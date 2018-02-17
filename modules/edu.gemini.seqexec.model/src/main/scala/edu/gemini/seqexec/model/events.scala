@@ -6,7 +6,7 @@ package edu.gemini.seqexec.model
 import edu.gemini.seqexec.model.Model._
 import java.time.Instant
 import dhs.ImageFileId
-import scalaz.Equal
+import cats.Eq
 
 object events {
 
@@ -20,7 +20,7 @@ object events {
   }
 
   object SeqexecModelUpdate {
-    implicit val equal: Equal[SeqexecModelUpdate] = Equal.equalA
+    implicit val equal: Eq[SeqexecModelUpdate] = Eq.fromUniversalEquals
 
     def unapply(u: SeqexecModelUpdate): Option[SequencesQueue[SequenceView]] =
       Some(u.view)
@@ -33,7 +33,7 @@ object events {
     final case class SequenceStart(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
     object SequenceStart {
-      implicit val equal: Equal[SequenceStart] = Equal.equalA
+      implicit val equal: Eq[SequenceStart] = Eq.fromUniversalEquals
     }
 
     final case class StepExecuted(obsId: SequenceId, view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
@@ -80,7 +80,7 @@ object events {
     final case class ServerLogMessage(level: ServerLogLevel, timestamp: Instant, msg: String) extends SeqexecEvent
     case object NullEvent extends SeqexecEvent
 
-    implicit val equal: Equal[SeqexecEvent] = Equal.equalA
+    implicit val equal: Eq[SeqexecEvent] = Eq.fromUniversalEquals
   }
   // scalastyle:on
 

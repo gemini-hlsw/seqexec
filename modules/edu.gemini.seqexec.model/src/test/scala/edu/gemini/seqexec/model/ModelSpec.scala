@@ -13,6 +13,7 @@ import cats.kernel.laws.discipline._
 final class ModelSpec extends CatsSuite {
   import SharedModelArbitraries._
 
+  checkAll("Eq[UserDetails]", EqTests[UserDetails].eqv)
   checkAll("Eq[SystemName]", EqTests[SystemName].eqv)
   checkAll("Eq[StepConfig]", EqTests[StepConfig].eqv)
   checkAll("Order[Resource]", OrderTests[Resource].order)
@@ -25,4 +26,6 @@ final class ModelSpec extends CatsSuite {
   checkAll("Eq[Step]", EqTests[Step].eqv)
   checkAll("Eq[StandardStep]", EqTests[StandardStep].eqv)
   checkAll("Eq[SequenceState]", EqTests[SequenceState].eqv)
+  checkAll("Eq[ActionType]", EqTests[ActionType].eqv)
+  checkAll("Eq[SequenceView]", EqTests[SequenceView].eqv)
 }

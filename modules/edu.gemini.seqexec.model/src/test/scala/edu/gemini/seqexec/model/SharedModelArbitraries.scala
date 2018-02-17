@@ -37,6 +37,7 @@ object SharedModelArbitraries {
   implicit val resArb = Arbitrary[Resource](Gen.oneOf(Resource.P1, Resource.OI, Resource.TCS, Resource.Gcal, Resource.Gems, Resource.Altair, Instrument.F2, Instrument.GmosS, Instrument.GmosN, Instrument.GPI, Instrument.GSAOI, Instrument.GNIRS, Instrument.NIRI, Instrument.NIFS))
   implicit val insArb = Arbitrary[Instrument](Gen.oneOf(Instrument.F2, Instrument.GmosS, Instrument.GmosN, Instrument.GPI, Instrument.GSAOI, Instrument.GNIRS, Instrument.NIRI, Instrument.NIFS))
 
+  implicit val actArb = implicitly[Arbitrary[ActionType]]
   implicit val udArb  = implicitly[Arbitrary[UserDetails]]
   implicit val svArb  = implicitly[Arbitrary[SequenceView]]
   implicit val opArb  = implicitly[Arbitrary[Operator]]
@@ -55,6 +56,9 @@ object SharedModelArbitraries {
   implicit val ofqArb = implicitly[Arbitrary[TelescopeOffset.Q]]
   implicit val guiArb = Arbitrary[Guiding](Gen.oneOf(Guiding.Park, Guiding.Guide, Guiding.Freeze))
   implicit val fpmArb = Arbitrary[FPUMode](Gen.oneOf(FPUMode.BuiltIn, FPUMode.Custom))
+
+  implicit val actCogen: Cogen[ActionType] =
+    Cogen[String].contramap(_.productPrefix)
 
   implicit val snCogen: Cogen[SystemName] =
     Cogen[String].contramap(_.show)
@@ -88,4 +92,10 @@ object SharedModelArbitraries {
 
   implicit val sqsCogen: Cogen[SequenceState] =
     Cogen[String].contramap(_.productPrefix)
+
+  implicit val udCogen: Cogen[UserDetails] =
+    Cogen[(String, String)].contramap(u => (u.username, u.displayName))
+
+  implicit val svCogen: Cogen[SequenceView] =
+    Cogen[(SequenceId, SequenceMetadata, SequenceState, List[Step], Option[Int])].contramap(s => (s.id, s.metadata, s.status, s.steps, s.willStopIn))
 }

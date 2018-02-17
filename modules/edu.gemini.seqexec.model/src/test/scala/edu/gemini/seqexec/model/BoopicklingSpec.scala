@@ -5,17 +5,18 @@ package edu.gemini.seqexec.model
 
 import Model._
 import events.SeqexecEvent._
+import cats.tests.CatsSuite
+// import cats.kernel.laws.discipline._
 import boopickle.Default._
 import org.scalacheck.Arbitrary
 import org.scalacheck.Arbitrary._
-import org.scalatest.{Assertion, FlatSpec, Matchers}
-import org.scalatest.prop.PropertyChecks
+import org.scalatest.{Assertion, Matchers}
 
 /**
   * Tests Serialization/Deserialization using BooPickle
   */
 @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter", "org.wartremover.warts.Throw", "org.wartremover.warts.OptionPartial", "org.wartremover.warts.NonUnitStatements", "org.wartremover.warts.Equals"))
-class BoopicklingSpec extends FlatSpec with Matchers with PropertyChecks {
+final class BoopicklingSpec extends CatsSuite with Matchers {
   import ModelBooPicklers._
   import SharedModelArbitraries._
   import SequenceEventsArbitraries._
@@ -26,88 +27,87 @@ class BoopicklingSpec extends FlatSpec with Matchers with PropertyChecks {
     }
   }
 
-  "SharedModel" should
-    "pickle/depickle user details" in {
-      // model
-      testPickleUnpickle[UserDetails]
-    }
-    it should "pickle/depickle SequenceView" in {
-      // model
-      testPickleUnpickle[SequenceView]
-    }
-    it should "pickle/depickle ConnectionOpenEvent" in {
-      // events
-      testPickleUnpickle[ConnectionOpenEvent]
-    }
-    it should "pickle/depickle SequenceStart" in {
-      // events
-      testPickleUnpickle[SequencesQueue[SequenceView]]
-    }
-    it should "pickle/depickle StepExecuted" in {
-      // events
-      testPickleUnpickle[StepExecuted]
-    }
-    it should "pickle/depickle SequenceCompleted" in {
-      // events
-      testPickleUnpickle[SequenceCompleted]
-    }
-    it should "pickle/depickle SequenceLoaded" in {
-      // events
-      testPickleUnpickle[SequenceLoaded]
-    }
-    it should "pickle/depickle SequenceUnloaded" in {
-      // events
-      testPickleUnpickle[SequenceUnloaded]
-    }
-    it should "pickle/depickle StepBreakpointChanged" in {
-      // events
-      testPickleUnpickle[StepBreakpointChanged]
-    }
-    it should "pickle/depickle StepSkipMarkChanged" in {
-      // events
-      testPickleUnpickle[StepSkipMarkChanged]
-    }
-    it should "pickle/depickle SequencePauseRequested" in {
-      // events
-      testPickleUnpickle[SequencePauseRequested]
-    }
-    it should "pickle/depickle SequencePauseCanceled" in {
-      // events
-      testPickleUnpickle[SequencePauseCanceled]
-    }
-    it should "pickle/depickle ActionStopRequested" in {
-      // events
-      testPickleUnpickle[ActionStopRequested]
-    }
-    it should "pickle/depickle SequenceError" in {
-      // events
-      testPickleUnpickle[SequenceError]
-    }
-    it should "pickle/depickle SequencePaused" in {
-      // events
-      testPickleUnpickle[SequencePaused]
-    }
-    it should "pickle/depickle ExposurePaused" in {
-      // events
-      testPickleUnpickle[ExposurePaused]
-    }
-    it should "pickle/depickle SequencesQueue[SequenceId]" in {
-      // events
-      testPickleUnpickle[SequencesQueue[SequenceId]]
-    }
-    it should "pickle/depickle ImageQuality" in {
-      testPickleUnpickle[ImageQuality]
-    }
-    it should "pickle/depickle WaterVapor" in {
-      testPickleUnpickle[WaterVapor]
-    }
-    it should "pickle/depickle SkyBackground" in {
-      testPickleUnpickle[SkyBackground]
-    }
-    it should "pickle/depickle CloudCover" in {
-      testPickleUnpickle[CloudCover]
-    }
-    it should "pickle/depickle Conditions" in {
-      testPickleUnpickle[Conditions]
-    }
+  test("pickle/depickle user details") {
+    // model
+    testPickleUnpickle[UserDetails]
+  }
+  test("pickle/depickle SequenceView") {
+    // model
+    testPickleUnpickle[SequenceView]
+  }
+  test("pickle/depickle ConnectionOpenEvent") {
+    // events
+    testPickleUnpickle[ConnectionOpenEvent]
+  }
+  test("pickle/depickle SequenceStart") {
+    // events
+    testPickleUnpickle[SequencesQueue[SequenceView]]
+  }
+  test("pickle/depickle StepExecuted") {
+    // events
+    testPickleUnpickle[StepExecuted]
+  }
+  test("pickle/depickle SequenceCompleted") {
+    // events
+    testPickleUnpickle[SequenceCompleted]
+  }
+  test("pickle/depickle SequenceLoaded") {
+    // events
+    testPickleUnpickle[SequenceLoaded]
+  }
+  test("pickle/depickle SequenceUnloaded") {
+    // events
+    testPickleUnpickle[SequenceUnloaded]
+  }
+  test("pickle/depickle StepBreakpointChanged") {
+    // events
+    testPickleUnpickle[StepBreakpointChanged]
+  }
+  test("pickle/depickle StepSkipMarkChanged") {
+    // events
+    testPickleUnpickle[StepSkipMarkChanged]
+  }
+  test("pickle/depickle SequencePauseRequested") {
+    // events
+    testPickleUnpickle[SequencePauseRequested]
+  }
+  test("pickle/depickle SequencePauseCanceled") {
+    // events
+    testPickleUnpickle[SequencePauseCanceled]
+  }
+  test("pickle/depickle ActionStopRequested") {
+    // events
+    testPickleUnpickle[ActionStopRequested]
+  }
+  test("pickle/depickle SequenceError") {
+    // events
+    testPickleUnpickle[SequenceError]
+  }
+  test("pickle/depickle SequencePaused") {
+    // events
+    testPickleUnpickle[SequencePaused]
+  }
+  test("pickle/depickle ExposurePaused") {
+    // events
+    testPickleUnpickle[ExposurePaused]
+  }
+  test("pickle/depickle SequencesQueue[SequenceId]") {
+    // events
+    testPickleUnpickle[SequencesQueue[SequenceId]]
+  }
+  test("pickle/depickle ImageQuality") {
+    testPickleUnpickle[ImageQuality]
+  }
+  test("pickle/depickle WaterVapor") {
+    testPickleUnpickle[WaterVapor]
+  }
+  test("pickle/depickle SkyBackground") {
+    testPickleUnpickle[SkyBackground]
+  }
+  test("pickle/depickle CloudCover") {
+    testPickleUnpickle[CloudCover]
+  }
+  test("pickle/depickle Conditions") {
+    testPickleUnpickle[Conditions]
+  }
 }
