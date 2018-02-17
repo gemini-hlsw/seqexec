@@ -17,7 +17,6 @@ import monocle.Iso
 
 import cats._
 import cats.implicits._
-import shims._
 import mouse.all._
 
 trait ModelLenses {

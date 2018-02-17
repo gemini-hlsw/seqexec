@@ -360,6 +360,10 @@ object Model {
     name: String
   )
 
+  object SequenceMetadata {
+    implicit val eq: Eq[SequenceMetadata] = Eq.fromUniversalEquals
+  }
+
   @Lenses final case class SequenceView (
     id: SequenceId,
     metadata: SequenceMetadata,
@@ -383,7 +387,8 @@ object Model {
   }
 
   // Complements to the science model
-  sealed trait StepType
+  sealed trait StepType extends Product with Serializable
+
   object StepType {
     case object Object extends StepType
     case object Arc extends StepType
@@ -407,6 +412,7 @@ object Model {
 
     def fromString(s: String): Option[StepType] = names.get(s)
   }
+
   sealed trait OffsetAxis {
     val configItem: String
   }
@@ -434,7 +440,28 @@ object Model {
     }
   }
 
-  sealed trait Guiding {
+  // Telescope offsets, roughly based on gem
+  final case class TelescopeOffset(p: TelescopeOffset.P, q: TelescopeOffset.Q)
+  object TelescopeOffset {
+    /** P component of an angular offset.. */
+    final case class P(value: Double) extends Offset
+    object P {
+      val Zero: P = P(0.0)
+      implicit val order: Order[P] = Order.by(_.value)
+
+    }
+    /** Q component of an angular offset.. */
+    final case class Q(value: Double) extends Offset
+    object Q {
+      val Zero: Q = Q(0.0)
+      implicit val order: Order[Q] = Order.by(_.value)
+
+    }
+    implicit val eq: Eq[TelescopeOffset] = Eq.fromUniversalEquals
+    implicit val show: Show[TelescopeOffset] = Show.fromToString
+  }
+
+  sealed trait Guiding extends Product with Serializable {
     val configValue: String
   }
   object Guiding {
@@ -457,7 +484,8 @@ object Model {
       case _        => none
     }
   }
-  sealed trait FPUMode
+
+  sealed trait FPUMode extends Product with Serializable
   object FPUMode {
     case object BuiltIn extends FPUMode
     case object Custom extends FPUMode
@@ -470,27 +498,6 @@ object Model {
       case "CUSTOM_MASK" => FPUMode.Custom.some
       case _             => none
     }
-  }
-
-  // Telescope offsets, roughly based on gem
-  final case class TelescopeOffset(p: TelescopeOffset.P, q: TelescopeOffset.Q)
-  object TelescopeOffset {
-    /** P component of an angular offset.. */
-    final case class P(value: Double) extends Offset
-    object P {
-      val Zero: P = P(0.0)
-      implicit val order: Order[P] = Order.by(_.value)
-
-    }
-    /** Q component of an angular offset.. */
-    final case class Q(value: Double) extends Offset
-    object Q {
-      val Zero: Q = Q(0.0)
-      implicit val order: Order[Q] = Order.by(_.value)
-
-    }
-    implicit val eq: Eq[TelescopeOffset] = Eq.fromUniversalEquals
-    implicit val show: Show[TelescopeOffset] = Show.fromToString
   }
 
   // Ported from OCS' SPSiteQuality.java
@@ -536,7 +543,7 @@ object Model {
     }
   }
 
-  sealed trait CloudCover {
+  sealed trait CloudCover extends Product with Serializable {
     val toInt: Int
   }
   object CloudCover {
@@ -558,7 +565,7 @@ object Model {
 
   }
 
-  sealed trait ImageQuality {
+  sealed trait ImageQuality extends Product with Serializable {
     val toInt: Int
   }
   object ImageQuality {
@@ -580,7 +587,7 @@ object Model {
 
   }
 
-  sealed trait SkyBackground {
+  sealed trait SkyBackground extends Product with Serializable {
     val toInt: Int
   }
   object SkyBackground {
@@ -602,7 +609,7 @@ object Model {
 
   }
 
-  sealed trait WaterVapor {
+  sealed trait WaterVapor extends Product with Serializable {
     val toInt: Int
   }
   object WaterVapor {

@@ -39,12 +39,19 @@ object SharedModelArbitraries {
 
   implicit val actArb = implicitly[Arbitrary[ActionType]]
   implicit val udArb  = implicitly[Arbitrary[UserDetails]]
+  implicit val smArb  = implicitly[Arbitrary[SequenceMetadata]]
   implicit val svArb  = implicitly[Arbitrary[SequenceView]]
   implicit val opArb  = implicitly[Arbitrary[Operator]]
   implicit val obArb  = implicitly[Arbitrary[Observer]]
   implicit val spsArb = implicitly[Arbitrary[StepState]]
   implicit val acsArb = implicitly[Arbitrary[ActionStatus]]
   implicit val sqsArb = implicitly[Arbitrary[SequenceState]]
+  implicit val ccArb  = Arbitrary[CloudCover](Gen.oneOf(CloudCover.all))
+  implicit val wvArb  = Arbitrary[WaterVapor](Gen.oneOf(WaterVapor.all))
+  implicit val sbArb  = Arbitrary[SkyBackground](Gen.oneOf(SkyBackground.all))
+  implicit val iqArb  = Arbitrary[ImageQuality](Gen.oneOf(ImageQuality.all))
+
+  implicit val conArb = implicitly[Arbitrary[Conditions]]
   // Must define these early on to be used on the events
   implicit val sqiArb = sequencesQueueArb[SequenceId]
   implicit val sqvArb = sequencesQueueArb[SequenceView]
@@ -52,10 +59,24 @@ object SharedModelArbitraries {
   implicit val steArb = implicitly[Arbitrary[Step]]
   implicit val stsArb = implicitly[Arbitrary[StandardStep]]
   implicit val styArb = Arbitrary(Gen.oneOf(StepType.all))
-  implicit val ofpArb = implicitly[Arbitrary[TelescopeOffset.P]]
-  implicit val ofqArb = implicitly[Arbitrary[TelescopeOffset.Q]]
   implicit val guiArb = Arbitrary[Guiding](Gen.oneOf(Guiding.Park, Guiding.Guide, Guiding.Freeze))
   implicit val fpmArb = Arbitrary[FPUMode](Gen.oneOf(FPUMode.BuiltIn, FPUMode.Custom))
+  implicit val telOffPArb = Arbitrary[TelescopeOffset.P] {
+    for {
+      d <- Gen.choose(-999.0, 999.0)
+    } yield TelescopeOffset.P(d)
+  }
+  implicit val telOffQArb = Arbitrary[TelescopeOffset.Q] {
+    for {
+      d <- Gen.choose(-999.0, 999.0)
+    } yield TelescopeOffset.Q(d)
+  }
+  implicit val telOffArb = Arbitrary[TelescopeOffset] {
+    for {
+      p <- arbitrary[TelescopeOffset.P]
+      q <- arbitrary[TelescopeOffset.Q]
+    } yield TelescopeOffset(p, q)
+  }
 
   implicit val actCogen: Cogen[ActionType] =
     Cogen[String].contramap(_.productPrefix)
@@ -93,9 +114,49 @@ object SharedModelArbitraries {
   implicit val sqsCogen: Cogen[SequenceState] =
     Cogen[String].contramap(_.productPrefix)
 
+  implicit val styCogen: Cogen[StepType] =
+    Cogen[String].contramap(_.productPrefix)
+
   implicit val udCogen: Cogen[UserDetails] =
     Cogen[(String, String)].contramap(u => (u.username, u.displayName))
 
+  implicit val smCogen: Cogen[SequenceMetadata] =
+    Cogen[(Instrument, Option[Observer], String)].contramap(s => (s.instrument, s.observer, s.name))
+
   implicit val svCogen: Cogen[SequenceView] =
     Cogen[(SequenceId, SequenceMetadata, SequenceState, List[Step], Option[Int])].contramap(s => (s.id, s.metadata, s.status, s.steps, s.willStopIn))
+
+  implicit def sqCogen[A: Cogen]: Cogen[SequencesQueue[A]] =
+    Cogen[(Conditions, Option[Operator], List[A])].contramap(s => (s.conditions, s.operator, s.queue))
+
+  implicit val offPCogen: Cogen[TelescopeOffset.P] =
+    Cogen[Double].contramap(_.value)
+
+  implicit val offQCogen: Cogen[TelescopeOffset.Q] =
+    Cogen[Double].contramap(_.value)
+
+  implicit val offCogen: Cogen[TelescopeOffset] =
+    Cogen[(TelescopeOffset.P, TelescopeOffset.Q)].contramap(o => (o.p, o.q))
+
+  implicit val guiCogen: Cogen[Guiding] =
+    Cogen[String].contramap(_.productPrefix)
+
+  implicit val fpuCogen: Cogen[FPUMode] =
+    Cogen[String].contramap(_.productPrefix)
+
+  implicit val ccCogen: Cogen[CloudCover] =
+    Cogen[String].contramap(_.productPrefix)
+
+  implicit val wvCogen: Cogen[WaterVapor] =
+    Cogen[String].contramap(_.productPrefix)
+
+  implicit val sbCogen: Cogen[SkyBackground] =
+    Cogen[String].contramap(_.productPrefix)
+
+  implicit val iqCogen: Cogen[ImageQuality] =
+    Cogen[String].contramap(_.productPrefix)
+
+  implicit val conCogen: Cogen[Conditions] =
+    Cogen[(CloudCover, ImageQuality, SkyBackground, WaterVapor)].contramap(c => (c.cc, c.iq, c.sb, c.wv))
+
 }

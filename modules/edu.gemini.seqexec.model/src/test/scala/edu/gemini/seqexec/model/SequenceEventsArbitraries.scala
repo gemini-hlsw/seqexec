@@ -7,6 +7,7 @@ import Model._
 import events.{SeqexecEvent, SeqexecModelUpdate}
 import events.SeqexecEvent._
 import org.scalacheck.Arbitrary
+import org.scalacheck.Cogen
 import org.scalacheck.Arbitrary._
 
 // Keep the arbitraries in a separate trait to improve caching
@@ -30,14 +31,21 @@ object SequenceEventsArbitraries {
   implicit val neArb  = implicitly[Arbitrary[NullEvent.type]]
   implicit val opArb  = implicitly[Arbitrary[OperatorUpdated]]
   implicit val obArb  = implicitly[Arbitrary[ObserverUpdated]]
-  implicit val iqArb  = implicitly[Arbitrary[ImageQuality]]
-  implicit val wvArb  = implicitly[Arbitrary[WaterVapor]]
-  implicit val sbArb  = implicitly[Arbitrary[SkyBackground]]
-  implicit val ccArb  = implicitly[Arbitrary[CloudCover]]
-  implicit val conArb = implicitly[Arbitrary[Conditions]]
   implicit val seArb  = implicitly[Arbitrary[SeqexecEvent]]
   implicit val smuArb = implicitly[Arbitrary[SeqexecModelUpdate]]
   implicit val serArb = implicitly[Arbitrary[SequenceError]]
   implicit val sspArb = implicitly[Arbitrary[SequencePaused]]
   implicit val sepArb = implicitly[Arbitrary[ExposurePaused]]
+
+  implicit val coeCogen: Cogen[ConnectionOpenEvent] =
+    Cogen[Option[UserDetails]].contramap(_.u)
+
+  implicit val smuCogen: Cogen[SeqexecModelUpdate] =
+    Cogen[SequencesQueue[SequenceView]].contramap(_.view)
+
+  implicit val sseCogen: Cogen[SequenceStart] =
+    Cogen[SequencesQueue[SequenceView]].contramap(_.view)
+
+  implicit val seeCogen: Cogen[StepExecuted] =
+    Cogen[SequencesQueue[SequenceView]].contramap(_.view)
 }

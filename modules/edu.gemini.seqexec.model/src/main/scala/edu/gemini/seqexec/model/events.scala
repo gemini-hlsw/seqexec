@@ -30,6 +30,10 @@ object events {
   object SeqexecEvent {
     final case class ConnectionOpenEvent(u: Option[UserDetails], clientId: ClientID) extends SeqexecEvent
 
+    object ConnectionOpenEvent {
+      implicit val equal: Eq[ConnectionOpenEvent] = Eq.fromUniversalEquals
+    }
+
     final case class SequenceStart(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
     object SequenceStart {
@@ -37,6 +41,10 @@ object events {
     }
 
     final case class StepExecuted(obsId: SequenceId, view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
+
+    object StepExecuted {
+      implicit val equal: Eq[StepExecuted] = Eq.fromUniversalEquals
+    }
 
     final case class FileIdStepExecuted(fileId: ImageFileId, view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 

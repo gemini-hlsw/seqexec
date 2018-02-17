@@ -5,14 +5,18 @@ package edu.gemini.seqexec.model
 
 import cats.tests.CatsSuite
 import cats.kernel.laws.discipline._
+import events.SeqexecModelUpdate
 import events.SeqexecEvent._
 
 /**
-  * Tests Model typeclasses
+  * Tests Event typeclasses
   */
-final class SeqexecVenteSpec extends CatsSuite {
-  import SharedModelArbitraries._
+final class SeqexEventSpec extends CatsSuite {
+  // import SharedModelArbitraries._
   import SequenceEventsArbitraries._
 
+  checkAll("Eq[SeqexecModelUpdate]", EqTests[SeqexecModelUpdate].eqv)
   checkAll("Eq[ConnectionOpenEvent]", EqTests[ConnectionOpenEvent].eqv)
+  checkAll("Eq[SequenceStart]", EqTests[SequenceStart].eqv)
+  checkAll("Eq[StepExecuted]", EqTests[StepExecuted].eqv)
 }

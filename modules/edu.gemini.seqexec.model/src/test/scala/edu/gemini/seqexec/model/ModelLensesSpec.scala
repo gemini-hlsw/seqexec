@@ -13,7 +13,6 @@ import SharedModelArbitraries._
 import SequenceEventsArbitraries._
 
 import cats.implicits._
-import shims._
 
 class ModelLensesSpec extends FunSuite with Discipline with ModelLenses {
 
