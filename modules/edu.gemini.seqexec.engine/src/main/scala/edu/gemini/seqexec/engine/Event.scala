@@ -7,8 +7,8 @@ import scalaz.syntax.std.option._
 import edu.gemini.seqexec.model.Model.{ClientID, Observer}
 import edu.gemini.seqexec.model.UserDetails
 
-import scalaz.concurrent.Task
-import scalaz.stream.Process
+import cats.effect.IO
+import fs2.Stream
 
 /**
   * Anything that can go through the Event Queue.
@@ -27,12 +27,12 @@ object Event {
   def breakpoint[D<:Engine.Types](id: Sequence.Id, user: UserDetails, step: Step.Id, v: Boolean): Event[D] = EventUser[D](Breakpoint(id, user.some, step, v))
   def skip[D<:Engine.Types](id: Sequence.Id, user: UserDetails, step: Step.Id, v: Boolean): Event[D] = EventUser[D](SkipMark(id, user.some, step, v))
   def setObserver[D<:Engine.Types](id: Sequence.Id, user: UserDetails, name: Observer): Event[D] = EventUser[D](SetObserver(id, user.some, name))
-  def poll(clientId: ClientID): Event[Nothing] = EventUser(Poll(clientId))
-  def getState[D<:Engine.Types](f: (Engine.State[D#StateData]) => Task[Option[Process[Task, Event[D]]]]): Event[D] = EventUser[D](GetState[D](f))
+  val poll(clientId: ClientID): Event[Nothing] = EventUser(Poll(clientId))
+  def getState[D<:Engine.Types](f: (Engine.State[D#StateData]) => IO[Option[Stream[IO, Event[D]]]]): Event[D] = EventUser[D](GetState[D](f))
   def modifyState[D<:Engine.Types](f: (Engine.State[D#StateData]) => Engine.State[D#StateData], data: D#EventData): Event[D] = EventUser[D](ModifyState[D](f, data))
-  def getSeqState[D<:Engine.Types](id: Sequence.Id, f: (Sequence.State) => Option[Process[Task, Event[D]]]): Event[D] = EventUser[D](GetSeqState(id, f))
-  def actionStop[D<:Engine.Types](id: Sequence.Id, f: (Sequence.State) => Option[Process[Task, Event[D]]]): Event[D] = EventUser[D](ActionStop(id, f))
-  def actionResume[D<:Engine.Types](id: Sequence.Id, i: Int, c: Task[Result]): Event[D] = EventUser[D](ActionResume(id, i, c))
+  def getSeqState[D<:Engine.Types](id: Sequence.Id, f: (Sequence.State) => Option[Stream[IO, Event[D]]]): Event[D] = EventUser[D](GetSeqState(id, f))
+  def actionStop[D<:Engine.Types](id: Sequence.Id, f: (Sequence.State) => Option[Stream[IO, Event[D]]]): Event[D] = EventUser[D](ActionStop(id, f))
+  def actionResume[D<:Engine.Types](id: Sequence.Id, i: Int, c: IO[Result]): Event[D] = EventUser[D](ActionResume(id, i, c))
   def logDebugMsg[D<:Engine.Types](msg: String): Event[D] = EventUser[D](LogDebug(msg))
   def logInfoMsg[D<:Engine.Types](msg: String): Event[D] = EventUser[D](LogInfo(msg))
   def logWarningMsg[D<:Engine.Types](msg: String): Event[D] = EventUser[D](LogWarning(msg))

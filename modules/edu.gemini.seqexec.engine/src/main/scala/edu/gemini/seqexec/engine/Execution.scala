@@ -5,8 +5,10 @@ package edu.gemini.seqexec.engine
 
 import edu.gemini.seqexec.model.Model.Resource
 
-import scalaz._
-import Scalaz._
+import cats.implicits._
+import monocle.syntax.apply._
+import monocle.function.Index.{index, listIndex}
+import mouse.boolean._
 
 /**
   * This structure holds the current `Execution` under execution. It carries
@@ -47,9 +49,10 @@ final case class Execution(execution: List[Action]) {
     * If the index doesn't exist, `Current` is returned unmodified.
     */
   def mark(i: Int)(r: Result): Execution =
-    Execution(PLens.listNthPLens[Action](i).modg(a => a.copy(state = actionStateFromResult(r)(a.state)), execution).getOrElse(execution))
+    Execution((execution &|-? index(i)).modify(a => a.copy(state = actionStateFromResult(r)(a.state))))
 
-  def start(i: Int): Execution = Execution(PLens.listNthPLens[Action](i).modg(a => a.copy(state = a.state.copy(runState = Action.Started)), execution).getOrElse(execution))
+  def start(i: Int): Execution =
+    Execution((execution &|-? index(i)).modify(a => a.copy(state = a.state.copy(runState = Action.Started))))
 }
 
 object Execution {
@@ -68,7 +71,7 @@ object Execution {
     case _                => false
   })
 
-  def finished(ex: Execution): Boolean = ex.execution.all(_.state.runState match {
+  def finished(ex: Execution): Boolean = ex.execution.forall(_.state.runState match {
     case Action.Completed(_) => true
     case Action.Failed(_)    => true
     case _                   => false

@@ -5,12 +5,7 @@ package edu.gemini.seqexec.engine
 
 import edu.gemini.seqexec.model.Model.{Resource, StepConfig, StepState}
 
-import scalaz.syntax.apply._
-import scalaz.syntax.foldable._
-import scalaz.syntax.std.option._
-import scalaz.syntax.equal._
-import scalaz.std.AllInstances._
-
+import cats.implicits._
 import monocle.Lens
 import monocle.macros.GenLens
 
@@ -56,8 +51,8 @@ object Step {
         // Return error or continue with the rest of the checks
       }}.map(StepState.Failed).getOrElse(
         // All actions in this Step were completed successfully, or the Step is empty.
-        if (step.executions.flatten.all(Action.completed)) StepState.Completed
-        else if (step.executions.flatten.all(_.state.runState === Action.Idle)) StepState.Pending
+        if (step.executions.flatten.forall(Action.completed)) StepState.Completed
+        else if (step.executions.flatten.forall(_.state.runState === Action.Idle)) StepState.Pending
         // Not all actions are completed or pending.
         else StepState.Running
       )
@@ -92,7 +87,7 @@ object Step {
       pending match {
         case Nil           => None
         case exep :: exeps =>
-          (Execution.currentify(exep) |@| focus.uncurrentify) (
+          (Execution.currentify(exep), focus.uncurrentify).mapN (
             (curr, exed) => self.copy(pending = exeps, focus = curr, done = exed :: done)
           )
       }

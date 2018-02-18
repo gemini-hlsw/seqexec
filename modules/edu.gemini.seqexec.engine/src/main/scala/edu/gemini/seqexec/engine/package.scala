@@ -7,8 +7,9 @@ import edu.gemini.seqexec.engine.Result.{Error, PartialVal, PauseContext, RetVal
 import edu.gemini.seqexec.model.Model.{Conditions, Observer, Operator}
 import edu.gemini.seqexec.model.ActionType
 
-import scalaz._
-import scalaz.concurrent.Task
+import cats._
+import cats.data.{Kleisli/*, StateT*/}
+import cats.effect.IO
 
 package engine {
 
@@ -39,7 +40,7 @@ package engine {
     sealed trait ActionState
 
     object ActionState {
-      implicit val equal: Equal[ActionState] = Equal.equalA
+      implicit val equal: Eq[ActionState] = Eq.fromUniversalEquals
     }
 
     object Idle extends ActionState
@@ -84,7 +85,15 @@ package object engine {
     * This represents an actual real-world action to be done in the underlying
     * systems.
     */
-  def fromTask(kind: ActionType, t: Task[Result]): Action = Action(kind, Kleisli[Task, ActionMetadata, Result](_ => t), Action.State(Action.Idle, Nil))
+  def fromIO(kind: ActionType, t: IO[Result]): Action = Action(kind, Kleisli[IO, ActionMetadata, Result](_ => t), Action.State(Action.Idle, Nil))
+
+  // Top level synonyms
+
+  /**
+    * This represents an actual real-world action to be done in the underlying
+    * systems.
+    */
+  def fromTask(kind: ActionType, t: IO[Result]): Action = Action(kind, Kleisli[IO, ActionMetadata, Result](_ => t), Action.State(Action.Idle, Nil))
   /**
     * An `Execution` is a group of `Action`s that need to be run in parallel
     * without interruption. A *sequential* `Execution` can be represented with
@@ -92,7 +101,7 @@ package object engine {
     */
   type Actions = List[Action]
 
-  type ActionGen = Kleisli[Task, ActionMetadata, Result]
+  type ActionGen = Kleisli[IO, ActionMetadata, Result]
 
   type Results = List[Result]
 

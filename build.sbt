@@ -254,7 +254,7 @@ lazy val edu_gemini_seqexec_engine = project
   .settings(
     addCompilerPlugin(Plugins.kindProjectorPlugin),
     addCompilerPlugin(Plugins.paradisePlugin),
-    libraryDependencies ++= Seq(ScalaZStream, Log4s) ++ Monocle.value
+    libraryDependencies ++= Seq(Fs2, CatsEffect.value, CatsMtl.value, Log4s) ++ Monocle.value
   )
 
 lazy val edu_gemini_epics_acm = project

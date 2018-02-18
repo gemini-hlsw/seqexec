@@ -3,19 +3,20 @@
 
 package edu.gemini.seqexec.engine
 
-import edu.gemini.seqexec.engine.Event._
-import edu.gemini.seqexec.engine.Result.{PartialVal, PauseContext, RetVal}
-import edu.gemini.seqexec.model.Model.{ClientID, Conditions, Observer, Resource, SequenceState}
-import org.log4s.getLogger
-import scalaz.concurrent.Task
-import scalaz.{Applicative, Kleisli, MonadState, StateT}
-import scalaz._
-import Scalaz._
+// import edu.gemini.seqexec.engine.Event._
+// import edu.gemini.seqexec.engine.Result.{PartialVal, PauseContext, RetVal}
+import edu.gemini.seqexec.model.Model.{/*Conditions,*/ Observer, Resource, SequenceState}
+// import org.log4s.getLogger
+import cats.effect.IO
+import cats._
+// import cats.implicits._
+import cats.data.StateT
 import monocle.macros.GenLens
 import monocle.Lens
-import scalaz.stream.{Process, merge}
+import fs2.Stream
 
 class Engine[D: ActionMetadataGenerator, U](implicit ev: ActionMetadataGenerator[D]) {
+  println(ev)
 
   class ConcreteTypes extends Engine.Types {
     override type StateData = D
@@ -31,55 +32,56 @@ class Engine[D: ActionMetadataGenerator, U](implicit ev: ActionMetadataGenerator
     * It's named `Handle` after `fs2.Handle` in order to give a hint in a future
     * migration.
     */
-  type Handle[A] = HandleStateT[Task, A]
+  type Handle[A] = HandleStateT[IO, A]
   // Helper alias to facilitate lifting.
   type HandleStateT[M[_], A] = StateT[M, StateType, A]
 
-
   // The `Catchable` instance of `Handle`` needs to be manually written.
   // Without it it's not possible to use `Handle` as a scalaz-stream process effects.
-  implicit def engineInstance: Catchable[Handle] =
-    new Catchable[Handle] {
-      def attempt[A](a: Handle[A]): Handle[Throwable \/ A] = a.flatMap(
-        x => Catchable[Task].attempt(Applicative[Task].pure(x)).liftM[HandleStateT]
-      )
-      def fail[A](err: Throwable): Handle[A] = Catchable[Task].fail[A](err).liftM[HandleStateT]
-    }
+  // implicit def engineInstance[A]: MonadError[Handle, A] =
+  //   new MonadError[Handle, A] {
+      // def attempt[A](a: Handle[A]): Handle[Throwable \/ A] = a.flatMap(
+      //   x => MonadError[IO].attempt(Applicative[IO].pure(x)).liftM[HandleStateT]
+      // )
+      // def fail[A](err: Throwable): Handle[A] = MonadError[IO].fail[A](err).liftM[HandleStateT]
+    // }
 
   /*
-   * HandleP is a Process which has as a side effect a State machine inside a Task, which can produce other
-   * Processes as output.
+   * HandleP is a Stream which has as a side effect a State machine inside a IO, which can produce other
+   * Streames as output.
    * Its type parameters are:
    * A: Type of the output (usually Unit)
    * D: Type of the user data included in the state machine state.
    *
    * Making it final causes an error: "The outer reference in this type test cannot be checked at run time"
    */
-  case class HandleP[A](run: Handle[(A, Option[Process[Task, EventType]])])
+  case class HandleP[A](run: Handle[(A, Option[Stream[IO, EventType]])])
   object HandleP {
-    def fromProcess(p: Process[Task, EventType]): HandleP[Unit] = {
-      HandleP[Unit](Applicative[Handle].pure[(Unit, Option[Process[Task, EventType]])](((), Some(p))))
+    def fromStream(p: Stream[IO, EventType]): HandleP[Unit] = {
+      HandleP[Unit](Applicative[Handle].pure[(Unit, Option[Stream[IO, EventType]])](((), Some(p))))
     }
   }
 
   implicit def handlePInstances: Monad[HandleP] = new Monad[HandleP] {
-    private def concatOpP(op1: Option[Process[Task, EventType]],
-                          op2: Option[Process[Task, EventType]]): Option[Process[Task, EventType]] = (op1, op2) match {
+    private def concatOpP[F[_]](op1: Option[Stream[F, EventType]],
+                          op2: Option[Stream[F, EventType]]): Option[Stream[F, EventType]] = (op1, op2) match {
       case (None, None)         => None
       case (Some(p1), None)     => Some(p1)
       case (None, Some(p2))     => Some(p2)
       case (Some(p1), Some(p2)) => Some(p1 ++ p2)
     }
 
-    override def point[A](a: => A): HandleP[A] = HandleP(Applicative[Handle].pure((a, None)))
+    override def pure[A](a: A): HandleP[A] = HandleP(Applicative[Handle].pure((a, None)))
 
-    override def bind[A, B](fa: HandleP[A])(f: A => HandleP[B]): HandleP[B] = HandleP[B](
-      fa.run.flatMap{
+    override def flatMap[A, B](fa: HandleP[A])(f: A => HandleP[B]): HandleP[B] = HandleP[B](
+      fa.run.flatMap {
         case (a, op1) => f(a).run.map{
           case (b, op2) => (b, concatOpP(op1, op2))
         }
       }
     )
+
+    override def tailRecM[A, B](a: A)(f: A => HandleP[Either[A, B]]): HandleP[B] = ???
   }
 
   implicit class HandleToHandleP[A](self: Handle[A]) {
@@ -372,19 +374,21 @@ class Engine[D: ActionMetadataGenerator, U](implicit ev: ActionMetadataGenerator
   private val unit: HandleP[Unit] = pure(())
 
   private val get: HandleP[StateType] =
-    MonadState[Handle, StateType].get.toHandleP
+    //  MonadState[Handle, StateType].get.toHandleP
+    StateT.get[Handle, StateType].toHandleP
 
-  private def gets[A](f: (StateType) => A): HandleP[A] =
-    MonadState[Handle, StateType].gets(f).toHandleP
-
+  // private def gets[A](f: StateType => A): HandleP[A] =
+  //  MonadState[Handle, StateType].gets(f).toHandleP
+  //   StateT.get[IO, StateType](f).toHandleP
+  //
   private def modify(f: (StateType) => StateType): HandleP[Unit] =
-    MonadState[Handle, StateType].modify(f).toHandleP
+    StateT.modify[IO, StateType](f).toHandleP
 
-  private def getS(id: Sequence.Id): HandleP[Option[Sequence.State]] = get.map(_.sequences.get(id))
-
-  private def getSs[A](id: Sequence.Id)(f: Sequence.State => A): HandleP[Option[A]] =
-    gets(_.sequences.get(id).map(f))
-
+  // private def getS(id: Sequence.Id): HandleP[Option[Sequence.State]] = get.map(_.sequences.get(id))
+  //
+  // private def getSs[A](id: Sequence.Id)(f: Sequence.State => A): HandleP[Option[A]] =
+  //   gets(_.sequences.get(id).map(f))
+  //
   private def modifyS(id: Sequence.Id)(f: Sequence.State => Sequence.State): HandleP[Unit] =
     modify(
       st => Engine.State(
@@ -394,12 +398,12 @@ class Engine[D: ActionMetadataGenerator, U](implicit ev: ActionMetadataGenerator
       )
     )
 
-  private def putS(id: Sequence.Id)(s: Sequence.State): HandleP[Unit] =
-    modify(st => Engine.State[ConcreteTypes#StateData](st.userData, st.sequences.updated(id, s)))
-
-  // For debugging
-  def printSequenceState(id: Sequence.Id): HandleP[Unit] =
-    getSs(id)((qs: Sequence.State) => Task.now(println(qs)).liftM[HandleStateT]).void // scalastyle:ignore
+  // private def putS(id: Sequence.Id)(s: Sequence.State): HandleP[Unit] =
+  //   modify(st => Engine.State[ConcreteTypes#StateData](st.userData, st.sequences.updated(id, s)))
+  //
+  // // For debugging
+  // def printSequenceState(id: Sequence.Id): HandleP[Unit] =
+  //   getSs(id)((qs: Sequence.State) => IO.now(println(qs)).liftM[HandleStateT]).void // scalastyle:ignore
 
 }
 
