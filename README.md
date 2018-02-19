@@ -33,6 +33,13 @@ ocs3/
 
 Settings and module versions are defined in the file `project/Settings.scala`
 
+## SBT
+
+To provide `sbt` with enough memory, it is recommended that you set:
+```
+SBT_OPTS='-XX:ReservedCodeCacheSize=512M -Xmx4096M -Xss2M -Dfile.encoding=UTF-8 -XX:+CMSClassUnloadingEnabled -XX:+UseConcMarkSweepGC -XX:MaxMetaspaceSize=2G'
+```
+
 ## Testing
 
 `ScalaTest` has been chosen as the test framework since it works in both scala.js and jvm. `ScalaCheck` is also supported running with `ScalaTest`.
