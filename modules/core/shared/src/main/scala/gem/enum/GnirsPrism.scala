@@ -9,7 +9,7 @@ import cats.syntax.eq._
 import gem.util.Enumerated
 
 /**
- * Enumerated type for Prism.
+ * Enumerated type for GNIRS Prism Turret.
  * @group Enumerations (Generated)
  */
 sealed abstract class GnirsPrism(

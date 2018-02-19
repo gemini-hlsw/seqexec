@@ -9,7 +9,7 @@ import cats.syntax.eq._
 import gem.util.Enumerated
 
 /**
- * Enumerated type for GNRIS Camera.
+ * Enumerated type for GNIRS Camera.
  * @group Enumerations (Generated)
  */
 sealed abstract class GnirsCamera(

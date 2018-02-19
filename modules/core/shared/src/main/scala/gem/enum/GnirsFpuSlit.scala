@@ -10,7 +10,7 @@ import gem.math.Angle
 import gem.util.Enumerated
 
 /**
- * Enumerated type for GNRIS FPU Slit.
+ * Enumerated type for GNIRS FPU Slit.
  * @group Enumerations (Generated)
  */
 sealed abstract class GnirsFpuSlit(

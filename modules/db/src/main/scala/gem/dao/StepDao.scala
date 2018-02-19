@@ -83,7 +83,7 @@ object StepDao {
         case Instrument.Ghost      => pure(DynamicConfig.Ghost())
         case Instrument.GmosN      => Gmos.selectOneNorth(oid, loc).maybe.widen[DynamicConfig]
         case Instrument.GmosS      => Gmos.selectOneSouth(oid, loc).maybe.widen[DynamicConfig]
-        case Instrument.Gnirs      => pure(DynamicConfig.Gnirs())
+        case Instrument.Gnirs      => Gnirs.selectOne(oid, loc)    .maybe.widen[DynamicConfig]
         case Instrument.Gpi        => pure(DynamicConfig.Gpi())
         case Instrument.Gsaoi      => pure(DynamicConfig.Gsaoi())
         case Instrument.Michelle   => pure(DynamicConfig.Michelle())
@@ -117,7 +117,7 @@ object StepDao {
         case Instrument.Ghost      => pure(DynamicConfig.Ghost())
         case Instrument.GmosN      => Gmos.selectAllNorth(oid).toMap[DynamicConfig] //.map(a => a: TreeMap[Loc, DynamicConfig])
         case Instrument.GmosS      => Gmos.selectAllSouth(oid).toMap[DynamicConfig] //.map(a => a: TreeMap[Loc, DynamicConfig])
-        case Instrument.Gnirs      => pure(DynamicConfig.Gnirs())
+        case Instrument.Gnirs      => Gnirs.selectAll(oid)    .toMap[DynamicConfig] //.map(a => a: TreeMap[Loc, DynamicConfig])
         case Instrument.Gpi        => pure(DynamicConfig.Gpi())
         case Instrument.Gsaoi      => pure(DynamicConfig.Gsaoi())
         case Instrument.Michelle   => pure(DynamicConfig.Michelle())
@@ -168,7 +168,7 @@ object StepDao {
                                            Gmos.insertNorth(id, i).run.void
       case i: DynamicConfig.GmosSouth => Gmos.insertCommon(id, i.common).run *>
                                            Gmos.insertSouth(id, i).run.void
-      case _: DynamicConfig.Gnirs     => ().pure[ConnectionIO]
+      case g: DynamicConfig.Gnirs     => Gnirs.insert(id, g).run.void
       case _: DynamicConfig.Gpi       => ().pure[ConnectionIO]
       case _: DynamicConfig.Gsaoi     => ().pure[ConnectionIO]
       case _: DynamicConfig.Michelle  => ().pure[ConnectionIO]
@@ -540,6 +540,112 @@ object StepDao {
             ${g.fpu.flatMap(_.swap.toOption.map(_.maskDefinitionFilename))},
             ${g.fpu.flatMap(_.swap.toOption.map(_.slitWidth))},
             ${g.fpu.flatMap(_.toOption)})
+        """.update
+    }
+
+    object Gnirs {
+
+      @SuppressWarnings(Array("org.wartremover.warts.Throw"))
+      final case class GnirsFpuBuilder(slit: Option[GnirsFpuSlit], other: Option[GnirsFpuOther]) {
+        def toFpu: Either[GnirsFpuOther, GnirsFpuSlit] = (slit, other) match {
+          case (Some(s), None) => Right(s)
+          case (None, Some(o)) => Left(o)
+          case _               => throw new IllegalArgumentException(s"GNIRS FPU must be either Slit or Other")
+        }
+      }
+
+      final case class GnirsBuilder(
+        camera:               GnirsCamera,
+        decker:               GnirsDecker,
+        disperser:            GnirsDisperser,
+        disperserOrder:       GnirsDisperserOrder,
+        exposureTime:         Duration,
+        filter:               GnirsFilter,
+        prism:                GnirsPrism,
+        fpuBuilder:           GnirsFpuBuilder,
+        readMode:             GnirsReadMode
+      ) {
+        def toGnirs: DynamicConfig.Gnirs =
+          DynamicConfig.Gnirs(
+            camera,
+            decker,
+            disperser,
+            disperserOrder,
+            exposureTime,
+            filter,
+            fpuBuilder.toFpu,
+            prism,
+            readMode
+          )
+      }
+
+      def selectAll(oid: Observation.Id): Query0[(Loc, DynamicConfig.Gnirs)] =
+        sql"""
+          SELECT s.location,
+                 i.camera,
+                 i.decker,
+                 i.disperser,
+                 i.disperser_order,
+                 i.exposure_time,
+                 i.filter,
+                 i.fpu_list,
+                 i.fpu_other,
+                 i.prism,
+                 i.read_mode
+            FROM step s
+                 LEFT OUTER JOIN step_gnirs i
+                   ON i.step_gnirs_id = s.step_id
+           WHERE s.program_id        = ${oid.pid}
+             AND s.observation_index = ${oid.index}
+        """.query[(Loc, GnirsBuilder)].map(_.map(_.toGnirs))
+
+      def selectOne(oid: Observation.Id, loc: Loc): Query0[DynamicConfig.Gnirs] =
+        sql"""
+          SELECT i.camera,
+                 i.dekcer,
+                 i.disperser,
+                 i.disperser_order,
+                 i.exposure_time,
+                 i.filter,
+                 i.fpu_slit,
+                 i.fpu_other,
+                 i.prism,
+                 i.read_mode
+            FROM step s
+                 LEFT OUTER JOIN step_gnirs i
+                   ON i.step_gnirs_id = s.step_id
+           WHERE s.program_id        = ${oid.pid}
+             AND s.observation_index = ${oid.index}
+             AND s.location          = $loc
+        """.query[GnirsBuilder].map(_.toGnirs)
+
+      def insert(id: Int, gnirs: DynamicConfig.Gnirs): Update0 =
+        sql"""
+          INSERT INTO step_gnirs (
+            step_gnirs_id,
+            camera,
+            decker,
+            disperser,
+            disperser_order,
+            exposure_time,
+            filter,
+            fpu_slit,
+            fpu_other,
+            prism,
+            read_mode
+          )
+          VALUES (
+            $id,
+            ${gnirs.camera},
+            ${gnirs.decker},
+            ${gnirs.disperser},
+            ${gnirs.disperserOrder},
+            ${gnirs.exposureTime},
+            ${gnirs.filter},
+            ${gnirs.fpu.toOption},
+            ${gnirs.fpu.swap.toOption},
+            ${gnirs.prism},
+            ${gnirs.readMode}
         """.update
     }
   }
