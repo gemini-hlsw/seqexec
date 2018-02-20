@@ -128,4 +128,6 @@ class SeqexecEngineSpec extends FlatSpec with Matchers {
         List(done(Resource.TCS), paused))
       SeqexecEngine.observeStatus(executions) shouldBe ActionStatus.Paused
     }
+
+
 }

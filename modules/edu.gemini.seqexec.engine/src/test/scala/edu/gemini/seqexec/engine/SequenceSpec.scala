@@ -55,6 +55,7 @@ class SequenceSpec extends FlatSpec {
 
   private val metadata = SequenceMetadata(F2, None, "")
   private val user = UserDetails("telops", "Telops")
+  private val executionEngine = new Engine[Unit]
 
   def simpleStep(id: Int, breakpoint: Boolean): Step =
     Step.init(
@@ -75,16 +76,17 @@ class SequenceSpec extends FlatSpec {
     case _                       => false
   }
 
-  def runToCompletion(s0: Engine.State): Option[Engine.State] = {
-    process(Process.eval(Task.now(Event.start(seqId, user))))(s0).drop(1).takeThrough(
+  def runToCompletion(s0: Engine.State[Unit]): Option[Engine.State[Unit]] = {
+    executionEngine.process(Process.eval(Task.now(Event.start(seqId, user))))(s0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
     ).runLast.unsafePerformSync.map(_._2)
   }
 
   it should "stop on breakpoints" in {
 
-    val qs0: Engine.State =
-      Engine.State(
+    val qs0: Engine.State[Unit] =
+      Engine.State[Unit](
+        (),
         Conditions.default,
         None,
         Map(
@@ -112,8 +114,9 @@ class SequenceSpec extends FlatSpec {
 
   it should "resume execution to completion after a breakpoint" in {
 
-    val qs0: Engine.State =
-      Engine.State(
+    val qs0: Engine.State[Unit] =
+      Engine.State[Unit](
+        (),
         Conditions.default,
         None,
         Map(

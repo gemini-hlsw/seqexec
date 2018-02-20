@@ -26,6 +26,8 @@ class StepSpec extends FlatSpec {
   private val seqId ="TEST-01"
   private val user = UserDetails("telops", "Telops")
 
+  private val executionEngine = new Engine[Unit]
+
   /**
     * Emulates TCS configuration in the real world.
     *
@@ -66,7 +68,7 @@ class StepSpec extends FlatSpec {
     }
   )
 
-  def triggerPause(q: async.mutable.Queue[Event]): Action = fromTask(ActionType.Undefined,
+  def triggerPause(q: async.mutable.Queue[Event[Unit]]): Action = fromTask(ActionType.Undefined,
     for {
       _ <- q.enqueueOne(Event.pause(seqId, user))
       // There is not a distinct result for Pause because the Pause action is a
@@ -74,7 +76,7 @@ class StepSpec extends FlatSpec {
       // input event is enough.
     } yield Result.OK(Result.Configured(Resource.TCS)))
 
-  def triggerStart(q: async.mutable.Queue[Event]): Action = fromTask(ActionType.Undefined,
+  def triggerStart(q: async.mutable.Queue[Event[Unit]]): Action = fromTask(ActionType.Undefined,
     for {
       _ <- q.enqueueOne(Event.start(seqId, user))
       // Same case that the pause action
@@ -87,14 +89,14 @@ class StepSpec extends FlatSpec {
     case _                       => false
   }
 
-  def runToCompletion(s0: Engine.State): Option[Engine.State] = {
-    process(Process.eval(Task.now(Event.start(seqId, user))))(s0).drop(1).takeThrough(
+  def runToCompletion(s0: Engine.State[Unit]): Option[Engine.State[Unit]] = {
+    executionEngine.process(Process.eval(Task.now(Event.start(seqId, user))))(s0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
     ).runLast.unsafePerformSync.map(_._2)
   }
 
-  def runToCompletionL(s0: Engine.State): List[Engine.State] = {
-    process(Process.eval(Task.now(Event.start(seqId, user))))(s0).drop(1).takeThrough(
+  def runToCompletionL(s0: Engine.State[Unit]): List[Engine.State[Unit]] = {
+    executionEngine.process(Process.eval(Task.now(Event.start(seqId, user))))(s0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
     ).runLog.unsafePerformSync.map(_._2).toList
   }
@@ -107,9 +109,10 @@ class StepSpec extends FlatSpec {
 
   // The difficult part is to set the pause command to interrupts the step execution in the middle.
   "pause" should "stop execution in response to a pause command" in {
-    val q = async.boundedQueue[Event](10)
-    val qs0: Engine.State =
-      Engine.State(
+    val q = async.boundedQueue[Event[Unit]](10)
+    val qs0: Engine.State[Unit] =
+      Engine.State[Unit](
+        (),
         Conditions.default,
         None,
         Map(
@@ -136,7 +139,7 @@ class StepSpec extends FlatSpec {
         )
       )
 
-    val qs1 = q.enqueueOne(Event.start(seqId, user)).flatMap(_ => process(q.dequeue)(qs0).drop(1).takeThrough(
+    val qs1 = q.enqueueOne(Event.start(seqId, user)).flatMap(_ => executionEngine.process(q.dequeue)(qs0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
     ).runLast).unsafePerformSync.map(_._2)
 
@@ -154,8 +157,9 @@ class StepSpec extends FlatSpec {
 
   it should "resume execution from the non-running state in response to a resume command, rolling back a partially run step." in {
     // Engine state with one idle sequence partially executed. One Step completed, two to go.
-    val qs0: Engine.State =
-      Engine.State(
+    val qs0: Engine.State[Unit] =
+      Engine.State[Unit](
+        (),
         Conditions.default,
         None,
         Map(
@@ -184,7 +188,7 @@ class StepSpec extends FlatSpec {
         )
       )
 
-    val qs1 = process(Process.eval(Task.now(Event.start(seqId, user))))(qs0).take(1).runLast.unsafePerformSync.map(_._2)
+    val qs1 = executionEngine.process(Process.eval(Task.now(Event.start(seqId, user))))(qs0).take(1).runLast.unsafePerformSync.map(_._2)
 
     inside (qs1.flatMap(_.sequences.get(seqId))) {
       case Some(Sequence.State.Zipper(zipper, status)) =>
@@ -198,8 +202,9 @@ class StepSpec extends FlatSpec {
   }
 
   it should "cancel a pause request in response to a cancel pause command." in {
-    val qs0: Engine.State =
-      Engine.State(
+    val qs0: Engine.State[Unit] =
+      Engine.State[Unit](
+        (),
         Conditions.default,
         None,
         Map(
@@ -228,7 +233,7 @@ class StepSpec extends FlatSpec {
         )
       )
 
-    val qs1 = process(Process.eval(Task.now(Event.cancelPause(seqId, user))))(qs0).take(1).runLast.unsafePerformSync.map(_._2)
+    val qs1 = executionEngine.process(Process.eval(Task.now(Event.cancelPause(seqId, user))))(qs0).take(1).runLast.unsafePerformSync.map(_._2)
 
     inside (qs1.flatMap(_.sequences.get(seqId))) {
       case Some(Sequence.State.Zipper(_, status)) => assert(status.isRunning)
@@ -237,8 +242,9 @@ class StepSpec extends FlatSpec {
   }
 
   "engine" should "ignore pause command if step is not being executed." in {
-    val qs0: Engine.State =
-      Engine.State(
+    val qs0: Engine.State[Unit] =
+      Engine.State[Unit](
+        (),
         Conditions.default,
         None,
         Map(
@@ -265,7 +271,7 @@ class StepSpec extends FlatSpec {
         )
       )
 
-    val qss = process(Process.eval(Task.now(Event.pause(seqId, user))))(qs0).runLog.unsafePerformSync.map(_._2)
+    val qss =executionEngine. process(Process.eval(Task.now(Event.pause(seqId, user))))(qs0).runLog.unsafePerformSync.map(_._2)
 
     assert(qss.length == 1)
     inside (qss.headOption.flatMap(_.sequences.get(seqId))) {
@@ -280,9 +286,10 @@ class StepSpec extends FlatSpec {
 
   // Be careful that start command doesn't run an already running sequence.
   "engine" should "ignore start command if step is already running." in {
-    val q = async.boundedQueue[Event](10)
-    val qs0: Engine.State =
-      Engine.State(
+    val q = async.boundedQueue[Event[Unit]](10)
+    val qs0: Engine.State[Unit] =
+      Engine.State[Unit](
+        (),
         Conditions.default,
         None,
         Map(
@@ -310,7 +317,7 @@ class StepSpec extends FlatSpec {
         )
       )
 
-    val qss = q.enqueueOne(Event.start(seqId, user)).flatMap(_ => process(q.dequeue)(qs0).drop(1).takeThrough(
+    val qss = q.enqueueOne(Event.start(seqId, user)).flatMap(_ => executionEngine.process(q.dequeue)(qs0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
     ).runLog).unsafePerformSync
 
@@ -332,8 +339,9 @@ class StepSpec extends FlatSpec {
   // For this test, one of the actions in the step must produce an error as result.
   "engine" should "stop execution and propagate error when an Action ends in error." in {
     val errMsg = "Dummy error"
-    val qs0: Engine.State =
-      Engine.State(
+    val qs0: Engine.State[Unit] =
+      Engine.State[Unit](
+        (),
         Conditions.default,
         None,
         Map(
@@ -381,8 +389,9 @@ class StepSpec extends FlatSpec {
     case class RetValDouble(v: Double) extends Result.RetVal
     case class PartialValDouble(v: Double) extends Result.PartialVal
 
-    val qs0: Engine.State =
-      Engine.State(
+    val qs0: Engine.State[Unit] =
+      Engine.State[Unit](
+        (),
         Conditions.default,
         None,
         Map(

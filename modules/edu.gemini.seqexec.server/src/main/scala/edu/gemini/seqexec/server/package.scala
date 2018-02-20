@@ -3,10 +3,11 @@
 
 package edu.gemini.seqexec
 
-import edu.gemini.seqexec.engine.Event
+import edu.gemini.seqexec.engine.{Engine, Event, Sequence}
+import edu.gemini.seqexec.model.Model.SequenceState
 
-import scalaz._
-import Scalaz._
+import scalaz.{-\/, EitherT, Failure, NonEmptyList, Reader, Success, ValidationNel, \/, \/-}
+import scalaz.syntax.either._
 import scalaz.concurrent.Task
 import scalaz.stream.async.mutable.Queue
 
@@ -23,7 +24,14 @@ package object server {
 
   type SeqObserve[A, B] = Reader[A, SeqAction[B]]
 
-  type EventQueue = Queue[Event]
+  type ExecutionQueue = List[Sequence.Id]
+  type ExecutionQueues = Map[String, ExecutionQueue]
+  type EngineEvent = Event[ExecutionQueues]
+  type EngineState = Engine.State[ExecutionQueues]
+
+  val executeEngine: Engine[ExecutionQueues] = new Engine[ExecutionQueues]
+
+  type EventQueue = Queue[EngineEvent]
 
   object SeqAction {
     def apply[A](a: => A): SeqAction[A]          = EitherT(Task.delay(TrySeq(a)))
@@ -39,4 +47,14 @@ package object server {
         case \/-(b) => Success(b)
       }
   }
+
+  implicit class ExecutionQueueOps(q: ExecutionQueue) {
+    def status(st: EngineState): SequenceState = {
+      val statuses: List[SequenceState] = q.map(st.sequences.get(_).map(_.status).getOrElse(SequenceState.Idle))
+
+      statuses.find(_.isRunning).orElse(statuses.find(_.isError)).orElse(statuses.find(_.isStopped))
+        .orElse(statuses.find(_.isIdle)).getOrElse(SequenceState.Completed)
+    }
+  }
+
 }

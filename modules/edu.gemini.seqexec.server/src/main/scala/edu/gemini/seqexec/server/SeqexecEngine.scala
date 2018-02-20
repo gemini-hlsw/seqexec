@@ -124,11 +124,11 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
 
   def requestRefresh(q: EventQueue): Task[Unit] = q.enqueueOne(Event.poll)
 
-  def seqQueueRefreshProcess: Process[Task, Event] =
+  def seqQueueRefreshProcess: Process[Task, EngineEvent] =
     awakeEvery(settings.odbQueuePollingInterval)(Strategy.DefaultStrategy, DefaultScheduler).map(_ => Event.getState(refreshSequenceList()))
 
   def eventProcess(q: EventQueue): Process[Task, SeqexecEvent] =
-    engine.process(wye(q.dequeue, seqQueueRefreshProcess)(mergeHaltBoth))(Engine.State.empty).flatMap(x => Process.eval(notifyODB(x))).map {
+    executeEngine.process(wye(q.dequeue, seqQueueRefreshProcess)(mergeHaltBoth))(Engine.State.empty[ExecutionQueues](Map("Calibration Queue" -> Nil))).flatMap(x => Process.eval(notifyODB(x))).map {
       case (ev, qState) =>
         toSeqexecEvent(ev)(
           SequencesQueue(
@@ -157,7 +157,49 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     Event.getSeqState(seqId.stringValue, translator.resumePaused(seqId.stringValue))
   )
 
-  private def notifyODB(i: (Event, Engine.State)): Task[(Event, Engine.State)] = {
+  private def addSeq(name: String, seqId: Sequence.Id)(st: EngineState): EngineState = (
+    for {
+      q   <- st.userData.get(name)
+      seq <- st.sequences.get(seqId)
+    } yield if(!q.status(st).isRunning && !seq.status.isRunning && !q.contains(seqId)) st.copy(userData = st.userData.updated(name, q :+ seqId)) else st
+  ).getOrElse(st)
+
+  def addSequenceToQueue(q: EventQueue, queueName: String, seqId: SPObservationID): Task[Unit] = q.enqueueOne(
+    Event.modifyState(addSeq(queueName, seqId.stringValue))
+  )
+
+  private def removeSeq(name: String, seqId: Sequence.Id)(st: EngineState): EngineState = (
+    for {
+      q <- st.userData.get(name)
+    } yield if(!q.status(st).isRunning && q.contains(seqId)) st.copy(userData = st.userData.updated(name, q.filterNot(_===seqId))) else st
+  ).getOrElse(st)
+
+  def removeSequenceFromQueue(q: EventQueue, queueName: String, seqId: SPObservationID): Task[Unit] = q.enqueueOne(
+    Event.modifyState(removeSeq(queueName, seqId.stringValue))
+  )
+
+  // This assumes that there is only one instance of e in l
+  private def moveElement[T](l: List[T], e: T, d: Int)(implicit eq: Equal[T]): List[T] = {
+    val idx = l.indexOf(e)
+
+    if(d === 0 || idx<0) l
+    else {
+      val (h, t) = l.filterNot(_===e).splitAt(idx+d)
+      (h :+ e) ::: t
+    }
+  }
+
+  private def moveSeq(name: String, seqId: Sequence.Id, d: Int)(st: EngineState): EngineState = (
+    for {
+      q <- st.userData.get(name)
+    } yield if(!q.status(st).isRunning && !q.contains(seqId)) st.copy(userData = st.userData.updated(name, moveElement(q, seqId, d))) else st
+  ).getOrElse(st)
+
+  def moveSequenceInQueue(q: EventQueue, queueName: String, seqId: SPObservationID, d: Int): Task[Unit] = q.enqueueOne(
+    Event.modifyState(moveSeq(queueName, seqId.stringValue, d))
+  )
+
+  private def notifyODB(i: (EngineEvent, EngineState)): Task[(EngineEvent, EngineState)] = {
     def safeGetObsId(ids: String): SeqAction[SPObservationID] = EitherT(Task.delay(new SPObservationID(ids)).map(_.right).handle{
       case e: Exception => SeqexecFailure.SeqexecException(e).left
     })
@@ -178,7 +220,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     }).run.map(_ => i)
   }
 
-  private def loadEvents(seqId: SPObservationID): SeqAction[List[Event]] = {
+  private def loadEvents(seqId: SPObservationID): SeqAction[List[EngineEvent]] = {
     val t: EitherT[Task, SeqexecFailure, (List[SeqexecFailure], Option[Sequence])] = for {
       odbSeq       <- SeqAction.either(odbProxy.read(seqId))
       progIdString <- SeqAction.either(odbSeq.config.extract(OCS_KEY / InstConstants.PROGRAMID_PROP).as[String].leftMap(ConfigUtilOps.explainExtractError))
@@ -192,9 +234,9 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     }
   }
 
-  private def unloadEvent(seqId: SPObservationID): Event = Event.unload(seqId.stringValue)
+  private def unloadEvent(seqId: SPObservationID): EngineEvent = Event.unload(seqId.stringValue)
 
-  private def toSeqexecEvent(ev: engine.Event)(svs: => SequencesQueue[SequenceView]): SeqexecEvent = ev match {
+  private def toSeqexecEvent(ev: EngineEvent)(svs: => SequencesQueue[SequenceView]): SeqexecEvent = ev match {
     case engine.EventUser(ue) => ue match {
       case engine.Start(_, _)            => SequenceStart(svs)
       case engine.Pause(_, _)            => SequencePauseRequested(svs)
@@ -213,6 +255,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
       case engine.Poll                   => SequenceRefreshed(svs)
       case engine.GetState(_)            => NullEvent
       case engine.GetSeqState(_, _)      => NullEvent
+      case engine.ModifyState(_)         => NullEvent
       case engine.ActionStop(_, _)       => ActionStopRequested(svs)
       case engine.LogDebug(_)            => NullEvent
       case engine.LogInfo(_)             => NullEvent
@@ -260,14 +303,14 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     SequenceView(seq.id, seq.metadata, st.status, engineSteps(seq), None)
   }
 
-  private def refreshSequenceList(): Engine.State => Task[Option[Process[Task, Event]]] = (st: Engine.State) => {
+  private def refreshSequenceList(): EngineState => Task[Option[Process[Task, EngineEvent]]] = (st: EngineState) => {
 
     val seqexecList = st.sequences.keys.toSeq.map(v => new SPObservationID(v))
 
-    def loads(odbList: Seq[SPObservationID]): Task[List[Event]] =
+    def loads(odbList: Seq[SPObservationID]): Task[List[EngineEvent]] =
       odbList.diff(seqexecList).toList.map(id => loadEvents(id)).sequenceU.map(_.flatten).run.map(_.valueOr( r => List(Event.logDebugMsg(SeqexecFailure.explain(r)))))
 
-    def unloads(odbList: Seq[SPObservationID]): Seq[Event] =
+    def unloads(odbList: Seq[SPObservationID]): Seq[EngineEvent] =
       seqexecList.diff(odbList).map(id => unloadEvent(id))
 
     val x = odbProxy.queuedSequences.flatMapF(seqs => loads(seqs).map(ee => (ee ++ unloads(seqs)).right)).run
