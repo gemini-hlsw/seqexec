@@ -128,7 +128,7 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
   val stepRunning: StyleA = style() // Marker css
 
   val observeConfig: StyleA = style {
-    backgroundColor.lightcyan
+    backgroundColor.lightcyan.important
   }
 
   val inline: StyleA = style {

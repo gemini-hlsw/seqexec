@@ -227,18 +227,21 @@ object StepsTable {
     }
 
     // Wire it up from VDOM
-    def render(p: Props): VdomElement =
+    def render(p: Props): VdomElement = {
+      val settingsDisplayed = p.steps.forall(_.stepConfigDisplayed.isDefined)
       <.div(
-        SeqexecStyles.stepsListPane.unless(p.status.isLogged),
-        SeqexecStyles.stepsListPaneWithControls.when(p.status.isLogged),
+        SeqexecStyles.stepsListPane.unless(p.status.isLogged || settingsDisplayed),
+        SeqexecStyles.stepsListPaneWithControls.when(p.status.isLogged || settingsDisplayed),
         p.steps.whenDefined { tab =>
           tab.stepConfigDisplayed.map { i =>
-            <.div("CONFIG")
+            val steps = p.stepsList.index(i).getOrElse(Step.Zero)
+            AutoSizer(AutoSizer.props(s => StepConfigTable(StepConfigTable.Props(steps, s))))
           }.getOrElse {
             AutoSizer(AutoSizer.props(s => ref.component(stepsTableProps(p)(s))(columns(p, s).map(_.vdomElement): _*)))
-          }
+          }.vdomElement
         }
       )
+    }
   }
 
   private val component = ScalaComponent.builder[Props]("Steps")
