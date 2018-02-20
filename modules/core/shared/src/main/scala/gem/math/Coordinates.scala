@@ -6,7 +6,7 @@ package math
 
 import cats._, cats.implicits._
 import gem.parser.CoordinateParsers
-import gem.util.Format
+import gem.optics.Format
 import gem.syntax.all._
 import scala.math.{ sin, cos, atan2, sqrt }
 

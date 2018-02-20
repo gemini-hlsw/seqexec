@@ -8,7 +8,7 @@ import cats.{ Order, Show }
 import cats.instances.long._
 import gem.parser.CoordinateParsers
 import gem.syntax.all._
-import gem.util.Format
+import gem.optics.Format
 import monocle.Prism
 
 /**

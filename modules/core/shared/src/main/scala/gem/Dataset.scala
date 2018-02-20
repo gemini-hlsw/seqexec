@@ -7,7 +7,7 @@ import cats.{ Order, Show }
 import cats.implicits._
 import gem.imp.TimeInstances._
 import gem.syntax.string._
-import gem.util.Format
+import gem.optics.Format
 import java.time.Instant
 
 /**

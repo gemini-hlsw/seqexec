@@ -5,9 +5,9 @@ package gem.laws
 
 import cats.Eq
 import cats.implicits._
-import gem.util.Section
+import gem.optics.SplitEpi
 
-final case class SectionLaws[A, B](fab: Section[A, B]) {
+final case class SplitEpiLaws[A, B](fab: SplitEpi[A, B]) {
 
   def normalize(a: A): IsEq[B] =
     fab.get(fab.normalize(a)) <-> fab.get(a)

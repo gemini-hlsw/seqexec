@@ -5,13 +5,13 @@ package gem.laws
 
 import cats.Eq
 import cats.implicits._
-import gem.util.Format
+import gem.optics.Format
 
 final case class FormatLaws[A, B](fab: Format[A, B]) {
 
   def normalize(a: A): IsEq[Option[B]] =
     fab.normalize(a).flatMap(fab.getOption) <-> fab.getOption(a)
-  
+
   def parseRoundTrip(a: A): IsEq[Option[A]] = {
     val oa = fab.normalize(a)
     oa.flatMap(fab.getOption).map(fab.reverseGet) <-> oa

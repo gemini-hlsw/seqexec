@@ -2,18 +2,18 @@
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package gem
-package util
+package optics
 
 import cats.tests.CatsSuite
 import gem.laws.discipline._
 
-final class SectionSpec extends CatsSuite {
+final class SplitEpiSpec extends CatsSuite {
 
-  // Our example Section injects Int into Byte
-  val example: Section[Int, Byte] =
-    Section(_.toByte, _.toInt)
+  // Our example SplitEpi injects Int into Byte
+  val example: SplitEpi[Int, Byte] =
+    SplitEpi(_.toByte, _.toInt)
 
   // Ensure it's lawful
-  checkAll("IntByte", SectionTests(example).section)
+  checkAll("IntByte", SplitEpiTests(example).splitEpi)
 
 }

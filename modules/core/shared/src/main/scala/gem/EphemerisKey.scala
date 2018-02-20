@@ -7,7 +7,7 @@ import gem.enum.EphemerisKeyType
 import gem.parser.EphemerisKeyParsers
 import gem.syntax.parser._
 import gem.syntax.string._
-import gem.util.Format
+import gem.optics.Format
 
 import cats.{ Order, Show }
 import cats.implicits._
