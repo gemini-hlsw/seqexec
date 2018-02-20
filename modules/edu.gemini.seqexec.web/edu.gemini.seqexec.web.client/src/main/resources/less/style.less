@@ -215,8 +215,8 @@ body {
   outline: none;
   min-height: 33px;
   height: 33px;
-  padding-left: 6px;
-  padding-top: 6px;
+  padding-left: 7px;
+  padding-top: 7px;
 }
 .ReactVirtualized__Table__headerRow {
   font-weight: 700;
@@ -234,8 +234,6 @@ body {
   &:first-of-type {
     border-left: none;
   }
-  padding-left: 0.7em;
-  padding-right: 0.7em;
   border-left-width: 1px;
   border-left-style: solid;
   border-left-color: @border_color;
@@ -246,6 +244,8 @@ body {
   text-overflow: ellipsis;
   white-space: nowrap;
   height: 100%;
+  padding-left: 0.7em;
+  padding-right: 0.7em;
 }
 .SeqexecStyles-centeredCell {
   display: flex;
@@ -261,9 +261,6 @@ body {
   display: flex;
   align-items: center;
   justify-content: flex-start;
-}
-.SeqexecStyles-controlCellHeader {
-  padding-bottom: 8px;
 }
 .ReactVirtualized__Table__Grid {
   border-bottom-width: 1px;
@@ -282,9 +279,15 @@ body {
   border-bottom-style: solid;
   border-bottom-color: @border_color;
 }
+.SeqexecStyles-controlCell {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  min-width: 42.3px;
+}
 .SeqexecStyles-controlCellRow {
-  padding-right: 0 !important;
-  padding-left: 0 !important;
+  padding-right: 0;
+  padding-left: 0;
   overflow: unset !important;
 }
 .SeqexecStyles-guidingCell {
@@ -296,14 +299,18 @@ body {
   margin-left: auto;
 }
 .SeqexecStyles-settingsCellRow {
-  padding-right: 5 !important;
-  padding-left: 0 !important;
+  min-width: 35px;
+  padding-right: 5;
+  padding-left: 0;
   overflow: unset !important;
 }
 .ReactVirtualized__Table__row {
   display: flex;
   flex-direction: row;
   align-items: center;
+  &:first-of-type {
+    border-top: none;
+  }
   &:hover {
     background-color: @background_color_7;
     color: @color_4;
@@ -334,13 +341,10 @@ body {
   background-color: @background_color_1;
   color: @color_4;
   overflow: unset !important;
-  border-left-color: @border_color;
-  border-left-width: 1px;
   border-right-style: solid;
   border-right-color: @border_color;
-  border-top-style: solid;
-  border-left-style: solid;
   border-right-width: 1px;
+  border-top-style: solid;
   border-top-color: @border_color;
   border-top-width: 1px;
   outline: none;
@@ -375,9 +379,6 @@ body {
   outline: none;
 }
 .SeqexecStyles-infoLog {
-  border-left-width: 1px;
-  border-left-style: solid;
-  border-left-color: @border_color;
   border-top-width: 1px;
   border-top-style: solid;
   border-top-color: @border_color;
@@ -388,9 +389,6 @@ body {
   color: @color_4;
 }
 .SeqexecStyles-errorLog {
-  border-left-width: 1px;
-  border-left-style: solid;
-  border-left-color: @border_color;
   border-top-width: 1px;
   border-top-style: solid;
   border-top-color: @border_color;
@@ -401,9 +399,6 @@ body {
   color: @color_5 !important;
 }
 .SeqexecStyles-warningLog {
-  border-left-width: 1px;
-  border-left-style: solid;
-  border-left-color: @border_color;
   border-top-width: 1px;
   border-top-style: solid;
   border-top-color: @border_color;
@@ -412,12 +407,6 @@ body {
   border-right-color: @border_color;
   background-color: @background_color_4 !important;
   color: @color_2 !important;
-}
-.SeqexecStyles-controlCell {
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
-  min-width: 42.3px;
 }
 .SeqexecStyles-settingsCellHeader {
   display: flex;
@@ -438,7 +427,7 @@ body {
   justify-content: center;
   min-width: 24px;
   height: 100%;
-  align-content: center;
+  align-items: center;
   width: 100%;
   display: flex;
   padding-bottom: 8px;
@@ -447,7 +436,7 @@ body {
   justify-content: center;
   min-width: 24px;
   height: 100%;
-  align-content: center;
+  align-items: center;
   width: 100%;
   display: flex;
 }
@@ -455,7 +444,7 @@ body {
   justify-content: center;
   min-width: 24px;
   height: 100%;
-  align-content: center;
+  align-items: center;
   width: 100%;
   display: flex;
   padding-bottom: 8px;
@@ -464,7 +453,7 @@ body {
   justify-content: center;
   min-width: 24px;
   height: 100%;
-  align-content: center;
+  align-items: center;
   width: 100%;
   display: flex;
   padding-right: 10px;
@@ -499,13 +488,13 @@ body {
 }
 .SeqexecStyles-breakPointOffIcon {
   position: relative;
-  left: 2px;
+  left: 1px;
   top: -5px;
 }
 .SeqexecStyles-breakPointHandle {
   position: relative;
-  left: 3px;
-  top: -6px;
+  left: 3.82px;
+  top: -4px;
   height: 13px;
   width: 13px;
   cursor: pointer;
@@ -592,6 +581,28 @@ body {
 }
 .SeqexecStyles-configLabel {
   padding-top: 0.6em;
+}
+.SeqexecStyles-noRowsSegment {
+  border: none !important;
+}
+.clipboardIconMixin() {
+  display: flex;
+  padding-top: 4px;
+  justify-content: center;
+  height: 100%;
+  align-items: center;
+  width: 100%;
+}
+.SeqexecStyles-clipboardIconDiv {
+  min-width: 38px;
+  .clipboardIconMixin;
+}
+.SeqexecStyles-clipboardIconHeader {
+  .clipboardIconMixin;
+  padding-left: 3px;
+}
+.SeqexecStyles-labelPointer {
+  cursor: pointer;
 }
 @media only screen and (min-width: 767px) {
   .SeqexecStyles-queueListPane {
