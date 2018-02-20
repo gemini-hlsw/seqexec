@@ -3,11 +3,12 @@
 
 package edu.gemini.seqexec.web.client.components.sequence.steps
 
-import edu.gemini.seqexec.model.Model.{FPUMode, Instrument, Step, StepType, StepState}
-import edu.gemini.seqexec.web.client.actions.{FlipSkipStep, FlipBreakpointStep}
+import edu.gemini.seqexec.model.Model.{FPUMode, Instrument, SequenceId, Step, StepType, StepState}
+import edu.gemini.seqexec.web.client.actions.{NavigateTo, FlipSkipStep, FlipBreakpointStep}
 import edu.gemini.seqexec.model.enumerations
 import edu.gemini.seqexec.web.client.circuit.{SeqexecCircuit, ClientStatus, StepsTableFocus}
 import edu.gemini.seqexec.web.client.components.SeqexecStyles
+import edu.gemini.seqexec.web.client.model.Pages
 import edu.gemini.seqexec.web.client.lenses._
 import edu.gemini.seqexec.web.client.semanticui.elements.label.Label
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
@@ -17,6 +18,7 @@ import edu.gemini.seqexec.web.client.services.HtmlConstants.iconEmpty
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
+import japgolly.scalajs.react.extra.router.RouterCtl
 
 import scalacss.ScalaCssReact._
 import scalacss.StyleA
@@ -245,16 +247,20 @@ object StepIdCell {
   * Component to link to the settings
   */
 object SettingsCell {
-  private val component = ScalaComponent.builder[Int]("SettingsCell")
+  final case class Props(ctl: RouterCtl[Pages.SeqexecPages], instrument: Instrument, obsId: SequenceId, index: Int)
+  private val component = ScalaComponent.builder[Props]("SettingsCell")
     .stateless
     .render_P { p =>
+      val page = Pages.SequenceConfigPage(p.instrument, p.obsId, p.index + 1)
       <.div(
         SeqexecStyles.settingsCell,
-        IconCaretRight.copyIcon(fitted = true)
+        p.ctl.link(page)(
+          IconCaretRight.copyIcon(fitted = true, color = "black".some, onClick = SeqexecCircuit.dispatchCB(NavigateTo(page)))
+        )
       )
     }.build
 
-  def apply(i: Int): Unmounted[Int, Unit, Unit] = component(i)
+  def apply(i: Props): Unmounted[Props, Unit, Unit] = component(i)
 }
 
 /**

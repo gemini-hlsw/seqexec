@@ -99,8 +99,8 @@ object StepsTable {
   val stepIdRenderer: CellRenderer[js.Object, js.Object, StepRow] = (_, _, _, row: StepRow, _) =>
     StepIdCell(row.step.id)
 
-  val settingsControlRenderer: CellRenderer[js.Object, js.Object, StepRow] = (_, _, _, row: StepRow, _) =>
-    SettingsCell(row.step.id)
+  def settingsControlRenderer(p: Props, f: StepsTableFocus): CellRenderer[js.Object, js.Object, StepRow] = (_, _, _, row: StepRow, _) =>
+    SettingsCell(SettingsCell.Props(p.router, f.instrument, f.id, row.step.id))
 
   def stepProgressRenderer(f: StepsTableFocus, p: Props): CellRenderer[js.Object, js.Object, StepRow] = (_, _, _, row: StepRow, _) =>
     StepProgressCell(StepProgressCell.Props(p.status, f, row.step))
@@ -185,7 +185,7 @@ object StepsTable {
           p.steps.map(i => Column(Column.props(ColWidths.FilterWidth, "filter", label = "Filter", flexShrink = 0, flexGrow = 1, disableSort = true, className = SeqexecStyles.centeredCell.htmlClass, cellRenderer = stepFilterRenderer(i.instrument)))).filter(_ => filterVisible),
           p.steps.map(i => Column(Column.props(ColWidths.FPUWidth, "fpu", label = "FPU", flexShrink = 4, flexGrow = 1, disableSort = true, className = SeqexecStyles.centeredCell.htmlClass, cellRenderer = stepFPURenderer(i.instrument)))).filter(_ => fpuVisible),
           p.steps.map(i => Column(Column.props(ColWidths.ObjectTypeWidth, "type", label = "Type", flexShrink = 3, disableSort = true, className = SeqexecStyles.centeredCell.htmlClass, cellRenderer = stepObjectTypeRenderer(objectSize)))),
-          p.steps.map(i => Column(Column.props(ColWidths.SettingsWidth, "set", label = "", disableSort = true, cellRenderer = settingsControlRenderer, flexShrink = 0, className = SeqexecStyles.settingsCellRow.htmlClass, headerRenderer = settingsHeaderRenderer)))
+          p.steps.map(i => Column(Column.props(ColWidths.SettingsWidth, "set", label = "", disableSort = true, cellRenderer = settingsControlRenderer(p, i), flexShrink = 0, className = SeqexecStyles.settingsCellRow.htmlClass, headerRenderer = settingsHeaderRenderer)))
         ).collect { case Some(x) => x }
     }
 
