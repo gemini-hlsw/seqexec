@@ -70,8 +70,8 @@ final case class SplitEpi[A, B](get: A => B, reverseGet: B => A) {
    * get and reverseGet, yielding a normalized formatted value. Subsequent get/reverseGet cycles are
    * idempotent.
    */
-  def normalize(b: A): A =
-    reverseGet(get(b))
+  def normalize(a: A): A =
+    reverseGet(get(a))
 
   /** If we can reverseGet a Product as a String we can implement a tagged toString like "Foo(stuff)". */
   def productToString(b: B)(

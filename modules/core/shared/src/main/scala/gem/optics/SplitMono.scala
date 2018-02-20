@@ -62,6 +62,13 @@ final case class SplitMono[A, B](get: A => B, reverseGet: B => A) {
   def imapB[C](f: A => C, g: C => A): SplitMono[C, B] =
     SplitMono(g andThen get, reverseGet andThen f)
 
+  /**
+   * reverseGet and get, yielding a normalized formatted value. Subsequent reverseGet/get cycles are
+   * idempotent.
+   */
+  def normalize(b: B): B =
+    get(reverseGet(b))
+
 }
 
 object SplitMono {
