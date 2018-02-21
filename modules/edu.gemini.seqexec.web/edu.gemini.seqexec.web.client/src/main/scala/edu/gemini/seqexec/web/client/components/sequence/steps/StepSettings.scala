@@ -219,6 +219,7 @@ object DisperserCell {
       // Formatter
       val displayedText = (disperser, centralWavelength) match {
         case (Some(d), Some(w)) => f"$d @ $w%.0f nm"
+        case (Some(d), None)    => d
         case _                  => "Unknown"
       }
       <.div(
