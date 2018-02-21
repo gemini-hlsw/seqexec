@@ -60,6 +60,10 @@ const Web = Merge(Common.Web, {
             console.log("proxied: " + req.url);
           }
         }
+      },
+      watchOptions: {
+        // We need this to get around the long scala.js compilation cycles
+        aggregateTimeout: 35000
       }
       /*"/***": {
         target: "http://localhost:9090",

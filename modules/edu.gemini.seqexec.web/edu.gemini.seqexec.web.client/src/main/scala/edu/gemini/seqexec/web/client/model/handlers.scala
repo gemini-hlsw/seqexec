@@ -527,11 +527,11 @@ object handlers {
     */
   class WebSocketEventsHandler[M](modelRW: ModelRW[M, WebSocketsFocus]) extends ActionHandler(modelRW) with Handlers {
     // Global references to audio files
-    private val SequencePausedAudio = new Audio("/sequencepaused.mp3")
-    private val ExposurePausedAudio = new Audio("/exposurepaused.mp3")
-    private val SequenceErrorAudio = new Audio("/sequenceerror.mp3")
-    private val SequenceCompleteAudio = new Audio("/sequencecomplete.mp3")
-    private val StepBeepAudio = new Audio("/beep-22.mp3")
+    private val SequencePausedAudio = new Audio(SequencePausedResource.resource)
+    private val ExposurePausedAudio = new Audio(ExposurePausedResource.resource)
+    private val SequenceErrorAudio = new Audio(SequenceErrorResource.resource)
+    private val SequenceCompleteAudio = new Audio(SequenceCompleteResource.resource)
+    private val StepBeepAudio = new Audio(BeepResource.resource)
 
     // It is legal do put sequences of the other sites on the queue
     // but we don't know how to display them, so let's filter them out

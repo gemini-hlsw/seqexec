@@ -28,6 +28,10 @@ import cats.effect.IO
   */
 @JSExportTopLevel("seqexec.SeqexecApp")
 object SeqexecApp {
+  // These are unused but they bring the css from webpack
+  val semanticUICss: String = WebpackResources.SemanticUILessResource.resource
+  val seqexecCss: String = WebpackResources.SeqexecLessResource.resource
+
   private val defaultFmt = "[%4$s] %1s - %5$s"
 
   def setupLogFormat: IO[String] = IO {

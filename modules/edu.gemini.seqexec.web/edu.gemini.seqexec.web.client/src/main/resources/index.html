@@ -13,12 +13,6 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black"/>
     <meta name="apple-mobile-web-app-title" content="Seqexec"/>
     <link rel="apple-touch-icon-precomposed" href={s"/images/launcher.$builtAtMillis.png"}/>
-
-    <title>{s"Seqexec - $site"}</title>
-
-    <!-- <link rel="stylesheet" href={s"/css/semantic.$builtAtMillis.css"}/>
-    <link rel="stylesheet" href={s"/css/virtualized.$builtAtMillis.css"}/>
-    <style>{style.stripMargin}</style> -->
   </head>
 
   <body>
@@ -26,22 +20,5 @@
     <div id="content">
     </div>
 
-    <!--script>
-      {"""
-        /* Trick to get semantic ui to talk to jquery loaded via modules */
-        var $ = require('jquery');
-        $.fn.dropdown = require('semantic-ui-dropdown');
-        $.fn.visibility = require('semantic-ui-visibility');
-        $.fn.tab = require('semantic-ui-tab');
-        $.fn.progress = require('semantic-ui-progress');
-        $.fn.dimmer = require('semantic-ui-dimmer');
-        $.fn.transition = require('semantic-ui-transition');
-        $.fn.modal = require('semantic-ui-modal');
-        $.fn.popup = require('semantic-ui-popup');
-        """} </script>
-    <script src={s"/$seqexecScript"}></script>
-    <script>
-      {s"""SeqexecApp.start('$site');"""}
-    </script-->
   </body>
 </html>
