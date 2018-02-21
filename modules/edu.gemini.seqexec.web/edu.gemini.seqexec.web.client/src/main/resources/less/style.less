@@ -80,7 +80,7 @@ body {
   margin-top: 1em;
 }
 .SeqexecStyles-observeConfig {
-  background-color: @background_color_3;
+  background-color: @background_color_3 !important;
 }
 .SeqexecStyles-inline {
   display: inline;
@@ -296,7 +296,7 @@ body {
   margin-left: auto;
 }
 .SeqexecStyles-settingsCellRow {
-  padding-right: 0 !important;
+  padding-right: 5 !important;
   padding-left: 0 !important;
   overflow: unset !important;
 }
@@ -589,6 +589,9 @@ body {
   &:hover {
     transform: scale(1.2);
   }
+}
+.SeqexecStyles-configLabel {
+  padding-top: 0.6em;
 }
 @media only screen and (min-width: 767px) {
   .SeqexecStyles-queueListPane {
