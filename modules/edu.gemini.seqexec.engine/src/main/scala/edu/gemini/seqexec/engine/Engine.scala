@@ -171,13 +171,13 @@ class Engine[D] {
   }
 
   private def getState(f: Engine.State[D] => Task[Option[Process[Task, Event[D]]]]): HandleP[Unit, D] =
-    get.flatMap(s => HandleP[Unit, D](f(s).liftM[({type L[M[_], A] = HandleStateT[M, A, D]})#L].map(((), _))))
+    get.flatMap(s => HandleP[Unit, D](f(s).liftM[HandleStateT[?[_], ?, D]].map(((), _))))
 
   private def getSeqState(id: Sequence.Id, f: Sequence.State => Option[Process[Task, Event[D]]]): HandleP[Unit, D] =
-    getS(id).flatMap(_.map(s => HandleP[Unit, D](f(s).pure[({type L[T] = Handle[T, D]})#L].map(((), _)))).getOrElse(unit))
+    getS(id).flatMap(_.map(s => HandleP[Unit, D](f(s).pure[Handle[?, D]].map(((), _)))).getOrElse(unit))
 
   private def actionStop(id: Sequence.Id, f: (Sequence.State) => Option[Process[Task, Event[D]]]): HandleP[Unit, D] =
-    getS(id).flatMap(_.map(s => if (Sequence.State.isRunning(s)) HandleP[Unit, D](f(s).pure[({type L[T] = Handle[T, D]})#L].map(((), _))) *> modifyS(id)(Sequence.State.internalStopSet(true)) else unit).getOrElse(unit))
+    getS(id).flatMap(_.map(s => if (Sequence.State.isRunning(s)) HandleP[Unit, D](f(s).pure[Handle[?, D]].map(((), _))) *> modifyS(id)(Sequence.State.internalStopSet(true)) else unit).getOrElse(unit))
 
   /**
     * Given the index of the completed `Action` in the current `Execution`, it
@@ -326,18 +326,18 @@ class Engine[D] {
 
   // Functions for type bureaucracy
 
-  private def pure[A](a: A): HandleP[A, D] = Applicative[({type L[T] = HandleP[T, D]})#L].pure(a)
+  private def pure[A](a: A): HandleP[A, D] = Applicative[HandleP[?, D]].pure(a)
 
   private val unit: HandleP[Unit, D] = pure(())
 
   private val get: HandleP[Engine.State[D], D] =
-    MonadState[({type L[T] = Handle[T, D]})#L, Engine.State[D]].get.toHandleP
+    MonadState[Handle[?, D], Engine.State[D]].get.toHandleP
 
   private def gets[A](f: (Engine.State[D]) => A): HandleP[A, D] =
-    MonadState[({type L[T] = Handle[T, D]})#L, Engine.State[D]].gets(f).toHandleP
+    MonadState[Handle[?, D], Engine.State[D]].gets(f).toHandleP
 
   private def modify(f: (Engine.State[D]) => Engine.State[D]): HandleP[Unit, D] =
-    MonadState[({type L[T] = Handle[T, D]})#L, Engine.State[D]].modify(f).toHandleP
+    MonadState[Handle[?, D], Engine.State[D]].modify(f).toHandleP
 
   private def getS(id: Sequence.Id): HandleP[Option[Sequence.State], D] = get.map(_.sequences.get(id))
 
@@ -360,7 +360,7 @@ class Engine[D] {
 
   // For debugging
   def printSequenceState(id: Sequence.Id): HandleP[Unit, D] =
-    getSs(id)((qs: Sequence.State) => Task.now(println(qs)).liftM[({type L[M[_], A] = HandleStateT[M, A, D]})#L]).void // scalastyle:ignore
+    getSs(id)((qs: Sequence.State) => Task.now(println(qs)).liftM[HandleStateT[?[_], ?, D]]).void // scalastyle:ignore
 
 }
 

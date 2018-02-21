@@ -24,7 +24,7 @@ package engine {
    */
   final case class HandleP[A, D](run: Handle[(A, Option[Process[Task, Event[D]]]), D])
   object HandleP {
-    def fromProcess[D](p: Process[Task, Event[D]]): HandleP[Unit, D] = HandleP[Unit, D](Applicative[({type L[T] = Handle[T, D]})#L].pure[(Unit, Option[Process[Task, Event[D]]])](((), Some(p))))
+    def fromProcess[D](p: Process[Task, Event[D]]): HandleP[Unit, D] = HandleP[Unit, D](Applicative[Handle[?, D]].pure[(Unit, Option[Process[Task, Event[D]]])](((), Some(p))))
   }
   final case class ActionMetadata(conditions: Conditions, operator: Option[Operator], observer: Option[Observer])
   object ActionMetadata {
@@ -114,7 +114,7 @@ package object engine {
   // Helper alias to facilitate lifting.
   type HandleStateT[M[_], A, D] = StateT[M, Engine.State[D], A]
 
-  implicit def handlePInstances[D]: Applicative[({type L[T] = HandleP[T, D]})#L] with Monad[({type L[T] = HandleP[T, D]})#L] = new Applicative[({type L[T] = HandleP[T, D]})#L] with Monad[({type L[T] = HandleP[T, D]})#L] {
+  implicit def handlePInstances[D]: Applicative[HandleP[?, D]] with Monad[HandleP[?, D]] = new Applicative[HandleP[?, D]] with Monad[HandleP[?, D]] {
     private def concatOpP(op1: Option[Process[Task, Event[D]]],
                           op2: Option[Process[Task, Event[D]]]): Option[Process[Task, Event[D]]] = (op1, op2) match {
       case (None, None)         => None
@@ -123,7 +123,7 @@ package object engine {
       case (Some(p1), Some(p2)) => Some(p1 ++ p2)
     }
 
-    override def point[A](a: => A): HandleP[A, D] = HandleP(Applicative[({type L[T] = Handle[T, D]})#L].pure((a, None)))
+    override def point[A](a: => A): HandleP[A, D] = HandleP(Applicative[Handle[?, D]].pure((a, None)))
 
 
     // I tried to use a for comprehension here, but the compiler failed with error
@@ -149,12 +149,12 @@ package object engine {
 
   // The `Catchable` instance of `Handle`` needs to be manually written.
   // Without it it's not possible to use `Handle` as a scalaz-stream process effects.
-  implicit def engineInstance[D]: Catchable[({type L[T] = Handle[T, D]})#L] =
-    new Catchable[({type L[T] = Handle[T, D]})#L] {
+  implicit def engineInstance[D]: Catchable[Handle[?, D]] =
+    new Catchable[Handle[?, D]] {
       def attempt[A](a: Handle[A, D]): Handle[Throwable \/ A, D] = a.flatMap(
-        x => Catchable[Task].attempt(Applicative[Task].pure(x)).liftM[({ type L[M[_], T] = HandleStateT[M, T, D]})#L]
+        x => Catchable[Task].attempt(Applicative[Task].pure(x)).liftM[HandleStateT[?[_], ?, D]]
       )
-      def fail[A](err: Throwable): Handle[A, D] = Catchable[Task].fail[A](err).liftM[({ type L[M[_], T] = HandleStateT[M, T, D]})#L]
+      def fail[A](err: Throwable): Handle[A, D] = Catchable[Task].fail[A](err).liftM[HandleStateT[?[_], ?, D]]
     }
 
 
