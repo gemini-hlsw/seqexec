@@ -735,4 +735,8 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     )
   )
 
+  val configLabel: StyleA = style(
+    paddingTop(0.6.em)
+  )
+
 }

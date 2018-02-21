@@ -4,28 +4,16 @@
 package edu.gemini.seqexec.web.client.components.sequence.steps
 
 import scala.scalajs.js
-// import diode.react.ModelProxy
-// import edu.gemini.seqexec.model.Model.{Instrument, StandardStep, Step, StepState, StepType}
 import edu.gemini.seqexec.model.Model.{Step, SystemName}
-// import edu.gemini.seqexec.web.client.lenses._
-// import edu.gemini.seqexec.web.client.model.Pages.SeqexecPages
-// import edu.gemini.seqexec.web.client.circuit.{ClientStatus, StepsTableFocus}
 import edu.gemini.seqexec.web.client.components.SeqexecStyles
-// import edu.gemini.seqexec.web.client.components.sequence.steps.OffsetFns._
-// import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
-// import edu.gemini.seqexec.web.client.semanticui.{Size => SSize}
 import japgolly.scalajs.react._
-// import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
-//
-// import scalacss.ScalaCssReact._
+
 import scalacss._
 import scalaz.std.AllInstances._
 import scalaz.syntax.traverse._
 import scalaz.syntax.equal._
-// import scalaz._
-// import Scalaz._
 import react.virtualized._
 
 object StepConfigTable {
@@ -78,7 +66,7 @@ object StepConfigTable {
     )
 
   def rowClassName(p: Props)(i: Int): String = ((i, p.rowGetter(i)) match {
-    case (-1, _)                                                   =>
+    case (-1, _)                                                  =>
       SeqexecStyles.headerRowStyle
     case (_, SettingsRow(s, _, _)) if s === SystemName.instrument =>
       SeqexecStyles.stepRow + SeqexecStyles.rowPositive

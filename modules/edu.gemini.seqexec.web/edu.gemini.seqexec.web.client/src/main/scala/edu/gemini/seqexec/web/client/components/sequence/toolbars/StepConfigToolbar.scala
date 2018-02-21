@@ -44,7 +44,7 @@ object StepConfigToolbar {
           SeqexecStyles.shorterRow,
           SeqexecStyles.lowerRow,
           <.div(
-            ^.cls := "ui left floated two wide column",
+            ^.cls := "ui left floated eight wide column",
             SeqexecStyles.shorterFields,
             <.div(
               p.router.link(InstrumentPage(p.instrument, p.id))
@@ -52,11 +52,13 @@ object StepConfigToolbar {
             )
           ),
           <.div(
-            ^.cls := "ui left middle aligned floated fourteen wide column",
-            <.h5(
-              ^.cls := "ui header",
-              SeqexecStyles.inline,
-              s" Configuration for step ${p.step + 1}"
+            ^.cls := "ui right floated eight wide column",
+            <.div(
+              SeqexecStyles.configLabel,
+              <.h5(
+                ^.cls := "ui header",
+                s" Configuration for step ${p.step + 1}"
+              )
             )
           )
         )
