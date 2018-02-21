@@ -15,6 +15,13 @@ import scalaz.stream.Process
 
 package engine {
 
+  /*
+   * HandleP is a Process which has as a side effect a State machine inside a Task, which can produce other
+   * Processes as output.
+   * Its type parameters are:
+   * A: Type of the output (usually Unit)
+   * D: Type of the user data included in the state machine state.
+   */
   final case class HandleP[A, D](run: Handle[(A, Option[Process[Task, Event[D]]]), D])
   object HandleP {
     def fromProcess[D](p: Process[Task, Event[D]]): HandleP[Unit, D] = HandleP[Unit, D](Applicative[({type L[T] = Handle[T, D]})#L].pure[(Unit, Option[Process[Task, Event[D]]])](((), Some(p))))

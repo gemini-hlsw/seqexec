@@ -161,7 +161,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     for {
       q   <- st.userData.get(name)
       seq <- st.sequences.get(seqId)
-    } yield if(!q.status(st).isRunning && !seq.status.isRunning && !q.contains(seqId)) st.copy(userData = st.userData.updated(name, q :+ seqId)) else st
+    } yield if(!q.status(st).isRunning && !seq.status.isRunning && !seq.status.isCompleted && !q.contains(seqId)) st.copy(userData = st.userData.updated(name, q :+ seqId)) else st
   ).getOrElse(st)
 
   def addSequenceToQueue(q: EventQueue, queueName: String, seqId: SPObservationID): Task[Unit] = q.enqueueOne(
@@ -192,7 +192,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
   private def moveSeq(name: String, seqId: Sequence.Id, d: Int)(st: EngineState): EngineState = (
     for {
       q <- st.userData.get(name)
-    } yield if(!q.status(st).isRunning && !q.contains(seqId)) st.copy(userData = st.userData.updated(name, moveElement(q, seqId, d))) else st
+    } yield if(!q.status(st).isRunning && q.contains(seqId)) st.copy(userData = st.userData.updated(name, moveElement(q, seqId, d))) else st
   ).getOrElse(st)
 
   def moveSequenceInQueue(q: EventQueue, queueName: String, seqId: SPObservationID, d: Int): Task[Unit] = q.enqueueOne(

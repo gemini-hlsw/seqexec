@@ -334,6 +334,8 @@ object Model {
         case _             => false
       }
 
+      def isCompleted: Boolean = state === SequenceState.Completed
+
       def isIdle: Boolean = state === SequenceState.Idle
 
       def isStopped: Boolean = state === SequenceState.Stopped

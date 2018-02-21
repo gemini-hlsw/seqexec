@@ -271,7 +271,7 @@ class StepSpec extends FlatSpec {
         )
       )
 
-    val qss =executionEngine. process(Process.eval(Task.now(Event.pause(seqId, user))))(qs0).runLog.unsafePerformSync.map(_._2)
+    val qss = executionEngine. process(Process.eval(Task.now(Event.pause(seqId, user))))(qs0).runLog.unsafePerformSync.map(_._2)
 
     assert(qss.length == 1)
     inside (qss.headOption.flatMap(_.sequences.get(seqId))) {
