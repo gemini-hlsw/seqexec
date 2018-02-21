@@ -99,8 +99,8 @@ object StepsTable {
   val stepIdRenderer: CellRenderer[js.Object, js.Object, StepRow] = (_, _, _, row: StepRow, _) =>
     StepIdCell(row.step.id)
 
-  val settingsControlRenderer: CellRenderer[js.Object, js.Object, StepRow] = (_, _, _, row: StepRow, _) =>
-    SettingsCell(row.step.id)
+  def settingsControlRenderer(p: Props, f: StepsTableFocus): CellRenderer[js.Object, js.Object, StepRow] = (_, _, _, row: StepRow, _) =>
+    SettingsCell(SettingsCell.Props(p.router, f.instrument, f.id, row.step.id))
 
   def stepProgressRenderer(f: StepsTableFocus, p: Props): CellRenderer[js.Object, js.Object, StepRow] = (_, _, _, row: StepRow, _) =>
     StepProgressCell(StepProgressCell.Props(p.status, f, row.step))
@@ -185,7 +185,7 @@ object StepsTable {
           p.steps.map(i => Column(Column.props(ColWidths.FilterWidth, "filter", label = "Filter", flexShrink = 0, flexGrow = 1, disableSort = true, className = SeqexecStyles.centeredCell.htmlClass, cellRenderer = stepFilterRenderer(i.instrument)))).filter(_ => filterVisible),
           p.steps.map(i => Column(Column.props(ColWidths.FPUWidth, "fpu", label = "FPU", flexShrink = 4, flexGrow = 1, disableSort = true, className = SeqexecStyles.centeredCell.htmlClass, cellRenderer = stepFPURenderer(i.instrument)))).filter(_ => fpuVisible),
           p.steps.map(i => Column(Column.props(ColWidths.ObjectTypeWidth, "type", label = "Type", flexShrink = 3, disableSort = true, className = SeqexecStyles.centeredCell.htmlClass, cellRenderer = stepObjectTypeRenderer(objectSize)))),
-          p.steps.map(i => Column(Column.props(ColWidths.SettingsWidth, "set", label = "", disableSort = true, cellRenderer = settingsControlRenderer, flexShrink = 0, className = SeqexecStyles.settingsCellRow.htmlClass, headerRenderer = settingsHeaderRenderer)))
+          p.steps.map(i => Column(Column.props(ColWidths.SettingsWidth, "set", label = "", disableSort = true, cellRenderer = settingsControlRenderer(p, i), flexShrink = 0, className = SeqexecStyles.settingsCellRow.htmlClass, headerRenderer = settingsHeaderRenderer)))
         ).collect { case Some(x) => x }
     }
 
@@ -227,18 +227,21 @@ object StepsTable {
     }
 
     // Wire it up from VDOM
-    def render(p: Props): VdomElement =
+    def render(p: Props): VdomElement = {
+      val settingsDisplayed = p.steps.forall(_.stepConfigDisplayed.isDefined)
       <.div(
-        SeqexecStyles.stepsListPane.unless(p.status.isLogged),
-        SeqexecStyles.stepsListPaneWithControls.when(p.status.isLogged),
+        SeqexecStyles.stepsListPane.unless(p.status.isLogged || settingsDisplayed),
+        SeqexecStyles.stepsListPaneWithControls.when(p.status.isLogged || settingsDisplayed),
         p.steps.whenDefined { tab =>
           tab.stepConfigDisplayed.map { i =>
-            <.div("CONFIG")
+            val steps = p.stepsList.index(i).getOrElse(Step.Zero)
+            AutoSizer(AutoSizer.props(s => StepConfigTable(StepConfigTable.Props(steps, s))))
           }.getOrElse {
             AutoSizer(AutoSizer.props(s => ref.component(stepsTableProps(p)(s))(columns(p, s).map(_.vdomElement): _*)))
-          }
+          }.vdomElement
         }
       )
+    }
   }
 
   private val component = ScalaComponent.builder[Props]("Steps")

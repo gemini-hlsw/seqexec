@@ -128,7 +128,7 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
   val stepRunning: StyleA = style() // Marker css
 
   val observeConfig: StyleA = style {
-    backgroundColor.lightcyan
+    backgroundColor.lightcyan.important
   }
 
   val inline: StyleA = style {
@@ -451,7 +451,7 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
 
   // This must be defined before rowColumn
   val settingsCellRow: StyleA = style(
-    paddingRight(0.px).important,
+    paddingRight(5.px).important,
     paddingLeft(0.px).important,
     overflow.unset.important
   )
@@ -733,6 +733,10 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
       paddingTop(0.px).important,
       paddingBottom(0.px).important
     )
+  )
+
+  val configLabel: StyleA = style(
+    paddingTop(0.6.em)
   )
 
 }
