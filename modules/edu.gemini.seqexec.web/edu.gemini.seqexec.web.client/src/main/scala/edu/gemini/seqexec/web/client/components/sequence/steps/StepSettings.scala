@@ -6,7 +6,7 @@ package edu.gemini.seqexec.web.client.components.sequence.steps
 import edu.gemini.seqexec.model.Model.{FPUMode, Instrument, SequenceId, Step, StepType, StepState}
 import edu.gemini.seqexec.web.client.actions.{NavigateSilentTo, FlipSkipStep, FlipBreakpointStep}
 import edu.gemini.seqexec.model.enumerations
-import edu.gemini.seqexec.web.client.circuit.{SeqexecCircuit, ClientStatus, StepsTableFocus}
+import edu.gemini.seqexec.web.client.circuit.{ClientStatus, SeqexecCircuit, StepsTableFocus}
 import edu.gemini.seqexec.web.client.components.SeqexecStyles
 import edu.gemini.seqexec.web.client.model.Pages
 import edu.gemini.seqexec.web.client.lenses._
@@ -27,6 +27,7 @@ import scalaz.syntax.show._
 import scalaz.syntax.std.option._
 import scalaz.std.anyVal._
 import scalaz.std.string._
+
 
 /**
  * Component to display an icon for the state
@@ -187,6 +188,42 @@ object FilterCell {
       <.div(
         SeqexecStyles.componentLabel,
         filter.getOrElse("Unknown"): String
+      )
+    }
+    .build
+
+  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
+}
+
+/**
+ * Component to display the disperser and wavelength
+ */
+object DisperserCell {
+  final case class Props(s: Step, i: Instrument)
+
+  private val component = ScalaComponent.builder[Props]("DisperserCell")
+    .stateless
+    .render_P { p =>
+
+      val nameMapper: Map[String, String] = p.i match {
+        case Instrument.GmosS => enumerations.disperser.GmosSDisperser
+        case Instrument.GmosN => enumerations.disperser.GmosNDisperser
+        case _                => Map.empty
+      }
+
+      val disperser = for {
+        disperser <- instrumentDisperserO.getOption(p.s)
+      } yield nameMapper.getOrElse(disperser, disperser)
+      val centralWavelength = instrumentDisperserLambdaO.getOption(p.s)
+
+      // Formatter
+      val displayedText = (disperser, centralWavelength) match {
+        case (Some(d), Some(w)) => f"$d @ $w%.0f nm"
+        case _                  => "Unknown"
+      }
+      <.div(
+        SeqexecStyles.componentLabel,
+        displayedText
       )
     }
     .build

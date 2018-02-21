@@ -353,7 +353,7 @@ object Model {
   /**
     * Metadata about the sequence required on the exit point
     */
-  // TODO Une a proper instrument class
+  // TODO Use a proper instrument class
   @Lenses final case class SequenceMetadata(
     instrument: Instrument,
     observer: Option[Observer],

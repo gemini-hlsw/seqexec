@@ -59,7 +59,7 @@ trait ModelLenses {
 
   // Param name of a StepConfig
   def configParamValueO(system: SystemName, param: String): Optional[StepConfig, String] =
-    systemConfigL(system)                ^<-? // observe paramaters
+    systemConfigL(system)                ^<-? // observe parameters
     some                                 ^|-> // focus on the option
     paramValueL(system.withParam(param)) ^<-? // find the target name
     some                                      // focus on the option
@@ -180,6 +180,14 @@ trait ModelLenses {
   // Composite lens to find the instrument filter
   val instrumentFilterO: Optional[Step, String] =
     stepObserveOptional(SystemName.instrument, "filter", Iso.id[String].asPrism)
+
+  // Composite lens to find the instrument disperser for GMOS
+  val instrumentDisperserO: Optional[Step, String] =
+    stepObserveOptional(SystemName.instrument, "disperser", Iso.id[String].asPrism)
+
+  // Composite lens to find the central wavelength for a disperser
+  val instrumentDisperserLambdaO: Optional[Step, Double] =
+    stepObserveOptional(SystemName.instrument, "disperserLambda", stringToDoubleP)
 
   // Lens to find p offset
   def telescopeOffsetO(x: OffsetAxis): Optional[Step, Double] =
