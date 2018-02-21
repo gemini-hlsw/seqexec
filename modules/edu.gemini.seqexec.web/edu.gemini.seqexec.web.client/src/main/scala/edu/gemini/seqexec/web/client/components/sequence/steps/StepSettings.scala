@@ -4,7 +4,7 @@
 package edu.gemini.seqexec.web.client.components.sequence.steps
 
 import edu.gemini.seqexec.model.Model.{FPUMode, Instrument, SequenceId, Step, StepType, StepState}
-import edu.gemini.seqexec.web.client.actions.{NavigateTo, FlipSkipStep, FlipBreakpointStep}
+import edu.gemini.seqexec.web.client.actions.{NavigateSilentTo, FlipSkipStep, FlipBreakpointStep}
 import edu.gemini.seqexec.model.enumerations
 import edu.gemini.seqexec.web.client.circuit.{SeqexecCircuit, ClientStatus, StepsTableFocus}
 import edu.gemini.seqexec.web.client.components.SeqexecStyles
@@ -255,7 +255,7 @@ object SettingsCell {
       <.div(
         SeqexecStyles.settingsCell,
         p.ctl.link(page)(
-          IconCaretRight.copyIcon(fitted = true, color = "black".some, onClick = SeqexecCircuit.dispatchCB(NavigateTo(page)))
+          IconCaretRight.copyIcon(color = "black".some, onClick = SeqexecCircuit.dispatchCB(NavigateSilentTo(page)))
         )
       )
     }.build

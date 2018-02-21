@@ -44,7 +44,7 @@ object StepConfigTable {
     val rowCount: Int = settingsList.size
 
     def rowGetter(idx: Int): SettingsRow =
-      settingsList.index(idx).fold(SettingsRow.Zero){ case (s, n, v) => SettingsRow(s, n, v)}
+      settingsList.index(idx).fold(SettingsRow.Zero)(Function.tupled(SettingsRow.apply))
   }
 
   // ScalaJS defined trait

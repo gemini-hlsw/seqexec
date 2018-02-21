@@ -451,7 +451,7 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
 
   // This must be defined before rowColumn
   val settingsCellRow: StyleA = style(
-    paddingRight(0.px).important,
+    paddingRight(5.px).important,
     paddingLeft(0.px).important,
     overflow.unset.important
   )

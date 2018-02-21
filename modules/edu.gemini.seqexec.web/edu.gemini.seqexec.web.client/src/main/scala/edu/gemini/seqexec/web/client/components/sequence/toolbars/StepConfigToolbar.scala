@@ -24,7 +24,7 @@ object StepConfigToolbar {
     protected[sequence] val sequenceInfoConnects = site.instruments.list.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(i)))).toMap
   }
 
-  def backToSequence(i: Instrument, id: Option[SequenceId]): Callback = Callback {SeqexecCircuit.dispatch(NavigateSilentTo(InstrumentPage(i, id)))}
+  def backToSequence(i: Instrument, id: Option[SequenceId]): Callback = SeqexecCircuit.dispatchCB(NavigateSilentTo(InstrumentPage(i, id)))
 
   private val component = ScalaComponent.builder[Props]("StepConfigToolbar")
     .stateless
