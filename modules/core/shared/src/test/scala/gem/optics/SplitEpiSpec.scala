@@ -9,11 +9,15 @@ import gem.laws.discipline._
 
 final class SplitEpiSpec extends CatsSuite {
 
-  // Our example SplitEpi injects Int into Byte
-  val example: SplitEpi[Int, Byte] =
+  val ex1: SplitEpi[Long, Int] =
+    SplitEpi(_.toInt, _.toLong)
+
+  val ex2: SplitEpi[Int, Byte] =
     SplitEpi(_.toByte, _.toInt)
 
-  // Ensure it's lawful
-  checkAll("IntByte", SplitEpiTests(example).splitEpi)
+  // Laws
+  checkAll("Long > Int", SplitEpiTests(ex1).splitEpi)
+  checkAll("Int > Byte", SplitEpiTests(ex2).splitEpi)
+  checkAll("Long > Int > Byte", SplitEpiTests(ex1 composeSplitEpi ex2).splitEpi)
 
 }

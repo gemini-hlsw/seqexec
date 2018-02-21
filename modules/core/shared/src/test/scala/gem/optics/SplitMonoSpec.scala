@@ -9,11 +9,15 @@ import gem.laws.discipline._
 
 final class SplitMonoSpec extends CatsSuite {
 
-  // Our example SplitMono injects Byte from Int
-  val example: SplitMono[Byte, Int] =
+  val ex1: SplitMono[Byte, Int] =
     SplitMono(_.toInt, _.toByte)
 
-  // Ensure it's lawful
-  checkAll("ByteInt", SplitMonoTests(example).splitMono)
+  val ex2: SplitMono[Int, Long] =
+    SplitMono(_.toLong, _.toInt)
+
+  // Laws
+  checkAll("Byte < Int", SplitMonoTests(ex1).splitMono)
+  checkAll("Int < Long", SplitMonoTests(ex2).splitMono)
+  checkAll("Byte < Int < Long", SplitMonoTests(ex1 composeSplitMono ex2).splitMono)
 
 }

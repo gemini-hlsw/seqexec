@@ -30,6 +30,10 @@ final case class SplitEpi[A, B](get: A => B, reverseGet: B => A) {
   def composeSplitEpi[C](f: SplitEpi[B, C]): SplitEpi[A, C] =
     SplitEpi(get andThen f.get, reverseGet compose f.reverseGet)
 
+  /** Compose with another SplitEpi. */
+  def composeSplitMono[C](f: SplitMono[B, C]): Wedge[A, C] =
+    Wedge(get andThen f.get, reverseGet compose f.reverseGet)
+
   /** Compose with an Iso. */
   def composeIso[C](f: Iso[B, C]): SplitEpi[A, C] =
     SplitEpi(get andThen f.get, reverseGet compose f.reverseGet)

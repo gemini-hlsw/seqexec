@@ -40,6 +40,14 @@ final case class Wedge[A, B](get: A => B, reverseGet: B => A) {
   def imapB[C](f: A => C, g: C => A): Wedge[C, B] =
     Wedge(g andThen get, reverseGet andThen f)
 
+  /** Normalize A via a round-trip through B. */
+  def normalizeA(a: A): A =
+    (get andThen reverseGet)(a)
+
+  /** Normalize B via a round-trip through A. */
+  def normalizeB(b: B): B =
+    (get compose reverseGet)(b)
+
 }
 
 object Wedge {
