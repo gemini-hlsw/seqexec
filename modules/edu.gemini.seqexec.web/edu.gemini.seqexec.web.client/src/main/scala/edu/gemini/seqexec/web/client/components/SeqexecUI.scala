@@ -117,6 +117,13 @@ object SeqexecUI {
   def router(site: SeqexecSite): IO[Router[SeqexecPages]] = {
     val instrumentNames = site.instruments.map(i => (i.shows, i)).list.toList.toMap
 
+    def pageTitle(p: SeqexecPages): String = p match {
+      case SequenceConfigPage(_, id, _) => s"Seqexec - $id"
+      case InstrumentPage(_, Some(id))  => s"Seqexec - $id"
+      case InstrumentPage(i, None)      => s"Seqexec - ${i.show}"
+      case _                            => s"Seqexec - ${site.shows}"
+    }
+
     val routerConfig = RouterConfigDsl[SeqexecPages].buildConfig { dsl =>
       import dsl._
 
@@ -146,6 +153,7 @@ object SeqexecUI {
         .onPostRender((_, next) =>
           Callback.when(next =/= SeqexecCircuit.zoom(_.uiModel.navLocation).value)(Callback(SeqexecCircuit.dispatch(NavigateSilentTo(next)))))
         .renderWith { case (_, r) => <.div(r.render()).render}
+        .setTitle(pageTitle)
         .logToConsole
     }
 
