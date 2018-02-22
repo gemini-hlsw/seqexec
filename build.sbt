@@ -37,9 +37,6 @@ git.uncommittedSignifier in ThisBuild := Some("UNCOMMITTED")
 
 enablePlugins(GitBranchPrompt)
 
-resolvers in ThisBuild +=
-  Resolver.sonatypeRepo("snapshots")
-
 //////////////
 // Projects
 //////////////
