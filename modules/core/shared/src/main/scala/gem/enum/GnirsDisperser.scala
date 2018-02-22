@@ -9,7 +9,7 @@ import cats.syntax.eq._
 import gem.util.Enumerated
 
 /**
- * Enumerated type for GNRIS Disperser.
+ * Enumerated type for GNIRS Disperser.
  * @group Enumerations (Generated)
  */
 sealed abstract class GnirsDisperser(

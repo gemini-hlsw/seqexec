@@ -9,7 +9,7 @@ import cats.syntax.eq._
 import gem.util.Enumerated
 
 /**
- * Enumerated type for GNRIS FPU Other.
+ * Enumerated type for GNIRS FPU Other.
  * @group Enumerations (Generated)
  */
 sealed abstract class GnirsFpuOther(

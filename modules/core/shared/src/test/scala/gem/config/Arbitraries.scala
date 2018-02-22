@@ -142,7 +142,6 @@ trait Arbitraries {
   val genAcqCamDynamic  : Gen[DynamicConfig.Aux[AcqCam.type]]   = Gen.const(DynamicConfig.AcqCam()  )
   val genBhrosDynamic   : Gen[DynamicConfig.Aux[Bhros.type]]    = Gen.const(DynamicConfig.Bhros()   )
   val genGhostDynamic   : Gen[DynamicConfig.Aux[Ghost.type]]    = Gen.const(DynamicConfig.Ghost()   )
-  val genGnirsDynamic   : Gen[DynamicConfig.Aux[Gnirs.type]]    = Gen.const(DynamicConfig.Gnirs()   )
   val genGpiDynamic     : Gen[DynamicConfig.Aux[Gpi.type]]      = Gen.const(DynamicConfig.Gpi()     )
   val genGsaoiDynamic   : Gen[DynamicConfig.Aux[Gsaoi.type]]    = Gen.const(DynamicConfig.Gsaoi()   )
   val genMichelleDynamic: Gen[DynamicConfig.Aux[Michelle.type]] = Gen.const(DynamicConfig.Michelle())
@@ -232,6 +231,19 @@ trait Arbitraries {
       f <- arbitrary[Option[GmosSouthFilter]]
       u <- arbitrary[Option[Either[GmosCustomMask, GmosSouthFpu]]]
     } yield DynamicConfig.GmosSouth(c, g, f, u)
+
+  val genGnirsDynamic: Gen[DynamicConfig.Aux[Gnirs.type]] =
+      for {
+        a <- arbitrary[GnirsCamera                        ]
+        b <- arbitrary[GnirsDecker                        ]
+        c <- arbitrary[GnirsDisperser                     ]
+        d <- arbitrary[GnirsDisperserOrder                ]
+        e <- arbitrary[Duration                           ]
+        f <- arbitrary[GnirsFilter                        ]
+        g <- arbitrary[Either[GnirsFpuOther, GnirsFpuSlit]]
+        h <- arbitrary[GnirsPrism                         ]
+        i <- arbitrary[GnirsReadMode                      ]
+      } yield DynamicConfig.Gnirs(a, b, c, d, e, f, g, h, i)
 
   def genDynamicConfigOf[I <: Instrument with Singleton](i: Instrument.Aux[I]): Gen[DynamicConfig.Aux[I]] = {
     i match {

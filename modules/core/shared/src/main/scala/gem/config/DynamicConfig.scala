@@ -82,6 +82,7 @@ object DynamicConfig {
 
     type GmosNorthDefinition = GmosDefinition[GmosNorthDisperser, GmosNorthFilter, GmosNorthFpu]
     type GmosSouthDefinition = GmosDefinition[GmosSouthDisperser, GmosSouthFilter, GmosSouthFpu]
+
   }
 
   sealed abstract class Impl[I0 <: Instrument with Singleton](val instrument: Instrument.Aux[I0]) extends DynamicConfig {
@@ -91,7 +92,6 @@ object DynamicConfig {
   /** @group Constructors */ final case class AcqCam()   extends DynamicConfig.Impl(Instrument.AcqCam)
   /** @group Constructors */ final case class Bhros()    extends DynamicConfig.Impl(Instrument.Bhros)
   /** @group Constructors */ final case class Ghost()    extends DynamicConfig.Impl(Instrument.Ghost)
-  /** @group Constructors */ final case class Gnirs()    extends DynamicConfig.Impl(Instrument.Gnirs)
   /** @group Constructors */ final case class Gpi()      extends DynamicConfig.Impl(Instrument.Gpi)
   /** @group Constructors */ final case class Gsaoi()    extends DynamicConfig.Impl(Instrument.Gsaoi)
   /** @group Constructors */ final case class Michelle() extends DynamicConfig.Impl(Instrument.Michelle)
@@ -184,6 +184,32 @@ object DynamicConfig {
   object GmosSouth {
     val Default: GmosSouth =
       GmosSouth(GmosCommonDynamicConfig.Default, None, None, None)
+  }
+
+  final case class Gnirs(
+    camera:               GnirsCamera,
+    decker:               GnirsDecker,
+    disperser:            GnirsDisperser,
+    disperserOrder:       GnirsDisperserOrder,
+    exposureTime:         Duration,
+    filter:               GnirsFilter,
+    fpu:                  Either[GnirsFpuOther, GnirsFpuSlit],
+    prism:                GnirsPrism,
+    readMode:             GnirsReadMode
+  ) extends DynamicConfig.Impl(Instrument.Gnirs)
+
+  object Gnirs {
+    val Default: Gnirs = Gnirs(
+      GnirsCamera.ShortBlue,
+      GnirsDecker.Acquisition,
+      GnirsDisperser.D32,
+      GnirsDisperserOrder.Three,
+      java.time.Duration.ofSeconds(17),
+      GnirsFilter.Order5,
+      Right(GnirsFpuSlit.LongSlit_0_30),
+      GnirsPrism.Mirror,
+      GnirsReadMode.Bright
+    )
   }
 
 }

@@ -9,7 +9,7 @@ import cats.syntax.eq._
 import gem.util.Enumerated
 
 /**
- * Enumerated type for GNRIS Read Mode.
+ * Enumerated type for GNIRS Read Mode.
  * @group Enumerations (Generated)
  */
 sealed abstract class GnirsReadMode(

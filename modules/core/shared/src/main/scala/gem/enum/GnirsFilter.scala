@@ -10,7 +10,7 @@ import gem.math.Wavelength
 import gem.util.Enumerated
 
 /**
- * Enumerated type for GNRIS Filter.
+ * Enumerated type for GNIRS Filter.
  * @group Enumerations (Generated)
  */
 sealed abstract class GnirsFilter(

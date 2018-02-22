@@ -71,7 +71,9 @@ object SequenceDecoder extends PioDecoder[List[Step[DynamicConfig]]] {
       case Instrument.GmosN      => Gmos.parseNorth(cm)
       case Instrument.GmosS      => Gmos.parseSouth(cm)
 
-      case Instrument.Gnirs      => DynamicConfig.Gnirs()   .asRight
+      /// TODO: Implement GNIRS decoder
+      case Instrument.Gnirs      => DynamicConfig.Gnirs.Default.asRight
+
       case Instrument.Gpi        => DynamicConfig.Gpi()     .asRight
       case Instrument.Gsaoi      => DynamicConfig.Gsaoi()   .asRight
       case Instrument.Michelle   => DynamicConfig.Michelle().asRight

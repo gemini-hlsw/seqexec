@@ -10,7 +10,7 @@ import gem.math.Wavelength
 import gem.util.Enumerated
 
 /**
- * Enumerated type for GNRIS Disperser Order.
+ * Enumerated type for GNIRS Disperser Order.
  * @group Enumerations (Generated)
  */
 sealed abstract class GnirsDisperserOrder(
