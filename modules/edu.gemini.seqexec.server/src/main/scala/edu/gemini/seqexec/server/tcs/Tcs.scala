@@ -70,7 +70,7 @@ final case class Tcs(tcsController: TcsController, subsystems: NonEmptyList[Subs
 
   @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
   private def configure(config: Config, tcsState: TcsConfig): SeqAction[ConfigResult] = {
-    val configFromSequence = fromSequenceConfig(config)(tcsState)
+    val configFromSequence = fromSequenceConfig(config, subsystems)(tcsState)
     //The desired science fold position is passed as a class parameter
     val tcsConfig = configFromSequence.copy(agc = configFromSequence.agc.copy(sfPos = scienceFoldPosition.some))
 
@@ -155,12 +155,14 @@ object Tcs {
     }
   }
 
-  def fromSequenceConfig(config: Config)(s0: TcsConfig): TcsConfig =
+  def fromSequenceConfig(config: Config, subsystems: NonEmptyList[Subsystem])(s0: TcsConfig): TcsConfig = {
+    val subs = subsystems.toList
     List(
-      build(buildPwfs1Config,  TELESCOPE_KEY / GUIDE_WITH_PWFS1_PROP, config),
-      build(buildPwfs2Config,  TELESCOPE_KEY / GUIDE_WITH_PWFS2_PROP, config),
-      build(buildOiwfsConfig,  TELESCOPE_KEY / GUIDE_WITH_OIWFS_PROP, config),
-      build(buildOffsetConfig, TELESCOPE_KEY / P_OFFSET_PROP, TELESCOPE_KEY / Q_OFFSET_PROP, config)
-    ).suml.apply(s0)
+      subs.contains(Subsystem.P1WFS).option(build(buildPwfs1Config, TELESCOPE_KEY / GUIDE_WITH_PWFS1_PROP, config)),
+      subs.contains(Subsystem.P2WFS).option(build(buildPwfs2Config, TELESCOPE_KEY / GUIDE_WITH_PWFS2_PROP, config)),
+      subs.contains(Subsystem.OIWFS).option(build(buildOiwfsConfig, TELESCOPE_KEY / GUIDE_WITH_OIWFS_PROP, config)),
+      subs.contains(Subsystem.Mount).option(build(buildOffsetConfig, TELESCOPE_KEY / P_OFFSET_PROP, TELESCOPE_KEY / Q_OFFSET_PROP, config))
+    ).collect{case Some(x) => x}.suml.apply(s0)
+  }
 
 }
