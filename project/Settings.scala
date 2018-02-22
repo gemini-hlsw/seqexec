@@ -74,7 +74,7 @@ object Settings {
     val scalaCSS                = "0.5.5"
     val booPickle               = "1.2.6"
     val diode                   = "1.1.3"
-    val javaTimeJS              = "2.0.0-M13-SNAPSHOT"
+    val javaTimeJS              = "2.0.0-M13"
     val javaLogJS               = "0.1.3"
     val scalaJQuery             = "1.2"
     val scalaJSReactVirtualized = "0.0.9"
