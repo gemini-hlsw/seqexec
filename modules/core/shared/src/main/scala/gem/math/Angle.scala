@@ -10,7 +10,7 @@ import cats.instances.long._
 import cats.syntax.eq._
 import gem.parser.AngleParsers
 import gem.syntax.parser._
-import gem.util.Format
+import gem.optics.Format
 import monocle.Prism
 
 /**

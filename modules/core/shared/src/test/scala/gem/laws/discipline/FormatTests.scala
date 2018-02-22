@@ -6,7 +6,7 @@ package discipline
 
 import cats.Eq
 import cats.instances.option._
-import gem.util.Format
+import gem.optics.Format
 import org.scalacheck.{ Arbitrary, Gen }
 import org.scalacheck.Prop._
 import org.typelevel.discipline.Laws
@@ -36,7 +36,7 @@ trait FormatTests[A, B] extends Laws {
 
 object FormatTests extends Laws {
 
-  def apply[A, B](fab: Format[A, B]): FormatTests[A, B] = 
+  def apply[A, B](fab: Format[A, B]): FormatTests[A, B] =
     new FormatTests[A, B] {
       val laws = new FormatLaws(fab)
     }

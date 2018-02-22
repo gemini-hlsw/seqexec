@@ -5,19 +5,19 @@ package gem.laws
 package discipline
 
 import cats.Eq
-import gem.util.Section
+import gem.optics.SplitEpi
 import org.scalacheck.{ Arbitrary, Gen }
 import org.scalacheck.Prop._
 import org.typelevel.discipline.Laws
 
-trait SectionTests[A, B] extends Laws {
-  val laws: SectionLaws[A, B]
+trait SplitEpiTests[A, B] extends Laws {
+  val laws: SplitEpiLaws[A, B]
 
-  def section(
+  def splitEpi(
     implicit aa: Arbitrary[A], ea: Eq[A],
              ab: Arbitrary[B], eb: Eq[B]
   ): RuleSet =
-    new SimpleRuleSet("Section",
+    new SimpleRuleSet("SplitEpi",
       "normalize"                -> forAll((a: A) => laws.normalize(a)),
       "normalized get roundtrip" -> forAll((a: A) => laws.normalizedGetRoundTrip(a)),
       "reverseGet roundtrip"     -> forAll((b: B) => laws.reverseGetRoundTrip(b)),
@@ -25,19 +25,19 @@ trait SectionTests[A, B] extends Laws {
     )
 
   /** Convenience constructor that allows passing an explicit generator for input values. */
-  def sectionWith(ga: Gen[A])(
+  def splitEpiWith(ga: Gen[A])(
     implicit ea: Eq[A],
              ab: Arbitrary[B], eb: Eq[B]
   ): RuleSet =
-    section(Arbitrary(ga), ea, ab, eb)
+    splitEpi(Arbitrary(ga), ea, ab, eb)
 
 }
 
-object SectionTests extends Laws {
+object SplitEpiTests extends Laws {
 
-  def apply[A, B](fab: Section[A, B]): SectionTests[A, B] =
-    new SectionTests[A, B] {
-      val laws = new SectionLaws(fab)
+  def apply[A, B](fab: SplitEpi[A, B]): SplitEpiTests[A, B] =
+    new SplitEpiTests[A, B] {
+      val laws = new SplitEpiLaws(fab)
     }
 
 }

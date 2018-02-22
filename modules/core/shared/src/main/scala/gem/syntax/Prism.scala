@@ -3,7 +3,7 @@
 
 package gem.syntax
 
-import gem.util.Format
+import gem.optics.Format
 import monocle.Prism
 
 @SuppressWarnings(Array("org.wartremover.warts.Null"))

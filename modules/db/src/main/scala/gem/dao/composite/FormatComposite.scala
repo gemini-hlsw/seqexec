@@ -4,7 +4,7 @@
 package gem.dao.composite
 
 import doobie._
-import gem.util.Format
+import gem.optics.Format
 
 /**
  * Given an Format[A, B] and a Composite[A] for the external type, we can create a Composite[B] that

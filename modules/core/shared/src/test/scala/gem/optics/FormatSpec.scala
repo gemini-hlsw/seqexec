@@ -2,7 +2,7 @@
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package gem
-package util
+package optics
 
 import cats.tests.CatsSuite
 import gem.laws.discipline._

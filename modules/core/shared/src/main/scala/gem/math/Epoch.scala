@@ -8,7 +8,7 @@ import cats.{ Order, Show }
 import cats.implicits._
 import gem.parser.EpochParsers
 import gem.syntax.parser._
-import gem.util.Format
+import gem.optics.Format
 import java.time._
 
 /**

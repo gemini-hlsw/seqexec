@@ -8,8 +8,9 @@ import gem.enum.GcalArc
 import gem.config.GcalConfig.GcalArcs
 import gem.config.GmosConfig._
 import gem.math._
+import gem.optics.Format
 import gem.syntax.prism._
-import gem.util.{ Enumerated, Format, Timestamp }
+import gem.util.{ Enumerated, Timestamp }
 import io.circe._
 import io.circe.syntax._
 import io.circe.generic.auto._
