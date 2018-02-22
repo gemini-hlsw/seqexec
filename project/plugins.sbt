@@ -19,5 +19,6 @@ addSbtPlugin("org.wartremover"   % "sbt-wartremover"       % "2.2.1")
 addSbtPlugin("org.scala-js"      % "sbt-scalajs"           % "0.6.22")
 addSbtPlugin("net.virtual-void"  % "sbt-dependency-graph"  % "0.9.0")
 addSbtPlugin("com.timushev.sbt"  % "sbt-updates"           % "0.3.4")
+addSbtPlugin("io.github.cquiroz" % "sbt-tzdb"              % "0.1.2")
 
 onLoad in Global := { s => "dependencyUpdates" :: s }

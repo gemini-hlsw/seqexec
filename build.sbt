@@ -1,26 +1,27 @@
 import com.typesafe.sbt.packager.docker._
 
-lazy val circeVersion        = "0.9.1"
-lazy val attoVersion         = "0.6.2-M1"
-lazy val catsEffectVersion   = "0.8"
-lazy val catsVersion         = "1.0.1"
-lazy val declineVersion      = "0.4.1"
-lazy val doobieVersion       = "0.5.0"
-lazy val flywayVersion       = "5.0.7"
-lazy val fs2Version          = "0.10.1"
-lazy val http4sVersion       = "0.18.0"
-lazy val jwtVersion          = "0.14.1"
-lazy val kpVersion           = "0.9.6"
-lazy val monocleVersion      = "1.5.0-cats"
-lazy val mouseVersion        = "0.16"
-lazy val paradiseVersion     = "2.1.1"
-lazy val scalaCheckVersion   = "1.13.5"
-lazy val scalaParsersVersion = "1.1.0"
-lazy val scalaTestVersion    = "3.0.5"
-lazy val scalaXmlVerson      = "1.0.6"
-lazy val shapelessVersion    = "2.3.3"
-lazy val slf4jVersion        = "1.7.25"
-lazy val tucoVersion         = "0.3.0"
+lazy val circeVersion         = "0.9.1"
+lazy val attoVersion          = "0.6.2-M1"
+lazy val catsEffectVersion    = "0.8"
+lazy val catsVersion          = "1.0.1"
+lazy val declineVersion       = "0.4.1"
+lazy val doobieVersion        = "0.5.0"
+lazy val flywayVersion        = "5.0.7"
+lazy val fs2Version           = "0.10.1"
+lazy val http4sVersion        = "0.18.0"
+lazy val jwtVersion           = "0.14.1"
+lazy val kpVersion            = "0.9.6"
+lazy val monocleVersion       = "1.5.0-cats"
+lazy val mouseVersion         = "0.16"
+lazy val paradiseVersion      = "2.1.1"
+lazy val scalaCheckVersion    = "1.13.5"
+lazy val scalaParsersVersion  = "1.1.0"
+lazy val scalaTestVersion     = "3.0.5"
+lazy val scalaXmlVerson       = "1.0.6"
+lazy val shapelessVersion     = "2.3.3"
+lazy val slf4jVersion         = "1.7.25"
+lazy val tucoVersion          = "0.3.0"
+lazy val scalaJavaTimeVersion = "2.0.0-M13"
 
 // our version is determined by the current git state (see project/ImageManifest.scala)
 def imageManifest = ImageManifest.current("postgres:9.6.0").unsafeRunSync
@@ -204,20 +205,23 @@ lazy val core = crossProject
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "org.typelevel"              %%% "cats-core"      % catsVersion,
-      "org.typelevel"              %%% "cats-effect"    % catsEffectVersion,
-      "org.typelevel"              %%% "cats-testkit"   % catsVersion % "test",
-      "org.typelevel"              %%% "mouse"          % mouseVersion,
-      "com.chuusai"                %%% "shapeless"      % shapelessVersion,
-      "org.tpolecat"               %%% "atto-core"      % attoVersion,
-      "com.github.julien-truffaut" %%% "monocle-core"   % monocleVersion,
-      "com.github.julien-truffaut" %%% "monocle-macro"  % monocleVersion,
-      "com.github.julien-truffaut" %%% "monocle-law"    % monocleVersion % "test"
+      "org.typelevel"              %%% "cats-core"       % catsVersion,
+      "org.typelevel"              %%% "cats-effect"     % catsEffectVersion,
+      "org.typelevel"              %%% "cats-testkit"    % catsVersion % "test",
+      "org.typelevel"              %%% "mouse"           % mouseVersion,
+      "com.chuusai"                %%% "shapeless"       % shapelessVersion,
+      "org.tpolecat"               %%% "atto-core"       % attoVersion,
+      "com.github.julien-truffaut" %%% "monocle-core"    % monocleVersion,
+      "com.github.julien-truffaut" %%% "monocle-macro"   % monocleVersion,
+      "com.github.julien-truffaut" %%% "monocle-law"     % monocleVersion % "test"
     )
   )
   .jsSettings(
     libraryDependencies +=
-      "io.github.cquiroz" %%% "scala-java-time" % "2.0.0-M12"
+      "io.github.cquiroz"          %%% "scala-java-time" % scalaJavaTimeVersion,
+    wartremoverExcluded += sourceManaged.value / "main" / "java" / "time" / "zone" / "TzdbZoneRulesProvider.scala",
+    // We only care about these two timezones. UTC is implicitly included
+    zonesFilter         := {(z: String) => z == "America/Santiago" || z == "Pacific/Honolulu"}
   )
   .jsSettings(commonJSSettings)
   .jvmSettings(
@@ -226,7 +230,7 @@ lazy val core = crossProject
 
 
 lazy val coreJVM = core.jvm.enablePlugins(AutomateHeaderPlugin)
-lazy val coreJS = core.js
+lazy val coreJS = core.js.enablePlugins(TzdbPlugin)
 
 lazy val db = project
   .in(file("modules/db"))

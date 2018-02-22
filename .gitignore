@@ -40,3 +40,6 @@ ensime.sbt
 archive
 smartgcal
 .jvmopts
+
+node_modules/
+package-lock.json
