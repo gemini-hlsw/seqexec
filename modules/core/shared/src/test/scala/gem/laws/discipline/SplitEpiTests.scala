@@ -10,18 +10,19 @@ import org.scalacheck.{ Arbitrary, Gen }
 import org.scalacheck.Prop._
 import org.typelevel.discipline.Laws
 
-trait SplitEpiTests[A, B] extends Laws {
-  val laws: SplitEpiLaws[A, B]
+trait SplitEpiTests[A, B] extends FormatTests[A, B] {
+  val splitEpiLaws: SplitEpiLaws[A, B]
 
   def splitEpi(
     implicit aa: Arbitrary[A], ea: Eq[A],
              ab: Arbitrary[B], eb: Eq[B]
   ): RuleSet =
-    new SimpleRuleSet("SplitEpi",
-      "normalize"                -> forAll((a: A) => laws.normalize(a)),
-      "normalized get roundtrip" -> forAll((a: A) => laws.normalizedGetRoundTrip(a)),
-      "reverseGet roundtrip"     -> forAll((b: B) => laws.reverseGetRoundTrip(b)),
-      "coverage"                 -> exists((a: A) => laws.demonstratesNormalization(a))
+    new DefaultRuleSet("SplitEpi",
+      Some(format),
+      "normalize"                -> forAll((a: A) => splitEpiLaws.normalize(a)),
+      "normalized get roundtrip" -> forAll((a: A) => splitEpiLaws.normalizedGetRoundTrip(a)),
+      "reverseGet roundtrip"     -> forAll((b: B) => splitEpiLaws.reverseGetRoundTrip(b)),
+      "coverage"                 -> exists((a: A) => splitEpiLaws.demonstratesNormalization(a))
     )
 
   /** Convenience constructor that allows passing an explicit generator for input values. */
@@ -37,7 +38,8 @@ object SplitEpiTests extends Laws {
 
   def apply[A, B](fab: SplitEpi[A, B]): SplitEpiTests[A, B] =
     new SplitEpiTests[A, B] {
-      val laws = new SplitEpiLaws(fab)
+      val formatLaws = new FormatLaws(fab.asFormat)
+      val splitEpiLaws = new SplitEpiLaws(fab)
     }
 
 }

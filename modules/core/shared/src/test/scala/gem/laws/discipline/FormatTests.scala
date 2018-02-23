@@ -12,17 +12,17 @@ import org.scalacheck.Prop._
 import org.typelevel.discipline.Laws
 
 trait FormatTests[A, B] extends Laws {
-  val laws: FormatLaws[A, B]
+  val formatLaws: FormatLaws[A, B]
 
   def format(
     implicit aa: Arbitrary[A], ea: Eq[A],
              ab: Arbitrary[B], eb: Eq[B]
   ): RuleSet =
     new SimpleRuleSet("format",
-      "normalize"        -> forAll((a: A) => laws.normalize(a)),
-      "parse roundtrip"  -> forAll((a: A) => laws.parseRoundTrip(a)),
-      "format roundtrip" -> forAll((b: B) => laws.formatRoundTrip(b)),
-      "coverage"         -> exists((a: A) => laws.demonstratesNormalization(a))
+      "normalize"        -> forAll((a: A) => formatLaws.normalize(a)),
+      "parse roundtrip"  -> forAll((a: A) => formatLaws.parseRoundTrip(a)),
+      "format roundtrip" -> forAll((b: B) => formatLaws.formatRoundTrip(b)),
+      "coverage"         -> exists((a: A) => formatLaws.demonstratesNormalization(a))
     )
 
   /** Convenience constructor that allows passing an explicit generator for input values. */
@@ -38,7 +38,7 @@ object FormatTests extends Laws {
 
   def apply[A, B](fab: Format[A, B]): FormatTests[A, B] =
     new FormatTests[A, B] {
-      val laws = new FormatLaws(fab)
+      val formatLaws = new FormatLaws(fab)
     }
 
 }
