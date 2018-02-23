@@ -8,7 +8,8 @@ import monocle.Iso
 
 /**
  * Composition of a `SplitMono` and a `SplitEpi`, yielding an even weaker structure where neither
- * `get andThen reverseGet` and `reverseGet andThen get` is an identity but both are idempotent.
+ * `get andThen reverseGet` and `reverseGet andThen get` is an identity or idempotent, but will
+ * reach a fixpoint after two round trips.
  */
 final case class Wedge[A, B](get: A => B, reverseGet: B => A) {
 
@@ -40,13 +41,13 @@ final case class Wedge[A, B](get: A => B, reverseGet: B => A) {
   def imapB[C](f: A => C, g: C => A): Wedge[C, B] =
     Wedge(g andThen get, reverseGet andThen f)
 
-  /** Normalize A via a round-trip through B. */
+  /** Normalize A via two round-trips through B. */
   def normalizeA(a: A): A =
-    (get andThen reverseGet)(a)
+    (get andThen reverseGet andThen get andThen reverseGet)(a)
 
-  /** Normalize B via a round-trip through A. */
+  /** Normalize B via two round-trips through A. */
   def normalizeB(b: B): B =
-    (get compose reverseGet)(b)
+    (get compose reverseGet compose get compose reverseGet)(b)
 
 }
 
