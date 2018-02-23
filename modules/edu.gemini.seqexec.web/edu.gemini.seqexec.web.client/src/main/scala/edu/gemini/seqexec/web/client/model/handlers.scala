@@ -567,9 +567,13 @@ object handlers {
         val observer = value.user.map(_.displayName)
         val newSequence = view.queue.find(_.id === id)
         val updateObserverE = observer.fold(VoidEffect)(o => Effect(Future(UpdateObserver(id, o): Action)))
+        val inInstrumentPage = value.location match {
+          case Root | InstrumentPage(_) => true
+          case _                        => false
+        }
         val syncPageE = for {
           s <- newSequence
-          if view.queue.length === 1
+          if inInstrumentPage
         } yield Effect(Future(SyncPageToAddedSequence(s.metadata.instrument, id): Action))
         val effects = updateObserverE + syncPageE.fold(VoidEffect)(identity)
         updated(value.copy(sequences = filterSequences(view), firstLoad = false), effects)
