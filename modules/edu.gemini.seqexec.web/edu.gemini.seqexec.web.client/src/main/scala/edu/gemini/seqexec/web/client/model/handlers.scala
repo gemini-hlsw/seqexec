@@ -65,14 +65,14 @@ object handlers {
         updatedSilent(page, effect)
     }
 
-    def handleSyncToPage: PartialFunction[Any, ActionResult[M]] = {
-      case SyncToPage(s) =>
+    def handleInitialSyncToPage: PartialFunction[Any, ActionResult[M]] = {
+      case InitialSyncToPage(s) =>
         // the page maybe not in sync with the tabs. Let's fix that
         value match {
           case SequencePage(i, id, _) if i === s.metadata.instrument && id === s.id          =>
             effectOnly(Effect(Future(SelectIdToDisplay(s.id))))
           case InstrumentPage(_)                                                             =>
-            effectOnly(Effect(Future(SelectIdToDisplay(s.id))))
+            updated(SequencePage(s.metadata.instrument, s.id, 0), Effect(Future(SelectIdToDisplay(s.id))))
           case SequenceConfigPage(i, id, step) if i === s.metadata.instrument && id === s.id =>
             effectOnly(Effect(Future(ShowStep(s.id, step))))
           case _                                                                             =>
@@ -120,7 +120,7 @@ object handlers {
     def handle: PartialFunction[Any, ActionResult[M]] =
       List(handleNavigateTo,
         handleSilentTo,
-        handleSyncToPage,
+        handleInitialSyncToPage,
         handleSyncToRunning,
         handleSyncPageToRemovedSequence,
         handleSyncPageToAddedSequence).suml
@@ -491,6 +491,11 @@ object handlers {
         case SequenceView(_, metadata, _, _, _) => value.site.map(_.instruments.list.toList.contains(metadata.instrument)).getOrElse(false)
       })
 
+    private def inInstrumentPage = value.location match {
+      case Root | InstrumentPage(_) => true
+      case _                        => false
+    }
+
     val logMessage: PartialFunction[Any, ActionResult[M]] = {
       case ServerMessage(l: ServerLogMessage) =>
         effectOnly(Effect(Future(AppendToLog(l))))
@@ -567,10 +572,6 @@ object handlers {
         val observer = value.user.map(_.displayName)
         val newSequence = view.queue.find(_.id === id)
         val updateObserverE = observer.fold(VoidEffect)(o => Effect(Future(UpdateObserver(id, o): Action)))
-        val inInstrumentPage = value.location match {
-          case Root | InstrumentPage(_) => true
-          case _                        => false
-        }
         val syncPageE = for {
           s <- newSequence
           if inInstrumentPage
@@ -601,7 +602,7 @@ object handlers {
              List[Option[Effect]](VoidEffect.some))
           ) { case ((seq, eff), q) =>
               val syncUrlE: Option[Effect] =
-                syncToRunE.orElse(value.firstLoad option Effect(Future(SyncToPage(q)))).orElse(VoidEffect.some)
+                syncToRunE.orElse(value.firstLoad option Effect(Future(InitialSyncToPage(q)))).orElse(VoidEffect.some)
               if (q.metadata.observer.isEmpty && observer.nonEmpty) {
                 (q.copy(metadata = q.metadata.copy(observer = observer.map(Observer.apply))) :: seq,
                 Effect(Future(UpdateObserver(q.id, observer.getOrElse("")))).some ::
