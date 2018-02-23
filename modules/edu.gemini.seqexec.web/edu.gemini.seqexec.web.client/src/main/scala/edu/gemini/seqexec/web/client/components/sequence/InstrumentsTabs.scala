@@ -5,8 +5,8 @@ package edu.gemini.seqexec.web.client.components.sequence
 
 import diode.react.ModelProxy
 import edu.gemini.seqexec.model.Model.{SequenceState, SeqexecSite}
-import edu.gemini.seqexec.web.client.actions.{NavigateTo, SelectInstrumentToDisplay}
-import edu.gemini.seqexec.web.client.model.Pages.{InstrumentPage, SeqexecPages}
+import edu.gemini.seqexec.web.client.actions.{NavigateTo, SelectIdToDisplay, SelectInstrumentToDisplay}
+import edu.gemini.seqexec.web.client.model.Pages.{InstrumentPage, SequencePage, SeqexecPages}
 import edu.gemini.seqexec.web.client.circuit.{SeqexecCircuit, InstrumentStatusFocus}
 import edu.gemini.seqexec.web.client.semanticui._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
@@ -19,7 +19,6 @@ import japgolly.scalajs.react.{Callback, ScalaComponent}
 
 import scalacss.ScalaCssReact._
 
-import scalaz.std.option._
 import scalaz.std.string._
 import scalaz.syntax.std.option._
 import scalaz.syntax.show._
@@ -51,7 +50,7 @@ object InstrumentTab {
         case SequenceState.Completed     => "green".some
         case _                           => "grey".some
       }
-      val linkPage = InstrumentPage(instrument, sequenceId)
+      val linkPage: SeqexecPages = sequenceId.fold(InstrumentPage(instrument): SeqexecPages)(SequencePage(instrument, _, 0))
       val instrumentNoId =
         <.div(SeqexecStyles.instrumentTabLabel, instrument.shows)
       val instrumentWithId =
@@ -83,10 +82,13 @@ object InstrumentTab {
           JsTabOptions
             .onVisible { (x: String) =>
               val instrument = ctx.props.site.instruments.list.toList.find(_.shows === x)
-              val updateModelCB = (ctx.props.t().idState, instrument) match {
-                case (_, Some(i))             =>
-                  ctx.props.t.dispatchCB(NavigateTo(InstrumentPage(i, none))) >> ctx.props.t.dispatchCB(SelectInstrumentToDisplay(i))
-                case _                        =>
+              val sequenceId = ctx.props.t().idState.map(_._1)
+              val updateModelCB = (sequenceId, instrument) match {
+                case (Some(id), Some(i)) =>
+                  ctx.props.t.dispatchCB(NavigateTo(SequencePage(i, id, 0))) >> ctx.props.t.dispatchCB(SelectIdToDisplay(id))
+                case (_, Some(i))        =>
+                  ctx.props.t.dispatchCB(NavigateTo(InstrumentPage(i))) >> ctx.props.t.dispatchCB(SelectInstrumentToDisplay(i))
+                case _                   =>
                   Callback.empty
               }
               // runNow as we are outside react loop

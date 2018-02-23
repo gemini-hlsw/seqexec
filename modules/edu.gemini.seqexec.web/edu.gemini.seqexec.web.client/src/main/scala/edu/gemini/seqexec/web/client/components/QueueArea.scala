@@ -21,7 +21,6 @@ import org.scalajs.dom.html.TableRow
 import scalacss.ScalaCssReact._
 import scalaz.syntax.show._
 import scalaz.syntax.equal._
-import scalaz.syntax.std.option._
 
 object QueueTableBody {
   type SequencesModel = ModelProxy[StatusAndLoadedSequencesFocus]
@@ -51,7 +50,7 @@ object QueueTableBody {
 
   def showSequence(p: Props, s: SequenceInQueue): Callback =
     // Request to display the selected sequence
-    p.sequences.dispatchCB(NavigateTo(InstrumentPage(s.instrument, s.id.some))) >> p.sequences.dispatchCB(SelectIdToDisplay(s.id))
+    p.sequences.dispatchCB(NavigateTo(SequencePage(s.instrument, s.id, 0))) >> p.sequences.dispatchCB(SelectIdToDisplay(s.id))
 
   private val component = ScalaComponent.builder[Props]("QueueTableBody")
     .render_P { p =>
@@ -108,36 +107,36 @@ object QueueTableBody {
                 <.td(
                   ^.cls := "collapsing",
                   selectableRowCls.toTagMod,
-                  p.ctl.link(InstrumentPage(s.instrument, s.id.some))(leftColumnIcon).unless(inProcess),
+                  p.ctl.link(SequencePage(s.instrument, s.id, 0))(leftColumnIcon).unless(inProcess),
                   leftColumnIcon.when(inProcess)
                 ),
                 <.td(
                   ^.cls := "collapsing",
                   selectableRowCls.toTagMod,
-                  p.ctl.link(InstrumentPage(s.instrument, s.id.some))(s.id).unless(inProcess),
+                  p.ctl.link(SequencePage(s.instrument, s.id, 0))(s.id).unless(inProcess),
                   s.id.when(inProcess)
                 ),
                 <.td(
                   ^.cls := "collapsing",
                   selectableRowCls.toTagMod,
-                  p.ctl.link(InstrumentPage(s.instrument, s.id.some))(stepAtText).unless(inProcess),
+                  p.ctl.link(SequencePage(s.instrument, s.id, 0))(stepAtText).unless(inProcess),
                   stepAtText.when(inProcess)
                 ),
                 <.td(
                   selectableRowCls.toTagMod,
-                  p.ctl.link(InstrumentPage(s.instrument, s.id.some))(s.instrument.shows).unless(inProcess),
+                  p.ctl.link(SequencePage(s.instrument, s.id, 0))(s.instrument.shows).unless(inProcess),
                   s.instrument.shows.when(inProcess)
                 ),
                 <.td(
                   selectableRowCls.toTagMod,
                   SeqexecStyles.notInMobile,
-                  p.ctl.link(InstrumentPage(s.instrument, s.id.some))(targetName).unless(inProcess),
+                  p.ctl.link(SequencePage(s.instrument, s.id, 0))(targetName).unless(inProcess),
                   targetName.when(inProcess)
                 ).when(isLogged),
                 <.td(
                   selectableRowCls.toTagMod,
                   SeqexecStyles.notInMobile,
-                  p.ctl.link(InstrumentPage(s.instrument, s.id.some))(s.name).unless(inProcess),
+                  p.ctl.link(SequencePage(s.instrument, s.id, 0))(s.name).unless(inProcess),
                   s.name.when(inProcess)
                 ).when(isLogged)
               )

@@ -53,10 +53,14 @@ object handlers {
     def handleSilentTo: PartialFunction[Any, ActionResult[M]] = {
       case NavigateSilentTo(page) =>
         val effect = page match {
-          case InstrumentPage(i, None)         => Effect(Future(SelectInstrumentToDisplay(i)))
-          case InstrumentPage(i, Some(id))     => Effect(Future(UnShowStep(i))) + Effect(Future(SelectIdToDisplay(id)))
-          case SequenceConfigPage(_, id, step) => Effect(Future(ShowStep(id, step)))
-          case _                               => Effect(Future(NoAction: Action))
+          case InstrumentPage(i)               =>
+            Effect(Future(SelectInstrumentToDisplay(i)))
+          case SequencePage(i, id, _)          =>
+            Effect(Future(UnShowStep(i))) + Effect(Future(SelectIdToDisplay(id)))
+          case SequenceConfigPage(_, id, step) =>
+            Effect(Future(ShowStep(id, step)))
+          case _                               =>
+            Effect(Future(NoAction: Action))
         }
         updatedSilent(page, effect)
     }
@@ -65,13 +69,13 @@ object handlers {
       case SyncToPage(s) =>
         // the page maybe not in sync with the tabs. Let's fix that
         value match {
-          case InstrumentPage(i, Some(id)) if i === s.metadata.instrument && id === s.id =>
+          case SequencePage(i, id, _) if i === s.metadata.instrument && id === s.id          =>
             effectOnly(Effect(Future(SelectIdToDisplay(s.id))))
-          case InstrumentPage(_, None) =>
+          case InstrumentPage(_)                                                             =>
             effectOnly(Effect(Future(SelectIdToDisplay(s.id))))
           case SequenceConfigPage(i, id, step) if i === s.metadata.instrument && id === s.id =>
             effectOnly(Effect(Future(ShowStep(s.id, step))))
-          case _ =>
+          case _                                                                             =>
             noChange
         }
     }
@@ -80,9 +84,9 @@ object handlers {
       case SyncToRunning(s) =>
         // We'll select the sequence currently running and show the correct url
         value match {
-          case Root | InstrumentPage(_, None) =>
-              updated(InstrumentPage(s.metadata.instrument, s.id.some), Effect(Future(SelectInstrumentToDisplay(s.metadata.instrument))))
-          case InstrumentPage(_, Some(id))    =>
+          case Root | InstrumentPage(_)        =>
+              updated(InstrumentPage(s.metadata.instrument), Effect(Future(SelectInstrumentToDisplay(s.metadata.instrument))))
+          case SequencePage(_, id, _)          =>
             effectOnly(Effect(Future(SelectIdToDisplay(id))))
           case SequenceConfigPage(_, id, step) =>
             effectOnly(Effect(Future(SelectSequenceConfig(id, step))))
@@ -93,8 +97,10 @@ object handlers {
       case SyncPageToRemovedSequence(id) =>
         // If the id is selected, reset the route
         value match {
-          case InstrumentPage(i, Some(sid)) if sid === id =>
-            updated(InstrumentPage(i, none), Effect(Future(SelectInstrumentToDisplay(i))))
+          case InstrumentPage(i)                          =>
+            updated(InstrumentPage(i), Effect(Future(SelectInstrumentToDisplay(i))))
+          case SequencePage(i, sid, _) if sid === id      =>
+            updated(InstrumentPage(i), Effect(Future(SelectInstrumentToDisplay(i))))
           case _                                          =>
             noChange
         }
@@ -104,8 +110,8 @@ object handlers {
       case SyncPageToAddedSequence(i, id) =>
         // Switch to the sequence in none is selected
         value match {
-          case Root | InstrumentPage(_, None) =>
-            updated(InstrumentPage(i, Some(id)), Effect(Future(SelectIdToDisplay(id))))
+          case Root | InstrumentPage(_) =>
+            updated(SequencePage(i, id, 0), Effect(Future(SelectIdToDisplay(id))))
           case _                                  =>
             noChange
         }
