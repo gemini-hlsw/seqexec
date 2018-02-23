@@ -113,6 +113,8 @@ object StepProgressCell {
         <.p("Skipped")
       case (_, _) if props.step.skip                                                        =>
         <.p("Skip")
+      case (_, StandardStep(_, _, StepState.Completed, _, _, Some(fileId), _, _))             =>
+        <.p(SeqexecStyles.componentLabel, fileId)
       case (_, _)                                                                           =>
         <.p(SeqexecStyles.componentLabel, props.step.shows)
     }
