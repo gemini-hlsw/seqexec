@@ -229,10 +229,10 @@ object GnirsControllerEpics extends GnirsController {
   }
 
   override def applyConfig(config: GnirsConfig): SeqAction[Unit] =
-    SeqAction(Log.info("Starting GNIRS configuration")) *>
+    SeqAction(Log.debug("Starting GNIRS configuration")) *>
       setDCParams(config.dc) *>
       setCCParams(config.cc) *>
-      SeqAction(Log.info("Completed GNIRS configuration"))
+      SeqAction(Log.debug("Completed GNIRS configuration"))
 
 
   override def observe(fileId: ImageFileId, expTime: Time): SeqAction[ObserveCommand.Result] = for {
@@ -242,7 +242,7 @@ object GnirsControllerEpics extends GnirsController {
   } yield ret
 
   override def endObserve: SeqAction[Unit] = for {
-    _ <- EitherT(Task(Log.info("Send endObserve to GNIRS").right))
+    _ <- EitherT(Task(Log.debug("Send endObserve to GNIRS").right))
     _ <- GnirsEpics.instance.endObserveCmd.setTimeout(DefaultTimeout)
     _ <- GnirsEpics.instance.endObserveCmd.mark
     _ <- GnirsEpics.instance.endObserveCmd.post

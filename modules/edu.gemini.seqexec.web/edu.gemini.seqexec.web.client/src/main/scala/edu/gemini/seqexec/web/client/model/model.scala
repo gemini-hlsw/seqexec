@@ -132,7 +132,7 @@ object model {
   object SeqexecUIModel {
     val noSequencesLoaded: SequencesQueue[SequenceView] = SequencesQueue[SequenceView](Conditions.default, None, Nil)
     val initial: SeqexecUIModel = SeqexecUIModel(Pages.Root, None, noSequencesLoaded,
-      SectionClosed, ResourcesConflict(SectionClosed, None), GlobalLog(FixedLengthBuffer.unsafeFromInt(100)), SequencesOnDisplay.empty, true)
+      SectionClosed, ResourcesConflict(SectionClosed, None), GlobalLog(FixedLengthBuffer.unsafeFromInt(500)), SequencesOnDisplay.empty, true)
   }
 
   /**

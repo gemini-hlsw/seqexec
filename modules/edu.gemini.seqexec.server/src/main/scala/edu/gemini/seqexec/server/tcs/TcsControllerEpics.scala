@@ -393,11 +393,11 @@ object TcsControllerEpics extends TcsController {
 
     subsystems.tail.foldLeft(configSubsystem(subsystems.head))((b, a) => b *> configSubsystem(a)) *>
       TcsEpics.instance.post *>
-      EitherT(Task(Log.info("TCS configuration command post").right)) *>
+      EitherT(Task(Log.debug("TCS configuration command post").right)) *>
       (if(subsystems.toList.contains(Subsystem.Mount))
         TcsEpics.instance.waitInPosition(tcsTimeout) *> EitherT(Task(Log.info("TCS inposition").right))
       else if(subsystems.toList.contains(Subsystem.ScienceFold))
-        TcsEpics.instance.waitAGInPosition(agTimeout) *> EitherT(Task(Log.info("AG inposition").right))
+        TcsEpics.instance.waitAGInPosition(agTimeout) *> EitherT(Task(Log.debug("AG inposition").right))
       else SeqAction.void)
   }
 
