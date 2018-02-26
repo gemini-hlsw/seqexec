@@ -8,6 +8,7 @@ import cats.{ Eq, Show }
 import cats.kernel.laws.discipline._
 import gem.arb._
 import gem.laws.discipline._
+import monocle.law.discipline._
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals"))
 final class AngleSpec extends CatsSuite {
@@ -18,6 +19,17 @@ final class AngleSpec extends CatsSuite {
   checkAll("Angle", EqTests[Angle].eqv)
   checkAll("Angle", OrderTests[Angle](Angle.AngleOrder).order)
   checkAll("SignedAngle", OrderTests[Angle](Angle.SignedAngleOrder).order)
+
+  // Optics
+  checkAll("microarcseconds", SplitMonoTests(Angle.microarcseconds).splitMono)
+  checkAll("signedMicroarcseconds", SplitMonoTests(Angle.signedMicroarcseconds).splitMono)
+  checkAll("milliarcseconds", WedgeTests(Angle.milliarcseconds).wedge)
+  checkAll("arcseconds", WedgeTests(Angle.arcseconds).wedge)
+  checkAll("arcminutes", WedgeTests(Angle.arcminutes).wedge)
+  checkAll("degrees", WedgeTests(Angle.degrees).wedge)
+  checkAll("hourAngle", SplitEpiTests(Angle.hourAngle).splitEpi)
+  checkAll("hourAngleExact", PrismTests(Angle.hourAngleExact))
+  checkAll("dms", IsoTests(Angle.dms))
   checkAll("fromStringDMS", FormatTests(Angle.fromStringDMS).formatWith(ArbAngle.stringsDMS))
   checkAll("fromStringSignedDMS", FormatTests(Angle.fromStringSignedDMS).formatWith(ArbAngle.stringsSignedDMS))
 
@@ -40,9 +52,10 @@ final class AngleSpec extends CatsSuite {
     }
   }
 
+  // N.B. this is *not* covered by the `dms` Iso test.
   test("Conversion to DMS must be invertable") {
     forAll { (a: Angle) =>
-      val dms = a.toDMS
+      val dms = Angle.dms.get(a)
       Angle.fromDMS(
         dms.degrees,
         dms.arcminutes,
@@ -50,21 +63,6 @@ final class AngleSpec extends CatsSuite {
         dms.milliarcseconds,
         dms.microarcseconds
       ) shouldEqual a
-    }
-  }
-
-  test("Conversion to signed microarcseconds must be invertable") {
-    forAll { (a: Angle) =>
-      Angle.fromMicroarcseconds(a.toSignedMicroarcseconds) shouldEqual a
-    }
-  }
-
-  test("Narrowing to HourAngle must be invertable where defined") {
-    forAll { (a: Angle) =>
-      a.toHourAngleExact match {
-        case Some(b) => a shouldEqual b
-        case None    => succeed
-      }
     }
   }
 

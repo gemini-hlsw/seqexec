@@ -52,7 +52,7 @@ object RightAscension extends RightAscensionOptics {
    * @group Constructors
    */
   def fromRadians(rad: Double): RightAscension =
-    RightAscension(Angle.fromDoubleRadians(rad).toHourAngle)
+    RightAscension(Angle.hourAngle.get(Angle.fromDoubleRadians(rad)))
 
   /**
    * The `RightAscension` at zero degrees.
@@ -82,7 +82,7 @@ trait RightAscensionOptics { this: RightAscension.type =>
   val fromStringHMS: Format[String, RightAscension] =
     HourAngle.fromStringHMS composeIso fromHourAngle
 
-  val fromAngle: Prism[Angle, RightAscension] =
-    Angle.hourAngle composeIso fromHourAngle
+  val fromAngleExact: Prism[Angle, RightAscension] =
+    Angle.hourAngleExact composeIso fromHourAngle
 
 }

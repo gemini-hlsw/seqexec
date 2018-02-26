@@ -22,7 +22,7 @@ trait EphemerisCompression {
 
   /** Standard velocity threshold for compression, 0.1 arcsec/hour. */
   val StandardVelocityLimitµas: Long =
-    Angle.fromMilliarcseconds(100).toMicroarcseconds
+    Angle.milliarcseconds.reverseGet(100).toMicroarcseconds
 
   /** An `fs2.Pipe` that passes only elements which differ by more than the
     * provided delta velocity.
@@ -52,7 +52,7 @@ trait EphemerisCompression {
 
   /** Standard acceleration threshold for compression, 0.2 arcsec/hour^2. */
   val StandardAccelerationLimitµas: Long =
-    Angle.fromMilliarcseconds(200).toMicroarcseconds
+    Angle.milliarcseconds.reverseGet(200).toMicroarcseconds
 
   /** An `fs2.Pipe` that passes only elements which sufficiently differ by an
     * accumulated average acceleration.
@@ -101,7 +101,7 @@ object EphemerisCompression extends EphemerisCompression {
 
   private class ElementOps(val self: Element) extends AnyVal {
     private def µas(f: Offset => Angle): Double =
-      f(self._2.delta).toSignedMicroarcseconds.toDouble
+      Angle.signedMicroarcseconds.get(f(self._2.delta)).toDouble
 
     // Extracts the velocity in p as decimal microarcseconds / hour
     def µasP: Double =

@@ -43,8 +43,8 @@ class StepDaoSpec extends FlatSpec with Matchers with DaoTest {
                 F2WindowCover.Close
               ),
               TelescopeConfig(
-                Offset.P(Angle.fromMilliarcseconds( 1250)), // 1.25 arcseconds
-                Offset.Q(Angle.fromMilliarcseconds(-2750))
+                Offset.P(Angle.milliarcseconds.reverseGet( 1250)), // 1.25 arcseconds
+                Offset.Q(Angle.milliarcseconds.reverseGet(-2750))
               )
             )
           )

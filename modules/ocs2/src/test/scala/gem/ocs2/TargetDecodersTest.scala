@@ -107,13 +107,13 @@ object TargetDecodersTest {
     val c   = Coordinates(ra, dec)
 
     val off = Offset(
-                Offset.P(Angle.fromMilliarcseconds(2)),
-                Offset.Q(Angle.fromMilliarcseconds(3))
+                Offset.P(Angle.milliarcseconds.reverseGet(2)),
+                Offset.Q(Angle.milliarcseconds.reverseGet(3))
               )
 
     val rv  = RadialVelocity.fromRedshift(4.0)
 
-    val px  = Angle.fromMilliarcseconds(1)
+    val px  = Angle.milliarcseconds.reverseGet(1)
 
     ProperMotion(c, Epoch.J2000, Some(off), Some(rv), Some(px))
   }

@@ -58,10 +58,10 @@ final class EphemerisCoordinatesSpec extends CatsSuite {
 
   private def midpoint(a: EphemerisCoordinates, b: EphemerisCoordinates, f: Offset => Angle): Assertion = {
     val m  = a.interpolate(b, 0.5).delta
-    val mΔ = f(m).toSignedMicroarcseconds
+    val mΔ = Angle.signedMicroarcseconds.get(f(m))
 
-    val aΔ = f(a.delta).toSignedMicroarcseconds
-    val bΔ = f(b.delta).toSignedMicroarcseconds
+    val aΔ = Angle.signedMicroarcseconds.get(f(a.delta))
+    val bΔ = Angle.signedMicroarcseconds.get(f(b.delta))
 
     mΔ shouldEqual ((aΔ + bΔ)/2.0).round
   }
