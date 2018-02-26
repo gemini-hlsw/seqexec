@@ -10,10 +10,10 @@ import gem.optics.Wedge
 final case class WedgeLaws[A, B](fab: Wedge[A, B]) {
 
   def normalizeA(a: A): IsEq[B] =
-    fab.get(fab.normalizeA(a)) <-> fab.get(fab.reverseGet(fab.get(a)))
+    fab.get(fab.normalizeA(a)) <-> fab.get(a)
 
   def normalizeB(b: B): IsEq[A] =
-    fab.reverseGet(fab.normalizeB(b)) <-> fab.reverseGet(fab.get(fab.reverseGet(b)))
+    fab.reverseGet(fab.normalizeB(b)) <-> fab.reverseGet(b)
 
   def normalizedReverseGetRoundTrip(b: B): IsEq[B] = {
     val bʹ = fab.normalizeB(b)

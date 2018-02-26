@@ -11,19 +11,19 @@ import org.scalacheck.Prop._
 import org.typelevel.discipline.Laws
 
 trait WedgeTests[A, B] extends Laws {
-  val wedgeLaws: WedgeLaws[A, B]
+  val laws: WedgeLaws[A, B]
 
   def wedge(
     implicit aa: Arbitrary[A], ea: Eq[A],
              ab: Arbitrary[B], eb: Eq[B]
   ): RuleSet =
     new SimpleRuleSet("Wedge",
-      "normalize A"                     -> forAll((a: A) => wedgeLaws.normalizeA(a)),
-      "normalize B"                     -> forAll((b: B) => wedgeLaws.normalizeB(b)),
-      "normalized get roundtrip"        -> forAll((a: A) => wedgeLaws.normalizedGetRoundTrip(a)),
-      "normalized reverseGet roundtrip" -> forAll((b: B) => wedgeLaws.normalizedReverseGetRoundTrip(b)),
-      "coverage A"                      -> exists((a: A) => wedgeLaws.demonstratesCoverageA(a)),
-      "coverage B"                      -> exists((b: B) => wedgeLaws.demonstratesCoverageB(b))
+      "normalize A"                     -> forAll((a: A) => laws.normalizeA(a)),
+      "normalize B"                     -> forAll((b: B) => laws.normalizeB(b)),
+      "reverseGet reverseGet roundtrip" -> forAll((a: A) => laws.normalizedGetRoundTrip(a)),
+      "normalized get roundtrip"        -> forAll((b: B) => laws.normalizedReverseGetRoundTrip(b)),
+      "coverage A"                      -> exists((a: A) => laws.demonstratesCoverageA(a)),
+      "coverage B"                      -> exists((b: B) => laws.demonstratesCoverageB(b))
     )
 
   /** Convenience constructor that allows passing an explicit generator for input values. */
@@ -39,7 +39,7 @@ object WedgeTests extends Laws {
 
   def apply[A, B](fab: Wedge[A, B]): WedgeTests[A, B] =
     new WedgeTests[A, B] {
-      val wedgeLaws = new WedgeLaws(fab)
+      val laws = new WedgeLaws(fab)
     }
 
 }
