@@ -34,12 +34,12 @@ final case class Wedge[A, B](get: A => B, reverseGet: B => A) {
     composeIso(f)
 
   /** Wedge is an invariant functor over A. */
-  def imapA[C](f: C => B, g: B => C): Wedge[A, C] =
-    Wedge(get andThen g, f andThen reverseGet)
+  def imapA[C](f: A => C, g: C => A): Wedge[C, B] =
+    Wedge(g andThen get, reverseGet andThen f)
 
   /** Wedge is an invariant functor over B. */
-  def imapB[C](f: A => C, g: C => A): Wedge[C, B] =
-    Wedge(g andThen get, reverseGet andThen f)
+  def imapB[C](f: C => B, g: B => C): Wedge[A, C] =
+    Wedge(get andThen g, f andThen reverseGet)
 
   /** Normalize A via two round-trips through B. */
   def normalizeA(a: A): A =
