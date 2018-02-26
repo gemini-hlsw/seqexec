@@ -201,7 +201,7 @@ class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosCo
   } yield ()
 
   override def endObserve: SeqAction[Unit] = for {
-    _ <- EitherT(Task(Log.info("Send endObserve to Gmos").right))
+    _ <- EitherT(Task(Log.debug("Send endObserve to Gmos").right))
     _ <- GmosEpics.instance.endObserveCmd.setTimeout(DefaultTimeout)
     _ <- GmosEpics.instance.endObserveCmd.mark
     _ <- GmosEpics.instance.endObserveCmd.post
@@ -215,11 +215,11 @@ class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosCo
   } yield ()
 
   override def resumePaused(expTime: Time): SeqAction[ObserveCommand.Result] = for {
-    _ <- EitherT(Task(Log.info("Resume Gmos observation").right))
+    _ <- EitherT(Task(Log.debug("Resume Gmos observation").right))
     _ <- GmosEpics.instance.continueCmd.setTimeout(expTime+ReadoutTimeout)
     _ <- GmosEpics.instance.continueCmd.mark
     ret <- GmosEpics.instance.continueCmd.post
-    _ <- EitherT(Task(Log.info("Completed Gmos observation").right))
+    _ <- EitherT(Task(Log.debug("Completed Gmos observation").right))
   } yield ret
 
   override def stopPaused = for {

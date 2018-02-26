@@ -129,12 +129,12 @@ object Flamingos2ControllerEpics extends Flamingos2Controller {
   }
 
   override def applyConfig(config: Flamingos2Config): SeqAction[Unit] = for {
-    _ <- EitherT(Task(Log.info("Start Flamingos2 configuration").right))
+    _ <- EitherT(Task(Log.debug("Start Flamingos2 configuration").right))
     _ <- setDCConfig(config.dc)
     _ <- setCCConfig(config.cc)
     _ <- Flamingos2Epics.instance.configCmd.setTimeout(ConfigTimeout)
     _ <- Flamingos2Epics.instance.post
-    _ <- EitherT(Task(Log.info("Completed Flamingos2 configuration").right))
+    _ <- EitherT(Task(Log.debug("Completed Flamingos2 configuration").right))
   } yield ()
 
   override def observe(fileId: ImageFileId, expTime: Time): SeqAction[ImageFileId] = for {
@@ -144,7 +144,7 @@ object Flamingos2ControllerEpics extends Flamingos2Controller {
   } yield fileId
 
   override def endObserve =  for {
-      _ <- EitherT(Task(Log.info("Send endObserve to Flamingos2").right))
+      _ <- EitherT(Task(Log.debug("Send endObserve to Flamingos2").right))
       _ <- Flamingos2Epics.instance.endObserveCmd.setTimeout(DefaultTimeout)
       _ <- Flamingos2Epics.instance.endObserveCmd.mark
       _ <- Flamingos2Epics.instance.endObserveCmd.post
