@@ -59,12 +59,12 @@ final case class SplitMono[A, B](get: A => B, reverseGet: B => A) {
     composeIso(f)
 
   /** SplitMono is an invariant functor over A. */
-  def imapA[C](f: C => B, g: B => C): SplitMono[A, C] =
-    SplitMono(get andThen g, f andThen reverseGet)
+  def imapA[C](f: A => C, g: C => A): SplitMono[C, B] =
+    SplitMono(g andThen get, reverseGet andThen f)
 
   /** SplitMono is an invariant functor over B. */
-  def imapB[C](f: A => C, g: C => A): SplitMono[C, B] =
-    SplitMono(g andThen get, reverseGet andThen f)
+  def imapB[C](f: C => B, g: B => C): SplitMono[A, C] =
+    SplitMono(get andThen g, f andThen reverseGet)
 
   /**
    * reverseGet and get, yielding a normalized formatted value. Subsequent reverseGet/get cycles are
