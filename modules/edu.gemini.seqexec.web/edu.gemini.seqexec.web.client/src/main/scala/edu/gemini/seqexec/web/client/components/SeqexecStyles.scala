@@ -739,4 +739,7 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     paddingTop(0.6.em)
   )
 
+  val labelPointer: StyleA = style(
+    cursor.pointer
+  )
 }

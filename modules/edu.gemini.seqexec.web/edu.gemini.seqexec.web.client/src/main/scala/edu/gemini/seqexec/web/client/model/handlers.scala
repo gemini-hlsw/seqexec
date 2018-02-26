@@ -53,25 +53,29 @@ object handlers {
     def handleSilentTo: PartialFunction[Any, ActionResult[M]] = {
       case NavigateSilentTo(page) =>
         val effect = page match {
-          case InstrumentPage(i, None)         => Effect(Future(SelectInstrumentToDisplay(i)))
-          case InstrumentPage(i, Some(id))     => Effect(Future(UnShowStep(i))) + Effect(Future(SelectIdToDisplay(id)))
-          case SequenceConfigPage(_, id, step) => Effect(Future(ShowStep(id, step)))
-          case _                               => Effect(Future(NoAction: Action))
+          case InstrumentPage(i)               =>
+            Effect(Future(SelectInstrumentToDisplay(i)))
+          case SequencePage(i, id, _)          =>
+            Effect(Future(UnShowStep(i))) + Effect(Future(SelectIdToDisplay(id)))
+          case SequenceConfigPage(_, id, step) =>
+            Effect(Future(ShowStep(id, step)))
+          case _                               =>
+            Effect(Future(NoAction: Action))
         }
         updatedSilent(page, effect)
     }
 
-    def handleSyncToPage: PartialFunction[Any, ActionResult[M]] = {
-      case SyncToPage(s) =>
+    def handleInitialSyncToPage: PartialFunction[Any, ActionResult[M]] = {
+      case InitialSyncToPage(s) =>
         // the page maybe not in sync with the tabs. Let's fix that
         value match {
-          case InstrumentPage(i, Some(id)) if i === s.metadata.instrument && id === s.id =>
+          case SequencePage(i, id, _) if i === s.metadata.instrument && id === s.id          =>
             effectOnly(Effect(Future(SelectIdToDisplay(s.id))))
-          case InstrumentPage(_, None) =>
-            effectOnly(Effect(Future(SelectIdToDisplay(s.id))))
+          case InstrumentPage(_)                                                             =>
+            updated(SequencePage(s.metadata.instrument, s.id, 0), Effect(Future(SelectIdToDisplay(s.id))))
           case SequenceConfigPage(i, id, step) if i === s.metadata.instrument && id === s.id =>
             effectOnly(Effect(Future(ShowStep(s.id, step))))
-          case _ =>
+          case _                                                                             =>
             noChange
         }
     }
@@ -80,9 +84,9 @@ object handlers {
       case SyncToRunning(s) =>
         // We'll select the sequence currently running and show the correct url
         value match {
-          case Root | InstrumentPage(_, None) =>
-              updated(InstrumentPage(s.metadata.instrument, s.id.some), Effect(Future(SelectInstrumentToDisplay(s.metadata.instrument))))
-          case InstrumentPage(_, Some(id))    =>
+          case Root | InstrumentPage(_)        =>
+              updated(InstrumentPage(s.metadata.instrument), Effect(Future(SelectInstrumentToDisplay(s.metadata.instrument))))
+          case SequencePage(_, id, _)          =>
             effectOnly(Effect(Future(SelectIdToDisplay(id))))
           case SequenceConfigPage(_, id, step) =>
             effectOnly(Effect(Future(SelectSequenceConfig(id, step))))
@@ -93,8 +97,10 @@ object handlers {
       case SyncPageToRemovedSequence(id) =>
         // If the id is selected, reset the route
         value match {
-          case InstrumentPage(i, Some(sid)) if sid === id =>
-            updated(InstrumentPage(i, none), Effect(Future(SelectInstrumentToDisplay(i))))
+          case InstrumentPage(i)                          =>
+            updated(InstrumentPage(i), Effect(Future(SelectInstrumentToDisplay(i))))
+          case SequencePage(i, sid, _) if sid === id      =>
+            updated(InstrumentPage(i), Effect(Future(SelectInstrumentToDisplay(i))))
           case _                                          =>
             noChange
         }
@@ -104,8 +110,8 @@ object handlers {
       case SyncPageToAddedSequence(i, id) =>
         // Switch to the sequence in none is selected
         value match {
-          case Root | InstrumentPage(_, None) =>
-            updated(InstrumentPage(i, Some(id)), Effect(Future(SelectIdToDisplay(id))))
+          case Root | InstrumentPage(_) =>
+            updated(SequencePage(i, id, 0), Effect(Future(SelectIdToDisplay(id))))
           case _                                  =>
             noChange
         }
@@ -114,7 +120,7 @@ object handlers {
     def handle: PartialFunction[Any, ActionResult[M]] =
       List(handleNavigateTo,
         handleSilentTo,
-        handleSyncToPage,
+        handleInitialSyncToPage,
         handleSyncToRunning,
         handleSyncPageToRemovedSequence,
         handleSyncPageToAddedSequence).suml
@@ -485,6 +491,11 @@ object handlers {
         case SequenceView(_, metadata, _, _, _) => value.site.map(_.instruments.list.toList.contains(metadata.instrument)).getOrElse(false)
       })
 
+    private def inInstrumentPage = value.location match {
+      case Root | InstrumentPage(_) => true
+      case _                        => false
+    }
+
     val logMessage: PartialFunction[Any, ActionResult[M]] = {
       case ServerMessage(l: ServerLogMessage) =>
         effectOnly(Effect(Future(AppendToLog(l))))
@@ -563,7 +574,7 @@ object handlers {
         val updateObserverE = observer.fold(VoidEffect)(o => Effect(Future(UpdateObserver(id, o): Action)))
         val syncPageE = for {
           s <- newSequence
-          if view.queue.length === 1
+          if inInstrumentPage
         } yield Effect(Future(SyncPageToAddedSequence(s.metadata.instrument, id): Action))
         val effects = updateObserverE + syncPageE.fold(VoidEffect)(identity)
         updated(value.copy(sequences = filterSequences(view), firstLoad = false), effects)
@@ -591,7 +602,7 @@ object handlers {
              List[Option[Effect]](VoidEffect.some))
           ) { case ((seq, eff), q) =>
               val syncUrlE: Option[Effect] =
-                syncToRunE.orElse(value.firstLoad option Effect(Future(SyncToPage(q)))).orElse(VoidEffect.some)
+                syncToRunE.orElse(value.firstLoad option Effect(Future(InitialSyncToPage(q)))).orElse(VoidEffect.some)
               if (q.metadata.observer.isEmpty && observer.nonEmpty) {
                 (q.copy(metadata = q.metadata.copy(observer = observer.map(Observer.apply))) :: seq,
                 Effect(Future(UpdateObserver(q.id, observer.getOrElse("")))).some ::

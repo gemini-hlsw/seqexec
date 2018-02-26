@@ -28,41 +28,53 @@ object Pointing {
 object Label {
   @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
   final case class Props(text: String,
-    htmlFor : Option[String] = None,
-    color   : Option[String] = None,
-    tag     : Boolean = false,
-    basic   : Boolean = false,
-    size    : Size = Size.NotSized,
-    pointing: Pointing = Pointing.None,
-    icon    : Option[Icon] = None,
-    extraStyles: List[scalacss.internal.StyleA] = Nil)
+    htmlFor                  : Option[String] = None,
+    color                    : Option[String] = None,
+    tag                      : Boolean = false,
+    basic                    : Boolean = false,
+    link                     : Boolean = false,
+    size                     : Size = Size.NotSized,
+    pointing                 : Pointing = Pointing.None,
+    icon                     : Option[Icon] = None,
+    extraStyles              : List[scalacss.internal.StyleA] = Nil)
+
+  def content(p: Props): List[TagMod] = List(
+    ^.cls := p.color.fold("ui label")(u => s"ui $u label"),
+    p.extraStyles.map(scalacssStyleaToTagMod).toTagMod,
+    ^.classSet(
+      "basic"          -> p.basic,
+      "tag"            -> p.tag,
+      "tiny"           -> (p.size === Size.Tiny),
+      "mini"           -> (p.size === Size.Mini),
+      "small"          -> (p.size === Size.Small),
+      "large"          -> (p.size === Size.Large),
+      "big"            -> (p.size === Size.Big),
+      "huge"           -> (p.size === Size.Huge),
+      "massive"        -> (p.size === Size.Massive),
+      "pointing"       -> (p.pointing === Pointing.Up),
+      "pointing below" -> (p.pointing === Pointing.Down),
+      "left pointing"  -> (p.pointing === Pointing.Left),
+      "right pointing" -> (p.pointing === Pointing.Right)
+    ),
+    ^.htmlFor :=? p.htmlFor,
+    p.icon.whenDefined,
+    p.text
+  )
 
   private val component = ScalaComponent.builder[Props]("Label")
     .stateless
     .renderPC((_, p, c) =>
-      <.label(
-        ^.cls := p.color.fold("ui label")(u => s"ui $u label"),
-        p.extraStyles.map(scalacssStyleaToTagMod).toTagMod,
-        ^.classSet(
-          "basic"          -> p.basic,
-          "tag"            -> p.tag,
-          "tiny"           -> (p.size === Size.Tiny),
-          "mini"           -> (p.size === Size.Mini),
-          "small"          -> (p.size === Size.Small),
-          "large"          -> (p.size === Size.Large),
-          "big"            -> (p.size === Size.Big),
-          "huge"           -> (p.size === Size.Huge),
-          "massive"        -> (p.size === Size.Massive),
-          "pointing"       -> (p.pointing === Pointing.Up),
-          "pointing below" -> (p.pointing === Pointing.Down),
-          "left pointing"  -> (p.pointing === Pointing.Left),
-          "right pointing" -> (p.pointing === Pointing.Right)
-        ),
-        ^.htmlFor :=? p.htmlFor,
-        p.icon.whenDefined,
-        p.text,
-        c
-      )
+      if (p.link) {
+        <.a(
+          content(p).toTagMod,
+          c
+        )
+      } else {
+        <.label(
+          content(p).toTagMod,
+          c
+        )
+      }
     ).build
 
   def apply(p: Props, children: VdomNode*): Unmounted[Props, Unit, Unit] = component(p)(children: _*)

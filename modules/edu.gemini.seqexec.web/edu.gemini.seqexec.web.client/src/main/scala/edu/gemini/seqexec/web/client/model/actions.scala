@@ -18,7 +18,7 @@ object actions {
   // Actions
   final case class NavigateTo(page: Pages.SeqexecPages) extends Action
   final case class NavigateSilentTo(page: Pages.SeqexecPages) extends Action
-  final case class SyncToPage(view: SequenceView) extends Action
+  final case class InitialSyncToPage(view: SequenceView) extends Action
   final case class SyncToRunning(view: SequenceView) extends Action
   final case class SyncPageToRemovedSequence(id: SequenceId) extends Action
   final case class SyncPageToAddedSequence(i: Instrument, id: SequenceId) extends Action

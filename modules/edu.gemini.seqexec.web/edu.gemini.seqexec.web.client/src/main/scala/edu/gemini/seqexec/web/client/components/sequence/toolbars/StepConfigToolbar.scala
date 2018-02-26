@@ -3,7 +3,7 @@
 
 package edu.gemini.seqexec.web.client.components.sequence.toolbars
 
-import edu.gemini.seqexec.model.Model.{Instrument, SequenceId, SeqexecSite}
+import edu.gemini.seqexec.model.Model.{Instrument, SequenceId, SeqexecSite, StepId}
 import edu.gemini.seqexec.web.client.model.Pages._
 import edu.gemini.seqexec.web.client.circuit.SeqexecCircuit
 import edu.gemini.seqexec.web.client.components.SeqexecStyles
@@ -20,11 +20,12 @@ import scalacss.ScalaCssReact._
   * Toolbar when displaying a step configuration
   */
 object StepConfigToolbar {
-  final case class Props(router: RouterCtl[SeqexecPages], site: SeqexecSite, instrument: Instrument, id: Option[SequenceId], step: Int) {
+  final case class Props(router: RouterCtl[SeqexecPages], site: SeqexecSite, instrument: Instrument, id: Option[SequenceId], step: StepId) {
     protected[sequence] val sequenceInfoConnects = site.instruments.list.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(i)))).toMap
   }
 
-  def backToSequence(i: Instrument, id: Option[SequenceId]): Callback = SeqexecCircuit.dispatchCB(NavigateSilentTo(InstrumentPage(i, id)))
+  def backToSequence(p: Props): Callback =
+    p.id.map(si => SeqexecCircuit.dispatchCB(NavigateSilentTo(SequencePage(p.instrument, si, p.step)))).getOrEmpty
 
   private val component = ScalaComponent.builder[Props]("StepConfigToolbar")
     .stateless
@@ -47,8 +48,8 @@ object StepConfigToolbar {
             ^.cls := "ui left floated eight wide column",
             SeqexecStyles.shorterFields,
             <.div(
-              p.router.link(InstrumentPage(p.instrument, p.id))
-                (Button(Button.Props(icon = Some(IconChevronLeft), labeled = true, onClick = backToSequence(p.instrument, p.id)), "Back"))
+              p.router.link(SequencePage(p.instrument, p.id.getOrElse(""), p.step))
+                (Button(Button.Props(icon = Some(IconChevronLeft), labeled = true, onClick = backToSequence(p)), "Back"))
             )
           ),
           <.div(

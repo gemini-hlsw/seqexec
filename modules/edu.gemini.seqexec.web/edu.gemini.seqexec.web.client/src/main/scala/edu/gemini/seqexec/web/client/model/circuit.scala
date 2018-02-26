@@ -12,6 +12,7 @@ import japgolly.scalajs.react.Callback
 import edu.gemini.seqexec.model.UserDetails
 import edu.gemini.seqexec.model.Model._
 import edu.gemini.seqexec.web.client.model._
+import edu.gemini.seqexec.web.client.model.Pages
 import edu.gemini.seqexec.web.client.lenses._
 import edu.gemini.seqexec.web.client.handlers._
 import edu.gemini.seqexec.web.client.model.SeqexecAppRootModel.LoadedSequences
@@ -36,7 +37,7 @@ object circuit {
 
   // All these classes are focused views of the root model. They are used to only update small sections of the
   // UI even if other parts of the root model change
-  final case class WebSocketsFocus(sequences: LoadedSequences, user: Option[UserDetails], site: Option[SeqexecSite], firstLoad: Boolean) extends UseValueEq
+  final case class WebSocketsFocus(location: Pages.SeqexecPages, sequences: LoadedSequences, user: Option[UserDetails], site: Option[SeqexecSite], firstLoad: Boolean) extends UseValueEq
   final case class SequenceInQueue(id: SequenceId, status: SequenceState, instrument: Instrument, active: Boolean, name: String, targetName: Option[TargetName], runningStep: Option[(Int, Int)]) extends UseValueEq
   object SequenceInQueue {
     implicit val order: Order[SequenceInQueue] = Order.orderBy(_.id)
@@ -63,7 +64,7 @@ object circuit {
 
     // Model read-writers
     private val webSocketFocusRW: ModelRW[SeqexecAppRootModel, WebSocketsFocus] =
-      zoomRW(m => WebSocketsFocus(m.uiModel.sequences, m.uiModel.user, m.site, m.uiModel.firstLoad)) ((m, v) => m.copy(uiModel = m.uiModel.copy(sequences = v.sequences, user = v.user, firstLoad = v.firstLoad), site = v.site))
+      zoomRW(m => WebSocketsFocus(m.uiModel.navLocation, m.uiModel.sequences, m.uiModel.user, m.site, m.uiModel.firstLoad)) ((m, v) => m.copy(uiModel = m.uiModel.copy(sequences = v.sequences, user = v.user, firstLoad = v.firstLoad), site = v.site))
 
     private val wsHandler                = new WebSocketHandler(zoomTo(_.ws))
     private val wsEventsHandler          = new WebSocketEventsHandler(webSocketFocusRW)

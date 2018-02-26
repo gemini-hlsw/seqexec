@@ -101,7 +101,7 @@ object SequenceTabsBody {
     .stateless
     .render_P(p =>
       <.div(
-        InstrumentsTabs(p.site),
+        InstrumentsTabs(InstrumentsTabs.Props(p.router, p.site)),
         p.instrumentConnects.map(c => c(s => SequenceTabContent(p.router, p.site, s))).toList.toTagMod
       )
     ).build

@@ -24,7 +24,8 @@ object model {
     sealed trait SeqexecPages
 
     case object Root extends SeqexecPages
-    final case class InstrumentPage(instrument: Instrument, obsId: Option[SequenceId]) extends SeqexecPages
+    final case class InstrumentPage(instrument: Instrument) extends SeqexecPages
+    final case class SequencePage(instrument: Instrument, obsId: SequenceId, step: StepId) extends SeqexecPages
     final case class SequenceConfigPage(instrument: Instrument, obsId: SequenceId, step: Int) extends SeqexecPages
 
     implicit val equal: Equal[SeqexecPages] = Equal.equalA

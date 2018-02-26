@@ -22,7 +22,6 @@ import scalacss.ScalaCssReact._
 import scala.scalajs.js.timers.SetTimeoutHandle
 import scalaz.syntax.show._
 import scalaz.syntax.equal._
-import scalaz.syntax.std.option._
 import scalaz.effect.IO
 
 object AppTitle {
@@ -113,6 +112,13 @@ object SeqexecMain {
 object SeqexecUI {
   final case class RouterProps(page: InstrumentPage, router: RouterCtl[InstrumentPage])
 
+  def pageTitle(site: SeqexecSite)(p: SeqexecPages): String = p match {
+    case SequenceConfigPage(_, id, _) => s"Seqexec - $id"
+    case SequencePage(_, id, _)       => s"Seqexec - $id"
+    case InstrumentPage(i)            => s"Seqexec - ${i.show}"
+    case _                            => s"Seqexec - ${site.shows}"
+  }
+
   @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
   def router(site: SeqexecSite): IO[Router[SeqexecPages]] = {
     val instrumentNames = site.instruments.map(i => (i.shows, i)).list.toList.toMap
@@ -128,24 +134,24 @@ object SeqexecUI {
         }(p => (p.instrument.shows, p.obsId, p.step))) {
           case x @ SequenceConfigPage(i, _, _) if site.instruments.list.toList.contains(i) => x
         } ~> dynRenderR((p, r) => SeqexecMain(site, r))
-      | dynamicRoute(("/" ~ string("[a-zA-Z0-9-]+") ~ "/" ~ string("[a-zA-Z0-9-]+").option)
+      | dynamicRoute(("/" ~ string("[a-zA-Z0-9-]+") ~ "/" ~ string("[a-zA-Z0-9-]+"))
         .pmap {
-          case (i, Some(s)) => instrumentNames.get(i).map(InstrumentPage(_, s.some))
-          case (i, None)    => instrumentNames.get(i).map(InstrumentPage(_, None))
+          case (i, s) => instrumentNames.get(i).map(SequencePage(_, s, 0))
         }(p => (p.instrument.shows, p.obsId))) {
-          case x @ InstrumentPage(i, _) if site.instruments.list.toList.contains(i) => x
+          case x @ SequencePage(i, _, _) if site.instruments.list.toList.contains(i) => x
         } ~> dynRenderR((p, r) => SeqexecMain(site, r))
       | dynamicRoute(("/" ~ string("[a-zA-Z0-9-]+"))
-        .pmap(i => instrumentNames.get(i).map(InstrumentPage(_, None)))(p => p.instrument.shows)) {
-          case x @ InstrumentPage(i, _) if site.instruments.list.toList.contains(i) => x
+        .pmap(i => instrumentNames.get(i).map(InstrumentPage(_)))(p => p.instrument.shows)) {
+          case x @ InstrumentPage(i) if site.instruments.list.toList.contains(i) => x
         } ~> dynRenderR((p, r) => SeqexecMain(site, r))
       )
         .notFound(redirectToPage(Root)(Redirect.Push))
         // Runtime verification that all pages are routed
-        .verify(Root, site.instruments.list.toList.map(i => InstrumentPage(i, None)): _*)
+        .verify(Root, site.instruments.list.toList.map(i => InstrumentPage(i)): _*)
         .onPostRender((_, next) =>
           Callback.when(next =/= SeqexecCircuit.zoom(_.uiModel.navLocation).value)(Callback(SeqexecCircuit.dispatch(NavigateSilentTo(next)))))
         .renderWith { case (_, r) => <.div(r.render()).render}
+        .setTitle(pageTitle(site))
         .logToConsole
     }
 

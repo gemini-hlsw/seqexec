@@ -5,27 +5,27 @@ package edu.gemini.seqexec.web.client.components.sequence
 
 import diode.react.ModelProxy
 import edu.gemini.seqexec.model.Model.{SequenceState, SeqexecSite}
-import edu.gemini.seqexec.web.client.actions.{NavigateTo, SelectInstrumentToDisplay}
-import edu.gemini.seqexec.web.client.model.Pages.InstrumentPage
+import edu.gemini.seqexec.web.client.actions.{NavigateTo, SelectIdToDisplay, SelectInstrumentToDisplay}
+import edu.gemini.seqexec.web.client.model.Pages.{InstrumentPage, SequencePage, SeqexecPages}
 import edu.gemini.seqexec.web.client.circuit.{SeqexecCircuit, InstrumentStatusFocus}
 import edu.gemini.seqexec.web.client.semanticui._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
 import edu.gemini.seqexec.web.client.components.SeqexecStyles
 import edu.gemini.seqexec.web.client.semanticui.elements.label.Label
+import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{Callback, ScalaComponent}
 
 import scalacss.ScalaCssReact._
 
-import scalaz.std.option._
 import scalaz.std.string._
 import scalaz.syntax.std.option._
 import scalaz.syntax.show._
 import scalaz.syntax.equal._
 
 object InstrumentTab {
-  final case class Props(site: SeqexecSite, t: ModelProxy[InstrumentStatusFocus])
+  final case class Props(router: RouterCtl[SeqexecPages], site: SeqexecSite, t: ModelProxy[InstrumentStatusFocus])
 
   private val component = ScalaComponent.builder[Props]("InstrumentMenu")
     .stateless
@@ -50,15 +50,18 @@ object InstrumentTab {
         case SequenceState.Completed     => "green".some
         case _                           => "grey".some
       }
+      val linkPage: SeqexecPages = sequenceId.fold(InstrumentPage(instrument): SeqexecPages)(SequencePage(instrument, _, 0))
       val instrumentNoId =
         <.div(SeqexecStyles.instrumentTabLabel, instrument.shows)
       val instrumentWithId =
         <.div(
           SeqexecStyles.instrumentTabLabel,
           <.div(SeqexecStyles.activeInstrumentLabel, instrument.shows),
-          Label(Label.Props(tabTitle, color = color, icon = icon))
+          Label(Label.Props(tabTitle, color = color, icon = icon, extraStyles = List(SeqexecStyles.labelPointer)))
         )
-      <.a(
+      p.router.link(linkPage)(
+        IconAttention.copyIcon(color = Some("red")).when(hasError),
+        sequenceId.fold(instrumentNoId)(_ => instrumentWithId),
         ^.cls := "item",
         ^.classSet(
           "active" -> active,
@@ -67,9 +70,7 @@ object InstrumentTab {
         SeqexecStyles.instrumentTab,
         SeqexecStyles.activeInstrumentContent.when(active),
         SeqexecStyles.errorTab.when(hasError),
-        dataTab := instrument.shows,
-        IconAttention.copyIcon(color = Some("red")).when(hasError),
-        sequenceId.fold(instrumentNoId)(_ => instrumentWithId)
+        dataTab := instrument.shows
       )
     }.componentDidMount(ctx =>
       Callback {
@@ -81,10 +82,13 @@ object InstrumentTab {
           JsTabOptions
             .onVisible { (x: String) =>
               val instrument = ctx.props.site.instruments.list.toList.find(_.shows === x)
-              val updateModelCB = (ctx.props.t().idState, instrument) match {
-                case (_, Some(i))             =>
-                  ctx.props.t.dispatchCB(NavigateTo(InstrumentPage(i, none))) >> ctx.props.t.dispatchCB(SelectInstrumentToDisplay(i))
-                case _                        =>
+              val sequenceId = ctx.props.t().idState.map(_._1)
+              val updateModelCB = (sequenceId, instrument) match {
+                case (Some(id), Some(i)) =>
+                  ctx.props.t.dispatchCB(NavigateTo(SequencePage(i, id, 0))) >> ctx.props.t.dispatchCB(SelectIdToDisplay(id))
+                case (_, Some(i))        =>
+                  ctx.props.t.dispatchCB(NavigateTo(InstrumentPage(i))) >> ctx.props.t.dispatchCB(SelectInstrumentToDisplay(i))
+                case _                   =>
                   Callback.empty
               }
               // runNow as we are outside react loop
@@ -94,13 +98,13 @@ object InstrumentTab {
       }
     ).build
 
-  def apply(site: SeqexecSite, p: ModelProxy[InstrumentStatusFocus]): Unmounted[Props, Unit, Unit] = component(Props(site, p))
+  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
 }
 /**
   * Menu with tabs
   */
 object InstrumentsTabs {
-  final case class Props(site: SeqexecSite) {
+  final case class Props(router: RouterCtl[SeqexecPages], site: SeqexecSite) {
     protected[sequence] val instrumentConnects = site.instruments.list.toList.map(i => SeqexecCircuit.connect(SeqexecCircuit.instrumentStatusReader(i)))
   }
 
@@ -109,9 +113,9 @@ object InstrumentsTabs {
     .render_P(p =>
       <.div(
         ^.cls := "ui attached tabular menu",
-        p.instrumentConnects.map(c => c(InstrumentTab(p.site, _))).toTagMod
+        p.instrumentConnects.map(c => c(m => InstrumentTab(InstrumentTab.Props(p.router, p.site, m)))).toTagMod
       )
     ).build
 
-  def apply(site: SeqexecSite): Unmounted[Props, Unit, Unit] = component(Props(site))
+  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
 }
