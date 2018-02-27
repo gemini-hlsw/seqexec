@@ -1,6 +1,7 @@
 const Path = require("path");
 const Merge = require("webpack-merge");
 const ExtractTextPlugin = require("extract-text-webpack-plugin");
+const PostCSSPlugin = require("postcss-loader");
 
 const generatedConfig = require("./scalajs.webpack.config");
 

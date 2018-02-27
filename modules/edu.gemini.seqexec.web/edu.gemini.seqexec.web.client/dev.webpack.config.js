@@ -2,6 +2,7 @@ const Path = require("path");
 const Webpack = require("webpack");
 const Merge = require("webpack-merge");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
+const Autoprefixer = require("autoprefixer");
 
 const Common = require("./common.webpack.config.js");
 const isDevServer = process.argv.some(s => s.match(/webpack-dev-server\.js$/));
@@ -25,8 +26,18 @@ const Web = Merge(Common.Web, {
           {
             loader: "style-loader" // creates style nodes from JS strings
           },
+          // translates CSS into CommonJS
+          { loader: "css-loader", options: { importLoaders: 1 } },
           {
-            loader: "css-loader" // translates CSS into CommonJS
+            loader: "postcss-loader", // post css plugins
+            options: {
+              ident: "postcss",
+              plugins: loader => [
+                Autoprefixer({
+                  browsers: ["last 3 versions", "> 1%"]
+                })
+              ]
+            }
           },
           {
             loader: "less-loader" // compiles Less to CSS
