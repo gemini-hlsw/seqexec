@@ -25,8 +25,16 @@ import java.nio.file.StandardOpenOption.{ CREATE, TRUNCATE_EXISTING }
   *
   * @param xa transactor to use for working with the database
   */
-final class TcsEphemerisExport[M[_]: Effect](xa: Transactor[M]) {
+final class TcsEphemerisExport[M[_]: Sync](xa: Transactor[M]) {
   import TcsEphemerisExport.RowLimit
+
+  /** Produces the name of the corresponding .eph file. */
+  def fileName(k: EphemerisKey): String =
+    s"${EphemerisKey.fromString.reverseGet(k)}.eph"
+
+  /** Resolves the ephemeris file corresponding to the given key. */
+  def resolve(key: EphemerisKey, dir: Path): Path =
+    dir.resolve(fileName(key))
 
   /** Exports up to `RowLimit` lines of ephemeris data associated with the given
     * key, site, and time range.
@@ -36,7 +44,7 @@ final class TcsEphemerisExport[M[_]: Effect](xa: Transactor[M]) {
     * that the time range is fully covered and a position at any point in the
     * range can be inferred from the ephemeris.
     *
-    * @param path  file path to which the ephemeris data should be written
+    * @param path  directory to which the ephemeris data should be written
     * @param key   key corresponding to the object to export
     * @param site  site for which the data is relevant
     * @param start start time for ephemeris data; if there is an element at
@@ -46,7 +54,7 @@ final class TcsEphemerisExport[M[_]: Effect](xa: Transactor[M]) {
     *              exactly this time it will be the last element (otherwise,
     *              the element immediately following this time is included)
     */
-  def exportOne(path: Path, key: EphemerisKey, site: Site, start: Timestamp, end: Timestamp): M[Unit] = {
+  def exportOne(key: EphemerisKey, site: Site, start: Timestamp, end: Timestamp, dir: Path): M[Unit] = {
     import EphemerisDao.{ bracketRange, streamRange }
 
     Stream.eval(bracketRange(key, site, start, end))
@@ -57,7 +65,7 @@ final class TcsEphemerisExport[M[_]: Effect](xa: Transactor[M]) {
       .intersperse("\n")
       .append(Stream.emit("\n"))
       .through(text.utf8Encode)
-      .to(file.writeAll(path, List(CREATE, TRUNCATE_EXISTING)))
+      .to(file.writeAll(resolve(key, dir), List(CREATE, TRUNCATE_EXISTING)))
       .compile
       .drain
   }
@@ -71,15 +79,11 @@ final class TcsEphemerisExport[M[_]: Effect](xa: Transactor[M]) {
     * @param start start time for the ephemeris data, inclusive
     * @param end   end time for the ephemeirs day, exclusive
     */
-  def exportAll(dir: Path, site: Site, start: Timestamp, end: Timestamp): M[Unit] = {
-    def name(k: EphemerisKey): String =
-      s"${EphemerisKey.fromString.reverseGet(k)}.eph"
-
+  def exportAll(site: Site, start: Timestamp, end: Timestamp, dir: Path): M[Unit] =
     for {
       ks <- EphemerisDao.selectKeys(site).transact(xa)
-      _  <- ks.toList.traverse(k => exportOne(dir.resolve(name(k)), k, site, start, end)).void
+      _  <- ks.toList.traverse(k => exportOne(k, site, start, end, resolve(k, dir))).void
     } yield ()
-  }
 }
 
 object TcsEphemerisExport {

@@ -15,6 +15,9 @@ package object command {
 
   val All: Commands[GemState] =
     Commands[GemState](
+      eph.exportCommand,
+      eph.reportCommand,
+      eph.updateCommand,
       ls.command,
       whoami.command,
       passwd.command

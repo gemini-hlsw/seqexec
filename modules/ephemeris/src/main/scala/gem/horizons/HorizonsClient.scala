@@ -15,7 +15,7 @@ import org.http4s.client.Client
 import org.http4s.client.blaze.{ BlazeClientConfig, Http1Client }
 
 import fs2.Stream
-import fs2.async.mutable.Semaphore
+//import fs2.async.mutable.Semaphore
 import fs2.text.utf8Decode
 
 import java.net.URLEncoder
@@ -32,8 +32,8 @@ import scala.concurrent.duration._
 object HorizonsClient {
 
   /** A global mutex for limiting concurrent connections to Horizons. */
-  private val mutex: Semaphore[IO] =
-    Semaphore[IO](1L)(implicitly, scala.concurrent.ExecutionContext.global).unsafeRunSync // note
+//  private val mutex: Semaphore[IO] =
+//    Semaphore[IO](1L)(implicitly, scala.concurrent.ExecutionContext.global).unsafeRunSync // note
 
   /** A stream that emits a single client that will be shut down automatically. An global mutex
     * ensures that only one such stream exists at a time.
@@ -41,9 +41,10 @@ object HorizonsClient {
   val client: Stream[IO, Client[IO]] = {
     // By using the singleton type here we prove that the mutex is a constant value. This guards
     // against someone accidentally refactoring it into a method.
-    val mutexʹ: mutex.type = mutex
+//    val mutexʹ: mutex.type = mutex
     val client = Http1Client.stream[IO](BlazeClientConfig.defaultConfig.copy(responseHeaderTimeout = 20.seconds))
-    Stream.bracket(mutexʹ.decrement)(_ => client, _ => mutexʹ.increment)
+//    Stream.bracket(mutexʹ.decrement)(_ => client, _ => mutexʹ.increment)
+    client
   }
 
   /** Horizons service URL. */
