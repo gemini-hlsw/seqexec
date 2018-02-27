@@ -34,7 +34,7 @@ object CopyLogToClipboard {
     .render_P { p =>
       // Callback
       val onCopy: OnCopy = (_, _) => Callback.log(s"Copied $p")
-      CopyToClipboard(CopyToClipboard.props(p, onCopy = onCopy), <.div(^.cls := "copydiv", IconCopy.copyIcon(link = true, extraStyles = List(SeqexecStyles.logIconRow))))
+      CopyToClipboard(CopyToClipboard.props(p, onCopy = onCopy), <.div(IconCopy.copyIcon(link = true, extraStyles = List(SeqexecStyles.logIconRow))))
     }.build
 
   def apply(p: String): Unmounted[String, Unit, Unit] = component(p)
@@ -44,6 +44,9 @@ object CopyLogToClipboard {
   * Area to display a sequence's log
   */
 object LogArea {
+  private val CssSettings = scalacss.devOrProdDefaults
+  import CssSettings._
+
   // Date time formatter
   private val formatter  = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SS")
   // ScalaJS defined trait
@@ -125,14 +128,15 @@ object LogArea {
       Column(Column.props(TimestampWidth, "local", label = "Timestamp", disableSort = true)),
       Column(Column.props(LevelWidth, "level", label = "Level", disableSort = true)),
       Column(Column.props(size.width.toInt - TimestampWidth - LevelWidth - ClipboardWidth, "msg", label = "Message", disableSort = true)),
-      Column(Column.props(ClipboardWidth, "clip", disableSort = true, headerRenderer = clipboardHeaderRenderer, cellRenderer = clipboardCellRenderer))
+      Column(Column.props(ClipboardWidth, "clip", disableSort = true, flexShrink = 0, flexGrow = 0, headerRenderer = clipboardHeaderRenderer, cellRenderer = clipboardCellRenderer, className = SeqexecStyles.clipboardIconDiv.htmlClass, headerClassName = SeqexecStyles.clipboardIconHeader.htmlClass))
     )
 
-    def rowClassName(s: State)(i: Int): String = (p.rowGetter(s)(i) match {
-      case LogRow(_, ServerLogLevel.INFO, _, _)  => SeqexecStyles.infoLog
-      case LogRow(_, ServerLogLevel.WARN, _, _)  => SeqexecStyles.warningLog
-      case LogRow(_, ServerLogLevel.ERROR, _, _) => SeqexecStyles.errorLog
-      case _                                     => SeqexecStyles.headerRowStyle
+    def rowClassName(s: State)(i: Int): String = ((i, p.rowGetter(s)(i)) match {
+      case (-1, _)                                    => SeqexecStyles.headerRowStyle
+      case (_, LogRow(_, ServerLogLevel.INFO, _, _))  => SeqexecStyles.stepRow + SeqexecStyles.infoLog
+      case (_, LogRow(_, ServerLogLevel.WARN, _, _))  => SeqexecStyles.stepRow + SeqexecStyles.warningLog
+      case (_, LogRow(_, ServerLogLevel.ERROR, _, _)) => SeqexecStyles.stepRow + SeqexecStyles.errorLog
+      case _                                          => SeqexecStyles.stepRow
     }).htmlClass
 
     Table(
@@ -141,6 +145,7 @@ object LogArea {
         noRowsRenderer = () =>
           <.div(
             ^.cls := "ui center aligned segment noRows",
+            SeqexecStyles.noRowsSegment,
             ^.height := 270.px,
             "No log entries"
           ),
