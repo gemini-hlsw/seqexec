@@ -17,7 +17,7 @@ final class RightAscensionSpec extends CatsSuite {
 
   // Laws
   checkAll("RightAscension", OrderTests[RightAscension].order)
-  checkAll("fromAngle", PrismTests(RightAscension.fromAngle))
+  checkAll("fromAngleExact", PrismTests(RightAscension.fromAngleExact))
   checkAll("fromHourAngle", IsoTests(RightAscension.fromHourAngle))
   checkAll("fromStringHMS", FormatTests(RightAscension.fromStringHMS).formatWith(ArbAngle.stringsHMS))
 

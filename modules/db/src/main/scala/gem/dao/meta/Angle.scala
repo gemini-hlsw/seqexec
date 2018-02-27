@@ -12,7 +12,7 @@ trait AngleMeta {
     Meta[java.math.BigDecimal]
       .xmap[Angle](
         b => Angle.fromMicroarcseconds(b.movePointRight(d).longValue),
-        a => new java.math.BigDecimal(a.toSignedMicroarcseconds).movePointLeft(d)
+        a => new java.math.BigDecimal(Angle.signedMicroarcseconds.get(a)).movePointLeft(d)
       )
 
   // Angle mapping to signed arcseconds via NUMERIC. NOT implicit. We're mapping a type that

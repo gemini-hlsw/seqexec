@@ -60,7 +60,7 @@ object Parsers {
 
   val ra: PioParse[RightAscension] =
     double.map(Angle.fromDoubleDegrees)
-          .map(_.toHourAngle)
+          .map(Angle.hourAngle.get)
           .map(RightAscension.fromHourAngle.get)
 
   val dec: PioParse[Declination] =

@@ -76,7 +76,7 @@ object Declination extends DeclinationOptics {
    * @group Typeclass Instances
    */
   implicit val DeclinationOrder: Order[Declination] =
-    Order.by(_.toAngle.toSignedMicroarcseconds)
+    Order.by(dec => Angle.signedMicroarcseconds.get(dec.toAngle))
 
   implicit val DeclinationShow: Show[Declination] =
     Show.fromToString

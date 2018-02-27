@@ -17,11 +17,23 @@ trait ArbAngle {
   implicit def arbHourAngle: Arbitrary[HourAngle] =
     Arbitrary(arbitrary[Double].map(HourAngle.fromDoubleHours))
 
+  implicit def arbDMS: Arbitrary[Angle.DMS] =
+    Arbitrary(arbitrary[Angle].map(Angle.dms.get))
+
+  implicit def arbHMS: Arbitrary[HourAngle.HMS] =
+    Arbitrary(arbitrary[HourAngle].map(HourAngle.hms.get))
+
   implicit def cogAngle: Cogen[Angle] =
     Cogen[Double].contramap(_.toDoubleDegrees)
 
   implicit def cogHourAngle: Cogen[HourAngle] =
     Cogen[Double].contramap(_.toDoubleDegrees)
+
+  implicit def cogDMS: Cogen[Angle.DMS] =
+    Cogen[Angle].contramap(_.toAngle)
+
+  implicit def cogHMS: Cogen[HourAngle.HMS] =
+    Cogen[HourAngle].contramap(_.toHourAngle)
 
   private val perturbations: List[String => Gen[String]] =
     List(

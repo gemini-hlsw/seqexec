@@ -76,7 +76,7 @@ final case class Coordinates(ra: RightAscension, dec: Declination) {
       val φi = atan2(z, sqrt(x * x + y * y))
       val λi = atan2(y, x)
       Coordinates(
-        RA.fromHourAngle.get(Angle.fromDoubleRadians(λi).toHourAngle),
+        RA.fromHourAngle.get(Angle.hourAngle.get(Angle.fromDoubleRadians(λi))),
         Dec.fromAngle.unsafeGet(Angle.fromDoubleRadians(φi))
       )
     }

@@ -47,7 +47,7 @@ object TcsFormat {
     // Round to an even number of tenths of microseconds.
     val µs         = ra.toHourAngle.toMicroseconds
     val tenthsOfMs = (µs / 100) + ((µs % 100) + 50) / 100
-    val hms        = HourAngle.fromMicroseconds(tenthsOfMs * 100).toHMS
+    val hms        = (HourAngle.microseconds.reverse composeIso HourAngle.hms).get(tenthsOfMs * 100)
 
     f"${hms.hours}%02d ${hms.minutes}%02d ${hms.seconds}%02d.${hms.milliseconds}%03d${hms.microseconds/100}%01d"
   }
@@ -57,12 +57,12 @@ object TcsFormat {
     */
   def formatDec(dec: Declination): String = {
     val a    = dec.toAngle
-    val sµas = a.toSignedMicroarcseconds
+    val sµas = Angle.signedMicroarcseconds.get(a)
 
     // Round to an even number of milliseconds
     val µas  = (if (sµas < 0) -a else a).toMicroarcseconds
     val mas  = (µas / 1000) + ((µas % 1000) + 500) / 1000
-    val dms  = Angle.fromMilliarcseconds(mas.toInt).toDMS
+    val dms  = (Angle.milliarcseconds.reverse composeIso Angle.dms).get(mas.toInt)
 
     // -9 should format as "-09", 9 as " 09"
     val sign = if (sµas < 0) "-" else " "
@@ -70,7 +70,7 @@ object TcsFormat {
   }
 
   def formatDeltaArcseconds(a: Angle): String =
-    f"${a.toSignedMicroarcseconds.toDouble / 1000000.0}%9.5f"
+    f"${Angle.signedMicroarcseconds.get(a).toDouble / 1000000.0}%9.5f"
 
   def formatElement(e: Ephemeris.Element): String = {
     val (time, ephCoords) = e

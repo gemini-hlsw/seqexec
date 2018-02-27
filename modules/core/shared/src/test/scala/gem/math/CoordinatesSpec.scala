@@ -76,7 +76,7 @@ final class CoordinatesSpec extends CatsSuite {
   test("angularDistance must be symmetric to within 1µas") {
     forAll { (a: Coordinates, b: Coordinates) =>
       val Δ = a.angularDistance(b) - b.angularDistance(a)
-      Δ.toSignedMicroarcseconds.abs should be <= 1L
+      Angle.signedMicroarcseconds.get(Δ).abs should be <= 1L
     }
   }
 
@@ -102,7 +102,7 @@ final class CoordinatesSpec extends CatsSuite {
       val pole = Coordinates(ra1, if (b) Dec.Min else Dec.Max)
       val Δdec = dec.toAngle + Angle.Angle90 // [0, 180]
       val Δ    = pole.angularDistance(pole.offset(ra2.toHourAngle, Δdec)) - Δdec
-      Δ.toSignedMicroarcseconds.abs should be <= 1L
+      Angle.signedMicroarcseconds.get(Δ).abs should be <= 1L
     }
   }
 
@@ -112,7 +112,7 @@ final class CoordinatesSpec extends CatsSuite {
       val a = Coordinates(ra, Dec.Zero)
       val b = a.offset(ha, Angle.Angle0)
       val d = a.angularDistance(b)
-      val Δ = d.toSignedMicroarcseconds.abs - ha.toSignedMicroarcseconds.abs
+      val Δ = Angle.signedMicroarcseconds.get(d).abs - Angle.signedMicroarcseconds.get(ha).abs
       Δ.abs should be <= 1L
     }
   }
@@ -120,14 +120,14 @@ final class CoordinatesSpec extends CatsSuite {
   test("interpolate should result in angular distance of 0° from `a` for factor 0.0, within 1µsec (15µas)") {
     forAll { (a: Coordinates, b: Coordinates) =>
       val Δ = a.angularDistance(a.interpolate(b, 0.0))
-      Δ.toSignedMicroarcseconds.abs should be <= 15L
+      Angle.signedMicroarcseconds.get(Δ).abs should be <= 15L
     }
   }
 
   test("interpolate should result in angular distance of 0° from `b` for factor 1.0, within 1µsec (15µas)") {
     forAll { (a: Coordinates, b: Coordinates) =>
       val Δ = b.angularDistance(a.interpolate(b, 1.0))
-      Δ.toSignedMicroarcseconds.abs should be <= 15L
+      Angle.signedMicroarcseconds.get(Δ).abs should be <= 15L
     }
   }
 

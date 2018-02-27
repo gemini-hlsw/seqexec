@@ -8,6 +8,7 @@ import cats.{ Eq, Show }
 import cats.kernel.laws.discipline._
 import gem.arb._
 import gem.laws.discipline._
+import monocle.law.discipline._
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals"))
 final class HourAngleSpec extends CatsSuite {
@@ -16,6 +17,15 @@ final class HourAngleSpec extends CatsSuite {
   // Laws
   checkAll("HourAngle", CommutativeGroupTests[HourAngle].commutativeGroup)
   checkAll("HourAngle", EqTests[HourAngle].eqv)
+
+  // Optics
+  checkAll("angle", SplitMonoTests(HourAngle.angle).splitMono)
+  checkAll("microseconds", SplitMonoTests(HourAngle.microseconds).splitMono)
+  checkAll("milliseconds", WedgeTests(HourAngle.milliseconds).wedge)
+  checkAll("seconds", WedgeTests(HourAngle.seconds).wedge)
+  checkAll("minutes", WedgeTests(HourAngle.minutes).wedge)
+  checkAll("hours", WedgeTests(HourAngle.hours).wedge)
+  checkAll("hms", IsoTests(HourAngle.hms))
   checkAll("fromStringHMS", FormatTests(HourAngle.fromStringHMS).formatWith(ArbAngle.stringsHMS))
 
   test("Equality must be natural") {
@@ -39,7 +49,7 @@ final class HourAngleSpec extends CatsSuite {
 
   test("Conversion to HMS must be invertable") {
     forAll { (a: HourAngle) =>
-      val hms = a.toHMS
+      val hms = HourAngle.hms.get(a)
       HourAngle.fromHMS(
         hms.hours,
         hms.minutes,
@@ -47,18 +57,6 @@ final class HourAngleSpec extends CatsSuite {
         hms.milliseconds,
         hms.microseconds
       ) shouldEqual a
-    }
-  }
-
-  test("Widening to Angle must be invertable") {
-    forAll { (a: HourAngle) =>
-      a.toAngle.toHourAngle shouldEqual a
-    }
-  }
-
-  test("Widening to Angle must also work for toHourAngleExact") {
-    forAll { (a: HourAngle) =>
-      a.toAngle.toHourAngleExact shouldEqual Some(a)
     }
   }
 
