@@ -22,13 +22,9 @@ import java.time.{ Duration, Period }
 
 import fs2.Stream
 
-import scala.math.Ordering.Implicits._
 
 /** Utility for inserting / updating en ephemeris. */
-final case class HorizonsEphemerisUpdater(
-  user: User[_],
-  log:  Log[ConnectionIO],
-  xa:   Transactor[IO]) {
+final case class HorizonsEphemerisUpdater[M[_]: Monad: LiftIO](xa: Transactor[M]) {
 
   import HorizonsEphemerisUpdater._
 
@@ -37,49 +33,33 @@ final case class HorizonsEphemerisUpdater(
     * whether an update is needed, to see when the last update was performed,
     * and when the last update check happened.
     */
-  def context(key:  EphemerisKey.Horizons, site: Site): IO[Context] =
+  def report(key:  EphemerisKey.Horizons, site: Site): M[EphemerisContext] =
 
     (for {
-
-      meta <- log.log(user, s"EphemerisDao.selectMeta($key, $site)") {
-                EphemerisDao.selectMeta(key, site)
-              }
-
-      rnge <- log.log(user, s"EphemerisDao.selectTimes($key, $site)") {
-                EphemerisDao.selectTimes(key, site)
-              }
-
-      soln <- log.log(user, s"HorizonsSolutionRefQuery($key).lookup") {
-                HorizonsSolutionRefQuery(key).lookup.liftIO[ConnectionIO]
-              }
-
-    } yield Context(key, site, meta, rnge, soln)).transact(xa)
+      meta <- EphemerisDao.selectMeta(key, site)
+      rnge <- EphemerisDao.selectTimes(key, site)
+      soln <- HorizonsSolutionRefQuery(key).lookup.liftIO[ConnectionIO]
+    } yield EphemerisContext(key, site, meta, rnge, soln)).transact(xa)
 
 
   /** Constructs an action that when run will insert a new ephemeris or update
     * an existing one if necessary.
     */
-  def update(key: EphemerisKey.Horizons, site: Site): IO[Unit] =
+  def update(key: EphemerisKey.Horizons, site: Site): M[Unit] =
 
     for {
-
-      time <- Timestamp.now
-      sem  <- Semester.current(site)
-      ctx  <- context(key, site)
+      time <- Timestamp.now.liftIO[M]
+      sem  <- Semester.current(site).liftIO[M]
+      ctx  <- report(key, site)
       _    <- updateIfNecessary(ctx, time, sem).transact(xa)
-
     } yield ()
 
 
   private def insertMeta(key: EphemerisKey.Horizons, site: Site, m: EphemerisMeta): ConnectionIO[Unit] =
-    log.log(user, s"insertMeta($key, $site, $m)") {
-      EphemerisDao.insertMeta(key, site, m).void
-    }
+    EphemerisDao.insertMeta(key, site, m).void
 
   private def updateMeta(key: EphemerisKey.Horizons, site: Site, m: EphemerisMeta): ConnectionIO[Unit] =
-    log.log(user, s"updateMeta($key, $site, $m)") {
-      EphemerisDao.updateMeta(key, site, m).void
-    }
+    EphemerisDao.updateMeta(key, site, m).void
 
   private def streamEphemeris(
     key:      EphemerisKey.Horizons,
@@ -96,7 +76,7 @@ final case class HorizonsEphemerisUpdater(
 
 
   private def updateIfNecessary(
-    ctx:  Context,
+    ctx:  EphemerisContext,
     time: Timestamp,
     sem:  Semester
   ): ConnectionIO[Unit] =
@@ -106,20 +86,17 @@ final case class HorizonsEphemerisUpdater(
 
 
   private def recordUpdateCheck(
-    ctx:  Context,
+    ctx:  EphemerisContext,
     time: Timestamp
   ): ConnectionIO[Unit] =
 
-    for {
-      _ <- log.logMessage(user, s"${ctx.key}@${ctx.site} already up-to-date. Record update check.")
-      _ <- ctx.meta.fold(().pure[ConnectionIO]) { m =>
-            updateMeta(ctx.key, ctx.site, EphemerisMeta.lastUpdateCheck.set(time)(m))
-          }
-    } yield ()
+    ctx.meta.fold(().pure[ConnectionIO]) { m =>
+      updateMeta(ctx.key, ctx.site, EphemerisMeta.lastUpdateCheck.set(time)(m))
+    }
 
 
   private def doUpdate(
-    ctx:  Context,
+    ctx:  EphemerisContext,
     time: Timestamp,
     sem:  Semester
   ): ConnectionIO[Unit] = {
@@ -136,13 +113,10 @@ final case class HorizonsEphemerisUpdater(
 
     // Update the metadata and stream the ephemeris into the database.
     for {
-      _ <- log.logMessage(user, s"Update ${ctx.key}@${ctx.site}")
       _ <- ctx.meta.fold(insertMeta(ctx.key, ctx.site, mʹ)) { _ =>
              updateMeta(ctx.key, ctx.site, mʹ)
            }
-      _ <- log.log(user, s"streamEphemeris(${ctx.key}, ${ctx.site}, $sem)") {
-             streamEphemeris(ctx.key, ctx.site, sem).to(sink).compile.drain
-           }
+      _ <- streamEphemeris(ctx.key, ctx.site, sem).to(sink).compile.drain
     } yield ()
   }
 
@@ -159,44 +133,5 @@ object HorizonsEphemerisUpdater {
     */
   val StepSize: Duration =
     Duration.ofMinutes(1L)
-
-  /** Collection of information related to an ephemeris.  Used to determine
-    * whether an update is needed.
-    *
-    * @param key  unique horizons id of the object
-    * @param site information valid for the given site
-    * @param meta associated ephemeris metadata, if any
-    * @param rnge earliest and latest ephemeris element times, if any
-    * @param soln current horizons solution reference from JPL, if any
-    */
-  final case class Context(
-    key:  EphemerisKey.Horizons,
-    site: Site,
-    meta: Option[EphemerisMeta],
-    rnge: Option[(Timestamp, Timestamp)],
-    soln: Option[HorizonsSolutionRef]
-  ) {
-
-    /** Determines whether the existing ephemeris, if any, covers the given
-      * semester.
-      */
-    def coversSemester(sem: Semester): Boolean =
-      rnge.exists { case (start, end) =>
-        (start.toInstant <= sem.start.atSite(site).toInstant) &&
-          (sem.end.atSite(site).toInstant <= end.toInstant)
-      }
-
-    /** Whether the database and latest horizons version data matches. */
-    val sameSolution: Boolean =
-      (meta.flatMap(_.solnRef), soln).tupled.exists { case (s0, s1) =>
-        s0 === s1
-      }
-
-    /** Determines whether updates are needed to obtain the latest ephemeris for
-      * the given semester.
-      */
-    def isUpToDateFor(sem: Semester): Boolean =
-      coversSemester(sem) && sameSolution
-  }
 
 }

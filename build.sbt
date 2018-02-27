@@ -312,7 +312,7 @@ lazy val ephemeris = project
 lazy val service = project
   .in(file("modules/service"))
   .enablePlugins(AutomateHeaderPlugin)
-  .dependsOn(coreJVM, db)
+  .dependsOn(coreJVM, db, ephemeris)
   .settings(commonSettings)
 
 lazy val telnetd = project
