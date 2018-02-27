@@ -5,23 +5,94 @@ package edu.gemini.seqexec.engine
 
 import edu.gemini.seqexec.engine.Event._
 import edu.gemini.seqexec.engine.Result.{PartialVal, PauseContext, RetVal}
-import edu.gemini.seqexec.model.Model.{CloudCover, Conditions, ImageQuality, Observer, Operator, Resource, SequenceState, SkyBackground, WaterVapor}
+import edu.gemini.seqexec.model.Model.{Conditions, Observer, Resource, SequenceState}
 import org.log4s.getLogger
-
 import scalaz.concurrent.Task
 import scalaz.{Applicative, Kleisli, MonadState, StateT}
 import scalaz._
 import Scalaz._
+import monocle.macros.GenLens
+import monocle.Lens
 import scalaz.stream.{Process, merge}
 
-class Engine[D] {
+class Engine[D: ActionMetadataGenerator, U](implicit ev: ActionMetadataGenerator[D]) {
+
+  class ConcreteTypes extends Engine.Types {
+    override type StateData = D
+    override type EventData = U
+  }
+  type EventType = Event[ConcreteTypes]
+  type UserEventType = UserEvent[ConcreteTypes]
+  type StateType = Engine.State[ConcreteTypes#StateData]
+
+  /**
+    * Type constructor where all Seqexec side effect are managed.
+    *
+    * It's named `Handle` after `fs2.Handle` in order to give a hint in a future
+    * migration.
+    */
+  type Handle[A] = HandleStateT[Task, A]
+  // Helper alias to facilitate lifting.
+  type HandleStateT[M[_], A] = StateT[M, StateType, A]
+
+
+  // The `Catchable` instance of `Handle`` needs to be manually written.
+  // Without it it's not possible to use `Handle` as a scalaz-stream process effects.
+  implicit def engineInstance: Catchable[Handle] =
+    new Catchable[Handle] {
+      def attempt[A](a: Handle[A]): Handle[Throwable \/ A] = a.flatMap(
+        x => Catchable[Task].attempt(Applicative[Task].pure(x)).liftM[HandleStateT]
+      )
+      def fail[A](err: Throwable): Handle[A] = Catchable[Task].fail[A](err).liftM[HandleStateT]
+    }
+
+  /*
+   * HandleP is a Process which has as a side effect a State machine inside a Task, which can produce other
+   * Processes as output.
+   * Its type parameters are:
+   * A: Type of the output (usually Unit)
+   * D: Type of the user data included in the state machine state.
+   *
+   * Making it final causes an error: "The outer reference in this type test cannot be checked at run time"
+   */
+  case class HandleP[A](run: Handle[(A, Option[Process[Task, EventType]])])
+  object HandleP {
+    def fromProcess(p: Process[Task, EventType]): HandleP[Unit] = {
+      HandleP[Unit](Applicative[Handle].pure[(Unit, Option[Process[Task, EventType]])](((), Some(p))))
+    }
+  }
+
+  implicit def handlePInstances: Monad[HandleP] = new Monad[HandleP] {
+    private def concatOpP(op1: Option[Process[Task, EventType]],
+                          op2: Option[Process[Task, EventType]]): Option[Process[Task, EventType]] = (op1, op2) match {
+      case (None, None)         => None
+      case (Some(p1), None)     => Some(p1)
+      case (None, Some(p2))     => Some(p2)
+      case (Some(p1), Some(p2)) => Some(p1 ++ p2)
+    }
+
+    override def point[A](a: => A): HandleP[A] = HandleP(Applicative[Handle].pure((a, None)))
+
+    override def bind[A, B](fa: HandleP[A])(f: A => HandleP[B]): HandleP[B] = HandleP[B](
+      fa.run.flatMap{
+        case (a, op1) => f(a).run.map{
+          case (b, op2) => (b, concatOpP(op1, op2))
+        }
+      }
+    )
+  }
+
+  implicit class HandleToHandleP[A](self: Handle[A]) {
+    def toHandleP: HandleP[A] = HandleP(self.map((_, None)))
+  }
+
   /**
     * Changes the `Status` and returns the new `Queue.State`.
     */
-  private def switch(id: Sequence.Id)(st: SequenceState): HandleP[Unit, D] =
+  private def switch(id: Sequence.Id)(st: SequenceState): HandleP[Unit] =
     modifyS(id)(s => Sequence.State.status.set(st)(s))
 
-  private def start(id: Sequence.Id): HandleP[Unit, D] =
+  private def start(id: Sequence.Id): HandleP[Unit] =
     resources.flatMap(
       other => getS(id).flatMap {
         case Some(seq) =>
@@ -37,11 +108,11 @@ class Engine[D] {
       }
     )
 
-  private def pause(id: Sequence.Id): HandleP[Unit, D] = modifyS(id)(Sequence.State.userStopSet(true))
+  private def pause(id: Sequence.Id): HandleP[Unit] = modifyS(id)(Sequence.State.userStopSet(true))
 
-  private def cancelPause(id: Sequence.Id): HandleP[Unit, D] = modifyS(id)(Sequence.State.userStopSet(false))
+  private def cancelPause(id: Sequence.Id): HandleP[Unit] = modifyS(id)(Sequence.State.userStopSet(false))
 
-  private def resources: HandleP[Set[Resource], D] =
+  private def resources: HandleP[Set[Resource]] =
     gets(_.sequences
       .values
       .toList
@@ -49,39 +120,15 @@ class Engine[D] {
       .foldMap(_.toSequence.resources)
     )
 
-  //  private def rollback(id: Sequence.Id): HandleP[Unit, D] =
-  //    modifyS(id)(_.rollback)
-
-  private def setOperator(name: Operator): HandleP[Unit, D] =
-    modify(_.copy(operator = name.some))
-
-  private def setObserver(id: Sequence.Id)(name: Observer): HandleP[Unit, D] =
+  private def setObserver(id: Sequence.Id)(name: Observer): HandleP[Unit] =
     modifyS(id)(_.setObserver(name))
-
-  private def setConditions(conditions: Conditions): HandleP[Unit, D] =
-    modify(_.copy(conditions = conditions))
-
-  private def setImageQuality(iq: ImageQuality): HandleP[Unit, D] =
-    modify(st => st.copy(conditions = st.conditions.copy(iq = iq)))
-
-  private def setWaterVapor(wv: WaterVapor): HandleP[Unit, D] =
-    modify(st => st.copy(conditions = st.conditions.copy(wv = wv)))
-
-  private def setSkyBackground(sb: SkyBackground): HandleP[Unit, D] =
-    modify(st => st.copy(conditions = st.conditions.copy(sb = sb)))
-
-  private def setCloudCover(cc: CloudCover): HandleP[Unit, D] =
-    modify(st => st.copy(conditions = st.conditions.copy(cc = cc)))
 
   /**
     * Load a Sequence
     */
-  private def load(id: Sequence.Id, seq: Sequence): HandleP[Unit, D] =
+  private def load(id: Sequence.Id, seq: Sequence): HandleP[Unit] =
     modify(
-      st => Engine.State[D](
-        st.userData,
-        st.conditions,
-        st.operator,
+      st => st.copy(sequences =
         st.sequences.get(id).map(t =>
           if (Sequence.State.isRunning(t)) st.sequences
           else st.sequences.updated(id, Sequence.State.init(seq))
@@ -89,12 +136,9 @@ class Engine[D] {
       )
     )
 
-  private def unload(id: Sequence.Id): HandleP[Unit, D] =
+  private def unload(id: Sequence.Id): HandleP[Unit] =
     modify(
-      st => Engine.State[D](
-        st.userData,
-        st.conditions,
-        st.operator,
+      st => st.copy(sequences =
         st.sequences.get(id).map(t =>
           if (Sequence.State.isRunning(t)) st.sequences
           else st.sequences - id
@@ -108,7 +152,7 @@ class Engine[D] {
     *
     * If there are no more pending `Execution`s, it emits the `Finished` event.
     */
-  private def next(id: Sequence.Id): HandleP[Unit, D] =
+  private def next(id: Sequence.Id): HandleP[Unit] =
     getS(id).flatMap(
       _.map { seq =>
         if (Sequence.State.anyStopRequested(seq))
@@ -146,7 +190,7 @@ class Engine[D] {
     */
   // Send the expected event when the `Action` is executed
   // It doesn't catch run time exceptions. If desired, the Action has to do it itself.
-  private def act(id: Sequence.Id, t: (ActionGen, Int), cx: ActionMetadata): Process[Task, Event[D]] = t match {
+  private def act(id: Sequence.Id, t: (ActionGen, Int), cx: ActionMetadata): Process[Task, EventType] = t match {
     case (gen, i) =>
       Process.eval(gen(cx)).flatMap {
         case r@Result.OK(_)         => Process(completed(id, i, r))
@@ -156,28 +200,28 @@ class Engine[D] {
       }
   }
 
-  private def execute(id: Sequence.Id): HandleP[Unit, D] = {
+  private def execute(id: Sequence.Id): HandleP[Unit] = {
     get.flatMap(st => st.sequences.get(id).map {
       case seq@Sequence.State.Final(_, _) =>
         // The sequence is marked as completed here
         putS(id)(seq) *> send(finished(id))
       case seq                            =>
-        val u = seq.current.actions.map(_.gen).zipWithIndex.map(x => act(id, x, ActionMetadata(st.conditions, st.operator, seq.toSequence.metadata.observer)))
+        val u = seq.current.actions.map(_.gen).zipWithIndex.map(x => act(id, x, ev.generate(st.userData)(ActionMetadata(Conditions.default, None, seq.toSequence.metadata.observer))))
         val v = merge.mergeN(Process.emitAll(u))
         val w = seq.current.actions.indices.map(i => modifyS(id)(_.start(i))).toList
-        w.sequenceU *> HandleP.fromProcess[D](v)
+        w.sequenceU *> HandleP.fromProcess(v)
     }.getOrElse(unit)
     )
   }
 
-  private def getState(f: Engine.State[D] => Task[Option[Process[Task, Event[D]]]]): HandleP[Unit, D] =
-    get.flatMap(s => HandleP[Unit, D](f(s).liftM[HandleStateT[?[_], ?, D]].map(((), _))))
+  private def getState(f: StateType => Task[Option[Process[Task, EventType]]]): HandleP[Unit] =
+    get.flatMap(s => HandleP[Unit](f(s).liftM[HandleStateT].map(((), _))))
 
-  private def getSeqState(id: Sequence.Id, f: Sequence.State => Option[Process[Task, Event[D]]]): HandleP[Unit, D] =
-    getS(id).flatMap(_.map(s => HandleP[Unit, D](f(s).pure[Handle[?, D]].map(((), _)))).getOrElse(unit))
+  private def getSeqState(id: Sequence.Id, f: Sequence.State => Option[Process[Task, EventType]]): HandleP[Unit] =
+    getS(id).flatMap(_.map(s => HandleP[Unit](f(s).pure[Handle].map(((), _)))).getOrElse(unit))
 
-  private def actionStop(id: Sequence.Id, f: (Sequence.State) => Option[Process[Task, Event[D]]]): HandleP[Unit, D] =
-    getS(id).flatMap(_.map(s => if (Sequence.State.isRunning(s)) HandleP[Unit, D](f(s).pure[Handle[?, D]].map(((), _))) *> modifyS(id)(Sequence.State.internalStopSet(true)) else unit).getOrElse(unit))
+  private def actionStop(id: Sequence.Id, f: (Sequence.State) => Option[Process[Task, EventType]]): HandleP[Unit] =
+    getS(id).flatMap(_.map(s => if (Sequence.State.isRunning(s)) HandleP[Unit](f(s).pure[Handle].map(((), _))) *> modifyS(id)(Sequence.State.internalStopSet(true)) else unit).getOrElse(unit))
 
   /**
     * Given the index of the completed `Action` in the current `Execution`, it
@@ -185,16 +229,16 @@ class Engine[D] {
     *
     * When the index doesn't exist it does nothing.
     */
-  private def complete[R <: RetVal](id: Sequence.Id, i: Int, r: Result.OK[R]): HandleP[Unit, D] = modifyS(id)(_.mark(i)(r)) *>
+  private def complete[R <: RetVal](id: Sequence.Id, i: Int, r: Result.OK[R]): HandleP[Unit] = modifyS(id)(_.mark(i)(r)) *>
     getS(id).flatMap(_.flatMap(
-      _.current.execution.all(Action.completed).option(HandleP.fromProcess[D](Process(executed(id))))
+      _.current.execution.all(Action.completed).option(HandleP.fromProcess(Process(executed(id))))
     ).getOrElse(unit))
 
-  private def partialResult[R <: PartialVal](id: Sequence.Id, i: Int, p: Result.Partial[R]): HandleP[Unit, D] = modifyS(id)(_.mark(i)(p))
+  private def partialResult[R <: PartialVal](id: Sequence.Id, i: Int, p: Result.Partial[R]): HandleP[Unit] = modifyS(id)(_.mark(i)(p))
 
-  def actionPause[C <: PauseContext](id: Sequence.Id, i: Int, p: Result.Paused[C]): HandleP[Unit, D] = modifyS(id)(s => Sequence.State.internalStopSet(false)(s).mark(i)(p))
+  def actionPause[C <: PauseContext](id: Sequence.Id, i: Int, p: Result.Paused[C]): HandleP[Unit] = modifyS(id)(s => Sequence.State.internalStopSet(false)(s).mark(i)(p))
 
-  private def actionResume(id: Sequence.Id, i: Int, cont: Task[Result]): HandleP[Unit, D] = getS(id).flatMap(_.map { s =>
+  private def actionResume(id: Sequence.Id, i: Int, cont: Task[Result]): HandleP[Unit] = getS(id).flatMap(_.map { s =>
     if (Sequence.State.isRunning(s) && s.current.execution.index(i).exists(Action.paused))
       modifyS(id)(_.start(i)) *> HandleP.fromProcess(act(id, (Kleisli(_ => cont), i), ActionMetadata.default))
     else unit
@@ -205,11 +249,11 @@ class Engine[D] {
     * `State`. In the future this function should handle the failed
     * action.
     */
-  private def fail(id: Sequence.Id)(i: Int, e: Result.Error): HandleP[Unit, D] =
+  private def fail(id: Sequence.Id)(i: Int, e: Result.Error): HandleP[Unit] =
     modifyS(id)(_.mark(i)(e)) *>
       switch(id)(SequenceState.Failed(e.msg))
 
-  private def logError(e: Result.Error): HandleP[Unit, D] = Logger.error(e.errMsg.getOrElse(e.msg))
+  private def logError(e: Result.Error): HandleP[Unit] = Logger.error(e.errMsg.getOrElse(e.msg))
 
   /**
     * Ask for the current Handle `Status`.
@@ -225,35 +269,35 @@ class Engine[D] {
     /**
       * Log info lifted into Handle.
       */
-    def info(msg: => String): HandleP[Unit, D] = pure((logger.info(msg), None)).void
+    def info(msg: => String): HandleP[Unit] = pure((logger.info(msg), None)).void
 
     /**
       * Log warning lifted into Handle.
       */
-    def warning(msg: => String): HandleP[Unit, D] = pure((logger.warn(msg), None)).void
+    def warning(msg: => String): HandleP[Unit] = pure((logger.warn(msg), None)).void
 
     /**
       * Log debug lifted into Handle.
       */
-    def debug(msg: => String): HandleP[Unit, D] = pure((logger.debug(msg), None)).void
+    def debug(msg: => String): HandleP[Unit] = pure((logger.debug(msg), None)).void
 
     /**
       * Log error lifted into Handle
       */
-    def error(msg: => String): HandleP[Unit, D] = pure((logger.error(msg), None)).void
+    def error(msg: => String): HandleP[Unit] = pure((logger.error(msg), None)).void
 
   }
 
   /**
     * Enqueue `Event` in the Handle.
     */
-  private def send(ev: Event[D]): HandleP[Unit, D] = HandleP.fromProcess[D](Process(ev))
+  private def send(ev: EventType): HandleP[Unit] = HandleP.fromProcess(Process(ev))
 
   /**
     * Main logical thread to handle events and produce output.
     */
-  private def run(ev: Event[D]): HandleP[Engine.State[D], D] = {
-    def handleUserEvent(ue: UserEvent[D]): HandleP[Unit, D] = ue match {
+  private def run(ev: EventType): HandleP[StateType] = {
+    def handleUserEvent(ue: UserEventType): HandleP[Unit] = ue match {
       case Start(id, _)               => Logger.debug("Engine: Started") *> start(id)
       case Pause(id, _)               => Logger.debug("Engine: Pause requested") *> pause(id)
       case CancelPause(id, _)         => Logger.debug("Engine: Pause canceled") *> cancelPause(id)
@@ -263,16 +307,10 @@ class Engine[D] {
         modifyS(id)(_.setBreakpoint(step, v))
       case SkipMark(id, _, step, v)   => Logger.debug(s"Engine: skip mark changed for step $step to $v") *>
         modifyS(id)(_.setSkipMark(step, v))
-      case SetOperator(name, _)       => Logger.debug(s"Engine: Setting Operator name to '$name' by ${ue.username}") *> setOperator(name)
       case SetObserver(id, _, name)   => Logger.debug(s"Engine: Setting Observer for observation $id to '$name' by ${ue.username}") *> setObserver(id)(name)
-      case SetConditions(conds, _)    => Logger.debug("Engine: Setting conditions") *> setConditions(conds)
-      case SetImageQuality(iq, _)     => Logger.debug("Engine: Setting image quality") *> setImageQuality(iq)
-      case SetWaterVapor(wv, _)       => Logger.debug("Engine: Setting water vapor") *> setWaterVapor(wv)
-      case SetSkyBackground(sb, _)    => Logger.debug("Engine: Setting sky background") *> setSkyBackground(sb)
-      case SetCloudCover(cc, _)       => Logger.debug("Engine: Setting cloud cover") *> setCloudCover(cc)
       case Poll                       => Logger.debug("Engine: Polling current state")
       case GetState(f)                => getState(f)
-      case ModifyState(f)             => modify(f)
+      case ModifyState(f, _)          => modify(f)
       case GetSeqState(id, f)         => getSeqState(id, f)
       case ActionStop(id, f)          => Logger.debug("Engine: Action stop requested") *> actionStop(id, f)
       case ActionResume(id, i, cont)  => Logger.debug("Engine: Action resume requested") *> actionResume(id, i, cont)
@@ -282,7 +320,7 @@ class Engine[D] {
       case LogError(msg)              => Logger.error(msg)
     }
 
-    def handleSystemEvent(se: SystemEvent): HandleP[Unit, D] = se match {
+    def handleSystemEvent(se: SystemEvent): HandleP[Unit] = se match {
       case Completed(id, i, r)     => Logger.debug("Engine: Action completed") *> complete(id, i, r)
       case PartialResult(id, i, r) => Logger.debug("Engine: Partial result") *> partialResult(id, i, r)
       case Paused(id, i, r)        => Logger.debug("Engine: Action paused") *> actionPause(id, i, r)
@@ -318,60 +356,65 @@ class Engine[D] {
     go(fs, s0)
   }
 
-  private def runE(ev: Event[D]): HandleP[(Event[D], Engine.State[D]), D] =
+  private def runE(ev: EventType): HandleP[(EventType, StateType)] =
     run(ev).map((ev, _))
 
-  def process(input: Process[Task, Event[D]])(qs: Engine.State[D]): Process[Task, (Event[D], Engine.State[D])] =
-    mapEvalState[Event[D], Engine.State[D], (Event[D], Engine.State[D])](input, qs, (e: Event[D]) => runE(e).run)
+  def process(input: Process[Task, EventType])(qs: StateType): Process[Task, (EventType, StateType)] =
+    mapEvalState[EventType, StateType, (EventType, StateType)](input, qs, (e: EventType) => runE(e).run)
 
   // Functions for type bureaucracy
 
-  private def pure[A](a: A): HandleP[A, D] = Applicative[HandleP[?, D]].pure(a)
+  private def pure[A](a: A): HandleP[A] = Applicative[HandleP].pure(a)
 
-  private val unit: HandleP[Unit, D] = pure(())
+  private val unit: HandleP[Unit] = pure(())
 
-  private val get: HandleP[Engine.State[D], D] =
-    MonadState[Handle[?, D], Engine.State[D]].get.toHandleP
+  private val get: HandleP[StateType] =
+    MonadState[Handle, StateType].get.toHandleP
 
-  private def gets[A](f: (Engine.State[D]) => A): HandleP[A, D] =
-    MonadState[Handle[?, D], Engine.State[D]].gets(f).toHandleP
+  private def gets[A](f: (StateType) => A): HandleP[A] =
+    MonadState[Handle, StateType].gets(f).toHandleP
 
-  private def modify(f: (Engine.State[D]) => Engine.State[D]): HandleP[Unit, D] =
-    MonadState[Handle[?, D], Engine.State[D]].modify(f).toHandleP
+  private def modify(f: (StateType) => StateType): HandleP[Unit] =
+    MonadState[Handle, StateType].modify(f).toHandleP
 
-  private def getS(id: Sequence.Id): HandleP[Option[Sequence.State], D] = get.map(_.sequences.get(id))
+  private def getS(id: Sequence.Id): HandleP[Option[Sequence.State]] = get.map(_.sequences.get(id))
 
-  private def getSs[A](id: Sequence.Id)(f: Sequence.State => A): HandleP[Option[A], D] =
+  private def getSs[A](id: Sequence.Id)(f: Sequence.State => A): HandleP[Option[A]] =
     gets(_.sequences.get(id).map(f))
 
-  private def modifyS(id: Sequence.Id)(f: Sequence.State => Sequence.State): HandleP[Unit, D] =
+  private def modifyS(id: Sequence.Id)(f: Sequence.State => Sequence.State): HandleP[Unit] =
     modify(
       st => Engine.State(
         st.userData,
-        st.conditions,
-        st.operator,
         st.sequences.get(id).map(
           s => st.sequences.updated(id, f(s))).getOrElse(st.sequences)
       )
     )
 
-  private def putS(id: Sequence.Id)(s: Sequence.State): HandleP[Unit, D] =
-    modify(st => Engine.State[D](st.userData, st.conditions, st.operator, st.sequences.updated(id, s)))
+  private def putS(id: Sequence.Id)(s: Sequence.State): HandleP[Unit] =
+    modify(st => Engine.State[ConcreteTypes#StateData](st.userData, st.sequences.updated(id, s)))
 
   // For debugging
-  def printSequenceState(id: Sequence.Id): HandleP[Unit, D] =
-    getSs(id)((qs: Sequence.State) => Task.now(println(qs)).liftM[HandleStateT[?[_], ?, D]]).void // scalastyle:ignore
+  def printSequenceState(id: Sequence.Id): HandleP[Unit] =
+    getSs(id)((qs: Sequence.State) => Task.now(println(qs)).liftM[HandleStateT]).void // scalastyle:ignore
 
 }
 
 object Engine {
 
-  final case class State[D](userData: D, conditions: Conditions, operator: Option[Operator], sequences: Map[Sequence.Id, Sequence.State])
+  final case class State[D](userData: D, sequences: Map[Sequence.Id, Sequence.State])
 
   object State {
 
-    def empty[D](userData: D): State[D] = State(userData, Conditions.default, None, Map.empty)
+    def userDataL[D]: Lens[State[D], D] = GenLens[State[D]](_.userData)
 
+    def empty[D](userData: D): State[D] = State(userData, Map.empty)
+
+  }
+
+  abstract class Types {
+    type StateData
+    type EventData
   }
 
 }

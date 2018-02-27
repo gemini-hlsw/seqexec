@@ -3,7 +3,7 @@
 
 package edu.gemini.seqexec.engine
 
-import edu.gemini.seqexec.model.Model.{Conditions, SequenceMetadata, SequenceState, StepConfig}
+import edu.gemini.seqexec.model.Model.{SequenceMetadata, SequenceState, StepConfig}
 import edu.gemini.seqexec.model.Model.Instrument.F2
 import edu.gemini.seqexec.model.{ActionType, UserDetails}
 
@@ -55,7 +55,10 @@ class SequenceSpec extends FlatSpec {
 
   private val metadata = SequenceMetadata(F2, None, "")
   private val user = UserDetails("telops", "Telops")
-  private val executionEngine = new Engine[Unit]
+  implicit object UnitCanGenerateActionMetadata extends ActionMetadataGenerator[Unit] {
+    override def generate(a: Unit)(v: ActionMetadata): ActionMetadata = v
+  }
+  private val executionEngine = new Engine[Unit, Unit]
 
   def simpleStep(id: Int, breakpoint: Boolean): Step =
     Step.init(
@@ -87,8 +90,6 @@ class SequenceSpec extends FlatSpec {
     val qs0: Engine.State[Unit] =
       Engine.State[Unit](
         (),
-        Conditions.default,
-        None,
         Map(
           (seqId,
            Sequence.State.init(
@@ -117,8 +118,6 @@ class SequenceSpec extends FlatSpec {
     val qs0: Engine.State[Unit] =
       Engine.State[Unit](
         (),
-        Conditions.default,
-        None,
         Map(
           (seqId,
            Sequence.State.init(

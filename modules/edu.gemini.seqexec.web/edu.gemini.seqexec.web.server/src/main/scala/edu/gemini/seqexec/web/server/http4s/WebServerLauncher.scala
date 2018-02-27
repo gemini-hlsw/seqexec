@@ -9,7 +9,7 @@ import ch.qos.logback.classic.spi.ILoggingEvent
 
 import edu.gemini.seqexec.server
 import edu.gemini.seqexec.model.events.SeqexecEvent
-import edu.gemini.seqexec.server.{SeqexecEngine, EngineEvent}
+import edu.gemini.seqexec.server.{SeqexecEngine, executeEngine}
 import edu.gemini.seqexec.web.server.OcsBuildInfo
 import edu.gemini.seqexec.web.server.security.{AuthenticationConfig, AuthenticationService, LDAPConfig}
 import edu.gemini.seqexec.web.server.logging.AppenderForClients
@@ -165,7 +165,7 @@ object WebServerLauncher extends ProcessApp with LogInitialization {
       seqc <- SeqexecEngine.seqexecConfiguration.run(c)
     } yield SeqexecEngine(seqc)
 
-    val inq  = async.boundedQueue[EngineEvent](10)
+    val inq  = async.boundedQueue[executeEngine.EventType](10)
     val out  = async.topic[SeqexecEvent]()
 
     // It should be possible to cleanup the engine at shutdown in this function

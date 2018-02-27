@@ -7,28 +7,24 @@ import edu.gemini.seqexec.engine.Result.{Error, PartialVal, PauseContext, RetVal
 import edu.gemini.seqexec.model.Model.{Conditions, Observer, Operator}
 import edu.gemini.seqexec.model.ActionType
 
-import scalaz.Monad
 import scalaz._
-import Scalaz._
 import scalaz.concurrent.Task
-import scalaz.stream.Process
 
 package engine {
 
-  /*
-   * HandleP is a Process which has as a side effect a State machine inside a Task, which can produce other
-   * Processes as output.
-   * Its type parameters are:
-   * A: Type of the output (usually Unit)
-   * D: Type of the user data included in the state machine state.
-   */
-  final case class HandleP[A, D](run: Handle[(A, Option[Process[Task, Event[D]]]), D])
-  object HandleP {
-    def fromProcess[D](p: Process[Task, Event[D]]): HandleP[Unit, D] = HandleP[Unit, D](Applicative[Handle[?, D]].pure[(Unit, Option[Process[Task, Event[D]]])](((), Some(p))))
-  }
   final case class ActionMetadata(conditions: Conditions, operator: Option[Operator], observer: Option[Observer])
   object ActionMetadata {
     val default: ActionMetadata = ActionMetadata(Conditions.default, None, None)
+  }
+
+  // This trait describe the kind of types that can fill the ActionMetadata used to generate an Action body
+  trait ActionMetadataGenerator[T] {
+    /*
+     * generate is used to fill the ActionMetadata structure. It is expected in the future that there will be pieces of
+     * data at the Sequence level, or even the Step level, all of ActionMetadataGenerator kind, that could be used
+     * sequentially to produce the final ActionMetadata
+     */
+    def generate(a: T)(v: ActionMetadata): ActionMetadata
   }
 
   final case class Action(
@@ -101,61 +97,6 @@ package object engine {
   type Results = List[Result]
 
   type FileId = String
-
-  // Handle proper
-
-  /**
-    * Type constructor where all Seqexec side effect are managed.
-    *
-    * It's named `Handle` after `fs2.Handle` in order to give a hint in a future
-    * migration.
-    */
-  type Handle[A, D] = HandleStateT[Task, A, D]
-  // Helper alias to facilitate lifting.
-  type HandleStateT[M[_], A, D] = StateT[M, Engine.State[D], A]
-
-  implicit def handlePInstances[D]: Applicative[HandleP[?, D]] with Monad[HandleP[?, D]] = new Applicative[HandleP[?, D]] with Monad[HandleP[?, D]] {
-    private def concatOpP(op1: Option[Process[Task, Event[D]]],
-                          op2: Option[Process[Task, Event[D]]]): Option[Process[Task, Event[D]]] = (op1, op2) match {
-      case (None, None)         => None
-      case (Some(p1), None)     => Some(p1)
-      case (None, Some(p2))     => Some(p2)
-      case (Some(p1), Some(p2)) => Some(p1 ++ p2)
-    }
-
-    override def point[A](a: => A): HandleP[A, D] = HandleP(Applicative[Handle[?, D]].pure((a, None)))
-
-
-    // I tried to use a for comprehension here, but the compiler failed with error
-    // "value filter is not a member of edu.gemini.seqexec.engine.Handle"
-    override def ap[A, B](fa: => HandleP[A, D])(f: => HandleP[(A) => B, D]): HandleP[B, D] = HandleP(
-      f.run.flatMap{
-        case (g, op2) => fa.run.map {
-          case (a, op1) => (g(a), concatOpP(op1, op2)) } })
-
-    override def bind[A, B](fa: HandleP[A, D])(f: (A) => HandleP[B, D]): HandleP[B, D] = HandleP(
-      fa.run.flatMap{
-        case (a, op1) => f(a).run.map{
-          case (b, op2) => (b, concatOpP(op1, op2))
-        }
-      }
-    )
-
-  }
-
-  implicit class HandleToHandleP[A, D](self: Handle[A, D]) {
-    def toHandleP: HandleP[A, D] = HandleP(self.map((_, None)))
-  }
-
-  // The `Catchable` instance of `Handle`` needs to be manually written.
-  // Without it it's not possible to use `Handle` as a scalaz-stream process effects.
-  implicit def engineInstance[D]: Catchable[Handle[?, D]] =
-    new Catchable[Handle[?, D]] {
-      def attempt[A](a: Handle[A, D]): Handle[Throwable \/ A, D] = a.flatMap(
-        x => Catchable[Task].attempt(Applicative[Task].pure(x)).liftM[HandleStateT[?[_], ?, D]]
-      )
-      def fail[A](err: Throwable): Handle[A, D] = Catchable[Task].fail[A](err).liftM[HandleStateT[?[_], ?, D]]
-    }
 
 
 }

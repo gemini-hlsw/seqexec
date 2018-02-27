@@ -495,7 +495,7 @@ object Model {
 
   // Ported from OCS' SPSiteQuality.java
 
-  final case class Conditions(
+  @Lenses final case class Conditions(
     cc: CloudCover,
     iq: ImageQuality,
     sb: SkyBackground,
@@ -534,7 +534,6 @@ object Model {
     implicit val showConditions: Show[Conditions] = Show.shows[Conditions] {
       case Conditions(cc, iq, sb, wv) => List(cc, iq, sb, wv).mkString(", ")
     }
-
   }
 
   sealed trait CloudCover {

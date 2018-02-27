@@ -4,18 +4,19 @@
 package edu.gemini.seqexec.server
 
 import edu.gemini.pot.sp.SPObservationID
-import edu.gemini.seqexec.engine.{Action, Engine, Result, Sequence, Step}
+import edu.gemini.seqexec.engine._
 import edu.gemini.seqexec.engine
 import edu.gemini.seqexec.engine.Result.PauseContext
-import edu.gemini.seqexec.model.ActionType
+import edu.gemini.seqexec.model.{ActionType, UserDetails}
 import edu.gemini.seqexec.model.Model.Instrument.F2
-import edu.gemini.seqexec.model.Model.{ActionStatus, Instrument, Resource, SequenceMetadata, SequenceState}
+import edu.gemini.seqexec.model.Model.{ActionStatus, ImageQuality, WaterVapor, CloudCover, SkyBackground, Instrument, Operator, Resource, SequenceMetadata, SequenceState, Conditions}
+import edu.gemini.seqexec.server.EngineMetadata.queuesL
 import org.scalatest.{FlatSpec, Matchers}
-
 import scalaz.concurrent.Task
 import scalaz.stream.async
 import scalaz.syntax.applicative._
 import org.scalatest.Inside.inside
+import scalaz.\/
 
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 class SeqexecEngineSpec extends FlatSpec with Matchers {
@@ -136,10 +137,10 @@ class SeqexecEngineSpec extends FlatSpec with Matchers {
     }
 
   private val seqexecEngine = SeqexecEngine(SeqexecEngine.defaultSettings)
-  private def advanceOne(q: EventQueue, s0: EngineState, put: Task[Unit]): Option[EngineState] = {
+  private def advanceOne(q: EventQueue, s0: executeEngine.StateType, put: Task[SeqexecFailure\/Unit]): Option[executeEngine.StateType] = {
     (put *> executeEngine.process(q.dequeue)(s0).take(1).runLast).unsafePerformSync.map(_._2)
   }
-  private def advanceN(q: EventQueue, s0: EngineState, put: Task[Unit], n: Int): Option[EngineState] = {
+  private def advanceN(q: EventQueue, s0: executeEngine.StateType, put: Task[SeqexecFailure\/Unit], n: Int): Option[executeEngine.StateType] = {
     (put *> executeEngine.process(q.dequeue)(s0).take(n).runLast).unsafePerformSync.map(_._2)
   }
   private val seqId1 = "Dummy-1"
@@ -155,86 +156,83 @@ class SeqexecEngineSpec extends FlatSpec with Matchers {
       List(Step.init(1, None, Map(), Set(), List(List(pendingAction(F2)))))
     )
   )
-  private val queueName = "Calibration Queue"
-
-
   "SeqexecEngine addSequenceToQueue" should
     "add sequence id to queue" in {
-    val s0 = Engine.State.empty[ExecutionQueues](Map(queueName -> Nil))
+    val s0 = Engine.State.empty(EngineMetadata.default)
       .copy(sequences = Map(seqId1 -> sequence(seqId1)))
 
-    val q = async.boundedQueue[EngineEvent](10)
-    val sf = advanceOne(q, s0, seqexecEngine.addSequenceToQueue(q, queueName, seqObsId1))
+    val q = async.boundedQueue[executeEngine.EventType](10)
+    val sf = advanceOne(q, s0, seqexecEngine.addSequenceToQueue(q, CalibrationQueueName, seqObsId1))
 
-    inside(sf.flatMap(_.userData.get(queueName))) {
+    inside(sf.flatMap(x => queuesL.get(x.userData).get(CalibrationQueueName))) {
       case Some(exq) => exq shouldBe List(seqId1)
     }
   }
   it should "not add sequence id if sequence does not exists" in {
     val badObsId = new SPObservationID("NonExistent-1")
-    val s0 = Engine.State.empty[ExecutionQueues](Map(queueName -> Nil))
+    val s0 = Engine.State.empty(EngineMetadata.default)
       .copy(sequences = Map(seqId1 -> sequence(seqId1)))
 
-    val q = async.boundedQueue[EngineEvent](10)
-    val sf = advanceOne(q, s0, seqexecEngine.addSequenceToQueue(q, queueName, badObsId))
+    val q = async.boundedQueue[executeEngine.EventType](10)
+    val sf = advanceOne(q, s0, seqexecEngine.addSequenceToQueue(q, CalibrationQueueName, badObsId))
 
-    inside(sf.flatMap(_.userData.get(queueName))) {
+    inside(sf.flatMap(x => queuesL.get(x.userData).get(CalibrationQueueName))) {
       case Some(exq) => assert(exq.isEmpty)
     }
   }
   it should "not add sequence id if sequence is running or completed" in {
-    val s0 = Engine.State.empty[ExecutionQueues](Map(queueName -> Nil))
+    val s0 = Engine.State.empty(EngineMetadata.default)
       .copy(sequences = Map(seqId1 -> Sequence.State.status.set(SequenceState.Running.init)(sequence(seqId1)),
         seqId2 -> Sequence.State.status.set(SequenceState.Completed)(sequence(seqId2))
       ) )
 
-    val q = async.boundedQueue[EngineEvent](10)
+    val q = async.boundedQueue[executeEngine.EventType](10)
     val sf = advanceN(q, s0,
-      seqexecEngine.addSequenceToQueue(q, queueName, seqObsId1) *>
-      seqexecEngine.addSequenceToQueue(q, queueName, seqObsId2),
+      seqexecEngine.addSequenceToQueue(q, CalibrationQueueName, seqObsId1) *>
+      seqexecEngine.addSequenceToQueue(q, CalibrationQueueName, seqObsId2),
       2
     )
 
-    inside(sf.flatMap(_.userData.get(queueName))) {
+    inside(sf.flatMap(x => queuesL.get(x.userData).get(CalibrationQueueName))) {
       case Some(exq) => assert(exq.isEmpty)
     }
   }
   it should "not add sequence id if already in queue" in {
-    val s0 = Engine.State.empty[ExecutionQueues](Map(queueName -> List(seqId1)))
+    val s0 = Engine.State.empty(EngineMetadata.default)
       .copy(sequences = Map(seqId1 -> sequence(seqId1)))
 
-    val q = async.boundedQueue[EngineEvent](10)
-    val sf = advanceOne(q, s0, seqexecEngine.addSequenceToQueue(q, queueName, seqObsId1))
+    val q = async.boundedQueue[executeEngine.EventType](10)
+    val sf = advanceOne(q, s0, seqexecEngine.addSequenceToQueue(q, CalibrationQueueName, seqObsId1))
 
-    inside(sf.flatMap(_.userData.get(queueName))) {
+    inside(sf.flatMap(x => queuesL.get(x.userData).get(CalibrationQueueName))) {
       case Some(exq) => exq shouldBe List(seqId1)
     }
   }
 
-  "SeqexecEngine removeSequenceToQueue" should
+  "SeqexecEngine removeSequenceFromQueue" should
     "remove sequence id from queue" in {
-    val s0 = Engine.State.empty[ExecutionQueues](Map(queueName -> List(seqId1, seqId2)))
+    val s0 = Engine.State.empty(queuesL.set(Map(CalibrationQueueName -> List(seqId1, seqId2)))(EngineMetadata.default))
       .copy(sequences = Map(seqId1 -> sequence(seqId1),
         seqId2 -> sequence(seqId2)
       ) )
 
-    val q = async.boundedQueue[EngineEvent](10)
-    val sf = advanceOne(q, s0, seqexecEngine.removeSequenceFromQueue(q, queueName, seqObsId1))
+    val q = async.boundedQueue[executeEngine.EventType](10)
+    val sf = advanceOne(q, s0, seqexecEngine.removeSequenceFromQueue(q, CalibrationQueueName, seqObsId1))
 
-    inside(sf.flatMap(_.userData.get(queueName))) {
+    inside(sf.flatMap(x => queuesL.get(x.userData).get(CalibrationQueueName))) {
       case Some(exq) => exq shouldBe List(seqId2)
     }
   }
   it should "not remove sequence id if sequence is running" in {
-    val s0 = Engine.State.empty[ExecutionQueues](Map(queueName -> List(seqId1, seqId2)))
+    val s0 = Engine.State.empty(queuesL.set(Map(CalibrationQueueName -> List(seqId1, seqId2)))(EngineMetadata.default))
       .copy(sequences = Map(seqId1 -> Sequence.State.status.set(SequenceState.Running.init)(sequence(seqId1)),
         seqId2 -> sequence(seqId2)
       ) )
 
-    val q = async.boundedQueue[EngineEvent](10)
-    val sf = advanceOne(q, s0, seqexecEngine.removeSequenceFromQueue(q, queueName, seqObsId1))
+    val q = async.boundedQueue[executeEngine.EventType](10)
+    val sf = advanceOne(q, s0, seqexecEngine.removeSequenceFromQueue(q, CalibrationQueueName, seqObsId1))
 
-    inside(sf.flatMap(_.userData.get(queueName))) {
+    inside(sf.flatMap(x => queuesL.get(x.userData).get(CalibrationQueueName))) {
       case Some(exq) => exq shouldBe List(seqId1, seqId2)
     }
   }
@@ -242,41 +240,100 @@ class SeqexecEngineSpec extends FlatSpec with Matchers {
 
   "SeqexecEngine moveSequenceInQueue" should
     "move sequence id inside queue" in {
-    val s0 = Engine.State.empty[ExecutionQueues](Map(queueName -> List(seqId1, seqId2, seqId3)))
+    val s0 = Engine.State.empty(queuesL.set(Map(CalibrationQueueName -> List(seqId1, seqId2, seqId3)))(EngineMetadata.default))
       .copy(sequences = Map(seqId1 -> sequence(seqId1),
         seqId2 -> sequence(seqId2),
         seqId3 -> sequence(seqId3)
       ) )
 
-    def testAdvance(obsId: SPObservationID, n: Int): Option[EngineState] = {
-      val q = async.boundedQueue[EngineEvent](10)
-      advanceOne(q, s0, seqexecEngine.moveSequenceInQueue(q, queueName, obsId, n))
+    def testAdvance(obsId: SPObservationID, n: Int): Option[executeEngine.StateType] = {
+      val q = async.boundedQueue[executeEngine.EventType](10)
+      advanceOne(q, s0, seqexecEngine.moveSequenceInQueue(q, CalibrationQueueName, obsId, n))
     }
 
     val sf1 = testAdvance(seqObsId2, -1)
 
-    inside(sf1.flatMap(_.userData.get(queueName))) {
+    inside(sf1.flatMap(x => queuesL.get(x.userData).get(CalibrationQueueName))) {
       case Some(exq) => exq shouldBe List(seqId2, seqId1, seqId3)
     }
 
     val sf2 = testAdvance(seqObsId1, 2)
 
-    inside(sf2.flatMap(_.userData.get(queueName))) {
+    inside(sf2.flatMap(x => queuesL.get(x.userData).get(CalibrationQueueName))) {
       case Some(exq) => exq shouldBe List(seqId2, seqId3, seqId1)
     }
 
     val sf3 = testAdvance(seqObsId3, 4)
 
-    inside(sf3.flatMap(_.userData.get(queueName))) {
+    inside(sf3.flatMap(x => queuesL.get(x.userData).get(CalibrationQueueName))) {
       case Some(exq) => exq shouldBe List(seqId1, seqId2, seqId3)
     }
 
     val sf4 = testAdvance(seqObsId1, -2)
 
-    inside(sf4.flatMap(_.userData.get(queueName))) {
+    inside(sf4.flatMap(x => queuesL.get(x.userData).get(CalibrationQueueName))) {
       case Some(exq) => exq shouldBe List(seqId1, seqId2, seqId3)
     }
   }
 
+  "SeqexecEngine setOperator" should "set operator's name" in {
+    val operator = Operator("Joe")
+    val s0 = Engine.State.empty(EngineMetadata.default)
+    val q = async.boundedQueue[executeEngine.EventType](10)
+    val sf = advanceN(q, s0, seqexecEngine.setOperator(q, UserDetails("", ""), operator), 2)
+
+    inside(sf.flatMap((Engine.State.userDataL ^|-> EngineMetadata.operatorL).get(_))) {
+      case Some(op) => op shouldBe operator
+    }
+
+  }
+
+  "SeqexecEngine setImageQuality" should "set Image Quality condition" in {
+    val iq = ImageQuality.Percent20
+    val s0 = Engine.State.empty(EngineMetadata.default)
+    val q = async.boundedQueue[executeEngine.EventType](10)
+    val sf = advanceN(q, s0, seqexecEngine.setImageQuality(q, iq, UserDetails("", "")), 2)
+
+    inside(sf.map((Engine.State.userDataL ^|-> EngineMetadata.conditionsL ^|-> Conditions.iq).get(_))) {
+      case Some(op) => op shouldBe iq
+    }
+
+  }
+
+  "SeqexecEngine setWaterVapor" should "set Water Vapor condition" in {
+    val wv = WaterVapor.Percent80
+    val s0 = Engine.State.empty(EngineMetadata.default)
+    val q = async.boundedQueue[executeEngine.EventType](10)
+    val sf = advanceN(q, s0, seqexecEngine.setWaterVapor(q, wv, UserDetails("", "")), 2)
+
+    inside(sf.map((Engine.State.userDataL ^|-> EngineMetadata.conditionsL ^|-> Conditions.wv).get(_))) {
+      case Some(op) => op shouldBe wv
+    }
+
+  }
+
+  "SeqexecEngine setCloudCover" should "set Cloud Cover condition" in {
+    val cc = CloudCover.Percent70
+    val s0 = Engine.State.empty(EngineMetadata.default)
+    val q = async.boundedQueue[executeEngine.EventType](10)
+    val sf = advanceN(q, s0, seqexecEngine.setCloudCover(q, cc, UserDetails("", "")), 2)
+
+    inside(sf.map((Engine.State.userDataL ^|-> EngineMetadata.conditionsL ^|-> Conditions.cc).get(_))) {
+      case Some(op) => op shouldBe cc
+    }
+
+  }
+
+  "SeqexecEngine setSkyBackground" should "set Sky Background condition" in {
+    val sb = SkyBackground.Percent50
+    val s0 = Engine.State.empty(EngineMetadata.default)
+    val q = async.boundedQueue[executeEngine.EventType](10)
+    val sf = advanceN(q, s0, seqexecEngine.setSkyBackground(q, sb, UserDetails("", "")), 2)
+
+    inside(sf.map((Engine.State.userDataL ^|-> EngineMetadata.conditionsL ^|-> Conditions.sb).get(_))) {
+      case Some(op) => op shouldBe sb
+    }
+
+  }
 
 }

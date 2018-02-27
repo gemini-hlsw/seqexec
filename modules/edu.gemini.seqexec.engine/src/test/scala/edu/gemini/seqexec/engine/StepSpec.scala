@@ -3,7 +3,7 @@
 
 package edu.gemini.seqexec.engine
 
-import edu.gemini.seqexec.model.Model.{Conditions, SequenceMetadata, SequenceState, StepConfig, StepState}
+import edu.gemini.seqexec.model.Model.{SequenceMetadata, SequenceState, StepConfig, StepState}
 import edu.gemini.seqexec.model.Model.Instrument.{F2, GmosS}
 import org.scalatest._
 import Matchers._
@@ -26,7 +26,10 @@ class StepSpec extends FlatSpec {
   private val seqId ="TEST-01"
   private val user = UserDetails("telops", "Telops")
 
-  private val executionEngine = new Engine[Unit]
+  implicit object UnitCanGenerateActionMetadata extends ActionMetadataGenerator[Unit] {
+    override def generate(a: Unit)(v: ActionMetadata): ActionMetadata = v
+  }
+  private val executionEngine = new Engine[Unit, Unit]
 
   /**
     * Emulates TCS configuration in the real world.
@@ -68,7 +71,7 @@ class StepSpec extends FlatSpec {
     }
   )
 
-  def triggerPause(q: async.mutable.Queue[Event[Unit]]): Action = fromTask(ActionType.Undefined,
+  def triggerPause(q: async.mutable.Queue[executionEngine.EventType]): Action = fromTask(ActionType.Undefined,
     for {
       _ <- q.enqueueOne(Event.pause(seqId, user))
       // There is not a distinct result for Pause because the Pause action is a
@@ -76,7 +79,7 @@ class StepSpec extends FlatSpec {
       // input event is enough.
     } yield Result.OK(Result.Configured(Resource.TCS)))
 
-  def triggerStart(q: async.mutable.Queue[Event[Unit]]): Action = fromTask(ActionType.Undefined,
+  def triggerStart(q: async.mutable.Queue[executionEngine.EventType]): Action = fromTask(ActionType.Undefined,
     for {
       _ <- q.enqueueOne(Event.start(seqId, user))
       // Same case that the pause action
@@ -109,12 +112,10 @@ class StepSpec extends FlatSpec {
 
   // The difficult part is to set the pause command to interrupts the step execution in the middle.
   "pause" should "stop execution in response to a pause command" in {
-    val q = async.boundedQueue[Event[Unit]](10)
+    val q = async.boundedQueue[executionEngine.EventType](10)
     val qs0: Engine.State[Unit] =
       Engine.State[Unit](
         (),
-        Conditions.default,
-        None,
         Map(
           (seqId,
            Sequence.State.init(
@@ -160,8 +161,6 @@ class StepSpec extends FlatSpec {
     val qs0: Engine.State[Unit] =
       Engine.State[Unit](
         (),
-        Conditions.default,
-        None,
         Map(
           (seqId,
            Sequence.State.Zipper(
@@ -205,8 +204,6 @@ class StepSpec extends FlatSpec {
     val qs0: Engine.State[Unit] =
       Engine.State[Unit](
         (),
-        Conditions.default,
-        None,
         Map(
           (seqId,
            Sequence.State.Zipper(
@@ -245,8 +242,6 @@ class StepSpec extends FlatSpec {
     val qs0: Engine.State[Unit] =
       Engine.State[Unit](
         (),
-        Conditions.default,
-        None,
         Map(
           (seqId,
            Sequence.State.init(
@@ -286,12 +281,10 @@ class StepSpec extends FlatSpec {
 
   // Be careful that start command doesn't run an already running sequence.
   "engine" should "ignore start command if step is already running." in {
-    val q = async.boundedQueue[Event[Unit]](10)
+    val q = async.boundedQueue[executionEngine.EventType](10)
     val qs0: Engine.State[Unit] =
       Engine.State[Unit](
         (),
-        Conditions.default,
-        None,
         Map(
           (seqId,
            Sequence.State.init(
@@ -342,8 +335,6 @@ class StepSpec extends FlatSpec {
     val qs0: Engine.State[Unit] =
       Engine.State[Unit](
         (),
-        Conditions.default,
-        None,
         Map(
           (seqId,
            Sequence.State.init(
@@ -392,8 +383,6 @@ class StepSpec extends FlatSpec {
     val qs0: Engine.State[Unit] =
       Engine.State[Unit](
         (),
-        Conditions.default,
-        None,
         Map(
           (seqId,
            Sequence.State.init(
