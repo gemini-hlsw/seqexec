@@ -9,11 +9,11 @@ import java.time.{Instant, LocalDate}
 import java.time.temporal.ChronoUnit
 
 import edu.gemini.seqexec.web.server.security.{AuthenticationConfig, AuthenticationService, LDAPConfig}
-import edu.gemini.seqexec.engine.Event
 import edu.gemini.seqexec.model.events.SeqexecEvent
 import edu.gemini.seqexec.model.events.SeqexecEvent.ConnectionOpenEvent
 import edu.gemini.seqexec.model.{ModelBooPicklers, UserDetails, UserLoginRequest}
 import edu.gemini.seqexec.server.SeqexecEngine
+import edu.gemini.seqexec.server.executeEngine
 import org.http4s._
 import org.http4s.headers.`Set-Cookie`
 import org.http4s.syntax.StringSyntax
@@ -42,9 +42,9 @@ class SeqexecUIApiRoutesSpec extends FlatSpec with Matchers with UriFunctions wi
   private val config = AuthenticationConfig(devMode = true, Hours(8), "token", "abc", useSSL = false, LDAPConfig(Nil))
   private val engine = SeqexecEngine(SeqexecEngine.defaultSettings.copy(date = LocalDate.now))
   private val authService = AuthenticationService(config)
-  val inq: Queue[Event] = async.boundedQueue[Event](10)
+  val inq: Queue[executeEngine.EventType] = async.boundedQueue[executeEngine.EventType](10)
   val out: Topic[SeqexecEvent] = async.topic[SeqexecEvent]()
-  val queues: (Queue[Event], Topic[SeqexecEvent]) = (inq, out)
+  val queues: (Queue[executeEngine.EventType], Topic[SeqexecEvent]) = (inq, out)
 
   val service: Service[Request, MaybeResponse] = new SeqexecUIApiRoutes(authService, queues, engine).service
 

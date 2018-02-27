@@ -7,7 +7,7 @@ import java.util.concurrent.Semaphore
 
 import edu.gemini.seqexec.engine.Sequence.State.Final
 import org.scalatest.{FlatSpec, NonImplicitAssertions}
-import edu.gemini.seqexec.model.Model.{Conditions, Observer, Operator, Resource, SequenceMetadata, SequenceState, StepConfig, StepState}
+import edu.gemini.seqexec.model.Model.{Operator, Resource, SequenceMetadata, SequenceState, StepConfig, StepState}
 import edu.gemini.seqexec.model.Model.Instrument.{F2, GmosS}
 import edu.gemini.seqexec.model.Model.Resource.TCS
 import edu.gemini.seqexec.model.{ActionType, UserDetails}
@@ -15,7 +15,8 @@ import edu.gemini.seqexec.model.{ActionType, UserDetails}
 import scala.concurrent.duration._
 import scalaz._
 import Scalaz._
-//import scalaz.syntax.equal._
+import monocle.Lens
+import monocle.macros.GenLens
 import scalaz.Nondeterminism
 import scalaz.concurrent.Task
 import scalaz.stream.{Process, async}
@@ -59,10 +60,9 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   val executions: List[List[Action]] = List(List(configureTcs, configureInst), List(observe))
   val config: StepConfig = Map()
   val seqId: String = "TEST-01"
-  val qs1: Engine.State =
-    Engine.State(
-      Conditions.default,
-      None,
+  val qs1: Engine.State[Unit] =
+    Engine.State[Unit](
+      (),
       Map(
         (seqId,
          Sequence.State.init(
@@ -111,11 +111,15 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
       )
     )
 
+  implicit object UnitCanGenerateActionMetadata extends ActionMetadataGenerator[Unit] {
+    override def generate(a: Unit)(v: ActionMetadata): ActionMetadata = v
+  }
+  private val executionEngine = new Engine[Unit, Unit]
   private val seqId1 = seqId
   private val seqId2 = "TEST-02"
   private val seqId3 = "TEST-03"
-  private val qs2 = Engine.State(Conditions.default, None, qs1.sequences + (seqId2 -> qs1.sequences(seqId1)))
-  private val qs3 = Engine.State(Conditions.default, None, qs2.sequences + (seqId3 -> seqG))
+  private val qs2 = Engine.State[Unit]((), qs1.sequences + (seqId2 -> qs1.sequences(seqId1)))
+  private val qs3 = Engine.State[Unit]((), qs2.sequences + (seqId3 -> seqG))
   private val user = UserDetails("telops", "Telops")
 
   def isFinished(status: SequenceState): Boolean = status match {
@@ -125,15 +129,15 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
     case _                       => false
   }
 
-  def runToCompletion(s0: Engine.State): Option[Engine.State] = {
-    process(Process.eval(Task.now(Event.start(seqId, user))))(s0).drop(1).takeThrough(
+  def runToCompletion(s0: Engine.State[Unit]): Option[Engine.State[Unit]] = {
+    executionEngine.process(Process.eval(Task.now(Event.start(seqId, user))))(s0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
     ).runLast.unsafePerformSync.map(_._2)
   }
 
   it should "be in Running status after starting" in {
     val p = Process.eval(Task.now(Event.start(seqId, user)))
-    val qs = process(p)(qs1).take(1).runLast.unsafePerformSync.map(_._2)
+    val qs = executionEngine.process(p)(qs1).take(1).runLast.unsafePerformSync.map(_._2)
     assert(qs.exists(s => Sequence.State.isRunning(s.sequences(seqId))))
   }
 
@@ -147,9 +151,8 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
     assert(qs.exists(_.sequences(seqId).done.length === 2))
   }
 
-  private def actionPause: Option[Engine.State] = {
-    val s0: Engine.State = Engine.State(Conditions.default,
-      None,
+  private def actionPause: Option[Engine.State[Unit]] = {
+    val s0: Engine.State[Unit] = Engine.State[Unit]((),
       Map((seqId, Sequence.State.init(Sequence(
         "First",
         SequenceMetadata(GmosS, None, ""),
@@ -169,7 +172,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
     )
     val p = Process.eval(Task.now(Event.start(seqId, user)))
 
-    process(p)(s0).runLast.unsafePerformSync.map(_._2)
+    executionEngine.process(p)(s0).runLast.unsafePerformSync.map(_._2)
   }
 
   "sequence state" should "stay as running when action pauses itself" in {
@@ -183,7 +186,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   "engine" should "run sequence to completion after resuming a paused action" in {
     val p = Process.eval(Task.now(Event.actionResume(seqId, 0, Task(Result.OK(Result.Configured(GmosS))))))
 
-    val result = actionPause.map(process(p)(_).drop(1).takeThrough(
+    val result = actionPause.map(executionEngine.process(p)(_).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
     ).runLast.timed(5.seconds).unsafePerformSyncAttempt)
     val qso = result.map(_.map(_.map(_._2)))
@@ -196,7 +199,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   it should "not run 2nd sequence because it's using the same resource" in {
     val p = Process.emitAll(List(Event.start(seqId1, user), Event.start(seqId2, user))).evalMap(Task.now(_))
     assert(
-      process(p)(qs2).take(6).runLast.unsafePerformSync.map(_._2.sequences(seqId2)).map(_.status === SequenceState.Idle)getOrElse(false)
+      executionEngine.process(p)(qs2).take(6).runLast.unsafePerformSync.map(_._2.sequences(seqId2)).map(_.status === SequenceState.Idle)getOrElse(false)
     )
   }
 
@@ -204,17 +207,16 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
     val p = Process.emitAll(List(Event.start(seqId1, user), Event.start(seqId3, user))).evalMap(Task.now(_))
 
     assert(
-      process(p)(qs3).take(6).runLast.unsafePerformSync.exists(t => Sequence.State.isRunning(t._2.sequences(seqId3)))
+      executionEngine.process(p)(qs3).take(6).runLast.unsafePerformSync.exists(t => Sequence.State.isRunning(t._2.sequences(seqId3)))
     )
   }
 
   "engine" should "keep processing input messages regardless of how long Actions take" in {
-    val q = async.boundedQueue[Event](10)
+    val q = async.boundedQueue[executionEngine.EventType](10)
     val startedFlag = new Semaphore(0)
     val finishFlag = new Semaphore(0)
 
-    val qs = Engine.State(Conditions.default,
-      None,
+    val qs = Engine.State[Unit]((),
       Map((seqId, Sequence.State.init(Sequence(
         "First",
         SequenceMetadata(GmosS, None, ""),
@@ -241,17 +243,16 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
       List(
         q.enqueueOne(Event.start(seqId, user)),
         Task.apply(startedFlag.acquire()),
-        q.enqueueOne(Event.getState{_ => Task.delay{finishFlag.release()} *> Task.delay(None)})
+        q.enqueueOne(Event.getState[executionEngine.ConcreteTypes]{_ => Task.delay{finishFlag.release()} *> Task.delay(None)})
       ).sequenceU,
-        process(q.dequeue)(qs).drop(1).takeThrough(a => !isFinished(a._2.sequences(seqId).status)).run
+      executionEngine.process(q.dequeue)(qs).drop(1).takeThrough(a => !isFinished(a._2.sequences(seqId).status)).run
       ).timed(5.seconds).unsafePerformSyncAttempt
     assert(result.isRight)
   }
 
   "engine" should "not capture fatal errors." in {
     @SuppressWarnings(Array("org.wartremover.warts.Throw"))
-    def s0(e: Error): Engine.State = Engine.State(Conditions.default,
-      None,
+    def s0(e: Error): Engine.State[Unit] = Engine.State[Unit]((),
       Map((seqId, Sequence.State.init(Sequence(
         "First",
         SequenceMetadata(GmosS, None, ""),
@@ -280,10 +281,23 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
     )
   }
 
+
+  case class DummyData(operator: Option[Operator])
+  implicit object DummyDataCanGenerateActionMetadata extends ActionMetadataGenerator[DummyData] {
+    override def generate(a: DummyData)(v: ActionMetadata): ActionMetadata = v.copy(operator = a.operator)
+  }
+  private val executionEngine2 = new Engine[DummyData, Unit]
+  case class DummyResult(operator: Option[Operator]) extends Result.RetVal
+  private val operatorL: Lens[DummyData, Option[Operator]] = GenLens[DummyData](_.operator)
+
   "engine" should "pass parameters to Actions." in {
-    val p = Process.emitAll(List(Event.setOperator(Operator("John"), user), Event.setObserver(seqId1, user, Observer("Smith")), Event.start(seqId1, user))).evalMap(Task.now(_))
-    val s0 = Engine.State(Conditions.default,
-      None,
+
+    def setOperator(op: Operator): executionEngine2.StateType => executionEngine2.StateType = (Engine.State.userDataL[DummyData] ^|-> operatorL ).set(op.some)
+
+    val opName = Operator("John")
+
+    val p = Process.emitAll(List(Event.modifyState[executionEngine2.ConcreteTypes](setOperator(opName), ()), Event.start(seqId1, user))).evalMap(Task.now(_))
+    val s0 = Engine.State[DummyData](DummyData(None),
       Map((seqId, Sequence.State.init(Sequence(
         "First",
         SequenceMetadata(GmosS, None, ""),
@@ -294,18 +308,18 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
             config,
             Set(GmosS),
             List(
-              List(Action(ActionType.Undefined, Kleisli(v => Task(Result.OK(Result.Configured(TCS)))), Action.State(Action.Idle, Nil)))
+              List(Action(ActionType.Undefined, Kleisli(v => Task(Result.OK(DummyResult(v.operator)))), Action.State(Action.Idle, Nil)))
             )
           )
         )
       ) ) ) )
     )
 
-    val sf = process(p)(s0).drop(3).takeThrough(
+    val sf = executionEngine2.process(p)(s0).drop(3).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
     ).runLast.unsafePerformSync.map(_._2)
 
-    assertResult(Some(Action.Completed(Result.Configured(TCS)))){
+    assertResult(Some(Action.Completed(DummyResult(Some(opName))))){
       for {
         st <- sf
         sq <- st.sequences.get(seqId)
@@ -317,8 +331,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   }
 
   it should "skip steps marked to be skipped at the beginning of the sequence." in {
-    val s0: Engine.State = Engine.State(Conditions.default,
-      None,
+    val s0: Engine.State[Unit] = Engine.State[Unit]((),
       Map((seqId, Sequence.State.init(Sequence(
         "First",
         SequenceMetadata(GmosS, None, ""),
@@ -338,8 +351,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   }
 
   it should "skip steps marked to be skipped in the middle of the sequence." in {
-    val s0: Engine.State = Engine.State(Conditions.default,
-      None,
+    val s0: Engine.State[Unit] = Engine.State[Unit]((),
       Map((seqId, Sequence.State.init(Sequence(
         "First",
         SequenceMetadata(GmosS, None, ""),
@@ -359,8 +371,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   }
 
   it should "skip several steps marked to be skipped." in {
-    val s0: Engine.State = Engine.State(Conditions.default,
-      None,
+    val s0: Engine.State[Unit] = Engine.State[Unit]((),
       Map((seqId, Sequence.State.init(Sequence(
         "First",
         SequenceMetadata(GmosS, None, ""),
@@ -382,8 +393,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   }
 
   it should "skip steps marked to be skipped at the end of the sequence." in {
-    val s0: Engine.State = Engine.State(Conditions.default,
-      None,
+    val s0: Engine.State[Unit] = Engine.State[Unit]((),
       Map((seqId, Sequence.State.init(Sequence(
         "First",
         SequenceMetadata(GmosS, None, ""),
@@ -404,8 +414,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   }
 
   it should "skip a step marked to be skipped even if it is the only one." in {
-    val s0: Engine.State = Engine.State(Conditions.default,
-      None,
+    val s0: Engine.State[Unit] = Engine.State[Unit]((),
       Map((seqId, Sequence.State.init(Sequence(
         "First",
         SequenceMetadata(GmosS, None, ""),
@@ -423,8 +432,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   }
 
   it should "skip steps marked to be skipped at the beginning of the sequence, even if they have breakpoints." in {
-    val s0: Engine.State = Engine.State(Conditions.default,
-      None,
+    val s0: Engine.State[Unit] = Engine.State[Unit]((),
       Map((seqId, Sequence.State.init(Sequence(
         "First",
         SequenceMetadata(GmosS, None, ""),
@@ -445,8 +453,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   }
 
   it should "skip the leading steps if marked to be skipped, even if they have breakpoints and are the last ones." in {
-    val s0: Engine.State = Engine.State(Conditions.default,
-      None,
+    val s0: Engine.State[Unit] = Engine.State[Unit]((),
       Map((seqId, Sequence.State.init(Sequence(
         "First",
         SequenceMetadata(GmosS, None, ""),
@@ -469,8 +476,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   }
 
   it should "skip steps marked to be skipped in the middle of the sequence, but honoring breakpoints." in {
-    val s0: Engine.State = Engine.State(Conditions.default,
-      None,
+    val s0: Engine.State[Unit] = Engine.State[Unit]((),
       Map((seqId, Sequence.State.init(Sequence(
         "First",
         SequenceMetadata(GmosS, None, ""),

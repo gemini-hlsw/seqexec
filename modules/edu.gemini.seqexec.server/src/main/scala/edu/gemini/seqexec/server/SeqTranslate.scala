@@ -227,7 +227,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
   }
 
   private def deliverObserveCmd(seqState: Sequence.State,
-                                f: ObserveControl => Option[SeqAction[Unit]]): Option[Process[Task, Event]] = {
+                                f: ObserveControl => Option[SeqAction[Unit]]): Option[Process[Task, executeEngine.EventType]] = {
     def isObserving(v: Action): Boolean = v.kind === ActionType.Observe && (v.state.runState match {
       case Action.Started               => true
       case _                            => false
@@ -238,12 +238,12 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     }
   }
 
-  private def handleError(t: TrySeq[Unit]): Event = t match {
+  private def handleError(t: TrySeq[Unit]): executeEngine.EventType = t match {
     case -\/(e) => Event.logErrorMsg(SeqexecFailure.explain(e))
     case _      => Event.nullEvent
   }
 
-  def stopObserve(seqId: Sequence.Id)(seqState: Sequence.State): Option[Process[Task, Event]] = {
+  def stopObserve(seqId: Sequence.Id)(seqState: Sequence.State): Option[Process[Task, executeEngine.EventType]] = {
     def f(oc: ObserveControl): Option[SeqAction[Unit]] = oc match {
       case OpticControl(StopObserveCmd(stop), _, _, _, _, _) => Some(stop)
       case InfraredControl(StopObserveCmd(stop), _)          => Some(stop)
@@ -252,7 +252,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     deliverObserveCmd(seqState, f).orElse(stopPaused(seqId)(seqState))
   }
 
-  def abortObserve(seqId: Sequence.Id)(seqState: Sequence.State): Option[Process[Task, Event]] = {
+  def abortObserve(seqId: Sequence.Id)(seqState: Sequence.State): Option[Process[Task, executeEngine.EventType]] = {
     def f(oc: ObserveControl): Option[SeqAction[Unit]] = oc match {
       case OpticControl(_, AbortObserveCmd(abort), _, _, _, _) => Some(abort)
       case InfraredControl(_, AbortObserveCmd(abort))          => Some(abort)
@@ -262,7 +262,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     deliverObserveCmd(seqState, f).orElse(abortPaused(seqId)(seqState))
   }
 
-  def pauseObserve(seqState: Sequence.State): Option[Process[Task, Event]] = {
+  def pauseObserve(seqState: Sequence.State): Option[Process[Task, executeEngine.EventType]] = {
     def f(oc: ObserveControl): Option[SeqAction[Unit]] = oc match {
       case OpticControl(_, _, PauseObserveCmd(pause), _, _, _) => Some(pause)
       case _                                                   => none
@@ -271,7 +271,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
   }
 
   private def pausedCommand(seqId: Sequence.Id, f: ObserveControl => Option[Time => SeqAction[ObserveCommand.Result]])
-                           (seqState: Sequence.State): Option[Process[Task, Event]] = {
+                           (seqState: Sequence.State): Option[Process[Task, executeEngine.EventType]] = {
     val observeIndex: Option[(ObserveContext, Int)] =
       seqState.current.execution.zipWithIndex.find(_._1.kind === ActionType.Observe).flatMap{ case (a, i) =>
         a.state.runState match {
@@ -290,7 +290,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     } }
   }
 
-  def resumePaused(seqId: Sequence.Id)(seqState: Sequence.State): Option[Process[Task, Event]] = {
+  def resumePaused(seqId: Sequence.Id)(seqState: Sequence.State): Option[Process[Task, executeEngine.EventType]] = {
     def f(o: ObserveControl): Option[Time => SeqAction[ObserveCommand.Result]] = o match {
       case OpticControl(_, _, _, ContinuePausedCmd(a), _, _) => Some(a)
       case _                                                 => none
@@ -299,7 +299,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     pausedCommand(seqId, f)(seqState)
   }
 
-  private def stopPaused(seqId: Sequence.Id)(seqState: Sequence.State): Option[Process[Task, Event]] = {
+  private def stopPaused(seqId: Sequence.Id)(seqState: Sequence.State): Option[Process[Task, executeEngine.EventType]] = {
     def f(o: ObserveControl): Option[Time => SeqAction[ObserveCommand.Result]] = o match {
       case OpticControl(_, _, _, _, StopPausedCmd(a), _) => Some(_ => a)
       case _                                             => none
@@ -308,7 +308,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     pausedCommand(seqId, f)(seqState)
   }
 
-  private def abortPaused(seqId: Sequence.Id)(seqState: Sequence.State): Option[Process[Task, Event]] = {
+  private def abortPaused(seqId: Sequence.Id)(seqState: Sequence.State): Option[Process[Task, executeEngine.EventType]] = {
     def f(o: ObserveControl): Option[Time => SeqAction[ObserveCommand.Result]] = o match {
       case OpticControl(_, _, _, _, _, AbortPausedCmd(a)) => Some(_ => a)
       case _                                              => none

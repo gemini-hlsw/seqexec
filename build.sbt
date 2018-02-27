@@ -234,6 +234,7 @@ lazy val edu_gemini_seqexec_engine = project
   .dependsOn(edu_gemini_seqexec_model_JVM)
   .settings(commonSettings: _*)
   .settings(
+    addCompilerPlugin(Plugins.kindProjectorPlugin),
     addCompilerPlugin(Plugins.paradisePlugin),
     libraryDependencies ++= Seq(ScalaZStream, Log4s) ++ Monocle.value
   )

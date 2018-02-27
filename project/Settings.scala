@@ -218,10 +218,12 @@ object Settings {
   object PluginVersions {
     // Compiler plugins
     val paradiseVersion    = "2.1.1"
+    val kpVersion          = "0.9.6"
   }
 
   object Plugins {
     val paradisePlugin = "org.scalamacros" %% "paradise" % PluginVersions.paradiseVersion cross CrossVersion.patch
+    val kindProjectorPlugin = "org.spire-math" %% "kind-projector" % PluginVersions.kpVersion
   }
 
 }
