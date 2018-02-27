@@ -111,7 +111,7 @@ object Settings {
     val jQuery           = "3.2.1"
     val semanticUI       = "2.2.10"
     val ocsVersion       = "2018101.1.1"
-    val uglifyJs         = "1.0.0-beta.3"
+    val uglifyJs         = "1.2.4"
     val reactVirtualized = "9.18.5"
     val reactClipboard   = "5.0.0"
 

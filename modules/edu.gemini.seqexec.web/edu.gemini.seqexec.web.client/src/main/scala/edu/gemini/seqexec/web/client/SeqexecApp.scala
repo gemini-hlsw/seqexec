@@ -3,7 +3,7 @@
 
 package edu.gemini.seqexec.web.client
 
-import edu.gemini.seqexec.web.client.component.SeqexecUI
+import edu.gemini.seqexec.web.client.components.SeqexecUI
 import edu.gemini.seqexec.web.client.services.log.ConsoleHandler
 import edu.gemini.seqexec.web.client.services.SeqexecWebClient
 import edu.gemini.seqexec.web.client.model.Pages

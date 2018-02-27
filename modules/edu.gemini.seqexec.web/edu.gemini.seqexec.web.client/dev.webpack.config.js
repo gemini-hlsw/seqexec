@@ -8,6 +8,7 @@ const Common = require("./common.webpack.config.js");
 const isDevServer = process.argv.some(s => s.match(/webpack-dev-server\.js$/));
 
 const Web = Merge(Common.Web, {
+  mode: "development",
   output: {
     path: __dirname,
     publicPath: "/"
@@ -95,13 +96,13 @@ const Web = Merge(Common.Web, {
   },
   plugins: [
     new Webpack.HotModuleReplacementPlugin(),
-    new Webpack.NamedModulesPlugin(),
-    new HtmlWebpackPlugin({
-      filename: "index.html",
-      chunks: ["app"],
-      template: Path.resolve(Common.resourcesDir, "./index.html"),
-      favicon: Path.resolve(Common.resourcesDir, "./images/favicon.ico")
-    })
+    new Webpack.NamedModulesPlugin()
+    // new HtmlWebpackPlugin({
+    //   filename: "index.html",
+    //   chunks: ["app"],
+    //   template: Path.resolve(Common.resourcesDir, "./index.html"),
+    //   favicon: Path.resolve(Common.resourcesDir, "./images/favicon.ico")
+    // })
   ]
 });
 
