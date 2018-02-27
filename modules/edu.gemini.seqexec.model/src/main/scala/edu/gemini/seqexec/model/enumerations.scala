@@ -170,10 +170,6 @@ object enumerations {
       "R150_G5326"  -> "R150"
     )
 
-    // TODO: Do we still need to include the obsolete filters here?
-    // TODO: For now, omitting. See GmosNorthType.DisperserNorth if needed.
-    // TODO: If needed, the reverse mapping will not be well-defined,
-    // TODO: e.g. B600 maps to B600_G5303 and B600_G5307.
     val GmosNDisperser: Map[String, String] = Map(
       "MIRROR"      -> "Mirror",
       "B1200_G5301" -> "B1200",
