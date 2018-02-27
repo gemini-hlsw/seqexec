@@ -480,7 +480,7 @@ trait HourAngleOptics extends OpticsHelpers { this: HourAngle.type =>
   lazy val angle: SplitMono[HourAngle, Angle] = Angle.hourAngle.reverse
 
   /**
-   * This `HourAngle` as an `Angle`.
+   * This `HourAngle` in microseconds.
    * @group Optics
    */
   lazy val microseconds: SplitMono[HourAngle, Long] =
