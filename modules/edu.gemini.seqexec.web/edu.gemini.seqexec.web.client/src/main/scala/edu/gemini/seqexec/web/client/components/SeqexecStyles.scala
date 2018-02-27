@@ -359,8 +359,8 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     outline.none,
     minHeight(headerHeight.px),
     height(headerHeight.px),
-    paddingLeft(6.px),
-    paddingTop(6.px)
+    paddingLeft(7.px),
+    paddingTop(7.px)
   )
 
   // Override styles used by react-virtualized
@@ -388,7 +388,6 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
   )
 
   val rowMixin: StyleS = mixin(
-    leftBorderMixin,
     topBorderMixin,
     rightBorderMixin
   )
@@ -411,12 +410,9 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     justifyContent.flexStart
   )
 
-  val controlCellHeader: StyleA = style(
-    paddingBottom((headerHeight/4).px)
-  )
-
   val tableGrid: StyleA = style("ReactVirtualized__Table__Grid")(
-    topBorderMixin,
+    leftBorderMixin,
+    rightBorderMixin,
     bottomBorderMixin,
     outline.none
   )
@@ -449,8 +445,8 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     marginLeft(auto)
   )
 
-  // This must be defined before rowColumn
   val settingsCellRow: StyleA = style(
+    minWidth(35.px).important,
     paddingRight(5.px).important,
     paddingLeft(0.px).important,
     overflow.unset.important
@@ -476,11 +472,16 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     &.hover(
       backgroundColor(rgba(0, 0, 0, 0.05)),
       color(rgba(0, 0, 0, 0.95))
+    ),
+    &.firstOfType(
+      borderTop.none
     )
   )
 
   val headerRowStyle: StyleA = style(
     rowMixin,
+    leftBorderMixin,
+    bottomBorderMixin,
     backgroundColor(c"#F9FAFB"),
     minHeight(headerHeight.px),
     height(headerHeight.px)
@@ -557,7 +558,7 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
   )
 
   val statusCellMixin: StyleS = mixin(
-    alignContent.center,
+    alignItems.center,
     display.flex,
     height(100.%%),
     width(100.%%),
@@ -741,5 +742,29 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
 
   val labelPointer: StyleA = style(
     cursor.pointer
+  )
+
+  val noRowsSegment: StyleA = style(
+    border.none.important
+  )
+
+  val clipboardIconDiv: StyleA = style(
+    minWidth(38.px),
+    display.flex,
+    paddingTop(4.px),
+    justifyContent.center,
+    alignItems.center,
+    height(100.%%),
+    width(100.%%)
+  )
+
+  val clipboardIconHeader: StyleA = style(
+    display.flex,
+    paddingTop(4.px),
+    justifyContent.center,
+    alignItems.center,
+    height(100.%%),
+    width(100.%%),
+    paddingLeft(3.px)
   )
 }

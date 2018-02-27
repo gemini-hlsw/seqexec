@@ -36,7 +36,7 @@ object ColWidths {
   val FilterWidth: Int = 100
   val FPUWidth: Int = 100
   val ObjectTypeWidth: Int = 75
-  val SettingsWidth: Int = 27
+  val SettingsWidth: Int = 34
 }
 
 /**
