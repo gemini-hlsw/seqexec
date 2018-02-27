@@ -92,6 +92,8 @@ trait Check extends FlatSpec with Matchers with IOChecker {
     val target: Target =
       Target("untitled", Right(ProperMotion.const(Coordinates.Zero)))
 
+    val gnirsConfig = DynamicConfig.Gnirs.Default
+
   }
 
 

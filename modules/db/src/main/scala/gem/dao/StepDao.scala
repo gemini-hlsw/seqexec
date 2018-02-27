@@ -561,8 +561,8 @@ object StepDao {
         disperserOrder:       GnirsDisperserOrder,
         exposureTime:         Duration,
         filter:               GnirsFilter,
-        prism:                GnirsPrism,
         fpuBuilder:           GnirsFpuBuilder,
+        prism:                GnirsPrism,
         readMode:             GnirsReadMode
       ) {
         def toGnirs: DynamicConfig.Gnirs =
@@ -588,7 +588,7 @@ object StepDao {
                  i.disperser_order,
                  i.exposure_time,
                  i.filter,
-                 i.fpu_list,
+                 i.fpu_slit,
                  i.fpu_other,
                  i.prism,
                  i.read_mode
@@ -602,7 +602,7 @@ object StepDao {
       def selectOne(oid: Observation.Id, loc: Loc): Query0[DynamicConfig.Gnirs] =
         sql"""
           SELECT i.camera,
-                 i.dekcer,
+                 i.decker,
                  i.disperser,
                  i.disperser_order,
                  i.exposure_time,
@@ -645,7 +645,7 @@ object StepDao {
             ${gnirs.fpu.toOption},
             ${gnirs.fpu.swap.toOption},
             ${gnirs.prism},
-            ${gnirs.readMode}
+            ${gnirs.readMode})
         """.update
     }
   }
