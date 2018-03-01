@@ -64,12 +64,16 @@ trait ArbTime {
   implicit val arbInstant: Arbitrary[Instant] =
     Arbitrary(arbitrary[ZonedDateTime].map(_.toInstant))
 
+  /** An arbitrary `Timestamp` from `Timestamp.Epoch` to `Timestamp.Max`. We
+    * don't generate from `Timestamp.Min` due to what appears to be a
+    * `java.sql.Timestamp` formatting issue for ancient dates.  See Issue #241.
+    */
   implicit val arbTimestamp: Arbitrary[Timestamp] =
     Arbitrary {
       for {
-        m <- Gen.choose(0L, Duration.between(Timestamp.Min.toInstant, Timestamp.Max.toInstant).toMillis)
+        m <- Gen.choose(0L, Duration.between(Instant.EPOCH, Timestamp.Max.toInstant).toMillis)
         u <- Gen.choose(0, 999L)
-      } yield Timestamp.Min.plusMillis(m).flatMap(_.plusMicros(u)).getOrElse(Timestamp.Min)
+      } yield Timestamp.Epoch.plusMillis(m).flatMap(_.plusMicros(u)).getOrElse(Timestamp.Epoch)
     }
 
   implicit val arbDuration: Arbitrary[Duration] =
