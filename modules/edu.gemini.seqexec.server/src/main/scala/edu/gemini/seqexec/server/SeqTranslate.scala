@@ -121,14 +121,10 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
   }
 
   //scalastyle:off
-  private def step(obsId: SPObservationID, i: Int, config: Config, last: Boolean, nextToRun: Int, datasets: Map[Int, ExecutedDataset]): TrySeq[Step] = {
+  private def step(obsId: SPObservationID, i: Int, config: Config, nextToRun: Int, datasets: Map[Int, ExecutedDataset]): TrySeq[Step] = {
     def buildStep(inst: InstrumentSystem, sys: List[System], headers: Reader[ActionMetadata,List[Header]], resources: Set[Resource]): Step = {
       val initialStepExecutions: List[List[Action]] =
         if (i === 0) List(List(systems.odb.sequenceStart(obsId, "").map(_ => Result.Ignored).toAction(ActionType.Undefined)))
-        else Nil
-
-      val lastStepExecutions: List[List[Action]] =
-        if (last) List(List(systems.odb.sequenceEnd(obsId).map(_ => Result.Ignored).toAction(ActionType.Undefined)))
         else Nil
 
       val regularStepExecutions: List[List[Action]] =
@@ -144,7 +140,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
           fileId = None,
           config = config.toStepConfig,
           resources = resources,
-          executions = initialStepExecutions ++ regularStepExecutions ++ lastStepExecutions
+          executions = initialStepExecutions ++ regularStepExecutions
         )
         case StepState.Pending => Step.init(
           id = i,
@@ -203,7 +199,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     val nextToRun = configs.map(extractStatus).lastIndexWhere(s => s === StepState.Completed || s === StepState.Skipped) + 1
 
     val steps = configs.zipWithIndex.map {
-      case (c, i) => step(obsId, i, c, i === (configs.length - 1), nextToRun, sequence.datasets)
+      case (c, i) => step(obsId, i, c, nextToRun, sequence.datasets)
     }.separate
 
     val instName = configs.headOption.map(extractInstrument).getOrElse(SeqexecFailure.UnrecognizedInstrument("UNKNOWN").left)
