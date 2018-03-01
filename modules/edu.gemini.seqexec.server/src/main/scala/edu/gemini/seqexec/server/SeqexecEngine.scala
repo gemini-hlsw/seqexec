@@ -10,7 +10,7 @@ import edu.gemini.epics.acm.CaService
 import edu.gemini.pot.sp.SPObservationID
 import edu.gemini.spModel.core.Site
 import edu.gemini.seqexec.engine
-import edu.gemini.seqexec.engine.{Action, Engine, Event, EventSystem, Executed, Failed, Sequence}
+import edu.gemini.seqexec.engine.{Step => _, _}
 import edu.gemini.seqexec.engine.Result.{FileIdAllocated, Partial}
 import edu.gemini.seqexec.server.ConfigUtilOps._
 import edu.gemini.seqexec.odb.SmartGcal
@@ -30,10 +30,10 @@ import edu.gemini.spModel.seqcomp.SeqConfigNames.OCS_KEY
 import edu.gemini.spModel.obscomp.InstConstants
 import edu.gemini.spModel.core.SPProgramID
 import knobs.Config
-
 import scalaz._
 import Scalaz._
 import scalaz.concurrent.{Strategy, Task}
+
 import scala.concurrent.duration._
 import scalaz.stream.{DefaultScheduler, Process, wye}
 import scalaz.stream.wye._
@@ -225,18 +225,11 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     })
 
     (i match {
-      case (EventSystem(Failed(id, _, e)), _) =>
-        for {
-          obsId <- safeGetObsId(id)
-          _     <- systems.odb.obsAbort(obsId, e.msg)
-        } yield ()
+      case (EventSystem(Failed(id, _, e)), _) => safeGetObsId(id) >>= {systems.odb.obsAbort(_, e.msg)}
       case (EventSystem(Executed(id)), st) if st.sequences.get(id).exists(_.status === SequenceState.Idle) =>
-        for {
-          obsId <- safeGetObsId(id)
-          _     <- systems.odb.obsPause(obsId, "Sequence paused by user")
-        } yield ()
-      case _ =>
-        SeqAction(())
+        safeGetObsId(id) >>= {systems.odb.obsPause(_, "Sequence paused by user")}
+      case (EventSystem(Finished(id)), _)     => safeGetObsId(id) >>= systems.odb.sequenceEnd
+      case _                                  => SeqAction(())
     }).run.map(_ => i)
   }
 
