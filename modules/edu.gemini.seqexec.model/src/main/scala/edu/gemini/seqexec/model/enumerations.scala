@@ -158,4 +158,26 @@ object enumerations {
       "CUSTOM_MASK" -> "Custom Mask"
     )
   }
+
+  object disperser {
+    val GmosSDisperser: Map[String, String] = Map(
+      "MIRROR"      -> "Mirror",
+      "B1200_G5321" -> "B1200",
+      "R831_G5322"  -> "R831",
+      "B600_G5323"  -> "B600",
+      "R600_G5324"  -> "R600",
+      "R400_G5325"  -> "R400",
+      "R150_G5326"  -> "R150"
+    )
+
+    val GmosNDisperser: Map[String, String] = Map(
+      "MIRROR"      -> "Mirror",
+      "B1200_G5301" -> "B1200",
+      "R831_G5302"  -> "R831",
+      "B600_G5307"  -> "B600",
+      "R600_G5304"  -> "R600",
+      "R400_G5305"  -> "R400",
+      "R150_G5308"  -> "R150"
+    )
+  }
 }
