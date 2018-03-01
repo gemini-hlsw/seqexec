@@ -1,12 +1,11 @@
 // Copyright (c) 2016-2017 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
-package gem.ocs2
+package gem
+package ocs2
 
 import gem.dao._
-import gem.{ Dataset, Log, Observation, Program, User }
 
-import cats.effect.IO
 import cats.implicits._
 import doobie._, doobie.implicits._
 
@@ -33,49 +32,34 @@ object Importer extends DoobieClient {
       } yield ()
   }
 
-  def writeObservation(oid: Observation.Id, o: Observation.Full, ds: List[Dataset]): (User[_], Log[ConnectionIO]) => ConnectionIO[Unit] = {
+  def importObservation(oid: Observation.Id, o: Observation.Full, ds: List[Dataset]): ConnectionIO[Unit] = {
 
     val rmObservation: ConnectionIO[Unit] =
       sql"DELETE FROM observation WHERE program_id = ${oid.pid} AND observation_index = ${oid.index}".update.run.void
 
-    (u: User[_], l: Log[ConnectionIO]) =>
-      for {
-        _ <- ignoreUniqueViolation(ProgramDao.insertFlat(Program[Nothing](oid.pid, "", TreeMap.empty)).as(1))
-        _ <- l.log(u, s"remove observation $oid"   )(rmObservation                )
-        _ <- l.log(u, s"insert new version of $oid")(ObservationDao.insert(oid, o))
-        _ <- l.log(u, s"write datasets for $oid"   )(datasets.write(oid, ds)      )
-      } yield ()
+    for {
+      _ <- ignoreUniqueViolation(ProgramDao.insertFlat(Program[Nothing](oid.pid, "", TreeMap.empty)).as(1))
+      _ <- rmObservation
+      _ <- ObservationDao.insert(oid, o)
+      _ <- datasets.write(oid, ds)
+    } yield ()
   }
 
-  def writeProgram(p: Program[Observation.Full], ds: List[Dataset]): (User[_], Log[ConnectionIO]) => ConnectionIO[Unit] = {
+  def importProgram(p: Program[Observation.Full], ds: List[Dataset]): ConnectionIO[Unit] = {
+
     val rmProgram: ConnectionIO[Unit] =
       sql"DELETE FROM program WHERE program_id = ${p.id}".update.run.void
 
     val dsMap = ds.groupBy(_.label.observationId).withDefaultValue(List.empty[Dataset])
 
-    (u: User[_], l: Log[ConnectionIO]) =>
-      for {
-        _ <- l.log(u, s"remove program ${p.id}"       )(rmProgram           )
-        _ <- l.log(u, s"insert new version of ${p.id}")(ProgramDao.insert(p))
-        _ <- p.observations.toList.traverse_ { case (i, _) =>
-               val oid = Observation.Id(p.id, i)
-               l.log(u, s"write datasets for $oid")(datasets.write(oid, dsMap(oid)))
-             }
-      } yield ()
+    for {
+      _ <- rmProgram
+      _ <- ProgramDao.insert(p)
+      _ <- p.observations.toList.traverse_ { case (i, _) =>
+             val oid = Observation.Id(p.id, i)
+             datasets.write(oid, dsMap(oid))
+           }
+    } yield ()
   }
 
-  def doImport(write: (User[_], Log[ConnectionIO]) => ConnectionIO[Unit]): IO[Unit] =
-    for {
-      u <- UserDao.selectRootUser.transact(lxa)
-      l <- Log.newLog[ConnectionIO]("importer", lxa).transact(lxa)
-      _ <- IO(configureLogging)
-      _ <- write(u, l).transact(lxa)
-      _ <- l.shutdown(5 * 1000).transact(lxa) // if we're not done soon something is wrong
-    } yield ()
-
-  def importObservation(oid: Observation.Id, o: Observation.Full, ds: List[Dataset]): IO[Unit] =
-    doImport(writeObservation(oid, o, ds))
-
-  def importProgram(p: Program[Observation.Full], ds: List[Dataset]): IO[Unit] =
-    doImport(writeProgram(p, ds))
 }

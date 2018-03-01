@@ -3,20 +3,22 @@
 
 package gem.ocs2
 
-import cats.effect.IO, cats.implicits._
+import cats.effect.IO
+import cats.implicits._
 import fs2.Stream
 import fs2.{io, text}
 import gem.Log
 import gem.config.GcalConfig
 import gem.config.DynamicConfig.SmartGcalKey
-import gem.dao.{ SmartGcalDao, UserDao }
-import gem.enum.{ GcalBaselineType, GcalLampType }
+import gem.dao.{DatabaseConfiguration, SmartGcalDao, UserDao}
+import gem.enum.{GcalBaselineType, GcalLampType}
 import gem.ocs2.pio.PioParse
 import gem.math.Wavelength
 
 import java.io.File
 import java.time.Duration
-import doobie._, doobie.implicits._
+import doobie._
+import doobie.implicits._
 
 import scala.reflect.runtime.universe._
 
@@ -26,6 +28,8 @@ import scala.reflect.runtime.universe._
   * by science staff.
   */
 object SmartGcalImporter extends DoobieClient {
+
+  private val xa = DatabaseConfiguration.forTesting.transactor[IO]
 
   implicit class ParseOps(s: String) {
     def parseAs[A: TypeTag](parse: PioParse[A]): A =
@@ -186,23 +190,23 @@ object SmartGcalImporter extends DoobieClient {
 
     val prog = (lines(GcalLampType.Arc) ++ lines(GcalLampType.Flat))
       .segmentN(4096)
-      .flatMap { v => writer(v.force.toVector).transact(lxa) }
+      .flatMap { v => writer(v.force.toVector).transact(xa) }
 
     for {
       _ <- IO(println(s"Importing $instFilePrefix ...")) // scalastyle:ignore
-      _ <- unindexer.transact(lxa)
+      _ <- unindexer.transact(xa)
       _ <- prog.compile.drain
-      _ <- indexer.transact(lxa)
+      _ <- indexer.transact(xa)
     } yield ()
   }
 
   def runc: IO[Unit] =
     for {
-      u <- UserDao.selectRootUser.transact(lxa)
-      l <- Log.newLog[IO]("smartgcal importer", lxa)
+      u <- UserDao.selectRootUser.transact(xa)
+      l <- Log.newLog[IO]("smartgcal importer", xa)
       _ <- checkSmartDir
-      _ <- IO(configureLogging)
-      _ <- clean.transact(lxa)
+      _ <- configureLogging[IO]
+      _ <- clean.transact(xa)
       _ <- importAllInst
       _ <- l.shutdown(5 * 1000)
       _ <- IO(println("Done.")) // scalastyle:ignore

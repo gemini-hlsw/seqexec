@@ -18,6 +18,8 @@ package object command {
       eph.exportCommand,
       eph.reportCommand,
       eph.updateCommand,
+      fetch.obsCommand,
+      fetch.progCommand,
       ls.command,
       whoami.command,
       passwd.command
