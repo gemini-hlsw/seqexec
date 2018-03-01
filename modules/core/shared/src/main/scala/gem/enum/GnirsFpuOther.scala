@@ -29,11 +29,11 @@ object GnirsFpuOther {
   /** @group Constructors */ case object Acquisition extends GnirsFpuOther("Acquisition", "Acquisition", "Acquisition", false)
   /** @group Constructors */ case object PupilViewer extends GnirsFpuOther("PupilViewer", "Pupil", "Pupil viewer", false)
   /** @group Constructors */ case object Pinhole1 extends GnirsFpuOther("Pinhole1", "Small pin", "pinhole 0.1", false)
-  /** @group Constructors */ case object Pinhole2 extends GnirsFpuOther("Pinhole2", "Large pin", "pinhole 0.3", false)
+  /** @group Constructors */ case object Pinhole3 extends GnirsFpuOther("Pinhole3", "Large pin", "pinhole 0.3", false)
 
   /** All members of GnirsFpuOther, in canonical order. */
   val all: List[GnirsFpuOther] =
-    List(Ifu, Acquisition, PupilViewer, Pinhole1, Pinhole2)
+    List(Ifu, Acquisition, PupilViewer, Pinhole1, Pinhole3)
 
   /** Select the member of GnirsFpuOther with the given tag, if any. */
   def fromTag(s: String): Option[GnirsFpuOther] =
