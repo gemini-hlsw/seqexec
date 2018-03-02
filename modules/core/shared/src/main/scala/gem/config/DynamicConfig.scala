@@ -190,12 +190,12 @@ object DynamicConfig {
     camera:               GnirsCamera,
     decker:               GnirsDecker,
     disperser:            GnirsDisperser,
-    disperserOrder:       GnirsDisperserOrder,
     exposureTime:         Duration,
     filter:               GnirsFilter,
     fpu:                  Either[GnirsFpuOther, GnirsFpuSlit],
     prism:                GnirsPrism,
-    readMode:             GnirsReadMode
+    readMode:             GnirsReadMode,
+    wavelength:           Wavelength
   ) extends DynamicConfig.Impl(Instrument.Gnirs)
 
   object Gnirs {
@@ -203,12 +203,12 @@ object DynamicConfig {
       GnirsCamera.ShortBlue,
       GnirsDecker.Acquisition,
       GnirsDisperser.D32,
-      GnirsDisperserOrder.Three,
       java.time.Duration.ofSeconds(17),
       GnirsFilter.Order5,
       Right(GnirsFpuSlit.LongSlit_0_30),
       GnirsPrism.Mirror,
-      GnirsReadMode.Bright
+      GnirsReadMode.Bright,
+      Wavelength.fromAngstroms.unsafeGet(22000)
     )
   }
 

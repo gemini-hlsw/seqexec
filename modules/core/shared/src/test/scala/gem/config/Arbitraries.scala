@@ -237,12 +237,12 @@ trait Arbitraries {
         a <- arbitrary[GnirsCamera                        ]
         b <- arbitrary[GnirsDecker                        ]
         c <- arbitrary[GnirsDisperser                     ]
-        d <- arbitrary[GnirsDisperserOrder                ]
-        e <- arbitrary[Duration                           ]
-        f <- arbitrary[GnirsFilter                        ]
-        g <- arbitrary[Either[GnirsFpuOther, GnirsFpuSlit]]
-        h <- arbitrary[GnirsPrism                         ]
-        i <- arbitrary[GnirsReadMode                      ]
+        d <- arbitrary[Duration                           ]
+        e <- arbitrary[GnirsFilter                        ]
+        f <- arbitrary[Either[GnirsFpuOther, GnirsFpuSlit]]
+        g <- arbitrary[GnirsPrism                         ]
+        h <- arbitrary[GnirsReadMode                      ]
+        i <- Gen.choose(1000, 120000).map(Wavelength.fromAngstroms.unsafeGet)
       } yield DynamicConfig.Gnirs(a, b, c, d, e, f, g, h, i)
 
   def genDynamicConfigOf[I <: Instrument with Singleton](i: Instrument.Aux[I]): Gen[DynamicConfig.Aux[I]] = {

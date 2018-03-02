@@ -70,9 +70,7 @@ object SequenceDecoder extends PioDecoder[List[Step[DynamicConfig]]] {
       case Instrument.Ghost      => DynamicConfig.Ghost()   .asRight
       case Instrument.GmosN      => Gmos.parseNorth(cm)
       case Instrument.GmosS      => Gmos.parseSouth(cm)
-
-      /// TODO: Implement GNIRS decoder
-      case Instrument.Gnirs      => DynamicConfig.Gnirs.Default.asRight
+      case Instrument.Gnirs      => Gnirs.parse(cm)
 
       case Instrument.Gpi        => DynamicConfig.Gpi()     .asRight
       case Instrument.Gsaoi      => DynamicConfig.Gsaoi()   .asRight
@@ -168,6 +166,24 @@ object SequenceDecoder extends PioDecoder[List[Step[DynamicConfig]]] {
         m <- customMask(cm)
         fpu = u.map(_.asRight[GmosCustomMask]) orElse m.map(_.asLeft[GmosSouthFpu])
       } yield GmosSouth(c, g, f, fpu)
+    }
+  }
+
+  private object Gnirs {
+    def parse(cm: ConfigMap): Either[PioError, DynamicConfig] = {
+      import Legacy.Instrument.Gnirs._
+      import gem.config.DynamicConfig.Gnirs.Default
+      for {
+        a <- Camera.parse(cm)
+        b <- Decker.cparseOrElse(cm, Default.decker)
+        c <- Disperser.parse(cm)
+        d <- Legacy.Observe.ExposureTime.cparseOrElse(cm, Default.exposureTime)
+        e <- Filter.cparseOrElse(cm, Default.filter)
+        f <- Fpu.parse(cm)
+        g <- Prism.parse(cm)
+        h <- ReadMode.parse(cm)
+        i <- Wavelength.parse(cm)
+      } yield DynamicConfig.Gnirs(a, b, c, d, e, f, g, h, i)
     }
   }
 

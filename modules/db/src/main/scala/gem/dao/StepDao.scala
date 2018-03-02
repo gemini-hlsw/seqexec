@@ -11,7 +11,7 @@ import gem.config._
 import gem.config.GcalConfig.GcalLamp
 import gem.dao.meta._
 import gem.enum._
-import gem.math.Offset
+import gem.math.{ Offset, Wavelength }
 import gem.syntax.treemap._
 import java.time.Duration
 import scala.collection.immutable.TreeMap
@@ -555,27 +555,27 @@ object StepDao {
       }
 
       final case class GnirsBuilder(
-        camera:               GnirsCamera,
-        decker:               GnirsDecker,
-        disperser:            GnirsDisperser,
-        disperserOrder:       GnirsDisperserOrder,
-        exposureTime:         Duration,
-        filter:               GnirsFilter,
-        fpuBuilder:           GnirsFpuBuilder,
-        prism:                GnirsPrism,
-        readMode:             GnirsReadMode
+        camera:       GnirsCamera,
+        decker:       GnirsDecker,
+        disperser:    GnirsDisperser,
+        exposureTime: Duration,
+        filter:       GnirsFilter,
+        fpuBuilder:   GnirsFpuBuilder,
+        prism:        GnirsPrism,
+        readMode:     GnirsReadMode,
+        wavelength:   Wavelength
       ) {
         def toGnirs: DynamicConfig.Gnirs =
           DynamicConfig.Gnirs(
             camera,
             decker,
             disperser,
-            disperserOrder,
             exposureTime,
             filter,
             fpuBuilder.toFpu,
             prism,
-            readMode
+            readMode,
+            wavelength
           )
       }
 
@@ -585,13 +585,13 @@ object StepDao {
                  i.camera,
                  i.decker,
                  i.disperser,
-                 i.disperser_order,
                  i.exposure_time,
                  i.filter,
                  i.fpu_slit,
                  i.fpu_other,
                  i.prism,
-                 i.read_mode
+                 i.read_mode,
+                 i.wavelength
             FROM step s
                  LEFT OUTER JOIN step_gnirs i
                    ON i.step_gnirs_id = s.step_id
@@ -604,13 +604,13 @@ object StepDao {
           SELECT i.camera,
                  i.decker,
                  i.disperser,
-                 i.disperser_order,
                  i.exposure_time,
                  i.filter,
                  i.fpu_slit,
                  i.fpu_other,
                  i.prism,
-                 i.read_mode
+                 i.read_mode,
+                 i.wavelength
             FROM step s
                  LEFT OUTER JOIN step_gnirs i
                    ON i.step_gnirs_id = s.step_id
@@ -626,26 +626,26 @@ object StepDao {
             camera,
             decker,
             disperser,
-            disperser_order,
             exposure_time,
             filter,
             fpu_slit,
             fpu_other,
             prism,
-            read_mode
+            read_mode,
+            wavelength
           )
           VALUES (
             $id,
             ${gnirs.camera},
             ${gnirs.decker},
             ${gnirs.disperser},
-            ${gnirs.disperserOrder},
             ${gnirs.exposureTime},
             ${gnirs.filter},
             ${gnirs.fpu.toOption},
             ${gnirs.fpu.swap.toOption},
             ${gnirs.prism},
-            ${gnirs.readMode})
+            ${gnirs.readMode},
+            ${gnirs.wavelength})
         """.update
     }
   }

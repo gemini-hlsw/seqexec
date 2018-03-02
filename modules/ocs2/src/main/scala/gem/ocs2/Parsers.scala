@@ -539,9 +539,137 @@ object Parsers {
   }
 
   object Gnirs {
-    val wellDepth: PioParse[GnirsWellDepth] = enum(
-      "SHALLOW" -> GnirsWellDepth.Shallow,
-      "DEEP"    -> GnirsWellDepth.Deep
-    )
+
+    val camera: PioParse[GnirsCamera] = {
+
+      import GnirsCamera._
+
+      enum(
+        "short blue" -> ShortBlue,
+        "long blue"  -> LongBlue,
+        "short red"  -> ShortRed,
+        "long red"   -> LongRed
+      )
+    }
+
+    val decker: PioParse[GnirsDecker] = {
+
+      import GnirsDecker._
+
+      enum(
+        "acquisition"            -> Acquisition,
+        "pupil viewer"           -> PupilViewer,
+        "short camera long slit" -> ShortCamLongSlit,
+        "short camera x-disp"    -> ShortCamCrossDispersed,
+        "IFU"                    -> Ifu,
+        "long camera long slit"  -> LongCamLongSlit,
+        "wollaston"              -> Wollaston
+      )
+
+    }
+
+    val disperser: PioParse[GnirsDisperser] = {
+
+      import GnirsDisperser._
+
+      enum(
+        "10 l/mm grating"  -> D10,
+        "32 l/mm grating"  -> D32,
+        "111 l/mm grating" -> D111
+      )
+
+    }
+
+    val filter: PioParse[GnirsFilter] = {
+
+      import GnirsFilter._
+
+      enum(
+        "x-dispersed"            -> CrossDispersed,
+        "order 6 (X)"            -> Order6,
+        "order 5 (J)"            -> Order5,
+        "order 4 (H-MK: 1.65um)" -> Order4,
+        "order 3 (K)"            -> Order3,
+        "order 2 (L)"            -> Order2,
+        "order 1 (M)"            -> Order1,
+        "H2: 2.12um"             -> H2,
+        "H + ND100X"             -> HNd100x,
+        "H2 + ND100X"            -> H2Nd100x,
+        "PAH: 3.3um"             -> PAH,
+        "Y-MK: 1.03um"           -> Y,
+        "J-MK: 1.25um"           -> J,
+        "K-MK: 2.20um"           -> K
+      )
+
+    }
+
+    val fpu: PioParse[Either[GnirsFpuOther, GnirsFpuSlit]] = {
+
+      import GnirsFpuSlit._
+      import GnirsFpuOther._
+
+      enum(
+        "0.10 arcsec"  -> Right(LongSlit_0_10),
+        "0.15 arcsec"  -> Right(LongSlit_0_15),
+        "0.20 arcsec"  -> Right(LongSlit_0_20),
+        "0.30 arcsec"  -> Right(LongSlit_0_30),
+        "0.45 arcsec"  -> Right(LongSlit_0_45),
+        "0.675 arcsec" -> Right(LongSlit_0_675),
+        "1.0 arcsec"   -> Right(LongSlit_1_00),
+        "3.0 arcsec"   -> Right(LongSlit_3_00),
+        "IFU"          -> Left(Ifu),
+        "acquisition"  -> Left(Acquisition),
+        "pupil viewer" -> Left(PupilViewer),
+        "pinhole 0.1"  -> Left(Pinhole1),
+        "pinhole 0.3"  -> Left(Pinhole3)
+      )
+
+    }
+
+    val prism: PioParse[GnirsPrism] = {
+
+      import GnirsPrism._
+
+      enum(
+        "No"  -> Mirror,
+        "SXD" -> Sxd,
+        "LXD" -> Lxd
+      )
+
+    }
+
+    val readMode: PioParse[GnirsReadMode] = {
+
+      import GnirsReadMode._
+
+      enum(
+        "Very Bright/Acq./High Bckgrd." -> VeryBright,
+        "Bright Objects"                -> Bright,
+        "Faint Objects"                 -> Faint,
+        "Very Faint Objects"            -> VeryFaint
+      )
+
+    }
+
+    val centralWavelength: PioParse[Wavelength] = {
+      bigDecimal.map(w =>
+        Wavelength.fromAngstroms.unsafeGet(
+          w.underlying.movePointRight(4).intValue
+        )
+      )
+    }
+
+
+    val wellDepth: PioParse[GnirsWellDepth] = {
+
+      import GnirsWellDepth._
+
+      enum(
+        "SHALLOW" -> Shallow,
+        "DEEP"    -> Deep
+      )
+
+    }
+
   }
 }

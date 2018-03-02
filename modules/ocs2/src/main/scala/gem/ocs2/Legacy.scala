@@ -139,7 +139,16 @@ object Legacy {
     }
 
     object Gnirs {
-      val WellDepth = Key("wellDepth")(Parsers.Gnirs.wellDepth)
+      import Parsers.Gnirs._
+      val Camera         = Key("camera"           )(camera)
+      val Decker         = Key("decker"           )(decker)
+      val Disperser      = Key("disperser"        )(disperser)
+      val Filter         = Key("filter"           )(filter)
+      val Fpu            = Key("slitWidth"        )(fpu)
+      val Prism          = Key("crossDispersed"   )(prism)
+      val ReadMode       = Key("readMode"         )(readMode)
+      val Wavelength     = Key("centralWavelength")(centralWavelength)
+      val WellDepth      = Key("wellDepth"        )(wellDepth)
     }
   }
 
