@@ -2,14 +2,14 @@ import com.typesafe.sbt.packager.docker._
 
 lazy val circeVersion         = "0.9.1"
 lazy val attoVersion          = "0.6.2-M1"
-lazy val catsEffectVersion    = "0.8"
+lazy val catsEffectVersion    = "0.9"
 lazy val catsVersion          = "1.0.1"
 lazy val declineVersion       = "0.4.1"
-lazy val doobieVersion        = "0.5.0"
+lazy val doobieVersion        = "0.5.1"
 lazy val flywayVersion        = "5.0.7"
-lazy val fs2Version           = "0.10.1"
-lazy val http4sVersion        = "0.18.0"
-lazy val jwtVersion           = "0.14.1"
+lazy val fs2Version           = "0.10.2"
+lazy val http4sVersion        = "0.18.1"
+lazy val jwtVersion           = "0.15.0"
 lazy val kpVersion            = "0.9.6"
 lazy val monocleVersion       = "1.5.0-cats"
 lazy val mouseVersion         = "0.16"
@@ -17,10 +17,10 @@ lazy val paradiseVersion      = "2.1.1"
 lazy val scalaCheckVersion    = "1.13.5"
 lazy val scalaParsersVersion  = "1.1.0"
 lazy val scalaTestVersion     = "3.0.5"
-lazy val scalaXmlVerson       = "1.0.6"
+lazy val scalaXmlVerson       = "1.1.0"
 lazy val shapelessVersion     = "2.3.3"
 lazy val slf4jVersion         = "1.7.25"
-lazy val tucoVersion          = "0.3.0"
+lazy val tucoVersion          = "0.3.1"
 lazy val scalaJavaTimeVersion = "2.0.0-M13"
 
 // our version is determined by the current git state (see project/ImageManifest.scala)
@@ -75,6 +75,15 @@ lazy val gemWarts =
   )
 
 lazy val commonSettings = Seq(
+
+  // Don't worry about stale deps pulled in by scala-js
+  dependencyUpdatesFilter -= moduleFilter(organization = "org.eclipse.jetty"),
+
+  // Don't worry about monocle versions that start with the same prefix.
+  dependencyUpdatesFilter -= moduleFilter(
+    organization = "com.github.julien-truffaut",
+    revision = sbt.io.GlobFilter(monocleVersion.replace("-cats", "*"))
+  ),
 
   // These sbt-header settings can't be set in ThisBuild for some reason
   headerMappings := headerMappings.value + (HeaderFileType.scala -> HeaderCommentStyle.cppStyleLineComment),
