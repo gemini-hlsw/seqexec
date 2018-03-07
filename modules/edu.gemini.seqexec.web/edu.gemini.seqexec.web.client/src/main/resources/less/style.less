@@ -1,6 +1,6 @@
 @color_2: #573a08;
 @color_3: black;
-@color_4: rgba(0, 0, 0, 0.95);
+@text_color: rgba(0, 0, 0, 0.95);
 @color_5: #9f3a38;
 @color_6: rgba(40, 40, 40, 0.3);
 @color_7: rgba(0, 0, 0, 0.87);
@@ -17,7 +17,7 @@
 @background_color_10: #fcfff5;
 @border_color: rgba(34, 36, 38, 0.15);
 
-@keyframes "SeqexecStyles-blink" {
+@keyframes SeqexecStyles-blink {
   50% {
     opacity: 0;
   }
@@ -62,11 +62,10 @@ body {
 .SeqexecStyles-fieldsNoBottom {
   margin-bottom: 0 !important;
 }
-.ui.scroll.pane {
-  overflow: auto;
-}
 .SeqexecStyles-queueListPane {
-  margin-top: 0 !important;
+  padding: 0px !important;
+  margin-top: 0;
+  overflow: auto;
 }
 .SeqexecStyles-stepsListPane {
   height: ~"calc(100% - 1.98em)";
@@ -93,13 +92,6 @@ body {
 }
 .SeqexecStyles-offsetGrid {
   margin-right: 1em !important;
-}
-.ui.scroll.pane.segment {
-  padding: 0 !important;
-  > .ui.table {
-    border: 0;
-    border-spacing: 0;
-  }
 }
 .SeqexecStyles-shorterRow {
   margin-bottom: -1em !important;
@@ -313,7 +305,7 @@ body {
   }
   &:hover {
     background-color: @background_color_7;
-    color: @color_4;
+    color: @text_color;
   }
 }
 .SeqexecStyles-headerRowStyle {
@@ -339,7 +331,7 @@ body {
   word-wrap: break-word;
   white-space: nowrap;
   background-color: @background_color_1;
-  color: @color_4;
+  color: @text_color;
   overflow: unset !important;
   border-right-style: solid;
   border-right-color: @border_color;
@@ -355,7 +347,7 @@ body {
   word-wrap: break-word;
   white-space: nowrap;
   background-color: @background_color_1;
-  color: @color_4;
+  color: @text_color;
   border-left-width: 1px;
   border-left-style: solid;
   border-left-color: @border_color;
@@ -386,7 +378,7 @@ body {
   border-right-style: solid;
   border-right-color: @border_color;
   background-color: @background_color_1;
-  color: @color_4;
+  color: @text_color;
 }
 .SeqexecStyles-errorLog {
   border-top-width: 1px;
@@ -604,10 +596,66 @@ body {
 .SeqexecStyles-labelPointer {
   cursor: pointer;
 }
+.fullCell() {
+  width: 100%;
+  height: 100%;
+}
+.queueFullCell() {
+  .fullCell;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0px;
+}
+.queueCenterCell() {
+  .fullCell;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0px;
+}
+.queueText() {
+  color: @text_color;
+  &:hover {
+    color: @text_color;
+  }
+}
+.SeqexecStyles-queueTextColumn {
+  .queueText;
+  .queueFullCell;
+}
+.SeqexecStyles-queueText {
+  padding-left: 0.7em;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.SeqexecStyles-queueIconColumn {
+  min-width: 19px;
+  .queueCenterCell;
+}
+.SeqexecStyles-selectedIcon {
+  .queueText;
+  margin-bottom: 5px !important;
+}
+.SeqexecStyles-runningIcon {
+  .queueText;
+}
+.SeqexecStyles-errorIcon {
+  .queueText;
+  margin-bottom: 6px !important;
+}
+.SeqexecStyles-headerSidebarStyle {
+  border-width: 1px;
+  border-style: solid;
+  border-color: @border_color;
+  border-radius: unset !important;
+  box-shadow: unset !important;
+}
 @media only screen and (min-width: 767px) {
   .SeqexecStyles-queueListPane {
-    max-height: 15.45em;
-    min-height: 15.45em;
+    max-height: 213px;
+    min-height: 213px;
   }
   .SeqexecStyles-instrumentTabSegment {
     min-height: 25.4em;
