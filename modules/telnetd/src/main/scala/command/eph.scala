@@ -7,6 +7,7 @@ package command
 
 import gem.enum.Site
 import gem.horizons.EphemerisContext
+import gem.math.ObservingNight
 import gem.util.Timestamp
 
 import cats.data.NonEmptyList
@@ -17,7 +18,7 @@ import Tuco._
 import tuco.shell._
 
 import java.nio.file.Path
-import java.time.{ Instant, LocalDateTime }
+import java.time.Instant
 import java.time.ZoneOffset.UTC
 import java.time.format.DateTimeFormatter
 
@@ -80,21 +81,30 @@ object eph extends SiteOpt {
   /** Command that exports ephemeris files in TCS format to a directory on the
     * server.
     */
-  val exportCommand: GemCommand =
+  val exportCommand: GemCommand = {
+    def range(now: Instant, s: Site): (Timestamp, Timestamp) = {
+      val n = ObservingNight.forInstant(now, s)
+      (Timestamp.unsafeFromInstant(n.start), Timestamp.unsafeFromInstant(n.end))
+    }
+
     Command(
       "eph-export", "Export ephemerides for the current night for use by the TCS",
-      (site, dir, anyKeys).mapN { (s: Site, p: Path, ks: NonEmptyList[EphemerisKey]) => (d: GemState) => {
+      (site, dir, anyKeys).mapN { (s: Site, p: Path, ks: NonEmptyList[EphemerisKey]) =>
+        (d: GemState) => {
 
-        ks.traverse { k =>
-          for {
-            r <- SessionIO.delay(Instant.now).map(night.range(_, s))
-            _ <- write(s"Exporting $k @ $s ... ")
-            f <- d.ephemeris.export(k, s, r._1, r._2, p)
-            _ <- writeLn(s"$f")
-          } yield ()
-        }.as(d)
-      }}
+          ks.traverse { k =>
+            for {
+              r <- SessionIO.delay(Instant.now).map(range(_, s))
+              _ <- write(s"Exporting $k @ $s ... ")
+              f <- d.ephemeris.export(k, s, r._1, r._2, p)
+              _ <- writeLn(s"$f")
+            } yield ()
+          }.as(d)
+        }
+      }
     ).zoom(Session.data[GemState])
+
+  }
 
   private def horizonsCommand(name: String, help: String, msg: String)
                              (f: (GemState, EphemerisKey.Horizons, Site) => SessionIO[EphemerisContext]): GemCommand =
@@ -138,22 +148,6 @@ object eph extends SiteOpt {
          |  Solution Reference: ${ctx.meta.flatMap(_.solnRef).map(_.stringValue).orEmpty}
          |  Available Range...: ${formatTime(ctx.rnge.map(_._1))}${ctx.rnge.as(" - ").orEmpty}${formatTime(ctx.rnge.map(_._2))}
        """.stripMargin
-  }
-
-  // TODO: we need something like ObservingNight. make due for now ...
-  private object night {
-    val LocalNightStartHour = 14
-
-    def range(now: Instant, s: Site): (Timestamp, Timestamp) = {
-      val local  = LocalDateTime.ofInstant(now, s.timezone)
-      val localʹ = if (local.getHour < LocalNightStartHour) local.minusDays(1L) else local
-      val start  = localʹ.withHour(LocalNightStartHour).withMinute(0).withSecond(0).withNano(0)
-      val end    = start.plusDays(1L)
-      val offset = s.timezone.getRules.getOffset(start)
-      (Timestamp.unsafeFromInstant(start.toInstant(offset)),
-        Timestamp.unsafeFromInstant(end.toInstant(offset)))
-    }
-
   }
 
 }
