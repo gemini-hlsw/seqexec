@@ -73,6 +73,7 @@ object HeadersSideBar {
       val operatorEV = StateSnapshot(~s.currentText)(updateState)
       <.div(
         ^.cls := "ui secondary segment",
+        SeqexecStyles.headerSideBarStyle,
         <.div(
           ^.cls := "ui form",
           <.div(
