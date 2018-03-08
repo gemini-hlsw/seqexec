@@ -47,11 +47,17 @@ object ModelOps {
     case i: Instrument   => i.shows
   }
 
+  final case class RunningStep(last: Int, total: Int)
+
+  object RunningStep {
+    implicit val show: Show[RunningStep] = Show.shows(u => s"${u.last + 1}/${u.total}")
+  }
+
   implicit class SequenceViewOps(val s: SequenceView) extends AnyVal {
-    private def progress: (Int, Int) = (s.steps.count(_.isFinished), s.steps.length)
+    private def progress: RunningStep = RunningStep(s.steps.count(_.isFinished), s.steps.length)
 
     // Returns where on the sequence the execution is at
-    def runningStep: Option[(Int, Int)] = s.status match {
+    def runningStep: Option[RunningStep] = s.status match {
       case SequenceState.Running(_, _) => Some(progress)
       case SequenceState.Failed(_)     => Some(progress)
       case _                           => None

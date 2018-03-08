@@ -47,12 +47,12 @@ object QueueTableBody {
     var targetName: Option[String]
     var name: String
     var active: Boolean
-    var runningStep: Option[(Int, Int)]
+    var runningStep: Option[RunningStep]
   }
   // scalastyle:on
   object QueueRow {
     @SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf"))
-    def apply(obsId: SequenceId, status: SequenceState, instrument: Instrument, targetName: Option[String], name: String, active: Boolean, runningStep: Option[(Int, Int)]): QueueRow = {
+    def apply(obsId: SequenceId, status: SequenceState, instrument: Instrument, targetName: Option[String], name: String, active: Boolean, runningStep: Option[RunningStep]): QueueRow = {
       val p = (new js.Object).asInstanceOf[QueueRow]
       p.obsId = obsId
       p.status = status
@@ -64,7 +64,7 @@ object QueueTableBody {
       p
     }
 
-    def unapply(l: QueueRow): Option[(SequenceId, SequenceState, Instrument, Option[String], String, Boolean, Option[(Int, Int)])] =
+    def unapply(l: QueueRow): Option[(SequenceId, SequenceState, Instrument, Option[String], String, Boolean, Option[RunningStep])] =
       Some((l.obsId, l.status, l.instrument, l.targetName, l.name, l.active, l.runningStep))
 
     val Zero: QueueRow = apply("", SequenceState.Idle, Instrument.F2, None, "", false, None)
@@ -92,7 +92,7 @@ object QueueTableBody {
   private def obsNameRenderer(p: Props) = linkedTextRenderer(p){ r => <.p(SeqexecStyles.queueText, r.name) }
 
   private def stateRenderer(p: Props) = linkedTextRenderer(p){ r =>
-    val stepAtText = r.status.shows + r.runningStep.map(u => s" ${u._1 + 1}/${u._2}").getOrElse("")
+    val stepAtText = r.status.shows + r.runningStep.map(u => s" ${u.shows}").getOrElse("")
     <.p(SeqexecStyles.queueText, stepAtText)
   }
 
