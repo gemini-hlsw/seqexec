@@ -68,13 +68,23 @@ object SmartGcalDao {
 
   private def bulkInsert[K](
                 update:  Update[((GcalLampType, GcalBaselineType, K), Int)],
-                entries: Vector[(GcalLampType, GcalBaselineType, K, GcalConfig)]): Stream[ConnectionIO, Int] =
+                entries: Vector[(GcalLampType, GcalBaselineType, K, GcalConfig)]): Stream[ConnectionIO, Int] = {
 
-    Stream.emits(entries.map(t => (t._1, t._2, t._3)))          // Stream[Pure, (Lamp, Baseline, Key)]
-      .zip(GcalDao.bulkInsertSmartGcal(entries.map(_._4)))      // Stream[ConnectionIO, ((Lamp, Baseline, Key), Id)]
-      .segmentN(4096)                                           // Stream[ConnectionIO, Segment[((Lamp, Baseline, Key), Id)]]
-      .flatMap { rows => Stream.eval(update.updateMany(rows.force.toVector)) } // Stream[ConnectionIO, Int]
+    // Workaround for issue https://github.com/functional-streams-for-scala/fs2/issues/1099
+    val tups = entries.map(t => (t._1, t._2, t._3))
+    GcalDao.bulkInsertSmartGcal(entries.map(_._4))
+      .segmentN(tups.size)
+      .flatMap { rows =>
+        Stream.eval(update.updateMany(tups.zip(rows.force.toVector)))
+      }
 
+    /* https://github.com/functional-streams-for-scala/fs2/issues/1099
+      Stream.emits(entries.map(t => (t._1, t._2, t._3)))          // Stream[Pure, (Lamp, Baseline, Key)]
+        .zip(GcalDao.bulkInsertSmartGcal(entries.map(_._4)))      // Stream[ConnectionIO, ((Lamp, Baseline, Key), Id)]
+        .segmentN(4096)                                           // Stream[ConnectionIO, Segment[((Lamp, Baseline, Key), Id)]]
+        .flatMap { rows => Stream.eval(update.updateMany(rows.force.toVector)) } // Stream[ConnectionIO, Int]
+    */
+  }
 
   type ExpansionResult[A] = EitherConnectionIO[ExpansionError, A]
 
