@@ -16,6 +16,10 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
 
   private val gutterWidth = 21
   val mobileCut: Int = 767
+  // Border color
+  private val tableBorderColor = rgba(34, 36, 38, 0.15)
+  // Text color from SUI
+  private val textColor = rgba(0, 0, 0, 0.95)
 
   val body: StyleA = style(unsafeRoot("body")(
     backgroundColor(white),
@@ -67,20 +71,76 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     )
   )
 
-  val scrollPane: StyleA = style("ui.scroll.pane")(
-    overflow.auto
-  )
-
   val queueListPane: StyleA = style (
-    marginTop(0.px).important,
+    padding(0.px).important,
     media.only.screen.maxWidth(mobileCut.px)(
       maxHeight(10.1.em),
       minHeight(10.1.em)
     ),
     media.only.screen.minWidth(mobileCut.px)(
-      maxHeight(15.45.em),
-      minHeight(15.45.em)
+      maxHeight(213.px),
+      minHeight(213.px)
     )
+  )
+
+  val fullCell: StyleS = mixin(
+    width(100.%%),
+    height(100.%%)
+  )
+
+  val queueFullCell: StyleS = mixin(
+    fullCell,
+    display.flex,
+    alignItems.center,
+    justifyContent.flexStart,
+    padding(0.px).important
+  )
+
+  val queueCenterCell: StyleS = mixin(
+    fullCell,
+    display.flex,
+    alignItems.center,
+    justifyContent.center,
+    padding(0.px).important
+  )
+
+  val queueTextM: StyleS = mixin(
+    color(textColor),
+    &.hover(
+      color(textColor)
+    )
+  )
+
+  val queueTextColumn: StyleA = style(
+    queueTextM,
+    queueFullCell
+  )
+
+  val queueText: StyleA = style(
+    paddingLeft(0.7.em),
+    textOverflow := "ellipsis",
+    overflow.hidden,
+    wordWrap.breakWord,
+    whiteSpace.nowrap
+  )
+
+  val queueIconColumn: StyleA = style(
+    minWidth(19.px).important,
+    queueCenterCell
+  )
+
+  val selectedIcon: StyleA = style(
+    queueTextM,
+    marginBottom(5.px).important
+  )
+
+  val errorIcon: StyleA = style(
+    queueTextM,
+    marginBottom(6.px).important
+  )
+
+  val runningIcon: StyleA = style(
+    queueTextM
   )
 
   val stepsListPane: StyleA = style (
@@ -118,7 +178,6 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     mobileSegment
   )
 
-
   val stepsListPaneWithControls: StyleA = style (
     (height :=! "calc(100% - 4.9em)"),
     marginTop(1.em)
@@ -126,6 +185,13 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
 
   val stepsListBody: StyleA = style() // Marker css
   val stepRunning: StyleA = style() // Marker css
+  val headerSideBarStyle: StyleA = style(
+    boxShadow := "unset !important",
+    borderRadius.unset.important,
+    borderWidth(1.px),
+    borderStyle.solid,
+    borderColor(tableBorderColor)
+  )
 
   val observeConfig: StyleA = style {
     backgroundColor.lightcyan.important
@@ -153,14 +219,6 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
 
   val noMargin: StyleS = mixin(
     margin(0.px)
-  )
-
-  val scrollPaneSegment: StyleA = style("ui.scroll.pane.segment")(
-    noPadding,
-    unsafeChild("> .ui.table")(
-      border(0.px),
-      borderSpacing(0.px)
-    )
   )
 
   val shorterRow: StyleA = style(
@@ -300,9 +358,6 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
   val logTable: StyleA = style(
     fontSize(1.em)
   )
-
-  // Border color
-  private val tableBorderColor = rgba(34, 36, 38, 0.15)
 
   val selectorFields: StyleA = style(
     float.right
@@ -471,7 +526,7 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     alignItems.center,
     &.hover(
       backgroundColor(rgba(0, 0, 0, 0.05)),
-      color(rgba(0, 0, 0, 0.95))
+      color(textColor)
     ),
     &.firstOfType(
       borderTop.none
@@ -490,7 +545,7 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
   val stepRowMixin: StyleS = mixin(
     stepsTableMixin,
     backgroundColor.white,
-    color(rgba(0, 0, 0, 0.95))
+    color(textColor)
   )
 
   val stepRow: StyleA = style(
@@ -518,7 +573,7 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
   val infoLog: StyleA = style(
     rowMixin,
     backgroundColor.white,
-    color(rgba(0, 0, 0, 0.95))
+    color(textColor)
   )
 
   val errorLog: StyleA = style(

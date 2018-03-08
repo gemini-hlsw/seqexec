@@ -38,14 +38,14 @@ object circuit {
   // All these classes are focused views of the root model. They are used to only update small sections of the
   // UI even if other parts of the root model change
   final case class WebSocketsFocus(location: Pages.SeqexecPages, sequences: LoadedSequences, user: Option[UserDetails], site: Option[SeqexecSite], firstLoad: Boolean) extends UseValueEq
-  final case class SequenceInQueue(id: SequenceId, status: SequenceState, instrument: Instrument, active: Boolean, name: String, targetName: Option[TargetName], runningStep: Option[(Int, Int)]) extends UseValueEq
+  final case class SequenceInQueue(id: SequenceId, status: SequenceState, instrument: Instrument, active: Boolean, name: String, targetName: Option[TargetName], runningStep: Option[RunningStep]) extends UseValueEq
   object SequenceInQueue {
     implicit val order: Order[SequenceInQueue] = Order.orderBy(_.id)
     implicit val ordering: scala.math.Ordering[SequenceInQueue] = order.toScalaOrdering
   }
   final case class StatusAndLoadedSequencesFocus(isLogged: Boolean, sequences: List[SequenceInQueue]) extends UseValueEq
   final case class HeaderSideBarFocus(status: ClientStatus, conditions: Conditions, operator: Option[Operator]) extends UseValueEq
-  final case class InstrumentStatusFocus(instrument: Instrument, active: Boolean, idState: Option[(SequenceId, SequenceState)], runningStep: Option[(Int, Int)]) extends UseValueEq
+  final case class InstrumentStatusFocus(instrument: Instrument, active: Boolean, idState: Option[(SequenceId, SequenceState)], runningStep: Option[RunningStep]) extends UseValueEq
   final case class InstrumentTabContentFocus(instrument: Instrument, active: Boolean, sequenceSelected: Boolean) extends UseValueEq
   final case class StatusAndObserverFocus(isLogged: Boolean, name: Option[String], instrument: Instrument, id: Option[SequenceId], observer: Option[Observer], status: Option[SequenceState], targetName: Option[TargetName]) extends UseValueEq
   final case class StatusAndStepFocus(isLogged: Boolean, instrument: Instrument, id: Option[SequenceId], stepConfigDisplayed: Option[Int]) extends UseValueEq

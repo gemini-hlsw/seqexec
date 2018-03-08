@@ -6,6 +6,7 @@ package edu.gemini.seqexec.web.client.components.sequence
 import diode.react.ModelProxy
 import edu.gemini.seqexec.model.Model.{SequenceState, SeqexecSite}
 import edu.gemini.seqexec.web.client.actions.{NavigateTo, SelectIdToDisplay, SelectInstrumentToDisplay}
+import edu.gemini.seqexec.web.client.ModelOps.RunningStep
 import edu.gemini.seqexec.web.client.model.Pages.{InstrumentPage, SequencePage, SeqexecPages}
 import edu.gemini.seqexec.web.client.circuit.{SeqexecCircuit, InstrumentStatusFocus}
 import edu.gemini.seqexec.web.client.semanticui._
@@ -37,8 +38,8 @@ object InstrumentTab {
       val sequenceId = tab.idState.map(_._1)
       val instrument = tab.instrument
       val tabTitle = tab.runningStep match {
-        case Some((current, total)) => s"${~sequenceId} - ${current + 1}/$total"
-        case _                      => ~sequenceId
+        case Some(RunningStep(current, total)) => s"${~sequenceId} - ${current + 1}/$total"
+        case _                                 => ~sequenceId
       }
       val icon = status.flatMap {
         case SequenceState.Running(_, _) => IconCircleNotched.copyIcon(loading = true).some

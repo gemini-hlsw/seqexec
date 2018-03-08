@@ -3,152 +3,192 @@
 
 package edu.gemini.seqexec.web.client.components
 
+import scala.scalajs.js
 import diode.react.ModelProxy
-import edu.gemini.seqexec.model.Model.{DaytimeCalibrationTargetName, SequenceState}
+import edu.gemini.seqexec.model.Model.{Instrument, SequenceId, DaytimeCalibrationTargetName, SequenceState}
 import edu.gemini.seqexec.web.client.circuit._
 import edu.gemini.seqexec.web.client.actions._
 import edu.gemini.seqexec.web.client.model.Pages._
 import edu.gemini.seqexec.web.client.ModelOps._
+import edu.gemini.seqexec.web.client.services.HtmlConstants.iconEmpty
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconAttention, IconCheckmark, IconCircleNotched, IconSelectedRadio}
-import edu.gemini.seqexec.web.client.semanticui.elements.table.TableHeader
-import edu.gemini.seqexec.web.client.services.HtmlConstants.{iconEmpty, nbsp}
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.extra.router.RouterCtl
-import org.scalajs.dom.html.TableRow
+import react.virtualized._
 
 import scalacss.ScalaCssReact._
 import scalaz.syntax.show._
-import scalaz.syntax.equal._
+import scalaz.syntax.traverse._
+import scalaz.syntax.std.boolean._
+import scalaz.std.AllInstances._
 
 object QueueTableBody {
-  type SequencesModel = ModelProxy[StatusAndLoadedSequencesFocus]
+  private val CssSettings = scalacss.devOrProdDefaults
+  import CssSettings._
 
-  final case class Props(ctl: RouterCtl[SeqexecPages], sequences: SequencesModel)
+  final case class Props(ctl: RouterCtl[SeqexecPages], sequences: ModelProxy[StatusAndLoadedSequencesFocus]) {
+    private lazy val sequencesList = sequences().sequences
+    def rowGetter(i: Int): QueueRow = sequencesList.index(i).map { s =>
+        QueueRow(s.id, s.status, s.instrument, s.targetName, s.name, s.active, s.runningStep)
+      }.getOrElse(QueueRow.Zero)
 
-  // Minimum rows to display, pad with empty rows if needed
-  private val minRows = 5
-
-  def emptyRow(k: String, isLogged: Boolean): VdomTagOf[TableRow] = {
-    <.tr(
-      ^.key := k, // React requires unique keys
-      <.td(
-        ^.cls := "collapsing",
-        iconEmpty),
-      <.td(nbsp),
-      <.td(nbsp),
-      <.td(nbsp),
-      <.td(
-        SeqexecStyles.notInMobile,
-        nbsp).when(isLogged),
-      <.td(
-        SeqexecStyles.notInMobile,
-        nbsp).when(isLogged)
-    )
+    def rowCount: Int =
+      sequencesList.size
   }
 
-  def showSequence(p: Props, s: SequenceInQueue): Callback =
+  // ScalaJS defined trait
+  // scalastyle:off
+  trait QueueRow extends js.Object {
+    var obsId: SequenceId
+    var status: SequenceState
+    var instrument: Instrument
+    var targetName: Option[String]
+    var name: String
+    var active: Boolean
+    var runningStep: Option[RunningStep]
+  }
+  // scalastyle:on
+  object QueueRow {
+    @SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf"))
+    def apply(obsId: SequenceId, status: SequenceState, instrument: Instrument, targetName: Option[String], name: String, active: Boolean, runningStep: Option[RunningStep]): QueueRow = {
+      val p = (new js.Object).asInstanceOf[QueueRow]
+      p.obsId = obsId
+      p.status = status
+      p.instrument = instrument
+      p.targetName = targetName
+      p.name = name
+      p.active = active
+      p.runningStep = runningStep
+      p
+    }
+
+    def unapply(l: QueueRow): Option[(SequenceId, SequenceState, Instrument, Option[String], String, Boolean, Option[RunningStep])] =
+      Some((l.obsId, l.status, l.instrument, l.targetName, l.name, l.active, l.runningStep))
+
+    val Zero: QueueRow = apply("", SequenceState.Idle, Instrument.F2, None, "", false, None)
+  }
+
+  def showSequence(p: Props, i: Instrument, id: SequenceId): Callback =
     // Request to display the selected sequence
-    p.sequences.dispatchCB(NavigateTo(SequencePage(s.instrument, s.id, 0))) >> p.sequences.dispatchCB(SelectIdToDisplay(s.id))
+    p.sequences.dispatchCB(NavigateTo(SequencePage(i, id, 0)))
+
+  private def linkTo(p: Props, page: SequencePage)(mod: TagMod*) =
+    <.a(
+      ^.href := p.ctl.urlFor(page).value,
+      ^.onClick --> showSequence(p, page.instrument, page.obsId),
+      p.ctl.setOnLinkClick(page),
+      mod.toTagMod
+    )
+
+  private def linkedTextRenderer(p: Props)(f: QueueRow => TagMod): CellRenderer[js.Object, js.Object, QueueRow] = (_, _, _, row: QueueRow, _) => {
+    val page = SequencePage(row.instrument, row.obsId, 0)
+    linkTo(p, page)(SeqexecStyles.queueTextColumn, f(row))
+  }
+
+  private def obsIdRenderer(p: Props) = linkedTextRenderer(p){ r => <.p(SeqexecStyles.queueText, r.obsId) }
+
+  private def obsNameRenderer(p: Props) = linkedTextRenderer(p){ r => <.p(SeqexecStyles.queueText, r.name) }
+
+  private def stateRenderer(p: Props) = linkedTextRenderer(p){ r =>
+    val stepAtText = r.status.shows + r.runningStep.map(u => s" ${u.shows}").getOrElse("")
+    <.p(SeqexecStyles.queueText, stepAtText)
+  }
+
+  private def instrumentRenderer(p: Props) = linkedTextRenderer(p){ r => <.p(SeqexecStyles.queueText, r.instrument.shows) }
+
+  val daytimeCalibrationTargetName: TagMod =
+    <.span(
+      SeqexecStyles.daytimeCal,
+      DaytimeCalibrationTargetName)
+
+  private def targetRenderer(p: Props) = linkedTextRenderer(p){ r =>
+    val targetName = r.targetName.fold(daytimeCalibrationTargetName)(x => x: TagMod)
+    <.p(SeqexecStyles.queueText, targetName)
+  }
+
+  def statusIconRenderer(p: Props): CellRenderer[js.Object, js.Object, QueueRow] = (_, _, _, row: QueueRow, _) => {
+    val icon: TagMod =
+      row.status match {
+        case SequenceState.Completed     => IconCheckmark.copyIcon(fitted = true, extraStyles = List(SeqexecStyles.selectedIcon))
+        case SequenceState.Running(_, _) => IconCircleNotched.copyIcon(fitted = true, loading = true, extraStyles = List(SeqexecStyles.runningIcon))
+        case SequenceState.Failed(_)     => IconAttention.copyIcon(fitted = true, extraStyles = List(SeqexecStyles.selectedIcon))
+        case _                           => if (row.active) IconSelectedRadio.copyIcon(fitted = true, extraStyles = List(SeqexecStyles.selectedIcon)) else iconEmpty
+      }
+
+      val page = SequencePage(row.instrument, row.obsId, 0)
+      linkTo(p, page) (
+        SeqexecStyles.queueIconColumn,
+        icon
+      )
+  }
+
+  val statusHeaderRenderer: HeaderRenderer[js.Object] = (_, _, _, _, _, _) =>
+    <.div(
+      ^.title := "Control",
+      ^.width := 12.px
+    )
+
+  private def columns(p: Props): List[Table.ColumnArg] = {
+    val isLogged = p.sequences().isLogged
+    val regularColumns = List(
+      Column(Column.props(12, "obsId", flexShrink = 0, flexGrow = 0, label = "", cellRenderer = statusIconRenderer(p), headerRenderer = statusHeaderRenderer, className = SeqexecStyles.queueIconColumn.htmlClass)),
+      Column(Column.props(140, "obsId", flexShrink = 0, flexGrow = 0, label = "Obs. ID", cellRenderer = obsIdRenderer(p), className = SeqexecStyles.queueTextColumn.htmlClass)),
+      Column(Column.props(80, "state", flexShrink = 0, flexGrow = 0, label = "State", cellRenderer = stateRenderer(p), className = SeqexecStyles.queueTextColumn.htmlClass)),
+      Column(Column.props(100, "instrument", flexShrink = 0, flexGrow = 0, label = "Instrument", cellRenderer = instrumentRenderer(p), className = SeqexecStyles.queueTextColumn.htmlClass))
+    )
+    val loggedInColumns = List(
+      Column(Column.props(140, "target", flexShrink = 1, flexGrow = 1, label = "Target", cellRenderer = targetRenderer(p), className = SeqexecStyles.queueTextColumn.htmlClass)),
+      Column(Column.props(140, "obsName", flexShrink = 1, flexGrow = 1, label = "Obs. Name", cellRenderer = obsNameRenderer(p), className = SeqexecStyles.queueTextColumn.htmlClass))
+    )
+    isLogged.fold(regularColumns ::: loggedInColumns, regularColumns)
+  }
+
+  def rowClassName(p: Props)(i: Int): String = ((i, p.rowGetter(i)) match {
+    case (-1, _)                                                             =>
+      SeqexecStyles.headerRowStyle
+    case (_, QueueRow(_, s, _, _, _, _, _)) if s == SequenceState.Completed  =>
+      SeqexecStyles.stepRow + SeqexecStyles.rowPositive
+    case (_, QueueRow(_, s, _, _, _, _, _)) if s.isRunning                   =>
+      SeqexecStyles.stepRow + SeqexecStyles.rowWarning
+    case (_, QueueRow(_, s, _, _, _, _, _)) if s.isError                     =>
+      SeqexecStyles.stepRow + SeqexecStyles.rowNegative
+    case (_, QueueRow(_, s, _, _, _, active, _)) if active && !s.isInProcess =>
+      SeqexecStyles.stepRow + SeqexecStyles.rowActive
+    case _                                                                   =>
+      SeqexecStyles.stepRow
+  }).htmlClass
+
+  def table(p: Props)(size: Size): VdomNode =
+    Table(
+      Table.props(
+        disableHeader = false,
+        noRowsRenderer = () =>
+          <.div(
+            ^.cls := "ui center aligned segment noRows",
+            SeqexecStyles.noRowsSegment,
+            ^.height := 213.px,
+            "Queue empty"
+          ),
+        overscanRowCount = SeqexecStyles.overscanRowCount,
+        height = 213,
+        rowCount = p.rowCount,
+        rowHeight = SeqexecStyles.rowHeight,
+        rowClassName = rowClassName(p) _,
+        width = size.width.toInt,
+        rowGetter = p.rowGetter _,
+        headerClassName = SeqexecStyles.tableHeader.htmlClass,
+        headerHeight = SeqexecStyles.headerHeight),
+      columns(p): _*).vdomElement
 
   private val component = ScalaComponent.builder[Props]("QueueTableBody")
-    .render_P { p =>
-      val (isLogged, sequences) = (p.sequences().isLogged, p.sequences().sequences)
-      <.table(
-        ^.cls := "ui selectable compact celled table unstackable",
-        <.thead(
-          <.tr(
-            SeqexecStyles.notInMobile,
-            TableHeader(TableHeader.Props(collapsing = true),  iconEmpty),
-            TableHeader("Obs ID"),
-            TableHeader("State"),
-            TableHeader("Instrument"),
-            TableHeader("Target").when(isLogged),
-            TableHeader("Obs. Name").when(isLogged)
-          )
-        ),
-        <.tbody(
-          sequences.map(Some.apply).padTo(minRows, None).zipWithIndex.collect {
-            case (Some(s), i) =>
-              val leftColumnIcon: TagMod =
-                s.status match {
-                  case SequenceState.Completed     => IconCheckmark
-                  case SequenceState.Running(_, _) => IconCircleNotched.copy(IconCircleNotched.p.copy(loading = true))
-                  case SequenceState.Failed(_)     => IconAttention
-                  case _                           => if (s.active) IconSelectedRadio else iconEmpty
-                }
-              val stepAtText = s.status.shows + s.runningStep.map(u => s" ${u._1 + 1}/${u._2}").getOrElse("")
-              val inProcess = s.status.isInProcess
-              // Let's assume if the target name is not found, we are doing a calibration
-              val daytimeCalibrationTargetName: TagMod =
-                <.span(
-                  SeqexecStyles.daytimeCal,
-                  DaytimeCalibrationTargetName)
-
-              val targetName = s.targetName.fold(daytimeCalibrationTargetName)(x => x: TagMod)
-
-              val selectableRowCls = List(
-                ^.classSet(
-                  "selectable" -> !inProcess
-                ),
-                SeqexecStyles.linkeableRows.when(inProcess)
-              )
-
-              <.tr(
-                ^.classSet(
-                  "positive" -> (s.status === SequenceState.Completed),
-                  "warning"  -> s.status.isRunning,
-                  "negative" -> s.status.isError,
-                  "active"   -> (s.active && !inProcess)
-                ),
-                ^.key := s"item.queue.$i",
-                ^.onClick --> showSequence(p, s),
-                <.td(
-                  ^.cls := "collapsing",
-                  selectableRowCls.toTagMod,
-                  p.ctl.link(SequencePage(s.instrument, s.id, 0))(leftColumnIcon).unless(inProcess),
-                  leftColumnIcon.when(inProcess)
-                ),
-                <.td(
-                  ^.cls := "collapsing",
-                  selectableRowCls.toTagMod,
-                  p.ctl.link(SequencePage(s.instrument, s.id, 0))(s.id).unless(inProcess),
-                  s.id.when(inProcess)
-                ),
-                <.td(
-                  ^.cls := "collapsing",
-                  selectableRowCls.toTagMod,
-                  p.ctl.link(SequencePage(s.instrument, s.id, 0))(stepAtText).unless(inProcess),
-                  stepAtText.when(inProcess)
-                ),
-                <.td(
-                  selectableRowCls.toTagMod,
-                  p.ctl.link(SequencePage(s.instrument, s.id, 0))(s.instrument.shows).unless(inProcess),
-                  s.instrument.shows.when(inProcess)
-                ),
-                <.td(
-                  selectableRowCls.toTagMod,
-                  SeqexecStyles.notInMobile,
-                  p.ctl.link(SequencePage(s.instrument, s.id, 0))(targetName).unless(inProcess),
-                  targetName.when(inProcess)
-                ).when(isLogged),
-                <.td(
-                  selectableRowCls.toTagMod,
-                  SeqexecStyles.notInMobile,
-                  p.ctl.link(SequencePage(s.instrument, s.id, 0))(s.name).unless(inProcess),
-                  s.name.when(inProcess)
-                ).when(isLogged)
-              )
-            case (_, i) =>
-              emptyRow(s"item.queue.$i", isLogged)
-          }.toTagMod
-        )
-      )
-    }
+    .render_P ( p =>
+      AutoSizer(AutoSizer.props(table(p), disableHeight = true))
+    )
     .build
 
-  def apply(ctl: RouterCtl[SeqexecPages], p: SequencesModel): Unmounted[Props, Unit, Unit] = component(Props(ctl, p))
+  def apply(ctl: RouterCtl[SeqexecPages], p: ModelProxy[StatusAndLoadedSequencesFocus]): Unmounted[Props, Unit, Unit] = component(Props(ctl, p))
 
 }
 
@@ -162,7 +202,6 @@ object QueueTableSection {
     .stateless
     .render_P(p =>
       <.div(
-        ^.cls := "ui segment scroll pane",
         SeqexecStyles.queueListPane,
         sequencesConnect(c => QueueTableBody(p, c))
       )

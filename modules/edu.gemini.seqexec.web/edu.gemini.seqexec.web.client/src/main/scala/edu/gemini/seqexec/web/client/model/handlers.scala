@@ -511,7 +511,7 @@ object handlers {
       val curStep =
         for {
             obs      <- sequenceViewT.find(_.id === obsId)(e)
-            curSIdx  <- obs.runningStep.map(_._1)
+            curSIdx  <- obs.runningStep.map(_.last)
             curStep  <- sequenceStepT.find(_.id === curSIdx)(obs)
             if curStep.observeStatus === ActionStatus.Pending && curStep.status === StepState.Running
             if curStep.configStatus.map(_._2).forall(_ === ActionStatus.Pending)
