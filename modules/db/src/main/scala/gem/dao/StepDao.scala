@@ -9,9 +9,10 @@ import doobie._, doobie.implicits._
 import gem.util.Location
 import gem.config._
 import gem.config.GcalConfig.GcalLamp
+import gem.dao.composite._
 import gem.dao.meta._
 import gem.enum._
-import gem.math.{ Offset, Wavelength }
+import gem.math.Offset
 import gem.syntax.treemap._
 import java.time.Duration
 import scala.collection.immutable.TreeMap
@@ -545,39 +546,7 @@ object StepDao {
 
     object Gnirs {
 
-      @SuppressWarnings(Array("org.wartremover.warts.Throw"))
-      final case class GnirsFpuBuilder(slit: Option[GnirsFpuSlit], other: Option[GnirsFpuOther]) {
-        def toFpu: Either[GnirsFpuOther, GnirsFpuSlit] = (slit, other) match {
-          case (Some(s), None) => Right(s)
-          case (None, Some(o)) => Left(o)
-          case _               => throw new IllegalArgumentException(s"GNIRS FPU must be either Slit or Other")
-        }
-      }
-
-      final case class GnirsBuilder(
-        camera:       GnirsCamera,
-        decker:       GnirsDecker,
-        disperser:    GnirsDisperser,
-        exposureTime: Duration,
-        filter:       GnirsFilter,
-        fpuBuilder:   GnirsFpuBuilder,
-        prism:        GnirsPrism,
-        readMode:     GnirsReadMode,
-        wavelength:   Wavelength
-      ) {
-        def toGnirs: DynamicConfig.Gnirs =
-          DynamicConfig.Gnirs(
-            camera,
-            decker,
-            disperser,
-            exposureTime,
-            filter,
-            fpuBuilder.toFpu,
-            prism,
-            readMode,
-            wavelength
-          )
-      }
+      import EitherComposite._
 
       def selectAll(oid: Observation.Id): Query0[(Loc, DynamicConfig.Gnirs)] =
         sql"""
@@ -597,7 +566,7 @@ object StepDao {
                    ON i.step_gnirs_id = s.step_id
            WHERE s.program_id        = ${oid.pid}
              AND s.observation_index = ${oid.index}
-        """.query[(Loc, GnirsBuilder)].map(_.map(_.toGnirs))
+        """.query
 
       def selectOne(oid: Observation.Id, loc: Loc): Query0[DynamicConfig.Gnirs] =
         sql"""
@@ -617,7 +586,7 @@ object StepDao {
            WHERE s.program_id        = ${oid.pid}
              AND s.observation_index = ${oid.index}
              AND s.location          = $loc
-        """.query[GnirsBuilder].map(_.toGnirs)
+        """.query
 
       def insert(id: Int, gnirs: DynamicConfig.Gnirs): Update0 =
         sql"""
