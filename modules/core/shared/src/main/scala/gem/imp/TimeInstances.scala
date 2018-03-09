@@ -20,10 +20,11 @@ trait TimeInstances {
 
   // This looks like repetition but it's not. The isBefore methods have the same name but are
   // unrelated by any common supertype.
-  implicit val InstantOrder:   Order[Instant]   = naturalOrder(_ isBefore _)
-  implicit val YearOrder:      Order[Year]      = naturalOrder(_ isBefore _)
-  implicit val LocalDateOrder: Order[LocalDate] = naturalOrder(_ isBefore _)
-
+  implicit val InstantOrder:       Order[Instant]       = naturalOrder(_ isBefore _)
+  implicit val YearOrder:          Order[Year]          = naturalOrder(_ isBefore _)
+  implicit val LocalTimeOrder:     Order[LocalTime]     = naturalOrder(_ isBefore _)
+  implicit val LocalDateOrder:     Order[LocalDate]     = naturalOrder(_ isBefore _)
+  implicit val LocalDateTimeOrder: Order[LocalDateTime] = naturalOrder(_ isBefore _)
 
 }
 object TimeInstances extends TimeInstances

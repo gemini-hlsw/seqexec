@@ -83,7 +83,7 @@ object eph extends SiteOpt {
     */
   val exportCommand: GemCommand = {
     def range(now: Instant, s: Site): (Timestamp, Timestamp) = {
-      val n = ObservingNight.forInstant(now, s)
+      val n = ObservingNight.fromSiteAndInstant(s, now)
       (Timestamp.unsafeFromInstant(n.start), Timestamp.unsafeFromInstant(n.end))
     }
 

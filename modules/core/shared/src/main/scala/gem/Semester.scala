@@ -8,6 +8,7 @@ import cats.effect.IO
 import cats.implicits._
 import gem.enum.{ Half, Site }
 import gem.imp.TimeInstances._
+import gem.math.LocalObservingNight
 import gem.parser.SemesterParsers
 import gem.syntax.parser._
 import java.time._
@@ -100,16 +101,16 @@ object Semester {
 
   /**
    * Semester for the specified local date and time. This handles the 2pm switchover on the last
-   * day of the semester by adding 10 hours to the given date-time, then looking up by month.
+   * day of the semester.
    */
   def fromLocalDateTime(d: LocalDateTime): Semester = {
-    val dʹ = d.plusHours(10)
+    val dʹ = LocalObservingNight.fromLocalDateTime(d).toLocalDate
     fromYearMonth(YearMonth.of(dʹ.getYear, dʹ.getMonth))
   }
 
   /**
    * Semester for the specified zoned date and time. This handles the 2pm switchover on the last
-   * day of the semester by adding 10 hours to the given date-time, then looking up by month.
+   * day of the semester.
    */
   def fromZonedDateTime(d: ZonedDateTime): Semester =
     fromLocalDateTime(d.toLocalDateTime)

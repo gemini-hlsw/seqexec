@@ -87,6 +87,9 @@ trait ArbTime {
   implicit val cogInstant: Cogen[Instant] =
     Cogen[(Long, Int)].contramap(t => (t.getEpochSecond, t.getNano))
 
+  implicit val cogLocalDate: Cogen[LocalDate] =
+    Cogen[(Int, Int)].contramap(d => (d.getYear, d.getDayOfYear))
+
   implicit val cogTimestamp: Cogen[Timestamp] =
     Cogen[Instant].contramap(_.toInstant)
 

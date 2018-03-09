@@ -5,7 +5,6 @@ package gem.math
 
 import gem.arb._
 import gem.enum.Site
-import gem.math.ObservingNight.LocalNightStartHour
 
 import cats.{ Eq, Show }
 import cats.kernel.laws.discipline._
@@ -17,7 +16,9 @@ import java.time._
 @SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals"))
 final class ObservingNightSpec extends CatsSuite {
 
+  import ArbEnumerated._
   import ArbObservingNight._
+  import ArbTime._
 
   checkAll("ObservingNight", OrderTests[ObservingNight].order)
 
@@ -33,15 +34,15 @@ final class ObservingNightSpec extends CatsSuite {
     }
   }
 
-  test("Always begins at 2PM") {
+  test("Start time consistent with LocalObservingNight") {
     forAll { (o: ObservingNight) =>
-      o.start.atZone(o.site.timezone).getHour shouldEqual LocalNightStartHour
+      o.start.atZone(o.site.timezone).toLocalDateTime shouldEqual o.toLocalObservingNight.start
     }
   }
 
-  test("Always ends at 2PM") {
+  test("End time consistent with LocalObservingNight") {
     forAll { (o: ObservingNight) =>
-      o.end.atZone(o.site.timezone).getHour shouldEqual LocalNightStartHour
+      o.end.atZone(o.site.timezone).toLocalDateTime shouldEqual o.toLocalObservingNight.end
     }
   }
 
@@ -76,18 +77,27 @@ final class ObservingNightSpec extends CatsSuite {
   }
 
   test("handle daylight savings correctly (summer end)") {
-    val o = ObservingNight.forYMD(Year.of(2018), Month.MAY, 13, Site.GS)
-    o.map(_.duration.toHours) shouldEqual Some(25)
+    val h = LocalObservingNight.fromString("20180513").map(_.atSite(Site.GS).duration.toHours)
+    h shouldEqual Some(25)
   }
 
   test("handle daylight savings correctly (winter end)") {
-    val o = ObservingNight.forYMD(Year.of(2018), Month.AUGUST, 12, Site.GS)
-    o.map(_.duration.toHours) shouldEqual Some(23)
+    val h = LocalObservingNight.fromString("20180812").map(_.atSite(Site.GS).duration.toHours)
+    h shouldEqual Some(23)
   }
 
-  test("can always parse a formatted night") {
-    forAll { (o: ObservingNight) =>
-      ObservingNight.parse(o.format, o.site) shouldEqual Some(o)
+  test("fromSiteAndLocalDate consistent") {
+    forAll { (s: Site, l: LocalDate) =>
+      ObservingNight.fromSiteAndLocalDate(s, l).toLocalDate shouldEqual l
+    }
+  }
+
+  test("fromSiteAndLocalDateTime consistent") {
+    forAll { (s: Site, l: LocalDateTime) =>
+      val n  = ObservingNight.fromSiteAndLocalDateTime(s, l)
+      val d  = l.toLocalDate
+      val dʹ = if (l.toLocalTime.isBefore(LocalObservingNight.Start)) d else d.plusDays(1L)
+      n.toLocalDate shouldEqual dʹ
     }
   }
 }

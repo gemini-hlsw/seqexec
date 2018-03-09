@@ -6,126 +6,89 @@ package gem.math
 import gem.enum.Site
 
 import cats._
-import cats.data.Validated
-import cats.effect.IO
+import cats.effect.Sync
 import cats.implicits._
 
 import java.time._
-import java.time.format.DateTimeFormatter
-
-import scala.math.Ordering.Implicits._
 
 
 /** An observing night is defined as the period of time from 14:00 on one day
   * until 14:00 on the following day.  In a timezone that honors daylight saving,
-  * it is sometimes onger and sometimes shorter than a period of 24 hours.  This
-  * is also true of days which contain leap seconds.
+  * it is sometimes longer and sometimes shorter than a period of 24 hours.
+  *
+  * An `ObservingNight` pairs a `Site` with a `LocalObservingNight` to obtain
+  * precise start/end `Instant`s.
   */
-sealed abstract case class ObservingNight(start: Instant, end: Instant, site: Site) extends Night {
+final case class ObservingNight(site: Site, toLocalObservingNight: LocalObservingNight) extends Night {
 
-  // Sanity check ... should be correct via the companion constructor
-  assert(start < end)
+  /** The `Instant` at which the observing night starts (inclusive) for the
+    * associated site.
+    */
+  override val start: Instant =
+    toLocalObservingNight.start.atZone(site.timezone).toInstant
 
+  /** The `Instant` at which the observing night ends (exclusive) for the
+    * associated site.
+    */
+  override val end: Instant =
+    toLocalObservingNight.end.atZone(site.timezone).toInstant
+
+  /** The previous observing night. */
   def previous: ObservingNight =
-    ObservingNight.forInstant(start.minusNanos(1L), site)
+    ObservingNight(site, toLocalObservingNight.previous)
 
+  /** The next observing night. */
   def next: ObservingNight =
-    ObservingNight.forInstant(end, site)
+    ObservingNight(site, toLocalObservingNight.next)
 
-  def format: String =
-    ObservingNight.Formatter.withZone(site.timezone).format(end)
+  /** Returns the local date on which this observing night ends. */
+  def toLocalDate: LocalDate =
+    toLocalObservingNight.toLocalDate
 
 }
 
 object ObservingNight {
 
-  /** The hour, in the local time zone, at which the night is considered to
-    * officially start.
-    *
-    * @group Constants
-    */
-  val LocalNightStartHour: Int =
-    14
-
-  /** The local time at which the night is considered to officially start.
-    *
-    * @group Constants
-    */
-  val LocalNightStart: LocalTime =
-    LocalTime.of(LocalNightStartHour, 0)
-
-  /** Formatter for nights.  The night string representation corresponds to the
-    * date YYYYMMDD for which the night ends in UTC.
-    *
-    * @group Constants
-    */
-  val Formatter: DateTimeFormatter =
-    DateTimeFormatter.ofPattern("yyyyMMdd")
-
-  /** Returns a IO that when executed the observing night corresponding to the
-    * current instant.
+  /** Constructs the observing night that ends on the given local date for
+    * for the given site.
     *
     * @group Constructors
     */
-  def now(s: Site): IO[ObservingNight] =
-    IO(Instant.now).map(forInstant(_, s))
+  def fromSiteAndLocalDate(s: Site, d: LocalDate): ObservingNight =
+    ObservingNight(s, LocalObservingNight(d))
+
+  /** Constructs the observing night for the given site and local date time.
+    *
+    * @group Constructors
+    */
+  def fromSiteAndLocalDateTime(s: Site, d: LocalDateTime): ObservingNight =
+    ObservingNight(s, LocalObservingNight.fromLocalDateTime(d))
 
   /** Constructs the observing night that includes the given time at the
     * specified site.
     *
     * @group Constructors
     */
-  def forInstant(i: Instant, s: Site): ObservingNight = {
-    val zdt   = ZonedDateTime.ofInstant(i, s.timezone)
-    val bound = zdt.withHour(LocalNightStartHour)
-                   .withMinute(0)
-                   .withSecond(0)
-                   .withNano(0)
+  def fromSiteAndInstant(s: Site, i: Instant): ObservingNight =
+    ObservingNight(s, LocalObservingNight.fromSiteAndInstant(s, i))
 
-    val (start, end) =
-      if (zdt.toLocalTime >= LocalNightStart) (bound, bound.plusDays(1L))
-      else (bound.minusDays(1L), bound)
-
-    new ObservingNight(start.toInstant, end.toInstant, s) {}
-  }
-
-  /** Constructs the observing night for the given year, month, and day at the
-    * given site.
+  /** Returns a program in M that computes the ObservingNight for the instant it
+    * is executed.
     *
     * @group Constructors
     */
-  def forYMD(year: Year, month: Month, day: Int, site: Site): Option[ObservingNight] =
-    Validated.catchNonFatal {
-      ZonedDateTime.of(year.getValue, month.getValue, day, LocalNightStartHour, 0, 0, 0, site.timezone)
-                   .minusNanos(1L)
-                   .toInstant
-    }.toOption.map(forInstant(_, site))
-
-
-  /** Parses a night string of the form YYYYMMDD into an `ObservingNight` for
-    * the given `Site`.
-    */
-  def parse(nightString: String, site: Site): Option[ObservingNight] =
-    Validated.catchNonFatal { LocalDate.parse(nightString, Formatter) }
-             .toOption
-             .map { localDate =>
-               ObservingNight.forInstant(
-                 ZonedDateTime.of(localDate, LocalNightStart, site.timezone)
-                              .minusNanos(1L)
-                              .toInstant,
-                 site)
-             }
-
+  def current[M[_]: Sync](s: Site): M[ObservingNight] =
+    LocalObservingNight.current.map(_.atSite(s))
 
   /** @group Typeclass Instances. */
   implicit val ShowObservingNight: Show[ObservingNight] =
     Show.fromToString
 
-  /** ObservingNight is ordered by start time.
+  /** ObservingNight is ordered by site and local observing night.
     *
     * @group Typeclass Instances
     */
   implicit val OrderObservingNight: Order[ObservingNight] =
-    Order.by(n => (n.start.getEpochSecond, n.start.getNano))
+    Order.by(n => (n.site, n.toLocalObservingNight))
 
 }

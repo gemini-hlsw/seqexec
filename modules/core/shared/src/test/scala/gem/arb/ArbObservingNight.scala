@@ -5,12 +5,12 @@ package gem
 package arb
 
 import gem.enum.Site
-import gem.math.ObservingNight
+import gem.math.{ LocalObservingNight, ObservingNight }
 
 import org.scalacheck._
 import org.scalacheck.Arbitrary._
 
-import java.time.Instant
+import java.time.LocalDate
 
 
 trait ArbObservingNight {
@@ -18,16 +18,24 @@ trait ArbObservingNight {
   import ArbEnumerated._
   import ArbTime._
 
+  implicit val arbLocalObservingNight: Arbitrary[LocalObservingNight] =
+    Arbitrary {
+      arbitrary[LocalDate].map(LocalObservingNight(_))
+    }
+
   implicit val arbObservingNight: Arbitrary[ObservingNight] =
     Arbitrary {
       for {
-        i <- arbitrary[Instant]
+        n <- arbitrary[LocalObservingNight]
         s <- arbitrary[Site]
-      } yield ObservingNight.forInstant(i, s)
+      } yield n.atSite(s)
     }
 
+  implicit val cogLocalObservingNight: Cogen[LocalObservingNight] =
+    Cogen[LocalDate].contramap(_.toLocalDate)
+
   implicit val cogObservingNight: Cogen[ObservingNight] =
-    Cogen[(Instant, Instant, Site)].contramap(o => (o.start, o.end, o.site))
+    Cogen[(Site, LocalObservingNight)].contramap(o => (o.site, o.toLocalObservingNight))
 }
 
 object ArbObservingNight extends ArbObservingNight
