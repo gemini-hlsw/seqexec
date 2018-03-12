@@ -22,12 +22,13 @@ sealed abstract class DynamicConfig extends Product with Serializable {
     * configuration.
     * @return corresponding smart gcal search key, if any
     */
-  def smartGcalKey: Option[DynamicConfig.SmartGcalSearchKey] =
-    this match {
-      case f2: DynamicConfig.F2        => Some(f2.key)
-      case gn: DynamicConfig.GmosNorth => Some(gn.key)
-      case gs: DynamicConfig.GmosSouth => Some(gs.key)
-      case _                           => None
+  def smartGcalKey(s: StaticConfig): Option[DynamicConfig.SmartGcalSearchKey] =
+    (this, s) match {
+      case (d: DynamicConfig.F2,        _) => Some(d.key)
+      case (d: DynamicConfig.GmosNorth, _) => Some(d.key)
+      case (d: DynamicConfig.GmosSouth, _) => Some(d.key)
+//    case (d: DynamicConfig.Gnirs, s: StaticConfig.Gnirs) => Some(d.key(s))
+      case _                               => None
     }
 }
 

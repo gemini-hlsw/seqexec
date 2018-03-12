@@ -88,7 +88,8 @@ object SmartGcalDao {
 
   type ExpansionResult[A] = EitherConnectionIO[ExpansionError, A]
 
-  private def lookupʹ(step: MaybeConnectionIO[Step[DynamicConfig]], loc: Location.Middle): ExpansionResult[ExpandedSteps] = {
+  private def lookupʹ(step: MaybeConnectionIO[Step[DynamicConfig]], loc: Location.Middle, static: StaticConfig): ExpansionResult[ExpandedSteps] = {
+
     // Information we need to extract from a smart gcal step in order to expand
     // it into manual gcal steps.  The key is used to look up the gcal config
     // from the instrument's smart table (e.g., smart_f2).  The type is used to
@@ -98,28 +99,27 @@ object SmartGcalDao {
 
     // Get the key, type, and instrument config from the step.  We'll need this
     // information to lookup the corresponding GcalConfig.
-    val context: ExpansionResult[SmartContext] =
-      for {
-        s <- step.toRight(stepNotFound(loc))
-        c <- s match {
-               case Step.SmartGcal(i, t) =>
-                 EitherConnectionIO.fromDisjunction {
-                   (i.smartGcalKey.toRight(noMappingDefined)).map { k => (k, t, i) }
-                 }
-               case _                    =>
-                 EitherConnectionIO.pointLeft(notSmartGcal)
-             }
-      } yield c
+    val stepToContext: (Step[DynamicConfig]) => ExpansionResult[SmartContext] = {
+      case Step.SmartGcal(d, t) =>
+        EitherConnectionIO.fromDisjunction {
+          (d.smartGcalKey(static).toRight(noMappingDefined)).map { k => (k, t, d) }
+        }
+      case _                    =>
+        EitherConnectionIO.pointLeft(notSmartGcal)
+    }
 
+    def expand(k: SmartGcalSearchKey, t: SmartGcalType, d: DynamicConfig): ExpansionResult[ExpandedSteps] =
+      EitherConnectionIO(select(k, t).map {
+        case Nil => Left(noMappingDefined)
+        case cs  => Right(cs.map(Step.Gcal(d, _)))
+      })
 
     // Find the corresponding smart gcal mapping, if any.
     for {
-      kti  <- context
-      (k, t, i) = kti
-      gcal <- EitherConnectionIO(select(k, t).map {
-                case Nil => Left(noMappingDefined)
-                case cs  => Right(cs.map(Step.Gcal(i, _)))
-              })
+      step <- step.toRight(stepNotFound(loc))
+      ktd  <- stepToContext(step)
+      (k, t, d) = ktd
+      gcal <- expand(k, t, d)
     } yield gcal
   }
 
@@ -135,7 +135,10 @@ object SmartGcalDao {
     *         its instrument configuration
     */
   def lookup(oid: Observation.Id, loc: Location.Middle): ExpansionResult[ExpandedSteps] =
-    lookupʹ(StepDao.selectOne(oid, loc), loc)
+    for {
+      o <- ObservationDao.selectStatic(oid).injectRight
+      s <- lookupʹ(StepDao.selectOne(oid, loc), loc, o.staticConfig)
+    } yield s
 
   /** Expands a smart gcal step into the corresponding gcal steps so that they
     * may be executed. Updates the sequence to replace a smart gcal step with
@@ -165,9 +168,10 @@ object SmartGcalDao {
       }.void
 
     for {
+      obs   <- ObservationDao.selectStatic(oid).injectRight
       steps <- StepDao.selectAll(oid).injectRight
       (locBefore, locAfter) = bounds(steps)
-      gcal  <- lookupʹ(MaybeConnectionIO.fromOption(steps.get(loc)), loc)
+      gcal  <- lookupʹ(MaybeConnectionIO.fromOption(steps.get(loc)), loc, obs.staticConfig)
       // replaces the smart gcal step with the expanded manual gcal steps
       _     <- StepDao.deleteAtLocation(oid, loc).injectRight
       _     <- insert(locBefore, gcal, locAfter).injectRight
