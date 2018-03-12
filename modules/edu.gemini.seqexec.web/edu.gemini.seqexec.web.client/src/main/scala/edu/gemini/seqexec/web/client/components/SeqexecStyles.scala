@@ -178,6 +178,15 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     mobileSegment
   )
 
+  val normalizedSegment: StyleS = mixin (
+    borderRadius.unset.important,
+    boxShadow := "unset !important"
+  )
+
+  val logSecondarySegment: StyleA = style (
+    normalizedSegment
+  )
+
   val stepsListPaneWithControls: StyleA = style (
     (height :=! "calc(100% - 4.9em)"),
     marginTop(1.em)
@@ -186,8 +195,7 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
   val stepsListBody: StyleA = style() // Marker css
   val stepRunning: StyleA = style() // Marker css
   val headerSideBarStyle: StyleA = style(
-    boxShadow := "unset !important",
-    borderRadius.unset.important,
+    normalizedSegment,
     borderWidth(1.px),
     borderStyle.solid,
     borderColor(tableBorderColor)
@@ -320,7 +328,21 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
   )
 
   val logArea: StyleA = style(
-    marginBottom(3.em) // Matches the height of the footer
+    marginBottom(3.em),
+    padding(0.em).important
+  )
+
+  val logControlRow: StyleA = style(
+    marginBottom(0.2.em),
+    marginTop(0.2.em),
+    padding(0.1.em).important
+  )
+
+  val logTableRow: StyleA = style(
+    paddingLeft(1.em).important,
+    paddingRight(1.em).important,
+    paddingBottom(0.6.em).important,
+    paddingTop(0.2.em).important
   )
 
   val footerSegment: StyleA = style("ui.footer")(
@@ -360,7 +382,13 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
   )
 
   val selectorFields: StyleA = style(
-    float.right
+    float.right,
+    marginBottom(0.px).important,
+    marginTop(5.px).important
+  )
+
+  val logVisibilityField: StyleA = style(
+    float.left
   )
 
   val logIconHeader: StyleA = style(

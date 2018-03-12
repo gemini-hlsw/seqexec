@@ -8,8 +8,11 @@ import diode.react.ModelProxy
 import edu.gemini.seqexec.model.Model.{SeqexecSite, ServerLogLevel}
 import edu.gemini.seqexec.model.events.SeqexecEvent.ServerLogMessage
 import edu.gemini.seqexec.web.client.semanticui.elements.checkbox.Checkbox
-import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.IconCopy
-import edu.gemini.seqexec.web.client.model.GlobalLog
+import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconCopy, IconAngleDoubleDown, IconAngleDoubleUp}
+import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
+import edu.gemini.seqexec.web.client.semanticui.{Size => SSize}
+import edu.gemini.seqexec.web.client.model.{GlobalLog, SectionOpen}
+import edu.gemini.seqexec.web.client.actions.ToggleLogArea
 import edu.gemini.web.common.FixedLengthBuffer
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.component.Scala.Unmounted
@@ -24,6 +27,8 @@ import scalacss.ScalaCssReact._
 import scalaz.syntax.foldable._
 import scalaz.syntax.monadPlus.{^ => _, _}
 import scalaz.syntax.show._
+import scalaz.syntax.equal._
+import scalaz.syntax.std.boolean._
 
 /**
   * Area to display a sequence's log
@@ -167,28 +172,47 @@ object LogArea {
   private val component = ScalaComponent.builder[Props]("LogArea")
     .initialState(State.Zero)
     .renderPS { ($, p, s) =>
+      val toggleIcon = (p.log().display === SectionOpen).fold(IconAngleDoubleUp, IconAngleDoubleDown)
+      val toggleText = (p.log().display === SectionOpen).fold("Hide Log", "Show Log")
       <.div(
         ^.cls := "ui sixteen wide column",
         SeqexecStyles.logSegment,
         <.div(
           ^.cls := "ui secondary segment",
+          SeqexecStyles.logSecondarySegment,
           <.div(
-            ^.cls := "ui form",
+            ^.cls := "ui grid",
             <.div(
-              ^.cls := "fields",
-              SeqexecStyles.selectorFields,
-              s.selectedLevels.map {
-                case (l, s) =>
+              ^.cls := "ui row",
+              SeqexecStyles.logControlRow,
+              <.div(
+                ^.cls := "ui six wide column",
+                SeqexecStyles.logVisibilityField,
+                Button(Button.Props(icon = Option(toggleIcon), labeled = true, compact = true, size = SSize.Small, onClick = p.log.dispatchCB(ToggleLogArea)), toggleText)
+              ),
+              <.div(
+                ^.cls := "ui ten wide column",
                 <.div(
-                  ^.cls := "inline field",
-                  Checkbox(Checkbox.Props(l.shows, s, v => $.runState(updateState(l)(v))))
+                ^.cls := "ui form row",
+                  <.div(
+                  ^.cls := "fields",
+                  SeqexecStyles.selectorFields,
+                  s.selectedLevels.map {
+                    case (l, s) =>
+                    <.div(
+                      ^.cls := "inline field",
+                      Checkbox(Checkbox.Props(l.shows, s, v => $.runState(updateState(l)(v))))
+                    )
+                  }.toTagMod
                 )
-              }.toTagMod
+                )
+              ).when(p.log().display === SectionOpen),
             ),
             <.div(
-              ^.cls := "field",
+              ^.cls := "ui row",
+              SeqexecStyles.logTableRow,
               AutoSizer(AutoSizer.props(table(p, s), disableHeight = true))
-            )
+            ).when(p.log().display === SectionOpen)
           )
         )
       )
