@@ -17,13 +17,14 @@ import edu.gemini.seqexec.web.client.lenses._
 import edu.gemini.seqexec.web.client.handlers._
 import edu.gemini.seqexec.web.client.model.SeqexecAppRootModel.LoadedSequences
 import edu.gemini.seqexec.web.client.ModelOps._
-import edu.gemini.seqexec.web.client.actions.{OpenLoginBox, CloseLoginBox, OpenResourcesBox, CloseResourcesBox}
+import edu.gemini.seqexec.web.client.actions.{show, AppendToLog, OpenLoginBox, CloseLoginBox, OpenResourcesBox, CloseResourcesBox}
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
 import scalaz.Order
 import scalaz.std.AllInstances._
 import scalaz.syntax.equal._
+import scalaz.syntax.show._
 
 object circuit {
 
@@ -53,12 +54,27 @@ object circuit {
   final case class ControlModel(id: SequenceId, isPartiallyExecuted: Boolean, nextStepToRun: Option[Int], status: SequenceState)
   final case class SequenceControlFocus(isLogged: Boolean, isConnected: Boolean, control: Option[ControlModel])
 
+  final class LoggingProcessor[M <: AnyRef] extends ActionProcessor[M] {
+    private val logger = Logger.getLogger(this.getClass.getName)
+    override def process(dispatch: Dispatcher, action: Any, next: Any => ActionResult[M], currentModel: M): ActionResult[M] = {
+      // log the action
+      action match {
+        case AppendToLog(_) =>
+        case a: Action => logger.info(s"Action: ${a.shows}")
+        case _ =>
+      }
+      // call the next processor
+      next(action)
+    }
+  }
+
   /**
     * Contains the model for Diode
     */
   object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[SeqexecAppRootModel] {
     type SearchResults = SequencesQueue[SequenceId]
     private val logger = Logger.getLogger(SeqexecCircuit.getClass.getSimpleName)
+    addProcessor(new LoggingProcessor[SeqexecAppRootModel]())
 
     def dispatchCB[A <: Action](a: A): Callback = Callback(dispatch(a))
 

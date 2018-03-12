@@ -12,6 +12,8 @@ import edu.gemini.seqexec.model.events.SeqexecEvent.ServerLogMessage
 import edu.gemini.seqexec.web.client.model._
 import org.scalajs.dom.WebSocket
 
+import scalaz.Show
+
 object actions {
 
   // scalastyle:off
@@ -92,4 +94,11 @@ object actions {
   final case class UpdateWaterVapor(wv: WaterVapor) extends Action
 
   // scalastyle:on
+
+  implicit val show: Show[Action] = Show.shows {
+    case s @ ServerMessage(u @ SeqexecModelUpdate(view)) => s"${s.getClass.getSimpleName}(${u.getClass.getSimpleName}(${view.queue.map(_.id)}))"
+    case s @ InitialSyncToPage(view) => s"${s.getClass.getSimpleName}(${view.id})"
+    case s @ SyncPageToRemovedSequence(view) => s"${s.getClass.getSimpleName}(${view})"
+    case a => s"$a"
+  }
 }

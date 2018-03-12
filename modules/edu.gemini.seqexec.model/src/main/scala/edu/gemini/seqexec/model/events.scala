@@ -17,7 +17,11 @@ object events {
 
   object SeqexecModelUpdate {
     implicit val equal: Equal[SeqexecModelUpdate] = Equal.equalA
+
+    def unapply(u: SeqexecModelUpdate): Option[SequencesQueue[SequenceView]] =
+      Some(u.view)
   }
+
   object SeqexecEvent {
     final case class ConnectionOpenEvent(u: Option[UserDetails]) extends SeqexecEvent
 

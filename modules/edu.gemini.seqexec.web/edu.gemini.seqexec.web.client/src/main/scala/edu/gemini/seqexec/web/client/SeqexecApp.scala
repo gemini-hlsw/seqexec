@@ -40,7 +40,7 @@ object SeqexecApp {
     // Using the root logger setup the handlers
     val rootLogger = Logger.getLogger("edu")
     rootLogger.addHandler(new ConsoleHandler(Level.INFO))
-    rootLogger.addHandler(new AjaxHandler(Level.INFO))
+    // rootLogger.addHandler(new AjaxHandler(Level.INFO))
 
     SeqexecWebClient.start()
     ()
