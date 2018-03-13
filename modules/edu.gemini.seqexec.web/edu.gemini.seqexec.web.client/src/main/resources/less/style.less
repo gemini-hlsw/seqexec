@@ -72,7 +72,13 @@ body {
   margin-top: 1em;
 }
 .SeqexecStyles-instrumentTabSegment {
-  height: ~"calc(100vh - 48.2em)";
+  min-height: 20.4em;
+}
+.SeqexecStyles-instrumentTabSegmentLogHidden {
+  height: ~"calc(100vh - 30.1em)";
+}
+.SeqexecStyles-instrumentTabSegmentLogShown {
+  height: ~"calc(100vh - 44.8em)";
 }
 .SeqexecStyles-stepsListPaneWithControls {
   height: ~"calc(100% - 4.9em)";
@@ -97,8 +103,13 @@ body {
   margin-bottom: -1em !important;
 }
 .SeqexecStyles-emptyInstrumentTab {
-  height: ~"calc(100vh - 46.2em)";
-  min-height: 25.4em;
+  min-height: 20.4em;
+}
+.SeqexecStyles-emptyInstrumentTabLogShown {
+  height: ~"calc(100vh - 44.9em)";
+}
+.SeqexecStyles-emptyInstrumentTabLogHidden {
+  height: ~"calc(100vh - 30.2em)";
 }
 .SeqexecStyles-instrumentTab {
   min-width: 20%;
@@ -149,8 +160,13 @@ body {
 .SeqexecStyles-smallTextArea {
   font-size: smaller;
 }
+.appSegment() {
+  padding-top: 0.5em !important;
+  padding-bottom: 0.5em !important;
+}
 .SeqexecStyles-logArea {
   margin-bottom: 3em;
+  .appSegment;
 }
 .ui.footer {
   position: fixed;
@@ -190,6 +206,8 @@ body {
 }
 .SeqexecStyles-selectorFields {
   float: right;
+  margin-bottom: 0px !important;
+  margin-top: 5px !important;
 }
 .SeqexecStyles-logIconHeader {
   margin: 0 0 10px 0 !important;
@@ -646,17 +664,42 @@ body {
   .queueText;
   margin-bottom: 6px !important;
 }
+.widerColumn() {
+  padding-left: 0.5rem !important;
+  padding-right: 0.5rem !important;
+}
+.normalizedSegment() {
+  border-radius: unset !important;
+  box-shadow: unset !important;
+}
+.SeqexecStyles-headerSidebarArea {
+  .widerColumn;
+}
 .SeqexecStyles-headerSidebarStyle {
   border-width: 1px;
   border-style: solid;
   border-color: @border_color;
-  border-radius: unset !important;
-  box-shadow: unset !important;
+  .normalizedSegment;
+  .widerColumn;
+}
+.SeqexecStyles-logSecondarySegment {
+  .normalizedSegment;
+}
+.SeqexecStyles-logControlRow {
+  margin-top: 0.2em;
+  margin-bottom: 0.2em;
+  padding: 0em !important;
+}
+.SeqexecStyles-logTableRow {
+  padding-left: 1em !important;
+  padding-right: 1em !important;
+  padding-bottom: 0.4em !important;
+  padding-top: 0em !important;
 }
 @media only screen and (min-width: 767px) {
   .SeqexecStyles-queueListPane {
-    max-height: 213px;
-    min-height: 213px;
+    max-height: 216px;
+    min-height: 216px;
   }
   .SeqexecStyles-instrumentTabSegment {
     min-height: 25.4em;
@@ -664,6 +707,22 @@ body {
   .SeqexecStyles-onlyMobile {
     display: none !important;
   }
+}
+.mobileSegment() {
+  padding-right: 0 !important;
+  padding-left: 0 !important;
+}
+.SeqexecStyles-queueAreaRow {
+  .appSegment;
+}
+.SeqexecStyles-logSegment {
+  .widerColumn;
+}
+.SeqexecStyles-sequencesArea {
+  .widerColumn;
+}
+.SeqexecStyles-queueArea {
+  .widerColumn;
 }
 @media only screen and (max-width: 767px) {
   .ui.container {
@@ -676,21 +735,17 @@ body {
     min-height: 10.1em;
   }
   .SeqexecStyles-instrumentTabSegment {
-    padding-right: 0 !important;
-    padding-left: 0 !important;
-    min-height: 36.3em;
+    .mobileSegment;
+    min-height: 32.3em;
   }
   .SeqexecStyles-sequencesArea {
-    padding-right: 0 !important;
-    padding-left: 0 !important;
+    .mobileSegment;
   }
   .SeqexecStyles-queueArea {
-    padding-right: 0 !important;
-    padding-left: 0 !important;
+    .mobileSegment;
   }
   .SeqexecStyles-logSegment {
-    padding-right: 0 !important;
-    padding-left: 0 !important;
+    .mobileSegment;
   }
   .SeqexecStyles-notInMobile {
     display: none !important;
@@ -702,5 +757,8 @@ body {
   .SeqexecStyles-queueAreaRow {
     padding-top: 0 !important;
     padding-bottom: 0 !important;
+  }
+  .SeqexecStyles-logArea {
+    padding: 0em !important;
   }
 }
