@@ -504,7 +504,8 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     minWidth(35.px).important,
     paddingRight(5.px).important,
     paddingLeft(0.px).important,
-    overflow.unset.important
+    overflow.unset.important,
+    pointerEvents := "auto"
   )
 
   val rowColumn: StyleA = style("ReactVirtualized__Table__rowColumn")(
