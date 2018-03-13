@@ -206,7 +206,7 @@ object LogArea {
                   }.toTagMod
                 )
                 )
-              ).when(p.log().display === SectionOpen),
+              ).when(p.log().display === SectionOpen)
             ),
             <.div(
               ^.cls := "ui row",
