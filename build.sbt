@@ -1,6 +1,6 @@
 import com.typesafe.sbt.packager.docker._
 
-lazy val circeVersion         = "0.9.1"
+lazy val circeVersion         = "0.9.2"
 lazy val attoVersion          = "0.6.2-M1"
 lazy val catsEffectVersion    = "0.9"
 lazy val catsVersion          = "1.0.1"
@@ -8,8 +8,8 @@ lazy val declineVersion       = "0.4.1"
 lazy val doobieVersion        = "0.5.1"
 lazy val flywayVersion        = "5.0.7"
 lazy val fs2Version           = "0.10.2"
-lazy val http4sVersion        = "0.18.1"
-lazy val jwtVersion           = "0.15.0"
+lazy val http4sVersion        = "0.18.2"
+lazy val jwtVersion           = "0.16.0"
 lazy val kpVersion            = "0.9.6"
 lazy val monocleVersion       = "1.5.0-cats"
 lazy val mouseVersion         = "0.16"
