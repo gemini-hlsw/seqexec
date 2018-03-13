@@ -46,7 +46,7 @@ object circuit {
   final case class StatusAndLoadedSequencesFocus(isLogged: Boolean, sequences: List[SequenceInQueue]) extends UseValueEq
   final case class HeaderSideBarFocus(status: ClientStatus, conditions: Conditions, operator: Option[Operator]) extends UseValueEq
   final case class InstrumentStatusFocus(instrument: Instrument, active: Boolean, idState: Option[(SequenceId, SequenceState)], runningStep: Option[RunningStep]) extends UseValueEq
-  final case class InstrumentTabContentFocus(instrument: Instrument, active: Boolean, sequenceSelected: Boolean) extends UseValueEq
+  final case class InstrumentTabContentFocus(instrument: Instrument, active: Boolean, sequenceSelected: Boolean, logDisplayed: SectionVisibilityState) extends UseValueEq
   final case class StatusAndObserverFocus(isLogged: Boolean, name: Option[String], instrument: Instrument, id: Option[SequenceId], observer: Option[Observer], status: Option[SequenceState], targetName: Option[TargetName]) extends UseValueEq
   final case class StatusAndStepFocus(isLogged: Boolean, instrument: Instrument, id: Option[SequenceId], stepConfigDisplayed: Option[Int]) extends UseValueEq
   final case class StepsTableFocus(id: SequenceId, instrument: Instrument, state: SequenceState, steps: List[Step], stepConfigDisplayed: Option[Int], nextStepToRun: Option[Int]) extends UseValueEq
@@ -102,8 +102,8 @@ object circuit {
       }
 
     def instrumentTabContentReader(i: Instrument): ModelR[SeqexecAppRootModel, InstrumentTabContentFocus] =
-      zoom(_.uiModel.sequencesOnDisplay.instrument(i)).zoom {
-        case (tab, active) => InstrumentTabContentFocus(tab.instrument, active, tab.sequence.isDefined)
+      logDisplayedReader.zip(zoom(_.uiModel.sequencesOnDisplay.instrument(i))).zoom {
+        case (log, (tab, active)) => InstrumentTabContentFocus(tab.instrument, active, tab.sequence.isDefined, log)
       }
 
     private def instrumentTab(i: Instrument): ModelR[SeqexecAppRootModel, (SequenceTab, Boolean)] = zoom(_.uiModel.sequencesOnDisplay.instrument(i))
@@ -114,6 +114,8 @@ object circuit {
           val targetName = tab.sequence.flatMap(firstScienceStepTargetNameT.headOption)
           StatusAndObserverFocus(status.isLogged, tab.sequence.map(_.metadata.name), i, tab.sequence.map(_.id), tab.sequence.flatMap(_.metadata.observer), tab.sequence.map(_.status), targetName)
       }
+
+    def logDisplayedReader: ModelR[SeqexecAppRootModel, SectionVisibilityState] = zoom(_.uiModel.globalLog.display)
 
     def statusAndStepReader(i: Instrument): ModelR[SeqexecAppRootModel, StatusAndStepFocus] =
       statusReader.zip(instrumentTab(i)).zoom {

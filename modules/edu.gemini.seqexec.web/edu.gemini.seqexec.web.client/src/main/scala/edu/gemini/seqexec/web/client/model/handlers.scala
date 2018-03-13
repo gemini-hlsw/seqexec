@@ -346,6 +346,9 @@ object handlers {
     override def handle: PartialFunction[Any, ActionResult[M]] = {
       case AppendToLog(s) =>
         updated(value.copy(log = value.log.append(s)))
+
+      case ToggleLogArea =>
+        updated(value.copy(display = value.display.toggle))
     }
   }
 

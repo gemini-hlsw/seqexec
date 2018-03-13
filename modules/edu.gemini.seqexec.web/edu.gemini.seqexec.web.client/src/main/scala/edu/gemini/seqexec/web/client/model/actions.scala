@@ -70,6 +70,7 @@ object actions {
   final case class RememberCompleted(s: SequenceView) extends Action
 
   final case class AppendToLog(l: ServerLogMessage) extends Action
+  final case object ToggleLogArea extends Action
 
   // Actions related to web sockets
   final case class WSConnect(delay: Int) extends Action

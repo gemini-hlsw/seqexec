@@ -7,6 +7,7 @@ import diode.react.ModelProxy
 import edu.gemini.seqexec.web.client.components.sequence.toolbars.{SequenceDefaultToolbar, StepConfigToolbar, SequenceAnonymousToolbar}
 import edu.gemini.seqexec.web.client.circuit.{SeqexecCircuit, StatusAndStepFocus, InstrumentTabContentFocus}
 import edu.gemini.seqexec.web.client.model.Pages.SeqexecPages
+import edu.gemini.seqexec.web.client.model.{SectionOpen, SectionClosed}
 import edu.gemini.seqexec.web.client.semanticui._
 import edu.gemini.seqexec.web.client.semanticui.elements.message.IconMessage
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.IconInbox
@@ -21,6 +22,7 @@ import japgolly.scalajs.react.ScalazReact._
 import scalacss.ScalaCssReact._
 
 import scalaz.syntax.show._
+import scalaz.syntax.equal._
 
 object SequenceStepsTableContainer {
   final case class Props(router: RouterCtl[SeqexecPages], site: SeqexecSite, p: ModelProxy[StatusAndStepFocus]) {
@@ -70,15 +72,19 @@ object SequenceTabContent {
   private val component = ScalaComponent.builder[Props]("SequenceTabContent")
     .stateless
     .render_P { p =>
-      val InstrumentTabContentFocus(instrument, active, sequenceSelected) = p.p()
+      val InstrumentTabContentFocus(instrument, active, sequenceSelected, logDisplayed) = p.p()
       <.div(
         ^.cls := "ui attached secondary segment tab",
         ^.classSet(
-          "active" -> active
+          "active"    -> active
         ),
         dataTab := instrument.shows,
         SeqexecStyles.emptyInstrumentTab.unless(sequenceSelected),
+        SeqexecStyles.emptyInstrumentTabLogShown.when(!sequenceSelected && logDisplayed === SectionOpen),
+        SeqexecStyles.emptyInstrumentTabLogHidden.when(!sequenceSelected && logDisplayed === SectionClosed),
         SeqexecStyles.instrumentTabSegment.when(sequenceSelected),
+        SeqexecStyles.instrumentTabSegmentLogShown.when(sequenceSelected && logDisplayed === SectionOpen),
+        SeqexecStyles.instrumentTabSegmentLogHidden.when(sequenceSelected && logDisplayed === SectionClosed),
         IconMessage(IconMessage.Props(IconInbox, Some("No sequence loaded"), IconMessage.Style.Warning)).unless(sequenceSelected),
         p.connect(st => SequenceStepsTableContainer(p.router, p.site, st)).when(sequenceSelected)
       )

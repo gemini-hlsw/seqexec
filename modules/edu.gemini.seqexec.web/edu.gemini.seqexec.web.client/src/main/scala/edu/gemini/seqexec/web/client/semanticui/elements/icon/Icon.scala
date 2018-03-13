@@ -334,10 +334,10 @@ object Icon {
   // val IconSound: Icon       = Icon("sound")
   //
   // // pointers icons
-  // val IconAngleDoubleDown: Icon         = Icon("angle double down")
+  val IconAngleDoubleDown: Icon         = Icon("angle double down")
   // val IconAngleDoubleLeft: Icon         = Icon("angle double left")
   // val IconAngleDoubleRight: Icon        = Icon("angle double right")
-  // val IconAngleDoubleUp: Icon           = Icon("angle double up")
+  val IconAngleDoubleUp: Icon           = Icon("angle double up")
   // val IconAngleDown: Icon               = Icon("angle down")
   // val IconAngleLeft: Icon               = Icon("angle left")
   // val IconAngleRight: Icon              = Icon("angle right")

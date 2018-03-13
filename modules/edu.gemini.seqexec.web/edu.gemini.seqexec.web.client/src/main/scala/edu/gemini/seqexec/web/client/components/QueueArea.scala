@@ -124,23 +124,34 @@ object QueueTableBody {
       )
   }
 
+  private val PhoneCut = 400
+  private val LargePhoneCut = 570
+  private val IconColumnWidth = 12
+  private val ObsIdColumnWidth = 140
+  private val StateColumnWidth = 80
+  private val TargetNameColumnWidth = 140
+
   val statusHeaderRenderer: HeaderRenderer[js.Object] = (_, _, _, _, _, _) =>
     <.div(
       ^.title := "Control",
-      ^.width := 12.px
+      ^.width := IconColumnWidth.px
     )
 
-  private def columns(p: Props): List[Table.ColumnArg] = {
+  private def columns(p: Props, s: Size): List[Table.ColumnArg] = {
     val isLogged = p.sequences().isLogged
+    val targetColumn = Column(Column.props(TargetNameColumnWidth, "target", flexShrink = 1, flexGrow = 3, label = "Target", cellRenderer = targetRenderer(p), className = SeqexecStyles.queueTextColumn.htmlClass))
+    val nameColumn = Column(Column.props(TargetNameColumnWidth, "obsName", flexShrink = 1, flexGrow = 3, label = "Obs. Name", cellRenderer = obsNameRenderer(p), className = SeqexecStyles.queueTextColumn.htmlClass))
+    val (loggedInWidth, loggedInColumns) = s.width match {
+      case w if w < PhoneCut      => (0, Nil)
+      case w if w < LargePhoneCut => (TargetNameColumnWidth, List(targetColumn))
+      case _                      => (2 * TargetNameColumnWidth, List(targetColumn, nameColumn))
+    }
+    val instWidth = s.width - IconColumnWidth - ObsIdColumnWidth - StateColumnWidth - loggedInWidth + 2
     val regularColumns = List(
-      Column(Column.props(12, "obsId", flexShrink = 0, flexGrow = 0, label = "", cellRenderer = statusIconRenderer(p), headerRenderer = statusHeaderRenderer, className = SeqexecStyles.queueIconColumn.htmlClass)),
-      Column(Column.props(140, "obsId", flexShrink = 0, flexGrow = 0, label = "Obs. ID", cellRenderer = obsIdRenderer(p), className = SeqexecStyles.queueTextColumn.htmlClass)),
-      Column(Column.props(80, "state", flexShrink = 0, flexGrow = 0, label = "State", cellRenderer = stateRenderer(p), className = SeqexecStyles.queueTextColumn.htmlClass)),
-      Column(Column.props(100, "instrument", flexShrink = 0, flexGrow = 0, label = "Instrument", cellRenderer = instrumentRenderer(p), className = SeqexecStyles.queueTextColumn.htmlClass))
-    )
-    val loggedInColumns = List(
-      Column(Column.props(140, "target", flexShrink = 1, flexGrow = 1, label = "Target", cellRenderer = targetRenderer(p), className = SeqexecStyles.queueTextColumn.htmlClass)),
-      Column(Column.props(140, "obsName", flexShrink = 1, flexGrow = 1, label = "Obs. Name", cellRenderer = obsNameRenderer(p), className = SeqexecStyles.queueTextColumn.htmlClass))
+      Column(Column.props(IconColumnWidth, "status", flexShrink = 0, flexGrow = 0, label = "", cellRenderer = statusIconRenderer(p), headerRenderer = statusHeaderRenderer, className = SeqexecStyles.queueIconColumn.htmlClass)),
+      Column(Column.props(ObsIdColumnWidth, "obsId", flexShrink = 0, flexGrow = 0, label = "Obs. ID", cellRenderer = obsIdRenderer(p), className = SeqexecStyles.queueTextColumn.htmlClass)),
+      Column(Column.props(StateColumnWidth, "state", flexShrink = 0, flexGrow = 0, label = "State", cellRenderer = stateRenderer(p), className = SeqexecStyles.queueTextColumn.htmlClass)),
+      Column(Column.props(instWidth.toInt, "instrument", flexShrink = 0, flexGrow = 1, label = "Instrument", cellRenderer = instrumentRenderer(p), className = SeqexecStyles.queueTextColumn.htmlClass))
     )
     isLogged.fold(regularColumns ::: loggedInColumns, regularColumns)
   }
@@ -168,11 +179,11 @@ object QueueTableBody {
           <.div(
             ^.cls := "ui center aligned segment noRows",
             SeqexecStyles.noRowsSegment,
-            ^.height := 213.px,
+            ^.height := 216.px,
             "Queue empty"
           ),
         overscanRowCount = SeqexecStyles.overscanRowCount,
-        height = 213,
+        height = 216,
         rowCount = p.rowCount,
         rowHeight = SeqexecStyles.rowHeight,
         rowClassName = rowClassName(p) _,
@@ -180,7 +191,7 @@ object QueueTableBody {
         rowGetter = p.rowGetter _,
         headerClassName = SeqexecStyles.tableHeader.htmlClass,
         headerHeight = SeqexecStyles.headerHeight),
-      columns(p): _*).vdomElement
+      columns(p, size): _*).vdomElement
 
   private val component = ScalaComponent.builder[Props]("QueueTableBody")
     .render_P ( p =>

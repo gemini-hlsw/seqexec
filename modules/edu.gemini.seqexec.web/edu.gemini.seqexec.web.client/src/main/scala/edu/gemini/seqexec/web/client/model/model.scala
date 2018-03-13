@@ -40,6 +40,13 @@ object model {
     implicit val eq: Equal[SectionVisibilityState] = Equal.equalA[SectionVisibilityState]
   }
 
+  implicit class SectionVisibilityStateOps(val s: SectionVisibilityState) extends AnyVal {
+    def toggle: SectionVisibilityState = s match {
+      case SectionOpen   => SectionClosed
+      case SectionClosed => SectionOpen
+    }
+  }
+
   final case class SequenceTab(instrument: Instrument, currentSequence: RefTo[Option[SequenceView]], completedSequence: Option[SequenceView], stepConfigDisplayed: Option[Int]) {
     // Returns the current sequence or if empty the last completed one
     // This must be a def since it will do a call to dereference a RefTo
@@ -111,7 +118,7 @@ object model {
   /**
     * Keeps a list of log entries for display
     */
-  final case class GlobalLog(log: FixedLengthBuffer[ServerLogMessage])
+  final case class GlobalLog(log: FixedLengthBuffer[ServerLogMessage], display: SectionVisibilityState)
 
   /**
    * Model to display a resource conflict
@@ -133,7 +140,7 @@ object model {
   object SeqexecUIModel {
     val noSequencesLoaded: SequencesQueue[SequenceView] = SequencesQueue[SequenceView](Conditions.default, None, Nil)
     val initial: SeqexecUIModel = SeqexecUIModel(Pages.Root, None, noSequencesLoaded,
-      SectionClosed, ResourcesConflict(SectionClosed, None), GlobalLog(FixedLengthBuffer.unsafeFromInt(500)), SequencesOnDisplay.empty, true)
+      SectionClosed, ResourcesConflict(SectionClosed, None), GlobalLog(FixedLengthBuffer.unsafeFromInt(500), SectionClosed), SequencesOnDisplay.empty, true)
   }
 
   /**

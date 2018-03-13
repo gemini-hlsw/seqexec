@@ -78,8 +78,8 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
       minHeight(10.1.em)
     ),
     media.only.screen.minWidth(mobileCut.px)(
-      maxHeight(213.px),
-      minHeight(213.px)
+      maxHeight(216.px),
+      minHeight(216.px)
     )
   )
 
@@ -156,26 +156,50 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
   )
 
   val instrumentTabSegment: StyleA = style (
-    (height :=! "calc(100vh - 48.2em)"),
     mobileSegment,
     media.only.screen.maxWidth(mobileCut.px)(
-      minHeight(36.3.em)
+      minHeight(32.3.em)
     ),
     media.only.screen.minWidth(mobileCut.px)(
-      minHeight(25.4.em)
+      minHeight(20.4.em)
     )
   )
 
+  val instrumentTabSegmentLogHidden: StyleA = style (
+    (height :=! "calc(100vh - 30.1em)")
+  )
+
+  val instrumentTabSegmentLogShown: StyleA = style (
+    (height :=! "calc(100vh - 44.8em)")
+  )
+
+  val widerColumn: StyleS = mixin(
+    paddingLeft(0.5.rem).important,
+    paddingRight(0.5.rem).important
+  )
+
   val sequencesArea: StyleA = style (
-    mobileSegment
+    mobileSegment,
+    widerColumn
   )
 
   val queueArea: StyleA = style (
-    mobileSegment
+    mobileSegment,
+    widerColumn
   )
 
   val logSegment: StyleA = style (
-    mobileSegment
+    mobileSegment,
+    widerColumn
+  )
+
+  val normalizedSegment: StyleS = mixin (
+    borderRadius.unset.important,
+    boxShadow := "unset !important"
+  )
+
+  val logSecondarySegment: StyleA = style (
+    normalizedSegment
   )
 
   val stepsListPaneWithControls: StyleA = style (
@@ -186,11 +210,15 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
   val stepsListBody: StyleA = style() // Marker css
   val stepRunning: StyleA = style() // Marker css
   val headerSideBarStyle: StyleA = style(
-    boxShadow := "unset !important",
-    borderRadius.unset.important,
+    normalizedSegment,
+    widerColumn,
     borderWidth(1.px),
     borderStyle.solid,
     borderColor(tableBorderColor)
+  )
+
+  val headerSideBarArea: StyleA = style(
+    widerColumn
   )
 
   val observeConfig: StyleA = style {
@@ -226,8 +254,15 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
   )
 
   val emptyInstrumentTab: StyleA = style(
-    (height :=! "calc(100vh - 46.2em)"),
-    minHeight(25.4.em)
+    minHeight(20.4.em)
+  )
+
+  val emptyInstrumentTabLogShown: StyleA = style(
+    (height :=! "calc(100vh - 44.9em)")
+  )
+
+  val emptyInstrumentTabLogHidden: StyleA = style(
+    (height :=! "calc(100vh - 30.2em)")
   )
 
   val instrumentTab: StyleA = style(
@@ -319,8 +354,33 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     fontSize.smaller
   )
 
+  val appSegment: StyleS = mixin(
+    paddingTop(0.5.em).important,
+    paddingBottom(0.5.em).important
+  )
+
   val logArea: StyleA = style(
-    marginBottom(3.em) // Matches the height of the footer
+    marginBottom(3.em),
+    appSegment,
+    media.only.screen.maxWidth(mobileCut.px)(
+      padding(0.px).important
+    )
+  )
+
+  val sequenceArea: StyleA = style(
+  )
+
+  val logControlRow: StyleA = style(
+    marginBottom(0.2.em),
+    marginTop(0.2.em),
+    padding(0.em).important
+  )
+
+  val logTableRow: StyleA = style(
+    paddingLeft(1.em).important,
+    paddingRight(1.em).important,
+    paddingBottom(0.4.em).important,
+    paddingTop(0.em).important
   )
 
   val footerSegment: StyleA = style("ui.footer")(
@@ -360,7 +420,13 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
   )
 
   val selectorFields: StyleA = style(
-    float.right
+    float.right,
+    marginBottom(0.px).important,
+    marginTop(5.px).important
+  )
+
+  val logVisibilityField: StyleA = style(
+    float.left
   )
 
   val logIconHeader: StyleA = style(
@@ -786,6 +852,7 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
   )
 
   val queueAreaRow: StyleA = style(
+    appSegment,
     media.only.screen.maxWidth(mobileCut.px)(
       paddingTop(0.px).important,
       paddingBottom(0.px).important
