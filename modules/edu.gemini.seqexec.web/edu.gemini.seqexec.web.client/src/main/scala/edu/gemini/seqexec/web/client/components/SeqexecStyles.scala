@@ -166,16 +166,24 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     )
   )
 
+  val widerColumn: StyleS = mixin(
+    paddingLeft(0.5.rem).important,
+    paddingRight(0.5.rem).important
+  )
+
   val sequencesArea: StyleA = style (
-    mobileSegment
+    mobileSegment,
+    widerColumn
   )
 
   val queueArea: StyleA = style (
-    mobileSegment
+    mobileSegment,
+    widerColumn
   )
 
   val logSegment: StyleA = style (
-    mobileSegment
+    mobileSegment,
+    widerColumn
   )
 
   val normalizedSegment: StyleS = mixin (
@@ -196,9 +204,14 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
   val stepRunning: StyleA = style() // Marker css
   val headerSideBarStyle: StyleA = style(
     normalizedSegment,
+    widerColumn,
     borderWidth(1.px),
     borderStyle.solid,
     borderColor(tableBorderColor)
+  )
+
+  val headerSideBarArea: StyleA = style(
+    widerColumn
   )
 
   val observeConfig: StyleA = style {
@@ -327,9 +340,17 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     fontSize.smaller
   )
 
+  val appSegment: StyleS = mixin(
+    paddingTop(0.5.em).important,
+    paddingBottom(0.5.em).important
+  )
+
   val logArea: StyleA = style(
     marginBottom(3.em),
-    padding(0.em).important
+    appSegment
+  )
+
+  val sequenceArea: StyleA = style(
   )
 
   val logControlRow: StyleA = style(
@@ -814,6 +835,7 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
   )
 
   val queueAreaRow: StyleA = style(
+    appSegment,
     media.only.screen.maxWidth(mobileCut.px)(
       paddingTop(0.px).important,
       paddingBottom(0.px).important

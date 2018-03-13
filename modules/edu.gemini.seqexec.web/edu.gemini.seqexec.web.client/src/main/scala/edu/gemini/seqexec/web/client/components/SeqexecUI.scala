@@ -82,12 +82,14 @@ object SeqexecMain {
             ),
             <.div(
               ^.cls := "six wide column tablet computer only",
+              SeqexecStyles.headerSideBarArea,
               headerSideBarConnect(HeadersSideBar.apply)
             )
           ),
           <.div(
             ^.cls := "ui row",
             SeqexecStyles.shorterRow,
+            SeqexecStyles.sequenceArea,
             SequenceArea(p.ctl, p.site)
           ),
           <.div(
