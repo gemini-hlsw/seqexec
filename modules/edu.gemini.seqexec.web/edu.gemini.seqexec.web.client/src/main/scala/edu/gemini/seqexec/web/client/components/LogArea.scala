@@ -195,16 +195,16 @@ object LogArea {
                 <.div(
                 ^.cls := "ui form row",
                   <.div(
-                  ^.cls := "fields",
-                  SeqexecStyles.selectorFields,
-                  s.selectedLevels.map {
-                    case (l, s) =>
-                    <.div(
-                      ^.cls := "inline field",
-                      Checkbox(Checkbox.Props(l.shows, s, v => $.runState(updateState(l)(v))))
-                    )
-                  }.toTagMod
-                )
+                    ^.cls := "fields",
+                    SeqexecStyles.selectorFields,
+                    s.selectedLevels.toTagMod {
+                      case (l, s) =>
+                      <.div(
+                        ^.cls := "inline field",
+                        Checkbox(Checkbox.Props(l.shows, s, v => $.runState(updateState(l)(v))))
+                      )
+                    }
+                  )
                 )
               ).when(p.log().display === SectionOpen)
             ),
