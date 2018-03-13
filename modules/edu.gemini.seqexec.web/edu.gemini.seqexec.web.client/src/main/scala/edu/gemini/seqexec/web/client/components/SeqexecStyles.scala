@@ -78,8 +78,8 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
       minHeight(10.1.em)
     ),
     media.only.screen.minWidth(mobileCut.px)(
-      maxHeight(213.px),
-      minHeight(213.px)
+      maxHeight(216.px),
+      minHeight(216.px)
     )
   )
 
@@ -158,10 +158,10 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
   val instrumentTabSegment: StyleA = style (
     mobileSegment,
     media.only.screen.maxWidth(mobileCut.px)(
-      minHeight(36.3.em)
+      minHeight(32.3.em)
     ),
     media.only.screen.minWidth(mobileCut.px)(
-      minHeight(25.4.em)
+      minHeight(20.4.em)
     )
   )
 
@@ -254,15 +254,15 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
   )
 
   val emptyInstrumentTab: StyleA = style(
-    minHeight(25.4.em)
+    minHeight(20.4.em)
   )
 
   val emptyInstrumentTabLogShown: StyleA = style(
-    (height :=! "calc(100vh - 42.9em)")
+    (height :=! "calc(100vh - 44.9em)")
   )
 
   val emptyInstrumentTabLogHidden: StyleA = style(
-    (height :=! "calc(100vh - 28.2em)")
+    (height :=! "calc(100vh - 30.2em)")
   )
 
   val instrumentTab: StyleA = style(
@@ -361,7 +361,10 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
 
   val logArea: StyleA = style(
     marginBottom(3.em),
-    appSegment
+    appSegment,
+    media.only.screen.maxWidth(mobileCut.px)(
+      padding(0.px).important
+    )
   )
 
   val sequenceArea: StyleA = style(

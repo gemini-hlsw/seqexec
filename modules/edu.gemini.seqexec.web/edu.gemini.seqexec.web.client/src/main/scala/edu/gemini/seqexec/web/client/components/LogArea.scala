@@ -172,7 +172,7 @@ object LogArea {
   private val component = ScalaComponent.builder[Props]("LogArea")
     .initialState(State.Zero)
     .renderPS { ($, p, s) =>
-      val toggleIcon = (p.log().display === SectionOpen).fold(IconAngleDoubleUp, IconAngleDoubleDown)
+      val toggleIcon = (p.log().display === SectionOpen).fold(IconAngleDoubleDown, IconAngleDoubleUp)
       val toggleText = (p.log().display === SectionOpen).fold("Hide Log", "Show Log")
       <.div(
         ^.cls := "ui sixteen wide column",
