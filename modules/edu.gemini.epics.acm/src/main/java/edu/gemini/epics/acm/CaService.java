@@ -5,6 +5,7 @@
 
 package edu.gemini.epics.acm;
 
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.locks.Lock;
@@ -43,23 +44,24 @@ public final class CaService {
     private final Map<String, CaApplySenderImpl> applySenders;
     private final Map<String, CaObserveSenderImpl> observeSenders;
     private final Map<String, CaCommandSenderImpl> commandSenders;
-    static private String addrList;
+    static private String addrList = "";
+    static private Duration ioTimeout = Duration.ofSeconds(1);
     static private CaService theInstance;
     static private Lock instanceLock = new ReentrantLock();
 
-    private CaService(String addrList) {
+    private CaService(String addrList, Duration timeout) {
         statusAcceptors = new HashMap<>();
         applySenders = new HashMap<>();
         observeSenders = new HashMap<>();
         commandSenders = new HashMap<>();
-        epicsService = new EpicsService(addrList);
+        epicsService = new EpicsService(addrList, Double.valueOf(timeout.getSeconds()));
 
         epicsService.startService();
     }
 
     private CaService() {
 
-        this(System.getenv(EPICS_CA_ADDR_LIST).replaceAll("\\\\ ", " "));
+        this(System.getenv(EPICS_CA_ADDR_LIST).replaceAll("\\\\ ", " "), Duration.ofSeconds(1));
 
     }
 
@@ -71,6 +73,16 @@ public final class CaService {
      */
     public static void setAddressList(String addrList) {
         CaService.addrList = addrList;
+    }
+
+    /**
+     * Sets the timeout to wait for EPICS IO requests.
+     *
+     * @param timeout
+     *            time to wait for EPICS requests.
+     */
+    public static void setIOTimeout(Duration timeout) {
+        CaService.ioTimeout = timeout;
     }
 
     /**
@@ -86,7 +98,7 @@ public final class CaService {
                 if (addrList == null) {
                     theInstance = new CaService();
                 } else {
-                    theInstance = new CaService(addrList);
+                    theInstance = new CaService(addrList, ioTimeout);
                 }
             }
             instanceLock.unlock();
