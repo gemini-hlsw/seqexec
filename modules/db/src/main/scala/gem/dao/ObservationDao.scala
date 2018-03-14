@@ -9,6 +9,7 @@ import doobie._, doobie.implicits._
 import gem.config.{ DynamicConfig, StaticConfig }
 import gem.dao.meta._
 import gem.enum._
+import gem.math.Index
 import gem.syntax.treemap._
 import gem.util.Location
 
@@ -97,13 +98,13 @@ object ObservationDao {
   /** Construct a program to select all observations for the specified science
     * program, with the instrument but no targets nor steps.
     */
-  def selectAllFlat(pid: Program.Id): ConnectionIO[TreeMap[Observation.Index, Observation[Option[AsterismType], Instrument, Nothing]]] =
+  def selectAllFlat(pid: Program.Id): ConnectionIO[TreeMap[Index, Observation[Option[AsterismType], Instrument, Nothing]]] =
     Statements.selectAllFlat(pid).to[List].map(lst => TreeMap.fromList(lst))
 
   /** Construct a program to select all observations for the specified science
     * program, with the targets and the instrument type, but no steps.
     */
-  def selectAllTarget(pid: Program.Id): ConnectionIO[TreeMap[Observation.Index, Observation[TargetEnvironment, Instrument, Nothing]]] =
+  def selectAllTarget(pid: Program.Id): ConnectionIO[TreeMap[Index, Observation[TargetEnvironment, Instrument, Nothing]]] =
     for {
       os  <- selectAllFlat(pid)
       as  = os.values.toList.flatMap(_.targets.toList).toSet // All asterism types in the program
@@ -113,7 +114,7 @@ object ObservationDao {
   /** Construct a program to select all observations for the specified science
     * program, with the static component but no targets nor steps.
     */
-  def selectAllStatic(pid: Program.Id): ConnectionIO[TreeMap[Observation.Index, Observation[Option[AsterismType], StaticConfig, Nothing]]] =
+  def selectAllStatic(pid: Program.Id): ConnectionIO[TreeMap[Index, Observation[Option[AsterismType], StaticConfig, Nothing]]] =
     for {
       ids <- selectIds(pid)
       oss <- ids.traverse(selectStatic)
@@ -122,7 +123,7 @@ object ObservationDao {
   /** Construct a program to select all observations for the specified science
     * program, with static component and steps but not targets.
     */
-  def selectAllConfig(pid: Program.Id): ConnectionIO[TreeMap[Observation.Index, Observation[Option[AsterismType], StaticConfig, Step[DynamicConfig]]]] =
+  def selectAllConfig(pid: Program.Id): ConnectionIO[TreeMap[Index, Observation[Option[AsterismType], StaticConfig, Step[DynamicConfig]]]] =
     for {
       ids <- selectIds(pid)
       oss <- ids.traverse(selectConfig)
@@ -132,12 +133,12 @@ object ObservationDao {
     * program, with its targets, static component and steps.
     */
   @SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf"))
-  def selectAll(pid: Program.Id): ConnectionIO[TreeMap[Observation.Index, Observation.Full]] =
+  def selectAll(pid: Program.Id): ConnectionIO[TreeMap[Index, Observation.Full]] =
     for {
       os <- selectAllConfig(pid)
       as  = os.values.toList.flatMap(_.targets.toList).toSet // All asterism types in the program
       ts <- TargetEnvironmentDao.selectProg(pid, as)
-    } yield merge(os, ts).asInstanceOf[TreeMap[Observation.Index, Observation.Full]] // todo: push down
+    } yield merge(os, ts).asInstanceOf[TreeMap[Index, Observation.Full]] // todo: push down
 
   object Statements {
 
@@ -174,7 +175,7 @@ object ObservationDao {
       """.query[(String, Option[AsterismType], Instrument)]
         .map { case (t, a, i) => Observation(t, a, i, Nil) }
 
-    def selectAllFlat(pid: Program.Id): Query0[(Observation.Index, Observation[Option[AsterismType], Instrument, Nothing])] =
+    def selectAllFlat(pid: Program.Id): Query0[(Index, Observation[Option[AsterismType], Instrument, Nothing])] =
       sql"""
         SELECT observation_index, title, asterism_type, instrument
           FROM observation
@@ -182,7 +183,7 @@ object ObservationDao {
       ORDER BY observation_index
       """.query[(Short, String, Option[AsterismType], Instrument)]
         .map { case (n, t, a, i) =>
-          (Observation.Index.unsafeFromShort(n), Observation(t, a, i, Nil))
+          (Index.unsafeFromShort(n), Observation(t, a, i, Nil))
         }
 
   }

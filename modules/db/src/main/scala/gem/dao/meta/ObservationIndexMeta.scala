@@ -4,14 +4,14 @@
 package gem.dao.meta
 
 import doobie._
-import gem.Observation
+import gem.math.Index
 
 trait ObservationIndexMeta {
 
-  // Observation.Index has a DISTINCT type due to its check constraint so we
+  // Index has a DISTINCT type due to its check constraint so we
   // need a fine-grained mapping here to satisfy the query checker.
-  implicit val ObservationIndexMeta: Meta[Observation.Index] =
-    Distinct.short("id_index").xmap(Observation.Index.unsafeFromShort, _.toShort)
+  implicit val ObservationIndexMeta: Meta[Index] =
+    Distinct.short("id_index").xmap(Index.unsafeFromShort, _.toShort)
 
 }
 object ObservationIndexMeta extends ObservationIndexMeta

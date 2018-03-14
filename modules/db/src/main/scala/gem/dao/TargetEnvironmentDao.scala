@@ -8,6 +8,7 @@ import cats.implicits._
 import doobie._
 import doobie.implicits._
 import gem.enum.AsterismType
+import gem.math.Index
 import gem.syntax.treemap._
 import scala.collection.immutable.{ TreeMap, TreeSet }
 
@@ -25,7 +26,7 @@ object TargetEnvironmentDao {
       u <- UserTargetDao.selectObs(oid)
     } yield TargetEnvironment(a, u)
 
-  def selectProg(pid: Program.Id, ats: Set[AsterismType]): ConnectionIO[Map[Observation.Index, TargetEnvironment]] =
+  def selectProg(pid: Program.Id, ats: Set[AsterismType]): ConnectionIO[Map[Index, TargetEnvironment]] =
     for {
       am <- ats.toList.traverse(AsterismDao.selectAll(pid, _)).map(ms => TreeMap.join(ms))
       um <- UserTargetDao.selectProg(pid)

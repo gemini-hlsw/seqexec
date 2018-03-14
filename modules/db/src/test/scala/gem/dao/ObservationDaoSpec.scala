@@ -7,6 +7,7 @@ import cats.implicits._
 import doobie.implicits._
 import gem.Observation
 import gem.enum._
+import gem.math.Index
 import org.scalatest._
 import org.scalatest.prop._
 import org.scalatest.Matchers._
@@ -27,7 +28,7 @@ class ObservationDaoSpec extends PropSpec with PropertyChecks with DaoTest {
   }
 
   property("ObservationDao should select flat observations") {
-    val oid = Observation.Id(pid, Observation.Index.One)
+    val oid = Observation.Id(pid, Index.One)
 
     forAll { (obsIn: Observation.Full) =>
       val obsOut = withProgram {
@@ -48,7 +49,7 @@ class ObservationDaoSpec extends PropSpec with PropertyChecks with DaoTest {
   }
 
   property("ObservationDao should select static-only observations") {
-    val oid = Observation.Id(pid, Observation.Index.One)
+    val oid = Observation.Id(pid, Index.One)
 
     forAll { (obsIn: Observation.Full) =>
       val obsOut = withProgram {
@@ -68,7 +69,7 @@ class ObservationDaoSpec extends PropSpec with PropertyChecks with DaoTest {
   }
 
   property("ObservationDao should select target-only observations") {
-    val oid = Observation.Id(pid, Observation.Index.One)
+    val oid = Observation.Id(pid, Index.One)
 
     forAll { (obsIn: Observation.Full) =>
       val obsOut = withProgram {
@@ -89,7 +90,7 @@ class ObservationDaoSpec extends PropSpec with PropertyChecks with DaoTest {
   }
 
   property("ObservationDao should roundtrip complete observations") {
-    val oid = Observation.Id(pid, Observation.Index.One)
+    val oid = Observation.Id(pid, Index.One)
 
     forAll { (obsIn: Observation.Full) =>
       val obsOut = withProgram {

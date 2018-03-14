@@ -7,8 +7,7 @@ import cats.{ Functor, Order, Show }
 import cats.implicits._
 import gem.config.{ StaticConfig, DynamicConfig }
 import gem.enum.Instrument
-import gem.syntax.string._
-import mouse.boolean._
+import gem.math.Index
 
 /**
  * An observation, parameterized over the types of its targets, static config
@@ -51,38 +50,6 @@ object Observation {
       def narrow: (Instrument.Aux[I], Observation.Full.Aux[I]) forSome { type I <: Instrument with Singleton } =
         narrowImpl(o)
 
-  }
-
-  /** A positive, non-zero integer for use in ids. */
-  sealed abstract case class Index(toShort: Short) {
-    def format: String =
-      s"$toShort"
-  }
-
-  object Index {
-    val One: Index =
-      unsafeFromShort(1)
-
-    def fromShort(i: Short): Option[Index] =
-      (i > 0) option new Index(i) {}
-
-    def unsafeFromShort(i: Short): Index =
-      fromShort(i).getOrElse(sys.error(s"Negative index: $i"))
-
-    def fromString(s: String): Option[Index] =
-      s.parseShortOption.filter(_ > 0).map(new Index(_) {})
-
-    def unsafeFromString(s: String): Index =
-      fromString(s).getOrElse(sys.error(s"Malformed observation index: '$s'"))
-
-    implicit val OrderIndex: Order[Index] =
-      Order.by(_.toShort)
-
-    implicit val OrderingIndex: scala.math.Ordering[Index] =
-      OrderIndex.toOrdering
-
-    implicit val showIndex: Show[Index] =
-      Show.fromToString
   }
 
   /** An observation is identified by its program and a serial index. */

@@ -5,6 +5,7 @@ package gem
 package arb
 
 import gem.enum.Instrument
+import gem.math.Index
 import org.scalacheck._
 import org.scalacheck.Gen._
 import org.scalacheck.Arbitrary._
@@ -12,6 +13,7 @@ import org.scalacheck.Cogen._
 
 trait ArbObservation extends gem.config.Arbitraries {
   import ArbEnumerated._
+  import ArbIndex._
   import ArbProgramId._
   import ArbTargetEnvironment._
 
@@ -20,7 +22,7 @@ trait ArbObservation extends gem.config.Arbitraries {
       for {
         pid <- arbitrary[ProgramId]
         num <- choose[Short](1, 100)
-      } yield Observation.Id(pid, Observation.Index.unsafeFromShort(num))
+      } yield Observation.Id(pid, Index.unsafeFromShort(num))
     }
 
   def genObservation[I <: Instrument with Singleton](i: Instrument.Aux[I]): Gen[Observation.Full] =
@@ -39,11 +41,8 @@ trait ArbObservation extends gem.config.Arbitraries {
       } yield o
     }
 
-  implicit val cogObservationIdex: Cogen[Observation.Index] =
-    Cogen[Short].contramap(_.toShort)
-
   implicit val cogObservationId: Cogen[Observation.Id] =
-    Cogen[(ProgramId, Observation.Index)].contramap(oid => (oid.pid, oid.index))
+    Cogen[(ProgramId, Index)].contramap(oid => (oid.pid, oid.index))
 
 }
 

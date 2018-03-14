@@ -67,10 +67,10 @@ object TestProgram {
     Program(
       pid,
       "Test Program",
-      TreeMap[Observation.Index, Observation.Full](
-        Observation.Index.unsafeFromShort(1) -> f2,
-        Observation.Index.unsafeFromShort(2) -> gmosS,
-        Observation.Index.unsafeFromShort(3) -> gmosN
+      TreeMap[Index, Observation.Full](
+        Index.unsafeFromShort(1) -> f2,
+        Index.unsafeFromShort(2) -> gmosS,
+        Index.unsafeFromShort(3) -> gmosN
       )
     )
 

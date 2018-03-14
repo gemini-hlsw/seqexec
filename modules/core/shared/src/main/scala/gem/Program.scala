@@ -5,7 +5,7 @@ package gem
 
 import cats.{ Applicative, Eval, Traverse }
 import cats.implicits._
-
+import gem.math.Index
 import gem.syntax.treemap._
 
 import scala.collection.immutable.TreeMap
@@ -16,7 +16,7 @@ import scala.collection.immutable.TreeMap
  * or `Nothing` for a minimally-specified program.
  * @group Program Model
  */
-final case class Program[+A](id: Program.Id, title: String, observations: TreeMap[Observation.Index, A])
+final case class Program[+A](id: Program.Id, title: String, observations: TreeMap[Index, A])
 
 object Program {
 

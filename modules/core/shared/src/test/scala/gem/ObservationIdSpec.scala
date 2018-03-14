@@ -7,6 +7,7 @@ import cats.{ Eq, Show }
 import cats.kernel.laws.discipline._
 import cats.tests.CatsSuite
 import gem.arb._
+import gem.math.Index
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals"))
 final class ObservationIdSpec extends CatsSuite {
@@ -24,7 +25,7 @@ final class ObservationIdSpec extends CatsSuite {
   test("Equalty must act pairwise") {
     forAll { (a: Observation.Id, b: Observation.Id) =>
       Eq[Program.Id].eqv(a.pid, b.pid) &&
-      Eq[Observation.Index].eqv(a.index, b.index) shouldEqual Eq[Observation.Id].eqv(a, b)
+      Eq[Index].eqv(a.index, b.index) shouldEqual Eq[Observation.Id].eqv(a, b)
     }
   }
 

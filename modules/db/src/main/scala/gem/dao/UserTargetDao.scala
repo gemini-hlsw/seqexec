@@ -6,6 +6,7 @@ package dao
 
 import gem.dao.meta._
 import gem.enum.UserTargetType
+import gem.math.Index
 import gem.syntax.treesetcompanion._
 
 import cats.implicits._
@@ -17,7 +18,7 @@ object UserTargetDao {
 
   // A target ID and the corresponding user target type.  We use the id to
   // get the actual target.
-  final case class ProtoUserTarget(targetId: Target.Id, targetType: UserTargetType, oi: Observation.Index) {
+  final case class ProtoUserTarget(targetId: Target.Id, targetType: UserTargetType, oi: Index) {
 
     val toUserTarget: ConnectionIO[Option[UserTarget]] =
       TargetDao.select(targetId).map { _.map(UserTarget(_, targetType)) }
@@ -43,7 +44,7 @@ object UserTargetDao {
 
   private def selectAll(
     targetsQuery: Query0[(UserTarget.Id, ProtoUserTarget)]
-  ): ConnectionIO[List[(Observation.Index, (UserTarget.Id, UserTarget))]] =
+  ): ConnectionIO[List[(Index, (UserTarget.Id, UserTarget))]] =
     for {
       puts <- targetsQuery.to[List]                              // List[(UserTarget.Id, ProtoUserTarget)]
       ots  <- puts.map(_._2.targetId).traverse(TargetDao.select) // List[Option[Target]]
@@ -67,13 +68,13 @@ object UserTargetDao {
 
   /** Selects all `UserTarget`s for a program.
     */
-  def selectProg(pid: Program.Id): ConnectionIO[Map[Observation.Index, TreeSet[UserTarget]]] =
+  def selectProg(pid: Program.Id): ConnectionIO[Map[Index, TreeSet[UserTarget]]] =
     selectProgWithId(pid).map(_.mapValues(toUserTargetSet))
 
   /** Selects all `UserTarget`s for a program paired with the `UserTarget` id
     * itself.
     */
-  def selectProgWithId(pid: Program.Id): ConnectionIO[Map[Observation.Index, List[(UserTarget.Id, UserTarget)]]] =
+  def selectProgWithId(pid: Program.Id): ConnectionIO[Map[Index, List[(UserTarget.Id, UserTarget)]]] =
     selectAll(Statements.selectProg(pid)).map {
       _.groupBy(_._1).mapValues(_.unzip._2)
     }

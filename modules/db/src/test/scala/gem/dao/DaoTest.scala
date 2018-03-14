@@ -5,7 +5,8 @@ package gem.dao
 
 import cats.effect.IO
 import doobie._, doobie.implicits._
-import gem.{ Observation, Program, Step }
+import gem.{ Program, Step }
+import gem.math.Index
 
 import scala.collection.immutable.TreeMap
 
@@ -14,12 +15,12 @@ import scala.collection.immutable.TreeMap
 trait DaoTest extends gem.Arbitraries {
   val pid = Program.Id.unsafeFromString("GS-1234A-Q-1")
 
-  protected val xa: Transactor[IO] = 
+  protected val xa: Transactor[IO] =
     Transactor.after.set(DatabaseConfiguration.forTesting.transactor[IO], HC.rollback)
 
   def withProgram[A](test: ConnectionIO[A]): A =
     (for {
-      _ <- ProgramDao.insertFlat(Program(pid, "Test Prog", TreeMap.empty[Observation.Index, Step[Nothing]]))
+      _ <- ProgramDao.insertFlat(Program(pid, "Test Prog", TreeMap.empty[Index, Step[Nothing]]))
       a <- test
     } yield a).transact(xa).unsafeRunSync()
 

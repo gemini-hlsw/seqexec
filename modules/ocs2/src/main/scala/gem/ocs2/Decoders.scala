@@ -159,7 +159,7 @@ object Decoders {
       (n \\* "obsExecLog" \\* "&datasets" \\* "&dataset").decode[Dataset]
     }
 
-  implicit val ObservationIndexDecoder: PioDecoder[Observation.Index] =
+  implicit val ObservationIndexDecoder: PioDecoder[Index] =
     PioDecoder { n =>
       (n \! "@name").decode[Observation.Id].map(_.index)
     }
@@ -217,7 +217,7 @@ object Decoders {
       for {
         id <- (n \!  "@name"           ).decode[Program.Id]
         t  <- (n \!  "data" \? "#title").decodeOrZero[String]
-        is <- (n \\* "observation"     ).decode[Observation.Index]
+        is <- (n \\* "observation"     ).decode[Index]
         os <- (n \\* "observation"     ).decode[Observation.Full]
       } yield Program(id, t, TreeMap.fromList(is.zip(os)))
     }

@@ -6,7 +6,7 @@ package dao
 
 import cats.implicits._
 import doobie.implicits._
-
+import gem.math.Index
 import org.scalatest._
 import org.scalatest.prop._
 import org.scalatest.Matchers._
@@ -17,7 +17,7 @@ class UserTargetDaoSpec extends PropSpec with PropertyChecks with DaoTest {
 
   property("UserTargetDao should roundtrip") {
     forAll { (obs: Observation.Full, ut: UserTarget) =>
-      val oid = Observation.Id(pid, Observation.Index.One)
+      val oid = Observation.Id(pid, Index.One)
 
       val utʹ = withProgram {
         for {
@@ -33,7 +33,7 @@ class UserTargetDaoSpec extends PropSpec with PropertyChecks with DaoTest {
 
   property("UserTargetDao should bulk select observation") {
     forAll { (obs: Observation.Full) =>
-      val oid = Observation.Id(pid, Observation.Index.One)
+      val oid = Observation.Id(pid, Index.One)
 
       val actual = withProgram {
         for {
