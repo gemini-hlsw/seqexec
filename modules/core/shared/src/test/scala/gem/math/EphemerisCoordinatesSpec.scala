@@ -8,17 +8,27 @@ import gem.arb._
 import cats.{ Eq, Show }
 import cats.kernel.laws.discipline._
 import cats.tests.CatsSuite
-
+import monocle.law.discipline._
 import org.scalacheck.{ Arbitrary, Gen }
 import org.scalatest.Assertion
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals"))
 final class EphemerisCoordinatesSpec extends CatsSuite {
+  import ArbCoordinates._
   import ArbEphemeris._
+  import ArbOffset._
+  import ArbRightAscension._
+  import ArbDeclination._
   import EphemerisCoordinatesSpec._
 
   // Laws
   checkAll("EphemerisCoordinates", EqTests[EphemerisCoordinates].eqv)
+  checkAll("EphemerisCoordinates.coordinates", LensTests(EphemerisCoordinates.coordinates))
+  checkAll("EphemerisCoordinates.rightAscension", LensTests(EphemerisCoordinates.rightAscension))
+  checkAll("EphemerisCoordinates.declination", LensTests(EphemerisCoordinates.declination))
+  checkAll("EphemerisCoordinates.delta", LensTests(EphemerisCoordinates.delta))
+  checkAll("EphemerisCoordinates.deltaP", LensTests(EphemerisCoordinates.deltaP))
+  checkAll("EphemerisCoordinates.deltaQ", LensTests(EphemerisCoordinates.deltaQ))
 
   test("Equality must be natural") {
     forAll { (a: EphemerisCoordinates, b: EphemerisCoordinates) =>
