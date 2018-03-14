@@ -508,6 +508,7 @@ object SeqexecEngine {
     val odbQueuePollingInterval = Duration(cfg.require[String]("seqexec-engine.odbQueuePollingInterval"))
     val tops                    = decodeTops(cfg.require[String]("seqexec-engine.tops"))
     val caAddrList              = cfg.lookup[String]("seqexec-engine.epics_ca_addr_list")
+    val ioTimeout               = Duration(cfg.require[String]("seqexec-engine.ioTimeout"))
     val smartGCalHost           = cfg.require[String]("seqexec-engine.smartGCalHost")
     val smartGCalDir            = cfg.require[String]("seqexec-engine.smartGCalDir")
     val smartGcalEnable         = cfg.lookup[Boolean]("seqexec-engine.smartGCalEnable").getOrElse(true)
@@ -530,7 +531,7 @@ object SeqexecEngine {
     // the configuration file or from the environment
     val caInit   = caAddrList.map(a => Task.delay(CaService.setAddressList(a))).getOrElse {
       Task.delay(Option(System.getenv("EPICS_CA_ADDR_LIST"))).flatMap {
-        case Some(_) => taskUnit // Do nothing, just check that it exists
+        case Some(_) => Task.delay(CaService.setIOTimeout(java.time.Duration.ofMillis(ioTimeout.toMillis)))
         case _       => Task.fail(new RuntimeException("Cannot initialize EPICS subsystem"))
       }
     }
@@ -546,7 +547,7 @@ object SeqexecEngine {
     val smartGcal = smartGcalEnable.fold(initSmartGCal(smartGCalHost, smartGCalDir), taskUnit)
 
     smartGcal *>
-    caInit *>
+      caInit *>
       tcsInit *>
       gwsInit *>
       gcalInit *>
