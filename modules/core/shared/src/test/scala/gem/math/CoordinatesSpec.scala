@@ -8,6 +8,7 @@ import cats.{ Eq, Show }
 import cats.kernel.laws.discipline._
 import gem.laws.discipline._
 import gem.arb._
+import monocle.law.discipline._
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals"))
 final class CoordinatesSpec extends CatsSuite {
@@ -18,7 +19,9 @@ final class CoordinatesSpec extends CatsSuite {
 
   // Laws
   checkAll("Coordinates", OrderTests[Coordinates].order)
-  checkAll("Formats.HmsDms", FormatTests(Coordinates.fromHmsDms).formatWith(ArbCoordinates.strings))
+  checkAll("Coordinates.fromHmsDms", FormatTests(Coordinates.fromHmsDms).formatWith(ArbCoordinates.strings))
+  checkAll("Coordinates.rightAscension", LensTests(Coordinates.rightAscension))
+  checkAll("Coordinates.declination", LensTests(Coordinates.declination))
 
   test("Equality must be natural") {
     forAll { (a: Coordinates, b: Coordinates) =>
