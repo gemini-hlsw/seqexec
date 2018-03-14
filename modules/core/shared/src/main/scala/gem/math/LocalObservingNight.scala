@@ -9,9 +9,10 @@ import cats.effect.Sync
 import cats.implicits._
 import gem.enum.Site
 import gem.imp.TimeInstances._
-
 import java.time._
 import java.time.format.DateTimeFormatter
+import monocle.Iso
+import monocle.macros.GenIso
 
 /** A local observing night is defined as the period of time starting at 14:00
   * (inclusive) on one day and ending at 14:00 (exclusive) the next day.
@@ -54,7 +55,7 @@ final case class LocalObservingNight(toLocalDate: LocalDate) {
     LocalObservingNight.Formatter.format(toLocalDate)
 }
 
-object LocalObservingNight {
+object LocalObservingNight extends LocalObservingNightOptics {
 
   /** The hour, in the local time zone, at which the night is considered to
     * officially start.
@@ -135,4 +136,12 @@ object LocalObservingNight {
     */
   implicit val OrderLocalObservingNight: Order[LocalObservingNight] =
     Order.by(_.toLocalDate)
+}
+
+trait LocalObservingNightOptics {
+
+  /** @group Optics */
+  val localDate: Iso[LocalObservingNight, LocalDate] =
+    GenIso[LocalObservingNight, LocalDate]
+
 }
