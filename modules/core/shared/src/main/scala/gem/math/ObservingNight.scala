@@ -8,9 +8,9 @@ import gem.enum.Site
 import cats._
 import cats.effect.Sync
 import cats.implicits._
-
 import java.time._
-
+import monocle.Lens
+import monocle.macros.GenLens
 
 /** An observing night is defined as the period of time from 14:00 on one day
   * until 14:00 on the following day.  In a timezone that honors daylight saving,
@@ -47,7 +47,7 @@ final case class ObservingNight(site: Site, toLocalObservingNight: LocalObservin
 
 }
 
-object ObservingNight {
+object ObservingNight extends ObservingNightOptics {
 
   /** Constructs the observing night that ends on the given local date for
     * for the given site.
@@ -90,5 +90,21 @@ object ObservingNight {
     */
   implicit val OrderObservingNight: Order[ObservingNight] =
     Order.by(n => (n.site, n.toLocalObservingNight))
+
+}
+
+trait ObservingNightOptics {
+
+  /** @group Optics */
+  val site: Lens[ObservingNight, Site] =
+    GenLens[ObservingNight](_.site)
+
+  /** @group Optics */
+  val localObservingNight: Lens[ObservingNight, LocalObservingNight] =
+    GenLens[ObservingNight](_.toLocalObservingNight)
+
+  /** @group Optics */
+  val localDate: Lens[ObservingNight, LocalDate] =
+    localObservingNight composeIso LocalObservingNight.localDate
 
 }
