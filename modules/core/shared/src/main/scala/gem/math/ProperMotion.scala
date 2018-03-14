@@ -6,6 +6,8 @@ package gem.math
 import cats._
 import cats.implicits._
 import java.time.Instant
+import monocle.Lens
+import monocle.macros.GenLens
 import scala.math.{ sin, cos, hypot, atan2 }
 
 /**
@@ -54,7 +56,7 @@ final case class ProperMotion(
 }
 
 
-object ProperMotion {
+object ProperMotion extends ProperMotionOptics {
   import PhysicalConstants.{ AstronomicalUnit, TwoPi }
 
   def const(cs: Coordinates): ProperMotion =
@@ -198,6 +200,30 @@ object ProperMotion {
       order(_.parallax)
 
   }
+}
+
+trait ProperMotionOptics {
+
+  /** @group Optics */
+  val baseCoordinates: Lens[ProperMotion, Coordinates] =
+    GenLens[ProperMotion](_.baseCoordinates)
+
+  /** @group Optics */
+  val epoch: Lens[ProperMotion, Epoch] =
+    GenLens[ProperMotion](_.epoch)
+
+  /** @group Optics */
+  val properVelocity: Lens[ProperMotion, Option[Offset]] =
+    GenLens[ProperMotion](_.properVelocity)
+
+  /** @group Optics */
+  val radialVelocity: Lens[ProperMotion, Option[RadialVelocity]] =
+    GenLens[ProperMotion](_.radialVelocity)
+
+  /** @group Optics */
+  val parallax: Lens[ProperMotion, Option[Angle]] =
+    GenLens[ProperMotion](_.parallax)
+
 }
 
 
