@@ -287,6 +287,7 @@ class StandardHeader(
   private def sfTcsKeyword[A](v: SeqAction[A])(implicit d:DefaultValue[A]) = optTcsKeyword[A](TcsController.Subsystem.ScienceFold)(v)(d)
 
   private val baseKeywords = List(
+    buildString(SeqAction(OcsBuildInfo.version), "SEQEXVER"),
     buildString(obsObject.orDefault, "OBJECT"),
     buildString(obsReader.getObsType, "OBSTYPE"),
     buildString(obsReader.getObsClass, "OBSCLASS"),

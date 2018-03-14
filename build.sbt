@@ -187,6 +187,7 @@ lazy val edu_gemini_seqexec_server = project
   .in(file("modules/edu.gemini.seqexec.server"))
   .enablePlugins(AutomateHeaderPlugin)
   .enablePlugins(GitBranchPrompt)
+  .enablePlugins(BuildInfoPlugin)
   .dependsOn(edu_gemini_seqexec_engine, edu_gemini_seqexec_model_JVM, edu_gemini_epics_acm)
   .settings(commonSettings: _*)
   .settings(
@@ -202,6 +203,12 @@ lazy val edu_gemini_seqexec_server = project
           OpenCSV,
           Log4s
       ) ++ SeqexecOdb ++ WDBAClient ++ TestLibs.value
+  )
+  .settings(
+    buildInfoUsePackageAsPath := true,
+    buildInfoKeys := Seq(name, version),
+    buildInfoObject := "OcsBuildInfo",
+    buildInfoPackage := "edu.gemini.seqexec.server"
   )
 
 // Unfortunately crossProject doesn't seem to work properly at the module/build.sbt level
