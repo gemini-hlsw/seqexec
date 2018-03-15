@@ -3,7 +3,7 @@
 
 package gem.math
 
-import cats.{ Order, Show }
+import cats.{Order, Show}
 import cats.implicits._
 
 import java.time.{Instant, LocalDateTime}
@@ -22,7 +22,7 @@ sealed abstract case class JulianDate(
   nanoAdjustment: Long
 ) {
 
-  import JulianDate.{ NanoPerDay, MaxAdjustment, MinAdjustment }
+  import JulianDate._
 
   // Guaranteed by the JulianDate constructors, double checked here.
   assert(dayNumber      >= 0,             s"dayNumber >= 0")
@@ -35,21 +35,47 @@ sealed abstract case class JulianDate(
     */
   val toDouble: Double =
     dayNumber + nanoAdjustment.toDouble / NanoPerDay.toDouble
+
+  /** Modified Julian Date (MJD) double.  This is logically the same as
+    * `toDouble - 2400000.5`. MJD was introduced to preserve a bit of floating
+    * point decimal precision in calculations that use Julian dates.  It also
+    * makes it easier to directly implement algorithms that work with MJD.
+    *
+    * @see http://tycho.usno.navy.mil/mjd.html
+    */
+  def toModifiedDouble: Double = {
+    val h = SecondsPerHalfDay.toLong * Billion.toLong
+    val d = dayNumber      - 2400000
+    val n = nanoAdjustment - h
+
+    val (dʹ,nʹ) = if (n >= MinAdjustment) (d, n)
+                  else (d - 1, n + SecondsPerDay.toLong * Billion.toLong)
+
+    dʹ + nʹ.toDouble / NanoPerDay.toDouble
+  }
 }
 
 
 object JulianDate {
 
-  // One half day of seconds, ignoring leap seconds since Java time API ignores
-  // them as well.
-  private val SecPerDay: Int      = 86400
-  private val SecPerHalfDay: Int  = 43200
+  /** Seconds per Julian day. */
+  val SecondsPerDay: Int =               // 86400
+    24 * 60 * 60
+
+  private val SecondsPerHalfDay: Int  =  // 43200
+    SecondsPerDay / 2
 
   private val Billion: Int        = 1000000000
-  private val NanoPerDay: Long    = SecPerDay.toLong * Billion.toLong
+  private val NanoPerDay: Long    = SecondsPerDay.toLong * Billion.toLong
 
-  private val MinAdjustment: Long = -SecPerHalfDay.toLong * Billion.toLong
-  private val MaxAdjustment: Long =  SecPerHalfDay.toLong * Billion.toLong - 1
+  private val MinAdjustment: Long = -SecondsPerHalfDay.toLong * Billion.toLong
+  private val MaxAdjustment: Long =  SecondsPerHalfDay.toLong * Billion.toLong - 1
+
+  /** J2000 reference epoch as Julian Date. */
+  val J2000: JulianDate =                // JulianDate(2451545,0)
+    JulianDate.ofLocalDateTime(
+      LocalDateTime.of(2000, 1, 1, 12, 0, 0)
+    )
 
   /** Convert an `Instant` to a Julian Date.
     */
@@ -79,7 +105,7 @@ object JulianDate {
 
     // Whole seconds since midnight
     val secs = ldt.getHour * 3600 + ldt.getMinute * 60 + ldt.getSecond
-    val adj  = (secs - SecPerHalfDay).toLong * Billion + ldt.getNano
+    val adj  = (secs - SecondsPerHalfDay).toLong * Billion + ldt.getNano
 
     new JulianDate(jdn, adj) {}
   }
