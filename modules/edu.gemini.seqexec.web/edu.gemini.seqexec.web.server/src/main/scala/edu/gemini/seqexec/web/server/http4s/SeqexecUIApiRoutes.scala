@@ -83,6 +83,14 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, events: (server.EventQueue
 
   val protectedServices: AuthedService[AuthResult] =
     AuthedService {
+      case GET  -> Root  / "log" =>
+      for (i <- 0 to 20) {
+        clientLog.info("info")
+        clientLog.warn("warn")
+        clientLog.error("error")
+      }
+      Ok("")
+
       case auth @ POST -> Root / "seqexec" / "log" as user =>
         auth.req.decode[LogMessage] { msg =>
           val userName = user.fold(_ => "Anonymous", _.displayName)

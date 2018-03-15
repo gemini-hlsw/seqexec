@@ -5,11 +5,12 @@ package edu.gemini.seqexec.web.client
 
 import java.util.logging.Logger
 
+import diode._
 import diode.data._
 import diode.react.ReactConnector
-import diode._
 import japgolly.scalajs.react.Callback
 import edu.gemini.seqexec.model.UserDetails
+import edu.gemini.seqexec.model.events.SeqexecEvent.ServerLogMessage
 import edu.gemini.seqexec.model.Model._
 import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.model.Pages
@@ -17,7 +18,7 @@ import edu.gemini.seqexec.web.client.lenses._
 import edu.gemini.seqexec.web.client.handlers._
 import edu.gemini.seqexec.web.client.model.SeqexecAppRootModel.LoadedSequences
 import edu.gemini.seqexec.web.client.ModelOps._
-import edu.gemini.seqexec.web.client.actions.{show, AppendToLog, OpenLoginBox, CloseLoginBox, OpenResourcesBox, CloseResourcesBox}
+import edu.gemini.seqexec.web.client.actions.{show, ServerMessage, AppendToLog, OpenLoginBox, CloseLoginBox, OpenResourcesBox, CloseResourcesBox}
 
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
@@ -27,7 +28,6 @@ import scalaz.syntax.equal._
 import scalaz.syntax.show._
 
 object circuit {
-
   /**
     * Utility class to let components more easily switch parts of the UI depending on the context
     */
@@ -59,9 +59,10 @@ object circuit {
     override def process(dispatch: Dispatcher, action: Any, next: Any => ActionResult[M], currentModel: M): ActionResult[M] = {
       // log the action
       action match {
-        case AppendToLog(_) =>
-        case a: Action => logger.info(s"Action: ${a.shows}")
-        case _ =>
+        case AppendToLog(_)                     =>
+        case ServerMessage(_: ServerLogMessage) =>
+        case a: Action                          => logger.info(s"Action: ${a.shows}")
+        case _                                  =>
       }
       // call the next processor
       next(action)

@@ -396,8 +396,9 @@ object handlers {
           case buffer: ArrayBuffer =>
             val byteBuffer = TypedArrayBuffer.wrap(buffer)
             \/.fromTryCatchNonFatal(Unpickle[SeqexecEvent].fromBytes(byteBuffer)) match {
-              case \/-(event) => logger.info(s"Decoding event: ${event.getClass}"); SeqexecCircuit.dispatch(ServerMessage(event))
-              case -\/(t)     => logger.warning(s"Error decoding event ${t.getMessage}")
+              case \/-(event: ServerLogMessage) => SeqexecCircuit.dispatch(ServerMessage(event))
+              case \/-(event)                   => logger.info(s"Decoding event: ${event.getClass}"); SeqexecCircuit.dispatch(ServerMessage(event))
+              case -\/(t)                       => logger.warning(s"Error decoding event ${t.getMessage}")
             }
           case _                   =>
             ()
