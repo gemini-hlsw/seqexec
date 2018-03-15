@@ -11,7 +11,7 @@ import doobie.implicits._
 
 import gem.dao.meta._
 import gem.enum.{ AsterismType, Instrument }
-
+import gem.math.Index
 import scala.collection.immutable.TreeMap
 
 
@@ -32,10 +32,10 @@ object AsterismDao {
       case AsterismType.GhostDualTarget => selectGhostDualTarget(oid)
     }
 
-  def selectAll(pid: Program.Id, t: AsterismType): ConnectionIO[TreeMap[Observation.Index, Asterism]] =
+  def selectAll(pid: Program.Id, t: AsterismType): ConnectionIO[TreeMap[Index, Asterism]] =
     t match {
       case AsterismType.SingleTarget    => selectAllSingleTarget(pid)
-      case AsterismType.GhostDualTarget => TreeMap.empty[Observation.Index, Asterism].pure[ConnectionIO]
+      case AsterismType.GhostDualTarget => TreeMap.empty[Index, Asterism].pure[ConnectionIO]
     }
 
   def insertSingleTarget[I <: Instrument with Singleton](oid: Observation.Id, a: Asterism.SingleTarget[I]): ConnectionIO[Unit] =
@@ -64,14 +64,14 @@ object AsterismDao {
       t1  <- ids.fold(NoTarget) { case (_, id) => TargetDao.select(id) }
     } yield t0.product(t1).map { case (t0, t1) => Asterism.GhostDualTarget(t0, t1) }
 
-  type AsterismMap = ConnectionIO[TreeMap[Observation.Index, Asterism]]
-  type OptMapEntry = ConnectionIO[Option[(Observation.Index, Asterism)]]
+  type AsterismMap = ConnectionIO[TreeMap[Index, Asterism]]
+  type OptMapEntry = ConnectionIO[Option[(Index, Asterism)]]
 
   private def toAsterismMap[A](as: List[A])(f: A => OptMapEntry): AsterismMap =
     as.traverse(f).map { lst => TreeMap(lst.flatMap(_.toList): _*) }
 
   def selectAllSingleTarget(pid: Program.Id): AsterismMap = {
-    def toEntry[I <: Instrument with Singleton](idx: Observation.Index, tid: Target.Id, inst: Instrument.Aux[I]): OptMapEntry =
+    def toEntry[I <: Instrument with Singleton](idx: Index, tid: Target.Id, inst: Instrument.Aux[I]): OptMapEntry =
       TargetDao.select(tid).map {
         _.map(idx -> Asterism.SingleTarget(_, inst))
       }
@@ -83,7 +83,7 @@ object AsterismDao {
   }
 
   def selectAllGhostDualTarget(pid: Program.Id): AsterismMap = {
-    def toEntry(idx: Observation.Index, tid0: Target.Id, tid1: Target.Id): OptMapEntry =
+    def toEntry(idx: Index, tid0: Target.Id, tid1: Target.Id): OptMapEntry =
       for {
         t0 <- TargetDao.select(tid0)
         t1 <- TargetDao.select(tid1)
@@ -130,14 +130,14 @@ object AsterismDao {
              AND observation_index = ${oid.index}
         """.query[(Target.Id, Instrument)]
 
-      def selectAll(pid: Program.Id): Query0[(Observation.Index, Target.Id, Instrument)] =
+      def selectAll(pid: Program.Id): Query0[(Index, Target.Id, Instrument)] =
         sql"""
           SELECT observation_index,
                  target_id,
                  instrument
             FROM single_target_asterism
            WHERE program_id = $pid
-        """.query[(Observation.Index, Target.Id, Instrument)]
+        """.query[(Index, Target.Id, Instrument)]
     }
 
     object GhostDualTarget {
@@ -170,14 +170,14 @@ object AsterismDao {
              AND observation_index = ${oid.index}
         """.query[(Target.Id, Target.Id)]
 
-      def selectAll(pid: Program.Id): Query0[(Observation.Index, Target.Id, Target.Id)] =
+      def selectAll(pid: Program.Id): Query0[(Index, Target.Id, Target.Id)] =
         sql"""
           SELECT observation_index,
                  target1_id,
                  target2_id
             FROM ghost_dual_target_asterism
            WHERE program_id = $pid
-        """.query[(Observation.Index, Target.Id, Target.Id)]
+        """.query[(Index, Target.Id, Target.Id)]
 
     }
 

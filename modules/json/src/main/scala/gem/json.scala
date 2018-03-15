@@ -68,9 +68,9 @@ package object json {
   val AngleAsSignedMilliarcsecondsEncoder: Encoder[Angle] = Encoder[BigDecimal].contramap(_.toSignedMilliarcseconds)
   val AngleAsSignedMilliarcsecondsDecoder: Decoder[Angle] = Decoder[BigDecimal].map(Angle.fromSignedMilliarcseconds)
 
-  // Observation.Index to Integer.
-  implicit val ObservationIndexEncoder: Encoder[Observation.Index] = Encoder[Short].contramap(_.toShort)
-  implicit val ObservationIndexDecoder: Decoder[Observation.Index] = Decoder[Short].map(Observation.Index.unsafeFromShort)
+  // Index to Short.
+  implicit val ObservationIndexEncoder: Encoder[Index] = Encoder[Short].contramap(_.toShort)
+  implicit val ObservationIndexDecoder: Decoder[Index] = Decoder[Short].map(Index.unsafeFromShort)
 
   // Wavelength mapping to integral Angstroms.
   implicit val (
@@ -174,11 +174,11 @@ package object json {
   implicit def programIdKeyedMapDecoder[A: Decoder]: Decoder[Map[Program.Id, A]] =
     Decoder[Map[String, A]].map(_.map { case (k, v) => (Program.Id.unsafeFromString(k), v) })
 
-  // Codec for maps keyed by Observation.Index
-  implicit def observationIndexMapEncoder[A: Encoder]: Encoder[TreeMap[Observation.Index, A]] =
+  // Codec for maps keyed by Index
+  implicit def observationIndexMapEncoder[A: Encoder]: Encoder[TreeMap[Index, A]] =
     Encoder[TreeMap[Short, A]].contramap(_.map { case (k, v) => (k.toShort, v) })
-  implicit def observationIndexMapDecoder[A: Decoder]: Decoder[TreeMap[Observation.Index, A]] =
-    Decoder[TreeMap[Short, A]].map(_.map { case (k, v) => (Observation.Index.unsafeFromShort(k), v) })
+  implicit def observationIndexMapDecoder[A: Decoder]: Decoder[TreeMap[Index, A]] =
+    Decoder[TreeMap[Short, A]].map(_.map { case (k, v) => (Index.unsafeFromShort(k), v) })
 
   // GmosCustomRoiEntry as a quad of shorts
   implicit val GmosCustomRoiEntryEncoder: Encoder[GmosCustomRoiEntry] =

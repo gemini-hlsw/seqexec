@@ -7,7 +7,7 @@ import cats.implicits._
 import gem.arb._
 import gem.config.{ DynamicConfig, GcalConfig, TelescopeConfig }
 import gem.enum.{Instrument, SmartGcalType}
-import gem.math.Offset
+import gem.math.{ Index, Offset }
 import gem.syntax.treemap._
 import gem.util.Location
 import org.scalacheck._
@@ -107,10 +107,10 @@ trait Arbitraries extends gem.config.Arbitraries  {
       } yield o
     }
 
-  def genObservationMap(limit: Int): Gen[TreeMap[Observation.Index, Observation.Full]] =
+  def genObservationMap(limit: Int): Gen[TreeMap[Index, Observation.Full]] =
     for {
       count   <- Gen.choose(0, limit)
-      obsIdxs <- Gen.listOfN(count, Gen.posNum[Short]).map(_.distinct.map(Observation.Index.unsafeFromShort))
+      obsIdxs <- Gen.listOfN(count, Gen.posNum[Short]).map(_.distinct.map(Index.unsafeFromShort))
       obsList <- obsIdxs.traverse(_ => arbitrary[Observation.Full])
     } yield TreeMap.fromList(obsIdxs.zip(obsList))
 }

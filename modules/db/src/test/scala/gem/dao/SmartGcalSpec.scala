@@ -11,6 +11,7 @@ import gem.config._
 import gem.config.F2Config.F2FpuChoice.Builtin
 import gem.config.GcalConfig.GcalLamp
 import gem.enum._
+import gem.math.Index
 import gem.util.Location
 import org.scalatest.{Assertion, FlatSpec, Matchers}
 import java.time.Duration
@@ -90,7 +91,7 @@ class SmartGcalSpec extends FlatSpec with Matchers with DaoTest {
     ss.values.toList shouldEqual lookup(m).map(Step.Gcal(f2, _))
   }
 
-  private val oid = Observation.Id(pid, Observation.Index.One)
+  private val oid = Observation.Id(pid, Index.One)
 
   private def doTest[A](test: ConnectionIO[A]): A =
     withProgram {
