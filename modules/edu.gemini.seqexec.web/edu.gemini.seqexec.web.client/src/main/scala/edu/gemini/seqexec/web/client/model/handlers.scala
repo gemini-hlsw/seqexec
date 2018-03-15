@@ -370,7 +370,6 @@ object handlers {
     import ModelBooPicklers._
 
     private implicit val runner = new RunAfterJS
-
     private val logger = Logger.getLogger(this.getClass.getSimpleName)
     // Reconfigure to avoid sending ajax events in this logger
     logger.setUseParentHandlers(false)
@@ -406,7 +405,6 @@ object handlers {
       }
 
       def onError(): Unit =
-        // Unfortunately reading the event is not cross-browser safe
         logger.severe("Error on websocket")
 
       def onClose(): Unit =

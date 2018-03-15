@@ -34,7 +34,7 @@ trait ArbitrariesWebClient extends ArbitrariesWebCommon {
         i   <- arbitrary[Instrument]
         idx <- arbitrary[Option[Int]]
         sv  <- arbitrary[Option[SequenceView]]
-      } yield SequenceTab(i, RefTo(new RootModelR(sv.map(k => k.copy(metadata = k.metadata.copy(instrument = i))))), 1, None, idx)
+      } yield SequenceTab(i, RefTo(new RootModelR(sv.map(k => k.copy(metadata = k.metadata.copy(instrument = i))))), None, idx)
     }
 
   implicit val arbSequenceOnDisplay: Arbitrary[SequencesOnDisplay] =

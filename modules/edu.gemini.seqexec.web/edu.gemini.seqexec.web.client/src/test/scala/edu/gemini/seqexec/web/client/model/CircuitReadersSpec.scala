@@ -8,16 +8,12 @@ import edu.gemini.seqexec.web.client.circuit.SeqexecCircuit._
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{FlatSpec, Matchers}
 
-// import scalaz._
-
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 class CircuitReaderSpec extends FlatSpec with Matchers with PropertyChecks with ArbitrariesWebClient {
-  // import edu.gemini.seqexec.model.SharedModelArbitraries._
 
   "CircuitReaderSpec" should
     "maintain reference equality for constant readers" in {
       (webSocketFocusRW === webSocketFocusRW.value) should be(true)
-      (initialSyncFocusRW === initialSyncFocusRW.value) should be(true)
       (statusAndLoadedSequencesReader === statusAndLoadedSequencesReader.value) should be(true)
       (statusReader === statusReader.value) should be(true)
       (headerSideBarReader === headerSideBarReader.value) should be(true)

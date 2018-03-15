@@ -46,7 +46,7 @@ class SeqexecUIApiRoutesSpec extends FlatSpec with Matchers with UriFunctions wi
   val out: Topic[SeqexecEvent] = async.topic[SeqexecEvent]()
   val queues: (Queue[executeEngine.EventType], Topic[SeqexecEvent]) = (inq, out)
 
-  val service: Service[Request, MaybeResponse] = new SeqexecUIApiRoutes(authService, queues, engine).service
+  val service: Service[Request, MaybeResponse] = new SeqexecUIApiRoutes(true, authService, queues, engine).service
 
   "SeqexecUIApiRoutes login" should
     "reject requests without body" in {

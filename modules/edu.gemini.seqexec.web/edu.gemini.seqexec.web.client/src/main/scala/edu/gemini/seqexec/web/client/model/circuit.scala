@@ -62,6 +62,9 @@ object circuit {
   final case class ControlModel(id: SequenceId, isPartiallyExecuted: Boolean, nextStepToRun: Option[Int], status: SequenceState) extends UseValueEq
   final case class SequenceControlFocus(isLogged: Boolean, isConnected: Boolean, control: Option[ControlModel]) extends UseValueEq
 
+  /**
+   * Diode processor to log some of the action to aid in debugging
+   */
   final class LoggingProcessor[M <: AnyRef] extends ActionProcessor[M] {
     private val logger = Logger.getLogger(this.getClass.getName)
     override def process(dispatch: Dispatcher, action: Any, next: Any => ActionResult[M], currentModel: M): ActionResult[M] = {
@@ -86,33 +89,25 @@ object circuit {
     addProcessor(new LoggingProcessor[SeqexecAppRootModel]())
 
     implicit object ClientStatusEq extends FastEq[ClientStatus] {
-      override def eqv(a: ClientStatus, b: ClientStatus): Boolean = {
-        a === b
-      }
+      override def eqv(a: ClientStatus, b: ClientStatus): Boolean = a === b
     }
 
     implicit object InstrumentTabActiveEq extends FastEq[InstrumentTabActive] {
-      override def eqv(a: InstrumentTabActive, b: InstrumentTabActive): Boolean = {
-        a === b
-      }
+      override def eqv(a: InstrumentTabActive, b: InstrumentTabActive): Boolean = a === b
     }
 
     implicit object StepsTableEq extends FastEq[Option[StepsTableFocus]] {
-      override def eqv(a: Option[StepsTableFocus], b: Option[StepsTableFocus]): Boolean = {
-        a === b
-      }
+      override def eqv(a: Option[StepsTableFocus], b: Option[StepsTableFocus]): Boolean = a === b
     }
 
     implicit object SequenceTabEq extends FastEq[SequenceTab] {
-      override def eqv(a: SequenceTab, b: SequenceTab): Boolean = {
-        a === b
-      }
+      override def eqv(a: SequenceTab, b: SequenceTab): Boolean = a === b
     }
 
     def dispatchCB[A <: Action](a: A): Callback = Callback(dispatch(a))
 
     // Model read-writers
-    private val webSocketFocusRW: ModelRW[SeqexecAppRootModel, WebSocketsFocus] =
+    val webSocketFocusRW: ModelRW[SeqexecAppRootModel, WebSocketsFocus] =
       zoomRW(m => WebSocketsFocus(m.uiModel.navLocation, m.uiModel.sequences, m.uiModel.user, m.site, m.uiModel.firstLoad)) ((m, v) => m.copy(uiModel = m.uiModel.copy(sequences = v.sequences, user = v.user, firstLoad = v.firstLoad), site = v.site))
 
     private val wsHandler                = new WebSocketHandler(zoomTo(_.ws))
@@ -148,9 +143,11 @@ object circuit {
     val headerSideBarReader: ModelR[SeqexecAppRootModel, HeaderSideBarFocus] =
       zoom(c => HeaderSideBarFocus(ClientStatus(c.uiModel.user, c.ws, c.uiModel.sequencesOnDisplay.isAnySelected), c.uiModel.sequences.conditions, c.uiModel.sequences.operator))
 
-    val logDisplayedReader: ModelR[SeqexecAppRootModel, SectionVisibilityState] = zoom(_.uiModel.globalLog.display)
+    val logDisplayedReader: ModelR[SeqexecAppRootModel, SectionVisibilityState] =
+      zoom(_.uiModel.globalLog.display)
 
-    def instrumentTab(i: Instrument): ModelR[SeqexecAppRootModel, InstrumentTabActive] = zoom(_.uiModel.sequencesOnDisplay.instrument(i))
+    def instrumentTab(i: Instrument): ModelR[SeqexecAppRootModel, InstrumentTabActive] =
+      zoom(_.uiModel.sequencesOnDisplay.instrument(i))
 
     def instrumentStatusReader(i: Instrument): ModelR[SeqexecAppRootModel, InstrumentStatusFocus] =
       instrumentTab(i).zoom {
