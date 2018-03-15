@@ -7,8 +7,9 @@ package edu.gemini.seqexec.web.client
 import diode.Action
 import edu.gemini.seqexec.model.UserDetails
 import edu.gemini.seqexec.model.Model._
+import edu.gemini.seqexec.model.events.SeqexecModelUpdate
 import edu.gemini.seqexec.model.events.SeqexecEvent
-import edu.gemini.seqexec.model.events.SeqexecEvent.ServerLogMessage
+import edu.gemini.seqexec.model.events.SeqexecEvent.{ServerLogMessage}
 import edu.gemini.seqexec.web.client.model._
 import org.scalajs.dom.WebSocket
 
@@ -96,9 +97,11 @@ object actions {
   // scalastyle:on
 
   implicit val show: Show[Action] = Show.shows {
-    case s @ ServerMessage(u @ SeqexecModelUpdate(view)) => s"${s.getClass.getSimpleName}(${u.getClass.getSimpleName}(${view.queue.map(_.id)}))"
-    case s @ InitialSyncToPage(view) => s"${s.getClass.getSimpleName}(${view.id})"
-    case s @ SyncPageToRemovedSequence(view) => s"${s.getClass.getSimpleName}(${view})"
-    case a => s"$a"
+    case s @ ServerMessage(u @ SeqexecModelUpdate(view)) =>
+      s"${s.getClass.getSimpleName}(${u.getClass.getSimpleName}(${view.queue.map(s => (s.id, s.steps.map(i => (i.id, i.status))))}))"
+    case s @ RememberCompleted(view)                     =>
+      s"${s.getClass.getSimpleName}(${view.id})"
+    case a                                               =>
+      s"$a"
   }
 }

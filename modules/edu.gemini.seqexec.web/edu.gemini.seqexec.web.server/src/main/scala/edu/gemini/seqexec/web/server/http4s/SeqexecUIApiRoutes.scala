@@ -29,11 +29,12 @@ import Scalaz._
 import scalaz.concurrent.Task
 import scalaz.stream.async.mutable.Topic
 import scalaz.stream.{Exchange, Process}
+import scala.math._
 
 /**
   * Rest Endpoints under the /api route
   */
-class SeqexecUIApiRoutes(auth: AuthenticationService, events: (server.EventQueue, Topic[SeqexecEvent]), se: SeqexecEngine) extends BooEncoders with ModelLenses {
+class SeqexecUIApiRoutes(devMode: Boolean, auth: AuthenticationService, events: (server.EventQueue, Topic[SeqexecEvent]), se: SeqexecEngine) extends BooEncoders with ModelLenses {
   import ModelBooPicklers._
 
   // Logger for client messages
@@ -83,13 +84,14 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, events: (server.EventQueue
 
   val protectedServices: AuthedService[AuthResult] =
     AuthedService {
-      case GET  -> Root  / "log" =>
-      for (i <- 0 to 20) {
-        clientLog.info("info")
-        clientLog.warn("warn")
-        clientLog.error("error")
-      }
-      Ok("")
+      // Route used for testing only
+      case GET  -> Root  / "log" / count as _ if devMode =>
+        for (i <- 0 until min(1000, max(0, count.toInt))) {
+          clientLog.info("info")
+          clientLog.warn("warn")
+          clientLog.error("error")
+        }
+        Ok("")
 
       case auth @ POST -> Root / "seqexec" / "log" as user =>
         auth.req.decode[LogMessage] { msg =>

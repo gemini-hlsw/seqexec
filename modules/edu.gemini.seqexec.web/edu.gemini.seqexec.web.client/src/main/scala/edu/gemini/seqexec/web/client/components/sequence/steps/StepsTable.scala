@@ -9,7 +9,7 @@ import edu.gemini.seqexec.model.Model.{Instrument, StandardStep, Step, StepState
 import edu.gemini.seqexec.model.properties
 import edu.gemini.seqexec.web.client.lenses._
 import edu.gemini.seqexec.web.client.model.Pages.SeqexecPages
-import edu.gemini.seqexec.web.client.circuit.{ClientStatus, StepsTableFocus}
+import edu.gemini.seqexec.web.client.circuit.{ClientStatus, StepsTableAndStatusFocus, StepsTableFocus}
 import edu.gemini.seqexec.web.client.components.SeqexecStyles
 import edu.gemini.seqexec.web.client.components.sequence.steps.OffsetFns._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._

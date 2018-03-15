@@ -54,7 +54,7 @@ object circuit {
   final case class InstrumentTabContentFocus(instrument: Instrument, active: Boolean, sequenceSelected: Boolean, logDisplayed: SectionVisibilityState) extends UseValueEq
   final case class StatusAndObserverFocus(isLogged: Boolean, name: Option[String], instrument: Instrument, id: Option[SequenceId], observer: Option[Observer], status: Option[SequenceState], targetName: Option[TargetName]) extends UseValueEq
   final case class StatusAndStepFocus(isLogged: Boolean, instrument: Instrument, id: Option[SequenceId], stepConfigDisplayed: Option[Int]) extends UseValueEq
-  final case class StepsTableFocus(id: SequenceId, instrument: Instrument, state: SequenceState, steps: List[Step], stepDisplayed: Int, stepConfigDisplayed: Option[Int], nextStepToRun: Option[Int]) extends UseValueEq
+  final case class StepsTableFocus(id: SequenceId, instrument: Instrument, state: SequenceState, steps: List[Step], stepConfigDisplayed: Option[Int], nextStepToRun: Option[Int]) extends UseValueEq
   object StepsTableFocus {
     implicit val eq: Equal[StepsTableFocus] = Equal.equalA
   }
@@ -178,7 +178,7 @@ object circuit {
       instrumentTab(i).zoom {
         case InstrumentTabActive(tab, _) =>
           tab.sequence.map { sequence =>
-            StepsTableFocus(sequence.id, i, sequence.status, sequence.steps, tab.currentStep, tab.stepConfigDisplayed, sequence.nextStepToRun)
+            StepsTableFocus(sequence.id, i, sequence.status, sequence.steps, tab.stepConfigDisplayed, sequence.nextStepToRun)
           }
       }(StepsTableEq)
 
