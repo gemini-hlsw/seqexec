@@ -531,10 +531,10 @@ object SeqexecEngine {
     // the configuration file or from the environment
     val caInit   = caAddrList.map(a => Task.delay(CaService.setAddressList(a))).getOrElse {
       Task.delay(Option(System.getenv("EPICS_CA_ADDR_LIST"))).flatMap {
-        case Some(_) => Task.delay(CaService.setIOTimeout(java.time.Duration.ofMillis(ioTimeout.toMillis)))
+        case Some(_) => taskUnit
         case _       => Task.fail(new RuntimeException("Cannot initialize EPICS subsystem"))
       }
-    }
+    } *> Task.delay(CaService.setIOTimeout(java.time.Duration.ofMillis(ioTimeout.toMillis)))
     val tcsInit  = (tcsKeywords || !tcsSim).fold(initEpicsSystem(TcsEpics, tops), taskUnit)
     // More instruments to be added to the list here
     val instList = site match {
