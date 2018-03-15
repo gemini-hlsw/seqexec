@@ -551,6 +551,7 @@ object StepDao {
       def selectAll(oid: Observation.Id): Query0[(Loc, DynamicConfig.Gnirs)] =
         sql"""
           SELECT s.location,
+                 i.acquisition_mirror,
                  i.camera,
                  i.decker,
                  i.disperser,
@@ -570,7 +571,8 @@ object StepDao {
 
       def selectOne(oid: Observation.Id, loc: Loc): Query0[DynamicConfig.Gnirs] =
         sql"""
-          SELECT i.camera,
+          SELECT i.acquisition_mirror,
+                 i.camera,
                  i.decker,
                  i.disperser,
                  i.exposure_time,
@@ -592,6 +594,7 @@ object StepDao {
         sql"""
           INSERT INTO step_gnirs (
             step_gnirs_id,
+            acquisition_mirror,
             camera,
             decker,
             disperser,
@@ -605,6 +608,7 @@ object StepDao {
           )
           VALUES (
             $id,
+            ${gnirs.acquisitionMirror},
             ${gnirs.camera},
             ${gnirs.decker},
             ${gnirs.disperser},

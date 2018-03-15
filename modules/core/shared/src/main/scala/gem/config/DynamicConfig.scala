@@ -188,6 +188,7 @@ object DynamicConfig {
   }
 
   final case class Gnirs(
+    acquisitionMirror:    GnirsAcquisitionMirror,
     camera:               GnirsCamera,
     decker:               GnirsDecker,
     disperser:            GnirsDisperser,
@@ -201,6 +202,7 @@ object DynamicConfig {
 
   object Gnirs {
     val Default: Gnirs = Gnirs(
+      GnirsAcquisitionMirror.Out,
       GnirsCamera.ShortBlue,
       GnirsDecker.Acquisition,
       GnirsDisperser.D32,
