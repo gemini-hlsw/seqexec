@@ -47,14 +47,21 @@ object model {
     }
   }
 
-  final case class SequenceTab(instrument: Instrument, currentSequence: RefTo[Option[SequenceView]], completedSequence: Option[SequenceView], stepConfigDisplayed: Option[Int]) {
+  final case class InstrumentTabActive(tab: SequenceTab, active: Boolean)
+
+  object InstrumentTabActive {
+    implicit val eq: Equal[InstrumentTabActive] = Equal.equalA
+  }
+
+  final case class SequenceTab(instrument: Instrument, currentSequence: RefTo[Option[SequenceView]], currentStep: Int, completedSequence: Option[SequenceView], stepConfigDisplayed: Option[Int]) {
     // Returns the current sequence or if empty the last completed one
     // This must be a def since it will do a call to dereference a RefTo
     def sequence: Option[SequenceView] = currentSequence().orElse(completedSequence)
   }
 
   object SequenceTab {
-    val empty: SequenceTab = SequenceTab(Instrument.F2, RefTo(new RootModelR(None)), None, None)
+    implicit val eq: Equal[SequenceTab] = Equal.equalA
+    val empty: SequenceTab = SequenceTab(Instrument.F2, RefTo(new RootModelR(None)), 0, None, None)
   }
 
   // Model for the tabbed area of sequences
@@ -88,9 +95,9 @@ object model {
     def idDisplayed(id: SequenceId): Boolean =
       instrumentSequences.withFocus.toStream.find { case (s, a) => a && s.sequence.exists(_.id === id)}.isDefined
 
-    def instrument(i: Instrument): (SequenceTab, Boolean) =
+    def instrument(i: Instrument): InstrumentTabActive =
       // The getOrElse shouldn't be called as we have an element per instrument
-      instrumentSequences.withFocus.toStream.find(_._1.instrument === i).getOrElse((SequenceTab.empty, false))
+      instrumentSequences.withFocus.toStream.find(_._1.instrument === i).map{ case (i, a) => InstrumentTabActive(i, a) }.getOrElse(InstrumentTabActive(SequenceTab.empty, false))
 
     // We'll set the passed SequenceView as completed for the given instruments
     def markCompleted(completed: SequenceView): SequencesOnDisplay = {
