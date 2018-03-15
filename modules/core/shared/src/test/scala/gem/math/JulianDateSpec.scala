@@ -73,4 +73,10 @@ final class JulianDateSpec extends CatsSuite {
       assert((expected - jd.toDouble).abs <= 0.000001)
     }
   }
+
+  test("Modified JulianDate should almost equal JulianDate - 2400000.5") {
+    forAll { (j: JulianDate) =>
+      assert(j.toModifiedDouble === (j.toDouble - 2400000.5) +- 0.000000001)
+    }
+  }
 }

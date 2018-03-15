@@ -369,6 +369,13 @@ final class HourAngle private (µas: Long) extends Angle(µas) {
     toMicroarcseconds / 15
 
   /**
+   * This `HourAngle` in decimal hours. Approximate.
+   * @group Conversions
+   */
+  def toDoubleHours: Double =
+    toMicroseconds.toDouble / HourAngle.µsPerHour
+
+  /**
    * Sum of this HourAngle and `ha`. Exact, commutative, invertible.
    * @group Operations
    */
@@ -392,6 +399,8 @@ final class HourAngle private (µas: Long) extends Angle(µas) {
 
 object HourAngle extends HourAngleOptics {
 
+  private val µsPerHour: Long = 60L * 60L * 1000L * 1000L
+
   /** @group Constants */ lazy val HourAngle0 : HourAngle = microseconds.reverseGet(0)
   /** @group Constants */ lazy val HourAngle12: HourAngle = hours.reverseGet(12)
 
@@ -400,7 +409,7 @@ object HourAngle extends HourAngleOptics {
    * @group Constructors
    */
   def fromMicroseconds(µs: Long): HourAngle = {
-    val µsPer24 = 24L * 60L * 60L * 1000L * 1000L
+    val µsPer24 = 24L * µsPerHour
     val µsʹ = (((µs % µsPer24) + µsPer24) % µsPer24)
     new HourAngle(µsʹ * 15L)
   }
@@ -410,7 +419,7 @@ object HourAngle extends HourAngleOptics {
    * @group Constructors
    */
   def fromDoubleHours(hs: Double): HourAngle =
-    fromMicroseconds((hs * 60.0 * 60.0 * 1000.0).toLong)
+    fromMicroseconds((hs * µsPerHour).round)
 
   /**
    * Construct a new HourAngle of the given magnitude as a sum of hours, minutes, seconds,

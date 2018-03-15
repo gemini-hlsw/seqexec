@@ -125,4 +125,12 @@ final class AngleSpec extends CatsSuite {
     }
   }
 
+  test("HourAngle should (almost) round-trip double hours") {
+    forAll { (a: HourAngle) =>
+      val hrs  = a.toDoubleHours
+      val hrsʹ = HourAngle.fromDoubleHours(hrs).toDoubleHours
+      hrs shouldEqual hrsʹ +- 0.000000001
+    }
+  }
+
 }

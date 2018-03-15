@@ -540,6 +540,16 @@ object Parsers {
 
   object Gnirs {
 
+    val acquisitionMirror: PioParse[GnirsAcquisitionMirror] = {
+
+      import GnirsAcquisitionMirror._
+
+      enum(
+        "IN"  -> In,
+        "OUT" -> Out
+      )
+    }
+
     val camera: PioParse[GnirsCamera] = {
 
       import GnirsCamera._

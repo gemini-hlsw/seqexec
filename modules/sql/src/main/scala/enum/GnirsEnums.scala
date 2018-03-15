@@ -13,8 +13,13 @@ object GnirsEnums {
   val enums: List[ConnectionIO[EnumDef]] =
     List(
 
+      EnumDef.fromQuery("GnirsAcquisitionMirror", "GNIRS Acquisition Mirror") {
+        type R = Record.`'tag -> String, 'shortName -> String, 'longName -> String`.T
+        sql"""SELECT id, id tag, short_name, long_name FROM e_gnirs_acquisition_mirror""".query[(String, R)]
+      },
+
       EnumDef.fromQuery("GnirsCamera", "GNIRS Camera") {
-        type R = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'pixelScale -> BigDecimal`.T
+        type R = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'pixelScale -> GnirsPixelScale`.T
         sql"""SELECT id, id tag, short_name, long_name, pixel_scale FROM e_gnirs_camera""".query[(String, R)]
       },
 
@@ -47,6 +52,12 @@ object GnirsEnums {
         type R = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'obsolete -> Boolean`.T
         sql"""SELECT id, id tag, short_name, long_name, obsolete FROM e_gnirs_fpu_other""".query[(String, R)]
       },
+
+      EnumDef.fromQuery("GnirsPixelScale", "GNIRS Pixel Scale") {
+        type R = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'value -> BigDecimal`.T
+        sql"""SELECT id, id tag, short_name, long_name, value FROM e_gnirs_pixel_scale""".query[(String, R)]
+      },
+
 
       EnumDef.fromQuery("GnirsWellDepth", "GNRIS Well Depth") {
         type R = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'bias_level -> Int`.T
