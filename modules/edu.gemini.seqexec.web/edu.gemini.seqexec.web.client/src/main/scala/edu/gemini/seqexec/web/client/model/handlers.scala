@@ -377,12 +377,9 @@ object handlers {
 
     // Makes a websocket connection and setups event listeners
     def webSocket: Future[Action] = Future[Action] {
-      import org.scalajs.dom.document
-
       val host = document.location.host
       val protocol = document.location.protocol.startsWith("https") ? "wss" | "ws"
       val url = s"$protocol://$host/api/seqexec/events"
-
       val ws = new WebSocket(url)
 
       def onOpen(): Unit = {
@@ -395,17 +392,20 @@ object handlers {
           case buffer: ArrayBuffer =>
             val byteBuffer = TypedArrayBuffer.wrap(buffer)
             \/.fromTryCatchNonFatal(Unpickle[SeqexecEvent].fromBytes(byteBuffer)) match {
-              case \/-(event: ServerLogMessage) => SeqexecCircuit.dispatch(ServerMessage(event))
-              case \/-(event)                   => logger.info(s"Decoding event: ${event.getClass}"); SeqexecCircuit.dispatch(ServerMessage(event))
-              case -\/(t)                       => logger.warning(s"Error decoding event ${t.getMessage}")
+              case \/-(event: ServerLogMessage) =>
+                SeqexecCircuit.dispatch(ServerMessage(event))
+              case \/-(event)                   =>
+                logger.info(s"Decoding event: ${event.getClass}")
+                SeqexecCircuit.dispatch(ServerMessage(event))
+              case -\/(t)                       =>
+                logger.warning(s"Error decoding event ${t.getMessage}")
             }
           case _                   =>
             ()
         }
       }
 
-      def onError(): Unit =
-        logger.severe("Error on websocket")
+      def onError(): Unit = logger.severe("Error on websocket")
 
       def onClose(): Unit =
         // Increase the delay to get exponential backoff with a minimum of 200ms and a max of 1m
