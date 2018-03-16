@@ -9,6 +9,7 @@ import java.time._
 import java.time.format.DateTimeFormatter
 import gem.enum.{ Site, ProgramType, DailyProgramType }
 import gem.imp.TimeInstances._
+import gem.math.Index
 import gem.parser.ProgramIdParsers
 import gem.syntax.parser._
 
@@ -39,25 +40,15 @@ sealed trait ProgramId extends Product with Serializable {
 object ProgramId {
 
   /** A standard science program id with a site, semester, program type, and positive index. */
-  sealed abstract case class Science private (
+  final case class Science private (
     site:        Site,
     semester:    Semester,
     programType: ProgramType,
-    index:       Int
+    index:       Index
   ) extends ProgramId {
 
-    // A copy method isn't generated because this class is abstract, so we do so here. It can't
-    // support `index` because this could break the invariant that it must be positive.
-    @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
-    def copy(
-      site:        Site        = this.site,
-      semester:    Semester    = this.semester,
-      programType: ProgramType = this.programType
-    ): Science =
-      Science.unsafeApply(site, semester, programType, index)
-
     override def format =
-      s"${site.shortName}-${semester.format}-${programType.shortName}-$index"
+      s"${site.shortName}-${semester.format}-${programType.shortName}-${index.toShort}"
 
     override def siteOption: Option[Site] =
       Some(site)
@@ -70,17 +61,6 @@ object ProgramId {
   }
 
   object Science {
-
-    /** Construct a `Science` program id, if `index` is positive. */
-    def apply(site: Site, semester: Semester, programType: ProgramType, index: Int): Option[Science] =
-      if (index > 0) Some(new Science(site, semester, programType, index) {})
-      else None
-
-    /** Construct a `Science` program id, throwing if `index` is positive. */
-    @SuppressWarnings(Array("org.wartremover.warts.Throw"))
-    def unsafeApply(site: Site, semester: Semester, programType: ProgramType, index: Int): Science =
-      apply(site, semester, programType, index)
-        .getOrElse(throw new IllegalArgumentException(s"Program index must be positive: $index"))
 
     /** Parse a `Science` program id from a string, if possible. */
     def fromString(s: String): Option[ProgramId] =

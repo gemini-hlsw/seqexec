@@ -4,6 +4,7 @@
 package gem.parser
 
 import atto._, Atto._
+import gem.math.Index
 import scala.annotation.tailrec
 
 /** General-purpose parsers and combinators that aren't provided by atto. */
@@ -56,6 +57,15 @@ trait MiscParsers {
   /** Parser for a positive `Int`. */
   val positiveInt: Parser[Int] =
     int.filter(_ > 0) namedOpaque "positiveInt"
+
+  /** Parser for an `Index`. */
+  val index: Parser[Index] =
+    short.flatMap { s =>
+      Index.fromShort.getOption(s) match {
+        case Some(i) => ok(i)
+        case None    => err("Index must be positive.")
+      }
+    }
 
   /** Parser for an optional sign (+ or -), returned as a boolean indicating whether to negate. */
   val neg: Parser[Boolean] =

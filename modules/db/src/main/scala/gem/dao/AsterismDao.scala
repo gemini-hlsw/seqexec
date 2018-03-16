@@ -100,7 +100,7 @@ object AsterismDao {
     import AsterismTypeMeta._
     import EnumeratedMeta._
     import ProgramIdMeta._
-    import ObservationIndexMeta._
+    import IndexMeta._
 
     object SingleTarget {
 

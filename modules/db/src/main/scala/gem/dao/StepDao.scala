@@ -21,7 +21,7 @@ object StepDao {
   import EnumeratedMeta._
   import LocationMeta._
   import ProgramIdMeta._
-  import ObservationIndexMeta._
+  import IndexMeta._
   import OffsetMeta._
   import TimeMeta._
   import WavelengthMeta._

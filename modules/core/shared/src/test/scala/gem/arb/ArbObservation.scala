@@ -6,6 +6,7 @@ package arb
 
 import gem.enum.Instrument
 import gem.math.Index
+import gem.syntax.prism._
 import org.scalacheck._
 import org.scalacheck.Gen._
 import org.scalacheck.Arbitrary._
@@ -22,7 +23,7 @@ trait ArbObservation extends gem.config.Arbitraries {
       for {
         pid <- arbitrary[ProgramId]
         num <- choose[Short](1, 100)
-      } yield Observation.Id(pid, Index.unsafeFromShort(num))
+      } yield Observation.Id(pid, Index.fromShort.unsafeGet(num))
     }
 
   def genObservation[I <: Instrument with Singleton](i: Instrument.Aux[I]): Gen[Observation.Full] =

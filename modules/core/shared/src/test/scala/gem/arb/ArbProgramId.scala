@@ -5,6 +5,8 @@ package gem
 package arb
 
 import gem.enum. { Site, ProgramType, DailyProgramType }
+import gem.math.Index
+import gem.syntax.prism._
 import java.time.LocalDate
 import org.scalacheck._
 import org.scalacheck.Gen._
@@ -22,8 +24,8 @@ trait ArbProgramId {
         site        <- arbitrary[Site]
         semester    <- arbitrary[Semester]
         programType <- arbitrary[ProgramType]
-        index       <- choose(1, 200)
-      } yield Science.unsafeApply(site, semester, programType, index)
+        index       <- choose[Short](1, 200).map(Index.fromShort.unsafeGet)
+      } yield Science(site, semester, programType, index)
     }
 
   implicit val arbDaily: Arbitrary[Daily] =
