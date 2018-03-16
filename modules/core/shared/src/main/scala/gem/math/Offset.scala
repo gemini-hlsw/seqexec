@@ -7,6 +7,8 @@ package math
 import cats.{ Order, Show }
 import cats.kernel.CommutativeGroup
 import cats.implicits._
+import monocle.{ Iso, Lens }
+import monocle.macros.{ GenIso, GenLens }
 
 /** Angular offset with P and Q components. */
 final case class Offset(p: Offset.P, q: Offset.Q) {
@@ -25,7 +27,7 @@ final case class Offset(p: Offset.P, q: Offset.Q) {
 
 }
 
-object Offset {
+object Offset extends OffsetOptics {
 
   /** The zero offset. */
   val Zero: Offset =
@@ -62,7 +64,7 @@ object Offset {
       toAngle.toSignedDoubleRadians
 
   }
-  object P {
+  object P extends POptics {
 
     /** The zero P component. */
     val Zero: P =
@@ -84,6 +86,13 @@ object Offset {
       Angle.SignedAngleOrder.contramap(_.toAngle)
 
   }
+  trait POptics {
+
+    /** @Group Optics */
+    val angle: Iso[P, Angle] =
+      GenIso[P, Angle]
+
+  }
 
   /** Q component of an angular offset.. */
   final case class Q(toAngle: Angle) {
@@ -101,7 +110,7 @@ object Offset {
       toAngle.toSignedDoubleRadians
 
   }
-  object Q {
+  object Q extends QOptics {
 
     /** The zero Q component. */
     val Zero: Q =
@@ -123,5 +132,33 @@ object Offset {
       Angle.SignedAngleOrder.contramap(_.toAngle)
 
   }
+  trait QOptics {
+
+    /** @Group Optics */
+    val angle: Iso[Q, Angle] =
+      GenIso[Q, Angle]
+
+  }
+
+
+}
+
+trait OffsetOptics {
+
+  /** @group Optics */
+  val p: Lens[Offset, Offset.P] =
+    GenLens[Offset](_.p)
+
+  /** @group Optics */
+  val q: Lens[Offset, Offset.Q] =
+    GenLens[Offset](_.q)
+
+  /** @group Optics */
+  val pAngle: Lens[Offset, Angle] =
+    p composeIso Offset.P.angle
+
+  /** @group Optics */
+  val qAngle: Lens[Offset, Angle] =
+    q composeIso Offset.Q.angle
 
 }

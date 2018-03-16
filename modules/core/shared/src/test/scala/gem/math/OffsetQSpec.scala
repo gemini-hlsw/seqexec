@@ -7,14 +7,17 @@ import cats.tests.CatsSuite
 import cats.{ Eq, Show }
 import cats.kernel.laws.discipline._
 import gem.arb._
+import monocle.law.discipline._
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals"))
 final class OffsetQSpec extends CatsSuite {
+  import ArbAngle._
   import ArbOffset._
 
   // Laws
   checkAll("Offset.Q", CommutativeGroupTests[Offset.Q].commutativeGroup)
   checkAll("Offset.Q", OrderTests[Offset.Q].order)
+  checkAll("Offset.Q.angle", IsoTests(Offset.Q.angle))
 
   test("Equality must be natural") {
     forAll { (a: Offset.Q, b: Offset.Q) =>

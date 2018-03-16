@@ -5,22 +5,26 @@ package gem.math
 
 import gem.arb._
 import gem.enum.Site
+import gem.imp.TimeInstances
 
 import cats.{ Eq, Show }
 import cats.kernel.laws.discipline._
 import cats.tests.CatsSuite
-
 import java.time._
+import monocle.law.discipline._
 
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals"))
 final class ObservingNightSpec extends CatsSuite {
-
   import ArbEnumerated._
   import ArbObservingNight._
   import ArbTime._
+  import TimeInstances._
 
   checkAll("ObservingNight", OrderTests[ObservingNight].order)
+  checkAll("ObservingNight.site", LensTests(ObservingNight.site))
+  checkAll("ObservingNight.localObservingNight", LensTests(ObservingNight.localObservingNight))
+  checkAll("ObservingNight.localDate", LensTests(ObservingNight.localDate))
 
   test("Equality must be natural") {
     forAll { (a: ObservingNight, b: ObservingNight) =>

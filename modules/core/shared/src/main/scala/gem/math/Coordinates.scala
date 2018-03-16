@@ -8,6 +8,8 @@ import cats._, cats.implicits._
 import gem.parser.CoordinateParsers
 import gem.optics.Format
 import gem.syntax.all._
+import monocle.Lens
+import monocle.macros._
 import scala.math.{ sin, cos, atan2, sqrt }
 
 /** A point in the sky, given right ascension and declination. */
@@ -91,6 +93,7 @@ final case class Coordinates(ra: RightAscension, dec: Declination) {
 
 }
 
+@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object Coordinates extends CoordinatesOptics {
 
   /* @group Constructors */ val Zero:      Coordinates = Coordinates(RA.Zero, Dec.Zero)
@@ -115,10 +118,21 @@ object Coordinates extends CoordinatesOptics {
 
 trait CoordinatesOptics { this: Coordinates.type =>
 
-  /** Format as a String like "17 57 48.49803 +04 41 36.2072". */
+  /**
+   * Format as a String like "17 57 48.49803 +04 41 36.2072".
+   * @group Optics
+   */
   val fromHmsDms: Format[String, Coordinates] = Format(
     CoordinateParsers.coordinates.parseExact,
     cs => s"${RightAscension.fromStringHMS.reverseGet(cs.ra)} ${Declination.fromStringSignedDMS.reverseGet(cs.dec)}"
   )
+
+  /** @group Optics */
+  val rightAscension: Lens[Coordinates, RightAscension] =
+    GenLens[Coordinates](_.ra)
+
+  /** @group Optics */
+  val declination: Lens[Coordinates, Declination] =
+    GenLens[Coordinates](_.dec)
 
 }
