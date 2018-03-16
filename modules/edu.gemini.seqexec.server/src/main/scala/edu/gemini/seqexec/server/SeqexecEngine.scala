@@ -141,7 +141,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
                   v: Boolean): Task[SeqexecFailure \/ Unit] =
   q.enqueueOne(Event.skip(seqId.stringValue(), user, stepId, v)).map(_.right)
 
-  def requestRefresh(q: EventQueue): Task[Unit] = q.enqueueOne(Event.poll)
+  def requestRefresh(q: EventQueue, clientId: ClientID): Task[Unit] = q.enqueueOne(Event.poll(clientId))
 
   def seqQueueRefreshProcess: Process[Task, executeEngine.EventType] =
     awakeEvery(settings.odbQueuePollingInterval)(Strategy.DefaultStrategy, DefaultScheduler).map(_ =>
@@ -270,7 +270,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
       case engine.Breakpoint(_, _, _, _) => StepBreakpointChanged(svs)
       case engine.SkipMark(_, _, _, _)   => StepSkipMarkChanged(svs)
       case engine.SetObserver(_, _, _)   => ObserverUpdated(svs)
-      case engine.Poll                   => SequenceRefreshed(svs)
+      case engine.Poll(cid)              => SequenceRefreshed(svs, cid)
       case engine.GetState(_)            => NullEvent
       case engine.GetSeqState(_, _)      => NullEvent
       case engine.ModifyState(_, ev)     => modifyStateEvent(ev, svs)

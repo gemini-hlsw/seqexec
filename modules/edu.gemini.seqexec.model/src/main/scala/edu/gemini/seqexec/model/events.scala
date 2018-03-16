@@ -26,6 +26,7 @@ object events {
       Some(u.view)
   }
 
+  // scalastyle:off
   object SeqexecEvent {
     final case class ConnectionOpenEvent(u: Option[UserDetails], clientId: ClientID) extends SeqexecEvent
 
@@ -59,7 +60,7 @@ object events {
 
     final case class SequencePauseCanceled(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
-    final case class SequenceRefreshed(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
+    final case class SequenceRefreshed(view: SequencesQueue[SequenceView], clientId: ClientID) extends SeqexecModelUpdate with ForClient
 
     final case class ActionStopRequested(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
@@ -81,5 +82,6 @@ object events {
 
     implicit val equal: Equal[SeqexecEvent] = Equal.equalA
   }
+  // scalastyle:on
 
 }

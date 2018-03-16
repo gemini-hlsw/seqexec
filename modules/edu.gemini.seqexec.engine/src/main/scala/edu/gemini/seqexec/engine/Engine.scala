@@ -308,7 +308,7 @@ class Engine[D: ActionMetadataGenerator, U](implicit ev: ActionMetadataGenerator
       case SkipMark(id, _, step, v)   => Logger.debug(s"Engine: skip mark changed for step $step to $v") *>
         modifyS(id)(_.setSkipMark(step, v))
       case SetObserver(id, _, name)   => Logger.debug(s"Engine: Setting Observer for observation $id to '$name' by ${ue.username}") *> setObserver(id)(name)
-      case Poll                       => Logger.debug("Engine: Polling current state")
+      case Poll(_)                    => Logger.debug("Engine: Polling current state")
       case GetState(f)                => getState(f)
       case ModifyState(f, _)          => modify(f)
       case GetSeqState(id, f)         => getSeqState(id, f)

@@ -447,9 +447,7 @@ object handlers {
 
     def connectedHandler: PartialFunction[Any, ActionResult[M]] = {
       case Connected(ws, delay) =>
-        // After connected to the Websocket request a refresh
-        val refreshRequest = Effect(SeqexecWebClient.refresh().map(_ => NoAction))
-        updated(WebSocketConnection(Ready(ws), delay, autoReconnect = true), refreshRequest)
+        updated(WebSocketConnection(Ready(ws), delay, autoReconnect = true))
     }
 
     def connectionErrorHandler: PartialFunction[Any, ActionResult[M]] = {
@@ -505,7 +503,9 @@ object handlers {
 
     val connectionOpenMessage: PartialFunction[Any, ActionResult[M]] = {
       case ServerMessage(ConnectionOpenEvent(u, c)) =>
-        updated(value.copy(user = u, clientId = Option(c)))
+        // After connected to the Websocket request a refresh
+        val refreshRequest = Effect(SeqexecWebClient.refresh(c).map(_ => NoAction))
+        updated(value.copy(user = u, clientId = Option(c)), refreshRequest)
     }
 
     val stepCompletedMessage: PartialFunction[Any, ActionResult[M]] = {
