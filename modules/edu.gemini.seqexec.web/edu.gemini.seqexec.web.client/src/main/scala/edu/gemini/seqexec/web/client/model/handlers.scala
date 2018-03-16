@@ -504,8 +504,8 @@ object handlers {
     }
 
     val connectionOpenMessage: PartialFunction[Any, ActionResult[M]] = {
-      case ServerMessage(ConnectionOpenEvent(u)) =>
-        updated(value.copy(user = u))
+      case ServerMessage(ConnectionOpenEvent(u, c)) =>
+        updated(value.copy(user = u, clientId = Option(c)))
     }
 
     val stepCompletedMessage: PartialFunction[Any, ActionResult[M]] = {

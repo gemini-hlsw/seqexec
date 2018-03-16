@@ -15,6 +15,10 @@ object events {
     def view: SequencesQueue[SequenceView]
   }
 
+  sealed trait ForClient extends SeqexecEvent {
+    def clientId: ClientID
+  }
+
   object SeqexecModelUpdate {
     implicit val equal: Equal[SeqexecModelUpdate] = Equal.equalA
 
@@ -23,7 +27,7 @@ object events {
   }
 
   object SeqexecEvent {
-    final case class ConnectionOpenEvent(u: Option[UserDetails]) extends SeqexecEvent
+    final case class ConnectionOpenEvent(u: Option[UserDetails], clientId: ClientID) extends SeqexecEvent
 
     final case class SequenceStart(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 

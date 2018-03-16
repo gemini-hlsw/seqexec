@@ -101,6 +101,8 @@ object actions {
       s"${s.getClass.getSimpleName}(${u.getClass.getSimpleName}(${view.queue.map(s => (s.id, s.steps.map(i => (i.id, i.status))))}))"
     case s @ RememberCompleted(view)                     =>
       s"${s.getClass.getSimpleName}(${view.id})"
+    case s @ InitialSyncToPage(view)                     =>
+      s"${s.getClass.getSimpleName}(${view.id})"
     case a                                               =>
       s"$a"
   }
