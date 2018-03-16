@@ -11,7 +11,7 @@ import monocle.macros.GenLens
   * expressed as an offset in p and q.  In reality the velocity information
   * comes from horizons and is always arcseconds per hour in horizons data.
   *
-  * @param coord delta
+  * @param coord coordinates
   * @param delta rate of change in RA and dec, where the delta(RA)/time has been
   *              multiplied by the cosine of the dec
   */
