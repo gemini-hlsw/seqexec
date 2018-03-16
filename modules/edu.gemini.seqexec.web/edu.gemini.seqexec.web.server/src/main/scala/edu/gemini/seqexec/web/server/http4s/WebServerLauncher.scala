@@ -109,7 +109,7 @@ object WebServerLauncher extends ProcessApp with LogInitialization {
       .withWebSockets(true)
       .mountService(new StaticRoutes(index(conf.site, conf.devMode, OcsBuildInfo.builtAtMillis), conf.devMode, OcsBuildInfo.builtAtMillis).service, "/")
       .mountService(new SeqexecCommandRoutes(as, events._1, se).service, "/api/seqexec/commands")
-      .mountService(new SeqexecUIApiRoutes(as, events, se).service, "/api")
+      .mountService(new SeqexecUIApiRoutes(conf.devMode, as, events, se).service, "/api")
     conf.sslConfig.fold(builder) { ssl =>
       val storeInfo = StoreInfo(ssl.keyStore, ssl.keyStorePwd)
       builder.withSSL(storeInfo, ssl.certPwd, "TLS")

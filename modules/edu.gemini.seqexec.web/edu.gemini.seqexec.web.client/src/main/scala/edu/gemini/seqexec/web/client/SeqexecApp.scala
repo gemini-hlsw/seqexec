@@ -4,7 +4,7 @@
 package edu.gemini.seqexec.web.client
 
 import edu.gemini.seqexec.web.client.components.{SeqexecStyles, SeqexecUI}
-import edu.gemini.seqexec.web.client.services.log.{AjaxHandler, ConsoleHandler}
+import edu.gemini.seqexec.web.client.services.log.ConsoleHandler
 import edu.gemini.seqexec.web.client.services.SeqexecWebClient
 import edu.gemini.seqexec.web.client.model.Pages
 import edu.gemini.seqexec.web.client.actions.Initialize
@@ -40,7 +40,6 @@ object SeqexecApp {
     // Using the root logger setup the handlers
     val rootLogger = Logger.getLogger("edu")
     rootLogger.addHandler(new ConsoleHandler(Level.INFO))
-    rootLogger.addHandler(new AjaxHandler(Level.INFO))
 
     SeqexecWebClient.start()
     ()

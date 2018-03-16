@@ -9,7 +9,7 @@ import edu.gemini.seqexec.model.Model.{Instrument, StandardStep, Step, StepState
 import edu.gemini.seqexec.model.properties
 import edu.gemini.seqexec.web.client.lenses._
 import edu.gemini.seqexec.web.client.model.Pages.SeqexecPages
-import edu.gemini.seqexec.web.client.circuit.{ClientStatus, StepsTableFocus}
+import edu.gemini.seqexec.web.client.circuit.{ClientStatus, StepsTableAndStatusFocus, StepsTableFocus}
 import edu.gemini.seqexec.web.client.components.SeqexecStyles
 import edu.gemini.seqexec.web.client.components.sequence.steps.OffsetFns._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
@@ -71,9 +71,9 @@ object StepsTable {
     val Zero: StepRow = apply(Step.Zero)
   }
 
-  final case class Props(router: RouterCtl[SeqexecPages], stepsTable: ModelProxy[(ClientStatus, Option[StepsTableFocus])], onStepToRun: Int => Callback) {
-    def status: ClientStatus = stepsTable()._1
-    def steps: Option[StepsTableFocus] = stepsTable()._2
+  final case class Props(router: RouterCtl[SeqexecPages], stepsTable: ModelProxy[StepsTableAndStatusFocus], onStepToRun: Int => Callback) {
+    def status: ClientStatus = stepsTable().status
+    def steps: Option[StepsTableFocus] = stepsTable().stepsTable
     val stepsList: List[Step] = ~steps.map(_.steps)
     def rowCount: Int = stepsList.length
     def rowGetter(idx: Int): StepRow = steps.flatMap(_.steps.index(idx)).fold(StepRow.Zero)(StepRow.apply)
