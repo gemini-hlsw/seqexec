@@ -26,6 +26,12 @@ object SharedModelArbitraries {
     } yield SequencesQueue(Conditions.default, Some(Operator("operator")), b)
   }
 
+  implicit val clientIdArb: Arbitrary[ClientID] = Arbitrary {
+    for {
+      i <- Gen.uuid
+    } yield i
+  }
+
   implicit val instArb: Arbitrary[Instant] = Arbitrary {
     for {
       i <- Gen.choose(0L, Long.MaxValue)
