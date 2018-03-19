@@ -7,7 +7,7 @@ import edu.gemini.pot.sp.SPObservationID
 import edu.gemini.seqexec.server.Commands
 import edu.gemini.seqexec.server.SeqexecEngine
 import edu.gemini.seqexec.server
-import edu.gemini.seqexec.model.Model.{CloudCover, Conditions, ImageQuality, Operator, Observer, SkyBackground, WaterVapor}
+import edu.gemini.seqexec.model.Model.{ClientID, CloudCover, Conditions, ImageQuality, Operator, Observer, SkyBackground, WaterVapor}
 import edu.gemini.seqexec.model.UserDetails
 import edu.gemini.seqexec.web.server.model.CommandsModel._
 import edu.gemini.seqexec.web.server.http4s.encoder._
@@ -20,6 +20,10 @@ import scalaz._
 import Scalaz._
 import scalaz.concurrent.Task
 
+object ClientIDVar {
+  def unapply(str: String): Option[ClientID] =
+    \/.fromTryCatchNonFatal(java.util.UUID.fromString(str)).toOption
+}
 /**
   * Rest Endpoints under the /api route
   */
@@ -152,9 +156,8 @@ class SeqexecCommandRoutes(auth: AuthenticationService, inputQueue: server.Event
     }
 
   val refreshCommand: HttpService = HttpService {
-    case GET -> Root / "refresh" =>
-      se.requestRefresh(inputQueue) *> NoContent()
-
+    case GET -> Root / "refresh" / ClientIDVar(clientId) =>
+      se.requestRefresh(inputQueue, clientId) *> NoContent()
   }
 
   val service: Service[Request, MaybeResponse] = refreshCommand |+| TokenRefresher(httpAuthentication, GZip(httpAuthentication.reqAuth(commandServices)))

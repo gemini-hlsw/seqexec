@@ -99,6 +99,8 @@ object ModelBooPicklers {
 
   implicit val sequenceQueueViewPickler = generatePickler[SequencesQueue[SequenceView]]
 
+  implicit val clientIDPickler = transformPickler((t: String) => java.util.UUID.fromString(t))(_.toString)
+
   // Composite pickler for the seqexec event hierarchy
   // It is not strictly need but reduces the size of the js
   implicit val eventsPickler = compositePickler[SeqexecEvent]

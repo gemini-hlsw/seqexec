@@ -7,7 +7,7 @@ import java.util.logging.LogRecord
 import boopickle.Default._
 
 import edu.gemini.seqexec.model.{ModelBooPicklers, UserDetails, UserLoginRequest}
-import edu.gemini.seqexec.model.Model.{Conditions, CloudCover, ImageQuality, SkyBackground, WaterVapor, Operator, Step, SequencesQueue, SequenceId}
+import edu.gemini.seqexec.model.Model.{ClientID, Conditions, CloudCover, ImageQuality, SkyBackground, WaterVapor, Operator, Step, SequencesQueue, SequenceId}
 import edu.gemini.seqexec.web.common._
 import edu.gemini.seqexec.web.common.LogMessage._
 
@@ -197,9 +197,9 @@ object SeqexecWebClient {
   /**
     * Requests the backend to send a copy of the current state
     */
-  def refresh(): Future[RegularCommand] = {
+  def refresh(clientId: ClientID): Future[RegularCommand] = {
     Ajax.get(
-      url = s"$baseUrl/commands/refresh",
+      url = s"$baseUrl/commands/refresh/$clientId",
       responseType = "arraybuffer"
     ).map(unpickle[RegularCommand])
   }
