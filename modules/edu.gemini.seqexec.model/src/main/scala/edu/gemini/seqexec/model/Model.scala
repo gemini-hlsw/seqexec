@@ -97,7 +97,7 @@ object Model {
   type ObservationName = String
   type TargetName = String
   type ClientID = java.util.UUID
-  implicit val clientIdEq: Equal[ClientID] = Equal.equalA
+  implicit val clientIdEq: Eq[ClientID] = Eq.fromUniversalEquals
   val DaytimeCalibrationTargetName = "Daytime calibration"
 
   /**

@@ -27,7 +27,7 @@ object Event {
   def breakpoint[D<:Engine.Types](id: Sequence.Id, user: UserDetails, step: Step.Id, v: Boolean): Event[D] = EventUser[D](Breakpoint(id, user.some, step, v))
   def skip[D<:Engine.Types](id: Sequence.Id, user: UserDetails, step: Step.Id, v: Boolean): Event[D] = EventUser[D](SkipMark(id, user.some, step, v))
   def setObserver[D<:Engine.Types](id: Sequence.Id, user: UserDetails, name: Observer): Event[D] = EventUser[D](SetObserver(id, user.some, name))
-  val poll(clientId: ClientID): Event[Nothing] = EventUser(Poll(clientId))
+  def poll(clientId: ClientID): Event[Nothing] = EventUser(Poll(clientId))
   def getState[D<:Engine.Types](f: (Engine.State[D#StateData]) => IO[Option[Stream[IO, Event[D]]]]): Event[D] = EventUser[D](GetState[D](f))
   def modifyState[D<:Engine.Types](f: (Engine.State[D#StateData]) => Engine.State[D#StateData], data: D#EventData): Event[D] = EventUser[D](ModifyState[D](f, data))
   def getSeqState[D<:Engine.Types](id: Sequence.Id, f: (Sequence.State) => Option[Stream[IO, Event[D]]]): Event[D] = EventUser[D](GetSeqState(id, f))

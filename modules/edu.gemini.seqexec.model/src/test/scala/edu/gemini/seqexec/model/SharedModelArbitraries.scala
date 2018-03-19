@@ -159,4 +159,7 @@ object SharedModelArbitraries {
   implicit val conCogen: Cogen[Conditions] =
     Cogen[(CloudCover, ImageQuality, SkyBackground, WaterVapor)].contramap(c => (c.cc, c.iq, c.sb, c.wv))
 
+  implicit val cidCogen: Cogen[ClientID] =
+    Cogen[String].contramap(_.toString)
+
 }
