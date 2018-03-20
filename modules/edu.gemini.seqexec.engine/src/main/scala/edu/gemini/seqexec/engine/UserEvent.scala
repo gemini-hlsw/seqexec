@@ -19,7 +19,7 @@ sealed trait UserEvent[+D<:Engine.Types] {
   def username: String = ~user.map(_.username)
 }
 
-final case class Start(id: Sequence.Id, user: Option[UserDetails]) extends UserEvent[Nothing]
+final case class Start(id: Sequence.Id, user: Option[UserDetails], clientId: ClientID) extends UserEvent[Nothing]
 final case class Pause(id: Sequence.Id, user: Option[UserDetails]) extends UserEvent[Nothing]
 final case class CancelPause(id: Sequence.Id, user: Option[UserDetails]) extends UserEvent[Nothing]
 final case class Load(id: Sequence.Id, sequence: Sequence) extends UserEvent[Nothing] {

@@ -76,8 +76,8 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
 
   def load(q: EventQueue, seqId: SPObservationID): Task[SeqexecFailure \/ Unit] = loadEvents(seqId).flatMapF(q.enqueueAll(_).map(_.right)).run
 
-  def start(q: EventQueue, id: SPObservationID, user: UserDetails): Task[SeqexecFailure \/ Unit] =
-    q.enqueueOne(Event.start(id.stringValue(), user)).map(_.right)
+  def start(q: EventQueue, id: SPObservationID, user: UserDetails, clientId: ClientID): Task[SeqexecFailure \/ Unit] =
+    q.enqueueOne(Event.start(id.stringValue(), user, clientId)).map(_.right)
 
   def requestPause(q: EventQueue, id: SPObservationID, user: UserDetails): Task[SeqexecFailure \/ Unit] =
     q.enqueueOne(Event.pause(id.stringValue(), user)).map(_.right)
@@ -262,7 +262,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
 
   private def toSeqexecEvent(ev: executeEngine.EventType)(svs: => SequencesQueue[SequenceView]): SeqexecEvent = ev match {
     case engine.EventUser(ue) => ue match {
-      case engine.Start(_, _)            => SequenceStart(svs)
+      case engine.Start(_, _, _)         => SequenceStart(svs)
       case engine.Pause(_, _)            => SequencePauseRequested(svs)
       case engine.CancelPause(_, _)      => SequencePauseCanceled(svs)
       case engine.Load(id, _)            => SequenceLoaded(id, svs)
@@ -287,7 +287,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
       case engine.PartialResult(_, _, Partial(FileIdAllocated(fileId), _))  => FileIdStepExecuted(fileId, svs)
       case engine.PartialResult(_, _, _)                                    => SequenceUpdated(svs)
       case engine.Failed(id, _, _)                                          => SequenceError(id, svs)
-      case engine.Busy(id)                                                  => ResourcesBusy(id, svs)
+      case engine.Busy(id, clientId)                                        => ResourcesBusy(id, svs, clientId)
       case engine.Executed(s)                                               => StepExecuted(s, svs)
       case engine.Executing(_)                                              => SequenceUpdated(svs)
       case engine.Finished(_)                                               => SequenceCompleted(svs)

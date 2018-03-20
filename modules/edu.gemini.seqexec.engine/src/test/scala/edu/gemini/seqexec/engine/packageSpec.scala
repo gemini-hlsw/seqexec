@@ -22,6 +22,8 @@ import scalaz.concurrent.Task
 import scalaz.stream.{Process, async}
 import org.scalatest.Inside.inside
 
+import java.util.UUID
+
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 class packageSpec extends FlatSpec with NonImplicitAssertions {
 
@@ -130,13 +132,13 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   }
 
   def runToCompletion(s0: Engine.State[Unit]): Option[Engine.State[Unit]] = {
-    executionEngine.process(Process.eval(Task.now(Event.start(seqId, user))))(s0).drop(1).takeThrough(
+    executionEngine.process(Process.eval(Task.now(Event.start(seqId, user, UUID.randomUUID()))))(s0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
     ).runLast.unsafePerformSync.map(_._2)
   }
 
   it should "be in Running status after starting" in {
-    val p = Process.eval(Task.now(Event.start(seqId, user)))
+    val p = Process.eval(Task.now(Event.start(seqId, user, UUID.randomUUID())))
     val qs = executionEngine.process(p)(qs1).take(1).runLast.unsafePerformSync.map(_._2)
     assert(qs.exists(s => Sequence.State.isRunning(s.sequences(seqId))))
   }
@@ -170,7 +172,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
         )
       ) ) ) )
     )
-    val p = Process.eval(Task.now(Event.start(seqId, user)))
+    val p = Process.eval(Task.now(Event.start(seqId, user, UUID.randomUUID())))
 
     executionEngine.process(p)(s0).runLast.unsafePerformSync.map(_._2)
   }
@@ -197,14 +199,14 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   }
 
   it should "not run 2nd sequence because it's using the same resource" in {
-    val p = Process.emitAll(List(Event.start(seqId1, user), Event.start(seqId2, user))).evalMap(Task.now(_))
+    val p = Process.emitAll(List(Event.start(seqId1, user, UUID.randomUUID()), Event.start(seqId2, user, UUID.randomUUID()))).evalMap(Task.now(_))
     assert(
       executionEngine.process(p)(qs2).take(6).runLast.unsafePerformSync.map(_._2.sequences(seqId2)).map(_.status === SequenceState.Idle)getOrElse(false)
     )
   }
 
   it should "run 2nd sequence when there are no shared resources" in {
-    val p = Process.emitAll(List(Event.start(seqId1, user), Event.start(seqId3, user))).evalMap(Task.now(_))
+    val p = Process.emitAll(List(Event.start(seqId1, user, UUID.randomUUID()), Event.start(seqId3, user, UUID.randomUUID()))).evalMap(Task.now(_))
 
     assert(
       executionEngine.process(p)(qs3).take(6).runLast.unsafePerformSync.exists(t => Sequence.State.isRunning(t._2.sequences(seqId3)))
@@ -241,7 +243,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
 
     val result = Nondeterminism[Task].both(
       List(
-        q.enqueueOne(Event.start(seqId, user)),
+        q.enqueueOne(Event.start(seqId, user, UUID.randomUUID())),
         Task.apply(startedFlag.acquire()),
         q.enqueueOne(Event.getState[executionEngine.ConcreteTypes]{_ => Task.delay{finishFlag.release()} *> Task.delay(None)})
       ).sequenceU,
@@ -296,7 +298,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
 
     val opName = Operator("John")
 
-    val p = Process.emitAll(List(Event.modifyState[executionEngine2.ConcreteTypes](setOperator(opName), ()), Event.start(seqId1, user))).evalMap(Task.now(_))
+    val p = Process.emitAll(List(Event.modifyState[executionEngine2.ConcreteTypes](setOperator(opName), ()), Event.start(seqId1, user, UUID.randomUUID()))).evalMap(Task.now(_))
     val s0 = Engine.State[DummyData](DummyData(None),
       Map((seqId, Sequence.State.init(Sequence(
         "First",

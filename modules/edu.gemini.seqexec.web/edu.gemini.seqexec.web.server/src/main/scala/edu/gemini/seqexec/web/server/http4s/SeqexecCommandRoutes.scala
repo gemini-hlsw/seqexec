@@ -40,12 +40,12 @@ class SeqexecCommandRoutes(auth: AuthenticationService, inputQueue: server.Event
     case GET  -> Root  / obsId / "count" as _ =>
       Ok(toCommandResult("count", commands.showCount(obsId)))
 
-    case POST -> Root / obsId / "start" as user =>
+    case POST -> Root / obsId / "start" / ClientIDVar(clientId) as user =>
       for {
         obs <-
             \/.fromTryCatchNonFatal(new SPObservationID(obsId))
               .fold(e => Task.fail(e), Task.now)
-        _     <- se.start(inputQueue, obs, user)
+        _     <- se.start(inputQueue, obs, user, clientId)
         resp  <- Ok(s"Started sequence $obs")
       } yield resp
 

@@ -19,7 +19,7 @@ final case class EventSystem(se: SystemEvent) extends Event[Nothing]
 
 object Event {
 
-  def start[D<:Engine.Types](id: Sequence.Id, user: UserDetails): Event[D] = EventUser[D](Start(id, user.some))
+  def start[D<:Engine.Types](id: Sequence.Id, user: UserDetails, clientId: ClientID): Event[D] = EventUser[D](Start(id, user.some, clientId))
   def pause[D<:Engine.Types](id: Sequence.Id, user: UserDetails): Event[D] = EventUser[D](Pause(id, user.some))
   def cancelPause[D<:Engine.Types](id: Sequence.Id, user: UserDetails): Event[D] = EventUser[D](CancelPause(id, user.some))
   def load[D<:Engine.Types](id: Sequence.Id, sequence: Sequence): Event[D] = EventUser[D](Load(id, sequence))
@@ -43,7 +43,7 @@ object Event {
   def partial[R<:Result.PartialVal](id: Sequence.Id, i: Int, r: Result.Partial[R]): Event[Nothing] = EventSystem(PartialResult(id, i, r))
   def paused[C <: Result.PauseContext](id: Sequence.Id, i: Int, c: Result.Paused[C]): Event[Nothing] = EventSystem(Paused(id, i, c))
   def breakpointReached(id: Sequence.Id): Event[Nothing] = EventSystem(BreakpointReached(id))
-  def busy(id: Sequence.Id): Event[Nothing] = EventSystem(Busy(id))
+  def busy(id: Sequence.Id, clientId: ClientID): Event[Nothing] = EventSystem(Busy(id, clientId))
   def executed(id: Sequence.Id): Event[Nothing] = EventSystem(Executed(id))
   def executing(id: Sequence.Id): Event[Nothing] = EventSystem(Executing(id))
   def finished(id: Sequence.Id): Event[Nothing] = EventSystem(Finished(id))
