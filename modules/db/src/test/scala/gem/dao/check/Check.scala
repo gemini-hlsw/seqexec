@@ -94,8 +94,8 @@ trait Check extends FlatSpec with Matchers with IOChecker {
 
     val gnirsConfig = DynamicConfig.Gnirs.Default
 
+    val gnirsSmartGcalKey = DynamicConfig.Gnirs.Default.key(StaticConfig.Gnirs.Default)
+
   }
-
-
 
 }

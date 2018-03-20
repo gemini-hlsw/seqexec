@@ -21,4 +21,8 @@ class SmartGcalCheck extends Check {
   it should "dropIndexGmosNorth"        in check(dropIndexGmosNorth)
   it should "createIndexGmosSouth"      in check(createIndexGmosSouth)
   it should "dropIndexGmosSouth"        in check(dropIndexGmosSouth)
+  it should "selectGnirsByLamp"         in check(selectGnirsByLamp(Dummy.gnirsSmartGcalKey)(Dummy.gcalLampType))
+  it should "selectGnirsbyBaseline"     in check(selectGnirsByBaseline(Dummy.gnirsSmartGcalKey)(Dummy.gcalBaselineType))
+  it should "createIndexGnirs"          in check(createIndexGnirs)
+  it should "dropIndexGnirs"            in check(dropIndexGnirs)
 }

@@ -681,5 +681,31 @@ object Parsers {
 
     }
 
+    object SmartGcal {
+
+      val mode: PioParse[GnirsAcquisitionMirror] = {
+
+        import GnirsAcquisitionMirror._
+
+        enum(
+          "IMAGING"      -> In,
+          "SPECTROSCOPY" -> Out
+        )
+
+      }
+
+      val pixelScale: PioParse[GnirsPixelScale] = {
+
+        import GnirsPixelScale._
+
+        enum(
+          "0.05\"/pix" -> PixelScale_0_05,
+          "0.15\"/pix" -> PixelScale_0_15
+        )
+
+      }
+
+    }
+
   }
 }

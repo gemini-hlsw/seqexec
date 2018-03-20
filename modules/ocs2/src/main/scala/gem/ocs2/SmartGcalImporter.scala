@@ -56,6 +56,7 @@ object SmartGcalImporter extends DoobieClient {
       _ <- importInst("Flamingos2", parseF2,        dropIndexF2,        bulkInsertF2,        createIndexF2       )
       _ <- importInst("GMOS-N",     parseGmosNorth, dropIndexGmosNorth, bulkInsertGmosNorth, createIndexGmosNorth)
       _ <- importInst("GMOS-S",     parseGmosSouth, dropIndexGmosSouth, bulkInsertGmosSouth, createIndexGmosSouth)
+      _ <- importInst("GNIRS",      parseGnirs,     dropIndexGnirs,     bulkInsertGnirs,     createIndexGnirs)
     } yield ()
   }
 
@@ -111,6 +112,28 @@ object SmartGcalImporter extends DoobieClient {
     val wmax = parseMaxWavelength(wavelengthMaxS)
 
     (SmartGcalKey.GmosDefinition(c, (wmin, wmax)), gcal)
+  }
+
+  def parseGnirs(input: List[String]): (SmartGcalKey.GnirsDefinition, List[String]) = {
+    import Parsers.Gnirs._
+    import Parsers.Gnirs.SmartGcal
+
+    val modeS :: pixelScaleS :: disperserS :: crossDispersedS :: slitWidthS :: wellDepthS :: wavelengthMinS :: wavelengthMaxS :: gcal = input
+
+    val a = modeS          .parseAs(SmartGcal.mode)
+    val b = pixelScaleS    .parseAs(SmartGcal.pixelScale)
+    val c = disperserS     .parseAs(disperser)
+    val d = slitWidthS     .parseAs(fpu)
+    val e = crossDispersedS.parseAs(prism)
+    val f = wellDepthS     .parseAs(wellDepth)
+
+    val k = SmartGcalKey.Gnirs(a, b, c, d, e, f)
+
+    val wmin = wavelengthMinS.parseAs(Parsers.angstroms)
+    val wmax = parseMaxWavelength(wavelengthMaxS)
+
+    (SmartGcalKey.GnirsDefinition(k, (wmin, wmax)), gcal)
+
   }
 
   // -------------------------------------------------------------------------

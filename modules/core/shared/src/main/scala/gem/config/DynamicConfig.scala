@@ -24,11 +24,11 @@ sealed abstract class DynamicConfig extends Product with Serializable {
     */
   def smartGcalKey(s: StaticConfig): Option[DynamicConfig.SmartGcalSearchKey] =
     (this, s) match {
-      case (d: DynamicConfig.F2,        _) => Some(d.key)
-      case (d: DynamicConfig.GmosNorth, _) => Some(d.key)
-      case (d: DynamicConfig.GmosSouth, _) => Some(d.key)
-//    case (d: DynamicConfig.Gnirs, s: StaticConfig.Gnirs) => Some(d.key(s))
-      case _                               => None
+      case (d: DynamicConfig.F2,        _)                 => Some(d.key)
+      case (d: DynamicConfig.GmosNorth, _)                 => Some(d.key)
+      case (d: DynamicConfig.GmosSouth, _)                 => Some(d.key)
+      case (d: DynamicConfig.Gnirs, s: StaticConfig.Gnirs) => Some(d.key(s))
+      case _                                               => None
     }
 }
 
@@ -83,6 +83,25 @@ object DynamicConfig {
 
     type GmosNorthDefinition = GmosDefinition[GmosNorthDisperser, GmosNorthFilter, GmosNorthFpu]
     type GmosSouthDefinition = GmosDefinition[GmosSouthDisperser, GmosSouthFilter, GmosSouthFpu]
+
+    final case class Gnirs(
+      acquisitionMirror: GnirsAcquisitionMirror,
+      pixelScale:        GnirsPixelScale,
+      disperser:         GnirsDisperser,
+      fpu:               Either[GnirsFpuOther, GnirsFpuSlit],
+      prism:             GnirsPrism,
+      wellDepth:         GnirsWellDepth
+    )
+
+    final case class GnirsSearch(
+      gnirs: Gnirs,
+      wavelength: Wavelength
+    ) extends SmartGcalSearchKey
+
+    final case class GnirsDefinition(
+      gnirs: Gnirs,
+      wavelengthRange: (Wavelength, Wavelength)
+    ) extends SmartGcalDefinitionKey
 
   }
 
@@ -188,17 +207,33 @@ object DynamicConfig {
   }
 
   final case class Gnirs(
-    acquisitionMirror:    GnirsAcquisitionMirror,
-    camera:               GnirsCamera,
-    decker:               GnirsDecker,
-    disperser:            GnirsDisperser,
-    exposureTime:         Duration,
-    filter:               GnirsFilter,
-    fpu:                  Either[GnirsFpuOther, GnirsFpuSlit],
-    prism:                GnirsPrism,
-    readMode:             GnirsReadMode,
-    wavelength:           Wavelength
-  ) extends DynamicConfig.Impl(Instrument.Gnirs)
+    acquisitionMirror: GnirsAcquisitionMirror,
+    camera:            GnirsCamera,
+    decker:            GnirsDecker,
+    disperser:         GnirsDisperser,
+    exposureTime:      Duration,
+    filter:            GnirsFilter,
+    fpu:               Either[GnirsFpuOther, GnirsFpuSlit],
+    prism:             GnirsPrism,
+    readMode:          GnirsReadMode,
+    wavelength:        Wavelength
+  ) extends DynamicConfig.Impl(Instrument.Gnirs) {
+
+    /** Returns the smart gcal search key for this GNIRS configuration. */
+    def key(s: StaticConfig.Gnirs): SmartGcalKey.GnirsSearch =
+      SmartGcalKey.GnirsSearch(
+        SmartGcalKey.Gnirs(
+          acquisitionMirror,
+          camera.pixelScale,
+          disperser,
+          fpu,
+          prism,
+          s.wellDepth
+        ),
+        wavelength
+      )
+
+  }
 
   object Gnirs {
     val Default: Gnirs = Gnirs(
