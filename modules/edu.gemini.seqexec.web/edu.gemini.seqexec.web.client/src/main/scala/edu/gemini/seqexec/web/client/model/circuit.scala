@@ -122,6 +122,7 @@ object circuit {
     private val globalLogHandler         = new GlobalLogHandler(zoomTo(_.uiModel.globalLog))
     private val conditionsHandler        = new ConditionsHandler(zoomTo(_.uiModel.sequences.conditions))
     private val operatorHandler          = new OperatorHandler(zoomTo(_.uiModel.sequences.operator))
+    private val remoteRequestsHandler    = new RemoteRequestsHandler(zoomTo(_.clientId))
 
     override protected def initialModel = SeqexecAppRootModel.initial
 
@@ -213,6 +214,7 @@ object circuit {
       globalLogHandler,
       conditionsHandler,
       operatorHandler,
+      remoteRequestsHandler,
       navigationHandler)
 
     /**

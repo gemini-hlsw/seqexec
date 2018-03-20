@@ -103,6 +103,8 @@ object actions {
       s"${s.getClass.getSimpleName}(${view.id})"
     case s @ InitialSyncToPage(view)                     =>
       s"${s.getClass.getSimpleName}(${view.id})"
+    case s @ SyncToRunning(view)                     =>
+      s"${s.getClass.getSimpleName}(${view.id})"
     case a                                               =>
       s"$a"
   }

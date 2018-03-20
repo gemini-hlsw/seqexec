@@ -52,9 +52,9 @@ object SeqexecWebClient {
   /**
     * Requests the backend to execute a sequence
     */
-  def run(id: SequenceId): Future[RegularCommand] = {
+  def run(id: SequenceId, clientId: ClientID): Future[RegularCommand] = {
     Ajax.post(
-      url = s"$baseUrl/commands/$id/start",
+      url = s"$baseUrl/commands/$id/start/$clientId",
       responseType = "arraybuffer"
     ).map(unpickle[RegularCommand])
   }

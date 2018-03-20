@@ -36,6 +36,7 @@ import scalaz._
 import Scalaz._
 
 object handlers {
+  private val VoidEffect = Effect(Future(NoAction: Action))
 
   trait Handlers {
     implicit def pfMonoid[A, B]: Monoid[PartialFunction[A, B]] = new Monoid[PartialFunction[A, B]] {
@@ -126,13 +127,14 @@ object handlers {
         handleSyncPageToAddedSequence).suml
   }
 
-  /**
-    * Handles sequence execution actions
+   /**
+    * Handles actions requesting results
     */
-  class SequenceExecutionHandler[M](modelRW: ModelRW[M, LoadedSequences]) extends ActionHandler(modelRW) with Handlers {
+  class RemoteRequestsHandler[M](modelRW: ModelRW[M, Option[ClientID]]) extends ActionHandler(modelRW) with Handlers {
     def handleRequestOperation: PartialFunction[Any, ActionResult[M]] = {
       case RequestRun(s) =>
-        effectOnly(Effect(SeqexecWebClient.run(s).map(r => if (r.error) RunStartFailed(s) else RunStarted(s))))
+        val effect = value.map(clientId => Effect(SeqexecWebClient.run(s, clientId).map(r => if (r.error) RunStartFailed(s) else RunStarted(s)))).getOrElse(VoidEffect)
+        effectOnly(effect)
 
       case RequestSync(s) =>
         effectOnly(Effect(SeqexecWebClient.sync(s).map(r => if (r.queue.isEmpty) RunSyncFailed(s) else RunSync(s))))
@@ -171,6 +173,15 @@ object handlers {
         noChange
     }
 
+    override def handle: PartialFunction[Any, ActionResult[M]] =
+      List(handleRequestOperation,
+        handleOperationResult).suml
+  }
+
+  /**
+    * Handles sequence execution actions
+    */
+  class SequenceExecutionHandler[M](modelRW: ModelRW[M, LoadedSequences]) extends ActionHandler(modelRW) with Handlers {
     def handleUpdateObserver: PartialFunction[Any, ActionResult[M]] = {
       case UpdateObserver(sequenceId, name) =>
         val updateObserverE = Effect(SeqexecWebClient.setObserver(sequenceId, name).map(_ => NoAction))
@@ -199,10 +210,7 @@ object handlers {
     }
 
     override def handle: PartialFunction[Any, ActionResult[M]] =
-      List(handleRequestOperation,
-        handleOperationResult,
-        handleUpdateObserver,
-        handleFlipSkipBreakpoint).suml
+      List(handleUpdateObserver, handleFlipSkipBreakpoint).suml
   }
 
   /**
@@ -476,7 +484,6 @@ object handlers {
     * Handles messages received over the WS channel
     */
   class WebSocketEventsHandler[M](modelRW: ModelRW[M, WebSocketsFocus]) extends ActionHandler(modelRW) with Handlers {
-    private val VoidEffect = Effect(Future(NoAction: Action))
     // Global references to audio files
     private val SequencePausedAudio = new Audio("/sequencepaused.mp3")
     private val ExposurePausedAudio = new Audio("/exposurepaused.mp3")
@@ -563,7 +570,7 @@ object handlers {
     }
 
     val resourceBusyMessage: PartialFunction[Any, ActionResult[M]] = {
-      case ServerMessage(ResourcesBusy(id, _)) =>
+      case ServerMessage(ResourcesBusy(id, _, _)) =>
         val setConflictE = Effect(Future(SequenceInConflict(id)))
         val openBoxE = Effect(Future(OpenResourcesBox))
         effectOnly(setConflictE >> openBoxE)
