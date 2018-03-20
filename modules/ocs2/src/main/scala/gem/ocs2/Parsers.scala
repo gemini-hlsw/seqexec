@@ -139,8 +139,8 @@ object Parsers {
       val lampToArc       = Map[String, GcalArc](
         "Ar arc"              -> ArArc,
         "CuAr arc"            -> CuArArc,
-        "ThAr Arc"            -> ThArArc,
-        "Xe Arc"              -> XeArc
+        "ThAr arc"            -> ThArArc,
+        "Xe arc"              -> XeArc
       ).lift
 
       PioParse(lamps => {
@@ -545,8 +545,8 @@ object Parsers {
       import GnirsAcquisitionMirror._
 
       enum(
-        "IN"  -> In,
-        "OUT" -> Out
+        "in"  -> In,
+        "out" -> Out
       )
     }
 
@@ -571,6 +571,7 @@ object Parsers {
         "pupil viewer"           -> PupilViewer,
         "short camera long slit" -> ShortCamLongSlit,
         "short camera x-disp"    -> ShortCamCrossDispersed,
+        "long camera x-disp"     -> LongCamCrossDispersed,
         "IFU"                    -> Ifu,
         "long camera long slit"  -> LongCamLongSlit,
         "wollaston"              -> Wollaston
@@ -595,20 +596,20 @@ object Parsers {
       import GnirsFilter._
 
       enum(
-        "x-dispersed"            -> CrossDispersed,
-        "order 6 (X)"            -> Order6,
-        "order 5 (J)"            -> Order5,
-        "order 4 (H-MK: 1.65um)" -> Order4,
-        "order 3 (K)"            -> Order3,
-        "order 2 (L)"            -> Order2,
-        "order 1 (M)"            -> Order1,
-        "H2: 2.12um"             -> H2,
-        "H + ND100X"             -> HNd100x,
-        "H2 + ND100X"            -> H2Nd100x,
-        "PAH: 3.3um"             -> PAH,
-        "Y-MK: 1.03um"           -> Y,
-        "J-MK: 1.25um"           -> J,
-        "K-MK: 2.20um"           -> K
+        "x-dispersed" -> CrossDispersed,
+        "order 6 (X)" -> Order6,
+        "order 5 (J)" -> Order5,
+        "order 4 (H)" -> Order4,
+        "order 3 (K)" -> Order3,
+        "order 2 (L)" -> Order2,
+        "order 1 (M)" -> Order1,
+        "H2: 2.12um"  -> H2,
+        "H + ND100X"  -> HNd100x,
+        "H2 + ND100X" -> H2Nd100x,
+        "PAH: 3.3um"  -> PAH,
+        "Y: 1.03um"   -> Y,
+        "J: 1.25um"   -> J,
+        "K: 2.20um"   -> K
       )
 
     }
