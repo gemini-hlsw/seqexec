@@ -84,7 +84,7 @@ object SequenceControl {
           val runContinueButton = s"${isPartiallyExecuted ? "Continue" | "Run"} from step $nextStepToRun"
           List(
             // Sync button
-            controlButton(IconRefresh, "purple", $.runState(requestSync(id)), (!allowedToExecute || !s.canSync) && !inConflict, s"Sync sequence", s"Sync $inConflict")
+            controlButton(IconRefresh, "purple", $.runState(requestSync(id)), (!allowedToExecute || !s.canSync) && !inConflict, "Sync sequence", "Sync")
               .when(status.isIdle || status.isError),
             // Run button
             controlButton(IconPlay, "blue", $.runState(requestRun(id)), (!allowedToExecute || !s.canRun) && !inConflict, runContinueTooltip, runContinueButton)
