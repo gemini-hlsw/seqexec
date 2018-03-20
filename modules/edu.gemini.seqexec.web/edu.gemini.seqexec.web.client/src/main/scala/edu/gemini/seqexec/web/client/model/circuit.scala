@@ -59,7 +59,7 @@ object circuit {
     implicit val eq: Equal[StepsTableFocus] = Equal.equalA
   }
   final case class StepsTableAndStatusFocus(status: ClientStatus, stepsTable: Option[StepsTableFocus]) extends UseValueEq
-  final case class ControlModel(id: SequenceId, isPartiallyExecuted: Boolean, nextStepToRun: Option[Int], status: SequenceState) extends UseValueEq
+  final case class ControlModel(id: SequenceId, isPartiallyExecuted: Boolean, nextStepToRun: Option[Int], status: SequenceState, inConflict: Boolean) extends UseValueEq
   final case class SequenceControlFocus(isLogged: Boolean, isConnected: Boolean, control: Option[ControlModel]) extends UseValueEq
 
   /**
@@ -140,6 +140,9 @@ object circuit {
     // Reader to indicate the allowed interactions
     val statusReader: ModelR[SeqexecAppRootModel, ClientStatus] = zoom(m => ClientStatus(m.uiModel.user, m.ws, m.uiModel.sequencesOnDisplay.isAnySelected))
 
+    // Reader to contain the sequence in conflict
+    val sequenceInConflictReader: ModelR[SeqexecAppRootModel, Option[SequenceId]] = zoomTo(_.uiModel.resourceConflict.id)
+
     // Reader for sequences on display
     val headerSideBarReader: ModelR[SeqexecAppRootModel, HeaderSideBarFocus] =
       zoom(c => HeaderSideBarFocus(ClientStatus(c.uiModel.user, c.ws, c.uiModel.sequencesOnDisplay.isAnySelected), c.uiModel.sequences.conditions, c.uiModel.sequences.operator))
@@ -186,9 +189,9 @@ object circuit {
       }
 
     def sequenceControlReader(i: Instrument): ModelR[SeqexecAppRootModel, SequenceControlFocus] =
-      statusReader.zip(instrumentTab(i)).zoom {
-        case (status, InstrumentTabActive(tab, _)) =>
-          SequenceControlFocus(status.isLogged, status.isConnected, tab.sequence.map(s => ControlModel(s.id, s.isPartiallyExecuted, s.nextStepToRun, s.status)))
+      sequenceInConflictReader.zip(statusReader.zip(instrumentTab(i))).zoom {
+        case (inConflict, (status, InstrumentTabActive(tab, _))) =>
+          SequenceControlFocus(status.isLogged, status.isConnected, tab.sequence.map(s => ControlModel(s.id, s.isPartiallyExecuted, s.nextStepToRun, s.status, inConflict.exists(_ === s.id))))
       }
 
     // Reader for a specific sequence if available
