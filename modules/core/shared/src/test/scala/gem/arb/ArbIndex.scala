@@ -13,7 +13,7 @@ import org.scalacheck.Gen._
 trait ArbIndex {
 
   val genIndex: Gen[Index] =
-    choose[Short](0, Short.MaxValue).map(Index.fromShort.unsafeGet)
+    choose[Short](1, Short.MaxValue).map(Index.fromShort.unsafeGet)
 
   implicit val arbIndex: Arbitrary[Index] =
     Arbitrary(genIndex)
