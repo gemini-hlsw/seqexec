@@ -17,6 +17,7 @@ final class HourAngleSpec extends CatsSuite {
   // Laws
   checkAll("HourAngle", CommutativeGroupTests[HourAngle].commutativeGroup)
   checkAll("HourAngle", EqTests[HourAngle].eqv)
+  checkAll("HourAngle <: Angle", SubgroupTests[HourAngle, Angle].subgroup)
 
   // Optics
   checkAll("angle", SplitMonoTests(HourAngle.angle).splitMono)
