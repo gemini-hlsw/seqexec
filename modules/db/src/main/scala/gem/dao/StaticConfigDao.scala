@@ -13,7 +13,7 @@ import gem.config._
 object StaticConfigDao {
   import EnumeratedMeta._
   import ProgramIdMeta._
-  import ObservationIndexMeta._
+  import IndexMeta._
   import OffsetMeta._
 
   def insert(oid: Observation.Id, s: StaticConfig): ConnectionIO[Unit] =

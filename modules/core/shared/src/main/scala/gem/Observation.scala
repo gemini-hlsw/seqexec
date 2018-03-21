@@ -55,7 +55,7 @@ object Observation {
   /** An observation is identified by its program and a serial index. */
   final case class Id(pid: Program.Id, index: Index) {
     def format: String =
-      s"${pid.format}-${index.format}"
+      s"${pid.format}-${Index.fromString.reverseGet(index)}"
   }
   object Id {
 
@@ -64,7 +64,7 @@ object Observation {
         case -1 => None
         case  n =>
           val (a, b) = s.splitAt(n)
-          Index.fromString(b.drop(1)).flatMap { i =>
+          Index.fromString.getOption(b.drop(1)).flatMap { i =>
             Program.Id.fromString(a).map(Observation.Id(_, i))
           }
       }

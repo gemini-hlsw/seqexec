@@ -6,30 +6,17 @@ package gem.math
 import cats.{ Order, Show }
 import cats.instances.short._
 import mouse.boolean._
-import gem.syntax.string._
+import gem.optics.Format
+import gem.parser.MiscParsers
+import gem.syntax.all._
+import monocle.Prism
 
 /** A positive, non-zero value for numbered identifiers. */
-sealed abstract case class Index(toShort: Short) {
-  def format: String =
-    s"$toShort"
-}
-
-object Index {
+sealed abstract case class Index(toShort: Short)
+object Index extends IndexOptics {
 
   val One: Index =
-    unsafeFromShort(1)
-
-  def fromShort(i: Short): Option[Index] =
-    (i > 0) option new Index(i) {}
-
-  def unsafeFromShort(i: Short): Index =
-    fromShort(i).getOrElse(sys.error(s"Negative index: $i"))
-
-  def fromString(s: String): Option[Index] =
-    s.parseShortOption.filter(_ > 0).map(new Index(_) {})
-
-  def unsafeFromString(s: String): Index =
-    fromString(s).getOrElse(sys.error(s"Malformed observation index: '$s'"))
+    fromShort.unsafeGet(1)
 
   implicit val OrderIndex: Order[Index] =
     Order.by(_.toShort)
@@ -39,5 +26,17 @@ object Index {
 
   implicit val showIndex: Show[Index] =
     Show.fromToString
+
+}
+
+trait IndexOptics {
+
+  /** @group Optics */
+  val fromShort: Prism[Short, Index] =
+    Prism((i: Short) => (i > 0) option new Index(i) {})(_.toShort)
+
+  /** @group Optics */
+  val fromString: Format[String, Index] =
+    Format(MiscParsers.index.parseExact, _.toShort.toString)
 
 }
