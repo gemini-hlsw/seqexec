@@ -10,14 +10,15 @@ import Matchers._
 import Inside._
 import edu.gemini.seqexec.model.Model.Resource
 
-import scalaz.concurrent.Task
-import scalaz.stream.{Process, async}
+import cats.effect.IO
+import fs2.Stream
+import fs2.async
 import edu.gemini.seqexec.model.{ActionType, UserDetails}
 
 import scala.Function.const
-import scalaz.Kleisli
+import cats.data.Kleisli
 
-import java.util.UUID
+import scala.concurrent.ExecutionContext.Implicits.global
 
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 class StepSpec extends FlatSpec {
@@ -34,53 +35,53 @@ class StepSpec extends FlatSpec {
     * Emulates TCS configuration in the real world.
     *
     */
-  val configureTcs: Action  = fromTask(ActionType.Configure(Resource.TCS),
+  val configureTcs: Action  = fromIO(ActionType.Configure(Resource.TCS),
     for {
-      _ <- Task(println("System: Start TCS configuration"))
-      _ <- Task(Thread.sleep(200))
-      _ <- Task(println ("System: Complete TCS configuration"))
+      _ <- IO(println("System: Start TCS configuration"))
+      _ <- IO(Thread.sleep(200))
+      _ <- IO(println ("System: Complete TCS configuration"))
     } yield Result.OK(Result.Configured(Resource.TCS)))
 
   /**
     * Emulates Instrument configuration in the real world.
     *
     */
-  val configureInst: Action  = fromTask(ActionType.Configure(GmosS),
+  val configureInst: Action  = fromIO(ActionType.Configure(GmosS),
     for {
-      _ <- Task(println("System: Start Instrument configuration"))
-      _ <- Task(Thread.sleep(150))
-      _ <- Task(println("System: Complete Instrument configuration"))
+      _ <- IO(println("System: Start Instrument configuration"))
+      _ <- IO(Thread.sleep(150))
+      _ <- IO(println("System: Complete Instrument configuration"))
     } yield Result.OK(Result.Configured(GmosS)))
 
   /**
     * Emulates an observation in the real world.
     *
     */
-  val observe: Action  = fromTask(ActionType.Observe,
+  val observe: Action  = fromIO(ActionType.Observe,
     for {
-    _ <- Task(println("System: Start observation"))
-    _ <- Task(Thread.sleep(200))
-    _ <- Task(println ("System: Complete observation"))
+    _ <- IO(println("System: Start observation"))
+    _ <- IO(Thread.sleep(200))
+    _ <- IO(println ("System: Complete observation"))
   } yield Result.OK(Result.Observed("DummyFileId")))
 
-  def error(errMsg: String): Action  = fromTask(ActionType.Undefined,
-    Task {
+  def error(errMsg: String): Action  = fromIO(ActionType.Undefined,
+    IO {
       Thread.sleep(200)
       Result.Error(errMsg)
     }
   )
 
-  def triggerPause(q: async.mutable.Queue[executionEngine.EventType]): Action = fromTask(ActionType.Undefined,
+  def triggerPause(q: IO[async.mutable.Queue[IO, executionEngine.EventType]]): Action = fromIO(ActionType.Undefined,
     for {
-      _ <- q.enqueueOne(Event.pause(seqId, user))
+      _ <- q.map(_.enqueue1(Event.pause(seqId, user)))
       // There is not a distinct result for Pause because the Pause action is a
       // trick for testing but we don't need to support it in real life, the pause
       // input event is enough.
     } yield Result.OK(Result.Configured(Resource.TCS)))
 
-  def triggerStart(q: async.mutable.Queue[executionEngine.EventType]): Action = fromTask(ActionType.Undefined,
+  def triggerStart(q: IO[async.mutable.Queue[IO, executionEngine.EventType]]): Action = fromIO(ActionType.Undefined,
     for {
-      _ <- q.enqueueOne(Event.start(seqId, user, UUID.randomUUID()))
+      _ <- q.map(_.enqueue1(Event.start(seqId, user, UUID.randomUUID())))
       // Same case that the pause action
     } yield Result.OK(Result.Configured(Resource.TCS)))
 
@@ -92,15 +93,15 @@ class StepSpec extends FlatSpec {
   }
 
   def runToCompletion(s0: Engine.State[Unit]): Option[Engine.State[Unit]] = {
-    executionEngine.process(Process.eval(Task.now(Event.start(seqId, user, UUID.randomUUID()))))(s0).drop(1).takeThrough(
+    executionEngine.process(Stream.eval(IO.pure(Event.start(seqId, user, UUID.randomUUID()))))(s0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
-    ).runLast.unsafePerformSync.map(_._2)
+    ).compile.last.unsafeRunSync.map(_._2)
   }
 
   def runToCompletionL(s0: Engine.State[Unit]): List[Engine.State[Unit]] = {
-    executionEngine.process(Process.eval(Task.now(Event.start(seqId, user, UUID.randomUUID()))))(s0).drop(1).takeThrough(
+    executionEngine.process(Stream.eval(IO.pure(Event.start(seqId, user, UUID.randomUUID()))))(s0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
-    ).runLog.unsafePerformSync.map(_._2).toList
+    ).compile.toVector.unsafeRunSync.map(_._2).toList
   }
 
   // This test must have a simple step definition and the known sequence of updates that running that step creates.
@@ -111,7 +112,7 @@ class StepSpec extends FlatSpec {
 
   // The difficult part is to set the pause command to interrupts the step execution in the middle.
   "pause" should "stop execution in response to a pause command" in {
-    val q = async.boundedQueue[executionEngine.EventType](10)
+    val q = async.boundedQueue[IO, executionEngine.EventType](10)
     val qs0: Engine.State[Unit] =
       Engine.State[Unit](
         (),
@@ -139,12 +140,11 @@ class StepSpec extends FlatSpec {
         )
       )
 
-    val qs1 = q.enqueueOne(Event.start(seqId, user, UUID.randomUUID())).flatMap(_ => executionEngine.process(q.dequeue)(qs0).drop(1).takeThrough(
+    val qs1 = q.flatMap{ k => k.enqueue1(Event.start(seqId, user, UUID.randomUUID())).flatMap(_ => executionEngine.process(k.dequeue)(qs0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
-    ).runLast).unsafePerformSync.map(_._2)
+    ).compile.last)}.unsafeRunSync.map(_._2)
 
-
-     inside (qs1.map(_.sequences(seqId))) {
+    inside (qs1.map(_.sequences(seqId))) {
       case Some(Sequence.State.Zipper(zipper, status)) =>
         inside (zipper.focus.toStep) {
           case Step(_, _, _, _, _, _, _, ex1::ex2::Nil) =>
@@ -186,7 +186,7 @@ class StepSpec extends FlatSpec {
         )
       )
 
-    val qs1 = executionEngine.process(Process.eval(Task.now(Event.start(seqId, user, UUID.randomUUID()))))(qs0).take(1).runLast.unsafePerformSync.map(_._2)
+    val qs1 = executionEngine.process(Process.eval(Task.now(Event.start(seqId, user))))(qs0).take(1).runLast.unsafePerformSync.map(_._2)
 
     inside (qs1.flatMap(_.sequences.get(seqId))) {
       case Some(Sequence.State.Zipper(zipper, status)) =>
@@ -229,7 +229,7 @@ class StepSpec extends FlatSpec {
         )
       )
 
-    val qs1 = executionEngine.process(Process.eval(Task.now(Event.cancelPause(seqId, user))))(qs0).take(1).runLast.unsafePerformSync.map(_._2)
+    val qs1 = executionEngine.process(Stream.eval(IO.pure(Event.cancelPause(seqId, user))))(qs0).take(1).compile.last.unsafeRunSync.map(_._2)
 
     inside (qs1.flatMap(_.sequences.get(seqId))) {
       case Some(Sequence.State.Zipper(_, status)) => assert(status.isRunning)
@@ -265,7 +265,7 @@ class StepSpec extends FlatSpec {
         )
       )
 
-    val qss = executionEngine. process(Process.eval(Task.now(Event.pause(seqId, user))))(qs0).runLog.unsafePerformSync.map(_._2)
+    val qss = executionEngine.process(Stream.eval(IO.pure(Event.pause(seqId, user))))(qs0).compile.toVector.unsafeRunSync.map(_._2)
 
     assert(qss.length == 1)
     inside (qss.headOption.flatMap(_.sequences.get(seqId))) {
@@ -280,7 +280,7 @@ class StepSpec extends FlatSpec {
 
   // Be careful that start command doesn't run an already running sequence.
   "engine" should "ignore start command if step is already running." in {
-    val q = async.boundedQueue[executionEngine.EventType](10)
+    val q = async.boundedQueue[IO, executionEngine.EventType](10)
     val qs0: Engine.State[Unit] =
       Engine.State[Unit](
         (),
@@ -309,9 +309,9 @@ class StepSpec extends FlatSpec {
         )
       )
 
-    val qss = q.enqueueOne(Event.start(seqId, user, UUID.randomUUID)).flatMap(_ => executionEngine.process(q.dequeue)(qs0).drop(1).takeThrough(
+    val qss = q.flatMap { k => k.enqueue1(Event.start(seqId, user, UUID.randomUUID)).flatMap(_ => executionEngine.process(k.dequeue)(qs0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
-    ).runLog).unsafePerformSync
+    ).compile.toVector)}.unsafeRunSync
 
     val actionsCompleted = qss.map(_._1).collect{case x@EventSystem(_: Completed[_]) => x}
     assert(actionsCompleted.length == 4)
@@ -396,11 +396,11 @@ class StepSpec extends FlatSpec {
                    Set.empty,
                    List(
                      List(
-                       fromTask(ActionType.Undefined,
-                         Task(
+                       fromIO(ActionType.Undefined,
+                         IO(
                            Result.Partial(
                              PartialValDouble(0.5),
-                             Kleisli(_ => Task(Result.OK(RetValDouble(1.0)))
+                             Kleisli(_ => IO(Result.OK(RetValDouble(1.0)))
                              )
                            )
                         )
@@ -435,8 +435,8 @@ class StepSpec extends FlatSpec {
   private val observeResult = Result.Observed("dummyId")
   private val result = Result.OK(observeResult)
   private val failure = Result.Error("Dummy error")
-  private val actionFailed =  fromTask(ActionType.Undefined, Task(failure)).copy(state = Action.State(Action.Failed(failure), Nil))
-  private val action: Action = fromTask(ActionType.Undefined, Task(result))
+  private val actionFailed =  fromIO(ActionType.Undefined, IO(failure)).copy(state = Action.State(Action.Failed(failure), Nil))
+  private val action: Action = fromIO(ActionType.Undefined, IO(result))
   private val actionCompleted: Action = action.copy(state = Action.State(Action.Completed(observeResult), Nil))
   private val config: StepConfig = Map.empty
   def simpleStep(pending: List[Actions], focus: Execution, done: List[Results]): Step.Zipper = {
@@ -446,7 +446,7 @@ class StepSpec extends FlatSpec {
     }
 
     Step.Zipper(1, None, config, Set.empty, breakpoint = Step.BreakpointMark(false), skipMark = Step.SkipMark(false), pending, focus, done.map(_.map{ r =>
-      val x = fromTask(ActionType.Observe, Task(r))
+      val x = fromIO(ActionType.Observe, IO(r))
       x.copy(state = Execution.actionStateFromResult(r)(x.state))
     }), rollback)
   }

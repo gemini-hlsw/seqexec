@@ -203,6 +203,7 @@ class Engine[D: ActionMetadataGenerator, U](implicit ev: ActionMetadataGenerator
       }
   }
 
+  @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
   private def execute(id: Sequence.Id)(implicit ec: ExecutionContext): HandleP[Unit] = {
     get.flatMap(st => st.sequences.get(id).map {
       case seq@Sequence.State.Final(_, _) =>
@@ -299,6 +300,7 @@ class Engine[D: ActionMetadataGenerator, U](implicit ev: ActionMetadataGenerator
   /**
     * Main logical thread to handle events and produce output.
     */
+  @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
   private def run(ev: EventType)(implicit ec: ExecutionContext): HandleP[StateType] = {
     def handleUserEvent(ue: UserEventType): HandleP[Unit] = ue match {
       case Start(id, _)               => Logger.debug("Engine: Started") *> start(id)
@@ -344,26 +346,33 @@ class Engine[D: ActionMetadataGenerator, U](implicit ev: ActionMetadataGenerator
 
   // Kudos to @tpolecat
   /** Traverse a process with a stateful computation. */
-  private def mapEvalState[A, S, B](
-                                     fs: Stream[IO, A], s0: S, f: A => StateT[IO, S, (B, Option[Stream[IO, A]])]
-                                   )(implicit ec: ExecutionContext): Stream[IO, B] = {
-    def go(fi: Stream[IO, A], si: S): Stream[IO, B] = {
-      Stream.eval(fi.pull.uncons).flatMap {
-        case None => Stream.halt
-        case Some((h, t)) => Stream.eval(f(h).run(si)).flatMap {
-          case (s, (b, p)) => Stream.emit(b) ++ go(p.map(_ merge t).getOrElse(t), s)
-        }
-      }
-    }
-
-    go(fs, s0)
-  }
-
-  private def runE(ev: EventType)(implicit ec: ExecutionContext): HandleP[(EventType, StateType)] =
+  // private def mapEvalState[A, S, B](
+  //                                    fs: Stream[IO, A], s0: S, f: A => StateT[IO, S, (B, Option[Stream[IO, A]])]
+  //                                  )(implicit ec: ExecutionContext): Stream[IO, B] = {
+  //   def go(fi: Stream[IO, A], si: S): Stream[IO, B] = {
+  //     Stream.eval(fi.pull.uncons).flatMap {
+  //       case None => Stream.halt
+  //       case Some((h, t)) => Stream.eval(f(h).run(si)).flatMap {
+  //         case (s, (b, p)) => Stream.emit(b) ++ go(p.map(_ merge t).getOrElse(t), s)
+  //       }
+  //     }
+  //   }
+  //
+  //   go(fs, s0)
+  // }
+  //
+  @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
+  def runE(ev: EventType)(implicit ec: ExecutionContext): HandleP[(EventType, StateType)] =
     run(ev).map((ev, _))
 
-  def process(input: Stream[IO, EventType])(qs: StateType)(implicit ec: ExecutionContext): Stream[IO, (EventType, StateType)] =
-    mapEvalState[EventType, StateType, (EventType, StateType)](input, qs, (e: EventType) => runE(e).run)
+  @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
+  def process(input: Stream[IO, EventType])(qs: StateType)(implicit ec: ExecutionContext): Stream[IO, (EventType, StateType)] = {
+    println(input)
+    println(qs)
+    println(ec)
+    ???
+  }
+  //   mapEvalState[EventType, StateType, (EventType, StateType)](input, qs, (e: EventType) => runE(e).run)
 
   // Functions for type bureaucracy
 

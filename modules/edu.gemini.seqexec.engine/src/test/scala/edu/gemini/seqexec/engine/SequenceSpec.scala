@@ -12,10 +12,10 @@ import org.scalatest.FlatSpec
 import org.scalatest.Inside.inside
 import org.scalatest.Matchers._
 
-import scalaz.concurrent.Task
-import scalaz.stream.Process
+import cats.effect.IO
+import fs2.Stream
 
-import java.util.UUID
+import scala.concurrent.ExecutionContext.Implicits.global
 
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 class SequenceSpec extends FlatSpec {
@@ -79,9 +79,9 @@ class SequenceSpec extends FlatSpec {
   }
 
   def runToCompletion(s0: Engine.State[Unit]): Option[Engine.State[Unit]] = {
-    executionEngine.process(Process.eval(Task.now(Event.start(seqId, user, UUID.randomUUID()))))(s0).drop(1).takeThrough(
+    executionEngine.process(Stream.eval(IO.pure(Event.start(seqId, user, UUID.randomUUID))))(s0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
-    ).runLast.unsafePerformSync.map(_._2)
+    ).compile.last.unsafeRunSync.map(_._2)
   }
 
   it should "stop on breakpoints" in {
@@ -151,7 +151,7 @@ class SequenceSpec extends FlatSpec {
   // TODO: Share these fixtures with StepSpec
   private val observeResult: Result.Response = Result.Observed("dummyId")
   private val result: Result = Result.OK(observeResult)
-  private val action: Action = fromTask(ActionType.Undefined, Task(result))
+  private val action: Action = fromIO(ActionType.Undefined, IO(result))
   private val completedAction: Action = action.copy(state = Action.State(Action.Completed(observeResult), Nil))
   private val config: StepConfig = Map()
   def simpleStep2(pending: List[Actions], focus: Execution, done: List[Results]): Step.Zipper = {
@@ -161,7 +161,7 @@ class SequenceSpec extends FlatSpec {
     }
 
     Step.Zipper(1, None, config, Set.empty, breakpoint = Step.BreakpointMark(false), Step.SkipMark(false), pending, focus, done.map(_.map{r =>
-      val x = fromTask(ActionType.Observe, Task(r))
+      val x = fromIO(ActionType.Observe, IO(r))
       x.copy(state = Execution.actionStateFromResult(r)(x.state))
     }), rollback)
   }
