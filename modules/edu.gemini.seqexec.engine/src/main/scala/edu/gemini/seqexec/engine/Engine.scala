@@ -3,18 +3,19 @@
 
 package edu.gemini.seqexec.engine
 
+import cats._
+import cats.data.{Kleisli, StateT}
+import cats.effect.IO
+import cats.implicits._
 import edu.gemini.seqexec.engine.Event._
 import edu.gemini.seqexec.engine.Result.{PartialVal, PauseContext, RetVal}
-import edu.gemini.seqexec.model.Model.{Conditions, Observer, Resource, SequenceState}
-import org.log4s.getLogger
-import cats.effect.IO
-import cats._
-import cats.implicits._
-import cats.data.{Kleisli, StateT}
-import monocle.macros.GenLens
+import edu.gemini.seqexec.model.Model.{ClientID, Conditions, Observer, Resource, SequenceState}
+import fs2.{Pull, Stream}
 import monocle.Lens
-import fs2.Stream
+import monocle.macros.GenLens
 import mouse.boolean._
+import org.log4s.getLogger
+
 import scala.concurrent.ExecutionContext
 
 class Engine[D: ActionMetadataGenerator, U](implicit ev: ActionMetadataGenerator[D]) {
@@ -303,7 +304,7 @@ class Engine[D: ActionMetadataGenerator, U](implicit ev: ActionMetadataGenerator
   @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
   private def run(ev: EventType)(implicit ec: ExecutionContext): HandleP[StateType] = {
     def handleUserEvent(ue: UserEventType): HandleP[Unit] = ue match {
-      case Start(id, _)               => Logger.debug("Engine: Started") *> start(id)
+      case Start(id, _, cid)          => Logger.debug("Engine: Started") *> start(id, cid)
       case Pause(id, _)               => Logger.debug("Engine: Pause requested") *> pause(id)
       case CancelPause(id, _)         => Logger.debug("Engine: Pause canceled") *> cancelPause(id)
       case Load(id, seq)              => Logger.debug("Engine: Sequence loaded") *> load(id, seq)
@@ -330,7 +331,7 @@ class Engine[D: ActionMetadataGenerator, U](implicit ev: ActionMetadataGenerator
       case PartialResult(id, i, r) => Logger.debug("Engine: Partial result") *> partialResult(id, i, r)
       case Paused(id, i, r)        => Logger.debug("Engine: Action paused") *> actionPause(id, i, r)
       case Failed(id, i, e)        => logError(e) *> fail(id)(i, e)
-      case Busy(id)                => Logger.warning(s"Cannot run sequence $id because required systems are in use.")
+      case Busy(id, _)             => Logger.warning(s"Cannot run sequence $id because required systems are in use.")
       case BreakpointReached(_)    => Logger.debug("Engine: Breakpoint reached")
       case Executed(id)            => Logger.debug("Engine: Execution completed") *> next(id)
       case Executing(id)           => Logger.debug("Engine: Executing") *> execute(id)
@@ -346,33 +347,40 @@ class Engine[D: ActionMetadataGenerator, U](implicit ev: ActionMetadataGenerator
 
   // Kudos to @tpolecat
   /** Traverse a process with a stateful computation. */
-  // private def mapEvalState[A, S, B](
-  //                                    fs: Stream[IO, A], s0: S, f: A => StateT[IO, S, (B, Option[Stream[IO, A]])]
-  //                                  )(implicit ec: ExecutionContext): Stream[IO, B] = {
-  //   def go(fi: Stream[IO, A], si: S): Stream[IO, B] = {
-  //     Stream.eval(fi.pull.uncons).flatMap {
-  //       case None => Stream.halt
-  //       case Some((h, t)) => Stream.eval(f(h).run(si)).flatMap {
-  //         case (s, (b, p)) => Stream.emit(b) ++ go(p.map(_ merge t).getOrElse(t), s)
-  //       }
-  //     }
-  //   }
-  //
-  //   go(fs, s0)
-  // }
-  //
-  @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
-  def runE(ev: EventType)(implicit ec: ExecutionContext): HandleP[(EventType, StateType)] =
-    run(ev).map((ev, _))
+  // input, stream of events
+  // initalState: state
+  // f takes an event and the current state, it produces a new state, a new value B and more actions
+  @SuppressWarnings(Array("org.wartremover.warts.OptionPartial", "org.wartremover.warts.ImplicitParameter"))
+  def mapEvalState[A, S, B](input: Stream[IO, A], initialState: S, f: (A, S) => IO[(S, B, Stream[IO, A])])(implicit ec: ExecutionContext): Stream[IO, B] = {
+    def go(fi: Stream[IO, A], si: S): Stream[IO, B] = {
+      fi.pull.uncons1.flatMap {
+        case None => Pull.done
+        case Some((head, tail)) =>
+          // head: A
+          // tail: Stream[IO, A]
+          val i: Stream[IO, B] = for {
+            ns <- Stream.eval(f(head, si)).flatMap {
+              case (s, b, p) =>
+                Stream.emit(b).covary[IO] ++ go(p.merge(tail), s)
+            }
+          } yield ns
+          i.pull.echo
+      }.stream
+    }
 
-  @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
-  def process(input: Stream[IO, EventType])(qs: StateType)(implicit ec: ExecutionContext): Stream[IO, (EventType, StateType)] = {
-    println(input)
-    println(qs)
-    println(ec)
-    ???
+    go(input, initialState)
   }
-  //   mapEvalState[EventType, StateType, (EventType, StateType)](input, qs, (e: EventType) => runE(e).run)
+
+  @SuppressWarnings(Array("org.wartremover.warts.AnyVal", "org.wartremover.warts.ImplicitParameter"))
+  private def runE(ev: EventType, s: StateType)(implicit ec: ExecutionContext): IO[(StateType, (EventType, StateType), Stream[IO, EventType])] =
+    run(ev).run.run(s).map {
+      case (_, (si, p)) =>
+        (si, (ev, si), p.getOrElse(Stream.empty))
+    }
+
+  @SuppressWarnings(Array("org.wartremover.warts.AnyVal", "org.wartremover.warts.ImplicitParameter"))
+  def process(input: Stream[IO, EventType])(qs: StateType)(implicit ec: ExecutionContext): Stream[IO, (EventType, StateType)] =
+    mapEvalState[EventType, StateType, (EventType, StateType)](input, qs, runE)
 
   // Functions for type bureaucracy
 
@@ -381,7 +389,7 @@ class Engine[D: ActionMetadataGenerator, U](implicit ev: ActionMetadataGenerator
   private val unit: HandleP[Unit] = pure(())
 
   private val get: HandleP[StateType] =
-     StateT.get[IO, StateType].toHandleP
+    StateT.get[IO, StateType].toHandleP
 
   private def inspect[A](f: StateType => A): HandleP[A] =
     StateT.inspect[IO, StateType, A](f).toHandleP

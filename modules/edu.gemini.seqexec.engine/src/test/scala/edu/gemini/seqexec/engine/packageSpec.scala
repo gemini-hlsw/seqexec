@@ -3,16 +3,18 @@
 
 package edu.gemini.seqexec.engine
 
-// import java.util.concurrent.Semaphore
+import java.util.UUID
 
 import edu.gemini.seqexec.engine.Sequence.State.Final
+import edu.gemini.seqexec.model.Model.StepState
 import org.scalatest.{FlatSpec, NonImplicitAssertions}
-import edu.gemini.seqexec.model.Model.{Operator, Resource, SequenceMetadata, SequenceState, StepConfig, StepState}
+import edu.gemini.seqexec.model.Model.{Operator/*, Resource, SequenceMetadata, SequenceState, StepConfig, StepState*/}
+import edu.gemini.seqexec.model.Model.{Resource, SequenceMetadata, SequenceState, StepConfig}
 import edu.gemini.seqexec.model.Model.Instrument.{F2, GmosS}
 import edu.gemini.seqexec.model.Model.Resource.TCS
 import edu.gemini.seqexec.model.{ActionType, UserDetails}
 
-// import scala.concurrent.duration._
+ import scala.concurrent.duration._
 // import cats._
 import cats.implicits._
 import cats.data.Kleisli
@@ -185,28 +187,28 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
     assert(actionPause.exists(_.sequences(seqId).current.execution.forall{Action.paused}))
   }
 
-  // "engine" should "run sequence to completion after resuming a paused action" in {
-  //   val p = Stream.eval(IO.pure(Event.actionResume(seqId, 0, IO(Result.OK(Result.Configured(GmosS))))))
-  //
-  //   val result = actionPause.map(executionEngine.process(p)(_).drop(1).takeThrough(
-  //     a => !isFinished(a._2.sequences(seqId).status)
-  //   ).compile.last.timed(5.seconds).unsafeRunSyncAttempt)
-  //   val qso = result.map(_.map(_.map(_._2)))
-  //
-  //   assert(qso.exists(qs => qs.isRight && qs.forall(x => x.isDefined && x.map(_.sequences(seqId).current.actions.isEmpty).getOrElse(false) &&
-  //     x.map(_.sequences(seqId).status === SequenceState.Completed).getOrElse(false))))
-  //
-  // }
-  //
+   "engine" should "run sequence to completion after resuming a paused action" in {
+     val p = Stream.eval(IO.pure(Event.actionResume(seqId, 0, IO(Result.OK(Result.Configured(GmosS))))))
+
+     val result = actionPause.map(executionEngine.process(p)(_).drop(1).takeThrough(
+       a => !isFinished(a._2.sequences(seqId).status)
+     ).compile.last.timed(5.seconds).unsafeRunSyncAttempt)
+     val qso = result.map(_.map(_.map(_._2)))
+
+     assert(qso.exists(qs => qs.isRight && qs.forall(x => x.isDefined && x.map(_.sequences(seqId).current.actions.isEmpty).getOrElse(false) &&
+       x.map(_.sequences(seqId).status === SequenceState.Completed).getOrElse(false))))
+
+   }
+
   it should "not run 2nd sequence because it's using the same resource" in {
-    val p = Stream.emits(List(Event.start(seqId1, user, UUID.randomUUID()), Event.start(seqId2, user))).evalMap(IO.pure(_))
+    val p = Stream.emits(List(Event.start(seqId1, user, UUID.randomUUID()), Event.start(seqId2, user, UUID.randomUUID()))).evalMap(IO.pure(_))
     assert(
-      executionEngine.process(p)(qs2).take(6).compile.last.unsafeRunSync.map(_._2.sequences(seqId2)).map(_.status === SequenceState.Idle)getOrElse(false)
+      executionEngine.process(p)(qs2).take(6).compile.last.unsafeRunSync.map(_._2.sequences(seqId2)).exists(_.status === SequenceState.Idle)
     )
   }
 
   it should "run 2nd sequence when there are no shared resources" in {
-    val p = Stream.emits(List(Event.start(seqId1, user, UUID.randomUUID()), Event.start(seqId3, user))).evalMap(IO.pure(_))
+    val p = Stream.emits(List(Event.start(seqId1, user, UUID.randomUUID()), Event.start(seqId3, user, UUID.randomUUID()))).evalMap(IO.pure(_))
 
     assert(
       executionEngine.process(p)(qs3).take(6).compile.last.unsafeRunSync.exists(t => Sequence.State.isRunning(t._2.sequences(seqId3)))
@@ -252,36 +254,36 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   //   assert(result.isRight)
   // }
 
-  "engine" should "not capture fatal errors." in {
-    @SuppressWarnings(Array("org.wartremover.warts.Throw"))
-    def s0(e: Error): Engine.State[Unit] = Engine.State[Unit]((),
-      Map((seqId, Sequence.State.init(Sequence(
-        "First",
-        SequenceMetadata(GmosS, None, ""),
-        List(
-          Step.init(
-            1,
-            None,
-            config,
-            Set(GmosS),
-            List(
-              List(fromIO(ActionType.Undefined,
-              IO.apply{
-                throw e
-              }))
-            )
-          )
-        )
-      ) ) ) )
-    )
-
-    intercept[OutOfMemoryError](
-      runToCompletion(s0(new OutOfMemoryError))
-    )
-    intercept[StackOverflowError](
-      runToCompletion(s0(new StackOverflowError))
-    )
-  }
+//  "engine" should "not capture fatal errors." in {
+//    @SuppressWarnings(Array("org.wartremover.warts.Throw"))
+//    def s0(e: Error): Engine.State[Unit] = Engine.State[Unit]((),
+//      Map((seqId, Sequence.State.init(Sequence(
+//        "First",
+//        SequenceMetadata(GmosS, None, ""),
+//        List(
+//          Step.init(
+//            1,
+//            None,
+//            config,
+//            Set(GmosS),
+//            List(
+//              List(fromIO(ActionType.Undefined,
+//              IO.apply{
+//                throw e
+//              }))
+//            )
+//          )
+//        )
+//      ) ) ) )
+//    )
+//
+//    intercept[OutOfMemoryError](
+//      runToCompletion(s0(new OutOfMemoryError))
+//    )
+//    intercept[StackOverflowError](
+//      runToCompletion(s0(new StackOverflowError))
+//    )
+//  }
 
 
   case class DummyData(operator: Option[Operator])
@@ -410,7 +412,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
     val sf = runToCompletion(s0)
 
     inside (sf.map(_.sequences(seqId))) {
-      case Some(s@Final(_, SequenceState.Completed)) =>
+      case Some(s @ Final(_, SequenceState.Completed)) =>
         assert(s.done.map(Step.status) === List(StepState.Completed, StepState.Completed, StepState.Skipped))
     }
   }

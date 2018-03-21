@@ -3,6 +3,8 @@
 
 package edu.gemini.seqexec.engine
 
+import java.util.UUID
+
 import edu.gemini.seqexec.model.Model.{SequenceMetadata, SequenceState, StepConfig}
 import edu.gemini.seqexec.model.Model.Instrument.F2
 import edu.gemini.seqexec.model.{ActionType, UserDetails}
@@ -11,7 +13,6 @@ import scala.Function.const
 import org.scalatest.FlatSpec
 import org.scalatest.Inside.inside
 import org.scalatest.Matchers._
-
 import cats.effect.IO
 import fs2.Stream
 
