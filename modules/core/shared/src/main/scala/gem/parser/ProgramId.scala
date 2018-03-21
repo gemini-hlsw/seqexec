@@ -21,7 +21,7 @@ trait ProgramIdParsers {
     (site        <~ hyphen,
      semester    <~ hyphen,
      programType <~ hyphen,
-     positiveInt).mapN(Science.unsafeApply) named "science"
+     index).mapN(Science.apply) named "science"
 
   /** Parser for a daily program id like `GS-ENG20120102`. */
   val daily: Parser[Daily] =

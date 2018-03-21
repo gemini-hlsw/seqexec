@@ -14,6 +14,7 @@ import scala.collection.immutable.TreeMap
 object ProgramDao {
   import EnumeratedMeta._
   import ProgramIdMeta._
+  import IndexMeta._
 
   /** Insert a program, disregarding its observations, if any. */
   def insertFlat(p: Program[_]): ConnectionIO[Program.Id] =
@@ -123,7 +124,7 @@ object ProgramDao {
                      ${pid.site},
                      ${pid.semester.format},
                      ${pid.programType},
-                     ${Index(pid.index)})
+                     ${pid.index})
       """.update
 
     // N.B. assumes program id slice has been inserted

@@ -13,7 +13,7 @@ import scala.collection.immutable.{ TreeMap, TreeSet }
 
 object TestProgram {
   val pid: Program.Id =
-    ProgramId.Science.unsafeApply(Site.GS, Semester(Year.of(2018), Half.A), ProgramType.Q, 1)
+    ProgramId.Science(Site.GS, Semester(Year.of(2018), Half.A), ProgramType.Q, Index.One)
 
   val vega: Target =
     Target("Vega",
@@ -68,9 +68,9 @@ object TestProgram {
       pid,
       "Test Program",
       TreeMap[Index, Observation.Full](
-        Index.unsafeFromShort(1) -> f2,
-        Index.unsafeFromShort(2) -> gmosS,
-        Index.unsafeFromShort(3) -> gmosN
+        Index.fromShort.unsafeGet(1) -> f2,
+        Index.fromShort.unsafeGet(2) -> gmosS,
+        Index.fromShort.unsafeGet(3) -> gmosN
       )
     )
 

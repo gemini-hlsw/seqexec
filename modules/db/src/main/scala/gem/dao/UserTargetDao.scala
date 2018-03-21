@@ -83,7 +83,7 @@ object UserTargetDao {
   object Statements {
 
     import gem.dao.meta.ProgramIdMeta._
-    import gem.dao.meta.ObservationIndexMeta._
+    import gem.dao.meta.IndexMeta._
 
     def insert(targetId: Target.Id, targetType: UserTargetType, oid: Observation.Id): Update0 =
       sql"""

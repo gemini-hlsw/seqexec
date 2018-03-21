@@ -11,7 +11,7 @@ import doobie.postgres.implicits._
 import java.util.logging.{ Level, Logger }
 
 /** Shared support for import applications using Doobie. */
-trait DoobieClient extends ProgramIdMeta with ObservationIndexMeta {
+trait DoobieClient extends ProgramIdMeta with IndexMeta {
 
   def configureLogging[M[_]: Effect]: M[Unit] =
     Effect[M].delay(

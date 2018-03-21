@@ -5,14 +5,15 @@ package gem.dao.meta
 
 import doobie._
 import gem.math.Index
+import gem.syntax.prism._
 
-trait ObservationIndexMeta {
+trait IndexMeta {
 
   // Index has a DISTINCT type due to its check constraint so we
   // need a fine-grained mapping here to satisfy the query checker.
-  implicit val ObservationIndexMeta: Meta[Index] =
-    Distinct.short("id_index").xmap(Index.unsafeFromShort, _.toShort)
+  implicit val IndexMeta: Meta[Index] =
+    Distinct.short("id_index").xmap(Index.fromShort.unsafeGet, _.toShort)
 
 }
-object ObservationIndexMeta extends ObservationIndexMeta
+object IndexMeta extends IndexMeta
 

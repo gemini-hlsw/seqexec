@@ -18,7 +18,7 @@ import scala.collection.immutable.TreeMap
 object ObservationDao {
   import EnumeratedMeta._
   import ObservationIdMeta._
-  import ObservationIndexMeta._
+  import IndexMeta._
   import ProgramIdMeta._
 
   /**
@@ -183,7 +183,7 @@ object ObservationDao {
       ORDER BY observation_index
       """.query[(Short, String, Option[AsterismType], Instrument)]
         .map { case (n, t, a, i) =>
-          (Index.unsafeFromShort(n), Observation(t, a, i, Nil))
+          (Index.fromShort.unsafeGet(n), Observation(t, a, i, Nil))
         }
 
   }
