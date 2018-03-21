@@ -1,19 +1,39 @@
-var UglifyJsPlugin = require("uglifyjs-webpack-plugin");
-var webpack = require("webpack");
+const Path = require("path");
+const UglifyJsPlugin = require("uglifyjs-webpack-plugin");
+const Merge = require("webpack-merge");
+const Webpack = require("webpack");
 
-module.exports = require("./scalajs.webpack.config");
+const Common = require("./common.webpack.config.js");
+const CopyWebpackPlugin = require("copy-webpack-plugin");
 
-module.exports.plugins = (module.exports.plugins || []).concat([
-  // Useful to further minify react and make it faster in production
-  new webpack.DefinePlugin({
-    "process.env": {
-      NODE_ENV: JSON.stringify("production")
-    }
-  }),
-  // Reduce the size of the library
-  new UglifyJsPlugin({
-    sourceMap: module.exports.devtool === "source-map"
-  })
-]);
+const Web = Merge(Common.Web, {
+  mode: "production",
+  entry: {
+    app: [Path.resolve(Common.resourcesDir, "./prod.js")]
+  },
+  plugins: [
+    // Useful to further minify react and make it faster in production
+    new Webpack.DefinePlugin({
+      "process.env": {
+        NODE_ENV: JSON.stringify("production")
+      }
+    }),
+    // Reduce the size of the library
+    new UglifyJsPlugin({
+      sourceMap: module.exports.devtool === "source-map"
+    }),
+    new CopyWebpackPlugin(
+      [
+        { from: "*.mp3", to: Common.resourcesManagedDir },
+        { from: "*.css", to: Common.resourcesManagedDir }
+      ],
+      {
+        debug: "info"
+      }
+    )
+  ]
+});
 
-module.exports.mode = "production";
+console.log(Web);
+console.log(Common.resourcesManagedDir);
+module.exports = Web;

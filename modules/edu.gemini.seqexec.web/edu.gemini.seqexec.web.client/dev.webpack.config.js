@@ -2,7 +2,6 @@ const Path = require("path");
 const Webpack = require("webpack");
 const Merge = require("webpack-merge");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
-const Autoprefixer = require("autoprefixer");
 
 const Common = require("./common.webpack.config.js");
 const isDevServer = process.argv.some(s => s.match(/webpack-dev-server\.js$/));
@@ -19,33 +18,7 @@ const Web = Merge(Common.Web, {
   module: {
     noParse: function(content) {
       return content.endsWith("-fastopt");
-    },
-    rules: [
-      {
-        test: /\.less$/,
-        use: [
-          {
-            loader: "style-loader" // creates style nodes from JS strings
-          },
-          // translates CSS into CommonJS
-          { loader: "css-loader", options: { importLoaders: 1 } },
-          {
-            loader: "postcss-loader", // post css plugins
-            options: {
-              ident: "postcss",
-              plugins: loader => [
-                Autoprefixer({
-                  browsers: ["last 3 versions", "> 1%"]
-                })
-              ]
-            }
-          },
-          {
-            loader: "less-loader" // compiles Less to CSS
-          }
-        ]
-      }
-    ]
+    }
   },
   devServer: {
     hot: true,
@@ -96,13 +69,13 @@ const Web = Merge(Common.Web, {
   },
   plugins: [
     new Webpack.HotModuleReplacementPlugin(),
-    new Webpack.NamedModulesPlugin()
-    // new HtmlWebpackPlugin({
-    //   filename: "index.html",
-    //   chunks: ["app"],
-    //   template: Path.resolve(Common.resourcesDir, "./index.html"),
-    //   favicon: Path.resolve(Common.resourcesDir, "./images/favicon.ico")
-    // })
+    new Webpack.NamedModulesPlugin(),
+    new HtmlWebpackPlugin({
+      filename: "index.html",
+      chunks: ["app"],
+      template: Path.resolve(Common.resourcesDir, "./index.html"),
+      favicon: Path.resolve(Common.resourcesDir, "./images/favicon.ico")
+    })
   ]
 });
 

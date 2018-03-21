@@ -198,6 +198,7 @@ lazy val edu_gemini_seqexec_web_client = project.in(file("modules/edu.gemini.seq
       "webpack-merge" -> "4.1.2",
       "webpack-dev-server-status-bar" -> "1.0.0",
       "cssnano" -> "3.10.0",
+      "copy-webpack-plugin" -> "4.5.1",
       "clean-webpack-plugin" -> "0.1.19",
       "html-webpack-plugin" -> "3.0.6",
       "extract-text-webpack-plugin" -> "4.0.0-beta.0",
@@ -345,6 +346,8 @@ lazy val seqexecCommonSettings = Seq(
   parallelExecution in Universal := false,
   // Run full opt js on the javascript. They will be placed on the "seqexec" jar
   resources in Compile ++= (webpack in (edu_gemini_seqexec_web_client, Compile, fullOptJS)).value.map(_.data),
+  resources in Compile ++= ((resourceManaged in (edu_gemini_seqexec_web_client, Compile, fullOptJS)).value ** "*.mp3").get,
+  resources in Compile ++= ((resourceManaged in (edu_gemini_seqexec_web_client, Compile, fullOptJS)).value ** "*.css").get,
   test := {},
   // Name of the launch script
   executableScriptName := "seqexec-server",
