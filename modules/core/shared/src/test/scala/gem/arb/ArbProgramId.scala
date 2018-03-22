@@ -67,6 +67,16 @@ trait ArbProgramId {
   implicit val cogProgramId: Cogen[ProgramId] =
     Cogen[String].contramap(_.format)
 
+  private val perturbations: List[String => Gen[String]] =
+    List(
+      s => arbitrary[String],                          // swap for a random string
+      s => Gen.const("\\d+$".r.replaceAllIn(s, "0$0")) // add a leading zero to the index
+    )
+
+  // Strings that are often parsable as a program id.
+  val stringsScience: Gen[String] =
+    arbitrary[Science].map(_.format).flatMapOneOf(Gen.const, perturbations: _*)
+
 }
 
 object ArbProgramId extends ArbProgramId

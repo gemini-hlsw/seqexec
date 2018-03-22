@@ -8,6 +8,7 @@ import cats.kernel.laws.discipline._
 import cats.tests.CatsSuite
 import gem.arb._
 import gem.enum.{ Site, DailyProgramType }
+import gem.laws.discipline._
 import java.time._
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals"))
@@ -20,6 +21,9 @@ final class ProgramIdSpec extends CatsSuite {
   // Laws
   checkAll("Program.Id", OrderTests[Program.Id].order)
 
+  // Laws - Science
+  checkAll("Program.Id.Science.fromString", FormatTests(Program.Id.Science.fromString).formatWith(stringsScience))
+
   test("Equality must be natural") {
     forAll { (a: ProgramId, b: ProgramId) =>
       a.equals(b) shouldEqual Eq[ProgramId].eqv(a, b)
@@ -29,12 +33,6 @@ final class ProgramIdSpec extends CatsSuite {
   test("Show must be natural") {
     forAll { (a: ProgramId) =>
       a.toString shouldEqual Show[ProgramId].show(a)
-    }
-  }
-
-  test("Science must reparse") {
-    forAll { (sid: Science) =>
-      Science.fromString(sid.format) shouldEqual Some(sid)
     }
   }
 

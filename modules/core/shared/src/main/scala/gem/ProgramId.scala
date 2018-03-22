@@ -10,6 +10,7 @@ import java.time.format.DateTimeFormatter
 import gem.enum.{ Site, ProgramType, DailyProgramType }
 import gem.imp.TimeInstances._
 import gem.math.Index
+import gem.optics.Format
 import gem.parser.ProgramIdParsers
 import gem.syntax.parser._
 
@@ -48,7 +49,7 @@ object ProgramId {
   ) extends ProgramId {
 
     override def format =
-      s"${site.shortName}-${semester.format}-${programType.shortName}-${index.toShort}"
+      Science.fromString.reverseGet(this)
 
     override def siteOption: Option[Site] =
       Some(site)
@@ -62,13 +63,15 @@ object ProgramId {
 
   object Science {
 
-    /** Parse a `Science` program id from a string, if possible. */
-    def fromString(s: String): Option[ProgramId] =
-      ProgramIdParsers.science.parseExact(s)
-
     /** `Science` program ids are ordered pairwise by their data members. */
     implicit val ScienceOrder: Order[Science] =
       Order.by(a => (a.site, a.semester, a.programType, a.index))
+
+    /** Parse a string into a Science id, and format in the reverse direction. */
+    def fromString: Format[String, Science] =
+      Format(ProgramIdParsers.science.parseExact, id =>
+        s"${id.site.shortName}-${id.semester.format}-${id.programType.shortName}-${id.index.toShort}"
+      )
 
   }
 
@@ -185,7 +188,7 @@ object ProgramId {
 
   /** Parse a `ProgramId` from string, if possible. */
   def fromString(s: String): Option[ProgramId] =
-    Science.fromString(s) orElse
+    Science.fromString.getOption(s) orElse
     Daily  .fromString(s) orElse
     // Do this only in the last case, and only here, to guarantee you can never get a Nonstandard
     // that can be formatted and re-parsed as a Science or Daily program id. This is important.
