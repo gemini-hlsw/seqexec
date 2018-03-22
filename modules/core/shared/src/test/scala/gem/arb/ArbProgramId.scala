@@ -47,7 +47,7 @@ trait ArbProgramId {
         semester    <- arbitrary[Option[Semester]]
         programType <- arbitrary[Option[ProgramType]]
         tail        <- Gen.alphaNumStr
-      } yield ProgramId.fromString(Nonstandard.format(site, semester, programType, tail))
+      } yield ProgramId.fromString.getOption(Nonstandard.format(site, semester, programType, tail))
 
       // It's possible that the generated value is actually a valid Science id, so we need to
       // retry until we get a Nonstandard.
@@ -65,13 +65,13 @@ trait ArbProgramId {
     }
 
   implicit val cogProgramId: Cogen[ProgramId] =
-    Cogen[String].contramap(_.format)
+    Cogen[String].contramap(ProgramId.fromString.reverseGet)
 
   implicit val cogDaily: Cogen[ProgramId.Daily] =
-    Cogen[String].contramap(_.format)
+    Cogen[String].contramap(ProgramId.fromString.reverseGet)
 
   implicit val cogNonstandard: Cogen[ProgramId.Nonstandard] =
-    Cogen[String].contramap(_.format)
+    Cogen[String].contramap(ProgramId.fromString.reverseGet)
 
   private val perturbations: List[String => Gen[String]] =
     List(
@@ -79,9 +79,13 @@ trait ArbProgramId {
       s => Gen.const("\\d+$".r.replaceAllIn(s, "0$0")) // add a leading zero to the index
     )
 
-  // Strings that are often parsable as a program id.
+  // Strings that are often parsable as a science program id.
   val stringsScience: Gen[String] =
-    arbitrary[Science].map(_.format).flatMapOneOf(Gen.const, perturbations: _*)
+    arbitrary[Science].map(ProgramId.fromString.reverseGet).flatMapOneOf(Gen.const, perturbations: _*)
+
+  // Strings that are often parsable as a program id.
+  val strings: Gen[String] =
+    arbitrary[ProgramId].map(ProgramId.fromString.reverseGet).flatMapOneOf(Gen.const, perturbations: _*)
 
 }
 

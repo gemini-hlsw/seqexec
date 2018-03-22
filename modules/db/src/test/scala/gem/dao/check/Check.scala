@@ -33,7 +33,7 @@ trait Check extends FlatSpec with Matchers with IOChecker {
   object Dummy {
     val instant          = java.time.Instant.EPOCH
     val duration         = java.time.Duration.ZERO
-    val programId        = Program.Id.unsafeFromString("GS-foobar") match { case n: Program.Id.Nonstandard => n ; case _ => sys.error("unpossible") }
+    val programId        = Program.Id.fromString.unsafeGet("GS-foobar") match { case n: Program.Id.Nonstandard => n ; case _ => sys.error("unpossbile") }
     val semester         = Semester.unsafeFromString("2015B")
     val site             = Site.GN
     val programType      = ProgramType.C

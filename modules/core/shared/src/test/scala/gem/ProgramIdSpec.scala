@@ -21,10 +21,10 @@ final class ProgramIdSpec extends CatsSuite {
 
   // Laws
   checkAll("Program.Id", OrderTests[Program.Id].order)
-
   checkAll("Program.Id.Science.fromString", FormatTests(Program.Id.Science.fromString).formatWith(stringsScience))
   checkAll("Program.Id.Daily.fromString", PrismTests(Program.Id.Daily.fromString))
   checkAll("Program.Id.Nonstandard.fromString", PrismTests(Program.Id.Nonstandard.fromString))
+  checkAll("Program.Id.fromString", FormatTests(Program.Id.fromString).formatWith(strings))
 
   test("Equality must be natural") {
     forAll { (a: ProgramId, b: ProgramId) =>
@@ -40,13 +40,13 @@ final class ProgramIdSpec extends CatsSuite {
 
   test("Science should never reparse into a Nonstandard, even if we try") {
     forAll { (sid: Science) =>
-      Nonstandard.fromString.getOption(sid.format) shouldEqual None
+      Nonstandard.fromString.getOption(ProgramId.fromString.reverseGet(sid)) shouldEqual None
     }
   }
 
   test("Daily should never reparse into a Nonstandard, even if we try") {
     forAll { (did: Daily) =>
-      Nonstandard.fromString.getOption(did.format) shouldEqual None
+      Nonstandard.fromString.getOption(ProgramId.fromString.reverseGet(did)) shouldEqual None
     }
   }
 
@@ -81,12 +81,6 @@ final class ProgramIdSpec extends CatsSuite {
   test("Daily should have a consistent date and semester") {
     forAll { (did: Daily) =>
       Semester.fromLocalDate(did.localDate) shouldEqual did.semester
-    }
-  }
-
-  test("ProgramId must reparse") {
-    forAll { (pid: ProgramId) =>
-      ProgramId.fromString(pid.format) shouldEqual Some(pid)
     }
   }
 

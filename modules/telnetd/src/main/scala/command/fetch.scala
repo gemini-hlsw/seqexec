@@ -34,7 +34,7 @@ object fetch {
     Opts.argument[String](
       metavar = "prog-id"
     ).mapValidated { s =>
-      ProgramId.fromString(s).toValidNel(s"Could not parse '$s' as a program id")
+      ProgramId.fromString.getOption(s).toValidNel(s"Could not parse '$s' as a program id")
     }
 
   val obsCommand: GemCommand =
@@ -54,7 +54,10 @@ object fetch {
       (host, pid).mapN { (h: String, id: Program.Id) => (d: GemState) => {
         for {
           r <- d.ocs2.importProgram(h, id)
-          _ <- writeLn(r.fold(m => s"Failed to import ${id.format}: $m", _ => s"Imported ${id.format}"))
+          _ <- writeLn(r.fold(
+                 m => s"Failed to import ${Program.Id.fromString.reverseGet(id)}: $m",
+                 _ => s"Imported ${Program.Id.fromString.reverseGet(id)}"
+               ))
         } yield d
       }}
     ).zoom(Session.data[GemState])

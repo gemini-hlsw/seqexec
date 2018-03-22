@@ -23,12 +23,6 @@ import monocle.Prism
  */
 sealed trait ProgramId extends Product with Serializable {
 
-  /**
-   * Format a canonical string for this `ProgramId`. This is for human use, and can be round-
-   * tripped through `ProgramId.fromString`.
-   */
-  def format: String
-
   /** The `Site` associated with this id, if any. */
   def siteOption: Option[Site]
 
@@ -37,6 +31,7 @@ sealed trait ProgramId extends Product with Serializable {
 
   /** The `ProgramType` associated with this id, if any. */
   def programTypeOption: Option[ProgramType]
+
 }
 
 object ProgramId {
@@ -48,9 +43,6 @@ object ProgramId {
     programType: ProgramType,
     index:       Index
   ) extends ProgramId {
-
-    override def format =
-      Science.fromString.reverseGet(this)
 
     override def siteOption: Option[Site] =
       Some(site)
@@ -103,9 +95,6 @@ object ProgramId {
     def includes(i: Instant): Boolean =
       start.toInstant <= i && i <= end.toInstant
 
-    override def format =
-      Daily.fromString.reverseGet(this)
-
     override def siteOption: Option[Site] =
       Some(site)
 
@@ -153,10 +142,8 @@ object ProgramId {
     override val semesterOption:    Option[Semester],
     override val programTypeOption: Option[ProgramType],
                  tail:              String
-  ) extends ProgramId {
-    override def format =
-      Nonstandard.fromString.reverseGet(this)
-  }
+  ) extends ProgramId
+
   object Nonstandard {
 
     /**
@@ -183,30 +170,12 @@ object ProgramId {
 
     /** Parse a string into a Nonstandard id, and format in the reverse direction. */
     val fromString: Prism[String, Nonstandard] =
-      Prism { (s: String) =>
-        ProgramId.fromString(s) collect {
-          case id: Nonstandard => id
-        }
-      } { id =>
-        format(id.siteOption, id.semesterOption, id.programTypeOption, id.tail)
-      }
+      Prism[String, Nonstandard] { s =>
+        // We need to try to parse the other types first because if they match we don't.
+        ProgramId.fromString.getOption(s) collect { case id: Nonstandard => id }
+      } { id => format(id.siteOption, id.semesterOption, id.programTypeOption, id.tail) }
 
   }
-
-  /** Parse a `ProgramId` from string, if possible. */
-  def fromString(s: String): Option[ProgramId] =
-    Science.fromString.getOption(s) orElse
-    Daily  .fromString.getOption(s) orElse
-    // Do this only in the last case, and only here, to guarantee you can never get a Nonstandard
-    // that can be formatted and re-parsed as a Science or Daily program id. This is important.
-    ProgramIdParsers.nonstandard.parseExact(s).map {
-      case (os, om, op, t) => new Nonstandard(os, om, op, t) {}
-    }
-
-  /** Parse a `ProgramId` from string, throwing on failure. */
-  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
-  def unsafeFromString(s: String): ProgramId =
-    fromString(s).getOrElse(throw new IllegalArgumentException(s"Invalid program id: $s"))
 
   /**
    * Programs are ordered lexically by prodict prefix (Daily, Nonstandard, then Science) and then
@@ -229,5 +198,24 @@ object ProgramId {
 
   implicit val ProgramIdShow: Show[ProgramId] =
     Show.fromToString
+
+  /**
+   * Parse a `ProgramId` from string, if possible, and format canonically in the revese direction.
+   * Note that the parser is very lenient, and any non-empty String is a valid program id.
+   */
+  val fromString: Format[String, ProgramId] =
+    Format(s =>
+      Science.fromString.getOption(s) orElse
+      Daily  .fromString.getOption(s) orElse
+      // Do this only in the last case, and only here, to guarantee you can never get a Nonstandard
+      // that can be formatted and re-parsed as a Science or Daily program id. This is important.
+      ProgramIdParsers.nonstandard.parseExact(s).map {
+        case (os, om, op, t) => new Nonstandard(os, om, op, t) {}
+      }
+    , {
+      case s: Science     => Science    .fromString.reverseGet(s)
+      case d: Daily       => Daily      .fromString.reverseGet(d)
+      case n: Nonstandard => Nonstandard.fromString.reverseGet(n)
+    })
 
 }

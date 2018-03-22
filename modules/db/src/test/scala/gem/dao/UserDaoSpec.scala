@@ -15,8 +15,8 @@ import scala.collection.immutable.TreeMap
 
 class UserDaoSpec extends FlatSpec with Matchers with DaoTest {
 
-  private val pid1 = Program.Id.unsafeFromString("GS-1234A-Q-1")
-  private val pid2 = Program.Id.unsafeFromString("GS-1234A-Q-3")
+  private val pid1 = Program.Id.fromString.unsafeGet("GS-1234A-Q-1")
+  private val pid2 = Program.Id.fromString.unsafeGet("GS-1234A-Q-3")
 
   private val prog1 = Program(pid1, "prog1", TreeMap.empty)
   private val prog2 = Program(pid2, "prog2", TreeMap.empty)
