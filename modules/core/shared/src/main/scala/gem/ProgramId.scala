@@ -155,12 +155,15 @@ object ProgramId {
                  tail:              String
   ) extends ProgramId {
     override def format =
-      Nonstandard.format(siteOption, semesterOption, programTypeOption, tail)
-
+      Nonstandard.fromString.reverseGet(this)
   }
   object Nonstandard {
 
-    /** Format the components of a `Nonstandard`. */
+    /**
+     * Format the components of a `Nonstandard`, which may result in a string that *cannot* be
+     * re-parsed into a Nonstandard program id because it instead parses into a more structured
+     * type (i.e., Daily or Science). Nonstandard is the fallback.
+     */
     def format(
       siteOption:        Option[Site],
       semesterOption:    Option[Semester],
@@ -174,18 +177,19 @@ object ProgramId {
         List(tail)
       ).flatten.intercalate("-")
 
-    /**
-     * Parse a `Nonstandard` program id from a string, if possible. Note that this will fail if
-     * the the `s` represents a valid science or daily program id.
-     */
-    def fromString(s: String): Option[Nonstandard] =
-      ProgramId.fromString(s) collect {
-        case id: Nonstandard => id
-      }
-
     /** `Nonstandard` program ids are ordered pairwise by their data members. */
     implicit val NonStandardOrder: Order[Nonstandard] =
       Order.by(a => (a.siteOption, a.semesterOption, a.programTypeOption, a.tail))
+
+    /** Parse a string into a Nonstandard id, and format in the reverse direction. */
+    val fromString: Prism[String, Nonstandard] =
+      Prism { (s: String) =>
+        ProgramId.fromString(s) collect {
+          case id: Nonstandard => id
+        }
+      } { id =>
+        format(id.siteOption, id.semesterOption, id.programTypeOption, id.tail)
+      }
 
   }
 
