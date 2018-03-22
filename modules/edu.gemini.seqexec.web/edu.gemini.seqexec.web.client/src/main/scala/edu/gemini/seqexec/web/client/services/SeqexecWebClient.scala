@@ -259,4 +259,5 @@ object SeqexecWebClient {
     Ajax.post(
       url = s"$baseUrl/start"
     ).map(_.responseText)
+
 }

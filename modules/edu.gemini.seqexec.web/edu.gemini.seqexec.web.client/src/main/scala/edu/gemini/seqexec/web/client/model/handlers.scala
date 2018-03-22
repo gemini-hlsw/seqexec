@@ -85,7 +85,7 @@ object handlers {
       case SyncToRunning(s) =>
         // We'll select the sequence currently running and show the correct url
         value match {
-          case Root | InstrumentPage(_)        =>
+          case Root | SoundTest | InstrumentPage(_)        =>
               updated(InstrumentPage(s.metadata.instrument), Effect(Future(SelectInstrumentToDisplay(s.metadata.instrument))))
           case SequencePage(_, id, _)          =>
             effectOnly(Effect(Future(SelectIdToDisplay(id))))
@@ -111,7 +111,7 @@ object handlers {
       case SyncPageToAddedSequence(i, id) =>
         // Switch to the sequence in none is selected
         value match {
-          case Root | InstrumentPage(_) =>
+          case Root | SoundTest | InstrumentPage(_) =>
             updated(SequencePage(i, id, 0), Effect(Future(SelectIdToDisplay(id))))
           case _                                  =>
             noChange
@@ -503,6 +503,12 @@ object handlers {
       case _                        => false
     }
 
+    val soundCheck: PartialFunction[Any, ActionResult[M]] = {
+      case RequestSoundEcho =>
+        val soundEffect = Effect(Future(SequenceCompleteAudio.play()).map(_ => NoAction))
+        effectOnly(soundEffect)
+    }
+
     val logMessage: PartialFunction[Any, ActionResult[M]] = {
       case ServerMessage(l: ServerLogMessage) =>
         effectOnly(Effect(Future(AppendToLog(l))))
@@ -631,7 +637,8 @@ object handlers {
     }
 
     override def handle: PartialFunction[Any, ActionResult[M]] =
-      List(logMessage,
+      List(soundCheck,
+        logMessage,
         stepCompletedMessage,
         connectionOpenMessage,
         sequenceCompletedMessage,
