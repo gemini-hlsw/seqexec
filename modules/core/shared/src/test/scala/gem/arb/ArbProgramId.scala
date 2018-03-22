@@ -67,6 +67,9 @@ trait ArbProgramId {
   implicit val cogProgramId: Cogen[ProgramId] =
     Cogen[String].contramap(_.format)
 
+  implicit val cogDaily: Cogen[ProgramId.Daily] =
+    Cogen[String].contramap(_.format)
+
   private val perturbations: List[String => Gen[String]] =
     List(
       s => arbitrary[String],                          // swap for a random string

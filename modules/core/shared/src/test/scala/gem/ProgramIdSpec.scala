@@ -10,6 +10,7 @@ import gem.arb._
 import gem.enum.{ Site, DailyProgramType }
 import gem.laws.discipline._
 import java.time._
+import monocle.law.discipline._
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals"))
 final class ProgramIdSpec extends CatsSuite {
@@ -21,8 +22,8 @@ final class ProgramIdSpec extends CatsSuite {
   // Laws
   checkAll("Program.Id", OrderTests[Program.Id].order)
 
-  // Laws - Science
   checkAll("Program.Id.Science.fromString", FormatTests(Program.Id.Science.fromString).formatWith(stringsScience))
+  checkAll("Program.Id.Daily.fromString", PrismTests(Program.Id.Daily.fromString))
 
   test("Equality must be natural") {
     forAll { (a: ProgramId, b: ProgramId) =>
@@ -42,15 +43,9 @@ final class ProgramIdSpec extends CatsSuite {
     }
   }
 
-  test("Daily must reparse") {
-    forAll { (did: Daily) =>
-      Daily.fromString(did.format) shouldEqual Some(did)
-    }
-  }
-
   test("Daily should never reparse into a Nonstandard, even if we try") {
-    forAll { (did: Science) =>
-      Daily.fromString(did.format) shouldEqual None
+    forAll { (did: Daily) =>
+      Nonstandard.fromString(did.format) shouldEqual None
     }
   }
 

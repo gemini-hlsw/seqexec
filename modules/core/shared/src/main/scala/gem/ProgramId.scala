@@ -13,6 +13,7 @@ import gem.math.Index
 import gem.optics.Format
 import gem.parser.ProgramIdParsers
 import gem.syntax.parser._
+import monocle.Prism
 
 /**
  * A science program id, which has three constructors: [[gem.ProgramId.Science Science]]` for standard
@@ -103,7 +104,7 @@ object ProgramId {
       start.toInstant <= i && i <= end.toInstant
 
     override def format =
-      f"${site.shortName}-${dailyProgramType.shortName}${Daily.ymd.format(localDate)}"
+      Daily.fromString.reverseGet(this)
 
     override def siteOption: Option[Site] =
       Some(site)
@@ -113,11 +114,9 @@ object ProgramId {
 
     override def programTypeOption: Option[ProgramType] =
       Some(programType)
+
   }
   object Daily {
-
-    // shared by all instances
-    private val ymd = DateTimeFormatter.ofPattern("yyyyMMdd")
 
     /** Daily program id for the zoned date and time of the given Site and Instant. */
     def fromSiteAndInstant(site: Site, instant: Instant, programType: DailyProgramType): Daily = {
@@ -127,13 +126,17 @@ object ProgramId {
       apply(site, programType, zdtʹ.toLocalDate)
     }
 
-    /** Parse a `Daily` program id from a string, if possible. */
-    def fromString(s: String): Option[Daily] =
-      ProgramIdParsers.daily.parseExact(s)
-
     /** `Daily` program ids are ordered pairwise by their data members. */
     implicit val DailyOrder: Order[Daily] =
       Order.by(a => (a.site, a.dailyProgramType, a.localDate))
+
+    /** Parse a string into a Daily id, and format in the reverse direction. */
+    val fromString: Prism[String, Daily] = {
+      val ymd = DateTimeFormatter.ofPattern("yyyyMMdd")
+      Prism(ProgramIdParsers.daily.parseExact)(id =>
+        f"${id.site.shortName}-${id.dailyProgramType.shortName}${ymd.format(id.localDate)}"
+      )
+    }
 
   }
 
@@ -189,7 +192,7 @@ object ProgramId {
   /** Parse a `ProgramId` from string, if possible. */
   def fromString(s: String): Option[ProgramId] =
     Science.fromString.getOption(s) orElse
-    Daily  .fromString(s) orElse
+    Daily  .fromString.getOption(s) orElse
     // Do this only in the last case, and only here, to guarantee you can never get a Nonstandard
     // that can be formatted and re-parsed as a Science or Daily program id. This is important.
     ProgramIdParsers.nonstandard.parseExact(s).map {
