@@ -51,6 +51,7 @@ object actions {
   final case class RequestAbort(id: SequenceId, step: Int) extends Action
   final case class RequestObsPause(id: SequenceId, step: Int) extends Action
   final case class RequestObsResume(id: SequenceId, step: Int) extends Action
+  case object RequestSoundEcho extends Action
 
   final case class RunStarted(s: SequenceId) extends Action
   final case class RunPaused(s: SequenceId) extends Action

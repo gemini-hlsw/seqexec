@@ -21,9 +21,10 @@ object model {
 
   // Pages
   object Pages {
-    sealed trait SeqexecPages
+    sealed trait SeqexecPages extends Product with Serializable
 
     case object Root extends SeqexecPages
+    case object SoundTest extends SeqexecPages
     final case class InstrumentPage(instrument: Instrument) extends SeqexecPages
     final case class SequencePage(instrument: Instrument, obsId: SequenceId, step: StepId) extends SeqexecPages
     final case class SequenceConfigPage(instrument: Instrument, obsId: SequenceId, step: Int) extends SeqexecPages
