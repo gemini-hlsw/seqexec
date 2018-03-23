@@ -12,6 +12,7 @@ import gem.imp.TimeInstances._
 import gem.math.Index
 import gem.parser.ProgramIdParsers
 import gem.syntax.parser._
+import monocle.Prism
 
 /**
  * A science program id, which has three constructors: [[gem.ProgramId.Science Science]]` for standard
@@ -21,12 +22,6 @@ import gem.syntax.parser._
  */
 sealed trait ProgramId extends Product with Serializable {
 
-  /**
-   * Format a canonical string for this `ProgramId`. This is for human use, and can be round-
-   * tripped through `ProgramId.fromString`.
-   */
-  def format: String
-
   /** The `Site` associated with this id, if any. */
   def siteOption: Option[Site]
 
@@ -35,6 +30,7 @@ sealed trait ProgramId extends Product with Serializable {
 
   /** The `ProgramType` associated with this id, if any. */
   def programTypeOption: Option[ProgramType]
+
 }
 
 object ProgramId {
@@ -46,9 +42,6 @@ object ProgramId {
     programType: ProgramType,
     index:       Index
   ) extends ProgramId {
-
-    override def format =
-      s"${site.shortName}-${semester.format}-${programType.shortName}-${index.toShort}"
 
     override def siteOption: Option[Site] =
       Some(site)
@@ -62,13 +55,15 @@ object ProgramId {
 
   object Science {
 
-    /** Parse a `Science` program id from a string, if possible. */
-    def fromString(s: String): Option[ProgramId] =
-      ProgramIdParsers.science.parseExact(s)
-
     /** `Science` program ids are ordered pairwise by their data members. */
     implicit val ScienceOrder: Order[Science] =
       Order.by(a => (a.site, a.semester, a.programType, a.index))
+
+    /** Parse a string into a Science id, and format in the reverse direction. */
+    def fromString: Prism[String, Science] =
+      Prism(ProgramIdParsers.science.parseExact)(id =>
+        s"${id.site.shortName}-${id.semester.format}-${id.programType.shortName}-${id.index.toShort}"
+      )
 
   }
 
@@ -99,9 +94,6 @@ object ProgramId {
     def includes(i: Instant): Boolean =
       start.toInstant <= i && i <= end.toInstant
 
-    override def format =
-      f"${site.shortName}-${dailyProgramType.shortName}${Daily.ymd.format(localDate)}"
-
     override def siteOption: Option[Site] =
       Some(site)
 
@@ -110,11 +102,9 @@ object ProgramId {
 
     override def programTypeOption: Option[ProgramType] =
       Some(programType)
+
   }
   object Daily {
-
-    // shared by all instances
-    private val ymd = DateTimeFormatter.ofPattern("yyyyMMdd")
 
     /** Daily program id for the zoned date and time of the given Site and Instant. */
     def fromSiteAndInstant(site: Site, instant: Instant, programType: DailyProgramType): Daily = {
@@ -124,13 +114,17 @@ object ProgramId {
       apply(site, programType, zdtʹ.toLocalDate)
     }
 
-    /** Parse a `Daily` program id from a string, if possible. */
-    def fromString(s: String): Option[Daily] =
-      ProgramIdParsers.daily.parseExact(s)
-
     /** `Daily` program ids are ordered pairwise by their data members. */
     implicit val DailyOrder: Order[Daily] =
       Order.by(a => (a.site, a.dailyProgramType, a.localDate))
+
+    /** Parse a string into a Daily id, and format in the reverse direction. */
+    val fromString: Prism[String, Daily] = {
+      val ymd = DateTimeFormatter.ofPattern("yyyyMMdd")
+      Prism(ProgramIdParsers.daily.parseExact)(id =>
+        f"${id.site.shortName}-${id.dailyProgramType.shortName}${ymd.format(id.localDate)}"
+      )
+    }
 
   }
 
@@ -147,14 +141,15 @@ object ProgramId {
     override val semesterOption:    Option[Semester],
     override val programTypeOption: Option[ProgramType],
                  tail:              String
-  ) extends ProgramId {
-    override def format =
-      Nonstandard.format(siteOption, semesterOption, programTypeOption, tail)
+  ) extends ProgramId
 
-  }
   object Nonstandard {
 
-    /** Format the components of a `Nonstandard`. */
+    /**
+     * Format the components of a `Nonstandard`, which may result in a string that *cannot* be
+     * re-parsed into a Nonstandard program id because it instead parses into a more structured
+     * type (i.e., Daily or Science). Nonstandard is the fallback.
+     */
     def format(
       siteOption:        Option[Site],
       semesterOption:    Option[Semester],
@@ -168,35 +163,18 @@ object ProgramId {
         List(tail)
       ).flatten.intercalate("-")
 
-    /**
-     * Parse a `Nonstandard` program id from a string, if possible. Note that this will fail if
-     * the the `s` represents a valid science or daily program id.
-     */
-    def fromString(s: String): Option[Nonstandard] =
-      ProgramId.fromString(s) collect {
-        case id: Nonstandard => id
-      }
-
     /** `Nonstandard` program ids are ordered pairwise by their data members. */
     implicit val NonStandardOrder: Order[Nonstandard] =
       Order.by(a => (a.siteOption, a.semesterOption, a.programTypeOption, a.tail))
 
+    /** Parse a string into a Nonstandard id, and format in the reverse direction. */
+    val fromString: Prism[String, Nonstandard] =
+      Prism[String, Nonstandard] { s =>
+        // We need to try to parse the other types first because if they match we don't.
+        ProgramId.fromString.getOption(s) collect { case id: Nonstandard => id }
+      } { id => format(id.siteOption, id.semesterOption, id.programTypeOption, id.tail) }
+
   }
-
-  /** Parse a `ProgramId` from string, if possible. */
-  def fromString(s: String): Option[ProgramId] =
-    Science.fromString(s) orElse
-    Daily  .fromString(s) orElse
-    // Do this only in the last case, and only here, to guarantee you can never get a Nonstandard
-    // that can be formatted and re-parsed as a Science or Daily program id. This is important.
-    ProgramIdParsers.nonstandard.parseExact(s).map {
-      case (os, om, op, t) => new Nonstandard(os, om, op, t) {}
-    }
-
-  /** Parse a `ProgramId` from string, throwing on failure. */
-  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
-  def unsafeFromString(s: String): ProgramId =
-    fromString(s).getOrElse(throw new IllegalArgumentException(s"Invalid program id: $s"))
 
   /**
    * Programs are ordered lexically by prodict prefix (Daily, Nonstandard, then Science) and then
@@ -219,5 +197,25 @@ object ProgramId {
 
   implicit val ProgramIdShow: Show[ProgramId] =
     Show.fromToString
+
+  /**
+   * Parse a `ProgramId` from string, if possible, and format canonically in the revese direction.
+   * Note that the parser is very lenient, and any String containing no whitespace is a valid
+   * program id.
+   */
+  val fromString: Prism[String, ProgramId] =
+    Prism { (s: String) =>
+      Science.fromString.getOption(s) orElse
+      Daily  .fromString.getOption(s) orElse
+      // Do this only in the last case, and only here, to guarantee you can never get a Nonstandard
+      // that can be formatted and re-parsed as a Science or Daily program id. This is important.
+      ProgramIdParsers.nonstandard.parseExact(s).map {
+        case (os, om, op, t) => new Nonstandard(os, om, op, t) {}
+      }
+    } {
+      case s: Science     => Science    .fromString.reverseGet(s)
+      case d: Daily       => Daily      .fromString.reverseGet(d)
+      case n: Nonstandard => Nonstandard.fromString.reverseGet(n)
+    }
 
 }

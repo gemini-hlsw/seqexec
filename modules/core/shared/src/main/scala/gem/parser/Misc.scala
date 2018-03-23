@@ -5,6 +5,7 @@ package gem.parser
 
 import atto._, Atto._
 import gem.math.Index
+import gem.syntax.prism._
 import scala.annotation.tailrec
 
 /** General-purpose parsers and combinators that aren't provided by atto. */
@@ -58,13 +59,12 @@ trait MiscParsers {
   val positiveInt: Parser[Int] =
     int.filter(_ > 0) namedOpaque "positiveInt"
 
-  /** Parser for an `Index`. */
+  /** Parser for an `Index`, which must be a positive Short with no leading zeros. */
   val index: Parser[Index] =
-    short.flatMap { s =>
-      Index.fromShort.getOption(s) match {
-        case Some(i) => ok(i)
-        case None    => err("Index must be positive.")
-      }
+    ensure(1).flatMap { s =>
+      val c = s(0) // safe
+      if (c >= '1' && c <= '9') short.map(Index.fromShort.unsafeGet)
+      else err("Expected non-zero leading digit.")
     }
 
   /** Parser for an optional sign (+ or -), returned as a boolean indicating whether to negate. */

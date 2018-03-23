@@ -103,7 +103,7 @@ object Parsers {
   )
 
   val progId: PioParse[Program.Id] =
-    PioParse(s => Option(Program.Id.unsafeFromString(s)))
+    PioParse(Program.Id.fromString.getOption)
 
   val obsId: PioParse[Observation.Id] =
     PioParse(Observation.Id.fromString)

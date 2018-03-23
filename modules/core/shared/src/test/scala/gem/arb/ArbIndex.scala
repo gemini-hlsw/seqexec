@@ -7,7 +7,6 @@ package arb
 import gem.math.Index
 import gem.syntax.prism._
 import org.scalacheck._
-import org.scalacheck.Arbitrary._
 import org.scalacheck.Gen._
 
 trait ArbIndex {
@@ -20,16 +19,6 @@ trait ArbIndex {
 
   implicit val cogIndex: Cogen[Index] =
     Cogen[Short].contramap(_.toShort)
-
-  private val perturbations: List[String => Gen[String]] =
-    List(
-      s => arbitrary[String], // swap for a random string
-      s => Gen.const("0" + s) // prepend a zero
-    )
-
-  // Strings that are often parsable as an Index.
-  val strings: Gen[String] =
-    arbitrary[Short].map(_.toString).flatMapOneOf(Gen.const, perturbations: _*)
 
 }
 

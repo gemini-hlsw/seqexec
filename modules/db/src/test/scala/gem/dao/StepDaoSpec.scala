@@ -22,7 +22,7 @@ class StepDaoSpec extends FlatSpec with Matchers with DaoTest {
     val idx  = Index.One
 
     // We specifically want to test round-tripping of telescope offsets.
-    val pid  = Program.Id.unsafeFromString("GS-1234A-Q-1")
+    val pid  = Program.Id.fromString.unsafeGet("GS-1234A-Q-1")
     val orig = Program(
       pid,
       "Untitled Prog",

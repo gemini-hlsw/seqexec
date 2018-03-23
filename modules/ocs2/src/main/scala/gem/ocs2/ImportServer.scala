@@ -52,7 +52,7 @@ final class ImportServer(ocsHost: String) {
   def importProgram(pidStr: String): IO[Response[IO]] = {
     importRemote[Program.Id](
       pidStr,
-      ProgramId.fromString,
+      ProgramId.fromString.getOption,
       "program",
       OdbClient.importProgram(ocsHost, _, xa)
     )

@@ -7,13 +7,14 @@ import cats.effect.IO
 import doobie._, doobie.implicits._
 import gem.{ Program, Step }
 import gem.math.Index
+import gem.syntax.prism._
 
 import scala.collection.immutable.TreeMap
 
 /** Base trait for DAO test cases.
   */
 trait DaoTest extends gem.Arbitraries {
-  val pid = Program.Id.unsafeFromString("GS-1234A-Q-1")
+  val pid = Program.Id.fromString.unsafeGet("GS-1234A-Q-1")
 
   protected val xa: Transactor[IO] =
     Transactor.after.set(DatabaseConfiguration.forTesting.transactor[IO], HC.rollback)

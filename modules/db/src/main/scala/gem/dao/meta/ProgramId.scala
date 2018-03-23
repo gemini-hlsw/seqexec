@@ -7,10 +7,11 @@ import doobie._
 import gem.Program
 
 trait ProgramIdMeta {
+  import PrismMeta._
 
   // Program.Id as string
   implicit val ProgramIdMeta: Meta[Program.Id] =
-    Meta[String].xmap(Program.Id.unsafeFromString, _.format)
+    Program.Id.fromString.asMeta
 
 }
 object ProgramIdMeta extends ProgramIdMeta

@@ -122,8 +122,11 @@ package object json {
   implicit def enumeratedDecoder[A](implicit ev: Enumerated[A]): Decoder[A] = Decoder[String].map(ev.unsafeFromTag)
 
   // Program ID in canonical form
-  implicit val ProgramIdEncoder: Encoder[Program.Id] = Encoder[String].contramap(_.format)
-  implicit val ProgramIdDecoder: Decoder[Program.Id] = Decoder[String].map(Program.Id.unsafeFromString)
+  implicit val (
+    programIdEncoder: Encoder[Program.Id],
+    programIdDecoder: Decoder[Program.Id]
+   ) =
+    Program.Id.fromString.toCodec
 
   // Right Ascension in canonical form
   implicit val (
@@ -180,9 +183,9 @@ package object json {
 
   // Codec for maps keyed by Program.Id
   implicit def programIdKeyedMapEncoder[A: Encoder]: Encoder[Map[Program.Id, A]] =
-    Encoder[Map[String, A]].contramap(_.map { case (k, v) => (k.format, v) })
+    Encoder[Map[String, A]].contramap(_.map { case (k, v) => (Program.Id.fromString.reverseGet(k), v) })
   implicit def programIdKeyedMapDecoder[A: Decoder]: Decoder[Map[Program.Id, A]] =
-    Decoder[Map[String, A]].map(_.map { case (k, v) => (Program.Id.unsafeFromString(k), v) })
+    Decoder[Map[String, A]].map(_.map { case (k, v) => (Program.Id.fromString.unsafeGet(k), v) })
 
   // Codec for maps keyed by Index
   implicit def observationIndexMapEncoder[A: Encoder]: Encoder[TreeMap[Index, A]] =

@@ -47,7 +47,7 @@ trait ArbProgramId {
         semester    <- arbitrary[Option[Semester]]
         programType <- arbitrary[Option[ProgramType]]
         tail        <- Gen.alphaNumStr
-      } yield ProgramId.fromString(Nonstandard.format(site, semester, programType, tail))
+      } yield ProgramId.fromString.getOption(Nonstandard.format(site, semester, programType, tail))
 
       // It's possible that the generated value is actually a valid Science id, so we need to
       // retry until we get a Nonstandard.
@@ -65,7 +65,16 @@ trait ArbProgramId {
     }
 
   implicit val cogProgramId: Cogen[ProgramId] =
-    Cogen[String].contramap(_.format)
+    Cogen[String].contramap(ProgramId.fromString.reverseGet)
+
+  implicit val cogScience: Cogen[ProgramId.Science] =
+    Cogen[String].contramap(ProgramId.Science.fromString.reverseGet)
+
+  implicit val cogDaily: Cogen[ProgramId.Daily] =
+    Cogen[String].contramap(ProgramId.Daily.fromString.reverseGet)
+
+  implicit val cogNonstandard: Cogen[ProgramId.Nonstandard] =
+    Cogen[String].contramap(ProgramId.Nonstandard.fromString.reverseGet)
 
 }
 

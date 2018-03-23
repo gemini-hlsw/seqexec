@@ -9,6 +9,7 @@ import cats.tests.CatsSuite
 import gem.arb._
 import gem.enum.{ Site, DailyProgramType }
 import java.time._
+import monocle.law.discipline._
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals"))
 final class ProgramIdSpec extends CatsSuite {
@@ -19,6 +20,10 @@ final class ProgramIdSpec extends CatsSuite {
 
   // Laws
   checkAll("Program.Id", OrderTests[Program.Id].order)
+  checkAll("Program.Id.Science.fromString", PrismTests(Program.Id.Science.fromString))
+  checkAll("Program.Id.Daily.fromString", PrismTests(Program.Id.Daily.fromString))
+  checkAll("Program.Id.Nonstandard.fromString", PrismTests(Program.Id.Nonstandard.fromString))
+  checkAll("Program.Id.fromString", PrismTests(Program.Id.fromString))
 
   test("Equality must be natural") {
     forAll { (a: ProgramId, b: ProgramId) =>
@@ -32,27 +37,15 @@ final class ProgramIdSpec extends CatsSuite {
     }
   }
 
-  test("Science must reparse") {
-    forAll { (sid: Science) =>
-      Science.fromString(sid.format) shouldEqual Some(sid)
-    }
-  }
-
   test("Science should never reparse into a Nonstandard, even if we try") {
     forAll { (sid: Science) =>
-      Nonstandard.fromString(sid.format) shouldEqual None
-    }
-  }
-
-  test("Daily must reparse") {
-    forAll { (did: Daily) =>
-      Daily.fromString(did.format) shouldEqual Some(did)
+      Nonstandard.fromString.getOption(ProgramId.fromString.reverseGet(sid)) shouldEqual None
     }
   }
 
   test("Daily should never reparse into a Nonstandard, even if we try") {
-    forAll { (did: Science) =>
-      Daily.fromString(did.format) shouldEqual None
+    forAll { (did: Daily) =>
+      Nonstandard.fromString.getOption(ProgramId.fromString.reverseGet(did)) shouldEqual None
     }
   }
 
@@ -87,18 +80,6 @@ final class ProgramIdSpec extends CatsSuite {
   test("Daily should have a consistent date and semester") {
     forAll { (did: Daily) =>
       Semester.fromLocalDate(did.localDate) shouldEqual did.semester
-    }
-  }
-
-  test("Nonstandard must reparse") {
-    forAll { (nid: Nonstandard) =>
-      Nonstandard.fromString(nid.format) shouldEqual Some(nid)
-    }
-  }
-
-  test("ProgramId must reparse") {
-    forAll { (pid: ProgramId) =>
-      ProgramId.fromString(pid.format) shouldEqual Some(pid)
     }
   }
 
