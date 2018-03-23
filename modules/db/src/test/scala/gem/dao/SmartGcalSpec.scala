@@ -149,7 +149,7 @@ object SmartGcalSpec {
         GcalDiffuser.Ir,
         GcalShutter.Closed,
         Duration.ofMillis(30000),
-        1
+        CoAdds.One
       )),
       (Flat, Night, GcalConfig(
         GcalLamp.fromContinuum(GcalContinuum.IrGreyBodyHigh),
@@ -157,7 +157,7 @@ object SmartGcalSpec {
         GcalDiffuser.Ir,
         GcalShutter.Open,
         Duration.ofMillis(20000),
-        1
+        CoAdds.One
       ))
     )
 }

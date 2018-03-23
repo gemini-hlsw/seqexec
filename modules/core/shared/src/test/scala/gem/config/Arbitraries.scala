@@ -5,6 +5,7 @@ package gem.config
 
 import cats._
 
+import gem.CoAdds
 import gem.arb._
 import gem.config.F2Config.F2FpuChoice
 import gem.config.GcalConfig.{GcalArcs, GcalLamp}
@@ -39,6 +40,9 @@ trait Arbitraries {
     def pure[A](a: A): Gen[A] =
       Gen.const(a)
   }
+
+  implicit val arbCoAdds: Arbitrary[CoAdds] =
+    Arbitrary(Gen.posNum[Short].map(CoAdds.fromShort.unsafeGet))
 
   implicit val arbDuration: Arbitrary[Duration] =
     Arbitrary(Gen.posNum[Long].map(Duration.ofMillis))
@@ -236,15 +240,16 @@ trait Arbitraries {
       for {
         a <- arbitrary[GnirsAcquisitionMirror             ]
         b <- arbitrary[GnirsCamera                        ]
-        c <- arbitrary[GnirsDecker                        ]
-        d <- arbitrary[GnirsDisperser                     ]
-        e <- arbitrary[Duration                           ]
-        f <- arbitrary[GnirsFilter                        ]
-        g <- arbitrary[Either[GnirsFpuOther, GnirsFpuSlit]]
-        h <- arbitrary[GnirsPrism                         ]
-        i <- arbitrary[GnirsReadMode                      ]
-        j <- Gen.choose(1000, 120000).map(Wavelength.fromAngstroms.unsafeGet)
-      } yield DynamicConfig.Gnirs(a, b, c, d, e, f, g, h, i, j)
+        c <- arbitrary[CoAdds                             ]
+        d <- arbitrary[GnirsDecker                        ]
+        e <- arbitrary[GnirsDisperser                     ]
+        f <- arbitrary[Duration                           ]
+        g <- arbitrary[GnirsFilter                        ]
+        h <- arbitrary[Either[GnirsFpuOther, GnirsFpuSlit]]
+        i <- arbitrary[GnirsPrism                         ]
+        j <- arbitrary[GnirsReadMode                      ]
+        k <- Gen.choose(1000, 120000).map(Wavelength.fromAngstroms.unsafeGet)
+      } yield DynamicConfig.Gnirs(a, b, c, d, e, f, g, h, i, j, k)
 
   def genDynamicConfigOf[I <: Instrument with Singleton](i: Instrument.Aux[I]): Gen[DynamicConfig.Aux[I]] = {
     i match {
@@ -291,7 +296,7 @@ trait Arbitraries {
         d <- arbitrary[GcalDiffuser]
         s <- arbitrary[GcalShutter ]
         e <- arbitrary[Duration    ]
-        c <- Gen.posNum[Short]
+        c <- arbitrary[CoAdds      ]
       } yield GcalConfig(l, f, d, s, e, c)
     }
 }

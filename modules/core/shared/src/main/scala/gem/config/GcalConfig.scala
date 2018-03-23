@@ -6,6 +6,7 @@ package config
 
 import cats.Order
 import cats.data.OneAnd
+import gem.CoAdds
 import gem.enum.{GcalArc, GcalContinuum, GcalDiffuser, GcalFilter, GcalShutter}
 import java.time.Duration
 import GcalConfig.GcalLamp
@@ -14,7 +15,7 @@ import GcalConfig.GcalLamp
  * Additional configuration information for [[gem.Step.Gcal Gcal]] steps.
  * @group Configurations
  */
-final case class GcalConfig(lamp: GcalLamp, filter: GcalFilter, diffuser: GcalDiffuser, shutter: GcalShutter, exposureTime: Duration, coadds: Short) {
+final case class GcalConfig(lamp: GcalLamp, filter: GcalFilter, diffuser: GcalDiffuser, shutter: GcalShutter, exposureTime: Duration, coadds: CoAdds) {
   def continuum: Option[GcalContinuum] =
     lamp.swap.toOption
 

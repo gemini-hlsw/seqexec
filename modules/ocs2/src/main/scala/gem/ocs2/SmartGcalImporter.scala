@@ -183,7 +183,7 @@ object SmartGcalImporter extends DoobieClient {
     val d = diffuserS.parseAs(diffuser)
     val s = shutterS .parseAs(shutter )
     val e = Duration.ofMillis(expS.parseAs(PioParse.long))
-    val c = coaddsS  .parseAs(PioParse.short)
+    val c = coaddsS  .parseAs(Parsers.coadds)
 
     val b = baselineS.parseAs(baseline)
 

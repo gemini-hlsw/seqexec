@@ -4,7 +4,7 @@
 package gem.ocs2
 
 import cats.implicits._
-import gem.{ Dataset, Observation, Program }
+import gem.{ CoAdds, Dataset, Observation, Program }
 import gem.enum._
 import gem.config.GcalConfig.GcalLamp
 import gem.math._
@@ -123,6 +123,8 @@ object Parsers {
     "tuningStar"  -> UserTargetType.TuningStar,
     "other"       -> UserTargetType.Other
   )
+
+  val coadds: PioParse[CoAdds] = positiveShort.map(CoAdds.fromShort.unsafeGet)
 
   object Calibration {
 

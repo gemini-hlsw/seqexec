@@ -4,6 +4,7 @@
 package gem
 package ui
 
+import gem.CoAdds
 import gem.config._
 import gem.enum._
 import gem.math._
@@ -36,7 +37,7 @@ object TestProgram {
       GcalDiffuser.Ir,
       GcalShutter.Open,
       Duration.ofSeconds(1L),
-      1
+      CoAdds.One
     )
 
   val f2: Observation.Full.Aux[Instrument.Flamingos2.type] =

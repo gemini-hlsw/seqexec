@@ -33,7 +33,7 @@ trait Check extends FlatSpec with Matchers with IOChecker {
   object Dummy {
     val instant          = java.time.Instant.EPOCH
     val duration         = java.time.Duration.ZERO
-    val programId        = Program.Id.unsafeFromString("GS-foobar") match { case n: Program.Id.Nonstandard => n ; case _ => sys.error("unpossbile") }
+    val programId        = Program.Id.unsafeFromString("GS-foobar") match { case n: Program.Id.Nonstandard => n ; case _ => sys.error("unpossible") }
     val semester         = Semester.unsafeFromString("2015B")
     val site             = Site.GN
     val programType      = ProgramType.C
@@ -47,7 +47,7 @@ trait Check extends FlatSpec with Matchers with IOChecker {
     val gcalFilter       = GcalFilter.None
     val gcalDiffuser     = GcalDiffuser.Ir
     val gcalShutter      = GcalShutter.Open
-    val gcalConfig       = GcalConfig(gcalLamp, gcalFilter, gcalDiffuser, gcalShutter, duration, 0)
+    val gcalConfig       = GcalConfig(gcalLamp, gcalFilter, gcalDiffuser, gcalShutter, duration, CoAdds.One)
     val user             = User[Nothing]("", "", "", "", false, Map.empty)
     val observation      = Observation[TargetEnvironment, StaticConfig, Nothing]("", TargetEnvironment.empty, StaticConfig.F2.Default, Nil)
     val program          = Program(programId, "", TreeMap.empty)

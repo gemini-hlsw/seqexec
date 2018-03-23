@@ -46,8 +46,8 @@ object SequenceDecoder extends PioDecoder[List[Step[DynamicConfig]]] {
             d <- Diffuser.parse(cm)
             s <- Shutter.parse(cm)
             e <- ExposureTime.parse(cm)
-            c <- Coadds.parse(cm)
-          } yield Step.Gcal(instrument, GcalConfig(l, f, d, s, e, c.toShort))
+            c <- CoAdds.parse(cm)
+          } yield Step.Gcal(instrument, GcalConfig(l, f, d, s, e, c))
 
         case x =>
           PioError.parseError(x, "ObserveType").asLeft
@@ -173,18 +173,20 @@ object SequenceDecoder extends PioDecoder[List[Step[DynamicConfig]]] {
     def parse(cm: ConfigMap): Either[PioError, DynamicConfig] = {
       import Legacy.Instrument.Gnirs._
       import gem.config.DynamicConfig.Gnirs.Default
+
       for {
         a <- AcquisitionMirror.parse(cm)
         b <- Camera.parse(cm)
-        c <- Decker.cparseOrElse(cm, Default.decker)
-        d <- Disperser.parse(cm)
-        e <- Legacy.Observe.ExposureTime.cparseOrElse(cm, Default.exposureTime)
-        f <- Filter.cparseOrElse(cm, Default.filter)
-        g <- Fpu.parse(cm)
-        h <- Prism.parse(cm)
-        i <- ReadMode.parse(cm)
-        j <- Wavelength.parse(cm)
-      } yield DynamicConfig.Gnirs(a, b, c, d, e, f, g, h, i, j)
+        c <- CoAdds.parse(cm)
+        d <- Decker.cparseOrElse(cm, Default.decker)
+        e <- Disperser.parse(cm)
+        f <- Legacy.Observe.ExposureTime.cparseOrElse(cm, Default.exposureTime)
+        g <- Filter.cparseOrElse(cm, Default.filter)
+        h <- Fpu.parse(cm)
+        i <- Prism.parse(cm)
+        j <- ReadMode.parse(cm)
+        k <- Wavelength.parse(cm)
+      } yield DynamicConfig.Gnirs(a, b, c, d, e, f, g, h, i, j, k)
     }
   }
 

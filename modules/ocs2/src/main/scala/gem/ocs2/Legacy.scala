@@ -142,6 +142,7 @@ object Legacy {
       import Parsers.Gnirs._
       val AcquisitionMirror = Key("acquisitionMirror")(acquisitionMirror)
       val Camera            = Key("camera"           )(camera)
+      val CoAdds            = Key("coadds"           )(Parsers.coadds)
       val Decker            = Key("decker"           )(decker)
       val Disperser         = Key("disperser"        )(disperser)
       val Filter            = Key("filter"           )(filter)
@@ -160,6 +161,6 @@ object Legacy {
     val Diffuser     = Key("diffuser"    )(diffuser        )
     val Shutter      = Key("shutter"     )(shutter         )
     val ExposureTime = Key("exposureTime")(PioParse.seconds)
-    val Coadds       = Key("coadds"      )(PioParse.int    )
+    val CoAdds       = Key("coadds"      )(Parsers.coadds)
   }
 }

@@ -7,6 +7,7 @@ package dao
 import cats.implicits._
 import doobie._, doobie.implicits._
 import gem.util.Location
+import gem.CoAdds
 import gem.config._
 import gem.config.GcalConfig.GcalLamp
 import gem.dao.composite._
@@ -18,6 +19,7 @@ import java.time.Duration
 import scala.collection.immutable.TreeMap
 
 object StepDao {
+  import CoAddsMeta._
   import EnumeratedMeta._
   import LocationMeta._
   import ProgramIdMeta._
@@ -208,7 +210,7 @@ object StepDao {
             d    <- diffuserOpt
             s    <- shutterOpt
             e    <- exposureOpt
-            c    <- coaddsOpt
+            c    <- coaddsOpt.flatMap(CoAdds.fromShort.getOption)
           } yield Step.Gcal(i, GcalConfig(l, f, d, s, e, c))).getOrElse(sys.error(s"missing gcal information: $gcal"))
 
         case StepType.SmartGcal =>
@@ -553,6 +555,7 @@ object StepDao {
           SELECT s.location,
                  i.acquisition_mirror,
                  i.camera,
+                 i.coadds,
                  i.decker,
                  i.disperser,
                  i.exposure_time,
@@ -573,6 +576,7 @@ object StepDao {
         sql"""
           SELECT i.acquisition_mirror,
                  i.camera,
+                 i.coadds,
                  i.decker,
                  i.disperser,
                  i.exposure_time,
@@ -596,6 +600,7 @@ object StepDao {
             step_gnirs_id,
             acquisition_mirror,
             camera,
+            coadds,
             decker,
             disperser,
             exposure_time,
@@ -610,6 +615,7 @@ object StepDao {
             $id,
             ${gnirs.acquisitionMirror},
             ${gnirs.camera},
+            ${gnirs.coadds},
             ${gnirs.decker},
             ${gnirs.disperser},
             ${gnirs.exposureTime},

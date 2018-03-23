@@ -4,6 +4,7 @@
 package gem.dao
 
 import cats.implicits._
+import gem.CoAdds
 import gem.config.GcalConfig
 import gem.config.GcalConfig.GcalLamp
 import doobie._, doobie.implicits._
@@ -16,6 +17,7 @@ import java.time.Duration
   * gcal (for smart gcal lookup).
   */
 object GcalDao {
+  import CoAddsMeta._
   import EnumeratedMeta._
   import TimeMeta._
 
@@ -33,14 +35,6 @@ object GcalDao {
 
   object Statements {
 
-    // CoAdds has a DISTINCT type due to its check constraint so we need a fine-grained mapping
-    // here to satisfy the query checker.
-    final case class CoAdds(toShort: Short)
-    object CoAdds {
-      implicit val MetaCoAdds: Meta[CoAdds] =
-        Distinct.short("coadds").xmap(CoAdds(_), _.toShort)
-    }
-
     final case class GcalRow(
       continuum:    Option[GcalContinuum],
       ar:           Boolean,
@@ -55,7 +49,7 @@ object GcalDao {
     {
       def toGcalConfig: Option[GcalConfig] =
         GcalLamp.fromConfig(continuum, ArArc -> ar, CuArArc -> cuar, ThArArc -> thar, XeArc -> xe).map { lamp =>
-          GcalConfig(lamp, filter, diffuser, shutter, exposureTime, coadds.toShort)
+          GcalConfig(lamp, filter, diffuser, shutter, exposureTime, coadds)
         }
     }
 
@@ -64,7 +58,7 @@ object GcalDao {
         val arcs: GcalArc => Boolean =
           c.arcs
 
-        GcalRow(c.continuum, arcs(ArArc), arcs(CuArArc), arcs(ThArArc), arcs(XeArc), c.filter, c.diffuser, c.shutter, c.exposureTime, CoAdds(c.coadds))
+        GcalRow(c.continuum, arcs(ArArc), arcs(CuArArc), arcs(ThArArc), arcs(XeArc), c.filter, c.diffuser, c.shutter, c.exposureTime, c.coadds)
       }
     }
 
@@ -89,7 +83,7 @@ object GcalDao {
     def insertStepGcal(stepId: Int, gcal: GcalConfig): Update0 = {
       val arcs: GcalArc => Boolean = gcal.arcs
       sql"""INSERT INTO step_gcal (step_gcal_id, continuum, ar_arc, cuar_arc, thar_arc, xe_arc, filter, diffuser, shutter, exposure_time, coadds)
-            VALUES ($stepId, ${gcal.continuum}, ${arcs(ArArc)}, ${arcs(CuArArc)}, ${arcs(ThArArc)}, ${arcs(XeArc)}, ${gcal.filter}, ${gcal.diffuser}, ${gcal.shutter}, ${gcal.exposureTime}, ${CoAdds(gcal.coadds)})
+            VALUES ($stepId, ${gcal.continuum}, ${arcs(ArArc)}, ${arcs(CuArArc)}, ${arcs(ThArArc)}, ${arcs(XeArc)}, ${gcal.filter}, ${gcal.diffuser}, ${gcal.shutter}, ${gcal.exposureTime}, ${gcal.coadds})
          """.update
     }
 

@@ -75,6 +75,13 @@ package object json {
    ) =
     Index.fromShort.toCodec
 
+  // Coadds to Short
+  implicit val (
+    coAddsEncoder: Encoder[CoAdds],
+    coAddsIndexDecoder: Decoder[CoAdds]
+  ) =
+    CoAdds.fromShort.toCodec
+
   // Wavelength mapping to integral Angstroms.
   implicit val (
     wavelengthEncoderAngstroms: Encoder[Wavelength],

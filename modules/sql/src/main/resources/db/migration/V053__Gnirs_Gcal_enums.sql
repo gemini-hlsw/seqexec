@@ -54,7 +54,7 @@ ALTER TABLE e_gnirs_camera
     ADD COLUMN pixel_scale identifier REFERENCES e_gnirs_pixel_scale;
 
 UPDATE e_gnirs_camera
-    SET pixel_scale = 'PixelScale_0_05' WHERE id = 'LongBlue'  OR id = 'LongRed';
+    SET pixel_scale = 'PixelScale_0_05' WHERE id = 'LongBlue' OR id = 'LongRed';
 
 UPDATE e_gnirs_camera
     SET pixel_scale = 'PixelScale_0_15' WHERE id = 'ShortBlue' OR id = 'ShortRed';

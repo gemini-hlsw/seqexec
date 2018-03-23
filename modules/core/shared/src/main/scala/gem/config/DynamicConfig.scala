@@ -4,6 +4,7 @@
 package gem
 package config
 
+import gem.CoAdds
 import gem.enum._
 import gem.math.Wavelength
 import java.time.Duration
@@ -209,6 +210,7 @@ object DynamicConfig {
   final case class Gnirs(
     acquisitionMirror: GnirsAcquisitionMirror,
     camera:            GnirsCamera,
+    coadds:            CoAdds,
     decker:            GnirsDecker,
     disperser:         GnirsDisperser,
     exposureTime:      Duration,
@@ -239,6 +241,7 @@ object DynamicConfig {
     val Default: Gnirs = Gnirs(
       GnirsAcquisitionMirror.Out,
       GnirsCamera.ShortBlue,
+      CoAdds.One,
       GnirsDecker.Acquisition,
       GnirsDisperser.D32,
       java.time.Duration.ofSeconds(17),
