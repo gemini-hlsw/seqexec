@@ -8,7 +8,6 @@ import cats.kernel.laws.discipline._
 import cats.tests.CatsSuite
 import gem.arb._
 import gem.enum.{ Site, DailyProgramType }
-import gem.laws.discipline._
 import java.time._
 import monocle.law.discipline._
 
@@ -21,10 +20,10 @@ final class ProgramIdSpec extends CatsSuite {
 
   // Laws
   checkAll("Program.Id", OrderTests[Program.Id].order)
-  checkAll("Program.Id.Science.fromString", FormatTests(Program.Id.Science.fromString).formatWith(stringsScience))
+  checkAll("Program.Id.Science.fromString", PrismTests(Program.Id.Science.fromString))
   checkAll("Program.Id.Daily.fromString", PrismTests(Program.Id.Daily.fromString))
   checkAll("Program.Id.Nonstandard.fromString", PrismTests(Program.Id.Nonstandard.fromString))
-  checkAll("Program.Id.fromString", FormatTests(Program.Id.fromString).formatWith(strings))
+  checkAll("Program.Id.fromString", PrismTests(Program.Id.fromString))
 
   test("Equality must be natural") {
     forAll { (a: ProgramId, b: ProgramId) =>

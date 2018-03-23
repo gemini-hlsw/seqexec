@@ -7,6 +7,7 @@ import cats.effect.IO
 import doobie._, doobie.implicits._
 import gem.{ Program, Step }
 import gem.math.Index
+import gem.syntax.prism._
 
 import scala.collection.immutable.TreeMap
 

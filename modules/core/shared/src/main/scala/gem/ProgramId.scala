@@ -10,7 +10,6 @@ import java.time.format.DateTimeFormatter
 import gem.enum.{ Site, ProgramType, DailyProgramType }
 import gem.imp.TimeInstances._
 import gem.math.Index
-import gem.optics.Format
 import gem.parser.ProgramIdParsers
 import gem.syntax.parser._
 import monocle.Prism
@@ -61,8 +60,8 @@ object ProgramId {
       Order.by(a => (a.site, a.semester, a.programType, a.index))
 
     /** Parse a string into a Science id, and format in the reverse direction. */
-    def fromString: Format[String, Science] =
-      Format(ProgramIdParsers.science.parseExact, id =>
+    def fromString: Prism[String, Science] =
+      Prism(ProgramIdParsers.science.parseExact)(id =>
         s"${id.site.shortName}-${id.semester.format}-${id.programType.shortName}-${id.index.toShort}"
       )
 
@@ -201,10 +200,11 @@ object ProgramId {
 
   /**
    * Parse a `ProgramId` from string, if possible, and format canonically in the revese direction.
-   * Note that the parser is very lenient, and any non-empty String is a valid program id.
+   * Note that the parser is very lenient, and any String containing no whitespace is a valid
+   * program id.
    */
-  val fromString: Format[String, ProgramId] =
-    Format(s =>
+  val fromString: Prism[String, ProgramId] =
+    Prism { (s: String) =>
       Science.fromString.getOption(s) orElse
       Daily  .fromString.getOption(s) orElse
       // Do this only in the last case, and only here, to guarantee you can never get a Nonstandard
@@ -212,10 +212,10 @@ object ProgramId {
       ProgramIdParsers.nonstandard.parseExact(s).map {
         case (os, om, op, t) => new Nonstandard(os, om, op, t) {}
       }
-    , {
+    } {
       case s: Science     => Science    .fromString.reverseGet(s)
       case d: Daily       => Daily      .fromString.reverseGet(d)
       case n: Nonstandard => Nonstandard.fromString.reverseGet(n)
-    })
+    }
 
 }

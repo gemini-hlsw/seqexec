@@ -6,7 +6,6 @@ package gem.math
 import cats.{ Order, Show }
 import cats.instances.short._
 import mouse.boolean._
-import gem.optics.Format
 import gem.parser.MiscParsers
 import gem.syntax.all._
 import monocle.Prism
@@ -36,7 +35,7 @@ trait IndexOptics {
     Prism((i: Short) => (i > 0) option new Index(i) {})(_.toShort)
 
   /** @group Optics */
-  val fromString: Format[String, Index] =
-    Format(MiscParsers.index.parseExact, _.toShort.toString)
+  val fromString: Prism[String, Index] =
+    Prism(MiscParsers.index.parseExact)(_.toShort.toString)
 
 }

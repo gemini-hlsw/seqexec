@@ -7,7 +7,7 @@ import doobie._
 import gem.Program
 
 trait ProgramIdMeta {
-  import FormatMeta._
+  import PrismMeta._
 
   // Program.Id as string
   implicit val ProgramIdMeta: Meta[Program.Id] =

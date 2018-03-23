@@ -67,25 +67,14 @@ trait ArbProgramId {
   implicit val cogProgramId: Cogen[ProgramId] =
     Cogen[String].contramap(ProgramId.fromString.reverseGet)
 
+  implicit val cogScience: Cogen[ProgramId.Science] =
+    Cogen[String].contramap(ProgramId.Science.fromString.reverseGet)
+
   implicit val cogDaily: Cogen[ProgramId.Daily] =
-    Cogen[String].contramap(ProgramId.fromString.reverseGet)
+    Cogen[String].contramap(ProgramId.Daily.fromString.reverseGet)
 
   implicit val cogNonstandard: Cogen[ProgramId.Nonstandard] =
-    Cogen[String].contramap(ProgramId.fromString.reverseGet)
-
-  private val perturbations: List[String => Gen[String]] =
-    List(
-      s => arbitrary[String],                          // swap for a random string
-      s => Gen.const("\\d+$".r.replaceAllIn(s, "0$0")) // add a leading zero to the index
-    )
-
-  // Strings that are often parsable as a science program id.
-  val stringsScience: Gen[String] =
-    arbitrary[Science].map(ProgramId.fromString.reverseGet).flatMapOneOf(Gen.const, perturbations: _*)
-
-  // Strings that are often parsable as a program id.
-  val strings: Gen[String] =
-    arbitrary[ProgramId].map(ProgramId.fromString.reverseGet).flatMapOneOf(Gen.const, perturbations: _*)
+    Cogen[String].contramap(ProgramId.Nonstandard.fromString.reverseGet)
 
 }
 

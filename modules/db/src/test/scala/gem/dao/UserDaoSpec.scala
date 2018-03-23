@@ -8,6 +8,7 @@ import doobie._, doobie.implicits._
 import doobie.postgres.implicits._
 import gem._
 import gem.enum.ProgramRole
+import gem.syntax.prism._
 import org.scalatest._
 
 import scala.collection.immutable.TreeMap
