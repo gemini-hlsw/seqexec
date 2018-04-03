@@ -28,14 +28,20 @@ cancelable in Global := true
 
 // Settings to use git to define the version of the project
 def versionFmt(out: sbtdynver.GitDescribeOutput): String = {
-  val dirtySuffix = out.dirtySuffix.dropPlus.mkString("-", "-UNCOMMITED")
-  out.ref.dropV.value + out.commitSuffix.mkString("+", "-", "") + dirtySuffix
+  val dirtySuffix = if (out.dirtySuffix.mkString("", "").nonEmpty) {
+    "-UNCOMMITED"
+  } else {
+    ""
+  }
+  s"-${out.commitSuffix.sha}$dirtySuffix"
 }
 
 def fallbackVersion(d: java.util.Date): String = s"HEAD-${sbtdynver.DynVer timestamp d}"
 
+val dateFormatter = java.time.format.DateTimeFormatter.BASIC_ISO_DATE
+
 inThisBuild(List(
-  version := dynverGitDescribeOutput.value.mkVersion(versionFmt, fallbackVersion(dynverCurrentDate.value)),
+  version := dateFormatter.format(dynverCurrentDate.value.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate()) + dynverGitDescribeOutput.value.mkVersion(versionFmt, fallbackVersion(dynverCurrentDate.value)),
   dynver := {
      val d = new java.util.Date
      sbtdynver.DynVer.getGitDescribeOutput(d).mkVersion(versionFmt, fallbackVersion(d))
