@@ -69,10 +69,10 @@ object Settings {
     val scalaVersion       = s"$scalaCommonVersion-bin-typelevel-4"
 
     // ScalaJS libraries
-    val scalaDom                = "0.9.4"
+    val scalaDom                = "0.9.5"
     val scalajsReact            = "1.1.1"
     val scalaCSS                = "0.5.5"
-    val booPickle               = "1.2.6"
+    val booPickle               = "1.3.0"
     val diode                   = "1.1.3"
     val javaTimeJS              = "2.0.0-M13"
     val javaLogJS               = "0.1.3"
@@ -81,7 +81,7 @@ object Settings {
     val scalaJSReactClipboard   = "0.1.0"
 
     // Java libraries
-    val scalaZ       = "7.2.18"
+    val scalaZ       = "7.2.20"
     val scalaZStream = "0.8.6a"
 
     // Scala libraries
@@ -100,10 +100,10 @@ object Settings {
     val monocle      = "1.5.0"
 
     // test libraries
-    val scalaTest             = "3.0.4"
+    val scalaTest             = "3.0.5"
     val scalaCheck            = "1.13.5"
     val scalaCheckShapeless   = "1.1.8"
-    val discipline            = "0.8"
+    val discipline            = "0.9.0"
 
     // Pure JS libraries
     val reactJS          = "15.6.1"
