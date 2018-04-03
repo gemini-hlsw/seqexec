@@ -17,9 +17,8 @@ import edu.gemini.seqexec.model.{ActionType, UserDetails}
 import scala.Function.const
 import scalaz.Kleisli
 
-/**
-  * Created by jluhrs on 9/29/16.
-  */
+import java.util.UUID
+
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 class StepSpec extends FlatSpec {
 
@@ -81,7 +80,7 @@ class StepSpec extends FlatSpec {
 
   def triggerStart(q: async.mutable.Queue[executionEngine.EventType]): Action = fromTask(ActionType.Undefined,
     for {
-      _ <- q.enqueueOne(Event.start(seqId, user))
+      _ <- q.enqueueOne(Event.start(seqId, user, UUID.randomUUID()))
       // Same case that the pause action
     } yield Result.OK(Result.Configured(Resource.TCS)))
 
@@ -93,13 +92,13 @@ class StepSpec extends FlatSpec {
   }
 
   def runToCompletion(s0: Engine.State[Unit]): Option[Engine.State[Unit]] = {
-    executionEngine.process(Process.eval(Task.now(Event.start(seqId, user))))(s0).drop(1).takeThrough(
+    executionEngine.process(Process.eval(Task.now(Event.start(seqId, user, UUID.randomUUID()))))(s0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
     ).runLast.unsafePerformSync.map(_._2)
   }
 
   def runToCompletionL(s0: Engine.State[Unit]): List[Engine.State[Unit]] = {
-    executionEngine.process(Process.eval(Task.now(Event.start(seqId, user))))(s0).drop(1).takeThrough(
+    executionEngine.process(Process.eval(Task.now(Event.start(seqId, user, UUID.randomUUID()))))(s0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
     ).runLog.unsafePerformSync.map(_._2).toList
   }
@@ -140,7 +139,7 @@ class StepSpec extends FlatSpec {
         )
       )
 
-    val qs1 = q.enqueueOne(Event.start(seqId, user)).flatMap(_ => executionEngine.process(q.dequeue)(qs0).drop(1).takeThrough(
+    val qs1 = q.enqueueOne(Event.start(seqId, user, UUID.randomUUID())).flatMap(_ => executionEngine.process(q.dequeue)(qs0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
     ).runLast).unsafePerformSync.map(_._2)
 
@@ -187,7 +186,7 @@ class StepSpec extends FlatSpec {
         )
       )
 
-    val qs1 = executionEngine.process(Process.eval(Task.now(Event.start(seqId, user))))(qs0).take(1).runLast.unsafePerformSync.map(_._2)
+    val qs1 = executionEngine.process(Process.eval(Task.now(Event.start(seqId, user, UUID.randomUUID()))))(qs0).take(1).runLast.unsafePerformSync.map(_._2)
 
     inside (qs1.flatMap(_.sequences.get(seqId))) {
       case Some(Sequence.State.Zipper(zipper, status)) =>
@@ -310,7 +309,7 @@ class StepSpec extends FlatSpec {
         )
       )
 
-    val qss = q.enqueueOne(Event.start(seqId, user)).flatMap(_ => executionEngine.process(q.dequeue)(qs0).drop(1).takeThrough(
+    val qss = q.enqueueOne(Event.start(seqId, user, UUID.randomUUID)).flatMap(_ => executionEngine.process(q.dequeue)(qs0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
     ).runLog).unsafePerformSync
 

@@ -7,10 +7,13 @@ package edu.gemini.seqexec.web.client
 import diode.Action
 import edu.gemini.seqexec.model.UserDetails
 import edu.gemini.seqexec.model.Model._
+import edu.gemini.seqexec.model.events.SeqexecModelUpdate
 import edu.gemini.seqexec.model.events.SeqexecEvent
-import edu.gemini.seqexec.model.events.SeqexecEvent.ServerLogMessage
+import edu.gemini.seqexec.model.events.SeqexecEvent.{ServerLogMessage}
 import edu.gemini.seqexec.web.client.model._
 import org.scalajs.dom.WebSocket
+
+import scalaz.Show
 
 object actions {
 
@@ -48,6 +51,7 @@ object actions {
   final case class RequestAbort(id: SequenceId, step: Int) extends Action
   final case class RequestObsPause(id: SequenceId, step: Int) extends Action
   final case class RequestObsResume(id: SequenceId, step: Int) extends Action
+  case object RequestSoundEcho extends Action
 
   final case class RunStarted(s: SequenceId) extends Action
   final case class RunPaused(s: SequenceId) extends Action
@@ -92,4 +96,17 @@ object actions {
   final case class UpdateWaterVapor(wv: WaterVapor) extends Action
 
   // scalastyle:on
+
+  implicit val show: Show[Action] = Show.shows {
+    case s @ ServerMessage(u @ SeqexecModelUpdate(view)) =>
+      s"${s.getClass.getSimpleName}(${u.getClass.getSimpleName}(${view.queue.map(s => (s.id, s.steps.map(i => (i.id, i.status))))}))"
+    case s @ RememberCompleted(view)                     =>
+      s"${s.getClass.getSimpleName}(${view.id})"
+    case s @ InitialSyncToPage(view)                     =>
+      s"${s.getClass.getSimpleName}(${view.id})"
+    case s @ SyncToRunning(view)                     =>
+      s"${s.getClass.getSimpleName}(${view.id})"
+    case a                                               =>
+      s"$a"
+  }
 }

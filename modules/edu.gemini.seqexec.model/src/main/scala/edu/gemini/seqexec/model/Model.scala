@@ -98,6 +98,8 @@ object Model {
   type StepId = Int
   type ObservationName = String
   type TargetName = String
+  type ClientID = java.util.UUID
+  implicit val clientIdEq: Equal[ClientID] = Equal.equalA
   val DaytimeCalibrationTargetName = "Daytime calibration"
 
   /**

@@ -36,6 +36,7 @@ import scalaz._
 import Scalaz._
 
 object handlers {
+  private val VoidEffect = Effect(Future(NoAction: Action))
 
   trait Handlers {
     implicit def pfMonoid[A, B]: Monoid[PartialFunction[A, B]] = new Monoid[PartialFunction[A, B]] {
@@ -84,7 +85,7 @@ object handlers {
       case SyncToRunning(s) =>
         // We'll select the sequence currently running and show the correct url
         value match {
-          case Root | InstrumentPage(_)        =>
+          case Root | SoundTest | InstrumentPage(_)        =>
               updated(InstrumentPage(s.metadata.instrument), Effect(Future(SelectInstrumentToDisplay(s.metadata.instrument))))
           case SequencePage(_, id, _)          =>
             effectOnly(Effect(Future(SelectIdToDisplay(id))))
@@ -110,7 +111,7 @@ object handlers {
       case SyncPageToAddedSequence(i, id) =>
         // Switch to the sequence in none is selected
         value match {
-          case Root | InstrumentPage(_) =>
+          case Root | SoundTest | InstrumentPage(_) =>
             updated(SequencePage(i, id, 0), Effect(Future(SelectIdToDisplay(id))))
           case _                                  =>
             noChange
@@ -126,13 +127,14 @@ object handlers {
         handleSyncPageToAddedSequence).suml
   }
 
-  /**
-    * Handles sequence execution actions
+   /**
+    * Handles actions requesting results
     */
-  class SequenceExecutionHandler[M](modelRW: ModelRW[M, LoadedSequences]) extends ActionHandler(modelRW) with Handlers {
+  class RemoteRequestsHandler[M](modelRW: ModelRW[M, Option[ClientID]]) extends ActionHandler(modelRW) with Handlers {
     def handleRequestOperation: PartialFunction[Any, ActionResult[M]] = {
       case RequestRun(s) =>
-        effectOnly(Effect(SeqexecWebClient.run(s).map(r => if (r.error) RunStartFailed(s) else RunStarted(s))))
+        val effect = value.map(clientId => Effect(SeqexecWebClient.run(s, clientId).map(r => if (r.error) RunStartFailed(s) else RunStarted(s)))).getOrElse(VoidEffect)
+        effectOnly(effect)
 
       case RequestSync(s) =>
         effectOnly(Effect(SeqexecWebClient.sync(s).map(r => if (r.queue.isEmpty) RunSyncFailed(s) else RunSync(s))))
@@ -171,6 +173,15 @@ object handlers {
         noChange
     }
 
+    override def handle: PartialFunction[Any, ActionResult[M]] =
+      List(handleRequestOperation,
+        handleOperationResult).suml
+  }
+
+  /**
+    * Handles sequence execution actions
+    */
+  class SequenceExecutionHandler[M](modelRW: ModelRW[M, LoadedSequences]) extends ActionHandler(modelRW) with Handlers {
     def handleUpdateObserver: PartialFunction[Any, ActionResult[M]] = {
       case UpdateObserver(sequenceId, name) =>
         val updateObserverE = Effect(SeqexecWebClient.setObserver(sequenceId, name).map(_ => NoAction))
@@ -199,10 +210,7 @@ object handlers {
     }
 
     override def handle: PartialFunction[Any, ActionResult[M]] =
-      List(handleRequestOperation,
-        handleOperationResult,
-        handleUpdateObserver,
-        handleFlipSkipBreakpoint).suml
+      List(handleUpdateObserver, handleFlipSkipBreakpoint).suml
   }
 
   /**
@@ -370,7 +378,6 @@ object handlers {
     import ModelBooPicklers._
 
     private implicit val runner = new RunAfterJS
-
     private val logger = Logger.getLogger(this.getClass.getSimpleName)
     // Reconfigure to avoid sending ajax events in this logger
     logger.setUseParentHandlers(false)
@@ -378,12 +385,9 @@ object handlers {
 
     // Makes a websocket connection and setups event listeners
     def webSocket: Future[Action] = Future[Action] {
-      import org.scalajs.dom.document
-
       val host = document.location.host
       val protocol = document.location.protocol.startsWith("https") ? "wss" | "ws"
       val url = s"$protocol://$host/api/seqexec/events"
-
       val ws = new WebSocket(url)
 
       def onOpen(): Unit = {
@@ -396,17 +400,20 @@ object handlers {
           case buffer: ArrayBuffer =>
             val byteBuffer = TypedArrayBuffer.wrap(buffer)
             \/.fromTryCatchNonFatal(Unpickle[SeqexecEvent].fromBytes(byteBuffer)) match {
-              case \/-(event) => logger.info(s"Decoding event: ${event.getClass}"); SeqexecCircuit.dispatch(ServerMessage(event))
-              case -\/(t)     => logger.warning(s"Error decoding event ${t.getMessage}")
+              case \/-(event: ServerLogMessage) =>
+                SeqexecCircuit.dispatch(ServerMessage(event))
+              case \/-(event)                   =>
+                logger.info(s"Decoding event: ${event.getClass}")
+                SeqexecCircuit.dispatch(ServerMessage(event))
+              case -\/(t)                       =>
+                logger.warning(s"Error decoding event ${t.getMessage}")
             }
           case _                   =>
             ()
         }
       }
 
-      def onError(): Unit =
-        // Unfortunately reading the event is not cross-browser safe
-        logger.severe("Error on websocket")
+      def onError(): Unit = logger.severe("Error on websocket")
 
       def onClose(): Unit =
         // Increase the delay to get exponential backoff with a minimum of 200ms and a max of 1m
@@ -448,9 +455,7 @@ object handlers {
 
     def connectedHandler: PartialFunction[Any, ActionResult[M]] = {
       case Connected(ws, delay) =>
-        // After connected to the Websocket request a refresh
-        val refreshRequest = Effect(SeqexecWebClient.refresh().map(_ => NoAction))
-        updated(WebSocketConnection(Ready(ws), delay, autoReconnect = true), refreshRequest)
+        updated(WebSocketConnection(Ready(ws), delay, autoReconnect = true))
     }
 
     def connectionErrorHandler: PartialFunction[Any, ActionResult[M]] = {
@@ -479,7 +484,6 @@ object handlers {
     * Handles messages received over the WS channel
     */
   class WebSocketEventsHandler[M](modelRW: ModelRW[M, WebSocketsFocus]) extends ActionHandler(modelRW) with Handlers {
-    private val VoidEffect = Effect(Future(NoAction: Action))
     // Global references to audio files
     private val SequencePausedAudio = new Audio("/sequencepaused.mp3")
     private val ExposurePausedAudio = new Audio("/exposurepaused.mp3")
@@ -499,14 +503,22 @@ object handlers {
       case _                        => false
     }
 
+    val soundCheck: PartialFunction[Any, ActionResult[M]] = {
+      case RequestSoundEcho =>
+        val soundEffect = Effect(Future(SequenceCompleteAudio.play()).map(_ => NoAction))
+        effectOnly(soundEffect)
+    }
+
     val logMessage: PartialFunction[Any, ActionResult[M]] = {
       case ServerMessage(l: ServerLogMessage) =>
         effectOnly(Effect(Future(AppendToLog(l))))
     }
 
     val connectionOpenMessage: PartialFunction[Any, ActionResult[M]] = {
-      case ServerMessage(ConnectionOpenEvent(u)) =>
-        updated(value.copy(user = u))
+      case ServerMessage(ConnectionOpenEvent(u, c)) =>
+        // After connected to the Websocket request a refresh
+        val refreshRequest = Effect(SeqexecWebClient.refresh(c).map(_ => NoAction))
+        updated(value.copy(user = u, clientId = Option(c)), refreshRequest)
     }
 
     val stepCompletedMessage: PartialFunction[Any, ActionResult[M]] = {
@@ -564,7 +576,7 @@ object handlers {
     }
 
     val resourceBusyMessage: PartialFunction[Any, ActionResult[M]] = {
-      case ServerMessage(ResourcesBusy(id, _)) =>
+      case ServerMessage(ResourcesBusy(id, _, _)) =>
         val setConflictE = Effect(Future(SequenceInConflict(id)))
         val openBoxE = Effect(Future(OpenResourcesBox))
         effectOnly(setConflictE >> openBoxE)
@@ -625,7 +637,8 @@ object handlers {
     }
 
     override def handle: PartialFunction[Any, ActionResult[M]] =
-      List(logMessage,
+      List(soundCheck,
+        logMessage,
         stepCompletedMessage,
         connectionOpenMessage,
         sequenceCompletedMessage,

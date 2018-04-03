@@ -26,11 +26,14 @@ object SharedModelArbitraries {
     } yield SequencesQueue(Conditions.default, Some(Operator("operator")), b)
   }
 
+  implicit val clientIdArb: Arbitrary[ClientID] = Arbitrary(Gen.uuid)
+
   implicit val instArb: Arbitrary[Instant] = Arbitrary {
     for {
       i <- Gen.choose(0L, Long.MaxValue)
     } yield Instant.ofEpochMilli(i)
   }
+
   implicit val levArb = Arbitrary(Gen.oneOf(ServerLogLevel.INFO, ServerLogLevel.WARN, ServerLogLevel.ERROR))
 
   implicit val udArb  = implicitly[Arbitrary[UserDetails]]

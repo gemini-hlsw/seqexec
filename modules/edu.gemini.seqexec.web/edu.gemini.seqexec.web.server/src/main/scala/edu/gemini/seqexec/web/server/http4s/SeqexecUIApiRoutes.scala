@@ -7,7 +7,8 @@ import org.log4s._
 
 import edu.gemini.pot.sp.SPObservationID
 import edu.gemini.seqexec.server
-import edu.gemini.seqexec.model.Model.{Conditions, SequenceId, SequencesQueue}
+import edu.gemini.seqexec.model.Model.{clientIdEq, ClientID, Conditions, SequenceId, SequencesQueue}
+import edu.gemini.seqexec.model.events.ForClient
 import edu.gemini.seqexec.model.events.SeqexecEvent
 import edu.gemini.seqexec.model.events.SeqexecEvent._
 import edu.gemini.seqexec.model._
@@ -29,11 +30,14 @@ import Scalaz._
 import scalaz.concurrent.Task
 import scalaz.stream.async.mutable.Topic
 import scalaz.stream.{Exchange, Process}
+import scala.math._
+
+import java.util.UUID
 
 /**
   * Rest Endpoints under the /api route
   */
-class SeqexecUIApiRoutes(auth: AuthenticationService, events: (server.EventQueue, Topic[SeqexecEvent]), se: SeqexecEngine) extends BooEncoders with ModelLenses {
+class SeqexecUIApiRoutes(devMode: Boolean, auth: AuthenticationService, events: (server.EventQueue, Topic[SeqexecEvent]), se: SeqexecEngine) extends BooEncoders with ModelLenses {
   import ModelBooPicklers._
 
   // Logger for client messages
@@ -83,6 +87,15 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, events: (server.EventQueue
 
   val protectedServices: AuthedService[AuthResult] =
     AuthedService {
+      // Route used for testing only
+      case GET  -> Root  / "log" / count as _ if devMode =>
+        for {i <- 0 until min(1000, max(0, count.toInt))} {
+          clientLog.info("info")
+          clientLog.warn("warn")
+          clientLog.error("error")
+        }
+        Ok("")
+
       case auth @ POST -> Root / "seqexec" / "log" as user =>
         auth.req.decode[LogMessage] { msg =>
           val userName = user.fold(_ => "Anonymous", _.displayName)
@@ -106,15 +119,24 @@ class SeqexecUIApiRoutes(auth: AuthenticationService, events: (server.EventQueue
           case NullEvent => false
           case _         => true
         }
+        def filterOutOnClientId(clientId: ClientID) = (e: SeqexecEvent) => e match {
+          case e: ForClient if e.clientId =/= clientId => false
+          case _                                       => true
+        }
         // If the user didn't login, anonymize
         val anonymizeF: SeqexecEvent => SeqexecEvent = user.fold(_ => anonymize _, _ => identity _)
-        WS(
-          Exchange(
-            Process.emit(Binary(trimmedArray(ConnectionOpenEvent(user.toOption)))) ++
-              (pingProcess merge engineOutput.subscribe.map(anonymizeF).filter(filterOutNull).map(v => Binary(trimmedArray(v)))),
-            scalaz.stream.Process.empty
-          )
-        )
+        // Create a client specific process
+        for {
+          clientId <- Task.delay(UUID.randomUUID())
+          ws       <-
+                      WS(
+                        Exchange(
+                          Process.emit(Binary(trimmedArray(ConnectionOpenEvent(user.toOption, clientId)))) ++
+                            (pingProcess merge engineOutput.subscribe.map(anonymizeF).filter(filterOutNull).filter(filterOutOnClientId(clientId)).map(v => Binary(trimmedArray(v)))),
+                          scalaz.stream.Process.empty
+                        )
+                      )
+        } yield ws
 
       case GET -> Root / "seqexec" / "sequence" / oid as user =>
         user.toOption.fold(Unauthorized(Challenge("jwt", "seqexec"))) { _ =>

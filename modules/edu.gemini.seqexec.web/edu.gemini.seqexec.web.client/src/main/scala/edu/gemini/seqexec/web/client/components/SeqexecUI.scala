@@ -6,7 +6,7 @@ package edu.gemini.seqexec.web.client.components
 import edu.gemini.seqexec.web.client.circuit.SeqexecCircuit
 import edu.gemini.seqexec.web.client.actions.WSConnect
 import edu.gemini.seqexec.web.client.model.Pages._
-import edu.gemini.seqexec.web.client.actions.NavigateSilentTo
+import edu.gemini.seqexec.web.client.actions.{NavigateSilentTo, RequestSoundEcho}
 import edu.gemini.seqexec.web.client.components.sequence.{HeadersSideBar, SequenceArea}
 import edu.gemini.seqexec.model.Model.SeqexecSite
 import edu.gemini.seqexec.web.client.model.WebSocketConnection
@@ -130,6 +130,7 @@ object SeqexecUI {
 
       (emptyRule
       | staticRoute(root, Root) ~> renderR(r => SeqexecMain(site, r))
+      | staticRoute("/soundtest", SoundTest) ~> renderR(r => SeqexecMain(site, r))
       | dynamicRoute(("/" ~ string("[a-zA-Z0-9-]+") ~ "/" ~ string("[a-zA-Z0-9-]+") ~ "/configuration/" ~ int)
         .pmap {
           case (i, s, step) => instrumentNames.get(i).map(SequenceConfigPage(_, s, step))
@@ -149,9 +150,10 @@ object SeqexecUI {
       )
         .notFound(redirectToPage(Root)(Redirect.Push))
         // Runtime verification that all pages are routed
-        .verify(Root, site.instruments.list.toList.map(i => InstrumentPage(i)): _*)
+        .verify(Root, (SoundTest :: site.instruments.list.toList.map(i => InstrumentPage(i))): _*)
         .onPostRender((_, next) =>
-          Callback.when(next =/= SeqexecCircuit.zoom(_.uiModel.navLocation).value)(Callback(SeqexecCircuit.dispatch(NavigateSilentTo(next)))))
+          Callback.when(next === SoundTest)(SeqexecCircuit.dispatchCB(RequestSoundEcho)) >>
+          Callback.when(next =/= SeqexecCircuit.zoom(_.uiModel.navLocation).value)(SeqexecCircuit.dispatchCB(NavigateSilentTo(next))))
         .renderWith { case (_, r) => <.div(r.render()).render}
         .setTitle(pageTitle(site))
         .logToConsole

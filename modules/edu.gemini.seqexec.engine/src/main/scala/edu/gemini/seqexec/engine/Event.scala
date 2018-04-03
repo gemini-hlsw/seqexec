@@ -4,7 +4,7 @@
 package edu.gemini.seqexec.engine
 
 import scalaz.syntax.std.option._
-import edu.gemini.seqexec.model.Model.Observer
+import edu.gemini.seqexec.model.Model.{ClientID, Observer}
 import edu.gemini.seqexec.model.UserDetails
 
 import scalaz.concurrent.Task
@@ -19,7 +19,7 @@ final case class EventSystem(se: SystemEvent) extends Event[Nothing]
 
 object Event {
 
-  def start[D<:Engine.Types](id: Sequence.Id, user: UserDetails): Event[D] = EventUser[D](Start(id, user.some))
+  def start[D<:Engine.Types](id: Sequence.Id, user: UserDetails, clientId: ClientID): Event[D] = EventUser[D](Start(id, user.some, clientId))
   def pause[D<:Engine.Types](id: Sequence.Id, user: UserDetails): Event[D] = EventUser[D](Pause(id, user.some))
   def cancelPause[D<:Engine.Types](id: Sequence.Id, user: UserDetails): Event[D] = EventUser[D](CancelPause(id, user.some))
   def load[D<:Engine.Types](id: Sequence.Id, sequence: Sequence): Event[D] = EventUser[D](Load(id, sequence))
@@ -27,7 +27,7 @@ object Event {
   def breakpoint[D<:Engine.Types](id: Sequence.Id, user: UserDetails, step: Step.Id, v: Boolean): Event[D] = EventUser[D](Breakpoint(id, user.some, step, v))
   def skip[D<:Engine.Types](id: Sequence.Id, user: UserDetails, step: Step.Id, v: Boolean): Event[D] = EventUser[D](SkipMark(id, user.some, step, v))
   def setObserver[D<:Engine.Types](id: Sequence.Id, user: UserDetails, name: Observer): Event[D] = EventUser[D](SetObserver(id, user.some, name))
-  val poll: Event[Nothing] = EventUser(Poll)
+  def poll(clientId: ClientID): Event[Nothing] = EventUser(Poll(clientId))
   def getState[D<:Engine.Types](f: (Engine.State[D#StateData]) => Task[Option[Process[Task, Event[D]]]]): Event[D] = EventUser[D](GetState[D](f))
   def modifyState[D<:Engine.Types](f: (Engine.State[D#StateData]) => Engine.State[D#StateData], data: D#EventData): Event[D] = EventUser[D](ModifyState[D](f, data))
   def getSeqState[D<:Engine.Types](id: Sequence.Id, f: (Sequence.State) => Option[Process[Task, Event[D]]]): Event[D] = EventUser[D](GetSeqState(id, f))
@@ -43,7 +43,7 @@ object Event {
   def partial[R<:Result.PartialVal](id: Sequence.Id, i: Int, r: Result.Partial[R]): Event[Nothing] = EventSystem(PartialResult(id, i, r))
   def paused[C <: Result.PauseContext](id: Sequence.Id, i: Int, c: Result.Paused[C]): Event[Nothing] = EventSystem(Paused(id, i, c))
   def breakpointReached(id: Sequence.Id): Event[Nothing] = EventSystem(BreakpointReached(id))
-  def busy(id: Sequence.Id): Event[Nothing] = EventSystem(Busy(id))
+  def busy(id: Sequence.Id, clientId: ClientID): Event[Nothing] = EventSystem(Busy(id, clientId))
   def executed(id: Sequence.Id): Event[Nothing] = EventSystem(Executed(id))
   def executing(id: Sequence.Id): Event[Nothing] = EventSystem(Executing(id))
   def finished(id: Sequence.Id): Event[Nothing] = EventSystem(Finished(id))

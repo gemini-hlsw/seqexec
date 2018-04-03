@@ -5,7 +5,7 @@ package edu.gemini.seqexec.engine
 
 import edu.gemini.seqexec.engine.Event._
 import edu.gemini.seqexec.engine.Result.{PartialVal, PauseContext, RetVal}
-import edu.gemini.seqexec.model.Model.{Conditions, Observer, Resource, SequenceState}
+import edu.gemini.seqexec.model.Model.{ClientID, Conditions, Observer, Resource, SequenceState}
 import org.log4s.getLogger
 import scalaz.concurrent.Task
 import scalaz.{Applicative, Kleisli, MonadState, StateT}
@@ -92,7 +92,7 @@ class Engine[D: ActionMetadataGenerator, U](implicit ev: ActionMetadataGenerator
   private def switch(id: Sequence.Id)(st: SequenceState): HandleP[Unit] =
     modifyS(id)(s => Sequence.State.status.set(st)(s))
 
-  private def start(id: Sequence.Id): HandleP[Unit] =
+  private def start(id: Sequence.Id, clientId: ClientID): HandleP[Unit] =
     resources.flatMap(
       other => getS(id).flatMap {
         case Some(seq) =>
@@ -102,7 +102,7 @@ class Engine[D: ActionMetadataGenerator, U](implicit ev: ActionMetadataGenerator
               putS(id)(Sequence.State.status.set(SequenceState.Running.init)(seq.skips.getOrElse(seq).rollback)) *>
                 send(Event.executing(id))
             // Some resources are being used
-            else send(busy(id))
+            else send(busy(id, clientId))
           else unit
         case None      => unit
       }
@@ -298,7 +298,7 @@ class Engine[D: ActionMetadataGenerator, U](implicit ev: ActionMetadataGenerator
     */
   private def run(ev: EventType): HandleP[StateType] = {
     def handleUserEvent(ue: UserEventType): HandleP[Unit] = ue match {
-      case Start(id, _)               => Logger.debug("Engine: Started") *> start(id)
+      case Start(id, _, clientId)     => Logger.debug("Engine: Started") *> start(id, clientId)
       case Pause(id, _)               => Logger.debug("Engine: Pause requested") *> pause(id)
       case CancelPause(id, _)         => Logger.debug("Engine: Pause canceled") *> cancelPause(id)
       case Load(id, seq)              => Logger.debug("Engine: Sequence loaded") *> load(id, seq)
@@ -308,7 +308,7 @@ class Engine[D: ActionMetadataGenerator, U](implicit ev: ActionMetadataGenerator
       case SkipMark(id, _, step, v)   => Logger.debug(s"Engine: skip mark changed for step $step to $v") *>
         modifyS(id)(_.setSkipMark(step, v))
       case SetObserver(id, _, name)   => Logger.debug(s"Engine: Setting Observer for observation $id to '$name' by ${ue.username}") *> setObserver(id)(name)
-      case Poll                       => Logger.debug("Engine: Polling current state")
+      case Poll(_)                    => Logger.debug("Engine: Polling current state")
       case GetState(f)                => getState(f)
       case ModifyState(f, _)          => modify(f)
       case GetSeqState(id, f)         => getSeqState(id, f)
@@ -325,7 +325,7 @@ class Engine[D: ActionMetadataGenerator, U](implicit ev: ActionMetadataGenerator
       case PartialResult(id, i, r) => Logger.debug("Engine: Partial result") *> partialResult(id, i, r)
       case Paused(id, i, r)        => Logger.debug("Engine: Action paused") *> actionPause(id, i, r)
       case Failed(id, i, e)        => logError(e) *> fail(id)(i, e)
-      case Busy(id)                => Logger.warning(s"Cannot run sequence $id because required systems are in use.")
+      case Busy(id, _)             => Logger.warning(s"Cannot run sequence $id because required systems are in use.")
       case BreakpointReached(_)    => Logger.debug("Engine: Breakpoint reached")
       case Executed(id)            => Logger.debug("Engine: Execution completed") *> next(id)
       case Executing(id)           => Logger.debug("Engine: Executing") *> execute(id)

@@ -15,9 +15,8 @@ import org.scalatest.Matchers._
 import scalaz.concurrent.Task
 import scalaz.stream.Process
 
-/**
-  * Created by jluhrs on 9/29/16.
-  */
+import java.util.UUID
+
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 class SequenceSpec extends FlatSpec {
   private val seqId ="TEST-01"
@@ -80,7 +79,7 @@ class SequenceSpec extends FlatSpec {
   }
 
   def runToCompletion(s0: Engine.State[Unit]): Option[Engine.State[Unit]] = {
-    executionEngine.process(Process.eval(Task.now(Event.start(seqId, user))))(s0).drop(1).takeThrough(
+    executionEngine.process(Process.eval(Task.now(Event.start(seqId, user, UUID.randomUUID()))))(s0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
     ).runLast.unsafePerformSync.map(_._2)
   }

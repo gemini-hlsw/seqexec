@@ -46,7 +46,7 @@ class SeqexecUIApiRoutesSpec extends FlatSpec with Matchers with UriFunctions wi
   val out: Topic[SeqexecEvent] = async.topic[SeqexecEvent]()
   val queues: (Queue[executeEngine.EventType], Topic[SeqexecEvent]) = (inq, out)
 
-  val service: Service[Request, MaybeResponse] = new SeqexecUIApiRoutes(authService, queues, engine).service
+  val service: Service[Request, MaybeResponse] = new SeqexecUIApiRoutes(true, authService, queues, engine).service
 
   "SeqexecUIApiRoutes login" should
     "reject requests without body" in {
@@ -163,7 +163,9 @@ class SeqexecUIApiRoutesSpec extends FlatSpec with Matchers with UriFunctions wi
           firstEvent <- OptionT(Task.now(Unpickle[SeqexecEvent].fromBytes(ByteBuffer.wrap(firstFrame))).map(Option.apply))
         } yield firstEvent
 
-      openEvent.run.unsafePerformSync shouldBe Some(ConnectionOpenEvent(None))
+      openEvent.run.unsafePerformSync should matchPattern {
+        case Some(ConnectionOpenEvent(None, _)) =>
+      }
     }
     it should "return the user if the cookie is provided" in {
       val b = emit(ByteVector.view(Pickle.intoBytes(UserLoginRequest("telops", "pwd"))))
@@ -180,7 +182,9 @@ class SeqexecUIApiRoutesSpec extends FlatSpec with Matchers with UriFunctions wi
           firstEvent   <- OptionT(Task.now(Unpickle[SeqexecEvent].fromBytes(ByteBuffer.wrap(firstFrame))).map(Option.apply))
         } yield firstEvent
 
-      openEvent.run.unsafePerformSync shouldBe Some(ConnectionOpenEvent(Some(UserDetails("telops", "Telops"))))
+      openEvent.run.unsafePerformSync should matchPattern {
+        case Some(ConnectionOpenEvent(Some(UserDetails("telops", "Telops")), _)) =>
+      }
     }
 
 }

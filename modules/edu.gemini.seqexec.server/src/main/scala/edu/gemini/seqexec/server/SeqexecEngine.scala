@@ -76,8 +76,8 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
 
   def load(q: EventQueue, seqId: SPObservationID): Task[SeqexecFailure \/ Unit] = loadEvents(seqId).flatMapF(q.enqueueAll(_).map(_.right)).run
 
-  def start(q: EventQueue, id: SPObservationID, user: UserDetails): Task[SeqexecFailure \/ Unit] =
-    q.enqueueOne(Event.start(id.stringValue(), user)).map(_.right)
+  def start(q: EventQueue, id: SPObservationID, user: UserDetails, clientId: ClientID): Task[SeqexecFailure \/ Unit] =
+    q.enqueueOne(Event.start(id.stringValue(), user, clientId)).map(_.right)
 
   def requestPause(q: EventQueue, id: SPObservationID, user: UserDetails): Task[SeqexecFailure \/ Unit] =
     q.enqueueOne(Event.pause(id.stringValue(), user)).map(_.right)
@@ -141,7 +141,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
                   v: Boolean): Task[SeqexecFailure \/ Unit] =
   q.enqueueOne(Event.skip(seqId.stringValue(), user, stepId, v)).map(_.right)
 
-  def requestRefresh(q: EventQueue): Task[Unit] = q.enqueueOne(Event.poll)
+  def requestRefresh(q: EventQueue, clientId: ClientID): Task[Unit] = q.enqueueOne(Event.poll(clientId))
 
   def seqQueueRefreshProcess: Process[Task, executeEngine.EventType] =
     awakeEvery(settings.odbQueuePollingInterval)(Strategy.DefaultStrategy, DefaultScheduler).map(_ =>
@@ -262,7 +262,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
 
   private def toSeqexecEvent(ev: executeEngine.EventType)(svs: => SequencesQueue[SequenceView]): SeqexecEvent = ev match {
     case engine.EventUser(ue) => ue match {
-      case engine.Start(_, _)            => SequenceStart(svs)
+      case engine.Start(_, _, _)         => SequenceStart(svs)
       case engine.Pause(_, _)            => SequencePauseRequested(svs)
       case engine.CancelPause(_, _)      => SequencePauseCanceled(svs)
       case engine.Load(id, _)            => SequenceLoaded(id, svs)
@@ -270,7 +270,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
       case engine.Breakpoint(_, _, _, _) => StepBreakpointChanged(svs)
       case engine.SkipMark(_, _, _, _)   => StepSkipMarkChanged(svs)
       case engine.SetObserver(_, _, _)   => ObserverUpdated(svs)
-      case engine.Poll                   => SequenceRefreshed(svs)
+      case engine.Poll(cid)              => SequenceRefreshed(svs, cid)
       case engine.GetState(_)            => NullEvent
       case engine.GetSeqState(_, _)      => NullEvent
       case engine.ModifyState(_, ev)     => modifyStateEvent(ev, svs)
@@ -287,7 +287,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
       case engine.PartialResult(_, _, Partial(FileIdAllocated(fileId), _))  => FileIdStepExecuted(fileId, svs)
       case engine.PartialResult(_, _, _)                                    => SequenceUpdated(svs)
       case engine.Failed(id, _, _)                                          => SequenceError(id, svs)
-      case engine.Busy(id)                                                  => ResourcesBusy(id, svs)
+      case engine.Busy(id, clientId)                                        => ResourcesBusy(id, svs, clientId)
       case engine.Executed(s)                                               => StepExecuted(s, svs)
       case engine.Executing(_)                                              => SequenceUpdated(svs)
       case engine.Finished(_)                                               => SequenceCompleted(svs)
@@ -531,10 +531,10 @@ object SeqexecEngine {
     // the configuration file or from the environment
     val caInit   = caAddrList.map(a => Task.delay(CaService.setAddressList(a))).getOrElse {
       Task.delay(Option(System.getenv("EPICS_CA_ADDR_LIST"))).flatMap {
-        case Some(_) => Task.delay(CaService.setIOTimeout(java.time.Duration.ofMillis(ioTimeout.toMillis)))
+        case Some(_) => taskUnit
         case _       => Task.fail(new RuntimeException("Cannot initialize EPICS subsystem"))
       }
-    }
+    } *> Task.delay(CaService.setIOTimeout(java.time.Duration.ofMillis(ioTimeout.toMillis)))
     val tcsInit  = (tcsKeywords || !tcsSim).fold(initEpicsSystem(TcsEpics, tops), taskUnit)
     // More instruments to be added to the list here
     val instList = site match {
