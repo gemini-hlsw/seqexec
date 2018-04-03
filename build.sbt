@@ -27,13 +27,22 @@ parallelExecution in (ThisBuild, Test) := false
 cancelable in Global := true
 
 // Settings to use git to define the version of the project
-enablePlugins(GitVersioning)
+def versionFmt(out: sbtdynver.GitDescribeOutput): String = {
+  val dirtySuffix = if (out.dirtySuffix.mkString("", "").nonEmpty) {
+    "-UNCOMMITED"
+  } else {
+    ""
+  }
+  s"-${out.commitSuffix.sha}$dirtySuffix"
+}
 
-git.useGitDescribe := true
+def fallbackVersion(d: java.util.Date): String = s"HEAD-${sbtdynver.DynVer timestamp d}"
 
-git.formattedShaVersion := git.gitHeadCommit.value map { sha => s"v$sha" }
+val dateFormatter = java.time.format.DateTimeFormatter.BASIC_ISO_DATE
 
-git.uncommittedSignifier in ThisBuild := Some("UNCOMMITTED")
+inThisBuild(List(
+  version := dateFormatter.format(dynverCurrentDate.value.toInstant.atZone(java.time.ZoneId.of("UTC")).toLocalDate) + dynverGitDescribeOutput.value.mkVersion(versionFmt, fallbackVersion(dynverCurrentDate.value))
+))
 
 enablePlugins(GitBranchPrompt)
 

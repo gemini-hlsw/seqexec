@@ -21,6 +21,7 @@ addSbtPlugin("de.heikoseeberger" % "sbt-header"             % "3.0.1")
 
 // Built the version out of git
 addSbtPlugin("com.typesafe.sbt"  % "sbt-git"                % "0.9.3")
+addSbtPlugin("com.dwijnand"      % "sbt-dynver"             % "3.0.0")
 
 addSbtPlugin("org.wartremover"   % "sbt-wartremover"        % "2.2.1")
 
