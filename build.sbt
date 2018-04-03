@@ -41,11 +41,7 @@ def fallbackVersion(d: java.util.Date): String = s"HEAD-${sbtdynver.DynVer times
 val dateFormatter = java.time.format.DateTimeFormatter.BASIC_ISO_DATE
 
 inThisBuild(List(
-  version := dateFormatter.format(dynverCurrentDate.value.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate()) + dynverGitDescribeOutput.value.mkVersion(versionFmt, fallbackVersion(dynverCurrentDate.value)),
-  dynver := {
-     val d = new java.util.Date
-     sbtdynver.DynVer.getGitDescribeOutput(d).mkVersion(versionFmt, fallbackVersion(d))
-  }
+  version := dateFormatter.format(dynverCurrentDate.value.toInstant.atZone(java.time.ZoneId.of("UTC")).toLocalDate) + dynverGitDescribeOutput.value.mkVersion(versionFmt, fallbackVersion(dynverCurrentDate.value))
 ))
 
 enablePlugins(GitBranchPrompt)
