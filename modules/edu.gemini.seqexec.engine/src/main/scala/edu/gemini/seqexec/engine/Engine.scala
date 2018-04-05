@@ -342,13 +342,13 @@ class Engine[D: ActionMetadataGenerator, U](implicit ev: ActionMetadataGenerator
   // Kudos to @tpolecat
   /** Traverse a process with a stateful computation. */
   private def mapEvalState[A, S, B](
-                                     fs: Process[Task, A], s0: S, f: A => StateT[Task, S, (B, Option[Process[Task, A]])]
+                                     fs: Process[Task, A], s0: S, f: (A, S) => Task[(S, B, Process[Task, A])]
                                    ): Process[Task, B] = {
     def go(fi: Process[Task, A], si: S): Process[Task, B] = {
       Process.eval(fi.unconsOption).flatMap {
         case None => Process.halt
-        case Some((h, t)) => Process.eval(f(h).run(si)).flatMap {
-          case (s, (b, p)) => Process.emit(b) ++ go(p.map(_ merge t).getOrElse(t), s)
+        case Some((h, t)) => Process.eval(f(h, si)).flatMap {
+          case (s, b, p) => Process.emit(b) ++ go(p merge t, s)
         }
       }
     }
@@ -356,11 +356,14 @@ class Engine[D: ActionMetadataGenerator, U](implicit ev: ActionMetadataGenerator
     go(fs, s0)
   }
 
-  private def runE(ev: EventType): HandleP[(EventType, StateType)] =
-    run(ev).map((ev, _))
+  private def runE(ev: EventType, s: StateType): Task[(StateType, (EventType, StateType), Process[Task, EventType])] =
+    run(ev).run.run(s).map {
+      case (s, (si, p)) =>
+        (s, (ev, si), p.getOrElse(Process.empty))
+    }
 
   def process(input: Process[Task, EventType])(qs: StateType): Process[Task, (EventType, StateType)] =
-    mapEvalState[EventType, StateType, (EventType, StateType)](input, qs, (e: EventType) => runE(e).run)
+    mapEvalState[EventType, StateType, (EventType, StateType)](input, qs, runE)
 
   // Functions for type bureaucracy
 
@@ -410,6 +413,7 @@ object Engine {
 
     def empty[D](userData: D): State[D] = State(userData, Map.empty)
 
+    implicit def equal[D]: Equal[State[D]] = Equal.equalA
   }
 
   abstract class Types {
