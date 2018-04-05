@@ -26,6 +26,9 @@ parallelExecution in (ThisBuild, Test) := false
 
 cancelable in Global := true
 
+// Uncomment for local gmp testing
+// resolvers in ThisBuild += "Local Maven Repository" at "file://"+Path.userHome.absolutePath+"/Projects/maven-repo/releases"
+
 // Settings to use git to define the version of the project
 def versionFmt(out: sbtdynver.GitDescribeOutput): String = {
   val dirtySuffix = if (out.dirtySuffix.mkString("", "").nonEmpty) {
