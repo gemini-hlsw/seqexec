@@ -116,9 +116,9 @@ object Settings {
 
     val apacheXMLRPC      = "3.1.3"
     val opencsv           = "2.1"
-    val epicsService      = "0.18"
-    val gmpCommandRecords = "0.6.6"
-    val guava             = "16.0.1"
+    val epicsService      = "1.0.0"
+    val gmpCommandRecords = "0.7.0"
+    val guava             = "24.1-jre"
   }
 
   /**
