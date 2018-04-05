@@ -413,7 +413,9 @@ object Engine {
 
     def empty[D](userData: D): State[D] = State(userData, Map.empty)
 
-    implicit def equal[D]: Equal[State[D]] = Equal.equalA
+    implicit def equal[D: Equal]: Equal[State[D]] = {
+      Equal[(D, Map[Sequence.Id, Sequence.State])].contramap(s => (s.userData, s.sequences))
+    }
   }
 
   abstract class Types {
