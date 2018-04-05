@@ -313,7 +313,7 @@ object Model {
     case object Stopped           extends SequenceState
     final case class Running(userStop: Boolean, internalStop: Boolean) extends SequenceState
     object Running {
-      val init: Running = Running(false, false)
+      val init: Running = Running(userStop = false, internalStop = false)
     }
     final case class Failed(msg: String) extends SequenceState
 
