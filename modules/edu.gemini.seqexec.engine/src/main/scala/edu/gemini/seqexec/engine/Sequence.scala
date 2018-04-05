@@ -256,12 +256,6 @@ object Sequence {
       Sequence.Zipper.zipper(q).map(Zipper(_, SequenceState.Idle))
         .getOrElse(Final(Sequence.empty(q.id, q.metadata), SequenceState.Idle))
 
-    implicit val eq: Equal[State] = Equal.equal {
-      case (a: Zipper, b: Zipper) => Zipper.eq.equal(a, b)
-      case (a: Final, b: Final) => Final.eq.equal(a, b)
-      case _ => false
-    }
-
     /**
       * This is the `State` in Zipper mode, which means is under execution.
       *
@@ -348,10 +342,6 @@ object Sequence {
 
     }
 
-    object Zipper {
-      implicit val eq: Equal[Zipper] = Equal.equalA
-    }
-
     /**
       * Final `State`. This doesn't have any `Step` under execution, there are
       * only completed `Step`s.
@@ -394,10 +384,6 @@ object Sequence {
       private val observerL: Lens[Final, Option[Observer]] =
         metadataL ^|-> SequenceMetadata.observer
 
-    }
-
-    object Final {
-      implicit val eq: Equal[Final] = Equal.equalA
     }
 
   }

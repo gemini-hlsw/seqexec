@@ -412,10 +412,6 @@ object Engine {
     def userDataL[D]: Lens[State[D], D] = GenLens[State[D]](_.userData)
 
     def empty[D](userData: D): State[D] = State(userData, Map.empty)
-
-    implicit def equal[D: Equal]: Equal[State[D]] = {
-      Equal[(D, Map[Sequence.Id, Sequence.State])].contramap(s => (s.userData, s.sequences))
-    }
   }
 
   abstract class Types {
