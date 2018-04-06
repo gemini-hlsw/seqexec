@@ -29,12 +29,12 @@ import edu.gemini.spModel.gemini.altair.AltairConstants
 import edu.gemini.spModel.obscomp.InstConstants._
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import org.log4s._
-
-import scalaz.Scalaz._
-import scalaz._
-import scalaz.concurrent.Task
-import scalaz.stream.Process
+import cats._
+import cats.data.{EitherT, Kleisli, NonEmptyList, Reader}
+import cats.effect.IO
+import cats.implicits._
 import squants.Time
+import fs2.Stream
 
 /**
   * Created by jluhrs on 9/14/16.
@@ -42,7 +42,7 @@ import squants.Time
 class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
   private val Log = getLogger
 
-  implicit val show: Show[InstrumentSystem] = Show.shows(_.resource.shows)
+  implicit val show: Show[InstrumentSystem] = Show.show(_.resource.show)
 
   import SeqTranslate._
 
@@ -67,16 +67,16 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
       else SeqAction.fail(SeqexecFailure.Unexpected("Unable to send ObservationAborted message to ODB."))
     }
 
-  private def info(msg: => String): SeqAction[Unit] = EitherT(Task(Log.info(msg).right))
+  private def info(msg: => String): SeqAction[Unit] = EitherT.right(IO.apply(Log.info(msg)))
 
   private def observe[A <: InstrumentSystem: Show](config: Config, obsId: SPObservationID, inst: A,
                       otherSys: List[System], headers: Reader[ActionMetadata, List[Header]])
                      (ctx: ActionMetadata): SeqAction[Result.Partial[FileIdAllocated]] = {
-    val dataId: SeqAction[String] = EitherT(Task(
+    val dataId: SeqAction[String] = EitherT(IO.apply(
       config.extract(OBSERVE_KEY / DATA_LABEL_PROP).as[String].leftMap(e =>
       SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))))
 
-    def notifyObserveStart: SeqAction[Unit] = otherSys.map(_.notifyObserveStart).sequenceU.map(_ => ())
+    def notifyObserveStart: SeqAction[Unit] = otherSys.map(_.notifyObserveStart).sequence.map(_ => ())
 
     // endObserve must be sent to the instrument too.
     def notifyObserveEnd: SeqAction[Unit] = (inst +: otherSys).map(_.notifyObserveEnd).sequenceU.map(_ => ())
@@ -90,9 +90,9 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
         _   <- sendDataStart(obsId, fileId, d)
         _   <- notifyObserveStart
         _   <- headers(ctx).map(_.sendBefore(fileId, inst.dhsInstrumentName)).sequenceU
-        _   <- info(s"Start ${inst.shows} observation $obsId with label $fileId")
+        _   <- info(s"Start ${inst.show} observation $obsId with label $fileId")
         r   <- inst.observe(config)(fileId)
-        _   <- info(s"Completed ${inst.shows} observation $obsId with label $fileId")
+        _   <- info(s"Completed ${inst.show} observation $obsId with label $fileId")
         ret <- observeTail(fileId, d)(r)
       } yield ret
 
@@ -133,7 +133,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
             val kind = ActionType.Configure(resourceFromSystem(x))
             x.configure(config).map(_ => Result.Configured(x.resource)).toAction(kind)
           },
-          List(Action(ActionType.Observe, Kleisli(ctx => observe(config, obsId, inst, sys.filterNot(inst.equals), headers)(ctx).run.map(_.toResult)), Action.State(Action.Idle, Nil))))
+          List(Action(ActionType.Observe, Kleisli(ctx => observe(config, obsId, inst, sys.filterNot(inst.equals), headers)(ctx).value.map(_.toResult)), Action.State(Action.Idle, Nil))))
       extractStatus(config) match {
         case StepState.Pending if i >= nextToRun => Step.init(
           id = i,
@@ -175,10 +175,10 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
   //scalastyle:on
 
   // Required for untyped objects from java
-  implicit val objectShow: Show[AnyRef] = Show.showA
+  implicit val objectShow: Show[AnyRef] = Show.fromToString
 
   private def extractStatus(config: Config): StepState =
-    config.getItemValue(new ItemKey("observe:status")).shows match {
+    config.getItemValue(new ItemKey("observe:status")).show match {
       case "ready"    => StepState.Pending
       case "complete" => StepState.Completed
       case "skipped"  => StepState.Skipped
@@ -186,7 +186,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     }
 
   private def extractSkipped(config: Config): Boolean =
-    config.getItemValue(new ItemKey("observe:status")).shows match {
+    config.getItemValue(new ItemKey("observe:status")).show match {
       case "skipped" => true
       case _         => false
     }
@@ -235,7 +235,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
   }
 
   private def handleError(t: TrySeq[Unit]): executeEngine.EventType = t match {
-    case -\/(e) => Event.logErrorMsg(SeqexecFailure.explain(e))
+    case Left(e) => Event.logErrorMsg(SeqexecFailure.explain(e))
     case _      => Event.nullEvent
   }
 
@@ -334,7 +334,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     case _                      => false
   }
 
-  private def flatOrArcTcsSubsystems(inst: Model.Instrument) = NonEmptyList[TcsController.Subsystem](ScienceFold) :::> (if(hasOI(inst)) IList(OIWFS) else IList.empty)
+  private def flatOrArcTcsSubsystems(inst: Model.Instrument) = NonEmptyList[TcsController.Subsystem].of(ScienceFold) :::> (if(hasOI(inst)) IList(OIWFS) else IList.empty)
 
   private def calcSystems(stepType: StepType): TrySeq[List[System]] = {
     stepType match {
@@ -452,19 +452,15 @@ object SeqTranslate {
 
   private def calcStepType(config: Config): TrySeq[StepType] = {
     def extractGaos(inst: Model.Instrument): TrySeq[StepType] = config.extract(new ItemKey(AO_CONFIG_NAME) / AO_SYSTEM_PROP).as[String] match {
-      case -\/(ConfigUtilOps.ConversionError(_, _)) => TrySeq.fail(Unexpected("Unable to get AO system from sequence"))
-      case -\/(ConfigUtilOps.ContentError(_))       => TrySeq.fail(Unexpected("Logical error"))
-      case -\/(ConfigUtilOps.KeyNotFound(_))        => TrySeq(CelestialObject(inst))
-      case \/-(gaos)                                =>
-        gaos match {
-          case AltairConstants.SYSTEM_NAME_PROP                => TrySeq(Altair(inst))
-          case edu.gemini.spModel.gemini.gems.Gems.SYSTEM_NAME => TrySeq(Gems(inst))
-          case _                                               => TrySeq.fail(Unexpected("Logical error reading AO system name"))
-        }
+      case Left(ConfigUtilOps.ConversionError(_, _))              => TrySeq.fail(Unexpected("Unable to get AO system from sequence"))
+      case Left(ConfigUtilOps.ContentError(_))                    => TrySeq.fail(Unexpected("Logical error"))
+      case Left(ConfigUtilOps.KeyNotFound(_))                     => TrySeq(CelestialObject(inst))
+      case Right(AltairConstants.SYSTEM_NAME_PROP)                => TrySeq(Altair(inst))
+      case Right(edu.gemini.spModel.gemini.gems.Gems.SYSTEM_NAME) => TrySeq(Gems(inst))
+      case _                                                      => TrySeq.fail(Unexpected("Logical error reading AO system name"))
     }
 
-    (config.extract(OBSERVE_KEY / OBSERVE_TYPE_PROP).as[String].leftMap(explainExtractError)
-      |@| extractInstrument(config)) { (obsType, inst) =>
+    (config.extract(OBSERVE_KEY / OBSERVE_TYPE_PROP).as[String].leftMap(explainExtractError), extractInstrument(config)).mapN { (obsType, inst) =>
       obsType match {
         case SCIENCE_OBSERVE_TYPE                     => extractGaos(inst)
         case BIAS_OBSERVE_TYPE | DARK_OBSERVE_TYPE    => TrySeq(DarkOrBias(inst))
@@ -475,33 +471,24 @@ object SeqTranslate {
     }.join
   }
 
-  implicit class ResponseToResult(val r: SeqexecFailure \/ Result.Response) extends AnyVal {
-    def toResult: Result = r match {
-      case \/-(r) => Result.OK(r)
-      case -\/(e) => Result.Error(SeqexecFailure.explain(e))
-    }
+  implicit class ResponseToResult(val r: Either[SeqexecFailure, Result.Response]) extends AnyVal {
+    def toResult: Result = r.fold(e => Result.Error(SeqexecFailure.explain(e)), r => Result.OK(r))
   }
 
-  implicit class ResultToResult(val r: SeqexecFailure \/ Result) extends AnyVal {
-    def toResult: Result = r match {
-      case \/-(r) => r
-      case -\/(e) => Result.Error(SeqexecFailure.explain(e))
-    }
+  implicit class ResultToResult(val r: Either[SeqexecFailure, Result]) extends AnyVal {
+    def toResult: Result = r.fold(e => Result.Error(SeqexecFailure.explain(e)), identity)
   }
 
-  implicit class ConfigResultToResult[A <: Result.PartialVal](val r: SeqexecFailure \/ ConfigResult) extends AnyVal {
-    def toResult: Result = r match {
-      case \/-(r) => Result.OK(Configured(r.sys.resource))
-      case -\/(e) => Result.Error(SeqexecFailure.explain(e))
-    }
+  implicit class ConfigResultToResult[A <: Result.PartialVal](val r: Either[SeqexecFailure, ConfigResult]) extends AnyVal {
+    def toResult: Result = r.fold(e => Result.Error(SeqexecFailure.explain(e)), r => Result.OK(Configured(r.sys.resource)))
   }
 
   implicit class ActionResponseToAction[A <: Result.Response](val x: SeqAction[A]) extends AnyVal {
-    def toAction(kind: ActionType): Action = fromTask(kind, x.run.map(_.toResult))
+    def toAction(kind: ActionType): Action = fromTask(kind, x.value.map(_.toResult))
   }
 
   implicit class ConfigResultToAction(val x: SeqAction[ConfigResult]) extends AnyVal {
-    def toAction(kind: ActionType): Action = fromTask(kind, x.run.map(_.toResult))
+    def toAction(kind: ActionType): Action = fromTask(kind, x.value.map(_.toResult))
   }
 
   final case class ObserveContext(t: ObserveCommand.Result => SeqAction[Result], expTime: Time) extends Result.PauseContext

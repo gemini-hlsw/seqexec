@@ -57,16 +57,16 @@ final case class Tcs(tcsController: TcsController, subsystems: NonEmptyList[Subs
     }
 
   // Helper function to output the part of the TCS configuration that is actually applied.
-  private def subsystemConfig(tcs: TcsConfig, subsystem: Subsystem): List[AnyRef] = (subsystem match {
-    case Subsystem.M1          => List(tcs.gc.m1Guide.shows)
-    case Subsystem.M2          => List(tcs.gc.m2Guide.shows)
-    case Subsystem.OIWFS       => List(tcs.gtc.oiwfs.shows, tcs.ge.oiwfs.shows)
-    case Subsystem.P1WFS       => List(tcs.gtc.pwfs1.shows, tcs.ge.pwfs1.shows)
-    case Subsystem.P2WFS       => List(tcs.gtc.pwfs2.shows, tcs.ge.pwfs2.shows)
-    case Subsystem.Mount       => List(tcs.tc.shows)
-    case Subsystem.HRProbe     => List(tcs.agc.hrwfsPos.shows)
+  private def subsystemConfig(tcs: TcsConfig, subsystem: Subsystem): List[AnyRef] = subsystem match {
+    case Subsystem.M1 => List(tcs.gc.m1Guide.shows)
+    case Subsystem.M2 => List(tcs.gc.m2Guide.shows)
+    case Subsystem.OIWFS => List(tcs.gtc.oiwfs.shows, tcs.ge.oiwfs.shows)
+    case Subsystem.P1WFS => List(tcs.gtc.pwfs1.shows, tcs.ge.pwfs1.shows)
+    case Subsystem.P2WFS => List(tcs.gtc.pwfs2.shows, tcs.ge.pwfs2.shows)
+    case Subsystem.Mount => List(tcs.tc.shows)
+    case Subsystem.HRProbe => List(tcs.agc.hrwfsPos.shows)
     case Subsystem.ScienceFold => List(tcs.agc.sfPos.shows)
-  })
+  }
 
   @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
   private def configure(config: Config, tcsState: TcsConfig): SeqAction[ConfigResult] = {
