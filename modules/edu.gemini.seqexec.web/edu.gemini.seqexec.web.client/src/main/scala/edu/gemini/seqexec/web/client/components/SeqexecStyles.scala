@@ -117,7 +117,7 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
   )
 
   val queueText: StyleA = style(
-    paddingLeft(0.7.em),
+    paddingLeft(10.px),
     textOverflow := "ellipsis",
     overflow.hidden,
     wordWrap.breakWord,
@@ -125,7 +125,7 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
   )
 
   val queueIconColumn: StyleA = style(
-    minWidth(19.px).important,
+    minWidth(20.px).important,
     queueCenterCell
   )
 
@@ -480,8 +480,8 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     outline.none,
     minHeight(headerHeight.px),
     height(headerHeight.px),
-    paddingLeft(7.px),
-    paddingTop(7.px)
+    display.flex,
+    alignItems.center
   )
 
   // Override styles used by react-virtualized
@@ -490,6 +490,11 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     display.flex,
     flexDirection.row,
     alignItems.center
+  )
+
+  // Override styles used by react-virtualized
+  val headerTruncatedText: StyleA = style("ReactVirtualized__Table__headerTruncatedText")(
+    paddingLeft(7.px)
   )
 
   val firstHeaderColumn: StyleA = style("ReactVirtualized__Table__headerColumn:first-of-type")(
@@ -529,6 +534,10 @@ object SeqexecStyles extends scalacss.StyleSheet.Inline {
     display.flex,
     alignItems.center,
     justifyContent.flexStart
+  )
+
+  val tableHeaderIcons: StyleA = style(
+    paddingBottom(4.px)
   )
 
   val tableGrid: StyleA = style("ReactVirtualized__Table__Grid")(

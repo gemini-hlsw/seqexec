@@ -130,12 +130,13 @@ object QueueTableBody {
 
   private val PhoneCut = 400
   private val LargePhoneCut = 570
-  private val IconColumnWidth = 12
+  private val IconColumnWidth = 20
   private val ObsIdColumnWidth = 140
   private val StateColumnWidth = 80
   private val InstrumentColumnWidth = 80
   private val NameColumnWidth = 140
   private val TargetNameColumnWidth = 140
+  private val ColumnPadding = 10 + 1 // Taken from SeqexecStyles.queueText padding and 1 for border
 
   val statusHeaderRenderer: HeaderRenderer[js.Object] = (_, _, _, _, _, _) =>
     <.div(
@@ -158,8 +159,8 @@ object QueueTableBody {
     }
 
     // Columns displayed when logged in
-    val targetColumn = Column(Column.props(targetNameColumnWidth, "target", flexShrink = 0, flexGrow = 2, label = "Target", cellRenderer = targetRenderer(p), className = QueueColumnStyle))
-    val nameColumn = Column(Column.props(nameColumnWidth, "obsName", flexShrink = 0, flexGrow = 3, label = "Obs. Name", cellRenderer = obsNameRenderer(p), className = QueueColumnStyle))
+    val targetColumn = Column(Column.props(targetNameColumnWidth + ColumnPadding, "target", minWidth = TargetNameColumnWidth / 2, flexShrink = 2, flexGrow = 2, label = "Target", cellRenderer = targetRenderer(p), className = QueueColumnStyle))
+    val nameColumn = Column(Column.props(nameColumnWidth + ColumnPadding, "obsName", minWidth = NameColumnWidth / 2, flexShrink = 2, flexGrow = 2, label = "Obs. Name", cellRenderer = obsNameRenderer(p), className = QueueColumnStyle))
 
     val loggedInColumns = s.width match {
       case w if w < PhoneCut      => Nil
@@ -169,9 +170,9 @@ object QueueTableBody {
 
     val regularColumns = List(
       Column(Column.props(IconColumnWidth, "status", flexShrink = 0, flexGrow = 0, label = "", cellRenderer = statusIconRenderer(p), headerRenderer = statusHeaderRenderer, className = SeqexecStyles.queueIconColumn.htmlClass)),
-      Column(Column.props(obsColumnWidth, "obsId", flexShrink = 0, flexGrow = 2, label = "Obs. ID", cellRenderer = obsIdRenderer(p), className = QueueColumnStyle)),
-      Column(Column.props(statusColumnWidth, "state", flexShrink = 0, flexGrow = 0, label = "State", cellRenderer = stateRenderer(p), className = QueueColumnStyle)),
-      Column(Column.props(instrumentColumnWidth, "instrument", flexShrink = 0, flexGrow = 1, label = "Instrument", cellRenderer = instrumentRenderer(p), className = QueueColumnStyle))
+      Column(Column.props(obsColumnWidth + ColumnPadding, "obsId", minWidth = ObsIdColumnWidth, flexShrink = 0, flexGrow = 0, label = "Obs. ID", cellRenderer = obsIdRenderer(p), className = QueueColumnStyle)),
+      Column(Column.props(statusColumnWidth + ColumnPadding, "state", minWidth = StateColumnWidth, flexShrink = 0, flexGrow = 0, label = "State", cellRenderer = stateRenderer(p), className = QueueColumnStyle)),
+      Column(Column.props(instrumentColumnWidth + ColumnPadding, "instrument", minWidth = InstrumentColumnWidth, flexShrink = 0, flexGrow = 0, label = "Instrument", cellRenderer = instrumentRenderer(p), className = QueueColumnStyle))
     )
     isLogged.fold(regularColumns ::: loggedInColumns, regularColumns)
   }
