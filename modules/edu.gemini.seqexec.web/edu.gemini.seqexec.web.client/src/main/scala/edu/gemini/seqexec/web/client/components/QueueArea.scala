@@ -12,11 +12,13 @@ import edu.gemini.seqexec.web.client.model.Pages._
 import edu.gemini.seqexec.web.client.ModelOps._
 import edu.gemini.seqexec.web.client.services.HtmlConstants.iconEmpty
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconAttention, IconCheckmark, IconCircleNotched, IconSelectedRadio}
+import edu.gemini.web.client.utils._
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.extra.router.RouterCtl
 import react.virtualized._
+import scala.math.max
 
 import scalacss.ScalaCssReact._
 import scalaz.syntax.show._
@@ -91,9 +93,11 @@ object QueueTableBody {
 
   private def obsNameRenderer(p: Props) = linkedTextRenderer(p){ r => <.p(SeqexecStyles.queueText, r.name) }
 
+  private def statusText(status: SequenceState, runningStep: Option[RunningStep]): String =
+    s"${status.shows} ${runningStep.map(u => s" ${u.shows}").getOrElse("")}"
+
   private def stateRenderer(p: Props) = linkedTextRenderer(p){ r =>
-    val stepAtText = r.status.shows + r.runningStep.map(u => s" ${u.shows}").getOrElse("")
-    <.p(SeqexecStyles.queueText, stepAtText)
+    <.p(SeqexecStyles.queueText, statusText(r.status, r.runningStep))
   }
 
   private def instrumentRenderer(p: Props) = linkedTextRenderer(p){ r => <.p(SeqexecStyles.queueText, r.instrument.shows) }
@@ -129,6 +133,8 @@ object QueueTableBody {
   private val IconColumnWidth = 12
   private val ObsIdColumnWidth = 140
   private val StateColumnWidth = 80
+  private val InstrumentColumnWidth = 80
+  private val NameColumnWidth = 140
   private val TargetNameColumnWidth = 140
 
   val statusHeaderRenderer: HeaderRenderer[js.Object] = (_, _, _, _, _, _) =>
@@ -137,21 +143,35 @@ object QueueTableBody {
       ^.width := IconColumnWidth.px
     )
 
+  val QueueColumnStyle: String = SeqexecStyles.queueTextColumn.htmlClass
+
   private def columns(p: Props, s: Size): List[Table.ColumnArg] = {
     val isLogged = p.sequences().isLogged
-    val targetColumn = Column(Column.props(TargetNameColumnWidth, "target", flexShrink = 1, flexGrow = 3, label = "Target", cellRenderer = targetRenderer(p), className = SeqexecStyles.queueTextColumn.htmlClass))
-    val nameColumn = Column(Column.props(TargetNameColumnWidth, "obsName", flexShrink = 1, flexGrow = 3, label = "Obs. Name", cellRenderer = obsNameRenderer(p), className = SeqexecStyles.queueTextColumn.htmlClass))
-    val (loggedInWidth, loggedInColumns) = s.width match {
-      case w if w < PhoneCut      => (0, Nil)
-      case w if w < LargePhoneCut => (TargetNameColumnWidth, List(targetColumn))
-      case _                      => (2 * TargetNameColumnWidth, List(targetColumn, nameColumn))
+
+    // Calculate the column's width
+    val (obsColumnWidth, statusColumnWidth, instrumentColumnWidth, nameColumnWidth, targetNameColumnWidth) = p.sequences().sequences.map {
+      case SequenceInQueue(id, st, i, _, n, t, r) =>
+        (tableTextWidth(id), tableTextWidth(statusText(st, r)), tableTextWidth(i.shows), tableTextWidth(n), tableTextWidth(t.getOrElse("")))
+    }.foldLeft((ObsIdColumnWidth, StateColumnWidth, InstrumentColumnWidth, NameColumnWidth, TargetNameColumnWidth)) {
+      case ((o, s, i, n, t), (co, cs, ci, cn, ct)) =>
+        (max(o, co), max(s, cs), max(i, ci), max(n, cn), max(t, ct))
     }
-    val instWidth = s.width - IconColumnWidth - ObsIdColumnWidth - StateColumnWidth - loggedInWidth + 2
+
+    // Columns displayed when logged in
+    val targetColumn = Column(Column.props(targetNameColumnWidth, "target", flexShrink = 0, flexGrow = 2, label = "Target", cellRenderer = targetRenderer(p), className = QueueColumnStyle))
+    val nameColumn = Column(Column.props(nameColumnWidth, "obsName", flexShrink = 0, flexGrow = 3, label = "Obs. Name", cellRenderer = obsNameRenderer(p), className = QueueColumnStyle))
+
+    val loggedInColumns = s.width match {
+      case w if w < PhoneCut      => Nil
+      case w if w < LargePhoneCut => List(targetColumn)
+      case _                      => List(targetColumn, nameColumn)
+    }
+
     val regularColumns = List(
       Column(Column.props(IconColumnWidth, "status", flexShrink = 0, flexGrow = 0, label = "", cellRenderer = statusIconRenderer(p), headerRenderer = statusHeaderRenderer, className = SeqexecStyles.queueIconColumn.htmlClass)),
-      Column(Column.props(ObsIdColumnWidth, "obsId", flexShrink = 0, flexGrow = 0, label = "Obs. ID", cellRenderer = obsIdRenderer(p), className = SeqexecStyles.queueTextColumn.htmlClass)),
-      Column(Column.props(StateColumnWidth, "state", flexShrink = 0, flexGrow = 0, label = "State", cellRenderer = stateRenderer(p), className = SeqexecStyles.queueTextColumn.htmlClass)),
-      Column(Column.props(instWidth.toInt, "instrument", flexShrink = 0, flexGrow = 1, label = "Instrument", cellRenderer = instrumentRenderer(p), className = SeqexecStyles.queueTextColumn.htmlClass))
+      Column(Column.props(obsColumnWidth, "obsId", flexShrink = 0, flexGrow = 2, label = "Obs. ID", cellRenderer = obsIdRenderer(p), className = QueueColumnStyle)),
+      Column(Column.props(statusColumnWidth, "state", flexShrink = 0, flexGrow = 0, label = "State", cellRenderer = stateRenderer(p), className = QueueColumnStyle)),
+      Column(Column.props(instrumentColumnWidth, "instrument", flexShrink = 0, flexGrow = 1, label = "Instrument", cellRenderer = instrumentRenderer(p), className = QueueColumnStyle))
     )
     isLogged.fold(regularColumns ::: loggedInColumns, regularColumns)
   }
