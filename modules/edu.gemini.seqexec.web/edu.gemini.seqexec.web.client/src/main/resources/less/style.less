@@ -215,6 +215,9 @@ body {
 .SeqexecStyles-logIconRow {
   margin: 0 0 13px 2px !important;
 }
+.SeqexecStyles-tableHeaderIcons {
+  padding-bottom: 4px;
+}
 .SeqexecStyles-tableHeader {
   border-left-width: 1px;
   border-left-style: solid;
@@ -225,8 +228,8 @@ body {
   outline: none;
   min-height: 33px;
   height: 33px;
-  padding-left: 7px;
-  padding-top: 7px;
+  display: flex;
+  align-items: center;
 }
 .ReactVirtualized__Table__headerRow {
   font-weight: 700;
@@ -644,13 +647,13 @@ body {
   .queueFullCell;
 }
 .SeqexecStyles-queueText {
-  padding-left: 0.7em;
+  padding-left: 10px;
   text-overflow: ellipsis;
   overflow: hidden;
   white-space: nowrap;
 }
 .SeqexecStyles-queueIconColumn {
-  min-width: 19px;
+  min-width: 20px;
   .queueCenterCell;
 }
 .SeqexecStyles-selectedIcon {
@@ -723,6 +726,9 @@ body {
 }
 .SeqexecStyles-queueArea {
   .widerColumn;
+}
+.ReactVirtualized__Table__headerTruncatedText {
+  padding-left: 7px;
 }
 @media only screen and (max-width: 767px) {
   .ui.container {
