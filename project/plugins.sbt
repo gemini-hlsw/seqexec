@@ -26,7 +26,7 @@ addSbtPlugin("com.dwijnand"      % "sbt-dynver"             % "3.0.0")
 addSbtPlugin("org.wartremover"   % "sbt-wartremover"        % "2.2.1")
 
 // Use NPM modules rather than webjars
-addSbtPlugin("ch.epfl.scala"     % "sbt-scalajs-bundler"    % "0.10.0")
+addSbtPlugin("ch.epfl.scala"     % "sbt-scalajs-bundler"    % "0.12.0")
 
 // Generate a custom tzdb
 addSbtPlugin("io.github.cquiroz" % "sbt-tzdb" % "0.1.2")

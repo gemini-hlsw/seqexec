@@ -40,8 +40,6 @@ object OffsetFns {
   def offsetValueFormat(off: Offset): String =
     f" ${off.value}%003.2f″"
 
-  def tableTextWidth(text: String): Int = textWidth(text, "bold 14px sans-serif")
-
   def offsetText(axis: OffsetAxis)(step: Step): String =
     offsetValueFormat(axis match {
       case OffsetAxis.AxisP => telescopeOffsetPO.getOption(step).getOrElse(TelescopeOffset.P.Zero)

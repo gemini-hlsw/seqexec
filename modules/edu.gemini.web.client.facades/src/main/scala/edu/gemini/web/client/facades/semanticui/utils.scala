@@ -9,16 +9,18 @@ import scala.math
 
 trait utils {
   type Canvas = html.Canvas
-  type Ctx2D = dom.CanvasRenderingContext2D
+  type Ctx2D  = dom.CanvasRenderingContext2D
 
   @SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf"))
   def textWidth(text: String, font: String): Int = {
     val canvas = dom.document.createElement("canvas").asInstanceOf[Canvas]
-    val ctx = canvas.getContext("2d").asInstanceOf[Ctx2D]
+    val ctx    = canvas.getContext("2d").asInstanceOf[Ctx2D]
     ctx.font = font
     val metrics = ctx.measureText(text)
     math.round(metrics.width.toFloat)
   }
+
+  def tableTextWidth(text: String): Int = textWidth(text, "bold 14px sans-serif")
 }
 
 object utils extends utils
