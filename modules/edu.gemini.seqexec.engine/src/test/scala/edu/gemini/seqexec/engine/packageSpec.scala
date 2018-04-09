@@ -7,24 +7,25 @@ import java.util.UUID
 
 import edu.gemini.seqexec.engine.Sequence.State.Final
 import edu.gemini.seqexec.model.Model.StepState
-import org.scalatest.{FlatSpec, NonImplicitAssertions}
-import edu.gemini.seqexec.model.Model.{Operator/*, Resource, SequenceMetadata, SequenceState, StepConfig, StepState*/}
+import edu.gemini.seqexec.model.Model.Operator
 import edu.gemini.seqexec.model.Model.{Resource, SequenceMetadata, SequenceState, StepConfig}
 import edu.gemini.seqexec.model.Model.Instrument.{F2, GmosS}
 import edu.gemini.seqexec.model.Model.Resource.TCS
 import edu.gemini.seqexec.model.{ActionType, UserDetails}
+//import fs2.async
+//import fs2.async.mutable.Semaphore
+import fs2.Stream
 
- import scala.concurrent.duration._
-// import cats._
-import cats.implicits._
 import cats.data.Kleisli
+import cats.implicits._
+import cats.effect.IO
 import monocle.Lens
 import monocle.macros.GenLens
-import cats.effect.IO
-import fs2.Stream
 import org.scalatest.Inside.inside
+import org.scalatest.{FlatSpec, NonImplicitAssertions}
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration._
 
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 class packageSpec extends FlatSpec with NonImplicitAssertions {
@@ -133,10 +134,11 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
     case _                       => false
   }
 
+  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def runToCompletion(s0: Engine.State[Unit]): Option[Engine.State[Unit]] = {
     executionEngine.process(Stream.eval(IO.pure(Event.start(seqId, user, UUID.randomUUID()))))(s0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
-    ).compile.last.unsafeRunSync.map(_._2)
+    ).compile.last.attempt.unsafeRunSync.fold(x => throw x, _.map(_._2))
   }
 
   it should "be in Running status after starting" in {
@@ -187,18 +189,17 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
     assert(actionPause.exists(_.sequences(seqId).current.execution.forall{Action.paused}))
   }
 
-   "engine" should "run sequence to completion after resuming a paused action" in {
-     val p = Stream.eval(IO.pure(Event.actionResume(seqId, 0, IO(Result.OK(Result.Configured(GmosS))))))
+  "engine" should "run sequence to completion after resuming a paused action" in {
+    val p = Stream.eval(IO.pure(Event.actionResume(seqId, 0, IO(Result.OK(Result.Configured(GmosS))))))
 
-     val result = actionPause.map(executionEngine.process(p)(_).drop(1).takeThrough(
-       a => !isFinished(a._2.sequences(seqId).status)
-     ).compile.last.timed(5.seconds).unsafeRunSyncAttempt)
-     val qso = result.map(_.map(_.map(_._2)))
+    val result = actionPause.flatMap(executionEngine.process(p)(_).drop(1).takeThrough(
+      a => !isFinished(a._2.sequences(seqId).status)
+    ).compile.last.unsafeRunTimed(5.seconds))
+    val qso = result.flatMap(_.map(_._2))
 
-     assert(qso.exists(qs => qs.isRight && qs.forall(x => x.isDefined && x.map(_.sequences(seqId).current.actions.isEmpty).getOrElse(false) &&
-       x.map(_.sequences(seqId).status === SequenceState.Completed).getOrElse(false))))
+    assert(qso.forall(x => x.sequences(seqId).current.actions.isEmpty && (x.sequences(seqId).status === SequenceState.Completed)))
 
-   }
+  }
 
   it should "not run 2nd sequence because it's using the same resource" in {
     val p = Stream.emits(List(Event.start(seqId1, user, UUID.randomUUID()), Event.start(seqId2, user, UUID.randomUUID()))).evalMap(IO.pure(_))
@@ -215,48 +216,12 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
     )
   }
 
-  // "engine" should "keep processing input messages regardless of how long Actions take" in {
-  //   val q = async.boundedQueue[IO, executionEngine.EventType](10)
-  //   val startedFlag = new Semaphore(0)
-  //   val finishFlag = new Semaphore(0)
-  //
-  //   val qs = Engine.State[Unit]((),
-  //     Map((seqId, Sequence.State.init(Sequence(
-  //       "First",
-  //       SequenceMetadata(GmosS, None, ""),
-  //       List(
-  //         Step.init(
-  //           1,
-  //           None,
-  //           config,
-  //           Set(GmosS),
-  //           List(
-  //             List(fromIO(ActionType.Configure(TCS),
-  //             IO.apply{
-  //               startedFlag.release()
-  //               finishFlag.acquire()
-  //               Result.OK(Result.Configured(TCS))
-  //             }) )
-  //           )
-  //         )
-  //       )
-  //     ) ) ) )
-  //   )
-  //
-  //   val result = Nondeterminism[IO].both(
-  //     List(
-  //       q.enqueueOne(Event.start(seqId, user)),
-  //       IO.apply(startedFlag.acquire()),
-  //       q.enqueueOne(Event.getState[executionEngine.ConcreteTypes]{_ => IO.delay{finishFlag.release()} *> IO.delay(None)})
-  //     ).sequenceU,
-  //     executionEngine.process(q.dequeue)(qs).drop(1).takeThrough(a => !isFinished(a._2.sequences(seqId).status)).run
-  //     ).timed(5.seconds).unsafeRunSyncAttempt
-  //   assert(result.isRight)
-  // }
-
-//  "engine" should "not capture fatal errors." in {
-//    @SuppressWarnings(Array("org.wartremover.warts.Throw"))
-//    def s0(e: Error): Engine.State[Unit] = Engine.State[Unit]((),
+//  "engine" should "keep processing input messages regardless of how long Actions take" in {
+//    val q = async.boundedQueue[IO, executionEngine.EventType](10)
+//    val startedFlag = Semaphore.apply(0)
+//    val finishFlag = Semaphore.apply(0)
+//
+//    val qs = Engine.State[Unit]((),
 //      Map((seqId, Sequence.State.init(Sequence(
 //        "First",
 //        SequenceMetadata(GmosS, None, ""),
@@ -267,24 +232,62 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
 //            config,
 //            Set(GmosS),
 //            List(
-//              List(fromIO(ActionType.Undefined,
+//              List(fromIO(ActionType.Configure(TCS),
 //              IO.apply{
-//                throw e
-//              }))
+//                startedFlag.decrement
+//                finishFlag.increment
+//                Result.OK(Result.Configured(TCS))
+//              }) )
 //            )
 //          )
 //        )
 //      ) ) ) )
 //    )
 //
+//    val result = cats.Parallel[List, IO].map2(
+//      List(
+//        q.enqueue1(Event.start(seqId, user)),
+//        IO.apply(startedFlag.increment),
+//        q.enqueue1(Event.getState[executionEngine.ConcreteTypes]{_ => IO.apply{finishFlag.decrement()} *> IO.apply(None)})
+//      ).sequenceU,
+//      executionEngine.process(q.dequeue)(qs).drop(1).takeThrough(a => !isFinished(a._2.sequences(seqId).status)).run
+//      ).timed(5.seconds).unsafeRunSyncAttempt
+//    assert(result.isRight)
+//  }
+
+  "engine" should "not capture fatal errors." in {
+    @SuppressWarnings(Array("org.wartremover.warts.Throw"))
+    def s0(e: Exception): Engine.State[Unit] = Engine.State[Unit]((),
+      Map((seqId, Sequence.State.init(Sequence(
+        "First",
+        SequenceMetadata(GmosS, None, ""),
+        List(
+          Step.init(
+            1,
+            None,
+            config,
+            Set(GmosS),
+            List(
+              List(fromIO(ActionType.Undefined,
+              IO.apply {
+                throw e
+              }))
+            )
+          )
+        )
+      ) ) ) )
+    )
+
+    intercept[RuntimeException](
+      runToCompletion(s0(new RuntimeException))
+    )
 //    intercept[OutOfMemoryError](
 //      runToCompletion(s0(new OutOfMemoryError))
 //    )
 //    intercept[StackOverflowError](
 //      runToCompletion(s0(new StackOverflowError))
 //    )
-//  }
-
+  }
 
   case class DummyData(operator: Option[Operator])
   implicit object DummyDataCanGenerateActionMetadata extends ActionMetadataGenerator[DummyData] {
@@ -500,6 +503,5 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
       case Some(stepSs) => assert(stepSs === List(StepState.Completed, StepState.Skipped))
     }
   }
-
 
 }
