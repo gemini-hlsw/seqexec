@@ -6,17 +6,14 @@ package edu.gemini.seqexec.server.tcs
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
+import cats.Apply
+import cats.implicits._
 import edu.gemini.seqexec.server.SeqAction
 import edu.gemini.spModel.core.Wavelength
 import squants.space.{Angstroms, Meters}
 
 import scala.util.Try
-import scalaz.Scalaz._
-import scalaz._
 
-/**
-  * Created by jluhrs on 2/6/17.
-  */
 trait TargetKeywordsReader {
   def getRA: SeqAction[Option[Double]]
   def getDec: SeqAction[Option[Double]]
@@ -217,7 +214,7 @@ object TcsKeywordsReaderImpl extends TcsKeywordsReader {
     }
     def raOffset(off: Double, dec: Double): Double = angleRange(Math.toDegrees(off))*Math.cos(dec)*degreeToArcsec
 
-    TcsEpics.instance.targetA.flatMap(v => Apply[Option].lift2(raOffset)(v.lift(raoffIndex),v.lift(decoffIndex)))
+    TcsEpics.instance.targetA.flatMap(v => Apply[Option].ap2(Option(raOffset _))(v.lift(raoffIndex),v.lift(decoffIndex)))
   }
 
   override def getTrackingDecOffset: SeqAction[Option[Double]] =

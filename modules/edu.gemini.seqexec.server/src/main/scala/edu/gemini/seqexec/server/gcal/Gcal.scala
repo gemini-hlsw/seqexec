@@ -3,6 +3,8 @@
 
 package edu.gemini.seqexec.server.gcal
 
+import cats._
+import cats.implicits._
 import edu.gemini.seqexec.model.Model.Resource
 import edu.gemini.seqexec.server.ConfigUtilOps._
 import edu.gemini.seqexec.server.gcal.GcalController._
@@ -14,8 +16,7 @@ import edu.gemini.spModel.seqcomp.SeqConfigNames.CALIBRATION_KEY
 
 import scala.Function.const
 import scala.collection.JavaConverters._
-import scalaz.Scalaz._
-import scalaz.{Equal, \/}
+import edu.gemini.seqexec.server._
 
 /**
   * Created by jluhrs on 3/21/17.
@@ -26,9 +27,9 @@ final case class Gcal(controller: GcalController, isCP: Boolean) extends System 
   override val resource: Resource = Resource.Gcal
 
   /**
-    * Called to configure a system, returns a Task[SeqexecFailure \/ ConfigResult]
+    * Called to configure a system, returns a IO[Either[SeqexecFailure, ConfigResult]]
     */
-  override def configure(config: Config): SeqAction[ConfigResult] = ^(controller.getConfig, fromSequenceConfig(config, isCP))(diffConfiguration)
+  override def configure(config: Config): SeqAction[ConfigResult] = (controller.getConfig, fromSequenceConfig(config, isCP)).mapN(diffConfiguration)
     .flatMap(controller.applyConfig).map(const(ConfigResult(this)))
 
   override def notifyObserveStart: SeqAction[Unit] = SeqAction.void
@@ -40,17 +41,17 @@ object Gcal {
   def explainExtractError(e: ExtractFailure): SeqexecFailure =
     SeqexecFailure.Unexpected(ConfigUtilOps.explain(e))
 
-  implicit class Recover[T](v: \/[ConfigUtilOps.ExtractFailure, T]) {
+  implicit class Recover[T](v: Either[ConfigUtilOps.ExtractFailure, T]) {
     def recoverWithDefault[R >:T](d: R): TrySeq[R] = v.recoverWith[ConfigUtilOps.ExtractFailure, R] {
-          case ConfigUtilOps.KeyNotFound(_)            => d.right[ConfigUtilOps.ExtractFailure]
-          case e @ ConfigUtilOps.ConversionError(_, _) => e.left
+          case ConfigUtilOps.KeyNotFound(_)            => d.asRight[ConfigUtilOps.ExtractFailure]
+          case e @ ConfigUtilOps.ConversionError(_, _) => e.asLeft
         }.leftMap(explainExtractError)
   }
 
   def diffConfiguration(from: GcalConfig, to: GcalConfig): GcalConfig = {
 
-    def diff[T](from: Option[T], to: Option[T])(implicit eq: Equal[T]): Option[T] = (from, to) match {
-      case (Some(a), Some(b)) if a =/= b => Some(b)
+    def diff[T](from: Option[T], to: Option[T])(implicit eq: Eq[T]): Option[T] = (from, to) match {
+      case (Some(a), Some(b)) if a =!= b => Some(b)
       case (None, Some(b))               => Some(b)
       case _                             => None
     }
@@ -95,7 +96,7 @@ object Gcal {
         sht  <- shutter
         flt  <- filter
         dif  <- diffuser
-      } yield if(lamps.isEmpty && List[Option[_]](sht, flt, dif).all(_.isEmpty)) GcalConfig.allOff
+      } yield if(lamps.isEmpty && List[Option[_]](sht, flt, dif).forall(_.isEmpty)) GcalConfig.allOff
               else GcalConfig(ar, cuar, qh, thar, xe, ir, sht, flt, dif)
     )
 

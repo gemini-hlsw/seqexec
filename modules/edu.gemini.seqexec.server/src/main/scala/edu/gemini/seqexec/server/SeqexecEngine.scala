@@ -6,6 +6,7 @@ package edu.gemini.seqexec.server
 import java.time.LocalDate
 import java.nio.file.Paths
 
+import cats.effect.IO
 import edu.gemini.epics.acm.CaService
 import edu.gemini.pot.sp.SPObservationID
 import edu.gemini.spModel.core.Site
@@ -30,18 +31,20 @@ import edu.gemini.spModel.seqcomp.SeqConfigNames.OCS_KEY
 import edu.gemini.spModel.obscomp.InstConstants
 import edu.gemini.spModel.core.SPProgramID
 import knobs.Config
-import scalaz._
-import Scalaz._
-import scalaz.concurrent.{Strategy, Task}
+import cats._
+import cats.data.{EitherT, Kleisli}
+import cats.implicits._
+import fs2.Stream
+//import scalaz._
+//import Scalaz._
+//import scalaz.concurrent.{Strategy, IO}
 
 import scala.concurrent.duration._
-import scalaz.stream.{DefaultScheduler, Process, wye}
-import scalaz.stream.wye._
-import scalaz.stream.time._
+import mouse.all._
+//import scalaz.stream.{DefaultScheduler, Stream, wye}
+//import scalaz.stream.wye._
+//import scalaz.stream.time._
 
-/**
-  * Created by jluhrs on 10/7/16.
-  */
 class SeqexecEngine(settings: SeqexecEngine.Settings) {
   import SeqexecEngine._
 
@@ -74,81 +77,81 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
 
   private val translator = SeqTranslate(settings.site, systems, translatorSettings)
 
-  def load(q: EventQueue, seqId: SPObservationID): Task[SeqexecFailure \/ Unit] = loadEvents(seqId).flatMapF(q.enqueueAll(_).map(_.right)).run
+  def load(q: EventQueue, seqId: SPObservationID): IO[Either[SeqexecFailure, Unit]] = loadEvents(seqId).flatMapF(q.enqueueAll(_).map(_.asRight)).run
 
-  def start(q: EventQueue, id: SPObservationID, user: UserDetails, clientId: ClientID): Task[SeqexecFailure \/ Unit] =
-    q.enqueueOne(Event.start(id.stringValue(), user, clientId)).map(_.right)
+  def start(q: EventQueue, id: SPObservationID, user: UserDetails, clientId: ClientID): IO[Either[SeqexecFailure, Unit]] =
+    q.enqueueOne(Event.start(id.stringValue(), user, clientId)).map(_.asRight)
 
-  def requestPause(q: EventQueue, id: SPObservationID, user: UserDetails): Task[SeqexecFailure \/ Unit] =
-    q.enqueueOne(Event.pause(id.stringValue(), user)).map(_.right)
+  def requestPause(q: EventQueue, id: SPObservationID, user: UserDetails): IO[Either[SeqexecFailure, Unit]] =
+    q.enqueueOne(Event.pause(id.stringValue(), user)).map(_.asRight)
 
-  def requestCancelPause(q: EventQueue, id: SPObservationID, user: UserDetails): Task[SeqexecFailure \/ Unit] =
-    q.enqueueOne(Event.cancelPause(id.stringValue(), user)).map(_.right)
+  def requestCancelPause(q: EventQueue, id: SPObservationID, user: UserDetails): IO[Either[SeqexecFailure, Unit]] =
+    q.enqueueOne(Event.cancelPause(id.stringValue(), user)).map(_.asRight)
 
   def setBreakpoint(q: EventQueue,
                     seqId: SPObservationID,
                     user: UserDetails,
                     stepId: edu.gemini.seqexec.engine.Step.Id,
-                    v: Boolean): Task[SeqexecFailure \/ Unit] =
-    q.enqueueOne(Event.breakpoint(seqId.stringValue(), user, stepId, v)).map(_.right)
+                    v: Boolean): IO[Either[SeqexecFailure, Unit]] =
+    q.enqueueOne(Event.breakpoint(seqId.stringValue(), user, stepId, v)).map(_.asRight)
 
-  def setOperator(q: EventQueue, user: UserDetails, name: Operator): Task[SeqexecFailure \/ Unit] =
+  def setOperator(q: EventQueue, user: UserDetails, name: Operator): IO[Either[SeqexecFailure, Unit]] =
     q.enqueueAll(List(
       Event.logDebugMsg(s"SeqexecEngine: Setting Operator name to '$name' by ${user.username}"),
       Event.modifyState[executeEngine.ConcreteTypes]((Engine.State.userDataL ^|-> EngineMetadata.operatorL).set(name.some), SetOperator(name, user.some))
-    )).map(_.right)
+    )).map(_.asRight)
 
   def setObserver(q: EventQueue,
                   seqId: SPObservationID,
                   user: UserDetails,
-                  name: Observer): Task[SeqexecFailure \/ Unit] =
-    q.enqueueOne(Event.setObserver(seqId.stringValue(), user, name)).map(_.right)
+                  name: Observer): IO[Either[SeqexecFailure, Unit]] =
+    q.enqueueOne(Event.setObserver(seqId.stringValue(), user, name)).map(_.asRight)
 
-  def setConditions(q: EventQueue, conditions: Conditions, user: UserDetails): Task[SeqexecFailure \/ Unit] =
+  def setConditions(q: EventQueue, conditions: Conditions, user: UserDetails): IO[Either[SeqexecFailure, Unit]] =
     q.enqueueAll(List(
       Event.logDebugMsg("SeqexecEngine: Setting conditions"),
       Event.modifyState[executeEngine.ConcreteTypes]((Engine.State.userDataL ^|-> EngineMetadata.conditionsL).set(conditions), SetConditions(conditions, user.some))
-    )).map(_.right)
+    )).map(_.asRight)
 
-  def setImageQuality(q: EventQueue, iq: ImageQuality, user: UserDetails): Task[SeqexecFailure \/ Unit] =
+  def setImageQuality(q: EventQueue, iq: ImageQuality, user: UserDetails): IO[Either[SeqexecFailure, Unit]] =
     q.enqueueAll(List(
       Event.logDebugMsg("SeqexecEngine: Setting image quality"),
       Event.modifyState[executeEngine.ConcreteTypes]((Engine.State.userDataL ^|-> EngineMetadata.conditionsL ^|-> Conditions.iq).set(iq), SetImageQuality(iq, user.some))
-    )).map(_.right)
+    )).map(_.asRight)
 
-  def setWaterVapor(q: EventQueue, wv: WaterVapor, user: UserDetails): Task[SeqexecFailure \/ Unit] =
+  def setWaterVapor(q: EventQueue, wv: WaterVapor, user: UserDetails): IO[Either[SeqexecFailure, Unit]] =
     q.enqueueAll(List(
       Event.logDebugMsg("SeqexecEngine: Setting water vapor"),
       Event.modifyState[executeEngine.ConcreteTypes]((Engine.State.userDataL ^|-> EngineMetadata.conditionsL ^|-> Conditions.wv).set(wv), SetWaterVapor(wv, user.some))
-    )).map(_.right)
+    )).map(_.asRight)
 
-  def setSkyBackground(q: EventQueue, sb: SkyBackground, user: UserDetails): Task[SeqexecFailure \/ Unit] =
+  def setSkyBackground(q: EventQueue, sb: SkyBackground, user: UserDetails): IO[Either[SeqexecFailure, Unit]] =
     q.enqueueAll(List(
       Event.logDebugMsg("SeqexecEngine: Setting sky background"),
       Event.modifyState[executeEngine.ConcreteTypes]((Engine.State.userDataL ^|-> EngineMetadata.conditionsL ^|-> Conditions.sb).set(sb), SetSkyBackground(sb, user.some))
-    )).map(_.right)
+    )).map(_.asRight)
 
-  def setCloudCover(q: EventQueue, cc: CloudCover, user: UserDetails): Task[SeqexecFailure \/ Unit] =
+  def setCloudCover(q: EventQueue, cc: CloudCover, user: UserDetails): IO[Either[SeqexecFailure, Unit]] =
     q.enqueueAll(List(
       Event.logDebugMsg("SeqexecEngine: Setting cloud cover"),
       Event.modifyState[executeEngine.ConcreteTypes]((Engine.State.userDataL ^|-> EngineMetadata.conditionsL ^|-> Conditions.cc).set(cc), SetCloudCover(cc, user.some))
-    )).map(_.right)
+    )).map(_.asRight)
 
   def setSkipMark(q: EventQueue,
                   seqId: SPObservationID,
                   user: UserDetails,
                   stepId: edu.gemini.seqexec.engine.Step.Id,
-                  v: Boolean): Task[SeqexecFailure \/ Unit] =
-  q.enqueueOne(Event.skip(seqId.stringValue(), user, stepId, v)).map(_.right)
+                  v: Boolean): IO[Either[SeqexecFailure, Unit]] =
+  q.enqueueOne(Event.skip(seqId.stringValue(), user, stepId, v)).map(_.asRight)
 
-  def requestRefresh(q: EventQueue, clientId: ClientID): Task[Unit] = q.enqueueOne(Event.poll(clientId))
+  def requestRefresh(q: EventQueue, clientId: ClientID): IO[Unit] = q.enqueueOne(Event.poll(clientId))
 
-  def seqQueueRefreshProcess: Process[Task, executeEngine.EventType] =
+  def seqQueueRefreshStream: Stream[IO, executeEngine.EventType] =
     awakeEvery(settings.odbQueuePollingInterval)(Strategy.DefaultStrategy, DefaultScheduler).map(_ =>
       Event.getState[executeEngine.ConcreteTypes](refreshSequenceList()))
 
-  def eventProcess(q: EventQueue): Process[Task, SeqexecEvent] =
-    executeEngine.process(wye(q.dequeue, seqQueueRefreshProcess)(mergeHaltBoth))(Engine.State.empty[EngineMetadata](EngineMetadata.default)).flatMap(x => Process.eval(notifyODB(x))).map {
+  def eventStream(q: EventQueue): Stream[IO, SeqexecEvent] =
+    executeEngine.process(wye(q.dequeue, seqQueueRefreshStream)(mergeHaltBoth))(Engine.State.empty[EngineMetadata](EngineMetadata.default)).flatMap(x => Stream.eval(notifyODB(x))).map {
       case (ev, qState) =>
         toSeqexecEvent(ev)(
           SequencesQueue(
@@ -161,19 +164,19 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
         )
     }
 
-  def stopObserve(q: EventQueue, seqId: SPObservationID): Task[Unit] = q.enqueueOne(
+  def stopObserve(q: EventQueue, seqId: SPObservationID): IO[Unit] = q.enqueueOne(
     Event.actionStop[executeEngine.ConcreteTypes](seqId.stringValue, translator.stopObserve(seqId.stringValue))
   )
 
-  def abortObserve(q: EventQueue, seqId: SPObservationID): Task[Unit] = q.enqueueOne(
+  def abortObserve(q: EventQueue, seqId: SPObservationID): IO[Unit] = q.enqueueOne(
     Event.actionStop[executeEngine.ConcreteTypes](seqId.stringValue, translator.abortObserve(seqId.stringValue))
   )
 
-  def pauseObserve(q: EventQueue, seqId: SPObservationID): Task[Unit] = q.enqueueOne(
+  def pauseObserve(q: EventQueue, seqId: SPObservationID): IO[Unit] = q.enqueueOne(
     Event.actionStop[executeEngine.ConcreteTypes](seqId.stringValue, translator.pauseObserve)
   )
 
-  def resumeObserve(q: EventQueue, seqId: SPObservationID): Task[Unit] = q.enqueueOne(
+  def resumeObserve(q: EventQueue, seqId: SPObservationID): IO[Unit] = q.enqueueOne(
     Event.getSeqState[executeEngine.ConcreteTypes](seqId.stringValue, translator.resumePaused(seqId.stringValue))
   )
 
@@ -184,9 +187,9 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     } yield if(!q.status(st).isRunning && !seq.status.isRunning && !seq.status.isCompleted && !q.contains(seqId)) st.copy(userData = queuesL.modify(_.updated(name, q :+ seqId))(st.userData)) else st
   ).getOrElse(st)
 
-  def addSequenceToQueue(q: EventQueue, queueName: String, seqId: SPObservationID): Task[SeqexecFailure \/ Unit] = q.enqueueOne(
+  def addSequenceToQueue(q: EventQueue, queueName: String, seqId: SPObservationID): IO[Either[SeqexecFailure, Unit]] = q.enqueueOne(
     Event.modifyState[executeEngine.ConcreteTypes](addSeq(queueName, seqId.stringValue), NullSeqEvent)
-  ).map(_.right)
+  ).map(_.asRight)
 
   private def removeSeq(name: String, seqId: Sequence.Id)(st: executeEngine.StateType): executeEngine.StateType = (
     for {
@@ -194,9 +197,9 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     } yield if(!q.status(st).isRunning && q.contains(seqId)) st.copy(userData = queuesL.modify(_.updated(name, q.filterNot(_===seqId)))(st.userData)) else st
   ).getOrElse(st)
 
-  def removeSequenceFromQueue(q: EventQueue, queueName: String, seqId: SPObservationID): Task[SeqexecFailure \/ Unit] = q.enqueueOne(
+  def removeSequenceFromQueue(q: EventQueue, queueName: String, seqId: SPObservationID): IO[Either[SeqexecFailure, Unit]] = q.enqueueOne(
     Event.modifyState[executeEngine.ConcreteTypes](removeSeq(queueName, seqId.stringValue), NullSeqEvent)
-  ).map(_.right)
+  ).map(_.asRight)
 
   // This assumes that there is only one instance of e in l
   private def moveElement[T](l: List[T], e: T, d: Int)(implicit eq: Equal[T]): List[T] = {
@@ -215,13 +218,13 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     } yield if(!q.status(st).isRunning && q.contains(seqId)) st.copy(userData = queuesL.modify(_.updated(name, moveElement(q, seqId, d)))(st.userData)) else st
   ).getOrElse(st)
 
-  def moveSequenceInQueue(q: EventQueue, queueName: String, seqId: SPObservationID, d: Int): Task[SeqexecFailure \/ Unit] = q.enqueueOne(
+  def moveSequenceInQueue(q: EventQueue, queueName: String, seqId: SPObservationID, d: Int): IO[Either[SeqexecFailure, Unit]] = q.enqueueOne(
     Event.modifyState[executeEngine.ConcreteTypes](moveSeq(queueName, seqId.stringValue, d), NullSeqEvent)
-  ).map(_.right)
+  ).map(_.asRight)
 
-  private def notifyODB(i: (executeEngine.EventType, executeEngine.StateType)): Task[(executeEngine.EventType, executeEngine.StateType)] = {
-    def safeGetObsId(ids: String): SeqAction[SPObservationID] = EitherT(Task.delay(new SPObservationID(ids)).map(_.right).handle{
-      case e: Exception => SeqexecFailure.SeqexecException(e).left
+  private def notifyODB(i: (executeEngine.EventType, executeEngine.StateType)): IO[(executeEngine.EventType, executeEngine.StateType)] = {
+    def safeGetObsId(ids: String): SeqAction[SPObservationID] = EitherT(IO.apply(new SPObservationID(ids)).map(_.asRight).handle{
+      case e: Exception => SeqexecFailure.SeqexecException(e).asRight
     })
 
     (i match {
@@ -230,14 +233,14 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
         safeGetObsId(id) >>= {systems.odb.obsPause(_, "Sequence paused by user")}
       case (EventSystem(Finished(id)), _)     => safeGetObsId(id) >>= systems.odb.sequenceEnd
       case _                                  => SeqAction(())
-    }).run.map(_ => i)
+    }).value.map(_ => i)
   }
 
   private def loadEvents(seqId: SPObservationID): SeqAction[List[executeEngine.EventType]] = {
-    val t: EitherT[Task, SeqexecFailure, (List[SeqexecFailure], Option[Sequence])] = for {
+    val t: EitherT[IO, SeqexecFailure, (List[SeqexecFailure], Option[Sequence])] = for {
       odbSeq       <- SeqAction.either(odbProxy.read(seqId))
       progIdString <- SeqAction.either(odbSeq.config.extract(OCS_KEY / InstConstants.PROGRAMID_PROP).as[String].leftMap(ConfigUtilOps.explainExtractError))
-      _            <- EitherT.fromTryCatchNonFatal(Task.now(SPProgramID.toProgramID(progIdString))).leftMap(e => SeqexecFailure.SeqexecException(e): SeqexecFailure)
+      _            <- EitherT.fromTryCatchNonFatal(IO.pure(SPProgramID.toProgramID(progIdString))).leftMap(e => SeqexecFailure.SeqexecException(e): SeqexecFailure)
     } yield translator.sequence(seqId, odbSeq)
 
     t.map {
@@ -307,10 +310,10 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
         // The sequence could be empty
         case Nil => Nil
         // Find first Pending Step when no Step is Running and mark it as Running
-        case steps if (Sequence.State.isRunning(st)) && steps.all(_.status =/= StepState.Running) =>
+        case steps if Sequence.State.isRunning(st) && steps.forall(_.status =!= StepState.Running) =>
           val (xs, (y :: ys)) = splitWhere(steps)(_.status === StepState.Pending)
           xs ++ (y.copy(status = StepState.Running) :: ys)
-        case steps if st.status === SequenceState.Idle && steps.any(_.status === StepState.Running) =>
+        case steps if st.status === SequenceState.Idle && steps.exists(_.status === StepState.Running) =>
           val (xs, (y :: ys)) = splitWhere(steps)(_.status === StepState.Running)
           xs ++ (y.copy(status = StepState.Paused) :: ys)
         case x => x
@@ -321,19 +324,19 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     SequenceView(seq.id, seq.metadata, st.status, engineSteps(seq), None)
   }
 
-  private def refreshSequenceList(): executeEngine.StateType => Task[Option[Process[Task, executeEngine.EventType]]] = (st: executeEngine.StateType) => {
+  private def refreshSequenceList(): executeEngine.StateType => IO[Option[Stream[IO, executeEngine.EventType]]] = (st: executeEngine.StateType) => {
 
     val seqexecList = st.sequences.keys.toSeq.map(v => new SPObservationID(v))
 
-    def loads(odbList: Seq[SPObservationID]): Task[List[executeEngine.EventType]] =
-      odbList.diff(seqexecList).toList.map(id => loadEvents(id)).sequenceU.map(_.flatten).run.map(_.valueOr( r => List(Event.logDebugMsg(SeqexecFailure.explain(r)))))
+    def loads(odbList: Seq[SPObservationID]): IO[List[executeEngine.EventType]] =
+      odbList.diff(seqexecList).toList.map(id => loadEvents(id)).sequence.map(_.flatten).run.map(_.valueOr( r => List(Event.logDebugMsg(SeqexecFailure.explain(r)))))
 
     def unloads(odbList: Seq[SPObservationID]): Seq[executeEngine.EventType] =
       seqexecList.diff(odbList).map(id => unloadEvent(id))
 
-    val x = odbProxy.queuedSequences.flatMapF(seqs => loads(seqs).map(ee => (ee ++ unloads(seqs)).right)).run
+    val x = odbProxy.queuedSequences.flatMapF(seqs => loads(seqs).map(ee => (ee ++ unloads(seqs)).asRight)).value
     val y = x.map(_.valueOr(r => List(Event.logWarningMsg(SeqexecFailure.explain(r)))))
-    y.map { ee => ee.nonEmpty option Process.emitAll(ee).evalMap(Task.delay(_)) }
+    y.map { ee => ee.nonEmpty option Stream.emitAll(ee).evalMap(IO.apply(_)) }
   }
 
 }
@@ -475,16 +478,16 @@ object SeqexecEngine {
       case Array(k, v) => k.trim -> v.trim
     }.toMap
 
-  private def initSmartGCal(smartGCalHost: String, smartGCalLocation: String): Task[edu.gemini.seqexec.odb.TrySeq[Unit]] = {
+  private def initSmartGCal(smartGCalHost: String, smartGCalLocation: String): IO[edu.gemini.seqexec.odb.TrySeq[Unit]] = {
     // SmartGCal always talks to GS
     val peer = new Peer(smartGCalHost, 8443, Site.GS)
-    Task.delay(Paths.get(smartGCalLocation)).map { p => SmartGcal.initialize(peer, p) }
+    IO.delay(Paths.get(smartGCalLocation)).map { p => SmartGcal.initialize(peer, p) }
   }
 
-  private val taskUnit = Task.now(())
+  private val taskUnit = IO.now(())
 
   // scalastyle:off
-  def seqexecConfiguration: Kleisli[Task, Config, Settings] = Kleisli { cfg: Config =>
+  def seqexecConfiguration: Kleisli[IO, Config, Settings] = Kleisli { cfg: Config =>
     val site = cfg.require[String]("seqexec-engine.site") match {
       case "GS" => Site.GS
       case "GN" => Site.GN
@@ -515,8 +518,8 @@ object SeqexecEngine {
 
     // TODO: Review initialization of EPICS systems
     @SuppressWarnings(Array("org.wartremover.warts.Throw"))
-    def initEpicsSystem[T](sys: EpicsSystem[T], tops: Map[String, String]): Task[Unit] =
-      Task.delay(
+    def initEpicsSystem[T](sys: EpicsSystem[T], tops: Map[String, String]): IO[Unit] =
+      IO.apply(
         Option(CaService.getInstance()) match {
           case None => throw new Exception("Unable to start EPICS service.")
           case Some(s) =>
@@ -529,19 +532,19 @@ object SeqexecEngine {
 
     // Ensure there is a valid way to init CaService either from
     // the configuration file or from the environment
-    val caInit   = caAddrList.map(a => Task.delay(CaService.setAddressList(a))).getOrElse {
-      Task.delay(Option(System.getenv("EPICS_CA_ADDR_LIST"))).flatMap {
+    val caInit   = caAddrList.map(a => IO.apply(CaService.setAddressList(a))).getOrElse {
+      IO.apply(Option(System.getenv("EPICS_CA_ADDR_LIST"))).flatMap {
         case Some(_) => taskUnit
-        case _       => Task.fail(new RuntimeException("Cannot initialize EPICS subsystem"))
+        case _       => IO.raiseError(new RuntimeException("Cannot initialize EPICS subsystem"))
       }
-    } *> Task.delay(CaService.setIOTimeout(java.time.Duration.ofMillis(ioTimeout.toMillis)))
+    } *> IO.apply(CaService.setIOTimeout(java.time.Duration.ofMillis(ioTimeout.toMillis)))
     val tcsInit  = (tcsKeywords || !tcsSim).fold(initEpicsSystem(TcsEpics, tops), taskUnit)
     // More instruments to be added to the list here
     val instList = site match {
       case Site.GS => List((f2Keywords, Flamingos2Epics), (gmosKeywords, GmosEpics))
       case Site.GN => List((gmosKeywords, GmosEpics), (gnirsKeywords, GnirsEpics))
     }
-    val instInit = Nondeterminism[Task].gatherUnordered(instList.filter(_._1 || !instSim).map(x => initEpicsSystem(x._2, tops)))
+    val instInit = Nondeterminism[IO].gatherUnordered(instList.filter(_._1 || !instSim).map(x => initEpicsSystem(x._2, tops)))
     val gwsInit  = gwsKeywords.fold(initEpicsSystem(GwsEpics, tops), taskUnit)
     val gcalInit = (gcalKeywords || !gcalSim).fold(initEpicsSystem(GcalEpics, tops), taskUnit)
     val smartGcal = smartGcalEnable.fold(initSmartGCal(smartGCalHost, smartGCalDir), taskUnit)
@@ -553,7 +556,7 @@ object SeqexecEngine {
       gcalInit *>
       instInit *>
       (for {
-        now <- Task(LocalDate.now)
+        now <- IO(LocalDate.now)
       } yield Settings(site,
                        odbHost,
                        now,

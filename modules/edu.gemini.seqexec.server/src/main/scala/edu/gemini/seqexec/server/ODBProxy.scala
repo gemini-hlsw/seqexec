@@ -9,19 +9,10 @@ import edu.gemini.seqexec.odb.{SeqexecSequence, SeqExecService}
 import edu.gemini.wdba.session.client.WDBA_XmlRpc_SessionClient
 import edu.gemini.seqexec.model.dhs.ImageFileId
 
-import scalaz.{EitherT, \/}
-import scalaz.syntax.either._
-import scalaz.syntax.equal._
-import scalaz.std.anyVal._
-import scalaz.concurrent.Task
-
-/**
-  * Created by jluhrs on 9/6/16.
-  */
 class ODBProxy(val loc: Peer, cmds: ODBProxy.OdbCommands) {
 
   def host(): Peer = loc
-  def read(oid: SPObservationID): SeqexecFailure \/ SeqexecSequence =
+  def read(oid: SPObservationID): Either[SeqexecFailure, SeqexecSequence] =
     SeqExecService.client(loc).sequence(oid).leftMap(SeqexecFailure.ODBSeqError)
 
   val queuedSequences: SeqAction[Seq[SPObservationID]] = cmds.queuedSequences()

@@ -3,11 +3,11 @@
 
 package edu.gemini.seqexec.server.gnirs
 
+import cats.Eq
 import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.server.gnirs.GnirsController.GnirsConfig
 import edu.gemini.seqexec.server.{ObserveCommand, SeqAction}
 import squants.{Length, Time}
-
 import scalaz.Show
 //scalastyle:off
 trait GnirsController {
@@ -96,6 +96,8 @@ object GnirsController {
     case object SmallPinhole extends SlitWidth
     case object LargePinhole extends SlitWidth
     case object Acquisition extends SlitWidth
+
+    implicit val eq: Eq[SlitWidth] = Eq.fromUniversalEquals
   }
 
   type WellDepth = edu.gemini.spModel.gemini.gnirs.GNIRSParams.WellDepth

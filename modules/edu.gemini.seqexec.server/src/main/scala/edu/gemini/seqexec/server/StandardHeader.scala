@@ -6,6 +6,8 @@ package edu.gemini.seqexec.server
 import java.time.format.DateTimeFormatter
 import java.time.{Instant, LocalDate, LocalDateTime, ZoneId}
 
+import cats._
+import cats.implicits._
 import edu.gemini.seqexec.model.Model.{Conditions, Observer, Operator}
 import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.server.ConfigUtilOps._
@@ -20,9 +22,8 @@ import edu.gemini.spModel.gemini.obscomp.SPSiteQuality._
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import edu.gemini.spModel.target.obsComp.TargetObsCompConstants._
 
-import scalaz._
-import Scalaz._
 import scala.collection.breakOut
+import mouse.all._
 
 /**
   * Created by jluhrs on 1/31/17.
@@ -76,19 +77,19 @@ final case class TimingWindowKeywords(start: SeqAction[String], duration: SeqAct
 final case class ObsKeywordReaderImpl(config: Config, telescope: String) extends ObsKeywordsReader {
   import ObsKeywordsReader._
 
-  implicit private val show: Show[AnyRef] = Show.showA
+  implicit private val show: Show[AnyRef] = Show.fromToString
 
   override def getObsType: SeqAction[String] = SeqAction(
-    config.getItemValue(new ItemKey(OBSERVE_KEY, OBSERVE_TYPE_PROP)).shows)
+    config.getItemValue(new ItemKey(OBSERVE_KEY, OBSERVE_TYPE_PROP)).show)
 
   override def getObsClass: SeqAction[String] = SeqAction(
-    config.getItemValue(new ItemKey(OBSERVE_KEY, OBS_CLASS_PROP)).shows)
+    config.getItemValue(new ItemKey(OBSERVE_KEY, OBS_CLASS_PROP)).show)
 
   override def getGemPrgId: SeqAction[String] = SeqAction(
-    config.getItemValue(new ItemKey(OCS_KEY, PROGRAMID_PROP)).shows)
+    config.getItemValue(new ItemKey(OCS_KEY, PROGRAMID_PROP)).show)
 
   override def getObsId: SeqAction[String] = SeqAction(
-    config.getItemValue(new ItemKey(OCS_KEY, OBSERVATIONID_PROP)).shows)
+    config.getItemValue(new ItemKey(OCS_KEY, OBSERVATIONID_PROP)).show)
 
   def explainExtractError(e: ExtractFailure): SeqexecFailure =
     SeqexecFailure.Unexpected(ConfigUtilOps.explain(e))
@@ -102,26 +103,26 @@ final case class ObsKeywordReaderImpl(config: Config, telescope: String) extends
   override def getRequestedConditions: Map[String, SeqAction[String]]  =
     List(SB, CC, IQ, WV).flatMap { key =>
       val value: Option[String] = config.extract(new ItemKey(OCS_KEY, "obsConditions:" + key)).as[String].map { d =>
-        (d === "100") ? "Any" | s"$d-percentile"
+        (d === "100").fold("Any", s"$d-percentile")
       }.toOption
       value.toList.map(v => key -> SeqAction(v))
     }(breakOut)
 
   override def getTimingWindows: List[(Int, TimingWindowKeywords)] = {
-    def calcDuration(duration: String): NumberFormatException \/ SeqAction[Double] =
-      duration.parseDouble.map { d => SeqAction((d < 0) ? d | d / 1000)}.disjunction
+    def calcDuration(duration: String): Either[NumberFormatException, SeqAction[Double]] =
+      duration.parseDouble.map { d => SeqAction((d < 0).fold(d, d / 1000))}
 
-    def calcRepeat(repeat: String): NumberFormatException \/ SeqAction[Int] =
-      repeat.parseInt.map(SeqAction(_)).disjunction
+    def calcRepeat(repeat: String): Either[NumberFormatException, SeqAction[Int]] =
+      repeat.parseInt.map(SeqAction(_))
 
-    def calcPeriod(period: String): NumberFormatException \/ SeqAction[Double] =
-      period.parseDouble.map(p => SeqAction(p/1000)).disjunction
+    def calcPeriod(period: String): Either[NumberFormatException, SeqAction[Double]] =
+      period.parseDouble.map(p => SeqAction(p/1000))
 
-    def calcStart(start: String): NumberFormatException \/ SeqAction[String] =
+    def calcStart(start: String): Either[NumberFormatException, SeqAction[String]] =
       start.parseLong.map { s =>
         val timeStr = LocalDateTime.ofInstant(Instant.ofEpochMilli(s), ZoneId.of("GMT")).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
         SeqAction(timeStr)
-      }.disjunction
+      }
 
     val prefixes = List(TIMING_WINDOW_START, TIMING_WINDOW_DURATION, TIMING_WINDOW_REPEAT, TIMING_WINDOW_PERIOD)
     val windows = for {
@@ -130,18 +131,18 @@ final case class ObsKeywordReaderImpl(config: Config, telescope: String) extends
       // Keys on the ocs use the prefix and the value and they are always Strings
       val keys = prefixes.map(p => f"$p$w")
       keys.map { k =>
-        Option(config.getItemValue(new ItemKey(OCS_KEY, "obsConditions:" + k))).map(_.shows)
+        Option(config.getItemValue(new ItemKey(OCS_KEY, "obsConditions:" + k))).map(_.show)
       }.sequence.collect {
         case start :: duration :: repeat :: period :: Nil =>
-          (calcStart(start) |@| calcDuration(duration) |@| calcRepeat(repeat) |@| calcPeriod(period))(TimingWindowKeywords.apply)
+          (calcStart(start), calcDuration(duration), calcRepeat(repeat), calcPeriod(period)).mapN(TimingWindowKeywords.apply)
           .map(w -> _).toOption
-      }.join
+      }.collect { case Some(x) => x }
     }
     windows.collect { case Some(x) => x }
   }
 
   override def getDataLabel: SeqAction[String] = SeqAction(
-    config.getItemValue(OBSERVE_KEY / DATA_LABEL_PROP).shows
+    config.getItemValue(OBSERVE_KEY / DATA_LABEL_PROP).show
   )
 
   override def getObservatory: SeqAction[String] = SeqAction(telescope)
@@ -163,8 +164,8 @@ final case class ObsKeywordReaderImpl(config: Config, telescope: String) extends
   override def getAowfsGuide: SeqAction[StandardGuideOptions.Value] =
     SeqAction.either(config.extract(new ItemKey(TELESCOPE_KEY, Tcs.GUIDE_WITH_AOWFS_PROP)).as[StandardGuideOptions.Value]
       .recoverWith[ConfigUtilOps.ExtractFailure, StandardGuideOptions.Value] {
-        case ConfigUtilOps.KeyNotFound(_)         => StandardGuideOptions.Value.park.right
-        case e@ConfigUtilOps.ConversionError(_,_) => e.left
+        case ConfigUtilOps.KeyNotFound(_)         => StandardGuideOptions.Value.park.asRight
+        case e@ConfigUtilOps.ConversionError(_,_) => e.asLeft
       }.leftMap(explainExtractError))
 
   private val headerPrivacy: Boolean = config.extract(HEADER_VISIBILITY_KEY).as[Visibility].getOrElse(Visibility.PUBLIC) match {
@@ -178,8 +179,8 @@ final case class ObsKeywordReaderImpl(config: Config, telescope: String) extends
     if(headerPrivacy) {
       SeqAction.either(
         config.extract(PROPRIETARY_MONTHS_KEY).as[Integer].recoverWith[ConfigUtilOps.ExtractFailure, Integer]{
-          case ConfigUtilOps.KeyNotFound(_) => new Integer(0).right
-          case e@ConfigUtilOps.ConversionError(_, _) => e.left
+          case ConfigUtilOps.KeyNotFound(_) => new Integer(0).asRight
+          case e@ConfigUtilOps.ConversionError(_, _) => e.asLeft
         }.leftMap(explainExtractError)
           .map(v => LocalDate.now(ZoneId.of("GMT")).plusMonths(v.toLong).format(DateTimeFormatter.ISO_LOCAL_DATE)))
     }
@@ -267,7 +268,7 @@ class StandardHeader(
     obsType   <- obsReader.getObsType
     obsObject <- obsReader.getObsObject
     tcsObject <- tcsReader.getSourceATarget.getObjectName
-  } yield if (obsType === "OBJECT" && obsObject =/= "Twilight" && obsObject =/= "Domeflat") tcsObject
+  } yield if (obsType === "OBJECT" && obsObject =!= "Twilight" && obsObject =!= "Domeflat") tcsObject
           else Some(obsObject)
 
   private def decodeGuide(v: StandardGuideOptions.Value): String = v match {

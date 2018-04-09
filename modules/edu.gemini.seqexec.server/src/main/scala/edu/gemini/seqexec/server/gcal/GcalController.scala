@@ -6,11 +6,9 @@ package edu.gemini.seqexec.server.gcal
 import edu.gemini.seqexec.server.SeqAction
 import edu.gemini.spModel.gemini.calunit.CalUnitParams.Shutter
 
-import scalaz.Equal
+import cats.Eq
+import cats.implicits._
 
-/**
-  * Created by jluhrs on 3/15/17.
-  */
 trait GcalController {
 
   import GcalController._
@@ -31,42 +29,51 @@ object GcalController {
 
     case object On extends LampState
 
+    implicit val eq: Eq[LampState] =
+      Eq.fromUniversalEquals
+
   }
 
   final case class ArLampState(self: LampState) extends AnyVal
 
   object ArLampState {
-    implicit val eq: Equal[ArLampState] = Equal.equalA
+    implicit val eq: Eq[ArLampState] =
+      Eq[LampState].contramap(_.self)
   }
 
   final case class CuArLampState(self: LampState) extends AnyVal
 
   object CuArLampState {
-    implicit val eq: Equal[CuArLampState] = Equal.equalA
+    implicit val eq: Eq[CuArLampState] =
+      Eq[LampState].contramap(_.self)
   }
 
   final case class QHLampState(self: LampState) extends AnyVal
 
   object QHLampState {
-    implicit val eq: Equal[QHLampState] = Equal.equalA
+    implicit val eq: Eq[QHLampState] =
+      Eq[LampState].contramap(_.self)
   }
 
   final case class ThArLampState(self: LampState) extends AnyVal
 
   object ThArLampState {
-    implicit val eq: Equal[ThArLampState] = Equal.equalA
+    implicit val eq: Eq[ThArLampState] =
+      Eq[LampState].contramap(_.self)
   }
 
   final case class XeLampState(self: LampState) extends AnyVal
 
   object XeLampState {
-    implicit val eq: Equal[XeLampState] = Equal.equalA
+    implicit val eq: Eq[XeLampState] =
+      Eq[LampState].contramap(_.self)
   }
 
   final case class IrLampState(self: LampState) extends AnyVal
 
   object IrLampState {
-    implicit val eq: Equal[IrLampState] = Equal.equalA
+    implicit val eq: Eq[IrLampState] =
+      Eq[LampState].contramap(_.self)
   }
 
   type Shutter = edu.gemini.spModel.gemini.calunit.CalUnitParams.Shutter

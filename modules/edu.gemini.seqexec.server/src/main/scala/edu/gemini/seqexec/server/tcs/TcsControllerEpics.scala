@@ -10,14 +10,11 @@ import edu.gemini.spModel.core.Wavelength
 import org.log4s.getLogger
 import squants.space.{Angstroms, Degrees, Millimeters}
 import squants.time.Seconds
+import cats._
+import cats.data.{EitherT, NonEmptyList, OneAnd}
+import cats.effect.IO
+import cats.implicits._
 
-import scalaz.Scalaz._
-import scalaz._
-import scalaz.concurrent.Task
-
-/**
- * Created by jluhrs on 9/7/15.
- */
 object TcsControllerEpics extends TcsController {
   private val Log = getLogger
 
@@ -42,7 +39,7 @@ object TcsControllerEpics extends TcsController {
     if (r === BinaryOnOff.Off) M1GuideOff
     else M1GuideOn(s)
 
-  private def decodeGuideSourceOption(s: String): Boolean = s.trim =/= "OFF"
+  private def decodeGuideSourceOption(s: String): Boolean = s.trim =!= "OFF"
 
   implicit private val decodeComaOption: DecodeEpicsValue[String, ComaOption] = DecodeEpicsValue((s: String)
   => if (s.trim === "Off") ComaOption.ComaOff else ComaOption.ComaOn)
@@ -125,7 +122,7 @@ object TcsControllerEpics extends TcsController {
                 ) collect {
                   case (true, a) => a
                 } match {
-                  case h :: t => Some(NodChopTrackingConfig.Special(OneAnd(h, t.toSet)))
+                  case h :: t => Some(NodChopTrackingConfig.Special(OneAnd(h, t)))
                   case Nil    => None // the list is empty
                 }
               }
@@ -182,7 +179,7 @@ object TcsControllerEpics extends TcsController {
 
   // Decoding and encoding the science fold position require some common definitions, therefore I put them inside an
   // object
-  private object CodexScienceFoldPosition {
+  private[tcs] object CodexScienceFoldPosition {
 
     import LightSource._
     import ScienceFoldPosition._
@@ -193,8 +190,8 @@ object TcsControllerEpics extends TcsController {
 
     final case class SFInstName(self: String) extends AnyVal
     object SFInstName {
-      implicit val EqualSFInstName: Equal[SFInstName] =
-        Equal.equalA // natural equality here
+      implicit val EqualSFInstName: Eq[SFInstName] =
+        Eq.fromUniversalEquals // natural equality here
     }
 
     val instNameMap: Map[Model.Instrument, SFInstName] = Map(
@@ -237,7 +234,7 @@ object TcsControllerEpics extends TcsController {
     sfPosOpt <- TcsEpics.instance.sfName.map(decode[String, Option[ScienceFoldPosition]])
     sfPos    <- sfPosOpt
     sfParked <- TcsEpics.instance.sfParked.map {
-      _.toInt =/= 0
+      _.toInt =!= 0
     }
   } yield if (sfParked) ScienceFoldPosition.Parked
           else sfPos
@@ -249,7 +246,7 @@ object TcsControllerEpics extends TcsController {
   private def getHrwfsPickupPosition: Option[HrwfsPickupPosition] = for {
     hwPos <- TcsEpics.instance.agHwName.map(decode[String, HrwfsPickupPosition])
     hwParked <- TcsEpics.instance.agHwParked.map {
-      _.toInt =/= 0
+      _.toInt =!= 0
     }
   } yield if (hwParked) HrwfsPickupPosition.Parked
     else hwPos
@@ -262,7 +259,7 @@ object TcsControllerEpics extends TcsController {
     } yield TrySeq(InstrumentAlignAngle(Degrees[Double](iaa)))
   }.getOrElse(TrySeq.fail(SeqexecFailure.Unexpected("Unable to read IAA from TCS.")))
 
-  override def getConfig: SeqAction[TcsConfig] = EitherT ( Task {
+  override def getConfig: SeqAction[TcsConfig] = EitherT.apply ( IO.apply {
     for {
       gc <- getGuideConfig
       tc <- getTelescopeConfig
@@ -393,11 +390,11 @@ object TcsControllerEpics extends TcsController {
 
     subsystems.tail.foldLeft(configSubsystem(subsystems.head))((b, a) => b *> configSubsystem(a)) *>
       TcsEpics.instance.post *>
-      EitherT(Task(Log.debug("TCS configuration command post").right)) *>
+      EitherT.right(IO.apply(Log.debug("TCS configuration command post"))) *>
       (if(subsystems.toList.contains(Subsystem.Mount))
-        TcsEpics.instance.waitInPosition(tcsTimeout) *> EitherT(Task(Log.info("TCS inposition").right))
+        TcsEpics.instance.waitInPosition(tcsTimeout) *> EitherT.right(IO.apply(Log.info("TCS inposition")))
       else if(subsystems.toList.contains(Subsystem.ScienceFold))
-        TcsEpics.instance.waitAGInPosition(agTimeout) *> EitherT(Task(Log.debug("AG inposition").right))
+        TcsEpics.instance.waitAGInPosition(agTimeout) *> EitherT.right(IO.apply(Log.debug("AG inposition")))
       else SeqAction.void)
   }
 
@@ -406,7 +403,7 @@ object TcsControllerEpics extends TcsController {
     _ <- setM1Guide(gc.m1Guide)
     _ <- setM2Guide(gc.m2Guide)
     _ <- TcsEpics.instance.post
-    _ <- EitherT(Task(Log.info("TCS guide command post").right))
+    _ <- EitherT.right(IO.apply(Log.info("TCS guide command post")))
   } yield ()
 
   override def notifyObserveStart: SeqAction[Unit] = TcsEpics.instance.observe.mark *> TcsEpics.instance.post.map(_ => ())

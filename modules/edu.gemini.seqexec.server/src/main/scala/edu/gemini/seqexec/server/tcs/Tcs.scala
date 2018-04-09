@@ -3,6 +3,7 @@
 
 package edu.gemini.seqexec.server.tcs
 
+import cats.data.NonEmptyList
 import edu.gemini.seqexec.model.Model.Resource
 import edu.gemini.seqexec.server.ConfigUtilOps._
 import edu.gemini.seqexec.server.tcs.TcsController._
@@ -16,12 +17,10 @@ import squants.space.Millimeters
 
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
-import scalaz.Scalaz._
-import scalaz._
+import cats._
+import cats.implicits._
+import mouse.all._
 
-/**
- * Created by jluhrs on 4/23/15.
- */
 final case class Tcs(tcsController: TcsController, subsystems: NonEmptyList[Subsystem], scienceFoldPosition: ScienceFoldPosition) extends System {
 
   import Tcs._
@@ -58,14 +57,14 @@ final case class Tcs(tcsController: TcsController, subsystems: NonEmptyList[Subs
 
   // Helper function to output the part of the TCS configuration that is actually applied.
   private def subsystemConfig(tcs: TcsConfig, subsystem: Subsystem): List[AnyRef] = subsystem match {
-    case Subsystem.M1 => List(tcs.gc.m1Guide.shows)
-    case Subsystem.M2 => List(tcs.gc.m2Guide.shows)
-    case Subsystem.OIWFS => List(tcs.gtc.oiwfs.shows, tcs.ge.oiwfs.shows)
-    case Subsystem.P1WFS => List(tcs.gtc.pwfs1.shows, tcs.ge.pwfs1.shows)
-    case Subsystem.P2WFS => List(tcs.gtc.pwfs2.shows, tcs.ge.pwfs2.shows)
-    case Subsystem.Mount => List(tcs.tc.shows)
-    case Subsystem.HRProbe => List(tcs.agc.hrwfsPos.shows)
-    case Subsystem.ScienceFold => List(tcs.agc.sfPos.shows)
+    case Subsystem.M1 => List(tcs.gc.m1Guide.show)
+    case Subsystem.M2 => List(tcs.gc.m2Guide.show)
+    case Subsystem.OIWFS => List(tcs.gtc.oiwfs.show, tcs.ge.oiwfs.show)
+    case Subsystem.P1WFS => List(tcs.gtc.pwfs1.show, tcs.ge.pwfs1.show)
+    case Subsystem.P2WFS => List(tcs.gtc.pwfs2.show, tcs.ge.pwfs2.show)
+    case Subsystem.Mount => List(tcs.tc.show)
+    case Subsystem.HRProbe => List(tcs.agc.hrwfsPos.show)
+    case Subsystem.ScienceFold => List(tcs.agc.sfPos.show)
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
@@ -89,9 +88,9 @@ final case class Tcs(tcsController: TcsController, subsystems: NonEmptyList[Subs
   @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
   override def configure(config: Config): SeqAction[ConfigResult] = tcsController.getConfig.flatMap(configure(config, _))
 
-  override def notifyObserveStart = tcsController.notifyObserveStart
+  override def notifyObserveStart: SeqAction[Unit] = tcsController.notifyObserveStart
 
-  override def notifyObserveEnd = tcsController.notifyObserveEnd
+  override def notifyObserveEnd: SeqAction[Unit] = tcsController.notifyObserveEnd
 }
 
 object Tcs {
@@ -118,29 +117,32 @@ object Tcs {
 
   @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
   def build[T, P: ClassTag](f: P => Endo[T], k: ItemKey, config: Config): Endo[T] =
-    config.extract(k).as[P].foldMap(f)
+    config.extract(k).as[P].map(f).foldK
 
+//  import scalaz._
+//  import Scalaz._
+  cats.Apply
   @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
   def build[T, P: ClassTag, Q: ClassTag](f: (P, Q) => Endo[T], k1: ItemKey, k2: ItemKey, config: Config): Endo[T] =
     (config.extract(k1).as[P] tuple config.extract(k2).as[Q]).foldMap(f.tupled)
 
   // Parameter specific build functions
-  def buildPwfs1Config(guideWithPWFS1: StandardGuideOptions.Value): Endo[TcsConfig] = Endo { s0 =>
+  def buildPwfs1Config(guideWithPWFS1: StandardGuideOptions.Value): Endo[TcsConfig] = { s0 =>
     s0.setGuidersTrackingConfig(s0.gtc.setPwfs1TrackingConfig(guideWithPWFS1)).
       setGuidersEnabled(s0.ge.setPwfs1GuiderSensorOption(guideWithPWFS1))
   }
 
-  def buildPwfs2Config(guideWithPWFS2: StandardGuideOptions.Value): Endo[TcsConfig] = Endo { s0 =>
+  def buildPwfs2Config(guideWithPWFS2: StandardGuideOptions.Value): Endo[TcsConfig] = { s0 =>
     s0.setGuidersTrackingConfig(s0.gtc.setPwfs2TrackingConfig(guideWithPWFS2)).
       setGuidersEnabled(s0.ge.setPwfs1GuiderSensorOption(guideWithPWFS2))
   }
 
-  def buildOiwfsConfig(guideWithOIWFS: StandardGuideOptions.Value): Endo[TcsConfig] = Endo { s0 =>
+  def buildOiwfsConfig(guideWithOIWFS: StandardGuideOptions.Value): Endo[TcsConfig] = { s0 =>
     s0.setGuidersTrackingConfig(s0.gtc.setOiwfsTrackingConfig(guideWithOIWFS)).
       setGuidersEnabled(s0.ge.setOiwfsGuiderSensorOption(guideWithOIWFS))
   }
 
-  def buildOffsetConfig(pstr: String, qstr: String): Endo[TcsConfig] = Endo { s0 =>
+  def buildOffsetConfig(pstr: String, qstr: String): Endo[TcsConfig] = { s0 =>
     // Is there a way to express this value with squants quantities ?
     val FOCAL_PLANE_SCALE = 1.61144; //[arcsec/mm]
 
@@ -162,7 +164,7 @@ object Tcs {
       subs.contains(Subsystem.P2WFS).option(build(buildPwfs2Config, TELESCOPE_KEY / GUIDE_WITH_PWFS2_PROP, config)),
       subs.contains(Subsystem.OIWFS).option(build(buildOiwfsConfig, TELESCOPE_KEY / GUIDE_WITH_OIWFS_PROP, config)),
       subs.contains(Subsystem.Mount).option(build(buildOffsetConfig, TELESCOPE_KEY / P_OFFSET_PROP, TELESCOPE_KEY / Q_OFFSET_PROP, config))
-    ).collect{case Some(x) => x}.suml.apply(s0)
+    ).collect{case Some(x) => x }.foldK.apply(s0)
   }
 
 }

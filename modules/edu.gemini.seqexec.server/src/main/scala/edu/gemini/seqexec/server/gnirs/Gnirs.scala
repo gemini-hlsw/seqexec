@@ -3,24 +3,23 @@
 
 package edu.gemini.seqexec.server.gnirs
 
+import cats.data.Reader
+import cats.implicits._
 import edu.gemini.seqexec.model.Model
 import edu.gemini.seqexec.model.Model.Instrument
 import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.server.ConfigUtilOps._
 import edu.gemini.seqexec.server.gnirs.GnirsController.{CCConfig, DCConfig, Other, ReadMode}
-import edu.gemini.seqexec.server.{ConfigResult, ConfigUtilOps, InstrumentSystem, ObserveCommand, SeqAction, SeqObserve, SeqexecFailure, TrySeq}
+import edu.gemini.seqexec.server._
 import edu.gemini.spModel.config2.Config
-import edu.gemini.spModel.seqcomp.SeqConfigNames.{INSTRUMENT_KEY, OBSERVE_KEY}
-import edu.gemini.spModel.obscomp.InstConstants.{DARK_OBSERVE_TYPE, BIAS_OBSERVE_TYPE, OBSERVE_TYPE_PROP}
-import edu.gemini.spModel.gemini.gnirs.InstGNIRS._
 import edu.gemini.spModel.gemini.gnirs.GNIRSConstants.{INSTRUMENT_NAME_PROP, WOLLASTON_PRISM_PROP}
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams._
+import edu.gemini.spModel.gemini.gnirs.InstGNIRS._
+import edu.gemini.spModel.obscomp.InstConstants.{BIAS_OBSERVE_TYPE, DARK_OBSERVE_TYPE, OBSERVE_TYPE_PROP}
+import edu.gemini.spModel.seqcomp.SeqConfigNames.{INSTRUMENT_KEY, OBSERVE_KEY}
 import squants.Time
 import squants.space.LengthConversions._
 import squants.time.TimeConversions._
-
-import scalaz._
-import Scalaz._
 
 final case class Gnirs(controller: GnirsController) extends InstrumentSystem {
   override val sfName: String = "gnirs"
@@ -28,7 +27,6 @@ final case class Gnirs(controller: GnirsController) extends InstrumentSystem {
   override val dhsInstrumentName: String = "GNIRS"
 
   import Gnirs._
-
   import InstrumentSystem._
   override val observeControl: ObserveControl = InfraredControl(StopObserveCmd(controller.stopObserve),
                                                                 AbortObserveCmd(controller.abortObserve))
@@ -38,7 +36,7 @@ final case class Gnirs(controller: GnirsController) extends InstrumentSystem {
   }
 
   override def calcObserveTime(config: Config): Time =
-    (extractExposureTime(config) |@| extractCoadds(config))(_ * _.toDouble).getOrElse(10000.seconds)
+    (extractExposureTime(config), extractCoadds(config)).mapN(_ * _.toDouble).getOrElse(10000.seconds)
 
   override val resource: Model.Resource = Instrument.GNIRS
 
@@ -52,14 +50,14 @@ object Gnirs {
 
   val name: String = INSTRUMENT_NAME_PROP
 
-  def extractExposureTime(config: Config): ExtractFailure\/Time =
+  def extractExposureTime(config: Config): Either[ExtractFailure, Time] =
     config.extract(OBSERVE_KEY / EXPOSURE_TIME_PROP).as[java.lang.Double].map(_.toDouble.seconds)
 
-  def extractCoadds(config: Config): ExtractFailure\/Int =
+  def extractCoadds(config: Config): Either[ExtractFailure, Int] =
     config.extract(OBSERVE_KEY / COADDS_PROP).as[java.lang.Integer].map(_.toInt)
 
   def fromSequenceConfig(config: Config): TrySeq[GnirsController.GnirsConfig] =
-    (getCCConfig(config) |@| getDCConfig(config))(GnirsController.GnirsConfig(_, _))
+    (getCCConfig(config), getDCConfig(config)).mapN(GnirsController.GnirsConfig)
 
   private def getDCConfig(config: Config): TrySeq[DCConfig] = (for {
     expTime <- extractExposureTime(config)
@@ -71,8 +69,8 @@ object Gnirs {
 
   private def getCCConfig(config: Config): TrySeq[CCConfig] = config.extract(OBSERVE_KEY / OBSERVE_TYPE_PROP).as[String]
     .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e))).flatMap{
-    case DARK_OBSERVE_TYPE => GnirsController.Dark.right
-    case BIAS_OBSERVE_TYPE => SeqexecFailure.Unexpected("Bias not supported for GNIRS").left
+    case DARK_OBSERVE_TYPE => GnirsController.Dark.asRight
+    case BIAS_OBSERVE_TYPE => SeqexecFailure.Unexpected("Bias not supported for GNIRS").asLeft
     case _                 => getCCOtherConfig(config)
   }
 
@@ -85,13 +83,13 @@ object Gnirs {
     camera <- config.extract(INSTRUMENT_KEY / CAMERA_PROP).as[Camera]
     decker <- getDecker(config, slit, woll, xdisp)
     wavel  <- config.extract(INSTRUMENT_KEY / CENTRAL_WAVELENGTH_PROP).as[Wavelength].map(_.doubleValue().nanometers)
-    filter <- config.extract(INSTRUMENT_KEY / FILTER_PROP).as[Filter].toOption.right
+    filter <- config.extract(INSTRUMENT_KEY / FILTER_PROP).as[Filter].toOption.asRight
     filter1 = getFilter1(filter, slit, decker)
     filter2 = getFilter2(filter, xdisp)
   } yield Other(mode, camera, decker, filter1, filter2, wavel, slitOp) )
     .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
 
-  private def getCCMode(config: Config, xdispersed: CrossDispersed, woll: WollastonPrism): ConfigUtilOps.ExtractFailure\/GnirsController.Mode = for {
+  private def getCCMode(config: Config, xdispersed: CrossDispersed, woll: WollastonPrism): Either[ConfigUtilOps.ExtractFailure, GnirsController.Mode] = for {
     acq        <- config.extract(INSTRUMENT_KEY / ACQUISITION_MIRROR_PROP).as[AcquisitionMirror]
     disperser  <- config.extract(INSTRUMENT_KEY / DISPERSER_PROP).as[Disperser]
   } yield {
@@ -104,23 +102,21 @@ object Gnirs {
     }
   }
 
-  private def getDecker(config: Config, slit: SlitWidth, woll: WollastonPrism, xdisp: CrossDispersed): ConfigUtilOps.ExtractFailure\/GnirsController.Decker =
+  private def getDecker(config: Config, slit: SlitWidth, woll: WollastonPrism, xdisp: CrossDispersed): Either[ConfigUtilOps.ExtractFailure, GnirsController.Decker] =
     config.extract(INSTRUMENT_KEY / DECKER_PROP).as[Decker].orElse{
       for {
-        pixScale <- config.extract((INSTRUMENT_KEY / PIXEL_SCALE_PROP)).as[PixelScale]
+        pixScale <- config.extract(INSTRUMENT_KEY / PIXEL_SCALE_PROP).as[PixelScale]
       } yield xdisp match {
         case CrossDispersed.LXD => Decker.LONG_CAM_X_DISP
         case CrossDispersed.SXD => Decker.SHORT_CAM_X_DISP
-        case _                  => {
+        case _                  =>
           if (woll === WollastonPrism.YES) Decker.WOLLASTON
           else pixScale match {
             case PixelScale.PS_005 => Decker.LONG_CAM_LONG_SLIT
-            case PixelScale.PS_015 => {
+            case PixelScale.PS_015 =>
               if (slit === SlitWidth.IFU) Decker.IFU
               else Decker.SHORT_CAM_LONG_SLIT
-            }
           }
-        }
       }
     }
 

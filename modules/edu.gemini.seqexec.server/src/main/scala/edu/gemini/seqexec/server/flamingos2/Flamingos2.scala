@@ -12,12 +12,13 @@ import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2._
 import edu.gemini.spModel.obscomp.InstConstants.{DARK_OBSERVE_TYPE, OBSERVE_TYPE_PROP}
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
-import squants.time.Seconds
+import squants.time.{Seconds, Time}
 
 import scala.concurrent.duration.{Duration, SECONDS}
-import scalaz.concurrent.Task
-import scalaz.syntax.equal._
-import scalaz.{EitherT, Equal, Reader, \/, \/-}
+import cats._
+import cats.data.{EitherT, Reader}
+import cats.effect.IO
+import cats.implicits._
 
 final case class Flamingos2(f2Controller: Flamingos2Controller) extends InstrumentSystem {
 
@@ -43,11 +44,12 @@ final case class Flamingos2(f2Controller: Flamingos2Controller) extends Instrume
 
   override def notifyObserveEnd: SeqAction[Unit] = f2Controller.endObserve
 
-  override def calcObserveTime(config: Config) = config.extract(OBSERVE_KEY / EXPOSURE_TIME_PROP).as[java.lang.Double].map(x => Seconds(x.toDouble)).getOrElse(Seconds(360))
+  override def calcObserveTime(config: Config): Time = config.extract(OBSERVE_KEY / EXPOSURE_TIME_PROP).as[java.lang.Double].map(x => Seconds(x.toDouble)).getOrElse(Seconds(360))
 }
 
 object Flamingos2 {
-  implicit val equalFPUnit: Equal[FPUnit] = Equal.equalA
+  implicit val equalFPUnit: Eq[FPUnit] =
+    Eq[String].contramap(_.sequenceValue())
 
   val name: String = INSTRUMENT_NAME_PROP
 
@@ -78,12 +80,12 @@ object Flamingos2 {
     case Decker.MOS       => BiasMode.MOS
   }
 
-  def fpuConfig(config: Config): \/[ConfigUtilOps.ExtractFailure, FocalPlaneUnit] = {
+  def fpuConfig(config: Config): Either[ConfigUtilOps.ExtractFailure, FocalPlaneUnit] = {
     val a = INSTRUMENT_KEY / FPU_PROP
     val b = INSTRUMENT_KEY / FPU_MASK_PROP
 
     config.extract(a).as[FPUnit].flatMap(x =>
-      if(x =/= FPUnit.CUSTOM_MASK) \/-(fpuFromFPUnit(x))
+      if(x =!= FPUnit.CUSTOM_MASK) fpuFromFPUnit(x).asRight
       else config.extract(b).as[String].map(FocalPlaneUnit.Custom)
     )
   }
@@ -121,16 +123,16 @@ object Flamingos2 {
     p <- config.extract(OBSERVE_KEY / EXPOSURE_TIME_PROP).as[java.lang.Double].map(x => Duration(x, SECONDS))
     // Reads is usually inferred from the read mode, but it can be explicit.
     q <- config.extract(OBSERVE_KEY / READS_PROP).as[Reads] match {
-          case a: \/-[Reads] => a
-          case _             => config.extract(INSTRUMENT_KEY / READMODE_PROP).as[ReadMode]
+          case a @ Right(_) => a
+          case _            => config.extract(INSTRUMENT_KEY / READMODE_PROP).as[ReadMode]
                                 .map(readsFromReadMode)
         }
     // Readout mode defaults to SCIENCE if not present.
-    r <- \/-(config.extract(INSTRUMENT_KEY / READOUT_MODE_PROP).as[ReadoutMode].getOrElse(ReadoutMode.SCIENCE))
+    r <- config.extract(INSTRUMENT_KEY / READOUT_MODE_PROP).as[ReadoutMode].getOrElse(ReadoutMode.SCIENCE).asRight
     s <- config.extract(INSTRUMENT_KEY / DECKER_PROP).as[Decker]
   } yield DCConfig(p, q, r, s) ).leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
 
-  def fromSequenceConfig(config: Config): SeqAction[Flamingos2Config] = EitherT( Task ( for {
+  def fromSequenceConfig(config: Config): SeqAction[Flamingos2Config] = EitherT( IO ( for {
       p <- ccConfigFromSequenceConfig(config)
       q <- dcConfigFromSequenceConfig(config)
     } yield Flamingos2Config(p, q)

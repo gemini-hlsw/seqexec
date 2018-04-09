@@ -6,10 +6,12 @@ package edu.gemini.seqexec
 import cats.data._
 import cats.effect.IO
 import cats.implicits._
+import cats.kernel.Eq
 import edu.gemini.seqexec.engine.{ActionMetadata, ActionMetadataGenerator, Engine, Sequence}
 import edu.gemini.seqexec.model.Model.{CloudCover, Conditions, ImageQuality, Observer, Operator, SequenceState, SkyBackground, WaterVapor}
 import edu.gemini.seqexec.model.UserDetails
-import scalaz.stream.async.mutable.Queue
+import edu.gemini.spModel.`type`.SequenceableSpType
+import fs2.async.mutable.Queue
 import monocle.Lens
 import monocle.macros.GenLens
 
@@ -37,6 +39,8 @@ package server {
 }
 
 package object server {
+  implicit def geEq[D <: SequenceableSpType]: Eq[D] =
+    Eq[String].contramap(_.sequenceValue())
 
   val CalibrationQueueName: String = "Calibration Queue"
 
@@ -61,7 +65,7 @@ package object server {
 
   val executeEngine: Engine[EngineMetadata, SeqEvent] = new Engine[EngineMetadata, SeqEvent]
 
-  type EventQueue = Queue[executeEngine.EventType]
+  type EventQueue = Queue[IO, executeEngine.EventType]
 
   object SeqAction {
     def apply[A](a: => A): SeqAction[A]          = EitherT(IO.apply(TrySeq(a)))

@@ -3,16 +3,16 @@
 
 package edu.gemini.seqexec.server.tcs
 
+import cats.implicits._
 import edu.gemini.epics.acm._
 import edu.gemini.seqexec.server.EpicsCommand._
-import edu.gemini.seqexec.server.{EpicsCommand, EpicsSystem, SeqAction}
 import edu.gemini.seqexec.server.EpicsUtil._
+import edu.gemini.seqexec.server.{EpicsCommand, EpicsSystem, SeqAction}
 import org.log4s.{Logger, getLogger}
 import squants.Time
 import squants.time.TimeConversions._
 
 import scala.collection.JavaConverters._
-import scalaz.syntax.apply._
 
 /**
  * TcsEpics wraps the non-functional parts of the EPICS ACM library to interact with TCS. It has all the objects used
@@ -364,37 +364,37 @@ final class TcsEpics(epicsService: CaService, tops: Map[String, String]) {
 
     override def equinox = Option(tcsState.getStringAttribute("sourceAEquinox").value)
 
-    override def radialVelocity = Option(tcsState.getDoubleAttribute("radvel").value).map(_.doubleValue)
+    override def radialVelocity: Option[Double] = Option(tcsState.getDoubleAttribute("radvel").value).map(_.doubleValue)
 
     override def frame = Option(tcsState.getStringAttribute("frame").value)
 
-    override def centralWavelenght = sourceAWavelength
+    override def centralWavelenght: Option[Double] = sourceAWavelength
 
-    override def ra = Option(tcsState.getDoubleAttribute("ra").value).map(_.doubleValue)
+    override def ra: Option[Double] = Option(tcsState.getDoubleAttribute("ra").value).map(_.doubleValue)
 
     override def objectName = Option(tcsState.getStringAttribute("sourceAObjectName").value)
 
-    override def dec = Option(tcsState.getDoubleAttribute("dec").value).map(_.doubleValue)
+    override def dec: Option[Double] = Option(tcsState.getDoubleAttribute("dec").value).map(_.doubleValue)
 
-    override def parallax = Option(tcsState.getDoubleAttribute("parallax").value).map(_.doubleValue)
+    override def parallax: Option[Double] = Option(tcsState.getDoubleAttribute("parallax").value).map(_.doubleValue)
 
-    override def properMotionRA = Option(tcsState.getDoubleAttribute("pmra").value).map(_.doubleValue)
+    override def properMotionRA: Option[Double] = Option(tcsState.getDoubleAttribute("pmra").value).map(_.doubleValue)
 
-    override def properMotionDec = Option(tcsState.getDoubleAttribute("pmdec").value).map(_.doubleValue)
+    override def properMotionDec: Option[Double] = Option(tcsState.getDoubleAttribute("pmdec").value).map(_.doubleValue)
   }
 
   private def target(base: String): Target = new Target {
       override def epoch = Option(tcsState.getStringAttribute(base + "aepoch").value)
       override def equinox = Option(tcsState.getStringAttribute(base + "aequin").value)
-      override def radialVelocity = Option(tcsState.getDoubleAttribute(base + "arv").value).map(_.doubleValue)
+      override def radialVelocity: Option[Double] = Option(tcsState.getDoubleAttribute(base + "arv").value).map(_.doubleValue)
       override def frame  = Option(tcsState.getStringAttribute(base + "aframe").value)
-      override def centralWavelenght = Option(tcsState.getDoubleAttribute(base + "awavel").value).map(_.doubleValue)
-      override def ra = Option(tcsState.getDoubleAttribute(base + "ara").value).map(_.doubleValue)
+      override def centralWavelenght: Option[Double] = Option(tcsState.getDoubleAttribute(base + "awavel").value).map(_.doubleValue)
+      override def ra: Option[Double] = Option(tcsState.getDoubleAttribute(base + "ara").value).map(_.doubleValue)
       override def objectName = Option(tcsState.getStringAttribute(base + "aobjec").value)
-      override def dec = Option(tcsState.getDoubleAttribute(base + "adec").value).map(_.doubleValue)
-      override def parallax = Option(tcsState.getDoubleAttribute(base + "aparal").value).map(_.doubleValue)
-      override def properMotionRA = Option(tcsState.getDoubleAttribute(base + "apmra").value).map(_.doubleValue)
-      override def properMotionDec = Option(tcsState.getDoubleAttribute(base + "apmdec").value).map(_.doubleValue)
+      override def dec: Option[Double] = Option(tcsState.getDoubleAttribute(base + "adec").value).map(_.doubleValue)
+      override def parallax: Option[Double] = Option(tcsState.getDoubleAttribute(base + "aparal").value).map(_.doubleValue)
+      override def properMotionRA: Option[Double] = Option(tcsState.getDoubleAttribute(base + "apmra").value).map(_.doubleValue)
+      override def properMotionDec: Option[Double] = Option(tcsState.getDoubleAttribute(base + "apmdec").value).map(_.doubleValue)
     }
 
   def pwfs1Target: Target = target("p1")
