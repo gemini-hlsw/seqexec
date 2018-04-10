@@ -67,8 +67,8 @@ object ODBProxy {
 
     implicit class IORecover[A](t: IO[A]) {
       def recover: IO[Either[SeqexecFailure, A]] = t.map(_.asRight).attempt.map {
-        case Left(e: Exception) => SeqexecFailure.SeqexecException(e).asLeft
-        case Right(r)           => r
+        case Left(e)  => SeqexecFailure.SeqexecException(e).asLeft
+        case Right(r) => r
       }
     }
 

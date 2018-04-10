@@ -88,7 +88,7 @@ class DhsClientHttp(val baseURI: String) extends DhsClient {
 
       r.getOrElse(TrySeq.fail[T](SeqexecFailure.Execution(errMsg)))
     }.attempt.map {
-      case Left(e: Exception) => SeqexecExceptionWhile("connecting to DHS Server", e).asLeft
+      case Left(e)  => SeqexecExceptionWhile("connecting to DHS Server", e).asLeft
       case Right(r) => r
     }
   )

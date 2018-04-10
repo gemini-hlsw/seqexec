@@ -119,12 +119,9 @@ object Tcs {
   def build[T, P: ClassTag](f: P => Endo[T], k: ItemKey, config: Config): Endo[T] =
     config.extract(k).as[P].map(f).foldK
 
-//  import scalaz._
-//  import Scalaz._
-  cats.Apply
   @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
   def build[T, P: ClassTag, Q: ClassTag](f: (P, Q) => Endo[T], k1: ItemKey, k2: ItemKey, config: Config): Endo[T] =
-    (config.extract(k1).as[P] tuple config.extract(k2).as[Q]).foldMap(f.tupled)
+    config.extract(k1).as[P].product(config.extract(k2).as[Q]).map(f.tupled).foldK
 
   // Parameter specific build functions
   def buildPwfs1Config(guideWithPWFS1: StandardGuideOptions.Value): Endo[TcsConfig] = { s0 =>
