@@ -5,18 +5,19 @@ package edu.gemini.seqexec.server
 
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
 
+import cats.Show
+import cats.data.EitherT
+import cats.effect.IO
+import cats.implicits._
 import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.server.SeqexecFailure.SeqexecException
 import gov.aps.jca.TimeoutException
+import mouse.all._
 import org.log4s.getLogger
 import squants.Time
 import squants.time.Seconds
 
 import scala.annotation.tailrec
-import scalaz.{EitherT, Show}
-import scalaz.concurrent.Task
-import scalaz.syntax.show._
-import scalaz.syntax.std.boolean._
 
 class InstrumentControllerSim(name: String, useTimeout: Boolean) {
   private val Log = getLogger
@@ -48,61 +49,61 @@ class InstrumentControllerSim(name: String, useTimeout: Boolean) {
         observeTic(stopFlag.get, abortFlag.get, pauseFlag.get, remain - tic, timeout.map(_ - tic))
       }
 
-  def observe(fileId: ImageFileId, expTime: Time): SeqAction[ObserveCommand.Result] = EitherT( Task {
+  def observe(fileId: ImageFileId, expTime: Time): SeqAction[ObserveCommand.Result] = EitherT( IO {
     Log.info(s"Simulate taking $name observation with label $fileId")
     pauseFlag.set(false)
     stopFlag.set(false)
     abortFlag.set(false)
     val totalTime = (expTime + ReadoutDelay).toMilliseconds.toInt
     remainingTime.set(totalTime)
-    observeTic(false, false, false, totalTime, useTimeout.option(totalTime + 2 * tic))
+    observeTic(stop = false, abort = false, pause = false, totalTime, useTimeout.option(totalTime + 2 * tic))
   } )
 
-  def applyConfig[C: Show](config: C): SeqAction[Unit] = EitherT( Task {
-    Log.info(s"Simulate applying $name configuration ${config.shows}")
+  def applyConfig[C: Show](config: C): SeqAction[Unit] = EitherT( IO {
+    Log.info(s"Simulate applying $name configuration ${config.show}")
     Thread.sleep(ConfigurationDelay.toMilliseconds.toLong)
     TrySeq(())
   } )
 
-  def stopObserve: SeqAction[Unit] = EitherT( Task {
+  def stopObserve: SeqAction[Unit] = EitherT( IO {
     Log.info(s"Simulate stopping $name exposure")
     stopFlag.set(true)
     TrySeq(())
   } )
 
-  def abortObserve: SeqAction[Unit] = EitherT( Task {
+  def abortObserve: SeqAction[Unit] = EitherT( IO {
     Log.info(s"Simulate aborting $name exposure")
     abortFlag.set(true)
     TrySeq(())
   } )
 
-  def endObserve: SeqAction[Unit] = EitherT( Task {
+  def endObserve: SeqAction[Unit] = EitherT( IO {
     Log.info(s"Simulate sending endObserve to $name")
     TrySeq(())
   } )
 
-  def pauseObserve: SeqAction[Unit] = EitherT( Task {
+  def pauseObserve: SeqAction[Unit] = EitherT( IO {
     Log.info(s"Simulate pausing $name exposure")
     pauseFlag.set(true)
     TrySeq(())
   } )
 
-  def resumePaused: SeqAction[ObserveCommand.Result] = EitherT( Task {
+  def resumePaused: SeqAction[ObserveCommand.Result] = EitherT( IO {
     Log.info(s"Simulate resuming $name observation")
     pauseFlag.set(false)
-    observeTic(false, false, false, remainingTime.get, useTimeout.option(remainingTime.get + 2 * tic))
+    observeTic(stop = false, abort = false, pause = false, remainingTime.get, useTimeout.option(remainingTime.get + 2 * tic))
   } )
 
-  def stopPaused: SeqAction[ObserveCommand.Result] = EitherT( Task {
+  def stopPaused: SeqAction[ObserveCommand.Result] = EitherT( IO {
     Log.info(s"Simulate stopping $name paused observation")
     pauseFlag.set(false)
-    observeTic(true, false, false, 1000, None)
+    observeTic(stop = true, abort = false, pause = false, 1000, None)
   } )
 
-  def abortPaused: SeqAction[ObserveCommand.Result] = EitherT( Task {
+  def abortPaused: SeqAction[ObserveCommand.Result] = EitherT( IO {
     Log.info(s"Simulate aborting $name paused observation")
     pauseFlag.set(false)
-    observeTic(false, true, false, 1000, None)
+    observeTic(stop = false, abort = true, pause = false, 1000, None)
   } )
 
 }

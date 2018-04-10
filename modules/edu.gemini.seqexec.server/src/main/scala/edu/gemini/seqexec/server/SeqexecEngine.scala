@@ -77,26 +77,26 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
 
   private val translator = SeqTranslate(settings.site, systems, translatorSettings)
 
-  def load(q: EventQueue, seqId: SPObservationID): IO[Either[SeqexecFailure, Unit]] = loadEvents(seqId).flatMapF(q.enqueueAll(_).map(_.asRight)).run
+  def load(q: EventQueue, seqId: SPObservationID): IO[Either[SeqexecFailure, Unit]] = loadEvents(seqId).flatMapF(q.enqueue(_).map(_.asRight)).run
 
   def start(q: EventQueue, id: SPObservationID, user: UserDetails, clientId: ClientID): IO[Either[SeqexecFailure, Unit]] =
-    q.enqueueOne(Event.start(id.stringValue(), user, clientId)).map(_.asRight)
+    q.enqueue1(Event.start(id.stringValue(), user, clientId)).map(_.asRight)
 
   def requestPause(q: EventQueue, id: SPObservationID, user: UserDetails): IO[Either[SeqexecFailure, Unit]] =
-    q.enqueueOne(Event.pause(id.stringValue(), user)).map(_.asRight)
+    q.enqueue1(Event.pause(id.stringValue(), user)).map(_.asRight)
 
   def requestCancelPause(q: EventQueue, id: SPObservationID, user: UserDetails): IO[Either[SeqexecFailure, Unit]] =
-    q.enqueueOne(Event.cancelPause(id.stringValue(), user)).map(_.asRight)
+    q.enqueue1(Event.cancelPause(id.stringValue(), user)).map(_.asRight)
 
   def setBreakpoint(q: EventQueue,
                     seqId: SPObservationID,
                     user: UserDetails,
                     stepId: edu.gemini.seqexec.engine.Step.Id,
                     v: Boolean): IO[Either[SeqexecFailure, Unit]] =
-    q.enqueueOne(Event.breakpoint(seqId.stringValue(), user, stepId, v)).map(_.asRight)
+    q.enqueue1(Event.breakpoint(seqId.stringValue(), user, stepId, v)).map(_.asRight)
 
   def setOperator(q: EventQueue, user: UserDetails, name: Operator): IO[Either[SeqexecFailure, Unit]] =
-    q.enqueueAll(List(
+    q.enqueue(List(
       Event.logDebugMsg(s"SeqexecEngine: Setting Operator name to '$name' by ${user.username}"),
       Event.modifyState[executeEngine.ConcreteTypes]((Engine.State.userDataL ^|-> EngineMetadata.operatorL).set(name.some), SetOperator(name, user.some))
     )).map(_.asRight)
@@ -105,7 +105,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
                   seqId: SPObservationID,
                   user: UserDetails,
                   name: Observer): IO[Either[SeqexecFailure, Unit]] =
-    q.enqueueOne(Event.setObserver(seqId.stringValue(), user, name)).map(_.asRight)
+    q.enqueue1(Event.setObserver(seqId.stringValue(), user, name)).map(_.asRight)
 
   def setConditions(q: EventQueue, conditions: Conditions, user: UserDetails): IO[Either[SeqexecFailure, Unit]] =
     q.enqueueAll(List(
@@ -142,9 +142,9 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
                   user: UserDetails,
                   stepId: edu.gemini.seqexec.engine.Step.Id,
                   v: Boolean): IO[Either[SeqexecFailure, Unit]] =
-  q.enqueueOne(Event.skip(seqId.stringValue(), user, stepId, v)).map(_.asRight)
+  q.enqueue1(Event.skip(seqId.stringValue(), user, stepId, v)).map(_.asRight)
 
-  def requestRefresh(q: EventQueue, clientId: ClientID): IO[Unit] = q.enqueueOne(Event.poll(clientId))
+  def requestRefresh(q: EventQueue, clientId: ClientID): IO[Unit] = q.enqueue1(Event.poll(clientId))
 
   def seqQueueRefreshStream: Stream[IO, executeEngine.EventType] =
     awakeEvery(settings.odbQueuePollingInterval)(Strategy.DefaultStrategy, DefaultScheduler).map(_ =>
@@ -164,19 +164,19 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
         )
     }
 
-  def stopObserve(q: EventQueue, seqId: SPObservationID): IO[Unit] = q.enqueueOne(
+  def stopObserve(q: EventQueue, seqId: SPObservationID): IO[Unit] = q.enqueue1(
     Event.actionStop[executeEngine.ConcreteTypes](seqId.stringValue, translator.stopObserve(seqId.stringValue))
   )
 
-  def abortObserve(q: EventQueue, seqId: SPObservationID): IO[Unit] = q.enqueueOne(
+  def abortObserve(q: EventQueue, seqId: SPObservationID): IO[Unit] = q.enqueue1(
     Event.actionStop[executeEngine.ConcreteTypes](seqId.stringValue, translator.abortObserve(seqId.stringValue))
   )
 
-  def pauseObserve(q: EventQueue, seqId: SPObservationID): IO[Unit] = q.enqueueOne(
+  def pauseObserve(q: EventQueue, seqId: SPObservationID): IO[Unit] = q.enqueue1(
     Event.actionStop[executeEngine.ConcreteTypes](seqId.stringValue, translator.pauseObserve)
   )
 
-  def resumeObserve(q: EventQueue, seqId: SPObservationID): IO[Unit] = q.enqueueOne(
+  def resumeObserve(q: EventQueue, seqId: SPObservationID): IO[Unit] = q.enqueue1(
     Event.getSeqState[executeEngine.ConcreteTypes](seqId.stringValue, translator.resumePaused(seqId.stringValue))
   )
 
@@ -187,7 +187,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     } yield if(!q.status(st).isRunning && !seq.status.isRunning && !seq.status.isCompleted && !q.contains(seqId)) st.copy(userData = queuesL.modify(_.updated(name, q :+ seqId))(st.userData)) else st
   ).getOrElse(st)
 
-  def addSequenceToQueue(q: EventQueue, queueName: String, seqId: SPObservationID): IO[Either[SeqexecFailure, Unit]] = q.enqueueOne(
+  def addSequenceToQueue(q: EventQueue, queueName: String, seqId: SPObservationID): IO[Either[SeqexecFailure, Unit]] = q.enqueue1(
     Event.modifyState[executeEngine.ConcreteTypes](addSeq(queueName, seqId.stringValue), NullSeqEvent)
   ).map(_.asRight)
 
@@ -197,17 +197,17 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     } yield if(!q.status(st).isRunning && q.contains(seqId)) st.copy(userData = queuesL.modify(_.updated(name, q.filterNot(_===seqId)))(st.userData)) else st
   ).getOrElse(st)
 
-  def removeSequenceFromQueue(q: EventQueue, queueName: String, seqId: SPObservationID): IO[Either[SeqexecFailure, Unit]] = q.enqueueOne(
+  def removeSequenceFromQueue(q: EventQueue, queueName: String, seqId: SPObservationID): IO[Either[SeqexecFailure, Unit]] = q.enqueue1(
     Event.modifyState[executeEngine.ConcreteTypes](removeSeq(queueName, seqId.stringValue), NullSeqEvent)
   ).map(_.asRight)
 
   // This assumes that there is only one instance of e in l
-  private def moveElement[T](l: List[T], e: T, d: Int)(implicit eq: Equal[T]): List[T] = {
+  private def moveElement[T](l: List[T], e: T, d: Int)(implicit eq: Eq[T]): List[T] = {
     val idx = l.indexOf(e)
 
     if(d === 0 || idx<0) l
     else {
-      val (h, t) = l.filterNot(_===e).splitAt(idx+d)
+      val (h, t) = l.filterNot(_=== e).splitAt(idx+d)
       (h :+ e) ::: t
     }
   }
@@ -218,7 +218,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     } yield if(!q.status(st).isRunning && q.contains(seqId)) st.copy(userData = queuesL.modify(_.updated(name, moveElement(q, seqId, d)))(st.userData)) else st
   ).getOrElse(st)
 
-  def moveSequenceInQueue(q: EventQueue, queueName: String, seqId: SPObservationID, d: Int): IO[Either[SeqexecFailure, Unit]] = q.enqueueOne(
+  def moveSequenceInQueue(q: EventQueue, queueName: String, seqId: SPObservationID, d: Int): IO[Either[SeqexecFailure, Unit]] = q.enqueue1(
     Event.modifyState[executeEngine.ConcreteTypes](moveSeq(queueName, seqId.stringValue, d), NullSeqEvent)
   ).map(_.asRight)
 
@@ -240,7 +240,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     val t: EitherT[IO, SeqexecFailure, (List[SeqexecFailure], Option[Sequence])] = for {
       odbSeq       <- SeqAction.either(odbProxy.read(seqId))
       progIdString <- SeqAction.either(odbSeq.config.extract(OCS_KEY / InstConstants.PROGRAMID_PROP).as[String].leftMap(ConfigUtilOps.explainExtractError))
-      _            <- EitherT.fromTryCatchNonFatal(IO.pure(SPProgramID.toProgramID(progIdString))).leftMap(e => SeqexecFailure.SeqexecException(e): SeqexecFailure)
+      _            <- EitherT.fromEither(Either.catchNonFatal(IO.pure(SPProgramID.toProgramID(progIdString))).leftMap(e => SeqexecFailure.SeqexecException(e): SeqexecFailure))
     } yield translator.sequence(seqId, odbSeq)
 
     t.map {
@@ -418,8 +418,8 @@ object SeqexecEngine {
     val configStatus = current.foldLeft(Map.empty[Resource, ActionStatus]) {
       case (s, e) =>
         val (a, r) = separateActions(e).bimap(
-            _.flatMap(a => kindToResource(a.kind).strengthR(ActionStatus.Running)).toMap,
-            _.flatMap(r => kindToResource(r.kind).strengthR(ActionStatus.Completed)).toMap)
+            _.flatMap(a => kindToResource(a.kind).tupleRight(ActionStatus.Running)).toMap,
+            _.flatMap(r => kindToResource(r.kind).tupleRight(ActionStatus.Completed)).toMap)
         s ++ a ++ r
     }
 
@@ -429,7 +429,7 @@ object SeqexecEngine {
     val systemsPending = pending.map {
       s => separateActions(s).bimap(_.map(_.kind).flatMap(kindToResource), _.map(_.kind).flatMap(kindToResource))
     }.flatMap {
-      x => x._1.strengthR(ActionStatus.Pending) ::: x._2.strengthR(ActionStatus.Completed)
+      x => x._1.tupleRight(ActionStatus.Pending) ::: x._2.tupleRight(ActionStatus.Completed)
     }.filter {
       case (a, _) => !presentSystems.contains(a)
     }.distinct
@@ -445,7 +445,7 @@ object SeqexecEngine {
       s => separateActions(s).bimap(_.map(_.kind).flatMap(kindToResource), _.map(_.kind).flatMap(kindToResource))
     }.flatMap {
       x => x._1 ::: x._2
-    }.distinct.strengthR(ActionStatus.Pending).sortBy(_._1)
+    }.distinct.tupleRight(ActionStatus.Pending).sortBy(_._1)
 
   /**
    * Overall pending status for a step
@@ -481,10 +481,10 @@ object SeqexecEngine {
   private def initSmartGCal(smartGCalHost: String, smartGCalLocation: String): IO[edu.gemini.seqexec.odb.TrySeq[Unit]] = {
     // SmartGCal always talks to GS
     val peer = new Peer(smartGCalHost, 8443, Site.GS)
-    IO.delay(Paths.get(smartGCalLocation)).map { p => SmartGcal.initialize(peer, p) }
+    IO.apply(Paths.get(smartGCalLocation)).map { p => SmartGcal.initialize(peer, p) }
   }
 
-  private val taskUnit = IO.now(())
+  private val taskUnit = IO.pure(())
 
   // scalastyle:off
   def seqexecConfiguration: Kleisli[IO, Config, Settings] = Kleisli { cfg: Config =>

@@ -10,6 +10,8 @@ import java.util.concurrent.atomic.AtomicInteger
 import org.log4s._
 import argonaut._
 import Argonaut._
+import cats.data.EitherT
+import cats.effect.IO
 import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.server.DhsClient.{ImageParameters, KeywordBag}
 import edu.gemini.seqexec.server.SeqexecFailure.SeqexecExceptionWhile
@@ -17,9 +19,7 @@ import org.apache.commons.httpclient.HttpClient
 import org.apache.commons.httpclient.methods.{EntityEnclosingMethod, PostMethod, PutMethod}
 
 import scala.io.Source
-import scalaz.concurrent.Task
-import scalaz.EitherT
-import scalaz.syntax.either._
+import cats.implicits._
 
 /**
   * Implementation of DhsClient that interfaces with the real DHS over the http interface
@@ -72,7 +72,7 @@ class DhsClientHttp(val baseURI: String) extends DhsClient {
     ("name" := k.name) ->: ("type" := k.keywordType.str) ->: ("value" := k.value) ->: Json.jEmptyObject )
 
   @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
-  private def sendRequest[T](method: EntityEnclosingMethod, body: Json, errMsg: String)(implicit decoder: argonaut.DecodeJson[TrySeq[T]]): SeqAction[T] = EitherT ( Task.delay {
+  private def sendRequest[T](method: EntityEnclosingMethod, body: Json, errMsg: String)(implicit decoder: argonaut.DecodeJson[TrySeq[T]]): SeqAction[T] = EitherT ( IO.apply {
       val client = new HttpClient()
 
       client.setConnectionTimeout(timeout)
@@ -87,9 +87,11 @@ class DhsClientHttp(val baseURI: String) extends DhsClient {
       method.releaseConnection()
 
       r.getOrElse(TrySeq.fail[T](SeqexecFailure.Execution(errMsg)))
-    }.handle {
-      case e: Exception => SeqexecExceptionWhile("connecting to DHS Server", e).left
-  } )
+    }.attempt.map {
+      case Left(e: Exception) => SeqexecExceptionWhile("connecting to DHS Server", e).asLeft
+      case Right(r) => r
+    }
+  )
 
   @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
   private def createImage(reqBody: Json): SeqAction[ImageFileId] =
@@ -142,11 +144,11 @@ class DhsClientSim(date: LocalDate) extends DhsClient {
   val format: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd")
 
   override def createImage(p: ImageParameters): SeqAction[ImageFileId] =
-    EitherT(Task.delay{
+    EitherT(IO.apply{
       TrySeq(f"S${date.format(format)}S${counter.incrementAndGet()}%04d")
     })
 
-  override def setKeywords(id: ImageFileId, keywords: KeywordBag, finalFlag: Boolean): SeqAction[Unit] = EitherT(Task(Log.info(keywords.keywords.map(k => s"${k.name} = ${k.value}").mkString(", ")).right))
+  override def setKeywords(id: ImageFileId, keywords: KeywordBag, finalFlag: Boolean): SeqAction[Unit] = EitherT.right(IO(Log.info(keywords.keywords.map(k => s"${k.name} = ${k.value}").mkString(", "))))
 
 }
 

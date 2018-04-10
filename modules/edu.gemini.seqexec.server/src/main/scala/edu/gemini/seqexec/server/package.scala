@@ -11,6 +11,7 @@ import edu.gemini.seqexec.engine.{ActionMetadata, ActionMetadataGenerator, Engin
 import edu.gemini.seqexec.model.Model.{CloudCover, Conditions, ImageQuality, Observer, Operator, SequenceState, SkyBackground, WaterVapor}
 import edu.gemini.seqexec.model.UserDetails
 import edu.gemini.spModel.`type`.SequenceableSpType
+import edu.gemini.spModel.guide.StandardGuideOptions
 import fs2.async.mutable.Queue
 import monocle.Lens
 import monocle.macros.GenLens
@@ -41,6 +42,9 @@ package server {
 package object server {
   implicit def geEq[D <: SequenceableSpType]: Eq[D] =
     Eq[String].contramap(_.sequenceValue())
+
+  implicit val sgoEq: Eq[StandardGuideOptions.Value] =
+    Eq[Int].contramap(_.ordinal())
 
   val CalibrationQueueName: String = "Calibration Queue"
 

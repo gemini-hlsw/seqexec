@@ -14,14 +14,11 @@ import edu.gemini.seqexec.server.EpicsCommand.safe
 import edu.gemini.seqexec.server.SeqexecFailure.SeqexecException
 import org.log4s._
 import squants.Time
+import cats._
+import cats.data.EitherT
+import cats.effect.IO
+import cats.implicits._
 
-import scalaz.Scalaz._
-import scalaz._
-import scalaz.concurrent.Task
-
-/**
- * Created by jluhrs on 10/5/15.
- */
 trait EpicsCommand {
   import EpicsCommand._
 
@@ -30,23 +27,23 @@ trait EpicsCommand {
   def post: SeqAction[Result] =
     safe {
       EitherT {
-        Task.async[TrySeq[Result]] { (f: (Throwable \/ TrySeq[Result]) => Unit) =>
+        IO.async[TrySeq[Result]] { (f: (Either[Throwable, TrySeq[Result]]) => Unit) =>
           cs.map { ccs =>
             ccs.postCallback {
               new CaCommandListener {
-                override def onSuccess(): Unit = f(TrySeq(Completed).right)
-                override def onPause(): Unit = f(TrySeq(Paused).right)
-                override def onFailure(cause: Exception): Unit = f(cause.left)
+                override def onSuccess(): Unit = f(TrySeq(Completed).asRight)
+                override def onPause(): Unit = f(TrySeq(Paused).asRight)
+                override def onFailure(cause: Exception): Unit = f(cause.asLeft)
               }
             }
           // It should call f on all execution paths, thanks @tpolecat
-          }.void.getOrElse(f(TrySeq.fail(SeqexecFailure.Unexpected("Unable to trigger command.")).right))
+          }.void.getOrElse(f(TrySeq.fail(SeqexecFailure.Unexpected("Unable to trigger command.")).asRight))
         }
       }
     }
 
-  def mark: SeqAction[Unit] = safe(EitherT(Task.delay {
-      cs.map(_.mark().right).getOrElse(SeqexecFailure.Unexpected("Unable to mark command.").left)
+  def mark: SeqAction[Unit] = safe(EitherT(IO.apply {
+      cs.map(_.mark().asRight).getOrElse(SeqexecFailure.Unexpected("Unable to mark command.").asLeft)
     })
   )
 
@@ -91,18 +88,19 @@ object EpicsCommand {
   object Paused extends Result
   object Completed extends Result
 
-  def safe[A](a: SeqAction[A]): SeqAction[A] = EitherT(a.run.handle {
-    case e: Exception => SeqexecException(e).left
+  def safe[A](a: SeqAction[A]): SeqAction[A] = EitherT(a.value.attempt.map {
+    case Left(e)  => SeqexecException(e).asLeft
+    case Right(r) => r
   })
 
   def setParameter[A,T](p: Option[CaParameter[T]], v: A, f: A => T): SeqAction[Unit] =
     safe(SeqAction.either {
-      p.map(_.set(f(v)).right).getOrElse(SeqexecFailure.Unexpected("Unable to set parameter.").left)
+      p.map(_.set(f(v)).asRight).getOrElse(SeqexecFailure.Unexpected("Unable to set parameter.").asLeft)
     } )
 
   def setParameter[T](p: Option[CaParameter[T]], v: T): SeqAction[Unit] =
     safe(SeqAction.either {
-      p.map(_.set(v).right).getOrElse(SeqexecFailure.Unexpected("Unable to set parameter.").left)
+      p.map(_.set(v).asRight).getOrElse(SeqexecFailure.Unexpected("Unable to set parameter.").asLeft)
     } )
 
 }
@@ -116,26 +114,26 @@ trait ObserveCommand {
   def post: SeqAction[Result] =
     EpicsCommand.safe {
       EitherT {
-        Task.async[TrySeq[Result]] { (f: (Throwable \/ TrySeq[Result]) => Unit) =>
+        IO.async[TrySeq[Result]] { (f: (Either[Throwable, TrySeq[Result]]) => Unit) =>
           os.map { oos =>
             oos.postCallback {
               new CaCommandListener {
-                override def onSuccess(): Unit = f(TrySeq(Success).right)
-                override def onPause(): Unit = f(TrySeq(Paused).right)
+                override def onSuccess(): Unit = f(TrySeq(Success).asRight)
+                override def onPause(): Unit = f(TrySeq(Paused).asRight)
                 override def onFailure(cause: Exception): Unit = cause match {
-                  case _: CaObserveStopped => f(TrySeq(Stopped).right)
-                  case _: CaObserveAborted => f(TrySeq(Aborted).right)
-                  case _                   => f(cause.left)
+                  case _: CaObserveStopped => f(TrySeq(Stopped).asRight)
+                  case _: CaObserveAborted => f(TrySeq(Aborted).asRight)
+                  case _                   => f(cause.asLeft)
                 }
               }
             }
-          }.void.getOrElse(f(TrySeq.fail(SeqexecFailure.Unexpected("Unable to trigger command.")).right))
+          }.void.getOrElse(f(TrySeq.fail(SeqexecFailure.Unexpected("Unable to trigger command.")).asRight))
         }
       }
     }
 
-  def mark: SeqAction[Unit] = safe(EitherT(Task.delay {
-    cs.map(_.mark().right).getOrElse(SeqexecFailure.Unexpected("Unable to mark command.").left)
+  def mark: SeqAction[Unit] = safe(EitherT(IO.apply {
+    cs.map(_.mark().asRight).getOrElse(SeqexecFailure.Unexpected("Unable to mark command.").asLeft)
   }))
 
   def setTimeout(t: Time): SeqAction[Unit] = EpicsUtil.setTimeout(cs.map(_.getApplySender), t)
@@ -148,7 +146,7 @@ object ObserveCommand {
   object Stopped extends Result
   object Aborted extends Result
 
-  implicit val equal: Equal[Result] = Equal.equalA[Result]
+  implicit val equal: Eq[Result] = Eq.fromUniversalEquals
 }
 
 object EpicsCodex {
@@ -158,9 +156,7 @@ object EpicsCodex {
   }
 
   object EncodeEpicsValue {
-    def apply[A, T](f: A => T): EncodeEpicsValue[A, T] = new EncodeEpicsValue[A, T] {
-      override def encode(a: A): T = f(a)
-    }
+    def apply[A, T](f: A => T): EncodeEpicsValue[A, T] = (a: A) => f(a)
   }
 
   def encode[A, T](a: A)(implicit e: EncodeEpicsValue[A, T]): T = e.encode(a)
@@ -170,9 +166,7 @@ object EpicsCodex {
   }
 
   object DecodeEpicsValue {
-    def apply[T, A](f: T => A): DecodeEpicsValue[T, A] = new DecodeEpicsValue[T, A] {
-      override def decode(t: T): A = f(t)
-    }
+    def apply[T, A](f: T => A): DecodeEpicsValue[T, A] = (t: T) => f(t)
   }
 
   def decode[T, A](t: T)(implicit e: DecodeEpicsValue[T, A]): A = e.decode(t)
@@ -193,8 +187,8 @@ object EpicsUtil {
   }
 
   def waitForValues[T](attr: CaAttribute[T], vv: Seq[T], timeout: Time, name: String): SeqAction[T] =
-    EpicsCommand.safe(EitherT(Task.async[TrySeq[T]]((f) => {
-      //The task is created with Task.async. So we do whatever we need to do,
+    EpicsCommand.safe(EitherT(IO.async[TrySeq[T]]((f) => {
+      //The task is created with IO.async. So we do whatever we need to do,
       // and then call `f` to signal the completion of the task.
 
       //`resultGuard` and `lock` are used for synchronization.
@@ -203,12 +197,12 @@ object EpicsUtil {
 
       // First we verify that the attribute doesn't already have the required value.
       if (!attr.values().isEmpty && vv.contains(attr.value)) {
-        f(TrySeq(attr.value).right)
+        f(TrySeq(attr.value).asRight)
       } else {
         // If not, we set a timer for the timeout, and a listener for the EPICS
-        // channel. The timer and the listener can both complete the Task. The
+        // channel. The timer and the listener can both complete the IO. The
         // first one to do it cancels the other.The use of `resultGuard`
-        // guarantees that only one of them will complete the Task.
+        // guarantees that only one of them will complete the IO.
         val timer = new Timer
         val statusListener = new CaAttributeListener[T] {
           override def onValueChange(newVals: util.List[T]): Unit = {
@@ -218,8 +212,8 @@ object EpicsUtil {
                 timer.cancel()
               }
               // This `right` looks a bit confusing because is not related to
-              // the `TrySeq`, but to the result of `Task`.
-              f(TrySeq(newVals.get(0)).right)
+              // the `TrySeq`, but to the result of `IO`.
+              f(TrySeq(newVals.get(0)).asRight)
             }
           }
 
@@ -233,7 +227,7 @@ object EpicsUtil {
                 locked(lock) {
                   attr.removeListener(statusListener)
                 }
-                f(TrySeq.fail(SeqexecFailure.Timeout(s"waiting for $name.")).right)
+                f(TrySeq.fail(SeqexecFailure.Timeout(s"waiting for $name.")).asRight)
               }
             }, timeout.toMilliseconds.toLong)
           }
@@ -245,10 +239,10 @@ object EpicsUtil {
   def waitForValue[T](attr: CaAttribute[T], v: T, timeout: Time, name: String): SeqAction[Unit] = waitForValues[T](attr, List(v), timeout, name).map(_ => ())
 
   def setTimeout(os: Option[CaApplySender], t: Time):SeqAction[Unit] = SeqAction.either{
-    os.map(_.setTimeout(t.toMilliseconds.toLong, MILLISECONDS).right).getOrElse(SeqexecFailure.Unexpected("Unable to set timeout for EPICS command.").left)
+    os.map(_.setTimeout(t.toMilliseconds.toLong, MILLISECONDS).asRight).getOrElse(SeqexecFailure.Unexpected("Unable to set timeout for EPICS command.").asLeft)
   }
 
-  def smartSetParam[A: Equal](v: A, get: => Option[A], set: SeqAction[Unit]): SeqAction[Unit] =
-    if(get =/= v.some) set else SeqAction.void
+  def smartSetParam[A: Eq](v: A, get: => Option[A], set: SeqAction[Unit]): SeqAction[Unit] =
+    if(get =!= v.some) set else SeqAction.void
 
 }

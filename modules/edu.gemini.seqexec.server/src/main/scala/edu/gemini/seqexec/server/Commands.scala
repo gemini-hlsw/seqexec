@@ -7,9 +7,7 @@ import edu.gemini.pot.sp.SPObservationID
 import edu.gemini.spModel.`type`.{DisplayableSpType, LoggableSpType, SequenceableSpType}
 import edu.gemini.spModel.config2.{ConfigSequence, ItemKey}
 import edu.gemini.spModel.core.Peer
-
-import scalaz.Scalaz._
-import scalaz._
+import cats.implicits._
 
 sealed trait CommandError {
   val msg: String
@@ -41,7 +39,7 @@ sealed trait Commands {
 }
 
 object Commands {
-  type CommandResult = CommandError \/ CommandResponse
+  type CommandResult = Either[CommandError, CommandResponse]
 
   val Usage: String =
     "Usage: seq host [host:port] | show obsId count|static|dynamic | run obsId"
@@ -71,7 +69,7 @@ object Commands {
   def apply(odbProxy: ODBProxy): Commands = new Commands {
 
     override def host(): CommandResult =
-      \/.right(CommandResponse(s"Default seq host set to ${odbProxy.host().host} ${odbProxy.host().port}"))
+      CommandResponse(s"Default seq host set to ${odbProxy.host().host} ${odbProxy.host().port}").asRight
 
     override def showCount(obsId: String): CommandResult =
       for {
@@ -123,22 +121,22 @@ object Commands {
     def sysFilter(system: String): ItemKey => Boolean =
       _.splitPath().get(0) === system
 
-    def ifStepValid(oid: SPObservationID, cs: ConfigSequence, step: String): CommandError \/ Int =
-      \/.fromTryCatchNonFatal(step.toInt - 1).fold(
-      _ => \/.left(BadParameter(s"Specify an integer step, not '$step'.")), {
-        case i if i < 0          => \/.left(BadParameter("Specify a positive step number."))
-        case i if i >= cs.size() => \/.left(BadParameter(s"$oid only has ${cs.size} steps."))
-        case i                   => \/.right(i)
+    def ifStepValid(oid: SPObservationID, cs: ConfigSequence, step: String): Either[CommandError, Int] =
+      Either.catchNonFatal(step.toInt - 1).fold(
+      _ => BadParameter(s"Specify an integer step, not '$step'.").asLeft, {
+        case i if i < 0          => BadParameter("Specify a positive step number.").asLeft
+        case i if i >= cs.size() => BadParameter(s"$oid only has ${cs.size} steps.").asLeft
+        case i                   => Right(i)
       })
   }
   // scalastyle:on
 
-  def parseId(s: String): CommandError \/ SPObservationID =
-    \/.fromTryCatchNonFatal {
+  def parseId(s: String): Either[CommandError, SPObservationID] =
+    Either.catchNonFatal {
       new SPObservationID(s)
     }.leftMap(_ => BadParameter(s"Sorry, '$s' isn't a valid observation id."))
 
-  def parseLoc(s: String): CommandError \/ Peer =
-    Option(Peer.tryParse(s)) \/> BadParameter(s"Sorry, expecting host:port not '$s'.")
+  def parseLoc(s: String): Either[CommandError, Peer] =
+    Option(Peer.tryParse(s)).toRight(BadParameter(s"Sorry, expecting host:port not '$s'."))
 
 }

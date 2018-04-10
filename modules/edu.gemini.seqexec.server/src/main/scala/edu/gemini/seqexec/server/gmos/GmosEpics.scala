@@ -15,8 +15,7 @@ import squants.Time
 
 import scala.collection.breakOut
 import scala.concurrent.duration._
-import scalaz.std.AllInstances._
-import scalaz.syntax.equal._
+import cats.implicits._
 
 class GmosEpics(epicsService: CaService, tops: Map[String, String]) {
 
@@ -242,7 +241,7 @@ class GmosEpics(epicsService: CaService, tops: Map[String, String]) {
 
   def stageMode: Option[String] = Option(state.getStringAttribute("stageMode").value)
 
-  def useElectronicOffsetting: Option[Boolean] = Option(state.getIntegerAttribute("useElectronicOffsetting").value).map(_.toInt =/= 0)
+  def useElectronicOffsetting: Option[Boolean] = Option(state.getIntegerAttribute("useElectronicOffsetting").value).map(_.toInt =!= 0)
 
   def disperserWavel: Option[Double] = Option(state.getDoubleAttribute("disperserLambda").value).map(_.toDouble)
 

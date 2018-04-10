@@ -11,12 +11,8 @@ import edu.gemini.spModel.gemini.gmos.GmosCommonType
 import edu.gemini.spModel.gemini.gmos.GmosCommonType.{AmpGain, AmpReadMode, BuiltinROI}
 import edu.gemini.spModel.gemini.gmos.GmosSouthType.{DisperserSouth => Disperser, FPUnitSouth => FPU, FilterSouth => Filter, StageModeSouth => StageMode}
 
-import scalaz.Scalaz.none
-import scalaz.syntax.std.option._
+import cats.implicits._
 
-/**
-  * Created by jluhrs on 8/3/17.
-  */
 object GmosSouthEncoders extends GmosControllerEpics.Encoders[SouthTypes] {
   override val disperser: EncodeEpicsValue[SouthTypes#Disperser, String] = EncodeEpicsValue{
     case Disperser.MIRROR      => "mirror"

@@ -3,11 +3,11 @@
 
 package edu.gemini.seqexec.server.flamingos2
 
+import cats.kernel.Eq
 import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.server.SeqAction
 
 import scala.concurrent.duration.Duration
-import scalaz.Equal
 import squants.Time
 
 trait Flamingos2Controller {
@@ -44,7 +44,7 @@ object Flamingos2Controller {
     object Slit6Pix extends FocalPlaneUnit
     object Slit8Pix extends FocalPlaneUnit
     final case class Custom(mask: String) extends FocalPlaneUnit
-    implicit val equal: Equal[FocalPlaneUnit] = Equal.equalA
+    implicit val equal: Eq[FocalPlaneUnit] = Eq.fromUniversalEquals
   }
 
   type Filter = edu.gemini.spModel.gemini.flamingos2.Flamingos2.Filter

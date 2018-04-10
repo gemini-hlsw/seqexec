@@ -468,7 +468,7 @@ object SeqTranslate {
                                                       => TrySeq(FlatOrArc(inst))
         case _                                        => TrySeq.fail(Unexpected("Unknown step type " + obsType))
       }
-    }.join
+    }.flatten
   }
 
   implicit class ResponseToResult(val r: Either[SeqexecFailure, Result.Response]) extends AnyVal {

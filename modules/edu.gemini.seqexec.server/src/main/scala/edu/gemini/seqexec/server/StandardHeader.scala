@@ -16,14 +16,14 @@ import edu.gemini.seqexec.server.tcs.{TargetKeywordsReader, Tcs, TcsController, 
 import edu.gemini.spModel.config2.{Config, ItemKey}
 import edu.gemini.spModel.dataflow.GsaAspect.Visibility
 import edu.gemini.spModel.dataflow.GsaSequenceEditor.{HEADER_VISIBILITY_KEY, PROPRIETARY_MONTHS_KEY}
+import edu.gemini.spModel.gemini.obscomp.SPSiteQuality._
 import edu.gemini.spModel.guide.StandardGuideOptions
 import edu.gemini.spModel.obscomp.InstConstants._
-import edu.gemini.spModel.gemini.obscomp.SPSiteQuality._
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import edu.gemini.spModel.target.obsComp.TargetObsCompConstants._
+import mouse.all._
 
 import scala.collection.breakOut
-import mouse.all._
 
 /**
   * Created by jluhrs on 1/31/17.
@@ -220,8 +220,8 @@ class StandardHeader(
   stateReader: StateKeywordsReader,
   tcsSubsystems: List[TcsController.Subsystem]) extends Header {
 
-  import Header._
   import Header.Implicits._
+  import Header._
 
   val p: SeqAction[Option[Double]] = for {
     xoffOpt <- tcsReader.getXOffset

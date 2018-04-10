@@ -16,10 +16,11 @@ import edu.gemini.spModel.gemini.gmos.GmosCommonType.Order
 import edu.gemini.spModel.gemini.gmos.GmosSouthType.{DisperserSouth => Disperser}
 import org.log4s.getLogger
 import squants.{Length, Seconds, Time}
-
-import scalaz.Scalaz._
-import scalaz._
-import scalaz.concurrent.Task
+import cats._
+import cats.data.EitherT
+import cats.effect.IO
+import cats.implicits._
+import mouse.all._
 
 class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosControllerEpics.Encoders[T])(cfg: GmosController.Config[T]) extends GmosController[T] {
   private val Log = getLogger
@@ -63,7 +64,7 @@ class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosCo
 
   implicit val disperserLambdaEncoder: EncodeEpicsValue[Length, Double] = EncodeEpicsValue((l: Length) => l.toNanometers)
 
-  implicit val useElectronicOffsetEncoder: EncodeEpicsValue[UseElectronicOffset, Int] = EncodeEpicsValue(_.allow ? 1 | 0)
+  implicit val useElectronicOffsetEncoder: EncodeEpicsValue[UseElectronicOffset, Int] = EncodeEpicsValue(_.allow.fold(1, 0))
 
   private def setShutterState(s: ShutterState): SeqAction[Unit] = s match {
     case UnsetShutter => SeqAction.void
@@ -71,19 +72,19 @@ class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosCo
   }
 
   private def roiNumUsed(s: RegionsOfInterest): Int = s.rois match {
-    case \/-(rois) => rois.length
-    case -\/(_)    => 1
+    case Right(rois) => rois.length
+    case Left(_)     => 1
   }
 
   private def setROI(binning: CCDBinning, s: RegionsOfInterest): SeqAction[Unit] = s.rois match {
-    case -\/(b)    => roiParameters(binning, 1, encoders.builtInROI.encode(b))
-    case \/-(rois) => rois.zipWithIndex.map { case (roi, i) =>
+    case Left(b)    => roiParameters(binning, 1, encoders.builtInROI.encode(b))
+    case Right(rois) => rois.zipWithIndex.map { case (roi, i) =>
       roiParameters(binning, i + 1, ROIValues.fromOCS(roi))
-    }.sequenceU.flatMap(_ => SeqAction.void)
+    }.sequence.flatMap(_ => SeqAction.void)
   }
 
   private def roiParameters(binning: CCDBinning, index: Int, roi: Option[ROIValues]): SeqAction[Unit] = {
-    (roi |@| DC.rois.get(index)) { (roi, r) =>
+    (roi, DC.rois.get(index)).mapN { (roi, r) =>
       for {
         _ <- r.setCcdXstart1(roi.xStart.value)
         _ <- r.setCcdXsize1(roi.xSize.value / binning.x.getValue)
@@ -172,12 +173,12 @@ class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosCo
   }
 
   override def applyConfig(config: GmosController.GmosConfig[T]): SeqAction[Unit] = for {
-    _ <- EitherT(Task(Log.info("Start Gmos configuration").right))
+    _ <- EitherT.right(IO(Log.info("Start Gmos configuration")))
     _ <- setDCConfig(config.dc)
     _ <- setCCConfig(config.cc)
     _ <- GmosEpics.instance.configCmd.setTimeout(ConfigTimeout)
     _ <- GmosEpics.instance.post
-    _ <- EitherT(Task(Log.info("Completed Gmos configuration").right))
+    _ <- EitherT.right(IO(Log.info("Completed Gmos configuration")))
   } yield ()
 
   override def observe(fileId: ImageFileId, expTime: Time): SeqAction[ObserveCommand.Result] = for {
@@ -187,55 +188,55 @@ class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosCo
   } yield ret
 
   override def stopObserve: SeqAction[Unit] = for {
-    _ <- EitherT(Task(Log.info("Stop Gmos exposure").right))
+    _ <- EitherT.right(IO(Log.info("Stop Gmos exposure")))
     _ <- GmosEpics.instance.stopCmd.setTimeout(DefaultTimeout)
     _ <- GmosEpics.instance.stopCmd.mark
     _ <- GmosEpics.instance.stopCmd.post
   } yield ()
 
   override def abortObserve: SeqAction[Unit] = for {
-    _ <- EitherT(Task(Log.info("Abort Gmos exposure").right))
+    _ <- EitherT.right(IO(Log.info("Abort Gmos exposure")))
     _ <- GmosEpics.instance.abortCmd.setTimeout(DefaultTimeout)
     _ <- GmosEpics.instance.abortCmd.mark
     _ <- GmosEpics.instance.abortCmd.post
   } yield ()
 
   override def endObserve: SeqAction[Unit] = for {
-    _ <- EitherT(Task(Log.debug("Send endObserve to Gmos").right))
+    _ <- EitherT.right(IO(Log.debug("Send endObserve to Gmos")))
     _ <- GmosEpics.instance.endObserveCmd.setTimeout(DefaultTimeout)
     _ <- GmosEpics.instance.endObserveCmd.mark
     _ <- GmosEpics.instance.endObserveCmd.post
   } yield ()
 
-  override def pauseObserve = for {
-    _ <- EitherT(Task(Log.info("Send pause to Gmos").right))
+  override def pauseObserve: SeqAction[Unit] = for {
+    _ <- EitherT.right(IO(Log.info("Send pause to Gmos")))
     _ <- GmosEpics.instance.pauseCmd.setTimeout(DefaultTimeout)
     _ <- GmosEpics.instance.pauseCmd.mark
     _ <- GmosEpics.instance.pauseCmd.post
   } yield ()
 
   override def resumePaused(expTime: Time): SeqAction[ObserveCommand.Result] = for {
-    _ <- EitherT(Task(Log.debug("Resume Gmos observation").right))
+    _ <- EitherT.right(IO(Log.debug("Resume Gmos observation")))
     _ <- GmosEpics.instance.continueCmd.setTimeout(expTime+ReadoutTimeout)
     _ <- GmosEpics.instance.continueCmd.mark
     ret <- GmosEpics.instance.continueCmd.post
-    _ <- EitherT(Task(Log.debug("Completed Gmos observation").right))
+    _ <- EitherT.right(IO(Log.debug("Completed Gmos observation")))
   } yield ret
 
-  override def stopPaused = for {
-    _ <- EitherT(Task(Log.info("Stop Gmos paused observation").right))
+  override def stopPaused: SeqAction[ObserveCommand.Result] = for {
+    _ <- EitherT.right(IO(Log.info("Stop Gmos paused observation")))
     _ <- GmosEpics.instance.stopAndWaitCmd.setTimeout(DefaultTimeout)
     _ <- GmosEpics.instance.stopAndWaitCmd.mark
     ret <- GmosEpics.instance.stopAndWaitCmd.post
-    _ <- EitherT(Task(Log.info("Completed stopping Gmos observation").right))
+    _ <- EitherT.right(IO(Log.info("Completed stopping Gmos observation")))
   } yield if(ret === ObserveCommand.Success) ObserveCommand.Stopped else ret
 
-  override def abortPaused = for {
-    _ <- EitherT(Task(Log.info("Abort Gmos paused observation").right))
+  override def abortPaused: SeqAction[ObserveCommand.Result] = for {
+    _ <- EitherT.right(IO(Log.info("Abort Gmos paused observation")))
     _ <- GmosEpics.instance.abortAndWait.setTimeout(DefaultTimeout)
     _ <- GmosEpics.instance.abortAndWait.mark
     ret <- GmosEpics.instance.abortAndWait.post
-    _ <- EitherT(Task(Log.info("Completed aborting Gmos observation").right))
+    _ <- EitherT.right(IO(Log.info("Completed aborting Gmos observation")))
   } yield if(ret === ObserveCommand.Success) ObserveCommand.Aborted else ret
 }
 
@@ -269,11 +270,11 @@ object GmosControllerEpics {
     // but these are hardcoded values according to LUTS
     // Being private we ensure it is mostly sane
     def fromInt(xStart: Int, xSize: Int, yStart: Int, ySize: Int): Option[ROIValues] =
-      (XStart.fromInt(xStart) |@| XSize.fromInt(xSize) |@| YStart.fromInt(yStart) |@| YSize.fromInt(ySize))(new ROIValues(_, _, _, _) {})
+      (XStart.fromInt(xStart), XSize.fromInt(xSize), YStart.fromInt(yStart), YSize.fromInt(ySize)).mapN(new ROIValues(_, _, _, _) {})
 
     // Built from OCS ROI values
     def fromOCS(roi: ROI): Option[ROIValues] =
-      (XStart.fromInt(roi.getXStart) |@| XSize.fromInt(roi.getXSize) |@| YStart.fromInt(roi.getYStart) |@| YSize.fromInt(roi.getYSize))(new ROIValues(_, _, _, _) {})
+      (XStart.fromInt(roi.getXStart), XSize.fromInt(roi.getXSize), YStart.fromInt(roi.getYStart), YSize.fromInt(roi.getYSize)).mapN(new ROIValues(_, _, _, _) {})
 
   }
 

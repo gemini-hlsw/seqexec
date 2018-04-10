@@ -5,34 +5,32 @@ package edu.gemini.seqexec.server.flamingos2
 
 import java.util.concurrent.atomic.AtomicInteger
 
+import cats.data.EitherT
+import cats.effect.IO
 import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.server.SeqexecFailure.Execution
 import edu.gemini.seqexec.server.flamingos2.Flamingos2Controller.Flamingos2Config
 import edu.gemini.seqexec.server.{SeqAction, TrySeq}
 import org.log4s.getLogger
-
-import scalaz.EitherT
-import scalaz.concurrent.Task
-import scalaz.syntax.equal._
-import scalaz.std.anyVal._
 import squants.Time
+import cats.implicits._
 
 object Flamingos2ControllerSim extends Flamingos2Controller {
   private val Log = getLogger
 
   override def getConfig: SeqAction[Flamingos2Config] = ??? // scalastyle:ignore
 
-  override def observe(fileId: ImageFileId, expTime: Time): SeqAction[ImageFileId] = EitherT( Task {
+  override def observe(fileId: ImageFileId, expTime: Time): SeqAction[ImageFileId] = EitherT( IO {
     Thread.sleep(5000)
     TrySeq(fileId)
   } )
 
-  override def applyConfig(config: Flamingos2Config): SeqAction[Unit] = EitherT( Task {
+  override def applyConfig(config: Flamingos2Config): SeqAction[Unit] = EitherT( IO {
     Log.info(s"Applying Flamingos-2 configuration $config")
     TrySeq(())
   } )
 
-  override def endObserve = EitherT( Task {
+  override def endObserve = EitherT( IO {
     Log.info("Sending endObserve to Flamingos-2")
     TrySeq(())
   } )
@@ -48,13 +46,13 @@ final case class Flamingos2ControllerSimBad(failAt: Int) extends Flamingos2Contr
 
   private val counter: AtomicInteger = new AtomicInteger(0)
 
-  override def observe(fileId: ImageFileId, expTime: Time): SeqAction[ImageFileId] = EitherT( Task {
+  override def observe(fileId: ImageFileId, expTime: Time): SeqAction[ImageFileId] = EitherT( IO {
     Log.info(s"Simulating Flamingos-2 observe with fileId: $fileId")
     Thread.sleep(5000)
     TrySeq(fileId)
   } )
 
-  override def applyConfig(config: Flamingos2Config): SeqAction[Unit] = EitherT( Task {
+  override def applyConfig(config: Flamingos2Config): SeqAction[Unit] = EitherT( IO {
     Log.info(s"Applying Flamingos-2 configuration $config")
     if (counter.addAndGet(1) === failAt) {
       counter.set(0)
@@ -65,7 +63,7 @@ final case class Flamingos2ControllerSimBad(failAt: Int) extends Flamingos2Contr
     }
   } )
 
-  override def endObserve = EitherT( Task {
+  override def endObserve = EitherT( IO {
     Log.info("Sending endObserve to Flamingos-2")
     TrySeq(())
   } )

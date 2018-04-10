@@ -5,6 +5,7 @@ package edu.gemini.seqexec.server.flamingos2
 
 import cats.kernel.laws.discipline._
 import cats.tests.CatsSuite
+import edu.gemini.seqexec.server.flamingos2.Flamingos2Controller.FocalPlaneUnit
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.FPUnit
 
 /**
@@ -12,4 +13,5 @@ import edu.gemini.spModel.gemini.flamingos2.Flamingos2.FPUnit
   */
 final class Flamingos2Spec extends CatsSuite {
   checkAll("Eq[FPUnit]", EqTests[FPUnit].eqv)
+  checkAll("Eq[FocalPlaneUnit]", EqTests[FocalPlaneUnit].eqv)
 }

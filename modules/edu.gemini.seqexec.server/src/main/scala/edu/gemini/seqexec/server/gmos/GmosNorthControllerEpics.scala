@@ -12,12 +12,8 @@ import edu.gemini.spModel.gemini.gmos.GmosCommonType
 import edu.gemini.spModel.gemini.gmos.GmosCommonType.{AmpGain, AmpReadMode, BuiltinROI}
 import edu.gemini.spModel.gemini.gmos.GmosNorthType.{DisperserNorth => Disperser, FPUnitNorth => FPU, FilterNorth => Filter, StageModeNorth => StageMode}
 
-import scalaz.Scalaz.none
-import scalaz.syntax.std.option._
+import cats.implicits._
 
-/**
-  * Created by jluhrs on 8/10/17.
-  */
 object GmosNorthEncoders extends GmosControllerEpics.Encoders[NorthTypes] {
   override val filter: EpicsCodex.EncodeEpicsValue[NorthTypes#Filter, (String, String)] = EncodeEpicsValue{
     case Filter.NONE                    => ("open1-6", "open2-8")

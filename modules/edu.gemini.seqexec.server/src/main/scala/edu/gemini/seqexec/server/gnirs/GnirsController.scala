@@ -3,12 +3,12 @@
 
 package edu.gemini.seqexec.server.gnirs
 
-import cats.Eq
+import cats.{Eq, Show}
 import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.server.gnirs.GnirsController.GnirsConfig
 import edu.gemini.seqexec.server.{ObserveCommand, SeqAction}
 import squants.{Length, Time}
-import scalaz.Show
+
 //scalastyle:off
 trait GnirsController {
 
@@ -125,6 +125,6 @@ object GnirsController {
 
   final case class GnirsConfig(cc: CCConfig, dc: DCConfig)
 
-  implicit val cfgShow: Show[GnirsConfig] = Show.showA[GnirsConfig]
+  implicit val cfgShow: Show[GnirsConfig] = Show.fromToString
 
 }
