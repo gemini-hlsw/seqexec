@@ -5,7 +5,6 @@ package edu.gemini.web.client
 
 import org.scalajs.dom
 import org.scalajs.dom.html
-import scala.math
 
 trait utils {
   type Canvas = html.Canvas

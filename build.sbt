@@ -64,7 +64,7 @@ lazy val edu_gemini_web_server_common = project
   .enablePlugins(GitBranchPrompt)
   .settings(commonSettings: _*)
   .settings(
-    libraryDependencies ++= Seq(ScalaZConcurrent) ++ Http4s ++ Logging
+    libraryDependencies ++= CatsEffect.value +: (Http4s ++ Logging)
   )
 
 lazy val edu_gemini_web_client_facades = project

@@ -3,14 +3,15 @@
 
 package edu.gemini.web.common.http4s
 
+import cats.data.NonEmptyList
 import edu.gemini.web.server.common.StaticRoutes
+import fs2.text
 import org.http4s.CacheDirective.{`max-age`, `no-cache`}
 import org.http4s.MediaType._
 import org.http4s.headers.{`Cache-Control`, `Content-Type`}
-import org.http4s.util.NonEmptyList
 import org.http4s._
 import org.scalatest.{EitherValues, FlatSpec, Matchers}
-
+import cats.implicits._
 import scala.concurrent.duration._
 
 @SuppressWarnings(Array("org.wartremover.warts.Throw", "org.wartremover.warts.NonUnitStatements", "org.wartremover.warts.Throw"))
@@ -18,8 +19,8 @@ class StaticRoutesSpec extends FlatSpec with Matchers with EitherValues with Uri
   private val builtAtMillis = 1000L
 
   def index(devMode: Boolean): String = {
-    val deps = if (devMode) "package-jsdeps.js" else s"package-jsdeps.min.${builtAtMillis}.js"
-    val script = if (devMode) s"app.js" else s"app-opt.${builtAtMillis}.js"
+    val deps = if (devMode) "package-jsdeps.js" else s"package-jsdeps.min.$builtAtMillis.js"
+    val script = if (devMode) s"app.js" else s"app-opt.$builtAtMillis.js"
 
     val xml =
       <html lang="en">
@@ -29,7 +30,7 @@ class StaticRoutesSpec extends FlatSpec with Matchers with EitherValues with Uri
 
           <title>Title</title>
 
-          <link rel="stylesheet" href={s"css/semantic.${builtAtMillis}.css"}/>
+          <link rel="stylesheet" href={s"css/semantic.$builtAtMillis.css"}/>
         </head>
 
         <body>
@@ -47,47 +48,47 @@ class StaticRoutesSpec extends FlatSpec with Matchers with EitherValues with Uri
   "StaticRoutes index(true)" should
     "return a generated index(true) with production files on production mode" in {
       val service = new StaticRoutes(index(false), false, builtAtMillis).service
-      service.apply(Request(uri = uri("/"))).unsafePerformSync.orNotFound.status should equal (Status.Ok)
-      service.apply(Request(uri = uri("/"))).unsafePerformSync.orNotFound.headers should contain (`Content-Type`(`text/html`, Charset.`UTF-8`))
-      service.apply(Request(uri = uri("/"))).unsafePerformSync.orNotFound.headers should contain (`Cache-Control`(NonEmptyList(`no-cache`())))
-      val body = service.apply(Request(uri = uri("/"))).unsafePerformSync.orNotFound.body.runLast.unsafePerformSync.map(_.decodeUtf8).fold("")(_.right.value)
-      body should include regex ".*jsdeps\\.min\\.(\\d*)\\.js.*"
-      body should include regex ".*app-opt\\.(\\d*)\\.js.*"
+      service.apply(Request(uri = uri("/"))).value.map(_.map(_.status)).unsafeRunSync should contain(Status.Ok)
+      service.apply(Request(uri = uri("/"))).value.map(_.map(_.headers)).unsafeRunSync.getOrElse(Headers.empty) should contain (`Content-Type`(`text/html`, Charset.`UTF-8`))
+      service.apply(Request(uri = uri("/"))).value.map(_.map(_.headers)).unsafeRunSync.getOrElse(Headers.empty) should contain (`Cache-Control`(NonEmptyList.of(`no-cache`())))
+      val body = service.apply(Request(uri = uri("/"))).value.map(_.map(_.body.through(text.utf8Decode).compile.foldMonoid)).unsafeRunSync.map(_.unsafeRunSync())
+      body.getOrElse("") should include regex ".*jsdeps\\.min\\.(\\d*)\\.js.*"
+      body.getOrElse("") should include regex ".*app-opt\\.(\\d*)\\.js.*"
     }
     it should "return a generated index(true) with development files on dev mode" in {
       val service = new StaticRoutes(index(true), true, builtAtMillis).service
-      service.apply(Request(uri = uri("/"))).unsafePerformSync.orNotFound.status should equal (Status.Ok)
-      service.apply(Request(uri = uri("/"))).unsafePerformSync.orNotFound.headers should contain (`Content-Type`(`text/html`, Charset.`UTF-8`))
-      service.apply(Request(uri = uri("/"))).unsafePerformSync.orNotFound.headers should contain (`Cache-Control`(NonEmptyList(`no-cache`())))
-      val body = service.apply(Request(uri = uri("/"))).unsafePerformSync.orNotFound.body.runLast.unsafePerformSync.map(_.decodeUtf8).fold("")(_.right.value)
-      body should include regex ".*jsdeps\\.js.*"
-      body should include regex ".*app*\\.js.*"
+      service.apply(Request(uri = uri("/"))).value.map(_.map(_.status)).unsafeRunSync should contain(Status.Ok)
+      service.apply(Request(uri = uri("/"))).value.map(_.map(_.headers)).unsafeRunSync.getOrElse(Headers.empty) should contain (`Content-Type`(`text/html`, Charset.`UTF-8`))
+      service.apply(Request(uri = uri("/"))).value.map(_.map(_.headers)).unsafeRunSync.getOrElse(Headers.empty) should contain (`Cache-Control`(NonEmptyList.of(`no-cache`())))
+      val body = service.apply(Request(uri = uri("/"))).value.map(_.map(_.body.through(text.utf8Decode).compile.foldMonoid)).unsafeRunSync.map(_.unsafeRunSync())
+      body.getOrElse("") should include regex ".*jsdeps\\.js.*"
+      body.getOrElse("") should include regex ".*app*\\.js.*"
     }
 
   "StaticRoutes regular files" should
     "return a file if present on resources" in {
       val service = new StaticRoutes(index(false), false, builtAtMillis).service
-      service.apply(Request(uri = uri("/css/test.css"))).unsafePerformSync.orNotFound.status should equal (Status.Ok)
-      service.apply(Request(uri = uri("/css/test.css"))).unsafePerformSync.orNotFound.headers should contain (`Content-Type`(`text/css`))
+      service.apply(Request(uri = uri("/css/test.css"))).value.map(_.map(_.status)).unsafeRunSync should contain(Status.Ok)
+      service.apply(Request(uri = uri("/css/test.css"))).value.map(_.map(_.headers)).unsafeRunSync.getOrElse(Headers.empty) should contain (`Content-Type`(`text/css`))
     }
     it should "return the index for an unknown file" in {
       val service = new StaticRoutes(index(true), true, builtAtMillis).service
-      service.apply(Request(uri = uri("/unknown"))).unsafePerformSync.orNotFound.status should equal (Status.Ok)
+      service.apply(Request(uri = uri("/unknown"))).value.map(_.map(_.status)).unsafeRunSync should contain(Status.Ok)
     }
     it should "not leak the application configuration file" in {
       val service = new StaticRoutes(index(true), true, builtAtMillis).service
-      service.apply(Request(uri = uri("/app.conf"))).unsafePerformSync.orNotFound.status should equal (Status.NotFound)
+      service.apply(Request(uri = uri("/app.conf"))).value.map(_.map(_.status)).unsafeRunSync shouldBe empty
     }
     it should "cache them for a year on production mode" in {
       val service = new StaticRoutes(index(true), false, builtAtMillis).service
-      service.apply(Request(uri = uri("/css/test.css"))).unsafePerformSync.orNotFound.headers should contain (`Cache-Control`(NonEmptyList(`max-age`(31536000.seconds))))
+      service.apply(Request(uri = uri("/css/test.css"))).value.map(_.map(_.headers)).unsafeRunSync.getOrElse(Headers.empty) should contain (`Cache-Control`(NonEmptyList.of(`max-age`(31536000.seconds))))
     }
     it should "not cache them on dev mode" in {
       val service = new StaticRoutes(index(true), true, builtAtMillis).service
-      service.apply(Request(uri = uri("/css/test.css"))).unsafePerformSync.orNotFound.headers should not contain `Cache-Control`(NonEmptyList(`max-age`(31536000.seconds)))
+      service.apply(Request(uri = uri("/css/test.css"))).value.map(_.map(_.headers)).unsafeRunSync.getOrElse(Headers.empty) should not contain `Cache-Control`(NonEmptyList.of(`max-age`(31536000.seconds)))
     }
     it should "support fingerprinting" in {
       val service = new StaticRoutes(index(true), true, builtAtMillis).service
-      service.apply(Request(uri = Uri.fromString(s"/css/test.$builtAtMillis.css").toOption.fold(uri("/"))(x => x))).unsafePerformSync.orNotFound.status should equal (Status.Ok)
+      service.apply(Request(uri = Uri.fromString(s"/css/test.$builtAtMillis.css").toOption.fold(uri("/"))(x => x))).value.map(_.map(_.status)).unsafeRunSync() should contain(Status.Ok)
     }
 }
