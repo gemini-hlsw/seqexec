@@ -5,6 +5,8 @@ package edu.gemini.seqexec.server
 
 import java.time.LocalDate
 
+import cats.data.Kleisli
+import cats.effect.IO
 import edu.gemini.seqexec.engine.{Action, Result, Sequence, Step}
 import edu.gemini.seqexec.model.ActionType
 import edu.gemini.seqexec.model.Model.Instrument.GmosS
@@ -19,19 +21,13 @@ import edu.gemini.spModel.core.{Peer, Site}
 import org.scalatest.FlatSpec
 import squants.time.Seconds
 
-import scalaz.Kleisli
-import scalaz.concurrent.Task
-
-/**
-  * Created by jluhrs on 10/16/17.
-  */
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 class SeqTranslateSpec extends FlatSpec {
 
   private val config: StepConfig = Map()
   private val fileId = "DummyFileId"
   private val seqId = "DummiSeqId"
-  private def observeActions(state: Action.ActionState): List[Action] = List(Action(ActionType.Observe, Kleisli(v => Task(Result.OK(Result.Observed(fileId)))), Action.State(state, Nil)))
+  private def observeActions(state: Action.ActionState): List[Action] = List(Action(ActionType.Observe, Kleisli(v => IO(Result.OK(Result.Observed(fileId)))), Action.State(state, Nil)))
   private val s: Sequence.State = Sequence.State.status.set(SequenceState.Running.init)(Sequence.State.init(Sequence(
     seqId,
     SequenceMetadata(GmosS, None, ""),
@@ -53,7 +49,7 @@ class SeqTranslateSpec extends FlatSpec {
   // Observe completed
   private val s2: Sequence.State = s.mark(0)(Result.OK(Result.Observed(fileId)))
   // Observe started, but with file Id already allocated
-  private val s3: Sequence.State = s.start(0).mark(0)(Result.Partial(Result.FileIdAllocated(fileId), Kleisli(_=>Task(Result.OK(Result.Observed(fileId))))))
+  private val s3: Sequence.State = s.start(0).mark(0)(Result.Partial(Result.FileIdAllocated(fileId), Kleisli(_ => IO(Result.OK(Result.Observed(fileId))))))
   // Observe paused
   private val s4: Sequence.State = s.mark(0)(Result.Paused(ObserveContext(_ => SeqAction(Result.OK(Result.Observed(fileId))), Seconds(1))))
   // Observe failed

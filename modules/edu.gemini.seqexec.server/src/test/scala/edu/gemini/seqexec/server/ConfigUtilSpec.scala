@@ -10,8 +10,7 @@ import org.scalacheck.{Arbitrary, _}
 import org.scalacheck.Arbitrary._
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{EitherValues, FlatSpec, Matchers}
-
-import scalaz.\/-
+import cats.implicits._
 
 object ConfigArbitraries {
 
@@ -50,13 +49,13 @@ class ConfigUtilSpec extends FlatSpec with Matchers with EitherValues with Prope
       forAll { (c: Config, k: ItemKey) =>
         // Make sure the key is present
         c.putItem(k, "value")
-        c.extract(k).as[String] shouldBe \/-("value")
+        c.extract(k).as[String] shouldBe Right("value")
       }
     }
     it should "fail to extract keys with the wrong type" in {
       forAll { (c: Config, k: ItemKey) =>
         c.putItem(k, "value")
-        c.extract(k).as[Int].toEither.left.value should matchPattern {
+        c.extract(k).as[Int].left.value should matchPattern {
           case ConversionError(_, _) =>
         }
       }
@@ -65,7 +64,7 @@ class ConfigUtilSpec extends FlatSpec with Matchers with EitherValues with Prope
       forAll { (c: Config, k: ItemKey) =>
         // Make sure the key is removed
         c.remove(k)
-        c.extract(k).as[String].toEither.left.value should matchPattern {
+        c.extract(k).as[String].left.value should matchPattern {
           case KeyNotFound(_) =>
         }
       }

@@ -21,7 +21,7 @@ trait GcalController {
 
 object GcalController {
 
-  trait LampState
+  sealed trait LampState extends Product with Serializable
 
   object LampState {
 
@@ -34,42 +34,42 @@ object GcalController {
 
   }
 
-  final case class ArLampState(self: LampState) extends AnyVal
+  final case class ArLampState(self: LampState)
 
   object ArLampState {
     implicit val eq: Eq[ArLampState] =
       Eq[LampState].contramap(_.self)
   }
 
-  final case class CuArLampState(self: LampState) extends AnyVal
+  final case class CuArLampState(self: LampState)
 
   object CuArLampState {
     implicit val eq: Eq[CuArLampState] =
       Eq[LampState].contramap(_.self)
   }
 
-  final case class QHLampState(self: LampState) extends AnyVal
+  final case class QHLampState(self: LampState)
 
   object QHLampState {
     implicit val eq: Eq[QHLampState] =
       Eq[LampState].contramap(_.self)
   }
 
-  final case class ThArLampState(self: LampState) extends AnyVal
+  final case class ThArLampState(self: LampState)
 
   object ThArLampState {
     implicit val eq: Eq[ThArLampState] =
       Eq[LampState].contramap(_.self)
   }
 
-  final case class XeLampState(self: LampState) extends AnyVal
+  final case class XeLampState(self: LampState)
 
   object XeLampState {
     implicit val eq: Eq[XeLampState] =
       Eq[LampState].contramap(_.self)
   }
 
-  final case class IrLampState(self: LampState) extends AnyVal
+  final case class IrLampState(self: LampState)
 
   object IrLampState {
     implicit val eq: Eq[IrLampState] =

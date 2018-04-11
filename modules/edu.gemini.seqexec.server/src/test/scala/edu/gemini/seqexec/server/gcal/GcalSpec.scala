@@ -11,6 +11,8 @@ import edu.gemini.seqexec.server.gcal.GcalController._
   * Tests Gcal typeclasses
   */
 final class GcalSpec extends CatsSuite {
+  import edu.gemini.seqexec.server.SeqexecServerArbitraries._
+
   checkAll("Eq[LampState]", EqTests[LampState].eqv)
   checkAll("Eq[ArLampState]", EqTests[ArLampState].eqv)
   checkAll("Eq[CuArLampState]", EqTests[CuArLampState].eqv)
@@ -18,7 +20,4 @@ final class GcalSpec extends CatsSuite {
   checkAll("Eq[ThArLampState]", EqTests[ThArLampState].eqv)
   checkAll("Eq[XeLampState]", EqTests[XeLampState].eqv)
   checkAll("Eq[IrLampState]", EqTests[IrLampState].eqv)
-  checkAll("Eq[Shutter]", EqTests[Shutter].eqv)
-  checkAll("Eq[Filter]", EqTests[Filter].eqv)
-  checkAll("Eq[Diffuser]", EqTests[Diffuser].eqv)
 }

@@ -5,13 +5,15 @@ package edu.gemini.seqexec.server.gnirs
 
 import cats.kernel.laws.discipline._
 import cats.tests.CatsSuite
-import edu.gemini.seqexec.server.gnirs.GnirsController.Decker
+import edu.gemini.seqexec.server._
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams._
 
 /**
   * Tests GNIRS typeclasses
   */
 final class GnirsSpec extends CatsSuite {
+  import edu.gemini.seqexec.server.SeqexecServerArbitraries._
+
   checkAll("Eq[AcquisitionMirror]", EqTests[AcquisitionMirror].eqv)
   checkAll("Eq[WollastonPrism]", EqTests[WollastonPrism].eqv)
   checkAll("Eq[SlitWidth]", EqTests[SlitWidth].eqv)

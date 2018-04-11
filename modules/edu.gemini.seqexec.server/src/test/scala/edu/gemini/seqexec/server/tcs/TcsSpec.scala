@@ -10,6 +10,8 @@ import cats.tests.CatsSuite
   * Tests Tcs typeclasses
   */
 final class TcsSpec extends CatsSuite {
+  import edu.gemini.seqexec.server.SeqexecServerArbitraries._
+
   checkAll("Eq[BinaryYesNo]", EqTests[BinaryYesNo].eqv)
   checkAll("Eq[BinaryOnOff]", EqTests[BinaryOnOff].eqv)
 }

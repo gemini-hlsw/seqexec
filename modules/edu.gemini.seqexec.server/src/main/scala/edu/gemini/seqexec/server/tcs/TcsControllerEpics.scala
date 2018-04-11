@@ -179,7 +179,7 @@ object TcsControllerEpics extends TcsController {
 
   // Decoding and encoding the science fold position require some common definitions, therefore I put them inside an
   // object
-  private[tcs] object CodexScienceFoldPosition {
+  private[server] object CodexScienceFoldPosition {
 
     import LightSource._
     import ScienceFoldPosition._
@@ -188,7 +188,7 @@ object TcsControllerEpics extends TcsController {
     private val GCAL_PREFIX = "gcal2"
     private val PARK_POS = "park-pos"
 
-    final case class SFInstName(self: String) extends AnyVal
+    final case class SFInstName(self: String)
     object SFInstName {
       implicit val EqualSFInstName: Eq[SFInstName] =
         Eq.fromUniversalEquals // natural equality here

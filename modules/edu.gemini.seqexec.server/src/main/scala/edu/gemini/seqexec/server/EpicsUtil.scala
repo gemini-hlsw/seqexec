@@ -140,11 +140,11 @@ trait ObserveCommand {
 }
 
 object ObserveCommand {
-  sealed trait Result
-  object Success extends Result
-  object Paused extends Result
-  object Stopped extends Result
-  object Aborted extends Result
+  sealed trait Result extends Product with Serializable
+  case object Success extends Result
+  case object Paused extends Result
+  case object Stopped extends Result
+  case object Aborted extends Result
 
   implicit val equal: Eq[Result] = Eq.fromUniversalEquals
 }

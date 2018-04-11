@@ -83,7 +83,7 @@ object TcsController {
   final case class M1GuideOn(source: M1Source) extends M1GuideConfig
 
   /** Enumerated type for beams A, B, and C. */
-  sealed trait Beam
+  sealed trait Beam extends Product with Serializable
   object Beam {
     case object A extends Beam
     case object B extends Beam
@@ -207,13 +207,13 @@ object TcsController {
   }
 
   // TCS expects offsets as two length quantities (in millimeters) in the focal plane
-  final case class OffsetX(self: Length) extends AnyVal
+  final case class OffsetX(self: Length)
   object OffsetX {
     implicit val EqOffsetX: Eq[OffsetX] =
       Eq[Double].contramap(_.self.value)
   }
 
-  final case class OffsetY(self: Length) extends AnyVal
+  final case class OffsetY(self: Length)
   object OffsetY {
     implicit val EqOffsetY: Eq[OffsetY] =
       Eq[Double].contramap(_.self.value)
@@ -225,19 +225,19 @@ object TcsController {
       Eq.by(o => (o.x, o.y))
   }
 
-  final case class OffsetA(self: FocalPlaneOffset) extends AnyVal
+  final case class OffsetA(self: FocalPlaneOffset)
   object OffsetA {
     implicit val EqOffsetA: Eq[OffsetA] =
       Eq.by(_.self)
   }
 
-  final case class OffsetB(self: FocalPlaneOffset) extends AnyVal
+  final case class OffsetB(self: FocalPlaneOffset)
   object OffsetB {
     implicit val EqOffsetB: Eq[OffsetB] =
       Eq.by(_.self)
   }
 
-  final case class OffsetC(self: FocalPlaneOffset) extends AnyVal
+  final case class OffsetC(self: FocalPlaneOffset)
   object OffsetC {
     implicit val EqOffsetC: Eq[OffsetC] =
       Eq.by(_.self)

@@ -10,5 +10,7 @@ import cats.tests.CatsSuite
   * Tests TcsControllerEpics typeclasses
   */
 final class TcsControllerEpicsSpec extends CatsSuite {
+  import edu.gemini.seqexec.server.SeqexecServerArbitraries._
+
   checkAll("Eq[SFInstName]", EqTests[TcsControllerEpics.CodexScienceFoldPosition.SFInstName].eqv)
 }
