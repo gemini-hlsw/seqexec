@@ -79,7 +79,7 @@ object Settings {
     val scalaZStream = "0.8.6a"
     val catsEffectVersion   = "0.10"
     val catsMtlVersion      = "0.2.1"
-    val catsVersion         = "1.0.1"
+    val catsVersion         = "1.1.0"
     val mouseVersion        = "0.16"
     val fs2Version          = "0.10.3"
     // Scala libraries
@@ -94,7 +94,7 @@ object Settings {
     val logback      = "1.2.3"
     val janino       = "3.0.8"
     val logstash     = "4.11"
-    val knobs        = "4.0.31-scalaz-7.2"
+    val knobs        = "6.0.33"
     val monocle      = "1.5.0-cats"
 
     // test libraries
