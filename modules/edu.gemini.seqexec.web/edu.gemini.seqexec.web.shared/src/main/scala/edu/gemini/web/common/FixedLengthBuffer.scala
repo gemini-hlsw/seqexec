@@ -3,10 +3,9 @@
 
 package edu.gemini.web.common
 
-import scalaz.{Show, Equal, Foldable, IsEmpty, Functor, MonadPlus}
-import scalaz.syntax.std.boolean._
-import scalaz.syntax.equal._
-import scalaz.std.AllInstances._
+import cats.{Applicative, Eq, Eval, Show, Traverse}
+import cats.implicits._
+import mouse.all._
 
 object FixedLengthBuffer {
   private final case class FixedLengthBufferImpl[A](maxLength: Int, data: Vector[A]) extends FixedLengthBuffer[A] {
@@ -52,50 +51,31 @@ object FixedLengthBuffer {
 
   def Zero[A]: FixedLengthBuffer[A] = FixedLengthBufferImpl[A](0, Vector.empty[A])
 
-  implicit def show[A]: Show[FixedLengthBuffer[A]] = Show.showFromToString
+  implicit def show[A]: Show[FixedLengthBuffer[A]] = Show.fromToString
 
-  implicit def equal[A]: Equal[FixedLengthBuffer[A]] = Equal.equalA
-
-  /**
-   * @typeclass Functor
-   */
-  implicit val functor: Functor[FixedLengthBuffer] = new Functor[FixedLengthBuffer] {
-    def map[B, C](fa: FixedLengthBuffer[B])(f: B => C): FixedLengthBuffer[C] = fa match {
-        case FixedLengthBufferImpl(max, data) => FixedLengthBufferImpl[C](max, data.map(f))
-      }
-  }
+  implicit def equal[A: Eq]: Eq[FixedLengthBuffer[A]] =
+    Eq.by(_.toVector)
 
   /**
-   * @typeclass Foldable
-   * Based on foldable implementation for Set
+   * @typeclass Traverse
+   * Based on traverse implementation for List
    */
-  implicit val foldable: Foldable[FixedLengthBuffer] with MonadPlus[FixedLengthBuffer] with IsEmpty[FixedLengthBuffer] = new Foldable[FixedLengthBuffer] with MonadPlus[FixedLengthBuffer] with IsEmpty[FixedLengthBuffer] with Foldable.FromFoldr[FixedLengthBuffer] {
-    override def length[A](fa: FixedLengthBuffer[A]) = fa.size
-    override def empty[A] = Zero[A]
-    override def plus[A](a: FixedLengthBuffer[A], b: => FixedLengthBuffer[A]) = FixedLengthBufferImpl(Vector(a.maxLength, b.maxLength, a.size + b.size).max, a.toVector ++ b.toVector)
-    override def isEmpty[A](fa: FixedLengthBuffer[A]) = fa.isEmpty
+  implicit val instance: Traverse[FixedLengthBuffer] = new Traverse[FixedLengthBuffer] {
+    override def traverse[G[_], A, B](fa: FixedLengthBuffer[A])(f: A => G[B])(implicit G: Applicative[G]): G[FixedLengthBuffer[B]] =
+      fa.toVector.traverse(f).map(FixedLengthBuffer.unsafeFromInt(fa.maxLength, _: _*))
 
-    @SuppressWarnings(Array("org.wartremover.warts.Var", "org.wartremover.warts.While"))
-    override def foldRight[A, B](fa: FixedLengthBuffer[A], z: => B)(f: (A, => B) => B) = {
-      import scala.collection.mutable.ArrayStack
-      // Faster using a mutable collection
-      val s = new ArrayStack[A]
-      fa.toVector.foreach(a => s += a)
-      var r = z
-      while (!s.isEmpty) {
-        // Fixes stack overflow issue
-        val w = r
-        r = f(s.pop, w)
-      }
-      r
+    override def foldLeft[A, B](fa: FixedLengthBuffer[A], b: B)(f: (B, A) => B): B =
+      fa.toVector.foldLeft(b)(f)
+
+    override def foldRight[A, B](fa: FixedLengthBuffer[A], lb: Eval[B])(f: (A, Eval[B]) => Eval[B]): Eval[B] = {
+      def loop(as: Vector[A]): Eval[B] =
+        as match {
+          case h +: t => f(h, Eval.defer(loop(t)))
+          case _ => lb
+        }
+
+      Eval.defer(loop(fa.toVector))
     }
-    override def all[A](fa: FixedLengthBuffer[A])(f: A => Boolean) =
-      fa.toVector.forall(f)
-    override def any[A](fa: FixedLengthBuffer[A])(f: A => Boolean) =
-      fa.toVector.exists(f)
-    override def point[A](a: => A): FixedLengthBuffer[A] = new FixedLengthBufferImpl(1, Vector(a))
-    override def bind[A, B](fa: FixedLengthBuffer[A])(f: A => FixedLengthBuffer[B]) =
-      fa.flatMap(f)
   }
 
 }

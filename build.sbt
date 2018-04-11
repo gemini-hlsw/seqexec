@@ -204,8 +204,7 @@ lazy val edu_gemini_seqexec_server = project
   .settings(commonSettings: _*)
   .settings(
     libraryDependencies ++=
-      Seq(ScalaZStream,
-          Argonaut,
+      Seq(Argonaut,
           CommonsHttp,
           Squants.value,
           // OCS bundles
