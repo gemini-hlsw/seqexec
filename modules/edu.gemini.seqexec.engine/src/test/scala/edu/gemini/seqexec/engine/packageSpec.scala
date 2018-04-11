@@ -12,13 +12,13 @@ import edu.gemini.seqexec.model.Model.{Resource, SequenceMetadata, SequenceState
 import edu.gemini.seqexec.model.Model.Instrument.{F2, GmosS}
 import edu.gemini.seqexec.model.Model.Resource.TCS
 import edu.gemini.seqexec.model.{ActionType, UserDetails}
-//import fs2.async
-//import fs2.async.mutable.Semaphore
+import fs2.async
+import fs2.async.mutable.Semaphore
 import fs2.Stream
 
 import cats.data.Kleisli
 import cats.implicits._
-import cats.effect.IO
+import cats.effect._
 import monocle.Lens
 import monocle.macros.GenLens
 import org.scalatest.Inside.inside
@@ -216,44 +216,46 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
     )
   }
 
-//  "engine" should "keep processing input messages regardless of how long Actions take" in {
-//    val q = async.boundedQueue[IO, executionEngine.EventType](10)
-//    val startedFlag = Semaphore.apply(0)
-//    val finishFlag = Semaphore.apply(0)
-//
-//    val qs = Engine.State[Unit]((),
-//      Map((seqId, Sequence.State.init(Sequence(
-//        "First",
-//        SequenceMetadata(GmosS, None, ""),
-//        List(
-//          Step.init(
-//            1,
-//            None,
-//            config,
-//            Set(GmosS),
-//            List(
-//              List(fromIO(ActionType.Configure(TCS),
-//              IO.apply{
-//                startedFlag.decrement
-//                finishFlag.increment
-//                Result.OK(Result.Configured(TCS))
-//              }) )
-//            )
-//          )
-//        )
-//      ) ) ) )
-//    )
-//
-//    val result = cats.Parallel[List, IO].map2(
-//      List(
-//        q.enqueue1(Event.start(seqId, user)),
-//        IO.apply(startedFlag.increment),
-//        q.enqueue1(Event.getState[executionEngine.ConcreteTypes]{_ => IO.apply{finishFlag.decrement()} *> IO.apply(None)})
-//      ).sequenceU,
-//      executionEngine.process(q.dequeue)(qs).drop(1).takeThrough(a => !isFinished(a._2.sequences(seqId).status)).run
-//      ).timed(5.seconds).unsafeRunSyncAttempt
-//    assert(result.isRight)
-//  }
+  "engine" should "keep processing input messages regardless of how long Actions take" in {
+    val result = (for {
+      q <- Stream.eval(async.boundedQueue[IO, executionEngine.EventType](10))
+      startedFlag <- Stream.eval(Semaphore.apply[IO](0))
+      finishFlag <- Stream.eval(Semaphore.apply[IO](0))
+    } yield {
+      val qs = Engine.State[Unit]((),
+        Map((seqId, Sequence.State.init(Sequence(
+          "First",
+          SequenceMetadata(GmosS, None, ""),
+          List(
+            Step.init(
+              1,
+              None,
+              config,
+              Set(GmosS),
+              List(
+                List(fromIO(ActionType.Configure(TCS),
+                  IO.apply {
+                    startedFlag.decrement
+                    finishFlag.increment
+                    Result.OK(Result.Configured(TCS))
+                  }))
+              )
+            )
+          )
+        ))))
+      )
+      List(
+        List[IO[Unit]](
+          q.enqueue1(Event.start(seqId, user, UUID.randomUUID())),
+          startedFlag.increment,
+          q.enqueue1(Event.getState[executionEngine.ConcreteTypes] { _ => finishFlag.decrement *> IO.apply(None) })
+        ).sequence,
+        executionEngine.process(q.dequeue)(qs).drop(1).takeThrough(a => !isFinished(a._2.sequences(seqId).status)).compile.drain
+      ).parSequence
+    }).attempt.compile.last.unsafeRunTimed(5.seconds).flatten
+
+    assert(result.forall(_.isRight))
+  }
 
   "engine" should "not capture fatal errors." in {
     @SuppressWarnings(Array("org.wartremover.warts.Throw"))
