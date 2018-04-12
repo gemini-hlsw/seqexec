@@ -3,10 +3,10 @@
 
 package edu.gemini.seqexec.web.server.security
 
+import cats.effect.IO
 import edu.gemini.seqexec.model.UserDetails
-
-import scalaz._
-import Scalaz._
+import edu.gemini.seqexec.web.server.security.AuthenticationService.AuthResult
+import cats.implicits._
 
 /**
   * Authentication service for testing with a hardcoded list of users
@@ -15,9 +15,9 @@ import Scalaz._
 object TestAuthenticationService extends AuthService {
   private val cannedUsers = List(UserDetails("telops", "Telops") -> "pwd")
 
-  override def authenticateUser(username: String, password: String): AuthenticationFailure \/ UserDetails = {
-    cannedUsers.collect {
-      case (ud @ UserDetails(u, _), p) if u == username && p == password => ud
-    }.headOption.fold(BadCredentials(username).left[UserDetails])(_.right)
+  override def authenticateUser(username: String, password: String): IO[AuthResult] = IO.pure {
+    cannedUsers.collectFirst {
+      case (ud@UserDetails(u, _), p) if u == username && p == password => ud
+    }.fold(BadCredentials(username).asLeft[UserDetails])(_.asRight)
   }
 }

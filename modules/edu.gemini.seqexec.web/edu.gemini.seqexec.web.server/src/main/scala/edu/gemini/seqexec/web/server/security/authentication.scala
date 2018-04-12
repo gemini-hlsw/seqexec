@@ -14,8 +14,6 @@ import squants.Time
 import squants.time.Seconds
 import cats.implicits._
 
-import scala.annotation.tailrec
-
 sealed trait AuthenticationFailure
 final case class UserNotFound(user: String) extends AuthenticationFailure
 final case class BadCredentials(user: String) extends AuthenticationFailure
@@ -28,7 +26,7 @@ case object MissingCookie extends AuthenticationFailure
   * Interface for implementations that can authenticate users from a username/pwd pair
   */
 trait AuthService {
-  def authenticateUser(username: String, password: String): AuthResult
+  def authenticateUser(username: String, password: String): IO[AuthResult]
 }
 
 /**
@@ -85,7 +83,7 @@ final case class AuthenticationService(config: AuthenticationConfig) extends Aut
 
   val sessionTimeout: Time = config.sessionLifeHrs in Seconds
 
-  override def authenticateUser(username: String, password: String): AuthResult =
+  override def authenticateUser(username: String, password: String): IO[AuthResult] =
     authServices.authenticateUser(username, password)
 }
 
@@ -97,19 +95,18 @@ object AuthenticationService {
   // that succeeds
   implicit class ComposedAuth(val s: AuthenticationServices) extends AnyVal {
 
-    def authenticateUser(username: String, password: String): AuthResult = {
-      @tailrec
-      def go(l: List[AuthService]): AuthResult = l match {
-        case Nil      => Left(NoAuthenticator)
+    def authenticateUser(username: String, password: String): IO[AuthResult] = {
+      def go(l: List[AuthService]): IO[AuthResult] = l match {
+        case Nil      => IO(Left(NoAuthenticator))
         case x :: Nil => x.authenticateUser(username, password)
-        case x :: xs  => x.authenticateUser(username, password) match {
-            case u @ Right(_) => u
-            case Left(_)     => go(xs)
+        case x :: xs  => x.authenticateUser(username, password).attempt.flatMap {
+            case Right(u) => IO.pure(u)
+            case Left(_)      => go(xs)
           }
       }
       // Discard empty values right away
       if (username.isEmpty || password.isEmpty) {
-        Left(BadCredentials(username))
+        IO.pure(Left(BadCredentials(username)))
       } else {
         go(s)
       }
