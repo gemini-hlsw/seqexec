@@ -17,10 +17,8 @@ import edu.gemini.seqexec.web.client.services.SeqexecWebClient
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.TagOf
 import org.scalajs.dom.html.Div
-
+import cats.implicits._
 import scala.concurrent.ExecutionContext.Implicits.global
-
-import scalaz.syntax.equal._
 
 /**
   * UI for the login box

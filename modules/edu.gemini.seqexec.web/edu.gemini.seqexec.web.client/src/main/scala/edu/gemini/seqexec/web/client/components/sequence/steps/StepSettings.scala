@@ -19,15 +19,9 @@ import japgolly.scalajs.react._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.extra.router.RouterCtl
-
+import cats.implicits._
 import scalacss.ScalaCssReact._
 import scalacss.StyleA
-import scalaz.syntax.order._
-import scalaz.syntax.show._
-import scalaz.syntax.std.option._
-import scalaz.std.anyVal._
-import scalaz.std.string._
-
 
 /**
  * Component to display an icon for the state
@@ -253,7 +247,7 @@ object ExposureTimeCell {
       val seconds = List(<.span(^.display := "inline-block", ^.marginLeft := 5.px, "["), <.span(^.display := "inline-block", ^.verticalAlign := "none", ^.fontStyle := "italic", "s"), <.span(^.display := "inline-block", "]"))
 
       val displayedText: TagMod = (coadds, exposureTime) match {
-        case (c, Some(e)) if c.exists(_ > 1) => (List(<.span(^.display := "inline-block", s"${~c.map(_.shows)} "), <.span(^.display := "inline-block", ^.verticalAlign := "none", "\u2A2F"), <.span(^.display := "inline-block", s"${formatExposureTime(e)}")) ::: seconds).toTagMod
+        case (c, Some(e)) if c.exists(_ > 1) => (List(<.span(^.display := "inline-block", s"${c.map(_.show).getOrElse("")} "), <.span(^.display := "inline-block", ^.verticalAlign := "none", "\u2A2F"), <.span(^.display := "inline-block", s"${formatExposureTime(e)}")) ::: seconds).toTagMod
         case (_, Some(e))                    => ((s"${formatExposureTime(e)}": VdomNode) :: seconds).toTagMod
         case _                               => EmptyVdom
       }
@@ -320,7 +314,7 @@ object ObjectTypeCell {
             case StepType.Dark                              => "black"
             case StepType.Calibration                       => "blue"
           }
-          Label(Label.Props(st.shows, color = stepTypeColor.some, size = p.size))
+          Label(Label.Props(st.show, color = stepTypeColor.some, size = p.size))
         }.whenDefined
       )
     }.build

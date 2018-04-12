@@ -16,10 +16,8 @@ import edu.gemini.seqexec.web.client.semanticui.elements.menu.HeaderItem
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.component.Scala.Unmounted
-
+import cats.implicits._
 import scalacss.ScalaCssReact._
-
-import scalaz.syntax.show._
 
 /**
   * Component for the bar at the top of the page

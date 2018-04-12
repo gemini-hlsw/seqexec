@@ -17,10 +17,9 @@ import japgolly.scalajs.react.ScalazReact._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{Callback, CallbackTo, ScalaComponent, ScalazReact}
-
+import cats.implicits._
+import mouse.all._
 import scalacss.ScalaCssReact._
-import scalaz.syntax.show._
-import scalaz.syntax.std.boolean._
 
 /**
  * Component to wrap the steps control buttons
@@ -39,7 +38,7 @@ object StepsControlButtonsWrapper {
             <.div(
               ^.cls := "ui segment basic running",
               // We need both sequence state and step state to decide what to display
-              props.p.state.userStopRequested.fold(props.p.state.shows, props.step.shows)
+              props.p.state.userStopRequested.fold(props.p.state.show, props.step.show)
             )
           ),
           <.div(

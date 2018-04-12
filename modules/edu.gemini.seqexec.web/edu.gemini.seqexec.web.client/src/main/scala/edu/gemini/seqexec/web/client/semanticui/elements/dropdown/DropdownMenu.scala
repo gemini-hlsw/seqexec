@@ -3,16 +3,13 @@
 
 package edu.gemini.seqexec.web.client.semanticui.elements.dropdown
 
+import cats.Show
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
 import edu.gemini.seqexec.web.client.semanticui.elements.menu.Item
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.{Callback, ScalaComponent}
 import japgolly.scalajs.react.vdom.html_<^._
-
-import scalaz.Show
-import scalaz.syntax.show._
-import scalaz.syntax.equal._
-import scalaz.std.string._
+import cats.implicits._
 
 /**
   * Produces a dropdown menu, similar to a combobox
@@ -43,12 +40,12 @@ object DropdownMenu {
             ^.classSet(
               "default" -> p.defaultSelect.isEmpty
             ),
-            p.defaultSelect.fold(p.defaultSelectText)(_.shows)
+            p.defaultSelect.fold(p.defaultSelectText)(_.show)
           ),
           IconDropdown,
           <.div(
             ^.cls := "menu",
-            p.items.map(i => Item(i.shows)).toTagMod
+            p.items.map(i => Item(i.show)).toTagMod
           )
         )
       )
@@ -65,7 +62,7 @@ object DropdownMenu {
               // The text comes wrapped on react tags
               val cleanText = $(text).text()
               // We need to run the callback explicitly as we are outside the event loop
-              ctx.props.items.find(_.shows === cleanText).map(ctx.props.onChange).foreach(_.runNow)
+              ctx.props.items.find(_.show === cleanText).map(ctx.props.onChange).foreach(_.runNow)
             }
         )
       }

@@ -7,9 +7,8 @@ import edu.gemini.seqexec.model.UserDetails
 import edu.gemini.seqexec.model.UserDetails._
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{FlatSpec, Matchers, NonImplicitAssertions}
-
-import scalaz._
-import Scalaz._
+import cats._
+import cats.implicits._
 
 class FreeLDAPAuthenticationServiceSpec extends FlatSpec with Matchers with PropertyChecks with NonImplicitAssertions {
   import FreeLDAPAuthenticationService._
@@ -21,7 +20,7 @@ class FreeLDAPAuthenticationServiceSpec extends FlatSpec with Matchers with Prop
       // This checks if the username and password but lets it bypass it
       if (users.contains(u) && ((u === p && p.nonEmpty) || acceptEmptyPwd)) u else throw new RuntimeException()
 
-    def displayName(uid: UID): DisplayName = ~users.get(uid).map(_._2)
+    def displayName(uid: UID): DisplayName = users.get(uid).map(_._2).getOrElse("")
   }
 
   // Natural transformation to Id with a mock auth db

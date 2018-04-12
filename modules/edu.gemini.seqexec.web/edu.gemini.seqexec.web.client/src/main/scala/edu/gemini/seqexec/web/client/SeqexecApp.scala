@@ -21,7 +21,7 @@ import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.extra.OnUnmount
 import japgolly.scalajs.react.extra.router.Resolution
 
-import scalaz.effect.IO
+import cats.effect.IO
 
 /**
   * Seqexec WebApp entry point
@@ -81,6 +81,6 @@ object SeqexecApp {
       router      <- SeqexecUI.router(seqexecSite)
       node        <- renderingNode
     } yield router().renderIntoDOM(node)
-    program.unsafePerformIO
+    program.unsafeRunSync()
   }
 }

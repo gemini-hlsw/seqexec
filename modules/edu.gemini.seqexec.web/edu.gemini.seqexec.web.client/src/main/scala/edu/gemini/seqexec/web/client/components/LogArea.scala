@@ -23,12 +23,8 @@ import react.clipboard._
 import java.time.{Instant, LocalDateTime}
 import java.time.format.DateTimeFormatter
 import scalacss.ScalaCssReact._
-
-import scalaz.syntax.foldable._
-import scalaz.syntax.monadPlus.{^ => _, _}
-import scalaz.syntax.show._
-import scalaz.syntax.equal._
-import scalaz.syntax.std.boolean._
+import cats.implicits._
+import mouse.all._
 
 /**
   * Area to display a sequence's log
@@ -88,13 +84,13 @@ object LogArea {
     // Filter according to the levels on the controls
     private def levelFilter(s: State)(m: ServerLogMessage): Boolean = s.allowedLevel(m.level)
 
-    def rowGetter(s: State)(i: Int): LogRow = reverseLog.filter(levelFilter(s) _).index(i).map { l =>
+    def rowGetter(s: State)(i: Int): LogRow = reverseLog.filter_(levelFilter(s) _).lift(i).map { l =>
         val localTime = LocalDateTime.ofInstant(l.timestamp, site.timeZone)
         LogRow(formatter.format(localTime), l.timestamp, l.level, l.msg)
       }.getOrElse(LogRow.Zero)
 
     def rowCount(s: State): Int =
-      reverseLog.filter(levelFilter(s) _).size
+      reverseLog.filter_(levelFilter(s) _).size
 
   }
 
@@ -201,7 +197,7 @@ object LogArea {
                       case (l, s) =>
                       <.div(
                         ^.cls := "inline field",
-                        Checkbox(Checkbox.Props(l.shows, s, v => $.runState(updateState(l)(v))))
+                        Checkbox(Checkbox.Props(l.show, s, v => $.runState(updateState(l)(v))))
                       )
                     }
                   )

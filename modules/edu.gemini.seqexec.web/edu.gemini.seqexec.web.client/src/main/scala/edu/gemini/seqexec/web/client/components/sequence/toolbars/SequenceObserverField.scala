@@ -16,12 +16,7 @@ import japgolly.scalajs.react.component.Scala.Unmounted
 import diode.react.ModelProxy
 import org.scalajs.dom.html.Div
 import scalacss.ScalaCssReact._
-
-import scalaz.syntax.equal._
-import scalaz.syntax.std.option._
-import scalaz.std.string._
-import scalaz.std.option._
-
+import cats.implicits._
 import scala.concurrent.duration._
 
 /**
@@ -41,7 +36,7 @@ object SequenceObserverField {
 
     def submitIfChanged: Callback =
       ($.state zip $.props) >>= {
-        case (s, p) => Callback.when(p.p().isLogged && p.p().observer.map(_.value) =/= s.currentText)(p.p().id.map(updateObserver(_, s.currentText.getOrElse(""))).getOrEmpty)
+        case (s, p) => Callback.when(p.p().isLogged && p.p().observer.map(_.value) =!= s.currentText)(p.p().id.map(updateObserver(_, s.currentText.getOrElse(""))).getOrEmpty)
       }
 
     def setupTimer: Callback =
@@ -49,7 +44,7 @@ object SequenceObserverField {
       setInterval(submitIfChanged, 2.second)
 
     def render(p: Props, s: State): VdomTagOf[Div] = {
-      val observerEV = StateSnapshot(~s.currentText)(updateState)
+      val observerEV = StateSnapshot(s.currentText.getOrElse(""))(updateState)
       val StatusAndObserverFocus(_, _, instrument, _, _, _, _) = p.p()
       <.div(
         ^.cls := "ui form",
@@ -83,11 +78,11 @@ object SequenceObserverField {
     .componentWillReceiveProps { f =>
       val observer = f.nextProps.p().observer
       // Update the observer field
-      Callback.when((observer.map(_.value) =/= f.state.currentText) && observer.nonEmpty)(f.backend.updateState(observer.map(_.value).getOrElse("")))
+      Callback.when((observer.map(_.value) =!= f.state.currentText) && observer.nonEmpty)(f.backend.updateState(observer.map(_.value).getOrElse("")))
     }
     .shouldComponentUpdatePure { f =>
       val observer = f.nextProps.p().observer
-      observer.map(_.value) =/= f.currentState.currentText
+      observer.map(_.value) =!= f.currentState.currentText
     }
     .build
 

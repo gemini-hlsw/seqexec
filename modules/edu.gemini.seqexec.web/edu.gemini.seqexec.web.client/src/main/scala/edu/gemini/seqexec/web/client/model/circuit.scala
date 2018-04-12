@@ -5,6 +5,7 @@ package edu.gemini.seqexec.web.client
 
 import java.util.logging.Logger
 
+import cats.{Eq, Order}
 import diode._
 import diode.data._
 import diode.react.ReactConnector
@@ -13,17 +14,13 @@ import edu.gemini.seqexec.model.UserDetails
 import edu.gemini.seqexec.model.events.SeqexecEvent.ServerLogMessage
 import edu.gemini.seqexec.model.Model._
 import edu.gemini.seqexec.web.client.model._
-import edu.gemini.seqexec.web.client.model.Pages
+import edu.gemini.seqexec.web.client.model.SeqexecAppRootModel.LoadedSequences
 import edu.gemini.seqexec.web.client.lenses._
 import edu.gemini.seqexec.web.client.handlers._
-import edu.gemini.seqexec.web.client.model.SeqexecAppRootModel.LoadedSequences
 import edu.gemini.seqexec.web.client.ModelOps._
-import edu.gemini.seqexec.web.client.actions.{show, ServerMessage, AppendToLog, OpenLoginBox, CloseLoginBox, OpenResourcesBox, CloseResourcesBox}
+import edu.gemini.seqexec.web.client.actions.{AppendToLog, CloseLoginBox, CloseResourcesBox, OpenLoginBox, OpenResourcesBox, ServerMessage, show}
+import cats.implicits._
 
-import scalaz.{Equal, Order}
-import scalaz.std.AllInstances._
-import scalaz.syntax.equal._
-import scalaz.syntax.show._
 
 object circuit {
   /**
@@ -35,7 +32,7 @@ object circuit {
   }
 
   object ClientStatus {
-    implicit val eq: Equal[ClientStatus] = Equal.equalA
+    implicit val eq: Eq[ClientStatus] = Eq.fromUniversalEquals
   }
 
   // All these classes are focused views of the root model. They are used to only update small sections of the
@@ -43,8 +40,8 @@ object circuit {
   final case class WebSocketsFocus(location: Pages.SeqexecPages, sequences: LoadedSequences, user: Option[UserDetails], clientId: Option[ClientID], site: Option[SeqexecSite], firstLoad: Boolean) extends UseValueEq
   final case class SequenceInQueue(id: SequenceId, status: SequenceState, instrument: Instrument, active: Boolean, name: String, targetName: Option[TargetName], runningStep: Option[RunningStep]) extends UseValueEq
   object SequenceInQueue {
-    implicit val order: Order[SequenceInQueue] = Order.orderBy(_.id)
-    implicit val ordering: scala.math.Ordering[SequenceInQueue] = order.toScalaOrdering
+    implicit val order: Order[SequenceInQueue] = Order.by(_.id)
+    implicit val ordering: scala.math.Ordering[SequenceInQueue] = order.toOrdering
   }
   final case class StatusAndLoadedSequencesFocus(isLogged: Boolean, sequences: List[SequenceInQueue]) extends UseValueEq
   final case class HeaderSideBarFocus(status: ClientStatus, conditions: Conditions, operator: Option[Operator]) extends UseValueEq
@@ -54,7 +51,7 @@ object circuit {
   final case class StatusAndStepFocus(isLogged: Boolean, instrument: Instrument, id: Option[SequenceId], stepConfigDisplayed: Option[Int]) extends UseValueEq
   final case class StepsTableFocus(id: SequenceId, instrument: Instrument, state: SequenceState, steps: List[Step], stepConfigDisplayed: Option[Int], nextStepToRun: Option[Int]) extends UseValueEq
   object StepsTableFocus {
-    implicit val eq: Equal[StepsTableFocus] = Equal.equalA
+    implicit val eq: Eq[StepsTableFocus] = Eq.fromUniversalEquals
   }
   final case class StepsTableAndStatusFocus(status: ClientStatus, stepsTable: Option[StepsTableFocus]) extends UseValueEq
   final case class ControlModel(id: SequenceId, isPartiallyExecuted: Boolean, nextStepToRun: Option[Int], status: SequenceState, inConflict: Boolean) extends UseValueEq
@@ -70,7 +67,7 @@ object circuit {
       action match {
         case AppendToLog(_)                     =>
         case ServerMessage(_: ServerLogMessage) =>
-        case a: Action                          => logger.info(s"Action: ${a.shows}")
+        case a: Action                          => logger.info(s"Action: ${a.show}")
         case _                                  =>
       }
       // call the next processor

@@ -8,9 +8,7 @@ import japgolly.scalajs.react.ScalazReact._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.extra.StateSnapshot
-
-import scalaz.syntax.equal._
-import scalaz.std.string._
+import cats.implicits._
 
 /**
  * Input component that uses a EVar to share the content of the field
@@ -66,11 +64,11 @@ object InputEV {
       )
     }.componentWillMount { ctx =>
       // Update state of the input if the property has changed
-      Callback.when((ctx.props.value.value =/= ctx.state.value) && !ctx.state.changed)(ctx.setState(State(ctx.props.value.value)))
+      Callback.when((ctx.props.value.value =!= ctx.state.value) && !ctx.state.changed)(ctx.setState(State(ctx.props.value.value)))
     }.componentWillReceiveProps { ctx =>
       // Update state of the input if the property has changed
       // TBD Should check if the state has changed?
-      Callback.when(ctx.nextProps.value.value =/= ctx.state.value)(ctx.setState(State(ctx.nextProps.value.value)))
+      Callback.when(ctx.nextProps.value.value =!= ctx.state.value)(ctx.setState(State(ctx.nextProps.value.value)))
     }.build
 
   def apply(p: Props): Unmounted[Props, State, Unit] = component(p)

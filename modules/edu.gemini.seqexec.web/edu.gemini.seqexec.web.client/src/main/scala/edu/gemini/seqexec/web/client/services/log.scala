@@ -4,12 +4,11 @@
 package edu.gemini.seqexec.web.client.services
 
 import java.util.logging.{Handler, Level, LogRecord, SimpleFormatter}
-
-import scalaz.Equal
-import scalaz.syntax.equal._
+import cats.implicits._
+import cats.Eq
 
 object log {
-  private implicit val equalLog: Equal[Level] = Equal.equalA
+  private implicit val equalLog: Eq[Level] = Eq.fromUniversalEquals
 
   // Override Console Handler to use the default js console
   class ConsoleHandler(level: Level) extends Handler {

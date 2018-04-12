@@ -10,11 +10,9 @@ import edu.gemini.seqexec.model.Model._
 import edu.gemini.seqexec.model.events.SeqexecEvent.ServerLogMessage
 import edu.gemini.web.common.FixedLengthBuffer
 import org.scalajs.dom.WebSocket
-
-// import monocle.macros.Lenses
-
-import scalaz._
-import Scalaz._
+import cats._
+import cats.implicits._
+import scalaz.Zipper
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object model {
@@ -29,7 +27,14 @@ object model {
     final case class SequencePage(instrument: Instrument, obsId: SequenceId, step: StepId) extends SeqexecPages
     final case class SequenceConfigPage(instrument: Instrument, obsId: SequenceId, step: Int) extends SeqexecPages
 
-    implicit val equal: Equal[SeqexecPages] = Equal.equalA
+    implicit val equal: Eq[SeqexecPages] = Eq.instance {
+      case (Root, Root) => true
+      case (SoundTest, SoundTest) => true
+      case (InstrumentPage(i), InstrumentPage(j)) => i === j
+      case (SequencePage(i, o, s), SequencePage(j, p, r)) => i === j && o === p && s === r
+      case (SequenceConfigPage(i, o, s), SequenceConfigPage(j, p, r)) => i === j && o === p && s === r
+      case _ => false
+    }
   }
 
   // UI model
@@ -38,7 +43,7 @@ object model {
   case object SectionClosed extends SectionVisibilityState
 
   object SectionVisibilityState {
-    implicit val eq: Equal[SectionVisibilityState] = Equal.equalA[SectionVisibilityState]
+    implicit val eq: Eq[SectionVisibilityState] = Eq.fromUniversalEquals
   }
 
   implicit class SectionVisibilityStateOps(val s: SectionVisibilityState) extends AnyVal {
@@ -51,7 +56,8 @@ object model {
   final case class InstrumentTabActive(tab: SequenceTab, active: Boolean)
 
   object InstrumentTabActive {
-    implicit val eq: Equal[InstrumentTabActive] = Equal.equalA
+    implicit val eq: Eq[InstrumentTabActive] =
+      Eq[(SequenceTab, Boolean)].contramap(x => (x.tab, x.active))
   }
 
   final case class SequenceTab(instrument: Instrument, currentSequence: RefTo[Option[SequenceView]], completedSequence: Option[SequenceView], stepConfigDisplayed: Option[Int]) {
@@ -61,7 +67,8 @@ object model {
   }
 
   object SequenceTab {
-    implicit val eq: Equal[SequenceTab] = Equal.equalA
+    implicit val eq: Eq[SequenceTab] =
+      Eq[(Instrument, RefTo[Option[SequenceView]], Option[SequenceView], Option[Int])].contramap(x => (x.instrument, x.currentSequence, x.completedSequence, x.stepConfigDisplayed))
     val empty: SequenceTab = SequenceTab(Instrument.F2, RefTo(new RootModelR(None)), None, None)
   }
 
@@ -81,30 +88,30 @@ object model {
     def focusOnSequence(s: RefTo[Option[SequenceView]]): SequencesOnDisplay = {
       // Replace the sequence for the instrument or the completed sequence
       val q = instrumentSequences.findZ(i => s().exists(_.metadata.instrument === i.instrument)).map(_.modify(_.copy(currentSequence = s)))
-      copy(instrumentSequences = q | instrumentSequences)
+      copy(instrumentSequences = q.getOrElse(instrumentSequences))
     }
 
     def focusOnInstrument(i: Instrument): SequencesOnDisplay = {
       // Focus on the instrument
       val q = instrumentSequences.findZ(s => s.instrument === i)
-      copy(instrumentSequences = q | instrumentSequences)
+      copy(instrumentSequences = q.getOrElse(instrumentSequences))
     }
 
     def isAnySelected: Boolean = instrumentSequences.toStream.exists(_.sequence.isDefined)
 
     // Is the id on the sequences area?
     def idDisplayed(id: SequenceId): Boolean =
-      instrumentSequences.withFocus.toStream.find { case (s, a) => a && s.sequence.exists(_.id === id)}.isDefined
+      instrumentSequences.withFocus.toStream.exists { case (s, a) => a && s.sequence.exists(_.id === id) }
 
     def instrument(i: Instrument): InstrumentTabActive =
       // The getOrElse shouldn't be called as we have an element per instrument
       instrumentSequences.withFocus.toStream.find(_._1.instrument === i)
-        .map{ case (i, a) => InstrumentTabActive(i, a) }.getOrElse(InstrumentTabActive(SequenceTab.empty, false))
+        .map{ case (i, a) => InstrumentTabActive(i, a) }.getOrElse(InstrumentTabActive(SequenceTab.empty, active = false))
 
     // We'll set the passed SequenceView as completed for the given instruments
     def markCompleted(completed: SequenceView): SequencesOnDisplay = {
       val q = instrumentSequences.findZ(s => s.instrument === completed.metadata.instrument).map(_.modify(_.copy(completedSequence = completed.some)))
-      copy(instrumentSequences = q | instrumentSequences)
+      copy(instrumentSequences = q.getOrElse(instrumentSequences))
     }
   }
 
@@ -121,7 +128,7 @@ object model {
   final case class WebSocketConnection(ws: Pot[WebSocket], nextAttempt: Int, autoReconnect: Boolean)
 
   object WebSocketConnection {
-    val empty: WebSocketConnection = WebSocketConnection(Empty, 0, true)
+    val empty: WebSocketConnection = WebSocketConnection(Empty, 0, autoReconnect = true)
   }
 
   /**
@@ -149,7 +156,7 @@ object model {
   object SeqexecUIModel {
     val noSequencesLoaded: SequencesQueue[SequenceView] = SequencesQueue[SequenceView](Conditions.default, None, Nil)
     val initial: SeqexecUIModel = SeqexecUIModel(Pages.Root, None, noSequencesLoaded,
-      SectionClosed, ResourcesConflict(SectionClosed, None), GlobalLog(FixedLengthBuffer.unsafeFromInt(500), SectionClosed), SequencesOnDisplay.empty, true)
+      SectionClosed, ResourcesConflict(SectionClosed, None), GlobalLog(FixedLengthBuffer.unsafeFromInt(500), SectionClosed), SequencesOnDisplay.empty, firstLoad = true)
   }
 
   /**

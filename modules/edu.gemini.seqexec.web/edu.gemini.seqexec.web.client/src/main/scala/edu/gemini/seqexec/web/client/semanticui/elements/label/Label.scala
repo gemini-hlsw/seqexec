@@ -9,9 +9,8 @@ import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 import scalacss.ScalaCssReact._
-
-import scalaz.Equal
-import scalaz.syntax.equal._
+import cats.implicits._
+import cats.kernel.Eq
 
 sealed trait Pointing
 
@@ -22,7 +21,7 @@ object Pointing {
   case object Left extends Pointing
   case object Right extends Pointing
 
-  implicit val equal: Equal[Pointing] = Equal.equalA[Pointing]
+  implicit val equal: Eq[Pointing] = Eq.fromUniversalEquals
 }
 
 object Label {

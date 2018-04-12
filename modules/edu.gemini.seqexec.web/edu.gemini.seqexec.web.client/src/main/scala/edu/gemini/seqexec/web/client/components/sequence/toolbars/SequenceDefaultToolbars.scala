@@ -18,9 +18,8 @@ import japgolly.scalajs.react.ScalazReact._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import diode.react.ModelProxy
 import scalacss.ScalaCssReact._
-
-import scalaz.syntax.equal._
-import scalaz.syntax.std.boolean._
+import cats.implicits._
+import mouse.all._
 
 /**
   * Control buttons for the sequence
@@ -80,8 +79,8 @@ object SequenceControl {
         control.whenDefined { m =>
           val ControlModel(id, isPartiallyExecuted, nextStep, status, inConflict) = m
           val nextStepToRun = nextStep.getOrElse(0) + 1
-          val runContinueTooltip = s"${isPartiallyExecuted ? "Continue" | "Run"} the sequence from the step $nextStepToRun"
-          val runContinueButton = s"${isPartiallyExecuted ? "Continue" | "Run"} from step $nextStepToRun"
+          val runContinueTooltip = s"${isPartiallyExecuted.fold("Continue", "Run")} the sequence from the step $nextStepToRun"
+          val runContinueButton = s"${isPartiallyExecuted.fold("Continue", "Run")} from step $nextStepToRun"
           List(
             // Sync button
             controlButton(IconRefresh, "purple", $.runState(requestSync(id)), (!allowedToExecute || !s.canSync) && !inConflict, "Sync sequence", "Sync")

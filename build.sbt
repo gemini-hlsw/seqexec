@@ -179,6 +179,7 @@ lazy val edu_gemini_seqexec_web_client = project.in(file("modules/edu.gemini.seq
     version in webpack := "3.5.5",
     libraryDependencies ++= Seq(
       JQuery.value,
+      CatsEffect.value,
       ScalaCSS.value,
       ScalaJSDom.value,
       JavaTimeJS.value,

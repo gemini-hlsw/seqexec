@@ -7,41 +7,40 @@ import java.util.logging.{Level, Logger}
 import java.time.Instant
 
 import diode.util.RunAfterJS
-import diode.{Action, ModelRW, NoAction, Effect, ActionHandler, ActionResult}
+import diode.{Action, ActionHandler, ActionResult, Effect, ModelRW, NoAction}
 import diode.data.{Pending, Pot, Ready}
 import boopickle.DefaultBasic._
-
 import edu.gemini.seqexec.model.{ModelBooPicklers, UserDetails}
 import edu.gemini.seqexec.model.Model._
 import edu.gemini.seqexec.model.events.{SeqexecEvent, SeqexecModelUpdate}
-import edu.gemini.seqexec.model.events.SeqexecEvent.{StepExecuted, ActionStopRequested, ConnectionOpenEvent, ObserverUpdated, SequenceCompleted}
-import edu.gemini.seqexec.model.events.SeqexecEvent.{ResourcesBusy, ExposurePaused, SequencePaused, SequenceError, ServerLogMessage, SequenceLoaded, SequenceUnloaded}
+import edu.gemini.seqexec.model.events.SeqexecEvent.{ActionStopRequested, ConnectionOpenEvent, ObserverUpdated, SequenceCompleted, StepExecuted}
+import edu.gemini.seqexec.model.events.SeqexecEvent.{ExposurePaused, ResourcesBusy, SequenceError, SequenceLoaded, SequencePaused, SequenceUnloaded, ServerLogMessage}
 import edu.gemini.seqexec.web.client.model._
-import edu.gemini.seqexec.web.client.lenses.{sequenceViewT, sequenceStepT}
+import edu.gemini.seqexec.web.client.model.Pages._
+import edu.gemini.seqexec.web.client.model.SeqexecAppRootModel.LoadedSequences
+import edu.gemini.seqexec.web.client.lenses.{sequenceStepT, sequenceViewT}
 import edu.gemini.seqexec.web.client.ModelOps._
 import edu.gemini.seqexec.web.client.actions._
 import edu.gemini.seqexec.web.client.circuit._
-import edu.gemini.seqexec.web.client.model.Pages._
 import edu.gemini.seqexec.web.client.services.log.ConsoleHandler
-import edu.gemini.seqexec.web.client.services.{SeqexecWebClient, Audio}
-import edu.gemini.seqexec.web.client.model.SeqexecAppRootModel.LoadedSequences
-
+import edu.gemini.seqexec.web.client.services.{Audio, SeqexecWebClient}
+import cats._
+import cats.implicits._
 import org.scalajs.dom._
+import mouse.all._
+
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.scalajs.js.typedarray.{ArrayBuffer, TypedArrayBuffer}
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
-
-import scalaz._
-import Scalaz._
 
 object handlers {
   private val VoidEffect = Effect(Future(NoAction: Action))
 
   trait Handlers {
     implicit def pfMonoid[A, B]: Monoid[PartialFunction[A, B]] = new Monoid[PartialFunction[A, B]] {
-      def zero = PartialFunction.empty[A, B]
-      def append(pf1: PartialFunction[A, B], pf2: => PartialFunction[A, B]) = pf1.orElse(pf2)
+      override def empty = PartialFunction.empty[A, B]
+      override def combine(x: PartialFunction[A, B], y: PartialFunction[A, B]): PartialFunction[A, B] = x.orElse(y)
     }
   }
 
@@ -124,7 +123,7 @@ object handlers {
         handleInitialSyncToPage,
         handleSyncToRunning,
         handleSyncPageToRemovedSequence,
-        handleSyncPageToAddedSequence).suml
+        handleSyncPageToAddedSequence).combineAll
   }
 
    /**
@@ -175,7 +174,7 @@ object handlers {
 
     override def handle: PartialFunction[Any, ActionResult[M]] =
       List(handleRequestOperation,
-        handleOperationResult).suml
+        handleOperationResult).combineAll
   }
 
   /**
@@ -210,7 +209,7 @@ object handlers {
     }
 
     override def handle: PartialFunction[Any, ActionResult[M]] =
-      List(handleUpdateObserver, handleFlipSkipBreakpoint).suml
+      List(handleUpdateObserver, handleFlipSkipBreakpoint).combineAll
   }
 
   /**
@@ -297,7 +296,7 @@ object handlers {
       List(handleSelectSequenceDisplay,
         handleInitialize,
         handleShowHideStep,
-        handleRememberCompleted).suml
+        handleRememberCompleted).combineAll
   }
 
   /**
@@ -386,7 +385,7 @@ object handlers {
     // Makes a websocket connection and setups event listeners
     def webSocket: Future[Action] = Future[Action] {
       val host = document.location.host
-      val protocol = document.location.protocol.startsWith("https") ? "wss" | "ws"
+      val protocol = document.location.protocol.startsWith("https").fold("wss", "ws")
       val url = s"$protocol://$host/api/seqexec/events"
       val ws = new WebSocket(url)
 
@@ -399,13 +398,13 @@ object handlers {
         e.data match {
           case buffer: ArrayBuffer =>
             val byteBuffer = TypedArrayBuffer.wrap(buffer)
-            \/.fromTryCatchNonFatal(Unpickle[SeqexecEvent].fromBytes(byteBuffer)) match {
-              case \/-(event: ServerLogMessage) =>
+            Either.catchNonFatal(Unpickle[SeqexecEvent].fromBytes(byteBuffer)) match {
+              case Right(event: ServerLogMessage) =>
                 SeqexecCircuit.dispatch(ServerMessage(event))
-              case \/-(event)                   =>
+              case Right(event)                   =>
                 logger.info(s"Decoding event: ${event.getClass}")
                 SeqexecCircuit.dispatch(ServerMessage(event))
-              case -\/(t)                       =>
+              case Left(t)                       =>
                 logger.warning(s"Error decoding event ${t.getMessage}")
             }
           case _                   =>
@@ -477,7 +476,7 @@ object handlers {
         connectingHandler,
         connectedHandler,
         connectionErrorHandler,
-        connectionClosedHandler).suml
+        connectionClosedHandler).combineAll
   }
 
   /**
@@ -495,7 +494,7 @@ object handlers {
     // but we don't know how to display them, so let's filter them out
     private def filterSequences(sequences: LoadedSequences): LoadedSequences =
       sequences.copy(queue = sequences.queue.filter {
-        case SequenceView(_, metadata, _, _, _) => value.site.map(_.instruments.list.toList.contains(metadata.instrument)).getOrElse(false)
+        case SequenceView(_, metadata, _, _, _) => value.site.map(_.instruments.toList.contains(metadata.instrument)).getOrElse(false)
       })
 
     private def inInstrumentPage = value.location match {
@@ -605,12 +604,12 @@ object handlers {
       case ServerMessage(s: SeqexecModelUpdate) =>
         // Replace the observer if not set and logged in
         val observer = value.user.map(_.displayName)
-        val syncToRunE: Option[Effect] = (value.firstLoad option {
+        val syncToRunE: Option[Effect] = value.firstLoad option {
           s.view.queue.filter(_.status.isRunning) match {
-             case x :: _   => Effect(Future(SyncToRunning(x))).some // if we have multiple sequences running, let's pick the first
-             case _        => none
+            case x :: _ => Effect(Future(SyncToRunning(x))) // if we have multiple sequences running, let's pick the first
+            case _ => VoidEffect
           }
-        }).join
+        }
         val (sequencesWithObserver, effects) =
           filterSequences(s.view).queue.foldLeft(
             (List.empty[SequenceView],
@@ -651,6 +650,6 @@ object handlers {
         sequenceUnloadedMessage,
         resourceBusyMessage,
         modelUpdateMessage,
-        defaultMessage).suml
+        defaultMessage).combineAll
   }
 }

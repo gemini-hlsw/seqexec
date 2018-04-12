@@ -7,8 +7,7 @@ import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.vdom.html_<^._
 import edu.gemini.seqexec.web.client.semanticui._
 import japgolly.scalajs.react.component.Scala.Unmounted
-
-import scalaz.syntax.equal._
+import cats.implicits._
 
 object TableHeader {
   @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))

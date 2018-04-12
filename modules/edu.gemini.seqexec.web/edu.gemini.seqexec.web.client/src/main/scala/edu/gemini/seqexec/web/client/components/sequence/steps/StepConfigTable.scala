@@ -11,9 +11,7 @@ import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 
 import scalacss._
-import scalaz.std.AllInstances._
-import scalaz.syntax.traverse._
-import scalaz.syntax.equal._
+import cats.implicits._
 import react.virtualized._
 
 object StepConfigTable {
@@ -32,7 +30,7 @@ object StepConfigTable {
     val rowCount: Int = settingsList.size
 
     def rowGetter(idx: Int): SettingsRow =
-      settingsList.index(idx).fold(SettingsRow.Zero)(Function.tupled(SettingsRow.apply))
+      settingsList.lift(idx).fold(SettingsRow.Zero)(Function.tupled(SettingsRow.apply))
   }
 
   // ScalaJS defined trait

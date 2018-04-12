@@ -3,7 +3,7 @@
 
 package edu.gemini.seqexec.web.client.semanticui
 
-import scalaz.Equal
+import cats.Eq
 
 sealed trait Aligned
 
@@ -13,5 +13,5 @@ object Aligned {
   case object Center extends Aligned
   case object Right extends Aligned
 
-  implicit val equal: Equal[Aligned] = Equal.equalA[Aligned]
+  implicit val equal: Eq[Aligned] = Eq.fromUniversalEquals
 }

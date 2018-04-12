@@ -18,11 +18,9 @@ import diode.react.ModelProxy
 import diode.react.ReactPot._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import scalacss.ScalaCssReact._
-
+import cats.implicits._
+import cats.effect.IO
 import scala.scalajs.js.timers.SetTimeoutHandle
-import scalaz.syntax.show._
-import scalaz.syntax.equal._
-import scalaz.effect.IO
 
 object AppTitle {
   final case class Props(site: SeqexecSite, ws: ModelProxy[WebSocketConnection])
@@ -36,7 +34,7 @@ object AppTitle {
         SeqexecStyles.notInMobile,
         <.h4(
           ^.cls := "ui horizontal divider header",
-          s"Seqexec ${p.site.shows}",
+          s"Seqexec ${p.site.show}",
           p.ws().ws.renderPending(_ =>
             <.div(
               SeqexecStyles.errorText,
@@ -118,12 +116,12 @@ object SeqexecUI {
     case SequenceConfigPage(_, id, _) => s"Seqexec - $id"
     case SequencePage(_, id, _)       => s"Seqexec - $id"
     case InstrumentPage(i)            => s"Seqexec - ${i.show}"
-    case _                            => s"Seqexec - ${site.shows}"
+    case _                            => s"Seqexec - ${site.show}"
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
   def router(site: SeqexecSite): IO[Router[SeqexecPages]] = {
-    val instrumentNames = site.instruments.map(i => (i.shows, i)).list.toList.toMap
+    val instrumentNames = site.instruments.map(i => (i.show, i)).toList.toMap
 
     val routerConfig = RouterConfigDsl[SeqexecPages].buildConfig { dsl =>
       import dsl._
@@ -134,26 +132,26 @@ object SeqexecUI {
       | dynamicRoute(("/" ~ string("[a-zA-Z0-9-]+") ~ "/" ~ string("[a-zA-Z0-9-]+") ~ "/configuration/" ~ int)
         .pmap {
           case (i, s, step) => instrumentNames.get(i).map(SequenceConfigPage(_, s, step))
-        }(p => (p.instrument.shows, p.obsId, p.step))) {
-          case x @ SequenceConfigPage(i, _, _) if site.instruments.list.toList.contains(i) => x
+        }(p => (p.instrument.show, p.obsId, p.step))) {
+          case x @ SequenceConfigPage(i, _, _) if site.instruments.toList.contains(i) => x
         } ~> dynRenderR((p, r) => SeqexecMain(site, r))
       | dynamicRoute(("/" ~ string("[a-zA-Z0-9-]+") ~ "/" ~ string("[a-zA-Z0-9-]+"))
         .pmap {
           case (i, s) => instrumentNames.get(i).map(SequencePage(_, s, 0))
-        }(p => (p.instrument.shows, p.obsId))) {
-          case x @ SequencePage(i, _, _) if site.instruments.list.toList.contains(i) => x
+        }(p => (p.instrument.show, p.obsId))) {
+          case x @ SequencePage(i, _, _) if site.instruments.toList.contains(i) => x
         } ~> dynRenderR((p, r) => SeqexecMain(site, r))
       | dynamicRoute(("/" ~ string("[a-zA-Z0-9-]+"))
-        .pmap(i => instrumentNames.get(i).map(InstrumentPage(_)))(p => p.instrument.shows)) {
-          case x @ InstrumentPage(i) if site.instruments.list.toList.contains(i) => x
+        .pmap(i => instrumentNames.get(i).map(InstrumentPage))(p => p.instrument.show)) {
+          case x @ InstrumentPage(i) if site.instruments.toList.contains(i) => x
         } ~> dynRenderR((p, r) => SeqexecMain(site, r))
       )
         .notFound(redirectToPage(Root)(Redirect.Push))
         // Runtime verification that all pages are routed
-        .verify(Root, (SoundTest :: site.instruments.list.toList.map(i => InstrumentPage(i))): _*)
+        .verify(Root, SoundTest :: site.instruments.toList.map(i => InstrumentPage(i)): _*)
         .onPostRender((_, next) =>
           Callback.when(next === SoundTest)(SeqexecCircuit.dispatchCB(RequestSoundEcho)) >>
-          Callback.when(next =/= SeqexecCircuit.zoom(_.uiModel.navLocation).value)(SeqexecCircuit.dispatchCB(NavigateSilentTo(next))))
+          Callback.when(next =!= SeqexecCircuit.zoom(_.uiModel.navLocation).value)(SeqexecCircuit.dispatchCB(NavigateSilentTo(next))))
         .renderWith { case (_, r) => <.div(r.render()).render}
         .setTitle(pageTitle(site))
         .logToConsole

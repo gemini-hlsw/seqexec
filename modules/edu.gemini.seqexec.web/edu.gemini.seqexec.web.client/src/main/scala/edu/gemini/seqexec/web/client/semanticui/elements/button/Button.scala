@@ -11,8 +11,8 @@ import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 
 import scalacss.ScalaCssReact._
-import scalaz.syntax.equal._
-import scalaz.Equal
+import cats.Eq
+import cats.implicits._
 
 object Button {
   sealed trait ButtonState
@@ -20,7 +20,7 @@ object Button {
   case object Inactive extends ButtonState
 
   object ButtonState {
-    implicit val equal: Equal[ButtonState] = Equal.equalA
+    implicit val equal: Eq[ButtonState] = Eq.fromUniversalEquals
   }
 
   sealed trait Emphasis
@@ -29,7 +29,7 @@ object Button {
   case object Secondary extends Emphasis
 
   object Emphasis {
-    implicit val equal: Equal[Emphasis] = Equal.equalA
+    implicit val equal: Eq[Emphasis] = Eq.fromUniversalEquals
   }
 
   sealed trait Animated
@@ -39,7 +39,7 @@ object Button {
   case object Fade extends Animated
 
   object Animated {
-    implicit val equal: Equal[Animated] = Equal.equalA
+    implicit val equal: Eq[Animated] = Eq.fromUniversalEquals
   }
 
   sealed trait Type
@@ -48,7 +48,7 @@ object Button {
   case object SubmitType extends Type
 
   object Type {
-    implicit val equal: Equal[Type] = Equal.equalA
+    implicit val equal: Eq[Type] = Eq.fromUniversalEquals
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
@@ -76,7 +76,7 @@ object Button {
       "active"    -> (p.state === Active),
       "primary"   -> (p.emphasis === Primary),
       "secondary" -> (p.emphasis === Secondary),
-      "animated"  -> (p.animated =/= NotAnimated),
+      "animated"  -> (p.animated =!= NotAnimated),
       "vertical"  -> (p.animated === Vertical),
       "fade"      -> (p.animated === Fade),
       "icon"      -> p.icon.isDefined,
