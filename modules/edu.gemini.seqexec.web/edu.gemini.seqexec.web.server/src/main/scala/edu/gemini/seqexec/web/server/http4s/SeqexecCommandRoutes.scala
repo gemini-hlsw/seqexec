@@ -3,26 +3,24 @@
 
 package edu.gemini.seqexec.web.server.http4s
 
+import cats.effect.IO
 import edu.gemini.pot.sp.SPObservationID
 import edu.gemini.seqexec.server.Commands
 import edu.gemini.seqexec.server.SeqexecEngine
 import edu.gemini.seqexec.server
-import edu.gemini.seqexec.model.Model.{ClientID, CloudCover, Conditions, ImageQuality, Operator, Observer, SkyBackground, WaterVapor}
+import edu.gemini.seqexec.model.Model.{ClientID, CloudCover, Conditions, ImageQuality, Observer, Operator, SkyBackground, WaterVapor}
 import edu.gemini.seqexec.model.UserDetails
 import edu.gemini.seqexec.web.server.model.CommandsModel._
 import edu.gemini.seqexec.web.server.http4s.encoder._
 import edu.gemini.seqexec.web.server.security.{AuthenticationService, Http4sAuthentication, TokenRefresher}
 import org.http4s._
-import org.http4s.dsl._
+import org.http4s.dsl.io._
 import org.http4s.server.middleware.GZip
-
-import scalaz._
-import Scalaz._
-import scalaz.concurrent.Task
+import cats.implicits._
 
 object ClientIDVar {
   def unapply(str: String): Option[ClientID] =
-    \/.fromTryCatchNonFatal(java.util.UUID.fromString(str)).toOption
+    Either.catchNonFatal(java.util.UUID.fromString(str)).toOption
 }
 /**
   * Rest Endpoints under the /api route
@@ -43,8 +41,8 @@ class SeqexecCommandRoutes(auth: AuthenticationService, inputQueue: server.Event
     case POST -> Root / obsId / "start" / ClientIDVar(clientId) as user =>
       for {
         obs <-
-            \/.fromTryCatchNonFatal(new SPObservationID(obsId))
-              .fold(e => Task.fail(e), Task.now)
+            Either.catchNonFatal(new SPObservationID(obsId))
+              .fold(e => IO.raiseError(e), IO.pure)
         _     <- se.start(inputQueue, obs, user, clientId)
         resp  <- Ok(s"Started sequence $obs")
       } yield resp
@@ -52,8 +50,8 @@ class SeqexecCommandRoutes(auth: AuthenticationService, inputQueue: server.Event
     case POST -> Root / obsId / "pause" as user =>
       for {
         obs <-
-            \/.fromTryCatchNonFatal(new SPObservationID(obsId))
-              .fold(e => Task.fail(e), Task.now)
+            Either.catchNonFatal(new SPObservationID(obsId))
+              .fold(e => IO.raiseError(e), IO.pure)
         _     <- se.requestPause(inputQueue, obs, user)
         resp  <- Ok(s"Pause sequence $obs")
       } yield resp
@@ -61,17 +59,17 @@ class SeqexecCommandRoutes(auth: AuthenticationService, inputQueue: server.Event
     case POST -> Root / obsId / "cancelpause" as user =>
       for {
         obs <-
-            \/.fromTryCatchNonFatal(new SPObservationID(obsId))
-              .fold(e => Task.fail(e), Task.now)
+            Either.catchNonFatal(new SPObservationID(obsId))
+              .fold(e => IO.raiseError(e), IO.pure)
         _     <- se.requestCancelPause(inputQueue, obs, user)
         resp  <- Ok(s"Cancel Pause sequence $obs")
       } yield resp
 
     case POST -> Root / obsId / stepId / "breakpoint" / bp as user =>
       for {
-        obs    <- \/.fromTryCatchNonFatal(new SPObservationID(obsId)).fold(e => Task.fail(e), Task.now)
-        step   <- \/.fromTryCatchNonFatal(stepId.toInt).fold(e => Task.fail(e), Task.now)
-        newVal <- \/.fromTryCatchNonFatal(bp.toBoolean).fold(e => Task.fail(e), Task.now)
+        obs    <- Either.catchNonFatal(new SPObservationID(obsId)).fold(e => IO.raiseError(e), IO.pure)
+        step   <- Either.catchNonFatal(stepId.toInt).fold(e => IO.raiseError(e), IO.pure)
+        newVal <- Either.catchNonFatal(bp.toBoolean).fold(e => IO.raiseError(e), IO.pure)
         _      <- se.setBreakpoint(inputQueue, obs, user, step, newVal)
         resp   <- Ok(s"Set breakpoint in step $step of sequence $obsId")
 
@@ -79,9 +77,9 @@ class SeqexecCommandRoutes(auth: AuthenticationService, inputQueue: server.Event
 
     case POST -> Root / obsId / stepId / "skip" / bp as user =>
       for {
-        obs    <- \/.fromTryCatchNonFatal(new SPObservationID(obsId)).fold(e => Task.fail(e), Task.now)
-        step   <- \/.fromTryCatchNonFatal(stepId.toInt).fold(e => Task.fail(e), Task.now)
-        newVal <- \/.fromTryCatchNonFatal(bp.toBoolean).fold(e => Task.fail(e), Task.now)
+        obs    <- Either.catchNonFatal(new SPObservationID(obsId)).fold(e => IO.raiseError(e), IO.pure)
+        step   <- Either.catchNonFatal(stepId.toInt).fold(e => IO.raiseError(e), IO.pure)
+        newVal <- Either.catchNonFatal(bp.toBoolean).fold(e => IO.raiseError(e), IO.pure)
         _      <- se.setSkipMark(inputQueue, obs, user, step, newVal)
         resp   <- Ok(s"Set skip mark in step $step of sequence $obsId")
 
@@ -89,28 +87,28 @@ class SeqexecCommandRoutes(auth: AuthenticationService, inputQueue: server.Event
 
     case POST -> Root / obsId / stepId / "stop" as _ =>
       for {
-        obs  <- \/.fromTryCatchNonFatal(new SPObservationID(obsId)).fold(e => Task.fail(e), Task.now)
+        obs  <- Either.catchNonFatal(new SPObservationID(obsId)).fold(e => IO.raiseError(e), IO.pure)
         _    <- se.stopObserve(inputQueue, obs)
         resp <- Ok(s"Stop requested for $obsId on step $stepId")
       } yield resp
 
     case POST -> Root / obsId / stepId / "abort" as _ =>
       for {
-        obs  <- \/.fromTryCatchNonFatal(new SPObservationID(obsId)).fold(e => Task.fail(e), Task.now)
+        obs  <- Either.catchNonFatal(new SPObservationID(obsId)).fold(e => IO.raiseError(e), IO.pure)
         _    <- se.abortObserve(inputQueue, obs)
         resp <- Ok(s"Abort requested for $obsId on step $stepId")
       } yield resp
 
     case POST -> Root / obsId / stepId / "pauseObs" as _ =>
       for {
-        obs  <- \/.fromTryCatchNonFatal(new SPObservationID(obsId)).fold(e => Task.fail(e), Task.now)
+        obs  <- Either.catchNonFatal(new SPObservationID(obsId)).fold(e => IO.raiseError(e), IO.pure)
         _    <- se.pauseObserve(inputQueue, obs)
         resp <- Ok(s"Pause observation requested for $obsId on step $stepId")
       } yield resp
 
     case POST -> Root / obsId / stepId / "resumeObs" as _ =>
       for {
-        obs  <- \/.fromTryCatchNonFatal(new SPObservationID(obsId)).fold(e => Task.fail(e), Task.now)
+        obs  <- Either.catchNonFatal(new SPObservationID(obsId)).fold(e => IO.raiseError(e), IO.pure)
         _    <- se.resumeObserve(inputQueue, obs)
         resp <- Ok(s"Resume observation requested for $obsId on step $stepId")
       } yield resp
@@ -121,8 +119,8 @@ class SeqexecCommandRoutes(auth: AuthenticationService, inputQueue: server.Event
     case POST -> Root / obsId / "observer" / name as user =>
       for {
         obs   <-
-          \/.fromTryCatchNonFatal(new SPObservationID(obsId))
-            .fold(e => Task.fail(e), Task.now)
+          Either.catchNonFatal(new SPObservationID(obsId))
+            .fold(e => IO.raiseError(e), IO.pure)
         _     <- se.setObserver(inputQueue, obs, user, Observer(name))
         resp  <- Ok(s"Set observer name to '$name' for sequence $obs")
       } yield resp

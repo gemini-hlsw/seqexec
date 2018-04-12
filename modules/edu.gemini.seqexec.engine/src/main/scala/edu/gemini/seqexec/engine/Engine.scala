@@ -38,16 +38,6 @@ class Engine[D: ActionMetadataGenerator, U](implicit ev: ActionMetadataGenerator
   // Helper alias to facilitate lifting.
   type HandleStateT[M[_], A] = StateT[M, StateType, A]
 
-  // The `Catchable` instance of `Handle`` needs to be manually written.
-  // Without it it's not possible to use `Handle` as a scalaz-stream process effects.
-  // implicit def engineInstance[A]: MonadError[Handle, A] =
-  //   new MonadError[Handle, A] {
-      // def attempt[A](a: Handle[A]): Handle[Throwable \/ A] = a.flatMap(
-      //   x => MonadError[IO].attempt(Applicative[IO].pure(x)).liftM[HandleStateT]
-      // )
-      // def fail[A](err: Throwable): Handle[A] = MonadError[IO].fail[A](err).liftM[HandleStateT]
-    // }
-
   /*
    * HandleP is a Stream which has as a side effect a State machine inside a IO, which can produce other
    * Streames as output.

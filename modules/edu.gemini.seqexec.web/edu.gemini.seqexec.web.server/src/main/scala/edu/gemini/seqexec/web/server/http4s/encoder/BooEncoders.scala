@@ -4,12 +4,11 @@
 package edu.gemini.seqexec.web.server.http4s.encoder
 
 import edu.gemini.seqexec.model._
-import edu.gemini.seqexec.model.Model.{CloudCover, Conditions, ImageQuality, SequenceId, SequencesQueue, SkyBackground, WaterVapor, Operator}
-import edu.gemini.seqexec.web.common._
-import edu.gemini.seqexec.web.common.LogMessage._
-import CliCommand._
-
+import edu.gemini.seqexec.model.Model.{CloudCover, Conditions, ImageQuality, Operator, SequenceId, SequencesQueue, SkyBackground, WaterVapor}
 import boopickle.Default._
+import cats.effect.Sync
+import edu.gemini.web.common.{CliCommand, LogMessage}
+import org.http4s.{EntityDecoder, EntityEncoder}
 
 /**
   * Contains http4s implicit encoders of model objects
@@ -18,15 +17,15 @@ import boopickle.Default._
 trait BooEncoders {
   // Decoders, Included here instead of the on the object definitions to avoid
   // a circular dependency on http4s
-  implicit val userLoginDecoder      = booOf[UserLoginRequest]
-  implicit val userDetailEncoder     = booEncoderOf[UserDetails]
-  implicit val operatorEncoder       = booEncoderOf[Operator]
-  implicit val logMessageDecoder     = booOf[LogMessage]
-  implicit val commandsEncoder       = booEncoderOf[CliCommand]
-  implicit val sequenceIdEncoder     = booEncoderOf[SequencesQueue[SequenceId]]
-  implicit val conditionsEncoder     = booOf[Conditions]
-  implicit val iqEncoder             = booOf[ImageQuality]
-  implicit val wvEncoder             = booOf[WaterVapor]
-  implicit val sbEncoder             = booOf[SkyBackground]
-  implicit val ccEncoder             = booOf[CloudCover]
+  implicit def userLoginDecoder[F[_]: Sync]: EntityDecoder[F, UserLoginRequest] = booOf[F, UserLoginRequest]
+  implicit def userDetailEncoder[F[_]: Sync]: EntityEncoder[F, UserDetails] = booEncoderOf[F, UserDetails]
+  implicit def operatorEncoder[F[_]: Sync]: EntityEncoder[F, Operator] = booEncoderOf[F, Operator]
+  implicit def logMessageDecoder[F[_]: Sync]: EntityDecoder[F, LogMessage] = booOf[F, LogMessage]
+  implicit def commandsEncoder[F[_]: Sync]: EntityEncoder[F, CliCommand] = booEncoderOf[F, CliCommand]
+  implicit def sequenceIdEncoder[F[_]: Sync]: EntityEncoder[F, SequencesQueue[SequenceId]] = booEncoderOf[F, SequencesQueue[SequenceId]]
+  implicit def conditionsEncoder[F[_]: Sync]: EntityDecoder[F, Conditions] = booOf[F, Conditions]
+  implicit def iqEncoder[F[_]: Sync]: EntityDecoder[F, ImageQuality] = booOf[F, ImageQuality]
+  implicit def wvEncoder[F[_]: Sync]: EntityDecoder[F, WaterVapor] = booOf[F, WaterVapor]
+  implicit def sbEncoder[F[_]: Sync]: EntityDecoder[F, SkyBackground] = booOf[F, SkyBackground]
+  implicit def ccEncoder[F[_]: Sync]: EntityDecoder[F, CloudCover] = booOf[F, CloudCover]
 }

@@ -3,19 +3,17 @@
 
 package edu.gemini.seqexec.web.server.logging
 
-import ch.qos.logback.classic.spi.ILoggingEvent
+import java.time.Instant
+
+import cats.effect.IO
+import cats.implicits._
 import ch.qos.logback.classic.Level
+import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.AppenderBase
 import edu.gemini.seqexec.model.Model.ServerLogLevel
 import edu.gemini.seqexec.model.events.SeqexecEvent
 import edu.gemini.seqexec.model.events.SeqexecEvent.ServerLogMessage
-import scalaz.stream.async.mutable.Topic
-
-import scalaz._
-import Scalaz._
-import scalaz.concurrent.Task
-
-import java.time.Instant
+import fs2.async.mutable.Topic
 
 /**
  * Custom appender that can take log events from logback and send them
@@ -23,7 +21,7 @@ import java.time.Instant
  *
  * This is out of the scala/http4s loop
  */
-class AppenderForClients(out: Topic[SeqexecEvent]) extends AppenderBase[ILoggingEvent] {
+class AppenderForClients(out: Topic[IO, SeqexecEvent]) extends AppenderBase[ILoggingEvent] {
   // Remove some loggers. This is a weak form of protection where he don't send some
   // loggers to the cilent, e.g. security related logs
   private val blackListedLoggers = List(""".*\.security\..*""".r)
@@ -40,6 +38,6 @@ class AppenderForClients(out: Topic[SeqexecEvent]) extends AppenderBase[ILogging
 
     // Send a message to the clients if level is INFO or higher
     // We are outside the normal execution loop, thus we need to call unsafePerformSync directly
-    level.filter(_ => !blackListedLoggers.exists(_.findFirstIn(event.getLoggerName).isDefined)).fold(Task.now(()))(l => out.publishOne(ServerLogMessage(l, timestamp, event.getMessage))).unsafePerformSync
+    level.filter(_ => !blackListedLoggers.exists(_.findFirstIn(event.getLoggerName).isDefined)).fold(IO.pure(()))(l => out.publish1(ServerLogMessage(l, timestamp, event.getMessage))).unsafeRunSync
   }
 }

@@ -4,7 +4,7 @@
 package edu.gemini.seqexec.web.server.model
 
 import edu.gemini.seqexec.server.Commands.CommandResult
-import edu.gemini.seqexec.web.common._
+import edu.gemini.web.common.{CliCommand, RegularCommand, SequenceStatus}
 
 object CommandsModel {
   def toCommandResult(s: String, r: CommandResult): CliCommand =

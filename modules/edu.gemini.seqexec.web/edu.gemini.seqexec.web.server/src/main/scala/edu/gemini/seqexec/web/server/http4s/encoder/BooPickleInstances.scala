@@ -3,15 +3,16 @@
 
 package edu.gemini.seqexec.web.server.http4s.encoder
 
+import java.nio.ByteBuffer
+
 import boopickle.Default._
 import boopickle.Pickler
-
+import cats.effect.Sync
 import org.http4s._
 import org.http4s.headers.`Content-Type`
 import scodec.bits.ByteVector
 
-import scalaz.-\/
-import scalaz.stream.Process._
+import scala.util.{Failure, Success}
 
 /**
   * Generic factories for http4s encoders/decoders for boopickle
@@ -19,17 +20,27 @@ import scalaz.stream.Process._
   */
 trait BooPickleInstances {
 
-  def booOf[A](implicit pickler: Pickler[A]): EntityDecoder[A] =
-    EntityDecoder.decodeBy(MediaType.`application/octet-stream`) { msg =>
-      DecodeResult {
-        msg.body.map(bv => Unpickle[A](pickler).fromBytes(bv.toByteBuffer)).partialAttempt {
-          case e: Exception => emit(MalformedMessageBodyFailure("Invalid binary body", Some(e)))
-        }.runLastOr(-\/(MalformedMessageBodyFailure("Invalid binary: empty body")))
+  def booOf[F[_]: Sync, A: Pickler]: EntityDecoder[F, A] =
+    EntityDecoder.decodeBy(MediaType.`application/octet-stream`)(booDecoderByteBuffer[F, A])
+
+  private def booDecoderByteBuffer[F[_]: Sync, A](msg: Message[F])(implicit pickler: Pickler[A]): DecodeResult[F, A] =
+    EntityDecoder.collectBinary(msg).flatMap { segment =>
+      val bb = ByteBuffer.wrap(segment.force.toArray)
+      if (bb.hasRemaining) {
+        Unpickle[A](pickler).tryFromBytes(bb) match {
+          case Success(bb) =>
+            DecodeResult.success[F, A](bb)
+          case Failure(pf) =>
+            DecodeResult.failure[F, A](
+              MalformedMessageBodyFailure("Invalid binary body", Some(pf)))
+        }
+      } else {
+        DecodeResult.failure[F, A](MalformedMessageBodyFailure("Invalid binary: empty body", None))
       }
     }
 
-  def booEncoderOf[A](implicit encoder: Pickler[A]): EntityEncoder[A] =
-    EntityEncoder[ByteVector].contramap[A] { v =>
+  def booEncoderOf[F[_], A: Pickler]: EntityEncoder[F, A] =
+    EntityEncoder[F, ByteVector].contramap[A] { v =>
       ByteVector(Pickle.intoBytes(v))
     }.withContentType(`Content-Type`(MediaType.`application/octet-stream`))
 

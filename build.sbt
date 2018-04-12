@@ -112,6 +112,7 @@ lazy val edu_gemini_seqexec_web_server = project.in(file("modules/edu.gemini.seq
   .enablePlugins(GitBranchPrompt)
   .settings(commonSettings: _*)
   .settings(
+    addCompilerPlugin(Plugins.kindProjectorPlugin),
     libraryDependencies ++= Seq(UnboundId, JwtCore, Knobs) ++ Http4s ++ Logging,
     // Settings to optimize the use of sbt-revolver
     // Allows to read the generated JS on client
