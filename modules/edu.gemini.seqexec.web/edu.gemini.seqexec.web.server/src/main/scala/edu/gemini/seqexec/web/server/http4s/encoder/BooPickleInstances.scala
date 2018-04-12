@@ -7,8 +7,10 @@ import java.nio.ByteBuffer
 
 import boopickle.Default._
 import boopickle.Pickler
+import cats.Applicative
 import cats.effect.Sync
 import org.http4s._
+import org.http4s.EntityEncoder.byteArrayEncoder
 import org.http4s.headers.`Content-Type`
 import scodec.bits.ByteVector
 
@@ -39,9 +41,9 @@ trait BooPickleInstances {
       }
     }
 
-  def booEncoderOf[F[_], A: Pickler]: EntityEncoder[F, A] =
-    EntityEncoder[F, ByteVector].contramap[A] { v =>
-      ByteVector(Pickle.intoBytes(v))
+  def booEncoderOf[F[_]: Applicative, A: Pickler]: EntityEncoder[F, A] =
+    byteArrayEncoder[F].contramap[A] { v =>
+      ByteVector(Pickle.intoBytes(v)).toArray
     }.withContentType(`Content-Type`(MediaType.`application/octet-stream`))
 
 }

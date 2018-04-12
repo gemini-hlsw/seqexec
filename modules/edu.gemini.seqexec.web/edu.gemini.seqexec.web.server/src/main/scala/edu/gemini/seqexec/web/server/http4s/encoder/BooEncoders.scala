@@ -8,6 +8,7 @@ import edu.gemini.seqexec.model.Model.{CloudCover, Conditions, ImageQuality, Ope
 import boopickle.Default._
 import cats.effect.Sync
 import edu.gemini.web.common.{CliCommand, LogMessage}
+import edu.gemini.web.common.LogMessage._
 import org.http4s.{EntityDecoder, EntityEncoder}
 
 /**
