@@ -11,11 +11,13 @@ import edu.gemini.seqexec.model.events.SeqexecEvent.ServerLogMessage
 import edu.gemini.web.common.FixedLengthBuffer
 import org.scalajs.dom.WebSocket
 import cats._
+import cats.data.NonEmptyList
 import cats.implicits._
-import scalaz.Zipper
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object model {
+  implicit def eqRefTo[A: Eq]: Eq[RefTo[A]] =
+    Eq.by(_.apply())
 
   // Pages
   object Pages {
@@ -66,6 +68,50 @@ object model {
     def sequence: Option[SequenceView] = currentSequence().orElse(completedSequence)
   }
 
+  final case class Zipper[A](lefts: List[A], focus: A, rights: List[A]) {
+    /**
+      * Modify the focus
+      */
+    def modify(f: A => A): Zipper[A] = copy(lefts, f(focus), rights)
+
+    /**
+      * Find and element and focus if successful
+      */
+    @SuppressWarnings(Array("org.wartremover.warts.TraversableOps"))
+    def findFocus(p: A => Boolean): Zipper[A] =
+      if (p(focus)) this
+      else {
+        val indexLeft = lefts.indexWhere(p)
+        val indexRight = rights.indexWhere(p)
+        if (indexLeft === -1 && indexRight === -1) {
+          this
+        } else if (indexLeft >= 0) {
+          val (newL, newR) = lefts.splitAt(indexLeft)
+          Zipper(newL, newR.head, newR ::: rights)
+        } else {
+          val (newL, newR) = rights.splitAt(indexLeft)
+          Zipper(lefts, newL.head, newR)
+        }
+      }
+    def exists(p: A => Boolean): Boolean = {
+      if (p(focus)) true else {
+        lefts.exists(p) || rights.exists(p)
+      }
+    }
+    def find(p: A => Boolean): Option[A] = {
+      if (p(focus)) Some(focus) else {
+        lefts.find(p).orElse(rights.find(p))
+      }
+    }
+    def withFocus: Zipper[(A, Boolean)] =
+      Zipper(lefts.map((_, false)), (focus, true), rights.map((_, false)))
+  }
+
+  object Zipper {
+    def fromNel[A](ne: NonEmptyList[A]): Zipper[A] =
+      Zipper(Nil, ne.head, ne.tail)
+  }
+
   object SequenceTab {
     implicit val eq: Eq[SequenceTab] =
       Eq[(Instrument, RefTo[Option[SequenceView]], Option[SequenceView], Option[Int])].contramap(x => (x.instrument, x.currentSequence, x.completedSequence, x.stepConfigDisplayed))
@@ -75,7 +121,7 @@ object model {
   // Model for the tabbed area of sequences
   final case class SequencesOnDisplay(instrumentSequences: Zipper[SequenceTab]) {
     def withSite(site: SeqexecSite): SequencesOnDisplay =
-      SequencesOnDisplay(site.instruments.map(SequenceTab(_, SequencesOnDisplay.emptySeqRef, None, None)).toZipper)
+      SequencesOnDisplay(Zipper.fromNel(site.instruments.map(SequenceTab(_, SequencesOnDisplay.emptySeqRef, None, None))))
 
     // Display a given step on the focused sequence
     def showStep(i: Int): SequencesOnDisplay =
@@ -87,31 +133,31 @@ object model {
 
     def focusOnSequence(s: RefTo[Option[SequenceView]]): SequencesOnDisplay = {
       // Replace the sequence for the instrument or the completed sequence
-      val q = instrumentSequences.findZ(i => s().exists(_.metadata.instrument === i.instrument)).map(_.modify(_.copy(currentSequence = s)))
-      copy(instrumentSequences = q.getOrElse(instrumentSequences))
+      val q = instrumentSequences.findFocus(i => s().exists(_.metadata.instrument === i.instrument)).modify(_.copy(currentSequence = s))
+      copy(instrumentSequences = q)
     }
 
     def focusOnInstrument(i: Instrument): SequencesOnDisplay = {
       // Focus on the instrument
-      val q = instrumentSequences.findZ(s => s.instrument === i)
-      copy(instrumentSequences = q.getOrElse(instrumentSequences))
+      val q = instrumentSequences.findFocus(s => s.instrument === i)
+      copy(instrumentSequences = q)
     }
 
-    def isAnySelected: Boolean = instrumentSequences.toStream.exists(_.sequence.isDefined)
+    def isAnySelected: Boolean = instrumentSequences.exists(_.sequence.isDefined)
 
     // Is the id on the sequences area?
     def idDisplayed(id: SequenceId): Boolean =
-      instrumentSequences.withFocus.toStream.exists { case (s, a) => a && s.sequence.exists(_.id === id) }
+      instrumentSequences.withFocus.exists { case (s, a) => a && s.sequence.exists(_.id === id) }
 
     def instrument(i: Instrument): InstrumentTabActive =
       // The getOrElse shouldn't be called as we have an element per instrument
-      instrumentSequences.withFocus.toStream.find(_._1.instrument === i)
+      instrumentSequences.withFocus.find(_._1.instrument === i)
         .map{ case (i, a) => InstrumentTabActive(i, a) }.getOrElse(InstrumentTabActive(SequenceTab.empty, active = false))
 
     // We'll set the passed SequenceView as completed for the given instruments
     def markCompleted(completed: SequenceView): SequencesOnDisplay = {
-      val q = instrumentSequences.findZ(s => s.instrument === completed.metadata.instrument).map(_.modify(_.copy(completedSequence = completed.some)))
-      copy(instrumentSequences = q.getOrElse(instrumentSequences))
+      val q = instrumentSequences.findFocus(s => s.instrument === completed.metadata.instrument).modify(_.copy(completedSequence = completed.some))
+      copy(instrumentSequences = q)
     }
   }
 
@@ -122,7 +168,7 @@ object model {
     val emptySeqRef: RefTo[Option[SequenceView]] = RefTo(new RootModelR(None))
 
     // We need to initialize the model with some instruments but it will be shortly replaced by the actual list
-    val empty: SequencesOnDisplay = SequencesOnDisplay(Instrument.gsInstruments.map(SequenceTab(_, emptySeqRef, None, None)).toZipper)
+    val empty: SequencesOnDisplay = SequencesOnDisplay(Zipper.fromNel(Instrument.gsInstruments.map(SequenceTab(_, emptySeqRef, None, None))))
   }
 
   final case class WebSocketConnection(ws: Pot[WebSocket], nextAttempt: Int, autoReconnect: Boolean)

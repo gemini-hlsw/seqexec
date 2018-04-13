@@ -60,7 +60,7 @@ object Sequence {
     val next: Option[Zipper] =
       focus.next match {
         // Step completed
-        case None      => {
+        case None      =>
           val (toSkip, remaining): (List[Step], List[Step]) = pending.span(st => st.skipMark.self && !st.breakpoint.self)
           remaining match {
             case Nil => None
@@ -68,7 +68,6 @@ object Sequence {
               (curr, stepd) => Zipper(id, metadata, stepps, curr, (done :+ stepd) ::: toSkip.map(_.copy(skipped = Step.Skipped(true))))
             )
           }
-        }
         // Current step ongoing
         case Some(stz) => Some(Zipper(id, metadata, pending, stz, done))
       }
