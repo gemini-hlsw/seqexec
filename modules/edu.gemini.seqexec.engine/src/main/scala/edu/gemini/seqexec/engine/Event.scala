@@ -3,11 +3,11 @@
 
 package edu.gemini.seqexec.engine
 
-import scalaz.syntax.std.option._
 import edu.gemini.seqexec.model.Model.{ClientID, Observer}
 import edu.gemini.seqexec.model.UserDetails
 
 import cats.effect.IO
+import cats.implicits._
 import fs2.Stream
 
 /**

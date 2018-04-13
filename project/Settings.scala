@@ -75,8 +75,6 @@ object Settings {
     val scalaJSReactClipboard   = "0.1.0"
 
     // Java libraries
-    val scalaZ       = "7.2.20"
-    val scalaZStream = "0.8.6a"
     val catsEffectVersion   = "0.10"
     val catsMtlVersion      = "0.2.1"
     val catsVersion         = "1.1.0"
@@ -95,7 +93,7 @@ object Settings {
     val janino       = "3.0.8"
     val logstash     = "4.11"
     val knobs        = "6.0.33"
-    val monocle      = "1.5.0-cats"
+    val monocle      = "1.5.1-cats"
 
     // test libraries
     val scalaTest             = "3.0.5"
@@ -154,15 +152,11 @@ object Settings {
     val JavaLogJS   = Def.setting("org.scala-js"      %%% "scalajs-java-logging" % LibraryVersions.javaLogJS)
 
     // ScalaZ
-    val ScalaZCore       = Def.setting("org.scalaz"    %%% "scalaz-core"         % LibraryVersions.scalaZ)
-    val ScalaZConcurrent = "org.scalaz"                %%  "scalaz-concurrent"   % LibraryVersions.scalaZ
-    val ScalaZStream     = "org.scalaz.stream"         %%  "scalaz-stream"       % LibraryVersions.scalaZStream
     val Cats             = Def.setting("org.typelevel" %%% "cats-core"           % LibraryVersions.catsVersion)
     val CatsMtl          = Def.setting("org.typelevel" %%% "cats-mtl-core"       % LibraryVersions.catsMtlVersion)
     val CatsEffect       = Def.setting("org.typelevel" %%% "cats-effect"         % LibraryVersions.catsEffectVersion)
     val Fs2              = "co.fs2"                    %%  "fs2-core"            % LibraryVersions.fs2Version
     val Mouse            = Def.setting("org.typelevel" %%% "mouse"               % LibraryVersions.mouseVersion)
-    val Shims            = Def.setting("com.codecommit" %%% "shims" % "1.1")
 
     // Server side libraries
     val Http4s  = Seq(
