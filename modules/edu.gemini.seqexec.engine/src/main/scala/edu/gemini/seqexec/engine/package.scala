@@ -44,7 +44,9 @@ package engine {
     }
     case object Started extends ActionState
     final case class Paused[C <: PauseContext](ctx: C) extends ActionState
+
     final case class Completed[V <: RetVal](r: V) extends ActionState
+
     final case class Failed(e: Error) extends ActionState
 
     def errored(ar: Action): Boolean = ar.state.runState match {

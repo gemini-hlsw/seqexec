@@ -308,9 +308,8 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     SequenceView(seq.id, seq.metadata, st.status, engineSteps(seq), None)
   }
 
-   private def unloadEvent(seqId: SPObservationID): executeEngine.EventType = Event.unload(seqId.stringValue)
-
   private def refreshSequenceList(): executeEngine.StateType => IO[Option[Stream[IO, executeEngine.EventType]]] = (st: executeEngine.StateType) => {
+
     val seqexecList = st.sequences.keys.toSeq.map(v => new SPObservationID(v))
 
     def loads(odbList: Seq[SPObservationID]): IO[List[executeEngine.EventType]] =
