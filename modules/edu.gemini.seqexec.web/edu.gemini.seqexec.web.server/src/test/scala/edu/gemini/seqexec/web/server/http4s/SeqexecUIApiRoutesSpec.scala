@@ -3,55 +3,59 @@
 
 package edu.gemini.seqexec.web.server.http4s
 
-import java.nio.ByteBuffer
-import java.nio.charset.StandardCharsets
-import java.time.{Instant, LocalDate}
-import java.time.temporal.ChronoUnit
+import java.time.LocalDate
 
-import edu.gemini.seqexec.web.server.security.{AuthenticationConfig, AuthenticationService, LDAPConfig}
-import edu.gemini.seqexec.model.events.SeqexecEvent
-import edu.gemini.seqexec.model.events.SeqexecEvent.{ConnectionOpenEvent, NullEvent}
-import edu.gemini.seqexec.model.{ModelBooPicklers, UserDetails, UserLoginRequest}
-import edu.gemini.seqexec.server.{SeqexecEngine, executeEngine}
-import org.http4s._
-import org.http4s.headers.`Set-Cookie`
-import org.http4s.syntax.StringSyntax
-import org.http4s.websocket.WebsocketBits
-import scodec.bits.ByteVector
-import squants.time._
-import boopickle.Default._
-import cats._
-import cats.data.OptionT
 import cats.effect.IO
-import cats.implicits._
-import fs2.{Stream, async}
+import edu.gemini.seqexec.model.events.SeqexecEvent
+import edu.gemini.seqexec.model.events.SeqexecEvent.NullEvent
+import edu.gemini.seqexec.server.{SeqexecEngine, executeEngine}
+import edu.gemini.seqexec.web.server.security.{AuthenticationConfig, AuthenticationService, LDAPConfig}
 import fs2.async.mutable.{Queue, Topic}
+import fs2.{Stream, async}
+import org.http4s._
+import org.http4s.syntax.StringSyntax
 import org.scalatest.{FlatSpec, Matchers, NonImplicitAssertions}
+import squants.time._
 
-import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext.Implicits.global
+import cats.implicits._
 
 @SuppressWarnings(Array("org.wartremover.warts.Throw", "org.wartremover.warts.ImplicitParameter", "org.wartremover.warts.NonUnitStatements", "org.wartremover.warts.Equals", "org.wartremover.warts.OptionPartial"))
 class SeqexecUIApiRoutesSpec extends FlatSpec with Matchers with UriFunctions with StringSyntax with NonImplicitAssertions {
-  import ModelBooPicklers._
-eq
+//  import ModelBooPicklers._
+
   private val config = AuthenticationConfig(devMode = true, Hours(8), "token", "abc", useSSL = false, LDAPConfig(Nil))
   private val engine = SeqexecEngine(SeqexecEngine.defaultSettings.copy(date = LocalDate.now))
   private val authService = AuthenticationService(config)
   val inq: Stream[IO, Queue[IO, executeEngine.EventType]] = Stream.eval(async.boundedQueue[IO, executeEngine.EventType](10))
   val out: Stream[IO, Topic[IO, SeqexecEvent]] = Stream.eval(async.topic[IO, SeqexecEvent](NullEvent))
-  val queues: (Queue[IO, executeEngine.EventType], Topic[IO, SeqexecEvent]) = (inq, out)
+  val streams: Stream[IO, Queue[IO, executeEngine.EventType]] = inq.concurrently(out)
 
-  private val service = new SeqexecUIApiRoutes(true, authService, queues, engine).service
+  private val service =
+    for {
+      i <- {val i = inq;println(s"r $i");i}
+      o <- {println(i);out}
+    } yield new SeqexecUIApiRoutes(true, authService, (i, o), engine).service
 
   "SeqexecUIApiRoutes login" should
     "reject requests without body" in {
-      service.apply(Request(method = Method.POST, uri = uri("/seqexec/login"))).value.unsafeRunSync.map(_.orNotFound.status) should contain(Status.BadRequest)
+    println("run")
+      for {
+        s <- service
+      } yield {
+        println("service")
+        val r = s.apply(Request(method = Method.POST, uri = uri("/seqexec/login"))).value.unsafeRunSync.map(_.status) should contain(Status.FailedDependency)
+        println(r)
+        r
+      }
     }
-//    it should "reject GET requests" in {
-//      // This should in principle return a 405
-//      // see https://github.com/http4s/http4s/issues/234
-//      service.apply(Request(uri = uri("/seqexec/login"))).unsafeRunSync.orNotFound.status should equal(Status.NotFound)
-//    }
+    it should "reject GET requests" in {
+      // This should in principle return a 405
+      // see https://github.com/http4s/http4s/issues/234
+      for {
+        s <- service
+      } yield s.apply(Request(uri = uri("/seqexec/login"))).value.unsafeRunSync.map(_.status) should contain(Status.NotFound)
+    }
 //    it should "reject requests with string body" in {
 //      val b = emit(ByteVector.view("hello".getBytes(StandardCharsets.UTF_8)))
 //      service.apply(Request(method = Method.POST, uri = uri("/seqexec/login"), body = b)).unsafeRunSync.orNotFound.status should equal(Status.BadRequest)

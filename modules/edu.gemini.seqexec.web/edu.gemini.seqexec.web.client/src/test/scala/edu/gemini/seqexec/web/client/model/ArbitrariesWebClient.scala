@@ -3,15 +3,14 @@
 
 package edu.gemini.seqexec.web.client
 
+import cats.data.NonEmptyList
 import diode.RootModelR
 import diode.data._
 import edu.gemini.seqexec.model.Model.{Instrument, SequenceView}
-import edu.gemini.seqexec.web.client.model.{SequenceTab, SequencesOnDisplay}
+import edu.gemini.seqexec.web.client.model.{SequenceTab, SequencesOnDisplay, Zipper}
 import edu.gemini.web.common.ArbitrariesWebCommon
 import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, _}
-
-import scalaz._
 
 trait ArbitrariesWebClient extends ArbitrariesWebCommon {
   import edu.gemini.seqexec.model.SharedModelArbitraries._
@@ -23,9 +22,6 @@ trait ArbitrariesWebClient extends ArbitrariesWebCommon {
         i  <- Gen.oneOf(Empty, Ready(a), Pending(), PendingStale(a), Failed(new RuntimeException()), FailedStale(a, new RuntimeException()))
       } yield i
     }
-
-  implicit val arbInstrument: Arbitrary[Instrument] =
-    Arbitrary { Gen.oneOf(Instrument.gsInstruments.list.toList ++ Instrument.gnInstruments.list.toList) }
 
   implicit val arbSequenceTab: Arbitrary[SequenceTab] =
     Arbitrary {
@@ -42,8 +38,8 @@ trait ArbitrariesWebClient extends ArbitrariesWebCommon {
         s <- Gen.nonEmptyListOf(arbitrary[SequenceTab])
         if s.exists(_.sequence.isDefined)
       } yield {
-        val sequences = NonEmptyList(s.headOption.getOrElse(SequenceTab.empty), s.drop(1): _*)
-        SequencesOnDisplay(sequences.toZipper)
+        val sequences = NonEmptyList.of(s.headOption.getOrElse(SequenceTab.empty), s.drop(1): _*)
+        SequencesOnDisplay(Zipper.fromNel(sequences))
       }
     }
 }

@@ -3,13 +3,14 @@
 
 package edu.gemini.seqexec.web.client
 
-import edu.gemini.seqexec.model.Model.{SequenceId, Instrument}
+import edu.gemini.seqexec.model.Model.{Instrument, SequenceId}
 import edu.gemini.seqexec.web.client.circuit.SeqexecCircuit._
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{FlatSpec, Matchers}
 
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 class CircuitReaderSpec extends FlatSpec with Matchers with PropertyChecks with ArbitrariesWebClient {
+  import edu.gemini.seqexec.model.SharedModelArbitraries._
 
   "CircuitReaderSpec" should
     "maintain reference equality for constant readers" in {
