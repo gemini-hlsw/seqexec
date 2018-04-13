@@ -3,11 +3,11 @@
 
 package edu.gemini.seqexec.engine
 
-import edu.gemini.seqexec.model.Model.Resource
-
+import cats.Eq
 import cats.implicits._
-import monocle.syntax.apply._
+import edu.gemini.seqexec.model.Model.Resource
 import monocle.function.Index.{index, listIndex}
+import monocle.syntax.apply._
 import mouse.boolean._
 
 /**
@@ -107,6 +107,9 @@ object Result {
   // TODO: Replace the message by a richer Error type like `SeqexecFailure`
   final case class Error(msg: String) extends Result {
     override val errMsg: Option[String] = Some(msg)
+  }
+  object Error {
+    implicit val eq: Eq[Error] = Eq.fromUniversalEquals
   }
 
   sealed trait Response extends RetVal

@@ -133,11 +133,13 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
   def seqQueueRefreshStream: Stream[IO, executeEngine.EventType] =
     Scheduler[IO](corePoolSize = 1).flatMap { scheduler =>
       val fd = Duration(settings.odbQueuePollingInterval.toSeconds, TimeUnit.SECONDS)
-      scheduler.fixedRate[IO](fd).flatMap(r => Stream.emit(Event.getState[executeEngine.ConcreteTypes](refreshSequenceList())))
+      scheduler.fixedRate[IO](fd).flatMap { r =>
+        Stream.emit(Event.getState[executeEngine.ConcreteTypes](refreshSequenceList()))
+      }
     }
 
-  def eventStream(q: EventQueue): Stream[IO, SeqexecEvent] =
-    executeEngine.process(q.dequeue.concurrently(seqQueueRefreshStream))(Engine.State.empty[EngineMetadata](EngineMetadata.default)).flatMap(x => Stream.eval(notifyODB(x))).map {
+  def eventStream(q: EventQueue): Stream[IO, SeqexecEvent] = {
+    executeEngine.process(q.dequeue.mergeHaltBoth(seqQueueRefreshStream))(Engine.State.empty[EngineMetadata](EngineMetadata.default)).flatMap(x => Stream.eval(notifyODB(x))).map {
       case (ev, qState) =>
         toSeqexecEvent(ev)(
           SequencesQueue(
@@ -149,6 +151,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
           )
         )
     }
+  }
 
   def stopObserve(q: EventQueue, seqId: SPObservationID): IO[Unit] = q.enqueue1(
     Event.actionStop[executeEngine.ConcreteTypes](seqId.stringValue, translator.stopObserve(seqId.stringValue))
@@ -208,7 +211,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     Event.modifyState[executeEngine.ConcreteTypes](moveSeq(queueName, seqId.stringValue, d), NullSeqEvent)
   ).map(_.asRight)
 
-  private def notifyODB(i: (executeEngine.EventType, executeEngine.StateType)): IO[(executeEngine.EventType, executeEngine.StateType)] = {
+  def notifyODB(i: (executeEngine.EventType, executeEngine.StateType)): IO[(executeEngine.EventType, executeEngine.StateType)] = {
     def safeGetObsId(ids: String): SeqAction[SPObservationID] = EitherT(IO.apply(new SPObservationID(ids)).attempt.map { _.leftMap(SeqexecFailure.SeqexecException.apply) })
 
     (i match {
@@ -247,7 +250,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     case SetCloudCover(_, _)    => ConditionsUpdated(svs)
   }
 
-  private def toSeqexecEvent(ev: executeEngine.EventType)(svs: => SequencesQueue[SequenceView]): SeqexecEvent = ev match {
+  def toSeqexecEvent(ev: executeEngine.EventType)(svs: => SequencesQueue[SequenceView]): SeqexecEvent = ev match {
     case engine.EventUser(ue) => ue match {
       case engine.Start(_, _, _)         => SequenceStart(svs)
       case engine.Pause(_, _)            => SequencePauseRequested(svs)
@@ -309,11 +312,10 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
   }
 
   private def refreshSequenceList(): executeEngine.StateType => IO[Option[Stream[IO, executeEngine.EventType]]] = (st: executeEngine.StateType) => {
-
     val seqexecList = st.sequences.keys.toSeq.map(v => new SPObservationID(v))
 
     def loads(odbList: Seq[SPObservationID]): IO[List[executeEngine.EventType]] =
-      odbList.diff(seqexecList).toList.map(id => loadEvents(id)).sequence.map(_.flatten).value.map(_.valueOr( r => List(Event.logDebugMsg(SeqexecFailure.explain(r)))))
+      odbList.diff(seqexecList).toList.map(id => loadEvents(id)).sequence.map(_.flatten).value.map(_.valueOr(r => List(Event.logDebugMsg(SeqexecFailure.explain(r)))))
 
     def unloads(odbList: Seq[SPObservationID]): Seq[executeEngine.EventType] =
       seqexecList.diff(odbList).map(id => unloadEvent(id))

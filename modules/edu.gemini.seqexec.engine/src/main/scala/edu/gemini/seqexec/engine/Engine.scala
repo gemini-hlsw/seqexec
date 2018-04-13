@@ -40,7 +40,8 @@ class Engine[D: ActionMetadataGenerator, U](implicit ev: ActionMetadataGenerator
 
   /*
    * HandleP is a Stream which has as a side effect a State machine inside a IO, which can produce other
-   * Streames as output.
+   * Streams as output.
+   *
    * Its type parameters are:
    * A: Type of the output (usually Unit)
    * D: Type of the user data included in the state machine state.
@@ -73,7 +74,7 @@ class Engine[D: ActionMetadataGenerator, U](implicit ev: ActionMetadataGenerator
       }
     )
 
-    override def tailRecM[A, B](a: A)(f: A => HandleP[Either[A, B]]): HandleP[B] = ???
+    override def tailRecM[A, B](a: A)(f: A => HandleP[Either[A, B]]): HandleP[B] = ??? //scalastyle:ignore
   }
 
   implicit class HandleToHandleP[A](self: Handle[A]) {
@@ -253,7 +254,7 @@ class Engine[D: ActionMetadataGenerator, U](implicit ev: ActionMetadataGenerator
   /**
     * Ask for the current Handle `Status`.
     */
-   // private def status(id: Sequence.Id): HandleP[Option[SequenceState], D] = inspect(_.sequences.get(id).map(_.status))
+  // private def status(id: Sequence.Id): HandleP[Option[SequenceState], D] = inspect(_.sequences.get(id).map(_.status))
 
   // You shouldn't need to import this but if you do you could use the qualified
   // import: `engine.Logger`
@@ -344,7 +345,7 @@ class Engine[D: ActionMetadataGenerator, U](implicit ev: ActionMetadataGenerator
   def mapEvalState[A, S, B](input: Stream[IO, A], initialState: S, f: (A, S) => IO[(S, B, Stream[IO, A])])(implicit ec: ExecutionContext): Stream[IO, B] = {
     def go(fi: Stream[IO, A], si: S): Stream[IO, B] = {
       fi.pull.uncons1.flatMap {
-        case None => Pull.done
+        case None               => Pull.done
         case Some((head, tail)) =>
           // head: A
           // tail: Stream[IO, A]

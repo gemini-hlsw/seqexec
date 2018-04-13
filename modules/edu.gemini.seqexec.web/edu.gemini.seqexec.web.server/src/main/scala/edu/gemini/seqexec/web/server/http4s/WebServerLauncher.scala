@@ -10,6 +10,7 @@ import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.Appender
 import edu.gemini.seqexec.model.events.SeqexecEvent
 import edu.gemini.seqexec.model.events.SeqexecEvent.NullEvent
+import fs2.async.mutable.Queue
 import edu.gemini.seqexec.server
 import edu.gemini.seqexec.server.{SeqexecEngine, executeEngine}
 import edu.gemini.seqexec.web.server.OcsBuildInfo
@@ -17,12 +18,11 @@ import edu.gemini.seqexec.web.server.logging.AppenderForClients
 import edu.gemini.seqexec.web.server.security.{AuthenticationConfig, AuthenticationService, LDAPConfig}
 import edu.gemini.web.server.common.{LogInitialization, RedirectToHttpsRoutes, StaticRoutes}
 import fs2.StreamApp.ExitCode
-import fs2.async.mutable.{Queue, Topic}
-import fs2.{Stream, StreamApp, async}
+import fs2.async.mutable.Topic
+import fs2.{Scheduler, Stream, StreamApp, async}
 import knobs._
 import mouse.all._
 import org.http4s.server.SSLKeyStoreSupport.StoreInfo
-import org.http4s.server.Server
 import org.http4s.server.blaze.BlazeBuilder
 import org.log4s._
 import squants.time.Hours
@@ -104,7 +104,7 @@ object WebServerLauncher extends StreamApp[IO] with LogInitialization {
   /**
     * Configures and builds the web server
     */
-  def webServer(as: AuthenticationService, events: (server.EventQueue, Topic[IO, SeqexecEvent]), se: SeqexecEngine): Kleisli[IO, WebServerConfiguration, Server[IO]] = Kleisli { conf =>
+  def webServer(as: AuthenticationService, events: (server.EventQueue, Topic[IO, SeqexecEvent]), se: SeqexecEngine): Kleisli[Stream[IO, ?], WebServerConfiguration, StreamApp.ExitCode] = Kleisli { conf =>
     val builder = BlazeBuilder[IO].bindHttp(conf.port, conf.host)
       .withWebSockets(true)
       .mountService(new StaticRoutes(index(conf.site, conf.devMode, OcsBuildInfo.builtAtMillis), conf.devMode, OcsBuildInfo.builtAtMillis).service, "/")
@@ -113,13 +113,13 @@ object WebServerLauncher extends StreamApp[IO] with LogInitialization {
     conf.sslConfig.fold(builder) { ssl =>
       val storeInfo = StoreInfo(ssl.keyStore, ssl.keyStorePwd)
       builder.withSSL(storeInfo, ssl.certPwd, "TLS")
-    }.start
+    }.serve
   }
 
-  def redirectWebServer: Kleisli[IO, WebServerConfiguration, Server[IO]] = Kleisli { conf =>
+  def redirectWebServer: Kleisli[Stream[IO, ?], WebServerConfiguration, StreamApp.ExitCode] = Kleisli { conf =>
     val builder = BlazeBuilder[IO].bindHttp(conf.insecurePort, conf.host)
       .mountService(new RedirectToHttpsRoutes(443, conf.externalBaseUrl).service, "/")
-    builder.start
+    builder.serve
   }
 
   def logStart: Kleisli[IO, WebServerConfiguration, Unit] = Kleisli { conf =>
@@ -162,28 +162,35 @@ object WebServerLauncher extends StreamApp[IO] with LogInitialization {
         _    <- configLog // Initialize log before the engine is setup
         c    <- config
         seqc <- SeqexecEngine.seqexecConfiguration.run(c)
-      } yield SeqexecEngine(seqc)
-        //.eventStream(in).to(out.publish)
+        se   = SeqexecEngine(seqc)
+      } yield se
 
-    def webServerIO(in: Queue[IO, executeEngine.EventType], out: Topic[IO, SeqexecEvent], e: IO[SeqexecEngine]): IO[List[Server[IO]]] =
+    def webServerIO(in: Queue[IO, executeEngine.EventType], out: Topic[IO, SeqexecEvent], et: SeqexecEngine): IO[Stream[IO, ExitCode]] =
       // Launch web server
       for {
         wc <- serverConf
         ac <- authConf.run(wc)
         as <- authService.run(ac)
-        rd <- redirectWebServer.run(wc)
         _  <- logStart.run(wc)
         _  <- logToClients(out)
-        et <- e
-        ws <- webServer(as, (in, out), et).run(wc)
-      } yield List(ws, rd)
+      } yield redirectWebServer.run(wc).mergeHaltBoth(webServer(as, (in, out), et).run(wc))
 
-    for {
-      inq  <- Stream.eval(async.boundedQueue[IO, executeEngine.EventType](10))
-      out  <- Stream.eval(async.topic[IO, SeqexecEvent](NullEvent))
-      eng  <- Stream.eval(engineIO)
-      ser  <- Stream.eval(List(engineIO, webServerIO(inq, out, engineIO)).parSequence)
-    } yield ExitCode.Success
+    // I have taken this from the examples at:
+    // https://github.com/gvolpe/advanced-http4s/blob/master/src/main/scala/com/github/gvolpe/fs2/PubSub.scala
+    // It's not very clear why we need to run this inside a Scheduler
+    Scheduler[IO](corePoolSize = 4).flatMap { implicit S =>
+      for {
+        inq <- Stream.eval(async.boundedQueue[IO, executeEngine.EventType](10))
+        out <- Stream.eval(async.topic[IO, SeqexecEvent](NullEvent))
+        // TODO Run these
+        engine = engineIO.unsafeRunSync()
+        ws = webServerIO(inq, out, engine).unsafeRunSync()
+        ws <- Stream(
+          engine.eventStream(inq).to(out.publish),
+          ws
+        ).join(2).drain  ++ Stream.emit(ExitCode.Success)
+      } yield ws
+    }
   }
 
 }

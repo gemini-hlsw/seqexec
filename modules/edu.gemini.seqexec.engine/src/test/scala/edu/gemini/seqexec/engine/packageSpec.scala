@@ -283,6 +283,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
     intercept[RuntimeException](
       runToCompletion(s0(new RuntimeException))
     )
+    // TODO: Restore these tests, see SEQNG-586
 //    intercept[OutOfMemoryError](
 //      runToCompletion(s0(new OutOfMemoryError))
 //    )

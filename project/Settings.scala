@@ -81,7 +81,7 @@ object Settings {
     val mouseVersion        = "0.16"
     val fs2Version          = "0.10.3"
     // Scala libraries
-    val http4s       = "0.18.7"
+    val http4s       = "0.18.8"
     val squants      = "1.3.0"
     val argonaut     = "6.2.1"
     val commonsHttp  = "2.0.2"

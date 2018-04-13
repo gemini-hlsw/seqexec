@@ -33,20 +33,16 @@ class SeqexecUIApiRoutesSpec extends FlatSpec with Matchers with UriFunctions wi
 
   private val service =
     for {
-      i <- {val i = inq;println(s"r $i");i}
-      o <- {println(i);out}
+      i <- inq
+      o <- out
     } yield new SeqexecUIApiRoutes(true, authService, (i, o), engine).service
 
   "SeqexecUIApiRoutes login" should
     "reject requests without body" in {
-    println("run")
       for {
         s <- service
       } yield {
-        println("service")
-        val r = s.apply(Request(method = Method.POST, uri = uri("/seqexec/login"))).value.unsafeRunSync.map(_.status) should contain(Status.FailedDependency)
-        println(r)
-        r
+        s.apply(Request(method = Method.POST, uri = uri("/seqexec/login"))).value.unsafeRunSync.map(_.status) should contain(Status.FailedDependency)
       }
     }
     it should "reject GET requests" in {
