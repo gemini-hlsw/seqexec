@@ -99,7 +99,7 @@ object TcsController {
   final case class NodChop(nod: Beam, chop: Beam)
   object NodChop {
     implicit def EqNodChop: Eq[NodChop] =
-      Eq.fromUniversalEquals
+      Eq[(Beam, Beam)].contramap(x => (x.nod, x.chop))
   }
 
   /** Enumerated type for nod/chop tracking. */

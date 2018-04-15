@@ -182,7 +182,7 @@ object WebServerLauncher extends StreamApp[IO] with LogInitialization {
       for {
         inq <- Stream.eval(async.boundedQueue[IO, executeEngine.EventType](10))
         out <- Stream.eval(async.topic[IO, SeqexecEvent](NullEvent))
-        // TODO Run these
+        // TODO Run these inside a stream
         engine = engineIO.unsafeRunSync()
         ws = webServerIO(inq, out, engine).unsafeRunSync()
         ws <- Stream(

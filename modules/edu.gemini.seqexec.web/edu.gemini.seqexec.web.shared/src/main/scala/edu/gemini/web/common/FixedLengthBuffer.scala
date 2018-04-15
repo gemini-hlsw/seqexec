@@ -54,7 +54,7 @@ object FixedLengthBuffer {
   implicit def show[A]: Show[FixedLengthBuffer[A]] = Show.fromToString
 
   implicit def equal[A: Eq]: Eq[FixedLengthBuffer[A]] =
-    Eq.by(_.toVector)
+    Eq[(Int, Vector[A])].contramap(x => (x.maxLength, x.data))
 
   /**
    * @typeclass Traverse

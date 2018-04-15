@@ -7,7 +7,7 @@ import edu.gemini.seqexec.model.Model.{Instrument, Resource}
 import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.server.ConfigUtilOps._
 import edu.gemini.seqexec.server.flamingos2.Flamingos2Controller._
-import edu.gemini.seqexec.server.{ConfigResult, ConfigUtilOps, InstrumentSystem, ObserveCommand, SeqAction, SeqObserve, SeqexecFailure, TrySeq}
+import edu.gemini.seqexec.server._
 import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2._
 import edu.gemini.spModel.obscomp.InstConstants.{DARK_OBSERVE_TYPE, OBSERVE_TYPE_PROP}
@@ -15,7 +15,6 @@ import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import squants.time.{Seconds, Time}
 
 import scala.concurrent.duration.{Duration, SECONDS}
-import cats._
 import cats.data.{EitherT, Reader}
 import cats.effect.IO
 import cats.implicits._
@@ -48,9 +47,6 @@ final case class Flamingos2(f2Controller: Flamingos2Controller) extends Instrume
 }
 
 object Flamingos2 {
-  implicit val equalFPUnit: Eq[FPUnit] =
-    Eq[String].contramap(_.sequenceValue())
-
   val name: String = INSTRUMENT_NAME_PROP
 
   val sfName: String = "f2"

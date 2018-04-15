@@ -33,7 +33,7 @@ object SharedModelArbitraries {
     } yield Instant.ofEpochMilli(i)
   }
 
-  implicit val levArb = Arbitrary(Gen.oneOf(ServerLogLevel.INFO, ServerLogLevel.WARN, ServerLogLevel.ERROR))
+  implicit val levArb = Arbitrary[ServerLogLevel](Gen.oneOf(ServerLogLevel.INFO, ServerLogLevel.WARN, ServerLogLevel.ERROR))
   implicit val resArb = Arbitrary[Resource](Gen.oneOf(Resource.P1, Resource.OI, Resource.TCS, Resource.Gcal, Resource.Gems, Resource.Altair, Instrument.F2, Instrument.GmosS, Instrument.GmosN, Instrument.GPI, Instrument.GSAOI, Instrument.GNIRS, Instrument.NIRI, Instrument.NIFS))
   implicit val insArb = Arbitrary[Instrument](Gen.oneOf(Instrument.F2, Instrument.GmosS, Instrument.GmosN, Instrument.GPI, Instrument.GSAOI, Instrument.GNIRS, Instrument.NIRI, Instrument.NIFS))
 
@@ -162,4 +162,6 @@ object SharedModelArbitraries {
   implicit val cidCogen: Cogen[ClientID] =
     Cogen[String].contramap(_.toString)
 
+  implicit val levCogen: Cogen[ServerLogLevel] =
+    Cogen[String].contramap(_.productPrefix)
 }

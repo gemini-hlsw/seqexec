@@ -26,7 +26,7 @@ class Http4sAuthentication(auth: AuthenticationService) {
     val authResult = for {
       header <- headers.Cookie.from(request.headers).toRight(MissingCookie)
       cookie <- header.values.toList.find(_.name === auth.config.cookieName).toRight(MissingCookie)
-      user <- auth.decodeToken(cookie.content)
+      user   <- auth.decodeToken(cookie.content)
     } yield user
     authResult
   }

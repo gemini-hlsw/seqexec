@@ -16,8 +16,21 @@ import cats.implicits._
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object model {
+  implicit val eqWebSocket: Eq[WebSocket] =
+    Eq[(String, String, Int)].contramap { x =>
+      (x.url, x.protocol, x.readyState)
+    }
+
   implicit def eqRefTo[A: Eq]: Eq[RefTo[A]] =
     Eq.by(_.apply())
+
+
+  @SuppressWarnings(Array("org.wartremover.warts.Equals"))
+  implicit def eqPot[A: Eq]: Eq[Pot[A]] = Eq.instance { (a, b) =>
+    if (a.nonEmpty && b.nonEmpty)
+      a.get  === b.get
+    else (a == b)
+  }
 
   // Pages
   object Pages {
@@ -30,12 +43,12 @@ object model {
     final case class SequenceConfigPage(instrument: Instrument, obsId: SequenceId, step: Int) extends SeqexecPages
 
     implicit val equal: Eq[SeqexecPages] = Eq.instance {
-      case (Root, Root) => true
-      case (SoundTest, SoundTest) => true
-      case (InstrumentPage(i), InstrumentPage(j)) => i === j
-      case (SequencePage(i, o, s), SequencePage(j, p, r)) => i === j && o === p && s === r
+      case (Root, Root)                                               => true
+      case (SoundTest, SoundTest)                                     => true
+      case (InstrumentPage(i), InstrumentPage(j))                     => i === j
+      case (SequencePage(i, o, s), SequencePage(j, p, r))             => i === j && o === p && s === r
       case (SequenceConfigPage(i, o, s), SequenceConfigPage(j, p, r)) => i === j && o === p && s === r
-      case _ => false
+      case _                                                          => false
     }
   }
 
@@ -175,6 +188,12 @@ object model {
 
   object WebSocketConnection {
     val empty: WebSocketConnection = WebSocketConnection(Empty, 0, autoReconnect = true)
+
+    implicit val equal: Eq[WebSocketConnection] =
+      Eq[(Pot[WebSocket], Int, Boolean)].contramap { x =>
+        (x.ws, x.nextAttempt, x.autoReconnect)
+      }
+
   }
 
   /**

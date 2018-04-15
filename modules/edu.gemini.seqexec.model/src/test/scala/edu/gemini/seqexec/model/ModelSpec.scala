@@ -42,4 +42,5 @@ final class ModelSpec extends CatsSuite {
   checkAll("Eq[SkyBackground]", EqTests[SkyBackground].eqv)
   checkAll("Eq[Conditions]", EqTests[Conditions].eqv)
   checkAll("Eq[ClientID]", EqTests[ClientID].eqv)
+  checkAll("Eq[ServerLogLevel]", EqTests[ServerLogLevel].eqv)
 }

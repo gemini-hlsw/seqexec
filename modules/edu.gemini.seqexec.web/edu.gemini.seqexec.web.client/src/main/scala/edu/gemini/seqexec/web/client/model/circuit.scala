@@ -32,7 +32,10 @@ object circuit {
   }
 
   object ClientStatus {
-    implicit val eq: Eq[ClientStatus] = Eq.fromUniversalEquals
+    implicit val eq: Eq[ClientStatus] =
+      Eq[(Option[UserDetails], WebSocketConnection, Boolean)].contramap { x =>
+        (x.u, x.w, x.anySelected)
+      }
   }
 
   // All these classes are focused views of the root model. They are used to only update small sections of the
@@ -51,7 +54,10 @@ object circuit {
   final case class StatusAndStepFocus(isLogged: Boolean, instrument: Instrument, id: Option[SequenceId], stepConfigDisplayed: Option[Int]) extends UseValueEq
   final case class StepsTableFocus(id: SequenceId, instrument: Instrument, state: SequenceState, steps: List[Step], stepConfigDisplayed: Option[Int], nextStepToRun: Option[Int]) extends UseValueEq
   object StepsTableFocus {
-    implicit val eq: Eq[StepsTableFocus] = Eq.fromUniversalEquals
+    implicit val eq: Eq[StepsTableFocus] =
+      Eq[(SequenceId, Instrument, SequenceState, List[Step], Option[Int], Option[Int])].contramap { x =>
+        (x.id, x.instrument, x.state, x.steps, x.stepConfigDisplayed, x.nextStepToRun)
+      }
   }
   final case class StepsTableAndStatusFocus(status: ClientStatus, stepsTable: Option[StepsTableFocus]) extends UseValueEq
   final case class ControlModel(id: SequenceId, isPartiallyExecuted: Boolean, nextStepToRun: Option[Int], status: SequenceState, inConflict: Boolean) extends UseValueEq

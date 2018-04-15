@@ -34,7 +34,7 @@ object Model {
     }
   }
 
-  sealed trait ServerLogLevel
+  sealed trait ServerLogLevel extends Product with Serializable
   object ServerLogLevel {
     case object INFO extends ServerLogLevel
     case object WARN extends ServerLogLevel
@@ -42,6 +42,7 @@ object Model {
 
     val all: List[ServerLogLevel] = List(INFO, WARN, ERROR)
 
+    implicit val eq: Eq[ServerLogLevel] = Eq.fromUniversalEquals
     implicit val show: Show[ServerLogLevel] = Show.show {
       case INFO  => "INFO"
       case WARN  => "WARNING"
@@ -236,7 +237,10 @@ object Model {
   object Step {
     val Zero: Step = StandardStep(id = -1, config = Map.empty, status = StepState.Pending, breakpoint = false, skip = false, fileId = None, configStatus = Nil, observeStatus = ActionStatus.Pending)
 
-    implicit val equal: Eq[Step] = Eq.fromUniversalEquals
+    implicit val equal: Eq[Step] =
+      Eq[(StepId, StepConfig, StepState, Boolean, Boolean, Option[dhs.ImageFileId])].contramap { x =>
+        (x.id, x.config, x.status, x.breakpoint, x.skip, x.fileId)
+      }
 
     implicit class StepOps(val s: Step) extends AnyVal {
       def flipBreakpoint: Step = s match {
@@ -300,7 +304,10 @@ object Model {
     observeStatus: ActionStatus
   ) extends Step
   object StandardStep {
-    implicit val equal: Eq[StandardStep] = Eq.fromUniversalEquals
+    implicit val equal: Eq[StandardStep] =
+      Eq[(StepId, StepConfig, StepState, Boolean, Boolean, Option[dhs.ImageFileId], List[(Resource, ActionStatus)], ActionStatus)].contramap { x =>
+        (x.id, x.config, x.status, x.breakpoint, x.skip, x.fileId, x.configStatus, x.observeStatus)
+      }
   }
   // Other kinds of Steps to be defined.
 
@@ -361,7 +368,10 @@ object Model {
   )
 
   object SequenceMetadata {
-    implicit val eq: Eq[SequenceMetadata] = Eq.fromUniversalEquals
+    implicit val eq: Eq[SequenceMetadata] =
+      Eq[(Instrument, Option[Observer], String)].contramap { x =>
+        (x.instrument, x.observer, x.name)
+      }
   }
 
   @Lenses final case class SequenceView (
@@ -373,7 +383,10 @@ object Model {
   )
 
   object SequenceView {
-    implicit val eq: Eq[SequenceView] = Eq.fromUniversalEquals
+    implicit val eq: Eq[SequenceView] =
+      Eq[(SequenceId, SequenceMetadata, SequenceState, List[Step], Option[Int])].contramap { x =>
+        (x.id, x.metadata, x.status, x.steps, x.willStopIn)
+      }
   }
 
   /**
@@ -383,7 +396,10 @@ object Model {
   final case class SequencesQueue[T](conditions: Conditions, operator: Option[Operator], queue: List[T])
 
   object SequencesQueue {
-    implicit def equal[T: Eq]: Eq[SequencesQueue[T]] = Eq.fromUniversalEquals
+    implicit def equal[T: Eq]: Eq[SequencesQueue[T]] =
+      Eq[(Conditions, Option[Operator], List[T])].contramap { x =>
+        (x.conditions, x.operator, x.queue)
+      }
   }
 
   // Complements to the science model
@@ -433,7 +449,12 @@ object Model {
     val value: Double
   }
   object Offset {
-    implicit val equal: Eq[Offset] = Eq.fromUniversalEquals
+    implicit val equal: Eq[Offset] =
+      Eq[Either[TelescopeOffset.P, TelescopeOffset.Q]].contramap {
+        case p: TelescopeOffset.P => Left(p)
+        case q: TelescopeOffset.Q => Right(q)
+      }
+
     def Zero(axis: OffsetAxis): Offset = axis match {
       case OffsetAxis.AxisP => TelescopeOffset.P.Zero
       case OffsetAxis.AxisQ => TelescopeOffset.Q.Zero
@@ -457,7 +478,9 @@ object Model {
       implicit val order: Order[Q] = Order.by(_.value)
 
     }
-    implicit val eq: Eq[TelescopeOffset] = Eq.fromUniversalEquals
+    implicit val eq: Eq[TelescopeOffset] =
+      Eq[(TelescopeOffset.P, TelescopeOffset.Q)].contramap(x => (x.p, x.q))
+
     implicit val show: Show[TelescopeOffset] = Show.fromToString
   }
 
@@ -536,7 +559,10 @@ object Model {
 
     val default: Conditions = worst // Taken from ODB
 
-    implicit val equalConditions: Eq[Conditions] = Eq.fromUniversalEquals
+    implicit val equalConditions: Eq[Conditions] =
+      Eq[(CloudCover, ImageQuality, SkyBackground, WaterVapor)].contramap { x =>
+        (x.cc, x.iq, x.sb, x.wv)
+      }
 
     implicit val showConditions: Show[Conditions] = Show.show[Conditions] {
       case Conditions(cc, iq, sb, wv) => List(cc, iq, sb, wv).mkString(", ")

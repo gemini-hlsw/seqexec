@@ -3,20 +3,10 @@
 
 package edu.gemini.web.common
 
-//import java.util.logging.Levell
-
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.{Arbitrary, Cogen, Gen}
 
 trait ArbitrariesWebCommon {
-
-//  implicit val arbLevel: Arbitrary[LogMessage] =
-//    Arbitrary {
-//      for {
-//        m <- arbitrary[String]
-//        l <- Gen.oneOf(Seq(Level.SEVERE, Level.WARNING, Level.INFO, Level.CONFIG, Level.FINE, Level.FINER, Level.FINEST))
-//      } yield LogMessage(l, m)
-//    }
 
   implicit def arbFixedLengthBuffer[A: Arbitrary]: Arbitrary[FixedLengthBuffer[A]] =
     Arbitrary {

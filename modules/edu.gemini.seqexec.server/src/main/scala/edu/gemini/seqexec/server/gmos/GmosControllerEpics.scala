@@ -77,10 +77,12 @@ class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosCo
   }
 
   private def setROI(binning: CCDBinning, s: RegionsOfInterest): SeqAction[Unit] = s.rois match {
-    case Left(b)    => roiParameters(binning, 1, encoders.builtInROI.encode(b))
-    case Right(rois) => rois.zipWithIndex.map { case (roi, i) =>
-      roiParameters(binning, i + 1, ROIValues.fromOCS(roi))
-    }.sequence.flatMap(_ => SeqAction.void)
+    case Left(b)     =>
+      roiParameters(binning, 1, encoders.builtInROI.encode(b))
+    case Right(rois) =>
+      rois.zipWithIndex.map { case (roi, i) =>
+        roiParameters(binning, i + 1, ROIValues.fromOCS(roi))
+      }.sequence.flatMap(_ => SeqAction.void)
   }
 
   private def roiParameters(binning: CCDBinning, index: Int, roi: Option[ROIValues]): SeqAction[Unit] = {
@@ -216,27 +218,27 @@ class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosCo
   } yield ()
 
   override def resumePaused(expTime: Time): SeqAction[ObserveCommand.Result] = for {
-    _ <- EitherT.right(IO(Log.debug("Resume Gmos observation")))
-    _ <- GmosEpics.instance.continueCmd.setTimeout(expTime+ReadoutTimeout)
-    _ <- GmosEpics.instance.continueCmd.mark
+    _   <- EitherT.right(IO(Log.debug("Resume Gmos observation")))
+    _   <- GmosEpics.instance.continueCmd.setTimeout(expTime+ReadoutTimeout)
+    _   <- GmosEpics.instance.continueCmd.mark
     ret <- GmosEpics.instance.continueCmd.post
-    _ <- EitherT.right(IO(Log.debug("Completed Gmos observation")))
+    _   <- EitherT.right(IO(Log.debug("Completed Gmos observation")))
   } yield ret
 
   override def stopPaused: SeqAction[ObserveCommand.Result] = for {
-    _ <- EitherT.right(IO(Log.info("Stop Gmos paused observation")))
-    _ <- GmosEpics.instance.stopAndWaitCmd.setTimeout(DefaultTimeout)
-    _ <- GmosEpics.instance.stopAndWaitCmd.mark
+    _   <- EitherT.right(IO(Log.info("Stop Gmos paused observation")))
+    _   <- GmosEpics.instance.stopAndWaitCmd.setTimeout(DefaultTimeout)
+    _   <- GmosEpics.instance.stopAndWaitCmd.mark
     ret <- GmosEpics.instance.stopAndWaitCmd.post
-    _ <- EitherT.right(IO(Log.info("Completed stopping Gmos observation")))
+    _   <- EitherT.right(IO(Log.info("Completed stopping Gmos observation")))
   } yield if(ret === ObserveCommand.Success) ObserveCommand.Stopped else ret
 
   override def abortPaused: SeqAction[ObserveCommand.Result] = for {
-    _ <- EitherT.right(IO(Log.info("Abort Gmos paused observation")))
-    _ <- GmosEpics.instance.abortAndWait.setTimeout(DefaultTimeout)
-    _ <- GmosEpics.instance.abortAndWait.mark
+    _   <- EitherT.right(IO(Log.info("Abort Gmos paused observation")))
+    _   <- GmosEpics.instance.abortAndWait.setTimeout(DefaultTimeout)
+    _   <- GmosEpics.instance.abortAndWait.mark
     ret <- GmosEpics.instance.abortAndWait.post
-    _ <- EitherT.right(IO(Log.info("Completed aborting Gmos observation")))
+    _   <- EitherT.right(IO(Log.info("Completed aborting Gmos observation")))
   } yield if(ret === ObserveCommand.Success) ObserveCommand.Aborted else ret
 }
 
