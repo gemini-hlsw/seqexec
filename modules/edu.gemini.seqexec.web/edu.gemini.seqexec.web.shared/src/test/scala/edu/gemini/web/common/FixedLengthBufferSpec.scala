@@ -11,7 +11,9 @@ import cats.tests.CatsSuite
   * Tests the Monocle Lenses for Seqexec Events
   */
 @SuppressWarnings(Array("org.wartremover.warts.ToString"))
-final class FixedLengthBufferSpec extends CatsSuite with ArbitrariesWebCommon {
+final class FixedLengthBufferSpec extends CatsSuite {
+  import ArbitrariesWebCommon.arbFixedLengthBuffer
+  import ArbitrariesWebCommon.fixedLengthBufferCogen
 
   checkAll("Eq[FixedLengthBuffer]", EqTests[FixedLengthBuffer[Int]].eqv)
   checkAll("Functor[FixedLengthBuffer]", FunctorTests[FixedLengthBuffer].functor)

@@ -10,13 +10,13 @@ import edu.gemini.seqexec.model.Model._
 import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.circuit._
 import edu.gemini.seqexec.model.UserDetails
-import edu.gemini.web.common.ArbitrariesWebCommon
+import edu.gemini.web.common.Zipper
 import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, _}
 import edu.gemini.seqexec.web.client.components.sequence.steps.OffsetFns.OffsetsDisplay
 import org.scalajs.dom.WebSocket
 
-trait ArbitrariesWebClient extends ArbitrariesWebCommon {
+trait ArbitrariesWebClient {
   import edu.gemini.seqexec.model.SharedModelArbitraries._
 
   implicit val arbSequenceTab: Arbitrary[SequenceTab] =

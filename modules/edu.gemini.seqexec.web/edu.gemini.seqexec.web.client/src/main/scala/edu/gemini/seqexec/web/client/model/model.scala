@@ -8,10 +8,9 @@ import diode.data.{Empty, Pot, RefTo}
 import edu.gemini.seqexec.model.UserDetails
 import edu.gemini.seqexec.model.Model._
 import edu.gemini.seqexec.model.events.SeqexecEvent.ServerLogMessage
-import edu.gemini.web.common.FixedLengthBuffer
+import edu.gemini.web.common.{Zipper, FixedLengthBuffer}
 import org.scalajs.dom.WebSocket
 import cats._
-import cats.data.NonEmptyList
 import cats.implicits._
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
@@ -79,50 +78,6 @@ object model {
     // Returns the current sequence or if empty the last completed one
     // This must be a def since it will do a call to dereference a RefTo
     def sequence: Option[SequenceView] = currentSequence().orElse(completedSequence)
-  }
-
-  final case class Zipper[A](lefts: List[A], focus: A, rights: List[A]) {
-    /**
-      * Modify the focus
-      */
-    def modify(f: A => A): Zipper[A] = copy(lefts, f(focus), rights)
-
-    /**
-      * Find and element and focus if successful
-      */
-    @SuppressWarnings(Array("org.wartremover.warts.TraversableOps"))
-    def findFocus(p: A => Boolean): Zipper[A] =
-      if (p(focus)) this
-      else {
-        val indexLeft = lefts.indexWhere(p)
-        val indexRight = rights.indexWhere(p)
-        if (indexLeft === -1 && indexRight === -1) {
-          this
-        } else if (indexLeft >= 0) {
-          val (newL, newR) = lefts.splitAt(indexLeft)
-          Zipper(newL, newR.head, newR ::: rights)
-        } else {
-          val (newL, newR) = rights.splitAt(indexLeft)
-          Zipper(lefts, newL.head, newR)
-        }
-      }
-    def exists(p: A => Boolean): Boolean = {
-      if (p(focus)) true else {
-        lefts.exists(p) || rights.exists(p)
-      }
-    }
-    def find(p: A => Boolean): Option[A] = {
-      if (p(focus)) Some(focus) else {
-        lefts.find(p).orElse(rights.find(p))
-      }
-    }
-    def withFocus: Zipper[(A, Boolean)] =
-      Zipper(lefts.map((_, false)), (focus, true), rights.map((_, false)))
-  }
-
-  object Zipper {
-    def fromNel[A](ne: NonEmptyList[A]): Zipper[A] =
-      Zipper(Nil, ne.head, ne.tail)
   }
 
   object SequenceTab {
