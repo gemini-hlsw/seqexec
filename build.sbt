@@ -26,6 +26,11 @@ parallelExecution in (ThisBuild, Test) := false
 
 cancelable in Global := true
 
+// check for library updates whenever the project is [re]load
+onLoad in Global := { s =>
+  "dependencyUpdates" :: s
+}
+
 // Uncomment for local gmp testing
 // resolvers in ThisBuild += "Local Maven Repository" at "file://"+Path.userHome.absolutePath+"/Projects/maven-repo/releases"
 
