@@ -138,7 +138,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   def runToCompletion(s0: Engine.State[Unit]): Option[Engine.State[Unit]] = {
     executionEngine.process(Stream.eval(IO.pure(Event.start(seqId, user, UUID.randomUUID()))))(s0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
-    ).compile.last.attempt.unsafeRunSync.fold(x => throw x, _.map(_._2))
+    ).compile.last.unsafeRunSync.map(_._2)
   }
 
   it should "be in Running status after starting" in {
@@ -259,7 +259,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
 
   "engine" should "not capture fatal errors." in {
     @SuppressWarnings(Array("org.wartremover.warts.Throw"))
-    def s0(e: Exception): Engine.State[Unit] = Engine.State[Unit]((),
+    def s0(e: Throwable): Engine.State[Unit] = Engine.State[Unit]((),
       Map((seqId, Sequence.State.init(Sequence(
         "First",
         SequenceMetadata(GmosS, None, ""),
@@ -284,9 +284,9 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
       runToCompletion(s0(new RuntimeException))
     )
     // TODO: Restore these tests, see SEQNG-586
-//    intercept[OutOfMemoryError](
-//      runToCompletion(s0(new OutOfMemoryError))
-//    )
+   // intercept[OutOfMemoryError](
+   //   runToCompletion(s0(new OutOfMemoryError))
+   // )
 //    intercept[StackOverflowError](
 //      runToCompletion(s0(new StackOverflowError))
 //    )
