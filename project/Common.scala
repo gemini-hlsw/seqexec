@@ -3,6 +3,7 @@ import sbt.Keys._
 import sbt._
 import de.heikoseeberger.sbtheader.HeaderPlugin.autoImport._
 import wartremover.WartRemover.autoImport._
+import net.virtualvoid.sbt.graph.DependencyGraphPlugin.autoImport._
 
 /**
   * Define tasks and settings used by module definitions
@@ -34,7 +35,6 @@ object Common {
          |For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
          |""".stripMargin
     )),
-
     // Common libraries
     libraryDependencies                    ++= Seq(ScalaZCore.value) ++ TestLibs.value,
     // Wartremover in compile and test (not in Console)

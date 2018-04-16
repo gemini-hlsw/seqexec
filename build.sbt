@@ -28,7 +28,8 @@ cancelable in Global := true
 
 // check for library updates whenever the project is [re]load
 onLoad in Global := { s =>
-  "dependencyUpdates" :: s
+  if (sys.props.contains("ocs3.skipDependencyUpdates")) s
+  else "dependencyUpdates" :: s
 }
 
 // Uncomment for local gmp testing
