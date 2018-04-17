@@ -29,13 +29,13 @@ final case class Zipper[A](lefts: List[A], focus: A, rights: List[A]) {
         this
       } else if (indexLeft >= 0) {
         lefts.splitAt(indexLeft) match {
-          case (Nil, h :: t) => Zipper(Nil, h, t ::: focus :: rights)
-          case (x :: Nil, y) => Zipper(Nil, x, y ::: focus :: rights)
-          case (i :+ l, y)   => Zipper(i, l, (focus :: y.reverse).reverse ::: rights)
-          case _             => this
+          case (Nil, h :: t)      => Zipper(Nil, h, t ::: focus :: rights)
+          case (x :: Nil, i :: l) => Zipper(List(x), i, l ::: focus :: rights)
+          case (x, i :: l)        => Zipper(x, i, (focus :: l.reverse).reverse ::: rights)
+          case _                  => this
         }
       } else {
-        rights.splitAt(indexLeft) match {
+        rights.splitAt(indexRight) match {
           case (Nil, List(y)) => Zipper((focus :: lefts.reverse).reverse, y, Nil)
           case (x, h :: t)    => Zipper((focus :: lefts.reverse).reverse ::: x, h, t)
           case _              => this
