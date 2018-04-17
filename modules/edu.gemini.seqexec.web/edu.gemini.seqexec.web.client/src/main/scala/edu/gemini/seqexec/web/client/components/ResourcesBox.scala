@@ -4,7 +4,7 @@
 package edu.gemini.seqexec.web.client.components
 
 import diode.react.ModelProxy
-import japgolly.scalajs.react.{Callback, ScalaComponent}
+import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.IconCheckmark
 import edu.gemini.seqexec.web.client.semanticui.elements.modal.{Content, Header}
@@ -51,20 +51,22 @@ object ResourcesBox {
         import edu.gemini.web.client.facades.semanticui.SemanticUIModal._
 
         // Close the modal box if the model changes
-        ctx.currentProps.visible() match {
-          case ResourcesConflict(SectionClosed, _) =>
-            $(ctx.getDOMNode).modal("hide")
-          case ResourcesConflict(SectionOpen, _)   =>
-            // Configure the modal to autofocus and to act properly on closing
-            $(ctx.getDOMNode).modal(
-              JsModalOptions
-                .onHidden { () =>
-                  // Need to call direct access as this is outside the event loop
-                  SeqexecCircuit.dispatch(CloseResourcesBox)
-                }
-            )
-            // Show the modal box
-            $(ctx.getDOMNode).modal("show")
+        ctx.getDOMNode.toElement.foreach { dom =>
+          ctx.currentProps.visible() match {
+            case ResourcesConflict(SectionClosed, _) =>
+              $(dom).modal("hide")
+            case ResourcesConflict(SectionOpen, _)   =>
+              // Configure the modal to autofocus and to act properly on closing
+              $(dom).modal(
+                JsModalOptions
+                  .onHidden { () =>
+                    // Need to call direct access as this is outside the event loop
+                    SeqexecCircuit.dispatch(CloseResourcesBox)
+                  }
+              )
+              // Show the modal box
+              $(dom).modal("show")
+          }
         }
       }
     ).build

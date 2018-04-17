@@ -5,7 +5,7 @@ package edu.gemini.seqexec.web.client.components
 
 import diode.react.ModelProxy
 import edu.gemini.seqexec.model.UserDetails
-import japgolly.scalajs.react.{BackendScope, Callback, CallbackTo, ReactEventFromInput, ScalaComponent}
+import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon._
 import edu.gemini.seqexec.web.client.model._
@@ -153,22 +153,24 @@ object LoginBox {
         import edu.gemini.web.client.facades.semanticui.SemanticUIModal._
 
         // Close the modal box if the model changes
-        if (ctx.currentProps.visible() === SectionClosed) {
-          $(ctx.getDOMNode).modal("hide")
-        }
-        if (ctx.currentProps.visible() === SectionOpen) {
-          // Configure the modal to autofocus and to act properly on closing
-          $(ctx.getDOMNode).modal(
-            JsModalOptions
-              .autofocus(true)
-              .onHidden { () =>
-                // Need to call direct access as this is outside the event loop
-                ctx.setState(empty)
-                ctx.currentProps.visible.dispatchCB(CloseLoginBox)
-              }
-          )
-          // Show the modal box
-          $(ctx.getDOMNode).modal("show")
+        ctx.getDOMNode.toElement.foreach { dom =>
+          if (ctx.currentProps.visible() === SectionClosed) {
+            $(dom).modal("hide")
+          }
+          if (ctx.currentProps.visible() === SectionOpen) {
+            // Configure the modal to autofocus and to act properly on closing
+            $(dom).modal(
+              JsModalOptions
+                .autofocus(true)
+                .onHidden { () =>
+                  // Need to call direct access as this is outside the event loop
+                  ctx.setState(empty)
+                  ctx.currentProps.visible.dispatchCB(CloseLoginBox)
+                }
+            )
+            // Show the modal box
+            $(dom).modal("show")
+          }
         }
       }
     ).build

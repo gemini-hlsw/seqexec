@@ -218,17 +218,17 @@ object StepsTable {
     }
 
     // Create a ref
-    private val ref = JsComponent.mutableRefTo(Table.component)
+    private val ref = Ref.toJsComponent(Table.component)
     // Keep it lazy or it won't be properly initialized
-    private lazy val tableRef = ref.value.raw
+    // private lazy val tableRef = ref.value.raw
 
-    private def recomputeRowHeightsCB(index: Int): Callback = tableRef.recomputeRowsHeightsCB(index)
+    private def recomputeRowHeightsCB(index: Int): Callback = ref.get.flatMapCB(_.raw.recomputeRowsHeightsCB(index))
 
     def receive(cur: Props, next: Props): Callback = {
       // Recalculate the heights if needed
       val stepsPairs = next.stepsList.zip(cur.stepsList)
       val differentStepsStates = stepsPairs.collect {
-        case (cur, prev) if cur.status =!= prev.status => Callback.log(cur.id) >> tableRef.recomputeRowsHeightsCB(cur.id)
+        case (cur, prev) if cur.status =!= prev.status => Callback.log(cur.id) >> ref.get.flatMapCB(_.raw.recomputeRowsHeightsCB(cur.id))
       }
       Callback.sequence(differentStepsStates)
     }

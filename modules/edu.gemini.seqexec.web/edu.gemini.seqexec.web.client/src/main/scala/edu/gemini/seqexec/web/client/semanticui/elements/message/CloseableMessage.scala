@@ -5,7 +5,7 @@ package edu.gemini.seqexec.web.client.semanticui.elements.message
 
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.IconClose
 import japgolly.scalajs.react.component.Scala.Unmounted
-import japgolly.scalajs.react.{Callback, ScalaComponent}
+import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
 import cats.implicits._
 
@@ -47,9 +47,11 @@ object CloseableMessage extends Message {
         import edu.gemini.web.client.facades.semanticui.SemanticUITransition._
         import org.scalajs.dom.Element
 
-        $(ctx.getDOMNode).on("click", (e: Element, ev: Any) =>
-          $(e).closest(".message").transition("fade")
-        )
+        ctx.getDOMNode.toElement.foreach { dom =>
+          $(dom).on("click", (e: Element, ev: Any) =>
+            $(e).closest(".message").transition("fade")
+          )
+        }
       }
     )
     .build

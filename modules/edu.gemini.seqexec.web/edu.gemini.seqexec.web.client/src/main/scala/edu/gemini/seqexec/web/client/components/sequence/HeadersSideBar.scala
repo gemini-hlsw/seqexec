@@ -40,8 +40,8 @@ object HeadersSideBar {
     def updateOperator(name: String): Callback =
       $.props >>= { p => Callback.when(p.isLogged)(p.model.dispatchCB(UpdateOperator(Operator(name)))) }
 
-    def updateState(value: String): Callback =
-      $.modState(_.copy(currentText = value.some))
+    def updateState(value: Option[String], cb: Callback): Callback =
+      $.modState(_.copy(currentText = value)) >> cb
 
     def setupTimer: Callback =
       // Every 2 seconds check if the field has changed and submit
@@ -110,7 +110,7 @@ object HeadersSideBar {
     .initialState(State(None))
     .renderBackend[Backend]
     .configure(TimerSupport.install)
-    .componentWillMount(f => f.backend.$.props >>= {p => Callback.when(p.model().operator.isDefined)(f.backend.updateState(p.model().operator.getOrElse(Operator.Zero).value))})
+    .componentWillMount(f => f.backend.$.props >>= {p => Callback.when(p.model().operator.isDefined)(f.backend.updateState(p.model().operator.map(_.value), Callback.empty))})
     .componentDidMount(_.backend.setupTimer)
     .componentWillReceiveProps { f =>
       val operator = f.nextProps.model().operator
