@@ -236,12 +236,12 @@ object Sequence {
       case _                           => false
     }
 
-    def userStopSet(v: Boolean): State => State = status.modify{
+    def userStopSet(v: Boolean): State => State = status.modify {
       case r@SequenceState.Running(_, _) => r.copy(userStop = v)
       case r                             => r
     }
 
-    def internalStopSet(v: Boolean): State => State = status.modify{
+    def internalStopSet(v: Boolean): State => State = status.modify {
       case r@SequenceState.Running(_, _) => r.copy(internalStop = v)
       case r                             => r
     }

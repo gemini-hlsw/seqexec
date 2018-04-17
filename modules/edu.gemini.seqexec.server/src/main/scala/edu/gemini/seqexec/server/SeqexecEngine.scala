@@ -133,13 +133,13 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
   def seqQueueRefreshStream: Stream[IO, executeEngine.EventType] =
     Scheduler[IO](corePoolSize = 1).flatMap { scheduler =>
       val fd = Duration(settings.odbQueuePollingInterval.toSeconds, TimeUnit.SECONDS)
-      scheduler.fixedRate[IO](fd).flatMap { r =>
+      scheduler.fixedRate[IO](fd).flatMap { _ =>
         Stream.emit(Event.getState[executeEngine.ConcreteTypes](refreshSequenceList()))
       }
     }
 
   def eventStream(q: EventQueue): Stream[IO, SeqexecEvent] = {
-    executeEngine.process(q.dequeue.mergeHaltBoth(seqQueueRefreshStream))(Engine.State.empty[EngineMetadata](EngineMetadata.default)).flatMap(x => Stream.eval(notifyODB(x))).map {
+    executeEngine.process(q.dequeue.merge(seqQueueRefreshStream))(Engine.State.empty[EngineMetadata](EngineMetadata.default)).flatMap(x => Stream.eval(notifyODB(x))).map {
       case (ev, qState) =>
         toSeqexecEvent(ev)(
           SequencesQueue(
@@ -237,8 +237,6 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     }
   }
 
-  private def unloadEvent(seqId: SPObservationID): executeEngine.EventType = Event.unload(seqId.stringValue)
-
   private def modifyStateEvent(v: SeqEvent, svs: => SequencesQueue[SequenceView]): SeqexecEvent = v match {
     case NullSeqEvent           => NullEvent
     case SetOperator(_, _)      => OperatorUpdated(svs)
@@ -310,6 +308,8 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     // TODO: Implement willStopIn
     SequenceView(seq.id, seq.metadata, st.status, engineSteps(seq), None)
   }
+
+   private def unloadEvent(seqId: SPObservationID): executeEngine.EventType = Event.unload(seqId.stringValue)
 
   private def refreshSequenceList(): executeEngine.StateType => IO[Option[Stream[IO, executeEngine.EventType]]] = (st: executeEngine.StateType) => {
     val seqexecList = st.sequences.keys.toSeq.map(v => new SPObservationID(v))

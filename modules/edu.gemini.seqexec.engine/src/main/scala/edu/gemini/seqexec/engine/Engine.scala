@@ -150,7 +150,7 @@ class Engine[D: ActionMetadataGenerator, U](implicit ev: ActionMetadataGenerator
   private def next(id: Sequence.Id): HandleP[Unit] =
     getS(id).flatMap(
       _.map { seq =>
-        if (Sequence.State.anyStopRequested(seq))
+        if (Sequence.State.anyStopRequested(seq)) {
           seq.next match {
             case None =>
               send(finished(id))
@@ -161,7 +161,7 @@ class Engine[D: ActionMetadataGenerator, U](implicit ev: ActionMetadataGenerator
             case Some(qs) =>
               putS(id)(qs) *> switch(id)(SequenceState.Idle)
           }
-        else if (Sequence.State.isRunning(seq))
+        } else if (Sequence.State.isRunning(seq)) {
           seq.next match {
             // Empty state
             case None =>
@@ -175,7 +175,7 @@ class Engine[D: ActionMetadataGenerator, U](implicit ev: ActionMetadataGenerator
                 switch(id)(SequenceState.Idle) *> send(breakpointReached(id))
               } else send(executing(id)))
           }
-        else unit
+        } else unit
       }.getOrElse(unit)
     )
 
@@ -336,6 +336,21 @@ class Engine[D: ActionMetadataGenerator, U](implicit ev: ActionMetadataGenerator
     }) *> get
   }
 
+  // Taken from https://github.com/functional-streams-for-scala/fs2/pull/1123
+  def evalMapAccumulate[F[_], S, O, O2](in: Stream[F, O], s: S)(f: (S, O) => F[(S, O2)]): Stream[F, (S, O2)] = {
+    def go(s: S, in: Stream[F, O]): Pull[F, (S, O2), Unit] =
+      in.pull.uncons1.flatMap {
+        case None => Pull.done
+        case Some((hd, tl)) =>
+          Pull.eval(f(s, hd)).flatMap {
+            case (ns, o) =>
+              Pull.output1((ns, o)) >> go(ns, tl)
+          }
+      }
+
+      go(s, in).stream
+    }
+
   // Kudos to @tpolecat
   /** Traverse a process with a stateful computation. */
   // input, stream of events
@@ -343,23 +358,15 @@ class Engine[D: ActionMetadataGenerator, U](implicit ev: ActionMetadataGenerator
   // f takes an event and the current state, it produces a new state, a new value B and more actions
   @SuppressWarnings(Array("org.wartremover.warts.OptionPartial", "org.wartremover.warts.ImplicitParameter"))
   def mapEvalState[A, S, B](input: Stream[IO, A], initialState: S, f: (A, S) => IO[(S, B, Stream[IO, A])])(implicit ec: ExecutionContext): Stream[IO, B] = {
-    def go(fi: Stream[IO, A], si: S): Stream[IO, B] = {
-      fi.pull.uncons1.flatMap {
-        case None               => Pull.done
-        case Some((head, tail)) =>
-          // head: A
-          // tail: Stream[IO, A]
-          val i: Stream[IO, B] = for {
-            ns <- Stream.eval(f(head, si)).flatMap {
-              case (s, b, p) =>
-                Stream.emit(b).covary[IO] ++ go(p.merge(tail), s)
-            }
-          } yield ns
-          i.pull.echo
-      }.stream
+    Stream.eval(fs2.async.unboundedQueue[IO, Stream[IO, A]]).flatMap { q =>
+      Stream.eval_(q.enqueue1(input)) ++
+        evalMapAccumulate(q.dequeue.joinUnbounded, initialState) { (s, a) =>
+          f(a, s).flatMap {
+            case (ns, b, st) =>
+              q.enqueue1(st) >> IO.pure((ns, b))
+          }
+        }.map(_._2)
     }
-
-    go(input, initialState)
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.AnyVal", "org.wartremover.warts.ImplicitParameter"))

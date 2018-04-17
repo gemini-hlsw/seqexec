@@ -173,7 +173,7 @@ object WebServerLauncher extends StreamApp[IO] with LogInitialization {
         as <- authService.run(ac)
         _  <- logStart.run(wc)
         _  <- logToClients(out)
-      } yield redirectWebServer.run(wc).mergeHaltBoth(webServer(as, (in, out), et).run(wc))
+      } yield Stream(redirectWebServer.run(wc), webServer(as, (in, out), et).run(wc)).join(2)
 
     // I have taken this from the examples at:
     // https://github.com/gvolpe/advanced-http4s/blob/master/src/main/scala/com/github/gvolpe/fs2/PubSub.scala

@@ -62,11 +62,11 @@ class SequenceSpec extends FlatSpec {
 
   def simpleStep(id: Int, breakpoint: Boolean): Step =
     Step.init(
-      id,
-      None,
-      config,
-      Set.empty,
-      List(
+      id = id,
+      fileId = None,
+      config = config,
+      resources = Set.empty,
+      executions = List(
         List(action, action), // Execution
         List(action) // Execution
       )
@@ -89,16 +89,16 @@ class SequenceSpec extends FlatSpec {
 
     val qs0: Engine.State[Unit] =
       Engine.State[Unit](
-        (),
-        Map(
+        userData = (),
+        sequences = Map(
           (seqId,
-           Sequence.State.init(
-             Sequence(
-               seqId,
-               SequenceMetadata(F2, None, ""),
-               List(simpleStep(1, breakpoint = false), simpleStep(2, breakpoint = true))
-             )
-           )
+            Sequence.State.init(
+              Sequence(
+                id = seqId,
+                metadata = SequenceMetadata(F2, None, ""),
+                steps = List(simpleStep(1, breakpoint = false), simpleStep(2, breakpoint = true))
+              )
+            )
           )
         )
       )
@@ -117,16 +117,16 @@ class SequenceSpec extends FlatSpec {
 
     val qs0: Engine.State[Unit] =
       Engine.State[Unit](
-        (),
-        Map(
+        userData = (),
+        sequences = Map(
           (seqId,
-           Sequence.State.init(
-             Sequence(
-               seqId,
-               SequenceMetadata(F2, None, ""),
-               List(simpleStep(1, breakpoint = false), simpleStep(2, breakpoint = true), simpleStep(3, breakpoint = false))
-             )
-           )
+            Sequence.State.init(
+              Sequence(
+                id = seqId,
+                metadata = SequenceMetadata(F2, None, ""),
+                steps = List(simpleStep(1, breakpoint = false), simpleStep(2, breakpoint = true), simpleStep(3, breakpoint = false))
+              )
+            )
           )
         )
       )
