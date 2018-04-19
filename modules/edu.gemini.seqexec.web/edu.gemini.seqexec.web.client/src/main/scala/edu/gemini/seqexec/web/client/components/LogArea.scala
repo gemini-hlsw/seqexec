@@ -6,7 +6,7 @@ package edu.gemini.seqexec.web.client.components
 import scala.scalajs.js
 import diode.react.ModelProxy
 import edu.gemini.seqexec.model.Model.{SeqexecSite, ServerLogLevel}
-import edu.gemini.seqexec.model.events.SeqexecEvent.ServerLogMessage
+import edu.gemini.seqexec.model.events._
 import edu.gemini.seqexec.web.client.semanticui.elements.checkbox.Checkbox
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconCopy, IconAngleDoubleDown, IconAngleDoubleUp}
 import edu.gemini.seqexec.web.client.semanticui.elements.button.Button

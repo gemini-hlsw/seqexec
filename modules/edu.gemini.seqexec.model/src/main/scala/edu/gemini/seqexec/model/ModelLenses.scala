@@ -4,8 +4,7 @@
 package edu.gemini.seqexec.model
 
 import edu.gemini.seqexec.model.Model._
-import edu.gemini.seqexec.model.events.{SeqexecEvent, SeqexecModelUpdate}
-import edu.gemini.seqexec.model.events.SeqexecEvent._
+import edu.gemini.seqexec.model.events._
 
 import monocle.{Lens, Optional, Prism, Traversal}
 import monocle.macros.{GenLens, GenPrism}
@@ -20,7 +19,6 @@ import cats.implicits._
 import mouse.all._
 
 trait ModelLenses {
-
     // Some useful Monocle lenses
   val obsNameL: Lens[SequenceView, String] = GenLens[SequenceView](_.metadata.name)
   // From step to standard step

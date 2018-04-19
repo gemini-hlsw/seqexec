@@ -4,7 +4,7 @@
 package edu.gemini.seqexec.model
 
 import Model._
-import events.SeqexecEvent._
+import events._
 import cats.tests.CatsSuite
 import boopickle.Default._
 import org.scalacheck.Arbitrary

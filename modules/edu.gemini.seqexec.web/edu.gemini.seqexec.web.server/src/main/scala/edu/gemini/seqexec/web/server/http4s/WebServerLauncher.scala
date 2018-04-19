@@ -8,8 +8,7 @@ import cats.effect.IO
 import cats.implicits._
 import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.Appender
-import edu.gemini.seqexec.model.events.SeqexecEvent
-import edu.gemini.seqexec.model.events.SeqexecEvent.NullEvent
+import edu.gemini.seqexec.model.events._
 import fs2.async.mutable.Queue
 import edu.gemini.seqexec.server
 import edu.gemini.seqexec.server.{SeqexecEngine, executeEngine}

@@ -28,7 +28,7 @@ object OffsetFns {
     case object NoDisplay extends OffsetsDisplay
     final case class DisplayOffsets(offsetsWidth: Int) extends OffsetsDisplay
     implicit val eq: Eq[OffsetsDisplay] =
-      Eq[Option[Int]].contramap {
+      Eq.by {
         case NoDisplay         => None
         case DisplayOffsets(v) => Some(v)
       }

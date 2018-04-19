@@ -12,9 +12,7 @@ import diode.data.{Pending, Pot, Ready}
 import boopickle.DefaultBasic._
 import edu.gemini.seqexec.model.{ModelBooPicklers, UserDetails}
 import edu.gemini.seqexec.model.Model._
-import edu.gemini.seqexec.model.events.{SeqexecEvent, SeqexecModelUpdate}
-import edu.gemini.seqexec.model.events.SeqexecEvent.{ActionStopRequested, ConnectionOpenEvent, ObserverUpdated, SequenceCompleted, StepExecuted}
-import edu.gemini.seqexec.model.events.SeqexecEvent.{ExposurePaused, ResourcesBusy, SequenceError, SequenceLoaded, SequencePaused, SequenceUnloaded, ServerLogMessage}
+import edu.gemini.seqexec.model.events._
 import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.model.Pages._
 import edu.gemini.seqexec.web.client.model.SeqexecAppRootModel.LoadedSequences

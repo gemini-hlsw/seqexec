@@ -7,7 +7,7 @@ import diode.RootModelR
 import diode.data.{Empty, Pot, RefTo}
 import edu.gemini.seqexec.model.UserDetails
 import edu.gemini.seqexec.model.Model._
-import edu.gemini.seqexec.model.events.SeqexecEvent.ServerLogMessage
+import edu.gemini.seqexec.model.events._
 import edu.gemini.web.common.{Zipper, FixedLengthBuffer}
 import org.scalajs.dom.WebSocket
 import cats._
@@ -16,7 +16,7 @@ import cats.implicits._
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object model {
   implicit val eqWebSocket: Eq[WebSocket] =
-    Eq[(String, String, Int)].contramap { x =>
+    Eq.by { x =>
       (x.url, x.protocol, x.readyState)
     }
 
@@ -71,7 +71,7 @@ object model {
 
   object InstrumentTabActive {
     implicit val eq: Eq[InstrumentTabActive] =
-      Eq[(SequenceTab, Boolean)].contramap(x => (x.tab, x.active))
+      Eq.by(x => (x.tab, x.active))
   }
 
   final case class SequenceTab(instrument: Instrument, currentSequence: RefTo[Option[SequenceView]], completedSequence: Option[SequenceView], stepConfigDisplayed: Option[Int]) {
@@ -82,7 +82,7 @@ object model {
 
   object SequenceTab {
     implicit val eq: Eq[SequenceTab] =
-      Eq[(Instrument, RefTo[Option[SequenceView]], Option[SequenceView], Option[Int])].contramap(x => (x.instrument, x.currentSequence, x.completedSequence, x.stepConfigDisplayed))
+      Eq.by(x => (x.instrument, x.currentSequence, x.completedSequence, x.stepConfigDisplayed))
     val empty: SequenceTab = SequenceTab(Instrument.F2, RefTo(new RootModelR(None)), None, None)
   }
 
@@ -145,7 +145,7 @@ object model {
     val empty: WebSocketConnection = WebSocketConnection(Empty, 0, autoReconnect = true)
 
     implicit val equal: Eq[WebSocketConnection] =
-      Eq[(Pot[WebSocket], Int, Boolean)].contramap { x =>
+      Eq.by { x =>
         (x.ws, x.nextAttempt, x.autoReconnect)
       }
 

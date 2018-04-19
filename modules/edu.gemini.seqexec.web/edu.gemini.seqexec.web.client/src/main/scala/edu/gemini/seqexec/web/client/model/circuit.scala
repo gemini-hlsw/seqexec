@@ -11,7 +11,7 @@ import diode.data._
 import diode.react.ReactConnector
 import japgolly.scalajs.react.Callback
 import edu.gemini.seqexec.model.UserDetails
-import edu.gemini.seqexec.model.events.SeqexecEvent.ServerLogMessage
+import edu.gemini.seqexec.model.events._
 import edu.gemini.seqexec.model.Model._
 import edu.gemini.seqexec.web.client.model._
 import edu.gemini.seqexec.web.client.model.SeqexecAppRootModel.LoadedSequences
@@ -33,9 +33,7 @@ object circuit {
 
   object ClientStatus {
     implicit val eq: Eq[ClientStatus] =
-      Eq[(Option[UserDetails], WebSocketConnection, Boolean)].contramap { x =>
-        (x.u, x.w, x.anySelected)
-      }
+      Eq.by (x => (x.u, x.w, x.anySelected))
   }
 
   // All these classes are focused views of the root model. They are used to only update small sections of the
@@ -55,7 +53,7 @@ object circuit {
   final case class StepsTableFocus(id: SequenceId, instrument: Instrument, state: SequenceState, steps: List[Step], stepConfigDisplayed: Option[Int], nextStepToRun: Option[Int]) extends UseValueEq
   object StepsTableFocus {
     implicit val eq: Eq[StepsTableFocus] =
-      Eq[(SequenceId, Instrument, SequenceState, List[Step], Option[Int], Option[Int])].contramap { x =>
+      Eq.by { x =>
         (x.id, x.instrument, x.state, x.steps, x.stepConfigDisplayed, x.nextStepToRun)
       }
   }

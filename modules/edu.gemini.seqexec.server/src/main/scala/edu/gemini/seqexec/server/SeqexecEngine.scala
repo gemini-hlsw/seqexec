@@ -17,8 +17,7 @@ import edu.gemini.seqexec.engine
 import edu.gemini.seqexec.engine.Result.{FileIdAllocated, Partial}
 import edu.gemini.seqexec.engine.{Step => _, _}
 import edu.gemini.seqexec.model.Model._
-import edu.gemini.seqexec.model.events.SeqexecEvent
-import edu.gemini.seqexec.model.events.SeqexecEvent._
+import edu.gemini.seqexec.model.events._
 import edu.gemini.seqexec.model.{ActionType, UserDetails}
 import edu.gemini.seqexec.odb.SmartGcal
 import edu.gemini.seqexec.server.ConfigUtilOps._

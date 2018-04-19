@@ -12,8 +12,7 @@ import edu.gemini.pot.sp.SPObservationID
 import edu.gemini.seqexec.model.Model.{ClientID, Conditions, SequenceId, SequencesQueue}
 import edu.gemini.seqexec.model._
 import edu.gemini.seqexec.model.ModelBooPicklers.trimmedArray
-import edu.gemini.seqexec.model.events.{ForClient, SeqexecEvent}
-import edu.gemini.seqexec.model.events.SeqexecEvent.{ConnectionOpenEvent, NullEvent}
+import edu.gemini.seqexec.model.events._
 import edu.gemini.seqexec.server
 import edu.gemini.seqexec.server.SeqexecEngine
 import edu.gemini.seqexec.web.server.http4s.encoder._

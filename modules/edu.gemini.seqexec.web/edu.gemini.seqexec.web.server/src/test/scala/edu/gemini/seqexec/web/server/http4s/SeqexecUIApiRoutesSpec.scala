@@ -6,8 +6,7 @@ package edu.gemini.seqexec.web.server.http4s
 import java.time.LocalDate
 
 import cats.effect.IO
-import edu.gemini.seqexec.model.events.SeqexecEvent
-import edu.gemini.seqexec.model.events.SeqexecEvent.NullEvent
+import edu.gemini.seqexec.model.events._
 import edu.gemini.seqexec.server.{SeqexecEngine, executeEngine}
 import edu.gemini.seqexec.web.server.security.{AuthenticationConfig, AuthenticationService, LDAPConfig}
 import fs2.async.mutable.{Queue, Topic}

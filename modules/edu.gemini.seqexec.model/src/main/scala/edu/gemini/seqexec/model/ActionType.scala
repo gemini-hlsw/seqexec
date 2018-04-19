@@ -6,10 +6,8 @@ package edu.gemini.seqexec.model
 import edu.gemini.seqexec.model.Model.Resource
 
 import cats.Eq
+import cats.implicits._
 
-/**
-  * Created by jluhrs on 10/13/17.
-  */
 sealed trait ActionType extends Product with Serializable
 
 object ActionType {
@@ -19,6 +17,11 @@ object ActionType {
   case object Undefined extends ActionType
   final case class Configure(sys: Resource) extends ActionType
 
-  implicit val equal: Eq[ActionType] = Eq.fromUniversalEquals
+  implicit val equal: Eq[ActionType] = Eq.instance {
+    case (_: Observe.type,   _: Observe.type)   => true
+    case (_: Undefined.type, _: Undefined.type) => true
+    case (Configure(a),         Configure(b))   => a === b
+    case _                                      => false
+  }
 
 }

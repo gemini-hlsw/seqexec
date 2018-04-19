@@ -4,8 +4,7 @@
 package edu.gemini.seqexec.model
 
 import Model._
-import events.{SeqexecEvent, SeqexecModelUpdate}
-import events.SeqexecEvent._
+import events._
 import org.scalacheck.Arbitrary
 import org.scalacheck.Cogen
 import org.scalacheck.Arbitrary._

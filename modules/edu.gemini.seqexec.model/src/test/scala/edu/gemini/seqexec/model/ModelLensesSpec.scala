@@ -8,15 +8,9 @@ import edu.gemini.seqexec.model.Model.{OffsetAxis, SystemName}
 import edu.gemini.seqexec.model.SequenceEventsArbitraries._
 import edu.gemini.seqexec.model.SharedModelArbitraries._
 import monocle.law.discipline.{IsoTests, LensTests, OptionalTests, PrismTests, TraversalTests}
-import org.scalacheck.Arbitrary
 import org.scalacheck.Arbitrary._
-import org.typelevel.discipline.scalatest.Discipline
 
-final class ModelLensesSpec extends CatsSuite with Discipline with ModelLenses {
-
-  // I'm not sure why these are not made available automatically
-  implicit def arbF[A]: Arbitrary[A => A] = Arbitrary[A => A]((x: A) => x)
-
+final class ModelLensesSpec extends CatsSuite with ModelLenses {
   checkAll("event observer name lens", LensTests(obsNameL))
   checkAll("standard step prism", PrismTests(standardStepP))
   checkAll("each step traversal", TraversalTests(eachStepT))

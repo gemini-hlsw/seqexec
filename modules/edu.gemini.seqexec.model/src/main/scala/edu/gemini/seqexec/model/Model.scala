@@ -238,7 +238,7 @@ object Model {
     val Zero: Step = StandardStep(id = -1, config = Map.empty, status = StepState.Pending, breakpoint = false, skip = false, fileId = None, configStatus = Nil, observeStatus = ActionStatus.Pending)
 
     implicit val equal: Eq[Step] =
-      Eq[(StepId, StepConfig, StepState, Boolean, Boolean, Option[dhs.ImageFileId])].contramap { x =>
+      Eq.by { x =>
         (x.id, x.config, x.status, x.breakpoint, x.skip, x.fileId)
       }
 
@@ -305,7 +305,7 @@ object Model {
   ) extends Step
   object StandardStep {
     implicit val equal: Eq[StandardStep] =
-      Eq[(StepId, StepConfig, StepState, Boolean, Boolean, Option[dhs.ImageFileId], List[(Resource, ActionStatus)], ActionStatus)].contramap { x =>
+      Eq.by { x =>
         (x.id, x.config, x.status, x.breakpoint, x.skip, x.fileId, x.configStatus, x.observeStatus)
       }
   }
@@ -369,9 +369,7 @@ object Model {
 
   object SequenceMetadata {
     implicit val eq: Eq[SequenceMetadata] =
-      Eq[(Instrument, Option[Observer], String)].contramap { x =>
-        (x.instrument, x.observer, x.name)
-      }
+      Eq.by(x => (x.instrument, x.observer, x.name))
   }
 
   @Lenses final case class SequenceView (
@@ -384,7 +382,7 @@ object Model {
 
   object SequenceView {
     implicit val eq: Eq[SequenceView] =
-      Eq[(SequenceId, SequenceMetadata, SequenceState, List[Step], Option[Int])].contramap { x =>
+      Eq.by { x =>
         (x.id, x.metadata, x.status, x.steps, x.willStopIn)
       }
   }
@@ -397,7 +395,7 @@ object Model {
 
   object SequencesQueue {
     implicit def equal[T: Eq]: Eq[SequencesQueue[T]] =
-      Eq[(Conditions, Option[Operator], List[T])].contramap { x =>
+      Eq.by { x =>
         (x.conditions, x.operator, x.queue)
       }
   }
@@ -450,7 +448,7 @@ object Model {
   }
   object Offset {
     implicit val equal: Eq[Offset] =
-      Eq[Either[TelescopeOffset.P, TelescopeOffset.Q]].contramap {
+      Eq.by {
         case p: TelescopeOffset.P => Left(p)
         case q: TelescopeOffset.Q => Right(q)
       }
@@ -479,7 +477,7 @@ object Model {
 
     }
     implicit val eq: Eq[TelescopeOffset] =
-      Eq[(TelescopeOffset.P, TelescopeOffset.Q)].contramap(x => (x.p, x.q))
+      Eq.by(x => (x.p, x.q))
 
     implicit val show: Show[TelescopeOffset] = Show.fromToString
   }
@@ -560,7 +558,7 @@ object Model {
     val default: Conditions = worst // Taken from ODB
 
     implicit val equalConditions: Eq[Conditions] =
-      Eq[(CloudCover, ImageQuality, SkyBackground, WaterVapor)].contramap { x =>
+      Eq.by { x =>
         (x.cc, x.iq, x.sb, x.wv)
       }
 
