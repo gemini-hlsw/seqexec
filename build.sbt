@@ -33,7 +33,7 @@ onLoad in Global := { s =>
 }
 
 // Uncomment for local gmp testing
-// resolvers in ThisBuild += "Local Maven Repository" at "file://"+Path.userHome.absolutePath+"/Projects/maven-repo/releases"
+resolvers in ThisBuild += "Local Maven Repository" at "file://"+Path.userHome.absolutePath+"/.m2/repository"
 
 // Settings to use git to define the version of the project
 def versionFmt(out: sbtdynver.GitDescribeOutput): String = {
@@ -64,7 +64,7 @@ lazy val edu_gemini_giapi_client = project
   .enablePlugins(GitBranchPrompt)
   .settings(commonSettings: _*)
   .settings(
-    libraryDependencies += CatsEffect.value
+    libraryDependencies ++= Seq(CatsEffect.value, GiapiJmsUtil, GiapiJmsProvider) ++ Logging
   )
 
 lazy val edu_gemini_web_server_common = project

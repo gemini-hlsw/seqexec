@@ -114,6 +114,8 @@ object Settings {
     val opencsv           = "2.1"
     val epicsService      = "1.0.0"
     val gmpCommandRecords = "0.7.0"
+    val giapiJmsUtil      = "0.5.1"
+    val giapiJmsProvider  = "1.6.1"
     val guava             = "24.1-jre"
   }
 
@@ -207,6 +209,8 @@ object Settings {
 
     val EpicsService = "edu.gemini.epics" % "epics-service" % LibraryVersions.epicsService
     val GmpCommandsRecords = "edu.gemini.gmp" % "gmp-commands-records" % LibraryVersions.gmpCommandRecords
+    val GiapiJmsUtil = "edu.gemini.aspen" % "giapi-jms-util" % LibraryVersions.giapiJmsUtil
+    val GiapiJmsProvider = "edu.gemini.jms" % "jms-activemq-provider" % LibraryVersions.giapiJmsProvider
     val Guava = "com.google.guava" % "guava" % LibraryVersions.guava
   }
 

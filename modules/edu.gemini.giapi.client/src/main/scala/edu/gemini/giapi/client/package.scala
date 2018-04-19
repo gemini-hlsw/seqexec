@@ -5,6 +5,8 @@ package edu.gemini.giapi.client
 
 import cats.{Id, Monad}
 import cats.implicits._
+import cats.effect._
+import edu.gemini.jms.activemq.provider.ActiveMQJmsProvider
 
 trait Giapi[F[_]] {
   def init: F[Unit]
@@ -16,6 +18,14 @@ object Giapi {
     def init: Id[Unit] = ()
     def get(statusItem: String): Id[Option[Int]] = {println("Id");None}
   }
+
+  val giapiWithIO: Giapi[IO] = new Giapi[IO] {
+    val connection = new ActiveMQJmsProvider("failover:(tcp://tlc.cl.gemini.edu:61616)")
+    connection.startConnection()
+    def init: IO[Unit] = IO.pure(())
+    def get(statusItem: String): IO[Option[Int]] = IO{println("Id");None}
+  }
+
 }
 
 object Example extends App {
@@ -30,4 +40,5 @@ object Example extends App {
   }
 
   println(new GPIRead(Giapi.giapiWithId).readFilter)
+  println(new GPIRead(Giapi.giapiWithIO).readFilter)
 }
