@@ -58,6 +58,15 @@ enablePlugins(GitBranchPrompt)
 //////////////
 // Projects
 //////////////
+lazy val edu_gemini_giapi_client = project
+  .in(file("modules/edu.gemini.giapi.client"))
+  .enablePlugins(AutomateHeaderPlugin)
+  .enablePlugins(GitBranchPrompt)
+  .settings(commonSettings: _*)
+  .settings(
+    libraryDependencies += CatsEffect.value
+  )
+
 lazy val edu_gemini_web_server_common = project
   .in(file("modules/edu.gemini.web.server.common"))
   .enablePlugins(AutomateHeaderPlugin)
