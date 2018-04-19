@@ -4,6 +4,7 @@ import sbt._
 import de.heikoseeberger.sbtheader.HeaderPlugin.autoImport._
 import wartremover.WartRemover.autoImport._
 import net.virtualvoid.sbt.graph.DependencyGraphPlugin.autoImport._
+import com.timushev.sbt.updates.UpdatesPlugin.autoImport._
 
 /**
   * Define tasks and settings used by module definitions
@@ -40,7 +41,18 @@ object Common {
     // Wartremover in compile and test (not in Console)
     wartremoverErrors in (Compile, compile) := gemWarts,
     wartremoverErrors in (Test,    compile) := gemWarts,
-    sources in (Compile,doc)                := Seq.empty
+    sources in (Compile,doc)                := Seq.empty,
+    // We don't care to see updates about the scala language itself
+    dependencyUpdatesFilter -= moduleFilter(name = "scala-library"),
+    dependencyUpdatesFilter -= moduleFilter(name = "scala-reflect"),
+    // Don't worry about stale deps pulled in by scala-js
+    dependencyUpdatesFilter -= moduleFilter(organization = "org.eclipse.jetty"),
+
+    // Don't worry about monocle versions that start with the same prefix.
+    dependencyUpdatesFilter -= moduleFilter(
+      organization = "com.github.julien-truffaut",
+      revision = sbt.io.GlobFilter(Settings.LibraryVersions.monocle.replace("-cats", "*"))
+    )
   )
 
   lazy val commonJSSettings = commonSettings ++ Seq(

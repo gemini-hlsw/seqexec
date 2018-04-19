@@ -13,6 +13,7 @@ yarn.lock
 package.json
 package-lock.json
 calibrations/
+.metals/
 
 # sbt specific
 .cache
