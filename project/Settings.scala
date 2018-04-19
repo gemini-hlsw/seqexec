@@ -75,13 +75,13 @@ object Settings {
     val scalaJSReactClipboard   = "0.1.0"
 
     // Java libraries
-    val catsEffectVersion   = "0.10"
+    val catsEffectVersion   = "0.10.1"
     val catsMtlVersion      = "0.2.1"
     val catsVersion         = "1.1.0"
     val mouseVersion        = "0.16"
     val fs2Version          = "0.10.3"
     // Scala libraries
-    val http4s       = "0.18.8"
+    val http4s       = "0.18.9"
     val squants      = "1.3.0"
     val argonaut     = "6.2.1"
     val commonsHttp  = "2.0.2"
