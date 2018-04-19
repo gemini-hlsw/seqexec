@@ -74,7 +74,26 @@ class Engine[D: ActionMetadataGenerator, U](implicit ev: ActionMetadataGenerator
       }
     )
 
-    override def tailRecM[A, B](a: A)(f: A => HandleP[Either[A, B]]): HandleP[B] = ??? //scalastyle:ignore
+    // Kudos to @tpolecat
+    def tailRecM[A, B](a: A)(f: A => HandleP[Either[A, B]]): HandleP[B] = {
+      // We don't really care what this type is
+      type Unused = Option[Stream[IO, EventType]]
+
+      // Construct a StateT that delegates to IO's tailRecM
+      val st: StateT[IO, StateType, (B, Unused)] =
+        StateT { s =>
+          Monad[IO].tailRecM[(StateType, A), (StateType, (B, Unused))]((s, a)) {
+            case (s, a) =>
+              f(a).run.run(s).map {
+                case (sʹ, (Left(a), _))  => Left((sʹ, a))
+                case (sʹ, (Right(b), u)) => Right((sʹ, (b, u)))
+              }
+          }
+        }
+
+      // Done
+      HandleP(st)
+    }
   }
 
   implicit class HandleToHandleP[A](self: Handle[A]) {
@@ -351,12 +370,11 @@ class Engine[D: ActionMetadataGenerator, U](implicit ev: ActionMetadataGenerator
       go(s, in).stream
     }
 
-  // Kudos to @tpolecat
   /** Traverse a process with a stateful computation. */
   // input, stream of events
   // initalState: state
   // f takes an event and the current state, it produces a new state, a new value B and more actions
-  @SuppressWarnings(Array("org.wartremover.warts.OptionPartial", "org.wartremover.warts.ImplicitParameter"))
+  @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
   def mapEvalState[A, S, B](input: Stream[IO, A], initialState: S, f: (A, S) => IO[(S, B, Stream[IO, A])])(implicit ec: ExecutionContext): Stream[IO, B] = {
     Stream.eval(fs2.async.unboundedQueue[IO, Stream[IO, A]]).flatMap { q =>
       Stream.eval_(q.enqueue1(input)) ++

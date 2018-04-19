@@ -52,7 +52,7 @@ object Step {
       }}.map(StepState.Failed).getOrElse(
         // All actions in this Step were completed successfully, or the Step is empty.
         if (step.executions.flatten.forall(Action.completed)) StepState.Completed
-        else if (step.executions.flatten.forall(_.state.runState === Action.Idle)) StepState.Pending
+        else if (step.executions.flatten.forall(_.state.runState.isIdle)) StepState.Pending
         // Not all actions are completed or pending.
         else StepState.Running
       )

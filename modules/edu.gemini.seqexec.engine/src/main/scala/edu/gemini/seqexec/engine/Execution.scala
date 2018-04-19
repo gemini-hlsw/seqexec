@@ -4,7 +4,6 @@
 package edu.gemini.seqexec.engine
 
 import cats.Eq
-import cats.implicits._
 import edu.gemini.seqexec.model.Model.Resource
 import monocle.function.Index.{index, listIndex}
 import monocle.syntax.apply._
@@ -21,7 +20,7 @@ final case class Execution(execution: List[Action]) {
 
   val isEmpty: Boolean = execution.isEmpty
 
-  val actions: List[Action] = execution.filter(_.state.runState === Action.Idle)
+  val actions: List[Action] = execution.filter(_.state.runState.isIdle)
 
   val results: List[Action] = execution.filter(Action.finished)
 
@@ -30,7 +29,7 @@ final case class Execution(execution: List[Action]) {
     *
     */
   def status: Status =
-    if (execution.forall(_.state.runState === Action.Idle)) Status.Waiting
+    if (execution.forall(_.state.runState.isIdle)) Status.Waiting
     // Empty execution is handled here
     else if (finished(this)) Status.Completed
     else if (isEmpty) Status.Completed
@@ -64,7 +63,7 @@ object Execution {
     * are pending.
     */
   def currentify(as: Actions): Option[Execution] =
-    (as.nonEmpty && as.forall(_.state.runState === Action.Idle)).option(Execution(as))
+    (as.nonEmpty && as.forall(_.state.runState.isIdle)).option(Execution(as))
 
   def errored(ex: Execution): Boolean = ex.execution.exists(_.state.runState match {
     case Action.Failed(_) => true

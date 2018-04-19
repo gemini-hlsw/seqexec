@@ -7,6 +7,7 @@ import edu.gemini.seqexec.model.Model.{ClientID, Observer}
 import edu.gemini.seqexec.model.UserDetails
 
 import cats.effect.IO
+import cats.implicits._
 import fs2.Stream
 
 /**
@@ -14,7 +15,7 @@ import fs2.Stream
   */
 sealed trait UserEvent[+D <: Engine.Types] {
   def user: Option[UserDetails]
-  def username: String = user.map(_.username).getOrElse("")
+  def username: String = user.foldMap(_.username)
 }
 
 final case class Start(id: Sequence.Id, user: Option[UserDetails], clientId: ClientID) extends UserEvent[Nothing]

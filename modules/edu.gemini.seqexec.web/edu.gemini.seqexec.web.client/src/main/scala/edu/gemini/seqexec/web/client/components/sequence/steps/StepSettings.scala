@@ -247,7 +247,7 @@ object ExposureTimeCell {
       val seconds = List(<.span(^.display := "inline-block", ^.marginLeft := 5.px, "["), <.span(^.display := "inline-block", ^.verticalAlign := "none", ^.fontStyle := "italic", "s"), <.span(^.display := "inline-block", "]"))
 
       val displayedText: TagMod = (coadds, exposureTime) match {
-        case (c, Some(e)) if c.exists(_ > 1) => (List(<.span(^.display := "inline-block", s"${c.map(_.show).getOrElse("")} "), <.span(^.display := "inline-block", ^.verticalAlign := "none", "\u2A2F"), <.span(^.display := "inline-block", s"${formatExposureTime(e)}")) ::: seconds).toTagMod
+        case (c, Some(e)) if c.exists(_ > 1) => (List(<.span(^.display := "inline-block", s"${c.foldMap(_.show)} "), <.span(^.display := "inline-block", ^.verticalAlign := "none", "\u2A2F"), <.span(^.display := "inline-block", s"${formatExposureTime(e)}")) ::: seconds).toTagMod
         case (_, Some(e))                    => ((s"${formatExposureTime(e)}": VdomNode) :: seconds).toTagMod
         case _                               => EmptyVdom
       }

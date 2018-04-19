@@ -3,7 +3,6 @@
 
 package edu.gemini.seqexec
 
-import cats._
 import cats.data.Kleisli
 import cats.effect.IO
 import edu.gemini.seqexec.engine.Result.{Error, PartialVal, PauseContext, RetVal}
@@ -36,26 +35,17 @@ package engine {
 
     final case class State(runState: ActionState, partials: List[PartialVal])
 
-    sealed trait ActionState
+    sealed trait ActionState {
+      def isIdle: Boolean = false
+    }
 
-    case object Idle extends ActionState
+    case object Idle extends ActionState {
+      override def isIdle: Boolean = true
+    }
     case object Started extends ActionState
     final case class Paused[C <: PauseContext](ctx: C) extends ActionState
     final case class Completed[V <: RetVal](r: V) extends ActionState
     final case class Failed(e: Error) extends ActionState
-
-    object ActionState {
-      // TODO: This is not always valid
-      implicit val equal: Eq[ActionState] = Eq.fromUniversalEquals
-//      implicit val equal: Eq[ActionState] =
-//        Eq[Option[Option[Either[PauseContext, Either[RetVal, Error]]]]].contramap {
-//          case Idle => None
-//          case Started => Some(None)
-//          case Paused(ctx) => Some(Option(Either.left(ctx)))
-//          case Completed(r) => Some(Option(Right(Left(r: RetVal))))
-//          case Failed(e) => Some(Option(Right(Right(e))))
-//        }
-    }
 
     def errored(ar: Action): Boolean = ar.state.runState match {
       case Action.Failed(_) => true

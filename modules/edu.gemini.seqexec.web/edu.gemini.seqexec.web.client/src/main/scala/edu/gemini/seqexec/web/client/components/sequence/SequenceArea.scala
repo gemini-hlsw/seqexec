@@ -24,9 +24,9 @@ import cats.implicits._
 
 object SequenceStepsTableContainer {
   final case class Props(router: RouterCtl[SeqexecPages], site: SeqexecSite, p: ModelProxy[StatusAndStepFocus]) {
-    protected[sequence] val sequenceControlConnects = site.instruments.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceControlReader(i)))).toMap
-    private[sequence] val instrumentConnects = site.instruments.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.stepsTableReader(i)))).toMap
-    protected[sequence] val sequenceObserverConnects = site.instruments.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(i)))).toMap
+    protected[sequence] val sequenceControlConnects = site.instruments.toList.fproduct(i => SeqexecCircuit.connect(SeqexecCircuit.sequenceControlReader(i))).toMap
+    private[sequence] val instrumentConnects = site.instruments.toList.fproduct(i => SeqexecCircuit.connect(SeqexecCircuit.stepsTableReader(i))).toMap
+    protected[sequence] val sequenceObserverConnects = site.instruments.toList.fproduct(i => SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(i))).toMap
   }
   final case class State(nextStepToRun: Int)
 
