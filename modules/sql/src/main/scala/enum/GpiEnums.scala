@@ -6,7 +6,9 @@ package enum
 
 import doobie._, doobie.implicits._
 import shapeless.record._
+import shapeless.Witness
 
+@SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 object GpiEnums {
   import EnumRefs._
 
@@ -19,8 +21,11 @@ object GpiEnums {
       },
 
       EnumDef.fromQuery("GpiFilter", "GPI Filter") {
-        type E = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'band -> EnumRef['MagnitudeBand], 'obsolete -> Boolean`.T
-        sql"""SELECT id, id tag, short_name, long_name, band, obsolete FROM e_gpi_filter""".query[(String, E)]
+        val  m = Witness('MagnitudeBand)
+        type M = m.T
+        type E = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'band -> EnumRef[M], 'obsolete -> Boolean`.T
+        val ret = sql"""SELECT id, id tag, short_name, long_name, band, obsolete FROM e_gpi_filter""".query[(String, E)]
+        (ret, m.value: M)._1 // convince scalac that we really do use M
       },
 
       EnumDef.fromQuery("GpiDisperser", "GPI Disperser") {
@@ -84,8 +89,15 @@ object GpiEnums {
       },
 
       EnumDef.fromQuery("GpiObservingMode", "GPI ObservingMode") {
-        type E = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'filter -> Option[EnumRef['GpiFilter]], 'filterIterable -> Boolean, 'apodizer -> Option[EnumRef['GpiApodizer]], 'fpm -> Option[EnumRef['GpiFPM]], 'lyot -> Option[EnumRef['GpiLyot]], 'brightLimitPrism -> Option[MagnitudeValue], 'brightLimitWollaston -> Option[MagnitudeValue], 'correspondingHMode -> LazyEnumRef['GpiObservingMode], 'obsolete  -> Boolean`.T
-        sql"""SELECT id, id tag, short_name, long_name, filter, filter_iterable, apodizer, fpm, lyot, bright_limit_prism, bright_limit_wollaston, corresponding_h_mode, obsolete FROM e_gpi_observing_mode""".query[(String, E)]
+        val (a, b, c, d, e) = (Witness('GpiFilter), Witness('GpiApodizer), Witness('GpiFPM), Witness('GpiLyot), Witness('GpiObservingMode))
+        type A = a.T
+        type B = b.T
+        type C = c.T
+        type D = d.T
+        type E = e.T
+        type F = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'filter -> Option[EnumRef[A]], 'filterIterable -> Boolean, 'apodizer -> Option[EnumRef[B]], 'fpm -> Option[EnumRef[C]], 'lyot -> Option[EnumRef[D]], 'brightLimitPrism -> Option[MagnitudeValue], 'brightLimitWollaston -> Option[MagnitudeValue], 'correspondingHMode -> LazyEnumRef[E], 'obsolete  -> Boolean`.T
+        val ret = sql"""SELECT id, id tag, short_name, long_name, filter, filter_iterable, apodizer, fpm, lyot, bright_limit_prism, bright_limit_wollaston, corresponding_h_mode, obsolete FROM e_gpi_observing_mode""".query[(String, F)]
+        (ret, a.value: A, b.value: B, c.value: C, d.value: D, e.value: E)._1 // suppress unused warnigs
       }
 
     )

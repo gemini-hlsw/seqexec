@@ -1,14 +1,14 @@
 import com.typesafe.sbt.packager.docker._
 
-lazy val circeVersion         = "0.9.2"
-lazy val attoVersion          = "0.6.2-M1"
-lazy val catsEffectVersion    = "0.10"
+lazy val circeVersion         = "0.9.3"
+lazy val attoVersion          = "0.6.2"
+lazy val catsEffectVersion    = "0.10.1"
 lazy val catsVersion          = "1.1.0"
 lazy val declineVersion       = "0.4.1"
-lazy val doobieVersion        = "0.5.1"
+lazy val doobieVersion        = "0.5.2"
 lazy val flywayVersion        = "5.0.7"
 lazy val fs2Version           = "0.10.3"
-lazy val http4sVersion        = "0.18.3"
+lazy val http4sVersion        = "0.18.9"
 lazy val jwtVersion           = "0.16.0"
 lazy val kpVersion            = "0.9.6"
 lazy val monocleVersion       = "1.5.1-cats"
@@ -107,8 +107,7 @@ lazy val commonSettings = Seq(
   wartremoverErrors in (Compile, compile) := gemWarts,
   wartremoverErrors in (Test,    compile) := gemWarts,
 
-  scalaOrganization := "org.typelevel",
-  scalaVersion := "2.12.3-bin-typelevel-4",
+  scalaVersion := "2.12.5",
   scalacOptions ++= Seq(
     "-deprecation",                      // Emit warning and location for usages of deprecated APIs.
     "-encoding", "utf-8",                // Specify character encoding used by source files.
@@ -155,11 +154,6 @@ lazy val commonSettings = Seq(
     "-Ywarn-unused:patvars",             // Warn if a variable bound in a pattern is unused.
     "-Ywarn-unused:privates",            // Warn if a private member is unused.
     "-Ywarn-value-discard",              // Warn when non-Unit expression results are unused.
-    "-Yinduction-heuristics",            // speeds up the compilation of inductive implicit resolution
-    // "-Ykind-polymorphism",               // type and method definitions with type parameters of arbitrary kinds
-    "-Yliteral-types",                   // literals can appear in type position
-    "-Xstrict-patmat-analysis",          // more accurate reporting of failures of match exhaustivity
-    "-Xlint:strict-unsealed-patmat"      // warn on inexhaustive matches against unsealed traits
   ),
   scalacOptions in (Compile, console) ~= (_.filterNot(Set(
     "-Xfatal-warnings",

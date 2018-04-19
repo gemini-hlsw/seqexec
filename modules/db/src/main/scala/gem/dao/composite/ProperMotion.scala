@@ -28,7 +28,8 @@ private object ProperMotionCompositeLemmas {
   import RadialVelocityMeta._
 
   // The parallax member is an angle, which we will store as signed milliarcseconds
-  private implicit lazy val AngleMasMeta: Meta[Angle] =
+  // N.B. if this is marked private we get a spurious "unused" warning
+  implicit lazy val AngleMasMeta: Meta[Angle] =
     AngleMeta.AngleMetaAsSignedMilliarcseconds
 
   val ProperMotionComposite: Composite[ProperMotion] = implicitly
