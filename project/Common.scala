@@ -55,6 +55,10 @@ object Common {
   )
 
   lazy val commonJSSettings = commonSettings ++ Seq(
+    scalacOptions ~= (_.filterNot(Set(
+      // Allows a certain reduction on the ouput js file
+      "-Xcheckinit"
+    ))),
     // activate the ScalaJS defined annotation by default
     scalacOptions       += "-P:scalajs:sjsDefinedByDefault"
   )
