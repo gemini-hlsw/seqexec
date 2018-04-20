@@ -22,7 +22,6 @@ object Common {
     )
 
   lazy val commonSettings = Seq(
-    scalaOrganization                       := "org.typelevel",
     scalaVersion                            := Settings.LibraryVersions.scalaVersion,
     scalacOptions                          ++= Settings.Definitions.scalacOptions,
     scalacOptions in (Compile, console)     ~= (_.filterNot(Set(
@@ -56,9 +55,10 @@ object Common {
   )
 
   lazy val commonJSSettings = commonSettings ++ Seq(
-    // These settings allow to use TLS with scala.js
-    // Remove the dependency on the scalajs-compiler
-    libraryDependencies := libraryDependencies.value.filterNot(_.name == "scalajs-compiler"),
+    scalacOptions ~= (_.filterNot(Set(
+      // Allows a certain reduction on the ouput js file
+      "-Xcheckinit"
+    ))),
     // activate the ScalaJS defined annotation by default
     scalacOptions       += "-P:scalajs:sjsDefinedByDefault"
   )

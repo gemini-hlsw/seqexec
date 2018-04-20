@@ -108,7 +108,7 @@ object Flamingos2 {
   def ccConfigFromSequenceConfig(config: Config): TrySeq[CCConfig] = ( for {
       obsType <- config.extract(OBSERVE_KEY / OBSERVE_TYPE_PROP).as[String]
       // WINDOW_COVER_PROP is optional. If not present, then window cover position is inferred from observe type.
-      p <- config.extract(INSTRUMENT_KEY / WINDOW_COVER_PROP).as[WindowCover].recover(PartialFunction((x:ConfigUtilOps.ExtractFailure) => windowCoverFromObserveType(obsType)))
+      p <- config.extract(INSTRUMENT_KEY / WINDOW_COVER_PROP).as[WindowCover].recover { case _:ConfigUtilOps.ExtractFailure => windowCoverFromObserveType(obsType)}
       q <- config.extract(INSTRUMENT_KEY / DECKER_PROP).as[Decker]
       r <- fpuConfig(config)
       s <- config.extract(INSTRUMENT_KEY / FILTER_PROP).as[Filter]
