@@ -76,6 +76,9 @@ lazy val gemWarts =
 
 lazy val commonSettings = Seq(
 
+  // Workaround for https://github.com/sbt/sbt/issues/4109
+  initialCommands += "jline.TerminalFactory.get.init\n",
+
   // Don't worry about stale deps pulled in by scala-js
   dependencyUpdatesFilter -= moduleFilter(organization = "org.eclipse.jetty"),
 
