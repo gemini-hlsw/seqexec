@@ -78,9 +78,7 @@ lazy val edu_gemini_web_client_facades = project
       // By necessity facades will have unused params
       "-Ywarn-unused:params"
     ))),
-    libraryDependencies ++= Seq(ScalaJSDom.value, JQuery.value),
-    // And add a custom one
-    addCompilerPlugin("org.scala-js" % "scalajs-compiler" % scalaJSVersion cross CrossVersion.patch)
+    libraryDependencies ++= Seq(ScalaJSDom.value, JQuery.value)
   )
 
 // Root web project
@@ -100,9 +98,7 @@ lazy val edu_gemini_seqexec_web_shared = (crossProject.crossType(CrossType.Pure)
   .jvmSettings(commonSettings)
   .jsSettings(commonJSSettings)
   .jsSettings(
-    libraryDependencies += JavaLogJS.value,
-    // And add a custom one
-    addCompilerPlugin("org.scala-js" % "scalajs-compiler" % scalaJSVersion cross CrossVersion.patch)
+    libraryDependencies += JavaLogJS.value
   )
 
 lazy val edu_gemini_seqexec_web_shared_JVM = edu_gemini_seqexec_web_shared.jvm
@@ -188,9 +184,7 @@ lazy val edu_gemini_seqexec_web_client = project.in(file("modules/edu.gemini.seq
       JavaLogJS.value,
       ScalaJSReactVirtualized.value,
       ScalaJSReactClipboard.value
-    ) ++ ReactScalaJS.value ++ Diode.value,
-    // Specify the scalajs-compiler to make it compatbile with TLS
-    addCompilerPlugin("org.scala-js" % "scalajs-compiler" % scalaJSVersion cross CrossVersion.patch)
+    ) ++ ReactScalaJS.value ++ Diode.value
   )
   .settings(
     buildInfoUsePackageAsPath := true,
@@ -244,8 +238,7 @@ lazy val edu_gemini_seqexec_model = crossProject.crossType(CrossType.Pure)
   .jsSettings(commonJSSettings)
   .jsSettings(
     // And add a custom one
-    libraryDependencies += JavaTimeJS.value,
-    addCompilerPlugin("org.scala-js" % "scalajs-compiler" % scalaJSVersion cross CrossVersion.patch)
+    libraryDependencies += JavaTimeJS.value
   )
 
 lazy val edu_gemini_seqexec_model_JVM:Project = edu_gemini_seqexec_model.jvm

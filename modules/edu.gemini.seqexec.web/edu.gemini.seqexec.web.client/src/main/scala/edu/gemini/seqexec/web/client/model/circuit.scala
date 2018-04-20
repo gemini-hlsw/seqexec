@@ -20,8 +20,6 @@ import edu.gemini.seqexec.web.client.model.SeqexecAppRootModel.LoadedSequences
 import edu.gemini.seqexec.web.client.ModelOps._
 import edu.gemini.seqexec.web.client.actions.{show, ServerMessage, AppendToLog, OpenLoginBox, CloseLoginBox, OpenResourcesBox, CloseResourcesBox}
 
-import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
-
 import scalaz.{Equal, Order}
 import scalaz.std.AllInstances._
 import scalaz.syntax.equal._

@@ -12,7 +12,6 @@ import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, _}
 
 import scalaz._
-import Scalaz._
 
 trait ArbitrariesWebClient extends ArbitrariesWebCommon {
   import edu.gemini.seqexec.model.SharedModelArbitraries._

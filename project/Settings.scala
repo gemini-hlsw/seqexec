@@ -54,19 +54,13 @@ object Settings {
       "-Ywarn-unused:params",              // Warn if a value parameter is unused.
       "-Ywarn-unused:patvars",             // Warn if a variable bound in a pattern is unused.
       "-Ywarn-unused:privates",            // Warn if a private member is unused.
-      "-Ywarn-value-discard",              // Warn when non-Unit expression results are unused.
-      "-Yinduction-heuristics",            // speeds up the compilation of inductive implicit resolution
-      // "-Ykind-polymorphism",               // type and method definitions with type parameters of arbitrary kinds
-      "-Yliteral-types",                   // literals can appear in type position
-      "-Xstrict-patmat-analysis",          // more accurate reporting of failures of match exhaustivity
-      "-Xlint:strict-unsealed-patmat"      // warn on inexhaustive matches against unsealed traits
+      "-Ywarn-value-discard"               // Warn when non-Unit expression results are unused.
     )
   }
 
   /** Library versions */
   object LibraryVersions {
-    val scalaCommonVersion = "2.12.4"
-    val scalaVersion       = s"$scalaCommonVersion-bin-typelevel-4"
+    val scalaVersion = "2.12.5"
 
     // ScalaJS libraries
     val scalaDom                = "0.9.5"
