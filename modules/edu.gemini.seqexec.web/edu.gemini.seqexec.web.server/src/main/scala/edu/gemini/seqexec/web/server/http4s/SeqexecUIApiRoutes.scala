@@ -125,7 +125,7 @@ class SeqexecUIApiRoutes(devMode: Boolean, auth: AuthenticationService, events: 
           clientId <- IO.apply(UUID.randomUUID())
           ws       <-
             WebSocketBuilder[IO].build(Stream.emit(Binary(trimmedArray(ConnectionOpenEvent(user.toOption, clientId)))) ++
-              (pingStream merge engineOutput.subscribe(1).map(anonymizeF).filter(filterOutNull).filter(filterOutOnClientId(clientId)).map(v => Binary(trimmedArray(v)))), Sink(_ => IO.pure(())))
+              (pingStream merge engineOutput.subscribe(1).map(anonymizeF).filter(filterOutNull).filter(filterOutOnClientId(clientId)).map(v => Binary(trimmedArray(v)))), Sink(_ => IO.unit))
         } yield ws
 
       case GET -> Root / "seqexec" / "sequence" / oid as user =>

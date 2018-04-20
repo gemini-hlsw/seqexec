@@ -469,8 +469,6 @@ object SeqexecEngine {
     IO.apply(Paths.get(smartGCalLocation)).map { p => SmartGcal.initialize(peer, p) }
   }
 
-  private val taskUnit = IO.pure(())
-
   // scalastyle:off
   def seqexecConfiguration: Kleisli[IO, Config, Settings] = Kleisli { cfg: Config =>
     val site = cfg.require[String]("seqexec-engine.site") match {
@@ -513,26 +511,26 @@ object SeqexecEngine {
                 case c: SeqexecFailure                   => throw new Exception(SeqexecFailure.explain(c))
             }
         }
-      ) *> taskUnit
+      ) *> IO.unit
 
     // Ensure there is a valid way to init CaService either from
     // the configuration file or from the environment
     val caInit   = caAddrList.map(a => IO.apply(CaService.setAddressList(a))).getOrElse {
       IO.apply(Option(System.getenv("EPICS_CA_ADDR_LIST"))).flatMap {
-        case Some(_) => taskUnit
+        case Some(_) => IO.unit
         case _       => IO.raiseError(new RuntimeException("Cannot initialize EPICS subsystem"))
       }
     } *> IO.apply(CaService.setIOTimeout(java.time.Duration.ofMillis(ioTimeout.toMillis)))
-    val tcsInit  = (tcsKeywords || !tcsSim).fold(initEpicsSystem(TcsEpics, tops), taskUnit)
+    val tcsInit  = (tcsKeywords || !tcsSim).fold(initEpicsSystem(TcsEpics, tops), IO.unit)
     // More instruments to be added to the list here
     val instList = site match {
       case Site.GS => List((f2Keywords, Flamingos2Epics), (gmosKeywords, GmosEpics))
       case Site.GN => List((gmosKeywords, GmosEpics), (gnirsKeywords, GnirsEpics))
     }
     val instInit: IO[List[Unit]] = instList.filter(_._1 || !instSim).map(x => initEpicsSystem(x._2, tops)).parSequence
-    val gwsInit  = gwsKeywords.fold(initEpicsSystem(GwsEpics, tops), taskUnit)
-    val gcalInit = (gcalKeywords || !gcalSim).fold(initEpicsSystem(GcalEpics, tops), taskUnit)
-    val smartGcal = smartGcalEnable.fold(initSmartGCal(smartGCalHost, smartGCalDir), taskUnit)
+    val gwsInit  = gwsKeywords.fold(initEpicsSystem(GwsEpics, tops), IO.unit)
+    val gcalInit = (gcalKeywords || !gcalSim).fold(initEpicsSystem(GcalEpics, tops), IO.unit)
+    val smartGcal = smartGcalEnable.fold(initSmartGCal(smartGCalHost, smartGCalDir), IO.unit)
 
     smartGcal *>
       caInit *>
