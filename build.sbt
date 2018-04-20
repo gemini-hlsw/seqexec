@@ -178,11 +178,6 @@ lazy val commonSettings = Seq(
 )
 
 lazy val commonJSSettings = Seq(
-  // These settings allow to use TLS with scala.js
-  // Remove the dependency on the scalajs-compiler
-  libraryDependencies := libraryDependencies.value.filterNot(_.name == "scalajs-compiler"),
-  // And add a custom one
-  addCompilerPlugin("org.scala-js" % "scalajs-compiler" % scalaJSVersion cross CrossVersion.patch),
   // Make JS tests run fine on travis
   parallelExecution in Test := false
 )
