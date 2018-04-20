@@ -80,9 +80,9 @@ object EnumDef {
     implicit def caseOptionMagnitudeValue[S <: Symbol] = at[(S, Option[MagnitudeValue])] { case (s, _) => s"  val ${s.name}: Option[MagnitudeValue]" }
     implicit def caseGnirsPixelScale[S <: Symbol] = at[(S, GnirsPixelScale)] { case (s, _) => s"  val ${s.name}: GnirsPixelScale" }
 
-    implicit def caseEnumRef[T <: Symbol: ValueOf, S <: Symbol]       = at[(S, EnumRef[T])        ] { case (s, _) => s"  val ${s.name}: ${valueOf[T].name}" }
-    implicit def caseLazyEnumRef[T <: Symbol: ValueOf, S <: Symbol]   = at[(S, LazyEnumRef[T])    ] { case (s, _) => s"  val ${s.name}: Eval[${valueOf[T].name}]" }
-    implicit def caseOptionEnumRef[T <: Symbol: ValueOf, S <: Symbol] = at[(S, Option[EnumRef[T]])] { case (s, _) => s"  val ${s.name}: Option[${valueOf[T].name}]" }
+    implicit def caseEnumRef[T <: Symbol, S <: Symbol](implicit w: Witness.Aux[T])       = at[(S, EnumRef[T])        ] { case (s, _) => s"  val ${s.name}: ${w.value.name}" }
+    implicit def caseLazyEnumRef[T <: Symbol, S <: Symbol](implicit w: Witness.Aux[T])   = at[(S, LazyEnumRef[T])    ] { case (s, _) => s"  val ${s.name}: Eval[${w.value.name}]" }
+    implicit def caseOptionEnumRef[T <: Symbol, S <: Symbol](implicit w: Witness.Aux[T]) = at[(S, Option[EnumRef[T]])] { case (s, _) => s"  val ${s.name}: Option[${w.value.name}]" }
     // scalastyle:on method.type
   }
 
@@ -117,9 +117,9 @@ object EnumDef {
     implicit val caseGnirsPixelScale = at[GnirsPixelScale](a => s"GnirsPixelScale.${a.id}")
 
     // scalastyle:off method.type
-    implicit def caseEnumRef[T <: Symbol: ValueOf]       = at[EnumRef[T]        ](a => s"${valueOf[T].name}.${a.tag}")
-    implicit def caseLazyEnumRef[T <: Symbol: ValueOf]   = at[LazyEnumRef[T]        ](a => s"""cats.Eval.later(${valueOf[T].name}.unsafeFromTag("${a.tag}"))""")
-    implicit def caseOptionEnumRef[T <: Symbol: ValueOf] = at[Option[EnumRef[T]]](a => a.fold(s"Option.empty[${valueOf[T].name}]")(aʹ => s"Some(${valueOf[T].name}.${aʹ.tag})"))
+    implicit def caseEnumRef[T <: Symbol](implicit w: Witness.Aux[T])       = at[EnumRef[T]        ](a => s"${w.value.name}.${a.tag}")
+    implicit def caseLazyEnumRef[T <: Symbol](implicit w: Witness.Aux[T])   = at[LazyEnumRef[T]        ](a => s"""cats.Eval.later(${w.value.name}.unsafeFromTag("${a.tag}"))""")
+    implicit def caseOptionEnumRef[T <: Symbol](implicit w: Witness.Aux[T]) = at[Option[EnumRef[T]]](a => a.fold(s"Option.empty[${w.value.name}]")(aʹ => s"Some(${w.value.name}.${aʹ.tag})"))
     // scalastyle:on method.type
   }
 
