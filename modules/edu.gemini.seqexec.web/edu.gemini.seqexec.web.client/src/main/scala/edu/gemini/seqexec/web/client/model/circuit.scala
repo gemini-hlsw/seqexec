@@ -51,12 +51,6 @@ object circuit {
   final case class StatusAndObserverFocus(isLogged: Boolean, name: Option[String], instrument: Instrument, id: Option[SequenceId], observer: Option[Observer], status: Option[SequenceState], targetName: Option[TargetName]) extends UseValueEq
   final case class StatusAndStepFocus(isLogged: Boolean, instrument: Instrument, id: Option[SequenceId], stepConfigDisplayed: Option[Int]) extends UseValueEq
   final case class StepsTableFocus(id: SequenceId, instrument: Instrument, state: SequenceState, steps: List[Step], stepConfigDisplayed: Option[Int], nextStepToRun: Option[Int]) extends UseValueEq
-  object StepsTableFocus {
-    implicit val eq: Eq[StepsTableFocus] =
-      Eq.by { x =>
-        (x.id, x.instrument, x.state, x.steps, x.stepConfigDisplayed, x.nextStepToRun)
-      }
-  }
   final case class StepsTableAndStatusFocus(status: ClientStatus, stepsTable: Option[StepsTableFocus]) extends UseValueEq
   final case class ControlModel(id: SequenceId, isPartiallyExecuted: Boolean, nextStepToRun: Option[Int], status: SequenceState, inConflict: Boolean) extends UseValueEq
   final case class SequenceControlFocus(isLogged: Boolean, isConnected: Boolean, control: Option[ControlModel]) extends UseValueEq
@@ -93,10 +87,6 @@ object circuit {
 
     implicit object InstrumentTabActiveEq extends FastEq[InstrumentTabActive] {
       override def eqv(a: InstrumentTabActive, b: InstrumentTabActive): Boolean = a === b
-    }
-
-    implicit object StepsTableEq extends FastEq[Option[StepsTableFocus]] {
-      override def eqv(a: Option[StepsTableFocus], b: Option[StepsTableFocus]): Boolean = a === b
     }
 
     implicit object SequenceTabEq extends FastEq[SequenceTab] {
@@ -180,7 +170,7 @@ object circuit {
           tab.sequence.map { sequence =>
             StepsTableFocus(sequence.id, i, sequence.status, sequence.steps, tab.stepConfigDisplayed, sequence.nextStepToRun)
           }
-      }(StepsTableEq)
+      }
 
     def stepsTableReader(i: Instrument): ModelR[SeqexecAppRootModel, StepsTableAndStatusFocus] =
       statusReader.zip(stepsTableReaderF(i)).zoom {

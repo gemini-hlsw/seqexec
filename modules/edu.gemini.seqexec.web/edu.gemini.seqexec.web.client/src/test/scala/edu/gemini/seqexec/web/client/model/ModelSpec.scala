@@ -21,5 +21,4 @@ final class ModelSpec extends CatsSuite with ArbitrariesWebClient {
   checkAll("Eq[Pot[A]]", EqTests[Pot[Int]].eqv)
   checkAll("Eq[WebSocketConnection]", EqTests[WebSocketConnection].eqv)
   checkAll("Eq[ClientStatus]", EqTests[ClientStatus].eqv)
-  checkAll("Eq[StepsTableFocus]", EqTests[StepsTableFocus].eqv)
 }

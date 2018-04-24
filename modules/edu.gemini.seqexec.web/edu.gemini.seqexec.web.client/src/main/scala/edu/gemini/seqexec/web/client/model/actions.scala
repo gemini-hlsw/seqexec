@@ -93,10 +93,13 @@ object actions {
   final case class UpdateWaterVapor(wv: WaterVapor) extends Action
 
   // scalastyle:on
+  private val standardStep: PartialFunction[Step, (StepId, StepState, List[(Resource, ActionStatus)])] = {
+    case i: StandardStep => (i.id, i.status, i.configStatus)
+  }
 
   implicit val show: Show[Action] = Show.show {
     case s @ ServerMessage(u @ SeqexecModelUpdate(view)) =>
-      s"${s.getClass.getSimpleName}(${u.getClass.getSimpleName}(${view.queue.map(s => (s.id, s.steps.map(i => (i.id, i.status))))}))"
+      s"${s.getClass.getSimpleName}(${u.getClass.getSimpleName}(${view.queue.map(s => (s.id, s.steps.collect(standardStep)))}))"
     case s @ RememberCompleted(view)                     =>
       s"${s.getClass.getSimpleName}(${view.id})"
     case s @ InitialSyncToPage(view)                     =>
