@@ -138,7 +138,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     }
 
   def eventStream(q: EventQueue): Stream[IO, SeqexecEvent] = {
-    executeEngine.process(q.dequeue.merge(seqQueueRefreshStream))(Engine.State.empty[EngineMetadata](EngineMetadata.default)).flatMap(x => Stream.eval(notifyODB(x))).map {
+    executeEngine.process(q.dequeue.mergeHaltBoth(seqQueueRefreshStream))(Engine.State.empty[EngineMetadata](EngineMetadata.default)).flatMap(x => Stream.eval(notifyODB(x))).map {
       case (ev, qState) =>
         toSeqexecEvent(ev)(
           SequencesQueue(
