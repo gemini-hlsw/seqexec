@@ -101,14 +101,14 @@ object model {
 
     def focusOnSequence(s: RefTo[Option[SequenceView]]): SequencesOnDisplay = {
       // Replace the sequence for the instrument or the completed sequence
-      val q = instrumentSequences.findFocus(i => s().exists(_.metadata.instrument === i.instrument)).modify(_.copy(currentSequence = s))
-      copy(instrumentSequences = q)
+      val q = instrumentSequences.findFocus(i => s().exists(_.metadata.instrument === i.instrument)).map(_.modify(_.copy(currentSequence = s)))
+      copy(instrumentSequences = q.getOrElse(instrumentSequences))
     }
 
     def focusOnInstrument(i: Instrument): SequencesOnDisplay = {
       // Focus on the instrument
       val q = instrumentSequences.findFocus(s => s.instrument === i)
-      copy(instrumentSequences = q)
+      copy(instrumentSequences = q.getOrElse(instrumentSequences))
     }
 
     def isAnySelected: Boolean = instrumentSequences.exists(_.sequence.isDefined)
@@ -124,8 +124,8 @@ object model {
 
     // We'll set the passed SequenceView as completed for the given instruments
     def markCompleted(completed: SequenceView): SequencesOnDisplay = {
-      val q = instrumentSequences.findFocus(s => s.instrument === completed.metadata.instrument).modify(_.copy(completedSequence = completed.some))
-      copy(instrumentSequences = q)
+      val q = instrumentSequences.findFocus(s => s.instrument === completed.metadata.instrument).map(_.modify(_.copy(completedSequence = completed.some)))
+      copy(instrumentSequences = q.getOrElse(instrumentSequences))
     }
   }
 

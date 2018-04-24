@@ -20,26 +20,26 @@ final case class Zipper[A](lefts: List[A], focus: A, rights: List[A]) {
   /**
     * Find and element and focus if successful
     */
-  def findFocus(p: A => Boolean): Zipper[A] =
-    if (p(focus)) this
+  def findFocus(p: A => Boolean): Option[Zipper[A]] =
+    if (p(focus)) this.some
     else {
       val indexLeft = lefts.indexWhere(p)
       val indexRight = rights.indexWhere(p)
       if (indexLeft === -1 && indexRight === -1) {
-        this
+        none
       } else if (indexLeft >= 0) {
-        lefts.splitAt(indexLeft) match {
+        (lefts.splitAt(indexLeft) match {
           case (Nil, h :: t)      => Zipper(Nil, h, t ::: focus :: rights)
           case (x :: Nil, i :: l) => Zipper(List(x), i, l ::: focus :: rights)
           case (x, i :: l)        => Zipper(x, i, (focus :: l.reverse).reverse ::: rights)
           case _                  => this
-        }
+        }).some
       } else {
-        rights.splitAt(indexRight) match {
+        (rights.splitAt(indexRight) match {
           case (Nil, List(y)) => Zipper((focus :: lefts.reverse).reverse, y, Nil)
           case (x, h :: t)    => Zipper((focus :: lefts.reverse).reverse ::: x, h, t)
           case _              => this
-        }
+        }).some
       }
     }
 

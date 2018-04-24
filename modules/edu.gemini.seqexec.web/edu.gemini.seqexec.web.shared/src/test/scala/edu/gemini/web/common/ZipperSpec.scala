@@ -38,14 +38,14 @@ final class ZipperSpec extends CatsSuite {
     forAll { (l: List[Int], r: List[Int]) =>
       val u = Zipper(l, 0, r)
       val e = u.findFocus(_ === 0)
-      assert(e.focus === 0)
+      assert(e.exists(_.focus === 0) === true)
     }
   }
   test("support find focus II") {
     forAll { (l: List[Int], r: List[Int]) =>
       val u = Zipper(l, 0, r)
       val e = u.findFocus(x => l.headOption.forall(x === _))
-      val m = l.headOption.forall(_ === e.focus)
+      val m = l.headOption.forall(x => e.exists(_.focus === x))
       assert(m)
     }
   }
@@ -53,7 +53,7 @@ final class ZipperSpec extends CatsSuite {
     forAll { (l: List[Int], r: List[Int]) =>
       val u = Zipper(l, 0, r)
       val e = u.findFocus(x => r.headOption.forall(x === _))
-      val m = l.contains(e.focus) || r.headOption.forall(_ === e.focus)
+      val m = l.forall(x => e.exists(_.focus === x)) || r.headOption.forall(x => e.exists(_.focus === x))
       assert(m)
     }
   }
