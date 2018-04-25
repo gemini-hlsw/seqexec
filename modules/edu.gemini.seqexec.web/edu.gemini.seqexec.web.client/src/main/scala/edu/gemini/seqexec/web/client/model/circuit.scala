@@ -38,7 +38,8 @@ object circuit {
 
   // All these classes are focused views of the root model. They are used to only update small sections of the
   // UI even if other parts of the root model change
-  final case class WebSocketsFocus(location: Pages.SeqexecPages, sequences: LoadedSequences, user: Option[UserDetails], clientId: Option[ClientID], site: Option[SeqexecSite], firstLoad: Boolean) extends UseValueEq
+  final case class WebSocketsFocus(location: Pages.SeqexecPages, sequences: LoadedSequences, user: Option[UserDetails], clientId: Option[ClientID], site: Option[SeqexecSite]) extends UseValueEq
+  final case class InitialSyncFocus(location: Pages.SeqexecPages, sod: SequencesOnDisplay, firstLoad: Boolean) extends UseValueEq
   final case class SequenceInQueue(id: SequenceId, status: SequenceState, instrument: Instrument, active: Boolean, name: String, targetName: Option[TargetName], runningStep: Option[RunningStep]) extends UseValueEq
   object SequenceInQueue {
     implicit val order: Order[SequenceInQueue] = Order.by(_.id)
@@ -97,20 +98,25 @@ object circuit {
 
     // Model read-writers
     val webSocketFocusRW: ModelRW[SeqexecAppRootModel, WebSocketsFocus] =
-      zoomRW(m => WebSocketsFocus(m.uiModel.navLocation, m.uiModel.sequences, m.uiModel.user, m.clientId, m.site, m.uiModel.firstLoad)) ((m, v) => m.copy(uiModel = m.uiModel.copy(sequences = v.sequences, user = v.user, firstLoad = v.firstLoad), clientId = v.clientId, site = v.site))
+      zoomRW(m => WebSocketsFocus(m.uiModel.navLocation, m.uiModel.sequences, m.uiModel.user, m.clientId, m.site)) ((m, v) => m.copy(uiModel = m.uiModel.copy(sequences = v.sequences, user = v.user), clientId = v.clientId, site = v.site))
+
+    val initialSyncFocusRW: ModelRW[SeqexecAppRootModel, InitialSyncFocus] =
+      zoomRW(m => InitialSyncFocus(m.uiModel.navLocation, m.uiModel.sequencesOnDisplay, m.uiModel.firstLoad)) ((m, v) => m.copy(uiModel = m.uiModel.copy(navLocation = v.location, sequencesOnDisplay = v.sod, firstLoad = v.firstLoad)))
 
     private val wsHandler                = new WebSocketHandler(zoomTo(_.ws))
     private val wsEventsHandler          = new WebSocketEventsHandler(webSocketFocusRW)
+    private val initialSyncHandler       = new InitialSyncHandler(initialSyncFocusRW)
     private val navigationHandler        = new NavigationHandler(zoomTo(_.uiModel.navLocation))
     private val loginBoxHandler          = new ModalBoxHandler(OpenLoginBox, CloseLoginBox, zoomTo(_.uiModel.loginBox))
     private val resourcesBoxHandler      = new ModalBoxHandler(OpenResourcesBox, CloseResourcesBox, zoomTo(_.uiModel.resourceConflict.visibility))
     private val userLoginHandler         = new UserLoginHandler(zoomTo(_.uiModel.user))
-    private val sequenceDisplayHandler   = new SequenceDisplayHandler(zoomRW(m => (m.uiModel.sequencesOnDisplay, m.uiModel.sequences, m.site))((m, v) => m.copy(uiModel = m.uiModel.copy(sequencesOnDisplay = v._1, sequences = v._2), site = v._3)))
+    private val sequenceDisplayHandler   = new SequenceDisplayHandler(zoomRW(m => (m.uiModel.sequencesOnDisplay, m.site))((m, v) => m.copy(uiModel = m.uiModel.copy(sequencesOnDisplay = v._1), site = v._2)))
     private val sequenceExecHandler      = new SequenceExecutionHandler(zoomTo(_.uiModel.sequences))
     private val resourcesConflictHandler = new SequenceInConflictHandler(zoomTo(_.uiModel.resourceConflict.id))
     private val globalLogHandler         = new GlobalLogHandler(zoomTo(_.uiModel.globalLog))
     private val conditionsHandler        = new ConditionsHandler(zoomTo(_.uiModel.sequences.conditions))
     private val operatorHandler          = new OperatorHandler(zoomTo(_.uiModel.sequences.operator))
+    private val syncToAddedHandler       = new SyncToAddedRemovedRun(zoomTo(_.uiModel.navLocation))
     private val remoteRequestsHandler    = new RemoteRequestsHandler(zoomTo(_.clientId))
 
     override protected def initialModel = SeqexecAppRootModel.initial
@@ -196,7 +202,7 @@ object circuit {
 
     override protected def actionHandler = composeHandlers(
       wsHandler,
-      wsEventsHandler,
+      foldHandlers(wsEventsHandler, syncToAddedHandler, initialSyncHandler),
       sequenceExecHandler,
       resourcesBoxHandler,
       resourcesConflictHandler,

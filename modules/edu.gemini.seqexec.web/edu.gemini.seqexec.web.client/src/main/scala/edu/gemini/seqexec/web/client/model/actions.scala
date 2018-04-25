@@ -18,10 +18,6 @@ object actions {
   // Actions
   final case class NavigateTo(page: Pages.SeqexecPages) extends Action
   final case class NavigateSilentTo(page: Pages.SeqexecPages) extends Action
-  final case class InitialSyncToPage(view: SequenceView) extends Action
-  final case class SyncToRunning(view: SequenceView) extends Action
-  final case class SyncPageToRemovedSequence(id: SequenceId) extends Action
-  final case class SyncPageToAddedSequence(i: Instrument, id: SequenceId) extends Action
   final case class Initialize(site: SeqexecSite) extends Action
 
   // Actions to close and/open the login box
@@ -66,8 +62,8 @@ object actions {
   final case class RunObsPauseFailed(s: SequenceId) extends Action
   final case class RunObsResumeFailed(s: SequenceId) extends Action
 
-  final case class ShowStep(id: SequenceId, step: Int) extends Action
-  final case class UnShowStep(i: Instrument) extends Action
+  final case class ShowStepConfig(id: SequenceId, step: Int) extends Action
+  final case class HideStepConfig(i: Instrument) extends Action
   final case class RememberCompleted(s: SequenceView) extends Action
 
   final case class AppendToLog(l: ServerLogMessage) extends Action
@@ -101,10 +97,6 @@ object actions {
     case s @ ServerMessage(u @ SeqexecModelUpdate(view)) =>
       s"${s.getClass.getSimpleName}(${u.getClass.getSimpleName}(${view.queue.map(s => (s.id, s.steps.collect(standardStep)))}))"
     case s @ RememberCompleted(view)                     =>
-      s"${s.getClass.getSimpleName}(${view.id})"
-    case s @ InitialSyncToPage(view)                     =>
-      s"${s.getClass.getSimpleName}(${view.id})"
-    case s @ SyncToRunning(view)                     =>
       s"${s.getClass.getSimpleName}(${view.id})"
     case a                                               =>
       s"$a"

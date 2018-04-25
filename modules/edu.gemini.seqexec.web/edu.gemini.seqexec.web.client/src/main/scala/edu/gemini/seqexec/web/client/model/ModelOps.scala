@@ -51,7 +51,7 @@ object ModelOps {
   }
 
   implicit class SequenceViewOps(val s: SequenceView) extends AnyVal {
-    private def progress: RunningStep = RunningStep(s.steps.count(_.isFinished), s.steps.length)
+    def progress: RunningStep = RunningStep(s.steps.count(_.isFinished), s.steps.length)
 
     // Returns where on the sequence the execution is at
     def runningStep: Option[RunningStep] = s.status match {

@@ -78,7 +78,7 @@ object Settings {
     val catsEffectVersion   = "0.10.1"
     val catsMtlVersion      = "0.2.1"
     val catsVersion         = "1.1.0"
-    val mouseVersion        = "0.16"
+    val mouseVersion        = "0.17"
     val fs2Version          = "0.10.3"
     // Scala libraries
     val http4s       = "0.18.9"

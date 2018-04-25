@@ -92,11 +92,11 @@ object model {
       SequencesOnDisplay(Zipper.fromNel(site.instruments.map(SequenceTab(_, SequencesOnDisplay.emptySeqRef, None, None))))
 
     // Display a given step on the focused sequence
-    def showStep(i: Int): SequencesOnDisplay =
+    def showStepConfig(i: Int): SequencesOnDisplay =
       copy(instrumentSequences = instrumentSequences.modify(_.copy(stepConfigDisplayed = Some(i))))
 
     // Don't show steps for the sequence
-    def unshowStep: SequencesOnDisplay =
+    def hideStepConfig: SequencesOnDisplay =
       copy(instrumentSequences = instrumentSequences.modify(_.copy(stepConfigDisplayed = None)))
 
     def focusOnSequence(s: RefTo[Option[SequenceView]]): SequencesOnDisplay = {
