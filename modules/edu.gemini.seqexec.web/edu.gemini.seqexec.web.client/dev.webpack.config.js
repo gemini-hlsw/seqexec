@@ -50,21 +50,6 @@ const Web = Merge(Common.Web, {
         // We need this to get around the long scala.js compilation cycles
         aggregateTimeout: 35000
       }
-      /*"/***": {
-        target: "http://localhost:9090",
-        logLevel: "debug",
-        bypass: function(req, res, proxyOptions) {
-          // regex matching everything but js files
-          var backendUrls = /(^(.(?!\.js$))+$)/;
-
-          if (!backendUrls.test(req.url)) {
-            console.log("other: " + req.url);
-            return req.url;
-          } else {
-            console.log("proxied: " + req.url);
-          }
-        }
-      }*/
     }
   },
   plugins: [
@@ -83,5 +68,4 @@ if (isDevServer) {
   Web.entry.app.push("webpack-dev-server-status-bar");
 }
 
-console.log(Web);
 module.exports = Web;

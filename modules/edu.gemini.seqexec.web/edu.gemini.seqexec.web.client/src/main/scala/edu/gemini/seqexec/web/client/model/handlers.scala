@@ -22,6 +22,7 @@ import edu.gemini.seqexec.web.client.actions._
 import edu.gemini.seqexec.web.client.circuit._
 import edu.gemini.seqexec.web.client.services.log.ConsoleHandler
 import edu.gemini.seqexec.web.client.services.{Audio, SeqexecWebClient}
+import edu.gemini.seqexec.web.client.services.WebpackResources._
 import cats._
 import cats.implicits._
 import org.scalajs.dom._

@@ -167,7 +167,8 @@ lazy val edu_gemini_seqexec_web_client = project.in(file("modules/edu.gemini.seq
     zonesFilter := {(z: String) => z == "America/Santiago" || z == "Pacific/Honolulu"},
     // Needed for Monocle macros
     addCompilerPlugin(Plugins.paradisePlugin),
-    webpackBundlingMode          := BundlingMode.LibraryOnly(),
+    webpackBundlingMode in fastOptJS         := BundlingMode.LibraryOnly(),
+    webpackBundlingMode in fullOptJS         := BundlingMode.Application,
     webpackMonitoredDirectories  += (resourceDirectory in Compile).value,
     // JS dependencies via npm
     npmDependencies in Compile ++= Seq(
@@ -207,8 +208,8 @@ lazy val edu_gemini_seqexec_web_client = project.in(file("modules/edu.gemini.seq
       "optimize-css-assets-webpack-plugin" -> "4.0.0"
     ),
     // Use a different Webpack configuration file for production and create a single bundle without source maps
-    version in webpack               := "4.1.1",
-    version in startWebpackDevServer := "3.1.1",
+    version in webpack               := "4.8.1",
+    version in startWebpackDevServer := "3.1.4",
     webpackConfigFile in fullOptJS   := Some(baseDirectory.value / "prod.webpack.config.js"),
     webpackEmitSourceMaps            := false,
     webpackExtraArgs                 := Seq("--profile", "--progress", "true"),

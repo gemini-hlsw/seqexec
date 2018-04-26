@@ -22,18 +22,11 @@ const Web = Merge(Common.Web, {
     new UglifyJsPlugin({
       sourceMap: module.exports.devtool === "source-map"
     }),
-    new CopyWebpackPlugin(
-      [
-        { from: "*.mp3", to: Common.resourcesManagedDir },
-        { from: "*.css", to: Common.resourcesManagedDir }
-      ],
-      {
-        debug: "info"
-      }
-    )
+    new CopyWebpackPlugin([
+      { from: "*.mp3", to: Common.resourcesManagedDir },
+      { from: "*.css", to: Common.resourcesManagedDir }
+    ])
   ]
 });
 
-console.log(Web);
-console.log(Common.resourcesManagedDir);
 module.exports = Web;

@@ -17,7 +17,7 @@ const Web = Merge(generatedConfig, {
   devtool: "none",
   resolve: {
     alias: {
-      // resources: resourcesDir,
+      resources: resourcesDir,
       // Required to find the Semantic-UI-less module
       node_modules: Path.resolve(__dirname, "node_modules"),
       // Used to find the produced scala.js file
@@ -43,10 +43,10 @@ const Web = Merge(generatedConfig, {
       {
         test: /\.less$/,
         use: [
-          {
-            loader: "style-loader" // creates style nodes from JS strings
-          },
-          // translates CSS into CommonJS
+          // {
+          //   loader: "style-loader" // creates style nodes from JS strings
+          // },
+          // // translates CSS into CommonJS
           { loader: "css-loader", options: { importLoaders: 1 } },
           {
             loader: "postcss-loader", // post css plugins
