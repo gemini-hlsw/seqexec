@@ -10,7 +10,7 @@ import cats.implicits._
 import edu.gemini.seqexec.engine.Event._
 import edu.gemini.seqexec.engine.Result.{PartialVal, PauseContext, RetVal}
 import edu.gemini.seqexec.model.Model.{ClientID, Conditions, Observer, Resource, SequenceState}
-import fs2.{Pull, Stream}
+import fs2.Stream
 import monocle.Lens
 import monocle.macros.GenLens
 import mouse.boolean._
@@ -355,21 +355,6 @@ class Engine[D: ActionMetadataGenerator, U](implicit ev: ActionMetadataGenerator
     }) *> get
   }
 
-  // Taken from https://github.com/functional-streams-for-scala/fs2/pull/1123
-  def evalMapAccumulate[F[_], S, O, O2](in: Stream[F, O], s: S)(f: (S, O) => F[(S, O2)]): Stream[F, (S, O2)] = {
-    def go(s: S, in: Stream[F, O]): Pull[F, (S, O2), Unit] =
-      in.pull.uncons1.flatMap {
-        case None => Pull.done
-        case Some((hd, tl)) =>
-          Pull.eval(f(s, hd)).flatMap {
-            case (ns, o) =>
-              Pull.output1((ns, o)) >> go(ns, tl)
-          }
-      }
-
-      go(s, in).stream
-    }
-
   /** Traverse a process with a stateful computation. */
   // input, stream of events
   // initalState: state
@@ -378,7 +363,7 @@ class Engine[D: ActionMetadataGenerator, U](implicit ev: ActionMetadataGenerator
   def mapEvalState[A, S, B](input: Stream[IO, A], initialState: S, f: (A, S) => IO[(S, B, Stream[IO, A])])(implicit ec: ExecutionContext): Stream[IO, B] = {
     Stream.eval(fs2.async.unboundedQueue[IO, Stream[IO, A]]).flatMap { q =>
       Stream.eval_(q.enqueue1(input)) ++
-        evalMapAccumulate(q.dequeue.joinUnbounded, initialState) { (s, a) =>
+        q.dequeue.joinUnbounded.evalMapAccumulate(initialState) { (s, a) =>
           f(a, s).flatMap {
             case (ns, b, st) =>
               q.enqueue1(st) >> IO.pure((ns, b))
