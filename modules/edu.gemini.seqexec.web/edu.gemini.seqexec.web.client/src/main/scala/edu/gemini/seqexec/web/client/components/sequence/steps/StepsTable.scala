@@ -219,8 +219,6 @@ object StepsTable {
 
     // Create a ref
     private val ref = Ref.toJsComponent(Table.component)
-    // Keep it lazy or it won't be properly initialized
-    // private lazy val tableRef = ref.value.raw
 
     private def recomputeRowHeightsCB(index: Int): Callback = ref.get.flatMapCB(_.raw.recomputeRowsHeightsCB(index))
 

@@ -14,7 +14,7 @@ import cats.implicits._
 /**
   * Produces a dropdown menu, similar to a combobox
   */
-  @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
+@SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 object DropdownMenu {
   @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
   final case class Props[A](label: String,
@@ -60,10 +60,8 @@ object DropdownMenu {
           $(dom).find(".ui.dropdown").dropdown(
             JsDropdownOptions
               .onChange { (value: String, text: String) =>
-                // The text comes wrapped on react tags
-                val cleanText = $(text).text()
                 // We need to run the callback explicitly as we are outside the event loop
-                ctx.props.items.find(_.show === cleanText).map(ctx.props.onChange).foreach(_.runNow)
+                ctx.props.items.find(_.show === text).map(ctx.props.onChange).foreach(_.runNow)
               }
           )
         }

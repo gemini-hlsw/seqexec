@@ -53,16 +53,16 @@ object HeadersSideBar {
       }
 
     def iqChanged(iq: ImageQuality): Callback =
-      Callback(SeqexecCircuit.dispatch(UpdateImageQuality(iq)))
+      SeqexecCircuit.dispatchCB(UpdateImageQuality(iq))
 
     def ccChanged(i: CloudCover): Callback =
-      Callback(SeqexecCircuit.dispatch(UpdateCloudCover(i)))
+      SeqexecCircuit.dispatchCB(UpdateCloudCover(i))
 
     def sbChanged(sb: SkyBackground): Callback =
-      Callback(SeqexecCircuit.dispatch(UpdateSkyBackground(sb)))
+      SeqexecCircuit.dispatchCB(UpdateSkyBackground(sb))
 
     def wvChanged(wv: WaterVapor): Callback =
-      Callback(SeqexecCircuit.dispatch(UpdateWaterVapor(wv)))
+      SeqexecCircuit.dispatchCB(UpdateWaterVapor(wv))
 
     def render(p: Props, s: State): VdomTagOf[Div] = {
       val enabled = p.model().status.isLogged && p.model().status.anySelected
