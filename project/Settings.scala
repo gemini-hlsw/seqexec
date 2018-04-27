@@ -76,7 +76,6 @@ object Settings {
 
     // Java libraries
     val catsEffectVersion   = "0.10.1"
-    val catsMtlVersion      = "0.2.1"
     val catsVersion         = "1.1.0"
     val mouseVersion        = "0.17"
     val fs2Version          = "0.10.4"
@@ -153,7 +152,6 @@ object Settings {
 
     // ScalaZ
     val Cats             = Def.setting("org.typelevel" %%% "cats-core"           % LibraryVersions.catsVersion)
-    val CatsMtl          = Def.setting("org.typelevel" %%% "cats-mtl-core"       % LibraryVersions.catsMtlVersion)
     val CatsEffect       = Def.setting("org.typelevel" %%% "cats-effect"         % LibraryVersions.catsEffectVersion)
     val Fs2              = "co.fs2"                    %%  "fs2-core"            % LibraryVersions.fs2Version
     val Mouse            = Def.setting("org.typelevel" %%% "mouse"               % LibraryVersions.mouseVersion)
