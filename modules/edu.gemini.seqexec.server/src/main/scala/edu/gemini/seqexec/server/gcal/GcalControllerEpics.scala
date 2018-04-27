@@ -5,12 +5,8 @@ package edu.gemini.seqexec.server.gcal
 
 import edu.gemini.seqexec.server.{EpicsCodex, SeqAction}
 import edu.gemini.spModel.gemini.calunit.CalUnitParams.{Diffuser, Filter, Shutter}
+import cats.implicits._
 
-import scalaz.Scalaz._
-
-/**
-  * Created by jluhrs on 3/16/17.
-  */
 object GcalControllerEpics extends GcalController {
   import EpicsCodex._
   import GcalController._
@@ -168,7 +164,7 @@ object GcalControllerEpics extends GcalController {
       config.lampQh.map(v => setQHLampParams(encode(v.self))),
       config.lampXe.map(v => setXeLampParams(encode(v.self))),
       config.lampIr.map(v => setIrLampParams(encode(v.self)))
-    ).toList.collect { case Some(x) => x }.flatten ++
+    ).collect { case Some(x) => x }.flatten ++
       List(
         config.shutter.map(v => GcalEpics.instance.shutterCmd.setPosition(encode(v))),
         config.filter.map(v => GcalEpics.instance.filterCmd.setName(encode(v))),

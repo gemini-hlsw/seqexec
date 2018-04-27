@@ -18,13 +18,9 @@ import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
-
+import cats.implicits._
 import scalacss.ScalaCssReact._
 import scalacss._
-import scalaz.std.AllInstances._
-import scalaz.syntax.foldable._
-import scalaz.syntax.equal._
-import scalaz.syntax.std.option._
 import react.virtualized._
 
 object ColWidths {
@@ -74,9 +70,9 @@ object StepsTable {
   final case class Props(router: RouterCtl[SeqexecPages], stepsTable: ModelProxy[StepsTableAndStatusFocus], onStepToRun: Int => Callback) {
     def status: ClientStatus = stepsTable().status
     def steps: Option[StepsTableFocus] = stepsTable().stepsTable
-    val stepsList: List[Step] = ~steps.map(_.steps)
+    val stepsList: List[Step] = steps.map(_.steps).getOrElse(Nil)
     def rowCount: Int = stepsList.length
-    def rowGetter(idx: Int): StepRow = steps.flatMap(_.steps.index(idx)).fold(StepRow.Zero)(StepRow.apply)
+    def rowGetter(idx: Int): StepRow = steps.flatMap(_.steps.lift(idx)).fold(StepRow.Zero)(StepRow.apply)
     // Find out if offsets should be displayed
     val offsetsDisplay: OffsetsDisplay = stepsList.offsetsDisplay
   }
@@ -232,7 +228,7 @@ object StepsTable {
       // Recalculate the heights if needed
       val stepsPairs = next.stepsList.zip(cur.stepsList)
       val differentStepsStates = stepsPairs.collect {
-        case (cur, prev) if cur.status =/= prev.status => Callback.log(cur.id) >> tableRef.recomputeRowsHeightsCB(cur.id)
+        case (cur, prev) if cur.status =!= prev.status => Callback.log(cur.id) >> tableRef.recomputeRowsHeightsCB(cur.id)
       }
       Callback.sequence(differentStepsStates)
     }
@@ -245,7 +241,7 @@ object StepsTable {
         SeqexecStyles.stepsListPaneWithControls.when(p.status.isLogged || settingsDisplayed),
         p.steps.whenDefined { tab =>
           tab.stepConfigDisplayed.map { i =>
-            val steps = p.stepsList.index(i).getOrElse(Step.Zero)
+            val steps = p.stepsList.lift(i).getOrElse(Step.Zero)
             AutoSizer(AutoSizer.props(s => StepConfigTable(StepConfigTable.Props(steps, s))))
           }.getOrElse {
             AutoSizer(AutoSizer.props(s => ref.component(stepsTableProps(p)(s))(columns(p, s).map(_.vdomElement): _*)))

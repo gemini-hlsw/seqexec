@@ -64,7 +64,7 @@ lazy val edu_gemini_web_server_common = project
   .enablePlugins(GitBranchPrompt)
   .settings(commonSettings: _*)
   .settings(
-    libraryDependencies ++= Seq(ScalaZConcurrent) ++ Http4s ++ Logging
+    libraryDependencies ++= CatsEffect.value +: (Http4s ++ Logging)
   )
 
 lazy val edu_gemini_web_client_facades = project
@@ -112,6 +112,7 @@ lazy val edu_gemini_seqexec_web_server = project.in(file("modules/edu.gemini.seq
   .enablePlugins(GitBranchPrompt)
   .settings(commonSettings: _*)
   .settings(
+    addCompilerPlugin(Plugins.kindProjectorPlugin),
     libraryDependencies ++= Seq(UnboundId, JwtCore, Knobs) ++ Http4s ++ Logging,
     // Settings to optimize the use of sbt-revolver
     // Allows to read the generated JS on client
@@ -178,6 +179,7 @@ lazy val edu_gemini_seqexec_web_client = project.in(file("modules/edu.gemini.seq
     version in webpack := "3.5.5",
     libraryDependencies ++= Seq(
       JQuery.value,
+      CatsEffect.value,
       ScalaCSS.value,
       ScalaJSDom.value,
       JavaTimeJS.value,
@@ -204,8 +206,7 @@ lazy val edu_gemini_seqexec_server = project
   .settings(commonSettings: _*)
   .settings(
     libraryDependencies ++=
-      Seq(ScalaZStream,
-          Argonaut,
+      Seq(Argonaut,
           CommonsHttp,
           Squants.value,
           // OCS bundles
@@ -254,7 +255,7 @@ lazy val edu_gemini_seqexec_engine = project
   .settings(
     addCompilerPlugin(Plugins.kindProjectorPlugin),
     addCompilerPlugin(Plugins.paradisePlugin),
-    libraryDependencies ++= Seq(ScalaZStream, Log4s) ++ Monocle.value
+    libraryDependencies ++= Seq(Fs2, CatsEffect.value, Log4s) ++ Monocle.value
   )
 
 lazy val edu_gemini_epics_acm = project

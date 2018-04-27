@@ -3,33 +3,32 @@
 
 package edu.gemini.seqexec.web.server.http4s
 
-import org.log4s._
-import ch.qos.logback.core.Appender
+import cats.data.Kleisli
+import cats.effect.IO
+import cats.implicits._
 import ch.qos.logback.classic.spi.ILoggingEvent
-
+import ch.qos.logback.core.Appender
+import edu.gemini.seqexec.model.events._
+import fs2.async.mutable.Queue
 import edu.gemini.seqexec.server
-import edu.gemini.seqexec.model.events.SeqexecEvent
 import edu.gemini.seqexec.server.{SeqexecEngine, executeEngine}
 import edu.gemini.seqexec.web.server.OcsBuildInfo
-import edu.gemini.seqexec.web.server.security.{AuthenticationConfig, AuthenticationService, LDAPConfig}
 import edu.gemini.seqexec.web.server.logging.AppenderForClients
-import edu.gemini.web.server.common.{LogInitialization, StaticRoutes, RedirectToHttpsRoutes}
+import edu.gemini.seqexec.web.server.security.{AuthenticationConfig, AuthenticationService, LDAPConfig}
+import edu.gemini.web.server.common.{LogInitialization, RedirectToHttpsRoutes, StaticRoutes}
+import fs2.StreamApp.ExitCode
+import fs2.async.mutable.Topic
+import fs2.{Scheduler, Stream, StreamApp, async}
 import knobs._
+import mouse.all._
 import org.http4s.server.SSLKeyStoreSupport.StoreInfo
 import org.http4s.server.blaze.BlazeBuilder
-import org.http4s.server.Server
-import org.http4s.util.ProcessApp
+import org.log4s._
 import squants.time.Hours
 
-import scalaz.Scalaz._
-import scalaz._
-import scalaz.concurrent.Task
-import scalaz.concurrent.Task._
-import scalaz.stream.Process
-import scalaz.stream.async
-import scalaz.stream.async.mutable.Topic
+import scala.concurrent.ExecutionContext.Implicits.global
 
-object WebServerLauncher extends ProcessApp with LogInitialization {
+object WebServerLauncher extends StreamApp[IO] with LogInitialization {
   private val logger = getLogger
 
   final case class SSLConfig(keyStore: String, keyStorePwd: String, certPwd: String)
@@ -40,24 +39,24 @@ object WebServerLauncher extends ProcessApp with LogInitialization {
   final case class WebServerConfiguration(site: String, host: String, port: Int, insecurePort: Int, externalBaseUrl: String, devMode: Boolean, sslConfig: Option[SSLConfig])
 
   // Attempt to get the configuration file relative to the base dir
-  val configurationFile: Task[java.nio.file.Path] = baseDir.map(_.resolve("conf").resolve("app.conf"))
+  val configurationFile: IO[java.nio.file.Path] = baseDir.map(_.resolve("conf").resolve("app.conf"))
 
   // Read the config, first attempt the file or default to the classpath file
-  val defaultConfig: Task[Config] =
-    knobs.loadImmutable(ClassPathResource("app.conf").required :: Nil)
+  val defaultConfig: IO[Config] =
+    knobs.loadImmutable[IO](ClassPathResource("app.conf").required :: Nil)
 
-  val fileConfig: Task[Config] = configurationFile >>= { f =>
-    knobs.loadImmutable(FileResource(f.toFile).optional :: Nil)
+  val fileConfig: IO[Config] = configurationFile >>= { f =>
+    knobs.loadImmutable[IO](FileResource(f.toFile).optional :: Nil)
   }
 
-  val config: Task[Config] =
+  val config: IO[Config] =
     for {
       dc <- defaultConfig
       fc <- fileConfig
     } yield dc ++ fc
 
   // configuration specific to the web server
-  val serverConf: Task[WebServerConfiguration] =
+  val serverConf: IO[WebServerConfiguration] =
     config.map { cfg =>
       val site            = cfg.require[String]("seqexec-engine.site")
       val host            = cfg.require[String]("web-server.host")
@@ -68,19 +67,19 @@ object WebServerLauncher extends ProcessApp with LogInitialization {
       val keystore        = cfg.lookup[String]("web-server.tls.keyStore")
       val keystorePwd     = cfg.lookup[String]("web-server.tls.keyStorePwd")
       val certPwd         = cfg.lookup[String]("web-server.tls.certPwd")
-      val sslConfig       = (keystore |@| keystorePwd |@| certPwd)(SSLConfig.apply)
+      val sslConfig       = (keystore, keystorePwd, certPwd).mapN(SSLConfig.apply)
       WebServerConfiguration(site, host, port, insecurePort, externalBaseUrl, devMode.equalsIgnoreCase("dev"), sslConfig)
     }
 
   // Configuration of the ldap clients
-  val ldapConf: Task[LDAPConfig] =
+  val ldapConf: IO[LDAPConfig] =
     config.map { cfg =>
       val urls = cfg.require[List[String]]("authentication.ldapURLs")
       LDAPConfig(urls)
     }
 
   // Configuration of the authentication service
-  val authConf: Kleisli[Task, WebServerConfiguration, AuthenticationConfig] = Kleisli { conf =>
+  val authConf: Kleisli[IO, WebServerConfiguration, AuthenticationConfig] = Kleisli { conf =>
     for {
       ld <- ldapConf
       cfg <- config
@@ -97,15 +96,15 @@ object WebServerLauncher extends ProcessApp with LogInitialization {
   /**
     * Configures the Authentication service
     */
-  def authService: Kleisli[Task, AuthenticationConfig, AuthenticationService] = Kleisli { conf =>
-    Task.delay(AuthenticationService(conf))
+  def authService: Kleisli[IO, AuthenticationConfig, AuthenticationService] = Kleisli { conf =>
+    IO.apply(AuthenticationService(conf))
   }
 
   /**
     * Configures and builds the web server
     */
-  def webServer(as: AuthenticationService, events: (server.EventQueue, Topic[SeqexecEvent]), se: SeqexecEngine): Kleisli[Task, WebServerConfiguration, Server] = Kleisli { conf =>
-    val builder = BlazeBuilder.bindHttp(conf.port, conf.host)
+  def webServer(as: AuthenticationService, events: (server.EventQueue, Topic[IO, SeqexecEvent]), se: SeqexecEngine): Kleisli[Stream[IO, ?], WebServerConfiguration, StreamApp.ExitCode] = Kleisli { conf =>
+    val builder = BlazeBuilder[IO].bindHttp(conf.port, conf.host)
       .withWebSockets(true)
       .mountService(new StaticRoutes(index(conf.site, conf.devMode, OcsBuildInfo.builtAtMillis), conf.devMode, OcsBuildInfo.builtAtMillis).service, "/")
       .mountService(new SeqexecCommandRoutes(as, events._1, se).service, "/api/seqexec/commands")
@@ -113,31 +112,29 @@ object WebServerLauncher extends ProcessApp with LogInitialization {
     conf.sslConfig.fold(builder) { ssl =>
       val storeInfo = StoreInfo(ssl.keyStore, ssl.keyStorePwd)
       builder.withSSL(storeInfo, ssl.certPwd, "TLS")
-    }.start
+    }.serve
   }
 
-  def redirectWebServer: Kleisli[Task, WebServerConfiguration, Server] = Kleisli { conf =>
-    val builder = BlazeBuilder.bindHttp(conf.insecurePort, conf.host)
+  def redirectWebServer: Kleisli[Stream[IO, ?], WebServerConfiguration, StreamApp.ExitCode] = Kleisli { conf =>
+    val builder = BlazeBuilder[IO].bindHttp(conf.insecurePort, conf.host)
       .mountService(new RedirectToHttpsRoutes(443, conf.externalBaseUrl).service, "/")
-    builder.start
+    builder.serve
   }
 
-  def logStart: Kleisli[Task, WebServerConfiguration, Unit] = Kleisli { conf =>
-    val msg = s"Start web server for site ${conf.site} on ${conf.devMode ? "dev" | "production"} mode"
-    Task.delay { logger.info(msg) }
+  def logStart: Kleisli[IO, WebServerConfiguration, Unit] = Kleisli { conf =>
+    val msg = s"Start web server for site ${conf.site} on ${conf.devMode.fold("dev", "production")} mode"
+    IO.apply { logger.info(msg) }
   }
 
   // We need to manually update the configuration of the logging subsystem
   // to support capturing log messages and forward them to the clients
-  def logToClients(out: Topic[SeqexecEvent]): Task[Appender[ILoggingEvent]] = Task.delay {
+  def logToClients(out: Topic[IO, SeqexecEvent]): IO[Appender[ILoggingEvent]] = IO.apply {
+    import ch.qos.logback.classic.{AsyncAppender, Logger, LoggerContext}
     import org.slf4j.LoggerFactory
-    import ch.qos.logback.classic.LoggerContext
-    import ch.qos.logback.classic.Logger
-    import ch.qos.logback.classic.AsyncAppender
 
     val asyncAppender = new AsyncAppender
     val appender = new AppenderForClients(out)
-    Option(LoggerFactory.getILoggerFactory()).collect {
+    Option(LoggerFactory.getILoggerFactory).collect {
       case lc: LoggerContext => lc
     }.foreach { ctx =>
       asyncAppender.setContext(ctx)
@@ -158,34 +155,40 @@ object WebServerLauncher extends ProcessApp with LogInitialization {
   /**
     * Reads the configuration and launches the web server
     */
-  override def process(args: List[String]): Process[Task, Nothing] = {
-    val engineTask = for {
-      _    <- configLog // Initialize log before the engine is setup
-      c    <- config
-      seqc <- SeqexecEngine.seqexecConfiguration.run(c)
-    } yield SeqexecEngine(seqc)
+  def stream(args: List[String], requestShutdown: IO[Unit]): Stream[IO, ExitCode] = {
+    val engineIO: IO[SeqexecEngine] =
+      for {
+        _    <- configLog // Initialize log before the engine is setup
+        c    <- config
+        seqc <- SeqexecEngine.seqexecConfiguration.run(c)
+        se   = SeqexecEngine(seqc)
+      } yield se
 
-    val inq  = async.boundedQueue[executeEngine.EventType](10)
-    val out  = async.topic[SeqexecEvent]()
+    def webServerIO(in: Queue[IO, executeEngine.EventType], out: Topic[IO, SeqexecEvent], et: SeqexecEngine): IO[Stream[IO, ExitCode]] =
+      // Launch web server
+      for {
+        wc <- serverConf
+        ac <- authConf.run(wc)
+        as <- authService.run(ac)
+        _  <- logStart.run(wc)
+        _  <- logToClients(out)
+      } yield Stream(redirectWebServer.run(wc), webServer(as, (in, out), et).run(wc)).join(2)
 
-    // It should be possible to cleanup the engine at shutdown in this function
-    def cleanup = (s: SeqexecEngine) => Process.eval_(Task.now(()))
-    Process.bracket(engineTask)(cleanup) { case et =>
-        val pt = Nondeterminism[Task].both(
-          // Launch engine and broadcast channel
-          et.eventProcess(inq).to(out.publish).run,
-          // Launch web server
-          for {
-            wc <- serverConf
-            ac <- authConf.run(wc)
-            as <- authService.run(ac)
-            rd <- redirectWebServer.run(wc)
-            _  <- logStart.run(wc)
-            _  <- logToClients(out)
-            ws <- webServer(as, (inq, out), et).run(wc)
-          } yield (ws, rd)
-        )
-      Process.eval_(pt.map(_._2))
+    // I have taken this from the examples at:
+    // https://github.com/gvolpe/advanced-http4s/blob/master/src/main/scala/com/github/gvolpe/fs2/PubSub.scala
+    // It's not very clear why we need to run this inside a Scheduler
+    Scheduler[IO](corePoolSize = 4).flatMap { implicit S =>
+      for {
+        inq <- Stream.eval(async.boundedQueue[IO, executeEngine.EventType](10))
+        out <- Stream.eval(async.topic[IO, SeqexecEvent](NullEvent))
+        // TODO Run these inside a stream
+        engine = engineIO.unsafeRunSync()
+        ws = webServerIO(inq, out, engine).unsafeRunSync()
+        ws <- Stream(
+          engine.eventStream(inq).to(out.publish),
+          ws
+        ).join(2).drain  ++ Stream.emit(ExitCode.Success)
+      } yield ws
     }
   }
 

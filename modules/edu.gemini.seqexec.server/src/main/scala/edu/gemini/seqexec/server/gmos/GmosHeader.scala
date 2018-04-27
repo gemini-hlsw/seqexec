@@ -13,10 +13,9 @@ import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.data.YesNoType
 import edu.gemini.spModel.gemini.gmos.InstGmosCommon.IS_MOS_PREIMAGING_PROP
 import edu.gemini.spModel.seqcomp.SeqConfigNames.INSTRUMENT_KEY
-
-import scalaz.Scalaz._
-import scalaz._
-import scalaz.concurrent.Task
+import cats.data.EitherT
+import cats.effect.IO
+import cats.implicits._
 
 final case class GmosHeader(hs: DhsClient, gmosObsReader: GmosHeader.ObsKeywordsReader, gmosReader: GmosHeader.InstKeywordsReader, tcsKeywordsReader: TcsKeywordsReader) extends Header {
   override def sendBefore(id: ImageFileId, inst: String): SeqAction[Unit] ={
@@ -103,7 +102,7 @@ object GmosHeader {
   }
 
   final case class ObsKeywordsReaderImpl(config: Config) extends ObsKeywordsReader {
-    override def preimage: SeqAction[YesNoType] = EitherT(Task.now(config.extract(INSTRUMENT_KEY / IS_MOS_PREIMAGING_PROP)
+    override def preimage: SeqAction[YesNoType] = EitherT(IO.pure(config.extract(INSTRUMENT_KEY / IS_MOS_PREIMAGING_PROP)
       .as[YesNoType].leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))))
   }
 

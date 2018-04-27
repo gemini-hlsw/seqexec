@@ -3,6 +3,8 @@
 
 package edu.gemini.seqexec.model
 
+import cats.Eq
+
 // Shared classes used for authentication
 final case class UserLoginRequest(username: String, password: String)
 final case class UserDetails(username: String, displayName: String)
@@ -13,4 +15,6 @@ object UserDetails {
   type DisplayName = String
   type Groups = List[String]
   type Thumbnail = Array[Byte]
+
+  implicit val eq: Eq[UserDetails] = Eq.fromUniversalEquals
 }

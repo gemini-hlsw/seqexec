@@ -3,13 +3,12 @@
 
 package edu.gemini.seqexec.web.client.semanticui.elements.icon
 
+import cats.Eq
 import edu.gemini.seqexec.web.client.semanticui.Size
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{Callback, ScalaComponent}
 import scalacss.ScalaCssReact._
-
-import scalaz.syntax.equal._
-import scalaz.Equal
+import cats.implicits._
 
 /**
   * Semantic UI Icon component
@@ -653,7 +652,7 @@ object Icon {
     case object Horizontally extends Flipped
     case object Vertically extends Flipped
 
-    implicit val equal: Equal[Flipped] = Equal.equalA
+    implicit val equal: Eq[Flipped] = Eq.fromUniversalEquals
   }
 
   sealed trait Rotated
@@ -663,7 +662,7 @@ object Icon {
     case object Clockwise extends Rotated
     case object CounterClockwise extends Rotated
 
-    implicit val equal: Equal[Rotated] = Equal.equalA
+    implicit val equal: Eq[Rotated] = Eq.fromUniversalEquals
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))

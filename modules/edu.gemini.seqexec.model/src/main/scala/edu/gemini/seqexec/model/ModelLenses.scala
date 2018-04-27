@@ -4,28 +4,21 @@
 package edu.gemini.seqexec.model
 
 import edu.gemini.seqexec.model.Model._
-import edu.gemini.seqexec.model.events.{SeqexecEvent, SeqexecModelUpdate}
-import edu.gemini.seqexec.model.events.SeqexecEvent._
+import edu.gemini.seqexec.model.events._
 
 import monocle.{Lens, Optional, Prism, Traversal}
 import monocle.macros.{GenLens, GenPrism}
 import monocle.function.At.{at, atMap}
-import monocle.function.FilterIndex.{filterIndex, mapFilterIndex}
+import monocle.function.FilterIndex.{filterIndex}
+import monocle.unsafe.MapTraversal._
 import monocle.std.option.some
 import monocle.Iso
 
-import scalaz.Applicative
-import scalaz.std.list._
-import scalaz.std.anyVal._
-import scalaz.std.map._
-import scalaz.syntax.std.string._
-import scalaz.syntax.equal._
-import scalaz.syntax.show._
-import scalaz.syntax.applicative._
-import scalaz.syntax.traverse._
+import cats._
+import cats.implicits._
+import mouse.all._
 
 trait ModelLenses {
-
     // Some useful Monocle lenses
   val obsNameL: Lens[SequenceView, String] = GenLens[SequenceView](_.metadata.name)
   // From step to standard step
@@ -122,9 +115,9 @@ trait ModelLenses {
   def filterEntry[K, V](predicate: (K, V) => Boolean): Traversal[Map[K, V], V] =
     new Traversal[Map[K, V], V]{
       def modifyF[F[_]: Applicative](f: V => F[V])(s: Map[K, V]): F[Map[K, V]] =
-        s.map { case (k, v) =>
-          k -> (if(predicate(k, v)) f(v) else v.pure[F])
-        }.sequenceU
+        s.toList.traverse{ case (k, v) =>
+          (if(predicate(k, v)) f(v) else v.pure[F]).tupleLeft(k)
+        }.map(kvs => kvs.toMap)
     }
 
   // Find the Parameters of the steps containing science steps
@@ -138,11 +131,11 @@ trait ModelLenses {
     paramValueL(SystemName.observe.withParam("object")) ^<-? // find the target name
     some                                                     // focus on the option
 
-  val stringToStepTypeP: Prism[String, StepType] = Prism(StepType.fromString)(_.shows)
+  val stringToStepTypeP: Prism[String, StepType] = Prism(StepType.fromString)(_.show)
   private[model] def telescopeOffsetPI: Iso[Double, TelescopeOffset.P] = Iso(TelescopeOffset.P.apply)(_.value)
   private[model] def telescopeOffsetQI: Iso[Double, TelescopeOffset.Q] = Iso(TelescopeOffset.Q.apply)(_.value)
-  val stringToDoubleP: Prism[String, Double] = Prism((x: String) => x.parseDouble.toOption)(_.shows)
-  val stringToIntP: Prism[String, Int] = Prism((x: String) => x.parseInt.toOption)(_.shows)
+  val stringToDoubleP: Prism[String, Double] = Prism((x: String) => x.parseDouble.toOption)(_.show)
+  val stringToIntP: Prism[String, Int] = Prism((x: String) => x.parseInt.toOption)(_.show)
 
   def stepObserveOptional[A](systemName: SystemName, param: String, prism: Prism[String, A]): Optional[Step, A] =
     standardStepP                            ^|-> // which is a standard step
@@ -164,7 +157,7 @@ trait ModelLenses {
   val observeCoaddsO: Optional[Step, Int] =
     stepObserveOptional(SystemName.observe, "coadds", stringToIntP)
 
-  val stringToFPUModeP: Prism[String, FPUMode] = Prism(FPUMode.fromString)(_.shows)
+  val stringToFPUModeP: Prism[String, FPUMode] = Prism(FPUMode.fromString)(_.show)
   // Composite lens to find the instrument fpu model
   val instrumentFPUModeO: Optional[Step, FPUMode] =
     stepObserveOptional(SystemName.instrument, "fpuMode", stringToFPUModeP)

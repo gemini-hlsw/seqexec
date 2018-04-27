@@ -8,20 +8,18 @@ import java.time.LocalDate
 import edu.gemini.seqexec.server.DhsClient.{Int32Keyword, KeywordBag, Permanent}
 import org.scalatest.{FlatSpec, Matchers}
 
-import scalaz.\/-
-
 class DhsClientSimSpec extends FlatSpec with Matchers {
   "DhsClientSim" should "produce data labels for today" in {
-      DhsClientSim(LocalDate.of(2016, 4, 15)).createImage(DhsClient.ImageParameters(Permanent, Nil)).run.unsafePerformSync should matchPattern {
-        case \/-("S20160415S0001") =>
+      DhsClientSim(LocalDate.of(2016, 4, 15)).createImage(DhsClient.ImageParameters(Permanent, Nil)).value.unsafeRunSync() should matchPattern {
+        case Right("S20160415S0001") =>
       }
     }
   it should "accept keywords" in {
     val client = DhsClientSim(LocalDate.of(2016, 4, 15))
-    client.createImage(DhsClient.ImageParameters(Permanent, Nil)).run.unsafePerformSync.fold(
+    client.createImage(DhsClient.ImageParameters(Permanent, Nil)).value.unsafeRunSync().fold(
       _ => fail(),
-      id => client.setKeywords(id, KeywordBag(Int32Keyword("Key", 10)), finalFlag = true).run.unsafePerformSync should matchPattern {
-        case \/-(()) =>
+      id => client.setKeywords(id, KeywordBag(Int32Keyword("Key", 10)), finalFlag = true).value.unsafeRunSync() should matchPattern {
+        case Right(()) =>
       }
     )
   }

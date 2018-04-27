@@ -3,6 +3,8 @@
 
 package edu.gemini.seqexec.engine
 
+import java.util.UUID
+
 import edu.gemini.seqexec.model.Model.{SequenceMetadata, SequenceState, StepConfig}
 import edu.gemini.seqexec.model.Model.Instrument.F2
 import edu.gemini.seqexec.model.{ActionType, UserDetails}
@@ -11,11 +13,10 @@ import scala.Function.const
 import org.scalatest.FlatSpec
 import org.scalatest.Inside.inside
 import org.scalatest.Matchers._
+import cats.effect.IO
+import fs2.Stream
 
-import scalaz.concurrent.Task
-import scalaz.stream.Process
-
-import java.util.UUID
+import scala.concurrent.ExecutionContext.Implicits.global
 
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 class SequenceSpec extends FlatSpec {
@@ -61,11 +62,11 @@ class SequenceSpec extends FlatSpec {
 
   def simpleStep(id: Int, breakpoint: Boolean): Step =
     Step.init(
-      id,
-      None,
-      config,
-      Set.empty,
-      List(
+      id = id,
+      fileId = None,
+      config = config,
+      resources = Set.empty,
+      executions = List(
         List(action, action), // Execution
         List(action) // Execution
       )
@@ -79,25 +80,25 @@ class SequenceSpec extends FlatSpec {
   }
 
   def runToCompletion(s0: Engine.State[Unit]): Option[Engine.State[Unit]] = {
-    executionEngine.process(Process.eval(Task.now(Event.start(seqId, user, UUID.randomUUID()))))(s0).drop(1).takeThrough(
+    executionEngine.process(Stream.eval(IO.pure(Event.start(seqId, user, UUID.randomUUID))))(s0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
-    ).runLast.unsafePerformSync.map(_._2)
+    ).compile.last.unsafeRunSync.map(_._2)
   }
 
   it should "stop on breakpoints" in {
 
     val qs0: Engine.State[Unit] =
       Engine.State[Unit](
-        (),
-        Map(
+        userData = (),
+        sequences = Map(
           (seqId,
-           Sequence.State.init(
-             Sequence(
-               seqId,
-               SequenceMetadata(F2, None, ""),
-               List(simpleStep(1, breakpoint = false), simpleStep(2, breakpoint = true))
-             )
-           )
+            Sequence.State.init(
+              Sequence(
+                id = seqId,
+                metadata = SequenceMetadata(F2, None, ""),
+                steps = List(simpleStep(1, breakpoint = false), simpleStep(2, breakpoint = true))
+              )
+            )
           )
         )
       )
@@ -116,16 +117,16 @@ class SequenceSpec extends FlatSpec {
 
     val qs0: Engine.State[Unit] =
       Engine.State[Unit](
-        (),
-        Map(
+        userData = (),
+        sequences = Map(
           (seqId,
-           Sequence.State.init(
-             Sequence(
-               seqId,
-               SequenceMetadata(F2, None, ""),
-               List(simpleStep(1, breakpoint = false), simpleStep(2, breakpoint = true), simpleStep(3, breakpoint = false))
-             )
-           )
+            Sequence.State.init(
+              Sequence(
+                id = seqId,
+                metadata = SequenceMetadata(F2, None, ""),
+                steps = List(simpleStep(1, breakpoint = false), simpleStep(2, breakpoint = true), simpleStep(3, breakpoint = false))
+              )
+            )
           )
         )
       )
@@ -151,7 +152,7 @@ class SequenceSpec extends FlatSpec {
   // TODO: Share these fixtures with StepSpec
   private val observeResult: Result.Response = Result.Observed("dummyId")
   private val result: Result = Result.OK(observeResult)
-  private val action: Action = fromTask(ActionType.Undefined, Task(result))
+  private val action: Action = fromIO(ActionType.Undefined, IO(result))
   private val completedAction: Action = action.copy(state = Action.State(Action.Completed(observeResult), Nil))
   private val config: StepConfig = Map()
   def simpleStep2(pending: List[Actions], focus: Execution, done: List[Results]): Step.Zipper = {
@@ -161,7 +162,7 @@ class SequenceSpec extends FlatSpec {
     }
 
     Step.Zipper(1, None, config, Set.empty, breakpoint = Step.BreakpointMark(false), Step.SkipMark(false), pending, focus, done.map(_.map{r =>
-      val x = fromTask(ActionType.Observe, Task(r))
+      val x = fromIO(ActionType.Observe, IO(r))
       x.copy(state = Execution.actionStateFromResult(r)(x.state))
     }), rollback)
   }

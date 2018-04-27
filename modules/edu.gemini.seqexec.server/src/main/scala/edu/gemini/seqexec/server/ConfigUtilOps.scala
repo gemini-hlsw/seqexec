@@ -10,8 +10,8 @@ import java.beans.PropertyDescriptor
 
 import scala.reflect.ClassTag
 import scala.collection.breakOut
-import scalaz._
-import Scalaz._
+
+import cats.implicits._
 
 /**
  * Utility operations to work with Configs from the ODB
@@ -32,7 +32,7 @@ object ConfigUtilOps {
   def explainExtractError(e: ExtractFailure): SeqexecFailure =
     SeqexecFailure.Unexpected(ConfigUtilOps.explain(e))
 
-  implicit class TrySeqed[A] private [server] (r: ExtractFailure \/ A) {
+  implicit class TrySeqed[A] private [server] (r: Either[ExtractFailure, A]) {
     def asTrySeq: TrySeq[A] = r.leftMap(explainExtractError)
   }
 
@@ -47,20 +47,16 @@ object ConfigUtilOps {
     def itemValue(a: A, key: ItemKey): Option[AnyRef]
   }
 
-  implicit val ConfigExtractItem: ExtractItem[Config] = new ExtractItem[Config] {
-    override def itemValue(c: Config, key: ItemKey): Option[AnyRef] = Option(c.getItemValue(key))
-  }
+  implicit val ConfigExtractItem: ExtractItem[Config] = (c: Config, key: ItemKey) => Option(c.getItemValue(key))
 
-  implicit val ConfigSequenceExtractItem: ExtractItem[ConfigSequence] = new ExtractItem[ConfigSequence] {
-    override def itemValue(c: ConfigSequence, key: ItemKey): Option[AnyRef] = Option(c.getItemValue(0, key))
-  }
+  implicit val ConfigSequenceExtractItem: ExtractItem[ConfigSequence] = (c: ConfigSequence, key: ItemKey) => Option(c.getItemValue(0, key))
 
   @SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf"))
   final class Extracted[C] private [server] (c: C, key: ItemKey)(implicit ei: ExtractItem[C]) {
-    def as[A](implicit clazz: ClassTag[A]): ExtractFailure \/ A =
+    def as[A](implicit clazz: ClassTag[A]): Either[ExtractFailure, A] =
       for {
-        v <- ei.itemValue(c, key) \/> KeyNotFound(key)
-        b <- \/.fromTryCatchNonFatal(clazz.runtimeClass.cast(v).asInstanceOf[A]).leftMap(e => ConversionError(key,e.getMessage))
+        v <- Either.fromOption(ei.itemValue(c, key), KeyNotFound(key))
+        b <- Either.catchNonFatal(clazz.runtimeClass.cast(v).asInstanceOf[A]).leftMap(e => ConversionError(key,e.getMessage))
       } yield b
   }
 

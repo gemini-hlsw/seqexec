@@ -6,7 +6,7 @@ package edu.gemini.seqexec.model
 import edu.gemini.seqexec.model.Model.{Instrument, Step}
 import edu.gemini.seqexec.model.Model.Instrument._
 
-import scalaz.syntax.std.boolean._
+import mouse.boolean._
 
 object operations {
   // Operations possible at the sequence level

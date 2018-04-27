@@ -75,23 +75,24 @@ object Settings {
     val scalaJSReactClipboard   = "0.1.0"
 
     // Java libraries
-    val scalaZ       = "7.2.20"
-    val scalaZStream = "0.8.6a"
-
+    val catsEffectVersion   = "0.10.1"
+    val catsVersion         = "1.1.0"
+    val mouseVersion        = "0.17"
+    val fs2Version          = "0.10.4"
     // Scala libraries
-    val http4s       = "0.16.6a"
+    val http4s       = "0.18.9"
     val squants      = "1.3.0"
     val argonaut     = "6.2.1"
     val commonsHttp  = "2.0.2"
     val unboundId    = "3.2.1"
     val jwt          = "0.14.1"
     val slf4j        = "1.7.25"
-    val log4s        = "1.4.0"
+    val log4s        = "1.6.1"
     val logback      = "1.2.3"
     val janino       = "3.0.8"
     val logstash     = "4.11"
-    val knobs        = "4.0.31-scalaz-7.2"
-    val monocle      = "1.5.0"
+    val knobs        = "6.0.33"
+    val monocle      = "1.5.1-cats"
 
     // test libraries
     val scalaTest             = "3.0.5"
@@ -103,7 +104,7 @@ object Settings {
     val reactJS          = "15.6.1"
     val jQuery           = "3.2.1"
     val semanticUI       = "2.2.10"
-    val ocsVersion       = "2018001.1.0"
+    val ocsVersion       = "2018101.1.1"
     val uglifyJs         = "1.0.0-beta.3"
     val reactVirtualized = "9.18.0"
     val reactClipboard   = "5.0.0"
@@ -123,10 +124,8 @@ object Settings {
 
     // Test Libraries
     val TestLibs = Def.setting(Seq(
-      "org.scalatest"              %%% "scalatest"                 % LibraryVersions.scalaTest           % "test",
-      "org.scalacheck"             %%% "scalacheck"                % LibraryVersions.scalaCheck          % "test",
-      "com.github.alexarchambault" %%% "scalacheck-shapeless_1.13" % LibraryVersions.scalaCheckShapeless % "test",
-      "org.typelevel"              %%% "discipline"                % LibraryVersions.discipline          % "test"
+      "org.typelevel"              %%% "cats-testkit"              % LibraryVersions.catsVersion         % "test",
+      "com.github.alexarchambault" %%% "scalacheck-shapeless_1.13" % LibraryVersions.scalaCheckShapeless % "test"
     ))
 
     val Argonaut    = "io.argonaut"        %% "argonaut"                          % LibraryVersions.argonaut
@@ -152,9 +151,10 @@ object Settings {
     val JavaLogJS   = Def.setting("org.scala-js"      %%% "scalajs-java-logging" % LibraryVersions.javaLogJS)
 
     // ScalaZ
-    val ScalaZCore       = Def.setting("org.scalaz" %%% "scalaz-core"         % LibraryVersions.scalaZ)
-    val ScalaZConcurrent = "org.scalaz"             %%  "scalaz-concurrent"   % LibraryVersions.scalaZ
-    val ScalaZStream     = "org.scalaz.stream"      %%  "scalaz-stream"       % LibraryVersions.scalaZStream
+    val Cats             = Def.setting("org.typelevel" %%% "cats-core"           % LibraryVersions.catsVersion)
+    val CatsEffect       = Def.setting("org.typelevel" %%% "cats-effect"         % LibraryVersions.catsEffectVersion)
+    val Fs2              = "co.fs2"                    %%  "fs2-core"            % LibraryVersions.fs2Version
+    val Mouse            = Def.setting("org.typelevel" %%% "mouse"               % LibraryVersions.mouseVersion)
 
     // Server side libraries
     val Http4s  = Seq(
@@ -162,9 +162,10 @@ object Settings {
       "org.http4s" %% "http4s-blaze-server" % LibraryVersions.http4s)
 
     val Monocle  = Def.setting(Seq(
-      "com.github.julien-truffaut" %%% "monocle-core"  % LibraryVersions.monocle,
-      "com.github.julien-truffaut" %%% "monocle-macro" % LibraryVersions.monocle,
-      "com.github.julien-truffaut" %%% "monocle-law"   % LibraryVersions.monocle % "test"))
+      "com.github.julien-truffaut" %%% "monocle-core"   % LibraryVersions.monocle,
+      "com.github.julien-truffaut" %%% "monocle-macro"  % LibraryVersions.monocle,
+      "com.github.julien-truffaut" %%% "monocle-unsafe" % LibraryVersions.monocle,
+      "com.github.julien-truffaut" %%% "monocle-law"    % LibraryVersions.monocle % "test"))
 
     // Client Side JS libraries
     val ReactScalaJS = Def.setting(Seq(

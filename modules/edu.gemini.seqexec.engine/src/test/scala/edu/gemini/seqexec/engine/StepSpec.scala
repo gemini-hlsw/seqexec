@@ -3,21 +3,21 @@
 
 package edu.gemini.seqexec.engine
 
-import edu.gemini.seqexec.model.Model.{SequenceMetadata, SequenceState, StepConfig, StepState}
-import edu.gemini.seqexec.model.Model.Instrument.{F2, GmosS}
-import org.scalatest._
-import Matchers._
-import Inside._
-import edu.gemini.seqexec.model.Model.Resource
+import java.util.UUID
 
-import scalaz.concurrent.Task
-import scalaz.stream.{Process, async}
+import cats.data.Kleisli
+import cats.effect.IO
+import edu.gemini.seqexec.model.Model.Instrument.{F2, GmosS}
+import edu.gemini.seqexec.model.Model.{Resource, SequenceMetadata, SequenceState, StepConfig, StepState}
 import edu.gemini.seqexec.model.{ActionType, UserDetails}
+import fs2.async.mutable.Queue
+import fs2.{Stream, async}
+import org.scalatest.Inside._
+import org.scalatest.Matchers._
+import org.scalatest._
 
 import scala.Function.const
-import scalaz.Kleisli
-
-import java.util.UUID
+import scala.concurrent.ExecutionContext.Implicits.global
 
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 class StepSpec extends FlatSpec {
@@ -30,57 +30,86 @@ class StepSpec extends FlatSpec {
   }
   private val executionEngine = new Engine[Unit, Unit]
 
+  private val observeResult = Result.Observed("dummyId")
+  private val result = Result.OK(observeResult)
+  private val failure = Result.Error("Dummy error")
+  private val actionFailed =  fromIO(ActionType.Undefined, IO(failure)).copy(state = Action.State(Action.Failed(failure), Nil))
+  private val action: Action = fromIO(ActionType.Undefined, IO(result))
+  private val actionCompleted: Action = action.copy(state = Action.State(Action.Completed(observeResult), Nil))
+  private val config: StepConfig = Map.empty
+  def simpleStep(pending: List[Actions], focus: Execution, done: List[Results]): Step.Zipper = {
+    val rollback: (Execution, List[Actions]) = done.map(_.map(const(action))) ++ List(focus.execution.map(const(action))) ++ pending match {
+      case Nil => (Execution.empty, Nil)
+      case x::xs => (Execution(x), xs)
+    }
+
+    Step.Zipper(1, None, config, Set.empty, breakpoint = Step.BreakpointMark(false), skipMark = Step.SkipMark(false), pending, focus, done.map(_.map{ r =>
+      val x = fromIO(ActionType.Observe, IO(r))
+      x.copy(state = Execution.actionStateFromResult(r)(x.state))
+    }), rollback)
+  }
+
+  val stepz0: Step.Zipper   = simpleStep(Nil, Execution.empty, Nil)
+  val stepza0: Step.Zipper  = simpleStep(List(List(action)), Execution.empty, Nil)
+  val stepza1: Step.Zipper  = simpleStep(List(List(action)), Execution(List(actionCompleted)), Nil)
+  val stepzr0: Step.Zipper  = simpleStep(Nil, Execution.empty, List(List(result)))
+  val stepzr1: Step.Zipper  = simpleStep(Nil, Execution(List(actionCompleted, actionCompleted)), Nil)
+  val stepzr2: Step.Zipper  = simpleStep(Nil, Execution(List(actionCompleted, actionCompleted)), List(List(result)))
+  val stepzar0: Step.Zipper = simpleStep(Nil, Execution(List(actionCompleted, action)), Nil)
+  val stepzar1: Step.Zipper = simpleStep(List(List(action)), Execution(List(actionCompleted, actionCompleted)), List(List(result)))
+  private val startEvent = Event.start(seqId, user, UUID.randomUUID())
+
   /**
     * Emulates TCS configuration in the real world.
     *
     */
-  val configureTcs: Action  = fromTask(ActionType.Configure(Resource.TCS),
+  val configureTcs: Action  = fromIO(ActionType.Configure(Resource.TCS),
     for {
-      _ <- Task(println("System: Start TCS configuration"))
-      _ <- Task(Thread.sleep(200))
-      _ <- Task(println ("System: Complete TCS configuration"))
+      _ <- IO(println("System: Start TCS configuration"))
+      _ <- IO(Thread.sleep(200))
+      _ <- IO(println ("System: Complete TCS configuration"))
     } yield Result.OK(Result.Configured(Resource.TCS)))
 
   /**
     * Emulates Instrument configuration in the real world.
     *
     */
-  val configureInst: Action  = fromTask(ActionType.Configure(GmosS),
+  val configureInst: Action  = fromIO(ActionType.Configure(GmosS),
     for {
-      _ <- Task(println("System: Start Instrument configuration"))
-      _ <- Task(Thread.sleep(150))
-      _ <- Task(println("System: Complete Instrument configuration"))
+      _ <- IO(println("System: Start Instrument configuration"))
+      _ <- IO(Thread.sleep(150))
+      _ <- IO(println("System: Complete Instrument configuration"))
     } yield Result.OK(Result.Configured(GmosS)))
 
   /**
     * Emulates an observation in the real world.
     *
     */
-  val observe: Action  = fromTask(ActionType.Observe,
+  val observe: Action  = fromIO(ActionType.Observe,
     for {
-    _ <- Task(println("System: Start observation"))
-    _ <- Task(Thread.sleep(200))
-    _ <- Task(println ("System: Complete observation"))
+    _ <- IO(println("System: Start observation"))
+    _ <- IO(Thread.sleep(200))
+    _ <- IO(println ("System: Complete observation"))
   } yield Result.OK(Result.Observed("DummyFileId")))
 
-  def error(errMsg: String): Action  = fromTask(ActionType.Undefined,
-    Task {
+  def error(errMsg: String): Action  = fromIO(ActionType.Undefined,
+    IO {
       Thread.sleep(200)
       Result.Error(errMsg)
     }
   )
 
-  def triggerPause(q: async.mutable.Queue[executionEngine.EventType]): Action = fromTask(ActionType.Undefined,
+  def triggerPause(q: async.mutable.Queue[IO, executionEngine.EventType]): Action = fromIO(ActionType.Undefined,
     for {
-      _ <- q.enqueueOne(Event.pause(seqId, user))
+      _ <- q.enqueue1(Event.pause(seqId, user))
       // There is not a distinct result for Pause because the Pause action is a
       // trick for testing but we don't need to support it in real life, the pause
       // input event is enough.
     } yield Result.OK(Result.Configured(Resource.TCS)))
 
-  def triggerStart(q: async.mutable.Queue[executionEngine.EventType]): Action = fromTask(ActionType.Undefined,
+  def triggerStart(q: IO[async.mutable.Queue[IO, executionEngine.EventType]]): Action = fromIO(ActionType.Undefined,
     for {
-      _ <- q.enqueueOne(Event.start(seqId, user, UUID.randomUUID()))
+      _ <- q.map(_.enqueue1(Event.start(seqId, user, UUID.randomUUID())))
       // Same case that the pause action
     } yield Result.OK(Result.Configured(Resource.TCS)))
 
@@ -92,15 +121,15 @@ class StepSpec extends FlatSpec {
   }
 
   def runToCompletion(s0: Engine.State[Unit]): Option[Engine.State[Unit]] = {
-    executionEngine.process(Process.eval(Task.now(Event.start(seqId, user, UUID.randomUUID()))))(s0).drop(1).takeThrough(
+    executionEngine.process(Stream.eval(IO.pure(Event.start(seqId, user, UUID.randomUUID()))))(s0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
-    ).runLast.unsafePerformSync.map(_._2)
+    ).compile.last.unsafeRunSync.map(_._2)
   }
 
   def runToCompletionL(s0: Engine.State[Unit]): List[Engine.State[Unit]] = {
-    executionEngine.process(Process.eval(Task.now(Event.start(seqId, user, UUID.randomUUID()))))(s0).drop(1).takeThrough(
+    executionEngine.process(Stream.eval(IO.pure(Event.start(seqId, user, UUID.randomUUID()))))(s0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
-    ).runLog.unsafePerformSync.map(_._2).toList
+    ).compile.toVector.unsafeRunSync.map(_._2).toList
   }
 
   // This test must have a simple step definition and the known sequence of updates that running that step creates.
@@ -111,40 +140,44 @@ class StepSpec extends FlatSpec {
 
   // The difficult part is to set the pause command to interrupts the step execution in the middle.
   "pause" should "stop execution in response to a pause command" in {
-    val q = async.boundedQueue[executionEngine.EventType](10)
-    val qs0: Engine.State[Unit] =
+    val q: Stream[IO, Queue[IO, executionEngine.EventType]] = Stream.eval(async.boundedQueue[IO, executionEngine.EventType](10))
+    def qs0(q: async.mutable.Queue[IO, executionEngine.EventType]): Engine.State[Unit] =
       Engine.State[Unit](
-        (),
-        Map(
+        userData = (),
+        sequences = Map(
           (seqId,
-           Sequence.State.init(
-             Sequence(
-               seqId,
-               SequenceMetadata(F2, None, ""),
-               List(
-                 Step.init(
-                   1,
-                   None,
-                   config,
-                   Set.empty,
-                   List(
-                     List(configureTcs, configureInst, triggerPause(q)), // Execution
-                     List(observe) // Execution
-                   )
-                 )
-               )
-             )
-           )
+            Sequence.State.init(
+              Sequence(
+                id = seqId,
+                metadata = SequenceMetadata(F2, None, ""),
+                steps = List(
+                  Step.init(
+                    id = 1,
+                    fileId = None,
+                    config = config,
+                    resources = Set.empty,
+                    executions = List(
+                      List(configureTcs, configureInst, triggerPause(q)), // Execution
+                      List(observe) // Execution
+                    )
+                  )
+                )
+              )
+            )
           )
         )
       )
+    def notFinished(v: (executionEngine.EventType, executionEngine.StateType)): Boolean =
+      !isFinished(v._2.sequences(seqId).status)
 
-    val qs1 = q.enqueueOne(Event.start(seqId, user, UUID.randomUUID())).flatMap(_ => executionEngine.process(q.dequeue)(qs0).drop(1).takeThrough(
-      a => !isFinished(a._2.sequences(seqId).status)
-    ).runLast).unsafePerformSync.map(_._2)
+    val m = for {
+      k <- q
+      o <- Stream.apply(qs0(k))
+      _ <- Stream.eval(k.enqueue1(startEvent))
+      u <- executionEngine.process(k.dequeue)(o).drop(1).takeThrough(notFinished).map(_._2)
+    } yield u.sequences(seqId)
 
-
-     inside (qs1.map(_.sequences(seqId))) {
+    inside (m.compile.last.unsafeRunSync()) {
       case Some(Sequence.State.Zipper(zipper, status)) =>
         inside (zipper.focus.toStep) {
           case Step(_, _, _, _, _, _, _, ex1::ex2::Nil) =>
@@ -159,37 +192,40 @@ class StepSpec extends FlatSpec {
     // Engine state with one idle sequence partially executed. One Step completed, two to go.
     val qs0: Engine.State[Unit] =
       Engine.State[Unit](
-        (),
-        Map(
+        userData = (),
+        sequences = Map(
           (seqId,
-           Sequence.State.Zipper(
-             Sequence.Zipper(
-               "First",
-               SequenceMetadata(F2, None, ""),
-               Nil,
-               Step.Zipper(
-                 2,
-                 None,
-                 config,
-                 Set.empty,
-                 breakpoint = Step.BreakpointMark(false),
-                 skipMark = Step.SkipMark(false),
-                 Nil,
-                 Execution(List(observe)),
-                 List(List(actionCompleted, actionCompleted)),
-                 (Execution(List(configureTcs, configureInst)), List(List(observe)))),
-               Nil
-             ),
-             SequenceState.Idle
-           )
+            Sequence.State.Zipper(
+              Sequence.Zipper(
+                id = "First",
+                metadata = SequenceMetadata(F2, None, ""),
+                pending = Nil,
+                focus = Step.Zipper(
+                  id = 2,
+                  fileId = None,
+                  config = config,
+                  resources = Set.empty,
+                  breakpoint = Step.BreakpointMark(false),
+                  skipMark = Step.SkipMark(false),
+                  pending = Nil,
+                  focus = Execution(List(observe)),
+                  done = List(List(actionCompleted, actionCompleted)),
+                  rolledback = (Execution(List(configureTcs, configureInst)), List(List(observe)))),
+                done = Nil
+              ),
+              SequenceState.Idle
+            )
           )
         )
       )
 
-    val qs1 = executionEngine.process(Process.eval(Task.now(Event.start(seqId, user, UUID.randomUUID()))))(qs0).take(1).runLast.unsafePerformSync.map(_._2)
+    val qs1: Stream[IO, Option[Sequence.State]] =
+      for {
+        u <- executionEngine.process(Stream.eval(IO.pure(startEvent)))(qs0).take(1)
+      } yield u._2.sequences.get(seqId)
 
-    inside (qs1.flatMap(_.sequences.get(seqId))) {
-      case Some(Sequence.State.Zipper(zipper, status)) =>
+    inside (qs1.compile.last.unsafeRunSync()) {
+      case Some(Some(Sequence.State.Zipper(zipper, status))) =>
         inside (zipper.focus.toStep) {
           case Step(_, _, _, _, _, _, _, ex1::ex2::Nil) =>
             assert(Execution(ex1).actions.length == 2 && Execution(ex2).actions.length == 1)
@@ -202,37 +238,38 @@ class StepSpec extends FlatSpec {
   it should "cancel a pause request in response to a cancel pause command." in {
     val qs0: Engine.State[Unit] =
       Engine.State[Unit](
-        (),
-        Map(
+        userData = (),
+        sequences = Map(
           (seqId,
-           Sequence.State.Zipper(
-             Sequence.Zipper(
-               "First",
-               SequenceMetadata(F2, None, ""),
-               Nil,
-               Step.Zipper(
-                 2,
-                 None,
-                 config,
-                 Set.empty,
-                 breakpoint = Step.BreakpointMark(false),
-                 skipMark = Step.SkipMark(false),
-                 Nil,
-                 Execution(List(observe)),
-                 List(List(actionCompleted, actionCompleted)),
-                 (Execution(List(configureTcs, configureInst)), List(List(observe)))),
-               Nil
-             ),
-             SequenceState.Running(true, false)
-           )
+            Sequence.State.Zipper(
+              Sequence.Zipper(
+                id = "First",
+                metadata = SequenceMetadata(F2, None, ""),
+                pending = Nil,
+                focus = Step.Zipper(
+                  id = 2,
+                  fileId = None,
+                  config = config,
+                  resources = Set.empty,
+                  breakpoint = Step.BreakpointMark(false),
+                  skipMark = Step.SkipMark(false),
+                  pending = Nil,
+                  focus = Execution(List(observe)),
+                  done = List(List(actionCompleted, actionCompleted)),
+                  rolledback = (Execution(List(configureTcs, configureInst)), List(List(observe)))),
+                done = Nil
+              ),
+              SequenceState.Running(userStop = true, internalStop = false)
+            )
           )
         )
       )
 
-    val qs1 = executionEngine.process(Process.eval(Task.now(Event.cancelPause(seqId, user))))(qs0).take(1).runLast.unsafePerformSync.map(_._2)
+    val qs1 = executionEngine.process(Stream.eval(IO.pure(Event.cancelPause(seqId, user))))(qs0).take(1).compile.last.unsafeRunSync.map(_._2)
 
     inside (qs1.flatMap(_.sequences.get(seqId))) {
-      case Some(Sequence.State.Zipper(_, status)) => assert(status.isRunning)
+      case Some(Sequence.State.Zipper(_, status)) =>
+        assert(status.isRunning)
     }
 
   }
@@ -240,35 +277,33 @@ class StepSpec extends FlatSpec {
   "engine" should "ignore pause command if step is not being executed." in {
     val qs0: Engine.State[Unit] =
       Engine.State[Unit](
-        (),
-        Map(
+        userData = (),
+        sequences = Map(
           (seqId,
-           Sequence.State.init(
-             Sequence(
-               seqId,
-               SequenceMetadata(F2, None, ""),
-               List(
-                 Step.init(
-                   1,
-                   None,
-                   config,
-                   Set.empty,
-                   List(
-                     List(configureTcs, configureInst), // Execution
-                     List(observe) // Execution
-                   )
-                 )
-               )
-             )
-           )
+            Sequence.State.init(
+              Sequence(
+                id = seqId,
+                metadata = SequenceMetadata(F2, None, ""),
+                steps = List(
+                  Step.init(
+                    id = 1,
+                    fileId = None,
+                    config = config,
+                    resources = Set.empty,
+                    executions = List(
+                      List(configureTcs, configureInst), // Execution
+                      List(observe) // Execution
+                    )
+                  )
+                )
+              )
+            )
           )
         )
       )
+    val qss = executionEngine.process(Stream.eval(IO.pure(Event.pause(seqId, user))))(qs0).take(1).compile.last.unsafeRunSync.map(_._2)
 
-    val qss = executionEngine. process(Process.eval(Task.now(Event.pause(seqId, user))))(qs0).runLog.unsafePerformSync.map(_._2)
-
-    assert(qss.length == 1)
-    inside (qss.headOption.flatMap(_.sequences.get(seqId))) {
+    inside (qss.flatMap(_.sequences.get(seqId))) {
       case Some(Sequence.State.Zipper(zipper, status)) =>
         inside (zipper.focus.toStep) {
           case Step(_, _, _, _, _, _, _, ex1::ex2::Nil) =>
@@ -280,38 +315,38 @@ class StepSpec extends FlatSpec {
 
   // Be careful that start command doesn't run an already running sequence.
   "engine" should "ignore start command if step is already running." in {
-    val q = async.boundedQueue[executionEngine.EventType](10)
+    val q = async.boundedQueue[IO, executionEngine.EventType](10)
     val qs0: Engine.State[Unit] =
       Engine.State[Unit](
-        (),
-        Map(
+        userData = (),
+        sequences = Map(
           (seqId,
-           Sequence.State.init(
-             Sequence(
-               seqId,
-               SequenceMetadata(F2, None, ""),
-               List(
-                 Step.init(
-                   1,
-                   None,
-                   config,
-                   Set.empty,
-                   List(
-                     List(configureTcs, configureInst), // Execution
-                     List(triggerStart(q)), // Execution
-                     List(observe) // Execution
-                   )
-                 )
-               )
-             )
-           )
+            Sequence.State.init(
+              Sequence(
+                id = seqId,
+                metadata = SequenceMetadata(F2, None, ""),
+                steps = List(
+                  Step.init(
+                    id = 1,
+                    fileId = None,
+                    config = config,
+                    resources = Set.empty,
+                    executions = List(
+                      List(configureTcs, configureInst), // Execution
+                      List(triggerStart(q)), // Execution
+                      List(observe) // Execution
+                    )
+                  )
+                )
+              )
+            )
           )
         )
       )
 
-    val qss = q.enqueueOne(Event.start(seqId, user, UUID.randomUUID)).flatMap(_ => executionEngine.process(q.dequeue)(qs0).drop(1).takeThrough(
+    val qss = q.flatMap { k => k.enqueue1(Event.start(seqId, user, UUID.randomUUID)).flatMap(_ => executionEngine.process(k.dequeue)(qs0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
-    ).runLog).unsafePerformSync
+    ).compile.toVector)}.unsafeRunSync
 
     val actionsCompleted = qss.map(_._1).collect{case x@EventSystem(_: Completed[_]) => x}
     assert(actionsCompleted.length == 4)
@@ -333,28 +368,28 @@ class StepSpec extends FlatSpec {
     val errMsg = "Dummy error"
     val qs0: Engine.State[Unit] =
       Engine.State[Unit](
-        (),
-        Map(
+        userData = (),
+        sequences = Map(
           (seqId,
-           Sequence.State.init(
-             Sequence(
-               seqId,
-               SequenceMetadata(F2, None, ""),
-               List(
-                 Step.init(
-                   1,
-                   None,
-                   config,
-                   Set.empty,
-                   List(
-                     List(configureTcs, configureInst), // Execution
-                     List(error(errMsg)),
-                     List(observe)
-                   )
-                 )
-               )
-             )
-           )
+            Sequence.State.init(
+              Sequence(
+                id = seqId,
+                metadata = SequenceMetadata(F2, None, ""),
+                steps = List(
+                  Step.init(
+                    id = 1,
+                    fileId = None,
+                    config = config,
+                    resources = Set.empty,
+                    executions = List(
+                      List(configureTcs, configureInst), // Execution
+                      List(error(errMsg)),
+                      List(observe)
+                    )
+                  )
+                )
+              )
+            )
           )
         )
       )
@@ -381,36 +416,36 @@ class StepSpec extends FlatSpec {
 
     val qs0: Engine.State[Unit] =
       Engine.State[Unit](
-        (),
-        Map(
+        userData = (),
+        sequences = Map(
           (seqId,
-           Sequence.State.init(
-             Sequence(
-               seqId,
-               SequenceMetadata(F2, None, ""),
-               List(
-                 Step.init(
-                   1,
-                   None,
-                   config,
-                   Set.empty,
-                   List(
-                     List(
-                       fromTask(ActionType.Undefined,
-                         Task(
-                           Result.Partial(
-                             PartialValDouble(0.5),
-                             Kleisli(_ => Task(Result.OK(RetValDouble(1.0)))
-                             )
-                           )
+            Sequence.State.init(
+              Sequence(
+                id = seqId,
+                metadata = SequenceMetadata(F2, None, ""),
+                steps = List(
+                  Step.init(
+                    id = 1,
+                    fileId = None,
+                    config = config,
+                    resources = Set.empty,
+                    executions = List(
+                      List(
+                        fromIO(ActionType.Undefined,
+                          IO(
+                            Result.Partial(
+                              PartialValDouble(0.5),
+                              Kleisli(_ => IO(Result.OK(RetValDouble(1.0)))
+                              )
+                            )
+                          )
                         )
-                       )
-                     )
-                   )
-                 )
-               )
-             )
-           )
+                      )
+                    )
+                  )
+                )
+              )
+            )
           )
         )
       )
@@ -431,34 +466,6 @@ class StepSpec extends FlatSpec {
     }
 
   }
-
-  private val observeResult = Result.Observed("dummyId")
-  private val result = Result.OK(observeResult)
-  private val failure = Result.Error("Dummy error")
-  private val actionFailed =  fromTask(ActionType.Undefined, Task(failure)).copy(state = Action.State(Action.Failed(failure), Nil))
-  private val action: Action = fromTask(ActionType.Undefined, Task(result))
-  private val actionCompleted: Action = action.copy(state = Action.State(Action.Completed(observeResult), Nil))
-  private val config: StepConfig = Map.empty
-  def simpleStep(pending: List[Actions], focus: Execution, done: List[Results]): Step.Zipper = {
-    val rollback: (Execution, List[Actions]) = done.map(_.map(const(action))) ++ List(focus.execution.map(const(action))) ++ pending match {
-      case Nil => (Execution.empty, Nil)
-      case x::xs => (Execution(x), xs)
-    }
-
-    Step.Zipper(1, None, config, Set.empty, breakpoint = Step.BreakpointMark(false), skipMark = Step.SkipMark(false), pending, focus, done.map(_.map{ r =>
-      val x = fromTask(ActionType.Observe, Task(r))
-      x.copy(state = Execution.actionStateFromResult(r)(x.state))
-    }), rollback)
-  }
-
-  val stepz0: Step.Zipper   = simpleStep(Nil, Execution.empty, Nil)
-  val stepza0: Step.Zipper  = simpleStep(List(List(action)), Execution.empty, Nil)
-  val stepza1: Step.Zipper  = simpleStep(List(List(action)), Execution(List(actionCompleted)), Nil)
-  val stepzr0: Step.Zipper  = simpleStep(Nil, Execution.empty, List(List(result)))
-  val stepzr1: Step.Zipper  = simpleStep(Nil, Execution(List(actionCompleted, actionCompleted)), Nil)
-  val stepzr2: Step.Zipper  = simpleStep(Nil, Execution(List(actionCompleted, actionCompleted)), List(List(result)))
-  val stepzar0: Step.Zipper = simpleStep(Nil, Execution(List(actionCompleted, action)), Nil)
-  val stepzar1: Step.Zipper = simpleStep(List(List(action)), Execution(List(actionCompleted, actionCompleted)), List(List(result)))
 
   "uncurrentify" should "be None when not all executions are completed" in {
     assert(stepz0.uncurrentify.isEmpty)
@@ -501,16 +508,16 @@ class StepSpec extends FlatSpec {
     assert(
       Step.status(
         Step.Zipper(
-          1,
-          None,
-          Map.empty,
-          Set.empty,
+          id = 1,
+          fileId = None,
+          config = Map.empty,
+          resources = Set.empty,
           breakpoint = Step.BreakpointMark(false),
           skipMark = Step.SkipMark(false),
-          Nil,
-          Execution(List(action, actionFailed, actionCompleted)),
-          Nil,
-          (Execution(List(action, action, action)), Nil)
+          pending = Nil,
+          focus = Execution(List(action, actionFailed, actionCompleted)),
+          done = Nil,
+          rolledback = (Execution(List(action, action, action)), Nil)
         ).toStep
       ) === StepState.Failed("Dummy error")
     )
@@ -520,16 +527,16 @@ class StepSpec extends FlatSpec {
     assert(
       Step.status(
         Step.Zipper(
-          1,
-          None,
-          Map.empty,
-          Set.empty,
+          id = 1,
+          fileId = None,
+          config = Map.empty,
+          resources = Set.empty,
           breakpoint = Step.BreakpointMark(false),
           skipMark = Step.SkipMark(false),
-          Nil,
-          Execution(List(actionCompleted, actionCompleted, actionCompleted)),
-          Nil,
-          (Execution(List(action, action, action)), Nil)
+          pending = Nil,
+          focus = Execution(List(actionCompleted, actionCompleted, actionCompleted)),
+          done = Nil,
+          rolledback = (Execution(List(action, action, action)), Nil)
         ).toStep
       ) === StepState.Completed
     )
@@ -539,16 +546,16 @@ class StepSpec extends FlatSpec {
     assert(
       Step.status(
         Step.Zipper(
-          1,
-          None,
-          Map.empty,
-          Set.empty,
+          id = 1,
+          fileId = None,
+          config = Map.empty,
+          resources = Set.empty,
           breakpoint = Step.BreakpointMark(false),
           skipMark = Step.SkipMark(false),
-          Nil,
-          Execution(List(actionCompleted, action, actionCompleted)),
-          Nil,
-          (Execution(List(action, action, action)), Nil)
+          pending = Nil,
+          focus = Execution(List(actionCompleted, action, actionCompleted)),
+          done = Nil,
+          rolledback = (Execution(List(action, action, action)), Nil)
         ).toStep
       ) === StepState.Running
     )
@@ -558,16 +565,16 @@ class StepSpec extends FlatSpec {
     assert(
       Step.status(
         Step.Zipper(
-          1,
-          None,
-          Map.empty,
-          Set.empty,
+          id = 1,
+          fileId = None,
+          config = Map.empty,
+          resources = Set.empty,
           breakpoint = Step.BreakpointMark(false),
           skipMark = Step.SkipMark(false),
-          Nil,
-          Execution(List(action, action, action)),
-          Nil,
-          (Execution(List(action, action, action)), Nil)
+          pending = Nil,
+          focus = Execution(List(action, action, action)),
+          done = Nil,
+          rolledback = (Execution(List(action, action, action)), Nil)
         ).toStep
       ) === StepState.Pending
     )
@@ -577,16 +584,16 @@ class StepSpec extends FlatSpec {
     assert(
       Step.status(
         Step.Zipper(
-          1,
-          None,
-          Map.empty,
-          Set.empty,
+          id = 1,
+          fileId = None,
+          config = Map.empty,
+          resources = Set.empty,
           breakpoint = Step.BreakpointMark(false),
           skipMark = Step.SkipMark(false),
-          Nil,
-          Execution(List(action, action, action)),
-          Nil,
-          (Execution(List(action, action, action)), Nil)
+          pending = Nil,
+          focus = Execution(List(action, action, action)),
+          done = Nil,
+          rolledback = (Execution(List(action, action, action)), Nil)
         ).toStep.copy(skipped = Step.Skipped(true))
       ) === StepState.Skipped
     )

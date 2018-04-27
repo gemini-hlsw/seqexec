@@ -3,9 +3,11 @@
 
 package edu.gemini.seqexec.server.gnirs
 
+import cats.Eq
+import cats.data.EitherT
+import cats.effect.IO
 import edu.gemini.seqexec.model.dhs.ImageFileId
-import edu.gemini.seqexec.server.EpicsCodex.EncodeEpicsValue
-import edu.gemini.seqexec.server.{EpicsCodex, EpicsCommand, ObserveCommand, SeqAction}
+import edu.gemini.seqexec.server._
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams.{Camera, Decker, Disperser, ReadMode}
 import org.log4s.getLogger
@@ -13,10 +15,8 @@ import squants.{Length, Seconds, Time}
 import squants.space.LengthConversions._
 import squants.electro.Millivolts
 
-import scalaz.concurrent.Task
-import scalaz._
-import Scalaz._
 import scala.math.abs
+import cats.implicits._
 
 object GnirsControllerEpics extends GnirsController {
   private val Log = getLogger
@@ -194,7 +194,7 @@ object GnirsControllerEpics extends GnirsController {
       setSpectrographyComponents(config.mode, config.camera) ++
       smartSetParam(encode(config.camera), epicsSys.camera.map(removePartName), ccCmd.setCamera(encode(config.camera)))
     // Force focus configuration if any of the above is set
-    val focusSet = if (!refocusParams.isEmpty) List(ccCmd.setFocusBest(focus)) else Nil
+    val focusSet = if (refocusParams.nonEmpty) List(ccCmd.setFocusBest(focus)) else Nil
 
     smartSetParam(open, epicsSys.cover.map(removePartName), ccCmd.setCover(open)) ++
       refocusParams ++
@@ -211,7 +211,7 @@ object GnirsControllerEpics extends GnirsController {
       case c:Other => setOtherCCParams(c)
     }
     if (params.isEmpty) SeqAction(EpicsCommand.Completed)
-    else params.sequenceU.map(_ => ()) *>
+    else params.sequence.map(_ => ()) *>
       ccCmd.setTimeout(ConfigTimeout) *>
       ccCmd.post
   }
@@ -242,21 +242,21 @@ object GnirsControllerEpics extends GnirsController {
   } yield ret
 
   override def endObserve: SeqAction[Unit] = for {
-    _ <- EitherT(Task(Log.debug("Send endObserve to GNIRS").right))
+    _ <- EitherT.right(IO(Log.debug("Send endObserve to GNIRS")))
     _ <- GnirsEpics.instance.endObserveCmd.setTimeout(DefaultTimeout)
     _ <- GnirsEpics.instance.endObserveCmd.mark
     _ <- GnirsEpics.instance.endObserveCmd.post
   } yield ()
 
   override def stopObserve: SeqAction[Unit] = for {
-    _ <- EitherT(Task(Log.info("Stop GNIRS exposure").right))
+    _ <- EitherT.right(IO(Log.info("Stop GNIRS exposure")))
     _ <- GnirsEpics.instance.stopCmd.setTimeout(DefaultTimeout)
     _ <- GnirsEpics.instance.stopCmd.mark
     _ <- GnirsEpics.instance.stopCmd.post
   } yield ()
 
   override def abortObserve: SeqAction[Unit] = for {
-    _ <- EitherT(Task(Log.info("Abort GNIRS exposure").right))
+    _ <- EitherT.right(IO(Log.info("Abort GNIRS exposure")))
     _ <- GnirsEpics.instance.abortCmd.setTimeout(DefaultTimeout)
     _ <- GnirsEpics.instance.abortCmd.mark
     _ <- GnirsEpics.instance.abortCmd.post
@@ -268,10 +268,10 @@ object GnirsControllerEpics extends GnirsController {
     s.replaceAll(pattern, "")
   }
 
-  private def smartSetParam[A: Equal](v: A, get: => Option[A], set: SeqAction[Unit]): List[SeqAction[Unit]] =
-    if(get =/= v.some) List(set) else Nil
+  private def smartSetParam[A: Eq](v: A, get: => Option[A], set: SeqAction[Unit]): List[SeqAction[Unit]] =
+    if(get =!= v.some) List(set) else Nil
   private def smartSetDoubleParam(tolerance: Double)(v: Double, get: => Option[Double], set: SeqAction[Unit]): List[SeqAction[Unit]] =
-    if(get.map(x => abs(x - v) < tolerance).getOrElse(true)) List(set) else Nil
+    if(get.forall(x => abs(x - v) < tolerance)) List(set) else Nil
 
   private val DefaultTimeout: Time = Seconds(60)
   private val ReadoutTimeout: Time = Seconds(300)

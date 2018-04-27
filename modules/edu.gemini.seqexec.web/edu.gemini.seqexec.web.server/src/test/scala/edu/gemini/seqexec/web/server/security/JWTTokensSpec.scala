@@ -8,8 +8,6 @@ import org.scalatest.prop.PropertyChecks
 import org.scalatest.{FlatSpec, Matchers}
 import squants.time.Hours
 
-import scalaz.\/-
-
 class JWTTokensSpec extends FlatSpec with Matchers with PropertyChecks {
   private val ldapConfig = LDAPConfig(Nil)
   private val config = AuthenticationConfig(devMode = true, Hours(8), "token", "key", useSSL = false, ldapConfig)
@@ -18,8 +16,8 @@ class JWTTokensSpec extends FlatSpec with Matchers with PropertyChecks {
   "JWT Tokens" should "encode/decode" in {
     forAll { (u: String, p: String) =>
       val userDetails = UserDetails(u, p)
-      val token = authService.buildToken(userDetails).unsafePerformSync
-      \/-(userDetails) shouldEqual authService.decodeToken(token)
+      val token = authService.buildToken(userDetails).unsafeRunSync
+      Right(userDetails) shouldEqual authService.decodeToken(token)
     }
   }
 }

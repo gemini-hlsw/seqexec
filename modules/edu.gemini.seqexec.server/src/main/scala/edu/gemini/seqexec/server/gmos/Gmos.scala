@@ -8,25 +8,21 @@ import edu.gemini.seqexec.server.ConfigUtilOps.{ContentError, ConversionError, _
 import edu.gemini.seqexec.server.gmos.Gmos.SiteSpecifics
 import edu.gemini.seqexec.server.gmos.GmosController.Config._
 import edu.gemini.seqexec.server.gmos.GmosController.SiteDependentTypes
-import edu.gemini.seqexec.server.{ConfigResult, ConfigUtilOps, InstrumentSystem, ObserveCommand, SeqAction, SeqObserve, SeqexecFailure, TrySeq}
+import edu.gemini.seqexec.server._
 import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.gemini.gmos.GmosCommonType._
 import edu.gemini.spModel.gemini.gmos.InstGmosCommon._
 import edu.gemini.spModel.obscomp.InstConstants.{EXPOSURE_TIME_PROP, _}
 import edu.gemini.spModel.seqcomp.SeqConfigNames.{INSTRUMENT_KEY, OBSERVE_KEY}
 import org.log4s.{Logger, getLogger}
-import squants.{Time, Seconds}
+import squants.{Seconds, Time}
 import squants.space.LengthConversions._
-
+import cats.data.{EitherT, Reader}
+import cats.implicits._
+import cats.effect.IO
+import mouse.all._
 import scala.concurrent.duration._
-import scalaz.concurrent.Task
-import scalaz.syntax.std.string._
-import scalaz.syntax.equal._
-import scalaz.{EitherT, Reader, \/}
 
-/**
-  * Created by jluhrs on 8/3/17.
-  */
 abstract class Gmos[T<:GmosController.SiteDependentTypes](controller: GmosController[T], ss: SiteSpecifics[T])(configTypes: GmosController.Config[T]) extends InstrumentSystem {
   import Gmos._
   import InstrumentSystem._
@@ -70,7 +66,7 @@ abstract class Gmos[T<:GmosController.SiteDependentTypes](controller: GmosContro
       disperser = configTypes.GmosDisperser(disp, disperserOrder.toOption, disperserLambda.toOption)
     } yield configTypes.CCConfig(filter, disperser, fpu, stageMode, dtax, adc, electronicOffset.toOption)).leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
 
-  private def fromSequenceConfig(config: Config): SeqAction[GmosController.GmosConfig[T]] = EitherT( Task ( for {
+  private def fromSequenceConfig(config: Config): SeqAction[GmosController.GmosConfig[T]] = EitherT( IO ( for {
       cc <- ccConfigFromSequenceConfig(config)
       dc <- dcConfigFromSequenceConfig(config)
     } yield new GmosController.GmosConfig[T](configTypes)(cc, dc)
@@ -93,13 +89,13 @@ object Gmos {
   val name: String = INSTRUMENT_NAME_PROP
 
   trait SiteSpecifics[T<:SiteDependentTypes] {
-    def extractFilter(config: Config): ExtractFailure\/T#Filter
+    def extractFilter(config: Config): Either[ExtractFailure, T#Filter]
 
-    def extractDisperser(config: Config): ExtractFailure\/T#Disperser
+    def extractDisperser(config: Config): Either[ExtractFailure, T#Disperser]
 
-    def extractFPU(config: Config): ExtractFailure\/T#FPU
+    def extractFPU(config: Config): Either[ExtractFailure, T#FPU]
 
-    def extractStageMode(config: Config): ExtractFailure\/T#GmosStageMode
+    def extractStageMode(config: Config): Either[ExtractFailure, T#GmosStageMode]
 
     val fpuDefault: T#FPU
   }
@@ -141,13 +137,13 @@ object Gmos {
   def dcConfigFromSequenceConfig(config: Config): TrySeq[DCConfig] =
     (for {
       obsType      <- config.extract(OBSERVE_KEY / OBSERVE_TYPE_PROP).as[String]
-      biasTime     <- \/.right(biasTimeObserveType(obsType))
-      shutterState <- \/.right(shutterStateObserveType(obsType))
+      biasTime     <- biasTimeObserveType(obsType).asRight
+      shutterState <- shutterStateObserveType(obsType).asRight
       exposureTime <- config.extract(OBSERVE_KEY / EXPOSURE_TIME_PROP).as[java.lang.Double].map(_.toDouble.seconds)
       ampReadMode  <- config.extract(AmpReadMode.KEY).as[AmpReadMode]
       gainChoice   <- config.extract(INSTRUMENT_KEY / AMP_GAIN_CHOICE_PROP).as[AmpGain]
       ampCount     <- config.extract(INSTRUMENT_KEY / AMP_COUNT_PROP).as[AmpCount]
-      gainSetting  <- config.extract(INSTRUMENT_KEY / AMP_GAIN_SETTING_PROP).as[String].flatMap(s => s.parseDouble.disjunction.leftMap(_ => ConversionError(INSTRUMENT_KEY / AMP_GAIN_SETTING_PROP, "Bad Amp gain setting")))
+      gainSetting  <- config.extract(INSTRUMENT_KEY / AMP_GAIN_SETTING_PROP).as[String].flatMap(s => s.parseDouble.leftMap(_ => ConversionError(INSTRUMENT_KEY / AMP_GAIN_SETTING_PROP, "Bad Amp gain setting")))
       xBinning     <- config.extract(INSTRUMENT_KEY / CCD_X_BIN_PROP).as[Binning]
       yBinning     <- config.extract(INSTRUMENT_KEY / CCD_Y_BIN_PROP).as[Binning]
       builtInROI   <- config.extract(INSTRUMENT_KEY / BUILTIN_ROI_PROP).as[BuiltinROI]

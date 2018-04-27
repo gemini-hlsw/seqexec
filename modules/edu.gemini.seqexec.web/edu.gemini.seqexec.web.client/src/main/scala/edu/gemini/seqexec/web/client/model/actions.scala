@@ -3,17 +3,14 @@
 
 package edu.gemini.seqexec.web.client
 
-
 import diode.Action
 import edu.gemini.seqexec.model.UserDetails
 import edu.gemini.seqexec.model.Model._
-import edu.gemini.seqexec.model.events.SeqexecModelUpdate
-import edu.gemini.seqexec.model.events.SeqexecEvent
-import edu.gemini.seqexec.model.events.SeqexecEvent.{ServerLogMessage}
+import edu.gemini.seqexec.model.events._
 import edu.gemini.seqexec.web.client.model._
 import org.scalajs.dom.WebSocket
 
-import scalaz.Show
+import cats.Show
 
 object actions {
 
@@ -21,10 +18,6 @@ object actions {
   // Actions
   final case class NavigateTo(page: Pages.SeqexecPages) extends Action
   final case class NavigateSilentTo(page: Pages.SeqexecPages) extends Action
-  final case class InitialSyncToPage(view: SequenceView) extends Action
-  final case class SyncToRunning(view: SequenceView) extends Action
-  final case class SyncPageToRemovedSequence(id: SequenceId) extends Action
-  final case class SyncPageToAddedSequence(i: Instrument, id: SequenceId) extends Action
   final case class Initialize(site: SeqexecSite) extends Action
 
   // Actions to close and/open the login box
@@ -69,8 +62,8 @@ object actions {
   final case class RunObsPauseFailed(s: SequenceId) extends Action
   final case class RunObsResumeFailed(s: SequenceId) extends Action
 
-  final case class ShowStep(id: SequenceId, step: Int) extends Action
-  final case class UnShowStep(i: Instrument) extends Action
+  final case class ShowStepConfig(id: SequenceId, step: Int) extends Action
+  final case class HideStepConfig(i: Instrument) extends Action
   final case class RememberCompleted(s: SequenceView) extends Action
 
   final case class AppendToLog(l: ServerLogMessage) extends Action
@@ -96,15 +89,14 @@ object actions {
   final case class UpdateWaterVapor(wv: WaterVapor) extends Action
 
   // scalastyle:on
+  private val standardStep: PartialFunction[Step, (StepId, StepState, List[(Resource, ActionStatus)])] = {
+    case i: StandardStep => (i.id, i.status, i.configStatus)
+  }
 
-  implicit val show: Show[Action] = Show.shows {
+  implicit val show: Show[Action] = Show.show {
     case s @ ServerMessage(u @ SeqexecModelUpdate(view)) =>
-      s"${s.getClass.getSimpleName}(${u.getClass.getSimpleName}(${view.queue.map(s => (s.id, s.steps.map(i => (i.id, i.status))))}))"
+      s"${s.getClass.getSimpleName}(${u.getClass.getSimpleName}(${view.queue.map(s => (s.id, s.steps.collect(standardStep)))}))"
     case s @ RememberCompleted(view)                     =>
-      s"${s.getClass.getSimpleName}(${view.id})"
-    case s @ InitialSyncToPage(view)                     =>
-      s"${s.getClass.getSimpleName}(${view.id})"
-    case s @ SyncToRunning(view)                     =>
       s"${s.getClass.getSimpleName}(${view.id})"
     case a                                               =>
       s"$a"

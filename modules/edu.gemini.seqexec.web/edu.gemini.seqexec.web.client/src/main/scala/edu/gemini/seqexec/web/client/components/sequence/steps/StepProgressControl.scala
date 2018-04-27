@@ -15,9 +15,7 @@ import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import scalacss.ScalaCssReact._
-
-import scalaz.syntax.show._
-import scalaz.syntax.std.option._
+import cats.implicits._
 
 /**
   * Component to display the step state and control
@@ -44,7 +42,7 @@ object StepProgressCell {
   }
 
   def statusLabel(system: Resource, status: ActionStatus): VdomNode =
-    Label(Label.Props(s"${system.shows}", color = labelColor(status).some, icon = labelIcon(status)))
+    Label(Label.Props(s"${system.show}", color = labelColor(status).some, icon = labelIcon(status)))
 
   def stepSystemsStatus(step: StandardStep): VdomElement =
     <.div(
@@ -74,7 +72,7 @@ object StepProgressCell {
       SeqexecStyles.configuringRow,
       <.div(
         SeqexecStyles.specialStateLabel,
-        props.step.shows
+        props.step.show
       ),
       StepsControlButtons(props.focus.id, props.focus.instrument, props.focus.state, props.step).when(controlButtonsActive(props))
     )
@@ -84,7 +82,7 @@ object StepProgressCell {
       SeqexecStyles.configuringRow,
       <.div(
         SeqexecStyles.specialStateLabel,
-        props.focus.state.shows
+        props.focus.state.show
       ),
       StepsControlButtons(props.focus.id, props.focus.instrument, props.focus.state, props.step).when(controlButtonsActive(props))
     )
@@ -92,7 +90,7 @@ object StepProgressCell {
   def stepPaused(props: Props): VdomElement =
     <.div(
       SeqexecStyles.configuringRow,
-      props.step.shows
+      props.step.show
     )
 
   def stepDisplay(props: Props): VdomElement =
@@ -116,7 +114,7 @@ object StepProgressCell {
       case (_, StandardStep(_, _, StepState.Completed, _, _, Some(fileId), _, _))             =>
         <.p(SeqexecStyles.componentLabel, fileId)
       case (_, _)                                                                           =>
-        <.p(SeqexecStyles.componentLabel, props.step.shows)
+        <.p(SeqexecStyles.componentLabel, props.step.show)
     }
 
   private val component = ScalaComponent.builder[Props]("StepProgressCell")

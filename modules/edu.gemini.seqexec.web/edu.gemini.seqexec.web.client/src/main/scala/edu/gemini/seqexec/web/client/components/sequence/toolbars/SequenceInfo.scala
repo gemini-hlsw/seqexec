@@ -14,9 +14,7 @@ import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import diode.react.ModelProxy
 import scalacss.ScalaCssReact._
-
-import scalaz.syntax.std.option._
-import scalaz.syntax.equal._
+import cats.implicits._
 
 /**
   * Display the name of the sequence and the observer

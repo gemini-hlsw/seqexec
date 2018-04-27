@@ -20,15 +20,13 @@ import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.ScalazReact._
 import scalacss.ScalaCssReact._
-
-import scalaz.syntax.show._
-import scalaz.syntax.equal._
+import cats.implicits._
 
 object SequenceStepsTableContainer {
   final case class Props(router: RouterCtl[SeqexecPages], site: SeqexecSite, p: ModelProxy[StatusAndStepFocus]) {
-    protected[sequence] val sequenceControlConnects = site.instruments.list.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceControlReader(i)))).toMap
-    private[sequence] val instrumentConnects = site.instruments.list.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.stepsTableReader(i)))).toMap
-    protected[sequence] val sequenceObserverConnects = site.instruments.list.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(i)))).toMap
+    protected[sequence] val sequenceControlConnects = site.instruments.toList.fproduct(i => SeqexecCircuit.connect(SeqexecCircuit.sequenceControlReader(i))).toMap
+    private[sequence] val instrumentConnects = site.instruments.toList.fproduct(i => SeqexecCircuit.connect(SeqexecCircuit.stepsTableReader(i))).toMap
+    protected[sequence] val sequenceObserverConnects = site.instruments.toList.fproduct(i => SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(i))).toMap
   }
   final case class State(nextStepToRun: Int)
 
@@ -78,7 +76,7 @@ object SequenceTabContent {
         ^.classSet(
           "active"    -> active
         ),
-        dataTab := instrument.shows,
+        dataTab := instrument.show,
         SeqexecStyles.emptyInstrumentTab.unless(sequenceSelected),
         SeqexecStyles.emptyInstrumentTabLogShown.when(!sequenceSelected && logDisplayed === SectionOpen),
         SeqexecStyles.emptyInstrumentTabLogHidden.when(!sequenceSelected && logDisplayed === SectionClosed),
@@ -100,7 +98,7 @@ object SequenceTabContent {
  */
 object SequenceTabsBody {
   final case class Props(router: RouterCtl[SeqexecPages], site: SeqexecSite) {
-    protected[sequence] val instrumentConnects = site.instruments.list.map(i => SeqexecCircuit.connect(SeqexecCircuit.instrumentTabContentReader(i)))
+    protected[sequence] val instrumentConnects = site.instruments.toList.map(i => SeqexecCircuit.connect(SeqexecCircuit.instrumentTabContentReader(i)))
   }
 
   private val component = ScalaComponent.builder[Props]("SequenceTabsBody")

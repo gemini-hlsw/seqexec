@@ -3,7 +3,7 @@
 
 package edu.gemini.seqexec.web.client.semanticui
 
-import scalaz.Equal
+import cats.Eq
 
 sealed trait Width
 
@@ -26,5 +26,5 @@ object Width {
   case object Fifteen extends Width
   case object Sixteen extends Width
 
-  implicit val equal: Equal[Width] = Equal.equalA[Width]
+  implicit val equal: Eq[Width] = Eq.fromUniversalEquals
 }

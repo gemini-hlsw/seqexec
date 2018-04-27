@@ -3,15 +3,13 @@
 
 package edu.gemini.seqexec.server.flamingos2
 
+import cats.data.EitherT
+import cats.effect.IO
 import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.server.{EpicsCodex, SeqAction}
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.{Decker, Filter, ReadoutMode, WindowCover, _}
 import org.log4s.getLogger
-import squants.{Time, Seconds}
-
-import scalaz.EitherT
-import scalaz.Scalaz._
-import scalaz.concurrent.Task
+import squants.{Seconds, Time}
 
 object Flamingos2ControllerEpics extends Flamingos2Controller {
   private val Log = getLogger
@@ -129,22 +127,22 @@ object Flamingos2ControllerEpics extends Flamingos2Controller {
   }
 
   override def applyConfig(config: Flamingos2Config): SeqAction[Unit] = for {
-    _ <- EitherT(Task(Log.debug("Start Flamingos2 configuration").right))
+    _ <- EitherT.right(IO.apply(Log.debug("Start Flamingos2 configuration")))
     _ <- setDCConfig(config.dc)
     _ <- setCCConfig(config.cc)
     _ <- Flamingos2Epics.instance.configCmd.setTimeout(ConfigTimeout)
     _ <- Flamingos2Epics.instance.post
-    _ <- EitherT(Task(Log.debug("Completed Flamingos2 configuration").right))
+    _ <- EitherT.right(IO(Log.debug("Completed Flamingos2 configuration")))
   } yield ()
 
   override def observe(fileId: ImageFileId, expTime: Time): SeqAction[ImageFileId] = for {
     _ <- Flamingos2Epics.instance.observeCmd.setLabel(fileId)
-    _ <- Flamingos2Epics.instance.observeCmd.setTimeout(expTime+ReadoutTimeout)
+    _ <- Flamingos2Epics.instance.observeCmd.setTimeout(expTime + ReadoutTimeout)
     _ <- Flamingos2Epics.instance.observeCmd.post
   } yield fileId
 
-  override def endObserve =  for {
-      _ <- EitherT(Task(Log.debug("Send endObserve to Flamingos2").right))
+  override def endObserve: SeqAction[Unit] =  for {
+      _ <- EitherT.right(IO(Log.debug("Send endObserve to Flamingos2")))
       _ <- Flamingos2Epics.instance.endObserveCmd.setTimeout(DefaultTimeout)
       _ <- Flamingos2Epics.instance.endObserveCmd.mark
       _ <- Flamingos2Epics.instance.endObserveCmd.post

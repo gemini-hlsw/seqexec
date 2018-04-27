@@ -5,8 +5,7 @@ package edu.gemini.seqexec.model
 
 import boopickle.Default._
 import edu.gemini.seqexec.model.Model._
-import edu.gemini.seqexec.model.events.SeqexecEvent
-import edu.gemini.seqexec.model.events.SeqexecEvent._
+import edu.gemini.seqexec.model.events._
 
 import java.time.Instant
 

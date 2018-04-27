@@ -8,8 +8,7 @@ import edu.gemini.seqexec.web.client.semanticui.Size
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.component.Scala.Unmounted
-
-import scalaz.syntax.equal._
+import cats.implicits._
 
 /**
   * React component for a message with a large icon

@@ -7,8 +7,7 @@ import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.IconClose
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.{Callback, ScalaComponent}
 import japgolly.scalajs.react.vdom.html_<^._
-
-import scalaz.syntax.equal. _
+import cats.implicits._
 
 /**
   * ReactComponent for a closeable message

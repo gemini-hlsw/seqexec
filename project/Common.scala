@@ -36,7 +36,7 @@ object Common {
          |""".stripMargin
     )),
     // Common libraries
-    libraryDependencies                    ++= Seq(ScalaZCore.value) ++ TestLibs.value,
+    libraryDependencies                    ++= Seq(Cats.value, Mouse.value) ++ TestLibs.value,
     // Wartremover in compile and test (not in Console)
     wartremoverErrors in (Compile, compile) := gemWarts,
     wartremoverErrors in (Test,    compile) := gemWarts,

@@ -17,13 +17,8 @@ import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{Callback, ScalaComponent}
-
+import cats.implicits._
 import scalacss.ScalaCssReact._
-
-import scalaz.std.string._
-import scalaz.syntax.std.option._
-import scalaz.syntax.show._
-import scalaz.syntax.equal._
 
 object InstrumentTab {
   final case class Props(router: RouterCtl[SeqexecPages], site: SeqexecSite, t: ModelProxy[InstrumentStatusFocus])
@@ -38,8 +33,8 @@ object InstrumentTab {
       val sequenceId = tab.idState.map(_._1)
       val instrument = tab.instrument
       val tabTitle = tab.runningStep match {
-        case Some(RunningStep(current, total)) => s"${~sequenceId} - ${current + 1}/$total"
-        case _                                 => ~sequenceId
+        case Some(RunningStep(current, total)) => s"${sequenceId.getOrElse("")} - ${current + 1}/$total"
+        case _                                 => sequenceId.getOrElse("")
       }
       val icon = status.flatMap {
         case SequenceState.Running(_, _) => IconCircleNotched.copyIcon(loading = true).some
@@ -53,11 +48,11 @@ object InstrumentTab {
       }
       val linkPage: SeqexecPages = sequenceId.fold(InstrumentPage(instrument): SeqexecPages)(SequencePage(instrument, _, 0))
       val instrumentNoId =
-        <.div(SeqexecStyles.instrumentTabLabel, instrument.shows)
+        <.div(SeqexecStyles.instrumentTabLabel, instrument.show)
       val instrumentWithId =
         <.div(
           SeqexecStyles.instrumentTabLabel,
-          <.div(SeqexecStyles.activeInstrumentLabel, instrument.shows),
+          <.div(SeqexecStyles.activeInstrumentLabel, instrument.show),
           Label(Label.Props(tabTitle, color = color, icon = icon, extraStyles = List(SeqexecStyles.labelPointer)))
         )
       p.router.link(linkPage)(
@@ -71,7 +66,7 @@ object InstrumentTab {
         SeqexecStyles.instrumentTab,
         SeqexecStyles.activeInstrumentContent.when(active),
         SeqexecStyles.errorTab.when(hasError),
-        dataTab := instrument.shows
+        dataTab := instrument.show
       )
     }.componentDidMount(ctx =>
       Callback {
@@ -82,7 +77,7 @@ object InstrumentTab {
         $(ctx.getDOMNode).tab(
           JsTabOptions
             .onVisible { (x: String) =>
-              val instrument = ctx.props.site.instruments.list.toList.find(_.shows === x)
+              val instrument = ctx.props.site.instruments.toList.find(_.show === x)
               val sequenceId = ctx.props.t().idState.map(_._1)
               val updateModelCB = (sequenceId, instrument) match {
                 case (Some(id), Some(i)) =>
@@ -106,7 +101,7 @@ object InstrumentTab {
   */
 object InstrumentsTabs {
   final case class Props(router: RouterCtl[SeqexecPages], site: SeqexecSite) {
-    protected[sequence] val instrumentConnects = site.instruments.list.toList.map(i => SeqexecCircuit.connect(SeqexecCircuit.instrumentStatusReader(i)))
+    protected[sequence] val instrumentConnects = site.instruments.toList.map(i => SeqexecCircuit.connect(SeqexecCircuit.instrumentStatusReader(i)))
   }
 
   private val component = ScalaComponent.builder[Props]("InstrumentsMenu")

@@ -19,12 +19,9 @@ import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.extra.router.RouterCtl
 import react.virtualized._
 import scala.math.max
-
+import cats.implicits._
 import scalacss.ScalaCssReact._
-import scalaz.syntax.show._
-import scalaz.syntax.traverse._
-import scalaz.syntax.std.boolean._
-import scalaz.std.AllInstances._
+import mouse.all._
 
 object QueueTableBody {
   private val CssSettings = scalacss.devOrProdDefaults
@@ -32,7 +29,7 @@ object QueueTableBody {
 
   final case class Props(ctl: RouterCtl[SeqexecPages], sequences: ModelProxy[StatusAndLoadedSequencesFocus]) {
     private lazy val sequencesList = sequences().sequences
-    def rowGetter(i: Int): QueueRow = sequencesList.index(i).map { s =>
+    def rowGetter(i: Int): QueueRow = sequencesList.lift(i).map { s =>
         QueueRow(s.id, s.status, s.instrument, s.targetName, s.name, s.active, s.runningStep)
       }.getOrElse(QueueRow.Zero)
 
@@ -69,7 +66,7 @@ object QueueTableBody {
     def unapply(l: QueueRow): Option[(SequenceId, SequenceState, Instrument, Option[String], String, Boolean, Option[RunningStep])] =
       Some((l.obsId, l.status, l.instrument, l.targetName, l.name, l.active, l.runningStep))
 
-    val Zero: QueueRow = apply("", SequenceState.Idle, Instrument.F2, None, "", false, None)
+    val Zero: QueueRow = apply("", SequenceState.Idle, Instrument.F2, None, "", active = false, None)
   }
 
   def showSequence(p: Props, i: Instrument, id: SequenceId): Callback =
@@ -94,13 +91,13 @@ object QueueTableBody {
   private def obsNameRenderer(p: Props) = linkedTextRenderer(p){ r => <.p(SeqexecStyles.queueText, r.name) }
 
   private def statusText(status: SequenceState, runningStep: Option[RunningStep]): String =
-    s"${status.shows} ${runningStep.map(u => s" ${u.shows}").getOrElse("")}"
+    s"${status.show} ${runningStep.map(u => s" ${u.show}").getOrElse("")}"
 
   private def stateRenderer(p: Props) = linkedTextRenderer(p){ r =>
     <.p(SeqexecStyles.queueText, statusText(r.status, r.runningStep))
   }
 
-  private def instrumentRenderer(p: Props) = linkedTextRenderer(p){ r => <.p(SeqexecStyles.queueText, r.instrument.shows) }
+  private def instrumentRenderer(p: Props) = linkedTextRenderer(p){ r => <.p(SeqexecStyles.queueText, r.instrument.show) }
 
   val daytimeCalibrationTargetName: TagMod =
     <.span(
@@ -152,7 +149,7 @@ object QueueTableBody {
     // Calculate the column's width
     val (obsColumnWidth, statusColumnWidth, instrumentColumnWidth, nameColumnWidth, targetNameColumnWidth) = p.sequences().sequences.map {
       case SequenceInQueue(id, st, i, _, n, t, r) =>
-        (tableTextWidth(id), tableTextWidth(statusText(st, r)), tableTextWidth(i.shows), tableTextWidth(n), tableTextWidth(t.getOrElse("")))
+        (tableTextWidth(id), tableTextWidth(statusText(st, r)), tableTextWidth(i.show), tableTextWidth(n), tableTextWidth(t.getOrElse("")))
     }.foldLeft((ObsIdColumnWidth, StateColumnWidth, InstrumentColumnWidth, NameColumnWidth, TargetNameColumnWidth)) {
       case ((o, s, i, n, t), (co, cs, ci, cn, ct)) =>
         (max(o, co), max(s, cs), max(i, ci), max(n, cn), max(t, ct))

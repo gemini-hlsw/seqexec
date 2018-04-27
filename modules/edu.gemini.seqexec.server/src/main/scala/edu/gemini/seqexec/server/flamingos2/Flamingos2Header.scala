@@ -6,6 +6,8 @@ package edu.gemini.seqexec.server.flamingos2
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
+import cats.data.EitherT
+import cats.effect.IO
 import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.server.ConfigUtilOps._
 import edu.gemini.seqexec.server.tcs.TcsKeywordsReader
@@ -14,9 +16,7 @@ import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.data.YesNoType
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.{MOS_PREIMAGING_PROP, READMODE_PROP, ReadMode}
 import edu.gemini.spModel.seqcomp.SeqConfigNames.INSTRUMENT_KEY
-
-import scalaz.EitherT
-import scalaz.concurrent.Task
+import cats.implicits._
 
 /**
   * Created by jluhrs on 2/10/17.
@@ -58,10 +58,10 @@ object Flamingos2Header {
   }
 
   class ObsKeywordsReaderImpl(config: Config) extends ObsKeywordsReader {
-    override def getPreimage: SeqAction[YesNoType] = EitherT(Task.now(config.extract(INSTRUMENT_KEY / MOS_PREIMAGING_PROP)
+    override def getPreimage: SeqAction[YesNoType] = EitherT(IO.pure(config.extract(INSTRUMENT_KEY / MOS_PREIMAGING_PROP)
       .as[YesNoType].leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))))
 
-    override def getReadMode: SeqAction[ReadMode] = EitherT(Task.now(config.extract(INSTRUMENT_KEY / READMODE_PROP)
+    override def getReadMode: SeqAction[ReadMode] = EitherT(IO.pure(config.extract(INSTRUMENT_KEY / READMODE_PROP)
       .as[ReadMode].leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))))
   }
 

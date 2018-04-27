@@ -6,17 +6,13 @@ package edu.gemini.seqexec.server.gmos
 import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.server.gmos.GmosController.Config.DCConfig
 import edu.gemini.seqexec.server.SeqexecFailure.Unexpected
-import edu.gemini.seqexec.server.{ObserveCommand, SeqAction, SeqexecFailure}
+import edu.gemini.seqexec.server._
 import edu.gemini.spModel.gemini.gmos.GmosCommonType.BuiltinROI
 import squants.{Length, Time}
 
 import scala.concurrent.duration.Duration
-import scalaz.syntax.equal._
-import scalaz.{Equal, \/}
+import cats.implicits._
 
-/**
-  * Created by jluhrs on 8/3/17.
-  */
 trait GmosController[T<:GmosController.SiteDependentTypes] {
   import GmosController._
 
@@ -71,20 +67,18 @@ object GmosController {
 
   // scalastyle:off
   object Config {
-    type DTAX = edu.gemini.spModel.gemini.gmos.GmosCommonType.DTAX
-    type ADC = edu.gemini.spModel.gemini.gmos.GmosCommonType.ADC
+    type DTAX                = edu.gemini.spModel.gemini.gmos.GmosCommonType.DTAX
+    type ADC                 = edu.gemini.spModel.gemini.gmos.GmosCommonType.ADC
     type UseElectronicOffset = edu.gemini.spModel.gemini.gmos.InstGmosCommon.UseElectronicOffsettingRuling
-    type DisperserOrder = edu.gemini.spModel.gemini.gmos.GmosCommonType.Order
-    type Binning = edu.gemini.spModel.gemini.gmos.GmosCommonType.Binning
-    type AmpReadMode = edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpReadMode
-    type AmpGain = edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpGain
-    type AmpCount = edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpCount
-    type BuiltinROI = edu.gemini.spModel.gemini.gmos.GmosCommonType.BuiltinROI
-    type ROI = edu.gemini.spModel.gemini.gmos.GmosCommonType.ROIDescription
-    type ExposureTime = Duration
-    type PosAngle = edu.gemini.spModel.core.Angle
-
-    implicit val equalBuiltInROI: Equal[BuiltinROI] = Equal.equalA
+    type DisperserOrder      = edu.gemini.spModel.gemini.gmos.GmosCommonType.Order
+    type Binning             = edu.gemini.spModel.gemini.gmos.GmosCommonType.Binning
+    type AmpReadMode         = edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpReadMode
+    type AmpGain             = edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpGain
+    type AmpCount            = edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpCount
+    type BuiltinROI          = edu.gemini.spModel.gemini.gmos.GmosCommonType.BuiltinROI
+    type ROI                 = edu.gemini.spModel.gemini.gmos.GmosCommonType.ROIDescription
+    type ExposureTime        = Duration
+    type PosAngle            = edu.gemini.spModel.core.Angle
 
     // I'm not totally sure this is being used
     sealed trait BiasTime
@@ -120,17 +114,17 @@ object GmosController {
 
     final case class CCDBinning(x: Binning, y: Binning)
 
-    sealed abstract class RegionsOfInterest(val rois: BuiltinROI \/ List[ROI])
+    sealed abstract class RegionsOfInterest(val rois: Either[BuiltinROI, List[ROI]])
 
     object RegionsOfInterest {
-      def fromOCS(builtIn: BuiltinROI, custom: List[ROI]): SeqexecFailure \/ RegionsOfInterest =
+      def fromOCS(builtIn: BuiltinROI, custom: List[ROI]): Either[SeqexecFailure, RegionsOfInterest] =
         (builtIn, custom) match {
-          case (b, r) if b =/= BuiltinROI.CUSTOM && r.isEmpty => \/.right(new RegionsOfInterest(\/.left(b)) {})
-          case (BuiltinROI.CUSTOM, r) if r.nonEmpty => \/.right(new RegionsOfInterest(\/.right(r)) {})
-          case _ => \/.left(Unexpected("Inconsistent values for GMOS regions of interest"))
+          case (b, r) if b =!= BuiltinROI.CUSTOM && r.isEmpty => new RegionsOfInterest(b.asLeft) {}.asRight
+          case (BuiltinROI.CUSTOM, r) if r.nonEmpty           => new RegionsOfInterest(r.asRight) {}.asRight
+          case _                                              => Unexpected("Inconsistent values for GMOS regions of interest").asLeft
         }
 
-      def unapply(r: RegionsOfInterest): Some[BuiltinROI \/ List[ROI]] = Some(r.rois)
+      def unapply(r: RegionsOfInterest): Some[Either[BuiltinROI, List[ROI]]] = Some(r.rois)
     }
 
     final case class DCConfig(
@@ -153,20 +147,20 @@ object GmosController {
   }
 
   final class SouthTypes extends SiteDependentTypes {
-    override type Filter = edu.gemini.spModel.gemini.gmos.GmosSouthType.FilterSouth
-    override type FPU = edu.gemini.spModel.gemini.gmos.GmosSouthType.FPUnitSouth
+    override type Filter        = edu.gemini.spModel.gemini.gmos.GmosSouthType.FilterSouth
+    override type FPU           = edu.gemini.spModel.gemini.gmos.GmosSouthType.FPUnitSouth
     override type GmosStageMode = edu.gemini.spModel.gemini.gmos.GmosSouthType.StageModeSouth
-    override type Disperser = edu.gemini.spModel.gemini.gmos.GmosSouthType.DisperserSouth
+    override type Disperser     = edu.gemini.spModel.gemini.gmos.GmosSouthType.DisperserSouth
   }
 
   type SouthConfigTypes = Config[SouthTypes]
   val southConfigTypes: SouthConfigTypes = new SouthConfigTypes
 
   final class NorthTypes extends SiteDependentTypes {
-    override type Filter = edu.gemini.spModel.gemini.gmos.GmosNorthType.FilterNorth
-    override type FPU = edu.gemini.spModel.gemini.gmos.GmosNorthType.FPUnitNorth
+    override type Filter        = edu.gemini.spModel.gemini.gmos.GmosNorthType.FilterNorth
+    override type FPU           = edu.gemini.spModel.gemini.gmos.GmosNorthType.FPUnitNorth
     override type GmosStageMode = edu.gemini.spModel.gemini.gmos.GmosNorthType.StageModeNorth
-    override type Disperser = edu.gemini.spModel.gemini.gmos.GmosNorthType.DisperserNorth
+    override type Disperser     = edu.gemini.spModel.gemini.gmos.GmosNorthType.DisperserNorth
   }
 
   type NorthConfigTypes = Config[NorthTypes]

@@ -5,17 +5,18 @@ package edu.gemini.web.server.common
 
 import java.io.File
 import java.nio.file.{Path, Paths}
-import org.slf4j.bridge.SLF4JBridgeHandler
-import java.util.logging.{Logger, Level, LogManager}
 
-import scalaz.concurrent.Task
+import org.slf4j.bridge.SLF4JBridgeHandler
+import java.util.logging.{Level, LogManager, Logger}
+
+import cats.effect.IO
 
 trait AppBaseDir {
   /**
     * Calculates the base dir of the application based on the location of "this" class jar file
     * It will throw an exception if unable to find the base dir
     */
-  def baseDir: Task[Path] = Task.delay {
+  def baseDir: IO[Path] = IO.apply {
     val clazz = this.getClass
     val fileName = clazz.getResource(s"/${clazz.getName.replace(".", System.getProperty("file.separator"))}.class").getFile
 
@@ -31,13 +32,13 @@ trait AppBaseDir {
 
 trait LogInitialization extends AppBaseDir {
   // Send logs from JULI (e.g. ocs) to SLF4J
-  private def sendJuliToSLF4J: Task[Unit] = Task.delay {
-    LogManager.getLogManager().reset()
+  private def sendJuliToSLF4J: IO[Unit] = IO.apply {
+    LogManager.getLogManager.reset()
     SLF4JBridgeHandler.removeHandlersForRootLogger()
     SLF4JBridgeHandler.install()
     // Required to include debugging info, may affect performance though
     Logger.getGlobal.setLevel(Level.FINE)
   }
 
-  def configLog: Task[Unit] = sendJuliToSLF4J
+  def configLog: IO[Unit] = sendJuliToSLF4J
 }

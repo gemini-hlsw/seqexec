@@ -7,42 +7,91 @@ import java.util.logging.{Level, Logger}
 import java.time.Instant
 
 import diode.util.RunAfterJS
-import diode.{Action, ModelRW, NoAction, Effect, ActionHandler, ActionResult}
-import diode.data.{Pending, Pot, Ready}
+import diode.{Action, ActionHandler, ActionResult, RootModelR, Effect, ModelRW, NoAction}
+import diode.data.{Pending, RefTo, Pot, Ready}
 import boopickle.DefaultBasic._
-
 import edu.gemini.seqexec.model.{ModelBooPicklers, UserDetails}
 import edu.gemini.seqexec.model.Model._
-import edu.gemini.seqexec.model.events.{SeqexecEvent, SeqexecModelUpdate}
-import edu.gemini.seqexec.model.events.SeqexecEvent.{StepExecuted, ActionStopRequested, ConnectionOpenEvent, ObserverUpdated, SequenceCompleted}
-import edu.gemini.seqexec.model.events.SeqexecEvent.{ResourcesBusy, ExposurePaused, SequencePaused, SequenceError, ServerLogMessage, SequenceLoaded, SequenceUnloaded}
+import edu.gemini.seqexec.model.events._
 import edu.gemini.seqexec.web.client.model._
-import edu.gemini.seqexec.web.client.lenses.{sequenceViewT, sequenceStepT}
+import edu.gemini.seqexec.web.client.model.Pages._
+import edu.gemini.seqexec.web.client.model.SeqexecAppRootModel.LoadedSequences
+import edu.gemini.seqexec.web.client.lenses.{sequenceStepT, sequenceViewT}
 import edu.gemini.seqexec.web.client.ModelOps._
 import edu.gemini.seqexec.web.client.actions._
 import edu.gemini.seqexec.web.client.circuit._
-import edu.gemini.seqexec.web.client.model.Pages._
 import edu.gemini.seqexec.web.client.services.log.ConsoleHandler
-import edu.gemini.seqexec.web.client.services.{SeqexecWebClient, Audio}
-import edu.gemini.seqexec.web.client.model.SeqexecAppRootModel.LoadedSequences
-
+import edu.gemini.seqexec.web.client.services.{Audio, SeqexecWebClient}
+import cats._
+import cats.implicits._
 import org.scalajs.dom._
+import mouse.all._
+
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.scalajs.js.typedarray.{ArrayBuffer, TypedArrayBuffer}
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
-
-import scalaz._
-import Scalaz._
 
 object handlers {
   private val VoidEffect = Effect(Future(NoAction: Action))
 
   trait Handlers {
     implicit def pfMonoid[A, B]: Monoid[PartialFunction[A, B]] = new Monoid[PartialFunction[A, B]] {
-      def zero = PartialFunction.empty[A, B]
-      def append(pf1: PartialFunction[A, B], pf2: => PartialFunction[A, B]) = pf1.orElse(pf2)
+      override def empty = PartialFunction.empty[A, B]
+      override def combine(x: PartialFunction[A, B], y: PartialFunction[A, B]): PartialFunction[A, B] = x.orElse(y)
     }
+  }
+
+  /**
+   * Handles syncing added sequences to the page
+   */
+  class SyncToAddedRemovedRun[M](modelRW: ModelRW[M, Pages.SeqexecPages]) extends ActionHandler(modelRW) with Handlers {
+    private def inInstrumentPage = value match {
+      case Root | SoundTest | InstrumentPage(_) => true
+      case _                                    => false
+    }
+
+    def handleSyncPageToAddedSequence: PartialFunction[Any, ActionResult[M]] = {
+      case ServerMessage(SequenceLoaded(id, view)) =>
+        val newSequence = view.queue.find(_.id === id)
+        // If a new sequence is loaded then switch the page and focus
+        // if we are on the instrument route
+        val toSelect = for {
+          s <- newSequence
+          if inInstrumentPage
+        } yield s
+        toSelect match {
+          case Some(seq) =>
+            val instrument = seq.metadata.instrument
+            val sid = seq.id
+            val step = seq.progress.last
+            // We need to use an effect here as the model is not fully resolved
+            val effect = Effect(Future(SelectIdToDisplay(sid)))
+            value match {
+              case Root | SoundTest | InstrumentPage(_) =>
+                updated(SequencePage(instrument, id, step), effect)
+              case _                                    =>
+                effectOnly(effect)
+            }
+          case _ =>
+            noChange
+        }
+      }
+
+    def handleSyncPageToRemovedSequence: PartialFunction[Any, ActionResult[M]] = {
+      case ServerMessage(SequenceUnloaded(id, _)) =>
+        // If the selecte id is removed, reset the route
+        value match {
+          case SequencePage(i, sid, _) if sid === id      =>
+            updated(InstrumentPage(i))
+          case _                                          =>
+            noChange
+        }
+    }
+
+    override def handle: PartialFunction[Any, ActionResult[M]] =
+      List(handleSyncPageToRemovedSequence, handleSyncPageToAddedSequence).combineAll
+
   }
 
   class NavigationHandler[M](modelRW: ModelRW[M, Pages.SeqexecPages]) extends ActionHandler(modelRW) with Handlers {
@@ -56,80 +105,77 @@ object handlers {
         val effect = page match {
           case InstrumentPage(i)               =>
             Effect(Future(SelectInstrumentToDisplay(i)))
-          case SequencePage(i, id, _)          =>
-            Effect(Future(UnShowStep(i))) + Effect(Future(SelectIdToDisplay(id)))
+          case SequencePage(_, id, _)          =>
+            Effect(Future(SelectIdToDisplay(id)))
           case SequenceConfigPage(_, id, step) =>
-            Effect(Future(ShowStep(id, step)))
+            Effect(Future(ShowStepConfig(id, step)))
           case _                               =>
-            Effect(Future(NoAction: Action))
+            VoidEffect
         }
         updatedSilent(page, effect)
     }
 
-    def handleInitialSyncToPage: PartialFunction[Any, ActionResult[M]] = {
-      case InitialSyncToPage(s) =>
-        // the page maybe not in sync with the tabs. Let's fix that
-        value match {
-          case SequencePage(i, id, _) if i === s.metadata.instrument && id === s.id          =>
-            effectOnly(Effect(Future(SelectIdToDisplay(s.id))))
-          case InstrumentPage(_)                                                             =>
-            updated(SequencePage(s.metadata.instrument, s.id, 0), Effect(Future(SelectIdToDisplay(s.id))))
-          case SequenceConfigPage(i, id, step) if i === s.metadata.instrument && id === s.id =>
-            effectOnly(Effect(Future(ShowStep(s.id, step))))
-          case _                                                                             =>
-            noChange
-        }
-    }
-
-    def handleSyncToRunning: PartialFunction[Any, ActionResult[M]] = {
-      case SyncToRunning(s) =>
-        // We'll select the sequence currently running and show the correct url
-        value match {
-          case Root | SoundTest | InstrumentPage(_)        =>
-              updated(InstrumentPage(s.metadata.instrument), Effect(Future(SelectInstrumentToDisplay(s.metadata.instrument))))
-          case SequencePage(_, id, _)          =>
-            effectOnly(Effect(Future(SelectIdToDisplay(id))))
-          case SequenceConfigPage(_, id, step) =>
-            effectOnly(Effect(Future(SelectSequenceConfig(id, step))))
-        }
-    }
-
-    def handleSyncPageToRemovedSequence: PartialFunction[Any, ActionResult[M]] = {
-      case SyncPageToRemovedSequence(id) =>
-        // If the id is selected, reset the route
-        value match {
-          case InstrumentPage(i)                          =>
-            updated(InstrumentPage(i), Effect(Future(SelectInstrumentToDisplay(i))))
-          case SequencePage(i, sid, _) if sid === id      =>
-            updated(InstrumentPage(i), Effect(Future(SelectInstrumentToDisplay(i))))
-          case _                                          =>
-            noChange
-        }
-    }
-
-    def handleSyncPageToAddedSequence: PartialFunction[Any, ActionResult[M]] = {
-      case SyncPageToAddedSequence(i, id) =>
-        // Switch to the sequence in none is selected
-        value match {
-          case Root | SoundTest | InstrumentPage(_) =>
-            updated(SequencePage(i, id, 0), Effect(Future(SelectIdToDisplay(id))))
-          case _                                  =>
-            noChange
-        }
-    }
-
     def handle: PartialFunction[Any, ActionResult[M]] =
-      List(handleNavigateTo,
-        handleSilentTo,
-        handleInitialSyncToPage,
-        handleSyncToRunning,
-        handleSyncPageToRemovedSequence,
-        handleSyncPageToAddedSequence).suml
+      List(handleNavigateTo, handleSilentTo).combineAll
   }
 
-   /**
-    * Handles actions requesting results
-    */
+  /**
+   * This handler is called only once. It will be triggered when the first message
+   * with the full model arrives.
+   * Then we sync to the first running sequence or to the route we are currently on
+   */
+  class InitialSyncHandler[M](modelRW: ModelRW[M, InitialSyncFocus]) extends ActionHandler(modelRW) with Handlers {
+    def runningSequence(s: SeqexecModelUpdate): Option[SequenceView] =
+          s.view.queue.filter(_.status.isRunning).sortBy(_.id).headOption
+
+    def handle: PartialFunction[Any, ActionResult[M]] = {
+      // If there is a running sequence update the page to go there
+      case ServerMessage(s: SeqexecModelUpdate) if runningSequence(s).isDefined && value.firstLoad =>
+        val running = runningSequence(s)
+        running.fold(updated(value.copy(firstLoad = true))) { f =>
+          val seq = RefTo(new RootModelR(running))
+          updated(value.copy(location = SequencePage(f.metadata.instrument, f.id, f.progress.last), sod = value.sod.focusOnSequence(seq)))
+        }
+
+      // Otherwise, update the model to reflect the current page
+      case ServerMessage(s: SeqexecModelUpdate) if value.firstLoad                                 =>
+        // the page maybe not in sync with the tabs. Let's fix that
+        val sids = s.view.queue.map(_.id)
+        val instruments = s.view.queue.map(_.metadata.instrument)
+        value.location match {
+          case SequencePage(_, id, _) if sids.contains(id)                 =>
+            // We are on a sequence page, update the model
+            val seq = RefTo(new RootModelR(s.view.queue.find(_.id === id)))
+            // We need to effect to update the reference
+            val effect = Effect(Future(SelectIdToDisplay(id)))
+            updated(value.copy(sod = value.sod.focusOnSequence(seq), firstLoad = false), effect)
+
+          case InstrumentPage(instrument) if instruments.contains(instrument) =>
+            // We are on a page for an instrument and we have sequences, let's go to the first one and change page
+            val first = s.view.queue.filter(_.metadata.instrument == instrument).sortBy(_.id).headOption
+            first.fold(updated(value.copy(firstLoad = false))) { f =>
+              val seq = RefTo(new RootModelR(first))
+              val firstStep = f.progress.last
+              // We need to effect to update the reference
+              val effect = Effect(Future(SelectIdToDisplay(f.id)))
+              updated(value.copy(location = SequencePage(f.metadata.instrument, f.id, firstStep), sod = value.sod.focusOnSequence(seq), firstLoad = false), effect)
+            }
+
+          case SequenceConfigPage(_, id, step) if sids.contains(id)           =>
+            // We are on a seq config page, update the model
+            val seq = RefTo(new RootModelR(s.view.queue.find(_.id === id)))
+            val effect = Effect(Future(ShowStepConfig(id, step)))
+            updated(value.copy(sod = value.sod.focusOnSequence(seq).showStepConfig(step - 1), firstLoad = false), effect)
+          case _                                                              =>
+            // No matches
+            updated(value.copy(firstLoad = false))
+        }
+      }
+  }
+
+  /**
+  * Handles actions requesting results
+  */
   class RemoteRequestsHandler[M](modelRW: ModelRW[M, Option[ClientID]]) extends ActionHandler(modelRW) with Handlers {
     def handleRequestOperation: PartialFunction[Any, ActionResult[M]] = {
       case RequestRun(s) =>
@@ -175,7 +221,7 @@ object handlers {
 
     override def handle: PartialFunction[Any, ActionResult[M]] =
       List(handleRequestOperation,
-        handleOperationResult).suml
+        handleOperationResult).combineAll
   }
 
   /**
@@ -188,7 +234,7 @@ object handlers {
         val updatedSequences = value.copy(queue = value.queue.collect {
           case s if s.id === sequenceId =>
             s.copy(metadata = s.metadata.copy(observer = Some(Observer(name))))
-          case s                  => s
+          case s                        => s
         })
         updated(updatedSequences, updateObserverE)
     }
@@ -198,7 +244,7 @@ object handlers {
         val skipRequest = Effect(SeqexecWebClient.skip(sequenceId, step.flipSkip).map(_ => NoAction))
         updated(value.copy(queue = value.queue.collect {
           case s if s.id === sequenceId => s.flipSkipMarkAtStep(step)
-          case s                      => s
+          case s                        => s
         }), skipRequest)
 
       case FlipBreakpointStep(sequenceId, step) =>
@@ -210,7 +256,7 @@ object handlers {
     }
 
     override def handle: PartialFunction[Any, ActionResult[M]] =
-      List(handleUpdateObserver, handleFlipSkipBreakpoint).suml
+      List(handleUpdateObserver, handleFlipSkipBreakpoint).combineAll
   }
 
   /**
@@ -260,7 +306,7 @@ object handlers {
   /**
     * Handles actions related to the changing the selection of the displayed sequence
     */
-  class SequenceDisplayHandler[M](modelRW: ModelRW[M, (SequencesOnDisplay, LoadedSequences, Option[SeqexecSite])]) extends ActionHandler(modelRW) with Handlers {
+  class SequenceDisplayHandler[M](modelRW: ModelRW[M, (SequencesOnDisplay, Option[SeqexecSite])]) extends ActionHandler(modelRW) with Handlers {
     def handleSelectSequenceDisplay: PartialFunction[Any, ActionResult[M]] = {
       case SelectInstrumentToDisplay(i) =>
         updated(value.copy(_1 = value._1.focusOnInstrument(i)))
@@ -268,21 +314,22 @@ object handlers {
       case SelectIdToDisplay(id) =>
         val seq = SeqexecCircuit.sequenceRef(id)
         updated(value.copy(_1 = value._1.focusOnSequence(seq)))
+
     }
 
     def handleInitialize: PartialFunction[Any, ActionResult[M]] = {
       case Initialize(site) =>
-        updated(value.copy(_1 = value._1.withSite(site), _3 = Some(site)))
+        updated(value.copy(_1 = value._1.withSite(site), _2 = Some(site)))
     }
 
     def handleShowHideStep: PartialFunction[Any, ActionResult[M]] = {
-      case ShowStep(id, step) =>
+      case ShowStepConfig(id, step)         =>
         val seq = SeqexecCircuit.sequenceRef(id)
-        updated(value.copy(_1 = value._1.focusOnSequence(seq).showStep(step - 1)))
+        updated(value.copy(_1 = value._1.focusOnSequence(seq).showStepConfig(step - 1)))
 
-      case UnShowStep(instrument) =>
+      case HideStepConfig(instrument) =>
         if (value._1.instrumentSequences.focus.sequence.exists(_.metadata.instrument == instrument)) {
-          updated(value.copy(_1 = value._1.unshowStep))
+          updated(value.copy(_1 = value._1.hideStepConfig))
         } else {
           noChange
         }
@@ -297,7 +344,7 @@ object handlers {
       List(handleSelectSequenceDisplay,
         handleInitialize,
         handleShowHideStep,
-        handleRememberCompleted).suml
+        handleRememberCompleted).combineAll
   }
 
   /**
@@ -386,7 +433,7 @@ object handlers {
     // Makes a websocket connection and setups event listeners
     def webSocket: Future[Action] = Future[Action] {
       val host = document.location.host
-      val protocol = document.location.protocol.startsWith("https") ? "wss" | "ws"
+      val protocol = document.location.protocol.startsWith("https").fold("wss", "ws")
       val url = s"$protocol://$host/api/seqexec/events"
       val ws = new WebSocket(url)
 
@@ -399,13 +446,13 @@ object handlers {
         e.data match {
           case buffer: ArrayBuffer =>
             val byteBuffer = TypedArrayBuffer.wrap(buffer)
-            \/.fromTryCatchNonFatal(Unpickle[SeqexecEvent].fromBytes(byteBuffer)) match {
-              case \/-(event: ServerLogMessage) =>
+            Either.catchNonFatal(Unpickle[SeqexecEvent].fromBytes(byteBuffer)) match {
+              case Right(event: ServerLogMessage) =>
                 SeqexecCircuit.dispatch(ServerMessage(event))
-              case \/-(event)                   =>
+              case Right(event)                   =>
                 logger.info(s"Decoding event: ${event.getClass}")
                 SeqexecCircuit.dispatch(ServerMessage(event))
-              case -\/(t)                       =>
+              case Left(t)                       =>
                 logger.warning(s"Error decoding event ${t.getMessage}")
             }
           case _                   =>
@@ -477,7 +524,7 @@ object handlers {
         connectingHandler,
         connectedHandler,
         connectionErrorHandler,
-        connectionClosedHandler).suml
+        connectionClosedHandler).combineAll
   }
 
   /**
@@ -495,13 +542,8 @@ object handlers {
     // but we don't know how to display them, so let's filter them out
     private def filterSequences(sequences: LoadedSequences): LoadedSequences =
       sequences.copy(queue = sequences.queue.filter {
-        case SequenceView(_, metadata, _, _, _) => value.site.map(_.instruments.list.toList.contains(metadata.instrument)).getOrElse(false)
+        case SequenceView(_, metadata, _, _, _) => value.site.map(_.instruments.toList.contains(metadata.instrument)).getOrElse(false)
       })
-
-    private def inInstrumentPage = value.location match {
-      case Root | InstrumentPage(_) => true
-      case _                        => false
-    }
 
     val soundCheck: PartialFunction[Any, ActionResult[M]] = {
       case RequestSoundEcho =>
@@ -585,49 +627,32 @@ object handlers {
     val sequenceLoadedMessage: PartialFunction[Any, ActionResult[M]] = {
       case ServerMessage(SequenceLoaded(id, view)) =>
         val observer = value.user.map(_.displayName)
-        val newSequence = view.queue.find(_.id === id)
         val updateObserverE = observer.fold(VoidEffect)(o => Effect(Future(UpdateObserver(id, o): Action)))
-        val syncPageE = for {
-          s <- newSequence
-          if inInstrumentPage
-        } yield Effect(Future(SyncPageToAddedSequence(s.metadata.instrument, id): Action))
-        val effects = updateObserverE + syncPageE.fold(VoidEffect)(identity)
-        updated(value.copy(sequences = filterSequences(view), firstLoad = false), effects)
+        updated(value.copy(sequences = filterSequences(view)), updateObserverE)
     }
 
     val sequenceUnloadedMessage: PartialFunction[Any, ActionResult[M]] = {
-      case ServerMessage(SequenceUnloaded(id, view)) =>
-        val syncPageE = Effect(Future(SyncPageToRemovedSequence(id)))
-        updated(value.copy(sequences = filterSequences(view), firstLoad = false), syncPageE)
+      case ServerMessage(SequenceUnloaded(_, view)) =>
+        updated(value.copy(sequences = filterSequences(view)))
     }
 
     val modelUpdateMessage: PartialFunction[Any, ActionResult[M]] = {
       case ServerMessage(s: SeqexecModelUpdate) =>
         // Replace the observer if not set and logged in
         val observer = value.user.map(_.displayName)
-        val syncToRunE: Option[Effect] = (value.firstLoad option {
-          s.view.queue.filter(_.status.isRunning) match {
-             case x :: _   => Effect(Future(SyncToRunning(x))).some // if we have multiple sequences running, let's pick the first
-             case _        => none
-          }
-        }).join
-        val (sequencesWithObserver, effects) =
-          filterSequences(s.view).queue.foldLeft(
-            (List.empty[SequenceView],
-             List[Option[Effect]](VoidEffect.some))
-          ) { case ((seq, eff), q) =>
-              val syncUrlE: Option[Effect] =
-                syncToRunE.orElse(value.firstLoad option Effect(Future(InitialSyncToPage(q)))).orElse(VoidEffect.some)
-              if (q.metadata.observer.isEmpty && observer.nonEmpty) {
-                (q.copy(metadata = q.metadata.copy(observer = observer.map(Observer.apply))) :: seq,
-                Effect(Future(UpdateObserver(q.id, observer.getOrElse("")))).some ::
-                syncUrlE :: eff)
-              } else {
-                (q :: seq, syncUrlE :: eff)
-              }
-            }
-        val newValue = value.copy(sequences = SequencesQueue(s.view.conditions, s.view.operator, sequencesWithObserver), firstLoad = false)
-        effects.collect { case Some(x) => x }.reduceOption(_ + _).fold(updated(newValue))(eff => updated(newValue, eff))
+        val newQueue = filterSequences(s.view).queue
+        val sequencesWithObserver = newQueue.collect {
+          case q if q.metadata.observer.isEmpty && observer.nonEmpty =>
+            q.copy(metadata = q.metadata.copy(observer = observer.map(Observer.apply)))
+          case q                                                     =>
+            q
+        }
+        val effects = newQueue.collect {
+          case q if q.metadata.observer.isEmpty && observer.nonEmpty =>
+            Effect(Future(UpdateObserver(q.id, observer.getOrElse("")))).some
+        }
+        val newValue = value.copy(sequences = SequencesQueue(s.view.conditions, s.view.operator, sequencesWithObserver))
+        effects.reduceOption(_ >> _).fold(updated(newValue))(eff => updated(newValue, eff.getOrElse(VoidEffect)))
     }
 
     val defaultMessage: PartialFunction[Any, ActionResult[M]] = {
@@ -651,6 +676,6 @@ object handlers {
         sequenceUnloadedMessage,
         resourceBusyMessage,
         modelUpdateMessage,
-        defaultMessage).suml
+        defaultMessage).combineAll
   }
 }

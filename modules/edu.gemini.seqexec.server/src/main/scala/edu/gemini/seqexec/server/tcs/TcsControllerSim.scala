@@ -3,19 +3,16 @@
 
 package edu.gemini.seqexec.server.tcs
 
+import cats.data.{EitherT, NonEmptyList}
+import cats.effect.IO
 import edu.gemini.seqexec.server.tcs.TcsController._
 import edu.gemini.seqexec.server.{SeqAction, TrySeq}
 import edu.gemini.spModel.core.Wavelength
 import org.log4s.getLogger
 import squants.space.{Degrees, Millimeters, Nanometers}
 
-import scalaz.Scalaz._
-import scalaz._
-import scalaz.concurrent.Task
+import cats.implicits._
 
-/**
- * Created by jluhrs on 8/3/15.
- */
 object TcsControllerSim extends TcsController {
 
   import MountGuideOption._
@@ -46,22 +43,22 @@ object TcsControllerSim extends TcsController {
   ))
 
   override def applyConfig(subsystems: NonEmptyList[Subsystem], tc: TcsConfig): SeqAction[Unit] = {
-    def configSubsystem(subsystem: Subsystem): Task[Unit] = Task.delay(Log.info(s"Applying $subsystem configuration."))
+    def configSubsystem(subsystem: Subsystem): IO[Unit] = IO.apply(Log.info(s"Applying $subsystem configuration."))
 
     EitherT(
-      (subsystems.tail.foldLeft(configSubsystem(subsystems.head))((b, a) => b *> configSubsystem(a))).map(TrySeq(_)))
+      subsystems.tail.foldLeft(configSubsystem(subsystems.head))((b, a) => b *> configSubsystem(a)).map(TrySeq(_)))
   }
 
   override def guide(gc: GuideConfig): SeqAction[Unit] =
     EitherT ( for {
-        _ <- Task {
+        _ <- IO {
           Log.info("Applying guiding configuration")
           Thread.sleep(1000)
         }
       } yield TrySeq(())
     )
 
-  override def notifyObserveStart: SeqAction[Unit] = EitherT(Task(Log.info("Simulate TCS observe").right))
+  override def notifyObserveStart: SeqAction[Unit] = EitherT.right(IO(Log.info("Simulate TCS observe")))
 
-  override def notifyObserveEnd: SeqAction[Unit] = EitherT(Task(Log.info("Simulate TCS endObserve").right))
+  override def notifyObserveEnd: SeqAction[Unit] = EitherT.right(IO(Log.info("Simulate TCS endObserve")))
 }

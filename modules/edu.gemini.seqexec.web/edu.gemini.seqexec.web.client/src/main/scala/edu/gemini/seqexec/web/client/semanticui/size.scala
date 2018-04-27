@@ -3,7 +3,7 @@
 
 package edu.gemini.seqexec.web.client.semanticui
 
-import scalaz.Equal
+import cats.Eq
 
 sealed trait Size
 
@@ -18,5 +18,5 @@ object Size {
   case object Huge extends Size
   case object Massive extends Size
 
-  implicit val equal: Equal[Size] = Equal.equalA[Size]
+  implicit val equal: Eq[Size] = Eq.fromUniversalEquals
 }

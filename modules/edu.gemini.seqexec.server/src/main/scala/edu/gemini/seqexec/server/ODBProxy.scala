@@ -3,25 +3,19 @@
 
 package edu.gemini.seqexec.server
 
+import cats.data.EitherT
+import cats.effect.IO
 import edu.gemini.pot.sp.SPObservationID
 import edu.gemini.spModel.core.Peer
-import edu.gemini.seqexec.odb.{SeqexecSequence, SeqExecService}
+import edu.gemini.seqexec.odb.{SeqExecService, SeqexecSequence}
 import edu.gemini.wdba.session.client.WDBA_XmlRpc_SessionClient
 import edu.gemini.seqexec.model.dhs.ImageFileId
+import cats.implicits._
 
-import scalaz.{EitherT, \/}
-import scalaz.syntax.either._
-import scalaz.syntax.equal._
-import scalaz.std.anyVal._
-import scalaz.concurrent.Task
-
-/**
-  * Created by jluhrs on 9/6/16.
-  */
 class ODBProxy(val loc: Peer, cmds: ODBProxy.OdbCommands) {
 
   def host(): Peer = loc
-  def read(oid: SPObservationID): SeqexecFailure \/ SeqexecSequence =
+  def read(oid: SPObservationID): Either[SeqexecFailure, SeqexecSequence] =
     SeqExecService.client(loc).sequence(oid).leftMap(SeqexecFailure.ODBSeqError)
 
   val queuedSequences: SeqAction[Seq[SPObservationID]] = cmds.queuedSequences()
@@ -64,69 +58,70 @@ object ODBProxy {
   implicit class SeqexecSequenceOps(val s: SeqexecSequence) extends AnyVal {
     def stepsCount: Int = Option(s.config.getAllSteps).map(_.length).getOrElse(0)
     def executedCount: Int = s.datasets.size
-    def unExecutedSteps: Boolean = stepsCount =/= executedCount
+    def unExecutedSteps: Boolean = stepsCount =!= executedCount
   }
 
   final case class OdbCommandsImpl(host: Peer) extends OdbCommands {
     private val xmlrpcClient = new WDBA_XmlRpc_SessionClient(host.host, host.port.toString)
     private val sessionName = "sessionQueue"
 
-    implicit class TaskRecover[A](t: Task[A]) {
-      def recover: Task[SeqexecFailure\/A] = t.map(_.right).handle{
-        case e: Exception => SeqexecFailure.SeqexecException(e).left
+    implicit class IORecover[A](t: IO[A]) {
+      def recover: IO[Either[SeqexecFailure, A]] = t.map(_.asRight).attempt.map {
+        case Left(e)  => SeqexecFailure.SeqexecException(e).asLeft
+        case Right(r) => r
       }
     }
 
     override def datasetStart(obsId: SPObservationID, dataId: String, fileId: ImageFileId): SeqAction[Boolean] = EitherT(
-      Task.delay(
+      IO.apply(
         xmlrpcClient.datasetStart(sessionName, obsId.stringValue, dataId, fileId.toString)
       ).recover
     )
 
     override def datasetComplete(obsId: SPObservationID, dataId: String, fileId: ImageFileId): SeqAction[Boolean] = EitherT(
-      Task.delay(
+      IO.apply(
         xmlrpcClient.datasetComplete(sessionName, obsId.stringValue, dataId, fileId.toString)
       ).recover
     )
 
     override def obsAbort(obsId: SPObservationID, reason: String): SeqAction[Boolean] = EitherT(
-      Task.delay(
+      IO.apply(
         xmlrpcClient.observationAbort(sessionName, obsId.stringValue, reason)
       ).recover
     )
 
     override def sequenceEnd(obsId: SPObservationID): SeqAction[Boolean] = EitherT(
-      Task.delay(
+      IO.apply(
         xmlrpcClient.sequenceEnd(sessionName, obsId.stringValue)
       ).recover
     )
 
     override def sequenceStart(obsId: SPObservationID, fileId: ImageFileId): SeqAction[Boolean] = EitherT(
-      Task.delay(
+      IO.apply(
         xmlrpcClient.sequenceStart(sessionName, obsId.stringValue, fileId.toString)
       ).recover
     )
 
     override def obsContinue(obsId: SPObservationID): SeqAction[Boolean] = EitherT(
-      Task.delay(
+      IO.apply(
         xmlrpcClient.observationContinue(sessionName, obsId.stringValue)
       ).recover
     )
 
     override def obsPause(obsId: SPObservationID, reason: String): SeqAction[Boolean] = EitherT(
-      Task.delay(
+      IO.apply(
         xmlrpcClient.observationPause(sessionName, obsId.stringValue, reason)
       ).recover
     )
 
     override def obsStop(obsId: SPObservationID, reason: String): SeqAction[Boolean] = EitherT(
-      Task.delay(
+      IO.apply(
         xmlrpcClient.observationStop(sessionName, obsId.stringValue, reason)
       ).recover
     )
 
     override def queuedSequences(): SeqAction[Seq[SPObservationID]] = EitherT(
-      Task.delay(
+      IO.apply(
         xmlrpcClient.getObservations(sessionName).toSeq.map(new SPObservationID(_))
       ).recover
     )

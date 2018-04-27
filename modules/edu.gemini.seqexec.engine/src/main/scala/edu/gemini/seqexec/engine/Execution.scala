@@ -3,10 +3,11 @@
 
 package edu.gemini.seqexec.engine
 
+import cats.Eq
 import edu.gemini.seqexec.model.Model.Resource
-
-import scalaz._
-import Scalaz._
+import monocle.function.Index.{index, listIndex}
+import monocle.syntax.apply._
+import mouse.boolean._
 
 /**
   * This structure holds the current `Execution` under execution. It carries
@@ -19,7 +20,7 @@ final case class Execution(execution: List[Action]) {
 
   val isEmpty: Boolean = execution.isEmpty
 
-  val actions: List[Action] = execution.filter(_.state.runState === Action.Idle)
+  val actions: List[Action] = execution.filter(_.state.runState.isIdle)
 
   val results: List[Action] = execution.filter(Action.finished)
 
@@ -28,7 +29,7 @@ final case class Execution(execution: List[Action]) {
     *
     */
   def status: Status =
-    if (execution.forall(_.state.runState === Action.Idle)) Status.Waiting
+    if (execution.forall(_.state.runState.isIdle)) Status.Waiting
     // Empty execution is handled here
     else if (finished(this)) Status.Completed
     else if (isEmpty) Status.Completed
@@ -47,9 +48,10 @@ final case class Execution(execution: List[Action]) {
     * If the index doesn't exist, `Current` is returned unmodified.
     */
   def mark(i: Int)(r: Result): Execution =
-    Execution(PLens.listNthPLens[Action](i).modg(a => a.copy(state = actionStateFromResult(r)(a.state)), execution).getOrElse(execution))
+    Execution((execution &|-? index(i)).modify(a => a.copy(state = actionStateFromResult(r)(a.state))))
 
-  def start(i: Int): Execution = Execution(PLens.listNthPLens[Action](i).modg(a => a.copy(state = a.state.copy(runState = Action.Started)), execution).getOrElse(execution))
+  def start(i: Int): Execution =
+    Execution((execution &|-? index(i)).modify(a => a.copy(state = a.state.copy(runState = Action.Started))))
 }
 
 object Execution {
@@ -61,14 +63,14 @@ object Execution {
     * are pending.
     */
   def currentify(as: Actions): Option[Execution] =
-    (as.nonEmpty && as.forall(_.state.runState === Action.Idle)).option(Execution(as))
+    (as.nonEmpty && as.forall(_.state.runState.isIdle)).option(Execution(as))
 
   def errored(ex: Execution): Boolean = ex.execution.exists(_.state.runState match {
     case Action.Failed(_) => true
     case _                => false
   })
 
-  def finished(ex: Execution): Boolean = ex.execution.all(_.state.runState match {
+  def finished(ex: Execution): Boolean = ex.execution.forall(_.state.runState match {
     case Action.Completed(_) => true
     case Action.Failed(_)    => true
     case _                   => false
@@ -104,6 +106,9 @@ object Result {
   // TODO: Replace the message by a richer Error type like `SeqexecFailure`
   final case class Error(msg: String) extends Result {
     override val errMsg: Option[String] = Some(msg)
+  }
+  object Error {
+    implicit val eq: Eq[Error] = Eq.fromUniversalEquals
   }
 
   sealed trait Response extends RetVal

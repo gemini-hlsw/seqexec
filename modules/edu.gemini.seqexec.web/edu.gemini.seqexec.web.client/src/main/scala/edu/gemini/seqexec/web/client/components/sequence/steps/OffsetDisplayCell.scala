@@ -3,6 +3,7 @@
 
 package edu.gemini.seqexec.web.client.components.sequence.steps
 
+import cats.Eq
 import edu.gemini.seqexec.model.Model.{Guiding, Offset, OffsetAxis, Step, TelescopeOffset}
 import edu.gemini.seqexec.web.client.lenses.{telescopeOffsetPO, telescopeOffsetQO}
 import edu.gemini.seqexec.web.client.lenses._
@@ -14,12 +15,7 @@ import japgolly.scalajs.react._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 import scalacss.ScalaCssReact._
-
-import scalaz.Equal
-import scalaz.syntax.order._
-import scalaz.syntax.show._
-import scalaz.syntax.std.option._
-import scalaz.std.anyVal._
+import cats.implicits._
 
 /**
   * Utility methods to display offsets and calculate their widths
@@ -31,11 +27,15 @@ object OffsetFns {
   object OffsetsDisplay {
     case object NoDisplay extends OffsetsDisplay
     final case class DisplayOffsets(offsetsWidth: Int) extends OffsetsDisplay
-    implicit val eq: Equal[OffsetsDisplay] = Equal.equalA
+    implicit val eq: Eq[OffsetsDisplay] =
+      Eq.by {
+        case NoDisplay         => None
+        case DisplayOffsets(v) => Some(v)
+      }
   }
 
   def offsetAxis(axis: OffsetAxis): String =
-    f"${axis.shows}:"
+    f"${axis.show}:"
 
   def offsetValueFormat(off: Offset): String =
     f" ${off.value}%003.2f″"
@@ -60,7 +60,7 @@ object OffsetFns {
 
   // Calculate if there are non-zero offsets
   private def areNonZeroOffsetsF(steps: List[Step]): Boolean = {
-    steps.map(s => telescopeOffsetPO.exist(_ =/= TelescopeOffset.P.Zero)(s) || telescopeOffsetQO.exist(_ =/= TelescopeOffset.Q.Zero)(s)).fold(false)(_ || _)
+    steps.map(s => telescopeOffsetPO.exist(_ =!= TelescopeOffset.P.Zero)(s) || telescopeOffsetQO.exist(_ =!= TelescopeOffset.Q.Zero)(s)).fold(false)(_ || _)
   }
 
   implicit class OffsetFnsOps(val steps: List[Step]) extends AnyVal {

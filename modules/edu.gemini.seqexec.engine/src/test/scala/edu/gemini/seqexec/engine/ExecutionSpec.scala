@@ -7,14 +7,14 @@ import edu.gemini.seqexec.model.ActionType
 
 import org.scalatest._
 
-import scalaz.concurrent.Task
+import cats.effect.IO
 
 class ExecutionSpec extends FlatSpec with Matchers {
 
   private val observeResult: Result.Response = Result.Observed("dummyId")
   private val ok: Result = Result.OK(observeResult)
-  private val completedAction: Action = fromTask(ActionType.Observe, Task(ok)).copy(state = Action.State(Action.Completed(observeResult), Nil))
-  private val action: Action = fromTask(ActionType.Observe, Task(ok))
+  private val completedAction: Action = fromIO(ActionType.Observe, IO(ok)).copy(state = Action.State(Action.Completed(observeResult), Nil))
+  private val action: Action = fromIO(ActionType.Observe, IO(ok))
   private val curr: Execution = Execution(List(completedAction, action))
 
   "currentify" should "be None only when an Execution is empty" in {

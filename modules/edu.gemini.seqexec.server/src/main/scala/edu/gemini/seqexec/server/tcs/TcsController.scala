@@ -3,13 +3,13 @@
 
 package edu.gemini.seqexec.server.tcs
 
+import cats._
+import cats.data.{NonEmptyList, OneAnd}
+import cats.implicits._
 import edu.gemini.seqexec.model.Model.Instrument
 import edu.gemini.seqexec.server.SeqAction
 import edu.gemini.spModel.core.Wavelength
 import squants.{Angle, Length}
-
-import scalaz.Scalaz._
-import scalaz._
 
 /**
  * Created by jluhrs on 7/30/15.
@@ -66,7 +66,7 @@ object TcsController {
   /** Data type for M2 guide config. */
   sealed trait M2GuideConfig
   object M2GuideConfig {
-    implicit val show: Show[M2GuideConfig] = Show.showA
+    implicit val show: Show[M2GuideConfig] = Show.fromToString
   }
   case object M2GuideOff extends M2GuideConfig
   final case class M2GuideOn(coma: ComaOption, source: Set[TipTiltSource]) extends M2GuideConfig {
@@ -77,19 +77,19 @@ object TcsController {
   /** Data type for M2 guide config. */
   sealed trait M1GuideConfig
   object M1GuideConfig {
-    implicit val show: Show[M1GuideConfig] = Show.showA
+    implicit val show: Show[M1GuideConfig] = Show.fromToString
   }
   case object M1GuideOff extends M1GuideConfig
   final case class M1GuideOn(source: M1Source) extends M1GuideConfig
 
   /** Enumerated type for beams A, B, and C. */
-  sealed trait Beam
+  sealed trait Beam extends Product with Serializable
   object Beam {
     case object A extends Beam
     case object B extends Beam
     case object C extends Beam
 
-    implicit val equal: Equal[Beam] = Equal.equalA
+    implicit val equal: Eq[Beam] = Eq.fromUniversalEquals
   }
 
   /**
@@ -98,8 +98,8 @@ object TcsController {
    */
   final case class NodChop(nod: Beam, chop: Beam)
   object NodChop {
-    implicit def EqualNodChop: Equal[NodChop] =
-      Equal.equalA
+    implicit def EqNodChop: Eq[NodChop] =
+      Eq[(Beam, Beam)].contramap(x => (x.nod, x.chop))
   }
 
   /** Enumerated type for nod/chop tracking. */
@@ -136,9 +136,9 @@ object TcsController {
         NodChopTrackingOption.fromBoolean(nodchop.nod === nodchop.chop)
     }
 
-    final case class Special(s: OneAnd[Set, NodChop]) extends ActiveNodChopTracking {
+    final case class Special(s: OneAnd[List, NodChop]) extends ActiveNodChopTracking {
       def get(nodchop: NodChop): NodChopTrackingOption =
-        NodChopTrackingOption.fromBoolean(s.element(nodchop))
+        NodChopTrackingOption.fromBoolean(s.exists(_ === nodchop))
     }
 
   }
@@ -173,7 +173,7 @@ object TcsController {
     case object IN     extends HrwfsPickupPosition
     case object OUT    extends HrwfsPickupPosition
     case object Parked extends HrwfsPickupPosition
-    implicit val show: Show[HrwfsPickupPosition] = Show.showA
+    implicit val show: Show[HrwfsPickupPosition] = Show.fromToString
   }
 
   /** Enumerated type for light source. */
@@ -189,7 +189,7 @@ object TcsController {
   object ScienceFoldPosition {
     case object Parked extends ScienceFoldPosition
     final case class Position(source: LightSource, sink: Instrument) extends ScienceFoldPosition
-    implicit val show: Show[ScienceFoldPosition] = Show.showA
+    implicit val show: Show[ScienceFoldPosition] = Show.fromToString
   }
 
   /** Enumerated type for offloading of tip/tilt corrections from M2 to mount. */
@@ -207,40 +207,40 @@ object TcsController {
   }
 
   // TCS expects offsets as two length quantities (in millimeters) in the focal plane
-  final case class OffsetX(self: Length) extends AnyVal
+  final case class OffsetX(self: Length)
   object OffsetX {
-    implicit val EqualOffsetX: Equal[OffsetX] =
-      Equal.equalA // natural equality here
+    implicit val EqOffsetX: Eq[OffsetX] =
+      Eq[Double].contramap(_.self.value)
   }
 
-  final case class OffsetY(self: Length) extends AnyVal
+  final case class OffsetY(self: Length)
   object OffsetY {
-    implicit val EqualOffsetY: Equal[OffsetY] =
-      Equal.equalA // natural equality here
+    implicit val EqOffsetY: Eq[OffsetY] =
+      Eq[Double].contramap(_.self.value)
   }
 
   final case class FocalPlaneOffset(x: OffsetX, y: OffsetY)
   object FocalPlaneOffset {
-    implicit val EqualFocalPlaneOffset: Equal[FocalPlaneOffset] =
-      Equal.equalBy(o => (o.x, o.y))
+    implicit val EqFocalPlaneOffset: Eq[FocalPlaneOffset] =
+      Eq.by(o => (o.x, o.y))
   }
 
-  final case class OffsetA(self: FocalPlaneOffset) extends AnyVal
+  final case class OffsetA(self: FocalPlaneOffset)
   object OffsetA {
-    implicit val EqualOffsetA: Equal[OffsetA] =
-      Equal.equalBy(_.self)
+    implicit val EqOffsetA: Eq[OffsetA] =
+      Eq.by(_.self)
   }
 
-  final case class OffsetB(self: FocalPlaneOffset) extends AnyVal
+  final case class OffsetB(self: FocalPlaneOffset)
   object OffsetB {
-    implicit val EqualOffsetB: Equal[OffsetB] =
-      Equal.equalBy(_.self)
+    implicit val EqOffsetB: Eq[OffsetB] =
+      Eq.by(_.self)
   }
 
-  final case class OffsetC(self: FocalPlaneOffset) extends AnyVal
+  final case class OffsetC(self: FocalPlaneOffset)
   object OffsetC {
-    implicit val EqualOffsetC: Equal[OffsetC] =
-      Equal.equalBy(_.self)
+    implicit val EqOffsetC: Eq[OffsetC] =
+      Eq.by(_.self)
   }
 
   // The WavelengthX classes cannot be value classes, because Wavelength is now a value class, and they cannot be
@@ -265,24 +265,24 @@ object TcsController {
     def setBeam(v: Beam): TelescopeConfig = TelescopeConfig(offsetA, offsetB, offsetC, wavelA, wavelB, wavelC, v)
   }
   object TelescopeConfig {
-    implicit val show: Show[TelescopeConfig] = Show.showA
+    implicit val show: Show[TelescopeConfig] = Show.fromToString
   }
 
   final case class ProbeTrackingConfigP1(self: ProbeTrackingConfig) extends AnyVal
   object ProbeTrackingConfigP1 {
-    implicit val show: Show[ProbeTrackingConfigP1] = Show.showA
+    implicit val show: Show[ProbeTrackingConfigP1] = Show.fromToString
   }
   final case class ProbeTrackingConfigP2(self: ProbeTrackingConfig) extends AnyVal
   object ProbeTrackingConfigP2 {
-    implicit val show: Show[ProbeTrackingConfigP2] = Show.showA
+    implicit val show: Show[ProbeTrackingConfigP2] = Show.fromToString
   }
   final case class ProbeTrackingConfigOI(self: ProbeTrackingConfig) extends AnyVal
   object ProbeTrackingConfigOI {
-    implicit val show: Show[ProbeTrackingConfigOI] = Show.showA
+    implicit val show: Show[ProbeTrackingConfigOI] = Show.fromToString
   }
   final case class ProbeTrackingConfigAO(self: ProbeTrackingConfig) extends AnyVal
   object ProbeTrackingConfigAO {
-    implicit val show: Show[ProbeTrackingConfigAO] = Show.showA
+    implicit val show: Show[ProbeTrackingConfigAO] = Show.fromToString
   }
 
   final case class GuidersTrackingConfig(
@@ -303,19 +303,19 @@ object TcsController {
 
   final case class GuiderSensorOptionP1(self: GuiderSensorOption) extends AnyVal
   object GuiderSensorOptionP1 {
-    implicit val show: Show[GuiderSensorOptionP1] = Show.showA
+    implicit val show: Show[GuiderSensorOptionP1] = Show.fromToString
   }
   final case class GuiderSensorOptionP2(self: GuiderSensorOption) extends AnyVal
   object GuiderSensorOptionP2 {
-    implicit val show: Show[GuiderSensorOptionP2] = Show.showA
+    implicit val show: Show[GuiderSensorOptionP2] = Show.fromToString
   }
   final case class GuiderSensorOptionOI(self: GuiderSensorOption) extends AnyVal
   object GuiderSensorOptionOI {
-    implicit val show: Show[GuiderSensorOptionOI] = Show.showA
+    implicit val show: Show[GuiderSensorOptionOI] = Show.fromToString
   }
   final case class GuiderSensorOptionAO(self: GuiderSensorOption) extends AnyVal
   object GuiderSensorOptionAO {
-    implicit val show: Show[GuiderSensorOptionAO] = Show.showA
+    implicit val show: Show[GuiderSensorOptionAO] = Show.fromToString
   }
 
   // A enabled guider means it is taking images and producing optical error measurements.
@@ -360,7 +360,7 @@ object TcsController {
     object M1 extends Subsystem
     object M2 extends Subsystem
 
-    val all: NonEmptyList[Subsystem] = NonEmptyList(OIWFS, P1WFS, P2WFS, ScienceFold, HRProbe, Mount, M1, M2)
+    val all: NonEmptyList[Subsystem] = NonEmptyList.of(OIWFS, P1WFS, P2WFS, ScienceFold, HRProbe, Mount, M1, M2)
   }
 
 }

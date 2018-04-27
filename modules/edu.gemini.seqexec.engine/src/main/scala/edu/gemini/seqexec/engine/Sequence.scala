@@ -5,8 +5,7 @@ package edu.gemini.seqexec.engine
 
 import edu.gemini.seqexec.model.Model.{Observer, Resource, SequenceMetadata, SequenceState, StepState}
 
-import scalaz._
-import Scalaz._
+import cats.implicits._
 import monocle.Lens
 import monocle.macros.GenLens
 
@@ -61,15 +60,14 @@ object Sequence {
     val next: Option[Zipper] =
       focus.next match {
         // Step completed
-        case None      => {
+        case None      =>
           val (toSkip, remaining): (List[Step], List[Step]) = pending.span(st => st.skipMark.self && !st.breakpoint.self)
           remaining match {
             case Nil => None
-            case stepp :: stepps => (Step.Zipper.currentify(stepp) |@| focus.uncurrentify) (
+            case stepp :: stepps => (Step.Zipper.currentify(stepp), focus.uncurrentify).mapN (
               (curr, stepd) => Zipper(id, metadata, stepps, curr, (done :+ stepd) ::: toSkip.map(_.copy(skipped = Step.Skipped(true))))
             )
           }
-        }
         // Current step ongoing
         case Some(stz) => Some(Zipper(id, metadata, pending, stz, done))
       }
@@ -82,7 +80,7 @@ object Sequence {
         remaining match {
           case Nil => None
           case stepp :: stepps =>
-            (Step.Zipper.currentify(stepp) |@| focus.skip.some) (
+            (Step.Zipper.currentify(stepp), focus.skip.some).mapN (
               (curr, stepd) => Zipper(id, metadata, stepps, curr, (done :+ stepd) ::: toSkip.map(_.copy(skipped = Step.Skipped(true))))
             )
         }
@@ -150,7 +148,7 @@ object Sequence {
         if (Step.status(step) === StepState.Pending)
           Some(acc.leftMap(_ :+ step))
         else if (Step.status(step) === StepState.Completed || Step.status(step) === StepState.Skipped)
-          Some(acc.rightMap(_ :+ step))
+          Some(acc.map(_ :+ step))
         else None
       )
 
@@ -238,12 +236,12 @@ object Sequence {
       case _                           => false
     }
 
-    def userStopSet(v: Boolean): State => State = status.modify{
+    def userStopSet(v: Boolean): State => State = status.modify {
       case r@SequenceState.Running(_, _) => r.copy(userStop = v)
       case r                             => r
     }
 
-    def internalStopSet(v: Boolean): State => State = status.modify{
+    def internalStopSet(v: Boolean): State => State = status.modify {
       case r@SequenceState.Running(_, _) => r.copy(internalStop = v)
       case r                             => r
     }

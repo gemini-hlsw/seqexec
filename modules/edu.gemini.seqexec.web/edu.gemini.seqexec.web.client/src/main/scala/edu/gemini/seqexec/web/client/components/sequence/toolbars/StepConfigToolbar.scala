@@ -21,7 +21,7 @@ import scalacss.ScalaCssReact._
   */
 object StepConfigToolbar {
   final case class Props(router: RouterCtl[SeqexecPages], site: SeqexecSite, instrument: Instrument, id: Option[SequenceId], step: StepId) {
-    protected[sequence] val sequenceInfoConnects = site.instruments.list.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(i)))).toMap
+    protected[sequence] val sequenceInfoConnects = site.instruments.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(i)))).toMap
   }
 
   def backToSequence(p: Props): Callback =

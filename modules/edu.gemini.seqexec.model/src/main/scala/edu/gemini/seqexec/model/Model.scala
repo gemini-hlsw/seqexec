@@ -5,12 +5,10 @@ package edu.gemini.seqexec.model
 
 import monocle.macros.Lenses
 
-import scalaz.{Equal, NonEmptyList, Order, Show}
-import scalaz.std.anyVal._
-import scalaz.std.option._
-import scalaz.syntax.show._
-import scalaz.syntax.equal._
-import scalaz.syntax.std.option._
+import cats._
+import cats.implicits._
+import cats.data.NonEmptyList
+
 import java.time.ZoneId
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference", "org.wartremover.warts.IsInstanceOf"))
@@ -30,13 +28,13 @@ object Model {
       val instruments : NonEmptyList[Instrument]= Instrument.gsInstruments
     }
 
-    implicit val show: Show[SeqexecSite] = Show.shows({
+    implicit val show: Show[SeqexecSite] = Show.show {
       case SeqexecGN(_) => "GN"
       case SeqexecGS(_) => "GS"
-    })
+    }
   }
 
-  sealed trait ServerLogLevel
+  sealed trait ServerLogLevel extends Product with Serializable
   object ServerLogLevel {
     case object INFO extends ServerLogLevel
     case object WARN extends ServerLogLevel
@@ -44,7 +42,8 @@ object Model {
 
     val all: List[ServerLogLevel] = List(INFO, WARN, ERROR)
 
-    implicit val show: Show[ServerLogLevel] = Show.shows {
+    implicit val eq: Eq[ServerLogLevel] = Eq.fromUniversalEquals
+    implicit val show: Show[ServerLogLevel] = Show.show {
       case INFO  => "INFO"
       case WARN  => "WARNING"
       case ERROR => "ERROR"
@@ -53,7 +52,7 @@ object Model {
 
   // The system name in ocs is a string but we can represent the important ones as an ADT
   sealed trait SystemName {
-    def withParam(p: String): String = s"${this.shows}:$p"
+    def withParam(p: String): String = s"${this.show}:$p"
   }
   object SystemName {
     case object ocs extends SystemName
@@ -77,7 +76,7 @@ object Model {
 
     val all: List[SystemName] = List(ocs, instrument, telescope, gcal)
 
-    implicit val show: Show[SystemName] = Show.shows {
+    implicit val show: Show[SystemName] = Show.show {
       case `ocs`         => "ocs"
       case `instrument`  => "instrument"
       case `telescope`   => "telescope"
@@ -86,20 +85,20 @@ object Model {
       case `calibration` => "calibration"
       case `meta`        => "meta"
     }
-    implicit val equal: Equal[SystemName] = Equal.equalA[SystemName]
+    implicit val equal: Eq[SystemName] = Eq.fromUniversalEquals
   }
   type ParamName = String
   type ParamValue = String
   type Parameters = Map[ParamName, ParamValue]
   type StepConfig = Map[SystemName, Parameters]
-  implicit val stEqual: Equal[StepConfig] = Equal.equalA[StepConfig]
+  implicit val stEq: Eq[StepConfig] = Eq.fromUniversalEquals
   // TODO This should be a richer type
   type SequenceId = String
   type StepId = Int
   type ObservationName = String
   type TargetName = String
   type ClientID = java.util.UUID
-  implicit val clientIdEq: Equal[ClientID] = Equal.equalA
+  implicit val clientIdEq: Eq[ClientID] = Eq.fromUniversalEquals
   val DaytimeCalibrationTargetName = "Daytime calibration"
 
   /**
@@ -121,7 +120,7 @@ object Model {
     case object Gems extends Resource
     case object Altair extends Resource
 
-    implicit val order: Order[Resource] = Order.orderBy {
+    implicit val order: Order[Resource] = Order.by {
       case TCS               => 1
       case Gcal              => 2
       case Gems              => 3
@@ -137,16 +136,16 @@ object Model {
       case Instrument.NIRI   => 17
       case Instrument.NIFS   => 18
     }
-    implicit val show: Show[Resource] = Show.shows {
+    implicit val show: Show[Resource] = Show.show {
       case TCS               => "TCS"
       case Gcal              => "Gcal"
       case Gems              => "Gems"
       case Altair            => "Altair"
       case OI                => "OI"
       case P1                => "P1"
-      case i: Instrument     => i.shows
+      case i: Instrument     => i.show
     }
-    implicit val ordering: scala.math.Ordering[Resource] = order.toScalaOrdering
+    implicit val ordering: scala.math.Ordering[Resource] = order.toOrdering
   }
   sealed trait Instrument extends Resource
   object Instrument {
@@ -159,8 +158,8 @@ object Model {
     case object NIRI extends Instrument
     case object NIFS extends Instrument
 
-    implicit val equal: Equal[Instrument] = Equal.equalA[Instrument]
-    implicit val show: Show[Instrument] = Show.shows {
+    implicit val equal: Eq[Instrument] = Eq.fromUniversalEquals
+    implicit val show: Show[Instrument] = Show.show {
       case F2    => "Flamingos2"
       case GmosS => "GMOS-S"
       case GmosN => "GMOS-N"
@@ -170,28 +169,28 @@ object Model {
       case NIRI  => "NIRI"
       case NIFS  => "NIFS"
     }
-    val gsInstruments: NonEmptyList[Instrument] = NonEmptyList[Instrument](F2, GmosS, GPI, GSAOI)
-    val gnInstruments: NonEmptyList[Instrument] = NonEmptyList[Instrument](GmosN, GNIRS, NIRI, NIFS)
+    val gsInstruments: NonEmptyList[Instrument] = NonEmptyList.of(F2, GmosS, GPI, GSAOI)
+    val gnInstruments: NonEmptyList[Instrument] = NonEmptyList.of(GmosN, GNIRS, NIRI, NIFS)
   }
 
   final case class Operator(value: String)
 
   object Operator {
     val Zero: Operator = Operator("")
-    implicit val equal: Equal[Operator] = Equal.equalA
-    implicit val shows: Show[Operator] = Show.shows(_.value)
+    implicit val equal: Eq[Operator] = Eq.fromUniversalEquals
+    implicit val shows: Show[Operator] = Show.show(_.value)
   }
 
   final case class Observer(value: String)
   object Observer {
     val Zero: Observer = Observer("")
-    implicit val equal: Equal[Observer] = Equal.equalA
-    implicit val shows: Show[Observer] = Show.shows(_.value)
+    implicit val equal: Eq[Observer] = Eq.fromUniversalEquals
+    implicit val shows: Show[Observer] = Show.show(_.value)
   }
 
-  implicit val equalSequenceId: Equal[SequenceId] = Equal.equalA[SequenceId]
+  implicit val equalSequenceId: Eq[SequenceId] = Eq.fromUniversalEquals
 
-  sealed trait StepState {
+  sealed trait StepState extends Product with Serializable {
     def canRunFrom: Boolean = false
   }
   object StepState {
@@ -208,10 +207,10 @@ object Model {
       override val canRunFrom: Boolean = true
     }
 
-    implicit val equal: Equal[StepState] = Equal.equalA[StepState]
+    implicit val equal: Eq[StepState] = Eq.fromUniversalEquals
   }
 
-  sealed trait ActionStatus
+  sealed trait ActionStatus extends Product with Serializable
   object ActionStatus {
     // Action is not yet run
     case object Pending extends ActionStatus
@@ -224,7 +223,7 @@ object Model {
     // Action run but failed to complete
     case object Failed extends ActionStatus
 
-    implicit val equal: Equal[ActionStatus] = Equal.equalA[ActionStatus]
+    implicit val equal: Eq[ActionStatus] = Eq.fromUniversalEquals
   }
 
   sealed trait Step {
@@ -238,7 +237,10 @@ object Model {
   object Step {
     val Zero: Step = StandardStep(id = -1, config = Map.empty, status = StepState.Pending, breakpoint = false, skip = false, fileId = None, configStatus = Nil, observeStatus = ActionStatus.Pending)
 
-    implicit val equal: Equal[Step] = Equal.equalA[Step]
+    implicit val equal: Eq[Step] =
+      Eq.by { x =>
+        (x.id, x.config, x.status, x.breakpoint, x.skip, x.fileId)
+      }
 
     implicit class StepOps(val s: Step) extends AnyVal {
       def flipBreakpoint: Step = s match {
@@ -302,11 +304,14 @@ object Model {
     observeStatus: ActionStatus
   ) extends Step
   object StandardStep {
-    implicit val equal: Equal[StandardStep] = Equal.equalA[StandardStep]
+    implicit val equal: Eq[StandardStep] =
+      Eq.by { x =>
+        (x.id, x.config, x.status, x.breakpoint, x.skip, x.fileId, x.configStatus, x.observeStatus)
+      }
   }
   // Other kinds of Steps to be defined.
 
-  sealed trait SequenceState
+  sealed trait SequenceState extends Product with Serializable
   object SequenceState {
     case object Completed         extends SequenceState
     case object Idle              extends SequenceState
@@ -329,7 +334,7 @@ object Model {
         case _         => false
       }
 
-      def isInProcess: Boolean = state =/= SequenceState.Idle
+      def isInProcess: Boolean = state =!= SequenceState.Idle
 
       def isRunning: Boolean = state match {
         case Running(_, _) => true
@@ -349,7 +354,7 @@ object Model {
 
     }
 
-    implicit val equal: Equal[SequenceState] = Equal.equalA[SequenceState]
+    implicit val equal: Eq[SequenceState] = Eq.fromUniversalEquals
   }
 
   /**
@@ -362,6 +367,11 @@ object Model {
     name: String
   )
 
+  object SequenceMetadata {
+    implicit val eq: Eq[SequenceMetadata] =
+      Eq.by(x => (x.instrument, x.observer, x.name))
+  }
+
   @Lenses final case class SequenceView (
     id: SequenceId,
     metadata: SequenceMetadata,
@@ -371,7 +381,10 @@ object Model {
   )
 
   object SequenceView {
-    implicit val eq: Equal[SequenceView] = Equal.equalA
+    implicit val eq: Eq[SequenceView] =
+      Eq.by { x =>
+        (x.id, x.metadata, x.status, x.steps, x.willStopIn)
+      }
   }
 
   /**
@@ -381,11 +394,15 @@ object Model {
   final case class SequencesQueue[T](conditions: Conditions, operator: Option[Operator], queue: List[T])
 
   object SequencesQueue {
-    implicit def equal[T: Equal]: Equal[SequencesQueue[T]] = Equal.equalA
+    implicit def equal[T: Eq]: Eq[SequencesQueue[T]] =
+      Eq.by { x =>
+        (x.conditions, x.operator, x.queue)
+      }
   }
 
   // Complements to the science model
-  sealed trait StepType
+  sealed trait StepType extends Product with Serializable
+
   object StepType {
     case object Object extends StepType
     case object Arc extends StepType
@@ -394,8 +411,8 @@ object Model {
     case object Dark extends StepType
     case object Calibration extends StepType
 
-    implicit val eq: Equal[StepType] = Equal.equalA[StepType]
-    implicit val show: Show[StepType] = Show.shows {
+    implicit val eq: Eq[StepType] = Eq.fromUniversalEquals
+    implicit val show: Show[StepType] = Show.show {
       case Object      => "OBJECT"
       case Arc         => "ARC"
       case Flat        => "FLAT"
@@ -405,10 +422,11 @@ object Model {
     }
 
     val all: List[StepType] = List(Object, Arc, Flat, Bias, Dark, Calibration)
-    private val names = all.map(x => (x.shows, x)).toMap
+    private val names = all.map(x => (x.show, x)).toMap
 
     def fromString(s: String): Option[StepType] = names.get(s)
   }
+
   sealed trait OffsetAxis {
     val configItem: String
   }
@@ -419,7 +437,7 @@ object Model {
     case object AxisQ extends OffsetAxis {
       val configItem = "q"
     }
-    implicit val show: Show[OffsetAxis] = Show.shows {
+    implicit val show: Show[OffsetAxis] = Show.show {
       case AxisP => "p"
       case AxisQ => "q"
     }
@@ -429,14 +447,42 @@ object Model {
     val value: Double
   }
   object Offset {
-    implicit val equal: Equal[Offset] = Equal.equalA
+    implicit val equal: Eq[Offset] =
+      Eq.by {
+        case p: TelescopeOffset.P => Left(p)
+        case q: TelescopeOffset.Q => Right(q)
+      }
+
     def Zero(axis: OffsetAxis): Offset = axis match {
       case OffsetAxis.AxisP => TelescopeOffset.P.Zero
       case OffsetAxis.AxisQ => TelescopeOffset.Q.Zero
     }
   }
 
-  sealed trait Guiding {
+  // Telescope offsets, roughly based on gem
+  final case class TelescopeOffset(p: TelescopeOffset.P, q: TelescopeOffset.Q)
+  object TelescopeOffset {
+    /** P component of an angular offset.. */
+    final case class P(value: Double) extends Offset
+    object P {
+      val Zero: P = P(0.0)
+      implicit val order: Order[P] = Order.by(_.value)
+
+    }
+    /** Q component of an angular offset.. */
+    final case class Q(value: Double) extends Offset
+    object Q {
+      val Zero: Q = Q(0.0)
+      implicit val order: Order[Q] = Order.by(_.value)
+
+    }
+    implicit val eq: Eq[TelescopeOffset] =
+      Eq.by(x => (x.p, x.q))
+
+    implicit val show: Show[TelescopeOffset] = Show.fromToString
+  }
+
+  sealed trait Guiding extends Product with Serializable {
     val configValue: String
   }
   object Guiding {
@@ -450,7 +496,7 @@ object Model {
       val configValue: String = "freeze"
     }
 
-    implicit val equal: Equal[Guiding] = Equal.equalA
+    implicit val equal: Eq[Guiding] = Eq.fromUniversalEquals
 
     def fromString(s: String): Option[Guiding] = s match {
       case "guide"  => Guiding.Guide.some
@@ -459,40 +505,20 @@ object Model {
       case _        => none
     }
   }
-  sealed trait FPUMode
+
+  sealed trait FPUMode extends Product with Serializable
   object FPUMode {
     case object BuiltIn extends FPUMode
     case object Custom extends FPUMode
 
-    implicit val equal: Equal[FPUMode] = Equal.equalA
-    implicit val show: Show[FPUMode] = Show.showFromToString
+    implicit val equal: Eq[FPUMode] = Eq.fromUniversalEquals
+    implicit val show: Show[FPUMode] = Show.fromToString
 
     def fromString(s: String): Option[FPUMode] = s match {
       case "BUILTIN"     => FPUMode.BuiltIn.some
       case "CUSTOM_MASK" => FPUMode.Custom.some
       case _             => none
     }
-  }
-
-  // Telescope offsets, roughly based on gem
-  final case class TelescopeOffset(p: TelescopeOffset.P, q: TelescopeOffset.Q)
-  object TelescopeOffset {
-    /** P component of an angular offset.. */
-    final case class P(value: Double) extends Offset
-    object P {
-      val Zero: P = P(0.0)
-      implicit val order: Order[P] = Order.orderBy(_.value)
-
-    }
-    /** Q component of an angular offset.. */
-    final case class Q(value: Double) extends Offset
-    object Q {
-      val Zero: Q = Q(0.0)
-      implicit val order: Order[Q] = Order.orderBy(_.value)
-
-    }
-    implicit val eq: Equal[TelescopeOffset] = Equal.equalA[TelescopeOffset]
-    implicit val show: Show[TelescopeOffset] = Show.showFromToString
   }
 
   // Ported from OCS' SPSiteQuality.java
@@ -531,14 +557,17 @@ object Model {
 
     val default: Conditions = worst // Taken from ODB
 
-    implicit val equalConditions: Equal[Conditions] = Equal.equalA[Conditions]
+    implicit val equalConditions: Eq[Conditions] =
+      Eq.by { x =>
+        (x.cc, x.iq, x.sb, x.wv)
+      }
 
-    implicit val showConditions: Show[Conditions] = Show.shows[Conditions] {
+    implicit val showConditions: Show[Conditions] = Show.show[Conditions] {
       case Conditions(cc, iq, sb, wv) => List(cc, iq, sb, wv).mkString(", ")
     }
   }
 
-  sealed trait CloudCover {
+  sealed trait CloudCover extends Product with Serializable {
     val toInt: Int
   }
   object CloudCover {
@@ -549,9 +578,9 @@ object Model {
 
     val all: List[CloudCover] = List(Percent50, Percent70, Percent80, Any)
 
-    implicit val equalCloudCover: Equal[CloudCover] = Equal.equalA[CloudCover]
+    implicit val equalCloudCover: Eq[CloudCover] = Eq.fromUniversalEquals
 
-    implicit val showCloudCover: Show[CloudCover] = Show.shows[CloudCover] {
+    implicit val showCloudCover: Show[CloudCover] = Show.show[CloudCover] {
       case Percent50 => "50%/Clear"
       case Percent70 => "70%/Cirrus"
       case Percent80 => "80%/Cloudy"
@@ -560,7 +589,7 @@ object Model {
 
   }
 
-  sealed trait ImageQuality {
+  sealed trait ImageQuality extends Product with Serializable {
     val toInt: Int
   }
   object ImageQuality {
@@ -571,9 +600,9 @@ object Model {
 
     val all: List[ImageQuality] = List(Percent20, Percent70, Percent85, Any)
 
-    implicit val equalImageQuality: Equal[ImageQuality] = Equal.equalA[ImageQuality]
+    implicit val equalImageQuality: Eq[ImageQuality] = Eq.fromUniversalEquals
 
-    implicit val showImageQuality: Show[ImageQuality] = Show.shows[ImageQuality] {
+    implicit val showImageQuality: Show[ImageQuality] = Show.show[ImageQuality] {
       case Percent20 => "20%/Best"
       case Percent70 => "70%/Good"
       case Percent85 => "85%/Poor"
@@ -582,7 +611,7 @@ object Model {
 
   }
 
-  sealed trait SkyBackground {
+  sealed trait SkyBackground extends Product with Serializable {
     val toInt: Int
   }
   object SkyBackground {
@@ -593,9 +622,9 @@ object Model {
 
     val all: List[SkyBackground] = List(Percent20, Percent50, Percent80, Any)
 
-    implicit val equal: Equal[SkyBackground] = Equal.equalA[SkyBackground]
+    implicit val equal: Eq[SkyBackground] = Eq.fromUniversalEquals
 
-    implicit val showSkyBackground: Show[SkyBackground] = Show.shows[SkyBackground] {
+    implicit val showSkyBackground: Show[SkyBackground] = Show.show[SkyBackground] {
       case Percent20 => "20%/Darkest"
       case Percent50 => "50%/Dark"
       case Percent80 => "80%/Grey"
@@ -604,7 +633,7 @@ object Model {
 
   }
 
-  sealed trait WaterVapor {
+  sealed trait WaterVapor extends Product with Serializable {
     val toInt: Int
   }
   object WaterVapor {
@@ -615,9 +644,9 @@ object Model {
 
     val all: List[WaterVapor] = List(Percent20, Percent50, Percent80, Any)
 
-    implicit val equal: Equal[WaterVapor] = Equal.equalA[WaterVapor]
+    implicit val equal: Eq[WaterVapor] = Eq.fromUniversalEquals
 
-    implicit val showWaterVapor: Show[WaterVapor] = Show.shows[WaterVapor] {
+    implicit val showWaterVapor: Show[WaterVapor] = Show.show[WaterVapor] {
       case Percent20 => "20%/Low"
       case Percent50 => "50%/Median"
       case Percent80 => "85%/High"

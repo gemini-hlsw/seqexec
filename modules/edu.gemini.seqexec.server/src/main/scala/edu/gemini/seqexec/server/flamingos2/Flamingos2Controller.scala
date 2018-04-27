@@ -3,11 +3,11 @@
 
 package edu.gemini.seqexec.server.flamingos2
 
+import cats.kernel.Eq
 import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.server.SeqAction
 
 import scala.concurrent.duration.Duration
-import scalaz.Equal
 import squants.Time
 
 trait Flamingos2Controller {
@@ -32,19 +32,19 @@ object Flamingos2Controller {
 
   type Decker = edu.gemini.spModel.gemini.flamingos2.Flamingos2.Decker
 
-  sealed trait FocalPlaneUnit
+  sealed trait FocalPlaneUnit extends Product with Serializable
   object FocalPlaneUnit {
-    object Open extends FocalPlaneUnit
-    object GridSub1Pix extends FocalPlaneUnit
-    object Grid2Pix extends FocalPlaneUnit
-    object Slit1Pix extends FocalPlaneUnit
-    object Slit2Pix extends FocalPlaneUnit
-    object Slit3Pix extends FocalPlaneUnit
-    object Slit4Pix extends FocalPlaneUnit
-    object Slit6Pix extends FocalPlaneUnit
-    object Slit8Pix extends FocalPlaneUnit
+    case object Open extends FocalPlaneUnit
+    case object GridSub1Pix extends FocalPlaneUnit
+    case object Grid2Pix extends FocalPlaneUnit
+    case object Slit1Pix extends FocalPlaneUnit
+    case object Slit2Pix extends FocalPlaneUnit
+    case object Slit3Pix extends FocalPlaneUnit
+    case object Slit4Pix extends FocalPlaneUnit
+    case object Slit6Pix extends FocalPlaneUnit
+    case object Slit8Pix extends FocalPlaneUnit
     final case class Custom(mask: String) extends FocalPlaneUnit
-    implicit val equal: Equal[FocalPlaneUnit] = Equal.equalA
+    implicit val equal: Eq[FocalPlaneUnit] = Eq.fromUniversalEquals
   }
 
   type Filter = edu.gemini.spModel.gemini.flamingos2.Flamingos2.Filter
