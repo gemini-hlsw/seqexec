@@ -91,7 +91,7 @@ object Settings {
     val log4s        = "1.6.1"
     val logback      = "1.2.3"
     val janino       = "3.0.8"
-    val logstash     = "4.11"
+    val logstash     = "5.0"
     val knobs        = "6.0.33"
     val monocle      = "1.5.1-cats"
 
