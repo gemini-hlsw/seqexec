@@ -40,8 +40,8 @@ object HeadersSideBar {
     def updateOperator(name: String): Callback =
       $.props >>= { p => Callback.when(p.isLogged)(p.model.dispatchCB(UpdateOperator(Operator(name)))) }
 
-    def updateState(value: String): Callback =
-      $.modState(_.copy(currentText = value.some))
+    def updateState(value: Option[String], cb: Callback): Callback =
+      $.modState(_.copy(currentText = value)) >> cb
 
     def setupTimer: Callback =
       // Every 2 seconds check if the field has changed and submit
@@ -53,16 +53,16 @@ object HeadersSideBar {
       }
 
     def iqChanged(iq: ImageQuality): Callback =
-      Callback(SeqexecCircuit.dispatch(UpdateImageQuality(iq)))
+      SeqexecCircuit.dispatchCB(UpdateImageQuality(iq))
 
     def ccChanged(i: CloudCover): Callback =
-      Callback(SeqexecCircuit.dispatch(UpdateCloudCover(i)))
+      SeqexecCircuit.dispatchCB(UpdateCloudCover(i))
 
     def sbChanged(sb: SkyBackground): Callback =
-      Callback(SeqexecCircuit.dispatch(UpdateSkyBackground(sb)))
+      SeqexecCircuit.dispatchCB(UpdateSkyBackground(sb))
 
     def wvChanged(wv: WaterVapor): Callback =
-      Callback(SeqexecCircuit.dispatch(UpdateWaterVapor(wv)))
+      SeqexecCircuit.dispatchCB(UpdateWaterVapor(wv))
 
     def render(p: Props, s: State): VdomTagOf[Div] = {
       val enabled = p.model().status.isLogged && p.model().status.anySelected
@@ -110,7 +110,7 @@ object HeadersSideBar {
     .initialState(State(None))
     .renderBackend[Backend]
     .configure(TimerSupport.install)
-    .componentWillMount(f => f.backend.$.props >>= {p => Callback.when(p.model().operator.isDefined)(f.backend.updateState(p.model().operator.getOrElse(Operator.Zero).value))})
+    .componentWillMount(f => f.backend.$.props >>= {p => Callback.when(p.model().operator.isDefined)(f.backend.updateState(p.model().operator.map(_.value), Callback.empty))})
     .componentDidMount(_.backend.setupTimer)
     .componentWillReceiveProps { f =>
       val operator = f.nextProps.model().operator

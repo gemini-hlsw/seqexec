@@ -16,7 +16,7 @@ import edu.gemini.seqexec.web.client.semanticui.elements.label.Label
 import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.{Callback, ScalaComponent}
+import japgolly.scalajs.react._
 import cats.implicits._
 import scalacss.ScalaCssReact._
 
@@ -74,23 +74,25 @@ object InstrumentTab {
         import org.querki.jquery.$
         import edu.gemini.web.client.facades.semanticui.SemanticUITab._
 
-        $(ctx.getDOMNode).tab(
-          JsTabOptions
-            .onVisible { (x: String) =>
-              val instrument = ctx.props.site.instruments.toList.find(_.show === x)
-              val sequenceId = ctx.props.t().idState.map(_._1)
-              val updateModelCB = (sequenceId, instrument) match {
-                case (Some(id), Some(i)) =>
-                  ctx.props.t.dispatchCB(NavigateTo(SequencePage(i, id, 0))) >> ctx.props.t.dispatchCB(SelectIdToDisplay(id))
-                case (_, Some(i))        =>
-                  ctx.props.t.dispatchCB(NavigateTo(InstrumentPage(i))) >> ctx.props.t.dispatchCB(SelectInstrumentToDisplay(i))
-                case _                   =>
-                  Callback.empty
+        ctx.getDOMNode.toElement.foreach { dom =>
+          $(dom).tab(
+            JsTabOptions
+              .onVisible { (x: String) =>
+                val instrument = ctx.props.site.instruments.toList.find(_.show === x)
+                val sequenceId = ctx.props.t().idState.map(_._1)
+                val updateModelCB = (sequenceId, instrument) match {
+                  case (Some(id), Some(i)) =>
+                    ctx.props.t.dispatchCB(NavigateTo(SequencePage(i, id, 0))) >> ctx.props.t.dispatchCB(SelectIdToDisplay(id))
+                  case (_, Some(i))        =>
+                    ctx.props.t.dispatchCB(NavigateTo(InstrumentPage(i))) >> ctx.props.t.dispatchCB(SelectInstrumentToDisplay(i))
+                  case _                   =>
+                    Callback.empty
+                }
+                // runNow as we are outside react loop
+                updateModelCB.runNow()
               }
-              // runNow as we are outside react loop
-              updateModelCB.runNow()
-            }
-        )
+          )
+        }
       }
     ).build
 

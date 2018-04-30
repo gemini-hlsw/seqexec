@@ -31,8 +31,8 @@ object SequenceObserverField {
     def updateObserver(id: SequenceId, name: String): Callback =
       $.props >>= { p => Callback.when(p.p().isLogged)(p.p.dispatchCB(UpdateObserver(id, name))) }
 
-    def updateState(value: String): Callback =
-      $.state >>= { s => Callback.when(!s.currentText.contains(value))($.modState(_.copy(currentText = Some(value)))) }
+    def updateState(value: Option[String], cb: Callback): Callback =
+      {$.state >>= { (s: State) => Callback.when(!s.currentText.contains(value.getOrElse("")))($.modState(_.copy(currentText = value))) }} >> cb
 
     def submitIfChanged: Callback =
       ($.state zip $.props) >>= {
@@ -73,12 +73,12 @@ object SequenceObserverField {
     .initialState(State(None))
     .renderBackend[Backend]
     .configure(TimerSupport.install)
-    .componentWillMount(f => f.backend.$.props >>= {p => Callback.when(p.p().observer.isDefined)(f.backend.updateState(p.p().observer.map(_.value).orEmpty))})
+    .componentWillMount(f => f.backend.$.props >>= {p => Callback.when(p.p().observer.isDefined)(f.backend.updateState(p.p().observer.map(_.value), Callback.empty))})
     .componentDidMount(_.backend.setupTimer)
     .componentWillReceiveProps { f =>
       val observer = f.nextProps.p().observer
       // Update the observer field
-      Callback.when((observer.map(_.value) =!= f.state.currentText) && observer.nonEmpty)(f.backend.updateState(observer.map(_.value).orEmpty))
+      Callback.when((observer.map(_.value) =!= f.state.currentText) && observer.nonEmpty)(f.backend.updateState(observer.map(_.value), Callback.empty))
     }
     .shouldComponentUpdatePure { f =>
       val observer = f.nextProps.p().observer

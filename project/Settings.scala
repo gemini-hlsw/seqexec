@@ -64,15 +64,16 @@ object Settings {
 
     // ScalaJS libraries
     val scalaDom                = "0.9.5"
-    val scalajsReact            = "1.1.1"
+    val scalajsReact            = "1.2.0"
     val scalaCSS                = "0.5.5"
     val booPickle               = "1.3.0"
     val diode                   = "1.1.3"
+    val diodeReact              = "1.1.3.120"
     val javaTimeJS              = "2.0.0-M13"
     val javaLogJS               = "0.1.3"
     val scalaJQuery             = "1.2"
-    val scalaJSReactVirtualized = "0.0.9"
-    val scalaJSReactClipboard   = "0.1.0"
+    val scalaJSReactVirtualized = "0.2.0"
+    val scalaJSReactClipboard   = "0.3.0"
 
     // Java libraries
     val catsEffectVersion   = "0.10.1"
@@ -101,12 +102,12 @@ object Settings {
     val discipline            = "0.9.0"
 
     // Pure JS libraries
-    val reactJS          = "15.6.1"
+    val reactJS          = "16.2.0"
     val jQuery           = "3.2.1"
     val semanticUI       = "2.2.10"
     val ocsVersion       = "2018101.1.1"
     val uglifyJs         = "1.0.0-beta.3"
-    val reactVirtualized = "9.18.0"
+    val reactVirtualized = "9.18.5"
     val reactClipboard   = "5.0.0"
 
     val apacheXMLRPC      = "3.1.3"
@@ -176,7 +177,7 @@ object Settings {
     ))
     val Diode = Def.setting(Seq(
       "io.suzaku" %%% "diode"       % LibraryVersions.diode,
-      "io.suzaku" %%% "diode-react" % LibraryVersions.diode
+      "io.suzaku" %%% "diode-react" % LibraryVersions.diodeReact
     ))
     val ScalaCSS                = Def.setting("com.github.japgolly.scalacss" %%% "core"                      % LibraryVersions.scalaCSS)
     val ScalaJSDom              = Def.setting("org.scala-js"                 %%% "scalajs-dom"               % LibraryVersions.scalaDom)
@@ -202,7 +203,6 @@ object Settings {
     val WDBAClient  = Seq(
                       "edu.gemini.ocs"    %% "edu-gemini-wdba-session-client" % LibraryVersions.ocsVersion,
                       "org.apache.xmlrpc" %  "xmlrpc-client"                  % LibraryVersions.apacheXMLRPC
-
     )
 
     val EpicsService = "edu.gemini.epics" % "epics-service" % LibraryVersions.epicsService

@@ -4,9 +4,9 @@
 package edu.gemini.seqexec.web.client.semanticui.elements.popup
 
 import japgolly.scalajs.react.component.Scala.Unmounted
-import japgolly.scalajs.react.{Callback, ScalaComponent}
+import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.raw.ReactElement
+import japgolly.scalajs.react.raw.React
 
 /**
   * Produces a popup using javascript
@@ -21,7 +21,7 @@ object Popup {
     .stateless
     .renderPC{($, p, c) =>
       // This is in principle unsafe but we are only allowing Elements on the constructor
-      VdomElement($.propsChildren.only().asInstanceOf[ReactElement])
+      VdomElement($.propsChildren.only().asInstanceOf[React.Element])
     }
     .componentDidMount(ctx =>
       Callback {
@@ -29,9 +29,11 @@ object Popup {
         import org.querki.jquery.$
         import edu.gemini.web.client.facades.semanticui.SemanticUIPopup._
 
-        $(ctx.getDOMNode).popup(
-          JsPopupOptions.content(ctx.props.content)
-        )
+        ctx.getDOMNode.toElement.foreach { dom =>
+          $(dom).popup(
+            JsPopupOptions.content(ctx.props.content)
+          )
+        }
       }
     ).build
 
