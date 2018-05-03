@@ -10,10 +10,9 @@ import boopickle.Pickler
 import cats.Applicative
 import cats.effect.Sync
 import org.http4s._
-import org.http4s.EntityEncoder.byteArrayEncoder
+import org.http4s.EntityEncoder.chunkEncoder
 import org.http4s.headers.`Content-Type`
-import scodec.bits.ByteVector
-
+import fs2.Chunk
 import scala.util.{Failure, Success}
 
 /**
@@ -42,8 +41,8 @@ trait BooPickleInstances {
     }
 
   def booEncoderOf[F[_]: Applicative, A: Pickler]: EntityEncoder[F, A] =
-    byteArrayEncoder[F].contramap[A] { v =>
-      ByteVector(Pickle.intoBytes(v)).toArray
+    chunkEncoder[F].contramap[A] { v =>
+      Chunk.ByteBuffer(Pickle.intoBytes(v))
     }.withContentType(`Content-Type`(MediaType.`application/octet-stream`))
 
 }
