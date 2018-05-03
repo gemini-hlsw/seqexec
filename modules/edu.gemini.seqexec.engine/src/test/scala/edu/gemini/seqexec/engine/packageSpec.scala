@@ -257,7 +257,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
     assert(result.forall(_.isRight))
   }
 
-  "engine" should "not capture fatal errors." in {
+  "engine" should "not capture runtime exceptions." in {
     @SuppressWarnings(Array("org.wartremover.warts.Throw"))
     def s0(e: Throwable): Engine.State[Unit] = Engine.State[Unit]((),
       Map((seqId, Sequence.State.init(Sequence(
@@ -279,17 +279,10 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
         )
       ) ) ) )
     )
-
-    intercept[RuntimeException](
-      runToCompletion(s0(new RuntimeException))
+    
+    assertThrows[java.lang.RuntimeException](
+      runToCompletion(s0(new java.lang.RuntimeException))
     )
-    // TODO: Restore these tests, see SEQNG-586
-   // intercept[OutOfMemoryError](
-   //   runToCompletion(s0(new OutOfMemoryError))
-   // )
-//    intercept[StackOverflowError](
-//      runToCompletion(s0(new StackOverflowError))
-//    )
   }
 
   case class DummyData(operator: Option[Operator])
