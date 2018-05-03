@@ -20,7 +20,7 @@ resolvers in ThisBuild += "Gemini Repository" at "https://github.com/gemini-hlsw
 
 // This key is used to find the JRE dir. It could/should be overriden on a user basis
 // Add e.g. a `jres.sbt` file with your particular configuration
-ocsJreDir in ThisBuild := Path.userHome / ".jres8"
+ocsJreDir in ThisBuild := Path.userHome / ".jres8_ocs3"
 
 parallelExecution in (ThisBuild, Test) := false
 
@@ -336,6 +336,9 @@ lazy val seqexecCommonSettings = Seq(
     "-J-XX:+PrintGCDetails",
     "-J-XX:+PrintGCTimeStamps",
     "-J-XX:+HeapDumpOnOutOfMemoryError",
+    // Make sure the application exits on OOM
+    "-J-XX:+ExitOnOutOfMemoryError",
+    "-J-XX:+CrashOnOutOfMemoryError",
     "-J-XX:HeapDumpPath=/tmp",
     "-J-Xrunjdwp:transport=dt_socket,address=8457,server=y,suspend=n"
   )
