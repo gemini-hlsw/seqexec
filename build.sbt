@@ -33,7 +33,7 @@ onLoad in Global := { s =>
 }
 
 // Uncomment for local gmp testing
-resolvers in ThisBuild += "Local Maven Repository" at "file://"+Path.userHome.absolutePath+"/.m2/repository"
+//resolvers in ThisBuild += "Local Maven Repository" at "file://"+Path.userHome.absolutePath+"/.m2/repository"
 
 // Settings to use git to define the version of the project
 def versionFmt(out: sbtdynver.GitDescribeOutput): String = {

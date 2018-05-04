@@ -38,7 +38,7 @@ object GPIExample extends App {
             f <- client.fpmMask
             o <- client.aoDarkLevel
           } yield (h, f, o)
-        Stream.eval(r.map(println)) // scalastyle: off
+        Stream.eval(r.map(println)) // scalastyle:ignore
       },
       _.close
     )
