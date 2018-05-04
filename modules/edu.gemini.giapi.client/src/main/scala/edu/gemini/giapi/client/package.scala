@@ -8,8 +8,7 @@ import cats.implicits._
 import cats.effect._
 import edu.gemini.aspen.giapi.util.jms.status.StatusGetter
 import edu.gemini.jms.activemq.provider.ActiveMQJmsProvider
-import fs2.{Stream, async}
-import fs2.async.Ref
+import fs2.async
 
 /**
   * Represents a connection to a GIAPi based instrument
@@ -68,24 +67,24 @@ object Giapi {
         sg
       }
 
-      private def build(ref: Ref[F, ActiveMQJmsProvider]): F[Giapi[F]] =
+      private def build(ref: async.Ref[F, ActiveMQJmsProvider]): F[Giapi[F]] =
         for {
           c  <- ref.get
           sc <- statusGetter(c)
         } yield
-          // Build a reference
-          new Giapi[F] {
-            override def get[A](statusItem: String): F[Option[A]] = Sync[F].delay {
-              val item = sc.getStatusItem[A](statusItem)
-              Option(item.getValue)
-            }
-
-            override def close: F[Unit] =
-              for {
-                _ <- Sync[F].delay(sc.stopJms())
-                _ <- Sync[F].delay(c.stopConnection())
-              } yield ()
+        // Build a reference
+        new Giapi[F] {
+          override def get[A](statusItem: String): F[Option[A]] = Sync[F].delay {
+            val item = sc.getStatusItem[A](statusItem)
+            Option(item.getValue)
           }
+
+          override def close: F[Unit] =
+            for {
+              _ <- Sync[F].delay(sc.stopJms())
+              _ <- Sync[F].delay(c.stopConnection())
+            } yield ()
+        }
 
       def connect: F[Giapi[F]] =
         for {
@@ -97,27 +96,3 @@ object Giapi {
     }
 }
 
-object Example extends App {
-
-  // Read an item from GPI
-  class GPIRead[F[_]: Monad](giapi: Giapi[F]) {
-
-    def readFilter: F[Option[String]] =
-      for {
-        v <- giapi.get[String]("gpi:ppmMask.gemini")
-      } yield v
-  }
-
-  private val gpi =
-    Stream.bracket(Giapi.giapiConnection[IO]("failover:(tcp://172.16.140.131:61616)").connect)(
-      giapi => {
-        val r =
-          for {
-            v <- new GPIRead(giapi).readFilter
-          } yield println(v) // scalastyle:off
-        Stream.eval(r)
-      },
-      _.close)
-
-  gpi.compile.drain.unsafeRunSync()
-}
