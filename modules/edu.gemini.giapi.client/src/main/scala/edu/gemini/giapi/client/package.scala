@@ -28,7 +28,7 @@ trait Giapi[F[_]] {
   /**
     * Returns a value for the status item. If not found a `None` is returned
     */
-  def get(statusItem: String): F[Option[Int]]
+  def get[A](statusItem: String): F[Option[A]]
 
   /**
     * Close the connection
@@ -48,7 +48,7 @@ object Giapi {
 
     def connect: Id[Giapi[Id]] = new Giapi[Id] {
 
-      def get(statusItem: String): Id[Option[Int]] =
+      def get[A](statusItem: String): Id[Option[A]] =
         None
 
       override def close: Id[Unit] = ()
@@ -75,13 +75,9 @@ object Giapi {
         } yield
           // Build a reference
           new Giapi[F] {
-            override def get(statusItem: String): F[Option[Int]] = Sync[F].delay {
-              val item = sc.getStatusItem(statusItem)
-              val r = item.getValue match {
-                case i: Int => i
-                case _      => -1
-              }
-              Some(r)
+            override def get[A](statusItem: String): F[Option[A]] = Sync[F].delay {
+              val item = sc.getStatusItem[A](statusItem)
+              Option(item.getValue)
             }
 
             override def close: F[Unit] =
@@ -106,9 +102,9 @@ object Example extends App {
   // Read an item from GPI
   class GPIRead[F[_]: Monad](giapi: Giapi[F]) {
 
-    def readFilter: F[Option[Int]] =
+    def readFilter: F[Option[String]] =
       for {
-        v <- giapi.get("gmp:gmp:heartbeat")
+        v <- giapi.get[String]("gpi:ppmMask.gemini")
       } yield v
   }
 
