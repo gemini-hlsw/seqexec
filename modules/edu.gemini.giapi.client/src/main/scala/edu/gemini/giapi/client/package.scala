@@ -3,7 +3,6 @@
 
 package edu.gemini.giapi
 
-import cats._
 import cats.implicits._
 import cats.effect._
 import edu.gemini.aspen.giapi.util.jms.status.StatusGetter
@@ -45,7 +44,7 @@ package client {
   trait Giapi[F[_]] {
 
     /**
-      * Returns a value for the status item. If not found a `None` is returned
+      * Returns a value for the status item. If not found or there is an error, e.g. on types the exception is returned
       */
     def get[A: ItemGetter](statusItem: String): F[Option[A]]
 
@@ -59,20 +58,6 @@ package client {
     * Interpreters
     */
   object Giapi {
-
-    /**
-      * Interpreter on Id
-      */
-    val giapiConnectionWithId: GiapiConnection[Id] = new GiapiConnection[Id] {
-
-      def connect: Id[Giapi[Id]] = new Giapi[Id] {
-
-        def get[A: ItemGetter](statusItem: String): Id[Option[A]] =
-          None
-
-        override def close: Id[Unit] = ()
-      }
-    }
 
     /**
       * Interpreter on F
@@ -90,10 +75,11 @@ package client {
 
         private def giapi(c: ActiveMQJmsProvider, sg: StatusGetter) =
           new Giapi[F] {
-            override def get[A: ItemGetter](statusItem: String): F[Option[A]] = Sync[F].delay {
-              val item = sg.getStatusItem[A](statusItem)
-              Option(item.getValue)
-            }
+            override def get[A: ItemGetter](statusItem: String): F[Option[A]] =
+              Sync[F].delay {
+                val item = sg.getStatusItem[A](statusItem)
+                Either.catchNonFatal(item.getValue).toOption
+              }
 
             override def close: F[Unit] =
               for {
