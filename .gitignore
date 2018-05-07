@@ -1,6 +1,7 @@
 *.class
 *.log
 *.iml
+.metals/
 .DS_Store
 *.pem
 *.der

@@ -33,7 +33,7 @@ onLoad in Global := { s =>
 }
 
 // Uncomment for local gmp testing
-// resolvers in ThisBuild += "Local Maven Repository" at "file://"+Path.userHome.absolutePath+"/Projects/maven-repo/releases"
+//resolvers in ThisBuild += "Local Maven Repository" at "file://"+Path.userHome.absolutePath+"/.m2/repository"
 
 // Settings to use git to define the version of the project
 def versionFmt(out: sbtdynver.GitDescribeOutput): String = {
@@ -58,6 +58,15 @@ enablePlugins(GitBranchPrompt)
 //////////////
 // Projects
 //////////////
+lazy val edu_gemini_giapi_client = project
+  .in(file("modules/edu.gemini.giapi.client"))
+  .enablePlugins(AutomateHeaderPlugin)
+  .enablePlugins(GitBranchPrompt)
+  .settings(commonSettings: _*)
+  .settings(
+    libraryDependencies ++= Seq(CatsEffect.value, Fs2, GiapiJmsUtil, GiapiJmsProvider) ++ Logging
+  )
+
 lazy val edu_gemini_web_server_common = project
   .in(file("modules/edu.gemini.web.server.common"))
   .enablePlugins(AutomateHeaderPlugin)
