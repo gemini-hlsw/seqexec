@@ -46,7 +46,7 @@ package client {
     /**
       * Returns a value for the status item. If not found or there is an error, e.g. on types the exception is returned
       */
-    def get[A: ItemGetter](statusItem: String): F[Option[A]]
+    def get[A: ItemGetter](statusItem: String): F[A]
 
     /**
       * Close the connection
@@ -75,10 +75,11 @@ package client {
 
         private def giapi(c: ActiveMQJmsProvider, sg: StatusGetter) =
           new Giapi[F] {
-            override def get[A: ItemGetter](statusItem: String): F[Option[A]] =
+            override def get[A: ItemGetter](statusItem: String): F[A] =
               Sync[F].delay {
                 val item = sg.getStatusItem[A](statusItem)
-                Either.catchNonFatal(item.getValue).toOption
+                // Note item.getValue can throw if e.g. the item is unknown
+                item.getValue
               }
 
             override def close: F[Unit] =

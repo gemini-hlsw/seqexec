@@ -3,7 +3,6 @@
 
 package edu.gemini.giapi.client.gpi
 
-import cats.Monad
 import cats.effect.IO
 import edu.gemini.giapi.client.Giapi
 import fs2.Stream
@@ -11,17 +10,17 @@ import fs2.Stream
 /**
   * Client for GPI
   */
-class GPIClient[F[_]: Monad](giapi: Giapi[F]) {
+class GPIClient[F[_]](giapi: Giapi[F]) {
 
   // Some items, more will be added as needed
-  def heartbeat: F[Option[Int]] =
+  def heartbeat: F[Int] =
     giapi.get[Int]("gpi:heartbeat")
 
-  def fpmMask: F[Option[String]] =
+  def fpmMask: F[String] =
     giapi.get[String]("gpi:fpmMask")
 
-  def aoDarkLevel: F[Option[Double]] =
-    giapi.get[Double]("gpi:ao:darkLevel")
+  def aoDarkLevel: F[Float] =
+    giapi.get[Float]("gpi:ao:darkLevel")
 
   // add more items...
 }
