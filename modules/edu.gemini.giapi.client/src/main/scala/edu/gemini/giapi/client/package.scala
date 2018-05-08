@@ -3,13 +3,15 @@
 
 package edu.gemini.giapi
 
-import cats.implicits._
+import cats.Applicative
 import cats.effect._
-import edu.gemini.aspen.giapi.util.jms.status.StatusGetter
-import edu.gemini.jms.activemq.provider.ActiveMQJmsProvider
+import cats.implicits._
 import edu.gemini.aspen.giapi.commands.Command
+import edu.gemini.aspen.giapi.util.jms.status.StatusGetter
+import edu.gemini.aspen.gmp.commands.jms.client.CommandSenderClient
+import edu.gemini.giapi.client.commands.CommandResult
+import edu.gemini.jms.activemq.provider.ActiveMQJmsProvider
 import fs2.async
-import client.commands.CommandResult
 
 package object client {
 
@@ -24,10 +26,6 @@ package object client {
 
 package client {
 
-  import cats.Applicative
-  import edu.gemini.aspen.gmp.commands.jms.client.CommandSenderClient
-
-  import scala.concurrent.ExecutionContext
 
   /**
     * Typeclass to present as evidence when calling `Giapi.get`
@@ -77,8 +75,7 @@ package client {
       * @param url Url to connect to
       * @tparam F Effect type
       */
-    @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
-    def giapiConnection[F[_]: Effect](url: String)(implicit ec: ExecutionContext): GiapiConnection[F] =
+    def giapiConnection[F[_]: Async](url: String): GiapiConnection[F] =
       new GiapiConnection[F] {
         private def statusGetter(c: ActiveMQJmsProvider): F[StatusGetter] = Sync[F].delay {
           val sg = new StatusGetter("client")
@@ -99,7 +96,7 @@ package client {
               }
 
             override def command(command: Command): F[CommandResult] =
-              commands.sendCommand(cc, command, None)
+              commands.sendCommand(cc, command)
 
             override def close: F[Unit] =
               for {

@@ -69,8 +69,6 @@ class GPIClient[F[_]](giapi: Giapi[F]) {
 }
 
 object GPIExample extends App {
-  import scala.concurrent.ExecutionContext.Implicits.global
-
   private val gpiStatus =
     Stream.bracket(Giapi.giapiConnection[IO]("failover:(tcp://127.0.0.1:61616)").connect)(
       giapi => {

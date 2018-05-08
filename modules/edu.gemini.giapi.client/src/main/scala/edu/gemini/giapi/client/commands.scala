@@ -9,8 +9,6 @@ import cats.effect._
 import edu.gemini.aspen.giapi.commands.HandlerResponse.Response
 import edu.gemini.aspen.giapi.commands.{Command, HandlerResponse}
 import edu.gemini.aspen.gmp.commands.jms.client.CommandSenderClient
-import fs2.async
-import scala.concurrent.ExecutionContext
 
 package commands {
   sealed trait CommandResult {
@@ -20,11 +18,6 @@ package commands {
   final case class Error(response: Response, message: String) extends CommandResult {
     override def isError = true
   }
-  final case class Accepted[F[_]](commandName: Option[String],
-                                  response: Response,
-                                  completion: async.Promise[F, CommandResult])
-      extends CommandResult
-  final case class CommandFailure(e: Throwable) extends CommandResult
 }
 
 package object commands {
@@ -35,12 +28,9 @@ package object commands {
     case (a, b) => a.name === b.name
   }
 
-  @SuppressWarnings(
-    Array("org.wartremover.warts.ImplicitParameter", "org.wartremover.warts.NonUnitStatements"))
-  def sendCommand[F[_]: Effect](
+  def sendCommand[F[_]: Async](
       commandsClient: CommandSenderClient,
-      command: Command,
-      commandName: Option[String])(implicit ec: ExecutionContext): F[CommandResult] =
+      command: Command): F[CommandResult] =
     Async[F].async { cb =>
       val hr = commandsClient.sendCommand(
         command,
@@ -60,10 +50,9 @@ package object commands {
             Error(hr.getResponse,
               if (hr.getResponse === Response.NOANSWER) "No answer from the instrument"
               else hr.getMessage)))
-      } else if (hr.getResponse === Response.COMPLETED || hr.getResponse === Response.ACCEPTED) {
+      } else if (hr.getResponse === Response.COMPLETED) {
         cb(Right(Completed(hr.getResponse)))
-      } else {
-        cb(Right(Accepted(commandName, hr.getResponse, null)))
       }
+      // A third case is ACCEPTED but that is handled on the callback
     }
 }
