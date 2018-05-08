@@ -112,12 +112,12 @@ object Settings {
 
     val apacheXMLRPC      = "3.1.3"
     val opencsv           = "2.1"
-    val epicsService      = "1.0.1"
-    val gmpCommandRecords = "0.7.1"
-    val giapi             = "1.1.1"
-    val giapiJmsUtil      = "0.5.1"
-    val giapiJmsProvider  = "1.6.1"
-    val giapiCommandsClient = "0.2.1"
+    val epicsService      = "1.0.2"
+    val gmpCommandRecords = "0.7.2"
+    val giapi             = "1.1.2"
+    val giapiJmsUtil      = "0.5.2"
+    val giapiJmsProvider  = "1.6.2"
+    val giapiCommandsClient = "0.2.2"
     val guava             = "25.0-jre"
   }
 
