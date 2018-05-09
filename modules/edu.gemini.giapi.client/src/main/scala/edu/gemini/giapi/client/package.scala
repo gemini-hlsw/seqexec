@@ -26,7 +26,6 @@ package object client {
 
 package client {
 
-
   /**
     * Typeclass to present as evidence when calling `Giapi.get`
     */
@@ -54,7 +53,13 @@ package client {
     def get[A: ItemGetter](statusItem: String): F[A]
 
     /**
-      * Executes a command
+      * Executes a command as defined on GIAPI
+      * Note that commands can end in ERROR or COMPLETED
+      * Giapi has an extra case where we have a command ACCEPTED and it will complete in the future
+      * That makes handling easier with callbacks on Java land but on IO-land it makes more sense to
+      * wait for ERROR/COMPLETED and do async calls avobe this level
+      *
+      * This decision may be review in the future
       */
     def command(command: Command): F[CommandResult]
 

@@ -21,16 +21,14 @@ package commands {
 }
 
 package object commands {
-
-  type CommandOperationResult[F[_]] = F[CommandResult]
+  val DataLabelCfg = "DATA_LABEL"
 
   implicit val responseEq: Eq[Response] = Eq.instance {
     case (a, b) => a.name === b.name
   }
 
-  def sendCommand[F[_]: Async](
-      commandsClient: CommandSenderClient,
-      command: Command): F[CommandResult] =
+  def sendCommand[F[_]: Async](commandsClient: CommandSenderClient,
+                               command: Command): F[CommandResult] =
     Async[F].async { cb =>
       val hr = commandsClient.sendCommand(
         command,
@@ -48,11 +46,11 @@ package object commands {
         cb(
           Right(
             Error(hr.getResponse,
-              if (hr.getResponse === Response.NOANSWER) "No answer from the instrument"
-              else hr.getMessage)))
+                  if (hr.getResponse === Response.NOANSWER) "No answer from the instrument"
+                  else hr.getMessage)))
       } else if (hr.getResponse === Response.COMPLETED) {
         cb(Right(Completed(hr.getResponse)))
       }
-      // A third case is ACCEPTED but that is handled on the callback
+    // A third case is ACCEPTED but that is handled on the callback
     }
 }

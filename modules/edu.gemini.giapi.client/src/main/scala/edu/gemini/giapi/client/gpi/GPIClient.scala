@@ -3,9 +3,12 @@
 
 package edu.gemini.giapi.client.gpi
 
+import cats.Show
+import cats.instances.string._
+import cats.syntax.show._
 import cats.effect.IO
-import edu.gemini.aspen.giapi.commands.{Activity, Command, SequenceCommand}
-import edu.gemini.giapi.client.Giapi
+import edu.gemini.aspen.giapi.commands.{Activity, Command, DefaultConfiguration, SequenceCommand}
+import edu.gemini.giapi.client.{Giapi, commands}
 import edu.gemini.giapi.client.commands.CommandResult
 import fs2.Stream
 
@@ -52,6 +55,15 @@ class GPIClient[F[_]](giapi: Giapi[F]) {
   def endGuide: F[CommandResult] =
     giapi.command(new Command(SequenceCommand.END_GUIDE, Activity.START))
 
+  def observe[A: Show](dataLabel: A): F[CommandResult] =
+    giapi.command(
+      new Command(SequenceCommand.OBSERVE,
+                  Activity.START,
+                  DefaultConfiguration
+                    .configurationBuilder()
+                    .withConfiguration(commands.DataLabelCfg, dataLabel.show)
+                    .build()))
+
   def endObserve: F[CommandResult] =
     giapi.command(new Command(SequenceCommand.END_OBSERVE, Activity.START))
 
@@ -67,6 +79,7 @@ class GPIClient[F[_]](giapi: Giapi[F]) {
   def abort: F[CommandResult] =
     giapi.command(new Command(SequenceCommand.ABORT, Activity.START))
 }
+
 
 object GPIExample extends App {
   private val gpiStatus =
@@ -90,7 +103,7 @@ object GPIExample extends App {
         val client = new GPIClient[IO](giapi)
         val r =
           for {
-            c <- client.park
+            c <- client.observe("S20180509")
           } yield c
         Stream.eval(r.map(println)) // scalastyle:ignore
       },
