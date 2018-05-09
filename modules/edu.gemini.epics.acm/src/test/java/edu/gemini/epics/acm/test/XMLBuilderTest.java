@@ -43,13 +43,13 @@ public final class XMLBuilderTest {
 
     @AfterClass
     public static void tearDown() {
-        if (simulator != null) {
-            simulator.stop();
-            simulator = null;
-        }
         if (caService != null) {
             caService.unbind();
             caService = null;
+        }
+        if (simulator != null) {
+            simulator.stop();
+            simulator = null;
         }
     }
 
