@@ -68,7 +68,11 @@ public final class CaStatusAcceptorTest {
             caService.unbind();
             caService = null;
         }
-        simulator.stop();
+
+        if (simulator != null) {
+            simulator.stop();
+            simulator = null;
+        }
     }
 
     @Test
