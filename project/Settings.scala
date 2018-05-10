@@ -81,7 +81,7 @@ object Settings {
     val mouseVersion        = "0.17"
     val fs2Version          = "0.10.4"
     // Scala libraries
-    val http4s       = "0.18.9"
+    val http4s       = "0.18.11"
     val squants      = "1.3.0"
     val argonaut     = "6.2.1"
     val commonsHttp  = "2.0.2"
@@ -91,7 +91,7 @@ object Settings {
     val log4s        = "1.6.1"
     val logback      = "1.2.3"
     val janino       = "3.0.8"
-    val logstash     = "5.0"
+    val logstash     = "5.1"
     val knobs        = "6.0.33"
     val monocle      = "1.5.1-cats"
 
@@ -163,6 +163,7 @@ object Settings {
     val Http4s  = Seq(
       "org.http4s" %% "http4s-dsl"          % LibraryVersions.http4s,
       "org.http4s" %% "http4s-blaze-server" % LibraryVersions.http4s)
+    val Http4sBoopickle  = "org.http4s" %% "http4s-boopickle" % LibraryVersions.http4s
 
     val Monocle  = Def.setting(Seq(
       "com.github.julien-truffaut" %%% "monocle-core"   % LibraryVersions.monocle,

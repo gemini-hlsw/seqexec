@@ -10,11 +10,12 @@ import cats.effect.Sync
 import edu.gemini.web.common.{CliCommand, LogMessage}
 import edu.gemini.web.common.LogMessage._
 import org.http4s.{EntityDecoder, EntityEncoder}
+import org.http4s.booPickle._
 
 /**
   * Contains http4s implicit encoders of model objects
   */
-@SuppressWarnings(Array("org.wartremover.warts.Equals", "org.wartremover.warts.ImplicitParameter", "org.wartremover.warts.NonUnitStatements", "org.wartremover.warts.OptionPartial", "org.wartremover.warts.Throw"))
+@SuppressWarnings(Array("org.wartremover.warts.Equals", "org.wartremover.warts.ImplicitParameter", "org.wartremover.warts.NonUnitStatements", "org.wartremover.warts.OptionPartial"))
 trait BooEncoders {
   // Decoders, Included here instead of the on the object definitions to avoid
   // a circular dependency on http4s
