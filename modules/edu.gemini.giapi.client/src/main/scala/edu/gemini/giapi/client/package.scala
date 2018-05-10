@@ -3,9 +3,13 @@
 
 package edu.gemini.giapi
 
-import cats.implicits._
+import cats.Applicative
 import cats.effect._
+import cats.implicits._
+import edu.gemini.aspen.giapi.commands.Command
 import edu.gemini.aspen.giapi.util.jms.status.StatusGetter
+import edu.gemini.aspen.gmp.commands.jms.client.CommandSenderClient
+import edu.gemini.giapi.client.commands.CommandResult
 import edu.gemini.jms.activemq.provider.ActiveMQJmsProvider
 import fs2.async
 
@@ -21,6 +25,8 @@ package object client {
 }
 
 package client {
+
+  import scala.concurrent.duration.Duration
 
   /**
     * Typeclass to present as evidence when calling `Giapi.get`
@@ -49,6 +55,17 @@ package client {
     def get[A: ItemGetter](statusItem: String): F[A]
 
     /**
+      * Executes a command as defined on GIAPI
+      * Note that commands can end in ERROR or COMPLETED
+      * Giapi has an extra case where we have a command ACCEPTED and it will complete in the future
+      * That makes handling easier with callbacks on Java land but on IO-land it makes more sense to
+      * wait for ERROR/COMPLETED and do async calls avobe this level
+      *
+      * This decision may be review in the future
+      */
+    def command(command: Command): F[CommandResult]
+
+    /**
       * Close the connection
       */
     def close: F[Unit]
@@ -65,7 +82,7 @@ package client {
       * @param url Url to connect to
       * @tparam F Effect type
       */
-    def giapiConnection[F[_]: Sync](url: String): GiapiConnection[F] =
+    def giapiConnection[F[_]: Async](url: String, commandsTimeout: Duration): GiapiConnection[F] =
       new GiapiConnection[F] {
         private def statusGetter(c: ActiveMQJmsProvider): F[StatusGetter] = Sync[F].delay {
           val sg = new StatusGetter("client")
@@ -73,7 +90,10 @@ package client {
           sg
         }
 
-        private def giapi(c: ActiveMQJmsProvider, sg: StatusGetter) =
+        private def commandSenderClient(c: ActiveMQJmsProvider): F[CommandSenderClient] =
+          Applicative[F].pure { new CommandSenderClient(c) }
+
+        private def giapi(c: ActiveMQJmsProvider, sg: StatusGetter, cc: CommandSenderClient) =
           new Giapi[F] {
             override def get[A: ItemGetter](statusItem: String): F[A] =
               Sync[F].delay {
@@ -82,18 +102,23 @@ package client {
                 item.getValue
               }
 
+            override def command(command: Command): F[CommandResult] =
+              commands.sendCommand(cc, command, commandsTimeout)
+
             override def close: F[Unit] =
               for {
                 _ <- Sync[F].delay(sg.stopJms())
                 _ <- Sync[F].delay(c.stopConnection())
               } yield ()
+
           }
 
         private def build(ref: async.Ref[F, ActiveMQJmsProvider]): F[Giapi[F]] =
           for {
             c  <- ref.get
             sg <- statusGetter(c)
-          } yield giapi(c, sg)
+            cc <- commandSenderClient(c)
+          } yield giapi(c, sg, cc)
 
         def connect: F[Giapi[F]] =
           for {
