@@ -10,25 +10,41 @@ import edu.gemini.aspen.giapi.commands.HandlerResponse.Response
 import edu.gemini.aspen.giapi.commands.{Command, HandlerResponse}
 import edu.gemini.aspen.gmp.commands.jms.client.CommandSenderClient
 
+import scala.concurrent.duration.Duration
+
 package commands {
-  sealed trait CommandResult {
-    def isError: Boolean = false
-  }
-  final case class Completed(response: Response) extends CommandResult
-  final case class Error(response: Response, message: String) extends CommandResult {
-    override def isError = true
-  }
+  sealed trait CommandResult
+  final case class Completed(response: Response)            extends CommandResult
+  final case class Error[A](response: Response, message: A) extends CommandResult
+
 }
 
 package object commands {
   val DataLabelCfg = "DATA_LABEL"
 
+  implicit class CommandResultOps(val cr: CommandResult) extends AnyVal {
+
+    def isError: Boolean = cr match {
+      case Error(_, _) => true
+      case _           => false
+    }
+  }
+
   implicit val responseEq: Eq[Response] = Eq.instance {
     case (a, b) => a.name === b.name
   }
 
+  /**
+    * Send a command over giapi
+    * @param commandsClient Client interface to send the command to the client and await the response
+    * @param command The actual command sent
+    * @param timeout Timeout to await a response, often 2 seconds
+    * @tparam F Effect type
+    * @return the result of the operation
+    */
   def sendCommand[F[_]: Async](commandsClient: CommandSenderClient,
-                               command: Command): F[CommandResult] =
+                               command: Command,
+                               timeout: Duration): F[CommandResult] =
     Async[F].async { cb =>
       val hr = commandsClient.sendCommand(
         command,
@@ -40,7 +56,7 @@ package object commands {
           }
           ()
         },
-        2000
+        timeout.toMillis
       )
       if (hr.getResponse === Response.ERROR || hr.getResponse === Response.NOANSWER) {
         cb(

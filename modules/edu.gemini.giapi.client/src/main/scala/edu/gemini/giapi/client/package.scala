@@ -26,6 +26,8 @@ package object client {
 
 package client {
 
+  import scala.concurrent.duration.Duration
+
   /**
     * Typeclass to present as evidence when calling `Giapi.get`
     */
@@ -80,7 +82,7 @@ package client {
       * @param url Url to connect to
       * @tparam F Effect type
       */
-    def giapiConnection[F[_]: Async](url: String): GiapiConnection[F] =
+    def giapiConnection[F[_]: Async](url: String, commandsTimeout: Duration): GiapiConnection[F] =
       new GiapiConnection[F] {
         private def statusGetter(c: ActiveMQJmsProvider): F[StatusGetter] = Sync[F].delay {
           val sg = new StatusGetter("client")
@@ -101,7 +103,7 @@ package client {
               }
 
             override def command(command: Command): F[CommandResult] =
-              commands.sendCommand(cc, command)
+              commands.sendCommand(cc, command, commandsTimeout)
 
             override def close: F[Unit] =
               for {

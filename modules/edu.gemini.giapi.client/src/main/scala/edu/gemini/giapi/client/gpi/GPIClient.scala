@@ -8,7 +8,6 @@ import cats.instances.string._
 import cats.instances.double._
 import cats.instances.int._
 import cats.syntax.show._
-import cats.effect.IO
 import edu.gemini.aspen.giapi.commands.{Activity, Command, DefaultConfiguration, SequenceCommand}
 import edu.gemini.giapi.client.{Giapi, commands}
 import edu.gemini.giapi.client.commands.CommandResult
@@ -60,12 +59,14 @@ class GPIClient[F[_]](giapi: Giapi[F]) {
 
   def observe[A: Show](dataLabel: A): F[CommandResult] =
     giapi.command(
-      new Command(SequenceCommand.OBSERVE,
-                  Activity.PRESET_START,
-                  DefaultConfiguration
-                    .configurationBuilder()
-                    .withConfiguration(commands.DataLabelCfg, dataLabel.show)
-                    .build()))
+      new Command(
+        SequenceCommand.OBSERVE,
+        Activity.PRESET_START,
+        DefaultConfiguration
+          .configurationBuilder()
+          .withConfiguration(commands.DataLabelCfg, dataLabel.show)
+          .build()
+      ))
 
   def endObserve: F[CommandResult] =
     giapi.command(new Command(SequenceCommand.END_OBSERVE, Activity.PRESET_START))
@@ -88,11 +89,15 @@ class GPIClient[F[_]](giapi: Giapi[F]) {
 
   // TODO Use OCS constants for open/close
   private def shutter(shutterName: String, position: Boolean): F[CommandResult] =
-    giapi.command(new Command(SequenceCommand.APPLY, Activity.PRESET_START,
-      DefaultConfiguration
-        .configurationBuilder()
-        .withConfiguration(s"gpi:selectShutter.$shutterName", position.fold("1", "0"))
-        .build()))
+    giapi.command(
+      new Command(
+        SequenceCommand.APPLY,
+        Activity.PRESET_START,
+        DefaultConfiguration
+          .configurationBuilder()
+          .withConfiguration(s"gpi:selectShutter.$shutterName", position.fold("1", "0"))
+          .build()
+      ))
 
   def entranceShutter(position: Boolean): F[CommandResult] =
     shutter("entranceShutter", position)
@@ -111,33 +116,47 @@ class GPIClient[F[_]](giapi: Giapi[F]) {
 
   // TODO Use OCS constants
   def observingMode(mode: String): F[CommandResult] =
-    giapi.command(new Command(SequenceCommand.APPLY, Activity.PRESET_START,
-      DefaultConfiguration
-        .configurationBuilder()
-        .withConfiguration("gpi:observationMode.mode", mode)
-        .build()))
+    giapi.command(
+      new Command(SequenceCommand.APPLY,
+                  Activity.PRESET_START,
+                  DefaultConfiguration
+                    .configurationBuilder()
+                    .withConfiguration("gpi:observationMode.mode", mode)
+                    .build()))
 
   def ifsFilter(filter: String): F[CommandResult] =
-    giapi.command(new Command(SequenceCommand.APPLY, Activity.PRESET_START,
-      DefaultConfiguration
-        .configurationBuilder()
-        .withConfiguration("gpi:ifs:selectIfsFilter.maskStr", filter)
-        .build()))
+    giapi.command(
+      new Command(
+        SequenceCommand.APPLY,
+        Activity.PRESET_START,
+        DefaultConfiguration
+          .configurationBuilder()
+          .withConfiguration("gpi:ifs:selectIfsFilter.maskStr", filter)
+          .build()
+      ))
 
   def ifsConfigure(integrationTime: Double, coAdds: Int, readoutMode: Int): F[CommandResult] =
-    giapi.command(new Command(SequenceCommand.APPLY, Activity.PRESET_START,
-      DefaultConfiguration
-        .configurationBuilder()
-        .withConfiguration("gpi:configIfs.integrationTime", integrationTime.show)
-        .withConfiguration("gpi:configIfs.numCoadds", coAdds.show)
-        .withConfiguration("gpi:configIfs.readoutMode", readoutMode.show)
-        .build()))
+    giapi.command(
+      new Command(
+        SequenceCommand.APPLY,
+        Activity.PRESET_START,
+        DefaultConfiguration
+          .configurationBuilder()
+          .withConfiguration("gpi:configIfs.integrationTime", integrationTime.show)
+          .withConfiguration("gpi:configIfs.numCoadds", coAdds.show)
+          .withConfiguration("gpi:configIfs.readoutMode", readoutMode.show)
+          .build()
+      ))
 }
 
-
 object GPIExample extends App {
+
+  import cats.effect.IO
+  import scala.concurrent.duration._
+
   private val gpiStatus =
-    Stream.bracket(Giapi.giapiConnection[IO]("failover:(tcp://127.0.0.1:61616)").connect)(
+    Stream.bracket(
+      Giapi.giapiConnection[IO]("failover:(tcp://127.0.0.1:61616)", 2000.millis).connect)(
       giapi => {
         val client = new GPIClient[IO](giapi)
         val r =
@@ -152,7 +171,8 @@ object GPIExample extends App {
     )
 
   private val gpiSequence =
-    Stream.bracket(Giapi.giapiConnection[IO]("failover:(tcp://127.0.0.1:61616)").connect)(
+    Stream.bracket(
+      Giapi.giapiConnection[IO]("failover:(tcp://127.0.0.1:61616)", 2000.millis).connect)(
       giapi => {
         val client = new GPIClient[IO](giapi)
         val r =
