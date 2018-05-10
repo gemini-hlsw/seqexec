@@ -223,7 +223,8 @@ lazy val edu_gemini_seqexec_server = project
           POT,
           Knobs,
           OpenCSV,
-          Log4s
+          Log4s,
+          Http4sBoopickle
       ) ++ SeqexecOdb ++ WDBAClient ++ TestLibs.value
   )
   .settings(
