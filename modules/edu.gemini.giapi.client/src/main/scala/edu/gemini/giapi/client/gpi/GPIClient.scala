@@ -13,6 +13,7 @@ import edu.gemini.giapi.client.commands.CommandResult
 import edu.gemini.giapi.client.{Giapi, commands}
 import fs2.Stream
 import mouse.boolean._
+
 import scala.concurrent.ExecutionContext
 
 /**

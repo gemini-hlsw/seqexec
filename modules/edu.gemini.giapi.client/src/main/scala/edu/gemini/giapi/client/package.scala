@@ -76,7 +76,7 @@ package client {
     * @tparam F Effect type
     */
   trait GiapiConnection[F[_]] {
-    def connect: F[Giapi[F]]
+    def connect(implicit ev: Sync[F]): F[Giapi[F]]
   }
 
   /**
@@ -89,7 +89,7 @@ package client {
     /**
       * Returns a value for the status item. If not found or there is an error, an exception could be thrown
       */
-    def get[A: ItemGetter](statusItem: String): F[A]
+    def get[A: ItemGetter](statusItem: String)(implicit ev: Sync[F]): F[A]
 
     /**
       * Executes a command as defined on GIAPI
@@ -100,17 +100,17 @@ package client {
       *
       * This decision may be review in the future
       */
-    def command(command: Command): F[CommandResult]
+    def command(command: Command)(implicit ev: Async[F]): F[CommandResult]
 
     /**
       * Returns a stream of values for the status item.
       */
-    def stream[A: ItemGetter](statusItem: String, ec: ExecutionContext): F[Stream[F, A]]
+    def stream[A: ItemGetter](statusItem: String, ec: ExecutionContext)(implicit ev: Effect[F]): F[Stream[F, A]]
 
     /**
       * Close the connection
       */
-    def close: F[Unit]
+    def close(implicit ev: Sync[F]): F[Unit]
   }
 
   /**
@@ -171,28 +171,28 @@ package client {
       * @param url Url to connect to
       * @tparam F Effect type
       */
-    def giapiConnection[F[_]: Effect](url: String, commandsTimeout: Duration): GiapiConnection[F] =
+    def giapiConnection[F[_]](url: String, commandsTimeout: Duration): GiapiConnection[F] =
       new GiapiConnection[F] {
         private def giapi(c: ActiveMQJmsProvider,
                           sg: StatusGetter,
                           cc: CommandSenderClient,
                           ss: StatusStreamer) =
           new Giapi[F] {
-            override def get[A: ItemGetter](statusItem: String): F[A] =
+            override def get[A: ItemGetter](statusItem: String)(implicit ev: Sync[F]): F[A] =
               Sync[F].delay {
                 val item = sg.getStatusItem[A](statusItem)
                 // Note item.getValue can throw if e.g. the item is unknown
                 item.getValue
               }
 
-            override def command(command: Command): F[CommandResult] =
+            override def command(command: Command)(implicit ev: Async[F]): F[CommandResult] =
               commands.sendCommand(cc, command, commandsTimeout)
 
             override def stream[A: ItemGetter](statusItem: String,
-                                               ec: ExecutionContext): F[Stream[F, A]] =
+                                               ec: ExecutionContext)(implicit ev: Effect[F]): F[Stream[F, A]] =
               streamItem[F, A](ss.aggregate, statusItem, ec)
 
-            override def close: F[Unit] =
+            override def close(implicit ev: Sync[F]): F[Unit] =
               for {
                 _ <- Sync[F].delay(sg.stopJms())
                 _ <- Sync[F].delay(ss.ss.stopJms())
@@ -201,7 +201,7 @@ package client {
 
           }
 
-        private def build(ref: async.Ref[F, ActiveMQJmsProvider]): F[Giapi[F]] =
+        private def build(ref: async.Ref[F, ActiveMQJmsProvider])(implicit ev: Sync[F]): F[Giapi[F]] =
           for {
             c  <- ref.get
             sg <- statusGetter[F](c)
@@ -209,7 +209,7 @@ package client {
             ss <- statusStreamer[F](c)
           } yield giapi(c, sg, cc, ss)
 
-        def connect: F[Giapi[F]] =
+        def connect(implicit ev: Sync[F]): F[Giapi[F]] =
           for {
             c   <- Sync[F].delay(new ActiveMQJmsProvider(url)) // Build the connection
             ref <- async.refOf(c)                              // store a reference
