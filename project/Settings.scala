@@ -1,4 +1,5 @@
 import sbt._
+import java.lang.{Runtime => JRuntime}
 
 /**
  * Application settings and dependencies
@@ -54,13 +55,14 @@ object Settings {
       "-Ywarn-unused:params",              // Warn if a value parameter is unused.
       "-Ywarn-unused:patvars",             // Warn if a variable bound in a pattern is unused.
       "-Ywarn-unused:privates",            // Warn if a private member is unused.
-      "-Ywarn-value-discard"               // Warn when non-Unit expression results are unused.
+      "-Ywarn-value-discard",              // Warn when non-Unit expression results are unused.
+      "-Ybackend-parallelism", JRuntime.getRuntime.availableProcessors.toString // Run some tasks in parallel
     )
   }
 
   /** Library versions */
   object LibraryVersions {
-    val scalaVersion = "2.12.5"
+    val scalaVersion = "2.12.6"
 
     // ScalaJS libraries
     val scalaDom                = "0.9.5"
