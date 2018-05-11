@@ -77,12 +77,13 @@ object Settings {
     val scalaJSReactVirtualized = "0.2.0"
     val scalaJSReactClipboard   = "0.3.0"
 
-    // Java libraries
+    // Scala libraries
     val catsEffectVersion   = "0.10.1"
     val catsVersion         = "1.1.0"
     val mouseVersion        = "0.17"
     val fs2Version          = "0.10.4"
-    // Scala libraries
+    val shapelessVersion    = "2.3.3"
+
     val http4s       = "0.18.11"
     val squants      = "1.3.0"
     val argonaut     = "6.2.1"
@@ -158,11 +159,12 @@ object Settings {
     val JavaTimeJS  = Def.setting("io.github.cquiroz" %%% "scala-java-time"      % LibraryVersions.javaTimeJS)
     val JavaLogJS   = Def.setting("org.scala-js"      %%% "scalajs-java-logging" % LibraryVersions.javaLogJS)
 
-    // ScalaZ
+    // FP
     val Cats             = Def.setting("org.typelevel" %%% "cats-core"           % LibraryVersions.catsVersion)
     val CatsEffect       = Def.setting("org.typelevel" %%% "cats-effect"         % LibraryVersions.catsEffectVersion)
     val Fs2              = "co.fs2"                    %%  "fs2-core"            % LibraryVersions.fs2Version
     val Mouse            = Def.setting("org.typelevel" %%% "mouse"               % LibraryVersions.mouseVersion)
+    val Shapeless        = Def.setting("com.chuusai"   %%% "shapeless"           % LibraryVersions.shapelessVersion)
 
     // Server side libraries
     val Http4s  = Seq(

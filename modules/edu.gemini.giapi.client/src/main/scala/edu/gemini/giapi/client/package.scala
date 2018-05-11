@@ -16,39 +16,20 @@ import edu.gemini.jms.activemq.provider.ActiveMQJmsProvider
 import fs2.{Stream, async}
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.Duration
+import shapeless.Typeable._
 
 package object client {
 
   /**
     * Allowed types according to GIAPI
     */
-  implicit val strItemGetter: ItemGetter[String] = new ItemGetter[String] {
-    def value(p: Any): Option[String] = p match {
-      case x: String => Some(x)
-      case _         => None
-    }
-  }
+  implicit val strItemGetter: ItemGetter[String] = new ItemGetter[String] {}
 
-  implicit val doubleItemGetter: ItemGetter[Double] = new ItemGetter[Double] {
-    def value(p: Any): Option[Double] = p match {
-      case x: Double => Some(x)
-      case _         => None
-    }
-  }
+  implicit val doubleItemGetter: ItemGetter[Double] = new ItemGetter[Double] {}
 
-  implicit val intItemGetter: ItemGetter[Int] = new ItemGetter[Int] {
-    def value(p: Any): Option[Int] = p match {
-      case x: Int => Some(x)
-      case _      => None
-    }
-  }
+  implicit val intItemGetter: ItemGetter[Int] = new ItemGetter[Int] {}
 
-  implicit val floatItemGetter: ItemGetter[Float] = new ItemGetter[Float] {
-    def value(p: Any): Option[Float] = p match {
-      case x: Float => Some(x)
-      case _        => None
-    }
-  }
+  implicit val floatItemGetter: ItemGetter[Float] = new ItemGetter[Float] {}
 }
 
 package client {
@@ -56,12 +37,12 @@ package client {
   /**
     * Typeclass to present as evidence when calling `Giapi.get`
     */
-  sealed trait ItemGetter[A] {
+  sealed abstract class ItemGetter[A: shapeless.Typeable] {
 
     /**
       * Attempt to convert any value to A as sent by StatusHandler
       */
-    def value(p: Any): Option[A]
+    def value(p: Any): Option[A] = shapeless.Typeable[A].cast(p)
   }
 
   object ItemGetter {
@@ -142,7 +123,7 @@ package client {
         def statusHandler(q: async.mutable.Queue[F, A]) = new StatusHandler {
 
           override def update[B](item: StatusItem[B]): Unit =
-          // Check the item name and attempt convert it to A
+            // Check the item name and attempt convert it to A
             if (item.getName === statusItem) {
               ItemGetter[A].value(item.getValue).foreach { a =>
                 async.unsafeRunAsync(q.enqueue1(a))(_ => IO.unit)
