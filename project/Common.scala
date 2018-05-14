@@ -18,7 +18,8 @@ object Common {
       Wart.Product,            // false positives
       Wart.Serializable,       // false positives
       Wart.Recursion,          // false positives
-      Wart.ImplicitConversion  // we know what we're doing
+      Wart.ImplicitConversion, // we know what we're doing
+      Wart.ImplicitParameter   // we do finally tagless
     )
 
   lazy val commonSettings = Seq(

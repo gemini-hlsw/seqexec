@@ -64,7 +64,7 @@ lazy val edu_gemini_giapi_client = project
   .enablePlugins(GitBranchPrompt)
   .settings(commonSettings: _*)
   .settings(
-    libraryDependencies ++= Seq(CatsEffect.value, Fs2, GiapiJmsUtil, GiapiJmsProvider, Giapi, GiapiCommandsClient) ++ Logging
+    libraryDependencies ++= Seq(Shapeless.value, CatsEffect.value, Fs2, GiapiJmsUtil, GiapiJmsProvider, GiapiStatusService, Giapi, GiapiCommandsClient) ++ Logging
   )
 
 lazy val edu_gemini_web_server_common = project

@@ -4,23 +4,26 @@
 package edu.gemini.giapi.client.gpi
 
 import cats.Show
-import cats.instances.string._
+import cats.effect.Effect
 import cats.instances.double._
 import cats.instances.int._
 import cats.syntax.show._
 import edu.gemini.aspen.giapi.commands.{Activity, Command, DefaultConfiguration, SequenceCommand}
-import edu.gemini.giapi.client.{Giapi, commands}
 import edu.gemini.giapi.client.commands.CommandResult
+import edu.gemini.giapi.client.{Giapi, commands}
 import fs2.Stream
 import mouse.boolean._
+
+import scala.concurrent.ExecutionContext
 
 /**
   * Client for GPI
   */
-// Status items
-class GPIClient[F[_]](giapi: Giapi[F]) {
+class GPIClient[F[_]: Effect](giapi: Giapi[F], ec: ExecutionContext) {
 
-  // Some items, more will be added as needed
+  ///////////////
+  // Status items
+  ///////////////
   def heartbeat: F[Int] =
     giapi.get[Int]("gpi:heartbeat")
 
@@ -30,9 +33,15 @@ class GPIClient[F[_]](giapi: Giapi[F]) {
   def aoDarkLevel: F[Float] =
     giapi.get[Float]("gpi:ao:darkLevel")
 
-  // add more items...
+  /////////////////////
+  // Streaming statuses
+  /////////////////////
+  def heartbeatS: F[Stream[F, Int]] =
+    giapi.stream[Int]("gpi:heartbeat", ec)
 
-  // Commands
+  ///////////////////
+  // General commands
+  ///////////////////
   def test: F[CommandResult] =
     giapi.command(new Command(SequenceCommand.TEST, Activity.PRESET_START))
 
@@ -153,18 +162,20 @@ object GPIExample extends App {
 
   import cats.effect.IO
   import scala.concurrent.duration._
+  import cats.instances.string._
 
   private val gpiStatus =
     Stream.bracket(
       Giapi.giapiConnection[IO]("failover:(tcp://127.0.0.1:61616)", 2000.millis).connect)(
       giapi => {
-        val client = new GPIClient[IO](giapi)
+        val client = new GPIClient[IO](giapi, scala.concurrent.ExecutionContext.Implicits.global)
         val r =
           for {
-            h <- client.heartbeat
-            f <- client.fpmMask
-            o <- client.aoDarkLevel
-          } yield (h, f, o)
+            hs <- client.heartbeatS.flatMap(_.take(3).compile.toVector)
+            h  <- client.heartbeat
+            f  <- client.fpmMask
+            o  <- client.aoDarkLevel
+          } yield (hs, h, f, o)
         Stream.eval(r.map(println)) // scalastyle:ignore
       },
       _.close
@@ -174,7 +185,7 @@ object GPIExample extends App {
     Stream.bracket(
       Giapi.giapiConnection[IO]("failover:(tcp://127.0.0.1:61616)", 2000.millis).connect)(
       giapi => {
-        val client = new GPIClient[IO](giapi)
+        val client = new GPIClient[IO](giapi, scala.concurrent.ExecutionContext.Implicits.global)
         val r =
           for {
             _ <- client.calExitShutter(true) // Open the shutter
