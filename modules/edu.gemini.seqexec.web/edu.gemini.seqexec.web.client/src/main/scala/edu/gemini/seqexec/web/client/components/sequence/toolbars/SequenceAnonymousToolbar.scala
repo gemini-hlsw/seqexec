@@ -9,7 +9,7 @@ import edu.gemini.seqexec.web.client.components.SeqexecStyles
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.component.Scala.Unmounted
-import scalacss.ScalaCssReact._
+import edu.gemini.web.client.style._
 
 /**
   * Toolbar for anonymous users

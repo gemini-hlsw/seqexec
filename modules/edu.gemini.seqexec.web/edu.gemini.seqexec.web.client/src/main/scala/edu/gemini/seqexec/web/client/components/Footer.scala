@@ -17,7 +17,7 @@ import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import cats.implicits._
-import scalacss.ScalaCssReact._
+import edu.gemini.web.client.style._
 
 /**
   * Component for the bar at the top of the page

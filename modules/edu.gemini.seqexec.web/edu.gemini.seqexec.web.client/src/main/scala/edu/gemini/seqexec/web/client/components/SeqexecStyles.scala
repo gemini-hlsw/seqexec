@@ -3,900 +3,494 @@
 
 package edu.gemini.seqexec.web.client.components
 
-import scalacss.DevDefaults._
-import scalacss.internal.Keyframes
-import scala.concurrent.duration._
+import edu.gemini.web.client.style._
 
 /**
   * Custom CSS for the Seqexec UI
   */
-object SeqexecStyles extends scalacss.StyleSheet.Inline {
+object SeqexecStyles {
 
-  import dsl._
-
-  private val gutterWidth = 21
-  val mobileCut: Int = 767
+  // private val gutterWidth = 21
+  // private val mobileCut: Int = 767
   // Border color
-  private val tableBorderColor = rgba(34, 36, 38, 0.15)
+  // private val tableBorderColor = rgba(34, 36, 38, 0.15)
   // Text color from SUI
-  private val textColor = rgba(0, 0, 0, 0.95)
+  // private val textColor = rgba(0, 0, 0, 0.95)
+  val headerHeight: Int = 33
+  val rowHeight: Int = 30
+  val overscanRowCount: Int = 10
+  val runningRowHeight: Int = 60
 
-  val body: StyleA = style(unsafeRoot("body")(
-    backgroundColor(white),
-    display.flex,
-    flexDirection.column
-  ))
+  val activeInstrumentLabel: GStyle = GStyle("SeqexecStyles-activeInstrumentLabel")
 
-  val mainContainer: StyleA = style(
-    addClassNames("main", "ui", "borderless", "menu", "container")
-  )
+  val instrumentTab: GStyle = GStyle("SeqexecStyles-instrumentTab")
 
-  val navBar: StyleA = style("navbar")(
-    unsafeRoot(".main.ui.borderless.menu.container.placeholder")(
-      marginTop(0.px)
-    )
-  )
+  val instrumentTabLabel: GStyle = GStyle("SeqexecStyles-instrumentTabLabel")
 
-  val topLogo: StyleA = style("main.menu .item img.logo")(
-    marginRight(1.5.em)
-  )
+  val activeInstrumentContent: GStyle = GStyle("SeqexecStyles-activeInstrumentContent")
 
-  val linkeableRows: StyleA = style(
-    unsafeRoot(".ui.table tbody tr td.selectable > a:not(.ui)")(
-      paddingTop(0.5.em),
-      paddingBottom(0.5.em)
-    )
-  )
+  val errorTab: GStyle = GStyle("SeqexecStyles-errorTab")
 
-  val activeInstrumentLabel: StyleA = style(
-    paddingBottom(0.2.em),
-    textAlign.center
-  )
+  val fieldsNoBottom: GStyle = GStyle("SeqexecStyles-fieldsNoBottom")
 
-  val activeInstrumentContent: StyleA = style(
-    padding(0.6.em, 0.9.em),
-    backgroundColor(rgb(243, 244, 245)).important
-  )
+  val headerSideBarStyle: GStyle = GStyle("SeqexecStyles-headerSidebarStyle")
 
-  val fieldsNoBottom: StyleA = style(
-    marginBottom(0.px).important
-  )
+  val emptyInstrumentTab: GStyle = GStyle("SeqexecStyles-emptyInstrumentTab")
 
-  // Media query to adjust the width of containers on mobile to the max allowed width
-  val deviceContainer: StyleA = style("ui.container")(
-    media.only.screen.maxWidth(mobileCut.px)(
-      width(100.%%).important,
-      marginLeft(0.px).important,
-      marginRight(0.px).important
-    )
-  )
+  val emptyInstrumentTabLogShown: GStyle = GStyle("SeqexecStyles-emptyInstrumentTabLogShown")
 
-  val queueListPane: StyleA = style (
-    padding(0.px).important,
-    media.only.screen.maxWidth(mobileCut.px)(
-      maxHeight(10.1.em),
-      minHeight(10.1.em)
-    ),
-    media.only.screen.minWidth(mobileCut.px)(
-      maxHeight(216.px),
-      minHeight(216.px)
-    )
-  )
+  val emptyInstrumentTabLogHidden: GStyle = GStyle("SeqexecStyles-emptyInstrumentTabLogHidden")
 
-  val fullCell: StyleS = mixin(
-    width(100.%%),
-    height(100.%%)
-  )
+  val instrumentTabSegment: GStyle = GStyle("SeqexecStyles-instrumentTabSegment")
 
-  val queueFullCell: StyleS = mixin(
-    fullCell,
-    display.flex,
-    alignItems.center,
-    justifyContent.flexStart,
-    padding(0.px).important
-  )
+  val instrumentTabSegmentLogHidden: GStyle = GStyle("SeqexecStyles-instrumentTabSegmentLogHidden")
 
-  val queueCenterCell: StyleS = mixin(
-    fullCell,
-    display.flex,
-    alignItems.center,
-    justifyContent.center,
-    padding(0.px).important
-  )
+  val instrumentTabSegmentLogShown: GStyle = GStyle("SeqexecStyles-instrumentTabSegmentLogShown")
 
-  val queueTextM: StyleS = mixin(
-    color(textColor),
-    &.hover(
-      color(textColor)
-    )
-  )
-
-  val queueTextColumn: StyleA = style(
-    queueTextM,
-    queueFullCell
-  )
-
-  val queueText: StyleA = style(
-    paddingLeft(10.px),
-    textOverflow := "ellipsis",
-    overflow.hidden,
-    wordWrap.breakWord,
-    whiteSpace.nowrap
-  )
-
-  val queueIconColumn: StyleA = style(
-    minWidth(20.px).important,
-    queueCenterCell
-  )
-
-  val selectedIcon: StyleA = style(
-    queueTextM,
-    marginBottom(5.px).important
-  )
-
-  val errorIcon: StyleA = style(
-    queueTextM,
-    marginBottom(6.px).important
-  )
-
-  val runningIcon: StyleA = style(
-    queueTextM
-  )
-
-  val stepsListPane: StyleA = style (
-    (height :=! "calc(100% - 1.98em)"),
-    marginTop(1.em)
-  )
-
-  private val mobileSegment: StyleS = mixin (
-    media.only.screen.maxWidth(mobileCut.px)(
-      paddingRight(0.px).important,
-      paddingLeft(0.px).important
-    )
-  )
-
-  val instrumentTabSegment: StyleA = style (
-    mobileSegment,
-    media.only.screen.maxWidth(mobileCut.px)(
-      minHeight(32.3.em)
-    ),
-    media.only.screen.minWidth(mobileCut.px)(
-      minHeight(20.4.em)
-    )
-  )
-
-  val instrumentTabSegmentLogHidden: StyleA = style (
-    (height :=! "calc(100vh - 30.1em)")
-  )
-
-  val instrumentTabSegmentLogShown: StyleA = style (
-    (height :=! "calc(100vh - 44.8em)")
-  )
-
-  val widerColumn: StyleS = mixin(
-    paddingLeft(0.5.rem).important,
-    paddingRight(0.5.rem).important
-  )
-
-  val sequencesArea: StyleA = style (
-    mobileSegment,
-    widerColumn
-  )
-
-  val queueArea: StyleA = style (
-    mobileSegment,
-    widerColumn
-  )
-
-  val logSegment: StyleA = style (
-    mobileSegment,
-    widerColumn
-  )
-
-  val normalizedSegment: StyleS = mixin (
-    borderRadius.unset.important,
-    boxShadow := "unset !important"
-  )
-
-  val logSecondarySegment: StyleA = style (
-    normalizedSegment
-  )
-
-  val stepsListPaneWithControls: StyleA = style (
-    (height :=! "calc(100% - 4.9em)"),
-    marginTop(1.em)
-  )
-
-  val stepsListBody: StyleA = style() // Marker css
-  val stepRunning: StyleA = style() // Marker css
-  val headerSideBarStyle: StyleA = style(
-    normalizedSegment,
-    widerColumn,
-    borderWidth(1.px),
-    borderStyle.solid,
-    borderColor(tableBorderColor)
-  )
-
-  val headerSideBarArea: StyleA = style(
-    widerColumn
-  )
-
-  val observeConfig: StyleA = style {
-    backgroundColor.lightcyan.important
-  }
-
-  val inline: StyleA = style {
-    display.inline
-  }
-
-  val inlineBlock: StyleA = style {
-    display.inlineBlock
-  }
-
-  val observerField: StyleA = style {
-    paddingRight(0.px).important
-  }
-
-  val offsetGrid: StyleA = style {
-    marginRight(1.em).important
-  }
-
-  val noPadding: StyleS = mixin(
-    padding(0.px).important
-  )
-
-  val noMargin: StyleS = mixin(
-    margin(0.px)
-  )
-
-  val shorterRow: StyleA = style(
-    marginBottom(-1.em).important
-  )
-
-  val emptyInstrumentTab: StyleA = style(
-    minHeight(20.4.em)
-  )
-
-  val emptyInstrumentTabLogShown: StyleA = style(
-    (height :=! "calc(100vh - 44.9em)")
-  )
-
-  val emptyInstrumentTabLogHidden: StyleA = style(
-    (height :=! "calc(100vh - 30.2em)")
-  )
-
-  val instrumentTab: StyleA = style(
-    minWidth(20.%%),
-    textAlign.center
-  )
-
-  val instrumentTabLabel: StyleA = style(
-    width(100.%%)
-  )
-
-  val lowerRow: StyleA = style(
-    marginTop(-1.em).important
-  )
-
-  val shorterFields: StyleA = style(
-    marginBottom(0.2.em).important
-  )
-
-  val hidden: StyleA = style(
-    display.none
-  )
-
-  val tdNoPadding: StyleA = style(
-    noPadding
-  )
-
-  val errorTab: StyleA = style(
-    borderTop(3.px, red, solid).important
-  )
-
-  val noOpacity: StyleA = style(
-    opacity(0)
-  )
-
-  val blink: Keyframes = keyframes(
-    50.%% -> noOpacity
-  )
-
-  val blinking: StyleA = style(
-    animationName(blink),
-    animationDuration(1.7.seconds),
-    animationIterationCount.infinite,
-    animationTimingFunction.cubicBezier(0.5, 0, 1, 1),
-    animationDirection.alternate
-  )
-
-  val buttonsRow: StyleA = style(
-    marginRight(0.8.rem).important,
-    marginLeft(0.8.rem).important
-  )
-
-  val progressVCentered: StyleA = style("ui.progress.vcentered")(
-    marginBottom(0.px)
-  )
-
-  // Common properties for a segment displayed when running
-  val segmentRunningMixin: StyleS = mixin(
-    backgroundColor(rgba(0, 0, 0, 0.0)).important,
-    color.inherit,
-    padding(0.5.em, 0.5.em, 0.5.em, 0.em),
-    noMargin,
-    (boxShadow := "none").important
-  )
+  val sequencesArea: GStyle = GStyle("SeqexecStyles-sequencesArea")
 
   // Media queries to hide/display items for mobile
-  val notInMobile: StyleA = style(
-    media.only.screen.maxWidth(mobileCut.px)(
-      display.none.important
-    )
-  )
-
-  val onlyMobile: StyleA = style(
-    media.only.screen.minWidth(mobileCut.px)(
-      display.none.important
-    )
-  )
-
-  val errorText: StyleA = style(
-    color.red
-  )
-
-  val runningLabel: StyleA = style(
-    backgroundColor(c"#FFFAF3").important,
-    color(c"#573A08").important
-  )
-
-  val smallTextArea: StyleA = style(
-    fontSize.smaller
-  )
-
-  val appSegment: StyleS = mixin(
-    paddingTop(0.5.em).important,
-    paddingBottom(0.5.em).important
-  )
-
-  val logArea: StyleA = style(
-    marginBottom(3.em),
-    appSegment,
-    media.only.screen.maxWidth(mobileCut.px)(
-      padding(0.px).important
-    )
-  )
-
-  val sequenceArea: StyleA = style(
-  )
-
-  val logControlRow: StyleA = style(
-    marginBottom(0.2.em),
-    marginTop(0.2.em),
-    padding(0.em).important
-  )
-
-  val logTableRow: StyleA = style(
-    paddingLeft(1.em).important,
-    paddingRight(1.em).important,
-    paddingBottom(0.4.em).important,
-    paddingTop(0.em).important
-  )
-
-  val footerSegment: StyleA = style("ui.footer")(
-    position.fixed,
-    bottom(0.px),
-    width(100.%%),
-    height(46.px),
-    marginBottom(0.px),
-    marginTop(0.px),
-    backgroundColor(c"#F5F5F5"),
-    borderRadius.unset
-  )
-
-  val stepsTable: StyleA = style(
-    // CSS Dark magic to get the gutter background, see
-    // http://stackoverflow.com/questions/14628601/can-i-add-background-color-only-for-padding
-    (backgroundImage := s"linear-gradient(to bottom, rgba(249, 0, 1, 0) 0%, rgba(249, 0, 1, 0) 0%), linear-gradient(to right, rgba(34, 36, 38, 0.15) 0px, rgba(34, 36, 38, 0.00001) ${gutterWidth}px)").important,
-    backgroundClip.contentBox.paddingBox.important
-  )
-
-  val daytimeCal: StyleA = style(
-    fontWeight.bold,
-    fontStyle.italic
-  )
-
-  val componentLabel: StyleA = style(
-    textOverflow := "ellipsis",
-    overflow.hidden,
-    wordWrap.breakWord,
-    whiteSpace.nowrap
-  )
-
-  // Styles for the log table, These styles will make react-virtualized
-  // match the look of SemanticUI tables
-  val logTable: StyleA = style(
-    fontSize(1.em)
-  )
-
-  val selectorFields: StyleA = style(
-    float.right,
-    marginBottom(0.px).important,
-    marginTop(5.px).important
-  )
-
-  val logVisibilityField: StyleA = style(
-    float.left
-  )
-
-  val logIconHeader: StyleA = style(
-    margin(0.px, 0.px, 10.px, 0.px).important
-  )
-
-  val logIconRow: StyleA = style(
-    margin(0.px, 0.px, 13.px, 2.px).important
-  )
-
-  val overscanRowCount: Int = 10
-  val rowHeight: Int = 30
-  val mobileRowHeight: Int = 15
-  val runningRowHeight: Int = 60
-  val headerHeight: Int = 33
-
-  val leftBorderMixin: StyleS = mixin(
-    borderLeftWidth(1.px),
-    borderLeftStyle.solid,
-    borderLeftColor(tableBorderColor)
-  )
-
-  val bottomBorderMixin: StyleS = mixin(
-    borderBottomWidth(1.px),
-    borderBottomStyle.solid,
-    borderBottomColor(tableBorderColor)
-  )
-
-  val topBorderMixin: StyleS = mixin(
-    borderTopWidth(1.px),
-    borderTopStyle.solid,
-    borderTopColor(tableBorderColor)
-  )
-
-  val rightBorderMixin: StyleS = mixin(
-    borderRightWidth(1.px),
-    borderRightStyle.solid,
-    borderRightColor(tableBorderColor)
-  )
-
-  private val cellPaddingMixin: StyleS = mixin(
-    paddingLeft(0.7.em),
-    paddingRight(0.7.em)
-  )
-
-  val tableHeader: StyleA = style(
-    leftBorderMixin,
-    fontWeight.bold,
-    color(black),
-    backgroundColor(c"#F9FAFB"),
-    outline.none,
-    minHeight(headerHeight.px),
-    height(headerHeight.px),
-    display.flex,
-    alignItems.center
-  )
-
-  // Override styles used by react-virtualized
-  val headerRow: StyleA = style("ReactVirtualized__Table__headerRow")(
-    fontWeight._700,
-    display.flex,
-    flexDirection.row,
-    alignItems.center
-  )
-
-  // Override styles used by react-virtualized
-  val headerTruncatedText: StyleA = style("ReactVirtualized__Table__headerTruncatedText")(
-    paddingLeft(7.px)
-  )
-
-  val firstHeaderColumn: StyleA = style("ReactVirtualized__Table__headerColumn:first-of-type")(
-    borderLeft.none,
-    overflow.visible.important
-  )
-
-  val firstRowColumn: StyleA = style("ReactVirtualized__Table__rowColumn:first-of-type")(
-    borderLeft.none
-  )
-
-  val stepsTableMixin: StyleS = mixin(
-    fontSize.smaller.important,
-    textOverflow := "ellipsis",
-    wordWrap.breakWord,
-    whiteSpace.nowrap
-  )
-
-  val rowMixin: StyleS = mixin(
-    topBorderMixin,
-    rightBorderMixin
-  )
-
-  val centeredCell: StyleA = style(
-    display.flex,
-    alignItems.center,
-    justifyContent.center
-  )
-
-  val rightCell: StyleA = style(
-    display.flex,
-    alignItems.center,
-    justifyContent.flexEnd
-  )
-
-  val leftCell: StyleA = style(
-    display.flex,
-    alignItems.center,
-    justifyContent.flexStart
-  )
-
-  val tableHeaderIcons: StyleA = style(
-    paddingBottom(4.px)
-  )
-
-  val tableGrid: StyleA = style("ReactVirtualized__Table__Grid")(
-    leftBorderMixin,
-    rightBorderMixin,
-    bottomBorderMixin,
-    outline.none
-  )
-
-  val innerScroll: StyleA = style("ReactVirtualized__Grid__innerScrollContainer")(
-    bottomBorderMixin
-  )
-
-  private val mobileRow: StyleS = mixin (
-    media.only.screen.maxWidth(mobileCut.px)(
-      paddingRight(2.px),
-      paddingLeft(2.px)
-    )
-  )
-
-  // This must be defined before rowColumn
-  val controlCellRow: StyleA = style(
-    paddingRight(0.px).important,
-    paddingLeft(0.px).important,
-    overflow.unset.important
-  )
-
-  val guidingCell: StyleA = style(
-    display.flex,
-    width(100.%%),
-    alignItems.center
-  )
-
-  val offsetsBlock: StyleA = style(
-    marginLeft(auto)
-  )
-
-  val settingsCellRow: StyleA = style(
-    minWidth(35.px).important,
-    paddingRight(5.px).important,
-    paddingLeft(0.px).important,
-    overflow.unset.important,
-    pointerEvents := "auto"
-  )
-
-  val rowColumn: StyleA = style("ReactVirtualized__Table__rowColumn")(
-    cellPaddingMixin,
-    leftBorderMixin,
-    minWidth(0.px),
-    display.flex,
-    alignItems.center,
-    fontSize.small,
-    textOverflow := "ellipsis",
-    whiteSpace.nowrap,
-    height(100.%%),
-    mobileRow
-  )
-
-  val row: StyleA = style("ReactVirtualized__Table__row")(
-    display.flex,
-    flexDirection.row,
-    alignItems.center,
-    &.hover(
-      backgroundColor(rgba(0, 0, 0, 0.05)),
-      color(textColor)
-    ),
-    &.firstOfType(
-      borderTop.none
-    )
-  )
-
-  val headerRowStyle: StyleA = style(
-    rowMixin,
-    leftBorderMixin,
-    bottomBorderMixin,
-    backgroundColor(c"#F9FAFB"),
-    minHeight(headerHeight.px),
-    height(headerHeight.px)
-  )
-
-  val stepRowMixin: StyleS = mixin(
-    stepsTableMixin,
-    backgroundColor.white,
-    color(textColor)
-  )
-
-  val stepRow: StyleA = style(
-    stepRowMixin,
-    overflow.unset.important,
-    rowMixin,
-    outline.none
-  )
-
-  val stepRowWithBreakpoint: StyleA = style(
-    stepRowMixin,
-    leftBorderMixin,
-    rightBorderMixin,
-    backgroundImage := "linear-gradient(to right, rgba(34, 36, 38, 0.15) , rgba(34, 36, 38, 0.15) 20px, #a5673f 20px, #a5673f)",
-    backgroundSize := "100% 4px",
-    backgroundRepeat.noRepeat,
-    borderTopColor(tableBorderColor),
-    borderTopWidth(1.px),
-    borderTopStyle.solid,
-    paddingTop(4.px),
-    overflow.visible.important,
-    outline.none
-  )
-
-  val infoLog: StyleA = style(
-    rowMixin,
-    backgroundColor.white,
-    color(textColor)
-  )
-
-  val errorLog: StyleA = style(
-    rowMixin,
-    backgroundColor(c"#fff6f6").important,
-    color(c"#9f3a38").important
-  )
-
-  val warningLog: StyleA = style(
-    rowMixin,
-    backgroundColor(c"#fffaf3").important,
-    color(c"#573a08").important
-  )
-
-  val controlCell: StyleA = style(
-    display.flex,
-    justifyContent.spaceAround,
-    alignItems.center,
-    minWidth(42.3.px)
-  )
-
-  val settingsCellHeader: StyleA = style(
-    display.flex,
-    alignItems.center,
-    justifyContent.center,
-    paddingLeft(-2.px)
-  )
-
-  val settingsCell: StyleA = style(
-    display.flex,
-    justifyContent.center,
-    alignItems.center,
-    minWidth(15.px),
-    width(100.%%),
-    height(100.%%),
-    paddingBottom(9.px)
-  )
-
-  val statusCellMixin: StyleS = mixin(
-    alignItems.center,
-    display.flex,
-    height(100.%%),
-    width(100.%%),
-    minWidth(24.px)
-  )
-
-  val iconCellMixin: StyleS = mixin(
-    justifyContent.center,
-    statusCellMixin
-  )
-
-  val iconCell: StyleA = style(
-    iconCellMixin,
-    paddingBottom(8.px)
-  )
-
-  val runningIconCell: StyleA = style(
-    iconCellMixin
-  )
-
-  val errorCell: StyleA = style(
-    iconCellMixin,
-    paddingBottom(8.px)
-  )
-
-  val skippedIconCell: StyleA = style(
-    iconCellMixin,
-    paddingRight(10.px)
-  )
-
-  val gutterCell: StyleA = style(
-    // CSS Dark magic to get the gutter background, see
-    // http://stackoverflow.com/questions/14628601/can-i-add-background-color-only-for-padding
-    (backgroundImage := s"linear-gradient(to bottom, rgba(249, 0, 1, 0) 0%, rgba(249, 0, 1, 0) 0%), linear-gradient(to right, rgba(34, 36, 38, 0.15) 0px, rgba(34, 36, 38, 0.00001) ${gutterWidth}px)").important,
-    backgroundClip.paddingBox,
-    backgroundColor(white),
-    width(gutterWidth.px),
-    minWidth(gutterWidth.px),
-    rightBorderMixin,
-    position.relative
-  )
-
-  val offsetCellWrapper: StyleA = style(
-    paddingTop(0.4.em)
-  )
-
-  val breakPointOnIcon: StyleA = style(
-    position.relative,
-    left(3.px),
-    top(-5.px)
-  )
-
-  val breakPointOffIcon: StyleA = style(
-    position.relative,
-    left(2.px),
-    top(-5.px)
-  )
-
-  val breakPointHandle: StyleA = style(
-    position.relative,
-    left(3.px),
-    top(-6.px),
-    height(13.px),
-    width(13.px),
-    cursor.pointer,
-    opacity(0.8),
-    transition := "all .1s ease-in-out",
-    &.hover(
-      transform := "scale(1.4)"
-    )
-  )
+  val notInMobile: GStyle = GStyle("SeqexecStyles-notInMobile")
+
+  val onlyMobile: GStyle = GStyle("SeqexecStyles-onlyMobile")
+
+  val errorText: GStyle = GStyle("SeqexecStyles-errorText")
+
+  val noRowsSegment: GStyle = GStyle("SeqexecStyles-noRowsSegment")
+
+  val logSegment: GStyle = GStyle("SeqexecStyles-logSegment")
+
+  val logSecondarySegment: GStyle = GStyle("SeqexecStyles-logSecondarySegment")
+
+  val logControlRow: GStyle = GStyle("SeqexecStyles-logControlRow")
+
+  val logTableRow: GStyle = GStyle("SeqexecStyles-logTableRow")
+
+  val selectorFields: GStyle = GStyle("SeqexecStyles-selectorFields")
+
+  val queueTextColumn: GStyle = GStyle("SeqexecStyles-queueTextColumn")
+
+  val queueText: GStyle = GStyle("SeqexecStyles-queueText")
+
+  val daytimeCal: GStyle = GStyle("SeqexecStyles-daytimeCal")
+
+  val queueIconColumn: GStyle = GStyle("SeqexecStyles-queueIconColumn")
+
+  val queueListPane: GStyle = GStyle("SeqexecStyles-queueListPane")
+
+  val labelPointer: GStyle = GStyle("SeqexecStyles-labelPointer")
+
+  val shorterRow: GStyle = GStyle("SeqexecStyles-shorterRow")
+
+  val blinking: GStyle = GStyle("SeqexecStyles-blinking")
+
+  val queueAreaRow: GStyle = GStyle("SeqexecStyles-queueAreaRow")
+
+  val queueArea: GStyle = GStyle("SeqexecStyles-queueArea")
+
+  val headerSideBarArea: GStyle = GStyle("SeqexecStyles-headerSidebarArea")
+
+  val logArea: GStyle = GStyle("SeqexecStyles-logArea")
+
+  val lowerRow: GStyle = GStyle("SeqexecStyles-lowerRow")
+
+  val observerField: GStyle = GStyle("SeqexecStyles-observerField")
+
+  val shorterFields: GStyle = GStyle("SeqexecStyles-shorterFields")
+
+  val configLabel: GStyle = GStyle("SeqexecStyles-configLabel")
+
+  val observationProgressRow: GStyle = GStyle("SeqexecStyles-observationProgressRow")
+
+  val observationProgressBar: GStyle = GStyle("SeqexecStyles-observationProgressBar")
+
+  val observationBar: GStyle = GStyle("SeqexecStyles-observationBar")
+
+  val observationLabel: GStyle = GStyle("SeqexecStyles-observationLabel")
+
+  val guidingCell: GStyle = GStyle("SeqexecStyles-guidingCell")
+
+  val offsetsBlock: GStyle = GStyle("SeqexecStyles-offsetsBlock")
+
+  val inlineBlock: GStyle = GStyle("SeqexecStyles-inlineBlock")
+
+  val configuringRow: GStyle = GStyle("SeqexecStyles-configuringRow")
+
+  val specialStateLabel: GStyle = GStyle("SeqexecStyles-specialStateLabel")
+
+  val subsystems: GStyle = GStyle("SeqexecStyles-subsystems")
+
+  val componentLabel: GStyle = GStyle("SeqexecStyles-componentLabel")
+
+  val stepRow: GStyle = GStyle("SeqexecStyles-stepRow")
+
+  val observeConfig: GStyle = GStyle("SeqexecStyles-observeConfig")
+
+  val headerRowStyle: GStyle = GStyle("SeqexecStyles-headerRowStyle")
+
+  val infoLog: GStyle = GStyle("SeqexecStyles-infoLog")
+
+  val errorLog: GStyle = GStyle("SeqexecStyles-errorLog")
+
+  val warningLog: GStyle = GStyle("SeqexecStyles-warningLog")
 
   // Row styles taken from sematic ui tables
-  val rowDisabled: StyleA = style(
-    pointerEvents := "none",
-    color(rgba(40, 40, 40, 0.3))
-  )
+  val rowPositive: GStyle = GStyle("SeqexecStyles-rowPositive")
 
-  val rowActive: StyleA = style(
-    backgroundColor(c"#E0E0E0"),
-    color(rgba(0, 0, 0, 0.87)),
-    boxShadow := "0px 0px 0px rgba(0, 0, 0, 0.87) inset",
-    backgroundClip.paddingBox
-  )
+  val rowWarning: GStyle = GStyle("SeqexecStyles-rowWarning")
 
-  val rowNegative: StyleA = style(
-    backgroundColor(c"#FFF6F6"),
-    color(c"#9F3A38"),
-    boxShadow := "0px 0px 0px #E0B4B4 inset"
-  )
+  val rowActive: GStyle = GStyle("SeqexecStyles-rowActive")
 
-  val rowPositive: StyleA = style(
-    backgroundColor(c"#FCFFF5"),
-    color(c"#2C662D"),
-    boxShadow := "0px 0px 0px #9F3A38 inset"
-  )
+  val rowNegative: GStyle = GStyle("SeqexecStyles-rowNegative")
 
-  val rowError: StyleA = style(
-    backgroundColor(c"#FFF6F6"),
-    color(c"#9F3A38"),
-    boxShadow := "0px 0px 0px #E0B4B4 inset"
-  )
+  val rowError: GStyle = GStyle("SeqexecStyles-rowError")
 
-  val rowWarning: StyleA = style(
-    backgroundColor(c"#FFFAF3"),
-    color(c"#573A08"),
-    boxShadow := "0px 0px 0px #C9BA9B inset"
-  )
+  val rowDisabled: GStyle = GStyle("SeqexecStyles-rowDisabled")
 
-  val rowNone: StyleA = style(
-  )
-  // End row styles
+  val rowNone: GStyle = GStyle.Zero
 
-  val configuringRow: StyleA = style(
-    display.flex,
-    flexGrow(1)
-  )
+  val stepRowWithBreakpoint: GStyle = GStyle("SeqexecStyles-stepRowWithBreakpoint")
 
-  val subsystems: StyleA = style(
-    marginLeft.auto
-  )
+  val centeredCell: GStyle = GStyle("SeqexecStyles-centeredCell")
 
-  private val obsWidth = 200
+  val settingsCellHeader: GStyle = GStyle("SeqexecStyles-settingsCellHeader")
 
-  val observationProgressRow: StyleA = style(
-    display.flex,
-    flexGrow(1),
-    flexDirection.column,
-    width(obsWidth.px)
-  )
+  val tableHeaderIcons: GStyle = GStyle("SeqexecStyles-tableHeaderIcons")
 
-  val observationProgressBar: StyleA = style(
-    margin(0.px).important,
-    width(obsWidth.px)
-  )
+  val stepsListPane: GStyle = GStyle("SeqexecStyles-stepsListPane")
 
-  val observationBar: StyleA = style(
-    height(1.em).important
-  )
+  val stepsListPaneWithControls: GStyle = GStyle("SeqexecStyles-stepsListPaneWithControls")
 
-  val observationLabel: StyleA = style(
-    textAlign.center,
-    width(obsWidth.px)
-  )
+  val buttonsRow: GStyle = GStyle("SeqexecStyles-buttonsRow")
 
-  val specialStateLabel: StyleA = style(
-    display.flex,
-    flexGrow(1),
-    alignSelf.center,
-    textOverflow := "ellipsis",
-    overflow.hidden,
-    wordWrap.breakWord,
-    whiteSpace.nowrap
-  )
+  val gutterCell: GStyle = GStyle("SeqexecStyles-gutterCell")
+
+  val controlCell: GStyle = GStyle("SeqexecStyles-controlCell")
+
+  val breakPointHandle: GStyle = GStyle("SeqexecStyles-breakPointHandle")
 
   val skipHandleHeight: Int = 13
 
-  val skipHandle: StyleA = style(
-    position.absolute,
-    left(2.1.px),
-    height(skipHandleHeight.px),
-    width(skipHandleHeight.px),
-    cursor.pointer,
-    opacity(0.8),
-    transition := "all .1s ease-in-out",
-    &.hover(
-      transform := "scale(1.2)"
-    )
-  )
+  val skipHandle: GStyle = GStyle("SeqexecStyles-skipHandle")
 
-  val queueAreaRow: StyleA = style(
-    appSegment,
-    media.only.screen.maxWidth(mobileCut.px)(
-      paddingTop(0.px).important,
-      paddingBottom(0.px).important
-    )
-  )
+  val runningIconCell: GStyle = GStyle("SeqexecStyles-runningIconCell")
 
-  val configLabel: StyleA = style(
-    paddingTop(0.6.em)
-  )
+  val errorCell: GStyle = GStyle("SeqexecStyles-errorCell")
 
-  val labelPointer: StyleA = style(
-    cursor.pointer
-  )
+  val skippedIconCell: GStyle = GStyle("SeqexecStyles-skippedIconCell")
 
-  val noRowsSegment: StyleA = style(
-    border.none.important
-  )
+  val iconCell: GStyle = GStyle("SeqexecStyles-iconCell")
 
-  val clipboardIconDiv: StyleA = style(
-    minWidth(38.px),
-    display.flex,
-    paddingTop(4.px),
-    justifyContent.center,
-    alignItems.center,
-    height(100.%%),
-    width(100.%%)
-  )
+  val settingsCell: GStyle = GStyle("SeqexecStyles-settingsCell")
 
-  val clipboardIconHeader: StyleA = style(
-    display.flex,
-    paddingTop(4.px),
-    justifyContent.center,
-    alignItems.center,
-    height(100.%%),
-    width(100.%%),
-    paddingLeft(3.px)
-  )
+  val logIconRow: GStyle = GStyle("SeqexecStyles-logIconRow")
+
+  val logIconHeader: GStyle = GStyle("SeqexecStyles-logIconHeader")
+
+  val selectedIcon: GStyle = GStyle("SeqexecStyles-selectedIcon")
+
+  val runningIcon: GStyle = GStyle("SeqexecStyles-runningIcon")
+
+  val breakPointOnIcon: GStyle = GStyle("SeqexecStyles-breakPointOnIcon")
+
+  val breakPointOffIcon: GStyle = GStyle("SeqexecStyles-breakPointOffIcon")
+
+  val clipboardIconDiv: GStyle = GStyle("SeqexecStyles-clipboardIconDiv")
+
+  val clipboardIconHeader: GStyle = GStyle("SeqexecStyles-clipboardIconHeader")
+
+  val tableHeader: GStyle = GStyle("SeqexecStyles-tableHeader")
+
+  val controlCellRow: GStyle = GStyle("SeqexecStyles-controlCellRow")
+
+  val settingsCellRow: GStyle = GStyle("SeqexecStyles-settingsCellRow")
+  //   minWidth(35.px).important,
+  //   paddingRight(5.px).important,
+  //   paddingLeft(0.px).important,
+  //   overflow.unset.important,
+  //   pointerEvents := "auto"
+  // )
+  //
+  // //
+  // // Media query to adjust the width of containers on mobile to the max allowed width
+  // val deviceContainer: StyleA = style("ui.container")(
+  //   media.only.screen.maxWidth(mobileCut.px)(
+  //     width(100.%%).important,
+  //     marginLeft(0.px).important,
+  //     marginRight(0.px).important
+  //   )
+  // )
+  //
+  // val fullCell: StyleS = mixin(
+  //   width(100.%%),
+  //   height(100.%%)
+  // )
+  //
+  // val queueFullCell: StyleS = mixin(
+  //   fullCell,
+  //   display.flex,
+  //   alignItems.center,
+  //   justifyContent.flexStart,
+  //   padding(0.px).important
+  // )
+  //
+  // val queueCenterCell: StyleS = mixin(
+  //   fullCell,
+  //   display.flex,
+  //   alignItems.center,
+  //   justifyContent.center,
+  //   padding(0.px).important
+  // )
+  //
+  // val queueTextM: StyleS = mixin(
+  //   color(textColor),
+  //   &.hover(
+  //     color(textColor)
+  //   )
+  // )
+  //
+  // val errorIcon: StyleA = style(
+  //   queueTextM,
+  //   marginBottom(6.px).important
+  // )
+  //
+  //
+  // val widerColumn: StyleS = mixin(
+  //   paddingLeft(0.5.rem).important,
+  //   paddingRight(0.5.rem).important
+  // )
+  //
+  // val normalizedSegment: StyleS = mixin (
+  //   borderRadius.unset.important,
+  //   boxShadow := "unset !important"
+  // )
+  //
+  // val stepsListBody: StyleA = style() // Marker css
+  // val stepRunning: StyleA = style() // Marker css
+  //
+  // val inline: StyleA = style {
+  //   display.inline
+  // }
+  //
+  // val offsetGrid: StyleA = style {
+  //   marginRight(1.em).important
+  // }
+  //
+  // val noPadding: StyleS = mixin(
+  //   padding(0.px).important
+  // )
+  //
+  // val noMargin: StyleS = mixin(
+  //   margin(0.px)
+  // )
+  //
+  // val hidden: StyleA = style(
+  //   display.none
+  // )
+  //
+  // val tdNoPadding: StyleA = style(
+  //   noPadding
+  // )
+  //
+  // val noOpacity: StyleA = style(
+  //   opacity(0)
+  // )
+  //
+  // val progressVCentered: StyleA = style("ui.progress.vcentered")(
+  //   marginBottom(0.px)
+  // )
+  //
+  // // Common properties for a segment displayed when running
+  // val segmentRunningMixin: StyleS = mixin(
+  //   backgroundColor(rgba(0, 0, 0, 0.0)).important,
+  //   color.inherit,
+  //   padding(0.5.em, 0.5.em, 0.5.em, 0.em),
+  //   noMargin,
+  //   (boxShadow := "none").important
+  // )
+  //
+  // val runningLabel: StyleA = style(
+  //   backgroundColor(c"#FFFAF3").important,
+  //   color(c"#573A08").important
+  // )
+  //
+  // val smallTextArea: StyleA = style(
+  //   fontSize.smaller
+  // )
+  //
+  // val appSegment: StyleS = mixin(
+  //   paddingTop(0.5.em).important,
+  //   paddingBottom(0.5.em).important
+  // )
+  //
+  // val footerSegment: StyleA = style("ui.footer")(
+  //   position.fixed,
+  //   bottom(0.px),
+  //   width(100.%%),
+  //   height(46.px),
+  //   marginBottom(0.px),
+  //   marginTop(0.px),
+  //   backgroundColor(c"#F5F5F5"),
+  //   borderRadius.unset
+  // )
+  //
+  // val stepsTable: StyleA = style(
+  //   // CSS Dark magic to get the gutter background, see
+  //   // http://stackoverflow.com/questions/14628601/can-i-add-background-color-only-for-padding
+  //   (backgroundImage := s"linear-gradient(to bottom, rgba(249, 0, 1, 0) 0%, rgba(249, 0, 1, 0) 0%), linear-gradient(to right, rgba(34, 36, 38, 0.15) 0px, rgba(34, 36, 38, 0.00001) ${gutterWidth}px)").important,
+  //   backgroundClip.contentBox.paddingBox.important
+  // )
+  //
+  // // Styles for the log table, These styles will make react-virtualized
+  // // match the look of SemanticUI tables
+  // val logTable: StyleA = style(
+  //   fontSize(1.em)
+  // )
+  //
+  // val mobileRowHeight: Int = 15
+  //
+  // val leftBorderMixin: StyleS = mixin(
+  //   borderLeftWidth(1.px),
+  //   borderLeftStyle.solid,
+  //   borderLeftColor(tableBorderColor)
+  // )
+  //
+  // val bottomBorderMixin: StyleS = mixin(
+  //   borderBottomWidth(1.px),
+  //   borderBottomStyle.solid,
+  //   borderBottomColor(tableBorderColor)
+  // )
+  //
+  // val topBorderMixin: StyleS = mixin(
+  //   borderTopWidth(1.px),
+  //   borderTopStyle.solid,
+  //   borderTopColor(tableBorderColor)
+  // )
+  //
+  // val rightBorderMixin: StyleS = mixin(
+  //   borderRightWidth(1.px),
+  //   borderRightStyle.solid,
+  //   borderRightColor(tableBorderColor)
+  // )
+  //
+  // private val cellPaddingMixin: StyleS = mixin(
+  //   paddingLeft(0.7.em),
+  //   paddingRight(0.7.em)
+  // )
+  //
+  // // Override styles used by react-virtualized
+  // val headerRow: StyleA = style("ReactVirtualized__Table__headerRow")(
+  //   fontWeight._700,
+  //   display.flex,
+  //   flexDirection.row,
+  //   alignItems.center
+  // )
+  //
+  // // Override styles used by react-virtualized
+  // val headerTruncatedText: StyleA = style("ReactVirtualized__Table__headerTruncatedText")(
+  //   paddingLeft(7.px)
+  // )
+  //
+  // val firstHeaderColumn: StyleA = style("ReactVirtualized__Table__headerColumn:first-of-type")(
+  //   borderLeft.none,
+  //   overflow.visible.important
+  // )
+  //
+  // val firstRowColumn: StyleA = style("ReactVirtualized__Table__rowColumn:first-of-type")(
+  //   borderLeft.none
+  // )
+  //
+  // val stepsTableMixin: StyleS = mixin(
+  //   fontSize.smaller.important,
+  //   textOverflow := "ellipsis",
+  //   wordWrap.breakWord,
+  //   whiteSpace.nowrap
+  // )
+  //
+  // val rowMixin: StyleS = mixin(
+  //   topBorderMixin,
+  //   rightBorderMixin
+  // )
+  //
+  // val rightCell: StyleA = style(
+  //   display.flex,
+  //   alignItems.center,
+  //   justifyContent.flexEnd
+  // )
+  //
+  // val leftCell: StyleA = style(
+  //   display.flex,
+  //   alignItems.center,
+  //   justifyContent.flexStart
+  // )
+  //
+  // val tableGrid: StyleA = style("ReactVirtualized__Table__Grid")(
+  //   leftBorderMixin,
+  //   rightBorderMixin,
+  //   bottomBorderMixin,
+  //   outline.none
+  // )
+  //
+  // val innerScroll: StyleA = style("ReactVirtualized__Grid__innerScrollContainer")(
+  //   bottomBorderMixin
+  // )
+  //
+  // private val mobileRow: StyleS = mixin (
+  //   media.only.screen.maxWidth(mobileCut.px)(
+  //     paddingRight(2.px),
+  //     paddingLeft(2.px)
+  //   )
+  // )
+  //
+  // val rowColumn: StyleA = style("ReactVirtualized__Table__rowColumn")(
+  //   cellPaddingMixin,
+  //   leftBorderMixin,
+  //   minWidth(0.px),
+  //   display.flex,
+  //   alignItems.center,
+  //   fontSize.small,
+  //   textOverflow := "ellipsis",
+  //   whiteSpace.nowrap,
+  //   height(100.%%),
+  //   mobileRow
+  // )
+  //
+  // val row: StyleA = style("ReactVirtualized__Table__row")(
+  //   display.flex,
+  //   flexDirection.row,
+  //   alignItems.center,
+  //   &.hover(
+  //     backgroundColor(rgba(0, 0, 0, 0.05)),
+  //     color(textColor)
+  //   ),
+  //   &.firstOfType(
+  //     borderTop.none
+  //   )
+  // )
+  //
+  // val stepRowMixin: StyleS = mixin(
+  //   stepsTableMixin,
+  //   backgroundColor.white,
+  //   color(textColor)
+  // )
+  //
+  //
+  // val statusCellMixin: StyleS = mixin(
+  //   alignItems.center,
+  //   display.flex,
+  //   height(100.%%),
+  //   width(100.%%),
+  //   minWidth(24.px)
+  // )
+  //
+  // val iconCellMixin: StyleS = mixin(
+  //   justifyContent.center,
+  //   statusCellMixin
+  // )
+  //
+  //
+  // val offsetCellWrapper: StyleA = style(
+  //   paddingTop(0.4.em)
+  // )
+  //
 }

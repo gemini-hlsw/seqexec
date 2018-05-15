@@ -19,7 +19,7 @@ import japgolly.scalajs.react.{CallbackTo, ScalaComponent, ScalazReact}
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.ScalazReact._
-import scalacss.ScalaCssReact._
+import edu.gemini.web.client.style._
 import cats.implicits._
 
 object SequenceStepsTableContainer {

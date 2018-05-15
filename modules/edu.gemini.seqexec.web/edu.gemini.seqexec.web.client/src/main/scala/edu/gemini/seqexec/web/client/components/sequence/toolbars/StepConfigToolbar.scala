@@ -14,7 +14,7 @@ import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.{Callback, ScalaComponent}
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.component.Scala.Unmounted
-import scalacss.ScalaCssReact._
+import edu.gemini.web.client.style._
 
 /**
   * Toolbar when displaying a step configuration

@@ -17,19 +17,16 @@
 @background_color_10: #fcfff5;
 @border_color: rgba(34, 36, 38, 0.15);
 
-@keyframes SeqexecStyles-blink {
-  50% {
-    opacity: 0;
-  }
-}
 body {
   background-color: @background_color_1;
   display: flex;
   flex-direction: column;
 }
+
 .main.ui.borderless.menu.container.placeholder {
   margin-top: 0;
 }
+
 .main.menu {
   .item {
     img.logo {
@@ -37,6 +34,7 @@ body {
     }
   }
 }
+
 .ui.table {
   tbody {
     tr {
@@ -51,91 +49,154 @@ body {
     }
   }
 }
+
 .SeqexecStyles-activeInstrumentLabel {
   padding-bottom: 0.2em;
   text-align: center;
 }
+
+.SeqexecStyles-instrumentTabLabel {
+  width: 100%;
+}
+
+.SeqexecStyles-instrumentTab {
+  min-width: 20%;
+  text-align: center;
+}
+
 .SeqexecStyles-activeInstrumentContent {
   padding: 0.6em 0.9em;
   background-color: @background_color_2 !important;
 }
+
+.SeqexecStyles-errorTab {
+  border-top: 3px red solid !important;
+}
+
 .SeqexecStyles-fieldsNoBottom {
   margin-bottom: 0 !important;
 }
+
+.SeqexecStyles-headerSidebarStyle {
+  border-width: 1px;
+  border-style: solid;
+  border-color: @border_color;
+  .normalizedSegment;
+  .widerColumn;
+}
+
+.SeqexecStyles-emptyInstrumentTab {
+  min-height: 20.4em;
+}
+
+.SeqexecStyles-emptyInstrumentTabLogShown {
+  height: ~"calc(100vh - 44.9em)";
+}
+
+.SeqexecStyles-emptyInstrumentTabLogHidden {
+  height: ~"calc(100vh - 30.2em)";
+}
+
+.SeqexecStyles-instrumentTabSegment {
+  min-height: 20.4em;
+}
+
+.SeqexecStyles-instrumentTabSegmentLogHidden {
+  height: ~"calc(100vh - 30.1em)";
+}
+
+.SeqexecStyles-instrumentTabSegmentLogShown {
+  height: ~"calc(100vh - 44.8em)";
+}
+
+.SeqexecStyles-sequencesArea {
+  .widerColumn;
+}
+
+.SeqexecStyles-errorText {
+  color: red;
+}
+
+.SeqexecStyles-noRowsSegment {
+  border: none !important;
+}
+
+.SeqexecStyles-logSegment {
+  .widerColumn;
+}
+
+.SeqexecStyles-logSecondarySegment {
+  .normalizedSegment;
+}
+
+.SeqexecStyles-logControlRow {
+  margin-top: 0.2em;
+  margin-bottom: 0.2em;
+  padding: 0em !important;
+}
+
+.SeqexecStyles-logTableRow {
+  padding-left: 1em !important;
+  padding-right: 1em !important;
+  padding-bottom: 0.4em !important;
+  padding-top: 0em !important;
+}
+
+.SeqexecStyles-selectorFields {
+  float: right;
+  margin-bottom: 0px !important;
+  margin-top: 5px !important;
+}
+
+.queueText() {
+  color: @text_color;
+  &:hover {
+    color: @text_color;
+  }
+}
+
+.SeqexecStyles-queueTextColumn {
+  .queueText;
+  .queueFullCell;
+}
+
+.SeqexecStyles-queueText {
+  padding-left: 10px;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.SeqexecStyles-daytimeCal {
+  font-weight: bold;
+  font-style: italic;
+}
+
+.SeqexecStyles-queueIconColumn {
+  min-width: 20px;
+  .queueCenterCell;
+}
+
 .SeqexecStyles-queueListPane {
   padding: 0px !important;
   margin-top: 0;
   overflow: auto;
 }
-.SeqexecStyles-stepsListPane {
-  height: ~"calc(100% - 1.98em)";
-  margin-top: 1em;
+
+.SeqexecStyles-labelPointer {
+  cursor: pointer;
 }
-.SeqexecStyles-instrumentTabSegment {
-  min-height: 20.4em;
-}
-.SeqexecStyles-instrumentTabSegmentLogHidden {
-  height: ~"calc(100vh - 30.1em)";
-}
-.SeqexecStyles-instrumentTabSegmentLogShown {
-  height: ~"calc(100vh - 44.8em)";
-}
-.SeqexecStyles-stepsListPaneWithControls {
-  height: ~"calc(100% - 4.9em)";
-  margin-top: 1em;
-}
-.SeqexecStyles-observeConfig {
-  background-color: @background_color_3 !important;
-}
-.SeqexecStyles-inline {
-  display: inline;
-}
-.SeqexecStyles-inlineBlock {
-  display: inline-block;
-}
-.SeqexecStyles-observerField {
-  padding-right: 0 !important;
-}
-.SeqexecStyles-offsetGrid {
-  margin-right: 1em !important;
-}
+
 .SeqexecStyles-shorterRow {
   margin-bottom: -1em !important;
 }
-.SeqexecStyles-emptyInstrumentTab {
-  min-height: 20.4em;
+
+@keyframes SeqexecStyles-blink {
+  50% {
+    opacity: 0;
+  }
 }
-.SeqexecStyles-emptyInstrumentTabLogShown {
-  height: ~"calc(100vh - 44.9em)";
-}
-.SeqexecStyles-emptyInstrumentTabLogHidden {
-  height: ~"calc(100vh - 30.2em)";
-}
-.SeqexecStyles-instrumentTab {
-  min-width: 20%;
-  text-align: center;
-}
-.SeqexecStyles-instrumentTabLabel {
-  width: 100%;
-}
-.SeqexecStyles-lowerRow {
-  margin-top: -1em !important;
-}
-.SeqexecStyles-shorterFields {
-  margin-bottom: 0.2em !important;
-}
-.SeqexecStyles-hidden {
-  display: none;
-}
-.SeqexecStyles-tdNoPadding {
-  padding: 0 !important;
-}
-.SeqexecStyles-errorTab {
-  border-top: 3px red solid !important;
-}
-.SeqexecStyles-noOpacity {
-  opacity: 0;
-}
+
 .SeqexecStyles-blinking {
   animation-name: SeqexecStyles-blink;
   animation-duration: 1700ms;
@@ -143,15 +204,468 @@ body {
   animation-timing-function: cubic-bezier(0.5, 0, 1, 1);
   animation-direction: alternate;
 }
+
+.SeqexecStyles-queueAreaRow {
+  .appSegment;
+}
+
+.SeqexecStyles-queueArea {
+  .widerColumn;
+}
+
+.SeqexecStyles-headerSidebarArea {
+  .widerColumn;
+}
+
+.SeqexecStyles-logArea {
+  margin-bottom: 3em;
+  .appSegment;
+}
+
+.SeqexecStyles-lowerRow {
+  margin-top: -1em !important;
+}
+
+.SeqexecStyles-observerField {
+  padding-right: 0 !important;
+}
+
+.SeqexecStyles-shorterFields {
+  margin-bottom: 0.2em !important;
+}
+
+.SeqexecStyles-configLabel {
+  padding-top: 0.6em;
+}
+
+.SeqexecStyles-observationProgressRow {
+  display: flex;
+  flex-grow: 1;
+  flex-direction: column;
+  width: 200px;
+}
+
+.SeqexecStyles-observationProgressBar {
+  margin: 0 !important;
+  width: 200px;
+}
+
+.SeqexecStyles-observationBar {
+  height: 1em !important;
+}
+
+.SeqexecStyles-observationLabel {
+  text-align: center;
+  width: 200px;
+}
+
+.SeqexecStyles-guidingCell {
+  display: flex;
+  width: 100%;
+  align-items: center;
+}
+
+.SeqexecStyles-offsetsBlock {
+  margin-left: auto;
+}
+
+.SeqexecStyles-inlineBlock {
+  display: inline-block;
+}
+
+.SeqexecStyles-configuringRow {
+  display: flex;
+  flex-grow: 1;
+}
+
+.SeqexecStyles-specialStateLabel {
+  display: flex;
+  flex-grow: 1;
+  align-self: center;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  word-wrap: break-word;
+  white-space: nowrap;
+}
+
+.SeqexecStyles-subsystems {
+  margin-left: auto;
+}
+
+.SeqexecStyles-componentLabel {
+  text-overflow: ellipsis;
+  overflow: hidden;
+  word-wrap: break-word;
+  white-space: nowrap;
+}
+
+.SeqexecStyles-stepRow {
+  font-size: smaller !important;
+  text-overflow: ellipsis;
+  word-wrap: break-word;
+  white-space: nowrap;
+  background-color: @background_color_1;
+  color: @text_color;
+  overflow: unset !important;
+  border-right-style: solid;
+  border-right-color: @border_color;
+  border-right-width: 1px;
+  border-top-style: solid;
+  border-top-color: @border_color;
+  border-top-width: 1px;
+  outline: none;
+}
+
+.SeqexecStyles-observeConfig {
+  background-color: @background_color_3 !important;
+}
+
+.SeqexecStyles-headerRowStyle {
+  border-left-width: 1px;
+  border-left-style: solid;
+  border-left-color: @border_color;
+  border-top-width: 1px;
+  border-top-style: solid;
+  border-top-color: @border_color;
+  border-bottom-width: 1px;
+  border-bottom-style: solid;
+  border-bottom-color: @border_color;
+  border-right-width: 1px;
+  border-right-style: solid;
+  border-right-color: @border_color;
+  background-color: @background_color_6;
+  min-height: 33px;
+  height: 33px;
+}
+
+.SeqexecStyles-infoLog {
+  border-top-width: 1px;
+  border-top-style: solid;
+  border-top-color: @border_color;
+  border-right-width: 1px;
+  border-right-style: solid;
+  border-right-color: @border_color;
+  background-color: @background_color_1;
+  color: @text_color;
+}
+
+.SeqexecStyles-errorLog {
+  border-top-width: 1px;
+  border-top-style: solid;
+  border-top-color: @border_color;
+  border-right-width: 1px;
+  border-right-style: solid;
+  border-right-color: @border_color;
+  background-color: @background_color_8 !important;
+  color: @color_5 !important;
+}
+
+.SeqexecStyles-warningLog {
+  border-top-width: 1px;
+  border-top-style: solid;
+  border-top-color: @border_color;
+  border-right-width: 1px;
+  border-right-style: solid;
+  border-right-color: @border_color;
+  background-color: @background_color_4 !important;
+  color: @color_2 !important;
+}
+
+.SeqexecStyles-rowPositive {
+  background-color: @background_color_10;
+  color: @color_8;
+  box-shadow: 0px 0px 0px #9f3a38 inset;
+}
+
+.SeqexecStyles-rowWarning {
+  background-color: @background_color_4;
+  color: @color_2;
+  box-shadow: 0px 0px 0px #c9ba9b inset;
+}
+
+.SeqexecStyles-rowActive {
+  background-color: @background_color_9;
+  color: @color_7;
+  box-shadow: 0px 0px 0px rgba(0, 0, 0, 0.87) inset;
+  background-clip: padding-box;
+}
+
+.SeqexecStyles-rowNegative {
+  background-color: @background_color_8;
+  color: @color_5;
+  box-shadow: 0px 0px 0px #e0b4b4 inset;
+}
+
+.SeqexecStyles-rowError {
+  background-color: @background_color_8;
+  color: @color_5;
+  box-shadow: 0px 0px 0px #e0b4b4 inset;
+}
+
+.SeqexecStyles-rowDisabled {
+  pointer-events: none;
+  color: @color_6;
+}
+
+.SeqexecStyles-stepRowWithBreakpoint {
+  font-size: smaller !important;
+  text-overflow: ellipsis;
+  word-wrap: break-word;
+  white-space: nowrap;
+  background-color: @background_color_1;
+  color: @text_color;
+  border-left-width: 1px;
+  border-left-style: solid;
+  border-left-color: @border_color;
+  border-right-width: 1px;
+  border-right-style: solid;
+  border-right-color: @border_color;
+  background-image: linear-gradient(
+    to right,
+    rgba(34, 36, 38, 0.15),
+    rgba(34, 36, 38, 0.15) 20px,
+    #a5673f 20px,
+    #a5673f
+  );
+  background-size: 100% 4px;
+  background-repeat: no-repeat;
+  border-top-color: @border_color;
+  border-top-width: 1px;
+  border-top-style: solid;
+  padding-top: 4px;
+  overflow: visible !important;
+  outline: none;
+}
+
+.SeqexecStyles-centeredCell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.SeqexecStyles-settingsCellHeader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-left: -2px;
+}
+
+.SeqexecStyles-tableHeaderIcons {
+  padding-bottom: 4px;
+}
+
+.SeqexecStyles-stepsListPane {
+  height: ~"calc(100% - 1.98em)";
+  margin-top: 1em;
+}
+
+.SeqexecStyles-stepsListPaneWithControls {
+  height: ~"calc(100% - 4.9em)";
+  margin-top: 1em;
+}
+
 .SeqexecStyles-buttonsRow {
   margin-right: 0.8rem !important;
   margin-left: 0.8rem !important;
 }
+
+.SeqexecStyles-gutterCell {
+  background-image: linear-gradient(
+      to bottom,
+      rgba(249, 0, 1, 0) 0%,
+      rgba(249, 0, 1, 0) 0%
+    ),
+    linear-gradient(
+      to right,
+      rgba(34, 36, 38, 0.15) 0px,
+      rgba(34, 36, 38, 0.00001) 21px
+    ) !important;
+  background-clip: padding-box;
+  background-color: @background_color_1;
+  width: 21px;
+  min-width: 21px;
+  border-right-width: 1px;
+  border-right-style: solid;
+  border-right-color: @border_color;
+  position: relative;
+}
+
+.SeqexecStyles-controlCell {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  min-width: 42.3px;
+}
+
+.SeqexecStyles-breakPointHandle {
+  position: relative;
+  left: 3.82px;
+  top: -4px;
+  height: 13px;
+  width: 13px;
+  cursor: pointer;
+  opacity: 0.8;
+  transition: all 0.1s ease-in-out;
+  &:hover {
+    transform: scale(1.4);
+  }
+}
+
+.SeqexecStyles-skipHandle {
+  position: absolute;
+  left: 2.1px;
+  height: 13px;
+  width: 13px;
+  cursor: pointer;
+  opacity: 0.8;
+  transition: all 0.1s ease-in-out;
+  &:hover {
+    transform: scale(1.2);
+  }
+}
+
+.SeqexecStyles-runningIconCell {
+  justify-content: center;
+  min-width: 24px;
+  height: 100%;
+  align-items: center;
+  width: 100%;
+  display: flex;
+}
+
+.SeqexecStyles-errorCell {
+  justify-content: center;
+  min-width: 24px;
+  height: 100%;
+  align-items: center;
+  width: 100%;
+  display: flex;
+  padding-bottom: 8px;
+}
+
+.SeqexecStyles-skippedIconCell {
+  justify-content: center;
+  min-width: 24px;
+  height: 100%;
+  align-items: center;
+  width: 100%;
+  display: flex;
+  padding-right: 10px;
+}
+
+.SeqexecStyles-iconCell {
+  justify-content: center;
+  min-width: 24px;
+  height: 100%;
+  align-items: center;
+  width: 100%;
+  display: flex;
+  padding-bottom: 8px;
+}
+
+.SeqexecStyles-settingsCell {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-width: 15px;
+  width: 100%;
+  height: 100%;
+  padding-bottom: 9px;
+}
+
+.SeqexecStyles-logIconRow {
+  margin: 0 0 13px 2px !important;
+}
+
+.SeqexecStyles-logIconHeader {
+  margin: 0 0 10px 0 !important;
+}
+
+.SeqexecStyles-selectedIcon {
+  .queueText;
+  margin-bottom: 5px !important;
+}
+
+.SeqexecStyles-runningIcon {
+  .queueText;
+}
+
+.SeqexecStyles-breakPointOnIcon {
+  position: relative;
+  left: 3px;
+  top: -5px;
+}
+
+.SeqexecStyles-breakPointOffIcon {
+  position: relative;
+  left: 1px;
+  top: -5px;
+}
+
+.clipboardIconMixin() {
+  display: flex;
+  padding-top: 4px;
+  justify-content: center;
+  height: 100%;
+  align-items: center;
+  width: 100%;
+}
+
+.SeqexecStyles-clipboardIconDiv {
+  min-width: 38px;
+  .clipboardIconMixin;
+}
+
+.SeqexecStyles-clipboardIconHeader {
+  .clipboardIconMixin;
+  padding-left: 3px;
+}
+
+.SeqexecStyles-tableHeader {
+  border-left-width: 1px;
+  border-left-style: solid;
+  border-left-color: @border_color;
+  font-weight: bold;
+  color: @color_3;
+  background-color: @background_color_6;
+  outline: none;
+  min-height: 33px;
+  height: 33px;
+  display: flex;
+  align-items: center;
+}
+
+.SeqexecStyles-controlCellRow {
+  padding-right: 0;
+  padding-left: 0;
+  overflow: unset !important;
+}
+
+.SeqexecStyles-settingsCellRow {
+  min-width: 35px;
+  padding-right: 5;
+  padding-left: 0;
+  overflow: unset !important;
+  pointer-events: auto;
+}
+//=================
+.SeqexecStyles-inline {
+  display: inline;
+}
+.SeqexecStyles-offsetGrid {
+  margin-right: 1em !important;
+}
+.SeqexecStyles-hidden {
+  display: none;
+}
+.SeqexecStyles-tdNoPadding {
+  padding: 0 !important;
+}
+.SeqexecStyles-noOpacity {
+  opacity: 0;
+}
 .ui.progress.vcentered {
   margin-bottom: 0;
-}
-.SeqexecStyles-errorText {
-  color: red;
 }
 .SeqexecStyles-runningLabel {
   background-color: @background_color_4 !important;
@@ -163,10 +677,6 @@ body {
 .appSegment() {
   padding-top: 0.5em !important;
   padding-bottom: 0.5em !important;
-}
-.SeqexecStyles-logArea {
-  margin-bottom: 3em;
-  .appSegment;
 }
 .ui.footer {
   position: fixed;
@@ -191,45 +701,8 @@ body {
     ) !important;
   background-clip: content-box padding-box !important;
 }
-.SeqexecStyles-daytimeCal {
-  font-weight: bold;
-  font-style: italic;
-}
-.SeqexecStyles-componentLabel {
-  text-overflow: ellipsis;
-  overflow: hidden;
-  word-wrap: break-word;
-  white-space: nowrap;
-}
 .SeqexecStyles-logTable {
   font-size: 1em;
-}
-.SeqexecStyles-selectorFields {
-  float: right;
-  margin-bottom: 0px !important;
-  margin-top: 5px !important;
-}
-.SeqexecStyles-logIconHeader {
-  margin: 0 0 10px 0 !important;
-}
-.SeqexecStyles-logIconRow {
-  margin: 0 0 13px 2px !important;
-}
-.SeqexecStyles-tableHeaderIcons {
-  padding-bottom: 4px;
-}
-.SeqexecStyles-tableHeader {
-  border-left-width: 1px;
-  border-left-style: solid;
-  border-left-color: @border_color;
-  font-weight: bold;
-  color: @color_3;
-  background-color: @background_color_6;
-  outline: none;
-  min-height: 33px;
-  height: 33px;
-  display: flex;
-  align-items: center;
 }
 .ReactVirtualized__Table__headerRow {
   font-weight: 700;
@@ -260,11 +733,6 @@ body {
   padding-left: 0.7em;
   padding-right: 0.7em;
 }
-.SeqexecStyles-centeredCell {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
 .SeqexecStyles-rightCell {
   display: flex;
   align-items: center;
@@ -292,32 +760,6 @@ body {
   border-bottom-style: solid;
   border-bottom-color: @border_color;
 }
-.SeqexecStyles-controlCell {
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
-  min-width: 42.3px;
-}
-.SeqexecStyles-controlCellRow {
-  padding-right: 0;
-  padding-left: 0;
-  overflow: unset !important;
-}
-.SeqexecStyles-guidingCell {
-  display: flex;
-  width: 100%;
-  align-items: center;
-}
-.SeqexecStyles-offsetsBlock {
-  margin-left: auto;
-}
-.SeqexecStyles-settingsCellRow {
-  min-width: 35px;
-  padding-right: 5;
-  padding-left: 0;
-  overflow: unset !important;
-  pointer-events: auto;
-}
 .ReactVirtualized__Table__row {
   display: flex;
   flex-direction: row;
@@ -330,293 +772,8 @@ body {
     color: @text_color;
   }
 }
-.SeqexecStyles-headerRowStyle {
-  border-left-width: 1px;
-  border-left-style: solid;
-  border-left-color: @border_color;
-  border-top-width: 1px;
-  border-top-style: solid;
-  border-top-color: @border_color;
-  border-bottom-width: 1px;
-  border-bottom-style: solid;
-  border-bottom-color: @border_color;
-  border-right-width: 1px;
-  border-right-style: solid;
-  border-right-color: @border_color;
-  background-color: @background_color_6;
-  min-height: 33px;
-  height: 33px;
-}
-.SeqexecStyles-stepRow {
-  font-size: smaller !important;
-  text-overflow: ellipsis;
-  word-wrap: break-word;
-  white-space: nowrap;
-  background-color: @background_color_1;
-  color: @text_color;
-  overflow: unset !important;
-  border-right-style: solid;
-  border-right-color: @border_color;
-  border-right-width: 1px;
-  border-top-style: solid;
-  border-top-color: @border_color;
-  border-top-width: 1px;
-  outline: none;
-}
-.SeqexecStyles-stepRowWithBreakpoint {
-  font-size: smaller !important;
-  text-overflow: ellipsis;
-  word-wrap: break-word;
-  white-space: nowrap;
-  background-color: @background_color_1;
-  color: @text_color;
-  border-left-width: 1px;
-  border-left-style: solid;
-  border-left-color: @border_color;
-  border-right-width: 1px;
-  border-right-style: solid;
-  border-right-color: @border_color;
-  background-image: linear-gradient(
-    to right,
-    rgba(34, 36, 38, 0.15),
-    rgba(34, 36, 38, 0.15) 20px,
-    #a5673f 20px,
-    #a5673f
-  );
-  background-size: 100% 4px;
-  background-repeat: no-repeat;
-  border-top-color: @border_color;
-  border-top-width: 1px;
-  border-top-style: solid;
-  padding-top: 4px;
-  overflow: visible !important;
-  outline: none;
-}
-.SeqexecStyles-infoLog {
-  border-top-width: 1px;
-  border-top-style: solid;
-  border-top-color: @border_color;
-  border-right-width: 1px;
-  border-right-style: solid;
-  border-right-color: @border_color;
-  background-color: @background_color_1;
-  color: @text_color;
-}
-.SeqexecStyles-errorLog {
-  border-top-width: 1px;
-  border-top-style: solid;
-  border-top-color: @border_color;
-  border-right-width: 1px;
-  border-right-style: solid;
-  border-right-color: @border_color;
-  background-color: @background_color_8 !important;
-  color: @color_5 !important;
-}
-.SeqexecStyles-warningLog {
-  border-top-width: 1px;
-  border-top-style: solid;
-  border-top-color: @border_color;
-  border-right-width: 1px;
-  border-right-style: solid;
-  border-right-color: @border_color;
-  background-color: @background_color_4 !important;
-  color: @color_2 !important;
-}
-.SeqexecStyles-settingsCellHeader {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding-left: -2px;
-}
-.SeqexecStyles-settingsCell {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-width: 15px;
-  width: 100%;
-  height: 100%;
-  padding-bottom: 9px;
-}
-.SeqexecStyles-iconCell {
-  justify-content: center;
-  min-width: 24px;
-  height: 100%;
-  align-items: center;
-  width: 100%;
-  display: flex;
-  padding-bottom: 8px;
-}
-.SeqexecStyles-runningIconCell {
-  justify-content: center;
-  min-width: 24px;
-  height: 100%;
-  align-items: center;
-  width: 100%;
-  display: flex;
-}
-.SeqexecStyles-errorCell {
-  justify-content: center;
-  min-width: 24px;
-  height: 100%;
-  align-items: center;
-  width: 100%;
-  display: flex;
-  padding-bottom: 8px;
-}
-.SeqexecStyles-skippedIconCell {
-  justify-content: center;
-  min-width: 24px;
-  height: 100%;
-  align-items: center;
-  width: 100%;
-  display: flex;
-  padding-right: 10px;
-}
-.SeqexecStyles-gutterCell {
-  background-image: linear-gradient(
-      to bottom,
-      rgba(249, 0, 1, 0) 0%,
-      rgba(249, 0, 1, 0) 0%
-    ),
-    linear-gradient(
-      to right,
-      rgba(34, 36, 38, 0.15) 0px,
-      rgba(34, 36, 38, 0.00001) 21px
-    ) !important;
-  background-clip: padding-box;
-  background-color: @background_color_1;
-  width: 21px;
-  min-width: 21px;
-  border-right-width: 1px;
-  border-right-style: solid;
-  border-right-color: @border_color;
-  position: relative;
-}
 .SeqexecStyles-offsetCellWrapper {
   padding-top: 0.4em;
-}
-.SeqexecStyles-breakPointOnIcon {
-  position: relative;
-  left: 3px;
-  top: -5px;
-}
-.SeqexecStyles-breakPointOffIcon {
-  position: relative;
-  left: 1px;
-  top: -5px;
-}
-.SeqexecStyles-breakPointHandle {
-  position: relative;
-  left: 3.82px;
-  top: -4px;
-  height: 13px;
-  width: 13px;
-  cursor: pointer;
-  opacity: 0.8;
-  transition: all 0.1s ease-in-out;
-  &:hover {
-    transform: scale(1.4);
-  }
-}
-.SeqexecStyles-rowDisabled {
-  pointer-events: none;
-  color: @color_6;
-}
-.SeqexecStyles-rowActive {
-  background-color: @background_color_9;
-  color: @color_7;
-  box-shadow: 0px 0px 0px rgba(0, 0, 0, 0.87) inset;
-  background-clip: padding-box;
-}
-.SeqexecStyles-rowNegative {
-  background-color: @background_color_8;
-  color: @color_5;
-  box-shadow: 0px 0px 0px #e0b4b4 inset;
-}
-.SeqexecStyles-rowPositive {
-  background-color: @background_color_10;
-  color: @color_8;
-  box-shadow: 0px 0px 0px #9f3a38 inset;
-}
-.SeqexecStyles-rowError {
-  background-color: @background_color_8;
-  color: @color_5;
-  box-shadow: 0px 0px 0px #e0b4b4 inset;
-}
-.SeqexecStyles-rowWarning {
-  background-color: @background_color_4;
-  color: @color_2;
-  box-shadow: 0px 0px 0px #c9ba9b inset;
-}
-.SeqexecStyles-configuringRow {
-  display: flex;
-  flex-grow: 1;
-}
-.SeqexecStyles-subsystems {
-  margin-left: auto;
-}
-.SeqexecStyles-observationProgressRow {
-  display: flex;
-  flex-grow: 1;
-  flex-direction: column;
-  width: 200px;
-}
-.SeqexecStyles-observationProgressBar {
-  margin: 0 !important;
-  width: 200px;
-}
-.SeqexecStyles-observationBar {
-  height: 1em !important;
-}
-.SeqexecStyles-observationLabel {
-  text-align: center;
-  width: 200px;
-}
-.SeqexecStyles-specialStateLabel {
-  display: flex;
-  flex-grow: 1;
-  align-self: center;
-  text-overflow: ellipsis;
-  overflow: hidden;
-  word-wrap: break-word;
-  white-space: nowrap;
-}
-.SeqexecStyles-skipHandle {
-  position: absolute;
-  left: 2.1px;
-  height: 13px;
-  width: 13px;
-  cursor: pointer;
-  opacity: 0.8;
-  transition: all 0.1s ease-in-out;
-  &:hover {
-    transform: scale(1.2);
-  }
-}
-.SeqexecStyles-configLabel {
-  padding-top: 0.6em;
-}
-.SeqexecStyles-noRowsSegment {
-  border: none !important;
-}
-.clipboardIconMixin() {
-  display: flex;
-  padding-top: 4px;
-  justify-content: center;
-  height: 100%;
-  align-items: center;
-  width: 100%;
-}
-.SeqexecStyles-clipboardIconDiv {
-  min-width: 38px;
-  .clipboardIconMixin;
-}
-.SeqexecStyles-clipboardIconHeader {
-  .clipboardIconMixin;
-  padding-left: 3px;
-}
-.SeqexecStyles-labelPointer {
-  cursor: pointer;
 }
 .fullCell() {
   width: 100%;
@@ -636,33 +793,6 @@ body {
   justify-content: center;
   padding: 0px;
 }
-.queueText() {
-  color: @text_color;
-  &:hover {
-    color: @text_color;
-  }
-}
-.SeqexecStyles-queueTextColumn {
-  .queueText;
-  .queueFullCell;
-}
-.SeqexecStyles-queueText {
-  padding-left: 10px;
-  text-overflow: ellipsis;
-  overflow: hidden;
-  white-space: nowrap;
-}
-.SeqexecStyles-queueIconColumn {
-  min-width: 20px;
-  .queueCenterCell;
-}
-.SeqexecStyles-selectedIcon {
-  .queueText;
-  margin-bottom: 5px !important;
-}
-.SeqexecStyles-runningIcon {
-  .queueText;
-}
 .SeqexecStyles-errorIcon {
   .queueText;
   margin-bottom: 6px !important;
@@ -675,31 +805,11 @@ body {
   border-radius: unset !important;
   box-shadow: unset !important;
 }
-.SeqexecStyles-headerSidebarArea {
-  .widerColumn;
-}
-.SeqexecStyles-headerSidebarStyle {
-  border-width: 1px;
-  border-style: solid;
-  border-color: @border_color;
-  .normalizedSegment;
-  .widerColumn;
-}
-.SeqexecStyles-logSecondarySegment {
-  .normalizedSegment;
-}
-.SeqexecStyles-logControlRow {
-  margin-top: 0.2em;
-  margin-bottom: 0.2em;
-  padding: 0em !important;
-}
-.SeqexecStyles-logTableRow {
-  padding-left: 1em !important;
-  padding-right: 1em !important;
-  padding-bottom: 0.4em !important;
-  padding-top: 0em !important;
-}
 @media only screen and (min-width: 767px) {
+  .SeqexecStyles-onlyMobile {
+    display: none !important;
+  }
+
   .SeqexecStyles-queueListPane {
     max-height: 216px;
     min-height: 216px;
@@ -707,30 +817,19 @@ body {
   .SeqexecStyles-instrumentTabSegment {
     min-height: 25.4em;
   }
-  .SeqexecStyles-onlyMobile {
-    display: none !important;
-  }
 }
 .mobileSegment() {
   padding-right: 0 !important;
   padding-left: 0 !important;
 }
-.SeqexecStyles-queueAreaRow {
-  .appSegment;
-}
-.SeqexecStyles-logSegment {
-  .widerColumn;
-}
-.SeqexecStyles-sequencesArea {
-  .widerColumn;
-}
-.SeqexecStyles-queueArea {
-  .widerColumn;
-}
 .ReactVirtualized__Table__headerTruncatedText {
   padding-left: 7px;
 }
 @media only screen and (max-width: 767px) {
+  .SeqexecStyles-notInMobile {
+    display: none !important;
+  }
+
   .ui.container {
     width: 100% !important;
     margin-left: 0 !important;
@@ -752,9 +851,6 @@ body {
   }
   .SeqexecStyles-logSegment {
     .mobileSegment;
-  }
-  .SeqexecStyles-notInMobile {
-    display: none !important;
   }
   .ReactVirtualized__Table__rowColumn {
     padding-right: 2px;

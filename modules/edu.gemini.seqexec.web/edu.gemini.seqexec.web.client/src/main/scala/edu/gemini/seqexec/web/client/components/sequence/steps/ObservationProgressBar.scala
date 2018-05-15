@@ -5,10 +5,10 @@ package edu.gemini.seqexec.web.client.components.sequence.steps
 
 import edu.gemini.seqexec.model.dhs.ImageFileId
 import edu.gemini.seqexec.web.client.components.SeqexecStyles
+import edu.gemini.web.client.style._
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
-import scalacss.ScalaCssReact._
 
 /**
  * Component to wrap the progress bar

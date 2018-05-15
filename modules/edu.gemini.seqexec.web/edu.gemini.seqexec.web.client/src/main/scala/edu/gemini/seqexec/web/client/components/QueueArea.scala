@@ -20,12 +20,10 @@ import japgolly.scalajs.react.extra.router.RouterCtl
 import react.virtualized._
 import scala.math.max
 import cats.implicits._
-import scalacss.ScalaCssReact._
 import mouse.all._
+import edu.gemini.web.client.style._
 
 object QueueTableBody {
-  private val CssSettings = scalacss.devOrProdDefaults
-  import CssSettings._
 
   final case class Props(ctl: RouterCtl[SeqexecPages], sequences: ModelProxy[StatusAndLoadedSequencesFocus]) {
     private lazy val sequencesList = sequences().sequences
@@ -178,13 +176,13 @@ object QueueTableBody {
     case (-1, _)                                                             =>
       SeqexecStyles.headerRowStyle
     case (_, QueueRow(_, s, _, _, _, _, _)) if s == SequenceState.Completed  =>
-      SeqexecStyles.stepRow + SeqexecStyles.rowPositive
+      SeqexecStyles.stepRow |+| SeqexecStyles.rowPositive
     case (_, QueueRow(_, s, _, _, _, _, _)) if s.isRunning                   =>
-      SeqexecStyles.stepRow + SeqexecStyles.rowWarning
+      SeqexecStyles.stepRow |+| SeqexecStyles.rowWarning
     case (_, QueueRow(_, s, _, _, _, _, _)) if s.isError                     =>
-      SeqexecStyles.stepRow + SeqexecStyles.rowNegative
+      SeqexecStyles.stepRow |+| SeqexecStyles.rowNegative
     case (_, QueueRow(_, s, _, _, _, active, _)) if active && !s.isInProcess =>
-      SeqexecStyles.stepRow + SeqexecStyles.rowActive
+      SeqexecStyles.stepRow |+| SeqexecStyles.rowActive
     case _                                                                   =>
       SeqexecStyles.stepRow
   }).htmlClass

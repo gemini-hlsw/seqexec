@@ -12,12 +12,12 @@ import edu.gemini.seqexec.web.client.semanticui.elements.button.Button
 import edu.gemini.seqexec.web.client.semanticui.elements.popup.Popup
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.{IconRefresh, IconPlay, IconPause, IconBan}
+import edu.gemini.web.client.style._
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{Callback, CallbackTo, ScalaComponent, ScalazReact}
 import japgolly.scalajs.react.ScalazReact._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import diode.react.ModelProxy
-import scalacss.ScalaCssReact._
 import cats.implicits._
 import mouse.all._
 

@@ -20,8 +20,7 @@ import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.extra.router.RouterCtl
 import cats.implicits._
-import scalacss.ScalaCssReact._
-import scalacss.StyleA
+import edu.gemini.web.client.style._
 
 /**
  * Component to display an icon for the state
@@ -103,7 +102,7 @@ object StepIconCell {
       case _                                                  => iconEmpty
     }
 
-  private def stepStyle(p: StepToolsCell.Props): StyleA =
+  private def stepStyle(p: StepToolsCell.Props): GStyle =
     p.step.status match {
       case StepState.Running   => SeqexecStyles.runningIconCell
       case StepState.Skipped   => SeqexecStyles.skippedIconCell

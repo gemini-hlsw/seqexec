@@ -67,7 +67,6 @@ object Settings {
     // ScalaJS libraries
     val scalaDom                = "0.9.5"
     val scalajsReact            = "1.2.0"
-    val scalaCSS                = "0.5.5"
     val booPickle               = "1.3.0"
     val diode                   = "1.1.3"
     val diodeReact              = "1.1.3.120"
@@ -186,14 +185,12 @@ object Settings {
     val ReactScalaJS = Def.setting(Seq(
       "com.github.japgolly.scalajs-react" %%% "core"         % LibraryVersions.scalajsReact,
       "com.github.japgolly.scalajs-react" %%% "extra"        % LibraryVersions.scalajsReact,
-      "com.github.japgolly.scalajs-react" %%% "ext-scalaz72" % LibraryVersions.scalajsReact,
-      "com.github.japgolly.scalacss"      %%% "ext-react"    % LibraryVersions.scalaCSS
+      "com.github.japgolly.scalajs-react" %%% "ext-scalaz72" % LibraryVersions.scalajsReact
     ))
     val Diode = Def.setting(Seq(
       "io.suzaku" %%% "diode"       % LibraryVersions.diode,
       "io.suzaku" %%% "diode-react" % LibraryVersions.diodeReact
     ))
-    val ScalaCSS                = Def.setting("com.github.japgolly.scalacss" %%% "core"                      % LibraryVersions.scalaCSS)
     val ScalaJSDom              = Def.setting("org.scala-js"                 %%% "scalajs-dom"               % LibraryVersions.scalaDom)
     val ScalaJSReactVirtualized = Def.setting("io.github.cquiroz"            %%% "scalajs-react-virtualized" % LibraryVersions.scalaJSReactVirtualized)
     val ScalaJSReactClipboard   = Def.setting("io.github.cquiroz"            %%% "scalajs-react-clipboard"   % LibraryVersions.scalaJSReactClipboard)

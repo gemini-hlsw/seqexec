@@ -9,15 +9,10 @@ import edu.gemini.seqexec.web.client.components.SeqexecStyles
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
-
-import scalacss._
 import cats.implicits._
 import react.virtualized._
 
 object StepConfigTable {
-  private val CssSettings = scalacss.devOrProdDefaults
-  import CssSettings._
-
   final case class Props(step: Step, size: Size) {
     val settingsList: List[(SystemName, String, String)] =
       step.config.toList.flatMap {
@@ -67,13 +62,13 @@ object StepConfigTable {
     case (-1, _)                                                  =>
       SeqexecStyles.headerRowStyle
     case (_, SettingsRow(s, _, _)) if s === SystemName.instrument =>
-      SeqexecStyles.stepRow + SeqexecStyles.rowPositive
+      SeqexecStyles.stepRow |+| SeqexecStyles.rowPositive
     case (_, SettingsRow(s, _, _)) if s === SystemName.telescope  =>
-      SeqexecStyles.stepRow + SeqexecStyles.rowWarning
+      SeqexecStyles.stepRow |+| SeqexecStyles.rowWarning
     case (_, SettingsRow(_, n, _)) if n.startsWith("observe:")    =>
-      SeqexecStyles.stepRow + SeqexecStyles.observeConfig
+      SeqexecStyles.stepRow |+| SeqexecStyles.observeConfig
     case (_, SettingsRow(_, n, _)) if n.startsWith("ocs:")        =>
-      SeqexecStyles.stepRow + SeqexecStyles.observeConfig
+      SeqexecStyles.stepRow |+| SeqexecStyles.observeConfig
     case _                                                        =>
       SeqexecStyles.stepRow
   }).htmlClass

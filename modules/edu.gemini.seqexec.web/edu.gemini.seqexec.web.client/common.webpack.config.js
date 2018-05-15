@@ -43,9 +43,9 @@ const Web = Merge(generatedConfig, {
       {
         test: /\.less$/,
         use: [
-          // {
-          //   loader: "style-loader" // creates style nodes from JS strings
-          // },
+          {
+            loader: "style-loader" // creates style nodes from JS strings
+          },
           // // translates CSS into CommonJS
           { loader: "css-loader", options: { importLoaders: 1 } },
           {

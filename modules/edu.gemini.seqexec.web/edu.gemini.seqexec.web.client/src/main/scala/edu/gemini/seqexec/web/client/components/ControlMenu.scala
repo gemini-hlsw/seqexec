@@ -12,8 +12,7 @@ import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon.IconSignOut
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.{Callback, ScalaComponent}
 import japgolly.scalajs.react.vdom.html_<^._
-
-import scalacss.ScalaCssReact._
+import edu.gemini.web.client.style._
 
 /**
   * Menu with options

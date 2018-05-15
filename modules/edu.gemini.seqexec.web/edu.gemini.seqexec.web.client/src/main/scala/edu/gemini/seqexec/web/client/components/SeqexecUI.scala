@@ -17,10 +17,10 @@ import diode.ModelRO
 import diode.react.ModelProxy
 import diode.react.ReactPot._
 import japgolly.scalajs.react.component.Scala.Unmounted
-import scalacss.ScalaCssReact._
 import cats.implicits._
 import cats.effect.IO
 import scala.scalajs.js.timers.SetTimeoutHandle
+import edu.gemini.web.client.style._
 
 object AppTitle {
   final case class Props(site: SeqexecSite, ws: ModelProxy[WebSocketConnection])
@@ -87,7 +87,6 @@ object SeqexecMain {
           <.div(
             ^.cls := "ui row",
             SeqexecStyles.shorterRow,
-            SeqexecStyles.sequenceArea,
             SequenceArea(p.ctl, p.site)
           ),
           <.div(

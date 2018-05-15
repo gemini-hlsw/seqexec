@@ -6,11 +6,11 @@ package edu.gemini.seqexec.web.client.semanticui.elements.button
 import edu.gemini.seqexec.web.client.semanticui.Size
 import edu.gemini.seqexec.web.client.semanticui._
 import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
+import edu.gemini.web.client.style._
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 
-import scalacss.ScalaCssReact._
 import cats.Eq
 import cats.implicits._
 
@@ -52,7 +52,7 @@ object Button {
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
-  final case class Props(state      : ButtonState                    = Inactive,
+  final case class Props(state: ButtonState                    = Inactive,
                    emphasis   : Emphasis                       = NoEmphasis,
                    animated   : Animated                       = NotAnimated,
                    icon       : Option[Icon]                   = None,
@@ -69,7 +69,7 @@ object Button {
                    color      : Option[String]                 = None,
                    onClick    : Callback                       = Callback.empty,
                    dataTooltip: Option[String]                 = None,
-                   extraStyles: List[scalacss.internal.StyleA] = Nil)
+                   extraStyles: List[GStyle]                   = Nil)
 
   private def classSet(p: Props): TagMod =
     ^.classSet(
@@ -100,7 +100,7 @@ object Button {
       if (p.animated === NotAnimated)
         <.button(
           ^.cls := "ui button",
-          p.extraStyles.map(scalacssStyleaToTagMod).toTagMod,
+          p.extraStyles.map(geminiStyleToTagMod).toTagMod,
           ^.`type` := (p.buttonType match {
             case ButtonType => "button"
             case SubmitType => "submit"

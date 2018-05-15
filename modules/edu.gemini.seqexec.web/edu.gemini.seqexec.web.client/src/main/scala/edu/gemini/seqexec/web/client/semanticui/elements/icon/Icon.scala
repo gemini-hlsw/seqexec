@@ -7,8 +7,8 @@ import cats.Eq
 import edu.gemini.seqexec.web.client.semanticui.Size
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{Callback, ScalaComponent}
-import scalacss.ScalaCssReact._
 import cats.implicits._
+import edu.gemini.web.client.style._
 
 /**
   * Semantic UI Icon component
@@ -29,7 +29,7 @@ final case class Icon(p: Icon.Props, children: Seq[VdomNode]) {
            bordered: Boolean = false,
            inverted: Boolean = false,
            color: Option[String] = None,
-           extraStyles: List[scalacss.internal.StyleA] = Nil,
+           extraStyles: List[GStyle] = Nil,
            key: String = "",
            onClick: Callback = Callback.empty): Icon =
     copy(
@@ -55,7 +55,7 @@ final case class Icon(p: Icon.Props, children: Seq[VdomNode]) {
     .renderPC((_, p, c) =>
       <.i(
         ^.cls := s"${p.id} icon",
-        p.extraStyles.map(scalacssStyleaToTagMod).toTagMod,
+        p.extraStyles.map(geminiStyleToTagMod).toTagMod,
         ^.cls :=? p.color,
         ^.classSet(
           "disabled"                 -> p.disabled,
@@ -678,7 +678,7 @@ object Icon {
                    bordered: Boolean = false,
                    inverted: Boolean = false,
                    color: Option[String] = None,
-                   extraStyles: List[scalacss.internal.StyleA] = Nil,
+                   extraStyles: List[GStyle] = Nil,
                    key: String = "",
                    onClick: Callback = Callback.empty)
 

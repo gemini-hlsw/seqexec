@@ -104,7 +104,7 @@ lazy val edu_gemini_web_client_facades = project
       // By necessity facades will have unused params
       "-Ywarn-unused:params"
     ))),
-    libraryDependencies ++= Seq(ScalaJSDom.value, JQuery.value)
+    libraryDependencies ++= Seq(ScalaJSDom.value, JQuery.value) ++ ReactScalaJS.value
   )
 
 // Root web project
@@ -223,7 +223,6 @@ lazy val edu_gemini_seqexec_web_client = project.in(file("modules/edu.gemini.seq
     libraryDependencies             ++= Seq(
       JQuery.value,
       CatsEffect.value,
-      ScalaCSS.value,
       ScalaJSDom.value,
       JavaTimeJS.value,
       JavaLogJS.value,

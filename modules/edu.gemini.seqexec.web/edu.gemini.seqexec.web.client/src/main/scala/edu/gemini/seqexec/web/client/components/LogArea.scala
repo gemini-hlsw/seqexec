@@ -22,9 +22,9 @@ import react.virtualized._
 import react.clipboard._
 import java.time.{Instant, LocalDateTime}
 import java.time.format.DateTimeFormatter
-import scalacss.ScalaCssReact._
 import cats.implicits._
 import mouse.all._
+import edu.gemini.web.client.style._
 
 /**
   * Area to display a sequence's log
@@ -45,8 +45,6 @@ object CopyLogToClipboard {
   * Area to display a sequence's log
   */
 object LogArea {
-  private val CssSettings = scalacss.devOrProdDefaults
-  import CssSettings._
 
   // Date time formatter
   private val formatter  = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SS")
@@ -134,9 +132,9 @@ object LogArea {
 
     def rowClassName(s: State)(i: Int): String = ((i, p.rowGetter(s)(i)) match {
       case (-1, _)                                    => SeqexecStyles.headerRowStyle
-      case (_, LogRow(_, ServerLogLevel.INFO, _, _))  => SeqexecStyles.stepRow + SeqexecStyles.infoLog
-      case (_, LogRow(_, ServerLogLevel.WARN, _, _))  => SeqexecStyles.stepRow + SeqexecStyles.warningLog
-      case (_, LogRow(_, ServerLogLevel.ERROR, _, _)) => SeqexecStyles.stepRow + SeqexecStyles.errorLog
+      case (_, LogRow(_, ServerLogLevel.INFO, _, _))  => SeqexecStyles.stepRow |+| SeqexecStyles.infoLog
+      case (_, LogRow(_, ServerLogLevel.WARN, _, _))  => SeqexecStyles.stepRow |+| SeqexecStyles.warningLog
+      case (_, LogRow(_, ServerLogLevel.ERROR, _, _)) => SeqexecStyles.stepRow |+| SeqexecStyles.errorLog
       case _                                          => SeqexecStyles.stepRow
     }).htmlClass
 
@@ -183,7 +181,6 @@ object LogArea {
               SeqexecStyles.logControlRow,
               <.div(
                 ^.cls := "ui six wide column",
-                SeqexecStyles.logVisibilityField,
                 Button(Button.Props(icon = Option(toggleIcon), labeled = true, compact = true, size = SSize.Small, onClick = p.log.dispatchCB(ToggleLogArea)), toggleText)
               ),
               <.div(

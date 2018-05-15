@@ -8,8 +8,8 @@ import edu.gemini.seqexec.web.client.semanticui.elements.icon.Icon
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
-import scalacss.ScalaCssReact._
 import cats.implicits._
+import edu.gemini.web.client.style._
 import cats.kernel.Eq
 
 sealed trait Pointing
@@ -35,11 +35,11 @@ object Label {
     size                     : Size = Size.NotSized,
     pointing                 : Pointing = Pointing.None,
     icon                     : Option[Icon] = None,
-    extraStyles              : List[scalacss.internal.StyleA] = Nil)
+    extraStyles              : List[GStyle] = Nil)
 
   def content(p: Props): List[TagMod] = List(
     ^.cls := p.color.fold("ui label")(u => s"ui $u label"),
-    p.extraStyles.map(scalacssStyleaToTagMod).toTagMod,
+    p.extraStyles.map(geminiStyleToTagMod).toTagMod,
     ^.classSet(
       "basic"          -> p.basic,
       "tag"            -> p.tag,
