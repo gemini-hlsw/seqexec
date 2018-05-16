@@ -1,5 +1,4 @@
 const Path = require("path");
-const UglifyJsPlugin = require("uglifyjs-webpack-plugin");
 const Merge = require("webpack-merge");
 const Webpack = require("webpack");
 

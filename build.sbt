@@ -169,7 +169,20 @@ lazy val edu_gemini_seqexec_web_client = project.in(file("modules/edu.gemini.seq
     addCompilerPlugin(Plugins.paradisePlugin),
     webpackBundlingMode in fastOptJS         := BundlingMode.LibraryOnly(),
     webpackBundlingMode in fullOptJS         := BundlingMode.Application,
-    webpackMonitoredDirectories  += (resourceDirectory in Compile).value,
+    // webpackMonitoredDirectories  += Some(baseDirectory.value / "src" / "webpack").value,
+    webpackResources := (baseDirectory.value / "src" / "webpack") * "*.js",
+    // Use a different Webpack configuration file for production and create a single bundle without source maps
+    version in webpack               := "4.8.1",
+    version in startWebpackDevServer := "3.1.4",
+    webpackConfigFile in fullOptJS   := Some(baseDirectory.value / "src" / "webpack" / "prod.webpack.config.js"),
+    webpackEmitSourceMaps            := false,
+    webpackExtraArgs                 := Seq("--progress", "true"),
+    webpackConfigFile in fastOptJS   := Some(baseDirectory.value / "src" / "webpack" / "dev.webpack.config.js"),
+    emitSourceMaps                   := false,
+    // Requires the DOM for tests
+    requiresDOM in Test              := true,
+    // Use yarn as it is faster than npm
+    useYarn                          := true,
     // JS dependencies via npm
     npmDependencies in Compile ++= Seq(
       "react" -> LibraryVersions.reactJS,
@@ -202,23 +215,9 @@ lazy val edu_gemini_seqexec_web_client = project.in(file("modules/edu.gemini.seq
       "copy-webpack-plugin" -> "4.5.1",
       "clean-webpack-plugin" -> "0.1.19",
       "html-webpack-plugin" -> "3.0.6",
-      "extract-text-webpack-plugin" -> "4.0.0-beta.0",
-      "uglifyjs-webpack-plugin" -> LibraryVersions.uglifyJs,
       "cssnano" -> "3.10.0",
       "optimize-css-assets-webpack-plugin" -> "4.0.0"
     ),
-    // Use a different Webpack configuration file for production and create a single bundle without source maps
-    version in webpack               := "4.8.1",
-    version in startWebpackDevServer := "3.1.4",
-    webpackConfigFile in fullOptJS   := Some(baseDirectory.value / "prod.webpack.config.js"),
-    webpackEmitSourceMaps            := false,
-    webpackExtraArgs                 := Seq("--progress", "true"),
-    webpackConfigFile in fastOptJS   := Some(baseDirectory.value / "dev.webpack.config.js"),
-    emitSourceMaps                   := false,
-    // Requires the DOM for tests
-    requiresDOM in Test              := true,
-    // Use yarn as it is faster than npm
-    useYarn                          := true,
     libraryDependencies             ++= Seq(
       JQuery.value,
       CatsEffect.value,

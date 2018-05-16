@@ -1,6 +1,5 @@
 const Path = require("path");
 const Merge = require("webpack-merge");
-const ExtractTextPlugin = require("extract-text-webpack-plugin");
 const PostCSSPlugin = require("postcss-loader");
 const Autoprefixer = require("autoprefixer");
 
@@ -65,12 +64,7 @@ const Web = Merge(generatedConfig, {
         ]
       }
     ]
-  },
-  plugins: [
-    new ExtractTextPlugin({
-      filename: "[name].[contenthash].css"
-    })
-  ]
+  }
 });
 
 module.exports = {
