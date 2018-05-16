@@ -106,7 +106,7 @@ object WebServerLauncher extends StreamApp[IO] with LogInitialization {
   def webServer(as: AuthenticationService, events: (server.EventQueue, Topic[IO, SeqexecEvent]), se: SeqexecEngine): Kleisli[Stream[IO, ?], WebServerConfiguration, StreamApp.ExitCode] = Kleisli { conf =>
     val builder = BlazeBuilder[IO].bindHttp(conf.port, conf.host)
       .withWebSockets(true)
-      .mountService(new StaticRoutes(index(conf.site, conf.devMode, OcsBuildInfo.builtAtMillis), conf.devMode, OcsBuildInfo.builtAtMillis).service, "/")
+      .mountService(new StaticRoutes(conf.devMode, OcsBuildInfo.builtAtMillis).service, "/")
       .mountService(new SeqexecCommandRoutes(as, events._1, se).service, "/api/seqexec/commands")
       .mountService(new SeqexecUIApiRoutes(conf.devMode, as, events, se).service, "/api")
     conf.sslConfig.fold(builder) { ssl =>

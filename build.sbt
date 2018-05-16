@@ -212,8 +212,7 @@ lazy val edu_gemini_seqexec_web_client = project.in(file("modules/edu.gemini.seq
     version in startWebpackDevServer := "3.1.4",
     webpackConfigFile in fullOptJS   := Some(baseDirectory.value / "prod.webpack.config.js"),
     webpackEmitSourceMaps            := false,
-    webpackExtraArgs                 := Seq("--profile", "--progress", "true"),
-    webpackDevServerExtraArgs        := Seq("--profile"),
+    webpackExtraArgs                 := Seq("--progress", "true"),
     webpackConfigFile in fastOptJS   := Some(baseDirectory.value / "dev.webpack.config.js"),
     emitSourceMaps                   := false,
     // Requires the DOM for tests
@@ -344,10 +343,16 @@ lazy val seqexecCommonSettings = Seq(
   mainClass in Compile := Some("edu.gemini.seqexec.web.server.http4s.WebServerLauncher"),
   // This is important to keep the file generation order correctly
   parallelExecution in Universal := false,
-  // Run full opt js on the javascript. They will be placed on the "seqexec" jar
-  resources in Compile ++= (webpack in (edu_gemini_seqexec_web_client, Compile, fullOptJS)).value.map(_.data),
-  resources in Compile ++= ((resourceManaged in (edu_gemini_seqexec_web_client, Compile, fullOptJS)).value ** "*.mp3").get,
-  resources in Compile ++= ((resourceManaged in (edu_gemini_seqexec_web_client, Compile, fullOptJS)).value ** "*.css").get,
+  // This is fairly ugly. It may improve in future versions of scalajs-bundler
+  // Black magic. I truly hate sbt
+  resources in Compile ++= {
+    (webpack in (edu_gemini_seqexec_web_client, Compile, fullOptJS)).value
+    Seq(
+      ((resourceManaged in (edu_gemini_seqexec_web_client, Compile, fullOptJS)).value ** "*.js").get,
+      ((resourceManaged in (edu_gemini_seqexec_web_client, Compile, fullOptJS)).value ** "*.mp3").get,
+      ((resourceManaged in (edu_gemini_seqexec_web_client, Compile, fullOptJS)).value ** "*.css").get,
+      ((resourceManaged in (edu_gemini_seqexec_web_client, Compile, fullOptJS)).value ** "*.html").get).flatten
+    },
   test := {},
   // Name of the launch script
   executableScriptName := "seqexec-server",
@@ -416,8 +421,8 @@ lazy val seqexecRPMSettings = Seq(
   * Project for the seqexec server app for development
   */
 lazy val seqexec_server = preventPublication(project.in(file("app/seqexec-server")))
-  .dependsOn(edu_gemini_seqexec_web_server)
-  .aggregate(edu_gemini_seqexec_web_server)
+  .dependsOn(edu_gemini_seqexec_web_server, edu_gemini_seqexec_web_client)
+  .aggregate(edu_gemini_seqexec_web_server, edu_gemini_seqexec_web_client)
   .enablePlugins(JavaServerAppPackaging)
   .enablePlugins(GitBranchPrompt)
   .settings(seqexecCommonSettings: _*)
@@ -435,8 +440,8 @@ lazy val seqexec_server = preventPublication(project.in(file("app/seqexec-server
   * Project for the seqexec test server at GS on Linux 64
   */
 lazy val seqexec_server_gs_test = preventPublication(project.in(file("app/seqexec-server-gs-test")))
-  .dependsOn(edu_gemini_seqexec_web_server)
-  .aggregate(edu_gemini_seqexec_web_server)
+  .dependsOn(edu_gemini_seqexec_web_server, edu_gemini_seqexec_web_client)
+  .aggregate(edu_gemini_seqexec_web_server, edu_gemini_seqexec_web_client)
   .enablePlugins(LinuxPlugin, RpmPlugin)
   .enablePlugins(JavaServerAppPackaging)
   .enablePlugins(GitBranchPrompt)
@@ -452,8 +457,8 @@ lazy val seqexec_server_gs_test = preventPublication(project.in(file("app/seqexe
   * Project for the seqexec test server at GN on Linux 64
   */
 lazy val seqexec_server_gn_test = preventPublication(project.in(file("app/seqexec-server-gn-test")))
-  .dependsOn(edu_gemini_seqexec_web_server)
-  .aggregate(edu_gemini_seqexec_web_server)
+  .dependsOn(edu_gemini_seqexec_web_server, edu_gemini_seqexec_web_client)
+  .aggregate(edu_gemini_seqexec_web_server, edu_gemini_seqexec_web_client)
   .enablePlugins(LinuxPlugin, RpmPlugin)
   .enablePlugins(JavaServerAppPackaging)
   .enablePlugins(GitBranchPrompt)
@@ -469,8 +474,8 @@ lazy val seqexec_server_gn_test = preventPublication(project.in(file("app/seqexe
   * Project for the seqexec server app for production on Linux 64
   */
 lazy val seqexec_server_gs = preventPublication(project.in(file("app/seqexec-server-gs")))
-  .dependsOn(edu_gemini_seqexec_web_server)
-  .aggregate(edu_gemini_seqexec_web_server)
+  .dependsOn(edu_gemini_seqexec_web_server, edu_gemini_seqexec_web_client)
+  .aggregate(edu_gemini_seqexec_web_server, edu_gemini_seqexec_web_client)
   .enablePlugins(LinuxPlugin, RpmPlugin)
   .enablePlugins(JavaServerAppPackaging)
   .enablePlugins(GitBranchPrompt)
@@ -488,8 +493,8 @@ lazy val seqexec_server_gs = preventPublication(project.in(file("app/seqexec-ser
   * Project for the GN seqexec server app for production on Linux 64
   */
 lazy val seqexec_server_gn = preventPublication(project.in(file("app/seqexec-server-gn")))
-  .dependsOn(edu_gemini_seqexec_web_server)
-  .aggregate(edu_gemini_seqexec_web_server)
+  .dependsOn(edu_gemini_seqexec_web_server, edu_gemini_seqexec_web_client)
+  .aggregate(edu_gemini_seqexec_web_server, edu_gemini_seqexec_web_client)
   .enablePlugins(LinuxPlugin, RpmPlugin)
   .enablePlugins(JavaServerAppPackaging)
   .enablePlugins(GitBranchPrompt)

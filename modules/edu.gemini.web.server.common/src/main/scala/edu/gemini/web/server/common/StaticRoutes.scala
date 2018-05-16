@@ -6,21 +6,16 @@ package edu.gemini.web.server.common
 import cats.data.{NonEmptyList, OptionT}
 import cats.effect.{IO, Sync}
 import org.http4s.CacheDirective._
-import org.http4s.MediaType._
-import org.http4s.dsl.io._
-import org.http4s.headers.{`Cache-Control`, `Content-Type`}
+import org.http4s.headers.`Cache-Control`
 import org.http4s.server.middleware.GZip
-import org.http4s.{Charset, HttpService, Request, Response, StaticFile}
+import org.http4s.{HttpService, Request, Response, StaticFile}
 
 import scala.concurrent.duration._
 
-class StaticRoutes(index: String, devMode: Boolean, builtAtMillis: Long) {
+class StaticRoutes(devMode: Boolean, builtAtMillis: Long) {
   val oneYear: Int = 365 * 24 * 60 * 60
 
   private val cacheHeaders = if (devMode) List(`Cache-Control`(NonEmptyList.of(`no-cache`()))) else List(`Cache-Control`(NonEmptyList.of(`max-age`(oneYear.seconds))))
-
-  private val indexResponse: IO[Response[IO]] =
-    Ok(index).map(_.withContentType(`Content-Type`(`text/html`, Charset.`UTF-8`)).putHeaders(`Cache-Control`(NonEmptyList.of(`no-cache`()))))
 
   // Get a resource from a local file, useful for development
   def localResource[F[_]: Sync](path: String, req: Request[F]): OptionT[F, Response[F]] =
@@ -56,9 +51,9 @@ class StaticRoutes(index: String, devMode: Boolean, builtAtMillis: Long) {
   private val supportedExtension = List(".html", ".js", ".map", ".css", ".png", ".eot", ".svg", ".woff", ".woff2", ".ttf", ".mp3", ".ico")
 
   def service: HttpService[IO] = GZip { HttpService {
-    case req if req.pathInfo == "/"                  => indexResponse
+    case req if req.pathInfo == "/"                  => req.serve("index.html")
     case req if req.endsWith(supportedExtension: _*) => req.serve(req.pathInfo)
     // This maybe not desired in all cases but it helps to keep client side routing cleaner
-    case req if !req.pathInfo.contains(".")          => indexResponse
+    case req if !req.pathInfo.contains(".")          => req.serve("index.html")
   }}
 }
