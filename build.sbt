@@ -5,6 +5,7 @@ import Common._
 import AppsCommon._
 import org.scalajs.sbtplugin.ScalaJSPlugin.AutoImport.crossProject
 import sbt.Keys._
+import NativePackagerHelper._
 
 name := Settings.Definitions.name
 
@@ -201,7 +202,7 @@ lazy val edu_gemini_seqexec_web_client = project.in(file("modules/edu.gemini.seq
       "semantic-ui-less" -> LibraryVersions.semanticUI
     ),
     npmDevDependencies in Compile ++= Seq(
-      "postcss-loader" -> "2.0.8",
+      "postcss-loader" -> "2.1.5",
       "autoprefixer" -> "8.0.0",
       "url-loader" -> "1.0.1",
       "file-loader" -> "1.1.11",
@@ -210,6 +211,7 @@ lazy val edu_gemini_seqexec_web_client = project.in(file("modules/edu.gemini.seq
       "less" -> "2.3.1",
       "less-loader" -> "4.1.0",
       "webpack-merge" -> "4.1.2",
+      "mini-css-extract-plugin"       -> "0.4.0",
       "webpack-dev-server-status-bar" -> "1.0.0",
       "cssnano" -> "3.10.0",
       "copy-webpack-plugin" -> "4.5.1",
@@ -342,16 +344,24 @@ lazy val seqexecCommonSettings = Seq(
   mainClass in Compile := Some("edu.gemini.seqexec.web.server.http4s.WebServerLauncher"),
   // This is important to keep the file generation order correctly
   parallelExecution in Universal := false,
-  // This is fairly ugly. It may improve in future versions of scalajs-bundler
-  // Black magic. I truly hate sbt
-  resources in Compile ++= {
+  mappings in (Compile, packageBin) ++= ((npmUpdate in (edu_gemini_seqexec_web_client, Compile, fullOptJS))).map { f =>
+    (f * ("*.js" || "*.mp3" || "*.css" || "*.html")) pair (f => Some(f.getName))
+  }.value,
+  // Evil Black magic
+  compile in Compile := {
     (webpack in (edu_gemini_seqexec_web_client, Compile, fullOptJS)).value
-    Seq(
-      ((resourceManaged in (edu_gemini_seqexec_web_client, Compile, fullOptJS)).value ** "*.js").get,
-      ((resourceManaged in (edu_gemini_seqexec_web_client, Compile, fullOptJS)).value ** "*.mp3").get,
-      ((resourceManaged in (edu_gemini_seqexec_web_client, Compile, fullOptJS)).value ** "*.css").get,
-      ((resourceManaged in (edu_gemini_seqexec_web_client, Compile, fullOptJS)).value ** "*.html").get).flatten
-    },
+    (compile in Compile).value
+  },
+  // This is fairly ugly. It may improve in future versions of scalajs-bundler
+  mappings in (Compile, packageBin) := {
+    (webpack in (edu_gemini_seqexec_web_client, Compile, fullOptJS)).value
+    (mappings in (Compile, packageBin)).value
+  },
+    // compilecheck in Compile := Def.sequential(
+    //   (webpack in (edu_gemini_seqexec_web_client, Compile, fullOptJS)),
+    //   (compile in Compile),
+    //   (package in Compile)
+    // ).value,
   test := {},
   // Name of the launch script
   executableScriptName := "seqexec-server",

@@ -10,12 +10,6 @@ import edu.gemini.web.client.style._
   */
 object SeqexecStyles {
 
-  // private val gutterWidth = 21
-  // private val mobileCut: Int = 767
-  // Border color
-  // private val tableBorderColor = rgba(34, 36, 38, 0.15)
-  // Text color from SUI
-  // private val textColor = rgba(0, 0, 0, 0.95)
   val headerHeight: Int = 33
   val rowHeight: Int = 30
   val overscanRowCount: Int = 10

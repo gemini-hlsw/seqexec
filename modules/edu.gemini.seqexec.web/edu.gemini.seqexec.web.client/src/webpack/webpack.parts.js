@@ -1,5 +1,6 @@
 /**
  * Sheareable function to configure webpack
+ * this should be generic enough to be usable across scala.js projects
  */
 const path = require("path");
 
@@ -33,21 +34,23 @@ module.exports.devServer = ({ host, port } = {}) => ({
   plugins: [new Webpack.HotModuleReplacementPlugin()]
 });
 
-module.exports.extractCSS = ({ include, exclude, use = [] }) => {
+module.exports.extractCSS = ({ devMode, include, exclude, use = [] }) => {
   // Output extracted CSS to a file
   const plugin = new MiniCssExtractPlugin({
-    filename: "[name].[contenthash:4].css"
+    filename: devMode ? "[name].css" : "[name].[contenthash].css",
+    chunkFilename: devMode ? "[id].css" : "[id].[contenthash].css"
   });
 
   return {
     module: {
       rules: [
         {
-          test: /\.css$/,
+          test: /\.less$|\.css$/,
           include,
           exclude,
-
-          use: [MiniCssExtractPlugin.loader].concat(use)
+          use: [devMode ? "style-loader" : MiniCssExtractPlugin.loader].concat(
+            use
+          )
         }
       ]
     },

@@ -51,9 +51,9 @@ class StaticRoutes(devMode: Boolean, builtAtMillis: Long) {
   private val supportedExtension = List(".html", ".js", ".map", ".css", ".png", ".eot", ".svg", ".woff", ".woff2", ".ttf", ".mp3", ".ico")
 
   def service: HttpService[IO] = GZip { HttpService {
-    case req if req.pathInfo == "/"                  => req.serve("index.html")
+    case req if req.pathInfo == "/"                  => req.serve("/index.html")
     case req if req.endsWith(supportedExtension: _*) => req.serve(req.pathInfo)
     // This maybe not desired in all cases but it helps to keep client side routing cleaner
-    case req if !req.pathInfo.contains(".")          => req.serve("index.html")
+    case req if !req.pathInfo.contains(".")          => req.serve("/index.html")
   }}
 }
