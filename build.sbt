@@ -273,12 +273,14 @@ lazy val edu_gemini_epics_acm = project
   .enablePlugins(AutomateHeaderPlugin)
   .settings(commonSettings: _*)
   .settings(
-    libraryDependencies ++= Seq("xmlunit" % "xmlunit" % "1.5",
+    libraryDependencies ++= Seq(
       EpicsService,
       GmpCommandsRecords,
       Guava,
       Slf4j,
-      "com.novocode" % "junit-interface" % "0.11" % "test"),
+      XmlUnit,
+      JUnitInterface
+    ),
     sourceGenerators in Compile += Def.task {
       import scala.sys.process._
       val pkg = "edu.gemini.epics.acm.generated"

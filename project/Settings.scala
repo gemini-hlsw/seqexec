@@ -103,6 +103,8 @@ object Settings {
     val scalaCheck            = "1.13.5"
     val scalaCheckShapeless   = "1.1.8"
     val discipline            = "0.9.0"
+    val xmlUnit               = "1.6"
+    val jUnitInterface        = "0.11"
 
     // Pure JS libraries
     val reactJS          = "16.2.0"
@@ -136,6 +138,8 @@ object Settings {
       "org.typelevel"              %%% "cats-testkit"              % LibraryVersions.catsVersion         % "test",
       "com.github.alexarchambault" %%% "scalacheck-shapeless_1.13" % LibraryVersions.scalaCheckShapeless % "test"
     ))
+    val XmlUnit = "xmlunit" % "xmlunit" % LibraryVersions.xmlUnit % "test"
+    val JUnitInterface = "com.novocode" % "junit-interface" % LibraryVersions.jUnitInterface % "test"
 
     val Argonaut    = "io.argonaut"        %% "argonaut"                          % LibraryVersions.argonaut
     val CommonsHttp = "commons-httpclient" %  "commons-httpclient"                % LibraryVersions.commonsHttp
