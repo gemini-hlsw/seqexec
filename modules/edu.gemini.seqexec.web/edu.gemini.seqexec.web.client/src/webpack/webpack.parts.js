@@ -58,6 +58,26 @@ module.exports.extractCSS = ({ devMode, include, exclude, use = [] }) => {
   };
 };
 
+module.exports.resourceModules = {
+  resolve: {
+    modules: [path.resolve(__dirname, "node_modules"), resourcesDir]
+  }
+};
+
+module.exports.audioAssets = {
+  module: {
+    rules: [
+      {
+        test: /\.mp3$/,
+        loader: "file-loader",
+        options: {
+          name: "[name].[hash].[ext]"
+        }
+      }
+    ]
+  }
+};
+
 module.exports.resolve = () => ({
   resolve: {
     alias: {

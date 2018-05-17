@@ -176,6 +176,7 @@ lazy val edu_gemini_seqexec_web_client = project.in(file("modules/edu.gemini.seq
     version in webpack               := "4.8.1",
     version in startWebpackDevServer := "3.1.4",
     webpackConfigFile in fullOptJS   := Some(baseDirectory.value / "src" / "webpack" / "prod.webpack.config.js"),
+    webpackConfigFile in Test        := Some(baseDirectory.value / "src" / "webpack" / "test.webpack.config.js"),
     webpackEmitSourceMaps            := false,
     webpackExtraArgs                 := Seq("--progress", "true"),
     webpackConfigFile in fastOptJS   := Some(baseDirectory.value / "src" / "webpack" / "dev.webpack.config.js"),
@@ -347,7 +348,6 @@ lazy val seqexecCommonSettings = Seq(
   mappings in (Compile, packageBin) ++= ((npmUpdate in (edu_gemini_seqexec_web_client, Compile, fullOptJS))).map { f =>
     (f * ("*.js" || "*.mp3" || "*.css" || "*.html")) pair (f => Some(f.getName))
   }.value,
-  // Evil Black magic
   compile in Compile := {
     (webpack in (edu_gemini_seqexec_web_client, Compile, fullOptJS)).value
     (compile in Compile).value
@@ -357,11 +357,6 @@ lazy val seqexecCommonSettings = Seq(
     (webpack in (edu_gemini_seqexec_web_client, Compile, fullOptJS)).value
     (mappings in (Compile, packageBin)).value
   },
-    // compilecheck in Compile := Def.sequential(
-    //   (webpack in (edu_gemini_seqexec_web_client, Compile, fullOptJS)),
-    //   (compile in Compile),
-    //   (package in Compile)
-    // ).value,
   test := {},
   // Name of the launch script
   executableScriptName := "seqexec-server",
