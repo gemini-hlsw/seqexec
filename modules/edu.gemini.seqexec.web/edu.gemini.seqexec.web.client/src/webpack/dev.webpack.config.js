@@ -3,23 +3,33 @@ const Webpack = require("webpack");
 const Merge = require("webpack-merge");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const parts = require("./webpack.parts");
+const ScalaJSConfig = require("./scalajs.webpack.config");
 
-const Common = require("./common.webpack.config.js");
 const isDevServer = process.argv.some(s => s.match(/webpack-dev-server\.js$/));
 
 const Web = Merge(
-  Common.Web,
+  ScalaJSConfig,
+  parts.resolve,
+  parts.resolveSemanticUI,
+  parts.resourceModules,
   parts.extractCSS({ devMode: true, use: ["css-loader", "less-loader"] }),
+  parts.extraAssets,
+  parts.fontAssets,
   {
     mode: "development",
     entry: {
-      app: [path.resolve(parts.resourcesDir, "./dev.js")]
+      seqexec: [path.resolve(parts.resourcesDir, "./dev.js")]
+    },
+    output: {
+      publicPath: "/" // Required to make the url navigation work
     },
     module: {
+      // Don't parse scala.js code. it's just too slow
       noParse: function(content) {
         return content.endsWith("-fastopt");
       }
     },
+    // Custom dev server for the seqexec as we need a ws proxy
     devServer: {
       hot: true,
       contentBase: [__dirname, parts.rootDir],
@@ -53,19 +63,19 @@ const Web = Merge(
       }
     },
     plugins: [
+      // Needed to enable HMR
       new Webpack.HotModuleReplacementPlugin(),
       new HtmlWebpackPlugin({
         filename: "index.html",
-        chunks: ["app"],
-        template: path.resolve(parts.resourcesDir, "./index.html"),
-        favicon: path.resolve(parts.resourcesDir, "./images/favicon.ico")
+        chunks: ["seqexec"]
       })
     ]
   }
 );
 
+// Enable status bar to display on the page when webpack is reloading
 if (isDevServer) {
-  Web.entry.app.push("webpack-dev-server-status-bar");
+  Web.entry.seqexec.push("webpack-dev-server-status-bar");
 }
 
 module.exports = Web;

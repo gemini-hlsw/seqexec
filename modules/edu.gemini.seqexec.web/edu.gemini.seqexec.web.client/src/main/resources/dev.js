@@ -1,6 +1,6 @@
 import "node_modules/semantic-ui-less/semantic.less";
 import "./less/style.less";
-var App = require("root/edu_gemini_seqexec_web_client-fastopt.js");
+var App = require("sjs/edu_gemini_seqexec_web_client-fastopt.js");
 
 // Required to enable semantic-ui jQuery extensions
 var $ = require("jquery");

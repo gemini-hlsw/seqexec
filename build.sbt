@@ -56,6 +56,7 @@ inThisBuild(List(
 
 enablePlugins(GitBranchPrompt)
 
+// Custom commonds to facilitate web development
 val startAllCommands = List(
   "edu_gemini_seqexec_web_server/reStart",
   "edu_gemini_seqexec_web_client/fastOptJS::startWebpackDevServer",
@@ -141,7 +142,7 @@ lazy val edu_gemini_seqexec_web_server = project.in(file("modules/edu.gemini.seq
   .settings(
     addCompilerPlugin(Plugins.kindProjectorPlugin),
     libraryDependencies ++= Seq(UnboundId, JwtCore, Knobs) ++ Http4s ++ Logging,
-    // Supports launchin the server in the background
+    // Supports launching the server in the background
     mainClass in reStart := Some("edu.gemini.seqexec.web.server.http4s.WebServerLauncher"),
   )
   .settings(
@@ -168,60 +169,59 @@ lazy val edu_gemini_seqexec_web_client = project.in(file("modules/edu.gemini.seq
     zonesFilter := {(z: String) => z == "America/Santiago" || z == "Pacific/Honolulu"},
     // Needed for Monocle macros
     addCompilerPlugin(Plugins.paradisePlugin),
+    // Configurations for webpack
     webpackBundlingMode in fastOptJS         := BundlingMode.LibraryOnly(),
     webpackBundlingMode in fullOptJS         := BundlingMode.Application,
-    // webpackMonitoredDirectories  += Some(baseDirectory.value / "src" / "webpack").value,
-    webpackResources := (baseDirectory.value / "src" / "webpack") * "*.js",
+    webpackResources                         := (baseDirectory.value / "src" / "webpack") * "*.js",
+    version in webpack                       := "4.8.1",
+    version in startWebpackDevServer         := "3.1.4",
     // Use a different Webpack configuration file for production and create a single bundle without source maps
-    version in webpack               := "4.8.1",
-    version in startWebpackDevServer := "3.1.4",
-    webpackConfigFile in fullOptJS   := Some(baseDirectory.value / "src" / "webpack" / "prod.webpack.config.js"),
-    webpackConfigFile in Test        := Some(baseDirectory.value / "src" / "webpack" / "test.webpack.config.js"),
-    webpackEmitSourceMaps            := false,
-    webpackExtraArgs                 := Seq("--progress", "true"),
-    webpackConfigFile in fastOptJS   := Some(baseDirectory.value / "src" / "webpack" / "dev.webpack.config.js"),
-    emitSourceMaps                   := false,
+    webpackConfigFile in fullOptJS           := Some(baseDirectory.value / "src" / "webpack" / "prod.webpack.config.js"),
+    webpackConfigFile in fastOptJS           := Some(baseDirectory.value / "src" / "webpack" / "dev.webpack.config.js"),
+    webpackConfigFile in Test                := Some(baseDirectory.value / "src" / "webpack" / "test.webpack.config.js"),
+    webpackEmitSourceMaps                    := false,
+    webpackExtraArgs                         := Seq("--progress", "true"),
+    emitSourceMaps                           := false,
     // Requires the DOM for tests
-    requiresDOM in Test              := true,
+    requiresDOM in Test                      := true,
     // Use yarn as it is faster than npm
-    useYarn                          := true,
+    useYarn                                  := true,
     // JS dependencies via npm
     npmDependencies in Compile ++= Seq(
-      "react" -> LibraryVersions.reactJS,
-      "react-dom" -> LibraryVersions.reactJS,
-      "react-virtualized" -> LibraryVersions.reactVirtualized,
+      "react"                   -> LibraryVersions.reactJS,
+      "react-dom"               -> LibraryVersions.reactJS,
+      "react-virtualized"       -> LibraryVersions.reactVirtualized,
       "react-copy-to-clipboard" -> LibraryVersions.reactClipboard,
-      "jquery" -> LibraryVersions.jQuery,
-      "semantic-ui-dropdown" -> LibraryVersions.semanticUI,
-      "semantic-ui-modal" -> LibraryVersions.semanticUI,
-      "semantic-ui-progress" -> LibraryVersions.semanticUI,
-      "semantic-ui-popup" -> LibraryVersions.semanticUI,
-      "semantic-ui-tab" -> LibraryVersions.semanticUI,
-      "semantic-ui-visibility" -> LibraryVersions.semanticUI,
-      "semantic-ui-transition" -> LibraryVersions.semanticUI,
-      "semantic-ui-dimmer" -> LibraryVersions.semanticUI,
-      "semantic-ui-less" -> LibraryVersions.semanticUI
+      "jquery"                  -> LibraryVersions.jQuery,
+      "semantic-ui-dropdown"    -> LibraryVersions.semanticUI,
+      "semantic-ui-modal"       -> LibraryVersions.semanticUI,
+      "semantic-ui-progress"    -> LibraryVersions.semanticUI,
+      "semantic-ui-popup"       -> LibraryVersions.semanticUI,
+      "semantic-ui-tab"         -> LibraryVersions.semanticUI,
+      "semantic-ui-visibility"  -> LibraryVersions.semanticUI,
+      "semantic-ui-transition"  -> LibraryVersions.semanticUI,
+      "semantic-ui-dimmer"      -> LibraryVersions.semanticUI,
+      "semantic-ui-less"        -> LibraryVersions.semanticUI
     ),
+    // NPM libs for development, mostly to let webpack do its magic
     npmDevDependencies in Compile ++= Seq(
-      "postcss-loader" -> "2.1.5",
-      "autoprefixer" -> "8.0.0",
-      "url-loader" -> "1.0.1",
-      "file-loader" -> "1.1.11",
-      "css-loader" -> "0.28.11",
-      "style-loader" -> "0.20.2",
-      "less" -> "2.3.1",
-      "less-loader" -> "4.1.0",
-      "webpack-merge" -> "4.1.2",
-      "mini-css-extract-plugin"       -> "0.4.0",
-      "webpack-dev-server-status-bar" -> "1.0.0",
-      "cssnano" -> "3.10.0",
-      "copy-webpack-plugin" -> "4.5.1",
-      "clean-webpack-plugin" -> "0.1.19",
-      "html-webpack-plugin" -> "3.0.6",
-      "cssnano" -> "3.10.0",
+      "postcss-loader"                     -> "2.1.5",
+      "autoprefixer"                       -> "8.0.0",
+      "url-loader"                         -> "1.0.1",
+      "file-loader"                        -> "1.1.11",
+      "css-loader"                         -> "0.28.11",
+      "style-loader"                       -> "0.20.2",
+      "less"                               -> "2.3.1",
+      "less-loader"                        -> "4.1.0",
+      "webpack-merge"                      -> "4.1.2",
+      "mini-css-extract-plugin"            -> "0.4.0",
+      "webpack-dev-server-status-bar"      -> "1.0.0",
+      "cssnano"                            -> "3.10.0",
+      "uglifyjs-webpack-plugin"            -> "1.2.5",
+      "html-webpack-plugin"                -> "3.0.6",
       "optimize-css-assets-webpack-plugin" -> "4.0.0"
     ),
-    libraryDependencies             ++= Seq(
+    libraryDependencies ++= Seq(
       JQuery.value,
       CatsEffect.value,
       ScalaJSDom.value,
@@ -345,18 +345,12 @@ lazy val seqexecCommonSettings = Seq(
   mainClass in Compile := Some("edu.gemini.seqexec.web.server.http4s.WebServerLauncher"),
   // This is important to keep the file generation order correctly
   parallelExecution in Universal := false,
-  mappings in (Compile, packageBin) ++= ((npmUpdate in (edu_gemini_seqexec_web_client, Compile, fullOptJS))).map { f =>
-    (f * ("*.js" || "*.mp3" || "*.css" || "*.html")) pair (f => Some(f.getName))
-  }.value,
-  compile in Compile := {
-    (webpack in (edu_gemini_seqexec_web_client, Compile, fullOptJS)).value
-    (compile in Compile).value
-  },
+  // Black magic. Not even sbt gurus understand how to make this work
+  mappings in (Compile, packageBin) := (mappings in (Compile, packageBin)).dependsOn((webpack in (edu_gemini_seqexec_web_client, Compile, fullOptJS))).value,
   // This is fairly ugly. It may improve in future versions of scalajs-bundler
-  mappings in (Compile, packageBin) := {
-    (webpack in (edu_gemini_seqexec_web_client, Compile, fullOptJS)).value
-    (mappings in (Compile, packageBin)).value
-  },
+  mappings in (Compile, packageBin) ++= ((npmUpdate in (edu_gemini_seqexec_web_client, Compile, fullOptJS))).map { f =>
+    (f * ("*.js" || "*.mp3" || "*.css" || "*.html" || "*.woff" || "*.woff2" || "*.ttf" || "*.eot" || "*.svg")) pair (f => Some(f.getName))
+  }.value,
   test := {},
   // Name of the launch script
   executableScriptName := "seqexec-server",
