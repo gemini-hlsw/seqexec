@@ -1,5 +1,9 @@
 import sbt._
 import java.lang.{Runtime => JRuntime}
+import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
+import sbtcrossproject.{crossProject, CrossType}
+import sbtcrossproject.CrossPlugin.autoImport._
+import scalajscrossproject.ScalaJSCrossPlugin.autoImport.{toScalaJSGroupID => _, _}
 
 /**
  * Application settings and dependencies
@@ -65,13 +69,13 @@ object Settings {
     val scalaVersion = "2.12.6"
 
     // ScalaJS libraries
-    val scalaDom                = "0.9.5"
+    val scalaDom                = "0.9.6"
     val scalajsReact            = "1.2.0"
     val booPickle               = "1.3.0"
     val diode                   = "1.1.3"
     val diodeReact              = "1.1.3.120"
     val javaTimeJS              = "2.0.0-M13"
-    val javaLogJS               = "0.1.3"
+    val javaLogJS               = "0.1.4"
     val scalaJQuery             = "1.2"
     val scalaJSReactVirtualized = "0.2.0"
     val scalaJSReactClipboard   = "0.3.0"
@@ -130,8 +134,6 @@ object Settings {
     * Global libraries
     */
   object Libraries {
-    import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport._
-
     // Test Libraries
     val TestLibs = Def.setting(Seq(
       "org.typelevel"              %%% "cats-testkit"              % LibraryVersions.catsVersion         % "test",
@@ -229,7 +231,7 @@ object Settings {
   object PluginVersions {
     // Compiler plugins
     val paradiseVersion    = "2.1.1"
-    val kpVersion          = "0.9.6"
+    val kpVersion          = "0.9.7"
   }
 
   object Plugins {
