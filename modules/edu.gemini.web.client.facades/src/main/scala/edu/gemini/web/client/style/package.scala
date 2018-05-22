@@ -8,22 +8,19 @@ import cats.{Eq, Monoid}
 import cats.implicits._
 
 package style {
-  final case class GStyle(htmlClass: String)
+  final case class GStyle(htmlClasses: List[String]) {
+    val htmlClass: String = htmlClasses.mkString(" ")
+  }
 
   object GStyle {
-    val Zero: GStyle = GStyle("")
+    def fromString(htmlClass: String): GStyle = GStyle(List(htmlClass))
+
+    val Zero: GStyle = GStyle(Nil)
 
     implicit val eq: Eq[GStyle] = Eq.by(_.htmlClass)
 
-    implicit val monoid: Monoid[GStyle] = new Monoid[GStyle] {
-      override def empty = Zero
-      def combine(x: GStyle, y: GStyle): GStyle = (x, y) match {
-        case (x, y) if x === Zero && y === Zero => Zero
-        case (x, y) if x =!= Zero && y === Zero => x
-        case (x, y) if x === Zero && y =!= Zero => y
-        case (x, y)                             => GStyle(s"$x $y")
-      }
-    }
+    implicit val monoid: Monoid[GStyle] =
+      Monoid[List[String]].imap(GStyle.apply)(_.htmlClasses)
   }
 }
 

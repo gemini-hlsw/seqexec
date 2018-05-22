@@ -15,189 +15,189 @@ object SeqexecStyles {
   val overscanRowCount: Int = 10
   val runningRowHeight: Int = 60
 
-  val activeInstrumentLabel: GStyle = GStyle("SeqexecStyles-activeInstrumentLabel")
+  val activeInstrumentLabel: GStyle = GStyle.fromString("SeqexecStyles-activeInstrumentLabel")
 
-  val instrumentTab: GStyle = GStyle("SeqexecStyles-instrumentTab")
+  val instrumentTab: GStyle = GStyle.fromString("SeqexecStyles-instrumentTab")
 
-  val instrumentTabLabel: GStyle = GStyle("SeqexecStyles-instrumentTabLabel")
+  val instrumentTabLabel: GStyle = GStyle.fromString("SeqexecStyles-instrumentTabLabel")
 
-  val activeInstrumentContent: GStyle = GStyle("SeqexecStyles-activeInstrumentContent")
+  val activeInstrumentContent: GStyle = GStyle.fromString("SeqexecStyles-activeInstrumentContent")
 
-  val errorTab: GStyle = GStyle("SeqexecStyles-errorTab")
+  val errorTab: GStyle = GStyle.fromString("SeqexecStyles-errorTab")
 
-  val fieldsNoBottom: GStyle = GStyle("SeqexecStyles-fieldsNoBottom")
+  val fieldsNoBottom: GStyle = GStyle.fromString("SeqexecStyles-fieldsNoBottom")
 
-  val headerSideBarStyle: GStyle = GStyle("SeqexecStyles-headerSidebarStyle")
+  val headerSideBarStyle: GStyle = GStyle.fromString("SeqexecStyles-headerSidebarStyle")
 
-  val emptyInstrumentTab: GStyle = GStyle("SeqexecStyles-emptyInstrumentTab")
+  val emptyInstrumentTab: GStyle = GStyle.fromString("SeqexecStyles-emptyInstrumentTab")
 
-  val emptyInstrumentTabLogShown: GStyle = GStyle("SeqexecStyles-emptyInstrumentTabLogShown")
+  val emptyInstrumentTabLogShown: GStyle = GStyle.fromString("SeqexecStyles-emptyInstrumentTabLogShown")
 
-  val emptyInstrumentTabLogHidden: GStyle = GStyle("SeqexecStyles-emptyInstrumentTabLogHidden")
+  val emptyInstrumentTabLogHidden: GStyle = GStyle.fromString("SeqexecStyles-emptyInstrumentTabLogHidden")
 
-  val instrumentTabSegment: GStyle = GStyle("SeqexecStyles-instrumentTabSegment")
+  val instrumentTabSegment: GStyle = GStyle.fromString("SeqexecStyles-instrumentTabSegment")
 
-  val instrumentTabSegmentLogHidden: GStyle = GStyle("SeqexecStyles-instrumentTabSegmentLogHidden")
+  val instrumentTabSegmentLogHidden: GStyle = GStyle.fromString("SeqexecStyles-instrumentTabSegmentLogHidden")
 
-  val instrumentTabSegmentLogShown: GStyle = GStyle("SeqexecStyles-instrumentTabSegmentLogShown")
+  val instrumentTabSegmentLogShown: GStyle = GStyle.fromString("SeqexecStyles-instrumentTabSegmentLogShown")
 
-  val sequencesArea: GStyle = GStyle("SeqexecStyles-sequencesArea")
+  val sequencesArea: GStyle = GStyle.fromString("SeqexecStyles-sequencesArea")
 
   // Media queries to hide/display items for mobile
-  val notInMobile: GStyle = GStyle("SeqexecStyles-notInMobile")
+  val notInMobile: GStyle = GStyle.fromString("SeqexecStyles-notInMobile")
 
-  val onlyMobile: GStyle = GStyle("SeqexecStyles-onlyMobile")
+  val onlyMobile: GStyle = GStyle.fromString("SeqexecStyles-onlyMobile")
 
-  val errorText: GStyle = GStyle("SeqexecStyles-errorText")
+  val errorText: GStyle = GStyle.fromString("SeqexecStyles-errorText")
 
-  val noRowsSegment: GStyle = GStyle("SeqexecStyles-noRowsSegment")
+  val noRowsSegment: GStyle = GStyle.fromString("SeqexecStyles-noRowsSegment")
 
-  val logSegment: GStyle = GStyle("SeqexecStyles-logSegment")
+  val logSegment: GStyle = GStyle.fromString("SeqexecStyles-logSegment")
 
-  val logSecondarySegment: GStyle = GStyle("SeqexecStyles-logSecondarySegment")
+  val logSecondarySegment: GStyle = GStyle.fromString("SeqexecStyles-logSecondarySegment")
 
-  val logControlRow: GStyle = GStyle("SeqexecStyles-logControlRow")
+  val logControlRow: GStyle = GStyle.fromString("SeqexecStyles-logControlRow")
 
-  val logTableRow: GStyle = GStyle("SeqexecStyles-logTableRow")
+  val logTableRow: GStyle = GStyle.fromString("SeqexecStyles-logTableRow")
 
-  val selectorFields: GStyle = GStyle("SeqexecStyles-selectorFields")
+  val selectorFields: GStyle = GStyle.fromString("SeqexecStyles-selectorFields")
 
-  val queueTextColumn: GStyle = GStyle("SeqexecStyles-queueTextColumn")
+  val queueTextColumn: GStyle = GStyle.fromString("SeqexecStyles-queueTextColumn")
 
-  val queueText: GStyle = GStyle("SeqexecStyles-queueText")
+  val queueText: GStyle = GStyle.fromString("SeqexecStyles-queueText")
 
-  val daytimeCal: GStyle = GStyle("SeqexecStyles-daytimeCal")
+  val daytimeCal: GStyle = GStyle.fromString("SeqexecStyles-daytimeCal")
 
-  val queueIconColumn: GStyle = GStyle("SeqexecStyles-queueIconColumn")
+  val queueIconColumn: GStyle = GStyle.fromString("SeqexecStyles-queueIconColumn")
 
-  val queueListPane: GStyle = GStyle("SeqexecStyles-queueListPane")
+  val queueListPane: GStyle = GStyle.fromString("SeqexecStyles-queueListPane")
 
-  val labelPointer: GStyle = GStyle("SeqexecStyles-labelPointer")
+  val labelPointer: GStyle = GStyle.fromString("SeqexecStyles-labelPointer")
 
-  val shorterRow: GStyle = GStyle("SeqexecStyles-shorterRow")
+  val shorterRow: GStyle = GStyle.fromString("SeqexecStyles-shorterRow")
 
-  val blinking: GStyle = GStyle("SeqexecStyles-blinking")
+  val blinking: GStyle = GStyle.fromString("SeqexecStyles-blinking")
 
-  val queueAreaRow: GStyle = GStyle("SeqexecStyles-queueAreaRow")
+  val queueAreaRow: GStyle = GStyle.fromString("SeqexecStyles-queueAreaRow")
 
-  val queueArea: GStyle = GStyle("SeqexecStyles-queueArea")
+  val queueArea: GStyle = GStyle.fromString("SeqexecStyles-queueArea")
 
-  val headerSideBarArea: GStyle = GStyle("SeqexecStyles-headerSidebarArea")
+  val headerSideBarArea: GStyle = GStyle.fromString("SeqexecStyles-headerSidebarArea")
 
-  val logArea: GStyle = GStyle("SeqexecStyles-logArea")
+  val logArea: GStyle = GStyle.fromString("SeqexecStyles-logArea")
 
-  val lowerRow: GStyle = GStyle("SeqexecStyles-lowerRow")
+  val lowerRow: GStyle = GStyle.fromString("SeqexecStyles-lowerRow")
 
-  val observerField: GStyle = GStyle("SeqexecStyles-observerField")
+  val observerField: GStyle = GStyle.fromString("SeqexecStyles-observerField")
 
-  val shorterFields: GStyle = GStyle("SeqexecStyles-shorterFields")
+  val shorterFields: GStyle = GStyle.fromString("SeqexecStyles-shorterFields")
 
-  val configLabel: GStyle = GStyle("SeqexecStyles-configLabel")
+  val configLabel: GStyle = GStyle.fromString("SeqexecStyles-configLabel")
 
-  val observationProgressRow: GStyle = GStyle("SeqexecStyles-observationProgressRow")
+  val observationProgressRow: GStyle = GStyle.fromString("SeqexecStyles-observationProgressRow")
 
-  val observationProgressBar: GStyle = GStyle("SeqexecStyles-observationProgressBar")
+  val observationProgressBar: GStyle = GStyle.fromString("SeqexecStyles-observationProgressBar")
 
-  val observationBar: GStyle = GStyle("SeqexecStyles-observationBar")
+  val observationBar: GStyle = GStyle.fromString("SeqexecStyles-observationBar")
 
-  val observationLabel: GStyle = GStyle("SeqexecStyles-observationLabel")
+  val observationLabel: GStyle = GStyle.fromString("SeqexecStyles-observationLabel")
 
-  val guidingCell: GStyle = GStyle("SeqexecStyles-guidingCell")
+  val guidingCell: GStyle = GStyle.fromString("SeqexecStyles-guidingCell")
 
-  val offsetsBlock: GStyle = GStyle("SeqexecStyles-offsetsBlock")
+  val offsetsBlock: GStyle = GStyle.fromString("SeqexecStyles-offsetsBlock")
 
-  val inlineBlock: GStyle = GStyle("SeqexecStyles-inlineBlock")
+  val inlineBlock: GStyle = GStyle.fromString("SeqexecStyles-inlineBlock")
 
-  val configuringRow: GStyle = GStyle("SeqexecStyles-configuringRow")
+  val configuringRow: GStyle = GStyle.fromString("SeqexecStyles-configuringRow")
 
-  val specialStateLabel: GStyle = GStyle("SeqexecStyles-specialStateLabel")
+  val specialStateLabel: GStyle = GStyle.fromString("SeqexecStyles-specialStateLabel")
 
-  val subsystems: GStyle = GStyle("SeqexecStyles-subsystems")
+  val subsystems: GStyle = GStyle.fromString("SeqexecStyles-subsystems")
 
-  val componentLabel: GStyle = GStyle("SeqexecStyles-componentLabel")
+  val componentLabel: GStyle = GStyle.fromString("SeqexecStyles-componentLabel")
 
-  val stepRow: GStyle = GStyle("SeqexecStyles-stepRow")
+  val stepRow: GStyle = GStyle.fromString("SeqexecStyles-stepRow")
 
-  val observeConfig: GStyle = GStyle("SeqexecStyles-observeConfig")
+  val observeConfig: GStyle = GStyle.fromString("SeqexecStyles-observeConfig")
 
-  val headerRowStyle: GStyle = GStyle("SeqexecStyles-headerRowStyle")
+  val headerRowStyle: GStyle = GStyle.fromString("SeqexecStyles-headerRowStyle")
 
-  val infoLog: GStyle = GStyle("SeqexecStyles-infoLog")
+  val infoLog: GStyle = GStyle.fromString("SeqexecStyles-infoLog")
 
-  val errorLog: GStyle = GStyle("SeqexecStyles-errorLog")
+  val errorLog: GStyle = GStyle.fromString("SeqexecStyles-errorLog")
 
-  val warningLog: GStyle = GStyle("SeqexecStyles-warningLog")
+  val warningLog: GStyle = GStyle.fromString("SeqexecStyles-warningLog")
 
   // Row styles taken from sematic ui tables
-  val rowPositive: GStyle = GStyle("SeqexecStyles-rowPositive")
+  val rowPositive: GStyle = GStyle.fromString("SeqexecStyles-rowPositive")
 
-  val rowWarning: GStyle = GStyle("SeqexecStyles-rowWarning")
+  val rowWarning: GStyle = GStyle.fromString("SeqexecStyles-rowWarning")
 
-  val rowActive: GStyle = GStyle("SeqexecStyles-rowActive")
+  val rowActive: GStyle = GStyle.fromString("SeqexecStyles-rowActive")
 
-  val rowNegative: GStyle = GStyle("SeqexecStyles-rowNegative")
+  val rowNegative: GStyle = GStyle.fromString("SeqexecStyles-rowNegative")
 
-  val rowError: GStyle = GStyle("SeqexecStyles-rowError")
+  val rowError: GStyle = GStyle.fromString("SeqexecStyles-rowError")
 
-  val rowDisabled: GStyle = GStyle("SeqexecStyles-rowDisabled")
+  val rowDisabled: GStyle = GStyle.fromString("SeqexecStyles-rowDisabled")
 
   val rowNone: GStyle = GStyle.Zero
 
-  val stepRowWithBreakpoint: GStyle = GStyle("SeqexecStyles-stepRowWithBreakpoint")
+  val stepRowWithBreakpoint: GStyle = GStyle.fromString("SeqexecStyles-stepRowWithBreakpoint")
 
-  val centeredCell: GStyle = GStyle("SeqexecStyles-centeredCell")
+  val centeredCell: GStyle = GStyle.fromString("SeqexecStyles-centeredCell")
 
-  val settingsCellHeader: GStyle = GStyle("SeqexecStyles-settingsCellHeader")
+  val settingsCellHeader: GStyle = GStyle.fromString("SeqexecStyles-settingsCellHeader")
 
-  val tableHeaderIcons: GStyle = GStyle("SeqexecStyles-tableHeaderIcons")
+  val tableHeaderIcons: GStyle = GStyle.fromString("SeqexecStyles-tableHeaderIcons")
 
-  val stepsListPane: GStyle = GStyle("SeqexecStyles-stepsListPane")
+  val stepsListPane: GStyle = GStyle.fromString("SeqexecStyles-stepsListPane")
 
-  val stepsListPaneWithControls: GStyle = GStyle("SeqexecStyles-stepsListPaneWithControls")
+  val stepsListPaneWithControls: GStyle = GStyle.fromString("SeqexecStyles-stepsListPaneWithControls")
 
-  val buttonsRow: GStyle = GStyle("SeqexecStyles-buttonsRow")
+  val buttonsRow: GStyle = GStyle.fromString("SeqexecStyles-buttonsRow")
 
-  val gutterCell: GStyle = GStyle("SeqexecStyles-gutterCell")
+  val gutterCell: GStyle = GStyle.fromString("SeqexecStyles-gutterCell")
 
-  val controlCell: GStyle = GStyle("SeqexecStyles-controlCell")
+  val controlCell: GStyle = GStyle.fromString("SeqexecStyles-controlCell")
 
-  val breakPointHandle: GStyle = GStyle("SeqexecStyles-breakPointHandle")
+  val breakPointHandle: GStyle = GStyle.fromString("SeqexecStyles-breakPointHandle")
 
   val skipHandleHeight: Int = 13
 
-  val skipHandle: GStyle = GStyle("SeqexecStyles-skipHandle")
+  val skipHandle: GStyle = GStyle.fromString("SeqexecStyles-skipHandle")
 
-  val runningIconCell: GStyle = GStyle("SeqexecStyles-runningIconCell")
+  val runningIconCell: GStyle = GStyle.fromString("SeqexecStyles-runningIconCell")
 
-  val errorCell: GStyle = GStyle("SeqexecStyles-errorCell")
+  val errorCell: GStyle = GStyle.fromString("SeqexecStyles-errorCell")
 
-  val skippedIconCell: GStyle = GStyle("SeqexecStyles-skippedIconCell")
+  val skippedIconCell: GStyle = GStyle.fromString("SeqexecStyles-skippedIconCell")
 
-  val iconCell: GStyle = GStyle("SeqexecStyles-iconCell")
+  val iconCell: GStyle = GStyle.fromString("SeqexecStyles-iconCell")
 
-  val settingsCell: GStyle = GStyle("SeqexecStyles-settingsCell")
+  val settingsCell: GStyle = GStyle.fromString("SeqexecStyles-settingsCell")
 
-  val logIconRow: GStyle = GStyle("SeqexecStyles-logIconRow")
+  val logIconRow: GStyle = GStyle.fromString("SeqexecStyles-logIconRow")
 
-  val logIconHeader: GStyle = GStyle("SeqexecStyles-logIconHeader")
+  val logIconHeader: GStyle = GStyle.fromString("SeqexecStyles-logIconHeader")
 
-  val selectedIcon: GStyle = GStyle("SeqexecStyles-selectedIcon")
+  val selectedIcon: GStyle = GStyle.fromString("SeqexecStyles-selectedIcon")
 
-  val runningIcon: GStyle = GStyle("SeqexecStyles-runningIcon")
+  val runningIcon: GStyle = GStyle.fromString("SeqexecStyles-runningIcon")
 
-  val breakPointOnIcon: GStyle = GStyle("SeqexecStyles-breakPointOnIcon")
+  val breakPointOnIcon: GStyle = GStyle.fromString("SeqexecStyles-breakPointOnIcon")
 
-  val breakPointOffIcon: GStyle = GStyle("SeqexecStyles-breakPointOffIcon")
+  val breakPointOffIcon: GStyle = GStyle.fromString("SeqexecStyles-breakPointOffIcon")
 
-  val clipboardIconDiv: GStyle = GStyle("SeqexecStyles-clipboardIconDiv")
+  val clipboardIconDiv: GStyle = GStyle.fromString("SeqexecStyles-clipboardIconDiv")
 
-  val clipboardIconHeader: GStyle = GStyle("SeqexecStyles-clipboardIconHeader")
+  val clipboardIconHeader: GStyle = GStyle.fromString("SeqexecStyles-clipboardIconHeader")
 
-  val tableHeader: GStyle = GStyle("SeqexecStyles-tableHeader")
+  val tableHeader: GStyle = GStyle.fromString("SeqexecStyles-tableHeader")
 
-  val controlCellRow: GStyle = GStyle("SeqexecStyles-controlCellRow")
+  val controlCellRow: GStyle = GStyle.fromString("SeqexecStyles-controlCellRow")
 
-  val settingsCellRow: GStyle = GStyle("SeqexecStyles-settingsCellRow")
+  val settingsCellRow: GStyle = GStyle.fromString("SeqexecStyles-settingsCellRow")
   //   minWidth(35.px).important,
   //   paddingRight(5.px).important,
   //   paddingLeft(0.px).important,
