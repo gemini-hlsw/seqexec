@@ -13,8 +13,8 @@ import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import diode.react.ModelProxy
-import scalacss.ScalaCssReact._
 import cats.implicits._
+import edu.gemini.web.client.style._
 
 /**
   * Display the name of the sequence and the observer

@@ -22,6 +22,7 @@ import edu.gemini.seqexec.web.client.actions._
 import edu.gemini.seqexec.web.client.circuit._
 import edu.gemini.seqexec.web.client.services.log.ConsoleHandler
 import edu.gemini.seqexec.web.client.services.{Audio, SeqexecWebClient}
+import edu.gemini.seqexec.web.client.services.WebpackResources._
 import cats._
 import cats.implicits._
 import org.scalajs.dom._
@@ -465,11 +466,6 @@ object handlers {
       def onClose(): Unit =
         // Increase the delay to get exponential backoff with a minimum of 200ms and a max of 1m
         if (value.autoReconnect) {
-          // On development mode reload when the connection is broken. This is quite ugly but it helps on development
-          if (scala.scalajs.LinkingInfo.developmentMode) {
-            // reload in 10 seconds
-            scala.scalajs.js.timers.setTimeout(10000) (document.location.reload())
-          }
           SeqexecCircuit.dispatch(ConnectionRetry(math.min(60000, math.max(200, value.nextAttempt * 2))))
         }
 
@@ -532,11 +528,11 @@ object handlers {
     */
   class WebSocketEventsHandler[M](modelRW: ModelRW[M, WebSocketsFocus]) extends ActionHandler(modelRW) with Handlers {
     // Global references to audio files
-    private val SequencePausedAudio = new Audio("/sequencepaused.mp3")
-    private val ExposurePausedAudio = new Audio("/exposurepaused.mp3")
-    private val SequenceErrorAudio = new Audio("/sequenceerror.mp3")
-    private val SequenceCompleteAudio = new Audio("/sequencecomplete.mp3")
-    private val StepBeepAudio = new Audio("/beep-22.mp3")
+    private val SequencePausedAudio = new Audio(SequencePausedResource.resource)
+    private val ExposurePausedAudio = new Audio(ExposurePausedResource.resource)
+    private val SequenceErrorAudio = new Audio(SequenceErrorResource.resource)
+    private val SequenceCompleteAudio = new Audio(SequenceCompleteResource.resource)
+    private val StepBeepAudio = new Audio(BeepResource.resource)
 
     // It is legal do put sequences of the other sites on the queue
     // but we don't know how to display them, so let's filter them out

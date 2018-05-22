@@ -5,6 +5,7 @@ import Common._
 import AppsCommon._
 import org.scalajs.sbtplugin.ScalaJSPlugin.AutoImport.crossProject
 import sbt.Keys._
+import NativePackagerHelper._
 
 name := Settings.Definitions.name
 
@@ -55,6 +56,24 @@ inThisBuild(List(
 
 enablePlugins(GitBranchPrompt)
 
+// Custom commonds to facilitate web development
+val startAllCommands = List(
+  "edu_gemini_seqexec_web_server/reStart",
+  "edu_gemini_seqexec_web_client/fastOptJS::startWebpackDevServer",
+  "~edu_gemini_seqexec_web_client/fastOptJS"
+)
+val restartWDSCommands = List(
+  "edu_gemini_seqexec_web_client/fastOptJS::stopWebpackDevServer",
+  "edu_gemini_seqexec_web_client/fastOptJS::startWebpackDevServer"
+)
+
+addCommandAlias("startAll", startAllCommands.mkString(";", ";", ""))
+
+addCommandAlias("restartWDS", restartWDSCommands.mkString(";", ";", ""))
+
+resolvers in ThisBuild +=
+  Resolver.sonatypeRepo("snapshots")
+
 //////////////
 // Projects
 //////////////
@@ -87,7 +106,7 @@ lazy val edu_gemini_web_client_facades = project
       // By necessity facades will have unused params
       "-Ywarn-unused:params"
     ))),
-    libraryDependencies ++= Seq(ScalaJSDom.value, JQuery.value)
+    libraryDependencies ++= Seq(ScalaJSDom.value, JQuery.value) ++ ReactScalaJS.value
   )
 
 // Root web project
@@ -123,17 +142,8 @@ lazy val edu_gemini_seqexec_web_server = project.in(file("modules/edu.gemini.seq
   .settings(
     addCompilerPlugin(Plugins.kindProjectorPlugin),
     libraryDependencies ++= Seq(UnboundId, JwtCore, Knobs) ++ Http4s ++ Logging,
-    // Settings to optimize the use of sbt-revolver
-    // Allows to read the generated JS on client
-    resources in Compile ++= (webpack in (edu_gemini_seqexec_web_client, Compile, fastOptJS in edu_gemini_seqexec_web_client)).value.map(_.data),
-    // Lets the backend to read the .map file for js
-    resources in Compile ++= (webpack in (edu_gemini_seqexec_web_client, Compile, fastOptJS in edu_gemini_seqexec_web_client)).value.map((x: sbt.Attributed[File]) => new File(x.data.getAbsolutePath + ".map")),
-    // Support stopping the running server
+    // Supports launching the server in the background
     mainClass in reStart := Some("edu.gemini.seqexec.web.server.http4s.WebServerLauncher"),
-    // do a fastOptJS on reStart
-    reStart := (reStart dependsOn (webpack in (edu_gemini_seqexec_web_client, Compile, fastOptJS in edu_gemini_seqexec_web_client))).evaluated,
-    // This settings makes reStart to rebuild if a scala.js file changes on the client
-    watchSources ++= (watchSources in edu_gemini_seqexec_web_client).value
   )
   .settings(
     buildInfoUsePackageAsPath := true,
@@ -159,37 +169,62 @@ lazy val edu_gemini_seqexec_web_client = project.in(file("modules/edu.gemini.seq
     zonesFilter := {(z: String) => z == "America/Santiago" || z == "Pacific/Honolulu"},
     // Needed for Monocle macros
     addCompilerPlugin(Plugins.paradisePlugin),
-    webpackBundlingMode := BundlingMode.LibraryOnly(),
+    // Configurations for webpack
+    webpackBundlingMode in fastOptJS         := BundlingMode.LibraryOnly(),
+    webpackBundlingMode in fullOptJS         := BundlingMode.Application,
+    webpackResources                         := (baseDirectory.value / "src" / "webpack") * "*.js",
+    webpackDevServerPort                     := 9090,
+    version in webpack                       := "4.8.1",
+    version in startWebpackDevServer         := "3.1.4",
+    // Use a different Webpack configuration file for production and create a single bundle without source maps
+    webpackConfigFile in fullOptJS           := Some(baseDirectory.value / "src" / "webpack" / "prod.webpack.config.js"),
+    webpackConfigFile in fastOptJS           := Some(baseDirectory.value / "src" / "webpack" / "dev.webpack.config.js"),
+    webpackConfigFile in Test                := Some(baseDirectory.value / "src" / "webpack" / "test.webpack.config.js"),
+    webpackEmitSourceMaps                    := false,
+    webpackExtraArgs                         := Seq("--progress", "true"),
+    emitSourceMaps                           := false,
+    // Requires the DOM for tests
+    requiresDOM in Test                      := true,
+    // Use yarn as it is faster than npm
+    useYarn                                  := true,
     // JS dependencies via npm
     npmDependencies in Compile ++= Seq(
-      "react" -> LibraryVersions.reactJS,
-      "react-dom" -> LibraryVersions.reactJS,
-      "react-virtualized" -> LibraryVersions.reactVirtualized,
+      "react"                   -> LibraryVersions.reactJS,
+      "react-dom"               -> LibraryVersions.reactJS,
+      "react-virtualized"       -> LibraryVersions.reactVirtualized,
       "react-copy-to-clipboard" -> LibraryVersions.reactClipboard,
-      "jquery" -> LibraryVersions.jQuery,
-      "semantic-ui-dropdown" -> LibraryVersions.semanticUI,
-      "semantic-ui-modal" -> LibraryVersions.semanticUI,
-      "semantic-ui-progress" -> LibraryVersions.semanticUI,
-      "semantic-ui-popup" -> LibraryVersions.semanticUI,
-      "semantic-ui-tab" -> LibraryVersions.semanticUI,
-      "semantic-ui-visibility" -> LibraryVersions.semanticUI,
-      "semantic-ui-transition" -> LibraryVersions.semanticUI,
-      "semantic-ui-dimmer" -> LibraryVersions.semanticUI
+      "jquery"                  -> LibraryVersions.jQuery,
+      "semantic-ui-dropdown"    -> LibraryVersions.semanticUI,
+      "semantic-ui-modal"       -> LibraryVersions.semanticUI,
+      "semantic-ui-progress"    -> LibraryVersions.semanticUI,
+      "semantic-ui-popup"       -> LibraryVersions.semanticUI,
+      "semantic-ui-tab"         -> LibraryVersions.semanticUI,
+      "semantic-ui-visibility"  -> LibraryVersions.semanticUI,
+      "semantic-ui-transition"  -> LibraryVersions.semanticUI,
+      "semantic-ui-dimmer"      -> LibraryVersions.semanticUI,
+      "semantic-ui-less"        -> LibraryVersions.semanticUI
     ),
-    npmDevDependencies in Compile += "uglifyjs-webpack-plugin" -> LibraryVersions.uglifyJs,
-    // Use a different Webpack configuration file for production and create a single bundle without source maps
-    webpackConfigFile in fullOptJS := Some(baseDirectory.value / "prod.webpack.config.js"),
-    webpackEmitSourceMaps := false,
-    emitSourceMaps := false,
-    // Requires the DOM for tests
-    requiresDOM in Test := true,
-    // Use yarn as it is faster than npm
-    useYarn := true,
-    version in webpack := "3.5.5",
+    // NPM libs for development, mostly to let webpack do its magic
+    npmDevDependencies in Compile ++= Seq(
+      "postcss-loader"                     -> "2.1.5",
+      "autoprefixer"                       -> "8.0.0",
+      "url-loader"                         -> "1.0.1",
+      "file-loader"                        -> "1.1.11",
+      "css-loader"                         -> "0.28.11",
+      "style-loader"                       -> "0.20.2",
+      "less"                               -> "2.3.1",
+      "less-loader"                        -> "4.1.0",
+      "webpack-merge"                      -> "4.1.2",
+      "mini-css-extract-plugin"            -> "0.4.0",
+      "webpack-dev-server-status-bar"      -> "1.0.0",
+      "cssnano"                            -> "3.10.0",
+      "uglifyjs-webpack-plugin"            -> "1.2.5",
+      "html-webpack-plugin"                -> "3.0.6",
+      "optimize-css-assets-webpack-plugin" -> "4.0.0"
+    ),
     libraryDependencies ++= Seq(
       JQuery.value,
       CatsEffect.value,
-      ScalaCSS.value,
       ScalaJSDom.value,
       JavaTimeJS.value,
       JavaLogJS.value,
@@ -311,8 +346,12 @@ lazy val seqexecCommonSettings = Seq(
   mainClass in Compile := Some("edu.gemini.seqexec.web.server.http4s.WebServerLauncher"),
   // This is important to keep the file generation order correctly
   parallelExecution in Universal := false,
-  // Run full opt js on the javascript. They will be placed on the "seqexec" jar
-  resources in Compile ++= (webpack in (edu_gemini_seqexec_web_client, Compile, fullOptJS)).value.map(_.data),
+  // Black magic. Not even sbt gurus understand how to make this work
+  mappings in (Compile, packageBin) := (mappings in (Compile, packageBin)).dependsOn((webpack in (edu_gemini_seqexec_web_client, Compile, fullOptJS))).value,
+  // This is fairly ugly. It may improve in future versions of scalajs-bundler
+  mappings in (Compile, packageBin) ++= ((npmUpdate in (edu_gemini_seqexec_web_client, Compile, fullOptJS))).map { f =>
+    (f * ("*.js" || "*.mp3" || "*.css" || "*.html" || "*.woff" || "*.woff2" || "*.ttf" || "*.eot" || "*.svg")) pair (f => Some(f.getName))
+  }.value,
   test := {},
   // Name of the launch script
   executableScriptName := "seqexec-server",
@@ -381,8 +420,8 @@ lazy val seqexecRPMSettings = Seq(
   * Project for the seqexec server app for development
   */
 lazy val seqexec_server = preventPublication(project.in(file("app/seqexec-server")))
-  .dependsOn(edu_gemini_seqexec_web_server)
-  .aggregate(edu_gemini_seqexec_web_server)
+  .dependsOn(edu_gemini_seqexec_web_server, edu_gemini_seqexec_web_client)
+  .aggregate(edu_gemini_seqexec_web_server, edu_gemini_seqexec_web_client)
   .enablePlugins(JavaServerAppPackaging)
   .enablePlugins(GitBranchPrompt)
   .settings(seqexecCommonSettings: _*)
@@ -400,8 +439,8 @@ lazy val seqexec_server = preventPublication(project.in(file("app/seqexec-server
   * Project for the seqexec test server at GS on Linux 64
   */
 lazy val seqexec_server_gs_test = preventPublication(project.in(file("app/seqexec-server-gs-test")))
-  .dependsOn(edu_gemini_seqexec_web_server)
-  .aggregate(edu_gemini_seqexec_web_server)
+  .dependsOn(edu_gemini_seqexec_web_server, edu_gemini_seqexec_web_client)
+  .aggregate(edu_gemini_seqexec_web_server, edu_gemini_seqexec_web_client)
   .enablePlugins(LinuxPlugin, RpmPlugin)
   .enablePlugins(JavaServerAppPackaging)
   .enablePlugins(GitBranchPrompt)
@@ -417,8 +456,8 @@ lazy val seqexec_server_gs_test = preventPublication(project.in(file("app/seqexe
   * Project for the seqexec test server at GN on Linux 64
   */
 lazy val seqexec_server_gn_test = preventPublication(project.in(file("app/seqexec-server-gn-test")))
-  .dependsOn(edu_gemini_seqexec_web_server)
-  .aggregate(edu_gemini_seqexec_web_server)
+  .dependsOn(edu_gemini_seqexec_web_server, edu_gemini_seqexec_web_client)
+  .aggregate(edu_gemini_seqexec_web_server, edu_gemini_seqexec_web_client)
   .enablePlugins(LinuxPlugin, RpmPlugin)
   .enablePlugins(JavaServerAppPackaging)
   .enablePlugins(GitBranchPrompt)
@@ -434,8 +473,8 @@ lazy val seqexec_server_gn_test = preventPublication(project.in(file("app/seqexe
   * Project for the seqexec server app for production on Linux 64
   */
 lazy val seqexec_server_gs = preventPublication(project.in(file("app/seqexec-server-gs")))
-  .dependsOn(edu_gemini_seqexec_web_server)
-  .aggregate(edu_gemini_seqexec_web_server)
+  .dependsOn(edu_gemini_seqexec_web_server, edu_gemini_seqexec_web_client)
+  .aggregate(edu_gemini_seqexec_web_server, edu_gemini_seqexec_web_client)
   .enablePlugins(LinuxPlugin, RpmPlugin)
   .enablePlugins(JavaServerAppPackaging)
   .enablePlugins(GitBranchPrompt)
@@ -453,8 +492,8 @@ lazy val seqexec_server_gs = preventPublication(project.in(file("app/seqexec-ser
   * Project for the GN seqexec server app for production on Linux 64
   */
 lazy val seqexec_server_gn = preventPublication(project.in(file("app/seqexec-server-gn")))
-  .dependsOn(edu_gemini_seqexec_web_server)
-  .aggregate(edu_gemini_seqexec_web_server)
+  .dependsOn(edu_gemini_seqexec_web_server, edu_gemini_seqexec_web_client)
+  .aggregate(edu_gemini_seqexec_web_server, edu_gemini_seqexec_web_client)
   .enablePlugins(LinuxPlugin, RpmPlugin)
   .enablePlugins(JavaServerAppPackaging)
   .enablePlugins(GitBranchPrompt)

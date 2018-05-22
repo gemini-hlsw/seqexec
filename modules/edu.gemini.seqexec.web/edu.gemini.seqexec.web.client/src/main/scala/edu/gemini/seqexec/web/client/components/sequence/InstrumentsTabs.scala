@@ -18,7 +18,7 @@ import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react._
 import cats.implicits._
-import scalacss.ScalaCssReact._
+import edu.gemini.web.client.style._
 
 object InstrumentTab {
   final case class Props(router: RouterCtl[SeqexecPages], site: SeqexecSite, t: ModelProxy[InstrumentStatusFocus])

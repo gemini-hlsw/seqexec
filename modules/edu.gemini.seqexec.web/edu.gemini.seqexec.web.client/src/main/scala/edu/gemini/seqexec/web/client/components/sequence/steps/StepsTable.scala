@@ -19,8 +19,7 @@ import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 import cats.implicits._
-import scalacss.ScalaCssReact._
-import scalacss._
+import edu.gemini.web.client.style._
 import react.virtualized._
 
 object ColWidths {
@@ -41,9 +40,6 @@ object ColWidths {
   * Container for a table with the steps
   */
 object StepsTable {
-  private val CssSettings = scalacss.devOrProdDefaults
-  import CssSettings._
-
   val HeightWithOffsets: Int = 40
   val BreakpointLineHeight: Int = 5
 
@@ -121,7 +117,7 @@ object StepsTable {
   def stepObjectTypeRenderer(size: SSize): CellRenderer[js.Object, js.Object, StepRow] = (_, _, _, row: StepRow, _) =>
     ObjectTypeCell(ObjectTypeCell.Props(row.step, size))
 
-  private def stepRowStyle(step: Step): StyleA = step match {
+  private def stepRowStyle(step: Step): GStyle = step match {
     case s if s.hasError                     => SeqexecStyles.rowError
     case s if s.status === StepState.Running => SeqexecStyles.rowWarning
     case s if s.status === StepState.Paused  => SeqexecStyles.rowNegative
@@ -134,9 +130,9 @@ object StepsTable {
     case (-1, _)                                                   =>
       SeqexecStyles.headerRowStyle
     case (_, StepRow(s @ StandardStep(_, _, _, true, _, _, _, _))) =>
-      SeqexecStyles.stepRowWithBreakpoint + stepRowStyle(s)
+      SeqexecStyles.stepRowWithBreakpoint |+| stepRowStyle(s)
     case (_, StepRow(s))                                           =>
-      SeqexecStyles.stepRow + stepRowStyle(s)
+      SeqexecStyles.stepRow |+| stepRowStyle(s)
     case _                                                         =>
       SeqexecStyles.stepRow
   }).htmlClass
@@ -183,7 +179,7 @@ object StepsTable {
         else
           None
       List(
-        p.steps.map(i => Column(Column.props(ColWidths.ControlWidth, "ctl", label = "Icon", disableSort = true, cellRenderer = stepControlRenderer(i, p, recomputeRowHeightsCB), flexShrink = 0, className = SeqexecStyles.controlCellRow.htmlClass, headerRenderer = controlHeaderRenderer, headerClassName = (SeqexecStyles.centeredCell + SeqexecStyles.tableHeaderIcons).htmlClass))),
+        p.steps.map(i => Column(Column.props(ColWidths.ControlWidth, "ctl", label = "Icon", disableSort = true, cellRenderer = stepControlRenderer(i, p, recomputeRowHeightsCB), flexShrink = 0, className = SeqexecStyles.controlCellRow.htmlClass, headerRenderer = controlHeaderRenderer, headerClassName = (SeqexecStyles.centeredCell |+| SeqexecStyles.tableHeaderIcons).htmlClass))),
         Column(Column.props(ColWidths.IdxWidth, "idx", label = "Step", disableSort = true, flexShrink = 0, cellRenderer = stepIdRenderer)).some,
         p.steps.map(i => Column(Column.props(ColWidths.StateWidth, "state", label = "Control", flexShrink = 1, flexGrow = 4, disableSort = true, cellRenderer = stepProgressRenderer(i, p)))),
         offsetColumn.filter(_ => offsetVisible),
@@ -192,7 +188,7 @@ object StepsTable {
         p.steps.map(i => Column(Column.props(ColWidths.FilterWidth, "filter", label = "Filter", flexShrink = 0, flexGrow = 1, disableSort = true, className = SeqexecStyles.centeredCell.htmlClass, cellRenderer = stepFilterRenderer(i.instrument)))).filter(_ => filterVisible),
         p.steps.map(i => Column(Column.props(ColWidths.FPUWidth, "fpu", label = "FPU", flexShrink = 4, flexGrow = 1, disableSort = true, className = SeqexecStyles.centeredCell.htmlClass, cellRenderer = stepFPURenderer(i.instrument)))).filter(_ => fpuVisible),
         p.steps.map(i => Column(Column.props(ColWidths.ObjectTypeWidth, "type", label = "Type", flexShrink = 3, disableSort = true, className = SeqexecStyles.centeredCell.htmlClass, cellRenderer = stepObjectTypeRenderer(objectSize)))),
-        p.steps.map(i => Column(Column.props(ColWidths.SettingsWidth, "set", label = "", disableSort = true, cellRenderer = settingsControlRenderer(p, i), flexShrink = 0, className = SeqexecStyles.settingsCellRow.htmlClass, headerRenderer = settingsHeaderRenderer, headerClassName = (SeqexecStyles.centeredCell + SeqexecStyles.tableHeaderIcons).htmlClass)))
+        p.steps.map(i => Column(Column.props(ColWidths.SettingsWidth, "set", label = "", disableSort = true, cellRenderer = settingsControlRenderer(p, i), flexShrink = 0, className = SeqexecStyles.settingsCellRow.htmlClass, headerRenderer = settingsHeaderRenderer, headerClassName = (SeqexecStyles.centeredCell |+| SeqexecStyles.tableHeaderIcons).htmlClass)))
       ).collect { case Some(x) => x }
     }
 

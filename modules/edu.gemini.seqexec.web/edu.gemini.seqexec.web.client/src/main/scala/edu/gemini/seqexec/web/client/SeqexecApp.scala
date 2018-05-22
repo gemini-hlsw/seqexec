@@ -3,7 +3,7 @@
 
 package edu.gemini.seqexec.web.client
 
-import edu.gemini.seqexec.web.client.components.{SeqexecStyles, SeqexecUI}
+import edu.gemini.seqexec.web.client.components.SeqexecUI
 import edu.gemini.seqexec.web.client.services.log.ConsoleHandler
 import edu.gemini.seqexec.web.client.services.SeqexecWebClient
 import edu.gemini.seqexec.web.client.model.Pages
@@ -26,7 +26,7 @@ import cats.effect.IO
 /**
   * Seqexec WebApp entry point
   */
-@JSExportTopLevel("SeqexecApp")
+@JSExportTopLevel("seqexec.SeqexecApp")
 object SeqexecApp {
   private val defaultFmt = "[%4$s] %1s - %5$s"
 
@@ -45,13 +45,6 @@ object SeqexecApp {
     ()
   }
 
-  def setupCss: IO[Unit] = IO {
-    val CssSettings = scalacss.devOrProdDefaults
-    import CssSettings._
-    // Register CSS styles
-    SeqexecStyles.addToDocument()
-  }
-
   def setupSite(site: String): IO[SeqexecSite] = IO {
     site match {
       case "GN" => SeqexecSite.SeqexecGN(ZoneId.of("Pacific/Honolulu"))
@@ -64,9 +57,15 @@ object SeqexecApp {
     SeqexecCircuit.dispatch(Initialize(seqexecSite))
   }
 
+  @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
   def renderingNode: IO[Element] = IO {
-    // Find the node where we render
-    document.getElementById("content")
+    // Find or create the node where we render
+    Option(document.getElementById("root")).getOrElse {
+      val elem = document.createElement("div")
+      elem.id = "root"
+      document.body.appendChild(elem)
+      elem
+    }
   }
 
   @JSExport
@@ -75,7 +74,6 @@ object SeqexecApp {
     val program = for {
       _           <- setupLogFormat
       _           <- setupLogger
-      _           <- setupCss
       seqexecSite <- setupSite(site)
       _           <- initializeDataModel(seqexecSite)
       router      <- SeqexecUI.router(seqexecSite)

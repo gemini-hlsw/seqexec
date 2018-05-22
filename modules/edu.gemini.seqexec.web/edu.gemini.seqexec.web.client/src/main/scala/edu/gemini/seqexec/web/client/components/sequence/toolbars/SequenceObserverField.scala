@@ -9,13 +9,13 @@ import edu.gemini.seqexec.web.client.circuit.StatusAndObserverFocus
 import edu.gemini.seqexec.web.client.semanticui.elements.label.FormLabel
 import edu.gemini.seqexec.web.client.semanticui.elements.input.InputEV
 import edu.gemini.seqexec.web.client.components.SeqexecStyles
+import edu.gemini.web.client.style._
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{BackendScope, Callback, ScalaComponent}
 import japgolly.scalajs.react.extra.{StateSnapshot, TimerSupport}
 import japgolly.scalajs.react.component.Scala.Unmounted
 import diode.react.ModelProxy
 import org.scalajs.dom.html.Div
-import scalacss.ScalaCssReact._
 import cats.implicits._
 import scala.concurrent.duration._
 
