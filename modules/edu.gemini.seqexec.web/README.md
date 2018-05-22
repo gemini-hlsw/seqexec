@@ -23,7 +23,7 @@ Go to the JVM project
 
 Now every time a file is changed in the server code, the server files will be compiled, then the server will restart
 
-By default the REST backend will run on port 9090
+By default the REST backend will run on port 8080
 
 # Seqexec Web Client
 
@@ -47,7 +47,7 @@ Will do the following:
 
 Now you can open the client at
 
-http://localhost:8080
+http://localhost:9090
 
 if you want to update the client and get automatic reload do in sbt:
 

@@ -173,6 +173,7 @@ lazy val edu_gemini_seqexec_web_client = project.in(file("modules/edu.gemini.seq
     webpackBundlingMode in fastOptJS         := BundlingMode.LibraryOnly(),
     webpackBundlingMode in fullOptJS         := BundlingMode.Application,
     webpackResources                         := (baseDirectory.value / "src" / "webpack") * "*.js",
+    webpackDevServerPort                     := 9090,
     version in webpack                       := "4.8.1",
     version in startWebpackDevServer         := "3.1.4",
     // Use a different Webpack configuration file for production and create a single bundle without source maps

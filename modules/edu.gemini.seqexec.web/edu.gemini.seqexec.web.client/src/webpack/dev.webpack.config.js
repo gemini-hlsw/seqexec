@@ -37,12 +37,12 @@ const Web = Merge(
       // Proxy targets to the api server
       proxy: {
         "/api/seqexec/events": {
-          target: "http://localhost:9090",
+          target: "http://localhost:7070",
           changeOrigin: true,
           ws: true
         },
         "/api/***": {
-          target: "http://localhost:9090",
+          target: "http://localhost:7070",
           logLevel: "debug",
           bypass: function(req, res, proxyOptions) {
             // regex matching everything but js files
