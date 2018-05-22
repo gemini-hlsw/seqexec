@@ -38,6 +38,13 @@ module.exports.devServer = ({ host, port } = {}) => ({
   plugins: [new Webpack.HotModuleReplacementPlugin()]
 });
 
+module.exports.lessLoader = (options = {}) => {
+  return {
+    loader: "less-loader",
+    options: { sourceMap: true }
+  };
+};
+
 // Extract css to a file, use only in production
 module.exports.extractCSS = ({ devMode, include, exclude, use = [] }) => {
   // Output extracted CSS to a file

@@ -3,6 +3,7 @@
 
 package edu.gemini.web.client
 
+import japgolly.scalajs.react.raw.JsNumber
 import org.scalajs.dom
 import org.scalajs.dom.html
 
@@ -20,6 +21,21 @@ trait utils {
   }
 
   def tableTextWidth(text: String): Int = textWidth(text, "bold 14px sans-serif")
+
 }
 
-object utils extends utils
+object utils extends utils {
+
+  implicit class JsNumberOps(val d: JsNumber) extends AnyVal {
+
+    // Some uglies for js union types
+    def toDouble: Double = (d: Any) match {
+      case d: Float  => d.toDouble
+      case d: Double => d
+      case d: Byte   => d.toDouble
+      case d: Short  => d.toDouble
+      case d: Int    => d.toDouble
+    }
+  }
+
+}
