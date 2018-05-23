@@ -3,9 +3,9 @@ import Settings.LibraryVersions
 import Settings.Plugins
 import Common._
 import AppsCommon._
-import org.scalajs.sbtplugin.ScalaJSPlugin.AutoImport.crossProject
 import sbt.Keys._
 import NativePackagerHelper._
+import sbtcrossproject.{crossProject, CrossType}
 
 name := Settings.Definitions.name
 
@@ -118,7 +118,9 @@ lazy val edu_gemini_seqexec_web = project.in(file("modules/edu.gemini.seqexec.we
   .aggregate(edu_gemini_seqexec_web_server, edu_gemini_seqexec_web_client, edu_gemini_seqexec_web_shared_JS, edu_gemini_seqexec_web_shared_JVM)
 
 // a special crossProject for configuring a JS/JVM/shared structure
-lazy val edu_gemini_seqexec_web_shared = (crossProject.crossType(CrossType.Pure) in file("modules/edu.gemini.seqexec.web/edu.gemini.seqexec.web.shared"))
+lazy val edu_gemini_seqexec_web_shared = crossProject(JVMPlatform, JSPlatform)
+  .crossType(CrossType.Pure)
+  .in(file("modules/edu.gemini.seqexec.web/edu.gemini.seqexec.web.shared"))
   .enablePlugins(AutomateHeaderPlugin)
   .enablePlugins(GitBranchPrompt)
   .disablePlugins(RevolverPlugin)
@@ -271,7 +273,8 @@ lazy val edu_gemini_seqexec_server = project
 
 // Unfortunately crossProject doesn't seem to work properly at the module/build.sbt level
 // We have to define the project properties at this level
-lazy val edu_gemini_seqexec_model = crossProject.crossType(CrossType.Pure)
+lazy val edu_gemini_seqexec_model = crossProject(JVMPlatform, JSPlatform)
+  .crossType(CrossType.Pure)
   .in(file("modules/edu.gemini.seqexec.model"))
   .enablePlugins(AutomateHeaderPlugin)
   .enablePlugins(GitBranchPrompt)
