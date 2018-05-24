@@ -41,9 +41,10 @@ const Web = Merge(
           changeOrigin: true,
           ws: true
         },
-        "/api/***": {
+        "/api/**": {
           target: "http://localhost:7070",
           logLevel: "debug",
+          changeOrigin: true,
           bypass: function(req, res, proxyOptions) {
             // regex matching everything but js files
             var backendUrls = /(^(.(?!\.js$))+$)/;
