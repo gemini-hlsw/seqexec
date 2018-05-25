@@ -16,6 +16,7 @@
 @background_color_9: #e0e0e0;
 @background_color_10: #fcfff5;
 @border_color: rgba(34, 36, 38, 0.15);
+@table_row_left_padding: 7px;
 
 body {
   background-color: @background_color_1;
@@ -161,7 +162,7 @@ body {
 }
 
 .SeqexecStyles-queueText {
-  padding-left: 10px;
+  padding-left: @table_row_left_padding;
   text-overflow: ellipsis;
   overflow: hidden;
   white-space: nowrap;
@@ -263,6 +264,8 @@ body {
   display: flex;
   width: 100%;
   align-items: center;
+  padding-left: @table_row_left_padding;
+  padding-right: @table_row_left_padding;
 }
 
 .SeqexecStyles-offsetsBlock {
@@ -299,6 +302,41 @@ body {
   white-space: nowrap;
 }
 
+.borderRight() {
+  border-right-style: solid;
+  border-right-color: @border_color;
+  border-right-width: 1px;
+}
+
+.borderLeft() {
+  border-left-style: solid;
+  border-left-color: @border_color;
+  border-left-width: 1px;
+}
+
+.borderTop() {
+  border-top-style: solid;
+  border-top-color: @border_color;
+  border-top-width: 1px;
+}
+
+.borderBottom() {
+  border-bottom-style: solid;
+  border-bottom-color: @border_color;
+  border-bottom-width: 1px;
+}
+
+.borderAll() {
+  .borderRight();
+  .borderLeft();
+  .borderTop();
+  .borderBottom();
+}
+
+.SeqexecStyles-paddedStepRow {
+  padding-left: @table_row_left_padding;
+}
+
 .SeqexecStyles-stepRow {
   font-size: smaller !important;
   text-overflow: ellipsis;
@@ -307,12 +345,7 @@ body {
   background-color: @background_color_1;
   color: @text_color;
   overflow: unset !important;
-  border-right-style: solid;
-  border-right-color: @border_color;
-  border-right-width: 1px;
-  border-top-style: solid;
-  border-top-color: @border_color;
-  border-top-width: 1px;
+  .borderTop();
   outline: none;
 }
 
@@ -321,52 +354,26 @@ body {
 }
 
 .SeqexecStyles-headerRowStyle {
-  border-left-width: 1px;
-  border-left-style: solid;
-  border-left-color: @border_color;
-  border-top-width: 1px;
-  border-top-style: solid;
-  border-top-color: @border_color;
-  border-bottom-width: 1px;
-  border-bottom-style: solid;
-  border-bottom-color: @border_color;
-  border-right-width: 1px;
-  border-right-style: solid;
-  border-right-color: @border_color;
   background-color: @background_color_6;
-  min-height: 33px;
-  height: 33px;
 }
 
 .SeqexecStyles-infoLog {
-  border-top-width: 1px;
-  border-top-style: solid;
-  border-top-color: @border_color;
-  border-right-width: 1px;
-  border-right-style: solid;
-  border-right-color: @border_color;
+  .borderTop();
+  .borderRight();
   background-color: @background_color_1;
   color: @text_color;
 }
 
 .SeqexecStyles-errorLog {
-  border-top-width: 1px;
-  border-top-style: solid;
-  border-top-color: @border_color;
-  border-right-width: 1px;
-  border-right-style: solid;
-  border-right-color: @border_color;
+  .borderTop();
+  .borderRight();
   background-color: @background_color_8 !important;
   color: @color_5 !important;
 }
 
 .SeqexecStyles-warningLog {
-  border-top-width: 1px;
-  border-top-style: solid;
-  border-top-color: @border_color;
-  border-right-width: 1px;
-  border-right-style: solid;
-  border-right-color: @border_color;
+  .borderTop();
+  .borderRight();
   background-color: @background_color_4 !important;
   color: @color_2 !important;
 }
@@ -414,12 +421,9 @@ body {
   white-space: nowrap;
   background-color: @background_color_1;
   color: @text_color;
-  border-left-width: 1px;
-  border-left-style: solid;
-  border-left-color: @border_color;
-  border-right-width: 1px;
-  border-right-style: solid;
-  border-right-color: @border_color;
+  .borderLeft();
+  .borderRight();
+  .borderTop();
   background-image: linear-gradient(
     to right,
     rgba(34, 36, 38, 0.15),
@@ -429,9 +433,6 @@ body {
   );
   background-size: 100% 4px;
   background-repeat: no-repeat;
-  border-top-color: @border_color;
-  border-top-width: 1px;
-  border-top-style: solid;
   padding-top: 4px;
   overflow: visible !important;
   outline: none;
@@ -484,9 +485,7 @@ body {
   background-color: @background_color_1;
   width: 21px;
   min-width: 21px;
-  border-right-width: 1px;
-  border-right-style: solid;
-  border-right-color: @border_color;
+  .borderRight();
   position: relative;
 }
 
@@ -622,9 +621,7 @@ body {
 }
 
 .SeqexecStyles-tableHeader {
-  border-left-width: 1px;
-  border-left-style: solid;
-  border-left-color: @border_color;
+  .borderLeft();
   font-weight: bold;
   color: @color_3;
   background-color: @background_color_6;
@@ -709,20 +706,22 @@ body {
   display: flex;
   flex-direction: row;
   align-items: center;
+  .borderRight();
+  .borderLeft();
+  .borderTop();
 }
 .ReactVirtualized__Table__headerColumn {
   &:first-of-type {
     border-left: none;
-    overflow: visible !important;
   }
 }
+
+.ReactVirtualized__Table__headerTruncatedText {
+  padding-left: @table_row_left_padding;
+}
+
 .ReactVirtualized__Table__rowColumn {
-  &:first-of-type {
-    border-left: none;
-  }
-  border-left-width: 1px;
-  border-left-style: solid;
-  border-left-color: @border_color;
+  .borderLeft();
   min-width: 0;
   display: flex;
   align-items: center;
@@ -730,8 +729,9 @@ body {
   text-overflow: ellipsis;
   white-space: nowrap;
   height: 100%;
-  padding-left: 0.7em;
-  padding-right: 0.7em;
+  &:first-of-type {
+    border-left: none;
+  }
 }
 .SeqexecStyles-rightCell {
   display: flex;
@@ -744,21 +744,14 @@ body {
   justify-content: flex-start;
 }
 .ReactVirtualized__Table__Grid {
-  border-bottom-width: 1px;
-  border-bottom-style: solid;
-  border-bottom-color: @border_color;
-  border-left-width: 1px;
-  border-left-style: solid;
-  border-left-color: @border_color;
-  border-right-width: 1px;
-  border-right-style: solid;
-  border-right-color: @border_color;
+  .borderRight();
+  .borderLeft();
+  .borderBottom();
+  .borderTop();
   outline: none;
 }
 .ReactVirtualized__Grid__innerScrollContainer {
-  border-bottom-width: 1px;
-  border-bottom-style: solid;
-  border-bottom-color: @border_color;
+  .borderBottom();
 }
 .ReactVirtualized__Table__row {
   display: flex;
@@ -821,9 +814,6 @@ body {
 .mobileSegment() {
   padding-right: 0 !important;
   padding-left: 0 !important;
-}
-.ReactVirtualized__Table__headerTruncatedText {
-  padding-left: 7px;
 }
 @media only screen and (max-width: 767px) {
   .SeqexecStyles-notInMobile {

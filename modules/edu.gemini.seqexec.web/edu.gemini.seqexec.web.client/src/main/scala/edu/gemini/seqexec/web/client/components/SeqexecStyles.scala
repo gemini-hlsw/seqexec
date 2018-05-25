@@ -116,6 +116,8 @@ object SeqexecStyles {
 
   val componentLabel: GStyle = GStyle.fromString("SeqexecStyles-componentLabel")
 
+  val paddedStepRow: GStyle = GStyle.fromString("SeqexecStyles-paddedStepRow")
+
   val stepRow: GStyle = GStyle.fromString("SeqexecStyles-stepRow")
 
   val observeConfig: GStyle = GStyle.fromString("SeqexecStyles-observeConfig")

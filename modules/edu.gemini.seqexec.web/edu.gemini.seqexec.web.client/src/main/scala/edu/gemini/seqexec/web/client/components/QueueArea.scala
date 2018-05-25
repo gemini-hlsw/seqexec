@@ -128,10 +128,9 @@ object QueueTableBody {
   private val IconColumnWidth = 20
   private val ObsIdColumnWidth = 140
   private val StateColumnWidth = 80
-  private val InstrumentColumnWidth = 80
+  private val InstrumentColumnWidth = 120
   private val NameColumnWidth = 140
   private val TargetNameColumnWidth = 140
-  private val ColumnPadding = 10 + 1 // Taken from SeqexecStyles.queueText padding and 1 for border
 
   val statusHeaderRenderer: HeaderRenderer[js.Object] = (_, _, _, _, _, _) =>
     <.div(
@@ -144,8 +143,8 @@ object QueueTableBody {
   private def columns(p: Props, s: Size): List[Table.ColumnArg] = {
     val isLogged = p.sequences().isLogged
 
-    // Calculate the column's width
-    val (obsColumnWidth, statusColumnWidth, instrumentColumnWidth, nameColumnWidth, targetNameColumnWidth) = p.sequences().sequences.map {
+    // Calculate the column's width according to its contents
+    val (obsColumnWidth, statusColumnWidth, instrumentColumnWidth, _, targetNameColumnWidth) = p.sequences().sequences.map {
       case SequenceInQueue(id, st, i, _, n, t, r) =>
         (tableTextWidth(id), tableTextWidth(statusText(st, r)), tableTextWidth(i.show), tableTextWidth(n), tableTextWidth(t.getOrElse("")))
     }.foldLeft((ObsIdColumnWidth, StateColumnWidth, InstrumentColumnWidth, NameColumnWidth, TargetNameColumnWidth)) {
@@ -153,9 +152,15 @@ object QueueTableBody {
         (max(o, co), max(s, cs), max(i, ci), max(n, cn), max(t, ct))
     }
 
+    val lastColumnWidth = if (isLogged) {
+      s.width - obsColumnWidth - statusColumnWidth - instrumentColumnWidth - targetNameColumnWidth
+    } else {
+      s.width - obsColumnWidth - statusColumnWidth
+    }
+
     // Columns displayed when logged in
-    val targetColumn = Column(Column.props(targetNameColumnWidth + ColumnPadding, "target", minWidth = TargetNameColumnWidth / 2, flexShrink = 2, flexGrow = 2, label = "Target", cellRenderer = targetRenderer(p), className = QueueColumnStyle))
-    val nameColumn = Column(Column.props(nameColumnWidth + ColumnPadding, "obsName", minWidth = NameColumnWidth / 2, flexShrink = 2, flexGrow = 2, label = "Obs. Name", cellRenderer = obsNameRenderer(p), className = QueueColumnStyle))
+    val targetColumn = Column(Column.props(targetNameColumnWidth, "target", minWidth = TargetNameColumnWidth / 2, flexShrink = 0, flexGrow = 0, label = "Target", cellRenderer = targetRenderer(p), className = QueueColumnStyle))
+    val nameColumn = Column(Column.props(lastColumnWidth, "obsName", minWidth = NameColumnWidth / 2, flexShrink = 0, flexGrow = 0, label = "Obs. Name", cellRenderer = obsNameRenderer(p), className = QueueColumnStyle))
 
     val loggedInColumns = s.width match {
       case w if w < PhoneCut      => Nil
@@ -165,9 +170,9 @@ object QueueTableBody {
 
     val regularColumns = List(
       Column(Column.props(IconColumnWidth, "status", flexShrink = 0, flexGrow = 0, label = "", cellRenderer = statusIconRenderer(p), headerRenderer = statusHeaderRenderer, className = SeqexecStyles.queueIconColumn.htmlClass)),
-      Column(Column.props(obsColumnWidth + ColumnPadding, "obsId", minWidth = ObsIdColumnWidth, flexShrink = 0, flexGrow = 0, label = "Obs. ID", cellRenderer = obsIdRenderer(p), className = QueueColumnStyle)),
-      Column(Column.props(statusColumnWidth + ColumnPadding, "state", minWidth = StateColumnWidth, flexShrink = 0, flexGrow = 0, label = "State", cellRenderer = stateRenderer(p), className = QueueColumnStyle)),
-      Column(Column.props(instrumentColumnWidth + ColumnPadding, "instrument", minWidth = InstrumentColumnWidth, flexShrink = 0, flexGrow = 0, label = "Instrument", cellRenderer = instrumentRenderer(p), className = QueueColumnStyle))
+      Column(Column.props(obsColumnWidth, "obsId", minWidth = ObsIdColumnWidth, flexShrink = 0, flexGrow = 0, label = "Obs. ID", cellRenderer = obsIdRenderer(p), className = QueueColumnStyle)),
+      Column(Column.props(statusColumnWidth, "state", minWidth = StateColumnWidth, flexShrink = 0, flexGrow = 0, label = "State", cellRenderer = stateRenderer(p), className = QueueColumnStyle)),
+      Column(Column.props(if (isLogged) instrumentColumnWidth else lastColumnWidth, "instrument", minWidth = InstrumentColumnWidth, flexShrink = 0, flexGrow = 0, label = "Instrument", cellRenderer = instrumentRenderer(p), className = QueueColumnStyle))
     )
     isLogged.fold(regularColumns ::: loggedInColumns, regularColumns)
   }
@@ -208,6 +213,7 @@ object QueueTableBody {
         headerClassName = SeqexecStyles.tableHeader.htmlClass,
         headerHeight = SeqexecStyles.headerHeight),
       columns(p, size): _*).vdomElement
+
 
   private val component = ScalaComponent.builder[Props]("QueueTableBody")
     .render_P ( p =>
