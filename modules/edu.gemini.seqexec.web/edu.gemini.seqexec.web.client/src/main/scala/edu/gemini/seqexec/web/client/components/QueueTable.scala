@@ -383,6 +383,7 @@ object QueueTableBody {
         SeqexecStyles.stepRow
     }).htmlClass
 
+  // scalastyle:off
   private def columns($ : $, size: Size): List[Table.ColumnArg] = {
     val props = $.props
 
@@ -485,6 +486,7 @@ object QueueTableBody {
           ))
     }
   }
+  // scalastyle:on
 
   def table(rs: $)(size: Size): VdomNode =
     Table(
