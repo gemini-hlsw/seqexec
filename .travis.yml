@@ -16,7 +16,7 @@ install:
 - nvm use 8.7.0
 - npm install jsdom
 script:
-- sbt -Docs3.skipDependencyUpdates headerCheck test:headerCheck scalastyle test edu_gemini_seqexec_web_client/fastOptJS::webpack
-- sbt -Docs3.skipDependencyUpdates edu_gemini_seqexec_web_client/fullOptJS::webpack
+- sbt -Docs3.skipDependencyUpdates headerCheck test:headerCheck scalastyle test seqexec_web_client/fastOptJS::webpack
+- sbt -Docs3.skipDependencyUpdates seqexec_web_client/fullOptJS::webpack
 after_script:
 - $TRAVIS_BUILD_DIR/build/weigh.sh

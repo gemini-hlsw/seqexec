@@ -58,13 +58,13 @@ enablePlugins(GitBranchPrompt)
 
 // Custom commonds to facilitate web development
 val startAllCommands = List(
-  "edu_gemini_seqexec_web_server/reStart",
-  "edu_gemini_seqexec_web_client/fastOptJS::startWebpackDevServer",
-  "~edu_gemini_seqexec_web_client/fastOptJS"
+  "seqexec_web_server/reStart",
+  "seqexec_web_client/fastOptJS::startWebpackDevServer",
+  "~seqexec_web_client/fastOptJS"
 )
 val restartWDSCommands = List(
-  "edu_gemini_seqexec_web_client/fastOptJS::stopWebpackDevServer",
-  "edu_gemini_seqexec_web_client/fastOptJS::startWebpackDevServer"
+  "seqexec_web_client/fastOptJS::stopWebpackDevServer",
+  "seqexec_web_client/fastOptJS::startWebpackDevServer"
 )
 
 addCommandAlias("startAll", startAllCommands.mkString(";", ";", ""))
@@ -74,11 +74,28 @@ addCommandAlias("restartWDS", restartWDSCommands.mkString(";", ";", ""))
 resolvers in ThisBuild +=
   Resolver.sonatypeRepo("snapshots")
 
+///////////////
+// Root project
+///////////////
+lazy val ocs3 = preventPublication(project.in(file(".")))
+  .aggregate(
+    giapi,
+    web_server_common,
+    web_client,
+    seqexec_model_JS,
+    seqexec_model_JVM,
+    seqexec_engine,
+    seqexec_server,
+    seqexec_web_shared_JS,
+    seqexec_web_shared_JVM,
+    seqexec_web_server,
+    seqexec_web_client)
+
 //////////////
 // Projects
 //////////////
-lazy val edu_gemini_giapi_client = project
-  .in(file("modules/edu.gemini.giapi.client"))
+lazy val giapi = project
+  .in(file("modules/giapi"))
   .enablePlugins(AutomateHeaderPlugin)
   .enablePlugins(GitBranchPrompt)
   .settings(commonSettings: _*)
@@ -86,8 +103,9 @@ lazy val edu_gemini_giapi_client = project
     libraryDependencies ++= Seq(Shapeless.value, CatsEffect.value, Fs2, GiapiJmsUtil, GiapiJmsProvider, GiapiStatusService, Giapi, GiapiCommandsClient) ++ Logging
   )
 
-lazy val edu_gemini_web_server_common = project
-  .in(file("modules/edu.gemini.web.server.common"))
+// Common utilities for web server projects
+lazy val web_server_common = project
+  .in(file("modules/web/server/"))
   .enablePlugins(AutomateHeaderPlugin)
   .enablePlugins(GitBranchPrompt)
   .settings(commonSettings: _*)
@@ -95,8 +113,9 @@ lazy val edu_gemini_web_server_common = project
     libraryDependencies ++= CatsEffect.value +: (Http4s ++ Logging)
   )
 
-lazy val edu_gemini_web_client_facades = project
-  .in(file("modules/edu.gemini.web.client.facades"))
+// Common utilities for web clinet projects
+lazy val web_client = project
+  .in(file("modules/web/client"))
   .enablePlugins(AutomateHeaderPlugin)
   .enablePlugins(ScalaJSPlugin)
   .enablePlugins(GitBranchPrompt)
@@ -109,34 +128,26 @@ lazy val edu_gemini_web_client_facades = project
     libraryDependencies ++= Seq(ScalaJSDom.value, JQuery.value) ++ ReactScalaJS.value
   )
 
-// Root web project
-lazy val edu_gemini_seqexec_web = project.in(file("modules/edu.gemini.seqexec.web"))
-  .settings(commonSettings: _*)
-  .enablePlugins(AutomateHeaderPlugin)
-  .enablePlugins(GitBranchPrompt)
-  .disablePlugins(RevolverPlugin)
-  .aggregate(edu_gemini_seqexec_web_server, edu_gemini_seqexec_web_client, edu_gemini_seqexec_web_shared_JS, edu_gemini_seqexec_web_shared_JVM)
-
 // a special crossProject for configuring a JS/JVM/shared structure
-lazy val edu_gemini_seqexec_web_shared = crossProject(JVMPlatform, JSPlatform)
+lazy val seqexec_web_shared = crossProject(JVMPlatform, JSPlatform)
   .crossType(CrossType.Pure)
-  .in(file("modules/edu.gemini.seqexec.web/edu.gemini.seqexec.web.shared"))
+  .in(file("modules/seqexec/web/shared"))
   .enablePlugins(AutomateHeaderPlugin)
   .enablePlugins(GitBranchPrompt)
   .disablePlugins(RevolverPlugin)
-  .dependsOn(edu_gemini_seqexec_model)
+  .dependsOn(seqexec_model)
   .jvmSettings(commonSettings)
   .jsSettings(commonJSSettings)
   .jsSettings(
     libraryDependencies += JavaLogJS.value
   )
 
-lazy val edu_gemini_seqexec_web_shared_JVM = edu_gemini_seqexec_web_shared.jvm
+lazy val seqexec_web_shared_JVM = seqexec_web_shared.jvm
 
-lazy val edu_gemini_seqexec_web_shared_JS = edu_gemini_seqexec_web_shared.js
+lazy val seqexec_web_shared_JS = seqexec_web_shared.js
 
 // Project for the server side application
-lazy val edu_gemini_seqexec_web_server = project.in(file("modules/edu.gemini.seqexec.web/edu.gemini.seqexec.web.server"))
+lazy val seqexec_web_server = project.in(file("modules/seqexec/web/server"))
   .enablePlugins(BuildInfoPlugin)
   .enablePlugins(AutomateHeaderPlugin)
   .enablePlugins(GitBranchPrompt)
@@ -145,7 +156,7 @@ lazy val edu_gemini_seqexec_web_server = project.in(file("modules/edu.gemini.seq
     addCompilerPlugin(Plugins.kindProjectorPlugin),
     libraryDependencies ++= Seq(UnboundId, JwtCore, Knobs) ++ Http4s ++ Logging,
     // Supports launching the server in the background
-    mainClass in reStart := Some("edu.gemini.seqexec.web.server.http4s.WebServerLauncher"),
+    mainClass in reStart := Some("seqexec.web.server.http4s.WebServerLauncher"),
   )
   .settings(
     buildInfoUsePackageAsPath := true,
@@ -153,11 +164,11 @@ lazy val edu_gemini_seqexec_web_server = project.in(file("modules/edu.gemini.seq
     buildInfoKeys += buildInfoBuildNumber,
     buildInfoOptions += BuildInfoOption.BuildTime,
     buildInfoObject := "OcsBuildInfo",
-    buildInfoPackage := "edu.gemini.seqexec.web.server"
+    buildInfoPackage := "seqexec.web.server"
   )
-  .dependsOn(edu_gemini_seqexec_web_shared_JVM, edu_gemini_seqexec_server, edu_gemini_web_server_common)
+  .dependsOn(seqexec_web_shared_JVM, seqexec_server, web_server_common)
 
-lazy val edu_gemini_seqexec_web_client = project.in(file("modules/edu.gemini.seqexec.web/edu.gemini.seqexec.web.client"))
+lazy val seqexec_web_client = project.in(file("modules/seqexec/web/client"))
   .enablePlugins(ScalaJSPlugin)
   .enablePlugins(ScalaJSBundlerPlugin)
   .enablePlugins(TzdbPlugin)
@@ -240,17 +251,16 @@ lazy val edu_gemini_seqexec_web_client = project.in(file("modules/edu.gemini.seq
     buildInfoUsePackageAsPath := true,
     buildInfoKeys := Seq(name, version),
     buildInfoObject := "OcsBuildInfo",
-    buildInfoPackage := "edu.gemini.seqexec.web.client"
+    buildInfoPackage := "seqexec.web.client"
   )
-  .dependsOn(edu_gemini_web_client_facades, edu_gemini_seqexec_web_shared_JS % "compile->compile;test->test", edu_gemini_seqexec_model_JS % "compile->compile;test->test")
+  .dependsOn(web_client, seqexec_web_shared_JS % "compile->compile;test->test", seqexec_model_JS % "compile->compile;test->test")
 
 // List all the modules and their inter dependencies
-lazy val edu_gemini_seqexec_server = project
-  .in(file("modules/edu.gemini.seqexec.server"))
+lazy val seqexec_server = project
+  .in(file("modules/seqexec/server"))
   .enablePlugins(AutomateHeaderPlugin)
   .enablePlugins(GitBranchPrompt)
   .enablePlugins(BuildInfoPlugin)
-  .dependsOn(edu_gemini_seqexec_engine, edu_gemini_seqexec_model_JVM, edu_gemini_epics_acm)
   .settings(commonSettings: _*)
   .settings(
     libraryDependencies ++=
@@ -270,14 +280,15 @@ lazy val edu_gemini_seqexec_server = project
     buildInfoUsePackageAsPath := true,
     buildInfoKeys := Seq(name, version),
     buildInfoObject := "OcsBuildInfo",
-    buildInfoPackage := "edu.gemini.seqexec.server"
+    buildInfoPackage := "seqexec.server"
   )
+  .dependsOn(seqexec_engine, seqexec_model_JVM, acm)
 
 // Unfortunately crossProject doesn't seem to work properly at the module/build.sbt level
 // We have to define the project properties at this level
-lazy val edu_gemini_seqexec_model = crossProject(JVMPlatform, JSPlatform)
+lazy val seqexec_model = crossProject(JVMPlatform, JSPlatform)
   .crossType(CrossType.Pure)
-  .in(file("modules/edu.gemini.seqexec.model"))
+  .in(file("modules/seqexec/model"))
   .enablePlugins(AutomateHeaderPlugin)
   .enablePlugins(GitBranchPrompt)
   .settings(
@@ -292,15 +303,15 @@ lazy val edu_gemini_seqexec_model = crossProject(JVMPlatform, JSPlatform)
     libraryDependencies += JavaTimeJS.value
   )
 
-lazy val edu_gemini_seqexec_model_JVM:Project = edu_gemini_seqexec_model.jvm
+lazy val seqexec_model_JVM:Project = seqexec_model.jvm
 
-lazy val edu_gemini_seqexec_model_JS:Project = edu_gemini_seqexec_model.js
+lazy val seqexec_model_JS:Project = seqexec_model.js
 
-lazy val edu_gemini_seqexec_engine = project
-  .in(file("modules/edu.gemini.seqexec.engine"))
+lazy val seqexec_engine = project
+  .in(file("modules/seqexec/engine"))
   .enablePlugins(AutomateHeaderPlugin)
   .enablePlugins(GitBranchPrompt)
-  .dependsOn(edu_gemini_seqexec_model_JVM)
+  .dependsOn(seqexec_model_JVM)
   .settings(commonSettings: _*)
   .settings(
     addCompilerPlugin(Plugins.kindProjectorPlugin),
@@ -308,7 +319,7 @@ lazy val edu_gemini_seqexec_engine = project
     libraryDependencies ++= Seq(Fs2, CatsEffect.value, Log4s) ++ Monocle.value
   )
 
-lazy val edu_gemini_epics_acm = project
+lazy val acm = project
   .in(file("modules/edu.gemini.epics.acm"))
   .enablePlugins(AutomateHeaderPlugin)
   .settings(commonSettings: _*)
@@ -348,13 +359,13 @@ lazy val edu_gemini_epics_acm = project
   */
 lazy val seqexecCommonSettings = Seq(
   // Main class for launching
-  mainClass in Compile := Some("edu.gemini.seqexec.web.server.http4s.WebServerLauncher"),
+  mainClass in Compile := Some("seqexec.web.server.http4s.WebServerLauncher"),
   // This is important to keep the file generation order correctly
   parallelExecution in Universal := false,
   // Black magic. Not even sbt gurus understand how to make this work
-  mappings in (Compile, packageBin) := (mappings in (Compile, packageBin)).dependsOn((webpack in (edu_gemini_seqexec_web_client, Compile, fullOptJS))).value,
+  mappings in (Compile, packageBin) := (mappings in (Compile, packageBin)).dependsOn(webpack in (seqexec_web_client, Compile, fullOptJS)).value,
   // This is fairly ugly. It may improve in future versions of scalajs-bundler
-  mappings in (Compile, packageBin) ++= ((npmUpdate in (edu_gemini_seqexec_web_client, Compile, fullOptJS))).map { f =>
+  mappings in (Compile, packageBin) ++= (npmUpdate in (seqexec_web_client, Compile, fullOptJS)).map { f =>
     (f * ("*.js" || "*.mp3" || "*.css" || "*.html" || "*.woff" || "*.woff2" || "*.ttf" || "*.eot" || "*.svg")) pair (f => Some(f.getName))
   }.value,
   test := {},
@@ -369,7 +380,7 @@ lazy val seqexecCommonSettings = Seq(
   bashScriptExtraDefines += """addJava "-Dlogback.configurationFile=${app_home}/../conf/logback.xml"""",
   // Copy logback.xml to let users customize it on site
   mappings in Universal += {
-    val f = (resourceDirectory in (edu_gemini_seqexec_web_server, Compile)).value / "logback.xml"
+    val f = (resourceDirectory in (seqexec_web_server, Compile)).value / "logback.xml"
     f -> ("conf/" + f.getName)
   },
   // Launch options
@@ -424,9 +435,9 @@ lazy val seqexecRPMSettings = Seq(
 /**
   * Project for the seqexec server app for development
   */
-lazy val seqexec_server = preventPublication(project.in(file("app/seqexec-server")))
-  .dependsOn(edu_gemini_seqexec_web_server, edu_gemini_seqexec_web_client)
-  .aggregate(edu_gemini_seqexec_web_server, edu_gemini_seqexec_web_client)
+lazy val app_seqexec_server = preventPublication(project.in(file("app/seqexec-server")))
+  .dependsOn(seqexec_web_server, seqexec_web_client)
+  .aggregate(seqexec_web_server, seqexec_web_client)
   .enablePlugins(JavaServerAppPackaging)
   .enablePlugins(GitBranchPrompt)
   .settings(seqexecCommonSettings: _*)
@@ -443,9 +454,9 @@ lazy val seqexec_server = preventPublication(project.in(file("app/seqexec-server
 /**
   * Project for the seqexec test server at GS on Linux 64
   */
-lazy val seqexec_server_gs_test = preventPublication(project.in(file("app/seqexec-server-gs-test")))
-  .dependsOn(edu_gemini_seqexec_web_server, edu_gemini_seqexec_web_client)
-  .aggregate(edu_gemini_seqexec_web_server, edu_gemini_seqexec_web_client)
+lazy val app_seqexec_server_gs_test = preventPublication(project.in(file("app/seqexec-server-gs-test")))
+  .dependsOn(seqexec_web_server, seqexec_web_client)
+  .aggregate(seqexec_web_server, seqexec_web_client)
   .enablePlugins(LinuxPlugin, RpmPlugin)
   .enablePlugins(JavaServerAppPackaging)
   .enablePlugins(GitBranchPrompt)
@@ -460,9 +471,9 @@ lazy val seqexec_server_gs_test = preventPublication(project.in(file("app/seqexe
 /**
   * Project for the seqexec test server at GN on Linux 64
   */
-lazy val seqexec_server_gn_test = preventPublication(project.in(file("app/seqexec-server-gn-test")))
-  .dependsOn(edu_gemini_seqexec_web_server, edu_gemini_seqexec_web_client)
-  .aggregate(edu_gemini_seqexec_web_server, edu_gemini_seqexec_web_client)
+lazy val app_seqexec_server_gn_test = preventPublication(project.in(file("app/seqexec-server-gn-test")))
+  .dependsOn(seqexec_web_server, seqexec_web_client)
+  .aggregate(seqexec_web_server, seqexec_web_client)
   .enablePlugins(LinuxPlugin, RpmPlugin)
   .enablePlugins(JavaServerAppPackaging)
   .enablePlugins(GitBranchPrompt)
@@ -477,9 +488,9 @@ lazy val seqexec_server_gn_test = preventPublication(project.in(file("app/seqexe
 /**
   * Project for the seqexec server app for production on Linux 64
   */
-lazy val seqexec_server_gs = preventPublication(project.in(file("app/seqexec-server-gs")))
-  .dependsOn(edu_gemini_seqexec_web_server, edu_gemini_seqexec_web_client)
-  .aggregate(edu_gemini_seqexec_web_server, edu_gemini_seqexec_web_client)
+lazy val app_seqexec_server_gs = preventPublication(project.in(file("app/seqexec-server-gs")))
+  .dependsOn(seqexec_web_server, seqexec_web_client)
+  .aggregate(seqexec_web_server, seqexec_web_client)
   .enablePlugins(LinuxPlugin, RpmPlugin)
   .enablePlugins(JavaServerAppPackaging)
   .enablePlugins(GitBranchPrompt)
@@ -496,9 +507,9 @@ lazy val seqexec_server_gs = preventPublication(project.in(file("app/seqexec-ser
 /**
   * Project for the GN seqexec server app for production on Linux 64
   */
-lazy val seqexec_server_gn = preventPublication(project.in(file("app/seqexec-server-gn")))
-  .dependsOn(edu_gemini_seqexec_web_server, edu_gemini_seqexec_web_client)
-  .aggregate(edu_gemini_seqexec_web_server, edu_gemini_seqexec_web_client)
+lazy val app_seqexec_server_gn = preventPublication(project.in(file("app/seqexec-server-gn")))
+  .dependsOn(seqexec_web_server, seqexec_web_client)
+  .aggregate(seqexec_web_server, seqexec_web_client)
   .enablePlugins(LinuxPlugin, RpmPlugin)
   .enablePlugins(JavaServerAppPackaging)
   .enablePlugins(GitBranchPrompt)
