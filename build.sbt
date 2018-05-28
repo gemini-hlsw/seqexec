@@ -194,6 +194,7 @@ lazy val edu_gemini_seqexec_web_client = project.in(file("modules/edu.gemini.seq
       "react"                   -> LibraryVersions.reactJS,
       "react-dom"               -> LibraryVersions.reactJS,
       "react-virtualized"       -> LibraryVersions.reactVirtualized,
+      "react-draggable"         -> LibraryVersions.reactDraggable,
       "react-copy-to-clipboard" -> LibraryVersions.reactClipboard,
       "jquery"                  -> LibraryVersions.jQuery,
       "semantic-ui-dropdown"    -> LibraryVersions.semanticUI,
@@ -231,6 +232,7 @@ lazy val edu_gemini_seqexec_web_client = project.in(file("modules/edu.gemini.seq
       JavaTimeJS.value,
       JavaLogJS.value,
       ScalaJSReactVirtualized.value,
+      ScalaJSReactDraggable.value,
       ScalaJSReactClipboard.value
     ) ++ ReactScalaJS.value ++ Diode.value
   )

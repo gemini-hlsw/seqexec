@@ -12,7 +12,10 @@ const Web = Merge(
   parts.resolve,
   parts.resolveSemanticUI,
   parts.resourceModules,
-  parts.extractCSS({ devMode: true, use: ["css-loader", "less-loader"] }),
+  parts.extractCSS({
+    devMode: true,
+    use: ["css-loader", parts.lessLoader({ sourceMap: true })]
+  }),
   parts.extraAssets,
   parts.fontAssets,
   {
@@ -68,6 +71,7 @@ const Web = Merge(
       new Webpack.HotModuleReplacementPlugin(),
       new HtmlWebpackPlugin({
         filename: "index.html",
+        title: "Seqexec",
         chunks: ["seqexec"]
       })
     ]

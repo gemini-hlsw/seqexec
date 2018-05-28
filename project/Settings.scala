@@ -79,6 +79,7 @@ object Settings {
     val scalaJQuery             = "1.2"
     val scalaJSReactVirtualized = "0.3.0"
     val scalaJSReactClipboard   = "0.3.0"
+    val scalaJSReactDraggable   = "0.1.0"
 
     // Scala libraries
     val catsEffectVersion   = "0.10.1"
@@ -116,6 +117,7 @@ object Settings {
     val ocsVersion       = "2018101.1.1"
     val uglifyJs         = "1.2.4"
     val reactVirtualized = "9.18.5"
+    val reactDraggable   = "3.0.5"
     val reactClipboard   = "5.0.0"
 
     val apacheXMLRPC      = "3.1.3"
@@ -195,6 +197,7 @@ object Settings {
     ))
     val ScalaJSDom              = Def.setting("org.scala-js"                 %%% "scalajs-dom"               % LibraryVersions.scalaDom)
     val ScalaJSReactVirtualized = Def.setting("io.github.cquiroz"            %%% "scalajs-react-virtualized" % LibraryVersions.scalaJSReactVirtualized)
+    val ScalaJSReactDraggable   = Def.setting("io.github.cquiroz"            %%% "scalajs-react-draggable"   % LibraryVersions.scalaJSReactDraggable)
     val ScalaJSReactClipboard   = Def.setting("io.github.cquiroz"            %%% "scalajs-react-clipboard"   % LibraryVersions.scalaJSReactClipboard)
     val JQuery                  = Def.setting("org.querki"                   %%% "jquery-facade"             % LibraryVersions.scalaJQuery)
 
