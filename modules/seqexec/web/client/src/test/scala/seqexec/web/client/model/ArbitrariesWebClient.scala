@@ -92,7 +92,8 @@ trait ArbitrariesWebClient {
         u  <- arbitrary[Option[UserDetails]]
         ws <- arbitrary[WebSocketConnection]
         r  <- arbitrary[Boolean]
-      } yield ClientStatus(u, ws, r)
+        s  <- arbitrary[Boolean]
+      } yield ClientStatus(u, ws, r, s)
     }
 
   implicit val cssCogen: Cogen[ClientStatus] =

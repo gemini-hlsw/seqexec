@@ -37,7 +37,7 @@ object SeqexecWebClient {
 
   def sync(id: SequenceId): Future[SequencesQueue[SequenceId]] =
     Ajax.get(
-      url = s"$baseUrl/sequence/$id",
+      url = s"$baseUrl/commands/$id/sync",
       responseType = "arraybuffer"
     )
     .map(unpickle[SequencesQueue[SequenceId]])

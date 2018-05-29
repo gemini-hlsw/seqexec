@@ -8,7 +8,7 @@ import edu.gemini.pot.sp.SPObservationID
 import seqexec.server.Commands
 import seqexec.server.SeqexecEngine
 import seqexec.server
-import seqexec.model.Model.{ClientID, CloudCover, Conditions, ImageQuality, Observer, Operator, SkyBackground, WaterVapor}
+import seqexec.model.Model.{SequenceId, SequencesQueue, ClientID, CloudCover, Conditions, ImageQuality, Observer, Operator, SkyBackground, WaterVapor}
 import seqexec.model.UserDetails
 import seqexec.web.server.model.CommandsModel._
 import seqexec.web.server.http4s.encoder._
@@ -66,8 +66,15 @@ class SeqexecCommandRoutes(auth: AuthenticationService, inputQueue: server.Event
        newVal <- IO.fromEither(Either.catchNonFatal(bp.toBoolean))
        _      <- se.setBreakpoint(inputQueue, obs, user, step, newVal)
        resp   <- Ok(s"Set breakpoint in step $step of sequence $obsId")
-
      } yield resp
+
+    case GET -> Root / obsId / "sync" as _ =>
+      for {
+        obs   <- IO.fromEither(Either.catchNonFatal(new SPObservationID(obsId)))
+        u     <- se.load(inputQueue, obs)
+        resp  <- u.fold(_ => NotFound(s"Not found sequence $obsId"), _ =>
+          Ok(SequencesQueue[SequenceId](Conditions.default, None, List(obsId))))
+      } yield resp
 
    case POST -> Root / obsId / stepId / "skip" / bp as user =>
      for {

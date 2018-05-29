@@ -3,37 +3,28 @@
 
 package seqexec.web.server.http4s
 
-import java.time.LocalDate
-
 import cats.effect.IO
 import seqexec.model.events._
-import seqexec.server.{SeqexecEngine, executeEngine}
 import seqexec.web.server.security.{AuthenticationConfig, AuthenticationService, LDAPConfig}
-import fs2.async.mutable.{Queue, Topic}
+import fs2.async.mutable.Topic
 import fs2.{Stream, async}
 import org.http4s._
 import org.http4s.syntax.StringSyntax
 import org.scalatest.{FlatSpec, Matchers, NonImplicitAssertions}
 import squants.time._
-
 import scala.concurrent.ExecutionContext.Implicits.global
-import cats.implicits._
 
 @SuppressWarnings(Array("org.wartremover.warts.Throw", "org.wartremover.warts.ImplicitParameter", "org.wartremover.warts.NonUnitStatements", "org.wartremover.warts.Equals", "org.wartremover.warts.OptionPartial"))
 class SeqexecUIApiRoutesSpec extends FlatSpec with Matchers with UriFunctions with StringSyntax with NonImplicitAssertions {
 
   private val config = AuthenticationConfig(devMode = true, Hours(8), "token", "abc", useSSL = false, LDAPConfig(Nil))
-  private val engine = SeqexecEngine(SeqexecEngine.defaultSettings.copy(date = LocalDate.now))
   private val authService = AuthenticationService(config)
-  val inq: Stream[IO, Queue[IO, executeEngine.EventType]] = Stream.eval(async.boundedQueue[IO, executeEngine.EventType](10))
   val out: Stream[IO, Topic[IO, SeqexecEvent]] = Stream.eval(async.topic[IO, SeqexecEvent](NullEvent))
-  val streams: Stream[IO, Queue[IO, executeEngine.EventType]] = inq.concurrently(out)
 
   private val service =
     for {
-      i <- inq
       o <- out
-    } yield new SeqexecUIApiRoutes(true, authService, (i, o), engine).service
+    } yield new SeqexecUIApiRoutes(true, authService, o).service
 
   "SeqexecUIApiRoutes login" should
     "reject requests without body" in {

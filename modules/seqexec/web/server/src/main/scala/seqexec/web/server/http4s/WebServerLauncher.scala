@@ -103,12 +103,12 @@ object WebServerLauncher extends StreamApp[IO] with LogInitialization {
   /**
     * Configures and builds the web server
     */
-  def webServer(as: AuthenticationService, events: (server.EventQueue, Topic[IO, SeqexecEvent]), se: SeqexecEngine): Kleisli[Stream[IO, ?], WebServerConfiguration, StreamApp.ExitCode] = Kleisli { conf =>
+  def webServer(as: AuthenticationService, inputs: server.EventQueue, outputs: Topic[IO, SeqexecEvent], se: SeqexecEngine): Kleisli[Stream[IO, ?], WebServerConfiguration, StreamApp.ExitCode] = Kleisli { conf =>
     val builder = BlazeBuilder[IO].bindHttp(conf.port, conf.host)
       .withWebSockets(true)
       .mountService(new StaticRoutes(conf.devMode, OcsBuildInfo.builtAtMillis).service, "/")
-      .mountService(new SeqexecCommandRoutes(as, events._1, se).service, "/api/seqexec/commands")
-      .mountService(new SeqexecUIApiRoutes(conf.devMode, as, events, se).service, "/api")
+      .mountService(new SeqexecCommandRoutes(as, inputs, se).service, "/api/seqexec/commands")
+      .mountService(new SeqexecUIApiRoutes(conf.devMode, as, outputs).service, "/api")
     conf.sslConfig.fold(builder) { ssl =>
       val storeInfo = StoreInfo(ssl.keyStore, ssl.keyStorePwd)
       builder.withSSL(storeInfo, ssl.certPwd, "TLS")
@@ -172,7 +172,7 @@ object WebServerLauncher extends StreamApp[IO] with LogInitialization {
         as <- authService.run(ac)
         _  <- logStart.run(wc)
         _  <- logToClients(out)
-      } yield Stream(redirectWebServer.run(wc), webServer(as, (in, out), et).run(wc)).join(2)
+      } yield Stream(redirectWebServer.run(wc), webServer(as, in, out, et).run(wc)).join(2)
 
     // I have taken this from the examples at:
     // https://github.com/gvolpe/advanced-http4s/blob/master/src/main/scala/com/github/gvolpe/fs2/PubSub.scala
