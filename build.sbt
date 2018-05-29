@@ -320,7 +320,7 @@ lazy val seqexec_engine = project
   )
 
 lazy val acm = project
-  .in(file("modules/edu.gemini.epics.acm"))
+  .in(file("modules/acm"))
   .enablePlugins(AutomateHeaderPlugin)
   .settings(commonSettings: _*)
   .settings(
