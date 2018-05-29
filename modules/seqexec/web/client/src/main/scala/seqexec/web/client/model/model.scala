@@ -171,12 +171,21 @@ object model {
                             resourceConflict: ResourcesConflict,
                             globalLog: GlobalLog,
                             sequencesOnDisplay: SequencesOnDisplay,
+                            syncInProgress: Boolean,
                             firstLoad: Boolean)
 
   object SeqexecUIModel {
     val noSequencesLoaded: SequencesQueue[SequenceView] = SequencesQueue[SequenceView](Conditions.default, None, Nil)
-    val initial: SeqexecUIModel = SeqexecUIModel(Pages.Root, None, noSequencesLoaded,
-      SectionClosed, ResourcesConflict(SectionClosed, None), GlobalLog(FixedLengthBuffer.unsafeFromInt(500), SectionClosed), SequencesOnDisplay.empty, firstLoad = true)
+    val initial: SeqexecUIModel = SeqexecUIModel(
+      Pages.Root,
+      None,
+      noSequencesLoaded,
+      SectionClosed,
+      ResourcesConflict(SectionClosed, None),
+      GlobalLog(FixedLengthBuffer.unsafeFromInt(500), SectionClosed),
+      SequencesOnDisplay.empty,
+      syncInProgress = false,
+      firstLoad = true)
   }
 
   /**

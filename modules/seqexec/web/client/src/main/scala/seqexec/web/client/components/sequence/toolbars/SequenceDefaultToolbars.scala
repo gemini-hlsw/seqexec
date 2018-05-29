@@ -28,7 +28,6 @@ object SequenceControl {
   final case class Props(p: ModelProxy[SequenceControlFocus])
   final case class State(runRequested: Boolean, pauseRequested: Boolean, syncRequested: Boolean, cancelPauseRequested: Boolean) {
     val canRun: Boolean = !runRequested && !pauseRequested && !syncRequested
-    val canSync: Boolean = canRun
     val canPause: Boolean = !pauseRequested && !syncRequested
     val canCancelPause: Boolean = !pauseRequested && !syncRequested
     val canResume: Boolean = !pauseRequested && !syncRequested && !runRequested
@@ -73,8 +72,9 @@ object SequenceControl {
   private def component = ScalaComponent.builder[Props]("SequencesDefaultToolbar")
     .initialState(State.Zero)
     .renderPS { ($, p, s) =>
-      val SequenceControlFocus(isLogged, isConnected, control) = p.p()
+      val SequenceControlFocus(isLogged, isConnected, control, syncInProgress) = p.p()
       val allowedToExecute = isLogged && isConnected
+      val canSync = !syncInProgress && !s.syncRequested
       <.div(
         control.whenDefined { m =>
           val ControlModel(id, isPartiallyExecuted, nextStep, status, inConflict) = m
@@ -83,7 +83,7 @@ object SequenceControl {
           val runContinueButton = s"${isPartiallyExecuted.fold("Continue", "Run")} from step $nextStepToRun"
           List(
             // Sync button
-            controlButton(IconRefresh, "purple", $.runState(requestSync(id)), (!allowedToExecute || !s.canSync) && !inConflict, "Sync sequence", "Sync")
+            controlButton(IconRefresh, "purple", $.runState(requestSync(id)), (!allowedToExecute || !canSync) && !inConflict, "Sync sequence", "Sync")
               .when(status.isIdle || status.isError),
             // Run button
             controlButton(IconPlay, "blue", $.runState(requestRun(id)), (!allowedToExecute || !s.canRun) && !inConflict, runContinueTooltip, runContinueButton)
@@ -101,7 +101,8 @@ object SequenceControl {
         }
       )
     }.componentWillReceiveProps { f =>
-      // Update state of run requested depending on the run state
+      // Update state of run requested and sync requested depending on the run state
+      Callback.when(!f.nextProps.p().syncInProgress && f.state.syncRequested)(f.modState(_.copy(syncRequested = false))) *>
       Callback.when(f.nextProps.p().control.map(_.status).exists(_.isRunning) && f.state.runRequested)(f.modState(_.copy(runRequested = false)))
     }.build
 

@@ -127,7 +127,7 @@ object handlers {
    */
   class InitialSyncHandler[M](modelRW: ModelRW[M, InitialSyncFocus]) extends ActionHandler(modelRW) with Handlers {
     def runningSequence(s: SeqexecModelUpdate): Option[SequenceView] =
-          s.view.queue.filter(_.status.isRunning).sortBy(_.id).headOption
+      s.view.queue.filter(_.status.isRunning).sortBy(_.id).headOption
 
     def handle: PartialFunction[Any, ActionResult[M]] = {
       // If there is a running sequence update the page to go there
@@ -175,6 +175,28 @@ object handlers {
   }
 
   /**
+  * Handles actions requesting sync
+  */
+  class SyncRequestsHandler[M](modelRW: ModelRW[M, Boolean]) extends ActionHandler(modelRW) with Handlers {
+    def handleSyncRequestOperation: PartialFunction[Any, ActionResult[M]] = {
+      case RequestSync(s) =>
+        updated(true, Effect(SeqexecWebClient.sync(s).map(r => if (r.queue.isEmpty) RunSyncFailed(s) else RunSync(s))))
+    }
+
+    def handleSyncResult: PartialFunction[Any, ActionResult[M]] = {
+      case RunSyncFailed(_) =>
+        updated(false)
+
+      case RunSync(_) =>
+        updated(false)
+    }
+
+    override def handle: PartialFunction[Any, ActionResult[M]] =
+      List(handleSyncRequestOperation,
+        handleSyncResult).combineAll
+  }
+
+  /**
   * Handles actions requesting results
   */
   class RemoteRequestsHandler[M](modelRW: ModelRW[M, Option[ClientID]]) extends ActionHandler(modelRW) with Handlers {
@@ -182,9 +204,6 @@ object handlers {
       case RequestRun(s) =>
         val effect = value.map(clientId => Effect(SeqexecWebClient.run(s, clientId).map(r => if (r.error) RunStartFailed(s) else RunStarted(s)))).getOrElse(VoidEffect)
         effectOnly(effect)
-
-      case RequestSync(s) =>
-        effectOnly(Effect(SeqexecWebClient.sync(s).map(r => if (r.queue.isEmpty) RunSyncFailed(s) else RunSync(s))))
 
       case RequestPause(s) =>
         effectOnly(Effect(SeqexecWebClient.pause(s).map(r => if (r.error) RunPauseFailed(s) else RunPaused(s))))

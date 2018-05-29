@@ -26,14 +26,14 @@ object circuit {
   /**
     * Utility class to let components more easily switch parts of the UI depending on the context
     */
-  final case class ClientStatus(u: Option[UserDetails], w: WebSocketConnection, anySelected: Boolean) extends UseValueEq {
+  final case class ClientStatus(u: Option[UserDetails], w: WebSocketConnection, anySelected: Boolean, syncInProgress: Boolean) extends UseValueEq {
     def isLogged: Boolean = u.isDefined
     def isConnected: Boolean = w.ws.isReady
   }
 
   object ClientStatus {
     implicit val eq: Eq[ClientStatus] =
-      Eq.by (x => (x.u, x.w, x.anySelected))
+      Eq.by (x => (x.u, x.w, x.anySelected, x.syncInProgress))
   }
 
   // All these classes are focused views of the root model. They are used to only update small sections of the
@@ -54,7 +54,7 @@ object circuit {
   final case class StepsTableFocus(id: SequenceId, instrument: Instrument, state: SequenceState, steps: List[Step], stepConfigDisplayed: Option[Int], nextStepToRun: Option[Int]) extends UseValueEq
   final case class StepsTableAndStatusFocus(status: ClientStatus, stepsTable: Option[StepsTableFocus]) extends UseValueEq
   final case class ControlModel(id: SequenceId, isPartiallyExecuted: Boolean, nextStepToRun: Option[Int], status: SequenceState, inConflict: Boolean) extends UseValueEq
-  final case class SequenceControlFocus(isLogged: Boolean, isConnected: Boolean, control: Option[ControlModel]) extends UseValueEq
+  final case class SequenceControlFocus(isLogged: Boolean, isConnected: Boolean, control: Option[ControlModel], syncInProgress: Boolean) extends UseValueEq
 
   /**
    * Diode processor to log some of the action to aid in debugging
@@ -118,6 +118,7 @@ object circuit {
     private val operatorHandler          = new OperatorHandler(zoomTo(_.uiModel.sequences.operator))
     private val syncToAddedHandler       = new SyncToAddedRemovedRun(zoomTo(_.uiModel.navLocation))
     private val remoteRequestsHandler    = new RemoteRequestsHandler(zoomTo(_.clientId))
+    private val syncRequestsHandler      = new SyncRequestsHandler(zoomTo(_.uiModel.syncInProgress))
 
     override protected def initialModel = SeqexecAppRootModel.initial
 
@@ -133,14 +134,14 @@ object circuit {
       }
 
     // Reader to indicate the allowed interactions
-    val statusReader: ModelR[SeqexecAppRootModel, ClientStatus] = zoom(m => ClientStatus(m.uiModel.user, m.ws, m.uiModel.sequencesOnDisplay.isAnySelected))
+    val statusReader: ModelR[SeqexecAppRootModel, ClientStatus] = zoom(m => ClientStatus(m.uiModel.user, m.ws, m.uiModel.sequencesOnDisplay.isAnySelected, m.uiModel.syncInProgress))
 
     // Reader to contain the sequence in conflict
     val sequenceInConflictReader: ModelR[SeqexecAppRootModel, Option[SequenceId]] = zoomTo(_.uiModel.resourceConflict.id)
 
     // Reader for sequences on display
     val headerSideBarReader: ModelR[SeqexecAppRootModel, HeaderSideBarFocus] =
-      zoom(c => HeaderSideBarFocus(ClientStatus(c.uiModel.user, c.ws, c.uiModel.sequencesOnDisplay.isAnySelected), c.uiModel.sequences.conditions, c.uiModel.sequences.operator))
+      zoom(c => HeaderSideBarFocus(ClientStatus(c.uiModel.user, c.ws, c.uiModel.sequencesOnDisplay.isAnySelected, c.uiModel.syncInProgress), c.uiModel.sequences.conditions, c.uiModel.sequences.operator))
 
     val logDisplayedReader: ModelR[SeqexecAppRootModel, SectionVisibilityState] =
       zoom(_.uiModel.globalLog.display)
@@ -186,7 +187,7 @@ object circuit {
     def sequenceControlReader(i: Instrument): ModelR[SeqexecAppRootModel, SequenceControlFocus] =
       sequenceInConflictReader.zip(statusReader.zip(instrumentTab(i))).zoom {
         case (inConflict, (status, InstrumentTabActive(tab, _))) =>
-          SequenceControlFocus(status.isLogged, status.isConnected, tab.sequence.map(s => ControlModel(s.id, s.isPartiallyExecuted, s.nextStepToRun, s.status, inConflict.exists(_ === s.id))))
+          SequenceControlFocus(status.isLogged, status.isConnected, tab.sequence.map(s => ControlModel(s.id, s.isPartiallyExecuted, s.nextStepToRun, s.status, inConflict.exists(_ === s.id))), status.syncInProgress)
       }
 
     // Reader for a specific sequence if available
@@ -213,6 +214,7 @@ object circuit {
       conditionsHandler,
       operatorHandler,
       remoteRequestsHandler,
+      syncRequestsHandler,
       navigationHandler)
 
     /**
