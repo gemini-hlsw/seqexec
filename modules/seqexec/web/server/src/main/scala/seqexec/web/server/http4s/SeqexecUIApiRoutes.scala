@@ -8,18 +8,14 @@ import java.util.UUID
 import cats.data.NonEmptyList
 import cats.effect.IO
 import cats.implicits._
-import edu.gemini.pot.sp.SPObservationID
-import seqexec.model.Model.{ClientID, Conditions, SequenceId, SequencesQueue}
+import seqexec.model.Model.ClientID
 import seqexec.model._
 import seqexec.model.ModelBooPicklers.trimmedArray
 import seqexec.model.events._
-import seqexec.server
-import seqexec.server.SeqexecEngine
 import seqexec.web.server.http4s.encoder._
 import seqexec.web.server.security.AuthenticationService.AuthResult
 import seqexec.web.server.security.{AuthenticationService, Http4sAuthentication, TokenRefresher}
 import seqexec.web.common.LogMessage
-import edu.gemini.spModel.core.SPBadIDException
 import fs2.async.mutable.Topic
 import fs2.{Scheduler, Sink, Stream}
 import org.http4s._
@@ -29,7 +25,6 @@ import org.http4s.server.websocket.WebSocketBuilder
 import org.http4s.websocket.WebsocketBits._
 import org.http4s.headers.`WWW-Authenticate`
 import org.log4s._
-
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.math._
@@ -37,15 +32,13 @@ import scala.math._
 /**
   * Rest Endpoints under the /api route
   */
-class SeqexecUIApiRoutes(devMode: Boolean, auth: AuthenticationService, events: (server.EventQueue, Topic[IO, SeqexecEvent]), se: SeqexecEngine) extends BooEncoders with ModelLenses {
+class SeqexecUIApiRoutes(devMode: Boolean, auth: AuthenticationService, engineOutput: Topic[IO, SeqexecEvent]) extends BooEncoders with ModelLenses {
 
   // Logger for client messages
   private val clientLog = getLogger
 
   // Handles authentication
   private val httpAuthentication = new Http4sAuthentication(auth)
-
-  private val (inputQueue, engineOutput) = events
 
   /**
     * Creates a process that sends a ping every second to keep the connection alive
@@ -128,19 +121,6 @@ class SeqexecUIApiRoutes(devMode: Boolean, auth: AuthenticationService, events: 
               (pingStream.mergeHaltBoth(engineOutput.subscribe(1).map(anonymizeF).filter(filterOutNull).filter(filterOutOnClientId(clientId)).map(v => Binary(trimmedArray(v))))), Sink(_ => IO.unit))
         } yield ws
 
-      case GET -> Root / "seqexec" / "sequence" / oid as user =>
-        user.toOption.fold(Unauthorized(`WWW-Authenticate`(NonEmptyList.of(Challenge("jwt", "seqexec"))))) { _ =>
-          for {
-            obsId <- IO.fromEither(Either.catchNonFatal(new SPObservationID(oid)))
-            u     <- se.load(inputQueue, obsId)
-            resp  <- u.fold(_ => NotFound(s"Not found sequence $oid"), _ =>
-              Ok(SequencesQueue[SequenceId](Conditions.default, None, List(oid))))
-          } yield resp
-        }.attempt.flatMap {
-          case Left(_: SPBadIDException) => BadRequest(s"Bad sequence id $oid")
-          case Left(r) => IO.raiseError(r)
-          case Right(r) => IO.pure(r)
-        }
     }
 
   def service: HttpService[IO] = publicService <+> TokenRefresher(GZip(httpAuthentication.optAuth(protectedServices)), httpAuthentication)

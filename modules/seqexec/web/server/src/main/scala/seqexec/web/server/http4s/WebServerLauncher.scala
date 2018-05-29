@@ -108,7 +108,7 @@ object WebServerLauncher extends StreamApp[IO] with LogInitialization {
       .withWebSockets(true)
       .mountService(new StaticRoutes(conf.devMode, OcsBuildInfo.builtAtMillis).service, "/")
       .mountService(new SeqexecCommandRoutes(as, events._1, se).service, "/api/seqexec/commands")
-      .mountService(new SeqexecUIApiRoutes(conf.devMode, as, events, se).service, "/api")
+      .mountService(new SeqexecUIApiRoutes(conf.devMode, as, events._2).service, "/api")
     conf.sslConfig.fold(builder) { ssl =>
       val storeInfo = StoreInfo(ssl.keyStore, ssl.keyStorePwd)
       builder.withSSL(storeInfo, ssl.certPwd, "TLS")
