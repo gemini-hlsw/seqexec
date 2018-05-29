@@ -1,4 +1,5 @@
 import com.typesafe.sbt.packager.docker._
+import sbtcrossproject.{crossProject, CrossType}
 
 lazy val circeVersion         = "0.9.3"
 lazy val attoVersion          = "0.6.2"
@@ -12,7 +13,7 @@ lazy val http4sVersion        = "0.18.9"
 lazy val jwtVersion           = "0.16.0"
 lazy val kpVersion            = "0.9.6"
 lazy val monocleVersion       = "1.5.1-cats"
-lazy val mouseVersion         = "0.16"
+lazy val mouseVersion         = "0.17"
 lazy val paradiseVersion      = "2.1.1"
 lazy val scalaCheckVersion    = "1.13.5"
 lazy val scalaParsersVersion  = "1.1.0"
@@ -200,7 +201,7 @@ lazy val gem = project
   .settings(commonSettings)
   .aggregate(coreJVM, coreJS, db, json, ocs2, ephemeris, service, telnetd, ctl, web, sql, main, ui)
 
-lazy val core = crossProject
+lazy val core = crossProject(JVMPlatform, JSPlatform)
   .crossType(CrossType.Full)
   .in(file("modules/core"))
   .settings(commonSettings)
