@@ -136,8 +136,8 @@ object handlers {
       case ServerMessage(s: SeqexecModelUpdate) if runningSequence(s).isDefined && value.firstLoad =>
         val running = runningSequence(s)
         running.fold(updated(value.copy(firstLoad = true))) { f =>
-          val seq = RefTo(new RootModelR(running))
-          updated(value.copy(location = SequencePage(f.metadata.instrument, f.id, f.progress.last), sod = value.sod.focusOnSequence(seq)))
+          // val seq = RefTo(new RootModelR(running))
+          updated(value.copy(location = SequencePage(f.metadata.instrument, f.id, f.progress.last)))//, sod = value.sod.focusOnSequence(seq)))
         }
 
       // Otherwise, update the model to reflect the current page
@@ -148,20 +148,21 @@ object handlers {
         value.location match {
           case SequencePage(_, id, _) if sids.contains(id)                 =>
             // We are on a sequence page, update the model
-            val seq = RefTo(new RootModelR(s.view.queue.find(_.id === id)))
+            // val seq = RefTo(new RootModelR(s.view.queue.find(_.id === id)))
             // We need to effect to update the reference
             val effect = Effect(Future(SelectIdToDisplay(id)))
-            updated(value.copy(sod = value.sod.focusOnSequence(seq), firstLoad = false), effect)
+            updated(value.copy(/*sod = value.sod.focusOnSequence(seq), */firstLoad = false), effect)
 
           case InstrumentPage(instrument) if instruments.contains(instrument) =>
             // We are on a page for an instrument and we have sequences, let's go to the first one and change page
             val first = s.view.queue.filter(_.metadata.instrument == instrument).sortBy(_.id).headOption
             first.fold(updated(value.copy(firstLoad = false))) { f =>
-              val seq = RefTo(new RootModelR(first))
+              // val seq = RefTo(new RootModelR(first))
               val firstStep = f.progress.last
               // We need to effect to update the reference
               val effect = Effect(Future(SelectIdToDisplay(f.id)))
-              updated(value.copy(location = SequencePage(f.metadata.instrument, f.id, firstStep), sod = value.sod.focusOnSequence(seq), firstLoad = false), effect)
+              // updated(value.copy(location = SequencePage(f.metadata.instrument, f.id, firstStep), sod = value.sod.focusOnSequence(seq), firstLoad = false), effect)
+              updated(value.copy(location = SequencePage(f.metadata.instrument, f.id, firstStep), firstLoad = false), effect)
             }
 
           case SequenceConfigPage(_, id, step) if sids.contains(id)           =>
@@ -330,12 +331,14 @@ object handlers {
     */
   class SequenceDisplayHandler[M](modelRW: ModelRW[M, (SequencesOnDisplay, Option[Site])]) extends ActionHandler(modelRW) with Handlers {
     def handleSelectSequenceDisplay: PartialFunction[Any, ActionResult[M]] = {
-      case SelectInstrumentToDisplay(i) =>
-        updated(value.copy(_1 = value._1.focusOnInstrument(i)))
+      case SelectInstrumentToDisplay(_) =>
+        noChange
+        // updated(value.copy(_1 = value._1.focusOnInstrument(i)))
 
-      case SelectIdToDisplay(id) =>
-        val seq = SeqexecCircuit.sequenceRef(id)
-        updated(value.copy(_1 = value._1.focusOnSequence(seq)))
+      case SelectIdToDisplay(_) =>
+        // val seq = SeqexecCircuit.sequenceRef(id)
+        // updated(value.copy(_1 = value._1.focusOnSequence(seq)))
+        noChange
 
     }
 
@@ -344,18 +347,18 @@ object handlers {
         updated(value.copy(_1 = value._1.withSite(site), _2 = Some(site)))
     }
 
-    def handleShowHideStep: PartialFunction[Any, ActionResult[M]] = {
-      case ShowStepConfig(id, step)         =>
-        val seq = SeqexecCircuit.sequenceRef(id)
-        updated(value.copy(_1 = value._1.focusOnSequence(seq).showStepConfig(step - 1)))
-
-      case HideStepConfig(instrument) =>
-        if (value._1.instrumentSequences.focus.sequence.exists(_.metadata.instrument == instrument)) {
-          updated(value.copy(_1 = value._1.hideStepConfig))
-        } else {
-          noChange
-        }
-    }
+    // def handleShowHideStep: PartialFunction[Any, ActionResult[M]] = {
+    //   case ShowStepConfig(id, step)         =>
+    //     val seq = SeqexecCircuit.sequenceRef(id)
+    //     updated(value.copy(_1 = value._1.focusOnSequence(seq).showStepConfig(step - 1)))
+    //
+    //   case HideStepConfig(instrument) =>
+    //     if (value._1.instrumentSequences.focus.sequence.exists(_.metadata.instrument == instrument)) {
+    //       updated(value.copy(_1 = value._1.hideStepConfig))
+    //     } else {
+    //       noChange
+    //     }
+    // }
 
     def handleRememberCompleted: PartialFunction[Any, ActionResult[M]] = {
       case RememberCompleted(s) =>
@@ -365,7 +368,7 @@ object handlers {
     override def handle: PartialFunction[Any, ActionResult[M]] =
       List(handleSelectSequenceDisplay,
         handleInitialize,
-        handleShowHideStep,
+        // handleShowHideStep,
         handleRememberCompleted).combineAll
   }
 
@@ -381,13 +384,16 @@ object handlers {
   }
 
   /**
-   * Handles updates to the clientsModel
+   * Handles updates to the selected sequences set
    */
-  class ClientsModelHandler[M](modelRW: ModelRW[M, Unit]) extends ActionHandler(modelRW) with Handlers {
+  class ClientsModelHandler[M](modelRW: ModelRW[M, SequencesOnDisplay]) extends ActionHandler(modelRW) with Handlers {
     override def handle: PartialFunction[Any, ActionResult[M]] = {
+      case ServerMessage(SelectedSequenceUpdated(svs)) =>
+        println(svs.selected)
+        noChange
+
       case LoadSequence(i, id) =>
-        println("LOAD ")
-        effectOnly(Effect(SeqexecWebClient.loadSequence(i, id).map(_ => NoAction)))
+        effectOnly(Effect(SeqexecWebClient.loadSequence(i, id).map(r => if (r.error) NoAction else NoAction)))
     }
   }
 

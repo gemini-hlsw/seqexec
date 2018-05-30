@@ -130,7 +130,7 @@ class SeqexecUIApiRoutes(site: String, devMode: Boolean, auth: AuthenticationSer
           Stream.emit(Binary(trimmedArray(ConnectionOpenEvent(user.toOption, clientId): SeqexecEvent)))
 
         def engineEvents(clientId: ClientID): Stream[IO, WebSocketFrame]  =
-          engineOutput.subscribe(1).map(anonymizeF).filter(filterOutNull).filter(filterOutOnClientId(clientId)).through(x => {println(x);x}).map(v => Binary(trimmedArray(v)))
+          engineOutput.subscribe(1).map(anonymizeF).filter(filterOutNull).filter(filterOutOnClientId(clientId)).map(v => Binary(trimmedArray(v)))
 
         // We don't care about messages sent over ws by clients
         val clientEventsSink: Sink[IO, WebSocketFrame] = Sink(_ => IO.unit)

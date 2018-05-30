@@ -185,7 +185,7 @@ object Icon {
   // val IconShareAlternateSquare: Icon  = Icon("share alternate square")
   // val IconShare: Icon                 = Icon("share")
   // val IconShareSquare: Icon           = Icon("share square")
-  // val IconSignIn: Icon                = Icon("sign in")
+  val IconSignIn: Icon                = Icon("sign in")
   val IconSignOut: Icon               = Icon("sign out")
   // val IconTheme: Icon                 = Icon("theme")
   // val IconTranslate: Icon             = Icon("translate")

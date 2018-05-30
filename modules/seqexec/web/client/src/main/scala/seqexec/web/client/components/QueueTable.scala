@@ -26,12 +26,15 @@ import seqexec.web.client.circuit._
 import seqexec.web.client.actions._
 import seqexec.web.client.model.Pages._
 import seqexec.web.client.ModelOps._
-import seqexec.web.client.services.HtmlConstants.iconEmpty
+// import seqexec.web.client.services.HtmlConstants.iconEmpty
+import seqexec.web.client.semanticui.{Size => SSize}
+import seqexec.web.client.semanticui.elements.button.Button
 import seqexec.web.client.semanticui.elements.icon.Icon.{
   IconAttention,
   IconCheckmark,
   IconCircleNotched,
-  IconSelectedRadio
+  IconSelectedRadio,
+  IconSignIn
 }
 import web.client.style._
 import web.client.utils._
@@ -42,7 +45,7 @@ object QueueTableBody {
 
   private val PhoneCut                 = 400
   private val LargePhoneCut            = 570
-  private val IconColumnWidth          = 20
+  private val IconColumnWidth          = 25
   private val ObsIdColumnWidth         = 140
   private val StateColumnWidth         = 80
   private val InstrumentColumnWidth    = 80
@@ -341,15 +344,19 @@ object QueueTableBody {
 
   private def showSequence(p: Props,
                            i: Instrument,
-                           id: Observation.Id): Callback =
+                           id: Observation.Id)(e: ReactEvent): Callback =
     // Request to display the selected sequence
-    p.sequences.dispatchCB(NavigateTo(SequencePage(i, id, 0)))
+    //p.sequences.dispatchCB(NavigateTo(SequencePage(i, id, 0)))
+    // prevent default to avoid the link jumping
+    e.preventDefault
+    p.sequences.dispatchCB(LoadSequence(i, id))
+  }
 
   private def linkTo(p: Props, page: SequencePage)(mod: TagMod*) =
     <.a(
       ^.href := p.ctl.urlFor(page).value,
-      ^.onClick --> showSequence(p, page.instrument, page.obsId),
-      p.ctl.setOnLinkClick(page),
+      ^.onClick ==> showSequence(p, page.instrument, page.obsId),
+      // p.ctl.setOnLinkClick(page),
       mod.toTagMod
     )
 
@@ -407,7 +414,8 @@ object QueueTableBody {
             if (row.active)
               IconSelectedRadio.copyIcon(fitted = true,
                                          extraStyles = List(SeqexecStyles.selectedIcon))
-            else iconEmpty
+            else
+              Button(Button.Props(size = SSize.Large, compact = true, icon = Some(IconSignIn), onClick = Callback.log("Here")))
         }
 
       val page = SequencePage(row.instrument, row.obsId, 0)

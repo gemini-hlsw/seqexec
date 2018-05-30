@@ -128,6 +128,7 @@ object circuit {
     private val syncRequestsHandler      = new SyncRequestsHandler(zoomTo(_.uiModel.syncInProgress))
     private val debuggingHandler         = new DebuggingHandler(zoomTo(_.uiModel.sequences))
     private val stepConfigStateHandler   = new StepConfigTableStateHandler(tableStateRW)
+    private val clientsModelHandler      = new ClientsModelHandler(zoomTo(_.uiModel.sequencesOnDisplay))
 
     override protected def initialModel = SeqexecAppRootModel.initial
 
@@ -216,7 +217,7 @@ object circuit {
 
     override protected def actionHandler = composeHandlers(
       wsHandler,
-      foldHandlers(wsEventsHandler, syncToAddedHandler, initialSyncHandler),
+      foldHandlers(wsEventsHandler, syncToAddedHandler, initialSyncHandler, clientsModelHandler),
       sequenceExecHandler,
       resourcesBoxHandler,
       resourcesConflictHandler,
