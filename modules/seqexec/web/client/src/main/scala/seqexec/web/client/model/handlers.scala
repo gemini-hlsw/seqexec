@@ -381,6 +381,17 @@ object handlers {
   }
 
   /**
+   * Handles updates to the clientsModel
+   */
+  class ClientsModelHandler[M](modelRW: ModelRW[M, Unit]) extends ActionHandler(modelRW) with Handlers {
+    override def handle: PartialFunction[Any, ActionResult[M]] = {
+      case LoadSequence(id) =>
+        println("LOAD ")
+        effectOnly(Effect(SeqexecWebClient.loadSequence(id).map(_ => NoAction)))
+    }
+  }
+
+  /**
    * Handles updates to conditions
    */
   class ConditionsHandler[M](modelRW: ModelRW[M, Conditions]) extends ActionHandler(modelRW) with Handlers {

@@ -37,6 +37,9 @@ class SeqexecUIApiRoutes(site: String, devMode: Boolean, auth: AuthenticationSer
   // Logger for client messages
   private val clientLog = getLogger
 
+  private val unauthorized =
+    Unauthorized(`WWW-Authenticate`(NonEmptyList.of(Challenge("jwt", "seqexec"))))
+
   // Handles authentication
   private val httpAuthentication = new Http4sAuthentication(auth)
 
@@ -61,7 +64,7 @@ class SeqexecUIApiRoutes(site: String, devMode: Boolean, auth: AuthenticationSer
             // if successful set a cookie
             httpAuthentication.loginCookie(user) >>= { cookie => Ok(user).map(_.addCookie(cookie)) }
           case Left(_) =>
-            Unauthorized(`WWW-Authenticate`(NonEmptyList.of(Challenge("jwt", "seqexec"))))
+            unauthorized
         }
       }
 
@@ -103,26 +106,41 @@ class SeqexecUIApiRoutes(site: String, devMode: Boolean, auth: AuthenticationSer
 
       case GET -> Root / "seqexec" / "events" as user        =>
         // Stream seqexec events to clients and a ping
-        def anonymize(e: SeqexecEvent) = {
-            // Hide the name and target name for anonymous users
-            (telescopeTargetNameT.set("*****") andThen observeTargetNameT.set("*****") andThen sequenceNameT.set(""))(e)
-        }
+        def anonymize(e: SeqexecEvent) =
+          // Hide the name and target name for anonymous users
+          (telescopeTargetNameT.set("*****") andThen observeTargetNameT.set("*****") andThen sequenceNameT.set(""))(e)
+
+        // Filter out NullEvents from the engine
         def filterOutNull = (e: SeqexecEvent) => e match {
           case NullEvent => false
           case _         => true
         }
+
+        // Messages with a clientId are only sent to the matching cliend
         def filterOutOnClientId(clientId: ClientID) = (e: SeqexecEvent) => e match {
           case e: ForClient if e.clientId =!= clientId => false
           case _                                       => true
         }
+
         // If the user didn't login, anonymize
         val anonymizeF: SeqexecEvent => SeqexecEvent = user.fold(_ => anonymize _, _ => identity _)
         // Create a client specific process
+
+        def initialEvent(clientId: ClientID): Stream[IO, WebSocketFrame] =
+          Stream.emit(Binary(trimmedArray(ConnectionOpenEvent(user.toOption, clientId): SeqexecEvent)))
+
+        def engineEvents(clientId: ClientID): Stream[IO, WebSocketFrame]  =
+          engineOutput.subscribe(1).map(anonymizeF).filter(filterOutNull).filter(filterOutOnClientId(clientId)).through(x => {println(x);x}).map(v => Binary(trimmedArray(v)))
+
+        // We don't care about messages sent over ws by clients
+        val clientEventsSink: Sink[IO, WebSocketFrame] = Sink(_ => IO.unit)
+
+        // Create a client specific websocket
         for {
           clientId <- IO.apply(UUID.randomUUID())
-          ws       <-
-            WebSocketBuilder[IO].build(Stream.emit(Binary(trimmedArray(ConnectionOpenEvent(user.toOption, clientId)))) ++
-              (pingStream.mergeHaltBoth(engineOutput.subscribe(1).map(anonymizeF).filter(filterOutNull).filter(filterOutOnClientId(clientId)).map(v => Binary(trimmedArray(v))))), Sink(_ => IO.unit))
+          initial  = initialEvent(clientId)
+          streams  = pingStream.mergeHaltBoth(engineEvents(clientId))
+          ws       <- WebSocketBuilder[IO].build(initial ++ streams, clientEventsSink)
         } yield ws
 
     }
