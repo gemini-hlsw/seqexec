@@ -385,9 +385,9 @@ object handlers {
    */
   class ClientsModelHandler[M](modelRW: ModelRW[M, Unit]) extends ActionHandler(modelRW) with Handlers {
     override def handle: PartialFunction[Any, ActionResult[M]] = {
-      case LoadSequence(id) =>
+      case LoadSequence(i, id) =>
         println("LOAD ")
-        effectOnly(Effect(SeqexecWebClient.loadSequence(id).map(_ => NoAction)))
+        effectOnly(Effect(SeqexecWebClient.loadSequence(i, id).map(_ => NoAction)))
     }
   }
 
