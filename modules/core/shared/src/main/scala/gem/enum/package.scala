@@ -94,8 +94,8 @@ package object enum extends ToPrismOps {
   implicit class AsterismTypeOps(val value: AsterismType.type) extends AnyVal {
     def of(a: Asterism): AsterismType =
       a match {
-        case _: Asterism.SingleTarget => AsterismType.SingleTarget
-        case _: Asterism.DualTarget   => AsterismType.GhostDualTarget
+        case _: Asterism.SingleTarget    => AsterismType.SingleTarget
+        case _: Asterism.GhostDualTarget => AsterismType.GhostDualTarget
       }
   }
 
@@ -104,6 +104,7 @@ package object enum extends ToPrismOps {
    * @group Enrichment
    */
   implicit class InstrumentOps(val value: Instrument.type) extends AnyVal {
+
     def forStep(s: Step): Instrument =
       s match {
         case Step.Phoenix(_, _)    => Instrument.Phoenix
@@ -123,6 +124,27 @@ package object enum extends ToPrismOps {
         case Step.Flamingos2(_, _) => Instrument.Flamingos2
         case Step.Ghost(_, _)      => Instrument.Ghost
       }
+
+    def forAsterism(a: Asterism): Instrument =
+      a match {
+        case Asterism.Phoenix(_)            => Instrument.Phoenix
+        case Asterism.Michelle(_)           => Instrument.Michelle
+        case Asterism.Gnirs(_)              => Instrument.Gnirs
+        case Asterism.Niri(_)               => Instrument.Niri
+        case Asterism.Trecs(_)              => Instrument.Trecs
+        case Asterism.Nici(_)               => Instrument.Nici
+        case Asterism.Nifs(_)               => Instrument.Nifs
+        case Asterism.Gpi(_)                => Instrument.Gpi
+        case Asterism.Gsaoi(_)              => Instrument.Gsaoi
+        case Asterism.GmosS(_)              => Instrument.GmosS
+        case Asterism.AcqCam(_)             => Instrument.AcqCam
+        case Asterism.GmosN(_)              => Instrument.GmosN
+        case Asterism.Bhros(_)              => Instrument.Bhros
+        case Asterism.Visitor(_)            => Instrument.Visitor
+        case Asterism.Flamingos2(_)         => Instrument.Flamingos2
+        case Asterism.GhostDualTarget(_, _) => Instrument.Ghost
+      }
+
   }
 
 }

@@ -22,14 +22,14 @@ object AsterismDao {
 
   def insert(oid: Observation.Id, a: Asterism): ConnectionIO[Unit] =
     a match {
-      case a: Asterism.SingleTarget[_] => insertSingleTarget(oid, a)
-      case a: Asterism.GhostDualTarget => insertGhostDualTarget(oid, a)
+      case a: Asterism.SingleTarget => insertSingleTarget(oid, a)
+      case a: Asterism.GhostDualTarget => insertDualTarget(oid, a)
     }
 
   def select(oid: Observation.Id, t: AsterismType): ConnectionIO[Option[Asterism]] =
     t match {
       case AsterismType.SingleTarget    => selectSingleTarget(oid)
-      case AsterismType.GhostDualTarget => selectGhostDualTarget(oid)
+      case AsterismType.GhostDualTarget => selectDualTarget(oid)
     }
 
   def selectAll(pid: Program.Id, t: AsterismType): ConnectionIO[TreeMap[Index, Asterism]] =
@@ -38,26 +38,49 @@ object AsterismDao {
       case AsterismType.GhostDualTarget => TreeMap.empty[Index, Asterism].pure[ConnectionIO]
     }
 
-  def insertSingleTarget[I <: Instrument with Singleton](oid: Observation.Id, a: Asterism.SingleTarget[I]): ConnectionIO[Unit] =
+  def insertSingleTarget(oid: Observation.Id, a: Asterism.SingleTarget): ConnectionIO[Unit] =
     for {
       t <- TargetDao.insert(a.target)
-      _ <- Statements.SingleTarget.insert(oid, t, a.instrument).run.void
+      _ <- Statements.SingleTarget.insert(oid, t, Instrument.forAsterism(a)).run.void
     } yield ()
 
-  def insertGhostDualTarget(oid: Observation.Id, a: Asterism.GhostDualTarget): ConnectionIO[Unit] =
+  def insertDualTarget(oid: Observation.Id, a: Asterism.GhostDualTarget): ConnectionIO[Unit] =
     for {
       t0 <- TargetDao.insert(a.ifu1)
       t1 <- TargetDao.insert(a.ifu2)
       _ <- Statements.GhostDualTarget.insert(oid, t0, t1).run.void
     } yield ()
 
+  private def toSingleTargetAsterism(t: Target, i: Instrument): Option[Asterism] =
+    i match {
+      case Instrument.Phoenix    => Some(Asterism.Phoenix(t))
+      case Instrument.Michelle   => Some(Asterism.Michelle(t))
+      case Instrument.Gnirs      => Some(Asterism.Gnirs(t))
+      case Instrument.Niri       => Some(Asterism.Niri(t))
+      case Instrument.Trecs      => Some(Asterism.Trecs(t))
+      case Instrument.Nici       => Some(Asterism.Nici(t))
+      case Instrument.Nifs       => Some(Asterism.Nifs(t))
+      case Instrument.Gpi        => Some(Asterism.Gpi(t))
+      case Instrument.Gsaoi      => Some(Asterism.Gsaoi(t))
+      case Instrument.GmosS      => Some(Asterism.GmosS(t))
+      case Instrument.AcqCam     => Some(Asterism.AcqCam(t))
+      case Instrument.GmosN      => Some(Asterism.GmosN(t))
+      case Instrument.Bhros      => Some(Asterism.Bhros(t))
+      case Instrument.Visitor    => Some(Asterism.Visitor(t))
+      case Instrument.Flamingos2 => Some(Asterism.Flamingos2(t))
+      case Instrument.Ghost      => None
+    }
+
+  private def unsafeToSingleTargetAsterism(t: Target, i: Instrument): Asterism =
+    toSingleTargetAsterism(t, i).getOrElse(sys.error(s"No single-target asterism available for $i"))
+
   def selectSingleTarget(oid: Observation.Id): ConnectionIO[Option[Asterism]] =
     for {
       s <- Statements.SingleTarget.select(oid).option
       t <- s.fold(NoTarget) { case (id, _) => TargetDao.select(id) }
-    } yield t.product(s).map { case (target, (_, inst)) => Asterism.SingleTarget(target, inst: Instrument.Aux[inst.type]) }
+    } yield t.product(s).map { case (target, (_, inst)) => unsafeToSingleTargetAsterism(target, inst) }
 
-  def selectGhostDualTarget(oid: Observation.Id): ConnectionIO[Option[Asterism]] =
+  def selectDualTarget(oid: Observation.Id): ConnectionIO[Option[Asterism]] =
     for {
       ids <- Statements.GhostDualTarget.select(oid).option
       t0  <- ids.fold(NoTarget) { case (id, _) => TargetDao.select(id) }
@@ -73,7 +96,7 @@ object AsterismDao {
   def selectAllSingleTarget(pid: Program.Id): AsterismMap = {
     def toEntry[I <: Instrument with Singleton](idx: Index, tid: Target.Id, inst: Instrument.Aux[I]): OptMapEntry =
       TargetDao.select(tid).map {
-        _.map(idx -> Asterism.SingleTarget(_, inst))
+        _.map(idx -> unsafeToSingleTargetAsterism(_, inst))
       }
 
     for {
@@ -82,7 +105,7 @@ object AsterismDao {
     } yield m
   }
 
-  def selectAllGhostDualTarget(pid: Program.Id): AsterismMap = {
+  def selectAllDualTarget(pid: Program.Id): AsterismMap = {
     def toEntry(idx: Index, tid0: Target.Id, tid1: Target.Id): OptMapEntry =
       for {
         t0 <- TargetDao.select(tid0)

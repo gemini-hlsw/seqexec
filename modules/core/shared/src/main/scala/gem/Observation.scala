@@ -8,6 +8,7 @@ import cats.implicits._
 import gem.config.StaticConfig
 import gem.math.Index
 
+/** ADT for an observation, with constructors for each instrument. */
 sealed trait Observation {
   def title: String
   def targetEnvironment: TargetEnvironment
@@ -17,114 +18,162 @@ sealed trait Observation {
 
 object Observation {
 
+  /** A Phoenix observation.
+    * @group Constructors
+    */
   final case class Phoenix(
     title: String,
-    targetEnvironment: TargetEnvironment.DefaultSingleTarget,
+    targetEnvironment: TargetEnvironment.Phoenix,
     staticConfig: StaticConfig.Phoenix,
     sequence: List[Step.Phoenix]
   ) extends Observation
 
+  /** A Michelle observation.
+    * @group Constructors
+    */
   final case class Michelle(
     title: String,
-    targetEnvironment: TargetEnvironment.DefaultSingleTarget,
+    targetEnvironment: TargetEnvironment.Michelle,
     staticConfig: StaticConfig.Michelle,
     sequence: List[Step.Michelle]
   ) extends Observation
 
+  /** A Gnirs observation.
+    * @group Constructors
+    */
   final case class Gnirs(
     title: String,
-    targetEnvironment: TargetEnvironment.DefaultSingleTarget,
+    targetEnvironment: TargetEnvironment.Gnirs,
     staticConfig: StaticConfig.Gnirs,
     sequence: List[Step.Gnirs]
   ) extends Observation
 
+  /** A Niri observation.
+    * @group Constructors
+    */
   final case class Niri(
     title: String,
-    targetEnvironment: TargetEnvironment.DefaultSingleTarget,
+    targetEnvironment: TargetEnvironment.Niri,
     staticConfig: StaticConfig.Niri,
     sequence: List[Step.Niri]
   ) extends Observation
 
+  /** A Trecs observation.
+    * @group Constructors
+    */
   final case class Trecs(
     title: String,
-    targetEnvironment: TargetEnvironment.DefaultSingleTarget,
+    targetEnvironment: TargetEnvironment.Trecs,
     staticConfig: StaticConfig.Trecs,
     sequence: List[Step.Trecs]
   ) extends Observation
 
+  /** A Nici observation.
+    * @group Constructors
+    */
   final case class Nici(
     title: String,
-    targetEnvironment: TargetEnvironment.DefaultSingleTarget,
+    targetEnvironment: TargetEnvironment.Nici,
     staticConfig: StaticConfig.Nici,
     sequence: List[Step.Nici]
   ) extends Observation
 
+  /** A Nifs observation.
+    * @group Constructors
+    */
   final case class Nifs(
     title: String,
-    targetEnvironment: TargetEnvironment.DefaultSingleTarget,
+    targetEnvironment: TargetEnvironment.Nifs,
     staticConfig: StaticConfig.Nifs,
     sequence: List[Step.Nifs]
   ) extends Observation
 
+  /** A Gpi observation.
+    * @group Constructors
+    */
   final case class Gpi(
     title: String,
-    targetEnvironment: TargetEnvironment.DefaultSingleTarget,
+    targetEnvironment: TargetEnvironment.Gpi,
     staticConfig: StaticConfig.Gpi,
     sequence: List[Step.Gpi]
   ) extends Observation
 
+  /** A Gsaoi observation.
+    * @group Constructors
+    */
   final case class Gsaoi(
     title: String,
-    targetEnvironment: TargetEnvironment.DefaultSingleTarget,
+    targetEnvironment: TargetEnvironment.Gsaoi,
     staticConfig: StaticConfig.Gsaoi,
     sequence: List[Step.Gsaoi]
   ) extends Observation
 
+  /** A GmosS observation.
+    * @group Constructors
+    */
   final case class GmosS(
     title: String,
-    targetEnvironment: TargetEnvironment.DefaultSingleTarget,
+    targetEnvironment: TargetEnvironment.GmosS,
     staticConfig: StaticConfig.GmosS,
     sequence: List[Step.GmosS]
   ) extends Observation
 
+  /** A AcqCam observation.
+    * @group Constructors
+    */
   final case class AcqCam(
     title: String,
-    targetEnvironment: TargetEnvironment.DefaultSingleTarget,
+    targetEnvironment: TargetEnvironment.AcqCam,
     staticConfig: StaticConfig.AcqCam,
     sequence: List[Step.AcqCam]
   ) extends Observation
 
+  /** A GmosN observation.
+    * @group Constructors
+    */
   final case class GmosN(
     title: String,
-    targetEnvironment: TargetEnvironment.DefaultSingleTarget,
+    targetEnvironment: TargetEnvironment.GmosN,
     staticConfig: StaticConfig.GmosN,
     sequence: List[Step.GmosN]
   ) extends Observation
 
+  /** A Bhros observation.
+    * @group Constructors
+    */
   final case class Bhros(
     title: String,
-    targetEnvironment: TargetEnvironment.DefaultSingleTarget,
+    targetEnvironment: TargetEnvironment.Bhros,
     staticConfig: StaticConfig.Bhros,
     sequence: List[Step.Bhros]
   ) extends Observation
 
+  /** A Visitor observation.
+    * @group Constructors
+    */
   final case class Visitor(
     title: String,
-    targetEnvironment: TargetEnvironment.DefaultSingleTarget,
+    targetEnvironment: TargetEnvironment.Visitor,
     staticConfig: StaticConfig.Visitor,
     sequence: List[Step.Visitor]
   ) extends Observation
 
+  /** A Flamingos2 observation.
+    * @group Constructors
+    */
   final case class Flamingos2(
     title: String,
-    targetEnvironment: TargetEnvironment.DefaultSingleTarget,
+    targetEnvironment: TargetEnvironment.Flamingos2,
     staticConfig: StaticConfig.Flamingos2,
     sequence: List[Step.Flamingos2]
   ) extends Observation
 
+  /** A Ghost observation.
+    * @group Constructors
+    */
   final case class Ghost(
     title: String,
-    targetEnvironment: TargetEnvironment,
+    targetEnvironment: TargetEnvironment.Ghost,
     staticConfig: StaticConfig.Ghost,
     sequence: List[Step.Ghost]
   ) extends Observation
