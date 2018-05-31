@@ -22,13 +22,13 @@ package object enum extends ToPrismOps {
    * @group Enrichments
    */
   implicit class StepTypeCompanionOps(val value: StepType.type) extends AnyVal {
-    def forStep(s: Step[_]): StepType =
-      s match {
-        case Step.Bias(_)         => StepType.Bias
-        case Step.Dark(_)         => StepType.Dark
-        case Step.Gcal(_, _)      => StepType.Gcal
-        case Step.Science(_, _)   => StepType.Science
-        case Step.SmartGcal(_, _) => StepType.SmartGcal
+    def forStep(s: Step): StepType =
+      s.base match {
+        case Step.Base.Bias         => StepType.Bias
+        case Step.Base.Dark         => StepType.Dark
+        case Step.Base.Gcal(_)      => StepType.Gcal
+        case Step.Base.Science(_)   => StepType.Science
+        case Step.Base.SmartGcal(_) => StepType.SmartGcal
       }
   }
 
@@ -94,8 +94,35 @@ package object enum extends ToPrismOps {
   implicit class AsterismTypeOps(val value: AsterismType.type) extends AnyVal {
     def of(a: Asterism): AsterismType =
       a match {
-        case _: Asterism.SingleTarget[_] => AsterismType.SingleTarget
-        case _: Asterism.GhostDualTarget => AsterismType.GhostDualTarget
+        case _: Asterism.SingleTarget => AsterismType.SingleTarget
+        case _: Asterism.DualTarget   => AsterismType.GhostDualTarget
       }
   }
+
+  /**
+   * Enrichment methods for [[Instrument]].
+   * @group Enrichment
+   */
+  implicit class InstrumentOps(val value: Instrument.type) extends AnyVal {
+    def forStep(s: Step): Instrument =
+      s match {
+        case Step.Phoenix(_, _)    => Instrument.Phoenix
+        case Step.Michelle(_, _)   => Instrument.Michelle
+        case Step.Gnirs(_, _)      => Instrument.Gnirs
+        case Step.Niri(_, _)       => Instrument.Niri
+        case Step.Trecs(_, _)      => Instrument.Trecs
+        case Step.Nici(_, _)       => Instrument.Nici
+        case Step.Nifs(_, _)       => Instrument.Nifs
+        case Step.Gpi(_, _)        => Instrument.Gpi
+        case Step.Gsaoi(_, _)      => Instrument.Gsaoi
+        case Step.GmosS(_, _)      => Instrument.GmosS
+        case Step.AcqCam(_, _)     => Instrument.AcqCam
+        case Step.GmosN(_, _)      => Instrument.GmosN
+        case Step.Bhros(_, _)      => Instrument.Bhros
+        case Step.Visitor(_, _)    => Instrument.Visitor
+        case Step.Flamingos2(_, _) => Instrument.Flamingos2
+        case Step.Ghost(_, _)      => Instrument.Ghost
+      }
+  }
+
 }

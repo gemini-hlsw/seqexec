@@ -5,54 +5,40 @@ package gem
 
 import cats.Eq
 import cats.data.NonEmptyList
-import gem.enum.Instrument
 import monocle.macros.Lenses
 
 
-sealed trait Asterism extends Product with Serializable {
-
-  type I <: Instrument with Singleton
-
-  def instrument: Instrument
-
+sealed abstract class Asterism extends Product with Serializable {
   def targets: NonEmptyList[Target]
-
 }
 
 object Asterism {
 
-  type Aux[I0] = Asterism { type I = I0 }
-
-  sealed abstract class Impl[I0 <: Instrument with Singleton](val instrument: Instrument.Aux[I0]) extends Asterism {
-    type I = I0
-  }
-
-  @Lenses final case class SingleTarget[I0 <: Instrument with Singleton](target: Target, override val instrument: Instrument.Aux[I0]) extends Asterism.Impl(instrument) {
-
+  @Lenses
+  final case class SingleTarget(target: Target) extends Asterism {
     override def targets: NonEmptyList[Target] =
       NonEmptyList.one(target)
-
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object SingleTarget {
-    implicit def EqSingleTarget[I <: Instrument with Singleton]: Eq[SingleTarget[I]] =
+    implicit def EqSingleTarget: Eq[SingleTarget] =
       Eq.fromUniversalEquals
   }
 
-  @Lenses final case class GhostDualTarget(ifu1: Target, ifu2: Target) extends Asterism.Impl(Instrument.Ghost) {
-
+  @Lenses
+  final case class DualTarget(ifu1: Target, ifu2: Target) extends Asterism {
     override def targets: NonEmptyList[Target] =
       NonEmptyList.of(ifu1, ifu2)
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
-  object GhostDualTarget {
-    implicit val EqGhostDualTarget: Eq[GhostDualTarget] =
+  object DualTarget {
+    implicit val EqDualTarget: Eq[DualTarget] =
       Eq.fromUniversalEquals
   }
 
-  implicit def EqAsterism[I]: Eq[Asterism.Aux[I]] =
+  implicit def EqAsterism: Eq[Asterism] =
     Eq.fromUniversalEquals
 
 }

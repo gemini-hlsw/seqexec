@@ -4,7 +4,7 @@
 package gem
 package config
 
-import gem.enum.{GmosNorthStageMode, GmosSouthStageMode, GnirsWellDepth, Instrument, MosPreImaging}
+import gem.enum.{GmosNorthStageMode, GmosSouthStageMode, GnirsWellDepth, MosPreImaging}
 import monocle.Lens
 import monocle.macros.Lenses
 
@@ -13,95 +13,85 @@ import monocle.macros.Lenses
  * the same for every [[gem.Step Step]].
  * @group Configurations
  */
-sealed abstract class StaticConfig {
-  type I <: Instrument with Singleton
-  def instrument: Instrument.Aux[I]
-}
-
+sealed trait StaticConfig
 object StaticConfig {
 
-  type Aux[I0] = StaticConfig { type I = I0 }
+  final case class AcqCam()     extends StaticConfig
+  final case class Bhros()      extends StaticConfig
+  final case class Ghost()      extends StaticConfig
+  final case class Gpi()        extends StaticConfig
+  final case class Gsaoi()      extends StaticConfig
+  final case class Michelle()   extends StaticConfig
+  final case class Nici()       extends StaticConfig
+  final case class Nifs()       extends StaticConfig
+  final case class Niri()       extends StaticConfig
+  final case class Phoenix()    extends StaticConfig
+  final case class Trecs()      extends StaticConfig
+  final case class Visitor()    extends StaticConfig
 
-  sealed abstract class Impl[I0 <: Instrument with Singleton](val instrument: Instrument.Aux[I0]) extends StaticConfig {
-    type I = I0
-  }
-
-  final case class AcqCam()     extends StaticConfig.Impl(Instrument.AcqCam)
-  final case class Bhros()      extends StaticConfig.Impl(Instrument.Bhros)
-  final case class Ghost()      extends StaticConfig.Impl(Instrument.Ghost)
-  final case class Gpi()        extends StaticConfig.Impl(Instrument.Gpi)
-  final case class Gsaoi()      extends StaticConfig.Impl(Instrument.Gsaoi)
-  final case class Michelle()   extends StaticConfig.Impl(Instrument.Michelle)
-  final case class Nici()       extends StaticConfig.Impl(Instrument.Nici)
-  final case class Nifs()       extends StaticConfig.Impl(Instrument.Nifs)
-  final case class Niri()       extends StaticConfig.Impl(Instrument.Niri)
-  final case class Phoenix()    extends StaticConfig.Impl(Instrument.Phoenix)
-  final case class Trecs()      extends StaticConfig.Impl(Instrument.Trecs)
-  final case class Visitor()    extends StaticConfig.Impl(Instrument.Visitor)
-
-  final case class F2(
+  final case class Flamingos2(
     mosPreImaging: MosPreImaging
-  ) extends StaticConfig.Impl(Instrument.Flamingos2)
+  ) extends StaticConfig
 
-  object F2 {
-    val Default: F2 =
-      F2(MosPreImaging.IsNotMosPreImaging)
+  object Flamingos2 {
+    val Default: Flamingos2 =
+      Flamingos2(MosPreImaging.IsNotMosPreImaging)
   }
 
   import GmosConfig._
 
-  @Lenses final case class GmosNorth(
+  @Lenses final case class GmosN(
     common:    GmosCommonStaticConfig,
     stageMode: GmosNorthStageMode
-  ) extends StaticConfig.Impl(Instrument.GmosN)
+  ) extends StaticConfig
 
   @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
-  object GmosNorth extends GmosNorthLenses {
+  object GmosN extends GmosNorthLenses {
 
-    val Default: GmosNorth =
-      GmosNorth(
+    val Default: GmosN =
+      GmosN(
         GmosCommonStaticConfig.Default,
         GmosNorthStageMode.FollowXy
       )
 
   }
 
-  trait GmosNorthLenses { this: GmosNorth.type =>
+  trait GmosNorthLenses { this: GmosN.type =>
 
-    lazy val customRois: Lens[GmosNorth, Set[GmosCustomRoiEntry]] =
+    lazy val customRois: Lens[GmosN, Set[GmosCustomRoiEntry]] =
       common ^|-> GmosCommonStaticConfig.customRois
 
-    lazy val nodAndShuffle: Lens[GmosNorth, Option[GmosNodAndShuffle]] =
+    lazy val nodAndShuffle: Lens[GmosN, Option[GmosNodAndShuffle]] =
       common ^|-> GmosCommonStaticConfig.nodAndShuffle
 
   }
 
-  @Lenses final case class GmosSouth(
+  @Lenses final case class GmosS(
     common:    GmosCommonStaticConfig,
     stageMode: GmosSouthStageMode
-  ) extends StaticConfig.Impl(Instrument.GmosS)
+  ) extends StaticConfig
 
   @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
-  object GmosSouth extends GmosSouthLenses {
-    val Default: GmosSouth =
-      GmosSouth(
+  object GmosS extends GmosSouthLenses {
+    val Default: GmosS =
+      GmosS(
         GmosCommonStaticConfig.Default,
         GmosSouthStageMode.FollowXyz
       )
   }
 
-  trait GmosSouthLenses { this: GmosSouth.type =>
+  trait GmosSouthLenses { this: GmosS.type =>
 
-    lazy val customRois: Lens[GmosSouth, Set[GmosCustomRoiEntry]] =
+    lazy val customRois: Lens[GmosS, Set[GmosCustomRoiEntry]] =
       common ^|-> GmosCommonStaticConfig.customRois
 
-    lazy val nodAndShuffle: Lens[GmosSouth, Option[GmosNodAndShuffle]] =
+    lazy val nodAndShuffle: Lens[GmosS, Option[GmosNodAndShuffle]] =
       common ^|-> GmosCommonStaticConfig.nodAndShuffle
   }
 
   @Lenses final case class Gnirs(
     wellDepth: GnirsWellDepth
-  ) extends StaticConfig.Impl(Instrument.Gnirs)
+  ) extends StaticConfig
 
   @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object Gnirs {

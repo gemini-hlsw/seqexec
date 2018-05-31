@@ -3,7 +3,6 @@
 
 package gem
 
-import gem.config.DynamicConfig
 import gem.util.Location
 
 /**
@@ -14,7 +13,7 @@ object SmartGcal {
 
   sealed trait ExpansionError extends Product with Serializable
 
-  type ExpandedSteps      = List[Step.Gcal[DynamicConfig]]
+  type ExpandedSteps = List[Step]
 
   final case class StepNotFound(loc: Location.Middle) extends ExpansionError
   case object      NotSmartGcal                       extends ExpansionError

@@ -3,54 +3,131 @@
 
 package gem
 
-import cats.{ Functor, Order, Show }
+import cats.{ Order, Show }
 import cats.implicits._
-import gem.config.{ StaticConfig, DynamicConfig }
-import gem.enum.Instrument
+import gem.config.StaticConfig
 import gem.math.Index
 
-/**
- * An observation, parameterized over the types of its targets, static config
- * and steps (typically [[gem.TargetEnvironment]], [[gem.config.StaticConfig StaticConfig]]
- * and [[gem.Step Step[α]]], respectively, for a fully-specified Observation;
- * or `Unit`, `Unit` and `Nothing` for a minimally-specified Observation.
- *
- * @group Program Model
- */
-final case class Observation[+T, +S, +D](
-  title: String,
-  targets: T,
-  staticConfig: S,
-  steps: List[D])
+sealed trait Observation {
+  def title: String
+  def targetEnvironment: TargetEnvironment
+  def staticConfig: StaticConfig
+  def sequence: List[Step]
+}
 
 object Observation {
 
-  /** A fully specified observation, with unknown instrument. */
-  type Full = Full.Aux[I] forSome { type I <: Instrument with Singleton }
-  object Full {
-    /** A fully specified observation, with the specified instrument. */
-    type Aux[I <: Instrument with Singleton] =
-      Observation[TargetEnvironment.Aux[I], StaticConfig.Aux[I], Step[DynamicConfig.Aux[I]]]
-  }
+  final case class Phoenix(
+    title: String,
+    targetEnvironment: TargetEnvironment.DefaultSingleTarget,
+    staticConfig: StaticConfig.Phoenix,
+    sequence: List[Step.Phoenix]
+  ) extends Observation
 
-  // Some syntax for Observation.Full
-  implicit class ObservationFullOps(o: Observation.Full) {
+  final case class Michelle(
+    title: String,
+    targetEnvironment: TargetEnvironment.DefaultSingleTarget,
+    staticConfig: StaticConfig.Michelle,
+    sequence: List[Step.Michelle]
+  ) extends Observation
 
-      private def narrowImpl[I <: Instrument with Singleton](
-        o: Observation.Full.Aux[I]
-      ): (Instrument.Aux[I], Observation.Full.Aux[I]) =
-        (o.staticConfig.instrument, o)
+  final case class Gnirs(
+    title: String,
+    targetEnvironment: TargetEnvironment.DefaultSingleTarget,
+    staticConfig: StaticConfig.Gnirs,
+    sequence: List[Step.Gnirs]
+  ) extends Observation
 
-      /**
-       * This lets is inspect an Observation.Full and get back a dependent pair that we can
-       * pattern-match to dispatch based on the instrument; i.e., if the first element is
-       * `Gnirs` then the second must be an `Observation.Full.Aux[GNirs.type]`, and
-       * most importantly Scala understands this.
-       */
-      def narrow: (Instrument.Aux[I], Observation.Full.Aux[I]) forSome { type I <: Instrument with Singleton } =
-        narrowImpl(o)
+  final case class Niri(
+    title: String,
+    targetEnvironment: TargetEnvironment.DefaultSingleTarget,
+    staticConfig: StaticConfig.Niri,
+    sequence: List[Step.Niri]
+  ) extends Observation
 
-  }
+  final case class Trecs(
+    title: String,
+    targetEnvironment: TargetEnvironment.DefaultSingleTarget,
+    staticConfig: StaticConfig.Trecs,
+    sequence: List[Step.Trecs]
+  ) extends Observation
+
+  final case class Nici(
+    title: String,
+    targetEnvironment: TargetEnvironment.DefaultSingleTarget,
+    staticConfig: StaticConfig.Nici,
+    sequence: List[Step.Nici]
+  ) extends Observation
+
+  final case class Nifs(
+    title: String,
+    targetEnvironment: TargetEnvironment.DefaultSingleTarget,
+    staticConfig: StaticConfig.Nifs,
+    sequence: List[Step.Nifs]
+  ) extends Observation
+
+  final case class Gpi(
+    title: String,
+    targetEnvironment: TargetEnvironment.DefaultSingleTarget,
+    staticConfig: StaticConfig.Gpi,
+    sequence: List[Step.Gpi]
+  ) extends Observation
+
+  final case class Gsaoi(
+    title: String,
+    targetEnvironment: TargetEnvironment.DefaultSingleTarget,
+    staticConfig: StaticConfig.Gsaoi,
+    sequence: List[Step.Gsaoi]
+  ) extends Observation
+
+  final case class GmosS(
+    title: String,
+    targetEnvironment: TargetEnvironment.DefaultSingleTarget,
+    staticConfig: StaticConfig.GmosS,
+    sequence: List[Step.GmosS]
+  ) extends Observation
+
+  final case class AcqCam(
+    title: String,
+    targetEnvironment: TargetEnvironment.DefaultSingleTarget,
+    staticConfig: StaticConfig.AcqCam,
+    sequence: List[Step.AcqCam]
+  ) extends Observation
+
+  final case class GmosN(
+    title: String,
+    targetEnvironment: TargetEnvironment.DefaultSingleTarget,
+    staticConfig: StaticConfig.GmosN,
+    sequence: List[Step.GmosN]
+  ) extends Observation
+
+  final case class Bhros(
+    title: String,
+    targetEnvironment: TargetEnvironment.DefaultSingleTarget,
+    staticConfig: StaticConfig.Bhros,
+    sequence: List[Step.Bhros]
+  ) extends Observation
+
+  final case class Visitor(
+    title: String,
+    targetEnvironment: TargetEnvironment.DefaultSingleTarget,
+    staticConfig: StaticConfig.Visitor,
+    sequence: List[Step.Visitor]
+  ) extends Observation
+
+  final case class Flamingos2(
+    title: String,
+    targetEnvironment: TargetEnvironment.DefaultSingleTarget,
+    staticConfig: StaticConfig.Flamingos2,
+    sequence: List[Step.Flamingos2]
+  ) extends Observation
+
+  final case class Ghost(
+    title: String,
+    targetEnvironment: TargetEnvironment,
+    staticConfig: StaticConfig.Ghost,
+    sequence: List[Step.Ghost]
+  ) extends Observation
 
   /** An observation is identified by its program and a serial index. */
   final case class Id(pid: Program.Id, index: Index) {
@@ -84,30 +161,4 @@ object Observation {
 
   }
 
-  /** A functor over `Observation` on the `T`, or targets, type parameter.
-    * Not implicit.
-    */
-  def targetsFunctor[S, D]: Functor[Observation[?, S, D]] =
-    new Functor[Observation[?, S, D]] {
-      def map[A, B](o: Observation[A, S, D])(f: A => B): Observation[B, S, D] =
-        Observation(o.title, f(o.targets), o.staticConfig, o.steps)
-    }
-
-  /** A functor over `Observation` on the `S`, or static configuration, type
-    * parameter. Not implicit.
-    */
-  def staticConfigFunctor[T, D]: Functor[Observation[T, ?, D]] =
-    new Functor[Observation[T, ?, D]] {
-      def map[A, B](o: Observation[T, A, D])(f: A => B): Observation[T, B, D] =
-        Observation(o.title, o.targets, f(o.staticConfig), o.steps)
-    }
-
-  /** A functor over `Observation` on the `D`, or dynamic configuration, type
-    * parameter. Not implicit.
-    */
-  def dynamicConfigFunctor[T, S]: Functor[Observation[T, S, ?]] =
-    new Functor[Observation[T, S, ?]] {
-      def map[A, B](o: Observation[T, S, A])(f: A => B): Observation[T, S, B] =
-        Observation(o.title, o.targets, o.staticConfig, o.steps.map(f))
-    }
 }
