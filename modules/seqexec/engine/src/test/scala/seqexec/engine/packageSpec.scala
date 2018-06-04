@@ -15,7 +15,6 @@ import seqexec.model.{ActionType, UserDetails}
 import fs2.async
 import fs2.async.mutable.Semaphore
 import fs2.Stream
-
 import cats.data.Kleisli
 import cats.implicits._
 import cats.effect._
@@ -178,15 +177,17 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
     )
     val p = Stream.eval(IO.pure(Event.start(seqId, user, UUID.randomUUID())))
 
-    executionEngine.process(p)(s0).take(1).compile.last.unsafeRunSync.map(_._2)
+    //take(3): Start, Executing, Paused
+    executionEngine.process(p)(s0).take(3).compile.last.unsafeRunSync.map(_._2)
   }
 
   "sequence state" should "stay as running when action pauses itself" in {
     assert(actionPause.exists(s => Sequence.State.isRunning(s.sequences(seqId))))
   }
 
-  ignore should "change to Paused if output is Paused" in {
-    assert(actionPause.exists(_.sequences(seqId).current.execution.forall(Action.paused)))
+  "engine" should "change action state to Paused if output is Paused" in {
+    val r = actionPause
+    assert(r.exists(_.sequences(seqId).current.execution.forall(Action.paused)))
   }
 
   "engine" should "run sequence to completion after resuming a paused action" in {
@@ -218,43 +219,42 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
 
   "engine" should "keep processing input messages regardless of how long Actions take" in {
     val result = (for {
-      q <- Stream.eval(async.boundedQueue[IO, executionEngine.EventType](10))
+      q           <- Stream.eval(async.boundedQueue[IO, executionEngine.EventType](1))
       startedFlag <- Stream.eval(Semaphore.apply[IO](0))
-      finishFlag <- Stream.eval(Semaphore.apply[IO](0))
-    } yield {
-      val qs = Engine.State[Unit]((),
-        Map((seqId, Sequence.State.init(Sequence(
-          id = "First",
-          metadata = SequenceMetadata(GmosS, None, ""),
-          steps = List(
-            Step.init(
-              id = 1,
-              fileId = None,
-              config = config,
-              resources = Set(GmosS),
-              executions = List(
-                List(fromIO(ActionType.Configure(TCS),
-                  IO.apply {
-                    startedFlag.decrement
-                    finishFlag.increment
-                    Result.OK(Result.Configured(TCS))
-                  }))
+      finishFlag  <- Stream.eval(Semaphore.apply[IO](0))
+      r           <- {
+        val qs = Engine.State[Unit]((),
+          Map((seqId, Sequence.State.init(Sequence(
+            id = "First",
+            metadata = SequenceMetadata(GmosS, None, ""),
+            steps = List(
+              Step.init(
+                id = 1,
+                fileId = None,
+                config = config,
+                resources = Set(GmosS),
+                executions = List(
+                  List(fromIO(ActionType.Configure(TCS),
+                    startedFlag.increment *> finishFlag.decrement *> IO.pure(Result.OK(Result.Configured(TCS)))
+                  ))
+                )
               )
             )
-          )
-        ))))
-      )
-      List(
-        List[IO[Unit]](
-          q.enqueue1(Event.start(seqId, user, UUID.randomUUID())),
-          startedFlag.increment,
-          q.enqueue1(Event.getState[executionEngine.ConcreteTypes] { _ => finishFlag.decrement *> IO.apply(None) })
-        ).sequence,
-        executionEngine.process(q.dequeue)(qs).drop(1).takeThrough(a => !isFinished(a._2.sequences(seqId).status)).compile.drain
-      ).parSequence
-    }).attempt.compile.last.unsafeRunTimed(5.seconds).flatten
+          ))))
+        )
+        Stream.eval(List(
+          List[IO[Unit]](
+            q.enqueue1(Event.start(seqId, user, UUID.randomUUID())),
+            startedFlag.decrement,
+            q.enqueue1(Event.nullEvent),
+            q.enqueue1(Event.getState[executionEngine.ConcreteTypes] { _ => finishFlag.increment *> IO.apply(None) })
+          ).sequence,
+          executionEngine.process(q.dequeue)(qs).drop(1).takeThrough(a => !isFinished(a._2.sequences(seqId).status)).compile.drain
+        ).parSequence)
+      }
+    } yield r ).compile.last.unsafeRunTimed(5.seconds).flatten
 
-    assert(result.forall(_.isRight))
+    assert(!result.isEmpty)
   }
 
   "engine" should "not capture runtime exceptions." in {
