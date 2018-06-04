@@ -16,6 +16,26 @@ sealed trait TargetEnvironment {
 
 object TargetEnvironment {
 
+  def fromAsterism(a: Asterism, u: TreeSet[UserTarget]): TargetEnvironment =
+    a match {
+      case a @ Asterism.Phoenix(_)            => Phoenix(Some(a), u)
+      case a @ Asterism.Michelle(_)           => Michelle(Some(a), u)
+      case a @ Asterism.Gnirs(_)              => Gnirs(Some(a), u)
+      case a @ Asterism.Niri(_)               => Niri(Some(a), u)
+      case a @ Asterism.Trecs(_)              => Trecs(Some(a), u)
+      case a @ Asterism.Nici(_)               => Nici(Some(a), u)
+      case a @ Asterism.Nifs(_)               => Nifs(Some(a), u)
+      case a @ Asterism.Gpi(_)                => Gpi(Some(a), u)
+      case a @ Asterism.Gsaoi(_)              => Gsaoi(Some(a), u)
+      case a @ Asterism.GmosS(_)              => GmosS(Some(a), u)
+      case a @ Asterism.AcqCam(_)             => AcqCam(Some(a), u)
+      case a @ Asterism.GmosN(_)              => GmosN(Some(a), u)
+      case a @ Asterism.Bhros(_)              => Bhros(Some(a), u)
+      case a @ Asterism.Visitor(_)            => Visitor(Some(a), u)
+      case a @ Asterism.Flamingos2(_)         => Flamingos2(Some(a), u)
+      case a @ Asterism.GhostDualTarget(_, _) => Ghost(Some(a), u)
+    }
+
   /** Target environment for Phoenix
     * @group Constructors
     */
