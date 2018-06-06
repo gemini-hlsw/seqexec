@@ -362,12 +362,8 @@ lazy val seqexecCommonSettings = Seq(
   mainClass in Compile := Some("seqexec.web.server.http4s.WebServerLauncher"),
   // This is important to keep the file generation order correctly
   parallelExecution in Universal := false,
-  // Black magic. Not even sbt gurus understand how to make this work
-  mappings in (Compile, packageBin) := (mappings in (Compile, packageBin)).dependsOn(webpack in (seqexec_web_client, Compile, fullOptJS)).value,
-  // This is fairly ugly. It may improve in future versions of scalajs-bundler
-  mappings in (Compile, packageBin) ++= (npmUpdate in (seqexec_web_client, Compile, fullOptJS)).map { f =>
-    (f * ("*.js" || "*.mp3" || "*.css" || "*.html" || "*.woff" || "*.woff2" || "*.ttf" || "*.eot" || "*.svg")) pair (f => Some(f.getName))
-  }.value,
+  // Depend on webpack and add the assets created by webpack
+  mappings in (Compile, packageBin) ++= (webpack in (seqexec_web_client, Compile, fullOptJS)).value.map { f => f.data -> f.data.getName() },
   test := {},
   // Name of the launch script
   executableScriptName := "seqexec-server",
