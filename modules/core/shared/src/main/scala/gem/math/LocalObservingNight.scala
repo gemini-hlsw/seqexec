@@ -8,7 +8,7 @@ import cats.data.Validated
 import cats.effect.Sync
 import cats.implicits._
 import gem.enum.Site
-import gem.imp.TimeInstances._
+import gem.instances.time._
 import java.time._
 import java.time.format.DateTimeFormatter
 import monocle.Iso

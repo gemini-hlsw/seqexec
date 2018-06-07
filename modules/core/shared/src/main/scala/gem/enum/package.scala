@@ -6,6 +6,7 @@ package gem
 import java.time.Month
 import java.time.Month._
 import cats.implicits._
+import gem.config.StaticConfig
 import gem.syntax.ToPrismOps
 
 // The members of this package are generated from database tables, which are the source of truth.
@@ -125,6 +126,27 @@ package object enum extends ToPrismOps {
         case Step.Ghost(_, _)      => Instrument.Ghost
       }
 
+
+    def forStaticConfig(s: StaticConfig): Instrument =
+      s match {
+        case _: StaticConfig.Phoenix    => Instrument.Phoenix
+        case _: StaticConfig.Michelle   => Instrument.Michelle
+        case _: StaticConfig.Gnirs      => Instrument.Gnirs
+        case _: StaticConfig.Niri       => Instrument.Niri
+        case _: StaticConfig.Trecs      => Instrument.Trecs
+        case _: StaticConfig.Nici       => Instrument.Nici
+        case _: StaticConfig.Nifs       => Instrument.Nifs
+        case _: StaticConfig.Gpi        => Instrument.Gpi
+        case _: StaticConfig.Gsaoi      => Instrument.Gsaoi
+        case _: StaticConfig.GmosS      => Instrument.GmosS
+        case _: StaticConfig.AcqCam     => Instrument.AcqCam
+        case _: StaticConfig.GmosN      => Instrument.GmosN
+        case _: StaticConfig.Bhros      => Instrument.Bhros
+        case _: StaticConfig.Visitor    => Instrument.Visitor
+        case _: StaticConfig.Flamingos2 => Instrument.Flamingos2
+        case _: StaticConfig.Ghost      => Instrument.Ghost
+      }
+
     def forAsterism(a: Asterism): Instrument =
       a match {
         case Asterism.Phoenix(_)            => Instrument.Phoenix
@@ -143,6 +165,26 @@ package object enum extends ToPrismOps {
         case Asterism.Visitor(_)            => Instrument.Visitor
         case Asterism.Flamingos2(_)         => Instrument.Flamingos2
         case Asterism.GhostDualTarget(_, _) => Instrument.Ghost
+      }
+
+    def forObservation(a: Observation): Instrument =
+      a match {
+        case Observation.Phoenix(_, _, _, _)    => Instrument.Phoenix
+        case Observation.Michelle(_, _, _, _)   => Instrument.Michelle
+        case Observation.Gnirs(_, _, _, _)      => Instrument.Gnirs
+        case Observation.Niri(_, _, _, _)       => Instrument.Niri
+        case Observation.Trecs(_, _, _, _)      => Instrument.Trecs
+        case Observation.Nici(_, _, _, _)       => Instrument.Nici
+        case Observation.Nifs(_, _, _, _)       => Instrument.Nifs
+        case Observation.Gpi(_, _, _, _)        => Instrument.Gpi
+        case Observation.Gsaoi(_, _, _, _)      => Instrument.Gsaoi
+        case Observation.GmosS(_, _, _, _)      => Instrument.GmosS
+        case Observation.AcqCam(_, _, _, _)     => Instrument.AcqCam
+        case Observation.GmosN(_, _, _, _)      => Instrument.GmosN
+        case Observation.Bhros(_, _, _, _)      => Instrument.Bhros
+        case Observation.Visitor(_, _, _, _)    => Instrument.Visitor
+        case Observation.Flamingos2(_, _, _, _) => Instrument.Flamingos2
+        case Observation.Ghost(_, _, _, _)      => Instrument.Ghost
       }
 
   }

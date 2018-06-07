@@ -8,7 +8,7 @@ import cats.implicits._
 import java.time._
 import java.time.format.DateTimeFormatter
 import gem.enum.{ Site, ProgramType, DailyProgramType }
-import gem.imp.TimeInstances._
+import gem.instances.time._
 import gem.math.Index
 import gem.parser.ProgramIdParsers
 import gem.syntax.parser._

@@ -24,6 +24,9 @@ object TargetDao extends EnumeratedMeta /* extend EnumeratedMeta to lower the pr
   def select(id: Target.Id): ConnectionIO[Option[Target]] =
     Statements.select(id).option
 
+  def selectUnique(id: Target.Id): ConnectionIO[Target] =
+    Statements.select(id).unique
+
   def insert(target: Target): ConnectionIO[Target.Id] =
     Statements.insert(target)
               .withUniqueGeneratedKeys[Int]("id")
