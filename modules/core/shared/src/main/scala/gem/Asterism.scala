@@ -5,6 +5,7 @@ package gem
 
 import cats.Eq
 import cats.data.NonEmptyList
+import gem.enum.Instrument
 
 sealed abstract class Asterism extends Product with Serializable {
   def targets: NonEmptyList[Target]
@@ -105,5 +106,28 @@ object Asterism {
   /** @group Typeclass Instances */
   implicit def EqAsterism: Eq[Asterism] =
     Eq.fromUniversalEquals
+
+  def fromSingleTarget(t: Target, i: Instrument): Option[Asterism] =
+    i match {
+      case Instrument.Phoenix    => Some(Asterism.Phoenix(t))
+      case Instrument.Michelle   => Some(Asterism.Michelle(t))
+      case Instrument.Gnirs      => Some(Asterism.Gnirs(t))
+      case Instrument.Niri       => Some(Asterism.Niri(t))
+      case Instrument.Trecs      => Some(Asterism.Trecs(t))
+      case Instrument.Nici       => Some(Asterism.Nici(t))
+      case Instrument.Nifs       => Some(Asterism.Nifs(t))
+      case Instrument.Gpi        => Some(Asterism.Gpi(t))
+      case Instrument.Gsaoi      => Some(Asterism.Gsaoi(t))
+      case Instrument.GmosS      => Some(Asterism.GmosS(t))
+      case Instrument.AcqCam     => Some(Asterism.AcqCam(t))
+      case Instrument.GmosN      => Some(Asterism.GmosN(t))
+      case Instrument.Bhros      => Some(Asterism.Bhros(t))
+      case Instrument.Visitor    => Some(Asterism.Visitor(t))
+      case Instrument.Flamingos2 => Some(Asterism.Flamingos2(t))
+      case Instrument.Ghost      => None
+    }
+
+ def unsafeFromSingleTarget(t: Target, i: Instrument): Asterism =
+    fromSingleTarget(t, i).getOrElse(sys.error(s"No single-target asterism available for $i"))
 
 }

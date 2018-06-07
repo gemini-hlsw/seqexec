@@ -53,21 +53,21 @@ trait Arbitraries {
                 MosPreImaging.IsNotMosPreImaging)
     )
 
-  val genAcqCamStatic:   Gen[StaticConfig.Aux[AcqCam.type]]    = Gen.const(StaticConfig.AcqCam()  )
-  val genBhrosStatic:    Gen[StaticConfig.Aux[Bhros.type]]     = Gen.const(StaticConfig.Bhros()   )
-  val genGhostStatic:    Gen[StaticConfig.Aux[Ghost.type]]     = Gen.const(StaticConfig.Ghost()   )
-  val genGpiStatic:      Gen[StaticConfig.Aux[Gpi.type]]       = Gen.const(StaticConfig.Gpi()     )
-  val genGsaoiStatic:    Gen[StaticConfig.Aux[Gsaoi.type]]     = Gen.const(StaticConfig.Gsaoi()   )
-  val genMichelleStatic: Gen[StaticConfig.Aux[Michelle.type]]  = Gen.const(StaticConfig.Michelle())
-  val genNiciStatic:     Gen[StaticConfig.Aux[Nici.type]]      = Gen.const(StaticConfig.Nici()    )
-  val genNifsStatic:     Gen[StaticConfig.Aux[Nifs.type]]      = Gen.const(StaticConfig.Nifs()    )
-  val genNiriStatic:     Gen[StaticConfig.Aux[Niri.type]]      = Gen.const(StaticConfig.Niri()    )
-  val genPhoenixStatic:  Gen[StaticConfig.Aux[Phoenix.type]]   = Gen.const(StaticConfig.Phoenix() )
-  val genTrecsStatic:    Gen[StaticConfig.Aux[Trecs.type]]     = Gen.const(StaticConfig.Trecs()   )
-  val genVisitorStatic:  Gen[StaticConfig.Aux[Visitor.type]]   = Gen.const(StaticConfig.Visitor() )
+  val genAcqCamStatic:   Gen[StaticConfig.AcqCam]    = Gen.const(StaticConfig.AcqCam()  )
+  val genBhrosStatic:    Gen[StaticConfig.Bhros]     = Gen.const(StaticConfig.Bhros()   )
+  val genGhostStatic:    Gen[StaticConfig.Ghost]     = Gen.const(StaticConfig.Ghost()   )
+  val genGpiStatic:      Gen[StaticConfig.Gpi]       = Gen.const(StaticConfig.Gpi()     )
+  val genGsaoiStatic:    Gen[StaticConfig.Gsaoi]     = Gen.const(StaticConfig.Gsaoi()   )
+  val genMichelleStatic: Gen[StaticConfig.Michelle]  = Gen.const(StaticConfig.Michelle())
+  val genNiciStatic:     Gen[StaticConfig.Nici]      = Gen.const(StaticConfig.Nici()    )
+  val genNifsStatic:     Gen[StaticConfig.Nifs]      = Gen.const(StaticConfig.Nifs()    )
+  val genNiriStatic:     Gen[StaticConfig.Niri]      = Gen.const(StaticConfig.Niri()    )
+  val genPhoenixStatic:  Gen[StaticConfig.Phoenix]   = Gen.const(StaticConfig.Phoenix() )
+  val genTrecsStatic:    Gen[StaticConfig.Trecs]     = Gen.const(StaticConfig.Trecs()   )
+  val genVisitorStatic:  Gen[StaticConfig.Visitor]   = Gen.const(StaticConfig.Visitor() )
 
-  val genF2Static: Gen[StaticConfig.Aux[Flamingos2.type]] =
-    arbitrary[MosPreImaging].map(StaticConfig.F2(_))
+  val genF2Static: Gen[StaticConfig.Flamingos2] =
+    arbitrary[MosPreImaging].map(StaticConfig.Flamingos2(_))
 
   implicit val arbGmosShuffleOffset =
     Arbitrary(Gen.posNum[Int].map(GmosConfig.GmosShuffleOffset.unsafeFromRowCount))
@@ -107,22 +107,22 @@ trait Arbitraries {
       } yield GmosConfig.GmosCommonStaticConfig(d, p, n, r.toSet)
     )
 
-  val genGmosNorthStatic: Gen[StaticConfig.Aux[GmosN.type]] =
+  val genGmosNorthStatic: Gen[StaticConfig.GmosN] =
     for {
       c <- arbitrary[GmosConfig.GmosCommonStaticConfig]
       s <- arbitrary[GmosNorthStageMode]
-    } yield StaticConfig.GmosNorth(c, s)
+    } yield StaticConfig.GmosN(c, s)
 
-  val genGmosSouthStatic: Gen[StaticConfig.Aux[GmosS.type]] =
+  val genGmosSouthStatic: Gen[StaticConfig.GmosS] =
     for {
       c <- arbitrary[GmosConfig.GmosCommonStaticConfig]
       s <- arbitrary[GmosSouthStageMode]
-    } yield StaticConfig.GmosSouth(c, s)
+    } yield StaticConfig.GmosS(c, s)
 
-  val genGnirsStatic: Gen[StaticConfig.Aux[Gnirs.type]] =
+  val genGnirsStatic: Gen[StaticConfig.Gnirs] =
     arbitrary[GnirsWellDepth].map(StaticConfig.Gnirs(_))
 
-  def genStaticConfigOf[I <: Instrument with Singleton](i: Instrument.Aux[I]): Gen[StaticConfig.Aux[I]] = {
+  def genStaticConfigOf(i: Instrument): Gen[StaticConfig] = {
     i match {
       case AcqCam     => genAcqCamStatic
       case Bhros      => genBhrosStatic
@@ -143,18 +143,18 @@ trait Arbitraries {
     }
   }
 
-  val genAcqCamDynamic  : Gen[DynamicConfig.Aux[AcqCam.type]]   = Gen.const(DynamicConfig.AcqCam()  )
-  val genBhrosDynamic   : Gen[DynamicConfig.Aux[Bhros.type]]    = Gen.const(DynamicConfig.Bhros()   )
-  val genGhostDynamic   : Gen[DynamicConfig.Aux[Ghost.type]]    = Gen.const(DynamicConfig.Ghost()   )
-  val genGpiDynamic     : Gen[DynamicConfig.Aux[Gpi.type]]      = Gen.const(DynamicConfig.Gpi()     )
-  val genGsaoiDynamic   : Gen[DynamicConfig.Aux[Gsaoi.type]]    = Gen.const(DynamicConfig.Gsaoi()   )
-  val genMichelleDynamic: Gen[DynamicConfig.Aux[Michelle.type]] = Gen.const(DynamicConfig.Michelle())
-  val genNiciDynamic    : Gen[DynamicConfig.Aux[Nici.type]]     = Gen.const(DynamicConfig.Nici()    )
-  val genNifsDynamic    : Gen[DynamicConfig.Aux[Nifs.type]]     = Gen.const(DynamicConfig.Nifs()    )
-  val genNiriDynamic    : Gen[DynamicConfig.Aux[Niri.type]]     = Gen.const(DynamicConfig.Niri()    )
-  val genPhoenixDynamic : Gen[DynamicConfig.Aux[Phoenix.type]]  = Gen.const(DynamicConfig.Phoenix() )
-  val genTrecsDynamic   : Gen[DynamicConfig.Aux[Trecs.type]]    = Gen.const(DynamicConfig.Trecs()   )
-  val genVisitorDynamic : Gen[DynamicConfig.Aux[Visitor.type]]  = Gen.const(DynamicConfig.Visitor() )
+  val genAcqCamDynamic  : Gen[DynamicConfig.AcqCam]   = Gen.const(DynamicConfig.AcqCam()  )
+  val genBhrosDynamic   : Gen[DynamicConfig.Bhros]    = Gen.const(DynamicConfig.Bhros()   )
+  val genGhostDynamic   : Gen[DynamicConfig.Ghost]    = Gen.const(DynamicConfig.Ghost()   )
+  val genGpiDynamic     : Gen[DynamicConfig.Gpi]      = Gen.const(DynamicConfig.Gpi()     )
+  val genGsaoiDynamic   : Gen[DynamicConfig.Gsaoi]    = Gen.const(DynamicConfig.Gsaoi()   )
+  val genMichelleDynamic: Gen[DynamicConfig.Michelle] = Gen.const(DynamicConfig.Michelle())
+  val genNiciDynamic    : Gen[DynamicConfig.Nici]     = Gen.const(DynamicConfig.Nici()    )
+  val genNifsDynamic    : Gen[DynamicConfig.Nifs]     = Gen.const(DynamicConfig.Nifs()    )
+  val genNiriDynamic    : Gen[DynamicConfig.Niri]     = Gen.const(DynamicConfig.Niri()    )
+  val genPhoenixDynamic : Gen[DynamicConfig.Phoenix]  = Gen.const(DynamicConfig.Phoenix() )
+  val genTrecsDynamic   : Gen[DynamicConfig.Trecs]    = Gen.const(DynamicConfig.Trecs()   )
+  val genVisitorDynamic : Gen[DynamicConfig.Visitor]  = Gen.const(DynamicConfig.Visitor() )
 
   implicit val arbF2FpuChoice      =
     Arbitrary {
@@ -162,7 +162,7 @@ trait Arbitraries {
                 arbitrary[F2Fpu].map(F2FpuChoice.Builtin(_)))
     }
 
-  val genF2Dynamic: Gen[DynamicConfig.Aux[Flamingos2.type]] =
+  val genF2Dynamic: Gen[DynamicConfig.Flamingos2] =
     for {
       d <- arbitrary[Option[F2Disperser]]
       e <- arbitrary[Duration           ]
@@ -171,7 +171,7 @@ trait Arbitraries {
       l <- arbitrary[F2LyotWheel        ]
       r <- arbitrary[F2ReadMode         ]
       w <- arbitrary[F2WindowCover      ]
-    } yield DynamicConfig.F2(d, e, f, u, l, r, w)
+    } yield DynamicConfig.Flamingos2(d, e, f, u, l, r, w)
 
   implicit val arbGmosCcdReadout =
     Arbitrary {
@@ -220,23 +220,23 @@ trait Arbitraries {
       } yield GmosConfig.GmosGrating(d, o, w)
     }
 
-  val genGmosNorthDynamic: Gen[DynamicConfig.Aux[GmosN.type]] =
+  val genGmosNorthDynamic: Gen[DynamicConfig.GmosN] =
     for {
       c <- arbitrary[GmosConfig.GmosCommonDynamicConfig]
       g <- arbitrary[Option[GmosConfig.GmosGrating[GmosNorthDisperser]]]
       f <- arbitrary[Option[GmosNorthFilter]]
       u <- arbitrary[Option[Either[GmosCustomMask, GmosNorthFpu]]]
-    } yield DynamicConfig.GmosNorth(c, g, f, u)
+    } yield DynamicConfig.GmosN(c, g, f, u)
 
-  val genGmosSouthDynamic: Gen[DynamicConfig.Aux[GmosS.type]] =
+  val genGmosSouthDynamic: Gen[DynamicConfig.GmosS] =
     for {
       c <- arbitrary[GmosConfig.GmosCommonDynamicConfig]
       g <- arbitrary[Option[GmosConfig.GmosGrating[GmosSouthDisperser]]]
       f <- arbitrary[Option[GmosSouthFilter]]
       u <- arbitrary[Option[Either[GmosCustomMask, GmosSouthFpu]]]
-    } yield DynamicConfig.GmosSouth(c, g, f, u)
+    } yield DynamicConfig.GmosS(c, g, f, u)
 
-  val genGnirsDynamic: Gen[DynamicConfig.Aux[Gnirs.type]] =
+  val genGnirsDynamic: Gen[DynamicConfig.Gnirs] =
       for {
         a <- arbitrary[GnirsAcquisitionMirror             ]
         b <- arbitrary[GnirsCamera                        ]
@@ -251,7 +251,7 @@ trait Arbitraries {
         k <- Gen.choose(1000, 120000).map(Wavelength.fromAngstroms.unsafeGet)
       } yield DynamicConfig.Gnirs(a, b, c, d, e, f, g, h, i, j, k)
 
-  def genDynamicConfigOf[I <: Instrument with Singleton](i: Instrument.Aux[I]): Gen[DynamicConfig.Aux[I]] = {
+  def genDynamicConfigOf(i: Instrument): Gen[DynamicConfig] = {
     i match {
       case AcqCam     => genAcqCamDynamic
       case Bhros      => genBhrosDynamic

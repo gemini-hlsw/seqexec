@@ -7,7 +7,7 @@ import cats.tests.CatsSuite
 import cats.{ Eq, Show }
 import cats.kernel.laws.discipline._
 import gem.arb._
-import gem.imp.TimeInstances._
+import gem.instances.time._
 import java.time.Instant
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString"))

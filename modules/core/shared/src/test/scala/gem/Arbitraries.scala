@@ -5,7 +5,7 @@ package gem
 
 import cats.implicits._
 import gem.arb._
-import gem.config.{ DynamicConfig, GcalConfig, TelescopeConfig }
+import gem.config.{ GcalConfig, TelescopeConfig }
 import gem.enum.{Instrument, SmartGcalType}
 import gem.math.{ Index, Offset }
 import gem.syntax.all._
@@ -48,28 +48,28 @@ trait Arbitraries extends gem.config.Arbitraries  {
 
   // Step and Sequence
 
-  def genBiasStepOf[I <: Instrument with Singleton](i: Instrument.Aux[I]): Gen[Step.Bias[DynamicConfig.Aux[I]]] =
-    genDynamicConfigOf(i).map(Step.Bias(_))
+  def genBiasStepOf(i: Instrument): Gen[Step] =
+    genDynamicConfigOf(i).map(_.toStep(Step.Base.Bias))
 
-  def genDarkStepOf[I <: Instrument with Singleton](i: Instrument.Aux[I]): Gen[Step.Dark[DynamicConfig.Aux[I]]] =
-    genDynamicConfigOf(i).map(Step.Dark(_))
+  def genDarkStepOf(i: Instrument): Gen[Step] =
+    genDynamicConfigOf(i).map(_.toStep(Step.Base.Dark))
 
-  def genGcalStepOf[I <: Instrument with Singleton](i: Instrument.Aux[I]): Gen[Step.Gcal[DynamicConfig.Aux[I]]] =
+  def genGcalStepOf(i: Instrument): Gen[Step] =
     for {
       d <- genDynamicConfigOf(i)
       g <- arbitrary[GcalConfig]
-    } yield Step.Gcal(d, g)
+    } yield d.toStep(Step.Base.Gcal(g))
 
-  def genScienceStepOf[I <: Instrument with Singleton](i: Instrument.Aux[I]): Gen[Step.Science[DynamicConfig.Aux[I]]] =
-    genDynamicConfigOf(i).map(Step.Science(_, TelescopeConfig(Offset.P.Zero, Offset.Q.Zero)))
+  def genScienceStepOf(i: Instrument): Gen[Step] =
+    genDynamicConfigOf(i).map(_.toStep(Step.Base.Science(TelescopeConfig(Offset.P.Zero, Offset.Q.Zero))))
 
-  def genSmartGcalStepOf[I <: Instrument with Singleton](i: Instrument.Aux[I]): Gen[Step.SmartGcal[DynamicConfig.Aux[I]]] =
+  def genSmartGcalStepOf(i: Instrument): Gen[Step] =
     for {
       d <- genDynamicConfigOf(i)
       s <- arbitrary[SmartGcalType]
-    } yield Step.SmartGcal(d, s)
+    } yield d.toStep(Step.Base.SmartGcal(s))
 
-  def genStepOf[I <: Instrument with Singleton](i: Instrument.Aux[I]): Gen[Step[DynamicConfig.Aux[I]]] =
+  def genStepOf(i: Instrument): Gen[Step] =
     Gen.oneOf(
       genBiasStepOf(i),
       genDarkStepOf(i),
@@ -78,39 +78,40 @@ trait Arbitraries extends gem.config.Arbitraries  {
       genSmartGcalStepOf(i)
     )
 
-  def genSequenceOf[I <: Instrument with Singleton](i: Instrument.Aux[I]): Gen[List[Step[DynamicConfig.Aux[I]]]] =
+  def genSequenceOf(i: Instrument): Gen[List[Step]] =
     for {
       n <- Gen.choose(0, 50)
       s <- Gen.listOfN(n, genStepOf(i))
     } yield s
 
-
   // Observation
 
-  def genObservationOf[I <: Instrument with Singleton](i: Instrument.Aux[I]): Gen[Observation.Full] =
+  def genObservationOf(i: Instrument): Gen[Observation] =
     for {
       t <- genTitle
       e <- genTargetEnvironment(i)
       s <- genStaticConfigOf(i)
       d <- genSequenceOf(i)
-    } yield Observation(t, e, s, d)
+    } yield Observation.unsafeAssemble(t, e, s, d)
 
-  implicit val arbObservation: Arbitrary[Observation.Full] =
+  implicit val arbObservation: Arbitrary[Observation] =
     Arbitrary {
       for {
         i <- Gen.oneOf(
                Instrument.Flamingos2,
                Instrument.GmosN,
-               Instrument.GmosS
+               Instrument.GmosS,
+               Instrument.Gnirs
              ) // Add more as they become available
-        o <- genObservationOf(i: Instrument.Aux[i.type])
+        o <- genObservationOf(i)
       } yield o
     }
 
-  def genObservationMap(limit: Int): Gen[TreeMap[Index, Observation.Full]] =
+  def genObservationMap(limit: Int): Gen[TreeMap[Index, Observation]] =
     for {
       count   <- Gen.choose(0, limit)
       obsIdxs <- Gen.listOfN(count, Gen.posNum[Short]).map(_.distinct.map(Index.fromShort.unsafeGet))
-      obsList <- obsIdxs.traverse(_ => arbitrary[Observation.Full])
+      obsList <- obsIdxs.traverse(_ => arbitrary[Observation])
     } yield TreeMap.fromList(obsIdxs.zip(obsList))
+
 }

@@ -210,4 +210,41 @@ object Observation {
 
   }
 
+  /** Assemble an Observation from its parts, assuming they're consistent. */
+  def unsafeAssemble(
+    title: String,
+    targetEnvironment: TargetEnvironment,
+    staticConfig: StaticConfig,
+    sequence: List[Step]
+  ): Observation = {
+
+    implicit class SequenceOps(ss: List[Step]) {
+      def narrow[A](pf: PartialFunction[Step, A]): List[A] =
+        ss.collect(pf orElse {
+          case _ => sys.error("inconsistent sequence contains multiple instruments")
+        })
+    }
+
+    (targetEnvironment, staticConfig) match {
+        case (te: TargetEnvironment.Phoenix,    sc: StaticConfig.Phoenix)    => Observation.Phoenix(   title, te, sc, sequence.narrow { case s: Step.Phoenix    => s })
+        case (te: TargetEnvironment.Michelle,   sc: StaticConfig.Michelle)   => Observation.Michelle(  title, te, sc, sequence.narrow { case s: Step.Michelle   => s })
+        case (te: TargetEnvironment.Gnirs,      sc: StaticConfig.Gnirs)      => Observation.Gnirs(     title, te, sc, sequence.narrow { case s: Step.Gnirs      => s })
+        case (te: TargetEnvironment.Niri,       sc: StaticConfig.Niri)       => Observation.Niri(      title, te, sc, sequence.narrow { case s: Step.Niri       => s })
+        case (te: TargetEnvironment.Trecs,      sc: StaticConfig.Trecs)      => Observation.Trecs(     title, te, sc, sequence.narrow { case s: Step.Trecs      => s })
+        case (te: TargetEnvironment.Nici,       sc: StaticConfig.Nici)       => Observation.Nici(      title, te, sc, sequence.narrow { case s: Step.Nici       => s })
+        case (te: TargetEnvironment.Nifs,       sc: StaticConfig.Nifs)       => Observation.Nifs(      title, te, sc, sequence.narrow { case s: Step.Nifs       => s })
+        case (te: TargetEnvironment.Gpi,        sc: StaticConfig.Gpi)        => Observation.Gpi(       title, te, sc, sequence.narrow { case s: Step.Gpi        => s })
+        case (te: TargetEnvironment.Gsaoi,      sc: StaticConfig.Gsaoi)      => Observation.Gsaoi(     title, te, sc, sequence.narrow { case s: Step.Gsaoi      => s })
+        case (te: TargetEnvironment.GmosS,      sc: StaticConfig.GmosS)      => Observation.GmosS(     title, te, sc, sequence.narrow { case s: Step.GmosS      => s })
+        case (te: TargetEnvironment.AcqCam,     sc: StaticConfig.AcqCam)     => Observation.AcqCam(    title, te, sc, sequence.narrow { case s: Step.AcqCam     => s })
+        case (te: TargetEnvironment.GmosN,      sc: StaticConfig.GmosN)      => Observation.GmosN(     title, te, sc, sequence.narrow { case s: Step.GmosN      => s })
+        case (te: TargetEnvironment.Bhros,      sc: StaticConfig.Bhros)      => Observation.Bhros(     title, te, sc, sequence.narrow { case s: Step.Bhros      => s })
+        case (te: TargetEnvironment.Visitor,    sc: StaticConfig.Visitor)    => Observation.Visitor(   title, te, sc, sequence.narrow { case s: Step.Visitor    => s })
+        case (te: TargetEnvironment.Flamingos2, sc: StaticConfig.Flamingos2) => Observation.Flamingos2(title, te, sc, sequence.narrow { case s: Step.Flamingos2 => s })
+        case (te: TargetEnvironment.Ghost,      sc: StaticConfig.Ghost)      => Observation.Ghost(     title, te, sc, sequence.narrow { case s: Step.Ghost      => s })
+        case _ => sys.error("inconsistent observation")
+      }
+
+  }
+
 }
