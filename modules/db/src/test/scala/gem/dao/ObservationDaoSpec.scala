@@ -6,7 +6,7 @@ package gem.dao
 import cats.implicits._
 import doobie.implicits._
 import gem.Observation
-import gem.enum._
+// import gem.enum._
 import gem.math.Index
 import org.scalatest._
 import org.scalatest.prop._
@@ -30,7 +30,7 @@ class ObservationDaoSpec extends PropSpec with PropertyChecks with DaoTest {
   property("ObservationDao should select flat observations") {
     val oid = Observation.Id(pid, Index.One)
 
-    forAll { (obsIn: Observation.Full) =>
+    forAll { (obsIn: Observation) =>
       val obsOut = withProgram {
         for {
           _ <- ObservationDao.insert(oid, obsIn)
@@ -40,9 +40,7 @@ class ObservationDaoSpec extends PropSpec with PropertyChecks with DaoTest {
 
       // Take the generated observation, remove the targets and steps, and map
       // the the static config to the instrument.
-      val expected = Observation.staticConfigFunctor.map(
-                       Observation.targetsFunctor.map(obsIn)(_.asterism.map(AsterismType.of))
-                     )(_.instrument).copy(steps = Nil)
+      val expected = obsIn.title
 
       obsOut shouldEqual expected // obsIn.leftMap(_.instrument).copy(steps = Nil)
     }
@@ -51,7 +49,7 @@ class ObservationDaoSpec extends PropSpec with PropertyChecks with DaoTest {
   property("ObservationDao should select static-only observations") {
     val oid = Observation.Id(pid, Index.One)
 
-    forAll { (obsIn: Observation.Full) =>
+    forAll { (obsIn: Observation) =>
       val obsOut = withProgram {
         for {
           _ <- ObservationDao.insert(oid, obsIn)
@@ -60,9 +58,7 @@ class ObservationDaoSpec extends PropSpec with PropertyChecks with DaoTest {
       }
 
       // Take the generated observation and remove the targets and steps
-      val expected = Observation.targetsFunctor
-                       .map(obsIn)(_.asterism.map(AsterismType.of))
-                       .copy(steps = Nil)
+      val expected = "x"
 
       obsOut shouldEqual expected
     }
@@ -71,7 +67,7 @@ class ObservationDaoSpec extends PropSpec with PropertyChecks with DaoTest {
   property("ObservationDao should select target-only observations") {
     val oid = Observation.Id(pid, Index.One)
 
-    forAll { (obsIn: Observation.Full) =>
+    forAll { (obsIn: Observation) =>
       val obsOut = withProgram {
         for {
           _ <- ObservationDao.insert(oid, obsIn)
@@ -81,9 +77,7 @@ class ObservationDaoSpec extends PropSpec with PropertyChecks with DaoTest {
 
       // Take the generated observation, replace the static config with the
       // instrument type and remove the steps.
-      val expected = Observation.staticConfigFunctor
-                       .map(obsIn)(_.instrument)
-                       .copy(steps = Nil)
+      val expected = "x"
 
       obsOut shouldEqual expected
     }
@@ -92,7 +86,7 @@ class ObservationDaoSpec extends PropSpec with PropertyChecks with DaoTest {
   property("ObservationDao should roundtrip complete observations") {
     val oid = Observation.Id(pid, Index.One)
 
-    forAll { (obsIn: Observation.Full) =>
+    forAll { (obsIn: Observation) =>
       val obsOut = withProgram {
         for {
           _ <- ObservationDao.insert(oid, obsIn)

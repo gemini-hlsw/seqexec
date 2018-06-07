@@ -18,7 +18,7 @@ object ProgramDao {
   import IndexMeta._
 
   /** Insert a program, disregarding its observations, if any. */
-  private def insertFlat(p: Program): ConnectionIO[Program.Id] =
+  def insertFlat(p: Program): ConnectionIO[Program.Id] =
     insertProgramIdSlice(p.id) *>
     Statements.insert(p).run.as(p.id)
 

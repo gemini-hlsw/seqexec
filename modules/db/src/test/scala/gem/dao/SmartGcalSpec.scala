@@ -15,7 +15,7 @@ import gem.math.Index
 import gem.util.Location
 import org.scalatest.{Assertion, FlatSpec, Matchers}
 import java.time.Duration
-import scala.collection.immutable.TreeMap
+import scala.collection.immutable.{ TreeMap, TreeSet }
 
 @SuppressWarnings(Array("org.wartremover.warts.Equals", "org.wartremover.warts.NonUnitStatements"))
 class SmartGcalSpec extends FlatSpec with Matchers with DaoTest {
@@ -44,21 +44,21 @@ class SmartGcalSpec extends FlatSpec with Matchers with DaoTest {
   it should "fail when there is no corresponding mapping" in {
     runF2Expansionʹ(SmartGcalType.DayBaseline) { (expansion, steps) =>
       expansion    shouldEqual Left(noMappingDefined)
-      steps.values.toList shouldEqual List(Step.SmartGcal(f2, SmartGcalType.DayBaseline))
+      steps.values.toList shouldEqual List(f2.toStep(Step.Base.SmartGcal(SmartGcalType.DayBaseline)))
     }
   }
 
   it should "fail when the location is not found" in {
     runF2Expansion(SmartGcalType.Arc, loc1, loc2) { (expansion, steps) =>
       expansion shouldEqual Left(stepNotFound(loc2))
-      steps.values.toList shouldEqual List(Step.SmartGcal(f2, SmartGcalType.Arc))
+      steps.values.toList shouldEqual List(f2.toStep(Step.Base.SmartGcal(SmartGcalType.Arc)))
     }
   }
 
   it should "fail when the location is not a smart gcal step" in {
     val expansion = doTest {
       for {
-        _  <- StepDao.insert(oid, loc1, Step.Bias(f2))
+        _  <- StepDao.insert(oid, loc1, f2.toStep(Step.Base.Bias))
         ex <- SmartGcalDao.expand(oid, loc1).value
         ss <- StepDao.selectAll(oid)
         _  <- ss.keys.toList.traverse { StepDao.deleteAtLocation(oid, _) }
@@ -71,24 +71,24 @@ class SmartGcalSpec extends FlatSpec with Matchers with DaoTest {
   it should "expand intermediate smart gcal steps" in {
     val steps = doTest {
       for {
-        _  <- StepDao.insert(oid, loc1, Step.Bias(f2))
-        _  <- StepDao.insert(oid, loc2, Step.SmartGcal(f2, SmartGcalType.NightBaseline))
-        _  <- StepDao.insert(oid, loc9, Step.Dark(f2))
+        _  <- StepDao.insert(oid, loc1, f2.toStep(Step.Base.Bias))
+        _  <- StepDao.insert(oid, loc2, f2.toStep(Step.Base.SmartGcal(SmartGcalType.NightBaseline)))
+        _  <- StepDao.insert(oid, loc9, f2.toStep(Step.Base.Dark))
         _  <- SmartGcalDao.expand(oid, loc2).value
         ss <- StepDao.selectAll(oid)
         _  <- ss.keys.toList.traverse { StepDao.deleteAtLocation(oid, _) }
       } yield ss
     }
 
-    val exp = gcals.filter(_._2 == GcalBaselineType.Night).map { case (_, _, config) => Step.Gcal(f2, config) }
-    steps.values.toList shouldEqual (Step.Bias(f2) :: exp) :+ Step.Dark(f2)
+    val exp = gcals.filter(_._2 == GcalBaselineType.Night).map { case (_, _, config) => f2.toStep(Step.Base.Gcal(config)) }
+    steps.values.toList shouldEqual (f2.toStep(Step.Base.Bias) :: exp) :+ f2.toStep(Step.Base.Dark)
   }
 
-  private def verifySteps(m: Either[GcalLampType, GcalBaselineType], ss: TreeMap[Location.Middle, Step[DynamicConfig]]): Assertion = {
+  private def verifySteps(m: Either[GcalLampType, GcalBaselineType], ss: TreeMap[Location.Middle, Step]): Assertion = {
     def lookup(m: Either[GcalLampType, GcalBaselineType]): List[GcalConfig] =
       gcals.filter(t => m.fold(_ == t._1, _ == t._2)).map(_._3)
 
-    ss.values.toList shouldEqual lookup(m).map(Step.Gcal(f2, _))
+    ss.values.toList shouldEqual lookup(m).map(a => f2.toStep(Step.Base.Gcal(a)))
   }
 
   private val oid = Observation.Id(pid, Index.One)
@@ -96,22 +96,22 @@ class SmartGcalSpec extends FlatSpec with Matchers with DaoTest {
   private def doTest[A](test: ConnectionIO[A]): A =
     withProgram {
       for {
-        _ <- ObservationDao.insert(oid, Observation("SmartGcalSpec Obs", TargetEnvironment.Aux.empty[Instrument.Flamingos2.type], StaticConfig.F2.Default, List.empty[Step[DynamicConfig.Aux[Instrument.Flamingos2.type]]]))
+        _ <- ObservationDao.insert(oid, Observation.Flamingos2("SmartGcalSpec Obs", TargetEnvironment.Flamingos2(None, TreeSet.empty), StaticConfig.Flamingos2.Default, Nil))
         a <- test
       } yield a
     }
 
   private def runF2Expansionʹ(t: SmartGcalType)(
-    verify: (Either[ExpansionError, ExpandedSteps], TreeMap[Location.Middle, Step[DynamicConfig]]) => Assertion
+    verify: (Either[ExpansionError, ExpandedSteps], TreeMap[Location.Middle, Step]) => Assertion
   ): Assertion =
     runF2Expansion(t, loc1, loc1)(verify)
 
   private def runF2Expansion(t: SmartGcalType, insertionLoc: Location.Middle, searchLoc: Location.Middle)(
-    verify: (Either[ExpansionError, ExpandedSteps], TreeMap[Location.Middle, Step[DynamicConfig]]) => Assertion
+    verify: (Either[ExpansionError, ExpandedSteps], TreeMap[Location.Middle, Step]) => Assertion
   ): Assertion = {
     val (expansion, steps) = doTest {
       for {
-        _  <- StepDao.insert(oid, insertionLoc, Step.SmartGcal(f2, t))
+        _  <- StepDao.insert(oid, insertionLoc, f2.toStep(Step.Base.SmartGcal(t)))
         ex <- SmartGcalDao.expand(oid, searchLoc).value
         ss <- StepDao.selectAll(oid)
         _  <- ss.keys.toList.traverse { StepDao.deleteAtLocation(oid, _) }
@@ -130,8 +130,8 @@ object SmartGcalSpec {
   private val loc2: Location.Middle = Location.unsafeMiddle(2)
   private val loc9: Location.Middle = Location.unsafeMiddle(9)
 
-  private val f2: DynamicConfig.F2 =
-    DynamicConfig.F2(
+  private val f2: DynamicConfig.Flamingos2 =
+    DynamicConfig.Flamingos2(
       /* Disperser             */ Some(F2Disperser.R1200JH),
       Duration.ofMillis(1000),
       /* Filter                */ F2Filter.JH,

@@ -6,8 +6,7 @@ package gem.dao
 import cats.implicits._
 import doobie._, doobie.implicits._
 import gem.arb.ArbEnumerated._
-import gem.config.GcalConfig
-import gem.config.DynamicConfig.SmartGcalSearchKey
+import gem.config._
 import gem.enum.{ Instrument, SmartGcalType }
 import org.scalacheck.Gen
 import org.scalacheck.Arbitrary.arbitrary

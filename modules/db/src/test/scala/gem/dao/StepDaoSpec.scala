@@ -11,8 +11,7 @@ import gem.enum._
 import gem.math._
 import java.time.Duration
 import org.scalatest._
-
-import scala.collection.immutable.TreeMap
+import scala.collection.immutable.{ TreeMap, TreeSet }
 
 
 class StepDaoSpec extends FlatSpec with Matchers with DaoTest {
@@ -27,13 +26,13 @@ class StepDaoSpec extends FlatSpec with Matchers with DaoTest {
       pid,
       "Untitled Prog",
       TreeMap(idx ->
-        Observation(
+        Observation.Flamingos2(
           "Untitled Obs",
-          TargetEnvironment.Aux.empty[Instrument.Flamingos2.type],
-          StaticConfig.F2(MosPreImaging.IsNotMosPreImaging),
+          TargetEnvironment.Flamingos2(None, TreeSet.empty),
+          StaticConfig.Flamingos2(MosPreImaging.IsNotMosPreImaging),
           List(
-            Step.Science(
-              DynamicConfig.F2(
+            Step.Flamingos2(
+              DynamicConfig.Flamingos2(
                 None,
                 Duration.ZERO,
                 F2Filter.Dark,
@@ -42,9 +41,11 @@ class StepDaoSpec extends FlatSpec with Matchers with DaoTest {
                 F2ReadMode.Bright,
                 F2WindowCover.Close
               ),
-              TelescopeConfig(
-                Offset.P(Angle.milliarcseconds.reverseGet( 1250)), // 1.25 arcseconds
-                Offset.Q(Angle.milliarcseconds.reverseGet(-2750))
+              Step.Base.Science(
+                TelescopeConfig(
+                  Offset.P(Angle.milliarcseconds.reverseGet( 1250)), // 1.25 arcseconds
+                  Offset.Q(Angle.milliarcseconds.reverseGet(-2750))
+                )
               )
             )
           )

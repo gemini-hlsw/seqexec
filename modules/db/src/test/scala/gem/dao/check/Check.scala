@@ -10,14 +10,11 @@ import doobie.scalatest.imports._
 import gem._
 import gem.enum._
 import gem.config._
-import gem.config.DynamicConfig.SmartGcalKey
 import gem.util.{ Timestamp, Location }
 import gem.math._
 import java.time.LocalDate
 import org.scalatest._
-
-import scala.collection.immutable.TreeMap
-
+import scala.collection.immutable.{ TreeMap, TreeSet }
 
 /** Trait for tests that check statement syntax and mappings. */
 trait Check extends FlatSpec with Matchers with IOChecker {
@@ -49,13 +46,13 @@ trait Check extends FlatSpec with Matchers with IOChecker {
     val gcalShutter      = GcalShutter.Open
     val gcalConfig       = GcalConfig(gcalLamp, gcalFilter, gcalDiffuser, gcalShutter, duration, CoAdds.One)
     val user             = User[Nothing]("", "", "", "", false, Map.empty)
-    val observation      = Observation[TargetEnvironment, StaticConfig, Nothing]("", TargetEnvironment.empty, StaticConfig.F2.Default, Nil)
+    val observation      = Observation.Flamingos2("", TargetEnvironment.Flamingos2(None, TreeSet.empty), StaticConfig.Flamingos2.Default, Nil)
     val program          = Program(programId, "", TreeMap.empty)
-    val f2SmartGcalKey   = DynamicConfig.F2.Default.key
+    val f2SmartGcalKey   = DynamicConfig.Flamingos2.Default.key
     val gcalLampType     = GcalLampType.Arc
     val gcalBaselineType = GcalBaselineType.Day
     val locationMiddle   = Location.unsafeMiddle(1)
-    val f2Config         = DynamicConfig.F2.Default
+    val f2Config         = DynamicConfig.Flamingos2.Default
     val telescopeConfig  = TelescopeConfig(Offset.P.Zero, Offset.Q.Zero)
     val smartGcalType    = SmartGcalType.Arc
     val instrumentConfig = f2Config
@@ -68,13 +65,13 @@ trait Check extends FlatSpec with Matchers with IOChecker {
       gem.config.GmosConfig.GmosCustomRoiEntry.unsafeFromDescription(1, 1, 1, 1)
 
     val gmosNorthSmartGcalSearchKey     =
-      DynamicConfig.GmosNorth.Default.key
+      DynamicConfig.GmosN.Default.key
 
     val gmosSouthSmartGcalSearchKey     =
-      DynamicConfig.GmosSouth.Default.key
+      DynamicConfig.GmosS.Default.key
 
     val gmosNorthSmartGcalDefinitionKey = {
-      val sk = DynamicConfig.GmosNorth.Default.key
+      val sk = DynamicConfig.GmosN.Default.key
       SmartGcalKey.GmosDefinition(
         sk.gmos,
         (Wavelength.Min, Wavelength.Min)
@@ -82,7 +79,7 @@ trait Check extends FlatSpec with Matchers with IOChecker {
     }
 
     val gmosSouthSmartGcalDefinitionKey = {
-      val sk = DynamicConfig.GmosSouth.Default.key
+      val sk = DynamicConfig.GmosS.Default.key
       SmartGcalKey.GmosDefinition(
         sk.gmos,
         (Wavelength.Min, Wavelength.Min)

@@ -76,7 +76,7 @@ object ObservationDao {
     for {
       o <- selectConfig(id)
       t <- TargetEnvironmentDao.selectObs(id)
-    } yield assemble(o._1, t, o._3, o._4.values.toList)
+    } yield Observation.unsafeAssemble(o._1, t, o._3, o._4.values.toList)
 
   /** Construct a program to select the all obseravation ids for the specified
     * science program.
@@ -128,7 +128,7 @@ object ObservationDao {
   def selectAll(pid: Program.Id): ConnectionIO[TreeMap[Index, Observation]] =
     (selectAllConfig(pid), TargetEnvironmentDao.selectProg(pid)).mapN { (rm, tm) =>
       rm.map {  case (idx, (t, _, sc, seq)) =>
-        idx -> assemble(t, tm(idx), sc, seq.values.toList)
+        idx -> Observation.unsafeAssemble(t, tm(idx), sc, seq.values.toList)
       }
     }
 

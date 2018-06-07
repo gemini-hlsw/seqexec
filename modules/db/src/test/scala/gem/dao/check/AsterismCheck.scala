@@ -12,11 +12,8 @@ class AsterismCheck extends Check {
   import AsterismDao.Statements._
 
   "AsterismDao.Statements" should
-            "SingleTarget.insert"    in check(SingleTarget.insert(Dummy.observationId, Target.Id(0), Instrument.GmosS))
-  it should "SingleTarget.select"    in check(SingleTarget.select(Dummy.observationId))
-  it should "SingleTarget.selectAll" in check(SingleTarget.selectAll(Dummy.programId))
-
-  it should "GhostDualTarget.insert"    in check(GhostDualTarget.insert(Dummy.observationId, Target.Id(0), Target.Id(0)))
-  it should "GhostDualTarget.select"    in check(GhostDualTarget.select(Dummy.observationId))
-  it should "GhostDualTarget.selectAll" in check(GhostDualTarget.selectAll(Dummy.programId))
+            "SingleTarget.insert"    in check(insertSingleTarget(Dummy.observationId, Target.Id(0), Instrument.GmosS))
+  it should "GhostDualTarget.insert" in check(insertGhostDualTarget(Dummy.observationId, Target.Id(0), Target.Id(0)))
+  it should "select"                 in check(select(Dummy.observationId))
+  it should "selectAll"              in check(selectAll(Dummy.programId))
 }
