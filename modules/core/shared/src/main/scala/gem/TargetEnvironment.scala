@@ -4,6 +4,7 @@
 package gem
 
 import cats.Eq
+import gem.enum.Instrument
 import scala.collection.immutable.TreeSet
 
 /** Collection of targets associated with an observation. */
@@ -34,6 +35,26 @@ object TargetEnvironment {
       case a @ Asterism.Visitor(_)            => Visitor(Some(a), u)
       case a @ Asterism.Flamingos2(_)         => Flamingos2(Some(a), u)
       case a @ Asterism.GhostDualTarget(_, _) => Ghost(Some(a), u)
+    }
+
+  def fromInstrument(i: Instrument, ts: TreeSet[UserTarget]): TargetEnvironment =
+    i match {
+      case Instrument.Phoenix    => TargetEnvironment.Phoenix(None, ts)
+      case Instrument.Michelle   => TargetEnvironment.Michelle(None, ts)
+      case Instrument.Gnirs      => TargetEnvironment.Gnirs(None, ts)
+      case Instrument.Niri       => TargetEnvironment.Niri(None, ts)
+      case Instrument.Trecs      => TargetEnvironment.Trecs(None, ts)
+      case Instrument.Nici       => TargetEnvironment.Nici(None, ts)
+      case Instrument.Nifs       => TargetEnvironment.Nifs(None, ts)
+      case Instrument.Gpi        => TargetEnvironment.Gpi(None, ts)
+      case Instrument.Gsaoi      => TargetEnvironment.Gsaoi(None, ts)
+      case Instrument.GmosS      => TargetEnvironment.GmosS(None, ts)
+      case Instrument.AcqCam     => TargetEnvironment.AcqCam(None, ts)
+      case Instrument.GmosN      => TargetEnvironment.GmosN(None, ts)
+      case Instrument.Bhros      => TargetEnvironment.Bhros(None, ts)
+      case Instrument.Visitor    => TargetEnvironment.Visitor(None, ts)
+      case Instrument.Flamingos2 => TargetEnvironment.Flamingos2(None, ts)
+      case Instrument.Ghost      => TargetEnvironment.Ghost(None, ts)
     }
 
   /** Target environment for Phoenix

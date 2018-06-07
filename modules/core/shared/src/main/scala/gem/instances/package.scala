@@ -8,6 +8,9 @@ package gem
  * trait that can be extended and as a module whose members can be imported (preferred).
  */
 package object instances {
+
   object all extends TimeInstances
                 with TreeMapInstances
+                with TreeSetInstances
+
 }
