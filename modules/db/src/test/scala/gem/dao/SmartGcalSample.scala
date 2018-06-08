@@ -22,8 +22,8 @@ object SmartGcalSample extends TimedSample with gem.config.Arbitraries {
   private def nextKey(): Option[SmartGcalSearchKey] =
     (for {
       i <- Gen.oneOf(Instrument.Flamingos2, Instrument.GmosN, Instrument.GmosS, Instrument.Gnirs)
-      s <- genStaticConfigOf(i: Instrument.Aux[i.type])
-      d <- genDynamicConfigOf(i: Instrument.Aux[i.type])
+      s <- genStaticConfigOf(i)
+      d <- genDynamicConfigOf(i)
     } yield d.smartGcalKey(s)).sample.flatten
 
   private def nextTest(): Option[(SmartGcalSearchKey, SmartGcalType)] =
