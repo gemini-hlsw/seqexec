@@ -17,13 +17,9 @@ sealed abstract class GcalArc(
   val shortName: String,
   val longName: String,
   val obsolete: Boolean
-) extends Product with Serializable {
-  type Self = this.type
-}
+) extends Product with Serializable
 
 object GcalArc {
-
-  type Aux[A] = GcalArc { type Self = A }
 
   /** @group Constructors */ case object ArArc extends GcalArc("ArArc", "Ar arc", "Ar arc", false)
   /** @group Constructors */ case object ThArArc extends GcalArc("ThArArc", "ThAr arc", "ThAr arc", false)

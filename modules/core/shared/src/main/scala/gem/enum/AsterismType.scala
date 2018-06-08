@@ -14,13 +14,9 @@ import gem.util.Enumerated
  */
 sealed abstract class AsterismType(
   val tag: String
-) extends Product with Serializable {
-  type Self = this.type
-}
+) extends Product with Serializable
 
 object AsterismType {
-
-  type Aux[A] = AsterismType { type Self = A }
 
   /** @group Constructors */ case object GhostDualTarget extends AsterismType("GhostDualTarget")
   /** @group Constructors */ case object SingleTarget extends AsterismType("SingleTarget")

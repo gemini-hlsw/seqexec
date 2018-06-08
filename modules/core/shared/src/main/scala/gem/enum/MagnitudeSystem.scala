@@ -14,13 +14,9 @@ import gem.util.Enumerated
  */
 sealed abstract class MagnitudeSystem(
   val tag: String
-) extends Product with Serializable {
-  type Self = this.type
-}
+) extends Product with Serializable
 
 object MagnitudeSystem {
-
-  type Aux[A] = MagnitudeSystem { type Self = A }
 
   /** @group Constructors */ case object Vega extends MagnitudeSystem("Vega")
   /** @group Constructors */ case object AB extends MagnitudeSystem("AB")

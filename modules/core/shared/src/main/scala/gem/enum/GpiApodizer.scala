@@ -17,13 +17,9 @@ sealed abstract class GpiApodizer(
   val shortName: String,
   val longName: String,
   val obsolete: Boolean
-) extends Product with Serializable {
-  type Self = this.type
-}
+) extends Product with Serializable
 
 object GpiApodizer {
-
-  type Aux[A] = GpiApodizer { type Self = A }
 
   /** @group Constructors */ case object CLEAR extends GpiApodizer("CLEAR", "Clear", "Clear", false)
   /** @group Constructors */ case object CLEARGP extends GpiApodizer("CLEARGP", "CLEAR GP", "CLEAR GP", false)

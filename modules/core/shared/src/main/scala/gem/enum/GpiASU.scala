@@ -17,13 +17,9 @@ sealed abstract class GpiASU(
   val shortName: String,
   val longName: String,
   val value: Boolean
-) extends Product with Serializable {
-  type Self = this.type
-}
+) extends Product with Serializable
 
 object GpiASU {
-
-  type Aux[A] = GpiASU { type Self = A }
 
   /** @group Constructors */ case object On extends GpiASU("On", "On", "On", true)
   /** @group Constructors */ case object Off extends GpiASU("Off", "Off", "Off", false)

@@ -14,13 +14,9 @@ import gem.util.Enumerated
  */
 sealed abstract class SmartGcalType(
   val tag: String
-) extends Product with Serializable {
-  type Self = this.type
-}
+) extends Product with Serializable
 
 object SmartGcalType {
-
-  type Aux[A] = SmartGcalType { type Self = A }
 
   /** @group Constructors */ case object Arc extends SmartGcalType("Arc")
   /** @group Constructors */ case object Flat extends SmartGcalType("Flat")

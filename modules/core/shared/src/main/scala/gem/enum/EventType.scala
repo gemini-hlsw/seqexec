@@ -14,13 +14,9 @@ import gem.util.Enumerated
  */
 sealed abstract class EventType(
   val tag: String
-) extends Product with Serializable {
-  type Self = this.type
-}
+) extends Product with Serializable
 
 object EventType {
-
-  type Aux[A] = EventType { type Self = A }
 
   /** @group Constructors */ case object StartSequence extends EventType("StartSequence")
   /** @group Constructors */ case object EndSequence extends EventType("EndSequence")

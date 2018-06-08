@@ -17,13 +17,9 @@ sealed abstract class GpiFPM(
   val shortName: String,
   val longName: String,
   val obsolete: Boolean
-) extends Product with Serializable {
-  type Self = this.type
-}
+) extends Product with Serializable
 
 object GpiFPM {
-
-  type Aux[A] = GpiFPM { type Self = A }
 
   /** @group Constructors */ case object OPEN extends GpiFPM("OPEN", "Open", "Open", false)
   /** @group Constructors */ case object F50umPIN extends GpiFPM("F50umPIN", "50umPIN", "50umPIN", false)

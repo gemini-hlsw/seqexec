@@ -17,13 +17,9 @@ sealed abstract class GmosDisperserOrder(
   val shortName: String,
   val longName: String,
   val count: Int
-) extends Product with Serializable {
-  type Self = this.type
-}
+) extends Product with Serializable
 
 object GmosDisperserOrder {
-
-  type Aux[A] = GmosDisperserOrder { type Self = A }
 
   /** @group Constructors */ case object Zero extends GmosDisperserOrder("Zero", "0", "Zero", 0)
   /** @group Constructors */ case object One extends GmosDisperserOrder("One", "1", "One", 1)

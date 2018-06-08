@@ -14,13 +14,9 @@ import gem.util.Enumerated
  */
 sealed abstract class StepType(
   val tag: String
-) extends Product with Serializable {
-  type Self = this.type
-}
+) extends Product with Serializable
 
 object StepType {
-
-  type Aux[A] = StepType { type Self = A }
 
   /** @group Constructors */ case object Bias extends StepType("Bias")
   /** @group Constructors */ case object Dark extends StepType("Dark")

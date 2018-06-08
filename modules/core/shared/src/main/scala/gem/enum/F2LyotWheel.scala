@@ -19,13 +19,9 @@ sealed abstract class F2LyotWheel(
   val plateScale: Double,
   val pixelScale: Double,
   val obsolete: Boolean
-) extends Product with Serializable {
-  type Self = this.type
-}
+) extends Product with Serializable
 
 object F2LyotWheel {
-
-  type Aux[A] = F2LyotWheel { type Self = A }
 
   /** @group Constructors */ case object F16 extends F2LyotWheel("F16", "f/16", "f/16 (Open)", 1.61, 0.18, false)
   /** @group Constructors */ case object F32High extends F2LyotWheel("F32High", "f/32 High", "f/32 MCAO high background", 0.805, 0.09, true)

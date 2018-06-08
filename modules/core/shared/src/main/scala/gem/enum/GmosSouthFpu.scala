@@ -18,13 +18,9 @@ sealed abstract class GmosSouthFpu(
   val shortName: String,
   val longName: String,
   val slitWidth: Option[Angle]
-) extends Product with Serializable {
-  type Self = this.type
-}
+) extends Product with Serializable
 
 object GmosSouthFpu {
-
-  type Aux[A] = GmosSouthFpu { type Self = A }
 
   /** @group Constructors */ case object Ifu1 extends GmosSouthFpu("Ifu1", "IFU-2", "IFU 2 Slits", Option.empty[Angle])
   /** @group Constructors */ case object Ifu2 extends GmosSouthFpu("Ifu2", "IFU-B", "IFU Left Slit (blue)", Option.empty[Angle])

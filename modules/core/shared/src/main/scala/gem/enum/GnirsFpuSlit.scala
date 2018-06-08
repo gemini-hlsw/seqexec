@@ -19,13 +19,9 @@ sealed abstract class GnirsFpuSlit(
   val longName: String,
   val slitWidth: Angle,
   val obsolete: Boolean
-) extends Product with Serializable {
-  type Self = this.type
-}
+) extends Product with Serializable
 
 object GnirsFpuSlit {
-
-  type Aux[A] = GnirsFpuSlit { type Self = A }
 
   /** @group Constructors */ case object LongSlit_0_10 extends GnirsFpuSlit("LongSlit_0_10", "0.10 arcsec", "0.10 arcsec", Angle.fromDoubleArcseconds(0.100), false)
   /** @group Constructors */ case object LongSlit_0_15 extends GnirsFpuSlit("LongSlit_0_15", "0.15 arcsec", "0.15 arcsec", Angle.fromDoubleArcseconds(0.150), false)

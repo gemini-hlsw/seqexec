@@ -18,13 +18,9 @@ sealed abstract class F2Disperser(
   val shortName: String,
   val longName: String,
   val wavelength: Wavelength
-) extends Product with Serializable {
-  type Self = this.type
-}
+) extends Product with Serializable
 
 object F2Disperser {
-
-  type Aux[A] = F2Disperser { type Self = A }
 
   /** @group Constructors */ case object R1200JH extends F2Disperser("R1200JH", "R1200JH", "R=1200 (J + H) grism", Wavelength.fromAngstroms.unsafeGet(13900))
   /** @group Constructors */ case object R1200HK extends F2Disperser("R1200HK", "R1200HK", "R=1200 (H + K) grism", Wavelength.fromAngstroms.unsafeGet(18710))

@@ -17,13 +17,9 @@ sealed abstract class GmosXBinning(
   val shortName: String,
   val longName: String,
   val count: Int
-) extends Product with Serializable {
-  type Self = this.type
-}
+) extends Product with Serializable
 
 object GmosXBinning {
-
-  type Aux[A] = GmosXBinning { type Self = A }
 
   /** @group Constructors */ case object One extends GmosXBinning("One", "1", "One", 1)
   /** @group Constructors */ case object Two extends GmosXBinning("Two", "2", "Two", 2)
