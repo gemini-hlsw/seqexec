@@ -19,10 +19,10 @@ import java.nio.file.Path
 final class Service[M[_]: Sync: LiftIO] private (private val xa: Transactor[M], val log: Log[M], val user: User[ProgramRole]) {
 
   /**
-   * Construct a program that yields a list of `Program` whose name or id contains the given
-   * substring (case-insensitive), up to a provided maximum length.
+   * Construct a program that yields a list of `(Program.Id, String)` whose name or id contains the
+   * given substring (case-insensitive), up to a provided maximum length.
    */
-  def queryProgramsByName(substr: String, max: Int): M[List[Program[Nothing]]] =
+  def queryProgramsByName(substr: String, max: Int): M[List[(Program.Id, String)]] =
     log.log(user, s"""queryProgramsByName("$substr", $max)""") {
       ProgramDao.selectBySubstring(s"%$substr%", max).transact(xa)
     }
