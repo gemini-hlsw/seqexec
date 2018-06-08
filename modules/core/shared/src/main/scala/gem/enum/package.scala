@@ -6,6 +6,7 @@ package gem
 import java.time.Month
 import java.time.Month._
 import cats.implicits._
+import gem.config.StaticConfig
 import gem.syntax.ToPrismOps
 
 // The members of this package are generated from database tables, which are the source of truth.
@@ -22,13 +23,13 @@ package object enum extends ToPrismOps {
    * @group Enrichments
    */
   implicit class StepTypeCompanionOps(val value: StepType.type) extends AnyVal {
-    def forStep(s: Step[_]): StepType =
-      s match {
-        case Step.Bias(_)         => StepType.Bias
-        case Step.Dark(_)         => StepType.Dark
-        case Step.Gcal(_, _)      => StepType.Gcal
-        case Step.Science(_, _)   => StepType.Science
-        case Step.SmartGcal(_, _) => StepType.SmartGcal
+    def forStep(s: Step): StepType =
+      s.base match {
+        case Step.Base.Bias         => StepType.Bias
+        case Step.Base.Dark         => StepType.Dark
+        case Step.Base.Gcal(_)      => StepType.Gcal
+        case Step.Base.Science(_)   => StepType.Science
+        case Step.Base.SmartGcal(_) => StepType.SmartGcal
       }
   }
 
@@ -94,8 +95,98 @@ package object enum extends ToPrismOps {
   implicit class AsterismTypeOps(val value: AsterismType.type) extends AnyVal {
     def of(a: Asterism): AsterismType =
       a match {
-        case _: Asterism.SingleTarget[_] => AsterismType.SingleTarget
+        case _: Asterism.SingleTarget    => AsterismType.SingleTarget
         case _: Asterism.GhostDualTarget => AsterismType.GhostDualTarget
       }
   }
+
+  /**
+   * Enrichment methods for [[Instrument]].
+   * @group Enrichment
+   */
+  implicit class InstrumentOps(val value: Instrument.type) extends AnyVal {
+
+    def forStep(s: Step): Instrument =
+      s match {
+        case Step.Phoenix(_, _)    => Instrument.Phoenix
+        case Step.Michelle(_, _)   => Instrument.Michelle
+        case Step.Gnirs(_, _)      => Instrument.Gnirs
+        case Step.Niri(_, _)       => Instrument.Niri
+        case Step.Trecs(_, _)      => Instrument.Trecs
+        case Step.Nici(_, _)       => Instrument.Nici
+        case Step.Nifs(_, _)       => Instrument.Nifs
+        case Step.Gpi(_, _)        => Instrument.Gpi
+        case Step.Gsaoi(_, _)      => Instrument.Gsaoi
+        case Step.GmosS(_, _)      => Instrument.GmosS
+        case Step.AcqCam(_, _)     => Instrument.AcqCam
+        case Step.GmosN(_, _)      => Instrument.GmosN
+        case Step.Bhros(_, _)      => Instrument.Bhros
+        case Step.Visitor(_, _)    => Instrument.Visitor
+        case Step.Flamingos2(_, _) => Instrument.Flamingos2
+        case Step.Ghost(_, _)      => Instrument.Ghost
+      }
+
+
+    def forStaticConfig(s: StaticConfig): Instrument =
+      s match {
+        case _: StaticConfig.Phoenix    => Instrument.Phoenix
+        case _: StaticConfig.Michelle   => Instrument.Michelle
+        case _: StaticConfig.Gnirs      => Instrument.Gnirs
+        case _: StaticConfig.Niri       => Instrument.Niri
+        case _: StaticConfig.Trecs      => Instrument.Trecs
+        case _: StaticConfig.Nici       => Instrument.Nici
+        case _: StaticConfig.Nifs       => Instrument.Nifs
+        case _: StaticConfig.Gpi        => Instrument.Gpi
+        case _: StaticConfig.Gsaoi      => Instrument.Gsaoi
+        case _: StaticConfig.GmosS      => Instrument.GmosS
+        case _: StaticConfig.AcqCam     => Instrument.AcqCam
+        case _: StaticConfig.GmosN      => Instrument.GmosN
+        case _: StaticConfig.Bhros      => Instrument.Bhros
+        case _: StaticConfig.Visitor    => Instrument.Visitor
+        case _: StaticConfig.Flamingos2 => Instrument.Flamingos2
+        case _: StaticConfig.Ghost      => Instrument.Ghost
+      }
+
+    def forAsterism(a: Asterism): Instrument =
+      a match {
+        case Asterism.Phoenix(_)            => Instrument.Phoenix
+        case Asterism.Michelle(_)           => Instrument.Michelle
+        case Asterism.Gnirs(_)              => Instrument.Gnirs
+        case Asterism.Niri(_)               => Instrument.Niri
+        case Asterism.Trecs(_)              => Instrument.Trecs
+        case Asterism.Nici(_)               => Instrument.Nici
+        case Asterism.Nifs(_)               => Instrument.Nifs
+        case Asterism.Gpi(_)                => Instrument.Gpi
+        case Asterism.Gsaoi(_)              => Instrument.Gsaoi
+        case Asterism.GmosS(_)              => Instrument.GmosS
+        case Asterism.AcqCam(_)             => Instrument.AcqCam
+        case Asterism.GmosN(_)              => Instrument.GmosN
+        case Asterism.Bhros(_)              => Instrument.Bhros
+        case Asterism.Visitor(_)            => Instrument.Visitor
+        case Asterism.Flamingos2(_)         => Instrument.Flamingos2
+        case Asterism.GhostDualTarget(_, _) => Instrument.Ghost
+      }
+
+    def forObservation(a: Observation): Instrument =
+      a match {
+        case Observation.Phoenix(_, _, _, _)    => Instrument.Phoenix
+        case Observation.Michelle(_, _, _, _)   => Instrument.Michelle
+        case Observation.Gnirs(_, _, _, _)      => Instrument.Gnirs
+        case Observation.Niri(_, _, _, _)       => Instrument.Niri
+        case Observation.Trecs(_, _, _, _)      => Instrument.Trecs
+        case Observation.Nici(_, _, _, _)       => Instrument.Nici
+        case Observation.Nifs(_, _, _, _)       => Instrument.Nifs
+        case Observation.Gpi(_, _, _, _)        => Instrument.Gpi
+        case Observation.Gsaoi(_, _, _, _)      => Instrument.Gsaoi
+        case Observation.GmosS(_, _, _, _)      => Instrument.GmosS
+        case Observation.AcqCam(_, _, _, _)     => Instrument.AcqCam
+        case Observation.GmosN(_, _, _, _)      => Instrument.GmosN
+        case Observation.Bhros(_, _, _, _)      => Instrument.Bhros
+        case Observation.Visitor(_, _, _, _)    => Instrument.Visitor
+        case Observation.Flamingos2(_, _, _, _) => Instrument.Flamingos2
+        case Observation.Ghost(_, _, _, _)      => Instrument.Ghost
+      }
+
+  }
+
 }

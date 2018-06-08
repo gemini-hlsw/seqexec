@@ -15,13 +15,9 @@ import gem.util.Enumerated
 sealed abstract class Half(
   val tag: String,
   val toInt: Int
-) extends Product with Serializable {
-  type Self = this.type
-}
+) extends Product with Serializable
 
 object Half {
-
-  type Aux[A] = Half { type Self = A }
 
   /** @group Constructors */ case object A extends Half("A", 0)
   /** @group Constructors */ case object B extends Half("B", 1)

@@ -26,19 +26,19 @@ trait ArbObservation extends gem.config.Arbitraries {
       } yield Observation.Id(pid, Index.fromShort.unsafeGet(num))
     }
 
-  def genObservation[I <: Instrument with Singleton](i: Instrument.Aux[I]): Gen[Observation.Full] =
+  def genObservation(i: Instrument): Gen[Observation] =
     for {
       t   <- arbitrary[String]
       te  <- genTargetEnvironment(i)
       sc  <- genStaticConfigOf(i)
       dc  <- genDynamicConfigOf(i)
-    } yield Observation(t, te, sc, List(Step.Bias(dc)))
+    } yield Observation.unsafeAssemble(t, te, sc, List(dc.toStep(Step.Base.Bias)))
 
-  implicit val arbObservation: Arbitrary[Observation.Full] =
+  implicit val arbObservation: Arbitrary[Observation] =
     Arbitrary {
       for {
         i <- arbitrary[Instrument]
-        o <- genObservation[i.type](i)
+        o <- genObservation(i)
       } yield o
     }
 

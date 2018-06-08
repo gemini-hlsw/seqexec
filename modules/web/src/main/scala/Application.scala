@@ -35,7 +35,7 @@ object Application {
       case GET -> Root / "api" / "query" / "program" :? Query(q) +& Limit(n) as gs =>
         val pattern = globToSql(q.getOrElse("*"))
         val limit   = n.getOrElse(100)
-        gs.queryProgramsByName(pattern, limit).flatMap(ps => Ok(ps.map(p => (p.id, p.title)).asJson ))
+        gs.queryProgramsByName(pattern, limit).flatMap(ps => Ok(ps.map(p => (p._1, p._2)).asJson ))
 
     }
 

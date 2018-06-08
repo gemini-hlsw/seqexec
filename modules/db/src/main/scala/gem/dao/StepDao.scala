@@ -38,15 +38,15 @@ object StepDao {
   import Statements._
 
 
-  def insert[I <: DynamicConfig](oid: Observation.Id, loc: Loc, s: Step[I]): ConnectionIO[Int] =
+  def insert(oid: Observation.Id, loc: Loc, s: Step): ConnectionIO[Int] =
     for {
-      id <- Statements.insertBaseSlice(oid, loc, s.dynamicConfig, StepType.forStep(s)).withUniqueGeneratedKeys[Int]("step_id")
-      _  <- s match {
-              case Step.Bias(_)         => Statements.insertBiasSlice(id).run
-              case Step.Dark(_)         => Statements.insertDarkSlice(id).run
-              case Step.Science(_, t)   => Statements.insertScienceSlice(id, t).run
-              case Step.SmartGcal(_, t) => Statements.insertSmartGcalSlice(id, t).run
-              case Step.Gcal(_, g)      => GcalDao.insertStepGcal(id, g)
+      id <- Statements.insertBaseSlice(oid, loc, Instrument.forStep(s), StepType.forStep(s)).withUniqueGeneratedKeys[Int]("step_id")
+      _  <- s.base match {
+              case Step.Base.Bias         => Statements.insertBiasSlice(id).run
+              case Step.Base.Dark         => Statements.insertDarkSlice(id).run
+              case Step.Base.Science(t)   => Statements.insertScienceSlice(id, t).run
+              case Step.Base.SmartGcal(t) => Statements.insertSmartGcalSlice(id, t).run
+              case Step.Base.Gcal(g)      => GcalDao.insertStepGcal(id, g)
             }
       _  <- insertConfigSlice(id, s.dynamicConfig)
     } yield id
@@ -57,16 +57,16 @@ object StepDao {
     * @param oid observation whose step should be selected
     * @param loc position of the step to select
     */
-  def selectOneEmpty(oid: Observation.Id, loc: Loc): MaybeConnectionIO[Step[Instrument]] =
-    Statements.selectOneEmpty(oid, loc).maybe
+  def selectOneInstrumentAndBase(oid: Observation.Id, loc: Loc): MaybeConnectionIO[(Instrument, Step.Base)] =
+    Statements.selectOneInstrumentAndBase(oid, loc).maybe
 
   /** Selects `Step`s with an `Instrument` element but without any instrument
     * configuration information.
     *
     * @param oid observation whose steps should be selected
     */
-  def selectAllEmpty(oid: Observation.Id): ConnectionIO[TreeMap[Loc, Step[Instrument]]] =
-    Statements.selectAllEmpty(oid).to[List].map(ps => TreeMap.fromList(ps))
+  def selectAllInstrumentAndBase(oid: Observation.Id): ConnectionIO[TreeMap[Loc, (Instrument, Step.Base)]] =
+    Statements.selectAllInstrumentAndBase(oid).to[List].map(ps => TreeMap.fromList(ps))
 
   /** Selects the step at the indicated location in the sequence associated with
     * the indicated observation.
@@ -74,62 +74,53 @@ object StepDao {
     * @param oid observation whose step configuration is sought
     * @param loc location within the sequence to find
     */
-  def selectOne(oid: Observation.Id, loc: Loc): MaybeConnectionIO[Step[DynamicConfig]] = {
-    def pure(dc: DynamicConfig): MaybeConnectionIO[DynamicConfig] =
-      dc.pure[MaybeConnectionIO]
-
-    def instrumentConfig(s: Step[Instrument]): MaybeConnectionIO[DynamicConfig] =
-      s.dynamicConfig match {
-        case Instrument.AcqCam     => pure(DynamicConfig.AcqCam())
-        case Instrument.Bhros      => pure(DynamicConfig.Bhros())
-        case Instrument.Flamingos2 => F2.selectOne(oid, loc)       .maybe.widen[DynamicConfig]
-        case Instrument.Ghost      => pure(DynamicConfig.Ghost())
-        case Instrument.GmosN      => Gmos.selectOneNorth(oid, loc).maybe.widen[DynamicConfig]
-        case Instrument.GmosS      => Gmos.selectOneSouth(oid, loc).maybe.widen[DynamicConfig]
-        case Instrument.Gnirs      => Gnirs.selectOne(oid, loc)    .maybe.widen[DynamicConfig]
-        case Instrument.Gpi        => pure(DynamicConfig.Gpi())
-        case Instrument.Gsaoi      => pure(DynamicConfig.Gsaoi())
-        case Instrument.Michelle   => pure(DynamicConfig.Michelle())
-        case Instrument.Nici       => pure(DynamicConfig.Nici())
-        case Instrument.Nifs       => pure(DynamicConfig.Nifs())
-        case Instrument.Niri       => pure(DynamicConfig.Niri())
-        case Instrument.Phoenix    => pure(DynamicConfig.Phoenix())
-        case Instrument.Trecs      => pure(DynamicConfig.Trecs())
-        case Instrument.Visitor    => pure(DynamicConfig.Visitor())
-      }
-
-    for {
-      s <- selectOneEmpty(oid, loc)
-      i <- instrumentConfig(s)
-    } yield s.as(i)
-  }
+  def selectOne(oid: Observation.Id, loc: Loc): MaybeConnectionIO[Step] =
+    selectOneInstrumentAndBase(oid, loc).flatMap {
+      case (Instrument.AcqCam, b)     => MaybeConnectionIO.some(DynamicConfig.AcqCam().toStep(b))
+      case (Instrument.Bhros, b)      => MaybeConnectionIO.some(DynamicConfig.Bhros().toStep(b))
+      case (Instrument.Flamingos2, b) => Flamingos2.selectOne(oid, loc).map(_.toStep(b): Step).maybe
+      case (Instrument.Ghost, b)      => MaybeConnectionIO.some(DynamicConfig.Ghost().toStep(b))
+      case (Instrument.GmosN, b)      => Gmos.selectOneNorth(oid, loc).map(_.toStep(b): Step).maybe
+      case (Instrument.GmosS, b)      => Gmos.selectOneSouth(oid, loc).map(_.toStep(b): Step).maybe
+      case (Instrument.Gnirs, b)      => Gnirs.selectOne(oid, loc)    .map(_.toStep(b): Step).maybe
+      case (Instrument.Gpi, b)        => MaybeConnectionIO.some(DynamicConfig.Gpi().toStep(b))
+      case (Instrument.Gsaoi, b)      => MaybeConnectionIO.some(DynamicConfig.Gsaoi().toStep(b))
+      case (Instrument.Michelle, b)   => MaybeConnectionIO.some(DynamicConfig.Michelle().toStep(b))
+      case (Instrument.Nici, b)       => MaybeConnectionIO.some(DynamicConfig.Nici().toStep(b))
+      case (Instrument.Nifs, b)       => MaybeConnectionIO.some(DynamicConfig.Nifs().toStep(b))
+      case (Instrument.Niri, b)       => MaybeConnectionIO.some(DynamicConfig.Niri().toStep(b))
+      case (Instrument.Phoenix, b)    => MaybeConnectionIO.some(DynamicConfig.Phoenix().toStep(b))
+      case (Instrument.Trecs, b)      => MaybeConnectionIO.some(DynamicConfig.Trecs().toStep(b))
+      case (Instrument.Visitor, b)    => MaybeConnectionIO.some(DynamicConfig.Visitor().toStep(b))
+    }
 
   /** Selects all steps with their instrument configuration data.
     *
     * @param oid observation whose step configurations are sought
     */
-  def selectAll(oid: Observation.Id): ConnectionIO[TreeMap[Loc, Step[DynamicConfig]]] = {
+  def selectAll(oid: Observation.Id): ConnectionIO[TreeMap[Loc, Step]] = {
+
     def pure(dc: DynamicConfig): ConnectionIO[TreeMap[Loc, DynamicConfig]] =
       TreeMap(Location.unsafeMiddle(0) -> dc).pure[ConnectionIO]
 
-    def instrumentConfig(ss: TreeMap[Loc, Step[Instrument]]): ConnectionIO[TreeMap[Loc, DynamicConfig]] =
-      ss.headOption.map(_._2.dynamicConfig).fold(TreeMap.empty[Loc, DynamicConfig].pure[ConnectionIO]) {
-        case Instrument.AcqCam     => pure(DynamicConfig.AcqCam())
-        case Instrument.Bhros      => pure(DynamicConfig.Bhros())
-        case Instrument.Flamingos2 => F2.selectAll(oid)       .toMap[DynamicConfig] //.map(a => a: TreeMap[Loc, DynamicConfig])
-        case Instrument.Ghost      => pure(DynamicConfig.Ghost())
-        case Instrument.GmosN      => Gmos.selectAllNorth(oid).toMap[DynamicConfig] //.map(a => a: TreeMap[Loc, DynamicConfig])
-        case Instrument.GmosS      => Gmos.selectAllSouth(oid).toMap[DynamicConfig] //.map(a => a: TreeMap[Loc, DynamicConfig])
-        case Instrument.Gnirs      => Gnirs.selectAll(oid)    .toMap[DynamicConfig] //.map(a => a: TreeMap[Loc, DynamicConfig])
-        case Instrument.Gpi        => pure(DynamicConfig.Gpi())
-        case Instrument.Gsaoi      => pure(DynamicConfig.Gsaoi())
-        case Instrument.Michelle   => pure(DynamicConfig.Michelle())
-        case Instrument.Nici       => pure(DynamicConfig.Nici())
-        case Instrument.Nifs       => pure(DynamicConfig.Nifs())
-        case Instrument.Niri       => pure(DynamicConfig.Niri())
-        case Instrument.Phoenix    => pure(DynamicConfig.Phoenix())
-        case Instrument.Trecs      => pure(DynamicConfig.Trecs())
-        case Instrument.Visitor    => pure(DynamicConfig.Visitor())
+    def instrumentConfig(ss: TreeMap[Loc, (Instrument, Step.Base)]): ConnectionIO[TreeMap[Loc, DynamicConfig]] =
+      ss.headOption.map(_._2).fold(TreeMap.empty[Loc, DynamicConfig].pure[ConnectionIO]) {
+        case (Instrument.AcqCam, _)     => pure(DynamicConfig.AcqCam())
+        case (Instrument.Bhros, _)      => pure(DynamicConfig.Bhros())
+        case (Instrument.Flamingos2, _) => Flamingos2.selectAll(oid)       .toMap[DynamicConfig] //.map(a => a: TreeMap[Loc, DynamicConfig])
+        case (Instrument.Ghost, _)      => pure(DynamicConfig.Ghost())
+        case (Instrument.GmosN, _)      => Gmos.selectAllNorth(oid).toMap[DynamicConfig] //.map(a => a: TreeMap[Loc, DynamicConfig])
+        case (Instrument.GmosS, _)      => Gmos.selectAllSouth(oid).toMap[DynamicConfig] //.map(a => a: TreeMap[Loc, DynamicConfig])
+        case (Instrument.Gnirs, _)      => Gnirs.selectAll(oid)    .toMap[DynamicConfig] //.map(a => a: TreeMap[Loc, DynamicConfig])
+        case (Instrument.Gpi, _)        => pure(DynamicConfig.Gpi())
+        case (Instrument.Gsaoi, _)      => pure(DynamicConfig.Gsaoi())
+        case (Instrument.Michelle, _)   => pure(DynamicConfig.Michelle())
+        case (Instrument.Nici, _)       => pure(DynamicConfig.Nici())
+        case (Instrument.Nifs, _)       => pure(DynamicConfig.Nifs())
+        case (Instrument.Niri, _)       => pure(DynamicConfig.Niri())
+        case (Instrument.Phoenix, _)    => pure(DynamicConfig.Phoenix())
+        case (Instrument.Trecs, _)      => pure(DynamicConfig.Trecs())
+        case (Instrument.Visitor, _)    => pure(DynamicConfig.Visitor())
       }
 
     // n log n
@@ -139,9 +130,10 @@ object StepDao {
       }
 
     for {
-      ss <- selectAllEmpty(oid)
+      ss <- selectAllInstrumentAndBase(oid)
       is <- instrumentConfig(ss)
-    } yield intersect(ss, is)(_ as _)
+    } yield intersect(ss, is) { case ((_, b), dc) => dc.toStep(b) }
+
   }
 
   /** Deletes the step at the indicated location, if any.
@@ -163,24 +155,22 @@ object StepDao {
 
   private def insertConfigSlice(id: Int, d: DynamicConfig): ConnectionIO[Unit] =
     d match {
-      case _: DynamicConfig.AcqCam    => ().pure[ConnectionIO]
-      case _: DynamicConfig.Bhros     => ().pure[ConnectionIO]
-      case i: DynamicConfig.F2        => F2.insert(id, i).run.void
-      case _: DynamicConfig.Ghost     => ().pure[ConnectionIO]
-      case i: DynamicConfig.GmosNorth => Gmos.insertCommon(id, i.common).run *>
-                                           Gmos.insertNorth(id, i).run.void
-      case i: DynamicConfig.GmosSouth => Gmos.insertCommon(id, i.common).run *>
-                                           Gmos.insertSouth(id, i).run.void
-      case g: DynamicConfig.Gnirs     => Gnirs.insert(id, g).run.void
-      case _: DynamicConfig.Gpi       => ().pure[ConnectionIO]
-      case _: DynamicConfig.Gsaoi     => ().pure[ConnectionIO]
-      case _: DynamicConfig.Michelle  => ().pure[ConnectionIO]
-      case _: DynamicConfig.Nici      => ().pure[ConnectionIO]
-      case _: DynamicConfig.Nifs      => ().pure[ConnectionIO]
-      case _: DynamicConfig.Niri      => ().pure[ConnectionIO]
-      case _: DynamicConfig.Phoenix   => ().pure[ConnectionIO]
-      case _: DynamicConfig.Trecs     => ().pure[ConnectionIO]
-      case _: DynamicConfig.Visitor   => ().pure[ConnectionIO]
+      case _: DynamicConfig.AcqCam     => FC.unit
+      case _: DynamicConfig.Bhros      => FC.unit
+      case i: DynamicConfig.Flamingos2 => Flamingos2.insert(id, i).run.void
+      case _: DynamicConfig.Ghost      => FC.unit
+      case i: DynamicConfig.GmosN      => Gmos.insertCommon(id, i.common).run *> Gmos.insertNorth(id, i).run.void
+      case i: DynamicConfig.GmosS      => Gmos.insertCommon(id, i.common).run *> Gmos.insertSouth(id, i).run.void
+      case g: DynamicConfig.Gnirs      => Gnirs.insert(id, g).run.void
+      case _: DynamicConfig.Gpi        => FC.unit
+      case _: DynamicConfig.Gsaoi      => FC.unit
+      case _: DynamicConfig.Michelle   => FC.unit
+      case _: DynamicConfig.Nici       => FC.unit
+      case _: DynamicConfig.Nifs       => FC.unit
+      case _: DynamicConfig.Niri       => FC.unit
+      case _: DynamicConfig.Phoenix    => FC.unit
+      case _: DynamicConfig.Trecs      => FC.unit
+      case _: DynamicConfig.Visitor    => FC.unit
     }
 
   // The type we get when we select the fully joined step
@@ -191,11 +181,11 @@ object StepDao {
     telescope: (Option[Offset.P],  Option[Offset.Q]),
     smartGcalType: Option[SmartGcalType])
   {
-    def toStep: Step[Instrument] =
+    def toInstrumentAndBase: (Instrument, Step.Base) =
       stepType match {
 
-        case StepType.Bias => Step.Bias(i)
-        case StepType.Dark => Step.Dark(i)
+        case StepType.Bias => (i, Step.Base.Bias)
+        case StepType.Dark => (i, Step.Base.Dark)
 
         case StepType.Gcal =>
           import GcalArc._
@@ -211,14 +201,14 @@ object StepDao {
             s    <- shutterOpt
             e    <- exposureOpt
             c    <- coaddsOpt.flatMap(CoAdds.fromShort.getOption)
-          } yield Step.Gcal(i, GcalConfig(l, f, d, s, e, c))).getOrElse(sys.error(s"missing gcal information: $gcal"))
+          } yield (i, Step.Base.Gcal(GcalConfig(l, f, d, s, e, c)))).getOrElse(sys.error(s"missing gcal information: $gcal"))
 
         case StepType.SmartGcal =>
-          smartGcalType.map(t => Step.SmartGcal(i, t)).getOrElse(sys.error("missing smart gcal type"))
+          smartGcalType.map(t => (i, Step.Base.SmartGcal(t))).getOrElse(sys.error("missing smart gcal type"))
 
         case StepType.Science =>
           telescope.mapN(TelescopeConfig(_, _))
-            .map(Step.Science(i, _))
+            .map(c => (i, Step.Base.Science(c)))
             .getOrElse(sys.error(s"missing telescope information: $telescope"))
 
       }
@@ -241,7 +231,7 @@ object StepDao {
                 AND observation_index = ${oid.index}
       """.update
 
-    def selectAllEmpty(oid: Observation.Id): Query0[(Loc, Step[Instrument])] =
+    def selectAllInstrumentAndBase(oid: Observation.Id): Query0[(Loc, (Instrument, Step.Base))] =
       sql"""
         SELECT s.location,
                s.instrument,
@@ -268,9 +258,9 @@ object StepDao {
                   ON ss.step_smart_gcal_id = s.step_id
          WHERE s.program_id        = ${oid.pid}
            AND s.observation_index = ${oid.index}
-      """.query[(Loc, StepKernel)].map(_.map(_.toStep))
+      """.query[(Loc, StepKernel)].map(_.map(_.toInstrumentAndBase))
 
-    def selectOneEmpty(oid: Observation.Id, loc: Loc): Query0[Step[Instrument]] =
+    def selectOneInstrumentAndBase(oid: Observation.Id, loc: Loc): Query0[(Instrument, Step.Base)] =
       sql"""
         SELECT s.instrument,
                s.step_type,
@@ -297,7 +287,7 @@ object StepDao {
          WHERE s.program_id        = ${oid.pid}
            AND s.observation_index = ${oid.index}
            AND s.location          = $loc
-      """.query[StepKernel].map(_.toStep)
+      """.query[StepKernel].map(_.toInstrumentAndBase)
 
     def insertScienceSlice(id: Int, t: TelescopeConfig): Update0 =
       sql"""
@@ -323,13 +313,13 @@ object StepDao {
         VALUES ($id)
       """.update
 
-    def insertBaseSlice(oid: Observation.Id, loc: Loc, i: DynamicConfig, t: StepType): Update0 =
+    def insertBaseSlice(oid: Observation.Id, loc: Loc, i: Instrument, t: StepType): Update0 =
       sql"""
         INSERT INTO step (program_id, observation_index, location, instrument, step_type)
-        VALUES (${oid.pid}, ${oid.index}, $loc, ${i.instrument: Instrument}, ${t} :: step_type)
+        VALUES (${oid.pid}, ${oid.index}, $loc, ${i: Instrument}, ${t} :: step_type)
       """.update
 
-    object F2 {
+    object Flamingos2 {
       import F2Config.F2FpuChoice
       import F2Config.F2FpuChoice._
 
@@ -347,11 +337,11 @@ object StepDao {
         readMode:      F2ReadMode,
         windowCover:   F2WindowCover
       ) {
-        def toF2: DynamicConfig.F2 =
-          DynamicConfig.F2(disperser, exposureTime, filter, fpuBuilder.toFpuChoice, lyotWheel, readMode, windowCover)
+        def toF2: DynamicConfig.Flamingos2 =
+          DynamicConfig.Flamingos2(disperser, exposureTime, filter, fpuBuilder.toFpuChoice, lyotWheel, readMode, windowCover)
       }
 
-      def selectAll(oid: Observation.Id): Query0[(Loc, DynamicConfig.F2)] =
+      def selectAll(oid: Observation.Id): Query0[(Loc, DynamicConfig.Flamingos2)] =
         sql"""
           SELECT s.location,
                  i.disperser,
@@ -369,7 +359,7 @@ object StepDao {
              AND s.observation_index = ${oid.index}
         """.query[(Loc, F2Builder)].map(_.map(_.toF2))
 
-      def selectOne(oid: Observation.Id, loc: Loc): Query0[DynamicConfig.F2] =
+      def selectOne(oid: Observation.Id, loc: Loc): Query0[DynamicConfig.Flamingos2] =
         sql"""
           SELECT i.disperser,
                  i.exposure_time,
@@ -387,7 +377,7 @@ object StepDao {
              AND s.location          = $loc
         """.query[F2Builder].map(_.toF2)
 
-      def insert(id: Int, f2: DynamicConfig.F2): Update0 =
+      def insert(id: Int, f2: DynamicConfig.Flamingos2): Update0 =
         sql"""
           INSERT INTO step_f2 (
             step_f2_id,
@@ -409,7 +399,7 @@ object StepDao {
     object Gmos {
 
       import gem.config.GmosConfig.{ GmosCommonDynamicConfig, GmosCustomMask, GmosGrating }
-      import DynamicConfig.{ GmosNorth, GmosSouth }
+      import DynamicConfig.{ GmosN, GmosS }
 
       final case class GmosFpuBuilder[U](
                          mdfFileName: Option[String],
@@ -434,8 +424,8 @@ object StepDao {
                          f: Option[GmosNorthFilter],
                          u: GmosFpuBuilder[GmosNorthFpu]) {
 
-        val toDynamicConfig: GmosNorth =
-          GmosNorth(c, g, f, u.toFpu)
+        val toDynamicConfig: GmosN =
+          GmosN(c, g, f, u.toFpu)
       }
 
       final case class GmosSouthBuilder(
@@ -444,8 +434,8 @@ object StepDao {
                          f: Option[GmosSouthFilter],
                          u: GmosFpuBuilder[GmosSouthFpu]) {
 
-        val toDynamicConfig: GmosSouth =
-          GmosSouth(c, g, f, u.toFpu)
+        val toDynamicConfig: GmosS =
+          GmosS(c, g, f, u.toFpu)
       }
 
       private def selectFragment(withLocation: Boolean, table: String, oid: Observation.Id): Fragment =
@@ -474,20 +464,20 @@ object StepDao {
             """) ++
           fr"""WHERE s.program_id = ${oid.pid} AND s.observation_index = ${oid.index}"""
 
-      def selectAllNorth(oid: Observation.Id): Query0[(Loc, GmosNorth)] =
+      def selectAllNorth(oid: Observation.Id): Query0[(Loc, GmosN)] =
         selectFragment(withLocation = true, "step_gmos_north", oid)
           .query[(Loc, GmosNorthBuilder)].map(_.map(_.toDynamicConfig))
 
-      def selectOneNorth(oid: Observation.Id, loc: Loc): Query0[GmosNorth] =
+      def selectOneNorth(oid: Observation.Id, loc: Loc): Query0[GmosN] =
         (selectFragment(withLocation = false, "step_gmos_north", oid) ++
           fr"""AND s.location = $loc"""
           ).query[GmosNorthBuilder].map(_.toDynamicConfig)
 
-      def selectAllSouth(oid: Observation.Id): Query0[(Loc, GmosSouth)] =
+      def selectAllSouth(oid: Observation.Id): Query0[(Loc, GmosS)] =
         selectFragment(withLocation = true, "step_gmos_south", oid)
           .query[(Loc, GmosSouthBuilder)].map(_.map(_.toDynamicConfig))
 
-      def selectOneSouth(oid: Observation.Id, loc: Loc): Query0[GmosSouth] =
+      def selectOneSouth(oid: Observation.Id, loc: Loc): Query0[GmosS] =
         (selectFragment(withLocation = false, "step_gmos_south", oid) ++
           fr"""AND s.location = $loc"""
           ).query[GmosSouthBuilder].map(_.toDynamicConfig)
@@ -511,7 +501,7 @@ object StepDao {
             ${g.roi})
         """.update
 
-      def insertNorth(id: Int, g: GmosNorth): Update0 =
+      def insertNorth(id: Int, g: GmosN): Update0 =
         sql"""
           INSERT INTO step_gmos_north (
             step_id,
@@ -528,7 +518,7 @@ object StepDao {
             ${g.fpu.flatMap(_.toOption)})
         """.update
 
-      def insertSouth(id: Int, g: GmosSouth): Update0 =
+      def insertSouth(id: Int, g: GmosS): Update0 =
         sql"""
           INSERT INTO step_gmos_south (
             step_id,
@@ -627,5 +617,6 @@ object StepDao {
             ${gnirs.wavelength})
         """.update
     }
+
   }
 }

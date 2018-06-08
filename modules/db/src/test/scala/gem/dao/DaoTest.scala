@@ -5,8 +5,7 @@ package gem.dao
 
 import cats.effect.IO
 import doobie._, doobie.implicits._
-import gem.{ Program, Step }
-import gem.math.Index
+import gem.Program
 import gem.syntax.prism._
 
 import scala.collection.immutable.TreeMap
@@ -21,7 +20,7 @@ trait DaoTest extends gem.Arbitraries {
 
   def withProgram[A](test: ConnectionIO[A]): A =
     (for {
-      _ <- ProgramDao.insertFlat(Program(pid, "Test Prog", TreeMap.empty[Index, Step[Nothing]]))
+      _ <- ProgramDao.insertFlat(Program(pid, "Test Prog", TreeMap.empty))
       a <- test
     } yield a).transact(xa).unsafeRunSync()
 

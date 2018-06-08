@@ -4,36 +4,37 @@
 package gem
 package dao
 
+import cats._
 import cats.implicits._
 import doobie._
 import doobie.implicits._
-import gem.enum.AsterismType
+import gem.instances.treeset._
 import gem.math.Index
-import gem.syntax.treemap._
-import scala.collection.immutable.{ TreeMap, TreeSet }
 
 object TargetEnvironmentDao {
 
+  private implicit def m: Monoid[ConnectionIO[Unit]] =
+    Applicative.monoid
+
   def insert(oid: Observation.Id, e: TargetEnvironment): ConnectionIO[Unit] =
-    for {
-      _ <- e.asterism.fold(().pure[ConnectionIO])(AsterismDao.insert(oid, _))
-      _ <- e.userTargets.toList.traverse(UserTargetDao.insert(oid, _)).void
-    } yield ()
+    e.asterism.foldMap(AsterismDao.insert(oid, _)) *>
+    e.userTargets.toList.traverse(UserTargetDao.insert(oid, _)).void
 
-  def selectObs(oid: Observation.Id, at: Option[AsterismType]): ConnectionIO[TargetEnvironment] =
-    for {
-      a <- at.fold(Option.empty[Asterism].pure[ConnectionIO])(AsterismDao.select(oid, _))
-      u <- UserTargetDao.selectObs(oid)
-    } yield TargetEnvironment(a, u)
+  def selectObs(oid: Observation.Id): ConnectionIO[TargetEnvironment] =
+    (AsterismDao.select(oid), UserTargetDao.selectObs(oid)).mapN {
+      case (Left(a), uts)  => TargetEnvironment.fromAsterism(a, uts)
+      case (Right(i), uts) => TargetEnvironment.fromInstrument(i, uts)
+    }
 
-  def selectProg(pid: Program.Id, ats: Set[AsterismType]): ConnectionIO[Map[Index, TargetEnvironment]] =
-    for {
-      am <- ats.toList.traverse(AsterismDao.selectAll(pid, _)).map(ms => TreeMap.join(ms))
-      um <- UserTargetDao.selectProg(pid)
-    } yield am.mergeAll(um) {
-      _.fold(a      => TargetEnvironment(Some(a), TreeSet.empty),
-             u      => TargetEnvironment(None, u),
-             (a, u) => TargetEnvironment(Some(a), u))
+  def selectProg(pid: Program.Id): ConnectionIO[Map[Index, TargetEnvironment]] =
+    (AsterismDao.selectAll(pid), UserTargetDao.selectProg(pid)).mapN { (am, um) =>
+      am.map { case (idx, e) =>
+        val uts = um.get(idx).orEmpty
+        e match {
+          case Left(a)  => idx -> TargetEnvironment.fromAsterism(a, uts)
+          case Right(i) => idx -> TargetEnvironment.fromInstrument(i, uts)
+        }
+      }
     }
 
 }

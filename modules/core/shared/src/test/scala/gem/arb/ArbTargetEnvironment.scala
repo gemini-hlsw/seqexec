@@ -17,15 +17,23 @@ trait ArbTargetEnvironment {
   import ArbEnumerated._
   import ArbUserTarget._
 
-  def genTargetEnvironment[I <: Instrument with Singleton](i: Instrument.Aux[I]): Gen[TargetEnvironment.Aux[I]] =
+  def genTargetEnvironment(i: Instrument): Gen[TargetEnvironment] =
     for {
-      a <- frequency((9, genAsterism(i).map(Option(_))), (1, const(Option.empty[Asterism.Aux[I]])))
+      a <- frequency((9, genAsterism(i).map(Option(_))), (1, const(Option.empty[Asterism])))
       n <- choose(0, 10)
       u <- listOfN(n, arbitrary[UserTarget]).map(us => TreeSet.fromList(us))
-    } yield TargetEnvironment.Aux(a, u)
+    } yield a.fold(TargetEnvironment.fromInstrument(i, u))(TargetEnvironment.fromAsterism(_, u))
 
-  implicit def cogTargetEnvironment[I <: Instrument with Singleton]: Cogen[TargetEnvironment.Aux[I]] =
-    Cogen[(Option[Asterism.Aux[I]], List[UserTarget])].contramap(e => (e.asterism, e.userTargets.toList))
+  implicit val arbTargetEnvironment: Arbitrary[TargetEnvironment] =
+    Arbitrary {
+      for {
+        i <- arbitrary[Instrument]
+        e <- genTargetEnvironment(i)
+      } yield e
+    }
+
+  implicit val cogTargetEnvironment: Cogen[TargetEnvironment] =
+    Cogen[(Option[Asterism], List[UserTarget])].contramap(e => (e.asterism, e.userTargets.toList))
 
 }
 

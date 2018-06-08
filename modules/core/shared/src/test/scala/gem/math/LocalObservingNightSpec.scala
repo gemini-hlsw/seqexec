@@ -4,19 +4,17 @@
 package gem.math
 
 import gem.arb._
-import gem.imp.TimeInstances
+import gem.instances.time._
 import cats.{ Eq, Show }
 import cats.kernel.laws.discipline._
 import cats.tests.CatsSuite
 import monocle.law.discipline._
-
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals"))
 final class LocalObservingNightSpec extends CatsSuite {
   import ArbTime._
   import ArbEnumerated._
   import ArbObservingNight._
-  import TimeInstances._
 
   checkAll("LocalObservingNight", OrderTests[LocalObservingNight].order)
   checkAll("LocalObservingNight.localDate", IsoTests(LocalObservingNight.localDate))

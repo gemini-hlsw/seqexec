@@ -17,13 +17,9 @@ sealed abstract class GnirsCamera(
   val shortName: String,
   val longName: String,
   val pixelScale: GnirsPixelScale
-) extends Product with Serializable {
-  type Self = this.type
-}
+) extends Product with Serializable
 
 object GnirsCamera {
-
-  type Aux[A] = GnirsCamera { type Self = A }
 
   /** @group Constructors */ case object LongBlue extends GnirsCamera("LongBlue", "Long blue", "Long blue camera", GnirsPixelScale.PixelScale_0_05)
   /** @group Constructors */ case object LongRed extends GnirsCamera("LongRed", "Long red", "Long red camera", GnirsPixelScale.PixelScale_0_05)

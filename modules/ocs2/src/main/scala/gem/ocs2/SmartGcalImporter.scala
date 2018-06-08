@@ -9,7 +9,7 @@ import fs2.Stream
 import fs2.{io, text}
 import gem.Log
 import gem.config.GcalConfig
-import gem.config.DynamicConfig.SmartGcalKey
+import gem.config.SmartGcalKey
 import gem.dao.{DatabaseConfiguration, SmartGcalDao, UserDao}
 import gem.enum.{GcalBaselineType, GcalLampType}
 import gem.ocs2.pio.PioParse
@@ -60,7 +60,7 @@ object SmartGcalImporter extends DoobieClient {
     } yield ()
   }
 
-  def parseF2(input: List[String]): (SmartGcalKey.F2, List[String]) = {
+  def parseF2(input: List[String]): (SmartGcalKey.Flamingos2, List[String]) = {
     import Parsers.Flamingos2._
 
     val disperserS :: filterS :: fpuS :: gcal = input
@@ -69,7 +69,7 @@ object SmartGcalImporter extends DoobieClient {
     val f = filterS   .parseAs(filter   )
     val u = fpuS      .parseAs(fpu      ).flatMap(_.toBuiltin)
 
-    (SmartGcalKey.F2(d, f, u), gcal)
+    (SmartGcalKey.Flamingos2(d, f, u), gcal)
   }
 
   def parseGmosNorth(input: List[String]): (SmartGcalKey.GmosNorthDefinition, List[String]) = {

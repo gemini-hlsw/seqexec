@@ -16,13 +16,9 @@ sealed abstract class F2WindowCover(
   val tag: String,
   val shortName: String,
   val longName: String
-) extends Product with Serializable {
-  type Self = this.type
-}
+) extends Product with Serializable
 
 object F2WindowCover {
-
-  type Aux[A] = F2WindowCover { type Self = A }
 
   /** @group Constructors */ case object Open extends F2WindowCover("Open", "Open", "Open")
   /** @group Constructors */ case object Close extends F2WindowCover("Close", "Close", "Close")

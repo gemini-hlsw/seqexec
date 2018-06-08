@@ -49,12 +49,12 @@ object StaticDecoder extends PioDecoder[StaticConfig] {
 
   private object Flamingos2 {
     def parse(cm: ConfigMap): Either[PioError, StaticConfig] =
-      Legacy.Instrument.MosPreImaging.parse(cm).map(StaticConfig.F2(_))
+      Legacy.Instrument.MosPreImaging.parse(cm).map(StaticConfig.Flamingos2(_))
   }
 
   private object Gmos {
     import gem.config.GmosConfig.{ GmosCommonStaticConfig, GmosCustomRoiEntry, GmosNodAndShuffle }
-    import StaticConfig.{ GmosNorth, GmosSouth }
+    import StaticConfig.{ GmosN, GmosS }
 
     def parseCustomRoiEntry(cm: ConfigMap, index: Int): Either[PioError, Option[GmosCustomRoiEntry]] = {
       import Legacy.Instrument.Gmos._
@@ -96,13 +96,13 @@ object StaticDecoder extends PioDecoder[StaticConfig] {
       for {
         c <- parseCommonStatic(cm)
         s <- Legacy.Instrument.GmosNorth.StageMode.parse(cm)
-      } yield GmosNorth(c, s)
+      } yield GmosN(c, s)
 
     def parseSouth(cm: ConfigMap): Either[PioError, StaticConfig] =
       for {
         c <- parseCommonStatic(cm)
         s <- Legacy.Instrument.GmosSouth.StageMode.parse(cm)
-      } yield GmosSouth(c, s)
+      } yield GmosS(c, s)
   }
 
   private object Gnirs {

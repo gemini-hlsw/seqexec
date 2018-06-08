@@ -16,27 +16,27 @@ import scala.xml.Node
 
 /** Decoder for the OCS2 sequence XML.
   */
-object SequenceDecoder extends PioDecoder[List[Step[DynamicConfig]]] {
+object SequenceDecoder extends PioDecoder[List[Step]] {
 
-  def decode(n: Node): Either[PioError, List[Step[DynamicConfig]]] =
+  def decode(n: Node): Either[PioError, List[Step]] =
     (n \ "step").toList.scanLeft(EmptyConfigMap) { (m, stepNode) =>
       stepNode.addStepConfig(m)
     }.drop(1).traverse(parseStep)
 
-  private def parseStep(cm: ConfigMap): Either[PioError, Step[DynamicConfig]] = {
-    def go(observeType: String, instrument: DynamicConfig): Either[PioError, Step[DynamicConfig]] =
+  private def parseStep(cm: ConfigMap): Either[PioError, Step] = {
+    def go(observeType: String, dc: DynamicConfig): Either[PioError, Step] =
       observeType match {
         case "BIAS" =>
-          Step.Bias(instrument).asRight
+          dc.toStep(Step.Base.Bias).asRight
 
         case "DARK" =>
-          Step.Dark(instrument).asRight
+          dc.toStep(Step.Base.Dark).asRight
 
         case "OBJECT" | "CAL" =>
           for {
             p <- Legacy.Telescope.P.cparseOrElse(cm, Offset.P.Zero)
             q <- Legacy.Telescope.Q.cparseOrElse(cm, Offset.Q.Zero)
-          } yield Step.Science(instrument, TelescopeConfig(p, q))
+          } yield dc.toStep(Step.Base.Science(TelescopeConfig(p, q)))
 
         case "ARC" | "FLAT" =>
           import Legacy.Calibration._
@@ -47,7 +47,7 @@ object SequenceDecoder extends PioDecoder[List[Step[DynamicConfig]]] {
             s <- Shutter.parse(cm)
             e <- ExposureTime.parse(cm)
             c <- CoAdds.parse(cm)
-          } yield Step.Gcal(instrument, GcalConfig(l, f, d, s, e, c))
+          } yield dc.toStep(Step.Base.Gcal(GcalConfig(l, f, d, s, e, c)))
 
         case x =>
           PioError.parseError(x, "ObserveType").asLeft
@@ -94,13 +94,13 @@ object SequenceDecoder extends PioDecoder[List[Step[DynamicConfig]]] {
         l <- LyotWheel.parse(cm)
         r <- ReadMode.parse(cm)
         w <- WindowCover.cparseOrElse(cm, F2WindowCover.Close)
-      } yield DynamicConfig.F2(d, e, f, u, l, r, w)
+      } yield DynamicConfig.Flamingos2(d, e, f, u, l, r, w)
     }
   }
 
   private object Gmos {
     import gem.config.GmosConfig.{ GmosCcdReadout, GmosCommonDynamicConfig, GmosCustomMask, GmosGrating }
-    import DynamicConfig.{ GmosNorth, GmosSouth }
+    import DynamicConfig.{ GmosN, GmosS }
 
     def common(cm: ConfigMap): Either[PioError, GmosCommonDynamicConfig] = {
       import Legacy.Instrument.Gmos._
@@ -144,7 +144,7 @@ object SequenceDecoder extends PioDecoder[List[Step[DynamicConfig]]] {
         u <- Fpu.cparse(cm).map(_.flatten)
         m <- customMask(cm)
         fpu = u.map(_.asRight[GmosCustomMask]) orElse m.map(_.asLeft[GmosNorthFpu])
-      } yield GmosNorth(c, g, f, fpu)
+      } yield GmosN(c, g, f, fpu)
     }
 
     def parseSouth(cm: ConfigMap): Either[PioError, DynamicConfig] = {
@@ -165,7 +165,7 @@ object SequenceDecoder extends PioDecoder[List[Step[DynamicConfig]]] {
         u <- Fpu.cparse(cm).map(_.flatten)
         m <- customMask(cm)
         fpu = u.map(_.asRight[GmosCustomMask]) orElse m.map(_.asLeft[GmosSouthFpu])
-      } yield GmosSouth(c, g, f, fpu)
+      } yield GmosS(c, g, f, fpu)
     }
   }
 

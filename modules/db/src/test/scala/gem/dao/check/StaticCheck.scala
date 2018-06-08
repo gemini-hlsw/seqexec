@@ -12,11 +12,10 @@ class StaticCheck extends Check {
   import StaticConfigDao.Statements._
 
   "StaticDao.Statements" should
-            "F2.insert"                 in check(F2.insert(Dummy.observationId, StaticConfig.F2.Default))
-  it should "F2.select"                 in check(F2.select(Dummy.observationId))
-
-  it should "Gmos.insertNorth"          in check(Gmos.insertNorth(Dummy.observationId, StaticConfig.GmosNorth.Default))
-  it should "Gmos.insertSouth"          in check(Gmos.insertSouth(Dummy.observationId, StaticConfig.GmosSouth.Default))
+            "Flamingos2.insert"         in check(Flamingos2.insert(Dummy.observationId, StaticConfig.Flamingos2.Default))
+  it should "Flamingos2.select"         in check(Flamingos2.select(Dummy.observationId))
+  it should "Gmos.insertNorth"          in check(Gmos.insertNorth(Dummy.observationId, StaticConfig.GmosN.Default))
+  it should "Gmos.insertSouth"          in check(Gmos.insertSouth(Dummy.observationId, StaticConfig.GmosS.Default))
   it should "Gmos.insertCustomRoiEntry" in check(Gmos.insertCustomRoiEntry(Dummy.observationId, GmosN, Dummy.gmosCustomRoiEntry))
   it should "Gmos.insertNodAndShuffle"  in check(Gmos.insertNodAndShuffle(Dummy.observationId, GmosN, GmosNodAndShuffle.Default))
   it should "Gmos.selectNorth"          in check(Gmos.selectNorth(Dummy.observationId))

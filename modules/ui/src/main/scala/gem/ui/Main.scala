@@ -40,35 +40,35 @@ object TestProgram {
       CoAdds.One
     )
 
-  val f2: Observation.Full.Aux[Instrument.Flamingos2.type] =
-    Observation(
+  val f2: Observation.Flamingos2 =
+    Observation.Flamingos2(
       "F2 Observation",
-      TargetEnvironment.Aux(None, TreeSet(UserTarget(vega, UserTargetType.BlindOffset))),
-      StaticConfig.F2.Default,
-      List(Step.Gcal(DynamicConfig.F2.Default, gcal))
+      TargetEnvironment.Flamingos2(None, TreeSet(UserTarget(vega, UserTargetType.BlindOffset))),
+      StaticConfig.Flamingos2.Default,
+      List(DynamicConfig.Flamingos2.Default.toStep(Step.Base.Gcal(gcal)))
     )
 
-  val gmosS: Observation.Full.Aux[Instrument.GmosS.type] =
-    Observation(
+  val gmosS: Observation.GmosS =
+    Observation.GmosS(
       "GMOS-S Observation",
-      TargetEnvironment.Aux(None, TreeSet(UserTarget(vega, UserTargetType.BlindOffset))),
-      StaticConfig.GmosSouth.Default,
-      List(Step.SmartGcal(DynamicConfig.GmosSouth.Default, SmartGcalType.Arc))
+      TargetEnvironment.GmosS(None, TreeSet(UserTarget(vega, UserTargetType.BlindOffset))),
+      StaticConfig.GmosS.Default,
+      List(DynamicConfig.GmosS.Default.toStep(Step.Base.SmartGcal(SmartGcalType.Arc)))
     )
 
-  val gmosN: Observation.Full.Aux[Instrument.GmosN.type] =
-    Observation(
+  val gmosN: Observation.GmosN =
+    Observation.GmosN(
       "GMOS-N Observation",
-      TargetEnvironment.Aux(None, TreeSet(UserTarget(vega, UserTargetType.BlindOffset))),
-      StaticConfig.GmosNorth.Default,
-      List(Step.Bias(DynamicConfig.GmosNorth.Default))
+      TargetEnvironment.GmosN(None, TreeSet(UserTarget(vega, UserTargetType.BlindOffset))),
+      StaticConfig.GmosN.Default,
+      List(DynamicConfig.GmosN.Default.toStep(Step.Base.Bias))
     )
 
-  val p: Program[Observation.Full] =
+  val p: Program =
     Program(
       pid,
       "Test Program",
-      TreeMap[Index, Observation.Full](
+      TreeMap[Index, Observation](
         Index.fromShort.unsafeGet(1) -> f2,
         Index.fromShort.unsafeGet(2) -> gmosS,
         Index.fromShort.unsafeGet(3) -> gmosN

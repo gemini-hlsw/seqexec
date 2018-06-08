@@ -5,7 +5,7 @@ package gem.ocs2
 
 import cats.effect.IO, cats.implicits._
 import doobie._, doobie.implicits._
-import gem.{ Dataset, Log, Observation, Program, User }
+import gem.{ Dataset, Log, Program, User }
 import gem.dao.{ DatabaseConfiguration, UserDao }
 import gem.ocs2.Decoders._
 import gem.ocs2.pio.PioDecoder
@@ -22,8 +22,6 @@ object FileImporter extends DoobieClient {
 
   private val conf = DatabaseConfiguration.forTesting
   private val xa   = conf.transactor[IO]
-
-  type Prog = Program[Observation.Full]
 
   val dir: File = new File("archive")
 
@@ -49,7 +47,7 @@ object FileImporter extends DoobieClient {
 
   def readAndInsert(u: User[_], f: File, log: Log[ConnectionIO]): IO[Unit] =
     read(f).flatMap { elem =>
-      PioDecoder[(Prog, List[Dataset])].decode(elem) match {
+      PioDecoder[(Program, List[Dataset])].decode(elem) match {
         case Left(err)      => sys.error(s"Problem parsing ${f.getName}: $err")
         case Right((p, ds)) => log.log(u, s"insert ${p.id}")(Importer.importProgram(p, ds)).transact(xa)
       }

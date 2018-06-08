@@ -16,13 +16,9 @@ sealed abstract class MosPreImaging(
   val tag: String,
   val description: String,
   val toBoolean: Boolean
-) extends Product with Serializable {
-  type Self = this.type
-}
+) extends Product with Serializable
 
 object MosPreImaging {
-
-  type Aux[A] = MosPreImaging { type Self = A }
 
   /** @group Constructors */ case object IsMosPreImaging extends MosPreImaging("IsMosPreImaging", "Is MOS Pre-imaging", true)
   /** @group Constructors */ case object IsNotMosPreImaging extends MosPreImaging("IsNotMosPreImaging", "Is Not MOS Pre-Imaging", false)

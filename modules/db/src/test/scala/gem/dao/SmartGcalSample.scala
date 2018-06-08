@@ -6,8 +6,7 @@ package gem.dao
 import cats.implicits._
 import doobie._, doobie.implicits._
 import gem.arb.ArbEnumerated._
-import gem.config.GcalConfig
-import gem.config.DynamicConfig.SmartGcalSearchKey
+import gem.config._
 import gem.enum.{ Instrument, SmartGcalType }
 import org.scalacheck.Gen
 import org.scalacheck.Arbitrary.arbitrary
@@ -23,8 +22,8 @@ object SmartGcalSample extends TimedSample with gem.config.Arbitraries {
   private def nextKey(): Option[SmartGcalSearchKey] =
     (for {
       i <- Gen.oneOf(Instrument.Flamingos2, Instrument.GmosN, Instrument.GmosS, Instrument.Gnirs)
-      s <- genStaticConfigOf(i: Instrument.Aux[i.type])
-      d <- genDynamicConfigOf(i: Instrument.Aux[i.type])
+      s <- genStaticConfigOf(i)
+      d <- genDynamicConfigOf(i)
     } yield d.smartGcalKey(s)).sample.flatten
 
   private def nextTest(): Option[(SmartGcalSearchKey, SmartGcalType)] =

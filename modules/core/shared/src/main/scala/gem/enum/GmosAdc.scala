@@ -16,13 +16,9 @@ sealed abstract class GmosAdc(
   val tag: String,
   val shortName: String,
   val longName: String
-) extends Product with Serializable {
-  type Self = this.type
-}
+) extends Product with Serializable
 
 object GmosAdc {
-
-  type Aux[A] = GmosAdc { type Self = A }
 
   /** @group Constructors */ case object BestStatic extends GmosAdc("BestStatic", "Best Static", "Best Static Correction")
   /** @group Constructors */ case object Follow extends GmosAdc("Follow", "Follow", "Follow During Exposure")

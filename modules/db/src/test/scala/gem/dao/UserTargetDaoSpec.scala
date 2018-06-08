@@ -16,7 +16,7 @@ class UserTargetDaoSpec extends PropSpec with PropertyChecks with DaoTest {
   import gem.arb.ArbUserTarget._
 
   property("UserTargetDao should roundtrip") {
-    forAll { (obs: Observation.Full, ut: UserTarget) =>
+    forAll { (obs: Observation, ut: UserTarget) =>
       val oid = Observation.Id(pid, Index.One)
 
       val utʹ = withProgram {
@@ -32,7 +32,7 @@ class UserTargetDaoSpec extends PropSpec with PropertyChecks with DaoTest {
   }
 
   property("UserTargetDao should bulk select observation") {
-    forAll { (obs: Observation.Full) =>
+    forAll { (obs: Observation) =>
       val oid = Observation.Id(pid, Index.One)
 
       val actual = withProgram {
@@ -42,7 +42,7 @@ class UserTargetDaoSpec extends PropSpec with PropertyChecks with DaoTest {
         } yield uts
       }
 
-      obs.targets.userTargets shouldEqual actual
+      obs.targetEnvironment.userTargets shouldEqual actual
     }
   }
 
@@ -52,7 +52,7 @@ class UserTargetDaoSpec extends PropSpec with PropertyChecks with DaoTest {
       val obsList = m.toList
 
       val expected = obsList.map { case (oi, obs) =>
-        oi -> obs.targets.userTargets
+        oi -> obs.targetEnvironment.userTargets
       }.filter(_._2.nonEmpty).toMap
 
       val actual = withProgram {

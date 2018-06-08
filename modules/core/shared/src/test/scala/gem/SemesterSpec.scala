@@ -8,7 +8,7 @@ import cats.kernel.laws.discipline._
 import cats.tests.CatsSuite
 import gem.arb._
 import gem.enum.{ Half, Site }
-import gem.imp.TimeInstances._
+import gem.instances.time._
 import java.time.{ Year, ZoneId }
 import java.time.format.DateTimeFormatter
 

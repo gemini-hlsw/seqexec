@@ -13,150 +13,178 @@ import java.time.Duration
  * Instrument configuration that is specified for each [[gem.Step Step]].
  * @group Configurations
  */
-sealed abstract class DynamicConfig extends Product with Serializable {
-
-  type I <: Instrument with Singleton
-  def instrument: Instrument.Aux[I]
+sealed trait DynamicConfig {
 
   /** Obtains the smart gcal search key that corresponds to the instrument
     * configuration, if any. This key can be used to find the matching gcal
     * configuration.
     * @return corresponding smart gcal search key, if any
     */
-  def smartGcalKey(s: StaticConfig): Option[DynamicConfig.SmartGcalSearchKey] =
+  def smartGcalKey(s: StaticConfig): Option[SmartGcalSearchKey] =
     (this, s) match {
-      case (d: DynamicConfig.F2,        _)                 => Some(d.key)
-      case (d: DynamicConfig.GmosNorth, _)                 => Some(d.key)
-      case (d: DynamicConfig.GmosSouth, _)                 => Some(d.key)
+      case (d: DynamicConfig.Flamingos2, _)                => Some(d.key)
+      case (d: DynamicConfig.GmosN, _)                     => Some(d.key)
+      case (d: DynamicConfig.GmosS, _)                     => Some(d.key)
       case (d: DynamicConfig.Gnirs, s: StaticConfig.Gnirs) => Some(d.key(s))
       case _                                               => None
     }
+
+  def toStep(b: Step.Base): Step
+
 }
 
 object DynamicConfig {
 
-  type Aux[I0] = DynamicConfig { type I = I0 }
-
-  /** Marker trait for smart gcal search keys used to lookup corresponding gcal
-    * configurations.
-    */
-  sealed trait SmartGcalSearchKey
-
-  /** Marker trait for smart gcal definition keys used to register entries in
-    * a smart gcal lookup table.
-    */
-  sealed trait SmartGcalDefinitionKey
-
-  object SmartGcalKey {
-
-    final case class F2(
-      disperser: Option[F2Disperser],
-      filter:    F2Filter,
-      fpu:       Option[F2Fpu]
-    ) extends SmartGcalSearchKey with SmartGcalDefinitionKey
-
-    final case class GmosCommon[D, F, U](
-      disperser: Option[D],
-      filter:    Option[F],
-      fpu:       Option[U],
-      xBinning:  GmosXBinning,
-      yBinning:  GmosYBinning,
-      ampGain:   GmosAmpGain
-    )
-
-    type GmosNorthCommon = GmosCommon[GmosNorthDisperser, GmosNorthFilter, GmosNorthFpu]
-    type GmosSouthCommon = GmosCommon[GmosSouthDisperser, GmosSouthFilter, GmosSouthFpu]
-
-    final case class GmosNorthSearch(
-      gmos:       GmosNorthCommon,
-      wavelength: Option[Wavelength]
-    ) extends SmartGcalSearchKey
-
-    final case class GmosSouthSearch(
-      gmos:       GmosSouthCommon,
-      wavelength: Option[Wavelength]
-    ) extends SmartGcalSearchKey
-
-    final case class GmosDefinition[D, F, U](
-      gmos:            GmosCommon[D, F, U],
-      wavelengthRange: (Wavelength, Wavelength)
-    )
-
-    type GmosNorthDefinition = GmosDefinition[GmosNorthDisperser, GmosNorthFilter, GmosNorthFpu]
-    type GmosSouthDefinition = GmosDefinition[GmosSouthDisperser, GmosSouthFilter, GmosSouthFpu]
-
-    final case class Gnirs(
-      acquisitionMirror: GnirsAcquisitionMirror,
-      pixelScale:        GnirsPixelScale,
-      disperser:         GnirsDisperser,
-      fpu:               Either[GnirsFpuOther, GnirsFpuSlit],
-      prism:             GnirsPrism,
-      wellDepth:         GnirsWellDepth
-    )
-
-    final case class GnirsSearch(
-      gnirs: Gnirs,
-      wavelength: Wavelength
-    ) extends SmartGcalSearchKey
-
-    final case class GnirsDefinition(
-      gnirs: Gnirs,
-      wavelengthRange: (Wavelength, Wavelength)
-    ) extends SmartGcalDefinitionKey
-
+  /**
+   * Dynamic configuration for the acquisition camera.
+   * @group Constructors
+   */
+  final case class AcqCam() extends DynamicConfig {
+    def toStep(b: Step.Base): Step.AcqCam =
+      Step.AcqCam(this, b)
   }
 
-  sealed abstract class Impl[I0 <: Instrument with Singleton](val instrument: Instrument.Aux[I0]) extends DynamicConfig {
-    type I = I0
+  /**
+   * Dynamic configuration for bHROS (retired).
+   * @group Constructors
+   */
+  final case class Bhros() extends DynamicConfig {
+    def toStep(b: Step.Base): Step.Bhros =
+      Step.Bhros(this, b)
   }
 
-  /** @group Constructors */ final case class AcqCam()   extends DynamicConfig.Impl(Instrument.AcqCam)
-  /** @group Constructors */ final case class Bhros()    extends DynamicConfig.Impl(Instrument.Bhros)
-  /** @group Constructors */ final case class Ghost()    extends DynamicConfig.Impl(Instrument.Ghost)
-  /** @group Constructors */ final case class Gpi()      extends DynamicConfig.Impl(Instrument.Gpi)
-  /** @group Constructors */ final case class Gsaoi()    extends DynamicConfig.Impl(Instrument.Gsaoi)
-  /** @group Constructors */ final case class Michelle() extends DynamicConfig.Impl(Instrument.Michelle)
-  /** @group Constructors */ final case class Nici()     extends DynamicConfig.Impl(Instrument.Nici)
-  /** @group Constructors */ final case class Nifs()     extends DynamicConfig.Impl(Instrument.Nifs)
-  /** @group Constructors */ final case class Niri()     extends DynamicConfig.Impl(Instrument.Niri)
-  /** @group Constructors */ final case class Phoenix()  extends DynamicConfig.Impl(Instrument.Phoenix)
-  /** @group Constructors */ final case class Trecs()    extends DynamicConfig.Impl(Instrument.Trecs)
-  /** @group Constructors */ final case class Visitor()  extends DynamicConfig.Impl(Instrument.Visitor)
+  /**
+   * Dynamic configuration for GHOST.
+   * @group Constructors
+   */
+  final case class Ghost() extends DynamicConfig {
+    def toStep(b: Step.Base): Step.Ghost =
+      Step.Ghost(this, b)
+  }
+
+  /**
+   * Dynamic configuration for GPI.
+   * @group Constructors
+   */
+  final case class Gpi() extends DynamicConfig {
+    def toStep(b: Step.Base): Step.Gpi =
+      Step.Gpi(this, b)
+  }
+
+  /**
+   * Dynamic configuration for GSAOI.
+   * @group Constructors
+   */
+  final case class Gsaoi() extends DynamicConfig {
+    def toStep(b: Step.Base): Step.Gsaoi =
+      Step.Gsaoi(this, b)
+  }
+
+  /**
+   * Dynamic configuration for Michelle (retired).
+   * @group Constructors
+   */
+  final case class Michelle() extends DynamicConfig {
+    def toStep(b: Step.Base): Step.Michelle =
+      Step.Michelle(this, b)
+  }
+
+  /**
+   * Dynamic configuration for NICI (retired).
+   * @group Constructors
+   */
+  final case class Nici() extends DynamicConfig {
+    def toStep(b: Step.Base): Step.Nici =
+      Step.Nici(this, b)
+  }
+
+  /**
+   * Dynamic configuration for NIFS.
+   * @group Constructors
+   */
+  final case class Nifs() extends DynamicConfig {
+    def toStep(b: Step.Base): Step.Nifs =
+      Step.Nifs(this, b)
+  }
+
+  /**
+   * Dynamic configuration for NIRI.
+   * @group Constructors
+   */
+  final case class Niri() extends DynamicConfig {
+    def toStep(b: Step.Base): Step.Niri =
+      Step.Niri(this, b)
+  }
+
+  /**
+   * Dynamic configuration for Phoenix.
+   * @group Constructors
+   */
+  final case class Phoenix() extends DynamicConfig {
+    def toStep(b: Step.Base): Step.Phoenix =
+      Step.Phoenix(this, b)
+  }
+
+  /**
+   * Dynamic configuration for T-ReCS (retired).
+   * @group Constructors
+   */
+  final case class Trecs() extends DynamicConfig {
+    def toStep(b: Step.Base): Step.Trecs =
+      Step.Trecs(this, b)
+  }
+
+  /**
+   * Dynamic configuration for visitor instruments.
+   * @group Constructors
+   */
+  final case class Visitor() extends DynamicConfig {
+    def toStep(b: Step.Base): Step.Visitor =
+      Step.Visitor(this, b)
+  }
 
 
-  import F2Config.F2FpuChoice
-
-  /** @group Constructors */
-  final case class F2(
+  /**
+   * Dynamic configuration for FLAMINGOS-2.
+   * @group Constructors
+   */
+  final case class Flamingos2(
     disperser:     Option[F2Disperser],
     exposureTime:  Duration,
     filter:        F2Filter,
-    fpu:           Option[F2FpuChoice],
+    fpu:           Option[F2Config.F2FpuChoice],
     lyotWheel:     F2LyotWheel,
     readMode:      F2ReadMode,
     windowCover:   F2WindowCover
-  ) extends DynamicConfig.Impl(Instrument.Flamingos2) {
+  ) extends DynamicConfig {
 
-    /** Returns the smart gcal search key for this F2 configuration. */
-    def key: SmartGcalKey.F2 =
-      SmartGcalKey.F2(disperser, filter, fpu.flatMap(_.toBuiltin))
+    def toStep(b: Step.Base): Step.Flamingos2 =
+      Step.Flamingos2(this, b)
+
+    /** Returns the smart gcal search key for this Flamingos2 configuration. */
+    def key: SmartGcalKey.Flamingos2 =
+      SmartGcalKey.Flamingos2(disperser, filter, fpu.flatMap(_.toBuiltin))
+
   }
-
-  object F2 {
-    val Default: F2 =
-      F2(None, java.time.Duration.ZERO, F2Filter.Open,
+  object Flamingos2 {
+    val Default: Flamingos2 =
+      Flamingos2(None, java.time.Duration.ZERO, F2Filter.Open,
          None, F2LyotWheel.F16, F2ReadMode.Bright, F2WindowCover.Close)
   }
 
-  import GmosConfig._
-
-  /** @group Constructors */
-  final case class GmosNorth(
-    common:  GmosCommonDynamicConfig,
-    grating: Option[GmosGrating[GmosNorthDisperser]],
+  /**
+   * Dynamic configuration for GMOS-N.
+   * @group Constructors
+   */
+  final case class GmosN(
+    common:  GmosConfig.GmosCommonDynamicConfig,
+    grating: Option[GmosConfig.GmosGrating[GmosNorthDisperser]],
     filter:  Option[GmosNorthFilter],
-    fpu:     Option[Either[GmosCustomMask, GmosNorthFpu]]
-  ) extends DynamicConfig.Impl(Instrument.GmosN) {
+    fpu:     Option[Either[GmosConfig.GmosCustomMask, GmosNorthFpu]]
+  ) extends DynamicConfig {
+
+    def toStep(b: Step.Base): Step.GmosN =
+      Step.GmosN(this, b)
 
     /** Returns the smart gcal search key for this GMOS-N configuration. */
     def key: SmartGcalKey.GmosNorthSearch =
@@ -171,21 +199,26 @@ object DynamicConfig {
         ),
         grating.map(_.wavelength)
       )
+
+  }
+  object GmosN {
+    val Default: GmosN =
+      GmosN(GmosConfig.GmosCommonDynamicConfig.Default, None, None, None)
   }
 
-  object GmosNorth {
-    val Default: GmosNorth =
-      GmosNorth(GmosCommonDynamicConfig.Default, None, None, None)
-  }
-
-
-  /** @group Constructors */
-  final case class GmosSouth(
-    common:  GmosCommonDynamicConfig,
-    grating: Option[GmosGrating[GmosSouthDisperser]],
+  /**
+   * Dynamic configuration for GMOS-S.
+   * @group Constructors
+   */
+  final case class GmosS(
+    common:  GmosConfig.GmosCommonDynamicConfig,
+    grating: Option[GmosConfig.GmosGrating[GmosSouthDisperser]],
     filter:  Option[GmosSouthFilter],
-    fpu:     Option[Either[GmosCustomMask, GmosSouthFpu]]
-  ) extends DynamicConfig.Impl(Instrument.GmosS) {
+    fpu:     Option[Either[GmosConfig.GmosCustomMask, GmosSouthFpu]]
+  ) extends DynamicConfig {
+
+    def toStep(b: Step.Base): Step.GmosS =
+      Step.GmosS(this, b)
 
     /** Returns the smart gcal search key for this GMOS-S configuration. */
     def key: SmartGcalKey.GmosSouthSearch =
@@ -201,12 +234,15 @@ object DynamicConfig {
         grating.map(_.wavelength)
       )
   }
-
-  object GmosSouth {
-    val Default: GmosSouth =
-      GmosSouth(GmosCommonDynamicConfig.Default, None, None, None)
+  object GmosS {
+    val Default: GmosS =
+      GmosS(GmosConfig.GmosCommonDynamicConfig.Default, None, None, None)
   }
 
+  /**
+   * Dynamic configuration for GNIRS.
+   * @group Constructors
+   */
   final case class Gnirs(
     acquisitionMirror: GnirsAcquisitionMirror,
     camera:            GnirsCamera,
@@ -219,7 +255,10 @@ object DynamicConfig {
     prism:             GnirsPrism,
     readMode:          GnirsReadMode,
     wavelength:        Wavelength
-  ) extends DynamicConfig.Impl(Instrument.Gnirs) {
+  ) extends DynamicConfig {
+
+    def toStep(b: Step.Base): Step.Gnirs =
+      Step.Gnirs(this, b)
 
     /** Returns the smart gcal search key for this GNIRS configuration. */
     def key(s: StaticConfig.Gnirs): SmartGcalKey.GnirsSearch =
@@ -236,7 +275,6 @@ object DynamicConfig {
       )
 
   }
-
   object Gnirs {
     val Default: Gnirs = Gnirs(
       GnirsAcquisitionMirror.Out,

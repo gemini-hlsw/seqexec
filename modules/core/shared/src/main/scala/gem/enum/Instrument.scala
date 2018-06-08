@@ -17,13 +17,9 @@ sealed abstract class Instrument(
   val shortName: String,
   val longName: String,
   val obsolete: Boolean
-) extends Product with Serializable {
-  type Self = this.type
-}
+) extends Product with Serializable
 
 object Instrument {
-
-  type Aux[A] = Instrument { type Self = A }
 
   /** @group Constructors */ case object Phoenix extends Instrument("Phoenix", "Phoenix", "Phoenix", false)
   /** @group Constructors */ case object Michelle extends Instrument("Michelle", "Michelle", "Michelle", false)

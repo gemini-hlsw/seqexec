@@ -6,10 +6,11 @@ package dao
 
 import gem.dao.meta._
 
+import cats.data.OptionT
 import cats.implicits._
 import doobie._, doobie.implicits._
 
-import scala.collection.immutable.TreeMap
+// import scala.collection.immutable.TreeMap
 
 object ProgramDao {
   import EnumeratedMeta._
@@ -17,12 +18,12 @@ object ProgramDao {
   import IndexMeta._
 
   /** Insert a program, disregarding its observations, if any. */
-  def insertFlat(p: Program[_]): ConnectionIO[Program.Id] =
+  def insertFlat(p: Program): ConnectionIO[Program.Id] =
     insertProgramIdSlice(p.id) *>
     Statements.insert(p).run.as(p.id)
 
   /** Insert a complete program. */
-  def insert(p: Program[Observation.Full]): ConnectionIO[Program.Id] =
+  def insert(p: Program): ConnectionIO[Program.Id] =
     insertFlat(p) <* p.observations.toList.traverse { case (i,o) =>
       ObservationDao.insert(Observation.Id(p.id, i), o)
     }
@@ -45,19 +46,19 @@ object ProgramDao {
     pid.semesterOption.traverse(SemesterDao.canonicalize) *>
     Statements.insertNonstandardProgramIdSlice(pid).run
 
-  def selectBySubstring(pat: String, max: Int): ConnectionIO[List[Program[Nothing]]] =
+  def selectBySubstring(pat: String, max: Int): ConnectionIO[List[(Program.Id, String)]] =
     Statements.selectBySubstring(pat, max).to[List]
 
   /** Select a program by Id, without any Observation information. */
-  def selectFlat(pid: Program.Id): ConnectionIO[Option[Program[Nothing]]] =
+  def selectFlat(pid: Program.Id): ConnectionIO[Option[String]] =
     Statements.selectFlat(pid).option
 
   /** Select a program by id, with full Observation information. */
-  def selectFull(pid: Program.Id): ConnectionIO[Option[Program[Observation.Full]]] =
-    for {
-      opn <- selectFlat(pid)
-      os  <- ObservationDao.selectAll(pid)
-    } yield opn.map(_.copy(observations = os))
+  def selectFull(pid: Program.Id): ConnectionIO[Option[Program]] =
+    (for {
+      t  <- OptionT(selectFlat(pid))
+      os <- OptionT.liftF(ObservationDao.selectAll(pid))
+    } yield Program(pid, t, os)).value
 
   object Statements {
 
@@ -69,15 +70,14 @@ object ProgramDao {
         Distinct.integer("id_index").xmap(Index(_), _.toInt)
     }
 
-    def selectFlat(pid: Program.Id): Query0[Program[Nothing]] =
+    def selectFlat(pid: Program.Id): Query0[String] =
       sql"""
         SELECT title
           FROM program
          WHERE program_id = $pid
       """.query[String]
-         .map(Program(pid, _, TreeMap.empty))
 
-    def selectBySubstring(pat: String, max: Int): Query0[Program[Nothing]] =
+    def selectBySubstring(pat: String, max: Int): Query0[(Program.Id, String)] =
       sql"""
        SELECT program_id, title
          FROM program
@@ -85,7 +85,6 @@ object ProgramDao {
       ORDER BY program_id, title
         LIMIT ${max.toLong}
       """.query[(Program.Id, String)]
-        .map { case (pid, title) => Program(pid, title, TreeMap.empty) }
 
     // N.B. assumes semester has been canonicalized
     def insertNonstandardProgramIdSlice(pid: Program.Id.Nonstandard): Update0 =
@@ -128,7 +127,7 @@ object ProgramDao {
       """.update
 
     // N.B. assumes program id slice has been inserted
-    def insert(p: Program[_]): Update0 =
+    def insert(p: Program): Update0 =
       sql"""
         UPDATE program
            SET title = ${p.title}

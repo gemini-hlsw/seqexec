@@ -16,13 +16,9 @@ sealed abstract class GnirsAcquisitionMirror(
   val tag: String,
   val shortName: String,
   val longName: String
-) extends Product with Serializable {
-  type Self = this.type
-}
+) extends Product with Serializable
 
 object GnirsAcquisitionMirror {
-
-  type Aux[A] = GnirsAcquisitionMirror { type Self = A }
 
   /** @group Constructors */ case object In extends GnirsAcquisitionMirror("In", "In", "In")
   /** @group Constructors */ case object Out extends GnirsAcquisitionMirror("Out", "Out", "Out")

@@ -133,7 +133,7 @@ object EnumDef {
     implicit ma: Mapper.Aux[ToDeclaration.type, H, O],
              ta: ToTraversable.Aux[O, List, L]
   ): String =
-    h.map(ToDeclaration).toList.mkString(s"sealed abstract class $name(\n", ",\n", "\n) extends Product with Serializable {\n  type Self = this.type\n}")
+    h.map(ToDeclaration).toList.mkString(s"sealed abstract class $name(\n", ",\n", "\n) extends Product with Serializable")
 
    def imports[H <: HList, O <: HList, L](h: H)(
     implicit ma: Mapper.Aux[ToImport.type, H, O],
@@ -169,8 +169,6 @@ object EnumDef {
       |${declaration(name, records.head._2.fields)}
       |
       |object $name {
-      |
-      |  type Aux[A] = $name { type Self = A }
       |
       |${records.map { case (id, r) => constructor(name, id, r.values) }.intercalate("\n") }
       |

@@ -17,13 +17,9 @@ sealed abstract class GnirsPixelScale(
   val shortName: String,
   val longName: String,
   val value: BigDecimal
-) extends Product with Serializable {
-  type Self = this.type
-}
+) extends Product with Serializable
 
 object GnirsPixelScale {
-
-  type Aux[A] = GnirsPixelScale { type Self = A }
 
   /** @group Constructors */ case object PixelScale_0_05 extends GnirsPixelScale("PixelScale_0_05", "0.05 as/pix", "Pixel scale for short cameras", 0.05)
   /** @group Constructors */ case object PixelScale_0_15 extends GnirsPixelScale("PixelScale_0_15", "0.15 as/pix", "Pixel scale for long cameras", 0.15)

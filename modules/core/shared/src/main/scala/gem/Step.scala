@@ -3,37 +3,41 @@
 
 package gem
 
-import cats.Functor
 import gem.config._
 import gem.enum.SmartGcalType
 
-/**
- * An observation sequence step, parameterized on the type of its dynamic configuration, typically
- * some kind of [[gem.config.DynamicConfig DynamicConfig]] for a fully-specified step, or `Unit`
- * for a step without instrument-specific configuration information.
- * @group Sequence Model
- */
-sealed abstract class Step[+A] extends Product with Serializable {
-  def dynamicConfig: A
+sealed trait Step {
+  def dynamicConfig: DynamicConfig
+  def base: Step.Base
 }
 
 object Step {
 
-  final case class Bias     [A](dynamicConfig: A)                               extends Step[A]
-  final case class Dark     [A](dynamicConfig: A)                               extends Step[A]
-  final case class Gcal     [A](dynamicConfig: A, gcal: GcalConfig)             extends Step[A]
-  final case class Science  [A](dynamicConfig: A, telescope: TelescopeConfig)   extends Step[A]
-  final case class SmartGcal[A](dynamicConfig: A, smartGcalType: SmartGcalType) extends Step[A]
-
-  implicit val FunctorStep: Functor[Step] = new Functor[Step] {
-    def map[A, B](fa: Step[A])(f: A => B): Step[B] =
-      fa match {
-        case Bias(a)         => Bias(f(a))
-        case Dark(a)         => Dark(f(a))
-        case Gcal(a, g)      => Gcal(f(a), g)
-        case Science(a, t)   => Science(f(a), t)
-        case SmartGcal(a, s) => SmartGcal(f(a), s)
-      }
+  // TODO: better name for this
+  sealed trait Base
+  object Base {
+    final case object Bias extends Base
+    final case object Dark extends Base
+    final case class  Gcal(gcal: GcalConfig) extends Base
+    final case class  Science(telescope: TelescopeConfig) extends Base
+    final case class  SmartGcal(smartGcalType: SmartGcalType) extends Base
   }
+
+  sealed case class Phoenix(dynamicConfig: DynamicConfig.Phoenix, base: Base) extends Step
+  sealed case class Michelle(dynamicConfig: DynamicConfig.Michelle, base: Base) extends Step
+  sealed case class Gnirs(dynamicConfig: DynamicConfig.Gnirs, base: Base) extends Step
+  sealed case class Niri(dynamicConfig: DynamicConfig.Niri, base: Base) extends Step
+  sealed case class Trecs(dynamicConfig: DynamicConfig.Trecs, base: Base) extends Step
+  sealed case class Nici(dynamicConfig: DynamicConfig.Nici, base: Base) extends Step
+  sealed case class Nifs(dynamicConfig: DynamicConfig.Nifs, base: Base) extends Step
+  sealed case class Gpi(dynamicConfig: DynamicConfig.Gpi, base: Base) extends Step
+  sealed case class Gsaoi(dynamicConfig: DynamicConfig.Gsaoi, base: Base) extends Step
+  sealed case class GmosS(dynamicConfig: DynamicConfig.GmosS, base: Base) extends Step
+  sealed case class AcqCam(dynamicConfig: DynamicConfig.AcqCam, base: Base) extends Step
+  sealed case class GmosN(dynamicConfig: DynamicConfig.GmosN, base: Base) extends Step
+  sealed case class Bhros(dynamicConfig: DynamicConfig.Bhros, base: Base) extends Step
+  sealed case class Visitor(dynamicConfig: DynamicConfig.Visitor, base: Base) extends Step
+  sealed case class Flamingos2(dynamicConfig: DynamicConfig.Flamingos2, base: Base) extends Step
+  sealed case class Ghost(dynamicConfig: DynamicConfig.Ghost, base: Base) extends Step
 
 }

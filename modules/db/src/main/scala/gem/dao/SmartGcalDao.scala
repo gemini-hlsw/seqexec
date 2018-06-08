@@ -8,7 +8,6 @@ import doobie._, doobie.implicits._
 import gem._
 import gem.SmartGcal._
 import gem.config._
-import gem.config.DynamicConfig.{ SmartGcalKey, SmartGcalSearchKey }
 import gem.dao.composite._
 import gem.dao.meta._
 import gem.enum._
@@ -25,7 +24,7 @@ object SmartGcalDao {
   def select(k: SmartGcalSearchKey, t: SmartGcalType): ConnectionIO[List[GcalConfig]] =
     for {
       ids <- k match {
-               case f2:    SmartGcalKey.F2              => selectF2(f2, t)
+               case f2:    SmartGcalKey.Flamingos2      => selectF2(f2, t)
                case gn:    SmartGcalKey.GmosNorthSearch => selectGmosNorth(gn, t)
                case gs:    SmartGcalKey.GmosSouthSearch => selectGmosSouth(gs, t)
                case gnirs: SmartGcalKey.GnirsSearch     => selectGnirs(gnirs, t)
@@ -33,7 +32,7 @@ object SmartGcalDao {
       gcs <- ids.traverse { GcalDao.selectSmartGcal }.map(_.collect { case Some(a) => a })
     } yield gcs
 
-  def selectF2(k: SmartGcalKey.F2, t: SmartGcalType): ConnectionIO[List[Int]] =
+  def selectF2(k: SmartGcalKey.Flamingos2, t: SmartGcalType): ConnectionIO[List[Int]] =
     t.fold(Statements.selectF2ByLamp(k), Statements.selectF2ByBaseline(k)).to[List]
 
   def selectGmosNorth(k: SmartGcalKey.GmosNorthSearch, t: SmartGcalType): ConnectionIO[List[Int]] =
@@ -69,7 +68,7 @@ object SmartGcalDao {
   val dropIndexGnirs: ConnectionIO[Int] =
     Statements.dropIndexGnirs.run
 
-  def bulkInsertF2(entries: Vector[(GcalLampType, GcalBaselineType, SmartGcalKey.F2, GcalConfig)]): Stream[ConnectionIO, Int] =
+  def bulkInsertF2(entries: Vector[(GcalLampType, GcalBaselineType, SmartGcalKey.Flamingos2, GcalConfig)]): Stream[ConnectionIO, Int] =
     bulkInsert(Statements.bulkInsertF2, entries)
 
   def bulkInsertGmosNorth(entries: Vector[(GcalLampType, GcalBaselineType, SmartGcalKey.GmosNorthDefinition, GcalConfig)]): Stream[ConnectionIO, Int] =
@@ -103,7 +102,7 @@ object SmartGcalDao {
 
   type ExpansionResult[A] = EitherConnectionIO[ExpansionError, A]
 
-  private def lookupʹ(step: MaybeConnectionIO[Step[DynamicConfig]], loc: Location.Middle, static: StaticConfig): ExpansionResult[ExpandedSteps] = {
+  private def lookupʹ(step: MaybeConnectionIO[Step], loc: Location.Middle, static: StaticConfig): ExpansionResult[ExpandedSteps] = {
 
     // Information we need to extract from a smart gcal step in order to expand
     // it into manual gcal steps.  The key is used to look up the gcal config
@@ -114,19 +113,21 @@ object SmartGcalDao {
 
     // Get the key, type, and instrument config from the step.  We'll need this
     // information to lookup the corresponding GcalConfig.
-    val stepToContext: (Step[DynamicConfig]) => ExpansionResult[SmartContext] = {
-      case Step.SmartGcal(d, t) =>
-        EitherConnectionIO.fromDisjunction {
-          (d.smartGcalKey(static).toRight(noMappingDefined)).map { k => (k, t, d) }
-        }
-      case _                    =>
-        EitherConnectionIO.pointLeft(notSmartGcal)
+    val stepToContext: (Step) => ExpansionResult[SmartContext] = { step =>
+      (step.dynamicConfig, step.base) match {
+        case (d, Step.Base.SmartGcal(t)) =>
+          EitherConnectionIO.fromDisjunction {
+            (d.smartGcalKey(static).toRight(noMappingDefined)).map { k => (k, t, d) }
+          }
+        case _                    =>
+          EitherConnectionIO.pointLeft(notSmartGcal)
+      }
     }
 
     def expand(k: SmartGcalSearchKey, t: SmartGcalType, d: DynamicConfig): ExpansionResult[ExpandedSteps] =
       EitherConnectionIO(select(k, t).map {
         case Nil => Left(noMappingDefined)
-        case cs  => Right(cs.map(Step.Gcal(d, _)))
+        case cs  => Right(cs.map(c => d.toStep(Step.Base.Gcal(c))))
       })
 
     // Find the corresponding smart gcal mapping, if any.
@@ -152,7 +153,7 @@ object SmartGcalDao {
   def lookup(oid: Observation.Id, loc: Location.Middle): ExpansionResult[ExpandedSteps] =
     for {
       o <- ObservationDao.selectStatic(oid).injectRight
-      s <- lookupʹ(StepDao.selectOne(oid, loc), loc, o.staticConfig)
+      s <- lookupʹ(StepDao.selectOne(oid, loc), loc, o._2)
     } yield s
 
   /** Expands a smart gcal step into the corresponding gcal steps so that they
@@ -170,7 +171,7 @@ object SmartGcalDao {
     // Find the previous and next location for the smart gcal step that we are
     // replacing.  This is needed to generate locations for the steps that will
     // be inserted.
-    def bounds(steps: TreeMap[Location.Middle, Step[DynamicConfig]]): (Location, Location) =
+    def bounds(steps: TreeMap[Location.Middle, Step]): (Location, Location) =
       steps.span { case (k, _) => k < loc } match {
         case (prev, next) => (prev.lastOption.map(_._1).widen[Location] getOrElse Location.beginning,
                               next.headOption.map(_._1).widen[Location] getOrElse Location.end)
@@ -186,7 +187,7 @@ object SmartGcalDao {
       obs   <- ObservationDao.selectStatic(oid).injectRight
       steps <- StepDao.selectAll(oid).injectRight
       (locBefore, locAfter) = bounds(steps)
-      gcal  <- lookupʹ(MaybeConnectionIO.fromOption(steps.get(loc)), loc, obs.staticConfig)
+      gcal  <- lookupʹ(MaybeConnectionIO.fromOption(steps.get(loc)), loc, obs._2)
       // replaces the smart gcal step with the expanded manual gcal steps
       _     <- StepDao.deleteAtLocation(oid, loc).injectRight
       _     <- insert(locBefore, gcal, locAfter).injectRight
@@ -213,7 +214,7 @@ object SmartGcalDao {
         DROP INDEX IF EXISTS smart_f2_index
       """.update
 
-    def selectF2ByLamp(k: SmartGcalKey.F2)(l: GcalLampType): Query0[Int] =
+    def selectF2ByLamp(k: SmartGcalKey.Flamingos2)(l: GcalLampType): Query0[Int] =
       sql"""
           SELECT gcal_id
             FROM smart_f2
@@ -223,7 +224,7 @@ object SmartGcalDao {
              AND fpu       = ${k.fpu}
         """.query[Int]
 
-    def selectF2ByBaseline(k: SmartGcalKey.F2)(b: GcalBaselineType): Query0[Int] =
+    def selectF2ByBaseline(k: SmartGcalKey.Flamingos2)(b: GcalBaselineType): Query0[Int] =
       sql"""
           SELECT gcal_id
             FROM smart_f2
@@ -233,7 +234,7 @@ object SmartGcalDao {
              AND fpu       = ${k.fpu}
         """.query[Int]
 
-    type F2Row = ((GcalLampType, GcalBaselineType, SmartGcalKey.F2), Int)
+    type F2Row = ((GcalLampType, GcalBaselineType, SmartGcalKey.Flamingos2), Int)
 
     val bulkInsertF2: Update[F2Row] = {
       val sql =

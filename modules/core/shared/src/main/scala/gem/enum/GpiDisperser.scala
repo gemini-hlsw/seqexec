@@ -16,13 +16,9 @@ sealed abstract class GpiDisperser(
   val tag: String,
   val shortName: String,
   val longName: String
-) extends Product with Serializable {
-  type Self = this.type
-}
+) extends Product with Serializable
 
 object GpiDisperser {
-
-  type Aux[A] = GpiDisperser { type Self = A }
 
   /** @group Constructors */ case object PRISM extends GpiDisperser("PRISM", "Prism", "Prism")
   /** @group Constructors */ case object WOLLASTON extends GpiDisperser("WOLLASTON", "Wollaston", "Prism")

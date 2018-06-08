@@ -18,13 +18,9 @@ sealed abstract class GpiFilter(
   val longName: String,
   val band: MagnitudeBand,
   val obsolete: Boolean
-) extends Product with Serializable {
-  type Self = this.type
-}
+) extends Product with Serializable
 
 object GpiFilter {
-
-  type Aux[A] = GpiFilter { type Self = A }
 
   /** @group Constructors */ case object Y extends GpiFilter("Y", "Y", "Y", MagnitudeBand.Y, false)
   /** @group Constructors */ case object J extends GpiFilter("J", "J", "J", MagnitudeBand.J, false)

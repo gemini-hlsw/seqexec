@@ -1,7 +1,7 @@
 // Copyright (c) 2016-2017 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
-package gem.imp
+package gem.instances
 
 import java.time._
 import cats.Order
@@ -27,4 +27,4 @@ trait TimeInstances {
   implicit val LocalDateTimeOrder: Order[LocalDateTime] = naturalOrder(_ isBefore _)
 
 }
-object TimeInstances extends TimeInstances
+object time extends TimeInstances

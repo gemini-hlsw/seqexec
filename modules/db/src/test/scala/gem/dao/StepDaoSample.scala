@@ -5,12 +5,11 @@ package gem.dao
 
 import doobie._
 import gem.{ Observation, Step }
-import gem.config.DynamicConfig
 import gem.util.Location
 import scala.collection.immutable.TreeMap
 
 object StepDaoSample extends TimedSample {
-  type Result = TreeMap[Location.Middle, Step[DynamicConfig]]
+  type Result = TreeMap[Location.Middle, Step]
 
   val oid: Observation.Id = Observation.Id.unsafeFromString("GS-2016A-Q-102-108")
 

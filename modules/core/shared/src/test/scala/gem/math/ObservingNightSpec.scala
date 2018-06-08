@@ -5,7 +5,7 @@ package gem.math
 
 import gem.arb._
 import gem.enum.Site
-import gem.imp.TimeInstances
+import gem.instances.time._
 
 import cats.{ Eq, Show }
 import cats.kernel.laws.discipline._
@@ -19,7 +19,6 @@ final class ObservingNightSpec extends CatsSuite {
   import ArbEnumerated._
   import ArbObservingNight._
   import ArbTime._
-  import TimeInstances._
 
   checkAll("ObservingNight", OrderTests[ObservingNight].order)
   checkAll("ObservingNight.site", LensTests(ObservingNight.site))

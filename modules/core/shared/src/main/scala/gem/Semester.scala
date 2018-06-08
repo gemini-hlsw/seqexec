@@ -7,7 +7,7 @@ import cats.{ Order, Show }
 import cats.effect.IO
 import cats.implicits._
 import gem.enum.{ Half, Site }
-import gem.imp.TimeInstances._
+import gem.instances.time._
 import gem.math.LocalObservingNight
 import gem.parser.SemesterParsers
 import gem.syntax.parser._

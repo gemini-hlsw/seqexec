@@ -14,13 +14,9 @@ import gem.util.Enumerated
  */
 sealed abstract class GcalLampType(
   val tag: String
-) extends Product with Serializable {
-  type Self = this.type
-}
+) extends Product with Serializable
 
 object GcalLampType {
-
-  type Aux[A] = GcalLampType { type Self = A }
 
   /** @group Constructors */ case object Arc extends GcalLampType("Arc")
   /** @group Constructors */ case object Flat extends GcalLampType("Flat")

@@ -17,13 +17,9 @@ sealed abstract class GnirsFpuOther(
   val shortName: String,
   val longName: String,
   val obsolete: Boolean
-) extends Product with Serializable {
-  type Self = this.type
-}
+) extends Product with Serializable
 
 object GnirsFpuOther {
-
-  type Aux[A] = GnirsFpuOther { type Self = A }
 
   /** @group Constructors */ case object Ifu extends GnirsFpuOther("Ifu", "IFU", "Integral Field Unit", true)
   /** @group Constructors */ case object Acquisition extends GnirsFpuOther("Acquisition", "Acquisition", "Acquisition", false)

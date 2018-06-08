@@ -23,13 +23,9 @@ sealed abstract class Site(
   val longitude: Angle,
   val altitude: Int,
   val timezone: ZoneId
-) extends Product with Serializable {
-  type Self = this.type
-}
+) extends Product with Serializable
 
 object Site {
-
-  type Aux[A] = Site { type Self = A }
 
   /** @group Constructors */ case object GN extends Site("GN", "GN", "Gemini North", "Mauna Kea", Angle.fromDoubleDegrees(19.8238068), Angle.fromDoubleDegrees(-155.4690550), 4213, ZoneId.of("Pacific/Honolulu"))
   /** @group Constructors */ case object GS extends Site("GS", "GS", "Gemini South", "Cerro Pachon", Angle.fromDoubleDegrees(-30.2407494), Angle.fromDoubleDegrees(-70.7366867), 2722, ZoneId.of("America/Santiago"))

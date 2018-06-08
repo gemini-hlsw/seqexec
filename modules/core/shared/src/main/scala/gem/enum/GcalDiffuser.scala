@@ -17,13 +17,9 @@ sealed abstract class GcalDiffuser(
   val shortName: String,
   val longName: String,
   val obsolete: Boolean
-) extends Product with Serializable {
-  type Self = this.type
-}
+) extends Product with Serializable
 
 object GcalDiffuser {
-
-  type Aux[A] = GcalDiffuser { type Self = A }
 
   /** @group Constructors */ case object Ir extends GcalDiffuser("Ir", "IR", "IR", false)
   /** @group Constructors */ case object Visible extends GcalDiffuser("Visible", "Visible", "Visible", false)

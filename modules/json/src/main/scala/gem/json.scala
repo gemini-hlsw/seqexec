@@ -4,16 +4,16 @@
 package gem
 
 import cats.data.OneAnd
-import gem.enum.GcalArc
+import gem.enum.{ GcalArc, ProgramRole }
 import gem.config.GcalConfig.GcalArcs
 import gem.config.GmosConfig._
 import gem.math._
 import gem.optics.Format
+import gem.util._
 import gem.syntax.prism._
-import gem.util.{ Enumerated, Timestamp }
 import io.circe._
 import io.circe.syntax._
-import io.circe.generic.auto._
+import io.circe.generic.semiauto._
 import java.time.{ Duration, Instant }
 import monocle.Prism
 import scala.collection.immutable.TreeMap
@@ -23,7 +23,22 @@ import scala.collection.immutable.TreeMap
 // internal concern rather than a public or long-term storage format. If we decide that we *do*
 // want to use JSON externally then auto-derivation becomes dangerous because renaming fields
 // will cause the serial format to change.
-package object json {
+package object json extends Instances
+
+@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
+trait Instances {
+
+  implicit val coordinatesEncoder: Encoder[Coordinates] = deriveEncoder
+  implicit val coordinatesDecoder: Decoder[Coordinates] = deriveDecoder
+
+  implicit val offsetEncoder: Encoder[Offset] = deriveEncoder
+  implicit val offsetDecoder: Decoder[Offset] = deriveDecoder
+
+  implicit val radialVelocityEncoder: Encoder[RadialVelocity] = deriveEncoder
+  implicit val radialVelocityDecoder: Decoder[RadialVelocity] = deriveDecoder
+
+  implicit val userEncoder: Encoder[User[ProgramRole]] = deriveEncoder
+  implicit val userDecoder: Decoder[User[ProgramRole]] = deriveDecoder
 
   private implicit class MoreAngleOps(a: Angle) {
     private def moveRight(n: Int): BigDecimal =

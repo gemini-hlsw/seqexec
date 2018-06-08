@@ -17,13 +17,9 @@ sealed abstract class ProgramType(
   val shortName: String,
   val longName: String,
   val obsolete: Boolean
-) extends Product with Serializable {
-  type Self = this.type
-}
+) extends Product with Serializable
 
 object ProgramType {
-
-  type Aux[A] = ProgramType { type Self = A }
 
   /** @group Constructors */ case object CAL extends ProgramType("CAL", "CAL", "Calibration", false)
   /** @group Constructors */ case object C extends ProgramType("C", "C", "Classical", false)

@@ -30,15 +30,15 @@ object OdbClient {
   def fetchObservation[M[_]: Effect](
     host: String,
     id:   Observation.Id
-  ): M[Either[String, (Observation.Full, List[Dataset])]] =
-    fetch[Observation.Full, M](host, id.format)
+  ): M[Either[String, (Observation, List[Dataset])]] =
+    fetch[Observation, M](host, id.format)
 
   /** Fetches a program from the ODB. */
   def fetchProgram[M[_]: Effect](
     host: String,
     id:   Program.Id
-  ): M[Either[String, (Program[Observation.Full], List[Dataset])]] =
-    fetch[Program[Observation.Full], M](host, Program.Id.fromString.reverseGet(id))
+  ): M[Either[String, (Program, List[Dataset])]] =
+    fetch[Program, M](host, Program.Id.fromString.reverseGet(id))
 
   /** Fetches an observation from the ODB and stores it in the database. */
   def importObservation[M[_]: Effect](
