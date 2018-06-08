@@ -164,7 +164,7 @@ object Decoders {
       (n \! "@name").decode[Observation.Id].map(_.index)
     }
 
-  def targetEnvironmentDecoder[I <: Instrument with Singleton](i: Instrument.Aux[I]): PioDecoder[TargetEnvironment] = {
+  def targetEnvironmentDecoder(i: Instrument): PioDecoder[TargetEnvironment] = {
     import gem.enum.TrackType
 
     def trackType(targetNode: scala.xml.Node): Option[TrackType] =
@@ -197,28 +197,33 @@ object Decoders {
         a <- validTargets(n \* "&asterism" \! "&target")(_.toRequired).decode[Target]
         // g <- guideEnvironment
         u <- validTargets(n \? "&userTargets" \* "&userTarget")(_ \! "&spTarget" \! "&target").decode[UserTarget]
-      } yield TargetEnvironment(a.headOption.map(Asterism.SingleTarget(_, i)), TreeSet.fromList(u))
+      } yield {
+        a.headOption.map(Asterism.unsafeFromSingleTarget(_, i)) match {
+          case None    => TargetEnvironment.fromInstrument(i, TreeSet.fromList(u))
+          case Some(a) => TargetEnvironment.fromAsterism(a, TreeSet.fromList(u))
+        }
+      }
     }
   }
 
-  implicit val ObservationDecoder: PioDecoder[Observation.Full] =
+  implicit val ObservationDecoder: PioDecoder[Observation] =
     PioDecoder { n =>
       for {
         t <- (n \! "data" \? "#title"                   ).decodeOrZero[String]
         s <- (n \! "sequence"                           ).decode[StaticConfig](StaticDecoder)
-        d <- (n \! "sequence"                           ).decode[List[Step[DynamicConfig]]](SequenceDecoder)
-        i  = s.instrument // stable identifier needed below
-        e <- (n \? "telescope" \! "data" \! "&targetEnv").decodeOrElse(TargetEnvironment.empty)(targetEnvironmentDecoder(i))
-      } yield Observation(t, e, s, d).asInstanceOf[Observation.Full]
+        d <- (n \! "sequence"                           ).decode[List[Step]](SequenceDecoder)
+        i  = Instrument.forStaticConfig(s) // stable identifier needed below
+        e <- (n \? "telescope" \! "data" \! "&targetEnv").decodeOrElse(TargetEnvironment.fromInstrument(i, TreeSet.empty))(targetEnvironmentDecoder(i))
+      } yield Observation.unsafeAssemble(t, e, s, d)
     }
 
-  implicit val ProgramDecoder: PioDecoder[Program[Observation.Full]] =
+  implicit val ProgramDecoder: PioDecoder[Program] =
     PioDecoder { n =>
       for {
         id <- (n \!  "@name"           ).decode[Program.Id]
         t  <- (n \!  "data" \? "#title").decodeOrZero[String]
         is <- (n \\* "observation"     ).decode[Index]
-        os <- (n \\* "observation"     ).decode[Observation.Full]
+        os <- (n \\* "observation"     ).decode[Observation]
       } yield Program(id, t, TreeMap.fromList(is.zip(os)))
     }
 

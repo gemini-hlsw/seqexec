@@ -32,20 +32,20 @@ object Importer extends DoobieClient {
       } yield ()
   }
 
-  def importObservation(oid: Observation.Id, o: Observation.Full, ds: List[Dataset]): ConnectionIO[Unit] = {
+  def importObservation(oid: Observation.Id, o: Observation, ds: List[Dataset]): ConnectionIO[Unit] = {
 
     val rmObservation: ConnectionIO[Unit] =
       sql"DELETE FROM observation WHERE program_id = ${oid.pid} AND observation_index = ${oid.index}".update.run.void
 
     for {
-      _ <- ignoreUniqueViolation(ProgramDao.insertFlat(Program[Nothing](oid.pid, "", TreeMap.empty)).as(1))
+      _ <- ignoreUniqueViolation(ProgramDao.insertFlat(Program(oid.pid, "", TreeMap.empty)).as(1))
       _ <- rmObservation
       _ <- ObservationDao.insert(oid, o)
       _ <- datasets.write(oid, ds)
     } yield ()
   }
 
-  def importProgram(p: Program[Observation.Full], ds: List[Dataset]): ConnectionIO[Unit] = {
+  def importProgram(p: Program, ds: List[Dataset]): ConnectionIO[Unit] = {
 
     val rmProgram: ConnectionIO[Unit] =
       sql"DELETE FROM program WHERE program_id = ${p.id}".update.run.void
