@@ -46,11 +46,11 @@ object ls {
   // scala.text and kiama are both on the classpath but neither has any doc so I'm just going
   // to do this by hand for now. We're going to truncate output for now.
   @SuppressWarnings(Array("org.wartremover.warts.ToString"))
-  def formatProgs(ps: List[Program[_]], width: Int): List[String] = {
-    val w1 = ps.map(_.id.toString.length).foldRight(0)(_ max _) + 2
+  def formatProgs(ps: List[(Program.Id, String)], width: Int): List[String] = {
+    val w1 = ps.map(_._1.toString.length).foldRight(0)(_ max _) + 2
     val w2 = width - w1
     ps.map { p =>
-      p.id.toString.padTo(w1, ' ') + p.title.take(w2)
+      p._1.toString.padTo(w1, ' ') + p._2.take(w2)
     }
   }
 
