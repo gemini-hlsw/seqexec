@@ -153,7 +153,7 @@ object SmartGcalDao {
   def lookup(oid: Observation.Id, loc: Location.Middle): ExpansionResult[ExpandedSteps] =
     for {
       o <- ObservationDao.selectStatic(oid).injectRight
-      s <- lookupʹ(StepDao.selectOne(oid, loc), loc, o._3)
+      s <- lookupʹ(StepDao.selectOne(oid, loc), loc, o._2)
     } yield s
 
   /** Expands a smart gcal step into the corresponding gcal steps so that they
@@ -187,7 +187,7 @@ object SmartGcalDao {
       obs   <- ObservationDao.selectStatic(oid).injectRight
       steps <- StepDao.selectAll(oid).injectRight
       (locBefore, locAfter) = bounds(steps)
-      gcal  <- lookupʹ(MaybeConnectionIO.fromOption(steps.get(loc)), loc, obs._3)
+      gcal  <- lookupʹ(MaybeConnectionIO.fromOption(steps.get(loc)), loc, obs._2)
       // replaces the smart gcal step with the expanded manual gcal steps
       _     <- StepDao.deleteAtLocation(oid, loc).injectRight
       _     <- insert(locBefore, gcal, locAfter).injectRight

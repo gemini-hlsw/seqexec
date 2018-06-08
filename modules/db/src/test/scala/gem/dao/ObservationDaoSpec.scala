@@ -6,7 +6,7 @@ package gem.dao
 import cats.implicits._
 import doobie.implicits._
 import gem.Observation
-// import gem.enum._
+import gem.enum._
 import gem.math.Index
 import org.scalatest._
 import org.scalatest.prop._
@@ -40,9 +40,9 @@ class ObservationDaoSpec extends PropSpec with PropertyChecks with DaoTest {
 
       // Take the generated observation, remove the targets and steps, and map
       // the the static config to the instrument.
-      val expected = obsIn.title
+      val expected = (obsIn.title, Instrument.forObservation(obsIn))
 
-      obsOut shouldEqual expected // obsIn.leftMap(_.instrument).copy(steps = Nil)
+      obsOut shouldEqual expected
     }
   }
 
@@ -58,7 +58,7 @@ class ObservationDaoSpec extends PropSpec with PropertyChecks with DaoTest {
       }
 
       // Take the generated observation and remove the targets and steps
-      val expected = "x"
+      val expected = (obsIn.title, obsIn.staticConfig)
 
       obsOut shouldEqual expected
     }
@@ -77,7 +77,7 @@ class ObservationDaoSpec extends PropSpec with PropertyChecks with DaoTest {
 
       // Take the generated observation, replace the static config with the
       // instrument type and remove the steps.
-      val expected = "x"
+      val expected = (obsIn.title, obsIn.targetEnvironment)
 
       obsOut shouldEqual expected
     }

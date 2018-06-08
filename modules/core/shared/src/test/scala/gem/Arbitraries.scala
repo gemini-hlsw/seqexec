@@ -101,7 +101,6 @@ trait Arbitraries extends gem.config.Arbitraries  {
                Instrument.Flamingos2,
                Instrument.GmosN,
                Instrument.GmosS,
-               Instrument.Gnirs
              ) // Add more as they become available
         o <- genObservationOf(i)
       } yield o
