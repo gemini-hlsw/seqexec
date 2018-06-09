@@ -1,9 +1,30 @@
+resolvers  ++= Seq(
+  "Flyway" at "https://davidmweber.github.io/flyway-sbt.repo",
+  Resolver.bintrayIvyRepo("rtimush", "sbt-plugin-snapshots")
+)
 // Gives support for Scala.js compilation
 val scalaJSVersion =
   Option(System.getenv("SCALAJS_VERSION")).getOrElse("0.6.23")
 
+libraryDependencies ++= Seq(
+  "org.postgresql" % "postgresql"  % "42.2.1", // needed by flyway
+  "org.slf4j"      % "slf4j-nop"   % "1.7.25", // to silence some log messages
+  "org.typelevel" %% "cats-core"   % "1.0.1",
+  "org.typelevel" %% "cats-effect" % "0.8"
+)
 addSbtPlugin("org.scala-js" % "sbt-scalajs" % scalaJSVersion)
 
+addSbtPlugin("org.flywaydb"       % "flyway-sbt"               % "4.2.0")
+addSbtPlugin("org.scalastyle"    %% "scalastyle-sbt-plugin"    % "1.0.0")
+addSbtPlugin("com.typesafe.sbt"   % "sbt-native-packager"      % "1.3.3")
+addSbtPlugin("com.typesafe.sbt"   % "sbt-git"                  % "0.9.3")
+addSbtPlugin("de.heikoseeberger"  % "sbt-header"               % "4.1.0")
+addSbtPlugin("org.wartremover"    % "sbt-wartremover"          % "2.2.1")
+addSbtPlugin("org.scala-js"       % "sbt-scalajs"              % "0.6.23")
+addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "0.4.0")
+addSbtPlugin("net.virtual-void"   % "sbt-dependency-graph"     % "0.9.0")
+addSbtPlugin("com.timushev.sbt"   % "sbt-updates"              % "0.3.4")
+addSbtPlugin("io.github.cquiroz"  % "sbt-tzdb"                 % "0.1.2")
 addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject"      % "0.4.0")
 
 // sbt revolver lets launching applications from the sbt console
@@ -39,3 +60,5 @@ addSbtPlugin("io.github.cquiroz" % "sbt-tzdb" % "0.1.2")
 
 // Avoids a warning message when starting sbt-git
 libraryDependencies += "org.slf4j" % "slf4j-nop" % "1.7.21"
+
+onLoad in Global := { s => "dependencyUpdates" :: s }

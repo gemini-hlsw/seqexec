@@ -1,0 +1,6 @@
+# This file must contain a single non-blank, non-comment line specifying the name of
+# the Postgres container to use for deployment. We need to do this so that database version
+# upgrades are part of the evolution of the app; if we want to deploy an old version we
+# need to know the old Postgres image name at the specified commit.
+
+postgres:9.6.0
