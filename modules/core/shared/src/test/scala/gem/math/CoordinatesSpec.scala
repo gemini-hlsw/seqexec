@@ -109,7 +109,6 @@ final class CoordinatesSpec extends CatsSuite {
     }
   }
 
-
   test("angularDistance must equal any offset in right ascension along the equator, to within 1µas") {
     forAll { (ra: RA, ha: HourAngle) =>
       val a = Coordinates(ra, Dec.Zero)
@@ -140,8 +139,8 @@ final class CoordinatesSpec extends CatsSuite {
 
     forAll { (c1: Coordinates, c2: Coordinates) =>
       val sep = c1.angularDistance(c2)
-      val Δs  = (-1.0 to 2.0 by 0.1).map { f =>
-        val stepSep  = c1.interpolate(c2, f).angularDistance(c1).toMicroarcseconds
+      val Δs  = (Range.BigDecimal(-1.0, 2.0, 0.1)).map { f =>
+        val stepSep  = c1.interpolate(c2, f.toDouble).angularDistance(c1).toMicroarcseconds
         val fracSep  = (sep.toMicroarcseconds * f.abs).toLong
         val fracSepʹ = if (fracSep <= µas180) fracSep else µas360 - fracSep
         (stepSep - fracSepʹ).abs

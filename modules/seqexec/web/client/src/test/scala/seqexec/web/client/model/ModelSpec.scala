@@ -17,8 +17,8 @@ import diode.data._
 final class ModelSpec extends CatsSuite with ArbitrariesWebClient {
 
   checkAll("Eq[OffsetsDisplay]", EqTests[OffsetsDisplay].eqv)
-  checkAll("Eq[WebSocket]", EqTests[WebSocket].eqv)
+  // checkAll("Eq[WebSocket]", EqTests[WebSocket].eqv)
   checkAll("Eq[Pot[A]]", EqTests[Pot[Int]].eqv)
-  checkAll("Eq[WebSocketConnection]", EqTests[WebSocketConnection].eqv)
+  // checkAll("Eq[WebSocketConnection]", EqTests[WebSocketConnection].eqv)
   checkAll("Eq[ClientStatus]", EqTests[ClientStatus].eqv)
 }

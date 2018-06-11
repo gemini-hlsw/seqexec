@@ -23,8 +23,7 @@ install:
   - npm install jsdom
   - pip install --user awscli
 script:
-  - sbt headerCheck test:headerCheck scalastyle sql/flywayMigrate compile test ui/fastOptJS ui/fullOptJS
-  - sbt -Docs3.skipDependencyUpdates headerCheck test:headerCheck scalastyle test seqexec_web_client/fastOptJS::webpack
+  - sbt -Docs3.skipDependencyUpdates headerCheck test:headerCheck scalastyle sql/flywayMigrate compile test ui/fastOptJS ui/fullOptJS seqexec_web_client/fastOptJS::webpack
   - sbt -Docs3.skipDependencyUpdates seqexec_web_client/fullOptJS::webpack
 
 after_script:

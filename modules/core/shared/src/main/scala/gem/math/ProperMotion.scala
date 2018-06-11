@@ -225,28 +225,3 @@ trait ProperMotionOptics {
     GenLens[ProperMotion](_.parallax)
 
 }
-
-
-object ProperMotionExample {
-
-  /** Proper motion of Barnard's Star, for reference. */
-  val Barnard: ProperMotion =
-    ProperMotion(
-      Coordinates.fromHmsDms.getOption("17 57 48.49803 +04 41 36.2072").getOrElse(sys.error("oops")),
-      Epoch.J2000,
-      Some(Offset(
-        Offset.P(Angle.fromMicroarcseconds( -798580L)),
-        Offset.Q(Angle.fromMicroarcseconds(10328120L))
-      )),
-      Some(RadialVelocity.fromKilometersPerSecond(-110.6)),
-      Some(Angle.fromMicroarcseconds(545620L))
-    )
-
-  def main(args: Array[String]): Unit = {
-    (0.0 to 10.0 by 1.0) foreach { y =>
-      val cs = Barnard.plusYears(y).baseCoordinates
-      println(s"${2000 + y} -> $cs") // scalastyle:off console.io
-    }
-  }
-
-}

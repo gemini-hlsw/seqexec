@@ -27,7 +27,7 @@
  <!-- <check level="error" class="org.scalastyle.scalariform.NullChecker" enabled="true"></check> -->
  <check level="error" class="org.scalastyle.scalariform.CovariantEqualsChecker" enabled="true"></check>
  <check customId="console.io" level="error" class="org.scalastyle.file.RegexChecker" enabled="true">
-  <customMessage>Avoid console i/o É disable with // scalastyle:off console.io</customMessage>
+  <customMessage>Avoid console i/o disable with // scalastyle:off console.io</customMessage>
   <parameters>
    <parameter name="regex"><![CDATA[println]]></parameter>
   </parameters>

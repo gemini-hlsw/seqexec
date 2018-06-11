@@ -87,20 +87,28 @@ object Settings {
     val mouseVersion        = "0.17"
     val fs2Version          = "0.10.4"
     val shapelessVersion    = "2.3.3"
+    val attoVersion         = "0.6.2"
+    val scalaParsersVersion  = "1.1.1"
+    val scalaXmlVerson       = "1.1.0"
 
-    val http4s       = "0.18.11"
+    val http4sVersion        = "0.18.12"
     val squants      = "1.3.0"
     val argonaut     = "6.2.1"
     val commonsHttp  = "2.0.2"
     val unboundId    = "3.2.1"
-    val jwt          = "0.14.1"
+    val jwt          = "0.16.0"
     val slf4j        = "1.7.25"
     val log4s        = "1.6.1"
     val logback      = "1.2.3"
     val janino       = "3.0.8"
     val logstash     = "5.1"
     val knobs        = "6.0.33"
-    val monocle      = "1.5.1-cats"
+    val monocleVersion      = "1.5.1-cats"
+    val circeVersion         = "0.9.3"
+    val doobieVersion        = "0.5.3"
+    val flywayVersion        = "5.0.7"
+    val tucoVersion          = "0.3.1"
+    val declineVersion       = "0.4.1"
 
     // test libraries
     val scalaTest             = "3.0.5"
@@ -137,75 +145,92 @@ object Settings {
     */
   object Libraries {
     // Test Libraries
-    val TestLibs = Def.setting(Seq(
+    val TestLibs               = Def.setting(Seq(
       "org.typelevel"              %%% "cats-testkit"              % LibraryVersions.catsVersion         % "test",
       "com.github.alexarchambault" %%% "scalacheck-shapeless_1.13" % LibraryVersions.scalaCheckShapeless % "test"
     ))
-    val XmlUnit = "xmlunit" % "xmlunit" % LibraryVersions.xmlUnit % "test"
-    val JUnitInterface = "com.novocode" % "junit-interface" % LibraryVersions.jUnitInterface % "test"
+    val XmlUnit                = "xmlunit" % "xmlunit" % LibraryVersions.xmlUnit % "test"
+    val JUnitInterface         = "com.novocode" % "junit-interface" % LibraryVersions.jUnitInterface % "test"
 
-    val Argonaut    = "io.argonaut"        %% "argonaut"                          % LibraryVersions.argonaut
-    val CommonsHttp = "commons-httpclient" %  "commons-httpclient"                % LibraryVersions.commonsHttp
-    val UnboundId   = "com.unboundid"      %  "unboundid-ldapsdk-minimal-edition" % LibraryVersions.unboundId
-    val JwtCore     = "com.pauldijou"      %% "jwt-core"                          % LibraryVersions.jwt
-    val Slf4j       = "org.slf4j"          %  "slf4j-api"                         % LibraryVersions.slf4j
-    val JuliSlf4j   = "org.slf4j"          %  "jul-to-slf4j"                      % LibraryVersions.slf4j
-    val Logback     = Seq(
+    // Server side libraries
+    val Cats                   = Def.setting("org.typelevel" %%% "cats-core"                         % LibraryVersions.catsVersion)
+    val CatsEffect             = Def.setting("org.typelevel" %%% "cats-effect"                       % LibraryVersions.catsEffectVersion)
+    val CatsFree               = Def.setting("org.typelevel" %%% "cats-free"                         % LibraryVersions.catsVersion)
+    val Fs2                    = "co.fs2"                    %%  "fs2-core"                          % LibraryVersions.fs2Version
+    val Fs2IO                  = "co.fs2"                    %%  "fs2-io"                            % LibraryVersions.fs2Version % "test"
+    val Mouse                  = Def.setting("org.typelevel" %%% "mouse"                             % LibraryVersions.mouseVersion)
+    val Shapeless              = Def.setting("com.chuusai"   %%% "shapeless"                         % LibraryVersions.shapelessVersion)
+    val Decline                = "com.monovore"              %%  "decline"                           % LibraryVersions.declineVersion
+    val Argonaut               = "io.argonaut"               %%  "argonaut"                          % LibraryVersions.argonaut
+    val CommonsHttp            = "commons-httpclient"        %   "commons-httpclient"                % LibraryVersions.commonsHttp
+    val UnboundId              = "com.unboundid"             %   "unboundid-ldapsdk-minimal-edition" % LibraryVersions.unboundId
+    val JwtCore                = "com.pauldijou"             %%  "jwt-core"                          % LibraryVersions.jwt
+    val Slf4j                  = "org.slf4j"                 %   "slf4j-api"                         % LibraryVersions.slf4j
+    val JuliSlf4j              = "org.slf4j"                 %   "jul-to-slf4j"                      % LibraryVersions.slf4j
+    val Logback                = Seq(
       "ch.qos.logback"       % "logback-core"             % LibraryVersions.logback,
       "ch.qos.logback"       % "logback-classic"          % LibraryVersions.logback,
       "org.codehaus.janino"  % "janino"                   % LibraryVersions.janino,
       "net.logstash.logback" % "logstash-logback-encoder" % LibraryVersions.logstash
     )
-    val Log4s       = "org.log4s"          %% "log4s"                             % LibraryVersions.log4s
-    val Logging     = Seq(JuliSlf4j, Log4s) ++ Logback
-    val Knobs       = "io.verizon.knobs"   %% "core"                              % LibraryVersions.knobs
-    val OpenCSV     = "net.sf.opencsv"     %  "opencsv"                           % LibraryVersions.opencsv
-
-    val Squants     = Def.setting("org.typelevel"     %%% "squants"              % LibraryVersions.squants)
-    val BooPickle   = Def.setting("io.suzaku"         %%% "boopickle"            % LibraryVersions.booPickle)
-    val JavaTimeJS  = Def.setting("io.github.cquiroz" %%% "scala-java-time"      % LibraryVersions.javaTimeJS)
-    val JavaLogJS   = Def.setting("org.scala-js"      %%% "scalajs-java-logging" % LibraryVersions.javaLogJS)
-
-    // FP
-    val Cats             = Def.setting("org.typelevel" %%% "cats-core"           % LibraryVersions.catsVersion)
-    val CatsEffect       = Def.setting("org.typelevel" %%% "cats-effect"         % LibraryVersions.catsEffectVersion)
-    val Fs2              = "co.fs2"                    %%  "fs2-core"            % LibraryVersions.fs2Version
-    val Mouse            = Def.setting("org.typelevel" %%% "mouse"               % LibraryVersions.mouseVersion)
-    val Shapeless        = Def.setting("com.chuusai"   %%% "shapeless"           % LibraryVersions.shapelessVersion)
-
-    // Server side libraries
-    val Http4s  = Seq(
-      "org.http4s" %% "http4s-dsl"          % LibraryVersions.http4s,
-      "org.http4s" %% "http4s-blaze-server" % LibraryVersions.http4s)
-    val Http4sBoopickle  = "org.http4s" %% "http4s-boopickle" % LibraryVersions.http4s
-
-    val Monocle  = Def.setting(Seq(
-      "com.github.julien-truffaut" %%% "monocle-core"   % LibraryVersions.monocle,
-      "com.github.julien-truffaut" %%% "monocle-macro"  % LibraryVersions.monocle,
-      "com.github.julien-truffaut" %%% "monocle-unsafe" % LibraryVersions.monocle,
-      "com.github.julien-truffaut" %%% "monocle-law"    % LibraryVersions.monocle % "test"))
+    val Log4s                  = "org.log4s"                          %%  "log4s"                    % LibraryVersions.log4s
+    val Logging                = Seq(JuliSlf4j, Log4s) ++ Logback
+    val Knobs                  = "io.verizon.knobs"                   %%  "core"                     % LibraryVersions.knobs
+    val OpenCSV                = "net.sf.opencsv"                     %   "opencsv"                  % LibraryVersions.opencsv
+    val Squants                = Def.setting("org.typelevel"          %%% "squants"                  % LibraryVersions.squants)
+    val ScalaXml               = Def.setting("org.scala-lang.modules" %%% "scala-xml"                % LibraryVersions.scalaXmlVerson)
+    val ScalaParserCombinators = Def.setting("org.scala-lang.modules" %%  "scala-parser-combinators" % LibraryVersions.scalaParsersVersion)
+    val Http4s                 = Seq(
+      "org.http4s" %% "http4s-dsl"          % LibraryVersions.http4sVersion,
+      "org.http4s" %% "http4s-blaze-server" % LibraryVersions.http4sVersion)
+    val Http4sClient           = "org.http4s"                         %%  "http4s-blaze-client"      % LibraryVersions.http4sVersion
+    val Http4sBoopickle        = "org.http4s"                         %%  "http4s-boopickle"         % LibraryVersions.http4sVersion
+    val Http4sCirce            = "org.http4s"                         %%  "http4s-circe"             % LibraryVersions.http4sVersion
+    val Http4sXml              = "org.http4s"                         %%  "http4s-scala-xml"         % LibraryVersions.http4sVersion
+    val Flyway                 = "org.flywaydb"                       %   "flyway-core"              % LibraryVersions.flywayVersion
+    val Atto                   = Def.setting("org.tpolecat"           %%% "atto-core"                % LibraryVersions.attoVersion)
+    val Monocle                = Def.setting(Seq(
+      "com.github.julien-truffaut" %%% "monocle-core"   % LibraryVersions.monocleVersion,
+      "com.github.julien-truffaut" %%% "monocle-macro"  % LibraryVersions.monocleVersion,
+      "com.github.julien-truffaut" %%% "monocle-unsafe" % LibraryVersions.monocleVersion,
+      "com.github.julien-truffaut" %%% "monocle-law"    % LibraryVersions.monocleVersion % "test"))
+    val Tuco                   = Seq(
+      "org.tpolecat" %% "tuco-core"  % LibraryVersions.tucoVersion,
+      "org.tpolecat" %% "tuco-shell" % LibraryVersions.tucoVersion
+    )
+    val Circe                  = Def.setting(Seq(
+      "io.circe" %%% "circe-core"    % LibraryVersions.circeVersion,
+      "io.circe" %%% "circe-generic" % LibraryVersions.circeVersion,
+      "io.circe" %%% "circe-parser"  % LibraryVersions.circeVersion))
+    val Doobie                 = Seq(
+      "org.tpolecat" %% "doobie-core"      % LibraryVersions.doobieVersion,
+      "org.tpolecat" %% "doobie-postgres"  % LibraryVersions.doobieVersion,
+      "org.tpolecat" %% "doobie-scalatest" % LibraryVersions.doobieVersion % "test")
 
     // Client Side JS libraries
-    val ReactScalaJS = Def.setting(Seq(
+    val ReactScalaJS            = Def.setting(Seq(
       "com.github.japgolly.scalajs-react" %%% "core"         % LibraryVersions.scalajsReact,
       "com.github.japgolly.scalajs-react" %%% "extra"        % LibraryVersions.scalajsReact,
       "com.github.japgolly.scalajs-react" %%% "ext-scalaz72" % LibraryVersions.scalajsReact
     ))
-    val Diode = Def.setting(Seq(
+    val Diode                   = Def.setting(Seq(
       "io.suzaku" %%% "diode"       % LibraryVersions.diode,
       "io.suzaku" %%% "diode-react" % LibraryVersions.diodeReact
     ))
-    val ScalaJSDom              = Def.setting("org.scala-js"                 %%% "scalajs-dom"               % LibraryVersions.scalaDom)
-    val ScalaJSReactVirtualized = Def.setting("io.github.cquiroz"            %%% "scalajs-react-virtualized" % LibraryVersions.scalaJSReactVirtualized)
-    val ScalaJSReactDraggable   = Def.setting("io.github.cquiroz"            %%% "scalajs-react-draggable"   % LibraryVersions.scalaJSReactDraggable)
-    val ScalaJSReactClipboard   = Def.setting("io.github.cquiroz"            %%% "scalajs-react-clipboard"   % LibraryVersions.scalaJSReactClipboard)
-    val JQuery                  = Def.setting("org.querki"                   %%% "jquery-facade"             % LibraryVersions.scalaJQuery)
+    val ScalaJSDom              = Def.setting("org.scala-js"      %%% "scalajs-dom"               % LibraryVersions.scalaDom)
+    val ScalaJSReactVirtualized = Def.setting("io.github.cquiroz" %%% "scalajs-react-virtualized" % LibraryVersions.scalaJSReactVirtualized)
+    val ScalaJSReactDraggable   = Def.setting("io.github.cquiroz" %%% "scalajs-react-draggable"   % LibraryVersions.scalaJSReactDraggable)
+    val ScalaJSReactClipboard   = Def.setting("io.github.cquiroz" %%% "scalajs-react-clipboard"   % LibraryVersions.scalaJSReactClipboard)
+    val JQuery                  = Def.setting("org.querki"        %%% "jquery-facade"             % LibraryVersions.scalaJQuery)
+    val BooPickle               = Def.setting("io.suzaku"         %%% "boopickle"                 % LibraryVersions.booPickle)
+    val JavaTimeJS              = Def.setting("io.github.cquiroz" %%% "scala-java-time"           % LibraryVersions.javaTimeJS)
+    val JavaLogJS               = Def.setting("org.scala-js"      %%% "scalajs-java-logging"      % LibraryVersions.javaLogJS)
 
     // OCS Libraries, these should become modules in the future
     val SpModelCore = "edu.gemini.ocs"    %% "edu-gemini-spmodel-core"        % LibraryVersions.ocsVersion
     val SeqexecOdb  = Seq(
                       "edu.gemini.ocs"    %% "edu-gemini-seqexec-odb"         % LibraryVersions.ocsVersion,
-                      "dom4j"            %  "dom4j"                          % "1.5.1"
+                      "dom4j"             %  "dom4j"                          % "1.5.1"
                         exclude("jaxen", "jaxen")
                         exclude("jaxme", "jaxme-api")
                         exclude("msv", "xsdlib")
@@ -218,17 +243,17 @@ object Settings {
     val TRPC        = "edu.gemini.ocs"    %% "edu-gemini-util-trpc"           % LibraryVersions.ocsVersion
     val WDBAClient  = Seq(
                       "edu.gemini.ocs"    %% "edu-gemini-wdba-session-client" % LibraryVersions.ocsVersion,
-                      "org.apache.xmlrpc" %  "xmlrpc-client"                  % LibraryVersions.apacheXMLRPC
-    )
+                      "org.apache.xmlrpc" %  "xmlrpc-client"                  % LibraryVersions.apacheXMLRPC)
 
-    val EpicsService = "edu.gemini.epics" % "epics-service" % LibraryVersions.epicsService
-    val GmpCommandsRecords = "edu.gemini.gmp" % "gmp-commands-records" % LibraryVersions.gmpCommandRecords
-    val GiapiJmsUtil = "edu.gemini.aspen" % "giapi-jms-util" % LibraryVersions.giapiJmsUtil
-    val GiapiJmsProvider = "edu.gemini.jms" % "jms-activemq-provider" % LibraryVersions.giapiJmsProvider
-    val Giapi = "edu.gemini.aspen" % "giapi" % LibraryVersions.giapi
+    // GIAPI Libraries
+    val EpicsService        = "edu.gemini.epics"     % "epics-service"           % LibraryVersions.epicsService
+    val GmpCommandsRecords  = "edu.gemini.gmp"       % "gmp-commands-records"    % LibraryVersions.gmpCommandRecords
+    val GiapiJmsUtil        = "edu.gemini.aspen"     % "giapi-jms-util"          % LibraryVersions.giapiJmsUtil
+    val GiapiJmsProvider    = "edu.gemini.jms"       % "jms-activemq-provider"   % LibraryVersions.giapiJmsProvider
+    val Giapi               = "edu.gemini.aspen"     % "giapi"                   % LibraryVersions.giapi
     val GiapiCommandsClient = "edu.gemini.aspen.gmp" % "gmp-commands-jms-client" % LibraryVersions.giapiCommandsClient
-    val GiapiStatusService = "edu.gemini.aspen" % "giapi-status-service" % LibraryVersions.giapiStatusService
-    val Guava = "com.google.guava" % "guava" % LibraryVersions.guava
+    val GiapiStatusService  = "edu.gemini.aspen"     % "giapi-status-service"    % LibraryVersions.giapiStatusService
+    val Guava               = "com.google.guava"     % "guava"                   % LibraryVersions.guava
   }
 
   object PluginVersions {
