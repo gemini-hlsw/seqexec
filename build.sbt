@@ -310,13 +310,14 @@ lazy val main = project
     }
 
   )
+
 lazy val giapi = project
   .in(file("modules/giapi"))
   .enablePlugins(AutomateHeaderPlugin)
   .enablePlugins(GitBranchPrompt)
   .settings(commonSettings: _*)
   .settings(
-    libraryDependencies ++= Seq(Shapeless.value, CatsEffect.value, Fs2, GiapiJmsUtil, GiapiJmsProvider, GiapiStatusService, Giapi, GiapiCommandsClient) ++ Logging
+    libraryDependencies ++= Seq(Cats.value, Mouse.value, Shapeless.value, CatsEffect.value, Fs2, GiapiJmsUtil, GiapiJmsProvider, GiapiStatusService, Giapi, GiapiCommandsClient) ++ Logging
   )
 
 // Common utilities for web server projects
@@ -341,7 +342,7 @@ lazy val web_client = project
       // By necessity facades will have unused params
       "-Ywarn-unused:params"
     ))),
-    libraryDependencies ++= Seq(ScalaJSDom.value, JQuery.value) ++ ReactScalaJS.value
+    libraryDependencies ++= Seq(Cats.value, ScalaJSDom.value, JQuery.value) ++ ReactScalaJS.value
   )
 
 // a special crossProject for configuring a JS/JVM/shared structure
@@ -454,6 +455,8 @@ lazy val seqexec_web_client = project.in(file("modules/seqexec/web/client"))
     ),
     libraryDependencies ++= Seq(
       JQuery.value,
+      Cats.value,
+      Mouse.value,
       CatsEffect.value,
       ScalaJSDom.value,
       JavaTimeJS.value,
@@ -509,7 +512,7 @@ lazy val seqexec_model = crossProject(JVMPlatform, JSPlatform)
   .enablePlugins(GitBranchPrompt)
   .settings(
     addCompilerPlugin(Plugins.paradisePlugin),
-    libraryDependencies ++= BooPickle.value +: Monocle.value
+    libraryDependencies ++= Seq(Mouse.value, BooPickle.value) ++ Monocle.value
   )
   .jvmSettings(
     commonSettings)
