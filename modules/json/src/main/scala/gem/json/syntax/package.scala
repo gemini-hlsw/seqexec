@@ -4,5 +4,10 @@
 package gem.json
 
 package object syntax {
-  object all extends OpticsSyntax
+  object all
+    extends PrismJsonSyntax
+       with SplitMonoJsonSyntax
+       with SplitEpiJsonSyntax
+       with FormatJsonSyntax
+
 }
