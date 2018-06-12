@@ -29,27 +29,57 @@ trait StaticConfigJson {
   implicit val GmosCommonStaticConfigEncoder: Encoder[GmosConfig.GmosCommonStaticConfig] = deriveEncoder
   implicit val GmosCommonStaticConfigDecoder: Decoder[GmosConfig.GmosCommonStaticConfig] = deriveDecoder
 
-  // This is a sanity check. Uncomment these lines if the derivation for DynamicConfig fails and
-  // this will provide some clues as to what's missing.
-  // List[Any](
-  //   deriveEncoder[StaticConfig.Phoenix],    deriveDecoder[StaticConfig.Phoenix],
-  //   deriveEncoder[StaticConfig.Michelle],   deriveDecoder[StaticConfig.Michelle],
-  //   deriveEncoder[StaticConfig.Gnirs],      deriveDecoder[StaticConfig.Gnirs],
-  //   deriveEncoder[StaticConfig.Niri],       deriveDecoder[StaticConfig.Niri],
-  //   deriveEncoder[StaticConfig.Trecs],      deriveDecoder[StaticConfig.Trecs],
-  //   deriveEncoder[StaticConfig.Nici],       deriveDecoder[StaticConfig.Nici],
-  //   deriveEncoder[StaticConfig.Nifs],       deriveDecoder[StaticConfig.Nifs],
-  //   deriveEncoder[StaticConfig.Gpi],        deriveDecoder[StaticConfig.Gpi],
-  //   deriveEncoder[StaticConfig.Gsaoi],      deriveDecoder[StaticConfig.Gsaoi],
-  //   deriveEncoder[StaticConfig.GmosS],      deriveDecoder[StaticConfig.GmosS],
-  //   deriveEncoder[StaticConfig.AcqCam],     deriveDecoder[StaticConfig.AcqCam],
-  //   deriveEncoder[StaticConfig.GmosN],      deriveDecoder[StaticConfig.GmosN],
-  //   deriveEncoder[StaticConfig.Bhros],      deriveDecoder[StaticConfig.Bhros],
-  //   deriveEncoder[StaticConfig.Visitor],    deriveDecoder[StaticConfig.Visitor],
-  //   deriveEncoder[StaticConfig.Flamingos2], deriveDecoder[StaticConfig.Flamingos2],
-  //   deriveEncoder[StaticConfig.Ghost],      deriveDecoder[StaticConfig.Ghost],
-  // ).foreach(_ => ()) // ensure it's a unit statement
+  // Individual codecs are necessary for Observation codecs
 
+  implicit val PhoenixStaticConfigEncoder: Encoder[StaticConfig.Phoenix] = deriveEncoder
+  implicit val PhoenixStaticConfigDecoder: Decoder[StaticConfig.Phoenix] = deriveDecoder
+
+  implicit val MichelleStaticConfigEncoder: Encoder[StaticConfig.Michelle] = deriveEncoder
+  implicit val MichelleStaticConfigDecoder: Decoder[StaticConfig.Michelle] = deriveDecoder
+
+  implicit val GnirsStaticConfigEncoder: Encoder[StaticConfig.Gnirs] = deriveEncoder
+  implicit val GnirsStaticConfigDecoder: Decoder[StaticConfig.Gnirs] = deriveDecoder
+
+  implicit val NiriStaticConfigEncoder: Encoder[StaticConfig.Niri] = deriveEncoder
+  implicit val NiriStaticConfigDecoder: Decoder[StaticConfig.Niri] = deriveDecoder
+
+  implicit val TrecsStaticConfigEncoder: Encoder[StaticConfig.Trecs] = deriveEncoder
+  implicit val TrecsStaticConfigDecoder: Decoder[StaticConfig.Trecs] = deriveDecoder
+
+  implicit val NiciStaticConfigEncoder: Encoder[StaticConfig.Nici] = deriveEncoder
+  implicit val NiciStaticConfigDecoder: Decoder[StaticConfig.Nici] = deriveDecoder
+
+  implicit val NifsStaticConfigEncoder: Encoder[StaticConfig.Nifs] = deriveEncoder
+  implicit val NifsStaticConfigDecoder: Decoder[StaticConfig.Nifs] = deriveDecoder
+
+  implicit val GpiStaticConfigEncoder: Encoder[StaticConfig.Gpi] = deriveEncoder
+  implicit val GpiStaticConfigDecoder: Decoder[StaticConfig.Gpi] = deriveDecoder
+
+  implicit val GsaoiStaticConfigEncoder: Encoder[StaticConfig.Gsaoi] = deriveEncoder
+  implicit val GsaoiStaticConfigDecoder: Decoder[StaticConfig.Gsaoi] = deriveDecoder
+
+  implicit val GmosSStaticConfigEncoder: Encoder[StaticConfig.GmosS] = deriveEncoder
+  implicit val GmosSStaticConfigDecoder: Decoder[StaticConfig.GmosS] = deriveDecoder
+
+  implicit val AcqCamStaticConfigEncoder: Encoder[StaticConfig.AcqCam] = deriveEncoder
+  implicit val AcqCamStaticConfigDecoder: Decoder[StaticConfig.AcqCam] = deriveDecoder
+
+  implicit val GmosNStaticConfigEncoder: Encoder[StaticConfig.GmosN] = deriveEncoder
+  implicit val GmosNStaticConfigDecoder: Decoder[StaticConfig.GmosN] = deriveDecoder
+
+  implicit val BhrosStaticConfigEncoder: Encoder[StaticConfig.Bhros] = deriveEncoder
+  implicit val BhrosStaticConfigDecoder: Decoder[StaticConfig.Bhros] = deriveDecoder
+
+  implicit val VisitorStaticConfigEncoder: Encoder[StaticConfig.Visitor] = deriveEncoder
+  implicit val VisitorStaticConfigDecoder: Decoder[StaticConfig.Visitor] = deriveDecoder
+
+  implicit val Flamingos2StaticConfigEncoder: Encoder[StaticConfig.Flamingos2] = deriveEncoder
+  implicit val Flamingos2StaticConfigDecoder: Decoder[StaticConfig.Flamingos2] = deriveDecoder
+
+  implicit val GhostStaticConfigEncoder: Encoder[StaticConfig.Ghost] = deriveEncoder
+  implicit val GhostStaticConfigDecoder: Decoder[StaticConfig.Ghost] = deriveDecoder
+
+  // And the ADT itself
   implicit val StaticConfigEncoder: Encoder[StaticConfig] = deriveEncoder
   implicit val StaticConfigDecoder: Decoder[StaticConfig] = deriveDecoder
 
