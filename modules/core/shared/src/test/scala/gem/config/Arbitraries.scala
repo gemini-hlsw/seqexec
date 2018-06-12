@@ -279,7 +279,7 @@ trait Arbitraries {
       for {
         a  <- arbitrary[GcalArc]
         as <- Gen.someOf(GcalArc.all)
-      } yield GcalArcs(a, as.toList)
+      } yield GcalArcs.of(a, as.toList: _*)
     }
 
   implicit val arbGcalLamp: Arbitrary[GcalLamp] =

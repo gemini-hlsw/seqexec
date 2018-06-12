@@ -3,7 +3,7 @@
 
 package gem.json.instances
 
-import gem.{ EphemerisKey, Target }
+import gem.{ EphemerisKey, Target, UserTarget }
 import gem.enum.Site
 import gem.math.{ Ephemeris, ProperMotion }
 import io.circe._
@@ -30,6 +30,9 @@ trait TargetJson {
 
   implicit val TargetEncoder: Encoder[Target] = deriveEncoder
   implicit val TargetDecoder: Decoder[Target] = deriveDecoder
+
+  implicit val UserTargetEncoder: Encoder[UserTarget] = deriveEncoder
+  implicit val UserTargetDecoder: Decoder[UserTarget] = deriveDecoder
 
 }
 object target extends TargetJson
