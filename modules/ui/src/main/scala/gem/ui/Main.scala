@@ -32,7 +32,7 @@ object TestProgram {
 
   val gcal: GcalConfig =
     GcalConfig(
-      Right(GcalConfig.GcalArcs(GcalArc.ArArc, Nil)),
+      Right(GcalConfig.GcalArcs.of(GcalArc.ArArc)),
       GcalFilter.None,
       GcalDiffuser.Ir,
       GcalShutter.Open,
