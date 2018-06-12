@@ -1,5 +1,7 @@
 *.class
 *.log
+*.swp
+.#*
 *.iml
 .metals/
 .DS_Store
@@ -31,18 +33,37 @@ buildinfo.properties
 
 # Scala-IDE specific
 .scala_dependencies
-.worksheet
+.cache
+.classpath
+.project
+.worksheet/
+bin/
+.settings/
+.idea
+*.ipr
+*.iws
 
-# Idea specific
-.idea/
+# OS X
+.DS_Store
 
-# Ensime
+# Tags
+.tags
+GPATH
+GRTAGS
+GTAGS
+
+# ENSIME
 .ensime
 .ensime_cache/
 .#*
+ensime.sbt
 
+archive
+smartgcal
+.jvmopts
 # Node modules
 node_modules/
+package-lock.json
 
 # Project specific
 modules/edu.gemini.seqexec.web/edu.gemini.seqexec.web.server/log/

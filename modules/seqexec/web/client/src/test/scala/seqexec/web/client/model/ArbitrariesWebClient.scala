@@ -64,14 +64,14 @@ trait ArbitrariesWebClient {
     Arbitrary(Gen.oneOf(Gen.const(Empty), Gen.const(Unavailable), arbitrary[A].map(Ready.apply), Gen.const(Pending()), arbitrary[A].map(PendingStale(_)), arbitrary[Throwable].map(Failed(_)), arbitrary[(A, Throwable)].map{ case (a, t) => FailedStale(a, t)}))
 
   implicit def potCogen[A: Cogen]: Cogen[Pot[A]] =
-    Cogen[Option[Option[Option[Either[A, Either[(A, Long), Either[Throwable, (A, Throwable)]]]]]]].contramap {
+    Cogen[Option[Option[Either[Long, Either[A, Either[(A, Long), Either[Throwable, (A, Throwable)]]]]]]].contramap {
       case Empty              => None
       case Unavailable        => Some(None)
-      case Pending(_)         => Some(Some(None))
-      case Ready(a)           => Some(Some(Some(Left(a))))
-      case PendingStale(a, l) => Some(Some(Some(Right(Left((a, l))))))
-      case Failed(t)          => Some(Some(Some(Right(Right(Left(t))))))
-      case FailedStale(a, t)  => Some(Some(Some(Right(Right(Right((a, t)))))))
+      case Pending(a)         => Some(Some(Left(a)))
+      case Ready(a)           => Some(Some(Right(Left(a))))
+      case PendingStale(a, l) => Some(Some(Right(Right(Left((a, l))))))
+      case Failed(t)          => Some(Some(Right(Right(Right(Left(t))))))
+      case FailedStale(a, t)  => Some(Some(Right(Right(Right(Right((a, t)))))))
     }
 
   implicit val arbWebSocketConnection: Arbitrary[WebSocketConnection] =

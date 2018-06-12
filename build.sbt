@@ -6,6 +6,10 @@ import AppsCommon._
 import sbt.Keys._
 import NativePackagerHelper._
 import sbtcrossproject.{crossProject, CrossType}
+import com.typesafe.sbt.packager.docker._
+
+// our version is determined by the current git state (see project/ImageManifest.scala)
+def imageManifest = ImageManifest.current("postgres:9.6.0").unsafeRunSync
 
 name := Settings.Definitions.name
 
@@ -56,7 +60,7 @@ inThisBuild(List(
 
 enablePlugins(GitBranchPrompt)
 
-// Custom commonds to facilitate web development
+// Custom commands to facilitate web development
 val startAllCommands = List(
   "seqexec_web_server/reStart",
   "seqexec_web_client/fastOptJS::startWebpackDevServer",
@@ -68,17 +72,45 @@ val restartWDSCommands = List(
 )
 
 addCommandAlias("startAll", startAllCommands.mkString(";", ";", ""))
-
 addCommandAlias("restartWDS", restartWDSCommands.mkString(";", ";", ""))
+addCommandAlias("genEnums", "; sql/runMain gem.sql.Main modules/core/shared/src/main/scala/gem/enum")
+addCommandAlias("schemaSpy", "sql/runMain org.schemaspy.Main -t pgsql -port 5432 -db gem -o modules/sql/target/schemaspy -u postgres -host localhost -s public")
+addCommandAlias("gemctl", "ctl/runMain gem.ctl.main")//
 
 resolvers in ThisBuild +=
   Resolver.sonatypeRepo("snapshots")
+
+// Before printing the prompt check git to make sure all is well.
+shellPrompt in ThisBuild := { state =>
+  if (version.value != imageManifest.formatVersion) {
+    import scala.Console.{ RED, RESET }
+    print(RED)
+    println(s"Computed version doesn't match the filesystem anymore.")
+    println(s"Please `reload` to get back in sync.")
+    print(RESET)
+  }
+  "> "
+}
 
 ///////////////
 // Root project
 ///////////////
 lazy val ocs3 = preventPublication(project.in(file(".")))
+  .settings(commonSettings)
   .aggregate(
+    coreJVM,
+    coreJS,
+    db,
+    json,
+    ocs2,
+    ephemeris,
+    service,
+    telnetd,
+    ctl,
+    web,
+    sql,
+    main,
+    ui,
     giapi,
     web_server_common,
     web_client,
@@ -94,13 +126,198 @@ lazy val ocs3 = preventPublication(project.in(file(".")))
 //////////////
 // Projects
 //////////////
+lazy val core = crossProject(JVMPlatform, JSPlatform)
+  .crossType(CrossType.Full)
+  .in(file("modules/core"))
+  .settings(commonSettings)
+  .settings(
+    addCompilerPlugin(Plugins.kindProjectorPlugin),
+    addCompilerPlugin(Plugins.paradisePlugin),
+    libraryDependencies ++= Seq(
+      Cats.value,
+      CatsEffect.value,
+      Mouse.value,
+      Shapeless.value,
+      Atto.value
+    ) ++ Monocle.value
+  )
+  .jsSettings(
+    libraryDependencies +=
+      JavaTimeJS.value,
+    wartremoverExcluded += sourceManaged.value / "main" / "java" / "time" / "zone" / "TzdbZoneRulesProvider.scala",
+    // We only care about these two timezones. UTC is implicitly included
+    zonesFilter         := {(z: String) => z == "America/Santiago" || z == "Pacific/Honolulu"}
+  )
+  .jsSettings(commonJSSettings)
+  .jvmSettings(
+    libraryDependencies += Fs2
+  )
+
+lazy val coreJVM = core.jvm.enablePlugins(AutomateHeaderPlugin)
+lazy val coreJS = core.js.enablePlugins(TzdbPlugin)
+
+lazy val db = project
+  .in(file("modules/db"))
+  .enablePlugins(AutomateHeaderPlugin)
+  .dependsOn(coreJVM % "compile->compile;test->test")
+  .settings(commonSettings)
+  .settings(
+    addCompilerPlugin(Plugins.kindProjectorPlugin),
+    libraryDependencies ++= Doobie,
+    initialCommands += """
+      |import cats._, cats.data._, cats.implicits._, cats.effect._
+      |import doobie._, doobie.implicits._
+      |import gem._, gem.enum._, gem.math._, gem.dao._, gem.dao.meta._, gem.dao.composite._
+      |val xa = Transactor.fromDriverManager[IO](
+      |  "org.postgresql.Driver",
+      |  "jdbc:postgresql:gem",
+      |  "postgres",
+      |  "")
+      |val y = xa.yolo
+      |import y._
+    """.stripMargin.trim
+  )
+
+lazy val json = project
+  .in(file("modules/json"))
+  .enablePlugins(AutomateHeaderPlugin)
+  .dependsOn(coreJVM)
+  .settings(commonSettings)
+  .settings(
+    libraryDependencies ++= Circe.value
+  )
+
+lazy val sql = project
+  .in(file("modules/sql"))
+  .enablePlugins(AutomateHeaderPlugin)
+  .settings(commonSettings ++ flywaySettings)
+  .settings(
+    libraryDependencies ++= Seq(
+      Flyway
+    ) ++ Doobie
+  )
+
+lazy val ocs2 = project
+  .in(file("modules/ocs2"))
+  .enablePlugins(AutomateHeaderPlugin)
+  .dependsOn(coreJVM, db, sql)
+  .settings(commonSettings)
+  .settings(
+    addCompilerPlugin(Plugins.kindProjectorPlugin),
+    libraryDependencies ++= Seq(
+      Fs2,
+      ScalaXml.value,
+      ScalaParserCombinators.value,
+      Http4sXml,
+      Http4sClient,
+    ) ++ Http4s
+  )
+
+lazy val ephemeris = project
+  .in(file("modules/ephemeris"))
+  .enablePlugins(AutomateHeaderPlugin)
+  .dependsOn(coreJVM % "compile->compile;test->test", db, sql)
+  .settings(commonSettings)
+  .settings(
+    addCompilerPlugin(Plugins.kindProjectorPlugin),
+    libraryDependencies ++= Seq(
+      Fs2IO,
+      Http4sClient
+    )
+  )
+
+lazy val service = project
+  .in(file("modules/service"))
+  .enablePlugins(AutomateHeaderPlugin)
+  .dependsOn(coreJVM, db, ephemeris, ocs2)
+  .settings(commonSettings)
+
+lazy val telnetd = project
+  .in(file("modules/telnetd"))
+  .enablePlugins(AutomateHeaderPlugin)
+  .dependsOn(service, sql)
+  .settings(commonSettings)
+  .settings(
+    libraryDependencies ++= Tuco
+  )
+
+lazy val web = project
+  .in(file("modules/web"))
+  .enablePlugins(AutomateHeaderPlugin)
+  .dependsOn(service, sql, json)
+  .settings(commonSettings)
+  .settings(
+    addCompilerPlugin(Plugins.kindProjectorPlugin),
+    libraryDependencies ++= Seq(
+      Slf4j,
+      Http4sCirce,
+      JwtCore
+    ) ++ Http4s
+  )
+
+lazy val ui = project
+  .in(file("modules/ui"))
+  .enablePlugins(AutomateHeaderPlugin)
+  .enablePlugins(ScalaJSPlugin)
+  .dependsOn(coreJS)
+  .settings(commonSettings)
+  .settings(commonJSSettings)
+  .settings(
+    scalaJSUseMainModuleInitializer := true
+  )
+
+lazy val ctl = project
+  .in(file("modules/ctl"))
+  .enablePlugins(AutomateHeaderPlugin)
+  .settings(commonSettings)
+  .settings (
+    addCompilerPlugin(Plugins.kindProjectorPlugin),
+    resolvers += Resolver.bintrayRepo("bkirwi", "maven"),
+    libraryDependencies ++= Seq(
+      CatsEffect.value,
+      CatsFree.value,
+      Decline
+    ),
+    TaskKey[Unit]("deployTest") := (runMain in Compile).toTask {
+      s" gem.ctl.main --no-ansi --host sbfocstest-lv1.cl.gemini.edu deploy-test ${imageManifest.formatVersion}"
+    } .value,
+    fork in run := true
+  )
+
+lazy val main = project
+  .in(file("modules/main"))
+  .enablePlugins(AutomateHeaderPlugin)
+  .dependsOn(web, telnetd)
+  .settings(commonSettings)
+  .enablePlugins(JavaAppPackaging)
+  .enablePlugins(DockerPlugin)
+  .settings(
+    packageName in Docker := "gem",
+    dockerBaseImage       := "openjdk:8u141",
+    dockerExposedPorts    := List(9090, 9091),
+    dockerRepository      := Some("sbfocsdev-lv1.cl.gemini.edu"),
+    dockerLabels          := imageManifest.labels,
+
+    // Install nc before changing the user
+    dockerCommands       ++= dockerCommands.value.flatMap {
+      case c @ Cmd("USER", args @ _*) =>
+        Seq(
+          ExecCmd("RUN", "apt-get", "update"),
+          ExecCmd("RUN", "apt-get", "--assume-yes", "install", "netcat-openbsd"),
+          c
+        )
+      case cmd => Seq(cmd)
+    }
+
+  )
+
 lazy val giapi = project
   .in(file("modules/giapi"))
   .enablePlugins(AutomateHeaderPlugin)
   .enablePlugins(GitBranchPrompt)
   .settings(commonSettings: _*)
   .settings(
-    libraryDependencies ++= Seq(Shapeless.value, CatsEffect.value, Fs2, GiapiJmsUtil, GiapiJmsProvider, GiapiStatusService, Giapi, GiapiCommandsClient) ++ Logging
+    libraryDependencies ++= Seq(Cats.value, Mouse.value, Shapeless.value, CatsEffect.value, Fs2, GiapiJmsUtil, GiapiJmsProvider, GiapiStatusService, Giapi, GiapiCommandsClient) ++ Logging
   )
 
 // Common utilities for web server projects
@@ -125,7 +342,7 @@ lazy val web_client = project
       // By necessity facades will have unused params
       "-Ywarn-unused:params"
     ))),
-    libraryDependencies ++= Seq(ScalaJSDom.value, JQuery.value) ++ ReactScalaJS.value
+    libraryDependencies ++= Seq(Cats.value, ScalaJSDom.value, JQuery.value) ++ ReactScalaJS.value
   )
 
 // a special crossProject for configuring a JS/JVM/shared structure
@@ -238,6 +455,8 @@ lazy val seqexec_web_client = project.in(file("modules/seqexec/web/client"))
     ),
     libraryDependencies ++= Seq(
       JQuery.value,
+      Cats.value,
+      Mouse.value,
       CatsEffect.value,
       ScalaJSDom.value,
       JavaTimeJS.value,
@@ -293,7 +512,7 @@ lazy val seqexec_model = crossProject(JVMPlatform, JSPlatform)
   .enablePlugins(GitBranchPrompt)
   .settings(
     addCompilerPlugin(Plugins.paradisePlugin),
-    libraryDependencies ++= BooPickle.value +: Monocle.value
+    libraryDependencies ++= Seq(Mouse.value, BooPickle.value) ++ Monocle.value
   )
   .jvmSettings(
     commonSettings)

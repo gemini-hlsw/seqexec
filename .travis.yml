@@ -1,22 +1,45 @@
 language: scala
-scala:
-- 2.12.6
+
+dist: trusty
+
+sudo: required
+
 jdk:
-- oraclejdk8
+  - oraclejdk8
+
+scala:
+  - 2.12.6
+
+addons:
+  postgresql: "9.5"
+
+before_script:
+  - psql -c 'create database gem' -U postgres
+
+install:
+  - . $HOME/.nvm/nvm.sh
+  - nvm install stable
+  - nvm use stable
+  - npm install jsdom
+  - pip install --user awscli
+script:
+  - sbt -jvm-opts travis-jvmopts -Docs3.skipDependencyUpdates headerCheck test:headerCheck scalastyle sql/flywayMigrate compile test ui/fastOptJS ui/fullOptJS seqexec_web_client/fastOptJS::webpack seqexec_web_client/fullOptJS::webpack
+
+after_script:
+  - $TRAVIS_BUILD_DIR/build/weigh.sh
+
 cache:
   directories:
-  - "$HOME/.ivy2/cache"
-  - "$HOME/.sbt/boot/"
+  - $HOME/.sbt/0.13/dependency
+  - $HOME/.sbt/boot/scala*
+  - $HOME/.sbt/launchers
+  - $HOME/.ivy2/cache
+  - $HOME/.nvm
+  - $HOME/.coursier
+
 before_cache:
-- find $HOME/.ivy2 -name "ivydata-*.properties" -delete
-- find $HOME/.sbt -name "*.lock" -delete
-install:
-- ". $HOME/.nvm/nvm.sh"
-- nvm install 8.7.0
-- nvm use 8.7.0
-- npm install jsdom
-script:
-- sbt -Docs3.skipDependencyUpdates headerCheck test:headerCheck scalastyle test seqexec_web_client/fastOptJS::webpack
-- sbt -Docs3.skipDependencyUpdates seqexec_web_client/fullOptJS::webpack
-after_script:
-- $TRAVIS_BUILD_DIR/build/weigh.sh
+  - du -h -d 1 $HOME/.ivy2/cache
+  - du -h -d 2 $HOME/.sbt/
+  - du -h -d 2 $HOME/.coursier/
+  - find $HOME/.sbt -name "*.lock" -type f -delete
+  - find $HOME/.ivy2/cache -name "ivydata-*.properties" -type f -delete
