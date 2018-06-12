@@ -4,7 +4,7 @@
 package seqexec.web.client
 
 import diode.RootModelR
-import diode.data.{Empty, Pot, RefTo}
+import diode.data._
 import seqexec.model.UserDetails
 import seqexec.model.Model._
 import seqexec.model.events._
@@ -25,10 +25,15 @@ object model {
 
 
   @SuppressWarnings(Array("org.wartremover.warts.Equals"))
-  implicit def eqPot[A: Eq]: Eq[Pot[A]] = Eq.instance { (a, b) =>
-    if (a.nonEmpty && b.nonEmpty)
-      a.get  === b.get
-    else (a == b)
+  implicit def eqPot[A: Eq]: Eq[Pot[A]] = Eq.instance {
+    case (Empty, Empty)                           => true
+    case (Unavailable, Unavailable)               => true
+    case (Pending(a), Pending(b))                 => a === b
+    case (Ready(a), Ready(b))                     => a === b
+    case (PendingStale(a, b), PendingStale(c, d)) => a === c && b === d
+    case (Failed(a), Failed(b))                   => a == b
+    case (FailedStale(a, b), FailedStale(c, d))   => a === c && b == d
+    case _                                        => false
   }
 
   // Pages
