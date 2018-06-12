@@ -12,7 +12,6 @@ import io.circe.generic.semiauto._
 trait DynamicConfigJson {
   import coadds._
   import enumerated._
-  import offset._
   import time._
   import wavelength._
 
@@ -21,25 +20,7 @@ trait DynamicConfigJson {
   implicit val F2FpuChoiceEncoder: Encoder[F2Config.F2FpuChoice] = deriveEncoder
   implicit val F2FpuChoiceDecoder: Decoder[F2Config.F2FpuChoice] = deriveDecoder
 
-  implicit val Flamingos2Encoder: Encoder[DynamicConfig.Flamingos2] = deriveEncoder
-  implicit val Flamingos2Decoder: Decoder[DynamicConfig.Flamingos2] = deriveDecoder
-
   // GMOS Common
-
-  implicit val GmosShuffleOffsetEncoder: Encoder[GmosConfig.GmosShuffleOffset] = Encoder[Int].contramap(_.detectorRows)
-  implicit val GmosShuffleOffsetDecoder: Decoder[GmosConfig.GmosShuffleOffset] = Decoder[Int].map(GmosConfig.GmosShuffleOffset.unsafeFromRowCount)
-
-  implicit val GmosShuffleCyclesEncoder: Encoder[GmosConfig.GmosShuffleCycles] = Encoder[Int].contramap(_.toInt)
-  implicit val GmosShuffleCyclesDecoder: Decoder[GmosConfig.GmosShuffleCycles] = Decoder[Int].map(GmosConfig.GmosShuffleCycles.unsafeFromCycleCount)
-
-  implicit val GmosNodAndShuffleEncoder: Encoder[GmosConfig.GmosNodAndShuffle] = deriveEncoder
-  implicit val GmosNodAndShuffleDecoder: Decoder[GmosConfig.GmosNodAndShuffle] = deriveDecoder
-
-  implicit val GmosCustomRoiEntryEncoder: Encoder[GmosConfig.GmosCustomRoiEntry] = Encoder[(Short, Short, Short, Short)].contramap(e => (e.xMin, e.yMin, e.xRange, e.yRange))
-  implicit val GmosCustomRoiEntryDecoder: Decoder[GmosConfig.GmosCustomRoiEntry] = Decoder[(Short, Short, Short, Short)].map((GmosConfig.GmosCustomRoiEntry.unsafeFromDescription _).tupled)
-
-  implicit val GmosCommonStaticConfigEncoder: Encoder[GmosConfig.GmosCommonStaticConfig] = deriveEncoder
-  implicit val GmosCommonStaticConfigDecoder: Decoder[GmosConfig.GmosCommonStaticConfig] = deriveDecoder
 
   implicit val GmosCcdReadoutEncoder: Encoder[GmosConfig.GmosCcdReadout] = deriveEncoder
   implicit val GmosCcdReadoutDecoder: Decoder[GmosConfig.GmosCcdReadout] = deriveDecoder
@@ -65,29 +46,59 @@ trait DynamicConfigJson {
 
   // GNIRS
 
-  implicit val zzz: Encoder[Either[GnirsFpuOther, GnirsFpuSlit]] = deriveEncoder
-  implicit val xxx: Decoder[Either[GnirsFpuOther, GnirsFpuSlit]] = deriveDecoder
+  implicit val EitherGnirsFpuOtherGnirsFpuSlitEncoder: Encoder[Either[GnirsFpuOther, GnirsFpuSlit]] = deriveEncoder
+  implicit val EitherGnirsFpuOtherGnirsFpuSlitDecoder: Decoder[Either[GnirsFpuOther, GnirsFpuSlit]] = deriveDecoder
 
-  // This is a sanity check. Uncomment these lines if the derivation for DynamicConfig fails and
-  // this will provide some clues as to what's missing.
-  // List[Any](
-  //   deriveEncoder[DynamicConfig.Phoenix],    deriveDecoder[DynamicConfig.Phoenix],
-  //   deriveEncoder[DynamicConfig.Michelle],   deriveDecoder[DynamicConfig.Michelle],
-  //   deriveEncoder[DynamicConfig.Gnirs],      deriveDecoder[DynamicConfig.Gnirs],
-  //   deriveEncoder[DynamicConfig.Niri],       deriveDecoder[DynamicConfig.Niri],
-  //   deriveEncoder[DynamicConfig.Trecs],      deriveDecoder[DynamicConfig.Trecs],
-  //   deriveEncoder[DynamicConfig.Nici],       deriveDecoder[DynamicConfig.Nici],
-  //   deriveEncoder[DynamicConfig.Nifs],       deriveDecoder[DynamicConfig.Nifs],
-  //   deriveEncoder[DynamicConfig.Gpi],        deriveDecoder[DynamicConfig.Gpi],
-  //   deriveEncoder[DynamicConfig.Gsaoi],      deriveDecoder[DynamicConfig.Gsaoi],
-  //   deriveEncoder[DynamicConfig.GmosS],      deriveDecoder[DynamicConfig.GmosS],
-  //   deriveEncoder[DynamicConfig.AcqCam],     deriveDecoder[DynamicConfig.AcqCam],
-  //   deriveEncoder[DynamicConfig.GmosN],      deriveDecoder[DynamicConfig.GmosN],
-  //   deriveEncoder[DynamicConfig.Bhros],      deriveDecoder[DynamicConfig.Bhros],
-  //   deriveEncoder[DynamicConfig.Visitor],    deriveDecoder[DynamicConfig.Visitor],
-  //   deriveEncoder[DynamicConfig.Flamingos2], deriveDecoder[DynamicConfig.Flamingos2],
-  //   deriveEncoder[DynamicConfig.Ghost],      deriveDecoder[DynamicConfig.Ghost],
-  // ).foreach(_ => ()) // ensure it's a unit statement
+  // Individual codecs are necessary for Step codecs
+  implicit val PhoenixDynamicConfigEncoder: Encoder[DynamicConfig.Phoenix] = deriveEncoder
+  implicit val PhoenixDynamicConfigDecoder: Decoder[DynamicConfig.Phoenix] = deriveDecoder
+
+  implicit val MichelleDynamicConfigEncoder: Encoder[DynamicConfig.Michelle] = deriveEncoder
+  implicit val MichelleDynamicConfigDecoder: Decoder[DynamicConfig.Michelle] = deriveDecoder
+
+  implicit val GnirsDynamicConfigEncoder: Encoder[DynamicConfig.Gnirs] = deriveEncoder
+  implicit val GnirsDynamicConfigDecoder: Decoder[DynamicConfig.Gnirs] = deriveDecoder
+
+  implicit val NiriDynamicConfigEncoder: Encoder[DynamicConfig.Niri] = deriveEncoder
+  implicit val NiriDynamicConfigDecoder: Decoder[DynamicConfig.Niri] = deriveDecoder
+
+  implicit val TrecsDynamicConfigEncoder: Encoder[DynamicConfig.Trecs] = deriveEncoder
+  implicit val TrecsDynamicConfigDecoder: Decoder[DynamicConfig.Trecs] = deriveDecoder
+
+  implicit val NiciDynamicConfigEncoder: Encoder[DynamicConfig.Nici] = deriveEncoder
+  implicit val NiciDynamicConfigDecoder: Decoder[DynamicConfig.Nici] = deriveDecoder
+
+  implicit val NifsDynamicConfigEncoder: Encoder[DynamicConfig.Nifs] = deriveEncoder
+  implicit val NifsDynamicConfigDecoder: Decoder[DynamicConfig.Nifs] = deriveDecoder
+
+  implicit val GpiDynamicConfigEncoder: Encoder[DynamicConfig.Gpi] = deriveEncoder
+  implicit val GpiDynamicConfigDecoder: Decoder[DynamicConfig.Gpi] = deriveDecoder
+
+  implicit val GsaoiDynamicConfigEncoder: Encoder[DynamicConfig.Gsaoi] = deriveEncoder
+  implicit val GsaoiDynamicConfigDecoder: Decoder[DynamicConfig.Gsaoi] = deriveDecoder
+
+  implicit val GmosSDynamicConfigEncoder: Encoder[DynamicConfig.GmosS] = deriveEncoder
+  implicit val GmosSDynamicConfigDecoder: Decoder[DynamicConfig.GmosS] = deriveDecoder
+
+  implicit val AcqCamDynamicConfigEncoder: Encoder[DynamicConfig.AcqCam] = deriveEncoder
+  implicit val AcqCamDynamicConfigDecoder: Decoder[DynamicConfig.AcqCam] = deriveDecoder
+
+  implicit val GmosNDynamicConfigEncoder: Encoder[DynamicConfig.GmosN] = deriveEncoder
+  implicit val GmosNDynamicConfigDecoder: Decoder[DynamicConfig.GmosN] = deriveDecoder
+
+  implicit val BhrosDynamicConfigEncoder: Encoder[DynamicConfig.Bhros] = deriveEncoder
+  implicit val BhrosDynamicConfigDecoder: Decoder[DynamicConfig.Bhros] = deriveDecoder
+
+  implicit val VisitorDynamicConfigEncoder: Encoder[DynamicConfig.Visitor] = deriveEncoder
+  implicit val VisitorDynamicConfigDecoder: Decoder[DynamicConfig.Visitor] = deriveDecoder
+
+  implicit val Flamingos2DynamicConfigEncoder: Encoder[DynamicConfig.Flamingos2] = deriveEncoder
+  implicit val Flamingos2DynamicConfigDecoder: Decoder[DynamicConfig.Flamingos2] = deriveDecoder
+
+  implicit val GhostDynamicConfigEncoder: Encoder[DynamicConfig.Ghost] = deriveEncoder
+  implicit val GhostDynamicConfigDecoder: Decoder[DynamicConfig.Ghost] = deriveDecoder
+
+  // And the DynamicConfig ADT itself
 
   implicit val DynamicConfigEncoder: Encoder[DynamicConfig] = deriveEncoder
   implicit val DynamicConfigDecoder: Decoder[DynamicConfig] = deriveDecoder
