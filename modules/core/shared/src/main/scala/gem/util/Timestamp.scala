@@ -6,7 +6,7 @@ package gem.util
 import cats._
 import cats.implicits._
 import cats.effect.IO
-
+import gem.optics.Format
 import java.time.{ Instant, ZonedDateTime }
 import java.time.ZoneOffset.UTC
 import java.time.temporal.ChronoUnit.MICROS
@@ -104,6 +104,9 @@ object Timestamp {
     */
   def unsafeFromInstant(i: Instant): Timestamp =
     fromInstant(i).getOrElse(sys.error(s"$i out of Timestamp range"))
+
+  val instant: Format[Instant, Timestamp] =
+    Format[Instant, Timestamp](fromInstant, _.toInstant)
 
   /** Creates a Timestamp representing the current time, truncated to the
     * last integral number of microseconds.

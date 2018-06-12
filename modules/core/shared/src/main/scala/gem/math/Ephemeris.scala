@@ -3,6 +3,7 @@
 
 package gem.math
 
+import gem.optics.SplitMono
 import gem.syntax.treemap._
 import gem.util.Timestamp
 
@@ -78,5 +79,8 @@ object Ephemeris {
 
   implicit val EqEphemeris: Eq[Ephemeris] =
     Eq.fromUniversalEquals
+
+  val elements: SplitMono[Ephemeris, List[Element]] =
+    SplitMono(_.toMap.toList, fromFoldable(_))
 
 }

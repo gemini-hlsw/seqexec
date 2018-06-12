@@ -6,6 +6,8 @@ package gem.math
 import cats.{ Order, Show }
 import cats.implicits._
 import gem.math.PhysicalConstants.SpeedOfLight
+import gem.optics.SplitMono
+import monocle.Iso
 import scala.math.sqrt
 
 /**
@@ -42,6 +44,16 @@ object RadialVelocity {
   /** Construct a [[RadialVelocity]] from floating point kilometers per second. */
   def fromKilometersPerSecond(kms: Double): RadialVelocity =
     RadialVelocity((kms * 1000.0).toInt)
+
+  val toMetersPerSecond: Iso[RadialVelocity, Int] =
+    Iso[RadialVelocity, Int](_.toMetersPerSecond)(RadialVelocity(_))
+
+  val kilometersPerSecond: SplitMono[RadialVelocity, BigDecimal] =
+    SplitMono.fromIso(toMetersPerSecond)
+      .imapB(
+        d => d.underlying.movePointRight(3).intValue,
+        n => new java.math.BigDecimal(n).movePointLeft(3)
+      )
 
   def fromRedshift(z: Double): RadialVelocity = {
     val C = SpeedOfLight.toDouble
