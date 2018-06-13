@@ -8,30 +8,34 @@ import cats.effect.IO
 import cats.implicits._
 import cats.kernel.Eq
 import seqexec.engine.{ActionMetadata, ActionMetadataGenerator, Engine, Sequence}
-import seqexec.model.Model.{CloudCover, Conditions, ImageQuality, Observer, Operator, SequenceState, SkyBackground, WaterVapor}
+import seqexec.model.Model.{CloudCover, Conditions, Instrument, ImageQuality, Observer, Operator, SequenceId, SequenceState, SkyBackground, WaterVapor}
 import seqexec.model.UserDetails
 import edu.gemini.spModel.`type`.SequenceableSpType
 import edu.gemini.spModel.guide.StandardGuideOptions
 import fs2.async.mutable.Queue
+import monocle.macros.Lenses
 import monocle.Lens
 import monocle.macros.GenLens
+import monocle.function.At.at
+import monocle.function.At.atMap
 
 package server {
-  final case class EngineMetadata(queues: ExecutionQueues, conditions: Conditions, operator: Option[Operator])
+  @Lenses
+  final case class EngineMetadata(queues: ExecutionQueues, selected: Map[Instrument, SequenceId], conditions: Conditions, operator: Option[Operator])
+  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object EngineMetadata {
-    val default: EngineMetadata = EngineMetadata(Map(CalibrationQueueName -> Nil), Conditions.default, None)
+    implicit val eq: Eq[EngineMetadata] = Eq.by(x => (x.queues, x.selected, x.conditions, x.operator))
 
-    val queuesL: Lens[EngineMetadata, ExecutionQueues] = GenLens[EngineMetadata](_.queues)
+    val default: EngineMetadata = EngineMetadata(Map(CalibrationQueueName -> Nil), Map.empty, Conditions.default, None)
 
-    val conditionsL: Lens[EngineMetadata, Conditions] = GenLens[EngineMetadata](_.conditions)
-
-    val operatorL: Lens[EngineMetadata, Option[Operator]] = GenLens[EngineMetadata](_.operator)
+    def selectedML(instrument: Instrument): Lens[EngineMetadata, Option[SequenceId]] = GenLens[EngineMetadata](_.selected) ^|-> at(instrument)
   }
 
   sealed trait SeqEvent
   final case class SetOperator(name: Operator, user: Option[UserDetails]) extends SeqEvent
   final case class SetObserver(id: Sequence.Id, user: Option[UserDetails], name: Observer) extends SeqEvent
   final case class SetConditions(conditions: Conditions, user: Option[UserDetails]) extends SeqEvent
+  final case class SetSelectedSequences(selected: Map[Instrument, SequenceId], user: Option[UserDetails]) extends SeqEvent
   final case class SetImageQuality(iq: ImageQuality, user: Option[UserDetails]) extends SeqEvent
   final case class SetWaterVapor(wv: WaterVapor, user: Option[UserDetails]) extends SeqEvent
   final case class SetSkyBackground(wv: SkyBackground, user: Option[UserDetails]) extends SeqEvent

@@ -44,7 +44,7 @@ object SeqexecWebClient {
     .recover {
       case AjaxException(xhr) if xhr.status == HttpStatusCodes.NotFound  =>
         // If not found, we'll consider it like an empty response
-        SequencesQueue(Conditions.default, None, Nil)
+        SequencesQueue(Map.empty, Conditions.default, None, Nil)
     }
 
   /**

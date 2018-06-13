@@ -279,7 +279,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
         )
       ) ) ) )
     )
-    
+
     assertThrows[java.lang.RuntimeException](
       runToCompletion(s0(new java.lang.RuntimeException))
     )
@@ -295,7 +295,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
 
   "engine" should "pass parameters to Actions." in {
 
-    def setOperator(op: Operator): executionEngine2.StateType => executionEngine2.StateType = (Engine.State.userDataL[DummyData] ^|-> operatorL).set(op.some)
+    def setOperator(op: Operator): executionEngine2.StateType => executionEngine2.StateType = (Engine.State.userData[DummyData] ^|-> operatorL).set(op.some)
 
     val opName = Operator("John")
 

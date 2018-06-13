@@ -23,7 +23,6 @@ object model {
   implicit def eqRefTo[A: Eq]: Eq[RefTo[A]] =
     Eq.by(_.apply())
 
-
   @SuppressWarnings(Array("org.wartremover.warts.Equals"))
   implicit def eqPot[A: Eq]: Eq[Pot[A]] = Eq.instance {
     case (Empty, Empty)                           => true
@@ -125,7 +124,7 @@ object model {
     def instrument(i: Instrument): InstrumentTabActive =
       // The getOrElse shouldn't be called as we have an element per instrument
       instrumentSequences.withFocus.find(_._1.instrument === i)
-        .map{ case (i, a) => InstrumentTabActive(i, a) }.getOrElse(InstrumentTabActive(SequenceTab.empty, active = false))
+        .map { case (i, a) => InstrumentTabActive(i, a) }.getOrElse(InstrumentTabActive(SequenceTab.empty, active = false))
 
     // We'll set the passed SequenceView as completed for the given instruments
     def markCompleted(completed: SequenceView): SequencesOnDisplay = {
@@ -180,7 +179,7 @@ object model {
                             firstLoad: Boolean)
 
   object SeqexecUIModel {
-    val noSequencesLoaded: SequencesQueue[SequenceView] = SequencesQueue[SequenceView](Conditions.default, None, Nil)
+    val noSequencesLoaded: SequencesQueue[SequenceView] = SequencesQueue[SequenceView](Map.empty, Conditions.default, None, Nil)
     val initial: SeqexecUIModel = SeqexecUIModel(
       Pages.Root,
       None,

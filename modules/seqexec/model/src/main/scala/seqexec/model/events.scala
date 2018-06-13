@@ -52,27 +52,28 @@ object events {
   object SeqexecModelUpdate {
     implicit lazy val equalSE: Eq[SeqexecModelUpdate] =
       Eq.instance {
-        case (a: SequenceStart,          b: SequenceStart)          => a === b
-        case (a: StepExecuted,           b: StepExecuted)           => a === b
-        case (a: FileIdStepExecuted,     b: FileIdStepExecuted)     => a === b
-        case (a: SequenceCompleted,      b: SequenceCompleted)      => a === b
-        case (a: SequenceLoaded,         b: SequenceLoaded)         => a === b
-        case (a: SequenceUnloaded,       b: SequenceUnloaded)       => a === b
-        case (a: StepBreakpointChanged,  b: StepBreakpointChanged)  => a === b
-        case (a: OperatorUpdated,        b: OperatorUpdated)        => a === b
-        case (a: ObserverUpdated,        b: ObserverUpdated)        => a === b
-        case (a: ConditionsUpdated,      b: ConditionsUpdated)      => a === b
-        case (a: StepSkipMarkChanged,    b: StepSkipMarkChanged)    => a === b
-        case (a: SequencePauseRequested, b: SequencePauseRequested) => a === b
-        case (a: SequencePauseCanceled,  b: SequencePauseCanceled)  => a === b
-        case (a: SequenceRefreshed,      b: SequenceRefreshed)      => a === b
-        case (a: ActionStopRequested,    b: ActionStopRequested)    => a === b
-        case (a: ResourcesBusy,          b: ResourcesBusy)          => a === b
-        case (a: SequenceUpdated,        b: SequenceUpdated)        => a === b
-        case (a: SequencePaused,         b: SequencePaused)         => a === b
-        case (a: ExposurePaused,         b: ExposurePaused)         => a === b
-        case (a: SequenceError,          b: SequenceError)          => a === b
-        case _                                                      => false
+        case (a: SequenceStart,           b: SequenceStart)           => a === b
+        case (a: StepExecuted,            b: StepExecuted)            => a === b
+        case (a: FileIdStepExecuted,      b: FileIdStepExecuted)      => a === b
+        case (a: SequenceCompleted,       b: SequenceCompleted)       => a === b
+        case (a: SequenceLoaded,          b: SequenceLoaded)          => a === b
+        case (a: SequenceUnloaded,        b: SequenceUnloaded)        => a === b
+        case (a: StepBreakpointChanged,   b: StepBreakpointChanged)   => a === b
+        case (a: OperatorUpdated,         b: OperatorUpdated)         => a === b
+        case (a: ObserverUpdated,         b: ObserverUpdated)         => a === b
+        case (a: ConditionsUpdated,       b: ConditionsUpdated)       => a === b
+        case (a: SelectedSequenceUpdated, b: SelectedSequenceUpdated) => a === b
+        case (a: StepSkipMarkChanged,     b: StepSkipMarkChanged)     => a === b
+        case (a: SequencePauseRequested,  b: SequencePauseRequested)  => a === b
+        case (a: SequencePauseCanceled,   b: SequencePauseCanceled)   => a === b
+        case (a: SequenceRefreshed,       b: SequenceRefreshed)       => a === b
+        case (a: ActionStopRequested,     b: ActionStopRequested)     => a === b
+        case (a: ResourcesBusy,           b: ResourcesBusy)           => a === b
+        case (a: SequenceUpdated,         b: SequenceUpdated)         => a === b
+        case (a: SequencePaused,          b: SequencePaused)          => a === b
+        case (a: ExposurePaused,          b: ExposurePaused)          => a === b
+        case (a: SequenceError,           b: SequenceError)           => a === b
+        case _                                                        => false
       }
 
     def unapply(u: SeqexecModelUpdate): Option[SequencesQueue[SequenceView]] =
@@ -133,6 +134,13 @@ object events {
 
     object OperatorUpdated {
       implicit lazy val equal: Eq[OperatorUpdated] =
+        Eq.by(_.view)
+    }
+
+    final case class SelectedSequenceUpdated(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
+
+    object SelectedSequenceUpdated {
+      implicit lazy val equal: Eq[SelectedSequenceUpdated] =
         Eq.by(_.view)
     }
 

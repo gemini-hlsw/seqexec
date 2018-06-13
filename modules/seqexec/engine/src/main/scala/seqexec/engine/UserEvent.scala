@@ -41,7 +41,7 @@ final case class Poll(clientId: ClientID) extends UserEvent[Nothing] {
 }
 // Generic event to put a function in the main Stream process, which takes an
 // action depending on the current state
-final case class GetState[D <: Engine.Types](f: (Engine.State[D#StateData]) => IO[Option[Stream[IO, Event[D]]]]) extends UserEvent[D] {
+final case class GetState[D <: Engine.Types](f: Engine.State[D#StateData] => IO[Option[Stream[IO, Event[D]]]]) extends UserEvent[D] {
   val user: Option[UserDetails] = None
 }
 // Generic event to put a function in the main Stream process, which takes an
@@ -51,7 +51,10 @@ final case class GetSeqState[D <: Engine.Types](id: Sequence.Id, f: Sequence.Sta
 }
 // Generic event to put a function in the main Process process, which changes the state
 // depending on the current state
-final case class ModifyState[D <: Engine.Types](f: (Engine.State[D#StateData]) => Engine.State[D#StateData], data: D#EventData) extends UserEvent[D] {
+final case class ModifyState[D <: Engine.Types](f: Engine.State[D#StateData] => Engine.State[D#StateData], event: D#EventData) extends UserEvent[D] {
+  val user: Option[UserDetails] = None
+}
+final case class ModifyStateF[D <: Engine.Types](f: Engine.State[D#StateData] => Engine.State[D#StateData], event: Engine.State[D#StateData] => D#EventData) extends UserEvent[D] {
   val user: Option[UserDetails] = None
 }
 // Calls a user given function in the main Stream process to stop an Action.

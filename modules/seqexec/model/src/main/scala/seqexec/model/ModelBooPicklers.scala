@@ -112,6 +112,7 @@ object ModelBooPicklers {
     .addConcreteType[OperatorUpdated]
     .addConcreteType[ObserverUpdated]
     .addConcreteType[ConditionsUpdated]
+    .addConcreteType[SelectedSequenceUpdated]
     .addConcreteType[StepSkipMarkChanged]
     .addConcreteType[SequencePauseRequested]
     .addConcreteType[SequencePauseCanceled]
