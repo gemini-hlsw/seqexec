@@ -6,14 +6,25 @@ package gem.json
 package object instances {
 
   object all
-    extends CoAddsJson
+    extends AsterismJson
+       with CoAddsJson
        with CoordinatesJson
        with DynamicConfigJson
        with EnumeratedJson
        with EphemerisJson
+       with GcalConfigJson
+       with IndexJson
+       with NonEmptySetJson
+       with ObservationJson
        with OffsetJson
        with ProgramIdJson
+       with ProgramJson
        with ProperMotionJson
+       with SortedMapJson
+       with SortedSetJson
+       with StaticConfigJson
+       with StepJson
+       with TargetEnvironmentJson
        with TargetJson
        with TimeJson
        with WavelengthJson
