@@ -270,7 +270,7 @@ lazy val ui = project
   .in(file("modules/ui"))
   .enablePlugins(AutomateHeaderPlugin)
   .enablePlugins(ScalaJSPlugin)
-  .dependsOn(coreJS)
+  .dependsOn(coreJS, jsonJS)
   .settings(commonSettings)
   .settings(commonJSSettings)
   .settings(

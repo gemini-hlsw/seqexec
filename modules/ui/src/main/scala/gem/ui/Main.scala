@@ -8,7 +8,8 @@ import gem.CoAdds
 import gem.config._
 import gem.enum._
 import gem.math._
-
+import gem.json.instances.program._
+import io.circe.syntax._
 import java.time.{ Duration, Year }
 import scala.collection.immutable.{ TreeMap, TreeSet }
 
@@ -80,7 +81,7 @@ object TestProgram {
 object Main {
   def main(args: Array[String]): Unit = {
     // scalastyle:off
-    println(TestProgram.p)
+    println(TestProgram.p.asJson.spaces2)
     // scalastyle:on
   }
 }
