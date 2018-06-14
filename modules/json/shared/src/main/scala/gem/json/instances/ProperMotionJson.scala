@@ -16,8 +16,8 @@ trait ProperMotionJson {
   implicit val EpochEncoder: Encoder[Epoch] = Epoch.fromString.toEncoder
   implicit val EpochDecoder: Decoder[Epoch] = Epoch.fromString.toDecoder
 
-  implicit val RadialVelocityEncoder: Encoder[RadialVelocity] = RadialVelocity.kilometersPerSecond.reverse.toEncoder
-  implicit val RadialVelocityDecoder: Decoder[RadialVelocity] = RadialVelocity.kilometersPerSecond.reverse.toDecoder
+  implicit val RadialVelocityEncoder: Encoder[RadialVelocity] = RadialVelocity.fromKilometersPerSecond.toEncoder
+  implicit val RadialVelocityDecoder: Decoder[RadialVelocity] = RadialVelocity.fromKilometersPerSecond.toDecoder
 
   // Local angle encoder in mas, wrapped to suppress bogus unused warning
   private object locals {

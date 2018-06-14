@@ -6,9 +6,10 @@ package gem.math
 import cats.{ Order, Show }
 import cats.implicits._
 import gem.math.PhysicalConstants.SpeedOfLight
-import gem.optics.SplitMono
-import monocle.Iso
+import gem.optics.Format
+import gem.syntax.prism._
 import scala.math.sqrt
+import monocle.Prism
 
 /**
  * Radial Velocity represented as integral meters per second, positive if receding. We can also
@@ -16,12 +17,12 @@ import scala.math.sqrt
  * @see Wikipedia on [[https://en.wikipedia.org/wiki/Radial_velocity Radial Velocity]]
  * @see Wikipedia on [[https://en.wikipedia.org/wiki/Redshift Redshift]]
  */
-final case class RadialVelocity(toMetersPerSecond: Int) {
+sealed abstract case class RadialVelocity(toMetersPerSecond: Int) {
 
   // Sanity check
   assert(toMetersPerSecond.abs <= SpeedOfLight, "Radial velocity exceeds the speed of light.")
 
-  def toKilometersPerSecond: Double =
+  def toDoubleKilometersPerSecond: Double =
     toMetersPerSecond.toDouble / 1000.0
 
   def toRedshift: Double = {
@@ -32,33 +33,33 @@ final case class RadialVelocity(toMetersPerSecond: Int) {
   }
 
   override def toString =
-    f"RadialVelocity($toKilometersPerSecond%3.3fkm/s)"
+    f"RadialVelocity($toDoubleKilometersPerSecond%3.3fkm/s)"
 
 }
 
 object RadialVelocity {
 
-  /** Radial velocity of zero. */
-  val Zero: RadialVelocity = RadialVelocity(0)
+  val fromMetersPerSecond: Prism[Int, RadialVelocity] =
+    Prism(Some(_: Int).filter(_.abs <= SpeedOfLight).map(new RadialVelocity(_) {}))(_.toMetersPerSecond)
 
-  /** Construct a [[RadialVelocity]] from floating point kilometers per second. */
-  def fromKilometersPerSecond(kms: Double): RadialVelocity =
-    RadialVelocity((kms * 1000.0).toInt)
-
-  val toMetersPerSecond: Iso[RadialVelocity, Int] =
-    Iso[RadialVelocity, Int](_.toMetersPerSecond)(RadialVelocity(_))
-
-  val kilometersPerSecond: SplitMono[RadialVelocity, BigDecimal] =
-    SplitMono.fromIso(toMetersPerSecond)
-      .imapB(
-        d => d.underlying.movePointRight(3).intValue,
-        n => new java.math.BigDecimal(n).movePointLeft(3)
+  val fromKilometersPerSecond: Format[BigDecimal, RadialVelocity] =
+    Format.fromPrism(fromMetersPerSecond)
+      .imapA(
+        n => new java.math.BigDecimal(n).movePointLeft(3),
+        d => d.underlying.movePointRight(3).intValue
       )
 
-  def fromRedshift(z: Double): RadialVelocity = {
+  /** Radial velocity of zero. */
+  val Zero: RadialVelocity = fromMetersPerSecond.unsafeGet(0)
+
+  /** Construct a [[RadialVelocity]] from floating point kilometers per second. */
+  def unsafeFromDoubleKilometersPerSecond(kms: Double): RadialVelocity =
+    fromKilometersPerSecond.unsafeGet(BigDecimal(kms))
+
+  def unsafeFromRedshift(z: Double): RadialVelocity = {
     val C = SpeedOfLight.toDouble
     val m = C * ((z + 1.0) * (z + 1.0) - 1.0) / ((z + 1.0) * (z + 1.0) + 1.0)
-    RadialVelocity(m.toInt)
+    fromMetersPerSecond.unsafeGet(m.toInt)
   }
 
   /** Instances are ordered by their `.toMetersPerSecond` values. */

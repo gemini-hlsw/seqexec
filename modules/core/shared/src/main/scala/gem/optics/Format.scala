@@ -47,11 +47,11 @@ final case class Format[A, B](getOption: A => Option[B], reverseGet: B => A) {
     composeIso(f)
 
   /** Format is an invariant functor over A. */
-  def imapA[C](f: C => B, g: B => C): Format[A, C] =
+  def imapB[C](f: C => B, g: B => C): Format[A, C] =
     Format(getOption(_).map(g), f andThen reverseGet)
 
   /** Format is an invariant functor over B. */
-  def imapB[C](f: A => C, g: C => A): Format[C, B] =
+  def imapA[C](f: A => C, g: C => A): Format[C, B] =
     Format(g andThen getOption, reverseGet andThen f)
 
   /**

@@ -5,6 +5,8 @@ package gem
 package util
 
 import gem.arb.ArbTime._
+import gem.laws.discipline._
+import gem.instances.time._
 
 import cats.kernel.laws.discipline._
 import cats.tests.CatsSuite
@@ -20,6 +22,7 @@ final class TimestampSpec extends CatsSuite {
 
   // Laws
   checkAll("Timestamp", OrderTests[Timestamp].order)
+  checkAll("Timestamp.instant", FormatTests(Timestamp.instant).format)
 
   test("Construction should truncate Instant nanoseconds to microseconds") {
     forAll { (i: Timestamp) =>

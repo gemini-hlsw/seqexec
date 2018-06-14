@@ -64,7 +64,7 @@ object Decoders {
           }
         }
         dz <- (n \? "#redshift").decode[Double]
-        rv  = dz.map(RadialVelocity.fromRedshift)
+        rv  = dz.map(RadialVelocity.unsafeFromRedshift)
         dp <- (n \? "#parallax").decode[Double]
         p   = dp.map(d => Angle.fromMicroarcseconds((d * 1000).round))
       } yield ProperMotion(c, e, pv, rv, p)

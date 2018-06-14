@@ -26,7 +26,7 @@ object TestProgram {
           Offset.P(Angle.fromMicroarcseconds(200940L)),
           Offset.Q(Angle.fromMicroarcseconds(286230L))
         )),
-        Some(RadialVelocity(-20686)),
+        Some(RadialVelocity.fromMetersPerSecond.unsafeGet(-20686)),
         Some(Angle.fromMicroarcseconds(130230L)))
       )
     )
