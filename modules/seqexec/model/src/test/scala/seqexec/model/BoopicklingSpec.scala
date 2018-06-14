@@ -74,6 +74,10 @@ final class BoopicklingSpec extends CatsSuite with Matchers {
     // events
     testPickleUnpickle[SequencePauseCanceled]
   }
+  test("pickle/depickle SelectedSequenceUpdated") {
+    // events
+    testPickleUnpickle[SelectedSequenceUpdate]
+  }
   test("pickle/depickle ActionStopRequested") {
     // events
     testPickleUnpickle[ActionStopRequested]

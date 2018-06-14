@@ -8,7 +8,7 @@ import edu.gemini.pot.sp.SPObservationID
 import seqexec.server.Commands
 import seqexec.server.SeqexecEngine
 import seqexec.server
-import seqexec.model.Model.{SequenceId, SequencesQueue, ClientID, CloudCover, Conditions, ImageQuality, Observer, Operator, SkyBackground, WaterVapor}
+import seqexec.model.Model.{SequenceId, SequencesQueue, CloudCover, Conditions, ImageQuality, Observer, Operator, SkyBackground, WaterVapor}
 import seqexec.model.UserDetails
 import seqexec.web.server.model.CommandsModel._
 import seqexec.web.server.http4s.encoder._
@@ -18,10 +18,6 @@ import org.http4s.dsl.io._
 import org.http4s.server.middleware.GZip
 import cats.implicits._
 
-object ClientIDVar {
-  def unapply(str: String): Option[ClientID] =
-    Either.catchNonFatal(java.util.UUID.fromString(str)).toOption
-}
 /**
   * Rest Endpoints under the /api route
   */
@@ -73,7 +69,7 @@ class SeqexecCommandRoutes(auth: AuthenticationService, inputQueue: server.Event
         obs   <- IO.fromEither(Either.catchNonFatal(new SPObservationID(obsId)))
         u     <- se.load(inputQueue, obs)
         resp  <- u.fold(_ => NotFound(s"Not found sequence $obsId"), _ =>
-          Ok(SequencesQueue[SequenceId](Conditions.default, None, List(obsId))))
+          Ok(SequencesQueue[SequenceId](Map.empty, Conditions.default, None, List(obsId))))
       } yield resp
 
    case POST -> Root / obsId / stepId / "skip" / bp as user =>
@@ -149,7 +145,9 @@ class SeqexecCommandRoutes(auth: AuthenticationService, inputQueue: server.Event
         se.setCloudCover(inputQueue, cc, user) *> Ok(s"Set cloud cover to $cc")
       )
 
-    }
+    case POST -> Root / "load" / InstrumentVar(i) / ObsIdVar(obsId) as user =>
+      se.setSelectedSequences(inputQueue, i, obsId.stringValue, user) *> Ok(s"Set selected sequence $obsId for $i")
+  }
 
   val refreshCommand: HttpService[IO] = HttpService[IO] {
     case GET -> Root / "refresh" / ClientIDVar(clientId) =>

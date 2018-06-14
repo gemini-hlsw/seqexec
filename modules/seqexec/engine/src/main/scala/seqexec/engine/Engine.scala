@@ -12,7 +12,9 @@ import seqexec.engine.Result.{PartialVal, PauseContext, RetVal}
 import seqexec.model.Model.{ClientID, Conditions, Observer, Resource, SequenceState}
 import fs2.Stream
 import monocle.Lens
-import monocle.macros.GenLens
+import monocle.macros.Lenses
+import monocle.function.At.at
+import monocle.function.At.atMap
 import mouse.boolean._
 import org.log4s.getLogger
 
@@ -327,6 +329,7 @@ class Engine[D: ActionMetadataGenerator, U](implicit ev: ActionMetadataGenerator
       case Poll(_)                    => Logger.debug("Engine: Polling current state")
       case GetState(f)                => getState(f)
       case ModifyState(f, _)          => modify(f)
+      case ModifyStateF(f, _)         => modify(f)
       case GetSeqState(id, f)         => getSeqState(id, f)
       case ActionStop(id, f)          => Logger.debug("Engine: Action stop requested") *> actionStop(id, f)
       case ActionResume(id, i, cont)  => Logger.debug("Engine: Action resume requested") *> actionResume(id, i, cont)
@@ -395,7 +398,7 @@ class Engine[D: ActionMetadataGenerator, U](implicit ev: ActionMetadataGenerator
   private def inspect[A](f: StateType => A): HandleP[A] =
     StateT.inspect[IO, StateType, A](f).toHandleP
 
-  private def modify(f: (StateType) => StateType): HandleP[Unit] =
+  private def modify(f: StateType => StateType): HandleP[Unit] =
     StateT.modify[IO, StateType](f).toHandleP
 
   private def getS(id: Sequence.Id): HandleP[Option[Sequence.State]] = get.map(_.sequences.get(id))
@@ -404,16 +407,10 @@ class Engine[D: ActionMetadataGenerator, U](implicit ev: ActionMetadataGenerator
     inspect(_.sequences.get(id).map(f))
 
   private def modifyS(id: Sequence.Id)(f: Sequence.State => Sequence.State): HandleP[Unit] =
-    modify(
-      st => Engine.State(
-        st.userData,
-        st.sequences.get(id).map(
-          s => st.sequences.updated(id, f(s))).getOrElse(st.sequences)
-      )
-    )
+    modify(Engine.State.sequenceState(id).modify(s => s.map(f)))
 
   private def putS(id: Sequence.Id)(s: Sequence.State): HandleP[Unit] =
-    modify(st => Engine.State[ConcreteTypes#StateData](st.userData, st.sequences.updated(id, s)))
+    modify(Engine.State.sequenceState(id).set(s.some))
 
   // For debugging
   def printSequenceState(id: Sequence.Id): HandleP[Unit] =
@@ -421,15 +418,16 @@ class Engine[D: ActionMetadataGenerator, U](implicit ev: ActionMetadataGenerator
 
 }
 
+@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object Engine {
 
+  @Lenses
   final case class State[D](userData: D, sequences: Map[Sequence.Id, Sequence.State])
 
   object State {
-
-    def userDataL[D]: Lens[State[D], D] = GenLens[State[D]](_.userData)
-
     def empty[D](userData: D): State[D] = State(userData, Map.empty)
+    def atSequence(id: Sequence.Id): Lens[Map[Sequence.Id, Sequence.State], Option[Sequence.State]] = at(id)
+    def sequenceState[D](id: Sequence.Id): Lens[State[D], Option[Sequence.State]] = State.sequences ^|-> atSequence(id)
   }
 
   abstract class Types {

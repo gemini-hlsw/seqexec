@@ -482,6 +482,7 @@ lazy val seqexec_server = project
   .enablePlugins(BuildInfoPlugin)
   .settings(commonSettings: _*)
   .settings(
+    addCompilerPlugin(Plugins.paradisePlugin),
     libraryDependencies ++=
       Seq(Argonaut,
           CommonsHttp,
@@ -493,7 +494,7 @@ lazy val seqexec_server = project
           OpenCSV,
           Log4s,
           Http4sBoopickle
-      ) ++ SeqexecOdb ++ WDBAClient ++ TestLibs.value
+      ) ++ SeqexecOdb ++ Monocle.value ++ WDBAClient ++ TestLibs.value
   )
   .settings(
     buildInfoUsePackageAsPath := true,
@@ -501,7 +502,7 @@ lazy val seqexec_server = project
     buildInfoObject := "OcsBuildInfo",
     buildInfoPackage := "seqexec.server"
   )
-  .dependsOn(seqexec_engine, seqexec_model_JVM, acm)
+  .dependsOn(seqexec_engine, seqexec_model_JVM % "compile->compile;test->test", acm)
 
 // Unfortunately crossProject doesn't seem to work properly at the module/build.sbt level
 // We have to define the project properties at this level

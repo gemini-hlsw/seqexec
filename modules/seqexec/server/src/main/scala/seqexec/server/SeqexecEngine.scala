@@ -20,7 +20,6 @@ import seqexec.model.Model._
 import seqexec.model.events._
 import seqexec.model.{ActionType, UserDetails}
 import seqexec.server.ConfigUtilOps._
-import seqexec.server.EngineMetadata.queuesL
 import seqexec.server.flamingos2.{Flamingos2ControllerEpics, Flamingos2ControllerSim, Flamingos2ControllerSimBad, Flamingos2Epics}
 import seqexec.server.gcal.{GcalControllerEpics, GcalControllerSim, GcalEpics}
 import seqexec.server.gmos.{GmosControllerSim, GmosEpics, GmosNorthControllerEpics, GmosSouthControllerEpics}
@@ -91,7 +90,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
 
   def setOperator(q: EventQueue, user: UserDetails, name: Operator): IO[Either[SeqexecFailure, Unit]] =
      q.enqueue1(Event.logDebugMsg(s"SeqexecEngine: Setting Operator name to '$name' by ${user.username}")) *>
-     q.enqueue1(Event.modifyState[executeEngine.ConcreteTypes]((Engine.State.userDataL ^|-> EngineMetadata.operatorL).set(name.some), SetOperator(name, user.some))).map(_.asRight)
+     q.enqueue1(Event.modifyState[executeEngine.ConcreteTypes]((Engine.State.userData ^|-> EngineMetadata.operator).set(name.some), SetOperator(name, user.some))).map(_.asRight)
 
   def setObserver(q: EventQueue,
                   seqId: SPObservationID,
@@ -99,25 +98,29 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
                   name: Observer): IO[Either[SeqexecFailure, Unit]] =
     q.enqueue1(Event.setObserver(seqId.stringValue(), user, name)).map(_.asRight)
 
+  def setSelectedSequences(q: EventQueue, i: Instrument, sid: SequenceId, user: UserDetails): IO[Either[SeqexecFailure, Unit]] =
+    q.enqueue1(Event.logDebugMsg("SeqexecEngine: Updating loaded sequences")) *>
+    q.enqueue1(Event.modifyState[executeEngine.ConcreteTypes]((Engine.State.userData ^|-> EngineMetadata.selectedML(i)).set(sid.some), SetSelectedSequence(i, sid, user.some))).map(_.asRight)
+
   def setConditions(q: EventQueue, conditions: Conditions, user: UserDetails): IO[Either[SeqexecFailure, Unit]] =
     q.enqueue1(Event.logDebugMsg("SeqexecEngine: Setting conditions")) *>
-    q.enqueue1(Event.modifyState[executeEngine.ConcreteTypes]((Engine.State.userDataL ^|-> EngineMetadata.conditionsL).set(conditions), SetConditions(conditions, user.some))).map(_.asRight)
+    q.enqueue1(Event.modifyState[executeEngine.ConcreteTypes]((Engine.State.userData ^|-> EngineMetadata.conditions).set(conditions), SetConditions(conditions, user.some))).map(_.asRight)
 
   def setImageQuality(q: EventQueue, iq: ImageQuality, user: UserDetails): IO[Either[SeqexecFailure, Unit]] =
     q.enqueue1(Event.logDebugMsg("SeqexecEngine: Setting image quality")) *>
-    q.enqueue1(Event.modifyState[executeEngine.ConcreteTypes]((Engine.State.userDataL ^|-> EngineMetadata.conditionsL ^|-> Conditions.iq).set(iq), SetImageQuality(iq, user.some))).map(_.asRight)
+    q.enqueue1(Event.modifyState[executeEngine.ConcreteTypes]((Engine.State.userData ^|-> EngineMetadata.conditions ^|-> Conditions.iq).set(iq), SetImageQuality(iq, user.some))).map(_.asRight)
 
   def setWaterVapor(q: EventQueue, wv: WaterVapor, user: UserDetails): IO[Either[SeqexecFailure, Unit]] =
     q.enqueue1(Event.logDebugMsg("SeqexecEngine: Setting water vapor")) *>
-    q.enqueue1(Event.modifyState[executeEngine.ConcreteTypes]((Engine.State.userDataL ^|-> EngineMetadata.conditionsL ^|-> Conditions.wv).set(wv), SetWaterVapor(wv, user.some))).map(_.asRight)
+    q.enqueue1(Event.modifyState[executeEngine.ConcreteTypes]((Engine.State.userData ^|-> EngineMetadata.conditions ^|-> Conditions.wv).set(wv), SetWaterVapor(wv, user.some))).map(_.asRight)
 
   def setSkyBackground(q: EventQueue, sb: SkyBackground, user: UserDetails): IO[Either[SeqexecFailure, Unit]] =
     q.enqueue1(Event.logDebugMsg("SeqexecEngine: Setting sky background")) *>
-    q.enqueue1(Event.modifyState[executeEngine.ConcreteTypes]((Engine.State.userDataL ^|-> EngineMetadata.conditionsL ^|-> Conditions.sb).set(sb), SetSkyBackground(sb, user.some))).map(_.asRight)
+    q.enqueue1(Event.modifyState[executeEngine.ConcreteTypes]((Engine.State.userData ^|-> EngineMetadata.conditions ^|-> Conditions.sb).set(sb), SetSkyBackground(sb, user.some))).map(_.asRight)
 
   def setCloudCover(q: EventQueue, cc: CloudCover, user: UserDetails): IO[Either[SeqexecFailure, Unit]] =
     q.enqueue1(Event.logDebugMsg("SeqexecEngine: Setting cloud cover")) *>
-    q.enqueue1(Event.modifyState[executeEngine.ConcreteTypes]((Engine.State.userDataL ^|-> EngineMetadata.conditionsL ^|-> Conditions.cc).set(cc), SetCloudCover(cc, user.some))).map(_.asRight)
+    q.enqueue1(Event.modifyState[executeEngine.ConcreteTypes]((Engine.State.userData ^|-> EngineMetadata.conditions ^|-> Conditions.cc).set(cc), SetCloudCover(cc, user.some))).map(_.asRight)
 
   def setSkipMark(q: EventQueue,
                   seqId: SPObservationID,
@@ -139,10 +142,11 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
   def eventStream(q: EventQueue): Stream[IO, SeqexecEvent] = {
     executeEngine.process(q.dequeue.mergeHaltBoth(seqQueueRefreshStream))(Engine.State.empty[EngineMetadata](EngineMetadata.default)).flatMap(x => Stream.eval(notifyODB(x))).map {
       case (ev, qState) =>
-        toSeqexecEvent(ev)(
+        toSeqexecEvent(ev, qState)(
           SequencesQueue(
-            (Engine.State.userDataL ^|-> EngineMetadata.conditionsL).get(qState),
-            (Engine.State.userDataL ^|-> EngineMetadata.operatorL).get(qState),
+            (Engine.State.userData ^|-> EngineMetadata.selected).get(qState),
+            (Engine.State.userData ^|-> EngineMetadata.conditions).get(qState),
+            (Engine.State.userData ^|-> EngineMetadata.operator).get(qState),
             qState.sequences.values.map(
               s => viewSequence(s.toSequence, s)
             ).toList
@@ -171,7 +175,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     for {
       q   <- st.userData.queues.get(name)
       seq <- st.sequences.get(seqId)
-    } yield if(!q.status(st).isRunning && !seq.status.isRunning && !seq.status.isCompleted && !q.contains(seqId)) st.copy(userData = queuesL.modify(_.updated(name, q :+ seqId))(st.userData)) else st
+    } yield if(!q.status(st).isRunning && !seq.status.isRunning && !seq.status.isCompleted && !q.contains(seqId)) st.copy(userData = EngineMetadata.queues.modify(_.updated(name, q :+ seqId))(st.userData)) else st
   ).getOrElse(st)
 
   def addSequenceToQueue(q: EventQueue, queueName: String, seqId: SPObservationID): IO[Either[SeqexecFailure, Unit]] = q.enqueue1(
@@ -181,7 +185,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
   private def removeSeq(name: String, seqId: Sequence.Id)(st: executeEngine.StateType): executeEngine.StateType = (
     for {
       q <- st.userData.queues.get(name)
-    } yield if(!q.status(st).isRunning && q.contains(seqId)) st.copy(userData = queuesL.modify(_.updated(name, q.filterNot(_===seqId)))(st.userData)) else st
+    } yield if(!q.status(st).isRunning && q.contains(seqId)) st.copy(userData = EngineMetadata.queues.modify(_.updated(name, q.filterNot(_===seqId)))(st.userData)) else st
   ).getOrElse(st)
 
   def removeSequenceFromQueue(q: EventQueue, queueName: String, seqId: SPObservationID): IO[Either[SeqexecFailure, Unit]] = q.enqueue1(
@@ -202,7 +206,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
   private def moveSeq(name: String, seqId: Sequence.Id, d: Int)(st: executeEngine.StateType): executeEngine.StateType = (
     for {
       q <- st.userData.queues.get(name)
-    } yield if(!q.status(st).isRunning && q.contains(seqId)) st.copy(userData = queuesL.modify(_.updated(name, moveElement(q, seqId, d)))(st.userData)) else st
+    } yield if(!q.status(st).isRunning && q.contains(seqId)) st.copy(userData = EngineMetadata.queues.modify(_.updated(name, moveElement(q, seqId, d)))(st.userData)) else st
   ).getOrElse(st)
 
   def moveSequenceInQueue(q: EventQueue, queueName: String, seqId: SPObservationID, d: Int): IO[Either[SeqexecFailure, Unit]] = q.enqueue1(
@@ -236,17 +240,18 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
   }
 
   private def modifyStateEvent(v: SeqEvent, svs: => SequencesQueue[SequenceView]): SeqexecEvent = v match {
-    case NullSeqEvent           => NullEvent
-    case SetOperator(_, _)      => OperatorUpdated(svs)
-    case SetObserver(_, _, _)   => ObserverUpdated(svs)
-    case SetConditions(_, _)    => ConditionsUpdated(svs)
-    case SetImageQuality(_, _)  => ConditionsUpdated(svs)
-    case SetWaterVapor(_, _)    => ConditionsUpdated(svs)
-    case SetSkyBackground(_, _) => ConditionsUpdated(svs)
-    case SetCloudCover(_, _)    => ConditionsUpdated(svs)
+    case NullSeqEvent                 => NullEvent
+    case SetOperator(_, _)            => OperatorUpdated(svs)
+    case SetObserver(_, _, _)         => ObserverUpdated(svs)
+    case SetSelectedSequence(i, s, _) => SelectedSequenceUpdate(i, s)
+    case SetConditions(_, _)          => ConditionsUpdated(svs)
+    case SetImageQuality(_, _)        => ConditionsUpdated(svs)
+    case SetWaterVapor(_, _)          => ConditionsUpdated(svs)
+    case SetSkyBackground(_, _)       => ConditionsUpdated(svs)
+    case SetCloudCover(_, _)          => ConditionsUpdated(svs)
   }
 
-  def toSeqexecEvent(ev: executeEngine.EventType)(svs: => SequencesQueue[SequenceView]): SeqexecEvent = ev match {
+  def toSeqexecEvent(ev: executeEngine.EventType, st: executeEngine.StateType)(svs: => SequencesQueue[SequenceView]): SeqexecEvent = ev match {
     case engine.EventUser(ue) => ue match {
       case engine.Start(_, _, _)         => SequenceStart(svs)
       case engine.Pause(_, _)            => SequencePauseRequested(svs)
@@ -260,6 +265,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
       case engine.GetState(_)            => NullEvent
       case engine.GetSeqState(_, _)      => NullEvent
       case engine.ModifyState(_, ev)     => modifyStateEvent(ev, svs)
+      case engine.ModifyStateF(_, evf)   => modifyStateEvent(evf(st), svs)
       case engine.ActionStop(_, _)       => ActionStopRequested(svs)
       case engine.LogDebug(_)            => NullEvent
       case engine.LogInfo(_)             => NullEvent

@@ -171,6 +171,7 @@ object Model {
     }
     val gsInstruments: NonEmptyList[Instrument] = NonEmptyList.of(F2, GmosS, GPI, GSAOI)
     val gnInstruments: NonEmptyList[Instrument] = NonEmptyList.of(GmosN, GNIRS, NIRI, NIFS)
+    val all: NonEmptyList[Instrument] = gsInstruments.concatNel(gnInstruments)
   }
 
   final case class Operator(value: String)
@@ -391,7 +392,7 @@ object Model {
     * Represents a queue with different levels of details. E.g. it could be a list of Ids
     * Or a list of fully hydrated SequenceViews
     */
-  final case class SequencesQueue[T](conditions: Conditions, operator: Option[Operator], queue: List[T])
+  final case class SequencesQueue[T](selected: Map[Instrument, SequenceId], conditions: Conditions, operator: Option[Operator], queue: List[T])
 
   object SequencesQueue {
     implicit def equal[T: Eq]: Eq[SequencesQueue[T]] =

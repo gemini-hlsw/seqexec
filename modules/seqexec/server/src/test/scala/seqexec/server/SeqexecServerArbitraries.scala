@@ -8,11 +8,13 @@ import seqexec.server.flamingos2.Flamingos2Controller
 import seqexec.server.gcal.GcalController
 import seqexec.server.gcal.GcalController._
 import seqexec.server.tcs.{TcsController, TcsControllerEpics}
+import seqexec.model.Model.{Conditions, Instrument, SequenceId, Operator}
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams
 import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, Cogen, Gen}
 import squants.space.LengthConversions._
+import seqexec.model.SharedModelArbitraries._
 
 object SeqexecServerArbitraries {
 
@@ -114,4 +116,15 @@ object SeqexecServerArbitraries {
   implicit val gcalIrLampArb: Arbitrary[GcalController.IrLampState] = Arbitrary(arbitrary[GcalController.LampState].map(IrLampState.apply))
   implicit val gcalIrLampCogen: Cogen[GcalController.IrLampState] =
     Cogen[GcalController.LampState].contramap(_.self)
+
+  implicit val selectedCoGen: Cogen[Map[Instrument, SequenceId]] =
+    Cogen[List[(Instrument, SequenceId)]].contramap(_.toList)
+  implicit val engineMetadataArb: Arbitrary[EngineMetadata] = Arbitrary {
+    for {
+      q <- arbitrary[ExecutionQueues]
+      s <- arbitrary[Map[Instrument, SequenceId]]
+      c <- arbitrary[Conditions]
+      o <- arbitrary[Option[Operator]]
+    } yield EngineMetadata(q, s, c, o)
+  }
 }

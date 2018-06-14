@@ -34,6 +34,7 @@ object SequenceEventsArbitraries {
   implicit val opArb  = implicitly[Arbitrary[OperatorUpdated]]
   implicit val obArb  = implicitly[Arbitrary[ObserverUpdated]]
   implicit val cuArb  = implicitly[Arbitrary[ConditionsUpdated]]
+  implicit val suArb  = implicitly[Arbitrary[SelectedSequenceUpdate]]
   implicit val seArb  = implicitly[Arbitrary[SeqexecEvent]]
   implicit val smuArb = implicitly[Arbitrary[SeqexecModelUpdate]]
   implicit val serArb = implicitly[Arbitrary[SequenceError]]
