@@ -97,7 +97,7 @@ object actions {
 
   // Used for UI debugging
   final case class MarkStepAsRunning(s: Observation.Id, step: Int) extends Action
-  final case class LoadSequence(i: Instrument, id: SequenceId) extends Action
+  final case class LoadSequence(i: Instrument, id: Observation.Id) extends Action
 
   // scalastyle:on
   private val standardStep: PartialFunction[Step, (StepId, StepState, List[(Resource, ActionStatus)])] = {

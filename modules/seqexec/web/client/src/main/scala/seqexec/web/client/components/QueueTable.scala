@@ -344,7 +344,7 @@ object QueueTableBody {
 
   private def showSequence(p: Props,
                            i: Instrument,
-                           id: Observation.Id)(e: ReactEvent): Callback =
+                           id: Observation.Id)(e: ReactEvent): Callback = {
     // Request to display the selected sequence
     //p.sequences.dispatchCB(NavigateTo(SequencePage(i, id, 0)))
     // prevent default to avoid the link jumping

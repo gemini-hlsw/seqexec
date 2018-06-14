@@ -111,7 +111,7 @@ object circuit {
       zoomRW(m => TableStates(m.uiModel.queueTableState, m.uiModel.configTableState)) ((m, v) => m.copy(uiModel = m.uiModel.copy(queueTableState = v.queueTable, configTableState = v.stepConfigTable)))
 
     private val wsHandler                = new WebSocketHandler(zoomTo(_.ws))
-    private val wsEventsHandler          = new WebSocketEventsHandler(webSocketFocusRW)
+    private val serverMessagesHandler    = new ServerMessagesHandler(webSocketFocusRW)
     private val initialSyncHandler       = new InitialSyncHandler(initialSyncFocusRW)
     private val navigationHandler        = new NavigationHandler(zoomTo(_.uiModel.navLocation))
     private val loginBoxHandler          = new ModalBoxHandler(OpenLoginBox, CloseLoginBox, zoomTo(_.uiModel.loginBox))
@@ -123,12 +123,11 @@ object circuit {
     private val globalLogHandler         = new GlobalLogHandler(zoomTo(_.uiModel.globalLog))
     private val conditionsHandler        = new ConditionsHandler(zoomTo(_.uiModel.sequences.conditions))
     private val operatorHandler          = new OperatorHandler(zoomTo(_.uiModel.sequences.operator))
-    private val syncToAddedHandler       = new SyncToAddedRemovedRun(zoomTo(_.uiModel.navLocation))
+    private val syncToAddedHandler       = new SyncToAddedRemovedRunHandler(zoomTo(_.uiModel.navLocation))
     private val remoteRequestsHandler    = new RemoteRequestsHandler(zoomTo(_.clientId))
     private val syncRequestsHandler      = new SyncRequestsHandler(zoomTo(_.uiModel.syncInProgress))
     private val debuggingHandler         = new DebuggingHandler(zoomTo(_.uiModel.sequences))
     private val stepConfigStateHandler   = new StepConfigTableStateHandler(tableStateRW)
-    private val clientsModelHandler      = new ClientsModelHandler(zoomTo(_.uiModel.sequencesOnDisplay))
 
     override protected def initialModel = SeqexecAppRootModel.initial
 
@@ -217,7 +216,7 @@ object circuit {
 
     override protected def actionHandler = composeHandlers(
       wsHandler,
-      foldHandlers(wsEventsHandler, syncToAddedHandler, initialSyncHandler, clientsModelHandler),
+      foldHandlers(serverMessagesHandler, syncToAddedHandler, initialSyncHandler),
       sequenceExecHandler,
       resourcesBoxHandler,
       resourcesConflictHandler,
