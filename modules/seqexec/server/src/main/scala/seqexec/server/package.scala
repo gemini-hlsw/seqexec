@@ -60,6 +60,7 @@ package object server {
   }
 
   type SeqAction[A] = EitherT[IO, SeqexecFailure, A]
+  type SeqActionF[F[_], A] = EitherT[F, SeqexecFailure, A]
 
   type SeqObserve[A, B] = Reader[A, SeqAction[B]]
 

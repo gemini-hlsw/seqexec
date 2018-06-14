@@ -4,7 +4,11 @@
 package seqexec.server
 
 import edu.gemini.seqexec.server.tcs.{BinaryOnOff, BinaryYesNo}
+import gem.arb.ArbTime
+import scala.concurrent.duration.Duration
 import seqexec.server.flamingos2.Flamingos2Controller
+import seqexec.server.gpi.GPIController
+import seqexec.server.gpi.GPIController._
 import seqexec.server.gcal.GcalController
 import seqexec.server.gcal.GcalController._
 import seqexec.server.tcs.{TcsController, TcsControllerEpics}
@@ -16,7 +20,7 @@ import org.scalacheck.{Arbitrary, Cogen, Gen}
 import squants.space.LengthConversions._
 import seqexec.model.SharedModelArbitraries._
 
-object SeqexecServerArbitraries {
+object SeqexecServerArbitraries extends ArbTime {
 
   implicit val observeCommandArb: Arbitrary[ObserveCommand.Result] = Arbitrary(Gen.oneOf(ObserveCommand.Success, ObserveCommand.Paused, ObserveCommand.Aborted, ObserveCommand.Stopped))
   implicit val observeCommandCogen: Cogen[ObserveCommand.Result] =
@@ -127,4 +131,68 @@ object SeqexecServerArbitraries {
       o <- arbitrary[Option[Operator]]
     } yield EngineMetadata(q, s, c, o)
   }
+
+  implicit val gpiAOFlagsArb: Arbitrary[GPIController.AOFlags] = Arbitrary{
+    for {
+      useAo    <- arbitrary[Boolean]
+      useCal   <- arbitrary[Boolean]
+      aoOpt    <- arbitrary[Boolean]
+      alignFpm <- arbitrary[Boolean]
+    } yield AOFlags(useAo, useCal, aoOpt, alignFpm)
+  }
+  implicit val gpiAOFlagsCogen: Cogen[GPIController.AOFlags] =
+    Cogen[(Boolean, Boolean, Boolean, Boolean)]
+      .contramap(x => (x.useAo, x.useCal, x.aoOptimize, x.alignFpm))
+
+  implicit val gpiArtificialSourcesArb: Arbitrary[GPIController.ArtificialSources] = Arbitrary {
+    for {
+      ir  <- arbitrary[ArtificialSource]
+      vis <- arbitrary[ArtificialSource]
+      sc  <- arbitrary[ArtificialSource]
+      att <- arbitrary[Double]
+    } yield ArtificialSources(ir, vis, sc, att)
+  }
+  implicit val asCogen: Cogen[ArtificialSource] =
+    Cogen[String].contramap(_.displayValue)
+  implicit val gpiArtificialSourcesCogen: Cogen[GPIController.ArtificialSources] =
+    Cogen[(ArtificialSource, ArtificialSource, ArtificialSource, Double)]
+      .contramap(x => (x.ir, x.vis, x.sc, x.attenuation))
+
+  implicit val gpiShuttersArb: Arbitrary[GPIController.Shutters] = Arbitrary {
+    for {
+      ent <- arbitrary[GPIController.Shutter]
+      cal <- arbitrary[GPIController.Shutter]
+      sci <- arbitrary[GPIController.Shutter]
+      ref <- arbitrary[GPIController.Shutter]
+    } yield Shutters(ent, cal, sci, ref)
+  }
+  implicit val shutCogen: Cogen[GPIController.Shutter] =
+    Cogen[String].contramap(_.displayValue)
+  implicit val gpiShuttersCogen: Cogen[GPIController.Shutters] =
+    Cogen[(GPIController.Shutter, GPIController.Shutter, GPIController.Shutter, GPIController.Shutter)]
+      .contramap(x => (x.entranceShutter, x.calEntranceShutter, x.scienceArmShutter, x.referenceArmShutter))
+
+  implicit val gpiConfigArb: Arbitrary[GPIController.GPIConfig] = Arbitrary {
+    for {
+      adc <- arbitrary[GPIController.Adc]
+      exp <- arbitrary[Duration]
+      coa <- Gen.posNum[Int]
+      mode <- arbitrary[GPIController.ObservingMode]
+      disp <- arbitrary[GPIController.Disperser]
+      dispA <- arbitrary[Double]
+      shut <- arbitrary[GPIController.Shutters]
+      asu <- arbitrary[GPIController.ArtificialSources]
+      pc <- arbitrary[PupilCamera]
+      ao <- arbitrary[GPIController.AOFlags]
+    } yield GPIConfig(adc, exp, coa, mode, disp, dispA, shut, asu, pc, ao)
+  }
+  implicit val adcCogen: Cogen[GPIController.Adc] =
+    Cogen[String].contramap(_.displayValue)
+  implicit val obsModeCogen: Cogen[GPIController.ObservingMode] =
+    Cogen[String].contramap(_.displayValue)
+  implicit val ppCogen: Cogen[GPIController.PupilCamera] =
+    Cogen[String].contramap(_.displayValue)
+  implicit val gpiConfigCogen: Cogen[GPIController.GPIConfig] =
+    Cogen[(GPIController.Adc, Duration, Int, GPIController.ObservingMode, GPIController.Shutters, GPIController.ArtificialSources, PupilCamera, GPIController.AOFlags)]
+      .contramap(x => (x.adc, x.expTime, x.coAdds, x.mode, x.shutters, x.asu, x.pc, x.aoFlags))
 }

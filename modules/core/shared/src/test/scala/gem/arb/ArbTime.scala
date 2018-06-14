@@ -11,6 +11,7 @@ import org.scalacheck.Gen._
 import org.scalacheck.Arbitrary._
 
 import scala.collection.JavaConverters._
+import scala.concurrent.duration.{Duration => SDuration}
 import java.time._
 import java.time.temporal.ChronoUnit
 
@@ -83,6 +84,15 @@ trait ArbTime {
         u <- Gen.oneOf(ChronoUnit.values.filterNot(_.isDurationEstimated))
       } yield Duration.of(a, u)
     }
+
+  implicit val arbSDuration: Arbitrary[SDuration] = Arbitrary {
+    for {
+      d <- arbitrary[Duration]
+    } yield SDuration.fromNanos(d.getNano.toDouble)
+  }
+
+  implicit val cogSDuration: Cogen[SDuration] =
+    Cogen[Long].contramap(_.toNanos)
 
   implicit val cogInstant: Cogen[Instant] =
     Cogen[(Long, Int)].contramap(t => (t.getEpochSecond, t.getNano))
