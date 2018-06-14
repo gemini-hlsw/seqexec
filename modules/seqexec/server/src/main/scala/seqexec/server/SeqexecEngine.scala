@@ -100,7 +100,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
 
   def setSelectedSequences(q: EventQueue, i: Instrument, sid: SequenceId, user: UserDetails): IO[Either[SeqexecFailure, Unit]] =
     q.enqueue1(Event.logDebugMsg("SeqexecEngine: Updating loaded sequences")) *>
-    q.enqueue1(Event.modifyStateF[executeEngine.ConcreteTypes]((Engine.State.userData ^|-> EngineMetadata.selectedML(i)).set(sid.some), e => SetSelectedSequences((Engine.State.userData ^|-> EngineMetadata.selected).get(e), user.some))).map(_.asRight)
+    q.enqueue1(Event.modifyState[executeEngine.ConcreteTypes]((Engine.State.userData ^|-> EngineMetadata.selectedML(i)).set(sid.some), SetSelectedSequence(i, sid, user.some))).map(_.asRight)
 
   def setConditions(q: EventQueue, conditions: Conditions, user: UserDetails): IO[Either[SeqexecFailure, Unit]] =
     q.enqueue1(Event.logDebugMsg("SeqexecEngine: Setting conditions")) *>
@@ -240,15 +240,15 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
   }
 
   private def modifyStateEvent(v: SeqEvent, svs: => SequencesQueue[SequenceView]): SeqexecEvent = v match {
-    case NullSeqEvent               => NullEvent
-    case SetOperator(_, _)          => OperatorUpdated(svs)
-    case SetObserver(_, _, _)       => ObserverUpdated(svs)
-    case SetSelectedSequences(_, _) => SelectedSequenceUpdated(svs)
-    case SetConditions(_, _)        => ConditionsUpdated(svs)
-    case SetImageQuality(_, _)      => ConditionsUpdated(svs)
-    case SetWaterVapor(_, _)        => ConditionsUpdated(svs)
-    case SetSkyBackground(_, _)     => ConditionsUpdated(svs)
-    case SetCloudCover(_, _)        => ConditionsUpdated(svs)
+    case NullSeqEvent                 => NullEvent
+    case SetOperator(_, _)            => OperatorUpdated(svs)
+    case SetObserver(_, _, _)         => ObserverUpdated(svs)
+    case SetSelectedSequence(i, s, _) => SelectedSequenceUpdate(i, s)
+    case SetConditions(_, _)          => ConditionsUpdated(svs)
+    case SetImageQuality(_, _)        => ConditionsUpdated(svs)
+    case SetWaterVapor(_, _)          => ConditionsUpdated(svs)
+    case SetSkyBackground(_, _)       => ConditionsUpdated(svs)
+    case SetCloudCover(_, _)          => ConditionsUpdated(svs)
   }
 
   def toSeqexecEvent(ev: executeEngine.EventType, st: executeEngine.StateType)(svs: => SequencesQueue[SequenceView]): SeqexecEvent = ev match {

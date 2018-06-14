@@ -35,7 +35,7 @@ package server {
   final case class SetOperator(name: Operator, user: Option[UserDetails]) extends SeqEvent
   final case class SetObserver(id: Sequence.Id, user: Option[UserDetails], name: Observer) extends SeqEvent
   final case class SetConditions(conditions: Conditions, user: Option[UserDetails]) extends SeqEvent
-  final case class SetSelectedSequences(selected: Map[Instrument, SequenceId], user: Option[UserDetails]) extends SeqEvent
+  final case class SetSelectedSequence(instrument: Instrument, sid: SequenceId, user: Option[UserDetails]) extends SeqEvent
   final case class SetImageQuality(iq: ImageQuality, user: Option[UserDetails]) extends SeqEvent
   final case class SetWaterVapor(wv: WaterVapor, user: Option[UserDetails]) extends SeqEvent
   final case class SetSkyBackground(wv: SkyBackground, user: Option[UserDetails]) extends SeqEvent
