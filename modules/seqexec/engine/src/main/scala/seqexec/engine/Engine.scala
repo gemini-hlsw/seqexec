@@ -407,15 +407,10 @@ class Engine[D: ActionMetadataGenerator, U](implicit ev: ActionMetadataGenerator
     inspect(_.sequences.get(id).map(f))
 
   private def modifyS(id: Sequence.Id)(f: Sequence.State => Sequence.State): HandleP[Unit] =
-    modify(
-      st =>
-        (Engine.State.sequenceState(id).modify(s => s.map(f)) compose Engine.State.userData.set(st.userData))(st)
-    )
+    modify(Engine.State.sequenceState(id).modify(s => s.map(f)))
 
   private def putS(id: Sequence.Id)(s: Sequence.State): HandleP[Unit] =
-    modify(st =>
-      (Engine.State.sequenceState(id).set(s.some) compose Engine.State.userData.set(st.userData))(st)
-    )
+    modify(Engine.State.sequenceState(id).set(s.some))
 
   // For debugging
   def printSequenceState(id: Sequence.Id): HandleP[Unit] =
