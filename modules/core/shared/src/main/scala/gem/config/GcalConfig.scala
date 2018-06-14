@@ -4,6 +4,7 @@
 package gem
 package config
 
+import cats.Eq
 import cats.data.NonEmptySet
 import cats.implicits._
 import gem.CoAdds
@@ -69,4 +70,8 @@ object GcalConfig {
         sys.error(s"misconfigured Gcal lamps: continuum=$continuum, arcs=[${arcs.filter(_._2).unzip._1.mkString(",")}]")
       }
   }
+
+  implicit val GcalConfigEq: Eq[GcalConfig] =
+    Eq.fromUniversalEquals // TODO: double-check
+
 }

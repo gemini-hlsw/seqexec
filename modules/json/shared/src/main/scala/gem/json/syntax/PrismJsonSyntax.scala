@@ -3,14 +3,15 @@
 
 package gem.json.syntax
 
-import gem.syntax.prism._
 import io.circe._
 import monocle.Prism
 
 trait PrismJsonSyntax {
   implicit class JsonPrismOps[A: Encoder: Decoder, B](p: Prism[A, B]) {
     def toEncoder: Encoder[B] = Encoder[A].contramap(p.reverseGet)
-    def toDecoder: Decoder[B] = Decoder[A].map(p.unsafeGet(_))
+    def toDecoder: Decoder[B] = Decoder[A].emap { a =>
+      p.getOption(a).toRight(s"getOption failed: $a")
+    }
   }
 }
 object prism extends PrismJsonSyntax

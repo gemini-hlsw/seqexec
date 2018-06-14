@@ -5,7 +5,6 @@ package gem.json.instances
 
 import gem.math.Index
 import gem.json.syntax.prism._
-import gem.syntax.prism._
 import io.circe.{ Decoder, Encoder, KeyDecoder, KeyEncoder }
 
 trait IndexJson {
@@ -14,7 +13,10 @@ trait IndexJson {
   implicit val IndexDecoder: Decoder[Index] = Index.fromShort.toDecoder
 
   implicit val IndexKeyEncoder: KeyEncoder[Index] = KeyEncoder[Short].contramap(_.toShort)
-  implicit val IndexKeyDecoder: KeyDecoder[Index] = KeyDecoder[Short].map(Index.fromShort.unsafeGet)
+  implicit val IndexKeyDecoder: KeyDecoder[Index] =
+    KeyDecoder.instance { s =>
+      KeyDecoder[Short].apply(s).flatMap(Index.fromShort.getOption)
+    }
 
 }
 object index extends IndexJson

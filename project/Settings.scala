@@ -198,7 +198,8 @@ object Settings {
     val Circe                  = Def.setting(Seq(
       "io.circe" %%% "circe-core"    % LibraryVersions.circeVersion,
       "io.circe" %%% "circe-generic" % LibraryVersions.circeVersion,
-      "io.circe" %%% "circe-parser"  % LibraryVersions.circeVersion))
+      "io.circe" %%% "circe-parser"  % LibraryVersions.circeVersion,
+      "io.circe" %%% "circe-testing" % LibraryVersions.circeVersion % "test"))
     val Doobie                 = Seq(
       "org.tpolecat" %% "doobie-core"      % LibraryVersions.doobieVersion,
       "org.tpolecat" %% "doobie-postgres"  % LibraryVersions.doobieVersion,

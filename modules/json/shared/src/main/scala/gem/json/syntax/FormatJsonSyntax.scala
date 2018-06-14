@@ -9,7 +9,9 @@ import io.circe._
 trait FormatJsonSyntax {
   implicit class JsonFormatOps[A: Encoder: Decoder, B](p: Format[A, B]) {
     def toEncoder: Encoder[B] = Encoder[A].contramap(p.reverseGet)
-    def toDecoder: Decoder[B] = Decoder[A].map(p.unsafeGet(_))
+    def toDecoder: Decoder[B] = Decoder[A].emap { a =>
+      p.getOption(a).toRight(s"getOption failed: $a")
+    }
   }
 }
 object format extends FormatJsonSyntax

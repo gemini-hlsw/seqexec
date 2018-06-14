@@ -272,6 +272,9 @@ trait Arbitraries {
     }
   }
 
+  implicit val arbDynamicConfig: Arbitrary[DynamicConfig] =
+    Arbitrary(arbitrary[Instrument].flatMap(genDynamicConfigOf))
+
   // GcalConfig
 
   implicit val arbGcalArcs: Arbitrary[GcalArcs] =

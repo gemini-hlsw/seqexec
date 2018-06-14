@@ -188,7 +188,7 @@ lazy val json = crossProject(JVMPlatform, JSPlatform)
   .crossType(CrossType.Full)
   .in(file("modules/json"))
   .enablePlugins(AutomateHeaderPlugin)
-  .dependsOn(core)
+  .dependsOn(core % "test->test;compile->compile")
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Circe.value
