@@ -143,6 +143,9 @@ trait Arbitraries {
     }
   }
 
+  implicit val arbStaticConfig: Arbitrary[StaticConfig] =
+    Arbitrary(arbitrary[Instrument].flatMap(genStaticConfigOf))
+
   val genAcqCamDynamic  : Gen[DynamicConfig.AcqCam]   = Gen.const(DynamicConfig.AcqCam()  )
   val genBhrosDynamic   : Gen[DynamicConfig.Bhros]    = Gen.const(DynamicConfig.Bhros()   )
   val genGhostDynamic   : Gen[DynamicConfig.Ghost]    = Gen.const(DynamicConfig.Ghost()   )

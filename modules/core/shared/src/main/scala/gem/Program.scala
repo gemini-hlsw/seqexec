@@ -3,6 +3,8 @@
 
 package gem
 
+import cats.Eq
+import cats.implicits._
 import gem.math.Index
 import scala.collection.immutable.SortedMap
 
@@ -15,4 +17,8 @@ final case class Program(id: Program.Id, title: String, observations: SortedMap[
 object Program {
   type Id                 = ProgramId
   val  Id: ProgramId.type = ProgramId
+
+  implicit val EqProgram: Eq[Program] =
+    Eq.by(p => (p.id, p.title, p.observations))
+
 }

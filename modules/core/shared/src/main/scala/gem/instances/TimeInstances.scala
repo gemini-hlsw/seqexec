@@ -4,7 +4,8 @@
 package gem.instances
 
 import java.time._
-import cats.Order
+import cats.{ Eq, Order }
+import cats.implicits._
 
 /** Instances for java.time data types. */
 trait TimeInstances {
@@ -25,6 +26,9 @@ trait TimeInstances {
   implicit val LocalTimeOrder:     Order[LocalTime]     = naturalOrder(_ isBefore _)
   implicit val LocalDateOrder:     Order[LocalDate]     = naturalOrder(_ isBefore _)
   implicit val LocalDateTimeOrder: Order[LocalDateTime] = naturalOrder(_ isBefore _)
+
+  implicit val DurationEq: Eq[Duration] =
+    Eq.by(d => (d.getSeconds, d.getNano))
 
 }
 object time extends TimeInstances
