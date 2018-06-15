@@ -18,8 +18,8 @@ before_script:
 
 install:
   - . $HOME/.nvm/nvm.sh
-  - nvm install stable
-  - nvm use stable
+  - nvm install 9.4.0
+  - nvm use 9.4.0
   - npm install jsdom
   - pip install --user awscli
 script:
