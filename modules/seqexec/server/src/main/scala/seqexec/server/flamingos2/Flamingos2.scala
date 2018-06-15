@@ -103,7 +103,8 @@ object Flamingos2 {
     case _                    => d
   }
 
-  def ccConfigFromSequenceConfig(config: Config): TrySeq[CCConfig] = ( for {
+  def ccConfigFromSequenceConfig(config: Config): TrySeq[CCConfig] =
+    (for {
       obsType <- config.extract(OBSERVE_KEY / OBSERVE_TYPE_PROP).as[String]
       // WINDOW_COVER_PROP is optional. If not present, then window cover position is inferred from observe type.
       p <- config.extract(INSTRUMENT_KEY / WINDOW_COVER_PROP).as[WindowCover].recover { case _:ConfigUtilOps.ExtractFailure => windowCoverFromObserveType(obsType)}
@@ -112,21 +113,21 @@ object Flamingos2 {
       s <- config.extract(INSTRUMENT_KEY / FILTER_PROP).as[Filter]
       t <- config.extract(INSTRUMENT_KEY / LYOT_WHEEL_PROP).as[LyotWheel]
       u <- config.extract(INSTRUMENT_KEY / DISPERSER_PROP).as[Disperser].map(disperserFromObserveType(obsType, _))
+    } yield CCConfig(p, q, r, s, t, u)).leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
 
-    } yield CCConfig(p, q, r, s, t, u) ).leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
-
-  def dcConfigFromSequenceConfig(config: Config): TrySeq[DCConfig] = ( for {
-    p <- config.extract(OBSERVE_KEY / EXPOSURE_TIME_PROP).as[java.lang.Double].map(x => Duration(x, SECONDS))
-    // Reads is usually inferred from the read mode, but it can be explicit.
-    q <- config.extract(OBSERVE_KEY / READS_PROP).as[Reads] match {
-          case a @ Right(_) => a
-          case _            => config.extract(INSTRUMENT_KEY / READMODE_PROP).as[ReadMode]
-                                .map(readsFromReadMode)
-        }
-    // Readout mode defaults to SCIENCE if not present.
-    r <- config.extract(INSTRUMENT_KEY / READOUT_MODE_PROP).as[ReadoutMode].getOrElse(ReadoutMode.SCIENCE).asRight
-    s <- config.extract(INSTRUMENT_KEY / DECKER_PROP).as[Decker]
-  } yield DCConfig(p, q, r, s) ).leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
+  def dcConfigFromSequenceConfig(config: Config): TrySeq[DCConfig] =
+    (for {
+      p <- config.extract(OBSERVE_KEY / EXPOSURE_TIME_PROP).as[java.lang.Double].map(x => Duration(x, SECONDS))
+      // Reads is usually inferred from the read mode, but it can be explicit.
+      q <- config.extract(OBSERVE_KEY / READS_PROP).as[Reads] match {
+            case a @ Right(_) => a
+            case _            => config.extract(INSTRUMENT_KEY / READMODE_PROP).as[ReadMode]
+                                  .map(readsFromReadMode)
+          }
+      // Readout mode defaults to SCIENCE if not present.
+      r <- config.extract(INSTRUMENT_KEY / READOUT_MODE_PROP).as[ReadoutMode].getOrElse(ReadoutMode.SCIENCE).asRight
+      s <- config.extract(INSTRUMENT_KEY / DECKER_PROP).as[Decker]
+    } yield DCConfig(p, q, r, s)).leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
 
   def fromSequenceConfig(config: Config): SeqAction[Flamingos2Config] = EitherT( IO ( for {
       p <- ccConfigFromSequenceConfig(config)
