@@ -22,12 +22,9 @@ install:
   - nvm use 9.4.0
   - npm install jsdom
   - pip install --user awscli
+
 script:
-  - sbt -jvm-opts travis-jvmopts -Docs3.skipDependencyUpdates headerCheck test:headerCheck scalastyle sql/flywayMigrate
-  - sbt -jvm-opts travis-jvmopts -Docs3.skipDependencyUpdates compile test:compile
-  - sbt -jvm-opts travis-jvmopts -Docs3.skipDependencyUpdates test
-  - sbt -jvm-opts travis-jvmopts -Docs3.skipDependencyUpdates ui/fastOptJS
-  - sbt -jvm-opts travis-jvmopts -Docs3.skipDependencyUpdates seqexec_web_client/fastOptJS::webpack
+  - $TRAVIS_BUILD_DIR/build/build.sh
 
 after_script:
   - $TRAVIS_BUILD_DIR/build/weigh.sh
