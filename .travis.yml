@@ -27,24 +27,23 @@ script:
   - sbt -jvm-opts travis-jvmopts -Docs3.skipDependencyUpdates compile test:compile
   - sbt -jvm-opts travis-jvmopts -Docs3.skipDependencyUpdates test
   - sbt -jvm-opts travis-jvmopts -Docs3.skipDependencyUpdates ui/fastOptJS
-  - sbt -jvm-opts travis-jvmopts -Docs3.skipDependencyUpdates ui/fullOptJS
-  - sbt -jvm-opts travis-jvmopts -Docs3.skipDependencyUpdates seqexec_web_client/fastOptJS::webpack seqexec_web_client/fullOptJS::webpack
+  - sbt -jvm-opts travis-jvmopts -Docs3.skipDependencyUpdates seqexec_web_client/fastOptJS::webpack
 
 after_script:
   - $TRAVIS_BUILD_DIR/build/weigh.sh
 
 cache:
   directories:
-  - $HOME/.sbt/0.13/dependency
+  - $HOME/.sbt/1.0
   - $HOME/.sbt/boot/scala*
   - $HOME/.sbt/launchers
-  - $HOME/.ivy2/cache
+  - $HOME/.ivy2
   - $HOME/.nvm
-  - $HOME/.coursier
+  - $HOME/.rvm/
+  - vendor/bundle
 
 before_cache:
-  - du -h -d 1 $HOME/.ivy2/cache
+  - du -h -d 1 $HOME/.ivy2/
   - du -h -d 2 $HOME/.sbt/
-  - du -h -d 2 $HOME/.coursier/
   - find $HOME/.sbt -name "*.lock" -type f -delete
-  - find $HOME/.ivy2/cache -name "ivydata-*.properties" -type f -delete
+  - find $HOME/.ivy2 -name "ivydata-*.properties" -type f -delete
