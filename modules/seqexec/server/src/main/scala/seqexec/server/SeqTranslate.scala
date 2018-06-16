@@ -16,6 +16,7 @@ import seqexec.server.SeqTranslate.{Settings, Systems}
 import seqexec.server.SeqexecFailure.{Unexpected, UnrecognizedInstrument}
 import seqexec.server.InstrumentSystem._
 import seqexec.server.flamingos2.{Flamingos2, Flamingos2Controller, Flamingos2Header}
+import seqexec.server.gpi.{GPI, GPIController, GPIHeader}
 import seqexec.server.gcal._
 import seqexec.server.gmos.{GmosController, GmosHeader, GmosNorth, GmosSouth}
 import seqexec.server.gws.{DummyGwsKeywordsReader, GwsHeader, GwsKeywordsReaderImpl}
@@ -318,7 +319,8 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     case Model.Instrument.GmosS => TrySeq(GmosSouth(systems.gmosSouth))
     case Model.Instrument.GmosN => TrySeq(GmosNorth(systems.gmosNorth))
     case Model.Instrument.GNIRS => TrySeq(Gnirs(systems.gnirs))
-    case _                      => TrySeq.fail(Unexpected(s"Instrument $inst not supported."))
+    case Model.Instrument.GPI   => TrySeq(GPI(systems.gpi))
+    case _                      => TrySeq.fail(Unexpected(s"Instrument2 $inst not supported."))
   }
 
   private def calcResources(sys: List[System]): Set[Resource] = sys.map(resourceFromSystem).toSet
@@ -331,6 +333,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     case Model.Instrument.GmosN => true
     case Model.Instrument.NIFS  => true
     case Model.Instrument.NIRI  => true
+    case Model.Instrument.GPI   => true
     case _                      => false
   }
 
@@ -355,6 +358,8 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     case GmosSouth(_)  => Instrument.GmosS
     case Flamingos2(_) => Instrument.F2
     case Gnirs(_)      => Instrument.GNIRS
+    case GPI(_)        => Instrument.GPI
+
   }
 
   private def calcInstHeader(config: Config, inst: Model.Instrument): TrySeq[Header] = {
@@ -369,7 +374,9 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
       case Model.Instrument.GNIRS  =>
         val gnirsReader = if(settings.gnirsKeywords) GnirsKeywordReaderImpl else GnirsKeywordReaderDummy
         TrySeq(GnirsHeader(systems.dhs, gnirsReader, tcsKReader))
-      case _                       =>  TrySeq.fail(Unexpected(s"Instrument $inst not supported."))
+      case Model.Instrument.GPI    =>
+        TrySeq(GPIHeader(tcsKReader))
+      case _                       =>  TrySeq.fail(Unexpected(s"Instrument3 $inst not supported."))
     }
   }
 
@@ -412,7 +419,8 @@ object SeqTranslate {
                       flamingos2: Flamingos2Controller,
                       gmosSouth: GmosController.GmosSouthController,
                       gmosNorth: GmosController.GmosNorthController,
-                      gnirs: GnirsController
+                      gnirs: GnirsController,
+                      gpi: GPIController
                     )
 
   final case class Settings(
@@ -435,7 +443,8 @@ object SeqTranslate {
       case GmosSouth.name  => TrySeq(Model.Instrument.GmosS)
       case GmosNorth.name  => TrySeq(Model.Instrument.GmosN)
       case Gnirs.name      => TrySeq(Model.Instrument.GNIRS)
-      case ins             => TrySeq.fail(UnrecognizedInstrument(ins))
+      case "GPI"=> TrySeq(Model.Instrument.GPI)
+      case ins             => TrySeq.fail(UnrecognizedInstrument(s"inst $ins"))
     }
   }
 

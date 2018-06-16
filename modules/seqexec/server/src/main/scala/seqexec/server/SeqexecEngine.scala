@@ -24,6 +24,7 @@ import seqexec.server.flamingos2.{Flamingos2ControllerEpics, Flamingos2Controlle
 import seqexec.server.gcal.{GcalControllerEpics, GcalControllerSim, GcalEpics}
 import seqexec.server.gmos.{GmosControllerSim, GmosEpics, GmosNorthControllerEpics, GmosSouthControllerEpics}
 import seqexec.server.gnirs.{GnirsControllerEpics, GnirsControllerSim, GnirsEpics}
+import seqexec.server.gpi.GPIControllerSim
 import seqexec.server.gws.GwsEpics
 import seqexec.server.tcs.{TcsControllerEpics, TcsControllerSim, TcsEpics}
 import edu.gemini.seqexec.odb.SmartGcal
@@ -55,7 +56,8 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     } else Flamingos2ControllerEpics,
     if (settings.instSim) GmosControllerSim.south else GmosSouthControllerEpics,
     if (settings.instSim) GmosControllerSim.north else GmosNorthControllerEpics,
-    if (settings.instSim) GnirsControllerSim else GnirsControllerEpics
+    if (settings.instSim) GnirsControllerSim else GnirsControllerEpics,
+    GPIControllerSim
   )
 
   private val translatorSettings = SeqTranslate.Settings(
@@ -313,7 +315,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     SequenceView(seq.id, seq.metadata, st.status, engineSteps(seq), None)
   }
 
-   private def unloadEvent(seqId: SPObservationID): executeEngine.EventType = Event.unload(seqId.stringValue)
+  private def unloadEvent(seqId: SPObservationID): executeEngine.EventType = Event.unload(seqId.stringValue)
 
   private def refreshSequenceList(): executeEngine.StateType => IO[Option[Stream[IO, executeEngine.EventType]]] = (st: executeEngine.StateType) => {
     val seqexecList = st.sequences.keys.toSeq.map(v => new SPObservationID(v))

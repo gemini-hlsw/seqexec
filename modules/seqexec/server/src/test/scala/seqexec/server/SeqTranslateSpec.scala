@@ -17,6 +17,7 @@ import seqexec.server.gcal.GcalControllerEpics
 import seqexec.server.gmos.GmosControllerSim
 import seqexec.server.gnirs.GnirsControllerSim
 import seqexec.server.tcs.TcsControllerEpics
+import seqexec.server.gpi.GPIControllerSim
 import edu.gemini.spModel.core.{Peer, Site}
 import org.scalatest.FlatSpec
 import squants.time.Seconds
@@ -63,7 +64,8 @@ class SeqTranslateSpec extends FlatSpec {
     Flamingos2ControllerSim,
     GmosControllerSim.south,
     GmosControllerSim.north,
-    GnirsControllerSim
+    GnirsControllerSim,
+    GPIControllerSim
   )
 
   private val translatorSettings = SeqTranslate.Settings(tcsKeywords = false, f2Keywords = false, gwsKeywords = false,

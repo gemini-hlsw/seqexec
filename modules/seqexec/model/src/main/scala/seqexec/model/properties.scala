@@ -4,16 +4,17 @@
 package seqexec.model
 
 import seqexec.model.Model.Instrument
-import seqexec.model.Model.Instrument.{F2, GNIRS, GmosN, GmosS}
+import seqexec.model.Model.Instrument.{F2, GNIRS, GmosN, GmosS, GPI}
 
 object properties {
   sealed trait InstrumentProperties
   case object Disperser extends InstrumentProperties
 
   val instrumentProperties: Map[Instrument, Set[InstrumentProperties]] = Map(
-    F2 -> Set.empty,
+    F2    -> Set.empty,
     GmosS -> Set(Disperser),
     GmosN -> Set(Disperser),
-    GNIRS -> Set(Disperser)
+    GNIRS -> Set(Disperser),
+    GPI   -> Set.empty
   )
 }
