@@ -16,6 +16,9 @@ addons:
 before_script:
   - psql -c 'create database gem' -U postgres
 
+before_install:
+  - chmod +x $TRAVIS_BUILD_DIR/build/build.sh
+
 install:
   - . $HOME/.nvm/nvm.sh
   - nvm install 9.4.0
