@@ -1,6 +1,6 @@
 -Dfile.encoding=UTF8
--Xms3G
--Xmx3G
+-Xms4G
+-Xmx4G
 -Xss6M
 -XX:ReservedCodeCacheSize=256M
 -XX:-UseGCOverheadLimit
