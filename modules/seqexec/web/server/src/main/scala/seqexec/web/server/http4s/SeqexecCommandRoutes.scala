@@ -21,7 +21,7 @@ import cats.implicits._
 /**
   * Rest Endpoints under the /api route
   */
-class SeqexecCommandRoutes(auth: AuthenticationService, inputQueue: server.EventQueue, se: SeqexecEngine) extends BooEncoders {
+class SeqexecCommandRoutes[F[_]](auth: AuthenticationService, inputQueue: server.EventQueue, se: SeqexecEngine[F]) extends BooEncoders {
 
   private val commands = Commands(se.odbProxy)
   // Handles authentication

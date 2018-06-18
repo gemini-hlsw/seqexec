@@ -103,7 +103,7 @@ object WebServerLauncher extends StreamApp[IO] with LogInitialization {
   /**
     * Configures and builds the web server
     */
-  def webServer(as: AuthenticationService, inputs: server.EventQueue, outputs: Topic[IO, SeqexecEvent], se: SeqexecEngine): Kleisli[Stream[IO, ?], WebServerConfiguration, StreamApp.ExitCode] = Kleisli { conf =>
+  def webServer(as: AuthenticationService, inputs: server.EventQueue, outputs: Topic[IO, SeqexecEvent], se: SeqexecEngine[IO]): Kleisli[Stream[IO, ?], WebServerConfiguration, StreamApp.ExitCode] = Kleisli { conf =>
     val builder = BlazeBuilder[IO].bindHttp(conf.port, conf.host)
       .withWebSockets(true)
       .mountService(new StaticRoutes(conf.devMode, OcsBuildInfo.builtAtMillis).service, "/")
@@ -156,15 +156,16 @@ object WebServerLauncher extends StreamApp[IO] with LogInitialization {
     * Reads the configuration and launches the web server
     */
   def stream(args: List[String], requestShutdown: IO[Unit]): Stream[IO, ExitCode] = {
-    val engineIO: IO[SeqexecEngine] =
+    val engineIO: IO[SeqexecEngine[IO]] =
       for {
-        _    <- configLog // Initialize log before the engine is setup
-        c    <- config
-        seqc <- SeqexecEngine.seqexecConfiguration.run(c)
-        se   = SeqexecEngine(seqc)
+        _     <- configLog // Initialize log before the engine is setup
+        c     <- config
+        giapi <- SeqexecEngine.giapiConnection.run(c)
+        seqc  <- SeqexecEngine.seqexecConfiguration(giapi).run(c)
+        se    = SeqexecEngine[IO](seqc)
       } yield se
 
-    def webServerIO(in: Queue[IO, executeEngine.EventType], out: Topic[IO, SeqexecEvent], et: SeqexecEngine): IO[Stream[IO, ExitCode]] =
+    def webServerIO(in: Queue[IO, executeEngine.EventType], out: Topic[IO, SeqexecEvent], et: SeqexecEngine[IO]): IO[Stream[IO, ExitCode]] =
       // Launch web server
       for {
         wc <- serverConf

@@ -13,6 +13,8 @@ import cats.effect.IO
 import cats.implicits._
 import edu.gemini.epics.acm.CaService
 import edu.gemini.pot.sp.SPObservationID
+import giapi.client.Giapi
+import giapi.client.gpi.GPIClient
 import seqexec.engine
 import seqexec.engine.Result.{FileIdAllocated, Partial}
 import seqexec.engine.{Step => _, _}
@@ -38,14 +40,14 @@ import mouse.all._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
-class SeqexecEngine(settings: SeqexecEngine.Settings) {
+class SeqexecEngine[F[_]](settings: SeqexecEngine.Settings[F]) {
   import SeqexecEngine._
 
   val odbProxy: ODBProxy = new ODBProxy(new Peer(settings.odbHost, 8443, null),
     if (settings.odbNotifications) ODBProxy.OdbCommandsImpl(new Peer(settings.odbHost, 8442, null))
     else ODBProxy.DummyOdbCommands)
 
-  private val systems = SeqTranslate.Systems[IO](
+  private val systems = SeqTranslate.Systems[F](
     odbProxy,
     if (settings.dhsSim) DhsClientSim(settings.date) else DhsClientHttp(settings.dhsURI),
     if (settings.tcsSim) TcsControllerSim else TcsControllerEpics,
@@ -57,7 +59,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     if (settings.instSim) GmosControllerSim.south else GmosSouthControllerEpics,
     if (settings.instSim) GmosControllerSim.north else GmosNorthControllerEpics,
     if (settings.instSim) GnirsControllerSim else GnirsControllerEpics,
-    GPIController(null)
+    GPIController(new GPIClient(settings.giapi, scala.concurrent.ExecutionContext.Implicits.global))
   )
 
   private val translatorSettings = SeqTranslate.Settings(
@@ -69,7 +71,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     gnirsKeywords = settings.gnirsKeywords
   )
 
-  private val translator = SeqTranslate[IO](settings.site, systems, translatorSettings)
+  private val translator = SeqTranslate[F](settings.site, systems, translatorSettings)
 
   def load(q: EventQueue, seqId: SPObservationID): IO[Either[SeqexecFailure, Unit]] =
     loadEvents(seqId).flatMapF(b => q.enqueue(Stream.emits(b)).map(_.asRight).compile.last.attempt.map(_.bimap(SeqexecFailure.SeqexecException.apply, _ => ()))).value
@@ -335,7 +337,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
 
 // Configuration stuff
 object SeqexecEngine {
-  final case class Settings(site: Site,
+  final case class Settings[F[_]](site: Site,
                       odbHost: String,
                       date: LocalDate,
                       dhsURI: String,
@@ -352,10 +354,11 @@ object SeqexecEngine {
                       gnirsKeywords: Boolean,
                       instForceError: Boolean,
                       failAt: Int,
-                      odbQueuePollingInterval: Duration)
-  def apply(settings: Settings): SeqexecEngine = new SeqexecEngine(settings)
+                      odbQueuePollingInterval: Duration,
+                      giapi: Giapi[F])
+  def apply[F[_]](settings: Settings[F]): SeqexecEngine[F] = new SeqexecEngine(settings)
 
-  val defaultSettings: Settings = Settings(Site.GS,
+  def defaultSettings[F[_]]: Settings[F] = Settings[F](Site.GS,
     "localhost",
     LocalDate.of(2017, 1, 1),
     "http://localhost/",
@@ -372,7 +375,8 @@ object SeqexecEngine {
     gnirsKeywords = false,
     instForceError = false,
     failAt = 0,
-    10.seconds)
+    10.seconds,
+    null)
 
   // Couldn't find this on Scalaz
   def splitWhere[A](l: List[A])(p: (A => Boolean)): (List[A], List[A]) =
@@ -476,8 +480,11 @@ object SeqexecEngine {
     IO.apply(Paths.get(smartGCalLocation)).map { p => SmartGcal.initialize(peer, p) }
   }
 
+  def giapiConnection: Kleisli[IO, Config, Giapi[IO]] = Kleisli { cfg: Config =>
+    Giapi.giapiConnectionIO.connect
+  }
   // scalastyle:off
-  def seqexecConfiguration: Kleisli[IO, Config, Settings] = Kleisli { cfg: Config =>
+  def seqexecConfiguration[F[_]](giapi: Giapi[F]): Kleisli[IO, Config, Settings[F]] = Kleisli { cfg: Config =>
     val site = cfg.require[String]("seqexec-engine.site") match {
       case "GS" => Site.GS
       case "GN" => Site.GN
@@ -547,7 +554,7 @@ object SeqexecEngine {
       instInit *>
       (for {
         now <- IO(LocalDate.now)
-      } yield Settings(site,
+      } yield Settings[F](site,
                        odbHost,
                        now,
                        dhsServer,
@@ -564,7 +571,8 @@ object SeqexecEngine {
                        gnirsKeywords,
                        instForceError,
                        failAt,
-                       odbQueuePollingInterval)
+                       odbQueuePollingInterval,
+                       giapi)
       )
 
 

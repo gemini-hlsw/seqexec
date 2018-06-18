@@ -216,6 +216,18 @@ package client {
         override def close: Id[Unit] = ()
       }
     }
+
+    /**
+      * Simulator interpreter on IO, Reading items will fail and all commands will succeed
+      */
+    def giapiConnectionIO: GiapiConnection[IO] = new GiapiConnection[IO] {
+      override def connect: IO[Giapi[IO]] = IO.pure(new Giapi[IO] {
+        override def get[A: ItemGetter](statusItem: String): IO[A] = IO.raiseError(new RuntimeException(s"Cannot read $statusItem"))
+        override def stream[A: ItemGetter](statusItem: String, ec: ExecutionContext): IO[Stream[IO, A]] = IO.pure(Stream.empty.covary[IO])
+        override def command(command: Command): IO[CommandResult] = IO.pure(Completed(Response.COMPLETED))
+        override def close: IO[Unit] = IO.unit
+      })
+    }
   }
 
 }
