@@ -88,6 +88,8 @@ object actions {
   final case class UpdateSkyBackground(sb: SkyBackground) extends Action
   final case class UpdateWaterVapor(wv: WaterVapor) extends Action
 
+  final case class UpdateStepsTableState(s: StepConfigTable.TableState) extends Action
+
   // Used for UI debugging
   final case class MarkStepAsRunning(s: Observation.Id, step: Int) extends Action
 

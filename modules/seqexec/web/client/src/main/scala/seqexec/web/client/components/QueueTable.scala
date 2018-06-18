@@ -15,9 +15,7 @@ import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.component.builder.Lifecycle.RenderScope
 import japgolly.scalajs.react.raw.JsNumber
 import mouse.all._
-import org.scalajs.dom.MouseEvent
 import react.virtualized._
-import react.draggable._
 import scala.math.max
 import scala.scalajs.js
 import seqexec.model.Model.{
@@ -38,9 +36,23 @@ import seqexec.web.client.semanticui.elements.icon.Icon.{
 }
 import web.client.style._
 import web.client.utils._
+import web.client.table._
+import japgolly.scalajs.react.vdom.html_<^._
+import japgolly.scalajs.react._
+import japgolly.scalajs.react.component.Scala.Unmounted
+import japgolly.scalajs.react.extra.router.RouterCtl
+import japgolly.scalajs.react.component.builder.Lifecycle.RenderScope
+import japgolly.scalajs.react.raw.JsNumber
+import react.virtualized._
+
+import scala.math.max
+import cats.implicits._
+import cats.data.NonEmptyList
+import cats.Eq
+import mouse.all._
 
 object QueueTableBody {
-  type $ = RenderScope[Props, TableState, Unit]
+  type Backend = RenderScope[Props, TableState, Unit]
 
   private val PhoneCut                 = 400
   private val LargePhoneCut            = 570
@@ -345,27 +357,6 @@ object QueueTableBody {
       ^.width := IconColumnWidth.px
   )
 
-  // Renderer for a resizable column
-  private def resizableHeaderRenderer(
-      rs: (String, JsNumber) => Callback): HeaderRenderer[js.Object] =
-    (_, dataKey: String, _, label: VdomNode, _, _) =>
-      ReactFragment.withKey(dataKey)(
-        <.div(
-          ^.cls := "ReactVirtualized__Table__headerTruncatedText",
-          label
-        ),
-        Draggable(
-          Draggable.props(
-            axis = Axis.X,
-            defaultClassName = "DragHandle",
-            defaultClassNameDragging = "DragHandleActive",
-            onDrag = (ev: MouseEvent, d: DraggableData) => rs(dataKey, d.deltaX),
-            position = ControlPosition(0)
-          ),
-          <.span(^.cls := "DragHandleIcon", "⋮")
-        )
-    )
-
   def rowClassName(p: Props)(i: Int): String =
     ((i, p.rowGetter(i)) match {
       case (-1, _) =>
@@ -383,18 +374,18 @@ object QueueTableBody {
     }).htmlClass
 
   // scalastyle:off
-  private def columns($ : $, size: Size): List[Table.ColumnArg] = {
-    val props = $.props
+  private def columns(b: Backend, size: Size): List[Table.ColumnArg] = {
+    val props = b.props
 
     // Tell the model to resize a column
     def resizeRow(c: TableColumn): (String, JsNumber) => Callback =
       (_, dx) =>
-        $.modState { s =>
+        b.modState { s =>
           val percentDelta = dx.toDouble / size.width
           s.applyOffset(c, percentDelta)
       }
 
-    $.state.visibleColumnsSizes(size).collect {
+    b.state.visibleColumnsSizes(size).collect {
       case (IconColumn, width, _) =>
         Column(
           Column.props(
@@ -487,7 +478,7 @@ object QueueTableBody {
   }
   // scalastyle:on
 
-  def table(rs: $)(size: Size): VdomNode =
+  def table(rs: Backend)(size: Size): VdomNode =
     Table(
       Table.props(
         disableHeader = false,

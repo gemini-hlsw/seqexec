@@ -116,7 +116,7 @@ lazy val ocs3 = preventPublication(project.in(file(".")))
     ui,
     giapi,
     web_server_common,
-    web_client,
+    web_client_common,
     seqexec_model_JS,
     seqexec_model_JVM,
     seqexec_engine,
@@ -349,8 +349,8 @@ lazy val web_server_common = project
     libraryDependencies ++= CatsEffect.value +: (Http4s ++ Logging)
   )
 
-// Common utilities for web clinet projects
-lazy val web_client = project
+// Common utilities for web client projects
+lazy val web_client_common = project
   .in(file("modules/shared/web/client"))
   .enablePlugins(AutomateHeaderPlugin)
   .enablePlugins(ScalaJSPlugin)
@@ -361,7 +361,12 @@ lazy val web_client = project
       // By necessity facades will have unused params
       "-Ywarn-unused:params"
     ))),
-    libraryDependencies ++= Seq(Cats.value, ScalaJSDom.value, JQuery.value) ++ ReactScalaJS.value
+    libraryDependencies ++= Seq(
+      Cats.value,
+      ScalaJSDom.value,
+      JQuery.value,
+      ScalaJSReactVirtualized.value,
+      ScalaJSReactDraggable.value) ++ ReactScalaJS.value
   )
 
 // a special crossProject for configuring a JS/JVM/shared structure
@@ -485,7 +490,6 @@ lazy val seqexec_web_client = project.in(file("modules/seqexec/web/client"))
       JavaTimeJS.value,
       JavaLogJS.value,
       ScalaJSReactVirtualized.value,
-      ScalaJSReactDraggable.value,
       ScalaJSReactClipboard.value
     ) ++ ReactScalaJS.value ++ Diode.value
   )
@@ -495,7 +499,7 @@ lazy val seqexec_web_client = project.in(file("modules/seqexec/web/client"))
     buildInfoObject := "OcsBuildInfo",
     buildInfoPackage := "seqexec.web.client"
   )
-  .dependsOn(web_client, seqexec_web_shared_JS % "compile->compile;test->test", seqexec_model_JS % "compile->compile;test->test")
+  .dependsOn(web_client_common, seqexec_web_shared_JS % "compile->compile;test->test", seqexec_model_JS % "compile->compile;test->test")
 
 // List all the modules and their inter dependencies
 lazy val seqexec_server = project
