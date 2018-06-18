@@ -24,7 +24,7 @@ addSbtPlugin("io.spray"           % "sbt-revolver"             % "0.9.1")
 addSbtPlugin("com.eed3si9n"       % "sbt-buildinfo"            % "0.7.0")
 
 // Support making distributions
-addSbtPlugin("com.typesafe.sbt"   % "sbt-native-packager"      % "1.3.3")
+addSbtPlugin("com.typesafe.sbt"   % "sbt-native-packager"      % "1.3.5")
 
 // Check the style with scalastyle
 addSbtPlugin("org.scalastyle"    %% "scalastyle-sbt-plugin"    % "1.0.0")
@@ -47,8 +47,5 @@ addSbtPlugin("com.timushev.sbt"   % "sbt-updates"              % "0.3.4")
 
 // Generate a custom tzdb
 addSbtPlugin("io.github.cquiroz"  % "sbt-tzdb"                 % "0.1.2")
-
-// Avoids a warning message when starting sbt-git
-libraryDependencies += "org.slf4j" % "slf4j-nop" % "1.7.21"
 
 onLoad in Global := { s => "dependencyUpdates" :: s }
