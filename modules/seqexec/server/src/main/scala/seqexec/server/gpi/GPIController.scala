@@ -8,16 +8,17 @@ import cats.implicits._
 import scala.concurrent.duration.Duration
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.SeqAction
+import giapi.client.gpi.GPIClient
 import squants.Time
 
-trait GPIController {
+final case class GPIController[F[_]](gpiClient: GPIClient[F]) {
   import GPIController._
 
-  def applyConfig(config: GPIConfig): SeqAction[Unit]
+  def applyConfig(config: GPIConfig): SeqAction[Unit] = ???
 
-  def observe(fileId: ImageFileId, expTime: Time): SeqAction[ImageFileId]
+  def observe(fileId: ImageFileId, expTime: Time): SeqAction[ImageFileId] = ???
 
-  def endObserve: SeqAction[Unit]
+  def endObserve: SeqAction[Unit] = ???
 }
 
 object GPIController {

@@ -6,7 +6,10 @@ package seqexec.server
 import java.time.LocalDate
 
 import cats.data.Kleisli
-import cats.effect.IO
+import cats.Id
+import cats.effect._
+import giapi.client.Giapi
+import giapi.client.gpi.GPIClient
 import seqexec.engine.{Action, Result, Sequence, Step}
 import seqexec.model.ActionType
 import seqexec.model.Model.Instrument.GmosS
@@ -17,7 +20,7 @@ import seqexec.server.gcal.GcalControllerEpics
 import seqexec.server.gmos.GmosControllerSim
 import seqexec.server.gnirs.GnirsControllerSim
 import seqexec.server.tcs.TcsControllerEpics
-import seqexec.server.gpi.GPIControllerSim
+import seqexec.server.gpi.GPIController
 import edu.gemini.spModel.core.{Peer, Site}
 import org.scalatest.FlatSpec
 import squants.time.Seconds
@@ -56,7 +59,7 @@ class SeqTranslateSpec extends FlatSpec {
   // Observe failed
   private val s5: Sequence.State = s.mark(0)(Result.Error("error"))
 
-  private val systems = SeqTranslate.Systems(
+  private val systems = SeqTranslate.Systems[Id](
     new ODBProxy(new Peer("localhost", 8443, null), ODBProxy.DummyOdbCommands),
     DhsClientSim(LocalDate.of(2016, 4, 15)),
     TcsControllerEpics,
@@ -65,13 +68,13 @@ class SeqTranslateSpec extends FlatSpec {
     GmosControllerSim.south,
     GmosControllerSim.north,
     GnirsControllerSim,
-    GPIControllerSim
+    GPIController(new GPIClient(Giapi.giapiConnectionId.connect, scala.concurrent.ExecutionContext.Implicits.global))
   )
 
   private val translatorSettings = SeqTranslate.Settings(tcsKeywords = false, f2Keywords = false, gwsKeywords = false,
     gcalKeywords = false, gmosKeywords = false, gnirsKeywords = false)
 
-  private val translator = SeqTranslate(Site.GS, systems, translatorSettings)
+  private val translator = SeqTranslate[Id](Site.GS, systems, translatorSettings)
 
   "SeqTranslate" should "trigger stopObserve command only if exposure is in progress" in {
     assert(translator.stopObserve(seqId)(s0).isDefined)

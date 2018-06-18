@@ -4,7 +4,6 @@
 package giapi.client.gpi
 
 import cats.Show
-import cats.effect.Effect
 import cats.instances.double._
 import cats.instances.int._
 import cats.syntax.show._
@@ -19,7 +18,7 @@ import scala.concurrent.ExecutionContext
 /**
   * Client for GPI
   */
-class GPIClient[F[_]: Effect](giapi: Giapi[F], ec: ExecutionContext) {
+class GPIClient[F[_]](giapi: Giapi[F], ec: ExecutionContext) {
 
   ///////////////
   // Status items

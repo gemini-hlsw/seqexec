@@ -18,7 +18,7 @@ import cats.implicits._
 import cats.data.Reader
 import squants.time.{Seconds, Time}
 
-final case class GPI(controller: GPIController) extends InstrumentSystem {
+final case class GPI[F[_]](controller: GPIController[F]) extends InstrumentSystem {
   override val resource: Resource = Instrument.GPI
 
   override val sfName: String = GPI.sfName

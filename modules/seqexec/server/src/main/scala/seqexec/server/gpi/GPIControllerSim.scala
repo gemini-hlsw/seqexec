@@ -14,21 +14,22 @@ import squants.Time
 /**
  * Simulator for GPI
  */
-object GPIControllerSim extends GPIController {
+object GPIControllerSim {
   private val Log = getLogger
 
-  override def observe(fileId: ImageFileId, expTime: Time): SeqAction[ImageFileId] = EitherT( IO {
+  def observe(fileId: ImageFileId, expTime: Time): SeqAction[ImageFileId] = EitherT( IO {
     Thread.sleep(5000)
+    println(expTime)
     TrySeq(fileId)
   } )
 
-  override def applyConfig(config: GPIConfig): SeqAction[Unit] = EitherT( IO {
+  def applyConfig(config: GPIConfig): SeqAction[Unit] = EitherT( IO {
     Log.info(s"Applying GPI configuration $config")
     TrySeq(())
   } )
 
-  override def endObserve = EitherT( IO {
-    Log.info("Sending endObserve to GPI")
-    TrySeq(())
-  } )
+  // def endObserve = EitherT( IO {
+  //   Log.info("Sending endObserve to GPI")
+  //   TrySeq(())
+  // } )
 }

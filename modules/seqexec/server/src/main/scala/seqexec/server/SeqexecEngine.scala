@@ -24,7 +24,7 @@ import seqexec.server.flamingos2.{Flamingos2ControllerEpics, Flamingos2Controlle
 import seqexec.server.gcal.{GcalControllerEpics, GcalControllerSim, GcalEpics}
 import seqexec.server.gmos.{GmosControllerSim, GmosEpics, GmosNorthControllerEpics, GmosSouthControllerEpics}
 import seqexec.server.gnirs.{GnirsControllerEpics, GnirsControllerSim, GnirsEpics}
-import seqexec.server.gpi.GPIControllerSim
+import seqexec.server.gpi.GPIController
 import seqexec.server.gws.GwsEpics
 import seqexec.server.tcs.{TcsControllerEpics, TcsControllerSim, TcsEpics}
 import edu.gemini.seqexec.odb.SmartGcal
@@ -45,7 +45,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     if (settings.odbNotifications) ODBProxy.OdbCommandsImpl(new Peer(settings.odbHost, 8442, null))
     else ODBProxy.DummyOdbCommands)
 
-  private val systems = SeqTranslate.Systems(
+  private val systems = SeqTranslate.Systems[IO](
     odbProxy,
     if (settings.dhsSim) DhsClientSim(settings.date) else DhsClientHttp(settings.dhsURI),
     if (settings.tcsSim) TcsControllerSim else TcsControllerEpics,
@@ -57,7 +57,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     if (settings.instSim) GmosControllerSim.south else GmosSouthControllerEpics,
     if (settings.instSim) GmosControllerSim.north else GmosNorthControllerEpics,
     if (settings.instSim) GnirsControllerSim else GnirsControllerEpics,
-    GPIControllerSim
+    GPIController(null)
   )
 
   private val translatorSettings = SeqTranslate.Settings(
@@ -69,7 +69,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     gnirsKeywords = settings.gnirsKeywords
   )
 
-  private val translator = SeqTranslate(settings.site, systems, translatorSettings)
+  private val translator = SeqTranslate[IO](settings.site, systems, translatorSettings)
 
   def load(q: EventQueue, seqId: SPObservationID): IO[Either[SeqexecFailure, Unit]] =
     loadEvents(seqId).flatMapF(b => q.enqueue(Stream.emits(b)).map(_.asRight).compile.last.attempt.map(_.bimap(SeqexecFailure.SeqexecException.apply, _ => ()))).value

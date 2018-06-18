@@ -38,7 +38,7 @@ import squants.Time
 import fs2.Stream
 import mouse.all._
 
-class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
+class SeqTranslate[F[_]](site: Site, systems: Systems[F], settings: Settings) {
   private val Log = getLogger
 
   implicit val show: Show[InstrumentSystem] = Show.show(_.resource.show)
@@ -409,9 +409,9 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
 }
 
 object SeqTranslate {
-  def apply(site: Site, systems: Systems, settings: Settings): SeqTranslate = new SeqTranslate(site, systems, settings)
+  def apply[F[_]](site: Site, systems: Systems[F], settings: Settings): SeqTranslate[F] = new SeqTranslate[F](site, systems, settings)
 
-  final case class Systems(
+  final case class Systems[F[_]](
                       odb: ODBProxy,
                       dhs: DhsClient,
                       tcs: TcsController,
@@ -420,7 +420,7 @@ object SeqTranslate {
                       gmosSouth: GmosController.GmosSouthController,
                       gmosNorth: GmosController.GmosNorthController,
                       gnirs: GnirsController,
-                      gpi: GPIController
+                      gpi: GPIController[F]
                     )
 
   final case class Settings(

@@ -3,10 +3,12 @@
 
 package giapi
 
-import cats.Applicative
+import cats.{Applicative, Id}
 import cats.effect._
 import cats.implicits._
 import edu.gemini.aspen.giapi.commands.Command
+import giapi.client.commands.Completed
+import edu.gemini.aspen.giapi.commands.HandlerResponse.Response
 import edu.gemini.aspen.giapi.status.{StatusHandler, StatusItem}
 import edu.gemini.aspen.giapi.statusservice.{StatusHandlerAggregate, StatusService}
 import edu.gemini.aspen.giapi.util.jms.status.StatusGetter
@@ -59,7 +61,7 @@ package client {
     * @tparam F Effect type
     */
   trait GiapiConnection[F[_]] {
-    def connect(implicit ev: Sync[F]): F[Giapi[F]]
+    def connect: F[Giapi[F]]
   }
 
   /**
@@ -72,7 +74,7 @@ package client {
     /**
       * Returns a value for the status item. If not found or there is an error, an exception could be thrown
       */
-    def get[A: ItemGetter](statusItem: String)(implicit ev: Sync[F]): F[A]
+    def get[A: ItemGetter](statusItem: String): F[A]
 
     /**
       * Executes a command as defined on GIAPI
@@ -83,17 +85,17 @@ package client {
       *
       * This decision may be review in the future
       */
-    def command(command: Command)(implicit ev: Async[F]): F[CommandResult]
+    def command(command: Command): F[CommandResult]
 
     /**
       * Returns a stream of values for the status item.
       */
-    def stream[A: ItemGetter](statusItem: String, ec: ExecutionContext)(implicit ev: Effect[F]): F[Stream[F, A]]
+    def stream[A: ItemGetter](statusItem: String, ec: ExecutionContext): F[Stream[F, A]]
 
     /**
       * Close the connection
       */
-    def close(implicit ev: Sync[F]): F[Unit]
+    def close: F[Unit]
   }
 
   /**
@@ -156,28 +158,28 @@ package client {
       * @param url Url to connect to
       * @tparam F Effect type
       */
-    def giapiConnection[F[_]](url: String, commandsTimeout: Duration): GiapiConnection[F] =
+    def giapiConnection[F[_]: Async: Effect](url: String, commandsTimeout: Duration): GiapiConnection[F] =
       new GiapiConnection[F] {
         private def giapi(c: ActiveMQJmsProvider,
                           sg: StatusGetter,
                           cc: CommandSenderClient,
                           ss: StatusStreamer) =
           new Giapi[F] {
-            override def get[A: ItemGetter](statusItem: String)(implicit ev: Sync[F]): F[A] =
+            override def get[A: ItemGetter](statusItem: String): F[A] =
               Sync[F].delay {
                 val item = sg.getStatusItem[A](statusItem)
                 // Note item.getValue can throw if e.g. the item is unknown
                 item.getValue
               }
 
-            override def command(command: Command)(implicit ev: Async[F]): F[CommandResult] =
+            override def command(command: Command): F[CommandResult] =
               commands.sendCommand(cc, command, commandsTimeout)
 
             override def stream[A: ItemGetter](statusItem: String,
-                                               ec: ExecutionContext)(implicit ev: Effect[F]): F[Stream[F, A]] =
+                                               ec: ExecutionContext): F[Stream[F, A]] =
               streamItem[F, A](ss.aggregate, statusItem, ec)
 
-            override def close(implicit ev: Sync[F]): F[Unit] =
+            override def close: F[Unit] =
               for {
                 _ <- Sync[F].delay(sg.stopJms())
                 _ <- Sync[F].delay(ss.ss.stopJms())
@@ -186,7 +188,7 @@ package client {
 
           }
 
-        private def build(ref: async.Ref[F, ActiveMQJmsProvider])(implicit ev: Sync[F]): F[Giapi[F]] =
+        private def build(ref: async.Ref[F, ActiveMQJmsProvider]): F[Giapi[F]] =
           for {
             c  <- ref.get
             sg <- statusGetter[F](c)
@@ -194,7 +196,7 @@ package client {
             ss <- statusStreamer[F](c)
           } yield giapi(c, sg, cc, ss)
 
-        def connect(implicit ev: Sync[F]): F[Giapi[F]] =
+        def connect: F[Giapi[F]] =
           for {
             c   <- Sync[F].delay(new ActiveMQJmsProvider(url)) // Build the connection
             ref <- async.refOf(c)                              // store a reference
@@ -202,6 +204,18 @@ package client {
             c   <- build(ref)                                  // Build the interpreter
           } yield c
       }
+
+    /**
+      * Interpreter on Id
+      */
+    def giapiConnectionId: GiapiConnection[Id] = new GiapiConnection[Id] {
+      override def connect: Id[Giapi[Id]] = new Giapi[Id] {
+        override def get[A: ItemGetter](statusItem: String): Id[A] = sys.error(s"Cannot read $statusItem")
+        override def stream[A: ItemGetter](statusItem: String, ec: ExecutionContext): Id[Stream[Id, A]] = Stream.raiseError(new RuntimeException(s"Cannot read $statusItem"))
+        override def command(command: Command): Id[CommandResult] = Completed(Response.COMPLETED)
+        override def close: Id[Unit] = ()
+      }
+    }
   }
 
 }
