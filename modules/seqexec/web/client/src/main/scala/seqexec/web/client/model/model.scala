@@ -104,8 +104,8 @@ object model {
       copy(instrumentSequences = instrumentSequences.modify(_.copy(stepConfigDisplayed = None)))
 
     def focusOnSequence(s: RefTo[Option[SequenceView]]): SequencesOnDisplay = {
-      // Replace the sequence for the instrument or the completed sequence
-      val q = instrumentSequences.findFocus(i => s().exists(_.metadata.instrument === i.instrument)).map(_.modify(_.copy(currentSequence = s)))
+      // Replace the sequence for the instrument or the completed sequence and reset displaying a step
+      val q = instrumentSequences.findFocus(i => s().exists(_.metadata.instrument === i.instrument)).map(_.modify(_.copy(currentSequence = s, stepConfigDisplayed = None)))
       copy(instrumentSequences = q.getOrElse(instrumentSequences))
     }
 
