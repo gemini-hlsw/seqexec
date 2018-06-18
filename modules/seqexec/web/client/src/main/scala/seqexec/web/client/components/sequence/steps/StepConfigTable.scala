@@ -54,8 +54,8 @@ object StepConfigTable {
 
   private def columns(p: Props): List[Table.ColumnArg] =
     List(
-      Column(Column.props(p.size.width.toInt / 2, "name", label = "Name")),
-      Column(Column.props(p.size.width.toInt / 2, "value", label = "Value"))
+      Column(Column.props(p.size.width.toInt / 2, "name", label = "Name", flexShrink = 0, flexGrow = 0, className = SeqexecStyles.paddedStepRow.htmlClass)),
+      Column(Column.props(p.size.width.toInt / 2, "value", label = "Value", flexShrink = 0, flexGrow = 0, className = SeqexecStyles.paddedStepRow.htmlClass))
     )
 
   def rowClassName(p: Props)(i: Int): String = ((i, p.rowGetter(i)) match {
