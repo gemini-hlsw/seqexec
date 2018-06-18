@@ -616,8 +616,9 @@ lazy val seqexecCommonSettings = Seq(
     "-J-Xdebug",
     "-J-Xnoagent",
     "-J-verbose:gc",
-    "-J-XX:+PrintGCDetails",
-    "-J-XX:+PrintGCTimeStamps",
+    // These are very verbose but could be useful when tracking momeroy leaks
+    // "-J-XX:+PrintGCDetails",
+    // "-J-XX:+PrintGCTimeStamps",
     "-J-XX:+HeapDumpOnOutOfMemoryError",
     // Make sure the application exits on OOM
     "-J-XX:+ExitOnOutOfMemoryError",
