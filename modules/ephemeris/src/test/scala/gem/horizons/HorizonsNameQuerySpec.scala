@@ -83,6 +83,12 @@ final class HorizonsNameQuerySpec extends CatsSuite with RespectIncludeTags {
     ).asRight
   }
 
+  test("asteroid search should handle single result (Format 5) 1I/'Oumuamua (A/2017 U1)", RequiresNetwork) {
+    runSearch(Search.Asteroid("A/2017 U1")) shouldEqual List(
+      Resolution(EK.AsteroidNew("A/2017 U1"), "A/2017 U1")
+    ).asRight
+  }
+
   test("major body search should handle empty results", RequiresNetwork) {
     runSearch(Search.MajorBody("covfefe")) shouldEqual Nil.asRight
   }
