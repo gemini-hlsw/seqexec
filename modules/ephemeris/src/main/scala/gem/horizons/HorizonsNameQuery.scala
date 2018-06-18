@@ -197,12 +197,26 @@ object HorizonsNameQuery {
           List(Resolution(EphemerisKey.AsteroidNew(m.group(1)) : EphemerisKey.Asteroid, m.group(1)))
         }.toRight("Could not match '418993 (2009 MS9)' header pattern.")
 
+      // Single result with form: JPL/HORIZONS              1I/'Oumuamua (A/2017 U1)         2018-Apr-16 18:28:59
+      def case5: ParsedAsteroids =
+        """  +\S+\s+\((A/.+?)\)  """.r.findFirstMatchIn(header).map { m =>
+          List(Resolution(EphemerisKey.AsteroidNew(m.group(1)) : EphemerisKey.Asteroid, m.group(1)))
+        }.toRight("Could not match '1I/'Oumuamua (A/2017 U1)' header pattern.")
+
+      // Single result with form: JPL/HORIZONS     A/2017 U7     2015-Dec-31 11:40:21
+      def case6: ParsedAsteroids =
+        """  +(A/\d+ [^(]+?)  """.r.findFirstMatchIn(header).map { m =>
+          List(Resolution(EphemerisKey.AsteroidNew(m.group(1)) : EphemerisKey.Asteroid, m.group(1)))
+        }.toRight("Could not match 'A/2017 U7' header pattern.")
+
       // First one that works!
       case0 orElse
       case1 orElse
       case2 orElse
       case3 orElse
-      case4 orElse "Could not parse the header line as an asteroid".asLeft
+      case4 orElse
+      case5 orElse
+      case6 orElse "Could not parse the header line as an asteroid".asLeft
     }
     // scalastyle:on method.length
 
