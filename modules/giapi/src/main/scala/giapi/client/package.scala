@@ -158,7 +158,7 @@ package client {
       * @param url Url to connect to
       * @tparam F Effect type
       */
-    def giapiConnection[F[_]: Async: Effect](url: String, commandsTimeout: Duration): GiapiConnection[F] =
+    def giapiConnection[F[_]: Effect](url: String, commandsTimeout: Duration): GiapiConnection[F] =
       new GiapiConnection[F] {
         private def giapi(c: ActiveMQJmsProvider,
                           sg: StatusGetter,

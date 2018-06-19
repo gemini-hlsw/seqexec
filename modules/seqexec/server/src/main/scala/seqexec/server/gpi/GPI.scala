@@ -18,7 +18,7 @@ import cats.implicits._
 import cats.data.Reader
 import squants.time.{Seconds, Time}
 
-final case class GPI[F[_]](controller: GPIController[F]) extends InstrumentSystem {
+final case class GPI[F[_]](controller: GPIController) extends InstrumentSystem {
   override val resource: Resource = Instrument.GPI
 
   override val sfName: String = GPI.sfName
@@ -30,7 +30,7 @@ final case class GPI[F[_]](controller: GPIController[F]) extends InstrumentSyste
   override val observeControl: InstrumentSystem.ObserveControl = InstrumentSystem.Uncontrollable
 
   override def observe(config: Config): SeqObserve[ImageFileId, ObserveCommand.Result] = Reader {
-    fileId => controller.observe(fileId, calcObserveTime(config)).map(_ => ObserveCommand.Success)
+    fileId => controller.observe(fileId).map(_ => ObserveCommand.Success)
   }
 
   override def configure(config: Config): SeqAction[ConfigResult] =

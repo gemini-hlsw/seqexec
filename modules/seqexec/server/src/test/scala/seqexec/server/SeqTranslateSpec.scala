@@ -6,7 +6,6 @@ package seqexec.server
 import java.time.LocalDate
 
 import cats.data.Kleisli
-import cats.Id
 import cats.effect._
 import giapi.client.Giapi
 import giapi.client.gpi.GPIClient
@@ -59,7 +58,7 @@ class SeqTranslateSpec extends FlatSpec {
   // Observe failed
   private val s5: Sequence.State = s.mark(0)(Result.Error("error"))
 
-  private val systems = SeqTranslate.Systems[Id](
+  private val systems = SeqTranslate.Systems(
     new ODBProxy(new Peer("localhost", 8443, null), ODBProxy.DummyOdbCommands),
     DhsClientSim(LocalDate.of(2016, 4, 15)),
     TcsControllerEpics,
@@ -68,13 +67,13 @@ class SeqTranslateSpec extends FlatSpec {
     GmosControllerSim.south,
     GmosControllerSim.north,
     GnirsControllerSim,
-    GPIController(new GPIClient(Giapi.giapiConnectionId.connect, scala.concurrent.ExecutionContext.Implicits.global))
+    GPIController(new GPIClient(Giapi.giapiConnectionIO.connect.unsafeRunSync, scala.concurrent.ExecutionContext.Implicits.global))
   )
 
   private val translatorSettings = SeqTranslate.Settings(tcsKeywords = false, f2Keywords = false, gwsKeywords = false,
     gcalKeywords = false, gmosKeywords = false, gnirsKeywords = false)
 
-  private val translator = SeqTranslate[Id](Site.GS, systems, translatorSettings)
+  private val translator = SeqTranslate(Site.GS, systems, translatorSettings)
 
   "SeqTranslate" should "trigger stopObserve command only if exposure is in progress" in {
     assert(translator.stopObserve(seqId)(s0).isDefined)

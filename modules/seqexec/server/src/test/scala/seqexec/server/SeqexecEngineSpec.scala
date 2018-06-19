@@ -9,16 +9,40 @@ import edu.gemini.pot.sp.SPObservationID
 import seqexec.engine
 import seqexec.engine.Result.PauseContext
 import seqexec.engine._
+import seqexec.server.SeqexecEngine.Settings
 import seqexec.model.Model.{ActionStatus, CloudCover, Conditions, ImageQuality, Instrument, Operator, Resource, SequenceMetadata, SequenceState, SkyBackground, WaterVapor}
 import seqexec.model.{ActionType, UserDetails}
 import fs2.{Pure, Stream, async}
 import org.scalatest.Inside.inside
 import org.scalatest.{FlatSpec, Matchers}
-
+import edu.gemini.spModel.core.Site
+import java.time.LocalDate
+import giapi.client.Giapi
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration._
 
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 class SeqexecEngineSpec extends FlatSpec with Matchers {
+  private val defaultSettings = Settings(Site.GS,
+    "localhost",
+    LocalDate.of(2017, 1, 1),
+    "http://localhost/",
+    dhsSim = true,
+    tcsSim = true,
+    instSim = true,
+    gcalSim = true,
+    odbNotifications = false,
+    tcsKeywords = false,
+    f2Keywords = false,
+    gmosKeywords = false,
+    gwsKeywords = false,
+    gcalKeywords = false,
+    gnirsKeywords = false,
+    instForceError = false,
+    failAt = 0,
+    10.seconds,
+    Giapi.giapiConnectionIO.connect.unsafeRunSync)
+
   def configureIO(resource: Resource): IO[Result] = IO.apply(Result.OK(Result.Configured(resource)))
   def pendingAction(resource: Resource): Action =
     engine.fromIO(ActionType.Configure(resource), configureIO(resource))
@@ -135,7 +159,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers {
       SeqexecEngine.observeStatus(executions) shouldBe ActionStatus.Paused
     }
 
-  private val seqexecEngine = SeqexecEngine(SeqexecEngine.defaultSettings)
+  private val seqexecEngine = SeqexecEngine(defaultSettings)
   private def advanceOne(q: EventQueue, s0: executeEngine.StateType, put: IO[Either[SeqexecFailure, Unit]]): Stream[Pure, Option[executeEngine.StateType]] =
     Stream.emit((put *> executeEngine.process(q.dequeue)(s0).take(1).compile.last).unsafeRunSync.map(_._2))
 

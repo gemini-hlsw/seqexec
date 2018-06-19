@@ -7,7 +7,7 @@ import cats.Show
 import cats.instances.double._
 import cats.instances.int._
 import cats.syntax.show._
-import edu.gemini.aspen.giapi.commands.{Activity, Command, DefaultConfiguration, SequenceCommand}
+import edu.gemini.aspen.giapi.commands.{Activity, Command, Configuration, DefaultConfiguration, SequenceCommand}
 import fs2.Stream
 import giapi.client.commands.CommandResult
 import giapi.client.{Giapi, commands}
@@ -154,6 +154,14 @@ class GPIClient[F[_]](giapi: Giapi[F], ec: ExecutionContext) {
           .withConfiguration("gpi:configIfs.numCoadds", coAdds.show)
           .withConfiguration("gpi:configIfs.readoutMode", readoutMode.show)
           .build()
+      ))
+
+  def genericApply(configuration: Configuration): F[CommandResult] =
+    giapi.command(
+      new Command(
+        SequenceCommand.APPLY,
+        Activity.PRESET_START,
+        configuration
       ))
 }
 

@@ -38,7 +38,7 @@ import squants.Time
 import fs2.Stream
 import mouse.all._
 
-class SeqTranslate[F[_]](site: Site, systems: Systems[F], settings: Settings) {
+class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
   private val Log = getLogger
 
   implicit val show: Show[InstrumentSystem] = Show.show(_.resource.show)
@@ -365,7 +365,7 @@ class SeqTranslate[F[_]](site: Site, systems: Systems[F], settings: Settings) {
   private def calcInstHeader(config: Config, inst: Model.Instrument): TrySeq[Header] = {
     val tcsKReader = if (settings.tcsKeywords) TcsKeywordsReaderImpl else DummyTcsKeywordsReader
     inst match {
-      case Model.Instrument.F2     =>  TrySeq(Flamingos2Header(systems.dhs, new Flamingos2Header.ObsKeywordsReaderImpl(config),
+      case Model.Instrument.F2     => TrySeq(Flamingos2Header(systems.dhs, new Flamingos2Header.ObsKeywordsReaderImpl(config),
         tcsKReader))
       case Model.Instrument.GmosS |
            Model.Instrument.GmosN  =>
@@ -374,9 +374,8 @@ class SeqTranslate[F[_]](site: Site, systems: Systems[F], settings: Settings) {
       case Model.Instrument.GNIRS  =>
         val gnirsReader = if(settings.gnirsKeywords) GnirsKeywordReaderImpl else GnirsKeywordReaderDummy
         TrySeq(GnirsHeader(systems.dhs, gnirsReader, tcsKReader))
-      case Model.Instrument.GPI    =>
-        TrySeq(GPIHeader(tcsKReader))
-      case _                       =>  TrySeq.fail(Unexpected(s"Instrument3 $inst not supported."))
+      case Model.Instrument.GPI    => TrySeq(GPIHeader(tcsKReader))
+      case _                       => TrySeq.fail(Unexpected(s"Instrument3 $inst not supported."))
     }
   }
 
@@ -409,9 +408,9 @@ class SeqTranslate[F[_]](site: Site, systems: Systems[F], settings: Settings) {
 }
 
 object SeqTranslate {
-  def apply[F[_]](site: Site, systems: Systems[F], settings: Settings): SeqTranslate[F] = new SeqTranslate[F](site, systems, settings)
+  def apply(site: Site, systems: Systems, settings: Settings): SeqTranslate = new SeqTranslate(site, systems, settings)
 
-  final case class Systems[F[_]](
+  final case class Systems(
                       odb: ODBProxy,
                       dhs: DhsClient,
                       tcs: TcsController,
@@ -420,7 +419,7 @@ object SeqTranslate {
                       gmosSouth: GmosController.GmosSouthController,
                       gmosNorth: GmosController.GmosNorthController,
                       gnirs: GnirsController,
-                      gpi: GPIController[F]
+                      gpi: GPIController
                     )
 
   final case class Settings(

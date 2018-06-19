@@ -40,14 +40,14 @@ import mouse.all._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
-class SeqexecEngine[F[_]](settings: SeqexecEngine.Settings[F]) {
+class SeqexecEngine(settings: SeqexecEngine.Settings) {
   import SeqexecEngine._
 
   val odbProxy: ODBProxy = new ODBProxy(new Peer(settings.odbHost, 8443, null),
     if (settings.odbNotifications) ODBProxy.OdbCommandsImpl(new Peer(settings.odbHost, 8442, null))
     else ODBProxy.DummyOdbCommands)
 
-  private val systems = SeqTranslate.Systems[F](
+  private val systems = SeqTranslate.Systems(
     odbProxy,
     if (settings.dhsSim) DhsClientSim(settings.date) else DhsClientHttp(settings.dhsURI),
     if (settings.tcsSim) TcsControllerSim else TcsControllerEpics,
@@ -71,7 +71,7 @@ class SeqexecEngine[F[_]](settings: SeqexecEngine.Settings[F]) {
     gnirsKeywords = settings.gnirsKeywords
   )
 
-  private val translator = SeqTranslate[F](settings.site, systems, translatorSettings)
+  private val translator = SeqTranslate(settings.site, systems, translatorSettings)
 
   def load(q: EventQueue, seqId: SPObservationID): IO[Either[SeqexecFailure, Unit]] =
     loadEvents(seqId).flatMapF(b => q.enqueue(Stream.emits(b)).map(_.asRight).compile.last.attempt.map(_.bimap(SeqexecFailure.SeqexecException.apply, _ => ()))).value
@@ -337,7 +337,7 @@ class SeqexecEngine[F[_]](settings: SeqexecEngine.Settings[F]) {
 
 // Configuration stuff
 object SeqexecEngine {
-  final case class Settings[F[_]](site: Site,
+  final case class Settings(site: Site,
                       odbHost: String,
                       date: LocalDate,
                       dhsURI: String,
@@ -355,28 +355,8 @@ object SeqexecEngine {
                       instForceError: Boolean,
                       failAt: Int,
                       odbQueuePollingInterval: Duration,
-                      giapi: Giapi[F])
-  def apply[F[_]](settings: Settings[F]): SeqexecEngine[F] = new SeqexecEngine(settings)
-
-  def defaultSettings[F[_]]: Settings[F] = Settings[F](Site.GS,
-    "localhost",
-    LocalDate.of(2017, 1, 1),
-    "http://localhost/",
-    dhsSim = true,
-    tcsSim = true,
-    instSim = true,
-    gcalSim = true,
-    odbNotifications = false,
-    tcsKeywords = false,
-    f2Keywords = false,
-    gmosKeywords = false,
-    gwsKeywords = false,
-    gcalKeywords = false,
-    gnirsKeywords = false,
-    instForceError = false,
-    failAt = 0,
-    10.seconds,
-    null)
+                      giapi: Giapi[IO])
+  def apply(settings: Settings): SeqexecEngine = new SeqexecEngine(settings)
 
   // Couldn't find this on Scalaz
   def splitWhere[A](l: List[A])(p: (A => Boolean)): (List[A], List[A]) =
@@ -483,8 +463,9 @@ object SeqexecEngine {
   def giapiConnection: Kleisli[IO, Config, Giapi[IO]] = Kleisli { cfg: Config =>
     Giapi.giapiConnectionIO.connect
   }
+
   // scalastyle:off
-  def seqexecConfiguration[F[_]](giapi: Giapi[F]): Kleisli[IO, Config, Settings[F]] = Kleisli { cfg: Config =>
+  def seqexecConfiguration(giapi: Giapi[IO]): Kleisli[IO, Config, Settings] = Kleisli { cfg: Config =>
     val site = cfg.require[String]("seqexec-engine.site") match {
       case "GS" => Site.GS
       case "GN" => Site.GN
@@ -554,7 +535,7 @@ object SeqexecEngine {
       instInit *>
       (for {
         now <- IO(LocalDate.now)
-      } yield Settings[F](site,
+      } yield Settings(site,
                        odbHost,
                        now,
                        dhsServer,

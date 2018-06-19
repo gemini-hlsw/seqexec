@@ -4,21 +4,42 @@
 package seqexec.server.gpi
 
 import cats.{Eq, Show}
+import cats.data.EitherT
+import cats.effect.IO
 import cats.implicits._
 import scala.concurrent.duration.Duration
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.SeqAction
+import giapi.client.commands.CommandResult
 import giapi.client.gpi.GPIClient
-import squants.Time
+import org.log4s.getLogger
+import edu.gemini.aspen.giapi.commands.{DefaultConfiguration}
+import mouse.boolean._
 
-final case class GPIController[F[_]](gpiClient: GPIClient[F]) {
+final case class GPIController(gpiClient: GPIClient[IO]) {
   import GPIController._
+  private val Log = getLogger
 
-  def applyConfig(config: GPIConfig): SeqAction[Unit] = ???
+  def gpiConfig(config: GPIConfig): SeqAction[CommandResult] = {
+    val giapiApply = DefaultConfiguration
+          .configurationBuilder()
+          .withConfiguration("gpi:selectAdc.deploy", (config.adc === edu.gemini.spModel.gemini.gpi.Gpi.Adc.IN).fold(1, 0).show)
+    EitherT.liftF(gpiClient.genericApply(giapiApply.build()))
+  }
 
-  def observe(fileId: ImageFileId, expTime: Time): SeqAction[ImageFileId] = ???
+  def applyConfig(config: GPIConfig): SeqAction[Unit] =
+    for {
+      _ <- EitherT.liftF(IO.apply(Log.debug("Start GPI configuration")))
+      _ <- EitherT.liftF(IO.apply(Log.debug(s"GPI configuration $config")))
+      _ <- gpiConfig(config)
+      _ <- EitherT.liftF(IO(Log.debug("Completed GPI configuration")))
+    } yield ()
 
-  def endObserve: SeqAction[Unit] = ???
+  def observe(fileId: ImageFileId): SeqAction[ImageFileId] =
+    EitherT(gpiClient.observe(fileId).map(_ => fileId.asRight))
+
+  def endObserve: SeqAction[Unit] =
+    SeqAction.void
 }
 
 object GPIController {
