@@ -320,7 +320,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     case Model.Instrument.GmosN => TrySeq(GmosNorth(systems.gmosNorth))
     case Model.Instrument.GNIRS => TrySeq(Gnirs(systems.gnirs))
     case Model.Instrument.GPI   => TrySeq(GPI(systems.gpi))
-    case _                      => TrySeq.fail(Unexpected(s"Instrument2 $inst not supported."))
+    case _                      => TrySeq.fail(Unexpected(s"Instrument $inst not supported."))
   }
 
   private def calcResources(sys: List[System]): Set[Resource] = sys.map(resourceFromSystem).toSet
@@ -375,7 +375,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
         val gnirsReader = if(settings.gnirsKeywords) GnirsKeywordReaderImpl else GnirsKeywordReaderDummy
         TrySeq(GnirsHeader(systems.dhs, gnirsReader, tcsKReader))
       case Model.Instrument.GPI    => TrySeq(GPIHeader(tcsKReader))
-      case _                       => TrySeq.fail(Unexpected(s"Instrument3 $inst not supported."))
+      case _                       => TrySeq.fail(Unexpected(s"Instrument $inst not supported."))
     }
   }
 
@@ -442,7 +442,7 @@ object SeqTranslate {
       case GmosSouth.name  => TrySeq(Model.Instrument.GmosS)
       case GmosNorth.name  => TrySeq(Model.Instrument.GmosN)
       case Gnirs.name      => TrySeq(Model.Instrument.GNIRS)
-      case "GPI"=> TrySeq(Model.Instrument.GPI)
+      case GPI.name        => TrySeq(Model.Instrument.GPI)
       case ins             => TrySeq.fail(UnrecognizedInstrument(s"inst $ins"))
     }
   }

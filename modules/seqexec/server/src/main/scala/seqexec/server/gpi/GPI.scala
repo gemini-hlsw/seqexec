@@ -27,18 +27,29 @@ final case class GPI[F[_]](controller: GPIController) extends InstrumentSystem {
 
   override val dhsInstrumentName: String = "GPI"
 
-  override val observeControl: InstrumentSystem.ObserveControl = InstrumentSystem.Uncontrollable
+  override val observeControl: InstrumentSystem.ObserveControl =
+    InstrumentSystem.Uncontrollable
 
-  override def observe(config: Config): SeqObserve[ImageFileId, ObserveCommand.Result] = Reader {
-    fileId => controller.observe(fileId).map(_ => ObserveCommand.Success)
+  override def observe(
+      config: Config): SeqObserve[ImageFileId, ObserveCommand.Result] = Reader {
+    fileId =>
+      controller.observe(fileId).map(_ => ObserveCommand.Success)
   }
 
   override def configure(config: Config): SeqAction[ConfigResult] =
-    GPI.fromSequenceConfig[IO](config).flatMap(controller.applyConfig).map(_ => ConfigResult(this))
+    GPI
+      .fromSequenceConfig[IO](config)
+      .flatMap(controller.applyConfig)
+      .map(_ => ConfigResult(this))
 
   override def notifyObserveEnd: SeqAction[Unit] = controller.endObserve
 
-  override def calcObserveTime(config: Config): Time = config.extract(OBSERVE_KEY / EXPOSURE_TIME_PROP).as[java.lang.Double].map(x => Seconds(x.toDouble)).getOrElse(Seconds(360))
+  override def calcObserveTime(config: Config): Time =
+    config
+      .extract(OBSERVE_KEY / EXPOSURE_TIME_PROP)
+      .as[java.lang.Double]
+      .map(x => Seconds(x.toDouble))
+      .getOrElse(Seconds(360))
 }
 
 object GPI {

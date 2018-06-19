@@ -22,8 +22,12 @@ final case class GPIController(gpiClient: GPIClient[IO]) {
 
   def gpiConfig(config: GPIConfig): SeqAction[CommandResult] = {
     val giapiApply = DefaultConfiguration
-          .configurationBuilder()
-          .withConfiguration("gpi:selectAdc.deploy", (config.adc === edu.gemini.spModel.gemini.gpi.Gpi.Adc.IN).fold(1, 0).show)
+      .configurationBuilder()
+      .withConfiguration(
+        "gpi:selectAdc.deploy",
+        (config.adc === edu.gemini.spModel.gemini.gpi.Gpi.Adc.IN)
+          .fold(1, 0)
+          .show)
     EitherT.liftF(gpiClient.genericApply(giapiApply.build()))
   }
 
