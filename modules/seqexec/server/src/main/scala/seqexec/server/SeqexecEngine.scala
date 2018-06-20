@@ -461,7 +461,13 @@ object SeqexecEngine {
   }
 
   def giapiConnection: Kleisli[IO, Config, Giapi[IO]] = Kleisli { cfg: Config =>
-    Giapi.giapiConnectionIO.connect
+    val instSim = cfg.require[Boolean]("seqexec-engine.instSim")
+    val gpiUrl  = cfg.require[String]("seqexec-engine.gpiUrl")
+    if (instSim) {
+      Giapi.giapiConnectionIO.connect
+    } else {
+      Giapi.giapiConnection[IO](gpiUrl, 2000.millis).connect
+    }
   }
 
   // scalastyle:off

@@ -180,16 +180,15 @@ object WebServerLauncher extends StreamApp[IO] with LogInitialization {
     // It's not very clear why we need to run this inside a Scheduler
     Scheduler[IO](corePoolSize = 4).flatMap { implicit S =>
       for {
-        inq <- Stream.eval(async.boundedQueue[IO, executeEngine.EventType](10))
-        out <- Stream.eval(async.topic[IO, SeqexecEvent](NullEvent))
-        // TODO Run these inside a stream
-        engine = engineIO.unsafeRunSync()
-        ws = webServerIO(inq, out, engine).unsafeRunSync()
-        ws <- Stream(
-          engine.eventStream(inq).to(out.publish),
-          ws
-        ).join(2).drain  ++ Stream.emit(ExitCode.Success)
-      } yield ws
+        inq    <- Stream.eval(async.boundedQueue[IO, executeEngine.EventType](10))
+        out    <- Stream.eval(async.topic[IO, SeqexecEvent](NullEvent))
+        engine <- Stream.eval(engineIO)
+        web    <- Stream.eval(webServerIO(inq, out, engine))
+        exit   <- Stream(
+                    engine.eventStream(inq).to(out.publish),
+                    web
+                  ).join(2).drain ++ Stream.emit(ExitCode.Success)
+      } yield exit
     }
   }
 
