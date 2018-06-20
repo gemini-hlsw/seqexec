@@ -404,7 +404,7 @@ lazy val seqexec_web_client = project.in(file("modules/seqexec/web/client"))
     webpackBundlingMode in fullOptJS         := BundlingMode.Application,
     webpackResources                         := (baseDirectory.value / "src" / "webpack") * "*.js",
     webpackDevServerPort                     := 9090,
-    version in webpack                       := "4.8.1",
+    version in webpack                       := "4.12.0",
     version in startWebpackDevServer         := "3.1.4",
     // Use a different Webpack configuration file for production and create a single bundle without source maps
     webpackConfigFile in fullOptJS           := Some(baseDirectory.value / "src" / "webpack" / "prod.webpack.config.js"),
@@ -438,20 +438,21 @@ lazy val seqexec_web_client = project.in(file("modules/seqexec/web/client"))
     // NPM libs for development, mostly to let webpack do its magic
     npmDevDependencies in Compile ++= Seq(
       "postcss-loader"                     -> "2.1.5",
-      "autoprefixer"                       -> "8.0.0",
+      "autoprefixer"                       -> "8.6.3",
       "url-loader"                         -> "1.0.1",
       "file-loader"                        -> "1.1.11",
       "css-loader"                         -> "0.28.11",
-      "style-loader"                       -> "0.20.2",
+      "style-loader"                       -> "0.21.0",
       "less"                               -> "2.3.1",
       "less-loader"                        -> "4.1.0",
-      "webpack-merge"                      -> "4.1.2",
+      "webpack-merge"                      -> "4.1.3",
       "mini-css-extract-plugin"            -> "0.4.0",
       "webpack-dev-server-status-bar"      -> "1.0.0",
       "cssnano"                            -> "3.10.0",
       "uglifyjs-webpack-plugin"            -> "1.2.5",
-      "html-webpack-plugin"                -> "3.0.6",
-      "optimize-css-assets-webpack-plugin" -> "4.0.0"
+      "html-webpack-plugin"                -> "3.2.0",
+      "optimize-css-assets-webpack-plugin" -> "4.0.2",
+      "favicons-webpack-plugin"            -> "0.0.9"
     ),
     libraryDependencies ++= Seq(
       JQuery.value,
