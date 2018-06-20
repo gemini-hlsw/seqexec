@@ -13,6 +13,8 @@ import cats.effect.IO
 import cats.implicits._
 import edu.gemini.epics.acm.CaService
 import edu.gemini.pot.sp.SPObservationID
+import giapi.client.Giapi
+import giapi.client.gpi.GPIClient
 import seqexec.engine
 import seqexec.engine.Result.{FileIdAllocated, Partial}
 import seqexec.engine.{Step => _, _}
@@ -24,6 +26,7 @@ import seqexec.server.flamingos2.{Flamingos2ControllerEpics, Flamingos2Controlle
 import seqexec.server.gcal.{GcalControllerEpics, GcalControllerSim, GcalEpics}
 import seqexec.server.gmos.{GmosControllerSim, GmosEpics, GmosNorthControllerEpics, GmosSouthControllerEpics}
 import seqexec.server.gnirs.{GnirsControllerEpics, GnirsControllerSim, GnirsEpics}
+import seqexec.server.gpi.GPIController
 import seqexec.server.gws.GwsEpics
 import seqexec.server.tcs.{TcsControllerEpics, TcsControllerSim, TcsEpics}
 import edu.gemini.seqexec.odb.SmartGcal
@@ -55,7 +58,8 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     } else Flamingos2ControllerEpics,
     if (settings.instSim) GmosControllerSim.south else GmosSouthControllerEpics,
     if (settings.instSim) GmosControllerSim.north else GmosNorthControllerEpics,
-    if (settings.instSim) GnirsControllerSim else GnirsControllerEpics
+    if (settings.instSim) GnirsControllerSim else GnirsControllerEpics,
+    GPIController(new GPIClient(settings.giapi, scala.concurrent.ExecutionContext.Implicits.global))
   )
 
   private val translatorSettings = SeqTranslate.Settings(
@@ -313,7 +317,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     SequenceView(seq.id, seq.metadata, st.status, engineSteps(seq), None)
   }
 
-   private def unloadEvent(seqId: SPObservationID): executeEngine.EventType = Event.unload(seqId.stringValue)
+  private def unloadEvent(seqId: SPObservationID): executeEngine.EventType = Event.unload(seqId.stringValue)
 
   private def refreshSequenceList(): executeEngine.StateType => IO[Option[Stream[IO, executeEngine.EventType]]] = (st: executeEngine.StateType) => {
     val seqexecList = st.sequences.keys.toSeq.map(v => new SPObservationID(v))
@@ -350,27 +354,9 @@ object SeqexecEngine {
                       gnirsKeywords: Boolean,
                       instForceError: Boolean,
                       failAt: Int,
-                      odbQueuePollingInterval: Duration)
+                      odbQueuePollingInterval: Duration,
+                      giapi: Giapi[IO])
   def apply(settings: Settings): SeqexecEngine = new SeqexecEngine(settings)
-
-  val defaultSettings: Settings = Settings(Site.GS,
-    "localhost",
-    LocalDate.of(2017, 1, 1),
-    "http://localhost/",
-    dhsSim = true,
-    tcsSim = true,
-    instSim = true,
-    gcalSim = true,
-    odbNotifications = false,
-    tcsKeywords = false,
-    f2Keywords = false,
-    gmosKeywords = false,
-    gwsKeywords = false,
-    gcalKeywords = false,
-    gnirsKeywords = false,
-    instForceError = false,
-    failAt = 0,
-    10.seconds)
 
   // Couldn't find this on Scalaz
   def splitWhere[A](l: List[A])(p: (A => Boolean)): (List[A], List[A]) =
@@ -474,8 +460,12 @@ object SeqexecEngine {
     IO.apply(Paths.get(smartGCalLocation)).map { p => SmartGcal.initialize(peer, p) }
   }
 
+  def giapiConnection: Kleisli[IO, Config, Giapi[IO]] = Kleisli { cfg: Config =>
+    Giapi.giapiConnectionIO.connect
+  }
+
   // scalastyle:off
-  def seqexecConfiguration: Kleisli[IO, Config, Settings] = Kleisli { cfg: Config =>
+  def seqexecConfiguration(giapi: Giapi[IO]): Kleisli[IO, Config, Settings] = Kleisli { cfg: Config =>
     val site = cfg.require[String]("seqexec-engine.site") match {
       case "GS" => Site.GS
       case "GN" => Site.GN
@@ -562,7 +552,8 @@ object SeqexecEngine {
                        gnirsKeywords,
                        instForceError,
                        failAt,
-                       odbQueuePollingInterval)
+                       odbQueuePollingInterval,
+                       giapi)
       )
 
 

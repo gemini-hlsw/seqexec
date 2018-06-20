@@ -158,10 +158,11 @@ object WebServerLauncher extends StreamApp[IO] with LogInitialization {
   def stream(args: List[String], requestShutdown: IO[Unit]): Stream[IO, ExitCode] = {
     val engineIO: IO[SeqexecEngine] =
       for {
-        _    <- configLog // Initialize log before the engine is setup
-        c    <- config
-        seqc <- SeqexecEngine.seqexecConfiguration.run(c)
-        se   = SeqexecEngine(seqc)
+        _     <- configLog // Initialize log before the engine is setup
+        c     <- config
+        giapi <- SeqexecEngine.giapiConnection.run(c)
+        seqc  <- SeqexecEngine.seqexecConfiguration(giapi).run(c)
+        se    = SeqexecEngine(seqc)
       } yield se
 
     def webServerIO(in: Queue[IO, executeEngine.EventType], out: Topic[IO, SeqexecEvent], et: SeqexecEngine): IO[Stream[IO, ExitCode]] =

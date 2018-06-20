@@ -3,6 +3,8 @@
 
 package seqexec.server.gpi
 
+import seqexec.model.dhs.ImageFileId
+import seqexec.model.Model.{Instrument, Resource}
 import seqexec.server.ConfigUtilOps._
 import seqexec.server._
 import seqexec.server.gpi.GPIController._
@@ -11,24 +13,60 @@ import edu.gemini.spModel.gemini.gpi.Gpi._
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import scala.concurrent.duration._
 import cats.data.EitherT
-import cats.effect.Sync
+import cats.effect.{IO, Sync}
 import cats.implicits._
+import cats.data.Reader
+import squants.time.{Seconds, Time}
+
+final case class GPI[F[_]](controller: GPIController) extends InstrumentSystem {
+  override val resource: Resource = Instrument.GPI
+
+  override val sfName: String = GPI.sfName
+
+  override val contributorName: String = "gpi"
+
+  override val dhsInstrumentName: String = "GPI"
+
+  override val observeControl: InstrumentSystem.ObserveControl =
+    InstrumentSystem.Uncontrollable
+
+  override def observe(
+      config: Config): SeqObserve[ImageFileId, ObserveCommand.Result] = Reader {
+    fileId =>
+      controller.observe(fileId).map(_ => ObserveCommand.Success)
+  }
+
+  override def configure(config: Config): SeqAction[ConfigResult] =
+    GPI
+      .fromSequenceConfig[IO](config)
+      .flatMap(controller.applyConfig)
+      .map(_ => ConfigResult(this))
+
+  override def notifyObserveEnd: SeqAction[Unit] = controller.endObserve
+
+  override def calcObserveTime(config: Config): Time =
+    config
+      .extract(OBSERVE_KEY / EXPOSURE_TIME_PROP)
+      .as[java.lang.Double]
+      .map(x => Seconds(x.toDouble))
+      .getOrElse(Seconds(360))
+}
 
 object GPI {
   val name: String = INSTRUMENT_NAME_PROP
 
-  val sfName: String = GPI.sfName
+  val sfName: String = "GPI"
 
   private def gpiAoFlags(config: Config): Either[ExtractFailure, AOFlags] =
     for {
-      useAo      <- config.extract(INSTRUMENT_KEY / USE_AO_PROP).as[Boolean]
-      useCal     <- config.extract(INSTRUMENT_KEY / USE_CAL_PROP).as[Boolean]
+      useAo      <- config.extract(INSTRUMENT_KEY / USE_AO_PROP).as[java.lang.Boolean]
+      useCal     <- config.extract(INSTRUMENT_KEY / USE_CAL_PROP).as[java.lang.Boolean]
       aoOptimize <- config
                       .extract(INSTRUMENT_KEY / AO_OPTIMIZE_PROP)
-                      .as[Boolean]
+                      .as[java.lang.Boolean]
       alignFpm   <- config
                       .extract(INSTRUMENT_KEY / ALIGN_FPM_PINHOLE_BIAS_PROP)
-                      .as[Boolean]
+                      .as[java.lang.Boolean]
     } yield AOFlags(useAo, useCal, aoOptimize, alignFpm)
 
   private def gpiASU(

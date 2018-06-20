@@ -6,7 +6,9 @@ package seqexec.server
 import java.time.LocalDate
 
 import cats.data.Kleisli
-import cats.effect.IO
+import cats.effect._
+import giapi.client.Giapi
+import giapi.client.gpi.GPIClient
 import seqexec.engine.{Action, Result, Sequence, Step}
 import seqexec.model.ActionType
 import seqexec.model.Model.Instrument.GmosS
@@ -17,6 +19,7 @@ import seqexec.server.gcal.GcalControllerEpics
 import seqexec.server.gmos.GmosControllerSim
 import seqexec.server.gnirs.GnirsControllerSim
 import seqexec.server.tcs.TcsControllerEpics
+import seqexec.server.gpi.GPIController
 import edu.gemini.spModel.core.{Peer, Site}
 import org.scalatest.FlatSpec
 import squants.time.Seconds
@@ -63,7 +66,8 @@ class SeqTranslateSpec extends FlatSpec {
     Flamingos2ControllerSim,
     GmosControllerSim.south,
     GmosControllerSim.north,
-    GnirsControllerSim
+    GnirsControllerSim,
+    GPIController(new GPIClient(Giapi.giapiConnectionIO.connect.unsafeRunSync, scala.concurrent.ExecutionContext.Implicits.global))
   )
 
   private val translatorSettings = SeqTranslate.Settings(tcsKeywords = false, f2Keywords = false, gwsKeywords = false,
