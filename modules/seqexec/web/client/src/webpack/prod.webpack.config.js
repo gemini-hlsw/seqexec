@@ -14,10 +14,14 @@ const Web = Merge(
   parts.resourceModules,
   parts.extractCSS({
     devMode: false,
-    use: ["css-loader", "less-loader"] // parts.autoprefix()] // autoprefix needs a fix on scalajs-bundler
+    use: ["css-loader", parts.autoprefix(), "less-loader"] // Order is very important: css, post-css, less
   }),
   parts.minifyJavaScript(),
-  parts.minifyCSS({}),
+  parts.minifyCSS({
+    safe: true,
+    discardComments: { removeAll: true },
+    autoprefixer: { disable: true } // Otherwise this conflicts with post-css autoprefixer
+  }),
   parts.extraAssets,
   parts.fontAssets,
   {
@@ -27,7 +31,7 @@ const Web = Merge(
     },
     output: {
       filename: "[name].[chunkhash].js",
-      publicPath: "/" // Required to make the url navigation work
+      publicPath: "/" // Required to make url navigation work
     },
     plugins: [
       // Useful to further minify react and make it faster in production
