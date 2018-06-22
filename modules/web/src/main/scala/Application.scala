@@ -20,13 +20,17 @@ import org.http4s.dsl.io._
 object Application {
 
   // These give us unapplies we can use for matching arguments.
-  private val Query  = QueryParamDecoder[String].optMatcher("query")
-  private val Limit  = QueryParamDecoder[Int].optMatcher("limit")
+  private val Query = QueryParamDecoder[String].optMatcher("query")
+  private val Limit = QueryParamDecoder[Int].optMatcher("limit")
+  private val Host  = QueryParamDecoder[String].matcher("host")
 
   /** Turn a glob-style pattern into a SQL pattern. */
   def globToSql(s: String): String =
     s.replaceAll("\\*", "%")
      .replaceAll("\\.", "?")
+
+  def withObsId(s: String)(f: Observation.Id => IO[Response[IO]]): IO[Response[IO]] =
+    Observation.Id.fromString(s).fold(BadRequest(s"Not an observation id: '$s'"))(f)
 
   /** Gem application endpoints. */
   def service: AuthedService[GemService[IO], IO] =
@@ -38,6 +42,21 @@ object Application {
         val limit   = n.getOrElse(100)
         gs.queryProgramsByName(pattern, limit).flatMap(ps => Ok(ps.map(p => (p._1, p._2)).asJson ))
 
+      // Import an observation from the legacy ODB.
+      case GET -> Root / "api" / "import" / "obs" / o :? Host(h) as gs =>
+        withObsId(o) { oid =>
+          gs.ocs2.importObservation(h, oid).flatMap {
+            _.fold(msg => InternalServerError(msg), _ => NoContent())
+          }
+        }
+
+      // Select an observation by id.
+//      case GET -> Root / "api" / "fetch" / "obs" / o as gs =>
+//        withObsId(o) { oid =>
+//          gs.queryObservationById(oid).flatMap { obs =>
+//            Ok(obs.asJson)
+//          }
+//        }
     }
 
 }
