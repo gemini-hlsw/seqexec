@@ -13,6 +13,7 @@ import cats.effect.IO
 import cats.implicits._
 
 import fs2.Stream
+import mouse.boolean._
 
 import java.time.{Duration, Instant, Period}
 
@@ -117,11 +118,6 @@ object HorizonsEphemerisQuery {
         HorizonsClient.stream(reqParams).through(EphemerisParser.elements)
     }
 
-
-  // Utility to calculate the integer ceiling of n/d.
-  private def intCeil(n: Long, d: Long): Long =
-    if (n >= 0) (n + d - 1L) / d else n / d
-
   // Utility to round up a Duration up to the next ms.
   private def roundUpMs(d: Duration): Duration =
     (d.getNano % 1000000) match {
@@ -151,42 +147,45 @@ object HorizonsEphemerisQuery {
     * @return List of queries that cover the entire time range
     */
   def paging(
-        key:   HorizonsDesignation,
-        site:  Site,
-        start: Instant,
-        end:   Instant,
-        step:  Duration): List[HorizonsEphemerisQuery] = {
+    key:   HorizonsDesignation,
+    site:  Site,
+    start: Instant,
+    end:   Instant,
+    step:  Duration
+  ): List[HorizonsEphemerisQuery] = {
+
+    // Calculates the list of queries with adjusted end time and step size.
+    def calc(end: Instant, step: Duration): List[HorizonsEphemerisQuery] = {
+      val maxPageDuration = step * (MaxElements - 1).toLong
+
+      Stream.unfold(start) { s =>               // page start time
+        (s <= end).option {
+          val e = (s + maxPageDuration) min end // page end time
+          val c = (Duration.between(s, e).toMillis / step.toMillis + 1).toInt // element count
+          // If the last query would produce just one element, which horizons
+          // doesn't seem to support, just ask for two elements instead.
+          val (eʹ, cʹ) = if (c === 1) (e + step, 2) else (e, c)
+          (HorizonsEphemerisQuery(key, site, s, eʹ, cʹ), eʹ + step)
+        }
+      }.toList
+    }
 
     // Horizons doesn't support a step length below 500 ms and FRACSEC gives
     // only ms precision.
-    val stepʹ   = roundUpMs(step) max MinStepLen
-    val stepMsʹ = stepʹ.toMillis
+    val stepʹ = roundUpMs(step) max MinStepLen
 
-    // Total time covered by a single page with max elements.
-    val maxPage  = stepʹ * MaxElements.toLong
-
-    // Calculate (end time inclusive, element count) for a page starting at pStart.
-    def pageEnd(pStart: Instant): (Instant, Int) = {
-      val rem = roundUpMs(Duration.between(pStart, end))
-      val cnt = if (rem >= maxPage) MaxElements.toLong else intCeil(rem.toMillis, stepMsʹ) + 1L
-
-      (pStart + stepʹ * (cnt - 1), cnt.toInt)
+    // Adjust end to be an even number of multiples of the step interval ending
+    // exactly at or just beyond the given end instant.  That is, it must cover
+    // the entire range and be an even number of steps even if we have to go a
+    // bit over the given end time.
+    val endʹ  = {
+      val stepMs  = stepʹ.toMillis
+      val totalMs = roundUpMs(Duration.between(start, end)).toMillis
+      val rem     = totalMs % stepMs
+      start + Duration.ofMillis(totalMs + (if (rem === 0) 0 else stepMs - rem))
     }
 
-    Stream.unfold(start) { pStart =>
-      if (pStart >= end)
-        None
-      else {
-        val (pEnd, pCnt) = pageEnd(pStart)
-
-        // Horizons queries must return >= 2 elements.  If next page would have
-        // just 1 elem, shorten *this* query so that the next one has 2.
-        val (_,     nCnt ) = pageEnd(pStart + maxPage)
-        val (pEndʹ, pCntʹ) = if (nCnt === 1) (pEnd - stepʹ, pCnt - 1) else (pEnd, pCnt)
-
-        Some((HorizonsEphemerisQuery(key, site, pStart, pEndʹ, pCntʹ), pEndʹ + stepʹ))
-      }
-    }.toList
+    if (end <= start) List.empty else calc(endʹ, stepʹ)
   }
 
   def pagingSemester(

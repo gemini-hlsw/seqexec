@@ -117,10 +117,11 @@ final class HorizonsEphemerisQuerySpec extends CatsSuite with EphemerisTestSuppo
     checkPaging(
       start,
       end,
-      // Here the first query is shortened so that the last query will have at
-      // least two elements.  There's no way to query for just one element.
-      HorizonsEphemerisQuery(titan, GS, start,           end - OneMinute * 2L, Max - 1),
-      HorizonsEphemerisQuery(titan, GS, end - OneMinute, end,                  2      )
+      // Here the first query has Max elements.  The second query would have
+      // just one element but since that won't work with horizons it is extended
+      // to include an additional element.
+      HorizonsEphemerisQuery(titan, GS, start, end - OneMinute, Max),
+      HorizonsEphemerisQuery(titan, GS, end,   end + OneMinute,   2)
     )
   }
 
