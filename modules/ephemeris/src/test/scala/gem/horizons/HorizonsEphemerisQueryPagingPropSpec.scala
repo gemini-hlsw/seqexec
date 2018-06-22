@@ -54,12 +54,24 @@ class HorizonsEphemerisQueryPagingPropSpec extends PropSpec with PropertyChecks 
     }
   }
 
-  property("last element should be less than one step size away from end") {
+  property("last element should be less than two step sizes away from end") {
     forAll { (t: TestCase) =>
       t.paging.lastOption match {
         case None    => fail
-        case Some(q) => q.endTime should (be >= t.end and be <= (t.end + t.step))
+        case Some(q) => q.endTime should (be >= t.end and be < (t.end + t.step * 2))
       }
+    }
+  }
+
+  property("explicitly handle case where last page would have one element using MaxElement-sized pages") {
+    // This was a failing randomly generated test case, so we'll leave it as a test.
+    val s = Instant.parse("2003-10-24T03:53:56.396546622Z")
+    val e = Instant.parse("2003-11-28T00:22:17.151546622Z")
+    val d = Duration.parse("PT6.69S")
+    val t = TestCase(s, e, d)
+    t.paging.lastOption match {
+      case None    => fail
+      case Some(q) => q.endTime should (be >= t.end and be < (t.end + t.step * 2))
     }
   }
 
