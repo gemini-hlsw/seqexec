@@ -18,6 +18,17 @@ module.exports.rootDir = rootDir;
 const resourcesDir = path.resolve(rootDir, "src/main/resources");
 module.exports.resourcesDir = resourcesDir;
 
+// Set of browser to support on the css. Taken from Semantic-UI-React
+module.exports.browsers = {
+  browsers: [
+    ">1%",
+    "last 4 versions",
+    "Firefox ESR",
+    "not ie < 9" // React doesn't support IE8 anyway
+  ],
+  flexbox: "no-2009"
+};
+
 // Setup webpack-dev-server. Use only in development
 module.exports.devServer = ({ host, port } = {}) => ({
   devServer: {
@@ -70,6 +81,17 @@ module.exports.extractCSS = ({ devMode, include, exclude, use = [] }) => {
   };
 };
 
+// Enable autoprefixing with postcss
+exports.autoprefix = () => {
+  return {
+    loader: "postcss-loader",
+    options: {
+      autoprefixer: module.exports.browsers,
+      plugins: () => [require("autoprefixer")()]
+    }
+  };
+};
+
 // This is needed for scala.js projects
 module.exports.resourceModules = {
   resolve: {
@@ -100,14 +122,6 @@ module.exports.resolveSemanticUI = {
     }
   }
 };
-
-// Enable autoprefixing with postcss
-exports.autoprefix = () => ({
-  loader: "postcss-loader",
-  options: {
-    plugins: () => [require("autoprefixer")()]
-  }
-});
 
 // Support css minifications
 exports.minifyCSS = ({ options }) => ({
