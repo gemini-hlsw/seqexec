@@ -20,7 +20,6 @@ final class ModelSpec extends CatsSuite {
   checkAll("Eq[Instrument]", EqTests[Instrument].eqv)
   checkAll("Eq[Operator]", EqTests[Operator].eqv)
   checkAll("Eq[Observer]", EqTests[Observer].eqv)
-  checkAll("Eq[SequenceId]", EqTests[SequenceId].eqv)
   checkAll("Eq[StepState]", EqTests[StepState].eqv)
   checkAll("Eq[ActionStatus]", EqTests[ActionStatus].eqv)
   checkAll("Eq[Step]", EqTests[Step].eqv)

@@ -3,6 +3,13 @@
 
 package seqexec.web.client.components.sequence.steps
 
+import cats.implicits._
+import japgolly.scalajs.react.ScalazReact._
+import japgolly.scalajs.react.component.Scala.Unmounted
+import japgolly.scalajs.react.vdom.html_<^._
+import japgolly.scalajs.react.{Callback, CallbackTo, ScalaComponent, ScalazReact}
+import gem.Observation
+import mouse.all._
 import seqexec.model.Model._
 import seqexec.model.operations.ObservationOperations._
 import seqexec.model.operations._
@@ -14,12 +21,6 @@ import seqexec.web.client.semanticui.elements.button.Button
 import seqexec.web.client.semanticui.elements.popup.Popup
 import seqexec.web.client.semanticui.elements.icon.Icon.{IconPause, IconPlay, IconStop, IconTrash}
 import web.client.style._
-import japgolly.scalajs.react.ScalazReact._
-import japgolly.scalajs.react.component.Scala.Unmounted
-import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.{Callback, CallbackTo, ScalaComponent, ScalazReact}
-import cats.implicits._
-import mouse.all._
 
 /**
  * Component to wrap the steps control buttons
@@ -58,7 +59,7 @@ object StepsControlButtonsWrapper {
  * Contains the control buttons like stop/abort at the row level
  */
 object StepsControlButtons {
-  final case class Props(id: SequenceId, instrument: Instrument, sequenceState: SequenceState, step: Step)
+  final case class Props(id: Observation.Id, instrument: Instrument, sequenceState: SequenceState, step: Step)
   final case class State(stopRequested: Boolean, abortRequested: Boolean, pauseRequested: Boolean, resumeRequested: Boolean) {
     val canPause: Boolean = !stopRequested && !abortRequested
     val canAbort: Boolean = !stopRequested && !pauseRequested && !resumeRequested
@@ -74,28 +75,28 @@ object StepsControlButtons {
 
   private val ST = ReactS.Fix[State]
 
-  def requestStop(id: SequenceId, stepId: Int): Callback =
+  def requestStop(id: Observation.Id, stepId: Int): Callback =
     Callback(SeqexecCircuit.dispatch(RequestStop(id, stepId)))
 
-  def requestAbort(id: SequenceId, stepId: Int): Callback =
+  def requestAbort(id: Observation.Id, stepId: Int): Callback =
     Callback(SeqexecCircuit.dispatch(RequestAbort(id, stepId)))
 
-  def requestObsPause(id: SequenceId, stepId: Int): Callback =
+  def requestObsPause(id: Observation.Id, stepId: Int): Callback =
     Callback(SeqexecCircuit.dispatch(RequestObsPause(id, stepId)))
 
-  def requestObsResume(id: SequenceId, stepId: Int): Callback =
+  def requestObsResume(id: Observation.Id, stepId: Int): Callback =
     Callback(SeqexecCircuit.dispatch(RequestObsResume(id, stepId)))
 
-  def handleStop(id: SequenceId, stepId: Int): ScalazReact.ReactST[CallbackTo, State, Unit] =
+  def handleStop(id: Observation.Id, stepId: Int): ScalazReact.ReactST[CallbackTo, State, Unit] =
     ST.retM(requestStop(id, stepId)) >> ST.set(StopRequested).liftCB
 
-  def handleAbort(id: SequenceId, stepId: Int): ScalazReact.ReactST[CallbackTo, State, Unit] =
+  def handleAbort(id: Observation.Id, stepId: Int): ScalazReact.ReactST[CallbackTo, State, Unit] =
     ST.retM(requestAbort(id, stepId)) >> ST.set(AbortRequested).liftCB
 
-  def handleObsPause(id: SequenceId, stepId: Int): ScalazReact.ReactST[CallbackTo, State, Unit] =
+  def handleObsPause(id: Observation.Id, stepId: Int): ScalazReact.ReactST[CallbackTo, State, Unit] =
     ST.retM(requestObsPause(id, stepId)) >> ST.set(PauseRequested).liftCB
 
-  def handleObsResume(id: SequenceId, stepId: Int): ScalazReact.ReactST[CallbackTo, State, Unit] =
+  def handleObsResume(id: Observation.Id, stepId: Int): ScalazReact.ReactST[CallbackTo, State, Unit] =
     ST.retM(requestObsResume(id, stepId)) >> ST.set(ResumeRequested).liftCB
 
   private val component = ScalaComponent.builder[Props]("StepsControlButtons")
@@ -149,5 +150,5 @@ object StepsControlButtons {
       })
     }.build
 
-  def apply(id: SequenceId, instrument: Instrument, state: SequenceState, step: Step): Unmounted[Props, State, Unit] = component(Props(id, instrument, state, step))
+  def apply(id: Observation.Id, instrument: Instrument, state: SequenceState, step: Step): Unmounted[Props, State, Unit] = component(Props(id, instrument, state, step))
 }

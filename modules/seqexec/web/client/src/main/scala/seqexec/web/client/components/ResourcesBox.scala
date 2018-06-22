@@ -29,7 +29,7 @@ object ResourcesBox {
         ^.cls := "ui tiny modal",
         Header("Resource conflict"),
         Content(
-          <.p(s"There is a conflict trying to run the sequence '${id.getOrElse("")}'"),
+          <.p(s"There is a conflict trying to run the sequence '${id.map(_.format).getOrElse("")}'"),
           <.p("Possibly another sequence is being executed on the same instrument")
         ),
         <.div(

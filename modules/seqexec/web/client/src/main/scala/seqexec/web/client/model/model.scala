@@ -3,15 +3,16 @@
 
 package seqexec.web.client
 
+import cats._
+import cats.implicits._
 import diode.RootModelR
 import diode.data._
+import gem.Observation
 import seqexec.model.UserDetails
 import seqexec.model.Model._
 import seqexec.model.events._
 import seqexec.web.common.{Zipper, FixedLengthBuffer}
 import org.scalajs.dom.WebSocket
-import cats._
-import cats.implicits._
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object model {
@@ -42,8 +43,8 @@ object model {
     case object Root extends SeqexecPages
     case object SoundTest extends SeqexecPages
     final case class InstrumentPage(instrument: Instrument) extends SeqexecPages
-    final case class SequencePage(instrument: Instrument, obsId: SequenceId, step: StepId) extends SeqexecPages
-    final case class SequenceConfigPage(instrument: Instrument, obsId: SequenceId, step: Int) extends SeqexecPages
+    final case class SequencePage(instrument: Instrument, obsId: Observation.Id, step: StepId) extends SeqexecPages
+    final case class SequenceConfigPage(instrument: Instrument, obsId: Observation.Id, step: Int) extends SeqexecPages
 
     implicit val equal: Eq[SeqexecPages] = Eq.instance {
       case (Root, Root)                                               => true
@@ -118,7 +119,7 @@ object model {
     def isAnySelected: Boolean = instrumentSequences.exists(_.sequence.isDefined)
 
     // Is the id on the sequences area?
-    def idDisplayed(id: SequenceId): Boolean =
+    def idDisplayed(id: Observation.Id): Boolean =
       instrumentSequences.withFocus.exists { case (s, a) => a && s.sequence.exists(_.id === id) }
 
     def instrument(i: Instrument): InstrumentTabActive =
@@ -163,7 +164,7 @@ object model {
   /**
    * Model to display a resource conflict
    */
-  final case class ResourcesConflict(visibility: SectionVisibilityState, id: Option[SequenceId])
+  final case class ResourcesConflict(visibility: SectionVisibilityState, id: Option[Observation.Id])
 
   /**
    * UI model, changes here will update the UI

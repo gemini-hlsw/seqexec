@@ -3,22 +3,21 @@
 
 package seqexec.web.client.services
 
-import java.util.logging.LogRecord
-
 import boopickle.Default._
-import seqexec.model.{UserDetails, UserLoginRequest}
-import seqexec.model.boopickle._
-import seqexec.model.Model.{ClientID, CloudCover, Conditions, ImageQuality, Operator, SequenceId, SequencesQueue, SkyBackground, Step, WaterVapor}
-import seqexec.web.common.{HttpStatusCodes, LogMessage, RegularCommand}
-import seqexec.web.common.LogMessage._
+import cats.implicits._
+import gem.Observation
+import java.util.logging.LogRecord
 import org.scalajs.dom.ext.{Ajax, AjaxException}
 import org.scalajs.dom.XMLHttpRequest
-
+import seqexec.model.{UserDetails, UserLoginRequest}
+import seqexec.model.boopickle._
+import seqexec.model.Model.{ClientID, CloudCover, Conditions, ImageQuality, Operator, SequencesQueue, SkyBackground, Step, WaterVapor}
+import seqexec.web.common.{HttpStatusCodes, LogMessage, RegularCommand}
+import seqexec.web.common.LogMessage._
 import scala.scalajs.js.URIUtils._
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.scalajs.js.typedarray.{ArrayBuffer, TypedArrayBuffer}
-import cats.implicits._
 
 /**
   * Encapsulates remote calls to the Seqexec Web API
@@ -34,12 +33,12 @@ object SeqexecWebClient extends ModelBooPicklers {
     Unpickle[A].fromBytes(ab)
   }
 
-  def sync(id: SequenceId): Future[SequencesQueue[SequenceId]] =
+  def sync(id: Observation.Id): Future[SequencesQueue[Observation.Id]] =
     Ajax.get(
       url = s"$baseUrl/commands/$id/sync",
       responseType = "arraybuffer"
     )
-    .map(unpickle[SequencesQueue[SequenceId]])
+    .map(unpickle[SequencesQueue[Observation.Id]])
     .recover {
       case AjaxException(xhr) if xhr.status == HttpStatusCodes.NotFound  =>
         // If not found, we'll consider it like an empty response
@@ -49,7 +48,7 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
     * Requests the backend to execute a sequence
     */
-  def run(id: SequenceId, clientId: ClientID): Future[RegularCommand] = {
+  def run(id: Observation.Id, clientId: ClientID): Future[RegularCommand] = {
     Ajax.post(
       url = s"$baseUrl/commands/$id/start/$clientId",
       responseType = "arraybuffer"
@@ -59,7 +58,7 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
     * Requests the backend to set a breakpoint
     */
-  def breakpoint(sid: SequenceId, step: Step): Future[RegularCommand] = {
+  def breakpoint(sid: Observation.Id, step: Step): Future[RegularCommand] = {
     Ajax.post(
       url = s"$baseUrl/commands/$sid/${step.id}/breakpoint/${step.breakpoint}",
       responseType = "arraybuffer"
@@ -69,7 +68,7 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
     * Requests the backend to set a breakpoint
     */
-  def skip(sid: SequenceId, step: Step): Future[RegularCommand] = {
+  def skip(sid: Observation.Id, step: Step): Future[RegularCommand] = {
     Ajax.post(
       url = s"$baseUrl/commands/$sid/${step.id}/skip/${step.skip}",
       responseType = "arraybuffer"
@@ -79,7 +78,7 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
     * Requests the backend to stop immediately this sequence
     */
-  def stop(sid: SequenceId, step: Int): Future[RegularCommand] = {
+  def stop(sid: Observation.Id, step: Int): Future[RegularCommand] = {
     Ajax.post(
       url = s"$baseUrl/commands/$sid/$step/stop",
       responseType = "arraybuffer"
@@ -89,7 +88,7 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
     * Requests the backend to abort this sequenece
     */
-  def abort(sid: SequenceId, step: Int): Future[RegularCommand] = {
+  def abort(sid: Observation.Id, step: Int): Future[RegularCommand] = {
     Ajax.post(
       url = s"$baseUrl/commands/$sid/$step/abort",
       responseType = "arraybuffer"
@@ -99,7 +98,7 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
     * Requests the backend to hold the current exposure
     */
-  def pauseObs(sid: SequenceId, step: Int): Future[RegularCommand] = {
+  def pauseObs(sid: Observation.Id, step: Int): Future[RegularCommand] = {
     Ajax.post(
       url = s"$baseUrl/commands/$sid/$step/pauseObs",
       responseType = "arraybuffer"
@@ -109,7 +108,7 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
     * Requests the backend to resume the current exposure
     */
-  def resumeObs(sid: SequenceId, step: Int): Future[RegularCommand] = {
+  def resumeObs(sid: Observation.Id, step: Int): Future[RegularCommand] = {
     Ajax.post(
       url = s"$baseUrl/commands/$sid/$step/resumeObs",
       responseType = "arraybuffer"
@@ -129,7 +128,7 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
     * Requests the backend to set the observer name of a sequence
     */
-  def setObserver(id: SequenceId, name: String): Future[RegularCommand] = {
+  def setObserver(id: Observation.Id, name: String): Future[RegularCommand] = {
     Ajax.post(
       url = s"$baseUrl/commands/$id/observer/${encodeURI(name)}",
       responseType = "arraybuffer"
@@ -204,7 +203,7 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
     * Requests the backend to pause a sequence
     */
-  def pause(id: SequenceId): Future[RegularCommand] = {
+  def pause(id: Observation.Id): Future[RegularCommand] = {
     Ajax.post(
       url = s"$baseUrl/commands/$id/pause",
       responseType = "arraybuffer"
@@ -214,7 +213,7 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
     * Requests the backend to cancel a pausing request in process
     */
-  def cancelPause(id: SequenceId): Future[RegularCommand] = {
+  def cancelPause(id: Observation.Id): Future[RegularCommand] = {
     Ajax.post(
       url = s"$baseUrl/commands/$id/cancelpause",
       responseType = "arraybuffer"

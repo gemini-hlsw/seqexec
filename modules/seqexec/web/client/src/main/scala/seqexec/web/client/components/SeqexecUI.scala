@@ -3,24 +3,27 @@
 
 package seqexec.web.client.components
 
+import diode.ModelRO
+import diode.react.ModelProxy
+import diode.react.ReactPot._
+import cats.implicits._
+import cats.effect.IO
+import monocle.Prism
+import japgolly.scalajs.react.vdom.html_<^._
+import japgolly.scalajs.react.extra.router._
+import japgolly.scalajs.react.{Callback, ScalaComponent}
+import japgolly.scalajs.react.MonocleReact._
+import japgolly.scalajs.react.component.Scala.Unmounted
+import gem.Observation
+import scala.scalajs.js.timers.SetTimeoutHandle
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.actions.WSConnect
 import seqexec.web.client.model.Pages._
 import seqexec.web.client.actions.{NavigateSilentTo, RequestSoundEcho}
 import seqexec.web.client.components.sequence.{HeadersSideBar, SequenceArea}
-import seqexec.model.Model.SeqexecSite
+import seqexec.model.Model.{Instrument, SeqexecSite}
 import seqexec.web.client.model.WebSocketConnection
 import web.client.style._
-import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.extra.router._
-import japgolly.scalajs.react.{Callback, ScalaComponent}
-import diode.ModelRO
-import diode.react.ModelProxy
-import diode.react.ReactPot._
-import japgolly.scalajs.react.component.Scala.Unmounted
-import cats.implicits._
-import cats.effect.IO
-import scala.scalajs.js.timers.SetTimeoutHandle
 
 object AppTitle {
   final case class Props(site: SeqexecSite, ws: ModelProxy[WebSocketConnection])
@@ -118,6 +121,19 @@ object SeqexecUI {
     case _                            => s"Seqexec - ${site.show}"
   }
 
+  // Prism from url params to config page
+  def configPageP(instrumentNames: Map[String, Instrument]): Prism[(String, String, Int), SequenceConfigPage] = Prism[(String, String, Int), SequenceConfigPage] {
+    case (i, s, step) => (instrumentNames.get(i), Observation.Id.fromString(s)).mapN(SequenceConfigPage(_, _, step))
+  } {
+    p => (p.instrument.show, p.obsId.format, p.step)
+  }
+  // Prism from url params to sequence page
+  def sequencePageP(instrumentNames: Map[String, Instrument]): Prism[(String, String), SequencePage] = Prism[(String, String), SequencePage] {
+    case (i, s) => (instrumentNames.get(i), Observation.Id.fromString(s)).mapN(SequencePage(_, _, 0))
+  } {
+    p => (p.instrument.show, p.obsId.format)
+  }
+
   @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
   def router(site: SeqexecSite): IO[Router[SeqexecPages]] = {
     val instrumentNames = site.instruments.map(i => (i.show, i)).toList.toMap
@@ -128,18 +144,10 @@ object SeqexecUI {
       (emptyRule
       | staticRoute(root, Root) ~> renderR(r => SeqexecMain(site, r))
       | staticRoute("/soundtest", SoundTest) ~> renderR(r => SeqexecMain(site, r))
-      | dynamicRoute(("/" ~ string("[a-zA-Z0-9-]+") ~ "/" ~ string("[a-zA-Z0-9-]+") ~ "/configuration/" ~ int)
-        .pmap {
-          case (i, s, step) => instrumentNames.get(i).map(SequenceConfigPage(_, s, step))
-        }(p => (p.instrument.show, p.obsId, p.step))) {
-          case x @ SequenceConfigPage(i, _, _) if site.instruments.toList.contains(i) => x
-        } ~> dynRenderR((p, r) => SeqexecMain(site, r))
-      | dynamicRoute(("/" ~ string("[a-zA-Z0-9-]+") ~ "/" ~ string("[a-zA-Z0-9-]+"))
-        .pmap {
-          case (i, s) => instrumentNames.get(i).map(SequencePage(_, s, 0))
-        }(p => (p.instrument.show, p.obsId))) {
-          case x @ SequencePage(i, _, _) if site.instruments.toList.contains(i) => x
-        } ~> dynRenderR((p, r) => SeqexecMain(site, r))
+      | dynamicRouteCT(("/" ~ string("[a-zA-Z0-9-]+") ~ "/" ~ string("[a-zA-Z0-9-]+") ~ "/configuration/" ~ int)
+        .pmapL(configPageP(instrumentNames))) ~> dynRenderR((_: SequenceConfigPage, r) => SeqexecMain(site, r))
+      | dynamicRouteCT(("/" ~ string("[a-zA-Z0-9-]+") ~ "/" ~ string("[a-zA-Z0-9-]+"))
+        .pmapL(sequencePageP(instrumentNames))) ~> dynRenderR((_: SequencePage, r) => SeqexecMain(site, r))
       | dynamicRoute(("/" ~ string("[a-zA-Z0-9-]+"))
         .pmap(i => instrumentNames.get(i).map(InstrumentPage))(p => p.instrument.show)) {
           case x @ InstrumentPage(i) if site.instruments.toList.contains(i) => x

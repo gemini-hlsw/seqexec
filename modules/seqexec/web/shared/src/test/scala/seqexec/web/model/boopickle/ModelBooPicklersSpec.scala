@@ -11,6 +11,7 @@ import boopickle.Default._
 import org.scalacheck.Arbitrary._
 import seqexec.model.SharedModelArbitraries._
 import seqexec.model.SequenceEventsArbitraries._
+import gem.Observation
 
 /**
   * Tests Serialization/Deserialization using BooPickle
@@ -49,8 +50,8 @@ final class BoopicklingSpec extends CatsSuite with ModelBooPicklers {
   checkAll("Pickler[SequenceError]", PicklerTests[SequenceError].pickler)
   checkAll("Pickler[SequencePaused]", PicklerTests[SequencePaused].pickler)
   checkAll("Pickler[ExposurePaused]", PicklerTests[ExposurePaused].pickler)
-  checkAll("Pickler[SequencesQueue[SequenceId]]",
-           PicklerTests[SequencesQueue[SequenceId]].pickler)
+  checkAll("Pickler[SequencesQueue[Observation.Id]]",
+           PicklerTests[SequencesQueue[Observation.Id]].pickler)
   checkAll("Pickler[ImageQuality]", PicklerTests[ImageQuality].pickler)
   checkAll("Pickler[WaterVapor]", PicklerTests[WaterVapor].pickler)
   checkAll("Pickler[SkyBackground]", PicklerTests[SkyBackground].pickler)

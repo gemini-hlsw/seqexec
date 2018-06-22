@@ -9,6 +9,7 @@ import java.time.Instant
 import dhs.ImageFileId
 import cats.Eq
 import cats.implicits._
+import gem.Observation
 
 object events {
   implicit val instantEq: Eq[Instant] = Eq.fromUniversalEquals
@@ -87,7 +88,7 @@ object events {
         Eq.by(_.view)
     }
 
-    final case class StepExecuted(obsId: SequenceId, view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
+    final case class StepExecuted(obsId: Observation.Id, view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
     object StepExecuted {
       implicit lazy val equal: Eq[StepExecuted] =
@@ -108,14 +109,14 @@ object events {
         Eq.by(_.view)
     }
 
-    final case class SequenceLoaded(obsId: SequenceId, view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
+    final case class SequenceLoaded(obsId: Observation.Id, view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
     object SequenceLoaded {
       implicit lazy val equal: Eq[SequenceLoaded] =
         Eq.by(x => (x.obsId, x.view))
     }
 
-    final case class SequenceUnloaded(obsId: SequenceId, view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
+    final case class SequenceUnloaded(obsId: Observation.Id, view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
     object SequenceUnloaded {
       implicit lazy val equal: Eq[SequenceUnloaded] =
@@ -136,7 +137,7 @@ object events {
         Eq.by(_.view)
     }
 
-    final case class SelectedSequenceUpdate(i: Instrument, sid: SequenceId) extends SeqexecEvent
+    final case class SelectedSequenceUpdate(i: Instrument, sid: Observation.Id) extends SeqexecEvent
 
     object SelectedSequenceUpdate {
       implicit lazy val equal: Eq[SelectedSequenceUpdate] =
@@ -192,7 +193,7 @@ object events {
         Eq.by(_.view)
     }
 
-    final case class ResourcesBusy(obsId: SequenceId, view: SequencesQueue[SequenceView], clientId: ClientID) extends SeqexecModelUpdate with ForClient
+    final case class ResourcesBusy(obsId: Observation.Id, view: SequencesQueue[SequenceView], clientId: ClientID) extends SeqexecModelUpdate with ForClient
 
     object ResourcesBusy {
       implicit lazy val equal: Eq[ResourcesBusy] =
@@ -206,21 +207,21 @@ object events {
         Eq.by(_.view)
     }
 
-    final case class SequencePaused(obsId: SequenceId, view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
+    final case class SequencePaused(obsId: Observation.Id, view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
     object SequencePaused {
       implicit lazy val equal: Eq[SequencePaused] =
         Eq.by(x => (x.obsId, x.view))
     }
 
-    final case class ExposurePaused(obsId: SequenceId, view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
+    final case class ExposurePaused(obsId: Observation.Id, view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
     object ExposurePaused {
       implicit lazy val equal: Eq[ExposurePaused] =
         Eq.by(x => (x.obsId, x.view))
     }
 
-    final case class SequenceError(obsId: SequenceId, view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
+    final case class SequenceError(obsId: Observation.Id, view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
     object SequenceError {
       implicit lazy val equal: Eq[SequenceError] =

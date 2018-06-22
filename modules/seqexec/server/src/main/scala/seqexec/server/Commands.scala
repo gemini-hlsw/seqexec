@@ -3,11 +3,11 @@
 
 package seqexec.server
 
-import edu.gemini.pot.sp.SPObservationID
+import cats.implicits._
 import edu.gemini.spModel.`type`.{DisplayableSpType, LoggableSpType, SequenceableSpType}
 import edu.gemini.spModel.config2.{ConfigSequence, ItemKey}
 import edu.gemini.spModel.core.Peer
-import cats.implicits._
+import gem.Observation
 
 sealed trait CommandError {
   val msg: String
@@ -121,20 +121,18 @@ object Commands {
     def sysFilter(system: String): ItemKey => Boolean =
       _.splitPath().get(0) === system
 
-    def ifStepValid(oid: SPObservationID, cs: ConfigSequence, step: String): Either[CommandError, Int] =
+    def ifStepValid(oid: Observation.Id, cs: ConfigSequence, step: String): Either[CommandError, Int] =
       Either.catchNonFatal(step.toInt - 1).fold(
       _ => BadParameter(s"Specify an integer step, not '$step'.").asLeft, {
         case i if i < 0          => BadParameter("Specify a positive step number.").asLeft
-        case i if i >= cs.size() => BadParameter(s"$oid only has ${cs.size} steps.").asLeft
+        case i if i >= cs.size() => BadParameter(s"${oid.format} only has ${cs.size} steps.").asLeft
         case i                   => Right(i)
       })
   }
   // scalastyle:on
 
-  def parseId(s: String): Either[CommandError, SPObservationID] =
-    Either.catchNonFatal {
-      new SPObservationID(s)
-    }.leftMap(_ => BadParameter(s"Sorry, '$s' isn't a valid observation id."))
+  def parseId(s: String): Either[CommandError, Observation.Id] =
+    Either.fromOption(Observation.Id.fromString(s), BadParameter(s"Sorry, '$s' isn't a valid observation id."))
 
   def parseLoc(s: String): Either[CommandError, Peer] =
     Option(Peer.tryParse(s)).toRight(BadParameter(s"Sorry, expecting host:port not '$s'."))

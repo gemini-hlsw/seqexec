@@ -4,8 +4,12 @@
 package seqexec.server
 
 import edu.gemini.seqexec.server.tcs.{BinaryOnOff, BinaryYesNo}
+import edu.gemini.spModel.gemini.flamingos2.Flamingos2
+import edu.gemini.spModel.gemini.gnirs.GNIRSParams
 import gem.arb.ArbTime
-import scala.concurrent.duration.Duration
+import gem.Observation
+import org.scalacheck.Arbitrary._
+import org.scalacheck.{Arbitrary, Cogen, Gen}
 import seqexec.server.flamingos2.Flamingos2Controller
 import seqexec.server.gpi.GPIController
 import seqexec.server.gpi.GPIController._
@@ -133,12 +137,12 @@ object SeqexecServerArbitraries extends ArbTime {
   implicit val gcalIrLampCogen: Cogen[GcalController.IrLampState] =
     Cogen[GcalController.LampState].contramap(_.self)
 
-  implicit val selectedCoGen: Cogen[Map[Instrument, SequenceId]] =
-    Cogen[List[(Instrument, SequenceId)]].contramap(_.toList)
+  implicit val selectedCoGen: Cogen[Map[Instrument, Observation.Id]] =
+    Cogen[List[(Instrument, Observation.Id)]].contramap(_.toList)
   implicit val engineMetadataArb: Arbitrary[EngineMetadata] = Arbitrary {
     for {
       q <- arbitrary[ExecutionQueues]
-      s <- arbitrary[Map[Instrument, SequenceId]]
+      s <- arbitrary[Map[Instrument, Observation.Id]]
       c <- arbitrary[Conditions]
       o <- arbitrary[Option[Operator]]
     } yield EngineMetadata(q, s, c, o)

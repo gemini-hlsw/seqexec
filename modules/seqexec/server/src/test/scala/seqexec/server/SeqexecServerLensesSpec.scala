@@ -7,11 +7,13 @@ import cats.tests.CatsSuite
 import monocle.law.discipline.LensTests
 import seqexec.model.Model.Instrument
 import seqexec.model.SharedModelArbitraries._
+import gem.arb.ArbObservation
+import gem.Observation
 
 /**
   * Tests SeqexecServer Lenses
   */
-final class SeqexecServerLensesSpec extends CatsSuite {
+final class SeqexecServerLensesSpec extends CatsSuite with ArbObservation {
   import SeqexecServerArbitraries._
 
   checkAll("queues lens", LensTests(EngineMetadata.queues))
@@ -19,14 +21,15 @@ final class SeqexecServerLensesSpec extends CatsSuite {
   checkAll("operator lens", LensTests(EngineMetadata.operator))
   checkAll("selected lens", LensTests(EngineMetadata.selected))
   checkAll("selected optional", LensTests(EngineMetadata.selectedML(Instrument.GPI)))
-  val seqId = "GS-2018-Q-0"
+
+  private val seqId = Observation.Id.unsafeFromString("GS-2018-Q-0-1")
   // Some sanity checks
   test("Support inserting new loaded sequences") {
-    val base = EngineMetadata.default.copy(selected = Map(Instrument.F2 -> "Test"))
-    EngineMetadata.selectedML(Instrument.GPI).set("GS-2018-Q-0".some).apply(base) shouldEqual base.copy(selected = base.selected+ (Instrument.GPI -> seqId))
+    val base = EngineMetadata.default.copy(selected = Map(Instrument.F2 -> Observation.Id.unsafeFromString("Test-1")))
+    EngineMetadata.selectedML(Instrument.GPI).set(Observation.Id.fromString("GS-2018-Q-0-1")).apply(base) shouldEqual base.copy(selected = base.selected+ (Instrument.GPI -> seqId))
   }
   test("Support replacing loaded sequences") {
-    val base = EngineMetadata.default.copy(selected = Map(Instrument.GPI -> "AnotherTest", Instrument.F2 -> "Test"))
-    EngineMetadata.selectedML(Instrument.GPI).set("GS-2018-Q-0".some).apply(base) shouldEqual base.copy(selected = base.selected.updated(Instrument.GPI, seqId))
+    val base = EngineMetadata.default.copy(selected = Map(Instrument.GPI -> Observation.Id.unsafeFromString("AnotherTest-1"), Instrument.F2 -> Observation.Id.unsafeFromString("Test-1")))
+    EngineMetadata.selectedML(Instrument.GPI).set(Observation.Id.fromString("GS-2018-Q-0-1")).apply(base) shouldEqual base.copy(selected = base.selected.updated(Instrument.GPI, seqId))
   }
 }

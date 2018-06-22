@@ -4,23 +4,22 @@
 package seqexec.engine
 
 import java.util.UUID
-
 import seqexec.model.Model.{SequenceMetadata, SequenceState, StepConfig}
 import seqexec.model.Model.Instrument.F2
 import seqexec.model.{ActionType, UserDetails}
-
 import scala.Function.const
 import org.scalatest.FlatSpec
 import org.scalatest.Inside.inside
 import org.scalatest.Matchers._
 import cats.effect.IO
 import fs2.Stream
+import gem.Observation
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 class SequenceSpec extends FlatSpec {
-  private val seqId ="TEST-01"
+  private val seqId = Observation.Id.unsafeFromString("GS-2018A-Q-1")
 
   // All tests check the output of running a sequence against the expected sequence of updates.
 

@@ -41,7 +41,7 @@ object SequenceStepsTableContainer {
         SequenceDefaultToolbar(p).when(p.p().isLogged),
         SequenceAnonymousToolbar(p.site, p.p().instrument).unless(p.p().isLogged)
       ): VdomElement
-    }(s => StepConfigToolbar(StepConfigToolbar.Props(p.router, p.site, p.p().instrument, p.p().id, s)))
+    }(s => p.p().id.fold(ReactFragment())(id => StepConfigToolbar(StepConfigToolbar.Props(p.router, p.site, p.p().instrument, id, s))))
 
   private val component = ScalaComponent.builder[Props]("SequenceStepsTableContainer")
     .initialState(State(0))

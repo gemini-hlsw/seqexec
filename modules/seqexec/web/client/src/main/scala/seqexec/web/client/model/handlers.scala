@@ -3,13 +3,17 @@
 
 package seqexec.web.client
 
-import java.util.logging.{Level, Logger}
-import java.time.Instant
-
+import boopickle.DefaultBasic._
+import cats._
+import cats.implicits._
 import diode.util.RunAfterJS
 import diode.{Action, ActionHandler, ActionResult, RootModelR, Effect, ModelRW, NoAction}
 import diode.data.{Pending, RefTo, Pot, Ready}
-import boopickle.DefaultBasic._
+import java.util.logging.{Level, Logger}
+import java.time.Instant
+import gem.Observation
+import mouse.all._
+import org.scalajs.dom._
 import seqexec.model.UserDetails
 import seqexec.model.boopickle._
 import seqexec.model.Model._
@@ -24,11 +28,6 @@ import seqexec.web.client.circuit._
 import seqexec.web.client.services.log.ConsoleHandler
 import seqexec.web.client.services.{Audio, SeqexecWebClient}
 import seqexec.web.client.services.WebpackResources._
-import cats._
-import cats.implicits._
-import org.scalajs.dom._
-import mouse.all._
-
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.scalajs.js.typedarray.{ArrayBuffer, TypedArrayBuffer}
@@ -431,7 +430,7 @@ object handlers {
   /**
     * Handles setting what sequence is in conflict
     */
-  class SequenceInConflictHandler[M](modelRW: ModelRW[M, Option[SequenceId]]) extends ActionHandler(modelRW) with Handlers {
+  class SequenceInConflictHandler[M](modelRW: ModelRW[M, Option[Observation.Id]]) extends ActionHandler(modelRW) with Handlers {
     override def handle: PartialFunction[Any, ActionResult[M]] = {
       case SequenceInConflict(id) =>
         updated(Some(id))

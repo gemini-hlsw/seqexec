@@ -3,7 +3,8 @@
 
 package seqexec.web.client.components.sequence.toolbars
 
-import seqexec.model.Model.{Instrument, SequenceId, SeqexecSite, StepId}
+import gem.Observation
+import seqexec.model.Model.{Instrument, SeqexecSite, StepId}
 import seqexec.web.client.model.Pages._
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.components.SeqexecStyles
@@ -20,12 +21,12 @@ import japgolly.scalajs.react.component.Scala.Unmounted
   * Toolbar when displaying a step configuration
   */
 object StepConfigToolbar {
-  final case class Props(router: RouterCtl[SeqexecPages], site: SeqexecSite, instrument: Instrument, id: Option[SequenceId], step: StepId) {
+  final case class Props(router: RouterCtl[SeqexecPages], site: SeqexecSite, instrument: Instrument, id: Observation.Id, step: StepId) {
     protected[sequence] val sequenceInfoConnects = site.instruments.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(i)))).toMap
   }
 
   def backToSequence(p: Props): Callback =
-    p.id.map(si => SeqexecCircuit.dispatchCB(NavigateSilentTo(SequencePage(p.instrument, si, p.step)))).getOrEmpty
+    SeqexecCircuit.dispatchCB(NavigateSilentTo(SequencePage(p.instrument, p.id, p.step)))
 
   private val component = ScalaComponent.builder[Props]("StepConfigToolbar")
     .stateless
@@ -48,7 +49,7 @@ object StepConfigToolbar {
             ^.cls := "ui left floated eight wide column",
             SeqexecStyles.shorterFields,
             <.div(
-              p.router.link(SequencePage(p.instrument, p.id.getOrElse(""), p.step))
+              p.router.link(SequencePage(p.instrument, p.id, p.step))
                 (Button(Button.Props(icon = Some(IconChevronLeft), labeled = true, onClick = backToSequence(p)), "Back"))
             )
           ),

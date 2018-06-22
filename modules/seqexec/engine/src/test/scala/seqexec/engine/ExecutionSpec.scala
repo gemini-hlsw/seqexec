@@ -3,11 +3,9 @@
 
 package seqexec.engine
 
-import seqexec.model.ActionType
-
-import org.scalatest._
-
 import cats.effect.IO
+import org.scalatest._
+import seqexec.model.ActionType
 
 class ExecutionSpec extends FlatSpec with Matchers {
 

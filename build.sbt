@@ -539,6 +539,7 @@ lazy val seqexec_model = crossProject(JVMPlatform, JSPlatform)
     // And add a custom one
     libraryDependencies += JavaTimeJS.value
   )
+  .dependsOn(core % "compile->compile;test->test")
 
 lazy val seqexec_model_JVM:Project = seqexec_model.jvm
 

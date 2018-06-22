@@ -3,7 +3,13 @@
 
 package seqexec.web.client.components.sequence.steps
 
-import seqexec.model.Model.{FPUMode, Instrument, SequenceId, Step, StepType, StepState}
+import cats.implicits._
+import japgolly.scalajs.react._
+import japgolly.scalajs.react.component.Scala.Unmounted
+import japgolly.scalajs.react.vdom.html_<^._
+import japgolly.scalajs.react.extra.router.RouterCtl
+import gem.Observation
+import seqexec.model.Model.{FPUMode, Instrument, Step, StepType, StepState}
 import seqexec.web.client.actions.{NavigateSilentTo, FlipSkipStep, FlipBreakpointStep}
 import seqexec.model.enumerations
 import seqexec.web.client.circuit.{ClientStatus, SeqexecCircuit, StepsTableFocus}
@@ -16,11 +22,6 @@ import seqexec.web.client.semanticui.elements.icon.Icon._
 import seqexec.web.client.semanticui.Size
 import seqexec.web.client.services.HtmlConstants.iconEmpty
 import web.client.style._
-import japgolly.scalajs.react._
-import japgolly.scalajs.react.component.Scala.Unmounted
-import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.extra.router.RouterCtl
-import cats.implicits._
 
 /**
  * Component to display an icon for the state
@@ -278,7 +279,7 @@ object StepIdCell {
   * Component to link to the settings
   */
 object SettingsCell {
-  final case class Props(ctl: RouterCtl[Pages.SeqexecPages], instrument: Instrument, obsId: SequenceId, index: Int)
+  final case class Props(ctl: RouterCtl[Pages.SeqexecPages], instrument: Instrument, obsId: Observation.Id, index: Int)
   private val component = ScalaComponent.builder[Props]("SettingsCell")
     .stateless
     .render_P { p =>

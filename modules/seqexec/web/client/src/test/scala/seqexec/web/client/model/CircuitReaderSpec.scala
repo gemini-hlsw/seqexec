@@ -3,7 +3,8 @@
 
 package seqexec.web.client
 
-import seqexec.model.Model.{Instrument, SequenceId}
+import gem.Observation
+import seqexec.model.Model.Instrument
 import seqexec.web.client.circuit.SeqexecCircuit._
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{FlatSpec, Matchers}
@@ -33,7 +34,7 @@ class CircuitReaderSpec extends FlatSpec with Matchers with PropertyChecks with 
       }
     }
     it should "maintain reference equality for the sequence reader" in {
-      forAll{ (i: SequenceId) =>
+      forAll{ (i: Observation.Id) =>
         (sequenceReader(i) === sequenceReader(i).value) should be(true)
       }
     }

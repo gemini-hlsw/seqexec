@@ -6,6 +6,8 @@ package seqexec.web.client
 import cats.data.NonEmptyList
 import diode.RootModelR
 import diode.data._
+import gem.arb.ArbObservation
+import gem.Observation
 import seqexec.model.Model._
 import seqexec.web.client.model._
 import seqexec.web.client.circuit._
@@ -16,7 +18,7 @@ import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, _}
 import org.scalajs.dom.WebSocket
 
-trait ArbitrariesWebClient {
+trait ArbitrariesWebClient extends ArbObservation {
   import seqexec.model.SharedModelArbitraries._
 
   implicit val arbSequenceTab: Arbitrary[SequenceTab] =
@@ -102,7 +104,7 @@ trait ArbitrariesWebClient {
   implicit val arbStepsTableFocus: Arbitrary[StepsTableFocus] =
     Arbitrary {
       for {
-        id <- arbitrary[SequenceId]
+        id <- arbitrary[Observation.Id]
         i  <- arbitrary[Instrument]
         ss <- arbitrary[SequenceState]
         s  <- arbitrary[List[Step]]
@@ -112,7 +114,7 @@ trait ArbitrariesWebClient {
     }
 
   implicit val sstCogen: Cogen[StepsTableFocus] =
-    Cogen[(SequenceId, Instrument, SequenceState, List[Step], Option[Int], Option[Int])].contramap { x =>
+    Cogen[(Observation.Id, Instrument, SequenceState, List[Step], Option[Int], Option[Int])].contramap { x =>
       (x.id, x.instrument, x.state, x.steps, x.stepConfigDisplayed, x.nextStepToRun)
     }
 
