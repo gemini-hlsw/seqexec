@@ -1,9 +1,6 @@
 import sbt._
 import java.lang.{Runtime => JRuntime}
 import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
-import sbtcrossproject.{crossProject, CrossType}
-import sbtcrossproject.CrossPlugin.autoImport._
-import scalajscrossproject.ScalaJSCrossPlugin.autoImport.{toScalaJSGroupID => _, _}
 
 /**
  * Application settings and dependencies

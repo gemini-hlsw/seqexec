@@ -3,7 +3,6 @@ import sbt.Keys._
 import sbt._
 import de.heikoseeberger.sbtheader.HeaderPlugin.autoImport._
 import wartremover.WartRemover.autoImport._
-import net.virtualvoid.sbt.graph.DependencyGraphPlugin.autoImport._
 import com.timushev.sbt.updates.UpdatesPlugin.autoImport._
 import org.flywaydb.sbt.FlywayPlugin.autoImport._
 
