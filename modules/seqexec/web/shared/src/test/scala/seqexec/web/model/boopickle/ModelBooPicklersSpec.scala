@@ -15,26 +15,42 @@ import seqexec.model.SequenceEventsArbitraries._
 /**
   * Tests Serialization/Deserialization using BooPickle
   */
-@SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter", "org.wartremover.warts.Throw", "org.wartremover.warts.OptionPartial", "org.wartremover.warts.NonUnitStatements", "org.wartremover.warts.Equals"))
+@SuppressWarnings(
+  Array(
+    "org.wartremover.warts.ImplicitParameter",
+    "org.wartremover.warts.Throw",
+    "org.wartremover.warts.OptionPartial",
+    "org.wartremover.warts.NonUnitStatements",
+    "org.wartremover.warts.Equals"
+  ))
 final class BoopicklingSpec extends CatsSuite with ModelBooPicklers {
 
   checkAll("Pickler[UserDetails]", PicklerTests[UserDetails].pickler)
   checkAll("Pickler[SequenceView]", PicklerTests[SequenceView].pickler)
-  checkAll("Pickler[ConnectionOpenEvent]", PicklerTests[ConnectionOpenEvent].pickler)
-  checkAll("Pickler[SequencesQueue[SequenceView]]", PicklerTests[SequencesQueue[SequenceView]].pickler)
+  checkAll("Pickler[ConnectionOpenEvent]",
+           PicklerTests[ConnectionOpenEvent].pickler)
+  checkAll("Pickler[SequencesQueue[SequenceView]]",
+           PicklerTests[SequencesQueue[SequenceView]].pickler)
   checkAll("Pickler[StepExecuted]", PicklerTests[StepExecuted].pickler)
-  checkAll("Pickler[SequenceCompleted]", PicklerTests[SequenceCompleted].pickler)
+  checkAll("Pickler[SequenceCompleted]",
+           PicklerTests[SequenceCompleted].pickler)
   checkAll("Pickler[SequenceLoaded]", PicklerTests[SequenceLoaded].pickler)
   checkAll("Pickler[SequenceUnloaded]", PicklerTests[SequenceUnloaded].pickler)
-  checkAll("Pickler[StepBreakpointChanged]", PicklerTests[StepBreakpointChanged].pickler)
-  checkAll("Pickler[StepSkipMarkChanged]", PicklerTests[StepSkipMarkChanged].pickler)
-  checkAll("Pickler[SequencePauseRequested]", PicklerTests[SequencePauseRequested].pickler)
-  checkAll("Pickler[SequencePauseCanceled]", PicklerTests[SequencePauseCanceled].pickler)
-  checkAll("Pickler[ActionStopRequested]", PicklerTests[ActionStopRequested].pickler)
+  checkAll("Pickler[StepBreakpointChanged]",
+           PicklerTests[StepBreakpointChanged].pickler)
+  checkAll("Pickler[StepSkipMarkChanged]",
+           PicklerTests[StepSkipMarkChanged].pickler)
+  checkAll("Pickler[SequencePauseRequested]",
+           PicklerTests[SequencePauseRequested].pickler)
+  checkAll("Pickler[SequencePauseCanceled]",
+           PicklerTests[SequencePauseCanceled].pickler)
+  checkAll("Pickler[ActionStopRequested]",
+           PicklerTests[ActionStopRequested].pickler)
   checkAll("Pickler[SequenceError]", PicklerTests[SequenceError].pickler)
   checkAll("Pickler[SequencePaused]", PicklerTests[SequencePaused].pickler)
   checkAll("Pickler[ExposurePaused]", PicklerTests[ExposurePaused].pickler)
-  checkAll("Pickler[SequencesQueue[SequenceId]]", PicklerTests[SequencesQueue[SequenceId]].pickler)
+  checkAll("Pickler[SequencesQueue[SequenceId]]",
+           PicklerTests[SequencesQueue[SequenceId]].pickler)
   checkAll("Pickler[ImageQuality]", PicklerTests[ImageQuality].pickler)
   checkAll("Pickler[WaterVapor]", PicklerTests[WaterVapor].pickler)
   checkAll("Pickler[SkyBackground]", PicklerTests[SkyBackground].pickler)

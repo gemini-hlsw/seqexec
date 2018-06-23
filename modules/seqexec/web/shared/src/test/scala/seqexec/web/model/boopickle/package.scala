@@ -7,32 +7,33 @@ import _root_.boopickle.Default._
 import cats.laws._
 import cats.laws.discipline._
 import cats.kernel.Eq
-import org.scalacheck.{ Arbitrary, Prop, Shrink }
+import org.scalacheck.{Arbitrary, Prop, Shrink}
 import org.typelevel.discipline.Laws
 
 package boopickle {
+
   trait PicklerLaws[A] {
     implicit def pickler: Pickler[A]
 
-    def picklerRoundTrip(a: A): IsEq[A] = {
+    def picklerRoundTrip(a: A): IsEq[A] =
       Unpickle[A].fromBytes(Pickle.intoBytes(a)) <-> a
-    }
   }
 
   object PicklerLaws {
-    def apply[A](implicit picklerA: Pickler[A]): PicklerLaws[A] = new PicklerLaws[A] {
-      override def pickler: Pickler[A] = picklerA
-    }
+
+    def apply[A](implicit picklerA: Pickler[A]): PicklerLaws[A] =
+      new PicklerLaws[A] {
+        override def pickler: Pickler[A] = picklerA
+      }
   }
 
   trait PicklerTests[A] extends Laws {
     def laws: PicklerLaws[A]
 
     def pickler(implicit
-      arbitraryA: Arbitrary[A],
-      shrinkA: Shrink[A],
-      eqA: Eq[A]
-    ): RuleSet = new DefaultRuleSet(
+                arbitraryA: Arbitrary[A],
+                shrinkA: Shrink[A],
+                eqA: Eq[A]): RuleSet = new DefaultRuleSet(
       name = "codec",
       parent = None,
       "roundTrip" -> Prop.forAll { (a: A) =>
@@ -42,6 +43,7 @@ package boopickle {
   }
 
   object PicklerTests {
+
     def apply[A: Pickler]: PicklerTests[A] = new PicklerTests[A] {
       val laws: PicklerLaws[A] = PicklerLaws[A]
     }
