@@ -5,7 +5,7 @@ package seqexec.web.server.http4s.encoder
 
 import seqexec.model._
 import seqexec.model.Model.{CloudCover, Conditions, ImageQuality, Operator, SequenceId, SequencesQueue, SkyBackground, WaterVapor}
-import boopickle.Default._
+import _root_.boopickle.Default._
 import cats.effect.Sync
 import seqexec.web.common.{CliCommand, LogMessage}
 import seqexec.web.common.LogMessage._

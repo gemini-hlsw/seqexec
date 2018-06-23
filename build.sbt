@@ -352,12 +352,12 @@ lazy val seqexec_web_shared = crossProject(JVMPlatform, JSPlatform)
   .enablePlugins(AutomateHeaderPlugin)
   .enablePlugins(GitBranchPrompt)
   .disablePlugins(RevolverPlugin)
-  .dependsOn(seqexec_model)
   .jvmSettings(commonSettings)
   .jsSettings(commonJSSettings)
   .jsSettings(
     libraryDependencies += JavaLogJS.value
   )
+  .dependsOn(seqexec_model % "compile->compile;test->test")
 
 lazy val seqexec_web_shared_JVM = seqexec_web_shared.jvm
 

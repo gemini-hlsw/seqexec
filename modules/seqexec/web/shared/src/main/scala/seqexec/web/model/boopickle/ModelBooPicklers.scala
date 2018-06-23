@@ -1,10 +1,11 @@
 // Copyright (c) 2016-2018 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
-package seqexec.model
+package seqexec.model.boopickle
 
 import boopickle.Default._
 import seqexec.model.Model._
+import seqexec.model.UserDetails
 import seqexec.model.events._
 
 import java.time.Instant
@@ -15,7 +16,7 @@ import java.time.Instant
   * them explicitly
   */
 @SuppressWarnings(Array("org.wartremover.warts.Equals", "org.wartremover.warts.PublicInference", "org.wartremover.warts.ImplicitParameter", "org.wartremover.warts.NonUnitStatements", "org.wartremover.warts.Throw", "org.wartremover.warts.OptionPartial"))
-object ModelBooPicklers {
+trait ModelBooPicklers {
   //**********************
   // IMPORTANT The order of the picklers is very relevant to the generated size
   // add them with care
@@ -126,15 +127,4 @@ object ModelBooPicklers {
     .addConcreteType[ServerLogMessage]
     .addConcreteType[NullEvent.type]
 
-  /**
-    * In most cases http4s will use the limit of a byte buffer but not for websockets
-    * This method trims the binary array to be sent on the WS channel
-    */
-  @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
-  def trimmedArray(e: SeqexecEvent): Array[Byte] = {
-    val byteBuffer = Pickle.intoBytes(e)
-    val bytes = new Array[Byte](byteBuffer.limit())
-    byteBuffer.get(bytes, 0, byteBuffer.limit)
-    bytes
-  }
 }

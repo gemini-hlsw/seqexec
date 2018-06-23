@@ -6,7 +6,8 @@ package seqexec.web.client.services
 import java.util.logging.LogRecord
 
 import boopickle.Default._
-import seqexec.model.{ModelBooPicklers, UserDetails, UserLoginRequest}
+import seqexec.model.{UserDetails, UserLoginRequest}
+import seqexec.model.boopickle._
 import seqexec.model.Model.{ClientID, CloudCover, Conditions, ImageQuality, Operator, SequenceId, SequencesQueue, SkyBackground, Step, WaterVapor}
 import seqexec.web.common.{HttpStatusCodes, LogMessage, RegularCommand}
 import seqexec.web.common.LogMessage._
@@ -23,9 +24,7 @@ import cats.implicits._
   * Encapsulates remote calls to the Seqexec Web API
   */
 @SuppressWarnings(Array("org.wartremover.warts.Equals", "org.wartremover.warts.ImplicitParameter", "org.wartremover.warts.NonUnitStatements", "org.wartremover.warts.OptionPartial", "org.wartremover.warts.Throw"))
-object SeqexecWebClient {
-  import ModelBooPicklers._
-
+object SeqexecWebClient extends ModelBooPicklers {
   private val baseUrl = "/api/seqexec"
 
   // Decodes the binary response with BooPickle, errors are not handled
