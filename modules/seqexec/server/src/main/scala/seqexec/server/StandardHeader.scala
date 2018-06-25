@@ -356,7 +356,7 @@ class StandardHeader(
     buildInt32(obsReader.getSciBand.orDefault, "SCIBAND")
   )
 
-  def timinigWindows(id: ImageFileId, inst: String): SeqAction[Unit] = {
+  def timinigWindows[A: HeaderProvider](id: ImageFileId, inst: A): SeqAction[Unit] = {
     val timingWindows = obsReader.getTimingWindows
     val windows = timingWindows.flatMap {
       case (i, tw) =>
@@ -370,7 +370,7 @@ class StandardHeader(
     sendKeywords(id, inst, hs, windowsCount :: windows)
   }
 
-  def requestedConditions(id: ImageFileId, inst: String): SeqAction[Unit] = {
+  def requestedConditions[A: HeaderProvider](id: ImageFileId, inst: A): SeqAction[Unit] = {
     import ObsKeywordsReader._
     val keys = List(
       "REQIQ" -> IQ,
@@ -383,7 +383,7 @@ class StandardHeader(
     sendKeywords(id, inst, hs, requested)
   }
 
-  def requestedAirMassAngle(id: ImageFileId, inst: String): SeqAction[Unit] = {
+  def requestedAirMassAngle[A: HeaderProvider](id: ImageFileId, inst: A): SeqAction[Unit] = {
     import ObsKeywordsReader._
     val keys = List(
       "REQMAXAM" -> MAX_AIRMASS,
@@ -398,7 +398,7 @@ class StandardHeader(
   }
 
   // scalastyle:of
-  override def sendBefore(id: ImageFileId, inst: String): SeqAction[Unit] = {
+  override def sendBefore[A: HeaderProvider](id: ImageFileId, inst: A): SeqAction[Unit] = {
     def guiderKeywords(guideWith: SeqAction[StandardGuideOptions.Value], baseName: String, target: TargetKeywordsReader,
                        extras: List[KeywordBag => SeqAction[KeywordBag]]): SeqAction[Unit] = guideWith.flatMap { g =>
       if (g === StandardGuideOptions.Value.guide) sendKeywords(id, inst, hs, List(
@@ -445,7 +445,7 @@ class StandardHeader(
   }
   // scalastyle:on
 
-  override def sendAfter(id: ImageFileId, inst: String): SeqAction[Unit] = sendKeywords(id, inst, hs,
+  override def sendAfter[A: HeaderProvider](id: ImageFileId, inst: A): SeqAction[Unit] = sendKeywords(id, inst, hs,
     List(
       buildDouble(tcsReader.getAirMass.orDefault, "AIRMASS"),
       buildDouble(tcsReader.getStartAirMass.orDefault, "AMSTART"),

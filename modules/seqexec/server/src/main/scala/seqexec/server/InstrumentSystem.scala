@@ -21,6 +21,17 @@ trait InstrumentSystem extends System {
 }
 
 object InstrumentSystem {
+
+  implicit val HeaderProvider: HeaderProvider[InstrumentSystem] = new HeaderProvider[InstrumentSystem] {
+    def name(a: InstrumentSystem): String = a match {
+      case i: flamingos2.Flamingos2 => i.dhsInstrumentName
+      case i: gmos.GmosNorth        => i.dhsInstrumentName
+      case i: gmos.GmosSouth        => i.dhsInstrumentName
+      case i: gnirs.Gnirs           => i.dhsInstrumentName
+      case i: gpi.GPI[_]            => i.dhsInstrumentName
+      case _                        => sys.error("Missing instrument")
+    }
+  }
   sealed trait ObserveControl
   object Uncontrollable extends ObserveControl
   final case class StopObserveCmd(self: SeqAction[Unit]) extends AnyVal

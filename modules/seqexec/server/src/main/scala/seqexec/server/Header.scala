@@ -7,12 +7,28 @@ import seqexec.model.dhs.ImageFileId
 import seqexec.server.keywords.DhsClient
 import seqexec.server.keywords.DhsClient._
 
+trait HeaderProvider[A] {
+  def name(a: A): String
+}
+
+object HeaderProvider {
+  def apply[A](implicit ev: HeaderProvider[A]): HeaderProvider[A] = ev
+
+  final class HeaderProviderOps[A: HeaderProvider](val a: A) {
+    def name: String = HeaderProvider[A].name(a)
+  }
+
+  implicit def ToHeaderProviderOps[A: HeaderProvider](a: A): HeaderProviderOps[A] = new HeaderProviderOps(a)
+}
+
 trait Header {
-  def sendBefore(id: ImageFileId, inst: String): SeqAction[Unit]
-  def sendAfter(id: ImageFileId, inst: String): SeqAction[Unit]
+  def sendBefore[A: HeaderProvider](id: ImageFileId, inst: A): SeqAction[Unit]
+  def sendAfter[A: HeaderProvider](id: ImageFileId, inst: A): SeqAction[Unit]
 }
 
 object Header {
+  import HeaderProvider._
+
   // Default values for FITS headers
   val IntDefault: Int = -9999
   val DoubleDefault: Double = -9999.0
@@ -29,12 +45,12 @@ object Header {
   def buildBoolean(get: SeqAction[Boolean], name: String ): KeywordBag => SeqAction[KeywordBag] = buildKeyword(get, name, BooleanKeyword)
   def buildString(get: SeqAction[String], name: String ): KeywordBag => SeqAction[KeywordBag]   = buildKeyword(get, name, StringKeyword)
 
-  private def bundleKeywords(inst: String, ks: Seq[KeywordBag => SeqAction[KeywordBag]]): SeqAction[KeywordBag] = {
-    val z = SeqAction(KeywordBag(StringKeyword("instrument", inst)))
+  private def bundleKeywords[A: HeaderProvider](inst: A, ks: Seq[KeywordBag => SeqAction[KeywordBag]]): SeqAction[KeywordBag] = {
+    val z = SeqAction(KeywordBag(StringKeyword("instrument", inst.name)))
     ks.foldLeft(z) { case (a,b) => a.flatMap(b) }
   }
 
-  def sendKeywords(id: ImageFileId, inst: String, hs: DhsClient, b: Seq[KeywordBag => SeqAction[KeywordBag]]): SeqAction[Unit] = for {
+  def sendKeywords[A: HeaderProvider](id: ImageFileId, inst: A, hs: DhsClient, b: Seq[KeywordBag => SeqAction[KeywordBag]]): SeqAction[Unit] = for {
     bag <- bundleKeywords(inst, b)
     _   <- hs.setKeywords(id, bag, finalFlag = false)
   } yield ()

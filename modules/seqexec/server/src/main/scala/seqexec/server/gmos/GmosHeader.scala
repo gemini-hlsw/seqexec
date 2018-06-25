@@ -7,6 +7,7 @@ import seqexec.model.dhs.ImageFileId
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.Header.Implicits._
 import seqexec.server.Header._
+import seqexec.server.HeaderProvider
 import seqexec.server.tcs.TcsKeywordsReader
 import seqexec.server.{ConfigUtilOps, Header, SeqAction, SeqexecFailure}
 import seqexec.server.keywords.DhsClient
@@ -18,85 +19,85 @@ import cats.data.EitherT
 import cats.effect.IO
 import cats.implicits._
 
-final case class GmosHeader(hs: DhsClient, gmosObsReader: GmosHeader.ObsKeywordsReader, gmosReader: GmosHeader.InstKeywordsReader, tcsKeywordsReader: TcsKeywordsReader) extends Header {
-  override def sendBefore(id: ImageFileId, inst: String): SeqAction[Unit] ={
-    sendKeywords(id, inst, hs, List(
-      buildInt32(tcsKeywordsReader.getGmosInstPort.orDefault, "INPORT"),
-      buildString(gmosReader.ccName, "GMOSCC"),
-      buildString(tcsKeywordsReader.getUT.orDefault, "TIME-OBS"),
-      buildBoolean(gmosObsReader.preimage.map(_.toBoolean), "PREIMAGE"))
-      // TODO NOD*
-    )
-  }
-
-  private def adcKeywords =
-    if (gmosReader.isADCInUse) {
-      List(
-        buildDouble(gmosReader.adcPrismEntSt, "ADCENPST"),
-        buildDouble(gmosReader.adcPrismEntEnd, "ADCENPEN"),
-        buildDouble(gmosReader.adcPrismEntMe, "ADCENPME"),
-        buildDouble(gmosReader.adcPrismExtSt, "ADCEXPST"),
-        buildDouble(gmosReader.adcPrismExtEnd, "ADCEXPEN"),
-        buildDouble(gmosReader.adcPrismExtMe, "ADCEXPME"),
-        buildDouble(gmosReader.adcWavelength1, "ADCWLEN1"),
-        buildDouble(gmosReader.adcWavelength2, "ADCWLEN2")
-      )
-    } else Nil
-
-  private def roiKeywords = gmosReader.roiValues.map {
-    case (i, rv) =>
-      List(
-        buildInt32(rv.xStart, s"DETRO${i}X"),
-        buildInt32(rv.xSize, s"DETRO${i}XS"),
-        buildInt32(rv.yStart, s"DETRO${i}Y"),
-        buildInt32(rv.ySize, s"DETRO${i}YS")
-      )
-  }.toList
-
-  private val InBeam: Int = 0
-  private def readMaskName: SeqAction[String] = gmosReader.maskLoc.flatMap{v => if(v === InBeam) gmosReader.maskName else SeqAction("None")}
-
-  override def sendAfter(id: ImageFileId, inst: String): SeqAction[Unit] = {
-    sendKeywords(id, inst, hs, List(
-      buildInt32(gmosReader.maskId, "MASKID"),
-      buildString(readMaskName, "MASKNAME"),
-      buildInt32(gmosReader.maskType, "MASKTYP"),
-      buildInt32(gmosReader.maskLoc, "MASKLOC"),
-      buildString(gmosReader.filter1, "FILTER1"),
-      buildInt32(gmosReader.filter1Id, "FILTID1"),
-      buildString(gmosReader.filter2, "FILTER2"),
-      buildInt32(gmosReader.filter2Id, "FILTID2"),
-      buildString(gmosReader.grating, "GRATING"),
-      buildInt32(gmosReader.gratingId, "GRATID"),
-      buildDouble(gmosReader.gratingWavelength, "GRWLEN"),
-      buildDouble(gmosReader.gratingAdjustedWavelength, "CENTWAVE"),
-      buildInt32(gmosReader.gratingOrder, "GRORDER"),
-      buildDouble(gmosReader.gratingTilt, "GRTILT"),
-      buildDouble(gmosReader.gratingStep, "GRSTEP"),
-      buildDouble(gmosReader.dtaX, "DTAX"),
-      buildDouble(gmosReader.dtaY, "DTAY"),
-      buildDouble(gmosReader.dtaZ, "DTAZ"),
-      buildDouble(gmosReader.dtaZst, "DTAZST"),
-      buildDouble(gmosReader.dtaZen, "DTAZEN"),
-      buildDouble(gmosReader.dtaZme, "DTAZME"),
-      buildString(gmosReader.stageMode, "DTMODE"),
-      buildString(gmosReader.adcMode, "ADCMODE"),
-      buildString(gmosReader.dcName, "GMOSDC"),
-      buildString(gmosReader.detectorType, "DETTYPE"),
-      buildString(gmosReader.detectorId, "DETID"),
-      buildDouble(gmosReader.exposureTime, "EXPOSURE"),
-      buildInt32(gmosReader.adcUsed, "ADCUSED"),
-      buildInt32(gmosReader.detNRoi, "DETNROI")
-      // TODO These are enabled on N&S only
-      /*buildInt32(gmosReader.aExpCount, "ANODCNT"),
-      buildInt32(gmosReader.bExpCount, "BNODCNT"),
-      buildInt32(gmosReader.exposureTime, "SUBINT")*/
-    ) ::: adcKeywords ::: roiKeywords.flatten)
-  }
-
-}
-
 object GmosHeader {
+  def header(hs: DhsClient, gmosObsReader: GmosHeader.ObsKeywordsReader, gmosReader: GmosHeader.InstKeywordsReader, tcsKeywordsReader: TcsKeywordsReader): Header =
+    new Header {
+    override def sendBefore[A: HeaderProvider](id: ImageFileId, inst: A): SeqAction[Unit] ={
+      sendKeywords(id, inst, hs, List(
+        buildInt32(tcsKeywordsReader.getGmosInstPort.orDefault, "INPORT"),
+        buildString(gmosReader.ccName, "GMOSCC"),
+        buildString(tcsKeywordsReader.getUT.orDefault, "TIME-OBS"),
+        buildBoolean(gmosObsReader.preimage.map(_.toBoolean), "PREIMAGE"))
+        // TODO NOD*
+      )
+    }
+
+    private def adcKeywords =
+      if (gmosReader.isADCInUse) {
+        List(
+          buildDouble(gmosReader.adcPrismEntSt, "ADCENPST"),
+          buildDouble(gmosReader.adcPrismEntEnd, "ADCENPEN"),
+          buildDouble(gmosReader.adcPrismEntMe, "ADCENPME"),
+          buildDouble(gmosReader.adcPrismExtSt, "ADCEXPST"),
+          buildDouble(gmosReader.adcPrismExtEnd, "ADCEXPEN"),
+          buildDouble(gmosReader.adcPrismExtMe, "ADCEXPME"),
+          buildDouble(gmosReader.adcWavelength1, "ADCWLEN1"),
+          buildDouble(gmosReader.adcWavelength2, "ADCWLEN2")
+        )
+      } else Nil
+
+    private def roiKeywords = gmosReader.roiValues.map {
+      case (i, rv) =>
+        List(
+          buildInt32(rv.xStart, s"DETRO${i}X"),
+          buildInt32(rv.xSize, s"DETRO${i}XS"),
+          buildInt32(rv.yStart, s"DETRO${i}Y"),
+          buildInt32(rv.ySize, s"DETRO${i}YS")
+        )
+    }.toList
+
+    private val InBeam: Int = 0
+    private def readMaskName: SeqAction[String] = gmosReader.maskLoc.flatMap{v => if(v === InBeam) gmosReader.maskName else SeqAction("None")}
+
+    override def sendAfter[A: HeaderProvider](id: ImageFileId, inst: A): SeqAction[Unit] = {
+      sendKeywords(id, inst, hs, List(
+        buildInt32(gmosReader.maskId, "MASKID"),
+        buildString(readMaskName, "MASKNAME"),
+        buildInt32(gmosReader.maskType, "MASKTYP"),
+        buildInt32(gmosReader.maskLoc, "MASKLOC"),
+        buildString(gmosReader.filter1, "FILTER1"),
+        buildInt32(gmosReader.filter1Id, "FILTID1"),
+        buildString(gmosReader.filter2, "FILTER2"),
+        buildInt32(gmosReader.filter2Id, "FILTID2"),
+        buildString(gmosReader.grating, "GRATING"),
+        buildInt32(gmosReader.gratingId, "GRATID"),
+        buildDouble(gmosReader.gratingWavelength, "GRWLEN"),
+        buildDouble(gmosReader.gratingAdjustedWavelength, "CENTWAVE"),
+        buildInt32(gmosReader.gratingOrder, "GRORDER"),
+        buildDouble(gmosReader.gratingTilt, "GRTILT"),
+        buildDouble(gmosReader.gratingStep, "GRSTEP"),
+        buildDouble(gmosReader.dtaX, "DTAX"),
+        buildDouble(gmosReader.dtaY, "DTAY"),
+        buildDouble(gmosReader.dtaZ, "DTAZ"),
+        buildDouble(gmosReader.dtaZst, "DTAZST"),
+        buildDouble(gmosReader.dtaZen, "DTAZEN"),
+        buildDouble(gmosReader.dtaZme, "DTAZME"),
+        buildString(gmosReader.stageMode, "DTMODE"),
+        buildString(gmosReader.adcMode, "ADCMODE"),
+        buildString(gmosReader.dcName, "GMOSDC"),
+        buildString(gmosReader.detectorType, "DETTYPE"),
+        buildString(gmosReader.detectorId, "DETID"),
+        buildDouble(gmosReader.exposureTime, "EXPOSURE"),
+        buildInt32(gmosReader.adcUsed, "ADCUSED"),
+        buildInt32(gmosReader.detNRoi, "DETNROI")
+        // TODO These are enabled on N&S only
+        /*buildInt32(gmosReader.aExpCount, "ANODCNT"),
+        buildInt32(gmosReader.bExpCount, "BNODCNT"),
+        buildInt32(gmosReader.exposureTime, "SUBINT")*/
+      ) ::: adcKeywords ::: roiKeywords.flatten)
+    }
+  }
+
   final case class RoiValues(xStart: SeqAction[Int], xSize: SeqAction[Int], yStart: SeqAction[Int], ySize: SeqAction[Int])
   trait ObsKeywordsReader {
     def preimage: SeqAction[YesNoType]

@@ -36,6 +36,7 @@ import cats.implicits._
 import edu.gemini.seqexec.odb.{ExecutedDataset, SeqexecSequence}
 import squants.Time
 import fs2.Stream
+// import org.http4s.client.Client
 import gem.Observation
 import mouse.all._
 
@@ -69,7 +70,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
 
   private def info(msg: => String): SeqAction[Unit] = EitherT.right(IO.apply(Log.info(msg)))
 
-  private def observe[A <: InstrumentSystem: Show](config: Config, obsId: Observation.Id, inst: A,
+  private def observe[A <: InstrumentSystem: Show: HeaderProvider](config: Config, obsId: Observation.Id, inst: A,
                       otherSys: List[System], headers: Reader[ActionMetadata, List[Header]])
                      (ctx: ActionMetadata): SeqAction[Result.Partial[FileIdAllocated]] = {
     val dataId: SeqAction[String] = EitherT(IO.apply(
@@ -89,7 +90,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
         d   <- dataId
         _   <- sendDataStart(obsId, fileId, d)
         _   <- notifyObserveStart
-        _   <- headers(ctx).map(_.sendBefore(fileId, inst.dhsInstrumentName)).sequence
+        _   <- headers(ctx).map(_.sendBefore(fileId, inst)).sequence
         _   <- info(s"Start ${inst.show} observation $obsId with label $fileId")
         r   <- inst.observe(config)(fileId)
         _   <- info(s"Completed ${inst.show} observation $obsId with label $fileId")
@@ -99,7 +100,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     def observeTail(id: ImageFileId, dataId: String)(r: ObserveCommand.Result): SeqAction[Result] = {
       val successTail: SeqAction[Result] = for {
         _ <- notifyObserveEnd
-        _ <- headers(ctx).reverseMap(_.sendAfter(id, inst.dhsInstrumentName)).sequence
+        _ <- headers(ctx).reverseMap(_.sendAfter(id, inst)).sequence
         _ <- closeImage(id, systems.dhs)
         _ <- sendDataEnd(obsId, id, dataId)
       } yield Result.OK(Observed(id))
@@ -366,16 +367,16 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
   private def calcInstHeader(config: Config, inst: Model.Instrument): TrySeq[Header] = {
     val tcsKReader = if (settings.tcsKeywords) TcsKeywordsReaderImpl else DummyTcsKeywordsReader
     inst match {
-      case Model.Instrument.F2     => TrySeq(Flamingos2Header(systems.dhs, new Flamingos2Header.ObsKeywordsReaderImpl(config),
+      case Model.Instrument.F2     => TrySeq(Flamingos2Header.header(systems.dhs, new Flamingos2Header.ObsKeywordsReaderImpl(config),
         tcsKReader))
       case Model.Instrument.GmosS |
            Model.Instrument.GmosN  =>
         val gmosInstReader = if (settings.gmosKeywords) GmosHeader.InstKeywordReaderImpl else GmosHeader.DummyInstKeywordReader
-        TrySeq(GmosHeader(systems.dhs, GmosHeader.ObsKeywordsReaderImpl(config), gmosInstReader, tcsKReader))
+        TrySeq(GmosHeader.header(systems.dhs, GmosHeader.ObsKeywordsReaderImpl(config), gmosInstReader, tcsKReader))
       case Model.Instrument.GNIRS  =>
         val gnirsReader = if(settings.gnirsKeywords) GnirsKeywordReaderImpl else GnirsKeywordReaderDummy
-        TrySeq(GnirsHeader(systems.dhs, gnirsReader, tcsKReader))
-      case Model.Instrument.GPI    => TrySeq(GPIHeader(tcsKReader))
+        TrySeq(GnirsHeader.header(systems.dhs, gnirsReader, tcsKReader))
+      case Model.Instrument.GPI    => TrySeq(GPIHeader.header(systems.gpi.gdsClient, tcsKReader))
       case _                       => TrySeq.fail(Unexpected(s"Instrument $inst not supported."))
     }
   }
@@ -388,11 +389,11 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     tcsSubsystems
   )
 
-  private val gwsHeaders: Header = new GwsHeader(systems.dhs,
+  private val gwsHeaders: Header = GwsHeader.header(systems.dhs,
     if (settings.gwsKeywords) GwsKeywordsReaderImpl else DummyGwsKeywordsReader
   )
 
-  private val gcalHeader: Header = new GcalHeader(systems.dhs,
+  private val gcalHeader: Header = GcalHeader.header(systems.dhs,
     if (settings.gcalKeywords) GcalKeywordsReaderImpl else DummyGcalKeywordsReader
   )
 
@@ -409,7 +410,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
 }
 
 object SeqTranslate {
-  def apply(site: Site, systems: Systems, settings: Settings): SeqTranslate = new SeqTranslate(site, systems, settings)
+  def apply(site: Site, systems: Systems, /*httpClient: Client[IO], */settings: Settings): SeqTranslate = new SeqTranslate(site, systems, settings)
 
   final case class Systems(
                       odb: ODBProxy,
