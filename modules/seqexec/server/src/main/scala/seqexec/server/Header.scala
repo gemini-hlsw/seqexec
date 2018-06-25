@@ -4,7 +4,8 @@
 package seqexec.server
 
 import seqexec.model.dhs.ImageFileId
-import seqexec.server.DhsClient._
+import seqexec.server.keywords.DhsClient
+import seqexec.server.keywords.DhsClient._
 
 trait Header {
   def sendBefore(id: ImageFileId, inst: String): SeqAction[Unit]

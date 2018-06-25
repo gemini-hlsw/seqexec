@@ -159,7 +159,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers {
       SeqexecEngine.observeStatus(executions) shouldBe ActionStatus.Paused
     }
 
-  private val seqexecEngine = SeqexecEngine(defaultSettings)
+  private val seqexecEngine = SeqexecEngine(null, defaultSettings)
   private def advanceOne(q: EventQueue, s0: executeEngine.StateType, put: IO[Either[SeqexecFailure, Unit]]): Stream[Pure, Option[executeEngine.StateType]] =
     Stream.emit((put *> executeEngine.process(q.dequeue)(s0).take(1).compile.last).unsafeRunSync.map(_._2))
 

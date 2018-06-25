@@ -7,7 +7,8 @@ import seqexec.model.dhs.ImageFileId
 import seqexec.server.Header._
 import seqexec.server.Header.Implicits._
 import seqexec.server.tcs.TcsKeywordsReader
-import seqexec.server.{DhsClient, Header, SeqAction}
+import seqexec.server.{Header, SeqAction}
+import seqexec.server.keywords.DhsClient
 
 class GnirsHeader(hs: DhsClient, gnirsReader: GnirsKeywordReader, tcsReader: TcsKeywordsReader) extends Header {
   override def sendBefore(id: ImageFileId, inst: String): SeqAction[Unit] =

@@ -15,6 +15,7 @@ import seqexec.model.ActionType
 import seqexec.model.Model.Instrument.GmosS
 import seqexec.model.Model.{SequenceMetadata, SequenceState, StepConfig}
 import seqexec.server.SeqTranslate.ObserveContext
+import seqexec.server.keywords.DhsClientSim
 import seqexec.server.flamingos2.Flamingos2ControllerSim
 import seqexec.server.gcal.GcalControllerEpics
 import seqexec.server.gmos.GmosControllerSim

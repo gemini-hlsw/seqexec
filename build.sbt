@@ -386,7 +386,7 @@ lazy val seqexec_web_server = project.in(file("modules/seqexec/web/server"))
   .settings(commonSettings: _*)
   .settings(
     addCompilerPlugin(Plugins.kindProjectorPlugin),
-    libraryDependencies ++= Seq(UnboundId, JwtCore, Knobs) ++ Http4s ++ Logging,
+    libraryDependencies ++= Seq(UnboundId, JwtCore, Knobs, Http4sClient) ++ Http4s ++ Logging,
     // Supports launching the server in the background
     mainClass in reStart := Some("seqexec.web.server.http4s.WebServerLauncher"),
   )
@@ -511,6 +511,8 @@ lazy val seqexec_server = project
           Knobs,
           OpenCSV,
           Log4s,
+          Http4sClient,
+          Http4sXml,
           Http4sBoopickle
       ) ++ SeqexecOdb ++ Monocle.value ++ WDBAClient ++ TestLibs.value
   )

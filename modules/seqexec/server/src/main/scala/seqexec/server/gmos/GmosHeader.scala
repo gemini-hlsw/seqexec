@@ -8,7 +8,8 @@ import seqexec.server.ConfigUtilOps._
 import seqexec.server.Header.Implicits._
 import seqexec.server.Header._
 import seqexec.server.tcs.TcsKeywordsReader
-import seqexec.server.{ConfigUtilOps, DhsClient, Header, SeqAction, SeqexecFailure}
+import seqexec.server.{ConfigUtilOps, Header, SeqAction, SeqexecFailure}
+import seqexec.server.keywords.DhsClient
 import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.data.YesNoType
 import edu.gemini.spModel.gemini.gmos.InstGmosCommon.IS_MOS_PREIMAGING_PROP

@@ -1,9 +1,10 @@
 // Copyright (c) 2016-2018 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
-package seqexec.server
+package seqexec.server.keywords
 
 import seqexec.model.dhs.ImageFileId
+import seqexec.server.SeqAction
 
 /**
   * Defines the interface for dhs client, with methods, e.g. to request image creation

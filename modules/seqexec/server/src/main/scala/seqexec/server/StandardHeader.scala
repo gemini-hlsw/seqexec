@@ -11,7 +11,8 @@ import cats.implicits._
 import seqexec.model.Model.{Conditions, Observer, Operator}
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.ConfigUtilOps._
-import seqexec.server.DhsClient.KeywordBag
+import seqexec.server.keywords.DhsClient
+import seqexec.server.keywords.DhsClient.KeywordBag
 import seqexec.server.tcs.{TargetKeywordsReader, Tcs, TcsController, TcsKeywordsReader}
 import edu.gemini.spModel.config2.{Config, ItemKey}
 import edu.gemini.spModel.dataflow.GsaAspect.Visibility

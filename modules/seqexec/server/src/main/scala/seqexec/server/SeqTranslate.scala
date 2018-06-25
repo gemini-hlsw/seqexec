@@ -10,7 +10,8 @@ import seqexec.model.Model.{Instrument, Resource, SequenceMetadata, StepState}
 import seqexec.model.{ActionType, Model}
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.ConfigUtilOps._
-import seqexec.server.DhsClient.{KeywordBag, StringKeyword}
+import seqexec.server.keywords.DhsClient
+import seqexec.server.keywords.DhsClient.{KeywordBag, StringKeyword}
 import seqexec.server.SeqTranslate.{Settings, Systems}
 import seqexec.server.SeqexecFailure.{Unexpected, UnrecognizedInstrument}
 import seqexec.server.InstrumentSystem._

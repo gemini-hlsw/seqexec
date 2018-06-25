@@ -6,7 +6,8 @@ package seqexec.server.gws
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.Header.Implicits._
 import seqexec.server.Header._
-import seqexec.server.{DhsClient, EpicsHealth, Header, SeqAction}
+import seqexec.server.{EpicsHealth, Header, SeqAction}
+import seqexec.server.keywords.DhsClient
 
 /**
   * Created by jluhrs on 7/17/17.

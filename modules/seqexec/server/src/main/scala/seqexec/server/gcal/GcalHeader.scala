@@ -6,7 +6,8 @@ package seqexec.server.gcal
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.Header._
 import seqexec.server.Header.Implicits._
-import seqexec.server.{DhsClient, Header, SeqAction}
+import seqexec.server.{Header, SeqAction}
+import seqexec.server.keywords.DhsClient
 
 class GcalHeader(hs: DhsClient, gcalReader: GcalKeywordReader) extends Header {
   private val gcalKeywords = List(

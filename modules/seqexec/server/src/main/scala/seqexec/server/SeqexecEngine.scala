@@ -22,6 +22,7 @@ import seqexec.model.Model._
 import seqexec.model.events._
 import seqexec.model.{ActionType, UserDetails}
 import seqexec.server.ConfigUtilOps._
+import seqexec.server.keywords._
 import seqexec.server.flamingos2.{Flamingos2ControllerEpics, Flamingos2ControllerSim, Flamingos2ControllerSimBad, Flamingos2Epics}
 import seqexec.server.gcal.{GcalControllerEpics, GcalControllerSim, GcalEpics}
 import seqexec.server.gmos.{GmosControllerSim, GmosEpics, GmosNorthControllerEpics, GmosSouthControllerEpics}
@@ -34,14 +35,16 @@ import edu.gemini.spModel.core.{Peer, SPProgramID, Site}
 import edu.gemini.spModel.obscomp.InstConstants
 import edu.gemini.spModel.seqcomp.SeqConfigNames.OCS_KEY
 import fs2.{Scheduler, Stream}
+import org.http4s.client.Client
 import knobs.Config
 import mouse.all._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
-class SeqexecEngine(settings: SeqexecEngine.Settings) {
+class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings) {
   import SeqexecEngine._
+  println(httpClient)
 
   val odbProxy: ODBProxy = new ODBProxy(new Peer(settings.odbHost, 8443, null),
     if (settings.odbNotifications) ODBProxy.OdbCommandsImpl(new Peer(settings.odbHost, 8442, null))
@@ -354,7 +357,7 @@ object SeqexecEngine {
                       failAt: Int,
                       odbQueuePollingInterval: Duration,
                       giapi: Giapi[IO])
-  def apply(settings: Settings): SeqexecEngine = new SeqexecEngine(settings)
+  def apply(httpClient: Client[IO], settings: Settings): SeqexecEngine = new SeqexecEngine(httpClient, settings)
 
   // Couldn't find this on Scalaz
   def splitWhere[A](l: List[A])(p: (A => Boolean)): (List[A], List[A]) =

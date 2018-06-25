@@ -11,16 +11,13 @@ import cats.effect.IO
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.tcs.TcsKeywordsReader
-import seqexec.server.{ConfigUtilOps, DhsClient, Header, SeqAction, SeqexecFailure}
+import seqexec.server.{ConfigUtilOps, Header, SeqAction, SeqexecFailure}
+import seqexec.server.keywords.DhsClient
 import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.data.YesNoType
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.{MOS_PREIMAGING_PROP, READMODE_PROP, ReadMode}
 import edu.gemini.spModel.seqcomp.SeqConfigNames.INSTRUMENT_KEY
 import cats.implicits._
-
-/**
-  * Created by jluhrs on 2/10/17.
-  */
 
 class Flamingos2Header(hs: DhsClient, f2ObsReader: Flamingos2Header.ObsKeywordsReader, tcsKeywordsReader: TcsKeywordsReader) extends Header {
   import Header.Implicits._
