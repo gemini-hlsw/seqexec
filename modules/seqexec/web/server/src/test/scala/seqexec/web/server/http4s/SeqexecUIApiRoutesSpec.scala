@@ -24,7 +24,7 @@ class SeqexecUIApiRoutesSpec extends FlatSpec with Matchers with UriFunctions wi
   private val service =
     for {
       o <- out
-    } yield new SeqexecUIApiRoutes(true, authService, o).service
+    } yield new SeqexecUIApiRoutes("GS", true, authService, o).service
 
   "SeqexecUIApiRoutes login" should
     "reject requests without body" in {

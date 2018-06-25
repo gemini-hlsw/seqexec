@@ -32,7 +32,7 @@ import scala.math._
 /**
   * Rest Endpoints under the /api route
   */
-class SeqexecUIApiRoutes(devMode: Boolean, auth: AuthenticationService, engineOutput: Topic[IO, SeqexecEvent]) extends BooEncoders with ModelLenses {
+class SeqexecUIApiRoutes(site: String, devMode: Boolean, auth: AuthenticationService, engineOutput: Topic[IO, SeqexecEvent]) extends BooEncoders with ModelLenses {
 
   // Logger for client messages
   private val clientLog = getLogger
@@ -96,6 +96,10 @@ class SeqexecUIApiRoutes(devMode: Boolean, auth: AuthenticationService, engineOu
         val userName = user.fold(_ => "Anonymous", _.displayName)
         // Always return ok
         IO(clientLog.info(s"$userName connected from ${auth.req.remoteHost.getOrElse("Unknown")}")) *> Ok("")
+
+      case GET -> Root / "seqexec" / "site" as _ =>
+        // Return the site of the current server
+        Ok(site)
 
       case GET -> Root / "seqexec" / "events" as user        =>
         // Stream seqexec events to clients and a ping

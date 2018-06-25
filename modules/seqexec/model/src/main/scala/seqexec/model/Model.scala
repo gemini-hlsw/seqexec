@@ -15,7 +15,7 @@ import java.time.ZoneId
 // scalastyle:off
 object Model {
   // We use this to avoid a dependency on spModel, should be replaced by gem
-  sealed trait SeqexecSite {
+  sealed trait SeqexecSite extends Product with Serializable {
     def instruments: NonEmptyList[Instrument]
     def timeZone: ZoneId
   }

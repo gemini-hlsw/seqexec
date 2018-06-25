@@ -15,5 +15,5 @@ $.fn.popup = require("semantic-ui-popup");
 
 if (module.hot) {
   module.hot.accept();
-  App.seqexec.SeqexecApp.start("GS");
+  App.seqexec.SeqexecApp.start();
 }

@@ -3,25 +3,18 @@
 
 package seqexec.web.client
 
+import cats.effect.IO
+import java.util.logging.{Level, Logger}
+import java.time.ZoneId
+import org.scalajs.dom.document
+import org.scalajs.dom.raw.Element
+import scala.scalajs.js.annotation.{JSExport, JSExportTopLevel}
 import seqexec.web.client.components.SeqexecUI
 import seqexec.web.client.services.log.ConsoleHandler
 import seqexec.web.client.services.SeqexecWebClient
-import seqexec.web.client.model.Pages
 import seqexec.web.client.actions.Initialize
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.model.Model.SeqexecSite
-import org.scalajs.dom.document
-import org.scalajs.dom.raw.Element
-
-import scala.scalajs.js.annotation.{JSExport, JSExportTopLevel}
-import java.util.logging.{Level, Logger}
-import java.time.ZoneId
-
-import japgolly.scalajs.react.component.Scala.Unmounted
-import japgolly.scalajs.react.extra.OnUnmount
-import japgolly.scalajs.react.extra.router.Resolution
-
-import cats.effect.IO
 
 /**
   * Seqexec WebApp entry point
@@ -45,10 +38,15 @@ object SeqexecApp {
     ()
   }
 
-  def setupSite(site: String): IO[SeqexecSite] = IO {
-    site match {
-      case "GN" => SeqexecSite.SeqexecGN(ZoneId.of("Pacific/Honolulu"))
-      case _    => SeqexecSite.SeqexecGS(ZoneId.of("America/Santiago"))
+  def setupSite: IO[SeqexecSite] = IO.fromFuture {
+    IO {
+      import scala.concurrent.ExecutionContext.Implicits.global
+
+      // Read the site from the webserver
+      SeqexecWebClient.site().map {
+        case "GN" => SeqexecSite.SeqexecGN(ZoneId.of("Pacific/Honolulu"))
+        case _    => SeqexecSite.SeqexecGS(ZoneId.of("America/Santiago"))
+      }
     }
   }
 
@@ -69,16 +67,18 @@ object SeqexecApp {
   }
 
   @JSExport
-  def start(site: String): Unmounted[Unit, Resolution[Pages.SeqexecPages], OnUnmount.Backend]#Mounted = {
+  def start(): Unit =
     // Render the UI using React
-    val program = for {
+    (for {
       _           <- setupLogFormat
       _           <- setupLogger
-      seqexecSite <- setupSite(site)
+      seqexecSite <- setupSite
       _           <- initializeDataModel(seqexecSite)
       router      <- SeqexecUI.router(seqexecSite)
       node        <- renderingNode
-    } yield router().renderIntoDOM(node)
-    program.unsafeRunSync()
-  }
+    } yield router().renderIntoDOM(node)).unsafeRunAsync {
+      case Left(e)  => e.printStackTrace
+      case Right(_) => // All allright
+    }
+
 }
