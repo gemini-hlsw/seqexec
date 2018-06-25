@@ -57,6 +57,9 @@
         <logger name="gov.aps.jca" level="DEBUG">
             <appender-ref ref="ASYNC500" />
         </logger>
+        <logger name="org.apache.activemq" level="INFO">
+            <appender-ref ref="ASYNC500" />
+        </logger>
 
     </then>
     <else>
@@ -66,6 +69,10 @@
                 <pattern>%d [%thread] %-5level %logger{35} - %msg %n</pattern>
             </encoder>
         </appender>
+
+        <logger name="org.apache.activemq" level="INFO">
+            <appender-ref ref="STDOUT" />
+        </logger>
 
         <root level="DEBUG">
             <appender-ref ref="STDOUT" />

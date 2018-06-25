@@ -67,7 +67,13 @@ object GPI {
       alignFpm   <- config
                       .extract(INSTRUMENT_KEY / ALIGN_FPM_PINHOLE_BIAS_PROP)
                       .as[java.lang.Boolean]
-    } yield AOFlags(useAo, useCal, aoOptimize, alignFpm)
+      magH       <- config
+                      .extract(INSTRUMENT_KEY / MAG_H_PROP)
+                      .as[java.lang.Double]
+      magI       <- config
+                      .extract(INSTRUMENT_KEY / MAG_I_PROP)
+                      .as[java.lang.Double]
+    } yield AOFlags(useAo, useCal, aoOptimize, alignFpm, magH, magI)
 
   private def gpiASU(
       config: Config): Either[ExtractFailure, ArtificialSources] =
