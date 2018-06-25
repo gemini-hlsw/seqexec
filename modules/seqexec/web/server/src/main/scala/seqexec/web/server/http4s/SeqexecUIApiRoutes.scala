@@ -10,7 +10,7 @@ import cats.effect.IO
 import cats.implicits._
 import seqexec.model.Model.ClientID
 import seqexec.model._
-import seqexec.model.ModelBooPicklers.trimmedArray
+import seqexec.model.boopickle._
 import seqexec.model.events._
 import seqexec.web.server.http4s.encoder._
 import seqexec.web.server.security.AuthenticationService.AuthResult

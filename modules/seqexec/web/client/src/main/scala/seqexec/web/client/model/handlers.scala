@@ -10,7 +10,8 @@ import diode.util.RunAfterJS
 import diode.{Action, ActionHandler, ActionResult, RootModelR, Effect, ModelRW, NoAction}
 import diode.data.{Pending, RefTo, Pot, Ready}
 import boopickle.DefaultBasic._
-import seqexec.model.{ModelBooPicklers, UserDetails}
+import seqexec.model.UserDetails
+import seqexec.model.boopickle._
 import seqexec.model.Model._
 import seqexec.model.events._
 import seqexec.web.client.model._
@@ -441,8 +442,7 @@ object handlers {
     * Handles the WebSocket connection and performs reconnection if needed
     */
   @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
-  class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection]) extends ActionHandler(modelRW) with Handlers {
-    import ModelBooPicklers._
+  class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection]) extends ActionHandler(modelRW) with Handlers with ModelBooPicklers {
 
     private implicit val runner = new RunAfterJS
     private val logger = Logger.getLogger(this.getClass.getSimpleName)

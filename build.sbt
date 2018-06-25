@@ -322,7 +322,7 @@ lazy val giapi = project
 
 // Common utilities for web server projects
 lazy val web_server_common = project
-  .in(file("modules/web/server/"))
+  .in(file("modules/shared/web/server/"))
   .enablePlugins(AutomateHeaderPlugin)
   .enablePlugins(GitBranchPrompt)
   .settings(commonSettings: _*)
@@ -332,7 +332,7 @@ lazy val web_server_common = project
 
 // Common utilities for web clinet projects
 lazy val web_client = project
-  .in(file("modules/web/client"))
+  .in(file("modules/shared/web/client"))
   .enablePlugins(AutomateHeaderPlugin)
   .enablePlugins(ScalaJSPlugin)
   .enablePlugins(GitBranchPrompt)
@@ -352,12 +352,12 @@ lazy val seqexec_web_shared = crossProject(JVMPlatform, JSPlatform)
   .enablePlugins(AutomateHeaderPlugin)
   .enablePlugins(GitBranchPrompt)
   .disablePlugins(RevolverPlugin)
-  .dependsOn(seqexec_model)
   .jvmSettings(commonSettings)
   .jsSettings(commonJSSettings)
   .jsSettings(
     libraryDependencies += JavaLogJS.value
   )
+  .dependsOn(seqexec_model % "compile->compile;test->test")
 
 lazy val seqexec_web_shared_JVM = seqexec_web_shared.jvm
 
