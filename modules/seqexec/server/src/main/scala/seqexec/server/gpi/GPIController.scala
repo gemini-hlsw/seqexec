@@ -9,7 +9,9 @@ import cats.effect.IO
 import cats.implicits._
 import edu.gemini.aspen.giapi.commands.DefaultConfiguration
 import edu.gemini.spModel.gemini.gpi.Gpi.{Adc => LegacyAdc}
-import edu.gemini.spModel.gemini.gpi.Gpi.{ArtificialSource => LegacyArtificialSource}
+import edu.gemini.spModel.gemini.gpi.Gpi.{
+  ArtificialSource => LegacyArtificialSource
+}
 import edu.gemini.spModel.gemini.gpi.Gpi.{Disperser => LegacyDisperser}
 import edu.gemini.spModel.gemini.gpi.Gpi.{ObservingMode => LegacyObservingMode}
 import edu.gemini.spModel.gemini.gpi.Gpi.{PupilCamera => LegacyPupilCamera}
@@ -25,29 +27,30 @@ import seqexec.server.SeqAction
 object GPILookupTables {
 
   val obsModeLUT: Map[LegacyObservingMode, String] = Map(
-    LegacyObservingMode.CORON_Y_BAND -> "Y_coron",
-    LegacyObservingMode.CORON_J_BAND -> "J_coron",
-    LegacyObservingMode.CORON_H_BAND -> "H_coron",
-    LegacyObservingMode.CORON_K1_BAND -> "K1_coron",
-    LegacyObservingMode.CORON_K2_BAND -> "K2_coron",
-    LegacyObservingMode.H_STAR -> "H_starcor",
-    LegacyObservingMode.H_LIWA -> "H_LIWAcor",
-    LegacyObservingMode.DIRECT_Y_BAND -> "Y_direct",
-    LegacyObservingMode.DIRECT_J_BAND -> "J_direct",
-    LegacyObservingMode.DIRECT_H_BAND -> "H_direct",
+    LegacyObservingMode.CORON_Y_BAND   -> "Y_coron",
+    LegacyObservingMode.CORON_J_BAND   -> "J_coron",
+    LegacyObservingMode.CORON_H_BAND   -> "H_coron",
+    LegacyObservingMode.CORON_K1_BAND  -> "K1_coron",
+    LegacyObservingMode.CORON_K2_BAND  -> "K2_coron",
+    LegacyObservingMode.H_STAR         -> "H_starcor",
+    LegacyObservingMode.H_LIWA         -> "H_LIWAcor",
+    LegacyObservingMode.DIRECT_Y_BAND  -> "Y_direct",
+    LegacyObservingMode.DIRECT_J_BAND  -> "J_direct",
+    LegacyObservingMode.DIRECT_H_BAND  -> "H_direct",
     LegacyObservingMode.DIRECT_K1_BAND -> "K1_direct",
     LegacyObservingMode.DIRECT_K2_BAND -> "K2_direct",
-    LegacyObservingMode.NRM_Y -> "NRM_Y",
-    LegacyObservingMode.NRM_J -> "NRM_J",
-    LegacyObservingMode.NRM_H -> "NRM_H",
-    LegacyObservingMode.NRM_K1 -> "NRM_K1",
-    LegacyObservingMode.NRM_K2 -> "NRM_K2",
-    LegacyObservingMode.DARK -> "DARK",
-    LegacyObservingMode.UNBLOCKED_Y -> "Y_unblocked",
-    LegacyObservingMode.UNBLOCKED_J -> "J_unblocked",
-    LegacyObservingMode.UNBLOCKED_H -> "H_unblocked",
-    LegacyObservingMode.UNBLOCKED_K1 -> "K1_unblocked",
-    LegacyObservingMode.UNBLOCKED_K2 -> "K2_unblocked")
+    LegacyObservingMode.NRM_Y          -> "NRM_Y",
+    LegacyObservingMode.NRM_J          -> "NRM_J",
+    LegacyObservingMode.NRM_H          -> "NRM_H",
+    LegacyObservingMode.NRM_K1         -> "NRM_K1",
+    LegacyObservingMode.NRM_K2         -> "NRM_K2",
+    LegacyObservingMode.DARK           -> "DARK",
+    LegacyObservingMode.UNBLOCKED_Y    -> "Y_unblocked",
+    LegacyObservingMode.UNBLOCKED_J    -> "J_unblocked",
+    LegacyObservingMode.UNBLOCKED_H    -> "H_unblocked",
+    LegacyObservingMode.UNBLOCKED_K1   -> "K1_unblocked",
+    LegacyObservingMode.UNBLOCKED_K2   -> "K2_unblocked"
+  )
 }
 
 final case class GPIController(gpiClient: GPIClient[IO]) {
@@ -55,46 +58,35 @@ final case class GPIController(gpiClient: GPIClient[IO]) {
   import GPILookupTables._
   private val Log = getLogger
 
+  // scalastyle:off
   def gpiConfig(config: GPIConfig): SeqAction[CommandResult] = {
     val giapiApply = DefaultConfiguration
       .configurationBuilder()
-      .withConfiguration(
-        "gpi:selectAdc.deploy",
-        (config.adc === LegacyAdc.IN)
-          .fold(1, 0)
-          .show)
-      .withConfiguration(
-        "gpi:configAo.useAo",
-        config.aoFlags.useAo
-          .fold(1, 0)
-          .show)
-      .withConfiguration(
-        "gpi:configAo.useCal",
-        config.aoFlags.useCal
-          .fold(1, 0)
-          .show)
-      .withConfiguration(
-        "gpi:configCal.fpmPinholeBias",
-        (config.aoFlags.alignFpm)
-          .fold(1, 0)
-          .show)
-      .withConfiguration(
-        "gpi:configAo.optimize",
-        config.aoFlags.aoOptimize
-          .fold(1, 0)
-          .show)
-      .withConfiguration(
-        "gpi:configIfs.integrationTime",
-        (config.expTime.toMillis / 1000.0).show)
-      .withConfiguration(
-        "gpi:configIfs.numCoadds",
-        config.coAdds.show)
-      .withConfiguration(
-        "gpi:configAo.magnitudeI",
-        config.aoFlags.magI.show)
-      .withConfiguration(
-        "gpi:configAo.magnitudeH",
-        config.aoFlags.magH.show)
+      .withConfiguration("gpi:selectAdc.deploy",
+                         (config.adc === LegacyAdc.IN)
+                           .fold(1, 0)
+                           .show)
+      .withConfiguration("gpi:configAo.useAo",
+                         config.aoFlags.useAo
+                           .fold(1, 0)
+                           .show)
+      .withConfiguration("gpi:configAo.useCal",
+                         config.aoFlags.useCal
+                           .fold(1, 0)
+                           .show)
+      .withConfiguration("gpi:configCal.fpmPinholeBias",
+                         (config.aoFlags.alignFpm)
+                           .fold(1, 0)
+                           .show)
+      .withConfiguration("gpi:configAo.optimize",
+                         config.aoFlags.aoOptimize
+                           .fold(1, 0)
+                           .show)
+      .withConfiguration("gpi:configIfs.integrationTime",
+                         (config.expTime.toMillis / 1000.0).show)
+      .withConfiguration("gpi:configIfs.numCoadds", config.coAdds.show)
+      .withConfiguration("gpi:configAo.magnitudeI", config.aoFlags.magI.show)
+      .withConfiguration("gpi:configAo.magnitudeH", config.aoFlags.magH.show)
       .withConfiguration(
         "gpi:selectShutter.calEntranceShutter",
         (config.shutters.calEntranceShutter === LegacyShutter.OPEN)
@@ -115,45 +107,37 @@ final case class GPIController(gpiClient: GPIClient[IO]) {
         (config.shutters.entranceShutter === LegacyShutter.OPEN)
           .fold(1, 0)
           .show)
-      .withConfiguration(
-        "gpi:selectShutter.calExitShutter", "-1")
-      .withConfiguration(
-        "gpi:observationMode.mode",
-        obsModeLUT.getOrElse(config.mode, ""))
-      .withConfiguration(
-        "gpi:selectPupilCamera.deploy",
-        (config.pc === LegacyPupilCamera.IN)
-          .fold(1, 0)
-          .show)
-      .withConfiguration(
-        "gpi:selectSource.sourceSCatten",
-        config.asu.attenuation.show)
-      .withConfiguration(
-        "gpi:selectSource.sourceSCpower",
-        (config.asu.sc === LegacyArtificialSource.ON)
-          .fold(100, 0)
-          .show)
-      .withConfiguration(
-        "gpi:selectSource.sourceVis",
-        (config.asu.vis === LegacyArtificialSource.ON)
-          .fold(1, 0)
-          .show)
-      .withConfiguration(
-        "gpi:selectSource.sourceIr",
-        (config.asu.ir === LegacyArtificialSource.ON)
-          .fold(1, 0)
-          .show)
-      .withConfiguration(
-        "gpi:selectSource.deploy",
-        (config.disperser === LegacyDisperser.WOLLASTON)
-          .fold(1, 0)
-          .show)
-      .withConfiguration(
-        "gpi:configPolarizer.angle",
-        config.disperserAngle.show)
+      .withConfiguration("gpi:selectShutter.calExitShutter", "-1")
+      .withConfiguration("gpi:observationMode.mode",
+                         obsModeLUT.getOrElse(config.mode, ""))
+      .withConfiguration("gpi:selectPupilCamera.deploy",
+                         (config.pc === LegacyPupilCamera.IN)
+                           .fold(1, 0)
+                           .show)
+      .withConfiguration("gpi:selectSource.sourceSCatten",
+                         config.asu.attenuation.show)
+      .withConfiguration("gpi:selectSource.sourceSCpower",
+                         (config.asu.sc === LegacyArtificialSource.ON)
+                           .fold(100, 0)
+                           .show)
+      .withConfiguration("gpi:selectSource.sourceVis",
+                         (config.asu.vis === LegacyArtificialSource.ON)
+                           .fold(1, 0)
+                           .show)
+      .withConfiguration("gpi:selectSource.sourceIr",
+                         (config.asu.ir === LegacyArtificialSource.ON)
+                           .fold(1, 0)
+                           .show)
+      .withConfiguration("gpi:selectSource.deploy",
+                         (config.disperser === LegacyDisperser.WOLLASTON)
+                           .fold(1, 0)
+                           .show)
+      .withConfiguration("gpi:configPolarizer.angle",
+                         config.disperserAngle.show)
 
     EitherT.liftF(gpiClient.genericApply(giapiApply.build()))
   }
+  // scalastyle:on
 
   def applyConfig(config: GPIConfig): SeqAction[Unit] =
     for {
