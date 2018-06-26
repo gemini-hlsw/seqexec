@@ -257,4 +257,12 @@ object SeqexecWebClient extends ModelBooPicklers {
       url = s"$baseUrl/start"
     ).map(_.responseText)
 
+  /**
+    * Read the site of the server
+    */
+  def site(): Future[String] =
+    Ajax.get(
+      url = s"$baseUrl/site"
+    ).map(_.responseText)
+
 }
