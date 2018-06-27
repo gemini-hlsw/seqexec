@@ -15,6 +15,14 @@ import seqexec.server.tcs.{TcsController, TcsControllerEpics}
 import seqexec.model.Model.{Conditions, Instrument, SequenceId, Operator}
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams
+import edu.gemini.spModel.gemini.gpi.Gpi.{Adc => LegacyAdc}
+import edu.gemini.spModel.gemini.gpi.Gpi.{
+  ArtificialSource => LegacyArtificialSource
+}
+import edu.gemini.spModel.gemini.gpi.Gpi.{Disperser => LegacyDisperser}
+import edu.gemini.spModel.gemini.gpi.Gpi.{ObservingMode => LegacyObservingMode}
+import edu.gemini.spModel.gemini.gpi.Gpi.{PupilCamera => LegacyPupilCamera}
+import edu.gemini.spModel.gemini.gpi.Gpi.{Shutter => LegacyShutter}
 import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, Cogen, Gen}
 import squants.space.LengthConversions._
@@ -138,7 +146,9 @@ object SeqexecServerArbitraries extends ArbTime {
       useCal   <- arbitrary[Boolean]
       aoOpt    <- arbitrary[Boolean]
       alignFpm <- arbitrary[Boolean]
-    } yield AOFlags(useAo, useCal, aoOpt, alignFpm)
+      magH     <- arbitrary[Double]
+      magI     <- arbitrary[Double]
+    } yield AOFlags(useAo, useCal, aoOpt, alignFpm, magH, magI)
   }
   implicit val gpiAOFlagsCogen: Cogen[GPIController.AOFlags] =
     Cogen[(Boolean, Boolean, Boolean, Boolean)]
@@ -146,53 +156,53 @@ object SeqexecServerArbitraries extends ArbTime {
 
   implicit val gpiArtificialSourcesArb: Arbitrary[GPIController.ArtificialSources] = Arbitrary {
     for {
-      ir  <- arbitrary[ArtificialSource]
-      vis <- arbitrary[ArtificialSource]
-      sc  <- arbitrary[ArtificialSource]
+      ir  <- arbitrary[LegacyArtificialSource]
+      vis <- arbitrary[LegacyArtificialSource]
+      sc  <- arbitrary[LegacyArtificialSource]
       att <- arbitrary[Double]
     } yield ArtificialSources(ir, vis, sc, att)
   }
-  implicit val asCogen: Cogen[ArtificialSource] =
+  implicit val asCogen: Cogen[LegacyArtificialSource] =
     Cogen[String].contramap(_.displayValue)
   implicit val gpiArtificialSourcesCogen: Cogen[GPIController.ArtificialSources] =
-    Cogen[(ArtificialSource, ArtificialSource, ArtificialSource, Double)]
+          Cogen[(LegacyArtificialSource, LegacyArtificialSource, LegacyArtificialSource, Double)]
       .contramap(x => (x.ir, x.vis, x.sc, x.attenuation))
 
   implicit val gpiShuttersArb: Arbitrary[GPIController.Shutters] = Arbitrary {
     for {
-      ent <- arbitrary[GPIController.Shutter]
-      cal <- arbitrary[GPIController.Shutter]
-      sci <- arbitrary[GPIController.Shutter]
-      ref <- arbitrary[GPIController.Shutter]
+      ent <- arbitrary[LegacyShutter]
+      cal <- arbitrary[LegacyShutter]
+      sci <- arbitrary[LegacyShutter]
+      ref <- arbitrary[LegacyShutter]
     } yield Shutters(ent, cal, sci, ref)
   }
-  implicit val shutCogen: Cogen[GPIController.Shutter] =
+  implicit val shutCogen: Cogen[LegacyShutter] =
     Cogen[String].contramap(_.displayValue)
   implicit val gpiShuttersCogen: Cogen[GPIController.Shutters] =
-    Cogen[(GPIController.Shutter, GPIController.Shutter, GPIController.Shutter, GPIController.Shutter)]
-      .contramap(x => (x.entranceShutter, x.calEntranceShutter, x.scienceArmShutter, x.referenceArmShutter))
+    Cogen[(LegacyShutter, LegacyShutter, LegacyShutter, LegacyShutter)]
+      .contramap(x => (x.entranceShutter, x.calEntranceShutter, x.calScienceShutter, x.calReferenceShutter))
 
   implicit val gpiConfigArb: Arbitrary[GPIController.GPIConfig] = Arbitrary {
     for {
-      adc <- arbitrary[GPIController.Adc]
-      exp <- arbitrary[Duration]
-      coa <- Gen.posNum[Int]
-      mode <- arbitrary[GPIController.ObservingMode]
-      disp <- arbitrary[GPIController.Disperser]
+      adc   <- arbitrary[LegacyAdc]
+      exp   <- arbitrary[Duration]
+      coa   <- Gen.posNum[Int]
+      mode  <- arbitrary[LegacyObservingMode]
+      disp  <- arbitrary[LegacyDisperser]
       dispA <- arbitrary[Double]
-      shut <- arbitrary[GPIController.Shutters]
-      asu <- arbitrary[GPIController.ArtificialSources]
-      pc <- arbitrary[PupilCamera]
-      ao <- arbitrary[GPIController.AOFlags]
+      shut  <- arbitrary[GPIController.Shutters]
+      asu   <- arbitrary[GPIController.ArtificialSources]
+      pc    <- arbitrary[LegacyPupilCamera]
+      ao    <- arbitrary[GPIController.AOFlags]
     } yield GPIConfig(adc, exp, coa, mode, disp, dispA, shut, asu, pc, ao)
   }
-  implicit val adcCogen: Cogen[GPIController.Adc] =
+  implicit val adcCogen: Cogen[LegacyAdc] =
     Cogen[String].contramap(_.displayValue)
-  implicit val obsModeCogen: Cogen[GPIController.ObservingMode] =
+  implicit val obsModeCogen: Cogen[LegacyObservingMode] =
     Cogen[String].contramap(_.displayValue)
-  implicit val ppCogen: Cogen[GPIController.PupilCamera] =
+  implicit val ppCogen: Cogen[LegacyPupilCamera] =
     Cogen[String].contramap(_.displayValue)
   implicit val gpiConfigCogen: Cogen[GPIController.GPIConfig] =
-    Cogen[(GPIController.Adc, Duration, Int, GPIController.ObservingMode, GPIController.Shutters, GPIController.ArtificialSources, PupilCamera, GPIController.AOFlags)]
+    Cogen[(LegacyAdc, Duration, Int, LegacyObservingMode, GPIController.Shutters, GPIController.ArtificialSources, LegacyPupilCamera, GPIController.AOFlags)]
       .contramap(x => (x.adc, x.expTime, x.coAdds, x.mode, x.shutters, x.asu, x.pc, x.aoFlags))
 }
