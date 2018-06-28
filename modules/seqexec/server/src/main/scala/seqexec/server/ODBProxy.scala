@@ -19,7 +19,7 @@ class ODBProxy(val loc: Peer, cmds: ODBProxy.OdbCommands) {
   def read(oid: Observation.Id): Either[SeqexecFailure, SeqexecSequence] =
     SeqExecService.client(loc).sequence(new SPObservationID(oid.format)).leftMap(SeqexecFailure.ODBSeqError)
 
-  val queuedSequences: SeqAction[Seq[Observation.Id]] = cmds.queuedSequences()
+  val queuedSequences: SeqAction[List[Observation.Id]] = cmds.queuedSequences()
   val datasetStart: (Observation.Id, String, ImageFileId) => SeqAction[Boolean] = cmds.datasetStart
   val datasetComplete: (Observation.Id, String, ImageFileId) => SeqAction[Boolean] = cmds.datasetComplete
   val obsAbort: (Observation.Id, String) => SeqAction[Boolean] = cmds.obsAbort
@@ -33,7 +33,7 @@ class ODBProxy(val loc: Peer, cmds: ODBProxy.OdbCommands) {
 
 object ODBProxy {
   trait OdbCommands {
-    def queuedSequences(): SeqAction[Seq[Observation.Id]]
+    def queuedSequences(): SeqAction[List[Observation.Id]]
     def datasetStart(obsId: Observation.Id, dataId: String, fileId: ImageFileId): SeqAction[Boolean]
     def datasetComplete(obsId: Observation.Id, dataId: String, fileId: ImageFileId): SeqAction[Boolean]
     def obsAbort(obsId: Observation.Id, reason: String): SeqAction[Boolean]
@@ -53,7 +53,7 @@ object ODBProxy {
     override def obsContinue(obsId: Observation.Id): SeqAction[Boolean] = SeqAction(false)
     override def obsPause(obsId: Observation.Id, reason: String): SeqAction[Boolean] = SeqAction(false)
     override def obsStop(obsId: Observation.Id, reason: String): SeqAction[Boolean] = SeqAction(false)
-    override def queuedSequences(): SeqAction[Seq[Observation.Id]] = SeqAction(List.empty)
+    override def queuedSequences(): SeqAction[List[Observation.Id]] = SeqAction(List.empty)
   }
 
   implicit class SeqexecSequenceOps(val s: SeqexecSequence) extends AnyVal {
@@ -121,9 +121,9 @@ object ODBProxy {
       ).recover
     )
 
-    override def queuedSequences(): SeqAction[Seq[Observation.Id]] = EitherT(
+    override def queuedSequences(): SeqAction[List[Observation.Id]] = EitherT(
       IO.apply(
-        xmlrpcClient.getObservations(sessionName).toSeq.flatMap(id => Observation.Id.fromString(id).toList)
+        xmlrpcClient.getObservations(sessionName).toList.flatMap(id => Observation.Id.fromString(id).toList)
       ).recover
     )
   }

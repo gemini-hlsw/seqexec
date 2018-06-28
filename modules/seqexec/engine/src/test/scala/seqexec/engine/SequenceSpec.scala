@@ -19,7 +19,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 class SequenceSpec extends FlatSpec {
-  private val seqId = Observation.Id.unsafeFromString("GS-2018A-Q-1")
+  private val seqId = Observation.Id.unsafeFromString("GS-2018A-Q-0-1")
 
   // All tests check the output of running a sequence against the expected sequence of updates.
 

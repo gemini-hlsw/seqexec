@@ -132,7 +132,7 @@ object Commands {
   // scalastyle:on
 
   def parseId(s: String): Either[CommandError, Observation.Id] =
-    Either.fromOption(Observation.Id.fromString(s), BadParameter(s"Sorry, '$s' isn't a valid observation id."))
+    Observation.Id.fromString(s).toRight(BadParameter(s"Sorry, '$s' isn't a valid observation id."))
 
   def parseLoc(s: String): Either[CommandError, Peer] =
     Option(Peer.tryParse(s)).toRight(BadParameter(s"Sorry, expecting host:port not '$s'."))

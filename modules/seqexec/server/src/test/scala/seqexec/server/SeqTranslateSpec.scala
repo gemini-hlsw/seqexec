@@ -30,7 +30,7 @@ class SeqTranslateSpec extends FlatSpec {
 
   private val config: StepConfig = Map()
   private val fileId = "DummyFileId"
-  private val seqId = Observation.Id.unsafeFromString("GS-2018A-Q-1")
+  private val seqId = Observation.Id.unsafeFromString("GS-2018A-Q-1-1")
   private def observeActions(state: Action.ActionState): List[Action] = List(Action(ActionType.Observe, Kleisli(v => IO(Result.OK(Result.Observed(fileId)))), Action.State(state, Nil)))
   private val s: Sequence.State = Sequence.State.status.set(SequenceState.Running.init)(Sequence.State.init(Sequence(
     seqId,

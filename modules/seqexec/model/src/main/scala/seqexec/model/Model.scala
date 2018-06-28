@@ -93,7 +93,6 @@ object Model {
   type Parameters = Map[ParamName, ParamValue]
   type StepConfig = Map[SystemName, Parameters]
   implicit val stEq: Eq[StepConfig] = Eq.fromUniversalEquals
-  // TODO This should be a richer type
   type StepId = Int
   type ObservationName = String
   type TargetName = String

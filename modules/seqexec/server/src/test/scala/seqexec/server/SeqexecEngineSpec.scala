@@ -166,11 +166,11 @@ class SeqexecEngineSpec extends FlatSpec with Matchers {
   private def advanceN(q: EventQueue, s0: executeEngine.StateType, put: IO[Either[SeqexecFailure, Unit]], n: Long): Stream[Pure, Option[executeEngine.StateType]] =
     Stream.emit((put *> executeEngine.process(q.dequeue)(s0).take(n).compile.last).unsafeRunSync.map(_._2))
 
-  private val seqId1 = "Dummy-1"
+  private val seqId1 = "GS-2018B-Q-0-1"
   private val seqObsId1 = Observation.Id.unsafeFromString(seqId1)
-  private val seqId2 = "Dummy-2"
+  private val seqId2 = "GS-2018B-Q-0-2"
   private val seqObsId2 = Observation.Id.unsafeFromString(seqId2)
-  private val seqId3 = "Dummy-3"
+  private val seqId3 = "GS-2018B-Q-0-3"
   private val seqObsId3 = Observation.Id.unsafeFromString(seqId3)
   private def sequence(id: Observation.Id): Sequence.State = Sequence.State.init(
     Sequence(

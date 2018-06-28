@@ -26,15 +26,12 @@ import org.scalacheck.Arbitrary._
 final class GemModelBooPicklersSpec extends CatsSuite with GemModelBooPicklers with ArbTime with ArbIndex with ArbProgramId {
   import ArbObservation.arbObservationId
 
-  implicit val yearEq: Eq[Year] = Eq.by(_.getValue)
+  implicit val yearEq:      Eq[Year]      = Eq.by(_.getValue)
   implicit val localDateEq: Eq[LocalDate] = Eq.by(_.toEpochDay)
 
-  checkAll("Pickler[Year]", PicklerTests[Year].pickler)
-  checkAll("Pickler[LocalDate]", PicklerTests[LocalDate].pickler)
-  checkAll("Pickler[Index]", PicklerTests[Index].pickler)
-  checkAll("Pickler[ProgramId.Science]", PicklerTests[ProgramId.Science].pickler)
-  checkAll("Pickler[ProgramId.Daily]", PicklerTests[ProgramId.Daily].pickler)
-  checkAll("Pickler[ProgramId.Nonstandard]", PicklerTests[ProgramId.Nonstandard].pickler)
-  checkAll("Pickler[ProgramId]", PicklerTests[ProgramId].pickler)
-  checkAll("Pickler[Observation.Id]", PicklerTests[Observation.Id].pickler)
+  checkAll("Pickler[Year]",                  PicklerTests[Year].pickler)
+  checkAll("Pickler[LocalDate]",             PicklerTests[LocalDate].pickler)
+  checkAll("Pickler[Index]",                 PicklerTests[Index].pickler)
+  checkAll("Pickler[ProgramId]",             PicklerTests[ProgramId].pickler)
+  checkAll("Pickler[Observation.Id]",        PicklerTests[Observation.Id].pickler)
 }

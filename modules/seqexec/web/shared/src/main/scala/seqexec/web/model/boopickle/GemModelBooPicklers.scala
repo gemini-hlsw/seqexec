@@ -14,12 +14,9 @@ import java.time.{LocalDate, Year}
   */
 @SuppressWarnings(Array("org.wartremover.warts.Equals", "org.wartremover.warts.PublicInference", "org.wartremover.warts.ImplicitParameter", "org.wartremover.warts.NonUnitStatements", "org.wartremover.warts.Throw", "org.wartremover.warts.OptionPartial"))
 trait GemModelBooPicklers extends BooPicklerSyntax {
-  implicit val yearPickler = transformPickler(Year.of)(_.getValue)
-  implicit val localDatePickler = transformPickler(LocalDate.ofEpochDay)(_.toEpochDay)
-  implicit val indexPickler: Pickler[Index] = Index.fromShort.toPickler
-  implicit val sciencePickler: Pickler[ProgramId.Science] = ProgramId.Science.fromString.toPickler
-  implicit val nonStandardPickler: Pickler[ProgramId.Nonstandard] = ProgramId.Nonstandard.fromString.toPickler
-  implicit val programIdPickler: Pickler[ProgramId] = ProgramId.fromString.toPickler
-
-  implicit val observationIdPickler = generatePickler[Observation.Id]
+  implicit val yearPickler:          Pickler[Year]           = transformPickler(Year.of)(_.getValue)
+  implicit val localDatePickler:     Pickler[LocalDate]      = transformPickler(LocalDate.ofEpochDay)(_.toEpochDay)
+  implicit val indexPickler:         Pickler[Index]          = Index.fromShort.toPickler
+  implicit val programIdPickler:     Pickler[ProgramId]      = ProgramId.fromString.toPickler
+  implicit val observationIdPickler: Pickler[Observation.Id] = generatePickler[Observation.Id]
 }

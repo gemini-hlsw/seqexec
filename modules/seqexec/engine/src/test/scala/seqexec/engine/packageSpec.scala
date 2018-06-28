@@ -62,7 +62,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
 
   val executions: List[List[Action]] = List(List(configureTcs, configureInst), List(observe))
   val config: StepConfig = Map()
-  val seqId: Observation.Id = Observation.Id.unsafeFromString("GS-2019A-Q-1")
+  val seqId: Observation.Id = Observation.Id.unsafeFromString("GS-2019A-Q-0-1")
   val qs1: Engine.State[Unit] =
     Engine.State[Unit](
       userData = (),
@@ -70,7 +70,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
         (seqId,
           Sequence.State.init(
             Sequence(
-              id = Observation.Id.unsafeFromString("GS-2018B-Q-2"),
+              id = Observation.Id.unsafeFromString("GS-2018B-Q-0-2"),
               metadata = SequenceMetadata(F2, None, ""),
               steps = List(
                 Step.init(
@@ -100,7 +100,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   private val seqG =
     Sequence.State.init(
       Sequence(
-        id = Observation.Id.unsafeFromString("GS-2018B-Q-3"),
+        id = Observation.Id.unsafeFromString("GS-2018B-Q-0-3"),
         metadata = SequenceMetadata(GmosS, None, ""),
         steps = List(
           Step.init(
@@ -119,8 +119,8 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   }
   private val executionEngine = new Engine[Unit, Unit]
   private val seqId1 = seqId
-  private val seqId2 = Observation.Id.unsafeFromString("GS-2018A-Q-2")
-  private val seqId3 = Observation.Id.unsafeFromString("GS-2018A-Q-3")
+  private val seqId2 = Observation.Id.unsafeFromString("GS-2018A-Q-2-2")
+  private val seqId3 = Observation.Id.unsafeFromString("GS-2018A-Q-2-3")
   private val qs2 = Engine.State[Unit]((), qs1.sequences + (seqId2 -> qs1.sequences(seqId1)))
   private val qs3 = Engine.State[Unit]((), qs2.sequences + (seqId3 -> seqG))
   private val user = UserDetails("telops", "Telops")
@@ -158,7 +158,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   private def actionPause: Option[Engine.State[Unit]] = {
     val s0: Engine.State[Unit] = Engine.State[Unit]((),
       Map((seqId, Sequence.State.init(Sequence(
-        id = Observation.Id.unsafeFromString("GS-2018B-Q-1"),
+        id = Observation.Id.unsafeFromString("GS-2018B-Q-0-1"),
         metadata = SequenceMetadata(GmosS, None, ""),
         steps = List(
           Step.init(
@@ -224,7 +224,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
       r           <- {
         val qs = Engine.State[Unit]((),
           Map((seqId, Sequence.State.init(Sequence(
-            id = Observation.Id.unsafeFromString("GS-2018B-Q-2"),
+            id = Observation.Id.unsafeFromString("GS-2018B-Q-0-2"),
             metadata = SequenceMetadata(GmosS, None, ""),
             steps = List(
               Step.init(
@@ -260,7 +260,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
     @SuppressWarnings(Array("org.wartremover.warts.Throw"))
     def s0(e: Throwable): Engine.State[Unit] = Engine.State[Unit]((),
       Map((seqId, Sequence.State.init(Sequence(
-        id = Observation.Id.unsafeFromString("GS-2018B-Q-4"),
+        id = Observation.Id.unsafeFromString("GS-2018B-Q-0-4"),
         metadata = SequenceMetadata(GmosS, None, ""),
         steps = List(
           Step.init(
@@ -301,7 +301,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
     val p = Stream.emits(List(Event.modifyState[executionEngine2.ConcreteTypes](setOperator(opName), ()), Event.start(seqId1, user, UUID.randomUUID()))).evalMap(IO.pure(_))
     val s0 = Engine.State[DummyData](DummyData(None),
       Map((seqId, Sequence.State.init(Sequence(
-        id = Observation.Id.unsafeFromString("GS-2018B-Q-5"),
+        id = Observation.Id.unsafeFromString("GS-2018B-Q-0-5"),
         metadata = SequenceMetadata(GmosS, None, ""),
         steps = List(
           Step.init(
@@ -335,7 +335,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   it should "skip steps marked to be skipped at the beginning of the sequence." in {
     val s0: Engine.State[Unit] = Engine.State[Unit]((),
       Map((seqId, Sequence.State.init(Sequence(
-        id = Observation.Id.unsafeFromString("GS-2018B-Q-6"),
+        id = Observation.Id.unsafeFromString("GS-2018B-Q-0-6"),
         metadata = SequenceMetadata(GmosS, None, ""),
         steps = List(
           Step.init(id = 1, fileId = None, config = config, resources = Set(GmosS), executions = executions).copy(skipMark = Step.SkipMark(true)),
@@ -355,7 +355,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   it should "skip steps marked to be skipped in the middle of the sequence." in {
     val s0: Engine.State[Unit] = Engine.State[Unit]((),
       Map((seqId, Sequence.State.init(Sequence(
-        id = Observation.Id.unsafeFromString("GS-2018B-Q-7"),
+        id = Observation.Id.unsafeFromString("GS-2018B-Q-0-7"),
         metadata = SequenceMetadata(GmosS, None, ""),
         steps = List(
           Step.init(id = 1, fileId = None, config = config, resources = Set(GmosS), executions = executions),
@@ -375,7 +375,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   it should "skip several steps marked to be skipped." in {
     val s0: Engine.State[Unit] = Engine.State[Unit]((),
       Map((seqId, Sequence.State.init(Sequence(
-        id = Observation.Id.unsafeFromString("GS-2018B-Q-8"),
+        id = Observation.Id.unsafeFromString("GS-2018B-Q-0-8"),
         metadata = SequenceMetadata(GmosS, None, ""),
         steps = List(
           Step.init(id = 1, fileId = None, config = config, resources = Set(GmosS), executions = executions),
@@ -397,7 +397,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   it should "skip steps marked to be skipped at the end of the sequence." in {
     val s0: Engine.State[Unit] = Engine.State[Unit]((),
       Map((seqId, Sequence.State.init(Sequence(
-        id = Observation.Id.unsafeFromString("GS-2018B-Q-9"),
+        id = Observation.Id.unsafeFromString("GS-2018B-Q-0-9"),
         metadata = SequenceMetadata(GmosS, None, ""),
         steps = List(
           Step.init(id = 1, fileId = None, config = config, resources = Set(GmosS), executions = executions),
@@ -418,7 +418,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   it should "skip a step marked to be skipped even if it is the only one." in {
     val s0: Engine.State[Unit] = Engine.State[Unit]((),
       Map((seqId, Sequence.State.init(Sequence(
-        id = Observation.Id.unsafeFromString("GS-2018B-Q-10"),
+        id = Observation.Id.unsafeFromString("GS-2018B-Q-0-10"),
         metadata = SequenceMetadata(GmosS, None, ""),
         steps = List(
           Step.init(id = 1, fileId = None, config = config, resources = Set(GmosS), executions = executions).copy(skipMark = Step.SkipMark(true))
@@ -436,7 +436,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   it should "skip steps marked to be skipped at the beginning of the sequence, even if they have breakpoints." in {
     val s0: Engine.State[Unit] = Engine.State[Unit]((),
       Map((seqId, Sequence.State.init(Sequence(
-        id = Observation.Id.unsafeFromString("GS-2018B-Q-11"),
+        id = Observation.Id.unsafeFromString("GS-2018B-Q-0-11"),
         metadata = SequenceMetadata(GmosS, None, ""),
         steps = List(
           Step.init(id = 1, fileId = None, config = config, resources = Set(GmosS), executions = executions).copy(skipMark = Step.SkipMark(true)),
@@ -480,7 +480,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   it should "skip steps marked to be skipped in the middle of the sequence, but honoring breakpoints." in {
     val s0: Engine.State[Unit] = Engine.State[Unit]((),
       Map((seqId, Sequence.State.init(Sequence(
-        id = Observation.Id.unsafeFromString("GS-2018B-Q-12"),
+        id = Observation.Id.unsafeFromString("GS-2018B-Q-0-12"),
         metadata = SequenceMetadata(GmosS, None, ""),
         steps = List(
           Step.init(id = 1, fileId = None, config = config, resources = Set(GmosS), executions = executions),

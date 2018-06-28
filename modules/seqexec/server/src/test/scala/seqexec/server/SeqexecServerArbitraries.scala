@@ -16,7 +16,7 @@ import seqexec.server.gpi.GPIController._
 import seqexec.server.gcal.GcalController
 import seqexec.server.gcal.GcalController._
 import seqexec.server.tcs.{TcsController, TcsControllerEpics}
-import seqexec.model.Model.{Conditions, Instrument, SequenceId, Operator}
+import seqexec.model.Model.{Conditions, Instrument, Operator}
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams
 import edu.gemini.spModel.gemini.gpi.Gpi.{Apodizer => LegacyApodizer}
@@ -34,6 +34,7 @@ import edu.gemini.spModel.gemini.gpi.Gpi.{Shutter => LegacyShutter}
 import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, Cogen, Gen}
 import squants.space.LengthConversions._
+import scala.concurrent.duration.Duration
 import seqexec.model.SharedModelArbitraries._
 
 object SeqexecServerArbitraries extends ArbTime {
