@@ -7,12 +7,16 @@ import cats.{Eq, Show}
 import cats.data.EitherT
 import cats.effect.IO
 import cats.implicits._
-import edu.gemini.aspen.giapi.commands.DefaultConfiguration
+import edu.gemini.aspen.giapi.commands.{Configuration, DefaultConfiguration}
+import edu.gemini.aspen.giapi.commands.ConfigPath.configPath
+import edu.gemini.spModel.gemini.gpi.Gpi.{Apodizer => LegacyApodizer}
 import edu.gemini.spModel.gemini.gpi.Gpi.{Adc => LegacyAdc}
 import edu.gemini.spModel.gemini.gpi.Gpi.{
   ArtificialSource => LegacyArtificialSource
 }
 import edu.gemini.spModel.gemini.gpi.Gpi.{Disperser => LegacyDisperser}
+import edu.gemini.spModel.gemini.gpi.Gpi.{FPM => LegacyFPM}
+import edu.gemini.spModel.gemini.gpi.Gpi.{Lyot => LegacyLyot}
 import edu.gemini.spModel.gemini.gpi.Gpi.{ObservingMode => LegacyObservingMode}
 import edu.gemini.spModel.gemini.gpi.Gpi.{PupilCamera => LegacyPupilCamera}
 import edu.gemini.spModel.gemini.gpi.Gpi.{Shutter => LegacyShutter}
@@ -25,6 +29,43 @@ import seqexec.model.dhs.ImageFileId
 import seqexec.server.SeqAction
 
 object GPILookupTables {
+  val apodizerLUT: Map[LegacyApodizer, String] = Map(
+    LegacyApodizer.CLEAR     -> "CLEAR",
+    LegacyApodizer.CLEARGP   -> "CLEARGP",
+    LegacyApodizer.APOD_Y    -> "APOD_Y",
+    LegacyApodizer.APOD_J    -> "APOD_J",
+    LegacyApodizer.APOD_H    -> "APOD_H",
+    LegacyApodizer.APOD_K1   -> "APOD_K1",
+    LegacyApodizer.APOD_K2   -> "APOD_K2",
+    LegacyApodizer.NRM       -> "NRM",
+    LegacyApodizer.APOD_HL   -> "APOD_HL",
+    LegacyApodizer.APOD_STAR -> "ND3",
+    LegacyApodizer.ND3       -> "ND3"
+  )
+
+  val fpmLUT: Map[LegacyFPM, String] = Map(
+    LegacyFPM.OPEN     -> "Open",
+    LegacyFPM.F50umPIN -> "50umPIN",
+    LegacyFPM.WITH_DOT -> "WITH_DOT",
+    LegacyFPM.FPM_Y    -> "FPM_Y",
+    LegacyFPM.FPM_J    -> "FPM_J",
+    LegacyFPM.FPM_H    -> "FPM_H",
+    LegacyFPM.FPM_K1   -> "FPM_K1",
+    LegacyFPM.SCIENCE  -> "SCIENCE"
+  )
+
+  val lyotLUT: Map[LegacyLyot, String] = Map(
+    LegacyLyot.OPEN              -> "Open",
+    LegacyLyot.BLANK             -> "Blank",
+    LegacyLyot.LYOT_080m12_03    -> "080m12_03",
+    LegacyLyot.LYOT_080m12_04    -> "080m12_04",
+    LegacyLyot.LYOT_080_04       -> "080_04",
+    LegacyLyot.LYOT_080m12_06    -> "080m12_06",
+    LegacyLyot.LYOT_080m12_04_c  -> "080m12_04_c",
+    LegacyLyot.LYOT_080m12_06_03 -> "080m12_06_03",
+    LegacyLyot.LYOT_080m12_07    -> "080m12_07",
+    LegacyLyot.LYOT_080m12_10    -> "080m12_10"
+  )
 
   val obsModeLUT: Map[LegacyObservingMode, String] = Map(
     LegacyObservingMode.CORON_Y_BAND   -> "Y_coron",
@@ -57,6 +98,19 @@ final case class GPIController(gpiClient: GPIClient[IO]) {
   import GPIController._
   import GPILookupTables._
   private val Log = getLogger
+  private val UNKNOWN_SETTING = "UNKNOWN"
+
+  private def obsModeConfiguration(config: GPIConfig): Configuration = {
+    config.mode.fold( m =>
+      DefaultConfiguration.configuration(configPath("gpi:observationMode.mode"), obsModeLUT.getOrElse(m, UNKNOWN_SETTING))
+    , params => {
+      DefaultConfiguration.configurationBuilder()
+        .withConfiguration("gpi:selectPupilPlaneMask.maskStr", apodizerLUT.getOrElse(params.apodizer, UNKNOWN_SETTING))
+        .withConfiguration("gpi:selectFocalPlaneMask.maskStr", fpmLUT.getOrElse(params.fpm, UNKNOWN_SETTING))
+        .withConfiguration("gpi:selectLyotMask.maskStr", lyotLUT.getOrElse(params.lyot, UNKNOWN_SETTING))
+        .build()
+    })
+  }
 
   // scalastyle:off
   def gpiConfig(config: GPIConfig): SeqAction[CommandResult] = {
@@ -108,8 +162,7 @@ final case class GPIController(gpiClient: GPIClient[IO]) {
           .fold(1, 0)
           .show)
       .withConfiguration("gpi:selectShutter.calExitShutter", "-1")
-      .withConfiguration("gpi:observationMode.mode",
-                         obsModeLUT.getOrElse(config.mode, ""))
+      .withConfiguration(obsModeConfiguration(config))
       .withConfiguration("gpi:selectPupilCamera.deploy",
                          (config.pc === LegacyPupilCamera.IN)
                            .fold(1, 0)
@@ -156,11 +209,17 @@ final case class GPIController(gpiClient: GPIClient[IO]) {
 
 object GPIController {
 
+  implicit val apodizerEq: Eq[LegacyApodizer] = Eq.by(_.displayValue)
+
   implicit val adcEq: Eq[LegacyAdc] = Eq.by(_.displayValue)
 
   implicit val omEq: Eq[LegacyObservingMode] = Eq.by(_.displayValue)
 
   implicit val dispEq: Eq[LegacyDisperser] = Eq.by(_.displayValue)
+
+  implicit val fpmEq: Eq[LegacyFPM] = Eq.by(_.displayValue)
+
+  implicit val lyotEq: Eq[LegacyLyot] = Eq.by(_.displayValue)
 
   implicit val shEq: Eq[LegacyShutter] = Eq.by(_.displayValue)
 
@@ -206,10 +265,19 @@ object GPIController {
     implicit val show: Show[Shutters] = Show.fromToString
   }
 
+  final case class NonStandardModeParams(apodizer: LegacyApodizer, fpm: LegacyFPM, lyot: LegacyLyot)
+
+  object NonStandardModeParams {
+    implicit val eq: Eq[NonStandardModeParams] = Eq.by(
+      x =>
+        (x.apodizer, x.fpm, x.lyot))
+    implicit val show: Show[NonStandardModeParams] = Show.fromToString
+  }
+
   final case class GPIConfig(adc: LegacyAdc,
                              expTime: Duration,
                              coAdds: Int,
-                             mode: LegacyObservingMode,
+                             mode: Either[LegacyObservingMode, NonStandardModeParams],
                              disperser: LegacyDisperser,
                              disperserAngle: Double,
                              shutters: Shutters,

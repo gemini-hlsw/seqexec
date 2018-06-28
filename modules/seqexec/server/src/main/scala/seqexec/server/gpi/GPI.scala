@@ -21,7 +21,7 @@ import squants.time.{Seconds, Time}
 final case class GPI[F[_]](controller: GPIController) extends InstrumentSystem {
   override val resource: Resource = Instrument.GPI
 
-  override val sfName: String = GPI.sfName
+  override val sfName: String = "GPI"
 
   override val contributorName: String = "gpi"
 
@@ -54,8 +54,6 @@ final case class GPI[F[_]](controller: GPIController) extends InstrumentSystem {
 
 object GPI {
   val name: String = INSTRUMENT_NAME_PROP
-
-  val sfName: String = "GPI"
 
   private def gpiAoFlags(config: Config): Either[ExtractFailure, AOFlags] =
     for {
@@ -110,6 +108,25 @@ object GPI {
                         .as[Shutter]
     } yield Shutters(entrance, calEntrance, scienceArm, referenceArm)
 
+  private def gpiMode(config: Config): Either[ExtractFailure, Either[ObservingMode, NonStandardModeParams]] =
+    config
+      .extract(INSTRUMENT_KEY / OBSERVING_MODE_PROP)
+      .as[ObservingMode].flatMap { mode =>
+        if (mode === ObservingMode.NONSTANDARD) {
+          for {
+            apodizer <- config
+                        .extract(INSTRUMENT_KEY / APODIZER_PROP)
+                        .as[Apodizer]
+            fpm      <- config
+                        .extract(INSTRUMENT_KEY / FPM_PROP)
+                        .as[FPM]
+            lyot     <- config
+                        .extract(INSTRUMENT_KEY / LYOT_PROP)
+                        .as[Lyot]
+          } yield NonStandardModeParams(apodizer, fpm, lyot).asRight
+        } else mode.asLeft.asRight
+      }
+
   def fromSequenceConfig[F[_]: Sync](config: Config): SeqActionF[F, GPIConfig] =
     EitherT(Sync[F].delay(
       (for {
@@ -122,9 +139,7 @@ object GPI {
                       .extract(OBSERVE_KEY / COADDS_PROP)
                       .as[java.lang.Integer]
                       .map(_.toInt)
-        mode     <- config
-                      .extract(INSTRUMENT_KEY / OBSERVING_MODE_PROP)
-                      .as[ObservingMode]
+        mode     <- gpiMode(config)
         pol      <- config.extract(INSTRUMENT_KEY / DISPERSER_PROP).as[Disperser]
         polA     <- config
                       .extract(INSTRUMENT_KEY / HALF_WAVE_PLATE_ANGLE_VALUE_PROP)

@@ -16,5 +16,6 @@ final class GpiSpec extends CatsSuite {
   checkAll("Eq[AOFlags]", EqTests[AOFlags].eqv)
   checkAll("Eq[ArtificialSources]", EqTests[ArtificialSources].eqv)
   checkAll("Eq[Shutters]", EqTests[Shutters].eqv)
+  checkAll("Eq[NonStandardModeParams]", EqTests[NonStandardModeParams].eqv)
   checkAll("Eq[GPIConfig]", EqTests[GPIConfig].eqv)
 }
