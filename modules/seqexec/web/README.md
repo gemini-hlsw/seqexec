@@ -36,7 +36,7 @@ For the common case we want to develop the client but we also need to run the ba
 an sbt task
 
 ```
-startAll
+startSeqexecAll
 ```
 
 Will do the following:
@@ -54,4 +54,10 @@ if you want to update the client and get automatic reload do in sbt:
 ```
     project edu_gemini_seqexec_web_client
     ~fastOptJS
+```
+
+and to stop all the processes you can do
+
+```
+stopSeqexecAll
 ```

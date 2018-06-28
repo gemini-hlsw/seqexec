@@ -61,18 +61,23 @@ inThisBuild(List(
 enablePlugins(GitBranchPrompt)
 
 // Custom commands to facilitate web development
-val startAllCommands = List(
+val startSeqexecAllCommands = List(
   "seqexec_web_server/reStart",
   "seqexec_web_client/fastOptJS::startWebpackDevServer",
   "~seqexec_web_client/fastOptJS"
 )
-val restartWDSCommands = List(
+val restartSeqexecWDSCommands = List(
   "seqexec_web_client/fastOptJS::stopWebpackDevServer",
   "seqexec_web_client/fastOptJS::startWebpackDevServer"
 )
+val stopSeqexecAllCommands = List(
+  "seqexec_web_server/reStop",
+  "seqexec_web_client/fastOptJS::stopWebpackDevServer"
+)
 
-addCommandAlias("startAll", startAllCommands.mkString(";", ";", ""))
-addCommandAlias("restartWDS", restartWDSCommands.mkString(";", ";", ""))
+addCommandAlias("startSeqexecAll", startSeqexecAllCommands.mkString(";", ";", ""))
+addCommandAlias("restartSeqexecWDS", restartSeqexecWDSCommands.mkString(";", ";", ""))
+addCommandAlias("stopSeqexecAll", stopSeqexecAllCommands.mkString(";", ";", ""))
 addCommandAlias("genEnums", "; sql/runMain gem.sql.Main modules/core/shared/src/main/scala/gem/enum")
 addCommandAlias("schemaSpy", "sql/runMain org.schemaspy.Main -t pgsql -port 5432 -db gem -o modules/sql/target/schemaspy -u postgres -host localhost -s public")
 addCommandAlias("gemctl", "ctl/runMain gem.ctl.main")//
