@@ -185,7 +185,7 @@ lazy val db = project
   )
 
 lazy val json = crossProject(JVMPlatform, JSPlatform)
-  .crossType(CrossType.Full)
+  .crossType(CrossType.Pure)
   .in(file("modules/json"))
   .enablePlugins(AutomateHeaderPlugin)
   .dependsOn(core % "test->test;compile->compile")
