@@ -21,7 +21,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 class StepSpec extends FlatSpec {
 
-  private val seqId = Observation.Id.unsafeFromString("GS-2017B-Q-1")
+  private val seqId = Observation.Id.unsafeFromString("GS-2017B-Q-1-1")
   private val user = UserDetails("telops", "Telops")
 
   implicit object UnitCanGenerateActionMetadata extends ActionMetadataGenerator[Unit] {
@@ -196,7 +196,7 @@ class StepSpec extends FlatSpec {
           (seqId,
             Sequence.State.Zipper(
               Sequence.Zipper(
-                id = Observation.Id.unsafeFromString("GS-2018A-Q-3"),
+                id = Observation.Id.unsafeFromString("GS-2018A-Q-3-1"),
                 metadata = SequenceMetadata(F2, None, ""),
                 pending = Nil,
                 focus = Step.Zipper(
@@ -242,7 +242,7 @@ class StepSpec extends FlatSpec {
           (seqId,
             Sequence.State.Zipper(
               Sequence.Zipper(
-                id = Observation.Id.unsafeFromString("GN-2017A-Q-7"),
+                id = Observation.Id.unsafeFromString("GN-2017A-Q-7-1"),
                 metadata = SequenceMetadata(F2, None, ""),
                 pending = Nil,
                 focus = Step.Zipper(

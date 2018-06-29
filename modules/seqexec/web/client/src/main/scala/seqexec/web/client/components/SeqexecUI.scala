@@ -115,8 +115,8 @@ object SeqexecUI {
   final case class RouterProps(page: InstrumentPage, router: RouterCtl[InstrumentPage])
 
   def pageTitle(site: SeqexecSite)(p: SeqexecPages): String = p match {
-    case SequenceConfigPage(_, id, _) => s"Seqexec - $id"
-    case SequencePage(_, id, _)       => s"Seqexec - $id"
+    case SequenceConfigPage(_, id, _) => s"Seqexec - ${id.format}"
+    case SequencePage(_, id, _)       => s"Seqexec - ${id.format}"
     case InstrumentPage(i)            => s"Seqexec - ${i.show}"
     case _                            => s"Seqexec - ${site.show}"
   }

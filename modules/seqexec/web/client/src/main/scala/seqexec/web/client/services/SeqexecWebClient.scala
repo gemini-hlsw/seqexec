@@ -35,7 +35,7 @@ object SeqexecWebClient extends ModelBooPicklers {
 
   def sync(id: Observation.Id): Future[SequencesQueue[Observation.Id]] =
     Ajax.get(
-      url = s"$baseUrl/commands/$id/sync",
+      url = s"$baseUrl/commands/${encodeURI(id.format)}/sync",
       responseType = "arraybuffer"
     )
     .map(unpickle[SequencesQueue[Observation.Id]])
@@ -50,7 +50,7 @@ object SeqexecWebClient extends ModelBooPicklers {
     */
   def run(id: Observation.Id, clientId: ClientID): Future[RegularCommand] = {
     Ajax.post(
-      url = s"$baseUrl/commands/$id/start/$clientId",
+      url = s"$baseUrl/commands/${encodeURI(id.format)}/start/$clientId",
       responseType = "arraybuffer"
     ).map(unpickle[RegularCommand])
   }
@@ -60,7 +60,7 @@ object SeqexecWebClient extends ModelBooPicklers {
     */
   def breakpoint(sid: Observation.Id, step: Step): Future[RegularCommand] = {
     Ajax.post(
-      url = s"$baseUrl/commands/$sid/${step.id}/breakpoint/${step.breakpoint}",
+      url = s"$baseUrl/commands/${encodeURI(sid.format)}/${step.id}/breakpoint/${step.breakpoint}",
       responseType = "arraybuffer"
     ).map(unpickle[RegularCommand])
   }
@@ -70,7 +70,7 @@ object SeqexecWebClient extends ModelBooPicklers {
     */
   def skip(sid: Observation.Id, step: Step): Future[RegularCommand] = {
     Ajax.post(
-      url = s"$baseUrl/commands/$sid/${step.id}/skip/${step.skip}",
+      url = s"$baseUrl/commands/${encodeURI(sid.format)}/${step.id}/skip/${step.skip}",
       responseType = "arraybuffer"
     ).map(unpickle[RegularCommand])
   }
@@ -80,7 +80,7 @@ object SeqexecWebClient extends ModelBooPicklers {
     */
   def stop(sid: Observation.Id, step: Int): Future[RegularCommand] = {
     Ajax.post(
-      url = s"$baseUrl/commands/$sid/$step/stop",
+      url = s"$baseUrl/commands/${encodeURI(sid.format)}/$step/stop",
       responseType = "arraybuffer"
     ).map(unpickle[RegularCommand])
   }
@@ -90,7 +90,7 @@ object SeqexecWebClient extends ModelBooPicklers {
     */
   def abort(sid: Observation.Id, step: Int): Future[RegularCommand] = {
     Ajax.post(
-      url = s"$baseUrl/commands/$sid/$step/abort",
+      url = s"$baseUrl/commands/${encodeURI(sid.format)}/$step/abort",
       responseType = "arraybuffer"
     ).map(unpickle[RegularCommand])
   }
@@ -100,7 +100,7 @@ object SeqexecWebClient extends ModelBooPicklers {
     */
   def pauseObs(sid: Observation.Id, step: Int): Future[RegularCommand] = {
     Ajax.post(
-      url = s"$baseUrl/commands/$sid/$step/pauseObs",
+      url = s"$baseUrl/commands/${encodeURI(sid.format)}/$step/pauseObs",
       responseType = "arraybuffer"
     ).map(unpickle[RegularCommand])
   }
@@ -110,7 +110,7 @@ object SeqexecWebClient extends ModelBooPicklers {
     */
   def resumeObs(sid: Observation.Id, step: Int): Future[RegularCommand] = {
     Ajax.post(
-      url = s"$baseUrl/commands/$sid/$step/resumeObs",
+      url = s"$baseUrl/commands/${encodeURI(sid.format)}/$step/resumeObs",
       responseType = "arraybuffer"
     ).map(unpickle[RegularCommand])
   }
@@ -130,7 +130,7 @@ object SeqexecWebClient extends ModelBooPicklers {
     */
   def setObserver(id: Observation.Id, name: String): Future[RegularCommand] = {
     Ajax.post(
-      url = s"$baseUrl/commands/$id/observer/${encodeURI(name)}",
+      url = s"$baseUrl/commands/${encodeURI(id.format)}/observer/${encodeURI(name)}",
       responseType = "arraybuffer"
     ).map(unpickle[RegularCommand])
   }
@@ -205,7 +205,7 @@ object SeqexecWebClient extends ModelBooPicklers {
     */
   def pause(id: Observation.Id): Future[RegularCommand] = {
     Ajax.post(
-      url = s"$baseUrl/commands/$id/pause",
+      url = s"$baseUrl/commands/${encodeURI(id.format)}/pause",
       responseType = "arraybuffer"
     ).map(unpickle[RegularCommand])
   }
@@ -215,7 +215,7 @@ object SeqexecWebClient extends ModelBooPicklers {
     */
   def cancelPause(id: Observation.Id): Future[RegularCommand] = {
     Ajax.post(
-      url = s"$baseUrl/commands/$id/cancelpause",
+      url = s"$baseUrl/commands/${encodeURI(id.format)}/cancelpause",
       responseType = "arraybuffer"
     ).map(unpickle[RegularCommand])
   }
