@@ -228,8 +228,8 @@ object StepsTable {
     def receive(cur: Props, next: Props): Callback = {
       // Recalculate the heights if needed
       val stepsPairs = next.stepsList.zip(cur.stepsList)
-      val differentStepsStates = stepsPairs.collect {
-        case (cur, prev) if cur.status =!= prev.status => Callback.log(cur.id) >> ref.get.flatMapCB(_.raw.recomputeRowsHeightsCB(cur.id))
+      val differentStepsStates: List[Callback] = stepsPairs.collect {
+        case (cur, prev) if cur.status =!= prev.status => ref.get.flatMapCB(_.raw.recomputeRowsHeightsCB(cur.id)).toCallback
       }
       Callback.sequence(differentStepsStates)
     }

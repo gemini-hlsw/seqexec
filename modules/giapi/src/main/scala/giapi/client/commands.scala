@@ -3,19 +3,56 @@
 
 package giapi.client
 
-import cats.Eq
+import cats._
 import cats.implicits._
 import cats.effect._
+import edu.gemini.aspen.giapi.commands.{Command => GiapiCommand}
+import edu.gemini.aspen.giapi.commands.{Configuration => GiapiConfiguration}
+import edu.gemini.aspen.giapi.commands.DefaultConfiguration
+import edu.gemini.aspen.giapi.commands.ConfigPath
+import edu.gemini.aspen.giapi.commands.{Activity, SequenceCommand}
 import edu.gemini.aspen.giapi.commands.HandlerResponse.Response
-import edu.gemini.aspen.giapi.commands.{Command, HandlerResponse}
+import edu.gemini.aspen.giapi.commands.HandlerResponse
 import edu.gemini.aspen.gmp.commands.jms.client.CommandSenderClient
-
+import scala.collection.JavaConverters._
 import scala.concurrent.duration.Duration
 
 package commands {
   sealed trait CommandResult
-  final case class Completed(response: Response)            extends CommandResult
-  final case class Error[A](response: Response, message: A) extends CommandResult
+  final case class Completed(response: Response) extends CommandResult
+  final case class Error[A](response: Response, message: A)
+      extends CommandResult
+
+  final case class Configuration(config: Map[ConfigPath, String]) {
+
+    def toGiapi: GiapiConfiguration =
+      new DefaultConfiguration(new java.util.TreeMap(config.asJava))
+  }
+
+  object Configuration {
+    val Zero: Configuration = Configuration(Map.empty)
+
+    def single[A: Show](key: String, value: A): Configuration =
+      Configuration(Map(ConfigPath.configPath(key) -> value.show))
+
+    implicit val eq: Eq[Configuration] = Eq.by(_.config)
+
+    implicit val monoid: Monoid[Configuration] = new Monoid[Configuration] {
+      def empty: Configuration = Zero
+
+      def combine(a: Configuration, b: Configuration): Configuration =
+        Configuration(a.config |+| b.config)
+    }
+  }
+
+  final case class Command(sequenceCommand: SequenceCommand,
+                           activity: Activity,
+                           config: Configuration) {
+
+    def toGiapi: GiapiCommand =
+      new GiapiCommand(sequenceCommand, activity, config.toGiapi)
+  }
+
 }
 
 package object commands {
@@ -46,8 +83,8 @@ package object commands {
                                timeout: Duration): F[CommandResult] =
     Async[F].async { cb =>
       val hr = commandsClient.sendCommand(
-        command,
-        (hr: HandlerResponse, _: Command) => {
+        command.toGiapi,
+        (hr: HandlerResponse, _: GiapiCommand) => {
           if (hr.getResponse === Response.ERROR || hr.getResponse === Response.NOANSWER) {
             cb(Right(Error(hr.getResponse, hr.getMessage)))
           } else {
@@ -61,7 +98,8 @@ package object commands {
         cb(
           Right(
             Error(hr.getResponse,
-                  if (hr.getResponse === Response.NOANSWER) "No answer from the instrument"
+                  if (hr.getResponse === Response.NOANSWER)
+                    "No answer from the instrument"
                   else hr.getMessage)))
       } else if (hr.getResponse === Response.COMPLETED) {
         cb(Right(Completed(hr.getResponse)))

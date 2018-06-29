@@ -3,22 +3,20 @@
 
 package giapi
 
-import cats.{Applicative, Id}
+import cats._
 import cats.effect._
 import cats.implicits._
-import edu.gemini.aspen.giapi.commands.Command
-import giapi.client.commands.Completed
 import edu.gemini.aspen.giapi.commands.HandlerResponse.Response
 import edu.gemini.aspen.giapi.status.{StatusHandler, StatusItem}
 import edu.gemini.aspen.giapi.statusservice.{StatusHandlerAggregate, StatusService}
 import edu.gemini.aspen.giapi.util.jms.status.StatusGetter
 import edu.gemini.aspen.gmp.commands.jms.client.CommandSenderClient
 import edu.gemini.jms.activemq.provider.ActiveMQJmsProvider
-import fs2.{Stream, async}
-import shapeless.Typeable._
-
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.Duration
+import shapeless.Typeable._
+import fs2.{Stream, async}
+import giapi.client.commands.{Command, Completed}
 
 package object client {
 
