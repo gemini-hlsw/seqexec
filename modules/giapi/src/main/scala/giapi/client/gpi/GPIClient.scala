@@ -4,15 +4,12 @@
 package giapi.client.gpi
 
 import cats.Show
-import cats.instances.double._
-import cats.instances.int._
-import cats.syntax.show._
-import edu.gemini.aspen.giapi.commands.{Activity, Command, Configuration, DefaultConfiguration, SequenceCommand}
+import cats.implicits._
+import edu.gemini.aspen.giapi.commands.{Activity, SequenceCommand}
 import fs2.Stream
-import giapi.client.commands.CommandResult
+import giapi.client.commands.{Command, Configuration, CommandResult}
 import giapi.client.{Giapi, commands}
 import mouse.boolean._
-
 import scala.concurrent.ExecutionContext
 
 /**
@@ -42,54 +39,51 @@ class GPIClient[F[_]](giapi: Giapi[F], ec: ExecutionContext) {
   // General commands
   ///////////////////
   def test: F[CommandResult] =
-    giapi.command(new Command(SequenceCommand.TEST, Activity.PRESET_START))
+    giapi.command(Command(SequenceCommand.TEST, Activity.PRESET_START, Configuration.Zero))
 
   def init: F[CommandResult] =
-    giapi.command(new Command(SequenceCommand.INIT, Activity.PRESET_START))
+    giapi.command(Command(SequenceCommand.INIT, Activity.PRESET_START, Configuration.Zero))
 
   def datum: F[CommandResult] =
-    giapi.command(new Command(SequenceCommand.DATUM, Activity.PRESET_START))
+    giapi.command(Command(SequenceCommand.DATUM, Activity.PRESET_START, Configuration.Zero))
 
   def park: F[CommandResult] =
-    giapi.command(new Command(SequenceCommand.PARK, Activity.PRESET_START))
+    giapi.command(Command(SequenceCommand.PARK, Activity.PRESET_START, Configuration.Zero))
 
   def verify: F[CommandResult] =
-    giapi.command(new Command(SequenceCommand.VERIFY, Activity.PRESET_START))
+    giapi.command(Command(SequenceCommand.VERIFY, Activity.PRESET_START, Configuration.Zero))
 
   def endVerify: F[CommandResult] =
-    giapi.command(new Command(SequenceCommand.END_VERIFY, Activity.PRESET_START))
+    giapi.command(Command(SequenceCommand.END_VERIFY, Activity.PRESET_START, Configuration.Zero))
 
   def guide: F[CommandResult] =
-    giapi.command(new Command(SequenceCommand.GUIDE, Activity.PRESET_START))
+    giapi.command(Command(SequenceCommand.GUIDE, Activity.PRESET_START, Configuration.Zero))
 
   def endGuide: F[CommandResult] =
-    giapi.command(new Command(SequenceCommand.END_GUIDE, Activity.PRESET_START))
+    giapi.command(Command(SequenceCommand.END_GUIDE, Activity.PRESET_START, Configuration.Zero))
 
   def observe[A: Show](dataLabel: A): F[CommandResult] =
     giapi.command(
-      new Command(
+      Command(
         SequenceCommand.OBSERVE,
         Activity.PRESET_START,
-        DefaultConfiguration
-          .configurationBuilder()
-          .withConfiguration(commands.DataLabelCfg, dataLabel.show)
-          .build()
+        Configuration.single(commands.DataLabelCfg, dataLabel)
       ))
 
   def endObserve: F[CommandResult] =
-    giapi.command(new Command(SequenceCommand.END_OBSERVE, Activity.PRESET_START))
+    giapi.command(Command(SequenceCommand.END_OBSERVE, Activity.PRESET_START, Configuration.Zero))
 
   def pause: F[CommandResult] =
-    giapi.command(new Command(SequenceCommand.PAUSE, Activity.PRESET_START))
+    giapi.command(Command(SequenceCommand.PAUSE, Activity.PRESET_START, Configuration.Zero))
 
   def continue: F[CommandResult] =
-    giapi.command(new Command(SequenceCommand.CONTINUE, Activity.PRESET_START))
+    giapi.command(Command(SequenceCommand.CONTINUE, Activity.PRESET_START, Configuration.Zero))
 
   def stop: F[CommandResult] =
-    giapi.command(new Command(SequenceCommand.STOP, Activity.PRESET_START))
+    giapi.command(Command(SequenceCommand.STOP, Activity.PRESET_START, Configuration.Zero))
 
   def abort: F[CommandResult] =
-    giapi.command(new Command(SequenceCommand.ABORT, Activity.PRESET_START))
+    giapi.command(Command(SequenceCommand.ABORT, Activity.PRESET_START, Configuration.Zero))
 
   ////////////////////////
   // GPI Specific commands
@@ -98,13 +92,10 @@ class GPIClient[F[_]](giapi: Giapi[F], ec: ExecutionContext) {
   // TODO Use OCS constants for open/close
   private def shutter(shutterName: String, position: Boolean): F[CommandResult] =
     giapi.command(
-      new Command(
+      Command(
         SequenceCommand.APPLY,
         Activity.PRESET_START,
-        DefaultConfiguration
-          .configurationBuilder()
-          .withConfiguration(s"gpi:selectShutter.$shutterName", position.fold("1", "0"))
-          .build()
+        Configuration.single(s"gpi:selectShutter.$shutterName", position.fold(1, 0))
       ))
 
   def entranceShutter(position: Boolean): F[CommandResult] =
@@ -125,40 +116,32 @@ class GPIClient[F[_]](giapi: Giapi[F], ec: ExecutionContext) {
   // TODO Use OCS constants
   def observingMode(mode: String): F[CommandResult] =
     giapi.command(
-      new Command(SequenceCommand.APPLY,
+      Command(SequenceCommand.APPLY,
                   Activity.PRESET_START,
-                  DefaultConfiguration
-                    .configurationBuilder()
-                    .withConfiguration("gpi:observationMode.mode", mode)
-                    .build()))
+                  Configuration.single("gpi:observationMode.mode", mode)
+      ))
 
   def ifsFilter(filter: String): F[CommandResult] =
     giapi.command(
-      new Command(
+      Command(
         SequenceCommand.APPLY,
         Activity.PRESET_START,
-        DefaultConfiguration
-          .configurationBuilder()
-          .withConfiguration("gpi:ifs:selectIfsFilter.maskStr", filter)
-          .build()
+        Configuration.single("gpi:ifs:selectIfsFilter.maskStr", filter)
       ))
 
   def ifsConfigure(integrationTime: Double, coAdds: Int, readoutMode: Int): F[CommandResult] =
     giapi.command(
-      new Command(
+      Command(
         SequenceCommand.APPLY,
         Activity.PRESET_START,
-        DefaultConfiguration
-          .configurationBuilder()
-          .withConfiguration("gpi:configIfs.integrationTime", integrationTime.show)
-          .withConfiguration("gpi:configIfs.numCoadds", coAdds.show)
-          .withConfiguration("gpi:configIfs.readoutMode", readoutMode.show)
-          .build()
+        List(Configuration.single("gpi:configIfs.integrationTime", integrationTime),
+          Configuration.single("gpi:configIfs.numCoadds", coAdds),
+          Configuration.single("gpi:configIfs.readoutMode", readoutMode)).combineAll
       ))
 
   def genericApply(configuration: Configuration): F[CommandResult] =
     giapi.command(
-      new Command(
+      Command(
         SequenceCommand.APPLY,
         Activity.PRESET_START,
         configuration
@@ -168,8 +151,6 @@ class GPIClient[F[_]](giapi: Giapi[F], ec: ExecutionContext) {
 object GPIExample extends App {
 
   import cats.effect.IO
-  import cats.instances.string._
-
   import scala.concurrent.duration._
 
   private val gpiStatus =

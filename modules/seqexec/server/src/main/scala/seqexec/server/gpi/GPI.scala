@@ -123,7 +123,10 @@ object GPI {
             lyot     <- config
                         .extract(INSTRUMENT_KEY / LYOT_PROP)
                         .as[Lyot]
-          } yield NonStandardModeParams(apodizer, fpm, lyot).asRight
+            filter   <- config
+                        .extract(INSTRUMENT_KEY / FILTER_PROP)
+                        .as[Filter]
+          } yield NonStandardModeParams(apodizer, fpm, lyot, filter).asRight
         } else mode.asLeft.asRight
       }
 

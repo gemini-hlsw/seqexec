@@ -7,8 +7,6 @@ import cats.{Eq, Show}
 import cats.data.EitherT
 import cats.effect.IO
 import cats.implicits._
-import edu.gemini.aspen.giapi.commands.{Configuration, DefaultConfiguration}
-import edu.gemini.aspen.giapi.commands.ConfigPath.configPath
 import edu.gemini.spModel.gemini.gpi.Gpi.{Apodizer => LegacyApodizer}
 import edu.gemini.spModel.gemini.gpi.Gpi.{Adc => LegacyAdc}
 import edu.gemini.spModel.gemini.gpi.Gpi.{
@@ -21,7 +19,7 @@ import edu.gemini.spModel.gemini.gpi.Gpi.{Lyot => LegacyLyot}
 import edu.gemini.spModel.gemini.gpi.Gpi.{ObservingMode => LegacyObservingMode}
 import edu.gemini.spModel.gemini.gpi.Gpi.{PupilCamera => LegacyPupilCamera}
 import edu.gemini.spModel.gemini.gpi.Gpi.{Shutter => LegacyShutter}
-import giapi.client.commands.CommandResult
+import giapi.client.commands.{Configuration, CommandResult}
 import giapi.client.gpi.GPIClient
 import mouse.boolean._
 import org.log4s.getLogger
@@ -103,94 +101,75 @@ final case class GPIController(gpiClient: GPIClient[IO]) {
 
   private def obsModeConfiguration(config: GPIConfig): Configuration = {
     config.mode.fold( m =>
-      DefaultConfiguration.configuration(configPath("gpi:observationMode.mode"), obsModeLUT.getOrElse(m, UNKNOWN_SETTING))
+      Configuration.single("gpi:observationMode.mode", obsModeLUT.getOrElse(m, UNKNOWN_SETTING))
     , params => {
-      DefaultConfiguration.configurationBuilder()
-        .withConfiguration("gpi:selectPupilPlaneMask.maskStr", apodizerLUT.getOrElse(params.apodizer, UNKNOWN_SETTING))
-        .withConfiguration("gpi:selectFocalPlaneMask.maskStr", fpmLUT.getOrElse(params.fpm, UNKNOWN_SETTING))
-        .withConfiguration("gpi:selectLyotMask.maskStr", lyotLUT.getOrElse(params.lyot, UNKNOWN_SETTING))
-        .withConfiguration("gpi:ifs:selectIfsFilter.maskStr", params.filter.displayValue)
-        .build()
+      Configuration.single("gpi:selectPupilPlaneMask.maskStr", apodizerLUT.getOrElse(params.apodizer, UNKNOWN_SETTING)) |+|
+      Configuration.single("gpi:selectFocalPlaneMask.maskStr", fpmLUT.getOrElse(params.fpm, UNKNOWN_SETTING)) |+|
+      Configuration.single("gpi:selectLyotMask.maskStr", lyotLUT.getOrElse(params.lyot, UNKNOWN_SETTING)) |+|
+      Configuration.single("gpi:ifs:selectIfsFilter.maskStr", params.filter.displayValue)
     })
   }
 
   // scalastyle:off
   def gpiConfig(config: GPIConfig): SeqAction[CommandResult] = {
-    val giapiApply = DefaultConfiguration
-      .configurationBuilder()
-      .withConfiguration("gpi:selectAdc.deploy",
+    val giapiApply =
+      Configuration.single("gpi:selectAdc.deploy",
                          (config.adc === LegacyAdc.IN)
-                           .fold(1, 0)
-                           .show)
-      .withConfiguration("gpi:configAo.useAo",
+                           .fold(1, 0)) |+|
+      Configuration.single("gpi:configAo.useAo",
                          config.aoFlags.useAo
-                           .fold(1, 0)
-                           .show)
-      .withConfiguration("gpi:configAo.useCal",
+                           .fold(1, 0)) |+|
+      Configuration.single("gpi:configAo.useCal",
                          config.aoFlags.useCal
-                           .fold(1, 0)
-                           .show)
-      .withConfiguration("gpi:configCal.fpmPinholeBias",
+                           .fold(1, 0)) |+|
+      Configuration.single("gpi:configCal.fpmPinholeBias",
                          (config.aoFlags.alignFpm)
-                           .fold(1, 0)
-                           .show)
-      .withConfiguration("gpi:configAo.optimize",
+                           .fold(1, 0)) |+|
+      Configuration.single("gpi:configAo.optimize",
                          config.aoFlags.aoOptimize
-                           .fold(1, 0)
-                           .show)
-      .withConfiguration("gpi:configIfs.integrationTime",
-                         (config.expTime.toMillis / 1000.0).show)
-      .withConfiguration("gpi:configIfs.numCoadds", config.coAdds.show)
-      .withConfiguration("gpi:configAo.magnitudeI", config.aoFlags.magI.show)
-      .withConfiguration("gpi:configAo.magnitudeH", config.aoFlags.magH.show)
-      .withConfiguration(
+                           .fold(1, 0)) |+|
+      Configuration.single("gpi:configIfs.integrationTime",
+                         (config.expTime.toMillis / 1000.0)) |+|
+      Configuration.single("gpi:configIfs.numCoadds", config.coAdds) |+|
+      Configuration.single("gpi:configAo.magnitudeI", config.aoFlags.magI) |+|
+      Configuration.single("gpi:configAo.magnitudeH", config.aoFlags.magH) |+|
+      Configuration.single(
         "gpi:selectShutter.calEntranceShutter",
         (config.shutters.calEntranceShutter === LegacyShutter.OPEN)
-          .fold(1, 0)
-          .show)
-      .withConfiguration(
+          .fold(1, 0)) |+|
+      Configuration.single(
         "gpi:selectShutter.calReferenceShutter",
         (config.shutters.calReferenceShutter === LegacyShutter.OPEN)
-          .fold(1, 0)
-          .show)
-      .withConfiguration(
+          .fold(1, 0)) |+|
+      Configuration.single(
         "gpi:selectShutter.calScienceShutter",
         (config.shutters.calScienceShutter === LegacyShutter.OPEN)
-          .fold(1, 0)
-          .show)
-      .withConfiguration(
+          .fold(1, 0)) |+|
+      Configuration.single(
         "gpi:selectShutter.entranceShutter",
         (config.shutters.entranceShutter === LegacyShutter.OPEN)
-          .fold(1, 0)
-          .show)
-      .withConfiguration("gpi:selectShutter.calExitShutter", "-1")
-      .withConfiguration(obsModeConfiguration(config))
-      .withConfiguration("gpi:selectPupilCamera.deploy",
+          .fold(1, 0)) |+|
+      Configuration.single("gpi:selectShutter.calExitShutter", "-1") |+|
+      Configuration.single("gpi:selectPupilCamera.deploy",
                          (config.pc === LegacyPupilCamera.IN)
-                           .fold(1, 0)
-                           .show)
-      .withConfiguration("gpi:selectSource.sourceSCatten",
-                         config.asu.attenuation.show)
-      .withConfiguration("gpi:selectSource.sourceSCpower",
+                           .fold(1, 0)) |+|
+      Configuration.single("gpi:selectSource.sourceSCatten",
+                         config.asu.attenuation) |+|
+      Configuration.single("gpi:selectSource.sourceSCpower",
                          (config.asu.sc === LegacyArtificialSource.ON)
-                           .fold(100, 0)
-                           .show)
-      .withConfiguration("gpi:selectSource.sourceVis",
+                           .fold(100, 0)) |+|
+      Configuration.single("gpi:selectSource.sourceVis",
                          (config.asu.vis === LegacyArtificialSource.ON)
-                           .fold(1, 0)
-                           .show)
-      .withConfiguration("gpi:selectSource.sourceIr",
+                           .fold(1, 0)) |+|
+      Configuration.single("gpi:selectSource.sourceIr",
                          (config.asu.ir === LegacyArtificialSource.ON)
-                           .fold(1, 0)
-                           .show)
-      .withConfiguration("gpi:selectSource.deploy",
+                           .fold(1, 0)) |+|
+      Configuration.single("gpi:selectSource.deploy",
                          (config.disperser === LegacyDisperser.WOLLASTON)
-                           .fold(1, 0)
-                           .show)
-      .withConfiguration("gpi:configPolarizer.angle",
-                         config.disperserAngle.show)
+                           .fold(1, 0)) |+|
+      Configuration.single("gpi:configPolarizer.angle", config.disperserAngle)
 
-    EitherT.liftF(gpiClient.genericApply(giapiApply.build()))
+    EitherT.liftF(gpiClient.genericApply(giapiApply |+| obsModeConfiguration(config)))
   }
   // scalastyle:on
 
