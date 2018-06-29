@@ -15,11 +15,15 @@ import seqexec.server.tcs.{TcsController, TcsControllerEpics}
 import seqexec.model.Model.{Conditions, Instrument, SequenceId, Operator}
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams
+import edu.gemini.spModel.gemini.gpi.Gpi.{Apodizer => LegacyApodizer}
 import edu.gemini.spModel.gemini.gpi.Gpi.{Adc => LegacyAdc}
 import edu.gemini.spModel.gemini.gpi.Gpi.{
   ArtificialSource => LegacyArtificialSource
 }
 import edu.gemini.spModel.gemini.gpi.Gpi.{Disperser => LegacyDisperser}
+import edu.gemini.spModel.gemini.gpi.Gpi.{FPM => LegacyFPM}
+import edu.gemini.spModel.gemini.gpi.Gpi.{Filter => LegacyFilter}
+import edu.gemini.spModel.gemini.gpi.Gpi.{Lyot => LegacyLyot}
 import edu.gemini.spModel.gemini.gpi.Gpi.{ObservingMode => LegacyObservingMode}
 import edu.gemini.spModel.gemini.gpi.Gpi.{PupilCamera => LegacyPupilCamera}
 import edu.gemini.spModel.gemini.gpi.Gpi.{Shutter => LegacyShutter}
@@ -181,13 +185,32 @@ object SeqexecServerArbitraries extends ArbTime {
   implicit val gpiShuttersCogen: Cogen[GPIController.Shutters] =
     Cogen[(LegacyShutter, LegacyShutter, LegacyShutter, LegacyShutter)]
       .contramap(x => (x.entranceShutter, x.calEntranceShutter, x.calScienceShutter, x.calReferenceShutter))
+  implicit val gpiNonStandardModParamsArb: Arbitrary[NonStandardModeParams] = Arbitrary {
+    for {
+      apo <- arbitrary[LegacyApodizer]
+      fpm <- arbitrary[LegacyFPM]
+      lyo <- arbitrary[LegacyLyot]
+      fil <- arbitrary[LegacyFilter]
+    } yield NonStandardModeParams(apo, fpm, lyo, fil)
+  }
+  implicit val apodizerCogen: Cogen[LegacyApodizer] =
+    Cogen[String].contramap(_.displayValue)
+  implicit val fpmCogen: Cogen[LegacyFPM] =
+    Cogen[String].contramap(_.displayValue)
+  implicit val lyotCogen: Cogen[LegacyLyot] =
+    Cogen[String].contramap(_.displayValue)
+  implicit val filterCogen: Cogen[LegacyFilter] =
+    Cogen[String].contramap(_.displayValue)
+  implicit val gpiNonStandardModeCogen: Cogen[NonStandardModeParams] =
+    Cogen[(LegacyApodizer, LegacyFPM, LegacyLyot, LegacyFilter)]
+      .contramap(x => (x.apodizer, x.fpm, x.lyot, x.filter))
 
   implicit val gpiConfigArb: Arbitrary[GPIController.GPIConfig] = Arbitrary {
     for {
       adc   <- arbitrary[LegacyAdc]
       exp   <- arbitrary[Duration]
       coa   <- Gen.posNum[Int]
-      mode  <- arbitrary[LegacyObservingMode]
+      mode  <- arbitrary[Either[LegacyObservingMode, NonStandardModeParams]]
       disp  <- arbitrary[LegacyDisperser]
       dispA <- arbitrary[Double]
       shut  <- arbitrary[GPIController.Shutters]
@@ -203,6 +226,6 @@ object SeqexecServerArbitraries extends ArbTime {
   implicit val ppCogen: Cogen[LegacyPupilCamera] =
     Cogen[String].contramap(_.displayValue)
   implicit val gpiConfigCogen: Cogen[GPIController.GPIConfig] =
-    Cogen[(LegacyAdc, Duration, Int, LegacyObservingMode, GPIController.Shutters, GPIController.ArtificialSources, LegacyPupilCamera, GPIController.AOFlags)]
+    Cogen[(LegacyAdc, Duration, Int, Either[LegacyObservingMode, NonStandardModeParams], GPIController.Shutters, GPIController.ArtificialSources, LegacyPupilCamera, GPIController.AOFlags)]
       .contramap(x => (x.adc, x.expTime, x.coAdds, x.mode, x.shutters, x.asu, x.pc, x.aoFlags))
 }
