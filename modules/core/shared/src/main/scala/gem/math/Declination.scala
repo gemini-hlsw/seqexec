@@ -6,7 +6,6 @@ package math
 
 import cats.{ Order, Show }
 import cats.instances.long._
-import gem.parser.CoordinateParsers
 import gem.syntax.all._
 import gem.optics.Format
 import monocle.Prism
@@ -93,6 +92,6 @@ trait DeclinationOptics { this: Declination.type =>
     })(_.toAngle)
 
   val fromStringSignedDMS: Format[String, Declination] =
-    Format(CoordinateParsers.dec.parseExact, d => Angle.fromStringSignedDMS.reverseGet(d.toAngle))
+    Angle.fromStringSignedDMS.composePrism(fromAngle)
 
 }

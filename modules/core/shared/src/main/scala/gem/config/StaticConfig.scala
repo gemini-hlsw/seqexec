@@ -4,6 +4,7 @@
 package gem
 package config
 
+import cats.Eq
 import gem.enum.{GmosNorthStageMode, GmosSouthStageMode, GnirsWellDepth, MosPreImaging}
 import monocle.Lens
 import monocle.macros.Lenses
@@ -98,5 +99,8 @@ object StaticConfig {
     val Default: Gnirs =
       Gnirs(GnirsWellDepth.Shallow)
   }
+
+  implicit val EqStaticConfig: Eq[StaticConfig] =
+    Eq.fromUniversalEquals
 
 }

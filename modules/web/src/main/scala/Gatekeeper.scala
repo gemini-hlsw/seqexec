@@ -7,7 +7,6 @@ package web
 import cats.data._
 import cats.effect.IO
 import cats.implicits._
-import gem.json._
 import gem.{ Service => GemService }
 import io.circe.generic.auto._
 import java.time.Instant

@@ -143,6 +143,9 @@ trait Arbitraries {
     }
   }
 
+  implicit val arbStaticConfig: Arbitrary[StaticConfig] =
+    Arbitrary(arbitrary[Instrument].flatMap(genStaticConfigOf))
+
   val genAcqCamDynamic  : Gen[DynamicConfig.AcqCam]   = Gen.const(DynamicConfig.AcqCam()  )
   val genBhrosDynamic   : Gen[DynamicConfig.Bhros]    = Gen.const(DynamicConfig.Bhros()   )
   val genGhostDynamic   : Gen[DynamicConfig.Ghost]    = Gen.const(DynamicConfig.Ghost()   )
@@ -272,6 +275,9 @@ trait Arbitraries {
     }
   }
 
+  implicit val arbDynamicConfig: Arbitrary[DynamicConfig] =
+    Arbitrary(arbitrary[Instrument].flatMap(genDynamicConfigOf))
+
   // GcalConfig
 
   implicit val arbGcalArcs: Arbitrary[GcalArcs] =
@@ -279,7 +285,7 @@ trait Arbitraries {
       for {
         a  <- arbitrary[GcalArc]
         as <- Gen.someOf(GcalArc.all)
-      } yield GcalArcs(a, as.toList)
+      } yield GcalArcs.of(a, as.toList: _*)
     }
 
   implicit val arbGcalLamp: Arbitrary[GcalLamp] =

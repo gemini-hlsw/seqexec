@@ -4,6 +4,7 @@
 package gem
 package config
 
+import cats.Eq
 import gem.CoAdds
 import gem.enum._
 import gem.math.Wavelength
@@ -290,5 +291,8 @@ object DynamicConfig {
       Wavelength.fromAngstroms.unsafeGet(22000)
     )
   }
+
+  implicit val EqDynamicConfig: Eq[DynamicConfig] =
+    Eq.fromUniversalEquals // TODO: ensure this is ok
 
 }

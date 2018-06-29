@@ -4,11 +4,13 @@
 package gem
 package config
 
-import cats.Order
-import cats.data.OneAnd
+import cats.Eq
+import cats.data.NonEmptySet
+import cats.implicits._
 import gem.CoAdds
 import gem.enum.{GcalArc, GcalContinuum, GcalDiffuser, GcalFilter, GcalShutter}
 import java.time.Duration
+import scala.collection.immutable.SortedSet
 import GcalConfig.GcalLamp
 
 /**
@@ -24,27 +26,18 @@ final case class GcalConfig(lamp: GcalLamp, filter: GcalFilter, diffuser: GcalDi
 }
 
 object GcalConfig {
-  // We make this a sealed abstract case class in order to force usage of the
-  // companion object constructor.  The OneAnd head is guaranteed to always be
-  // the minimum GcalArc in the group.
-  sealed abstract case class GcalArcs(arcs: OneAnd[Set, GcalArc]) {
-    def toList: List[GcalArc] =
-      arcs.head :: arcs.tail.toList
 
-    def toSet: Set[GcalArc] =
-      arcs.tail + arcs.head
+  final case class GcalArcs(arcs: NonEmptySet[GcalArc]) {
+    def toList: List[GcalArc] =
+      arcs.toList
+
+    def toSet: SortedSet[GcalArc] =
+      arcs.toSortedSet
   }
 
   object GcalArcs {
-    /** Constructs GcalArcs such that the GcalArc instances are always in order.
-      */
-    @SuppressWarnings(Array("org.wartremover.warts.OptionPartial"))
-    def apply(arc0: GcalArc, arcs: List[GcalArc]): GcalArcs = {
-      (arc0 :: arcs).toSet.toList.sorted(Order[GcalArc].toOrdering) match {
-        case h :: t => new GcalArcs(OneAnd(h, t.toSet)) {}
-        case Nil    => sys.error("unpossible")
-      }
-    }
+    def of(arc0: GcalArc, arcs: GcalArc*): GcalArcs =
+      GcalArcs(NonEmptySet.of(arc0, arcs: _*))
   }
 
   type GcalLamp = Either[GcalContinuum, GcalArcs]
@@ -59,7 +52,7 @@ object GcalConfig {
 
       // Prepare the arc lamps, assuming there is no continuum.
       val ao = as match {
-        case h :: t if continuum.isEmpty => Some(Right(GcalArcs(h, t)))
+        case h :: t if continuum.isEmpty => Some(Right(GcalArcs.of(h, t: _*)))
         case _                           => None
       }
 
@@ -70,11 +63,15 @@ object GcalConfig {
       Left(continuum)
 
     def fromArcs(arc0: GcalArc, arcs: GcalArc*): GcalLamp =
-      Right(GcalArcs(arc0, arcs.toList))
+      Right(GcalArcs.of(arc0, arcs: _*))
 
     def unsafeFromConfig(continuum: Option[GcalContinuum], arcs: (GcalArc, Boolean)*): GcalLamp =
       fromConfig(continuum, arcs: _*).getOrElse {
         sys.error(s"misconfigured Gcal lamps: continuum=$continuum, arcs=[${arcs.filter(_._2).unzip._1.mkString(",")}]")
       }
   }
+
+  implicit val GcalConfigEq: Eq[GcalConfig] =
+    Eq.fromUniversalEquals // TODO: double-check
+
 }

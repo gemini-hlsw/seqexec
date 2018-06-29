@@ -8,7 +8,8 @@ import gem.CoAdds
 import gem.config._
 import gem.enum._
 import gem.math._
-
+import gem.json.instances.program._
+import io.circe.syntax._
 import java.time.{ Duration, Year }
 import scala.collection.immutable.{ TreeMap, TreeSet }
 
@@ -25,14 +26,14 @@ object TestProgram {
           Offset.P(Angle.fromMicroarcseconds(200940L)),
           Offset.Q(Angle.fromMicroarcseconds(286230L))
         )),
-        Some(RadialVelocity(-20686)),
+        Some(RadialVelocity.fromMetersPerSecond.unsafeGet(-20686)),
         Some(Angle.fromMicroarcseconds(130230L)))
       )
     )
 
   val gcal: GcalConfig =
     GcalConfig(
-      Right(GcalConfig.GcalArcs(GcalArc.ArArc, Nil)),
+      Right(GcalConfig.GcalArcs.of(GcalArc.ArArc)),
       GcalFilter.None,
       GcalDiffuser.Ir,
       GcalShutter.Open,
@@ -80,7 +81,7 @@ object TestProgram {
 object Main {
   def main(args: Array[String]): Unit = {
     // scalastyle:off
-    println(TestProgram.p)
+    println(TestProgram.p.asJson.spaces2)
     // scalastyle:on
   }
 }

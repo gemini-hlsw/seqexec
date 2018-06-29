@@ -85,17 +85,17 @@ addCommandAlias("gemctl", "ctl/runMain gem.ctl.main")//
 resolvers in ThisBuild +=
   Resolver.sonatypeRepo("snapshots")
 
-// Before printing the prompt check git to make sure all is well.
-shellPrompt in ThisBuild := { state =>
-  if (version.value != imageManifest.formatVersion) {
-    import scala.Console.{ RED, RESET }
-    print(RED)
-    println(s"Computed version doesn't match the filesystem anymore.")
-    println(s"Please `reload` to get back in sync.")
-    print(RESET)
-  }
-  "> "
-}
+// // Before printing the prompt check git to make sure all is well.
+// shellPrompt in ThisBuild := { state =>
+//   if (version.value != imageManifest.formatVersion) {
+//     import scala.Console.{ RED, RESET }
+//     print(RED)
+//     println(s"Computed version doesn't match the filesystem anymore.")
+//     println(s"Please `reload` to get back in sync.")
+//     print(RESET)
+//   }
+//   "> "
+// }
 
 ///////////////
 // Root project
@@ -106,7 +106,8 @@ lazy val ocs3 = preventPublication(project.in(file(".")))
     coreJVM,
     coreJS,
     db,
-    json,
+    jsonJVM,
+    jsonJS,
     ocs2,
     ephemeris,
     service,
@@ -183,14 +184,22 @@ lazy val db = project
     """.stripMargin.trim
   )
 
-lazy val json = project
+lazy val json = crossProject(JVMPlatform, JSPlatform)
+  .crossType(CrossType.Pure)
   .in(file("modules/json"))
   .enablePlugins(AutomateHeaderPlugin)
-  .dependsOn(coreJVM)
+  .dependsOn(core % "test->test;compile->compile")
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Circe.value
   )
+  .jsSettings(commonJSSettings)
+  .jsSettings(
+    test := {}
+  )
+
+lazy val jsonJVM = json.jvm.enablePlugins(AutomateHeaderPlugin)
+lazy val jsonJS = json.js
 
 lazy val sql = project
   .in(file("modules/sql"))
@@ -249,7 +258,7 @@ lazy val telnetd = project
 lazy val web = project
   .in(file("modules/web"))
   .enablePlugins(AutomateHeaderPlugin)
-  .dependsOn(service, sql, json)
+  .dependsOn(service, sql, jsonJVM)
   .settings(commonSettings)
   .settings(
     addCompilerPlugin(Plugins.kindProjectorPlugin),
@@ -264,7 +273,7 @@ lazy val ui = project
   .in(file("modules/ui"))
   .enablePlugins(AutomateHeaderPlugin)
   .enablePlugins(ScalaJSPlugin)
-  .dependsOn(coreJS)
+  .dependsOn(coreJS, jsonJS)
   .settings(commonSettings)
   .settings(commonJSSettings)
   .settings(
@@ -418,6 +427,8 @@ lazy val seqexec_web_client = project.in(file("modules/seqexec/web/client"))
     webpackEmitSourceMaps                    := false,
     webpackExtraArgs                         := Seq("--progress", "true"),
     emitSourceMaps                           := false,
+    parallelExecution in Test                := false,
+    test                                     := {},
     // Requires the DOM for tests
     requiresDOM in Test                      := true,
     // Use yarn as it is faster than npm

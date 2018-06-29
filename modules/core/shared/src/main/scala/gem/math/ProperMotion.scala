@@ -43,7 +43,7 @@ final case class ProperMotion(
         baseCoordinates,
         epoch,
         properVelocity.orEmpty,
-        radialVelocity.getOrElse(RadialVelocity.Zero).toKilometersPerSecond,
+        radialVelocity.getOrElse(RadialVelocity.Zero).toDoubleKilometersPerSecond,
         parallax.orEmpty,
         elapsedYears
       ),

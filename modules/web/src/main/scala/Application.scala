@@ -6,8 +6,9 @@ package web
 
 import cats.effect.IO
 import gem.{ Service => GemService }
-import gem.json._
+import gem.json.instances.all._
 import io.circe.syntax._
+import io.circe.generic.auto._
 import org.http4s._
 import org.http4s.circe._
 import org.http4s.dsl.io._

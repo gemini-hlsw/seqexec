@@ -7,10 +7,11 @@ import doobie._
 import gem.math._
 
 trait RadialVelocityMeta {
+  import PrismMeta._
 
   /** Radial velocity in meters per second. */
   implicit lazy val RadialVelocityMeta: Meta[RadialVelocity] =
-    Meta[Int].xmap(RadialVelocity.apply, _.toMetersPerSecond)
+    RadialVelocity.fromMetersPerSecond.asMeta
 
 }
 object RadialVelocityMeta extends RadialVelocityMeta

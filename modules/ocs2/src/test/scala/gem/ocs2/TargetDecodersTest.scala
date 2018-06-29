@@ -111,7 +111,7 @@ object TargetDecodersTest {
                 Offset.Q(Angle.milliarcseconds.reverseGet(3))
               )
 
-    val rv  = RadialVelocity.fromRedshift(4.0)
+    val rv  = RadialVelocity.unsafeFromRedshift(4.0)
 
     val px  = Angle.milliarcseconds.reverseGet(1)
 

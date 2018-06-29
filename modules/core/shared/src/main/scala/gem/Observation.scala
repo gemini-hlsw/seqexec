@@ -3,7 +3,7 @@
 
 package gem
 
-import cats.{ Order, Show }
+import cats.{ Eq, Order, Show }
 import cats.implicits._
 import gem.config.StaticConfig
 import gem.math.Index
@@ -246,5 +246,8 @@ object Observation {
       }
 
   }
+
+  implicit val EqObservation: Eq[Observation] =
+    Eq.fromUniversalEquals
 
 }

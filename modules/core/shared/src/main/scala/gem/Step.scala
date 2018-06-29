@@ -3,6 +3,7 @@
 
 package gem
 
+import cats.Eq
 import gem.config._
 import gem.enum.SmartGcalType
 
@@ -39,5 +40,8 @@ object Step {
   sealed case class Visitor(dynamicConfig: DynamicConfig.Visitor, base: Base) extends Step
   sealed case class Flamingos2(dynamicConfig: DynamicConfig.Flamingos2, base: Base) extends Step
   sealed case class Ghost(dynamicConfig: DynamicConfig.Ghost, base: Base) extends Step
+
+  implicit val EqStep: Eq[Step] =
+    Eq.fromUniversalEquals
 
 }

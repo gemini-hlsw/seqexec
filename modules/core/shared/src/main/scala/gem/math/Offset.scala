@@ -7,6 +7,7 @@ package math
 import cats.{ Order, Show }
 import cats.kernel.CommutativeGroup
 import cats.implicits._
+import gem.optics.SplitMono
 import monocle.{ Iso, Lens }
 import monocle.macros.{ GenIso, GenLens }
 
@@ -92,6 +93,9 @@ object Offset extends OffsetOptics {
     val angle: Iso[P, Angle] =
       GenIso[P, Angle]
 
+    val signedArcseconds: SplitMono[P, BigDecimal] =
+      Angle.signedArcseconds.imapA(P(_), _.toAngle)
+
   }
 
   /** Q component of an angular offset.. */
@@ -137,6 +141,9 @@ object Offset extends OffsetOptics {
     /** @Group Optics */
     val angle: Iso[Q, Angle] =
       GenIso[Q, Angle]
+
+    val signedArcseconds: SplitMono[Q, BigDecimal] =
+      Angle.signedArcseconds.imapA(Q(_), _.toAngle)
 
   }
 

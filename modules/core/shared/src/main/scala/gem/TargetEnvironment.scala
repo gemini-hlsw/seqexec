@@ -5,19 +5,19 @@ package gem
 
 import cats.Eq
 import gem.enum.Instrument
-import scala.collection.immutable.TreeSet
+import scala.collection.immutable.SortedSet
 
 /** Collection of targets associated with an observation. */
 sealed trait TargetEnvironment {
   def asterism: Option[Asterism]
-  def userTargets: TreeSet[UserTarget]
+  def userTargets: SortedSet[UserTarget]
   override final def toString =
     s"TargetEnvironment($asterism, $userTargets)"
 }
 
 object TargetEnvironment {
 
-  def fromAsterism(a: Asterism, u: TreeSet[UserTarget]): TargetEnvironment =
+  def fromAsterism(a: Asterism, u: SortedSet[UserTarget]): TargetEnvironment =
     a match {
       case a @ Asterism.Phoenix(_)            => Phoenix(Some(a), u)
       case a @ Asterism.Michelle(_)           => Michelle(Some(a), u)
@@ -37,7 +37,7 @@ object TargetEnvironment {
       case a @ Asterism.GhostDualTarget(_, _) => Ghost(Some(a), u)
     }
 
-  def fromInstrument(i: Instrument, ts: TreeSet[UserTarget]): TargetEnvironment =
+  def fromInstrument(i: Instrument, ts: SortedSet[UserTarget]): TargetEnvironment =
     i match {
       case Instrument.Phoenix    => TargetEnvironment.Phoenix(None, ts)
       case Instrument.Michelle   => TargetEnvironment.Michelle(None, ts)
@@ -62,7 +62,7 @@ object TargetEnvironment {
     */
   final case class Phoenix(
     asterism: Option[Asterism.Phoenix],
-    userTargets: TreeSet[UserTarget]
+    userTargets: SortedSet[UserTarget]
   ) extends TargetEnvironment
 
   /** Target environment for Michelle
@@ -70,7 +70,7 @@ object TargetEnvironment {
     */
   final case class Michelle(
     asterism: Option[Asterism.Michelle],
-    userTargets: TreeSet[UserTarget]
+    userTargets: SortedSet[UserTarget]
   ) extends TargetEnvironment
 
   /** Target environment for Gnirs
@@ -78,7 +78,7 @@ object TargetEnvironment {
     */
   final case class Gnirs(
     asterism: Option[Asterism.Gnirs],
-    userTargets: TreeSet[UserTarget]
+    userTargets: SortedSet[UserTarget]
   ) extends TargetEnvironment
 
   /** Target environment for Niri
@@ -86,7 +86,7 @@ object TargetEnvironment {
     */
   final case class Niri(
     asterism: Option[Asterism.Niri],
-    userTargets: TreeSet[UserTarget]
+    userTargets: SortedSet[UserTarget]
   ) extends TargetEnvironment
 
   /** Target environment for Trecs
@@ -94,7 +94,7 @@ object TargetEnvironment {
     */
   final case class Trecs(
     asterism: Option[Asterism.Trecs],
-    userTargets: TreeSet[UserTarget]
+    userTargets: SortedSet[UserTarget]
   ) extends TargetEnvironment
 
   /** Target environment for Nici
@@ -102,7 +102,7 @@ object TargetEnvironment {
     */
   final case class Nici(
     asterism: Option[Asterism.Nici],
-    userTargets: TreeSet[UserTarget]
+    userTargets: SortedSet[UserTarget]
   ) extends TargetEnvironment
 
   /** Target environment for Nifs
@@ -110,7 +110,7 @@ object TargetEnvironment {
     */
   final case class Nifs(
     asterism: Option[Asterism.Nifs],
-    userTargets: TreeSet[UserTarget]
+    userTargets: SortedSet[UserTarget]
   ) extends TargetEnvironment
 
   /** Target environment for Gpi
@@ -118,7 +118,7 @@ object TargetEnvironment {
     */
   final case class Gpi(
     asterism: Option[Asterism.Gpi],
-    userTargets: TreeSet[UserTarget]
+    userTargets: SortedSet[UserTarget]
   ) extends TargetEnvironment
 
   /** Target environment for Gsaoi
@@ -126,7 +126,7 @@ object TargetEnvironment {
     */
   final case class Gsaoi(
     asterism: Option[Asterism.Gsaoi],
-    userTargets: TreeSet[UserTarget]
+    userTargets: SortedSet[UserTarget]
   ) extends TargetEnvironment
 
   /** Target environment for GmosS
@@ -134,7 +134,7 @@ object TargetEnvironment {
     */
   final case class GmosS(
     asterism: Option[Asterism.GmosS],
-    userTargets: TreeSet[UserTarget]
+    userTargets: SortedSet[UserTarget]
   ) extends TargetEnvironment
 
   /** Target environment for AcqCam
@@ -142,7 +142,7 @@ object TargetEnvironment {
     */
   final case class AcqCam(
     asterism: Option[Asterism.AcqCam],
-    userTargets: TreeSet[UserTarget]
+    userTargets: SortedSet[UserTarget]
   ) extends TargetEnvironment
 
   /** Target environment for GmosN
@@ -150,7 +150,7 @@ object TargetEnvironment {
     */
   final case class GmosN(
     asterism: Option[Asterism.GmosN],
-    userTargets: TreeSet[UserTarget]
+    userTargets: SortedSet[UserTarget]
   ) extends TargetEnvironment
 
   /** Target environment for Bhros
@@ -158,7 +158,7 @@ object TargetEnvironment {
     */
   final case class Bhros(
     asterism: Option[Asterism.Bhros],
-    userTargets: TreeSet[UserTarget]
+    userTargets: SortedSet[UserTarget]
   ) extends TargetEnvironment
 
   /** Target environment for Visitor
@@ -166,7 +166,7 @@ object TargetEnvironment {
     */
   final case class Visitor(
     asterism: Option[Asterism.Visitor],
-    userTargets: TreeSet[UserTarget]
+    userTargets: SortedSet[UserTarget]
   ) extends TargetEnvironment
 
   /** Target environment for Flamingos2
@@ -174,7 +174,7 @@ object TargetEnvironment {
     */
   final case class Flamingos2(
     asterism: Option[Asterism.Flamingos2],
-    userTargets: TreeSet[UserTarget]
+    userTargets: SortedSet[UserTarget]
   ) extends TargetEnvironment
 
   /** Target environment for Ghost
@@ -182,7 +182,7 @@ object TargetEnvironment {
     */
   final case class Ghost(
     asterism: Option[Asterism.GhostDualTarget],
-    userTargets: TreeSet[UserTarget]
+    userTargets: SortedSet[UserTarget]
   ) extends TargetEnvironment
 
   implicit def EqTargetEnvironment: Eq[TargetEnvironment] =

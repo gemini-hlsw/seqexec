@@ -6,6 +6,7 @@ package gem.math
 import cats.tests.CatsSuite
 import cats.{ Eq, Show }
 import cats.kernel.laws.discipline._
+import gem.laws.discipline._
 import gem.arb._
 import monocle.law.discipline._
 
@@ -18,6 +19,7 @@ final class OffsetQSpec extends CatsSuite {
   checkAll("Offset.Q", CommutativeGroupTests[Offset.Q].commutativeGroup)
   checkAll("Offset.Q", OrderTests[Offset.Q].order)
   checkAll("Offset.Q.angle", IsoTests(Offset.Q.angle))
+  checkAll("Offset.Q.signedArcseconds", SplitMonoTests(Offset.Q.signedArcseconds).splitMono)
 
   test("Equality must be natural") {
     forAll { (a: Offset.Q, b: Offset.Q) =>
