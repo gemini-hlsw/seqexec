@@ -264,7 +264,7 @@ object QueueTableBody {
       Some((l.obsId, l.status, l.instrument, l.targetName, l.name, l.active, l.runningStep))
 
     val Zero: QueueRow =
-      apply(Observation.Id.unsafeFromString("0"), SequenceState.Idle, Instrument.F2, None, "", active = false, None)
+      apply(Observation.Id.unsafeFromString("Zero-1"), SequenceState.Idle, Instrument.F2, None, "", active = false, None)
   }
 
   private def showSequence(p: Props, i: Instrument, id: Observation.Id): Callback =
