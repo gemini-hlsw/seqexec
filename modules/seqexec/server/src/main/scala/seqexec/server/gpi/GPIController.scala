@@ -16,6 +16,7 @@ import edu.gemini.spModel.gemini.gpi.Gpi.{
 }
 import edu.gemini.spModel.gemini.gpi.Gpi.{Disperser => LegacyDisperser}
 import edu.gemini.spModel.gemini.gpi.Gpi.{FPM => LegacyFPM}
+import edu.gemini.spModel.gemini.gpi.Gpi.{Filter => LegacyFilter}
 import edu.gemini.spModel.gemini.gpi.Gpi.{Lyot => LegacyLyot}
 import edu.gemini.spModel.gemini.gpi.Gpi.{ObservingMode => LegacyObservingMode}
 import edu.gemini.spModel.gemini.gpi.Gpi.{PupilCamera => LegacyPupilCamera}
@@ -108,6 +109,7 @@ final case class GPIController(gpiClient: GPIClient[IO]) {
         .withConfiguration("gpi:selectPupilPlaneMask.maskStr", apodizerLUT.getOrElse(params.apodizer, UNKNOWN_SETTING))
         .withConfiguration("gpi:selectFocalPlaneMask.maskStr", fpmLUT.getOrElse(params.fpm, UNKNOWN_SETTING))
         .withConfiguration("gpi:selectLyotMask.maskStr", lyotLUT.getOrElse(params.lyot, UNKNOWN_SETTING))
+        .withConfiguration("gpi:ifs:selectIfsFilter.maskStr", params.filter.displayValue)
         .build()
     })
   }
@@ -219,6 +221,8 @@ object GPIController {
 
   implicit val fpmEq: Eq[LegacyFPM] = Eq.by(_.displayValue)
 
+  implicit val filterEq: Eq[LegacyFilter] = Eq.by(_.displayValue)
+
   implicit val lyotEq: Eq[LegacyLyot] = Eq.by(_.displayValue)
 
   implicit val shEq: Eq[LegacyShutter] = Eq.by(_.displayValue)
@@ -265,12 +269,12 @@ object GPIController {
     implicit val show: Show[Shutters] = Show.fromToString
   }
 
-  final case class NonStandardModeParams(apodizer: LegacyApodizer, fpm: LegacyFPM, lyot: LegacyLyot)
+  final case class NonStandardModeParams(apodizer: LegacyApodizer, fpm: LegacyFPM, lyot: LegacyLyot, filter: LegacyFilter)
 
   object NonStandardModeParams {
     implicit val eq: Eq[NonStandardModeParams] = Eq.by(
       x =>
-        (x.apodizer, x.fpm, x.lyot))
+        (x.apodizer, x.fpm, x.lyot, x.filter))
     implicit val show: Show[NonStandardModeParams] = Show.fromToString
   }
 
