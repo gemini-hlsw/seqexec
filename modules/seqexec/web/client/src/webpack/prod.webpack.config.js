@@ -18,9 +18,12 @@ const Web = Merge(
   }),
   parts.minifyJavaScript(),
   parts.minifyCSS({
-    safe: true,
-    discardComments: { removeAll: true },
-    autoprefixer: { disable: true } // Otherwise this conflicts with post-css autoprefixer
+    options: {
+      safe: true,
+      mergeLonghand: false, // Required to avoid merges of border properties that are unsafe
+      discardComments: { removeAll: true },
+      autoprefixer: { disable: true } // Otherwise this conflicts with post-css autoprefixer
+    }
   }),
   parts.extraAssets,
   parts.fontAssets,
