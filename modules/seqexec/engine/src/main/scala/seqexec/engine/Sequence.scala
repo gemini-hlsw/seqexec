@@ -4,7 +4,7 @@
 package seqexec.engine
 
 import seqexec.model.Model.{Observer, Resource, SequenceMetadata, SequenceState, StepState}
-
+import gem.Observation
 import cats.implicits._
 import monocle.Lens
 import monocle.macros.GenLens
@@ -13,7 +13,7 @@ import monocle.macros.GenLens
   * A list of `Step`s grouped by target and instrument.
   */
 final case class Sequence(
-  id: Sequence.Id,
+  id: Observation.Id,
   metadata: SequenceMetadata,
   steps: List[Step]
 ) {
@@ -25,9 +25,7 @@ final case class Sequence(
 
 object Sequence {
 
-  type Id = String
-
-  def empty[A](id: Id, m: SequenceMetadata): Sequence = Sequence(id, m, Nil)
+  def empty[A](id: Observation.Id, m: SequenceMetadata): Sequence = Sequence(id, m, Nil)
 
   def metadata[A]: Lens[Sequence, SequenceMetadata] =
     GenLens[Sequence](_.metadata)
@@ -38,7 +36,7 @@ object Sequence {
     *
     */
   final case class Zipper(
-    id: Id,
+    id: Observation.Id,
     metadata: SequenceMetadata,
     pending: List[Step],
     focus: Step.Zipper,

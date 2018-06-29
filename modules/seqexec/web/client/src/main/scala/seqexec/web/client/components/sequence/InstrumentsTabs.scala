@@ -33,8 +33,8 @@ object InstrumentTab {
       val sequenceId = tab.idState.map(_._1)
       val instrument = tab.instrument
       val tabTitle = tab.runningStep match {
-        case Some(RunningStep(current, total)) => s"${sequenceId.getOrElse("")} - ${current + 1}/$total"
-        case _                                 => sequenceId.getOrElse("")
+        case Some(RunningStep(current, total)) => s"${sequenceId.map(_.format).getOrElse("")} - ${current + 1}/$total"
+        case _                                 => sequenceId.map(_.format).getOrElse("")
       }
       val icon = status.flatMap {
         case SequenceState.Running(_, _) => IconCircleNotched.copyIcon(loading = true).some

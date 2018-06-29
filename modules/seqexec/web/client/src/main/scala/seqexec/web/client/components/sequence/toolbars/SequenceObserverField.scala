@@ -3,21 +3,21 @@
 
 package seqexec.web.client.components.sequence.toolbars
 
-import seqexec.model.Model.SequenceId
+import diode.react.ModelProxy
+import cats.implicits._
+import gem.Observation
+import japgolly.scalajs.react.vdom.html_<^._
+import japgolly.scalajs.react.{BackendScope, Callback, ScalaComponent}
+import japgolly.scalajs.react.extra.{StateSnapshot, TimerSupport}
+import japgolly.scalajs.react.component.Scala.Unmounted
+import org.scalajs.dom.html.Div
 import seqexec.web.client.actions.UpdateObserver
 import seqexec.web.client.circuit.StatusAndObserverFocus
 import seqexec.web.client.semanticui.elements.label.FormLabel
 import seqexec.web.client.semanticui.elements.input.InputEV
 import seqexec.web.client.components.SeqexecStyles
-import web.client.style._
-import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.{BackendScope, Callback, ScalaComponent}
-import japgolly.scalajs.react.extra.{StateSnapshot, TimerSupport}
-import japgolly.scalajs.react.component.Scala.Unmounted
-import diode.react.ModelProxy
-import org.scalajs.dom.html.Div
-import cats.implicits._
 import scala.concurrent.duration._
+import web.client.style._
 
 /**
   * Encapsulates the field to change the observer name
@@ -28,7 +28,7 @@ object SequenceObserverField {
   final case class State(currentText: Option[String])
 
   class Backend(val $: BackendScope[Props, State]) extends TimerSupport {
-    def updateObserver(id: SequenceId, name: String): Callback =
+    def updateObserver(id: Observation.Id, name: String): Callback =
       $.props >>= { p => Callback.when(p.p().isLogged)(p.p.dispatchCB(UpdateObserver(id, name))) }
 
     def updateState(value: Option[String], cb: Callback): Callback =

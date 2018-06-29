@@ -3,7 +3,15 @@
 
 package seqexec.web.client.components.sequence.toolbars
 
-import seqexec.model.Model.{SequenceId, SequenceState}
+import diode.react.ModelProxy
+import cats.implicits._
+import japgolly.scalajs.react.vdom.html_<^._
+import japgolly.scalajs.react.{Callback, CallbackTo, ScalaComponent, ScalazReact}
+import japgolly.scalajs.react.ScalazReact._
+import japgolly.scalajs.react.component.Scala.Unmounted
+import gem.Observation
+import mouse.all._
+import seqexec.model.Model.SequenceState
 import seqexec.web.client.circuit.{SeqexecCircuit, SequenceControlFocus, ControlModel}
 import seqexec.web.client.actions.{RequestCancelPause, RequestPause, RequestSync, RequestRun}
 import seqexec.web.client.components.SeqexecStyles
@@ -13,13 +21,6 @@ import seqexec.web.client.semanticui.elements.popup.Popup
 import seqexec.web.client.semanticui.elements.icon.Icon
 import seqexec.web.client.semanticui.elements.icon.Icon.{IconRefresh, IconPlay, IconPause, IconBan}
 import web.client.style._
-import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.{Callback, CallbackTo, ScalaComponent, ScalazReact}
-import japgolly.scalajs.react.ScalazReact._
-import japgolly.scalajs.react.component.Scala.Unmounted
-import diode.react.ModelProxy
-import cats.implicits._
-import mouse.all._
 
 /**
   * Control buttons for the sequence
@@ -44,16 +45,16 @@ object SequenceControl {
 
   private val ST = ReactS.Fix[State]
 
-  def requestRun(s: SequenceId): ScalazReact.ReactST[CallbackTo, State, Unit] =
+  def requestRun(s: Observation.Id): ScalazReact.ReactST[CallbackTo, State, Unit] =
     ST.retM(Callback(SeqexecCircuit.dispatch(RequestRun(s)))) >> ST.mod(_.requestRun).liftCB
 
-  def requestSync(s: SequenceId): ScalazReact.ReactST[CallbackTo, State, Unit] =
+  def requestSync(s: Observation.Id): ScalazReact.ReactST[CallbackTo, State, Unit] =
     ST.retM(Callback(SeqexecCircuit.dispatch(RequestSync(s)))) >> ST.mod(_.requestSync).liftCB
 
-  def requestPause(s: SequenceId): ScalazReact.ReactST[CallbackTo, State, Unit] =
+  def requestPause(s: Observation.Id): ScalazReact.ReactST[CallbackTo, State, Unit] =
     ST.retM(Callback(SeqexecCircuit.dispatch(RequestPause(s)))) >> ST.mod(_.requestPause).liftCB
 
-  def requestCancelPause(s: SequenceId): ScalazReact.ReactST[CallbackTo, State, Unit] =
+  def requestCancelPause(s: Observation.Id): ScalazReact.ReactST[CallbackTo, State, Unit] =
     ST.retM(Callback(SeqexecCircuit.dispatch(RequestCancelPause(s)))) >> ST.mod(_.requestCancelPause).liftCB
 
   private def controlButton(icon: Icon, color: String, onClick: Callback, disabled: Boolean, tooltip: String, text: String) =

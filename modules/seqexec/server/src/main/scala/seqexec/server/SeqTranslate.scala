@@ -4,7 +4,6 @@
 package seqexec.server
 
 import edu.gemini.spModel.core.Site
-import edu.gemini.pot.sp.SPObservationID
 import seqexec.engine.Result.{Configured, FileIdAllocated, Observed}
 import seqexec.engine.{Action, ActionMetadata, Event, Result, Sequence, Step, fromIO}
 import seqexec.model.Model.{Instrument, Resource, SequenceMetadata, StepState}
@@ -36,6 +35,7 @@ import cats.implicits._
 import edu.gemini.seqexec.odb.{ExecutedDataset, SeqexecSequence}
 import squants.Time
 import fs2.Stream
+import gem.Observation
 import mouse.all._
 
 class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
@@ -48,19 +48,19 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
   private def dhsFileId(inst: InstrumentSystem): SeqAction[ImageFileId] =
     systems.dhs.createImage(DhsClient.ImageParameters(DhsClient.Permanent, List(inst.contributorName, "dhs-http")))
 
-  private def sendDataStart(obsId: SPObservationID, imageFileId: ImageFileId, dataId: String): SeqAction[Unit] =
+  private def sendDataStart(obsId: Observation.Id, imageFileId: ImageFileId, dataId: String): SeqAction[Unit] =
     systems.odb.datasetStart(obsId, dataId, imageFileId).flatMap{
       if(_) SeqAction.void
       else SeqAction.fail(SeqexecFailure.Unexpected("Unable to send DataStart message to ODB."))
     }
 
-  private def sendDataEnd(obsId: SPObservationID, imageFileId: ImageFileId, dataId: String): SeqAction[Unit] =
+  private def sendDataEnd(obsId: Observation.Id, imageFileId: ImageFileId, dataId: String): SeqAction[Unit] =
     systems.odb.datasetComplete(obsId, dataId, imageFileId).flatMap{
       if(_) SeqAction.void
       else SeqAction.fail(SeqexecFailure.Unexpected("Unable to send DataEnd message to ODB."))
     }
 
-  private def sendObservationAborted(obsId: SPObservationID, imageFileId: ImageFileId): SeqAction[Unit] =
+  private def sendObservationAborted(obsId: Observation.Id, imageFileId: ImageFileId): SeqAction[Unit] =
     systems.odb.obsAbort(obsId, imageFileId).flatMap{
       if(_) SeqAction.void
       else SeqAction.fail(SeqexecFailure.Unexpected("Unable to send ObservationAborted message to ODB."))
@@ -68,7 +68,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
 
   private def info(msg: => String): SeqAction[Unit] = EitherT.right(IO.apply(Log.info(msg)))
 
-  private def observe[A <: InstrumentSystem: Show](config: Config, obsId: SPObservationID, inst: A,
+  private def observe[A <: InstrumentSystem: Show](config: Config, obsId: Observation.Id, inst: A,
                       otherSys: List[System], headers: Reader[ActionMetadata, List[Header]])
                      (ctx: ActionMetadata): SeqAction[Result.Partial[FileIdAllocated]] = {
     val dataId: SeqAction[String] = EitherT(IO.apply(
@@ -120,7 +120,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
   }
 
   //scalastyle:off
-  private def step(obsId: SPObservationID, i: Int, config: Config, nextToRun: Int, datasets: Map[Int, ExecutedDataset]): TrySeq[Step] = {
+  private def step(obsId: Observation.Id, i: Int, config: Config, nextToRun: Int, datasets: Map[Int, ExecutedDataset]): TrySeq[Step] = {
     def buildStep(inst: InstrumentSystem, sys: List[System], headers: Reader[ActionMetadata,List[Header]], resources: Set[Resource]): Step = {
       val initialStepExecutions: List[List[Action]] =
         if (i === 0) List(List(systems.odb.sequenceStart(obsId, "").map(_ => Result.Ignored).toAction(ActionType.Undefined)))
@@ -190,7 +190,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
       case _         => false
     }
 
-  def sequence(obsId: SPObservationID, sequence: SeqexecSequence):
+  def sequence(obsId: Observation.Id, sequence: SeqexecSequence):
       (List[SeqexecFailure], Option[Sequence]) = {
 
     val configs = sequence.config.getAllSteps.toList
@@ -212,7 +212,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
           else
             Some(
               Sequence(
-                obsId.stringValue(),
+                obsId,
                 SequenceMetadata(i, None, sequence.title),
                 ss
               )
@@ -238,7 +238,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     case _       => Event.nullEvent
   }
 
-  def stopObserve(seqId: Sequence.Id)(seqState: Sequence.State): Option[Stream[IO, executeEngine.EventType]] = {
+  def stopObserve(seqId: Observation.Id)(seqState: Sequence.State): Option[Stream[IO, executeEngine.EventType]] = {
     def f(oc: ObserveControl): Option[SeqAction[Unit]] = oc match {
       case OpticControl(StopObserveCmd(stop), _, _, _, _, _) => Some(stop)
       case InfraredControl(StopObserveCmd(stop), _)          => Some(stop)
@@ -247,7 +247,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     deliverObserveCmd(seqState, f).orElse(stopPaused(seqId)(seqState))
   }
 
-  def abortObserve(seqId: Sequence.Id)(seqState: Sequence.State): Option[Stream[IO, executeEngine.EventType]] = {
+  def abortObserve(seqId: Observation.Id)(seqState: Sequence.State): Option[Stream[IO, executeEngine.EventType]] = {
     def f(oc: ObserveControl): Option[SeqAction[Unit]] = oc match {
       case OpticControl(_, AbortObserveCmd(abort), _, _, _, _) => Some(abort)
       case InfraredControl(_, AbortObserveCmd(abort))          => Some(abort)
@@ -265,7 +265,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     deliverObserveCmd( seqState, f)
   }
 
-  private def pausedCommand(seqId: Sequence.Id, f: ObserveControl => Option[Time => SeqAction[ObserveCommand.Result]])
+  private def pausedCommand(seqId: Observation.Id, f: ObserveControl => Option[Time => SeqAction[ObserveCommand.Result]])
                            (seqState: Sequence.State): Option[Stream[IO, executeEngine.EventType]] = {
     val observeIndex: Option[(ObserveContext, Int)] =
       seqState.current.execution.zipWithIndex.find(_._1.kind === ActionType.Observe).flatMap{ case (a, i) =>
@@ -287,7 +287,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     }
   }
 
-  def resumePaused(seqId: Sequence.Id)(seqState: Sequence.State): Option[Stream[IO, executeEngine.EventType]] = {
+  def resumePaused(seqId: Observation.Id)(seqState: Sequence.State): Option[Stream[IO, executeEngine.EventType]] = {
     def f(o: ObserveControl): Option[Time => SeqAction[ObserveCommand.Result]] = o match {
       case OpticControl(_, _, _, ContinuePausedCmd(a), _, _) => Some(a)
       case _                                                 => none
@@ -296,7 +296,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     pausedCommand(seqId, f)(seqState)
   }
 
-  private def stopPaused(seqId: Sequence.Id)(seqState: Sequence.State): Option[Stream[IO, executeEngine.EventType]] = {
+  private def stopPaused(seqId: Observation.Id)(seqState: Sequence.State): Option[Stream[IO, executeEngine.EventType]] = {
     def f(o: ObserveControl): Option[Time => SeqAction[ObserveCommand.Result]] = o match {
       case OpticControl(_, _, _, _, StopPausedCmd(a), _) => Some(_ => a)
       case _                                             => none
@@ -305,7 +305,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     pausedCommand(seqId, f)(seqState)
   }
 
-  private def abortPaused(seqId: Sequence.Id)(seqState: Sequence.State): Option[Stream[IO, executeEngine.EventType]] = {
+  private def abortPaused(seqId: Observation.Id)(seqState: Sequence.State): Option[Stream[IO, executeEngine.EventType]] = {
     def f(o: ObserveControl): Option[Time => SeqAction[ObserveCommand.Result]] = o match {
       case OpticControl(_, _, _, _, _, AbortPausedCmd(a)) => Some(_ => a)
       case _                                              => none

@@ -8,6 +8,7 @@ import events._
 import org.scalacheck.Arbitrary
 import org.scalacheck.Cogen
 import org.scalacheck.Arbitrary._
+import gem.Observation
 
 // Keep the arbitraries in a separate trait to improve caching
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
@@ -95,19 +96,19 @@ object SequenceEventsArbitraries {
     Cogen[SequencesQueue[SequenceView]].contramap(_.view)
 
   implicit val rcbCogen: Cogen[ResourcesBusy] =
-    Cogen[(SequenceId, SequencesQueue[SequenceView], ClientID)].contramap(x => (x.obsId, x.view, x.clientId))
+    Cogen[(Observation.Id, SequencesQueue[SequenceView], ClientID)].contramap(x => (x.obsId, x.view, x.clientId))
 
   implicit val supCogen: Cogen[SequenceUpdated] =
     Cogen[SequencesQueue[SequenceView]].contramap(_.view)
 
   implicit val sspCogen: Cogen[SequencePaused] =
-    Cogen[(SequenceId, SequencesQueue[SequenceView])].contramap(x => (x.obsId, x.view))
+    Cogen[(Observation.Id, SequencesQueue[SequenceView])].contramap(x => (x.obsId, x.view))
 
   implicit val sepCogen: Cogen[ExposurePaused] =
-    Cogen[(SequenceId, SequencesQueue[SequenceView])].contramap(x => (x.obsId, x.view))
+    Cogen[(Observation.Id, SequencesQueue[SequenceView])].contramap(x => (x.obsId, x.view))
 
   implicit val serCogen: Cogen[SequenceError] =
-    Cogen[(SequenceId, SequencesQueue[SequenceView])].contramap(x => (x.obsId, x.view))
+    Cogen[(Observation.Id, SequencesQueue[SequenceView])].contramap(x => (x.obsId, x.view))
 
   implicit val nlmCogen: Cogen[NewLogMessage] =
     Cogen[String].contramap(_.msg)

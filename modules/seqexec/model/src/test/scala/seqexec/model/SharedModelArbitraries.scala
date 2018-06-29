@@ -8,10 +8,12 @@ import org.scalacheck.{Arbitrary, Cogen, Gen}
 import org.scalacheck.Arbitrary._
 import java.time.Instant
 import cats.implicits._
+import gem.Observation
+import gem.arb.ArbObservation
 
 // Keep the arbitraries in a separate trait to improve caching
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
-object SharedModelArbitraries {
+object SharedModelArbitraries extends ArbObservation {
 
   import org.scalacheck.ScalacheckShapeless._
   private val maxListSize = 2
@@ -53,7 +55,6 @@ object SharedModelArbitraries {
 
   implicit val conArb = implicitly[Arbitrary[Conditions]]
   // Must define these early on to be used on the events
-  implicit val sqiArb = sequencesQueueArb[SequenceId]
   implicit val sqvArb = sequencesQueueArb[SequenceView]
   implicit val snArb  = Arbitrary(Gen.oneOf(SystemName.all))
   implicit val steArb = implicitly[Arbitrary[Step]]
@@ -124,7 +125,7 @@ object SharedModelArbitraries {
     Cogen[(Instrument, Option[Observer], String)].contramap(s => (s.instrument, s.observer, s.name))
 
   implicit val svCogen: Cogen[SequenceView] =
-    Cogen[(SequenceId, SequenceMetadata, SequenceState, List[Step], Option[Int])].contramap(s => (s.id, s.metadata, s.status, s.steps, s.willStopIn))
+    Cogen[(Observation.Id, SequenceMetadata, SequenceState, List[Step], Option[Int])].contramap(s => (s.id, s.metadata, s.status, s.steps, s.willStopIn))
 
   implicit def sqCogen[A: Cogen]: Cogen[SequencesQueue[A]] =
     Cogen[(Conditions, Option[Operator], List[A])].contramap(s => (s.conditions, s.operator, s.queue))

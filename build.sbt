@@ -369,7 +369,8 @@ lazy val seqexec_web_shared = crossProject(JVMPlatform, JSPlatform)
   .jvmSettings(commonSettings)
   .jsSettings(commonJSSettings)
   .jsSettings(
-    libraryDependencies += JavaLogJS.value
+    libraryDependencies += JavaLogJS.value,
+    test                := {}
   )
   .dependsOn(seqexec_model % "compile->compile;test->test")
 
@@ -539,6 +540,7 @@ lazy val seqexec_model = crossProject(JVMPlatform, JSPlatform)
     // And add a custom one
     libraryDependencies += JavaTimeJS.value
   )
+  .dependsOn(core % "compile->compile;test->test")
 
 lazy val seqexec_model_JVM:Project = seqexec_model.jvm
 

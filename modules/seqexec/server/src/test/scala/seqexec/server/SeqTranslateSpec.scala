@@ -9,6 +9,7 @@ import cats.data.Kleisli
 import cats.effect._
 import giapi.client.Giapi
 import giapi.client.gpi.GPIClient
+import gem.Observation
 import seqexec.engine.{Action, Result, Sequence, Step}
 import seqexec.model.ActionType
 import seqexec.model.Model.Instrument.GmosS
@@ -29,7 +30,7 @@ class SeqTranslateSpec extends FlatSpec {
 
   private val config: StepConfig = Map()
   private val fileId = "DummyFileId"
-  private val seqId = "DummiSeqId"
+  private val seqId = Observation.Id.unsafeFromString("GS-2018A-Q-1-1")
   private def observeActions(state: Action.ActionState): List[Action] = List(Action(ActionType.Observe, Kleisli(v => IO(Result.OK(Result.Observed(fileId)))), Action.State(state, Nil)))
   private val s: Sequence.State = Sequence.State.status.set(SequenceState.Running.init)(Sequence.State.init(Sequence(
     seqId,

@@ -4,7 +4,6 @@
 package seqexec.engine
 
 import java.util.UUID
-
 import cats.data.Kleisli
 import cats.effect.IO
 import seqexec.model.Model.Instrument.{F2, GmosS}
@@ -12,17 +11,17 @@ import seqexec.model.Model.{Resource, SequenceMetadata, SequenceState, StepConfi
 import seqexec.model.{ActionType, UserDetails}
 import fs2.async.mutable.Queue
 import fs2.{Stream, async}
+import gem.Observation
 import org.scalatest.Inside._
 import org.scalatest.Matchers._
 import org.scalatest._
-
 import scala.Function.const
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 class StepSpec extends FlatSpec {
 
-  private val seqId ="TEST-01"
+  private val seqId = Observation.Id.unsafeFromString("GS-2017B-Q-1-1")
   private val user = UserDetails("telops", "Telops")
 
   implicit object UnitCanGenerateActionMetadata extends ActionMetadataGenerator[Unit] {
@@ -197,7 +196,7 @@ class StepSpec extends FlatSpec {
           (seqId,
             Sequence.State.Zipper(
               Sequence.Zipper(
-                id = "First",
+                id = Observation.Id.unsafeFromString("GS-2018A-Q-3-1"),
                 metadata = SequenceMetadata(F2, None, ""),
                 pending = Nil,
                 focus = Step.Zipper(
@@ -243,7 +242,7 @@ class StepSpec extends FlatSpec {
           (seqId,
             Sequence.State.Zipper(
               Sequence.Zipper(
-                id = "First",
+                id = Observation.Id.unsafeFromString("GN-2017A-Q-7-1"),
                 metadata = SequenceMetadata(F2, None, ""),
                 pending = Nil,
                 focus = Step.Zipper(

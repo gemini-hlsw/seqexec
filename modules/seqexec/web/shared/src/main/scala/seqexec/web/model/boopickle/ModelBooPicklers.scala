@@ -4,11 +4,11 @@
 package seqexec.model.boopickle
 
 import boopickle.Default._
+import gem.Observation
+import java.time.Instant
 import seqexec.model.Model._
 import seqexec.model.UserDetails
 import seqexec.model.events._
-
-import java.time.Instant
 
 /**
   * Contains boopickle implicit picklers of model objects
@@ -16,7 +16,7 @@ import java.time.Instant
   * them explicitly
   */
 @SuppressWarnings(Array("org.wartremover.warts.Equals", "org.wartremover.warts.PublicInference", "org.wartremover.warts.ImplicitParameter", "org.wartremover.warts.NonUnitStatements", "org.wartremover.warts.Throw", "org.wartremover.warts.OptionPartial"))
-trait ModelBooPicklers {
+trait ModelBooPicklers extends GemModelBooPicklers {
   //**********************
   // IMPORTANT The order of the picklers is very relevant to the generated size
   // add them with care
@@ -95,7 +95,7 @@ trait ModelBooPicklers {
     .addConcreteType[ServerLogLevel.WARN.type]
     .addConcreteType[ServerLogLevel.ERROR.type]
 
-  implicit val sequenceQueueIdPickler = generatePickler[SequencesQueue[SequenceId]]
+  implicit val sequenceQueueIdPickler = generatePickler[SequencesQueue[Observation.Id]]
 
   implicit val sequenceQueueViewPickler = generatePickler[SequencesQueue[SequenceView]]
 

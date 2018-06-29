@@ -3,14 +3,14 @@
 
 package seqexec.web.server
 
-import edu.gemini.pot.sp.SPObservationID
-import seqexec.model.Model.{Instrument, ClientID}
 import cats.implicits._
+import gem.Observation
+import seqexec.model.Model.{Instrument, ClientID}
 
 trait Var {
   object ObsIdVar {
-    def unapply(str: String): Option[SPObservationID] =
-      Either.catchNonFatal(new SPObservationID(str)).toOption
+    def unapply(str: String): Option[Observation.Id] =
+      Observation.Id.fromString(str)
   }
 
   object InstrumentVar {

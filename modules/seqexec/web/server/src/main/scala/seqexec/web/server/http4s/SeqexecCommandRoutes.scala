@@ -4,11 +4,11 @@
 package seqexec.web.server.http4s
 
 import cats.effect.IO
-import edu.gemini.pot.sp.SPObservationID
+import gem.Observation
 import seqexec.server.Commands
 import seqexec.server.SeqexecEngine
 import seqexec.server
-import seqexec.model.Model.{SequenceId, SequencesQueue, CloudCover, Conditions, ImageQuality, Observer, Operator, SkyBackground, WaterVapor}
+import seqexec.model.Model.{SequencesQueue, CloudCover, Conditions, ImageQuality, Observer, Operator, SkyBackground, WaterVapor}
 import seqexec.model.UserDetails
 import seqexec.web.server.model.CommandsModel._
 import seqexec.web.server.http4s.encoder._
@@ -34,90 +34,76 @@ class SeqexecCommandRoutes(auth: AuthenticationService, inputQueue: server.Event
     case GET  -> Root  / obsId / "count" as _ =>
       Ok(toCommandResult("count", commands.showCount(obsId)))
 
-    case POST -> Root / obsId / "start" / ClientIDVar(clientId) as user =>
+    case POST -> Root / ObsIdVar(obsId) / "start" / ClientIDVar(clientId) as user =>
       for {
-        obs   <- IO.fromEither(Either.catchNonFatal(new SPObservationID(obsId)))
-        _     <- se.start(inputQueue, obs, user, clientId)
-        resp  <- Ok(s"Started sequence $obs")
+        _     <- se.start(inputQueue, obsId, user, clientId)
+        resp  <- Ok(s"Started sequence $obsId")
       } yield resp
 
-    case POST -> Root / obsId / "pause" as user =>
+    case POST -> Root / ObsIdVar(obsId) / "pause" as user =>
       for {
-        obs   <- IO.fromEither(Either.catchNonFatal(new SPObservationID(obsId)))
-        _     <- se.requestPause(inputQueue, obs, user)
-        resp  <- Ok(s"Pause sequence $obs")
+        _     <- se.requestPause(inputQueue, obsId, user)
+        resp  <- Ok(s"Pause sequence $obsId")
       } yield resp
 
-   case POST -> Root / obsId / "cancelpause" as user =>
+   case POST -> Root / ObsIdVar(obsId) / "cancelpause" as user =>
      for {
-       obs   <- IO.fromEither(Either.catchNonFatal(new SPObservationID(obsId)))
-       _     <- se.requestCancelPause(inputQueue, obs, user)
-       resp  <- Ok(s"Cancel Pause sequence $obs")
+       _     <- se.requestCancelPause(inputQueue, obsId, user)
+       resp  <- Ok(s"Cancel Pause sequence $obsId")
      } yield resp
 
-   case POST -> Root / obsId / stepId / "breakpoint" / bp as user =>
+   case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "breakpoint" / BooleanVar(bp) as user =>
      for {
-       obs    <- IO.fromEither(Either.catchNonFatal(new SPObservationID(obsId)))
-       step   <- IO.fromEither(Either.catchNonFatal(stepId.toInt))
-       newVal <- IO.fromEither(Either.catchNonFatal(bp.toBoolean))
-       _      <- se.setBreakpoint(inputQueue, obs, user, step, newVal)
-       resp   <- Ok(s"Set breakpoint in step $step of sequence $obsId")
+       _      <- se.setBreakpoint(inputQueue, obsId, user, stepId, bp)
+       resp   <- Ok(s"Set breakpoint in step $stepId of sequence $obsId")
      } yield resp
 
-    case GET -> Root / obsId / "sync" as _ =>
+    case GET -> Root / ObsIdVar(obsId) / "sync" as _ =>
       for {
-        obs   <- IO.fromEither(Either.catchNonFatal(new SPObservationID(obsId)))
-        u     <- se.load(inputQueue, obs)
+        u     <- se.load(inputQueue, obsId)
         resp  <- u.fold(_ => NotFound(s"Not found sequence $obsId"), _ =>
-          Ok(SequencesQueue[SequenceId](Map.empty, Conditions.default, None, List(obsId))))
+          Ok(SequencesQueue[Observation.Id](Map.empty, Conditions.default, None, List(obsId))))
       } yield resp
 
-   case POST -> Root / obsId / stepId / "skip" / bp as user =>
+   case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "skip" / bp as user =>
      for {
-       obs    <- IO.fromEither(Either.catchNonFatal(new SPObservationID(obsId)))
-       step   <- IO.fromEither(Either.catchNonFatal(stepId.toInt))
        newVal <- IO.fromEither(Either.catchNonFatal(bp.toBoolean))
-       _      <- se.setSkipMark(inputQueue, obs, user, step, newVal)
-       resp   <- Ok(s"Set skip mark in step $step of sequence $obsId")
+       _      <- se.setSkipMark(inputQueue, obsId, user, stepId, newVal)
+       resp   <- Ok(s"Set skip mark in step $stepId of sequence $obsId")
 
      } yield resp
 
-   case POST -> Root / obsId / stepId / "stop" as _ =>
+   case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "stop" as _ =>
      for {
-       obs  <- IO.fromEither(Either.catchNonFatal(new SPObservationID(obsId)))
-       _    <- se.stopObserve(inputQueue, obs)
+       _    <- se.stopObserve(inputQueue, obsId)
        resp <- Ok(s"Stop requested for $obsId on step $stepId")
      } yield resp
 
-   case POST -> Root / obsId / stepId / "abort" as _ =>
+   case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "abort" as _ =>
      for {
-       obs  <- IO.fromEither(Either.catchNonFatal(new SPObservationID(obsId)))
-       _    <- se.abortObserve(inputQueue, obs)
+       _    <- se.abortObserve(inputQueue, obsId)
        resp <- Ok(s"Abort requested for $obsId on step $stepId")
      } yield resp
 
-   case POST -> Root / obsId / stepId / "pauseObs" as _ =>
+   case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "pauseObs" as _ =>
      for {
-       obs  <- IO.fromEither(Either.catchNonFatal(new SPObservationID(obsId)))
-       _    <- se.pauseObserve(inputQueue, obs)
+       _    <- se.pauseObserve(inputQueue, obsId)
        resp <- Ok(s"Pause observation requested for $obsId on step $stepId")
      } yield resp
 
-   case POST -> Root / obsId / stepId / "resumeObs" as _ =>
+   case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "resumeObs" as _ =>
      for {
-       obs  <- IO.fromEither(Either.catchNonFatal(new SPObservationID(obsId)))
-       _    <- se.resumeObserve(inputQueue, obs)
+       _    <- se.resumeObserve(inputQueue, obsId)
        resp <- Ok(s"Resume observation requested for $obsId on step $stepId")
      } yield resp
 
    case POST -> Root / "operator" / name as user =>
      se.setOperator(inputQueue, user, Operator(name)) *> Ok(s"Set operator name to '$name'")
 
-   case POST -> Root / obsId / "observer" / name as user =>
+   case POST -> Root / ObsIdVar(obsId) / "observer" / name as user =>
      for {
-       obs   <- IO.fromEither(Either.catchNonFatal(new SPObservationID(obsId)))
-       _     <- se.setObserver(inputQueue, obs, user, Observer(name))
-       resp  <- Ok(s"Set observer name to '$name' for sequence $obs")
+       _     <- se.setObserver(inputQueue, obsId, user, Observer(name))
+       resp  <- Ok(s"Set observer name to '$name' for sequence $obsId")
      } yield resp
 
     case req @ POST -> Root / "conditions" as user =>
@@ -146,7 +132,7 @@ class SeqexecCommandRoutes(auth: AuthenticationService, inputQueue: server.Event
       )
 
     case POST -> Root / "load" / InstrumentVar(i) / ObsIdVar(obsId) as user =>
-      se.setSelectedSequences(inputQueue, i, obsId.stringValue, user) *> Ok(s"Set selected sequence $obsId for $i")
+      se.setSelectedSequences(inputQueue, i, obsId, user) *> Ok(s"Set selected sequence $obsId for $i")
   }
 
   val refreshCommand: HttpService[IO] = HttpService[IO] {

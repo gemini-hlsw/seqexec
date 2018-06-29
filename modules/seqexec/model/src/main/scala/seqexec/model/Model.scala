@@ -8,6 +8,7 @@ import monocle.macros.Lenses
 import cats._
 import cats.implicits._
 import cats.data.NonEmptyList
+import gem.Observation
 
 import java.time.ZoneId
 
@@ -92,8 +93,6 @@ object Model {
   type Parameters = Map[ParamName, ParamValue]
   type StepConfig = Map[SystemName, Parameters]
   implicit val stEq: Eq[StepConfig] = Eq.fromUniversalEquals
-  // TODO This should be a richer type
-  type SequenceId = String
   type StepId = Int
   type ObservationName = String
   type TargetName = String
@@ -188,8 +187,6 @@ object Model {
     implicit val equal: Eq[Observer] = Eq.fromUniversalEquals
     implicit val shows: Show[Observer] = Show.show(_.value)
   }
-
-  implicit val equalSequenceId: Eq[SequenceId] = Eq.fromUniversalEquals
 
   sealed trait StepState extends Product with Serializable {
     def canRunFrom: Boolean = false
@@ -374,7 +371,7 @@ object Model {
   }
 
   @Lenses final case class SequenceView (
-    id: SequenceId,
+    id: Observation.Id,
     metadata: SequenceMetadata,
     status: SequenceState,
     steps: List[Step],
@@ -392,7 +389,7 @@ object Model {
     * Represents a queue with different levels of details. E.g. it could be a list of Ids
     * Or a list of fully hydrated SequenceViews
     */
-  final case class SequencesQueue[T](selected: Map[Instrument, SequenceId], conditions: Conditions, operator: Option[Operator], queue: List[T])
+  final case class SequencesQueue[T](selected: Map[Instrument, Observation.Id], conditions: Conditions, operator: Option[Operator], queue: List[T])
 
   object SequencesQueue {
     implicit def equal[T: Eq]: Eq[SequencesQueue[T]] =

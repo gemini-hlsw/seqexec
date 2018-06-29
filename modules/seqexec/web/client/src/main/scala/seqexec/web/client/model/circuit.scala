@@ -3,12 +3,13 @@
 
 package seqexec.web.client
 
-import java.util.logging.Logger
-
 import cats.{Eq, Order}
+import cats.implicits._
 import diode._
 import diode.data._
 import diode.react.ReactConnector
+import gem.Observation
+import java.util.logging.Logger
 import japgolly.scalajs.react.Callback
 import seqexec.model.UserDetails
 import seqexec.model.events._
@@ -19,7 +20,6 @@ import seqexec.web.client.lenses._
 import seqexec.web.client.handlers._
 import seqexec.web.client.ModelOps._
 import seqexec.web.client.actions.{AppendToLog, CloseLoginBox, CloseResourcesBox, OpenLoginBox, OpenResourcesBox, ServerMessage, show}
-import cats.implicits._
 
 
 object circuit {
@@ -40,20 +40,20 @@ object circuit {
   // UI even if other parts of the root model change
   final case class WebSocketsFocus(location: Pages.SeqexecPages, sequences: LoadedSequences, user: Option[UserDetails], clientId: Option[ClientID], site: Option[SeqexecSite]) extends UseValueEq
   final case class InitialSyncFocus(location: Pages.SeqexecPages, sod: SequencesOnDisplay, firstLoad: Boolean) extends UseValueEq
-  final case class SequenceInQueue(id: SequenceId, status: SequenceState, instrument: Instrument, active: Boolean, name: String, targetName: Option[TargetName], runningStep: Option[RunningStep]) extends UseValueEq
+  final case class SequenceInQueue(id: Observation.Id, status: SequenceState, instrument: Instrument, active: Boolean, name: String, targetName: Option[TargetName], runningStep: Option[RunningStep]) extends UseValueEq
   object SequenceInQueue {
     implicit val order: Order[SequenceInQueue] = Order.by(_.id)
     implicit val ordering: scala.math.Ordering[SequenceInQueue] = order.toOrdering
   }
   final case class StatusAndLoadedSequencesFocus(isLogged: Boolean, sequences: List[SequenceInQueue]) extends UseValueEq
   final case class HeaderSideBarFocus(status: ClientStatus, conditions: Conditions, operator: Option[Operator]) extends UseValueEq
-  final case class InstrumentStatusFocus(instrument: Instrument, active: Boolean, idState: Option[(SequenceId, SequenceState)], runningStep: Option[RunningStep]) extends UseValueEq
+  final case class InstrumentStatusFocus(instrument: Instrument, active: Boolean, idState: Option[(Observation.Id, SequenceState)], runningStep: Option[RunningStep]) extends UseValueEq
   final case class InstrumentTabContentFocus(instrument: Instrument, active: Boolean, sequenceSelected: Boolean, logDisplayed: SectionVisibilityState) extends UseValueEq
-  final case class StatusAndObserverFocus(isLogged: Boolean, name: Option[String], instrument: Instrument, id: Option[SequenceId], observer: Option[Observer], status: Option[SequenceState], targetName: Option[TargetName]) extends UseValueEq
-  final case class StatusAndStepFocus(isLogged: Boolean, instrument: Instrument, id: Option[SequenceId], stepConfigDisplayed: Option[Int]) extends UseValueEq
-  final case class StepsTableFocus(id: SequenceId, instrument: Instrument, state: SequenceState, steps: List[Step], stepConfigDisplayed: Option[Int], nextStepToRun: Option[Int]) extends UseValueEq
+  final case class StatusAndObserverFocus(isLogged: Boolean, name: Option[String], instrument: Instrument, id: Option[Observation.Id], observer: Option[Observer], status: Option[SequenceState], targetName: Option[TargetName]) extends UseValueEq
+  final case class StatusAndStepFocus(isLogged: Boolean, instrument: Instrument, id: Option[Observation.Id], stepConfigDisplayed: Option[Int]) extends UseValueEq
+  final case class StepsTableFocus(id: Observation.Id, instrument: Instrument, state: SequenceState, steps: List[Step], stepConfigDisplayed: Option[Int], nextStepToRun: Option[Int]) extends UseValueEq
   final case class StepsTableAndStatusFocus(status: ClientStatus, stepsTable: Option[StepsTableFocus]) extends UseValueEq
-  final case class ControlModel(id: SequenceId, isPartiallyExecuted: Boolean, nextStepToRun: Option[Int], status: SequenceState, inConflict: Boolean) extends UseValueEq
+  final case class ControlModel(id: Observation.Id, isPartiallyExecuted: Boolean, nextStepToRun: Option[Int], status: SequenceState, inConflict: Boolean) extends UseValueEq
   final case class SequenceControlFocus(isLogged: Boolean, isConnected: Boolean, control: Option[ControlModel], syncInProgress: Boolean) extends UseValueEq
 
   /**
@@ -78,7 +78,7 @@ object circuit {
     * Contains the model for Diode
     */
   object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[SeqexecAppRootModel] {
-    type SearchResults = SequencesQueue[SequenceId]
+    type SearchResults = SequencesQueue[Observation.Id]
     private val logger = Logger.getLogger(SeqexecCircuit.getClass.getSimpleName)
     addProcessor(new LoggingProcessor[SeqexecAppRootModel]())
 
@@ -137,7 +137,7 @@ object circuit {
     val statusReader: ModelR[SeqexecAppRootModel, ClientStatus] = zoom(m => ClientStatus(m.uiModel.user, m.ws, m.uiModel.sequencesOnDisplay.isAnySelected, m.uiModel.syncInProgress))
 
     // Reader to contain the sequence in conflict
-    val sequenceInConflictReader: ModelR[SeqexecAppRootModel, Option[SequenceId]] = zoomTo(_.uiModel.resourceConflict.id)
+    val sequenceInConflictReader: ModelR[SeqexecAppRootModel, Option[Observation.Id]] = zoomTo(_.uiModel.resourceConflict.id)
 
     // Reader for sequences on display
     val headerSideBarReader: ModelR[SeqexecAppRootModel, HeaderSideBarFocus] =
@@ -191,14 +191,14 @@ object circuit {
       }
 
     // Reader for a specific sequence if available
-    def sequenceReader(id: SequenceId): ModelR[_, Option[SequenceView]] =
+    def sequenceReader(id: Observation.Id): ModelR[_, Option[SequenceView]] =
       zoom(_.uiModel.sequences.queue.find(_.id === id))
 
     /**
       * Makes a reference to a sequence on the queue.
       * This way we have a normalized model and need to update it in only one place
       */
-    def sequenceRef(id: SequenceId): RefTo[Option[SequenceView]] =
+    def sequenceRef(id: Observation.Id): RefTo[Option[SequenceView]] =
       RefTo(sequenceReader(id))
 
     override protected def actionHandler = composeHandlers(

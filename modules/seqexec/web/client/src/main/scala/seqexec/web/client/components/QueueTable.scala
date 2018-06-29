@@ -3,12 +3,26 @@
 
 package seqexec.web.client.components
 
-import scala.scalajs.js
+import cats.implicits._
+import cats.data.NonEmptyList
+import cats.Eq
 import diode.react.ModelProxy
+import gem.Observation
+import japgolly.scalajs.react.vdom.html_<^._
+import japgolly.scalajs.react._
+import japgolly.scalajs.react.component.Scala.Unmounted
+import japgolly.scalajs.react.extra.router.RouterCtl
+import japgolly.scalajs.react.component.builder.Lifecycle.RenderScope
+import japgolly.scalajs.react.raw.JsNumber
+import mouse.all._
+import org.scalajs.dom.MouseEvent
+import react.virtualized._
+import react.draggable._
+import scala.math.max
+import scala.scalajs.js
 import seqexec.model.Model.{
   DaytimeCalibrationTargetName,
   Instrument,
-  SequenceId,
   SequenceState
 }
 import seqexec.web.client.circuit._
@@ -24,21 +38,6 @@ import seqexec.web.client.semanticui.elements.icon.Icon.{
 }
 import web.client.style._
 import web.client.utils._
-import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react._
-import japgolly.scalajs.react.component.Scala.Unmounted
-import japgolly.scalajs.react.extra.router.RouterCtl
-import japgolly.scalajs.react.component.builder.Lifecycle.RenderScope
-import japgolly.scalajs.react.raw.JsNumber
-import org.scalajs.dom.MouseEvent
-import react.virtualized._
-import react.draggable._
-
-import scala.math.max
-import cats.implicits._
-import cats.data.NonEmptyList
-import cats.Eq
-import mouse.all._
 
 object QueueTableBody {
   type $ = RenderScope[Props, TableState, Unit]
@@ -143,7 +142,7 @@ object QueueTableBody {
       } else {
         val optimalSizes = sequences.foldLeft(ColumnMeta.columnsDefaultWidth) {
           case (currWidths, SequenceInQueue(id, st, i, _, n, t, r)) =>
-            val idWidth = max(currWidths.getOrElse(ObsIdColumn, 0), tableTextWidth(id))
+            val idWidth = max(currWidths.getOrElse(ObsIdColumn, 0), tableTextWidth(id.format))
             val statusWidth =
               max(currWidths.getOrElse(StateColumn, 0), tableTextWidth(statusText(st, r)))
             val instrumentWidth =
@@ -224,7 +223,7 @@ object QueueTableBody {
   // ScalaJS defined trait
   // scalastyle:off
   trait QueueRow extends js.Object {
-    var obsId: SequenceId
+    var obsId: Observation.Id
     var status: SequenceState
     var instrument: Instrument
     var targetName: Option[String]
@@ -237,7 +236,7 @@ object QueueTableBody {
   object QueueRow {
 
     @SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf"))
-    def apply(obsId: SequenceId,
+    def apply(obsId: Observation.Id,
               status: SequenceState,
               instrument: Instrument,
               targetName: Option[String],
@@ -255,7 +254,7 @@ object QueueTableBody {
       p
     }
 
-    def unapply(l: QueueRow): Option[(SequenceId,
+    def unapply(l: QueueRow): Option[(Observation.Id,
                                       SequenceState,
                                       Instrument,
                                       Option[String],
@@ -265,10 +264,10 @@ object QueueTableBody {
       Some((l.obsId, l.status, l.instrument, l.targetName, l.name, l.active, l.runningStep))
 
     val Zero: QueueRow =
-      apply("", SequenceState.Idle, Instrument.F2, None, "", active = false, None)
+      apply(Observation.Id.unsafeFromString("Zero-1"), SequenceState.Idle, Instrument.F2, None, "", active = false, None)
   }
 
-  private def showSequence(p: Props, i: Instrument, id: SequenceId): Callback =
+  private def showSequence(p: Props, i: Instrument, id: Observation.Id): Callback =
     // Request to display the selected sequence
     p.sequences.dispatchCB(NavigateTo(SequencePage(i, id, 0)))
 
@@ -288,7 +287,7 @@ object QueueTableBody {
     }
 
   private def obsIdRenderer(p: Props) = linkedTextRenderer(p) { r =>
-    <.p(SeqexecStyles.queueText, r.obsId)
+    <.p(SeqexecStyles.queueText, r.obsId.format)
   }
 
   private def obsNameRenderer(p: Props) = linkedTextRenderer(p) { r =>
