@@ -19,29 +19,38 @@ import scala.concurrent.duration.Duration
 
 package commands {
   sealed trait CommandResult
-  final case class Completed(response: Response)            extends CommandResult
-  final case class Error[A](response: Response, message: A) extends CommandResult
+  final case class Completed(response: Response) extends CommandResult
+  final case class Error[A](response: Response, message: A)
+      extends CommandResult
 
   final case class Configuration(config: Map[ConfigPath, String]) {
-    def toGiapi: GiapiConfiguration = new DefaultConfiguration(new java.util.TreeMap(config.asJava))
+
+    def toGiapi: GiapiConfiguration =
+      new DefaultConfiguration(new java.util.TreeMap(config.asJava))
   }
 
   object Configuration {
     val Zero: Configuration = Configuration(Map.empty)
 
-    def single[A: Show](key: String, value: A): Configuration = Configuration(Map(ConfigPath.configPath(key) -> value.show))
+    def single[A: Show](key: String, value: A): Configuration =
+      Configuration(Map(ConfigPath.configPath(key) -> value.show))
 
     implicit val eq: Eq[Configuration] = Eq.by(_.config)
 
     implicit val monoid: Monoid[Configuration] = new Monoid[Configuration] {
       def empty: Configuration = Zero
+
       def combine(a: Configuration, b: Configuration): Configuration =
         Configuration(a.config |+| b.config)
     }
   }
 
-  final case class Command(sequenceCommand: SequenceCommand, activity: Activity, config: Configuration) {
-    def toGiapi: GiapiCommand = new GiapiCommand(sequenceCommand, activity, config.toGiapi)
+  final case class Command(sequenceCommand: SequenceCommand,
+                           activity: Activity,
+                           config: Configuration) {
+
+    def toGiapi: GiapiCommand =
+      new GiapiCommand(sequenceCommand, activity, config.toGiapi)
   }
 
 }
@@ -89,7 +98,8 @@ package object commands {
         cb(
           Right(
             Error(hr.getResponse,
-                  if (hr.getResponse === Response.NOANSWER) "No answer from the instrument"
+                  if (hr.getResponse === Response.NOANSWER)
+                    "No answer from the instrument"
                   else hr.getMessage)))
       } else if (hr.getResponse === Response.COMPLETED) {
         cb(Right(Completed(hr.getResponse)))

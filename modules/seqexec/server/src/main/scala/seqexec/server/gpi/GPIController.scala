@@ -19,7 +19,7 @@ import edu.gemini.spModel.gemini.gpi.Gpi.{Lyot => LegacyLyot}
 import edu.gemini.spModel.gemini.gpi.Gpi.{ObservingMode => LegacyObservingMode}
 import edu.gemini.spModel.gemini.gpi.Gpi.{PupilCamera => LegacyPupilCamera}
 import edu.gemini.spModel.gemini.gpi.Gpi.{Shutter => LegacyShutter}
-import giapi.client.commands.{Configuration, CommandResult}
+import giapi.client.commands.{CommandResult, Configuration}
 import giapi.client.gpi.GPIClient
 import mouse.boolean._
 import org.log4s.getLogger
@@ -28,6 +28,7 @@ import seqexec.model.dhs.ImageFileId
 import seqexec.server.SeqAction
 
 object GPILookupTables {
+
   val apodizerLUT: Map[LegacyApodizer, String] = Map(
     LegacyApodizer.CLEAR     -> "CLEAR",
     LegacyApodizer.CLEARGP   -> "CLEARGP",
@@ -96,80 +97,90 @@ object GPILookupTables {
 final case class GPIController(gpiClient: GPIClient[IO]) {
   import GPIController._
   import GPILookupTables._
-  private val Log = getLogger
+  private val Log             = getLogger
   private val UNKNOWN_SETTING = "UNKNOWN"
 
-  private def obsModeConfiguration(config: GPIConfig): Configuration = {
-    config.mode.fold( m =>
-      Configuration.single("gpi:observationMode.mode", obsModeLUT.getOrElse(m, UNKNOWN_SETTING))
-    , params => {
-      Configuration.single("gpi:selectPupilPlaneMask.maskStr", apodizerLUT.getOrElse(params.apodizer, UNKNOWN_SETTING)) |+|
-      Configuration.single("gpi:selectFocalPlaneMask.maskStr", fpmLUT.getOrElse(params.fpm, UNKNOWN_SETTING)) |+|
-      Configuration.single("gpi:selectLyotMask.maskStr", lyotLUT.getOrElse(params.lyot, UNKNOWN_SETTING)) |+|
-      Configuration.single("gpi:ifs:selectIfsFilter.maskStr", params.filter.displayValue)
-    })
-  }
+  private def obsModeConfiguration(config: GPIConfig): Configuration =
+    config.mode.fold(
+      m =>
+        Configuration.single("gpi:observationMode.mode",
+                             obsModeLUT.getOrElse(m, UNKNOWN_SETTING)),
+      params => {
+        Configuration.single("gpi:selectPupilPlaneMask.maskStr",
+                             apodizerLUT.getOrElse(params.apodizer,
+                                                   UNKNOWN_SETTING)) |+|
+          Configuration.single(
+            "gpi:selectFocalPlaneMask.maskStr",
+            fpmLUT.getOrElse(params.fpm, UNKNOWN_SETTING)) |+|
+          Configuration.single(
+            "gpi:selectLyotMask.maskStr",
+            lyotLUT.getOrElse(params.lyot, UNKNOWN_SETTING)) |+|
+          Configuration.single("gpi:ifs:selectIfsFilter.maskStr",
+                               params.filter.displayValue)
+      }
+    )
 
   // scalastyle:off
   def gpiConfig(config: GPIConfig): SeqAction[CommandResult] = {
     val giapiApply =
       Configuration.single("gpi:selectAdc.deploy",
-                         (config.adc === LegacyAdc.IN)
-                           .fold(1, 0)) |+|
-      Configuration.single("gpi:configAo.useAo",
-                         config.aoFlags.useAo
-                           .fold(1, 0)) |+|
-      Configuration.single("gpi:configAo.useCal",
-                         config.aoFlags.useCal
-                           .fold(1, 0)) |+|
-      Configuration.single("gpi:configCal.fpmPinholeBias",
-                         (config.aoFlags.alignFpm)
-                           .fold(1, 0)) |+|
-      Configuration.single("gpi:configAo.optimize",
-                         config.aoFlags.aoOptimize
-                           .fold(1, 0)) |+|
-      Configuration.single("gpi:configIfs.integrationTime",
-                         (config.expTime.toMillis / 1000.0)) |+|
-      Configuration.single("gpi:configIfs.numCoadds", config.coAdds) |+|
-      Configuration.single("gpi:configAo.magnitudeI", config.aoFlags.magI) |+|
-      Configuration.single("gpi:configAo.magnitudeH", config.aoFlags.magH) |+|
-      Configuration.single(
-        "gpi:selectShutter.calEntranceShutter",
-        (config.shutters.calEntranceShutter === LegacyShutter.OPEN)
-          .fold(1, 0)) |+|
-      Configuration.single(
-        "gpi:selectShutter.calReferenceShutter",
-        (config.shutters.calReferenceShutter === LegacyShutter.OPEN)
-          .fold(1, 0)) |+|
-      Configuration.single(
-        "gpi:selectShutter.calScienceShutter",
-        (config.shutters.calScienceShutter === LegacyShutter.OPEN)
-          .fold(1, 0)) |+|
-      Configuration.single(
-        "gpi:selectShutter.entranceShutter",
-        (config.shutters.entranceShutter === LegacyShutter.OPEN)
-          .fold(1, 0)) |+|
-      Configuration.single("gpi:selectShutter.calExitShutter", "-1") |+|
-      Configuration.single("gpi:selectPupilCamera.deploy",
-                         (config.pc === LegacyPupilCamera.IN)
-                           .fold(1, 0)) |+|
-      Configuration.single("gpi:selectSource.sourceSCatten",
-                         config.asu.attenuation) |+|
-      Configuration.single("gpi:selectSource.sourceSCpower",
-                         (config.asu.sc === LegacyArtificialSource.ON)
-                           .fold(100, 0)) |+|
-      Configuration.single("gpi:selectSource.sourceVis",
-                         (config.asu.vis === LegacyArtificialSource.ON)
-                           .fold(1, 0)) |+|
-      Configuration.single("gpi:selectSource.sourceIr",
-                         (config.asu.ir === LegacyArtificialSource.ON)
-                           .fold(1, 0)) |+|
-      Configuration.single("gpi:selectSource.deploy",
-                         (config.disperser === LegacyDisperser.WOLLASTON)
-                           .fold(1, 0)) |+|
-      Configuration.single("gpi:configPolarizer.angle", config.disperserAngle)
+                           (config.adc === LegacyAdc.IN)
+                             .fold(1, 0)) |+|
+        Configuration.single("gpi:configAo.useAo",
+                             config.aoFlags.useAo
+                               .fold(1, 0)) |+|
+        Configuration.single("gpi:configAo.useCal",
+                             config.aoFlags.useCal
+                               .fold(1, 0)) |+|
+        Configuration.single("gpi:configCal.fpmPinholeBias",
+                             (config.aoFlags.alignFpm)
+                               .fold(1, 0)) |+|
+        Configuration.single("gpi:configAo.optimize",
+                             config.aoFlags.aoOptimize
+                               .fold(1, 0)) |+|
+        Configuration.single("gpi:configIfs.integrationTime",
+                             (config.expTime.toMillis / 1000.0)) |+|
+        Configuration.single("gpi:configIfs.numCoadds", config.coAdds) |+|
+        Configuration.single("gpi:configAo.magnitudeI", config.aoFlags.magI) |+|
+        Configuration.single("gpi:configAo.magnitudeH", config.aoFlags.magH) |+|
+        Configuration.single(
+          "gpi:selectShutter.calEntranceShutter",
+          (config.shutters.calEntranceShutter === LegacyShutter.OPEN)
+            .fold(1, 0)) |+|
+        Configuration.single(
+          "gpi:selectShutter.calReferenceShutter",
+          (config.shutters.calReferenceShutter === LegacyShutter.OPEN)
+            .fold(1, 0)) |+|
+        Configuration.single(
+          "gpi:selectShutter.calScienceShutter",
+          (config.shutters.calScienceShutter === LegacyShutter.OPEN)
+            .fold(1, 0)) |+|
+        Configuration.single(
+          "gpi:selectShutter.entranceShutter",
+          (config.shutters.entranceShutter === LegacyShutter.OPEN)
+            .fold(1, 0)) |+|
+        Configuration.single("gpi:selectShutter.calExitShutter", "-1") |+|
+        Configuration.single("gpi:selectPupilCamera.deploy",
+                             (config.pc === LegacyPupilCamera.IN)
+                               .fold(1, 0)) |+|
+        Configuration.single("gpi:selectSource.sourceSCatten",
+                             config.asu.attenuation) |+|
+        Configuration.single("gpi:selectSource.sourceSCpower",
+                             (config.asu.sc === LegacyArtificialSource.ON)
+                               .fold(100, 0)) |+|
+        Configuration.single("gpi:selectSource.sourceVis",
+                             (config.asu.vis === LegacyArtificialSource.ON)
+                               .fold(1, 0)) |+|
+        Configuration.single("gpi:selectSource.sourceIr",
+                             (config.asu.ir === LegacyArtificialSource.ON)
+                               .fold(1, 0)) |+|
+        Configuration.single("gpi:selectSource.deploy",
+                             (config.disperser === LegacyDisperser.WOLLASTON)
+                               .fold(1, 0)) |+|
+        Configuration.single("gpi:configPolarizer.angle", config.disperserAngle)
 
-    EitherT.liftF(gpiClient.genericApply(giapiApply |+| obsModeConfiguration(config)))
+    EitherT.liftF(
+      gpiClient.genericApply(giapiApply |+| obsModeConfiguration(config)))
   }
   // scalastyle:on
 
@@ -248,25 +259,28 @@ object GPIController {
     implicit val show: Show[Shutters] = Show.fromToString
   }
 
-  final case class NonStandardModeParams(apodizer: LegacyApodizer, fpm: LegacyFPM, lyot: LegacyLyot, filter: LegacyFilter)
+  final case class NonStandardModeParams(apodizer: LegacyApodizer,
+                                         fpm: LegacyFPM,
+                                         lyot: LegacyLyot,
+                                         filter: LegacyFilter)
 
   object NonStandardModeParams {
-    implicit val eq: Eq[NonStandardModeParams] = Eq.by(
-      x =>
-        (x.apodizer, x.fpm, x.lyot, x.filter))
+    implicit val eq: Eq[NonStandardModeParams] =
+      Eq.by(x => (x.apodizer, x.fpm, x.lyot, x.filter))
     implicit val show: Show[NonStandardModeParams] = Show.fromToString
   }
 
-  final case class GPIConfig(adc: LegacyAdc,
-                             expTime: Duration,
-                             coAdds: Int,
-                             mode: Either[LegacyObservingMode, NonStandardModeParams],
-                             disperser: LegacyDisperser,
-                             disperserAngle: Double,
-                             shutters: Shutters,
-                             asu: ArtificialSources,
-                             pc: LegacyPupilCamera,
-                             aoFlags: AOFlags)
+  final case class GPIConfig(
+      adc: LegacyAdc,
+      expTime: Duration,
+      coAdds: Int,
+      mode: Either[LegacyObservingMode, NonStandardModeParams],
+      disperser: LegacyDisperser,
+      disperserAngle: Double,
+      shutters: Shutters,
+      asu: ArtificialSources,
+      pc: LegacyPupilCamera,
+      aoFlags: AOFlags)
 
   object GPIConfig {
     private implicit val durationEq: Eq[Duration] = Eq.by(_.toMillis)
