@@ -80,7 +80,7 @@ object Common {
   )
 
   lazy val flywaySettings = Seq(
-    flywayUrl  := "jdbc:postgresql:gem",
+    flywayUrl  := sys.props.getOrElse("ocs3.databaseUrl", "jdbc:postgresql:gem"),
     flywayUser := "postgres",
     flywayLocations := Seq(
       s"filesystem:${baseDirectory.value}/src/main/resources/db/migration"
