@@ -38,7 +38,7 @@ object OffsetFns {
     f"${axis.show}:"
 
   def offsetValueFormat(off: Offset): String =
-    f" ${off.value}%003.2f″"
+    f" ${off.value}%03.2f″"
 
   def offsetText(axis: OffsetAxis)(step: Step): String =
     offsetValueFormat(axis match {
