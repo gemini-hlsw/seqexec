@@ -2,7 +2,7 @@
 set -x
 
 # Remove any cruft leftover from the last build.
-# Not strictly necessary but let's be safe.
+# This ensures we avoid a confused incremental compiler.
 # git clean -xdf
 
 # Start a new Postgres container for this build
@@ -19,7 +19,7 @@ do
   sleep 0.5
 done
 
-# Initialize the database
+# Ready to do the build!
 sbt                                                       \
   -jvm-opts travis-jvmopts                                \
   -no-colors                                              \
