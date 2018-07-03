@@ -20,12 +20,19 @@ do
 done
 
 # Initialize the database
-sbt                                       \
- -no-colors                                              \
- -Docs3.skipDependencyUpdates                            \
- -Docs3.databaseUrl=jdbc:postgresql://$HOST_AND_PORT/gem \
- sql/flywayMigrate                                       \
- db/test
+sbt                                                       \
+  -jvm-opts travis-jvmopts                                \
+  -no-colors                                              \
+  -Docs3.skipDependencyUpdates                            \
+  -Docs3.databaseUrl=jdbc:postgresql://$HOST_AND_PORT/gem \
+  headerCheck                                             \
+  test:headerCheck                                        \
+  scalastyle                                              \
+  sql/flywayMigrate                                       \
+  compile                                                 \
+  test                                                    \
+  ui/fastOptJS                                            \
+  seqexec_web_client/fastOptJS::webpack
 
 # Remember how this turned out
 EXIT_CODE=$?
