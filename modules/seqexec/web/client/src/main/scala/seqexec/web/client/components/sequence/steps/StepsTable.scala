@@ -166,9 +166,9 @@ object StepsTable {
     // Columns for the table
     private def columns(p: Props, s: Size): List[Table.ColumnArg] = {
       val (offsetVisible, exposureVisible, disperserVisible, fpuVisible, filterVisible, objectSize) = s.width match {
-        case w if w < PhoneCut => (false, false, false, false, false, SSize.Tiny)
+        case w if w < PhoneCut      => (false, false, false, false, false, SSize.Tiny)
         case w if w < LargePhoneCut => (false, true, false, false, false, SSize.Small)
-        case _ => (displayOffsets(p), true, true, true, true, SSize.Small)
+        case _                      => (displayOffsets(p), true, true, true, true, SSize.Small)
       }
 
       val (offsetColumn, offsetWidth) =
@@ -231,7 +231,10 @@ object StepsTable {
       // Recalculate the heights if needed
       val stepsPairs = next.stepsList.zip(cur.stepsList)
       val differentStepsStates: List[Callback] = stepsPairs.collect {
-        case (cur, prev) if cur.status =!= prev.status => ref.get.flatMapCB(_.raw.recomputeRowsHeightsCB(cur.id)).toCallback
+        // if step status changes recalculate
+        case (cur, prev) if cur.status =!= prev.status         => ref.get.flatMapCB(_.raw.recomputeRowsHeightsCB(cur.id)).toCallback
+        // if breakpoint state changes recalculate
+        case (cur, prev) if cur.breakpoint =!= prev.breakpoint => ref.get.flatMapCB(_.raw.recomputeRowsHeightsCB(cur.id)).toCallback
       }
       Callback.sequence(differentStepsStates)
     }
