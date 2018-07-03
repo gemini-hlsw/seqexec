@@ -64,7 +64,7 @@ object StepsTable {
     val Zero: StepRow = apply(Step.Zero)
   }
 
-  final case class Props(router: RouterCtl[SeqexecPages], stepsTable: ModelProxy[StepsTableAndStatusFocus], onStepToRun: Int => Callback) {
+  final case class Props(router: RouterCtl[SeqexecPages], loggedIn: Boolean, stepsTable: ModelProxy[StepsTableAndStatusFocus], onStepToRun: Int => Callback) {
     def status: ClientStatus = stepsTable().status
     def steps: Option[StepsTableFocus] = stepsTable().stepsTable
     val stepsList: List[Step] = steps.map(_.steps).getOrElse(Nil)
@@ -127,14 +127,16 @@ object StepsTable {
     case _                                   => SeqexecStyles.rowNone
   }
 
-  def rowClassName(p: Props)(i: Int): String = ((i, p.rowGetter(i)) match {
-    case (-1, _)                                                   =>
+  def rowClassName(p: Props)(i: Int): String = ((i, p.rowGetter(i), p.loggedIn) match {
+    case (-1, _, _)                                                       =>
       SeqexecStyles.headerRowStyle
-    case (_, StepRow(s @ StandardStep(_, _, _, true, _, _, _, _))) =>
+    case (_, StepRow(s @ StandardStep(_, _, _, true, _, _, _, _)), true)  =>
+      SeqexecStyles.stepRowWithBreakpointAndControl |+| stepRowStyle(s)
+    case (_, StepRow(s @ StandardStep(_, _, _, true, _, _, _, _)), false) =>
       SeqexecStyles.stepRowWithBreakpoint |+| stepRowStyle(s)
-    case (_, StepRow(s))                                           =>
+    case (_, StepRow(s), _)                                               =>
       SeqexecStyles.stepRow |+| stepRowStyle(s)
-    case _                                                         =>
+    case _                                                                =>
       SeqexecStyles.stepRow
   }).htmlClass
 
@@ -164,9 +166,9 @@ object StepsTable {
     // Columns for the table
     private def columns(p: Props, s: Size): List[Table.ColumnArg] = {
       val (offsetVisible, exposureVisible, disperserVisible, fpuVisible, filterVisible, objectSize) = s.width match {
-        case w if w < PhoneCut => (false, false, false, false, false, SSize.Tiny)
+        case w if w < PhoneCut      => (false, false, false, false, false, SSize.Tiny)
         case w if w < LargePhoneCut => (false, true, false, false, false, SSize.Small)
-        case _ => (displayOffsets(p), true, true, true, true, SSize.Small)
+        case _                      => (displayOffsets(p), true, true, true, true, SSize.Small)
       }
 
       val (offsetColumn, offsetWidth) =
@@ -229,7 +231,10 @@ object StepsTable {
       // Recalculate the heights if needed
       val stepsPairs = next.stepsList.zip(cur.stepsList)
       val differentStepsStates: List[Callback] = stepsPairs.collect {
-        case (cur, prev) if cur.status =!= prev.status => ref.get.flatMapCB(_.raw.recomputeRowsHeightsCB(cur.id)).toCallback
+        // if step status changes recalculate
+        case (cur, prev) if cur.status =!= prev.status         => ref.get.flatMapCB(_.raw.recomputeRowsHeightsCB(cur.id)).toCallback
+        // if breakpoint state changes recalculate
+        case (cur, prev) if cur.breakpoint =!= prev.breakpoint => ref.get.flatMapCB(_.raw.recomputeRowsHeightsCB(cur.id)).toCallback
       }
       Callback.sequence(differentStepsStates)
     }
