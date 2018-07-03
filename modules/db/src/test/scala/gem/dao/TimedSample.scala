@@ -11,12 +11,8 @@ import java.time.{Duration, Instant}
 trait TimedSample {
   type Result
 
-  val xa = Transactor.fromDriverManager[IO](
-    "org.postgresql.Driver",
-    "jdbc:postgresql:gem",
-    "postgres",
-    ""
-  )
+  val xa: Transactor[IO] =
+    DatabaseConfiguration.forTesting.transactor[IO]
 
   def runl(args: List[String]): ConnectionIO[Result]
 

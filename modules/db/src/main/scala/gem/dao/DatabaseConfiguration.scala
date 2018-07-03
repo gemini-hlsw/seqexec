@@ -22,8 +22,14 @@ final case class DatabaseConfiguration(
 
 object DatabaseConfiguration {
 
-  /** A configuration for local testing. */
-  val forTesting: DatabaseConfiguration =
-    apply("org.postgresql.Driver", "jdbc:postgresql:gem", "postgres", "")
+  /**
+   * A configuration for testing. This will use the connect URL from JVM property `ocs3.databaseUrl`
+   * when available, otherwise will connect to a local database called `gem`, in both cases under
+   * user `postgres`, with no password.
+   */
+  val forTesting: DatabaseConfiguration = {
+    val url = sys.props.getOrElse("ocs3.databaseUrl", "jdbc:postgresql:gem")
+    apply("org.postgresql.Driver", url, "postgres", "")
+  }
 
 }
