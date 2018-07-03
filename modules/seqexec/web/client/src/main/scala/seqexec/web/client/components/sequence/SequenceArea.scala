@@ -50,7 +50,7 @@ object SequenceStepsTableContainer {
         ^.height := "100%",
         toolbar(p),
         p.instrumentConnects.get(p.p().instrument).whenDefined(x => x(m =>
-            StepsTable(StepsTable.Props(p.router, m, x => $.runState(updateStepToRun(x))))))
+            StepsTable(StepsTable.Props(p.router, p.p().isLogged, m, x => $.runState(updateStepToRun(x))))))
       )
     }.build
 

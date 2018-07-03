@@ -64,7 +64,7 @@ object StepsTable {
     val Zero: StepRow = apply(Step.Zero)
   }
 
-  final case class Props(router: RouterCtl[SeqexecPages], stepsTable: ModelProxy[StepsTableAndStatusFocus], onStepToRun: Int => Callback) {
+  final case class Props(router: RouterCtl[SeqexecPages], loggedIn: Boolean, stepsTable: ModelProxy[StepsTableAndStatusFocus], onStepToRun: Int => Callback) {
     def status: ClientStatus = stepsTable().status
     def steps: Option[StepsTableFocus] = stepsTable().stepsTable
     val stepsList: List[Step] = steps.map(_.steps).getOrElse(Nil)
@@ -127,14 +127,16 @@ object StepsTable {
     case _                                   => SeqexecStyles.rowNone
   }
 
-  def rowClassName(p: Props)(i: Int): String = ((i, p.rowGetter(i)) match {
-    case (-1, _)                                                   =>
+  def rowClassName(p: Props)(i: Int): String = ((i, p.rowGetter(i), p.loggedIn) match {
+    case (-1, _, _)                                                       =>
       SeqexecStyles.headerRowStyle
-    case (_, StepRow(s @ StandardStep(_, _, _, true, _, _, _, _))) =>
+    case (_, StepRow(s @ StandardStep(_, _, _, true, _, _, _, _)), true)  =>
+      SeqexecStyles.stepRowWithBreakpointAndControl |+| stepRowStyle(s)
+    case (_, StepRow(s @ StandardStep(_, _, _, true, _, _, _, _)), false) =>
       SeqexecStyles.stepRowWithBreakpoint |+| stepRowStyle(s)
-    case (_, StepRow(s))                                           =>
+    case (_, StepRow(s), _)                                               =>
       SeqexecStyles.stepRow |+| stepRowStyle(s)
-    case _                                                         =>
+    case _                                                                =>
       SeqexecStyles.stepRow
   }).htmlClass
 
