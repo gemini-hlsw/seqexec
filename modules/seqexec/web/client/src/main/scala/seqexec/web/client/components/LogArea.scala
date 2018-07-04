@@ -10,6 +10,7 @@ import seqexec.model.events._
 import seqexec.web.client.semanticui.elements.checkbox.Checkbox
 import seqexec.web.client.semanticui.elements.icon.Icon.{IconCopy, IconAngleDoubleDown, IconAngleDoubleUp}
 import seqexec.web.client.semanticui.elements.button.Button
+import seqexec.web.client.semanticui.elements.button.Button.LeftLabeled
 import seqexec.web.client.semanticui.{Size => SSize}
 import seqexec.web.client.model.{GlobalLog, SectionOpen}
 import seqexec.web.client.actions.ToggleLogArea
@@ -181,7 +182,7 @@ object LogArea {
               SeqexecStyles.logControlRow,
               <.div(
                 ^.cls := "ui six wide column",
-                Button(Button.Props(icon = Option(toggleIcon), labeled = true, compact = true, size = SSize.Small, onClick = p.log.dispatchCB(ToggleLogArea)), toggleText)
+                Button(Button.Props(icon = Option(toggleIcon), labeled = LeftLabeled, compact = true, size = SSize.Small, onClick = p.log.dispatchCB(ToggleLogArea)), toggleText)
               ),
               <.div(
                 ^.cls := "ui ten wide column",

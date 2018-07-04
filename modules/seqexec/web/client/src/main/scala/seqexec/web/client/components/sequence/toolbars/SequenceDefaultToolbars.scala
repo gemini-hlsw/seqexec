@@ -17,6 +17,7 @@ import seqexec.web.client.actions.{RequestCancelPause, RequestPause, RequestSync
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.components.sequence.SequenceStepsTableContainer
 import seqexec.web.client.semanticui.elements.button.Button
+import seqexec.web.client.semanticui.elements.button.Button.LeftLabeled
 import seqexec.web.client.semanticui.elements.popup.Popup
 import seqexec.web.client.semanticui.elements.icon.Icon
 import seqexec.web.client.semanticui.elements.icon.Icon.{IconRefresh, IconPlay, IconPause, IconBan}
@@ -62,7 +63,7 @@ object SequenceControl {
       Button(
         Button.Props(
           icon = Some(icon),
-          labeled = true,
+          labeled = LeftLabeled,
           onClick = onClick,
           color = Some(color),
           disabled = disabled),

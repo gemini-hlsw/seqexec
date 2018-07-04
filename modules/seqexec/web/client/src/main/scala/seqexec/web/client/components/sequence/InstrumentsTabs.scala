@@ -11,8 +11,8 @@ import seqexec.web.client.model.Pages.{InstrumentPage, SequencePage, SeqexecPage
 import seqexec.web.client.circuit.{SeqexecCircuit, InstrumentStatusFocus}
 import seqexec.web.client.semanticui._
 import seqexec.web.client.semanticui.elements.icon.Icon._
-import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.semanticui.elements.label.Label
+import seqexec.web.client.components.SeqexecStyles
 import web.client.style._
 import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.component.Scala.Unmounted
