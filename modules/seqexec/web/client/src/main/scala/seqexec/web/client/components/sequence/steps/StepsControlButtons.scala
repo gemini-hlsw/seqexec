@@ -4,10 +4,10 @@
 package seqexec.web.client.components.sequence.steps
 
 import cats.implicits._
-import japgolly.scalajs.react.ScalazReact._
+import japgolly.scalajs.react.CatsReact._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.{Callback, CallbackTo, ScalaComponent, ScalazReact}
+import japgolly.scalajs.react.{Callback, CallbackTo, ScalaComponent, CatsReact}
 import gem.Observation
 import mouse.all._
 import seqexec.model.Model._
@@ -87,16 +87,16 @@ object StepsControlButtons {
   def requestObsResume(id: Observation.Id, stepId: Int): Callback =
     Callback(SeqexecCircuit.dispatch(RequestObsResume(id, stepId)))
 
-  def handleStop(id: Observation.Id, stepId: Int): ScalazReact.ReactST[CallbackTo, State, Unit] =
+  def handleStop(id: Observation.Id, stepId: Int): CatsReact.ReactST[CallbackTo, State, Unit] =
     ST.retM(requestStop(id, stepId)) >> ST.set(StopRequested).liftCB
 
-  def handleAbort(id: Observation.Id, stepId: Int): ScalazReact.ReactST[CallbackTo, State, Unit] =
+  def handleAbort(id: Observation.Id, stepId: Int): CatsReact.ReactST[CallbackTo, State, Unit] =
     ST.retM(requestAbort(id, stepId)) >> ST.set(AbortRequested).liftCB
 
-  def handleObsPause(id: Observation.Id, stepId: Int): ScalazReact.ReactST[CallbackTo, State, Unit] =
+  def handleObsPause(id: Observation.Id, stepId: Int): CatsReact.ReactST[CallbackTo, State, Unit] =
     ST.retM(requestObsPause(id, stepId)) >> ST.set(PauseRequested).liftCB
 
-  def handleObsResume(id: Observation.Id, stepId: Int): ScalazReact.ReactST[CallbackTo, State, Unit] =
+  def handleObsResume(id: Observation.Id, stepId: Int): CatsReact.ReactST[CallbackTo, State, Unit] =
     ST.retM(requestObsResume(id, stepId)) >> ST.set(ResumeRequested).liftCB
 
   private val component = ScalaComponent.builder[Props]("StepsControlButtons")

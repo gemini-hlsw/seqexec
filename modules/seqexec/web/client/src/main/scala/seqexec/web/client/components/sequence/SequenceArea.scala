@@ -16,10 +16,10 @@ import seqexec.web.client.components.sequence.steps.StepsTable
 import seqexec.model.Model.SeqexecSite
 import web.client.style._
 import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.{CallbackTo, ScalaComponent, ScalazReact}
+import japgolly.scalajs.react.{CallbackTo, ScalaComponent, CatsReact}
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.extra.router.RouterCtl
-import japgolly.scalajs.react.ScalazReact._
+import japgolly.scalajs.react.CatsReact._
 import cats.implicits._
 
 object SequenceStepsTableContainer {
@@ -32,7 +32,7 @@ object SequenceStepsTableContainer {
 
   private val ST = ReactS.Fix[State]
 
-  def updateStepToRun(step: Int): ScalazReact.ReactST[CallbackTo, State, Unit] =
+  def updateStepToRun(step: Int): CatsReact.ReactST[CallbackTo, State, Unit] =
     ST.set(State(step)).liftCB
 
   def toolbar(p: Props): VdomElement =

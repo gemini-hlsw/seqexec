@@ -210,7 +210,7 @@ object Settings {
       "com.github.japgolly.scalajs-react" %%% "core"             % LibraryVersions.scalajsReact,
       "com.github.japgolly.scalajs-react" %%% "extra"            % LibraryVersions.scalajsReact,
       "com.github.japgolly.scalajs-react" %%% "ext-monocle-cats" % LibraryVersions.scalajsReact,
-      "com.github.japgolly.scalajs-react" %%% "ext-scalaz72"     % LibraryVersions.scalajsReact
+      "com.github.japgolly.scalajs-react" %%% "ext-cats"         % LibraryVersions.scalajsReact
     ))
     val Diode                   = Def.setting(Seq(
       "io.suzaku" %%% "diode"       % LibraryVersions.diode,
