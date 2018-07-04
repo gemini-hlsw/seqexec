@@ -67,14 +67,14 @@ object Settings {
 
     // ScalaJS libraries
     val scalaDom                = "0.9.6"
-    val scalajsReact            = "1.2.0"
+    val scalajsReact            = "1.2.1"
     val booPickle               = "1.3.0"
     val diode                   = "1.1.3"
     val diodeReact              = "1.1.3.120"
     val javaTimeJS              = "2.0.0-M13"
-    val javaLogJS               = "0.1.4"
+    val javaLogJS               = "0.1.5"
     val scalaJQuery             = "1.2"
-    val scalaJSReactVirtualized = "0.3.0"
+    val scalaJSReactVirtualized = "0.3.1"
     val scalaJSReactClipboard   = "0.3.0"
     val scalaJSReactDraggable   = "0.1.0"
 
@@ -88,7 +88,7 @@ object Settings {
     val scalaParsersVersion     = "1.1.1"
     val scalaXmlVerson          = "1.1.0"
 
-    val http4sVersion           = "0.18.13"
+    val http4sVersion           = "0.18.14"
     val squants                 = "1.3.0"
     val argonaut                = "6.2.2"
     val commonsHttp             = "2.0.2"
@@ -121,7 +121,7 @@ object Settings {
     val semanticUI              = "2.2.10"
     val ocsVersion              = "2018101.1.1"
     val uglifyJs                = "1.2.4"
-    val reactVirtualized        = "9.18.5"
+    val reactVirtualized        = "9.20.0"
     val reactDraggable          = "3.0.5"
     val reactClipboard          = "5.0.0"
 
