@@ -6,7 +6,7 @@ package seqexec.web.client.semanticui.elements.checkbox
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.ScalazReact._
+import japgolly.scalajs.react.CatsReact._
 import web.client.style._
 
 /**

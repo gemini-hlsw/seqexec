@@ -4,7 +4,7 @@
 package seqexec.web.client.semanticui.elements.input
 
 import japgolly.scalajs.react.{Callback, CallbackTo, ReactEventFromInput, ScalaComponent}
-import japgolly.scalajs.react.ScalazReact._
+import japgolly.scalajs.react.CatsReact._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.extra.StateSnapshot

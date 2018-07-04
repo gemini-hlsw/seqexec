@@ -62,6 +62,10 @@ object Common {
     dependencyUpdatesFilter -= moduleFilter(name = "scala-reflect"),
     // Don't worry about stale deps pulled in by scala-js
     dependencyUpdatesFilter -= moduleFilter(organization = "org.eclipse.jetty"),
+    // Don't worry about old ocs related dependencies
+    dependencyUpdatesFilter -= moduleFilter(organization = "dom4j"),
+    dependencyUpdatesFilter -= moduleFilter(organization = "net.sf.opencsv"),
+    dependencyUpdatesFilter -= moduleFilter(organization = "commons-httpclient"),
     testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-l", "gem.test.Tags.RequiresNetwork"), // by default, ignore network tests
     // Don't worry about monocle versions that start with the same prefix.
     dependencyUpdatesFilter -= moduleFilter(

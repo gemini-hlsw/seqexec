@@ -5,9 +5,8 @@ package seqexec.web.client.services
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
-
-import scalaz.Show
-import scalaz.syntax.show._
+import cats.Show
+import cats.implicits._
 
 object WebpackResources {
 
@@ -15,11 +14,11 @@ object WebpackResources {
   trait WebpackResource extends js.Object
 
   object WebpackResource {
-    implicit val show: Show[WebpackResource] = Show.showFromToString
+    implicit val show: Show[WebpackResource] = Show.fromToString
   }
 
   implicit class WebpackResourceOps(val r: WebpackResource) extends AnyVal {
-    def resource: String = r.shows
+    def resource: String = r.show
   }
 
   @JSImport("semantic-ui-less/semantic.less", JSImport.Default)
