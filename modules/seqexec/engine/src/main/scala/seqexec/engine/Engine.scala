@@ -326,7 +326,7 @@ class Engine[D: ActionMetadataGenerator, U](implicit ev: ActionMetadataGenerator
         modifyS(id)(_.setBreakpoint(step, v))
       case SkipMark(id, _, step, v)   => Logger.debug(s"Engine: skip mark changed for step $step to $v") *>
         modifyS(id)(_.setSkipMark(step, v))
-      case SetObserver(id, _, name)   => Logger.debug(s"Engine: Setting Observer for observation $id to '$name' by ${ue.username}") *> setObserver(id)(name)
+      case SetObserver(id, _, name)   => Logger.debug(s"Engine: Setting Observer for observation ${id.format} to '${name.value}' by ${ue.username}") *> setObserver(id)(name)
       case Poll(_)                    => Logger.debug("Engine: Polling current state")
       case GetState(f)                => getState(f)
       case ModifyState(f, _)          => modify(f)
@@ -345,7 +345,7 @@ class Engine[D: ActionMetadataGenerator, U](implicit ev: ActionMetadataGenerator
       case PartialResult(id, i, r) => Logger.debug("Engine: Partial result") *> partialResult(id, i, r)
       case Paused(id, i, r)        => Logger.debug("Engine: Action paused") *> actionPause(id, i, r)
       case Failed(id, i, e)        => logError(e) *> fail(id)(i, e)
-      case Busy(id, _)             => Logger.warning(s"Cannot run sequence $id because required systems are in use.")
+      case Busy(id, _)             => Logger.warning(s"Cannot run sequence ${id.format} because required systems are in use.")
       case BreakpointReached(_)    => Logger.debug("Engine: Breakpoint reached")
       case Executed(id)            => Logger.debug("Engine: Execution completed") *> next(id)
       case Executing(id)           => Logger.debug("Engine: Executing") *> execute(id)
