@@ -3,9 +3,9 @@
 
 package gem.horizons
 
-import cats.effect.IO
+//import cats.effect.IO
 import cats.tests.CatsSuite
-import fs2.Stream
+// import fs2.Stream
 
 @SuppressWarnings(Array("org.wartremover.warts.Var", "org.wartremover.warts.Equals"))
 final class HorizonsClientSpec extends CatsSuite {
