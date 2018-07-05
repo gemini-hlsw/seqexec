@@ -1,9 +1,33 @@
 #!/bin/bash
-set -x
+set -xe
+
+###
+### BUILD
+###
+
+/usr/local/bin/sbt             \
+  -jvm-opts travis-jvmopts     \
+  -no-colors                   \
+  -Docs3.skipDependencyUpdates \
+  headerCheck                  \
+  test:headerCheck             \
+  scalastyle                   \
+  compile
+
+###
+### TEST
+###
 
 # Start a new Postgres container for this build
 # TODO: read postgres version from the build
 CID=`docker run --detach --publish 5432 postgres:9.6.0`
+
+# Add an exit handler to ensure we always clean up.
+function cleanup {
+  docker stop $CID
+  docker rm --volumes --force $CID
+}
+trap cleanup EXIT
 
 # Get our host and port ... like 0.0.0.0:32751
 HOST_AND_PORT=`docker port $CID 5432/tcp`
@@ -15,29 +39,22 @@ do
   sleep 0.5
 done
 
-# Ready to do the build!
+# Set up the schema and run tests
 /usr/local/bin/sbt                                        \
   -jvm-opts travis-jvmopts                                \
   -no-colors                                              \
   -Docs3.skipDependencyUpdates                            \
   -Docs3.databaseUrl=jdbc:postgresql://$HOST_AND_PORT/gem \
-  headerCheck                                             \
-  test:headerCheck                                        \
-  scalastyle                                              \
   sql/flywayMigrate                                       \
-  compile                                                 \
-  test                                                    \
-  ui/fastOptJS                                            \
+  test
+
+###
+### JAVASCRIPT PACKAGING
+###
+
+/usr/local/bin/sbt                      \
+  -jvm-opts travis-jvmopts              \
+  -no-colors                            \
+  -Docs3.skipDependencyUpdates          \
+  ui/fastOptJS                          \
   seqexec_web_client/fastOptJS::webpack
-
-# Remember how this turned out
-EXIT_CODE=$?
-
-# clean up docker image
-docker stop $CID
-docker rm --volumes --force $CID
-
-# done
-exit $EXIT_CODE
-
-
