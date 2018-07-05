@@ -10,9 +10,6 @@ import squants.space.Degrees
 import squants.thermal.Celsius
 import squants.{Angle, Temperature, Velocity}
 
-/**
-  * Created by jluhrs on 3/13/17.
-  */
 trait GwsKeywordReader {
   def getHealth: SeqAction[Option[EpicsHealth]]
   def getTemperature: SeqAction[Option[Temperature]]

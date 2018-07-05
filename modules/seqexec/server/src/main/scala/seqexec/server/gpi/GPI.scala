@@ -25,8 +25,6 @@ final case class GPI[F[_]](controller: GPIController) extends InstrumentSystem {
 
   override val contributorName: String = "gpi"
 
-  override val dhsInstrumentName: String = "GPI"
-
   override val observeControl: InstrumentSystem.ObserveControl =
     InstrumentSystem.Uncontrollable
 

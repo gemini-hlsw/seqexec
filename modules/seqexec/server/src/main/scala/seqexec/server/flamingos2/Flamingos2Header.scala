@@ -9,11 +9,10 @@ import java.time.format.DateTimeFormatter
 import cats.data.EitherT
 import cats.effect.IO
 import seqexec.model.dhs.ImageFileId
-import seqexec.server.HeaderProvider
+import seqexec.server.InstrumentSystem
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.tcs.TcsKeywordsReader
 import seqexec.server.{ConfigUtilOps, Header, SeqAction, SeqexecFailure}
-import seqexec.server.keywords.DhsClient
 import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.data.YesNoType
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.{MOS_PREIMAGING_PROP, READMODE_PROP, ReadMode}
@@ -21,12 +20,12 @@ import edu.gemini.spModel.seqcomp.SeqConfigNames.INSTRUMENT_KEY
 import cats.implicits._
 
 object Flamingos2Header {
-  def header(hs: DhsClient, f2ObsReader: Flamingos2Header.ObsKeywordsReader, tcsKeywordsReader: TcsKeywordsReader): Header =
+  def header(inst: InstrumentSystem, f2ObsReader: Flamingos2Header.ObsKeywordsReader, tcsKeywordsReader: TcsKeywordsReader): Header =
     new Header {
       import Header.Implicits._
       import Header._
-      override def sendBefore[A: HeaderProvider](id: ImageFileId, inst: A): SeqAction[Unit] =  {
-        sendKeywords(id, inst, hs, List(
+      override def sendBefore(id: ImageFileId): SeqAction[Unit] =  {
+        sendKeywords(id, inst, List(
           buildBoolean(f2ObsReader.getPreimage.map(_.toBoolean), "PREIMAGE"),
           buildString(SeqAction(LocalDate.now.format(DateTimeFormatter.ISO_LOCAL_DATE)), "DATE-OBS"),
           buildString(tcsKeywordsReader.getUT.orDefault, "TIME-OBS"),
@@ -43,7 +42,7 @@ object Flamingos2Header {
         )
       }
 
-      override def sendAfter[A: HeaderProvider](id: ImageFileId, inst: A): SeqAction[Unit] = SeqAction(())
+      override def sendAfter(id: ImageFileId): SeqAction[Unit] = SeqAction(())
     }
 
   import Header.Implicits._

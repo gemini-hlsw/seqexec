@@ -44,7 +44,6 @@ import scala.concurrent.duration._
 
 class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings) {
   import SeqexecEngine._
-  println(httpClient)
 
   val odbProxy: ODBProxy = new ODBProxy(new Peer(settings.odbHost, 8443, null),
     if (settings.odbNotifications) ODBProxy.OdbCommandsImpl(new Peer(settings.odbHost, 8442, null))
@@ -56,7 +55,7 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings) {
     odbProxy,
     if (settings.dhsSim) DhsClientSim(settings.date) else DhsClientHttp(settings.dhsURI),
     if (settings.tcsSim) TcsControllerSim else TcsControllerEpics,
-    if (settings.gcalSim) GcalControllerSim else GcalControllerEpics,
+    if (settings.gcalSim) GcalControllerSim(DhsClientSim(settings.date)) else GcalControllerEpics(DhsClientHttp(settings.dhsURI)),
     if (settings.instSim) {
       if (settings.instForceError) Flamingos2ControllerSimBad(settings.failAt)
       else Flamingos2ControllerSim

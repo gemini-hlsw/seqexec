@@ -4,16 +4,22 @@
 package seqexec.server.gws
 
 import seqexec.model.dhs.ImageFileId
+import seqexec.server.keywords.DhsClient
+import seqexec.server.keywords.StandaloneDhsClient
+import seqexec.server.keywords.KeywordsClient
 import seqexec.server.Header.Implicits._
 import seqexec.server.Header._
 import seqexec.server.{EpicsHealth, Header, HeaderProvider, SeqAction}
-import seqexec.server.keywords.DhsClient
 
 object GwsHeader {
-  def header(hs: DhsClient, gwsReader: GwsKeywordReader): Header = new Header {
-    override def sendBefore[A: HeaderProvider](id: ImageFileId, inst: A): SeqAction[Unit] = {
+  def headerProvider(dhs: DhsClient): HeaderProvider[GwsHeader.type] = new HeaderProvider[GwsHeader.type] {
+    def name(a: GwsHeader.type): String = "gws"
+    def keywordsClient(a: GwsHeader.type): KeywordsClient = StandaloneDhsClient(dhs)
+  }
+  def header[A: HeaderProvider](inst: A, gwsReader: GwsKeywordReader): Header = new Header {
+    override def sendBefore(id: ImageFileId): SeqAction[Unit] = {
       gwsReader.getHealth.flatMap{
-        case Some(EpicsHealth.Good) => sendKeywords(id, inst, hs, List(
+        case Some(EpicsHealth.Good) => sendKeywords(id, inst, List(
           buildDouble(gwsReader.getHumidity.orDefault, "HUMIDITY"),
           {
             val x = gwsReader.getTemperature.map(_.map(_.toCelsiusScale))
@@ -56,6 +62,6 @@ object GwsHeader {
       }
     }
 
-    override def sendAfter[A: HeaderProvider](id: ImageFileId, inst: A): SeqAction[Unit] = SeqAction(())
+    override def sendAfter(id: ImageFileId): SeqAction[Unit] = SeqAction(())
   }
 }

@@ -8,6 +8,7 @@ import seqexec.model.dhs.ImageFileId
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.flamingos2.Flamingos2Controller._
 import seqexec.server._
+import seqexec.server.keywords.{DhsInstrument, DhsClient}
 import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2._
 import edu.gemini.spModel.obscomp.InstConstants.{DARK_OBSERVE_TYPE, OBSERVE_TYPE_PROP}
@@ -19,7 +20,7 @@ import cats.data.{EitherT, Reader}
 import cats.effect.IO
 import cats.implicits._
 
-final case class Flamingos2(f2Controller: Flamingos2Controller) extends InstrumentSystem {
+final case class Flamingos2(f2Controller: Flamingos2Controller, dhsClient: DhsClient) extends InstrumentSystem with DhsInstrument {
 
   import Flamingos2._
 

@@ -5,17 +5,15 @@ package seqexec.server.gnirs
 
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.Header._
-import seqexec.server.HeaderProvider
+import seqexec.server.InstrumentSystem
 import seqexec.server.Header.Implicits._
 import seqexec.server.tcs.TcsKeywordsReader
 import seqexec.server.{Header, SeqAction}
-import seqexec.server.keywords.DhsClient
-
 
 object GnirsHeader {
-  def header(hs: DhsClient, gnirsReader: GnirsKeywordReader, tcsReader: TcsKeywordsReader): Header = new Header {
-    override def sendBefore[A: HeaderProvider](id: ImageFileId, inst: A): SeqAction[Unit] =
-      sendKeywords(id, inst, hs, List(
+  def header(inst: InstrumentSystem, gnirsReader: GnirsKeywordReader, tcsReader: TcsKeywordsReader): Header = new Header {
+    override def sendBefore(id: ImageFileId): SeqAction[Unit] =
+      sendKeywords(id, inst, List(
         buildInt32(tcsReader.getGnirsInstPort.orDefault, "INPORT"),
         buildString(gnirsReader.getArrayId, "ARRAYID"),
         buildString(gnirsReader.getArrayType, "ARRAYTYP"),
@@ -46,8 +44,8 @@ object GnirsHeader {
         buildDouble(gnirsReader.getDetectorBias, "DETBIAS")
       ) )
 
-    override def sendAfter[A: HeaderProvider](id: ImageFileId, inst: A): SeqAction[Unit] =
-      sendKeywords(id, inst, hs, List(
+    override def sendAfter(id: ImageFileId): SeqAction[Unit] =
+      sendKeywords(id, inst, List(
         buildString(tcsReader.getUT.orDefault, "UTEND"),
         buildDouble(gnirsReader.getObsEpoch, "OBSEPOCH")
       ) )

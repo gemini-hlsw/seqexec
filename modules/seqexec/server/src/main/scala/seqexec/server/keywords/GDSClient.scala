@@ -10,15 +10,11 @@ import org.http4s.client.Client
 /**
   * Gemini Data service client
   */
-final case class GDSClient[F[_]](client: Client[F]) {
+final case class GDSClient[F[_]](client: Client[F]) extends KeywordsClient {
   /**
     * Set the keywords for an image
     */
-  def setKeywords(id: ImageFileId, keywords: DhsClient.KeywordBag, finalFlag: Boolean): SeqAction[Unit] = {
-    println("DHS")
-    println(id)
-    println(keywords)
-    println(finalFlag)
+  def setKeywords(id: ImageFileId, keywords: KeywordBag, finalFlag: Boolean): SeqAction[Unit] = {
     SeqAction.void
   }
 }

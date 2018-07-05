@@ -14,7 +14,7 @@ import cats.data.EitherT
 import cats.effect.IO
 import seqexec.model.dhs.ImageFileId
 import seqexec.server._
-import seqexec.server.keywords.DhsClient.{ImageParameters, KeywordBag}
+import seqexec.server.keywords.DhsClient.ImageParameters
 import seqexec.server.SeqexecFailure.SeqexecExceptionWhile
 import org.apache.commons.httpclient.HttpClient
 import org.apache.commons.httpclient.methods.{EntityEnclosingMethod, PostMethod, PutMethod}
@@ -69,7 +69,7 @@ class DhsClientHttp(val baseURI: String) extends DhsClient {
   implicit def imageParametersEncode: EncodeJson[DhsClient.ImageParameters] = EncodeJson[DhsClient.ImageParameters]( p =>
     ("lifetime" := p.lifetime.str) ->: ("contributors" := p.contributors) ->: Json.jEmptyObject )
 
-  implicit def keywordEncode: EncodeJson[DhsClient.InternalKeyword] = EncodeJson[DhsClient.InternalKeyword]( k =>
+  implicit def keywordEncode: EncodeJson[InternalKeyword] = EncodeJson[InternalKeyword]( k =>
     ("name" := k.name) ->: ("type" := k.keywordType.str) ->: ("value" := k.value) ->: Json.jEmptyObject )
 
   @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))

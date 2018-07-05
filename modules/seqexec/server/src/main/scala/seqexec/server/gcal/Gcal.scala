@@ -38,9 +38,6 @@ final case class Gcal(controller: GcalController, isCP: Boolean) extends System 
 }
 
 object Gcal {
-  implicit val GcalHeaderProvider: HeaderProvider[Gcal] = new HeaderProvider[Gcal] {
-    def name(a: Gcal): String = ???
-  }
   def explainExtractError(e: ExtractFailure): SeqexecFailure =
     SeqexecFailure.Unexpected(ConfigUtilOps.explain(e))
 

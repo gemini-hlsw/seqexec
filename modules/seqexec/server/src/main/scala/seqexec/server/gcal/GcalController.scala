@@ -4,6 +4,8 @@
 package seqexec.server.gcal
 
 import seqexec.server.SeqAction
+import seqexec.server.HeaderProvider
+import seqexec.server.keywords.{DhsClient, KeywordsClient, StandaloneDhsClient}
 import edu.gemini.spModel.gemini.calunit.CalUnitParams.Shutter
 
 import cats.Eq
@@ -13,6 +15,8 @@ trait GcalController {
 
   import GcalController._
 
+  val dhsClient: DhsClient
+
   def getConfig: SeqAction[GcalConfig]
 
   def applyConfig(config: GcalConfig): SeqAction[Unit]
@@ -20,6 +24,10 @@ trait GcalController {
 }
 
 object GcalController {
+  implicit val headerProvider: HeaderProvider[GcalController] = new HeaderProvider[GcalController] {
+    def name(a: GcalController): String = "gcal"
+    def keywordsClient(a: GcalController): KeywordsClient = StandaloneDhsClient(a.dhsClient)
+  }
 
   sealed trait LampState extends Product with Serializable
 

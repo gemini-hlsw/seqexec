@@ -8,6 +8,7 @@ import seqexec.server.ConfigUtilOps.{ContentError, ConversionError, _}
 import seqexec.server.gmos.Gmos.SiteSpecifics
 import seqexec.server.gmos.GmosController.Config._
 import seqexec.server.gmos.GmosController.SiteDependentTypes
+import seqexec.server.keywords.DhsInstrument
 import seqexec.server._
 import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.gemini.gmos.GmosCommonType._
@@ -23,7 +24,7 @@ import cats.effect.IO
 import mouse.all._
 import scala.concurrent.duration._
 
-abstract class Gmos[T<:GmosController.SiteDependentTypes](controller: GmosController[T], ss: SiteSpecifics[T])(configTypes: GmosController.Config[T]) extends InstrumentSystem {
+abstract class Gmos[T<:GmosController.SiteDependentTypes](controller: GmosController[T], ss: SiteSpecifics[T])(configTypes: GmosController.Config[T]) extends InstrumentSystem with DhsInstrument {
   import Gmos._
   import InstrumentSystem._
 

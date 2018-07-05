@@ -8,10 +8,9 @@ import seqexec.server.HeaderProvider
 import seqexec.server.Header._
 import seqexec.server.Header.Implicits._
 import seqexec.server.{Header, SeqAction}
-import seqexec.server.keywords.DhsClient
 
 object GcalHeader {
-  implicit def header(hs: DhsClient, gcalReader: GcalKeywordReader): Header =
+  implicit def header[A: HeaderProvider](inst: A, gcalReader: GcalKeywordReader): Header =
     new Header {
       private val gcalKeywords = List(
         buildString(gcalReader.getLamp.orDefault, "GCALLAMP"),
@@ -20,9 +19,9 @@ object GcalHeader {
         buildString(gcalReader.getShutter.orDefault, "GCALSHUT")
       )
 
-      override def sendBefore[A: HeaderProvider](id: ImageFileId, inst: A): SeqAction[Unit] =
-        sendKeywords(id, inst, hs, gcalKeywords)
+      override def sendBefore(id: ImageFileId): SeqAction[Unit] =
+        sendKeywords(id, inst, gcalKeywords)
 
-      override def sendAfter[A: HeaderProvider](id: ImageFileId, inst: A): SeqAction[Unit] = SeqAction(())
+      override def sendAfter(id: ImageFileId): SeqAction[Unit] = SeqAction(())
     }
 }
