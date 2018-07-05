@@ -1,10 +1,6 @@
 #!/bin/bash
 set -x
 
-# Remove any cruft leftover from the last build.
-# This ensures we avoid a confused incremental compiler.
-# git clean -xdf
-
 # Start a new Postgres container for this build
 # TODO: read postgres version from the build
 CID=`docker run --detach --publish 5432 postgres:9.6.0`
@@ -20,7 +16,7 @@ do
 done
 
 # Ready to do the build!
-sbt                                                       \
+/usr/local/bin/sbt                                        \
   -jvm-opts travis-jvmopts                                \
   -no-colors                                              \
   -Docs3.skipDependencyUpdates                            \
