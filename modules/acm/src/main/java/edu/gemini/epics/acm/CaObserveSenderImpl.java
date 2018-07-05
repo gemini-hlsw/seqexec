@@ -93,24 +93,6 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
 
     };
 
-    private short getMark(ReadOnlyClientEpicsChannel<Short> ch, short def) {
-        if(ch!=null && ch.isValid()) {
-            try {
-                return ch.getFirst();
-            } catch(Exception e) {
-                return def;
-            }
-        } else {
-            return def;
-        }
-    }
-
-    private short getStopMark() { return getMark(stopMark, (short)0); }
-
-    private short getAbortMark() {
-        return getMark(abortMark, (short)0);
-    }
-
     public CaObserveSenderImpl(String name, String applyRecord, String carRecord, String observeCarRecord,
                                String stopCmd, String abortCmd, String description, Class<C> carClass, EpicsService epicsService)
             throws CAException {
@@ -476,7 +458,7 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
                     return new WaitObserveStart(cm);
                 }
                 else if(observeCarState.isBusy()) {
-                    return new WaitObserveCompletion(cm, getStopMark(), getAbortMark());
+                    return new WaitObserveCompletion(cm);
                 }
                 else if(observeCarState.isError()) {
                     failCommandWithObserveCarError(cm);
@@ -556,7 +538,7 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
         @Override
         public State onObserveCarValChange(CarStateGeneric val) {
             if(val.isBusy()){
-                return new WaitObserveCompletion(cm, getStopMark(), getAbortMark());
+                return new WaitObserveCompletion(cm);
             }
             else if(val.isError()){
                 failCommandWithObserveCarError(cm);
@@ -588,7 +570,13 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
         final short stopMark;
         final short abortMark;
 
-        WaitObserveCompletion(CaCommandMonitorImpl cm, short stopMark, short abortMark) {
+        WaitObserveCompletion(CaCommandMonitorImpl cm) {
+            this.cm = cm;
+            this.stopMark = MRK_IDLE;
+            this.abortMark = MRK_IDLE;
+        }
+
+        private WaitObserveCompletion(CaCommandMonitorImpl cm, short stopMark, short abortMark) {
             this.cm = cm;
             this.stopMark = stopMark;
             this.abortMark = abortMark;
