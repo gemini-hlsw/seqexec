@@ -5,7 +5,7 @@ package seqexec.server.keywords
 
 import java.time.LocalDate
 
-import seqexec.server.keywords.DhsClient.{Int32Keyword, KeywordBag, Permanent}
+import seqexec.server.keywords.DhsClient.Permanent
 import org.scalatest.{FlatSpec, Matchers}
 
 class DhsClientSimSpec extends FlatSpec with Matchers {
