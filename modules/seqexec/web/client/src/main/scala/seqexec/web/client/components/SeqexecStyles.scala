@@ -202,4 +202,6 @@ object SeqexecStyles {
   val controlCellRow: GStyle = GStyle.fromString("SeqexecStyles-controlCellRow")
 
   val settingsCellRow: GStyle = GStyle.fromString("SeqexecStyles-settingsCellRow")
+
+  val labelAsButton: GStyle = GStyle.fromString("SeqexecStyles-labelAsButton")
 }

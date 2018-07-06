@@ -35,13 +35,15 @@ object SequenceStepsTableContainer {
   def updateStepToRun(step: Int): CatsReact.ReactST[CallbackTo, State, Unit] =
     ST.set(State(step)).liftCB
 
-  def toolbar(p: Props): VdomElement =
-    p.p().stepConfigDisplayed.fold{
+  def toolbar(p: Props): VdomElement = {
+    val statusAndStep = p.p()
+    statusAndStep.stepConfigDisplayed.fold{
       <.div(
-        SequenceDefaultToolbar(p).when(p.p().isLogged),
-        SequenceAnonymousToolbar(p.site, p.p().instrument).unless(p.p().isLogged)
+        SequenceDefaultToolbar(p).when(statusAndStep.isLogged),
+        SequenceAnonymousToolbar(p.site, statusAndStep.instrument).unless(statusAndStep.isLogged)
       ): VdomElement
-    }(s => p.p().id.fold(ReactFragment())(id => StepConfigToolbar(StepConfigToolbar.Props(p.router, p.site, p.p().instrument, id, s))))
+    }(s => statusAndStep.id.fold(ReactFragment())(id => StepConfigToolbar(StepConfigToolbar.Props(p.router, p.site, statusAndStep.instrument, id, s, statusAndStep.totalSteps))))
+  }
 
   private val component = ScalaComponent.builder[Props]("SequenceStepsTableContainer")
     .initialState(State(0))
