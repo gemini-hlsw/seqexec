@@ -194,9 +194,6 @@ lazy val json = crossProject(JVMPlatform, JSPlatform)
     libraryDependencies ++= Circe.value
   )
   .jsSettings(commonJSSettings)
-  .jsSettings(
-    test := {}
-  )
 
 lazy val jsonJVM = json.jvm.enablePlugins(AutomateHeaderPlugin)
 lazy val jsonJS = json.js
@@ -603,7 +600,6 @@ lazy val seqexecCommonSettings = Seq(
   parallelExecution in Universal := false,
   // Depend on webpack and add the assets created by webpack
   mappings in (Compile, packageBin) ++= (webpack in (seqexec_web_client, Compile, fullOptJS)).value.map { f => f.data -> f.data.getName() },
-  test := {},
   // Name of the launch script
   executableScriptName := "seqexec-server",
   // No javadocs
