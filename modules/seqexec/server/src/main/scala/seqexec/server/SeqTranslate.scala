@@ -327,6 +327,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     case Model.Instrument.GmosN => TrySeq(GmosNorth(systems.gmosNorth, systems.dhs))
     case Model.Instrument.GNIRS => TrySeq(Gnirs(systems.gnirs, systems.dhs))
     case Model.Instrument.GPI   => TrySeq(GPI(systems.gpi))
+//    case Model.Instrument.GHOST => TrySeq(GHOST(systems.ghost))
     case _                      => TrySeq.fail(Unexpected(s"Instrument $inst not supported."))
   }
 
@@ -342,6 +343,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     case Model.Instrument.NIFS  => true
     case Model.Instrument.NIRI  => true
     case Model.Instrument.GPI   => true
+    case Model.Instrument.GHOST => false
     case _                      => false
   }
 
@@ -367,6 +369,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     case Flamingos2(_, _) => Instrument.F2
     case Gnirs(_, _)      => Instrument.GNIRS
     case GPI(_)           => Instrument.GPI
+
   }
 
   private def calcInstHeader(config: Config, inst: Model.Instrument): TrySeq[Header] = {
@@ -432,7 +435,7 @@ object SeqTranslate {
                       gmosSouth: GmosController.GmosSouthController,
                       gmosNorth: GmosController.GmosNorthController,
                       gnirs: GnirsController,
-                      gpi: GPIController[IO]
+                      gpi: GPIController
                     )
 
   final case class Settings(
@@ -456,6 +459,7 @@ object SeqTranslate {
       case GmosNorth.name  => TrySeq(Model.Instrument.GmosN)
       case Gnirs.name      => TrySeq(Model.Instrument.GNIRS)
       case GPI.name        => TrySeq(Model.Instrument.GPI)
+//      case GHOST.name      => TrySeq(Model.Instrument.GHOST)
       case ins             => TrySeq.fail(UnrecognizedInstrument(s"inst $ins"))
     }
   }
