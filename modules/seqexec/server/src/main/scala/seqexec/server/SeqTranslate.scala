@@ -3,6 +3,11 @@
 
 package seqexec.server
 
+import cats._
+import cats.data.{EitherT, Kleisli, NonEmptyList, Reader}
+import cats.effect.IO
+import cats.implicits._
+import edu.gemini.seqexec.odb.{ExecutedDataset, SeqexecSequence}
 import edu.gemini.spModel.core.Site
 import seqexec.engine.Result.{Configured, FileIdAllocated, Observed}
 import seqexec.engine.{Action, ActionMetadata, Event, Result, Sequence, Step, fromIO}
@@ -10,11 +15,13 @@ import seqexec.model.Model.{Instrument, Resource, SequenceMetadata, StepState}
 import seqexec.model.{ActionType, Model}
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.ConfigUtilOps._
-import seqexec.server.DhsClient.{KeywordBag, StringKeyword}
+import seqexec.server.HeaderProvider._
 import seqexec.server.SeqTranslate.{Settings, Systems}
 import seqexec.server.SeqexecFailure.{Unexpected, UnrecognizedInstrument}
 import seqexec.server.InstrumentSystem._
 import seqexec.server.flamingos2.{Flamingos2, Flamingos2Controller, Flamingos2Header}
+import seqexec.server.keywords.{DhsClient, DhsInstrument}
+import seqexec.server.keywords.{KeywordBag, StringKeyword}
 import seqexec.server.gpi.{GPI, GPIController, GPIHeader}
 import seqexec.server.gcal._
 import seqexec.server.gmos.{GmosController, GmosHeader, GmosNorth, GmosSouth}
@@ -28,13 +35,9 @@ import edu.gemini.spModel.gemini.altair.AltairConstants
 import edu.gemini.spModel.obscomp.InstConstants._
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import org.log4s._
-import cats._
-import cats.data.{EitherT, Kleisli, NonEmptyList, Reader}
-import cats.effect.IO
-import cats.implicits._
-import edu.gemini.seqexec.odb.{ExecutedDataset, SeqexecSequence}
 import squants.Time
 import fs2.Stream
+// import org.http4s.client.Client
 import gem.Observation
 import mouse.all._
 
@@ -45,6 +48,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
 
   import SeqTranslate._
 
+  // All instruments ask the DHS for an ImageFileId
   private def dhsFileId(inst: InstrumentSystem): SeqAction[ImageFileId] =
     systems.dhs.createImage(DhsClient.ImageParameters(DhsClient.Permanent, List(inst.contributorName, "dhs-http")))
 
@@ -68,7 +72,8 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
 
   private def info(msg: => String): SeqAction[Unit] = EitherT.right(IO.apply(Log.info(msg)))
 
-  private def observe[A <: InstrumentSystem: Show](config: Config, obsId: Observation.Id, inst: A,
+  //scalastyle:off
+  private def observe[A <: InstrumentSystem: HeaderProvider](config: Config, obsId: Observation.Id, inst: A,
                       otherSys: List[System], headers: Reader[ActionMetadata, List[Header]])
                      (ctx: ActionMetadata): SeqAction[Result.Partial[FileIdAllocated]] = {
     val dataId: SeqAction[String] = EitherT(IO.apply(
@@ -80,28 +85,34 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     // endObserve must be sent to the instrument too.
     def notifyObserveEnd: SeqAction[Unit] = (inst +: otherSys).map(_.notifyObserveEnd).sequence.map(_ => ())
 
-    def closeImage(id: ImageFileId, client: DhsClient): SeqAction[Unit] =
-      client.setKeywords(id, KeywordBag(StringKeyword("instrument", inst.dhsInstrumentName)), finalFlag = true)
+    def closeImage(id: ImageFileId): SeqAction[Unit] =
+      inst match {
+        case i: DhsInstrument =>
+          i.dhsClient.setKeywords(id, KeywordBag(StringKeyword("instrument", i.dhsInstrumentName)), finalFlag = true)
+        case _ =>
+          SeqAction.void
+      }
 
     def doObserve(fileId: ImageFileId): SeqAction[Result] =
       for {
         d   <- dataId
         _   <- sendDataStart(obsId, fileId, d)
         _   <- notifyObserveStart
-        _   <- headers(ctx).map(_.sendBefore(fileId, inst.dhsInstrumentName)).sequence
-        _   <- info(s"Start ${inst.show} observation $obsId with label $fileId")
+        _   <- headers(ctx).map(_.sendBefore(fileId)).sequence
+        _   <- info(s"Start ${inst.name} observation ${obsId.format} with label $fileId")
         r   <- inst.observe(config)(fileId)
-        _   <- info(s"Completed ${inst.show} observation $obsId with label $fileId")
+        _   <- info(s"Completed ${inst.name} observation ${obsId.format} with label $fileId")
         ret <- observeTail(fileId, d)(r)
       } yield ret
 
     def observeTail(id: ImageFileId, dataId: String)(r: ObserveCommand.Result): SeqAction[Result] = {
       val successTail: SeqAction[Result] = for {
         _ <- notifyObserveEnd
-        _ <- headers(ctx).reverseMap(_.sendAfter(id, inst.dhsInstrumentName)).sequence
-        _ <- closeImage(id, systems.dhs)
+        _ <- headers(ctx).reverseMap(_.sendAfter(id)).sequence
+        _ <- closeImage(id)
         _ <- sendDataEnd(obsId, id, dataId)
       } yield Result.OK(Observed(id))
+
       val stopTail: SeqAction[Result] = successTail
       val abortTail: SeqAction[Result] = sendObservationAborted(obsId, id) *>
         SeqAction.fail(SeqexecFailure.Execution(s"Observation $id aborted by user."))
@@ -110,7 +121,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
         case ObserveCommand.Success => successTail
         case ObserveCommand.Stopped => stopTail
         case ObserveCommand.Aborted => abortTail
-        case ObserveCommand.Paused => SeqAction(Result.Paused(ObserveContext(observeTail(id, dataId), inst.calcObserveTime(config))))
+        case ObserveCommand.Paused  => SeqAction(Result.Paused(ObserveContext(observeTail(id, dataId), inst.calcObserveTime(config))))
       }
     }
 
@@ -119,9 +130,8 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     } yield Result.Partial(FileIdAllocated(id), Kleisli(_ => doObserve(id).value.map(_.toResult)))
   }
 
-  //scalastyle:off
   private def step(obsId: Observation.Id, i: Int, config: Config, nextToRun: Int, datasets: Map[Int, ExecutedDataset]): TrySeq[Step] = {
-    def buildStep(inst: InstrumentSystem, sys: List[System], headers: Reader[ActionMetadata,List[Header]], resources: Set[Resource]): Step = {
+    def buildStep[A <: InstrumentSystem: HeaderProvider](inst: A, sys: List[System], headers: Reader[ActionMetadata,List[Header]], resources: Set[Resource]): Step = {
       val initialStepExecutions: List[List[Action]] =
         if (i === 0) List(List(systems.odb.sequenceStart(obsId, "").map(_ => Result.Ignored).toAction(ActionType.Undefined)))
         else Nil
@@ -315,10 +325,10 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
   }
 
   private def toInstrumentSys(inst: Model.Instrument): TrySeq[InstrumentSystem] = inst match {
-    case Model.Instrument.F2    => TrySeq(Flamingos2(systems.flamingos2))
-    case Model.Instrument.GmosS => TrySeq(GmosSouth(systems.gmosSouth))
-    case Model.Instrument.GmosN => TrySeq(GmosNorth(systems.gmosNorth))
-    case Model.Instrument.GNIRS => TrySeq(Gnirs(systems.gnirs))
+    case Model.Instrument.F2    => TrySeq(Flamingos2(systems.flamingos2, systems.dhs))
+    case Model.Instrument.GmosS => TrySeq(GmosSouth(systems.gmosSouth, systems.dhs))
+    case Model.Instrument.GmosN => TrySeq(GmosNorth(systems.gmosNorth, systems.dhs))
+    case Model.Instrument.GNIRS => TrySeq(Gnirs(systems.gnirs, systems.dhs))
     case Model.Instrument.GPI   => TrySeq(GPI(systems.gpi))
     case _                      => TrySeq.fail(Unexpected(s"Instrument $inst not supported."))
   }
@@ -352,63 +362,69 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
   // I cannot use a sealed trait as base, because I cannot have all systems in one source file (too big),
   // so either I use an unchecked notation, or add a default case that throws an exception.
   private def resourceFromSystem(s: System): Resource = (s: @unchecked) match {
-    case Tcs(_, _, _)  => Resource.TCS
-    case Gcal(_, _)    => Resource.Gcal
-    case GmosNorth(_)  => Instrument.GmosN
-    case GmosSouth(_)  => Instrument.GmosS
-    case Flamingos2(_) => Instrument.F2
-    case Gnirs(_)      => Instrument.GNIRS
-    case GPI(_)        => Instrument.GPI
+    case Tcs(_, _, _)     => Resource.TCS
+    case Gcal(_, _)       => Resource.Gcal
+    case GmosNorth(_, _)  => Instrument.GmosN
+    case GmosSouth(_, _)  => Instrument.GmosS
+    case Flamingos2(_, _) => Instrument.F2
+    case Gnirs(_, _)      => Instrument.GNIRS
+    case GPI(_)           => Instrument.GPI
 
   }
 
   private def calcInstHeader(config: Config, inst: Model.Instrument): TrySeq[Header] = {
     val tcsKReader = if (settings.tcsKeywords) TcsKeywordsReaderImpl else DummyTcsKeywordsReader
     inst match {
-      case Model.Instrument.F2     => TrySeq(Flamingos2Header(systems.dhs, new Flamingos2Header.ObsKeywordsReaderImpl(config),
-        tcsKReader))
+      case Model.Instrument.F2     =>
+        toInstrumentSys(inst).map(Flamingos2Header.header(_, new Flamingos2Header.ObsKeywordsReaderImpl(config), tcsKReader))
       case Model.Instrument.GmosS |
            Model.Instrument.GmosN  =>
         val gmosInstReader = if (settings.gmosKeywords) GmosHeader.InstKeywordReaderImpl else GmosHeader.DummyInstKeywordReader
-        TrySeq(GmosHeader(systems.dhs, GmosHeader.ObsKeywordsReaderImpl(config), gmosInstReader, tcsKReader))
+        toInstrumentSys(inst).map(GmosHeader.header(_, GmosHeader.ObsKeywordsReaderImpl(config), gmosInstReader, tcsKReader))
       case Model.Instrument.GNIRS  =>
         val gnirsReader = if(settings.gnirsKeywords) GnirsKeywordReaderImpl else GnirsKeywordReaderDummy
-        TrySeq(GnirsHeader(systems.dhs, gnirsReader, tcsKReader))
-      case Model.Instrument.GPI    => TrySeq(GPIHeader(tcsKReader))
-      case _                       => TrySeq.fail(Unexpected(s"Instrument $inst not supported."))
+        toInstrumentSys(inst).map(GnirsHeader.header(_, gnirsReader, tcsKReader))
+      case Model.Instrument.GPI    =>
+        TrySeq(GPIHeader.header())
+      case _                       =>
+        TrySeq.fail(Unexpected(s"Instrument $inst not supported."))
     }
   }
 
-  private def commonHeaders(config: Config, tcsSubsystems: List[TcsController.Subsystem])(ctx: ActionMetadata): Header = new StandardHeader(
-    systems.dhs,
-    ObsKeywordReaderImpl(config, site.displayName.replace(' ', '-')),
-    if (settings.tcsKeywords) TcsKeywordsReaderImpl else DummyTcsKeywordsReader,
-    StateKeywordsReader(ctx.conditions, ctx.operator, ctx.observer),
-    tcsSubsystems
-  )
+  private def commonHeaders(config: Config, tcsSubsystems: List[TcsController.Subsystem], inst: InstrumentSystem)(ctx: ActionMetadata): Header =
+    new StandardHeader(
+      inst,
+      ObsKeywordReaderImpl(config, site.displayName.replace(' ', '-')),
+      if (settings.tcsKeywords) TcsKeywordsReaderImpl else DummyTcsKeywordsReader,
+      StateKeywordsReader(ctx.conditions, ctx.operator, ctx.observer),
+      tcsSubsystems
+    )
 
-  private val gwsHeaders: Header = new GwsHeader(systems.dhs,
-    if (settings.gwsKeywords) GwsKeywordsReaderImpl else DummyGwsKeywordsReader
-  )
+  private val gwsHeaders: Header = GwsHeader.header(GwsHeader,
+      if (settings.gwsKeywords) GwsKeywordsReaderImpl else DummyGwsKeywordsReader
+    )(GwsHeader.headerProvider(systems.dhs))
 
-  private val gcalHeader: Header = new GcalHeader(systems.dhs,
-    if (settings.gcalKeywords) GcalKeywordsReaderImpl else DummyGcalKeywordsReader
-  )
+  private val gcalHeader: Header = GcalHeader.header(systems.gcal,
+      if (settings.gcalKeywords) GcalKeywordsReaderImpl else DummyGcalKeywordsReader
+    )
 
   private def calcHeaders(config: Config, stepType: StepType): TrySeq[Reader[ActionMetadata, List[Header]]] = stepType match {
-    case CelestialObject(inst) => calcInstHeader(config, inst).map(h => Reader(ctx =>
-      List(commonHeaders(config, all.toList)(ctx), gwsHeaders, h)))
-    case FlatOrArc(inst)       => calcInstHeader(config, inst).map(h => Reader(ctx =>
-      List(commonHeaders(config, flatOrArcTcsSubsystems(inst).toList)(ctx), gcalHeader, gwsHeaders, h)))
-    case DarkOrBias(inst)      => calcInstHeader(config, inst).map(h => Reader(ctx =>
-      List(commonHeaders(config, Nil)(ctx), gwsHeaders, h)))
+    case CelestialObject(inst) => toInstrumentSys(inst) >>= {i =>
+        calcInstHeader(config, inst).map(h => Reader(ctx => List(commonHeaders(config, all.toList, i)(ctx), gwsHeaders, h)))
+      }
+    case FlatOrArc(inst)       => toInstrumentSys(inst) >>= { i =>
+        calcInstHeader(config, inst).map(h => Reader(ctx => List(commonHeaders(config, flatOrArcTcsSubsystems(inst).toList, i)(ctx), gcalHeader, gwsHeaders, h)))
+      }
+    case DarkOrBias(inst)      => toInstrumentSys(inst) >>= { i =>
+        calcInstHeader(config, inst).map(h => Reader(ctx => List(commonHeaders(config, Nil, i)(ctx), gwsHeaders, h)))
+      }
     case st                    => TrySeq.fail(Unexpected(s"Unsupported step type $st"))
   }
 
 }
 
 object SeqTranslate {
-  def apply(site: Site, systems: Systems, settings: Settings): SeqTranslate = new SeqTranslate(site, systems, settings)
+  def apply(site: Site, systems: Systems, /*httpClient: Client[IO], */settings: Settings): SeqTranslate = new SeqTranslate(site, systems, settings)
 
   final case class Systems(
                       odb: ODBProxy,

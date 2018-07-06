@@ -5,32 +5,27 @@ package seqexec.server
 
 import seqexec.model.dhs.ImageFileId
 
-/**
-  * Defines the interface for dhs client, with methods, e.g. to request image creation
-  */
-trait DhsClient {
+package keywords {
   /**
-    * Requests the DHS to create an image returning the obs id if applicable
-    */
-  def createImage(p: DhsClient.ImageParameters): SeqAction[ImageFileId]
+   * Clients that can send keywords to a server that could e.g. write them to a file
+   */
+  trait KeywordsClient {
+    def setKeywords(id: ImageFileId, keywords: KeywordBag, finalFlag: Boolean): SeqAction[Unit]
+  }
 
-  /**
-    * Set the keywords for an image
-    */
-  def setKeywords(id: ImageFileId, keywords: DhsClient.KeywordBag, finalFlag: Boolean): SeqAction[Unit]
+  trait DhsInstrument extends KeywordsClient {
+    val dhsClient: DhsClient
 
-}
+    val dhsInstrumentName: String
 
-object DhsClient {
+    def setKeywords(id: ImageFileId, keywords: KeywordBag, finalFlag: Boolean): SeqAction[Unit] =
+      dhsClient.setKeywords(id, keywords, finalFlag)
+  }
 
-  type Contributor = String
-
-  sealed case class Lifetime(str: String)
-  object Permanent extends Lifetime("PERMANENT")
-  object Temporary extends Lifetime("TEMPORARY")
-  object Transient extends Lifetime("TRANSIENT")
-
-  final case class ImageParameters(lifetime: Lifetime, contributors: List[Contributor])
+  final case class StandaloneDhsClient(dhsClient: DhsClient) extends KeywordsClient {
+    override def setKeywords(id: ImageFileId, keywords: KeywordBag, finalFlag: Boolean): SeqAction[Unit] =
+      dhsClient.setKeywords(id, keywords, finalFlag)
+  }
 
   // TODO: Implement the unsigned types, if needed.
   sealed case class KeywordType protected (str: String)
@@ -58,9 +53,7 @@ object DhsClient {
   // use an internal representation, and offer a class to the developer (KeywordBag) to create the list from typed
   // keywords.
 
-  final case class InternalKeyword(name: String, keywordType: KeywordType, value: String)
-
-  protected implicit def internalKeywordConvert[T](k: Keyword[T]): InternalKeyword = InternalKeyword(k.n, k.t, s"${k.v}")
+  private[keywords] final case class InternalKeyword(name: String, keywordType: KeywordType, value: String)
 
   final case class KeywordBag(keywords: List[InternalKeyword]) {
     def add[T](k: Keyword[T]): KeywordBag = KeywordBag(keywords :+ internalKeywordConvert(k))
@@ -85,5 +78,9 @@ object DhsClient {
       KeywordBag(List(internalKeywordConvert(k1), internalKeywordConvert(k2), internalKeywordConvert(k3),
         internalKeywordConvert(k4), internalKeywordConvert(k5), internalKeywordConvert(k6)))
   }
+}
 
+package object keywords {
+
+  def internalKeywordConvert[T](k: Keyword[T]): InternalKeyword = InternalKeyword(k.n, k.t, s"${k.v}")
 }

@@ -5,12 +5,10 @@ package seqexec.server.gcal
 
 import seqexec.server.gcal.GcalController.GcalConfig
 import seqexec.server.{SeqAction, TrySeq}
+import seqexec.server.keywords.DhsClient
 import org.log4s.getLogger
 
-/**
-  * Created by jluhrs on 3/15/17.
-  */
-object GcalControllerSim extends GcalController {
+final case class GcalControllerSim(dhsClient: DhsClient) extends GcalController {
   private val Log = getLogger
 
   override def getConfig: SeqAction[GcalConfig] = SeqAction(GcalController.GcalConfig.allOff)

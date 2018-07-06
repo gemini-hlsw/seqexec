@@ -25,6 +25,7 @@ import mouse.boolean._
 import org.log4s.getLogger
 import scala.concurrent.duration.Duration
 import seqexec.model.dhs.ImageFileId
+import seqexec.server.keywords.GDSClient
 import seqexec.server.SeqAction
 
 object GPILookupTables {
@@ -94,7 +95,7 @@ object GPILookupTables {
   )
 }
 
-final case class GPIController(gpiClient: GPIClient[IO]) {
+final case class GPIController(gpiClient: GPIClient[IO], gdsClient: GDSClient[IO]) {
   import GPIController._
   import GPILookupTables._
   private val Log             = getLogger

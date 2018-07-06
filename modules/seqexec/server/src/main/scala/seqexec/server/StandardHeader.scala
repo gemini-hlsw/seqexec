@@ -11,7 +11,7 @@ import cats.implicits._
 import seqexec.model.Model.{Conditions, Observer, Operator}
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.ConfigUtilOps._
-import seqexec.server.DhsClient.KeywordBag
+import seqexec.server.keywords.KeywordBag
 import seqexec.server.tcs.{TargetKeywordsReader, Tcs, TcsController, TcsKeywordsReader}
 import edu.gemini.spModel.config2.{Config, ItemKey}
 import edu.gemini.spModel.dataflow.GsaAspect.Visibility
@@ -24,10 +24,6 @@ import edu.gemini.spModel.target.obsComp.TargetObsCompConstants._
 import mouse.all._
 
 import scala.collection.breakOut
-
-/**
-  * Created by jluhrs on 1/31/17.
-  */
 
 trait ObsKeywordsReader {
   def getObsType: SeqAction[String]
@@ -213,8 +209,8 @@ final case class StateKeywordsReader(conditions: Conditions, operator: Option[Op
   def getRawBackgroundLight: SeqAction[String] = SeqAction(encodeCondition(conditions.sb.toInt))
 }
 
-class StandardHeader(
-  hs: DhsClient,
+class StandardHeader[A: HeaderProvider](
+  inst: A,
   obsReader: ObsKeywordsReader,
   tcsReader: TcsKeywordsReader,
   stateReader: StateKeywordsReader,
@@ -277,15 +273,15 @@ class StandardHeader(
     case StandardGuideOptions.Value.freeze => "frozen"
   }
 
-  private def optTcsKeyword[A](s: TcsController.Subsystem)(v: SeqAction[A])(implicit d:DefaultValue[A]) : SeqAction[A] =
+  private def optTcsKeyword[B](s: TcsController.Subsystem)(v: SeqAction[B])(implicit d:DefaultValue[B]) : SeqAction[B] =
     if(tcsSubsystems.contains(s)) v
     else SeqAction(d.default)
 
-  private def mountTcsKeyword[A](v: SeqAction[A])(implicit d:DefaultValue[A]) = optTcsKeyword[A](TcsController.Subsystem.Mount)(v)(d)
+  private def mountTcsKeyword[B](v: SeqAction[B])(implicit d:DefaultValue[B]) = optTcsKeyword[B](TcsController.Subsystem.Mount)(v)(d)
 
-  private def m2TcsKeyword[A](v: SeqAction[A])(implicit d:DefaultValue[A]) = optTcsKeyword[A](TcsController.Subsystem.M2)(v)(d)
+  private def m2TcsKeyword[B](v: SeqAction[B])(implicit d:DefaultValue[B]) = optTcsKeyword[B](TcsController.Subsystem.M2)(v)(d)
 
-  private def sfTcsKeyword[A](v: SeqAction[A])(implicit d:DefaultValue[A]) = optTcsKeyword[A](TcsController.Subsystem.ScienceFold)(v)(d)
+  private def sfTcsKeyword[B](v: SeqAction[B])(implicit d:DefaultValue[B]) = optTcsKeyword[B](TcsController.Subsystem.ScienceFold)(v)(d)
 
   private val baseKeywords = List(
     buildString(SeqAction(OcsBuildInfo.version), "SEQEXVER"),
@@ -355,7 +351,7 @@ class StandardHeader(
     buildInt32(obsReader.getSciBand.orDefault, "SCIBAND")
   )
 
-  def timinigWindows(id: ImageFileId, inst: String): SeqAction[Unit] = {
+  def timinigWindows(id: ImageFileId): SeqAction[Unit] = {
     val timingWindows = obsReader.getTimingWindows
     val windows = timingWindows.flatMap {
       case (i, tw) =>
@@ -366,10 +362,10 @@ class StandardHeader(
           buildDouble(tw.period,   f"REQTWP${i + 1}%02d"))
     }
     val windowsCount = buildInt32(SeqAction(timingWindows.length), "NUMREQTW")
-    sendKeywords(id, inst, hs, windowsCount :: windows)
+    sendKeywords(id, inst, windowsCount :: windows)
   }
 
-  def requestedConditions(id: ImageFileId, inst: String): SeqAction[Unit] = {
+  def requestedConditions(id: ImageFileId): SeqAction[Unit] = {
     import ObsKeywordsReader._
     val keys = List(
       "REQIQ" -> IQ,
@@ -379,10 +375,10 @@ class StandardHeader(
     val requested = keys.flatMap {
       case (keyword, value) => obsReader.getRequestedConditions.get(value).toList.map(buildString(_, keyword))
     }
-    sendKeywords(id, inst, hs, requested)
+    sendKeywords(id, inst, requested)
   }
 
-  def requestedAirMassAngle(id: ImageFileId, inst: String): SeqAction[Unit] = {
+  def requestedAirMassAngle(id: ImageFileId): SeqAction[Unit] = {
     import ObsKeywordsReader._
     val keys = List(
       "REQMAXAM" -> MAX_AIRMASS,
@@ -392,15 +388,15 @@ class StandardHeader(
     val requested = keys.flatMap {
       case (keyword, value) => obsReader.getRequestedAirMassAngle.get(value).toList.map(buildDouble(_, keyword))
     }
-    if (!requested.isEmpty) sendKeywords(id, inst, hs, requested)
+    if (!requested.isEmpty) sendKeywords(id, inst, requested)
     else SeqAction.void
   }
 
   // scalastyle:of
-  override def sendBefore(id: ImageFileId, inst: String): SeqAction[Unit] = {
+  override def sendBefore(id: ImageFileId): SeqAction[Unit] = {
     def guiderKeywords(guideWith: SeqAction[StandardGuideOptions.Value], baseName: String, target: TargetKeywordsReader,
                        extras: List[KeywordBag => SeqAction[KeywordBag]]): SeqAction[Unit] = guideWith.flatMap { g =>
-      if (g === StandardGuideOptions.Value.guide) sendKeywords(id, inst, hs, List(
+      if (g === StandardGuideOptions.Value.guide) sendKeywords(id, inst, List(
         buildDouble(target.getRA.orDefault, baseName + "ARA"),
         buildDouble(target.getDec.orDefault, baseName + "ADEC"),
         buildDouble(target.getRadialVelocity.orDefault, baseName + "ARV"), {
@@ -433,10 +429,10 @@ class StandardHeader(
 
     val aowfsKeywords = standardGuiderKeywords(obsReader.getAowfsGuide, "AO", tcsReader.getAowfsTarget, List())
 
-    sendKeywords(id, inst, hs, baseKeywords) *>
-    requestedConditions(id, inst) *>
-    requestedAirMassAngle(id, inst) *>
-    timinigWindows(id, inst) *>
+    sendKeywords(id, inst, baseKeywords) *>
+    requestedConditions(id) *>
+    requestedAirMassAngle(id) *>
+    timinigWindows(id) *>
     pwfs1Keywords *>
     pwfs2Keywords *>
     oiwfsKeywords *>
@@ -444,7 +440,7 @@ class StandardHeader(
   }
   // scalastyle:on
 
-  override def sendAfter(id: ImageFileId, inst: String): SeqAction[Unit] = sendKeywords(id, inst, hs,
+  override def sendAfter(id: ImageFileId): SeqAction[Unit] = sendKeywords(id, inst,
     List(
       buildDouble(tcsReader.getAirMass.orDefault, "AIRMASS"),
       buildDouble(tcsReader.getStartAirMass.orDefault, "AMSTART"),

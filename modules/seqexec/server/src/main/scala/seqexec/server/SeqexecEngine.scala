@@ -22,6 +22,7 @@ import seqexec.model.Model._
 import seqexec.model.events._
 import seqexec.model.{ActionType, UserDetails}
 import seqexec.server.ConfigUtilOps._
+import seqexec.server.keywords._
 import seqexec.server.flamingos2.{Flamingos2ControllerEpics, Flamingos2ControllerSim, Flamingos2ControllerSimBad, Flamingos2Epics}
 import seqexec.server.gcal.{GcalControllerEpics, GcalControllerSim, GcalEpics}
 import seqexec.server.gmos.{GmosControllerSim, GmosEpics, GmosNorthControllerEpics, GmosSouthControllerEpics}
@@ -34,24 +35,27 @@ import edu.gemini.spModel.core.{Peer, SPProgramID, Site}
 import edu.gemini.spModel.obscomp.InstConstants
 import edu.gemini.spModel.seqcomp.SeqConfigNames.OCS_KEY
 import fs2.{Scheduler, Stream}
+import org.http4s.client.Client
 import knobs.Config
 import mouse.all._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
-class SeqexecEngine(settings: SeqexecEngine.Settings) {
+class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings) {
   import SeqexecEngine._
 
   val odbProxy: ODBProxy = new ODBProxy(new Peer(settings.odbHost, 8443, null),
     if (settings.odbNotifications) ODBProxy.OdbCommandsImpl(new Peer(settings.odbHost, 8442, null))
     else ODBProxy.DummyOdbCommands)
 
+  val gpiGDS: GDSClient[IO] = GDSClient[IO]((settings.gpiKeywords === GPIKeywords.GPIKeywordsGDS).fold(httpClient, httpClient))
+
   private val systems = SeqTranslate.Systems(
     odbProxy,
     if (settings.dhsSim) DhsClientSim(settings.date) else DhsClientHttp(settings.dhsURI),
     if (settings.tcsSim) TcsControllerSim else TcsControllerEpics,
-    if (settings.gcalSim) GcalControllerSim else GcalControllerEpics,
+    if (settings.gcalSim) GcalControllerSim(DhsClientSim(settings.date)) else GcalControllerEpics(DhsClientHttp(settings.dhsURI)),
     if (settings.instSim) {
       if (settings.instForceError) Flamingos2ControllerSimBad(settings.failAt)
       else Flamingos2ControllerSim
@@ -59,7 +63,7 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
     if (settings.instSim) GmosControllerSim.south else GmosSouthControllerEpics,
     if (settings.instSim) GmosControllerSim.north else GmosNorthControllerEpics,
     if (settings.instSim) GnirsControllerSim else GnirsControllerEpics,
-    GPIController(new GPIClient(settings.giapi, scala.concurrent.ExecutionContext.Implicits.global))
+    GPIController(new GPIClient(settings.giapi, scala.concurrent.ExecutionContext.Implicits.global), gpiGDS)
   )
 
   private val translatorSettings = SeqTranslate.Settings(
@@ -335,6 +339,15 @@ class SeqexecEngine(settings: SeqexecEngine.Settings) {
 
 // Configuration stuff
 object SeqexecEngine {
+  sealed trait GPIKeywords
+
+  object GPIKeywords {
+    case object GPIKeywordsSimulated extends GPIKeywords
+    case object GPIKeywordsGDS extends GPIKeywords
+
+    implicit val eq: Eq[GPIKeywords] = Eq.fromUniversalEquals
+  }
+
   final case class Settings(site: Site,
                       odbHost: String,
                       date: LocalDate,
@@ -350,11 +363,12 @@ object SeqexecEngine {
                       gwsKeywords: Boolean,
                       gcalKeywords: Boolean,
                       gnirsKeywords: Boolean,
+                      gpiKeywords: GPIKeywords,
                       instForceError: Boolean,
                       failAt: Int,
                       odbQueuePollingInterval: Duration,
                       giapi: Giapi[IO])
-  def apply(settings: Settings): SeqexecEngine = new SeqexecEngine(settings)
+  def apply(httpClient: Client[IO], settings: Settings): SeqexecEngine = new SeqexecEngine(httpClient, settings)
 
   // Couldn't find this on Scalaz
   def splitWhere[A](l: List[A])(p: (A => Boolean)): (List[A], List[A]) =
@@ -487,7 +501,8 @@ object SeqexecEngine {
     val gmosKeywords            = cfg.require[Boolean]("seqexec-engine.gmosKeywords")
     val gwsKeywords             = cfg.require[Boolean]("seqexec-engine.gwsKeywords")
     val gcalKeywords            = cfg.require[Boolean]("seqexec-engine.gcalKeywords")
-    val gnirsKeywords            = cfg.require[Boolean]("seqexec-engine.gnirsKeywords")
+    val gnirsKeywords           = cfg.require[Boolean]("seqexec-engine.gnirsKeywords")
+    val gpiKeywords             = cfg.require[Boolean]("seqexec-engine.gpiKeywords").fold(GPIKeywords.GPIKeywordsGDS, GPIKeywords.GPIKeywordsSimulated)
     val instForceError          = cfg.require[Boolean]("seqexec-engine.instForceError")
     val failAt                  = cfg.require[Int]("seqexec-engine.failAt")
     val odbQueuePollingInterval = Duration(cfg.require[String]("seqexec-engine.odbQueuePollingInterval"))
@@ -554,6 +569,7 @@ object SeqexecEngine {
                        gwsKeywords,
                        gcalKeywords,
                        gnirsKeywords,
+                       gpiKeywords,
                        instForceError,
                        failAt,
                        odbQueuePollingInterval,

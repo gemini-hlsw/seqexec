@@ -1,11 +1,11 @@
 // Copyright (c) 2016-2018 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
-package seqexec.server
+package seqexec.server.keywords
 
 import java.time.LocalDate
 
-import seqexec.server.DhsClient.{Int32Keyword, KeywordBag, Permanent}
+import seqexec.server.keywords.DhsClient.Permanent
 import org.scalatest.{FlatSpec, Matchers}
 
 class DhsClientSimSpec extends FlatSpec with Matchers {

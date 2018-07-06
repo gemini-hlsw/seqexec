@@ -24,9 +24,9 @@ import seqexec.model.{ActionType, UserDetails}
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 class SeqexecEngineSpec extends FlatSpec with Matchers {
   private val defaultSettings = Settings(Site.GS,
-    "localhost",
-    LocalDate.of(2017, 1, 1),
-    "http://localhost/",
+    odbHost = "localhost",
+    date = LocalDate.of(2017, 1, 1),
+    dhsURI = "http://localhost/",
     dhsSim = true,
     tcsSim = true,
     instSim = true,
@@ -38,6 +38,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers {
     gwsKeywords = false,
     gcalKeywords = false,
     gnirsKeywords = false,
+    gpiKeywords = SeqexecEngine.GPIKeywords.GPIKeywordsSimulated,
     instForceError = false,
     failAt = 0,
     10.seconds,
@@ -159,7 +160,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers {
       SeqexecEngine.observeStatus(executions) shouldBe ActionStatus.Paused
     }
 
-  private val seqexecEngine = SeqexecEngine(defaultSettings)
+  private val seqexecEngine = SeqexecEngine(null, defaultSettings)
   private def advanceOne(q: EventQueue, s0: executeEngine.StateType, put: IO[Either[SeqexecFailure, Unit]]): Stream[Pure, Option[executeEngine.StateType]] =
     Stream.emit((put *> executeEngine.process(q.dequeue)(s0).take(1).compile.last).unsafeRunSync.map(_._2))
 

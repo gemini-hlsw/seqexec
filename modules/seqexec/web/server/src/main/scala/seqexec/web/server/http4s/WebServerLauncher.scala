@@ -22,10 +22,11 @@ import knobs._
 import mouse.all._
 import org.http4s.server.SSLKeyStoreSupport.StoreInfo
 import org.http4s.server.blaze.BlazeBuilder
+import org.http4s.client.blaze._
+import org.http4s.client.Client
 import org.log4s._
 import squants.time.Hours
 import web.server.common.{LogInitialization, RedirectToHttpsRoutes, StaticRoutes}
-
 import scala.concurrent.ExecutionContext.Implicits.global
 
 object WebServerLauncher extends StreamApp[IO] with LogInitialization {
@@ -156,14 +157,13 @@ object WebServerLauncher extends StreamApp[IO] with LogInitialization {
     * Reads the configuration and launches the web server
     */
   def stream(args: List[String], requestShutdown: IO[Unit]): Stream[IO, ExitCode] = {
-    val engineIO: IO[SeqexecEngine] =
+    def engineIO(httpClient: Client[IO]): IO[SeqexecEngine] =
       for {
         _     <- configLog // Initialize log before the engine is setup
         c     <- config
         giapi <- SeqexecEngine.giapiConnection.run(c)
         seqc  <- SeqexecEngine.seqexecConfiguration(giapi).run(c)
-        se    = SeqexecEngine(seqc)
-      } yield se
+      } yield SeqexecEngine(httpClient, seqc)
 
     def webServerIO(in: Queue[IO, executeEngine.EventType], out: Topic[IO, SeqexecEvent], et: SeqexecEngine): IO[Stream[IO, ExitCode]] =
       // Launch web server
@@ -180,9 +180,10 @@ object WebServerLauncher extends StreamApp[IO] with LogInitialization {
     // It's not very clear why we need to run this inside a Scheduler
     Scheduler[IO](corePoolSize = 4).flatMap { implicit S =>
       for {
+        cli    <- Http1Client.stream[IO]()
         inq    <- Stream.eval(async.boundedQueue[IO, executeEngine.EventType](10))
         out    <- Stream.eval(async.topic[IO, SeqexecEvent](NullEvent))
-        engine <- Stream.eval(engineIO)
+        engine <- Stream.eval(engineIO(cli))
         web    <- Stream.eval(webServerIO(inq, out, engine))
         exit   <- Stream(
                     engine.eventStream(inq).to(out.publish),

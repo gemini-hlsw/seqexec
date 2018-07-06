@@ -15,6 +15,8 @@ import seqexec.model.ActionType
 import seqexec.model.Model.Instrument.GmosS
 import seqexec.model.Model.{SequenceMetadata, SequenceState, StepConfig}
 import seqexec.server.SeqTranslate.ObserveContext
+import seqexec.server.keywords.DhsClientSim
+import seqexec.server.keywords.GDSClient
 import seqexec.server.flamingos2.Flamingos2ControllerSim
 import seqexec.server.gcal.GcalControllerEpics
 import seqexec.server.gmos.GmosControllerSim
@@ -63,12 +65,12 @@ class SeqTranslateSpec extends FlatSpec {
     new ODBProxy(new Peer("localhost", 8443, null), ODBProxy.DummyOdbCommands),
     DhsClientSim(LocalDate.of(2016, 4, 15)),
     TcsControllerEpics,
-    GcalControllerEpics,
+    GcalControllerEpics(DhsClientSim(LocalDate.of(2016, 4, 15))),
     Flamingos2ControllerSim,
     GmosControllerSim.south,
     GmosControllerSim.north,
     GnirsControllerSim,
-    GPIController(new GPIClient(Giapi.giapiConnectionIO.connect.unsafeRunSync, scala.concurrent.ExecutionContext.Implicits.global))
+    GPIController(new GPIClient(Giapi.giapiConnectionIO.connect.unsafeRunSync, scala.concurrent.ExecutionContext.Implicits.global), new GDSClient[IO](null))
   )
 
   private val translatorSettings = SeqTranslate.Settings(tcsKeywords = false, f2Keywords = false, gwsKeywords = false,
