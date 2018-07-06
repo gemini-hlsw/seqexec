@@ -20,7 +20,7 @@ import cats.implicits._
 
 object GmosHeader {
   // scalastyle:off
-  def header(inst: InstrumentSystem, gmosObsReader: GmosHeader.ObsKeywordsReader, gmosReader: GmosHeader.InstKeywordsReader, tcsKeywordsReader: TcsKeywordsReader): Header =
+  def header(inst: InstrumentSystem[IO], gmosObsReader: GmosHeader.ObsKeywordsReader, gmosReader: GmosHeader.InstKeywordsReader, tcsKeywordsReader: TcsKeywordsReader): Header =
     new Header {
       override def sendBefore(id: ImageFileId): SeqAction[Unit] = {
         sendKeywords(id, inst, List(

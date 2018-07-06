@@ -3,17 +3,18 @@
 
 package seqexec.server
 
+import cats.effect.IO
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.keywords.{DhsInstrument, KeywordsClient}
 import edu.gemini.spModel.config2.Config
 import squants.Time
 
-trait InstrumentSystem extends System {
+trait InstrumentSystem[F[_]] extends System[F] {
   // The name used for this instrument in the science fold configuration
   val sfName: String
   val contributorName: String
   val observeControl: InstrumentSystem.ObserveControl
-  def observe(config: Config): SeqObserve[ImageFileId, ObserveCommand.Result]
+  def observe(config: Config): SeqObserveF[F, ImageFileId, ObserveCommand.Result]
   //Expected total observe lapse, used to calculate timeout
   def calcObserveTime(config: Config): Time
 
@@ -22,12 +23,12 @@ trait InstrumentSystem extends System {
 
 object InstrumentSystem {
 
-  implicit val HeaderProvider: HeaderProvider[InstrumentSystem] = new HeaderProvider[InstrumentSystem] {
-    def name(a: InstrumentSystem): String = a match {
+  implicit val HeaderProvider: HeaderProvider[InstrumentSystem[IO]] = new HeaderProvider[InstrumentSystem[IO]] {
+    def name(a: InstrumentSystem[IO]): String = a match {
       case i: DhsInstrument => i.dhsInstrumentName
       case _                => sys.error("Missing instrument")
     }
-    def keywordsClient(a: InstrumentSystem): KeywordsClient = a match {
+    def keywordsClient(a: InstrumentSystem[IO]): KeywordsClient = a match {
       case u: DhsInstrument => u
       case _                => sys.error("Missing instrument")
     }

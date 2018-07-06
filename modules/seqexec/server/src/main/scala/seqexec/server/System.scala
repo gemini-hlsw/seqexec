@@ -6,13 +6,13 @@ package seqexec.server
 import seqexec.model.Model.Resource
 import edu.gemini.spModel.config2.Config
 
-trait System {
+trait System[F[_]] {
   val resource: Resource
 
   /**
-    * Called to configure a system, returns a Task[SeqexecFailure \/ ConfigResult]
+    * Called to configure a system
     */
-  def configure(config: Config): SeqAction[ConfigResult]
+  def configure(config: Config): SeqActionF[F, ConfigResult[F]]
 
   def notifyObserveStart: SeqAction[Unit]
 
@@ -20,4 +20,4 @@ trait System {
 }
 
 //Placeholder for config response
-final case class ConfigResult(sys: System)
+final case class ConfigResult[F[_]](sys: System[F])

@@ -22,6 +22,13 @@ package keywords {
       dhsClient.setKeywords(id, keywords, finalFlag)
   }
 
+  trait GDSInstrument[F[_]] extends KeywordsClient {
+    val gdsClient: GDSClient[F]
+
+    def setKeywords(id: ImageFileId, keywords: KeywordBag, finalFlag: Boolean): SeqAction[Unit] =
+      gdsClient.setKeywords(id, keywords, finalFlag)
+  }
+
   final case class StandaloneDhsClient(dhsClient: DhsClient) extends KeywordsClient {
     override def setKeywords(id: ImageFileId, keywords: KeywordBag, finalFlag: Boolean): SeqAction[Unit] =
       dhsClient.setKeywords(id, keywords, finalFlag)

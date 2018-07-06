@@ -64,6 +64,7 @@ package object server {
   type SeqActionF[F[_], A] = EitherT[F, SeqexecFailure, A]
 
   type SeqObserve[A, B] = Reader[A, SeqAction[B]]
+  type SeqObserveF[F[_], A, B] = Reader[A, SeqActionF[F, B]]
 
   type ExecutionQueue = List[Observation.Id]
   type ExecutionQueues = Map[String, ExecutionQueue]

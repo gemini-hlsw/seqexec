@@ -20,7 +20,7 @@ import edu.gemini.spModel.seqcomp.SeqConfigNames.INSTRUMENT_KEY
 import cats.implicits._
 
 object Flamingos2Header {
-  def header(inst: InstrumentSystem, f2ObsReader: Flamingos2Header.ObsKeywordsReader, tcsKeywordsReader: TcsKeywordsReader): Header =
+  def header(inst: InstrumentSystem[IO], f2ObsReader: Flamingos2Header.ObsKeywordsReader, tcsKeywordsReader: TcsKeywordsReader): Header =
     new Header {
       import Header.Implicits._
       import Header._

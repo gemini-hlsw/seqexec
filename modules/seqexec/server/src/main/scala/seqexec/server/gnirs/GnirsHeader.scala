@@ -3,6 +3,7 @@
 
 package seqexec.server.gnirs
 
+import cats.effect.IO
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.Header._
 import seqexec.server.InstrumentSystem
@@ -11,7 +12,7 @@ import seqexec.server.tcs.TcsKeywordsReader
 import seqexec.server.{Header, SeqAction}
 
 object GnirsHeader {
-  def header(inst: InstrumentSystem, gnirsReader: GnirsKeywordReader, tcsReader: TcsKeywordsReader): Header = new Header {
+  def header(inst: InstrumentSystem[IO], gnirsReader: GnirsKeywordReader, tcsReader: TcsKeywordsReader): Header = new Header {
     override def sendBefore(id: ImageFileId): SeqAction[Unit] =
       sendKeywords(id, inst, List(
         buildInt32(tcsReader.getGnirsInstPort.orDefault, "INPORT"),
