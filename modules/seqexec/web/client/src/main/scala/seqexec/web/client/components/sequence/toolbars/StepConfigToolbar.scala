@@ -75,7 +75,7 @@ object StepConfigToolbar {
                 (p.router.link(SequenceConfigPage(p.instrument, p.id, p.step))
                   (Button(Button.Props(icon = Some(IconChevronLeft), labeled = LeftLabeled, onClick = previousStep(p)), "Prev"))): VdomElement,
                 ReactFragment()),
-              Label(Label.Props(RunningStep(p.step, p.total).show, size = Size.Large)),
+              Label(Label.Props(RunningStep(p.step, p.total).show, size = Size.Large, extraStyles = List(SeqexecStyles.labelAsButton))),
               (p.step < p.total - 1).fold(
                 (p.router.link(SequenceConfigPage(p.instrument, p.id, p.step + 2))
                   (Button(Button.Props(icon = Some(IconChevronRight), labeled = RightLabeled, onClick = nextStep(p)), "Next"))): VdomElement,

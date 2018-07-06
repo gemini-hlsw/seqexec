@@ -1,3 +1,5 @@
+@import "~semantic-ui-less/themes/default/globals/site.variables";
+
 @color_2: #573a08;
 @color_3: black;
 @text_color: rgba(0, 0, 0, 0.95);
@@ -692,6 +694,14 @@ body {
 
 .ReactVirtualized__Table__headerTruncatedText {
   flex: auto;
+}
+
+// Get the same background color as a button
+.SeqexecStyles-labelAsButton {
+  @import "~semantic-ui-less/themes/default/elements/button.variables";
+  background: @background !important;
+  padding-top: @verticalPadding !important;
+  padding-bottom: @verticalPadding !important;
 }
 
 //===========================
