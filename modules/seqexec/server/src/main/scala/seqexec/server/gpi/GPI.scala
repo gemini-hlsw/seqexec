@@ -43,7 +43,9 @@ final case class GPI[F[_]: Sync](controller: GPIController[F]) extends Instrumen
       .flatMap(controller.applyConfig)
       .map(_ => ConfigResult(this))
 
-  override def notifyObserveEnd: SeqAction[Unit] = controller.endObserve
+  override def notifyObserveEnd: SeqActionF[F, Unit] = controller.endObserve
+
+  override def notifyObserveStart = SeqActionF.void
 
   override def calcObserveTime(config: Config): Time =
     config

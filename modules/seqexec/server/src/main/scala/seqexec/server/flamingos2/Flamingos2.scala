@@ -44,6 +44,8 @@ final case class Flamingos2(f2Controller: Flamingos2Controller, dhsClient: DhsCl
 
   override def notifyObserveEnd: SeqAction[Unit] = f2Controller.endObserve
 
+  override def notifyObserveStart = SeqAction.void
+
   override def calcObserveTime(config: Config): Time = config.extract(OBSERVE_KEY / EXPOSURE_TIME_PROP).as[java.lang.Double].map(x => Seconds(x.toDouble)).getOrElse(Seconds(360))
 }
 

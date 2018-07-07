@@ -46,6 +46,8 @@ final case class Gnirs(controller: GnirsController, dhsClient: DhsClient) extend
     SeqAction.either(fromSequenceConfig(config)).flatMap(controller.applyConfig).map(_ => ConfigResult(this))
 
   override def notifyObserveEnd: SeqAction[Unit] = controller.endObserve
+
+  override def notifyObserveStart = SeqAction.void
 }
 
 object Gnirs {

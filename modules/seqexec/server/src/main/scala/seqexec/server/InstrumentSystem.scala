@@ -17,8 +17,6 @@ trait InstrumentSystem[F[_]] extends System[F] {
   def observe(config: Config): SeqObserveF[F, ImageFileId, ObserveCommand.Result]
   //Expected total observe lapse, used to calculate timeout
   def calcObserveTime(config: Config): Time
-
-  override def notifyObserveStart = SeqAction.void
 }
 
 object InstrumentSystem {

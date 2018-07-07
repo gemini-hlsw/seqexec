@@ -26,7 +26,7 @@ import org.log4s.getLogger
 import scala.concurrent.duration.Duration
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.keywords.GDSClient
-import seqexec.server.{SeqAction, SeqActionF}
+import seqexec.server.SeqActionF
 
 object GPILookupTables {
 
@@ -196,8 +196,8 @@ final case class GPIController[F[_]: Sync](gpiClient: GPIClient[F], gdsClient: G
   def observe(fileId: ImageFileId): SeqActionF[F, ImageFileId] =
     EitherT(gpiClient.observe(fileId).map(_ => fileId.asRight))
 
-  def endObserve: SeqAction[Unit] =
-    SeqAction.void
+  def endObserve: SeqActionF[F, Unit] =
+    SeqActionF.void
 }
 
 object GPIController {

@@ -79,6 +79,8 @@ abstract class Gmos[T<:GmosController.SiteDependentTypes](controller: GmosContro
 
   override def notifyObserveEnd: SeqAction[Unit] = controller.endObserve
 
+  override def notifyObserveStart = SeqAction.void
+
   override def configure(config: Config): SeqAction[ConfigResult[IO]] =
     fromSequenceConfig(config).flatMap(controller.applyConfig).map(_ => ConfigResult(this))
 

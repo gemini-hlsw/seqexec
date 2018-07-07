@@ -6,7 +6,7 @@ package seqexec
 import cats.data._
 import cats.effect.IO
 import cats.implicits._
-import cats.kernel.Eq
+import cats.{Applicative, Eq}
 import edu.gemini.spModel.`type`.SequenceableSpType
 import edu.gemini.spModel.guide.StandardGuideOptions
 import fs2.async.mutable.Queue
@@ -83,6 +83,11 @@ package object server {
     def either[A](a: => TrySeq[A]): SeqAction[A] = EitherT(IO.apply(a))
     def fail[A](p: SeqexecFailure): SeqAction[A] = EitherT(IO.apply(TrySeq.fail(p)))
     def void: SeqAction[Unit]                    = SeqAction.apply(())
+  }
+
+  object SeqActionF {
+    def void[F[_]: Applicative]: SeqActionF[F, Unit] =
+      EitherT.liftF(Applicative[F].pure(()))
   }
 
   implicit class MoreDisjunctionOps[A,B](ab: Either[A, B]) {
