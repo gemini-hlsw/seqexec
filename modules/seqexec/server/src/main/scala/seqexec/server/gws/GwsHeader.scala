@@ -13,7 +13,6 @@ import seqexec.server.{EpicsHealth, Header, HeaderProvider, SeqAction}
 
 object GwsHeader {
   def headerProvider(dhs: DhsClient): HeaderProvider[GwsHeader.type] = new HeaderProvider[GwsHeader.type] {
-    def name(a: GwsHeader.type): String = "gws"
     def keywordsClient(a: GwsHeader.type): KeywordsClient = StandaloneDhsClient(dhs)
   }
   def header[A: HeaderProvider](inst: A, gwsReader: GwsKeywordReader): Header = new Header {

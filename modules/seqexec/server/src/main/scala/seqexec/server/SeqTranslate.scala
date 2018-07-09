@@ -14,7 +14,6 @@ import seqexec.model.Model.{Instrument, Resource, SequenceMetadata, StepState}
 import seqexec.model.{ActionType, Model}
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.ConfigUtilOps._
-import seqexec.server.HeaderProvider._
 import seqexec.server.SeqTranslate.{Settings, Systems}
 import seqexec.server.SeqexecFailure.{Unexpected, UnrecognizedInstrument}
 import seqexec.server.InstrumentSystem._
@@ -98,9 +97,9 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
         _   <- sendDataStart(obsId, fileId, d)
         _   <- notifyObserveStart
         _   <- headers(ctx).map(_.sendBefore(fileId)).sequence
-        _   <- info(s"Start ${inst.name} observation ${obsId.format} with label $fileId")
+        _   <- info(s"Start ${inst.resource.show} observation ${obsId.format} with label $fileId")
         r   <- inst.observe(config)(fileId)
-        _   <- info(s"Completed ${inst.name} observation ${obsId.format} with label $fileId")
+        _   <- info(s"Completed ${inst.resource.show} observation ${obsId.format} with label $fileId")
         ret <- observeTail(fileId, d)(r)
       } yield ret
 

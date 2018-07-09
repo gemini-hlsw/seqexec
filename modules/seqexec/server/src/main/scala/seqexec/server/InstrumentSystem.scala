@@ -5,11 +5,11 @@ package seqexec.server
 
 import cats.effect.IO
 import seqexec.model.dhs.ImageFileId
-import seqexec.server.keywords.{DhsInstrument, KeywordsClient}
+import seqexec.server.keywords.KeywordsClient
 import edu.gemini.spModel.config2.Config
 import squants.Time
 
-trait InstrumentSystem[F[_]] extends System[F] {
+trait InstrumentSystem[F[_]] extends System[F] with KeywordsClient {
   // The name used for this instrument in the science fold configuration
   val sfName: String
   val contributorName: String
@@ -22,14 +22,7 @@ trait InstrumentSystem[F[_]] extends System[F] {
 object InstrumentSystem {
 
   implicit val HeaderProvider: HeaderProvider[InstrumentSystem[IO]] = new HeaderProvider[InstrumentSystem[IO]] {
-    def name(a: InstrumentSystem[IO]): String = a match {
-      case i: DhsInstrument => i.dhsInstrumentName
-      case _                => sys.error("Missing instrument")
-    }
-    def keywordsClient(a: InstrumentSystem[IO]): KeywordsClient = a match {
-      case u: DhsInstrument => u
-      case _                => sys.error("Missing instrument")
-    }
+    def keywordsClient(a: InstrumentSystem[IO]): KeywordsClient = a
   }
   sealed trait ObserveControl
   object Uncontrollable extends ObserveControl

@@ -25,7 +25,6 @@ trait GcalController {
 
 object GcalController {
   implicit val headerProvider: HeaderProvider[GcalController] = new HeaderProvider[GcalController] {
-    def name(a: GcalController): String = "gcal"
     def keywordsClient(a: GcalController): KeywordsClient = StandaloneDhsClient(a.dhsClient)
   }
 

@@ -10,8 +10,6 @@ import seqexec.server.keywords._
  * Typeclass for types that can send keywords
  */
 trait HeaderProvider[A] {
-  // Name of the instrument to be sent to the DHS
-  def name(a: A): String
   // Client to send keywords to an appropriate server
   def keywordsClient(a: A): KeywordsClient
 }
@@ -20,7 +18,6 @@ object HeaderProvider {
   def apply[A](implicit ev: HeaderProvider[A]): HeaderProvider[A] = ev
 
   final class HeaderProviderOps[A: HeaderProvider](val a: A) {
-    def name: String = HeaderProvider[A].name(a)
     def keywordsClient: KeywordsClient = HeaderProvider[A].keywordsClient(a)
   }
 
@@ -54,12 +51,15 @@ object Header {
   def buildBoolean(get: SeqAction[Boolean], name: String ): KeywordBag => SeqAction[KeywordBag] = buildKeyword(get, name, BooleanKeyword)
   def buildString(get: SeqAction[String], name: String ): KeywordBag => SeqAction[KeywordBag]   = buildKeyword(get, name, StringKeyword)
 
-  private def bundleKeywords[A: HeaderProvider](inst: A, ks: Seq[KeywordBag => SeqAction[KeywordBag]]): SeqAction[KeywordBag] = {
-    val z = SeqAction(KeywordBag(StringKeyword("instrument", inst.name)))
-    ks.foldLeft(z) { case (a,b) => a.flatMap(b) }
+  private def bundleKeywords[A: HeaderProvider](inst: A, ks: List[KeywordBag => SeqAction[KeywordBag]]): SeqAction[KeywordBag] = inst match {
+    case i: DhsInstrument =>
+      val z = SeqAction(KeywordBag(StringKeyword("instrument", i.dhsInstrumentName)))
+      ks.foldLeft(z) { case (a, b) => a.flatMap(b) }
+    case _ =>
+      ks.foldLeft(SeqAction(KeywordBag.empty)) { case (a, b) => a.flatMap(b) }
   }
 
-  def sendKeywords[A: HeaderProvider](id: ImageFileId, inst: A, b: Seq[KeywordBag => SeqAction[KeywordBag]]): SeqAction[Unit] = for {
+  def sendKeywords[A: HeaderProvider](id: ImageFileId, inst: A, b: List[KeywordBag => SeqAction[KeywordBag]]): SeqAction[Unit] = for {
     bag <- bundleKeywords(inst, b)
     _   <- inst.keywordsClient.setKeywords(id, bag, finalFlag = false)
   } yield ()
