@@ -124,7 +124,7 @@ object StepsTable {
     case s if s.status === StepState.Paused  => SeqexecStyles.rowNegative
     case s if s.status === StepState.Skipped => SeqexecStyles.rowActive
     case s if s.isFinished                   => SeqexecStyles.rowDisabled
-    case _                                   => SeqexecStyles.rowNone
+    case _                                   => SeqexecStyles.stepRow
   }
 
   def rowClassName(p: Props)(i: Int): String = ((i, p.rowGetter(i), p.loggedIn) match {

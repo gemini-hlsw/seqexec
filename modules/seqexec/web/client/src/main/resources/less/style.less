@@ -1,4 +1,5 @@
 @import "~semantic-ui-less/themes/default/globals/site.variables";
+@import "~semantic-ui-less/themes/default/collections/table.variables";
 
 @color_2: #573a08;
 @color_3: black;
@@ -15,7 +16,6 @@
 @background_color_6: #f9fafb;
 @background_color_7: rgba(0, 0, 0, 0.05);
 @background_color_8: #fff6f6;
-@background_color_9: #e0e0e0;
 @background_color_10: #fcfff5;
 @border_color: rgba(34, 36, 38, 0.15);
 @table_row_left_padding: 7px;
@@ -401,7 +401,7 @@ body {
 }
 
 .SeqexecStyles-rowActive {
-  background-color: @background_color_9;
+  background-color: @background;
   color: @color_7;
   box-shadow: 0px 0px 0px rgba(0, 0, 0, 0.87) inset;
   background-clip: padding-box;
@@ -421,7 +421,12 @@ body {
 
 .SeqexecStyles-rowDisabled {
   pointer-events: none;
-  color: @color_6;
+  background: @background;
+  color: @disabledTextColor;
+}
+
+.SeqexecStyles-rowNone {
+  background: @background;
 }
 
 .stepRowWithBreakpoint() {
@@ -429,8 +434,6 @@ body {
   text-overflow: ellipsis;
   word-wrap: break-word;
   white-space: nowrap;
-  background-color: @background_color_1;
-  color: @text_color;
   .borderRight();
   .borderTop();
   background-size: 100% 4px;
@@ -442,6 +445,7 @@ body {
 
 .SeqexecStyles-stepRowWithBreakpoint {
   .stepRowWithBreakpoint();
+  background: @background;
   background-image: linear-gradient(
     to right,
     @breakpoint_line_color 0px,
