@@ -1,6 +1,8 @@
 #!/bin/bash
 set -xe
 
+cd `dirname $0`/..
+
 ###
 ### BUILD
 ###
@@ -41,7 +43,7 @@ done
 
 # Set up the schema and run tests
 /usr/local/bin/sbt                                        \
-  -jvm-opts travis-jvmopts                                \
+  -jvm-opts build/buildkite-jvmopts                       \
   -no-colors                                              \
   -Docs3.skipDependencyUpdates                            \
   -Docs3.databaseUrl=jdbc:postgresql://$HOST_AND_PORT/gem \
@@ -53,7 +55,7 @@ done
 ###
 
 /usr/local/bin/sbt                      \
-  -jvm-opts travis-jvmopts              \
+  -jvm-opts build/buildkite-jvmopts     \
   -no-colors                            \
   -Docs3.skipDependencyUpdates          \
   ui/fastOptJS                          \
