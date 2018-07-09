@@ -108,6 +108,8 @@ object LogArea {
   private val LevelWidth     = 80
   private val ClipboardWidth = 37
 
+  private val LogColumnStyle: String = SeqexecStyles.queueText.htmlClass
+
   /**
    * Build the table log
    */
@@ -125,9 +127,9 @@ object LogArea {
     }
 
     val columns = List(
-      Column(Column.props(TimestampWidth, "local", label = "Timestamp", disableSort = true)),
-      Column(Column.props(LevelWidth, "level", label = "Level", disableSort = true)),
-      Column(Column.props(size.width.toInt - TimestampWidth - LevelWidth - ClipboardWidth, "msg", label = "Message", disableSort = true)),
+      Column(Column.props(TimestampWidth, "local", label = "Timestamp", disableSort = true, flexShrink = 0, flexGrow = 0, className = LogColumnStyle)),
+      Column(Column.props(LevelWidth, "level", label = "Level", disableSort = true, flexShrink = 0, flexGrow = 0, className = LogColumnStyle)),
+      Column(Column.props(size.width.toInt - TimestampWidth - LevelWidth - ClipboardWidth, "msg", label = "Message", disableSort = true, flexShrink = 0, flexGrow = 0, className = LogColumnStyle)),
       Column(Column.props(ClipboardWidth, "clip", disableSort = true, flexShrink = 0, flexGrow = 0, headerRenderer = clipboardHeaderRenderer, cellRenderer = clipboardCellRenderer, className = SeqexecStyles.clipboardIconDiv.htmlClass, headerClassName = SeqexecStyles.clipboardIconHeader.htmlClass))
     )
 
