@@ -3,6 +3,7 @@
 
 package seqexec.server.gws
 
+import cats.effect.IO
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.keywords.DhsClient
 import seqexec.server.keywords.StandaloneDhsClient
@@ -13,7 +14,7 @@ import seqexec.server.{EpicsHealth, Header, HeaderProvider, SeqAction}
 
 object GwsHeader {
   def headerProvider(dhs: DhsClient): HeaderProvider[GwsHeader.type] = new HeaderProvider[GwsHeader.type] {
-    def keywordsClient(a: GwsHeader.type): KeywordsClient = StandaloneDhsClient(dhs)
+    def keywordsClient(a: GwsHeader.type): KeywordsClient[IO] = StandaloneDhsClient(dhs)
   }
   def header[A: HeaderProvider](inst: A, gwsReader: GwsKeywordReader): Header = new Header {
     override def sendBefore(id: ImageFileId): SeqAction[Unit] = {

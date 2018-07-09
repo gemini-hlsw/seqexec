@@ -4,9 +4,9 @@
 package seqexec
 
 import cats.data._
-import cats.effect.IO
+import cats.effect.{IO, Sync}
 import cats.implicits._
-import cats.{Applicative, Eq}
+import cats.{Applicative, Eq, Functor}
 import edu.gemini.spModel.`type`.SequenceableSpType
 import edu.gemini.spModel.guide.StandardGuideOptions
 import fs2.async.mutable.Queue
@@ -86,6 +86,8 @@ package object server {
   }
 
   object SeqActionF {
+    def apply[F[_]: Sync, A](a: => A): SeqActionF[F, A] = EitherT(Sync[F].delay(TrySeq(a)))
+    def liftF[F[_]: Functor, A](a: => F[A]): SeqActionF[F, A] = EitherT.liftF(a)
     def void[F[_]: Applicative]: SeqActionF[F, Unit] =
       EitherT.liftF(Applicative[F].pure(()))
   }

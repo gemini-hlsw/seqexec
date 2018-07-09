@@ -9,7 +9,7 @@ import seqexec.server.keywords.KeywordsClient
 import edu.gemini.spModel.config2.Config
 import squants.Time
 
-trait InstrumentSystem[F[_]] extends System[F] with KeywordsClient {
+trait InstrumentSystem[F[_]] extends System[F] with KeywordsClient[F] {
   // The name used for this instrument in the science fold configuration
   val sfName: String
   val contributorName: String
@@ -22,7 +22,7 @@ trait InstrumentSystem[F[_]] extends System[F] with KeywordsClient {
 object InstrumentSystem {
 
   implicit val HeaderProvider: HeaderProvider[InstrumentSystem[IO]] = new HeaderProvider[InstrumentSystem[IO]] {
-    def keywordsClient(a: InstrumentSystem[IO]): KeywordsClient = a
+    override def keywordsClient(a: InstrumentSystem[IO]): KeywordsClient[IO] = a
   }
   sealed trait ObserveControl
   object Uncontrollable extends ObserveControl

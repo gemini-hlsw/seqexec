@@ -3,17 +3,18 @@
 
 package seqexec.server
 
+import cats.effect.IO
 import seqexec.model.dhs.ImageFileId
 
 package keywords {
   /**
    * Clients that can send keywords to a server that could e.g. write them to a file
    */
-  trait KeywordsClient {
-    def setKeywords(id: ImageFileId, keywords: KeywordBag, finalFlag: Boolean): SeqAction[Unit]
+  trait KeywordsClient[F[_]] {
+    def setKeywords(id: ImageFileId, keywords: KeywordBag, finalFlag: Boolean): SeqActionF[F, Unit]
   }
 
-  trait DhsInstrument extends KeywordsClient {
+  trait DhsInstrument extends KeywordsClient[IO] {
     val dhsClient: DhsClient
 
     val dhsInstrumentName: String
@@ -22,14 +23,14 @@ package keywords {
       dhsClient.setKeywords(id, keywords, finalFlag)
   }
 
-  trait GDSInstrument[F[_]] extends KeywordsClient {
+  trait GDSInstrument[F[_]] extends KeywordsClient[F] {
     val gdsClient: GDSClient[F]
 
-    def setKeywords(id: ImageFileId, keywords: KeywordBag, finalFlag: Boolean): SeqAction[Unit] =
+    def setKeywords(id: ImageFileId, keywords: KeywordBag, finalFlag: Boolean): SeqActionF[F, Unit] =
       gdsClient.setKeywords(id, keywords, finalFlag)
   }
 
-  final case class StandaloneDhsClient(dhsClient: DhsClient) extends KeywordsClient {
+  final case class StandaloneDhsClient(dhsClient: DhsClient) extends KeywordsClient[IO] {
     override def setKeywords(id: ImageFileId, keywords: KeywordBag, finalFlag: Boolean): SeqAction[Unit] =
       dhsClient.setKeywords(id, keywords, finalFlag)
   }
