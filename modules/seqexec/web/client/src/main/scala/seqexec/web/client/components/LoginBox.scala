@@ -45,7 +45,7 @@ object LoginBox {
       $.modState(_.copy(username = v))
     }
 
-    def loggedInEvent(u: UserDetails): Callback = updateProgressMsg("") >> $.props >>= {_.visible.dispatchCB(LoggedIn(u))}
+    def loggedInEvent(u: UserDetails): Callback = $.modState(_ => empty) >> $.props >>= {_.visible.dispatchCB(LoggedIn(u))}
     def updateProgressMsg(m: String): Callback = $.modState(_.copy(progressMsg = Some(m), errorMsg = None))
     def updateErrorMsg(m: String): Callback = $.modState(_.copy(errorMsg = Some(m), progressMsg = None))
     def closeBox: Callback = $.modState(_ => empty) >> $.props >>= {_.visible.dispatchCB(CloseLoginBox)}
