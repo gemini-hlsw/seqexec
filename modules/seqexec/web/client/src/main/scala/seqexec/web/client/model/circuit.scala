@@ -9,6 +9,7 @@ import diode._
 import diode.data._
 import diode.react.ReactConnector
 import gem.Observation
+import gem.enum.Site
 import java.util.logging.Logger
 import japgolly.scalajs.react.Callback
 import seqexec.model.UserDetails
@@ -38,7 +39,7 @@ object circuit {
 
   // All these classes are focused views of the root model. They are used to only update small sections of the
   // UI even if other parts of the root model change
-  final case class WebSocketsFocus(location: Pages.SeqexecPages, sequences: LoadedSequences, user: Option[UserDetails], clientId: Option[ClientID], site: Option[SeqexecSite]) extends UseValueEq
+  final case class WebSocketsFocus(location: Pages.SeqexecPages, sequences: LoadedSequences, user: Option[UserDetails], clientId: Option[ClientID], site: Option[Site]) extends UseValueEq
   final case class InitialSyncFocus(location: Pages.SeqexecPages, sod: SequencesOnDisplay, firstLoad: Boolean) extends UseValueEq
   final case class SequenceInQueue(id: Observation.Id, status: SequenceState, instrument: Instrument, active: Boolean, name: String, targetName: Option[TargetName], runningStep: Option[RunningStep]) extends UseValueEq
   object SequenceInQueue {

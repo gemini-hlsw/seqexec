@@ -4,8 +4,8 @@
 package seqexec.web.client
 
 import cats.effect.IO
+import gem.enum.Site
 import java.util.logging.{Level, Logger}
-import java.time.ZoneId
 import org.scalajs.dom.document
 import org.scalajs.dom.raw.Element
 import scala.scalajs.js.annotation.{JSExport, JSExportTopLevel}
@@ -14,7 +14,6 @@ import seqexec.web.client.services.log.ConsoleHandler
 import seqexec.web.client.services.SeqexecWebClient
 import seqexec.web.client.actions.Initialize
 import seqexec.web.client.circuit.SeqexecCircuit
-import seqexec.model.Model.SeqexecSite
 
 /**
   * Seqexec WebApp entry point
@@ -38,19 +37,16 @@ object SeqexecApp {
     ()
   }
 
-  def setupSite: IO[SeqexecSite] = IO.fromFuture {
+  def setupSite: IO[Site] = IO.fromFuture {
     IO {
       import scala.concurrent.ExecutionContext.Implicits.global
 
       // Read the site from the webserver
-      SeqexecWebClient.site().map {
-        case "GN" => SeqexecSite.SeqexecGN(ZoneId.of("Pacific/Honolulu"))
-        case _    => SeqexecSite.SeqexecGS(ZoneId.of("America/Santiago"))
-      }
+      SeqexecWebClient.site().map(Site.fromTag(_).getOrElse(Site.GS))
     }
   }
 
-  def initializeDataModel(seqexecSite: SeqexecSite): IO[Unit] = IO {
+  def initializeDataModel(seqexecSite: Site): IO[Unit] = IO {
     // Set the instruments before adding it to the dom
     SeqexecCircuit.dispatch(Initialize(seqexecSite))
   }

@@ -3,10 +3,16 @@
 
 package seqexec.web.client.components.sequence
 
+import cats.implicits._
 import diode.react.ModelProxy
-import seqexec.model.Model.{SequenceState, SeqexecSite}
+import gem.enum.Site
+import japgolly.scalajs.react.extra.router.RouterCtl
+import japgolly.scalajs.react.component.Scala.Unmounted
+import japgolly.scalajs.react.vdom.html_<^._
+import japgolly.scalajs.react._
+import seqexec.model.Model.SequenceState
 import seqexec.web.client.actions.{NavigateTo, SelectIdToDisplay, SelectInstrumentToDisplay}
-import seqexec.web.client.ModelOps.RunningStep
+import seqexec.web.client.ModelOps._
 import seqexec.web.client.model.Pages.{InstrumentPage, SequencePage, SeqexecPages}
 import seqexec.web.client.circuit.{SeqexecCircuit, InstrumentStatusFocus}
 import seqexec.web.client.semanticui._
@@ -14,14 +20,9 @@ import seqexec.web.client.semanticui.elements.icon.Icon._
 import seqexec.web.client.semanticui.elements.label.Label
 import seqexec.web.client.components.SeqexecStyles
 import web.client.style._
-import japgolly.scalajs.react.extra.router.RouterCtl
-import japgolly.scalajs.react.component.Scala.Unmounted
-import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react._
-import cats.implicits._
 
 object InstrumentTab {
-  final case class Props(router: RouterCtl[SeqexecPages], site: SeqexecSite, t: ModelProxy[InstrumentStatusFocus])
+  final case class Props(router: RouterCtl[SeqexecPages], site: Site, t: ModelProxy[InstrumentStatusFocus])
 
   private val component = ScalaComponent.builder[Props]("InstrumentMenu")
     .stateless
@@ -102,7 +103,7 @@ object InstrumentTab {
   * Menu with tabs
   */
 object InstrumentsTabs {
-  final case class Props(router: RouterCtl[SeqexecPages], site: SeqexecSite) {
+  final case class Props(router: RouterCtl[SeqexecPages], site: Site) {
     protected[sequence] val instrumentConnects = site.instruments.toList.map(i => SeqexecCircuit.connect(SeqexecCircuit.instrumentStatusReader(i)))
   }
 

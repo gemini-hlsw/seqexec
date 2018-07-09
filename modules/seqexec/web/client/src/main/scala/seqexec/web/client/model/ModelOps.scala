@@ -3,14 +3,17 @@
 
 package seqexec.web.client
 
-import seqexec.model.Model.{Resource, Instrument, SequenceState, SequenceView, Step, StepState, StandardStep}
 import cats.Show
 import cats.implicits._
+import cats.data.NonEmptyList
+import gem.enum.Site
+import seqexec.model.Model.{Resource, Instrument, SequenceState, SequenceView, Step, StepState, StandardStep}
 
 /**
   * Contains useful operations for the seqexec model
   */
 object ModelOps {
+
   implicit val sequenceStateShow: Show[SequenceState] = Show.show[SequenceState] {
     case SequenceState.Completed        => "Complete"
     case SequenceState.Running(true, _) => "Pausing..."
@@ -82,6 +85,13 @@ object ModelOps {
       }
 
     def isPartiallyExecuted: Boolean = s.steps.exists(_.isFinished)
+  }
+
+  implicit class SiteOps(val s: Site) extends AnyVal {
+    def instruments: NonEmptyList[Instrument] = s match {
+      case Site.GN => Instrument.gnInstruments
+      case Site.GS => Instrument.gsInstruments
+    }
   }
 
 }

@@ -5,7 +5,10 @@ package seqexec.web.client.components
 
 import diode.react.ModelProxy
 import diode.react.ReactPot._
-import seqexec.model.Model.SeqexecSite
+import gem.enum.Site
+import japgolly.scalajs.react._
+import japgolly.scalajs.react.vdom.html_<^._
+import japgolly.scalajs.react.component.Scala.Unmounted
 import seqexec.web.client.actions.NavigateTo
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.model.WebSocketConnection
@@ -13,10 +16,6 @@ import seqexec.web.client.model.Pages.Root
 import seqexec.web.client.OcsBuildInfo
 import seqexec.web.client.semanticui.elements.icon.Icon._
 import seqexec.web.client.semanticui.elements.menu.HeaderItem
-import japgolly.scalajs.react._
-import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.component.Scala.Unmounted
-import cats.implicits._
 import web.client.style._
 
 /**
@@ -31,7 +30,7 @@ object Footer {
     Callback(SeqexecCircuit.dispatch(NavigateTo(Root)))
   }
 
-  private val component = ScalaComponent.builder[SeqexecSite]("SeqexecAppBar")
+  private val component = ScalaComponent.builder[Site]("SeqexecAppBar")
     .stateless
     .render_P(p =>
       <.div(
@@ -39,7 +38,7 @@ object Footer {
         <.a(
           ^.cls := "header item",
           ^.onClick ==> goHome,
-          s"Seqexec - ${p.show}"
+          s"Seqexec - ${p.shortName}"
         ),
         HeaderItem(HeaderItem.Props(OcsBuildInfo.version, sub = true)),
         wsConnect(ConnectionState.apply),
@@ -58,7 +57,7 @@ object Footer {
     )
     .build
 
-  def apply(s: SeqexecSite): Unmounted[SeqexecSite, Unit, Unit] = component(s)
+  def apply(s: Site): Unmounted[Site, Unit, Unit] = component(s)
 }
 
 /**

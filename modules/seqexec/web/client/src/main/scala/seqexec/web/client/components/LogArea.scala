@@ -3,9 +3,20 @@
 
 package seqexec.web.client.components
 
-import scala.scalajs.js
+import cats.implicits._
+import mouse.all._
 import diode.react.ModelProxy
-import seqexec.model.Model.{SeqexecSite, ServerLogLevel}
+import gem.enum.Site
+import japgolly.scalajs.react._
+import japgolly.scalajs.react.component.Scala.Unmounted
+import japgolly.scalajs.react.CatsReact._
+import japgolly.scalajs.react.vdom.html_<^._
+import java.time.{Instant, LocalDateTime}
+import java.time.format.DateTimeFormatter
+import react.virtualized._
+import react.clipboard._
+import scala.scalajs.js
+import seqexec.model.Model.ServerLogLevel
 import seqexec.model.events._
 import seqexec.web.client.semanticui.elements.checkbox.Checkbox
 import seqexec.web.client.semanticui.elements.icon.Icon.{IconCopy, IconAngleDoubleDown, IconAngleDoubleUp}
@@ -16,16 +27,6 @@ import seqexec.web.client.model.{GlobalLog, SectionOpen}
 import seqexec.web.client.actions.ToggleLogArea
 import seqexec.web.common.FixedLengthBuffer
 import web.client.style._
-import japgolly.scalajs.react._
-import japgolly.scalajs.react.component.Scala.Unmounted
-import japgolly.scalajs.react.CatsReact._
-import japgolly.scalajs.react.vdom.html_<^._
-import react.virtualized._
-import react.clipboard._
-import java.time.{Instant, LocalDateTime}
-import java.time.format.DateTimeFormatter
-import cats.implicits._
-import mouse.all._
 
 /**
   * Area to display a sequence's log
@@ -77,14 +78,14 @@ object LogArea {
     val Zero: LogRow = apply("", Instant.MAX, ServerLogLevel.INFO, "")
   }
 
-  final case class Props(site: SeqexecSite, log: ModelProxy[GlobalLog]) {
+  final case class Props(site: Site, log: ModelProxy[GlobalLog]) {
     val reverseLog: FixedLengthBuffer[ServerLogMessage] = log().log.reverse
 
     // Filter according to the levels on the controls
     private def levelFilter(s: State)(m: ServerLogMessage): Boolean = s.allowedLevel(m.level)
 
     def rowGetter(s: State)(i: Int): LogRow = reverseLog.filter_(levelFilter(s) _).lift(i).map { l =>
-        val localTime = LocalDateTime.ofInstant(l.timestamp, site.timeZone)
+        val localTime = LocalDateTime.ofInstant(l.timestamp, site.timezone)
         LogRow(formatter.format(localTime), l.timestamp, l.level, l.msg)
       }.getOrElse(LogRow.Zero)
 
@@ -121,7 +122,7 @@ object LogArea {
 
     val clipboardCellRenderer: CellRenderer[js.Object, js.Object, LogRow] = (_, _, _, row: LogRow, _) => {
       // Simple csv export
-      val localTime = LocalDateTime.ofInstant(row.timestamp, p.site.timeZone)
+      val localTime = LocalDateTime.ofInstant(row.timestamp, p.site.timezone)
       val toCsv = s"${formatter.format(localTime)}, ${row.level}, ${row.msg}"
       CopyLogToClipboard(toCsv)
     }
@@ -215,5 +216,5 @@ object LogArea {
     }
     .build
 
-  def apply(site: SeqexecSite, p: ModelProxy[GlobalLog]): Unmounted[Props, State, Unit] = component(Props(site, p))
+  def apply(site: Site, p: ModelProxy[GlobalLog]): Unmounted[Props, State, Unit] = component(Props(site, p))
 }
