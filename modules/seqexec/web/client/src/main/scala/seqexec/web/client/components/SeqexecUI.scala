@@ -15,18 +15,20 @@ import japgolly.scalajs.react.{Callback, ScalaComponent}
 import japgolly.scalajs.react.MonocleReact._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import gem.Observation
+import gem.enum.Site
 import scala.scalajs.js.timers.SetTimeoutHandle
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.actions.WSConnect
 import seqexec.web.client.model.Pages._
+import seqexec.web.client.ModelOps._
 import seqexec.web.client.actions.{NavigateSilentTo, RequestSoundEcho}
 import seqexec.web.client.components.sequence.{HeadersSideBar, SequenceArea}
-import seqexec.model.Model.{Instrument, SeqexecSite}
+import seqexec.model.Model.Instrument
 import seqexec.web.client.model.WebSocketConnection
 import web.client.style._
 
 object AppTitle {
-  final case class Props(site: SeqexecSite, ws: ModelProxy[WebSocketConnection])
+  final case class Props(site: Site, ws: ModelProxy[WebSocketConnection])
 
   private val component = ScalaComponent.builder[Props]("SeqexecUI")
     .stateless
@@ -49,11 +51,11 @@ object AppTitle {
       )
     ).build
 
-  def apply(site: SeqexecSite, ws: ModelProxy[WebSocketConnection]): Unmounted[Props, Unit, Unit] = component(Props(site, ws))
+  def apply(site: Site, ws: ModelProxy[WebSocketConnection]): Unmounted[Props, Unit, Unit] = component(Props(site, ws))
 }
 
 object SeqexecMain {
-  final case class Props(site: SeqexecSite, ctl: RouterCtl[SeqexecPages])
+  final case class Props(site: Site, ctl: RouterCtl[SeqexecPages])
 
   private val lbConnect = SeqexecCircuit.connect(_.uiModel.loginBox)
   private val logConnect = SeqexecCircuit.connect(_.uiModel.globalLog)
@@ -105,7 +107,7 @@ object SeqexecMain {
       )
     ).build
 
-  def apply(site: SeqexecSite, ctl: RouterCtl[SeqexecPages]): Unmounted[Props, Unit, Unit] = component(Props(site, ctl))
+  def apply(site: Site, ctl: RouterCtl[SeqexecPages]): Unmounted[Props, Unit, Unit] = component(Props(site, ctl))
 }
 
 /**
@@ -114,7 +116,7 @@ object SeqexecMain {
 object SeqexecUI {
   final case class RouterProps(page: InstrumentPage, router: RouterCtl[InstrumentPage])
 
-  def pageTitle(site: SeqexecSite)(p: SeqexecPages): String = p match {
+  def pageTitle(site: Site)(p: SeqexecPages): String = p match {
     case SequenceConfigPage(_, id, _) => s"Seqexec - ${id.format}"
     case SequencePage(_, id, _)       => s"Seqexec - ${id.format}"
     case InstrumentPage(i)            => s"Seqexec - ${i.show}"
@@ -135,7 +137,7 @@ object SeqexecUI {
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
-  def router(site: SeqexecSite): IO[Router[SeqexecPages]] = {
+  def router(site: Site): IO[Router[SeqexecPages]] = {
     val instrumentNames = site.instruments.map(i => (i.show, i)).toList.toMap
 
     val routerConfig = RouterConfigDsl[SeqexecPages].buildConfig { dsl =>

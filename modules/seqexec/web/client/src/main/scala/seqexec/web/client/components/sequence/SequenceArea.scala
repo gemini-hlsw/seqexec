@@ -3,27 +3,28 @@
 
 package seqexec.web.client.components.sequence
 
+import cats.implicits._
 import diode.react.ModelProxy
-import seqexec.web.client.components.sequence.toolbars.{SequenceDefaultToolbar, StepConfigToolbar, SequenceAnonymousToolbar}
-import seqexec.web.client.circuit.{SeqexecCircuit, StatusAndStepFocus, InstrumentTabContentFocus}
-import seqexec.web.client.model.Pages.SeqexecPages
-import seqexec.web.client.model.{SectionOpen, SectionClosed}
-import seqexec.web.client.semanticui._
-import seqexec.web.client.semanticui.elements.message.IconMessage
-import seqexec.web.client.semanticui.elements.icon.Icon.IconInbox
-import seqexec.web.client.components.SeqexecStyles
-import seqexec.web.client.components.sequence.steps.StepsTable
-import seqexec.model.Model.SeqexecSite
-import web.client.style._
+import gem.enum.Site
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{CallbackTo, ScalaComponent, CatsReact}
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.CatsReact._
-import cats.implicits._
+import seqexec.web.client.components.sequence.toolbars.{SequenceDefaultToolbar, StepConfigToolbar, SequenceAnonymousToolbar}
+import seqexec.web.client.circuit.{SeqexecCircuit, StatusAndStepFocus, InstrumentTabContentFocus}
+import seqexec.web.client.model.Pages.SeqexecPages
+import seqexec.web.client.model.{SectionOpen, SectionClosed}
+import seqexec.web.client.ModelOps._
+import seqexec.web.client.semanticui._
+import seqexec.web.client.semanticui.elements.message.IconMessage
+import seqexec.web.client.semanticui.elements.icon.Icon.IconInbox
+import seqexec.web.client.components.SeqexecStyles
+import seqexec.web.client.components.sequence.steps.StepsTable
+import web.client.style._
 
 object SequenceStepsTableContainer {
-  final case class Props(router: RouterCtl[SeqexecPages], site: SeqexecSite, p: ModelProxy[StatusAndStepFocus]) {
+  final case class Props(router: RouterCtl[SeqexecPages], site: Site, p: ModelProxy[StatusAndStepFocus]) {
     protected[sequence] val sequenceControlConnects = site.instruments.toList.fproduct(i => SeqexecCircuit.connect(SeqexecCircuit.sequenceControlReader(i))).toMap
     private[sequence] val instrumentConnects = site.instruments.toList.fproduct(i => SeqexecCircuit.connect(SeqexecCircuit.stepsTableReader(i))).toMap
     protected[sequence] val sequenceObserverConnects = site.instruments.toList.fproduct(i => SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(i))).toMap
@@ -56,7 +57,7 @@ object SequenceStepsTableContainer {
       )
     }.build
 
-  def apply(router: RouterCtl[SeqexecPages], site: SeqexecSite, p: ModelProxy[StatusAndStepFocus]): Unmounted[Props, State, Unit] =
+  def apply(router: RouterCtl[SeqexecPages], site: Site, p: ModelProxy[StatusAndStepFocus]): Unmounted[Props, State, Unit] =
     component(Props(router, site, p))
 }
 
@@ -65,7 +66,7 @@ object SequenceStepsTableContainer {
 */
 object SequenceTabContent {
 
-  final case class Props(router: RouterCtl[SeqexecPages], site: SeqexecSite, p: ModelProxy[InstrumentTabContentFocus]) {
+  final case class Props(router: RouterCtl[SeqexecPages], site: Site, p: ModelProxy[InstrumentTabContentFocus]) {
     protected[sequence] val connect = SeqexecCircuit.connect(SeqexecCircuit.statusAndStepReader(p().instrument))
   }
 
@@ -91,7 +92,7 @@ object SequenceTabContent {
     }
     .build
 
-    def apply(router: RouterCtl[SeqexecPages], site: SeqexecSite, p: ModelProxy[InstrumentTabContentFocus]): Unmounted[Props, Unit, Unit] =
+    def apply(router: RouterCtl[SeqexecPages], site: Site, p: ModelProxy[InstrumentTabContentFocus]): Unmounted[Props, Unit, Unit] =
       component(Props(router, site, p))
 }
 
@@ -99,7 +100,7 @@ object SequenceTabContent {
  * Contains the area with tabs and the sequence body
  */
 object SequenceTabsBody {
-  final case class Props(router: RouterCtl[SeqexecPages], site: SeqexecSite) {
+  final case class Props(router: RouterCtl[SeqexecPages], site: Site) {
     protected[sequence] val instrumentConnects = site.instruments.toList.map(i => SeqexecCircuit.connect(SeqexecCircuit.instrumentTabContentReader(i)))
   }
 
@@ -112,7 +113,7 @@ object SequenceTabsBody {
       )
     ).build
 
-  def apply(router: RouterCtl[SeqexecPages], site: SeqexecSite): Unmounted[Props, Unit, Unit] =
+  def apply(router: RouterCtl[SeqexecPages], site: Site): Unmounted[Props, Unit, Unit] =
     component(Props(router, site))
 }
 
@@ -120,7 +121,7 @@ object SequenceTabsBody {
  * Top level container of the sequence area
  */
 object SequenceArea {
-  final case class Props(router: RouterCtl[SeqexecPages], site: SeqexecSite)
+  final case class Props(router: RouterCtl[SeqexecPages], site: Site)
 
   private val component = ScalaComponent.builder[Props]("QueueTableSection")
     .stateless
@@ -132,5 +133,5 @@ object SequenceArea {
       )
     ).build
 
-  def apply(router: RouterCtl[SeqexecPages], site: SeqexecSite): Unmounted[Props, Unit, Unit] = component(Props(router, site))
+  def apply(router: RouterCtl[SeqexecPages], site: Site): Unmounted[Props, Unit, Unit] = component(Props(router, site))
 }

@@ -10,30 +10,9 @@ import cats.implicits._
 import cats.data.NonEmptyList
 import gem.Observation
 
-import java.time.ZoneId
-
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference", "org.wartremover.warts.IsInstanceOf"))
 // scalastyle:off
 object Model {
-  // We use this to avoid a dependency on spModel, should be replaced by gem
-  sealed trait SeqexecSite extends Product with Serializable {
-    def instruments: NonEmptyList[Instrument]
-    def timeZone: ZoneId
-  }
-  object SeqexecSite {
-    final case class SeqexecGN(timeZone: ZoneId) extends SeqexecSite {
-      val instruments: NonEmptyList[Instrument] = Instrument.gnInstruments
-    }
-
-    final case class SeqexecGS(timeZone: ZoneId) extends SeqexecSite {
-      val instruments : NonEmptyList[Instrument]= Instrument.gsInstruments
-    }
-
-    implicit val show: Show[SeqexecSite] = Show.show {
-      case SeqexecGN(_) => "GN"
-      case SeqexecGS(_) => "GS"
-    }
-  }
 
   sealed trait ServerLogLevel extends Product with Serializable
   object ServerLogLevel {

@@ -3,9 +3,11 @@
 
 package seqexec.web.client.components.sequence.toolbars
 
-import seqexec.model.Model.{Instrument, SeqexecSite}
+import gem.enum.Site
+import seqexec.model.Model.Instrument
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.components.SeqexecStyles
+import seqexec.web.client.ModelOps._
 import web.client.style._
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.ScalaComponent
@@ -15,7 +17,7 @@ import japgolly.scalajs.react.component.Scala.Unmounted
   * Toolbar for anonymous users
   */
 object SequenceAnonymousToolbar {
-  final case class Props(site: SeqexecSite, instrument: Instrument) {
+  final case class Props(site: Site, instrument: Instrument) {
     protected[sequence] val instrumentConnects =
      site.instruments.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(i)))).toMap
   }
@@ -36,5 +38,5 @@ object SequenceAnonymousToolbar {
       )
     ).build
 
-  def apply(site: SeqexecSite, i: Instrument): Unmounted[Props, Unit, Unit] = component(Props(site, i))
+  def apply(site: Site, i: Instrument): Unmounted[Props, Unit, Unit] = component(Props(site, i))
 }

@@ -6,6 +6,7 @@ package seqexec.web.client
 import diode.Action
 import cats.Show
 import gem.Observation
+import gem.enum.Site
 import seqexec.model.UserDetails
 import seqexec.model.Model._
 import seqexec.model.events._
@@ -18,7 +19,7 @@ object actions {
   // Actions
   final case class NavigateTo(page: Pages.SeqexecPages) extends Action
   final case class NavigateSilentTo(page: Pages.SeqexecPages) extends Action
-  final case class Initialize(site: SeqexecSite) extends Action
+  final case class Initialize(site: Site) extends Action
 
   // Actions to close and/open the login box
   case object OpenLoginBox extends Action

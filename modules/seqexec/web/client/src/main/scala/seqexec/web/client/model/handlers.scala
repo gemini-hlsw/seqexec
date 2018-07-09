@@ -12,6 +12,7 @@ import diode.data.{Pending, RefTo, Pot, Ready}
 import java.util.logging.{Level, Logger}
 import java.time.Instant
 import gem.Observation
+import gem.enum.Site
 import mouse.all._
 import org.scalajs.dom._
 import seqexec.model.UserDetails
@@ -326,7 +327,7 @@ object handlers {
   /**
     * Handles actions related to the changing the selection of the displayed sequence
     */
-  class SequenceDisplayHandler[M](modelRW: ModelRW[M, (SequencesOnDisplay, Option[SeqexecSite])]) extends ActionHandler(modelRW) with Handlers {
+  class SequenceDisplayHandler[M](modelRW: ModelRW[M, (SequencesOnDisplay, Option[Site])]) extends ActionHandler(modelRW) with Handlers {
     def handleSelectSequenceDisplay: PartialFunction[Any, ActionResult[M]] = {
       case SelectInstrumentToDisplay(i) =>
         updated(value.copy(_1 = value._1.focusOnInstrument(i)))

@@ -5,11 +5,12 @@ package seqexec.web.client.components.sequence.toolbars
 
 import cats.implicits._
 import gem.Observation
+import gem.enum.Site
 import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.{Callback, ScalaComponent}
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.component.Scala.Unmounted
-import seqexec.model.Model.{Instrument, SeqexecSite}
+import seqexec.model.Model.Instrument
 import seqexec.web.client.model.Pages._
 import seqexec.web.client.ModelOps._
 import seqexec.web.client.circuit.SeqexecCircuit
@@ -28,7 +29,7 @@ import mouse.boolean._
   * Toolbar when displaying a step configuration
   */
 object StepConfigToolbar {
-  final case class Props(router: RouterCtl[SeqexecPages], site: SeqexecSite, instrument: Instrument, id: Observation.Id, step: Int, total: Int) {
+  final case class Props(router: RouterCtl[SeqexecPages], site: Site, instrument: Instrument, id: Observation.Id, step: Int, total: Int) {
     protected[sequence] val sequenceInfoConnects = site.instruments.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(i)))).toMap
   }
 

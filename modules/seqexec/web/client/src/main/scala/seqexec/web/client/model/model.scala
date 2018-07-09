@@ -8,9 +8,11 @@ import cats.implicits._
 import diode.RootModelR
 import diode.data._
 import gem.Observation
+import gem.enum.Site
 import seqexec.model.UserDetails
 import seqexec.model.Model._
 import seqexec.model.events._
+import seqexec.web.client.ModelOps._
 import seqexec.web.common.{Zipper, FixedLengthBuffer}
 import org.scalajs.dom.WebSocket
 
@@ -93,7 +95,7 @@ object model {
 
   // Model for the tabbed area of sequences
   final case class SequencesOnDisplay(instrumentSequences: Zipper[SequenceTab]) {
-    def withSite(site: SeqexecSite): SequencesOnDisplay =
+    def withSite(site: Site): SequencesOnDisplay =
       SequencesOnDisplay(Zipper.fromNel(site.instruments.map(SequenceTab(_, SequencesOnDisplay.emptySeqRef, None, None))))
 
     // Display a given step on the focused sequence
@@ -196,7 +198,7 @@ object model {
   /**
     * Root of the UI Model of the application
     */
-  final case class SeqexecAppRootModel(ws: WebSocketConnection, site: Option[SeqexecSite], clientId: Option[ClientID], uiModel: SeqexecUIModel)
+  final case class SeqexecAppRootModel(ws: WebSocketConnection, site: Option[Site], clientId: Option[ClientID], uiModel: SeqexecUIModel)
 
   object SeqexecAppRootModel {
     type LoadedSequences = SequencesQueue[SequenceView]
