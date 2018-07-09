@@ -13,10 +13,6 @@ import seqexec.model.Model.{Resource, Instrument, SequenceState, SequenceView, S
   * Contains useful operations for the seqexec model
   */
 object ModelOps {
-  implicit val siteStateShow: Show[Site] = Show.show[Site] {
-    case Site.GN => "GN"
-    case Site.GS => "GS"
-  }
 
   implicit val sequenceStateShow: Show[SequenceState] = Show.show[SequenceState] {
     case SequenceState.Completed        => "Complete"

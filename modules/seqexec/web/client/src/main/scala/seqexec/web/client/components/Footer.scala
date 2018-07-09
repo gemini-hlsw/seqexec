@@ -3,7 +3,6 @@
 
 package seqexec.web.client.components
 
-import cats.implicits._
 import diode.react.ModelProxy
 import diode.react.ReactPot._
 import gem.enum.Site
@@ -15,7 +14,6 @@ import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.model.WebSocketConnection
 import seqexec.web.client.model.Pages.Root
 import seqexec.web.client.OcsBuildInfo
-import seqexec.web.client.ModelOps._
 import seqexec.web.client.semanticui.elements.icon.Icon._
 import seqexec.web.client.semanticui.elements.menu.HeaderItem
 import web.client.style._
@@ -40,7 +38,7 @@ object Footer {
         <.a(
           ^.cls := "header item",
           ^.onClick ==> goHome,
-          s"Seqexec - ${p.show}"
+          s"Seqexec - ${p.shortName}"
         ),
         HeaderItem(HeaderItem.Props(OcsBuildInfo.version, sub = true)),
         wsConnect(ConnectionState.apply),

@@ -39,7 +39,7 @@ object AppTitle {
         SeqexecStyles.notInMobile,
         <.h4(
           ^.cls := "ui horizontal divider header",
-          s"Seqexec ${p.site.show}",
+          s"Seqexec ${p.site.shortName}",
           p.ws().ws.renderPending(_ =>
             <.div(
               SeqexecStyles.errorText,
@@ -120,7 +120,7 @@ object SeqexecUI {
     case SequenceConfigPage(_, id, _) => s"Seqexec - ${id.format}"
     case SequencePage(_, id, _)       => s"Seqexec - ${id.format}"
     case InstrumentPage(i)            => s"Seqexec - ${i.show}"
-    case _                            => s"Seqexec - ${site.show}"
+    case _                            => s"Seqexec - ${site.shortName}"
   }
 
   // Prism from url params to config page
