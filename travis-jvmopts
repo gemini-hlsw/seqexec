@@ -1,6 +1,0 @@
--Dfile.encoding=UTF8
--Xms4G
--Xmx4G
--Xss6M
--XX:ReservedCodeCacheSize=256M
--XX:-UseGCOverheadLimit
