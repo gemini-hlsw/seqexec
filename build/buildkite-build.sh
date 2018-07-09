@@ -7,13 +7,13 @@ cd `dirname $0`/..
 ### BUILD
 ###
 
-/usr/local/bin/sbt             \
-  -jvm-opts travis-jvmopts     \
-  -no-colors                   \
-  -Docs3.skipDependencyUpdates \
-  headerCheck                  \
-  test:headerCheck             \
-  scalastyle                   \
+/usr/local/bin/sbt                  \
+  -jvm-opts build/buildkite-jvmopts \
+  -no-colors                        \
+  -Docs3.skipDependencyUpdates      \
+  headerCheck                       \
+  test:headerCheck                  \
+  scalastyle                        \
   compile
 
 ###
