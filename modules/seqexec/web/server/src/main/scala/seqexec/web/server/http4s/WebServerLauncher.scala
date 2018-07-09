@@ -143,7 +143,7 @@ object WebServerLauncher extends StreamApp[IO] with LogInitialization {
       asyncAppender.addAppender(appender)
     }
 
-    Option(LoggerFactory.getLogger("edu.gemini.seqexec")).collect {
+    Option(LoggerFactory.getLogger("seqexec")).collect {
       case l: Logger => l
     }.foreach { l =>
       l.addAppender(asyncAppender)
