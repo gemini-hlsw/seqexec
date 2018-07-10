@@ -10,6 +10,7 @@ import cats.effect._
 import giapi.client.Giapi
 import giapi.client.gpi.GPIClient
 import gem.Observation
+import gem.enum.Site
 import seqexec.engine.{Action, Result, Sequence, Step}
 import seqexec.model.ActionType
 import seqexec.model.Model.Instrument.GmosS
@@ -23,7 +24,7 @@ import seqexec.server.gmos.GmosControllerSim
 import seqexec.server.gnirs.GnirsControllerSim
 import seqexec.server.tcs.TcsControllerEpics
 import seqexec.server.gpi.GPIController
-import edu.gemini.spModel.core.{Peer, Site}
+import edu.gemini.spModel.core.Peer
 import org.scalatest.FlatSpec
 import squants.time.Seconds
 

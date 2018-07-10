@@ -8,7 +8,6 @@ import cats.data.{EitherT, Kleisli, NonEmptyList, Reader}
 import cats.effect.IO
 import cats.implicits._
 import edu.gemini.seqexec.odb.{ExecutedDataset, SeqexecSequence}
-import edu.gemini.spModel.core.Site
 import seqexec.engine.Result.{Configured, FileIdAllocated, Observed}
 import seqexec.engine.{Action, ActionMetadata, Event, Result, Sequence, Step, fromIO}
 import seqexec.model.Model.{Instrument, Resource, SequenceMetadata, StepState}
@@ -37,8 +36,8 @@ import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import org.log4s._
 import squants.Time
 import fs2.Stream
-// import org.http4s.client.Client
 import gem.Observation
+import gem.enum.Site
 import mouse.all._
 
 class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
@@ -333,7 +332,8 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     case _                      => TrySeq.fail(Unexpected(s"Instrument $inst not supported."))
   }
 
-  private def calcResources(sys: List[System]): Set[Resource] = sys.map(resourceFromSystem).toSet
+  private def calcResources(sys: List[System]): Set[Resource] =
+    sys.map(resourceFromSystem).toSet
 
   import TcsController.Subsystem._
 
@@ -394,7 +394,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
   private def commonHeaders(config: Config, tcsSubsystems: List[TcsController.Subsystem], inst: InstrumentSystem)(ctx: ActionMetadata): Header =
     new StandardHeader(
       inst,
-      ObsKeywordReaderImpl(config, site.displayName.replace(' ', '-')),
+      ObsKeywordReaderImpl(config, site.longName.replace(' ', '-')),
       if (settings.tcsKeywords) TcsKeywordsReaderImpl else DummyTcsKeywordsReader,
       StateKeywordsReader(ctx.conditions, ctx.operator, ctx.observer),
       tcsSubsystems

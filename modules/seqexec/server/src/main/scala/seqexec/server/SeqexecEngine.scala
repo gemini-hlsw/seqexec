@@ -13,6 +13,7 @@ import cats.effect.IO
 import cats.implicits._
 import edu.gemini.epics.acm.CaService
 import gem.Observation
+import gem.enum.Site
 import giapi.client.Giapi
 import giapi.client.gpi.GPIClient
 import seqexec.engine
@@ -31,7 +32,7 @@ import seqexec.server.gpi.GPIController
 import seqexec.server.gws.GwsEpics
 import seqexec.server.tcs.{TcsControllerEpics, TcsControllerSim, TcsEpics}
 import edu.gemini.seqexec.odb.SmartGcal
-import edu.gemini.spModel.core.{Peer, SPProgramID, Site}
+import edu.gemini.spModel.core.{Peer, SPProgramID}
 import edu.gemini.spModel.obscomp.InstConstants
 import edu.gemini.spModel.seqcomp.SeqConfigNames.OCS_KEY
 import fs2.{Scheduler, Stream}
@@ -468,7 +469,7 @@ object SeqexecEngine {
 
   private def initSmartGCal(smartGCalHost: String, smartGCalLocation: String): IO[edu.gemini.seqexec.odb.TrySeq[Unit]] = {
     // SmartGCal always talks to GS
-    val peer = new Peer(smartGCalHost, 8443, Site.GS)
+    val peer = new Peer(smartGCalHost, 8443, edu.gemini.spModel.core.Site.GS)
     IO.apply(Paths.get(smartGCalLocation)).map { p => SmartGcal.initialize(peer, p) }
   }
 
@@ -484,11 +485,7 @@ object SeqexecEngine {
 
   // scalastyle:off
   def seqexecConfiguration(giapi: Giapi[IO]): Kleisli[IO, Config, Settings] = Kleisli { cfg: Config =>
-    val site = cfg.require[String]("seqexec-engine.site") match {
-      case "GS" => Site.GS
-      case "GN" => Site.GN
-      case _    => Site.GS // Let's default to GS
-    }
+    val site                    = Site.fromTag(cfg.require[String]("seqexec-engine.site")).getOrElse(Site.GS)
     val odbHost                 = cfg.require[String]("seqexec-engine.odb")
     val dhsServer               = cfg.require[String]("seqexec-engine.dhsServer")
     val dhsSim                  = cfg.require[Boolean]("seqexec-engine.dhsSim")
