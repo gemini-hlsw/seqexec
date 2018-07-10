@@ -36,14 +36,14 @@ package keywords {
   }
 
   // TODO: Implement the unsigned types, if needed.
-  sealed case class KeywordType protected (str: String)
-  object TypeInt8 extends KeywordType("INT8")
-  object TypeInt16 extends KeywordType("INT16")
-  object TypeInt32 extends KeywordType("INT32")
-  object TypeFloat extends KeywordType("FLOAT")
-  object TypeDouble extends KeywordType("DOUBLE")
-  object TypeBoolean extends KeywordType("BOOLEAN")
-  object TypeString extends KeywordType("STRING")
+  sealed case class KeywordType protected (str: String, gdsType: String)
+  object TypeInt8 extends KeywordType("INT8", "INT")
+  object TypeInt16 extends KeywordType("INT16", "INT")
+  object TypeInt32 extends KeywordType("INT32", "INT")
+  object TypeFloat extends KeywordType("FLOAT", "DOUBLE")
+  object TypeDouble extends KeywordType("DOUBLE", "DOUBLE")
+  object TypeBoolean extends KeywordType("BOOLEAN", "BOOLEAN")
+  object TypeString extends KeywordType("STRING", "STRING")
 
 
   // The developer uses these classes to define all the typed keywords
