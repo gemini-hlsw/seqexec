@@ -8,8 +8,8 @@ import seqexec.model.dhs.ImageFileId
 import seqexec.server.keywords._
 
 /**
- * Typeclass for types that can send keywords
- */
+  * Typeclass for types that can send keywords
+  */
 trait HeaderProvider[A] {
   // Client to send keywords to an appropriate server
   def keywordsClient(a: A): KeywordsClient[IO]
@@ -22,12 +22,13 @@ object HeaderProvider {
     def keywordsClient: KeywordsClient[IO] = HeaderProvider[A].keywordsClient(a)
   }
 
-  implicit def ToHeaderProviderOps[A: HeaderProvider](a: A): HeaderProviderOps[A] = new HeaderProviderOps(a)
+  implicit def ToHeaderProviderOps[A: HeaderProvider](
+      a: A): HeaderProviderOps[A] = new HeaderProviderOps(a)
 }
 
 /**
- * Header implementations know what headers sent before and after an observation
- */
+  * Header implementations know what headers sent before and after an observation
+  */
 trait Header {
   def sendBefore(id: ImageFileId): SeqAction[Unit]
   def sendAfter(id: ImageFileId): SeqAction[Unit]
@@ -37,9 +38,9 @@ object Header {
   import HeaderProvider._
 
   // Default values for FITS headers
-  val IntDefault: Int = -9999
-  val DoubleDefault: Double = -9999.0
-  val StrDefault: String = "No Value"
+  val IntDefault: Int         = -9999
+  val DoubleDefault: Double   = -9999.0
+  val StrDefault: String      = "No Value"
   val BooleanDefault: Boolean = false
 
   def buildKeyword[A](get: SeqAction[A], name: String, f: (String, A) => Keyword[A]): KeywordBag => SeqAction[KeywordBag] =
@@ -67,6 +68,7 @@ object Header {
 
 
   object Implicits {
+
     // A simple typeclass to encapsulate default values
     trait DefaultValue[A] {
       def default: A

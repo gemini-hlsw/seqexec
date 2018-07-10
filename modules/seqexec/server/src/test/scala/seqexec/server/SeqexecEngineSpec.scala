@@ -13,8 +13,8 @@ import java.time.LocalDate
 import org.scalatest.Inside.inside
 import org.scalatest.{FlatSpec, Matchers}
 import org.http4s.Uri._
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext.Implicits.global
 import seqexec.engine
 import seqexec.engine.Result.PauseContext
 import seqexec.engine._

@@ -19,7 +19,9 @@ import seqexec.server.keywords.{GDSClient, GDSInstrument}
 import scala.concurrent.duration._
 import squants.time.{Seconds, Time}
 
-final case class GPI[F[_]: Sync](controller: GPIController[F]) extends InstrumentSystem[F] with GDSInstrument {
+final case class GPI[F[_]: Sync](controller: GPIController[F])
+    extends InstrumentSystem[F]
+    with GDSInstrument {
   override val gdsClient: GDSClient = controller.gdsClient
 
   override val resource: Resource = Instrument.GPI
@@ -32,10 +34,12 @@ final case class GPI[F[_]: Sync](controller: GPIController[F]) extends Instrumen
     InstrumentSystem.Uncontrollable
 
   override def observe(
-      config: Config): SeqObserveF[F, ImageFileId, ObserveCommand.Result] = Reader {
-    fileId =>
-      controller.observe(fileId).map(_ => ObserveCommand.Success: ObserveCommand.Result)
-  }
+      config: Config): SeqObserveF[F, ImageFileId, ObserveCommand.Result] =
+    Reader { fileId =>
+      controller
+        .observe(fileId)
+        .map(_ => ObserveCommand.Success: ObserveCommand.Result)
+    }
 
   override def configure(config: Config): SeqActionF[F, ConfigResult[F]] =
     GPI

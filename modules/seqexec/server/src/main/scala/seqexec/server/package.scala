@@ -87,10 +87,9 @@ package object server {
   }
 
   object SeqActionF {
-    def apply[F[_]: Sync, A](a: => A): SeqActionF[F, A] = EitherT(Sync[F].delay(TrySeq(a)))
+    def apply[F[_]: Sync, A](a: => A): SeqActionF[F, A]       = EitherT(Sync[F].delay(TrySeq(a)))
     def liftF[F[_]: Functor, A](a: => F[A]): SeqActionF[F, A] = EitherT.liftF(a)
-    def void[F[_]: Applicative]: SeqActionF[F, Unit] =
-      EitherT.liftF(Applicative[F].pure(()))
+    def void[F[_]: Applicative]: SeqActionF[F, Unit]          = EitherT.liftF(Applicative[F].pure(()))
   }
 
   implicit class MoreDisjunctionOps[A,B](ab: Either[A, B]) {

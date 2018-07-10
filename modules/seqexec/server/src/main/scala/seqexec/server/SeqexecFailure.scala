@@ -20,7 +20,8 @@ object SeqexecFailure {
   final case class SeqexecException(ex: Throwable) extends SeqexecFailure
 
   /** Exception thrown while running a sequence. */
-  final case class SeqexecExceptionWhile(context: String, ex: Throwable) extends SeqexecFailure
+  final case class SeqexecExceptionWhile(context: String, ex: Throwable)
+      extends SeqexecFailure
 
   /** Invalid operation on a Sequence */
   final case class InvalidOp(errMsg: String) extends SeqexecFailure
@@ -46,14 +47,17 @@ object SeqexecFailure {
   def explain(f: SeqexecFailure): String = f match {
     case UnrecognizedInstrument(name) => s"Unrecognized instrument: $name"
     case Execution(errMsg)            => s"Sequence execution failed with error: $errMsg"
-    case SeqexecException(ex)         => s"Application exception: ${Option(ex.getMessage).getOrElse(ex.toString)}"
-    case SeqexecExceptionWhile(c, e)  => s"Application exception while $c: ${Option(e.getMessage).getOrElse(e.toString)}"
+    case SeqexecException(ex)         =>
+      s"Application exception: ${Option(ex.getMessage).getOrElse(ex.toString)}"
+    case SeqexecExceptionWhile(c, e)  =>
+      s"Application exception while $c: ${Option(e.getMessage).getOrElse(e.toString)}"
     case InvalidOp(msg)               => s"Invalid operation: $msg"
     case Unexpected(msg)              => s"Unexpected error: $msg"
     case Timeout(msg)                 => s"Timeout while waiting for $msg"
     case EmptySequence(title)         => s"Attempt to enqueue empty sequence $title"
     case ODBSeqError(fail)            => SeqFailure.explain(fail)
-    case GDSException(ex, url)        => s"Failure connecting with GDS at $url: ${ex.getMessage}"
+    case GDSException(ex, url)        =>
+      s"Failure connecting with GDS at $url: ${ex.getMessage}"
     case GDSXMLError(msg, url)        => s"XML RPC error with GDS at $url: $msg"
   }
 
