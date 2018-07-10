@@ -4,17 +4,11 @@
 package seqexec.server.gpi
 
 import seqexec.model.dhs.ImageFileId
-import seqexec.server.tcs.TcsKeywordsReader
 import seqexec.server.{Header, SeqAction}
-import seqexec.server.keywords.GDSClient
 
 object GPIHeader {
-  def header(client: GDSClient, tcsReader: TcsKeywordsReader): Header = new Header {
-    println("GPIHED")
-    println(client)
-    println(tcsReader)
+  def header: Header = new Header {
     override def sendBefore(id: ImageFileId): SeqAction[Unit] = {
-      println("Send before")
       SeqAction.void
     }
 

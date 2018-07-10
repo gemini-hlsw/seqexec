@@ -12,6 +12,7 @@ import giapi.client.Giapi
 import java.time.LocalDate
 import org.scalatest.Inside.inside
 import org.scalatest.{FlatSpec, Matchers}
+import org.http4s.Uri._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import seqexec.engine
@@ -22,6 +23,7 @@ import seqexec.model.Model.{ActionStatus, CloudCover, Conditions, ImageQuality, 
 import seqexec.model.{ActionType, UserDetails}
 
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
+@SuppressWarnings(Array("org.wartremover.warts.Throw"))
 class SeqexecEngineSpec extends FlatSpec with Matchers {
   private val defaultSettings = Settings(Site.GS,
     odbHost = "localhost",
@@ -42,7 +44,9 @@ class SeqexecEngineSpec extends FlatSpec with Matchers {
     instForceError = false,
     failAt = 0,
     10.seconds,
-    Giapi.giapiConnectionIO.connect.unsafeRunSync)
+    Giapi.giapiConnectionIO.connect.unsafeRunSync,
+    uri("http://localhost:8888/xmlrpc")
+  )
 
   def configureIO(resource: Resource): IO[Result] = IO.apply(Result.OK(Result.Configured(resource)))
   def pendingAction(resource: Resource): Action =

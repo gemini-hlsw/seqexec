@@ -40,6 +40,9 @@ object SeqexecFailure {
   /** Exception thrown while communicating with the GDS */
   final case class GDSException(ex: Throwable, url: Uri) extends SeqexecFailure
 
+  /** XMLRPC error while communicating with the GDS */
+  final case class GDSXMLError(msg: String, url: Uri) extends SeqexecFailure
+
   def explain(f: SeqexecFailure): String = f match {
     case UnrecognizedInstrument(name) => s"Unrecognized instrument: $name"
     case Execution(errMsg)            => s"Sequence execution failed with error: $errMsg"
@@ -51,6 +54,7 @@ object SeqexecFailure {
     case EmptySequence(title)         => s"Attempt to enqueue empty sequence $title"
     case ODBSeqError(fail)            => SeqFailure.explain(fail)
     case GDSException(ex, url)        => s"Failure connecting with GDS at $url: ${ex.getMessage}"
+    case GDSXMLError(msg, url)        => s"XML RPC error with GDS at $url: $msg"
   }
 
 }

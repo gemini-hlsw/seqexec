@@ -368,7 +368,6 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     case Flamingos2(_, _) => Instrument.F2
     case Gnirs(_, _)      => Instrument.GNIRS
     case GPI(_)           => Instrument.GPI
-
   }
 
   private def calcInstHeader(config: Config, inst: Model.Instrument): TrySeq[Header] = {
@@ -384,7 +383,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
         val gnirsReader = if(settings.gnirsKeywords) GnirsKeywordReaderImpl else GnirsKeywordReaderDummy
         toInstrumentSys(inst).map(GnirsHeader.header(_, gnirsReader, tcsKReader))
       case Model.Instrument.GPI    =>
-        TrySeq(GPIHeader.header(systems.gpi.gdsClient, tcsKReader))
+        TrySeq(GPIHeader.header)
       case _                       =>
         TrySeq.fail(Unexpected(s"Instrument $inst not supported."))
     }
