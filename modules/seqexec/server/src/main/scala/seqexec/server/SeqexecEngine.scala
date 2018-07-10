@@ -51,7 +51,8 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings) {
     if (settings.odbNotifications) ODBProxy.OdbCommandsImpl(new Peer(settings.odbHost, 8442, null))
     else ODBProxy.DummyOdbCommands)
 
-  val gpiGDS: GDSClient = GDSClient((settings.gpiKeywords === GPIKeywords.GPIKeywordsGDS).fold(httpClient, httpClient), settings.gpiGDS)
+  val gpiGDS: GDSClient = GDSClient((settings.gpiKeywords === GPIKeywords.GPIKeywordsGDS)
+    .fold(httpClient, GDSClient.alwaysOkClient), settings.gpiGDS)
 
   private val systems = SeqTranslate.Systems(
     odbProxy,

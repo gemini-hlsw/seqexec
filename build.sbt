@@ -511,7 +511,7 @@ lazy val seqexec_server = project
           Log4s,
           Http4sXml,
           Http4sBoopickle
-      ) ++ Http4sClient ++ SeqexecOdb ++ Monocle.value ++ WDBAClient ++ TestLibs.value
+      ) ++ Http4s ++ Http4sClient ++ SeqexecOdb ++ Monocle.value ++ WDBAClient ++ TestLibs.value
   )
   .settings(
     buildInfoUsePackageAsPath := true,

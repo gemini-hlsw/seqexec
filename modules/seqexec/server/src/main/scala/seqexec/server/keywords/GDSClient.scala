@@ -69,4 +69,23 @@ object GDSClient {
     } yield (m \ "value").text.trim
     v.headOption.fold(().asRight[SeqexecFailure])(SeqexecFailure.GDSXMLError(_, gdsUri).asLeft[Unit])
   }
+
+  /**
+   * Client for testing always returns ok
+   */
+  val alwaysOkClient: Client[IO] = {
+    val service = HttpService[IO] {
+      case _ =>
+        val response =
+          <methodResponse>
+            <params>
+              <param>
+                  <value><string>Ok</string></value>
+              </param>
+            </params>
+          </methodResponse>
+        Response(Status.Ok).withBody(response)
+    }
+    Client.fromHttpService(service)
+  }
 }
