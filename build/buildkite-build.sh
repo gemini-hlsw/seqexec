@@ -4,7 +4,7 @@ set -xe
 cd `dirname $0`/..
 
 ###
-### BUILD
+### BUILD ...
 ###
 
 /usr/local/bin/sbt                  \
