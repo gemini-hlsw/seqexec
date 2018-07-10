@@ -11,6 +11,8 @@ import scala.xml.XML
 final class GDSClientSpec extends CatsSuite {
   test("GDSClient should reject bad responses") {
     val xml = XML.load(getClass.getResource("/gds-bad-resp.xml"))
-    GDSClient.checkError(xml, uri("http://localhost:8888/xmlrpc")).isLeft shouldEqual true
+    GDSClient
+      .checkError(xml, uri("http://localhost:8888/xmlrpc"))
+      .isLeft shouldEqual true
   }
 }

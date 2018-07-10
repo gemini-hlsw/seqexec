@@ -95,7 +95,8 @@ object GPILookupTables {
   )
 }
 
-final case class GPIController[F[_]: Sync](gpiClient: GPIClient[F], gdsClient: GDSClient) {
+final case class GPIController[F[_]: Sync](gpiClient: GPIClient[F],
+                                           gdsClient: GDSClient) {
   import GPIController._
   import GPILookupTables._
   private val Log             = getLogger
@@ -190,7 +191,8 @@ final case class GPIController[F[_]: Sync](gpiClient: GPIClient[F], gdsClient: G
       _ <- EitherT.liftF(Sync[F].delay(Log.debug("Start GPI configuration")))
       _ <- EitherT.liftF(Sync[F].delay(Log.debug(s"GPI configuration $config")))
       _ <- gpiConfig(config)
-      _ <- EitherT.liftF(Sync[F].delay(Log.debug("Completed GPI configuration")))
+      _ <- EitherT.liftF(
+            Sync[F].delay(Log.debug("Completed GPI configuration")))
     } yield ()
 
   def observe(fileId: ImageFileId): SeqActionF[F, ImageFileId] =

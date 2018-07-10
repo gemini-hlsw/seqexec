@@ -19,7 +19,9 @@ import scala.xml.Elem
 /**
   * Gemini Data service client
   */
-final case class GDSClient(client: Client[IO], gdsUri: Uri) extends KeywordsClient[IO] with Http4sClientDsl[IO] {
+final case class GDSClient(client: Client[IO], gdsUri: Uri)
+    extends KeywordsClient[IO]
+    with Http4sClientDsl[IO] {
   // Build an xml rpc request to store keywords
   private def storeKeywords(id: ImageFileId, ks: KeywordBag): Elem =
     <methodCall>
@@ -49,30 +51,39 @@ final case class GDSClient(client: Client[IO], gdsUri: Uri) extends KeywordsClie
   /**
     * Set the keywords for an image
     */
-  override def setKeywords(id: ImageFileId, ks: KeywordBag, finalFlag: Boolean): SeqActionF[IO, Unit] = {
+  override def setKeywords(id: ImageFileId,
+                           ks: KeywordBag,
+                           finalFlag: Boolean): SeqActionF[IO, Unit] = {
     // Build the request
-    val xmlRpc = storeKeywords(id, ks)
+    val xmlRpc      = storeKeywords(id, ks)
     val postRequest = POST(gdsUri, xmlRpc)
 
     // Do the request
-    client.expect[Elem](postRequest)(scalaxml.xml).attemptT.leftMap {
-      case e: Throwable => SeqexecFailure.GDSException(e, gdsUri): SeqexecFailure
-    }.flatMap(xml => EitherT.fromEither(GDSClient.checkError(xml, gdsUri)))
+    client
+      .expect[Elem](postRequest)(scalaxml.xml)
+      .attemptT
+      .leftMap {
+        case e: Throwable =>
+          SeqexecFailure.GDSException(e, gdsUri): SeqexecFailure
+      }
+      .flatMap(xml => EitherT.fromEither(GDSClient.checkError(xml, gdsUri)))
   }
 }
 
 object GDSClient {
+
   def checkError(e: Elem, gdsUri: Uri): Either[SeqexecFailure, Unit] = {
     val v = for {
       m <- e \\ "methodResponse" \ "fault" \ "value" \ "struct" \\ "member"
-      if ((m \ "name").text === "faultString")
+      if (m \ "name").text === "faultString"
     } yield (m \ "value").text.trim
-    v.headOption.fold(().asRight[SeqexecFailure])(SeqexecFailure.GDSXMLError(_, gdsUri).asLeft[Unit])
+    v.headOption.fold(().asRight[SeqexecFailure])(
+      SeqexecFailure.GDSXMLError(_, gdsUri).asLeft[Unit])
   }
 
   /**
-   * Client for testing always returns ok
-   */
+    * Client for testing always returns ok
+    */
   val alwaysOkClient: Client[IO] = {
     val service = HttpService[IO] {
       case _ =>
