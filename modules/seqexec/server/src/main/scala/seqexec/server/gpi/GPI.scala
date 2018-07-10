@@ -19,8 +19,8 @@ import seqexec.server.keywords.{GDSClient, GDSInstrument}
 import scala.concurrent.duration._
 import squants.time.{Seconds, Time}
 
-final case class GPI[F[_]: Sync](controller: GPIController[F]) extends InstrumentSystem[F] with GDSInstrument[F] {
-  override val gdsClient: GDSClient[F] = controller.gdsClient
+final case class GPI[F[_]: Sync](controller: GPIController[F]) extends InstrumentSystem[F] with GDSInstrument {
+  override val gdsClient: GDSClient = controller.gdsClient
 
   override val resource: Resource = Instrument.GPI
 

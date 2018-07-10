@@ -3,8 +3,10 @@
 
 package seqexec.server.keywords
 
-import cats.effect.Sync
+import cats.effect.IO
+import cats.implicits._
 import seqexec.model.dhs.ImageFileId
+import seqexec.server.SeqexecFailure
 import seqexec.server.SeqActionF
 import org.http4s.client.Client
 import org.http4s._
@@ -16,12 +18,11 @@ import org.http4s.scalaxml._
 /**
   * Gemini Data service client
   */
-final case class GDSClient[F[_]: Sync](client: Client[F], gdsUri: Uri) extends KeywordsClient[F] with Http4sClientDsl[F] {
-
+final case class GDSClient(client: Client[IO], gdsUri: Uri) extends KeywordsClient[IO] with Http4sClientDsl[IO] {
   /**
     * Set the keywords for an image
     */
-  def setKeywords(id: ImageFileId, keywords: KeywordBag, finalFlag: Boolean): SeqActionF[F, Unit] = {
+  override def setKeywords(id: ImageFileId, keywords: KeywordBag, finalFlag: Boolean): SeqActionF[IO, Unit] = {
     val xml = <xml></xml>
     val postRequest = POST(
       gdsUri, xml)
@@ -29,8 +30,8 @@ final case class GDSClient[F[_]: Sync](client: Client[F], gdsUri: Uri) extends K
     //   // <xml></xml>
     //   "String"
     // )
-    println(id)
-    println(keywords)
-    SeqActionF.liftF(client.expect[Unit](postRequest))
+    client.expect[Unit](postRequest).attemptT.leftMap {
+      case e: Throwable => SeqexecFailure.GDSException(e, gdsUri)
+    }
   }
 }

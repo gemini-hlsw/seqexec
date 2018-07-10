@@ -4,6 +4,7 @@
 package seqexec.server
 
 import edu.gemini.seqexec.odb.SeqFailure
+import org.http4s.Uri
 
 sealed trait SeqexecFailure
 
@@ -36,6 +37,9 @@ object SeqexecFailure {
   /** Sequence loading errors */
   final case class ODBSeqError(fail: SeqFailure) extends SeqexecFailure
 
+  /** Exception thrown while communicating with the GDS */
+  final case class GDSException(ex: Throwable, url: Uri) extends SeqexecFailure
+
   def explain(f: SeqexecFailure): String = f match {
     case UnrecognizedInstrument(name) => s"Unrecognized instrument: $name"
     case Execution(errMsg)            => s"Sequence execution failed with error: $errMsg"
@@ -46,6 +50,7 @@ object SeqexecFailure {
     case Timeout(msg)                 => s"Timeout while waiting for $msg"
     case EmptySequence(title)         => s"Attempt to enqueue empty sequence $title"
     case ODBSeqError(fail)            => SeqFailure.explain(fail)
+    case GDSException(ex, url)        => s"Failure connecting with GDS at $url: ${ex.getMessage}"
   }
 
 }

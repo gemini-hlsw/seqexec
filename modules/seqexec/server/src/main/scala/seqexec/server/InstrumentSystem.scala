@@ -9,7 +9,7 @@ import seqexec.server.keywords.KeywordsClient
 import edu.gemini.spModel.config2.Config
 import squants.Time
 
-trait InstrumentSystem[F[_]] extends System[F] with KeywordsClient[F] {
+trait InstrumentSystem[F[_]] extends System[F] with KeywordsClient[IO] {
   // The name used for this instrument in the science fold configuration
   val sfName: String
   val contributorName: String

@@ -95,7 +95,7 @@ object GPILookupTables {
   )
 }
 
-final case class GPIController[F[_]: Sync](gpiClient: GPIClient[F], gdsClient: GDSClient[F]) {
+final case class GPIController[F[_]: Sync](gpiClient: GPIClient[F], gdsClient: GDSClient) {
   import GPIController._
   import GPILookupTables._
   private val Log             = getLogger

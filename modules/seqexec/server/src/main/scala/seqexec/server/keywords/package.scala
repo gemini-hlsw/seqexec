@@ -23,10 +23,10 @@ package keywords {
       dhsClient.setKeywords(id, keywords, finalFlag)
   }
 
-  trait GDSInstrument[F[_]] extends KeywordsClient[F] {
-    val gdsClient: GDSClient[F]
+  trait GDSInstrument extends KeywordsClient[IO] {
+    val gdsClient: GDSClient
 
-    def setKeywords(id: ImageFileId, keywords: KeywordBag, finalFlag: Boolean): SeqActionF[F, Unit] =
+    def setKeywords(id: ImageFileId, keywords: KeywordBag, finalFlag: Boolean): SeqAction[Unit] =
       gdsClient.setKeywords(id, keywords, finalFlag)
   }
 

@@ -9,7 +9,7 @@ import seqexec.server.{Header, SeqAction}
 import seqexec.server.keywords.GDSClient
 
 object GPIHeader {
-  def header[F[_]](client: GDSClient[F], tcsReader: TcsKeywordsReader): Header = new Header {
+  def header(client: GDSClient, tcsReader: TcsKeywordsReader): Header = new Header {
     println("GPIHED")
     println(client)
     println(tcsReader)

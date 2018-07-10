@@ -6,7 +6,7 @@ package seqexec
 import cats.data._
 import cats.effect.{IO, Sync}
 import cats.implicits._
-import cats.{Applicative, Eq, Functor}
+import cats.{Applicative, ApplicativeError, Eq, Functor}
 import edu.gemini.spModel.`type`.SequenceableSpType
 import edu.gemini.spModel.guide.StandardGuideOptions
 import fs2.async.mutable.Queue
@@ -54,6 +54,7 @@ package object server {
   val CalibrationQueueName: String = "Calibration Queue"
 
   type TrySeq[A] = Either[SeqexecFailure, A]
+  type ApplicativeErrorSeq[F[_]] = ApplicativeError[F, SeqexecFailure]
 
   object TrySeq {
     def apply[A](a: A): TrySeq[A]             = Either.right(a)
