@@ -21,7 +21,7 @@ cd `dirname $0`/..
 ###
 
 # Start a new Postgres container for this build
-# TODO: read postgres version from somewhere in the build
+# TODO: read postgres version from the build
 CID=`docker run --detach --publish 5432 postgres:9.6.0`
 
 # Add an exit handler to ensure we always clean up.
