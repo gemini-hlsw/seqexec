@@ -3,22 +3,27 @@
 
 package seqexec.server.gpi
 
+import cats.data.EitherT
+import cats.effect.Sync
+import cats.implicits._
+import cats.data.Reader
+import edu.gemini.spModel.config2.Config
+import edu.gemini.spModel.gemini.gpi.Gpi._
+import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.Model.{Instrument, Resource}
 import seqexec.server.ConfigUtilOps._
 import seqexec.server._
 import seqexec.server.gpi.GPIController._
-import edu.gemini.spModel.config2.Config
-import edu.gemini.spModel.gemini.gpi.Gpi._
-import edu.gemini.spModel.seqcomp.SeqConfigNames._
+import seqexec.server.keywords.{GDSClient, GDSInstrument}
 import scala.concurrent.duration._
-import cats.data.EitherT
-import cats.effect.{IO, Sync}
-import cats.implicits._
-import cats.data.Reader
 import squants.time.{Seconds, Time}
 
-final case class GPI[F[_]](controller: GPIController) extends InstrumentSystem {
+final case class GPI[F[_]: Sync](controller: GPIController[F])
+    extends InstrumentSystem[F]
+    with GDSInstrument {
+  override val gdsClient: GDSClient = controller.gdsClient
+
   override val resource: Resource = Instrument.GPI
 
   override val sfName: String = "GPI"
@@ -29,18 +34,22 @@ final case class GPI[F[_]](controller: GPIController) extends InstrumentSystem {
     InstrumentSystem.Uncontrollable
 
   override def observe(
-      config: Config): SeqObserve[ImageFileId, ObserveCommand.Result] = Reader {
-    fileId =>
-      controller.observe(fileId).map(_ => ObserveCommand.Success)
-  }
+      config: Config): SeqObserveF[F, ImageFileId, ObserveCommand.Result] =
+    Reader { fileId =>
+      controller
+        .observe(fileId)
+        .map(_ => ObserveCommand.Success: ObserveCommand.Result)
+    }
 
-  override def configure(config: Config): SeqAction[ConfigResult] =
+  override def configure(config: Config): SeqActionF[F, ConfigResult[F]] =
     GPI
-      .fromSequenceConfig[IO](config)
+      .fromSequenceConfig[F](config)
       .flatMap(controller.applyConfig)
       .map(_ => ConfigResult(this))
 
-  override def notifyObserveEnd: SeqAction[Unit] = controller.endObserve
+  override def notifyObserveEnd: SeqActionF[F, Unit] = controller.endObserve
+
+  override def notifyObserveStart = SeqActionF.void
 
   override def calcObserveTime(config: Config): Time =
     config

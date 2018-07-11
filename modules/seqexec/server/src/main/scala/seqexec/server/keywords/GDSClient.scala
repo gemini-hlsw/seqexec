@@ -3,18 +3,111 @@
 
 package seqexec.server.keywords
 
+import cats.effect.IO
+import cats.data.EitherT
+import cats.implicits._
 import seqexec.model.dhs.ImageFileId
-import seqexec.server.SeqAction
+import seqexec.server.SeqexecFailure
+import seqexec.server.SeqActionF
 import org.http4s.client.Client
+import org.http4s._
+import org.http4s.dsl.io._
+import org.http4s.client.dsl.Http4sClientDsl
+import org.http4s.scalaxml._
+import scala.xml.Elem
 
 /**
   * Gemini Data service client
   */
-final case class GDSClient[F[_]](client: Client[F]) extends KeywordsClient {
+final case class GDSClient(client: Client[IO], gdsUri: Uri)
+    extends KeywordsClient[IO]
+    with Http4sClientDsl[IO] {
+
+  // Build an xml rpc request to store keywords
+  private def storeKeywords(id: ImageFileId, ks: KeywordBag): Elem =
+    <methodCall>
+      <methodName>HeaderReceiver.storeKeywords</methodName>
+      <params>
+        <param>
+          <value>
+            <string>{id}</string>
+          </value>
+        </param>
+        <param>
+          <value>
+            <array>
+              <data>
+                {
+                  ks.keywords.map { k =>
+                    <value><string>{s"${k.name},${keywordType(k.keywordType)},${k.value}"}</string></value>
+                  }
+                }
+              </data>
+            </array>
+          </value>
+        </param>
+      </params>
+    </methodCall>
+
   /**
     * Set the keywords for an image
     */
-  def setKeywords(id: ImageFileId, keywords: KeywordBag, finalFlag: Boolean): SeqAction[Unit] = {
-    SeqAction.void
+  override def setKeywords(id: ImageFileId,
+                           ks: KeywordBag,
+                           finalFlag: Boolean): SeqActionF[IO, Unit] = {
+    // Build the request
+    val xmlRpc      = storeKeywords(id, ks)
+    val postRequest = POST(gdsUri, xmlRpc)
+
+    // Do the request
+    client
+      .expect[Elem](postRequest)(scalaxml.xml)
+      .attemptT
+      .leftMap {
+        case e: Throwable =>
+          SeqexecFailure.GDSException(e, gdsUri): SeqexecFailure
+      }
+      .flatMap(xml => EitherT.fromEither(GDSClient.checkError(xml, gdsUri)))
+  }
+
+  private def keywordType(k: KeywordType): String = k match {
+    case TypeInt8    => "INT"
+    case TypeInt16   => "INT"
+    case TypeInt32   => "INT"
+    case TypeFloat   => "DOUBLE"
+    case TypeDouble  => "DOUBLE"
+    case TypeBoolean => "BOOLEAN"
+    case TypeString  => "STRING"
+  }
+}
+
+object GDSClient {
+
+  def checkError(e: Elem, gdsUri: Uri): Either[SeqexecFailure, Unit] = {
+    val v = for {
+      m <- e \\ "methodResponse" \ "fault" \ "value" \ "struct" \\ "member"
+      if (m \ "name").text === "faultString"
+    } yield (m \ "value").text.trim
+    v.headOption.fold(().asRight[SeqexecFailure])(
+      SeqexecFailure.GDSXMLError(_, gdsUri).asLeft[Unit])
+  }
+
+  /**
+    * Client for testing always returns ok
+    */
+  val alwaysOkClient: Client[IO] = {
+    val service = HttpService[IO] {
+      case _ =>
+        val response =
+          <methodResponse>
+            <params>
+              <param>
+                  <value><string>Ok</string></value>
+              </param>
+            </params>
+          </methodResponse>
+        Response(Status.Ok).withBody(response)
+    }
+    Client.fromHttpService(service)
   }
 }

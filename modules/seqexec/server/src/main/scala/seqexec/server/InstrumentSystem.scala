@@ -3,43 +3,36 @@
 
 package seqexec.server
 
+import cats.effect.IO
 import seqexec.model.dhs.ImageFileId
-import seqexec.server.keywords.{DhsInstrument, KeywordsClient}
+import seqexec.server.keywords.KeywordsClient
 import edu.gemini.spModel.config2.Config
 import squants.Time
 
-trait InstrumentSystem extends System {
+trait InstrumentSystem[F[_]] extends System[F] with KeywordsClient[IO] {
   // The name used for this instrument in the science fold configuration
   val sfName: String
   val contributorName: String
   val observeControl: InstrumentSystem.ObserveControl
-  def observe(config: Config): SeqObserve[ImageFileId, ObserveCommand.Result]
+  def observe(config: Config): SeqObserveF[F, ImageFileId, ObserveCommand.Result]
   //Expected total observe lapse, used to calculate timeout
   def calcObserveTime(config: Config): Time
-
-  override def notifyObserveStart = SeqAction.void
 }
 
 object InstrumentSystem {
 
-  implicit val HeaderProvider: HeaderProvider[InstrumentSystem] = new HeaderProvider[InstrumentSystem] {
-    def name(a: InstrumentSystem): String = a match {
-      case i: DhsInstrument => i.dhsInstrumentName
-      case _                => sys.error("Missing instrument")
-    }
-    def keywordsClient(a: InstrumentSystem): KeywordsClient = a match {
-      case u: DhsInstrument => u
-      case _                => sys.error("Missing instrument")
-    }
+  implicit val HeaderProvider: HeaderProvider[InstrumentSystem[IO]] = new HeaderProvider[InstrumentSystem[IO]] {
+    override def keywordsClient(a: InstrumentSystem[IO]): KeywordsClient[IO] = a
   }
+  final case class StopObserveCmd(self: SeqAction[Unit])
+  final case class AbortObserveCmd(self: SeqAction[Unit])
+  final case class PauseObserveCmd(self: SeqAction[Unit])
+  final case class ContinuePausedCmd(self: Time => SeqAction[ObserveCommand.Result])
+  final case class StopPausedCmd(self: SeqAction[ObserveCommand.Result])
+  final case class AbortPausedCmd(self: SeqAction[ObserveCommand.Result])
+
   sealed trait ObserveControl
-  object Uncontrollable extends ObserveControl
-  final case class StopObserveCmd(self: SeqAction[Unit]) extends AnyVal
-  final case class AbortObserveCmd(self: SeqAction[Unit]) extends AnyVal
-  final case class PauseObserveCmd(self: SeqAction[Unit]) extends AnyVal
-  final case class ContinuePausedCmd(self: Time => SeqAction[ObserveCommand.Result]) extends AnyVal
-  final case class StopPausedCmd(self: SeqAction[ObserveCommand.Result]) extends AnyVal
-  final case class AbortPausedCmd(self: SeqAction[ObserveCommand.Result]) extends AnyVal
+  case object Uncontrollable extends ObserveControl
   final case class OpticControl(stop: StopObserveCmd,
                                 abort: AbortObserveCmd,
                                 pause: PauseObserveCmd,

@@ -37,6 +37,7 @@ import edu.gemini.spModel.obscomp.InstConstants
 import edu.gemini.spModel.seqcomp.SeqConfigNames.OCS_KEY
 import fs2.{Scheduler, Stream}
 import org.http4s.client.Client
+import org.http4s.Uri
 import knobs.Config
 import mouse.all._
 
@@ -50,7 +51,8 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings) {
     if (settings.odbNotifications) ODBProxy.OdbCommandsImpl(new Peer(settings.odbHost, 8442, null))
     else ODBProxy.DummyOdbCommands)
 
-  val gpiGDS: GDSClient[IO] = GDSClient[IO]((settings.gpiKeywords === GPIKeywords.GPIKeywordsGDS).fold(httpClient, httpClient))
+  val gpiGDS: GDSClient = GDSClient((settings.gpiKeywords === GPIKeywords.GPIKeywordsGDS)
+    .fold(httpClient, GDSClient.alwaysOkClient), settings.gpiGDS)
 
   private val systems = SeqTranslate.Systems(
     odbProxy,
@@ -64,7 +66,7 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings) {
     if (settings.instSim) GmosControllerSim.south else GmosSouthControllerEpics,
     if (settings.instSim) GmosControllerSim.north else GmosNorthControllerEpics,
     if (settings.instSim) GnirsControllerSim else GnirsControllerEpics,
-    GPIController(new GPIClient(settings.giapi, scala.concurrent.ExecutionContext.Implicits.global), gpiGDS)
+    GPIController(new GPIClient(settings.gpiGiapi, scala.concurrent.ExecutionContext.Implicits.global), gpiGDS)
   )
 
   private val translatorSettings = SeqTranslate.Settings(
@@ -368,7 +370,8 @@ object SeqexecEngine extends SeqexecConfiguration {
                       instForceError: Boolean,
                       failAt: Int,
                       odbQueuePollingInterval: Duration,
-                      giapi: Giapi[IO])
+                      gpiGiapi: Giapi[IO],
+                      gpiGDS: Uri)
   def apply(httpClient: Client[IO], settings: Settings): SeqexecEngine = new SeqexecEngine(httpClient, settings)
 
   // Couldn't find this on Scalaz
@@ -484,7 +487,7 @@ object SeqexecEngine extends SeqexecConfiguration {
   }
 
   // scalastyle:off
-  def seqexecConfiguration(giapi: Giapi[IO]): Kleisli[IO, Config, Settings] = Kleisli { cfg: Config =>
+  def seqexecConfiguration(gpiGiapi: Giapi[IO]): Kleisli[IO, Config, Settings] = Kleisli { cfg: Config =>
     val site                    = cfg.require[Site]("seqexec-engine.site")
     val odbHost                 = cfg.require[String]("seqexec-engine.odb")
     val dhsServer               = cfg.require[String]("seqexec-engine.dhsServer")
@@ -500,12 +503,13 @@ object SeqexecEngine extends SeqexecConfiguration {
     val gcalKeywords            = cfg.require[Boolean]("seqexec-engine.gcalKeywords")
     val gnirsKeywords           = cfg.require[Boolean]("seqexec-engine.gnirsKeywords")
     val gpiKeywords             = cfg.require[Boolean]("seqexec-engine.gpiKeywords").fold(GPIKeywords.GPIKeywordsGDS, GPIKeywords.GPIKeywordsSimulated)
+    val gpiGDS                  = cfg.require[Uri]("seqexec-engine.gpiGDS")
     val instForceError          = cfg.require[Boolean]("seqexec-engine.instForceError")
     val failAt                  = cfg.require[Int]("seqexec-engine.failAt")
-    val odbQueuePollingInterval = Duration(cfg.require[String]("seqexec-engine.odbQueuePollingInterval"))
+    val odbQueuePollingInterval = cfg.require[Duration]("seqexec-engine.odbQueuePollingInterval")
     val tops                    = decodeTops(cfg.require[String]("seqexec-engine.tops"))
     val caAddrList              = cfg.lookup[String]("seqexec-engine.epics_ca_addr_list")
-    val ioTimeout               = Duration(cfg.require[String]("seqexec-engine.ioTimeout"))
+    val ioTimeout               = cfg.require[Duration]("seqexec-engine.ioTimeout")
     val smartGCalHost           = cfg.require[String]("seqexec-engine.smartGCalHost")
     val smartGCalDir            = cfg.require[String]("seqexec-engine.smartGCalDir")
     val smartGcalEnable         = cfg.lookup[Boolean]("seqexec-engine.smartGCalEnable").getOrElse(true)
@@ -570,7 +574,8 @@ object SeqexecEngine extends SeqexecConfiguration {
                        instForceError,
                        failAt,
                        odbQueuePollingInterval,
-                       giapi)
+                       gpiGiapi,
+                       gpiGDS)
       )
 
 

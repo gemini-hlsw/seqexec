@@ -4,9 +4,9 @@
 package seqexec
 
 import cats.data._
-import cats.effect.IO
+import cats.effect.{IO, Sync}
 import cats.implicits._
-import cats.kernel.Eq
+import cats.{Applicative, ApplicativeError, Eq, Functor}
 import edu.gemini.spModel.`type`.SequenceableSpType
 import edu.gemini.spModel.guide.StandardGuideOptions
 import fs2.async.mutable.Queue
@@ -54,6 +54,7 @@ package object server {
   val CalibrationQueueName: String = "Calibration Queue"
 
   type TrySeq[A] = Either[SeqexecFailure, A]
+  type ApplicativeErrorSeq[F[_]] = ApplicativeError[F, SeqexecFailure]
 
   object TrySeq {
     def apply[A](a: A): TrySeq[A]             = Either.right(a)
@@ -64,6 +65,7 @@ package object server {
   type SeqActionF[F[_], A] = EitherT[F, SeqexecFailure, A]
 
   type SeqObserve[A, B] = Reader[A, SeqAction[B]]
+  type SeqObserveF[F[_], A, B] = Reader[A, SeqActionF[F, B]]
 
   type ExecutionQueue = List[Observation.Id]
   type ExecutionQueues = Map[String, ExecutionQueue]
@@ -82,6 +84,12 @@ package object server {
     def either[A](a: => TrySeq[A]): SeqAction[A] = EitherT(IO.apply(a))
     def fail[A](p: SeqexecFailure): SeqAction[A] = EitherT(IO.apply(TrySeq.fail(p)))
     def void: SeqAction[Unit]                    = SeqAction.apply(())
+  }
+
+  object SeqActionF {
+    def apply[F[_]: Sync, A](a: => A): SeqActionF[F, A]       = EitherT(Sync[F].delay(TrySeq(a)))
+    def liftF[F[_]: Functor, A](a: => F[A]): SeqActionF[F, A] = EitherT.liftF(a)
+    def void[F[_]: Applicative]: SeqActionF[F, Unit]          = EitherT.liftF(Applicative[F].pure(()))
   }
 
   implicit class MoreDisjunctionOps[A,B](ab: Either[A, B]) {

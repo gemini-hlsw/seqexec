@@ -5,6 +5,7 @@ package seqexec.server.gcal
 
 import cats._
 import cats.implicits._
+import cats.effect.IO
 import seqexec.model.Model.Resource
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.gcal.GcalController._
@@ -21,7 +22,7 @@ import scala.collection.JavaConverters._
 /**
   * Created by jluhrs on 3/21/17.
   */
-final case class Gcal(controller: GcalController, isCP: Boolean) extends System {
+final case class Gcal(controller: GcalController, isCP: Boolean) extends System[IO] {
   import Gcal._
 
   override val resource: Resource = Resource.Gcal
@@ -29,7 +30,7 @@ final case class Gcal(controller: GcalController, isCP: Boolean) extends System 
   /**
     * Called to configure a system, returns a IO[Either[SeqexecFailure, ConfigResult]]
     */
-  override def configure(config: Config): SeqAction[ConfigResult] = (controller.getConfig, fromSequenceConfig(config, isCP)).mapN(diffConfiguration)
+  override def configure(config: Config): SeqAction[ConfigResult[IO]] = (controller.getConfig, fromSequenceConfig(config, isCP)).mapN(diffConfiguration)
     .flatMap(controller.applyConfig).map(const(ConfigResult(this)))
 
   override def notifyObserveStart: SeqAction[Unit] = SeqAction.void

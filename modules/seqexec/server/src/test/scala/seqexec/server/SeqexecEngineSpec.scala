@@ -12,16 +12,19 @@ import giapi.client.Giapi
 import java.time.LocalDate
 import org.scalatest.Inside.inside
 import org.scalatest.{FlatSpec, Matchers}
-import scala.concurrent.ExecutionContext.Implicits.global
+import org.http4s.Uri._
 import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext.Implicits.global
 import seqexec.engine
 import seqexec.engine.Result.PauseContext
 import seqexec.engine._
 import seqexec.server.SeqexecEngine.Settings
+import seqexec.server.keywords.GDSClient
 import seqexec.model.Model.{ActionStatus, CloudCover, Conditions, ImageQuality, Instrument, Operator, Resource, SequenceMetadata, SequenceState, SkyBackground, WaterVapor}
 import seqexec.model.{ActionType, UserDetails}
 
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
+@SuppressWarnings(Array("org.wartremover.warts.Throw"))
 class SeqexecEngineSpec extends FlatSpec with Matchers {
   private val defaultSettings = Settings(Site.GS,
     odbHost = "localhost",
@@ -42,7 +45,9 @@ class SeqexecEngineSpec extends FlatSpec with Matchers {
     instForceError = false,
     failAt = 0,
     10.seconds,
-    Giapi.giapiConnectionIO.connect.unsafeRunSync)
+    Giapi.giapiConnectionIO.connect.unsafeRunSync,
+    uri("http://localhost:8888/xmlrpc")
+  )
 
   def configureIO(resource: Resource): IO[Result] = IO.apply(Result.OK(Result.Configured(resource)))
   def pendingAction(resource: Resource): Action =
@@ -160,7 +165,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers {
       SeqexecEngine.observeStatus(executions) shouldBe ActionStatus.Paused
     }
 
-  private val seqexecEngine = SeqexecEngine(null, defaultSettings)
+  private val seqexecEngine = SeqexecEngine(GDSClient.alwaysOkClient, defaultSettings)
   private def advanceOne(q: EventQueue, s0: executeEngine.StateType, put: IO[Either[SeqexecFailure, Unit]]): Stream[Pure, Option[executeEngine.StateType]] =
     Stream.emit((put *> executeEngine.process(q.dequeue)(s0).take(1).compile.last).unsafeRunSync.map(_._2))
 

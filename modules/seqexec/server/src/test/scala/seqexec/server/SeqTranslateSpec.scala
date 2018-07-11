@@ -26,9 +26,11 @@ import seqexec.server.tcs.TcsControllerEpics
 import seqexec.server.gpi.GPIController
 import edu.gemini.spModel.core.Peer
 import org.scalatest.FlatSpec
+import org.http4s.Uri._
 import squants.time.Seconds
 
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
+@SuppressWarnings(Array("org.wartremover.warts.Throw"))
 class SeqTranslateSpec extends FlatSpec {
 
   private val config: StepConfig = Map()
@@ -71,7 +73,8 @@ class SeqTranslateSpec extends FlatSpec {
     GmosControllerSim.south,
     GmosControllerSim.north,
     GnirsControllerSim,
-    GPIController(new GPIClient(Giapi.giapiConnectionIO.connect.unsafeRunSync, scala.concurrent.ExecutionContext.Implicits.global), new GDSClient[IO](null))
+    GPIController(new GPIClient(Giapi.giapiConnectionIO.connect.unsafeRunSync, scala.concurrent.ExecutionContext.Implicits.global),
+    new GDSClient(GDSClient.alwaysOkClient, uri("http://localhost:8888/xmlrpc")))
   )
 
   private val translatorSettings = SeqTranslate.Settings(tcsKeywords = false, f2Keywords = false, gwsKeywords = false,

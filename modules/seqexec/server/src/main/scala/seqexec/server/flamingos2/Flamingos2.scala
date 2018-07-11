@@ -20,7 +20,7 @@ import cats.data.{EitherT, Reader}
 import cats.effect.IO
 import cats.implicits._
 
-final case class Flamingos2(f2Controller: Flamingos2Controller, dhsClient: DhsClient) extends InstrumentSystem with DhsInstrument {
+final case class Flamingos2(f2Controller: Flamingos2Controller, dhsClient: DhsClient) extends InstrumentSystem[IO] with DhsInstrument {
 
   import Flamingos2._
 
@@ -39,10 +39,12 @@ final case class Flamingos2(f2Controller: Flamingos2Controller, dhsClient: DhsCl
     fileId => f2Controller.observe(fileId, calcObserveTime(config)).map(_ => ObserveCommand.Success)
   }
 
-  override def configure(config: Config): SeqAction[ConfigResult] =
+  override def configure(config: Config): SeqAction[ConfigResult[IO]] =
     fromSequenceConfig(config).flatMap(f2Controller.applyConfig).map(_ => ConfigResult(this))
 
   override def notifyObserveEnd: SeqAction[Unit] = f2Controller.endObserve
+
+  override def notifyObserveStart = SeqAction.void
 
   override def calcObserveTime(config: Config): Time = config.extract(OBSERVE_KEY / EXPOSURE_TIME_PROP).as[java.lang.Double].map(x => Seconds(x.toDouble)).getOrElse(Seconds(360))
 }

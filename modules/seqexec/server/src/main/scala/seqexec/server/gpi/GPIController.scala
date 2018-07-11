@@ -5,7 +5,7 @@ package seqexec.server.gpi
 
 import cats.{Eq, Show}
 import cats.data.EitherT
-import cats.effect.IO
+import cats.effect.Sync
 import cats.implicits._
 import edu.gemini.spModel.gemini.gpi.Gpi.{Apodizer => LegacyApodizer}
 import edu.gemini.spModel.gemini.gpi.Gpi.{Adc => LegacyAdc}
@@ -26,7 +26,7 @@ import org.log4s.getLogger
 import scala.concurrent.duration.Duration
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.keywords.GDSClient
-import seqexec.server.SeqAction
+import seqexec.server.SeqActionF
 
 object GPILookupTables {
 
@@ -95,7 +95,8 @@ object GPILookupTables {
   )
 }
 
-final case class GPIController(gpiClient: GPIClient[IO], gdsClient: GDSClient[IO]) {
+final case class GPIController[F[_]: Sync](gpiClient: GPIClient[F],
+                                           gdsClient: GDSClient) {
   import GPIController._
   import GPILookupTables._
   private val Log             = getLogger
@@ -122,7 +123,7 @@ final case class GPIController(gpiClient: GPIClient[IO], gdsClient: GDSClient[IO
     )
 
   // scalastyle:off
-  def gpiConfig(config: GPIConfig): SeqAction[CommandResult] = {
+  def gpiConfig(config: GPIConfig): SeqActionF[F, CommandResult] = {
     val giapiApply =
       Configuration.single("gpi:selectAdc.deploy",
                            (config.adc === LegacyAdc.IN)
@@ -185,19 +186,20 @@ final case class GPIController(gpiClient: GPIClient[IO], gdsClient: GDSClient[IO
   }
   // scalastyle:on
 
-  def applyConfig(config: GPIConfig): SeqAction[Unit] =
+  def applyConfig(config: GPIConfig): SeqActionF[F, Unit] =
     for {
-      _ <- EitherT.liftF(IO.apply(Log.debug("Start GPI configuration")))
-      _ <- EitherT.liftF(IO.apply(Log.debug(s"GPI configuration $config")))
+      _ <- EitherT.liftF(Sync[F].delay(Log.debug("Start GPI configuration")))
+      _ <- EitherT.liftF(Sync[F].delay(Log.debug(s"GPI configuration $config")))
       _ <- gpiConfig(config)
-      _ <- EitherT.liftF(IO(Log.debug("Completed GPI configuration")))
+      _ <- EitherT.liftF(
+            Sync[F].delay(Log.debug("Completed GPI configuration")))
     } yield ()
 
-  def observe(fileId: ImageFileId): SeqAction[ImageFileId] =
+  def observe(fileId: ImageFileId): SeqActionF[F, ImageFileId] =
     EitherT(gpiClient.observe(fileId).map(_ => fileId.asRight))
 
-  def endObserve: SeqAction[Unit] =
-    SeqAction.void
+  def endObserve: SeqActionF[F, Unit] =
+    SeqActionF.void
 }
 
 object GPIController {

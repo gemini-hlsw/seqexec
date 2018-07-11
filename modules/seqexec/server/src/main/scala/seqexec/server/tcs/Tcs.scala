@@ -4,6 +4,7 @@
 package seqexec.server.tcs
 
 import cats.data.NonEmptyList
+import cats.effect.IO
 import seqexec.model.Model.Resource
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.tcs.TcsController._
@@ -21,7 +22,7 @@ import cats._
 import cats.implicits._
 import mouse.all._
 
-final case class Tcs(tcsController: TcsController, subsystems: NonEmptyList[Subsystem], scienceFoldPosition: ScienceFoldPosition) extends System {
+final case class Tcs(tcsController: TcsController, subsystems: NonEmptyList[Subsystem], scienceFoldPosition: ScienceFoldPosition) extends System[IO] {
 
   import Tcs._
   import MountGuideOption._
@@ -68,7 +69,7 @@ final case class Tcs(tcsController: TcsController, subsystems: NonEmptyList[Subs
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
-  private def configure(config: Config, tcsState: TcsConfig): SeqAction[ConfigResult] = {
+  private def configure(config: Config, tcsState: TcsConfig): SeqAction[ConfigResult[IO]] = {
     val configFromSequence = fromSequenceConfig(config, subsystems)(tcsState)
     //The desired science fold position is passed as a class parameter
     val tcsConfig = configFromSequence.copy(agc = configFromSequence.agc.copy(sfPos = scienceFoldPosition.some))
@@ -86,7 +87,7 @@ final case class Tcs(tcsController: TcsController, subsystems: NonEmptyList[Subs
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
-  override def configure(config: Config): SeqAction[ConfigResult] = tcsController.getConfig.flatMap(configure(config, _))
+  override def configure(config: Config): SeqAction[ConfigResult[IO]] = tcsController.getConfig.flatMap(configure(config, _))
 
   override def notifyObserveStart: SeqAction[Unit] = tcsController.notifyObserveStart
 

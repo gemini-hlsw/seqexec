@@ -5,6 +5,7 @@ package seqexec.server.gnirs
 
 import cats.data.Reader
 import cats.implicits._
+import cats.effect.IO
 import seqexec.model.Model
 import seqexec.model.Model.Instrument
 import seqexec.model.dhs.ImageFileId
@@ -22,7 +23,7 @@ import squants.Time
 import squants.space.LengthConversions._
 import squants.time.TimeConversions._
 
-final case class Gnirs(controller: GnirsController, dhsClient: DhsClient) extends InstrumentSystem with DhsInstrument {
+final case class Gnirs(controller: GnirsController, dhsClient: DhsClient) extends InstrumentSystem[IO] with DhsInstrument {
   override val sfName: String = "gnirs"
   override val contributorName: String = "ngnirsdc1"
   override val dhsInstrumentName: String = "GNIRS"
@@ -41,10 +42,12 @@ final case class Gnirs(controller: GnirsController, dhsClient: DhsClient) extend
 
   override val resource: Model.Resource = Instrument.GNIRS
 
-  override def configure(config: Config): SeqAction[ConfigResult] =
+  override def configure(config: Config): SeqAction[ConfigResult[IO]] =
     SeqAction.either(fromSequenceConfig(config)).flatMap(controller.applyConfig).map(_ => ConfigResult(this))
 
   override def notifyObserveEnd: SeqAction[Unit] = controller.endObserve
+
+  override def notifyObserveStart = SeqAction.void
 }
 
 object Gnirs {

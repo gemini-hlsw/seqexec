@@ -14,7 +14,6 @@ import seqexec.model.Model.{Instrument, Resource, SequenceMetadata, StepState}
 import seqexec.model.{ActionType, Model}
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.ConfigUtilOps._
-import seqexec.server.HeaderProvider._
 import seqexec.server.SeqTranslate.{Settings, Systems}
 import seqexec.server.SeqexecFailure.{Unexpected, UnrecognizedInstrument}
 import seqexec.server.InstrumentSystem._
@@ -43,12 +42,12 @@ import mouse.all._
 class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
   private val Log = getLogger
 
-  implicit val show: Show[InstrumentSystem] = Show.show(_.resource.show)
+  implicit val show: Show[InstrumentSystem[IO]] = Show.show(_.resource.show)
 
   import SeqTranslate._
 
   // All instruments ask the DHS for an ImageFileId
-  private def dhsFileId(inst: InstrumentSystem): SeqAction[ImageFileId] =
+  private def dhsFileId(inst: InstrumentSystem[IO]): SeqAction[ImageFileId] =
     systems.dhs.createImage(DhsClient.ImageParameters(DhsClient.Permanent, List(inst.contributorName, "dhs-http")))
 
   private def sendDataStart(obsId: Observation.Id, imageFileId: ImageFileId, dataId: String): SeqAction[Unit] =
@@ -72,8 +71,8 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
   private def info(msg: => String): SeqAction[Unit] = EitherT.right(IO.apply(Log.info(msg)))
 
   //scalastyle:off
-  private def observe[A <: InstrumentSystem: HeaderProvider](config: Config, obsId: Observation.Id, inst: A,
-                      otherSys: List[System], headers: Reader[ActionMetadata, List[Header]])
+  private def observe[A <: InstrumentSystem[IO]: HeaderProvider](config: Config, obsId: Observation.Id, inst: A,
+                      otherSys: List[System[IO]], headers: Reader[ActionMetadata, List[Header]])
                      (ctx: ActionMetadata): SeqAction[Result.Partial[FileIdAllocated]] = {
     val dataId: SeqAction[String] = EitherT(IO.apply(
       config.extract(OBSERVE_KEY / DATA_LABEL_PROP).as[String].leftMap(e =>
@@ -98,9 +97,9 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
         _   <- sendDataStart(obsId, fileId, d)
         _   <- notifyObserveStart
         _   <- headers(ctx).map(_.sendBefore(fileId)).sequence
-        _   <- info(s"Start ${inst.name} observation ${obsId.format} with label $fileId")
+        _   <- info(s"Start ${inst.resource.show} observation ${obsId.format} with label $fileId")
         r   <- inst.observe(config)(fileId)
-        _   <- info(s"Completed ${inst.name} observation ${obsId.format} with label $fileId")
+        _   <- info(s"Completed ${inst.resource.show} observation ${obsId.format} with label $fileId")
         ret <- observeTail(fileId, d)(r)
       } yield ret
 
@@ -130,7 +129,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
   }
 
   private def step(obsId: Observation.Id, i: Int, config: Config, nextToRun: Int, datasets: Map[Int, ExecutedDataset]): TrySeq[Step] = {
-    def buildStep[A <: InstrumentSystem: HeaderProvider](inst: A, sys: List[System], headers: Reader[ActionMetadata,List[Header]], resources: Set[Resource]): Step = {
+    def buildStep[A <: InstrumentSystem[IO]: HeaderProvider](inst: A, sys: List[System[IO]], headers: Reader[ActionMetadata,List[Header]], resources: Set[Resource]): Step = {
       val initialStepExecutions: List[List[Action]] =
         if (i === 0) List(List(systems.odb.sequenceStart(obsId, "").map(_ => Result.Ignored).toAction(ActionType.Undefined)))
         else Nil
@@ -323,7 +322,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     pausedCommand(seqId, f)(seqState)
   }
 
-  private def toInstrumentSys(inst: Model.Instrument): TrySeq[InstrumentSystem] = inst match {
+  private def toInstrumentSys(inst: Model.Instrument): TrySeq[InstrumentSystem[IO]] = inst match {
     case Model.Instrument.F2    => TrySeq(Flamingos2(systems.flamingos2, systems.dhs))
     case Model.Instrument.GmosS => TrySeq(GmosSouth(systems.gmosSouth, systems.dhs))
     case Model.Instrument.GmosN => TrySeq(GmosNorth(systems.gmosNorth, systems.dhs))
@@ -332,7 +331,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     case _                      => TrySeq.fail(Unexpected(s"Instrument $inst not supported."))
   }
 
-  private def calcResources(sys: List[System]): Set[Resource] =
+  private def calcResources(sys: List[System[IO]]): Set[Resource] =
     sys.map(resourceFromSystem).toSet
 
   import TcsController.Subsystem._
@@ -349,7 +348,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
 
   private def flatOrArcTcsSubsystems(inst: Model.Instrument): NonEmptyList[TcsController.Subsystem] = NonEmptyList.of(ScienceFold, (if (hasOI(inst)) List(OIWFS) else List.empty): _*)
 
-  private def calcSystems(stepType: StepType): TrySeq[List[System]] = {
+  private def calcSystems(stepType: StepType): TrySeq[List[System[IO]]] = {
     stepType match {
       case CelestialObject(inst) => toInstrumentSys(inst).map(_ :: List(Tcs(systems.tcs, all, ScienceFoldPosition.Position(TcsController.LightSource.Sky, inst)), Gcal(systems.gcal, site == Site.GS)))
       case FlatOrArc(inst)       => toInstrumentSys(inst).map(_ :: List(Tcs(systems.tcs, flatOrArcTcsSubsystems(inst), ScienceFoldPosition.Position(TcsController.LightSource.GCAL, inst)), Gcal(systems.gcal, site == Site.GS)))
@@ -361,7 +360,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
 
   // I cannot use a sealed trait as base, because I cannot have all systems in one source file (too big),
   // so either I use an unchecked notation, or add a default case that throws an exception.
-  private def resourceFromSystem(s: System): Resource = (s: @unchecked) match {
+  private def resourceFromSystem(s: System[IO]): Resource = (s: @unchecked) match {
     case Tcs(_, _, _)     => Resource.TCS
     case Gcal(_, _)       => Resource.Gcal
     case GmosNorth(_, _)  => Instrument.GmosN
@@ -369,7 +368,6 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     case Flamingos2(_, _) => Instrument.F2
     case Gnirs(_, _)      => Instrument.GNIRS
     case GPI(_)           => Instrument.GPI
-
   }
 
   private def calcInstHeader(config: Config, inst: Model.Instrument): TrySeq[Header] = {
@@ -385,13 +383,13 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
         val gnirsReader = if(settings.gnirsKeywords) GnirsKeywordReaderImpl else GnirsKeywordReaderDummy
         toInstrumentSys(inst).map(GnirsHeader.header(_, gnirsReader, tcsKReader))
       case Model.Instrument.GPI    =>
-        TrySeq(GPIHeader.header())
+        TrySeq(GPIHeader.header)
       case _                       =>
         TrySeq.fail(Unexpected(s"Instrument $inst not supported."))
     }
   }
 
-  private def commonHeaders(config: Config, tcsSubsystems: List[TcsController.Subsystem], inst: InstrumentSystem)(ctx: ActionMetadata): Header =
+  private def commonHeaders(config: Config, tcsSubsystems: List[TcsController.Subsystem], inst: InstrumentSystem[IO])(ctx: ActionMetadata): Header =
     new StandardHeader(
       inst,
       ObsKeywordReaderImpl(config, site),
@@ -424,7 +422,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
 }
 
 object SeqTranslate {
-  def apply(site: Site, systems: Systems, /*httpClient: Client[IO], */settings: Settings): SeqTranslate = new SeqTranslate(site, systems, settings)
+  def apply(site: Site, systems: Systems, settings: Settings): SeqTranslate = new SeqTranslate(site, systems, settings)
 
   final case class Systems(
                       odb: ODBProxy,
@@ -435,7 +433,7 @@ object SeqTranslate {
                       gmosSouth: GmosController.GmosSouthController,
                       gmosNorth: GmosController.GmosNorthController,
                       gnirs: GnirsController,
-                      gpi: GPIController
+                      gpi: GPIController[IO]
                     )
 
   final case class Settings(
@@ -503,7 +501,7 @@ object SeqTranslate {
     def toResult: Result = r.fold(e => Result.Error(SeqexecFailure.explain(e)), identity)
   }
 
-  implicit class ConfigResultToResult[A <: Result.PartialVal](val r: Either[SeqexecFailure, ConfigResult]) extends AnyVal {
+  implicit class ConfigResultToResult[A <: Result.PartialVal](val r: Either[SeqexecFailure, ConfigResult[IO]]) extends AnyVal {
     def toResult: Result = r.fold(e => Result.Error(SeqexecFailure.explain(e)), r => Result.OK(Configured(r.sys.resource)))
   }
 
@@ -511,7 +509,7 @@ object SeqTranslate {
     def toAction(kind: ActionType): Action = fromIO(kind, x.value.map(_.toResult))
   }
 
-  implicit class ConfigResultToAction(val x: SeqAction[ConfigResult]) extends AnyVal {
+  implicit class ConfigResultToAction(val x: SeqAction[ConfigResult[IO]]) extends AnyVal {
     def toAction(kind: ActionType): Action = fromIO(kind, x.value.map(_.toResult))
   }
 
