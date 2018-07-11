@@ -5,9 +5,9 @@ package seqexec.server
 
 import cats.effect.IO
 import cats.implicits._
-import edu.gemini.spModel.core.Site
 import fs2.{Pure, Stream, async}
 import gem.Observation
+import gem.enum.Site
 import giapi.client.Giapi
 import java.time.LocalDate
 import org.scalatest.Inside.inside

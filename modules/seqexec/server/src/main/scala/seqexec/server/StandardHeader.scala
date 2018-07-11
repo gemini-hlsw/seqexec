@@ -3,16 +3,10 @@
 
 package seqexec.server
 
-import java.time.format.DateTimeFormatter
-import java.time.{Instant, LocalDate, LocalDateTime, ZoneId}
 
 import cats._
 import cats.implicits._
-import seqexec.model.Model.{Conditions, Observer, Operator}
-import seqexec.model.dhs.ImageFileId
-import seqexec.server.ConfigUtilOps._
-import seqexec.server.keywords.KeywordBag
-import seqexec.server.tcs.{TargetKeywordsReader, Tcs, TcsController, TcsKeywordsReader}
+import gem.enum.Site
 import edu.gemini.spModel.config2.{Config, ItemKey}
 import edu.gemini.spModel.dataflow.GsaAspect.Visibility
 import edu.gemini.spModel.dataflow.GsaSequenceEditor.{HEADER_VISIBILITY_KEY, PROPRIETARY_MONTHS_KEY}
@@ -21,9 +15,15 @@ import edu.gemini.spModel.guide.StandardGuideOptions
 import edu.gemini.spModel.obscomp.InstConstants._
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import edu.gemini.spModel.target.obsComp.TargetObsCompConstants._
+import java.time.format.DateTimeFormatter
+import java.time.{Instant, LocalDate, LocalDateTime, ZoneId}
 import mouse.all._
-
 import scala.collection.breakOut
+import seqexec.model.Model.{Conditions, Observer, Operator}
+import seqexec.model.dhs.ImageFileId
+import seqexec.server.ConfigUtilOps._
+import seqexec.server.keywords.KeywordBag
+import seqexec.server.tcs.{TargetKeywordsReader, Tcs, TcsController, TcsKeywordsReader}
 
 trait ObsKeywordsReader {
   def getObsType: SeqAction[String]
@@ -70,7 +70,12 @@ object ObsKeywordsReader {
 // A Timing window always have 4 keywords
 final case class TimingWindowKeywords(start: SeqAction[String], duration: SeqAction[Double], repeat: SeqAction[Int], period: SeqAction[Double])
 
-final case class ObsKeywordReaderImpl(config: Config, telescope: String) extends ObsKeywordsReader {
+final case class ObsKeywordReaderImpl(config: Config, site: Site) extends ObsKeywordsReader {
+  // Format used on FITS keywords
+  val telescope: String = site match {
+    case Site.GN => "Gemini-North"
+    case Site.GS => "Gemini-South"
+  }
   import ObsKeywordsReader._
 
   implicit private val show: Show[AnyRef] = Show.fromToString
