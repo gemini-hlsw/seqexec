@@ -5,7 +5,7 @@ package seqexec.server
 
 import cats.effect.IO
 import seqexec.model.dhs.ImageFileId
-import seqexec.server.keywords.KeywordsClient
+import seqexec.server.keywords.{HeaderProvider, KeywordsClient}
 import edu.gemini.spModel.config2.Config
 import squants.Time
 
