@@ -6,15 +6,16 @@ package seqexec.server.keywords
 import cats.effect.IO
 import cats.data.EitherT
 import cats.implicits._
-import seqexec.model.dhs.ImageFileId
-import seqexec.server.SeqexecFailure
-import seqexec.server.SeqActionF
+import gem.Observation
 import org.http4s.client.Client
 import org.http4s._
 import org.http4s.dsl.io._
 import org.http4s.client.dsl.Http4sClientDsl
 import org.http4s.scalaxml._
 import scala.xml.Elem
+import seqexec.model.dhs.ImageFileId
+import seqexec.server.SeqexecFailure
+import seqexec.server.SeqActionF
 
 /**
   * Gemini Data service client
@@ -49,6 +50,13 @@ final case class GDSClient(client: Client[IO], gdsUri: Uri)
       </params>
     </methodCall>
 
+  private def handleConnectionError: PartialFunction[Throwable, SeqexecFailure] = {
+    case e: Throwable =>
+      SeqexecFailure.GDSException(e, gdsUri): SeqexecFailure
+  }
+
+  private def handleXmlError(xml: Elem): SeqActionF[IO, Unit] = EitherT.fromEither(GDSClient.checkError(xml, gdsUri))
+
   /**
     * Set the keywords for an image
     */
@@ -63,13 +71,40 @@ final case class GDSClient(client: Client[IO], gdsUri: Uri)
     client
       .expect[Elem](postRequest)(scalaxml.xml)
       .attemptT
-      .leftMap {
-        case e: Throwable =>
-          SeqexecFailure.GDSException(e, gdsUri): SeqexecFailure
-      }
-      .flatMap(xml => EitherT.fromEither(GDSClient.checkError(xml, gdsUri)))
+      .leftMap(handleConnectionError)
+      .flatMap(handleXmlError)
   }
 
+  // Build an xml rpc request to open an obseravtion
+  private def openObservationRPC(obsId: Observation.Id, id: ImageFileId): Elem =
+    <methodCall>
+      <methodName>HeaderReceiver.openObservation</methodName>
+      <params>
+        <param>
+          <value>
+            <string>{obsId.format}</string>
+          </value>
+        </param>
+        <param>
+          <value>
+            <string>{id}</string>
+          </value>
+        </param>
+      </params>
+    </methodCall>
+
+  def openObservation(obsId: Observation.Id, id: ImageFileId): SeqActionF[IO, Unit] = {
+    // Build the request
+    val xmlRpc      = openObservationRPC(obsId, id)
+    val postRequest = POST(gdsUri, xmlRpc)
+
+    // Do the request
+    client
+      .expect[Elem](postRequest)(scalaxml.xml)
+      .attemptT
+      .leftMap(handleConnectionError)
+      .flatMap(xml => EitherT.fromEither(GDSClient.checkError(xml, gdsUri)))
+  }
 }
 
 object GDSClient {

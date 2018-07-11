@@ -3,6 +3,7 @@
 
 package seqexec.server.gcal
 
+import gem.Observation
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.keywords._
 import seqexec.server.SeqAction
@@ -17,9 +18,9 @@ object GcalHeader {
         buildString(gcalReader.getShutter.orDefault, "GCALSHUT")
       )
 
-      override def sendBefore(id: ImageFileId): SeqAction[Unit] =
+      override def sendBefore(obsId: Observation.Id, id: ImageFileId): SeqAction[Unit] =
         sendKeywords(id, inst, gcalKeywords)
 
-      override def sendAfter(id: ImageFileId): SeqAction[Unit] = SeqAction(())
+      override def sendAfter(obsId: Observation.Id, id: ImageFileId): SeqAction[Unit] = SeqAction(())
     }
 }

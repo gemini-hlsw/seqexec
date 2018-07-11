@@ -3,17 +3,19 @@
 
 package seqexec.server.gpi
 
+import gem.Observation
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.keywords.Header
 import seqexec.server.SeqAction
+import seqexec.server.keywords.GDSClient
 
 object GPIHeader {
 
-  def header: Header = new Header {
-    override def sendBefore(id: ImageFileId): SeqAction[Unit] =
-      SeqAction.void
+  def header(gdsClient: GDSClient): Header = new Header {
+    override def sendBefore(obsId: Observation.Id, id: ImageFileId): SeqAction[Unit] =
+      gdsClient.openObservation(obsId, id)
 
-    override def sendAfter(id: ImageFileId): SeqAction[Unit] =
+    override def sendAfter(obsId: Observation.Id, id: ImageFileId): SeqAction[Unit] =
       SeqAction.void
   }
 }

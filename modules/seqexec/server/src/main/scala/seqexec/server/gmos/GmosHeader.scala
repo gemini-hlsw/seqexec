@@ -3,6 +3,7 @@
 
 package seqexec.server.gmos
 
+import gem.Observation
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.keywords._
@@ -21,7 +22,7 @@ object GmosHeader {
   // scalastyle:off
   def header(inst: InstrumentSystem[IO], gmosObsReader: GmosHeader.ObsKeywordsReader, gmosReader: GmosHeader.InstKeywordsReader, tcsKeywordsReader: TcsKeywordsReader): Header =
     new Header {
-      override def sendBefore(id: ImageFileId): SeqAction[Unit] = {
+      override def sendBefore(obsId: Observation.Id, id: ImageFileId): SeqAction[Unit] = {
         sendKeywords(id, inst, List(
           buildInt32(tcsKeywordsReader.getGmosInstPort.orDefault, "INPORT"),
           buildString(gmosReader.ccName, "GMOSCC"),
@@ -58,7 +59,7 @@ object GmosHeader {
       private val InBeam: Int = 0
       private def readMaskName: SeqAction[String] = gmosReader.maskLoc.flatMap{v => if(v === InBeam) gmosReader.maskName else SeqAction("None")}
 
-      override def sendAfter(id: ImageFileId): SeqAction[Unit] = {
+      override def sendAfter(obsId: Observation.Id, id: ImageFileId): SeqAction[Unit] = {
         sendKeywords(id, inst, List(
           buildInt32(gmosReader.maskId, "MASKID"),
           buildString(readMaskName, "MASKNAME"),

@@ -204,8 +204,7 @@ class StandardHeader[A: HeaderProvider](
     else SeqAction.void
   }
 
-  // scalastyle:of
-  override def sendBefore(id: ImageFileId): SeqAction[Unit] = {
+  override def sendBefore(obsId: Observation.Id, id: ImageFileId): SeqAction[Unit] = {
     def guiderKeywords(guideWith: SeqAction[StandardGuideOptions.Value], baseName: String, target: TargetKeywordsReader,
                        extras: List[KeywordBag => SeqAction[KeywordBag]]): SeqAction[Unit] = guideWith.flatMap { g =>
       if (g === StandardGuideOptions.Value.guide) sendKeywords(id, inst, List(
@@ -250,9 +249,8 @@ class StandardHeader[A: HeaderProvider](
     oiwfsKeywords *>
     aowfsKeywords
   }
-  // scalastyle:on
 
-  override def sendAfter(id: ImageFileId): SeqAction[Unit] = sendKeywords(id, inst,
+  override def sendAfter(obsId: Observation.Id, id: ImageFileId): SeqAction[Unit] = sendKeywords(id, inst,
     List(
       buildDouble(tcsReader.getAirMass.orDefault, "AIRMASS"),
       buildDouble(tcsReader.getStartAirMass.orDefault, "AMSTART"),

@@ -4,6 +4,7 @@
 package seqexec.server.gnirs
 
 import cats.effect.IO
+import gem.Observation
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.keywords._
 import seqexec.server.InstrumentSystem
@@ -12,7 +13,7 @@ import seqexec.server.SeqAction
 
 object GnirsHeader {
   def header(inst: InstrumentSystem[IO], gnirsReader: GnirsKeywordReader, tcsReader: TcsKeywordsReader): Header = new Header {
-    override def sendBefore(id: ImageFileId): SeqAction[Unit] =
+    override def sendBefore(obsId: Observation.Id, id: ImageFileId): SeqAction[Unit] =
       sendKeywords(id, inst, List(
         buildInt32(tcsReader.getGnirsInstPort.orDefault, "INPORT"),
         buildString(gnirsReader.getArrayId, "ARRAYID"),
@@ -44,7 +45,7 @@ object GnirsHeader {
         buildDouble(gnirsReader.getDetectorBias, "DETBIAS")
       ) )
 
-    override def sendAfter(id: ImageFileId): SeqAction[Unit] =
+    override def sendAfter(obsId: Observation.Id, id: ImageFileId): SeqAction[Unit] =
       sendKeywords(id, inst, List(
         buildString(tcsReader.getUT.orDefault, "UTEND"),
         buildDouble(gnirsReader.getObsEpoch, "OBSEPOCH")
