@@ -5,6 +5,7 @@ package seqexec.server
 
 import knobs.{CfgText, CfgValue, Configured}
 import gem.enum.Site
+import org.http4s.Uri
 
 trait SeqexecConfiguration {
 
@@ -12,6 +13,14 @@ trait SeqexecConfiguration {
 
     def apply(a: CfgValue) = a match {
       case CfgText(t) => Site.fromTag(t)
+      case _          => None
+    }
+  }
+
+  implicit val configuredUri: Configured[Uri] = new Configured[Uri] {
+
+    def apply(a: CfgValue) = a match {
+      case CfgText(t) => Uri.fromString(t).toOption
       case _          => None
     }
   }

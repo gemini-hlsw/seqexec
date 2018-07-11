@@ -37,9 +37,9 @@ final case class GDSClient(client: Client[IO], gdsUri: Uri)
             <array>
               <data>
                 {
-                  for {
-                    k <- ks.keywords
-                  } yield <value><string>{s"${k.name},${k.keywordType.gdsType},${k.value}"}</string></value>
+                  ks.keywords.map { k =>
+                    <value><string>{s"${k.name},${k.keywordType.gdsType},${k.value}"}</string></value>
+                  }
                 }
               </data>
             </array>

@@ -22,8 +22,8 @@ object HeaderProvider {
     def keywordsClient: KeywordsClient[IO] = HeaderProvider[A].keywordsClient(a)
   }
 
-  implicit def ToHeaderProviderOps[A: HeaderProvider](
-      a: A): HeaderProviderOps[A] = new HeaderProviderOps(a)
+  implicit def ToHeaderProviderOps[A: HeaderProvider](a: A): HeaderProviderOps[A] =
+    new HeaderProviderOps(a)
 }
 
 /**

@@ -24,15 +24,15 @@ object InstrumentSystem {
   implicit val HeaderProvider: HeaderProvider[InstrumentSystem[IO]] = new HeaderProvider[InstrumentSystem[IO]] {
     override def keywordsClient(a: InstrumentSystem[IO]): KeywordsClient[IO] = a
   }
-  final case class StopObserveCmd(self: SeqAction[Unit])  extends AnyVal
-  final case class AbortObserveCmd(self: SeqAction[Unit]) extends AnyVal
-  final case class PauseObserveCmd(self: SeqAction[Unit]) extends AnyVal
-  final case class ContinuePausedCmd(self: Time => SeqAction[ObserveCommand.Result]) extends AnyVal
-  final case class StopPausedCmd(self: SeqAction[ObserveCommand.Result]) extends AnyVal
-  final case class AbortPausedCmd(self: SeqAction[ObserveCommand.Result]) extends AnyVal
+  final case class StopObserveCmd(self: SeqAction[Unit])
+  final case class AbortObserveCmd(self: SeqAction[Unit])
+  final case class PauseObserveCmd(self: SeqAction[Unit])
+  final case class ContinuePausedCmd(self: Time => SeqAction[ObserveCommand.Result])
+  final case class StopPausedCmd(self: SeqAction[ObserveCommand.Result])
+  final case class AbortPausedCmd(self: SeqAction[ObserveCommand.Result])
 
   sealed trait ObserveControl
-  object Uncontrollable extends ObserveControl
+  case object Uncontrollable extends ObserveControl
   final case class OpticControl(stop: StopObserveCmd,
                                 abort: AbortObserveCmd,
                                 pause: PauseObserveCmd,
