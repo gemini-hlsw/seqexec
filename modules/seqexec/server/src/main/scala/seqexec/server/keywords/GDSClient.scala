@@ -76,7 +76,7 @@ final case class GDSClient(client: Client[IO], gdsUri: Uri)
   }
 
   // Build an xml rpc request to open an obseravtion
-  private def openObservationRPC(obsId: Observation.Id, id: ImageFileId): Elem =
+  private def openObservationRPC(obsId: Observation.Id, id: ImageFileId, ks: KeywordBag): Elem =
     <methodCall>
       <methodName>HeaderReceiver.openObservation</methodName>
       <params>
@@ -90,12 +90,25 @@ final case class GDSClient(client: Client[IO], gdsUri: Uri)
             <string>{id}</string>
           </value>
         </param>
+        <param>
+          <value>
+            <array>
+              <data>
+                {
+                  ks.keywords.map { k =>
+                    <value><string>{s"${k.name},${keywordType(k.keywordType)},${k.value}"}</string></value>
+                  }
+                }
+              </data>
+            </array>
+          </value>
+        </param>
       </params>
     </methodCall>
 
-  def openObservation(obsId: Observation.Id, id: ImageFileId): SeqActionF[IO, Unit] = {
+  def openObservation(obsId: Observation.Id, id: ImageFileId, ks: KeywordBag): SeqActionF[IO, Unit] = {
     // Build the request
-    val xmlRpc      = openObservationRPC(obsId, id)
+    val xmlRpc      = openObservationRPC(obsId, id, ks)
     val postRequest = POST(gdsUri, xmlRpc)
 
     // Do the request

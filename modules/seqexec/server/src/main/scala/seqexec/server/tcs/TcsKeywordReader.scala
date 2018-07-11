@@ -3,10 +3,12 @@
 
 package seqexec.server.tcs
 
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 import cats.Apply
 import cats.implicits._
+import gem.math.Angle
+import edu.gemini.spModel.core.Wavelength
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import seqexec.server.SeqAction
 import seqexec.server.keywords._
 import edu.gemini.spModel.core.Wavelength
@@ -115,7 +117,6 @@ trait TcsKeywordsReader {
   def getCarouselMode: SeqAction[Option[String]]
 
   def getM2UserFocusOffset: SeqAction[Option[Double]]
-
   def getPwfs1Freq: SeqAction[Option[Double]]
 
   def getPwfs2Freq: SeqAction[Option[Double]]
@@ -243,7 +244,7 @@ object DummyTcsKeywordsReader extends TcsKeywordsReader {
 
   override def getM2UserFocusOffset: SeqAction[Option[Double]] = 0.0.toSeqAction
 
-  override def getPwfs1Freq: SeqAction[Option[Double]] = -9999.0.toSeqAction
+  override def getPwfs1Freq: SeqAction[Option[Double]] = -9999.0
 
   override def getPwfs2Freq: SeqAction[Option[Double]] = -9999.0.toSeqAction
 
@@ -375,6 +376,8 @@ object TcsKeywordsReaderImpl extends TcsKeywordsReader {
   override def getStartAirMass: SeqAction[Option[Double]] = TcsEpics.instance.airmassStart.toSeqActionO
 
   override def getEndAirMass: SeqAction[Option[Double]] = TcsEpics.instance.airmassEnd.toSeqActionO
+
+  override def getParallacticAngle: SeqAction[Option[Angle]] = TcsEpics.instance.parallacticAngle
 
   override def getPwfs1Target: TargetKeywordsReader = target(TcsEpics.instance.pwfs1Target)
 
