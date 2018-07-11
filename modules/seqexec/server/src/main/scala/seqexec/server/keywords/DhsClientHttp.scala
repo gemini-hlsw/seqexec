@@ -69,8 +69,18 @@ class DhsClientHttp(val baseURI: String) extends DhsClient {
   implicit def imageParametersEncode: EncodeJson[DhsClient.ImageParameters] = EncodeJson[DhsClient.ImageParameters]( p =>
     ("lifetime" := p.lifetime.str) ->: ("contributors" := p.contributors) ->: Json.jEmptyObject )
 
+  private def keywordType(k: KeywordType): String = k match {
+    case TypeInt8    => "INT8"
+    case TypeInt16   => "INT16"
+    case TypeInt32   => "INT32"
+    case TypeFloat   => "FLOAT"
+    case TypeDouble  => "DOUBLE"
+    case TypeBoolean => "BOOLEAN"
+    case TypeString  => "STRING"
+  }
+
   implicit def keywordEncode: EncodeJson[InternalKeyword] = EncodeJson[InternalKeyword]( k =>
-    ("name" := k.name) ->: ("type" := k.keywordType.str) ->: ("value" := k.value) ->: Json.jEmptyObject )
+    ("name" := k.name) ->: ("type" := keywordType(k.keywordType)) ->: ("value" := k.value) ->: Json.jEmptyObject )
 
   @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
   private def sendRequest[T](method: EntityEnclosingMethod, body: Json, errMsg: String)(implicit decoder: argonaut.DecodeJson[TrySeq[T]]): SeqAction[T] = EitherT ( IO.apply {

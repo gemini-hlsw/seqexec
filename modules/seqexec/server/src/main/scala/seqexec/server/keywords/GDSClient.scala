@@ -22,6 +22,7 @@ import scala.xml.Elem
 final case class GDSClient(client: Client[IO], gdsUri: Uri)
     extends KeywordsClient[IO]
     with Http4sClientDsl[IO] {
+
   // Build an xml rpc request to store keywords
   private def storeKeywords(id: ImageFileId, ks: KeywordBag): Elem =
     <methodCall>
@@ -38,7 +39,7 @@ final case class GDSClient(client: Client[IO], gdsUri: Uri)
               <data>
                 {
                   ks.keywords.map { k =>
-                    <value><string>{s"${k.name},${k.keywordType.gdsType},${k.value}"}</string></value>
+                    <value><string>{s"${k.name},${keywordType(k.keywordType)},${k.value}"}</string></value>
                   }
                 }
               </data>
@@ -67,6 +68,16 @@ final case class GDSClient(client: Client[IO], gdsUri: Uri)
           SeqexecFailure.GDSException(e, gdsUri): SeqexecFailure
       }
       .flatMap(xml => EitherT.fromEither(GDSClient.checkError(xml, gdsUri)))
+  }
+
+  private def keywordType(k: KeywordType): String = k match {
+    case TypeInt8    => "INT"
+    case TypeInt16   => "INT"
+    case TypeInt32   => "INT"
+    case TypeFloat   => "DOUBLE"
+    case TypeDouble  => "DOUBLE"
+    case TypeBoolean => "BOOLEAN"
+    case TypeString  => "STRING"
   }
 }
 

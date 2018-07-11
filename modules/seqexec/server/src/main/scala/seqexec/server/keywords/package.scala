@@ -3,6 +3,8 @@
 
 package seqexec.server
 
+import cats.{Eq, Monoid}
+import cats.implicits._
 import cats.effect.IO
 import seqexec.model.dhs.ImageFileId
 
@@ -47,14 +49,19 @@ package keywords {
   }
 
   // TODO: Implement the unsigned types, if needed.
-  sealed case class KeywordType protected (str: String, gdsType: String)
-  object TypeInt8    extends KeywordType("INT8", "INT")
-  object TypeInt16   extends KeywordType("INT16", "INT")
-  object TypeInt32   extends KeywordType("INT32", "INT")
-  object TypeFloat   extends KeywordType("FLOAT", "DOUBLE")
-  object TypeDouble  extends KeywordType("DOUBLE", "DOUBLE")
-  object TypeBoolean extends KeywordType("BOOLEAN", "BOOLEAN")
-  object TypeString  extends KeywordType("STRING", "STRING")
+  sealed trait KeywordType
+
+  object KeywordType {
+    implicit val eq: Eq[KeywordType] = Eq.fromUniversalEquals
+  }
+
+  case object TypeInt8    extends KeywordType
+  case object TypeInt16   extends KeywordType
+  case object TypeInt32   extends KeywordType
+  case object TypeFloat   extends KeywordType
+  case object TypeDouble  extends KeywordType
+  case object TypeBoolean extends KeywordType
+  case object TypeString  extends KeywordType
 
   // The developer uses these classes to define all the typed keywords
   sealed class Keyword[T] protected (val n: String,
@@ -80,9 +87,13 @@ package keywords {
   // use an internal representation, and offer a class to the developer (KeywordBag) to create the list from typed
   // keywords.
 
-  private[keywords] final case class InternalKeyword(name: String,
+  private[server] final case class InternalKeyword(name: String,
                                                      keywordType: KeywordType,
                                                      value: String)
+
+  object InternalKeyword {
+    implicit val eq: Eq[InternalKeyword] = Eq.by(x => (x.name, x.keywordType, x.value))
+  }
 
   final case class KeywordBag(keywords: List[InternalKeyword]) {
 
@@ -98,62 +109,20 @@ package keywords {
   object KeywordBag {
     def empty: KeywordBag = KeywordBag(List())
 
-    def apply[A](k1: Keyword[A]): KeywordBag =
-      KeywordBag(List(internalKeywordConvert(k1)))
+    implicit val eq: Eq[KeywordBag] = Eq.by(_.keywords)
+    implicit val monoid: Monoid[KeywordBag] = new Monoid[KeywordBag] {
+      override def empty: KeywordBag = KeywordBag.empty
+      override def combine(a: KeywordBag, b: KeywordBag) = KeywordBag(a.keywords |+| b.keywords)
+    }
 
-    def apply[A, B](k1: Keyword[A], k2: Keyword[B]): KeywordBag =
-      KeywordBag(List(internalKeywordConvert(k1), internalKeywordConvert(k2)))
+    def apply(ks: Keyword[_]*): KeywordBag =
+      KeywordBag(ks.toList.map(internalKeywordConvert))
 
-    def apply[A, B, C](k1: Keyword[A],
-                       k2: Keyword[B],
-                       k3: Keyword[C]): KeywordBag =
-      KeywordBag(
-        List(internalKeywordConvert(k1),
-             internalKeywordConvert(k2),
-             internalKeywordConvert(k3)))
-
-    def apply[A, B, C, D](k1: Keyword[A],
-                          k2: Keyword[B],
-                          k3: Keyword[C],
-                          k4: Keyword[D]): KeywordBag =
-      KeywordBag(
-        List(internalKeywordConvert(k1),
-             internalKeywordConvert(k2),
-             internalKeywordConvert(k3),
-             internalKeywordConvert(k4)))
-
-    def apply[A, B, C, D, E](k1: Keyword[A],
-                             k2: Keyword[B],
-                             k3: Keyword[C],
-                             k4: Keyword[D],
-                             k5: Keyword[E]): KeywordBag =
-      KeywordBag(
-        List(internalKeywordConvert(k1),
-             internalKeywordConvert(k2),
-             internalKeywordConvert(k3),
-             internalKeywordConvert(k4),
-             internalKeywordConvert(k5)))
-
-    def apply[A, B, C, D, E, F](k1: Keyword[A],
-                                k2: Keyword[B],
-                                k3: Keyword[C],
-                                k4: Keyword[D],
-                                k5: Keyword[E],
-                                k6: Keyword[F]): KeywordBag =
-      KeywordBag(
-        List(
-          internalKeywordConvert(k1),
-          internalKeywordConvert(k2),
-          internalKeywordConvert(k3),
-          internalKeywordConvert(k4),
-          internalKeywordConvert(k5),
-          internalKeywordConvert(k6)
-        ))
   }
 }
 
 package object keywords {
 
-  def internalKeywordConvert[T](k: Keyword[T]): InternalKeyword =
+  def internalKeywordConvert[_](k: Keyword[_]): InternalKeyword =
     InternalKeyword(k.n, k.t, s"${k.v}")
 }

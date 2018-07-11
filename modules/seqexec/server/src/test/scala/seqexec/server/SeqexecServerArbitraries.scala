@@ -16,6 +16,7 @@ import seqexec.server.gpi.GPIController._
 import seqexec.server.gcal.GcalController
 import seqexec.server.gcal.GcalController._
 import seqexec.server.tcs.{TcsController, TcsControllerEpics}
+import seqexec.server.keywords._
 import seqexec.model.Model.{Conditions, Instrument, Operator}
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams
@@ -233,4 +234,26 @@ object SeqexecServerArbitraries extends ArbTime {
   implicit val gpiConfigCogen: Cogen[GPIController.GPIConfig] =
     Cogen[(LegacyAdc, Duration, Int, Either[LegacyObservingMode, NonStandardModeParams], GPIController.Shutters, GPIController.ArtificialSources, LegacyPupilCamera, GPIController.AOFlags)]
       .contramap(x => (x.adc, x.expTime, x.coAdds, x.mode, x.shutters, x.asu, x.pc, x.aoFlags))
+
+  implicit val keywordTypeArb: Arbitrary[KeywordType] = Arbitrary {
+    Gen.oneOf(TypeInt8, TypeInt16, TypeInt32, TypeFloat, TypeDouble, TypeBoolean, TypeString)
+  }
+  implicit val keywordTypeCogen: Cogen[KeywordType] =
+    Cogen[Int].contramap(_.##)
+
+  implicit val internalKeywordArb: Arbitrary[InternalKeyword] = Arbitrary {
+    for {
+      name  <- Gen.listOfN(8, Gen.alphaUpperChar)
+      kt    <- arbitrary[KeywordType]
+      value <- Gen.listOfN(17, Gen.alphaChar)
+    } yield InternalKeyword(name.mkString, kt, value.mkString)
+  }
+  implicit val internalKeywordCogen: Cogen[InternalKeyword] =
+    Cogen[(String, KeywordType, String)].contramap(x => (x.name, x.keywordType, x.value))
+
+  implicit val keywordBagArb: Arbitrary[KeywordBag] = Arbitrary {
+    arbitrary[List[InternalKeyword]].map(KeywordBag.apply)
+  }
+  implicit val keywordBagCogen: Cogen[KeywordBag] =
+    Cogen[List[InternalKeyword]].contramap(_.keywords)
 }
