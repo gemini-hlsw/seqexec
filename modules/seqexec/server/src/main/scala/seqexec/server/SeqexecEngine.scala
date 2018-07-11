@@ -339,7 +339,7 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings) {
 }
 
 // Configuration stuff
-object SeqexecEngine {
+object SeqexecEngine extends SeqexecConfiguration {
   sealed trait GPIKeywords
 
   object GPIKeywords {
@@ -485,7 +485,7 @@ object SeqexecEngine {
 
   // scalastyle:off
   def seqexecConfiguration(giapi: Giapi[IO]): Kleisli[IO, Config, Settings] = Kleisli { cfg: Config =>
-    val site                    = Site.fromTag(cfg.require[String]("seqexec-engine.site")).getOrElse(Site.GS)
+    val site                    = cfg.require[Site]("seqexec-engine.site")
     val odbHost                 = cfg.require[String]("seqexec-engine.odb")
     val dhsServer               = cfg.require[String]("seqexec-engine.dhsServer")
     val dhsSim                  = cfg.require[Boolean]("seqexec-engine.dhsSim")

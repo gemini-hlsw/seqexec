@@ -394,7 +394,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
   private def commonHeaders(config: Config, tcsSubsystems: List[TcsController.Subsystem], inst: InstrumentSystem)(ctx: ActionMetadata): Header =
     new StandardHeader(
       inst,
-      ObsKeywordReaderImpl(config, site.longName.replace(' ', '-')),
+      ObsKeywordReaderImpl(config, site),
       if (settings.tcsKeywords) TcsKeywordsReaderImpl else DummyTcsKeywordsReader,
       StateKeywordsReader(ctx.conditions, ctx.operator, ctx.observer),
       tcsSubsystems
