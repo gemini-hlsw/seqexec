@@ -41,13 +41,21 @@ do
   sleep 0.5
 done
 
-# Set up the schema and run tests
+# Set up the schema and compile tests
 /usr/local/bin/sbt                                        \
   -jvm-opts build/buildkite-jvmopts                       \
   -no-colors                                              \
   -Docs3.skipDependencyUpdates                            \
   -Docs3.databaseUrl=jdbc:postgresql://$HOST_AND_PORT/gem \
   sql/flywayMigrate                                       \
+  test:compile
+
+# Run tests
+/usr/local/bin/sbt                                        \
+  -jvm-opts build/buildkite-jvmopts                       \
+  -no-colors                                              \
+  -Docs3.skipDependencyUpdates                            \
+  -Docs3.databaseUrl=jdbc:postgresql://$HOST_AND_PORT/gem \
   test
 
 ###
@@ -58,5 +66,10 @@ done
   -jvm-opts build/buildkite-jvmopts     \
   -no-colors                            \
   -Docs3.skipDependencyUpdates          \
-  ui/fastOptJS                          \
+  ui/fastOptJS
+
+/usr/local/bin/sbt                      \
+  -jvm-opts build/buildkite-jvmopts     \
+  -no-colors                            \
+  -Docs3.skipDependencyUpdates          \
   seqexec_web_client/fastOptJS::webpack

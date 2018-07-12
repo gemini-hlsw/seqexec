@@ -1,0 +1,7 @@
+steps:
+  - command: "build/buildkite-build.sh"
+    label: "Run the Build"
+    retry:
+      automatic:
+        - exit_status: 137
+          limit: 2
