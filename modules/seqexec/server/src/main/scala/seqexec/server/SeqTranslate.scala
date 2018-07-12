@@ -383,7 +383,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
         val gnirsReader = if(settings.gnirsKeywords) GnirsKeywordReaderImpl else GnirsKeywordReaderDummy
         toInstrumentSys(inst).map(GnirsHeader.header(_, gnirsReader, tcsKReader))
       case Model.Instrument.GPI    =>
-        toInstrumentSys(inst).map(GPIHeader.header(_, systems.gpi.gdsClient, tcsKReader))
+        toInstrumentSys(inst).map(GPIHeader.header(_, systems.gpi.gdsClient, tcsKReader, ObsKeywordReaderImpl(config, site)))
       case _                       =>
         TrySeq.fail(Unexpected(s"Instrument $inst not supported."))
     }

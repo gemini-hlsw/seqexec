@@ -75,7 +75,7 @@ final case class GDSClient(client: Client[IO], gdsUri: Uri)
       .flatMap(handleXmlError)
   }
 
-  // Build an xml rpc request to open an obseravtion
+  // Build an xml rpc request to open an observation
   private def openObservationRPC(obsId: Observation.Id, id: ImageFileId, ks: KeywordBag): Elem =
     <methodCall>
       <methodName>HeaderReceiver.openObservation</methodName>
