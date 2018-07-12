@@ -4,6 +4,7 @@
 package seqexec.server.gws
 
 import cats.effect.IO
+import gem.Observation
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.keywords._
 import seqexec.server.{EpicsHealth, SeqAction}
@@ -12,8 +13,9 @@ object GwsHeader {
   def headerProvider(dhs: DhsClient): HeaderProvider[GwsHeader.type] = new HeaderProvider[GwsHeader.type] {
     def keywordsClient(a: GwsHeader.type): KeywordsClient[IO] = StandaloneDhsClient(dhs)
   }
+
   def header[A: HeaderProvider](inst: A, gwsReader: GwsKeywordReader): Header = new Header {
-    override def sendBefore(id: ImageFileId): SeqAction[Unit] = {
+    override def sendBefore(obsId: Observation.Id, id: ImageFileId): SeqAction[Unit] = {
       gwsReader.getHealth.flatMap{
         case Some(EpicsHealth.Good) => sendKeywords(id, inst, List(
           buildDouble(gwsReader.getHumidity.orDefault, "HUMIDITY"),
@@ -54,7 +56,7 @@ object GwsHeader {
             buildDouble(x.orDefault, "WINDDIRE")
           }
         ))
-        case _       => SeqAction(())
+        case _       => SeqAction.void
       }
     }
 

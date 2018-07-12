@@ -693,4 +693,17 @@ object handlers {
         modelUpdateMessage,
         defaultMessage).combineAll
   }
+
+  /**
+    * Handle for UI debugging events
+    */
+  class DebuggingHandler[M](modelRW: ModelRW[M, LoadedSequences]) extends ActionHandler(modelRW) with Handlers {
+    override def handle: PartialFunction[Any, ActionResult[M]] = {
+      case MarkStepAsRunning(obsId, step) =>
+        updated(value.copy(queue = value.queue.collect {
+          case v: SequenceView if v.id === obsId => v.showAsRunning(step)
+          case v                                 => v
+        }))
+    }
+  }
 }

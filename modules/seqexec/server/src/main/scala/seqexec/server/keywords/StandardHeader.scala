@@ -6,6 +6,7 @@ package seqexec.server.keywords
 import cats.implicits._
 import edu.gemini.spModel.gemini.obscomp.SPSiteQuality._
 import edu.gemini.spModel.guide.StandardGuideOptions
+import gem.Observation
 import seqexec.model.Model.{Conditions, Observer, Operator}
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.{SeqAction, OcsBuildInfo, sgoEq}
@@ -204,8 +205,7 @@ class StandardHeader[A: HeaderProvider](
     else SeqAction.void
   }
 
-  // scalastyle:of
-  override def sendBefore(id: ImageFileId): SeqAction[Unit] = {
+  override def sendBefore(obsId: Observation.Id, id: ImageFileId): SeqAction[Unit] = {
     def guiderKeywords(guideWith: SeqAction[StandardGuideOptions.Value], baseName: String, target: TargetKeywordsReader,
                        extras: List[KeywordBag => SeqAction[KeywordBag]]): SeqAction[Unit] = guideWith.flatMap { g =>
       if (g === StandardGuideOptions.Value.guide) sendKeywords(id, inst, List(
@@ -250,7 +250,6 @@ class StandardHeader[A: HeaderProvider](
     oiwfsKeywords *>
     aowfsKeywords
   }
-  // scalastyle:on
 
   override def sendAfter(id: ImageFileId): SeqAction[Unit] = sendKeywords(id, inst,
     List(

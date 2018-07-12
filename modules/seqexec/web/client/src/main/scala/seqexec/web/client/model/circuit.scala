@@ -120,6 +120,7 @@ object circuit {
     private val syncToAddedHandler       = new SyncToAddedRemovedRun(zoomTo(_.uiModel.navLocation))
     private val remoteRequestsHandler    = new RemoteRequestsHandler(zoomTo(_.clientId))
     private val syncRequestsHandler      = new SyncRequestsHandler(zoomTo(_.uiModel.syncInProgress))
+    private val debuggingHandler         = new DebuggingHandler(zoomTo(_.uiModel.sequences))
 
     override protected def initialModel = SeqexecAppRootModel.initial
 
@@ -217,7 +218,8 @@ object circuit {
       operatorHandler,
       remoteRequestsHandler,
       syncRequestsHandler,
-      navigationHandler)
+      navigationHandler,
+      debuggingHandler)
 
     /**
       * Handles a fatal error most likely during action processing

@@ -14,6 +14,7 @@ import edu.gemini.spModel.guide.StandardGuideOptions
 import edu.gemini.spModel.obscomp.InstConstants._
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import edu.gemini.spModel.target.obsComp.TargetObsCompConstants._
+import edu.gemini.spModel.gemini.gpi.Gpi.ASTROMETRIC_FIELD_PROP
 import java.time.format.DateTimeFormatter
 import java.time.{Instant, LocalDate, LocalDateTime, ZoneId}
 import mouse.all._
@@ -43,6 +44,7 @@ trait ObsKeywordsReader {
   def getRequestedAirMassAngle: Map[String, SeqAction[Double]]
   def getTimingWindows: List[(Int, TimingWindowKeywords)]
   def getRequestedConditions: Map[String, SeqAction[String]]
+  def getAstrometicField: SeqAction[Boolean]
 }
 
 object ObsKeywordsReader {
@@ -196,4 +198,8 @@ final case class ObsKeywordReaderImpl(config: Config, site: Site) extends ObsKey
 
   override def getSciBand: SeqAction[Option[Int]] =
     SeqAction(config.extract(OBSERVE_KEY / SCI_BAND).as[Integer].map(_.toInt).toOption)
+
+  def getAstrometicField: SeqAction[Boolean] =
+    SeqAction.either(config.extract(INSTRUMENT_KEY / ASTROMETRIC_FIELD_PROP).as[java.lang.Boolean]
+      .leftMap(explainExtractError)).map(Boolean.unbox)
 }
