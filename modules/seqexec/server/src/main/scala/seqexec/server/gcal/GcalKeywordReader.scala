@@ -5,7 +5,7 @@ package seqexec.server.gcal
 
 import cats.Eq
 import seqexec.server.SeqAction
-import seqexec.server.KeywordsReader._
+import seqexec.server.keywords._
 import cats.implicits._
 import edu.gemini.seqexec.server.gcal.BinaryOnOff
 
@@ -18,13 +18,13 @@ trait GcalKeywordReader {
 
 object DummyGcalKeywordsReader extends GcalKeywordReader {
 
-  def getDiffuser: SeqAction[Option[String]] = None
+  def getDiffuser: SeqAction[Option[String]] = None.toSeqActionO
 
-  def getFilter: SeqAction[Option[String]] = None
+  def getFilter: SeqAction[Option[String]] = None.toSeqActionO
 
-  def getLamp: SeqAction[Option[String]] = None
+  def getLamp: SeqAction[Option[String]] = None.toSeqActionO
 
-  def getShutter: SeqAction[Option[String]] = None
+  def getShutter: SeqAction[Option[String]] = None.toSeqActionO
 }
 
 object GcalKeywordsReaderImpl extends GcalKeywordReader {

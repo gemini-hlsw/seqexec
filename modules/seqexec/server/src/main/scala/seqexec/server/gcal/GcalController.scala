@@ -7,8 +7,7 @@ import cats.Eq
 import cats.implicits._
 import cats.effect.IO
 import seqexec.server.SeqAction
-import seqexec.server.HeaderProvider
-import seqexec.server.keywords.{DhsClient, KeywordsClient, StandaloneDhsClient}
+import seqexec.server.keywords.{HeaderProvider, DhsClient, KeywordsClient, StandaloneDhsClient}
 import edu.gemini.spModel.gemini.calunit.CalUnitParams.Shutter
 
 trait GcalController {
