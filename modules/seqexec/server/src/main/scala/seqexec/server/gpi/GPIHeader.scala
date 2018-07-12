@@ -3,17 +3,36 @@
 
 package seqexec.server.gpi
 
+import gem.Observation
 import seqexec.model.dhs.ImageFileId
-import seqexec.server.keywords.Header
 import seqexec.server.SeqAction
+import seqexec.server.keywords._
+import seqexec.server.tcs.TcsKeywordsReader
 
 object GPIHeader {
 
-  def header: Header = new Header {
-    override def sendBefore(id: ImageFileId): SeqAction[Unit] =
-      SeqAction.void
+  def header[A: HeaderProvider](inst: A,
+                                gdsClient: GDSClient,
+                                tcsKeywordsReader: TcsKeywordsReader,
+                                obsKeywordsReader: ObsKeywordsReader): Header =
+    new Header {
+      override def sendBefore(obsId: Observation.Id,
+                              id: ImageFileId): SeqAction[Unit] = {
+        val ks = bundleKeywords(
+          inst,
+          List(
+            buildDouble(tcsKeywordsReader.getParallacticAngle
+                          .map(_.map(_.toDoubleDegrees))
+                          .orDefault,
+                        "PAR_ANG"),
+            buildInt32(tcsKeywordsReader.getGpiInstPort.orDefault, "INPORT"),
+            buildBoolean(obsKeywordsReader.getAstrometicField, "ASTROMTC")
+          )
+        )
+        ks.flatMap(gdsClient.openObservation(obsId, id, _))
+      }
 
-    override def sendAfter(id: ImageFileId): SeqAction[Unit] =
-      SeqAction.void
-  }
+      override def sendAfter(id: ImageFileId): SeqAction[Unit] =
+        gdsClient.closeObservation(id)
+    }
 }

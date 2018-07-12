@@ -4,16 +4,16 @@
 package seqexec.server.tcs
 
 import cats.implicits._
+import gem.math.Angle
 import edu.gemini.epics.acm._
 import edu.gemini.seqexec.server.tcs.{BinaryOnOff, BinaryYesNo}
+import org.log4s.{Logger, getLogger}
 import seqexec.server.EpicsCommand._
 import seqexec.server.EpicsUtil._
 import seqexec.server.{EpicsCommand, EpicsSystem, SeqAction}
-import org.log4s.{Logger, getLogger}
+import scala.collection.JavaConverters._
 import squants.Time
 import squants.time.TimeConversions._
-
-import scala.collection.JavaConverters._
 
 /**
  * TcsEpics wraps the non-functional parts of the EPICS ACM library to interact with TCS. It has all the objects used
@@ -411,6 +411,9 @@ final class TcsEpics(epicsService: CaService, tops: Map[String, String]) {
   def gwfs3Target: Target = target("g3")
 
   def gwfs4Target: Target = target("g4")
+
+  def parallacticAngle: Option[Angle] =
+    Option(tcsState.getDoubleAttribute("sad:parAngle").value).map(_.doubleValue).map(Angle.fromDoubleDegrees)
 
   def m2UserFocusOffset: Option[Double] = Option(tcsState.getDoubleAttribute("m2ZUserOffset").value).map(_.doubleValue)
 

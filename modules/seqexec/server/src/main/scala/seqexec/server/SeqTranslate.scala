@@ -18,8 +18,7 @@ import seqexec.server.SeqTranslate.{Settings, Systems}
 import seqexec.server.SeqexecFailure.{Unexpected, UnrecognizedInstrument}
 import seqexec.server.InstrumentSystem._
 import seqexec.server.flamingos2.{Flamingos2, Flamingos2Controller, Flamingos2Header}
-import seqexec.server.keywords.{DhsClient, DhsInstrument, StandardHeader, StateKeywordsReader}
-import seqexec.server.keywords.{Header, HeaderProvider, KeywordBag, StringKeyword, ObsKeywordReaderImpl}
+import seqexec.server.keywords._
 import seqexec.server.gpi.{GPI, GPIController, GPIHeader}
 import seqexec.server.gcal._
 import seqexec.server.gmos.{GmosController, GmosHeader, GmosNorth, GmosSouth}
@@ -96,7 +95,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
         d   <- dataId
         _   <- sendDataStart(obsId, fileId, d)
         _   <- notifyObserveStart
-        _   <- headers(ctx).map(_.sendBefore(fileId)).sequence
+        _   <- headers(ctx).map(_.sendBefore(obsId, fileId)).sequence
         _   <- info(s"Start ${inst.resource.show} observation ${obsId.format} with label $fileId")
         r   <- inst.observe(config)(fileId)
         _   <- info(s"Completed ${inst.resource.show} observation ${obsId.format} with label $fileId")
@@ -383,7 +382,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
         val gnirsReader = if(settings.gnirsKeywords) GnirsKeywordReaderImpl else GnirsKeywordReaderDummy
         toInstrumentSys(inst).map(GnirsHeader.header(_, gnirsReader, tcsKReader))
       case Model.Instrument.GPI    =>
-        TrySeq(GPIHeader.header)
+        toInstrumentSys(inst).map(GPIHeader.header(_, systems.gpi.gdsClient, tcsKReader, ObsKeywordReaderImpl(config, site)))
       case _                       =>
         TrySeq.fail(Unexpected(s"Instrument $inst not supported."))
     }

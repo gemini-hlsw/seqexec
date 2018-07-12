@@ -199,7 +199,7 @@ package object keywords {
   def buildBoolean(get: SeqAction[Boolean], name: String ): KeywordBag => SeqAction[KeywordBag] = buildKeyword(get, name, BooleanKeyword)
   def buildString(get: SeqAction[String], name: String ): KeywordBag => SeqAction[KeywordBag]   = buildKeyword(get, name, StringKeyword)
 
-  private def bundleKeywords[A: HeaderProvider](inst: A, ks: List[KeywordBag => SeqAction[KeywordBag]]): SeqAction[KeywordBag] = inst match {
+  def bundleKeywords[A: HeaderProvider](inst: A, ks: List[KeywordBag => SeqAction[KeywordBag]]): SeqAction[KeywordBag] = inst match {
     case i: DhsInstrument =>
       val z = SeqAction(KeywordBag(StringKeyword("instrument", i.dhsInstrumentName)))
       ks.foldLeft(z) { case (a, b) => a.flatMap(b) }

@@ -49,7 +49,7 @@ final case class GPI[F[_]: Sync](controller: GPIController[F])
 
   override def notifyObserveEnd: SeqActionF[F, Unit] = controller.endObserve
 
-  override def notifyObserveStart = SeqActionF.void
+  override def notifyObserveStart: SeqActionF[F, Unit] = SeqActionF.void
 
   override def calcObserveTime(config: Config): Time =
     config

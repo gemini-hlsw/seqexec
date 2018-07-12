@@ -7,21 +7,31 @@ import cats.Show
 import cats.implicits._
 import cats.data.NonEmptyList
 import gem.enum.Site
-import seqexec.model.Model.{ActionStatus, Resource, Instrument, SequenceState, SequenceView, Step, StepState, StandardStep}
+import seqexec.model.Model.{
+  ActionStatus,
+  Instrument,
+  Resource,
+  SequenceState,
+  SequenceView,
+  StandardStep,
+  Step,
+  StepState
+}
 
 /**
   * Contains useful operations for the seqexec model
   */
 object ModelOps {
 
-  implicit val sequenceStateShow: Show[SequenceState] = Show.show[SequenceState] {
-    case SequenceState.Completed        => "Complete"
-    case SequenceState.Running(true, _) => "Pausing..."
-    case SequenceState.Running(_, _)    => "Running"
-    case SequenceState.Idle             => "Idle"
-    case SequenceState.Stopped          => "Stopped"
-    case SequenceState.Failed(_)        => s"Error at step "
-  }
+  implicit val sequenceStateShow: Show[SequenceState] =
+    Show.show[SequenceState] {
+      case SequenceState.Completed        => "Complete"
+      case SequenceState.Running(true, _) => "Pausing..."
+      case SequenceState.Running(_, _)    => "Running"
+      case SequenceState.Idle             => "Idle"
+      case SequenceState.Stopped          => "Stopped"
+      case SequenceState.Failed(_)        => s"Error at step "
+    }
 
   implicit val stepShow: Show[Step] = Show.show[Step] { s =>
     s.status match {
@@ -50,11 +60,14 @@ object ModelOps {
   final case class RunningStep(last: Int, total: Int)
 
   object RunningStep {
-    implicit val show: Show[RunningStep] = Show.show(u => s"${u.last + 1}/${u.total}")
+    implicit val show: Show[RunningStep] =
+      Show.show(u => s"${u.last + 1}/${u.total}")
   }
 
   implicit class SequenceViewOps(val s: SequenceView) extends AnyVal {
-    def progress: RunningStep = RunningStep(s.steps.count(_.isFinished), s.steps.length)
+
+    def progress: RunningStep =
+      RunningStep(s.steps.count(_.isFinished), s.steps.length)
 
     // Returns where on the sequence the execution is at
     def runningStep: Option[RunningStep] = s.status match {
@@ -65,35 +78,51 @@ object ModelOps {
 
     def allStepsDone: Boolean = s.steps.forall(_.status === StepState.Completed)
 
-    def flipSkipMarkAtStep(step: Step): SequenceView = s.copy(steps = s.steps.collect {
-      case st: StandardStep if st == step => st.copy(skip = !st.skip)
-      case st               => st
-    })
+    def flipSkipMarkAtStep(step: Step): SequenceView =
+      s.copy(steps = s.steps.collect {
+        case st: StandardStep if st == step => st.copy(skip = !st.skip)
+        case st                             => st
+      })
 
-    def flipBreakpointAtStep(step: Step): SequenceView = s.copy(steps = s.steps.collect {
-      case st: StandardStep if st == step => st.copy(breakpoint = !st.breakpoint)
-      case st               => st
-    })
+    def flipBreakpointAtStep(step: Step): SequenceView =
+      s.copy(steps = s.steps.collect {
+        case st: StandardStep if st == step =>
+          st.copy(breakpoint = !st.breakpoint)
+        case st => st
+      })
 
     def nextStepToRun: Option[Int] =
       s.steps match {
-        case x if x.forall(s => s.status === StepState.Pending && !s.skip) => Some(0) // No steps have been executed, start at 0
-        case x if x.forall(_.isFinished)                                   => None // All steps have been executed
-        case x if x.exists(_.hasError)                                     => Option(x.indexWhere((s: Step) => s.hasError)).filter(_ =!= -1)
-        case x if x.exists(s => s.status === StepState.Paused && !s.skip)  => Option(x.indexWhere((s: Step) => s.status === StepState.Paused)).filter(_ =!= -1)
-        case x                                                             => Option(x.indexWhere((s: Step) => !s.isFinished && !s.skip)).filter(_ =!= -1)
+        case x if x.forall(s => s.status === StepState.Pending && !s.skip) =>
+          Some(0) // No steps have been executed, start at 0
+        case x if x.forall(_.isFinished) => None // All steps have been executed
+        case x if x.exists(_.hasError) =>
+          Option(x.indexWhere((s: Step) => s.hasError)).filter(_ =!= -1)
+        case x if x.exists(s => s.status === StepState.Paused && !s.skip) =>
+          Option(x.indexWhere((s: Step) => s.status === StepState.Paused))
+            .filter(_ =!= -1)
+        case x =>
+          Option(x.indexWhere((s: Step) => !s.isFinished && !s.skip))
+            .filter(_ =!= -1)
       }
 
     def isPartiallyExecuted: Boolean = s.steps.exists(_.isFinished)
 
-    def showAsRunning(i: Int): SequenceView = s.copy(steps = s.steps.collect {
-      case s: StandardStep if s.id === i => s.copy(status = StepState.Running,
-         configStatus = List((Resource.TCS, ActionStatus.Pending), (Resource.Gcal, ActionStatus.Running), (Instrument.GPI, ActionStatus.Completed)))
-      case s                             => s
-    })
+    def showAsRunning(i: Int): SequenceView =
+      s.copy(steps = s.steps.collect {
+        case s: StandardStep if s.id === i =>
+          s.copy(
+            status = StepState.Running,
+            configStatus = List((Resource.TCS, ActionStatus.Pending),
+                                (Resource.Gcal, ActionStatus.Running),
+                                (Instrument.GPI, ActionStatus.Completed))
+          )
+        case s => s
+      })
   }
 
   implicit class SiteOps(val s: Site) extends AnyVal {
+
     def instruments: NonEmptyList[Instrument] = s match {
       case Site.GN => Instrument.gnInstruments
       case Site.GS => Instrument.gsInstruments
