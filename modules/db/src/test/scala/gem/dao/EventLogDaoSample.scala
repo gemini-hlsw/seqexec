@@ -12,12 +12,7 @@ object EventLogDaoSample {
   import EventLogDao._
 
   val xa: Transactor[IO] =
-    Transactor.fromDriverManager[IO](
-      "org.postgresql.Driver",
-      "jdbc:postgresql:gem",
-      "postgres",
-      ""
-    )
+    DatabaseConfiguration.forTesting.transactor[IO]
 
   val oid: Observation.Id = Observation.Id.unsafeFromString("GS-2017A-Q-1-2")
 
