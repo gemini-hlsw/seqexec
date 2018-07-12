@@ -79,7 +79,6 @@ object actions {
   final case class ConnectionError(s: String) extends Action
   final case class ServerMessage(e: SeqexecEvent) extends Action
 
-  // Temporal actions for UI prototyping
   final case class FlipSkipStep(id: Observation.Id, step: Step) extends Action
   final case class FlipBreakpointStep(id: Observation.Id, step: Step) extends Action
   final case class UpdateObserver(id: Observation.Id, name: String) extends Action
@@ -88,6 +87,9 @@ object actions {
   final case class UpdateCloudCover(cc: CloudCover) extends Action
   final case class UpdateSkyBackground(sb: SkyBackground) extends Action
   final case class UpdateWaterVapor(wv: WaterVapor) extends Action
+
+  // Used for UI debugging
+  final case class MarkStepAsRunning(s: Observation.Id, step: Int) extends Action
 
   // scalastyle:on
   private val standardStep: PartialFunction[Step, (StepId, StepState, List[(Resource, ActionStatus)])] = {

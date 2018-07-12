@@ -7,7 +7,7 @@ import cats.Show
 import cats.implicits._
 import cats.data.NonEmptyList
 import gem.enum.Site
-import seqexec.model.Model.{Resource, Instrument, SequenceState, SequenceView, Step, StepState, StandardStep}
+import seqexec.model.Model.{ActionStatus, Resource, Instrument, SequenceState, SequenceView, Step, StepState, StandardStep}
 
 /**
   * Contains useful operations for the seqexec model
@@ -85,6 +85,12 @@ object ModelOps {
       }
 
     def isPartiallyExecuted: Boolean = s.steps.exists(_.isFinished)
+
+    def showAsRunning(i: Int): SequenceView = s.copy(steps = s.steps.collect {
+      case s: StandardStep if s.id === i => s.copy(status = StepState.Running,
+         configStatus = List((Resource.TCS, ActionStatus.Pending), (Resource.Gcal, ActionStatus.Running), (Instrument.GPI, ActionStatus.Completed)))
+      case s                             => s
+    })
   }
 
   implicit class SiteOps(val s: Site) extends AnyVal {

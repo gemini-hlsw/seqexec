@@ -47,16 +47,16 @@ object SequenceControl {
   private val ST = ReactS.Fix[State]
 
   def requestRun(s: Observation.Id): CatsReact.ReactST[CallbackTo, State, Unit] =
-    ST.retM(Callback(SeqexecCircuit.dispatch(RequestRun(s)))) >> ST.mod(_.requestRun).liftCB
+    ST.retM(SeqexecCircuit.dispatchCB(RequestRun(s))) >> ST.mod(_.requestRun).liftCB
 
   def requestSync(s: Observation.Id): CatsReact.ReactST[CallbackTo, State, Unit] =
-    ST.retM(Callback(SeqexecCircuit.dispatch(RequestSync(s)))) >> ST.mod(_.requestSync).liftCB
+    ST.retM(SeqexecCircuit.dispatchCB(RequestSync(s))) >> ST.mod(_.requestSync).liftCB
 
   def requestPause(s: Observation.Id): CatsReact.ReactST[CallbackTo, State, Unit] =
-    ST.retM(Callback(SeqexecCircuit.dispatch(RequestPause(s)))) >> ST.mod(_.requestPause).liftCB
+    ST.retM(SeqexecCircuit.dispatchCB(RequestPause(s))) >> ST.mod(_.requestPause).liftCB
 
   def requestCancelPause(s: Observation.Id): CatsReact.ReactST[CallbackTo, State, Unit] =
-    ST.retM(Callback(SeqexecCircuit.dispatch(RequestCancelPause(s)))) >> ST.mod(_.requestCancelPause).liftCB
+    ST.retM(SeqexecCircuit.dispatchCB(RequestCancelPause(s))) >> ST.mod(_.requestCancelPause).liftCB
 
   private def controlButton(icon: Icon, color: String, onClick: Callback, disabled: Boolean, tooltip: String, text: String) =
     Popup(Popup.Props("button", tooltip),
