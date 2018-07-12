@@ -59,7 +59,7 @@ object GmosHeader {
       private val InBeam: Int = 0
       private def readMaskName: SeqAction[String] = gmosReader.maskLoc.flatMap{v => if(v === InBeam) gmosReader.maskName else SeqAction("None")}
 
-      override def sendAfter(obsId: Observation.Id, id: ImageFileId): SeqAction[Unit] = {
+      override def sendAfter(id: ImageFileId): SeqAction[Unit] = {
         sendKeywords(id, inst, List(
           buildInt32(gmosReader.maskId, "MASKID"),
           buildString(readMaskName, "MASKNAME"),

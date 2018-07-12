@@ -18,8 +18,7 @@ import seqexec.server.SeqTranslate.{Settings, Systems}
 import seqexec.server.SeqexecFailure.{Unexpected, UnrecognizedInstrument}
 import seqexec.server.InstrumentSystem._
 import seqexec.server.flamingos2.{Flamingos2, Flamingos2Controller, Flamingos2Header}
-import seqexec.server.keywords.{DhsClient, DhsInstrument, StandardHeader, StateKeywordsReader}
-import seqexec.server.keywords.{Header, HeaderProvider, KeywordBag, StringKeyword, ObsKeywordReaderImpl}
+import seqexec.server.keywords._
 import seqexec.server.gpi.{GPI, GPIController, GPIHeader}
 import seqexec.server.gcal._
 import seqexec.server.gmos.{GmosController, GmosHeader, GmosNorth, GmosSouth}
@@ -106,7 +105,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     def observeTail(id: ImageFileId, dataId: String)(r: ObserveCommand.Result): SeqAction[Result] = {
       val successTail: SeqAction[Result] = for {
         _ <- notifyObserveEnd
-        _ <- headers(ctx).reverseMap(_.sendAfter(obsId, id)).sequence
+        _ <- headers(ctx).reverseMap(_.sendAfter(id)).sequence
         _ <- closeImage(id)
         _ <- sendDataEnd(obsId, id, dataId)
       } yield Result.OK(Observed(id))

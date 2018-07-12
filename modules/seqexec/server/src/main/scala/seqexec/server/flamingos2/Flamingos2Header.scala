@@ -18,7 +18,7 @@ import seqexec.server.InstrumentSystem
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.keywords._
 import seqexec.server.tcs.TcsKeywordsReader
-import seqexec.server.{ConfigUtilOps, Header, SeqAction, SeqexecFailure}
+import seqexec.server.{ConfigUtilOps, SeqAction, SeqexecFailure}
 import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.data.YesNoType
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.{MOS_PREIMAGING_PROP, READMODE_PROP, ReadMode}
@@ -46,7 +46,7 @@ object Flamingos2Header {
         )
       }
 
-      override def sendAfter(obsId: Observation.Id, id: ImageFileId): SeqAction[Unit] = SeqAction(())
+      override def sendAfter(id: ImageFileId): SeqAction[Unit] = SeqAction(())
     }
 
   trait ObsKeywordsReader {

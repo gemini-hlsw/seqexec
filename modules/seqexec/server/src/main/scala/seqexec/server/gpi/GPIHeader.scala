@@ -5,11 +5,8 @@ package seqexec.server.gpi
 
 import gem.Observation
 import seqexec.model.dhs.ImageFileId
-import seqexec.server.keywords.Header
 import seqexec.server.SeqAction
-import seqexec.server.keywords.GDSClient
-import seqexec.server.Header._
-import seqexec.server.Header.Implicits._
+import seqexec.server.keywords._
 import seqexec.server.tcs.TcsKeywordsReader
 
 object GPIHeader {
@@ -35,8 +32,7 @@ object GPIHeader {
         ks.flatMap(gdsClient.openObservation(obsId, id, _))
       }
 
-      override def sendAfter(obsId: Observation.Id,
-                             id: ImageFileId): SeqAction[Unit] =
+      override def sendAfter(id: ImageFileId): SeqAction[Unit] =
         gdsClient.closeObservation(id)
     }
 }

@@ -60,6 +60,6 @@ object GwsHeader {
       }
     }
 
-    override def sendAfter(obsId: Observation.Id, id: ImageFileId): SeqAction[Unit] = SeqAction(())
+    override def sendAfter(id: ImageFileId): SeqAction[Unit] = SeqAction(())
   }
 }

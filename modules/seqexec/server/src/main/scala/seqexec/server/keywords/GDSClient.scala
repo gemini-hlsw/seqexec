@@ -38,11 +38,8 @@ final case class GDSClient(client: Client[IO], gdsUri: Uri)
       </params>
     </methodCall>
 
-  private def handleConnectionError
-    : PartialFunction[Throwable, SeqexecFailure] = {
-    case e: Throwable =>
-      SeqexecFailure.GDSException(e, gdsUri): SeqexecFailure
-  }
+  private def handleConnectionError(e: Throwable): SeqexecFailure =
+    SeqexecFailure.GDSException(e, gdsUri)
 
   private def handleXmlError(xml: Elem): SeqActionF[IO, Unit] =
     EitherT.fromEither(GDSClient.checkError(xml, gdsUri))
@@ -134,7 +131,7 @@ final case class GDSClient(client: Client[IO], gdsUri: Uri)
           <data>
             {
               ks.keywords.map { k =>
-                <value><string>{s"${k.name},${keywordType(k.keywordType)},${k.value}"}</string></value>
+                <value><string>{s"${k.name},${KeywordType.gdsKeywordType(k.keywordType)},${k.value}"}</string></value>
               }
             }
           </data>

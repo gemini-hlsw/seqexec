@@ -21,6 +21,6 @@ object GcalHeader {
       override def sendBefore(obsId: Observation.Id, id: ImageFileId): SeqAction[Unit] =
         sendKeywords(id, inst, gcalKeywords)
 
-      override def sendAfter(obsId: Observation.Id, id: ImageFileId): SeqAction[Unit] = SeqAction(())
+      override def sendAfter(id: ImageFileId): SeqAction[Unit] = SeqAction(())
     }
 }

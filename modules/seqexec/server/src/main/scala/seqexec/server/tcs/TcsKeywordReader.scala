@@ -117,6 +117,9 @@ trait TcsKeywordsReader {
   def getCarouselMode: SeqAction[Option[String]]
 
   def getM2UserFocusOffset: SeqAction[Option[Double]]
+
+  def getParallacticAngle: SeqAction[Option[Angle]]
+
   def getPwfs1Freq: SeqAction[Option[Double]]
 
   def getPwfs2Freq: SeqAction[Option[Double]]
@@ -221,6 +224,7 @@ object DummyTcsKeywordsReader extends TcsKeywordsReader {
 
   override def getEndAirMass: SeqAction[Option[Double]] = 1.0.toSeqAction
 
+  override def getParallacticAngle: SeqAction[Option[Angle]] = Some(Angle.fromDoubleDegrees(0)).toSeqActionO
 
   override def getTrackingRAOffset: SeqAction[Option[Double]] = 0.0.toSeqAction
 
@@ -244,7 +248,7 @@ object DummyTcsKeywordsReader extends TcsKeywordsReader {
 
   override def getM2UserFocusOffset: SeqAction[Option[Double]] = 0.0.toSeqAction
 
-  override def getPwfs1Freq: SeqAction[Option[Double]] = -9999.0
+  override def getPwfs1Freq: SeqAction[Option[Double]] = -9999.0.toSeqAction
 
   override def getPwfs2Freq: SeqAction[Option[Double]] = -9999.0.toSeqAction
 
@@ -377,7 +381,7 @@ object TcsKeywordsReaderImpl extends TcsKeywordsReader {
 
   override def getEndAirMass: SeqAction[Option[Double]] = TcsEpics.instance.airmassEnd.toSeqActionO
 
-  override def getParallacticAngle: SeqAction[Option[Angle]] = TcsEpics.instance.parallacticAngle
+  override def getParallacticAngle: SeqAction[Option[Angle]] = TcsEpics.instance.parallacticAngle.toSeqActionO
 
   override def getPwfs1Target: TargetKeywordsReader = target(TcsEpics.instance.pwfs1Target)
 

@@ -45,7 +45,7 @@ object GnirsHeader {
         buildDouble(gnirsReader.getDetectorBias, "DETBIAS")
       ) )
 
-    override def sendAfter(obsId: Observation.Id, id: ImageFileId): SeqAction[Unit] =
+    override def sendAfter(id: ImageFileId): SeqAction[Unit] =
       sendKeywords(id, inst, List(
         buildString(tcsReader.getUT.orDefault, "UTEND"),
         buildDouble(gnirsReader.getObsEpoch, "OBSEPOCH")

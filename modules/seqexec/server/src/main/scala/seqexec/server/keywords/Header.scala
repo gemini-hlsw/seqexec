@@ -4,6 +4,7 @@
 package seqexec.server.keywords
 
 import cats.effect.IO
+import gem.Observation
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.SeqAction
 
@@ -30,6 +31,6 @@ object HeaderProvider {
   * Header implementations know what headers sent before and after an observation
   */
 trait Header {
-  def sendBefore(id: ImageFileId): SeqAction[Unit]
+  def sendBefore(obsId: Observation.Id, id: ImageFileId): SeqAction[Unit]
   def sendAfter(id: ImageFileId): SeqAction[Unit]
 }
