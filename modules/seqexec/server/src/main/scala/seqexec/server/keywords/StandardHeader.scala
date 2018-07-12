@@ -85,15 +85,15 @@ class StandardHeader[A: HeaderProvider](
     case StandardGuideOptions.Value.freeze => "frozen"
   }
 
-  private def optTcsKeyword[B](s: TcsController.Subsystem)(v: SeqAction[B])(implicit d:DefaultValue[B]) : SeqAction[B] =
+  private def optTcsKeyword[B](s: TcsController.Subsystem)(v: SeqAction[B])(implicit d: DefaultHeaderValue[B]) : SeqAction[B] =
     if(tcsSubsystems.contains(s)) v
     else SeqAction(d.default)
 
-  private def mountTcsKeyword[B](v: SeqAction[B])(implicit d:DefaultValue[B]) = optTcsKeyword[B](TcsController.Subsystem.Mount)(v)(d)
+  private def mountTcsKeyword[B](v: SeqAction[B])(implicit d: DefaultHeaderValue[B]) = optTcsKeyword[B](TcsController.Subsystem.Mount)(v)(d)
 
-  private def m2TcsKeyword[B](v: SeqAction[B])(implicit d:DefaultValue[B]) = optTcsKeyword[B](TcsController.Subsystem.M2)(v)(d)
+  private def m2TcsKeyword[B](v: SeqAction[B])(implicit d: DefaultHeaderValue[B]) = optTcsKeyword[B](TcsController.Subsystem.M2)(v)(d)
 
-  private def sfTcsKeyword[B](v: SeqAction[B])(implicit d:DefaultValue[B]) = optTcsKeyword[B](TcsController.Subsystem.ScienceFold)(v)(d)
+  private def sfTcsKeyword[B](v: SeqAction[B])(implicit d: DefaultHeaderValue[B]) = optTcsKeyword[B](TcsController.Subsystem.ScienceFold)(v)(d)
 
   private val baseKeywords = List(
     buildString(SeqAction(OcsBuildInfo.version), "SEQEXVER"),

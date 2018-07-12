@@ -139,8 +139,20 @@ package keywords {
   }
 
   // A simple typeclass to encapsulate default values
-  trait DefaultValue[A] {
+  sealed trait DefaultHeaderValue[A] {
     def default: A
+  }
+
+  object DefaultHeaderValue {
+    implicit val IntDefaultValue: DefaultHeaderValue[Int] = new DefaultHeaderValue[Int] {
+      val default: Int = IntDefault
+    }
+    implicit val DoubleDefaultValue: DefaultHeaderValue[Double] = new DefaultHeaderValue[Double] {
+      val default: Double = DoubleDefault
+    }
+    implicit val StrDefaultValue: DefaultHeaderValue[String] = new DefaultHeaderValue[String] {
+      val default: String = StrDefault
+    }
   }
 
 }
@@ -165,24 +177,15 @@ package object keywords {
     def toSeqActionO: SeqAction[Option[A]] = SeqAction(v)
   }
 
-  implicit val IntDefaultValue: DefaultValue[Int] = new DefaultValue[Int] {
-    val default: Int = IntDefault
-  }
-  implicit val DoubleDefaultValue: DefaultValue[Double] = new DefaultValue[Double] {
-    val default: Double = DoubleDefault
-  }
-  implicit val StrDefaultValue: DefaultValue[String] = new DefaultValue[String] {
-    val default: String = StrDefault
-  }
-  implicit class DefaultValueOps[A](a: Option[A])(implicit d: DefaultValue[A]) {
+  implicit class DefaultValueOps[A](a: Option[A])(implicit d: DefaultHeaderValue[A]) {
     def orDefault: A = a.getOrElse(d.default)
   }
 
-  implicit class A2SeqAction[A: DefaultValue](val v: Option[A]) {
+  implicit class A2SeqAction[A: DefaultHeaderValue](val v: Option[A]) {
     def toSeqAction: SeqAction[A] = SeqAction(v.orDefault)
   }
 
-  implicit class SeqActionOption2SeqAction[A: DefaultValue](val v: SeqAction[Option[A]]) {
+  implicit class SeqActionOption2SeqAction[A: DefaultHeaderValue](val v: SeqAction[Option[A]]) {
     def orDefault: SeqAction[A] = v.map(_.orDefault)
   }
 
