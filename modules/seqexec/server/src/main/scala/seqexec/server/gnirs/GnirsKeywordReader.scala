@@ -4,8 +4,7 @@
 package seqexec.server.gnirs
 
 import seqexec.server.SeqAction
-import seqexec.server.Header
-import seqexec.server.Header.Implicits._
+import seqexec.server.keywords._
 
 trait GnirsKeywordReader {
   def getArrayId: SeqAction[String]
@@ -36,31 +35,31 @@ trait GnirsKeywordReader {
 }
 
 object GnirsKeywordReaderDummy extends GnirsKeywordReader {
-  override def getArrayId: SeqAction[String] = SeqAction(Header.StrDefault)
-  override def getArrayType: SeqAction[String] = SeqAction(Header.StrDefault)
-  override def getDetectorBias: SeqAction[Double] = SeqAction(Header.DoubleDefault)
-  override def getFilter1: SeqAction[String] = SeqAction(Header.StrDefault)
-  override def getFilterWheel1Pos: SeqAction[Int] = SeqAction(Header.IntDefault)
-  override def getFilter2: SeqAction[String] = SeqAction(Header.StrDefault)
-  override def getFilterWheel2Pos: SeqAction[Int] = SeqAction(Header.IntDefault)
-  override def getCamera: SeqAction[String] = SeqAction(Header.StrDefault)
-  override def getCameraPos: SeqAction[Int] = SeqAction(Header.IntDefault)
-  override def getDecker: SeqAction[String] = SeqAction(Header.StrDefault)
-  override def getDeckerPos: SeqAction[Int] = SeqAction(Header.IntDefault)
-  override def getSlit: SeqAction[String] = SeqAction(Header.StrDefault)
-  override def getSlitPos: SeqAction[Int] = SeqAction(Header.IntDefault)
-  override def getPrism: SeqAction[String] = SeqAction(Header.StrDefault)
-  override def getPrismPos: SeqAction[Int] = SeqAction(Header.IntDefault)
-  override def getGrating: SeqAction[String] = SeqAction(Header.StrDefault)
-  override def getGratingPos: SeqAction[Int] = SeqAction(Header.IntDefault)
-  override def getGratingWavelength: SeqAction[Double] = SeqAction(Header.DoubleDefault)
-  override def getGratingOrder: SeqAction[Int] = SeqAction(Header.IntDefault)
-  override def getGratingTilt: SeqAction[Double] = SeqAction(Header.DoubleDefault)
-  override def getFocus: SeqAction[String] = SeqAction(Header.StrDefault)
-  override def getFocusPos: SeqAction[Int] = SeqAction(Header.IntDefault)
-  override def getAcquisitionMirror: SeqAction[String] = SeqAction(Header.StrDefault)
-  override def getWindowCover: SeqAction[String] = SeqAction(Header.StrDefault)
-  override def getObsEpoch: SeqAction[Double] = SeqAction(Header.DoubleDefault)
+  override def getArrayId: SeqAction[String] = SeqAction(StrDefault)
+  override def getArrayType: SeqAction[String] = SeqAction(StrDefault)
+  override def getDetectorBias: SeqAction[Double] = SeqAction(DoubleDefault)
+  override def getFilter1: SeqAction[String] = SeqAction(StrDefault)
+  override def getFilterWheel1Pos: SeqAction[Int] = SeqAction(IntDefault)
+  override def getFilter2: SeqAction[String] = SeqAction(StrDefault)
+  override def getFilterWheel2Pos: SeqAction[Int] = SeqAction(IntDefault)
+  override def getCamera: SeqAction[String] = SeqAction(StrDefault)
+  override def getCameraPos: SeqAction[Int] = SeqAction(IntDefault)
+  override def getDecker: SeqAction[String] = SeqAction(StrDefault)
+  override def getDeckerPos: SeqAction[Int] = SeqAction(IntDefault)
+  override def getSlit: SeqAction[String] = SeqAction(StrDefault)
+  override def getSlitPos: SeqAction[Int] = SeqAction(IntDefault)
+  override def getPrism: SeqAction[String] = SeqAction(StrDefault)
+  override def getPrismPos: SeqAction[Int] = SeqAction(IntDefault)
+  override def getGrating: SeqAction[String] = SeqAction(StrDefault)
+  override def getGratingPos: SeqAction[Int] = SeqAction(IntDefault)
+  override def getGratingWavelength: SeqAction[Double] = SeqAction(DoubleDefault)
+  override def getGratingOrder: SeqAction[Int] = SeqAction(IntDefault)
+  override def getGratingTilt: SeqAction[Double] = SeqAction(DoubleDefault)
+  override def getFocus: SeqAction[String] = SeqAction(StrDefault)
+  override def getFocusPos: SeqAction[Int] = SeqAction(IntDefault)
+  override def getAcquisitionMirror: SeqAction[String] = SeqAction(StrDefault)
+  override def getWindowCover: SeqAction[String] = SeqAction(StrDefault)
+  override def getObsEpoch: SeqAction[Double] = SeqAction(DoubleDefault)
 }
 
 object GnirsKeywordReaderImpl extends GnirsKeywordReader {

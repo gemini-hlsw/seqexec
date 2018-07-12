@@ -4,10 +4,8 @@
 package seqexec.server.gcal
 
 import seqexec.model.dhs.ImageFileId
-import seqexec.server.HeaderProvider
-import seqexec.server.Header._
-import seqexec.server.Header.Implicits._
-import seqexec.server.{Header, SeqAction}
+import seqexec.server.keywords._
+import seqexec.server.SeqAction
 
 object GcalHeader {
   implicit def header[A: HeaderProvider](inst: A, gcalReader: GcalKeywordReader): Header =

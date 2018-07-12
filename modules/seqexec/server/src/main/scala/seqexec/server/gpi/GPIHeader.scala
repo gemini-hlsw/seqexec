@@ -4,7 +4,8 @@
 package seqexec.server.gpi
 
 import seqexec.model.dhs.ImageFileId
-import seqexec.server.{Header, SeqAction}
+import seqexec.server.keywords.Header
+import seqexec.server.SeqAction
 
 object GPIHeader {
 

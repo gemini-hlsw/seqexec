@@ -39,7 +39,7 @@ final case class GDSClient(client: Client[IO], gdsUri: Uri)
               <data>
                 {
                   ks.keywords.map { k =>
-                    <value><string>{s"${k.name},${keywordType(k.keywordType)},${k.value}"}</string></value>
+                    <value><string>{s"${k.name},${KeywordType.gdsKeywordType(k.keywordType)},${k.value}"}</string></value>
                   }
                 }
               </data>
@@ -70,15 +70,6 @@ final case class GDSClient(client: Client[IO], gdsUri: Uri)
       .flatMap(xml => EitherT.fromEither(GDSClient.checkError(xml, gdsUri)))
   }
 
-  private def keywordType(k: KeywordType): String = k match {
-    case TypeInt8    => "INT"
-    case TypeInt16   => "INT"
-    case TypeInt32   => "INT"
-    case TypeFloat   => "DOUBLE"
-    case TypeDouble  => "DOUBLE"
-    case TypeBoolean => "BOOLEAN"
-    case TypeString  => "STRING"
-  }
 }
 
 object GDSClient {

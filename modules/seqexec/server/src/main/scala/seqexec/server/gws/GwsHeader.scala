@@ -5,12 +5,8 @@ package seqexec.server.gws
 
 import cats.effect.IO
 import seqexec.model.dhs.ImageFileId
-import seqexec.server.keywords.DhsClient
-import seqexec.server.keywords.StandaloneDhsClient
-import seqexec.server.keywords.KeywordsClient
-import seqexec.server.Header.Implicits._
-import seqexec.server.Header._
-import seqexec.server.{EpicsHealth, Header, HeaderProvider, SeqAction}
+import seqexec.server.keywords._
+import seqexec.server.{EpicsHealth, SeqAction}
 
 object GwsHeader {
   def headerProvider(dhs: DhsClient): HeaderProvider[GwsHeader.type] = new HeaderProvider[GwsHeader.type] {

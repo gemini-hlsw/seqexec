@@ -18,8 +18,8 @@ import seqexec.server.SeqTranslate.{Settings, Systems}
 import seqexec.server.SeqexecFailure.{Unexpected, UnrecognizedInstrument}
 import seqexec.server.InstrumentSystem._
 import seqexec.server.flamingos2.{Flamingos2, Flamingos2Controller, Flamingos2Header}
-import seqexec.server.keywords.{DhsClient, DhsInstrument}
-import seqexec.server.keywords.{KeywordBag, StringKeyword}
+import seqexec.server.keywords.{DhsClient, DhsInstrument, StandardHeader, StateKeywordsReader}
+import seqexec.server.keywords.{Header, HeaderProvider, KeywordBag, StringKeyword, ObsKeywordReaderImpl}
 import seqexec.server.gpi.{GPI, GPIController, GPIHeader}
 import seqexec.server.gcal._
 import seqexec.server.gmos.{GmosController, GmosHeader, GmosNorth, GmosSouth}

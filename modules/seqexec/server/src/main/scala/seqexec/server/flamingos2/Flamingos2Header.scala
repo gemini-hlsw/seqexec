@@ -11,8 +11,9 @@ import cats.effect.IO
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.InstrumentSystem
 import seqexec.server.ConfigUtilOps._
+import seqexec.server.keywords._
 import seqexec.server.tcs.TcsKeywordsReader
-import seqexec.server.{ConfigUtilOps, Header, SeqAction, SeqexecFailure}
+import seqexec.server.{ConfigUtilOps, SeqAction, SeqexecFailure}
 import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.data.YesNoType
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.{MOS_PREIMAGING_PROP, READMODE_PROP, ReadMode}
@@ -22,8 +23,6 @@ import cats.implicits._
 object Flamingos2Header {
   def header(inst: InstrumentSystem[IO], f2ObsReader: Flamingos2Header.ObsKeywordsReader, tcsKeywordsReader: TcsKeywordsReader): Header =
     new Header {
-      import Header.Implicits._
-      import Header._
       override def sendBefore(id: ImageFileId): SeqAction[Unit] =  {
         sendKeywords(id, inst, List(
           buildBoolean(f2ObsReader.getPreimage.map(_.toBoolean), "PREIMAGE"),
@@ -44,8 +43,6 @@ object Flamingos2Header {
 
       override def sendAfter(id: ImageFileId): SeqAction[Unit] = SeqAction(())
     }
-
-  import Header.Implicits._
 
   trait ObsKeywordsReader {
     def getPreimage: SeqAction[YesNoType]

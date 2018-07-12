@@ -5,11 +5,10 @@ package seqexec.server.gmos
 
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.ConfigUtilOps._
-import seqexec.server.Header.Implicits._
-import seqexec.server.Header._
+import seqexec.server.keywords._
 import seqexec.server.InstrumentSystem
 import seqexec.server.tcs.TcsKeywordsReader
-import seqexec.server.{ConfigUtilOps, Header, SeqAction, SeqexecFailure}
+import seqexec.server.{ConfigUtilOps, SeqAction, SeqexecFailure}
 import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.data.YesNoType
 import edu.gemini.spModel.gemini.gmos.InstGmosCommon.IS_MOS_PREIMAGING_PROP
@@ -163,47 +162,47 @@ object GmosHeader {
     }
 
     object DummyInstKeywordReader extends InstKeywordsReader {
-      override def ccName: SeqAction[String] = SeqAction(Header.StrDefault)
-      override def maskId: SeqAction[Int] = SeqAction(Header.IntDefault)
-      override def maskName: SeqAction[String] = SeqAction(Header.StrDefault)
-      override def maskType: SeqAction[Int] = SeqAction(Header.IntDefault)
-      override def maskLoc: SeqAction[Int] = SeqAction(Header.IntDefault)
-      override def filter1: SeqAction[String] = SeqAction(Header.StrDefault)
-      override def filter2: SeqAction[String] = SeqAction(Header.StrDefault)
-      override def filter1Id: SeqAction[Int] = SeqAction(Header.IntDefault)
-      override def filter2Id: SeqAction[Int] = SeqAction(Header.IntDefault)
-      override def grating: SeqAction[String] = SeqAction(Header.StrDefault)
-      override def gratingId: SeqAction[Int] = SeqAction(Header.IntDefault)
-      override def gratingWavelength: SeqAction[Double] = SeqAction(Header.DoubleDefault)
-      override def gratingAdjustedWavelength: SeqAction[Double] = SeqAction(Header.DoubleDefault)
-      override def gratingOrder: SeqAction[Int] = SeqAction(Header.IntDefault)
-      override def gratingTilt: SeqAction[Double] = SeqAction(Header.DoubleDefault)
-      override def gratingStep: SeqAction[Double] = SeqAction(Header.DoubleDefault)
-      override def dtaX: SeqAction[Double] = SeqAction(Header.DoubleDefault)
-      override def dtaY: SeqAction[Double] = SeqAction(Header.DoubleDefault)
-      override def dtaZ: SeqAction[Double] = SeqAction(Header.DoubleDefault)
-      override def dtaZst: SeqAction[Double] = SeqAction(Header.DoubleDefault)
-      override def dtaZen: SeqAction[Double] = SeqAction(Header.DoubleDefault)
-      override def dtaZme: SeqAction[Double] = SeqAction(Header.DoubleDefault)
-      override def stageMode: SeqAction[String] = SeqAction(Header.StrDefault)
-      override def adcMode: SeqAction[String] = SeqAction(Header.StrDefault)
-      override def dcName: SeqAction[String] = SeqAction(Header.StrDefault)
-      override def detectorType: SeqAction[String] = SeqAction(Header.StrDefault)
-      override def detectorId: SeqAction[String] = SeqAction(Header.StrDefault)
-      override def exposureTime: SeqAction[Double] = SeqAction(Header.DoubleDefault)
-      override def adcUsed: SeqAction[Int] = SeqAction(Header.IntDefault)
-      override def adcPrismEntSt: SeqAction[Double] = SeqAction(Header.DoubleDefault)
-      override def adcPrismEntEnd: SeqAction[Double] = SeqAction(Header.DoubleDefault)
-      override def adcPrismEntMe: SeqAction[Double] = SeqAction(Header.DoubleDefault)
-      override def adcPrismExtSt: SeqAction[Double] = SeqAction(Header.DoubleDefault)
-      override def adcPrismExtEnd: SeqAction[Double] = SeqAction(Header.DoubleDefault)
-      override def adcPrismExtMe: SeqAction[Double] = SeqAction(Header.DoubleDefault)
-      override def adcWavelength1: SeqAction[Double] = SeqAction(Header.DoubleDefault)
-      override def adcWavelength2: SeqAction[Double] = SeqAction(Header.DoubleDefault)
-      override def detNRoi: SeqAction[Int] = SeqAction(Header.IntDefault)
+      override def ccName: SeqAction[String] = SeqAction(StrDefault)
+      override def maskId: SeqAction[Int] = SeqAction(IntDefault)
+      override def maskName: SeqAction[String] = SeqAction(StrDefault)
+      override def maskType: SeqAction[Int] = SeqAction(IntDefault)
+      override def maskLoc: SeqAction[Int] = SeqAction(IntDefault)
+      override def filter1: SeqAction[String] = SeqAction(StrDefault)
+      override def filter2: SeqAction[String] = SeqAction(StrDefault)
+      override def filter1Id: SeqAction[Int] = SeqAction(IntDefault)
+      override def filter2Id: SeqAction[Int] = SeqAction(IntDefault)
+      override def grating: SeqAction[String] = SeqAction(StrDefault)
+      override def gratingId: SeqAction[Int] = SeqAction(IntDefault)
+      override def gratingWavelength: SeqAction[Double] = SeqAction(DoubleDefault)
+      override def gratingAdjustedWavelength: SeqAction[Double] = SeqAction(DoubleDefault)
+      override def gratingOrder: SeqAction[Int] = SeqAction(IntDefault)
+      override def gratingTilt: SeqAction[Double] = SeqAction(DoubleDefault)
+      override def gratingStep: SeqAction[Double] = SeqAction(DoubleDefault)
+      override def dtaX: SeqAction[Double] = SeqAction(DoubleDefault)
+      override def dtaY: SeqAction[Double] = SeqAction(DoubleDefault)
+      override def dtaZ: SeqAction[Double] = SeqAction(DoubleDefault)
+      override def dtaZst: SeqAction[Double] = SeqAction(DoubleDefault)
+      override def dtaZen: SeqAction[Double] = SeqAction(DoubleDefault)
+      override def dtaZme: SeqAction[Double] = SeqAction(DoubleDefault)
+      override def stageMode: SeqAction[String] = SeqAction(StrDefault)
+      override def adcMode: SeqAction[String] = SeqAction(StrDefault)
+      override def dcName: SeqAction[String] = SeqAction(StrDefault)
+      override def detectorType: SeqAction[String] = SeqAction(StrDefault)
+      override def detectorId: SeqAction[String] = SeqAction(StrDefault)
+      override def exposureTime: SeqAction[Double] = SeqAction(DoubleDefault)
+      override def adcUsed: SeqAction[Int] = SeqAction(IntDefault)
+      override def adcPrismEntSt: SeqAction[Double] = SeqAction(DoubleDefault)
+      override def adcPrismEntEnd: SeqAction[Double] = SeqAction(DoubleDefault)
+      override def adcPrismEntMe: SeqAction[Double] = SeqAction(DoubleDefault)
+      override def adcPrismExtSt: SeqAction[Double] = SeqAction(DoubleDefault)
+      override def adcPrismExtEnd: SeqAction[Double] = SeqAction(DoubleDefault)
+      override def adcPrismExtMe: SeqAction[Double] = SeqAction(DoubleDefault)
+      override def adcWavelength1: SeqAction[Double] = SeqAction(DoubleDefault)
+      override def adcWavelength2: SeqAction[Double] = SeqAction(DoubleDefault)
+      override def detNRoi: SeqAction[Int] = SeqAction(IntDefault)
       override def roiValues: Map[Int, RoiValues] = Map.empty
-      override def aExpCount: SeqAction[Int] = SeqAction(Header.IntDefault)
-      override def bExpCount: SeqAction[Int] = SeqAction(Header.IntDefault)
+      override def aExpCount: SeqAction[Int] = SeqAction(IntDefault)
+      override def bExpCount: SeqAction[Int] = SeqAction(IntDefault)
       override def isADCInUse: Boolean = false
     }
 
