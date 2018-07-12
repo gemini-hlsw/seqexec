@@ -34,28 +34,18 @@ final case class GDSClient(client: Client[IO], gdsUri: Uri)
             <string>{id}</string>
           </value>
         </param>
-        <param>
-          <value>
-            <array>
-              <data>
-                {
-                  ks.keywords.map { k =>
-                    <value><string>{s"${k.name},${KeywordType.gdsKeywordType(k.keywordType)},${k.value}"}</string></value>
-                  }
-                }
-              </data>
-            </array>
-          </value>
-        </param>
+        {keywordsParam(ks)}
       </params>
     </methodCall>
 
-  private def handleConnectionError: PartialFunction[Throwable, SeqexecFailure] = {
+  private def handleConnectionError
+    : PartialFunction[Throwable, SeqexecFailure] = {
     case e: Throwable =>
       SeqexecFailure.GDSException(e, gdsUri): SeqexecFailure
   }
 
-  private def handleXmlError(xml: Elem): SeqActionF[IO, Unit] = EitherT.fromEither(GDSClient.checkError(xml, gdsUri))
+  private def handleXmlError(xml: Elem): SeqActionF[IO, Unit] =
+    EitherT.fromEither(GDSClient.checkError(xml, gdsUri))
 
   /**
     * Set the keywords for an image
@@ -76,7 +66,9 @@ final case class GDSClient(client: Client[IO], gdsUri: Uri)
   }
 
   // Build an xml rpc request to open an observation
-  private def openObservationRPC(obsId: Observation.Id, id: ImageFileId, ks: KeywordBag): Elem =
+  private def openObservationRPC(obsId: Observation.Id,
+                                 id: ImageFileId,
+                                 ks: KeywordBag): Elem =
     <methodCall>
       <methodName>HeaderReceiver.openObservation</methodName>
       <params>
@@ -90,23 +82,13 @@ final case class GDSClient(client: Client[IO], gdsUri: Uri)
             <string>{id}</string>
           </value>
         </param>
-        <param>
-          <value>
-            <array>
-              <data>
-                {
-                  ks.keywords.map { k =>
-                    <value><string>{s"${k.name},${keywordType(k.keywordType)},${k.value}"}</string></value>
-                  }
-                }
-              </data>
-            </array>
-          </value>
-        </param>
+        {keywordsParam(ks)}
       </params>
     </methodCall>
 
-  def openObservation(obsId: Observation.Id, id: ImageFileId, ks: KeywordBag): SeqActionF[IO, Unit] = {
+  def openObservation(obsId: Observation.Id,
+                      id: ImageFileId,
+                      ks: KeywordBag): SeqActionF[IO, Unit] = {
     // Build the request
     val xmlRpc      = openObservationRPC(obsId, id, ks)
     val postRequest = POST(gdsUri, xmlRpc)
@@ -116,8 +98,49 @@ final case class GDSClient(client: Client[IO], gdsUri: Uri)
       .expect[Elem](postRequest)(scalaxml.xml)
       .attemptT
       .leftMap(handleConnectionError)
-      .flatMap(xml => EitherT.fromEither(GDSClient.checkError(xml, gdsUri)))
+      .flatMap(handleXmlError)
   }
+
+  // Build an xml rpc request to close an observation
+  private def closeObservationRPC(id: ImageFileId): Elem =
+    <methodCall>
+      <methodName>HeaderReceiver.closeObservation</methodName>
+      <params>
+        <param>
+          <value>
+            <string>{id}</string>
+          </value>
+        </param>
+      </params>
+    </methodCall>
+
+  def closeObservation(id: ImageFileId): SeqActionF[IO, Unit] = {
+    // Build the request
+    val xmlRpc      = closeObservationRPC(id)
+    val postRequest = POST(gdsUri, xmlRpc)
+
+    // Do the request
+    client
+      .expect[Elem](postRequest)(scalaxml.xml)
+      .attemptT
+      .leftMap(handleConnectionError)
+      .flatMap(handleXmlError)
+  }
+
+  private def keywordsParam(ks: KeywordBag): Elem =
+    <param>
+      <value>
+        <array>
+          <data>
+            {
+              ks.keywords.map { k =>
+                <value><string>{s"${k.name},${keywordType(k.keywordType)},${k.value}"}</string></value>
+              }
+            }
+          </data>
+        </array>
+      </value>
+    </param>
 }
 
 object GDSClient {

@@ -13,6 +13,7 @@ object GwsHeader {
   def headerProvider(dhs: DhsClient): HeaderProvider[GwsHeader.type] = new HeaderProvider[GwsHeader.type] {
     def keywordsClient(a: GwsHeader.type): KeywordsClient[IO] = StandaloneDhsClient(dhs)
   }
+
   def header[A: HeaderProvider](inst: A, gwsReader: GwsKeywordReader): Header = new Header {
     override def sendBefore(obsId: Observation.Id, id: ImageFileId): SeqAction[Unit] = {
       gwsReader.getHealth.flatMap{
@@ -55,7 +56,7 @@ object GwsHeader {
             buildDouble(x.orDefault, "WINDDIRE")
           }
         ))
-        case _       => SeqAction(())
+        case _       => SeqAction.void
       }
     }
 
