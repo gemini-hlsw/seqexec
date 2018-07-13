@@ -1011,6 +1011,11 @@
             <type>INTEGER</type>
             <description>CASS Rotator Follow</description>
         </attribute>
+        <attribute name="parangle">
+            <channel>parAngle</channel>
+            <type>DOUBLE</type>
+            <description>Parallactic Angle</description>
+        </attribute>
         <attribute name="decson">
             <channel>chopControl.VALB</channel>
             <type>INTEGER</type>

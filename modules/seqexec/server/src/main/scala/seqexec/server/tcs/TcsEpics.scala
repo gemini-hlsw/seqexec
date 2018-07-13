@@ -415,7 +415,7 @@ final class TcsEpics(epicsService: CaService, tops: Map[String, String]) {
   def gwfs4Target: Target = target("g4")
 
   def parallacticAngle: Option[Angle] =
-    Option(tcsState.getDoubleAttribute("sad:parAngle").value).map(_.doubleValue).map(Angle.fromDoubleDegrees)
+    Option(tcsState.getDoubleAttribute("parangle").value).map(_.doubleValue).map(Angle.fromDoubleDegrees)
 
   def m2UserFocusOffset: Option[Double] = Option(tcsState.getDoubleAttribute("m2ZUserOffset").value).map(_.doubleValue)
 
