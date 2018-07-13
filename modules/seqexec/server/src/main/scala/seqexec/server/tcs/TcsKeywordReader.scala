@@ -7,11 +7,12 @@ import cats.Apply
 import cats.implicits._
 import gem.math.Angle
 import edu.gemini.spModel.core.Wavelength
+import edu.gemini.spModel.core.Wavelength
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import seqexec.server.SeqAction
 import seqexec.server.keywords._
-import edu.gemini.spModel.core.Wavelength
+import seqexec.server.tcs.Tcs.CRFollow
 import squants.space.{Angstroms, Meters}
 
 trait TargetKeywordsReader {
@@ -139,6 +140,8 @@ trait TcsKeywordsReader {
   def getGsaoiInstPort: SeqAction[Option[Int]]
 
   def getF2InstPort: SeqAction[Option[Int]]
+
+  def getCRFollow: SeqAction[Option[CRFollow]]
 
 }
 
@@ -269,6 +272,8 @@ object DummyTcsKeywordsReader extends TcsKeywordsReader {
   override def getGsaoiInstPort: SeqAction[Option[Int]] = 0.toSeqAction
 
   override def getF2InstPort: SeqAction[Option[Int]] = 0.toSeqAction
+
+  override def getCRFollow: SeqAction[Option[CRFollow]] = (CRFollow.Off: CRFollow).toSeqAction
 }
 
 object TcsKeywordsReaderImpl extends TcsKeywordsReader {
@@ -422,4 +427,7 @@ object TcsKeywordsReaderImpl extends TcsKeywordsReader {
   override def getGsaoiInstPort: SeqAction[Option[Int]] = TcsEpics.instance.gsaoiPort.toSeqActionO
 
   override def getF2InstPort: SeqAction[Option[Int]] = TcsEpics.instance.f2Port.toSeqActionO
+
+  override def getCRFollow: SeqAction[Option[CRFollow]] =
+    TcsEpics.instance.crFollow.flatMap(CRFollow.fromInt.getOption).toSeqActionO
 }

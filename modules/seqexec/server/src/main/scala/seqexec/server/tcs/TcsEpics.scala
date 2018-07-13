@@ -360,6 +360,8 @@ final class TcsEpics(epicsService: CaService, tops: Map[String, String]) {
 
   def carouselMode: Option[String] = Option(tcsState.getStringAttribute("cguidmod").value)
 
+  def crFollow: Option[Int]  = Option(tcsState.getIntegerAttribute("crfollow").value).map(_.intValue)
+
   def sourceATarget: Target = new Target {
     override def epoch = Option(tcsState.getStringAttribute("sourceAEpoch").value)
 
@@ -429,6 +431,7 @@ final class TcsEpics(epicsService: CaService, tops: Map[String, String]) {
 
   // Attribute must be changed back to Double after EPICS channel is fixed.
   def oiwfsIntegrationTime: Option[Double]  = Option(oiwfsStatus.getDoubleAttribute("intTime").value).map(_.doubleValue)
+
 
   private def instPort(name: String): Option[Int] = Option(tcsState.getIntegerAttribute(s"${name}Port").value).map(_.intValue)
 

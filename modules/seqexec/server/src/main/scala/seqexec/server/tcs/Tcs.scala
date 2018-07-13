@@ -5,22 +5,22 @@ package seqexec.server.tcs
 
 import cats.data.NonEmptyList
 import cats.effect.IO
-import seqexec.model.Model.Resource
-import seqexec.server.ConfigUtilOps._
-import seqexec.server.tcs.TcsController._
-import seqexec.server.{ConfigResult, SeqAction, System}
+import cats._
+import cats.implicits._
 import edu.gemini.spModel.config2.{Config, ItemKey}
 import edu.gemini.spModel.guide.StandardGuideOptions
 import edu.gemini.spModel.seqcomp.SeqConfigNames.TELESCOPE_KEY
 import edu.gemini.spModel.target.obsComp.TargetObsCompConstants._
 import org.log4s.getLogger
-import squants.space.Millimeters
-
+import mouse.all._
+import monocle.Prism
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
-import cats._
-import cats.implicits._
-import mouse.all._
+import seqexec.model.Model.Resource
+import seqexec.server.ConfigUtilOps._
+import seqexec.server.tcs.TcsController._
+import seqexec.server.{ConfigResult, SeqAction, System}
+import squants.space.Millimeters
 
 final case class Tcs(tcsController: TcsController, subsystems: NonEmptyList[Subsystem], scienceFoldPosition: ScienceFoldPosition) extends System[IO] {
 
@@ -103,6 +103,28 @@ object Tcs {
   val GUIDE_WITH_AOWFS_PROP: String = "guideWithAOWFS"
   val P_OFFSET_PROP: String = "p"
   val Q_OFFSET_PROP: String = "q"
+
+  sealed trait CRFollow
+  object CRFollow {
+    case object On extends CRFollow
+    case object Off extends CRFollow
+
+    def keywordValue(cr: CRFollow): String = cr match {
+      case On  => "yes"
+      case Off => "no"
+    }
+
+    def fromInt: Prism[Int, CRFollow] =
+      Prism[Int, CRFollow] {
+        case 0  => Off.some
+        case 1  => On.some
+        case _  => none
+      } {
+        case Off => 0
+        case On  => 1
+      }
+
+  }
 
   // Conversions from ODB model values to TCS configuration values
   implicit def probeTrackingConfigFromGuideWith(guideWith: StandardGuideOptions.Value): ProbeTrackingConfig = guideWith match {
