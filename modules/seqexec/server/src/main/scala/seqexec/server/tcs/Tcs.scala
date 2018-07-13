@@ -5,22 +5,21 @@ package seqexec.server.tcs
 
 import cats.data.NonEmptyList
 import cats.effect.IO
-import seqexec.model.Model.Resource
-import seqexec.server.ConfigUtilOps._
-import seqexec.server.tcs.TcsController._
-import seqexec.server.{ConfigResult, SeqAction, System}
+import cats._
+import cats.implicits._
 import edu.gemini.spModel.config2.{Config, ItemKey}
 import edu.gemini.spModel.guide.StandardGuideOptions
 import edu.gemini.spModel.seqcomp.SeqConfigNames.TELESCOPE_KEY
 import edu.gemini.spModel.target.obsComp.TargetObsCompConstants._
 import org.log4s.getLogger
-import squants.space.Millimeters
-
+import mouse.all._
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
-import cats._
-import cats.implicits._
-import mouse.all._
+import seqexec.model.Model.Resource
+import seqexec.server.ConfigUtilOps._
+import seqexec.server.tcs.TcsController._
+import seqexec.server.{ConfigResult, SeqAction, System}
+import squants.space.Millimeters
 
 final case class Tcs(tcsController: TcsController, subsystems: NonEmptyList[Subsystem], scienceFoldPosition: ScienceFoldPosition) extends System[IO] {
 

@@ -3,16 +3,42 @@
 
 package seqexec.server.tcs
 
-import cats.Apply
+import cats.{Apply, Eq}
 import cats.implicits._
 import gem.math.Angle
 import edu.gemini.spModel.core.Wavelength
+import edu.gemini.spModel.core.Wavelength
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import monocle.Prism
 import seqexec.server.SeqAction
 import seqexec.server.keywords._
-import edu.gemini.spModel.core.Wavelength
 import squants.space.{Angstroms, Meters}
+
+sealed trait CRFollow extends Product with Serializable
+
+object CRFollow {
+  case object On extends CRFollow
+  case object Off extends CRFollow
+
+  implicit val eq: Eq[CRFollow] = Eq.fromUniversalEquals
+
+  def keywordValue(cr: CRFollow): String = cr match {
+    case On  => "yes"
+    case Off => "no"
+  }
+
+  def fromInt: Prism[Int, CRFollow] =
+    Prism[Int, CRFollow] {
+      case 0  => Off.some
+      case 1  => On.some
+      case _  => none
+    } {
+      case Off => 0
+      case On  => 1
+    }
+
+}
 
 trait TargetKeywordsReader {
   def getRA: SeqAction[Option[Double]]
@@ -139,6 +165,8 @@ trait TcsKeywordsReader {
   def getGsaoiInstPort: SeqAction[Option[Int]]
 
   def getF2InstPort: SeqAction[Option[Int]]
+
+  def getCRFollow: SeqAction[Option[CRFollow]]
 
 }
 
@@ -269,6 +297,8 @@ object DummyTcsKeywordsReader extends TcsKeywordsReader {
   override def getGsaoiInstPort: SeqAction[Option[Int]] = 0.toSeqAction
 
   override def getF2InstPort: SeqAction[Option[Int]] = 0.toSeqAction
+
+  override def getCRFollow: SeqAction[Option[CRFollow]] = (CRFollow.Off: CRFollow).toSeqAction
 }
 
 object TcsKeywordsReaderImpl extends TcsKeywordsReader {
@@ -422,4 +452,7 @@ object TcsKeywordsReaderImpl extends TcsKeywordsReader {
   override def getGsaoiInstPort: SeqAction[Option[Int]] = TcsEpics.instance.gsaoiPort.toSeqActionO
 
   override def getF2InstPort: SeqAction[Option[Int]] = TcsEpics.instance.f2Port.toSeqActionO
+
+  override def getCRFollow: SeqAction[Option[CRFollow]] =
+    TcsEpics.instance.crFollow.flatMap(CRFollow.fromInt.getOption).toSeqActionO
 }

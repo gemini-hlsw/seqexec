@@ -48,7 +48,7 @@ package keywords {
       dhsClient.setKeywords(id, keywords, finalFlag)
   }
 
-  sealed trait KeywordType
+  sealed trait KeywordType extends Product with Serializable
 
   object KeywordType {
     implicit val eq: Eq[KeywordType] = Eq.fromUniversalEquals
