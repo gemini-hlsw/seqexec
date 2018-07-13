@@ -5,9 +5,8 @@ package seqexec.server.gcal
 
 import cats.Eq
 import cats.implicits._
-import cats.effect.IO
 import seqexec.server.SeqAction
-import seqexec.server.keywords.{HeaderProvider, DhsClient, KeywordsClient, StandaloneDhsClient}
+import seqexec.server.keywords.DhsClient
 import edu.gemini.spModel.gemini.calunit.CalUnitParams.Shutter
 
 trait GcalController {
@@ -23,10 +22,6 @@ trait GcalController {
 }
 
 object GcalController {
-  implicit val headerProvider: HeaderProvider[GcalController] = new HeaderProvider[GcalController] {
-    def keywordsClient(a: GcalController): KeywordsClient[IO] = StandaloneDhsClient(a.dhsClient)
-  }
-
   sealed trait LampState extends Product with Serializable
 
   object LampState {

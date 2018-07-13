@@ -8,7 +8,7 @@ import seqexec.server.ConfigUtilOps.{ContentError, ConversionError, _}
 import seqexec.server.gmos.Gmos.SiteSpecifics
 import seqexec.server.gmos.GmosController.Config._
 import seqexec.server.gmos.GmosController.SiteDependentTypes
-import seqexec.server.keywords.DhsInstrument
+import seqexec.server.keywords.{DhsInstrument, KeywordsClient}
 import seqexec.server._
 import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.gemini.gmos.GmosCommonType._
@@ -31,6 +31,8 @@ abstract class Gmos[T<:GmosController.SiteDependentTypes](controller: GmosContro
   override val sfName: String = "gmos"
 
   override val contributorName: String = "gmosdc"
+
+  override val keywordsClient: KeywordsClient[IO] = this
 
   override val observeControl: InstrumentSystem.ObserveControl = OpticControl(
     StopObserveCmd(controller.stopObserve),

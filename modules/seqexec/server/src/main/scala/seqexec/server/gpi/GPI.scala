@@ -4,7 +4,7 @@
 package seqexec.server.gpi
 
 import cats.data.EitherT
-import cats.effect.Sync
+import cats.effect.{IO, Sync}
 import cats.implicits._
 import cats.data.Reader
 import edu.gemini.spModel.config2.Config
@@ -15,7 +15,7 @@ import seqexec.model.Model.{Instrument, Resource}
 import seqexec.server.ConfigUtilOps._
 import seqexec.server._
 import seqexec.server.gpi.GPIController._
-import seqexec.server.keywords.{GDSClient, GDSInstrument}
+import seqexec.server.keywords.{GDSClient, GDSInstrument, KeywordsClient}
 import scala.concurrent.duration._
 import squants.time.{Seconds, Time}
 
@@ -23,6 +23,8 @@ final case class GPI[F[_]: Sync](controller: GPIController[F])
     extends InstrumentSystem[F]
     with GDSInstrument {
   override val gdsClient: GDSClient = controller.gdsClient
+
+  override val keywordsClient: KeywordsClient[IO] = this
 
   override val resource: Resource = Instrument.GPI
 

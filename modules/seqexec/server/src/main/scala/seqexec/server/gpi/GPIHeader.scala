@@ -5,26 +5,26 @@ package seqexec.server.gpi
 
 import gem.Observation
 import gem.enum.KeywordName
+import cats.effect.IO
 import seqexec.model.dhs.ImageFileId
-import seqexec.server.SeqAction
+import seqexec.server.{InstrumentSystem, SeqAction}
 import seqexec.server.keywords._
 import seqexec.server.tcs.TcsKeywordsReader
 import seqexec.server.tcs.CRFollow
 
 object GPIHeader {
 
-  def header[A: HeaderProvider](inst: A,
-                                gdsClient: GDSClient,
-                                tcsKeywordsReader: TcsKeywordsReader,
-                                obsKeywordsReader: ObsKeywordsReader): Header =
+  def header(inst: InstrumentSystem[IO],
+            gdsClient: GDSClient,
+            tcsKeywordsReader: TcsKeywordsReader,
+            obsKeywordsReader: ObsKeywordsReader): Header =
     new Header {
       override def sendBefore(obsId: Observation.Id,
                               id: ImageFileId): SeqAction[Unit] = {
-        val ks = bundleKeywords(
-          inst,
+        val ks = inst.keywordsClient.bundleKeywords(
           List(
             buildDouble(tcsKeywordsReader.getParallacticAngle
-                          .map(_.map(_.toDoubleDegrees))
+                          .map(_.map(_.toSignedDoubleDegrees))
                           .orDefault,
                         KeywordName.PAR_ANG),
             buildInt32(tcsKeywordsReader.getGpiInstPort.orDefault,

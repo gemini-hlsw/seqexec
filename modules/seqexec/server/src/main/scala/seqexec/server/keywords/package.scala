@@ -19,6 +19,10 @@ package keywords {
     def setKeywords(id: ImageFileId,
                     keywords: KeywordBag,
                     finalFlag: Boolean): SeqActionF[F, Unit]
+
+    def closeImage(id: ImageFileId): SeqActionF[F, Unit]
+
+    def bundleKeywords(ks: List[KeywordBag => SeqAction[KeywordBag]]): SeqAction[KeywordBag]
   }
 
   trait DhsInstrument extends KeywordsClient[IO] {
@@ -30,6 +34,14 @@ package keywords {
                     keywords: KeywordBag,
                     finalFlag: Boolean): SeqAction[Unit] =
       dhsClient.setKeywords(id, keywords, finalFlag)
+
+    def closeImage(id: ImageFileId): SeqAction[Unit] =
+      dhsClient.setKeywords(id, KeywordBag(StringKeyword("instrument", dhsInstrumentName)), finalFlag = true)
+
+    def bundleKeywords(ks: List[KeywordBag => SeqAction[KeywordBag]]): SeqAction[KeywordBag] = {
+      val z = SeqAction(KeywordBag(StringKeyword("instrument", dhsInstrumentName)))
+      ks.foldLeft(z) { case (a, b) => a.flatMap(b) }
+    }
   }
 
   trait GDSInstrument extends KeywordsClient[IO] {
@@ -38,15 +50,14 @@ package keywords {
     def setKeywords(id: ImageFileId,
                     keywords: KeywordBag,
                     finalFlag: Boolean): SeqAction[Unit] =
-      gdsClient.setKeywords(id, keywords, finalFlag)
-  }
+      gdsClient.setKeywords(id, keywords)
 
-  final case class StandaloneDhsClient(dhsClient: DhsClient)
-      extends KeywordsClient[IO] {
-    override def setKeywords(id: ImageFileId,
-                             keywords: KeywordBag,
-                             finalFlag: Boolean): SeqAction[Unit] =
-      dhsClient.setKeywords(id, keywords, finalFlag)
+    def closeImage(id: ImageFileId): SeqAction[Unit] =
+      SeqAction.void
+
+    def bundleKeywords(ks: List[KeywordBag => SeqAction[KeywordBag]]): SeqAction[KeywordBag] =
+      ks.foldLeft(SeqAction(KeywordBag.empty)) { case (a, b) => a.flatMap(b) }
+
   }
 
   sealed trait KeywordType extends Product with Serializable
@@ -164,7 +175,6 @@ package keywords {
 }
 
 package object keywords {
-  import HeaderProvider._
 
   // Default values for FITS headers
   val IntDefault: Int         = -9999
@@ -198,7 +208,6 @@ package object keywords {
 
   def buildKeyword[A](get: SeqAction[A], name: KeywordName, f: (KeywordName, A) => Keyword[A]): KeywordBag => SeqAction[KeywordBag] =
     k => get.map(x => k.add(f(name, x)))
-
   def buildInt8(get: SeqAction[Byte], name: KeywordName): KeywordBag => SeqAction[KeywordBag]       = buildKeyword(get, name, Int8Keyword)
   def buildInt16(get: SeqAction[Short], name: KeywordName): KeywordBag => SeqAction[KeywordBag]     = buildKeyword(get, name, Int16Keyword)
   def buildInt32(get: SeqAction[Int], name: KeywordName): KeywordBag => SeqAction[KeywordBag]       = buildKeyword(get, name, Int32Keyword)
@@ -207,16 +216,8 @@ package object keywords {
   def buildBoolean(get: SeqAction[Boolean], name: KeywordName): KeywordBag => SeqAction[KeywordBag] = buildKeyword(get, name, BooleanKeyword)
   def buildString(get: SeqAction[String], name: KeywordName): KeywordBag => SeqAction[KeywordBag]   = buildKeyword(get, name, StringKeyword)
 
-  def bundleKeywords[A: HeaderProvider](inst: A, ks: List[KeywordBag => SeqAction[KeywordBag]]): SeqAction[KeywordBag] = inst match {
-    case i: DhsInstrument =>
-      val z = SeqAction(KeywordBag(StringKeyword(KeywordName.INSTRUMENT, i.dhsInstrumentName)))
-      ks.foldLeft(z) { case (a, b) => a.flatMap(b) }
-    case _ =>
-      ks.foldLeft(SeqAction(KeywordBag.empty)) { case (a, b) => a.flatMap(b) }
-  }
-
-  def sendKeywords[A: HeaderProvider](id: ImageFileId, inst: A, b: List[KeywordBag => SeqAction[KeywordBag]]): SeqAction[Unit] = for {
-    bag <- bundleKeywords(inst, b)
+  def sendKeywords[F[_]](id: ImageFileId, inst: InstrumentSystem[F], b: List[KeywordBag => SeqAction[KeywordBag]]): SeqAction[Unit] = for {
+    bag <- inst.keywordsClient.bundleKeywords(b)
     _   <- inst.keywordsClient.setKeywords(id, bag, finalFlag = false)
   } yield ()
 }

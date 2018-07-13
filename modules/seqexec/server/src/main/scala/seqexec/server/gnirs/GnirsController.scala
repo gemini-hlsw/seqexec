@@ -9,7 +9,6 @@ import seqexec.server.gnirs.GnirsController.GnirsConfig
 import seqexec.server.{ObserveCommand, SeqAction}
 import squants.{Length, Time}
 
-//scalastyle:off
 trait GnirsController {
 
   def applyConfig(config: GnirsConfig): SeqAction[Unit]

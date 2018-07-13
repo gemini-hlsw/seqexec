@@ -10,7 +10,7 @@ import gem.Observation
 import gem.enum.KeywordName
 import seqexec.model.Model.{Conditions, Observer, Operator}
 import seqexec.model.dhs.ImageFileId
-import seqexec.server.{SeqAction, OcsBuildInfo, sgoEq}
+import seqexec.server.{InstrumentSystem, SeqAction, OcsBuildInfo, sgoEq}
 import seqexec.server.tcs.{TargetKeywordsReader, TcsController, TcsKeywordsReader}
 
 // TODO: Replace Unit by something that can read the state for real
@@ -26,8 +26,8 @@ final case class StateKeywordsReader(conditions: Conditions, operator: Option[Op
   def getRawBackgroundLight: SeqAction[String] = SeqAction(encodeCondition(conditions.sb.toInt))
 }
 
-class StandardHeader[A: HeaderProvider](
-  inst: A,
+class StandardHeader[F[_]](
+  inst: InstrumentSystem[F],
   obsReader: ObsKeywordsReader,
   tcsReader: TcsKeywordsReader,
   stateReader: StateKeywordsReader,

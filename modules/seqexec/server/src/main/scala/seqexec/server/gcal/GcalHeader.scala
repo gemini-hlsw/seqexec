@@ -7,12 +7,10 @@ import gem.Observation
 import gem.enum.KeywordName
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.keywords._
-import seqexec.server.SeqAction
+import seqexec.server.{InstrumentSystem, SeqAction}
 
 object GcalHeader {
-  implicit def header[A: HeaderProvider](
-      inst: A,
-      gcalReader: GcalKeywordReader): Header =
+  implicit def header[F[_]](inst: InstrumentSystem[F], gcalReader: GcalKeywordReader): Header =
     new Header {
       private val gcalKeywords = List(
         buildString(gcalReader.getLamp.orDefault, KeywordName.GCALLAMP),
