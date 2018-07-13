@@ -42,6 +42,24 @@ package server {
   final case class SetSkyBackground(wv: SkyBackground, user: Option[UserDetails]) extends SeqEvent
   final case class SetCloudCover(cc: CloudCover, user: Option[UserDetails]) extends SeqEvent
   case object NullSeqEvent extends SeqEvent
+
+  sealed trait ControlStrategy
+  // System will be fully controlled by Seqexec
+  case object FullControl extends ControlStrategy
+  // Seqexec connects to system, but only to read values
+  case object ReadOnly extends ControlStrategy
+  // All system interactions are internally simulated
+  case object Simulated extends ControlStrategy
+
+  object ControlStrategy {
+    def fromString(v: String): Option[ControlStrategy] = v match {
+      case "full"      => Some(FullControl)
+      case "readOnly"  => Some(ReadOnly)
+      case "simulated" => Some(Simulated)
+      case _           => None
+    }
+  }
+
 }
 
 package object server {
@@ -103,6 +121,19 @@ package object server {
 
       statuses.find(_.isRunning).orElse(statuses.find(_.isError)).orElse(statuses.find(_.isStopped))
         .orElse(statuses.find(_.isIdle)).getOrElse(SequenceState.Completed)
+    }
+  }
+
+  implicit class ControlStrategyOps(v: ControlStrategy) {
+    val connect: Boolean = v match {
+      case Simulated => false
+      case _         => true
+    }
+    // If connected, then use real values for keywords
+    val realKeywords: Boolean = connect
+    val command: Boolean = v match {
+      case FullControl => true
+      case _           => false
     }
   }
 

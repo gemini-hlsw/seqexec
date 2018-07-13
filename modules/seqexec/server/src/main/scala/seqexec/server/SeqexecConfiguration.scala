@@ -25,4 +25,11 @@ trait SeqexecConfiguration {
     }
   }
 
+  implicit val configuredControl: Configured[ControlStrategy] = new Configured[ControlStrategy] {
+    override def apply(v: CfgValue): Option[ControlStrategy] = v match {
+      case CfgText(t) => ControlStrategy.fromString(t)
+      case _          => None
+    }
+  }
+
 }
