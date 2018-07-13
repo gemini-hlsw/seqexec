@@ -5,25 +5,26 @@ package seqexec.server.ghost
 
 
 import cats.implicits._
-import cats.Show
-import cats.Eq
+import cats.{Show, Eq}
+import cats.effect.Sync
 import gem.math.{Angle, HourAngle}
 import seqexec.model.dhs.ImageFileId
-import seqexec.server.SeqAction
-import squants.Time
-
+import seqexec.server.SeqActionF
+import seqexec.server.keywords.GDSClient
 import scala.concurrent.duration.Duration
+import org.log4s._
 
-// As of yet, GHOST has no LUTs.
-
-trait GHOSTController {
+final case class GHOSTController[F[_]: Sync](gdsClient: GDSClient) {
   import GHOSTController._
+  val log: Logger = getLogger
 
-  def applyConfig(config: GHOSTConfig): SeqAction[Unit]
+  def applyConfig(config: GHOSTConfig): SeqActionF[F, Unit] =
+    SeqActionF.apply(log.info(s"Configuring $config"))
 
-  def observe(fileId: ImageFileId, expTime: Time): SeqAction[ImageFileId]
+  def observe(fileId: ImageFileId): SeqActionF[F, ImageFileId] =
+    SeqActionF.apply(fileId)
 
-  def endObserve: SeqAction[Unit]
+  def endObserve: SeqActionF[F, Unit] = SeqActionF.void
 }
 
 object GHOSTController {

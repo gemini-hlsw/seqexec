@@ -255,6 +255,7 @@ object SeqexecServerArbitraries extends ArbTime {
       Some(srifu2name), Some(srifu1RA), Some(srifu1Dec),
       None, None, None,
       None, None)
+    }
 
   implicit val ghostCogen: Cogen[GHOSTController.GHOSTConfig] =
     Cogen[(Option[HourAngle], Option[Angle], Duration,
@@ -276,7 +277,7 @@ object SeqexecServerArbitraries extends ArbTime {
     Cogen[String].contramap(_.productPrefix)
 
   implicit val internalKeywordArb: Arbitrary[InternalKeyword] = Arbitrary {
-
+    for {
       name  <- Gen.listOfN(8, Gen.alphaUpperChar)
       kt    <- arbitrary[KeywordType]
       value <- Gen.listOfN(17, Gen.alphaChar)

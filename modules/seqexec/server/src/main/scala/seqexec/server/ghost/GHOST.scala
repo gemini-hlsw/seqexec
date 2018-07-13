@@ -3,58 +3,52 @@
 
 package seqexec.server.ghost
 
-import seqexec.model.dhs.ImageFileId
-import seqexec.model.Model.{Instrument, Resource}
-
-import edu.gemini.spModel.gemini.gpi.Gpi._
 import cats.data.Reader
-import squants.time.{Seconds, Time}
-
-import seqexec.server.ConfigUtilOps._
-import seqexec.server._
-import seqexec.server.ghost.GHOSTController._
+import cats.data.EitherT
+import cats.effect.Sync
+import cats.implicits._
 import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
-import scala.concurrent.duration._
-
-import cats.data.EitherT
-import cats.effect.{IO, Sync}
-import cats.implicits._
+import edu.gemini.spModel.gemini.ghost.Ghost
 import gem.math.{Angle, HourAngle}
+import scala.concurrent.duration._
+import seqexec.model.dhs.ImageFileId
+import seqexec.model.Model.{Instrument, Resource}
+import seqexec.server.ConfigUtilOps._
+import seqexec.server._
+import seqexec.server.keywords.{GDSClient, GDSInstrument}
+import seqexec.server.ghost.GHOSTController._
+import squants.time.{Seconds, Time}
 
-final case class GHOST[F[_]](controller: GHOSTController) extends InstrumentSystem {
+final case class GHOST[F[_]: Sync](controller: GHOSTController[F]) extends InstrumentSystem[F] with GDSInstrument {
+  override val gdsClient: GDSClient = controller.gdsClient
+
   override val resource: Resource = Instrument.GHOST
 
   override val sfName: String = "GHOST"
 
   override val contributorName: String = "ghost"
 
-  override val dhsInstrumentName: String = "GHOST"
-
   override val observeControl: InstrumentSystem.ObserveControl =
     InstrumentSystem.Uncontrollable
 
-  // TODO: No idea what the second parameter to observe should be.
   override def observe(
-                        config: Config): SeqObserve[ImageFileId, ObserveCommand.Result] = Reader {
+                        config: Config): SeqObserveF[F, ImageFileId, ObserveCommand.Result] = Reader {
     fileId =>
-      controller.observe(fileId, Seconds(60)).map(_ => ObserveCommand.Success)
+      controller.observe(fileId).map(_ => ObserveCommand.Success: ObserveCommand.Result)
   }
 
-  override def configure(config: Config): SeqAction[ConfigResult] =
+  override def configure(config: Config): SeqActionF[F, ConfigResult[F]] =
     GHOST
-      .fromSequenceConfig[IO](config)
+      .fromSequenceConfig[F](config)
       .flatMap(controller.applyConfig)
-      .map(_ => ConfigResult(this))
+      .map(_ => ConfigResult[F](this))
 
-  override def notifyObserveEnd: SeqAction[Unit] = controller.endObserve
+  override def notifyObserveEnd: SeqActionF[F, Unit] = controller.endObserve
 
-  override def calcObserveTime(config: Config): Time =
-    config
-      .extract(OBSERVE_KEY / EXPOSURE_TIME_PROP)
-      .as[java.lang.Double]
-      .map(x => Seconds(x.toDouble))
-      .getOrElse(Seconds(360))
+  override def notifyObserveStart: SeqActionF[F, Unit] = SeqActionF.void
+
+  override def calcObserveTime(config: Config): Time = Seconds(360)
 }
 
 object GHOST {
@@ -87,26 +81,22 @@ object GHOST {
 //  private def targetName(config: Config, name: String): Either[ExtractFailure, Option[String]] =
 //    config.extract(INSTRUMENT_KEY / name).as[Option[String]]
 
-  // TODO: Obviously, these will not be hard-coded strings in the final version.
-  // TODO: They are in Ghost.scala in OCS2.
-  // TODO: Also, we are skipping degree strings here as we don't want to have to deal with them.
-  // TODO: Placeholder for exposure time here.
   def fromSequenceConfig[F[_]: Sync](config: Config): SeqActionF[F, GHOSTConfig] =
     EitherT(Sync[F].delay(
       (for {
-        baseRAHMS          <- config.extract(INSTRUMENT_KEY / "baseRAHMS").as[Option[HourAngle]]
-        baseDecDMS         <- config.extract(INSTRUMENT_KEY / "baseDecDMS").as[Option[Angle]]
-        srifu1Name         <- config.extract(INSTRUMENT_KEY / "srifu1Name").as[Option[String]]
-        srifu1CoordsRAHMS  <- config.extract(INSTRUMENT_KEY / "srifu1CoordsRAHMS").as[Option[HourAngle]]
-        srifu1CoordsDecDMS <- config.extract(INSTRUMENT_KEY / "srifu1CoordsDecDMS").as[Option[Angle]]
-        srifu2Name         <- config.extract(INSTRUMENT_KEY / "srifu2Name").as[Option[String]]
-        srifu2CoordsRAHMS  <- config.extract(INSTRUMENT_KEY / "srifu2CoordsRAHMS").as[Option[HourAngle]]
-        srifu2CoordsDecDMS <- config.extract(INSTRUMENT_KEY / "srifu2CoordsDecDMS").as[Option[Angle]]
-        hrifu1Name         <- config.extract(INSTRUMENT_KEY / "hrifu1Name").as[Option[String]]
-        hrifu1CoordsRAHMS  <- config.extract(INSTRUMENT_KEY / "hrifu1CoordsRAHMS").as[Option[HourAngle]]
-        hrifu1CoordsDecDMS <- config.extract(INSTRUMENT_KEY / "hrifu1CoordsDecDMS").as[Option[Angle]]
-        hrifu2CoordsRAHMS  <- config.extract(INSTRUMENT_KEY / "hrifu2CoordsRAHMS").as[Option[HourAngle]]
-        hrifu2CoordsDecDMS <- config.extract(INSTRUMENT_KEY / "hrifu2CoordsDecDMS").as[Option[Angle]]
+        baseRAHMS          <- config.extract(INSTRUMENT_KEY / Ghost.BaseRAHMS).as[Option[HourAngle]]
+        baseDecDMS         <- config.extract(INSTRUMENT_KEY / Ghost.BaseDecDMS).as[Option[Angle]]
+        srifu1Name         <- config.extract(INSTRUMENT_KEY / Ghost.SRIFU1Name).as[Option[String]]
+        srifu1CoordsRAHMS  <- config.extract(INSTRUMENT_KEY / Ghost.SRIFU1RAHMS).as[Option[HourAngle]]
+        srifu1CoordsDecDMS <- config.extract(INSTRUMENT_KEY / Ghost.SRIFU1DecDMS).as[Option[Angle]]
+        srifu2Name         <- config.extract(INSTRUMENT_KEY / Ghost.SRIFU2Name).as[Option[String]]
+        srifu2CoordsRAHMS  <- config.extract(INSTRUMENT_KEY / Ghost.SRIFU2RAHMS).as[Option[HourAngle]]
+        srifu2CoordsDecDMS <- config.extract(INSTRUMENT_KEY / Ghost.SRIFU2DecDMS).as[Option[Angle]]
+        hrifu1Name         <- config.extract(INSTRUMENT_KEY / Ghost.HRIFU1Name).as[Option[String]]
+        hrifu1CoordsRAHMS  <- config.extract(INSTRUMENT_KEY / Ghost.HRIFU1RAHMS).as[Option[HourAngle]]
+        hrifu1CoordsDecDMS <- config.extract(INSTRUMENT_KEY / Ghost.HRIFU1DecDMS).as[Option[Angle]]
+        hrifu2CoordsRAHMS  <- config.extract(INSTRUMENT_KEY / Ghost.HRIFU2RAHMS).as[Option[HourAngle]]
+        hrifu2CoordsDecDMS <- config.extract(INSTRUMENT_KEY / Ghost.HRIFU2DecDMS).as[Option[Angle]]
       } yield GHOSTConfig(baseRAHMS, baseDecDMS, 1.minute,
                           srifu1Name, srifu1CoordsRAHMS, srifu1CoordsDecDMS,
                           srifu2Name, srifu2CoordsRAHMS, srifu2CoordsDecDMS,
