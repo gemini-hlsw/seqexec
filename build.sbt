@@ -8,9 +8,6 @@ import NativePackagerHelper._
 import sbtcrossproject.{crossProject, CrossType}
 import com.typesafe.sbt.packager.docker._
 
-// our version is determined by the current git state (see project/ImageManifest.scala)
-def imageManifest = ImageManifest.current("postgres:9.6.0").unsafeRunSync
-
 name := Settings.Definitions.name
 
 organization in Global := "edu.gemini.ocs"
@@ -287,9 +284,9 @@ lazy val ctl = project
       CatsFree.value,
       Decline
     ),
-    TaskKey[Unit]("deployTest") := (runMain in Compile).toTask {
-      s" gem.ctl.main --no-ansi --host sbfocstest-lv1.cl.gemini.edu deploy-test ${imageManifest.formatVersion}"
-    } .value,
+    // TaskKey[Unit]("deployTest") := (runMain in Compile).toTask {
+    //   s" gem.ctl.main --no-ansi --host sbfocstest-lv1.cl.gemini.edu deploy-test ${version.value}"
+    // } .value,
     fork in run := true
   )
 
@@ -305,7 +302,7 @@ lazy val main = project
     dockerBaseImage       := "openjdk:8u141",
     dockerExposedPorts    := List(9090, 9091),
     dockerRepository      := Some("sbfocsdev-lv1.cl.gemini.edu"),
-    dockerLabels          := imageManifest.labels,
+    dockerLabels          := ImageManifest.current("postgres:9.6.0", version.value).unsafeRunSync.labels,
 
     // Install nc before changing the user
     dockerCommands       ++= dockerCommands.value.flatMap {

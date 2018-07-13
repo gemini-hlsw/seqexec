@@ -8,45 +8,12 @@ import java.time._
 import scala.math.floor
 import scala.sys.process._
 
-case class ImageManifest(history: NonEmptyList[String], timestamp: Instant, unstable: Boolean, postgresImage: String) {
+case class ImageManifest(history: NonEmptyList[String], timestamp: Instant, unstable: Boolean, postgresImage: String, version: String) {
   import ImageManifest.Keys
 
   /** Commit hash for this version. */
   def commit: String =
     history.head
-
-  /** Timestamp as LocalDateTime. */
-  def localDateTime: LocalDateTime =
-    LocalDateTime.ofInstant(timestamp, ZoneOffset.UTC)
-
-  /** Timestamp as fractional Julian day. */
-  def julianDay: Double = {
-    val d = localDateTime
-    val a = floor((14.0 - d.getMonthValue) / 12.0)
-    val y = d.getYear + 4800.0 - a
-    val m = d.getMonthValue + 12 * a - 3.0
-    d.getDayOfMonth +
-    floor((153.0 * m + 2.0) / 5.0) +
-    365 * y +
-    floor(y / 4.0) -
-    floor(y / 100.0) +
-    floor(y / 400.0) -
-    32045.0
-  }
-
-  /** Timestamp as a J2000 fractional epoch year. */
-  def j2000: Double = {
-    val jd = julianDay
-    val yearBasis:    Double = 2000.0
-    val julianBasis:  Double = 2451545.0
-    val lengthOfYear: Double = 365.25
-    yearBasis + (jd - julianBasis) / lengthOfYear
-  }
-
-  /** Format a plausibly human-consumable "version" string for artifact naming. */
-  def formatVersion: String =
-    if (unstable) f"$j2000%8.4f-$commit-UNSTABLE"
-    else          f"$j2000%8.4f-$commit"
 
   /** Docker labels for this ImageManifest, in a format sbt-native-packager likes. */
   def labels: Map[String, String] =
@@ -54,7 +21,7 @@ case class ImageManifest(history: NonEmptyList[String], timestamp: Instant, unst
       Keys.Commit   -> commit,
       Keys.History  -> history.intercalate(","),
       Keys.Unstable -> unstable.toString,
-      Keys.Version  -> formatVersion,
+      Keys.Version  -> version,
       Keys.Postgres -> postgresImage
     )
 
@@ -98,7 +65,7 @@ object ImageManifest {
     IO(s"git show -s --pretty=format:%ct HEAD".!!).map(_.trim.toLong).map(Instant.ofEpochSecond)
 
   /** Compute a manifest based on the local Git situation and the provided postgres image name. */
-  def current(postgresImage: String): IO[ImageManifest] =
-    (history, instant, unstable).mapN(apply(_, _, _, postgresImage))
+  def current(postgresImage: String, version: String): IO[ImageManifest] =
+    (history, instant, unstable).mapN(apply(_, _, _, postgresImage, version))
 
 }
