@@ -39,10 +39,13 @@ CID=`docker run --detach --publish 5432 postgres:9.6.0`
 
 # Add an exit handler to ensure we always clean up.
 function cleanup {
+  # Unfold the previous (failing) group if we're exiting abnormally
+  if [[ $? -ne 0 ]]; then
+    echo "^^^ +++"
+  fi
   echo "--- :postgres: Cleaning up Postgres test instance"
   docker stop $CID
   docker rm --volumes --force $CID
-  echo "--- :tada: Done"
 }
 trap cleanup EXIT
 
@@ -95,5 +98,11 @@ echo "--- :webpack: Webpack"
     -Docs3.skipDependencyUpdates          \
     main/docker:publish                   \
     main/docker:clean
+
+  echo "--- :docker: Deploying to the test environment "
+  /usr/local/bin/sbt                      \
+    -jvm-opts build/buildkite-jvmopts     \
+    -Docs3.skipDependencyUpdates          \
+    ctl/deployTest
 
 # fi

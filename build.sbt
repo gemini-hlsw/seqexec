@@ -284,9 +284,11 @@ lazy val ctl = project
       CatsFree.value,
       Decline
     ),
-    // TaskKey[Unit]("deployTest") := (runMain in Compile).toTask {
-    //   s" gem.ctl.main --no-ansi --host sbfocstest-lv1.cl.gemini.edu deploy-test ${version.value}"
-    // } .value,
+    TaskKey[Unit]("deployTest") := Def.taskDyn {
+      (runMain in Compile).toTask {
+        s" gem.ctl.main --no-ansi --host sbfocstest-lv1.cl.gemini.edu deploy-test ${version.value}"
+      }
+    } .value,
     fork in run := true
   )
 
