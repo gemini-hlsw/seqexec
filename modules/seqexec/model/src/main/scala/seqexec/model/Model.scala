@@ -113,6 +113,7 @@ object Model {
       case Instrument.GNIRS  => 16
       case Instrument.NIRI   => 17
       case Instrument.NIFS   => 18
+      case Instrument.GHOST  => 19
     }
     implicit val show: Show[Resource] = Show.show {
       case TCS               => "TCS"
@@ -128,6 +129,7 @@ object Model {
   sealed trait Instrument extends Resource
   object Instrument {
     case object F2 extends Instrument
+    case object GHOST extends Instrument
     case object GmosS extends Instrument
     case object GmosN extends Instrument
     case object GNIRS extends Instrument
@@ -139,6 +141,7 @@ object Model {
     implicit val equal: Eq[Instrument] = Eq.fromUniversalEquals
     implicit val show: Show[Instrument] = Show.show {
       case F2    => "Flamingos2"
+      case GHOST => "GHOST"
       case GmosS => "GMOS-S"
       case GmosN => "GMOS-N"
       case GPI   => "GPI"
@@ -147,7 +150,7 @@ object Model {
       case NIRI  => "NIRI"
       case NIFS  => "NIFS"
     }
-    val gsInstruments: NonEmptyList[Instrument] = NonEmptyList.of(F2, GmosS, GPI, GSAOI)
+    val gsInstruments: NonEmptyList[Instrument] = NonEmptyList.of(F2, GHOST, GmosS, GPI, GSAOI)
     val gnInstruments: NonEmptyList[Instrument] = NonEmptyList.of(GmosN, GNIRS, NIRI, NIFS)
     val all: NonEmptyList[Instrument] = gsInstruments.concatNel(gnInstruments)
   }
