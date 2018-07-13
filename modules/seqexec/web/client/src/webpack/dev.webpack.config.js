@@ -35,6 +35,7 @@ const Web = Merge(
     },
     // Custom dev server for the seqexec as we need a ws proxy
     devServer: {
+      host: "0.0.0.0",
       hot: true,
       contentBase: [__dirname, parts.rootDir],
       historyApiFallback: true,
