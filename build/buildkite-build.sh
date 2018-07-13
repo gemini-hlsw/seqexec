@@ -7,7 +7,7 @@ cd `dirname $0`/..
 ### BUILD
 ###
 
-echo "--- :scala: Compiling ..."
+echo "--- :scala: Compiling main codebase ..."
 /usr/local/bin/sbt                  \
   -jvm-opts build/buildkite-jvmopts \
   -no-colors                        \
@@ -18,7 +18,20 @@ echo "--- :scala: Compiling ..."
   compile
 
 ###
-### TEST
+### COMPILE TESTS
+###
+
+# Compile tests
+echo "--- :scala: Compiling tests ..."
+/usr/local/bin/sbt                                        \
+  -jvm-opts build/buildkite-jvmopts                       \
+  -no-colors                                              \
+  -Docs3.skipDependencyUpdates                            \
+  -Docs3.databaseUrl=jdbc:postgresql://$HOST_AND_PORT/gem \
+  test:compile
+
+###
+### RUN TESTS
 ###
 
 # Start a new Postgres container for this build
@@ -38,29 +51,20 @@ trap cleanup EXIT
 HOST_AND_PORT=`docker port $CID 5432/tcp`
 
 # The postgres user already exists, so we can go ahead and create the database
+echo "--- :postgres: Creating database ..."
 until docker exec $CID psql -U postgres -c 'create database gem'
 do
-  echo "--- :postgres: Waiting for Postgres to start up ..."
-  sleep 0.5
+  sleep 1
 done
 
-# Set up the schema and compile tests
-echo "--- :scala: Compiling tests ..."
-/usr/local/bin/sbt                                        \
-  -jvm-opts build/buildkite-jvmopts                       \
-  -no-colors                                              \
-  -Docs3.skipDependencyUpdates                            \
-  -Docs3.databaseUrl=jdbc:postgresql://$HOST_AND_PORT/gem \
-  sql/flywayMigrate                                       \
-  test:compile
-
-# Run tests
+# Set up the schema and run tests
 echo "--- :scala: Running tests ..."
 /usr/local/bin/sbt                                        \
   -jvm-opts build/buildkite-jvmopts                       \
   -no-colors                                              \
   -Docs3.skipDependencyUpdates                            \
   -Docs3.databaseUrl=jdbc:postgresql://$HOST_AND_PORT/gem \
+  sql/flywayMigrate                                       \
   test
 
 ###
@@ -87,7 +91,7 @@ echo "--- :webpack: Webpack ..."
 
 # If this is a merge into `develop` then this is a shippable version and we will build a docker
 # image for it. We can later deploy it to test or production.
-if [ "$BUILDKITE_PULL_REQUEST" = "false" ] && [ "$BUILDKITE_BRANCH" = "develop" ]; then
+# if [ "$BUILDKITE_PULL_REQUEST" = "false" ] && [ "$BUILDKITE_BRANCH" = "develop" ]; then
   echo "--- :docker: Creating a Docker image ..."
   /usr/local/bin/sbt                      \
     -jvm-opts build/buildkite-jvmopts     \
@@ -95,7 +99,7 @@ if [ "$BUILDKITE_PULL_REQUEST" = "false" ] && [ "$BUILDKITE_BRANCH" = "develop" 
     -Docs3.skipDependencyUpdates          \
     main/docker:publish
     main/docker:clean
-fi
+# fi
 
 
 
