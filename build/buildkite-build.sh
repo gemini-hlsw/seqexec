@@ -7,7 +7,7 @@ cd `dirname $0`/..
 ### BUILD
 ###
 
-echo "--- :scala: Compiling main codebase ..."
+echo "--- :scala: Compiling main codebase"
 /usr/local/bin/sbt                  \
   -jvm-opts build/buildkite-jvmopts \
   -no-colors                        \
@@ -22,7 +22,7 @@ echo "--- :scala: Compiling main codebase ..."
 ###
 
 # Compile tests
-echo "--- :scala: Compiling tests ..."
+echo "--- :scala: Compiling tests"
 /usr/local/bin/sbt                                        \
   -jvm-opts build/buildkite-jvmopts                       \
   -no-colors                                              \
@@ -36,12 +36,12 @@ echo "--- :scala: Compiling tests ..."
 
 # Start a new Postgres container for this build
 # TODO: read postgres version from the build
-echo "--- :postgres: Starting Postgres test instance ..."
+echo "--- :postgres: Starting Postgres test instance"
 CID=`docker run --detach --publish 5432 postgres:9.6.0`
 
 # Add an exit handler to ensure we always clean up.
 function cleanup {
-  echo "--- :postgres: Cleaning up Postgres test instance ..."
+  echo "--- :postgres: Cleaning up Postgres test instance"
   docker stop $CID
   docker rm --volumes --force $CID
 }
@@ -51,14 +51,14 @@ trap cleanup EXIT
 HOST_AND_PORT=`docker port $CID 5432/tcp`
 
 # The postgres user already exists, so we can go ahead and create the database
-echo "--- :postgres: Creating database ..."
+echo "--- :postgres: Creating database"
 until docker exec $CID psql -U postgres -c 'create database gem'
 do
   sleep 1
 done
 
 # Set up the schema and run tests
-echo "--- :scala: Running tests ..."
+echo "--- :scala: Running tests"
 /usr/local/bin/sbt                                        \
   -jvm-opts build/buildkite-jvmopts                       \
   -no-colors                                              \
@@ -71,14 +71,14 @@ echo "--- :scala: Running tests ..."
 ### JAVASCRIPT PACKAGING
 ###
 
-echo "--- :javascript: Packaging Javascript ..."
+echo "--- :javascript: Linking Javascript"
 /usr/local/bin/sbt                      \
   -jvm-opts build/buildkite-jvmopts     \
   -no-colors                            \
   -Docs3.skipDependencyUpdates          \
   ui/fastOptJS
 
-echo "--- :webpack: Webpack ..."
+echo "--- :webpack: Webpack"
 /usr/local/bin/sbt                      \
   -jvm-opts build/buildkite-jvmopts     \
   -no-colors                            \
@@ -91,14 +91,16 @@ echo "--- :webpack: Webpack ..."
 
 # If this is a merge into `develop` then this is a shippable version and we will build a docker
 # image for it. We can later deploy it to test or production.
-# if [ "$BUILDKITE_PULL_REQUEST" = "false" ] && [ "$BUILDKITE_BRANCH" = "develop" ]; then
-  echo "--- :docker: Creating a Docker image ..."
+# if [ "$BUILDKITE_PULL_REQUEST" = "false" ] && [ "$BUILDKITE_BRANCH" = "develop" ];
+
+  echo "--- :docker: Creating a Docker image"
   /usr/local/bin/sbt                      \
     -jvm-opts build/buildkite-jvmopts     \
     -no-colors                            \
     -Docs3.skipDependencyUpdates          \
-    main/docker:publish
+    main/docker:publish                   \
     main/docker:clean
+
 # fi
 
 
