@@ -435,7 +435,7 @@ object SeqTranslate {
                       gmosSouth: GmosController.GmosSouthController,
                       gmosNorth: GmosController.GmosNorthController,
                       gnirs: GnirsController,
-                      gpi: GPIController
+                      gpi: GPIController[IO]
                     )
 
   final case class Settings(

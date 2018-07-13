@@ -119,7 +119,7 @@ object Settings {
     val reactJS                 = "16.2.0"
     val jQuery                  = "3.2.1"
     val semanticUI              = "2.2.10"
-    val ocsVersion              = "2018101.1.1"
+    val ocsVersion              = "2018101.1.3"
     val uglifyJs                = "1.2.4"
     val reactVirtualized        = "9.20.0"
     val reactDraggable          = "3.0.5"
