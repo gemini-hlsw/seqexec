@@ -3,17 +3,42 @@
 
 package seqexec.server.tcs
 
-import cats.Apply
+import cats.{Apply, Eq}
 import cats.implicits._
 import gem.math.Angle
 import edu.gemini.spModel.core.Wavelength
 import edu.gemini.spModel.core.Wavelength
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import monocle.Prism
 import seqexec.server.SeqAction
 import seqexec.server.keywords._
-import seqexec.server.tcs.Tcs.CRFollow
 import squants.space.{Angstroms, Meters}
+
+sealed trait CRFollow extends Product with Serializable
+
+object CRFollow {
+  case object On extends CRFollow
+  case object Off extends CRFollow
+
+  implicit val eq: Eq[CRFollow] = Eq.fromUniversalEquals
+
+  def keywordValue(cr: CRFollow): String = cr match {
+    case On  => "yes"
+    case Off => "no"
+  }
+
+  def fromInt: Prism[Int, CRFollow] =
+    Prism[Int, CRFollow] {
+      case 0  => Off.some
+      case 1  => On.some
+      case _  => none
+    } {
+      case Off => 0
+      case On  => 1
+    }
+
+}
 
 trait TargetKeywordsReader {
   def getRA: SeqAction[Option[Double]]

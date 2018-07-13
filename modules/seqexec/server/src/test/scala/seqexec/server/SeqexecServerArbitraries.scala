@@ -15,7 +15,7 @@ import seqexec.server.gpi.GPIController
 import seqexec.server.gpi.GPIController._
 import seqexec.server.gcal.GcalController
 import seqexec.server.gcal.GcalController._
-import seqexec.server.tcs.{TcsController, TcsControllerEpics}
+import seqexec.server.tcs.{CRFollow, TcsController, TcsControllerEpics}
 import seqexec.server.keywords._
 import seqexec.model.Model.{Conditions, Instrument, Operator}
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2
@@ -239,7 +239,7 @@ object SeqexecServerArbitraries extends ArbTime {
     Gen.oneOf(TypeInt8, TypeInt16, TypeInt32, TypeFloat, TypeDouble, TypeBoolean, TypeString)
   }
   implicit val keywordTypeCogen: Cogen[KeywordType] =
-    Cogen[Int].contramap(_.##)
+    Cogen[String].contramap(_.productPrefix)
 
   implicit val internalKeywordArb: Arbitrary[InternalKeyword] = Arbitrary {
     for {
@@ -256,4 +256,10 @@ object SeqexecServerArbitraries extends ArbTime {
   }
   implicit val keywordBagCogen: Cogen[KeywordBag] =
     Cogen[List[InternalKeyword]].contramap(_.keywords)
+
+  implicit val crFollowArb: Arbitrary[CRFollow] = Arbitrary {
+    Gen.oneOf(CRFollow.On, CRFollow.Off)
+  }
+  implicit val crFollowCogen: Cogen[CRFollow] =
+    Cogen[String].contramap(_.productPrefix)
 }

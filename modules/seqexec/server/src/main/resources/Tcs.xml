@@ -1007,12 +1007,12 @@
     <Status name="tcsstate">
         <top>tcs</top>
         <attribute name="crfollow">
-            <channel>crFollow</channel>
+            <channel>crFollow.VAL</channel>
             <type>INTEGER</type>
             <description>CASS Rotator Follow</description>
         </attribute>
         <attribute name="parangle">
-            <channel>parAngle</channel>
+            <channel>sad:parAngle.VAL</channel>
             <type>DOUBLE</type>
             <description>Parallactic Angle</description>
         </attribute>

@@ -8,7 +8,7 @@ import seqexec.model.dhs.ImageFileId
 import seqexec.server.SeqAction
 import seqexec.server.keywords._
 import seqexec.server.tcs.TcsKeywordsReader
-import seqexec.server.tcs.Tcs.CRFollow
+import seqexec.server.tcs.CRFollow
 
 object GPIHeader {
 
@@ -28,7 +28,9 @@ object GPIHeader {
                         "PAR_ANG"),
             buildInt32(tcsKeywordsReader.getGpiInstPort.orDefault, "INPORT"),
             buildBoolean(obsKeywordsReader.getAstrometicField, "ASTROMTC"),
-            buildString(tcsKeywordsReader.getCRFollow.map(_.map(CRFollow.keywordValue).getOrElse("INDEF")), "CRFOLLOW")
+            buildString(tcsKeywordsReader.getCRFollow.map(
+                          _.map(CRFollow.keywordValue).getOrElse("INDEF")),
+                        "CRFOLLOW")
           )
         )
         ks.flatMap(gdsClient.openObservation(obsId, id, _))
