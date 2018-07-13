@@ -51,31 +51,28 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings) {
     if (settings.odbNotifications) ODBProxy.OdbCommandsImpl(new Peer(settings.odbHost, 8442, null))
     else ODBProxy.DummyOdbCommands)
 
-  val gpiGDS: GDSClient = GDSClient((settings.gpiKeywords === GPIKeywords.GPIKeywordsGDS)
-    .fold(httpClient, GDSClient.alwaysOkClient), settings.gpiGDS)
+  val gpiGDS: GDSClient = GDSClient(settings.gpiGdsControl.command.fold(httpClient, GDSClient.alwaysOkClient), settings.gpiGDS)
 
   private val systems = SeqTranslate.Systems(
     odbProxy,
-    if (settings.dhsSim) DhsClientSim(settings.date) else DhsClientHttp(settings.dhsURI),
-    if (settings.tcsSim) TcsControllerSim else TcsControllerEpics,
-    if (settings.gcalSim) GcalControllerSim(DhsClientSim(settings.date)) else GcalControllerEpics(DhsClientHttp(settings.dhsURI)),
-    if (settings.instSim) {
-      if (settings.instForceError) Flamingos2ControllerSimBad(settings.failAt)
-      else Flamingos2ControllerSim
-    } else Flamingos2ControllerEpics,
-    if (settings.instSim) GmosControllerSim.south else GmosSouthControllerEpics,
-    if (settings.instSim) GmosControllerSim.north else GmosNorthControllerEpics,
-    if (settings.instSim) GnirsControllerSim else GnirsControllerEpics,
+    settings.dhsControl.command.fold(DhsClientHttp(settings.dhsURI), DhsClientSim(settings.date)),
+    settings.tcsControl.command.fold(TcsControllerEpics, TcsControllerSim),
+    settings.gcalControl.command.fold(GcalControllerEpics(DhsClientHttp(settings.dhsURI)), GcalControllerSim(DhsClientSim(settings.date))),
+    settings.f2Control.command.fold(Flamingos2ControllerEpics,
+      settings.instForceError.fold(Flamingos2ControllerSimBad(settings.failAt), Flamingos2ControllerSim)),
+    settings.gmosControl.command.fold(GmosSouthControllerEpics, GmosControllerSim.south),
+    settings.gmosControl.command.fold(GmosNorthControllerEpics, GmosControllerSim.north),
+    settings.gnirsControl.command.fold(GnirsControllerEpics, GnirsControllerSim),
     GPIController(new GPIClient(settings.gpiGiapi, scala.concurrent.ExecutionContext.Implicits.global), gpiGDS)
   )
 
   private val translatorSettings = SeqTranslate.Settings(
-    tcsKeywords = settings.tcsKeywords,
-    f2Keywords = settings.f2Keywords,
-    gwsKeywords = settings.gwsKeywords,
-    gcalKeywords = settings.gcalKeywords,
-    gmosKeywords = settings.gmosKeywords,
-    gnirsKeywords = settings.gnirsKeywords
+    tcsKeywords = settings.tcsControl.realKeywords,
+    f2Keywords = settings.f2Control.realKeywords,
+    gwsKeywords = settings.gwsControl.realKeywords,
+    gcalKeywords = settings.gcalControl.realKeywords,
+    gmosKeywords = settings.gmosControl.realKeywords,
+    gnirsKeywords = settings.gnirsControl.realKeywords
   )
 
   private val translator = SeqTranslate(settings.site, systems, translatorSettings)
@@ -352,26 +349,28 @@ object SeqexecEngine extends SeqexecConfiguration {
   }
 
   final case class Settings(site: Site,
-                      odbHost: String,
-                      date: LocalDate,
-                      dhsURI: String,
-                      dhsSim: Boolean,
-                      tcsSim: Boolean,
-                      instSim: Boolean,
-                      gcalSim: Boolean,
-                      odbNotifications: Boolean,
-                      tcsKeywords: Boolean,
-                      f2Keywords: Boolean,
-                      gmosKeywords: Boolean,
-                      gwsKeywords: Boolean,
-                      gcalKeywords: Boolean,
-                      gnirsKeywords: Boolean,
-                      gpiKeywords: GPIKeywords,
-                      instForceError: Boolean,
-                      failAt: Int,
-                      odbQueuePollingInterval: Duration,
-                      gpiGiapi: Giapi[IO],
-                      gpiGDS: Uri)
+                            odbHost: String,
+                            date: LocalDate,
+                            dhsURI: String,
+                            dhsControl: ControlStrategy,
+                            f2Control: ControlStrategy,
+                            gcalControl: ControlStrategy,
+                            ghostControl: ControlStrategy,
+                            gmosControl: ControlStrategy,
+                            gnirsControl: ControlStrategy,
+                            gpiControl: ControlStrategy,
+                            gpiGdsControl: ControlStrategy,
+                            gsaoiControl: ControlStrategy,
+                            gwsControl: ControlStrategy,
+                            nifsControl: ControlStrategy,
+                            niriControl: ControlStrategy,
+                            tcsControl: ControlStrategy,
+                            odbNotifications: Boolean,
+                            instForceError: Boolean,
+                            failAt: Int,
+                            odbQueuePollingInterval: Duration,
+                            gpiGiapi: Giapi[IO],
+                            gpiGDS: Uri)
   def apply(httpClient: Client[IO], settings: Settings): SeqexecEngine = new SeqexecEngine(httpClient, settings)
 
   // Couldn't find this on Scalaz
@@ -476,10 +475,12 @@ object SeqexecEngine extends SeqexecConfiguration {
     IO.apply(Paths.get(smartGCalLocation)).map { p => SmartGcal.initialize(peer, p) }
   }
 
+  // TODO: Initialization is a bit of a mess, with a mix of effectful and effectless code, and values
+  // that should go from one to the other. This should be improved.
   def giapiConnection: Kleisli[IO, Config, Giapi[IO]] = Kleisli { cfg: Config =>
-    val instSim = cfg.require[Boolean]("seqexec-engine.instSim")
+    val gpiControl = cfg.require[ControlStrategy]("seqexec-engine.systemControl.gpi")
     val gpiUrl  = cfg.require[String]("seqexec-engine.gpiUrl")
-    if (instSim) {
+    if (gpiControl.command) {
       Giapi.giapiConnectionIO.connect
     } else {
       Giapi.giapiConnection[IO](gpiUrl, 2000.millis).connect
@@ -491,18 +492,20 @@ object SeqexecEngine extends SeqexecConfiguration {
     val site                    = cfg.require[Site]("seqexec-engine.site")
     val odbHost                 = cfg.require[String]("seqexec-engine.odb")
     val dhsServer               = cfg.require[String]("seqexec-engine.dhsServer")
-    val dhsSim                  = cfg.require[Boolean]("seqexec-engine.dhsSim")
-    val tcsSim                  = cfg.require[Boolean]("seqexec-engine.tcsSim")
-    val instSim                 = cfg.require[Boolean]("seqexec-engine.instSim")
-    val gcalSim                 = cfg.require[Boolean]("seqexec-engine.gcalSim")
+    val dhsControl              = cfg.require[ControlStrategy]("seqexec-engine.systemControl.dhs")
+    val f2Control               = cfg.require[ControlStrategy]("seqexec-engine.systemControl.f2")
+    val gcalControl             = cfg.require[ControlStrategy]("seqexec-engine.systemControl.gcal")
+    val ghostControl            = cfg.require[ControlStrategy]("seqexec-engine.systemControl.ghost")
+    val gmosControl             = cfg.require[ControlStrategy]("seqexec-engine.systemControl.gmos")
+    val gnirsControl            = cfg.require[ControlStrategy]("seqexec-engine.systemControl.gnirs")
+    val gpiControl              = cfg.require[ControlStrategy]("seqexec-engine.systemControl.gpi")
+    val gpiGdsControl           = cfg.require[ControlStrategy]("seqexec-engine.systemControl.gpiGds")
+    val gsaoiControl            = cfg.require[ControlStrategy]("seqexec-engine.systemControl.gsaoi")
+    val gwsControl              = cfg.require[ControlStrategy]("seqexec-engine.systemControl.gws")
+    val nifsControl             = cfg.require[ControlStrategy]("seqexec-engine.systemControl.nifs")
+    val niriControl             = cfg.require[ControlStrategy]("seqexec-engine.systemControl.niri")
+    val tcsControl              = cfg.require[ControlStrategy]("seqexec-engine.systemControl.tcs")
     val odbNotifications        = cfg.require[Boolean]("seqexec-engine.odbNotifications")
-    val tcsKeywords             = cfg.require[Boolean]("seqexec-engine.tcsKeywords")
-    val f2Keywords              = cfg.require[Boolean]("seqexec-engine.f2Keywords")
-    val gmosKeywords            = cfg.require[Boolean]("seqexec-engine.gmosKeywords")
-    val gwsKeywords             = cfg.require[Boolean]("seqexec-engine.gwsKeywords")
-    val gcalKeywords            = cfg.require[Boolean]("seqexec-engine.gcalKeywords")
-    val gnirsKeywords           = cfg.require[Boolean]("seqexec-engine.gnirsKeywords")
-    val gpiKeywords             = cfg.require[Boolean]("seqexec-engine.gpiKeywords").fold(GPIKeywords.GPIKeywordsGDS, GPIKeywords.GPIKeywordsSimulated)
     val gpiGDS                  = cfg.require[Uri]("seqexec-engine.gpiGDS")
     val instForceError          = cfg.require[Boolean]("seqexec-engine.instForceError")
     val failAt                  = cfg.require[Int]("seqexec-engine.failAt")
@@ -536,41 +539,43 @@ object SeqexecEngine extends SeqexecConfiguration {
         case _       => IO.raiseError(new RuntimeException("Cannot initialize EPICS subsystem"))
       }
     } *> IO.apply(CaService.setIOTimeout(java.time.Duration.ofMillis(ioTimeout.toMillis)))
-    val tcsInit  = (tcsKeywords || !tcsSim).fold(initEpicsSystem(TcsEpics, tops), IO.unit)
+
     // More instruments to be added to the list here
-    val instList = site match {
-      case Site.GS => List((f2Keywords, Flamingos2Epics), (gmosKeywords, GmosEpics))
-      case Site.GN => List((gmosKeywords, GmosEpics), (gnirsKeywords, GnirsEpics))
+    val epicsInstruments = site match {
+      case Site.GS => List((f2Control, Flamingos2Epics), (gmosControl, GmosEpics))
+      case Site.GN => List((gmosControl, GmosEpics), (gnirsControl, GnirsEpics))
     }
-    val instInit: IO[List[Unit]] = instList.filter(_._1 || !instSim).map(x => initEpicsSystem(x._2, tops)).parSequence
-    val gwsInit  = gwsKeywords.fold(initEpicsSystem(GwsEpics, tops), IO.unit)
-    val gcalInit = (gcalKeywords || !gcalSim).fold(initEpicsSystem(GcalEpics, tops), IO.unit)
+    val epicsSystems = epicsInstruments ++ List(
+      (tcsControl, TcsEpics),
+      (gwsControl, GwsEpics),
+      (gcalControl, GcalEpics)
+    )
+    val epicsInit: IO[List[Unit]] = caInit *> epicsSystems.filter(_._1.connect).map(x => initEpicsSystem(x._2, tops)).parSequence
+
     val smartGcal = smartGcalEnable.fold(initSmartGCal(smartGCalHost, smartGCalDir), IO.unit)
 
     smartGcal *>
-      caInit *>
-      tcsInit *>
-      gwsInit *>
-      gcalInit *>
-      instInit *>
+      epicsInit *>
       (for {
         now <- IO(LocalDate.now)
       } yield Settings(site,
                        odbHost,
                        now,
                        dhsServer,
-                       dhsSim,
-                       tcsSim,
-                       instSim,
-                       gcalSim,
+                       dhsControl,
+                       f2Control,
+                       gcalControl,
+                       ghostControl,
+                       gmosControl,
+                       gnirsControl,
+                       gpiControl,
+                       gpiGdsControl,
+                       gsaoiControl,
+                       gwsControl,
+                       nifsControl,
+                       niriControl,
+                       tcsControl,
                        odbNotifications,
-                       tcsKeywords,
-                       f2Keywords,
-                       gmosKeywords,
-                       gwsKeywords,
-                       gcalKeywords,
-                       gnirsKeywords,
-                       gpiKeywords,
                        instForceError,
                        failAt,
                        odbQueuePollingInterval,
