@@ -10,7 +10,6 @@ cd `dirname $0`/..
 echo "--- :scala: Compiling main codebase"
 /usr/local/bin/sbt                  \
   -jvm-opts build/buildkite-jvmopts \
-  -no-colors                        \
   -Docs3.skipDependencyUpdates      \
   headerCheck                       \
   test:headerCheck                  \
@@ -25,7 +24,6 @@ echo "--- :scala: Compiling main codebase"
 echo "--- :scala: Compiling tests"
 /usr/local/bin/sbt                                        \
   -jvm-opts build/buildkite-jvmopts                       \
-  -no-colors                                              \
   -Docs3.skipDependencyUpdates                            \
   -Docs3.databaseUrl=jdbc:postgresql://$HOST_AND_PORT/gem \
   test:compile
@@ -44,6 +42,7 @@ function cleanup {
   echo "--- :postgres: Cleaning up Postgres test instance"
   docker stop $CID
   docker rm --volumes --force $CID
+  echo "--- :tada: Done"
 }
 trap cleanup EXIT
 
@@ -61,7 +60,6 @@ done
 echo "--- :scala: Running tests"
 /usr/local/bin/sbt                                        \
   -jvm-opts build/buildkite-jvmopts                       \
-  -no-colors                                              \
   -Docs3.skipDependencyUpdates                            \
   -Docs3.databaseUrl=jdbc:postgresql://$HOST_AND_PORT/gem \
   sql/flywayMigrate                                       \
@@ -74,14 +72,12 @@ echo "--- :scala: Running tests"
 echo "--- :javascript: Linking Javascript"
 /usr/local/bin/sbt                      \
   -jvm-opts build/buildkite-jvmopts     \
-  -no-colors                            \
   -Docs3.skipDependencyUpdates          \
   ui/fastOptJS
 
 echo "--- :webpack: Webpack"
 /usr/local/bin/sbt                      \
   -jvm-opts build/buildkite-jvmopts     \
-  -no-colors                            \
   -Docs3.skipDependencyUpdates          \
   seqexec_web_client/fastOptJS::webpack
 
@@ -96,12 +92,8 @@ echo "--- :webpack: Webpack"
   echo "--- :docker: Creating a Docker image"
   /usr/local/bin/sbt                      \
     -jvm-opts build/buildkite-jvmopts     \
-    -no-colors                            \
     -Docs3.skipDependencyUpdates          \
     main/docker:publish                   \
     main/docker:clean
 
 # fi
-
-
-
