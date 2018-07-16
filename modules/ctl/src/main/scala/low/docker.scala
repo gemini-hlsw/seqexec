@@ -114,12 +114,12 @@ object docker {
       case Output(0, _) => ()
     }
 
-  def destroyContainer(k: Container): CtlIO[Unit] =
+  def destroyContainer(k: Container, rmi: Boolean): CtlIO[Unit] =
     for {
       _ <- stopContainer(k)
       i <- containerImage(k)
       _ <- removeContainer(k)
-      _ <- removeImage(i)
+      _ <- removeImage(i).whenA(rmi)
     } yield ()
 
   def startContainer(k: Container): CtlIO[Unit] =

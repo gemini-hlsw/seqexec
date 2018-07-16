@@ -13,11 +13,9 @@ object Deploy {
 
   private def destroyDeployment: CtlIO[Unit] =
     gosub("Destroying current deployment, if any.") {
-      findRunningContainersWithLabel("gem.version").flatMap {
-        case Nil => info("None found, nothing to do!")
-        case cs  => cs.traverse { c =>
-          info(s"Stopping and removing ${c.hash}.") *> destroyContainer(c)
-        }.void
+      currentDeployment.flatMap {
+        case None => info("None found, nothing to do!")
+        case Some(Deployment(g, p)) => destroyContainer(g, true) *> destroyContainer(p, false)
       }
     }
 
