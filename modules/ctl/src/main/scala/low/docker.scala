@@ -13,7 +13,12 @@ import cats.implicits._
 object docker {
 
   final case class Network(hash: String, name: String)
-  final case class Image(hash: String)
+  final case class Image(hash: String) {
+    // Consider hashes to be the same if one contains the other. In practice this will mean they're
+    // the same.
+    def like(other: Image): Boolean =
+      hash.contains(other.hash) || other.hash.contains(hash)
+  }
   final case class Container(hash: String)
 
   def docker(args: String*): CtlIO[Output] =
@@ -61,7 +66,7 @@ object docker {
   // find *running* containers
   def findRunningContainersWithLabel(label: String): CtlIO[List[Container]] =
     docker("ps", "-q", "--filter", s"label=$label").require {
-      case Output(0, hs) => hs.map(Container)
+      case Output(0, hs) => hs.map(Container(_))
     }
 
   def containerImage(k: Container): CtlIO[Image] =

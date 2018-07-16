@@ -11,11 +11,14 @@ object Deploy {
 
   final case class Deployment(gem: Container, postgres: Container)
 
-  private def destroyDeployment: CtlIO[Unit] =
+  private def destroyDeployment(newGemImage: Image): CtlIO[Unit] =
     gosub("Destroying current deployment, if any.") {
       currentDeployment.flatMap {
         case None => info("None found, nothing to do!")
-        case Some(Deployment(g, p)) => destroyContainer(g, true) *> destroyContainer(p, false)
+        case Some(Deployment(g, p)) =>
+          containerImage(g).flatMap { oldGemImage =>
+            destroyContainer(g, !(oldGemImage like newGemImage)) *> destroyContainer(p, false)
+          }
       }
     }
 
@@ -81,7 +84,7 @@ object Deploy {
       n  <- Networks.getPrivateNetwork
       gi <- Images.getGemImage(version)
       pi <- Images.getPostgresImage(gi)
-      _  <- destroyDeployment
+      _  <- destroyDeployment(gi)
       pk <- deployDatabase(version, pi, n)
       gk <- deployGem(version, gi, n)
     } yield Deployment(gk, pk)
