@@ -19,7 +19,7 @@ case class ImageManifest(history: NonEmptyList[String], timestamp: Instant, unst
   def labels: Map[String, String] =
     Map(
       Keys.Commit   -> commit,
-      Keys.History  -> history.intercalate(","),
+      // Keys.History  -> history.intercalate(","),
       Keys.Unstable -> unstable.toString,
       Keys.Version  -> version,
       Keys.Postgres -> postgresImage
