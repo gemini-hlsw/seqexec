@@ -64,6 +64,15 @@ object docker {
       case Output(0, hs) => hs.map(Container)
     }
 
+  def containerImage(k: Container): CtlIO[Image] =
+    isRemote.flatMap { r =>
+      docker("inspect", "--format",
+        if (r) "'{{ .Index }}'"
+        else    "{{ .Index }}", k.hash).require {
+          case Output(0, s :: Nil) => Image(s)
+        }
+    }
+
   def allContainerNames: CtlIO[List[String]] =
     docker("ps", "-a", "--format", "{{.Names}}").require {
       case Output(_, ss) => ss
@@ -96,12 +105,22 @@ object docker {
     }
 
   def removeContainer(k: Container): CtlIO[Unit] =
-    docker("rm", k.hash) require {
+    docker("rm", "--volumes", k.hash) require {
       case Output(0, s :: Nil) if s === k.hash => ()
     }
 
+  def removeImage(i: Image): CtlIO[Unit] =
+    docker("rmi", "--force", i.hash) require {
+      case Output(0, _) => ()
+    }
+
   def destroyContainer(k: Container): CtlIO[Unit] =
-    stopContainer(k) *> removeContainer(k)
+    for {
+      _ <- stopContainer(k)
+      i <- containerImage(k)
+      _ <- removeContainer(k)
+      _ <- removeImage(i)
+    } yield ()
 
   def startContainer(k: Container): CtlIO[Unit] =
     docker("start", k.hash) require {
