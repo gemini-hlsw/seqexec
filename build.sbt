@@ -286,7 +286,7 @@ lazy val ctl = project
     ),
     TaskKey[Unit]("deployTest") := Def.taskDyn {
       (runMain in Compile).toTask {
-        s" gem.ctl.main --no-ansi --host sbfocstest-lv1.cl.gemini.edu deploy-test ${version.value}"
+        s" gem.ctl.main --verbose --host sbfocstest-lv1.cl.gemini.edu deploy-test ${version.value}"
       }
     } .value,
     fork in run := true
