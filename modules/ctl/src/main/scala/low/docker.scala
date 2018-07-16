@@ -67,8 +67,8 @@ object docker {
   def containerImage(k: Container): CtlIO[Image] =
     isRemote.flatMap { r =>
       docker("inspect", "--format",
-        if (r) "'{{ .Index }}'"
-        else    "{{ .Index }}", k.hash).require {
+        if (r) "'{{ .Image }}'"
+        else    "{{ .Image }}", k.hash).require {
           case Output(0, s :: Nil) => Image(s)
         }
     }
