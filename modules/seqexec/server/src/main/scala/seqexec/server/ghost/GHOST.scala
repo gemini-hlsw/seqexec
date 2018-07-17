@@ -91,44 +91,31 @@ object GHOST {
       Sync[F].delay(
         (for {
           baseRAHMS          <- config
-                                 .extract(INSTRUMENT_KEY / Ghost.BaseRAHMS)
-                                 .as[Option[HourAngle]]
+                                 .extractAs[Option[HourAngle]](INSTRUMENT_KEY / Ghost.BaseRAHMS)
           baseDecDMS         <- config
-                                 .extract(INSTRUMENT_KEY / Ghost.BaseDecDMS)
-                                 .as[Option[Angle]]
+                                 .extractAs[Option[Angle]](INSTRUMENT_KEY / Ghost.BaseDecDMS)
           srifu1Name         <- config
-                                 .extract(INSTRUMENT_KEY / Ghost.SRIFU1Name)
-                                 .as[Option[String]]
+                                 .extractAs[Option[String]](INSTRUMENT_KEY / Ghost.SRIFU1Name)
           srifu1CoordsRAHMS  <- config
-                                 .extract(INSTRUMENT_KEY / Ghost.SRIFU1RAHMS)
-                                 .as[Option[HourAngle]]
+                                 .extractAs[Option[HourAngle]](INSTRUMENT_KEY / Ghost.SRIFU1RAHMS)
           srifu1CoordsDecDMS <- config
-                                 .extract(INSTRUMENT_KEY / Ghost.SRIFU1DecDMS)
-                                 .as[Option[Angle]]
+                                 .extractAs[Option[Angle]](INSTRUMENT_KEY / Ghost.SRIFU1DecDMS)
           srifu2Name         <- config
-                                 .extract(INSTRUMENT_KEY / Ghost.SRIFU2Name)
-                                 .as[Option[String]]
+                                 .extractAs[Option[String]](INSTRUMENT_KEY / Ghost.SRIFU2Name)
           srifu2CoordsRAHMS  <- config
-                                 .extract(INSTRUMENT_KEY / Ghost.SRIFU2RAHMS)
-                                 .as[Option[HourAngle]]
+                                 .extractAs[Option[HourAngle]](INSTRUMENT_KEY / Ghost.SRIFU2RAHMS)
           srifu2CoordsDecDMS <- config
-                                 .extract(INSTRUMENT_KEY / Ghost.SRIFU2DecDMS)
-                                 .as[Option[Angle]]
+                                 .extractAs[Option[Angle]](INSTRUMENT_KEY / Ghost.SRIFU2DecDMS)
           hrifu1Name         <- config
-                                 .extract(INSTRUMENT_KEY / Ghost.HRIFU1Name)
-                                 .as[Option[String]]
+                                 .extractAs[Option[String]](INSTRUMENT_KEY / Ghost.HRIFU1Name)
           hrifu1CoordsRAHMS  <- config
-                                 .extract(INSTRUMENT_KEY / Ghost.HRIFU1RAHMS)
-                                 .as[Option[HourAngle]]
+                                 .extractAs[Option[HourAngle]](INSTRUMENT_KEY / Ghost.HRIFU1RAHMS)
           hrifu1CoordsDecDMS <- config
-                                 .extract(INSTRUMENT_KEY / Ghost.HRIFU1DecDMS)
-                                 .as[Option[Angle]]
+                                 .extractAs[Option[Angle]](INSTRUMENT_KEY / Ghost.HRIFU1DecDMS)
           hrifu2CoordsRAHMS  <- config
-                                 .extract(INSTRUMENT_KEY / Ghost.HRIFU2RAHMS)
-                                 .as[Option[HourAngle]]
+                                 .extractAs[Option[HourAngle]](INSTRUMENT_KEY / Ghost.HRIFU2RAHMS)
           hrifu2CoordsDecDMS <- config
-                                 .extract(INSTRUMENT_KEY / Ghost.HRIFU2DecDMS)
-                                 .as[Option[Angle]]
+                                 .extractAs[Option[Angle]](INSTRUMENT_KEY / Ghost.HRIFU2DecDMS)
         } yield
           GHOSTConfig(
             baseRAHMS,

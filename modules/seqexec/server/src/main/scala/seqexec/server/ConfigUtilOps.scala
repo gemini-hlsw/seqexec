@@ -64,6 +64,10 @@ object ConfigUtilOps {
     // config syntax: cfg.extract(key).as[Type]
     def extract(key: ItemKey): Extracted[Config] = new Extracted(c, key)
 
+    // config syntax: cfg.extractAs[Type](key)
+    def extractAs[A](key: ItemKey)(implicit clazz: ClassTag[A]): Either[ExtractFailure, A] =
+      new Extracted(c, key).as[A]
+
     // config syntax: cfg.toStepConfig
     def toStepConfig: StepConfig = {
       c.itemEntries().groupBy(_.getKey.getRoot).map {
