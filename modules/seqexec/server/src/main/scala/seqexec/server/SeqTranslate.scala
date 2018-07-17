@@ -17,7 +17,6 @@ import fs2.Stream
 import gem.Observation
 import gem.enum.Site
 import mouse.all._
-import gem.enum.KeywordName
 import org.log4s._
 import org.http4s.Uri._
 import seqexec.engine.Result.{Configured, FileIdAllocated, Observed}

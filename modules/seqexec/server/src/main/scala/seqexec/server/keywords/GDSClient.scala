@@ -46,8 +46,7 @@ final case class GDSClient(client: Client[IO], gdsUri: Uri)
   /**
     * Set the keywords for an image
     */
-  def setKeywords(id: ImageFileId,
-                           ks: KeywordBag): SeqActionF[IO, Unit] = {
+  def setKeywords(id: ImageFileId, ks: KeywordBag): SeqActionF[IO, Unit] = {
     // Build the request
     val xmlRpc      = storeKeywords(id, ks)
     val postRequest = POST(gdsUri, xmlRpc)

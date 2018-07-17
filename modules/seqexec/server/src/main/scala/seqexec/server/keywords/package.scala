@@ -22,7 +22,8 @@ package keywords {
 
     def closeImage(id: ImageFileId): SeqActionF[F, Unit]
 
-    def bundleKeywords(ks: List[KeywordBag => SeqAction[KeywordBag]]): SeqAction[KeywordBag]
+    def bundleKeywords(
+        ks: List[KeywordBag => SeqAction[KeywordBag]]): SeqAction[KeywordBag]
   }
 
   trait DhsInstrument extends KeywordsClient[IO] {
@@ -36,10 +37,15 @@ package keywords {
       dhsClient.setKeywords(id, keywords, finalFlag)
 
     def closeImage(id: ImageFileId): SeqAction[Unit] =
-      dhsClient.setKeywords(id, KeywordBag(StringKeyword("instrument", dhsInstrumentName)), finalFlag = true)
+      dhsClient.setKeywords(
+        id,
+        KeywordBag(StringKeyword(KeywordName.INSTRUMENT, dhsInstrumentName)),
+        finalFlag = true)
 
-    def bundleKeywords(ks: List[KeywordBag => SeqAction[KeywordBag]]): SeqAction[KeywordBag] = {
-      val z = SeqAction(KeywordBag(StringKeyword("instrument", dhsInstrumentName)))
+    def bundleKeywords(ks: List[KeywordBag => SeqAction[KeywordBag]])
+      : SeqAction[KeywordBag] = {
+      val z = SeqAction(
+        KeywordBag(StringKeyword(KeywordName.INSTRUMENT, dhsInstrumentName)))
       ks.foldLeft(z) { case (a, b) => a.flatMap(b) }
     }
   }
@@ -55,7 +61,8 @@ package keywords {
     def closeImage(id: ImageFileId): SeqAction[Unit] =
       SeqAction.void
 
-    def bundleKeywords(ks: List[KeywordBag => SeqAction[KeywordBag]]): SeqAction[KeywordBag] =
+    def bundleKeywords(
+        ks: List[KeywordBag => SeqAction[KeywordBag]]): SeqAction[KeywordBag] =
       ks.foldLeft(SeqAction(KeywordBag.empty)) { case (a, b) => a.flatMap(b) }
 
   }
@@ -202,7 +209,8 @@ package object keywords {
     def toSeqAction: SeqAction[A] = SeqAction(v.orDefault)
   }
 
-  implicit class SeqActionOption2SeqAction[A: DefaultHeaderValue](val v: SeqAction[Option[A]]) {
+  implicit class SeqActionOption2SeqAction[A: DefaultHeaderValue](
+      val v: SeqAction[Option[A]]) {
     def orDefault: SeqAction[A] = v.map(_.orDefault)
   }
 
@@ -216,8 +224,12 @@ package object keywords {
   def buildBoolean(get: SeqAction[Boolean], name: KeywordName): KeywordBag => SeqAction[KeywordBag] = buildKeyword(get, name, BooleanKeyword)
   def buildString(get: SeqAction[String], name: KeywordName): KeywordBag => SeqAction[KeywordBag]   = buildKeyword(get, name, StringKeyword)
 
-  def sendKeywords[F[_]](id: ImageFileId, inst: InstrumentSystem[F], b: List[KeywordBag => SeqAction[KeywordBag]]): SeqAction[Unit] = for {
-    bag <- inst.keywordsClient.bundleKeywords(b)
-    _   <- inst.keywordsClient.setKeywords(id, bag, finalFlag = false)
-  } yield ()
+  def sendKeywords[F[_]](
+      id: ImageFileId,
+      inst: InstrumentSystem[F],
+      b: List[KeywordBag => SeqAction[KeywordBag]]): SeqAction[Unit] =
+    for {
+      bag <- inst.keywordsClient.bundleKeywords(b)
+      _   <- inst.keywordsClient.setKeywords(id, bag, finalFlag = false)
+    } yield ()
 }

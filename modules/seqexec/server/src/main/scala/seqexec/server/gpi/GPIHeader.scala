@@ -15,9 +15,9 @@ import seqexec.server.tcs.CRFollow
 object GPIHeader {
 
   def header(inst: InstrumentSystem[IO],
-            gdsClient: GDSClient,
-            tcsKeywordsReader: TcsKeywordsReader,
-            obsKeywordsReader: ObsKeywordsReader): Header =
+             gdsClient: GDSClient,
+             tcsKeywordsReader: TcsKeywordsReader,
+             obsKeywordsReader: ObsKeywordsReader): Header =
     new Header {
       override def sendBefore(obsId: Observation.Id,
                               id: ImageFileId): SeqAction[Unit] = {
