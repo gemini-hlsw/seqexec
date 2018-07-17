@@ -21,7 +21,7 @@ object main {
                 .flatMap(impl.foldMap(_).value)
             }
       _  <- IO(Console.println) // scalastyle:ignore
-    } yield n.fold(0)(_.fold(identity, _ => 0))
+    } yield n.fold(-1)(_.fold(identity, _ => 0))
 
   def main(args: Array[String]): Unit =
     sys.exit(mainʹ(args.toList).unsafeRunSync)

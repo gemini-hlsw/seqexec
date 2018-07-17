@@ -13,7 +13,12 @@ import cats.implicits._
 object docker {
 
   final case class Network(hash: String, name: String)
-  final case class Image(hash: String)
+  final case class Image(hash: String) {
+    // Consider hashes to be the same if one contains the other. In practice this will mean they're
+    // the same.
+    def like(other: Image): Boolean =
+      hash.contains(other.hash) || other.hash.contains(hash)
+  }
   final case class Container(hash: String)
 
   def docker(args: String*): CtlIO[Output] =
@@ -61,7 +66,16 @@ object docker {
   // find *running* containers
   def findRunningContainersWithLabel(label: String): CtlIO[List[Container]] =
     docker("ps", "-q", "--filter", s"label=$label").require {
-      case Output(0, hs) => hs.map(Container)
+      case Output(0, hs) => hs.map(Container(_))
+    }
+
+  def containerImage(k: Container): CtlIO[Image] =
+    isRemote.flatMap { r =>
+      docker("inspect", "--format",
+        if (r) "'{{ .Image }}'"
+        else    "{{ .Image }}", k.hash).require {
+          case Output(0, s :: Nil) => Image(s)
+        }
     }
 
   def allContainerNames: CtlIO[List[String]] =
@@ -96,12 +110,22 @@ object docker {
     }
 
   def removeContainer(k: Container): CtlIO[Unit] =
-    docker("rm", k.hash) require {
+    docker("rm", "--volumes", k.hash) require {
       case Output(0, s :: Nil) if s === k.hash => ()
     }
 
-  def destroyContainer(k: Container): CtlIO[Unit] =
-    stopContainer(k) *> removeContainer(k)
+  def removeImage(i: Image): CtlIO[Unit] =
+    docker("rmi", "--force", i.hash) require {
+      case Output(0, _) => ()
+    }
+
+  def destroyContainer(k: Container, rmi: Boolean): CtlIO[Unit] =
+    for {
+      _ <- stopContainer(k)
+      i <- containerImage(k)
+      _ <- removeContainer(k)
+      _ <- removeImage(i).whenA(rmi)
+    } yield ()
 
   def startContainer(k: Container): CtlIO[Unit] =
     docker("start", k.hash) require {

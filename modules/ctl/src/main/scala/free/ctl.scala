@@ -53,7 +53,8 @@ object ctl {
         case None    =>
           o.lines.traverse(error(_))      *>
           error(s"exited (${o.exitCode})") *>
-          exit[A](o.exitCode)
+          error(s"Requirement failed. Exiting.") *>
+          exit[A](-1)
         case Some(a) => a.pure[CtlIO]
       }
     }

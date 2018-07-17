@@ -1,6 +1,7 @@
 steps:
   - command: "build/buildkite-build.sh"
     label: "Run the Build"
+    timeout_in_minutes: 20
     retry:
       automatic:
         - exit_status: 137
