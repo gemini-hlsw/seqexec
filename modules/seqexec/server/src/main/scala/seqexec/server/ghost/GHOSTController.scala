@@ -3,9 +3,8 @@
 
 package seqexec.server.ghost
 
-
 import cats.implicits._
-import cats.{Show, Eq}
+import cats.{Eq, Show}
 import cats.effect.Sync
 import gem.math.{Angle, HourAngle}
 import seqexec.model.dhs.ImageFileId
@@ -46,8 +45,7 @@ object GHOSTController {
                                hrifu1CoordsRAHMS: Option[HourAngle],
                                hrifu1CoordsDecDMS: Option[Angle],
                                hrifu2CoordsRAHMS: Option[HourAngle],
-                               hrifu2CoordsDecDMS: Option[Angle]
-                              )
+                               hrifu2CoordsDecDMS: Option[Angle])
 
   object GHOSTConfig {
     private implicit val durationEq: Eq[Duration] = Eq.by(_.toMillis)

@@ -20,7 +20,9 @@ import seqexec.server.keywords.{GDSClient, GDSInstrument}
 import seqexec.server.ghost.GHOSTController._
 import squants.time.{Seconds, Time}
 
-final case class GHOST[F[_]: Sync](controller: GHOSTController[F]) extends InstrumentSystem[F] with GDSInstrument {
+final case class GHOST[F[_]: Sync](controller: GHOSTController[F])
+    extends InstrumentSystem[F]
+    with GDSInstrument {
   override val gdsClient: GDSClient = controller.gdsClient
 
   override val resource: Resource = Instrument.GHOST
@@ -33,10 +35,12 @@ final case class GHOST[F[_]: Sync](controller: GHOSTController[F]) extends Instr
     InstrumentSystem.Uncontrollable
 
   override def observe(
-                        config: Config): SeqObserveF[F, ImageFileId, ObserveCommand.Result] = Reader {
-    fileId =>
-      controller.observe(fileId).map(_ => ObserveCommand.Success: ObserveCommand.Result)
-  }
+      config: Config): SeqObserveF[F, ImageFileId, ObserveCommand.Result] =
+    Reader { fileId =>
+      controller
+        .observe(fileId)
+        .map(_ => ObserveCommand.Success: ObserveCommand.Result)
+    }
 
   override def configure(config: Config): SeqActionF[F, ConfigResult[F]] =
     GHOST
@@ -53,7 +57,7 @@ final case class GHOST[F[_]: Sync](controller: GHOSTController[F]) extends Instr
 
 object GHOST {
   val INSTRUMENT_NAME_PROP: String = "GHOST"
-  val name: String = INSTRUMENT_NAME_PROP
+  val name: String                 = INSTRUMENT_NAME_PROP
 
   val sfName: String = "GHOST"
 
@@ -81,27 +85,67 @@ object GHOST {
 //  private def targetName(config: Config, name: String): Either[ExtractFailure, Option[String]] =
 //    config.extract(INSTRUMENT_KEY / name).as[Option[String]]
 
-  def fromSequenceConfig[F[_]: Sync](config: Config): SeqActionF[F, GHOSTConfig] =
-    EitherT(Sync[F].delay(
-      (for {
-        baseRAHMS          <- config.extract(INSTRUMENT_KEY / Ghost.BaseRAHMS).as[Option[HourAngle]]
-        baseDecDMS         <- config.extract(INSTRUMENT_KEY / Ghost.BaseDecDMS).as[Option[Angle]]
-        srifu1Name         <- config.extract(INSTRUMENT_KEY / Ghost.SRIFU1Name).as[Option[String]]
-        srifu1CoordsRAHMS  <- config.extract(INSTRUMENT_KEY / Ghost.SRIFU1RAHMS).as[Option[HourAngle]]
-        srifu1CoordsDecDMS <- config.extract(INSTRUMENT_KEY / Ghost.SRIFU1DecDMS).as[Option[Angle]]
-        srifu2Name         <- config.extract(INSTRUMENT_KEY / Ghost.SRIFU2Name).as[Option[String]]
-        srifu2CoordsRAHMS  <- config.extract(INSTRUMENT_KEY / Ghost.SRIFU2RAHMS).as[Option[HourAngle]]
-        srifu2CoordsDecDMS <- config.extract(INSTRUMENT_KEY / Ghost.SRIFU2DecDMS).as[Option[Angle]]
-        hrifu1Name         <- config.extract(INSTRUMENT_KEY / Ghost.HRIFU1Name).as[Option[String]]
-        hrifu1CoordsRAHMS  <- config.extract(INSTRUMENT_KEY / Ghost.HRIFU1RAHMS).as[Option[HourAngle]]
-        hrifu1CoordsDecDMS <- config.extract(INSTRUMENT_KEY / Ghost.HRIFU1DecDMS).as[Option[Angle]]
-        hrifu2CoordsRAHMS  <- config.extract(INSTRUMENT_KEY / Ghost.HRIFU2RAHMS).as[Option[HourAngle]]
-        hrifu2CoordsDecDMS <- config.extract(INSTRUMENT_KEY / Ghost.HRIFU2DecDMS).as[Option[Angle]]
-      } yield GHOSTConfig(baseRAHMS, baseDecDMS, 1.minute,
-                          srifu1Name, srifu1CoordsRAHMS, srifu1CoordsDecDMS,
-                          srifu2Name, srifu2CoordsRAHMS, srifu2CoordsDecDMS,
-                          hrifu1Name, hrifu1CoordsRAHMS, hrifu1CoordsDecDMS,
-                          hrifu2CoordsRAHMS, hrifu2CoordsDecDMS))
-        .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
-    ))
+  def fromSequenceConfig[F[_]: Sync](
+      config: Config): SeqActionF[F, GHOSTConfig] =
+    EitherT(
+      Sync[F].delay(
+        (for {
+          baseRAHMS          <- config
+                                 .extract(INSTRUMENT_KEY / Ghost.BaseRAHMS)
+                                 .as[Option[HourAngle]]
+          baseDecDMS         <- config
+                                 .extract(INSTRUMENT_KEY / Ghost.BaseDecDMS)
+                                 .as[Option[Angle]]
+          srifu1Name         <- config
+                                 .extract(INSTRUMENT_KEY / Ghost.SRIFU1Name)
+                                 .as[Option[String]]
+          srifu1CoordsRAHMS  <- config
+                                 .extract(INSTRUMENT_KEY / Ghost.SRIFU1RAHMS)
+                                 .as[Option[HourAngle]]
+          srifu1CoordsDecDMS <- config
+                                 .extract(INSTRUMENT_KEY / Ghost.SRIFU1DecDMS)
+                                 .as[Option[Angle]]
+          srifu2Name         <- config
+                                 .extract(INSTRUMENT_KEY / Ghost.SRIFU2Name)
+                                 .as[Option[String]]
+          srifu2CoordsRAHMS  <- config
+                                 .extract(INSTRUMENT_KEY / Ghost.SRIFU2RAHMS)
+                                 .as[Option[HourAngle]]
+          srifu2CoordsDecDMS <- config
+                                 .extract(INSTRUMENT_KEY / Ghost.SRIFU2DecDMS)
+                                 .as[Option[Angle]]
+          hrifu1Name         <- config
+                                 .extract(INSTRUMENT_KEY / Ghost.HRIFU1Name)
+                                 .as[Option[String]]
+          hrifu1CoordsRAHMS  <- config
+                                 .extract(INSTRUMENT_KEY / Ghost.HRIFU1RAHMS)
+                                 .as[Option[HourAngle]]
+          hrifu1CoordsDecDMS <- config
+                                 .extract(INSTRUMENT_KEY / Ghost.HRIFU1DecDMS)
+                                 .as[Option[Angle]]
+          hrifu2CoordsRAHMS  <- config
+                                 .extract(INSTRUMENT_KEY / Ghost.HRIFU2RAHMS)
+                                 .as[Option[HourAngle]]
+          hrifu2CoordsDecDMS <- config
+                                 .extract(INSTRUMENT_KEY / Ghost.HRIFU2DecDMS)
+                                 .as[Option[Angle]]
+        } yield
+          GHOSTConfig(
+            baseRAHMS,
+            baseDecDMS,
+            1.minute,
+            srifu1Name,
+            srifu1CoordsRAHMS,
+            srifu1CoordsDecDMS,
+            srifu2Name,
+            srifu2CoordsRAHMS,
+            srifu2CoordsDecDMS,
+            hrifu1Name,
+            hrifu1CoordsRAHMS,
+            hrifu1CoordsDecDMS,
+            hrifu2CoordsRAHMS,
+            hrifu2CoordsDecDMS
+          ))
+          .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
+      ))
 }
