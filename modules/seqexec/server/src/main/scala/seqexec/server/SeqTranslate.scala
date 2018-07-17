@@ -20,6 +20,7 @@ import seqexec.server.InstrumentSystem._
 import seqexec.server.flamingos2.{Flamingos2, Flamingos2Controller, Flamingos2Header}
 import seqexec.server.keywords._
 import seqexec.server.gpi.{GPI, GPIController, GPIHeader}
+import seqexec.server.ghost.{GHOST, GHOSTController}
 import seqexec.server.gcal._
 import seqexec.server.gmos.{GmosController, GmosHeader, GmosNorth, GmosSouth}
 import seqexec.server.gws.{DummyGwsKeywordsReader, GwsHeader, GwsKeywordsReaderImpl}
@@ -32,6 +33,7 @@ import edu.gemini.spModel.gemini.altair.AltairConstants
 import edu.gemini.spModel.obscomp.InstConstants._
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import org.log4s._
+import org.http4s.Uri._
 import squants.Time
 import fs2.Stream
 import gem.Observation
@@ -321,13 +323,14 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     pausedCommand(seqId, f)(seqState)
   }
 
+  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   private def toInstrumentSys(inst: Model.Instrument): TrySeq[InstrumentSystem[IO]] = inst match {
     case Model.Instrument.F2    => TrySeq(Flamingos2(systems.flamingos2, systems.dhs))
     case Model.Instrument.GmosS => TrySeq(GmosSouth(systems.gmosSouth, systems.dhs))
     case Model.Instrument.GmosN => TrySeq(GmosNorth(systems.gmosNorth, systems.dhs))
     case Model.Instrument.GNIRS => TrySeq(Gnirs(systems.gnirs, systems.dhs))
     case Model.Instrument.GPI   => TrySeq(GPI(systems.gpi))
-//    case Model.Instrument.GHOST => TrySeq(GHOST(systems.ghost))
+    case Model.Instrument.GHOST => TrySeq(GHOST(GHOSTController[IO](GDSClient(GDSClient.alwaysOkClient, uri("http://localhost:8888/xmlrpc"))))) // todo put the controller on systems
     case _                      => TrySeq.fail(Unexpected(s"Instrument $inst not supported."))
   }
 
@@ -369,6 +372,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     case Flamingos2(_, _) => Instrument.F2
     case Gnirs(_, _)      => Instrument.GNIRS
     case GPI(_)           => Instrument.GPI
+    case GHOST(_)         => Instrument.GHOST
 
   }
 
@@ -386,6 +390,12 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
         toInstrumentSys(inst).map(GnirsHeader.header(_, gnirsReader, tcsKReader))
       case Model.Instrument.GPI    =>
         toInstrumentSys(inst).map(GPIHeader.header(_, systems.gpi.gdsClient, tcsKReader, ObsKeywordReaderImpl(config, site)))
+      case Model.Instrument.GHOST    =>
+        // TODO Do an actual GHOST header
+        new Header() {
+          def sendAfter(id: ImageFileId) = SeqAction.void
+          def sendBefore(obsId: Observation.Id, id: ImageFileId) = SeqAction.void
+        }.asRight
       case _                       =>
         TrySeq.fail(Unexpected(s"Instrument $inst not supported."))
     }
@@ -459,7 +469,7 @@ object SeqTranslate {
       case GmosNorth.name  => TrySeq(Model.Instrument.GmosN)
       case Gnirs.name      => TrySeq(Model.Instrument.GNIRS)
       case GPI.name        => TrySeq(Model.Instrument.GPI)
-//      case GHOST.name      => TrySeq(Model.Instrument.GHOST)
+      case GHOST.name      => TrySeq(Model.Instrument.GHOST)
       case ins             => TrySeq.fail(UnrecognizedInstrument(s"inst $ins"))
     }
   }
