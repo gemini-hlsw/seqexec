@@ -6,14 +6,11 @@ package seqexec.server.gcal
 import cats.Eq
 import cats.implicits._
 import seqexec.server.SeqAction
-import seqexec.server.keywords.DhsClient
 import edu.gemini.spModel.gemini.calunit.CalUnitParams.Shutter
 
 trait GcalController {
 
   import GcalController._
-
-  val dhsClient: DhsClient
 
   def getConfig: SeqAction[GcalConfig]
 
