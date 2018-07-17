@@ -7,6 +7,7 @@ import edu.gemini.seqexec.server.tcs.{BinaryOnOff, BinaryYesNo}
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams
 import gem.arb.ArbTime
+import gem.arb.ArbAngle._
 import gem.Observation
 import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, Cogen, Gen}
@@ -22,9 +23,7 @@ import edu.gemini.spModel.gemini.flamingos2.Flamingos2
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams
 import edu.gemini.spModel.gemini.gpi.Gpi.{Apodizer => LegacyApodizer}
 import edu.gemini.spModel.gemini.gpi.Gpi.{Adc => LegacyAdc}
-import edu.gemini.spModel.gemini.gpi.Gpi.{
-  ArtificialSource => LegacyArtificialSource
-}
+import edu.gemini.spModel.gemini.gpi.Gpi.{ArtificialSource => LegacyArtificialSource}
 import edu.gemini.spModel.gemini.gpi.Gpi.{Disperser => LegacyDisperser}
 import edu.gemini.spModel.gemini.gpi.Gpi.{FPM => LegacyFPM}
 import edu.gemini.spModel.gemini.gpi.Gpi.{Filter => LegacyFilter}
@@ -32,11 +31,16 @@ import edu.gemini.spModel.gemini.gpi.Gpi.{Lyot => LegacyLyot}
 import edu.gemini.spModel.gemini.gpi.Gpi.{ObservingMode => LegacyObservingMode}
 import edu.gemini.spModel.gemini.gpi.Gpi.{PupilCamera => LegacyPupilCamera}
 import edu.gemini.spModel.gemini.gpi.Gpi.{Shutter => LegacyShutter}
+import gem.math.{Angle, HourAngle}
 import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, Cogen, Gen}
 import squants.space.LengthConversions._
+
 import scala.concurrent.duration.Duration
+import scala.concurrent.duration._
 import seqexec.model.SharedModelArbitraries._
+import seqexec.server.ghost.GHOSTController
+import seqexec.server.ghost.GHOSTController.GHOSTConfig
 
 object SeqexecServerArbitraries extends ArbTime {
 
@@ -225,6 +229,7 @@ object SeqexecServerArbitraries extends ArbTime {
       ao    <- arbitrary[GPIController.AOFlags]
     } yield GPIConfig(adc, exp, coa, mode, disp, dispA, shut, asu, pc, ao)
   }
+
   implicit val adcCogen: Cogen[LegacyAdc] =
     Cogen[String].contramap(_.displayValue)
   implicit val obsModeCogen: Cogen[LegacyObservingMode] =
@@ -234,6 +239,36 @@ object SeqexecServerArbitraries extends ArbTime {
   implicit val gpiConfigCogen: Cogen[GPIController.GPIConfig] =
     Cogen[(LegacyAdc, Duration, Int, Either[LegacyObservingMode, NonStandardModeParams], GPIController.Shutters, GPIController.ArtificialSources, LegacyPupilCamera, GPIController.AOFlags)]
       .contramap(x => (x.adc, x.expTime, x.coAdds, x.mode, x.shutters, x.asu, x.pc, x.aoFlags))
+
+  implicit val ghostConfigArb: Arbitrary[GHOSTController.GHOSTConfig] = Arbitrary {
+    for {
+      baseRA <- arbitrary[HourAngle]
+      baseDec <- arbitrary[Angle]
+      srifu1name <- arbitrary[String]
+      srifu1RA <- arbitrary[HourAngle]
+      srifu1Dec <- arbitrary[Angle]
+      srifu2name <- arbitrary[String]
+      srifu2RA <- arbitrary[HourAngle]
+      srifu2Dec <- arbitrary[Angle]
+    } yield GHOSTConfig(Some(baseRA), Some(baseDec), 60.seconds,
+      Some(srifu1name), Some(srifu1RA), Some(srifu1Dec),
+      Some(srifu2name), Some(srifu1RA), Some(srifu1Dec),
+      None, None, None,
+      None, None)
+    }
+
+  implicit val ghostCogen: Cogen[GHOSTController.GHOSTConfig] =
+    Cogen[(Option[HourAngle], Option[Angle], Duration,
+      Option[String], Option[HourAngle], Option[Angle],
+      Option[String], Option[HourAngle], Option[Angle],
+      Option[String], Option[HourAngle], Option[Angle],
+      Option[HourAngle], Option[Angle])]
+    .contramap(x => (x.baseRAHMS, x.baseDecDMS, x.expTime,
+      x.srifu2Name, x.srifu1CoordsRAHMS, x.srifu1CoordsDecDMS,
+      x.srifu2Name, x.srifu2CoordsRAHMS, x.srifu2CoordsDecDMS,
+      x.hrifu1Name, x.hrifu1CoordsRAHMS, x.hrifu1CoordsDecDMS,
+      x.hrifu2CoordsRAHMS, x.hrifu2CoordsDecDMS
+    ))
 
   implicit val keywordTypeArb: Arbitrary[KeywordType] = Arbitrary {
     Gen.oneOf(TypeInt8, TypeInt16, TypeInt32, TypeFloat, TypeDouble, TypeBoolean, TypeString)
