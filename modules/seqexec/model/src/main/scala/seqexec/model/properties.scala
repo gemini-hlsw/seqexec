@@ -4,7 +4,7 @@
 package seqexec.model
 
 import seqexec.model.Model.Instrument
-import seqexec.model.Model.Instrument.{F2, GNIRS, GmosN, GmosS, GPI}
+import seqexec.model.Model.Instrument._
 
 object properties {
   sealed trait InstrumentProperties
@@ -15,6 +15,7 @@ object properties {
     GmosS -> Set(Disperser),
     GmosN -> Set(Disperser),
     GNIRS -> Set(Disperser),
-    GPI   -> Set.empty
+    GPI   -> Set.empty,
+    GHOST -> Set.empty
   )
 }
