@@ -3,10 +3,10 @@
 
 package seqexec.server.keywords
 
+import gem.enum.KeywordName
 import java.time.LocalDate
-
-import seqexec.server.keywords.DhsClient.Permanent
 import org.scalatest.{FlatSpec, Matchers}
+import seqexec.server.keywords.DhsClient.Permanent
 
 class DhsClientSimSpec extends FlatSpec with Matchers {
   "DhsClientSim" should "produce data labels for today" in {
@@ -18,7 +18,7 @@ class DhsClientSimSpec extends FlatSpec with Matchers {
     val client = DhsClientSim(LocalDate.of(2016, 4, 15))
     client.createImage(DhsClient.ImageParameters(Permanent, Nil)).value.unsafeRunSync().fold(
       _ => fail(),
-      id => client.setKeywords(id, KeywordBag(Int32Keyword("Key", 10)), finalFlag = true).value.unsafeRunSync() should matchPattern {
+      id => client.setKeywords(id, KeywordBag(Int32Keyword(KeywordName.TELESCOP, 10)), finalFlag = true).value.unsafeRunSync() should matchPattern {
         case Right(()) =>
       }
     )

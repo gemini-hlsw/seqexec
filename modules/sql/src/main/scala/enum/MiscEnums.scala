@@ -71,6 +71,11 @@ object MiscEnums {
       EnumDef.fromQuery("EphemerisKeyType", "Non-sidereal target lookup type") {
         type R = Record.`'tag -> String, 'shortName -> String, 'longName -> String`.T
         sql"SELECT id, id tag, short_name, long_name FROM e_ephemeris_type".query[(String, R)]
+      },
+
+      EnumDef.fromQuery("KeywordName", "Fits Keyword names") {
+        type R = Record.`'tag -> String, 'name -> String`.T
+        sql"SELECT id, id tag, name FROM e_fits_keyword_names".query[(String, R)]
       }
 
     )
