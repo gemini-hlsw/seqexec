@@ -19,7 +19,6 @@ case class ImageManifest(history: NonEmptyList[String], timestamp: Instant, unst
   def labels: Map[String, String] =
     Map(
       Keys.Commit   -> commit,
-      // Keys.History  -> history.intercalate(","),
       Keys.Unstable -> unstable.toString,
       Keys.Version  -> version,
       Keys.Postgres -> postgresImage
@@ -40,7 +39,6 @@ object ImageManifest {
   /** Module of docker label keys. */
   object Keys {
     val Commit   = "gem.commit"
-    val History  = "gem.history"
     val Unstable = "gem.unstable"
     val Version  = "gem.version"
     val Postgres = "gem.postgres"
