@@ -8,7 +8,7 @@ import edu.gemini.spModel.gemini.flamingos2.Flamingos2
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams
 import gem.arb.ArbTime
 import gem.arb.ArbAngle._
-import gem.arb.ArbKeywordName._
+import gem.arb.ArbEnumerated._
 import gem.Observation
 import gem.enum.KeywordName
 import org.scalacheck.Arbitrary._
