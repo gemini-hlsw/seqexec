@@ -154,9 +154,9 @@ object StepConfigTable {
   }
 
   private val component = ScalaComponent.builder[Props]("StepConfig")
-    .initialStateFromProps(_.startState)
-    .render { b =>
-      Table(settingsTableProps(b.props), columns(b): _*)
+    .stateless
+    .render_P { p =>
+      Table(settingsTableProps(p), columns(p): _*)
     }
     .build
 

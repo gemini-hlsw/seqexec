@@ -37,19 +37,6 @@ import seqexec.web.client.semanticui.elements.icon.Icon.{
 import web.client.style._
 import web.client.utils._
 import web.client.table._
-import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react._
-import japgolly.scalajs.react.component.Scala.Unmounted
-import japgolly.scalajs.react.extra.router.RouterCtl
-import japgolly.scalajs.react.component.builder.Lifecycle.RenderScope
-import japgolly.scalajs.react.raw.JsNumber
-import react.virtualized._
-
-import scala.math.max
-import cats.implicits._
-import cats.data.NonEmptyList
-import cats.Eq
-import mouse.all._
 
 object QueueTableBody {
   type Backend = RenderScope[Props, TableState, Unit]
