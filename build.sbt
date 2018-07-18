@@ -292,6 +292,8 @@ lazy val ctl = project
     fork in run := true
   )
 
+lazy val imageManifest = SettingKey[ImageManifest]("imageManifest")
+
 lazy val main = project
   .in(file("modules/main"))
   .enablePlugins(AutomateHeaderPlugin)
@@ -300,11 +302,12 @@ lazy val main = project
   .enablePlugins(JavaAppPackaging)
   .enablePlugins(DockerPlugin)
   .settings(
+    imageManifest         := ImageManifest.current("postgres:9.6.0", version.value).unsafeRunSync,
     packageName in Docker := "gem",
     dockerBaseImage       := "openjdk:8u141",
     dockerExposedPorts    := List(9090, 9091),
     dockerRepository      := Some("sbfocsdev-lv1.cl.gemini.edu"),
-    dockerLabels          := ImageManifest.current("postgres:9.6.0", version.value).unsafeRunSync.labels,
+    dockerLabels          := imageManifest.value.labels,
 
     // Install nc before changing the user
     dockerCommands       ++= dockerCommands.value.flatMap {
@@ -315,6 +318,14 @@ lazy val main = project
           c
         )
       case cmd => Seq(cmd)
+    },
+
+    // Generate a file containing our git history
+    (mappings in Universal) += {
+      val out  = (target in Compile).value / "GIT_HISTORY"
+      val data = imageManifest.value.history
+      IO.writeLines(out, data.toList)
+      (out, "GIT_HISTORY")
     }
 
   )
