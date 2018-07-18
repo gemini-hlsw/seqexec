@@ -21,7 +21,7 @@ import seqexec.web.client.lenses._
 import seqexec.web.client.handlers._
 import seqexec.web.client.ModelOps._
 import seqexec.web.client.actions.{AppendToLog, CloseLoginBox, CloseResourcesBox, OpenLoginBox, OpenResourcesBox, ServerMessage, show}
-
+import seqexec.web.client.components.sequence.steps.StepConfigTable
 
 object circuit {
   /**
@@ -53,7 +53,7 @@ object circuit {
   final case class StatusAndObserverFocus(isLogged: Boolean, name: Option[String], instrument: Instrument, id: Option[Observation.Id], observer: Option[Observer], status: Option[SequenceState], targetName: Option[TargetName]) extends UseValueEq
   final case class StatusAndStepFocus(isLogged: Boolean, instrument: Instrument, id: Option[Observation.Id], stepConfigDisplayed: Option[Int], totalSteps: Int) extends UseValueEq
   final case class StepsTableFocus(id: Observation.Id, instrument: Instrument, state: SequenceState, steps: List[Step], stepConfigDisplayed: Option[Int], nextStepToRun: Option[Int]) extends UseValueEq
-  final case class StepsTableAndStatusFocus(status: ClientStatus, stepsTable: Option[StepsTableFocus]) extends UseValueEq
+  final case class StepsTableAndStatusFocus(status: ClientStatus, stepsTable: Option[StepsTableFocus], configTableState: StepConfigTable.TableState) extends UseValueEq
   final case class ControlModel(id: Observation.Id, isPartiallyExecuted: Boolean, nextStepToRun: Option[Int], status: SequenceState, inConflict: Boolean) extends UseValueEq
   final case class SequenceControlFocus(isLogged: Boolean, isConnected: Boolean, control: Option[ControlModel], syncInProgress: Boolean) extends UseValueEq
 
@@ -121,6 +121,7 @@ object circuit {
     private val remoteRequestsHandler    = new RemoteRequestsHandler(zoomTo(_.clientId))
     private val syncRequestsHandler      = new SyncRequestsHandler(zoomTo(_.uiModel.syncInProgress))
     private val debuggingHandler         = new DebuggingHandler(zoomTo(_.uiModel.sequences))
+    private val stepConfigStateHandler   = new StepConfigTableStateHandler(zoomTo(_.uiModel.configTableState))
 
     override protected def initialModel = SeqexecAppRootModel.initial
 
@@ -183,8 +184,8 @@ object circuit {
       }
 
     def stepsTableReader(i: Instrument): ModelR[SeqexecAppRootModel, StepsTableAndStatusFocus] =
-      statusReader.zip(stepsTableReaderF(i)).zoom {
-        case (s, f) => StepsTableAndStatusFocus(s, f)
+      statusReader.zip(stepsTableReaderF(i)).zip(configTableState).zoom {
+        case ((s, f), t) => StepsTableAndStatusFocus(s, f, t)
       }
 
     def sequenceControlReader(i: Instrument): ModelR[SeqexecAppRootModel, SequenceControlFocus] =
@@ -196,6 +197,9 @@ object circuit {
     // Reader for a specific sequence if available
     def sequenceReader(id: Observation.Id): ModelR[_, Option[SequenceView]] =
       zoom(_.uiModel.sequences.queue.find(_.id === id))
+
+    val configTableState: ModelR[SeqexecAppRootModel, StepConfigTable.TableState] =
+      zoom(_.uiModel.configTableState)
 
     /**
       * Makes a reference to a sequence on the queue.
@@ -219,7 +223,8 @@ object circuit {
       remoteRequestsHandler,
       syncRequestsHandler,
       navigationHandler,
-      debuggingHandler)
+      debuggingHandler,
+      stepConfigStateHandler)
 
     /**
       * Handles a fatal error most likely during action processing

@@ -70,6 +70,7 @@ object StepsTable {
     val stepsList: List[Step] = steps.map(_.steps).getOrElse(Nil)
     def rowCount: Int = stepsList.length
     def rowGetter(idx: Int): StepRow = steps.flatMap(_.steps.lift(idx)).fold(StepRow.Zero)(StepRow.apply)
+    val configTableState: StepConfigTable.TableState = stepsTable().configTableState
     // Find out if offsets should be displayed
     val offsetsDisplay: OffsetsDisplay = stepsList.offsetsDisplay
   }
@@ -248,7 +249,7 @@ object StepsTable {
         p.steps.whenDefined { tab =>
           tab.stepConfigDisplayed.map { i =>
             val steps = p.stepsList.lift(i).getOrElse(Step.Zero)
-            AutoSizer(AutoSizer.props(s => StepConfigTable(StepConfigTable.Props(steps, s))))
+            AutoSizer(AutoSizer.props(s => StepConfigTable(StepConfigTable.Props(steps, s, p.configTableState))))
           }.getOrElse {
             AutoSizer(AutoSizer.props(s => ref.component(stepsTableProps(p)(s))(columns(p, s).map(_.vdomElement): _*)))
           }.vdomElement

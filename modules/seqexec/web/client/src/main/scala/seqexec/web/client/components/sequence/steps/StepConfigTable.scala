@@ -24,7 +24,7 @@ import web.client.table._
 object StepConfigTable {
   type Backend = RenderScope[Props, TableState, Unit]
 
-  final case class Props(step: Step, size: Size) {
+  final case class Props(step: Step, size: Size, startState: TableState) {
     val settingsList: List[(SystemName, String, String)] =
       step.config.toList.flatMap {
         case (s, c) =>
@@ -103,10 +103,10 @@ object StepConfigTable {
     val width = b.props.size.width
     // Tell the model to resize a column
     def resizeRow(c: TableColumn): (String, JsNumber) => Callback =
-      (_, dx) =>
-        b.modState { s =>
-          val percentDelta = dx.toDouble / width
-          s.applyOffset(c, percentDelta)
+      (_, dx) => {
+        val percentDelta = dx.toDouble / width
+        val s = b.state.applyOffset(c, percentDelta)
+        b.setState(s) >> SeqexecCircuit.dispatchCB(UpdateStepsTableState(s))
       }
 
     b.state.columns.zipWithIndex.map {
@@ -154,9 +154,10 @@ object StepConfigTable {
   }
 
   private val component = ScalaComponent.builder[Props]("StepConfig")
-    .stateless
-    .render_P { p =>
-      Table(settingsTableProps(p), columns(p): _*)
+    .initialStateFromProps(_.startState)
+    .render { b =>
+      println(b.state)
+      Table(settingsTableProps(b.props), columns(b): _*)
     }
     .build
 

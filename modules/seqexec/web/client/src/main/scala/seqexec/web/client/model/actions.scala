@@ -11,6 +11,7 @@ import seqexec.model.UserDetails
 import seqexec.model.Model._
 import seqexec.model.events._
 import seqexec.web.client.model._
+import seqexec.web.client.components.sequence.steps.StepConfigTable
 import org.scalajs.dom.WebSocket
 
 object actions {
