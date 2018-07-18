@@ -187,7 +187,7 @@ object GnirsControllerEpics extends GnirsController {
   private def setOtherCCParams(config: Other): List[SeqAction[Unit]] = {
     val open = "Open"
     val focus = "best focus"
-    val wavelengthTolerance = 0.0005
+    val wavelengthTolerance = 0.0001
     val refocusParams = setAcquisitionMirror(config.mode) ++
       smartSetParam(encode(config.filter1), epicsSys.filter1.map(removePartName), ccCmd.setFilter1(encode(config.filter1))) ++
       setFilter2(config.filter2, config.wavel) ++
@@ -270,8 +270,9 @@ object GnirsControllerEpics extends GnirsController {
 
   private def smartSetParam[A: Eq](v: A, get: => Option[A], set: SeqAction[Unit]): List[SeqAction[Unit]] =
     if(get =!= v.some) List(set) else Nil
-  private def smartSetDoubleParam(tolerance: Double)(v: Double, get: => Option[Double], set: SeqAction[Unit]): List[SeqAction[Unit]] =
-    if(get.forall(x => abs(x - v) < tolerance)) List(set) else Nil
+
+  private def smartSetDoubleParam(relTolerance: Double)(v: Double, get: => Option[Double], set: SeqAction[Unit]): List[SeqAction[Unit]] =
+    if(get.forall(x => (v === 0.0 && x =!= 0.0) || abs((x - v)/v) > relTolerance)) List(set) else Nil
 
   private val DefaultTimeout: Time = Seconds(60)
   private val ReadoutTimeout: Time = Seconds(300)
