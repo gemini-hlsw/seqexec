@@ -7,6 +7,7 @@ import cats.data.EitherT
 import cats.effect.IO
 import cats.implicits._
 import gem.Observation
+import gem.enum.KeywordName
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import edu.gemini.spModel.config2.Config
@@ -30,19 +31,19 @@ object Flamingos2Header {
     new Header {
       override def sendBefore(obsId: Observation.Id, id: ImageFileId): SeqAction[Unit] =  {
         sendKeywords(id, inst, List(
-          buildBoolean(f2ObsReader.getPreimage.map(_.toBoolean), "PREIMAGE"),
-          buildString(SeqAction(LocalDate.now.format(DateTimeFormatter.ISO_LOCAL_DATE)), "DATE-OBS"),
-          buildString(tcsKeywordsReader.getUT.orDefault, "TIME-OBS"),
+          buildBoolean(f2ObsReader.getPreimage.map(_.toBoolean), KeywordName.PREIMAGE),
+          buildString(SeqAction(LocalDate.now.format(DateTimeFormatter.ISO_LOCAL_DATE)), KeywordName.DATE_OBS),
+          buildString(tcsKeywordsReader.getUT.orDefault, KeywordName.TIME_OBS),
           buildString(f2ObsReader.getReadMode.map{
             case ReadMode.BRIGHT_OBJECT_SPEC => "Bright"
             case ReadMode.MEDIUM_OBJECT_SPEC => "Medium"
             case ReadMode.FAINT_OBJECT_SPEC  => "Dark"
-          }, "READMODE"),
+          }, KeywordName.READMODE),
           buildInt32(f2ObsReader.getReadMode.map{
             case ReadMode.BRIGHT_OBJECT_SPEC => 1
             case ReadMode.MEDIUM_OBJECT_SPEC => 4
             case ReadMode.FAINT_OBJECT_SPEC  => 8
-          }, "NREADS"))
+          }, KeywordName.NREADS))
         )
       }
 
