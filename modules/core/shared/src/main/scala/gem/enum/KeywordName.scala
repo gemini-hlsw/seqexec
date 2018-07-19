@@ -82,7 +82,7 @@ object KeywordName {
   /** @group Constructors */ case object OIWFS_ST extends KeywordName("OIWFS_ST", "OIWFS_ST")
   /** @group Constructors */ case object AOWFS_ST extends KeywordName("AOWFS_ST", "AOWFS_ST")
   /** @group Constructors */ case object SCIBAND extends KeywordName("SCIBAND", "SCIBAND")
-  /** @group Constructors */ case object NUMREQTW extends KeywordName("NUMREQTW", "NUMREQT")
+  /** @group Constructors */ case object NUMREQTW extends KeywordName("NUMREQTW", "NUMREQTW")
   /** @group Constructors */ case object REQIQ extends KeywordName("REQIQ", "REQIQ")
   /** @group Constructors */ case object REQCC extends KeywordName("REQCC", "REQCC")
   /** @group Constructors */ case object REQBG extends KeywordName("REQBG", "REQBG")
