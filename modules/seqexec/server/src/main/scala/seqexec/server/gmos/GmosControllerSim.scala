@@ -3,15 +3,12 @@
 
 package seqexec.server.gmos
 
-import cats.Show
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.gmos.GmosController.{GmosConfig, NorthTypes, SiteDependentTypes, SouthTypes}
 import seqexec.server.{InstrumentControllerSim, ObserveCommand, SeqAction}
 import squants.Time
 
 private class GmosControllerSim[T<:SiteDependentTypes](name: String) extends GmosController[T] {
-
-  implicit val configShow: Show[GmosConfig[T]] = Show.show { config => s"(${config.cc.filter}, ${config.cc.disperser}, ${config.cc.fpu}, ${config.cc.stage}, ${config.cc.stage}, ${config.cc.dtaX}, ${config.cc.adc}, ${config.cc.useElectronicOffset}, ${config.dc.t}, ${config.dc.b}, ${config.dc.s}, ${config.dc.bi}, ${config.dc.roi.rois})" }
 
   override def getConfig: SeqAction[GmosConfig[T]] = ??? // scalastyle:ignore
 

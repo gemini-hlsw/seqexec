@@ -176,6 +176,7 @@ class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosCo
 
   override def applyConfig(config: GmosController.GmosConfig[T]): SeqAction[Unit] = for {
     _ <- EitherT.right(IO(Log.info("Start Gmos configuration")))
+    _ <- EitherT.right(IO(Log.debug(s"Gmos configuration: ${config.show}")))
     _ <- setDCConfig(config.dc)
     _ <- setCCConfig(config.cc)
     _ <- GmosEpics.instance.configCmd.setTimeout(ConfigTimeout)
