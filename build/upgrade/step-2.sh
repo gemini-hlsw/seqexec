@@ -7,6 +7,7 @@ set -xe
 
 DEPLOY_SERVER=`buildkite-agent meta-data get deploy-server`
 DEPLOY_VERSION=`buildkite-agent meta-data get deploy-version`
+DEPLOY_VERBOSITY=`buildkite-agent meta-data get deploy-verbosity`
 
 echo "--- :scala: Compiling gemctl"
 /usr/local/bin/sbt                   \
@@ -18,6 +19,6 @@ echo "--- :docker: Deploying $DEPLOY_VERSION to $DEPLOY_SERVER"
 /usr/local/bin/sbt                   \
   -jvm-opts build/buildkite-jvmopts  \
   -Docs3.skipDependencyUpdates       \
-  "ctl/runMain gem.ctl.main --verbose --host $DEPLOY_SERVER deploy-production $DEPLOY_VERSION"
+  "ctl/runMain gem.ctl.main $DEPLOY_VERBOSITY --host $DEPLOY_SERVER deploy-production $DEPLOY_VERSION"
 
 
