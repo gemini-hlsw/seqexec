@@ -1,5 +1,5 @@
 steps:
-  - block:  "Upgrade Details"
+  - block:  "Specify Server and Version"
     prompt: "Please provide details about this deployment."
     fields:
       - select: "Which server do you wish up upgrade?"
@@ -13,5 +13,5 @@ steps:
         hint: "This is an OCS3 version number, like 20180718-2f8dfb75"
         key:  "deploy-version"
   - command: "./build/upgrade/step-2.sh"
-    label:   "Upgrade"
+    label:   "Perform Upgrade"
 

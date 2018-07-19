@@ -9,6 +9,9 @@ DEPLOY_SERVER=`buildkite-agent meta-data get deploy-server`
 DEPLOY_VERSION=`buildkite-agent meta-data get deploy-version`
 
 echo "--- :docker: Deploying $DEPLOY_VERSION to $DEPLOY_SERVER"
-echo "done"
+/usr/local/bin/sbt                   \
+  -jvm-opts build/buildkite-jvmopts  \
+  ctl/compile
+  "ctl/runMain gem.ctl.main --verbose --host $DEPLOY_SERVER deploy-production $DEPLOY_VERSION"
 
 
