@@ -69,6 +69,12 @@ object docker {
       case Output(0, hs) => hs.map(Container(_))
     }
 
+  /** Read a file from an image by constructing a temporary container to cat the file. */
+  def readFileFromImage(i: Image, path: String): CtlIO[List[String]] =
+    docker("run", "--rm", "--entrypoint", "/bin/cat", i.hash, path).require {
+      case Output(0, ss) => ss
+    }
+
   def containerImage(k: Container): CtlIO[Image] =
     isRemote.flatMap { r =>
       docker("inspect", "--format",

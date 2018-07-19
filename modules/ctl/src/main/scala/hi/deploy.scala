@@ -59,13 +59,16 @@ object Deploy {
       }
     }
 
+  private def getHistory(i: Image): CtlIO[List[String]] =
+    readFileFromImage(i, "/opt/docker/GIT_HISTORY")
+
   private def verifyCompatibility(curr: Container, next: Image): CtlIO[Unit] =
     gosub("Verifying upgrade compatibility.") {
       for {
         _  <- info(s"Current gem container is ${curr.hash}")
         _  <- info(s"New gem image is ${next.hash}")
         c  <- getLabelValue("gem.commit", curr)
-        cs <- getImageLabel("gem.history", next).map(_.split(",").toSet)
+        cs <- getHistory(next)
         _  <- if (cs.contains(c)) info("They are compatible. The schema can be upgraded.")
               else error(s"New deployment is incompatible; missing commit: $c") *> exit(-1)
       } yield ()
