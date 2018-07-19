@@ -1,7 +1,7 @@
 steps:
   - block:  "Select Server"
     label: "Select Server"
-    hint:   "Upgrade Deployment, Step 1"
+    prompt: "Upgrade Deployment, Step 1"
     fields:
       - text: "Which server do you wish up upgrade?"
         key: "deploy-server"
