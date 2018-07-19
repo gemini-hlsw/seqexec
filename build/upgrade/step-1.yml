@@ -1,6 +1,6 @@
 steps:
-  - block:  "Select Server"
-    prompt: "Upgrade Deployment, Step 1"
+  - block:  "Upgrade Details"
+    prompt: "Please provide details about this deployment."
     fields:
       - select: "Which server do you wish up upgrade?"
         key: "deploy-server"
@@ -9,3 +9,7 @@ steps:
           value: "sbfocstest-lv1.cl.gemini.edu"
         - label: "Production on sbfocsprod-lv1"
           value: "sbfocsprod-lv1.cl.gemini.edu"
+      - text: "Which version do you wish to deploy?"
+        hint: "This is an OCS3 version number, like 20180718-2f8dfb75"
+        key:  "deploy-version"
+
