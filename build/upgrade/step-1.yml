@@ -14,10 +14,10 @@ steps:
         key:  "deploy-version"
       - select: "Verbosity"
         key: "deploy-verbosity"
-        default: ""
+        default: " "
         options:
         - label: "Normal"
-          value: ""
+          value: " "
         - label: "Verbose (show all command output)"
           value: "--verbose"
   - command: "./build/upgrade/step-2.sh"
