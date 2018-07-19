@@ -59,7 +59,7 @@ package keywords {
       gdsClient.setKeywords(id, keywords)
 
     def closeImage(id: ImageFileId): SeqAction[Unit] =
-      SeqAction.void
+      gdsClient.closeObservation(id)
 
     def bundleKeywords(
         ks: List[KeywordBag => SeqAction[KeywordBag]]): SeqAction[KeywordBag] =

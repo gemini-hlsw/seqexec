@@ -40,6 +40,6 @@ object GPIHeader {
       }
 
       override def sendAfter(id: ImageFileId): SeqAction[Unit] =
-        gdsClient.closeObservation(id)
+        SeqAction.void
     }
 }
