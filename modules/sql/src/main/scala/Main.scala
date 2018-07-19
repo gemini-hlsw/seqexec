@@ -13,7 +13,7 @@ object Main {
   val xa: Transactor[IO] =
     Transactor.fromDriverManager[IO](
       "org.postgresql.Driver",
-      "jdbc:postgresql:gem",
+      sys.props.getOrElse("ocs3.databaseUrl", "jdbc:postgresql:gem"),
       "postgres",
       ""
     )
