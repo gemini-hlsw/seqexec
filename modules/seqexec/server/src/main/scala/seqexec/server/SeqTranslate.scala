@@ -92,7 +92,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
         d   <- dataId
         _   <- sendDataStart(obsId, fileId, d)
         _   <- notifyObserveStart
-        _   <- headers(ctx).map(_.sendBefore(obsId, fileId)).sequence
+        _   <- headers(ctx).map(_.sendBefore(obsId, fileId)).parSequence
         _   <- info(s"Start ${inst.resource.show} observation ${obsId.format} with label $fileId")
         r   <- inst.observe(config)(fileId)
         _   <- info(s"Completed ${inst.resource.show} observation ${obsId.format} with label $fileId")
@@ -102,7 +102,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     def observeTail(id: ImageFileId, dataId: String)(r: ObserveCommand.Result): SeqAction[Result] = {
       val successTail: SeqAction[Result] = for {
         _ <- notifyObserveEnd
-        _ <- headers(ctx).reverseMap(_.sendAfter(id)).sequence
+        _ <- headers(ctx).reverseMap(_.sendAfter(id)).parSequence
         _ <- closeImage(id)
         _ <- sendDataEnd(obsId, id, dataId)
       } yield Result.OK(Observed(id))
