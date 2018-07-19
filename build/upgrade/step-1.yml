@@ -1,0 +1,11 @@
+steps:
+  - block:  "Select Server"
+    prompt: "Upgrade Deployment, Step 1"
+    fields:
+      - select: "Which server do you wish up upgrade?"
+        key: "deploy-server"
+        options:
+        - label: "Test on sbfocstest-lv1"
+          value: "sbfocstest-lv1.cl.gemini.edu"
+        - label: "Production on sbfocsprod-lv1"
+          value: "sbfocsprod-lv1.cl.gemini.edu"
