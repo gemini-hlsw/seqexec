@@ -13,13 +13,13 @@ steps:
         hint: "This is an OCS3 version number, like 20180718-2f8dfb75"
         key:  "deploy-version"
       - select: "Verbosity"
-        key: "deploy-verbosity"
-        default: " "
+        key: "deploy-verbose"
+        default: "false"
         options:
         - label: "Normal"
-          value: " "
+          value: "false"
         - label: "Verbose (show all command output)"
-          value: "--verbose"
+          value: "true"
   - command: "./build/upgrade/step-2.sh"
     label:   "Perform Upgrade"
 
