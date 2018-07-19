@@ -6,6 +6,7 @@ package seqexec.server
 import cats.{Eq, Monoid}
 import cats.implicits._
 import cats.effect.IO
+import gem.enum.KeywordName
 import seqexec.model.dhs.ImageFileId
 
 package keywords {
@@ -83,22 +84,22 @@ package keywords {
   case object TypeString  extends KeywordType
 
   // The developer uses these classes to define all the typed keywords
-  sealed class Keyword[T] protected (val n: String,
+  sealed class Keyword[T] protected (val n: KeywordName,
                                      val t: KeywordType,
                                      val v: T)
-  final case class Int8Keyword(name: String, value: Byte)
+  final case class Int8Keyword(name: KeywordName, value: Byte)
       extends Keyword[Byte](name, TypeInt8, value)
-  final case class Int16Keyword(name: String, value: Short)
+  final case class Int16Keyword(name: KeywordName, value: Short)
       extends Keyword[Short](name, TypeInt16, value)
-  final case class Int32Keyword(name: String, value: Int)
+  final case class Int32Keyword(name: KeywordName, value: Int)
       extends Keyword[Int](name, TypeInt32, value)
-  final case class FloatKeyword(name: String, value: Float)
+  final case class FloatKeyword(name: KeywordName, value: Float)
       extends Keyword[Float](name, TypeFloat, value)
-  final case class DoubleKeyword(name: String, value: Double)
+  final case class DoubleKeyword(name: KeywordName, value: Double)
       extends Keyword[Double](name, TypeDouble, value)
-  final case class BooleanKeyword(name: String, value: Boolean)
+  final case class BooleanKeyword(name: KeywordName, value: Boolean)
       extends Keyword[Boolean](name, TypeBoolean, value)
-  final case class StringKeyword(name: String, value: String)
+  final case class StringKeyword(name: KeywordName, value: String)
       extends Keyword[String](name, TypeString, value)
 
   // At the end, I want to just pass a list of keywords to be sent to the DHS. I cannot do this with Keyword[T],
@@ -106,12 +107,13 @@ package keywords {
   // use an internal representation, and offer a class to the developer (KeywordBag) to create the list from typed
   // keywords.
 
-  private[server] final case class InternalKeyword(name: String,
-                                                     keywordType: KeywordType,
-                                                     value: String)
+  private[server] final case class InternalKeyword(name: KeywordName,
+                                                   keywordType: KeywordType,
+                                                   value: String)
 
   object InternalKeyword {
-    implicit val eq: Eq[InternalKeyword] = Eq.by(x => (x.name, x.keywordType, x.value))
+    implicit val eq: Eq[InternalKeyword] =
+      Eq.by(x => (x.name, x.keywordType, x.value))
   }
 
   final case class KeywordBag(keywords: List[InternalKeyword]) {
@@ -130,7 +132,8 @@ package keywords {
     implicit val eq: Eq[KeywordBag] = Eq.by(_.keywords)
     implicit val monoid: Monoid[KeywordBag] = new Monoid[KeywordBag] {
       override def empty: KeywordBag = KeywordBag.empty
-      override def combine(a: KeywordBag, b: KeywordBag) = KeywordBag(a.keywords |+| b.keywords)
+      override def combine(a: KeywordBag, b: KeywordBag) =
+        KeywordBag(a.keywords |+| b.keywords)
     }
 
     def apply(ks: Keyword[_]*): KeywordBag =
@@ -144,15 +147,18 @@ package keywords {
   }
 
   object DefaultHeaderValue {
-    implicit val IntDefaultValue: DefaultHeaderValue[Int] = new DefaultHeaderValue[Int] {
-      val default: Int = IntDefault
-    }
-    implicit val DoubleDefaultValue: DefaultHeaderValue[Double] = new DefaultHeaderValue[Double] {
-      val default: Double = DoubleDefault
-    }
-    implicit val StrDefaultValue: DefaultHeaderValue[String] = new DefaultHeaderValue[String] {
-      val default: String = StrDefault
-    }
+    implicit val IntDefaultValue: DefaultHeaderValue[Int] =
+      new DefaultHeaderValue[Int] {
+        val default: Int = IntDefault
+      }
+    implicit val DoubleDefaultValue: DefaultHeaderValue[Double] =
+      new DefaultHeaderValue[Double] {
+        val default: Double = DoubleDefault
+      }
+    implicit val StrDefaultValue: DefaultHeaderValue[String] =
+      new DefaultHeaderValue[String] {
+        val default: String = StrDefault
+      }
   }
 
 }
@@ -177,7 +183,8 @@ package object keywords {
     def toSeqActionO: SeqAction[Option[A]] = SeqAction(v)
   }
 
-  implicit class DefaultValueOps[A](a: Option[A])(implicit d: DefaultHeaderValue[A]) {
+  implicit class DefaultValueOps[A](a: Option[A])(
+      implicit d: DefaultHeaderValue[A]) {
     def orDefault: A = a.getOrElse(d.default)
   }
 
@@ -189,19 +196,20 @@ package object keywords {
     def orDefault: SeqAction[A] = v.map(_.orDefault)
   }
 
-  def buildKeyword[A](get: SeqAction[A], name: String, f: (String, A) => Keyword[A]): KeywordBag => SeqAction[KeywordBag] =
+  def buildKeyword[A](get: SeqAction[A], name: KeywordName, f: (KeywordName, A) => Keyword[A]): KeywordBag => SeqAction[KeywordBag] =
     k => get.map(x => k.add(f(name, x)))
-  def buildInt8(get: SeqAction[Byte], name: String ): KeywordBag => SeqAction[KeywordBag]       = buildKeyword(get, name, Int8Keyword)
-  def buildInt16(get: SeqAction[Short], name: String ): KeywordBag => SeqAction[KeywordBag]     = buildKeyword(get, name, Int16Keyword)
-  def buildInt32(get: SeqAction[Int], name: String ): KeywordBag => SeqAction[KeywordBag]       = buildKeyword(get, name, Int32Keyword)
-  def buildFloat(get: SeqAction[Float], name: String ): KeywordBag => SeqAction[KeywordBag]     = buildKeyword(get, name, FloatKeyword)
-  def buildDouble(get: SeqAction[Double], name: String ): KeywordBag => SeqAction[KeywordBag]   = buildKeyword(get, name, DoubleKeyword)
-  def buildBoolean(get: SeqAction[Boolean], name: String ): KeywordBag => SeqAction[KeywordBag] = buildKeyword(get, name, BooleanKeyword)
-  def buildString(get: SeqAction[String], name: String ): KeywordBag => SeqAction[KeywordBag]   = buildKeyword(get, name, StringKeyword)
+
+  def buildInt8(get: SeqAction[Byte], name: KeywordName): KeywordBag => SeqAction[KeywordBag]       = buildKeyword(get, name, Int8Keyword)
+  def buildInt16(get: SeqAction[Short], name: KeywordName): KeywordBag => SeqAction[KeywordBag]     = buildKeyword(get, name, Int16Keyword)
+  def buildInt32(get: SeqAction[Int], name: KeywordName): KeywordBag => SeqAction[KeywordBag]       = buildKeyword(get, name, Int32Keyword)
+  def buildFloat(get: SeqAction[Float], name: KeywordName): KeywordBag => SeqAction[KeywordBag]     = buildKeyword(get, name, FloatKeyword)
+  def buildDouble(get: SeqAction[Double], name: KeywordName): KeywordBag => SeqAction[KeywordBag]   = buildKeyword(get, name, DoubleKeyword)
+  def buildBoolean(get: SeqAction[Boolean], name: KeywordName): KeywordBag => SeqAction[KeywordBag] = buildKeyword(get, name, BooleanKeyword)
+  def buildString(get: SeqAction[String], name: KeywordName): KeywordBag => SeqAction[KeywordBag]   = buildKeyword(get, name, StringKeyword)
 
   def bundleKeywords[A: HeaderProvider](inst: A, ks: List[KeywordBag => SeqAction[KeywordBag]]): SeqAction[KeywordBag] = inst match {
     case i: DhsInstrument =>
-      val z = SeqAction(KeywordBag(StringKeyword("instrument", i.dhsInstrumentName)))
+      val z = SeqAction(KeywordBag(StringKeyword(KeywordName.INSTRUMENT, i.dhsInstrumentName)))
       ks.foldLeft(z) { case (a, b) => a.flatMap(b) }
     case _ =>
       ks.foldLeft(SeqAction(KeywordBag.empty)) { case (a, b) => a.flatMap(b) }

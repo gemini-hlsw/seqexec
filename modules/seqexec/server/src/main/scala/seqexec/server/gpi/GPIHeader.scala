@@ -4,6 +4,7 @@
 package seqexec.server.gpi
 
 import gem.Observation
+import gem.enum.KeywordName
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.SeqAction
 import seqexec.server.keywords._
@@ -25,12 +26,14 @@ object GPIHeader {
             buildDouble(tcsKeywordsReader.getParallacticAngle
                           .map(_.map(_.toDoubleDegrees))
                           .orDefault,
-                        "PAR_ANG"),
-            buildInt32(tcsKeywordsReader.getGpiInstPort.orDefault, "INPORT"),
-            buildBoolean(obsKeywordsReader.getAstrometicField, "ASTROMTC"),
+                        KeywordName.PAR_ANG),
+            buildInt32(tcsKeywordsReader.getGpiInstPort.orDefault,
+                       KeywordName.INPORT),
+            buildBoolean(obsKeywordsReader.getAstrometicField,
+                         KeywordName.ASTROMTC),
             buildString(tcsKeywordsReader.getCRFollow.map(
                           _.map(CRFollow.keywordValue).getOrElse("INDEF")),
-                        "CRFOLLOW")
+                        KeywordName.CRFOLLOW)
           )
         )
         ks.flatMap(gdsClient.openObservation(obsId, id, _))

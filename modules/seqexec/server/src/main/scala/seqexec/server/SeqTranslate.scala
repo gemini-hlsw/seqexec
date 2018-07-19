@@ -8,6 +8,18 @@ import cats.data.{EitherT, Kleisli, NonEmptyList, Reader}
 import cats.effect.IO
 import cats.implicits._
 import edu.gemini.seqexec.odb.{ExecutedDataset, SeqexecSequence}
+import edu.gemini.spModel.ao.AOConstants._
+import edu.gemini.spModel.config2.{Config, ItemKey}
+import edu.gemini.spModel.gemini.altair.AltairConstants
+import edu.gemini.spModel.obscomp.InstConstants._
+import edu.gemini.spModel.seqcomp.SeqConfigNames._
+import fs2.Stream
+import gem.Observation
+import gem.enum.Site
+import mouse.all._
+import gem.enum.KeywordName
+import org.log4s._
+import org.http4s.Uri._
 import seqexec.engine.Result.{Configured, FileIdAllocated, Observed}
 import seqexec.engine.{Action, ActionMetadata, Event, Result, Sequence, Step, fromIO}
 import seqexec.model.Model.{Instrument, Resource, SequenceMetadata, StepState}
@@ -27,18 +39,7 @@ import seqexec.server.gws.{DummyGwsKeywordsReader, GwsHeader, GwsKeywordsReaderI
 import seqexec.server.tcs._
 import seqexec.server.tcs.TcsController.ScienceFoldPosition
 import seqexec.server.gnirs._
-import edu.gemini.spModel.ao.AOConstants._
-import edu.gemini.spModel.config2.{Config, ItemKey}
-import edu.gemini.spModel.gemini.altair.AltairConstants
-import edu.gemini.spModel.obscomp.InstConstants._
-import edu.gemini.spModel.seqcomp.SeqConfigNames._
-import org.log4s._
-import org.http4s.Uri._
 import squants.Time
-import fs2.Stream
-import gem.Observation
-import gem.enum.Site
-import mouse.all._
 
 class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
   private val Log = getLogger
@@ -87,7 +88,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     def closeImage(id: ImageFileId): SeqAction[Unit] =
       inst match {
         case i: DhsInstrument =>
-          i.dhsClient.setKeywords(id, KeywordBag(StringKeyword("instrument", i.dhsInstrumentName)), finalFlag = true)
+          i.dhsClient.setKeywords(id, KeywordBag(StringKeyword(KeywordName.INSTRUMENT, i.dhsInstrumentName)), finalFlag = true)
         case _ =>
           SeqAction.void
       }
