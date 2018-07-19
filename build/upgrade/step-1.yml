@@ -12,4 +12,6 @@ steps:
       - text: "Which version do you wish to deploy?"
         hint: "This is an OCS3 version number, like 20180718-2f8dfb75"
         key:  "deploy-version"
+  - command: "./build/upgrade/step-2.sh"
+    label:   "Upgrade"
 
