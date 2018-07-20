@@ -59,14 +59,25 @@ do
   sleep 1
 done
 
-# Set up the schema and run tests
+# Set up the schema generate enums and run tests
 echo "--- :scala: Running tests"
 /usr/local/bin/sbt                                        \
   -jvm-opts build/buildkite-jvmopts                       \
   -Docs3.skipDependencyUpdates                            \
   -Docs3.databaseUrl=jdbc:postgresql://$HOST_AND_PORT/gem \
   sql/flywayMigrate                                       \
+  genEnums                                                \
   test
+
+# Check git status. if genEnums generated something mismatching, this should fail
+if [ "$BUILDKITE" = "true" ]; then
+  echo "--- :git: check code generation is current"
+  if [ -n "$(git status --porcelain)" ]; then
+    # Uncommitted changes in tracked files
+    echo "--- :shrug: Enum generation produced unmatching files"
+    exit 1
+  fi
+fi
 
 ###
 ### JAVASCRIPT PACKAGING

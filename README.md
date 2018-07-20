@@ -1,3 +1,4 @@
+[![Build status](https://badge.buildkite.com/2d1ba8c871db19fd0a34289ae0b0f706ebbecc72e9ecf57dec.svg)](https://buildkite.com/gemini-hlsw-1/ocs3-ci-pipeline)
 
 # Gem Prototype
 
