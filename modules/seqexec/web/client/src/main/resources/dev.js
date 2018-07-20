@@ -1,4 +1,4 @@
-import "node_modules/semantic-ui-less/semantic.less";
+import "./theme/semantic.less";
 import "./less/style.less";
 var App = require("sjs/seqexec_web_client-fastopt.js");
 
