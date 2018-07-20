@@ -70,11 +70,13 @@ echo "--- :scala: Running tests"
   test
 
 # Check git status. if genEnums generated something mismatching, this should fail
-echo "--- :git: check code generation is current"
-if [ -n "$(git status --untracked-files=no --porcelain)" ]; then
-  # Uncommitted changes in tracked files
-  echo "--- :shrug: Enum generation produced unmatching files"
-  exit 1
+if [ "$BUILDKITE" = "true" ]; then
+  echo "--- :git: check code generation is current"
+  if [ -n "$(git status --porcelain)" ]; then
+    # Uncommitted changes in tracked files
+    echo "--- :shrug: Enum generation produced unmatching files"
+    exit 1
+  fi
 fi
 
 ###
