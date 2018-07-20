@@ -22,9 +22,17 @@ import web.client.utils._
 import web.client.table._
 
 object StepConfigTable {
-  type Backend = RenderScope[Props, TableState, Unit]
+  sealed trait TableColumn
+  case object NameColumn  extends TableColumn
+  case object ValueColumn extends TableColumn
 
-  final case class Props(step: Step, size: Size, startState: TableState) {
+  object TableColumn {
+    implicit val eq: Eq[TableColumn] = Eq.fromUniversalEquals
+  }
+
+  type Backend = RenderScope[Props, TableState[TableColumn], Unit]
+
+  final case class Props(step: Step, size: Size, startState: TableState[TableColumn]) {
     val settingsList: List[(SystemName, String, String)] =
       step.config.toList.flatMap {
         case (s, c) =>
@@ -63,41 +71,10 @@ object StepConfigTable {
     val Zero: SettingsRow = apply(SystemName.ocs, "", "")
   }
 
-  sealed trait TableColumn
-  case object NameColumn  extends TableColumn
-  case object ValueColumn extends TableColumn
+  val TableColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](NameColumn, name = "name", label = "Name", visible = true, PercentageColumnWidth(0.5))
+  val ValueColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](ValueColumn, name = "value", label = "Value", visible = true, PercentageColumnWidth(0.5))
 
-  object TableColumn {
-    implicit val eq: Eq[TableColumn] = Eq.fromUniversalEquals
-  }
-
-  final case class ColumnMeta(column: TableColumn, name: String, label: String, width: Double)
-
-  object ColumnMeta {
-    val TableColumnMeta: ColumnMeta = ColumnMeta(NameColumn, "name", "Name", 0.5)
-    val ValueColumnMeta: ColumnMeta = ColumnMeta(ValueColumn, "value", "Value", 0.5)
-  }
-
-  final case class TableState(userModified: Boolean,
-                              columns: NonEmptyList[ColumnMeta]) {
-    // Changes the relative widths when a column is being dragged
-    def applyOffset(column: TableColumn, delta: Double): TableState = {
-      val indexOf = columns.toList.indexWhere(_.column === column)
-      // Shift the selected column and the next one
-      val result = columns.toList.zipWithIndex.map {
-        case (c @ ColumnMeta(_, _, _, x), idx) if idx === indexOf     =>
-          c.copy(width = (x + delta))
-        case (c @ ColumnMeta(_, _, _, x), idx) if idx === indexOf + 1 =>
-          c.copy(width = (x - delta))
-        case (c, _)                                                => c
-      }
-      copy(userModified = true, columns = NonEmptyList.fromListUnsafe(result))
-    }
-  }
-
-  object TableState {
-    val Zero: TableState = TableState(false, NonEmptyList.of(ColumnMeta.TableColumnMeta, ColumnMeta.ValueColumnMeta))
-  }
+  val InitialTableState: TableState[TableColumn] = TableState[TableColumn](NotModified, NonEmptyList.of(TableColumnMeta, ValueColumnMeta))
 
   private def columns(b: Backend): List[Table.ColumnArg] = {
     val width = b.props.size.width
@@ -110,9 +87,9 @@ object StepConfigTable {
       }
 
     b.state.columns.zipWithIndex.map {
-      case (ColumnMeta(c, name, label, percentage), i) if i < b.state.columns.length - 1 =>
+      case (ColumnMeta(c, name, label, true, PercentageColumnWidth(percentage)), i) if i < b.state.columns.length - 1 =>
         Column(Column.props(width * percentage, name, label = label, flexShrink = 0, flexGrow = 0, headerRenderer = resizableHeaderRenderer(resizeRow(c)), className = SeqexecStyles.paddedStepRow.htmlClass))
-      case (ColumnMeta(_, name, label, percentage), _)                                   =>
+      case (ColumnMeta(_, name, label, true, PercentageColumnWidth(percentage)), _)                                   =>
         Column(Column.props(width * percentage, name, label = label, flexShrink = 0, flexGrow = 0, className = SeqexecStyles.paddedStepRow.htmlClass))
     }.toList
   }
@@ -156,10 +133,9 @@ object StepConfigTable {
   private val component = ScalaComponent.builder[Props]("StepConfig")
     .initialStateFromProps(_.startState)
     .render { b =>
-      println(b.state)
       Table(settingsTableProps(b.props), columns(b): _*)
     }
     .build
 
-  def apply(p: Props): Unmounted[Props, TableState, Unit] = component(p)
+  def apply(p: Props): Unmounted[Props, TableState[TableColumn], Unit] = component(p)
 }

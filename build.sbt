@@ -361,12 +361,15 @@ lazy val web_client_common = project
       // By necessity facades will have unused params
       "-Ywarn-unused:params"
     ))),
+    // Needed for Monocle macros
+    addCompilerPlugin(Plugins.paradisePlugin),
     libraryDependencies ++= Seq(
       Cats.value,
+      Mouse.value,
       ScalaJSDom.value,
       JQuery.value,
       ScalaJSReactVirtualized.value,
-      ScalaJSReactDraggable.value) ++ ReactScalaJS.value
+      ScalaJSReactDraggable.value) ++ ReactScalaJS.value ++ Monocle.value
   )
 
 // a special crossProject for configuring a JS/JVM/shared structure

@@ -15,6 +15,8 @@ import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.component.builder.Lifecycle.RenderScope
 import japgolly.scalajs.react.raw.JsNumber
 import mouse.all._
+import monocle.Lens
+import monocle.macros.GenLens
 import react.virtualized._
 import scala.math.max
 import scala.scalajs.js
@@ -39,7 +41,7 @@ import web.client.utils._
 import web.client.table._
 
 object QueueTableBody {
-  type Backend = RenderScope[Props, TableState, Unit]
+  type Backend = RenderScope[Props, State, Unit]
 
   private val PhoneCut                 = 400
   private val LargePhoneCut            = 570
@@ -63,33 +65,28 @@ object QueueTableBody {
     implicit val equal: Eq[TableColumn] = Eq.fromUniversalEquals
   }
 
-  // Width is either Left[Int] meaning a fixed width or Right[Double] indicating a precentage of the overal width
-  final case class ColumnMeta(column: TableColumn, visible: Boolean, width: Either[Int, Double])
+  val IconColumnMeta: ColumnMeta[TableColumn]       = ColumnMeta[TableColumn](IconColumn, name = "status", label = "", visible = true, FixedColumnWidth(IconColumnWidth))
+  val ObsIdColumnMeta: ColumnMeta[TableColumn]      = ColumnMeta[TableColumn](ObsIdColumn, name = "obsid", label = "Obs. ID", visible = true, PercentageColumnWidth(1.0))
+  val StateColumnMeta: ColumnMeta[TableColumn]      = ColumnMeta[TableColumn](StateColumn, name = "state", label = "State", visible = true, PercentageColumnWidth(1.0))
+  val InstrumentColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](InstrumentColumn, name = "instrument", label = "Instrument", visible = true, PercentageColumnWidth(1.0))
+  val ObsNameColumnMeta: ColumnMeta[TableColumn]    = ColumnMeta[TableColumn](ObsNameColumn, name = "obsName", label = "Obs. Name", visible = true, PercentageColumnWidth(1.0))
+  val TargetNameColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](TargetNameColumn, name = "target", label = "Target", visible = true, PercentageColumnWidth(1.0))
 
-  object ColumnMeta {
-    val IconColumnMeta: ColumnMeta       = ColumnMeta(IconColumn, visible = true, IconColumnWidth.asLeft)
-    val ObsIdColumnMeta: ColumnMeta      = ColumnMeta(ObsIdColumn, visible = true, 1.0.asRight)
-    val StateColumnMeta: ColumnMeta      = ColumnMeta(StateColumn, visible = true, 1.0.asRight)
-    val InstrumentColumnMeta: ColumnMeta = ColumnMeta(InstrumentColumn, visible = true, 1.0.asRight)
-    val ObsNameColumnMeta: ColumnMeta    = ColumnMeta(ObsNameColumn, visible = true, 1.0.asRight)
-    val TargetNameColumnMeta: ColumnMeta = ColumnMeta(TargetNameColumn, visible = true, 1.0.asRight)
+  val all: NonEmptyList[ColumnMeta[TableColumn]] = NonEmptyList.of(IconColumnMeta,
+                                                      ObsIdColumnMeta,
+                                                      StateColumnMeta,
+                                                      InstrumentColumnMeta,
+                                                      TargetNameColumnMeta,
+                                                      ObsNameColumnMeta)
 
-    val all: NonEmptyList[ColumnMeta] = NonEmptyList.of(IconColumnMeta,
-                                                        ObsIdColumnMeta,
-                                                        StateColumnMeta,
-                                                        InstrumentColumnMeta,
-                                                        TargetNameColumnMeta,
-                                                        ObsNameColumnMeta)
-
-    val columnsDefaultWidth: Map[TableColumn, Int] = Map(
-      IconColumn       -> IconColumnWidth,
-      ObsIdColumn      -> ObsIdColumnWidth,
-      StateColumn      -> StateColumnWidth,
-      InstrumentColumn -> InstrumentColumnWidth,
-      TargetNameColumn -> TargetNameColumnWidth,
-      ObsNameColumn    -> ObsNameColumnWidth
-    )
-  }
+  val columnsDefaultWidth: Map[TableColumn, Int] = Map(
+    IconColumn       -> IconColumnWidth,
+    ObsIdColumn      -> ObsIdColumnWidth,
+    StateColumn      -> StateColumnWidth,
+    InstrumentColumn -> InstrumentColumnWidth,
+    TargetNameColumn -> TargetNameColumnWidth,
+    ObsNameColumn    -> ObsNameColumnWidth
+  )
 
   final case class Props(ctl: RouterCtl[SeqexecPages],
                          sequences: ModelProxy[StatusAndLoadedSequencesFocus]) {
@@ -109,37 +106,33 @@ object QueueTableBody {
     def isLogged: Boolean = sequences().isLogged
   }
 
-  final case class TableState(userModified: Boolean,
-                              loggedIn: Boolean,
-                              columns: NonEmptyList[ColumnMeta]) {
+  final case class State(tableState: TableState[TableColumn], loggedIn: Boolean) {
     // Update the columns' visibility based on logged in state
-    private def logIn: TableState =
-      copy(loggedIn = true, columns = columns.map(_.copy(visible = true)))
+    private def logIn: State =
+      (State.columns.modify(_.map(_.copy(visible = true))) andThen State.loggedIn.set(true))(this)
 
     // Update the columns' visibility based on logged off state
-    private def logOff: TableState =
-      copy(
-        loggedIn = false,
-        columns = columns.map {
-          case c @ ColumnMeta(ObsNameColumn, _, _)    => c.copy(visible = false)
-          case c @ ColumnMeta(TargetNameColumn, _, _) => c.copy(visible = false)
-          case c                                      => c
-        }
-      )
+    private def logOff: State =
+      (State.loggedIn.set(false) andThen
+       State.columns.modify(_.map {
+          case c @ ColumnMeta(ObsNameColumn, _, _, _, _)    => c.copy(visible = false)
+          case c @ ColumnMeta(TargetNameColumn, _, _, _, _) => c.copy(visible = false)
+          case c                                            => c
+        }))(this)
 
     // Change the columns visibility depending on the logged in state
-    def loginState(isLogged: Boolean): TableState = {
+    def loginState(isLogged: Boolean): State = {
       val loginChanged = isLogged =!= loggedIn
-      isLogged.fold(logIn, logOff).copy(userModified = userModified && !loginChanged)
+      State.userModified.modify(m => UserModified.fromBool((m === IsModified) && !loginChanged))(isLogged.fold(logIn, logOff))
     }
 
     // calculate the relative widths of each column based on content only
-    // this should be renormalize against the actual tabel width
-    def withWidths(sequences: List[SequenceInQueue]): TableState =
-      if (userModified) {
+    // this should be renormalized against the actual tabel width
+    def withWidths(sequences: List[SequenceInQueue]): State =
+      if (tableState.userModified === IsModified) {
         this
       } else {
-        val optimalSizes = sequences.foldLeft(ColumnMeta.columnsDefaultWidth) {
+        val optimalSizes = sequences.foldLeft(columnsDefaultWidth) {
           case (currWidths, SequenceInQueue(id, st, i, _, n, t, r)) =>
             val idWidth = max(currWidths.getOrElse(ObsIdColumn, 0), tableTextWidth(id.format))
             val statusWidth =
@@ -153,70 +146,59 @@ object QueueTableBody {
         }
         // Width as it would be adding all the visible columns
         val width = optimalSizes
-          .filter { case (c, _) => columns.find(_.column === c).forall(_.visible) }
+          .filter { case (c, _) => tableState.columns.find(_.column === c).forall(_.visible) }
           .values
           .sum
         // Normalize based on visibility
-        copy(columns = columns.map {
-          case c @ ColumnMeta(t, true, Right(_)) =>
-            c.copy(width = (optimalSizes.getOrElse(t, 0).toDouble / width).asRight)
-          case c => c
-        })
+        State.columns.modify(_.map {
+          case c @ ColumnMeta(t, _, _, true, PercentageColumnWidth(_)) =>
+            c.copy(width = PercentageColumnWidth(optimalSizes.getOrElse(t, 0).toDouble / width))
+          case c                                                       =>
+            c
+        })(this)
       }
-
-    // Changes the relative widths when a column is being dragged
-    def applyOffset(column: TableColumn, delta: Double): TableState = {
-      val indexOf = columns.toList.indexWhere(_.column === column)
-      // Shift the selected column and the next one
-      val result = columns.toList.zipWithIndex.map {
-        case (c @ ColumnMeta(_, _, Right(x)), idx) if idx === indexOf     =>
-          c.copy(width = (x + delta).asRight)
-        case (c @ ColumnMeta(_, _, Right(x)), idx) if idx === indexOf + 1 =>
-          c.copy(width = (x - delta).asRight)
-        case (c, _)                                                       => c
-      }
-      copy(userModified = true, columns = NonEmptyList.fromListUnsafe(result))
-    }
 
     // Returns a list of the visible columns with the suggested size
     def visibleColumnsSizes(s: Size): List[(TableColumn, Double, Boolean)] =
       for {
-        (c, i) <- hideOnWidth(s: Size).columns.toList.zipWithIndex
+        (c, i) <- hideOnWidth(s).tableState.columns.toList.zipWithIndex
         if c.visible
-      } yield (c.column, widthOf(c.column, s), i === columns.filter(_.visible).length - 1)
-
-    // Return the width of a column from the actual column width
-    def widthOf(column: TableColumn, s: Size): Double =
-      columns
-        .filter(c => c.column === column && c.visible)
-        .map(_.width)
-        .map {
-          case Left(w)  => w.toDouble
-          case Right(f) => f * s.width
-        }
-        .headOption
-        .getOrElse(0.0)
+      } yield (c.column, tableState.widthOf(c.column, s), i === tableState.columns.filter(_.visible).length - 1)
 
     // Hide some columns depending on width
-    private def hideOnWidth(s: Size): TableState =
+    private def hideOnWidth(s: Size): State =
       s.width match {
         case w if w < PhoneCut =>
-          copy(columns = columns.map {
-            case c @ ColumnMeta(ObsNameColumn, _, _)    => c.copy(visible = false)
-            case c @ ColumnMeta(TargetNameColumn, _, _) => c.copy(visible = false)
+          State.columns.modify(_.map {
+            case c @ ColumnMeta(ObsNameColumn, _, _, _, _)    => c.copy(visible = false)
+            case c @ ColumnMeta(TargetNameColumn, _, _, _, _) => c.copy(visible = false)
             case c                                      => c
-          })
+          })(this)
         case w if w < LargePhoneCut =>
-          copy(columns = columns.map {
-            case c @ ColumnMeta(TargetNameColumn, _, _) => c.copy(visible = false)
+          State.columns.modify(_.map {
+            case c @ ColumnMeta(TargetNameColumn, _, _, _, _) => c.copy(visible = false)
             case c                                      => c
-          })
-        case _ => this
+          })(this)
+        case _                                          => this
       }
+
+      def applyOffset(column: TableColumn, delta: Double): State =
+        State.tableState.modify(_.applyOffset(column, delta))(this)
   }
 
-  object TableState {
-    val Zero: TableState = TableState(false, false, ColumnMeta.all)
+  object State {
+    val Zero: State = State(TableState(NotModified, all), false)
+
+    // Lenses
+    val loggedIn: Lens[State, Boolean] = GenLens[State](_.loggedIn)
+
+    val tableState: Lens[State, TableState[TableColumn]] = GenLens[State](_.tableState)
+
+    val columns: Lens[State, NonEmptyList[ColumnMeta[TableColumn]]] =
+      tableState ^|-> TableState.columns[TableColumn]
+
+    val userModified: Lens[State, UserModified] =
+      tableState ^|-> TableState.userModified[TableColumn]
   }
 
   // ScalaJS defined trait
@@ -489,8 +471,8 @@ object QueueTableBody {
       columns(rs, size): _*
     ).vdomElement
 
-  def initialState(p: Props): TableState =
-    TableState.Zero.loginState(p.isLogged).withWidths(p.sequencesList)
+  def initialState(p: Props): State =
+    State.Zero.loginState(p.isLogged).withWidths(p.sequencesList)
 
   private val component = ScalaComponent
     .builder[Props]("QueueTableBody")
@@ -504,7 +486,7 @@ object QueueTableBody {
     .build
 
   def apply(ctl: RouterCtl[SeqexecPages],
-            p: ModelProxy[StatusAndLoadedSequencesFocus]): Unmounted[Props, TableState, Unit] =
+            p: ModelProxy[StatusAndLoadedSequencesFocus]): Unmounted[Props, State, Unit] =
     component(Props(ctl, p))
 
 }

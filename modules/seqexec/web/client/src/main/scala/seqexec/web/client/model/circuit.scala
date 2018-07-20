@@ -22,6 +22,7 @@ import seqexec.web.client.handlers._
 import seqexec.web.client.ModelOps._
 import seqexec.web.client.actions.{AppendToLog, CloseLoginBox, CloseResourcesBox, OpenLoginBox, OpenResourcesBox, ServerMessage, show}
 import seqexec.web.client.components.sequence.steps.StepConfigTable
+import web.client.table._
 
 object circuit {
   /**
@@ -53,7 +54,7 @@ object circuit {
   final case class StatusAndObserverFocus(isLogged: Boolean, name: Option[String], instrument: Instrument, id: Option[Observation.Id], observer: Option[Observer], status: Option[SequenceState], targetName: Option[TargetName]) extends UseValueEq
   final case class StatusAndStepFocus(isLogged: Boolean, instrument: Instrument, id: Option[Observation.Id], stepConfigDisplayed: Option[Int], totalSteps: Int) extends UseValueEq
   final case class StepsTableFocus(id: Observation.Id, instrument: Instrument, state: SequenceState, steps: List[Step], stepConfigDisplayed: Option[Int], nextStepToRun: Option[Int]) extends UseValueEq
-  final case class StepsTableAndStatusFocus(status: ClientStatus, stepsTable: Option[StepsTableFocus], configTableState: StepConfigTable.TableState) extends UseValueEq
+  final case class StepsTableAndStatusFocus(status: ClientStatus, stepsTable: Option[StepsTableFocus], configTableState: TableState[StepConfigTable.TableColumn]) extends UseValueEq
   final case class ControlModel(id: Observation.Id, isPartiallyExecuted: Boolean, nextStepToRun: Option[Int], status: SequenceState, inConflict: Boolean) extends UseValueEq
   final case class SequenceControlFocus(isLogged: Boolean, isConnected: Boolean, control: Option[ControlModel], syncInProgress: Boolean) extends UseValueEq
 
@@ -198,7 +199,7 @@ object circuit {
     def sequenceReader(id: Observation.Id): ModelR[_, Option[SequenceView]] =
       zoom(_.uiModel.sequences.queue.find(_.id === id))
 
-    val configTableState: ModelR[SeqexecAppRootModel, StepConfigTable.TableState] =
+    val configTableState: ModelR[SeqexecAppRootModel, TableState[StepConfigTable.TableColumn]] =
       zoom(_.uiModel.configTableState)
 
     /**

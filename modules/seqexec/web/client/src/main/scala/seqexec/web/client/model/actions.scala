@@ -13,6 +13,7 @@ import seqexec.model.events._
 import seqexec.web.client.model._
 import seqexec.web.client.components.sequence.steps.StepConfigTable
 import org.scalajs.dom.WebSocket
+import web.client.table._
 
 object actions {
 
@@ -89,7 +90,7 @@ object actions {
   final case class UpdateSkyBackground(sb: SkyBackground) extends Action
   final case class UpdateWaterVapor(wv: WaterVapor) extends Action
 
-  final case class UpdateStepsTableState(s: StepConfigTable.TableState) extends Action
+  final case class UpdateStepsTableState(s: TableState[StepConfigTable.TableColumn]) extends Action
 
   // Used for UI debugging
   final case class MarkStepAsRunning(s: Observation.Id, step: Int) extends Action

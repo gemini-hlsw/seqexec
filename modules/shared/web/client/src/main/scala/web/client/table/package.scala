@@ -3,17 +3,72 @@
 
 package web.client
 
+import cats.Eq
 import cats.data.NonEmptyList
+import cats.implicits._
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.raw.JsNumber
 import japgolly.scalajs.react.Callback
 import org.scalajs.dom.MouseEvent
+import scala.scalajs.js
+import monocle.Lens
+import mouse.boolean._
 import react.virtualized._
 import react.draggable._
-import scala.scalajs.js
 
 package table {
-  final case class TableState[A](userModified: Boolean, columns: NonEmptyList[A])
+  sealed trait UserModified
+  case object IsModified extends UserModified
+  case object NotModified extends UserModified
+
+  object UserModified {
+    implicit val eq: Eq[UserModified] = Eq.fromUniversalEquals
+
+    def fromBool(b: Boolean): UserModified = b.fold(IsModified, NotModified)
+  }
+
+  sealed trait ColumnWidth
+  final case class FixedColumnWidth(width: Int) extends ColumnWidth
+  final case class PercentageColumnWidth(percentage: Double) extends ColumnWidth
+
+  final case class TableState[A: Eq](userModified: UserModified, columns: NonEmptyList[ColumnMeta[A]]) {
+
+    // Changes the relative widths when a column is being dragged
+    def applyOffset(column: A, delta: Double): TableState[A] = {
+      val indexOf = columns.toList.indexWhere(_.column === column)
+      // Shift the selected column and the next one
+      val result = columns.toList.zipWithIndex.map {
+        case (c @ ColumnMeta(_, _, _, true, PercentageColumnWidth(x)), idx) if idx === indexOf     =>
+          c.copy(width = PercentageColumnWidth(x + delta))
+        case (c @ ColumnMeta(_, _, _, true, PercentageColumnWidth(x)), idx) if idx === indexOf + 1 =>
+          c.copy(width = PercentageColumnWidth(x - delta))
+        case (c, _)                                                => c
+      }
+      copy(userModified = IsModified, columns = NonEmptyList.fromListUnsafe(result))
+    }
+
+    // Return the width of a column from the actual column width
+    def widthOf(column: A, s: Size): Double =
+      columns
+        .filter(c => c.column === column && c.visible)
+        .map(_.width)
+        .map {
+          case FixedColumnWidth(w)      => w.toDouble
+          case PercentageColumnWidth(f) => f * s.width
+        }
+        .headOption
+        .getOrElse(0.0)
+
+  }
+
+  object TableState {
+    def userModified[A: Eq]: Lens[TableState[A], UserModified] =
+      Lens[TableState[A], UserModified](_.userModified)(n => a => a.copy(userModified = n))
+
+    def columns[A: Eq]: Lens[TableState[A], NonEmptyList[ColumnMeta[A]]] =
+      Lens[TableState[A], NonEmptyList[ColumnMeta[A]]](_.columns)(n => a => a.copy(columns = n))
+  }
+  final case class ColumnMeta[A](column: A, name: String, label: String, visible: Boolean, width: ColumnWidth)
 }
 
 package object table {

@@ -16,6 +16,7 @@ import seqexec.web.client.ModelOps._
 import seqexec.web.common.{Zipper, FixedLengthBuffer}
 import seqexec.web.client.components.sequence.steps.StepConfigTable
 import org.scalajs.dom.WebSocket
+import web.client.table._
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object model {
@@ -180,7 +181,7 @@ object model {
                             globalLog: GlobalLog,
                             sequencesOnDisplay: SequencesOnDisplay,
                             syncInProgress: Boolean,
-                            configTableState: StepConfigTable.TableState,
+                            configTableState: TableState[StepConfigTable.TableColumn],
                             firstLoad: Boolean)
 
   object SeqexecUIModel {
@@ -194,7 +195,7 @@ object model {
       GlobalLog(FixedLengthBuffer.unsafeFromInt(500), SectionClosed),
       SequencesOnDisplay.empty,
       syncInProgress = false,
-      StepConfigTable.TableState.Zero,
+      StepConfigTable.InitialTableState,
       firstLoad = true)
   }
 
