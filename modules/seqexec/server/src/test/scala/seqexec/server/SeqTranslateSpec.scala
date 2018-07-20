@@ -19,10 +19,10 @@ import seqexec.server.SeqTranslate.ObserveContext
 import seqexec.server.keywords.DhsClientSim
 import seqexec.server.keywords.GDSClient
 import seqexec.server.flamingos2.Flamingos2ControllerSim
-import seqexec.server.gcal.GcalControllerEpics
+import seqexec.server.gcal.GcalControllerSim
 import seqexec.server.gmos.GmosControllerSim
 import seqexec.server.gnirs.GnirsControllerSim
-import seqexec.server.tcs.TcsControllerEpics
+import seqexec.server.tcs.TcsControllerSim
 import seqexec.server.gpi.GPIController
 import edu.gemini.spModel.core.Peer
 import org.scalatest.FlatSpec
@@ -67,8 +67,8 @@ class SeqTranslateSpec extends FlatSpec {
   private val systems = SeqTranslate.Systems(
     new ODBProxy(new Peer("localhost", 8443, null), ODBProxy.DummyOdbCommands),
     DhsClientSim(LocalDate.of(2016, 4, 15)),
-    TcsControllerEpics,
-    GcalControllerEpics(DhsClientSim(LocalDate.of(2016, 4, 15))),
+    TcsControllerSim,
+    GcalControllerSim,
     Flamingos2ControllerSim,
     GmosControllerSim.south,
     GmosControllerSim.north,

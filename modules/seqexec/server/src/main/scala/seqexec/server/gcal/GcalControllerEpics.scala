@@ -7,9 +7,8 @@ import cats.implicits._
 import edu.gemini.spModel.gemini.calunit.CalUnitParams.{Diffuser, Filter, Shutter}
 import edu.gemini.seqexec.server.gcal.BinaryOnOff
 import seqexec.server.{EpicsCodex, SeqAction}
-import seqexec.server.keywords.DhsClient
 
-final case class GcalControllerEpics(dhsClient: DhsClient) extends GcalController {
+object GcalControllerEpics extends GcalController {
   import EpicsCodex._
   import GcalController._
 

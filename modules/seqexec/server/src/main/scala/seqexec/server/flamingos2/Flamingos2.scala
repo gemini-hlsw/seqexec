@@ -8,7 +8,7 @@ import seqexec.model.dhs.ImageFileId
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.flamingos2.Flamingos2Controller._
 import seqexec.server._
-import seqexec.server.keywords.{DhsInstrument, DhsClient}
+import seqexec.server.keywords.{DhsInstrument, DhsClient, KeywordsClient}
 import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2._
 import edu.gemini.spModel.obscomp.InstConstants.{DARK_OBSERVE_TYPE, OBSERVE_TYPE_PROP}
@@ -31,6 +31,8 @@ final case class Flamingos2(f2Controller: Flamingos2Controller, dhsClient: DhsCl
   override val contributorName: String = "flamingos2"
 
   override val dhsInstrumentName: String = "F2"
+
+  override val keywordsClient: KeywordsClient[IO] = this
 
   override val observeControl: InstrumentSystem.ObserveControl = InstrumentSystem.Uncontrollable
 

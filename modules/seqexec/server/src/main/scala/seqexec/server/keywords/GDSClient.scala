@@ -21,8 +21,7 @@ import seqexec.server.SeqActionF
   * Gemini Data service client
   */
 final case class GDSClient(client: Client[IO], gdsUri: Uri)
-    extends KeywordsClient[IO]
-    with Http4sClientDsl[IO] {
+    extends Http4sClientDsl[IO] {
 
   // Build an xml rpc request to store keywords
   private def storeKeywords(id: ImageFileId, ks: KeywordBag): Elem =
@@ -47,9 +46,7 @@ final case class GDSClient(client: Client[IO], gdsUri: Uri)
   /**
     * Set the keywords for an image
     */
-  override def setKeywords(id: ImageFileId,
-                           ks: KeywordBag,
-                           finalFlag: Boolean): SeqActionF[IO, Unit] = {
+  def setKeywords(id: ImageFileId, ks: KeywordBag): SeqActionF[IO, Unit] = {
     // Build the request
     val xmlRpc      = storeKeywords(id, ks)
     val postRequest = POST(gdsUri, xmlRpc)

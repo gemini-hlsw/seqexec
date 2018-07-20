@@ -12,7 +12,7 @@ import seqexec.model.dhs.ImageFileId
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.gnirs.GnirsController.{CCConfig, DCConfig, Other, ReadMode}
 import seqexec.server._
-import seqexec.server.keywords.{DhsInstrument, DhsClient}
+import seqexec.server.keywords.{DhsInstrument, DhsClient, KeywordsClient}
 import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.gemini.gnirs.GNIRSConstants.{INSTRUMENT_NAME_PROP, WOLLASTON_PRISM_PROP}
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams._
@@ -27,6 +27,8 @@ final case class Gnirs(controller: GnirsController, dhsClient: DhsClient) extend
   override val sfName: String = "gnirs"
   override val contributorName: String = "ngnirsdc1"
   override val dhsInstrumentName: String = "GNIRS"
+
+  override val keywordsClient: KeywordsClient[IO] = this
 
   import Gnirs._
   import InstrumentSystem._

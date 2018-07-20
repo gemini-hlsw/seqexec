@@ -366,13 +366,13 @@ object TcsKeywordsReaderImpl extends TcsKeywordsReader {
       else if (r>=180.0) r - 360.0
       else r
     }
-    def raOffset(off: Double, dec: Double): Double = angleRange(Math.toDegrees(off))*Math.cos(dec)*degreeToArcsec
+    def raOffset(off: Double, dec: Double): Double = angleRange(Math.toDegrees(off)) * Math.cos(dec)*degreeToArcsec
 
     TcsEpics.instance.targetA.flatMap(v => Apply[Option].ap2(Option(raOffset _))(v.lift(raoffIndex),v.lift(decoffIndex))).toSeqActionO
   }
 
   override def getTrackingDecOffset: SeqAction[Option[Double]] =
-    TcsEpics.instance.targetA.flatMap(v => v.lift(decoffIndex).map(Math.toDegrees(_)*degreeToArcsec)).toSeqActionO
+    TcsEpics.instance.targetA.flatMap(v => v.lift(decoffIndex).map(Math.toDegrees(_) * degreeToArcsec)).toSeqActionO
 
   override def getInstrumentAA: SeqAction[Option[Double]] = TcsEpics.instance.instrAA.toSeqActionO
 

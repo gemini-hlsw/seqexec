@@ -8,7 +8,9 @@ import edu.gemini.spModel.gemini.flamingos2.Flamingos2
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams
 import gem.arb.ArbTime
 import gem.arb.ArbAngle._
+import gem.arb.ArbEnumerated._
 import gem.Observation
+import gem.enum.KeywordName
 import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, Cogen, Gen}
 import seqexec.server.flamingos2.Flamingos2Controller
@@ -278,13 +280,13 @@ object SeqexecServerArbitraries extends ArbTime {
 
   implicit val internalKeywordArb: Arbitrary[InternalKeyword] = Arbitrary {
     for {
-      name  <- Gen.listOfN(8, Gen.alphaUpperChar)
+      name  <- arbitrary[KeywordName]
       kt    <- arbitrary[KeywordType]
       value <- Gen.listOfN(17, Gen.alphaChar)
-    } yield InternalKeyword(name.mkString, kt, value.mkString)
+    } yield InternalKeyword(name, kt, value.mkString)
   }
   implicit val internalKeywordCogen: Cogen[InternalKeyword] =
-    Cogen[(String, KeywordType, String)].contramap(x => (x.name, x.keywordType, x.value))
+    Cogen[(KeywordName, KeywordType, String)].contramap(x => (x.name, x.keywordType, x.value))
 
   implicit val keywordBagArb: Arbitrary[KeywordBag] = Arbitrary {
     arbitrary[List[InternalKeyword]].map(KeywordBag.apply)

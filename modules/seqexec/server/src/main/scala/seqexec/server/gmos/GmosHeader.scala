@@ -4,6 +4,7 @@
 package seqexec.server.gmos
 
 import gem.Observation
+import gem.enum.KeywordName
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.keywords._
@@ -24,10 +25,10 @@ object GmosHeader {
     new Header {
       override def sendBefore(obsId: Observation.Id, id: ImageFileId): SeqAction[Unit] = {
         sendKeywords(id, inst, List(
-          buildInt32(tcsKeywordsReader.getGmosInstPort.orDefault, "INPORT"),
-          buildString(gmosReader.ccName, "GMOSCC"),
-          buildString(tcsKeywordsReader.getUT.orDefault, "TIME-OBS"),
-          buildBoolean(gmosObsReader.preimage.map(_.toBoolean), "PREIMAGE"))
+          buildInt32(tcsKeywordsReader.getGmosInstPort.orDefault, KeywordName.INPORT),
+          buildString(gmosReader.ccName, KeywordName.GMOSCC),
+          buildString(tcsKeywordsReader.getUT.orDefault, KeywordName.TIME_OBS),
+          buildBoolean(gmosObsReader.preimage.map(_.toBoolean), KeywordName.PREIMAGE))
           // TODO NOD*
         )
       }
@@ -35,25 +36,25 @@ object GmosHeader {
       private def adcKeywords =
         if (gmosReader.isADCInUse) {
           List(
-            buildDouble(gmosReader.adcPrismEntSt, "ADCENPST"),
-            buildDouble(gmosReader.adcPrismEntEnd, "ADCENPEN"),
-            buildDouble(gmosReader.adcPrismEntMe, "ADCENPME"),
-            buildDouble(gmosReader.adcPrismExtSt, "ADCEXPST"),
-            buildDouble(gmosReader.adcPrismExtEnd, "ADCEXPEN"),
-            buildDouble(gmosReader.adcPrismExtMe, "ADCEXPME"),
-            buildDouble(gmosReader.adcWavelength1, "ADCWLEN1"),
-            buildDouble(gmosReader.adcWavelength2, "ADCWLEN2")
+            buildDouble(gmosReader.adcPrismEntSt, KeywordName.ADCENPST),
+            buildDouble(gmosReader.adcPrismEntEnd, KeywordName.ADCENPEN),
+            buildDouble(gmosReader.adcPrismEntMe, KeywordName.ADCENPME),
+            buildDouble(gmosReader.adcPrismExtSt, KeywordName.ADCEXPST),
+            buildDouble(gmosReader.adcPrismExtEnd, KeywordName.ADCEXPEN),
+            buildDouble(gmosReader.adcPrismExtMe, KeywordName.ADCEXPME),
+            buildDouble(gmosReader.adcWavelength1, KeywordName.ADCWLEN1),
+            buildDouble(gmosReader.adcWavelength2, KeywordName.ADCWLEN2)
           )
         } else Nil
 
       private def roiKeywords = gmosReader.roiValues.map {
         case (i, rv) =>
           List(
-            buildInt32(rv.xStart, s"DETRO${i}X"),
-            buildInt32(rv.xSize, s"DETRO${i}XS"),
-            buildInt32(rv.yStart, s"DETRO${i}Y"),
-            buildInt32(rv.ySize, s"DETRO${i}YS")
-          )
+            KeywordName.fromTag(s"DETRO${i}X").map(buildInt32(rv.xStart, _)),
+            KeywordName.fromTag(s"DETRO${i}XS").map(buildInt32(rv.xSize, _)),
+            KeywordName.fromTag(s"DETRO${i}Y").map(buildInt32(rv.yStart, _)),
+            KeywordName.fromTag(s"DETRO${i}YS").map(buildInt32(rv.ySize, _))
+          ).collect { case Some(x) => x }
       }.toList
 
       private val InBeam: Int = 0
@@ -61,35 +62,35 @@ object GmosHeader {
 
       override def sendAfter(id: ImageFileId): SeqAction[Unit] = {
         sendKeywords(id, inst, List(
-          buildInt32(gmosReader.maskId, "MASKID"),
-          buildString(readMaskName, "MASKNAME"),
-          buildInt32(gmosReader.maskType, "MASKTYP"),
-          buildInt32(gmosReader.maskLoc, "MASKLOC"),
-          buildString(gmosReader.filter1, "FILTER1"),
-          buildInt32(gmosReader.filter1Id, "FILTID1"),
-          buildString(gmosReader.filter2, "FILTER2"),
-          buildInt32(gmosReader.filter2Id, "FILTID2"),
-          buildString(gmosReader.grating, "GRATING"),
-          buildInt32(gmosReader.gratingId, "GRATID"),
-          buildDouble(gmosReader.gratingWavelength, "GRWLEN"),
-          buildDouble(gmosReader.gratingAdjustedWavelength, "CENTWAVE"),
-          buildInt32(gmosReader.gratingOrder, "GRORDER"),
-          buildDouble(gmosReader.gratingTilt, "GRTILT"),
-          buildDouble(gmosReader.gratingStep, "GRSTEP"),
-          buildDouble(gmosReader.dtaX, "DTAX"),
-          buildDouble(gmosReader.dtaY, "DTAY"),
-          buildDouble(gmosReader.dtaZ, "DTAZ"),
-          buildDouble(gmosReader.dtaZst, "DTAZST"),
-          buildDouble(gmosReader.dtaZen, "DTAZEN"),
-          buildDouble(gmosReader.dtaZme, "DTAZME"),
-          buildString(gmosReader.stageMode, "DTMODE"),
-          buildString(gmosReader.adcMode, "ADCMODE"),
-          buildString(gmosReader.dcName, "GMOSDC"),
-          buildString(gmosReader.detectorType, "DETTYPE"),
-          buildString(gmosReader.detectorId, "DETID"),
-          buildDouble(gmosReader.exposureTime, "EXPOSURE"),
-          buildInt32(gmosReader.adcUsed, "ADCUSED"),
-          buildInt32(gmosReader.detNRoi, "DETNROI")
+          buildInt32(gmosReader.maskId, KeywordName.MASKID),
+          buildString(readMaskName, KeywordName.MASKNAME),
+          buildInt32(gmosReader.maskType, KeywordName.MASKTYP),
+          buildInt32(gmosReader.maskLoc, KeywordName.MASKLOC),
+          buildString(gmosReader.filter1, KeywordName.FILTER1),
+          buildInt32(gmosReader.filter1Id, KeywordName.FILTID1),
+          buildString(gmosReader.filter2, KeywordName.FILTER2),
+          buildInt32(gmosReader.filter2Id, KeywordName.FILTID2),
+          buildString(gmosReader.grating, KeywordName.GRATING),
+          buildInt32(gmosReader.gratingId, KeywordName.GRATID),
+          buildDouble(gmosReader.gratingWavelength, KeywordName.GRWLEN),
+          buildDouble(gmosReader.gratingAdjustedWavelength, KeywordName.CENTWAVE),
+          buildInt32(gmosReader.gratingOrder, KeywordName.GRORDER),
+          buildDouble(gmosReader.gratingTilt, KeywordName.GRTILT),
+          buildDouble(gmosReader.gratingStep, KeywordName.GRSTEP),
+          buildDouble(gmosReader.dtaX, KeywordName.DTAX),
+          buildDouble(gmosReader.dtaY, KeywordName.DTAY),
+          buildDouble(gmosReader.dtaZ, KeywordName.DTAZ),
+          buildDouble(gmosReader.dtaZst, KeywordName.DTAZST),
+          buildDouble(gmosReader.dtaZen, KeywordName.DTAZEN),
+          buildDouble(gmosReader.dtaZme, KeywordName.DTAZME),
+          buildString(gmosReader.stageMode, KeywordName.DTMODE),
+          buildString(gmosReader.adcMode, KeywordName.ADCMODE),
+          buildString(gmosReader.dcName, KeywordName.GMOSDC),
+          buildString(gmosReader.detectorType, KeywordName.DETTYPE),
+          buildString(gmosReader.detectorId, KeywordName.DETID),
+          buildDouble(gmosReader.exposureTime, KeywordName.EXPOSURE),
+          buildInt32(gmosReader.adcUsed, KeywordName.ADCUSED),
+          buildInt32(gmosReader.detNRoi, KeywordName.DETNROI)
           // TODO These are enabled on N&S only
           /*buildInt32(gmosReader.aExpCount, "ANODCNT"),
           buildInt32(gmosReader.bExpCount, "BNODCNT"),

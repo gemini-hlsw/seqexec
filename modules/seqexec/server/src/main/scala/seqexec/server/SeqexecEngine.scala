@@ -57,7 +57,7 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings) {
     odbProxy,
     settings.dhsControl.command.fold(DhsClientHttp(settings.dhsURI), DhsClientSim(settings.date)),
     settings.tcsControl.command.fold(TcsControllerEpics, TcsControllerSim),
-    settings.gcalControl.command.fold(GcalControllerEpics(DhsClientHttp(settings.dhsURI)), GcalControllerSim(DhsClientSim(settings.date))),
+    settings.gcalControl.command.fold(GcalControllerEpics, GcalControllerSim),
     settings.f2Control.command.fold(Flamingos2ControllerEpics,
       settings.instForceError.fold(Flamingos2ControllerSimBad(settings.failAt), Flamingos2ControllerSim)),
     settings.gmosControl.command.fold(GmosSouthControllerEpics, GmosControllerSim.south),
@@ -481,9 +481,9 @@ object SeqexecEngine extends SeqexecConfiguration {
     val gpiControl = cfg.require[ControlStrategy]("seqexec-engine.systemControl.gpi")
     val gpiUrl  = cfg.require[String]("seqexec-engine.gpiUrl")
     if (gpiControl.command) {
-      Giapi.giapiConnectionIO.connect
-    } else {
       Giapi.giapiConnection[IO](gpiUrl, 2000.millis).connect
+    } else {
+      Giapi.giapiConnectionIO.connect
     }
   }
 

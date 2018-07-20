@@ -5,29 +5,30 @@ package seqexec.server
 
 import cats.effect.IO
 import seqexec.model.dhs.ImageFileId
-import seqexec.server.keywords.{HeaderProvider, KeywordsClient}
+import seqexec.server.keywords.KeywordsClient
 import edu.gemini.spModel.config2.Config
 import squants.Time
 
-trait InstrumentSystem[F[_]] extends System[F] with KeywordsClient[IO] {
+trait InstrumentSystem[F[_]] extends System[F] {
   // The name used for this instrument in the science fold configuration
   val sfName: String
   val contributorName: String
   val observeControl: InstrumentSystem.ObserveControl
-  def observe(config: Config): SeqObserveF[F, ImageFileId, ObserveCommand.Result]
+
+  def observe(
+      config: Config): SeqObserveF[F, ImageFileId, ObserveCommand.Result]
   //Expected total observe lapse, used to calculate timeout
   def calcObserveTime(config: Config): Time
+  def keywordsClient: KeywordsClient[IO]
 }
 
 object InstrumentSystem {
 
-  implicit val HeaderProvider: HeaderProvider[InstrumentSystem[IO]] = new HeaderProvider[InstrumentSystem[IO]] {
-    override def keywordsClient(a: InstrumentSystem[IO]): KeywordsClient[IO] = a
-  }
   final case class StopObserveCmd(self: SeqAction[Unit])
   final case class AbortObserveCmd(self: SeqAction[Unit])
   final case class PauseObserveCmd(self: SeqAction[Unit])
-  final case class ContinuePausedCmd(self: Time => SeqAction[ObserveCommand.Result])
+  final case class ContinuePausedCmd(
+      self: Time => SeqAction[ObserveCommand.Result])
   final case class StopPausedCmd(self: SeqAction[ObserveCommand.Result])
   final case class AbortPausedCmd(self: SeqAction[ObserveCommand.Result])
 
@@ -38,8 +39,9 @@ object InstrumentSystem {
                                 pause: PauseObserveCmd,
                                 continue: ContinuePausedCmd,
                                 stopPaused: StopPausedCmd,
-                                abortPaused: AbortPausedCmd) extends ObserveControl
+                                abortPaused: AbortPausedCmd)
+      extends ObserveControl
   // Special class for infrared instrument, because they cannot pause/resume
-  final case class InfraredControl(stop: StopObserveCmd,
-                                   abort: AbortObserveCmd) extends ObserveControl
+  final case class InfraredControl(stop: StopObserveCmd, abort: AbortObserveCmd)
+      extends ObserveControl
 }
