@@ -3,6 +3,7 @@
 
 package seqexec.server.gmos
 
+import cats.Show
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.gmos.GmosController.Config.DCConfig
 import seqexec.server.SeqexecFailure.Unexpected
@@ -175,5 +176,8 @@ object GmosController {
   type GmosSouthController = GmosController[SouthTypes]
 
   type GmosNorthController = GmosController[NorthTypes]
+
+  implicit def configShow[T<:SiteDependentTypes]: Show[GmosConfig[T]] =
+    Show.show { config => s"(${config.cc.filter}, ${config.cc.disperser}, ${config.cc.fpu}, ${config.cc.stage}, ${config.cc.stage}, ${config.cc.dtaX}, ${config.cc.adc}, ${config.cc.useElectronicOffset}, ${config.dc.t}, ${config.dc.b}, ${config.dc.s}, ${config.dc.bi}, ${config.dc.roi.rois})" }
 
 }
