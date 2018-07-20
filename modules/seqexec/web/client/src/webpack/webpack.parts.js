@@ -115,8 +115,6 @@ module.exports.resolve = {
 module.exports.resolveSemanticUI = {
   resolve: {
     alias: {
-      // Required to find the Semantic-UI-less module
-      node_modules: path.resolve(__dirname, "node_modules"),
       // Required for the custom Semantic UI theme
       "../../theme.config$": path.join(resourcesDir, "theme/theme.config")
     }
