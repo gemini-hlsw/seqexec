@@ -31,11 +31,11 @@ gn-ca0
 ```
 
 From ITS we get two files in PEM format the cert: `site.cert.pem` and the private key `site.key.pem`.
-Additionally we need the intermediate certificate in a file `GN-CA1.pem`
+Additionally there is the intermediate certificate in a file `GN-CA1.pem`
 
 Now we are ready to build the keystore as follows:
 
-## Concatenate the intermediate and the site certificates
+## ~~Concatenate the intermediate and the site certificates (Obsolete)~~
 
 ```
 cat GN-CA1.pem site.cert.pem > intermediate-site.cert.pem
@@ -46,7 +46,7 @@ cat GN-CA1.pem site.cert.pem > intermediate-site.cert.pem
 Due to some limitations on java's keystore handling of private keys we need to do this with `openssl`
 
 ```
-openssl pkcs12 -export -in intermediate-site.cert.pem -inkey site.key.pem -out site.p12 -name <site-name> -password pass:<certpass>
+openssl pkcs12 -export -in site.cert.pem -inkey site.key.pem -out site.p12 -name <site-name> -password pass:<certpass>
 ```
 
 This will give you a pkcs12 store with the certificate and key
