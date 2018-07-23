@@ -1,0 +1,25 @@
+steps:
+  - block:  "Specify Server and Version"
+    prompt: "Please provide details about this deployment."
+    fields:
+      - select: "Which server do you wish up upgrade?"
+        key: "deploy-server"
+        options:
+        - label: "Test on sbfocstest-lv1"
+          value: "sbfocstest-lv1.cl.gemini.edu"
+        - label: "Production on sbfocsprod-lv1"
+          value: "sbfocsprod-lv1.cl.gemini.edu"
+      - text: "Which version do you wish to deploy?"
+        hint: "This is an OCS3 version number, like 20180718-2f8dfb75"
+        key:  "deploy-version"
+      - select: "Verbosity"
+        key: "deploy-verbose"
+        default: "false"
+        options:
+        - label: "Normal"
+          value: "false"
+        - label: "Verbose (show all command output)"
+          value: "true"
+  - command: "./build/upgrade/step-2.sh"
+    label:   "Perform Upgrade"
+
