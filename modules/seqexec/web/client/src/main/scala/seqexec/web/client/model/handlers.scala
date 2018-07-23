@@ -29,12 +29,10 @@ import seqexec.web.client.circuit._
 import seqexec.web.client.services.log.ConsoleHandler
 import seqexec.web.client.services.{Audio, SeqexecWebClient}
 import seqexec.web.client.services.WebpackResources._
-import seqexec.web.client.components.sequence.steps.StepConfigTable
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.scalajs.js.typedarray.{ArrayBuffer, TypedArrayBuffer}
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
-import web.client.table._
 
 object handlers {
   private val VoidEffect = Effect(Future(NoAction: Action))
@@ -712,10 +710,13 @@ object handlers {
   /**
     * Handle to preserve the steps table state
     */
-  class StepConfigTableStateHandler[M](modelRW: ModelRW[M, TableState[StepConfigTable.TableColumn]]) extends ActionHandler(modelRW) with Handlers {
+  class StepConfigTableStateHandler[M](modelRW: ModelRW[M, TableStates]) extends ActionHandler(modelRW) with Handlers {
     override def handle: PartialFunction[Any, ActionResult[M]] = {
-      case UpdateStepsTableState(state) =>
-        updatedSilent(state) // We should only do silent updates as these change too quickly
+      case UpdateStepsConfigTableState(state) =>
+        updatedSilent(value.copy(stepConfigTable = state)) // We should only do silent updates as these change too quickly
+
+      case UpdateQueueTableState(state) =>
+        updatedSilent(value.copy(queueTable = state)) // We should only do silent updates as these change too quickly
     }
   }
 }

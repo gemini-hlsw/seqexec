@@ -31,7 +31,10 @@ package table {
   final case class FixedColumnWidth(width: Int) extends ColumnWidth
   final case class PercentageColumnWidth(percentage: Double) extends ColumnWidth
 
-  final case class TableState[A: Eq](userModified: UserModified, columns: NonEmptyList[ColumnMeta[A]]) {
+  /**
+   * State of a table
+   */
+  final case class TableState[A: Eq](userModified: UserModified, scrollPosition: JsNumber, columns: NonEmptyList[ColumnMeta[A]]) {
 
     // Changes the relative widths when a column is being dragged
     def applyOffset(column: A, delta: Double): TableState[A] = {
@@ -67,7 +70,14 @@ package table {
 
     def columns[A: Eq]: Lens[TableState[A], NonEmptyList[ColumnMeta[A]]] =
       Lens[TableState[A], NonEmptyList[ColumnMeta[A]]](_.columns)(n => a => a.copy(columns = n))
+
+    def scrollPosition[A: Eq]: Lens[TableState[A], JsNumber] =
+      Lens[TableState[A], JsNumber](_.scrollPosition)(n => a => a.copy(scrollPosition = n))
   }
+
+  /**
+   * Metadata for a column
+   */
   final case class ColumnMeta[A](column: A, name: String, label: String, visible: Boolean, width: ColumnWidth)
 }
 

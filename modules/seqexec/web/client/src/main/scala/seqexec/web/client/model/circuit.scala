@@ -22,6 +22,7 @@ import seqexec.web.client.handlers._
 import seqexec.web.client.ModelOps._
 import seqexec.web.client.actions.{AppendToLog, CloseLoginBox, CloseResourcesBox, OpenLoginBox, OpenResourcesBox, ServerMessage, show}
 import seqexec.web.client.components.sequence.steps.StepConfigTable
+import seqexec.web.client.components.QueueTableBody
 import web.client.table._
 
 object circuit {
@@ -47,7 +48,7 @@ object circuit {
     implicit val order: Order[SequenceInQueue] = Order.by(_.id)
     implicit val ordering: scala.math.Ordering[SequenceInQueue] = order.toOrdering
   }
-  final case class StatusAndLoadedSequencesFocus(isLogged: Boolean, sequences: List[SequenceInQueue]) extends UseValueEq
+  final case class StatusAndLoadedSequencesFocus(isLogged: Boolean, sequences: List[SequenceInQueue], tableState: TableState[QueueTableBody.TableColumn]) extends UseValueEq
   final case class HeaderSideBarFocus(status: ClientStatus, conditions: Conditions, operator: Option[Operator]) extends UseValueEq
   final case class InstrumentStatusFocus(instrument: Instrument, active: Boolean, idState: Option[(Observation.Id, SequenceState)], runningStep: Option[RunningStep]) extends UseValueEq
   final case class InstrumentTabContentFocus(instrument: Instrument, active: Boolean, sequenceSelected: Boolean, logDisplayed: SectionVisibilityState) extends UseValueEq
@@ -57,6 +58,7 @@ object circuit {
   final case class StepsTableAndStatusFocus(status: ClientStatus, stepsTable: Option[StepsTableFocus], configTableState: TableState[StepConfigTable.TableColumn]) extends UseValueEq
   final case class ControlModel(id: Observation.Id, isPartiallyExecuted: Boolean, nextStepToRun: Option[Int], status: SequenceState, inConflict: Boolean) extends UseValueEq
   final case class SequenceControlFocus(isLogged: Boolean, isConnected: Boolean, control: Option[ControlModel], syncInProgress: Boolean) extends UseValueEq
+  final case class TableStates(queueTable: TableState[QueueTableBody.TableColumn], stepConfigTable: TableState[StepConfigTable.TableColumn]) extends UseValueEq
 
   /**
    * Diode processor to log some of the action to aid in debugging
@@ -105,6 +107,9 @@ object circuit {
     val initialSyncFocusRW: ModelRW[SeqexecAppRootModel, InitialSyncFocus] =
       zoomRW(m => InitialSyncFocus(m.uiModel.navLocation, m.uiModel.sequencesOnDisplay, m.uiModel.firstLoad)) ((m, v) => m.copy(uiModel = m.uiModel.copy(navLocation = v.location, sequencesOnDisplay = v.sod, firstLoad = v.firstLoad)))
 
+    val tableStateRW: ModelRW[SeqexecAppRootModel, TableStates] =
+      zoomRW(m => TableStates(m.uiModel.queueTableState, m.uiModel.configTableState)) ((m, v) => m.copy(uiModel = m.uiModel.copy(queueTableState = v.queueTable, configTableState = v.stepConfigTable)))
+
     private val wsHandler                = new WebSocketHandler(zoomTo(_.ws))
     private val wsEventsHandler          = new WebSocketEventsHandler(webSocketFocusRW)
     private val initialSyncHandler       = new InitialSyncHandler(initialSyncFocusRW)
@@ -122,7 +127,7 @@ object circuit {
     private val remoteRequestsHandler    = new RemoteRequestsHandler(zoomTo(_.clientId))
     private val syncRequestsHandler      = new SyncRequestsHandler(zoomTo(_.uiModel.syncInProgress))
     private val debuggingHandler         = new DebuggingHandler(zoomTo(_.uiModel.sequences))
-    private val stepConfigStateHandler   = new StepConfigTableStateHandler(zoomTo(_.uiModel.configTableState))
+    private val stepConfigStateHandler   = new StepConfigTableStateHandler(tableStateRW)
 
     override protected def initialModel = SeqexecAppRootModel.initial
 
@@ -134,7 +139,7 @@ object circuit {
           val targetName = firstScienceStepTargetNameT.headOption(s)
           SequenceInQueue(s.id, s.status, s.metadata.instrument, active, s.metadata.name, targetName, s.runningStep)
         }
-        StatusAndLoadedSequencesFocus(c.uiModel.user.isDefined, sequencesInQueue.sorted)
+        StatusAndLoadedSequencesFocus(c.uiModel.user.isDefined, sequencesInQueue.sorted, c.uiModel.queueTableState)
       }
 
     // Reader to indicate the allowed interactions

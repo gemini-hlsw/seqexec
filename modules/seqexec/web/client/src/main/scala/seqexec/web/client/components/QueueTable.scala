@@ -92,6 +92,8 @@ object QueueTableBody {
                          sequences: ModelProxy[StatusAndLoadedSequencesFocus]) {
     val sequencesList: List[SequenceInQueue] = sequences().sequences
 
+    val startState: TableState[TableColumn] = sequences().tableState
+
     def rowGetter(i: Int): QueueRow =
       sequencesList
         .lift(i)
@@ -100,10 +102,10 @@ object QueueTableBody {
         }
         .getOrElse(QueueRow.Zero)
 
-    def rowCount: Int =
+    val rowCount: Int =
       sequencesList.size
 
-    def isLogged: Boolean = sequences().isLogged
+    val isLogged: Boolean = sequences().isLogged
   }
 
   final case class State(tableState: TableState[TableColumn], loggedIn: Boolean) {
@@ -186,9 +188,9 @@ object QueueTableBody {
         State.tableState.modify(_.applyOffset(column, delta))(this)
   }
 
-  object State {
-    val Zero: State = State(TableState(NotModified, all), false)
+  val InitialTableState: State = State(TableState(NotModified, 0, all), false)
 
+  object State {
     // Lenses
     val loggedIn: Lens[State, Boolean] = GenLens[State](_.loggedIn)
 
@@ -199,6 +201,9 @@ object QueueTableBody {
 
     val userModified: Lens[State, UserModified] =
       tableState ^|-> TableState.userModified[TableColumn]
+
+    val scrollPosition: Lens[State, JsNumber] =
+      tableState ^|-> TableState.scrollPosition[TableColumn]
   }
 
   // ScalaJS defined trait
@@ -348,10 +353,10 @@ object QueueTableBody {
 
     // Tell the model to resize a column
     def resizeRow(c: TableColumn): (String, JsNumber) => Callback =
-      (_, dx) =>
-        b.modState { s =>
-          val percentDelta = dx.toDouble / size.width
-          s.applyOffset(c, percentDelta)
+      (_, dx) => {
+        val percentDelta = dx.toDouble / size.width
+        val ns = b.state.applyOffset(c, percentDelta)
+        b.setState(ns) >> SeqexecCircuit.dispatchCB(UpdateQueueTableState(ns.tableState))
       }
 
     b.state.visibleColumnsSizes(size).collect {
@@ -447,7 +452,12 @@ object QueueTableBody {
   }
   // scalastyle:on
 
-  def table(rs: Backend)(size: Size): VdomNode =
+  def updateScrollPosition(b: Backend, pos: JsNumber): Callback = {
+    val s = State.scrollPosition.set(pos)(b.state)
+    b.setState(s) >> SeqexecCircuit.dispatchCB(UpdateQueueTableState(s.tableState))
+  }
+
+  def table(b: Backend)(size: Size): VdomNode =
     Table(
       Table.props(
         disableHeader = false,
@@ -460,24 +470,26 @@ object QueueTableBody {
         ),
         overscanRowCount = SeqexecStyles.overscanRowCount,
         height = 216,
-        rowCount = rs.props.rowCount,
+        rowCount = b.props.rowCount,
         rowHeight = SeqexecStyles.rowHeight,
-        rowClassName = rowClassName(rs.props) _,
+        rowClassName = rowClassName(b.props) _,
         width = size.width.toInt,
-        rowGetter = rs.props.rowGetter _,
+        rowGetter = b.props.rowGetter _,
         headerClassName = SeqexecStyles.tableHeader.htmlClass,
+        scrollTop = b.state.tableState.scrollPosition,
+        onScroll = (_, _, pos) => updateScrollPosition(b, pos),
         headerHeight = SeqexecStyles.headerHeight
       ),
-      columns(rs, size): _*
+      columns(b, size): _*
     ).vdomElement
 
   def initialState(p: Props): State =
-    State.Zero.loginState(p.isLogged).withWidths(p.sequencesList)
+    InitialTableState.copy(tableState = p.startState).loginState(p.isLogged).withWidths(p.sequencesList)
 
   private val component = ScalaComponent
     .builder[Props]("QueueTableBody")
     .initialStateFromProps(initialState)
-    .renderPS(($, _, _) => AutoSizer(AutoSizer.props(table($), disableHeight = true)))
+    .render($ => AutoSizer(AutoSizer.props(table($), disableHeight = true)))
     .componentWillReceiveProps { $ =>
       $.modState { s =>
         s.loginState($.nextProps.isLogged).withWidths($.nextProps.sequencesList)

@@ -17,7 +17,7 @@ import scala.scalajs.js
 import seqexec.model.Model.{Step, SystemName}
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.circuit.SeqexecCircuit
-import seqexec.web.client.actions.UpdateStepsTableState
+import seqexec.web.client.actions.UpdateStepsConfigTableState
 import web.client.utils._
 import web.client.table._
 
@@ -74,7 +74,7 @@ object StepConfigTable {
   val TableColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](NameColumn, name = "name", label = "Name", visible = true, PercentageColumnWidth(0.5))
   val ValueColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](ValueColumn, name = "value", label = "Value", visible = true, PercentageColumnWidth(0.5))
 
-  val InitialTableState: TableState[TableColumn] = TableState[TableColumn](NotModified, NonEmptyList.of(TableColumnMeta, ValueColumnMeta))
+  val InitialTableState: TableState[TableColumn] = TableState[TableColumn](NotModified, 0, NonEmptyList.of(TableColumnMeta, ValueColumnMeta))
 
   private def columns(b: Backend): List[Table.ColumnArg] = {
     val width = b.props.size.width
@@ -83,7 +83,7 @@ object StepConfigTable {
       (_, dx) => {
         val percentDelta = dx.toDouble / width
         val s = b.state.applyOffset(c, percentDelta)
-        b.setState(s) >> SeqexecCircuit.dispatchCB(UpdateStepsTableState(s))
+        b.setState(s) >> SeqexecCircuit.dispatchCB(UpdateStepsConfigTableState(s))
       }
 
     b.state.columns.zipWithIndex.map {
@@ -92,6 +92,11 @@ object StepConfigTable {
       case (ColumnMeta(_, name, label, true, PercentageColumnWidth(percentage)), _)                                   =>
         Column(Column.props(width * percentage, name, label = label, flexShrink = 0, flexGrow = 0, className = SeqexecStyles.paddedStepRow.htmlClass))
     }.toList
+  }
+
+  def updateScrollPosition(b: Backend, pos: JsNumber): Callback = {
+    val s = TableState.scrollPosition[TableColumn].set(pos)(b.state)
+    b.setState(s) >> SeqexecCircuit.dispatchCB(UpdateStepsConfigTableState(s))
   }
 
   def rowClassName(p: Props)(i: Int): String = ((i, p.rowGetter(i)) match {
@@ -109,7 +114,8 @@ object StepConfigTable {
       SeqexecStyles.stepRow
   }).htmlClass
 
-  def settingsTableProps(p: Props): Table.Props = {
+  def settingsTableProps(b: Backend): Table.Props = {
+    val p = b.props
     Table.props(
       disableHeader = false,
       noRowsRenderer = () =>
@@ -125,15 +131,16 @@ object StepConfigTable {
       rowClassName = rowClassName(p) _,
       width = p.size.width.toInt,
       rowGetter = p.rowGetter _,
-      scrollTop = 0,
+      scrollTop = b.state.scrollPosition,
       headerClassName = SeqexecStyles.tableHeader.htmlClass,
+      onScroll = (_, _, pos) => updateScrollPosition(b, pos),
       headerHeight = SeqexecStyles.headerHeight)
   }
 
   private val component = ScalaComponent.builder[Props]("StepConfig")
     .initialStateFromProps(_.startState)
     .render { b =>
-      Table(settingsTableProps(b.props), columns(b): _*)
+      Table(settingsTableProps(b), columns(b): _*)
     }
     .build
 
