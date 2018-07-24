@@ -49,7 +49,7 @@ object StepConfigTable {
     def rowGetter(idx: Int): SettingsRow =
       settingsList
         .lift(idx)
-        .fold(SettingsRow.Zero)(Function.tupled(SettingsRow.apply))
+        .fold(SettingsRow.zero)(Function.tupled(SettingsRow.apply))
   }
 
   // ScalaJS defined trait
@@ -75,7 +75,7 @@ object StepConfigTable {
     def unapply(l: SettingsRow): Option[(SystemName, String, String)] =
       Some((l.sub, l.name, l.value))
 
-    val Zero: SettingsRow = apply(SystemName.ocs, "", "")
+    def zero: SettingsRow = apply(SystemName.ocs, "", "")
   }
 
   val TableColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](

@@ -26,7 +26,7 @@ package table {
   object UserModified {
     implicit val eq: Eq[UserModified] = Eq.fromUniversalEquals
 
-    def fromBool(b: Boolean): UserModified = b.fold(IsModified, NotModified)
+    def fromBool(b: Boolean): UserModified = if (b) IsModified else NotModified
   }
 
   sealed trait ColumnWidth extends Product with Serializable

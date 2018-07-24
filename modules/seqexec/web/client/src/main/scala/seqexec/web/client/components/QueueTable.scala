@@ -142,7 +142,7 @@ object QueueTableBody {
                    s.active,
                    s.runningStep)
         }
-        .getOrElse(QueueRow.Zero)
+        .getOrElse(QueueRow.zero)
 
     val rowCount: Int =
       sequencesList.size
@@ -332,7 +332,7 @@ object QueueTableBody {
          l.active,
          l.runningStep))
 
-    val Zero: QueueRow =
+    def zero: QueueRow =
       apply(Observation.Id.unsafeFromString("Zero-1"),
             SequenceState.Idle,
             Instrument.F2,
