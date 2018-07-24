@@ -35,10 +35,18 @@ Additionally there is the intermediate certificate in a file `GN-CA1.pem`
 
 Now we are ready to build the keystore as follows:
 
-## ~~Concatenate the intermediate and the site certificates (Obsolete)~~
+## Per host passwords
+
+The keystore and certificate passwords are stored on each target host at
 
 ```
-cat GN-CA1.pem site.cert.pem > intermediate-site.cert.pem
+/gemsoft/etc/seqexec/conf.d/tls.conf
+```
+
+## Concatenate the intermediate and the site certificates
+
+```
+cat gn-ca0.pem GN-CA1.pem site.cert.pem > site.cert.pem
 ```
 
 ## Make a PKCS12 keystore
