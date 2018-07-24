@@ -77,35 +77,35 @@ object QueueTableBody {
     name = "obsid",
     label = "Obs. ID",
     visible = true,
-    PercentageColumnWidth(1.0))
+    PercentageColumnWidth.Full)
 
   val StateColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     StateColumn,
     name = "state",
     label = "State",
     visible = true,
-    PercentageColumnWidth(1.0))
+    PercentageColumnWidth.Full)
 
   val InstrumentColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     InstrumentColumn,
     name = "instrument",
     label = "Instrument",
     visible = true,
-    PercentageColumnWidth(1.0))
+    PercentageColumnWidth.Full)
 
   val ObsNameColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     ObsNameColumn,
     name = "obsName",
     label = "Obs. Name",
     visible = true,
-    PercentageColumnWidth(1.0))
+    PercentageColumnWidth.Full)
 
   val TargetNameColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     TargetNameColumn,
     name = "target",
     label = "Target",
     visible = true,
-    PercentageColumnWidth(1.0))
+    PercentageColumnWidth.Full)
 
   val all: NonEmptyList[ColumnMeta[TableColumn]] = NonEmptyList.of(
     IconColumnMeta,

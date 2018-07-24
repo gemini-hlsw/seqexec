@@ -83,14 +83,14 @@ object StepConfigTable {
     name = "name",
     label = "Name",
     visible = true,
-    PercentageColumnWidth(0.5))
+    PercentageColumnWidth.Half)
 
   val ValueColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     ValueColumn,
     name = "value",
     label = "Value",
     visible = true,
-    PercentageColumnWidth(0.5))
+    PercentageColumnWidth.Half)
 
   val InitialTableState: TableState[TableColumn] = TableState[TableColumn](
     NotModified,

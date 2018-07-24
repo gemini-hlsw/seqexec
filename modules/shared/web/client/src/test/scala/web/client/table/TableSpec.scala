@@ -24,11 +24,17 @@ final class TableSpec extends CatsSuite {
   val genFixedColumnWidth: Gen[FixedColumnWidth] =
     Gen.posNum[Int].map(FixedColumnWidth.apply)
 
+  implicit val fixedColumnWidthArb: Arbitrary[FixedColumnWidth] =
+    Arbitrary(genFixedColumnWidth)
+
   implicit val fixedColumnWidthCogen: Cogen[FixedColumnWidth] =
     Cogen[Int].contramap(_.width)
 
   val genPercentageColumnWidth: Gen[PercentageColumnWidth] =
     Gen.choose[Double](0, 1).map(PercentageColumnWidth.apply)
+
+  implicit val percentageColumnWidthArb: Arbitrary[PercentageColumnWidth] =
+    Arbitrary(genPercentageColumnWidth)
 
   implicit val percentColumnWidthCogen: Cogen[PercentageColumnWidth] =
     Cogen[Double].contramap(_.percentage)
@@ -102,6 +108,9 @@ final class TableSpec extends CatsSuite {
     Cogen[List[ColumnMeta[A]]].contramap(_.toList)
 
   checkAll("Eq[UserModified]", EqTests[UserModified].eqv)
+  checkAll("Eq[FixedColumnWidth]", EqTests[FixedColumnWidth].eqv)
+  checkAll("Eq[PercentageColumnWidth]", EqTests[PercentageColumnWidth].eqv)
+  checkAll("Eq[ColumnWidth]", EqTests[ColumnWidth].eqv)
   checkAll("Eq[ColumnMeta[Int]]", EqTests[ColumnMeta[Int]].eqv)
   checkAll("Eq[TableState[Int]]", EqTests[TableState[Int]].eqv)
   checkAll("Lens[TableState[A], UserModified]",

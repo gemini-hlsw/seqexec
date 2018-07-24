@@ -20,8 +20,8 @@ import web.client.utils._
 package table {
 
   sealed trait UserModified extends Product with Serializable
-  case object IsModified    extends UserModified
-  case object NotModified   extends UserModified
+  case object IsModified  extends UserModified
+  case object NotModified extends UserModified
 
   object UserModified {
     implicit val eq: Eq[UserModified] = Eq.fromUniversalEquals
@@ -29,32 +29,58 @@ package table {
     def fromBool(b: Boolean): UserModified = b.fold(IsModified, NotModified)
   }
 
-  sealed trait ColumnWidth                                   extends Product with Serializable
-  final case class FixedColumnWidth(width: Int)              extends ColumnWidth
-  final case class PercentageColumnWidth(percentage: Double) extends ColumnWidth
+  sealed trait ColumnWidth extends Product with Serializable
+  final case class FixedColumnWidth private (width: Int) extends ColumnWidth {
+    assert(width >= 0)
+  }
+  final case class PercentageColumnWidth private (percentage: Double) extends ColumnWidth {
+    assert(percentage >= 0 && percentage <= 1)
+  }
+
+  object ColumnWidth {
+    implicit val eq: Eq[ColumnWidth] = Eq[Either[FixedColumnWidth, PercentageColumnWidth]].contramap {
+      case x: FixedColumnWidth      => x.asLeft
+      case x: PercentageColumnWidth => x.asRight
+    }
+  }
+
+  object FixedColumnWidth {
+    implicit val eqFcw: Eq[FixedColumnWidth] = Eq.by(_.width)
+
+    def fromInt(width: Int): Option[FixedColumnWidth] =
+      (width >= 0) option FixedColumnWidth(width)
+  }
+
+  object PercentageColumnWidth {
+    implicit val eqPcw: Eq[PercentageColumnWidth] = Eq.by(_.percentage)
+
+    def fromDouble(percentage: Double): Option[PercentageColumnWidth] =
+      (percentage >= 0 && percentage <= 1) option PercentageColumnWidth(percentage)
+
+    val Full: PercentageColumnWidth = PercentageColumnWidth(1)
+    val Zero: PercentageColumnWidth = PercentageColumnWidth(0)
+    val Half: PercentageColumnWidth = PercentageColumnWidth(0.5)
+  }
 
   /**
-    * State of a table
-    */
-  final case class TableState[A: Eq](userModified: UserModified,
-                                     scrollPosition: JsNumber,
-                                     columns: NonEmptyList[ColumnMeta[A]]) {
+   * State of a table
+   */
+  final case class TableState[A: Eq](userModified: UserModified, scrollPosition: JsNumber, columns: NonEmptyList[ColumnMeta[A]]) {
 
     // Changes the relative widths when a column is being dragged
     def applyOffset(column: A, delta: Double): TableState[A] = {
       val indexOf = columns.toList.indexWhere(_.column === column)
       // Shift the selected column and the next one
       val result = columns.toList.zipWithIndex.map {
-        case (c @ ColumnMeta(_, _, _, true, PercentageColumnWidth(x)), idx)
-            if idx === indexOf =>
-          c.copy(width = PercentageColumnWidth(x + delta))
-        case (c @ ColumnMeta(_, _, _, true, PercentageColumnWidth(x)), idx)
-            if idx === indexOf + 1 =>
-          c.copy(width = PercentageColumnWidth(x - delta))
-        case (c, _) => c
+        case (c @ ColumnMeta(_, _, _, true, PercentageColumnWidth(x)), idx) if idx === indexOf     =>
+          val nv = x + delta
+          (nv >= 0 && nv <= 1).fold(c.copy(width = PercentageColumnWidth(nv)), c)
+        case (c @ ColumnMeta(_, _, _, true, PercentageColumnWidth(x)), idx) if idx === indexOf + 1 =>
+          val nv = x - delta
+          (nv >= 0 && nv <= 1).fold(c.copy(width = PercentageColumnWidth(nv)), c)
+        case (c, _)                                                                                => c
       }
-      copy(userModified = IsModified,
-           columns = NonEmptyList.fromListUnsafe(result))
+      copy(userModified = IsModified, columns = NonEmptyList.fromListUnsafe(result))
     }
 
     // Return the width of a column from the actual column width
@@ -76,36 +102,27 @@ package table {
       Eq.by(x => (x.userModified, x.scrollPosition.toDouble, x.columns))
 
     def userModified[A: Eq]: Lens[TableState[A], UserModified] =
-      Lens[TableState[A], UserModified](_.userModified)(n =>
-        a => a.copy(userModified = n))
+      Lens[TableState[A], UserModified](_.userModified)(n => a => a.copy(userModified = n))
 
     def columns[A: Eq]: Lens[TableState[A], NonEmptyList[ColumnMeta[A]]] =
-      Lens[TableState[A], NonEmptyList[ColumnMeta[A]]](_.columns)(n =>
-        a => a.copy(columns = n))
+      Lens[TableState[A], NonEmptyList[ColumnMeta[A]]](_.columns)(n => a => a.copy(columns = n))
 
     def scrollPosition[A: Eq]: Lens[TableState[A], JsNumber] =
-      Lens[TableState[A], JsNumber](_.scrollPosition)(n =>
-        a => a.copy(scrollPosition = n))
+      Lens[TableState[A], JsNumber](_.scrollPosition)(n => a => a.copy(scrollPosition = n))
   }
 
   /**
-    * Metadata for a column
-    */
-  final case class ColumnMeta[A](column: A,
-                                 name: String,
-                                 label: String,
-                                 visible: Boolean,
-                                 width: ColumnWidth)
+   * Metadata for a column
+   */
+  final case class ColumnMeta[A](column: A, name: String, label: String, visible: Boolean, width: ColumnWidth)
 
   object ColumnMeta {
-    implicit def eqCm[A: Eq]: Eq[ColumnMeta[A]] =
-      Eq.by(x => (x.column, x.name, x.label, x.visible))
+    implicit def eqCm[A: Eq]: Eq[ColumnMeta[A]] = Eq.by(x => (x.column, x.name, x.label, x.visible, x.width))
   }
 
 }
 
 package object table {
-
   // Renderer for a resizable column
   def resizableHeaderRenderer(
       rs: (String, JsNumber) => Callback): HeaderRenderer[js.Object] =
