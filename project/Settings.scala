@@ -80,7 +80,7 @@ object Settings {
 
     // Scala libraries
     val catsEffectVersion       = "0.10.1"
-    val catsVersion             = "1.1.0"
+    val catsVersion             = "1.2.0"
     val mouseVersion            = "0.17"
     val fs2Version              = "0.10.5"
     val shapelessVersion        = "2.3.3"
@@ -103,9 +103,9 @@ object Settings {
     val monocleVersion          = "1.5.1-cats"
     val circeVersion            = "0.9.3"
     val doobieVersion           = "0.5.3"
-    val flywayVersion           = "5.0.7"
+    val flywayVersion           = "5.1.4"
     val tucoVersion             = "0.3.1"
-    val declineVersion          = "0.4.1"
+    val declineVersion          = "0.4.2"
 
     // test libraries
     val scalaTest               = "3.0.5"

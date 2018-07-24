@@ -9,7 +9,7 @@ import cats.kernel.laws.discipline._
 import cats.kernel.Comparison.{ GreaterThan => GT, LessThan => LT, EqualTo => EQ }
 import cats.tests.CatsSuite
 
-@SuppressWarnings(Array("org.wartremover.warts.Equals", "org.wartremover.warts.NonUnitStatements"))
+@SuppressWarnings(Array("org.wartremover.warts.Equals", "org.wartremover.warts.NonUnitStatements", "org.wartremover.warts.TraversableOps"))
 final class LocationSpec extends CatsSuite with Arbitraries {
 
   // Laws
