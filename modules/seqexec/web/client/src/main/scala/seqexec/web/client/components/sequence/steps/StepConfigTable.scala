@@ -32,7 +32,10 @@ object StepConfigTable {
 
   type Backend = RenderScope[Props, TableState[TableColumn], Unit]
 
-  final case class Props(step: Step, size: Size, startState: TableState[TableColumn]) {
+  final case class Props(step: Step,
+                         size: Size,
+                         startState: TableState[TableColumn]) {
+
     val settingsList: List[(SystemName, String, String)] =
       step.config.toList.flatMap {
         case (s, c) =>
@@ -44,7 +47,9 @@ object StepConfigTable {
     val rowCount: Int = settingsList.size
 
     def rowGetter(idx: Int): SettingsRow =
-      settingsList.lift(idx).fold(SettingsRow.Zero)(Function.tupled(SettingsRow.apply))
+      settingsList
+        .lift(idx)
+        .fold(SettingsRow.Zero)(Function.tupled(SettingsRow.apply))
   }
 
   // ScalaJS defined trait
@@ -54,8 +59,10 @@ object StepConfigTable {
     var name: String
     var value: String
   }
+
   // scalastyle:on
   object SettingsRow {
+
     @SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf"))
     def apply(sub: SystemName, name: String, value: String): SettingsRow = {
       val p = (new js.Object).asInstanceOf[SettingsRow]
@@ -71,10 +78,24 @@ object StepConfigTable {
     val Zero: SettingsRow = apply(SystemName.ocs, "", "")
   }
 
-  val TableColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](NameColumn, name = "name", label = "Name", visible = true, PercentageColumnWidth(0.5))
-  val ValueColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](ValueColumn, name = "value", label = "Value", visible = true, PercentageColumnWidth(0.5))
+  val TableColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
+    NameColumn,
+    name = "name",
+    label = "Name",
+    visible = true,
+    PercentageColumnWidth(0.5))
 
-  val InitialTableState: TableState[TableColumn] = TableState[TableColumn](NotModified, 0, NonEmptyList.of(TableColumnMeta, ValueColumnMeta))
+  val ValueColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
+    ValueColumn,
+    name = "value",
+    label = "Value",
+    visible = true,
+    PercentageColumnWidth(0.5))
+
+  val InitialTableState: TableState[TableColumn] = TableState[TableColumn](
+    NotModified,
+    0,
+    NonEmptyList.of(TableColumnMeta, ValueColumnMeta))
 
   private def columns(b: Backend): List[Table.ColumnArg] = {
     val width = b.props.size.width
@@ -82,15 +103,33 @@ object StepConfigTable {
     def resizeRow(c: TableColumn): (String, JsNumber) => Callback =
       (_, dx) => {
         val percentDelta = dx.toDouble / width
-        val s = b.state.applyOffset(c, percentDelta)
-        b.setState(s) >> SeqexecCircuit.dispatchCB(UpdateStepsConfigTableState(s))
+        val s            = b.state.applyOffset(c, percentDelta)
+        b.setState(s) >> SeqexecCircuit.dispatchCB(
+          UpdateStepsConfigTableState(s))
       }
 
     b.state.columns.zipWithIndex.map {
-      case (ColumnMeta(c, name, label, true, PercentageColumnWidth(percentage)), i) if i < b.state.columns.length - 1 =>
-        Column(Column.props(width * percentage, name, label = label, flexShrink = 0, flexGrow = 0, headerRenderer = resizableHeaderRenderer(resizeRow(c)), className = SeqexecStyles.paddedStepRow.htmlClass))
-      case (ColumnMeta(_, name, label, true, PercentageColumnWidth(percentage)), _)                                   =>
-        Column(Column.props(width * percentage, name, label = label, flexShrink = 0, flexGrow = 0, className = SeqexecStyles.paddedStepRow.htmlClass))
+      case (ColumnMeta(c, name, label, true, PercentageColumnWidth(percentage)), i)
+        if i < b.state.columns.length - 1 =>
+        Column(
+          Column.props(
+            width * percentage,
+            name,
+            label = label,
+            flexShrink = 0,
+            flexGrow = 0,
+            headerRenderer = resizableHeaderRenderer(resizeRow(c)),
+            className = SeqexecStyles.paddedStepRow.htmlClass
+          ))
+      case (ColumnMeta(_, name, label, true, PercentageColumnWidth(percentage)), _)
+                                          =>
+        Column(
+          Column.props(width * percentage,
+                       name,
+                       label = label,
+                       flexShrink = 0,
+                       flexGrow = 0,
+                       className = SeqexecStyles.paddedStepRow.htmlClass))
     }.toList
   }
 
@@ -99,20 +138,21 @@ object StepConfigTable {
     b.setState(s) >> SeqexecCircuit.dispatchCB(UpdateStepsConfigTableState(s))
   }
 
-  def rowClassName(p: Props)(i: Int): String = ((i, p.rowGetter(i)) match {
-    case (-1, _)                                                  =>
-      SeqexecStyles.headerRowStyle
-    case (_, SettingsRow(s, _, _)) if s === SystemName.instrument =>
-      SeqexecStyles.stepRow |+| SeqexecStyles.rowPositive
-    case (_, SettingsRow(s, _, _)) if s === SystemName.telescope  =>
-      SeqexecStyles.stepRow |+| SeqexecStyles.rowWarning
-    case (_, SettingsRow(_, n, _)) if n.startsWith("observe:")    =>
-      SeqexecStyles.stepRow |+| SeqexecStyles.observeConfig
-    case (_, SettingsRow(_, n, _)) if n.startsWith("ocs:")        =>
-      SeqexecStyles.stepRow |+| SeqexecStyles.observeConfig
-    case _                                                        =>
-      SeqexecStyles.stepRow
-  }).htmlClass
+  def rowClassName(p: Props)(i: Int): String =
+    ((i, p.rowGetter(i)) match {
+      case (-1, _) =>
+        SeqexecStyles.headerRowStyle
+      case (_, SettingsRow(s, _, _)) if s === SystemName.instrument =>
+        SeqexecStyles.stepRow |+| SeqexecStyles.rowPositive
+      case (_, SettingsRow(s, _, _)) if s === SystemName.telescope  =>
+        SeqexecStyles.stepRow |+| SeqexecStyles.rowWarning
+      case (_, SettingsRow(_, n, _)) if n.startsWith("observe:")    =>
+        SeqexecStyles.stepRow |+| SeqexecStyles.observeConfig
+      case (_, SettingsRow(_, n, _)) if n.startsWith("ocs:")        =>
+        SeqexecStyles.stepRow |+| SeqexecStyles.observeConfig
+      case _                                                        =>
+        SeqexecStyles.stepRow
+    }).htmlClass
 
   def settingsTableProps(b: Backend): Table.Props = {
     val p = b.props
@@ -123,7 +163,7 @@ object StepConfigTable {
           ^.cls := "ui center aligned segment noRows",
           ^.height := p.size.height.px,
           "No configuration for step"
-        ),
+      ),
       overscanRowCount = SeqexecStyles.overscanRowCount,
       height = p.size.height.toInt,
       rowCount = p.rowCount,
@@ -134,15 +174,18 @@ object StepConfigTable {
       scrollTop = b.state.scrollPosition,
       headerClassName = SeqexecStyles.tableHeader.htmlClass,
       onScroll = (_, _, pos) => updateScrollPosition(b, pos),
-      headerHeight = SeqexecStyles.headerHeight)
+      headerHeight = SeqexecStyles.headerHeight
+    )
   }
 
-  private val component = ScalaComponent.builder[Props]("StepConfig")
+  private val component = ScalaComponent
+    .builder[Props]("StepConfig")
     .initialStateFromProps(_.startState)
     .render { b =>
       Table(settingsTableProps(b), columns(b): _*)
     }
     .build
 
-  def apply(p: Props): Unmounted[Props, TableState[TableColumn], Unit] = component(p)
+  def apply(p: Props): Unmounted[Props, TableState[TableColumn], Unit] =
+    component(p)
 }
