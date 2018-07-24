@@ -14,9 +14,9 @@ trait GiapiArbitraries {
     for {
       m <- arbitrary[Map[String, String]]
     } yield
-      (m.map {
+      m.map {
           case (k, v) => Configuration.single(k, v)
-        })
+        }
         .toList
         .combineAll
   }
