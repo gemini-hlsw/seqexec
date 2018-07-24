@@ -3,8 +3,14 @@
 
 package seqexec.web.client.components.sequence.steps
 
-import scala.scalajs.js
+import cats.implicits._
 import diode.react.ModelProxy
+import japgolly.scalajs.react._
+import japgolly.scalajs.react.extra.router.RouterCtl
+import japgolly.scalajs.react.component.Scala.Unmounted
+import japgolly.scalajs.react.vdom.html_<^._
+import scala.scalajs.js
+import mouse.boolean._
 import seqexec.model.Model.{Instrument, StandardStep, Step, StepState, StepType}
 import seqexec.model.properties
 import seqexec.web.client.lenses._
@@ -14,14 +20,9 @@ import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.components.sequence.steps.OffsetFns._
 import seqexec.web.client.semanticui.elements.icon.Icon._
 import seqexec.web.client.semanticui.{Size => SSize}
-import web.client.style._
-import japgolly.scalajs.react._
-import japgolly.scalajs.react.extra.router.RouterCtl
-import japgolly.scalajs.react.component.Scala.Unmounted
-import japgolly.scalajs.react.vdom.html_<^._
-import cats.implicits._
 import react.virtualized._
-import mouse.boolean._
+import web.client.style._
+import web.client.table._
 
 object ColWidths {
   val ControlWidth: Int = 40
@@ -70,6 +71,7 @@ object StepsTable {
     val stepsList: List[Step] = steps.map(_.steps).getOrElse(Nil)
     def rowCount: Int = stepsList.length
     def rowGetter(idx: Int): StepRow = steps.flatMap(_.steps.lift(idx)).fold(StepRow.Zero)(StepRow.apply)
+    val configTableState: TableState[StepConfigTable.TableColumn] = stepsTable().configTableState
     // Find out if offsets should be displayed
     val offsetsDisplay: OffsetsDisplay = stepsList.offsetsDisplay
   }
@@ -248,7 +250,7 @@ object StepsTable {
         p.steps.whenDefined { tab =>
           tab.stepConfigDisplayed.map { i =>
             val steps = p.stepsList.lift(i).getOrElse(Step.Zero)
-            AutoSizer(AutoSizer.props(s => StepConfigTable(StepConfigTable.Props(steps, s))))
+            AutoSizer(AutoSizer.props(s => StepConfigTable(StepConfigTable.Props(steps, s, p.configTableState))))
           }.getOrElse {
             AutoSizer(AutoSizer.props(s => ref.component(stepsTableProps(p)(s))(columns(p, s).map(_.vdomElement): _*)))
           }.vdomElement

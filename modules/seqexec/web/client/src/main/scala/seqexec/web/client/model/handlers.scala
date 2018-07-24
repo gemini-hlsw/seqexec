@@ -706,4 +706,17 @@ object handlers {
         }))
     }
   }
+
+  /**
+    * Handle to preserve the steps table state
+    */
+  class StepConfigTableStateHandler[M](modelRW: ModelRW[M, TableStates]) extends ActionHandler(modelRW) with Handlers {
+    override def handle: PartialFunction[Any, ActionResult[M]] = {
+      case UpdateStepsConfigTableState(state) =>
+        updatedSilent(value.copy(stepConfigTable = state)) // We should only do silent updates as these change too quickly
+
+      case UpdateQueueTableState(state) =>
+        updatedSilent(value.copy(queueTable = state)) // We should only do silent updates as these change too quickly
+    }
+  }
 }
