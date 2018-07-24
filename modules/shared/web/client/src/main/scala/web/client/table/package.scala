@@ -15,9 +15,10 @@ import monocle.Lens
 import mouse.boolean._
 import react.virtualized._
 import react.draggable._
+import web.client.utils._
 
 package table {
-  sealed trait UserModified
+  sealed trait UserModified extends Product with Serializable
   case object IsModified extends UserModified
   case object NotModified extends UserModified
 
@@ -27,7 +28,7 @@ package table {
     def fromBool(b: Boolean): UserModified = b.fold(IsModified, NotModified)
   }
 
-  sealed trait ColumnWidth
+  sealed trait ColumnWidth extends Product with Serializable
   final case class FixedColumnWidth(width: Int) extends ColumnWidth
   final case class PercentageColumnWidth(percentage: Double) extends ColumnWidth
 
@@ -45,7 +46,7 @@ package table {
           c.copy(width = PercentageColumnWidth(x + delta))
         case (c @ ColumnMeta(_, _, _, true, PercentageColumnWidth(x)), idx) if idx === indexOf + 1 =>
           c.copy(width = PercentageColumnWidth(x - delta))
-        case (c, _)                                                => c
+        case (c, _)                                                                                => c
       }
       copy(userModified = IsModified, columns = NonEmptyList.fromListUnsafe(result))
     }
@@ -65,6 +66,8 @@ package table {
   }
 
   object TableState {
+    implicit def eqTs[A: Eq]: Eq[TableState[A]] = Eq.by(x => (x.userModified, x.scrollPosition.toDouble, x.columns))
+
     def userModified[A: Eq]: Lens[TableState[A], UserModified] =
       Lens[TableState[A], UserModified](_.userModified)(n => a => a.copy(userModified = n))
 
@@ -79,6 +82,11 @@ package table {
    * Metadata for a column
    */
   final case class ColumnMeta[A](column: A, name: String, label: String, visible: Boolean, width: ColumnWidth)
+
+  object ColumnMeta {
+    implicit def eqCm[A: Eq]: Eq[ColumnMeta[A]] = Eq.by(x => (x.column, x.name, x.label, x.visible))
+  }
+
 }
 
 package object table {
