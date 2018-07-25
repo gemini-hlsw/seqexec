@@ -453,7 +453,6 @@ lazy val seqexec_web_client = project.in(file("modules/seqexec/web/client"))
       "react-dom"               -> LibraryVersions.reactJS,
       "react-virtualized"       -> LibraryVersions.reactVirtualized,
       "react-draggable"         -> LibraryVersions.reactDraggable,
-      "react-copy-to-clipboard" -> LibraryVersions.reactClipboard,
       "jquery"                  -> LibraryVersions.jQuery,
       "semantic-ui-dropdown"    -> LibraryVersions.semanticUI,
       "semantic-ui-modal"       -> LibraryVersions.semanticUI,

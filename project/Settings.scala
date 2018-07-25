@@ -75,7 +75,7 @@ object Settings {
     val javaLogJS               = "0.1.5"
     val scalaJQuery             = "1.2"
     val scalaJSReactVirtualized = "0.3.2"
-    val scalaJSReactClipboard   = "0.3.1"
+    val scalaJSReactClipboard   = "0.4.0"
     val scalaJSReactDraggable   = "0.1.1"
 
     // Scala libraries
@@ -123,7 +123,6 @@ object Settings {
     val uglifyJs                = "1.2.4"
     val reactVirtualized        = "9.20.1"
     val reactDraggable          = "3.0.5"
-    val reactClipboard          = "5.0.0"
 
     val apacheXMLRPC            = "3.1.3"
     val opencsv                 = "2.1"
