@@ -133,18 +133,19 @@ object ModelOps {
   object InstrumentProperties {
     case object Disperser extends InstrumentProperties
     case object Offsets extends InstrumentProperties
+    case object FPU extends InstrumentProperties
   }
 
   implicit class InstrumentOps(val i: Instrument) extends AnyVal {
 
     def displayItems: Set[InstrumentProperties] = i match {
-      case Instrument.F2    => Set(InstrumentProperties.Offsets)
-      case Instrument.GmosS => Set(InstrumentProperties.Offsets, InstrumentProperties.Disperser)
-      case Instrument.GmosN => Set(InstrumentProperties.Offsets, InstrumentProperties.Disperser)
-      case Instrument.GNIRS => Set(InstrumentProperties.Offsets, InstrumentProperties.Disperser)
+      case Instrument.F2    => Set(InstrumentProperties.Offsets, InstrumentProperties.FPU)
+      case Instrument.GmosS => Set(InstrumentProperties.Offsets, InstrumentProperties.Disperser, InstrumentProperties.FPU)
+      case Instrument.GmosN => Set(InstrumentProperties.Offsets, InstrumentProperties.Disperser, InstrumentProperties.FPU)
+      case Instrument.GNIRS => Set(InstrumentProperties.Offsets, InstrumentProperties.Disperser, InstrumentProperties.FPU)
       case Instrument.GPI   => Set.empty
-      case Instrument.GHOST => Set(InstrumentProperties.Offsets)
-      case _                => Set(InstrumentProperties.Offsets)
+      case Instrument.GHOST => Set.empty
+      case _                => Set(InstrumentProperties.Offsets, InstrumentProperties.FPU)
     }
   }
 
