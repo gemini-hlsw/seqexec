@@ -175,7 +175,7 @@ object StepsTable {
 
       val (offsetColumn, offsetWidth) =
         p.offsetsDisplay match {
-          case OffsetsDisplay.DisplayOffsets(x) =>
+          case OffsetsDisplay.DisplayOffsets(x) if (p.steps.exists(s => s.instrument.displayItems.contains(InstrumentProperties.Offsets))) =>
             val width = ColWidths.OffsetWidthBase + x
             (Column(Column.props(width, "offset", label = "Offset", flexShrink = 0, flexGrow = 0, disableSort = true, cellRenderer = stepStatusRenderer(p.offsetsDisplay))).some, width)
           case _ => (None, 0)
