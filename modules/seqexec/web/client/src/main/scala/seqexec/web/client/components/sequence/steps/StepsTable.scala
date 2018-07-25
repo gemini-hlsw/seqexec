@@ -12,9 +12,9 @@ import japgolly.scalajs.react.vdom.html_<^._
 import scala.scalajs.js
 import mouse.boolean._
 import seqexec.model.Model.{Instrument, StandardStep, Step, StepState, StepType}
-import seqexec.model.properties
 import seqexec.web.client.lenses._
 import seqexec.web.client.model.Pages.SeqexecPages
+import seqexec.web.client.ModelOps._
 import seqexec.web.client.circuit.{ClientStatus, StepsTableAndStatusFocus, StepsTableFocus}
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.components.sequence.steps.OffsetFns._
@@ -181,7 +181,7 @@ object StepsTable {
           case _ => (None, 0)
         }
       val disperserColumn =
-        if (p.steps.exists(s => properties.instrumentProperties(s.instrument).contains(properties.Disperser)))
+        if (p.steps.exists(s => s.instrument.displayItems.contains(InstrumentProperties.Disperser)))
           ((i: StepsTableFocus) => Column(Column.props(ColWidths.DisperserWidth, "disperser", label = "Disperser", flexShrink = 0, flexGrow = 0, disableSort = true, className = SeqexecStyles.centeredCell.htmlClass, cellRenderer = stepDisperserRenderer(i.instrument)))).some
         else
           None

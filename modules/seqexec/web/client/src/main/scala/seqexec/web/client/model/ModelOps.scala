@@ -129,4 +129,23 @@ object ModelOps {
     }
   }
 
+  sealed trait InstrumentProperties
+  object InstrumentProperties {
+    case object Disperser extends InstrumentProperties
+    case object Offsets extends InstrumentProperties
+  }
+
+  implicit class InstrumentOps(val i: Instrument) extends AnyVal {
+
+    def displayItems: Set[InstrumentProperties] = i match {
+      case Instrument.F2    => Set(InstrumentProperties.Offsets)
+      case Instrument.GmosS => Set(InstrumentProperties.Offsets, InstrumentProperties.Disperser)
+      case Instrument.GmosN => Set(InstrumentProperties.Offsets, InstrumentProperties.Disperser)
+      case Instrument.GNIRS => Set(InstrumentProperties.Offsets, InstrumentProperties.Disperser)
+      case Instrument.GPI   => Set.empty
+      case Instrument.GHOST => Set(InstrumentProperties.Offsets)
+      case _                => Set(InstrumentProperties.Offsets)
+    }
+  }
+
 }
