@@ -95,7 +95,7 @@ final class Service[M[_]: Sync: LiftIO] private (private val xa: Transactor[M], 
      * existing program with the same id.
      */
     def importProgram(host: String, pid: Program.Id): M[Either[String, Unit]] =
-      log.log(user, s"ocs2.importProgram($host, $pid") {
+      log.log(user, s"ocs2.importProgram($host, $pid)") {
         OdbClient.fetchProgram[IO](host, pid).liftIO[M].flatMap { _.traverse { case (p, ds) =>
           Importer.importProgram(p, ds).transact(xa)
         }}

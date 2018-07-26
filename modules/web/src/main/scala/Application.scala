@@ -51,12 +51,12 @@ object Application {
         }
 
       // Select an observation by id.
-//      case GET -> Root / "api" / "fetch" / "obs" / o as gs =>
-//        withObsId(o) { oid =>
-//          gs.queryObservationById(oid).flatMap { obs =>
-//            Ok(obs.asJson)
-//          }
-//        }
+      case GET -> Root / "api" / "fetch" / "obs" / o as gs =>
+        withObsId(o) { oid =>
+          gs.queryObservationById(oid).flatMap { obs =>
+            Ok(obs.asJson)
+          }
+        }
     }
 
 }
