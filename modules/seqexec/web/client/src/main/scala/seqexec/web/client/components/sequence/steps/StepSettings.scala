@@ -321,3 +321,22 @@ object ObjectTypeCell {
 
   def apply(i: Props): Unmounted[Props, Unit, Unit] = component(i)
 }
+
+/**
+ * Component to display the Observing Mode (GPI Only)
+ */
+object ObservingModeCell {
+  final case class Props(s: Step)
+
+  private val component = ScalaComponent.builder[Props]("ObsModeCell")
+    .stateless
+    .render_P { p =>
+      <.div(
+        SeqexecStyles.componentLabel,
+        instrumentObservingModeO.getOption(p.s).getOrElse("Unknown"): String
+      )
+    }
+    .build
+
+  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
+}

@@ -134,6 +134,7 @@ object ModelOps {
     case object Disperser extends InstrumentProperties
     case object Offsets extends InstrumentProperties
     case object FPU extends InstrumentProperties
+    case object ObservingMode extends InstrumentProperties
   }
 
   implicit class InstrumentOps(val i: Instrument) extends AnyVal {
@@ -143,7 +144,7 @@ object ModelOps {
       case Instrument.GmosS => Set(InstrumentProperties.Offsets, InstrumentProperties.Disperser, InstrumentProperties.FPU)
       case Instrument.GmosN => Set(InstrumentProperties.Offsets, InstrumentProperties.Disperser, InstrumentProperties.FPU)
       case Instrument.GNIRS => Set(InstrumentProperties.Offsets, InstrumentProperties.Disperser, InstrumentProperties.FPU)
-      case Instrument.GPI   => Set.empty
+      case Instrument.GPI   => Set(InstrumentProperties.ObservingMode)
       case Instrument.GHOST => Set.empty
       case _                => Set(InstrumentProperties.Offsets, InstrumentProperties.FPU)
     }

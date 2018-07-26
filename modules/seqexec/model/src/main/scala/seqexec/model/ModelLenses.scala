@@ -178,6 +178,10 @@ trait ModelLenses {
   val instrumentDisperserO: Optional[Step, String] =
     stepObserveOptional(SystemName.instrument, "disperser", Iso.id[String].asPrism)
 
+  // Composite lens to find the instrument observing mode on GPI
+  val instrumentObservingModeO: Optional[Step, String] =
+    stepObserveOptional(SystemName.instrument, "observingMode", Iso.id[String].asPrism)
+
   // Composite lens to find the central wavelength for a disperser
   val instrumentDisperserLambdaO: Optional[Step, Double] =
     stepObserveOptional(SystemName.instrument, "disperserLambda", stringToDoubleP)

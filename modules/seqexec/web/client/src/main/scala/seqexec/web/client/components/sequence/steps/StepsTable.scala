@@ -31,6 +31,7 @@ object ColWidths {
   val OffsetWidthBase: Int = 75
   val ExposureWidth: Int = 75
   val DisperserWidth: Int = 100
+  val ObservingModeWidth: Int = 180
   val FilterWidth: Int = 100
   val FPUWidth: Int = 100
   val ObjectTypeWidth: Int = 75
@@ -79,6 +80,7 @@ object StepsTable {
     val showOffsets: Boolean = showProp(InstrumentProperties.Offsets)
     val showDisperser: Boolean = showProp(InstrumentProperties.Disperser)
     val showFPU: Boolean = showProp(InstrumentProperties.FPU)
+    val showObservingMode: Boolean = showProp(InstrumentProperties.ObservingMode)
   }
 
   val controlHeaderRenderer: HeaderRenderer[js.Object] = (_, _, _, _, _, _) =>
@@ -121,6 +123,9 @@ object StepsTable {
 
   def stepFPURenderer(i: Instrument): CellRenderer[js.Object, js.Object, StepRow] = (_, _, _, row: StepRow, _) =>
     FPUCell(FPUCell.Props(row.step, i))
+
+  val stepObsModeRenderer: CellRenderer[js.Object, js.Object, StepRow] = (_, _, _, row: StepRow, _) =>
+    ObservingModeCell(ObservingModeCell.Props(row.step))
 
   def stepObjectTypeRenderer(size: SSize): CellRenderer[js.Object, js.Object, StepRow] = (_, _, _, row: StepRow, _) =>
     ObjectTypeCell(ObjectTypeCell.Props(row.step, size))
@@ -170,7 +175,6 @@ object StepsTable {
     private val PhoneCut = 412
     private val LargePhoneCut = 767
 
-
     val idxColumn: Table.ColumnArg =
       Column(Column.propsNoFlex(ColWidths.IdxWidth, "idx", label = "Step", disableSort = true, className = SeqexecStyles.paddedStepRow.htmlClass, cellRenderer = stepIdRenderer))
 
@@ -209,6 +213,12 @@ object StepsTable {
         if fpuVisible
       } yield col
 
+    def observingModeColumn(p: Props): Option[Table.ColumnArg] =
+      for {
+        col <- p.steps.map(i => Column(Column.propsNoFlex(ColWidths.ObservingModeWidth, "obsMode", label = "Observing Mode", disableSort = true, className = SeqexecStyles.centeredCell.htmlClass, cellRenderer = stepObsModeRenderer)))
+        if p.showObservingMode
+      } yield col
+
     def filterColumn(p: Props, filterVisible: Boolean): Option[Table.ColumnArg] =
       p.steps.map(i => Column(Column.propsNoFlex(ColWidths.FilterWidth, "filter", label = "Filter", disableSort = true, className = SeqexecStyles.centeredCell.htmlClass, cellRenderer = stepFilterRenderer(i.instrument)))).filter(_ => filterVisible)
 
@@ -228,6 +238,7 @@ object StepsTable {
 
       val (offsetCol, offsetWidth) = offsetColumn(p, offsetVisible)
       val disperserCol = disperserColumn(p, disperserVisible)
+      val observingModeCol = observingModeColumn(p)
       val exposureCol = exposureColumn(p, exposureVisible)
       val fpuCol: Option[Table.ColumnArg] = fpuColumn(p, fpuVisible)
       val iconCol = iconColumn(p)
@@ -236,7 +247,18 @@ object StepsTable {
       val settingsCol = settingsColumn(p)
 
       // Let's precisely calculate the width of the control column
-      val controlWidth = s.width - (ColWidths.ControlWidth + ColWidths.IdxWidth + offsetCol.fold(0)(_ => offsetWidth) + exposureCol.fold(0)(_ => ColWidths.ExposureWidth) + disperserCol.fold(0)(_ => ColWidths.DisperserWidth) + filterCol.fold(0)(_ => ColWidths.FilterWidth) + fpuCol.fold(0)(_ => ColWidths.FPUWidth) + ColWidths.ObjectTypeWidth + ColWidths.SettingsWidth)
+      val colsWidth =
+        ColWidths.ControlWidth +
+        ColWidths.IdxWidth +
+        offsetCol.fold(0)(_ => offsetWidth) +
+        exposureCol.fold(0)(_ => ColWidths.ExposureWidth) +
+        disperserCol.fold(0)(_ => ColWidths.DisperserWidth) +
+        filterCol.fold(0)(_ => ColWidths.FilterWidth) +
+        fpuCol.fold(0)(_ => ColWidths.FPUWidth) +
+        observingModeCol.fold(0)(_ => ColWidths.ObservingModeWidth) +
+        ColWidths.ObjectTypeWidth +
+        ColWidths.SettingsWidth
+      val controlWidth = s.width - colsWidth
 
       val stateCol = stateColumn(p, controlWidth)
 
@@ -245,6 +267,7 @@ object StepsTable {
         idxColumn.some,
         stateCol,
         offsetCol,
+        observingModeCol,
         exposureCol,
         disperserCol,
         filterCol,
