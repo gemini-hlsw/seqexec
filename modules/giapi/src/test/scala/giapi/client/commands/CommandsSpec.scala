@@ -3,14 +3,14 @@
 
 package giapi.client.commands
 
-import cats.tests.CatsSuite
 import cats.kernel.laws.discipline._
+import cats.tests.CatsSuite
 import giapi.client.GiapiArbitraries
 
 /**
   * Tests Command typeclasses
   */
-final class CommandSpec extends CatsSuite with GiapiArbitraries {
+final class CommandsSpec extends CatsSuite with GiapiArbitraries {
   checkAll("Eq[Configuration]", EqTests[Configuration].eqv)
   checkAll("Monoid[Configuration]", MonoidTests[Configuration].monoid)
 }
