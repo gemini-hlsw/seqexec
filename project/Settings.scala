@@ -133,6 +133,8 @@ object Settings {
     val giapiJmsProvider        = "1.6.2"
     val giapiCommandsClient     = "0.2.2"
     val giapiStatusService      = "0.6.2"
+    val gmpStatusGateway        = "0.3.2"
+    val gmpStatusDatabase       = "0.3.2"
     val guava                   = "25.0-jre"
   }
 
@@ -253,6 +255,8 @@ object Settings {
     val Giapi               = "edu.gemini.aspen"     % "giapi"                   % LibraryVersions.giapi
     val GiapiCommandsClient = "edu.gemini.aspen.gmp" % "gmp-commands-jms-client" % LibraryVersions.giapiCommandsClient
     val GiapiStatusService  = "edu.gemini.aspen"     % "giapi-status-service"    % LibraryVersions.giapiStatusService
+    val GmpStatusGateway    = "edu.gemini.aspen.gmp" % "gmp-status-gateway"      % LibraryVersions.gmpStatusGateway
+    val GmpStatusDatabase   = "edu.gemini.aspen.gmp" % "gmp-statusdb"            % LibraryVersions.gmpStatusDatabase
     val Guava               = "com.google.guava"     % "guava"                   % LibraryVersions.guava
   }
 

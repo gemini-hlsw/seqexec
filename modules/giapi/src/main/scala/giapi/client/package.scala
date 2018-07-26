@@ -36,6 +36,8 @@ package client {
 
   import giapi.client.commands.CommandResult
 
+  final case class GiapiException(str: String) extends RuntimeException(str)
+
   /**
     * Typeclass to present as evidence when calling `Giapi.get`
     */
@@ -75,6 +77,11 @@ package client {
     def get[A: ItemGetter](statusItem: String): F[A]
 
     /**
+      * Attempts to read a value. If not found an empty F is returned
+      */
+    def getO[A: ItemGetter](statusItem: String): F[Option[A]]
+
+    /**
       * Executes a command as defined on GIAPI
       * Note that commands can end in ERROR or COMPLETED
       * Giapi has an extra case where we have a command ACCEPTED and it will complete in the future
@@ -103,7 +110,7 @@ package client {
     private final case class StatusStreamer(aggregate: StatusHandlerAggregate, ss: StatusService)
 
     private def statusGetter[F[_]: Sync](c: ActiveMQJmsProvider): F[StatusGetter] = Sync[F].delay {
-      val sg = new StatusGetter("client")
+      val sg = new StatusGetter("statusGetter")
       sg.startJms(c)
       sg
     }
@@ -156,6 +163,7 @@ package client {
       * @param url Url to connect to
       * @tparam F Effect type
       */
+    // scalastyle:off
     def giapiConnection[F[_]: Effect](url: String, commandsTimeout: Duration): GiapiConnection[F] =
       new GiapiConnection[F] {
         private def giapi(c: ActiveMQJmsProvider,
@@ -163,11 +171,21 @@ package client {
                           cc: CommandSenderClient,
                           ss: StatusStreamer) =
           new Giapi[F] {
+            @SuppressWarnings(Array("org.wartremover.warts.Throw"))
             override def get[A: ItemGetter](statusItem: String): F[A] =
               Sync[F].delay {
                 val item = sg.getStatusItem[A](statusItem)
-                // Note item.getValue can throw if e.g. the item is unknown
-                item.getValue
+                // Note item.getValue can throw if e.g. the item is unknown, let's avoid NPEs though
+                Option(item) match {
+                  case Some(i) => i.getValue
+                  case None    => throw GiapiException(s"Status item $statusItem not found")
+                }
+              }
+
+            def getO[A: ItemGetter](statusItem: String): F[Option[A]] =
+              Sync[F].delay {
+                val item = sg.getStatusItem[A](statusItem)
+                Option(item).map(_.getValue)
               }
 
             override def command(command: Command): F[CommandResult] =
@@ -202,6 +220,7 @@ package client {
             c   <- build(ref)                                  // Build the interpreter
           } yield c
       }
+      // scalastyle:on
 
     /**
       * Interpreter on Id
@@ -209,6 +228,7 @@ package client {
     def giapiConnectionId: GiapiConnection[Id] = new GiapiConnection[Id] {
       override def connect: Id[Giapi[Id]] = new Giapi[Id] {
         override def get[A: ItemGetter](statusItem: String): Id[A] = sys.error(s"Cannot read $statusItem")
+        override def getO[A: ItemGetter](statusItem: String): Id[Option[A]] = None
         override def stream[A: ItemGetter](statusItem: String, ec: ExecutionContext): Id[Stream[Id, A]] = Stream.raiseError(new RuntimeException(s"Cannot read $statusItem"))
         override def command(command: Command): Id[CommandResult] = Completed(Response.COMPLETED)
         override def close: Id[Unit] = ()
@@ -221,6 +241,7 @@ package client {
     def giapiConnectionIO: GiapiConnection[IO] = new GiapiConnection[IO] {
       override def connect: IO[Giapi[IO]] = IO.pure(new Giapi[IO] {
         override def get[A: ItemGetter](statusItem: String): IO[A] = IO.raiseError(new RuntimeException(s"Cannot read $statusItem"))
+        override def getO[A: ItemGetter](statusItem: String): IO[Option[A]] = IO.pure(None)
         override def stream[A: ItemGetter](statusItem: String, ec: ExecutionContext): IO[Stream[IO, A]] = IO.pure(Stream.empty.covary[IO])
         override def command(command: Command): IO[CommandResult] = IO.pure(Completed(Response.COMPLETED))
         override def close: IO[Unit] = IO.unit
