@@ -9,6 +9,7 @@ import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.extra.router.RouterCtl
 import gem.Observation
+import gem.enum.{GpiDisperser, GpiFilter, GpiObservingMode}
 import seqexec.model.Model.{FPUMode, Instrument, Step, StepType, StepState}
 import seqexec.web.client.actions.{NavigateSilentTo, FlipSkipStep, FlipBreakpointStep}
 import seqexec.model.enumerations
@@ -164,24 +165,39 @@ object FPUCell {
 object FilterCell {
   final case class Props(s: Step, i: Instrument)
 
+
+  private val gpiObsMode = GpiObservingMode.all.map(x => x.shortName -> x).toMap
+
+  private val gpiFiltersMap: Map[String, GpiFilter] =
+    GpiFilter.all.map(x => (x.shortName, x)).toMap
+
+  def gpiFilter: Step => Option[String] = s => {
+    // Read the filter, if not found deduce it from the obs mode
+    val f: Option[GpiFilter] = instrumentFilterO.getOption(s).flatMap(gpiFiltersMap.get).orElse {
+      for {
+        m <- instrumentObservingModeO.getOption(s)
+        o <- gpiObsMode.get(m)
+        f <- o.filter
+      } yield f
+    }
+    f.map(_.longName)
+  }
+
   private val component = ScalaComponent.builder[Props]("FilterCell")
     .stateless
     .render_P { p =>
 
-      val nameMapper: Map[String, String] = p.i match {
-        case Instrument.GmosS => enumerations.filter.GmosSFilter
-        case Instrument.GmosN => enumerations.filter.GmosNFilter
-        case Instrument.F2    => enumerations.filter.F2Filter
-        case _                => Map.empty
+      def filterName(s: Step): Option[String] = p.i match {
+        case Instrument.GmosS => instrumentFilterO.getOption(s).flatMap(enumerations.filter.GmosSFilter.get)
+        case Instrument.GmosN => instrumentFilterO.getOption(s).flatMap(enumerations.filter.GmosNFilter.get)
+        case Instrument.F2    => instrumentFilterO.getOption(s).flatMap(enumerations.filter.F2Filter.get)
+        case Instrument.GPI   => gpiFilter(s)
+        case _                => None
       }
-
-      val filter = for {
-        filter  <- instrumentFilterO.getOption(p.s)
-      } yield nameMapper.getOrElse(filter, filter)
 
       <.div(
         SeqexecStyles.componentLabel,
-        filter.getOrElse("Unknown"): String
+        filterName(p.s).getOrElse("Unknown"): String
       )
     }
     .build
@@ -195,6 +211,9 @@ object FilterCell {
 object DisperserCell {
   final case class Props(s: Step, i: Instrument)
 
+  val gpiDispersers: Map[String, String] =
+    GpiDisperser.all.map(x => x.shortName -> x.longName).toMap
+
   private val component = ScalaComponent.builder[Props]("DisperserCell")
     .stateless
     .render_P { p =>
@@ -202,6 +221,7 @@ object DisperserCell {
       val nameMapper: Map[String, String] = p.i match {
         case Instrument.GmosS => enumerations.disperser.GmosSDisperser
         case Instrument.GmosN => enumerations.disperser.GmosNDisperser
+        case Instrument.GPI   => gpiDispersers
         case _                => Map.empty
       }
 
@@ -328,14 +348,16 @@ object ObjectTypeCell {
 object ObservingModeCell {
   final case class Props(s: Step)
 
+  private val obsNames = GpiObservingMode.all.map(x => x.shortName -> x.longName).toMap
+
   private val component = ScalaComponent.builder[Props]("ObsModeCell")
     .stateless
-    .render_P { p =>
+    .render_P ( p =>
       <.div(
         SeqexecStyles.componentLabel,
-        instrumentObservingModeO.getOption(p.s).getOrElse("Unknown"): String
+        instrumentObservingModeO.getOption(p.s).flatMap(obsNames.get).getOrElse("Unknown"): String
       )
-    }
+    )
     .build
 
   def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)

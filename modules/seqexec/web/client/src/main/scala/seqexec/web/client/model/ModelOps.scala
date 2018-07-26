@@ -144,7 +144,7 @@ object ModelOps {
       case Instrument.GmosS => Set(InstrumentProperties.Offsets, InstrumentProperties.Disperser, InstrumentProperties.FPU)
       case Instrument.GmosN => Set(InstrumentProperties.Offsets, InstrumentProperties.Disperser, InstrumentProperties.FPU)
       case Instrument.GNIRS => Set(InstrumentProperties.Offsets, InstrumentProperties.Disperser, InstrumentProperties.FPU)
-      case Instrument.GPI   => Set(InstrumentProperties.ObservingMode)
+      case Instrument.GPI   => Set(InstrumentProperties.ObservingMode, InstrumentProperties.Disperser)
       case Instrument.GHOST => Set.empty
       case _                => Set(InstrumentProperties.Offsets, InstrumentProperties.FPU)
     }

@@ -273,7 +273,7 @@ object StepsTable {
         filterCol,
         fpuCol,
         typeCol,
-        settingsCol,
+        settingsCol
       ).collect { case Some(x) => x }
     }
 

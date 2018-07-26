@@ -21,7 +21,7 @@ sealed abstract class GpiDisperser(
 object GpiDisperser {
 
   /** @group Constructors */ case object PRISM extends GpiDisperser("PRISM", "Prism", "Prism")
-  /** @group Constructors */ case object WOLLASTON extends GpiDisperser("WOLLASTON", "Wollaston", "Prism")
+  /** @group Constructors */ case object WOLLASTON extends GpiDisperser("WOLLASTON", "Wollaston", "Wollaston")
 
   /** All members of GpiDisperser, in canonical order. */
   val all: List[GpiDisperser] =
