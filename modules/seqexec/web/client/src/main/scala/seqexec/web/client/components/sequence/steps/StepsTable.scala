@@ -10,7 +10,6 @@ import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 import scala.scalajs.js
-import mouse.boolean._
 import seqexec.model.Model.{Instrument, StandardStep, Step, StepState, StepType}
 import seqexec.web.client.lenses._
 import seqexec.web.client.model.Pages.SeqexecPages
@@ -74,6 +73,12 @@ object StepsTable {
     val configTableState: TableState[StepConfigTable.TableColumn] = stepsTable().configTableState
     // Find out if offsets should be displayed
     val offsetsDisplay: OffsetsDisplay = stepsList.offsetsDisplay
+    private def showProp(p: InstrumentProperties): Boolean =
+      steps.exists(s => s.instrument.displayItems.contains(p))
+
+    val showOffsets: Boolean = showProp(InstrumentProperties.Offsets)
+    val showDisperser: Boolean = showProp(InstrumentProperties.Disperser)
+    val showFPU: Boolean = showProp(InstrumentProperties.FPU)
   }
 
   val controlHeaderRenderer: HeaderRenderer[js.Object] = (_, _, _, _, _, _) =>
@@ -165,6 +170,54 @@ object StepsTable {
     private val PhoneCut = 412
     private val LargePhoneCut = 767
 
+
+    val idxColumn: Table.ColumnArg =
+      Column(Column.propsNoFlex(ColWidths.IdxWidth, "idx", label = "Step", disableSort = true, className = SeqexecStyles.paddedStepRow.htmlClass, cellRenderer = stepIdRenderer))
+
+    def stateColumn(p: Props, controlWidth: Double): Option[Table.ColumnArg] =
+      p.steps.map(i => Column(Column.propsNoFlex(controlWidth, "state", label = "Control", disableSort = true, className = SeqexecStyles.paddedStepRow.htmlClass, cellRenderer = stepProgressRenderer(i, p))))
+
+    def iconColumn(p: Props): Option[Table.ColumnArg] =
+      p.steps.map(i =>
+        Column(Column.propsNoFlex(ColWidths.ControlWidth, "ctl", label = "Icon", disableSort = true, cellRenderer = stepControlRenderer(i, p, recomputeRowHeightsCB), className = SeqexecStyles.controlCellRow.htmlClass, headerRenderer = controlHeaderRenderer, headerClassName = (SeqexecStyles.centeredCell |+| SeqexecStyles.tableHeaderIcons).htmlClass)))
+
+    def offsetColumn(p: Props, offsetVisible: Boolean): (Option[Table.ColumnArg], Int) =
+        p.offsetsDisplay match {
+          case OffsetsDisplay.DisplayOffsets(x) if p.showOffsets =>
+            val width = ColWidths.OffsetWidthBase + x
+            (Column(Column.propsNoFlex(width, "offset", label = "Offset", disableSort = true, cellRenderer = stepStatusRenderer(p.offsetsDisplay))).some.filter(_ => offsetVisible), width)
+          case _ => (None, 0)
+        }
+
+    def disperserColumn(p: Props, disperserVisible: Boolean): Option[Table.ColumnArg] =
+      for {
+        col <- p.steps.map(s => Column(Column.propsNoFlex(ColWidths.DisperserWidth, "disperser", label = "Disperser", disableSort = true, className = SeqexecStyles.centeredCell.htmlClass, cellRenderer = stepDisperserRenderer(s.instrument))))
+        if p.showDisperser
+        if disperserVisible
+      } yield col
+
+    def exposureColumn(p: Props, exposureVisible: Boolean): Option[Table.ColumnArg] =
+      for {
+        col <- p.steps.map(i => Column(Column.propsNoFlex(ColWidths.ExposureWidth, "exposure", label = "Exposure", disableSort = true, className = SeqexecStyles.centeredCell.htmlClass, cellRenderer = stepExposureRenderer(i.instrument))))
+        if exposureVisible
+      } yield col
+
+    def fpuColumn(p: Props, fpuVisible: Boolean): Option[Table.ColumnArg] =
+      for {
+        col <- p.steps.map(i => Column(Column.propsNoFlex(ColWidths.FPUWidth, "fpu", label = "FPU", disableSort = true, className = SeqexecStyles.centeredCell.htmlClass, cellRenderer = stepFPURenderer(i.instrument))))
+        if p.showFPU
+        if fpuVisible
+      } yield col
+
+    def filterColumn(p: Props, filterVisible: Boolean): Option[Table.ColumnArg] =
+      p.steps.map(i => Column(Column.propsNoFlex(ColWidths.FilterWidth, "filter", label = "Filter", disableSort = true, className = SeqexecStyles.centeredCell.htmlClass, cellRenderer = stepFilterRenderer(i.instrument)))).filter(_ => filterVisible)
+
+    def typeColumn(p: Props, objectSize: SSize): Option[Table.ColumnArg] =
+      p.steps.map(i => Column(Column.propsNoFlex(ColWidths.ObjectTypeWidth, "type", label = "Type", disableSort = true, className = SeqexecStyles.centeredCell.htmlClass, cellRenderer = stepObjectTypeRenderer(objectSize))))
+
+    def settingsColumn(p: Props): Option[Table.ColumnArg] =
+      p.steps.map(i => Column(Column.propsNoFlex(ColWidths.SettingsWidth, "set", label = "", disableSort = true, cellRenderer = settingsControlRenderer(p, i), className = SeqexecStyles.settingsCellRow.htmlClass, headerRenderer = settingsHeaderRenderer, headerClassName = (SeqexecStyles.centeredCell |+| SeqexecStyles.tableHeaderIcons).htmlClass)))
+
     // Columns for the table
     private def columns(p: Props, s: Size): List[Table.ColumnArg] = {
       val (offsetVisible, exposureVisible, disperserVisible, fpuVisible, filterVisible, objectSize) = s.width match {
@@ -173,43 +226,31 @@ object StepsTable {
         case _                      => (displayOffsets(p), true, true, true, true, SSize.Small)
       }
 
-      val (offsetColumn, offsetWidth) =
-        p.offsetsDisplay match {
-          case OffsetsDisplay.DisplayOffsets(x) if (p.steps.exists(s => s.instrument.displayItems.contains(InstrumentProperties.Offsets))) =>
-            val width = ColWidths.OffsetWidthBase + x
-            (Column(Column.props(width, "offset", label = "Offset", flexShrink = 0, flexGrow = 0, disableSort = true, cellRenderer = stepStatusRenderer(p.offsetsDisplay))).some.filter(_ => offsetVisible), width)
-          case _ => (None, 0)
-        }
-      val disperserColumn =
-        for {
-          col <- p.steps.map(s => Column(Column.props(ColWidths.DisperserWidth, "disperser", label = "Disperser", flexShrink = 0, flexGrow = 0, disableSort = true, className = SeqexecStyles.centeredCell.htmlClass, cellRenderer = stepDisperserRenderer(s.instrument))))
-          if p.steps.exists(s => s.instrument.displayItems.contains(InstrumentProperties.Disperser))
-          if disperserVisible
-        } yield col
-
-      val fpuColumn: Option[Table.ColumnArg] =
-        for {
-          col <- p.steps.map(i => Column(Column.props(ColWidths.FPUWidth, "fpu", flexShrink = 0, flexGrow = 0, label = "FPU", disableSort = true, className = SeqexecStyles.centeredCell.htmlClass, cellRenderer = stepFPURenderer(i.instrument))))
-          if p.steps.exists(s => s.instrument.displayItems.contains(InstrumentProperties.FPU))
-          if fpuVisible
-        } yield col
-
-        println(fpuColumn)
+      val (offsetCol, offsetWidth) = offsetColumn(p, offsetVisible)
+      val disperserCol = disperserColumn(p, disperserVisible)
+      val exposureCol = exposureColumn(p, exposureVisible)
+      val fpuCol: Option[Table.ColumnArg] = fpuColumn(p, fpuVisible)
+      val iconCol = iconColumn(p)
+      val filterCol = filterColumn(p, filterVisible)
+      val typeCol = typeColumn(p, objectSize)
+      val settingsCol = settingsColumn(p)
 
       // Let's precisely calculate the width of the control column
-      val controlWidth = s.width - (ColWidths.ControlWidth + ColWidths.IdxWidth + offsetColumn.fold(0)(_ => offsetWidth) + exposureVisible.fold(ColWidths.ExposureWidth, 0) + disperserColumn.fold(0)(_ => ColWidths.DisperserWidth) + filterVisible.fold(ColWidths.FilterWidth, 0) + fpuColumn.fold(0)(_ => ColWidths.FPUWidth) + ColWidths.ObjectTypeWidth + ColWidths.SettingsWidth)
+      val controlWidth = s.width - (ColWidths.ControlWidth + ColWidths.IdxWidth + offsetCol.fold(0)(_ => offsetWidth) + exposureCol.fold(0)(_ => ColWidths.ExposureWidth) + disperserCol.fold(0)(_ => ColWidths.DisperserWidth) + filterCol.fold(0)(_ => ColWidths.FilterWidth) + fpuCol.fold(0)(_ => ColWidths.FPUWidth) + ColWidths.ObjectTypeWidth + ColWidths.SettingsWidth)
+
+      val stateCol = stateColumn(p, controlWidth)
 
       List(
-        p.steps.map(i => Column(Column.props(ColWidths.ControlWidth, "ctl", label = "Icon", disableSort = true, cellRenderer = stepControlRenderer(i, p, recomputeRowHeightsCB), flexShrink = 0, className = SeqexecStyles.controlCellRow.htmlClass, headerRenderer = controlHeaderRenderer, headerClassName = (SeqexecStyles.centeredCell |+| SeqexecStyles.tableHeaderIcons).htmlClass))),
-        Column(Column.props(ColWidths.IdxWidth, "idx", label = "Step", flexShrink = 0, flexGrow = 0, disableSort = true, className = SeqexecStyles.paddedStepRow.htmlClass, cellRenderer = stepIdRenderer)).some,
-        p.steps.map(i => Column(Column.props(controlWidth, "state", flexGrow = 0, flexShrink = 0, label = "Control", disableSort = true, className = SeqexecStyles.paddedStepRow.htmlClass, cellRenderer = stepProgressRenderer(i, p)))),
-        offsetColumn,
-        p.steps.map(i => Column(Column.props(ColWidths.ExposureWidth, "exposure", flexShrink = 0, flexGrow = 0, label = "Exposure", disableSort = true, className = SeqexecStyles.centeredCell.htmlClass, cellRenderer = stepExposureRenderer(i.instrument)))).filter(_ => exposureVisible),
-        disperserColumn,
-        p.steps.map(i => Column(Column.props(ColWidths.FilterWidth, "filter", flexGrow = 0, flexShrink = 0, label = "Filter", disableSort = true, className = SeqexecStyles.centeredCell.htmlClass, cellRenderer = stepFilterRenderer(i.instrument)))).filter(_ => filterVisible),
-        fpuColumn,
-        p.steps.map(i => Column(Column.props(ColWidths.ObjectTypeWidth, "type", flexShrink = 0, flexGrow = 0, label = "Type", disableSort = true, className = SeqexecStyles.centeredCell.htmlClass, cellRenderer = stepObjectTypeRenderer(objectSize)))),
-        p.steps.map(i => Column(Column.props(ColWidths.SettingsWidth, "set", flexShrink = 0, flexGrow = 0, label = "", disableSort = true, cellRenderer = settingsControlRenderer(p, i), className = SeqexecStyles.settingsCellRow.htmlClass, headerRenderer = settingsHeaderRenderer, headerClassName = (SeqexecStyles.centeredCell |+| SeqexecStyles.tableHeaderIcons).htmlClass)))
+        iconCol,
+        idxColumn.some,
+        stateCol,
+        offsetCol,
+        exposureCol,
+        disperserCol,
+        filterCol,
+        fpuCol,
+        typeCol,
+        settingsCol,
       ).collect { case Some(x) => x }
     }
 
