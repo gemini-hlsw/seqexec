@@ -128,10 +128,10 @@ object LogArea {
     }
 
     val columns = List(
-      Column(Column.props(TimestampWidth, "local", label = "Timestamp", disableSort = true, flexShrink = 0, flexGrow = 0, className = LogColumnStyle)),
-      Column(Column.props(LevelWidth, "level", label = "Level", disableSort = true, flexShrink = 0, flexGrow = 0, className = LogColumnStyle)),
-      Column(Column.props(size.width.toInt - TimestampWidth - LevelWidth - ClipboardWidth, "msg", label = "Message", disableSort = true, flexShrink = 0, flexGrow = 0, className = LogColumnStyle)),
-      Column(Column.props(ClipboardWidth, "clip", disableSort = true, flexShrink = 0, flexGrow = 0, headerRenderer = clipboardHeaderRenderer, cellRenderer = clipboardCellRenderer, className = SeqexecStyles.clipboardIconDiv.htmlClass, headerClassName = SeqexecStyles.clipboardIconHeader.htmlClass))
+      Column(Column.propsNoFlex(TimestampWidth, "local", label = "Timestamp", className = LogColumnStyle)),
+      Column(Column.propsNoFlex(LevelWidth, "level", label = "Level", className = LogColumnStyle)),
+      Column(Column.propsNoFlex(size.width.toInt - TimestampWidth - LevelWidth - ClipboardWidth, "msg", label = "Message", className = LogColumnStyle)),
+      Column(Column.propsNoFlex(ClipboardWidth, "clip", headerRenderer = clipboardHeaderRenderer, cellRenderer = clipboardCellRenderer, className = SeqexecStyles.clipboardIconDiv.htmlClass, headerClassName = SeqexecStyles.clipboardIconHeader.htmlClass))
     )
 
     def rowClassName(s: State)(i: Int): String = ((i, p.rowGetter(s)(i)) match {

@@ -56,11 +56,11 @@ object Flamingos2Header {
   }
 
   class ObsKeywordsReaderImpl(config: Config) extends ObsKeywordsReader {
-    override def getPreimage: SeqAction[YesNoType] = EitherT(IO.pure(config.extract(INSTRUMENT_KEY / MOS_PREIMAGING_PROP)
-      .as[YesNoType].leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))))
+    override def getPreimage: SeqAction[YesNoType] = EitherT(IO.pure(config.extractAs[YesNoType](INSTRUMENT_KEY / MOS_PREIMAGING_PROP)
+      leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))))
 
-    override def getReadMode: SeqAction[ReadMode] = EitherT(IO.pure(config.extract(INSTRUMENT_KEY / READMODE_PROP)
-      .as[ReadMode].leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))))
+    override def getReadMode: SeqAction[ReadMode] = EitherT(IO.pure(config.extractAs[ReadMode](INSTRUMENT_KEY / READMODE_PROP)
+      leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))))
   }
 
   trait InstKeywordsReader {
