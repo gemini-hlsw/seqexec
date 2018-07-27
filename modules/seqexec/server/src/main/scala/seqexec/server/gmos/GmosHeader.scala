@@ -106,8 +106,8 @@ object GmosHeader {
     }
 
     final case class ObsKeywordsReaderImpl(config: Config) extends ObsKeywordsReader {
-      override def preimage: SeqAction[YesNoType] = EitherT(IO.pure(config.extract(INSTRUMENT_KEY / IS_MOS_PREIMAGING_PROP)
-        .as[YesNoType].leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))))
+      override def preimage: SeqAction[YesNoType] = EitherT(IO.pure(config.extractAs[YesNoType](INSTRUMENT_KEY / IS_MOS_PREIMAGING_PROP)
+        .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))))
     }
 
     trait InstKeywordsReader {

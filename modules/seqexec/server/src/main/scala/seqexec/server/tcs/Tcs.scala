@@ -117,11 +117,11 @@ object Tcs {
 
   @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
   def build[T, P: ClassTag](f: P => Endo[T], k: ItemKey, config: Config): Endo[T] =
-    config.extract(k).as[P].map(f).foldK
+    config.extractAs[P](k).map(f).foldK
 
   @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
   def build[T, P: ClassTag, Q: ClassTag](f: (P, Q) => Endo[T], k1: ItemKey, k2: ItemKey, config: Config): Endo[T] =
-    config.extract(k1).as[P].product(config.extract(k2).as[Q]).map(f.tupled).foldK
+    config.extractAs[P](k1).product(config.extractAs[Q](k2)).map(f.tupled).foldK
 
   // Parameter specific build functions
   def buildPwfs1Config(guideWithPWFS1: StandardGuideOptions.Value): Endo[TcsConfig] = { s0 =>

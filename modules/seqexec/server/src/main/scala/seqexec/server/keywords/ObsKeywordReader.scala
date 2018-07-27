@@ -96,13 +96,13 @@ final case class ObsKeywordReaderImpl(config: Config, site: Site) extends ObsKey
 
   override def getRequestedAirMassAngle: Map[String, SeqAction[Double]] =
     List(MAX_AIRMASS, MAX_HOUR_ANGLE, MIN_AIRMASS, MIN_HOUR_ANGLE).flatMap { key =>
-      val value = config.extract(new ItemKey(OCS_KEY, "obsConditions:" + key)).as[Double].toOption
+      val value = config.extractAs[Double](new ItemKey(OCS_KEY, "obsConditions:" + key)).toOption
       value.toList.map(v => key -> SeqAction(v))
     }(breakOut)
 
   override def getRequestedConditions: Map[String, SeqAction[String]]  =
     List(SB, CC, IQ, WV).flatMap { key =>
-      val value: Option[String] = config.extract(new ItemKey(OCS_KEY, "obsConditions:" + key)).as[String].map { d =>
+      val value: Option[String] = config.extractAs[String](new ItemKey(OCS_KEY, "obsConditions:" + key)).map { d =>
         (d === "100").fold("Any", s"$d-percentile")
       }.toOption
       value.toList.map(v => key -> SeqAction(v))
@@ -150,25 +150,25 @@ final case class ObsKeywordReaderImpl(config: Config, site: Site) extends ObsKey
   override def getTelescope: SeqAction[String] = SeqAction(telescope)
 
   override def getPwfs1Guide: SeqAction[StandardGuideOptions.Value] =
-    SeqAction.either(config.extract(new ItemKey(TELESCOPE_KEY, Tcs.GUIDE_WITH_PWFS1_PROP)).as[StandardGuideOptions.Value]
+    SeqAction.either(config.extractAs[StandardGuideOptions.Value](new ItemKey(TELESCOPE_KEY, Tcs.GUIDE_WITH_PWFS1_PROP))
       .leftMap(explainExtractError))
 
   override def getPwfs2Guide: SeqAction[StandardGuideOptions.Value] =
-    SeqAction.either(config.extract(new ItemKey(TELESCOPE_KEY, Tcs.GUIDE_WITH_PWFS2_PROP)).as[StandardGuideOptions.Value]
+    SeqAction.either(config.extractAs[StandardGuideOptions.Value](new ItemKey(TELESCOPE_KEY, Tcs.GUIDE_WITH_PWFS2_PROP))
       .leftMap(explainExtractError))
 
   override def getOiwfsGuide: SeqAction[StandardGuideOptions.Value] =
-    SeqAction.either(config.extract(new ItemKey(TELESCOPE_KEY, GUIDE_WITH_OIWFS_PROP)).as[StandardGuideOptions.Value]
+    SeqAction.either(config.extractAs[StandardGuideOptions.Value](new ItemKey(TELESCOPE_KEY, GUIDE_WITH_OIWFS_PROP))
       .leftMap(explainExtractError))
 
   override def getAowfsGuide: SeqAction[StandardGuideOptions.Value] =
-    SeqAction.either(config.extract(new ItemKey(TELESCOPE_KEY, Tcs.GUIDE_WITH_AOWFS_PROP)).as[StandardGuideOptions.Value]
+    SeqAction.either(config.extractAs[StandardGuideOptions.Value](new ItemKey(TELESCOPE_KEY, Tcs.GUIDE_WITH_AOWFS_PROP))
       .recoverWith[ConfigUtilOps.ExtractFailure, StandardGuideOptions.Value] {
         case ConfigUtilOps.KeyNotFound(_)         => StandardGuideOptions.Value.park.asRight
         case e@ConfigUtilOps.ConversionError(_,_) => e.asLeft
       }.leftMap(explainExtractError))
 
-  private val headerPrivacy: Boolean = config.extract(HEADER_VISIBILITY_KEY).as[Visibility].getOrElse(Visibility.PUBLIC) match {
+  private val headerPrivacy: Boolean = config.extractAs[Visibility](HEADER_VISIBILITY_KEY).getOrElse(Visibility.PUBLIC) match {
     case Visibility.PRIVATE => true
     case _                  => false
   }
@@ -178,7 +178,7 @@ final case class ObsKeywordReaderImpl(config: Config, site: Site) extends ObsKey
   override def getProprietaryMonths: SeqAction[String] =
     if(headerPrivacy) {
       SeqAction.either(
-        config.extract(PROPRIETARY_MONTHS_KEY).as[Integer].recoverWith[ConfigUtilOps.ExtractFailure, Integer]{
+        config.extractAs[Integer](PROPRIETARY_MONTHS_KEY).recoverWith[ConfigUtilOps.ExtractFailure, Integer]{
           case ConfigUtilOps.KeyNotFound(_) => new Integer(0).asRight
           case e@ConfigUtilOps.ConversionError(_, _) => e.asLeft
         }.leftMap(explainExtractError)
@@ -189,7 +189,7 @@ final case class ObsKeywordReaderImpl(config: Config, site: Site) extends ObsKey
   private val manualDarkValue = "Manual Dark"
   private val manualDarkOverride = "Dark"
   override def getObsObject: SeqAction[String] =
-    SeqAction.either(config.extract(OBSERVE_KEY / OBJECT_PROP).as[String]
+    SeqAction.either(config.extractAs[String](OBSERVE_KEY / OBJECT_PROP)
       .map(v => if(v === manualDarkValue) manualDarkOverride else v).leftMap(explainExtractError))
 
   override def getGeminiQA: SeqAction[String] = SeqAction("UNKNOWN")
@@ -197,9 +197,9 @@ final case class ObsKeywordReaderImpl(config: Config, site: Site) extends ObsKey
   override def getPIReq: SeqAction[String] = SeqAction("UNKNOWN")
 
   override def getSciBand: SeqAction[Option[Int]] =
-    SeqAction(config.extract(OBSERVE_KEY / SCI_BAND).as[Integer].map(_.toInt).toOption)
+    SeqAction(config.extractAs[Integer](OBSERVE_KEY / SCI_BAND).map(_.toInt).toOption)
 
   def getAstrometicField: SeqAction[Boolean] =
-    SeqAction.either(config.extract(INSTRUMENT_KEY / ASTROMETRIC_FIELD_PROP).as[java.lang.Boolean]
+    SeqAction.either(config.extractAs[java.lang.Boolean](INSTRUMENT_KEY / ASTROMETRIC_FIELD_PROP)
       .leftMap(explainExtractError)).map(Boolean.unbox)
 }

@@ -3,6 +3,18 @@
 
 package seqexec.server.gmos
 
+import cats.data.{EitherT, Reader}
+import cats.implicits._
+import cats.effect.IO
+import edu.gemini.spModel.config2.Config
+import edu.gemini.spModel.gemini.gmos.GmosCommonType._
+import edu.gemini.spModel.gemini.gmos.InstGmosCommon._
+import edu.gemini.spModel.obscomp.InstConstants.{EXPOSURE_TIME_PROP, _}
+import edu.gemini.spModel.seqcomp.SeqConfigNames.{INSTRUMENT_KEY, OBSERVE_KEY}
+import java.lang.{Double => JDouble, Integer => JInt}
+import mouse.all._
+import org.log4s.{Logger, getLogger}
+import scala.concurrent.duration._
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.ConfigUtilOps.{ContentError, ConversionError, _}
 import seqexec.server.gmos.Gmos.SiteSpecifics
@@ -10,19 +22,8 @@ import seqexec.server.gmos.GmosController.Config._
 import seqexec.server.gmos.GmosController.SiteDependentTypes
 import seqexec.server.keywords.{DhsInstrument, KeywordsClient}
 import seqexec.server._
-import edu.gemini.spModel.config2.Config
-import edu.gemini.spModel.gemini.gmos.GmosCommonType._
-import edu.gemini.spModel.gemini.gmos.InstGmosCommon._
-import edu.gemini.spModel.obscomp.InstConstants.{EXPOSURE_TIME_PROP, _}
-import edu.gemini.spModel.seqcomp.SeqConfigNames.{INSTRUMENT_KEY, OBSERVE_KEY}
-import org.log4s.{Logger, getLogger}
 import squants.{Seconds, Time}
 import squants.space.LengthConversions._
-import cats.data.{EitherT, Reader}
-import cats.implicits._
-import cats.effect.IO
-import mouse.all._
-import scala.concurrent.duration._
 
 abstract class Gmos[T<:GmosController.SiteDependentTypes](controller: GmosController[T], ss: SiteSpecifics[T])(configTypes: GmosController.Config[T]) extends InstrumentSystem[IO] with DhsInstrument {
   import Gmos._
@@ -57,15 +58,15 @@ abstract class Gmos[T<:GmosController.SiteDependentTypes](controller: GmosContro
     (for {
       filter           <- ss.extractFilter(config)
       disp             <- ss.extractDisperser(config)
-      disperserOrder   =  config.extract(INSTRUMENT_KEY / DISPERSER_ORDER_PROP).as[DisperserOrder]
-      disperserLambda  =  config.extract(INSTRUMENT_KEY / DISPERSER_LAMBDA_PROP).as[java.lang.Double].map(_.toDouble.nanometers)
+      disperserOrder   =  config.extractAs[DisperserOrder](INSTRUMENT_KEY / DISPERSER_ORDER_PROP)
+      disperserLambda  =  config.extractAs[JDouble](INSTRUMENT_KEY / DISPERSER_LAMBDA_PROP).map(_.toDouble.nanometers)
       fpuName          =  ss.extractFPU(config)
-      fpuMask          =  config.extract(INSTRUMENT_KEY / FPU_MASK_PROP).as[String]
-      fpu              <- config.extract(INSTRUMENT_KEY / FPU_MODE_PROP).as[FPUnitMode].map(fpuFromFPUnit(fpuName.toOption, fpuMask.toOption))
+      fpuMask          =  config.extractAs[String](INSTRUMENT_KEY / FPU_MASK_PROP)
+      fpu              <- config.extractAs[FPUnitMode](INSTRUMENT_KEY / FPU_MODE_PROP).map(fpuFromFPUnit(fpuName.toOption, fpuMask.toOption))
       stageMode        <- ss.extractStageMode(config)
-      dtax             <- config.extract(INSTRUMENT_KEY / DTAX_OFFSET_PROP).as[DTAX]
-      adc              <- config.extract(INSTRUMENT_KEY / ADC_PROP).as[ADC]
-      electronicOffset =  config.extract(INSTRUMENT_KEY / USE_ELECTRONIC_OFFSETTING_PROP).as[UseElectronicOffset]
+      dtax             <- config.extractAs[DTAX](INSTRUMENT_KEY / DTAX_OFFSET_PROP)
+      adc              <- config.extractAs[ADC](INSTRUMENT_KEY / ADC_PROP)
+      electronicOffset =  config.extractAs[UseElectronicOffset](INSTRUMENT_KEY / USE_ELECTRONIC_OFFSETTING_PROP)
       disperser = configTypes.GmosDisperser(disp, disperserOrder.toOption, disperserLambda.toOption)
     } yield configTypes.CCConfig(filter, disperser, fpu, stageMode, dtax, adc, electronicOffset.toOption)).leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
 
@@ -87,7 +88,8 @@ abstract class Gmos[T<:GmosController.SiteDependentTypes](controller: GmosContro
     fromSequenceConfig(config).flatMap(controller.applyConfig).map(_ => ConfigResult(this))
 
   override def calcObserveTime(config: Config): Time =
-    config.extract(OBSERVE_KEY / EXPOSURE_TIME_PROP).as[java.lang.Double].map(v => Seconds(v.toDouble)).getOrElse(Seconds(10000))
+    config.extractAs[JDouble](OBSERVE_KEY / EXPOSURE_TIME_PROP)
+      .map(v => Seconds(v.toDouble)).getOrElse(Seconds(10000))
 }
 
 object Gmos {
@@ -127,10 +129,10 @@ object Gmos {
   private def customROIs(config: Config): List[ROI] = {
     def attemptROI(i: Int): Option[ROI] =
       (for {
-        xStart <- config.extract(INSTRUMENT_KEY / s"customROI${i}Xmin").as[java.lang.Integer].map(_.toInt)
-        xRange <- config.extract(INSTRUMENT_KEY / s"customROI${i}Xrange").as[java.lang.Integer].map(_.toInt)
-        yStart <- config.extract(INSTRUMENT_KEY / s"customROI${i}Ymin").as[java.lang.Integer].map(_.toInt)
-        yRange <- config.extract(INSTRUMENT_KEY / s"customROI${i}Yrange").as[java.lang.Integer].map(_.toInt)
+        xStart <- config.extractAs[JInt](INSTRUMENT_KEY / s"customROI${i}Xmin").map(_.toInt)
+        xRange <- config.extractAs[JInt](INSTRUMENT_KEY / s"customROI${i}Xrange").map(_.toInt)
+        yStart <- config.extractAs[JInt](INSTRUMENT_KEY / s"customROI${i}Ymin").map(_.toInt)
+        yRange <- config.extractAs[JInt](INSTRUMENT_KEY / s"customROI${i}Yrange").map(_.toInt)
       } yield new ROI(xStart, yStart, xRange, yRange)).toOption
 
     val rois = for {
@@ -141,17 +143,17 @@ object Gmos {
 
   def dcConfigFromSequenceConfig(config: Config): TrySeq[DCConfig] =
     (for {
-      obsType      <- config.extract(OBSERVE_KEY / OBSERVE_TYPE_PROP).as[String]
+      obsType      <- config.extractAs[String](OBSERVE_KEY / OBSERVE_TYPE_PROP)
       biasTime     <- biasTimeObserveType(obsType).asRight
       shutterState <- shutterStateObserveType(obsType).asRight
-      exposureTime <- config.extract(OBSERVE_KEY / EXPOSURE_TIME_PROP).as[java.lang.Double].map(_.toDouble.seconds)
-      ampReadMode  <- config.extract(AmpReadMode.KEY).as[AmpReadMode]
-      gainChoice   <- config.extract(INSTRUMENT_KEY / AMP_GAIN_CHOICE_PROP).as[AmpGain]
-      ampCount     <- config.extract(INSTRUMENT_KEY / AMP_COUNT_PROP).as[AmpCount]
-      gainSetting  <- config.extract(INSTRUMENT_KEY / AMP_GAIN_SETTING_PROP).as[String].flatMap(s => s.parseDouble.leftMap(_ => ConversionError(INSTRUMENT_KEY / AMP_GAIN_SETTING_PROP, "Bad Amp gain setting")))
-      xBinning     <- config.extract(INSTRUMENT_KEY / CCD_X_BIN_PROP).as[Binning]
-      yBinning     <- config.extract(INSTRUMENT_KEY / CCD_Y_BIN_PROP).as[Binning]
-      builtInROI   <- config.extract(INSTRUMENT_KEY / BUILTIN_ROI_PROP).as[BuiltinROI]
+      exposureTime <- config.extractAs[JDouble](OBSERVE_KEY / EXPOSURE_TIME_PROP).map(_.toDouble.seconds)
+      ampReadMode  <- config.extractAs[AmpReadMode](AmpReadMode.KEY)
+      gainChoice   <- config.extractAs[AmpGain](INSTRUMENT_KEY / AMP_GAIN_CHOICE_PROP)
+      ampCount     <- config.extractAs[AmpCount](INSTRUMENT_KEY / AMP_COUNT_PROP)
+      gainSetting  <- config.extractAs[String](INSTRUMENT_KEY / AMP_GAIN_SETTING_PROP).flatMap(s => s.parseDouble.leftMap(_ => ConversionError(INSTRUMENT_KEY / AMP_GAIN_SETTING_PROP, "Bad Amp gain setting")))
+      xBinning     <- config.extractAs[Binning](INSTRUMENT_KEY / CCD_X_BIN_PROP)
+      yBinning     <- config.extractAs[Binning](INSTRUMENT_KEY / CCD_Y_BIN_PROP)
+      builtInROI   <- config.extractAs[BuiltinROI](INSTRUMENT_KEY / BUILTIN_ROI_PROP)
       customROI = if (builtInROI === BuiltinROI.CUSTOM) customROIs(config) else Nil
       roi          <- RegionsOfInterest.fromOCS(builtInROI, customROI).leftMap(e => ContentError(SeqexecFailure.explain(e)))
     } yield

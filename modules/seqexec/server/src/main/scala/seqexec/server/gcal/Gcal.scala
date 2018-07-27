@@ -6,18 +6,18 @@ package seqexec.server.gcal
 import cats._
 import cats.implicits._
 import cats.effect.IO
+import java.util.{Set => JSet}
+import edu.gemini.spModel.config2.Config
+import edu.gemini.spModel.gemini.calunit.CalUnitConstants._
+import edu.gemini.spModel.gemini.calunit.CalUnitParams.Lamp
+import edu.gemini.spModel.seqcomp.SeqConfigNames.CALIBRATION_KEY
+import scala.Function.const
+import scala.collection.JavaConverters._
 import seqexec.model.Model.Resource
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.gcal.GcalController._
 import seqexec.server.{ConfigResult, ConfigUtilOps, SeqAction, SeqexecFailure, System, TrySeq}
 import seqexec.server._
-import edu.gemini.spModel.config2.Config
-import edu.gemini.spModel.gemini.calunit.CalUnitConstants._
-import edu.gemini.spModel.gemini.calunit.CalUnitParams.Lamp
-import edu.gemini.spModel.seqcomp.SeqConfigNames.CALIBRATION_KEY
-
-import scala.Function.const
-import scala.collection.JavaConverters._
 
 /**
   * Created by jluhrs on 3/21/17.
@@ -71,7 +71,8 @@ object Gcal {
   }
 
   def fromSequenceConfig(config: Config, isCP: Boolean): SeqAction[GcalConfig] = {
-    val lamps = config.extract(CALIBRATION_KEY / LAMP_PROP).as[java.util.Set[Lamp]].map(_.asScala.toList).recoverWithDefault(List.empty)
+    val lamps = config.extractAs[JSet[Lamp]](CALIBRATION_KEY / LAMP_PROP)
+      .map(_.asScala.toList).recoverWithDefault(List.empty)
 
     val arLamp = lamps.map(v => if (v.contains(Lamp.AR_ARC)) Some(LampState.On) else Some(LampState.Off))
     val cuarLamp = lamps.map(v => if (v.contains(Lamp.CUAR_ARC)) Some(LampState.On) else Some(LampState.Off))
@@ -81,9 +82,9 @@ object Gcal {
     val irLampCP = lamps.map(v => if (v.contains(Lamp.IR_GREY_BODY_HIGH) || v.contains(Lamp.IR_GREY_BODY_LOW)) Some(LampState.On) else None)
     val irLampMK = lamps.map(v => if (v.contains(Lamp.IR_GREY_BODY_HIGH)) Some(LampState.On)
                                   else if (v.contains(Lamp.IR_GREY_BODY_LOW)) Some(LampState.Off) else None)
-    val shutter = config.extract(CALIBRATION_KEY / SHUTTER_PROP).as[Shutter].map(Some(_)).recoverWithDefault(None)
-    val filter = config.extract(CALIBRATION_KEY / FILTER_PROP).as[Filter].map(Some(_)).recoverWithDefault(None)
-    val diffuser = config.extract(CALIBRATION_KEY / DIFFUSER_PROP).as[Diffuser].map(Some(_)).recoverWithDefault(None)
+    val shutter = config.extractAs[Shutter](CALIBRATION_KEY / SHUTTER_PROP).map(Some(_)).recoverWithDefault(None)
+    val filter = config.extractAs[Filter](CALIBRATION_KEY / FILTER_PROP).map(Some(_)).recoverWithDefault(None)
+    val diffuser = config.extractAs[Diffuser](CALIBRATION_KEY / DIFFUSER_PROP).map(Some(_)).recoverWithDefault(None)
 
     SeqAction.either(
       for {

@@ -112,23 +112,19 @@ object StepConfigTable {
       case (ColumnMeta(c, name, label, true, PercentageColumnWidth(percentage)), i)
         if i < b.state.columns.length - 1 =>
         Column(
-          Column.props(
+          Column.propsNoFlex(
             width * percentage,
             name,
             label = label,
-            flexShrink = 0,
-            flexGrow = 0,
             headerRenderer = resizableHeaderRenderer(resizeRow(c)),
             className = SeqexecStyles.paddedStepRow.htmlClass
           ))
       case (ColumnMeta(_, name, label, true, PercentageColumnWidth(percentage)), _)
                                           =>
         Column(
-          Column.props(width * percentage,
+          Column.propsNoFlex(width * percentage,
                        name,
                        label = label,
-                       flexShrink = 0,
-                       flexGrow = 0,
                        className = SeqexecStyles.paddedStepRow.htmlClass))
     }.toList
   }

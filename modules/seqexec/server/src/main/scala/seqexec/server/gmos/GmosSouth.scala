@@ -20,10 +20,10 @@ import edu.gemini.spModel.seqcomp.SeqConfigNames.INSTRUMENT_KEY
 final case class GmosSouth(c: GmosSouthController, dhsClient: DhsClient) extends Gmos[SouthTypes](c,
   new SiteSpecifics[SouthTypes] {
     override val fpuDefault: GmosSouthType.FPUnitSouth = FPU_NONE
-    override def extractFilter(config: Config): Either[ConfigUtilOps.ExtractFailure, SouthTypes#Filter] = config.extract(INSTRUMENT_KEY / FILTER_PROP).as[SouthTypes#Filter]
-    override def extractDisperser(config: Config): Either[ConfigUtilOps.ExtractFailure, GmosSouthType.DisperserSouth] = config.extract(INSTRUMENT_KEY / DISPERSER_PROP).as[SouthTypes#Disperser]
-    override def extractFPU(config: Config): Either[ConfigUtilOps.ExtractFailure, GmosSouthType.FPUnitSouth] = config.extract(INSTRUMENT_KEY / FPU_PROP_NAME).as[SouthTypes#FPU]
-    override def extractStageMode(config: Config): Either[ConfigUtilOps.ExtractFailure, GmosSouthType.StageModeSouth] = config.extract(INSTRUMENT_KEY / STAGE_MODE_PROP).as[SouthTypes#GmosStageMode]
+    override def extractFilter(config: Config): Either[ConfigUtilOps.ExtractFailure, SouthTypes#Filter] = config.extractAs[SouthTypes#Filter](INSTRUMENT_KEY / FILTER_PROP)
+    override def extractDisperser(config: Config): Either[ConfigUtilOps.ExtractFailure, GmosSouthType.DisperserSouth] = config.extractAs[SouthTypes#Disperser](INSTRUMENT_KEY / DISPERSER_PROP)
+    override def extractFPU(config: Config): Either[ConfigUtilOps.ExtractFailure, GmosSouthType.FPUnitSouth] = config.extractAs[SouthTypes#FPU](INSTRUMENT_KEY / FPU_PROP_NAME)
+    override def extractStageMode(config: Config): Either[ConfigUtilOps.ExtractFailure, GmosSouthType.StageModeSouth] = config.extractAs[SouthTypes#GmosStageMode](INSTRUMENT_KEY / STAGE_MODE_PROP)
   })(southConfigTypes) {
   override val resource: Model.Resource = Instrument.GmosS
   override val dhsInstrumentName: String = "GMOS-S"

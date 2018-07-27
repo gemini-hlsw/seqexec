@@ -6,6 +6,13 @@ package seqexec.server.gnirs
 import cats.data.Reader
 import cats.implicits._
 import cats.effect.IO
+import edu.gemini.spModel.config2.Config
+import edu.gemini.spModel.gemini.gnirs.GNIRSConstants.{INSTRUMENT_NAME_PROP, WOLLASTON_PRISM_PROP}
+import edu.gemini.spModel.gemini.gnirs.GNIRSParams._
+import edu.gemini.spModel.gemini.gnirs.InstGNIRS._
+import edu.gemini.spModel.obscomp.InstConstants.{BIAS_OBSERVE_TYPE, DARK_OBSERVE_TYPE, OBSERVE_TYPE_PROP}
+import edu.gemini.spModel.seqcomp.SeqConfigNames.{INSTRUMENT_KEY, OBSERVE_KEY}
+import java.lang.{Double => JDouble, Integer => JInt}
 import seqexec.model.Model
 import seqexec.model.Model.Instrument
 import seqexec.model.dhs.ImageFileId
@@ -13,12 +20,6 @@ import seqexec.server.ConfigUtilOps._
 import seqexec.server.gnirs.GnirsController.{CCConfig, DCConfig, Other, ReadMode}
 import seqexec.server._
 import seqexec.server.keywords.{DhsInstrument, DhsClient, KeywordsClient}
-import edu.gemini.spModel.config2.Config
-import edu.gemini.spModel.gemini.gnirs.GNIRSConstants.{INSTRUMENT_NAME_PROP, WOLLASTON_PRISM_PROP}
-import edu.gemini.spModel.gemini.gnirs.GNIRSParams._
-import edu.gemini.spModel.gemini.gnirs.InstGNIRS._
-import edu.gemini.spModel.obscomp.InstConstants.{BIAS_OBSERVE_TYPE, DARK_OBSERVE_TYPE, OBSERVE_TYPE_PROP}
-import edu.gemini.spModel.seqcomp.SeqConfigNames.{INSTRUMENT_KEY, OBSERVE_KEY}
 import squants.Time
 import squants.space.LengthConversions._
 import squants.time.TimeConversions._
@@ -57,10 +58,10 @@ object Gnirs {
   val name: String = INSTRUMENT_NAME_PROP
 
   def extractExposureTime(config: Config): Either[ExtractFailure, Time] =
-    config.extract(OBSERVE_KEY / EXPOSURE_TIME_PROP).as[java.lang.Double].map(_.toDouble.seconds)
+    config.extractAs[JDouble](OBSERVE_KEY / EXPOSURE_TIME_PROP).map(_.toDouble.seconds)
 
   def extractCoadds(config: Config): Either[ExtractFailure, Int] =
-    config.extract(OBSERVE_KEY / COADDS_PROP).as[java.lang.Integer].map(_.toInt)
+    config.extractAs[JInt](OBSERVE_KEY / COADDS_PROP).map(_.toInt)
 
   def fromSequenceConfig(config: Config): TrySeq[GnirsController.GnirsConfig] =
     (getCCConfig(config), getDCConfig(config)).mapN(GnirsController.GnirsConfig)
@@ -68,12 +69,12 @@ object Gnirs {
   private def getDCConfig(config: Config): TrySeq[DCConfig] = (for {
     expTime <- extractExposureTime(config)
     coadds  <- extractCoadds(config)
-    readMode <- config.extract(INSTRUMENT_KEY / READ_MODE_PROP).as[ReadMode]
-    wellDepth <- config.extract(INSTRUMENT_KEY / WELL_DEPTH_PROP).as[WellDepth]
+    readMode <- config.extractAs[ReadMode](INSTRUMENT_KEY / READ_MODE_PROP)
+    wellDepth <- config.extractAs[WellDepth](INSTRUMENT_KEY / WELL_DEPTH_PROP)
   } yield DCConfig(expTime, coadds, readMode, wellDepth))
     .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
 
-  private def getCCConfig(config: Config): TrySeq[CCConfig] = config.extract(OBSERVE_KEY / OBSERVE_TYPE_PROP).as[String]
+  private def getCCConfig(config: Config): TrySeq[CCConfig] = config.extractAs[String](OBSERVE_KEY / OBSERVE_TYPE_PROP)
     .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e))).flatMap{
     case DARK_OBSERVE_TYPE => GnirsController.Dark.asRight
     case BIAS_OBSERVE_TYPE => SeqexecFailure.Unexpected("Bias not supported for GNIRS").asLeft
@@ -81,23 +82,23 @@ object Gnirs {
   }
 
   private def getCCOtherConfig(config: Config): TrySeq[CCConfig] = (for {
-    xdisp  <- config.extract(INSTRUMENT_KEY / CROSS_DISPERSED_PROP).as[CrossDispersed]
-    woll   <- config.extract(INSTRUMENT_KEY / WOLLASTON_PRISM_PROP).as[WollastonPrism]
+    xdisp  <- config.extractAs[CrossDispersed](INSTRUMENT_KEY / CROSS_DISPERSED_PROP)
+    woll   <- config.extractAs[WollastonPrism](INSTRUMENT_KEY / WOLLASTON_PRISM_PROP)
     mode   <- getCCMode(config, xdisp, woll)
-    slit   <- config.extract(INSTRUMENT_KEY / SLIT_WIDTH_PROP).as[SlitWidth]
+    slit   <- config.extractAs[SlitWidth](INSTRUMENT_KEY / SLIT_WIDTH_PROP)
     slitOp = getSlit(slit)
-    camera <- config.extract(INSTRUMENT_KEY / CAMERA_PROP).as[Camera]
+    camera <- config.extractAs[Camera](INSTRUMENT_KEY / CAMERA_PROP)
     decker <- getDecker(config, slit, woll, xdisp)
-    wavel  <- config.extract(INSTRUMENT_KEY / CENTRAL_WAVELENGTH_PROP).as[Wavelength].map(_.doubleValue().nanometers)
-    filter <- config.extract(INSTRUMENT_KEY / FILTER_PROP).as[Filter].toOption.asRight
+    wavel  <- config.extractAs[Wavelength](INSTRUMENT_KEY / CENTRAL_WAVELENGTH_PROP).map(_.doubleValue().nanometers)
+    filter <- config.extractAs[Filter](INSTRUMENT_KEY / FILTER_PROP).toOption.asRight
     filter1 = getFilter1(filter, slit, decker)
     filter2 = getFilter2(filter, xdisp)
   } yield Other(mode, camera, decker, filter1, filter2, wavel, slitOp) )
     .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
 
   private def getCCMode(config: Config, xdispersed: CrossDispersed, woll: WollastonPrism): Either[ConfigUtilOps.ExtractFailure, GnirsController.Mode] = for {
-    acq        <- config.extract(INSTRUMENT_KEY / ACQUISITION_MIRROR_PROP).as[AcquisitionMirror]
-    disperser  <- config.extract(INSTRUMENT_KEY / DISPERSER_PROP).as[Disperser]
+    acq        <- config.extractAs[AcquisitionMirror](INSTRUMENT_KEY / ACQUISITION_MIRROR_PROP)
+    disperser  <- config.extractAs[Disperser](INSTRUMENT_KEY / DISPERSER_PROP)
   } yield {
     if(acq === AcquisitionMirror.IN) GnirsController.Acquisition
     else xdispersed match {
@@ -109,9 +110,9 @@ object Gnirs {
   }
 
   private def getDecker(config: Config, slit: SlitWidth, woll: WollastonPrism, xdisp: CrossDispersed): Either[ConfigUtilOps.ExtractFailure, GnirsController.Decker] =
-    config.extract(INSTRUMENT_KEY / DECKER_PROP).as[Decker].orElse{
+    config.extractAs[Decker](INSTRUMENT_KEY / DECKER_PROP).orElse {
       for {
-        pixScale <- config.extract(INSTRUMENT_KEY / PIXEL_SCALE_PROP).as[PixelScale]
+        pixScale <- config.extractAs[PixelScale](INSTRUMENT_KEY / PIXEL_SCALE_PROP)
       } yield xdisp match {
         case CrossDispersed.LXD => Decker.LONG_CAM_X_DISP
         case CrossDispersed.SXD => Decker.SHORT_CAM_X_DISP

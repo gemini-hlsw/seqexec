@@ -461,11 +461,9 @@ object QueueTableBody {
     b.state.visibleColumnsSizes(size).collect {
       case (IconColumn, width, _) =>
         Column(
-          Column.props(
+          Column.propsNoFlex(
             width,
             dataKey = "status",
-            flexShrink = 0,
-            flexGrow = 0,
             label = "",
             cellRenderer = statusIconRenderer(props),
             headerRenderer = statusHeaderRenderer,
@@ -473,11 +471,9 @@ object QueueTableBody {
           ))
       case (ObsIdColumn, width, _) =>
         Column(
-          Column.props(
+          Column.propsNoFlex(
             width,
             dataKey = "obsid",
-            flexShrink = 0,
-            flexGrow = 0,
             minWidth = ObsIdColumnWidth,
             label = "Obs. ID",
             cellRenderer = obsIdRenderer(props),
@@ -486,12 +482,10 @@ object QueueTableBody {
           ))
       case (StateColumn, width, _) =>
         Column(
-          Column.props(
+          Column.propsNoFlex(
             width,
             dataKey = "state",
             minWidth = StateColumnWidth,
-            flexShrink = 0,
-            flexGrow = 0,
             label = "State",
             cellRenderer = stateRenderer(props),
             headerRenderer = resizableHeaderRenderer(resizeRow(StateColumn)),
@@ -499,12 +493,10 @@ object QueueTableBody {
           ))
       case (InstrumentColumn, width, false) =>
         Column(
-          Column.props(
+          Column.propsNoFlex(
             width,
             dataKey = "instrument",
             minWidth = InstrumentColumnWidth,
-            flexShrink = 0,
-            flexGrow = 0,
             label = "Instrument",
             cellRenderer = instrumentRenderer(props),
             headerRenderer =
@@ -513,36 +505,30 @@ object QueueTableBody {
           ))
       case (InstrumentColumn, width, true) =>
         Column(
-          Column.props(
+          Column.propsNoFlex(
             width,
             dataKey = "instrument",
             minWidth = InstrumentColumnWidth,
-            flexShrink = 0,
-            flexGrow = 0,
             label = "Instrument",
             cellRenderer = instrumentRenderer(props),
             className = QueueColumnStyle
           ))
       case (ObsNameColumn, width, _) =>
         Column(
-          Column.props(
+          Column.propsNoFlex(
             width,
             dataKey = "obsName",
             minWidth = ObsNameColumnWidth / 2,
-            flexShrink = 0,
-            flexGrow = 0,
             label = "Obs. Name",
             cellRenderer = obsNameRenderer(props),
             className = QueueColumnStyle
           ))
       case (TargetNameColumn, width, _) =>
         Column(
-          Column.props(
+          Column.propsNoFlex(
             width,
             dataKey = "target",
             minWidth = TargetNameColumnWidth / 2,
-            flexShrink = 0,
-            flexGrow = 0,
             label = "Target",
             cellRenderer = targetRenderer(props),
             headerRenderer =

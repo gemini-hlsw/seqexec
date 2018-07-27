@@ -217,7 +217,6 @@ object StepsTable {
         Column.propsNoFlex(ColWidths.IdxWidth,
                            "idx",
                            label = "Step",
-                           disableSort = true,
                            className = SeqexecStyles.paddedStepRow.htmlClass,
                            cellRenderer = stepIdRenderer))
 
@@ -229,7 +228,6 @@ object StepsTable {
               controlWidth,
               "state",
               label = "Control",
-              disableSort = true,
               className = SeqexecStyles.paddedStepRow.htmlClass,
               cellRenderer = stepProgressRenderer(i, p))))
 
@@ -241,7 +239,6 @@ object StepsTable {
               ColWidths.ControlWidth,
               "ctl",
               label = "Icon",
-              disableSort = true,
               cellRenderer = stepControlRenderer(i, p, recomputeRowHeightsCB),
               className = SeqexecStyles.controlCellRow.htmlClass,
               headerRenderer = controlHeaderRenderer,
@@ -258,7 +255,6 @@ object StepsTable {
              Column.propsNoFlex(width,
                                 "offset",
                                 label = "Offset",
-                                disableSort = true,
                                 cellRenderer =
                                   stepStatusRenderer(p.offsetsDisplay))).some
              .filter(_ => offsetVisible),
@@ -276,7 +272,6 @@ object StepsTable {
                       ColWidths.DisperserWidth,
                       "disperser",
                       label = "Disperser",
-                      disableSort = true,
                       className = SeqexecStyles.centeredCell.htmlClass,
                       cellRenderer = stepDisperserRenderer(s.instrument)
                     )))
@@ -294,7 +289,6 @@ object StepsTable {
                       ColWidths.ExposureWidth,
                       "exposure",
                       label = "Exposure",
-                      disableSort = true,
                       className = SeqexecStyles.centeredCell.htmlClass,
                       cellRenderer = stepExposureRenderer(i.instrument)
                     )))
@@ -310,7 +304,6 @@ object StepsTable {
                       ColWidths.FPUWidth,
                       "fpu",
                       label = "FPU",
-                      disableSort = true,
                       className = SeqexecStyles.centeredCell.htmlClass,
                       cellRenderer = stepFPURenderer(i.instrument))))
         if p.showFPU
@@ -326,7 +319,6 @@ object StepsTable {
                       ColWidths.ObservingModeWidth,
                       "obsMode",
                       label = "Observing Mode",
-                      disableSort = true,
                       className = SeqexecStyles.centeredCell.htmlClass,
                       cellRenderer = stepObsModeRenderer
                     )))
@@ -342,7 +334,6 @@ object StepsTable {
               ColWidths.FilterWidth,
               "filter",
               label = "Filter",
-              disableSort = true,
               className = SeqexecStyles.centeredCell.htmlClass,
               cellRenderer = stepFilterRenderer(i.instrument)
             )))
@@ -356,7 +347,6 @@ object StepsTable {
               ColWidths.ObjectTypeWidth,
               "type",
               label = "Type",
-              disableSort = true,
               className = SeqexecStyles.centeredCell.htmlClass,
               cellRenderer = stepObjectTypeRenderer(objectSize)
             )))
@@ -369,7 +359,6 @@ object StepsTable {
               ColWidths.SettingsWidth,
               "set",
               label = "",
-              disableSort = true,
               cellRenderer = settingsControlRenderer(p, i),
               className = SeqexecStyles.settingsCellRow.htmlClass,
               headerRenderer = settingsHeaderRenderer,

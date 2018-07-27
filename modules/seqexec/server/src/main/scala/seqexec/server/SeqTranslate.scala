@@ -76,8 +76,8 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
                       otherSys: List[System[IO]], headers: Reader[ActionMetadata, List[Header]])
                      (ctx: ActionMetadata): SeqAction[Result.Partial[FileIdAllocated]] = {
     val dataId: SeqAction[String] = EitherT(IO.apply(
-      config.extract(OBSERVE_KEY / DATA_LABEL_PROP).as[String].leftMap(e =>
-      SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))))
+      config.extractAs[String](OBSERVE_KEY / DATA_LABEL_PROP)
+        .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))))
 
     def notifyObserveStart: SeqAction[Unit] = otherSys.map(_.notifyObserveStart).sequence.map(_ => ())
 
@@ -456,7 +456,7 @@ object SeqTranslate {
   }
 
   private def extractInstrument(config: Config): TrySeq[Model.Instrument] = {
-    config.extract(INSTRUMENT_KEY / INSTRUMENT_NAME_PROP).as[String].asTrySeq.flatMap {
+    config.extractAs[String](INSTRUMENT_KEY / INSTRUMENT_NAME_PROP).asTrySeq.flatMap {
       case Flamingos2.name => TrySeq(Model.Instrument.F2)
       case GmosSouth.name  => TrySeq(Model.Instrument.GmosS)
       case GmosNorth.name  => TrySeq(Model.Instrument.GmosN)
@@ -479,7 +479,7 @@ object SeqTranslate {
   }
 
   private def calcStepType(config: Config): TrySeq[StepType] = {
-    def extractGaos(inst: Model.Instrument): TrySeq[StepType] = config.extract(new ItemKey(AO_CONFIG_NAME) / AO_SYSTEM_PROP).as[String] match {
+    def extractGaos(inst: Model.Instrument): TrySeq[StepType] = config.extractAs[String](new ItemKey(AO_CONFIG_NAME) / AO_SYSTEM_PROP) match {
       case Left(ConfigUtilOps.ConversionError(_, _))              => TrySeq.fail(Unexpected("Unable to get AO system from sequence"))
       case Left(ConfigUtilOps.ContentError(_))                    => TrySeq.fail(Unexpected("Logical error"))
       case Left(ConfigUtilOps.KeyNotFound(_))                     => TrySeq(CelestialObject(inst))
@@ -488,7 +488,7 @@ object SeqTranslate {
       case _                                                      => TrySeq.fail(Unexpected("Logical error reading AO system name"))
     }
 
-    (config.extract(OBSERVE_KEY / OBSERVE_TYPE_PROP).as[String].leftMap(explainExtractError), extractInstrument(config)).mapN { (obsType, inst) =>
+    (config.extractAs[String](OBSERVE_KEY / OBSERVE_TYPE_PROP).leftMap(explainExtractError), extractInstrument(config)).mapN { (obsType, inst) =>
       obsType match {
         case SCIENCE_OBSERVE_TYPE                     => extractGaos(inst)
         case BIAS_OBSERVE_TYPE | DARK_OBSERVE_TYPE    => TrySeq(DarkOrBias(inst))
