@@ -48,4 +48,5 @@ final class ModelLensesSpec extends CatsSuite with ModelLenses {
   checkAll("instrument filter Optional", OptionalTests(instrumentFilterO))
   checkAll("instrument disperser Optional", OptionalTests(instrumentDisperserO))
   checkAll("instrument disperser lambda Optional", OptionalTests(instrumentDisperserLambdaO))
+  checkAll("instrument observing mode Optional", OptionalTests(instrumentObservingModeO))
 }
