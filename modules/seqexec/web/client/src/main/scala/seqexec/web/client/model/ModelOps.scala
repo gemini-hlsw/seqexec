@@ -38,7 +38,7 @@ object ModelOps {
       case StepState.Pending                      => "Pending"
       case StepState.Completed                    => "Done"
       case StepState.Skipped                      => "Skipped"
-      case StepState.Failed(msg)                  => s"Error $msg"
+      case StepState.Failed(msg)                  => msg
       case StepState.Running if s.isObserving     => "Observing..."
       case StepState.Running if s.isObservePaused => "Exposure paused"
       case StepState.Running if s.isConfiguring   => "Configuring..."

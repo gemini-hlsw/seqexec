@@ -18,10 +18,8 @@ import scala.collection.JavaConverters._
 import scala.concurrent.duration.Duration
 
 package commands {
-  sealed trait CommandResult
-  final case class Completed(response: Response) extends CommandResult
-  final case class Error[A](response: Response, message: A)
-      extends CommandResult
+  final case class CommandResult(response: Response)
+  final case class CommandResultException(response: Response, message: String) extends RuntimeException
 
   final case class Configuration(config: Map[ConfigPath, String]) {
 
@@ -58,14 +56,6 @@ package commands {
 package object commands {
   val DataLabelCfg = "DATA_LABEL"
 
-  implicit class CommandResultOps(val cr: CommandResult) extends AnyVal {
-
-    def isError: Boolean = cr match {
-      case Error(_, _) => true
-      case _           => false
-    }
-  }
-
   implicit val responseEq: Eq[Response] = Eq.instance {
     case (a, b) => a.name === b.name
   }
@@ -86,9 +76,9 @@ package object commands {
         command.toGiapi,
         (hr: HandlerResponse, _: GiapiCommand) => {
           if (hr.getResponse === Response.ERROR || hr.getResponse === Response.NOANSWER) {
-            cb(Right(Error(hr.getResponse, hr.getMessage)))
+            cb(Left(CommandResultException(hr.getResponse, hr.getMessage)))
           } else {
-            cb(Right(Completed(hr.getResponse)))
+            cb(Right(CommandResult(hr.getResponse)))
           }
           ()
         },
@@ -96,13 +86,13 @@ package object commands {
       )
       if (hr.getResponse === Response.ERROR || hr.getResponse === Response.NOANSWER) {
         cb(
-          Right(
-            Error(hr.getResponse,
+          Left(
+            CommandResultException(hr.getResponse,
                   if (hr.getResponse === Response.NOANSWER)
                     "No answer from the instrument"
                   else hr.getMessage)))
       } else if (hr.getResponse === Response.COMPLETED) {
-        cb(Right(Completed(hr.getResponse)))
+        cb(Right(CommandResult(hr.getResponse)))
       }
     // A third case is ACCEPTED but that is handled on the callback
     }
