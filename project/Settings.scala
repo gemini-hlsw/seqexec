@@ -93,7 +93,7 @@ object Settings {
     val argonaut                = "6.2.2"
     val commonsHttp             = "2.0.2"
     val unboundId               = "3.2.1"
-    val jwt                     = "0.16.0"
+    val jwt                     = "0.17.0"
     val slf4j                   = "1.7.25"
     val log4s                   = "1.6.1"
     val logback                 = "1.2.3"
