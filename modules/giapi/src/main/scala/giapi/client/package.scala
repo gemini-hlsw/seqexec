@@ -16,7 +16,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.Duration
 import shapeless.Typeable._
 import fs2.{Stream, async}
-import giapi.client.commands.{Command, Completed}
+import giapi.client.commands.Command
 
 package object client {
 
@@ -230,7 +230,7 @@ package client {
         override def get[A: ItemGetter](statusItem: String): Id[A] = sys.error(s"Cannot read $statusItem")
         override def getO[A: ItemGetter](statusItem: String): Id[Option[A]] = None
         override def stream[A: ItemGetter](statusItem: String, ec: ExecutionContext): Id[Stream[Id, A]] = Stream.raiseError(new RuntimeException(s"Cannot read $statusItem"))
-        override def command(command: Command): Id[CommandResult] = Completed(Response.COMPLETED)
+        override def command(command: Command): Id[CommandResult] = CommandResult(Response.COMPLETED)
         override def close: Id[Unit] = ()
       }
     }
@@ -243,7 +243,7 @@ package client {
         override def get[A: ItemGetter](statusItem: String): IO[A] = IO.raiseError(new RuntimeException(s"Cannot read $statusItem"))
         override def getO[A: ItemGetter](statusItem: String): IO[Option[A]] = IO.pure(None)
         override def stream[A: ItemGetter](statusItem: String, ec: ExecutionContext): IO[Stream[IO, A]] = IO.pure(Stream.empty.covary[IO])
-        override def command(command: Command): IO[CommandResult] = IO.pure(Completed(Response.COMPLETED))
+        override def command(command: Command): IO[CommandResult] = IO.pure(CommandResult(Response.COMPLETED))
         override def close: IO[Unit] = IO.unit
       })
     }

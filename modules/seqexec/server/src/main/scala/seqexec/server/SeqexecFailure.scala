@@ -6,7 +6,7 @@ package seqexec.server
 import edu.gemini.seqexec.odb.SeqFailure
 import org.http4s.Uri
 
-sealed trait SeqexecFailure
+sealed trait SeqexecFailure extends Product with Serializable
 
 object SeqexecFailure {
 

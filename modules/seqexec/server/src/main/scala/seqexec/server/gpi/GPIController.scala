@@ -19,7 +19,7 @@ import edu.gemini.spModel.gemini.gpi.Gpi.{Lyot => LegacyLyot}
 import edu.gemini.spModel.gemini.gpi.Gpi.{ObservingMode => LegacyObservingMode}
 import edu.gemini.spModel.gemini.gpi.Gpi.{PupilCamera => LegacyPupilCamera}
 import edu.gemini.spModel.gemini.gpi.Gpi.{Shutter => LegacyShutter}
-import giapi.client.commands.{CommandResult, Configuration}
+import giapi.client.commands.{CommandResult, CommandResultException, Configuration}
 import giapi.client.gpi.GPIClient
 import mouse.boolean._
 import org.log4s.getLogger
@@ -27,6 +27,7 @@ import scala.concurrent.duration.Duration
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.keywords.GDSClient
 import seqexec.server.SeqActionF
+import seqexec.server.SeqexecFailure.{Execution, SeqexecException}
 
 object GPILookupTables {
 
@@ -181,8 +182,13 @@ final case class GPIController[F[_]: Sync](gpiClient: GPIClient[F],
                                .fold(1, 0)) |+|
         Configuration.single("gpi:configPolarizer.angle", config.disperserAngle)
 
-    EitherT.liftF(
-      gpiClient.genericApply(giapiApply |+| obsModeConfiguration(config)))
+      EitherT(gpiClient.genericApply(giapiApply |+| obsModeConfiguration(config)).attempt)
+        .leftMap {
+          // The GMP sends these cryptic messages but we can do better
+          case CommandResultException(_, "Message cannot be null") => Execution("Unhandled Apply command")
+          case CommandResultException(_, m)                        => Execution(m)
+          case f                                                   => SeqexecException(f)
+        }
   }
   // scalastyle:on
 
@@ -196,7 +202,12 @@ final case class GPIController[F[_]: Sync](gpiClient: GPIClient[F],
     } yield ()
 
   def observe(fileId: ImageFileId): SeqActionF[F, ImageFileId] =
-    EitherT(gpiClient.observe(fileId).map(_ => fileId.asRight))
+    EitherT(gpiClient.observe(fileId).map(_ => fileId).attempt)
+      .leftMap {
+        case CommandResultException(_, "Message cannot be null") => Execution("Unhandled observe command")
+        case CommandResultException(_, m)                        => Execution(m)
+        case f                                                   => SeqexecException(f)
+      }
 
   def endObserve: SeqActionF[F, Unit] =
     SeqActionF.void
