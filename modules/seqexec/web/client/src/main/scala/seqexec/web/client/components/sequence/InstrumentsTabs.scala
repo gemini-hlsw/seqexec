@@ -65,6 +65,7 @@ object InstrumentTab {
           "error"  -> hasError
         ),
         SeqexecStyles.instrumentTab,
+        SeqexecStyles.inactiveInstrumentContent.unless(active),
         SeqexecStyles.activeInstrumentContent.when(active),
         SeqexecStyles.errorTab.when(hasError),
         dataTab := instrument.show

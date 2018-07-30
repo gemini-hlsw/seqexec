@@ -15,7 +15,7 @@ const Web = Merge(
   parts.resourceModules,
   parts.extractCSS({
     devMode: true,
-    use: ["css-loader", parts.lessLoader({ sourceMap: true })]
+    use: ["css-loader", parts.lessLoader()]
   }),
   parts.extraAssets,
   parts.fontAssets,
