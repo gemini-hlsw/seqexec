@@ -23,6 +23,8 @@ object SeqexecStyles {
 
   val activeInstrumentContent: GStyle = GStyle.fromString("SeqexecStyles-activeInstrumentContent")
 
+  val inactiveInstrumentContent: GStyle = GStyle.fromString("SeqexecStyles-inactiveInstrumentContent")
+
   val errorTab: GStyle = GStyle.fromString("SeqexecStyles-errorTab")
 
   val fieldsNoBottom: GStyle = GStyle.fromString("SeqexecStyles-fieldsNoBottom")
