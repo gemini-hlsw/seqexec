@@ -337,7 +337,7 @@ lazy val giapi = project
   .settings(commonSettings: _*)
   .settings(
     libraryDependencies ++= Seq(Cats.value, Mouse.value, Shapeless.value, CatsEffect.value, Fs2, GiapiJmsUtil, GiapiJmsProvider, GiapiStatusService, Giapi, GiapiCommandsClient) ++ Logging,
-    libraryDependencies ++= Seq(GmpStatusGateway % "test", GmpStatusDatabase % "test")
+    libraryDependencies ++= Seq(GmpStatusGateway % "test", GmpStatusDatabase % "test", GmpCmdJmsBridge % "test")
   )
 
 // Common utilities for web server projects

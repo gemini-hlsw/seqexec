@@ -22,11 +22,11 @@ import edu.gemini.jms.api.{
 import fs2.Stream
 import scala.concurrent.duration._
 
-final case class Gmp(amq: ActiveMQJmsProvider,
+final case class GmpStatus(amq: ActiveMQJmsProvider,
                      dispatcher: JmsStatusDispatcher,
                      msgConsumer: BaseMessageConsumer)
 
-object Gmp {
+object GmpStatus {
 
   def amqUrl(name: String): String =
     s"vm://$name?broker.useJmx=false&marshal=false&broker.persistent=false"
@@ -37,9 +37,9 @@ object Gmp {
   /**
     * Setup a mini gmp that can store and provide status items
     */
-  def createGmp(amqUrl: String,
+  def createGmpStatus(amqUrl: String,
                 intItemName: String,
-                strItemName: String): IO[Gmp] = IO.apply {
+                strItemName: String): IO[GmpStatus] = IO.apply {
     // Local in memory broker
     val amq = new ActiveMQJmsProvider(amqUrl)
     amq.startConnection()
@@ -61,10 +61,10 @@ object Gmp {
     // Set a status item
     database.update(new BasicStatus[Int](intItemName, 1))
     database.update(new BasicStatus[String](strItemName, "one"))
-    Gmp(amq, dispatcher, msgConsumer)
+    GmpStatus(amq, dispatcher, msgConsumer)
   }
 
-  def closeGmp(gmp: Gmp): IO[Unit] = IO.apply {
+  def closeGmpStatus(gmp: GmpStatus): IO[Unit] = IO.apply {
     gmp.dispatcher.stopJms()
     gmp.msgConsumer.stopJms()
     gmp.amq.stopConnection()
@@ -74,32 +74,32 @@ object Gmp {
 /**
   * Tests of the giapi api
   */
-final class GiapiSpec extends CatsSuite {
+final class GiapiStatusSpec extends CatsSuite {
   val intItemName = "item:a"
   val strItemName = "item:b"
 
   test("Test reading an existing status item") {
     val result = Stream.bracket(
-      Gmp.createGmp(Gmp.amqUrl("test1"), intItemName, strItemName))(
+      GmpStatus.createGmpStatus(GmpStatus.amqUrl("test1"), intItemName, strItemName))(
       _ =>
         Stream.bracket(
           Giapi
-            .giapiConnection[IO](Gmp.amqUrlConnect("test1"), 2000.millis)
+            .giapiConnection[IO](GmpStatus.amqUrlConnect("test1"), 2000.millis)
             .connect)(c => Stream.eval(c.get[Int](intItemName)), _.close),
-      Gmp.closeGmp
+      GmpStatus.closeGmpStatus
     )
     result.compile.last.unsafeRunSync should contain(1)
   }
 
   test("Test reading an status with string type") {
     val result = Stream.bracket(
-      Gmp.createGmp(Gmp.amqUrl("test2"), intItemName, strItemName))(
+      GmpStatus.createGmpStatus(GmpStatus.amqUrl("test2"), intItemName, strItemName))(
       _ =>
         Stream.bracket(
           Giapi
-            .giapiConnection[IO](Gmp.amqUrlConnect("test2"), 2000.millis)
+            .giapiConnection[IO](GmpStatus.amqUrlConnect("test2"), 2000.millis)
             .connect)(c => Stream.eval(c.get[String](strItemName)), _.close),
-      Gmp.closeGmp
+      GmpStatus.closeGmpStatus
     )
     result.compile.last.attempt.unsafeRunSync should matchPattern {
       case Right(Some("one")) =>
@@ -108,13 +108,13 @@ final class GiapiSpec extends CatsSuite {
 
   test("Test reading an unknown status item") {
     val result = Stream.bracket(
-      Gmp.createGmp(Gmp.amqUrl("test3"), intItemName, strItemName))(
+      GmpStatus.createGmpStatus(GmpStatus.amqUrl("test3"), intItemName, strItemName))(
       _ =>
         Stream.bracket(
           Giapi
-            .giapiConnection[IO](Gmp.amqUrlConnect("test3"), 2000.millis)
+            .giapiConnection[IO](GmpStatus.amqUrlConnect("test3"), 2000.millis)
             .connect)(c => Stream.eval(c.get[Int]("item:u")), _.close),
-      Gmp.closeGmp
+      GmpStatus.closeGmpStatus
     )
     result.compile.drain.attempt.unsafeRunSync should matchPattern {
       case Left(GiapiException(_)) =>
@@ -123,13 +123,13 @@ final class GiapiSpec extends CatsSuite {
 
   test("Test reading an unknown status item as optional") {
     val result = Stream.bracket(
-      Gmp.createGmp(Gmp.amqUrl("test3"), intItemName, strItemName))(
+      GmpStatus.createGmpStatus(GmpStatus.amqUrl("test3"), intItemName, strItemName))(
       _ =>
         Stream.bracket(
           Giapi
-            .giapiConnection[IO](Gmp.amqUrlConnect("test3"), 2000.millis)
+            .giapiConnection[IO](GmpStatus.amqUrlConnect("test3"), 2000.millis)
             .connect)(c => Stream.eval(c.getO[Int]("item:u")), _.close),
-      Gmp.closeGmp
+      GmpStatus.closeGmpStatus
     )
     result.compile.last.unsafeRunSync should matchPattern {
       case Some(None) =>
@@ -139,15 +139,15 @@ final class GiapiSpec extends CatsSuite {
   test("Closing connection should terminate") {
     // This should fail but we are mostly concerned with ensuring that it terminates
     val result = Stream.bracket(
-      Gmp.createGmp(Gmp.amqUrl("test4"), intItemName, strItemName))(
+      GmpStatus.createGmpStatus(GmpStatus.amqUrl("test4"), intItemName, strItemName))(
       g =>
         Stream.bracket(
           Giapi
-            .giapiConnection[IO](Gmp.amqUrlConnect("test4"), 2000.millis)
+            .giapiConnection[IO](GmpStatus.amqUrlConnect("test4"), 2000.millis)
             .connect)(
-          c => Stream.eval(Gmp.closeGmp(g) >> c.get[Int](intItemName)),
+          c => Stream.eval(GmpStatus.closeGmpStatus(g) >> c.get[Int](intItemName)),
           _.close),
-      Gmp.closeGmp
+      GmpStatus.closeGmpStatus
     )
     result.compile.drain.attempt.unsafeRunSync should matchPattern {
       case Left(GiapiException(_)) =>
