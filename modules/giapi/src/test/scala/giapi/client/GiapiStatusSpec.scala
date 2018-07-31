@@ -80,11 +80,11 @@ final class GiapiStatusSpec extends CatsSuite {
 
   test("Test reading an existing status item") {
     val result = Stream.bracket(
-      GmpStatus.createGmpStatus(GmpStatus.amqUrl("test1"), intItemName, strItemName))(
+      GmpStatus.createGmpStatus(GmpStatus.amqUrl("tests1"), intItemName, strItemName))(
       _ =>
         Stream.bracket(
           Giapi
-            .giapiConnection[IO](GmpStatus.amqUrlConnect("test1"), 2000.millis)
+            .giapiConnection[IO](GmpStatus.amqUrlConnect("tests1"), 2000.millis)
             .connect)(c => Stream.eval(c.get[Int](intItemName)), _.close),
       GmpStatus.closeGmpStatus
     )
@@ -93,11 +93,11 @@ final class GiapiStatusSpec extends CatsSuite {
 
   test("Test reading an status with string type") {
     val result = Stream.bracket(
-      GmpStatus.createGmpStatus(GmpStatus.amqUrl("test2"), intItemName, strItemName))(
+      GmpStatus.createGmpStatus(GmpStatus.amqUrl("tests2"), intItemName, strItemName))(
       _ =>
         Stream.bracket(
           Giapi
-            .giapiConnection[IO](GmpStatus.amqUrlConnect("test2"), 2000.millis)
+            .giapiConnection[IO](GmpStatus.amqUrlConnect("tests2"), 2000.millis)
             .connect)(c => Stream.eval(c.get[String](strItemName)), _.close),
       GmpStatus.closeGmpStatus
     )
@@ -108,11 +108,11 @@ final class GiapiStatusSpec extends CatsSuite {
 
   test("Test reading an unknown status item") {
     val result = Stream.bracket(
-      GmpStatus.createGmpStatus(GmpStatus.amqUrl("test3"), intItemName, strItemName))(
+      GmpStatus.createGmpStatus(GmpStatus.amqUrl("tests3"), intItemName, strItemName))(
       _ =>
         Stream.bracket(
           Giapi
-            .giapiConnection[IO](GmpStatus.amqUrlConnect("test3"), 2000.millis)
+            .giapiConnection[IO](GmpStatus.amqUrlConnect("tests3"), 2000.millis)
             .connect)(c => Stream.eval(c.get[Int]("item:u")), _.close),
       GmpStatus.closeGmpStatus
     )
@@ -123,11 +123,11 @@ final class GiapiStatusSpec extends CatsSuite {
 
   test("Test reading an unknown status item as optional") {
     val result = Stream.bracket(
-      GmpStatus.createGmpStatus(GmpStatus.amqUrl("test3"), intItemName, strItemName))(
+      GmpStatus.createGmpStatus(GmpStatus.amqUrl("tests4"), intItemName, strItemName))(
       _ =>
         Stream.bracket(
           Giapi
-            .giapiConnection[IO](GmpStatus.amqUrlConnect("test3"), 2000.millis)
+            .giapiConnection[IO](GmpStatus.amqUrlConnect("tests4"), 2000.millis)
             .connect)(c => Stream.eval(c.getO[Int]("item:u")), _.close),
       GmpStatus.closeGmpStatus
     )
@@ -139,11 +139,11 @@ final class GiapiStatusSpec extends CatsSuite {
   test("Closing connection should terminate") {
     // This should fail but we are mostly concerned with ensuring that it terminates
     val result = Stream.bracket(
-      GmpStatus.createGmpStatus(GmpStatus.amqUrl("test4"), intItemName, strItemName))(
+      GmpStatus.createGmpStatus(GmpStatus.amqUrl("tests5"), intItemName, strItemName))(
       g =>
         Stream.bracket(
           Giapi
-            .giapiConnection[IO](GmpStatus.amqUrlConnect("test4"), 2000.millis)
+            .giapiConnection[IO](GmpStatus.amqUrlConnect("tests5"), 2000.millis)
             .connect)(
           c => Stream.eval(GmpStatus.closeGmpStatus(g) >> c.get[Int](intItemName)),
           _.close),

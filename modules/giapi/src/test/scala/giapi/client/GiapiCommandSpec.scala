@@ -3,7 +3,8 @@
 
 package giapi.client
 
-import cats.effect.IO
+import cats.effect.{IO, Timer}
+import cats.implicits._
 import cats.tests.CatsSuite
 import giapi.client.commands._
 import edu.gemini.jms.activemq.provider.ActiveMQJmsProvider
@@ -34,12 +35,21 @@ object GmpCommands {
     val amq = new ActiveMQJmsProvider(amqUrl)
     amq.startConnection()
     val cs = new CommandSender() {
-
+      import scala.concurrent.ExecutionContext.Implicits.global
+      // This is essentially an instrument simulator
+      // we test several possible scenarios
       override def sendCommand(command: JCommand, listener: CompletionListener): HandlerResponse =
         sendCommand(command, listener, 0)
+
+      @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
       override def sendCommand(command: JCommand, listener: CompletionListener, timeout: Long): HandlerResponse =
         command.getSequenceCommand match {
           case SequenceCommand.INIT => HandlerResponse.COMPLETED
+          case SequenceCommand.PARK =>
+            println(Thread.currentThread.getName)
+            println(listener)
+            println((IO.shift *> IO(println(Thread.currentThread.getName)) *> Timer[IO].sleep(5.seconds) *> IO(println("timed")) *> IO.shift *> IO({println(listener);listener.onHandlerResponse(HandlerResponse.COMPLETED, command);println("Done")}) *> IO(println("there"))).start.unsafeRunSync)
+            HandlerResponse.ACCEPTED
           case _                    => HandlerResponse.NOANSWER
         }
 
@@ -54,6 +64,7 @@ object GmpCommands {
   }
 
   def closeGmpCommands(gmp: GmpCommands): IO[Unit] = IO.apply {
+    println("Close")
     gmp.cmc.stopJms()
     gmp.amq.stopConnection()
   }
@@ -64,26 +75,26 @@ object GmpCommands {
   */
 final class GiapiCommandSpec extends CatsSuite with EitherValues {
 
-  test("Test sending a command with no handlers") {
-    val result = Stream.bracket(
-      GmpCommands.createGmpCommands(GmpCommands.amqUrl("test1"), false))(
-      _ =>
-        Stream.bracket(
-          Giapi
-            .giapiConnection[IO](GmpCommands.amqUrlConnect("test1"), 2000.millis)
-            .connect)(c => Stream.eval(c.command(Command(SequenceCommand.TEST, Activity.PRESET, Configuration.Zero)).attempt), _.close),
-      GmpCommands.closeGmpCommands
-    )
-    result.compile.last.unsafeRunSync.map(_.left.value) should contain(CommandResultException(Response.ERROR, "Message cannot be null"))
-  }
+//  test("Test sending a command with no handlers") {
+//    val result = Stream.bracket(
+//      GmpCommands.createGmpCommands(GmpCommands.amqUrl("test1"), false))(
+//      _ =>
+//        Stream.bracket(
+//          Giapi
+//            .giapiConnection[IO](GmpCommands.amqUrlConnect("test1"), 2000.millis)
+//            .connect)(c => Stream.eval(c.command(Command(SequenceCommand.TEST, Activity.PRESET, Configuration.Zero)).attempt), _.close),
+//      GmpCommands.closeGmpCommands
+//    )
+//    result.compile.last.unsafeRunSync.map(_.left.value) should contain(CommandResultException(Response.ERROR, "Message cannot be null"))
+//  }
 
   test("Test sending a command with no answer") {
     val result = Stream.bracket(
-      GmpCommands.createGmpCommands(GmpCommands.amqUrl("test1"), true))(
+      GmpCommands.createGmpCommands(GmpCommands.amqUrl("test2"), true))(
       _ =>
         Stream.bracket(
           Giapi
-            .giapiConnection[IO](GmpCommands.amqUrlConnect("test1"), 2000.millis)
+            .giapiConnection[IO](GmpCommands.amqUrlConnect("test2"), 2000.millis)
             .connect)(c => Stream.eval(c.command(Command(SequenceCommand.TEST, Activity.PRESET, Configuration.Zero)).attempt), _.close),
       GmpCommands.closeGmpCommands
     )
@@ -92,12 +103,25 @@ final class GiapiCommandSpec extends CatsSuite with EitherValues {
 
   test("Test sending a command with immediate answer") {
     val result = Stream.bracket(
-      GmpCommands.createGmpCommands(GmpCommands.amqUrl("test2"), true))(
+      GmpCommands.createGmpCommands(GmpCommands.amqUrl("test3"), true))(
       _ =>
         Stream.bracket(
           Giapi
-            .giapiConnection[IO](GmpCommands.amqUrlConnect("test2"), 2000.millis)
+            .giapiConnection[IO](GmpCommands.amqUrlConnect("test3"), 2000.millis)
             .connect)(c => Stream.eval(c.command(Command(SequenceCommand.INIT, Activity.PRESET, Configuration.Zero)).attempt), _.close),
+      GmpCommands.closeGmpCommands
+    )
+    result.compile.last.unsafeRunSync.map(_.right.value) should contain(CommandResult(Response.COMPLETED))
+  }
+
+  test("Test sending a command with delayed answer") {
+    val result = Stream.bracket(
+      GmpCommands.createGmpCommands(GmpCommands.amqUrl("test4"), true))(
+      _ =>
+        Stream.bracket(
+          Giapi
+            .giapiConnection[IO](GmpCommands.amqUrlConnect("test4"), 2000.millis)
+            .connect)(c => Stream.eval(c.command(Command(SequenceCommand.PARK, Activity.PRESET, Configuration.Zero)).attempt), _.close),
       GmpCommands.closeGmpCommands
     )
     result.compile.last.unsafeRunSync.map(_.right.value) should contain(CommandResult(Response.COMPLETED))
