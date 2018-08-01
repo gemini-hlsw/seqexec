@@ -18,7 +18,6 @@ import seqexec.model.Model.{Step, SystemName}
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.actions.UpdateStepsConfigTableState
-import web.client.utils._
 import web.client.table._
 
 object StepConfigTable {
@@ -55,8 +54,8 @@ object StepConfigTable {
   // ScalaJS defined trait
   // scalastyle:off
   trait SettingsRow extends js.Object {
-    var sub: SystemName
-    var name: String
+    var sub  : SystemName
+    var name : String
     var value: String
   }
 
@@ -79,54 +78,47 @@ object StepConfigTable {
   }
 
   val TableColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
-    NameColumn,
-    name = "name",
-    label = "Name",
+    column  = NameColumn,
+    name    = "name",
+    label   = "Name",
     visible = true,
-    PercentageColumnWidth.Half)
+    width   = PercentageColumnWidth.Half)
 
   val ValueColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
-    ValueColumn,
-    name = "value",
-    label = "Value",
+    column  = ValueColumn,
+    name    = "value",
+    label   = "Value",
     visible = true,
-    PercentageColumnWidth.Half)
+    width   = PercentageColumnWidth.Half)
 
   val InitialTableState: TableState[TableColumn] = TableState[TableColumn](
-    NotModified,
-    0,
-    NonEmptyList.of(TableColumnMeta, ValueColumnMeta))
+    userModified   = NotModified,
+    scrollPosition = 0,
+    columns        = NonEmptyList.of(TableColumnMeta, ValueColumnMeta))
 
-  private def columns(b: Backend): List[Table.ColumnArg] = {
-    val width = b.props.size.width
-    // Tell the model to resize a column
-    def resizeRow(c: TableColumn): (String, JsNumber) => Callback =
-      (_, dx) => {
-        val percentDelta = dx.toDouble / width
-        val s            = b.state.applyOffset(c, percentDelta)
-        b.setState(s) >> SeqexecCircuit.dispatchCB(
-          UpdateStepsConfigTableState(s))
-      }
+  private def colBuilder(b: Backend): ColumnRenderArgs[TableColumn] => Table.ColumnArg = tb => {
+    val state = b.state
+    def updateState(s: TableState[TableColumn]): Callback =
+      b.setState(s) >> SeqexecCircuit.dispatchCB(UpdateStepsConfigTableState(s))
 
-    b.state.columns.zipWithIndex.map {
-      case (ColumnMeta(c, name, label, true, PercentageColumnWidth(percentage)), i)
-        if i < b.state.columns.length - 1 =>
+    tb match {
+      case ColumnRenderArgs(ColumnMeta(c, name, label, _, _), _, width, true) =>
         Column(
           Column.propsNoFlex(
-            width * percentage,
-            name,
-            label = label,
-            headerRenderer = resizableHeaderRenderer(resizeRow(c)),
-            className = SeqexecStyles.paddedStepRow.htmlClass
+            width          = width,
+            dataKey        = name,
+            label          = label,
+            headerRenderer = resizableHeaderRenderer(state.resizeRow(c, b.props.size, updateState)),
+            className      = SeqexecStyles.paddedStepRow.htmlClass
           ))
-      case (ColumnMeta(_, name, label, true, PercentageColumnWidth(percentage)), _)
-                                          =>
+      case ColumnRenderArgs(ColumnMeta(_, name, label, _, _), _, width, false) =>
         Column(
-          Column.propsNoFlex(width * percentage,
-                       name,
-                       label = label,
-                       className = SeqexecStyles.paddedStepRow.htmlClass))
-    }.toList
+          Column.propsNoFlex(
+            width     = width,
+            dataKey   = name,
+            label     = label,
+            className = SeqexecStyles.paddedStepRow.htmlClass))
+    }
   }
 
   def updateScrollPosition(b: Backend, pos: JsNumber): Callback = {
@@ -178,7 +170,7 @@ object StepConfigTable {
     .builder[Props]("StepConfig")
     .initialStateFromProps(_.startState)
     .render { b =>
-      Table(settingsTableProps(b), columns(b): _*)
+      Table(settingsTableProps(b), b.state.columnBuilder(b.props.size.width, colBuilder(b)): _*)
     }
     .build
 
