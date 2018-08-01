@@ -102,7 +102,7 @@ object LogArea {
     def unapply(l: LogRow): Option[(Instant, ServerLogLevel, String, String)] =
       Some((l.timestamp, l.level, l.msg, l.clip))
 
-    val Zero: LogRow = apply("", Instant.MAX, ServerLogLevel.INFO, "")
+    val Default: LogRow = apply("", Instant.MAX, ServerLogLevel.INFO, "")
   }
 
   final case class Props(site: Site, log: ModelProxy[GlobalLog]) {
@@ -116,11 +116,10 @@ object LogArea {
       reverseLog
         .filter_(levelFilter(s) _)
         .lift(i)
-        .map { l =>
+        .fold(LogRow.Default) { l =>
           val localTime = LocalDateTime.ofInstant(l.timestamp, site.timezone)
           LogRow(formatter.format(localTime), l.timestamp, l.level, l.msg)
         }
-        .getOrElse(LogRow.Zero)
 
     def rowCount(s: State): Int =
       reverseLog.filter_(levelFilter(s) _).size
@@ -139,7 +138,7 @@ object LogArea {
 
   object State {
 
-    val ZeroTableState: TableState[TableColumn] = TableState[TableColumn](
+    val DefaultTableState: TableState[TableColumn] = TableState[TableColumn](
       userModified   = NotModified,
       scrollPosition = 0,
       columns        = NonEmptyList.of(TimestampColumnMeta,
@@ -147,8 +146,8 @@ object LogArea {
                                        MsgColumnMeta,
                                        ClipboardColumnMeta))
 
-    val Zero: State =
-      State(ServerLogLevel.all.map(_ -> true).toMap, ZeroTableState)
+    val Default: State =
+      State(ServerLogLevel.all.map(_ -> true).toMap, DefaultTableState)
   }
 
   private val ST = ReactS.Fix[State]
@@ -287,7 +286,7 @@ object LogArea {
 
   private val component = ScalaComponent
     .builder[Props]("LogArea")
-    .initialState(State.Zero)
+    .initialState(State.Default)
     .renderPS { ($, p, s) =>
       val toggleIcon = (p.log().display === SectionOpen)
         .fold(IconAngleDoubleDown, IconAngleDoubleUp)

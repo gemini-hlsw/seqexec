@@ -220,7 +220,7 @@ object QueueTableBody {
         State.columns.modify(_.map {
           case c @ ColumnMeta(t, _, _, true, PercentageColumnWidth(_)) =>
             PercentageColumnWidth.fromDouble(optimalSizes.getOrElse(t, 0).toDouble / width)
-              .map(w => c.copy(width = w)).getOrElse(c)
+              .fold(c)(w => c.copy(width = w))
           case c                                                       =>
             c
         })(this)
@@ -453,7 +453,7 @@ object QueueTableBody {
       (_, dx) => {
         val percentDelta = dx.toDouble / size.width
         val ns           = b.state.applyOffset(c, percentDelta)
-        b.setState(ns) >> SeqexecCircuit.dispatchCB(
+        b.setState(ns) *> SeqexecCircuit.dispatchCB(
           UpdateQueueTableState(ns.tableState))
       }
 
@@ -540,7 +540,7 @@ object QueueTableBody {
 
   def updateScrollPosition(b: Backend, pos: JsNumber): Callback = {
     val s = State.scrollPosition.set(pos)(b.state)
-    b.setState(s) >> SeqexecCircuit.dispatchCB(
+    b.setState(s) *> SeqexecCircuit.dispatchCB(
       UpdateQueueTableState(s.tableState))
   }
 

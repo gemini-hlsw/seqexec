@@ -88,12 +88,18 @@ package table {
       val result = columns.toList.zipWithIndex.map {
         case (c @ ColumnMeta(_, _, _, true, PercentageColumnWidth(x)), idx) if idx === indexOf     =>
           val nv = x + delta
-          (nv >= 0 && nv <= 1)
-            .fold(c.copy(width = PercentageColumnWidth(nv)), c)
+          if (nv >= 0 && nv <= 1) {
+            c.copy(width = PercentageColumnWidth(nv))
+          } else {
+            c
+          }
         case (c @ ColumnMeta(_, _, _, true, PercentageColumnWidth(x)), idx) if idx === indexOf + 1 =>
           val nv = x - delta
-          (nv >= 0 && nv <= 1)
-            .fold(c.copy(width = PercentageColumnWidth(nv)), c)
+          if (nv >= 0 && nv <= 1) {
+            c.copy(width = PercentageColumnWidth(nv))
+          } else {
+            c
+          }
         case (c, _)                                                                                => c
       }
       copy(userModified = IsModified,
@@ -109,8 +115,7 @@ package table {
           case FixedColumnWidth(w)      => w.toDouble
           case PercentageColumnWidth(f) => f * s.width
         }
-        .headOption
-        .getOrElse(0.0)
+        .foldMap(identity)
 
     // Table can call this to build the columns
     def columnBuilder(
