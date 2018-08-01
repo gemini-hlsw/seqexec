@@ -20,8 +20,8 @@ import web.client.utils._
 package table {
 
   sealed trait UserModified extends Product with Serializable
-  case object IsModified  extends UserModified
-  case object NotModified extends UserModified
+  case object IsModified    extends UserModified
+  case object NotModified   extends UserModified
 
   object UserModified {
     implicit val eq: Eq[UserModified] = Eq.fromUniversalEquals
@@ -30,48 +30,56 @@ package table {
   }
 
   sealed trait ColumnWidth extends Product with Serializable
-  final case class FixedColumnWidth private[table] (width: Int) extends ColumnWidth {
+  final case class FixedColumnWidth(width: Int) extends ColumnWidth {
     assert(width >= 0)
   }
-  final case class PercentageColumnWidth private[table] (percentage: Double) extends ColumnWidth {
+  final case class PercentageColumnWidth(percentage: Double) extends ColumnWidth {
     assert(percentage >= 0 && percentage <= 1)
   }
 
   object ColumnWidth {
-    implicit val eq: Eq[ColumnWidth] = Eq[Either[FixedColumnWidth, PercentageColumnWidth]].contramap {
-      case x: FixedColumnWidth      => x.asLeft
-      case x: PercentageColumnWidth => x.asRight
-    }
+    implicit val eq: Eq[ColumnWidth] =
+      Eq[Either[FixedColumnWidth, PercentageColumnWidth]].contramap {
+        case x: FixedColumnWidth      => x.asLeft
+        case x: PercentageColumnWidth => x.asRight
+      }
   }
 
   object FixedColumnWidth {
     implicit val eqFcw: Eq[FixedColumnWidth] = Eq.by(_.width)
 
     def fromInt(width: Int): Option[FixedColumnWidth] =
-      (width >= 0) option FixedColumnWidth(width)
+      (width >= 0).option(FixedColumnWidth(width))
   }
 
   object PercentageColumnWidth {
     implicit val eqPcw: Eq[PercentageColumnWidth] = Eq.by(_.percentage)
-    private[table] def apply(d: Double) = new PercentageColumnWidth(d)
+    private[table] def apply(d: Double)           = new PercentageColumnWidth(d)
 
     def fromDouble(percentage: Double): Option[PercentageColumnWidth] =
-      (percentage >= 0 && percentage <= 1) option PercentageColumnWidth(percentage)
+      (percentage >= 0 && percentage <= 1)
+        .option(PercentageColumnWidth(percentage))
 
     def unsafeFromDouble(percentage: Double): PercentageColumnWidth =
-      fromDouble(percentage).getOrElse(sys.error(s"Incorrect percentage value $percentage"))
+      fromDouble(percentage).getOrElse(
+        sys.error(s"Incorrect percentage value $percentage"))
 
     val Full: PercentageColumnWidth = PercentageColumnWidth(1)
     val Zero: PercentageColumnWidth = PercentageColumnWidth(0)
     val Half: PercentageColumnWidth = PercentageColumnWidth(0.5)
   }
 
-  final case class ColumnRenderArgs[A](meta: ColumnMeta[A], index: Int, width: JsNumber, resizable: Boolean)
+  final case class ColumnRenderArgs[A](meta     : ColumnMeta[A],
+                                       index    : Int,
+                                       width    : JsNumber,
+                                       resizable: Boolean)
 
   /**
-   * State of a table
-   */
-  final case class TableState[A: Eq](userModified: UserModified, scrollPosition: JsNumber, columns: NonEmptyList[ColumnMeta[A]]) {
+    * State of a table
+    */
+  final case class TableState[A: Eq](userModified  : UserModified,
+                                     scrollPosition: JsNumber,
+                                     columns       : NonEmptyList[ColumnMeta[A]]) {
 
     // Changes the relative widths when a column is being dragged
     def applyOffset(column: A, delta: Double): TableState[A] = {
@@ -80,13 +88,16 @@ package table {
       val result = columns.toList.zipWithIndex.map {
         case (c @ ColumnMeta(_, _, _, true, PercentageColumnWidth(x)), idx) if idx === indexOf     =>
           val nv = x + delta
-          (nv >= 0 && nv <= 1).fold(c.copy(width = PercentageColumnWidth(nv)), c)
+          (nv >= 0 && nv <= 1)
+            .fold(c.copy(width = PercentageColumnWidth(nv)), c)
         case (c @ ColumnMeta(_, _, _, true, PercentageColumnWidth(x)), idx) if idx === indexOf + 1 =>
           val nv = x - delta
-          (nv >= 0 && nv <= 1).fold(c.copy(width = PercentageColumnWidth(nv)), c)
+          (nv >= 0 && nv <= 1)
+            .fold(c.copy(width = PercentageColumnWidth(nv)), c)
         case (c, _)                                                                                => c
       }
-      copy(userModified = IsModified, columns = NonEmptyList.fromListUnsafe(result))
+      copy(userModified = IsModified,
+           columns = NonEmptyList.fromListUnsafe(result))
     }
 
     // Return the width of a column from the actual column width
@@ -101,15 +112,21 @@ package table {
         .headOption
         .getOrElse(0.0)
 
-    def columnBuilder(s: Size, b: ColumnRenderArgs[A] => Table.ColumnArg): List[Table.ColumnArg] = {
+    // Table can call this to build the columns
+    def columnBuilder(
+        s: Size,
+        b: ColumnRenderArgs[A] => Table.ColumnArg): List[Table.ColumnArg] = {
       val disposableWidth = math.max(0, s.width.toDouble - columns.collect {
         case ColumnMeta(_, _, _, true, FixedColumnWidth(x)) => x
       }.sum)
       normalizeColumnsPercentages.columns.toList.zipWithIndex.map {
-        case (m @ ColumnMeta(_, _, _, true, FixedColumnWidth(w)), i) =>
+        case (m @ ColumnMeta(_, _, _, true, FixedColumnWidth(w)), i)      =>
           b.apply(ColumnRenderArgs(m, i, w, i < (columns.length - 1)))
         case (m @ ColumnMeta(_, _, _, true, PercentageColumnWidth(p)), i) =>
-          b.apply(ColumnRenderArgs(m, i, p * disposableWidth, i < (columns.length - 1)))
+          b.apply(ColumnRenderArgs(m,
+                                   i,
+                                   p * disposableWidth,
+                                   i < (columns.length - 1)))
       }
     }
 
@@ -118,16 +135,21 @@ package table {
       val percentagesSum = columns.collect {
         case ColumnMeta(_, _, _, true, PercentageColumnWidth(x)) => x
       }.sum
-      TableState.columns[A].modify(_.map {
-        case c @ ColumnMeta(_, _, _, true, PercentageColumnWidth(x)) =>
-          c.copy(width = PercentageColumnWidth(x / percentagesSum))
-        case c =>
-          c
-      })(this)
+      TableState
+        .columns[A]
+        .modify(_.map {
+          case c @ ColumnMeta(_, _, _, true, PercentageColumnWidth(x)) =>
+            c.copy(width = PercentageColumnWidth(x / percentagesSum))
+          case c                                                       =>
+            c
+        })(this)
     }
 
     // Tell the model to resize a column
-    def resizeRow(column: A, s: Size, cb: TableState[A] => Callback): (String, JsNumber) => Callback =
+    def resizeRow(
+        column: A,
+        s: Size,
+        cb: TableState[A] => Callback): (String, JsNumber) => Callback =
       (_, dx) => {
         val percentDelta = dx.toDouble / s.width.toDouble
         val st           = applyOffset(column, percentDelta)
@@ -140,27 +162,36 @@ package table {
       Eq.by(x => (x.userModified, x.scrollPosition.toDouble, x.columns))
 
     def userModified[A: Eq]: Lens[TableState[A], UserModified] =
-      Lens[TableState[A], UserModified](_.userModified)(n => a => a.copy(userModified = n))
+      Lens[TableState[A], UserModified](_.userModified)(n =>
+        a => a.copy(userModified = n))
 
     def columns[A: Eq]: Lens[TableState[A], NonEmptyList[ColumnMeta[A]]] =
-      Lens[TableState[A], NonEmptyList[ColumnMeta[A]]](_.columns)(n => a => a.copy(columns = n))
+      Lens[TableState[A], NonEmptyList[ColumnMeta[A]]](_.columns)(n =>
+        a => a.copy(columns = n))
 
     def scrollPosition[A: Eq]: Lens[TableState[A], JsNumber] =
-      Lens[TableState[A], JsNumber](_.scrollPosition)(n => a => a.copy(scrollPosition = n))
+      Lens[TableState[A], JsNumber](_.scrollPosition)(n =>
+        a => a.copy(scrollPosition = n))
   }
 
   /**
-   * Metadata for a column
-   */
-  final case class ColumnMeta[A](column: A, name: String, label: String, visible: Boolean, width: ColumnWidth)
+    * Metadata for a column
+    */
+  final case class ColumnMeta[A](column : A,
+                                 name   : String,
+                                 label  : String,
+                                 visible: Boolean,
+                                 width  : ColumnWidth)
 
   object ColumnMeta {
-    implicit def eqCm[A: Eq]: Eq[ColumnMeta[A]] = Eq.by(x => (x.column, x.name, x.label, x.visible, x.width))
+    implicit def eqCm[A: Eq]: Eq[ColumnMeta[A]] =
+      Eq.by(x => (x.column, x.name, x.label, x.visible, x.width))
   }
 
 }
 
 package object table {
+
   // Renderer for a resizable column
   def resizableHeaderRenderer(
       rs: (String, JsNumber) => Callback): HeaderRenderer[js.Object] =
