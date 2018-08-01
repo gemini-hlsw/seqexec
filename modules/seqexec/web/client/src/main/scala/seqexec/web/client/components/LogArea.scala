@@ -3,12 +3,15 @@
 
 package seqexec.web.client.components
 
+import cats.Eq
+import cats.data.NonEmptyList
 import cats.implicits._
 import mouse.all._
 import diode.react.ModelProxy
 import gem.enum.Site
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.component.Scala.Unmounted
+import japgolly.scalajs.react.component.builder.Lifecycle.RenderScope
 import japgolly.scalajs.react.CatsReact._
 import japgolly.scalajs.react.vdom.html_<^._
 import java.time.{Instant, LocalDateTime}
@@ -27,6 +30,7 @@ import seqexec.web.client.model.{GlobalLog, SectionOpen}
 import seqexec.web.client.actions.ToggleLogArea
 import seqexec.web.common.FixedLengthBuffer
 import web.client.style._
+import web.client.table._
 
 /**
   * Area to display a sequence's log
@@ -47,6 +51,17 @@ object CopyLogToClipboard {
   * Area to display a sequence's log
   */
 object LogArea {
+  type Backend = RenderScope[Props, State, Unit]
+
+  sealed trait TableColumn
+  case object TimestampColumn  extends TableColumn
+  case object LevelColumn extends TableColumn
+  case object MsgColumn extends TableColumn
+  case object ClipboardColumn extends TableColumn
+
+  object TableColumn {
+    implicit val eq: Eq[TableColumn] = Eq.fromUniversalEquals
+  }
 
   // Date time formatter
   private val formatter  = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SS")
@@ -94,27 +109,63 @@ object LogArea {
 
   }
 
-  final case class State(selectedLevels: Map[ServerLogLevel, Boolean]) {
+  final case class State(selectedLevels: Map[ServerLogLevel, Boolean], tableState: TableState[TableColumn]) {
     def updateLevel(level: ServerLogLevel, value: Boolean): State = copy(selectedLevels + (level -> value))
     def allowedLevel(level: ServerLogLevel): Boolean = selectedLevels.getOrElse(level, false)
   }
 
   object State {
-    val Zero: State = State(ServerLogLevel.all.map(_ -> true).toMap)
+    val ZeroTableState: TableState[TableColumn] = TableState[TableColumn](NotModified, 0, NonEmptyList.of(TimestampColumnMeta, LevelColumnMeta, MsgColumnMeta, ClipboardColumnMeta))
+    val Zero: State = State(ServerLogLevel.all.map(_ -> true).toMap, ZeroTableState)
   }
 
   private val ST = ReactS.Fix[State]
 
-  private val TimestampWidth = 200
-  private val LevelWidth     = 80
   private val ClipboardWidth = 37
 
+  val TimestampColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
+    TimestampColumn,
+    name = "local",
+    label = "Timestamp",
+    visible = true,
+    PercentageColumnWidth.unsafeFromDouble(0.2)
+  )
+
+  val LevelColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
+    LevelColumn,
+    name = "level",
+    label = "Level",
+    visible = true,
+    PercentageColumnWidth.unsafeFromDouble(0.1)
+  )
+
+  val MsgColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
+    MsgColumn,
+    name = "msg",
+    label = "Message",
+    visible = true,
+    PercentageColumnWidth.unsafeFromDouble(0.7)
+  )
+
+  val ClipboardColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
+    ClipboardColumn,
+    name = "clip",
+    label = "",
+    visible = true,
+    FixedColumnWidth(ClipboardWidth)
+  )
+
   private val LogColumnStyle: String = SeqexecStyles.queueText.htmlClass
+
+  private def updateTableState(st: TableState[TableColumn]) =
+    ST.mod(_.copy(tableState = st)).liftCB
 
   /**
    * Build the table log
    */
-  def table(p: Props, s: State)(size: Size): VdomNode = {
+  def table(b: Backend)(size: Size): VdomNode = {
+    val p = b.props
+    val s = b.state
 
     // Custom renderers for the last column
     val clipboardHeaderRenderer: HeaderRenderer[js.Object] = (_, _, _, _, _, _) =>
@@ -127,12 +178,15 @@ object LogArea {
       CopyLogToClipboard(toCsv)
     }
 
-    val columns = List(
-      Column(Column.propsNoFlex(TimestampWidth, "local", label = "Timestamp", className = LogColumnStyle)),
-      Column(Column.propsNoFlex(LevelWidth, "level", label = "Level", className = LogColumnStyle)),
-      Column(Column.propsNoFlex(size.width.toInt - TimestampWidth - LevelWidth - ClipboardWidth, "msg", label = "Message", className = LogColumnStyle)),
-      Column(Column.propsNoFlex(ClipboardWidth, "clip", headerRenderer = clipboardHeaderRenderer, cellRenderer = clipboardCellRenderer, className = SeqexecStyles.clipboardIconDiv.htmlClass, headerClassName = SeqexecStyles.clipboardIconHeader.htmlClass))
-    )
+    def colBuilder(r: ColumnRenderArgs[TableColumn]): Table.ColumnArg =
+      r match {
+        case ColumnRenderArgs(ColumnMeta(ClipboardColumn, name, _, _, _), _, _, _) =>
+          Column(Column.propsNoFlex(ClipboardWidth, name, headerRenderer = clipboardHeaderRenderer, cellRenderer = clipboardCellRenderer, className = SeqexecStyles.clipboardIconDiv.htmlClass, headerClassName = SeqexecStyles.clipboardIconHeader.htmlClass))
+        case ColumnRenderArgs(ColumnMeta(MsgColumn, name, label, _, _), _, width, _) =>
+          Column(Column.propsNoFlex(width, name, label = label, className = LogColumnStyle))
+        case ColumnRenderArgs(ColumnMeta(c, name, label, _, _), _, width, _) =>
+          Column(Column.propsNoFlex(width, name, label = label, headerRenderer = resizableHeaderRenderer(s.tableState.resizeRow(c, size, x => b.runState(updateTableState(x)))), className = LogColumnStyle))
+      }
 
     def rowClassName(s: State)(i: Int): String = ((i, p.rowGetter(s)(i)) match {
       case (-1, _)                                    => SeqexecStyles.headerRowStyle
@@ -157,11 +211,11 @@ object LogArea {
         rowCount = p.rowCount(s),
         rowHeight = SeqexecStyles.rowHeight,
         rowClassName = rowClassName(s) _,
-        width = size.width.toInt,
+        width = size.width,
         rowGetter = p.rowGetter(s) _,
         headerClassName = SeqexecStyles.tableHeader.htmlClass,
         headerHeight = SeqexecStyles.headerHeight),
-      columns: _*).vdomElement
+      s.tableState.columnBuilder(size, colBuilder): _*).vdomElement
   }
 
   private def updateState(level: ServerLogLevel)(value: Boolean) =
@@ -208,7 +262,7 @@ object LogArea {
             <.div(
               ^.cls := "ui row",
               SeqexecStyles.logTableRow,
-              AutoSizer(AutoSizer.props(table(p, s), disableHeight = true))
+              AutoSizer(AutoSizer.props(table($), disableHeight = true))
             ).when(p.log().display === SectionOpen)
           )
         )

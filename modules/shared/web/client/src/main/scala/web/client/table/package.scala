@@ -30,10 +30,10 @@ package table {
   }
 
   sealed trait ColumnWidth extends Product with Serializable
-  final case class FixedColumnWidth private (width: Int) extends ColumnWidth {
+  final case class FixedColumnWidth private[table] (width: Int) extends ColumnWidth {
     assert(width >= 0)
   }
-  final case class PercentageColumnWidth private (percentage: Double) extends ColumnWidth {
+  final case class PercentageColumnWidth private[table] (percentage: Double) extends ColumnWidth {
     assert(percentage >= 0 && percentage <= 1)
   }
 
@@ -53,14 +53,20 @@ package table {
 
   object PercentageColumnWidth {
     implicit val eqPcw: Eq[PercentageColumnWidth] = Eq.by(_.percentage)
+    private[table] def apply(d: Double) = new PercentageColumnWidth(d)
 
     def fromDouble(percentage: Double): Option[PercentageColumnWidth] =
       (percentage >= 0 && percentage <= 1) option PercentageColumnWidth(percentage)
+
+    def unsafeFromDouble(percentage: Double): PercentageColumnWidth =
+      fromDouble(percentage).getOrElse(sys.error(s"Incorrect percentage value $percentage"))
 
     val Full: PercentageColumnWidth = PercentageColumnWidth(1)
     val Zero: PercentageColumnWidth = PercentageColumnWidth(0)
     val Half: PercentageColumnWidth = PercentageColumnWidth(0.5)
   }
+
+  final case class ColumnRenderArgs[A](meta: ColumnMeta[A], index: Int, width: JsNumber, resizable: Boolean)
 
   /**
    * State of a table
@@ -95,6 +101,38 @@ package table {
         .headOption
         .getOrElse(0.0)
 
+    def columnBuilder(s: Size, b: ColumnRenderArgs[A] => Table.ColumnArg): List[Table.ColumnArg] = {
+      val disposableWidth = math.max(0, s.width.toDouble - columns.collect {
+        case ColumnMeta(_, _, _, true, FixedColumnWidth(x)) => x
+      }.sum)
+      normalizeColumnsPercentages.columns.toList.zipWithIndex.map {
+        case (m @ ColumnMeta(_, _, _, true, FixedColumnWidth(w)), i) =>
+          b.apply(ColumnRenderArgs(m, i, w, i < (columns.length - 1)))
+        case (m @ ColumnMeta(_, _, _, true, PercentageColumnWidth(p)), i) =>
+          b.apply(ColumnRenderArgs(m, i, p * disposableWidth, i < (columns.length - 1)))
+      }
+    }
+
+    // normalize the percentages
+    def normalizeColumnsPercentages: TableState[A] = {
+      val percentagesSum = columns.collect {
+        case ColumnMeta(_, _, _, true, PercentageColumnWidth(x)) => x
+      }.sum
+      TableState.columns[A].modify(_.map {
+        case c @ ColumnMeta(_, _, _, true, PercentageColumnWidth(x)) =>
+          c.copy(width = PercentageColumnWidth(x / percentagesSum))
+        case c =>
+          c
+      })(this)
+    }
+
+    // Tell the model to resize a column
+    def resizeRow(column: A, s: Size, cb: TableState[A] => Callback): (String, JsNumber) => Callback =
+      (_, dx) => {
+        val percentDelta = dx.toDouble / s.width.toDouble
+        val st           = applyOffset(column, percentDelta)
+        cb(st)
+      }
   }
 
   object TableState {

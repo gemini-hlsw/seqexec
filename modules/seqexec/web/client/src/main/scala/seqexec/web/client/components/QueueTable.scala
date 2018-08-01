@@ -219,8 +219,8 @@ object QueueTableBody {
         // Normalize based on visibility
         State.columns.modify(_.map {
           case c @ ColumnMeta(t, _, _, true, PercentageColumnWidth(_)) =>
-            c.copy(
-              width = PercentageColumnWidth(optimalSizes.getOrElse(t, 0).toDouble / width))
+            PercentageColumnWidth.fromDouble(optimalSizes.getOrElse(t, 0).toDouble / width)
+              .map(w => c.copy(width = w)).getOrElse(c)
           case c                                                       =>
             c
         })(this)
