@@ -40,7 +40,7 @@ final case class GPI[F[_]: Sync](controller: GPIController[F])
       config: Config): SeqObserveF[F, ImageFileId, ObserveCommand.Result] =
     Reader { fileId =>
       controller
-        .observe(fileId)
+        .observe(fileId, calcObserveTime(config))
         .map(_ => ObserveCommand.Success: ObserveCommand.Result)
     }
 

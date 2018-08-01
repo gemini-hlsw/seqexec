@@ -8,10 +8,8 @@ import cats.tests.CatsSuite
 import edu.gemini.aspen.giapi.status.impl.BasicStatus
 import edu.gemini.aspen.giapi.util.jms.JmsKeys
 import edu.gemini.aspen.gmp.statusdb.StatusDatabase
-import edu.gemini.aspen.gmp.statusgw.jms.{
-  JmsStatusDispatcher,
-  StatusItemRequestListener
-}
+import edu.gemini.aspen.gmp.statusgw.jms.JmsStatusDispatcher
+import edu.gemini.aspen.gmp.statusgw.jms.StatusItemRequestListener
 import edu.gemini.jms.activemq.provider.ActiveMQJmsProvider
 import edu.gemini.jms.api.{
   BaseMessageConsumer,
@@ -20,7 +18,6 @@ import edu.gemini.jms.api.{
   JmsSimpleMessageSelector
 }
 import fs2.Stream
-import scala.concurrent.duration._
 
 final case class GmpStatus(amq: ActiveMQJmsProvider,
                      dispatcher: JmsStatusDispatcher,
@@ -84,7 +81,7 @@ final class GiapiStatusSpec extends CatsSuite {
       _ =>
         Stream.bracket(
           Giapi
-            .giapiConnection[IO](GmpStatus.amqUrlConnect("tests1"), 2000.millis)
+            .giapiConnection[IO](GmpStatus.amqUrlConnect("tests1"))
             .connect)(c => Stream.eval(c.get[Int](intItemName)), _.close),
       GmpStatus.closeGmpStatus
     )
@@ -97,7 +94,7 @@ final class GiapiStatusSpec extends CatsSuite {
       _ =>
         Stream.bracket(
           Giapi
-            .giapiConnection[IO](GmpStatus.amqUrlConnect("tests2"), 2000.millis)
+            .giapiConnection[IO](GmpStatus.amqUrlConnect("tests2"))
             .connect)(c => Stream.eval(c.get[String](strItemName)), _.close),
       GmpStatus.closeGmpStatus
     )
@@ -112,7 +109,7 @@ final class GiapiStatusSpec extends CatsSuite {
       _ =>
         Stream.bracket(
           Giapi
-            .giapiConnection[IO](GmpStatus.amqUrlConnect("tests3"), 2000.millis)
+            .giapiConnection[IO](GmpStatus.amqUrlConnect("tests3"))
             .connect)(c => Stream.eval(c.get[Int]("item:u")), _.close),
       GmpStatus.closeGmpStatus
     )
@@ -127,7 +124,7 @@ final class GiapiStatusSpec extends CatsSuite {
       _ =>
         Stream.bracket(
           Giapi
-            .giapiConnection[IO](GmpStatus.amqUrlConnect("tests4"), 2000.millis)
+            .giapiConnection[IO](GmpStatus.amqUrlConnect("tests4"))
             .connect)(c => Stream.eval(c.getO[Int]("item:u")), _.close),
       GmpStatus.closeGmpStatus
     )
@@ -143,7 +140,7 @@ final class GiapiStatusSpec extends CatsSuite {
       g =>
         Stream.bracket(
           Giapi
-            .giapiConnection[IO](GmpStatus.amqUrlConnect("tests5"), 2000.millis)
+            .giapiConnection[IO](GmpStatus.amqUrlConnect("tests5"))
             .connect)(
           c => Stream.eval(GmpStatus.closeGmpStatus(g) >> c.get[Int](intItemName)),
           _.close),

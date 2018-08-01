@@ -68,18 +68,18 @@ object GmpCommands {
   */
 final class GiapiCommandSpec extends CatsSuite with EitherValues {
 
-//  test("Test sending a command with no handlers") {
-//    val result = Stream.bracket(
-//      GmpCommands.createGmpCommands(GmpCommands.amqUrl("test1"), false))(
-//      _ =>
-//        Stream.bracket(
-//          Giapi
-//            .giapiConnection[IO](GmpCommands.amqUrlConnect("test1"), 2000.millis)
-//            .connect)(c => Stream.eval(c.command(Command(SequenceCommand.TEST, Activity.PRESET, Configuration.Zero)).attempt), _.close),
-//      GmpCommands.closeGmpCommands
-//    )
-//    result.compile.last.unsafeRunSync.map(_.left.value) should contain(CommandResultException(Response.ERROR, "Message cannot be null"))
-//  }
+  ignore("Test sending a command with no handlers") { // This test passes but the backend doesn't clean up properly
+    val result = Stream.bracket(
+      GmpCommands.createGmpCommands(GmpCommands.amqUrl("test1"), false))(
+      _ =>
+        Stream.bracket(
+          Giapi
+            .giapiConnection[IO](GmpCommands.amqUrlConnect("test1"))
+            .connect)(c => Stream.eval(c.command(Command(SequenceCommand.TEST, Activity.PRESET, Configuration.Zero), 1.second).attempt), _.close),
+      GmpCommands.closeGmpCommands
+    )
+    result.compile.last.unsafeRunSync.map(_.left.value) should contain(CommandResultException(Response.ERROR, "Message cannot be null"))
+  }
 
   test("Test sending a command with no answer") {
     val result = Stream.bracket(
@@ -87,8 +87,8 @@ final class GiapiCommandSpec extends CatsSuite with EitherValues {
       _ =>
         Stream.bracket(
           Giapi
-            .giapiConnection[IO](GmpCommands.amqUrlConnect("test2"), 2000.millis)
-            .connect)(c => Stream.eval(c.command(Command(SequenceCommand.TEST, Activity.PRESET, Configuration.Zero)).attempt), _.close),
+            .giapiConnection[IO](GmpCommands.amqUrlConnect("test2"))
+            .connect)(c => Stream.eval(c.command(Command(SequenceCommand.TEST, Activity.PRESET, Configuration.Zero), 1.second).attempt), _.close),
       GmpCommands.closeGmpCommands
     )
     result.compile.last.unsafeRunSync.map(_.left.value) should contain(CommandResultException(Response.NOANSWER, "No answer from the instrument"))
@@ -100,23 +100,24 @@ final class GiapiCommandSpec extends CatsSuite with EitherValues {
       _ =>
         Stream.bracket(
           Giapi
-            .giapiConnection[IO](GmpCommands.amqUrlConnect("test3"), 2000.millis)
-            .connect)(c => Stream.eval(c.command(Command(SequenceCommand.INIT, Activity.PRESET, Configuration.Zero)).attempt), _.close),
+            .giapiConnection[IO](GmpCommands.amqUrlConnect("test3"))
+            .connect)(c => Stream.eval(c.command(Command(SequenceCommand.INIT, Activity.PRESET, Configuration.Zero), 1.second).attempt), _.close),
       GmpCommands.closeGmpCommands
     )
     result.compile.last.unsafeRunSync.map(_.right.value) should contain(CommandResult(Response.COMPLETED))
   }
 
   test("Test sending a command with accepted but never completed answer") {
+    val timeout = 1.second
     val result = Stream.bracket(
       GmpCommands.createGmpCommands(GmpCommands.amqUrl("test4"), true))(
       _ =>
         Stream.bracket(
           Giapi
-            .giapiConnection[IO](GmpCommands.amqUrlConnect("test4"), 2000.millis)
-            .connect)(c => Stream.eval(c.command(Command(SequenceCommand.PARK, Activity.PRESET, Configuration.Zero)).attempt), _.close),
+            .giapiConnection[IO](GmpCommands.amqUrlConnect("test4"))
+            .connect)(c => Stream.eval(c.command(Command(SequenceCommand.PARK, Activity.PRESET, Configuration.Zero), timeout).attempt), _.close),
       GmpCommands.closeGmpCommands
     )
-    result.compile.last.unsafeRunSync.map(_.left.value) should contain(CommandResultException.timedOut(5.seconds))
+    result.compile.last.unsafeRunSync.map(_.left.value) should contain(CommandResultException.timedOut(timeout))
   }
 }

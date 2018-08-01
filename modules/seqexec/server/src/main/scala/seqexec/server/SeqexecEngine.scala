@@ -481,7 +481,7 @@ object SeqexecEngine extends SeqexecConfiguration {
     val gpiControl = cfg.require[ControlStrategy]("seqexec-engine.systemControl.gpi")
     val gpiUrl  = cfg.require[String]("seqexec-engine.gpiUrl")
     if (gpiControl.command) {
-      Giapi.giapiConnection[IO](gpiUrl, 2000.millis).connect
+      Giapi.giapiConnection[IO](gpiUrl).connect
     } else {
       Giapi.giapiConnectionIO.connect
     }
