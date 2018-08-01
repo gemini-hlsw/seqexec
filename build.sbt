@@ -35,7 +35,7 @@ onLoad in Global := { s =>
 }
 
 // Uncomment for local gmp testing
-//resolvers in ThisBuild += "Local Maven Repository" at "file://"+Path.userHome.absolutePath+"/.m2/repository"
+resolvers in ThisBuild += "Local Maven Repository" at "file://"+Path.userHome.absolutePath+"/.m2/repository"
 
 // Settings to use git to define the version of the project
 def versionFmt(out: sbtdynver.GitDescribeOutput): String = {
@@ -400,7 +400,7 @@ lazy val seqexec_web_server = project.in(file("modules/seqexec/web/server"))
   .settings(commonSettings: _*)
   .settings(
     addCompilerPlugin(Plugins.kindProjectorPlugin),
-    libraryDependencies ++= Seq(UnboundId, JwtCore, Knobs) ++ Http4sClient ++ Http4s ++ Logging,
+    libraryDependencies ++= Seq(UnboundId, JwtCore, Knobs, Http4sPrometheus) ++ Http4sClient ++ Http4s ++ Logging,
     // Supports launching the server in the background
     mainClass in reStart := Some("seqexec.web.server.http4s.WebServerLauncher"),
   )
