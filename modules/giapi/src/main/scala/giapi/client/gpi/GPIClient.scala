@@ -41,19 +41,23 @@ class GPIClient[F[_]](giapi: Giapi[F]) {
   ///////////////////
   def test: F[CommandResult] =
     giapi.command(
-      Command(SequenceCommand.TEST, Activity.PRESET_START, Configuration.Zero), defaultCommandTimeout)
+      Command(SequenceCommand.TEST, Activity.PRESET_START, Configuration.Zero),
+      defaultCommandTimeout)
 
   def init: F[CommandResult] =
     giapi.command(
-      Command(SequenceCommand.INIT, Activity.PRESET_START, Configuration.Zero), defaultCommandTimeout)
+      Command(SequenceCommand.INIT, Activity.PRESET_START, Configuration.Zero),
+      defaultCommandTimeout)
 
   def datum: F[CommandResult] =
     giapi.command(
-      Command(SequenceCommand.DATUM, Activity.PRESET_START, Configuration.Zero), defaultCommandTimeout)
+      Command(SequenceCommand.DATUM, Activity.PRESET_START, Configuration.Zero),
+      defaultCommandTimeout)
 
   def park: F[CommandResult] =
     giapi.command(
-      Command(SequenceCommand.PARK, Activity.PRESET_START, Configuration.Zero), defaultCommandTimeout)
+      Command(SequenceCommand.PARK, Activity.PRESET_START, Configuration.Zero),
+      defaultCommandTimeout)
 
   def verify: F[CommandResult] =
     giapi.command(
@@ -69,7 +73,8 @@ class GPIClient[F[_]](giapi: Giapi[F]) {
 
   def guide: F[CommandResult] =
     giapi.command(
-      Command(SequenceCommand.GUIDE, Activity.PRESET_START, Configuration.Zero), defaultCommandTimeout)
+      Command(SequenceCommand.GUIDE, Activity.PRESET_START, Configuration.Zero),
+      defaultCommandTimeout)
 
   def endGuide: F[CommandResult] =
     giapi.command(
@@ -93,7 +98,8 @@ class GPIClient[F[_]](giapi: Giapi[F]) {
 
   def pause: F[CommandResult] =
     giapi.command(
-      Command(SequenceCommand.PAUSE, Activity.PRESET_START, Configuration.Zero), defaultCommandTimeout)
+      Command(SequenceCommand.PAUSE, Activity.PRESET_START, Configuration.Zero),
+      defaultCommandTimeout)
 
   def continue: F[CommandResult] =
     giapi.command(
@@ -103,11 +109,13 @@ class GPIClient[F[_]](giapi: Giapi[F]) {
 
   def stop: F[CommandResult] =
     giapi.command(
-      Command(SequenceCommand.STOP, Activity.PRESET_START, Configuration.Zero), defaultCommandTimeout)
+      Command(SequenceCommand.STOP, Activity.PRESET_START, Configuration.Zero),
+      defaultCommandTimeout)
 
   def abort: F[CommandResult] =
     giapi.command(
-      Command(SequenceCommand.ABORT, Activity.PRESET_START, Configuration.Zero), defaultCommandTimeout)
+      Command(SequenceCommand.ABORT, Activity.PRESET_START, Configuration.Zero),
+      defaultCommandTimeout)
 
   ////////////////////////
   // GPI Specific commands
@@ -144,7 +152,8 @@ class GPIClient[F[_]](giapi: Giapi[F]) {
     giapi.command(
       Command(SequenceCommand.APPLY,
               Activity.PRESET_START,
-              Configuration.single("gpi:observationMode.mode", mode)), defaultCommandTimeout)
+              Configuration.single("gpi:observationMode.mode", mode)),
+      defaultCommandTimeout)
 
   def ifsFilter(filter: String): F[CommandResult] =
     giapi.command(
@@ -152,7 +161,8 @@ class GPIClient[F[_]](giapi: Giapi[F]) {
         SequenceCommand.APPLY,
         Activity.PRESET_START,
         Configuration.single("gpi:ifs:selectIfsFilter.maskStr", filter)
-      ), defaultCommandTimeout)
+      ),
+      defaultCommandTimeout)
 
   def ifsConfigure(integrationTime: Double,
                    coAdds: Int,
@@ -167,7 +177,9 @@ class GPIClient[F[_]](giapi: Giapi[F]) {
           Configuration.single("gpi:configIfs.numCoadds", coAdds),
           Configuration.single("gpi:configIfs.readoutMode", readoutMode)
         ).combineAll
-      ), defaultCommandTimeout)
+      ),
+      defaultCommandTimeout
+    )
 
   def genericApply(configuration: Configuration): F[CommandResult] =
     giapi.command(
@@ -186,7 +198,8 @@ object GPIExample extends App {
   private val gpiStatus =
     Stream.bracket(
       Giapi
-        .giapiConnection[IO]("failover:(tcp://127.0.0.1:61616)", scala.concurrent.ExecutionContext.Implicits.global)
+        .giapiConnection[IO]("failover:(tcp://127.0.0.1:61616)",
+                             scala.concurrent.ExecutionContext.Implicits.global)
         .connect)(
       giapi => {
         val client =
@@ -206,7 +219,8 @@ object GPIExample extends App {
   private val gpiSequence =
     Stream.bracket(
       Giapi
-        .giapiConnection[IO]("failover:(tcp://127.0.0.1:61616)", scala.concurrent.ExecutionContext.Implicits.global)
+        .giapiConnection[IO]("failover:(tcp://127.0.0.1:61616)",
+                             scala.concurrent.ExecutionContext.Implicits.global)
         .connect)(
       giapi => {
         val client =

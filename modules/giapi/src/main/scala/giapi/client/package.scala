@@ -163,9 +163,11 @@ package client {
         F.runAsync(f)(r => IO(cb(r))).unsafeRunSync()
       }
 
+    // Implementations of timeout suggested from cats-effect documentation
     private def timeoutTo[F[_]: Effect, A](fa: F[A], after: FiniteDuration, fallback: F[A])
                     (implicit timer: Timer[IO]): F[A] = {
 
+      // Race the task against a sleep timer
       LiftIO[F].liftIO(IO.race(toIOFromRunAsync(fa), timer.sleep(after)).flatMap {
         case Left(a) => IO.pure(a)
         case Right(_) => toIOFromRunAsync(fallback)
@@ -185,20 +187,24 @@ package client {
       * @tparam F Effect type
       */
     // scalastyle:off
-    def giapiConnection[F[_]: Effect](url: String, ec: ExecutionContext): GiapiConnection[F] =
+    def giapiConnection[F[_]: Effect](
+        url: String,
+        ec: ExecutionContext): GiapiConnection[F] =
       new GiapiConnection[F] {
         private def giapi(c: ActiveMQJmsProvider,
                           sg: StatusGetter,
                           cc: CommandSenderClient,
                           ss: StatusStreamer) =
           new Giapi[F] {
-            private val commandsAckTimeout = 2000.milliseconds
+            private val commandsAckTimeout                  = 2000.milliseconds
             implicit val executionContext: ExecutionContext = ec
 
             override def get[A: ItemGetter](statusItem: String): F[A] =
               getO[A](statusItem).flatMap {
                 case Some(a) => a.pure[F]
-                case None    => Sync[F].raiseError(new GiapiException(s"Status item $statusItem not found"))
+                case None =>
+                  Sync[F].raiseError(
+                    new GiapiException(s"Status item $statusItem not found"))
               }
 
             def getO[A: ItemGetter](statusItem: String): F[Option[A]] =

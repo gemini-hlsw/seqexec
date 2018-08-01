@@ -19,10 +19,14 @@ import scala.concurrent.duration.{Duration, FiniteDuration}
 
 package commands {
   final case class CommandResult(response: Response)
-  final case class CommandResultException(response: Response, message: String) extends RuntimeException
+  final case class CommandResultException(response: Response, message: String)
+      extends RuntimeException
 
   object CommandResultException {
-    def timedOut(after: FiniteDuration): CommandResultException = CommandResultException(Response.ERROR, s"Timed out response after: $after")
+
+    def timedOut(after: FiniteDuration): CommandResultException =
+      CommandResultException(Response.ERROR,
+                             s"Timed out response after: $after")
   }
 
   final case class Configuration(config: Map[ConfigPath, String]) {
@@ -92,9 +96,9 @@ package object commands {
         cb(
           Left(
             CommandResultException(hr.getResponse,
-                  if (hr.getResponse === Response.NOANSWER)
-                    "No answer from the instrument"
-                  else hr.getMessage)))
+                                   if (hr.getResponse === Response.NOANSWER)
+                                     "No answer from the instrument"
+                                   else hr.getMessage)))
       } else if (hr.getResponse === Response.COMPLETED) {
         cb(Right(CommandResult(hr.getResponse)))
       }
