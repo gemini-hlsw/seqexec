@@ -3,8 +3,7 @@
 
 package giapi.client
 
-import cats.effect.{IO, Timer}
-import cats.implicits._
+import cats.effect.IO
 import cats.tests.CatsSuite
 import giapi.client.commands._
 import edu.gemini.jms.activemq.provider.ActiveMQJmsProvider
@@ -35,7 +34,6 @@ object GmpCommands {
     val amq = new ActiveMQJmsProvider(amqUrl)
     amq.startConnection()
     val cs = new CommandSender() {
-      import scala.concurrent.ExecutionContext.Implicits.global
       // This is essentially an instrument simulator
       // we test several possible scenarios
       override def sendCommand(command: JCommand, listener: CompletionListener): HandlerResponse =
@@ -45,11 +43,7 @@ object GmpCommands {
       override def sendCommand(command: JCommand, listener: CompletionListener, timeout: Long): HandlerResponse =
         command.getSequenceCommand match {
           case SequenceCommand.INIT => HandlerResponse.COMPLETED
-          case SequenceCommand.PARK =>
-            println(Thread.currentThread.getName)
-            println(listener)
-            println((IO.shift *> IO(println(Thread.currentThread.getName)) *> Timer[IO].sleep(5.seconds) *> IO(println("timed")) *> IO.shift *> IO({println(listener);listener.onHandlerResponse(HandlerResponse.COMPLETED, command);println("Done")}) *> IO(println("there"))).start.unsafeRunSync)
-            HandlerResponse.ACCEPTED
+          case SequenceCommand.PARK => HandlerResponse.ACCEPTED
           case _                    => HandlerResponse.NOANSWER
         }
 
@@ -64,7 +58,6 @@ object GmpCommands {
   }
 
   def closeGmpCommands(gmp: GmpCommands): IO[Unit] = IO.apply {
-    println("Close")
     gmp.cmc.stopJms()
     gmp.amq.stopConnection()
   }
@@ -114,7 +107,7 @@ final class GiapiCommandSpec extends CatsSuite with EitherValues {
     result.compile.last.unsafeRunSync.map(_.right.value) should contain(CommandResult(Response.COMPLETED))
   }
 
-  test("Test sending a command with delayed answer") {
+  test("Test sending a command with accepted but never completed answer") {
     val result = Stream.bracket(
       GmpCommands.createGmpCommands(GmpCommands.amqUrl("test4"), true))(
       _ =>
@@ -124,6 +117,6 @@ final class GiapiCommandSpec extends CatsSuite with EitherValues {
             .connect)(c => Stream.eval(c.command(Command(SequenceCommand.PARK, Activity.PRESET, Configuration.Zero)).attempt), _.close),
       GmpCommands.closeGmpCommands
     )
-    result.compile.last.unsafeRunSync.map(_.right.value) should contain(CommandResult(Response.COMPLETED))
+    result.compile.last.unsafeRunSync.map(_.left.value) should contain(CommandResultException.timedOut(5.seconds))
   }
 }

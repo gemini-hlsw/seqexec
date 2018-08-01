@@ -13,10 +13,10 @@ import edu.gemini.aspen.giapi.util.jms.status.StatusGetter
 import edu.gemini.aspen.gmp.commands.jms.client.CommandSenderClient
 import edu.gemini.jms.activemq.provider.ActiveMQJmsProvider
 import scala.concurrent.ExecutionContext
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration._
 import shapeless.Typeable._
 import fs2.{Stream, async}
-import giapi.client.commands.Command
+import giapi.client.commands.{Command, CommandResultException}
 
 package object client {
 
@@ -157,6 +157,27 @@ package client {
         } yield i
       }
 
+    // taken from cats-effect 1.x
+    def toIOFromRunAsync[F[_], A](f: F[A])(implicit F: Effect[F]): IO[A] =
+      IO.async { cb =>
+        F.runAsync(f)(r => IO(cb(r))).unsafeRunSync()
+      }
+
+    def timeoutTo[F[_]: Effect, A](fa: F[A], after: FiniteDuration, fallback: F[A])
+                    (implicit timer: Timer[IO]): F[A] = {
+
+      LiftIO[F].liftIO(IO.race(toIOFromRunAsync(fa), timer.sleep(after)).flatMap {
+        case Left(a) => IO.pure(a)
+        case Right(_) => toIOFromRunAsync(fallback)
+      })
+    }
+
+    def timeout[F[_]: Effect, A](fa: F[A], after: FiniteDuration, error: Exception)
+                  (implicit timer: Timer[IO]): F[A] = {
+
+      timeoutTo(fa, after, Effect[F].raiseError(error))
+    }
+
     /**
       * Interpreter on F
       *
@@ -187,9 +208,12 @@ package client {
                 val item = sg.getStatusItem[A](statusItem)
                 Option(item).map(_.getValue)
               }
-
-            override def command(command: Command): F[CommandResult] =
-              commands.sendCommand(cc, command, commandsTimeout)
+            override def command(command: Command): F[CommandResult] = {
+              import scala.concurrent.ExecutionContext.Implicits.global
+              val time = 5.seconds
+              val error = CommandResultException.timedOut(time)
+              timeout(commands.sendCommand(cc, command, commandsTimeout), 5.seconds, error)
+            }
 
             override def stream[A: ItemGetter](statusItem: String,
                                                ec: ExecutionContext): F[Stream[F, A]] =

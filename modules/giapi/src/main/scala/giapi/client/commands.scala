@@ -15,11 +15,15 @@ import edu.gemini.aspen.giapi.commands.HandlerResponse.Response
 import edu.gemini.aspen.giapi.commands.HandlerResponse
 import edu.gemini.aspen.gmp.commands.jms.client.CommandSenderClient
 import scala.collection.JavaConverters._
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration.{Duration, FiniteDuration}
 
 package commands {
   final case class CommandResult(response: Response)
   final case class CommandResultException(response: Response, message: String) extends RuntimeException
+
+  object CommandResultException {
+    def timedOut(after: FiniteDuration): CommandResultException = CommandResultException(Response.ERROR, s"Timed out response after: $after")
+  }
 
   final case class Configuration(config: Map[ConfigPath, String]) {
 
