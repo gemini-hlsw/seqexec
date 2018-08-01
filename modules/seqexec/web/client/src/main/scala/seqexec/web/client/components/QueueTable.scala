@@ -392,8 +392,7 @@ object QueueTableBody {
     <.p(SeqexecStyles.queueText, targetName)
   }
 
-  private def statusIconRenderer(
-      p: Props): CellRenderer[js.Object, js.Object, QueueRow] =
+  private def statusIconRenderer(p: Props): CellRenderer[js.Object, js.Object, QueueRow] =
     (_, _, _, row: QueueRow, _) => {
       val icon: TagMod =
         row.status match {

@@ -114,16 +114,16 @@ package table {
 
     // Table can call this to build the columns
     def columnBuilder(
-        s: Size,
-        b: ColumnRenderArgs[A] => Table.ColumnArg): List[Table.ColumnArg] = {
-      val disposableWidth = math.max(0, s.width.toDouble - columns.collect {
+        width: Double,
+        cb: ColumnRenderArgs[A] => Table.ColumnArg): List[Table.ColumnArg] = {
+      val disposableWidth = math.max(0, width.toDouble - columns.collect {
         case ColumnMeta(_, _, _, true, FixedColumnWidth(x)) => x
       }.sum)
       normalizeColumnsPercentages.columns.toList.zipWithIndex.map {
         case (m @ ColumnMeta(_, _, _, true, FixedColumnWidth(w)), i)      =>
-          b.apply(ColumnRenderArgs(m, i, w, i < (columns.length - 1)))
+          cb.apply(ColumnRenderArgs(m, i, w, i < (columns.length - 1)))
         case (m @ ColumnMeta(_, _, _, true, PercentageColumnWidth(p)), i) =>
-          b.apply(ColumnRenderArgs(m,
+          cb.apply(ColumnRenderArgs(m,
                                    i,
                                    p * disposableWidth,
                                    i < (columns.length - 1)))

@@ -192,70 +192,71 @@ object LogArea {
   private def updateTableState(st: TableState[TableColumn]) =
     ST.mod(_.copy(tableState = st)).liftCB
 
+  // Custom renderers for the last column
+  val clipboardHeaderRenderer: HeaderRenderer[js.Object] =
+    (_, _, _, _, _, _) =>
+      IconCopy.copyIcon(extraStyles = List(SeqexecStyles.logIconHeader))
+
+  def colBuilder(b: Backend, size: Size)(r: ColumnRenderArgs[TableColumn]): Table.ColumnArg =
+    r match {
+      case ColumnRenderArgs(ColumnMeta(ClipboardColumn, name, _, _, _), _, _, _) =>
+        Column(
+          Column.propsNoFlex(
+            width           = ClipboardWidth,
+            dataKey         = name,
+            headerRenderer  = clipboardHeaderRenderer,
+            cellRenderer    = clipboardCellRenderer(b.props.site),
+            className       = SeqexecStyles.clipboardIconDiv.htmlClass,
+            headerClassName = SeqexecStyles.clipboardIconHeader.htmlClass
+          ))
+      case ColumnRenderArgs(ColumnMeta(MsgColumn, name, label, _, _), _, width, _) =>
+        Column(
+          Column.propsNoFlex(
+            width     = width,
+            dataKey   = name,
+            label     = label,
+            className = LogColumnStyle))
+      case ColumnRenderArgs(ColumnMeta(c, name, label, _, _), _, width, _) =>
+        Column(
+          Column.propsNoFlex(
+            width          = width,
+            dataKey        = name,
+            label          = label,
+            headerRenderer = resizableHeaderRenderer(b.state.tableState
+              .resizeRow(c, size, x => b.runState(updateTableState(x)))),
+            className      = LogColumnStyle
+          ))
+    }
+
+  def clipboardCellRenderer(site: Site): CellRenderer[js.Object, js.Object, LogRow] =
+    (_, _, _, row: LogRow, _) => {
+      // Simple csv export
+      val localTime = LocalDateTime.ofInstant(row.timestamp, site.timezone)
+      val toCsv     = s"${formatter.format(localTime)}, ${row.level}, ${row.msg}"
+      CopyLogToClipboard(toCsv)
+    }
+
+  // Style for each row
+  def rowClassName(b: Backend)(i: Int): String =
+    ((i, b.props.rowGetter(b.state)(i)) match {
+      case (-1, _)                                    =>
+        SeqexecStyles.headerRowStyle
+      case (_, LogRow(_, ServerLogLevel.INFO, _, _))  =>
+        SeqexecStyles.stepRow |+| SeqexecStyles.infoLog
+      case (_, LogRow(_, ServerLogLevel.WARN, _, _))  =>
+        SeqexecStyles.stepRow |+| SeqexecStyles.warningLog
+      case (_, LogRow(_, ServerLogLevel.ERROR, _, _)) =>
+        SeqexecStyles.stepRow |+| SeqexecStyles.errorLog
+      case _                                          =>
+        SeqexecStyles.stepRow
+    }).htmlClass
+
   /**
     * Build the table log
     */
   def table(b: Backend)(size: Size): VdomNode = {
     val p = b.props
     val s = b.state
-
-    // Custom renderers for the last column
-    val clipboardHeaderRenderer: HeaderRenderer[js.Object] =
-      (_, _, _, _, _, _) =>
-        IconCopy.copyIcon(extraStyles = List(SeqexecStyles.logIconHeader))
-
-    val clipboardCellRenderer: CellRenderer[js.Object, js.Object, LogRow] =
-      (_, _, _, row: LogRow, _) => {
-        // Simple csv export
-        val localTime = LocalDateTime.ofInstant(row.timestamp, p.site.timezone)
-        val toCsv     = s"${formatter.format(localTime)}, ${row.level}, ${row.msg}"
-        CopyLogToClipboard(toCsv)
-      }
-
-    def colBuilder(r: ColumnRenderArgs[TableColumn]): Table.ColumnArg =
-      r match {
-        case ColumnRenderArgs(ColumnMeta(ClipboardColumn, name, _, _, _), _, _, _) =>
-          Column(
-            Column.propsNoFlex(
-              width           = ClipboardWidth,
-              dataKey         = name,
-              headerRenderer  = clipboardHeaderRenderer,
-              cellRenderer    = clipboardCellRenderer,
-              className       = SeqexecStyles.clipboardIconDiv.htmlClass,
-              headerClassName = SeqexecStyles.clipboardIconHeader.htmlClass
-            ))
-        case ColumnRenderArgs(ColumnMeta(MsgColumn, name, label, _, _), _, width, _) =>
-          Column(
-            Column.propsNoFlex(
-              width     = width,
-              dataKey   = name,
-              label     = label,
-              className = LogColumnStyle))
-        case ColumnRenderArgs(ColumnMeta(c, name, label, _, _), _, width, _) =>
-          Column(
-            Column.propsNoFlex(
-              width          = width,
-              dataKey        = name,
-              label          = label,
-              headerRenderer = resizableHeaderRenderer(s.tableState
-                .resizeRow(c, size, x => b.runState(updateTableState(x)))),
-              className      = LogColumnStyle
-            ))
-      }
-
-    def rowClassName(s: State)(i: Int): String =
-      ((i, p.rowGetter(s)(i)) match {
-        case (-1, _)                                    =>
-          SeqexecStyles.headerRowStyle
-        case (_, LogRow(_, ServerLogLevel.INFO, _, _))  =>
-          SeqexecStyles.stepRow |+| SeqexecStyles.infoLog
-        case (_, LogRow(_, ServerLogLevel.WARN, _, _))  =>
-          SeqexecStyles.stepRow |+| SeqexecStyles.warningLog
-        case (_, LogRow(_, ServerLogLevel.ERROR, _, _)) =>
-          SeqexecStyles.stepRow |+| SeqexecStyles.errorLog
-        case _                                          =>
-          SeqexecStyles.stepRow
-      }).htmlClass
 
     Table(
       Table.props(
@@ -271,13 +272,13 @@ object LogArea {
         height = 200,
         rowCount = p.rowCount(s),
         rowHeight = SeqexecStyles.rowHeight,
-        rowClassName = rowClassName(s) _,
+        rowClassName = rowClassName(b) _,
         width = size.width,
         rowGetter = p.rowGetter(s) _,
         headerClassName = SeqexecStyles.tableHeader.htmlClass,
         headerHeight = SeqexecStyles.headerHeight
       ),
-      s.tableState.columnBuilder(size, colBuilder): _*
+      s.tableState.columnBuilder(size.width, colBuilder(b, size)): _*
     ).vdomElement
   }
 
