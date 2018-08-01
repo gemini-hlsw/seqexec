@@ -10,13 +10,12 @@ import fs2.Stream
 import giapi.client.commands.{Command, CommandResult, Configuration}
 import giapi.client.{Giapi, commands}
 import mouse.boolean._
-import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
 /**
   * Client for GPI
   */
-class GPIClient[F[_]](giapi: Giapi[F], ec: ExecutionContext) {
+class GPIClient[F[_]](giapi: Giapi[F]) {
   val defaultCommandTimeout: FiniteDuration = 2000.milliseconds
 
   ///////////////
@@ -35,7 +34,7 @@ class GPIClient[F[_]](giapi: Giapi[F], ec: ExecutionContext) {
   // Streaming statuses
   /////////////////////
   def heartbeatS: F[Stream[F, Int]] =
-    giapi.stream[Int]("gpi:heartbeat", ec)
+    giapi.stream[Int]("gpi:heartbeat")
 
   ///////////////////
   // General commands
@@ -187,12 +186,11 @@ object GPIExample extends App {
   private val gpiStatus =
     Stream.bracket(
       Giapi
-        .giapiConnection[IO]("failover:(tcp://127.0.0.1:61616)")
+        .giapiConnection[IO]("failover:(tcp://127.0.0.1:61616)", scala.concurrent.ExecutionContext.Implicits.global)
         .connect)(
       giapi => {
         val client =
-          new GPIClient[IO](giapi,
-                            scala.concurrent.ExecutionContext.Implicits.global)
+          new GPIClient[IO](giapi)
         val r =
           for {
             hs <- client.heartbeatS.flatMap(_.take(3).compile.toVector)
@@ -208,12 +206,11 @@ object GPIExample extends App {
   private val gpiSequence =
     Stream.bracket(
       Giapi
-        .giapiConnection[IO]("failover:(tcp://127.0.0.1:61616)")
+        .giapiConnection[IO]("failover:(tcp://127.0.0.1:61616)", scala.concurrent.ExecutionContext.Implicits.global)
         .connect)(
       giapi => {
         val client =
-          new GPIClient[IO](giapi,
-                            scala.concurrent.ExecutionContext.Implicits.global)
+          new GPIClient[IO](giapi)
         val r =
           for {
             _ <- client.calExitShutter(true) // Open the shutter

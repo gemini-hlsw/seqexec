@@ -81,7 +81,7 @@ final class GiapiStatusSpec extends CatsSuite {
       _ =>
         Stream.bracket(
           Giapi
-            .giapiConnection[IO](GmpStatus.amqUrlConnect("tests1"))
+            .giapiConnection[IO](GmpStatus.amqUrlConnect("tests1"), scala.concurrent.ExecutionContext.Implicits.global)
             .connect)(c => Stream.eval(c.get[Int](intItemName)), _.close),
       GmpStatus.closeGmpStatus
     )
@@ -94,7 +94,7 @@ final class GiapiStatusSpec extends CatsSuite {
       _ =>
         Stream.bracket(
           Giapi
-            .giapiConnection[IO](GmpStatus.amqUrlConnect("tests2"))
+            .giapiConnection[IO](GmpStatus.amqUrlConnect("tests2"), scala.concurrent.ExecutionContext.Implicits.global)
             .connect)(c => Stream.eval(c.get[String](strItemName)), _.close),
       GmpStatus.closeGmpStatus
     )
@@ -109,7 +109,7 @@ final class GiapiStatusSpec extends CatsSuite {
       _ =>
         Stream.bracket(
           Giapi
-            .giapiConnection[IO](GmpStatus.amqUrlConnect("tests3"))
+            .giapiConnection[IO](GmpStatus.amqUrlConnect("tests3"), scala.concurrent.ExecutionContext.Implicits.global)
             .connect)(c => Stream.eval(c.get[Int]("item:u")), _.close),
       GmpStatus.closeGmpStatus
     )
@@ -124,7 +124,7 @@ final class GiapiStatusSpec extends CatsSuite {
       _ =>
         Stream.bracket(
           Giapi
-            .giapiConnection[IO](GmpStatus.amqUrlConnect("tests4"))
+            .giapiConnection[IO](GmpStatus.amqUrlConnect("tests4"), scala.concurrent.ExecutionContext.Implicits.global)
             .connect)(c => Stream.eval(c.getO[Int]("item:u")), _.close),
       GmpStatus.closeGmpStatus
     )
@@ -140,7 +140,7 @@ final class GiapiStatusSpec extends CatsSuite {
       g =>
         Stream.bracket(
           Giapi
-            .giapiConnection[IO](GmpStatus.amqUrlConnect("tests5"))
+            .giapiConnection[IO](GmpStatus.amqUrlConnect("tests5"), scala.concurrent.ExecutionContext.Implicits.global)
             .connect)(
           c => Stream.eval(GmpStatus.closeGmpStatus(g) >> c.get[Int](intItemName)),
           _.close),

@@ -74,7 +74,7 @@ final class GiapiCommandSpec extends CatsSuite with EitherValues {
       _ =>
         Stream.bracket(
           Giapi
-            .giapiConnection[IO](GmpCommands.amqUrlConnect("test1"))
+            .giapiConnection[IO](GmpCommands.amqUrlConnect("test1"), scala.concurrent.ExecutionContext.Implicits.global)
             .connect)(c => Stream.eval(c.command(Command(SequenceCommand.TEST, Activity.PRESET, Configuration.Zero), 1.second).attempt), _.close),
       GmpCommands.closeGmpCommands
     )
@@ -87,7 +87,7 @@ final class GiapiCommandSpec extends CatsSuite with EitherValues {
       _ =>
         Stream.bracket(
           Giapi
-            .giapiConnection[IO](GmpCommands.amqUrlConnect("test2"))
+            .giapiConnection[IO](GmpCommands.amqUrlConnect("test2"), scala.concurrent.ExecutionContext.Implicits.global)
             .connect)(c => Stream.eval(c.command(Command(SequenceCommand.TEST, Activity.PRESET, Configuration.Zero), 1.second).attempt), _.close),
       GmpCommands.closeGmpCommands
     )
@@ -100,7 +100,7 @@ final class GiapiCommandSpec extends CatsSuite with EitherValues {
       _ =>
         Stream.bracket(
           Giapi
-            .giapiConnection[IO](GmpCommands.amqUrlConnect("test3"))
+            .giapiConnection[IO](GmpCommands.amqUrlConnect("test3"), scala.concurrent.ExecutionContext.Implicits.global)
             .connect)(c => Stream.eval(c.command(Command(SequenceCommand.INIT, Activity.PRESET, Configuration.Zero), 1.second).attempt), _.close),
       GmpCommands.closeGmpCommands
     )
@@ -114,7 +114,7 @@ final class GiapiCommandSpec extends CatsSuite with EitherValues {
       _ =>
         Stream.bracket(
           Giapi
-            .giapiConnection[IO](GmpCommands.amqUrlConnect("test4"))
+            .giapiConnection[IO](GmpCommands.amqUrlConnect("test4"), scala.concurrent.ExecutionContext.Implicits.global)
             .connect)(c => Stream.eval(c.command(Command(SequenceCommand.PARK, Activity.PRESET, Configuration.Zero), timeout).attempt), _.close),
       GmpCommands.closeGmpCommands
     )

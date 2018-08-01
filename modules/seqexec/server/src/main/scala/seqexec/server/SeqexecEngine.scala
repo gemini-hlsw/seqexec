@@ -63,7 +63,7 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings) {
     settings.gmosControl.command.fold(GmosSouthControllerEpics, GmosControllerSim.south),
     settings.gmosControl.command.fold(GmosNorthControllerEpics, GmosControllerSim.north),
     settings.gnirsControl.command.fold(GnirsControllerEpics, GnirsControllerSim),
-    GPIController(new GPIClient(settings.gpiGiapi, scala.concurrent.ExecutionContext.Implicits.global), gpiGDS)
+    GPIController(new GPIClient(settings.gpiGiapi), gpiGDS)
   )
 
   private val translatorSettings = SeqTranslate.Settings(
@@ -481,7 +481,7 @@ object SeqexecEngine extends SeqexecConfiguration {
     val gpiControl = cfg.require[ControlStrategy]("seqexec-engine.systemControl.gpi")
     val gpiUrl  = cfg.require[String]("seqexec-engine.gpiUrl")
     if (gpiControl.command) {
-      Giapi.giapiConnection[IO](gpiUrl).connect
+      Giapi.giapiConnection[IO](gpiUrl, scala.concurrent.ExecutionContext.Implicits.global).connect
     } else {
       Giapi.giapiConnectionIO.connect
     }

@@ -95,7 +95,7 @@ package client {
     /**
       * Returns a stream of values for the status item.
       */
-    def stream[A: ItemGetter](statusItem: String, ec: ExecutionContext): F[Stream[F, A]]
+    def stream[A: ItemGetter](statusItem: String): F[Stream[F, A]]
 
     /**
       * Close the connection
@@ -185,7 +185,7 @@ package client {
       * @tparam F Effect type
       */
     // scalastyle:off
-    def giapiConnection[F[_]: Effect](url: String): GiapiConnection[F] =
+    def giapiConnection[F[_]: Effect](url: String, ec: ExecutionContext): GiapiConnection[F] =
       new GiapiConnection[F] {
         private def giapi(c: ActiveMQJmsProvider,
                           sg: StatusGetter,
@@ -193,6 +193,7 @@ package client {
                           ss: StatusStreamer) =
           new Giapi[F] {
             private val commandsAckTimeout = 2000.milliseconds
+            implicit val executionContext: ExecutionContext = ec
 
             override def get[A: ItemGetter](statusItem: String): F[A] =
               getO[A](statusItem).flatMap {
@@ -206,13 +207,11 @@ package client {
                 Option(item).map(_.getValue)
               }
             override def command(command: Command, timeOut: FiniteDuration): F[CommandResult] = {
-              import scala.concurrent.ExecutionContext.Implicits.global
               val error = CommandResultException.timedOut(timeOut)
               timeout(commands.sendCommand(cc, command, commandsAckTimeout), timeOut, error)
             }
 
-            override def stream[A: ItemGetter](statusItem: String,
-                                               ec: ExecutionContext): F[Stream[F, A]] =
+            override def stream[A: ItemGetter](statusItem: String): F[Stream[F, A]] =
               streamItem[F, A](ss.aggregate, statusItem, ec)
 
             override def close: F[Unit] =
@@ -249,7 +248,7 @@ package client {
       override def connect: Id[Giapi[Id]] = new Giapi[Id] {
         override def get[A: ItemGetter](statusItem: String): Id[A] = sys.error(s"Cannot read $statusItem")
         override def getO[A: ItemGetter](statusItem: String): Id[Option[A]] = None
-        override def stream[A: ItemGetter](statusItem: String, ec: ExecutionContext): Id[Stream[Id, A]] = Stream.raiseError(new RuntimeException(s"Cannot read $statusItem"))
+        override def stream[A: ItemGetter](statusItem: String): Id[Stream[Id, A]] = Stream.raiseError(new RuntimeException(s"Cannot read $statusItem"))
         override def command(command: Command, timeout: FiniteDuration): Id[CommandResult] = CommandResult(Response.COMPLETED)
         override def close: Id[Unit] = ()
       }
@@ -262,7 +261,7 @@ package client {
       override def connect: IO[Giapi[IO]] = IO.pure(new Giapi[IO] {
         override def get[A: ItemGetter](statusItem: String): IO[A] = IO.raiseError(new RuntimeException(s"Cannot read $statusItem"))
         override def getO[A: ItemGetter](statusItem: String): IO[Option[A]] = IO.pure(None)
-        override def stream[A: ItemGetter](statusItem: String, ec: ExecutionContext): IO[Stream[IO, A]] = IO.pure(Stream.empty.covary[IO])
+        override def stream[A: ItemGetter](statusItem: String): IO[Stream[IO, A]] = IO.pure(Stream.empty.covary[IO])
         override def command(command: Command, timeout: FiniteDuration): IO[CommandResult] = IO.pure(CommandResult(Response.COMPLETED))
         override def close: IO[Unit] = IO.unit
       })
