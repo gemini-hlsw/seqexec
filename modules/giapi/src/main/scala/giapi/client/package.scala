@@ -5,6 +5,7 @@ package giapi
 
 import cats._
 import cats.effect._
+import cats.effect.implicits._
 import cats.implicits._
 import edu.gemini.aspen.giapi.commands.HandlerResponse.Response
 import edu.gemini.aspen.giapi.status.{StatusHandler, StatusItem}
@@ -158,26 +159,30 @@ package client {
       }
 
     // taken from cats-effect 1.x
-    private def toIOFromRunAsync[F[_], A](f: F[A])(implicit F: Effect[F]): IO[A] =
+    implicit class ToIOOps[F[_]: Effect, A](c: F[A]) {
+      def toIO: IO[A] = toIOFromRunAsync(c)
+    }
+
+    private def toIOFromRunAsync[F[_]: Effect, A](f: F[A]): IO[A] =
       IO.async { cb =>
-        F.runAsync(f)(r => IO(cb(r))).unsafeRunSync()
+        Effect[F].runAsync(f)(r => IO(cb(r))).unsafeRunSync()
       }
 
     // Implementations of timeout suggested from cats-effect documentation
-    private def timeoutTo[F[_]: Effect, A](fa: F[A], after: FiniteDuration, fallback: F[A])
-                    (implicit timer: Timer[IO]): F[A] = {
+    private def timeoutTo[A](fa: IO[A], after: FiniteDuration, fallback: IO[A])
+                    (implicit timer: Timer[IO]): IO[A] = {
 
       // Race the task against a sleep timer
-      LiftIO[F].liftIO(IO.race(toIOFromRunAsync(fa), timer.sleep(after)).flatMap {
-        case Left(a) => IO.pure(a)
-        case Right(_) => toIOFromRunAsync(fallback)
-      })
+      IO.race(toIOFromRunAsync(fa), timer.sleep(after)).flatMap {
+        case Left(a)  => IO.pure(a)
+        case Right(_) => fallback
+      }
     }
 
-    private def timeout[F[_]: Effect, A](fa: F[A], after: FiniteDuration, error: Exception)
-                  (implicit timer: Timer[IO]): F[A] = {
+    private def timeout[A](fa: IO[A], after: FiniteDuration, error: Exception)
+                  (implicit timer: Timer[IO]): IO[A] = {
 
-      timeoutTo(fa, after, Effect[F].raiseError(error))
+      timeoutTo(fa, after, IO.raiseError(error))
     }
 
     /**
@@ -212,9 +217,10 @@ package client {
                 val item = sg.getStatusItem[A](statusItem)
                 Option(item).map(_.getValue)
               }
+
             override def command(command: Command, timeOut: FiniteDuration): F[CommandResult] = {
               val error = CommandResultException.timedOut(timeOut)
-              timeout(commands.sendCommand(cc, command, commandsAckTimeout), timeOut, error)
+              timeout(commands.sendCommand(cc, command, commandsAckTimeout).toIO, timeOut, error).liftIO[F]
             }
 
             override def stream[A: ItemGetter](statusItem: String): F[Stream[F, A]] =

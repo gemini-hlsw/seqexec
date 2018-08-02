@@ -337,7 +337,11 @@ lazy val giapi = project
   .settings(commonSettings: _*)
   .settings(
     libraryDependencies ++= Seq(Cats.value, Mouse.value, Shapeless.value, CatsEffect.value, Fs2, GiapiJmsUtil, GiapiJmsProvider, GiapiStatusService, Giapi, GiapiCommandsClient) ++ Logging,
-    libraryDependencies ++= Seq(GmpStatusGateway % "test", GmpStatusDatabase % "test", GmpCmdJmsBridge % "test")
+    libraryDependencies ++= Seq(GmpStatusGateway % "test", GmpStatusDatabase % "test", GmpCmdJmsBridge % "test", NopSlf4j % "test"),
+    excludeDependencies ++= Seq(
+      // Remove to silence logging on tests
+      ExclusionRule("ch.qos.logback", "logback-classic")
+    )
   )
 
 // Common utilities for web server projects

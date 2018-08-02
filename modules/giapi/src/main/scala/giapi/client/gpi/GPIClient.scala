@@ -17,7 +17,7 @@ import scala.concurrent.duration._
   */
 class GPIClient[F[_]](giapi: Giapi[F]) {
   // GPI documentation specify 60 seconds as the max time to move muchanism
-  val defaultCommandTimeout: FiniteDuration = 60.seconds
+  val DefaultCommandTimeout: FiniteDuration = 60.seconds
 
   ///////////////
   // Status items
@@ -43,45 +43,45 @@ class GPIClient[F[_]](giapi: Giapi[F]) {
   def test: F[CommandResult] =
     giapi.command(
       Command(SequenceCommand.TEST, Activity.PRESET_START, Configuration.Zero),
-      defaultCommandTimeout)
+      DefaultCommandTimeout)
 
   def init: F[CommandResult] =
     giapi.command(
       Command(SequenceCommand.INIT, Activity.PRESET_START, Configuration.Zero),
-      defaultCommandTimeout)
+      DefaultCommandTimeout)
 
   def datum: F[CommandResult] =
     giapi.command(
       Command(SequenceCommand.DATUM, Activity.PRESET_START, Configuration.Zero),
-      defaultCommandTimeout)
+      DefaultCommandTimeout)
 
   def park: F[CommandResult] =
     giapi.command(
       Command(SequenceCommand.PARK, Activity.PRESET_START, Configuration.Zero),
-      defaultCommandTimeout)
+      DefaultCommandTimeout)
 
   def verify: F[CommandResult] =
     giapi.command(
       Command(SequenceCommand.VERIFY,
               Activity.PRESET_START,
-              Configuration.Zero), defaultCommandTimeout)
+              Configuration.Zero), DefaultCommandTimeout)
 
   def endVerify: F[CommandResult] =
     giapi.command(
       Command(SequenceCommand.END_VERIFY,
               Activity.PRESET_START,
-              Configuration.Zero), defaultCommandTimeout)
+              Configuration.Zero), DefaultCommandTimeout)
 
   def guide: F[CommandResult] =
     giapi.command(
       Command(SequenceCommand.GUIDE, Activity.PRESET_START, Configuration.Zero),
-      defaultCommandTimeout)
+      DefaultCommandTimeout)
 
   def endGuide: F[CommandResult] =
     giapi.command(
       Command(SequenceCommand.END_GUIDE,
               Activity.PRESET_START,
-              Configuration.Zero), defaultCommandTimeout)
+              Configuration.Zero), DefaultCommandTimeout)
 
   def observe[A: Show](dataLabel: A, expTime: FiniteDuration): F[CommandResult] =
     giapi.command(
@@ -95,28 +95,28 @@ class GPIClient[F[_]](giapi: Giapi[F]) {
     giapi.command(
       Command(SequenceCommand.END_OBSERVE,
               Activity.PRESET_START,
-              Configuration.Zero), defaultCommandTimeout)
+              Configuration.Zero), DefaultCommandTimeout)
 
   def pause: F[CommandResult] =
     giapi.command(
       Command(SequenceCommand.PAUSE, Activity.PRESET_START, Configuration.Zero),
-      defaultCommandTimeout)
+      DefaultCommandTimeout)
 
   def continue: F[CommandResult] =
     giapi.command(
       Command(SequenceCommand.CONTINUE,
               Activity.PRESET_START,
-              Configuration.Zero), defaultCommandTimeout)
+              Configuration.Zero), DefaultCommandTimeout)
 
   def stop: F[CommandResult] =
     giapi.command(
       Command(SequenceCommand.STOP, Activity.PRESET_START, Configuration.Zero),
-      defaultCommandTimeout)
+      DefaultCommandTimeout)
 
   def abort: F[CommandResult] =
     giapi.command(
       Command(SequenceCommand.ABORT, Activity.PRESET_START, Configuration.Zero),
-      defaultCommandTimeout)
+      DefaultCommandTimeout)
 
   ////////////////////////
   // GPI Specific commands
@@ -131,7 +131,7 @@ class GPIClient[F[_]](giapi: Giapi[F]) {
         Activity.PRESET_START,
         Configuration.single(s"gpi:selectShutter.$shutterName",
                              position.fold(1, 0))
-      ), defaultCommandTimeout)
+      ), DefaultCommandTimeout)
 
   def entranceShutter(position: Boolean): F[CommandResult] =
     shutter("entranceShutter", position)
@@ -154,7 +154,7 @@ class GPIClient[F[_]](giapi: Giapi[F]) {
       Command(SequenceCommand.APPLY,
               Activity.PRESET_START,
               Configuration.single("gpi:observationMode.mode", mode)),
-      defaultCommandTimeout)
+      DefaultCommandTimeout)
 
   def ifsFilter(filter: String): F[CommandResult] =
     giapi.command(
@@ -163,7 +163,7 @@ class GPIClient[F[_]](giapi: Giapi[F]) {
         Activity.PRESET_START,
         Configuration.single("gpi:ifs:selectIfsFilter.maskStr", filter)
       ),
-      defaultCommandTimeout)
+      DefaultCommandTimeout)
 
   def ifsConfigure(integrationTime: Double,
                    coAdds: Int,
@@ -179,7 +179,7 @@ class GPIClient[F[_]](giapi: Giapi[F]) {
           Configuration.single("gpi:configIfs.readoutMode", readoutMode)
         ).combineAll
       ),
-      defaultCommandTimeout
+      DefaultCommandTimeout
     )
 
   def genericApply(configuration: Configuration): F[CommandResult] =
@@ -188,7 +188,7 @@ class GPIClient[F[_]](giapi: Giapi[F]) {
         SequenceCommand.APPLY,
         Activity.PRESET_START,
         configuration
-      ), defaultCommandTimeout)
+      ), DefaultCommandTimeout)
 }
 
 object GPIExample extends App {
