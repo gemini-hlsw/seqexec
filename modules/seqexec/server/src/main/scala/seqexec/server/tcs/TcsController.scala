@@ -349,18 +349,20 @@ object TcsController {
     def setIAA(v: InstrumentAlignAngle): TcsConfig = TcsConfig(gc, tc, gtc, ge, agc, v)
   }
 
-  sealed trait Subsystem
+  sealed trait Subsystem extends Product with Serializable
   object Subsystem {
-    object OIWFS extends Subsystem
-    object P1WFS extends Subsystem
-    object P2WFS extends Subsystem
-    object ScienceFold extends Subsystem
-    object HRProbe extends Subsystem
-    object Mount extends Subsystem
-    object M1 extends Subsystem
-    object M2 extends Subsystem
+    case object OIWFS       extends Subsystem
+    case object P1WFS       extends Subsystem
+    case object P2WFS       extends Subsystem
+    case object ScienceFold extends Subsystem
+    case object HRProbe     extends Subsystem
+    case object Mount       extends Subsystem
+    case object M1          extends Subsystem
+    case object M2          extends Subsystem
 
     val all: NonEmptyList[Subsystem] = NonEmptyList.of(OIWFS, P1WFS, P2WFS, ScienceFold, HRProbe, Mount, M1, M2)
+
+    implicit val show: Show[Subsystem] = Show.show { _.productPrefix }
   }
 
 }

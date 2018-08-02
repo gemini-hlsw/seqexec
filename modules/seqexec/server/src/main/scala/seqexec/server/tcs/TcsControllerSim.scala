@@ -4,11 +4,12 @@
 package seqexec.server.tcs
 
 import cats.data.{EitherT, NonEmptyList}
+import cats.implicits._
 import cats.effect.IO
-import seqexec.server.tcs.TcsController._
-import seqexec.server.{SeqAction, TrySeq}
 import edu.gemini.spModel.core.Wavelength
 import org.log4s.getLogger
+import seqexec.server.tcs.TcsController._
+import seqexec.server.{SeqAction, TrySeq}
 import squants.space.{Degrees, Millimeters, Nanometers}
 
 import cats.implicits._
@@ -43,7 +44,7 @@ object TcsControllerSim extends TcsController {
   ))
 
   override def applyConfig(subsystems: NonEmptyList[Subsystem], tc: TcsConfig): SeqAction[Unit] = {
-    def configSubsystem(subsystem: Subsystem): IO[Unit] = IO.apply(Log.info(s"Applying $subsystem configuration."))
+    def configSubsystem(subsystem: Subsystem): IO[Unit] = IO.apply(Log.info(s"Applying ${subsystem.show} configuration."))
 
     EitherT(
       subsystems.tail.foldLeft(configSubsystem(subsystems.head))((b, a) => b *> configSubsystem(a)).map(TrySeq(_)))
