@@ -18,7 +18,7 @@ import seqexec.server._
 import seqexec.server.gpi.GPIController._
 import seqexec.server.keywords.{GDSClient, GDSInstrument, KeywordsClient}
 import scala.concurrent.duration._
-import squants.time.{Seconds, Time}
+import squants.time.{Milliseconds, Seconds, Time}
 
 final case class GPI[F[_]: Sync](controller: GPIController[F])
     extends InstrumentSystem[F]
@@ -55,10 +55,10 @@ final case class GPI[F[_]: Sync](controller: GPIController[F])
   override def notifyObserveStart: SeqActionF[F, Unit] = SeqActionF.void
 
   override def calcObserveTime(config: Config): Time =
-    config
-      .extractAs[JDouble](OBSERVE_KEY / EXPOSURE_TIME_PROP)
-      .map(x => Seconds(x.toDouble))
-      .getOrElse(Seconds(360))
+    (for {
+     exp      <- config.extractAs[JDouble](OBSERVE_KEY / EXPOSURE_TIME_PROP)
+     coa      <- config.extractAs[JInt](OBSERVE_KEY / COADDS_PROP).map(_.toInt)
+     } yield Seconds(2.2 * exp * coa + 300)).getOrElse(Milliseconds(100))
 }
 
 object GPI {

@@ -203,8 +203,7 @@ final case class GPIController[F[_]: Sync](gpiClient: GPIClient[F],
     } yield ()
 
   def observe(fileId: ImageFileId, expTime: Time): SeqActionF[F, ImageFileId] =
-    // Let's give it enough time to timeout
-    EitherT(gpiClient.observe(fileId, (3 * expTime.millis / 2).milliseconds).map(_ => fileId).attempt)
+    EitherT(gpiClient.observe(fileId, expTime.toMilliseconds.milliseconds).map(_ => fileId).attempt)
       .leftMap {
         case CommandResultException(_, "Message cannot be null") => Execution("Unhandled observe command")
         case CommandResultException(_, m)                        => Execution(m)

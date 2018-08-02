@@ -16,7 +16,8 @@ import scala.concurrent.duration._
   * Client for GPI
   */
 class GPIClient[F[_]](giapi: Giapi[F]) {
-  val defaultCommandTimeout: FiniteDuration = 2000.milliseconds
+  // GPI documentation specify 60 seconds as the max time to move muchanism
+  val defaultCommandTimeout: FiniteDuration = 60.seconds
 
   ///////////////
   // Status items
