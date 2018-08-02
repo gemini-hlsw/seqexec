@@ -57,13 +57,13 @@ final case class Tcs(tcsController: TcsController, subsystems: NonEmptyList[Subs
 
   // Helper function to output the part of the TCS configuration that is actually applied.
   private def subsystemConfig(tcs: TcsConfig, subsystem: Subsystem): List[AnyRef] = subsystem match {
-    case Subsystem.M1 => List(tcs.gc.m1Guide.show)
-    case Subsystem.M2 => List(tcs.gc.m2Guide.show)
-    case Subsystem.OIWFS => List(tcs.gtc.oiwfs.show, tcs.ge.oiwfs.show)
-    case Subsystem.P1WFS => List(tcs.gtc.pwfs1.show, tcs.ge.pwfs1.show)
-    case Subsystem.P2WFS => List(tcs.gtc.pwfs2.show, tcs.ge.pwfs2.show)
-    case Subsystem.Mount => List(tcs.tc.show)
-    case Subsystem.HRProbe => List(tcs.agc.hrwfsPos.show)
+    case Subsystem.M1          => List(tcs.gc.m1Guide.show)
+    case Subsystem.M2          => List(tcs.gc.m2Guide.show)
+    case Subsystem.OIWFS       => List(tcs.gtc.oiwfs.show, tcs.ge.oiwfs.show)
+    case Subsystem.P1WFS       => List(tcs.gtc.pwfs1.show, tcs.ge.pwfs1.show)
+    case Subsystem.P2WFS       => List(tcs.gtc.pwfs2.show, tcs.ge.pwfs2.show)
+    case Subsystem.Mount       => List(tcs.tc.show)
+    case Subsystem.HRProbe     => List(tcs.agc.hrwfsPos.show)
     case Subsystem.ScienceFold => List(tcs.agc.sfPos.show)
   }
 
