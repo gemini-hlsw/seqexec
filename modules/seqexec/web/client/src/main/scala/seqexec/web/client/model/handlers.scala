@@ -520,6 +520,14 @@ object handlers {
         updated(WebSocketConnection(Ready(ws), delay, autoReconnect = true))
     }
 
+    def connectedCloseHandler: PartialFunction[Any, ActionResult[M]] = {
+      case WSClose =>
+        // Forcefully close the websocket as requested when reloading the code via HMR
+        val ws = value.ws
+        val closeEffect = Effect(Future(ws.foreach(_.close())).map(_ => NoAction))
+        updated(value.copy(ws = Pot.empty[WebSocket], nextAttempt = 0, autoReconnect = false), closeEffect)
+    }
+
     def connectionErrorHandler: PartialFunction[Any, ActionResult[M]] = {
       case ConnectionError(_) =>
         effectOnly(Effect.action(AppendToLog(ServerLogMessage(ServerLogLevel.ERROR, Instant.now, "Error connecting to the seqexec server"))))
@@ -539,6 +547,7 @@ object handlers {
         connectingHandler,
         connectedHandler,
         connectionErrorHandler,
+        connectedCloseHandler,
         connectionClosedHandler).combineAll
   }
 

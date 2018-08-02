@@ -12,7 +12,7 @@ import scala.scalajs.js.annotation.{JSExport, JSExportTopLevel}
 import seqexec.web.client.components.SeqexecUI
 import seqexec.web.client.services.log.ConsoleHandler
 import seqexec.web.client.services.SeqexecWebClient
-import seqexec.web.client.actions.Initialize
+import seqexec.web.client.actions.{Initialize, WSClose}
 import seqexec.web.client.circuit.SeqexecCircuit
 
 /**
@@ -61,6 +61,11 @@ object SeqexecApp {
       elem
     }
   }
+
+  @JSExport
+  def stop(): Unit =
+    // Close the websocket
+    SeqexecCircuit.dispatch(WSClose)
 
   @JSExport
   def start(): Unit =
