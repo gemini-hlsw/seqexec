@@ -5,6 +5,7 @@ package giapi
 
 import cats._
 import cats.effect._
+import cats.effect.implicits._
 import cats.implicits._
 import edu.gemini.aspen.giapi.commands.HandlerResponse.Response
 import edu.gemini.aspen.giapi.status.{StatusHandler, StatusItem}
@@ -13,10 +14,10 @@ import edu.gemini.aspen.giapi.util.jms.status.StatusGetter
 import edu.gemini.aspen.gmp.commands.jms.client.CommandSenderClient
 import edu.gemini.jms.activemq.provider.ActiveMQJmsProvider
 import scala.concurrent.ExecutionContext
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration._
 import shapeless.Typeable._
 import fs2.{Stream, async}
-import giapi.client.commands.Command
+import giapi.client.commands.{Command, CommandResultException}
 
 package object client {
 
@@ -90,12 +91,12 @@ package client {
       *
       * This decision may be review in the future
       */
-    def command(command: Command): F[CommandResult]
+    def command(command: Command, timeout: FiniteDuration): F[CommandResult]
 
     /**
       * Returns a stream of values for the status item.
       */
-    def stream[A: ItemGetter](statusItem: String, ec: ExecutionContext): F[Stream[F, A]]
+    def stream[A: ItemGetter](statusItem: String): F[Stream[F, A]]
 
     /**
       * Close the connection
@@ -157,6 +158,33 @@ package client {
         } yield i
       }
 
+    // taken from cats-effect 1.x
+    implicit class ToIOOps[F[_]: Effect, A](c: F[A]) {
+      def toIO: IO[A] = toIOFromRunAsync(c)
+    }
+
+    private def toIOFromRunAsync[F[_]: Effect, A](f: F[A]): IO[A] =
+      IO.async { cb =>
+        Effect[F].runAsync(f)(r => IO(cb(r))).unsafeRunSync()
+      }
+
+    // Implementations of timeout suggested from cats-effect documentation
+    private def timeoutTo[A](fa: IO[A], after: FiniteDuration, fallback: IO[A])
+                    (implicit timer: Timer[IO]): IO[A] = {
+
+      // Race the task against a sleep timer
+      IO.race(toIOFromRunAsync(fa), timer.sleep(after)).flatMap {
+        case Left(a)  => IO.pure(a)
+        case Right(_) => fallback
+      }
+    }
+
+    private def timeout[A](fa: IO[A], after: FiniteDuration, error: Exception)
+                  (implicit timer: Timer[IO]): IO[A] = {
+
+      timeoutTo(fa, after, IO.raiseError(error))
+    }
+
     /**
       * Interpreter on F
       *
@@ -164,22 +192,24 @@ package client {
       * @tparam F Effect type
       */
     // scalastyle:off
-    def giapiConnection[F[_]: Effect](url: String, commandsTimeout: Duration): GiapiConnection[F] =
+    def giapiConnection[F[_]: Effect](
+        url: String,
+        ec: ExecutionContext): GiapiConnection[F] =
       new GiapiConnection[F] {
         private def giapi(c: ActiveMQJmsProvider,
                           sg: StatusGetter,
                           cc: CommandSenderClient,
                           ss: StatusStreamer) =
           new Giapi[F] {
-            @SuppressWarnings(Array("org.wartremover.warts.Throw"))
+            private val commandsAckTimeout                  = 2000.milliseconds
+            implicit val executionContext: ExecutionContext = ec
+
             override def get[A: ItemGetter](statusItem: String): F[A] =
-              Sync[F].delay {
-                val item = sg.getStatusItem[A](statusItem)
-                // Note item.getValue can throw if e.g. the item is unknown, let's avoid NPEs though
-                Option(item) match {
-                  case Some(i) => i.getValue
-                  case None    => throw GiapiException(s"Status item $statusItem not found")
-                }
+              getO[A](statusItem).flatMap {
+                case Some(a) => a.pure[F]
+                case None =>
+                  Sync[F].raiseError(
+                    new GiapiException(s"Status item $statusItem not found"))
               }
 
             def getO[A: ItemGetter](statusItem: String): F[Option[A]] =
@@ -188,11 +218,12 @@ package client {
                 Option(item).map(_.getValue)
               }
 
-            override def command(command: Command): F[CommandResult] =
-              commands.sendCommand(cc, command, commandsTimeout)
+            override def command(command: Command, timeOut: FiniteDuration): F[CommandResult] = {
+              val error = CommandResultException.timedOut(timeOut)
+              timeout(commands.sendCommand(cc, command, commandsAckTimeout).toIO, timeOut, error).liftIO[F]
+            }
 
-            override def stream[A: ItemGetter](statusItem: String,
-                                               ec: ExecutionContext): F[Stream[F, A]] =
+            override def stream[A: ItemGetter](statusItem: String): F[Stream[F, A]] =
               streamItem[F, A](ss.aggregate, statusItem, ec)
 
             override def close: F[Unit] =
@@ -229,8 +260,8 @@ package client {
       override def connect: Id[Giapi[Id]] = new Giapi[Id] {
         override def get[A: ItemGetter](statusItem: String): Id[A] = sys.error(s"Cannot read $statusItem")
         override def getO[A: ItemGetter](statusItem: String): Id[Option[A]] = None
-        override def stream[A: ItemGetter](statusItem: String, ec: ExecutionContext): Id[Stream[Id, A]] = Stream.raiseError(new RuntimeException(s"Cannot read $statusItem"))
-        override def command(command: Command): Id[CommandResult] = CommandResult(Response.COMPLETED)
+        override def stream[A: ItemGetter](statusItem: String): Id[Stream[Id, A]] = Stream.raiseError(new RuntimeException(s"Cannot read $statusItem"))
+        override def command(command: Command, timeout: FiniteDuration): Id[CommandResult] = CommandResult(Response.COMPLETED)
         override def close: Id[Unit] = ()
       }
     }
@@ -242,8 +273,8 @@ package client {
       override def connect: IO[Giapi[IO]] = IO.pure(new Giapi[IO] {
         override def get[A: ItemGetter](statusItem: String): IO[A] = IO.raiseError(new RuntimeException(s"Cannot read $statusItem"))
         override def getO[A: ItemGetter](statusItem: String): IO[Option[A]] = IO.pure(None)
-        override def stream[A: ItemGetter](statusItem: String, ec: ExecutionContext): IO[Stream[IO, A]] = IO.pure(Stream.empty.covary[IO])
-        override def command(command: Command): IO[CommandResult] = IO.pure(CommandResult(Response.COMPLETED))
+        override def stream[A: ItemGetter](statusItem: String): IO[Stream[IO, A]] = IO.pure(Stream.empty.covary[IO])
+        override def command(command: Command, timeout: FiniteDuration): IO[CommandResult] = IO.pure(CommandResult(Response.COMPLETED))
         override def close: IO[Unit] = IO.unit
       })
     }

@@ -73,7 +73,7 @@ class SeqTranslateSpec extends FlatSpec {
     GmosControllerSim.south,
     GmosControllerSim.north,
     GnirsControllerSim,
-    GPIController(new GPIClient(Giapi.giapiConnectionIO.connect.unsafeRunSync, scala.concurrent.ExecutionContext.Implicits.global),
+    GPIController(new GPIClient(Giapi.giapiConnectionIO.connect.unsafeRunSync),
     new GDSClient(GDSClient.alwaysOkClient, uri("http://localhost:8888/xmlrpc")))
   )
 

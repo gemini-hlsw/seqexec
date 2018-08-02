@@ -23,11 +23,12 @@ import giapi.client.commands.{CommandResult, CommandResultException, Configurati
 import giapi.client.gpi.GPIClient
 import mouse.boolean._
 import org.log4s.getLogger
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration._
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.keywords.GDSClient
 import seqexec.server.SeqActionF
 import seqexec.server.SeqexecFailure.{Execution, SeqexecException}
+import squants.time.Time
 
 object GPILookupTables {
 
@@ -201,8 +202,8 @@ final case class GPIController[F[_]: Sync](gpiClient: GPIClient[F],
             Sync[F].delay(Log.debug("Completed GPI configuration")))
     } yield ()
 
-  def observe(fileId: ImageFileId): SeqActionF[F, ImageFileId] =
-    EitherT(gpiClient.observe(fileId).map(_ => fileId).attempt)
+  def observe(fileId: ImageFileId, expTime: Time): SeqActionF[F, ImageFileId] =
+    EitherT(gpiClient.observe(fileId, expTime.toMilliseconds.milliseconds).map(_ => fileId).attempt)
       .leftMap {
         case CommandResultException(_, "Message cannot be null") => Execution("Unhandled observe command")
         case CommandResultException(_, m)                        => Execution(m)
