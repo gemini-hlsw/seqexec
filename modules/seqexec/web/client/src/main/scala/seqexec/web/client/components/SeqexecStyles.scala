@@ -145,6 +145,8 @@ object SeqexecStyles {
 
   val rowDisabled: GStyle = GStyle.fromString("SeqexecStyles-rowDisabled")
 
+  val rowDone: GStyle = GStyle.fromString("SeqexecStyles-rowDone")
+
   val rowNone: GStyle = GStyle.Zero
 
   val stepRowWithBreakpoint: GStyle = GStyle.fromString("SeqexecStyles-stepRowWithBreakpoint")

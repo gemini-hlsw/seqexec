@@ -172,7 +172,7 @@ object StepsTable {
     case s if s.status === StepState.Running => SeqexecStyles.rowWarning
     case s if s.status === StepState.Paused  => SeqexecStyles.rowNegative
     case s if s.status === StepState.Skipped => SeqexecStyles.rowActive
-    case s if s.isFinished                   => SeqexecStyles.rowDisabled
+    case s if s.isFinished                   => SeqexecStyles.rowDone
     case _                                   => SeqexecStyles.stepRow
   }
 

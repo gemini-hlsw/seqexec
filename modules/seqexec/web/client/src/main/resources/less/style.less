@@ -2,19 +2,8 @@
 @import "~semantic-ui-less/themes/default/collections/table.variables";
 @import "~semantic-ui-less/themes/default/elements/segment.variables";
 
-@color_2: #573a08;
-@color_3: black;
-@text_color: rgba(0, 0, 0, 0.95);
-@color_5: #9f3a38;
-@color_7: rgba(0, 0, 0, 0.87);
-@color_8: #2c662d;
-@background_color_3: lightcyan;
-@background_color_4: #fffaf3;
 @background_color_5: #f5f5f5;
 @background_color_6: #f9fafb;
-@background_color_7: rgba(0, 0, 0, 0.05);
-@background_color_8: #fff6f6;
-@background_color_10: #fcfff5;
 @table_row_left_padding: 7px;
 @breakpoint_line_color: #a5673f;
 @gutter_end_color: rgba(
@@ -170,9 +159,9 @@ body {
 }
 
 .queueText() {
-  color: @text_color;
+  color: @selectedTextColor;
   &:hover {
-    color: @text_color;
+    color: @selectedTextColor;
   }
 }
 
@@ -365,14 +354,14 @@ body {
   word-wrap: break-word;
   white-space: nowrap;
   background-color: @white;
-  color: @text_color;
+  color: @selectedTextColor;
   overflow: unset !important;
   .borderTop();
   outline: none;
 }
 
 .SeqexecStyles-observeConfig {
-  background-color: @background_color_3 !important;
+  background-color: lightcyan !important;
 }
 
 .SeqexecStyles-headerRowStyle {
@@ -383,58 +372,63 @@ body {
   .borderTop();
   .borderRight();
   background-color: @white;
-  color: @text_color;
+  color: @selectedTextColor;
 }
 
 .SeqexecStyles-errorLog {
   .borderTop();
   .borderRight();
-  background-color: @background_color_8 !important;
-  color: @color_5 !important;
+  background-color: @negativeBackgroundColor !important;
+  color: @negativeTextColor !important;
 }
 
 .SeqexecStyles-warningLog {
   .borderTop();
   .borderRight();
-  background-color: @background_color_4 !important;
-  color: @color_2 !important;
+  background-color: @warningBackgroundColor !important;
+  color: @warningTextColor !important;
 }
 
 .SeqexecStyles-rowPositive {
-  background-color: @background_color_10;
-  color: @color_8;
-  box-shadow: 0px 0px 0px #9f3a38 inset;
+  background-color: @positiveBackgroundColor;
+  color: @positiveTextColor;
+  box-shadow: @positiveBoxShadow;
 }
 
 .SeqexecStyles-rowWarning {
-  background-color: @background_color_4;
-  color: @color_2;
-  box-shadow: 0px 0px 0px #c9ba9b inset;
+  background-color: @warningBackgroundColor;
+  color: @warningTextColor;
+  box-shadow: @warningBoxShadow;
 }
 
 .SeqexecStyles-rowActive {
   background-color: @background;
-  color: @color_7;
-  box-shadow: 0px 0px 0px rgba(0, 0, 0, 0.87) inset;
+  color: @textColor;
+  box-shadow: 0px 0px 0px @textColor inset;
   background-clip: padding-box;
 }
 
 .SeqexecStyles-rowNegative {
-  background-color: @background_color_8;
-  color: @color_5;
-  box-shadow: 0px 0px 0px #e0b4b4 inset;
+  background-color: @negativeBackgroundColor;
+  color: @negativeTextColor;
+  box-shadow: @negativeBoxShadow;
 }
 
 .SeqexecStyles-rowError {
-  background-color: @background_color_8;
-  color: @color_5;
-  box-shadow: 0px 0px 0px #e0b4b4 inset;
+  background-color: @negativeBackgroundColor;
+  color: @negativeTextColor;
+  box-shadow: @negativeBoxShadow;
 }
 
 .SeqexecStyles-rowDisabled {
   pointer-events: none;
   background: @background;
   color: @disabledTextColor;
+}
+
+.SeqexecStyles-rowDone {
+  pointer-events: none;
+  color: fadein(@disabledTextColor, 30%);
 }
 
 .SeqexecStyles-rowNone {
@@ -657,7 +651,7 @@ body {
 .SeqexecStyles-tableHeader {
   .borderLeft();
   font-weight: bold;
-  color: @color_3;
+  color: @black;
   background-color: @background_color_6;
   outline: none;
   min-height: 33px;
@@ -743,8 +737,8 @@ body {
   margin-bottom: 0;
 }
 .SeqexecStyles-runningLabel {
-  background-color: @background_color_4 !important;
-  color: @color_2 !important;
+  background-color: @warningBackgroundColor !important;
+  color: @warningTextColor !important;
 }
 .SeqexecStyles-smallTextArea {
   font-size: smaller;
@@ -843,8 +837,8 @@ body {
     border-top: none;
   }
   &:hover {
-    background-color: @background_color_7;
-    color: @text_color;
+    background-color: @transparentBlack;
+    color: @selectedTextColor;
   }
 }
 .SeqexecStyles-offsetCellWrapper {
