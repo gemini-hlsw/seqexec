@@ -132,7 +132,10 @@ class SeqexecCommandRoutes(auth: AuthenticationService, inputQueue: server.Event
       )
 
     case POST -> Root / "load" / InstrumentVar(i) / ObsIdVar(obsId) as user =>
-      se.setSelectedSequences(inputQueue, i, obsId, user) *> Ok(s"Set selected sequence $obsId for $i")
+      se.loadSequence(inputQueue, i, obsId, user) *> Ok(s"Set selected sequence $obsId for $i")
+
+    case POST -> Root / "unload" / "all" as user =>
+      se.clearLoadedSequences(inputQueue, user) *> Ok(s"Queue cleared")
   }
 
   val refreshCommand: HttpService[IO] = HttpService[IO] {

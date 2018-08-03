@@ -72,12 +72,13 @@ object SequenceEventsArbitraries {
   implicit val opArb  = Arbitrary[OperatorUpdated] { arbitrary[SequencesQueue[SequenceView]].map(OperatorUpdated.apply) }
   implicit val obArb  = Arbitrary[ObserverUpdated] { arbitrary[SequencesQueue[SequenceView]].map(ObserverUpdated.apply) }
   implicit val cuArb  = Arbitrary[ConditionsUpdated] { arbitrary[SequencesQueue[SequenceView]].map(ConditionsUpdated.apply) }
-  implicit val suArb  = Arbitrary[SelectedSequenceUpdate] {
+  implicit val suArb  = Arbitrary[LoadSequenceUpdated] {
     for {
       i <- arbitrary[Instrument]
       o <- arbitrary[Observation.Id]
-    } yield SelectedSequenceUpdate(i, o)
+    } yield LoadSequenceUpdated(i, o)
   }
+  implicit val clsArb = Arbitrary[ClearLoadedSequencesUpdated.type] { ClearLoadedSequencesUpdated }
   implicit val serArb = Arbitrary[SequenceError] {
     for {
       i <- arbitrary[Observation.Id]
@@ -138,7 +139,8 @@ object SequenceEventsArbitraries {
       arbitrary[ConnectionOpenEvent],
       arbitrary[NewLogMessage],
       arbitrary[ServerLogMessage],
-      arbitrary[SelectedSequenceUpdate],
+      arbitrary[LoadSequenceUpdated],
+      arbitrary[ClearLoadedSequencesUpdated.type],
       arbitrary[NullEvent.type]
     )
   }

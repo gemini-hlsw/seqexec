@@ -137,12 +137,16 @@ object events {
         Eq.by(_.view)
     }
 
-    final case class SelectedSequenceUpdate(i: Instrument, sid: Observation.Id) extends SeqexecEvent
+    final case class LoadSequenceUpdated(i: Instrument, sid: Observation.Id) extends SeqexecEvent
 
-    object SelectedSequenceUpdate {
-      implicit lazy val equal: Eq[SelectedSequenceUpdate] =
+    object LoadSequenceUpdated {
+      implicit lazy val equal: Eq[LoadSequenceUpdated] =
         Eq.by(x => (x.i, x.sid))
     }
+
+    case object ClearLoadedSequencesUpdated extends SeqexecEvent
+
+    implicit lazy val clsEqual: Eq[ClearLoadedSequencesUpdated.type] = Eq.fromUniversalEquals
 
     final case class ObserverUpdated(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
@@ -230,13 +234,14 @@ object events {
 
     implicit val equal: Eq[SeqexecEvent] =
       Eq.instance {
-        case (a: ConnectionOpenEvent,    b: ConnectionOpenEvent)    => a === b
-        case (a: SeqexecModelUpdate,     b: SeqexecModelUpdate)     => a === b
-        case (a: NewLogMessage,          b: NewLogMessage)          => a === b
-        case (a: ServerLogMessage,       b: ServerLogMessage)       => a === b
-        case (a: SelectedSequenceUpdate, b: SelectedSequenceUpdate) => a === b
-        case (_: NullEvent.type,         _: NullEvent.type)         => true
-        case _                                                      => false
+        case (a: ConnectionOpenEvent,              b: ConnectionOpenEvent)              => a === b
+        case (a: SeqexecModelUpdate,               b: SeqexecModelUpdate)               => a === b
+        case (a: NewLogMessage,                    b: NewLogMessage)                    => a === b
+        case (a: ServerLogMessage,                 b: ServerLogMessage)                 => a === b
+        case (a: LoadSequenceUpdated,              b: LoadSequenceUpdated)              => a === b
+        case (_: ClearLoadedSequencesUpdated.type, _: ClearLoadedSequencesUpdated.type) => true
+        case (_: NullEvent.type,                   _: NullEvent.type)                   => true
+        case _                                                                          => false
       }
 
   // scalastyle:on

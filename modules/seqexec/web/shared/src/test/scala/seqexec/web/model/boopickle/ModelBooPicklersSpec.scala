@@ -47,6 +47,10 @@ final class BoopicklingSpec extends CatsSuite with ModelBooPicklers {
            PicklerTests[SequencePauseCanceled].pickler)
   checkAll("Pickler[ActionStopRequested]",
            PicklerTests[ActionStopRequested].pickler)
+  checkAll("Pickler[LoadSequenceUpdated]",
+           PicklerTests[LoadSequenceUpdated].pickler)
+  checkAll("Pickler[ClearLoadedSequencesUpdated.type]",
+           PicklerTests[ClearLoadedSequencesUpdated.type].pickler)
   checkAll("Pickler[SequenceError]", PicklerTests[SequenceError].pickler)
   checkAll("Pickler[SequencePaused]", PicklerTests[SequencePaused].pickler)
   checkAll("Pickler[ExposurePaused]", PicklerTests[ExposurePaused].pickler)
