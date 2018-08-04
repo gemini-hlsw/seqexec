@@ -9,15 +9,11 @@ import cats.implicits._
 import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.Appender
 import fs2.async.mutable.Queue
-import seqexec.model.events._
-import seqexec.server
-import seqexec.server.{SeqexecEngine, executeEngine}
-import seqexec.web.server.OcsBuildInfo
-import seqexec.web.server.logging.AppenderForClients
-import seqexec.web.server.security.{AuthenticationConfig, AuthenticationService, LDAPConfig}
 import fs2.StreamApp.ExitCode
 import fs2.async.mutable.Topic
 import fs2.{Scheduler, Stream, StreamApp, async}
+import gem.enum.Site
+import io.prometheus.client.CollectorRegistry
 import knobs._
 import mouse.all._
 import org.http4s.server.SSLKeyStoreSupport.StoreInfo
@@ -29,11 +25,17 @@ import org.http4s.server.Router
 import org.http4s.server.prometheus.{PrometheusMetrics, PrometheusExportService}
 import org.http4s.server.prometheus.{PrometheusExportService}
 import org.log4s._
+import scala.concurrent.ExecutionContext.Implicits.global
+import seqexec.model.events._
+import seqexec.server
+import seqexec.server.{SeqexecMetrics, SeqexecConfiguration, SeqexecEngine, executeEngine}
+import seqexec.web.server.OcsBuildInfo
+import seqexec.web.server.logging.AppenderForClients
+import seqexec.web.server.security.{AuthenticationConfig, AuthenticationService, LDAPConfig}
 import squants.time.Hours
 import web.server.common.{LogInitialization, RedirectToHttpsRoutes, StaticRoutes}
-import scala.concurrent.ExecutionContext.Implicits.global
 
-object WebServerLauncher extends StreamApp[IO] with LogInitialization {
+object WebServerLauncher extends StreamApp[IO] with LogInitialization with SeqexecConfiguration {
   private val logger = getLogger
 
   final case class SSLConfig(keyStore: String, keyStorePwd: String, certPwd: String)
@@ -122,12 +124,12 @@ object WebServerLauncher extends StreamApp[IO] with LogInitialization {
     }
 
     val router = Router[IO](
-            "/" -> (pe.service <+> new StaticRoutes(conf.devMode, OcsBuildInfo.builtAtMillis).service),
+            "/" -> new StaticRoutes(conf.devMode, OcsBuildInfo.builtAtMillis).service,
             "/api/seqexec/commands" -> new SeqexecCommandRoutes(as, inputs, se).service,
             "/api" -> new SeqexecUIApiRoutes(conf.site, conf.devMode, as, outputs).service)
     for {
       static <- Stream.eval(metricsMiddleware(router))
-      blaze <- build(static)
+      blaze <- build(pe.service <+> static)
     } yield blaze
   }
 
@@ -172,13 +174,15 @@ object WebServerLauncher extends StreamApp[IO] with LogInitialization {
     * Reads the configuration and launches the web server
     */
   def stream(args: List[String], requestShutdown: IO[Unit]): Stream[IO, ExitCode] = {
-    def engineIO(httpClient: Client[IO]): IO[SeqexecEngine] =
+    def engineIO(httpClient: Client[IO], collector: CollectorRegistry): IO[SeqexecEngine] =
       for {
         _     <- configLog // Initialize log before the engine is setup
         c     <- config
+        site  <- IO.pure(c.require[Site]("seqexec-engine.site"))
         giapi <- SeqexecEngine.giapiConnection.run(c)
         seqc  <- SeqexecEngine.seqexecConfiguration(giapi).run(c)
-      } yield SeqexecEngine(httpClient, seqc)
+        met   <- SeqexecMetrics.build[IO](site, collector)
+      } yield SeqexecEngine(httpClient, seqc, met)
 
     def webServerIO(in: Queue[IO, executeEngine.EventType], out: Topic[IO, SeqexecEvent], et: SeqexecEngine, pe: PrometheusExportService[IO]): IO[Stream[IO, ExitCode]] =
       // Launch web server
@@ -199,7 +203,7 @@ object WebServerLauncher extends StreamApp[IO] with LogInitialization {
         inq    <- Stream.eval(async.boundedQueue[IO, executeEngine.EventType](10))
         out    <- Stream.eval(async.topic[IO, SeqexecEvent](NullEvent))
         pe     <- Stream.eval(PrometheusExportService.build[IO])
-        engine <- Stream.eval(engineIO(cli))
+        engine <- Stream.eval(engineIO(cli, pe.collectorRegistry))
         web    <- Stream.eval(webServerIO(inq, out, engine, pe))
         exit   <- Stream(
                     engine.eventStream(inq).to(out.publish),

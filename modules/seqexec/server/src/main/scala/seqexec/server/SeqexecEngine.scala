@@ -45,7 +45,7 @@ import mouse.all._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
-class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings) {
+class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm: SeqexecMetrics) {
   import SeqexecEngine._
 
   val odbProxy: ODBProxy = new ODBProxy(new Peer(settings.odbHost, 8443, null),
@@ -333,7 +333,10 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings) {
 
     val x = odbProxy.queuedSequences.flatMapF(seqs => loads(seqs).map(ee => (ee ++ unloads(seqs)).asRight)).value
     val y = x.map(_.valueOr(r => List(Event.logWarningMsg(SeqexecFailure.explain(r)))))
-    y.map { ee => ee.nonEmpty option Stream.emits(ee).evalMap(IO.apply(_)) }
+    for {
+      ee <- y
+      _  <- sm.queueSize[IO](st.sequences.size)
+    } yield ee.nonEmpty option Stream.emits(ee).evalMap(IO.apply(_))
   }
 
 }
@@ -372,7 +375,7 @@ object SeqexecEngine extends SeqexecConfiguration {
                             odbQueuePollingInterval: Duration,
                             gpiGiapi: Giapi[IO],
                             gpiGDS: Uri)
-  def apply(httpClient: Client[IO], settings: Settings): SeqexecEngine = new SeqexecEngine(httpClient, settings)
+  def apply(httpClient: Client[IO], settings: Settings, c: SeqexecMetrics): SeqexecEngine = new SeqexecEngine(httpClient, settings, c)
 
   // Couldn't find this on Scalaz
   def splitWhere[A](l: List[A])(p: (A => Boolean)): (List[A], List[A]) =
@@ -480,7 +483,7 @@ object SeqexecEngine extends SeqexecConfiguration {
   // that should go from one to the other. This should be improved.
   def giapiConnection: Kleisli[IO, Config, Giapi[IO]] = Kleisli { cfg: Config =>
     val gpiControl = cfg.require[ControlStrategy]("seqexec-engine.systemControl.gpi")
-    val gpiUrl  = cfg.require[String]("seqexec-engine.gpiUrl")
+    val gpiUrl     = cfg.require[String]("seqexec-engine.gpiUrl")
     if (gpiControl.command) {
       Giapi.giapiConnection[IO](gpiUrl, scala.concurrent.ExecutionContext.Implicits.global).connect
     } else {

@@ -9,6 +9,7 @@ import fs2.{Pure, Stream, async}
 import gem.Observation
 import gem.enum.Site
 import giapi.client.Giapi
+import io.prometheus.client._
 import java.time.LocalDate
 import org.scalatest.Inside.inside
 import org.scalatest.{FlatSpec, Matchers}
@@ -167,7 +168,8 @@ class SeqexecEngineSpec extends FlatSpec with Matchers {
       SeqexecEngine.observeStatus(executions) shouldBe ActionStatus.Paused
     }
 
-  private val seqexecEngine = SeqexecEngine(GDSClient.alwaysOkClient, defaultSettings)
+  private val sm = SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry()).unsafeRunSync
+  private val seqexecEngine = SeqexecEngine(GDSClient.alwaysOkClient, defaultSettings, sm)
   private def advanceOne(q: EventQueue, s0: executeEngine.StateType, put: IO[Either[SeqexecFailure, Unit]]): Stream[Pure, Option[executeEngine.StateType]] =
     Stream.emit((put *> executeEngine.process(q.dequeue)(s0).take(1).compile.last).unsafeRunSync.map(_._2))
 

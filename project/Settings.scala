@@ -136,6 +136,7 @@ object Settings {
     val gmpStatusDatabase       = "0.3.2"
     val gmpCmdClientBridge      = "0.6.2"
     val guava                   = "25.0-jre"
+    val prometheusClient        = "0.5.0"
   }
 
   /**
@@ -172,6 +173,7 @@ object Settings {
       "net.logstash.logback" % "logstash-logback-encoder" % LibraryVersions.logstash
     )
     val Log4s                  = "org.log4s"                          %%  "log4s"                    % LibraryVersions.log4s
+    val PrometheusClient       = "io.prometheus"                      %   "simpleclient_common"      % LibraryVersions.prometheusClient
     val Logging                = Seq(JuliSlf4j, Log4s) ++ Logback
     val Knobs                  = "io.verizon.knobs"                   %%  "core"                     % LibraryVersions.knobs
     val OpenCSV                = "net.sf.opencsv"                     %   "opencsv"                  % LibraryVersions.opencsv
