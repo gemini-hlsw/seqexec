@@ -26,16 +26,13 @@ import seqexec.web.client.circuit._
 import seqexec.web.client.actions._
 import seqexec.web.client.model.Pages._
 import seqexec.web.client.ModelOps._
-// import seqexec.web.client.services.HtmlConstants.iconEmpty
 import seqexec.web.client.semanticui.{Size => SSize}
 import seqexec.web.client.semanticui.elements.button.Button
-import seqexec.web.client.semanticui.elements.icon.Icon.{
-  IconAttention,
-  IconCheckmark,
-  IconCircleNotched,
-  IconSelectedRadio,
-  IconSignIn
-}
+import seqexec.web.client.semanticui.elements.icon.Icon.IconAttention
+import seqexec.web.client.semanticui.elements.icon.Icon.IconCheckmark
+import seqexec.web.client.semanticui.elements.icon.Icon.IconCircleNotched
+import seqexec.web.client.semanticui.elements.icon.Icon.IconSelectedRadio
+import seqexec.web.client.semanticui.elements.icon.Icon.IconSignIn
 import web.client.style._
 import web.client.utils._
 import web.client.table._
@@ -415,14 +412,23 @@ object QueueTableBody {
               IconSelectedRadio.copyIcon(fitted = true,
                                          extraStyles = List(SeqexecStyles.selectedIcon))
             else
-              Button(Button.Props(size = SSize.Large, compact = true, icon = Some(IconSignIn), onClick = Callback.log("Here")))
+              Button(Button.Props(size = SSize.Large, compact = true, icon = Some(IconSignIn), onClick = Callback.log("Here") >> SeqexecCircuit.dispatchCB(LoadSequence(row.instrument, row.obsId))))
         }
 
       val page = SequencePage(row.instrument, row.obsId, 0)
-      linkTo(p, page)(
-        SeqexecStyles.queueIconColumn,
-        icon
-      )
+      row.status match {
+        case SequenceState.Completed | SequenceState.Running(_, _) | SequenceState.Failed(_) =>
+          linkTo(p, page)(
+            SeqexecStyles.queueIconColumn,
+            icon
+          )
+        case _ if p.isLogged =>
+          <.div(
+            icon
+          )
+        case _ =>
+          <.div("")
+      }
     }
 
   private val statusHeaderRenderer: HeaderRenderer[js.Object] =

@@ -25,8 +25,8 @@ object SequenceInfo {
   private def component = ScalaComponent.builder[Props]("SequenceInfo")
     .stateless
     .render_P { p =>
-      val StatusAndObserverFocus(isLogged, name, _, _, observer, status, tName) = p.p()
-      val obsName = name.filter(_.nonEmpty).getOrElse("Unknown.")
+      val StatusAndObserverFocus(isLogged, oName, _, observer, status, tName) = p.p()
+      val obsName = oName.filter(_.nonEmpty).getOrElse("Unknown.")
       val daytimeCalibrationTargetName: TagMod =
         Label(Label.Props(DaytimeCalibrationTargetName, basic = true, extraStyles = List(SeqexecStyles.daytimeCal)))
       val targetName = tName.filter(_.nonEmpty).fold(daytimeCalibrationTargetName)(t => Label(Label.Props(t, basic = true)))

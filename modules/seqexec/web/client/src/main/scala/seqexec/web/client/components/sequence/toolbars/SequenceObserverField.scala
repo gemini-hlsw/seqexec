@@ -36,7 +36,7 @@ object SequenceObserverField {
 
     def submitIfChanged: Callback =
       ($.state zip $.props) >>= {
-        case (s, p) => Callback.when(p.p().isLogged && p.p().observer.map(_.value) =!= s.currentText)(p.p().id.map(updateObserver(_, s.currentText.orEmpty)).getOrEmpty)
+        case (s, p) => Callback.when(p.p().isLogged && p.p().observer.map(_.value) =!= s.currentText)(updateObserver(p.p().id, s.currentText.orEmpty))
       }
 
     def setupTimer: Callback =
@@ -45,7 +45,7 @@ object SequenceObserverField {
 
     def render(p: Props, s: State): VdomTagOf[Div] = {
       val observerEV = StateSnapshot(s.currentText.orEmpty)(updateState)
-      val StatusAndObserverFocus(_, _, instrument, _, _, _, _) = p.p()
+      val StatusAndObserverFocus(_, instrument, _, _, _, _) = p.p()
       <.div(
         ^.cls := "ui form",
         <.div(

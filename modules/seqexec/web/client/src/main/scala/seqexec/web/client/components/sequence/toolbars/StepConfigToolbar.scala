@@ -29,9 +29,7 @@ import mouse.boolean._
   * Toolbar when displaying a step configuration
   */
 object StepConfigToolbar {
-  final case class Props(router: RouterCtl[SeqexecPages], site: Site, instrument: Instrument, id: Observation.Id, step: Int, total: Int) {
-    protected[sequence] val sequenceInfoConnects = site.instruments.toList.map(i => (i, SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(i)))).toMap
-  }
+  final case class Props(router: RouterCtl[SeqexecPages], site: Site, instrument: Instrument, id: Observation.Id, step: Int, total: Int)
 
   def backToSequence(p: Props): Callback =
     SeqexecCircuit.dispatchCB(NavigateSilentTo(SequencePage(p.instrument, p.id, p.step)))
@@ -42,6 +40,7 @@ object StepConfigToolbar {
   def nextStep(p: Props): Callback =
     SeqexecCircuit.dispatchCB(NavigateSilentTo(SequenceConfigPage(p.instrument, p.id, p.step + 1)))
 
+  @SuppressWarnings(Array("org.wartremover.warts.OptionPartial"))
   private val component = ScalaComponent.builder[Props]("StepConfigToolbar")
     .stateless
     .render_P( p =>
@@ -52,7 +51,7 @@ object StepConfigToolbar {
           SeqexecStyles.shorterRow,
           <.div(
             ^.cls := "left column bottom aligned sixteen wide computer ten wide tablet only",
-            p.sequenceInfoConnects.get(p.instrument).whenDefined(c => c(SequenceInfo.apply))
+            SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(p.id))(SequenceInfo.apply)
           )
         ),
         <.div(

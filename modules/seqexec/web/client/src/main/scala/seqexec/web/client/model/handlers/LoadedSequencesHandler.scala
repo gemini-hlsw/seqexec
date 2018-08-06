@@ -21,6 +21,7 @@ class LoadedSequencesHandler[M](modelRW: ModelRW[M, SequencesOnDisplay]) extends
       noChange
 
     case LoadSequence(i, id) =>
+      println(i)
       effectOnly(Effect(SeqexecWebClient.loadSequence(i, id).map(r => if (r.error) NoAction else NoAction)))
   }
 }

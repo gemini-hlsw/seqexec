@@ -15,7 +15,7 @@ import seqexec.web.client.components.sequence.toolbars.{SequenceDefaultToolbar, 
 import seqexec.web.client.circuit.{SeqexecCircuit, StatusAndStepFocus, InstrumentTabContentFocus}
 import seqexec.web.client.model.Pages.SeqexecPages
 import seqexec.web.client.model.{SectionOpen, SectionClosed}
-import seqexec.web.client.ModelOps._
+// import seqexec.web.client.ModelOps._
 import seqexec.web.client.semanticui._
 import seqexec.web.client.semanticui.elements.message.IconMessage
 import seqexec.web.client.semanticui.elements.icon.Icon.IconInbox
@@ -25,9 +25,9 @@ import web.client.style._
 
 object SequenceStepsTableContainer {
   final case class Props(router: RouterCtl[SeqexecPages], site: Site, p: ModelProxy[StatusAndStepFocus]) {
-    protected[sequence] val sequenceControlConnects = site.instruments.toList.fproduct(i => SeqexecCircuit.connect(SeqexecCircuit.sequenceControlReader(i))).toMap
-    private[sequence] val instrumentConnects = site.instruments.toList.fproduct(i => SeqexecCircuit.connect(SeqexecCircuit.stepsTableReader(i))).toMap
-    protected[sequence] val sequenceObserverConnects = site.instruments.toList.fproduct(i => SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(i))).toMap
+    // protected[sequence] val sequenceControlConnects = site.instruments.toList.fproduct(i => SeqexecCircuit.connect(SeqexecCircuit.sequenceControlReader(i))).toMap
+    // private[sequence] val instrumentConnects = site.instruments.toList.fproduct(i => SeqexecCircuit.connect(SeqexecCircuit.stepsTableReader(i))).toMap
+    // protected[sequence] val sequenceObserverConnects = site.instruments.toList.fproduct(i => SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(i))).toMap
   }
   final case class State(nextStepToRun: Int)
 
@@ -41,9 +41,9 @@ object SequenceStepsTableContainer {
     statusAndStep.stepConfigDisplayed.fold{
       <.div(
         SequenceDefaultToolbar(p).when(statusAndStep.isLogged),
-        SequenceAnonymousToolbar(p.site, statusAndStep.instrument).unless(statusAndStep.isLogged)
+        SequenceAnonymousToolbar(p.site, statusAndStep.obsId).unless(statusAndStep.isLogged)
       ): VdomElement
-    }(s => statusAndStep.id.fold(ReactFragment())(id => StepConfigToolbar(StepConfigToolbar.Props(p.router, p.site, statusAndStep.instrument, id, s, statusAndStep.totalSteps))))
+    }(s => StepConfigToolbar(StepConfigToolbar.Props(p.router, p.site, statusAndStep.instrument, statusAndStep.obsId, s, statusAndStep.totalSteps)))
   }
 
   private val component = ScalaComponent.builder[Props]("SequenceStepsTableContainer")
@@ -52,8 +52,8 @@ object SequenceStepsTableContainer {
       <.div(
         ^.height := "100%",
         toolbar(p),
-        p.instrumentConnects.get(p.p().instrument).whenDefined(x => x(m =>
-            StepsTable(StepsTable.Props(p.router, p.p().isLogged, m, x => $.runState(updateStepToRun(x))))))
+        SeqexecCircuit.connect(SeqexecCircuit.stepsTableReader(p.p().obsId))(r =>
+            StepsTable(StepsTable.Props(p.router, p.p().isLogged, r, x => $.runState(updateStepToRun(x)))))
       )
     }.build
 
@@ -67,7 +67,7 @@ object SequenceStepsTableContainer {
 object SequenceTabContent {
 
   final case class Props(router: RouterCtl[SeqexecPages], site: Site, p: ModelProxy[InstrumentTabContentFocus]) {
-    protected[sequence] val connect = SeqexecCircuit.connect(SeqexecCircuit.statusAndStepReader(p().instrument))
+    // protected[sequence] val connect = SeqexecCircuit.connect(SeqexecCircuit.statusAndStepReader(p().obsId))
   }
 
   private val component = ScalaComponent.builder[Props]("SequenceTabContent")
@@ -87,7 +87,7 @@ object SequenceTabContent {
         SeqexecStyles.instrumentTabSegmentLogShown.when(sequenceSelected && logDisplayed === SectionOpen),
         SeqexecStyles.instrumentTabSegmentLogHidden.when(sequenceSelected && logDisplayed === SectionClosed),
         IconMessage(IconMessage.Props(IconInbox, Some("No sequence loaded"), IconMessage.Style.Warning)).unless(sequenceSelected),
-        p.connect(st => SequenceStepsTableContainer(p.router, p.site, st)).when(sequenceSelected)
+        // p.connect(st => SequenceStepsTableContainer(p.router, p.site, st)).when(sequenceSelected)
       )
     }
     .build
@@ -100,16 +100,13 @@ object SequenceTabContent {
  * Contains the area with tabs and the sequence body
  */
 object SequenceTabsBody {
-  final case class Props(router: RouterCtl[SeqexecPages], site: Site) {
-    protected[sequence] val instrumentConnects = site.instruments.toList.map(i => SeqexecCircuit.connect(SeqexecCircuit.instrumentTabContentReader(i)))
-  }
+  final case class Props(router: RouterCtl[SeqexecPages], site: Site)
 
   private val component = ScalaComponent.builder[Props]("SequenceTabsBody")
     .stateless
     .render_P(p =>
       <.div(
-        InstrumentsTabs(InstrumentsTabs.Props(p.router, p.site)),
-        p.instrumentConnects.map(c => c(s => SequenceTabContent(p.router, p.site, s))).toList.toTagMod
+        InstrumentsTabs(InstrumentsTabs.Props(p.router))
       )
     ).build
 
@@ -123,7 +120,7 @@ object SequenceTabsBody {
 object SequenceArea {
   final case class Props(router: RouterCtl[SeqexecPages], site: Site)
 
-  private val component = ScalaComponent.builder[Props]("QueueTableSection")
+  private val component = ScalaComponent.builder[Props]("SequenceArea")
     .stateless
     .render_P( p =>
       <.div(

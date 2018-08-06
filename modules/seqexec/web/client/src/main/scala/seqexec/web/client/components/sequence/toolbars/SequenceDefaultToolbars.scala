@@ -114,6 +114,7 @@ object SequenceControl {
 /**
   * Toolbar for logged in users
   */
+@SuppressWarnings(Array("org.wartremover.warts.OptionPartial"))
 object SequenceDefaultToolbar {
   private val component = ScalaComponent.builder[SequenceStepsTableContainer.Props]("SequenceDefaultToolbar")
     .stateless
@@ -125,7 +126,7 @@ object SequenceDefaultToolbar {
           SeqexecStyles.shorterRow,
           <.div(
             ^.cls := "ui sixteen wide column",
-            p.sequenceObserverConnects.get(p.p().instrument).whenDefined(c => c(SequenceInfo.apply))
+            SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(p.p().obsId))(SequenceInfo.apply)
           )
         ),
         <.div(
@@ -134,12 +135,12 @@ object SequenceDefaultToolbar {
           SeqexecStyles.lowerRow,
           <.div(
             ^.cls := "ui left floated column eight wide computer eight wide tablet only",
-            p.sequenceControlConnects.get(p.p().instrument).whenDefined(c => c(SequenceControl.apply))
+            SeqexecCircuit.connect(SeqexecCircuit.sequenceControlReader(p.p().obsId))(SequenceControl.apply)
           ),
           <.div(
             ^.cls := "ui right floated column eight wide computer eight wide tablet sixteen wide mobile",
             SeqexecStyles.observerField.when(p.p().isLogged),
-            p.sequenceObserverConnects.get(p.p().instrument).whenDefined(c => c(m => SequenceObserverField(m)))
+            SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(p.p().obsId))(SequenceObserverField.apply)
           )
         )
       )

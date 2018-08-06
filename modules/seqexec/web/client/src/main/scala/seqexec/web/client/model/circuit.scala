@@ -5,6 +5,7 @@ package seqexec.web.client
 
 import cats.{Eq, Order}
 import cats.implicits._
+import cats.data.NonEmptyList
 import diode._
 import diode.data._
 import diode.react.ReactConnector
@@ -52,8 +53,8 @@ object circuit {
   final case class HeaderSideBarFocus(status: ClientStatus, conditions: Conditions, operator: Option[Operator]) extends UseValueEq
   final case class InstrumentStatusFocus(instrument: Instrument, active: Boolean, idState: Option[(Observation.Id, SequenceState)], runningStep: Option[RunningStep]) extends UseValueEq
   final case class InstrumentTabContentFocus(instrument: Instrument, active: Boolean, sequenceSelected: Boolean, logDisplayed: SectionVisibilityState) extends UseValueEq
-  final case class StatusAndObserverFocus(isLogged: Boolean, name: Option[String], instrument: Instrument, id: Option[Observation.Id], observer: Option[Observer], status: Option[SequenceState], targetName: Option[TargetName]) extends UseValueEq
-  final case class StatusAndStepFocus(isLogged: Boolean, instrument: Instrument, id: Option[Observation.Id], stepConfigDisplayed: Option[Int], totalSteps: Int) extends UseValueEq
+  final case class StatusAndObserverFocus(isLogged: Boolean, obsName: Option[String], /*instrument: Option[Instrument],*/ id: Observation.Id, observer: Option[Observer], status: Option[SequenceState], targetName: Option[TargetName]) extends UseValueEq
+  final case class StatusAndStepFocus(isLogged: Boolean, instrument: Instrument, obsId: Observation.Id, stepConfigDisplayed: Option[Int], totalSteps: Int) extends UseValueEq
   final case class StepsTableFocus(id: Observation.Id, instrument: Instrument, state: SequenceState, steps: List[Step], stepConfigDisplayed: Option[Int], nextStepToRun: Option[Int]) extends UseValueEq
   final case class StepsTableAndStatusFocus(status: ClientStatus, stepsTable: Option[StepsTableFocus], configTableState: TableState[StepConfigTable.TableColumn]) extends UseValueEq
   final case class ControlModel(id: Observation.Id, isPartiallyExecuted: Boolean, nextStepToRun: Option[Int], status: SequenceState, inConflict: Boolean) extends UseValueEq
@@ -81,6 +82,8 @@ object circuit {
   /**
     * Contains the model for Diode
     */
+
+  @SuppressWarnings(Array("org.wartremover.warts.OptionPartial"))
   object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[SeqexecAppRootModel] {
     type SearchResults = SequencesQueue[Observation.Id]
     private val logger = Logger.getLogger(SeqexecCircuit.getClass.getSimpleName)
@@ -90,8 +93,8 @@ object circuit {
       override def eqv(a: ClientStatus, b: ClientStatus): Boolean = a === b
     }
 
-    implicit object InstrumentTabActiveEq extends FastEq[InstrumentTabActive] {
-      override def eqv(a: InstrumentTabActive, b: InstrumentTabActive): Boolean = a === b
+    implicit object SequenceTabActiveEq extends FastEq[SequenceTabActive] {
+      override def eqv(a: SequenceTabActive, b: SequenceTabActive): Boolean = a === b
     }
 
     implicit object SequenceTabEq extends FastEq[SequenceTab] {
@@ -128,6 +131,7 @@ object circuit {
     private val syncRequestsHandler      = new SyncRequestsHandler(zoomTo(_.uiModel.syncInProgress))
     private val debuggingHandler         = new DebuggingHandler(zoomTo(_.uiModel.sequences))
     private val stepConfigStateHandler   = new StepConfigTableStateHandler(tableStateRW)
+    private val loadSequencesHandler     = new LoadedSequencesHandler(zoomTo(_.uiModel.sequencesOnDisplay))
 
     override protected def initialModel = SeqexecAppRootModel.initial
 
@@ -155,48 +159,60 @@ object circuit {
     val logDisplayedReader: ModelR[SeqexecAppRootModel, SectionVisibilityState] =
       zoom(_.uiModel.globalLog.display)
 
-    def instrumentTab(i: Instrument): ModelR[SeqexecAppRootModel, InstrumentTabActive] =
-      zoom(_.uiModel.sequencesOnDisplay.instrument(i))
+    def sequenceTab(id: Observation.Id): ModelR[SeqexecAppRootModel, SequenceTabActive] =
+      // Returning the getOrElse part shouldn't happen but it simplifies the model notcarrying the Option up
+      zoom(_.uiModel.sequencesOnDisplay.tab(id).getOrElse(SequenceTabActive.Empty))
 
-    def instrumentStatusReader(i: Instrument): ModelR[SeqexecAppRootModel, InstrumentStatusFocus] =
-      instrumentTab(i).zoom {
-        case InstrumentTabActive(tab, active) => InstrumentStatusFocus(tab.instrument, active, tab.sequence.map(s => (s.id, s.status)), tab.sequence.flatMap(_.runningStep))
-      }
-
-    def instrumentTabContentReader(i: Instrument): ModelR[SeqexecAppRootModel, InstrumentTabContentFocus] =
-      logDisplayedReader.zip(instrumentTab(i)).zoom {
-        case (log, InstrumentTabActive(tab, active)) => InstrumentTabContentFocus(tab.instrument, active, tab.sequence.isDefined, log)
-      }
-
-    def sequenceObserverReader(i: Instrument): ModelR[SeqexecAppRootModel, StatusAndObserverFocus] =
-      statusReader.zip(instrumentTab(i)).zoom {
-        case (status, InstrumentTabActive(tab, _)) =>
+    val availableTabs: ModelR[SeqexecAppRootModel, NonEmptyList[AvailableTab]] =
+      zoom(_.uiModel.sequencesOnDisplay.availableTabs)
+    // def instrumentTab(i: Instrument): ModelR[SeqexecAppRootModel, SequenceTabActive] =
+    //   zoom(_.uiModel.sequencesOnDisplay.instrument(i))
+    //
+    // def instrumentStatusReader(i: Instrument): ModelR[SeqexecAppRootModel, InstrumentStatusFocus] =
+    //   instrumentTab(i).zoom {
+    //     case SequenceTabActive(tab, active) => InstrumentStatusFocus(tab.instrument, active, tab.sequence.map(s => (s.id, s.status)), tab.sequence.flatMap(_.runningStep))
+    //   }
+    //
+    // def instrumentTabContentReader(i: Instrument): ModelR[SeqexecAppRootModel, InstrumentTabContentFocus] =
+    //   logDisplayedReader.zip(instrumentTab(i)).zoom {
+    //     case (log, SequenceTabActive(tab, active)) => InstrumentTabContentFocus(tab.instrument, active, tab.sequence.isDefined, log)
+    //   }
+    //
+    // def sequenceObserverReader(i: Instrument): ModelR[SeqexecAppRootModel, StatusAndObserverFocus] =
+    //   statusReader.zip(instrumentTab(i)).zoom {
+    //     case (status, SequenceTabActive(tab, _)) =>
+    //       val targetName = tab.sequence.flatMap(firstScienceStepTargetNameT.headOption)
+    //       StatusAndObserverFocus(status.isLogged, tab.sequence.map(_.metadata.name), i, tab.sequence.map(_.id), tab.sequence.flatMap(_.metadata.observer), tab.sequence.map(_.status), targetName)
+    //   }
+    def sequenceObserverReader(id: Observation.Id): ModelR[SeqexecAppRootModel, StatusAndObserverFocus] =
+      statusReader.zip(sequenceTab(id)).zoom {
+        case (status, SequenceTabActive(tab, _)) =>
           val targetName = tab.sequence.flatMap(firstScienceStepTargetNameT.headOption)
-          StatusAndObserverFocus(status.isLogged, tab.sequence.map(_.metadata.name), i, tab.sequence.map(_.id), tab.sequence.flatMap(_.metadata.observer), tab.sequence.map(_.status), targetName)
+          StatusAndObserverFocus(status.isLogged, tab.sequence.map(_.metadata.name), id, tab.sequence.flatMap(_.metadata.observer), tab.sequence.map(_.status), targetName)
       }
 
-    def statusAndStepReader(i: Instrument): ModelR[SeqexecAppRootModel, StatusAndStepFocus] =
-      statusReader.zip(instrumentTab(i)).zoom {
-        case (status, InstrumentTabActive(tab, _)) =>
-        StatusAndStepFocus(status.isLogged, i, tab.sequence.map(_.id), tab.stepConfigDisplayed, tab.sequence.foldMap(_.steps.length))
+    def statusAndStepReader(id: Observation.Id): ModelR[SeqexecAppRootModel, StatusAndStepFocus] =
+      statusReader.zip(sequenceTab(id)).zoom {
+        case (status, SequenceTabActive(tab, _)) =>
+        StatusAndStepFocus(status.isLogged, tab.sequence.map(_.metadata.instrument).get, tab.sequence.map(_.id).get, tab.stepConfigDisplayed, tab.sequence.foldMap(_.steps.length))
       }
 
-    def stepsTableReaderF(i: Instrument): ModelR[SeqexecAppRootModel, Option[StepsTableFocus]] =
-      instrumentTab(i).zoom {
-        case InstrumentTabActive(tab, _) =>
+    def stepsTableReaderF(id: Observation.Id): ModelR[SeqexecAppRootModel, Option[StepsTableFocus]] =
+      sequenceTab(id).zoom {
+        case SequenceTabActive(tab, _) =>
           tab.sequence.map { sequence =>
-            StepsTableFocus(sequence.id, i, sequence.status, sequence.steps, tab.stepConfigDisplayed, sequence.nextStepToRun)
+            StepsTableFocus(sequence.id, null, sequence.status, sequence.steps, tab.stepConfigDisplayed, sequence.nextStepToRun)
           }
       }
 
-    def stepsTableReader(i: Instrument): ModelR[SeqexecAppRootModel, StepsTableAndStatusFocus] =
-      statusReader.zip(stepsTableReaderF(i)).zip(configTableState).zoom {
+    def stepsTableReader(id: Observation.Id): ModelR[SeqexecAppRootModel, StepsTableAndStatusFocus] =
+      statusReader.zip(stepsTableReaderF(id)).zip(configTableState).zoom {
         case ((s, f), t) => StepsTableAndStatusFocus(s, f, t)
       }
 
-    def sequenceControlReader(i: Instrument): ModelR[SeqexecAppRootModel, SequenceControlFocus] =
-      sequenceInConflictReader.zip(statusReader.zip(instrumentTab(i))).zoom {
-        case (inConflict, (status, InstrumentTabActive(tab, _))) =>
+    def sequenceControlReader(obsId: Observation.Id): ModelR[SeqexecAppRootModel, SequenceControlFocus] =
+      sequenceInConflictReader.zip(statusReader.zip(sequenceTab(obsId))).zoom {
+        case (inConflict, (status, SequenceTabActive(tab, _))) =>
           SequenceControlFocus(status.isLogged, status.isConnected, tab.sequence.map(s => ControlModel(s.id, s.isPartiallyExecuted, s.nextStepToRun, s.status, inConflict.exists(_ === s.id))), status.syncInProgress)
       }
 
@@ -216,7 +232,7 @@ object circuit {
 
     override protected def actionHandler = composeHandlers(
       wsHandler,
-      foldHandlers(serverMessagesHandler, syncToAddedHandler, initialSyncHandler),
+      foldHandlers(serverMessagesHandler, syncToAddedHandler, initialSyncHandler, loadSequencesHandler),
       sequenceExecHandler,
       resourcesBoxHandler,
       resourcesConflictHandler,

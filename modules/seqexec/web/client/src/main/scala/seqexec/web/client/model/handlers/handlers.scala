@@ -164,7 +164,7 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, (SequencesOnDisplay, Option[
 
   def handleInitialize: PartialFunction[Any, ActionResult[M]] = {
     case Initialize(site) =>
-      updated(value.copy(_1 = value._1.withSite(site), _2 = Some(site)))
+      updated(value.copy(_2 = Some(site)))
   }
 
   // def handleShowHideStep: PartialFunction[Any, ActionResult[M]] = {
