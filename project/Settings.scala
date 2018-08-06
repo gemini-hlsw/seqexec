@@ -110,7 +110,6 @@ object Settings {
     // test libraries
     val scalaTest               = "3.0.5"
     val scalaCheck              = "1.13.5"
-    val scalaCheckShapeless     = "1.1.8"
     val discipline              = "0.9.0"
     val xmlUnit                 = "1.6"
     val jUnitInterface          = "0.11"
@@ -145,8 +144,7 @@ object Settings {
   object Libraries {
     // Test Libraries
     val TestLibs               = Def.setting(Seq(
-      "org.typelevel"              %%% "cats-testkit"              % LibraryVersions.catsVersion         % "test",
-      "com.github.alexarchambault" %%% "scalacheck-shapeless_1.13" % LibraryVersions.scalaCheckShapeless % "test"
+      "org.typelevel"              %%% "cats-testkit"              % LibraryVersions.catsVersion         % "test"
     ))
     val XmlUnit                = "xmlunit" % "xmlunit" % LibraryVersions.xmlUnit % "test"
     val JUnitInterface         = "com.novocode" % "junit-interface" % LibraryVersions.jUnitInterface % "test"

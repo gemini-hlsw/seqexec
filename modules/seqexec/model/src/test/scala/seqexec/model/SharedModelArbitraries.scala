@@ -15,7 +15,6 @@ import gem.arb.ArbObservation
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object SharedModelArbitraries extends ArbObservation {
 
-  import org.scalacheck.ScalacheckShapeless._
   private val maxListSize = 2
 
   // N.B. We don't want to auto derive this to limit the size of the lists for performance reasons
@@ -39,26 +38,95 @@ object SharedModelArbitraries extends ArbObservation {
   implicit val resArb = Arbitrary[Resource](Gen.oneOf(Resource.P1, Resource.OI, Resource.TCS, Resource.Gcal, Resource.Gems, Resource.Altair, Instrument.F2, Instrument.GmosS, Instrument.GmosN, Instrument.GPI, Instrument.GSAOI, Instrument.GNIRS, Instrument.NIRI, Instrument.NIFS))
   implicit val insArb = Arbitrary[Instrument](Gen.oneOf(Instrument.F2, Instrument.GmosS, Instrument.GmosN, Instrument.GPI, Instrument.GSAOI, Instrument.GNIRS, Instrument.NIRI, Instrument.NIFS))
 
-  implicit val actArb = implicitly[Arbitrary[ActionType]]
-  implicit val udArb  = implicitly[Arbitrary[UserDetails]]
-  implicit val smArb  = implicitly[Arbitrary[SequenceMetadata]]
-  implicit val svArb  = implicitly[Arbitrary[SequenceView]]
-  implicit val opArb  = implicitly[Arbitrary[Operator]]
-  implicit val obArb  = implicitly[Arbitrary[Observer]]
-  implicit val spsArb = implicitly[Arbitrary[StepState]]
-  implicit val acsArb = implicitly[Arbitrary[ActionStatus]]
-  implicit val sqsArb = implicitly[Arbitrary[SequenceState]]
+  implicit val actArb = Arbitrary[ActionType] {
+    for {
+      c <- arbitrary[Resource].map(ActionType.Configure.apply)
+      a <- Gen.oneOf(ActionType.Observe, ActionType.Undefined)
+      b <- Gen.oneOf(c, a)
+    } yield b
+  }
+
+  implicit val udArb  = Arbitrary[UserDetails] {
+    for {
+      u <- arbitrary[String]
+      n <- arbitrary[String]
+    } yield UserDetails(u, n)
+  }
+
+  implicit val obArb  = Arbitrary[Observer] { arbitrary[String].map(Observer.apply) }
+  implicit val smArb  = Arbitrary[SequenceMetadata] {
+    for {
+      i <- arbitrary[Instrument]
+      o <- arbitrary[Option[Observer]]
+      n <- arbitrary[String]
+    } yield SequenceMetadata(i, o, n)
+  }
+
+  implicit val opArb  = Arbitrary[Operator] { arbitrary[String].map(Operator.apply) }
+  implicit val spsArb = Arbitrary[StepState] {
+    for {
+      v1 <- Gen.oneOf(StepState.Pending, StepState.Completed, StepState.Skipped, StepState.Running, StepState.Paused)
+      v2 <- arbitrary[String].map(StepState.Failed.apply)
+      r  <- Gen.oneOf(v1, v2)
+    } yield r
+  }
+
+  implicit val acsArb = Arbitrary[ActionStatus](Gen.oneOf(ActionStatus.Pending, ActionStatus.Completed, ActionStatus.Running, ActionStatus.Paused, ActionStatus.Failed))
+
+  implicit val sqrArb = Arbitrary[SequenceState.Running] {
+    for {
+      u <- arbitrary[Boolean]
+      i <- arbitrary[Boolean]
+    } yield SequenceState.Running(u, i)
+  }
+
+  implicit val sqsArb = Arbitrary[SequenceState] {
+    for {
+      f <- Gen.oneOf(SequenceState.Completed, SequenceState.Idle, SequenceState.Stopped)
+      r <- arbitrary[SequenceState.Running]
+      a <- arbitrary[String].map(SequenceState.Failed.apply)
+      s <- Gen.oneOf(f, r, a)
+    } yield s
+  }
   implicit val ccArb  = Arbitrary[CloudCover](Gen.oneOf(CloudCover.all))
   implicit val wvArb  = Arbitrary[WaterVapor](Gen.oneOf(WaterVapor.all))
   implicit val sbArb  = Arbitrary[SkyBackground](Gen.oneOf(SkyBackground.all))
   implicit val iqArb  = Arbitrary[ImageQuality](Gen.oneOf(ImageQuality.all))
 
-  implicit val conArb = implicitly[Arbitrary[Conditions]]
-  // Must define these early on to be used on the events
-  implicit val sqvArb = sequencesQueueArb[SequenceView]
+  implicit val conArb = Arbitrary[Conditions] {
+    for {
+      cc <- arbitrary[CloudCover]
+      iq <- arbitrary[ImageQuality]
+      sb <- arbitrary[SkyBackground]
+      wv <- arbitrary[WaterVapor]
+    } yield Conditions(cc, iq, sb, wv)
+  }
+
   implicit val snArb  = Arbitrary(Gen.oneOf(SystemName.all))
-  implicit val steArb = implicitly[Arbitrary[Step]]
-  implicit val stsArb = implicitly[Arbitrary[StandardStep]]
+  implicit val steArb = Arbitrary[Step] {
+    for {
+      id <- arbitrary[StepId]
+      c  <- arbitrary[StepConfig]
+      s  <- arbitrary[StepState]
+      b  <- arbitrary[Boolean]
+      k  <- arbitrary[Boolean]
+      f  <- arbitrary[Option[dhs.ImageFileId]]
+    } yield new StandardStep(id = id, config = c, status = s, breakpoint = b, skip = k, fileId = f, configStatus = Nil, observeStatus = ActionStatus.Pending)
+  }
+
+  implicit val stsArb = Arbitrary[StandardStep] {
+    for {
+      id <- arbitrary[StepId]
+      c  <- arbitrary[StepConfig]
+      s  <- arbitrary[StepState]
+      b  <- arbitrary[Boolean]
+      k  <- arbitrary[Boolean]
+      f  <- arbitrary[Option[dhs.ImageFileId]]
+      cs <- arbitrary[List[(Resource, ActionStatus)]]
+      os <- arbitrary[ActionStatus]
+    } yield new StandardStep(id = id, config = c, status = s, breakpoint = b, skip = k, fileId = f, configStatus = cs, observeStatus = os)
+  }
+
   implicit val styArb = Arbitrary(Gen.oneOf(StepType.all))
   implicit val guiArb = Arbitrary[Guiding](Gen.oneOf(Guiding.Park, Guiding.Guide, Guiding.Freeze))
   implicit val fpmArb = Arbitrary[FPUMode](Gen.oneOf(FPUMode.BuiltIn, FPUMode.Custom))
@@ -78,6 +146,16 @@ object SharedModelArbitraries extends ArbObservation {
       q <- arbitrary[TelescopeOffset.Q]
     } yield TelescopeOffset(p, q)
   }
+  implicit val svArb  = Arbitrary[SequenceView] {
+    for {
+      id <- arbitrary[Observation.Id]
+      m  <- arbitrary[SequenceMetadata]
+      s  <- arbitrary[SequenceState]
+      t  <- arbitrary[List[Step]]
+      i  <- arbitrary[Option[Int]]
+    } yield SequenceView(id, m, s, t, i)
+  }
+  implicit val sqvArb = sequencesQueueArb[SequenceView]
 
   implicit val actCogen: Cogen[ActionType] =
     Cogen[String].contramap(_.productPrefix)
