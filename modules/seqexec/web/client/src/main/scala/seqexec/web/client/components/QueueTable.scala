@@ -340,27 +340,26 @@ object QueueTableBody {
   }
 
   private def showSequence(p: Props,
-                           i: Instrument,
-                           id: Observation.Id)(e: ReactEvent): Callback = {
-    // Request to display the selected sequence
-    //p.sequences.dispatchCB(NavigateTo(SequencePage(i, id, 0)))
+                           page: SeqexecPages)(e: ReactEvent): Callback = {
     // prevent default to avoid the link jumping
     e.preventDefault
-    p.sequences.dispatchCB(LoadSequence(i, id))
+    // Request to display the selected sequence
+    p.sequences.dispatchCB(NavigateTo(page))
+    //p.sequences.dispatchCB(LoadSequence(i, id))
   }
 
-  private def linkTo(p: Props, page: SequencePage)(mod: TagMod*) =
+  private def linkTo(p: Props, page: SeqexecPages)(mod: TagMod*) =
     <.a(
       ^.href := p.ctl.urlFor(page).value,
-      ^.onClick ==> showSequence(p, page.instrument, page.obsId),
-      // p.ctl.setOnLinkClick(page),
+      ^.onClick ==> showSequence(p, page),
+      p.ctl.setOnLinkClick(page),
       mod.toTagMod
     )
 
   private def linkedTextRenderer(p: Props)(
       f: QueueRow => TagMod): CellRenderer[js.Object, js.Object, QueueRow] =
     (_, _, _, row: QueueRow, _) => {
-      val page = SequencePage(row.instrument, row.obsId, 0)
+      val page = PreviewPage(row.instrument, row.obsId, 0)
       linkTo(p, page)(SeqexecStyles.queueTextColumn, f(row))
     }
 
@@ -415,7 +414,7 @@ object QueueTableBody {
               Button(Button.Props(size = SSize.Large, compact = true, icon = Some(IconSignIn), onClick = Callback.log("Here") >> SeqexecCircuit.dispatchCB(LoadSequence(row.instrument, row.obsId))))
         }
 
-      val page = SequencePage(row.instrument, row.obsId, 0)
+      val page = PreviewPage(row.instrument, row.obsId, 0)
       row.status match {
         case SequenceState.Completed | SequenceState.Running(_, _) | SequenceState.Failed(_) =>
           linkTo(p, page)(

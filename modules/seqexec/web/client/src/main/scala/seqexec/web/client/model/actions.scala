@@ -37,7 +37,8 @@ object actions {
   // Action to select a sequence for display
   final case class SelectIdToDisplay(id: Observation.Id) extends Action
   final case class SelectInstrumentToDisplay(i: Instrument) extends Action
-  final case class SelectSequenceConfig(id: Observation.Id, step: Int) extends Action
+  final case class SelectSequenceConfig(id: Observation.Id, step: StepId) extends Action
+  final case class SelectSequencePreview(id: Observation.Id, step: StepId) extends Action
 
   // Actions related to executing sequences
   final case class RequestRun(s: Observation.Id) extends Action
@@ -94,10 +95,10 @@ object actions {
 
   final case class UpdateStepsConfigTableState(s: TableState[StepConfigTable.TableColumn]) extends Action
   final case class UpdateQueueTableState(s: TableState[QueueTableBody.TableColumn]) extends Action
+  final case class LoadSequence(i: Instrument, id: Observation.Id) extends Action
 
   // Used for UI debugging
   final case class MarkStepAsRunning(s: Observation.Id, step: Int) extends Action
-  final case class LoadSequence(i: Instrument, id: Observation.Id) extends Action
 
   // scalastyle:on
   private val standardStep: PartialFunction[Step, (StepId, StepState, List[(Resource, ActionStatus)])] = {

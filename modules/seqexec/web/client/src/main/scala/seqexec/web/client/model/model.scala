@@ -51,6 +51,7 @@ object model {
     case object Root extends SeqexecPages
     case object SoundTest extends SeqexecPages
     final case class InstrumentPage(instrument: Instrument) extends SeqexecPages
+    final case class PreviewPage(instrument: Instrument, obsId: Observation.Id, step: StepId) extends SeqexecPages
     final case class SequencePage(instrument: Instrument, obsId: Observation.Id, step: StepId) extends SeqexecPages
     final case class SequenceConfigPage(instrument: Instrument, obsId: Observation.Id, step: Int) extends SeqexecPages
 
@@ -60,6 +61,7 @@ object model {
       case (InstrumentPage(i), InstrumentPage(j))                     => i === j
       case (SequencePage(i, o, s), SequencePage(j, p, r))             => i === j && o === p && s === r
       case (SequenceConfigPage(i, o, s), SequenceConfigPage(j, p, r)) => i === j && o === p && s === r
+      case (PreviewPage(i, o, s), PreviewPage(j, p, r))               => i === j && o === p && s === r
       case _                                                          => false
     }
   }
@@ -142,7 +144,7 @@ object model {
 
     def instrument: Option[Instrument] = t match {
       case i: InstrumentSequenceTab => i.instrument.some
-      case _                        => none
+      case i: PreviewSequenceTab    => i.currentSequence().map(_.metadata.instrument)
     }
 
     def sequence: Option[SequenceView] = t match {
@@ -185,6 +187,12 @@ object model {
     def focusOnSequence(s: RefTo[Option[SequenceView]]): SequencesOnDisplay = {
       // Replace the sequence for the instrument or the completed sequence and reset displaying a step
       val q = instrumentSequences.findFocus(i => i.sequence === s()).map(_.modify((SequenceTab.currentSequenceL.set(s) andThen SequenceTab.stepConfigL.set(None))(_)))
+      copy(instrumentSequences = q.getOrElse(instrumentSequences))
+    }
+
+    def previewSequence(s: RefTo[Option[SequenceView]]): SequencesOnDisplay = {
+      // Replace the sequence for the instrument or the completed sequence and reset displaying a step
+      val q = instrumentSequences.findFocus(_.isPreview).map(_.modify((SequenceTab.currentSequenceL.set(s) andThen SequenceTab.stepConfigL.set(None))(_)))
       copy(instrumentSequences = q.getOrElse(instrumentSequences))
     }
 

@@ -34,6 +34,8 @@ class NavigationHandler[M](modelRW: ModelRW[M, Pages.SeqexecPages]) extends Acti
           Effect(Future(SelectIdToDisplay(id)))
         case SequenceConfigPage(_, id, step) =>
           Effect(Future(ShowStepConfig(id, step)))
+        case PreviewPage(_, id, step) =>
+          Effect(Future(SelectSequencePreview(id, step)))
         case _                               =>
           VoidEffect
       }
@@ -159,6 +161,10 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, (SequencesOnDisplay, Option[
       // val seq = SeqexecCircuit.sequenceRef(id)
       // updated(value.copy(_1 = value._1.focusOnSequence(seq)))
       noChange
+
+    case SelectSequencePreview(id, _) =>
+      val seq = SeqexecCircuit.sequenceRef(id)
+      updated(value.copy(_1 = value._1.previewSequence(seq)))
 
   }
 

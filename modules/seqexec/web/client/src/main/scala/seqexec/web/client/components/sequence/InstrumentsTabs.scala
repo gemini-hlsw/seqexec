@@ -31,6 +31,9 @@ object InstrumentTab {
       val hasError = status.exists(_.isError)
       val sequenceId = p.tab.id
       val instrument = p.tab.instrument
+      val isPreview = p.tab.isPreview
+      val instName = instrument.foldMap(_.show)
+      val dispName = if (isPreview) s"Preview: $instName" else instName
 
       val tabTitle = p.tab.runningStep match {
         case Some(RunningStep(current, total)) => s"${sequenceId.map(_.format).getOrElse("")} - ${current + 1}/$total"
@@ -48,11 +51,11 @@ object InstrumentTab {
       }
       val linkPage: Option[SeqexecPages] = (sequenceId, instrument).mapN((id, inst) => SequencePage(inst, id, 0))
       val instrumentNoId =
-        <.div(SeqexecStyles.instrumentTabLabel, instrument.show)
+        <.div(SeqexecStyles.instrumentTabLabel, dispName)
       val instrumentWithId =
         <.div(
           SeqexecStyles.instrumentTabLabel,
-          <.div(SeqexecStyles.activeInstrumentLabel, instrument.show),
+          <.div(SeqexecStyles.activeInstrumentLabel, dispName),
           Label(Label.Props(tabTitle, color = color, icon = icon, extraStyles = List(SeqexecStyles.labelPointer)))
         )
       val tab = linkPage.map(l => p.router.link(l)(
@@ -69,15 +72,18 @@ object InstrumentTab {
         SeqexecStyles.errorTab.when(hasError),
         dataTab := instrument.show
       )).getOrElse(<.div(
+        sequenceId.fold(<.div("Preview"))(_ => instrumentWithId),
         ^.cls := "item",
         ^.classSet(
-          "active" -> active
+          "active" -> active,
+          "error"  -> hasError
         ),
         SeqexecStyles.instrumentTab,
         SeqexecStyles.inactiveInstrumentContent.unless(active),
         SeqexecStyles.activeInstrumentContent.when(active),
-        dataTab := "preview",
-        "Preview"))
+        SeqexecStyles.errorTab.when(hasError),
+        dataTab := "preview"
+      ))
       tab
     }.componentDidMount(ctx =>
       Callback {
