@@ -5,7 +5,6 @@ package seqexec.web.client.components.sequence.toolbars
 
 import cats.implicits._
 import gem.Observation
-import gem.enum.Site
 import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.{Callback, ScalaComponent}
 import japgolly.scalajs.react.vdom.html_<^._
@@ -29,7 +28,7 @@ import mouse.boolean._
   * Toolbar when displaying a step configuration
   */
 object StepConfigToolbar {
-  final case class Props(router: RouterCtl[SeqexecPages], site: Site, instrument: Instrument, id: Observation.Id, step: Int, total: Int)
+  final case class Props(router: RouterCtl[SeqexecPages], instrument: Instrument, id: Observation.Id, step: Int, total: Int)
 
   def backToSequence(p: Props): Callback =
     SeqexecCircuit.dispatchCB(NavigateSilentTo(SequencePage(p.instrument, p.id, p.step)))

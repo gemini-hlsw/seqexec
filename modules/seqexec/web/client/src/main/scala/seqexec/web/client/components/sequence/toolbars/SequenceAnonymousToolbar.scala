@@ -3,8 +3,6 @@
 
 package seqexec.web.client.components.sequence.toolbars
 
-import gem.enum.Site
-import seqexec.model.enum.Instrument
 import gem.Observation
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.components.SeqexecStyles
@@ -17,7 +15,7 @@ import japgolly.scalajs.react.component.Scala.Unmounted
   * Toolbar for anonymous users
   */
 object SequenceAnonymousToolbar {
-  final case class Props(site: Site, id: Observation.Id)
+  final case class Props(id: Observation.Id)
 
   private def component = ScalaComponent.builder[Props]("SequencesDefaultToolbar")
     .stateless
@@ -35,5 +33,5 @@ object SequenceAnonymousToolbar {
       )
     ).build
 
-  def apply(site: Site, id: Observation.Id): Unmounted[Props, Unit, Unit] = component(Props(site, id))
+  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
 }

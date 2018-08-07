@@ -59,6 +59,8 @@ final case class Zipper[A](lefts: List[A], focus: A, rights: List[A]) {
     Zipper(lefts.map((_, false)), (focus, true), rights.map((_, false)))
 
   def toList: List[A] = (focus :: lefts.reverse).reverse ::: rights
+
+  def toNel: NonEmptyList[A] = NonEmptyList.fromListUnsafe(toList)
 }
 
 object Zipper {

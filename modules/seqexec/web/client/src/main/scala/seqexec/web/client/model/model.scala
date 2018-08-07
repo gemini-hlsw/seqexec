@@ -173,9 +173,6 @@ object model {
 
   // Model for the tabbed area of sequences
   final case class SequencesOnDisplay(instrumentSequences: Zipper[SequenceTab]) {
-    // def withSite(site: Site): SequencesOnDisplay =
-    //   SequencesOnDisplay(Zipper.fromNel(site.instruments.map(SequenceTab(_, SequencesOnDisplay.emptySeqRef, None, None))))
-
     // Display a given step on the focused sequence
     def showStepConfig(i: Int): SequencesOnDisplay =
       copy(instrumentSequences = instrumentSequences.modify(SequenceTab.stepConfigL.set(Some(i))(_)))
