@@ -86,7 +86,7 @@ object model {
   object SequenceTabActive {
     implicit val eq: Eq[SequenceTabActive] =
       Eq.by(x => (x.tab, x.active))
-    val Empty: SequenceTabActive = SequenceTabActive(SequenceTab.Empty, false)
+    val Empty: SequenceTabActive = SequenceTabActive(SequenceTab.Empty, true)
   }
 
   sealed trait SequenceTab

@@ -68,7 +68,16 @@ object InstrumentTab {
         SeqexecStyles.activeInstrumentContent.when(active),
         SeqexecStyles.errorTab.when(hasError),
         dataTab := instrument.show
-      )).getOrElse(<.div("Preview"))
+      )).getOrElse(<.div(
+        ^.cls := "item",
+        ^.classSet(
+          "active" -> active
+        ),
+        SeqexecStyles.instrumentTab,
+        SeqexecStyles.inactiveInstrumentContent.unless(active),
+        SeqexecStyles.activeInstrumentContent.when(active),
+        dataTab := "preview",
+        "Preview"))
       tab
     }.componentDidMount(ctx =>
       Callback {
