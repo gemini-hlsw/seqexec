@@ -4,7 +4,7 @@
 package seqexec.web.client
 
 import gem.Observation
-import seqexec.model.Model.Instrument
+import seqexec.model.enum.Instrument
 import seqexec.web.client.circuit.SeqexecCircuit._
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{FlatSpec, Matchers}

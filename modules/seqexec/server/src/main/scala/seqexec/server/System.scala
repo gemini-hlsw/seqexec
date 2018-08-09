@@ -3,7 +3,7 @@
 
 package seqexec.server
 
-import seqexec.model.Model.Resource
+import seqexec.model.enum.Resource
 import edu.gemini.spModel.config2.Config
 
 trait System[F[_]] {

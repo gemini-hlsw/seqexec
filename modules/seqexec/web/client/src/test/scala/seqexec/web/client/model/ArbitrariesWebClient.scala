@@ -8,6 +8,7 @@ import diode.RootModelR
 import diode.data._
 import gem.arb.ArbObservation
 import gem.Observation
+import seqexec.model.enum.Instrument
 import seqexec.model.Model._
 import seqexec.web.client.model._
 import seqexec.web.client.circuit._

@@ -13,7 +13,7 @@ import gem.Observation
 import gem.enum.Site
 import seqexec.engine.{Action, Result, Sequence, Step}
 import seqexec.model.ActionType
-import seqexec.model.Model.Instrument.GmosS
+import seqexec.model.enum.Instrument.GmosS
 import seqexec.model.Model.{SequenceMetadata, SequenceState, StepConfig}
 import seqexec.server.SeqTranslate.ObserveContext
 import seqexec.server.keywords.DhsClientSim

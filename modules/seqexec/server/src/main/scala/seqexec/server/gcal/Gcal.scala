@@ -13,7 +13,7 @@ import edu.gemini.spModel.gemini.calunit.CalUnitParams.Lamp
 import edu.gemini.spModel.seqcomp.SeqConfigNames.CALIBRATION_KEY
 import scala.Function.const
 import scala.collection.JavaConverters._
-import seqexec.model.Model.Resource
+import seqexec.model.enum.Resource
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.gcal.GcalController._
 import seqexec.server.{ConfigResult, ConfigUtilOps, SeqAction, SeqexecFailure, System, TrySeq}

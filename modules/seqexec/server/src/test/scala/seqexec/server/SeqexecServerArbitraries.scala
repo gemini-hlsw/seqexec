@@ -20,7 +20,8 @@ import seqexec.server.gcal.GcalController
 import seqexec.server.gcal.GcalController._
 import seqexec.server.tcs.{CRFollow, TcsController, TcsControllerEpics}
 import seqexec.server.keywords._
-import seqexec.model.Model.{Conditions, Instrument, Operator}
+import seqexec.model.enum.Instrument
+import seqexec.model.Model.{ Conditions, Operator }
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams
 import edu.gemini.spModel.gemini.gpi.Gpi.{Apodizer => LegacyApodizer}

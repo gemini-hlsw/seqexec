@@ -4,7 +4,7 @@
 package seqexec.server.tcs
 
 import seqexec.server.tcs.TcsController._
-import seqexec.model.Model
+import seqexec.model.enum.Instrument
 import seqexec.server.{EpicsCodex, EpicsCommand, SeqAction, SeqexecFailure, TrySeq}
 import edu.gemini.spModel.core.Wavelength
 import org.log4s.getLogger
@@ -166,15 +166,15 @@ object TcsControllerEpics extends TcsController {
     } yield TrySeq(GuidersEnabled(GuiderSensorOptionP1(p1On), GuiderSensorOptionP2(p2On), GuiderSensorOptionOI(oiOn)))
   }.getOrElse(TrySeq.fail(SeqexecFailure.Unexpected("Unable to read guider detectors state from TCS.")))
 
-  private def getInstPort(inst: Model.Instrument): Option[Int] = (inst match {
-    case Model.Instrument.GmosS |
-         Model.Instrument.GmosN  => TcsEpics.instance.gmosPort
-    case Model.Instrument.GSAOI  => TcsEpics.instance.gsaoiPort
-    case Model.Instrument.F2     => TcsEpics.instance.f2Port
-    case Model.Instrument.GPI    => TcsEpics.instance.gpiPort
-    case Model.Instrument.NIRI   => TcsEpics.instance.niriPort
-    case Model.Instrument.GNIRS  => TcsEpics.instance.gnirsPort
-    case Model.Instrument.NIFS   => TcsEpics.instance.nifsPort
+  private def getInstPort(inst: Instrument): Option[Int] = (inst match {
+    case Instrument.GmosS |
+         Instrument.GmosN  => TcsEpics.instance.gmosPort
+    case Instrument.GSAOI  => TcsEpics.instance.gsaoiPort
+    case Instrument.F2     => TcsEpics.instance.f2Port
+    case Instrument.GPI    => TcsEpics.instance.gpiPort
+    case Instrument.NIRI   => TcsEpics.instance.niriPort
+    case Instrument.GNIRS  => TcsEpics.instance.gnirsPort
+    case Instrument.NIFS   => TcsEpics.instance.nifsPort
     case _                       => None
   }).flatMap(p => if (p === 0) None else Some(p))
 
@@ -195,16 +195,16 @@ object TcsControllerEpics extends TcsController {
         Eq.fromUniversalEquals // natural equality here
     }
 
-    val instNameMap: Map[Model.Instrument, SFInstName] = Map(
-      Model.Instrument.GmosS -> SFInstName("gmos"),
-      Model.Instrument.GmosN -> SFInstName("gmos"),
-      Model.Instrument.GSAOI -> SFInstName("gsaoi"),
-      Model.Instrument.GNIRS -> SFInstName("gnirs"),
-      Model.Instrument.F2    -> SFInstName("f2"),
-      Model.Instrument.GPI   -> SFInstName("gpi")
+    val instNameMap: Map[Instrument, SFInstName] = Map(
+      Instrument.GmosS -> SFInstName("gmos"),
+      Instrument.GmosN -> SFInstName("gmos"),
+      Instrument.GSAOI -> SFInstName("gsaoi"),
+      Instrument.GNIRS -> SFInstName("gnirs"),
+      Instrument.F2    -> SFInstName("f2"),
+      Instrument.GPI   -> SFInstName("gpi")
     )
 
-    private def findInstrument(str: String): Option[Model.Instrument] = instNameMap.find{ case (_, n) => str.startsWith(n.self)}.map(_._1)
+    private def findInstrument(str: String): Option[Instrument] = instNameMap.find{ case (_, n) => str.startsWith(n.self)}.map(_._1)
 
     implicit val decodeScienceFoldPosition: DecodeEpicsValue[String, Option[ScienceFoldPosition]] = DecodeEpicsValue(
       (t: String) => if (t.startsWith(PARK_POS)) Parked.some

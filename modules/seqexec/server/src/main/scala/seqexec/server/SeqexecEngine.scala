@@ -20,6 +20,7 @@ import seqexec.engine
 import seqexec.engine.Result.{FileIdAllocated, Partial}
 import seqexec.engine.{Step => _, _}
 import seqexec.model.Model._
+import seqexec.model.enum._
 import seqexec.model.events._
 import seqexec.model.{ActionType, UserDetails}
 import seqexec.server.ConfigUtilOps._

@@ -4,7 +4,8 @@
 package seqexec.server
 
 import edu.gemini.spModel.config2.{Config, ConfigSequence, ItemKey}
-import seqexec.model.Model.{StepConfig, SystemName}
+import seqexec.model.enum.SystemName
+import seqexec.model.Model.StepConfig
 
 import java.beans.PropertyDescriptor
 

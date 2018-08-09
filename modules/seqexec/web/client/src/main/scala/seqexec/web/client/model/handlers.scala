@@ -18,6 +18,7 @@ import org.scalajs.dom._
 import seqexec.model.UserDetails
 import seqexec.model.boopickle._
 import seqexec.model.Model._
+import seqexec.model.enum._
 import seqexec.model.events._
 import seqexec.web.client.model._
 import seqexec.web.client.model.Pages._

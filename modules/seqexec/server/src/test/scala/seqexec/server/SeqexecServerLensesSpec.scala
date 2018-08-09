@@ -5,7 +5,7 @@ package seqexec.server
 
 import cats.tests.CatsSuite
 import monocle.law.discipline.LensTests
-import seqexec.model.Model.Instrument
+import seqexec.model.enum.Instrument
 import seqexec.model.SharedModelArbitraries._
 import gem.arb.ArbObservation
 import gem.Observation

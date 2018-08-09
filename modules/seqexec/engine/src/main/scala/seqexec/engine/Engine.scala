@@ -9,7 +9,8 @@ import cats.effect.IO
 import cats.implicits._
 import seqexec.engine.Event._
 import seqexec.engine.Result.{PartialVal, PauseContext, RetVal}
-import seqexec.model.Model.{ClientID, Conditions, Observer, Resource, SequenceState}
+import seqexec.model.enum.Resource
+import seqexec.model.Model.{ClientID, Conditions, Observer, SequenceState}
 import fs2.Stream
 import gem.Observation
 import monocle.Lens

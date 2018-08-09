@@ -7,15 +7,17 @@ import cats.Show
 import cats.implicits._
 import cats.data.NonEmptyList
 import gem.enum.Site
-import seqexec.model.Model.{
+import seqexec.model.enum.{
   ActionStatus,
   Instrument,
   Resource,
+  StepState
+}
+import seqexec.model.Model.{
   SequenceState,
   SequenceView,
   StandardStep,
-  Step,
-  StepState
+  Step
 }
 
 /**

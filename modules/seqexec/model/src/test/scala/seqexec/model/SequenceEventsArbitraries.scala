@@ -11,6 +11,7 @@ import org.scalacheck.Gen
 import org.scalacheck.Arbitrary._
 import gem.Observation
 import java.time.Instant
+import seqexec.model.enum._
 
 // Keep the arbitraries in a separate trait to improve caching
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))

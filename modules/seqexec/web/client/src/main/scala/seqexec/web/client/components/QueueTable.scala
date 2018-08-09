@@ -20,9 +20,9 @@ import monocle.macros.GenLens
 import react.virtualized._
 import scala.math.max
 import scala.scalajs.js
+import seqexec.model.enum.Instrument
 import seqexec.model.Model.{
   DaytimeCalibrationTargetName,
-  Instrument,
   SequenceState
 }
 import seqexec.web.client.circuit._

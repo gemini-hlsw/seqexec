@@ -23,7 +23,7 @@ import seqexec.web.client.model.Pages._
 import seqexec.web.client.ModelOps._
 import seqexec.web.client.actions.{NavigateSilentTo, RequestSoundEcho}
 import seqexec.web.client.components.sequence.{HeadersSideBar, SequenceArea}
-import seqexec.model.Model.Instrument
+import seqexec.model.enum.Instrument
 import seqexec.web.client.model.WebSocketConnection
 import web.client.style._
 

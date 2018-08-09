@@ -11,6 +11,7 @@ import gem.Observation
 import gem.enum.Site
 import seqexec.model.UserDetails
 import seqexec.model.Model._
+import seqexec.model.enum._
 import seqexec.model.events._
 import seqexec.web.client.ModelOps._
 import seqexec.web.common.{Zipper, FixedLengthBuffer}

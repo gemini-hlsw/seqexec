@@ -13,7 +13,7 @@ import edu.gemini.spModel.gemini.ghost.Ghost
 import gem.math.{Angle, HourAngle}
 import scala.concurrent.duration._
 import seqexec.model.dhs.ImageFileId
-import seqexec.model.Model.{Instrument, Resource}
+import seqexec.model.enum.{ Instrument, Resource }
 import seqexec.server.ConfigUtilOps._
 import seqexec.server._
 import seqexec.server.keywords.{GDSClient, GDSInstrument, KeywordsClient}

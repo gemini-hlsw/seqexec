@@ -3,8 +3,9 @@
 
 package seqexec.model
 
-import seqexec.model.Model.{Instrument, Step}
-import seqexec.model.Model.Instrument._
+import seqexec.model.Model.Step
+import seqexec.model.enum.Instrument
+import seqexec.model.enum.Instrument._
 import mouse.boolean._
 
 object operations {

@@ -5,7 +5,8 @@ package seqexec.web.server
 
 import cats.implicits._
 import gem.Observation
-import seqexec.model.Model.{Instrument, ClientID}
+import seqexec.model.enum.Instrument
+import seqexec.model.Model.ClientID
 
 trait Var {
   object ObsIdVar {

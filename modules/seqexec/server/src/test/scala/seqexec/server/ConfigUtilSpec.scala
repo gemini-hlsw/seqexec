@@ -5,7 +5,7 @@ package seqexec.server
 
 import edu.gemini.spModel.config2.{Config, DefaultConfig, ItemEntry, ItemKey}
 import edu.gemini.spModel.seqcomp.SeqConfigNames
-import seqexec.model.Model.SystemName
+import seqexec.model.enum.SystemName
 import org.scalacheck.{Arbitrary, _}
 import org.scalacheck.Arbitrary._
 import org.scalatest.prop.PropertyChecks

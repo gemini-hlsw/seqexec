@@ -10,6 +10,7 @@ import java.time.Instant
 import cats.implicits._
 import gem.Observation
 import gem.arb.ArbObservation
+import seqexec.model.enum._
 
 // Keep the arbitraries in a separate trait to improve caching
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))

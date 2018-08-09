@@ -12,7 +12,7 @@ import edu.gemini.spModel.obscomp.InstConstants.{DARK_OBSERVE_TYPE, OBSERVE_TYPE
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import java.lang.{Double => JDouble}
 import scala.concurrent.duration.{Duration, SECONDS}
-import seqexec.model.Model.{Instrument, Resource}
+import seqexec.model.enum.{ Instrument, Resource }
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.flamingos2.Flamingos2Controller._

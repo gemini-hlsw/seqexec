@@ -15,7 +15,7 @@ import org.log4s.getLogger
 import mouse.all._
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
-import seqexec.model.Model.Resource
+import seqexec.model.enum.Resource
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.tcs.TcsController._
 import seqexec.server.{ConfigResult, SeqAction, System}

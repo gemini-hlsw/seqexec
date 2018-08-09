@@ -10,7 +10,7 @@ import cats.implicits._
 import ch.qos.logback.classic.Level
 import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.AppenderBase
-import seqexec.model.Model.ServerLogLevel
+import seqexec.model.enum.ServerLogLevel
 import seqexec.model.events._
 import fs2.async.mutable.Topic
 

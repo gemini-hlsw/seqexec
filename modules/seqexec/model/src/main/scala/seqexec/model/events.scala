@@ -4,6 +4,7 @@
 package seqexec.model
 
 import seqexec.model.Model._
+import seqexec.model.enum._
 import java.time.Instant
 
 import dhs.ImageFileId
