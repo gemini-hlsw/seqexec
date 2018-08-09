@@ -8,7 +8,6 @@ import SequenceEventsArbitraries._
 import SharedModelArbitraries._
 import monocle.law.discipline.{IsoTests, LensTests, OptionalTests, PrismTests, TraversalTests}
 import org.scalacheck.Arbitrary._
-import seqexec.model.Model.OffsetAxis
 import seqexec.model.enum._
 
 final class ModelLensesSpec extends CatsSuite with ModelLenses {

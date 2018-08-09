@@ -22,7 +22,7 @@ import seqexec.server.SeqexecEngine.Settings
 import seqexec.server.keywords.GDSClient
 import seqexec.model.enum.{ ActionStatus, CloudCover, ImageQuality, Instrument, Resource, SkyBackground, WaterVapor}
 import seqexec.model.Model.{ SequenceMetadata }
-import seqexec.model._
+import seqexec.model.{ Step => _, _ }
 
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 @SuppressWarnings(Array("org.wartremover.warts.Throw"))

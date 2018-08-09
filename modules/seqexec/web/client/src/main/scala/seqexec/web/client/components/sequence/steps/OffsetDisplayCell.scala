@@ -6,7 +6,7 @@ package seqexec.web.client.components.sequence.steps
 import cats.Eq
 import seqexec.model.enum.Guiding
 import seqexec.model.Step
-import seqexec.model.Model.{ Offset, OffsetAxis, TelescopeOffset }
+import seqexec.model.{ Offset, OffsetAxis, TelescopeOffset }
 import seqexec.web.client.lenses.{telescopeOffsetPO, telescopeOffsetQO}
 import seqexec.web.client.lenses._
 import seqexec.web.client.components.SeqexecStyles
