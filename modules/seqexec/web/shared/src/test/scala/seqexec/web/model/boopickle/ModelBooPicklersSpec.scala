@@ -4,12 +4,11 @@
 package seqexec.model.boopickle
 
 import seqexec.model.enum._
-import seqexec.model.Conditions
+import seqexec.model._
 import seqexec.model.Model._
 import seqexec.model.events._
-import seqexec.model.UserDetails
 import cats.tests.CatsSuite
-import boopickle.Default._
+import _root_.boopickle.Default._
 import org.scalacheck.Arbitrary._
 import seqexec.model.SharedModelArbitraries._
 import seqexec.model.SequenceEventsArbitraries._

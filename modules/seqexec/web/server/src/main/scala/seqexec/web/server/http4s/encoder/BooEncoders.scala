@@ -11,7 +11,6 @@ import org.http4s.booPickle._
 import seqexec.model._
 import seqexec.model.boopickle.GemModelBooPicklers
 import seqexec.model.enum.{ CloudCover, ImageQuality, SkyBackground, WaterVapor}
-import seqexec.model.Model.SequencesQueue
 import seqexec.model.Conditions
 import seqexec.model.Operator
 import seqexec.web.common.{CliCommand, LogMessage}

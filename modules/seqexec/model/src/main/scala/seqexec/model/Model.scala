@@ -142,20 +142,6 @@ object Model {
       }
   }
 
-  /**
-    * Represents a queue with different levels of details. E.g. it could be a list of Ids
-    * Or a list of fully hydrated SequenceViews
-    */
-  final case class SequencesQueue[T](selected: Map[Instrument, Observation.Id], conditions: Conditions, operator: Option[Operator], queue: List[T])
-
-  object SequencesQueue {
-    implicit def equal[T: Eq]: Eq[SequencesQueue[T]] =
-      Eq.by { x =>
-        (x.conditions, x.operator, x.queue)
-      }
-  }
-
-
   sealed trait OffsetAxis {
     val configItem: String
   }
