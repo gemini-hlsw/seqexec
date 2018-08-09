@@ -9,10 +9,10 @@ import gem.Observation
 import java.util.logging.LogRecord
 import org.scalajs.dom.ext.{Ajax, AjaxException}
 import org.scalajs.dom.XMLHttpRequest
-import seqexec.model.{ Conditions, UserDetails, UserLoginRequest, Operator, SequencesQueue }
+import seqexec.model.{ Conditions, UserDetails, UserLoginRequest, Operator, SequencesQueue, Step }
 import seqexec.model.boopickle._
 import seqexec.model.enum.{ CloudCover, ImageQuality, SkyBackground, WaterVapor}
-import seqexec.model.Model.{ ClientID, Step }
+import seqexec.model.Model.{ ClientID }
 import seqexec.web.common.{HttpStatusCodes, LogMessage, RegularCommand}
 import seqexec.web.common.LogMessage._
 import scala.scalajs.js.URIUtils._

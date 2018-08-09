@@ -10,7 +10,7 @@ import gem.arb.ArbObservation
 import gem.Observation
 import seqexec.model.enum.Instrument
 import seqexec.model.Model._
-import seqexec.model.SequenceState
+import seqexec.model.{ SequenceState, Step }
 import seqexec.web.client.model._
 import seqexec.web.client.circuit._
 import seqexec.model.UserDetails

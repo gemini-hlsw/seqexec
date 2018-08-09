@@ -6,7 +6,7 @@ package seqexec.web.client.components.sequence.steps
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.{ ActionStatus, Resource }
 import seqexec.model.StepState
-import seqexec.model.Model.{ StandardStep, Step }
+import seqexec.model.{ StandardStep, Step }
 import seqexec.web.client.circuit.{ClientStatus, StepsTableFocus}
 import seqexec.web.client.ModelOps._
 import seqexec.web.client.components.SeqexecStyles
