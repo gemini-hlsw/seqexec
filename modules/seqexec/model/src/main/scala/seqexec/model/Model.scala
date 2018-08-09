@@ -213,51 +213,6 @@ object Model {
 
 
 
-  @Lenses final case class Conditions(
-    cc: CloudCover,
-    iq: ImageQuality,
-    sb: SkyBackground,
-    wv: WaterVapor
-  )
-
-  object Conditions {
-
-    val worst: Conditions = Conditions(
-      CloudCover.Any,
-      ImageQuality.Any,
-      SkyBackground.Any,
-      WaterVapor.Any
-    )
-
-    val nominal: Conditions = Conditions(
-      CloudCover.Percent50,
-      ImageQuality.Percent70,
-      SkyBackground.Percent50,
-      WaterVapor.Any
-    )
-
-    val best: Conditions = Conditions(
-      // In the ODB model it's 20% but that value it's marked as obsolete
-      // so I took the non-obsolete lowest value.
-      CloudCover.Percent50,
-      ImageQuality.Percent20,
-      SkyBackground.Percent20,
-      WaterVapor.Percent20
-    )
-
-    val default: Conditions = worst // Taken from ODB
-
-    implicit val equalConditions: Eq[Conditions] =
-      Eq.by { x =>
-        (x.cc, x.iq, x.sb, x.wv)
-      }
-
-    implicit val showConditions: Show[Conditions] = Show.show[Conditions] {
-      case Conditions(cc, iq, sb, wv) => List(cc, iq, sb, wv).mkString(", ")
-    }
-  }
-
-
 
 
   // // Log message types

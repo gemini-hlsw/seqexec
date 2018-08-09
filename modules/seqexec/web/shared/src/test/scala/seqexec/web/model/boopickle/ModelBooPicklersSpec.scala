@@ -4,6 +4,7 @@
 package seqexec.model.boopickle
 
 import seqexec.model.enum._
+import seqexec.model.Conditions
 import seqexec.model.Model._
 import seqexec.model.events._
 import seqexec.model.UserDetails

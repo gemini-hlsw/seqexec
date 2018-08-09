@@ -1,0 +1,57 @@
+// Copyright (c) 2016-2018 Association of Universities for Research in Astronomy, Inc. (AURA)
+// For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
+
+package seqexec.model
+
+import cats._
+import cats.implicits._
+import monocle.macros.Lenses
+import seqexec.model.enum._
+
+@Lenses
+final case class Conditions(
+  cc: CloudCover,
+  iq: ImageQuality,
+  sb: SkyBackground,
+  wv: WaterVapor
+)
+
+@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
+object Conditions {
+
+  val worst: Conditions =
+    Conditions(
+      CloudCover.Any,
+      ImageQuality.Any,
+      SkyBackground.Any,
+      WaterVapor.Any
+    )
+
+  val nominal: Conditions =
+    Conditions(
+      CloudCover.Percent50,
+      ImageQuality.Percent70,
+      SkyBackground.Percent50,
+      WaterVapor.Any
+    )
+
+  val best: Conditions =
+    Conditions(
+      // In the ODB model it's 20% but that value it's marked as obsolete
+      // so I took the non-obsolete lowest value.
+      CloudCover.Percent50,
+      ImageQuality.Percent20,
+      SkyBackground.Percent20,
+      WaterVapor.Percent20
+    )
+
+  val default: Conditions =
+    worst // Taken from ODB
+
+  implicit val equalConditions: Eq[Conditions] =
+    Eq.by(x => (x.cc, x.iq, x.sb, x.wv))
+
+  implicit val showConditions: Show[Conditions] =
+    Show.show(x => List(x.cc, x.iq, x.sb, x.wv).mkString(", "))
+
+}

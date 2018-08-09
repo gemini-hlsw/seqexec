@@ -8,7 +8,7 @@ import edu.gemini.spModel.gemini.obscomp.SPSiteQuality._
 import edu.gemini.spModel.guide.StandardGuideOptions
 import gem.Observation
 import gem.enum.KeywordName
-import seqexec.model.Model.Conditions
+import seqexec.model.Conditions
 import seqexec.model.{ Observer, Operator}
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.{InstrumentSystem, SeqAction, OcsBuildInfo, sgoEq}

@@ -9,7 +9,7 @@ import diode.RootModelR
 import diode.data._
 import gem.Observation
 import gem.enum.Site
-import seqexec.model.UserDetails
+import seqexec.model.{ Conditions, UserDetails }
 import seqexec.model.Model._
 import seqexec.model.enum._
 import seqexec.model.events._

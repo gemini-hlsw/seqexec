@@ -10,8 +10,8 @@ import cats.implicits._
 import seqexec.engine.Event._
 import seqexec.engine.Result.{PartialVal, PauseContext, RetVal}
 import seqexec.model.enum.Resource
-import seqexec.model.Model.{ClientID, Conditions }
-import seqexec.model.{ Observer, SequenceState}
+import seqexec.model.Model.ClientID
+import seqexec.model.{ Conditions, Observer, SequenceState}
 import fs2.Stream
 import gem.Observation
 import monocle.Lens
