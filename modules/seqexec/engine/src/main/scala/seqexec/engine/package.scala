@@ -7,7 +7,8 @@ import cats.data.Kleisli
 import cats.effect.IO
 import seqexec.engine.Result.{Error, PartialVal, PauseContext, RetVal}
 import seqexec.model.ActionType
-import seqexec.model.Model.{Conditions, Observer, Operator}
+import seqexec.model.Model.Conditions
+import seqexec.model.{ Observer, Operator}
 
 package engine {
 

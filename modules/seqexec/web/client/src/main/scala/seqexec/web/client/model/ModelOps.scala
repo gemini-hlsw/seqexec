@@ -10,11 +10,10 @@ import gem.enum.Site
 import seqexec.model.enum.{
   ActionStatus,
   Instrument,
-  Resource,
-  StepState
+  Resource
 }
+import seqexec.model.{ StepState, SequenceState }
 import seqexec.model.Model.{
-  SequenceState,
   SequenceView,
   StandardStep,
   Step

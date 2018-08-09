@@ -14,7 +14,8 @@ import gem.enum.Site
 import seqexec.engine.{Action, Result, Sequence, Step}
 import seqexec.model.ActionType
 import seqexec.model.enum.Instrument.GmosS
-import seqexec.model.Model.{SequenceMetadata, SequenceState, StepConfig}
+import seqexec.model.Model.{SequenceMetadata, StepConfig}
+import seqexec.model.SequenceState
 import seqexec.server.SeqTranslate.ObserveContext
 import seqexec.server.keywords.DhsClientSim
 import seqexec.server.keywords.GDSClient

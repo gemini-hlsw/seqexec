@@ -5,9 +5,8 @@ package seqexec.engine
 
 import java.util.UUID
 import seqexec.engine.Sequence.State.Final
-import seqexec.model.enum.StepState
-import seqexec.model.Model.Operator
-import seqexec.model.Model.{ SequenceMetadata, SequenceState, StepConfig }
+import seqexec.model.{ StepState, Operator, SequenceState }
+import seqexec.model.Model.{ SequenceMetadata, StepConfig }
 import seqexec.model.enum.Instrument.{F2, GmosS}
 import seqexec.model.enum.Resource
 import seqexec.model.enum.Resource.TCS

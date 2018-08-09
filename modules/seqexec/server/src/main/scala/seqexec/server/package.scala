@@ -18,7 +18,8 @@ import monocle.function.At.at
 import monocle.function.At.atMap
 import seqexec.engine.{ActionMetadata, ActionMetadataGenerator, Engine}
 import seqexec.model.enum.{ CloudCover, Instrument, ImageQuality, SkyBackground, WaterVapor}
-import seqexec.model.Model.{ Conditions, Observer, Operator, SequenceState }
+import seqexec.model.Model.Conditions
+import seqexec.model.{ Observer, Operator, SequenceState }
 import seqexec.model.UserDetails
 
 package server {

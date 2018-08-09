@@ -26,21 +26,6 @@ object Model {
   implicit val clientIdEq: Eq[ClientID] = Eq.fromUniversalEquals
   val DaytimeCalibrationTargetName = "Daytime calibration"
 
-  final case class Operator(value: String)
-
-  object Operator {
-    val Zero: Operator = Operator("")
-    implicit val equal: Eq[Operator] = Eq.fromUniversalEquals
-    implicit val shows: Show[Operator] = Show.show(_.value)
-  }
-
-  final case class Observer(value: String)
-  object Observer {
-    val Zero: Observer = Observer("")
-    implicit val equal: Eq[Observer] = Eq.fromUniversalEquals
-    implicit val shows: Show[Observer] = Show.show(_.value)
-  }
-
   sealed trait Step {
     val id: StepId
     val config: StepConfig
@@ -126,51 +111,6 @@ object Model {
   }
   // Other kinds of Steps to be defined.
 
-  sealed trait SequenceState extends Product with Serializable
-  object SequenceState {
-    case object Completed         extends SequenceState
-    case object Idle              extends SequenceState
-    case object Stopped           extends SequenceState
-    final case class Running(userStop: Boolean, internalStop: Boolean) extends SequenceState
-    object Running {
-      val init: Running = Running(userStop = false, internalStop = false)
-    }
-    final case class Failed(msg: String) extends SequenceState
-
-    // Operations on the sequence state
-    implicit class SequenceStateOps(val state: SequenceState) extends AnyVal {
-      def internalStopRequested: Boolean = state match {
-        case SequenceState.Running(_, true) => true
-        case _                              => false
-      }
-
-      def isError: Boolean = state match {
-        case Failed(_) => true
-        case _         => false
-      }
-
-      def isInProcess: Boolean = state =!= SequenceState.Idle
-
-      def isRunning: Boolean = state match {
-        case Running(_, _) => true
-        case _             => false
-      }
-
-      def isCompleted: Boolean = state === SequenceState.Completed
-
-      def isIdle: Boolean = state === SequenceState.Idle
-
-      def isStopped: Boolean = state === SequenceState.Stopped
-
-      def userStopRequested: Boolean = state match {
-        case SequenceState.Running(true, _) => true
-        case _                              => false
-      }
-
-    }
-
-    implicit val equal: Eq[SequenceState] = Eq.fromUniversalEquals
-  }
 
   /**
     * Metadata about the sequence required on the exit point
@@ -320,18 +260,18 @@ object Model {
 
 
 
-  // Log message types
-  type Time = java.time.Instant
+  // // Log message types
+  // type Time = java.time.Instant
 
-  trait LogType
-  object LogType {
-    object Debug
-    object Info
-    object Warning
-    object Error
-  }
+  // trait LogType
+  // object LogType {
+  //   object Debug
+  //   object Info
+  //   object Warning
+  //   object Error
+  // }
 
-  final case class LogMsg(t: LogType, timestamp: Time, msg: String)
+  // final case class LogMsg(t: LogType, timestamp: Time, msg: String)
 
 }
 //scalastyle:on

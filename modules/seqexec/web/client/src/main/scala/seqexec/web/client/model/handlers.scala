@@ -17,6 +17,7 @@ import mouse.all._
 import org.scalajs.dom._
 import seqexec.model.UserDetails
 import seqexec.model.boopickle._
+import seqexec.model._
 import seqexec.model.Model._
 import seqexec.model.enum._
 import seqexec.model.events._
