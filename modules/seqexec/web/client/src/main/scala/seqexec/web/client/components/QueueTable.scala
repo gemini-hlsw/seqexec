@@ -411,7 +411,7 @@ object QueueTableBody {
               IconSelectedRadio.copyIcon(fitted = true,
                                          extraStyles = List(SeqexecStyles.selectedIcon))
             else
-              Button(Button.Props(size = SSize.Large, compact = true, icon = Some(IconSignIn), onClick = Callback.log("Here") >> SeqexecCircuit.dispatchCB(LoadSequence(row.instrument, row.obsId))))
+              Button(Button.Props(size = SSize.Large, compact = true, icon = Some(IconSignIn), onClick = SeqexecCircuit.dispatchCB(LoadSequence(row.instrument, row.obsId))))
         }
 
       val page = PreviewPage(row.instrument, row.obsId, 0)

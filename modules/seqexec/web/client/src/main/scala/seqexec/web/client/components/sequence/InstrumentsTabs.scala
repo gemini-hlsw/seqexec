@@ -9,7 +9,7 @@ import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react._
 import seqexec.model.SequenceState
-import seqexec.web.client.actions.{NavigateTo, SelectIdToDisplay, SelectInstrumentToDisplay}
+import seqexec.web.client.actions.{LoadSequence, NavigateTo, SelectIdToDisplay, SelectInstrumentToDisplay}
 import seqexec.web.client.ModelOps._
 import seqexec.web.client.model.Pages.{InstrumentPage, SequencePage, SeqexecPages}
 import seqexec.web.client.model.AvailableTab
@@ -17,6 +17,8 @@ import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.semanticui._
 import seqexec.web.client.semanticui.elements.icon.Icon._
 import seqexec.web.client.semanticui.elements.label.Label
+import seqexec.web.client.semanticui.elements.button.Button
+import seqexec.web.client.semanticui.elements.popup.Popup
 import seqexec.web.client.components.SeqexecStyles
 import web.client.style._
 
@@ -39,52 +41,62 @@ object InstrumentTab {
         case Some(RunningStep(current, total)) => s"${sequenceId.map(_.format).getOrElse("")} - ${current + 1}/$total"
         case _                                 => sequenceId.map(_.format).getOrElse("")
       }
+
       val icon = status.flatMap {
         case SequenceState.Running(_, _) => IconCircleNotched.copyIcon(loading = true).some
         case SequenceState.Completed     => IconCheckmark.some
         case _                           => IconSelectedRadio.some
       }
+
       val color = status.flatMap {
         case SequenceState.Running(_, _) => "orange".some
         case SequenceState.Completed     => "green".some
         case _                           => "grey".some
       }
-      val linkPage: Option[SeqexecPages] = (sequenceId, instrument).mapN((id, inst) => SequencePage(inst, id, 0))
-      val instrumentNoId =
-        <.div(SeqexecStyles.instrumentTabLabel, dispName)
+
+      val linkPage: Option[SeqexecPages] =
+        (sequenceId, instrument)
+          .mapN((id, inst) => SequencePage(inst, id, 0))
+          .filter(_ => !isPreview)
+
+      val loadButton: Option[VdomNode] =
+        (sequenceId, instrument)
+          .mapN((id, inst) =>
+            Popup(Popup.Props("button", s"Load sequence $id"),
+              Button(Button.Props(size = Size.Large, compact = true, icon = Some(IconSignIn), onClick = SeqexecCircuit.dispatchCB(LoadSequence(inst, id))))
+            ): VdomNode)
+          .filter(_ => isPreview)
+
+      val labelNoId =
+        <.div(SeqexecStyles.instrumentTabLabel, if (isPreview) "Preview" else dispName)
+
       val instrumentWithId =
         <.div(
           SeqexecStyles.instrumentTabLabel,
           <.div(SeqexecStyles.activeInstrumentLabel, dispName),
-          Label(Label.Props(tabTitle, color = color, icon = icon, extraStyles = List(SeqexecStyles.labelPointer)))
+          Label(Label.Props(tabTitle, color = color, icon = icon, extraStyles = if (isPreview) Nil else List(SeqexecStyles.labelPointer)))
         )
-      val tab = linkPage.map(l => p.router.link(l)(
-        IconAttention.copyIcon(color = Some("red")).when(hasError),
-        sequenceId.fold(instrumentNoId)(_ => instrumentWithId),
-        ^.cls := "item",
-        ^.classSet(
-          "active" -> active,
-          "error"  -> hasError
-        ),
-        SeqexecStyles.instrumentTab,
-        SeqexecStyles.inactiveInstrumentContent.unless(active),
-        SeqexecStyles.activeInstrumentContent.when(active),
-        SeqexecStyles.errorTab.when(hasError),
-        dataTab := instrument.show
-      )).getOrElse(<.div(
-        sequenceId.fold(<.div("Preview"))(_ => instrumentWithId),
-        ^.cls := "item",
-        ^.classSet(
-          "active" -> active,
-          "error"  -> hasError
-        ),
-        SeqexecStyles.instrumentTab,
-        SeqexecStyles.inactiveInstrumentContent.unless(active),
-        SeqexecStyles.activeInstrumentContent.when(active),
-        SeqexecStyles.errorTab.when(hasError),
-        dataTab := "preview"
-      ))
-      tab
+
+      val dataId = if (isPreview) "preview" else instrument.show
+
+      val tabContent: VdomNode =
+        <.div(
+          IconAttention.copyIcon(color = Some("red")).when(hasError),
+          sequenceId.fold(labelNoId)(_ => instrumentWithId),
+          ^.cls := "item",
+          ^.classSet(
+            "active" -> active,
+            "error"  -> hasError
+          ),
+          SeqexecStyles.instrumentTab,
+          SeqexecStyles.inactiveInstrumentContent.unless(active),
+          SeqexecStyles.activeInstrumentContent.when(active),
+          SeqexecStyles.errorTab.when(hasError),
+          dataTab := dataId,
+          loadButton
+        )
+
+      linkPage.map(l => p.router.link(l)(tabContent): VdomNode).getOrElse(tabContent)
     }.componentDidMount(ctx =>
       Callback {
         // Enable menu on Semantic UI
@@ -95,7 +107,6 @@ object InstrumentTab {
           $(dom).tab(
             JsTabOptions
               .onVisible { (x: String) =>
-                println("setup")
                 val sequenceId = ctx.props.tab.id
                 val instrument = ctx.props.tab.instrument
                 val updateModelCB = (sequenceId, instrument) match {
