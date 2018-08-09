@@ -4,7 +4,7 @@
 package seqexec.web.client.handlers
 
 import diode.{ActionHandler, ActionResult, Effect, ModelRW, NoAction}
-import seqexec.model.Model._
+import seqexec.model.Conditions
 import seqexec.web.client.actions._
 import seqexec.web.client.services.SeqexecWebClient
 import cats.implicits._

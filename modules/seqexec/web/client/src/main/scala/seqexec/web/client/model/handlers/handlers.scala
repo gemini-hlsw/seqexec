@@ -7,7 +7,7 @@ import cats.implicits._
 import diode.{Action, ActionHandler, ActionResult, Effect, ModelRW, NoAction}
 import gem.Observation
 import gem.enum.Site
-import seqexec.model.UserDetails
+import seqexec.model.{ Observer, Operator, UserDetails }
 import seqexec.model.Model._
 import seqexec.web.client.model._
 import seqexec.web.client.model.Pages._

@@ -5,6 +5,8 @@ package seqexec.web.client.handlers
 
 import diode.{Action, ActionHandler, ActionResult, Effect, ModelRW, NoAction}
 import seqexec.model.Model._
+import seqexec.model.enum.{ ActionStatus }
+import seqexec.model.{ Observer, SequencesQueue, StepState, SequenceState }
 import seqexec.model.events._
 import seqexec.web.client.model.SeqexecAppRootModel.LoadedSequences
 import seqexec.web.client.lenses.{sequenceStepT, sequenceViewT}
