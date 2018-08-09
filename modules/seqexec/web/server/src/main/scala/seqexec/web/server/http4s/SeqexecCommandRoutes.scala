@@ -62,7 +62,7 @@ class SeqexecCommandRoutes(auth: AuthenticationService, inputQueue: server.Event
       for {
         u     <- se.load(inputQueue, obsId)
         resp  <- u.fold(_ => NotFound(s"Not found sequence $obsId"), _ =>
-          Ok(SequencesQueue[Observation.Id](Map.empty, Conditions.default, None, List(obsId))))
+          Ok(SequencesQueue[Observation.Id](Map.empty, Conditions.Default, None, List(obsId))))
       } yield resp
 
    case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "skip" / bp as user =>

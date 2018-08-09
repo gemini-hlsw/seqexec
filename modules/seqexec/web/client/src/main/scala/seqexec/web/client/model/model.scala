@@ -188,7 +188,7 @@ object model {
                             firstLoad: Boolean)
 
   object SeqexecUIModel {
-    val noSequencesLoaded: SequencesQueue[SequenceView] = SequencesQueue[SequenceView](Map.empty, Conditions.default, None, Nil)
+    val noSequencesLoaded: SequencesQueue[SequenceView] = SequencesQueue[SequenceView](Map.empty, Conditions.Default, None, Nil)
     val initial: SeqexecUIModel = SeqexecUIModel(
       Pages.Root,
       None,

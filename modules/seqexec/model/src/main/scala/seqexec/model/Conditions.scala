@@ -19,7 +19,7 @@ final case class Conditions(
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object Conditions {
 
-  val worst: Conditions =
+  val Worst: Conditions =
     Conditions(
       CloudCover.Any,
       ImageQuality.Any,
@@ -27,7 +27,7 @@ object Conditions {
       WaterVapor.Any
     )
 
-  val nominal: Conditions =
+  val Nominal: Conditions =
     Conditions(
       CloudCover.Percent50,
       ImageQuality.Percent70,
@@ -35,7 +35,7 @@ object Conditions {
       WaterVapor.Any
     )
 
-  val best: Conditions =
+  val Best: Conditions =
     Conditions(
       // In the ODB model it's 20% but that value it's marked as obsolete
       // so I took the non-obsolete lowest value.
@@ -45,8 +45,8 @@ object Conditions {
       WaterVapor.Percent20
     )
 
-  val default: Conditions =
-    worst // Taken from ODB
+  val Default: Conditions =
+    Worst // Taken from ODB
 
   implicit val equalConditions: Eq[Conditions] =
     Eq.by(x => (x.cc, x.iq, x.sb, x.wv))
