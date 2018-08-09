@@ -3,7 +3,6 @@
 
 package seqexec.model
 
-import Model._
 import org.scalacheck.{Arbitrary, Cogen, Gen}
 import org.scalacheck.Arbitrary._
 import java.time.Instant

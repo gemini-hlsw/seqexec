@@ -3,8 +3,6 @@
 
 package seqexec.model
 
-import Model._
-
 import cats.tests.CatsSuite
 import cats.kernel.laws.discipline._
 import seqexec.model.enum._

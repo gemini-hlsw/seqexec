@@ -3,7 +3,6 @@
 
 package seqexec.model
 
-import seqexec.model.Model._
 import seqexec.model.enum._
 import seqexec.model.events._
 

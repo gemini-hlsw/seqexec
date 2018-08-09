@@ -6,7 +6,6 @@ package seqexec.model
 import cats._
 import cats.implicits._
 import seqexec.model.enum._
-import seqexec.model.Model.{ StepConfig, StepId }
 
 sealed trait Step {
   val id: StepId

@@ -4,7 +4,7 @@
 package seqexec.engine
 
 import seqexec.engine.Result._
-import seqexec.model.Model.ClientID
+import seqexec.model.ClientID
 import gem.Observation
 
 /**

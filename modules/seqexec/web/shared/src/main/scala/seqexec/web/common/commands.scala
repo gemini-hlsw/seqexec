@@ -4,7 +4,7 @@
 package seqexec.web.common
 
 import boopickle.Default._
-import seqexec.model.Model.StepConfig
+import seqexec.model.StepConfig
 import seqexec.model.boopickle.ModelBooPicklers
 
 sealed trait CliCommand {

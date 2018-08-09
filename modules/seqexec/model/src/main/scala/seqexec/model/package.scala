@@ -1,12 +1,12 @@
 // Copyright (c) 2016-2018 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
-package seqexec.model
+package seqexec
 
 import cats._
 import seqexec.model.enum._
 
-object Model {
+package object model {
   type ParamName = String
   type ParamValue = String
   type Parameters = Map[ParamName, ParamValue]

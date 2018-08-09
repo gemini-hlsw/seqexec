@@ -8,7 +8,6 @@ import cats.Show
 import gem.Observation
 import gem.enum.Site
 import seqexec.model._
-import seqexec.model.Model._
 import seqexec.model.enum._
 import seqexec.model.events._
 import seqexec.web.client.model._

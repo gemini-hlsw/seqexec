@@ -8,8 +8,7 @@ import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.semanticui.elements.label.Label
 import seqexec.web.client.semanticui.elements.icon.Icon.IconCheckmark
 import seqexec.web.client.semanticui.Size
-import seqexec.model.SequenceState
-import seqexec.model.Model.DaytimeCalibrationTargetName
+import seqexec.model.{ SequenceState, DaytimeCalibrationTargetName }
 import web.client.style._
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.vdom.html_<^._
