@@ -143,6 +143,13 @@ object SeqexecUI {
     p => (p.instrument.show, p.obsId.format)
   }
 
+  // Prism from url params to the preview page with config
+  def previewConfigPageP(instrumentNames: Map[String, Instrument]): Prism[(String, String, Int), PreviewConfigPage] = Prism[(String, String, Int), PreviewConfigPage] {
+    case (i, s, step) => (instrumentNames.get(i), Observation.Id.fromString(s)).mapN(PreviewConfigPage(_, _, step))
+  } {
+    p => (p.instrument.show, p.obsId.format, p.step)
+  }
+
   @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
   def router(site: Site): IO[Router[SeqexecPages]] = {
     val instrumentNames = site.instruments.map(i => (i.show, i)).toList.toMap
@@ -159,6 +166,8 @@ object SeqexecUI {
         .pmapL(sequencePageP(instrumentNames))) ~> dynRenderR((_: SequencePage, r) => SeqexecMain(site, r))
       | dynamicRouteCT(("/preview/" ~ string("[a-zA-Z0-9-]+") ~ "/" ~ string("[a-zA-Z0-9-]+"))
         .pmapL(previewPageP(instrumentNames))) ~> dynRenderR((_: PreviewPage, r) => SeqexecMain(site, r))
+      | dynamicRouteCT(("/preview/" ~ string("[a-zA-Z0-9-]+") ~ "/" ~ string("[a-zA-Z0-9-]+") ~ "/configuration/" ~ int)
+        .pmapL(previewConfigPageP(instrumentNames))) ~> dynRenderR((_: PreviewConfigPage, r) => SeqexecMain(site, r))
       | dynamicRoute(("/" ~ string("[a-zA-Z0-9-]+"))
         .pmap(i => instrumentNames.get(i).map(InstrumentPage))(p => p.instrument.show)) {
           case x @ InstrumentPage(i) if site.instruments.toList.contains(i) => x

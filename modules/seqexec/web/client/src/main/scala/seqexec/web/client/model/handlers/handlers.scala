@@ -33,9 +33,11 @@ class NavigationHandler[M](modelRW: ModelRW[M, Pages.SeqexecPages]) extends Acti
         case SequencePage(_, id, _)          =>
           Effect(Future(SelectIdToDisplay(id)))
         case SequenceConfigPage(_, id, step) =>
-          Effect(Future(ShowStepConfig(id, step)))
+          Effect(Future(ShowStepConfig(id, step, false)))
         case PreviewPage(_, id, step) =>
           Effect(Future(SelectSequencePreview(id, step)))
+        case PreviewConfigPage(_, id, step) =>
+          Effect(Future(ShowStepConfig(id, step, true)))
         case _                               =>
           VoidEffect
       }
@@ -173,18 +175,22 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, (SequencesOnDisplay, Option[
       updated(value.copy(_2 = Some(site)))
   }
 
-  // def handleShowHideStep: PartialFunction[Any, ActionResult[M]] = {
-  //   case ShowStepConfig(id, step)         =>
-  //     val seq = SeqexecCircuit.sequenceRef(id)
-  //     updated(value.copy(_1 = value._1.focusOnSequence(seq).showStepConfig(step - 1)))
-  //
-  //   case HideStepConfig(instrument) =>
-  //     if (value._1.instrumentSequences.focus.sequence.exists(_.metadata.instrument == instrument)) {
-  //       updated(value.copy(_1 = value._1.hideStepConfig))
-  //     } else {
-  //       noChange
-  //     }
-  // }
+  def handleShowHideStep: PartialFunction[Any, ActionResult[M]] = {
+    case ShowStepConfig(id, step, true) =>
+      val seq = SeqexecCircuit.sequenceRef(id)
+      updated(value.copy(_1 = value._1.previewSequence(seq).showStepConfig(step - 1)))
+
+    case ShowStepConfig(id, step, false) =>
+      val seq = SeqexecCircuit.sequenceRef(id)
+      updated(value.copy(_1 = value._1.focusOnSequence(seq).showStepConfig(step - 1)))
+
+    case HideStepConfig(instrument) =>
+      if (value._1.instrumentSequences.focus.sequence.exists(_.metadata.instrument == instrument)) {
+        updated(value.copy(_1 = value._1.hideStepConfig))
+      } else {
+        noChange
+      }
+  }
 
   def handleRememberCompleted: PartialFunction[Any, ActionResult[M]] = {
     case RememberCompleted(s) =>
@@ -194,7 +200,7 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, (SequencesOnDisplay, Option[
   override def handle: PartialFunction[Any, ActionResult[M]] =
     List(handleSelectSequenceDisplay,
       handleInitialize,
-      // handleShowHideStep,
+      handleShowHideStep,
       handleRememberCompleted).combineAll
 }
 

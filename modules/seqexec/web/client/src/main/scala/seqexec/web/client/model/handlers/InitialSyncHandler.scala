@@ -61,8 +61,14 @@ class InitialSyncHandler[M](modelRW: ModelRW[M, InitialSyncFocus]) extends Actio
         case SequenceConfigPage(_, id, step) if sids.contains(id)           =>
           // We are on a seq config page, update the model
           val seq = RefTo(new RootModelR(s.view.queue.find(_.id === id)))
-          val effect = Effect(Future(ShowStepConfig(id, step)))
+          val effect = Effect(Future(ShowStepConfig(id, step, isPreview = false)))
           updated(value.copy(sod = value.sod.focusOnSequence(seq).showStepConfig(step - 1), firstLoad = false), effect)
+
+        case PreviewConfigPage(_, id, step) if sids.contains(id)           =>
+          // We are on a seq config page, update the model
+          val seq = RefTo(new RootModelR(s.view.queue.find(_.id === id)))
+          val effect = Effect(Future(ShowStepConfig(id, step, isPreview = true)))
+          updated(value.copy(sod = value.sod.previewSequence(seq).showStepConfig(step - 1), firstLoad = false), effect)
         case _                                                              =>
           // No matches
           updated(value.copy(firstLoad = false))

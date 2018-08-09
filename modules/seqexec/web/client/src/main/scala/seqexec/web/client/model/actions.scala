@@ -67,7 +67,7 @@ object actions {
   final case class RunObsPauseFailed(s: Observation.Id) extends Action
   final case class RunObsResumeFailed(s: Observation.Id) extends Action
 
-  final case class ShowStepConfig(id: Observation.Id, step: Int) extends Action
+  final case class ShowStepConfig(id: Observation.Id, step: Int, isPreview: Boolean) extends Action
   final case class HideStepConfig(i: Instrument) extends Action
   final case class RememberCompleted(s: SequenceView) extends Action
 

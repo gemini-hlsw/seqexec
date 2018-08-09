@@ -129,7 +129,7 @@ object StepsTable {
       f: StepsTableFocus): CellRenderer[js.Object, js.Object, StepRow] =
     (_, _, _, row: StepRow, _) =>
       SettingsCell(
-        SettingsCell.Props(p.router, f.instrument, f.id, row.step.id))
+        SettingsCell.Props(p.router, f.instrument, f.id, row.step.id, p.isPreview))
 
   def stepProgressRenderer(
       f: StepsTableFocus,

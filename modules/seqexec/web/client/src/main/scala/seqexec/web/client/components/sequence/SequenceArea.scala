@@ -41,13 +41,13 @@ object SequenceStepsTableContainer {
     val isPreview = p.statusAndStep.isPreview
 
     val showDefault = loggedIn && !stepConfigDisplayed && !isPreview
-    val showAnonymous = (!loggedIn && !stepConfigDisplayed) || isPreview
+    val showAnonymous = (!loggedIn && !stepConfigDisplayed)
 
     <.div(
       SequenceDefaultToolbar(p).when(showDefault),
       SequenceAnonymousToolbar(SequenceAnonymousToolbar.Props(p.statusAndStep.obsId)).when(showAnonymous),
       p.statusAndStep.stepConfigDisplayed.map { s =>
-        StepConfigToolbar(StepConfigToolbar.Props(p.router, p.statusAndStep.instrument, p.statusAndStep.obsId, s, p.statusAndStep.totalSteps)).when(stepConfigDisplayed)
+        StepConfigToolbar(StepConfigToolbar.Props(p.router, p.statusAndStep.instrument, p.statusAndStep.obsId, s, p.statusAndStep.totalSteps, isPreview)).when(stepConfigDisplayed)
       }.getOrElse(TagMod.empty)
     )
   }

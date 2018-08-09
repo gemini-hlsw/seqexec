@@ -339,11 +339,15 @@ object StepIdCell {
   * Component to link to the settings
   */
 object SettingsCell {
-  final case class Props(ctl: RouterCtl[Pages.SeqexecPages], instrument: Instrument, obsId: Observation.Id, index: Int)
+  final case class Props(ctl: RouterCtl[Pages.SeqexecPages], instrument: Instrument, obsId: Observation.Id, index: Int, isPreview: Boolean)
   private val component = ScalaComponent.builder[Props]("SettingsCell")
     .stateless
     .render_P { p =>
-      val page = Pages.SequenceConfigPage(p.instrument, p.obsId, p.index + 1)
+      val page = if (p.isPreview) {
+        Pages.PreviewConfigPage(p.instrument, p.obsId, p.index + 1)
+      } else {
+        Pages.SequenceConfigPage(p.instrument, p.obsId, p.index + 1)
+      }
       <.div(
         SeqexecStyles.settingsCell,
         p.ctl.link(page)(

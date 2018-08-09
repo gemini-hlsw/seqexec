@@ -52,8 +52,9 @@ object model {
     case object SoundTest extends SeqexecPages
     final case class InstrumentPage(instrument: Instrument) extends SeqexecPages
     final case class PreviewPage(instrument: Instrument, obsId: Observation.Id, step: StepId) extends SeqexecPages
+    final case class PreviewConfigPage(instrument: Instrument, obsId: Observation.Id, step: StepId) extends SeqexecPages
     final case class SequencePage(instrument: Instrument, obsId: Observation.Id, step: StepId) extends SeqexecPages
-    final case class SequenceConfigPage(instrument: Instrument, obsId: Observation.Id, step: Int) extends SeqexecPages
+    final case class SequenceConfigPage(instrument: Instrument, obsId: Observation.Id, step: StepId) extends SeqexecPages
 
     implicit val equal: Eq[SeqexecPages] = Eq.instance {
       case (Root, Root)                                               => true
@@ -62,6 +63,7 @@ object model {
       case (SequencePage(i, o, s), SequencePage(j, p, r))             => i === j && o === p && s === r
       case (SequenceConfigPage(i, o, s), SequenceConfigPage(j, p, r)) => i === j && o === p && s === r
       case (PreviewPage(i, o, s), PreviewPage(j, p, r))               => i === j && o === p && s === r
+      case (PreviewConfigPage(i, o, s), PreviewConfigPage(j, p, r))   => i === j && o === p && s === r
       case _                                                          => false
     }
   }
