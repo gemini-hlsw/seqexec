@@ -10,7 +10,7 @@ import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.{Callback, ScalaComponent}
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.component.Scala.Unmounted
-import seqexec.model.Model.Instrument
+import seqexec.model.enum.Instrument
 import seqexec.web.client.model.Pages._
 import seqexec.web.client.ModelOps._
 import seqexec.web.client.circuit.SeqexecCircuit

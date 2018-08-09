@@ -4,6 +4,7 @@
 package seqexec.model
 
 import seqexec.model.Model._
+import seqexec.model.enum._
 import seqexec.model.events._
 
 import monocle.{Lens, Optional, Prism, Traversal}
@@ -122,13 +123,13 @@ trait ModelLenses {
 
   // Find the Parameters of the steps containing science steps
   val scienceStepT: Traversal[StepConfig, Parameters] = filterEntry[SystemName, Parameters] {
-    case (s, p) => s === SystemName.observe && p.exists {
-      case (k, v) => k === SystemName.observe.withParam("observeType") && v === "OBJECT"
+    case (s, p) => s === SystemName.Observe && p.exists {
+      case (k, v) => k === SystemName.Observe.withParam("observeType") && v === "OBJECT"
     }
   }
 
   val scienceTargetNameO: Optional[Parameters, TargetName] =
-    paramValueL(SystemName.observe.withParam("object")) ^<-? // find the target name
+    paramValueL(SystemName.Observe.withParam("object")) ^<-? // find the target name
     some                                                     // focus on the option
 
   val stringToStepTypeP: Prism[String, StepType] = Prism(StepType.fromString)(_.show)
@@ -147,48 +148,48 @@ trait ModelLenses {
     prism                                         // step type
 
   val stepTypeO: Optional[Step, StepType] =
-    stepObserveOptional(SystemName.observe, "observeType", stringToStepTypeP)
+    stepObserveOptional(SystemName.Observe, "observeType", stringToStepTypeP)
 
   // Composite lens to find the observe exposure time
   val observeExposureTimeO: Optional[Step, Double] =
-    stepObserveOptional(SystemName.observe, "exposureTime", stringToDoubleP)
+    stepObserveOptional(SystemName.Observe, "exposureTime", stringToDoubleP)
 
   // Composite lens to find the observe coadds
   val observeCoaddsO: Optional[Step, Int] =
-    stepObserveOptional(SystemName.observe, "coadds", stringToIntP)
+    stepObserveOptional(SystemName.Observe, "coadds", stringToIntP)
 
   val stringToFPUModeP: Prism[String, FPUMode] = Prism(FPUMode.fromString)(_.show)
   // Composite lens to find the instrument fpu model
   val instrumentFPUModeO: Optional[Step, FPUMode] =
-    stepObserveOptional(SystemName.instrument, "fpuMode", stringToFPUModeP)
+    stepObserveOptional(SystemName.Instrument, "fpuMode", stringToFPUModeP)
 
   // Composite lens to find the instrument fpu
   val instrumentFPUO: Optional[Step, String] =
-    stepObserveOptional(SystemName.instrument, "fpu", Iso.id[String].asPrism)
+    stepObserveOptional(SystemName.Instrument, "fpu", Iso.id[String].asPrism)
 
   // Composite lens to find the instrument fpu custom mask
   val instrumentFPUCustomMaskO: Optional[Step, String] =
-    stepObserveOptional(SystemName.instrument, "fpuCustomMask", Iso.id[String].asPrism)
+    stepObserveOptional(SystemName.Instrument, "fpuCustomMask", Iso.id[String].asPrism)
 
   // Composite lens to find the instrument filter
   val instrumentFilterO: Optional[Step, String] =
-    stepObserveOptional(SystemName.instrument, "filter", Iso.id[String].asPrism)
+    stepObserveOptional(SystemName.Instrument, "filter", Iso.id[String].asPrism)
 
   // Composite lens to find the instrument disperser for GMOS
   val instrumentDisperserO: Optional[Step, String] =
-    stepObserveOptional(SystemName.instrument, "disperser", Iso.id[String].asPrism)
+    stepObserveOptional(SystemName.Instrument, "disperser", Iso.id[String].asPrism)
 
   // Composite lens to find the instrument observing mode on GPI
   val instrumentObservingModeO: Optional[Step, String] =
-    stepObserveOptional(SystemName.instrument, "observingMode", Iso.id[String].asPrism)
+    stepObserveOptional(SystemName.Instrument, "observingMode", Iso.id[String].asPrism)
 
   // Composite lens to find the central wavelength for a disperser
   val instrumentDisperserLambdaO: Optional[Step, Double] =
-    stepObserveOptional(SystemName.instrument, "disperserLambda", stringToDoubleP)
+    stepObserveOptional(SystemName.Instrument, "disperserLambda", stringToDoubleP)
 
   // Lens to find p offset
   def telescopeOffsetO(x: OffsetAxis): Optional[Step, Double] =
-    stepObserveOptional(SystemName.telescope, x.configItem, stringToDoubleP)
+    stepObserveOptional(SystemName.Telescope, x.configItem, stringToDoubleP)
 
   val telescopeOffsetPO: Optional[Step, TelescopeOffset.P] = telescopeOffsetO(OffsetAxis.AxisP) ^<-> telescopeOffsetPI
   val telescopeOffsetQO: Optional[Step, TelescopeOffset.Q] = telescopeOffsetO(OffsetAxis.AxisQ) ^<-> telescopeOffsetQI
@@ -199,9 +200,9 @@ trait ModelLenses {
   val telescopeGuidingWithT: Traversal[Step, Guiding] =
     standardStepP                                                       ^|->  // which is a standard step
     stepConfigL                                                         ^|->  // configuration of the step
-    systemConfigL(SystemName.telescope)                                 ^<-?  // Observe config
+    systemConfigL(SystemName.Telescope)                                 ^<-?  // Observe config
     some                                                                ^|->> // some
-    paramValuesWithPrefixT(SystemName.telescope.withParam("guideWith")) ^<-?  // find the guiding with params
+    paramValuesWithPrefixT(SystemName.Telescope.withParam("guideWith")) ^<-?  // find the guiding with params
     stringToGuidingP                                                          // to guiding
 
   // Composite lens to find the step config
@@ -213,12 +214,12 @@ trait ModelLenses {
   // Composite lens to find the target name on observation
   val observeTargetNameT: Traversal[SeqexecEvent, TargetName] =
     sequenceConfigT                                 ^|-?  // configuration of the step
-    configParamValueO(SystemName.observe, "object")       // on the configuration find the target name
+    configParamValueO(SystemName.Observe, "object")       // on the configuration find the target name
 
   // Composite lens to find the target name on telescope
   val telescopeTargetNameT: Traversal[SeqexecEvent, TargetName] =
     sequenceConfigT                                       ^|-?  // configuration of the step
-    configParamValueO(SystemName.telescope, "Base:name")        // on the configuration find the target name
+    configParamValueO(SystemName.Telescope, "Base:name")        // on the configuration find the target name
 
   // Composite lens to find the first science step and from there the target name
   val firstScienceStepTargetNameT: Traversal[SequenceView, TargetName] =

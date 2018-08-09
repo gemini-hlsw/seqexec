@@ -12,7 +12,7 @@ import edu.gemini.spModel.gemini.gpi.Gpi._
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import java.lang.{Boolean => JBoolean, Double => JDouble, Integer => JInt}
 import seqexec.model.dhs.ImageFileId
-import seqexec.model.Model.{Instrument, Resource}
+import seqexec.model.enum.{ Instrument, Resource }
 import seqexec.server.ConfigUtilOps._
 import seqexec.server._
 import seqexec.server.gpi.GPIController._

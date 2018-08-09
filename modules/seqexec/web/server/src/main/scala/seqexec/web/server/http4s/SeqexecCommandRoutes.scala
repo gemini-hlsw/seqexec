@@ -8,7 +8,8 @@ import gem.Observation
 import seqexec.server.Commands
 import seqexec.server.SeqexecEngine
 import seqexec.server
-import seqexec.model.Model.{SequencesQueue, CloudCover, Conditions, ImageQuality, Observer, Operator, SkyBackground, WaterVapor}
+import seqexec.model.enum.{ CloudCover, ImageQuality, SkyBackground, WaterVapor}
+import seqexec.model.Model.{ SequencesQueue, Conditions, Observer, Operator }
 import seqexec.model.UserDetails
 import seqexec.web.server.model.CommandsModel._
 import seqexec.web.server.http4s.encoder._

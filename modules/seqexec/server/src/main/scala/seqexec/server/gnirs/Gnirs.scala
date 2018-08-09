@@ -13,8 +13,7 @@ import edu.gemini.spModel.gemini.gnirs.InstGNIRS._
 import edu.gemini.spModel.obscomp.InstConstants.{BIAS_OBSERVE_TYPE, DARK_OBSERVE_TYPE, OBSERVE_TYPE_PROP}
 import edu.gemini.spModel.seqcomp.SeqConfigNames.{INSTRUMENT_KEY, OBSERVE_KEY}
 import java.lang.{Double => JDouble, Integer => JInt}
-import seqexec.model.Model
-import seqexec.model.Model.Instrument
+import seqexec.model.enum.{ Instrument, Resource }
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.gnirs.GnirsController.{CCConfig, DCConfig, Other, ReadMode}
@@ -43,7 +42,7 @@ final case class Gnirs(controller: GnirsController, dhsClient: DhsClient) extend
   override def calcObserveTime(config: Config): Time =
     (extractExposureTime(config), extractCoadds(config)).mapN(_ * _.toDouble).getOrElse(10000.seconds)
 
-  override val resource: Model.Resource = Instrument.GNIRS
+  override val resource: Resource = Instrument.GNIRS
 
   override def configure(config: Config): SeqAction[ConfigResult[IO]] =
     SeqAction.either(fromSequenceConfig(config)).flatMap(controller.applyConfig).map(_ => ConfigResult(this))

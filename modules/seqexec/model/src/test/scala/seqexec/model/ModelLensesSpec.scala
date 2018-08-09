@@ -8,7 +8,8 @@ import SequenceEventsArbitraries._
 import SharedModelArbitraries._
 import monocle.law.discipline.{IsoTests, LensTests, OptionalTests, PrismTests, TraversalTests}
 import org.scalacheck.Arbitrary._
-import seqexec.model.Model.{OffsetAxis, SystemName}
+import seqexec.model.Model.OffsetAxis
+import seqexec.model.enum._
 
 final class ModelLensesSpec extends CatsSuite with ModelLenses {
   checkAll("event observer name lens", LensTests(obsNameL))
@@ -20,8 +21,8 @@ final class ModelLensesSpec extends CatsSuite with ModelLenses {
   checkAll("standard step config lens", LensTests(stepConfigL))
   checkAll("events prism", PrismTests(sequenceEventsP))
   checkAll("param value lens", LensTests(paramValueL("object")))
-  checkAll("system parameters lens", LensTests(systemConfigL(SystemName.observe)))
-  checkAll("config param value optional", OptionalTests(configParamValueO(SystemName.observe, "object")))
+  checkAll("system parameters lens", LensTests(systemConfigL(SystemName.Observe)))
+  checkAll("config param value optional", OptionalTests(configParamValueO(SystemName.Observe, "object")))
   checkAll("sequence view Lens", LensTests(sequenceQueueViewL))
   checkAll("sequencename traversal", TraversalTests(sequenceNameT))
   checkAll("sequence config traversal", TraversalTests(sequenceConfigT))

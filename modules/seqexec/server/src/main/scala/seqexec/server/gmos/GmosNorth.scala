@@ -3,7 +3,7 @@
 
 package seqexec.server.gmos
 
-import seqexec.model.Model.{Instrument, Resource}
+import seqexec.model.enum.{ Instrument, Resource }
 import seqexec.server.ConfigUtilOps
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.gmos.Gmos.SiteSpecifics

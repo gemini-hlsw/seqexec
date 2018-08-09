@@ -14,7 +14,8 @@ import japgolly.scalajs.react.component.builder.Lifecycle.RenderScope
 import cats.implicits._
 import react.virtualized._
 import scala.scalajs.js
-import seqexec.model.Model.{Step, SystemName}
+import seqexec.model.Model.Step
+import seqexec.model.enum.SystemName
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.actions.UpdateStepsConfigTableState
@@ -74,7 +75,7 @@ object StepConfigTable {
     def unapply(l: SettingsRow): Option[(SystemName, String, String)] =
       Some((l.sub, l.name, l.value))
 
-    def zero: SettingsRow = apply(SystemName.ocs, "", "")
+    def zero: SettingsRow = apply(SystemName.Ocs, "", "")
   }
 
   val TableColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
@@ -130,9 +131,9 @@ object StepConfigTable {
     ((i, p.rowGetter(i)) match {
       case (-1, _) =>
         SeqexecStyles.headerRowStyle
-      case (_, SettingsRow(s, _, _)) if s === SystemName.instrument =>
+      case (_, SettingsRow(s, _, _)) if s === SystemName.Instrument =>
         SeqexecStyles.stepRow |+| SeqexecStyles.rowPositive
-      case (_, SettingsRow(s, _, _)) if s === SystemName.telescope  =>
+      case (_, SettingsRow(s, _, _)) if s === SystemName.Telescope  =>
         SeqexecStyles.stepRow |+| SeqexecStyles.rowWarning
       case (_, SettingsRow(_, n, _)) if n.startsWith("observe:")    =>
         SeqexecStyles.stepRow |+| SeqexecStyles.observeConfig

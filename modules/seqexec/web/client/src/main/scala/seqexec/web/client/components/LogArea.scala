@@ -19,7 +19,7 @@ import java.time.format.DateTimeFormatter
 import react.virtualized._
 import react.clipboard._
 import scala.scalajs.js
-import seqexec.model.Model.ServerLogLevel
+import seqexec.model.enum.ServerLogLevel
 import seqexec.model.events._
 import seqexec.web.client.semanticui.elements.checkbox.Checkbox
 import seqexec.web.client.semanticui.elements.icon.Icon.{IconCopy, IconAngleDoubleDown, IconAngleDoubleUp}

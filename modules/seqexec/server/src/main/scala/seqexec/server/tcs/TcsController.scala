@@ -6,7 +6,7 @@ package seqexec.server.tcs
 import cats._
 import cats.data.{NonEmptyList, OneAnd}
 import cats.implicits._
-import seqexec.model.Model.Instrument
+import seqexec.model.enum.Instrument
 import seqexec.server.SeqAction
 import edu.gemini.spModel.core.Wavelength
 import squants.{Angle, Length}

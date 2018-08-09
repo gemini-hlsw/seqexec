@@ -5,11 +5,12 @@ package seqexec.engine
 
 import java.util.UUID
 import seqexec.engine.Sequence.State.Final
-import seqexec.model.Model.StepState
+import seqexec.model.enum.StepState
 import seqexec.model.Model.Operator
-import seqexec.model.Model.{Resource, SequenceMetadata, SequenceState, StepConfig}
-import seqexec.model.Model.Instrument.{F2, GmosS}
-import seqexec.model.Model.Resource.TCS
+import seqexec.model.Model.{ SequenceMetadata, SequenceState, StepConfig }
+import seqexec.model.enum.Instrument.{F2, GmosS}
+import seqexec.model.enum.Resource
+import seqexec.model.enum.Resource.TCS
 import seqexec.model.{ActionType, UserDetails}
 import fs2.async
 import fs2.async.mutable.Semaphore

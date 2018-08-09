@@ -4,7 +4,7 @@
 package seqexec.web.client.components.sequence.toolbars
 
 import gem.enum.Site
-import seqexec.model.Model.Instrument
+import seqexec.model.enum.Instrument
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.ModelOps._

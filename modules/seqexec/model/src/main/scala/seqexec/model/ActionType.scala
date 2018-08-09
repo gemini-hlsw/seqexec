@@ -3,7 +3,7 @@
 
 package seqexec.model
 
-import seqexec.model.Model.Resource
+import seqexec.model.enum.Resource
 
 import cats.Eq
 import cats.implicits._

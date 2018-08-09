@@ -10,7 +10,8 @@ import org.http4s.{EntityDecoder, EntityEncoder}
 import org.http4s.booPickle._
 import seqexec.model._
 import seqexec.model.boopickle.GemModelBooPicklers
-import seqexec.model.Model.{CloudCover, Conditions, ImageQuality, Operator, SequencesQueue, SkyBackground, WaterVapor}
+import seqexec.model.enum.{ CloudCover, ImageQuality, SkyBackground, WaterVapor}
+import seqexec.model.Model.{ Conditions, Operator, SequencesQueue }
 import seqexec.web.common.{CliCommand, LogMessage}
 import seqexec.web.common.LogMessage._
 

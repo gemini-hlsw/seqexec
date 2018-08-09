@@ -6,8 +6,9 @@ package seqexec.engine
 import java.util.UUID
 import cats.data.Kleisli
 import cats.effect.IO
-import seqexec.model.Model.Instrument.{F2, GmosS}
-import seqexec.model.Model.{Resource, SequenceMetadata, SequenceState, StepConfig, StepState}
+import seqexec.model.enum.Instrument.{ F2, GmosS }
+import seqexec.model.Model.{ SequenceMetadata, SequenceState, StepConfig }
+import seqexec.model.enum.{ Resource, StepState }
 import seqexec.model.{ActionType, UserDetails}
 import fs2.async.mutable.Queue
 import fs2.{Stream, async}

@@ -10,7 +10,8 @@ import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.extra.router.RouterCtl
 import gem.Observation
 import gem.enum.{GpiDisperser, GpiFilter, GpiObservingMode}
-import seqexec.model.Model.{FPUMode, Instrument, Step, StepType, StepState}
+import seqexec.model.enum.{ FPUMode, Instrument, StepType, StepState }
+import seqexec.model.Model.Step
 import seqexec.web.client.actions.{NavigateSilentTo, FlipSkipStep, FlipBreakpointStep}
 import seqexec.model.enumerations
 import seqexec.web.client.circuit.{ClientStatus, SeqexecCircuit, StepsTableFocus}
