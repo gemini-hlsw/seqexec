@@ -3,8 +3,9 @@
 
 package seqexec.engine
 
-import seqexec.model.Model.{Observer, SequenceMetadata, SequenceState }
-import seqexec.model.enum.{ Resource, StepState }
+import seqexec.model.Model.SequenceMetadata
+import seqexec.model.{ Observer, SequenceState, StepState }
+import seqexec.model.enum.Resource
 import gem.Observation
 import cats.implicits._
 import monocle.Lens

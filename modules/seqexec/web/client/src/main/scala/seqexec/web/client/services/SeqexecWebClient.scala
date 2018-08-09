@@ -9,10 +9,10 @@ import gem.Observation
 import java.util.logging.LogRecord
 import org.scalajs.dom.ext.{Ajax, AjaxException}
 import org.scalajs.dom.XMLHttpRequest
-import seqexec.model.{UserDetails, UserLoginRequest}
+import seqexec.model.{ Conditions, UserDetails, UserLoginRequest, Operator, SequencesQueue }
 import seqexec.model.boopickle._
 import seqexec.model.enum.{ CloudCover, ImageQuality, SkyBackground, WaterVapor}
-import seqexec.model.Model.{ ClientID, Conditions, Operator, SequencesQueue, Step }
+import seqexec.model.Model.{ ClientID, Step }
 import seqexec.web.common.{HttpStatusCodes, LogMessage, RegularCommand}
 import seqexec.web.common.LogMessage._
 import scala.scalajs.js.URIUtils._
@@ -43,7 +43,7 @@ object SeqexecWebClient extends ModelBooPicklers {
     .recover {
       case AjaxException(xhr) if xhr.status == HttpStatusCodes.NotFound  =>
         // If not found, we'll consider it like an empty response
-        SequencesQueue(Map.empty, Conditions.default, None, Nil)
+        SequencesQueue(Map.empty, Conditions.Default, None, Nil)
     }
 
   /**

@@ -6,6 +6,7 @@ package seqexec.model.boopickle
 import boopickle.Default._
 import gem.Observation
 import java.time.Instant
+import seqexec.model._
 import seqexec.model.enum._
 import seqexec.model.Model._
 import seqexec.model.UserDetails

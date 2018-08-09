@@ -9,8 +9,7 @@ import seqexec.server.Commands
 import seqexec.server.SeqexecEngine
 import seqexec.server
 import seqexec.model.enum.{ CloudCover, ImageQuality, SkyBackground, WaterVapor}
-import seqexec.model.Model.{ SequencesQueue, Conditions, Observer, Operator }
-import seqexec.model.UserDetails
+import seqexec.model._
 import seqexec.web.server.model.CommandsModel._
 import seqexec.web.server.http4s.encoder._
 import seqexec.web.server.security.{AuthenticationService, Http4sAuthentication, TokenRefresher}
@@ -63,7 +62,7 @@ class SeqexecCommandRoutes(auth: AuthenticationService, inputQueue: server.Event
       for {
         u     <- se.load(inputQueue, obsId)
         resp  <- u.fold(_ => NotFound(s"Not found sequence $obsId"), _ =>
-          Ok(SequencesQueue[Observation.Id](Map.empty, Conditions.default, None, List(obsId))))
+          Ok(SequencesQueue[Observation.Id](Map.empty, Conditions.Default, None, List(obsId))))
       } yield resp
 
    case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "skip" / bp as user =>

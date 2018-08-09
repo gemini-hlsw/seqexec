@@ -7,13 +7,14 @@ import cats.data.Kleisli
 import cats.effect.IO
 import seqexec.engine.Result.{Error, PartialVal, PauseContext, RetVal}
 import seqexec.model.ActionType
-import seqexec.model.Model.{Conditions, Observer, Operator}
+import seqexec.model.Conditions
+import seqexec.model.{ Observer, Operator}
 
 package engine {
 
   final case class ActionMetadata(conditions: Conditions, operator: Option[Operator], observer: Option[Observer])
   object ActionMetadata {
-    val default: ActionMetadata = ActionMetadata(Conditions.default, None, None)
+    val default: ActionMetadata = ActionMetadata(Conditions.Default, None, None)
   }
 
   // This trait describe the kind of types that can fill the ActionMetadata used to generate an Action body

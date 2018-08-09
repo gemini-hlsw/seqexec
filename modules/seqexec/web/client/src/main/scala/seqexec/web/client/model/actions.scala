@@ -7,7 +7,7 @@ import diode.Action
 import cats.Show
 import gem.Observation
 import gem.enum.Site
-import seqexec.model.UserDetails
+import seqexec.model._
 import seqexec.model.Model._
 import seqexec.model.enum._
 import seqexec.model.events._

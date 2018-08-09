@@ -7,7 +7,8 @@ import cats.effect.IO
 import cats.implicits._
 import fs2.Stream
 import gem.Observation
-import seqexec.model.Model.{ClientID, Observer}
+import seqexec.model.Model.ClientID
+import seqexec.model.Observer
 import seqexec.model.UserDetails
 
 /**

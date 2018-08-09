@@ -18,7 +18,7 @@ import monocle.function.At.at
 import monocle.function.At.atMap
 import seqexec.engine.{ActionMetadata, ActionMetadataGenerator, Engine}
 import seqexec.model.enum.{ CloudCover, Instrument, ImageQuality, SkyBackground, WaterVapor}
-import seqexec.model.Model.{ Conditions, Observer, Operator, SequenceState }
+import seqexec.model.{ Conditions, Observer, Operator, SequenceState }
 import seqexec.model.UserDetails
 
 package server {
@@ -28,7 +28,7 @@ package server {
   object EngineMetadata {
     implicit val eq: Eq[EngineMetadata] = Eq.by(x => (x.queues, x.selected, x.conditions, x.operator))
 
-    val default: EngineMetadata = EngineMetadata(Map(CalibrationQueueName -> Nil), Map.empty, Conditions.default, None)
+    val default: EngineMetadata = EngineMetadata(Map(CalibrationQueueName -> Nil), Map.empty, Conditions.Default, None)
 
     def selectedML(instrument: Instrument): Lens[EngineMetadata, Option[Observation.Id]] = GenLens[EngineMetadata](_.selected) ^|-> at(instrument)
   }

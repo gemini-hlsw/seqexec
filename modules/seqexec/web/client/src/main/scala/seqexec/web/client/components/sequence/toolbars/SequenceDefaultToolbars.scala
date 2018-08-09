@@ -11,7 +11,7 @@ import japgolly.scalajs.react.CatsReact._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import gem.Observation
 import mouse.all._
-import seqexec.model.Model.SequenceState
+import seqexec.model.SequenceState
 import seqexec.web.client.circuit.{SeqexecCircuit, SequenceControlFocus, ControlModel}
 import seqexec.web.client.actions.{RequestCancelPause, RequestPause, RequestSync, RequestRun}
 import seqexec.web.client.components.SeqexecStyles

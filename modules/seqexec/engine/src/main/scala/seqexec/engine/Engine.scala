@@ -10,7 +10,8 @@ import cats.implicits._
 import seqexec.engine.Event._
 import seqexec.engine.Result.{PartialVal, PauseContext, RetVal}
 import seqexec.model.enum.Resource
-import seqexec.model.Model.{ClientID, Conditions, Observer, SequenceState}
+import seqexec.model.Model.ClientID
+import seqexec.model.{ Conditions, Observer, SequenceState}
 import fs2.Stream
 import gem.Observation
 import monocle.Lens
@@ -225,7 +226,7 @@ class Engine[D: ActionMetadataGenerator, U](implicit ev: ActionMetadataGenerator
         // The sequence is marked as completed here
         putS(id)(seq) *> send(finished(id))
       case seq                            =>
-        val u: List[Stream[IO, EventType]] = seq.current.actions.map(_.gen).zipWithIndex.map(x => act(id, x, ev.generate(st.userData)(ActionMetadata(Conditions.default, None, seq.toSequence.metadata.observer))))
+        val u: List[Stream[IO, EventType]] = seq.current.actions.map(_.gen).zipWithIndex.map(x => act(id, x, ev.generate(st.userData)(ActionMetadata(Conditions.Default, None, seq.toSequence.metadata.observer))))
         val v: Stream[IO, EventType] = Stream.emits(u).join(u.length)
         val w: List[HandleP[Unit]] = seq.current.actions.indices.map(i => modifyS(id)(_.start(i))).toList
         w.sequence *> HandleP.fromStream(v)

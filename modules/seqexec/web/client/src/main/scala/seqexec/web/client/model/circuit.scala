@@ -12,7 +12,7 @@ import gem.Observation
 import gem.enum.Site
 import java.util.logging.Logger
 import japgolly.scalajs.react.Callback
-import seqexec.model.UserDetails
+import seqexec.model._
 import seqexec.model.enum._
 import seqexec.model.events._
 import seqexec.model.Model._

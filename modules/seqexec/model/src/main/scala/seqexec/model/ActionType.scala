@@ -3,25 +3,24 @@
 
 package seqexec.model
 
-import seqexec.model.enum.Resource
-
 import cats.Eq
 import cats.implicits._
+import seqexec.model.enum.Resource
 
 sealed trait ActionType extends Product with Serializable
 
 object ActionType {
 
-  case object Observe extends ActionType
-  // Used in tests
-  case object Undefined extends ActionType
-  final case class Configure(sys: Resource) extends ActionType
+        case object Observe                  extends ActionType
+        case object Undefined                extends ActionType // Used in tests
+  final case class  Configure(sys: Resource) extends ActionType
 
-  implicit val equal: Eq[ActionType] = Eq.instance {
-    case (_: Observe.type,   _: Observe.type)   => true
-    case (_: Undefined.type, _: Undefined.type) => true
-    case (Configure(a),         Configure(b))   => a === b
-    case _                                      => false
-  }
+  implicit val equal: Eq[ActionType] =
+    Eq.instance {
+      case (Observe, Observe)           => true
+      case (Undefined, Undefined)       => true
+      case (Configure(a), Configure(b)) => a === b
+      case _                            => false
+    }
 
 }

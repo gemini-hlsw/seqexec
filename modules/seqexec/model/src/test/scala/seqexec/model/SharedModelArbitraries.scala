@@ -24,7 +24,7 @@ object SharedModelArbitraries extends ArbObservation {
       b <- Gen.listOfN[A](maxListSize, arb.arbitrary)
       // We are already testing serialization of conditions and Strings
       // Let's reduce the test space by only testing the list of items
-    } yield SequencesQueue(Map.empty, Conditions.default, Some(Operator("operator")), b)
+    } yield SequencesQueue(Map.empty, Conditions.Default, Some(Operator("operator")), b)
   }
 
   implicit val clientIdArb: Arbitrary[ClientID] = Arbitrary(Gen.uuid)

@@ -9,7 +9,7 @@ import diode.RootModelR
 import diode.data._
 import gem.Observation
 import gem.enum.Site
-import seqexec.model.UserDetails
+import seqexec.model.{ Conditions, UserDetails, SequencesQueue }
 import seqexec.model.Model._
 import seqexec.model.enum._
 import seqexec.model.events._
@@ -188,7 +188,7 @@ object model {
                             firstLoad: Boolean)
 
   object SeqexecUIModel {
-    val noSequencesLoaded: SequencesQueue[SequenceView] = SequencesQueue[SequenceView](Map.empty, Conditions.default, None, Nil)
+    val noSequencesLoaded: SequencesQueue[SequenceView] = SequencesQueue[SequenceView](Map.empty, Conditions.Default, None, Nil)
     val initial: SeqexecUIModel = SeqexecUIModel(
       Pages.Root,
       None,

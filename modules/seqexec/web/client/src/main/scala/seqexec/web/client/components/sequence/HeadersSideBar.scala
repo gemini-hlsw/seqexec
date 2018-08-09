@@ -5,7 +5,7 @@ package seqexec.web.client.components.sequence
 
 import diode.react.ModelProxy
 import seqexec.model.enum.{ CloudCover, ImageQuality, SkyBackground, WaterVapor }
-import seqexec.model.Model.Operator
+import seqexec.model.Operator
 import seqexec.web.client.semanticui.elements.dropdown.DropdownMenu
 import seqexec.web.client.semanticui.elements.label.FormLabel
 import seqexec.web.client.semanticui.elements.input.InputEV

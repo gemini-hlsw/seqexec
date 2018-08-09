@@ -10,6 +10,7 @@ import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{Callback, CallbackTo, ScalaComponent, CatsReact}
 import gem.Observation
 import mouse.all._
+import seqexec.model._
 import seqexec.model.Model._
 import seqexec.model.enum._
 import seqexec.model.operations.ObservationOperations._
