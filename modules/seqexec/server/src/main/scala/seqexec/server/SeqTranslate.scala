@@ -327,7 +327,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     case Instrument.GNIRS => TrySeq(Gnirs(systems.gnirs, systems.dhs))
     case Instrument.GPI   => TrySeq(GPI(systems.gpi))
     case Instrument.GHOST => TrySeq(GHOST(GHOSTController[IO](GDSClient(GDSClient.alwaysOkClient, uri("http://localhost:8888/xmlrpc"))))) // todo put the controller on systems
-    case _                      => TrySeq.fail(Unexpected(s"Instrument $inst not supported."))
+    case _                => TrySeq.fail(Unexpected(s"Instrument $inst not supported."))
   }
 
   private def calcResources(sys: List[System[IO]]): Set[Resource] =
@@ -343,7 +343,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     case Instrument.NIRI  => true
     case Instrument.GPI   => true
     case Instrument.GHOST => false
-    case _                      => false
+    case _                => false
   }
 
   private def flatOrArcTcsSubsystems(inst: Instrument): NonEmptyList[TcsController.Subsystem] = NonEmptyList.of(ScienceFold, (if (hasOI(inst)) List(OIWFS) else List.empty): _*)
@@ -386,13 +386,13 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
         toInstrumentSys(inst).map(GnirsHeader.header(_, gnirsReader, tcsKReader))
       case Instrument.GPI    =>
         toInstrumentSys(inst).map(GPIHeader.header(_, systems.gpi.gdsClient, tcsKReader, ObsKeywordReaderImpl(config, site)))
-      case Instrument.GHOST    =>
+      case Instrument.GHOST  =>
         // TODO Do an actual GHOST header
         new Header() {
           def sendAfter(id: ImageFileId) = SeqAction.void
           def sendBefore(obsId: Observation.Id, id: ImageFileId) = SeqAction.void
         }.asRight
-      case _                       =>
+      case _                 =>
         TrySeq.fail(Unexpected(s"Instrument $inst not supported."))
     }
   }
