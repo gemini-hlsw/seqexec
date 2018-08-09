@@ -27,24 +27,6 @@ object Model {
   val DaytimeCalibrationTargetName = "Daytime calibration"
 
 
-
-
-  /**
-    * Metadata about the sequence required on the exit point
-    */
-  // TODO Use a proper instrument class
-  @Lenses final case class SequenceMetadata(
-    instrument: Instrument,
-    observer: Option[Observer],
-    name: String
-  )
-
-@SuppressWarnings(Array("org.wartremover.warts.PublicInference", "org.wartremover.warts.IsInstanceOf"))
-  object SequenceMetadata {
-    implicit val eq: Eq[SequenceMetadata] =
-      Eq.by(x => (x.instrument, x.observer, x.name))
-  }
-
   @Lenses final case class SequenceView (
     id: Observation.Id,
     metadata: SequenceMetadata,

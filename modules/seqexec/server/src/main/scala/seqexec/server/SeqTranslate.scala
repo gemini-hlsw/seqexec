@@ -22,9 +22,7 @@ import org.http4s.Uri._
 import seqexec.engine.Result.{Configured, FileIdAllocated, Observed}
 import seqexec.engine.{Action, ActionMetadata, Event, Result, Sequence, Step, fromIO}
 import seqexec.model.enum.{ Instrument, Resource }
-import seqexec.model.StepState
-import seqexec.model.Model.SequenceMetadata
-import seqexec.model.ActionType
+import seqexec.model.{ StepState, SequenceMetadata, ActionType }
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.SeqTranslate.{Settings, Systems}

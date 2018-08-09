@@ -4,8 +4,8 @@
 package seqexec.engine
 
 import java.util.UUID
-import seqexec.model.Model.{SequenceMetadata, StepConfig}
-import seqexec.model.SequenceState
+import seqexec.model.Model.StepConfig
+import seqexec.model.{ SequenceMetadata, SequenceState }
 import seqexec.model.enum.Instrument.F2
 import seqexec.model.{ActionType, UserDetails}
 import scala.Function.const

@@ -7,8 +7,8 @@ import java.util.UUID
 import cats.data.Kleisli
 import cats.effect.IO
 import seqexec.model.enum.Instrument.{ F2, GmosS }
-import seqexec.model.Model.{ SequenceMetadata, StepConfig }
-import seqexec.model.{ SequenceState, StepState }
+import seqexec.model.Model.StepConfig
+import seqexec.model.{ SequenceMetadata, SequenceState, StepState }
 import seqexec.model.enum.Resource
 import seqexec.model.{ActionType, UserDetails}
 import fs2.async.mutable.Queue
