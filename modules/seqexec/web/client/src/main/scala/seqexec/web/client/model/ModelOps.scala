@@ -13,7 +13,7 @@ import seqexec.model.enum.{
   Resource
 }
 import seqexec.model.{ StepState, SequenceState, Step, StandardStep }
-import seqexec.model.Model.SequenceView
+import seqexec.model.SequenceView
 
 /**
   * Contains useful operations for the seqexec model

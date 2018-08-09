@@ -3,17 +3,10 @@
 
 package seqexec.model
 
-import monocle.macros.Lenses
-
 import cats._
-import cats.implicits._
-import gem.Observation
 import seqexec.model.enum._
 
-// @SuppressWarnings(Array("org.wartremover.warts.PublicInference", "org.wartremover.warts.IsInstanceOf"))
-// scalastyle:off
 object Model {
-
   type ParamName = String
   type ParamValue = String
   type Parameters = Map[ParamName, ParamValue]
@@ -25,24 +18,4 @@ object Model {
   type ClientID = java.util.UUID
   implicit val clientIdEq: Eq[ClientID] = Eq.fromUniversalEquals
   val DaytimeCalibrationTargetName = "Daytime calibration"
-
-
-  @Lenses final case class SequenceView (
-    id: Observation.Id,
-    metadata: SequenceMetadata,
-    status: SequenceState,
-    steps: List[Step],
-    willStopIn: Option[Int]
-  )
-
-@SuppressWarnings(Array("org.wartremover.warts.PublicInference", "org.wartremover.warts.IsInstanceOf"))
-  object SequenceView {
-    implicit val eq: Eq[SequenceView] =
-      Eq.by { x =>
-        (x.id, x.metadata, x.status, x.steps, x.willStopIn)
-      }
-  }
-
-
 }
-//scalastyle:on
