@@ -47,7 +47,7 @@ object StepToolsCell {
                                   p.step,
                                   p.rowHeight,
                                   p.heightChangeCB))
-          .when(p.clientStatus.isLogged),
+          .when(p.clientStatus.isLogged).unless(p.focus.isPreview),
         StepIconCell(p)
       )
     }

@@ -19,7 +19,7 @@ import seqexec.web.client.semanticui._
 import seqexec.web.client.semanticui.elements.message.IconMessage
 import seqexec.web.client.semanticui.elements.icon.Icon.IconInbox
 import seqexec.web.client.components.SeqexecStyles
-// import seqexec.web.client.components.sequence.steps.StepsTable
+import seqexec.web.client.components.sequence.steps.StepsTable
 import web.client.style._
 
 object SequenceStepsTableContainer {
@@ -40,9 +40,12 @@ object SequenceStepsTableContainer {
     val stepConfigDisplayed = p.statusAndStep.stepConfigDisplayed.isDefined
     val isPreview = p.statusAndStep.isPreview
 
+    val showDefault = loggedIn && !stepConfigDisplayed && !isPreview
+    val showAnonymous = (!loggedIn && !stepConfigDisplayed) || isPreview
+
     <.div(
-      SequenceDefaultToolbar(p).when(loggedIn && !stepConfigDisplayed && !isPreview),
-      SequenceAnonymousToolbar(SequenceAnonymousToolbar.Props(p.statusAndStep.obsId)).when(!loggedIn && !stepConfigDisplayed && !isPreview),
+      SequenceDefaultToolbar(p).when(showDefault),
+      SequenceAnonymousToolbar(SequenceAnonymousToolbar.Props(p.statusAndStep.obsId)).when(showAnonymous),
       p.statusAndStep.stepConfigDisplayed.map { s =>
         StepConfigToolbar(StepConfigToolbar.Props(p.router, p.statusAndStep.instrument, p.statusAndStep.obsId, s, p.statusAndStep.totalSteps)).when(stepConfigDisplayed)
       }.getOrElse(TagMod.empty)
@@ -55,8 +58,8 @@ object SequenceStepsTableContainer {
       <.div(
         ^.height := "100%",
         toolbar(p),
-        // SeqexecCircuit.connect(SeqexecCircuit.stepsTableReader(p.statusAndStep.obsId))(r =>
-        //     StepsTable(StepsTable.Props(p.router, p.statusAndStep.isLogged, r, x => $.runState(updateStepToRun(x)))))
+        SeqexecCircuit.connect(SeqexecCircuit.stepsTableReader(p.statusAndStep.obsId))(r =>
+            StepsTable(StepsTable.Props(p.router, p.statusAndStep.isLogged, r, x => $.runState(updateStepToRun(x)))))
       )
     }.build
 

@@ -90,6 +90,7 @@ object StepsTable {
     val showOffsets: Boolean   = showProp(InstrumentProperties.Offsets)
     val showDisperser: Boolean = showProp(InstrumentProperties.Disperser)
     val showFPU: Boolean       = showProp(InstrumentProperties.FPU)
+    val isPreview: Boolean     = steps.map(_.isPreview).getOrElse(false)
 
     val showObservingMode: Boolean = showProp(
       InstrumentProperties.ObservingMode)
@@ -464,11 +465,10 @@ object StepsTable {
     // Wire it up from VDOM
     def render(p: Props): VdomElement = {
       val settingsDisplayed = p.steps.forall(_.stepConfigDisplayed.isDefined)
+      val isTall = (p.status.isLogged || settingsDisplayed) && !p.isPreview
       <.div(
-        SeqexecStyles.stepsListPane.unless(
-          p.status.isLogged || settingsDisplayed),
-        SeqexecStyles.stepsListPaneWithControls.when(
-          p.status.isLogged || settingsDisplayed),
+        SeqexecStyles.stepsListPane.unless(isTall),
+        SeqexecStyles.stepsListPaneWithControls.when(isTall),
         p.steps.whenDefined { tab =>
           tab.stepConfigDisplayed
             .map { i =>
