@@ -59,6 +59,9 @@ do
   sleep 1
 done
 
+echo "--- :node: Install jsdom"
+npm install jsdom
+
 # Set up the schema generate enums and run tests
 echo "--- :scala: Running tests"
 /usr/local/bin/sbt                                        \

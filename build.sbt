@@ -100,11 +100,11 @@ resolvers in ThisBuild +=
 lazy val ocs3 = preventPublication(project.in(file(".")))
   .settings(commonSettings)
   .aggregate(
-    coreJVM,
-    coreJS,
+    core.jvm,
+    core.js,
     db,
-    jsonJVM,
-    jsonJS,
+    json.jvm,
+    json.js,
     ocs2,
     ephemeris,
     service,
@@ -117,12 +117,12 @@ lazy val ocs3 = preventPublication(project.in(file(".")))
     giapi,
     web_server_common,
     web_client_common,
-    seqexec_model_JS,
-    seqexec_model_JVM,
+    seqexec_model.js,
+    seqexec_model.jvm,
     seqexec_engine,
     seqexec_server,
-    seqexec_web_shared_JS,
-    seqexec_web_shared_JVM,
+    seqexec_web_shared.js,
+    seqexec_web_shared.jvm,
     seqexec_web_server,
     seqexec_web_client)
 
@@ -144,7 +144,11 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
       Atto.value
     ) ++ Monocle.value
   )
-  .jsSettings(
+  .jsConfigure(
+    _.enablePlugins(TzdbPlugin)
+  ).jvmConfigure(
+    _.enablePlugins(AutomateHeaderPlugin)
+  ).jsSettings(
     libraryDependencies +=
       JavaTimeJS.value,
     wartremoverExcluded += sourceManaged.value / "main" / "java" / "time" / "zone" / "TzdbZoneRulesProvider.scala",
@@ -156,13 +160,10 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
     libraryDependencies += Fs2
   )
 
-lazy val coreJVM = core.jvm.enablePlugins(AutomateHeaderPlugin)
-lazy val coreJS = core.js.enablePlugins(TzdbPlugin)
-
 lazy val db = project
   .in(file("modules/db"))
   .enablePlugins(AutomateHeaderPlugin)
-  .dependsOn(coreJVM % "compile->compile;test->test")
+  .dependsOn(core.jvm % "compile->compile;test->test")
   .settings(commonSettings)
   .settings(
     addCompilerPlugin(Plugins.kindProjectorPlugin),
@@ -191,9 +192,9 @@ lazy val json = crossProject(JVMPlatform, JSPlatform)
     libraryDependencies ++= Circe.value
   )
   .jsSettings(commonJSSettings)
-
-lazy val jsonJVM = json.jvm.enablePlugins(AutomateHeaderPlugin)
-lazy val jsonJS = json.js
+  .jvmConfigure(
+    _.enablePlugins(AutomateHeaderPlugin)
+  )
 
 lazy val sql = project
   .in(file("modules/sql"))
@@ -208,7 +209,7 @@ lazy val sql = project
 lazy val ocs2 = project
   .in(file("modules/ocs2"))
   .enablePlugins(AutomateHeaderPlugin)
-  .dependsOn(coreJVM, db, sql)
+  .dependsOn(core.jvm, db, sql)
   .settings(commonSettings)
   .settings(
     addCompilerPlugin(Plugins.kindProjectorPlugin),
@@ -223,7 +224,7 @@ lazy val ocs2 = project
 lazy val ephemeris = project
   .in(file("modules/ephemeris"))
   .enablePlugins(AutomateHeaderPlugin)
-  .dependsOn(coreJVM % "compile->compile;test->test", db, sql)
+  .dependsOn(core.jvm % "compile->compile;test->test", db, sql)
   .settings(commonSettings)
   .settings(
     addCompilerPlugin(Plugins.kindProjectorPlugin),
@@ -235,7 +236,7 @@ lazy val ephemeris = project
 lazy val service = project
   .in(file("modules/service"))
   .enablePlugins(AutomateHeaderPlugin)
-  .dependsOn(coreJVM, db, ephemeris, ocs2)
+  .dependsOn(core.jvm, db, ephemeris, ocs2)
   .settings(commonSettings)
 
 lazy val telnetd = project
@@ -250,7 +251,7 @@ lazy val telnetd = project
 lazy val web = project
   .in(file("modules/web"))
   .enablePlugins(AutomateHeaderPlugin)
-  .dependsOn(service, sql, jsonJVM)
+  .dependsOn(service, sql, json.jvm)
   .settings(commonSettings)
   .settings(
     addCompilerPlugin(Plugins.kindProjectorPlugin),
@@ -265,7 +266,7 @@ lazy val ui = project
   .in(file("modules/ui"))
   .enablePlugins(AutomateHeaderPlugin)
   .enablePlugins(ScalaJSPlugin)
-  .dependsOn(coreJS, jsonJS)
+  .dependsOn(core.js, json.js)
   .settings(commonSettings)
   .settings(commonJSSettings)
   .settings(
@@ -388,13 +389,8 @@ lazy val seqexec_web_shared = crossProject(JVMPlatform, JSPlatform)
   .jsSettings(commonJSSettings)
   .jsSettings(
     libraryDependencies += JavaLogJS.value,
-    test                := {}
   )
   .dependsOn(seqexec_model % "compile->compile;test->test")
-
-lazy val seqexec_web_shared_JVM = seqexec_web_shared.jvm
-
-lazy val seqexec_web_shared_JS = seqexec_web_shared.js
 
 // Project for the server side application
 lazy val seqexec_web_server = project.in(file("modules/seqexec/web/server"))
@@ -416,7 +412,7 @@ lazy val seqexec_web_server = project.in(file("modules/seqexec/web/server"))
     buildInfoObject := "OcsBuildInfo",
     buildInfoPackage := "seqexec.web.server"
   )
-  .dependsOn(seqexec_web_shared_JVM, seqexec_server, web_server_common)
+  .dependsOn(seqexec_web_shared.jvm, seqexec_server, web_server_common)
 
 lazy val seqexec_web_client = project.in(file("modules/seqexec/web/client"))
   .enablePlugins(ScalaJSPlugin)
@@ -447,7 +443,6 @@ lazy val seqexec_web_client = project.in(file("modules/seqexec/web/client"))
     webpackExtraArgs                         := Seq("--progress", "true"),
     emitSourceMaps                           := false,
     parallelExecution in Test                := false,
-    test                                     := {},
     // Requires the DOM for tests
     requiresDOM in Test                      := true,
     // Use yarn as it is faster than npm
@@ -506,7 +501,7 @@ lazy val seqexec_web_client = project.in(file("modules/seqexec/web/client"))
     buildInfoObject := "OcsBuildInfo",
     buildInfoPackage := "seqexec.web.client"
   )
-  .dependsOn(web_client_common, seqexec_web_shared_JS % "compile->compile;test->test", seqexec_model_JS % "compile->compile;test->test")
+  .dependsOn(web_client_common, seqexec_web_shared.js % "compile->compile;test->test", seqexec_model.js % "compile->compile;test->test")
 
 // List all the modules and their inter dependencies
 lazy val seqexec_server = project
@@ -537,7 +532,7 @@ lazy val seqexec_server = project
     buildInfoObject := "OcsBuildInfo",
     buildInfoPackage := "seqexec.server"
   )
-  .dependsOn(seqexec_engine, giapi, seqexec_model_JVM % "compile->compile;test->test", acm, coreJVM % "test->test")
+  .dependsOn(seqexec_engine, giapi, seqexec_model.jvm % "compile->compile;test->test", acm, core.jvm % "test->test")
 
 // Unfortunately crossProject doesn't seem to work properly at the module/build.sbt level
 // We have to define the project properties at this level
@@ -559,15 +554,11 @@ lazy val seqexec_model = crossProject(JVMPlatform, JSPlatform)
   )
   .dependsOn(core % "compile->compile;test->test")
 
-lazy val seqexec_model_JVM:Project = seqexec_model.jvm
-
-lazy val seqexec_model_JS:Project = seqexec_model.js
-
 lazy val seqexec_engine = project
   .in(file("modules/seqexec/engine"))
   .enablePlugins(AutomateHeaderPlugin)
   .enablePlugins(GitBranchPrompt)
-  .dependsOn(seqexec_model_JVM)
+  .dependsOn(seqexec_model.jvm)
   .settings(commonSettings: _*)
   .settings(
     addCompilerPlugin(Plugins.kindProjectorPlugin),

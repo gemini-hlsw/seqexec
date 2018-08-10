@@ -15,7 +15,7 @@ libraryDependencies ++= Seq(
 addSbtPlugin("org.scala-js"       % "sbt-scalajs"              % scalaJSVersion)
 
 addSbtPlugin("org.flywaydb"       % "flyway-sbt"               % "4.2.0")
-addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "0.5.0")
+addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "0.6.0")
 
 // sbt revolver lets launching applications from the sbt console
 addSbtPlugin("io.spray"           % "sbt-revolver"             % "0.9.1")
@@ -36,7 +36,7 @@ addSbtPlugin("de.heikoseeberger"  % "sbt-header"               % "4.1.0")
 addSbtPlugin("com.typesafe.sbt"   % "sbt-git"                  % "0.9.3")
 addSbtPlugin("com.dwijnand"       % "sbt-dynver"               % "3.0.0")
 
-addSbtPlugin("org.wartremover"    % "sbt-wartremover"          % "2.3.1")
+addSbtPlugin("org.wartremover"    % "sbt-wartremover"          % "2.3.3")
 
 // Use NPM modules rather than webjars
 addSbtPlugin("ch.epfl.scala"      % "sbt-scalajs-bundler"      % "0.13.1")

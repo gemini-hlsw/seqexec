@@ -81,10 +81,10 @@ object Settings {
     // Scala libraries
     val catsEffectVersion       = "0.10.1"
     val catsVersion             = "1.2.0"
-    val mouseVersion            = "0.17"
+    val mouseVersion            = "0.18"
     val fs2Version              = "0.10.5"
     val shapelessVersion        = "2.3.3"
-    val attoVersion             = "0.6.2"
+    val attoVersion             = "0.6.3"
     val scalaParsersVersion     = "1.1.1"
     val scalaXmlVerson          = "1.1.0"
 
@@ -98,7 +98,7 @@ object Settings {
     val log4s                   = "1.6.1"
     val logback                 = "1.2.3"
     val janino                  = "3.0.8"
-    val logstash                = "5.1"
+    val logstash                = "5.2"
     val knobs                   = "6.0.33"
     val monocleVersion          = "1.5.1-cats"
     val circeVersion            = "0.9.3"
