@@ -11,8 +11,7 @@ import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 import scala.scalajs.js
 import seqexec.model.enum.{ Instrument, StepType }
-import seqexec.model.StepState
-import seqexec.model.Model.{ Step, StandardStep }
+import seqexec.model.{ StepState, Step, StandardStep }
 import seqexec.web.client.lenses._
 import seqexec.web.client.model.Pages.SeqexecPages
 import seqexec.web.client.ModelOps._

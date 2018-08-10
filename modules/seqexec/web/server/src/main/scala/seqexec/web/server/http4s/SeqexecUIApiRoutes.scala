@@ -8,7 +8,7 @@ import java.util.UUID
 import cats.data.NonEmptyList
 import cats.effect.IO
 import cats.implicits._
-import seqexec.model.Model.ClientID
+import seqexec.model.ClientID
 import seqexec.model._
 import seqexec.model.boopickle._
 import seqexec.model.events._

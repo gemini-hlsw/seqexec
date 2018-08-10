@@ -3,9 +3,8 @@
 
 package seqexec.engine
 
-import seqexec.model.Model.StepConfig
 import seqexec.model.enum.Resource
-import seqexec.model.StepState
+import seqexec.model.{ StepConfig, StepState }
 
 import cats.implicits._
 import monocle.Lens

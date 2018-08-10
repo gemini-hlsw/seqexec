@@ -12,12 +12,8 @@ import seqexec.model.enum.{
   Instrument,
   Resource
 }
-import seqexec.model.{ StepState, SequenceState }
-import seqexec.model.Model.{
-  SequenceView,
-  StandardStep,
-  Step
-}
+import seqexec.model.{ StepState, SequenceState, Step, StandardStep }
+import seqexec.model.SequenceView
 
 /**
   * Contains useful operations for the seqexec model

@@ -12,10 +12,8 @@ import giapi.client.gpi.GPIClient
 import gem.Observation
 import gem.enum.Site
 import seqexec.engine.{Action, Result, Sequence, Step}
-import seqexec.model.ActionType
 import seqexec.model.enum.Instrument.GmosS
-import seqexec.model.Model.{SequenceMetadata, StepConfig}
-import seqexec.model.SequenceState
+import seqexec.model.{ StepConfig, ActionType, SequenceMetadata, SequenceState }
 import seqexec.server.SeqTranslate.ObserveContext
 import seqexec.server.keywords.DhsClientSim
 import seqexec.server.keywords.GDSClient

@@ -5,7 +5,6 @@ package seqexec.model.boopickle
 
 import seqexec.model.enum._
 import seqexec.model._
-import seqexec.model.Model._
 import seqexec.model.events._
 import cats.tests.CatsSuite
 import _root_.boopickle.Default._

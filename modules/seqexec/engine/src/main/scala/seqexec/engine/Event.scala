@@ -7,8 +7,7 @@ import cats.effect.IO
 import cats.implicits._
 import fs2.Stream
 import gem.Observation
-import seqexec.model.Model.ClientID
-import seqexec.model.{ Observer, UserDetails }
+import seqexec.model.{ ClientID, Observer, UserDetails }
 
 /**
   * Anything that can go through the Event Queue.

@@ -14,7 +14,7 @@ import japgolly.scalajs.react.component.builder.Lifecycle.RenderScope
 import cats.implicits._
 import react.virtualized._
 import scala.scalajs.js
-import seqexec.model.Model.Step
+import seqexec.model.Step
 import seqexec.model.enum.SystemName
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.circuit.SeqexecCircuit

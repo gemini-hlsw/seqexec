@@ -3,7 +3,6 @@
 
 package seqexec.model
 
-import Model._
 import events._
 import org.scalacheck.Arbitrary
 import org.scalacheck.Cogen

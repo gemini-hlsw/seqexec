@@ -21,8 +21,7 @@ import react.virtualized._
 import scala.math.max
 import scala.scalajs.js
 import seqexec.model.enum.Instrument
-import seqexec.model.Model.DaytimeCalibrationTargetName
-import seqexec.model.SequenceState
+import seqexec.model.{ DaytimeCalibrationTargetName, SequenceState }
 import seqexec.web.client.circuit._
 import seqexec.web.client.actions._
 import seqexec.web.client.model.Pages._

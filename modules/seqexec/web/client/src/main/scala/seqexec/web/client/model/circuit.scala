@@ -15,7 +15,6 @@ import japgolly.scalajs.react.Callback
 import seqexec.model._
 import seqexec.model.enum._
 import seqexec.model.events._
-import seqexec.model.Model._
 import seqexec.web.client.model._
 import seqexec.web.client.model.SeqexecAppRootModel.LoadedSequences
 import seqexec.web.client.lenses._
