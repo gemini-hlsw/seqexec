@@ -4,11 +4,14 @@
 package seqexec.web.client.components.sequence
 
 import cats.implicits._
+import gem.Observation
 import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.component.Scala.Unmounted
+import japgolly.scalajs.react.component.builder.Lifecycle.RenderScope
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react._
 import seqexec.model.SequenceState
+import seqexec.model.enum.Instrument
 import seqexec.web.client.actions.{LoadSequence, NavigateTo, SelectIdToDisplay, SelectInstrumentToDisplay}
 import seqexec.web.client.ModelOps._
 import seqexec.web.client.model.Pages.{InstrumentPage, SequencePage, SeqexecPages}
@@ -23,21 +26,27 @@ import seqexec.web.client.components.SeqexecStyles
 import web.client.style._
 
 object InstrumentTab {
-  final case class Props(router: RouterCtl[SeqexecPages], tab: AvailableTab)
+  final case class Props(router: RouterCtl[SeqexecPages], tab: AvailableTab, loggedIn: Boolean)
+  final case class State(loading: Boolean)
+
+  type Backend = RenderScope[Props, State, Unit]
+
+  def load(b: Backend, inst: Instrument, id: Observation.Id): Callback =
+    b.setState(State(loading = true)) *> SeqexecCircuit.dispatchCB(LoadSequence(inst, id))
 
   private val component = ScalaComponent.builder[Props]("SequenceTab")
-    .stateless
-    .render_P { p =>
-      val active = p.tab.active
-      val status = p.tab.status
+    .initialState(State(false))
+    .render { b =>
+      val active = b.props.tab.active
+      val status = b.props.tab.status
       val hasError = status.exists(_.isError)
-      val sequenceId = p.tab.id
-      val instrument = p.tab.instrument
-      val isPreview = p.tab.isPreview
+      val sequenceId = b.props.tab.id
+      val instrument = b.props.tab.instrument
+      val isPreview = b.props.tab.isPreview
       val instName = instrument.foldMap(_.show)
       val dispName = if (isPreview) s"Preview: $instName" else instName
 
-      val tabTitle = p.tab.runningStep match {
+      val tabTitle = b.props.tab.runningStep match {
         case Some(RunningStep(current, total)) => s"${sequenceId.map(_.format).getOrElse("")} - ${current + 1}/$total"
         case _                                 => sequenceId.map(_.format).getOrElse("")
       }
@@ -59,13 +68,22 @@ object InstrumentTab {
           .mapN((id, inst) => SequencePage(inst, id, 0))
           .filter(_ => !isPreview)
 
+
       val loadButton: Option[VdomNode] =
         (sequenceId, instrument)
           .mapN((id, inst) =>
-            Popup(Popup.Props("button", s"Load sequence $id"),
-              Button(Button.Props(size = Size.Large, compact = true, icon = Some(IconSignIn), onClick = SeqexecCircuit.dispatchCB(LoadSequence(inst, id))))
+            Popup(Popup.Props("button", s"Load sequence ${id.format}"),
+              Button(
+                Button.Props(
+                  size = Size.Large,
+                  compact = true,
+                  icon = Some(IconSignIn),
+                  disabled = b.state.loading,
+                  loading = b.state.loading,
+                  onClick = load(b, inst, id))
+              )
             ): VdomNode)
-          .filter(_ => isPreview)
+          .filter(_ => isPreview && b.props.loggedIn)
 
       val labelNoId =
         <.div(SeqexecStyles.instrumentTabLabel, if (isPreview) "Preview" else dispName)
@@ -96,7 +114,7 @@ object InstrumentTab {
           loadButton
         )
 
-      linkPage.map(l => p.router.link(l)(tabContent): VdomNode).getOrElse(tabContent)
+      linkPage.map(l => b.props.router.link(l)(tabContent): VdomNode).getOrElse(tabContent)
     }.componentDidMount(ctx =>
       Callback {
         // Enable menu on Semantic UI
@@ -125,20 +143,20 @@ object InstrumentTab {
       }
     ).build
 
-  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
+  def apply(p: Props): Unmounted[Props, State, Unit] = component(p)
 }
 /**
   * Menu with tabs
   */
 object InstrumentsTabs {
-  final case class Props(router: RouterCtl[SeqexecPages])
+  final case class Props(router: RouterCtl[SeqexecPages], loggedIn: Boolean)
 
   private val component = ScalaComponent.builder[Props]("InstrumentsMenu")
     .stateless
     .render_P(p =>
       <.div(
         ^.cls := "ui attached tabular menu",
-        SeqexecCircuit.connect(SeqexecCircuit.availableTabs)(x => ReactFragment(x().toList.map(t => InstrumentTab(InstrumentTab.Props(p.router, t)): VdomNode): _*))
+        SeqexecCircuit.connect(SeqexecCircuit.availableTabs)(x => ReactFragment(x().toList.map(t => InstrumentTab(InstrumentTab.Props(p.router, t, p.loggedIn)): VdomNode): _*))
       )
     ).build
 

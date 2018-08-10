@@ -18,10 +18,9 @@ class LoadedSequencesHandler[M](modelRW: ModelRW[M, SequencesOnDisplay]) extends
   override def handle: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(LoadSequenceUpdated(i, sid)) =>
       println((i, sid))
-      noChange
+      updated(value.unsetPreview)
 
     case LoadSequence(i, id) =>
-      println(i)
       effectOnly(Effect(SeqexecWebClient.loadSequence(i, id).map(r => if (r.error) NoAction else NoAction)))
   }
 }

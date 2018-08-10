@@ -5,7 +5,7 @@ package seqexec.web.client.handlers
 
 import diode.{ActionHandler, ActionResult, RootModelR, Effect, ModelRW}
 import diode.data.RefTo
-import seqexec.model.Model._
+import seqexec.model.SequenceView
 import seqexec.model.events.SeqexecModelUpdate
 import seqexec.web.client.actions._
 import seqexec.web.client.circuit._

@@ -7,8 +7,7 @@ import cats.implicits._
 import diode.{Action, ActionHandler, ActionResult, Effect, ModelRW, NoAction}
 import gem.Observation
 import gem.enum.Site
-import seqexec.model.{ Observer, Operator, UserDetails }
-import seqexec.model.Model._
+import seqexec.model.{ Observer, Operator, SequenceView, UserDetails }
 import seqexec.web.client.model._
 import seqexec.web.client.model.Pages._
 import seqexec.web.client.model.SeqexecAppRootModel.LoadedSequences
@@ -185,7 +184,7 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, (SequencesOnDisplay, Option[
       updated(value.copy(_1 = value._1.focusOnSequence(seq).showStepConfig(step - 1)))
 
     case HideStepConfig(instrument) =>
-      if (value._1.instrumentSequences.focus.sequence.exists(_.metadata.instrument == instrument)) {
+      if (value._1.sequences.focus.sequence.exists(_.metadata.instrument == instrument)) {
         updated(value.copy(_1 = value._1.hideStepConfig))
       } else {
         noChange

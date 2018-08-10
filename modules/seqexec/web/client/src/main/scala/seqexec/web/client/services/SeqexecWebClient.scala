@@ -11,7 +11,7 @@ import org.scalajs.dom.ext.{Ajax, AjaxException}
 import org.scalajs.dom.XMLHttpRequest
 import seqexec.model.{ ClientID, Conditions, UserDetails, UserLoginRequest, Operator, SequencesQueue, Step }
 import seqexec.model.boopickle._
-import seqexec.model.enum.{ CloudCover, ImageQuality, SkyBackground, WaterVapor}
+import seqexec.model.enum.{ CloudCover, Instrument, ImageQuality, SkyBackground, WaterVapor}
 import seqexec.web.common.{HttpStatusCodes, LogMessage, RegularCommand}
 import seqexec.web.common.LogMessage._
 import scala.scalajs.js.URIUtils._

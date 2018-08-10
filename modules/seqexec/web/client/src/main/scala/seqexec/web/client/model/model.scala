@@ -12,7 +12,7 @@ import gem.Observation
 import gem.enum.Site
 import monocle.Lens
 import monocle.macros.Lenses
-import seqexec.model.{ ClientID, Conditions, UserDetails, SequencesQueue, SequenceView, StepId }
+import seqexec.model.{ ClientID, Conditions, UserDetails, SequenceState, SequencesQueue, SequenceView, StepId }
 import seqexec.model.enum._
 import seqexec.model.events._
 import seqexec.web.common.{Zipper, FixedLengthBuffer}
@@ -174,63 +174,72 @@ object model {
   }
 
   // Model for the tabbed area of sequences
-  final case class SequencesOnDisplay(instrumentSequences: Zipper[SequenceTab]) {
+  final case class SequencesOnDisplay(sequences: Zipper[SequenceTab]) {
     // Display a given step on the focused sequence
     def showStepConfig(i: Int): SequencesOnDisplay =
-      copy(instrumentSequences = instrumentSequences.modify(SequenceTab.stepConfigL.set(Some(i))(_)))
+      copy(sequences = sequences.modify(SequenceTab.stepConfigL.set(Some(i))(_)))
 
     // Don't show steps for the sequence
     def hideStepConfig: SequencesOnDisplay =
-      copy(instrumentSequences = instrumentSequences.modify(SequenceTab.stepConfigL.set(None)(_)))
+      copy(sequences = sequences.modify(SequenceTab.stepConfigL.set(None)(_)))
 
     def focusOnSequence(s: RefTo[Option[SequenceView]]): SequencesOnDisplay = {
       // Replace the sequence for the instrument or the completed sequence and reset displaying a step
-      val q = instrumentSequences.findFocus(i => i.sequence === s()).map(_.modify((SequenceTab.currentSequenceL.set(s) andThen SequenceTab.stepConfigL.set(None))(_)))
-      copy(instrumentSequences = q.getOrElse(instrumentSequences))
+      val q = sequences.findFocus(i => i.sequence === s()).map(_.modify((SequenceTab.currentSequenceL.set(s) andThen SequenceTab.stepConfigL.set(None))(_)))
+      copy(sequences = q.getOrElse(sequences))
     }
 
     def previewSequence(s: RefTo[Option[SequenceView]]): SequencesOnDisplay = {
       // Replace the sequence for the instrument or the completed sequence and reset displaying a step
-      val q = instrumentSequences.findFocus(_.isPreview).map(_.modify((SequenceTab.currentSequenceL.set(s) andThen SequenceTab.stepConfigL.set(None))(_)))
-      copy(instrumentSequences = q.getOrElse(instrumentSequences))
+      val q = sequences.findFocus(_.isPreview).map(_.modify((SequenceTab.currentSequenceL.set(s) andThen SequenceTab.stepConfigL.set(None))(_)))
+      copy(sequences = q.getOrElse(sequences))
+    }
+
+    def unsetPreview: SequencesOnDisplay = {
+      // Remove any sequence in the preview
+      val q = sequences.map {
+        case s if s.isPreview => SequenceTab.currentSequenceL.set(SequencesOnDisplay.emptySeqRef)(s)
+        case s                => s
+      }
+      copy(sequences = q)
     }
 
     def focusOnInstrument(i: Instrument): SequencesOnDisplay = {
       // Focus on the instrument
-      val q = instrumentSequences.findFocus{
+      val q = sequences.findFocus{
         case t: InstrumentSequenceTab => t.instrument === i
         case _                        => false
       }
-      copy(instrumentSequences = q.getOrElse(instrumentSequences))
+      copy(sequences = q.getOrElse(sequences))
     }
 
-    def isAnySelected: Boolean = instrumentSequences.exists(_.sequence.isDefined)
+    def isAnySelected: Boolean = sequences.exists(_.sequence.isDefined)
 
     // Is the id on the sequences area?
     def idDisplayed(id: Observation.Id): Boolean =
-      instrumentSequences.withFocus.exists { case (s, a) => a && s.sequence.exists(_.id === id) }
+      sequences.withFocus.exists { case (s, a) => a && s.sequence.exists(_.id === id) }
 
     // def instrument(i: Instrument): InstrumentTabActive =
     //   // The getOrElse shouldn't be called as we have an element per instrument
-    //   instrumentSequences.withFocus.find(_._1.instrument === i)
+    //   sequences.withFocus.find(_._1.instrument === i)
     //     .map { case (i, a) => InstrumentTabActive(i, a) }.getOrElse(InstrumentTabActive(SequenceTab.empty, active = false))
 
     def tab(id: Observation.Id): Option[SequenceTabActive] =
-      instrumentSequences.withFocus.find(_._1.obsId.exists(_ === id))
+      sequences.withFocus.find(_._1.obsId.exists(_ === id))
         .map { case (i, a) => SequenceTabActive(i, a) }
 
     // We'll set the passed SequenceView as completed for the given instruments
     def markCompleted(completed: SequenceView): SequencesOnDisplay = {
-      val q = instrumentSequences.findFocus {
+      val q = sequences.findFocus {
         case t: InstrumentSequenceTab => t.instrument === completed.metadata.instrument
         case _                        => false
       }.map(_.modify(SequenceTab.completedSequenceL.set(completed.some)(_)))
 
-      copy(instrumentSequences = q.getOrElse(instrumentSequences))
+      copy(sequences = q.getOrElse(sequences))
     }
 
     def availableTabs: NonEmptyList[AvailableTab] =
-      NonEmptyList.fromListUnsafe(instrumentSequences.withFocus.map {
+      NonEmptyList.fromListUnsafe(sequences.withFocus.map {
         case (i, a) => AvailableTab(i.sequence.map(_.id), i.sequence.map(_.status), i.instrument, i.runningStep, i.isPreview, a)
       }.toList)
   }

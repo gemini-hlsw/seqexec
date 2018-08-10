@@ -123,10 +123,10 @@ object SequenceArea {
       <.div(
         ^.cls := "ui sixteen wide column",
         SeqexecStyles.sequencesArea,
-        InstrumentsTabs(InstrumentsTabs.Props(p.router)),
+        SeqexecCircuit.connect(SeqexecCircuit.statusReader)(x => InstrumentsTabs(InstrumentsTabs.Props(p.router, x().isLogged))),
         SeqexecCircuit.connect(SeqexecCircuit.sequenceTabs)(x => ReactFragment(x().toList.map(t => SequenceTabContent(SequenceTabContent.Props(p.router, t)): VdomNode): _*))
       )
     ).build
 
-  def apply(router: RouterCtl[SeqexecPages], site: Site): Unmounted[Props, Unit, Unit] = component(Props(router, site))
+  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
 }
