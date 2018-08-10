@@ -15,6 +15,12 @@ import seqexec.model.enum._
 import seqexec.web.client.ModelOps._
 
 final case class AvailableTab(id: Option[Observation.Id], status: Option[SequenceState], instrument: Option[Instrument], runningStep: Option[RunningStep], isPreview: Boolean, active: Boolean)
+
+object AvailableTab {
+  implicit val eq: Eq[AvailableTab] =
+    Eq.by(x => (x.id, x.status, x.instrument, x.runningStep, x.isPreview, x.active))
+}
+
 final case class SequenceTabActive(tab: SequenceTab, active: Boolean)
 
 object SequenceTabActive {

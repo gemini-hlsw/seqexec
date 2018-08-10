@@ -17,7 +17,7 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 class LoadedSequencesHandler[M](modelRW: ModelRW[M, SequencesOnDisplay]) extends ActionHandler(modelRW) with Handlers {
   override def handle: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(LoadSequenceUpdated(i, sid)) =>
-      println((i, sid))
+      println((i, sid)) // scalastyle:off
       updated(value.unsetPreview)
 
     case LoadSequence(i, id) =>

@@ -53,6 +53,10 @@ object circuit {
   final case class HeaderSideBarFocus(status: ClientStatus, conditions: Conditions, operator: Option[Operator]) extends UseValueEq
   final case class InstrumentStatusFocus(instrument: Instrument, active: Boolean, idState: Option[(Observation.Id, SequenceState)], runningStep: Option[RunningStep]) extends UseValueEq
   final case class SequenceTabContentFocus(instrument: Option[Instrument], id: Option[Observation.Id], sequenceSelected: Boolean, logDisplayed: SectionVisibilityState) extends UseValueEq
+  object SequenceTabContentFocus {
+    implicit val eq: Eq[SequenceTabContentFocus] =
+      Eq.by(x => (x.instrument, x.id, x.sequenceSelected, x.logDisplayed))
+  }
   final case class StatusAndObserverFocus(isLogged: Boolean, obsName: Option[String], /*instrument: Option[Instrument],*/ id: Observation.Id, observer: Option[Observer], status: Option[SequenceState], targetName: Option[TargetName]) extends UseValueEq
   final case class StatusAndStepFocus(isLogged: Boolean, instrument: Instrument, obsId: Observation.Id, stepConfigDisplayed: Option[Int], totalSteps: Int, isPreview: Boolean) extends UseValueEq
   final case class StepsTableFocus(id: Observation.Id, instrument: Instrument, state: SequenceState, steps: List[Step], stepConfigDisplayed: Option[Int], nextStepToRun: Option[Int], isPreview: Boolean) extends UseValueEq
@@ -89,16 +93,12 @@ object circuit {
     private val logger = Logger.getLogger(SeqexecCircuit.getClass.getSimpleName)
     addProcessor(new LoggingProcessor[SeqexecAppRootModel]())
 
-    implicit object ClientStatusEq extends FastEq[ClientStatus] {
-      override def eqv(a: ClientStatus, b: ClientStatus): Boolean = a === b
+    implicit def fastEq[A: Eq]: FastEq[A] = new FastEq[A] {
+      override def eqv(a: A, b: A): Boolean = a === b
     }
 
-    implicit object SequenceTabActiveEq extends FastEq[SequenceTabActive] {
-      override def eqv(a: SequenceTabActive, b: SequenceTabActive): Boolean = a === b
-    }
-
-    implicit object SequenceTabEq extends FastEq[SequenceTab] {
-      override def eqv(a: SequenceTab, b: SequenceTab): Boolean = a === b
+    implicit def fastNelEq[A: Eq]: FastEq[NonEmptyList[A]] = new FastEq[NonEmptyList[A]] {
+      override def eqv(a: NonEmptyList[A], b: NonEmptyList[A]): Boolean = a === b
     }
 
     def dispatchCB[A <: Action](a: A): Callback = Callback(dispatch(a))
@@ -159,12 +159,23 @@ object circuit {
     val logDisplayedReader: ModelR[SeqexecAppRootModel, SectionVisibilityState] =
       zoom(_.uiModel.globalLog.display)
 
+    val availableTabs: ModelR[SeqexecAppRootModel, NonEmptyList[AvailableTab]] =
+      zoom(_.uiModel.sequencesOnDisplay.availableTabs)
+
+    val sequenceTabs: ModelR[SeqexecAppRootModel, NonEmptyList[SequenceTabContentFocus]] =
+      logDisplayedReader.zip(zoom(_.uiModel.sequencesOnDisplay)).zoom {
+        case (log, SequencesOnDisplay(sequences)) => sequences.withFocus.map{
+          case (tab, active) => SequenceTabContentFocus(tab.instrument, tab.sequence.map(_.id), active, log)
+        }.toNel
+      }
+
+    val configTableState: ModelR[SeqexecAppRootModel, TableState[StepConfigTable.TableColumn]] =
+      zoom(_.uiModel.configTableState)
+
     def sequenceTab(id: Observation.Id): ModelR[SeqexecAppRootModel, SequenceTabActive] =
       // Returning the getOrElse part shouldn't happen but it simplifies the model notcarrying the Option up
       zoom(_.uiModel.sequencesOnDisplay.tab(id).getOrElse(SequenceTabActive.Empty))
 
-    val availableTabs: ModelR[SeqexecAppRootModel, NonEmptyList[AvailableTab]] =
-      zoom(_.uiModel.sequencesOnDisplay.availableTabs)
     // def instrumentTab(i: Instrument): ModelR[SeqexecAppRootModel, SequenceTabActive] =
     //   zoom(_.uiModel.sequencesOnDisplay.instrument(i))
     //
@@ -173,12 +184,6 @@ object circuit {
     //     case SequenceTabActive(tab, active) => InstrumentStatusFocus(tab.instrument, active, tab.sequence.map(s => (s.id, s.status)), tab.sequence.flatMap(_.runningStep))
     //   }
     //
-    val sequenceTabs: ModelR[SeqexecAppRootModel, NonEmptyList[SequenceTabContentFocus]] =
-      logDisplayedReader.zip(zoom(_.uiModel.sequencesOnDisplay)).zoom {
-        case (log, SequencesOnDisplay(sequences)) => sequences.withFocus.map{
-          case (tab, active) => SequenceTabContentFocus(tab.instrument, tab.sequence.map(_.id), active, log)
-        }.toNel
-      }
     //
     // def sequenceObserverReader(i: Instrument): ModelR[SeqexecAppRootModel, StatusAndObserverFocus] =
     //   statusReader.zip(instrumentTab(i)).zoom {
@@ -223,9 +228,6 @@ object circuit {
     // Reader for a specific sequence if available
     def sequenceReader(id: Observation.Id): ModelR[_, Option[SequenceView]] =
       zoom(_.uiModel.sequences.queue.find(_.id === id))
-
-    val configTableState: ModelR[SeqexecAppRootModel, TableState[StepConfigTable.TableColumn]] =
-      zoom(_.uiModel.configTableState)
 
     /**
       * Makes a reference to a sequence on the queue.

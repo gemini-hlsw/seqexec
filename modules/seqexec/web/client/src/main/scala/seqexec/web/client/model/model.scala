@@ -41,8 +41,18 @@ object Pages {
   }
 }
 
+final case class RunningStep(last: Int, total: Int)
+
+object RunningStep {
+  implicit val show: Show[RunningStep] =
+    Show.show(u => s"${u.last + 1}/${u.total}")
+
+  implicit val eq: Eq[RunningStep] =
+    Eq.by(x => (x.last, x.total))
+}
+
 // UI model
-sealed trait SectionVisibilityState
+sealed trait SectionVisibilityState extends Product with Serializable
 case object SectionOpen extends SectionVisibilityState
 case object SectionClosed extends SectionVisibilityState
 

@@ -25,6 +25,7 @@ import seqexec.model.{ DaytimeCalibrationTargetName, SequenceState }
 import seqexec.web.client.circuit._
 import seqexec.web.client.actions._
 import seqexec.web.client.model.Pages._
+import seqexec.web.client.model.RunningStep
 import seqexec.web.client.ModelOps._
 import seqexec.web.client.semanticui.{Size => SSize}
 import seqexec.web.client.semanticui.elements.button.Button

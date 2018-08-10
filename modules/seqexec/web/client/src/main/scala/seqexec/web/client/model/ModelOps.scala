@@ -7,12 +7,9 @@ import cats.Show
 import cats.implicits._
 import cats.data.NonEmptyList
 import gem.enum.Site
-import seqexec.model.enum.{
-  ActionStatus,
-  Instrument,
-  Resource
-}
+import seqexec.model.enum.{ ActionStatus, Instrument, Resource }
 import seqexec.model.{ StepState, SequenceState, Step, StandardStep }
+import seqexec.web.client.model.RunningStep
 import seqexec.model.SequenceView
 
 /**
@@ -52,13 +49,6 @@ object ModelOps {
     case Resource.P1     => "P1"
     case Resource.OI     => "OI"
     case i: Instrument   => i.show
-  }
-
-  final case class RunningStep(last: Int, total: Int)
-
-  object RunningStep {
-    implicit val show: Show[RunningStep] =
-      Show.show(u => s"${u.last + 1}/${u.total}")
   }
 
   implicit class SequenceViewOps(val s: SequenceView) extends AnyVal {

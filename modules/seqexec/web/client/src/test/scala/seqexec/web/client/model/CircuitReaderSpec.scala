@@ -3,39 +3,39 @@
 
 package seqexec.web.client
 
+import cats.kernel.laws.discipline._
+import cats.tests.CatsSuite
 import gem.Observation
-import seqexec.model.enum.Instrument
+import seqexec.web.client.circuit._
 import seqexec.web.client.circuit.SeqexecCircuit._
 import org.scalatest.prop.PropertyChecks
-import org.scalatest.{FlatSpec, Matchers}
 
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
-class CircuitReaderSpec extends FlatSpec with Matchers with PropertyChecks with ArbitrariesWebClient {
-  import seqexec.model.SharedModelArbitraries._
+final class CircuitReaderSpec extends CatsSuite with PropertyChecks with ArbitrariesWebClient {
+  checkAll("Eq[SequenceTabContentFocus]", EqTests[SequenceTabContentFocus].eqv)
 
-  "CircuitReaderSpec" should
-    "maintain reference equality for constant readers" in {
+  test("maintain reference equality for constant readers") {
       (webSocketFocusRW === webSocketFocusRW.value) should be(true)
+      (initialSyncFocusRW === initialSyncFocusRW.value) should be(true)
+      (tableStateRW === tableStateRW.value) should be(true)
       (statusAndLoadedSequencesReader === statusAndLoadedSequencesReader.value) should be(true)
       (statusReader === statusReader.value) should be(true)
+      (sequenceInConflictReader === sequenceInConflictReader.value) should be(true)
       (headerSideBarReader === headerSideBarReader.value) should be(true)
       (logDisplayedReader === logDisplayedReader.value) should be(true)
+      (availableTabs === availableTabs.value) should be(true)
+      (sequenceTabs === sequenceTabs.value) should be(true)
+      (configTableState === configTableState.value) should be(true)
     }
-    it should "maintain reference equality for instrument based readers" in {
-      forAll{ (i: Instrument) =>
-        (instrumentTab(i) === instrumentTab(i).value) should be(true)
-        (instrumentStatusReader(i) === instrumentStatusReader(i).value) should be(true)
-        (instrumentTabContentReader(i) === instrumentTabContentReader(i).value) should be(true)
-        (sequenceObserverReader(i) === sequenceObserverReader(i).value) should be(true)
-        (statusAndStepReader(i) === statusAndStepReader(i).value) should be(true)
-        (stepsTableReaderF(i) === stepsTableReaderF(i).value) should be(true)
-        (stepsTableReader(i) === stepsTableReader(i).value) should be(true)
-        (sequenceControlReader(i) === sequenceControlReader(i).value) should be(true)
-      }
+  test("maintain reference equality for id based readers") {
+    forAll{ (i: Observation.Id) =>
+      (sequenceTab(i) === sequenceTab(i).value) should be(true)
+      (sequenceObserverReader(i) === sequenceObserverReader(i).value) should be(true)
+      (statusAndStepReader(i) === statusAndStepReader(i).value) should be(true)
+      (stepsTableReaderF(i) === stepsTableReaderF(i).value) should be(true)
+      (stepsTableReader(i) === stepsTableReader(i).value) should be(true)
+      (sequenceControlReader(i) === sequenceControlReader(i).value) should be(true)
+      (sequenceReader(i) === sequenceReader(i).value) should be(true)
     }
-    it should "maintain reference equality for the sequence reader" in {
-      forAll{ (i: Observation.Id) =>
-        (sequenceReader(i) === sequenceReader(i).value) should be(true)
-      }
-    }
+  }
 }

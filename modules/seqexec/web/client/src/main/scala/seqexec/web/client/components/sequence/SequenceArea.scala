@@ -23,11 +23,7 @@ import seqexec.web.client.components.sequence.steps.StepsTable
 import web.client.style._
 
 object SequenceStepsTableContainer {
-  final case class Props(router: RouterCtl[SeqexecPages], statusAndStep: StatusAndStepFocus) {
-    // protected[sequence] val sequenceControlConnects = site.instruments.toList.fproduct(i => SeqexecCircuit.connect(SeqexecCircuit.sequenceControlReader(i))).toMap
-    // private[sequence] val instrumentConnects = site.instruments.toList.fproduct(i => SeqexecCircuit.connect(SeqexecCircuit.stepsTableReader(i))).toMap
-    // protected[sequence] val sequenceObserverConnects = site.instruments.toList.fproduct(i => SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(i))).toMap
-  }
+  final case class Props(router: RouterCtl[SeqexecPages], statusAndStep: StatusAndStepFocus)
   final case class State(nextStepToRun: Int)
 
   private val ST = ReactS.Fix[State]

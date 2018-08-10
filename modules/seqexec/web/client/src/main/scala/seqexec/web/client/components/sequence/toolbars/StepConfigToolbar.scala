@@ -11,7 +11,7 @@ import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import seqexec.model.enum.Instrument
 import seqexec.web.client.model.Pages._
-import seqexec.web.client.ModelOps._
+import seqexec.web.client.model.RunningStep
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.actions.NavigateSilentTo

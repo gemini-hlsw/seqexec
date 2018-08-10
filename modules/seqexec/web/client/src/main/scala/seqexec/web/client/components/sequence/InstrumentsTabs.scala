@@ -13,9 +13,8 @@ import japgolly.scalajs.react._
 import seqexec.model.SequenceState
 import seqexec.model.enum.Instrument
 import seqexec.web.client.actions.{LoadSequence, NavigateTo, SelectIdToDisplay, SelectInstrumentToDisplay}
-import seqexec.web.client.ModelOps._
 import seqexec.web.client.model.Pages.{InstrumentPage, SequencePage, SeqexecPages}
-import seqexec.web.client.model.AvailableTab
+import seqexec.web.client.model.{ AvailableTab, RunningStep }
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.semanticui._
 import seqexec.web.client.semanticui.elements.icon.Icon._
