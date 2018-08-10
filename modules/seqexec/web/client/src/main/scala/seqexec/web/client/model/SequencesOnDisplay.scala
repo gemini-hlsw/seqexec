@@ -1,0 +1,94 @@
+// Copyright (c) 2016-2018 Association of Universities for Research in Astronomy, Inc. (AURA)
+// For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
+
+package seqexec.web.client.model
+
+import cats.implicits._
+import cats.data.NonEmptyList
+import diode.RootModelR
+import diode.data._
+import gem.Observation
+import seqexec.model.SequenceView
+import seqexec.model.enum._
+import seqexec.web.common.Zipper
+
+// Model for the tabbed area of sequences
+final case class SequencesOnDisplay(sequences: Zipper[SequenceTab]) {
+  // Display a given step on the focused sequence
+  def showStepConfig(i: Int): SequencesOnDisplay =
+    copy(sequences = sequences.modify(SequenceTab.stepConfigL.set(Some(i))(_)))
+
+  // Don't show steps for the sequence
+  def hideStepConfig: SequencesOnDisplay =
+    copy(sequences = sequences.modify(SequenceTab.stepConfigL.set(None)(_)))
+
+  def focusOnSequence(s: RefTo[Option[SequenceView]]): SequencesOnDisplay = {
+    // Replace the sequence for the instrument or the completed sequence and reset displaying a step
+    val q = sequences.findFocus(i => i.sequence === s()).map(_.modify((SequenceTab.currentSequenceL.set(s) andThen SequenceTab.stepConfigL.set(None))(_)))
+    copy(sequences = q.getOrElse(sequences))
+  }
+
+  def previewSequence(s: RefTo[Option[SequenceView]]): SequencesOnDisplay = {
+    // Replace the sequence for the instrument or the completed sequence and reset displaying a step
+    val q = sequences.findFocus(_.isPreview).map(_.modify((SequenceTab.currentSequenceL.set(s) andThen SequenceTab.stepConfigL.set(None))(_)))
+    copy(sequences = q.getOrElse(sequences))
+  }
+
+  def unsetPreview: SequencesOnDisplay = {
+    // Remove any sequence in the preview
+    val q = sequences.map {
+      case s if s.isPreview => SequenceTab.currentSequenceL.set(SequencesOnDisplay.emptySeqRef)(s)
+      case s                => s
+    }
+    copy(sequences = q)
+  }
+
+  def focusOnInstrument(i: Instrument): SequencesOnDisplay = {
+    // Focus on the instrument
+    val q = sequences.findFocus{
+      case t: InstrumentSequenceTab => t.instrument === i.some
+      case _                        => false
+    }
+    copy(sequences = q.getOrElse(sequences))
+  }
+
+  def isAnySelected: Boolean = sequences.exists(_.sequence.isDefined)
+
+  // Is the id on the sequences area?
+  def idDisplayed(id: Observation.Id): Boolean =
+    sequences.withFocus.exists { case (s, a) => a && s.sequence.exists(_.id === id) }
+
+  // def instrument(i: Instrument): InstrumentTabActive =
+  //   // The getOrElse shouldn't be called as we have an element per instrument
+  //   sequences.withFocus.find(_._1.instrument === i)
+  //     .map { case (i, a) => InstrumentTabActive(i, a) }.getOrElse(InstrumentTabActive(SequenceTab.empty, active = false))
+
+  def tab(id: Observation.Id): Option[SequenceTabActive] =
+    sequences.withFocus.find(_._1.obsId.exists(_ === id))
+      .map { case (i, a) => SequenceTabActive(i, a) }
+
+  // We'll set the passed SequenceView as completed for the given instruments
+  def markCompleted(completed: SequenceView): SequencesOnDisplay = {
+    val q = sequences.findFocus {
+      case t: InstrumentSequenceTab => t.instrument === completed.metadata.instrument.some
+      case _                        => false
+    }.map(_.modify(SequenceTab.completedSequenceL.set(completed.some)(_)))
+
+    copy(sequences = q.getOrElse(sequences))
+  }
+
+  def availableTabs: NonEmptyList[AvailableTab] =
+    NonEmptyList.fromListUnsafe(sequences.withFocus.map {
+      case (i, a) => AvailableTab(i.sequence.map(_.id), i.sequence.map(_.status), i.instrument, i.runningStep, i.isPreview, a)
+    }.toList)
+}
+
+/**
+  * Contains the sequences displayed on the instrument tabs. Note that they are references to sequences on the Queue
+  */
+object SequencesOnDisplay {
+  val emptySeqRef: RefTo[Option[SequenceView]] = RefTo(new RootModelR(None))
+
+  // We need to initialize the model with some instruments but it will be shortly replaced by the actual list
+  val empty: SequencesOnDisplay = SequencesOnDisplay(Zipper.fromNel(NonEmptyList.of(SequenceTab.Empty)))
+}

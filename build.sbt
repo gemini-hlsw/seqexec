@@ -65,7 +65,8 @@ val startSeqexecAllCommands = List(
 )
 val restartSeqexecWDSCommands = List(
   "seqexec_web_client/fastOptJS::stopWebpackDevServer",
-  "seqexec_web_client/fastOptJS::startWebpackDevServer"
+  "seqexec_web_client/fastOptJS::startWebpackDevServer",
+  "~seqexec_web_client/fastOptJS"
 )
 val stopSeqexecAllCommands = List(
   "seqexec_web_server/reStop",
