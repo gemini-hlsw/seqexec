@@ -90,13 +90,23 @@ echo "--- :javascript: Linking Javascript"
 /usr/local/bin/sbt                      \
   -jvm-opts build/buildkite-jvmopts     \
   -Docs3.skipDependencyUpdates          \
+  seqexec_web_client/fastOptJS          \
   ui/fastOptJS
 
 echo "--- :webpack: Webpack"
 /usr/local/bin/sbt                      \
   -jvm-opts build/buildkite-jvmopts     \
   -Docs3.skipDependencyUpdates          \
-  seqexec_web_client/fastOptJS::webpack
+  seqexec_web_client/fastOptJS::webpack \
+  seqexec_web_client/fullOptJS::webpack
+
+###
+### WEIGH
+###
+if [ "$BUILDKITE" = "true" ] && [ -n "$GITHUB_TOKEN" ]; then
+  echo "--- :github: Calculate assets' sizes"
+  $BUILDKITE_BUILD_CHECKOUT_PATH/build/weigh.sh
+fi
 
 ###
 ### DOCKER IMAGE
