@@ -9,7 +9,7 @@ import java.util.concurrent.TimeUnit
 
 import cats._
 import cats.data.{EitherT, Kleisli}
-import cats.effect.IO
+import cats.effect.{IO, Sync}
 import cats.implicits._
 import edu.gemini.epics.acm.CaService
 import gem.Observation
@@ -148,21 +148,24 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
       }
     }
 
-  def eventStream(q: EventQueue): Stream[IO, SeqexecEvent] = {
-    executeEngine.process(q.dequeue.mergeHaltBoth(seqQueueRefreshStream))(Engine.State.empty[EngineMetadata](EngineMetadata.default)).flatMap(x => Stream.eval(notifyODB(x))).map {
-      case (ev, qState) =>
-        toSeqexecEvent(ev, qState)(
-          SequencesQueue(
-            (Engine.State.userData ^|-> EngineMetadata.selected).get(qState),
-            (Engine.State.userData ^|-> EngineMetadata.conditions).get(qState),
-            (Engine.State.userData ^|-> EngineMetadata.operator).get(qState),
-            qState.sequences.values.map(
-              s => viewSequence(s.toSequence, s)
-            ).toList
-          )
-        )
-    }
-  }
+  def eventStream(q: EventQueue): Stream[IO, SeqexecEvent] =
+    executeEngine.process(q.dequeue.mergeHaltBoth(seqQueueRefreshStream))(Engine.State.empty[EngineMetadata](EngineMetadata.default))
+      .flatMap(x => Stream.eval(notifyODB(x))).flatMap {
+          case (ev, qState) =>
+            val sequences = qState.sequences.values.toList.map(
+                  s => viewSequence(s.toSequence, s)
+                )
+            val event = toSeqexecEvent(ev, qState)(
+              SequencesQueue(
+                (Engine.State.userData ^|-> EngineMetadata.selected).get(qState),
+                (Engine.State.userData ^|-> EngineMetadata.conditions).get(qState),
+                (Engine.State.userData ^|-> EngineMetadata.operator).get(qState),
+                sequences
+              )
+            )
+            Stream.eval(updateMetrics[IO](ev, sequences).map(_ => event))
+        }
+
 
   def stopObserve(q: EventQueue, seqId: Observation.Id): IO[Unit] = q.enqueue1(
     Event.actionStop[executeEngine.ConcreteTypes](seqId, translator.stopObserve(seqId))
@@ -294,6 +297,23 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
       case engine.Paused(id, _, _)                                          => ExposurePaused(id, svs)
       case engine.BreakpointReached(id)                                     => SequencePaused(id, svs)
     }
+  }
+
+  /**
+   * Update some metrics based on the event types
+   */
+  def updateMetrics[F[_]: Sync](e: executeEngine.EventType, sequences: List[SequenceView]): F[Unit] = {
+    def instrument(id: Observation.Id): Option[Instrument] = sequences.find(_.id === id).map(_.metadata.instrument)
+    (e match {
+      case engine.EventUser(ue) => ue match {
+        case engine.Start(id, _, _) => instrument(id).map(sm.startRunning[F]).getOrElse(Sync[F].unit)
+        case _                      => Sync[F].unit
+      }
+      case engine.EventSystem(se) => se match {
+        case _                            => Sync[F].unit
+      }
+      case _ => Sync[F].unit
+    }).flatMap(_ => Sync[F].unit)
   }
 
   def viewSequence(seq: Sequence, st: Sequence.State): SequenceView = {

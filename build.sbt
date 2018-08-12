@@ -18,7 +18,7 @@ startYear        in ThisBuild := Some(2018)
 licenses         in ThisBuild += ("BSD-3-Clause", new URL("https://opensource.org/licenses/BSD-3-Clause"))
 
 // Gemini repository
-//resolvers in ThisBuild += "Gemini Repository" at "https://github.com/gemini-hlsw/maven-repo/raw/master/releases"
+resolvers in ThisBuild += "Gemini Repository" at "https://github.com/gemini-hlsw/maven-repo/raw/master/releases"
 
 // This key is used to find the JRE dir. It could/should be overriden on a user basis
 // Add e.g. a `jres.sbt` file with your particular configuration
@@ -35,7 +35,7 @@ onLoad in Global := { s =>
 }
 
 // Uncomment for local gmp testing
-resolvers in ThisBuild += "Local Maven Repository" at "file://"+Path.userHome.absolutePath+"/.m2/repository"
+// resolvers in ThisBuild += "Local Maven Repository" at "file://"+Path.userHome.absolutePath+"/.m2/repository"
 
 // Settings to use git to define the version of the project
 def versionFmt(out: sbtdynver.GitDescribeOutput): String = {
@@ -402,6 +402,7 @@ lazy val seqexec_web_server = project.in(file("modules/seqexec/web/server"))
     addCompilerPlugin(Plugins.kindProjectorPlugin),
     libraryDependencies ++= Seq(UnboundId, JwtCore, Knobs, Http4sPrometheus) ++ Http4sClient ++ Http4s ++ Logging,
     // Supports launching the server in the background
+    javaOptions in reStart += s"-javaagent:${(baseDirectory in ThisBuild).value}/app/seqexec-server/src/universal/bin/jmx_prometheus_javaagent-0.3.1.jar=6060:${(baseDirectory in ThisBuild).value}/app/seqexec-server/src/universal/bin/prometheus.yaml",
     mainClass in reStart := Some("seqexec.web.server.http4s.WebServerLauncher"),
   )
   .settings(
@@ -643,7 +644,6 @@ lazy val seqexecCommonSettings = Seq(
     // Support remote debugging
     "-J-Xdebug",
     "-J-Xnoagent",
-    // These are very verbose but could be useful when tracking momeroy leaks
     "-J-XX:+HeapDumpOnOutOfMemoryError",
     // Make sure the application exits on OOM
     "-J-XX:+ExitOnOutOfMemoryError",
