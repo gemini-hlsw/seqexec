@@ -44,9 +44,9 @@ object Instrument {
   case object GHOST extends Instrument(12, "GHOST")
   case object GmosS extends Instrument(13, "GMOS-S")
   case object GmosN extends Instrument(14, "GMOS-N")
-  case object GNIRS extends Instrument(15, "GPI")
-  case object GPI   extends Instrument(16, "GSAOI")
-  case object GSAOI extends Instrument(17, "GNIRS")
+  case object GNIRS extends Instrument(15, "GNIRS")
+  case object GPI   extends Instrument(16, "GPI")
+  case object GSAOI extends Instrument(17, "GSAOI")
   case object NIRI  extends Instrument(18, "NIRI")
   case object NIFS  extends Instrument(19, "NIFS")
 
