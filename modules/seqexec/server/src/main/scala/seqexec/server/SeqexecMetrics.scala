@@ -10,9 +10,9 @@ import seqexec.model.enum.Instrument
 import io.prometheus.client._
 
 final case class SeqexecMetrics private (
-    site: Site,
-    private val qs: Gauge, // Amount of items on the list of queues
-    private val ss: Counter // Sequences started
+  site: Site,
+  private val qs: Gauge, // Amount of items on the list of queues
+  private val rs: Gauge  // Currently running queues
 )
 
 object SeqexecMetrics {

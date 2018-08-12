@@ -5,7 +5,7 @@ package seqexec.web.client.model
 
 import cats._
 import cats.implicits._
-import diode.data.{Pot, Empty}
+import diode.data.Pot
 import gem.Observation
 import gem.enum.Site
 import seqexec.model.{ ClientID, Conditions, UserDetails, SequencesQueue, SequenceView, StepId }
@@ -63,7 +63,7 @@ object SectionVisibilityState {
 final case class WebSocketConnection(ws: Pot[WebSocket], nextAttempt: Int, autoReconnect: Boolean)
 
 object WebSocketConnection {
-  val empty: WebSocketConnection = WebSocketConnection(Empty, 0, autoReconnect = true)
+  val Empty: WebSocketConnection = WebSocketConnection(diode.data.Empty, 0, autoReconnect = true)
 
   implicit val equal: Eq[WebSocketConnection] =
     Eq.by { x =>
@@ -87,7 +87,7 @@ final case class ResourcesConflict(visibility: SectionVisibilityState, id: Optio
  */
 final case class SeqexecUIModel(navLocation: Pages.SeqexecPages,
                           user: Option[UserDetails],
-                          sequences: SeqexecAppRootModel.LoadedSequences,
+                          sequences: SequencesQueue[SequenceView],
                           loginBox: SectionVisibilityState,
                           resourceConflict: ResourcesConflict,
                           globalLog: GlobalLog,
@@ -99,7 +99,7 @@ final case class SeqexecUIModel(navLocation: Pages.SeqexecPages,
 
 object SeqexecUIModel {
   val noSequencesLoaded: SequencesQueue[SequenceView] = SequencesQueue[SequenceView](Map.empty, Conditions.Default, None, Nil)
-  val initial: SeqexecUIModel = SeqexecUIModel(
+  val Initial: SeqexecUIModel = SeqexecUIModel(
     Pages.Root,
     None,
     noSequencesLoaded,
@@ -119,7 +119,5 @@ object SeqexecUIModel {
 final case class SeqexecAppRootModel(ws: WebSocketConnection, site: Option[Site], clientId: Option[ClientID], uiModel: SeqexecUIModel)
 
 object SeqexecAppRootModel {
-  type LoadedSequences = SequencesQueue[SequenceView]
-
-  val initial: SeqexecAppRootModel = SeqexecAppRootModel(WebSocketConnection.empty, None, None, SeqexecUIModel.initial)
+  val Initial: SeqexecAppRootModel = SeqexecAppRootModel(WebSocketConnection.Empty, None, None, SeqexecUIModel.Initial)
 }

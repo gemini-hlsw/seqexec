@@ -7,7 +7,6 @@ import diode.{Action, ActionHandler, ActionResult, Effect, ModelRW, NoAction}
 import seqexec.model.enum.{ ActionStatus }
 import seqexec.model.{ Observer, SequencesQueue, SequenceView, StepState, SequenceState }
 import seqexec.model.events._
-import seqexec.web.client.model.SeqexecAppRootModel.LoadedSequences
 import seqexec.web.client.lenses.{sequenceStepT, sequenceViewT}
 import seqexec.web.client.ModelOps._
 import seqexec.web.client.actions._
@@ -32,7 +31,7 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus]) extends Act
 
   // It is legal do put sequences of the other sites on the queue
   // but we don't know how to display them, so let's filter them out
-  private def filterSequences(sequences: LoadedSequences): LoadedSequences =
+  private def filterSequences(sequences: SequencesQueue[SequenceView]): SequencesQueue[SequenceView] =
     sequences.copy(queue = sequences.queue.filter {
       case SequenceView(_, metadata, _, _, _) => value.site.map(_.instruments.toList.contains(metadata.instrument)).getOrElse(false)
     })

@@ -17,7 +17,6 @@ import seqexec.model._
 import seqexec.model.enum._
 import seqexec.model.events._
 import seqexec.web.client.model._
-import seqexec.web.client.model.SeqexecAppRootModel.LoadedSequences
 import seqexec.web.client.lenses._
 import seqexec.web.client.handlers._
 import seqexec.web.client.ModelOps._
@@ -42,7 +41,7 @@ object circuit {
 
   // All these classes are focused views of the root model. They are used to only update small sections of the
   // UI even if other parts of the root model change
-  final case class WebSocketsFocus(location: Pages.SeqexecPages, sequences: LoadedSequences, user: Option[UserDetails], clientId: Option[ClientID], site: Option[Site]) extends UseValueEq
+  final case class WebSocketsFocus(location: Pages.SeqexecPages, sequences: SequencesQueue[SequenceView], user: Option[UserDetails], clientId: Option[ClientID], site: Option[Site]) extends UseValueEq
   final case class InitialSyncFocus(location: Pages.SeqexecPages, sod: SequencesOnDisplay, firstLoad: Boolean) extends UseValueEq
   final case class SequenceInQueue(id: Observation.Id, status: SequenceState, instrument: Instrument, active: Boolean, name: String, targetName: Option[TargetName], runningStep: Option[RunningStep]) extends UseValueEq
   object SequenceInQueue {
@@ -133,7 +132,7 @@ object circuit {
     private val stepConfigStateHandler   = new StepConfigTableStateHandler(tableStateRW)
     private val loadSequencesHandler     = new LoadedSequencesHandler(zoomTo(_.uiModel.sequencesOnDisplay))
 
-    override protected def initialModel = SeqexecAppRootModel.initial
+    override protected def initialModel = SeqexecAppRootModel.Initial
 
     // Some useful readers
     val statusAndLoadedSequencesReader: ModelR[SeqexecAppRootModel, StatusAndLoadedSequencesFocus] =

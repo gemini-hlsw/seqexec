@@ -7,10 +7,9 @@ import cats.implicits._
 import diode.{Action, ActionHandler, ActionResult, Effect, ModelRW, NoAction}
 import gem.Observation
 import gem.enum.Site
-import seqexec.model.{ Observer, Operator, SequenceView, UserDetails }
+  import seqexec.model.{ Observer, Operator, SequencesQueue, SequenceView, UserDetails }
 import seqexec.web.client.model._
 import seqexec.web.client.model.Pages._
-import seqexec.web.client.model.SeqexecAppRootModel.LoadedSequences
 import seqexec.web.client.ModelOps._
 import seqexec.web.client.actions._
 import seqexec.web.client.circuit._
@@ -73,7 +72,7 @@ class SyncRequestsHandler[M](modelRW: ModelRW[M, Boolean]) extends ActionHandler
 /**
   * Handles sequence execution actions
   */
-class SequenceExecutionHandler[M](modelRW: ModelRW[M, LoadedSequences]) extends ActionHandler(modelRW) with Handlers {
+class SequenceExecutionHandler[M](modelRW: ModelRW[M, SequencesQueue[SequenceView]]) extends ActionHandler(modelRW) with Handlers {
   def handleUpdateObserver: PartialFunction[Any, ActionResult[M]] = {
     case UpdateObserver(sequenceId, name) =>
       val updateObserverE = Effect(SeqexecWebClient.setObserver(sequenceId, name).map(_ => NoAction))
@@ -240,7 +239,7 @@ class SequenceInConflictHandler[M](modelRW: ModelRW[M, Option[Observation.Id]]) 
 /**
   * Handle for UI debugging events
   */
-class DebuggingHandler[M](modelRW: ModelRW[M, LoadedSequences]) extends ActionHandler(modelRW) with Handlers {
+class DebuggingHandler[M](modelRW: ModelRW[M, SequencesQueue[SequenceView]]) extends ActionHandler(modelRW) with Handlers {
   override def handle: PartialFunction[Any, ActionResult[M]] = {
     case MarkStepAsRunning(obsId, step) =>
       updated(value.copy(queue = value.queue.collect {
