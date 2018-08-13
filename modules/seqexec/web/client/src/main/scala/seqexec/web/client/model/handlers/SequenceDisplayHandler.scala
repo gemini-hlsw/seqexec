@@ -19,14 +19,15 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, SequencesOnDisplay]) extends
       noChange
       // updated(value.copy(_1 = value._1.focusOnInstrument(i)))
 
-    case SelectIdToDisplay(_) =>
-      // val seq = SeqexecCircuit.sequenceRef(id)
-      // updated(value.copy(_1 = value._1.focusOnSequence(seq)))
-      noChange
+    case SelectIdToDisplay(id) =>
+      updated(value.focusOnSequence(id))
 
     case SelectSequencePreview(id, _) =>
       val seq = SeqexecCircuit.sequenceRef(id)
       updated(value.previewSequence(seq))
+
+    case SelectEmptyPreview =>
+      updated(value.unsetPreview.focusOnPreview)
 
   }
 
@@ -41,8 +42,7 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, SequencesOnDisplay]) extends
       updated(value.previewSequence(seq).showStepConfig(step - 1))
 
     case ShowStepConfig(id, step, false) =>
-      val seq = SeqexecCircuit.sequenceRef(id)
-      updated(value.focusOnSequence(seq).showStepConfig(step - 1))
+      updated(value.focusOnSequence(id).showStepConfig(step - 1))
 
     case HideStepConfig(instrument) =>
       if (value.sequences.focus.sequence.exists(_.metadata.instrument == instrument)) {
@@ -59,7 +59,6 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, SequencesOnDisplay]) extends
 
   override def handle: PartialFunction[Any, ActionResult[M]] =
     List(handleSelectSequenceDisplay,
-      // handleInitialize,
       handleShowHideStep,
       handleRememberCompleted).combineAll
 }

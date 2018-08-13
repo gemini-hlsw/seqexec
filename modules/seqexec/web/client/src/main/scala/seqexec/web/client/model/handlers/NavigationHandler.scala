@@ -30,6 +30,8 @@ class NavigationHandler[M](modelRW: ModelRW[M, Pages.SeqexecPages]) extends Acti
           Effect(Future(SelectSequencePreview(id, step)))
         case PreviewConfigPage(_, id, step) =>
           Effect(Future(ShowStepConfig(id, step, true)))
+        case EmptyPreviewPage =>
+          Effect(Future(SelectEmptyPreview))
         case _                               =>
           VoidEffect
       }

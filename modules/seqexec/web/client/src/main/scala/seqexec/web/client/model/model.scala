@@ -24,6 +24,7 @@ object Pages {
   case object Root extends SeqexecPages
   case object SoundTest extends SeqexecPages
   final case class InstrumentPage(instrument: Instrument) extends SeqexecPages
+  case object EmptyPreviewPage extends SeqexecPages
   final case class PreviewPage(instrument: Instrument, obsId: Observation.Id, step: StepId) extends SeqexecPages
   final case class PreviewConfigPage(instrument: Instrument, obsId: Observation.Id, step: StepId) extends SeqexecPages
   final case class SequencePage(instrument: Instrument, obsId: Observation.Id, step: StepId) extends SeqexecPages
@@ -32,6 +33,7 @@ object Pages {
   implicit val equal: Eq[SeqexecPages] = Eq.instance {
     case (Root, Root)                                               => true
     case (SoundTest, SoundTest)                                     => true
+    case (EmptyPreviewPage, EmptyPreviewPage)                       => true
     case (InstrumentPage(i), InstrumentPage(j))                     => i === j
     case (SequencePage(i, o, s), SequencePage(j, p, r))             => i === j && o === p && s === r
     case (SequenceConfigPage(i, o, s), SequenceConfigPage(j, p, r)) => i === j && o === p && s === r

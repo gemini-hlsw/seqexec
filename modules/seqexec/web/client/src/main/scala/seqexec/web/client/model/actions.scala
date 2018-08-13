@@ -39,6 +39,7 @@ object actions {
   final case class SelectInstrumentToDisplay(i: Instrument) extends Action
   final case class SelectSequenceConfig(id: Observation.Id, step: StepId) extends Action
   final case class SelectSequencePreview(id: Observation.Id, step: StepId) extends Action
+  case object SelectEmptyPreview extends Action
 
   // Actions related to executing sequences
   final case class RequestRun(s: Observation.Id) extends Action

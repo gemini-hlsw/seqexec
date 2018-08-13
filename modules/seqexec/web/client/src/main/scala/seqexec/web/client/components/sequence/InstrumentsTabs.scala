@@ -13,7 +13,7 @@ import japgolly.scalajs.react._
 import seqexec.model.SequenceState
 import seqexec.model.enum.Instrument
 import seqexec.web.client.actions.{LoadSequence, NavigateTo, SelectIdToDisplay, SelectInstrumentToDisplay}
-import seqexec.web.client.model.Pages.{InstrumentPage, SequencePage, SeqexecPages}
+import seqexec.web.client.model.Pages._
 import seqexec.web.client.model.{ AvailableTab, RunningStep }
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.semanticui._
@@ -47,7 +47,7 @@ object InstrumentTab {
 
       val tabTitle = b.props.tab.runningStep match {
         case Some(RunningStep(current, total)) => s"${sequenceId.map(_.format).getOrElse("")} - ${current + 1}/$total"
-        case _                                 => sequenceId.map(_.format).getOrElse("")
+        case _                                 => sequenceId.map(_.format).getOrElse("Empty")
       }
 
       val icon = status.flatMap {
@@ -62,11 +62,10 @@ object InstrumentTab {
         case _                           => "grey".some
       }
 
-      val linkPage: Option[SeqexecPages] =
+      val linkPage: SeqexecPages =
         (sequenceId, instrument)
-          .mapN((id, inst) => SequencePage(inst, id, 0))
-          .filter(_ => !isPreview)
-
+          .mapN((id, inst) => if (isPreview) PreviewPage(inst, id, 0) else SequencePage(inst, id, 0))
+          .getOrElse(EmptyPreviewPage)
 
       val loadButton: Option[VdomNode] =
         (sequenceId, instrument)
@@ -84,14 +83,14 @@ object InstrumentTab {
             ): VdomNode)
           .filter(_ => isPreview && b.props.loggedIn)
 
-      val labelNoId =
-        <.div(SeqexecStyles.instrumentTabLabel, if (isPreview) "Preview" else dispName)
+      // val labelNoId =
+      //   <.div(SeqexecStyles.instrumentTabLabel, if (isPreview) "Preview" else dispName)
 
       val instrumentWithId =
         <.div(
           SeqexecStyles.instrumentTabLabel,
           <.div(SeqexecStyles.activeInstrumentLabel, dispName),
-          Label(Label.Props(tabTitle, color = color, icon = icon, extraStyles = if (isPreview) Nil else List(SeqexecStyles.labelPointer)))
+          Label(Label.Props(tabTitle, color = color, icon = icon, extraStyles = List(SeqexecStyles.labelPointer)))
         )
 
       val dataId = if (isPreview) "preview" else instrument.show
@@ -99,7 +98,7 @@ object InstrumentTab {
       val tabContent: VdomNode =
         <.div(
           IconAttention.copyIcon(color = Some("red")).when(hasError),
-          sequenceId.fold(labelNoId)(_ => instrumentWithId),
+          instrumentWithId,
           ^.cls := "item",
           ^.classSet(
             "active" -> active,
@@ -113,7 +112,7 @@ object InstrumentTab {
           loadButton
         )
 
-      linkPage.map(l => b.props.router.link(l)(tabContent): VdomNode).getOrElse(tabContent)
+      b.props.router.link(linkPage)(tabContent)
     }.componentDidMount(ctx =>
       Callback {
         // Enable menu on Semantic UI
@@ -128,10 +127,12 @@ object InstrumentTab {
                 val instrument = ctx.props.tab.instrument
                 val updateModelCB = (sequenceId, instrument) match {
                   case (Some(id), Some(i)) =>
+                    println(id)
                     SeqexecCircuit.dispatchCB(NavigateTo(SequencePage(i, id, 0))) >> SeqexecCircuit.dispatchCB(SelectIdToDisplay(id))
                   case (_, Some(i))        =>
                     SeqexecCircuit.dispatchCB(NavigateTo(InstrumentPage(i))) >> SeqexecCircuit.dispatchCB(SelectInstrumentToDisplay(i))
                   case _                   =>
+                  println("empty")
                     Callback.empty
                 }
                 // runNow as we are outside react loop

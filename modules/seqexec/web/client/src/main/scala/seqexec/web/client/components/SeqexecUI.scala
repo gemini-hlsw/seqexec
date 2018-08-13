@@ -160,6 +160,7 @@ object SeqexecUI {
       (emptyRule
       | staticRoute(root, Root) ~> renderR(r => SeqexecMain(site, r))
       | staticRoute("/soundtest", SoundTest) ~> renderR(r => SeqexecMain(site, r))
+      | staticRoute("/preview", EmptyPreviewPage) ~> renderR(r => SeqexecMain(site, r))
       | dynamicRouteCT(("/" ~ string("[a-zA-Z0-9-]+") ~ "/" ~ string("[a-zA-Z0-9-]+") ~ "/configuration/" ~ int)
         .pmapL(configPageP(instrumentNames))) ~> dynRenderR((_: SequenceConfigPage, r) => SeqexecMain(site, r))
       | dynamicRouteCT(("/" ~ string("[a-zA-Z0-9-]+") ~ "/" ~ string("[a-zA-Z0-9-]+"))
@@ -175,7 +176,7 @@ object SeqexecUI {
       )
         .notFound(redirectToPage(Root)(Redirect.Push))
         // Runtime verification that all pages are routed
-        .verify(Root, SoundTest :: site.instruments.toList.map(i => InstrumentPage(i)): _*)
+        .verify(Root, List(EmptyPreviewPage, SoundTest) ::: site.instruments.toList.map(i => InstrumentPage(i)): _*)
         .onPostRender((_, next) =>
           Callback.when(next === SoundTest)(SeqexecCircuit.dispatchCB(RequestSoundEcho)) >>
           Callback.when(next =!= SeqexecCircuit.zoom(_.uiModel.navLocation).value)(SeqexecCircuit.dispatchCB(NavigateSilentTo(next))))
