@@ -26,11 +26,6 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, SequencesOnDisplay]) extends
 
   }
 
-  // def handleInitialize: PartialFunction[Any, ActionResult[M]] = {
-  //   case Initialize(site) =>
-  //     updated(value.copy(_2 = Some(site)))
-  // }
-
   def handleShowHideStep: PartialFunction[Any, ActionResult[M]] = {
     case ShowStepConfig(id, step, true) =>
       val seq = SeqexecCircuit.sequenceRef(id)

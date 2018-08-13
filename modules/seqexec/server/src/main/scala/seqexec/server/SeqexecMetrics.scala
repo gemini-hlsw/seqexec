@@ -28,7 +28,7 @@ object SeqexecMetrics {
           .help("Queue Size.")
           .labelNames("site")
           .register(c),
-        ss = Counter
+        rs = Counter
           .build()
           .name(s"${prefix}_sequence_start")
           .help("Sequence started.")
@@ -48,7 +48,7 @@ object SeqexecMetrics {
 
     def startRunning[F[_]: Sync](i: Instrument): F[SeqexecMetrics] =
       Sync[F].delay {
-        m.ss
+        m.rs
           .labels(m.site.shortName, i.show)
           .inc()
         m

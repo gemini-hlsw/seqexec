@@ -76,9 +76,12 @@ object SequenceEventsArbitraries {
     for {
       i <- arbitrary[Instrument]
       o <- arbitrary[Observation.Id]
-    } yield LoadSequenceUpdated(i, o)
+      s <- arbitrary[SequencesQueue[SequenceView]]
+    } yield LoadSequenceUpdated(i, o, s)
   }
-  implicit val clsArb = Arbitrary[ClearLoadedSequencesUpdated.type] { ClearLoadedSequencesUpdated }
+  implicit val clsArb = Arbitrary[ClearLoadedSequencesUpdated] {
+    arbitrary[SequencesQueue[SequenceView]].map(ClearLoadedSequencesUpdated.apply)
+  }
   implicit val serArb = Arbitrary[SequenceError] {
     for {
       i <- arbitrary[Observation.Id]
@@ -130,6 +133,8 @@ object SequenceEventsArbitraries {
         arbitrary[SequenceUpdated],
         arbitrary[SequencePaused],
         arbitrary[ExposurePaused],
+        arbitrary[LoadSequenceUpdated],
+        arbitrary[ClearLoadedSequencesUpdated],
         arbitrary[SequenceError]
     )
   }
@@ -139,8 +144,6 @@ object SequenceEventsArbitraries {
       arbitrary[ConnectionOpenEvent],
       arbitrary[NewLogMessage],
       arbitrary[ServerLogMessage],
-      arbitrary[LoadSequenceUpdated],
-      arbitrary[ClearLoadedSequencesUpdated.type],
       arbitrary[NullEvent.type]
     )
   }

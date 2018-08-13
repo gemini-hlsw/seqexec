@@ -73,7 +73,6 @@ final case class SequencesOnDisplay(sequences: Zipper[SequenceTab]) {
 
   def previewSequence(s: RefTo[Option[SequenceView]]): SequencesOnDisplay = {
     // Replace the sequence for the instrument or the completed sequence and reset displaying a step
-    println(s())
     val q = sequences.findFocus(_.isPreview).map(_.modify((SequenceTab.currentSequenceL.set(s) andThen SequenceTab.stepConfigL.set(None))(_)))
     copy(sequences = q.getOrElse(sequences))
   }
@@ -86,6 +85,17 @@ final case class SequencesOnDisplay(sequences: Zipper[SequenceTab]) {
     copy(sequences = q.getOrElse(sequences))
   }
 
+
+  def unsetPreviewOn(i: Observation.Id): SequencesOnDisplay = {
+    // Remove any sequence in the preview
+    val q = sequences.map {
+      case s @ PreviewSequenceTab(cur, _) if cur().exists(_.id === i) =>
+        SequenceTab.currentSequenceL.set(SequencesOnDisplay.emptySeqRef)(s)
+      case s                                                      =>
+        s
+    }
+    copy(sequences = q)
+  }
 
   def unsetPreview: SequencesOnDisplay = {
     // Remove any sequence in the preview

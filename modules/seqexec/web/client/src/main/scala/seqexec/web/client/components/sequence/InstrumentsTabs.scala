@@ -127,10 +127,8 @@ object InstrumentTab {
                 val instrument = ctx.props.tab.instrument
                 val updateModelCB = (sequenceId, instrument) match {
                   case (Some(id), Some(i)) =>
-                    println(id)
                     SeqexecCircuit.dispatchCB(NavigateTo(SequencePage(i, id, 0))) >> SeqexecCircuit.dispatchCB(SelectIdToDisplay(id))
                   case _                   =>
-                  println("empty")
                     Callback.empty
                 }
                 // runNow as we are outside react loop

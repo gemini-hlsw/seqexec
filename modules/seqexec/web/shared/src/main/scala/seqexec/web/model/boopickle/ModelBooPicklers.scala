@@ -114,7 +114,7 @@ trait ModelBooPicklers extends GemModelBooPicklers {
     .addConcreteType[ObserverUpdated]
     .addConcreteType[ConditionsUpdated]
     .addConcreteType[LoadSequenceUpdated]
-    .addConcreteType[ClearLoadedSequencesUpdated.type]
+    .addConcreteType[ClearLoadedSequencesUpdated]
     .addConcreteType[StepSkipMarkChanged]
     .addConcreteType[SequencePauseRequested]
     .addConcreteType[SequencePauseCanceled]

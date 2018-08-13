@@ -53,27 +53,29 @@ object events {
   object SeqexecModelUpdate {
     implicit lazy val equalSE: Eq[SeqexecModelUpdate] =
       Eq.instance {
-        case (a: SequenceStart,           b: SequenceStart)           => a === b
-        case (a: StepExecuted,            b: StepExecuted)            => a === b
-        case (a: FileIdStepExecuted,      b: FileIdStepExecuted)      => a === b
-        case (a: SequenceCompleted,       b: SequenceCompleted)       => a === b
-        case (a: SequenceLoaded,          b: SequenceLoaded)          => a === b
-        case (a: SequenceUnloaded,        b: SequenceUnloaded)        => a === b
-        case (a: StepBreakpointChanged,   b: StepBreakpointChanged)   => a === b
-        case (a: OperatorUpdated,         b: OperatorUpdated)         => a === b
-        case (a: ObserverUpdated,         b: ObserverUpdated)         => a === b
-        case (a: ConditionsUpdated,       b: ConditionsUpdated)       => a === b
-        case (a: StepSkipMarkChanged,     b: StepSkipMarkChanged)     => a === b
-        case (a: SequencePauseRequested,  b: SequencePauseRequested)  => a === b
-        case (a: SequencePauseCanceled,   b: SequencePauseCanceled)   => a === b
-        case (a: SequenceRefreshed,       b: SequenceRefreshed)       => a === b
-        case (a: ActionStopRequested,     b: ActionStopRequested)     => a === b
-        case (a: ResourcesBusy,           b: ResourcesBusy)           => a === b
-        case (a: SequenceUpdated,         b: SequenceUpdated)         => a === b
-        case (a: SequencePaused,          b: SequencePaused)          => a === b
-        case (a: ExposurePaused,          b: ExposurePaused)          => a === b
-        case (a: SequenceError,           b: SequenceError)           => a === b
-        case _                                                        => false
+        case (a: SequenceStart,               b: SequenceStart)               => a === b
+        case (a: StepExecuted,                b: StepExecuted)                => a === b
+        case (a: FileIdStepExecuted,          b: FileIdStepExecuted)          => a === b
+        case (a: SequenceCompleted,           b: SequenceCompleted)           => a === b
+        case (a: SequenceLoaded,              b: SequenceLoaded)              => a === b
+        case (a: SequenceUnloaded,            b: SequenceUnloaded)            => a === b
+        case (a: StepBreakpointChanged,       b: StepBreakpointChanged)       => a === b
+        case (a: OperatorUpdated,             b: OperatorUpdated)             => a === b
+        case (a: ObserverUpdated,             b: ObserverUpdated)             => a === b
+        case (a: ConditionsUpdated,           b: ConditionsUpdated)           => a === b
+        case (a: StepSkipMarkChanged,         b: StepSkipMarkChanged)         => a === b
+        case (a: SequencePauseRequested,      b: SequencePauseRequested)      => a === b
+        case (a: SequencePauseCanceled,       b: SequencePauseCanceled)       => a === b
+        case (a: SequenceRefreshed,           b: SequenceRefreshed)           => a === b
+        case (a: ActionStopRequested,         b: ActionStopRequested)         => a === b
+        case (a: ResourcesBusy,               b: ResourcesBusy)               => a === b
+        case (a: SequenceUpdated,             b: SequenceUpdated)             => a === b
+        case (a: SequencePaused,              b: SequencePaused)              => a === b
+        case (a: ExposurePaused,              b: ExposurePaused)              => a === b
+        case (a: SequenceError,               b: SequenceError)               => a === b
+        case (a: LoadSequenceUpdated,         b: LoadSequenceUpdated)         => a === b
+        case (a: ClearLoadedSequencesUpdated, b: ClearLoadedSequencesUpdated) => a === b
+        case _                                                                => false
       }
 
     def unapply(u: SeqexecModelUpdate): Option[SequencesQueue[SequenceView]] =
@@ -137,16 +139,19 @@ object events {
         Eq.by(_.view)
     }
 
-    final case class LoadSequenceUpdated(i: Instrument, sid: Observation.Id) extends SeqexecEvent
+    final case class LoadSequenceUpdated(i: Instrument, sid: Observation.Id, view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
     object LoadSequenceUpdated {
       implicit lazy val equal: Eq[LoadSequenceUpdated] =
-        Eq.by(x => (x.i, x.sid))
+        Eq.by(x => (x.i, x.sid, x.view))
     }
 
-    case object ClearLoadedSequencesUpdated extends SeqexecEvent
+    final case class ClearLoadedSequencesUpdated(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
-    implicit lazy val clsEqual: Eq[ClearLoadedSequencesUpdated.type] = Eq.fromUniversalEquals
+    object ClearLoadedSequencesUpdated {
+      implicit lazy val clsEqual: Eq[ClearLoadedSequencesUpdated] =
+        Eq.by(_.view)
+    }
 
     final case class ObserverUpdated(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
@@ -238,8 +243,6 @@ object events {
         case (a: SeqexecModelUpdate,               b: SeqexecModelUpdate)               => a === b
         case (a: NewLogMessage,                    b: NewLogMessage)                    => a === b
         case (a: ServerLogMessage,                 b: ServerLogMessage)                 => a === b
-        case (a: LoadSequenceUpdated,              b: LoadSequenceUpdated)              => a === b
-        case (_: ClearLoadedSequencesUpdated.type, _: ClearLoadedSequencesUpdated.type) => true
         case (_: NullEvent.type,                   _: NullEvent.type)                   => true
         case _                                                                          => false
       }
