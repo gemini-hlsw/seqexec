@@ -7,44 +7,14 @@ import cats.implicits._
 import diode.{Action, ActionHandler, ActionResult, Effect, ModelRW, NoAction}
 import gem.Observation
 import gem.enum.Site
-  import seqexec.model.{ Observer, Operator, SequencesQueue, SequenceView, UserDetails }
+import seqexec.model.{ Observer, Operator, SequencesQueue, SequenceView, UserDetails }
 import seqexec.web.client.model._
-import seqexec.web.client.model.Pages._
 import seqexec.web.client.ModelOps._
 import seqexec.web.client.actions._
 import seqexec.web.client.circuit._
 import seqexec.web.client.services.SeqexecWebClient
 import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
-
-class NavigationHandler[M](modelRW: ModelRW[M, Pages.SeqexecPages]) extends ActionHandler(modelRW) with Handlers {
-  def handleNavigateTo: PartialFunction[Any, ActionResult[M]] = {
-    case NavigateTo(page) =>
-      updated(page)
-  }
-
-  def handleSilentTo: PartialFunction[Any, ActionResult[M]] = {
-    case NavigateSilentTo(page) =>
-      val effect = page match {
-        case InstrumentPage(i)               =>
-          Effect(Future(SelectInstrumentToDisplay(i)))
-        case SequencePage(_, id, _)          =>
-          Effect(Future(SelectIdToDisplay(id)))
-        case SequenceConfigPage(_, id, step) =>
-          Effect(Future(ShowStepConfig(id, step, false)))
-        case PreviewPage(_, id, step) =>
-          Effect(Future(SelectSequencePreview(id, step)))
-        case PreviewConfigPage(_, id, step) =>
-          Effect(Future(ShowStepConfig(id, step, true)))
-        case _                               =>
-          VoidEffect
-      }
-      updatedSilent(page, effect)
-  }
-
-  def handle: PartialFunction[Any, ActionResult[M]] =
-    List(handleNavigateTo, handleSilentTo).combineAll
-}
 
 /**
 * Handles actions requesting sync
@@ -149,60 +119,6 @@ class UserLoginHandler[M](modelRW: ModelRW[M, Option[UserDetails]]) extends Acti
 }
 
 /**
-  * Handles actions related to the changing the selection of the displayed sequence
-  */
-class SequenceDisplayHandler[M](modelRW: ModelRW[M, (SequencesOnDisplay, Option[Site])]) extends ActionHandler(modelRW) with Handlers {
-  def handleSelectSequenceDisplay: PartialFunction[Any, ActionResult[M]] = {
-    case SelectInstrumentToDisplay(_) =>
-      noChange
-      // updated(value.copy(_1 = value._1.focusOnInstrument(i)))
-
-    case SelectIdToDisplay(_) =>
-      // val seq = SeqexecCircuit.sequenceRef(id)
-      // updated(value.copy(_1 = value._1.focusOnSequence(seq)))
-      noChange
-
-    case SelectSequencePreview(id, _) =>
-      val seq = SeqexecCircuit.sequenceRef(id)
-      updated(value.copy(_1 = value._1.previewSequence(seq)))
-
-  }
-
-  def handleInitialize: PartialFunction[Any, ActionResult[M]] = {
-    case Initialize(site) =>
-      updated(value.copy(_2 = Some(site)))
-  }
-
-  def handleShowHideStep: PartialFunction[Any, ActionResult[M]] = {
-    case ShowStepConfig(id, step, true) =>
-      val seq = SeqexecCircuit.sequenceRef(id)
-      updated(value.copy(_1 = value._1.previewSequence(seq).showStepConfig(step - 1)))
-
-    case ShowStepConfig(id, step, false) =>
-      val seq = SeqexecCircuit.sequenceRef(id)
-      updated(value.copy(_1 = value._1.focusOnSequence(seq).showStepConfig(step - 1)))
-
-    case HideStepConfig(instrument) =>
-      if (value._1.sequences.focus.sequence.exists(_.metadata.instrument == instrument)) {
-        updated(value.copy(_1 = value._1.hideStepConfig))
-      } else {
-        noChange
-      }
-  }
-
-  def handleRememberCompleted: PartialFunction[Any, ActionResult[M]] = {
-    case RememberCompleted(s) =>
-      updated(value.copy(_1 = value._1.markCompleted(s)))
-  }
-
-  override def handle: PartialFunction[Any, ActionResult[M]] =
-    List(handleSelectSequenceDisplay,
-      handleInitialize,
-      handleShowHideStep,
-      handleRememberCompleted).combineAll
-}
-
-/**
  * Handles updates to the operator
  */
 class OperatorHandler[M](modelRW: ModelRW[M, Option[Operator]]) extends ActionHandler(modelRW) with Handlers {
@@ -210,6 +126,17 @@ class OperatorHandler[M](modelRW: ModelRW[M, Option[Operator]]) extends ActionHa
     case UpdateOperator(name) =>
       val updateOperatorE = Effect(SeqexecWebClient.setOperator(name).map(_ => NoAction))
       updated(name.some, updateOperatorE)
+  }
+}
+
+/**
+ * Handles setting the site
+ */
+class SiteHandler[M](modelRW: ModelRW[M, Option[Site]]) extends ActionHandler(modelRW) with Handlers {
+
+  override def handle: PartialFunction[Any, ActionResult[M]] = {
+    case Initialize(site) =>
+      updated(Some(site))
   }
 }
 

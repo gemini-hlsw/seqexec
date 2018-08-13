@@ -29,6 +29,16 @@ final case class SequencesOnDisplay(sequences: Zipper[SequenceTab]) {
   }
 
   /**
+   * List of loaded sequence ids
+   */
+  def loadedIds: List[Observation.Id] =
+    sequences.toList.collect {
+      case InstrumentSequenceTab(_, curr, _, _) => curr().map(_.id)
+    }.collect {
+      case Some(x) => x
+    }
+
+  /**
    * Replace the list of loaded sequences
    */
   def updateLoaded(s: List[RefTo[Option[SequenceView]]]): SequencesOnDisplay = {

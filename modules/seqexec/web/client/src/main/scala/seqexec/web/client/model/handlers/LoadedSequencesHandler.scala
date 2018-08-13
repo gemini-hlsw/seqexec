@@ -3,6 +3,7 @@
 
 package seqexec.web.client.handlers
 
+import cats.implicits._
 import diode.{ActionHandler, ActionResult, Effect, ModelRW, NoAction}
 import gem.Observation
 import seqexec.model.events._
@@ -25,7 +26,11 @@ class LoadedSequencesHandler[M](modelRW: ModelRW[M, SequencesOnDisplay]) extends
 
     case ServerMessage(s: SeqexecModelUpdate) =>
       // we need to send an effect for this to get the references to work correctly
-      effectOnly(Effect(Future(UpdateLoadedSequences(s.view.loaded))))
+      if (value.loadedIds =!= s.view.loaded.values.toList) {
+        effectOnly(Effect(Future(UpdateLoadedSequences(s.view.loaded))))
+      } else {
+        noChange
+      }
 
     case UpdateLoadedSequences(loaded: Map[Instrument, Observation.Id]) =>
       // we need to send an effect for this to get the references to work correctly

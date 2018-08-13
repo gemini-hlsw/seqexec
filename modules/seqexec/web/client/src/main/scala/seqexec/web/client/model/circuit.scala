@@ -119,7 +119,7 @@ object circuit {
     private val loginBoxHandler          = new ModalBoxHandler(OpenLoginBox, CloseLoginBox, zoomTo(_.uiModel.loginBox))
     private val resourcesBoxHandler      = new ModalBoxHandler(OpenResourcesBox, CloseResourcesBox, zoomTo(_.uiModel.resourceConflict.visibility))
     private val userLoginHandler         = new UserLoginHandler(zoomTo(_.uiModel.user))
-    private val sequenceDisplayHandler   = new SequenceDisplayHandler(zoomRW(m => (m.uiModel.sequencesOnDisplay, m.site))((m, v) => m.copy(uiModel = m.uiModel.copy(sequencesOnDisplay = v._1), site = v._2)))
+    private val sequenceDisplayHandler   = new SequenceDisplayHandler(zoomTo(_.uiModel.sequencesOnDisplay))
     private val sequenceExecHandler      = new SequenceExecutionHandler(zoomTo(_.uiModel.sequences))
     private val resourcesConflictHandler = new SequenceInConflictHandler(zoomTo(_.uiModel.resourceConflict.id))
     private val globalLogHandler         = new GlobalLogHandler(zoomTo(_.uiModel.globalLog))
@@ -131,6 +131,7 @@ object circuit {
     private val debuggingHandler         = new DebuggingHandler(zoomTo(_.uiModel.sequences))
     private val stepConfigStateHandler   = new StepConfigTableStateHandler(tableStateRW)
     private val loadSequencesHandler     = new LoadedSequencesHandler(zoomTo(_.uiModel.sequencesOnDisplay))
+    private val siteHandler              = new SiteHandler(zoomTo(_.site))
 
     override protected def initialModel = SeqexecAppRootModel.Initial
 
@@ -251,7 +252,8 @@ object circuit {
       syncRequestsHandler,
       navigationHandler,
       debuggingHandler,
-      stepConfigStateHandler)
+      stepConfigStateHandler,
+      siteHandler)
 
     /**
       * Handles a fatal error most likely during action processing
