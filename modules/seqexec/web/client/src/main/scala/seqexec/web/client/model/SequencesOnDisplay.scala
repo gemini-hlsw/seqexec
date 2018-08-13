@@ -28,6 +28,33 @@ final case class SequencesOnDisplay(sequences: Zipper[SequenceTab]) {
     copy(sequences = q.getOrElse(sequences))
   }
 
+  /**
+   * Replace the list of loaded sequences
+   */
+  def updateLoaded(s: List[RefTo[Option[SequenceView]]]): SequencesOnDisplay = {
+    // Build the new tabs
+    val instTabs = s.fproduct(_()).collect { case (r, Some(x)) => InstrumentSequenceTab(x.metadata.instrument, r, None, None)  }
+    // Store current focus
+    val currentFocus = sequences.focus
+    // Save the current preview
+    val onlyPreview = sequences.toList.filter{
+      case x => x.isPreview
+    }.headOption.getOrElse(SequenceTab.Empty)
+    // new zipper
+    val newZipper = Zipper[SequenceTab](Nil, onlyPreview, instTabs)
+    // Restore focus
+    val q = newZipper.findFocus {
+      case PreviewSequenceTab(_, _) if currentFocus.isPreview =>
+        true
+      case InstrumentSequenceTab(i, _, _, _)                  =>
+        currentFocus match {
+          case InstrumentSequenceTab(j, _, _, _) => i === j
+          case PreviewSequenceTab(_, _)          => false
+        }
+    }
+    copy(sequences = q.getOrElse(sequences))
+  }
+
   def previewSequence(s: RefTo[Option[SequenceView]]): SequencesOnDisplay = {
     // Replace the sequence for the instrument or the completed sequence and reset displaying a step
     val q = sequences.findFocus(_.isPreview).map(_.modify((SequenceTab.currentSequenceL.set(s) andThen SequenceTab.stepConfigL.set(None))(_)))

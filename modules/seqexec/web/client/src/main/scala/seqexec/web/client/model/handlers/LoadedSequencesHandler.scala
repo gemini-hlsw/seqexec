@@ -4,11 +4,14 @@
 package seqexec.web.client.handlers
 
 import diode.{ActionHandler, ActionResult, Effect, ModelRW, NoAction}
+import gem.Observation
 import seqexec.model.events._
+import seqexec.model.enum.Instrument
 import seqexec.web.client.model.SequencesOnDisplay
+import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.actions._
 import seqexec.web.client.services.SeqexecWebClient
-
+import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
 /**
@@ -19,6 +22,15 @@ class LoadedSequencesHandler[M](modelRW: ModelRW[M, SequencesOnDisplay]) extends
     case ServerMessage(LoadSequenceUpdated(i, sid)) =>
       println((i, sid)) // scalastyle:off
       updated(value.unsetPreview)
+
+    case ServerMessage(s: SeqexecModelUpdate) =>
+      // we need to send an effect for this to get the references to work correctly
+      effectOnly(Effect(Future(UpdateLoadedSequences(s.view.loaded))))
+
+    case UpdateLoadedSequences(loaded: Map[Instrument, Observation.Id]) =>
+      // we need to send an effect for this to get the references to work correctly
+      val refs = loaded.values.map(SeqexecCircuit.sequenceRef)
+      updated(value.updateLoaded(refs.toList))
 
     case LoadSequence(i, id) =>
       effectOnly(Effect(SeqexecWebClient.loadSequence(i, id).map(r => if (r.error) NoAction else NoAction)))

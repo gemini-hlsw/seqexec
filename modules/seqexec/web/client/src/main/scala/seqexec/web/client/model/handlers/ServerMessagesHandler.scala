@@ -142,7 +142,7 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus]) extends Act
         case q if q.metadata.observer.isEmpty && observer.nonEmpty =>
           Effect(Future(UpdateObserver(q.id, observer.getOrElse("")))).some
       }
-      val newValue = value.copy(sequences = SequencesQueue(s.view.selected, s.view.conditions, s.view.operator, sequencesWithObserver))
+      val newValue = value.copy(sequences = SequencesQueue(s.view.loaded, s.view.conditions, s.view.operator, sequencesWithObserver))
       effects.reduceOption(_ >> _).fold(updated(newValue))(eff => updated(newValue, eff.getOrElse(VoidEffect)))
   }
 
