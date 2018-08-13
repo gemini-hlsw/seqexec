@@ -305,12 +305,13 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
   def updateMetrics[F[_]: Sync](e: executeEngine.EventType, sequences: List[SequenceView]): F[Unit] = {
     def instrument(id: Observation.Id): Option[Instrument] = sequences.find(_.id === id).map(_.metadata.instrument)
     (e match {
+      // TODO Add metrics for more events
       case engine.EventUser(ue) => ue match {
         case engine.Start(id, _, _) => instrument(id).map(sm.startRunning[F]).getOrElse(Sync[F].unit)
         case _                      => Sync[F].unit
       }
       case engine.EventSystem(se) => se match {
-        case _                            => Sync[F].unit
+        case _ => Sync[F].unit
       }
       case _ => Sync[F].unit
     }).flatMap(_ => Sync[F].unit)

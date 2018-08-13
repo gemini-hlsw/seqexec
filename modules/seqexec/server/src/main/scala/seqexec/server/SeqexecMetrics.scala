@@ -10,32 +10,34 @@ import seqexec.model.enum.Instrument
 import io.prometheus.client._
 
 final case class SeqexecMetrics private (
-  site: Site,
-  private val qs: Gauge,  // Amount of items on the list of queues
-  private val ss: Counter // Sequences started
+    site: Site,
+    private val qs: Gauge, // Amount of items on the list of queues
+    private val ss: Counter // Sequences started
 )
 
 object SeqexecMetrics {
   private val prefix = "seqexec"
 
   def build[F[_]: Sync](site: Site, c: CollectorRegistry): F[SeqexecMetrics] =
-    Sync[F].delay(SeqexecMetrics(
-      site,
-      qs = Gauge
-        .build()
-        .name(s"${prefix}_queue_size")
-        .help("Queue Size.")
-        .labelNames("site")
-        .register(c),
-      ss = Counter
-        .build()
-        .name(s"${prefix}_sequence_start")
-        .help("Sequence started.")
-        .labelNames("site", "instrument")
-        .register(c)
-    ))
+    Sync[F].delay(
+      SeqexecMetrics(
+        site,
+        qs = Gauge
+          .build()
+          .name(s"${prefix}_queue_size")
+          .help("Queue Size.")
+          .labelNames("site")
+          .register(c),
+        ss = Counter
+          .build()
+          .name(s"${prefix}_sequence_start")
+          .help("Sequence started.")
+          .labelNames("site", "instrument")
+          .register(c)
+      ))
 
   implicit class SeqexecMetricsOps(val m: SeqexecMetrics) extends AnyVal {
+
     def queueSize[F[_]: Sync](i: Int): F[SeqexecMetrics] =
       Sync[F].delay {
         m.qs
