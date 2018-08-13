@@ -7,6 +7,8 @@ const FaviconsWebpackPlugin = require("favicons-webpack-plugin");
 
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 
+const ci = process.env.CI; // When on CI don't add hashes
+
 const Web = Merge(
   ScalaJSConfig,
   parts.resolve,
@@ -14,7 +16,8 @@ const Web = Merge(
   parts.resourceModules,
   parts.extractCSS({
     devMode: false,
-    use: ["css-loader", parts.autoprefix(), "less-loader"] // Order is very important: css, post-css, less
+    use: ["css-loader", parts.autoprefix(), "less-loader"], // Order is very important: css, post-css, less
+    ci: ci
   }),
   parts.minifyJavaScript(),
   parts.minifyCSS({
@@ -33,7 +36,7 @@ const Web = Merge(
       seqexec: [path.resolve(parts.resourcesDir, "./prod.js")]
     },
     output: {
-      filename: "[name].[chunkhash].js",
+      filename: ci ? "[name].js" : "[name].[chunkhash].js",
       publicPath: "/" // Required to make url navigation work
     },
     plugins: [

@@ -19,19 +19,31 @@ import sys
 import json
 import urllib2
 
-TRAVIS = os.environ.get('TRAVIS')
-TRAVIS_COMMIT = os.environ.get('TRAVIS_COMMIT')
-TRAVIS_PULL_REQUEST = os.environ.get('TRAVIS_PULL_REQUEST')
-TRAVIS_REPO_SLUG = os.environ.get('TRAVIS_REPO_SLUG')
+BUILDKITE = os.environ.get('BUILDKITE')
+BUILDKITE_COMMIT = os.environ.get('BUILDKITE_COMMIT')
+BUILDKITE_PULL_REQUEST = os.environ.get('BUILDKITE_PULL_REQUEST')
+BUILDKITE_REPO = os.environ.get('BUILDKITE_REPO')
+BUILDKITE_BRANCH = os.environ.get('BUILDKITE_BRANCH')
 GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN')
 
-if TRAVIS_PULL_REQUEST == 'false':
-    TRAVIS_PULL_REQUEST = False
+# Buildkite doesn't give the slug directly, get it via regex
+print BUILDKITE_REPO
+match = re.match( r'((git|ssh|http(s)?)|(git@[\w\.]+))(:(//)?)([\w\.@\:/\-~]+)(\.git)?(/)?', BUILDKITE_REPO)
+if not match:
+    sys.stderr.write('Cannot parse the repo\n')
+    sys.exit(1)
+
+owner = match.group(7).split('/')[1]
+repo = match.group(7).split('/')[2]
+slug = '%s/%s' % (owner, repo)
+
+if BUILDKITE_PULL_REQUEST == 'false':
+    BUILDKITE_PULL_REQUEST = False
 
 # The PR job has all the needed info to compute deltas.
 # But GitHub shows statuses for the commit associated with the push job.
 # For the PR job, this will be the status URL for the push job.
-TRAVIS_STATUS_URL = None
+STATUS_URL = None
 
 
 def raise_for_status(url, response):
@@ -71,6 +83,7 @@ def get_status(url, context):
 
 def get_pr_info(slug, pull_number):
     url = 'https://api.github.com/repos/%s/pulls/%s' % (slug, pull_number)
+    print url
     headers = {'Authorization': 'token ' + GITHUB_TOKEN}
     request = urllib2.Request(url, None, headers)
     r = urllib2.urlopen(request)
@@ -79,13 +92,14 @@ def get_pr_info(slug, pull_number):
 
 
 def get_base_size(filename):
-    global TRAVIS_STATUS_URL
-    if not TRAVIS_PULL_REQUEST:
+    global STATUS_URL
+    if not BUILDKITE_PULL_REQUEST:
         return None
-    pr = get_pr_info(TRAVIS_REPO_SLUG, TRAVIS_PULL_REQUEST)
+    pr = get_pr_info(slug, BUILDKITE_PULL_REQUEST)
     sha = pr['base']['sha']
     url = pr['base']['repo']['statuses_url'].replace('{sha}', sha)
-    TRAVIS_STATUS_URL = pr['statuses_url']
+    STATUS_URL = pr['statuses_url']
+    print STATUS_URL
     assert sha in url, 'statuses_url %s missing "{sha}"' % url
     status = get_status(url, filename)
     if not status:
@@ -126,16 +140,16 @@ def check_environment():
         sys.stderr.write('The GITHUB_TOKEN environment variable must be set.\n')
         sys.exit(1)
 
-    if not TRAVIS:
+    if not BUILDKITE:
         sys.stderr.write('Not Travis; exiting\n')
         sys.exit(0)
 
-    if not TRAVIS_COMMIT:
-        sys.stderr.write('Missing TRAVIS_COMMIT\n')
+    if not BUILDKITE_COMMIT:
+        sys.stderr.write('Missing BUILDKITE_COMMIT\n')
         sys.exit(1)
-        
-    if not TRAVIS_REPO_SLUG:
-        sys.stderr.write('Missing TRAVIS_REPO_SLUG\n')
+
+    if not slug:
+        sys.stderr.write('Missing slug\n')
         sys.exit(1)
 
 
@@ -153,10 +167,10 @@ if __name__ == '__main__':
     print '%s Current:  %s' % (filename, current_size)
     print '%s Previous: %s' % (filename, previous_size)
 
-    if TRAVIS_STATUS_URL:
-        url = TRAVIS_STATUS_URL
+    if STATUS_URL:
+        url = STATUS_URL
     else:
-        url = 'https://api.github.com/repos/%s/statuses/%s' % (TRAVIS_REPO_SLUG, TRAVIS_COMMIT)
+        url = 'https://api.github.com/repos/%s/statuses/%s' % (slug, BUILDKITE_COMMIT)
 
     prev_status = get_status(url, filename)
     if prev_status:
