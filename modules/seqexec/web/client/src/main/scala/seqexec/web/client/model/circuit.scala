@@ -125,7 +125,7 @@ object circuit {
     private val globalLogHandler         = new GlobalLogHandler(zoomTo(_.uiModel.globalLog))
     private val conditionsHandler        = new ConditionsHandler(zoomTo(_.uiModel.sequences.conditions))
     private val operatorHandler          = new OperatorHandler(zoomTo(_.uiModel.sequences.operator))
-    private val syncToAddedHandler       = new SyncToAddedRemovedRunHandler(zoomTo(_.uiModel.navLocation))
+    // private val syncToAddedHandler       = new SyncToAddedRemovedRunHandler(zoomTo(_.uiModel.navLocation))
     private val remoteRequestsHandler    = new RemoteRequestsHandler(zoomTo(_.clientId))
     private val syncRequestsHandler      = new SyncRequestsHandler(zoomTo(_.uiModel.syncInProgress))
     private val debuggingHandler         = new DebuggingHandler(zoomTo(_.uiModel.sequences))
@@ -238,7 +238,7 @@ object circuit {
 
     override protected def actionHandler = composeHandlers(
       wsHandler,
-      foldHandlers(serverMessagesHandler, syncToAddedHandler, initialSyncHandler, loadSequencesHandler),
+      foldHandlers(serverMessagesHandler, /*syncToAddedHandler, */initialSyncHandler, loadSequencesHandler),
       sequenceExecHandler,
       resourcesBoxHandler,
       resourcesConflictHandler,

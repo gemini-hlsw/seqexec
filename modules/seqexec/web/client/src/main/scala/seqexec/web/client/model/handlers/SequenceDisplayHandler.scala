@@ -14,11 +14,6 @@ import seqexec.web.client.circuit._
   */
 class SequenceDisplayHandler[M](modelRW: ModelRW[M, SequencesOnDisplay]) extends ActionHandler(modelRW) with Handlers {
   def handleSelectSequenceDisplay: PartialFunction[Any, ActionResult[M]] = {
-    case SelectInstrumentToDisplay(_) =>
-    println("select")
-      noChange
-      // updated(value.copy(_1 = value._1.focusOnInstrument(i)))
-
     case SelectIdToDisplay(id) =>
       updated(value.focusOnSequence(id))
 

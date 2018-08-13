@@ -114,12 +114,9 @@ object SeqexecMain {
   * Top level UI component
   */
 object SeqexecUI {
-  final case class RouterProps(page: InstrumentPage, router: RouterCtl[InstrumentPage])
-
   def pageTitle(site: Site)(p: SeqexecPages): String = p match {
     case SequenceConfigPage(_, id, _) => s"Seqexec - ${id.format}"
     case SequencePage(_, id, _)       => s"Seqexec - ${id.format}"
-    case InstrumentPage(i)            => s"Seqexec - ${i.show}"
     case _                            => s"Seqexec - ${site.shortName}"
   }
 
@@ -169,14 +166,10 @@ object SeqexecUI {
         .pmapL(previewPageP(instrumentNames))) ~> dynRenderR((_: PreviewPage, r) => SeqexecMain(site, r))
       | dynamicRouteCT(("/preview/" ~ string("[a-zA-Z0-9-]+") ~ "/" ~ string("[a-zA-Z0-9-]+") ~ "/configuration/" ~ int)
         .pmapL(previewConfigPageP(instrumentNames))) ~> dynRenderR((_: PreviewConfigPage, r) => SeqexecMain(site, r))
-      | dynamicRoute(("/" ~ string("[a-zA-Z0-9-]+"))
-        .pmap(i => instrumentNames.get(i).map(InstrumentPage))(p => p.instrument.show)) {
-          case x @ InstrumentPage(i) if site.instruments.toList.contains(i) => x
-        } ~> dynRenderR((p, r) => SeqexecMain(site, r))
       )
         .notFound(redirectToPage(Root)(Redirect.Push))
         // Runtime verification that all pages are routed
-        .verify(Root, List(EmptyPreviewPage, SoundTest) ::: site.instruments.toList.map(i => InstrumentPage(i)): _*)
+        .verify(Root, List(EmptyPreviewPage, SoundTest): _*)
         .onPostRender((_, next) =>
           Callback.when(next === SoundTest)(SeqexecCircuit.dispatchCB(RequestSoundEcho)) >>
           Callback.when(next =!= SeqexecCircuit.zoom(_.uiModel.navLocation).value)(SeqexecCircuit.dispatchCB(NavigateSilentTo(next))))

@@ -37,7 +37,6 @@ class InitialSyncHandler[M](modelRW: ModelRW[M, InitialSyncFocus]) extends Actio
     case ServerMessage(s: SeqexecModelUpdate) if value.firstLoad                                 =>
       // the page maybe not in sync with the tabs. Let's fix that
       val sids = s.view.queue.map(_.id)
-      val instruments = s.view.queue.map(_.metadata.instrument)
       value.location match {
         case SequencePage(_, id, _) if sids.contains(id)                 =>
           // We are on a sequence page, update the model
@@ -45,18 +44,6 @@ class InitialSyncHandler[M](modelRW: ModelRW[M, InitialSyncFocus]) extends Actio
           // We need to effect to update the reference
           val effect = Effect(Future(SelectIdToDisplay(id)))
           updated(value.copy(/*sod = value.sod.focusOnSequence(seq), */firstLoad = false), effect)
-
-        case InstrumentPage(instrument) if instruments.contains(instrument) =>
-          // We are on a page for an instrument and we have sequences, let's go to the first one and change page
-          val first = s.view.queue.filter(_.metadata.instrument == instrument).sortBy(_.id).headOption
-          first.fold(updated(value.copy(firstLoad = false))) { f =>
-            // val seq = RefTo(new RootModelR(first))
-            val firstStep = f.progress.last
-            // We need to effect to update the reference
-            val effect = Effect(Future(SelectIdToDisplay(f.id)))
-            // updated(value.copy(location = SequencePage(f.metadata.instrument, f.id, firstStep), sod = value.sod.focusOnSequence(seq), firstLoad = false), effect)
-            updated(value.copy(location = SequencePage(f.metadata.instrument, f.id, firstStep), firstLoad = false), effect)
-          }
 
         case SequenceConfigPage(_, id, _) if sids.contains(id)           =>
           // We are on a seq config page, update the model

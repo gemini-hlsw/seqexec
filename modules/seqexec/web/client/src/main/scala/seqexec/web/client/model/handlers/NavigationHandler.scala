@@ -20,8 +20,6 @@ class NavigationHandler[M](modelRW: ModelRW[M, Pages.SeqexecPages]) extends Acti
   def handleSilentTo: PartialFunction[Any, ActionResult[M]] = {
     case NavigateSilentTo(page) =>
       val effect = page match {
-        case InstrumentPage(i)               =>
-          Effect(Future(SelectInstrumentToDisplay(i)))
         case SequencePage(_, id, _)          =>
           Effect(Future(SelectIdToDisplay(id)))
         case SequenceConfigPage(_, id, step) =>

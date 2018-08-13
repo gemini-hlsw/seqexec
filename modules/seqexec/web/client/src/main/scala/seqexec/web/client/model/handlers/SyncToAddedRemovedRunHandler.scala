@@ -19,8 +19,8 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
  */
 class SyncToAddedRemovedRunHandler[M](modelRW: ModelRW[M, Pages.SeqexecPages]) extends ActionHandler(modelRW) with Handlers {
   private def inInstrumentPage = value match {
-    case Root | SoundTest | InstrumentPage(_) => true
-    case _                                    => false
+    case Root | SoundTest => true
+    case _                => false
   }
 
   def handleSyncPageToAddedSequence: PartialFunction[Any, ActionResult[M]] = {
@@ -40,7 +40,7 @@ class SyncToAddedRemovedRunHandler[M](modelRW: ModelRW[M, Pages.SeqexecPages]) e
           // We need to use an effect here as the model is not fully resolved
           val effect = Effect(Future(SelectIdToDisplay(sid)))
           value match {
-            case Root | SoundTest | InstrumentPage(_) =>
+            case Root | SoundTest =>
               updated(SequencePage(instrument, id, step), effect)
             case _                                    =>
               effectOnly(effect)
@@ -51,12 +51,12 @@ class SyncToAddedRemovedRunHandler[M](modelRW: ModelRW[M, Pages.SeqexecPages]) e
     }
 
   def handleSyncPageToRemovedSequence: PartialFunction[Any, ActionResult[M]] = {
-    case ServerMessage(SequenceUnloaded(id, _)) =>
+    case ServerMessage(SequenceUnloaded(_, _)) =>
       // If the selecte id is removed, reset the route
       value match {
-        case SequencePage(i, sid, _) if sid === id      =>
-          updated(InstrumentPage(i))
-        case _                                          =>
+        case SequencePage(_, _, _) =>
+          updated(Root)
+        case _                     =>
           noChange
       }
   }

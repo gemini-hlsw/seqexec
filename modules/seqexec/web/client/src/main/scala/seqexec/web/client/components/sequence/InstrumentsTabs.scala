@@ -12,7 +12,7 @@ import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react._
 import seqexec.model.SequenceState
 import seqexec.model.enum.Instrument
-import seqexec.web.client.actions.{LoadSequence, NavigateTo, SelectIdToDisplay, SelectInstrumentToDisplay}
+import seqexec.web.client.actions.{LoadSequence, NavigateTo, SelectIdToDisplay}
 import seqexec.web.client.model.Pages._
 import seqexec.web.client.model.{ AvailableTab, RunningStep }
 import seqexec.web.client.circuit.SeqexecCircuit
@@ -129,8 +129,6 @@ object InstrumentTab {
                   case (Some(id), Some(i)) =>
                     println(id)
                     SeqexecCircuit.dispatchCB(NavigateTo(SequencePage(i, id, 0))) >> SeqexecCircuit.dispatchCB(SelectIdToDisplay(id))
-                  case (_, Some(i))        =>
-                    SeqexecCircuit.dispatchCB(NavigateTo(InstrumentPage(i))) >> SeqexecCircuit.dispatchCB(SelectInstrumentToDisplay(i))
                   case _                   =>
                   println("empty")
                     Callback.empty

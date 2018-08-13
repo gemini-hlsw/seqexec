@@ -73,6 +73,7 @@ final case class SequencesOnDisplay(sequences: Zipper[SequenceTab]) {
 
   def previewSequence(s: RefTo[Option[SequenceView]]): SequencesOnDisplay = {
     // Replace the sequence for the instrument or the completed sequence and reset displaying a step
+    println(s())
     val q = sequences.findFocus(_.isPreview).map(_.modify((SequenceTab.currentSequenceL.set(s) andThen SequenceTab.stepConfigL.set(None))(_)))
     copy(sequences = q.getOrElse(sequences))
   }
