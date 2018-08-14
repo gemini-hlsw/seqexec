@@ -239,12 +239,12 @@ object events {
 
     implicit val equal: Eq[SeqexecEvent] =
       Eq.instance {
-        case (a: ConnectionOpenEvent,              b: ConnectionOpenEvent)              => a === b
-        case (a: SeqexecModelUpdate,               b: SeqexecModelUpdate)               => a === b
-        case (a: NewLogMessage,                    b: NewLogMessage)                    => a === b
-        case (a: ServerLogMessage,                 b: ServerLogMessage)                 => a === b
-        case (_: NullEvent.type,                   _: NullEvent.type)                   => true
-        case _                                                                          => false
+        case (a: ConnectionOpenEvent, b: ConnectionOpenEvent) => a === b
+        case (a: SeqexecModelUpdate,  b: SeqexecModelUpdate)  => a === b
+        case (a: NewLogMessage,       b: NewLogMessage)       => a === b
+        case (a: ServerLogMessage,    b: ServerLogMessage)    => a === b
+        case (_: NullEvent.type,      _: NullEvent.type)      => true
+        case _                                                => false
       }
 
   // scalastyle:on

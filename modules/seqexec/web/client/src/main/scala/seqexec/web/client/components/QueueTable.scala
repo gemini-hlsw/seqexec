@@ -345,7 +345,12 @@ object QueueTableBody {
     // prevent default to avoid the link jumping
     e.preventDefault
     // Request to display the selected sequence
-    p.sequences.dispatchCB(NavigateTo(page))
+    page match {
+      case PreviewPage(i, obsId, step) =>
+        p.sequences.dispatchCB(SelectSequencePreview(i, obsId, step))
+      case _ =>
+        Callback.empty
+    }
     //p.sequences.dispatchCB(LoadSequence(i, id))
   }
 

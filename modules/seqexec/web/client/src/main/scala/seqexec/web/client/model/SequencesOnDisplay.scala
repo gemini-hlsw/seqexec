@@ -41,7 +41,7 @@ final case class SequencesOnDisplay(sequences: Zipper[SequenceTab]) {
   /**
    * List of loaded sequence ids
    */
-  def loadedIds: List[Observation.Id] =
+  val loadedIds: List[Observation.Id] =
     sequences.toList.collect {
       case InstrumentSequenceTab(_, curr, _, _) => curr().map(_.id)
     }.collect {
@@ -75,14 +75,22 @@ final case class SequencesOnDisplay(sequences: Zipper[SequenceTab]) {
     copy(sequences = q.getOrElse(sequences))
   }
 
+  /**
+   * Sets the passed sequences as preview. if it is already loaded, it will focus there instead
+   */
   def previewSequence(i: Instrument, s: RefTo[Option[SequenceView]]): SequencesOnDisplay = {
+    val obsId = s().map(_.id)
+    val isLoaded = obsId.exists(loadedIds.contains)
     // Replace the sequence for the instrument or the completed sequence and reset displaying a step
-    if (s().exists(_.metadata.instrument === i)) {
+    val seq = if (s().exists(x => x.metadata.instrument === i && !isLoaded)) {
       val q = sequences.findFocus(_.isPreview).map(_.modify((SequenceTab.currentSequenceL.set(s) andThen SequenceTab.stepConfigL.set(None))(_)))
-      copy(sequences = q.getOrElse(sequences))
+      q.getOrElse(sequences)
+    } else if (isLoaded) {
+      sequences.findFocus(t => !t.isPreview && obsId === t.obsId).getOrElse(sequences)
     } else {
-      this
+      sequences
     }
+    copy(sequences = seq)
   }
 
   /**
