@@ -27,13 +27,13 @@ import seqexec.web.client.actions._
 import seqexec.web.client.model.Pages._
 import seqexec.web.client.model.RunningStep
 import seqexec.web.client.ModelOps._
-import seqexec.web.client.semanticui.{Size => SSize}
-import seqexec.web.client.semanticui.elements.button.Button
+// import seqexec.web.client.semanticui.{Size => SSize}
+// import seqexec.web.client.semanticui.elements.button.Button
 import seqexec.web.client.semanticui.elements.icon.Icon.IconAttention
 import seqexec.web.client.semanticui.elements.icon.Icon.IconCheckmark
 import seqexec.web.client.semanticui.elements.icon.Icon.IconCircleNotched
 import seqexec.web.client.semanticui.elements.icon.Icon.IconSelectedRadio
-import seqexec.web.client.semanticui.elements.icon.Icon.IconSignIn
+// import seqexec.web.client.semanticui.elements.icon.Icon.IconSignIn
 import web.client.style._
 import web.client.utils._
 import web.client.table._
@@ -138,9 +138,10 @@ object QueueTableBody {
                    s.targetName,
                    s.name,
                    s.active,
+                   s.loaded,
                    s.runningStep)
         }
-        .getOrElse(QueueRow.zero)
+        .getOrElse(QueueRow.Empty)
 
     val rowCount: Int =
       sequencesList.size
@@ -184,7 +185,7 @@ object QueueTableBody {
         this
       } else {
         val optimalSizes = sequences.foldLeft(columnsDefaultWidth) {
-          case (currWidths, SequenceInQueue(id, st, i, _, n, t, r)) =>
+          case (currWidths, SequenceInQueue(id, st, i, _, _, n, t, r)) =>
             val idWidth = max(currWidths.getOrElse(ObsIdColumn, 0),
                               tableTextWidth(id.format))
             val statusWidth =
@@ -289,7 +290,9 @@ object QueueTableBody {
     var targetName: Option[String]
     var name: String
     var active: Boolean
+    var loaded: Boolean
     var runningStep: Option[RunningStep]
+
   }
 
   // scalastyle:on
@@ -302,6 +305,7 @@ object QueueTableBody {
               targetName: Option[String],
               name: String,
               active: Boolean,
+              loaded: Boolean,
               runningStep: Option[RunningStep]): QueueRow = {
       val p = (new js.Object).asInstanceOf[QueueRow]
       p.obsId = obsId
@@ -311,6 +315,7 @@ object QueueTableBody {
       p.name = name
       p.active = active
       p.runningStep = runningStep
+      p.loaded = loaded
       p
     }
 
@@ -320,6 +325,7 @@ object QueueTableBody {
                                       Option[String],
                                       String,
                                       Boolean,
+                                      Boolean,
                                       Option[RunningStep])] =
       Some(
         (l.obsId,
@@ -328,15 +334,17 @@ object QueueTableBody {
          l.targetName,
          l.name,
          l.active,
+         l.loaded,
          l.runningStep))
 
-    def zero: QueueRow =
+    def Empty: QueueRow =
       apply(Observation.Id.unsafeFromString("Zero-1"),
             SequenceState.Idle,
             Instrument.F2,
             None,
             "",
             active = false,
+            loaded = false,
             None)
   }
 
@@ -348,10 +356,11 @@ object QueueTableBody {
     page match {
       case PreviewPage(i, obsId, step) =>
         p.sequences.dispatchCB(SelectSequencePreview(i, obsId, step))
+      case SequencePage(i, obsId, _) =>
+        p.sequences.dispatchCB(SelectIdToDisplay(i, obsId))
       case _ =>
         Callback.empty
     }
-    //p.sequences.dispatchCB(LoadSequence(i, id))
   }
 
   private def linkTo(p: Props, page: SeqexecPages)(mod: TagMod*) =
@@ -365,7 +374,11 @@ object QueueTableBody {
   private def linkedTextRenderer(p: Props)(
       f: QueueRow => TagMod): CellRenderer[js.Object, js.Object, QueueRow] =
     (_, _, _, row: QueueRow, _) => {
-      val page = PreviewPage(row.instrument, row.obsId, 0)
+      val page = if (row.loaded) {
+        SequencePage(row.instrument, row.obsId, 0)
+      } else {
+        PreviewPage(row.instrument, row.obsId, 0)
+      }
       linkTo(p, page)(SeqexecStyles.queueTextColumn, f(row))
     }
 
@@ -400,6 +413,7 @@ object QueueTableBody {
 
   private def statusIconRenderer(p: Props): CellRenderer[js.Object, js.Object, QueueRow] =
     (_, _, _, row: QueueRow, _) => {
+      val isFocused = row.active
       val icon: TagMod =
         row.status match {
           case SequenceState.Completed =>
@@ -413,26 +427,31 @@ object QueueTableBody {
             IconAttention.copyIcon(fitted = true,
                                    extraStyles = List(SeqexecStyles.selectedIcon))
           case _ =>
-            if (row.active)
+            if (isFocused) {
               IconSelectedRadio.copyIcon(fitted = true,
                                          extraStyles = List(SeqexecStyles.selectedIcon))
-            else
-              Button(Button.Props(size = SSize.Large, compact = true, icon = Some(IconSignIn), onClick = SeqexecCircuit.dispatchCB(LoadSequence(row.instrument, row.obsId))))
+            // } else if (p.isLogged) {
+            //   Button(Button.Props(size = SSize.Small, color = "teal".some, compact = true, icon = Some(IconSignIn)))
+            } else {
+              <.div()
+            }
         }
 
-      val page = PreviewPage(row.instrument, row.obsId, 0)
       row.status match {
         case SequenceState.Completed | SequenceState.Running(_, _) | SequenceState.Failed(_) =>
+          val page = SequencePage(row.instrument, row.obsId, 0)
           linkTo(p, page)(
             SeqexecStyles.queueIconColumn,
             icon
           )
-        case _ if p.isLogged =>
-          <.div(
+        case _ if p.isLogged && !row.loaded =>
+          val page = PreviewPage(row.instrument, row.obsId, 0)
+          linkTo(p, page)(
+            SeqexecStyles.queueIconColumn,
             icon
           )
         case _ =>
-          <.div("")
+          <.div(icon)
       }
     }
 
@@ -447,13 +466,13 @@ object QueueTableBody {
     ((i, p.rowGetter(i)) match {
       case (-1, _) =>
         SeqexecStyles.headerRowStyle
-      case (_, QueueRow(_, s, _, _, _, _, _)) if s == SequenceState.Completed =>
+      case (_, QueueRow(_, s, _, _, _, _, _, _)) if s == SequenceState.Completed =>
         SeqexecStyles.stepRow |+| SeqexecStyles.rowPositive
-      case (_, QueueRow(_, s, _, _, _, _, _)) if s.isRunning                  =>
+      case (_, QueueRow(_, s, _, _, _, _, _, _)) if s.isRunning                  =>
         SeqexecStyles.stepRow |+| SeqexecStyles.rowWarning
-      case (_, QueueRow(_, s, _, _, _, _, _)) if s.isError                    =>
+      case (_, QueueRow(_, s, _, _, _, _, _, _)) if s.isError                    =>
         SeqexecStyles.stepRow |+| SeqexecStyles.rowNegative
-      case (_, QueueRow(_, s, _, _, _, active, _))
+      case (_, QueueRow(_, s, _, _, _, _, active, _))
           if active && !s.isInProcess                                         =>
         SeqexecStyles.stepRow |+| SeqexecStyles.rowActive
       case _                                                                  =>

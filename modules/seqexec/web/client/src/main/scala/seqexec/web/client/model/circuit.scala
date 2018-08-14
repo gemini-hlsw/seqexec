@@ -43,7 +43,7 @@ object circuit {
   // UI even if other parts of the root model change
   final case class WebSocketsFocus(location: Pages.SeqexecPages, sequences: SequencesQueue[SequenceView], user: Option[UserDetails], clientId: Option[ClientID], site: Option[Site]) extends UseValueEq
   final case class InitialSyncFocus(location: Pages.SeqexecPages, sod: SequencesOnDisplay, firstLoad: Boolean) extends UseValueEq
-  final case class SequenceInQueue(id: Observation.Id, status: SequenceState, instrument: Instrument, active: Boolean, name: String, targetName: Option[TargetName], runningStep: Option[RunningStep]) extends UseValueEq
+  final case class SequenceInQueue(id: Observation.Id, status: SequenceState, instrument: Instrument, active: Boolean, loaded: Boolean, name: String, targetName: Option[TargetName], runningStep: Option[RunningStep]) extends UseValueEq
   object SequenceInQueue {
     implicit val order: Order[SequenceInQueue] = Order.by(_.id)
     implicit val ordering: scala.math.Ordering[SequenceInQueue] = order.toOrdering
@@ -140,8 +140,9 @@ object circuit {
       zoom { c =>
         val sequencesInQueue = c.uiModel.sequences.queue.map { s =>
           val active = c.uiModel.sequencesOnDisplay.idDisplayed(s.id)
+          val loaded = c.uiModel.sequencesOnDisplay.loadedIds.contains(s.id)
           val targetName = firstScienceStepTargetNameT.headOption(s)
-          SequenceInQueue(s.id, s.status, s.metadata.instrument, active, s.metadata.name, targetName, s.runningStep)
+          SequenceInQueue(s.id, s.status, s.metadata.instrument, active, loaded, s.metadata.name, targetName, s.runningStep)
         }
         StatusAndLoadedSequencesFocus(c.uiModel.user.isDefined, sequencesInQueue.sorted, c.uiModel.queueTableState)
       }

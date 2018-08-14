@@ -76,6 +76,7 @@ object InstrumentTab {
                   size = Size.Large,
                   compact = true,
                   icon = Some(IconSignIn),
+                  color = "teal".some,
                   disabled = b.state.loading,
                   loading = b.state.loading,
                   onClick = load(b, inst, id))

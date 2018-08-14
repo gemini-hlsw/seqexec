@@ -33,8 +33,14 @@ if not match:
     sys.stderr.write('Cannot parse the repo\n')
     sys.exit(1)
 
-owner = match.group(7).split('/')[1]
-repo = match.group(7).split('/')[2]
+splitted = match.group(7).split('/')
+if splitted.length == 3:
+    owner = match.group(7).split('/')[1]
+    repo = match.group(7).split('/')[2]
+else
+    owner = match.group(7).split('/')[0]
+    repo = match.group(7).split('/')[1]
+
 slug = '%s/%s' % (owner, repo)
 
 if BUILDKITE_PULL_REQUEST == 'false':
