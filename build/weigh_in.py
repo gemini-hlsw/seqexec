@@ -37,7 +37,7 @@ splitted = match.group(7).split('/')
 if splitted.length == 3:
     owner = match.group(7).split('/')[1]
     repo = match.group(7).split('/')[2]
-else
+else:
     owner = match.group(7).split('/')[0]
     repo = match.group(7).split('/')[1]
 

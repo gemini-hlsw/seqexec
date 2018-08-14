@@ -508,7 +508,6 @@ object QueueTableBody {
           Column.propsNoFlex(
             width,
             dataKey = "obsid",
-            minWidth = ObsIdColumnWidth,
             label = "Obs. ID",
             cellRenderer = obsIdRenderer(props),
             headerRenderer = resizableHeaderRenderer(resizeRow(ObsIdColumn)),
@@ -519,7 +518,6 @@ object QueueTableBody {
           Column.propsNoFlex(
             width,
             dataKey = "state",
-            minWidth = StateColumnWidth,
             label = "State",
             cellRenderer = stateRenderer(props),
             headerRenderer = resizableHeaderRenderer(resizeRow(StateColumn)),
@@ -530,7 +528,6 @@ object QueueTableBody {
           Column.propsNoFlex(
             width,
             dataKey = "instrument",
-            minWidth = InstrumentColumnWidth,
             label = "Instrument",
             cellRenderer = instrumentRenderer(props),
             headerRenderer =
@@ -542,7 +539,6 @@ object QueueTableBody {
           Column.propsNoFlex(
             width,
             dataKey = "instrument",
-            minWidth = InstrumentColumnWidth,
             label = "Instrument",
             cellRenderer = instrumentRenderer(props),
             className = QueueColumnStyle
@@ -552,7 +548,6 @@ object QueueTableBody {
           Column.propsNoFlex(
             width,
             dataKey = "obsName",
-            minWidth = ObsNameColumnWidth / 2,
             label = "Obs. Name",
             cellRenderer = obsNameRenderer(props),
             className = QueueColumnStyle
@@ -562,7 +557,6 @@ object QueueTableBody {
           Column.propsNoFlex(
             width,
             dataKey = "target",
-            minWidth = TargetNameColumnWidth / 2,
             label = "Target",
             cellRenderer = targetRenderer(props),
             headerRenderer =
