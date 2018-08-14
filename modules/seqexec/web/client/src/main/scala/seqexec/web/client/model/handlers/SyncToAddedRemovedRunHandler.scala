@@ -38,7 +38,7 @@ class SyncToAddedRemovedRunHandler[M](modelRW: ModelRW[M, Pages.SeqexecPages]) e
           val sid = seq.id
           val step = seq.progress.last
           // We need to use an effect here as the model is not fully resolved
-          val effect = Effect(Future(SelectIdToDisplay(sid)))
+          val effect = Effect(Future(SelectIdToDisplay(instrument, sid)))
           value match {
             case Root | SoundTest =>
               updated(SequencePage(instrument, id, step), effect)

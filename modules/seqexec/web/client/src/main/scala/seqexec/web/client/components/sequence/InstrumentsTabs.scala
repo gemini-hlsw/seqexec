@@ -115,7 +115,7 @@ object InstrumentTab {
       b.props.router.link(linkPage)(tabContent)
     }.componentDidMount(ctx =>
       Callback {
-        // Enable menu on Semantic UI
+        // Enable tabs on Semantic UI
         import org.querki.jquery.$
         import web.client.facades.semanticui.SemanticUITab._
 
@@ -127,7 +127,7 @@ object InstrumentTab {
                 val instrument = ctx.props.tab.instrument
                 val updateModelCB = (sequenceId, instrument) match {
                   case (Some(id), Some(i)) =>
-                    SeqexecCircuit.dispatchCB(NavigateTo(SequencePage(i, id, 0))) >> SeqexecCircuit.dispatchCB(SelectIdToDisplay(id))
+                    SeqexecCircuit.dispatchCB(NavigateTo(SequencePage(i, id, 0))) >> SeqexecCircuit.dispatchCB(SelectIdToDisplay(i, id))
                   case _                   =>
                     Callback.empty
                 }

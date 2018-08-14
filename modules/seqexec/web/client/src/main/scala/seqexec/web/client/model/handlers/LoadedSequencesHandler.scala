@@ -20,9 +20,9 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
  */
 class LoadedSequencesHandler[M](modelRW: ModelRW[M, SequencesOnDisplay]) extends ActionHandler(modelRW) with Handlers {
   override def handle: PartialFunction[Any, ActionResult[M]] = {
-    case ServerMessage(LoadSequenceUpdated(_, sid, view)) =>
+    case ServerMessage(LoadSequenceUpdated(i, sid, view)) =>
       val refs = view.loaded.values.map(SeqexecCircuit.sequenceRef)
-      updated(value.unsetPreviewOn(sid).updateLoaded(refs.toList).focusOnSequence(sid))
+      updated(value.unsetPreviewOn(sid).updateLoaded(refs.toList).focusOnSequence(i, sid))
 
     case ServerMessage(ClearLoadedSequencesUpdated(_)) =>
       updated(value.updateLoaded(Nil))

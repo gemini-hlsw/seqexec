@@ -114,7 +114,7 @@ object circuit {
 
     private val wsHandler                = new WebSocketHandler(zoomTo(_.ws))
     private val serverMessagesHandler    = new ServerMessagesHandler(webSocketFocusRW)
-    private val initialSyncHandler       = new InitialSyncHandler(initialSyncFocusRW)
+    // private val initialSyncHandler       = new InitialSyncHandler(initialSyncFocusRW)
     private val navigationHandler        = new NavigationHandler(zoomTo(_.uiModel.navLocation))
     private val loginBoxHandler          = new ModalBoxHandler(OpenLoginBox, CloseLoginBox, zoomTo(_.uiModel.loginBox))
     private val resourcesBoxHandler      = new ModalBoxHandler(OpenResourcesBox, CloseResourcesBox, zoomTo(_.uiModel.resourceConflict.visibility))
@@ -238,7 +238,7 @@ object circuit {
 
     override protected def actionHandler = composeHandlers(
       wsHandler,
-      foldHandlers(serverMessagesHandler, /*syncToAddedHandler, */initialSyncHandler, loadSequencesHandler),
+      foldHandlers(serverMessagesHandler, /*syncToAddedHandler, initialSyncHandler,*/ loadSequencesHandler),
       sequenceExecHandler,
       resourcesBoxHandler,
       resourcesConflictHandler,

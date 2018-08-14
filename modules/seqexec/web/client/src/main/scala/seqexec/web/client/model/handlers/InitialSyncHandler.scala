@@ -38,11 +38,11 @@ class InitialSyncHandler[M](modelRW: ModelRW[M, InitialSyncFocus]) extends Actio
       // the page maybe not in sync with the tabs. Let's fix that
       val sids = s.view.queue.map(_.id)
       value.location match {
-        case SequencePage(_, id, _) if sids.contains(id)                 =>
+        case SequencePage(i, id, _) if sids.contains(id)                 =>
           // We are on a sequence page, update the model
           // val seq = RefTo(new RootModelR(s.view.queue.find(_.id === id)))
           // We need to effect to update the reference
-          val effect = Effect(Future(SelectIdToDisplay(id)))
+          val effect = Effect(Future(SelectIdToDisplay(i, id)))
           updated(value.copy(/*sod = value.sod.focusOnSequence(seq), */firstLoad = false), effect)
 
         case SequenceConfigPage(_, id, _) if sids.contains(id)           =>
@@ -52,11 +52,11 @@ class InitialSyncHandler[M](modelRW: ModelRW[M, InitialSyncFocus]) extends Actio
           // updated(value.copy(sod = value.sod.focusOnSequence(seq).showStepConfig(step - 1), firstLoad = false), effect)
           noChange
 
-        case PreviewConfigPage(_, id, step) if sids.contains(id)           =>
+        case PreviewConfigPage(i, id, step) if sids.contains(id)           =>
           // We are on a seq config page, update the model
           val seq = RefTo(new RootModelR(s.view.queue.find(_.id === id)))
-          val effect = Effect(Future(ShowStepConfig(id, step, isPreview = true)))
-          updated(value.copy(sod = value.sod.previewSequence(seq).showStepConfig(step - 1), firstLoad = false), effect)
+          val effect = Effect(Future(ShowStepConfig(i, id, step, isPreview = true)))
+          updated(value.copy(sod = value.sod.previewSequence(i, seq).showStepConfig(id, step - 1), firstLoad = false), effect)
         case _                                                              =>
           // No matches
           updated(value.copy(firstLoad = false))

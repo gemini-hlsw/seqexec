@@ -15,22 +15,26 @@ import seqexec.web.common.Zipper
 // Model for the tabbed area of sequences
 final case class SequencesOnDisplay(sequences: Zipper[SequenceTab]) {
   // Display a given step on the focused sequence
-  def showStepConfig(i: Int): SequencesOnDisplay =
-    copy(sequences = sequences.modify(SequenceTab.stepConfigL.set(Some(i))(_)))
+  def showStepConfig(id: Observation.Id, i: Int): SequencesOnDisplay =
+    if (sequences.focus.obsId.exists(_ === id)) {
+      copy(sequences = sequences.modify(SequenceTab.stepConfigL.set(Some(i))(_)))
+    } else {
+      this
+    }
 
   // Don't show steps for the sequence
   def hideStepConfig: SequencesOnDisplay =
     copy(sequences = sequences.modify(SequenceTab.stepConfigL.set(None)(_)))
 
-  def focusOnSequence2(s: RefTo[Option[SequenceView]]): SequencesOnDisplay = {
-    // Replace the sequence for the instrument or the completed sequence and reset displaying a step
-    val q = sequences.findFocus(i => i.sequence === s()).map(_.modify((SequenceTab.currentSequenceL.set(s) andThen SequenceTab.stepConfigL.set(None))(_)))
-    copy(sequences = q.getOrElse(sequences))
-  }
+  // def focusOnSequence2(s: RefTo[Option[SequenceView]]): SequencesOnDisplay = {
+  //   // Replace the sequence for the instrument or the completed sequence and reset displaying a step
+  //   val q = sequences.findFocus(i => i.sequence === s()).map(_.modify((SequenceTab.currentSequenceL.set(s) andThen SequenceTab.stepConfigL.set(None))(_)))
+  //   copy(sequences = q.getOrElse(sequences))
+  // }
 
-  def focusOnSequence(id: Observation.Id): SequencesOnDisplay = {
+  def focusOnSequence(inst: Instrument, id: Observation.Id): SequencesOnDisplay = {
     // Replace the sequence for the instrument or the completed sequence and reset displaying a step
-    val q = sequences.findFocus(i => i.sequence.exists(_.id === id))
+    val q = sequences.findFocus(i => i.sequence.exists(s => s.id === id && s.metadata.instrument === inst))
     copy(sequences = q.getOrElse(sequences))
   }
 
@@ -71,10 +75,14 @@ final case class SequencesOnDisplay(sequences: Zipper[SequenceTab]) {
     copy(sequences = q.getOrElse(sequences))
   }
 
-  def previewSequence(s: RefTo[Option[SequenceView]]): SequencesOnDisplay = {
+  def previewSequence(i: Instrument, s: RefTo[Option[SequenceView]]): SequencesOnDisplay = {
     // Replace the sequence for the instrument or the completed sequence and reset displaying a step
-    val q = sequences.findFocus(_.isPreview).map(_.modify((SequenceTab.currentSequenceL.set(s) andThen SequenceTab.stepConfigL.set(None))(_)))
-    copy(sequences = q.getOrElse(sequences))
+    if (s().exists(_.metadata.instrument === i)) {
+      val q = sequences.findFocus(_.isPreview).map(_.modify((SequenceTab.currentSequenceL.set(s) andThen SequenceTab.stepConfigL.set(None))(_)))
+      copy(sequences = q.getOrElse(sequences))
+    } else {
+      this
+    }
   }
 
   /**
@@ -84,7 +92,6 @@ final case class SequencesOnDisplay(sequences: Zipper[SequenceTab]) {
     val q = sequences.findFocus(_.isPreview)
     copy(sequences = q.getOrElse(sequences))
   }
-
 
   def unsetPreviewOn(i: Observation.Id): SequencesOnDisplay = {
     // Remove any sequence in the preview
@@ -106,14 +113,14 @@ final case class SequencesOnDisplay(sequences: Zipper[SequenceTab]) {
     copy(sequences = q)
   }
 
-  def focusOnInstrument(i: Instrument): SequencesOnDisplay = {
-    // Focus on the instrument
-    val q = sequences.findFocus{
-      case t: InstrumentSequenceTab => t.instrument === i.some
-      case _                        => false
-    }
-    copy(sequences = q.getOrElse(sequences))
-  }
+  // def focusOnInstrument(i: Instrument): SequencesOnDisplay = {
+  //   // Focus on the instrument
+  //   val q = sequences.findFocus{
+  //     case t: InstrumentSequenceTab => t.instrument === i.some
+  //     case _                        => false
+  //   }
+  //   copy(sequences = q.getOrElse(sequences))
+  // }
 
   def isAnySelected: Boolean = sequences.exists(_.sequence.isDefined)
 
