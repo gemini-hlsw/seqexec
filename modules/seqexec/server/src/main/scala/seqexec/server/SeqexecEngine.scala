@@ -143,7 +143,7 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
   def seqQueueRefreshStream: Stream[IO, executeEngine.EventType] =
     Scheduler[IO](corePoolSize = 1).flatMap { scheduler =>
       val fd = Duration(settings.odbQueuePollingInterval.toSeconds, TimeUnit.SECONDS)
-      scheduler.fixedRate[IO](fd).flatMap { _ =>
+      scheduler.fixedDelay[IO](fd).flatMap { _ =>
         Stream.emit(Event.getState[executeEngine.ConcreteTypes](refreshSequenceList()))
       }
     }
