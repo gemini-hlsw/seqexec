@@ -97,13 +97,13 @@ class SeqexecCommandRoutes(auth: AuthenticationService, inputQueue: server.Event
        resp <- Ok(s"Resume observation requested for $obsId on step $stepId")
      } yield resp
 
-   case POST -> Root / "operator" / name as user =>
-     se.setOperator(inputQueue, user, Operator(name)) *> Ok(s"Set operator name to '$name'")
+   case POST -> Root / "operator" / OperatorVar(op) as user =>
+     se.setOperator(inputQueue, user, op) *> Ok(s"Set operator name to '${op.value}'")
 
-   case POST -> Root / ObsIdVar(obsId) / "observer" / name as user =>
+   case POST -> Root / ObsIdVar(obsId) / "observer" / ObserverVar(obs) as user =>
      for {
-       _     <- se.setObserver(inputQueue, obsId, user, Observer(name))
-       resp  <- Ok(s"Set observer name to '$name' for sequence $obsId")
+       _     <- se.setObserver(inputQueue, obsId, user, obs)
+       resp  <- Ok(s"Set observer name to '${obs.value}' for sequence $obsId")
      } yield resp
 
     case req @ POST -> Root / "conditions" as user =>
@@ -131,8 +131,8 @@ class SeqexecCommandRoutes(auth: AuthenticationService, inputQueue: server.Event
         se.setCloudCover(inputQueue, cc, user) *> Ok(s"Set cloud cover to $cc")
       )
 
-    case POST -> Root / "load" / InstrumentVar(i) / ObsIdVar(obsId) as user =>
-      se.loadSequence(inputQueue, i, obsId, user) *> Ok(s"Set selected sequence $obsId for $i")
+    case POST -> Root / "load" / InstrumentVar(i) / ObsIdVar(obsId) / ObserverVar(observer) as user =>
+      se.loadSequence(inputQueue, i, obsId, observer, user) *> Ok(s"Set selected sequence $obsId for $i")
 
     case POST -> Root / "unload" / "all" as user =>
       se.clearLoadedSequences(inputQueue, user) *> Ok(s"Queue cleared")

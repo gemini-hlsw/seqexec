@@ -7,7 +7,7 @@ import cats.implicits._
 import diode.{Action, ActionHandler, ActionResult, Effect, ModelRW, NoAction}
 import gem.Observation
 import gem.enum.Site
-import seqexec.model.{ Observer, Operator, SequencesQueue, SequenceView, UserDetails }
+import seqexec.model.{ Operator, SequencesQueue, SequenceView, UserDetails }
 import seqexec.web.client.model._
 import seqexec.web.client.ModelOps._
 import seqexec.web.client.actions._
@@ -45,10 +45,10 @@ class SyncRequestsHandler[M](modelRW: ModelRW[M, Boolean]) extends ActionHandler
 class SequenceExecutionHandler[M](modelRW: ModelRW[M, SequencesQueue[SequenceView]]) extends ActionHandler(modelRW) with Handlers {
   def handleUpdateObserver: PartialFunction[Any, ActionResult[M]] = {
     case UpdateObserver(sequenceId, name) =>
-      val updateObserverE = Effect(SeqexecWebClient.setObserver(sequenceId, name).map(_ => NoAction))
+      val updateObserverE = Effect(SeqexecWebClient.setObserver(sequenceId, name.value).map(_ => NoAction))
       val updatedSequences = value.copy(queue = value.queue.collect {
         case s if s.id === sequenceId =>
-          s.copy(metadata = s.metadata.copy(observer = Some(Observer(name))))
+          s.copy(metadata = s.metadata.copy(observer = Some(name)))
         case s                        => s
       })
       updated(updatedSequences, updateObserverE)

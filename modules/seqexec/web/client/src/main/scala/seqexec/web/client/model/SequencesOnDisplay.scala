@@ -60,6 +60,8 @@ final case class SequencesOnDisplay(sequences: Zipper[SequenceTab]) {
     val q = newZipper.findFocus {
       case PreviewSequenceTab(_, _) if currentFocus.isPreview =>
         true
+      case PreviewSequenceTab(_, _) =>
+        false
       case InstrumentSequenceTab(i, _, _, _)                  =>
         currentFocus match {
           case InstrumentSequenceTab(j, _, _, _) => i === j

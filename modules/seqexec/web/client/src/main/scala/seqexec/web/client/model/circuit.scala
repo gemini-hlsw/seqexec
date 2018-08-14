@@ -51,6 +51,7 @@ object circuit {
   final case class StatusAndLoadedSequencesFocus(isLogged: Boolean, sequences: List[SequenceInQueue], tableState: TableState[QueueTableBody.TableColumn]) extends UseValueEq
   final case class HeaderSideBarFocus(status: ClientStatus, conditions: Conditions, operator: Option[Operator]) extends UseValueEq
   final case class InstrumentStatusFocus(instrument: Instrument, active: Boolean, idState: Option[(Observation.Id, SequenceState)], runningStep: Option[RunningStep]) extends UseValueEq
+  final case class InstrumentTabFocus(tabs: NonEmptyList[AvailableTab], user: Option[UserDetails]) extends UseValueEq
   final case class SequenceTabContentFocus(instrument: Option[Instrument], id: Option[Observation.Id], sequenceSelected: Boolean, logDisplayed: SectionVisibilityState) extends UseValueEq
   object SequenceTabContentFocus {
     implicit val eq: Eq[SequenceTabContentFocus] =
@@ -160,8 +161,10 @@ object circuit {
     val logDisplayedReader: ModelR[SeqexecAppRootModel, SectionVisibilityState] =
       zoom(_.uiModel.globalLog.display)
 
-    val availableTabs: ModelR[SeqexecAppRootModel, NonEmptyList[AvailableTab]] =
-      zoom(_.uiModel.sequencesOnDisplay.availableTabs)
+    val availableTabs: ModelR[SeqexecAppRootModel, InstrumentTabFocus] =
+      zoom(_.uiModel.user).zip(zoom(_.uiModel.sequencesOnDisplay.availableTabs)).zoom {
+        case (u, tabs) => InstrumentTabFocus(tabs, u)
+      }
 
     val sequenceTabs: ModelR[SeqexecAppRootModel, NonEmptyList[SequenceTabContentFocus]] =
       logDisplayedReader.zip(zoom(_.uiModel.sequencesOnDisplay)).zoom {

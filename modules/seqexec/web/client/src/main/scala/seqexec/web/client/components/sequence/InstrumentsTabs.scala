@@ -10,7 +10,7 @@ import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.component.builder.Lifecycle.RenderScope
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react._
-import seqexec.model.SequenceState
+import seqexec.model.{Observer, UserDetails, SequenceState}
 import seqexec.model.enum.Instrument
 import seqexec.web.client.actions.{LoadSequence, /*NavigateTo,*/ SelectEmptyPreview, SelectSequencePreview, SelectIdToDisplay}
 import seqexec.web.client.model.Pages._
@@ -25,13 +25,14 @@ import seqexec.web.client.components.SeqexecStyles
 import web.client.style._
 
 object InstrumentTab {
-  final case class Props(router: RouterCtl[SeqexecPages], tab: AvailableTab, loggedIn: Boolean)
+  final case class Props(router: RouterCtl[SeqexecPages], tab: AvailableTab, loggedIn: Boolean, user: Option[UserDetails])
   final case class State(loading: Boolean)
 
   type Backend = RenderScope[Props, State, Unit]
 
   def load(b: Backend, inst: Instrument, id: Observation.Id): Callback =
-    b.setState(State(loading = true)) *> SeqexecCircuit.dispatchCB(LoadSequence(inst, id))
+    b.setState(State(loading = true)) *>
+    b.props.user.map(u => SeqexecCircuit.dispatchCB(LoadSequence(Observer(u.displayName), inst, id))).getOrEmpty
 
   private def showSequence(page: SeqexecPages)(e: ReactEvent): Callback = {
     // prevent default to avoid the link jumping
@@ -167,7 +168,7 @@ object InstrumentsTabs {
     .render_P(p =>
       <.div(
         ^.cls := "ui attached tabular menu",
-        SeqexecCircuit.connect(SeqexecCircuit.availableTabs)(x => ReactFragment(x().toList.map(t => InstrumentTab(InstrumentTab.Props(p.router, t, p.loggedIn)): VdomNode): _*))
+        SeqexecCircuit.connect(SeqexecCircuit.availableTabs)(x => ReactFragment(x().tabs.toList.map(t => InstrumentTab(InstrumentTab.Props(p.router, t, p.loggedIn, x().user)): VdomNode): _*))
       )
     ).build
 

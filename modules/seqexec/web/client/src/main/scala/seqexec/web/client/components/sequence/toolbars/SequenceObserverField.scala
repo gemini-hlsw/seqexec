@@ -11,6 +11,7 @@ import japgolly.scalajs.react.{BackendScope, Callback, ScalaComponent}
 import japgolly.scalajs.react.extra.{StateSnapshot, TimerSupport}
 import japgolly.scalajs.react.component.Scala.Unmounted
 import org.scalajs.dom.html.Div
+import seqexec.model.Observer
 import seqexec.web.client.actions.UpdateObserver
 import seqexec.web.client.circuit.StatusAndObserverFocus
 import seqexec.web.client.semanticui.elements.label.FormLabel
@@ -29,7 +30,7 @@ object SequenceObserverField {
 
   class Backend(val $: BackendScope[Props, State]) extends TimerSupport {
     def updateObserver(id: Observation.Id, name: String): Callback =
-      $.props >>= { p => Callback.when(p.p().isLogged)(p.p.dispatchCB(UpdateObserver(id, name))) }
+      $.props >>= { p => Callback.when(p.p().isLogged)(p.p.dispatchCB(UpdateObserver(id, Observer(name)))) }
 
     def updateState(value: Option[String], cb: Callback): Callback =
       {$.state >>= { (s: State) => Callback.when(!s.currentText.contains(value.getOrElse("")))($.modState(_.copy(currentText = value))) }} >> cb

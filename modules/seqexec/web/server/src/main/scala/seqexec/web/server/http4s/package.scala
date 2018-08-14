@@ -5,6 +5,7 @@ package seqexec.web.server
 
 import cats.implicits._
 import gem.Observation
+import seqexec.model.{ Observer, Operator }
 import seqexec.model.enum.Instrument
 import seqexec.model.ClientID
 
@@ -12,6 +13,16 @@ trait Var {
   object ObsIdVar {
     def unapply(str: String): Option[Observation.Id] =
       Observation.Id.fromString(str)
+  }
+
+  object ObserverVar {
+    def unapply(str: String): Option[Observer] =
+      Observer(str).some
+  }
+
+  object OperatorVar {
+    def unapply(str: String): Option[Operator] =
+      Operator(str).some
   }
 
   object InstrumentVar {
