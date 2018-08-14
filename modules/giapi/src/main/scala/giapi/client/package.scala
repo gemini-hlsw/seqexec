@@ -12,7 +12,9 @@ import edu.gemini.aspen.giapi.status.{StatusHandler, StatusItem}
 import edu.gemini.aspen.giapi.statusservice.{StatusHandlerAggregate, StatusService}
 import edu.gemini.aspen.giapi.util.jms.status.StatusGetter
 import edu.gemini.aspen.gmp.commands.jms.client.CommandSenderClient
+import edu.gemini.aspen.giapi.commands.SequenceCommand
 import edu.gemini.jms.activemq.provider.ActiveMQJmsProvider
+import giapi.client.commands._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 import shapeless.Typeable._
@@ -269,12 +271,19 @@ package client {
     /**
       * Simulator interpreter on IO, Reading items will fail and all commands will succeed
       */
-    def giapiConnectionIO: GiapiConnection[IO] = new GiapiConnection[IO] {
+    def giapiConnectionIO(ec: ExecutionContext): GiapiConnection[IO] = new GiapiConnection[IO] {
+      implicit val ecq: ExecutionContext = ec
       override def connect: IO[Giapi[IO]] = IO.pure(new Giapi[IO] {
         override def get[A: ItemGetter](statusItem: String): IO[A] = IO.raiseError(new RuntimeException(s"Cannot read $statusItem"))
         override def getO[A: ItemGetter](statusItem: String): IO[Option[A]] = IO.pure(None)
         override def stream[A: ItemGetter](statusItem: String): IO[Stream[IO, A]] = IO.pure(Stream.empty.covary[IO])
-        override def command(command: Command, timeout: FiniteDuration): IO[CommandResult] = IO.pure(CommandResult(Response.COMPLETED))
+        override def command(command: Command, timeout: FiniteDuration): IO[CommandResult] =
+          if (command.sequenceCommand === SequenceCommand.OBSERVE) {
+            IO.sleep(timeout) *>
+            IO.pure(CommandResult(Response.COMPLETED))
+          } else {
+            IO.pure(CommandResult(Response.COMPLETED))
+          }
         override def close: IO[Unit] = IO.unit
       })
     }

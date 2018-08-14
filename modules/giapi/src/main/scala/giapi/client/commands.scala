@@ -68,6 +68,8 @@ package object commands {
     case (a, b) => a.name === b.name
   }
 
+  implicit val scEq: Eq[SequenceCommand] = Eq.fromUniversalEquals
+
   /**
     * Send a command over giapi
     * @param commandsClient Client interface to send the command to the client and await the response
