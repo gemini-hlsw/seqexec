@@ -9,7 +9,6 @@ import seqexec.model.events.SeqexecModelUpdate
 import seqexec.web.client.actions._
 import seqexec.web.client.circuit._
 import seqexec.web.client.model.Pages._
-import seqexec.web.client.ModelOps._
 import scala.concurrent.Future
 import cats.implicits._
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
@@ -28,8 +27,8 @@ class InitialSyncHandler[M](modelRW: ModelRW[M, InitialSyncFocus]) extends Actio
     case ServerMessage(s: SeqexecModelUpdate) if runningSequence(s).isDefined && value.firstLoad =>
       val running = runningSequence(s)
       running.fold(updated(value.copy(firstLoad = true))) { f =>
-        // val seq = RefTo(new RootModelR(running))
-        updated(value.copy(location = SequencePage(f.metadata.instrument, f.id, f.progress.last)))//, sod = value.sod.focusOnSequence(seq)))
+        val effect = Effect(Future(SelectIdToDisplay(f.metadata.instrument, f.id)))
+        updated(value.copy(firstLoad = false), effect)
       }
 
     // Otherwise, update the model to reflect the current page
@@ -67,7 +66,7 @@ class InitialSyncHandler[M](modelRW: ModelRW[M, InitialSyncFocus]) extends Actio
           }
           updated(value.copy(firstLoad = false), effect)
 
-        case _                                                              =>
+        case _                                                           =>
           // No matches
           updated(value.copy(firstLoad = false))
       }

@@ -12,7 +12,7 @@ import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react._
 import seqexec.model.SequenceState
 import seqexec.model.enum.Instrument
-import seqexec.web.client.actions.{LoadSequence, NavigateTo, SelectIdToDisplay}
+import seqexec.web.client.actions.{LoadSequence, /*NavigateTo,*/ SelectEmptyPreview, SelectSequencePreview, SelectIdToDisplay}
 import seqexec.web.client.model.Pages._
 import seqexec.web.client.model.{ AvailableTab, RunningStep }
 import seqexec.web.client.circuit.SeqexecCircuit
@@ -33,10 +33,47 @@ object InstrumentTab {
   def load(b: Backend, inst: Instrument, id: Observation.Id): Callback =
     b.setState(State(loading = true)) *> SeqexecCircuit.dispatchCB(LoadSequence(inst, id))
 
+  private def showSequence(page: SeqexecPages)(e: ReactEvent): Callback = {
+    // prevent default to avoid the link jumping
+    e.preventDefault
+    // Request to display the selected sequence
+    page match {
+      case PreviewPage(i, obsId, step) =>
+        SeqexecCircuit.dispatchCB(SelectSequencePreview(i, obsId, step))
+      case SequencePage(i, obsId, _) =>
+        SeqexecCircuit.dispatchCB(SelectIdToDisplay(i, obsId))
+      case EmptyPreviewPage =>
+        SeqexecCircuit.dispatchCB(SelectEmptyPreview)
+      case _ =>
+        Callback.empty
+    }
+  }
+
+  private def linkTo(p: Props, page: SeqexecPages)(mod: TagMod*) = {
+    val active = p.tab.active
+    val isPreview = p.tab.isPreview
+    val instrument = p.tab.instrument
+    val dataId = if (isPreview) "preview" else instrument.foldMap(_.show)
+
+    <.a(
+      ^.href := p.router.urlFor(page).value,
+      ^.onClick ==> showSequence(page),
+      p.router.setOnLinkClick(page),
+      ^.cls := "item",
+      ^.classSet(
+        "active" -> active
+      ),
+      SeqexecStyles.instrumentTab,
+      SeqexecStyles.inactiveInstrumentContent.unless(active),
+      SeqexecStyles.activeInstrumentContent.when(active),
+      dataTab := dataId,
+      mod.toTagMod
+    )
+  }
+
   private val component = ScalaComponent.builder[Props]("SequenceTab")
     .initialState(State(false))
     .render { b =>
-      val active = b.props.tab.active
       val status = b.props.tab.status
       val hasError = status.exists(_.isError)
       val sequenceId = b.props.tab.id
@@ -44,6 +81,7 @@ object InstrumentTab {
       val isPreview = b.props.tab.isPreview
       val instName = instrument.foldMap(_.show)
       val dispName = if (isPreview) s"Preview: $instName" else instName
+      val isLogged = b.props.loggedIn
 
       val tabTitle = b.props.tab.runningStep match {
         case Some(RunningStep(current, total)) => s"${sequenceId.map(_.format).getOrElse("")} - ${current + 1}/$total"
@@ -82,63 +120,42 @@ object InstrumentTab {
                   onClick = load(b, inst, id))
               )
             ): VdomNode)
-          .filter(_ => isPreview && b.props.loggedIn)
-
-      // val labelNoId =
-      //   <.div(SeqexecStyles.instrumentTabLabel, if (isPreview) "Preview" else dispName)
+          .filter(_ => isPreview && isLogged)
 
       val instrumentWithId =
-        <.div(
-          SeqexecStyles.instrumentTabLabel,
+        ReactFragment(
           <.div(SeqexecStyles.activeInstrumentLabel, dispName),
           Label(Label.Props(tabTitle, color = color, icon = icon, extraStyles = List(SeqexecStyles.labelPointer)))
         )
 
-      val dataId = if (isPreview) "preview" else instrument.show
-
       val tabContent: VdomNode =
         <.div(
           IconAttention.copyIcon(color = Some("red")).when(hasError),
+          SeqexecStyles.instrumentTabLabel,
           instrumentWithId,
-          ^.cls := "item",
           ^.classSet(
-            "active" -> active,
             "error"  -> hasError
           ),
-          SeqexecStyles.instrumentTab,
-          SeqexecStyles.inactiveInstrumentContent.unless(active),
-          SeqexecStyles.activeInstrumentContent.when(active),
-          SeqexecStyles.errorTab.when(hasError),
-          dataTab := dataId,
-          loadButton
+          SeqexecStyles.errorTab.when(hasError)
         )
 
-      b.props.router.link(linkPage)(tabContent)
-    }.componentDidMount(ctx =>
-      Callback {
-        // Enable tabs on Semantic UI
-        import org.querki.jquery.$
-        import web.client.facades.semanticui.SemanticUITab._
-
-        ctx.getDOMNode.toElement.foreach { dom =>
-          $(dom).tab(
-            JsTabOptions
-              .onVisible { (x: String) =>
-                val sequenceId = ctx.props.tab.id
-                val instrument = ctx.props.tab.instrument
-                val updateModelCB = (sequenceId, instrument) match {
-                  case (Some(id), Some(i)) =>
-                    SeqexecCircuit.dispatchCB(NavigateTo(SequencePage(i, id, 0))) >> SeqexecCircuit.dispatchCB(SelectIdToDisplay(i, id))
-                  case _                   =>
-                    Callback.empty
-                }
-                // runNow as we are outside react loop
-                updateModelCB.runNow()
-              }
+      val previewTabContent: VdomNode =
+        <.div(
+          SeqexecStyles.previewTabLabel.when(isLogged && sequenceId.isDefined),
+          SeqexecStyles.instrumentTabLabel.unless(isLogged),
+          SeqexecStyles.instrumentTabLabel.when(sequenceId.isEmpty),
+          <.div(
+            SeqexecStyles.previewTabId,
+            instrumentWithId
+          ),
+          <.div(
+            SeqexecStyles.previewTabLoadButton,
+            loadButton
           )
-        }
-      }
-    ).build
+        )
+
+      linkTo(b.props, linkPage)(if (isPreview) previewTabContent else tabContent)
+    }.build
 
   def apply(p: Props): Unmounted[Props, State, Unit] = component(p)
 }

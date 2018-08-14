@@ -483,7 +483,7 @@ object SeqexecEngine extends SeqexecConfiguration {
     if (gpiControl.command) {
       Giapi.giapiConnection[IO](gpiUrl, scala.concurrent.ExecutionContext.Implicits.global).connect
     } else {
-      Giapi.giapiConnectionIO.connect
+      Giapi.giapiConnectionIO(scala.concurrent.ExecutionContext.Implicits.global).connect
     }
   }
 

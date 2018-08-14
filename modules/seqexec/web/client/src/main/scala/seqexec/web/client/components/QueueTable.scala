@@ -27,13 +27,10 @@ import seqexec.web.client.actions._
 import seqexec.web.client.model.Pages._
 import seqexec.web.client.model.RunningStep
 import seqexec.web.client.ModelOps._
-// import seqexec.web.client.semanticui.{Size => SSize}
-// import seqexec.web.client.semanticui.elements.button.Button
 import seqexec.web.client.semanticui.elements.icon.Icon.IconAttention
 import seqexec.web.client.semanticui.elements.icon.Icon.IconCheckmark
 import seqexec.web.client.semanticui.elements.icon.Icon.IconCircleNotched
 import seqexec.web.client.semanticui.elements.icon.Icon.IconSelectedRadio
-// import seqexec.web.client.semanticui.elements.icon.Icon.IconSignIn
 import web.client.style._
 import web.client.utils._
 import web.client.table._
