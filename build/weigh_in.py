@@ -34,14 +34,15 @@ if not match:
     sys.exit(1)
 
 splitted = match.group(7).split('/')
-if splitted.length == 3:
+if len(splitted) == 3:
     owner = match.group(7).split('/')[1]
     repo = match.group(7).split('/')[2]
 else:
     owner = match.group(7).split('/')[0]
-    repo = match.group(7).split('/')[1]
+    repo = match.group(7).split('/')[1].replace('.git', '')
 
 slug = '%s/%s' % (owner, repo)
+print("slug %s" % slug)
 
 if BUILDKITE_PULL_REQUEST == 'false':
     BUILDKITE_PULL_REQUEST = False

@@ -3,8 +3,7 @@
 
 package seqexec.web.client.handlers
 
-import diode.{ActionHandler, ActionResult, RootModelR, Effect, ModelRW}
-import diode.data.RefTo
+import diode.{ActionHandler, ActionResult, Effect, ModelRW}
 import seqexec.model.SequenceView
 import seqexec.model.events.SeqexecModelUpdate
 import seqexec.web.client.actions._
@@ -39,24 +38,35 @@ class InitialSyncHandler[M](modelRW: ModelRW[M, InitialSyncFocus]) extends Actio
       val sids = s.view.queue.map(_.id)
       value.location match {
         case SequencePage(i, id, _) if sids.contains(id)                 =>
-          // We are on a sequence page, update the model
-          // val seq = RefTo(new RootModelR(s.view.queue.find(_.id === id)))
           // We need to effect to update the reference
           val effect = Effect(Future(SelectIdToDisplay(i, id)))
-          updated(value.copy(/*sod = value.sod.focusOnSequence(seq), */firstLoad = false), effect)
+          updated(value.copy(firstLoad = false), effect)
 
-        case SequenceConfigPage(_, id, _) if sids.contains(id)           =>
-          // We are on a seq config page, update the model
-          // val seq = RefTo(new RootModelR(s.view.queue.find(_.id === id)))
-          // val effect = Effect(Future(ShowStepConfig(id, step, isPreview = false)))
-          // updated(value.copy(sod = value.sod.focusOnSequence(seq).showStepConfig(step - 1), firstLoad = false), effect)
-          noChange
+        case PreviewPage(i, id, st) if sids.contains(id)                 =>
+          val isLoaded = s.view.loaded.values.toList.contains(id)
+          // We need to effect to update the reference
+          val effect = if (isLoaded) {
+            Effect(Future(SelectIdToDisplay(i, id)))
+          } else {
+            Effect(Future(SelectSequencePreview(i, id, st)))
+          }
+          updated(value.copy(firstLoad = false), effect)
 
-        case PreviewConfigPage(i, id, step) if sids.contains(id)           =>
-          // We are on a seq config page, update the model
-          val seq = RefTo(new RootModelR(s.view.queue.find(_.id === id)))
-          val effect = Effect(Future(ShowStepConfig(i, id, step, isPreview = true)))
-          updated(value.copy(sod = value.sod.previewSequence(i, seq).showStepConfig(id, step - 1), firstLoad = false), effect)
+        case SequenceConfigPage(i, id, st) if sids.contains(id)          =>
+          // We need to effect to update the reference
+          val effect = Effect(Future(ShowStepConfig(i, id, st)))
+          updated(value.copy(firstLoad = false), effect)
+
+        case PreviewConfigPage(i, id, st) if sids.contains(id)           =>
+          val isLoaded = s.view.loaded.values.toList.contains(id)
+          // We need to effect to update the reference
+          val effect = if (isLoaded) {
+            Effect(Future(ShowStepConfig(i, id, st)))
+          } else {
+            Effect(Future(ShowPreviewStepConfig(i, id, st)))
+          }
+          updated(value.copy(firstLoad = false), effect)
+
         case _                                                              =>
           // No matches
           updated(value.copy(firstLoad = false))

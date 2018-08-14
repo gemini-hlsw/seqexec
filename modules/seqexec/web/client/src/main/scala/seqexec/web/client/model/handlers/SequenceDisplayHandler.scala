@@ -15,11 +15,11 @@ import seqexec.web.client.circuit._
 class SequenceDisplayHandler[M](modelRW: ModelRW[M, SequencesOnDisplay]) extends ActionHandler(modelRW) with Handlers {
   def handleSelectSequenceDisplay: PartialFunction[Any, ActionResult[M]] = {
     case SelectIdToDisplay(i, id) =>
-      updated(value.focusOnSequence(i, id))
+      updated(value.focusOnSequence(i, id).hideStepConfig)
 
     case SelectSequencePreview(i, id, _) =>
       val seq = SeqexecCircuit.sequenceRef(id)
-      updated(value.previewSequence(i, seq))
+      updated(value.previewSequence(i, seq).hideStepConfig)
 
     case SelectEmptyPreview =>
       updated(value.unsetPreview.focusOnPreview)
@@ -27,14 +27,14 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, SequencesOnDisplay]) extends
   }
 
   def handleShowHideStep: PartialFunction[Any, ActionResult[M]] = {
-    case ShowStepConfig(i, id, step, true) =>
+    case ShowPreviewStepConfig(i, id, step) =>
       val seq = SeqexecCircuit.sequenceRef(id)
       updated(value.previewSequence(i, seq).showStepConfig(id, step - 1))
 
-    case ShowStepConfig(i, id, step, false) =>
+    case ShowStepConfig(i, id, step)        =>
       updated(value.focusOnSequence(i, id).showStepConfig(id, step - 1))
 
-    case HideStepConfig(instrument) =>
+    case HideStepConfig(instrument)         =>
       if (value.sequences.focus.sequence.exists(_.metadata.instrument == instrument)) {
         updated(value.hideStepConfig)
       } else {

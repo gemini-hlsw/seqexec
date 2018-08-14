@@ -14,7 +14,7 @@ import seqexec.web.client.model.Pages._
 import seqexec.web.client.model.RunningStep
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.components.SeqexecStyles
-import seqexec.web.client.actions.NavigateSilentTo
+import seqexec.web.client.actions.{SelectIdToDisplay, ShowStepConfig, SelectSequencePreview}
 import seqexec.web.client.semanticui.elements.button.ButtonGroup
 import seqexec.web.client.semanticui.elements.button.Button
 import seqexec.web.client.semanticui.elements.button.Button._
@@ -31,13 +31,15 @@ object StepConfigToolbar {
   final case class Props(router: RouterCtl[SeqexecPages], instrument: Instrument, id: Observation.Id, step: Int, total: Int, isPreview: Boolean)
 
   def backToSequence(p: Props): Callback =
-    SeqexecCircuit.dispatchCB(NavigateSilentTo(SequencePage(p.instrument, p.id, p.step)))
+    SeqexecCircuit.dispatchCB(SelectSequencePreview(p.instrument, p.id, p.step)).when(p.isPreview) *>
+    SeqexecCircuit.dispatchCB(SelectIdToDisplay(p.instrument, p.id)).unless(p.isPreview) *>
+    Callback.empty
 
   def previousStep(p: Props): Callback =
-    SeqexecCircuit.dispatchCB(NavigateSilentTo(SequenceConfigPage(p.instrument, p.id, p.step)))
+    SeqexecCircuit.dispatchCB(ShowStepConfig(p.instrument, p.id, p.step))
 
   def nextStep(p: Props): Callback =
-    SeqexecCircuit.dispatchCB(NavigateSilentTo(SequenceConfigPage(p.instrument, p.id, p.step + 1)))
+    SeqexecCircuit.dispatchCB(ShowStepConfig(p.instrument, p.id, p.step + 1))
 
   @SuppressWarnings(Array("org.wartremover.warts.OptionPartial"))
   private val component = ScalaComponent.builder[Props]("StepConfigToolbar")

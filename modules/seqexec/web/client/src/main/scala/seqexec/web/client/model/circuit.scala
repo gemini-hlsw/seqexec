@@ -42,7 +42,7 @@ object circuit {
   // All these classes are focused views of the root model. They are used to only update small sections of the
   // UI even if other parts of the root model change
   final case class WebSocketsFocus(location: Pages.SeqexecPages, sequences: SequencesQueue[SequenceView], user: Option[UserDetails], clientId: Option[ClientID], site: Option[Site]) extends UseValueEq
-  final case class InitialSyncFocus(location: Pages.SeqexecPages, sod: SequencesOnDisplay, firstLoad: Boolean) extends UseValueEq
+  final case class InitialSyncFocus(location: Pages.SeqexecPages, firstLoad: Boolean) extends UseValueEq
   final case class SequenceInQueue(id: Observation.Id, status: SequenceState, instrument: Instrument, active: Boolean, loaded: Boolean, name: String, targetName: Option[TargetName], runningStep: Option[RunningStep]) extends UseValueEq
   object SequenceInQueue {
     implicit val order: Order[SequenceInQueue] = Order.by(_.id)
@@ -107,14 +107,14 @@ object circuit {
       zoomRW(m => WebSocketsFocus(m.uiModel.navLocation, m.uiModel.sequences, m.uiModel.user, m.clientId, m.site)) ((m, v) => m.copy(uiModel = m.uiModel.copy(sequences = v.sequences, user = v.user), clientId = v.clientId, site = v.site))
 
     val initialSyncFocusRW: ModelRW[SeqexecAppRootModel, InitialSyncFocus] =
-      zoomRW(m => InitialSyncFocus(m.uiModel.navLocation, m.uiModel.sequencesOnDisplay, m.uiModel.firstLoad)) ((m, v) => m.copy(uiModel = m.uiModel.copy(navLocation = v.location, sequencesOnDisplay = v.sod, firstLoad = v.firstLoad)))
+      zoomRW(m => InitialSyncFocus(m.uiModel.navLocation, m.uiModel.firstLoad)) ((m, v) => m.copy(uiModel = m.uiModel.copy(navLocation = v.location, firstLoad = v.firstLoad)))
 
     val tableStateRW: ModelRW[SeqexecAppRootModel, TableStates] =
       zoomRW(m => TableStates(m.uiModel.queueTableState, m.uiModel.configTableState)) ((m, v) => m.copy(uiModel = m.uiModel.copy(queueTableState = v.queueTable, configTableState = v.stepConfigTable)))
 
     private val wsHandler                = new WebSocketHandler(zoomTo(_.ws))
     private val serverMessagesHandler    = new ServerMessagesHandler(webSocketFocusRW)
-    // private val initialSyncHandler       = new InitialSyncHandler(initialSyncFocusRW)
+    private val initialSyncHandler       = new InitialSyncHandler(initialSyncFocusRW)
     private val navigationHandler        = new NavigationHandler(zoomTo(_.uiModel.navLocation))
     private val loginBoxHandler          = new ModalBoxHandler(OpenLoginBox, CloseLoginBox, zoomTo(_.uiModel.loginBox))
     private val resourcesBoxHandler      = new ModalBoxHandler(OpenResourcesBox, CloseResourcesBox, zoomTo(_.uiModel.resourceConflict.visibility))
@@ -177,21 +177,6 @@ object circuit {
       // Returning the getOrElse part shouldn't happen but it simplifies the model notcarrying the Option up
       zoom(_.uiModel.sequencesOnDisplay.tab(id).getOrElse(SequenceTabActive.Empty))
 
-    // def instrumentTab(i: Instrument): ModelR[SeqexecAppRootModel, SequenceTabActive] =
-    //   zoom(_.uiModel.sequencesOnDisplay.instrument(i))
-    //
-    // def instrumentStatusReader(i: Instrument): ModelR[SeqexecAppRootModel, InstrumentStatusFocus] =
-    //   instrumentTab(i).zoom {
-    //     case SequenceTabActive(tab, active) => InstrumentStatusFocus(tab.instrument, active, tab.sequence.map(s => (s.id, s.status)), tab.sequence.flatMap(_.runningStep))
-    //   }
-    //
-    //
-    // def sequenceObserverReader(i: Instrument): ModelR[SeqexecAppRootModel, StatusAndObserverFocus] =
-    //   statusReader.zip(instrumentTab(i)).zoom {
-    //     case (status, SequenceTabActive(tab, _)) =>
-    //       val targetName = tab.sequence.flatMap(firstScienceStepTargetNameT.headOption)
-    //       StatusAndObserverFocus(status.isLogged, tab.sequence.map(_.metadata.name), i, tab.sequence.map(_.id), tab.sequence.flatMap(_.metadata.observer), tab.sequence.map(_.status), targetName)
-    //   }
     def sequenceObserverReader(id: Observation.Id): ModelR[SeqexecAppRootModel, StatusAndObserverFocus] =
       statusReader.zip(sequenceTab(id)).zoom {
         case (status, SequenceTabActive(tab, _)) =>
@@ -239,7 +224,7 @@ object circuit {
 
     override protected def actionHandler = composeHandlers(
       wsHandler,
-      foldHandlers(serverMessagesHandler, /*syncToAddedHandler, initialSyncHandler,*/ loadSequencesHandler),
+      foldHandlers(serverMessagesHandler, /*syncToAddedHandler,*/ initialSyncHandler, loadSequencesHandler),
       sequenceExecHandler,
       resourcesBoxHandler,
       resourcesConflictHandler,
