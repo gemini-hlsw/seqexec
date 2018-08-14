@@ -35,7 +35,7 @@ onLoad in Global := { s =>
 }
 
 // Uncomment for local gmp testing
-//resolvers in ThisBuild += "Local Maven Repository" at "file://"+Path.userHome.absolutePath+"/.m2/repository"
+// resolvers in ThisBuild += "Local Maven Repository" at "file://"+Path.userHome.absolutePath+"/.m2/repository"
 
 // Settings to use git to define the version of the project
 def versionFmt(out: sbtdynver.GitDescribeOutput): String = {
@@ -400,8 +400,9 @@ lazy val seqexec_web_server = project.in(file("modules/seqexec/web/server"))
   .settings(commonSettings: _*)
   .settings(
     addCompilerPlugin(Plugins.kindProjectorPlugin),
-    libraryDependencies ++= Seq(UnboundId, JwtCore, Knobs) ++ Http4sClient ++ Http4s ++ Logging,
+    libraryDependencies ++= Seq(UnboundId, JwtCore, Knobs, Http4sPrometheus) ++ Http4sClient ++ Http4s ++ Logging,
     // Supports launching the server in the background
+    javaOptions in reStart += s"-javaagent:${(baseDirectory in ThisBuild).value}/app/seqexec-server/src/universal/bin/jmx_prometheus_javaagent-0.3.1.jar=6060:${(baseDirectory in ThisBuild).value}/app/seqexec-server/src/universal/bin/prometheus.yaml",
     mainClass in reStart := Some("seqexec.web.server.http4s.WebServerLauncher"),
   )
   .settings(
@@ -523,7 +524,8 @@ lazy val seqexec_server = project
           OpenCSV,
           Log4s,
           Http4sXml,
-          Http4sBoopickle
+          Http4sBoopickle,
+          PrometheusClient
       ) ++ Http4s ++ Http4sClient ++ SeqexecOdb ++ Monocle.value ++ WDBAClient ++ TestLibs.value
   )
   .settings(
@@ -620,6 +622,7 @@ lazy val seqexecCommonSettings = Seq(
   // Specify a different name for the config file
   bashScriptConfigLocation := Some("${app_home}/../conf/launcher.args"),
   bashScriptExtraDefines += """addJava "-Dlogback.configurationFile=${app_home}/../conf/logback.xml"""",
+  bashScriptExtraDefines += """addJava "-javaagent:${app_home}/jmx_prometheus_javaagent-0.3.1.jar=6060:${app_home}/prometheus.yaml"""",
   // Copy logback.xml to let users customize it on site
   mappings in Universal += {
     val f = (resourceDirectory in (seqexec_web_server, Compile)).value / "logback.xml"
@@ -641,10 +644,6 @@ lazy val seqexecCommonSettings = Seq(
     // Support remote debugging
     "-J-Xdebug",
     "-J-Xnoagent",
-    "-J-verbose:gc",
-    // These are very verbose but could be useful when tracking momeroy leaks
-    // "-J-XX:+PrintGCDetails",
-    // "-J-XX:+PrintGCTimeStamps",
     "-J-XX:+HeapDumpOnOutOfMemoryError",
     // Make sure the application exits on OOM
     "-J-XX:+ExitOnOutOfMemoryError",
@@ -686,7 +685,6 @@ lazy val app_seqexec_server = preventPublication(project.in(file("app/seqexec-se
   .settings(seqexecCommonSettings: _*)
   .settings(
     description := "Seqexec server for local testing",
-
     // Put the jar files in the lib dir
     mappings in Universal += {
       val jar = (packageBin in Compile).value
@@ -708,7 +706,10 @@ lazy val app_seqexec_server_gs_test = preventPublication(project.in(file("app/se
   .settings(deployedAppMappings: _*)
   .settings(embeddedJreSettingsLinux64: _*)
   .settings(
-    description := "Seqexec GS test deployment"
+    description := "Seqexec GS test deployment",
+    applicationConfName := "seqexec",
+    applicationConfSite := DeploymentSite.GS,
+    mappings in Universal ++= (mappings in (app_seqexec_server, Universal)).value
   ).dependsOn(seqexec_server)
 
 /**
@@ -725,7 +726,10 @@ lazy val app_seqexec_server_gn_test = preventPublication(project.in(file("app/se
   .settings(deployedAppMappings: _*)
   .settings(embeddedJreSettingsLinux64: _*)
   .settings(
-    description := "Seqexec GN test deployment"
+    description := "Seqexec GN test deployment",
+    applicationConfName := "seqexec",
+    applicationConfSite := DeploymentSite.GN,
+    mappings in Universal ++= (mappings in (app_seqexec_server, Universal)).value
   ).dependsOn(seqexec_server)
 
 /**
@@ -744,7 +748,8 @@ lazy val app_seqexec_server_gs = preventPublication(project.in(file("app/seqexec
   .settings(
     description := "Seqexec Gemini South server production",
     applicationConfName := "seqexec",
-    applicationConfSite := DeploymentSite.GS
+    applicationConfSite := DeploymentSite.GS,
+    mappings in Universal ++= (mappings in (app_seqexec_server, Universal)).value
   ).dependsOn(seqexec_server)
 
 /**

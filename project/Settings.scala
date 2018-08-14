@@ -136,6 +136,7 @@ object Settings {
     val gmpStatusDatabase       = "0.3.2"
     val gmpCmdClientBridge      = "0.6.2"
     val guava                   = "25.0-jre"
+    val prometheusClient        = "0.5.0"
   }
 
   /**
@@ -172,6 +173,7 @@ object Settings {
       "net.logstash.logback" % "logstash-logback-encoder" % LibraryVersions.logstash
     )
     val Log4s                  = "org.log4s"                          %%  "log4s"                    % LibraryVersions.log4s
+    val PrometheusClient       = "io.prometheus"                      %   "simpleclient_common"      % LibraryVersions.prometheusClient
     val Logging                = Seq(JuliSlf4j, Log4s) ++ Logback
     val Knobs                  = "io.verizon.knobs"                   %%  "core"                     % LibraryVersions.knobs
     val OpenCSV                = "net.sf.opencsv"                     %   "opencsv"                  % LibraryVersions.opencsv
@@ -184,11 +186,12 @@ object Settings {
     val Http4sClient           = Seq(
       "org.http4s" %% "http4s-dsl"          % LibraryVersions.http4sVersion,
       "org.http4s" %% "http4s-blaze-client" % LibraryVersions.http4sVersion)
-    val Http4sBoopickle        = "org.http4s"                         %%  "http4s-boopickle"         % LibraryVersions.http4sVersion
-    val Http4sCirce            = "org.http4s"                         %%  "http4s-circe"             % LibraryVersions.http4sVersion
-    val Http4sXml              = "org.http4s"                         %%  "http4s-scala-xml"         % LibraryVersions.http4sVersion
-    val Flyway                 = "org.flywaydb"                       %   "flyway-core"              % LibraryVersions.flywayVersion
-    val Atto                   = Def.setting("org.tpolecat"           %%% "atto-core"                % LibraryVersions.attoVersion)
+    val Http4sBoopickle        = "org.http4s"                         %%  "http4s-boopickle"                 % LibraryVersions.http4sVersion
+    val Http4sCirce            = "org.http4s"                         %%  "http4s-circe"                     % LibraryVersions.http4sVersion
+    val Http4sXml              = "org.http4s"                         %%  "http4s-scala-xml"                 % LibraryVersions.http4sVersion
+    val Http4sPrometheus       = "org.http4s"                         %%  "http4s-prometheus-server-metrics" % LibraryVersions.http4sVersion
+    val Flyway                 = "org.flywaydb"                       %   "flyway-core"                      % LibraryVersions.flywayVersion
+    val Atto                   = Def.setting("org.tpolecat"           %%% "atto-core"                        % LibraryVersions.attoVersion)
     val Monocle                = Def.setting(Seq(
       "com.github.julien-truffaut" %%% "monocle-core"   % LibraryVersions.monocleVersion,
       "com.github.julien-truffaut" %%% "monocle-macro"  % LibraryVersions.monocleVersion,
