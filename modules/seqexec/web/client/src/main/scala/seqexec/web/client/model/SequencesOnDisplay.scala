@@ -141,6 +141,9 @@ final case class SequencesOnDisplay(sequences: Zipper[SequenceTab]) {
     NonEmptyList.fromListUnsafe(sequences.withFocus.map {
       case (i, a) => AvailableTab(i.sequence.map(_.id), i.sequence.map(_.status), i.instrument, i.runningStep, i.isPreview, a)
     }.toList)
+
+  def cleanAll: SequencesOnDisplay =
+    SequencesOnDisplay.empty
 }
 
 /**

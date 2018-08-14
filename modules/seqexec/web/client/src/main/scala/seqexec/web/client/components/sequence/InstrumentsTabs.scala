@@ -134,7 +134,7 @@ object InstrumentTab {
       val tabContent: VdomNode =
         <.div(
           SeqexecStyles.instrumentTabLabel,
-          instrumentWithId,
+          instrumentWithId
         )
 
       val previewTabContent: VdomNode =

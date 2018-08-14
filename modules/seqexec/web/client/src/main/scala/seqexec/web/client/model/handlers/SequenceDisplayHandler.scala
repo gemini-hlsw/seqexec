@@ -47,6 +47,11 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, SequencesOnDisplay]) extends
       updated(value.markCompleted(s))
   }
 
+  def handleClean: PartialFunction[Any, ActionResult[M]] = {
+    case CleanSequences =>
+      updated(value.cleanAll)
+  }
+
   override def handle: PartialFunction[Any, ActionResult[M]] =
     List(handleSelectSequenceDisplay,
       handleShowHideStep,

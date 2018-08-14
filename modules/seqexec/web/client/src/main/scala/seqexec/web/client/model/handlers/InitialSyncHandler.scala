@@ -35,40 +35,37 @@ class InitialSyncHandler[M](modelRW: ModelRW[M, InitialSyncFocus]) extends Actio
     case ServerMessage(s: SeqexecModelUpdate) if value.firstLoad                                 =>
       // the page maybe not in sync with the tabs. Let's fix that
       val sids = s.view.queue.map(_.id)
-      value.location match {
+      val effect = value.location match {
         case SequencePage(i, id, _) if sids.contains(id)                 =>
           // We need to effect to update the reference
-          val effect = Effect(Future(SelectIdToDisplay(i, id)))
-          updated(value.copy(firstLoad = false), effect)
+          Effect(Future(SelectIdToDisplay(i, id)))
 
         case PreviewPage(i, id, st) if sids.contains(id)                 =>
           val isLoaded = s.view.loaded.values.toList.contains(id)
           // We need to effect to update the reference
-          val effect = if (isLoaded) {
+          if (isLoaded) {
             Effect(Future(SelectIdToDisplay(i, id)))
           } else {
             Effect(Future(SelectSequencePreview(i, id, st)))
           }
-          updated(value.copy(firstLoad = false), effect)
 
         case SequenceConfigPage(i, id, st) if sids.contains(id)          =>
           // We need to effect to update the reference
-          val effect = Effect(Future(ShowStepConfig(i, id, st)))
-          updated(value.copy(firstLoad = false), effect)
+          Effect(Future(ShowStepConfig(i, id, st)))
 
         case PreviewConfigPage(i, id, st) if sids.contains(id)           =>
           val isLoaded = s.view.loaded.values.toList.contains(id)
           // We need to effect to update the reference
-          val effect = if (isLoaded) {
+          if (isLoaded) {
             Effect(Future(ShowStepConfig(i, id, st)))
           } else {
             Effect(Future(ShowPreviewStepConfig(i, id, st)))
           }
-          updated(value.copy(firstLoad = false), effect)
 
         case _                                                           =>
           // No matches
-          updated(value.copy(firstLoad = false))
+          VoidEffect
       }
+      updated(value.copy(firstLoad = false), Effect(Future(CleanSequences)) >> effect)
     }
 }
