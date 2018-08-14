@@ -54,6 +54,7 @@ object InstrumentTab {
     val isPreview = p.tab.isPreview
     val instrument = p.tab.instrument
     val dataId = if (isPreview) "preview" else instrument.foldMap(_.show)
+    val hasError = p.tab.status.exists(_.isError)
 
     <.a(
       ^.href := p.router.urlFor(page).value,
@@ -63,10 +64,12 @@ object InstrumentTab {
       ^.classSet(
         "active" -> active
       ),
+      IconAttention.copyIcon(color = Some("red")).when(hasError),
       SeqexecStyles.instrumentTab,
       SeqexecStyles.inactiveInstrumentContent.unless(active),
       SeqexecStyles.activeInstrumentContent.when(active),
       dataTab := dataId,
+      SeqexecStyles.errorTab.when(hasError),
       mod.toTagMod
     )
   }
@@ -75,7 +78,6 @@ object InstrumentTab {
     .initialState(State(false))
     .render { b =>
       val status = b.props.tab.status
-      val hasError = status.exists(_.isError)
       val sequenceId = b.props.tab.id
       val instrument = b.props.tab.instrument
       val isPreview = b.props.tab.isPreview
@@ -130,13 +132,8 @@ object InstrumentTab {
 
       val tabContent: VdomNode =
         <.div(
-          IconAttention.copyIcon(color = Some("red")).when(hasError),
           SeqexecStyles.instrumentTabLabel,
           instrumentWithId,
-          ^.classSet(
-            "error"  -> hasError
-          ),
-          SeqexecStyles.errorTab.when(hasError)
         )
 
       val previewTabContent: VdomNode =

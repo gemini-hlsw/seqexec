@@ -421,7 +421,7 @@ object QueueTableBody {
                                        loading = true,
                                        extraStyles = List(SeqexecStyles.runningIcon))
           case SequenceState.Failed(_) =>
-            IconAttention.copyIcon(fitted = true,
+            IconAttention.copyIcon(fitted = true, color = "red".some,
                                    extraStyles = List(SeqexecStyles.selectedIcon))
           case _ =>
             if (isFocused) {

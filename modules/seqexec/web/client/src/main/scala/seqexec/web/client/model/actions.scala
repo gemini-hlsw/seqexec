@@ -87,7 +87,7 @@ object actions {
 
   final case class FlipSkipStep(id: Observation.Id, step: Step) extends Action
   final case class FlipBreakpointStep(id: Observation.Id, step: Step) extends Action
-  final case class UpdateObserver(id: Observation.Id, name: String) extends Action
+  final case class UpdateObserver(id: Observation.Id, name: Observer) extends Action
   final case class UpdateOperator(name: Operator) extends Action
   final case class UpdateImageQuality(iq: ImageQuality) extends Action
   final case class UpdateCloudCover(cc: CloudCover) extends Action
@@ -97,7 +97,7 @@ object actions {
   final case class UpdateStepsConfigTableState(s: TableState[StepConfigTable.TableColumn]) extends Action
   final case class UpdateQueueTableState(s: TableState[QueueTableBody.TableColumn]) extends Action
   final case class UpdateLoadedSequences(loaded: Map[Instrument, Observation.Id]) extends Action
-  final case class LoadSequence(i: Instrument, id: Observation.Id) extends Action
+  final case class LoadSequence(observer: Observer, i: Instrument, id: Observation.Id) extends Action
 
   // Used for UI debugging
   final case class MarkStepAsRunning(s: Observation.Id, step: Int) extends Action

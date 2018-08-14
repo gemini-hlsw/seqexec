@@ -5,7 +5,7 @@ package seqexec.web.client.handlers
 
 import diode.{Action, ActionHandler, ActionResult, Effect, ModelRW, NoAction}
 import seqexec.model.enum.{ ActionStatus }
-import seqexec.model.{ Observer, SequencesQueue, SequenceView, StepState, SequenceState }
+import seqexec.model.{ SequencesQueue, SequenceView, StepState, SequenceState }
 import seqexec.model.events._
 import seqexec.web.client.lenses.{sequenceStepT, sequenceViewT}
 import seqexec.web.client.ModelOps._
@@ -116,10 +116,8 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus]) extends Act
   }
 
   val sequenceLoadedMessage: PartialFunction[Any, ActionResult[M]] = {
-    case ServerMessage(SequenceLoaded(id, view)) =>
-      val observer = value.user.map(_.displayName)
-      val updateObserverE = observer.fold(VoidEffect)(o => Effect(Future(UpdateObserver(id, o): Action)))
-      updated(value.copy(sequences = filterSequences(view)), updateObserverE)
+    case ServerMessage(SequenceLoaded(_, view)) =>
+      updated(value.copy(sequences = filterSequences(view)))
   }
 
   val sequenceUnloadedMessage: PartialFunction[Any, ActionResult[M]] = {
@@ -129,21 +127,7 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus]) extends Act
 
   val modelUpdateMessage: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(s: SeqexecModelUpdate) =>
-      // Replace the observer if not set and logged in
-      val observer = value.user.map(_.displayName)
-      val newQueue = filterSequences(s.view).queue
-      val sequencesWithObserver = newQueue.collect {
-        case q if q.metadata.observer.isEmpty && observer.nonEmpty =>
-          q.copy(metadata = q.metadata.copy(observer = observer.map(Observer.apply)))
-        case q                                                     =>
-          q
-      }
-      val effects = newQueue.collect {
-        case q if q.metadata.observer.isEmpty && observer.nonEmpty =>
-          Effect(Future(UpdateObserver(q.id, observer.getOrElse("")))).some
-      }
-      val newValue = value.copy(sequences = SequencesQueue(s.view.loaded, s.view.conditions, s.view.operator, sequencesWithObserver))
-      effects.reduceOption(_ >> _).fold(updated(newValue))(eff => updated(newValue, eff.getOrElse(VoidEffect)))
+      updated(value.copy(sequences = filterSequences(s.view)))
   }
 
   val defaultMessage: PartialFunction[Any, ActionResult[M]] = {

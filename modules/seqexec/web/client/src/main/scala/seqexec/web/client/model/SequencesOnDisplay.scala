@@ -26,12 +26,6 @@ final case class SequencesOnDisplay(sequences: Zipper[SequenceTab]) {
   def hideStepConfig: SequencesOnDisplay =
     copy(sequences = sequences.modify(SequenceTab.stepConfigL.set(None)(_)))
 
-  // def focusOnSequence2(s: RefTo[Option[SequenceView]]): SequencesOnDisplay = {
-  //   // Replace the sequence for the instrument or the completed sequence and reset displaying a step
-  //   val q = sequences.findFocus(i => i.sequence === s()).map(_.modify((SequenceTab.currentSequenceL.set(s) andThen SequenceTab.stepConfigL.set(None))(_)))
-  //   copy(sequences = q.getOrElse(sequences))
-  // }
-
   def focusOnSequence(inst: Instrument, id: Observation.Id): SequencesOnDisplay = {
     // Replace the sequence for the instrument or the completed sequence and reset displaying a step
     val q = sequences.findFocus(i => i.sequence.exists(s => s.id === id && s.metadata.instrument === inst))
@@ -121,25 +115,11 @@ final case class SequencesOnDisplay(sequences: Zipper[SequenceTab]) {
     copy(sequences = q)
   }
 
-  // def focusOnInstrument(i: Instrument): SequencesOnDisplay = {
-  //   // Focus on the instrument
-  //   val q = sequences.findFocus{
-  //     case t: InstrumentSequenceTab => t.instrument === i.some
-  //     case _                        => false
-  //   }
-  //   copy(sequences = q.getOrElse(sequences))
-  // }
-
   def isAnySelected: Boolean = sequences.exists(_.sequence.isDefined)
 
   // Is the id on the sequences area?
   def idDisplayed(id: Observation.Id): Boolean =
     sequences.withFocus.exists { case (s, a) => a && s.sequence.exists(_.id === id) }
-
-  // def instrument(i: Instrument): InstrumentTabActive =
-  //   // The getOrElse shouldn't be called as we have an element per instrument
-  //   sequences.withFocus.find(_._1.instrument === i)
-  //     .map { case (i, a) => InstrumentTabActive(i, a) }.getOrElse(InstrumentTabActive(SequenceTab.empty, active = false))
 
   def tab(id: Observation.Id): Option[SequenceTabActive] =
     sequences.withFocus.find(_._1.obsId.exists(_ === id))

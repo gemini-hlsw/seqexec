@@ -40,7 +40,9 @@ class LoadedSequencesHandler[M](modelRW: ModelRW[M, SequencesOnDisplay]) extends
       val refs = loaded.values.map(SeqexecCircuit.sequenceRef)
       updated(value.updateLoaded(refs.toList))
 
-    case LoadSequence(i, id) =>
-      effectOnly(Effect(SeqexecWebClient.loadSequence(i, id).map(r => if (r.error) NoAction else NoAction)))
+    case LoadSequence(observer, i, id) =>
+      val updateObserver = Effect(Future(UpdateObserver(id, observer)))
+      val loadSequence = Effect(SeqexecWebClient.loadSequence(i, id).map(_ => NoAction))
+      effectOnly(updateObserver >> loadSequence)
   }
 }
