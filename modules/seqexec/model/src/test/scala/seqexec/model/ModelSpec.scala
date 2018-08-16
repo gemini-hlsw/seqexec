@@ -6,12 +6,12 @@ package seqexec.model
 import cats.tests.CatsSuite
 import cats.kernel.laws.discipline._
 import seqexec.model.enum._
+import seqexec.model.SeqexecModelArbitraries._
 
 /**
   * Tests Model typeclasses
   */
 final class ModelSpec extends CatsSuite {
-  import SharedModelArbitraries._
 
   checkAll("Eq[UserDetails]", EqTests[UserDetails].eqv)
   checkAll("Eq[SystemName]", EqTests[SystemName].eqv)

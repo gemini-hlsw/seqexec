@@ -8,7 +8,7 @@ import cats.implicits._
 import diode.RootModelR
 import diode.data._
 import gem.Observation
-import monocle.Lens
+import monocle.{Lens, Optional}
 import monocle.macros.Lenses
 import seqexec.model.{ SequenceState, SequenceView }
 import seqexec.model.enum._
@@ -26,6 +26,7 @@ final case class SequenceTabActive(tab: SequenceTab, active: Boolean)
 object SequenceTabActive {
   implicit val eq: Eq[SequenceTabActive] =
     Eq.by(x => (x.tab, x.active))
+
   val Empty: SequenceTabActive = SequenceTabActive(SequenceTab.Empty, true)
 }
 
@@ -86,6 +87,8 @@ object SequenceTab {
       case _                                                    => false
     }
   val Empty: SequenceTab = PreviewSequenceTab(RefTo(new RootModelR(None)), None)
+
+  // Some lenses
   val stepConfigL: Lens[SequenceTab, Option[Int]] = Lens[SequenceTab, Option[Int]] {
     case t: InstrumentSequenceTab => t.stepConfig
     case t: PreviewSequenceTab    => t.stepConfig
@@ -93,6 +96,7 @@ object SequenceTab {
     case t: InstrumentSequenceTab => t.copy(stepConfig = n)
     case t: PreviewSequenceTab    => t.copy(stepConfig = n)
   })
+
   val currentSequenceL: Lens[SequenceTab, RefTo[Option[SequenceView]]] = Lens[SequenceTab, RefTo[Option[SequenceView]]] {
     case t: InstrumentSequenceTab => t.currentSequence
     case t: PreviewSequenceTab    => t.currentSequence
@@ -100,8 +104,9 @@ object SequenceTab {
     case t: InstrumentSequenceTab => t.copy(currentSequence = n)
     case t: PreviewSequenceTab    => t.copy(currentSequence = n)
   })
-  val completedSequenceL: Lens[SequenceTab, Option[SequenceView]] = Lens[SequenceTab, Option[SequenceView]] {
-    case t: InstrumentSequenceTab => t.completedSequence
+
+  val completedSequenceO: Optional[SequenceTab, Option[SequenceView]] = Optional[SequenceTab, Option[SequenceView]] {
+    case t: InstrumentSequenceTab => t.completedSequence.some
     case _: PreviewSequenceTab    => None
   }(n => a => a match {
     case t: InstrumentSequenceTab => t.copy(completedSequence = n)

@@ -9,7 +9,7 @@ import seqexec.model.events._
 import cats.tests.CatsSuite
 import _root_.boopickle.Default._
 import org.scalacheck.Arbitrary._
-import seqexec.model.SharedModelArbitraries._
+import seqexec.model.SeqexecModelArbitraries._
 import seqexec.model.SequenceEventsArbitraries._
 import gem.Observation
 

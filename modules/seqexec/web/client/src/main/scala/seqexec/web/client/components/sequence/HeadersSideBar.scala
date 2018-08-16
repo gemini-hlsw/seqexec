@@ -65,8 +65,7 @@ object HeadersSideBar {
       SeqexecCircuit.dispatchCB(UpdateWaterVapor(wv))
 
     def render(p: Props, s: State): VdomTagOf[Div] = {
-      val enabled = p.model().status.isLogged && p.model().status.anySelected
-
+      val enabled = p.model().status.canOperate
       val operatorEV = StateSnapshot(s.currentText.getOrElse(""))(updateState)
       <.div(
         ^.cls := "ui secondary segment",

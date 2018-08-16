@@ -5,11 +5,10 @@ package seqexec.web.client
 
 import cats.kernel.laws.discipline._
 import cats.tests.CatsSuite
-import monocle.law.discipline.LensTests
+import monocle.law.discipline.{LensTests, OptionalTests}
 import seqexec.web.client.components.sequence.steps.OffsetFns.OffsetsDisplay
 import seqexec.web.client.model._
-import seqexec.web.client.circuit._
-// import seqexec.model.SharedModelArbitraries._
+import seqexec.model.SeqexecModelArbitraries._
 import org.scalajs.dom.WebSocket
 import diode.data._
 
@@ -32,5 +31,6 @@ final class ModelSpec extends CatsSuite with ArbitrariesWebClient {
 
   // lenses
   checkAll("Lens[SequenceTab, Option[Int]]", LensTests(SequenceTab.stepConfigL))
-  // checkAll("Lens[SequenceTab, Option[SequenceView]]", LensTests(SequenceTab.completedSequenceL))
+  checkAll("Lens[SequenceTab, RefTo[Option[SequenceView]]]", LensTests(SequenceTab.currentSequenceL))
+  checkAll("Optional[SequenceTab, SequenceView]", OptionalTests(SequenceTab.completedSequenceO))
 }

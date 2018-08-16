@@ -7,7 +7,8 @@ import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.{ ActionStatus, Resource }
 import seqexec.model.StepState
 import seqexec.model.{ StandardStep, Step }
-import seqexec.web.client.circuit.{ClientStatus, StepsTableFocus}
+import seqexec.web.client.circuit.StepsTableFocus
+import seqexec.web.client.model.ClientStatus
 import seqexec.web.client.ModelOps._
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.semanticui.elements.icon.Icon

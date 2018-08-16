@@ -11,11 +11,9 @@ import org.scalacheck.Arbitrary._
 import gem.Observation
 import java.time.Instant
 import seqexec.model.enum._
+import seqexec.model.SeqexecModelArbitraries._
 
-// Keep the arbitraries in a separate trait to improve caching
-@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
-object SequenceEventsArbitraries {
-  import SharedModelArbitraries._
+trait SequenceEventsArbitraries {
 
   implicit val coeArb = Arbitrary[ConnectionOpenEvent] {
     for {
@@ -217,3 +215,5 @@ object SequenceEventsArbitraries {
   implicit val nlmCogen: Cogen[NewLogMessage] =
     Cogen[String].contramap(_.msg)
 }
+
+object SequenceEventsArbitraries extends SequenceEventsArbitraries

@@ -6,7 +6,8 @@ package seqexec.server
 import cats.Eq
 import cats.tests.CatsSuite
 import seqexec.model.enum.Instrument
-import seqexec.engine
+import seqexec.model.SeqexecModelArbitraries._
+import seqexec.server.SeqexecServerArbitraries._
 import gem.arb.ArbObservation
 import gem.Observation
 import monocle.law.discipline.LensTests
@@ -15,7 +16,6 @@ import monocle.law.discipline.LensTests
   * Tests SeqexecServer Lenses
   */
 final class SeqexecServerLensesSpec extends CatsSuite with ArbObservation {
-  import SeqexecServerArbitraries._
 
   implicit val steppEq: Eq[HeaderExtraData => engine.Step] = Eq.fromUniversalEquals
   implicit val stepgEq: Eq[SequenceGen.Step] = Eq.by(x => (x.id, x.config, x.resources, x.generator))

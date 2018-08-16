@@ -11,9 +11,7 @@ import gem.Observation
 import gem.arb.ArbObservation
 import seqexec.model.enum._
 
-// Keep the arbitraries in a separate trait to improve caching
-@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
-object SharedModelArbitraries extends ArbObservation {
+trait SeqexecModelArbitraries extends ArbObservation {
 
   private val maxListSize = 2
 
@@ -244,3 +242,5 @@ object SharedModelArbitraries extends ArbObservation {
   implicit val levCogen: Cogen[ServerLogLevel] =
     Cogen[String].contramap(_.productPrefix)
 }
+
+object SeqexecModelArbitraries extends SeqexecModelArbitraries

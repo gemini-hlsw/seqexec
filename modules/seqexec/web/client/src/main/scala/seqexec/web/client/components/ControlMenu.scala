@@ -5,7 +5,7 @@ package seqexec.web.client.components
 
 import diode.react.ModelProxy
 import seqexec.web.client.actions.{Logout, OpenLoginBox}
-import seqexec.web.client.circuit.ClientStatus
+import seqexec.web.client.model.ClientStatus
 import seqexec.web.client.semanticui.Size
 import seqexec.web.client.semanticui.elements.button.Button
 import seqexec.web.client.semanticui.elements.icon.Icon.IconSignOut

@@ -117,8 +117,6 @@ final case class SequencesOnDisplay(sequences: Zipper[SequenceTab]) {
     copy(sequences = q)
   }
 
-  def isAnySelected: Boolean = sequences.exists(_.sequence.isDefined)
-
   // Is the id on the sequences area?
   def idDisplayed(id: Observation.Id): Boolean =
     sequences.withFocus.exists { case (s, a) => a && s.sequence.exists(_.id === id) }
@@ -132,7 +130,7 @@ final case class SequencesOnDisplay(sequences: Zipper[SequenceTab]) {
     val q = sequences.findFocus {
       case t: InstrumentSequenceTab => t.instrument === completed.metadata.instrument.some
       case _                        => false
-    }.map(_.modify(SequenceTab.completedSequenceL.set(completed.some)(_)))
+    }.map(_.modify(SequenceTab.completedSequenceO.set(completed.some)(_)))
 
     copy(sequences = q.getOrElse(sequences))
   }

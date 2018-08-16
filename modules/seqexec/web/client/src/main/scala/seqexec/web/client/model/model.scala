@@ -8,38 +8,13 @@ import cats.implicits._
 import diode.data.Pot
 import gem.Observation
 import gem.enum.Site
-import seqexec.model.{ ClientID, Conditions, UserDetails, SequencesQueue, SequenceView, StepId }
-import seqexec.model.enum._
+import seqexec.model.{ ClientID, Conditions, UserDetails, SequencesQueue, SequenceView }
 import seqexec.model.events._
 import seqexec.web.common.FixedLengthBuffer
 import seqexec.web.client.components.sequence.steps.StepConfigTable
 import seqexec.web.client.components.QueueTableBody
 import org.scalajs.dom.WebSocket
 import web.client.table._
-
-// Pages
-object Pages {
-  sealed trait SeqexecPages extends Product with Serializable
-
-  case object Root extends SeqexecPages
-  case object SoundTest extends SeqexecPages
-  case object EmptyPreviewPage extends SeqexecPages
-  final case class PreviewPage(instrument: Instrument, obsId: Observation.Id, step: StepId) extends SeqexecPages
-  final case class PreviewConfigPage(instrument: Instrument, obsId: Observation.Id, step: StepId) extends SeqexecPages
-  final case class SequencePage(instrument: Instrument, obsId: Observation.Id, step: StepId) extends SeqexecPages
-  final case class SequenceConfigPage(instrument: Instrument, obsId: Observation.Id, step: StepId) extends SeqexecPages
-
-  implicit val equal: Eq[SeqexecPages] = Eq.instance {
-    case (Root, Root)                                               => true
-    case (SoundTest, SoundTest)                                     => true
-    case (EmptyPreviewPage, EmptyPreviewPage)                       => true
-    case (SequencePage(i, o, s), SequencePage(j, p, r))             => i === j && o === p && s === r
-    case (SequenceConfigPage(i, o, s), SequenceConfigPage(j, p, r)) => i === j && o === p && s === r
-    case (PreviewPage(i, o, s), PreviewPage(j, p, r))               => i === j && o === p && s === r
-    case (PreviewConfigPage(i, o, s), PreviewConfigPage(j, p, r))   => i === j && o === p && s === r
-    case _                                                          => false
-  }
-}
 
 final case class RunningStep(last: Int, total: Int)
 

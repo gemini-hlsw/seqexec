@@ -168,7 +168,7 @@ object InstrumentsTabs {
     .render_P(p =>
       <.div(
         ^.cls := "ui attached tabular menu",
-        SeqexecCircuit.connect(SeqexecCircuit.availableTabs)(x => ReactFragment(x().tabs.toList.map(t => InstrumentTab(InstrumentTab.Props(p.router, t, p.loggedIn, x().user)): VdomNode): _*))
+        SeqexecCircuit.connect(SeqexecCircuit.tabsReader)(x => ReactFragment(x().tabs.toList.map(t => InstrumentTab(InstrumentTab.Props(p.router, t, p.loggedIn, x().user)): VdomNode): _*))
       )
     ).build
 

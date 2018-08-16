@@ -14,9 +14,9 @@ import seqexec.model.enum.{ FPUMode, Instrument, StepType }
 import seqexec.model.{ Step, StepState }
 import seqexec.web.client.actions.{NavigateSilentTo, FlipSkipStep, FlipBreakpointStep}
 import seqexec.model.enumerations
-import seqexec.web.client.circuit.{ClientStatus, SeqexecCircuit, StepsTableFocus}
+import seqexec.web.client.circuit.{ SeqexecCircuit, StepsTableFocus }
 import seqexec.web.client.components.SeqexecStyles
-import seqexec.web.client.model.Pages
+import seqexec.web.client.model.{ClientStatus, Pages}
 import seqexec.web.client.lenses._
 import seqexec.web.client.semanticui.elements.label.Label
 import seqexec.web.client.semanticui.elements.icon.Icon

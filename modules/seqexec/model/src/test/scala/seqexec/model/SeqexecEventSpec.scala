@@ -10,9 +10,7 @@ import events._
 /**
   * Tests Event typeclasses
   */
-final class SeqexecEventSpec extends CatsSuite {
-  import SequenceEventsArbitraries._
-
+final class SeqexecEventSpec extends CatsSuite with SequenceEventsArbitraries {
   checkAll("Eq[ConnectionOpenEvent]", EqTests[ConnectionOpenEvent].eqv)
   checkAll("Eq[SequenceStart]", EqTests[SequenceStart].eqv)
   checkAll("Eq[StepExecuted]", EqTests[StepExecuted].eqv)

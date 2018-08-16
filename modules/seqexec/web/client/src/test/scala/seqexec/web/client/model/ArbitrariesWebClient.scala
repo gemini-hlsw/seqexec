@@ -10,7 +10,7 @@ import gem.arb.ArbObservation
 import gem.Observation
 import seqexec.model.enum.Instrument
 import seqexec.model.{ SequenceState, SequenceView, Step }
-import seqexec.model.SharedModelArbitraries._
+import seqexec.model.SeqexecModelArbitraries._
 import seqexec.web.client.model._
 import seqexec.web.client.circuit._
 import seqexec.model.UserDetails
@@ -21,6 +21,12 @@ import org.scalacheck.{Arbitrary, _}
 import org.scalajs.dom.WebSocket
 
 trait ArbitrariesWebClient extends ArbObservation {
+
+  implicit def arbRefTo[A <: AnyRef : Arbitrary]: Arbitrary[RefTo[A]] = Arbitrary {
+    arbitrary[A].map(x => RefTo(new RootModelR[A](x)))
+  }
+  implicit def refToCogen[A: Cogen]: Cogen[RefTo[A]] =
+    Cogen[A].contramap(_())
 
   implicit val arbInstrumentSequenceTab: Arbitrary[InstrumentSequenceTab] =
     Arbitrary {
@@ -41,8 +47,8 @@ trait ArbitrariesWebClient extends ArbObservation {
     Arbitrary {
       for {
         idx <- arbitrary[Option[Int]]
-        sv  <- arbitrary[Option[SequenceView]]
-      } yield PreviewSequenceTab(RefTo(new RootModelR(sv)), idx)
+        sv  <- arbitrary[RefTo[Option[SequenceView]]]
+      } yield PreviewSequenceTab(sv, idx)
     }
 
   implicit val pstCogen: Cogen[PreviewSequenceTab] =
@@ -123,13 +129,12 @@ trait ArbitrariesWebClient extends ArbObservation {
       for {
         u  <- arbitrary[Option[UserDetails]]
         ws <- arbitrary[WebSocketConnection]
-        r  <- arbitrary[Boolean]
         s  <- arbitrary[Boolean]
-      } yield ClientStatus(u, ws, r, s)
+      } yield ClientStatus(u, ws, s)
     }
 
   implicit val cssCogen: Cogen[ClientStatus] =
-    Cogen[(Option[UserDetails], WebSocketConnection, Boolean)].contramap(x => (x.u, x.w, x.anySelected))
+    Cogen[(Option[UserDetails], WebSocketConnection, Boolean)].contramap(x => (x.u, x.w, x.syncInProgress))
 
   implicit val arbStepsTableFocus: Arbitrary[StepsTableFocus] =
     Arbitrary {

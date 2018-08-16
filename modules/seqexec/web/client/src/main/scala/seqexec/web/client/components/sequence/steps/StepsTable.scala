@@ -13,9 +13,10 @@ import scala.scalajs.js
 import seqexec.model.enum.{ Instrument, StepType }
 import seqexec.model.{ StepState, Step, StandardStep }
 import seqexec.web.client.lenses._
+import seqexec.web.client.model.ClientStatus
 import seqexec.web.client.model.Pages.SeqexecPages
 import seqexec.web.client.ModelOps._
-import seqexec.web.client.circuit.{ClientStatus, StepsTableAndStatusFocus, StepsTableFocus}
+import seqexec.web.client.circuit.{ StepsTableAndStatusFocus, StepsTableFocus }
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.components.sequence.steps.OffsetFns._
 import seqexec.web.client.semanticui.elements.icon.Icon._

@@ -26,19 +26,6 @@ import seqexec.web.client.components.QueueTableBody
 import web.client.table._
 
 object circuit {
-  /**
-    * Utility class to let components more easily switch parts of the UI depending on the context
-    */
-  final case class ClientStatus(u: Option[UserDetails], w: WebSocketConnection, anySelected: Boolean, syncInProgress: Boolean) extends UseValueEq {
-    def isLogged: Boolean = u.isDefined
-    def isConnected: Boolean = w.ws.isReady
-  }
-
-  object ClientStatus {
-    implicit val eq: Eq[ClientStatus] =
-      Eq.by (x => (x.u, x.w, x.anySelected, x.syncInProgress))
-  }
-
   // All these classes are focused views of the root model. They are used to only update small sections of the
   // UI even if other parts of the root model change
   final case class WebSocketsFocus(location: Pages.SeqexecPages, sequences: SequencesQueue[SequenceView], user: Option[UserDetails], clientId: Option[ClientID], site: Option[Site]) extends UseValueEq
@@ -149,19 +136,19 @@ object circuit {
       }
 
     // Reader to indicate the allowed interactions
-    val statusReader: ModelR[SeqexecAppRootModel, ClientStatus] = zoom(m => ClientStatus(m.uiModel.user, m.ws, m.uiModel.sequencesOnDisplay.isAnySelected, m.uiModel.syncInProgress))
+    val statusReader: ModelR[SeqexecAppRootModel, ClientStatus] = zoom(m => ClientStatus(m.uiModel.user, m.ws, m.uiModel.syncInProgress))
 
     // Reader to contain the sequence in conflict
     val sequenceInConflictReader: ModelR[SeqexecAppRootModel, Option[Observation.Id]] = zoomTo(_.uiModel.resourceConflict.id)
 
     // Reader for sequences on display
     val headerSideBarReader: ModelR[SeqexecAppRootModel, HeaderSideBarFocus] =
-      zoom(c => HeaderSideBarFocus(ClientStatus(c.uiModel.user, c.ws, c.uiModel.sequencesOnDisplay.isAnySelected, c.uiModel.syncInProgress), c.uiModel.sequences.conditions, c.uiModel.sequences.operator))
+      zoom(c => HeaderSideBarFocus(ClientStatus(c.uiModel.user, c.ws, c.uiModel.syncInProgress), c.uiModel.sequences.conditions, c.uiModel.sequences.operator))
 
     val logDisplayedReader: ModelR[SeqexecAppRootModel, SectionVisibilityState] =
       zoom(_.uiModel.globalLog.display)
 
-    val availableTabs: ModelR[SeqexecAppRootModel, InstrumentTabFocus] =
+    val tabsReader: ModelR[SeqexecAppRootModel, InstrumentTabFocus] =
       zoom(_.uiModel.user).zip(zoom(_.uiModel.sequencesOnDisplay.availableTabs)).zoom {
         case (u, tabs) => InstrumentTabFocus(tabs, u)
       }
