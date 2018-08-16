@@ -16,21 +16,26 @@ import monocle.Lens
 import monocle.macros.GenLens
 import monocle.function.At.at
 import monocle.function.At.atMap
-import seqexec.engine.{ActionMetadata, ActionMetadataGenerator, Engine}
-import seqexec.model.enum.{ CloudCover, Instrument, ImageQuality, SkyBackground, WaterVapor}
-import seqexec.model.{ Conditions, Observer, Operator, SequenceState }
+import seqexec.engine.Engine
+import seqexec.model.Model.{CloudCover, Conditions, Instrument, ImageQuality, Observer, Operator, SequenceState, SkyBackground, WaterVapor}
 import seqexec.model.UserDetails
 
 package server {
   @Lenses
-  final case class EngineMetadata(queues: ExecutionQueues, selected: Map[Instrument, Observation.Id], conditions: Conditions, operator: Option[Operator])
+  final case class ObserverSequence(observer: Option[Observer], seq: SequenceGen)
   @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
-  object EngineMetadata {
-    implicit val eq: Eq[EngineMetadata] = Eq.by(x => (x.queues, x.selected, x.conditions, x.operator))
+  object ObserverSequence {
+    implicit val eq: Eq[ObserverSequence] = Eq.by(x => (x.observer, x.seq))
+  }
+  @Lenses
+  final case class EngineState(queues: ExecutionQueues, selected: Map[Instrument, Observation.Id], conditions: Conditions, operator: Option[Operator], sequences: Map[Observation.Id, ObserverSequence], executionState: Engine.State)
+  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
+  object EngineState {
+    implicit val eq: Eq[EngineState] = Eq.by(x => (x.queues, x.selected, x.conditions, x.operator, x.sequences))//, x.executionState))
 
-    val default: EngineMetadata = EngineMetadata(Map(CalibrationQueueName -> Nil), Map.empty, Conditions.Default, None)
+    val default: EngineState = EngineState(Map(CalibrationQueueName -> Nil), Map.empty, Conditions.default, None, Map.empty, Engine.State.empty)
 
-    def selectedML(instrument: Instrument): Lens[EngineMetadata, Option[Observation.Id]] = GenLens[EngineMetadata](_.selected) ^|-> at(instrument)
+    def selectedML(instrument: Instrument): Lens[EngineState, Option[Observation.Id]] = GenLens[EngineState](_.selected) ^|-> at(instrument)
   }
 
   sealed trait SeqEvent
@@ -42,6 +47,8 @@ package server {
   final case class SetWaterVapor(wv: WaterVapor, user: Option[UserDetails]) extends SeqEvent
   final case class SetSkyBackground(wv: SkyBackground, user: Option[UserDetails]) extends SeqEvent
   final case class SetCloudCover(cc: CloudCover, user: Option[UserDetails]) extends SeqEvent
+  final case class LoadSequence(id: Observation.Id) extends SeqEvent
+  final case class UnloadSequence(id: Observation.Id) extends SeqEvent
   case object NullSeqEvent extends SeqEvent
 
   sealed trait ControlStrategy
@@ -59,6 +66,11 @@ package server {
       case "simulated" => Some(Simulated)
       case _           => None
     }
+  }
+
+  final case class HeaderExtraData(conditions: Conditions, operator: Option[Operator], observer: Option[Observer])
+  object HeaderExtraData {
+    val default: HeaderExtraData = HeaderExtraData(Conditions.default, None, None)
   }
 
 }
@@ -89,12 +101,7 @@ package object server {
   type ExecutionQueue = List[Observation.Id]
   type ExecutionQueues = Map[String, ExecutionQueue]
 
-  implicit object ExecutionQueuesCanGenerateActionMetadata extends ActionMetadataGenerator[EngineMetadata] {
-    override def generate(a: EngineMetadata)(v: ActionMetadata): ActionMetadata =
-      v.copy(conditions = a.conditions, operator = a.operator)
-  }
-
-  val executeEngine: Engine[EngineMetadata, SeqEvent] = new Engine[EngineMetadata, SeqEvent]
+  val executeEngine: Engine[EngineState, SeqEvent] = new Engine[EngineState, SeqEvent](EngineState.executionState)
 
   type EventQueue = Queue[IO, executeEngine.EventType]
 
@@ -117,8 +124,8 @@ package object server {
   }
 
   implicit class ExecutionQueueOps(q: ExecutionQueue) {
-    def status(st: executeEngine.StateType): SequenceState = {
-      val statuses: List[SequenceState] = q.map(st.sequences.get(_).map(_.status).getOrElse(SequenceState.Idle))
+    def status(st: EngineState): SequenceState = {
+      val statuses: List[SequenceState] = q.map(st.executionState.sequences.get(_).map(_.status).getOrElse(SequenceState.Idle))
 
       statuses.find(_.isRunning).orElse(statuses.find(_.isError)).orElse(statuses.find(_.isStopped))
         .orElse(statuses.find(_.isIdle)).getOrElse(SequenceState.Completed)

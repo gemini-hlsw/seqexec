@@ -4,7 +4,7 @@
 package seqexec.server
 
 import cats._
-import cats.data.{EitherT, Kleisli, NonEmptyList, Reader}
+import cats.data.{EitherT, NonEmptyList, Reader}
 import cats.effect.IO
 import cats.implicits._
 import edu.gemini.seqexec.odb.{ExecutedDataset, SeqexecSequence}
@@ -73,11 +73,11 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
 
   //scalastyle:off
   private def observe(config: Config, obsId: Observation.Id, inst: InstrumentSystem[IO],
-                      otherSys: List[System[IO]], headers: Reader[ActionMetadata, List[Header]])
-                     (ctx: ActionMetadata): SeqAction[Result.Partial[FileIdAllocated]] = {
+                      otherSys: List[System[IO]], headers: Reader[HeaderExtraData, List[Header]])
+                     (ctx: HeaderExtraData): SeqAction[Result.Partial[FileIdAllocated]] = {
     val dataId: SeqAction[String] = EitherT(IO.apply(
-      config.extractAs[String](OBSERVE_KEY / DATA_LABEL_PROP)
-        .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))))
+      config.extract(OBSERVE_KEY / DATA_LABEL_PROP).as[String].leftMap(e =>
+      SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))))
 
     def notifyObserveStart: SeqAction[Unit] = otherSys.map(_.notifyObserveStart).sequence.map(_ => ())
 
@@ -121,11 +121,11 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
 
     for {
       id <- dhsFileId(inst)
-    } yield Result.Partial(FileIdAllocated(id), Kleisli(_ => doObserve(id).value.map(_.toResult)))
+    } yield Result.Partial(FileIdAllocated(id), doObserve(id).value.map(_.toResult))
   }
 
-  private def step(obsId: Observation.Id, i: Int, config: Config, nextToRun: Int, datasets: Map[Int, ExecutedDataset]): TrySeq[Step] = {
-    def buildStep(inst: InstrumentSystem[IO], sys: List[System[IO]], headers: Reader[ActionMetadata,List[Header]], resources: Set[Resource]): Step = {
+  private def step(obsId: Observation.Id, i: Int, config: Config, nextToRun: Int, datasets: Map[Int, ExecutedDataset]): TrySeq[HeaderExtraData => Step] = {
+    def buildStep(inst: InstrumentSystem[IO], sys: List[System[IO]], headers: Reader[HeaderExtraData,List[Header]], resources: Set[Resource]): HeaderExtraData => Step = ctx => {
       val initialStepExecutions: List[List[Action]] =
         if (i === 0) List(List(systems.odb.sequenceStart(obsId, "").map(_ => Result.Ignored).toAction(ActionType.Undefined)))
         else Nil
@@ -136,7 +136,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
             val kind = ActionType.Configure(resourceFromSystem(x))
             x.configure(config).map(_ => Result.Configured(x.resource)).toAction(kind)
           },
-          List(Action(ActionType.Observe, Kleisli(ctx => observe(config, obsId, inst, sys.filterNot(inst.equals), headers)(ctx).value.map(_.toResult)), Action.State(Action.Idle, Nil))))
+          List(Action(ActionType.Observe, observe(config, obsId, inst, sys.filterNot(inst.equals), headers)(ctx).value.map(_.toResult), Action.State(Action.Idle, Nil))))
       extractStatus(config) match {
         case StepState.Pending if i >= nextToRun => Step.init(
           id = i,
@@ -195,14 +195,14 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     }
 
   def sequence(obsId: Observation.Id, sequence: SeqexecSequence):
-      (List[SeqexecFailure], Option[Sequence]) = {
+      (List[SeqexecFailure], Option[SequenceGen]) = {
 
     val configs = sequence.config.getAllSteps.toList
 
     val nextToRun = configs.map(extractStatus).lastIndexWhere(s => s === StepState.Completed || s === StepState.Skipped) + 1
 
     val steps = configs.zipWithIndex.map {
-      case (c, i) => step(obsId, i, c, nextToRun, sequence.datasets)
+      case (c, i) => step(obsId, i, c, nextToRun, sequence.datasets).map(SequenceGen.Step(i, c.toStepConfig, _))
     }.separate
 
     val instName = configs.headOption.map(extractInstrument).getOrElse(Either.left(SeqexecFailure.UnrecognizedInstrument("UNKNOWN")))
@@ -215,9 +215,10 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
             None
           else
             Some(
-              Sequence(
+              SequenceGen(
                 obsId,
-                SequenceMetadata(i, None, sequence.title),
+                sequence.title,
+                i,
                 ss
               )
             )
@@ -225,16 +226,23 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
       })
   }
 
-  private def deliverObserveCmd(seqState: Sequence.State,
-                                f: ObserveControl => Option[SeqAction[Unit]]): Option[Stream[IO, executeEngine.EventType]] = {
+  private def deliverObserveCmd(seqId: Observation.Id, f: ObserveControl => Option[SeqAction[Unit]])(st: EngineState):  Option[Stream[IO, executeEngine.EventType]] = {
     def isObserving(v: Action): Boolean = v.kind === ActionType.Observe && (v.state.runState match {
       case Action.Started               => true
       case _                            => false
     })
 
-    toInstrumentSys(seqState.toSequence.metadata.instrument).toOption.flatMap(x => f(x.observeControl)).flatMap {
-      v => seqState.current.execution.exists(isObserving).option(Stream.eval(v.value.map(handleError)))
-    }
+    def seqCmd(seqState: Sequence.State, instrument: Instrument): Option[Stream[IO, executeEngine.EventType]] =
+      toInstrumentSys(instrument).toOption.flatMap(x => f(x.observeControl)).flatMap {
+        v => seqState.current.execution.exists(isObserving).option(Stream.eval(v.value.map(handleError)))
+      }
+
+    for {
+      seqg <- st.sequences.seq.get(seqId)
+      seq  <- st.executionState.sequences.get(seqId)
+      r    <- seqCmd(seq, seqg.seq.instrument)
+    } yield r
+
   }
 
   private def handleError(t: TrySeq[Unit]): executeEngine.EventType = t match {
@@ -242,91 +250,102 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     case _       => Event.nullEvent
   }
 
-  def stopObserve(seqId: Observation.Id)(seqState: Sequence.State): Option[Stream[IO, executeEngine.EventType]] = {
+  def stopObserve(seqId: Observation.Id): EngineState => Option[Stream[IO, executeEngine.EventType]] = st =>{
     def f(oc: ObserveControl): Option[SeqAction[Unit]] = oc match {
       case OpticControl(StopObserveCmd(stop), _, _, _, _, _) => Some(stop)
       case InfraredControl(StopObserveCmd(stop), _)          => Some(stop)
       case _                                                 => none
     }
-    deliverObserveCmd(seqState, f).orElse(stopPaused(seqId)(seqState))
+    deliverObserveCmd(seqId, f)(st).orElse(stopPaused(seqId)(st))
   }
 
-  def abortObserve(seqId: Observation.Id)(seqState: Sequence.State): Option[Stream[IO, executeEngine.EventType]] = {
+  def abortObserve(seqId: Observation.Id): EngineState => Option[Stream[IO, executeEngine.EventType]] = st => {
     def f(oc: ObserveControl): Option[SeqAction[Unit]] = oc match {
       case OpticControl(_, AbortObserveCmd(abort), _, _, _, _) => Some(abort)
       case InfraredControl(_, AbortObserveCmd(abort))          => Some(abort)
       case _                                                   => none
     }
 
-    deliverObserveCmd(seqState, f).orElse(abortPaused(seqId)(seqState))
+    deliverObserveCmd(seqId, f)(st).orElse(abortPaused(seqId)(st))
   }
 
-  def pauseObserve(seqState: Sequence.State): Option[Stream[IO, executeEngine.EventType]] = {
+  def pauseObserve(seqId: Observation.Id): EngineState => Option[Stream[IO, executeEngine.EventType]] = {
     def f(oc: ObserveControl): Option[SeqAction[Unit]] = oc match {
       case OpticControl(_, _, PauseObserveCmd(pause), _, _, _) => Some(pause)
       case _                                                   => none
     }
-    deliverObserveCmd( seqState, f)
+    deliverObserveCmd(seqId, f)
   }
 
-  private def pausedCommand(seqId: Observation.Id, f: ObserveControl => Option[Time => SeqAction[ObserveCommand.Result]])
-                           (seqState: Sequence.State): Option[Stream[IO, executeEngine.EventType]] = {
-    val observeIndex: Option[(ObserveContext, Int)] =
-      seqState.current.execution.zipWithIndex.find(_._1.kind === ActionType.Observe).flatMap{ case (a, i) =>
-        a.state.runState match {
-          case Action.Paused(c: ObserveContext) => Some((c, i))
-          case _                                => none
-        }
-      }
+  private def pausedCommand(seqId: Observation.Id, f: ObserveControl => Option[Time => SeqAction[ObserveCommand.Result]]): EngineState => Option[Stream[IO, executeEngine.EventType]] = st => {
+
     def resumeIO(c: ObserveContext, resumeCmd: SeqAction[ObserveCommand.Result]): IO[Result] = (for {
       r <- resumeCmd
       ret <- c.t(r)
     } yield ret).value.map(_.toResult)
 
-    val u: Option[Time => SeqAction[ObserveCommand.Result]] = toInstrumentSys(seqState.toSequence.metadata.instrument).toOption.flatMap(x => f(x.observeControl))
-    (u, observeIndex).mapN {
-      (cmd, t) => t match {
-        case (c, i) => Stream.eval(IO(Event.actionResume(seqId, i, resumeIO(c, cmd(c.expTime)))))
+    def seqCmd(seqState: Sequence.State, instrument: Instrument): Option[Stream[IO, executeEngine.EventType]] = {
+
+      val observeIndex: Option[(ObserveContext, Int)] =
+        seqState.current.execution.zipWithIndex.find(_._1.kind === ActionType.Observe).flatMap { case (a, i) =>
+          a.state.runState match {
+            case Action.Paused(c: ObserveContext) => Some((c, i))
+            case _ => none
+          }
+        }
+
+      val u: Option[Time => SeqAction[ObserveCommand.Result]] = toInstrumentSys(instrument).toOption.flatMap(x => f(x.observeControl))
+      (u, observeIndex).mapN {
+        (cmd, t) =>
+          t match {
+            case (c, i) => Stream.eval(IO(Event.actionResume(seqId, i, resumeIO(c, cmd(c.expTime)))))
+          }
       }
     }
+
+    for {
+      seqg <- st.sequences.seq.get(seqId)
+      seq  <- st.executionState.sequences.get(seqId)
+      r    <- seqCmd(seq, seqg.seq.instrument)
+    } yield r
   }
 
-  def resumePaused(seqId: Observation.Id)(seqState: Sequence.State): Option[Stream[IO, executeEngine.EventType]] = {
+  def resumePaused(seqId: Observation.Id): EngineState => Option[Stream[IO, executeEngine.EventType]] = {
     def f(o: ObserveControl): Option[Time => SeqAction[ObserveCommand.Result]] = o match {
       case OpticControl(_, _, _, ContinuePausedCmd(a), _, _) => Some(a)
       case _                                                 => none
     }
 
-    pausedCommand(seqId, f)(seqState)
+    pausedCommand(seqId, f)
   }
 
-  private def stopPaused(seqId: Observation.Id)(seqState: Sequence.State): Option[Stream[IO, executeEngine.EventType]] = {
+  private def stopPaused(seqId: Observation.Id): EngineState => Option[Stream[IO, executeEngine.EventType]] = {
     def f(o: ObserveControl): Option[Time => SeqAction[ObserveCommand.Result]] = o match {
       case OpticControl(_, _, _, _, StopPausedCmd(a), _) => Some(_ => a)
       case _                                             => none
     }
 
-    pausedCommand(seqId, f)(seqState)
+    pausedCommand(seqId, f)
   }
 
-  private def abortPaused(seqId: Observation.Id)(seqState: Sequence.State): Option[Stream[IO, executeEngine.EventType]] = {
+  private def abortPaused(seqId: Observation.Id): EngineState => Option[Stream[IO, executeEngine.EventType]] = {
     def f(o: ObserveControl): Option[Time => SeqAction[ObserveCommand.Result]] = o match {
       case OpticControl(_, _, _, _, _, AbortPausedCmd(a)) => Some(_ => a)
       case _                                              => none
     }
 
-    pausedCommand(seqId, f)(seqState)
+    pausedCommand(seqId, f)
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
-  private def toInstrumentSys(inst: Instrument): TrySeq[InstrumentSystem[IO]] = inst match {
-    case Instrument.F2    => TrySeq(Flamingos2(systems.flamingos2, systems.dhs))
-    case Instrument.GmosS => TrySeq(GmosSouth(systems.gmosSouth, systems.dhs))
-    case Instrument.GmosN => TrySeq(GmosNorth(systems.gmosNorth, systems.dhs))
-    case Instrument.GNIRS => TrySeq(Gnirs(systems.gnirs, systems.dhs))
-    case Instrument.GPI   => TrySeq(GPI(systems.gpi))
-    case Instrument.GHOST => TrySeq(GHOST(GHOSTController[IO](GDSClient(GDSClient.alwaysOkClient, uri("http://localhost:8888/xmlrpc"))))) // todo put the controller on systems
-    case _                => TrySeq.fail(Unexpected(s"Instrument $inst not supported."))
+  private def toInstrumentSys(inst: Model.Instrument): TrySeq[InstrumentSystem[IO]] = inst match {
+    case Model.Instrument.F2    => TrySeq(Flamingos2(systems.flamingos2, systems.dhs))
+    case Model.Instrument.GmosS => TrySeq(GmosSouth(systems.gmosSouth, systems.dhs))
+    case Model.Instrument.GmosN => TrySeq(GmosNorth(systems.gmosNorth, systems.dhs))
+    case Model.Instrument.GNIRS => TrySeq(Gnirs(systems.gnirs, systems.dhs))
+    case Model.Instrument.GPI   => TrySeq(GPI(systems.gpi))
+    case Model.Instrument.GHOST => TrySeq(GHOST(GHOSTController[IO](GDSClient(GDSClient.alwaysOkClient, uri("http://localhost:8888/xmlrpc"))))) // todo put the controller on systems
+    case _                      => TrySeq.fail(Unexpected(s"Instrument $inst not supported."))
   }
 
   private def calcResources(sys: List[System[IO]]): Set[Resource] =
@@ -334,18 +353,18 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
 
   import TcsController.Subsystem._
 
-  private def hasOI(inst: Instrument): Boolean = inst match {
-    case Instrument.F2    => true
-    case Instrument.GmosS => true
-    case Instrument.GmosN => true
-    case Instrument.NIFS  => true
-    case Instrument.NIRI  => true
-    case Instrument.GPI   => true
-    case Instrument.GHOST => false
-    case _                => false
+  private def hasOI(inst: Model.Instrument): Boolean = inst match {
+    case Model.Instrument.F2    => true
+    case Model.Instrument.GmosS => true
+    case Model.Instrument.GmosN => true
+    case Model.Instrument.NIFS  => true
+    case Model.Instrument.NIRI  => true
+    case Model.Instrument.GPI   => true
+    case Model.Instrument.GHOST => false
+    case _                      => false
   }
 
-  private def flatOrArcTcsSubsystems(inst: Instrument): NonEmptyList[TcsController.Subsystem] = NonEmptyList.of(ScienceFold, (if (hasOI(inst)) List(OIWFS) else List.empty): _*)
+  private def flatOrArcTcsSubsystems(inst: Model.Instrument): NonEmptyList[TcsController.Subsystem] = NonEmptyList.of(ScienceFold, (if (hasOI(inst)) List(OIWFS) else List.empty): _*)
 
   private def calcSystems(stepType: StepType): TrySeq[List[System[IO]]] = {
     stepType match {
@@ -371,32 +390,32 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
 
   }
 
-  private def calcInstHeader(config: Config, inst: Instrument): TrySeq[Header] = {
+  private def calcInstHeader(config: Config, inst: Model.Instrument): TrySeq[Header] = {
     val tcsKReader = if (settings.tcsKeywords) TcsKeywordsReaderImpl else DummyTcsKeywordsReader
     inst match {
-      case Instrument.F2     =>
+      case Model.Instrument.F2     =>
         toInstrumentSys(inst).map(Flamingos2Header.header(_, new Flamingos2Header.ObsKeywordsReaderImpl(config), tcsKReader))
-      case Instrument.GmosS |
-           Instrument.GmosN  =>
+      case Model.Instrument.GmosS |
+           Model.Instrument.GmosN  =>
         val gmosInstReader = if (settings.gmosKeywords) GmosHeader.InstKeywordReaderImpl else GmosHeader.DummyInstKeywordReader
         toInstrumentSys(inst).map(GmosHeader.header(_, GmosHeader.ObsKeywordsReaderImpl(config), gmosInstReader, tcsKReader))
-      case Instrument.GNIRS  =>
+      case Model.Instrument.GNIRS  =>
         val gnirsReader = if(settings.gnirsKeywords) GnirsKeywordReaderImpl else GnirsKeywordReaderDummy
         toInstrumentSys(inst).map(GnirsHeader.header(_, gnirsReader, tcsKReader))
-      case Instrument.GPI    =>
+      case Model.Instrument.GPI    =>
         toInstrumentSys(inst).map(GPIHeader.header(_, systems.gpi.gdsClient, tcsKReader, ObsKeywordReaderImpl(config, site)))
-      case Instrument.GHOST  =>
+      case Model.Instrument.GHOST    =>
         // TODO Do an actual GHOST header
         new Header() {
           def sendAfter(id: ImageFileId) = SeqAction.void
           def sendBefore(obsId: Observation.Id, id: ImageFileId) = SeqAction.void
         }.asRight
-      case _                 =>
+      case _                       =>
         TrySeq.fail(Unexpected(s"Instrument $inst not supported."))
     }
   }
 
-  private def commonHeaders(config: Config, tcsSubsystems: List[TcsController.Subsystem], inst: InstrumentSystem[IO])(ctx: ActionMetadata): Header =
+  private def commonHeaders(config: Config, tcsSubsystems: List[TcsController.Subsystem], inst: InstrumentSystem[IO])(ctx: HeaderExtraData): Header =
     new StandardHeader(
       inst,
       ObsKeywordReaderImpl(config, site),
@@ -411,7 +430,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
   private def gcalHeader(i: InstrumentSystem[IO]): Header = GcalHeader.header(i,
     if (settings.gcalKeywords) GcalKeywordsReaderImpl else DummyGcalKeywordsReader )
 
-  private def calcHeaders(config: Config, stepType: StepType): TrySeq[Reader[ActionMetadata, List[Header]]] = stepType match {
+  private def calcHeaders(config: Config, stepType: StepType): TrySeq[Reader[HeaderExtraData, List[Header]]] = stepType match {
     case CelestialObject(inst) => toInstrumentSys(inst) >>= { i =>
         calcInstHeader(config, inst).map(h => Reader(ctx => List(commonHeaders(config, all.toList, i)(ctx), gwsHeaders(i), h)))
       }
@@ -452,34 +471,34 @@ object SeqTranslate {
 
 
   private sealed trait StepType {
-    val instrument: Instrument
+    val instrument: Model.Instrument
   }
 
-  private def extractInstrument(config: Config): TrySeq[Instrument] = {
-    config.extractAs[String](INSTRUMENT_KEY / INSTRUMENT_NAME_PROP).asTrySeq.flatMap {
-      case Flamingos2.name => TrySeq(Instrument.F2)
-      case GmosSouth.name  => TrySeq(Instrument.GmosS)
-      case GmosNorth.name  => TrySeq(Instrument.GmosN)
-      case Gnirs.name      => TrySeq(Instrument.GNIRS)
-      case GPI.name        => TrySeq(Instrument.GPI)
-      case GHOST.name      => TrySeq(Instrument.GHOST)
+  private def extractInstrument(config: Config): TrySeq[Model.Instrument] = {
+    config.extract(INSTRUMENT_KEY / INSTRUMENT_NAME_PROP).as[String].asTrySeq.flatMap {
+      case Flamingos2.name => TrySeq(Model.Instrument.F2)
+      case GmosSouth.name  => TrySeq(Model.Instrument.GmosS)
+      case GmosNorth.name  => TrySeq(Model.Instrument.GmosN)
+      case Gnirs.name      => TrySeq(Model.Instrument.GNIRS)
+      case GPI.name        => TrySeq(Model.Instrument.GPI)
+      case GHOST.name      => TrySeq(Model.Instrument.GHOST)
       case ins             => TrySeq.fail(UnrecognizedInstrument(s"inst $ins"))
     }
   }
 
-  private final case class CelestialObject(override val instrument: Instrument) extends StepType
-  private final case class Dark(override val instrument: Instrument) extends StepType
-  private final case class NodAndShuffle(override val instrument: Instrument) extends StepType
-  private final case class Gems(override val instrument: Instrument) extends StepType
-  private final case class Altair(override val instrument: Instrument) extends StepType
-  private final case class FlatOrArc(override val instrument: Instrument) extends StepType
-  private final case class DarkOrBias(override val instrument: Instrument) extends StepType
+  private final case class CelestialObject(override val instrument: Model.Instrument) extends StepType
+  private final case class Dark(override val instrument: Model.Instrument) extends StepType
+  private final case class NodAndShuffle(override val instrument: Model.Instrument) extends StepType
+  private final case class Gems(override val instrument: Model.Instrument) extends StepType
+  private final case class Altair(override val instrument: Model.Instrument) extends StepType
+  private final case class FlatOrArc(override val instrument: Model.Instrument) extends StepType
+  private final case class DarkOrBias(override val instrument: Model.Instrument) extends StepType
   private case object AlignAndCalib extends StepType {
-    override val instrument: Instrument = Instrument.GPI
+    override val instrument: Instrument = Model.Instrument.GPI
   }
 
   private def calcStepType(config: Config): TrySeq[StepType] = {
-    def extractGaos(inst: Instrument): TrySeq[StepType] = config.extractAs[String](new ItemKey(AO_CONFIG_NAME) / AO_SYSTEM_PROP) match {
+    def extractGaos(inst: Model.Instrument): TrySeq[StepType] = config.extract(new ItemKey(AO_CONFIG_NAME) / AO_SYSTEM_PROP).as[String] match {
       case Left(ConfigUtilOps.ConversionError(_, _))              => TrySeq.fail(Unexpected("Unable to get AO system from sequence"))
       case Left(ConfigUtilOps.ContentError(_))                    => TrySeq.fail(Unexpected("Logical error"))
       case Left(ConfigUtilOps.KeyNotFound(_))                     => TrySeq(CelestialObject(inst))
@@ -488,7 +507,7 @@ object SeqTranslate {
       case _                                                      => TrySeq.fail(Unexpected("Logical error reading AO system name"))
     }
 
-    (config.extractAs[String](OBSERVE_KEY / OBSERVE_TYPE_PROP).leftMap(explainExtractError), extractInstrument(config)).mapN { (obsType, inst) =>
+    (config.extract(OBSERVE_KEY / OBSERVE_TYPE_PROP).as[String].leftMap(explainExtractError), extractInstrument(config)).mapN { (obsType, inst) =>
       obsType match {
         case SCIENCE_OBSERVE_TYPE                     => extractGaos(inst)
         case BIAS_OBSERVE_TYPE | DARK_OBSERVE_TYPE    => TrySeq(DarkOrBias(inst))

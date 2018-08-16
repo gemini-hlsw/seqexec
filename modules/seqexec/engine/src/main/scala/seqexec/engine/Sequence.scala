@@ -3,8 +3,7 @@
 
 package seqexec.engine
 
-import seqexec.model.{ Observer, SequenceMetadata, SequenceState, StepState }
-import seqexec.model.enum.Resource
+import seqexec.model.Model.{Resource, SequenceState, StepState}
 import gem.Observation
 import cats.implicits._
 import monocle.Lens
@@ -15,7 +14,6 @@ import monocle.macros.GenLens
   */
 final case class Sequence(
   id: Observation.Id,
-  metadata: SequenceMetadata,
   steps: List[Step]
 ) {
 
@@ -26,10 +24,7 @@ final case class Sequence(
 
 object Sequence {
 
-  def empty[A](id: Observation.Id, m: SequenceMetadata): Sequence = Sequence(id, m, Nil)
-
-  def metadata[A]: Lens[Sequence, SequenceMetadata] =
-    GenLens[Sequence](_.metadata)
+  def empty[A](id: Observation.Id): Sequence = Sequence(id, Nil)
 
   /**
     * Sequence Zipper. This structure is optimized for the actual `Sequence`
@@ -38,7 +33,6 @@ object Sequence {
     */
   final case class Zipper(
     id: Observation.Id,
-    metadata: SequenceMetadata,
     pending: List[Step],
     focus: Step.Zipper,
     done: List[Step]
@@ -64,11 +58,11 @@ object Sequence {
           remaining match {
             case Nil => None
             case stepp :: stepps => (Step.Zipper.currentify(stepp), focus.uncurrentify).mapN (
-              (curr, stepd) => Zipper(id, metadata, stepps, curr, (done :+ stepd) ::: toSkip.map(_.copy(skipped = Step.Skipped(true))))
+              (curr, stepd) => Zipper(id, stepps, curr, (done :+ stepd) ::: toSkip.map(_.copy(skipped = Step.Skipped(true))))
             )
           }
         // Current step ongoing
-        case Some(stz) => Some(Zipper(id, metadata, pending, stz, done))
+        case Some(stz) => Some(Zipper(id, pending, stz, done))
       }
 
     def rollback: Zipper = this.copy(focus = focus.rollback)
@@ -80,7 +74,7 @@ object Sequence {
           case Nil => None
           case stepp :: stepps =>
             (Step.Zipper.currentify(stepp), focus.skip.some).mapN (
-              (curr, stepd) => Zipper(id, metadata, stepps, curr, (done :+ stepd) ::: toSkip.map(_.copy(skipped = Step.Skipped(true))))
+              (curr, stepd) => Zipper(id, stepps, curr, (done :+ stepd) ::: toSkip.map(_.copy(skipped = Step.Skipped(true))))
             )
         }
       }
@@ -94,8 +88,8 @@ object Sequence {
       */
     val uncurrentify: Option[Sequence] =
       if (remaining.isEmpty)
-        if(focus.skipMark.self) Sequence(id, metadata, (done :+ focus.skip) ::: toSkip.map(_.copy(skipped = Step.Skipped(true)))).some
-        else focus.uncurrentify.map(x => Sequence(id, metadata, (done :+ x) ::: toSkip.map(_.copy(skipped = Step.Skipped(true)))))
+        if(focus.skipMark.self) Sequence(id, (done :+ focus.skip) ::: toSkip.map(_.copy(skipped = Step.Skipped(true)))).some
+        else focus.uncurrentify.map(x => Sequence(id, (done :+ x) ::: toSkip.map(_.copy(skipped = Step.Skipped(true)))))
       else None
 
     /**
@@ -105,7 +99,6 @@ object Sequence {
     val toSequence: Sequence =
       Sequence(
         id,
-        metadata,
         // TODO: Functor composition?
         done ++ List(focus.toStep) ++ pending
       )
@@ -123,7 +116,7 @@ object Sequence {
         case Nil           => None
         case step :: steps =>
           Step.Zipper.currentify(step).map(
-            Zipper(seq.id, seq.metadata, steps, _, Nil)
+            Zipper(seq.id, steps, _, Nil)
           )
       }
 
@@ -133,7 +126,7 @@ object Sequence {
           case Nil             => None
           case s :: ss =>
             Step.Zipper.currentify(s).map(
-              Zipper(seq.id, seq.metadata, ss, _, done)
+              Zipper(seq.id, ss, _, done)
             )
         }
       }
@@ -158,9 +151,6 @@ object Sequence {
 
     val current: Lens[Zipper, Execution] =
       focus ^|-> Step.Zipper.current
-
-    val metadata: Lens[Zipper, SequenceMetadata] =
-      GenLens[Zipper](_.metadata)
 
   }
 
@@ -190,8 +180,6 @@ object Sequence {
 
     def getCurrentBreakpoint: Boolean
 
-    def setObserver(name: Observer): State
-
     /**
       * Current Execution
       */
@@ -208,6 +196,8 @@ object Sequence {
     def mark(i: Int)(r: Result): State
 
     def start(i: Int): State
+
+    def update(sequence: Sequence): State
 
     /**
       * Unzip `State`. This creates a single `Sequence` with either completed `Step`s
@@ -251,7 +241,7 @@ object Sequence {
     // TODO: Make this function `apply`?
     def init(q: Sequence): State =
       Sequence.Zipper.zipper(q).map(Zipper(_, SequenceState.Idle))
-        .getOrElse(Final(Sequence.empty(q.id, q.metadata), SequenceState.Idle))
+        .getOrElse(Final(Sequence.empty(q.id), SequenceState.Idle))
 
     /**
       * This is the `State` in Zipper mode, which means is under execution.
@@ -297,18 +287,10 @@ object Sequence {
 
       override def getCurrentBreakpoint: Boolean = zipper.focus.breakpoint.self && zipper.focus.done.isEmpty
 
-      override def setObserver(name: Observer): State = observerL.set(name.some)(self)
-
       override val done: List[Step] = zipper.done
 
       private val zipperL: Lens[Zipper, Sequence.Zipper] =
         GenLens[Zipper](_.zipper)
-
-      private val metadataL: Lens[Zipper, SequenceMetadata] =
-        zipperL ^|-> Sequence.Zipper.metadata
-
-      private val observerL: Lens[Zipper, Option[Observer]] =
-        metadataL ^|-> SequenceMetadata.observer
 
       override def mark(i: Int)(r: Result): State = {
 
@@ -334,6 +316,23 @@ object Sequence {
 
       }
 
+      // Some rules:
+      // 1. Done steps cannot change.
+      // 2. Pending steps cannot turn to not pending.
+      // 3. Focus cannot change if running.
+      // 4. Must preserve breakpoints and skip marks
+      override def update(sequence: Sequence): State = {
+        val updatedPending = sequence.steps.drop(zipper.done.length)
+
+        require(updatedPending.forall(Step.status(_) === StepState.Pending))
+
+        if(status.isRunning) zipperL.modify(zp => zp.copy(pending = updatedPending.drop(1)))(this)
+        else updatedPending match {
+          case t::ts => zipperL.modify(zp => zp.copy(focus = zp.focus.update(t), pending = ts))(this)
+          case _     => Final(Sequence(zipper.id, zipper.done), status)
+        }
+
+      }
 
       override val toSequence: Sequence = zipper.toSequence
 
@@ -362,24 +361,15 @@ object Sequence {
 
       override def getCurrentBreakpoint: Boolean = false
 
-      override def setObserver(name: Observer): State = observerL.set(name.some)(self)
-
       override val done: List[Step] = seq.steps
 
       override def mark(i: Int)(r: Result): State = self
 
       override def start(i: Int): State = self
 
+      override def update(sequence: Sequence): State = self
+
       override val toSequence: Sequence = seq
-
-      private val sequenceL: Lens[Final, Sequence] =
-        GenLens[Final](_.seq)
-
-      private val metadataL: Lens[Final, SequenceMetadata] =
-        sequenceL ^|-> Sequence.metadata
-
-      private val observerL: Lens[Final, Option[Observer]] =
-        metadataL ^|-> SequenceMetadata.observer
 
     }
 

@@ -125,6 +125,8 @@ object Step {
 
     val skip: Step = toStep.copy(skipped = Skipped(true))
 
+    def update(step: Step): Zipper = Zipper.currentify(step).map(_.copy(breakpoint = this.breakpoint, skipMark = this.skipMark)).getOrElse(this)
+
   }
 
   object Zipper {

@@ -4,7 +4,8 @@
 package seqexec.engine
 
 import cats.Eq
-import seqexec.model.enum.Resource
+import cats.effect.IO
+import seqexec.model.Model.Resource
 import monocle.function.Index.{index, listIndex}
 import monocle.syntax.apply._
 import mouse.boolean._
@@ -101,7 +102,7 @@ object Result {
   trait PauseContext
 
   final case class OK[R <: RetVal](response: R) extends Result
-  final case class Partial[R <: PartialVal](response: R, continuation: ActionGen) extends Result
+  final case class Partial[R <: PartialVal](response: R, continuation: IO[Result]) extends Result
   final case class Paused[C <: PauseContext](ctx: PauseContext) extends Result
   // TODO: Replace the message by a richer Error type like `SeqexecFailure`
   final case class Error(msg: String) extends Result {

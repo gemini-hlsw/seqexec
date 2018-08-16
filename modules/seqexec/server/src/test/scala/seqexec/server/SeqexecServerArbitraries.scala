@@ -149,13 +149,13 @@ object SeqexecServerArbitraries extends ArbTime {
 
   implicit val selectedCoGen: Cogen[Map[Instrument, Observation.Id]] =
     Cogen[List[(Instrument, Observation.Id)]].contramap(_.toList)
-  implicit val engineMetadataArb: Arbitrary[EngineMetadata] = Arbitrary {
+  implicit val engineMetadataArb: Arbitrary[EngineState] = Arbitrary {
     for {
       q <- arbitrary[ExecutionQueues]
       s <- arbitrary[Map[Instrument, Observation.Id]]
       c <- arbitrary[Conditions]
       o <- arbitrary[Option[Operator]]
-    } yield EngineMetadata(q, s, c, o)
+    } yield EngineState(q, s, c, o)
   }
 
   implicit val gpiAOFlagsArb: Arbitrary[GPIController.AOFlags] = Arbitrary{
