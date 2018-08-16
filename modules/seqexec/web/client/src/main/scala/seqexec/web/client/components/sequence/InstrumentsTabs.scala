@@ -12,7 +12,7 @@ import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react._
 import seqexec.model.{Observer, UserDetails, SequenceState}
 import seqexec.model.enum.Instrument
-import seqexec.web.client.actions.{LoadSequence, /*NavigateTo,*/ SelectEmptyPreview, SelectSequencePreview, SelectIdToDisplay}
+import seqexec.web.client.actions.{LoadSequence, SelectEmptyPreview, SelectSequencePreview, SelectIdToDisplay}
 import seqexec.web.client.model.Pages._
 import seqexec.web.client.model.{ AvailableTab, RunningStep }
 import seqexec.web.client.circuit.SeqexecCircuit

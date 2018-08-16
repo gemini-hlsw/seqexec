@@ -35,7 +35,7 @@ object circuit {
     implicit val order: Order[SequenceInQueue] = Order.by(_.id)
     implicit val ordering: scala.math.Ordering[SequenceInQueue] = order.toOrdering
   }
-  final case class StatusAndLoadedSequencesFocus(isLogged: Boolean, sequences: List[SequenceInQueue], tableState: TableState[QueueTableBody.TableColumn]) extends UseValueEq
+  final case class StatusAndLoadedSequencesFocus(status: ClientStatus, sequences: List[SequenceInQueue], tableState: TableState[QueueTableBody.TableColumn]) extends UseValueEq
   final case class HeaderSideBarFocus(status: ClientStatus, conditions: Conditions, operator: Option[Operator]) extends UseValueEq
   final case class InstrumentStatusFocus(instrument: Instrument, active: Boolean, idState: Option[(Observation.Id, SequenceState)], runningStep: Option[RunningStep]) extends UseValueEq
   final case class InstrumentTabFocus(tabs: NonEmptyList[AvailableTab], user: Option[UserDetails]) extends UseValueEq
@@ -123,20 +123,21 @@ object circuit {
 
     override protected def initialModel = SeqexecAppRootModel.Initial
 
-    // Some useful readers
-    val statusAndLoadedSequencesReader: ModelR[SeqexecAppRootModel, StatusAndLoadedSequencesFocus] =
-      zoom { c =>
-        val sequencesInQueue = c.uiModel.sequences.queue.map { s =>
-          val active = c.uiModel.sequencesOnDisplay.idDisplayed(s.id)
-          val loaded = c.uiModel.sequencesOnDisplay.loadedIds.contains(s.id)
-          val targetName = firstScienceStepTargetNameT.headOption(s)
-          SequenceInQueue(s.id, s.status, s.metadata.instrument, active, loaded, s.metadata.name, targetName, s.runningStep)
-        }
-        StatusAndLoadedSequencesFocus(c.uiModel.user.isDefined, sequencesInQueue.sorted, c.uiModel.queueTableState)
-      }
-
     // Reader to indicate the allowed interactions
     val statusReader: ModelR[SeqexecAppRootModel, ClientStatus] = zoom(m => ClientStatus(m.uiModel.user, m.ws, m.uiModel.syncInProgress))
+
+    // Some useful readers
+    val statusAndLoadedSequencesReader: ModelR[SeqexecAppRootModel, StatusAndLoadedSequencesFocus] =
+      statusReader.zip(zoom(_.uiModel.sequences.queue).zip(zoom(_.uiModel.sequencesOnDisplay).zip(zoom(_.uiModel.queueTableState)))).zoom {
+        case (s, (queue, (sod, queueTable))) =>
+          val sequencesInQueue = queue.map { s =>
+            val active = sod.idDisplayed(s.id)
+            val loaded = sod.loadedIds.contains(s.id)
+            val targetName = firstScienceStepTargetNameT.headOption(s)
+            SequenceInQueue(s.id, s.status, s.metadata.instrument, active, loaded, s.metadata.name, targetName, s.runningStep)
+          }
+          StatusAndLoadedSequencesFocus(s, sequencesInQueue.sorted, queueTable)
+      }
 
     // Reader to contain the sequence in conflict
     val sequenceInConflictReader: ModelR[SeqexecAppRootModel, Option[Observation.Id]] = zoomTo(_.uiModel.resourceConflict.id)

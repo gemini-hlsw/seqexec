@@ -21,7 +21,7 @@ import react.virtualized._
 import scala.math.max
 import scala.scalajs.js
 import seqexec.model.enum.Instrument
-import seqexec.model.{ DaytimeCalibrationTargetName, SequenceState }
+import seqexec.model.{ UserDetails, DaytimeCalibrationTargetName, Observer, SequenceState }
 import seqexec.web.client.circuit._
 import seqexec.web.client.actions._
 import seqexec.web.client.model.Pages._
@@ -30,6 +30,7 @@ import seqexec.web.client.ModelOps._
 import seqexec.web.client.semanticui.elements.icon.Icon.IconAttention
 import seqexec.web.client.semanticui.elements.icon.Icon.IconCheckmark
 import seqexec.web.client.semanticui.elements.icon.Icon.IconCircleNotched
+import seqexec.web.client.semanticui.elements.icon.Icon.IconRefresh
 import seqexec.web.client.semanticui.elements.icon.Icon.IconSelectedRadio
 import web.client.style._
 import web.client.utils._
@@ -143,10 +144,13 @@ object QueueTableBody {
     val rowCount: Int =
       sequencesList.size
 
-    val isLogged: Boolean = sequences().isLogged
+    val canOperate: Boolean = sequences().status.canOperate
+
+    val user: Option[UserDetails] = sequences().status.u
   }
 
   final case class State(tableState: TableState[TableColumn],
+                         rowLoading: Option[Int],
                          loggedIn: Boolean) {
     // Update the columns' visibility based on logged in state
     private def logIn: State =
@@ -168,12 +172,20 @@ object QueueTableBody {
         }))(this)
 
     // Change the columns visibility depending on the logged in state
-    def loginState(isLogged: Boolean): State = {
-      val loginChanged = isLogged =!= loggedIn
+    def loginState(canOperate: Boolean): State = {
+      val loginChanged = canOperate =!= loggedIn
       State.userModified.modify(m =>
         UserModified.fromBool((m === IsModified) && !loginChanged))(
-        isLogged.fold(logIn, logOff))
+        canOperate.fold(logIn, logOff))
     }
+
+    // Reset loading of rows
+    def resetLoading(p: Props): State =
+      if (rowLoading.exists(i => p.rowGetter(i).loaded)) {
+        copy(rowLoading = None)
+      } else {
+        this
+      }
 
     // calculate the relative widths of each column based on content only
     // this should be renormalized against the actual tabel width
@@ -259,7 +271,7 @@ object QueueTableBody {
       State.tableState.modify(_.applyOffset(column, delta))(this)
   }
 
-  val InitialTableState: State = State(TableState(NotModified, 0, all), false)
+  val InitialTableState: State = State(TableState(NotModified, 0, all), None, false)
 
   object State {
     // Lenses
@@ -345,38 +357,24 @@ object QueueTableBody {
             None)
   }
 
-  private def showSequence(p: Props,
-                           page: SeqexecPages)(e: ReactEvent): Callback = {
-    // prevent default to avoid the link jumping
-    e.preventDefault
-    // Request to display the selected sequence
-    page match {
-      case PreviewPage(i, obsId, step) =>
-        p.sequences.dispatchCB(SelectSequencePreview(i, obsId, step))
-      case SequencePage(i, obsId, _) =>
-        p.sequences.dispatchCB(SelectIdToDisplay(i, obsId))
-      case _ =>
-        Callback.empty
-    }
-  }
-
   private def linkTo(p: Props, page: SeqexecPages)(mod: TagMod*) =
     <.a(
       ^.href := p.ctl.urlFor(page).value,
-      ^.onClick ==> showSequence(p, page),
-      p.ctl.setOnLinkClick(page),
+      ^.onClick ==> {_.preventDefaultCB},
       mod.toTagMod
     )
+
+  def pageOf(row: QueueRow): SeqexecPages =
+    if (row.loaded) {
+      SequencePage(row.instrument, row.obsId, 0)
+    } else {
+      PreviewPage(row.instrument, row.obsId, 0)
+    }
 
   private def linkedTextRenderer(p: Props)(
       f: QueueRow => TagMod): CellRenderer[js.Object, js.Object, QueueRow] =
     (_, _, _, row: QueueRow, _) => {
-      val page = if (row.loaded) {
-        SequencePage(row.instrument, row.obsId, 0)
-      } else {
-        PreviewPage(row.instrument, row.obsId, 0)
-      }
-      linkTo(p, page)(SeqexecStyles.queueTextColumn, f(row))
+      linkTo(p, pageOf(row))(SeqexecStyles.queueTextColumn, f(row))
     }
 
   private def obsIdRenderer(p: Props) = linkedTextRenderer(p) { r =>
@@ -408,48 +406,36 @@ object QueueTableBody {
     <.p(SeqexecStyles.queueText, targetName)
   }
 
-  private def statusIconRenderer(p: Props): CellRenderer[js.Object, js.Object, QueueRow] =
-    (_, _, _, row: QueueRow, _) => {
+  private def statusIconRenderer(b: Backend): CellRenderer[js.Object, js.Object, QueueRow] =
+    (_, _, _, row: QueueRow, index) => {
       val isFocused = row.active
       val icon: TagMod =
         row.status match {
-          case SequenceState.Completed =>
+          case SequenceState.Completed     =>
             IconCheckmark.copyIcon(fitted = true,
                                    extraStyles = List(SeqexecStyles.selectedIcon))
           case SequenceState.Running(_, _) =>
             IconCircleNotched.copyIcon(fitted = true,
                                        loading = true,
                                        extraStyles = List(SeqexecStyles.runningIcon))
-          case SequenceState.Failed(_) =>
+          case SequenceState.Failed(_)     =>
             IconAttention.copyIcon(fitted = true, color = "red".some,
                                    extraStyles = List(SeqexecStyles.selectedIcon))
-          case _ =>
-            if (isFocused) {
-              IconSelectedRadio.copyIcon(fitted = true,
+          case _ if b.state.rowLoading.exists(_ === index) =>
+            // Spinning icon while loading
+            IconRefresh.copyIcon(fitted = true, loading = true,
+                                       extraStyles = List(SeqexecStyles.runningIcon))
+          case _ if isFocused              =>
+            IconSelectedRadio.copyIcon(fitted = true,
                                          extraStyles = List(SeqexecStyles.selectedIcon))
-            // } else if (p.isLogged) {
-            //   Button(Button.Props(size = SSize.Small, color = "teal".some, compact = true, icon = Some(IconSignIn)))
-            } else {
-              <.div()
-            }
+          case _                           =>
+            <.div()
         }
 
-      row.status match {
-        case SequenceState.Completed | SequenceState.Running(_, _) | SequenceState.Failed(_) =>
-          val page = SequencePage(row.instrument, row.obsId, 0)
-          linkTo(p, page)(
-            SeqexecStyles.queueIconColumn,
-            icon
-          )
-        case _ if p.isLogged && !row.loaded =>
-          val page = PreviewPage(row.instrument, row.obsId, 0)
-          linkTo(p, page)(
-            SeqexecStyles.queueIconColumn,
-            icon
-          )
-        case _ =>
-          <.div(icon)
-      }
+      linkTo(b.props, pageOf(row))(
+        SeqexecStyles.queueIconColumn,
+        icon
+      )
     }
 
   private val statusHeaderRenderer: HeaderRenderer[js.Object] =
@@ -496,7 +482,7 @@ object QueueTableBody {
             width,
             dataKey = "status",
             label = "",
-            cellRenderer = statusIconRenderer(props),
+            cellRenderer = statusIconRenderer(b),
             headerRenderer = statusHeaderRenderer,
             className = SeqexecStyles.queueIconColumn.htmlClass
           ))
@@ -570,6 +556,36 @@ object QueueTableBody {
       UpdateQueueTableState(s.tableState))
   }
 
+  // Single click puts in preview or go to tab
+  def singleClick(b: Backend)(i: Int): Callback = {
+    val r = b.props.rowGetter(i)
+    val page = pageOf(r)
+    b.props.ctl.set(page) *>
+    // If already loaded switch tabs
+    SeqexecCircuit.dispatchCB(SelectIdToDisplay(r.instrument, r.obsId)).when(r.loaded) *>
+    // Else send to preview
+    SeqexecCircuit.dispatchCB(SelectSequencePreview(r.instrument, r.obsId, 0)).unless(r.loaded) *>
+    Callback.empty
+  }
+
+  // Double click tries to load
+  def doubleClick(b: Backend)(i: Int): Callback = {
+    val r = b.props.rowGetter(i)
+    if (r.loaded) {
+      // If already loaded switch tabs
+      SeqexecCircuit.dispatchCB(SelectIdToDisplay(r.instrument, r.obsId))
+    } else { // Try to load it
+      (for {
+        u <- b.props.user
+        if (b.props.canOperate && i >= 0 && !r.loaded)
+      } yield {
+        val load = SeqexecCircuit.dispatchCB(LoadSequence(Observer(u.displayName), r.instrument, r.obsId))
+        val spin = b.modState(_.copy(rowLoading = i.some))
+        spin *> load
+      }).getOrEmpty
+    }
+  }
+
   def table(b: Backend)(size: Size): VdomNode =
     Table(
       Table.props(
@@ -591,6 +607,8 @@ object QueueTableBody {
         headerClassName = SeqexecStyles.tableHeader.htmlClass,
         scrollTop = b.state.tableState.scrollPosition,
         onScroll = (_, _, pos) => updateScrollPosition(b, pos),
+        onRowDoubleClick = doubleClick(b),
+        onRowClick = singleClick(b),
         headerHeight = SeqexecStyles.headerHeight
       ),
       columns(b, size): _*
@@ -599,7 +617,7 @@ object QueueTableBody {
   def initialState(p: Props): State =
     InitialTableState
       .copy(tableState = p.startState)
-      .loginState(p.isLogged)
+      .loginState(p.canOperate)
       .withWidths(p.sequencesList)
 
   private val component = ScalaComponent
@@ -608,7 +626,7 @@ object QueueTableBody {
     .render($ => AutoSizer(AutoSizer.props(table($), disableHeight = true)))
     .componentWillReceiveProps { $ =>
       $.modState { s =>
-        s.loginState($.nextProps.isLogged).withWidths($.nextProps.sequencesList)
+        s.loginState($.nextProps.canOperate).withWidths($.nextProps.sequencesList).resetLoading($.nextProps)
       }
     }
     .build
