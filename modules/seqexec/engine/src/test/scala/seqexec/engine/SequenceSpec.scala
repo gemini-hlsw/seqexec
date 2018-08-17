@@ -52,12 +52,8 @@ class SequenceSpec extends FlatSpec {
 
   }
 
-  private val metadata = SequenceMetadata(F2, None, "")
   private val user = UserDetails("telops", "Telops")
-  implicit object UnitCanGenerateActionMetadata extends ActionMetadataGenerator[Unit] {
-    override def generate(a: Unit)(v: ActionMetadata): ActionMetadata = v
-  }
-  private val executionEngine = new Engine[Unit, Unit]
+  private val executionEngine = new Engine[Engine.State, Unit](monocle.Lens.id)
 
   def simpleStep(id: Int, breakpoint: Boolean): Step =
     Step.init(
@@ -78,7 +74,7 @@ class SequenceSpec extends FlatSpec {
     case _                       => false
   }
 
-  def runToCompletion(s0: Engine.State[Unit]): Option[Engine.State[Unit]] = {
+  def runToCompletion(s0: Engine.State): Option[Engine.State] = {
     executionEngine.process(Stream.eval(IO.pure(Event.start(seqId, user, UUID.randomUUID))))(s0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
     ).compile.last.unsafeRunSync.map(_._2)
@@ -86,15 +82,13 @@ class SequenceSpec extends FlatSpec {
 
   it should "stop on breakpoints" in {
 
-    val qs0: Engine.State[Unit] =
-      Engine.State[Unit](
-        userData = (),
+    val qs0: Engine.State =
+      Engine.State(
         sequences = Map(
           (seqId,
             Sequence.State.init(
               Sequence(
                 id = seqId,
-                metadata = SequenceMetadata(F2, None, ""),
                 steps = List(simpleStep(1, breakpoint = false), simpleStep(2, breakpoint = true))
               )
             )
@@ -114,15 +108,13 @@ class SequenceSpec extends FlatSpec {
 
   it should "resume execution to completion after a breakpoint" in {
 
-    val qs0: Engine.State[Unit] =
-      Engine.State[Unit](
-        userData = (),
+    val qs0: Engine.State =
+      Engine.State(
         sequences = Map(
           (seqId,
             Sequence.State.init(
               Sequence(
                 id = seqId,
-                metadata = SequenceMetadata(F2, None, ""),
                 steps = List(simpleStep(1, breakpoint = false), simpleStep(2, breakpoint = true), simpleStep(3, breakpoint = false))
               )
             )
@@ -174,7 +166,7 @@ class SequenceSpec extends FlatSpec {
   val stepzar0: Step.Zipper = simpleStep2(Nil, Execution(List(completedAction, action)), Nil)
   val stepzar1: Step.Zipper = simpleStep2(List(List(action)), Execution(List(completedAction, completedAction)), List(List(result)))
 
-  def simpleSequenceZipper(focus: Step.Zipper): Sequence.Zipper = Sequence.Zipper(seqId, metadata, Nil, focus, Nil)
+  def simpleSequenceZipper(focus: Step.Zipper): Sequence.Zipper = Sequence.Zipper(seqId, Nil, focus, Nil)
   val seqz0: Sequence.Zipper   = simpleSequenceZipper(stepz0)
   val seqza0: Sequence.Zipper  = simpleSequenceZipper(stepza0)
   val seqza1: Sequence.Zipper  = simpleSequenceZipper(stepza1)

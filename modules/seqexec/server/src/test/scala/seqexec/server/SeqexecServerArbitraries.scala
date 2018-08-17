@@ -155,7 +155,7 @@ object SeqexecServerArbitraries extends ArbTime {
       s <- arbitrary[Map[Instrument, Observation.Id]]
       c <- arbitrary[Conditions]
       o <- arbitrary[Option[Operator]]
-    } yield EngineState(q, s, c, o)
+    } yield EngineState.default.copy(queues = q, selected = s, conditions = c, operator = o)
   }
 
   implicit val gpiAOFlagsArb: Arbitrary[GPIController.AOFlags] = Arbitrary{
