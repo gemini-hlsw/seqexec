@@ -12,7 +12,7 @@ import gem.Observation
 import gem.enum.{GpiDisperser, GpiFilter, GpiObservingMode}
 import seqexec.model.enum.{ FPUMode, Instrument, StepType }
 import seqexec.model.{ Step, StepState }
-import seqexec.web.client.actions.{NavigateSilentTo, FlipSkipStep, FlipBreakpointStep}
+import seqexec.web.client.actions.{FlipSkipStep, FlipBreakpointStep}
 import seqexec.model.enumerations
 import seqexec.web.client.circuit.{ SeqexecCircuit, StepsTableFocus }
 import seqexec.web.client.components.SeqexecStyles
@@ -351,7 +351,7 @@ object SettingsCell {
       <.div(
         SeqexecStyles.settingsCell,
         p.ctl.link(page)(
-          IconCaretRight.copyIcon(color = "black".some, onClick = SeqexecCircuit.dispatchCB(NavigateSilentTo(page)))
+          IconCaretRight.copyIcon(color = "black".some, onClick = p.ctl.setUrlAndDispatchCB(page))
         )
       )
     }.build

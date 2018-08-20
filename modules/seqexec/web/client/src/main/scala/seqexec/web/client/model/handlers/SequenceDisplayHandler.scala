@@ -14,7 +14,7 @@ import seqexec.web.client.circuit._
   */
 class SequenceDisplayHandler[M](modelRW: ModelRW[M, SequencesOnDisplay]) extends ActionHandler(modelRW) with Handlers {
   def handleSelectSequenceDisplay: PartialFunction[Any, ActionResult[M]] = {
-    case SelectIdToDisplay(i, id) =>
+    case SelectIdToDisplay(i, id, _) =>
       updated(value.focusOnSequence(i, id).hideStepConfig)
 
     case SelectSequencePreview(i, id, _) =>
@@ -34,12 +34,6 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, SequencesOnDisplay]) extends
     case ShowStepConfig(i, id, step)        =>
       updated(value.focusOnSequence(i, id).showStepConfig(id, step - 1))
 
-    case HideStepConfig(instrument)         =>
-      if (value.sequences.focus.sequence.exists(_.metadata.instrument == instrument)) {
-        updated(value.hideStepConfig)
-      } else {
-        noChange
-      }
   }
 
   def handleRememberCompleted: PartialFunction[Any, ActionResult[M]] = {

@@ -82,7 +82,7 @@ object SeqexecUI {
         // Runtime verification that all pages are routed
         .verify(Root, List(EmptyPreviewPage, SoundTest): _*)
         .onPostRender((_, next) =>
-          Callback.when(next === SoundTest)(SeqexecCircuit.dispatchCB(RequestSoundEcho)) >>
+          Callback.when(next === SoundTest)(SeqexecCircuit.dispatchCB(RequestSoundEcho)) *>
           Callback.when(next =!= SeqexecCircuit.zoom(_.uiModel.navLocation).value)(SeqexecCircuit.dispatchCB(NavigateSilentTo(next))))
         .renderWith { case (_, r) => <.div(r.render()).render}
         .setTitle(pageTitle(site))

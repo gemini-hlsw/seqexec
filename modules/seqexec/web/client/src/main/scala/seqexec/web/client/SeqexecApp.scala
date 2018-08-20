@@ -30,7 +30,7 @@ object SeqexecApp {
   @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
   def setupLogger: IO[Unit] = IO {
     // Using the root logger setup the handlers
-    val rootLogger = Logger.getLogger("edu")
+    val rootLogger = Logger.getLogger("seqexec")
     rootLogger.addHandler(new ConsoleHandler(Level.INFO))
 
     SeqexecWebClient.start()

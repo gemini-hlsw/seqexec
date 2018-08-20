@@ -12,7 +12,7 @@ import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react._
 import seqexec.model.{Observer, UserDetails, SequenceState}
 import seqexec.model.enum.Instrument
-import seqexec.web.client.actions.{LoadSequence, SelectEmptyPreview, SelectSequencePreview, SelectIdToDisplay}
+import seqexec.web.client.actions.LoadSequence
 import seqexec.web.client.model.Pages._
 import seqexec.web.client.model.{ AvailableTab, RunningStep }
 import seqexec.web.client.circuit.SeqexecCircuit
@@ -34,20 +34,11 @@ object InstrumentTab {
     b.setState(State(loading = true)) *>
     b.props.user.map(u => SeqexecCircuit.dispatchCB(LoadSequence(Observer(u.displayName), inst, id))).getOrEmpty
 
-  private def showSequence(page: SeqexecPages)(e: ReactEvent): Callback = {
+  private def showSequence(p: Props, page: SeqexecPages)(e: ReactEvent): Callback = {
     // prevent default to avoid the link jumping
     e.preventDefault
     // Request to display the selected sequence
-    page match {
-      case PreviewPage(i, obsId, step) =>
-        SeqexecCircuit.dispatchCB(SelectSequencePreview(i, obsId, step))
-      case SequencePage(i, obsId, _) =>
-        SeqexecCircuit.dispatchCB(SelectIdToDisplay(i, obsId))
-      case EmptyPreviewPage =>
-        SeqexecCircuit.dispatchCB(SelectEmptyPreview)
-      case _ =>
-        Callback.empty
-    }
+    p.router.setUrlAndDispatchCB(page)
   }
 
   private def linkTo(p: Props, page: SeqexecPages)(mod: TagMod*) = {
@@ -59,8 +50,7 @@ object InstrumentTab {
 
     <.a(
       ^.href := p.router.urlFor(page).value,
-      ^.onClick ==> showSequence(page),
-      p.router.setOnLinkClick(page),
+      ^.onClick ==> showSequence(p, page),
       ^.cls := "item",
       ^.classSet(
         "active" -> active

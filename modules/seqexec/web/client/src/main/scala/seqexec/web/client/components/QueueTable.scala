@@ -559,13 +559,9 @@ object QueueTableBody {
   // Single click puts in preview or go to tab
   def singleClick(b: Backend)(i: Int): Callback = {
     val r = b.props.rowGetter(i)
-    val page = pageOf(r)
-    b.props.ctl.set(page) *>
-    // If already loaded switch tabs
-    SeqexecCircuit.dispatchCB(SelectIdToDisplay(r.instrument, r.obsId)).when(r.loaded) *>
-    // Else send to preview
-    SeqexecCircuit.dispatchCB(SelectSequencePreview(r.instrument, r.obsId, 0)).unless(r.loaded) *>
-    Callback.empty
+    val p = pageOf(r)
+    // If already loaded switch tabs or to preview
+    b.props.ctl.setUrlAndDispatchCB(p)
   }
 
   // Double click tries to load
@@ -573,7 +569,7 @@ object QueueTableBody {
     val r = b.props.rowGetter(i)
     if (r.loaded) {
       // If already loaded switch tabs
-      SeqexecCircuit.dispatchCB(SelectIdToDisplay(r.instrument, r.obsId))
+      b.props.ctl.dispatchAndSetUrlCB(SelectIdToDisplay(r.instrument, r.obsId, 0))
     } else { // Try to load it
       (for {
         u <- b.props.user
