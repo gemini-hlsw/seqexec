@@ -3,7 +3,7 @@
 
 package seqexec.engine
 
-import seqexec.model.Model.{SequenceState, StepState}
+import seqexec.model.{SequenceState, StepState}
 import gem.Observation
 import cats.implicits._
 import monocle.Lens

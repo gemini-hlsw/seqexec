@@ -4,7 +4,7 @@
 package seqexec.engine
 
 import java.util.UUID
-import seqexec.engine.Sequence.State.Fina
+import seqexec.engine.Sequence.State.Final
 import seqexec.model.{StepState, SequenceState}
 import seqexec.model.enum.Instrument.GmosS
 import seqexec.model.enum.Resource.TCS

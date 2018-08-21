@@ -20,9 +20,9 @@ import mouse.all._
 import org.log4s._
 import org.http4s.Uri._
 import seqexec.engine.Result.{Configured, FileIdAllocated, Observed}
-import seqexec.engine.{Action, ActionMetadata, Event, Result, Sequence, Step, fromIO}
+import seqexec.engine.{Action, Event, Result, Sequence, Step, fromIO}
 import seqexec.model.enum.{ Instrument, Resource }
-import seqexec.model.{ StepState, SequenceMetadata, ActionType }
+import seqexec.model.{ StepState, ActionType }
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.SeqTranslate.{Settings, Systems}
@@ -330,13 +330,13 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
-  private def toInstrumentSys(inst: Model.Instrument): TrySeq[InstrumentSystem[IO]] = inst match {
-    case Model.Instrument.F2    => TrySeq(Flamingos2(systems.flamingos2, systems.dhs))
-    case Model.Instrument.GmosS => TrySeq(GmosSouth(systems.gmosSouth, systems.dhs))
-    case Model.Instrument.GmosN => TrySeq(GmosNorth(systems.gmosNorth, systems.dhs))
-    case Model.Instrument.GNIRS => TrySeq(Gnirs(systems.gnirs, systems.dhs))
-    case Model.Instrument.GPI   => TrySeq(GPI(systems.gpi))
-    case Model.Instrument.GHOST => TrySeq(GHOST(GHOSTController[IO](GDSClient(GDSClient.alwaysOkClient, uri("http://localhost:8888/xmlrpc"))))) // todo put the controller on systems
+  private def toInstrumentSys(inst: Instrument): TrySeq[InstrumentSystem[IO]] = inst match {
+    case Instrument.F2    => TrySeq(Flamingos2(systems.flamingos2, systems.dhs))
+    case Instrument.GmosS => TrySeq(GmosSouth(systems.gmosSouth, systems.dhs))
+    case Instrument.GmosN => TrySeq(GmosNorth(systems.gmosNorth, systems.dhs))
+    case Instrument.GNIRS => TrySeq(Gnirs(systems.gnirs, systems.dhs))
+    case Instrument.GPI   => TrySeq(GPI(systems.gpi))
+    case Instrument.GHOST => TrySeq(GHOST(GHOSTController[IO](GDSClient(GDSClient.alwaysOkClient, uri("http://localhost:8888/xmlrpc"))))) // todo put the controller on systems
     case _                      => TrySeq.fail(Unexpected(s"Instrument $inst not supported."))
   }
 
@@ -345,18 +345,18 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
 
   import TcsController.Subsystem._
 
-  private def hasOI(inst: Model.Instrument): Boolean = inst match {
-    case Model.Instrument.F2    => true
-    case Model.Instrument.GmosS => true
-    case Model.Instrument.GmosN => true
-    case Model.Instrument.NIFS  => true
-    case Model.Instrument.NIRI  => true
-    case Model.Instrument.GPI   => true
-    case Model.Instrument.GHOST => false
+  private def hasOI(inst: Instrument): Boolean = inst match {
+    case Instrument.F2    => true
+    case Instrument.GmosS => true
+    case Instrument.GmosN => true
+    case Instrument.NIFS  => true
+    case Instrument.NIRI  => true
+    case Instrument.GPI   => true
+    case Instrument.GHOST => false
     case _                      => false
   }
 
-  private def flatOrArcTcsSubsystems(inst: Model.Instrument): NonEmptyList[TcsController.Subsystem] = NonEmptyList.of(ScienceFold, (if (hasOI(inst)) List(OIWFS) else List.empty): _*)
+  private def flatOrArcTcsSubsystems(inst: Instrument): NonEmptyList[TcsController.Subsystem] = NonEmptyList.of(ScienceFold, (if (hasOI(inst)) List(OIWFS) else List.empty): _*)
 
   private def calcSystems(stepType: StepType): TrySeq[List[System[IO]]] = {
     stepType match {
@@ -382,21 +382,21 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
 
   }
 
-  private def calcInstHeader(config: Config, inst: Model.Instrument): TrySeq[Header] = {
+  private def calcInstHeader(config: Config, inst: Instrument): TrySeq[Header] = {
     val tcsKReader = if (settings.tcsKeywords) TcsKeywordsReaderImpl else DummyTcsKeywordsReader
     inst match {
-      case Model.Instrument.F2     =>
+      case Instrument.F2     =>
         toInstrumentSys(inst).map(Flamingos2Header.header(_, new Flamingos2Header.ObsKeywordsReaderImpl(config), tcsKReader))
-      case Model.Instrument.GmosS |
-           Model.Instrument.GmosN  =>
+      case Instrument.GmosS |
+           Instrument.GmosN  =>
         val gmosInstReader = if (settings.gmosKeywords) GmosHeader.InstKeywordReaderImpl else GmosHeader.DummyInstKeywordReader
         toInstrumentSys(inst).map(GmosHeader.header(_, GmosHeader.ObsKeywordsReaderImpl(config), gmosInstReader, tcsKReader))
-      case Model.Instrument.GNIRS  =>
+      case Instrument.GNIRS  =>
         val gnirsReader = if(settings.gnirsKeywords) GnirsKeywordReaderImpl else GnirsKeywordReaderDummy
         toInstrumentSys(inst).map(GnirsHeader.header(_, gnirsReader, tcsKReader))
-      case Model.Instrument.GPI    =>
+      case Instrument.GPI    =>
         toInstrumentSys(inst).map(GPIHeader.header(_, systems.gpi.gdsClient, tcsKReader, ObsKeywordReaderImpl(config, site)))
-      case Model.Instrument.GHOST    =>
+      case Instrument.GHOST    =>
         // TODO Do an actual GHOST header
         new Header() {
           def sendAfter(id: ImageFileId) = SeqAction.void
@@ -463,34 +463,34 @@ object SeqTranslate {
 
 
   private sealed trait StepType {
-    val instrument: Model.Instrument
+    val instrument: Instrument
   }
 
-  private def extractInstrument(config: Config): TrySeq[Model.Instrument] = {
+  private def extractInstrument(config: Config): TrySeq[Instrument] = {
     config.extract(INSTRUMENT_KEY / INSTRUMENT_NAME_PROP).as[String].asTrySeq.flatMap {
-      case Flamingos2.name => TrySeq(Model.Instrument.F2)
-      case GmosSouth.name  => TrySeq(Model.Instrument.GmosS)
-      case GmosNorth.name  => TrySeq(Model.Instrument.GmosN)
-      case Gnirs.name      => TrySeq(Model.Instrument.GNIRS)
-      case GPI.name        => TrySeq(Model.Instrument.GPI)
-      case GHOST.name      => TrySeq(Model.Instrument.GHOST)
+      case Flamingos2.name => TrySeq(Instrument.F2)
+      case GmosSouth.name  => TrySeq(Instrument.GmosS)
+      case GmosNorth.name  => TrySeq(Instrument.GmosN)
+      case Gnirs.name      => TrySeq(Instrument.GNIRS)
+      case GPI.name        => TrySeq(Instrument.GPI)
+      case GHOST.name      => TrySeq(Instrument.GHOST)
       case ins             => TrySeq.fail(UnrecognizedInstrument(s"inst $ins"))
     }
   }
 
-  private final case class CelestialObject(override val instrument: Model.Instrument) extends StepType
-  private final case class Dark(override val instrument: Model.Instrument) extends StepType
-  private final case class NodAndShuffle(override val instrument: Model.Instrument) extends StepType
-  private final case class Gems(override val instrument: Model.Instrument) extends StepType
-  private final case class Altair(override val instrument: Model.Instrument) extends StepType
-  private final case class FlatOrArc(override val instrument: Model.Instrument) extends StepType
-  private final case class DarkOrBias(override val instrument: Model.Instrument) extends StepType
+  private final case class CelestialObject(override val instrument: Instrument) extends StepType
+  private final case class Dark(override val instrument: Instrument) extends StepType
+  private final case class NodAndShuffle(override val instrument: Instrument) extends StepType
+  private final case class Gems(override val instrument: Instrument) extends StepType
+  private final case class Altair(override val instrument: Instrument) extends StepType
+  private final case class FlatOrArc(override val instrument: Instrument) extends StepType
+  private final case class DarkOrBias(override val instrument: Instrument) extends StepType
   private case object AlignAndCalib extends StepType {
-    override val instrument: Instrument = Model.Instrument.GPI
+    override val instrument: Instrument = Instrument.GPI
   }
 
   private def calcStepType(config: Config): TrySeq[StepType] = {
-    def extractGaos(inst: Model.Instrument): TrySeq[StepType] = config.extract(new ItemKey(AO_CONFIG_NAME) / AO_SYSTEM_PROP).as[String] match {
+    def extractGaos(inst: Instrument): TrySeq[StepType] = config.extract(new ItemKey(AO_CONFIG_NAME) / AO_SYSTEM_PROP).as[String] match {
       case Left(ConfigUtilOps.ConversionError(_, _))              => TrySeq.fail(Unexpected("Unable to get AO system from sequence"))
       case Left(ConfigUtilOps.ContentError(_))                    => TrySeq.fail(Unexpected("Logical error"))
       case Left(ConfigUtilOps.KeyNotFound(_))                     => TrySeq(CelestialObject(inst))

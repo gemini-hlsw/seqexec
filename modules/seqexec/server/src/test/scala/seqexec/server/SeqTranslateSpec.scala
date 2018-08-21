@@ -13,7 +13,7 @@ import gem.Observation
 import gem.enum.Site
 import seqexec.engine.{Engine, Action, Result, Sequence, Step}
 import seqexec.model.enum.Instrument.GmosS
-import seqexec.model.{ StepConfig, ActionType, SequenceMetadata, SequenceState }
+import seqexec.model.{ StepConfig, ActionType, SequenceState }
 import seqexec.server.SeqTranslate.ObserveContext
 import seqexec.server.keywords.DhsClientSim
 import seqexec.server.keywords.GDSClient
@@ -78,7 +78,7 @@ class SeqTranslateSpec extends FlatSpec {
     GmosControllerSim.south,
     GmosControllerSim.north,
     GnirsControllerSim,
-    GPIController(new GPIClient(Giapi.giapiConnectionIO.connect.unsafeRunSync, scala.concurrent.ExecutionContext.Implicits.global),
+    GPIController(new GPIClient(Giapi.giapiConnectionIO.connect.unsafeRunSync),
     new GDSClient(GDSClient.alwaysOkClient, uri("http://localhost:8888/xmlrpc")))
   )
 

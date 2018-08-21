@@ -23,7 +23,8 @@ import seqexec.engine.Result.PauseContext
 import seqexec.engine._
 import seqexec.server.SeqexecEngine.Settings
 import seqexec.server.keywords.GDSClient
-import seqexec.model.Model.{ActionStatus, CloudCover, Conditions, ImageQuality, Instrument, Observer, Operator, Resource, SequenceState, SkyBackground, WaterVapor}
+import seqexec.model.{Conditions, Observer, Operator, SequenceState}
+import seqexec.model.enum.{ActionStatus, CloudCover, ImageQuality, Instrument, Resource, SkyBackground, WaterVapor}
 import seqexec.model.{ActionType, UserDetails}
 import seqexec.model.enum.Resource.TCS
 import monocle.Monocle._
@@ -172,7 +173,8 @@ class SeqexecEngineSpec extends FlatSpec with Matchers {
       SeqexecEngine.observeStatus(executions) shouldBe ActionStatus.Paused
     }
 
-  private val seqexecEngine = SeqexecEngine(GDSClient.alwaysOkClient, defaultSettings)
+  private val sm = SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry()).unsafeRunSync
+  private val seqexecEngine = SeqexecEngine(GDSClient.alwaysOkClient, defaultSettings, sm)
   private def advanceOne(q: EventQueue, s0: EngineState, put: IO[Either[SeqexecFailure, Unit]]): IO[Option[EngineState]] =
     (put *> executeEngine.process(q.dequeue)(s0).take(1).compile.last).map(_.map(_._2))
 

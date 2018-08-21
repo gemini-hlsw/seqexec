@@ -5,7 +5,7 @@ package seqexec.engine
 
 import cats.Eq
 import cats.effect.IO
-import seqexec.model.Model.Resource
+import seqexec.model.enum.Resource
 import monocle.function.Index.{index, listIndex}
 import monocle.syntax.apply._
 import mouse.boolean._

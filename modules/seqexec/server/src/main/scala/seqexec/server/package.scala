@@ -17,7 +17,8 @@ import monocle.macros.GenLens
 import monocle.function.At.at
 import monocle.function.At.atMap
 import seqexec.engine.Engine
-import seqexec.model.Model.{CloudCover, Conditions, Instrument, ImageQuality, Observer, Operator, SequenceState, SkyBackground, WaterVapor}
+import seqexec.model.{Conditions, Observer, Operator, SequenceState}
+import seqexec.model.enum.{CloudCover, Instrument, ImageQuality, SkyBackground, WaterVapor}
 import seqexec.model.UserDetails
 
 package server {
@@ -33,7 +34,7 @@ package server {
   object EngineState {
     implicit val eq: Eq[EngineState] = Eq.by(x => (x.queues, x.selected, x.conditions, x.operator, x.sequences))//, x.executionState))
 
-    val default: EngineState = EngineState(Map(CalibrationQueueName -> Nil), Map.empty, Conditions.default, None, Map.empty, Engine.State.empty)
+    val default: EngineState = EngineState(Map(CalibrationQueueName -> Nil), Map.empty, Conditions.Default, None, Map.empty, Engine.State.empty)
 
     def selectedML(instrument: Instrument): Lens[EngineState, Option[Observation.Id]] = GenLens[EngineState](_.selected) ^|-> at(instrument)
   }
@@ -70,7 +71,7 @@ package server {
 
   final case class HeaderExtraData(conditions: Conditions, operator: Option[Operator], observer: Option[Observer])
   object HeaderExtraData {
-    val default: HeaderExtraData = HeaderExtraData(Conditions.default, None, None)
+    val default: HeaderExtraData = HeaderExtraData(Conditions.Default, None, None)
   }
 
 }

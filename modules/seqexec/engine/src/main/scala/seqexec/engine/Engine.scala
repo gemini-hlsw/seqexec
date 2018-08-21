@@ -9,7 +9,7 @@ import cats.effect.IO
 import cats.implicits._
 import seqexec.engine.Event._
 import seqexec.engine.Result.{PartialVal, PauseContext, RetVal}
-import seqexec.model.Model.{ClientID, SequenceState}
+import seqexec.model.{ClientID, SequenceState}
 import fs2.Stream
 import gem.Observation
 import monocle.Lens
@@ -29,7 +29,6 @@ class Engine[D, U](stateL: Lens[D, Engine.State]) {
   }
   type EventType = Event[ConcreteTypes]
   type UserEventType = UserEvent[ConcreteTypes]
-  type StateType = Engine.State[ConcreteTypes#StateData]
 
   /**
     * Type constructor where all Seqexec side effect are managed.

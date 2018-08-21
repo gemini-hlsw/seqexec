@@ -9,7 +9,7 @@ import java.util.concurrent.TimeUnit
 
 import cats._
 import cats.data.Kleisli
-import cats.effect.IO
+import cats.effect.{IO, Sync}
 import cats.implicits._
 import monocle.Monocle._
 import edu.gemini.epics.acm.CaService
@@ -46,7 +46,7 @@ import mouse.all._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
-class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings) {
+class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm: SeqexecMetrics) {
   import SeqexecEngine._
 
   val odbProxy: ODBProxy = new ODBProxy(new Peer(settings.odbHost, 8443, null),
@@ -65,7 +65,7 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings) {
     settings.gmosControl.command.fold(GmosSouthControllerEpics, GmosControllerSim.south),
     settings.gmosControl.command.fold(GmosNorthControllerEpics, GmosControllerSim.north),
     settings.gnirsControl.command.fold(GnirsControllerEpics, GnirsControllerSim),
-    GPIController(new GPIClient(settings.gpiGiapi, scala.concurrent.ExecutionContext.Implicits.global), gpiGDS)
+    GPIController(new GPIClient(settings.gpiGiapi), gpiGDS)
   )
 
   private val translatorSettings = SeqTranslate.Settings(
@@ -264,9 +264,27 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings) {
     }.valueOr(e => List(Event.logDebugMsg(SeqexecFailure.explain(e))))
   }
 
+  /**
+   * Update some metrics based on the event types
+   */
+  def updateMetrics[F[_]: Sync](e: executeEngine.EventType, sequences: List[SequenceView]): F[Unit] = {
+    def instrument(id: Observation.Id): Option[Instrument] = sequences.find(_.id === id).map(_.metadata.instrument)
+    (e match {
+      // TODO Add metrics for more events
+      case engine.EventUser(ue) => ue match {
+        case engine.Start(id, _, _, _) => instrument(id).map(sm.startRunning[F]).getOrElse(Sync[F].unit)
+        case _                      => Sync[F].unit
+      }
+      case engine.EventSystem(se) => se match {
+        case _ => Sync[F].unit
+      }
+      case _ => Sync[F].unit
+    }).flatMap(_ => Sync[F].unit)
+  }
+
   def viewSequence(obsSeq: ObserverSequence, seq: Sequence, st: Sequence.State): SequenceView = {
 
-    val engineSteps: List[Step] = {
+    def engineSteps(seq: Sequence): List[Step] = {
 
       // TODO: Calculate the whole status here and remove `Engine.Step.status`
       // This will be easier once the exact status labels in the UI are fixed.
@@ -285,7 +303,7 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings) {
     }
 
     // TODO: Implement willStopIn
-    SequenceView(seq.id, SequenceMetadata(obsSeq.seq.instrument, obsSeq.observer, obsSeq.seq.title), st.status, engineSteps, None)
+    SequenceView(seq.id, SequenceMetadata(obsSeq.seq.instrument, obsSeq.observer, obsSeq.seq.title), st.status, engineSteps(seq), None)
   }
 
   private def unloadEvent(seqId: Observation.Id): executeEngine.EventType =
@@ -341,7 +359,7 @@ object SeqexecEngine extends SeqexecConfiguration {
                             odbQueuePollingInterval: Duration,
                             gpiGiapi: Giapi[IO],
                             gpiGDS: Uri)
-  def apply(httpClient: Client[IO], settings: Settings): SeqexecEngine = new SeqexecEngine(httpClient, settings)
+  def apply(httpClient: Client[IO], settings: Settings, c: SeqexecMetrics): SeqexecEngine = new SeqexecEngine(httpClient, settings, c)
 
   // Couldn't find this on Scalaz
   def splitWhere[A](l: List[A])(p: A => Boolean): (List[A], List[A]) =
@@ -451,7 +469,7 @@ object SeqexecEngine extends SeqexecConfiguration {
     val gpiControl = cfg.require[ControlStrategy]("seqexec-engine.systemControl.gpi")
     val gpiUrl  = cfg.require[String]("seqexec-engine.gpiUrl")
     if (gpiControl.command) {
-      Giapi.giapiConnection[IO](gpiUrl, 2000.millis).connect
+      Giapi.giapiConnection[IO](gpiUrl, scala.concurrent.ExecutionContext.Implicits.global).connect
     } else {
       Giapi.giapiConnectionIO.connect
     }
