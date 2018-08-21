@@ -193,7 +193,7 @@ object Icon {
   // val IconUnhide: Icon                = Icon("unhide")
   // val IconUnlockAlternate: Icon       = Icon("unlock alternate")
   // val IconUnlock: Icon                = Icon("unlock")
-  // val IconUpload: Icon                = Icon("upload")
+  val IconUpload: Icon                = Icon("upload")
   // val IconWait: Icon                  = Icon("wait")
   // val IconWizard: Icon                = Icon("wizard")
   // val IconWrite: Icon                 = Icon("write")

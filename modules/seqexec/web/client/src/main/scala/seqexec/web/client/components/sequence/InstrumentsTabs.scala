@@ -30,15 +30,18 @@ object InstrumentTab {
 
   type Backend = RenderScope[Props, State, Unit]
 
-  def load(b: Backend, inst: Instrument, id: Observation.Id): Callback =
+  def load(b: Backend, inst: Instrument, id: Observation.Id)(e: ReactEvent): Callback =
+    e.preventDefaultCB *>
+    e.stopPropagationCB *>
     b.setState(State(loading = true)) *>
     b.props.user.map(u => SeqexecCircuit.dispatchCB(LoadSequence(Observer(u.displayName), inst, id))).getOrEmpty
 
   private def showSequence(p: Props, page: SeqexecPages)(e: ReactEvent): Callback = {
     // prevent default to avoid the link jumping
-    e.preventDefault
+    e.preventDefaultCB *>
     // Request to display the selected sequence
-    p.router.setUrlAndDispatchCB(page)
+    p.router.setUrlAndDispatchCB(page).unless(p.tab.active) *>
+    Callback.empty
   }
 
   private def linkTo(p: Props, page: SeqexecPages)(mod: TagMod*) = {
@@ -106,11 +109,12 @@ object InstrumentTab {
                 Button.Props(
                   size = Size.Large,
                   compact = true,
-                  icon = Some(IconSignIn),
+                  icon = Some(IconUpload),
                   color = "teal".some,
                   disabled = b.state.loading,
                   loading = b.state.loading,
-                  onClick = load(b, inst, id))
+                  onClickE = load(b, inst, id) _
+                )
               )
             ): VdomNode)
           .filter(_ => isPreview && isLogged)
