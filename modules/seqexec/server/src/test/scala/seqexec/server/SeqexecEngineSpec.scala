@@ -5,15 +5,17 @@ package seqexec.server
 
 import cats.effect.IO
 import cats.implicits._
-import fs2.{Pure, Stream, async}
+import fs2.async
 import gem.Observation
 import gem.enum.Site
 import giapi.client.Giapi
 import io.prometheus.client._
 import java.time.LocalDate
+import java.util.UUID
 import org.scalatest.Inside.inside
 import org.scalatest.{FlatSpec, Matchers}
 import org.http4s.Uri._
+
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 import seqexec.engine
@@ -21,8 +23,10 @@ import seqexec.engine.Result.PauseContext
 import seqexec.engine._
 import seqexec.server.SeqexecEngine.Settings
 import seqexec.server.keywords.GDSClient
-import seqexec.model.enum.{ ActionStatus, CloudCover, ImageQuality, Instrument, Resource, SkyBackground, WaterVapor}
-import seqexec.model.{ Step => _, _ }
+import seqexec.model.Model.{ActionStatus, CloudCover, Conditions, ImageQuality, Instrument, Observer, Operator, Resource, SequenceState, SkyBackground, WaterVapor}
+import seqexec.model.{ActionType, UserDetails}
+import seqexec.model.enum.Resource.TCS
+import monocle.Monocle._
 
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 @SuppressWarnings(Array("org.wartremover.warts.Throw"))
@@ -169,11 +173,11 @@ class SeqexecEngineSpec extends FlatSpec with Matchers {
     }
 
   private val seqexecEngine = SeqexecEngine(GDSClient.alwaysOkClient, defaultSettings)
-  private def advanceOne(q: EventQueue, s0: EngineState, put: IO[Either[SeqexecFailure, Unit]]): Stream[Pure, Option[EngineState]] =
-    Stream.emit((put *> executeEngine.process(q.dequeue)(s0).take(1).compile.last).unsafeRunSync.map(_._2))
+  private def advanceOne(q: EventQueue, s0: EngineState, put: IO[Either[SeqexecFailure, Unit]]): IO[Option[EngineState]] =
+    (put *> executeEngine.process(q.dequeue)(s0).take(1).compile.last).map(_.map(_._2))
 
-  private def advanceN(q: EventQueue, s0: EngineState, put: IO[Either[SeqexecFailure, Unit]], n: Long): Stream[Pure, Option[EngineState]] =
-    Stream.emit((put *> executeEngine.process(q.dequeue)(s0).take(n).compile.last).unsafeRunSync.map(_._2))
+  private def advanceN(q: EventQueue, s0: EngineState, put: IO[Either[SeqexecFailure, Unit]], n: Long): IO[Option[EngineState]] =
+    (put *> executeEngine.process(q.dequeue)(s0).take(n).compile.last).map(_.map(_._2))
 
   private val seqId1 = "GS-2018B-Q-0-1"
   private val seqObsId1 = Observation.Id.unsafeFromString(seqId1)
@@ -185,33 +189,33 @@ class SeqexecEngineSpec extends FlatSpec with Matchers {
     id,
     "",
     Instrument.F2,
-    List(SequenceGen.Step(1, Map(), _ => Step.init(1, None, Map(), Set.empty, List(List(pendingAction(Instrument.F2)))))))
+    List(SequenceGen.Step(1, Map(), Set.empty, _ => Step.init(1, None, List(List(pendingAction(Instrument.F2)))))))
 
   "SeqexecEngine addSequenceToQueue" should
     "add sequence id to queue" in {
     val s0 = SeqexecEngine.loadSequenceEndo(seqObsId1, sequence(seqObsId1))(EngineState.default)
 
     (for {
-      q <- Stream.eval(async.boundedQueue[IO, executeEngine.EventType](10))
+      q <- async.boundedQueue[IO, executeEngine.EventType](10)
       sf <- advanceOne(q, s0, seqexecEngine.addSequenceToQueue(q, CalibrationQueueName, seqObsId1))
     } yield {
       inside(sf.flatMap(x => EngineState.queues.get(x).get(CalibrationQueueName))) {
         case Some(exq) => exq shouldBe List(seqObsId1)
       }
-    }).compile.last.unsafeRunSync
+    }).unsafeRunSync
   }
   it should "not add sequence id if sequence does not exists" in {
     val badObsId = Observation.Id.unsafeFromString("NonExistent-1")
     val s0 = SeqexecEngine.loadSequenceEndo(seqObsId1, sequence(seqObsId1))(EngineState.default)
 
     (for {
-      q <- Stream.eval(async.boundedQueue[IO, executeEngine.EventType](10))
+      q <- async.boundedQueue[IO, executeEngine.EventType](10)
       sf <- advanceOne(q, s0, seqexecEngine.addSequenceToQueue(q, CalibrationQueueName, badObsId))
     } yield {
       inside(sf.flatMap(x => EngineState.queues.get(x).get(CalibrationQueueName))) {
         case Some(exq) => assert(exq.isEmpty)
       }
-    }).compile.last.unsafeRunSync
+    }).unsafeRunSync
   }
 
   it should "not add sequence id if sequence is running or completed" in {
@@ -221,7 +225,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers {
       (EngineState.executionState ^|-> Engine.State.sequences ^|-? index[Map[Observation.Id,Sequence.State], Observation.Id, Sequence.State](seqObsId2) ^|-> Sequence.State.status).set(SequenceState.Completed))(EngineState.default)
 
     (for {
-      q <- Stream.eval(async.boundedQueue[IO, executeEngine.EventType](10))
+      q <- async.boundedQueue[IO, executeEngine.EventType](10)
       sf <- advanceN(q, s0,
         seqexecEngine.addSequenceToQueue(q, CalibrationQueueName, seqObsId1) *>
         seqexecEngine.addSequenceToQueue(q, CalibrationQueueName, seqObsId2),
@@ -230,7 +234,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers {
       inside(sf.flatMap(x => EngineState.queues.get(x).get(CalibrationQueueName))) {
         case Some(exq) => assert(exq.isEmpty)
       }
-    }).compile.last.unsafeRunSync
+    }).unsafeRunSync
   }
 
   it should "not add sequence id if already in queue" in {
@@ -238,13 +242,13 @@ class SeqexecEngineSpec extends FlatSpec with Matchers {
       (EngineState.queues ^|-? index(CalibrationQueueName)).modify(_ :+ seqObsId1))(EngineState.default)
 
     (for {
-      q <- Stream.eval(async.boundedQueue[IO, executeEngine.EventType](10))
+      q <- async.boundedQueue[IO, executeEngine.EventType](10)
       sf <- advanceOne(q, s0, seqexecEngine.addSequenceToQueue(q, CalibrationQueueName, seqObsId1))
     } yield {
       inside(sf.flatMap(x => EngineState.queues.get(x).get(CalibrationQueueName))) {
         case Some(exq) => exq shouldBe List(seqObsId1)
       }
-    }).compile.last.unsafeRunSync
+    }).unsafeRunSync
   }
 
   "SeqexecEngine removeSequenceFromQueue" should
@@ -254,13 +258,13 @@ class SeqexecEngineSpec extends FlatSpec with Matchers {
       (EngineState.queues ^|-? index(CalibrationQueueName)).modify(_ ++ List(seqObsId1, seqObsId2)))(EngineState.default)
 
     (for {
-      q <- Stream.eval(async.boundedQueue[IO, executeEngine.EventType](10))
+      q <- async.boundedQueue[IO, executeEngine.EventType](10)
       sf <- advanceOne(q, s0, seqexecEngine.removeSequenceFromQueue(q, CalibrationQueueName, seqObsId1))
     } yield {
       inside(sf.flatMap(x => EngineState.queues.get(x).get(CalibrationQueueName))) {
         case Some(exq) => exq shouldBe List(seqObsId2)
       }
-    }).compile.last.unsafeRunSync
+    }).unsafeRunSync
   }
 
   it should "not remove sequence id if sequence is running" in {
@@ -270,13 +274,13 @@ class SeqexecEngineSpec extends FlatSpec with Matchers {
       (EngineState.executionState ^|-> Engine.State.sequences ^|-? index(seqObsId1) ^|-> Sequence.State.status).set(SequenceState.Running.init))(EngineState.default)
 
     (for {
-      q <- Stream.eval(async.boundedQueue[IO, executeEngine.EventType](10))
+      q <- async.boundedQueue[IO, executeEngine.EventType](10)
       sf <- advanceOne(q, s0, seqexecEngine.removeSequenceFromQueue(q, CalibrationQueueName, seqObsId1))
     } yield {
       inside(sf.flatMap(x => EngineState.queues.get(x).get(CalibrationQueueName))) {
         case Some(exq) => exq shouldBe List(seqObsId1, seqObsId2)
       }
-    }).compile.last.unsafeRunSync
+    }).unsafeRunSync
   }
 
   "SeqexecEngine moveSequenceInQueue" should
@@ -288,9 +292,9 @@ class SeqexecEngineSpec extends FlatSpec with Matchers {
 
     def testAdvance(obsId: Observation.Id, n: Int): Option[EngineState] =
       (for {
-        q <- Stream.eval(async.boundedQueue[IO, executeEngine.EventType](10))
+        q <- async.boundedQueue[IO, executeEngine.EventType](10)
         r <- advanceOne(q, s0, seqexecEngine.moveSequenceInQueue(q, CalibrationQueueName, obsId, n))
-      } yield r).compile.last.unsafeRunSync().flatten
+      } yield r).unsafeRunSync
 
     val sf1 = testAdvance(seqObsId2, -1)
 
@@ -321,13 +325,13 @@ class SeqexecEngineSpec extends FlatSpec with Matchers {
     val operator = Operator("Joe")
     val s0 = EngineState.default
     (for {
-      q <- Stream.eval(async.boundedQueue[IO, executeEngine.EventType](10))
+      q <- async.boundedQueue[IO, executeEngine.EventType](10)
       sf <- advanceN(q, s0, seqexecEngine.setOperator(q, UserDetails("", ""), operator), 2)
     } yield {
       inside(sf.flatMap(EngineState.operator.get)) {
         case Some(op) => op shouldBe operator
       }
-    }).compile.last.unsafeRunSync
+    }).unsafeRunSync
   }
 
   "SeqexecEngine setImageQuality" should "set Image Quality condition" in {
@@ -335,13 +339,13 @@ class SeqexecEngineSpec extends FlatSpec with Matchers {
     val s0 = EngineState.default
 
     (for {
-      q <- Stream.eval(async.boundedQueue[IO, executeEngine.EventType](10))
+      q <- async.boundedQueue[IO, executeEngine.EventType](10)
       sf <- advanceN(q, s0, seqexecEngine.setImageQuality(q, iq, UserDetails("", "")), 2)
     } yield {
       inside(sf.map((EngineState.conditions ^|-> Conditions.iq).get)) {
         case Some(op) => op shouldBe iq
       }
-    }).compile.last.unsafeRunSync
+    }).unsafeRunSync
 
   }
 
@@ -349,54 +353,89 @@ class SeqexecEngineSpec extends FlatSpec with Matchers {
     val wv = WaterVapor.Percent80
     val s0 = EngineState.default
     (for {
-      q <- Stream.eval(async.boundedQueue[IO, executeEngine.EventType](10))
+      q <- async.boundedQueue[IO, executeEngine.EventType](10)
       sf <- advanceN(q, s0, seqexecEngine.setWaterVapor(q, wv, UserDetails("", "")), 2)
     } yield {
       inside(sf.map((EngineState.conditions ^|-> Conditions.wv).get(_))) {
         case Some(op) => op shouldBe wv
       }
-    }).compile.last.unsafeRunSync
+    }).unsafeRunSync
   }
 
   "SeqexecEngine setCloudCover" should "set Cloud Cover condition" in {
     val cc = CloudCover.Percent70
     val s0 = EngineState.default
     (for {
-      q <- Stream.eval(async.boundedQueue[IO, executeEngine.EventType](10))
+      q <- async.boundedQueue[IO, executeEngine.EventType](10)
       sf <- advanceN(q, s0, seqexecEngine.setCloudCover(q, cc, UserDetails("", "")), 2)
     } yield {
       inside(sf.map((EngineState.conditions ^|-> Conditions.cc).get(_))) {
         case Some(op) => op shouldBe cc
       }
-    }).compile.last.unsafeRunSync
+    }).unsafeRunSync
   }
 
   "SeqexecEngine setSkyBackground" should "set Sky Background condition" in {
     val sb = SkyBackground.Percent50
     val s0 = EngineState.default
     (for {
-      q <- Stream.eval(async.boundedQueue[IO, executeEngine.EventType](10))
+      q <- async.boundedQueue[IO, executeEngine.EventType](10)
       sf <- advanceN(q, s0, seqexecEngine.setSkyBackground(q, sb, UserDetails("", "")), 2)
     } yield {
       inside(sf.map((EngineState.conditions ^|-> Conditions.sb).get(_))) {
         case Some(op) => op shouldBe sb
       }
-    }).compile.last.unsafeRunSync
+    }).unsafeRunSync
   }
 
   "SeqexecEngine setObserver" should "set observer's name" in {
     val observer = Observer("Joe")
     val s0 = SeqexecEngine.loadSequenceEndo(seqObsId1, sequence(seqObsId1))(EngineState.default)
     (for {
-      q <- Stream.eval(async.boundedQueue[IO, executeEngine.EventType](10))
+      q <- async.boundedQueue[IO, executeEngine.EventType](10)
       sf <- advanceN(q, s0, seqexecEngine.setObserver(q, seqObsId1, UserDetails("", ""), observer), 2)
     } yield {
       inside(sf.flatMap((EngineState.sequences ^|-? index(seqObsId1)).getOption).flatMap(_.observer)) {
         case Some(op) => op shouldBe observer
       }
-    }).compile.last.unsafeRunSync
+    }).unsafeRunSync
   }
 
+  private def sequenceWithResources(id: Observation.Id, resources: Set[Resource]): SequenceGen = SequenceGen(
+    id,
+    "",
+    Instrument.F2,
+    List(SequenceGen.Step(1, Map(), resources, _ => Step.init(1, None, List(List(pendingAction(Instrument.F2)))))))
 
+  "SeqexecEngine" should "not run 2nd sequence because it's using the same resource" in {
+    val s0 = (SeqexecEngine.loadSequenceEndo(seqObsId1, sequenceWithResources(seqObsId1, Set(Instrument.F2, TCS))) >>>
+      SeqexecEngine.loadSequenceEndo(seqObsId2, sequenceWithResources(seqObsId2, Set(Instrument.F2))) >>>
+      (EngineState.executionState ^|-> Engine.State.sequences ^|-? index(seqObsId1) ^|-> Sequence.State.status).set(SequenceState.Running.init))(EngineState.default)
+
+    (for {
+      q <- async.boundedQueue[IO, executeEngine.EventType](10)
+      sf <- advanceOne(q, s0, seqexecEngine.start(q, seqObsId2, UserDetails("", ""), UUID.randomUUID()))
+    } yield {
+      inside(sf.flatMap((EngineState.executionState ^|-> Engine.State.sequences ^|-? index(seqObsId2)).getOption).map(_.status)) {
+        case Some(status) => assert(status.isIdle)
+      }
+    }).unsafeRunSync
+
+  }
+
+  it should "run 2nd sequence when there are no shared resources" in {
+    val s0 = (SeqexecEngine.loadSequenceEndo(seqObsId1, sequenceWithResources(seqObsId1, Set(Instrument.F2, TCS))) >>>
+      SeqexecEngine.loadSequenceEndo(seqObsId2, sequenceWithResources(seqObsId2, Set(Instrument.GmosS))) >>>
+      (EngineState.executionState ^|-> Engine.State.sequences ^|-? index(seqObsId1) ^|-> Sequence.State.status).set(SequenceState.Running.init))(EngineState.default)
+
+    (for {
+      q <- async.boundedQueue[IO, executeEngine.EventType](10)
+      sf <- advanceOne(q, s0, seqexecEngine.start(q, seqObsId2, UserDetails("", ""), UUID.randomUUID()))
+    } yield {
+      inside(sf.flatMap((EngineState.executionState ^|-> Engine.State.sequences ^|-? index(seqObsId2)).getOption).map(_.status)) {
+        case Some(status) => assert(status.isRunning)
+      }
+    }).unsafeRunSync
+  }
 
 }

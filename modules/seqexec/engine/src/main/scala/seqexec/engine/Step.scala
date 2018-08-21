@@ -3,8 +3,7 @@
 
 package seqexec.engine
 
-import seqexec.model.enum.Resource
-import seqexec.model.{ StepConfig, StepState }
+import seqexec.model.StepState
 
 import cats.implicits._
 import monocle.Lens
@@ -16,8 +15,6 @@ import monocle.macros.GenLens
 final case class Step(
   id: Step.Id,
   fileId: Option[FileId],
-  config: StepConfig,
-  resources: Set[Resource],
   breakpoint: Step.BreakpointMark,
   skipped: Step.Skipped,
   skipMark: Step.SkipMark,
@@ -34,9 +31,7 @@ object Step {
 
   def init(id: Id,
            fileId: Option[FileId],
-           config: StepConfig,
-           resources: Set[Resource],
-           executions: List[List[Action]]): Step = Step(id, fileId, config, resources, BreakpointMark(false), Skipped(false), SkipMark(false), executions)
+           executions: List[List[Action]]): Step = Step(id, fileId, BreakpointMark(false), Skipped(false), SkipMark(false), executions)
 
   /**
     * Calculate the `Step` `Status` based on the underlying `Action`s.
@@ -67,8 +62,6 @@ object Step {
   final case class Zipper(
     id: Int,
     fileId: Option[FileId],
-    config: StepConfig,
-    resources: Set[Resource],
     breakpoint: BreakpointMark,
     skipMark: SkipMark,
     pending: List[Actions],
@@ -103,7 +96,7 @@ object Step {
       */
     val uncurrentify: Option[Step] =
       if (pending.isEmpty) focus.uncurrentify.map(
-        x => Step(id, fileId, config, resources, breakpoint, Skipped(false), skipMark, x :: done)
+        x => Step(id, fileId, breakpoint, Skipped(false), skipMark, x :: done)
       )
       else None
 
@@ -115,8 +108,6 @@ object Step {
       Step(
         id,
         fileId,
-        config,
-        resources,
         breakpoint,
         Skipped(false),
         skipMark,
@@ -144,8 +135,6 @@ object Step {
             Zipper(
               step.id,
               step.fileId,
-              step.config,
-              step.resources,
               step.breakpoint,
               step.skipMark,
               exes,

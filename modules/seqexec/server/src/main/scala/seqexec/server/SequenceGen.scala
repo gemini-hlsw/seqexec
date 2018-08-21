@@ -5,16 +5,19 @@ package seqexec.server
 
 
 import cats.Eq
+import cats.implicits._
 import gem.Observation
-import seqexec.model.Model.{Instrument, StepConfig}
+import seqexec.model.Model.{Instrument, Resource, StepConfig}
 import seqexec.engine.{Step => EngineStep}
 
-final case class SequenceGen(id: Observation.Id, title: String, instrument: Instrument, steps: List[SequenceGen.Step])
+final case class SequenceGen(id: Observation.Id, title: String, instrument: Instrument, steps: List[SequenceGen.Step]) {
+  val resources: Set[Resource] = steps.foldMap(_.resources)
+}
 
 object SequenceGen {
 
   implicit val eq: Eq[SequenceGen] = Eq.by(x => (x.id))
 
-  final case class Step(id: Int, config: StepConfig, generator: HeaderExtraData => EngineStep)
+  final case class Step(id: Int, config: StepConfig, resources: Set[Resource], generator: HeaderExtraData => EngineStep)
 
 }

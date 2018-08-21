@@ -3,7 +3,7 @@
 
 package seqexec.engine
 
-import seqexec.model.Model.{Resource, SequenceState, StepState}
+import seqexec.model.Model.{SequenceState, StepState}
 import gem.Observation
 import cats.implicits._
 import monocle.Lens
@@ -15,12 +15,7 @@ import monocle.macros.GenLens
 final case class Sequence(
   id: Observation.Id,
   steps: List[Step]
-) {
-
-  // The Monoid mappend of a Set is a Set union
-  val resources: Set[Resource] = steps.foldMap(_.resources)
-
-}
+)
 
 object Sequence {
 

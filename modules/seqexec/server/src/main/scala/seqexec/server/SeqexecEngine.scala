@@ -82,8 +82,14 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings) {
   def load(q: EventQueue, seqId: Observation.Id): IO[Either[SeqexecFailure, Unit]] =
     q.enqueue(Stream.emits(loadEvents(seqId))).map(_.asRight).compile.last.attempt.map(_.bimap(SeqexecFailure.SeqexecException.apply, _ => ()))
 
+  private def checkResources(seqId: Observation.Id)(st: EngineState): Boolean = {
+    val used = st.sequences.map{case (id, obsseq) => st.executionState.sequences.get(id).map((_, obsseq.seq.resources))}.collect{case Some(x) => x}.filter(x => Sequence.State.isRunning(x._1)).toList.foldMap(_._2)
+
+    st.sequences.get(seqId).map(_.seq.resources.intersect(used).isEmpty).getOrElse(false)
+  }
+
   def start(q: EventQueue, id: Observation.Id, user: UserDetails, clientId: ClientID): IO[Either[SeqexecFailure, Unit]] =
-    q.enqueue1(Event.start(id, user, clientId)).map(_.asRight)
+    q.enqueue1(Event.start[executeEngine.ConcreteTypes](id, user, clientId, checkResources(id))).map(_.asRight)
 
   def requestPause(q: EventQueue, id: Observation.Id, user: UserDetails): IO[Either[SeqexecFailure, Unit]] =
     q.enqueue1(Event.pause(id, user)).map(_.asRight)
@@ -264,7 +270,7 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings) {
 
       // TODO: Calculate the whole status here and remove `Engine.Step.status`
       // This will be easier once the exact status labels in the UI are fixed.
-      seq.steps.map(viewStep) match {
+      obsSeq.seq.steps.zip(seq.steps).map(Function.tupled(viewStep)) match {
         // The sequence could be empty
         case Nil => Nil
         // Find first Pending Step when no Step is Running and mark it as Running
@@ -414,11 +420,11 @@ object SeqexecEngine extends SeqexecConfiguration {
   protected[server] def observeStatus(executions: List[List[engine.Action]]): ActionStatus =
     executions.flatten.find(_.kind === ActionType.Observe).map(a => actionStateToStatus(a.state.runState)).getOrElse(ActionStatus.Pending)
 
-  def viewStep(step: engine.Step): StandardStep = {
+  def viewStep(stepg: SequenceGen.Step, step: engine.Step): StandardStep = {
     val configStatus = stepConfigStatus(step)
     StandardStep(
       id = step.id,
-      config = step.config,
+      config = stepg.config,
       status = engine.Step.status(step),
       breakpoint = step.breakpoint.self,
       skip = step.skipMark.self,
@@ -580,7 +586,7 @@ object SeqexecEngine extends SeqexecConfiguration {
 
   def toSeqexecEvent(ev: executeEngine.EventType, st: EngineState)(svs: => SequencesQueue[SequenceView]): SeqexecEvent = ev match {
     case engine.EventUser(ue) => ue match {
-      case engine.Start(_, _, _)         => SequenceStart(svs)
+      case engine.Start(_, _, _, _)         => SequenceStart(svs)
       case engine.Pause(_, _)            => SequencePauseRequested(svs)
       case engine.CancelPause(_, _)      => SequencePauseCanceled(svs)
       case engine.Breakpoint(_, _, _, _) => StepBreakpointChanged(svs)

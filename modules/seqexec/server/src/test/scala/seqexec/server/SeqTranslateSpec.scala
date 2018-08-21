@@ -43,12 +43,11 @@ class SeqTranslateSpec extends FlatSpec {
     GmosS,
     List(SequenceGen.Step(
       1,
-      Map.empty,
+      config,
+      Set(GmosS),
       _ => Step.init(
         1,
         None,
-        config,
-        Set(GmosS),
         List(observeActions(Action.Idle))
       )
     ))

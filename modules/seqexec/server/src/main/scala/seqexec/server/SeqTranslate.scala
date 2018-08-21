@@ -124,8 +124,8 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     } yield Result.Partial(FileIdAllocated(id), doObserve(id).value.map(_.toResult))
   }
 
-  private def step(obsId: Observation.Id, i: Int, config: Config, nextToRun: Int, datasets: Map[Int, ExecutedDataset]): TrySeq[HeaderExtraData => Step] = {
-    def buildStep(inst: InstrumentSystem[IO], sys: List[System[IO]], headers: Reader[HeaderExtraData,List[Header]], resources: Set[Resource]): HeaderExtraData => Step = ctx => {
+  private def step(obsId: Observation.Id, i: Int, config: Config, nextToRun: Int, datasets: Map[Int, ExecutedDataset]): TrySeq[SequenceGen.Step] = {
+    def buildStep(inst: InstrumentSystem[IO], sys: List[System[IO]], headers: Reader[HeaderExtraData,List[Header]]): HeaderExtraData => Step = ctx => {
       val initialStepExecutions: List[List[Action]] =
         if (i === 0) List(List(systems.odb.sequenceStart(obsId, "").map(_ => Result.Ignored).toAction(ActionType.Undefined)))
         else Nil
@@ -141,16 +141,11 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
         case StepState.Pending if i >= nextToRun => Step.init(
           id = i,
           fileId = None,
-          config = config.toStepConfig,
-          resources = resources,
           executions = initialStepExecutions ++ regularStepExecutions
         )
         case StepState.Pending => Step.init(
           id = i,
           fileId = datasets.get(i + 1).map(_.filename), // Note that steps on datasets are indexed starting on 1
-          config = config.toStepConfig,
-          // No resources when done
-          resources = Set.empty,
           // TODO: Is it possible to reconstruct done executions from the ODB?
           executions = Nil
         ).copy(skipped = Step.Skipped(true))
@@ -159,9 +154,6 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
         case _ => Step.init(
           id = i,
           fileId = datasets.get(i + 1).map(_.filename), // Note that steps on datasets are indexed starting on 1
-          config = config.toStepConfig,
-          // No resources when done
-          resources = Set.empty,
           // TODO: Is it possible to reconstruct done executions from the ODB?
           executions = Nil
         ).copy(skipped = Step.Skipped(extractSkipped(config)))
@@ -173,7 +165,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
       inst      <- toInstrumentSys(stepType.instrument)
       systems   <- calcSystems(stepType)
       headers   <- calcHeaders(config, stepType)
-    } yield buildStep(inst, systems, headers, calcResources(systems))
+    } yield SequenceGen.Step(i, config.toStepConfig, calcResources(systems), buildStep(inst, systems, headers))
   }
   //scalastyle:on
 
@@ -202,7 +194,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     val nextToRun = configs.map(extractStatus).lastIndexWhere(s => s === StepState.Completed || s === StepState.Skipped) + 1
 
     val steps = configs.zipWithIndex.map {
-      case (c, i) => step(obsId, i, c, nextToRun, sequence.datasets).map(SequenceGen.Step(i, c.toStepConfig, _))
+      case (c, i) => step(obsId, i, c, nextToRun, sequence.datasets)
     }.separate
 
     val instName = configs.headOption.map(extractInstrument).getOrElse(Either.left(SeqexecFailure.UnrecognizedInstrument("UNKNOWN")))

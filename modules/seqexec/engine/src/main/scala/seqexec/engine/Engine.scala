@@ -9,7 +9,7 @@ import cats.effect.IO
 import cats.implicits._
 import seqexec.engine.Event._
 import seqexec.engine.Result.{PartialVal, PauseContext, RetVal}
-import seqexec.model.Model.SequenceState
+import seqexec.model.Model.{ClientID, SequenceState}
 import fs2.Stream
 import gem.Observation
 import monocle.Lens
@@ -109,17 +109,21 @@ class Engine[D, U](stateL: Lens[D, Engine.State]) {
   private def switch(id: Observation.Id)(st: SequenceState): HandleP[Unit] =
     modifyS(id)(s => Sequence.State.status.set(st)(s))
 
-  private def start(id: Observation.Id): HandleP[Unit] =
+  private def start(id: Observation.Id, clientId: ClientID, f: D => Boolean): HandleP[Unit] =
     getS(id).flatMap {
-        case Some(seq) =>
-          // No resources being used by other running sequences
-          if (seq.status.isIdle || seq.status.isError)
+      case Some(seq) =>
+        // No resources being used by other running sequences
+        if (seq.status.isIdle || seq.status.isError)
+          get.flatMap { st =>
+            if (f(st))
               putS(id)(Sequence.State.status.set(SequenceState.Running.init)(seq.skips.getOrElse(seq).rollback)) *>
                 send(Event.executing(id))
-            // Some resources are being used
-          else unit
-        case None      => unit
-      }
+            // cannot run sequence
+            else send(busy(id, clientId))
+          }
+        else unit
+      case None      => unit
+    }
 
   private def pause(id: Observation.Id): HandleP[Unit] = modifyS(id)(Sequence.State.userStopSet(true))
 
@@ -296,7 +300,7 @@ class Engine[D, U](stateL: Lens[D, Engine.State]) {
   @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
   private def run(ev: EventType)(implicit ec: ExecutionContext): HandleP[D] = {
     def handleUserEvent(ue: UserEventType): HandleP[Unit] = ue match {
-      case Start(id, _, _)          => Logger.debug("Engine: Started") *> start(id)
+      case Start(id, _, clid, f)      => Logger.debug(s"Engine: Start requested for sequence $id") *> start(id, clid, f)
       case Pause(id, _)               => Logger.debug("Engine: Pause requested") *> pause(id)
       case CancelPause(id, _)         => Logger.debug("Engine: Pause canceled") *> cancelPause(id)
       case Breakpoint(id, _, step, v) => Logger.debug(s"Engine: breakpoint changed for step $step to $v") *>

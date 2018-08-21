@@ -4,10 +4,9 @@
 package seqexec.engine
 
 import java.util.UUID
-import seqexec.engine.Sequence.State.Final
-import seqexec.model.{ StepConfig, StepState, Operator, SequenceState, SequenceMetadata }
-import seqexec.model.enum.Instrument.{F2, GmosS}
-import seqexec.model.enum.Resource
+import seqexec.engine.Sequence.State.Fina
+import seqexec.model.{StepState, SequenceState}
+import seqexec.model.enum.Instrument.GmosS
 import seqexec.model.enum.Resource.TCS
 import seqexec.model.{ActionType, UserDetails}
 import fs2.async
@@ -19,6 +18,7 @@ import cats.effect._
 import monocle.Lens
 import org.scalatest.Inside.inside
 import org.scalatest.{FlatSpec, NonImplicitAssertions}
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
@@ -57,8 +57,9 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
     _ <- IO(Thread.sleep(100))
   } yield Result.Error("There was an error in this action"))
 
+  private def always[D]: D => Boolean = _ => true
+
   val executions: List[List[Action]] = List(List(configureTcs, configureInst), List(observe))
-  val config: StepConfig = Map()
   val seqId: Observation.Id = Observation.Id.unsafeFromString("GS-2019A-Q-0-1")
   val qs1: Engine.State =
     Engine.State(
@@ -71,8 +72,6 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
                 Step.init(
                   id = 1,
                   fileId = None,
-                  config = config,
-                  resources = Set(Resource.TCS, F2),
                   executions = List(
                     List(configureTcs, configureInst), // Execution
                     List(observe) // Execution
@@ -81,8 +80,6 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
                 Step.init(
                   id = 2,
                   fileId = None,
-                  config = config,
-                  resources = Set(Resource.TCS, Resource.OI, F2),
                   executions = executions
                 )
               )
@@ -92,28 +89,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
       )
     )
 
-  private val seqG =
-    Sequence.State.init(
-      Sequence(
-        id = Observation.Id.unsafeFromString("GS-2018B-Q-0-3"),
-        steps = List(
-          Step.init(
-            1,
-            fileId = None,
-            config = config,
-            resources = Set(GmosS),
-            executions = executions
-          )
-        )
-      )
-    )
-
   private val executionEngine = new Engine[Engine.State, Unit](Lens.id)
-  private val seqId1 = seqId
-  private val seqId2 = Observation.Id.unsafeFromString("GS-2018A-Q-2-2")
-  private val seqId3 = Observation.Id.unsafeFromString("GS-2018A-Q-2-3")
-  private val qs2 = Engine.State(qs1.sequences + (seqId2 -> qs1.sequences(seqId1)))
-  private val qs3 = Engine.State(qs2.sequences + (seqId3 -> seqG))
   private val user = UserDetails("telops", "Telops")
 
   def isFinished(status: SequenceState): Boolean = status match {
@@ -125,13 +101,13 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
 
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def runToCompletion(s0: Engine.State): Option[Engine.State] = {
-    executionEngine.process(Stream.eval(IO.pure(Event.start(seqId, user, UUID.randomUUID()))))(s0).drop(1).takeThrough(
+    executionEngine.process(Stream.eval(IO.pure(Event.start[executionEngine.ConcreteTypes](seqId, user, UUID.randomUUID(), always))))(s0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
     ).compile.last.unsafeRunSync.map(_._2)
   }
 
   it should "be in Running status after starting" in {
-    val p = Stream.eval(IO.pure(Event.start(seqId, user, UUID.randomUUID())))
+    val p = Stream.eval(IO.pure(Event.start[executionEngine.ConcreteTypes](seqId, user, UUID.randomUUID(), always)))
     val qs = executionEngine.process(p)(qs1).take(1).compile.last.unsafeRunSync.map(_._2)
     assert(qs.exists(s => Sequence.State.isRunning(s.sequences(seqId))))
   }
@@ -154,8 +130,6 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
           Step.init(
             id = 1,
             fileId = None,
-            config = config,
-            resources = Set(GmosS),
             executions = List(
               List(fromIO(ActionType.Undefined,
                 IO(Result.Paused(new Result.PauseContext {}))))
@@ -164,7 +138,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
         )
       ) ) )
     )
-    val p = Stream.eval(IO.pure(Event.start(seqId, user, UUID.randomUUID())))
+    val p = Stream.eval(IO.pure(Event.start[executionEngine.ConcreteTypes](seqId, user, UUID.randomUUID(), always)))
 
     //take(3): Start, Executing, Paused
     executionEngine.process(p)(s0).take(3).compile.last.unsafeRunSync.map(_._2)
@@ -191,21 +165,6 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
 
   }
 
-  ignore should "not run 2nd sequence because it's using the same resource" in {
-    val p = Stream.emits(List(Event.start(seqId1, user, UUID.randomUUID()), Event.start(seqId2, user, UUID.randomUUID()))).evalMap(IO.pure(_))
-    assert(
-      executionEngine.process(p)(qs2).take(6).compile.last.unsafeRunSync.map(_._2.sequences(seqId2)).exists(_.status === SequenceState.Idle)
-    )
-  }
-
-  it should "run 2nd sequence when there are no shared resources" in {
-    val p = Stream.emits(List(Event.start(seqId1, user, UUID.randomUUID()), Event.start(seqId3, user, UUID.randomUUID()))).evalMap(IO.pure(_))
-
-    assert(
-      executionEngine.process(p)(qs3).take(6).compile.last.unsafeRunSync.exists(t => Sequence.State.isRunning(t._2.sequences(seqId3)))
-    )
-  }
-
   "engine" should "keep processing input messages regardless of how long Actions take" in {
     val result = (for {
       q           <- Stream.eval(async.boundedQueue[IO, executionEngine.EventType](1))
@@ -219,8 +178,6 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
               Step.init(
                 id = 1,
                 fileId = None,
-                config = config,
-                resources = Set(GmosS),
                 executions = List(
                   List(fromIO(ActionType.Configure(TCS),
                     startedFlag.increment *> finishFlag.decrement *> IO.pure(Result.OK(Result.Configured(TCS)))
@@ -232,7 +189,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
         )
         Stream.eval(List(
           List[IO[Unit]](
-            q.enqueue1(Event.start(seqId, user, UUID.randomUUID())),
+            q.enqueue1(Event.start[executionEngine.ConcreteTypes](seqId, user, UUID.randomUUID(), always)),
             startedFlag.decrement,
             q.enqueue1(Event.nullEvent),
             q.enqueue1(Event.getState[executionEngine.ConcreteTypes] { _ => Stream.eval(finishFlag.increment).map(_ => Event.nullEvent).some })
@@ -242,7 +199,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
       }
     } yield r ).compile.last.unsafeRunTimed(5.seconds).flatten
 
-    assert(!result.isEmpty)
+    assert(result.isDefined)
   }
 
   "engine" should "not capture runtime exceptions." in {
@@ -254,8 +211,6 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
           Step.init(
             id = 1,
             fileId = None,
-            config = config,
-            resources = Set(GmosS),
             executions = List(
               List(fromIO(ActionType.Undefined,
                 IO.apply {
@@ -278,9 +233,9 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
       Map((seqId, Sequence.State.init(Sequence(
         id = Observation.Id.unsafeFromString("GS-2018B-Q-0-6"),
         steps = List(
-          Step.init(id = 1, fileId = None, config = config, resources = Set(GmosS), executions = executions).copy(skipMark = Step.SkipMark(true)),
-          Step.init(id = 2, fileId = None, config = config, resources = Set(GmosS), executions = executions),
-          Step.init(id = 3, fileId = None, config = config, resources = Set(GmosS), executions = executions)
+          Step.init(id = 1, fileId = None, executions = executions).copy(skipMark = Step.SkipMark(true)),
+          Step.init(id = 2, fileId = None, executions = executions),
+          Step.init(id = 3, fileId = None, executions = executions)
         )
       ) ) ) )
     )
@@ -297,9 +252,9 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
       Map((seqId, Sequence.State.init(Sequence(
         id = Observation.Id.unsafeFromString("GS-2018B-Q-0-7"),
         steps = List(
-          Step.init(id = 1, fileId = None, config = config, resources = Set(GmosS), executions = executions),
-          Step.init(id = 2, fileId = None, config = config, resources = Set(GmosS), executions = executions).copy(skipMark = Step.SkipMark(true)),
-          Step.init(id = 3, fileId = None, config = config, resources = Set(GmosS), executions = executions)
+          Step.init(id = 1, fileId = None, executions = executions),
+          Step.init(id = 2, fileId = None, executions = executions).copy(skipMark = Step.SkipMark(true)),
+          Step.init(id = 3, fileId = None, executions = executions)
         )
       ) ) ) )
     )
@@ -316,11 +271,11 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
       Map((seqId, Sequence.State.init(Sequence(
         id = Observation.Id.unsafeFromString("GS-2018B-Q-0-8"),
         steps = List(
-          Step.init(id = 1, fileId = None, config = config, resources = Set(GmosS), executions = executions),
-          Step.init(id = 2, fileId = None, config = config, resources = Set(GmosS), executions = executions).copy(skipMark = Step.SkipMark(true)),
-          Step.init(id = 3, fileId = None, config = config, resources = Set(GmosS), executions = executions).copy(skipMark = Step.SkipMark(true)),
-          Step.init(id = 4, fileId = None, config = config, resources = Set(GmosS), executions = executions).copy(skipMark = Step.SkipMark(true)),
-          Step.init(id = 5, fileId = None, config = config, resources = Set(GmosS), executions = executions)
+          Step.init(id = 1, fileId = None, executions = executions),
+          Step.init(id = 2, fileId = None, executions = executions).copy(skipMark = Step.SkipMark(true)),
+          Step.init(id = 3, fileId = None, executions = executions).copy(skipMark = Step.SkipMark(true)),
+          Step.init(id = 4, fileId = None, executions = executions).copy(skipMark = Step.SkipMark(true)),
+          Step.init(id = 5, fileId = None, executions = executions)
         )
       ) ) ) )
     )
@@ -337,9 +292,9 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
       Map((seqId, Sequence.State.init(Sequence(
         id = Observation.Id.unsafeFromString("GS-2018B-Q-0-9"),
         steps = List(
-          Step.init(id = 1, fileId = None, config = config, resources = Set(GmosS), executions = executions),
-          Step.init(id = 2, fileId = None, config = config, resources = Set(GmosS), executions = executions),
-          Step.init(id = 3, fileId = None, config = config, resources = Set(GmosS), executions = executions).copy(skipMark = Step.SkipMark(true))
+          Step.init(id = 1, fileId = None, executions = executions),
+          Step.init(id = 2, fileId = None, executions = executions),
+          Step.init(id = 3, fileId = None, executions = executions).copy(skipMark = Step.SkipMark(true))
         )
       ) ) ) )
     )
@@ -357,7 +312,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
       Map((seqId, Sequence.State.init(Sequence(
         id = Observation.Id.unsafeFromString("GS-2018B-Q-0-10"),
         steps = List(
-          Step.init(id = 1, fileId = None, config = config, resources = Set(GmosS), executions = executions).copy(skipMark = Step.SkipMark(true))
+          Step.init(id = 1, fileId = None, executions = executions).copy(skipMark = Step.SkipMark(true))
         )
       ) ) ) )
     )
@@ -374,10 +329,10 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
       Map((seqId, Sequence.State.init(Sequence(
         id = Observation.Id.unsafeFromString("GS-2018B-Q-0-11"),
         steps = List(
-          Step.init(id = 1, fileId = None, config = config, resources = Set(GmosS), executions = executions).copy(skipMark = Step.SkipMark(true)),
-          Step.init(id = 2, fileId = None, config = config, resources = Set(GmosS), executions = executions).copy(skipMark = Step.SkipMark(true),
+          Step.init(id = 1, fileId = None, executions = executions).copy(skipMark = Step.SkipMark(true)),
+          Step.init(id = 2, fileId = None, executions = executions).copy(skipMark = Step.SkipMark(true),
             breakpoint = Step.BreakpointMark(true)),
-          Step.init(id = 3, fileId = None, config = config, resources = Set(GmosS), executions = executions)
+          Step.init(id = 3, fileId = None, executions = executions)
         )
       ) ) ) )
     )
@@ -394,10 +349,10 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
       Map((seqId, Sequence.State.init(Sequence(
         Observation.Id.unsafeFromString("GS-2019A-Q-3"),
         steps = List(
-          Step.init(id = 1, fileId = None, config = config, resources = Set(GmosS), executions = executions).copy(skipped = Step.Skipped(true)),
-          Step.init(id = 2, fileId = None, config = config, resources = Set(GmosS), executions = executions).copy(skipMark = Step.SkipMark(true),
+          Step.init(id = 1, fileId = None, executions = executions).copy(skipped = Step.Skipped(true)),
+          Step.init(id = 2, fileId = None, executions = executions).copy(skipMark = Step.SkipMark(true),
             breakpoint = Step.BreakpointMark(true)),
-          Step.init(id = 2, fileId = None, config = config, resources = Set(GmosS), executions = executions).copy(skipMark = Step.SkipMark(true),
+          Step.init(id = 2, fileId = None, executions = executions).copy(skipMark = Step.SkipMark(true),
             breakpoint = Step.BreakpointMark(true))
         )
       ) ) ) )
@@ -416,11 +371,11 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
       Map((seqId, Sequence.State.init(Sequence(
         id = Observation.Id.unsafeFromString("GS-2018B-Q-0-12"),
         steps = List(
-          Step.init(id = 1, fileId = None, config = config, resources = Set(GmosS), executions = executions),
-          Step.init(id = 2, fileId = None, config = config, resources = Set(GmosS), executions = executions).copy(skipMark = Step.SkipMark(true)),
-          Step.init(id = 3, fileId = None, config = config, resources = Set(GmosS), executions = executions).copy(skipMark = Step.SkipMark(true),
+          Step.init(id = 1, fileId = None, executions = executions),
+          Step.init(id = 2, fileId = None, executions = executions).copy(skipMark = Step.SkipMark(true)),
+          Step.init(id = 3, fileId = None, executions = executions).copy(skipMark = Step.SkipMark(true),
             breakpoint = Step.BreakpointMark(true)),
-          Step.init(id = 4, fileId = None, config = config, resources = Set(GmosS), executions = executions)
+          Step.init(id = 4, fileId = None, executions = executions)
         )
       ) ) ) )
     )
