@@ -321,10 +321,10 @@ object Sequence {
 
         require(updatedPending.forall(Step.status(_) === StepState.Pending))
 
-        if(status.isRunning) zipperL.modify(zp => zp.copy(pending = updatedPending.drop(1)))(this)
-        else updatedPending match {
+        updatedPending match {
           case t::ts => zipperL.modify(zp => zp.copy(focus = zp.focus.update(t), pending = ts))(this)
-          case _     => Final(Sequence(zipper.id, zipper.done), status)
+          case _     => if(status.isRunning) this
+                        else Final(Sequence(zipper.id, zipper.done), status)
         }
 
       }

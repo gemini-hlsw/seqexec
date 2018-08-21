@@ -116,7 +116,14 @@ object Step {
 
     val skip: Step = toStep.copy(skipped = Skipped(true))
 
-    def update(step: Step): Zipper = Zipper.currentify(step).map(_.copy(breakpoint = this.breakpoint, skipMark = this.skipMark)).getOrElse(this)
+    def update(step: Step): Zipper = {
+      val currentified = Zipper.currentify(step)
+
+      //If running, don't touch the executions, but update the rollback list so it takes the new executions if paused
+      (if (Step.status(toStep) === StepState.Running) currentified.map(c => this.copy(rolledback = c.rolledback))
+      else currentified.map(_.copy(breakpoint = this.breakpoint, skipMark = this.skipMark))
+      ).getOrElse(this)
+    }
 
   }
 
