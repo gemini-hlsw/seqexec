@@ -160,10 +160,17 @@ object InstrumentsTabs {
   private val component = ScalaComponent.builder[Props]("InstrumentsMenu")
     .stateless
     .render_P(p =>
-      <.div(
-        ^.cls := "ui attached tabular menu",
-        SeqexecCircuit.connect(SeqexecCircuit.tabsReader)(x => ReactFragment(x().tabs.toList.map(t => InstrumentTab(InstrumentTab.Props(p.router, t, p.loggedIn, x().user)): VdomNode): _*))
-      )
+      SeqexecCircuit.connect(SeqexecCircuit.tabsReader) { x =>
+        val tabs = x().tabs.toList.filter(_.nonEmpty).map(t => InstrumentTab(InstrumentTab.Props(p.router, t, p.loggedIn, x().user)): VdomNode)
+        if (tabs.nonEmpty) {
+          <.div(
+            ^.cls := "ui attached tabular menu",
+            ReactFragment(tabs: _*)
+          )
+        } else {
+          <.div()
+        }
+      }
     ).build
 
   def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)

@@ -40,20 +40,20 @@ object Pages {
 
   // Pages forms a prism with Page
   val PageActionP: Prism[Action, SeqexecPages] = Prism[Action, SeqexecPages]{
-    case SelectRoot => Root.some
-    case RequestSoundEcho => SoundTest.some
-    case SelectEmptyPreview => EmptyPreviewPage.some
+    case SelectRoot                         => Root.some
+    case RequestSoundEcho                   => SoundTest.some
+    case SelectEmptyPreview                 => EmptyPreviewPage.some
     case SelectSequencePreview(i, id, step) => PreviewPage(i, id, step).some
     case ShowPreviewStepConfig(i, id, step) => PreviewConfigPage(i, id, step).some
-    case SelectIdToDisplay(i, id, step) => SequencePage(i, id, step).some
-    case ShowStepConfig(i, id, step) => SequenceConfigPage(i, id, step).some
+    case SelectIdToDisplay(i, id, step)     => SequencePage(i, id, step).some
+    case ShowStepConfig(i, id, step)        => SequenceConfigPage(i, id, step).some
   }{
-    case Root => SelectRoot
-    case SoundTest => RequestSoundEcho
-    case EmptyPreviewPage => SelectEmptyPreview
-    case PreviewPage(i, id, step) => SelectSequencePreview(i, id, step)
-    case PreviewConfigPage(i, id, step) => ShowPreviewStepConfig(i, id, step)
-    case SequencePage(i, id, step) => SelectIdToDisplay(i, id, step)
+    case Root                            => SelectRoot
+    case SoundTest                       => RequestSoundEcho
+    case EmptyPreviewPage                => SelectEmptyPreview
+    case PreviewPage(i, id, step)        => SelectSequencePreview(i, id, step)
+    case PreviewConfigPage(i, id, step)  => ShowPreviewStepConfig(i, id, step)
+    case SequencePage(i, id, step)       => SelectIdToDisplay(i, id, step)
     case SequenceConfigPage(i, id, step) => ShowStepConfig(i, id, step)
   }
 

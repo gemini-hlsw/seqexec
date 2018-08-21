@@ -7,12 +7,13 @@ import diode.react.ModelProxy
 import diode.react.ReactPot._
 import gem.enum.Site
 import japgolly.scalajs.react._
+import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.component.Scala.Unmounted
-import seqexec.web.client.actions.NavigateTo
+import seqexec.web.client.actions.SelectEmptyPreview
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.model.WebSocketConnection
-import seqexec.web.client.model.Pages.Root
+import seqexec.web.client.model.Pages._
 import seqexec.web.client.OcsBuildInfo
 import seqexec.web.client.semanticui.elements.icon.Icon._
 import seqexec.web.client.semanticui.elements.menu.HeaderItem
@@ -22,23 +23,23 @@ import web.client.style._
   * Component for the bar at the top of the page
   */
 object Footer {
+  final case class Props(router: RouterCtl[SeqexecPages], site: Site)
   private val userConnect = SeqexecCircuit.connect(SeqexecCircuit.statusReader)
   private val wsConnect = SeqexecCircuit.connect(_.ws)
 
-  private def goHome(e: ReactEvent): Callback = {
-    e.preventDefault
-    Callback(SeqexecCircuit.dispatch(NavigateTo(Root)))
-  }
+  private def goHome(p: Props)(e: ReactEvent): Callback =
+    e.preventDefaultCB *>
+    p.router.dispatchAndSetUrlCB(SelectEmptyPreview)
 
-  private val component = ScalaComponent.builder[Site]("SeqexecAppBar")
+  private val component = ScalaComponent.builder[Props]("SeqexecAppBar")
     .stateless
     .render_P(p =>
       <.div(
         ^.cls := "ui footer inverted menu",
         <.a(
           ^.cls := "header item",
-          ^.onClick ==> goHome,
-          s"Seqexec - ${p.shortName}"
+          ^.onClick ==> goHome(p),
+          s"Seqexec - ${p.site.shortName}"
         ),
         HeaderItem(HeaderItem.Props(OcsBuildInfo.version, sub = true)),
         wsConnect(ConnectionState.apply),
@@ -57,7 +58,7 @@ object Footer {
     )
     .build
 
-  def apply(s: Site): Unmounted[Site, Unit, Unit] = component(s)
+  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
 }
 
 /**

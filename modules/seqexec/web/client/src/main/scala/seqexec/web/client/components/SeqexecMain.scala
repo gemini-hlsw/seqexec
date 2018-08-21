@@ -92,7 +92,7 @@ object SeqexecMain {
         ),
         lbConnect(LoginBox.apply),
         resourcesBusyConnect(ResourcesBox.apply),
-        Footer(p.site)
+        Footer(Footer.Props(p.ctl, p.site))
       )
     ).build
 

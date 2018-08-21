@@ -14,7 +14,9 @@ import seqexec.model.{ SequenceState, SequenceView }
 import seqexec.model.enum._
 import seqexec.web.client.ModelOps._
 
-final case class AvailableTab(id: Option[Observation.Id], status: Option[SequenceState], instrument: Option[Instrument], runningStep: Option[RunningStep], isPreview: Boolean, active: Boolean)
+final case class AvailableTab(id: Option[Observation.Id], status: Option[SequenceState], instrument: Option[Instrument], runningStep: Option[RunningStep], isPreview: Boolean, active: Boolean) {
+  val nonEmpty: Boolean = id.isDefined
+}
 
 object AvailableTab {
   implicit val eq: Eq[AvailableTab] =

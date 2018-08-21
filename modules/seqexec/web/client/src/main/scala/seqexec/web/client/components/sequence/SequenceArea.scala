@@ -14,7 +14,6 @@ import seqexec.web.client.components.sequence.toolbars.{SequenceDefaultToolbar, 
 import seqexec.web.client.circuit.{SeqexecCircuit, StatusAndStepFocus, SequenceTabContentFocus}
 import seqexec.web.client.model.Pages.SeqexecPages
 import seqexec.web.client.model.{SectionOpen, SectionClosed}
-// import seqexec.web.client.ModelOps._
 import seqexec.web.client.semanticui._
 import seqexec.web.client.semanticui.elements.message.IconMessage
 import seqexec.web.client.semanticui.elements.icon.Icon.IconInbox
@@ -67,6 +66,7 @@ object SequenceStepsTableContainer {
 * Content of a single tab with a sequence
 */
 object SequenceTabContent {
+  private val defaultContent = IconMessage(IconMessage.Props(IconInbox, Some("No sequence loaded"), IconMessage.Style.Warning))
 
   final case class Props(router: RouterCtl[SeqexecPages], p: SequenceTabContentFocus) {
     val sequenceSelected: Boolean = p.id.isDefined
@@ -78,11 +78,12 @@ object SequenceTabContent {
       val SequenceTabContentFocus(instrument, id, active, logDisplayed) = p.p
       val content = id.map { i =>
         SeqexecCircuit.connect(SeqexecCircuit.statusAndStepReader(i)) { x =>
-          x() match {
-            case Some(st) => SequenceStepsTableContainer(SequenceStepsTableContainer.Props(p.router, st)): VdomElement
-            case _        => IconMessage(IconMessage.Props(IconInbox, Some("No sequence loaded"), IconMessage.Style.Warning)): VdomElement
-          }
+          x().map { st =>
+            SequenceStepsTableContainer(SequenceStepsTableContainer.Props(p.router, st)): VdomElement
+          }.getOrElse(defaultContent)
         }
+      }.getOrElse {
+        defaultContent
       }
 
       <.div(
