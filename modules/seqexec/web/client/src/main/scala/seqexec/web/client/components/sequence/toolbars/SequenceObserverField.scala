@@ -54,7 +54,7 @@ object SequenceObserverField {
           SeqexecStyles.shorterFields,
           <.div(
             ^.cls := "field four wide required",
-            FormLabel(FormLabel.Props("Observer"))
+            FormLabel(FormLabel.Props("Observer", None))
           ),
           <.div(
             ^.cls := "field fourteen wide",

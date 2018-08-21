@@ -4,13 +4,13 @@
 package seqexec.web.client.semanticui.elements.label
 
 import japgolly.scalajs.react.ScalaComponent
+import japgolly.scalajs.react.extra.Reusability
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 
 object FormLabel {
-  @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
-  final case class Props(text: String,
-    htmlFor: Option[String] = None)
+  final case class Props(text: String, htmlFor: Option[String])
+  implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
   private val component = ScalaComponent.builder[Props]("FormLabel")
     .stateless
@@ -20,7 +20,8 @@ object FormLabel {
         p.text,
         c
       )
-    ).build
+    ).configure(Reusability.shouldComponentUpdate)
+    .build
 
   def apply(p: Props, children: VdomNode*): Unmounted[Props, Unit, Unit] = component(p)(children: _*)
 }
