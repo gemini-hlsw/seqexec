@@ -8,12 +8,13 @@ import gem.enum.Site
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{CallbackTo, ScalaComponent, CatsReact}
 import japgolly.scalajs.react.component.Scala.Unmounted
+import japgolly.scalajs.react.extra.Reusability
 import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.CatsReact._
-import seqexec.web.client.components.sequence.toolbars.{SequenceDefaultToolbar, StepConfigToolbar, SequenceAnonymousToolbar}
-import seqexec.web.client.circuit.{SeqexecCircuit, StatusAndStepFocus, SequenceTabContentFocus}
+import seqexec.web.client.components.sequence.toolbars.{ SequenceDefaultToolbar, StepConfigToolbar, SequenceAnonymousToolbar }
+import seqexec.web.client.circuit.{ SeqexecCircuit, StatusAndStepFocus, SequenceTabContentFocus }
 import seqexec.web.client.model.Pages.SeqexecPages
-import seqexec.web.client.model.{SectionOpen, SectionClosed}
+import seqexec.web.client.model.{ SectionOpen, SectionClosed }
 import seqexec.web.client.semanticui._
 import seqexec.web.client.semanticui.elements.message.IconMessage
 import seqexec.web.client.semanticui.elements.icon.Icon.IconInbox
@@ -24,6 +25,10 @@ import web.client.style._
 object SequenceStepsTableContainer {
   final case class Props(router: RouterCtl[SeqexecPages], statusAndStep: StatusAndStepFocus)
   final case class State(nextStepToRun: Int)
+
+  implicit val ssReuse: Reusability[StatusAndStepFocus] = Reusability.byEq[StatusAndStepFocus]
+  implicit val propsReuse: Reusability[Props] = Reusability.by(_.statusAndStep)
+  implicit val stateReuse: Reusability[State] = Reusability.derive[State]
 
   private val ST = ReactS.Fix[State]
 
@@ -56,7 +61,8 @@ object SequenceStepsTableContainer {
         SeqexecCircuit.connect(SeqexecCircuit.stepsTableReader(p.statusAndStep.obsId))(r =>
             StepsTable(StepsTable.Props(p.router, p.statusAndStep.isLogged, r, x => $.runState(updateStepToRun(x)))))
       )
-    }.build
+    }.configure(Reusability.shouldComponentUpdate)
+    .build
 
   def apply(p: Props): Unmounted[Props, State, Unit] =
     component(p)

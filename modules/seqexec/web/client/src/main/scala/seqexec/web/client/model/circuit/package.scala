@@ -45,11 +45,26 @@ package circuit {
       Eq.by(x => (x.instrument, x.id, x.sequenceSelected, x.logDisplayed))
   }
 
-  final case class StatusAndObserverFocus(isLogged: Boolean, obsName: Option[String], /*instrument: Option[Instrument],*/ id: Observation.Id, observer: Option[Observer], status: Option[SequenceState], targetName: Option[TargetName]) extends UseValueEq
+  final case class StatusAndObserverFocus(isLogged: Boolean, obsName: Option[String], id: Observation.Id, observer: Option[Observer], status: Option[SequenceState], targetName: Option[TargetName])
 
-  final case class StatusAndStepFocus(isLogged: Boolean, instrument: Instrument, obsId: Observation.Id, stepConfigDisplayed: Option[Int], totalSteps: Int, isPreview: Boolean) extends UseValueEq
+  object StatusAndObserverFocus{
+    implicit val eq: Eq[StatusAndObserverFocus] =
+      Eq.by(x => (x.isLogged, x.obsName, x.id, x.observer, x.status, x.targetName))
+  }
+
+  final case class StatusAndStepFocus(isLogged: Boolean, instrument: Instrument, obsId: Observation.Id, stepConfigDisplayed: Option[Int], totalSteps: Int, isPreview: Boolean)
+
+  object StatusAndStepFocus {
+    implicit val eq: Eq[StatusAndStepFocus] =
+      Eq.by(x => (x.isLogged, x.instrument, x.obsId, x.stepConfigDisplayed, x.totalSteps, x.isPreview))
+  }
 
   final case class StepsTableFocus(id: Observation.Id, instrument: Instrument, state: SequenceState, steps: List[Step], stepConfigDisplayed: Option[Int], nextStepToRun: Option[Int], isPreview: Boolean) extends UseValueEq
+
+  object StepsTableFocus {
+    implicit val eq: Eq[StepsTableFocus] =
+      Eq.by(x => (x.id, x.instrument, x.state, x.steps, x.stepConfigDisplayed, x.nextStepToRun, x.isPreview))
+  }
 
   final case class StepsTableAndStatusFocus(status: ClientStatus, stepsTable: Option[StepsTableFocus], configTableState: TableState[StepConfigTable.TableColumn]) extends UseValueEq
 
@@ -58,7 +73,4 @@ package circuit {
   final case class SequenceControlFocus(isLogged: Boolean, isConnected: Boolean, control: Option[ControlModel], syncInProgress: Boolean) extends UseValueEq
 
   final case class TableStates(queueTable: TableState[QueueTableBody.TableColumn], stepConfigTable: TableState[StepConfigTable.TableColumn]) extends UseValueEq
-}
-
-package object circuit {
 }

@@ -4,6 +4,7 @@
 package seqexec.web.client.semanticui
 
 import cats.Eq
+import japgolly.scalajs.react.extra.Reusability
 
 sealed trait Size
 
@@ -19,4 +20,5 @@ object Size {
   case object Massive extends Size
 
   implicit val equal: Eq[Size] = Eq.fromUniversalEquals
+  implicit val reuse: Reusability[Size] = Reusability.byRef[Size]
 }

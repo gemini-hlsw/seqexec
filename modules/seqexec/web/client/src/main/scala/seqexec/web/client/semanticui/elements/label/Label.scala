@@ -6,6 +6,7 @@ package seqexec.web.client.semanticui.elements.label
 import seqexec.web.client.semanticui.Size
 import seqexec.web.client.semanticui.elements.icon.Icon
 import japgolly.scalajs.react.ScalaComponent
+import japgolly.scalajs.react.extra.Reusability
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 import cats.implicits._
@@ -22,6 +23,7 @@ object Pointing {
   case object Right extends Pointing
 
   implicit val equal: Eq[Pointing] = Eq.fromUniversalEquals
+  implicit val reuse: Reusability[Pointing] = Reusability.byRef[Pointing]
 }
 
 object Label {
@@ -36,6 +38,8 @@ object Label {
     pointing                 : Pointing = Pointing.None,
     icon                     : Option[Icon] = None,
     extraStyles              : List[GStyle] = Nil)
+
+  implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
   def content(p: Props): List[TagMod] = List(
     ^.cls := p.color.fold("ui label")(u => s"ui $u label"),
@@ -74,7 +78,9 @@ object Label {
           c
         )
       }
-    ).build
+    )
+    .configure(Reusability.shouldComponentUpdate)
+    .build
 
   def apply(p: Props, children: VdomNode*): Unmounted[Props, Unit, Unit] = component(p)(children: _*)
 }

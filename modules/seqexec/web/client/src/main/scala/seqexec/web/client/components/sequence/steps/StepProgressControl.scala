@@ -3,6 +3,11 @@
 
 package seqexec.web.client.components.sequence.steps
 
+import cats.implicits._
+import japgolly.scalajs.react._
+import japgolly.scalajs.react.vdom.html_<^._
+import japgolly.scalajs.react.component.Scala.Unmounted
+import japgolly.scalajs.react.extra.Reusability
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.{ ActionStatus, Resource }
 import seqexec.model.StepState
@@ -14,11 +19,8 @@ import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.semanticui.elements.icon.Icon
 import seqexec.web.client.semanticui.elements.icon.Icon._
 import seqexec.web.client.semanticui.elements.label.Label
+import seqexec.web.client.reusability._
 import web.client.style._
-import japgolly.scalajs.react._
-import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.component.Scala.Unmounted
-import cats.implicits._
 
 /**
   * Component to display the step state and control
@@ -27,6 +29,8 @@ object StepProgressCell {
   final case class Props(clientStatus: ClientStatus, focus: StepsTableFocus, step: Step) {
     val steps: List[Step] = focus.steps
   }
+
+  implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
   def labelColor(status: ActionStatus): String = status match {
     case ActionStatus.Pending   => "gray"
@@ -122,9 +126,9 @@ object StepProgressCell {
 
   private val component = ScalaComponent.builder[Props]("StepProgressCell")
     .stateless
-    .render_P { p =>
-      stepDisplay(p)
-    }.build
+    .render_P(stepDisplay)
+    .configure(Reusability.shouldComponentUpdate)
+    .build
 
   def apply(i: Props): Unmounted[Props, Unit, Unit] = component(i)
 }

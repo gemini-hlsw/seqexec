@@ -20,7 +20,8 @@ object FormLabel {
         p.text,
         c
       )
-    ).configure(Reusability.shouldComponentUpdate)
+    )
+    .configure(Reusability.shouldComponentUpdate)
     .build
 
   def apply(p: Props, children: VdomNode*): Unmounted[Props, Unit, Unit] = component(p)(children: _*)

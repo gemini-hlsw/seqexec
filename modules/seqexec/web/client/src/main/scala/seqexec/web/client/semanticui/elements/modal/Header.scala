@@ -4,6 +4,7 @@
 package seqexec.web.client.semanticui.elements.modal
 
 import japgolly.scalajs.react.ScalaComponent
+import japgolly.scalajs.react.extra.Reusability
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 
@@ -15,7 +16,9 @@ object Header {
         ^.cls := "header",
         c
       )
-    ).build
+    )
+    .configure(Reusability.shouldComponentUpdate)
+    .build
 
   def apply(children: VdomNode*): Unmounted[Unit, Unit, Unit] = component(children: _*)
 }

@@ -7,6 +7,7 @@ import cats.Eq
 import seqexec.web.client.semanticui.Size
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{Callback, ScalaComponent}
+import japgolly.scalajs.react.extra.Reusability
 import cats.implicits._
 import web.client.style._
 
@@ -81,10 +82,13 @@ final case class Icon(p: Icon.Props, children: Seq[VdomNode]) {
         c
       )
     )
+    .configure(Reusability.shouldComponentUpdate)
     .build.withKey(p.key).apply(p)(children: _*)
 }
 
 object Icon {
+  implicit val iconProps: Reusability[Icon.Props] = Reusability.caseClassExcept[Icon.Props]('onClick)
+  implicit val reuse: Reusability[Icon] = Reusability.by(_.p)
   // // Web content icons
   // val IconAlarm: Icon             = Icon("alarm")
   // val IconAlarmSlash: Icon        = Icon("alarm slash")
@@ -653,6 +657,7 @@ object Icon {
     case object Vertically extends Flipped
 
     implicit val equal: Eq[Flipped] = Eq.fromUniversalEquals
+    implicit val reuse: Reusability[Flipped] = Reusability.byRef[Flipped]
   }
 
   sealed trait Rotated
@@ -663,6 +668,7 @@ object Icon {
     case object CounterClockwise extends Rotated
 
     implicit val equal: Eq[Rotated] = Eq.fromUniversalEquals
+    implicit val reuse: Reusability[Rotated] = Reusability.byRef[Rotated]
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
