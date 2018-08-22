@@ -32,7 +32,9 @@ package circuit {
 
   final case class StatusAndLoadedSequencesFocus(status: ClientStatus, sequences: List[SequenceInQueue], tableState: TableState[QueueTableBody.TableColumn]) extends UseValueEq
 
-  final case class HeaderSideBarFocus(status: ClientStatus, conditions: Conditions, operator: Option[Operator]) extends UseValueEq
+  final case class SequenceObserverFocus(instrument: Instrument, obsId: Observation.Id, observer: Option[Observer]) extends UseValueEq
+
+  final case class HeaderSideBarFocus(status: ClientStatus, conditions: Conditions, operator: Option[Operator], observer: Option[SequenceObserverFocus]) extends UseValueEq
 
   final case class InstrumentStatusFocus(instrument: Instrument, active: Boolean, idState: Option[(Observation.Id, SequenceState)], runningStep: Option[RunningStep]) extends UseValueEq
 
@@ -45,11 +47,11 @@ package circuit {
       Eq.by(x => (x.instrument, x.id, x.sequenceSelected, x.logDisplayed))
   }
 
-  final case class StatusAndObserverFocus(isLogged: Boolean, obsName: Option[String], id: Observation.Id, observer: Option[Observer], status: Option[SequenceState], targetName: Option[TargetName])
+  final case class SequenceInfoFocus(isLogged: Boolean, obsName: Option[String], observer: Option[Observer], status: Option[SequenceState], targetName: Option[TargetName])
 
-  object StatusAndObserverFocus{
-    implicit val eq: Eq[StatusAndObserverFocus] =
-      Eq.by(x => (x.isLogged, x.obsName, x.id, x.observer, x.status, x.targetName))
+  object SequenceInfoFocus{
+    implicit val eq: Eq[SequenceInfoFocus] =
+      Eq.by(x => (x.isLogged, x.obsName, x.observer, x.status, x.targetName))
   }
 
   final case class StatusAndStepFocus(isLogged: Boolean, instrument: Instrument, obsId: Observation.Id, stepConfigDisplayed: Option[Int], totalSteps: Int, isPreview: Boolean)

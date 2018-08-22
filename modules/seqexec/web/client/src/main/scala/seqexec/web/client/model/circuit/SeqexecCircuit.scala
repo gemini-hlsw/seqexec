@@ -86,7 +86,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
 
   // Reader for sequences on display
   val headerSideBarReader: ModelR[SeqexecAppRootModel, HeaderSideBarFocus] =
-    zoom(c => HeaderSideBarFocus(ClientStatus(c.uiModel.user, c.ws, c.uiModel.syncInProgress), c.uiModel.sequences.conditions, c.uiModel.sequences.operator))
+    zoom(c => HeaderSideBarFocus(ClientStatus(c.uiModel.user, c.ws, c.uiModel.syncInProgress), c.uiModel.sequences.conditions, c.uiModel.sequences.operator, c.uiModel.sequencesOnDisplay.selectedOperator))
 
   val logDisplayedReader: ModelR[SeqexecAppRootModel, SectionVisibilityState] =
     zoom(_.uiModel.globalLog.display)
@@ -110,11 +110,11 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
     // Returning the getOrElse part shouldn't happen but it simplifies the model notcarrying the Option up
     zoom(_.uiModel.sequencesOnDisplay.tab(id).getOrElse(SequenceTabActive.Empty))
 
-  def sequenceObserverReader(id: Observation.Id): ModelR[SeqexecAppRootModel, StatusAndObserverFocus] =
+  def sequenceObserverReader(id: Observation.Id): ModelR[SeqexecAppRootModel, SequenceInfoFocus] =
     statusReader.zip(sequenceTab(id)).zoom {
       case (status, SequenceTabActive(tab, _)) =>
         val targetName = tab.sequence.flatMap(firstScienceStepTargetNameT.headOption)
-        StatusAndObserverFocus(status.isLogged, tab.sequence.map(_.metadata.name), id, tab.sequence.flatMap(_.metadata.observer), tab.sequence.map(_.status), targetName)
+        SequenceInfoFocus(status.isLogged, tab.sequence.map(_.metadata.name), tab.sequence.flatMap(_.metadata.observer), tab.sequence.map(_.status), targetName)
     }
 
   def statusAndStepReader(id: Observation.Id): ModelR[SeqexecAppRootModel, Option[StatusAndStepFocus]] =

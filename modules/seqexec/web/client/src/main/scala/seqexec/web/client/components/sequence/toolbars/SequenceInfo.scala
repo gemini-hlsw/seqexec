@@ -3,7 +3,7 @@
 
 package seqexec.web.client.components.sequence.toolbars
 
-import seqexec.web.client.circuit.StatusAndObserverFocus
+import seqexec.web.client.circuit.SequenceInfoFocus
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.semanticui.elements.label.Label
 import seqexec.web.client.semanticui.elements.icon.Icon.IconCheckmark
@@ -20,12 +20,12 @@ import cats.implicits._
   * Display the name of the sequence and the observer
   */
 object SequenceInfo {
-  final case class Props(p: ModelProxy[StatusAndObserverFocus])
+  final case class Props(p: ModelProxy[SequenceInfoFocus])
 
   private def component = ScalaComponent.builder[Props]("SequenceInfo")
     .stateless
     .render_P { p =>
-      val StatusAndObserverFocus(isLogged, oName, _, observer, status, tName) = p.p()
+      val SequenceInfoFocus(isLogged, oName, observer, status, tName) = p.p()
       val obsName = oName.filter(_.nonEmpty).getOrElse("Unknown.")
       val daytimeCalibrationTargetName: TagMod =
         Label(Label.Props(DaytimeCalibrationTargetName, basic = true, extraStyles = List(SeqexecStyles.daytimeCal)))
@@ -59,5 +59,5 @@ object SequenceInfo {
       )
     }.build
 
-  def apply(p: ModelProxy[StatusAndObserverFocus]): Unmounted[Props, Unit, Unit] = component(Props(p))
+  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
 }

@@ -27,7 +27,7 @@ object SequenceAnonymousToolbar {
           <.div(
             ^.cls := "ui left column bottom aligned sixteen wide",
             SeqexecStyles.shorterRow,
-            SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(p.id))(SequenceInfo.apply)
+            SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(p.id))(p => SequenceInfo(SequenceInfo.Props(p)))
           )
         )
       )

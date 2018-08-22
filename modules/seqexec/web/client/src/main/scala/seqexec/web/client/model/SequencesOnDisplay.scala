@@ -11,6 +11,7 @@ import gem.Observation
 import seqexec.model.SequenceView
 import seqexec.model.enum._
 import seqexec.web.common.Zipper
+import seqexec.web.client.circuit.SequenceObserverFocus
 
 // Model for the tabbed area of sequences
 final case class SequencesOnDisplay(sequences: Zipper[SequenceTab]) {
@@ -142,6 +143,11 @@ final case class SequencesOnDisplay(sequences: Zipper[SequenceTab]) {
 
   def cleanAll: SequencesOnDisplay =
     SequencesOnDisplay.empty
+
+  def selectedOperator: Option[SequenceObserverFocus] = {
+    val f = sequences.focus
+    f.sequence.map { s => SequenceObserverFocus(s.metadata.instrument, s.id, s.metadata.observer) }.filter(_ => !f.isPreview)
+  }
 }
 
 /**

@@ -55,7 +55,7 @@ object StepConfigToolbar {
           SeqexecStyles.shorterRow,
           <.div(
             ^.cls := "left column bottom aligned sixteen wide computer ten wide tablet only",
-            SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(p.id))(SequenceInfo.apply)
+            SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(p.id))(p => SequenceInfo(SequenceInfo.Props(p)))
           )
         ),
       <.div(

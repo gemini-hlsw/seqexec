@@ -126,7 +126,7 @@ object SequenceDefaultToolbar {
           SeqexecStyles.shorterRow,
           <.div(
             ^.cls := "ui sixteen wide column",
-            SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(p.statusAndStep.obsId))(SequenceInfo.apply)
+            SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(p.statusAndStep.obsId))(p => SequenceInfo(SequenceInfo.Props(p)))
           )
         ),
         <.div(
@@ -136,11 +136,6 @@ object SequenceDefaultToolbar {
           <.div(
             ^.cls := "ui left floated column eight wide computer eight wide tablet only",
             SeqexecCircuit.connect(SeqexecCircuit.sequenceControlReader(p.statusAndStep.obsId))(SequenceControl.apply)
-          ),
-          <.div(
-            ^.cls := "ui right floated column eight wide computer eight wide tablet sixteen wide mobile",
-            SeqexecStyles.observerField.when(p.statusAndStep.isLogged),
-            SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(p.statusAndStep.obsId))(SequenceObserverField.apply)
           )
         )
       )
