@@ -78,6 +78,7 @@ object SequenceControl {
       val allowedToExecute = isLogged && isConnected
       val canSync = !syncInProgress && !s.syncRequested
       <.div(
+        SeqexecStyles.controlButtons,
         control.whenDefined { m =>
           val ControlModel(id, isPartiallyExecuted, nextStep, status, inConflict) = m
           val nextStepToRun = nextStep.getOrElse(0) + 1
@@ -122,20 +123,16 @@ object SequenceDefaultToolbar {
       <.div(
         ^.cls := "ui grid",
         <.div(
-        ^.cls := "ui row",
+        ^.cls := "two column row",
           SeqexecStyles.shorterRow,
-          <.div(
-            ^.cls := "ui sixteen wide column",
-            SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(p.statusAndStep.obsId))(p => SequenceInfo(SequenceInfo.Props(p)))
-          )
-        ),
-        <.div(
-          ^.cls := "ui row",
-          SeqexecStyles.shorterRow,
-          SeqexecStyles.lowerRow,
           <.div(
             ^.cls := "ui left floated column eight wide computer eight wide tablet only",
             SeqexecCircuit.connect(SeqexecCircuit.sequenceControlReader(p.statusAndStep.obsId))(SequenceControl.apply)
+          ),
+          <.div(
+            ^.cls := "ui right floated column",
+            SeqexecStyles.infoOnControl,
+            SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(p.statusAndStep.obsId))(p => SequenceInfo(SequenceInfo.Props(p)))
           )
         )
       )

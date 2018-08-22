@@ -49,6 +49,10 @@ object SeqexecStyles {
 
   val instrumentTabSegmentLogShown: GStyle = GStyle.fromString("SeqexecStyles-instrumentTabSegmentLogShown")
 
+  val controlButtons: GStyle = GStyle.fromString("SeqexecStyles-controlButtons")
+
+  val infoOnControl: GStyle = GStyle.fromString("SeqexecStyles-infoOnControl")
+
   val sequencesArea: GStyle = GStyle.fromString("SeqexecStyles-sequencesArea")
 
   // Media queries to hide/display items for mobile
