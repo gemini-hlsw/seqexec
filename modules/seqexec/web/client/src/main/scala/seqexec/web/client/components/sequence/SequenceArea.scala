@@ -20,6 +20,7 @@ import seqexec.web.client.semanticui.elements.message.IconMessage
 import seqexec.web.client.semanticui.elements.icon.Icon.IconInbox
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.components.sequence.steps.StepsTable
+import seqexec.web.client.reusability._
 import web.client.style._
 
 object SequenceStepsTableContainer {
@@ -61,7 +62,8 @@ object SequenceStepsTableContainer {
         SeqexecCircuit.connect(SeqexecCircuit.stepsTableReader(p.statusAndStep.obsId))(r =>
             StepsTable(StepsTable.Props(p.router, p.statusAndStep.isLogged, r, x => $.runState(updateStepToRun(x)))))
       )
-    }.configure(Reusability.shouldComponentUpdate)
+    }
+    .configure(Reusability.shouldComponentUpdate)
     .build
 
   def apply(p: Props): Unmounted[Props, State, Unit] =
@@ -77,6 +79,9 @@ object SequenceTabContent {
   final case class Props(router: RouterCtl[SeqexecPages], p: SequenceTabContentFocus) {
     val sequenceSelected: Boolean = p.id.isDefined
   }
+
+  implicit val stcfReuse: Reusability[SequenceTabContentFocus] = Reusability.derive[SequenceTabContentFocus]
+  implicit val propsReuse: Reusability[Props] = Reusability.by(_.p)
 
   private val component = ScalaComponent.builder[Props]("SequenceTabContent")
     .stateless
@@ -107,6 +112,7 @@ object SequenceTabContent {
         content
       )
     }
+    .configure(Reusability.shouldComponentUpdate)
     .build
 
     def apply(p: Props): Unmounted[Props, Unit, Unit] =
@@ -119,6 +125,7 @@ object SequenceTabContent {
  */
 object SequenceArea {
   final case class Props(router: RouterCtl[SeqexecPages], site: Site)
+  implicit val propsReuse: Reusability[Props] = Reusability.by(_.site)
 
   private val component = ScalaComponent.builder[Props]("SequenceArea")
     .stateless
@@ -129,7 +136,9 @@ object SequenceArea {
         SeqexecCircuit.connect(SeqexecCircuit.statusReader)(x => InstrumentsTabs(InstrumentsTabs.Props(p.router, x().isLogged))),
         SeqexecCircuit.connect(SeqexecCircuit.sequenceTabs)(x => ReactFragment(x().toList.map(t => SequenceTabContent(SequenceTabContent.Props(p.router, t)): VdomNode): _*))
       )
-    ).build
+    )
+    .configure(Reusability.shouldComponentUpdate)
+    .build
 
   def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
 }

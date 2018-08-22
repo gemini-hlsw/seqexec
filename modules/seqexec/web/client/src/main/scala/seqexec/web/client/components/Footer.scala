@@ -10,6 +10,7 @@ import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.component.Scala.Unmounted
+import japgolly.scalajs.react.extra.Reusability
 import seqexec.web.client.actions.SelectEmptyPreview
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.model.WebSocketConnection
@@ -17,6 +18,7 @@ import seqexec.web.client.model.Pages._
 import seqexec.web.client.OcsBuildInfo
 import seqexec.web.client.semanticui.elements.icon.Icon._
 import seqexec.web.client.semanticui.elements.menu.HeaderItem
+import seqexec.web.client.reusability._
 import web.client.style._
 
 /**
@@ -24,6 +26,9 @@ import web.client.style._
   */
 object Footer {
   final case class Props(router: RouterCtl[SeqexecPages], site: Site)
+
+  implicit val propsReuse: Reusability[Props] = Reusability.by(_.site)
+
   private val userConnect = SeqexecCircuit.connect(SeqexecCircuit.statusReader)
   private val wsConnect = SeqexecCircuit.connect(_.ws)
 
@@ -56,6 +61,7 @@ object Footer {
         ctx.getDOMNode.foreach { dom => $(dom).visibility(JsVisiblityOptions.visibilityType("fixed").offset(0)) }
       }
     )
+    .configure(Reusability.shouldComponentUpdate)
     .build
 
   def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
@@ -67,6 +73,8 @@ object Footer {
 object ConnectionState {
 
   final case class Props(u: WebSocketConnection)
+
+  implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
   def formatTime(delay: Int): String = if (delay < 1000) {
     f"${delay / 1000.0}%.1f"
@@ -90,6 +98,7 @@ object ConnectionState {
         )
       )
     )
+    .configure(Reusability.shouldComponentUpdate)
     .build
 
   def apply(u: ModelProxy[WebSocketConnection]): Unmounted[Props, Unit, Unit] = component(Props(u()))

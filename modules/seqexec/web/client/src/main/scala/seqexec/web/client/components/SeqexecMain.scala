@@ -3,23 +3,26 @@
 
 package seqexec.web.client.components
 
-import diode.react.ModelProxy
 import diode.react.ReactPot._
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.extra.router._
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.component.Scala.Unmounted
+import japgolly.scalajs.react.extra.Reusability
 import gem.enum.Site
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.model.Pages._
 import seqexec.web.client.components.sequence.{HeadersSideBar, SequenceArea}
 import seqexec.web.client.model.WebSocketConnection
+import seqexec.web.client.reusability._
 import web.client.style._
 
 object AppTitle {
-  final case class Props(site: Site, ws: ModelProxy[WebSocketConnection])
+  final case class Props(site: Site, ws: WebSocketConnection)
 
-  private val component = ScalaComponent.builder[Props]("SeqexecUI")
+  implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
+
+  private val component = ScalaComponent.builder[Props]("SeqexecTitle")
     .stateless
     .render_P(p =>
       <.div(
@@ -29,7 +32,7 @@ object AppTitle {
         <.h4(
           ^.cls := "ui horizontal divider header",
           s"Seqexec ${p.site.shortName}",
-          p.ws().ws.renderPending(_ =>
+          p.ws.ws.renderPending(_ =>
             <.div(
               SeqexecStyles.errorText,
               SeqexecStyles.blinking,
@@ -38,13 +41,17 @@ object AppTitle {
           )
         )
       )
-    ).build
+    )
+    .configure(Reusability.shouldComponentUpdate)
+    .build
 
-  def apply(site: Site, ws: ModelProxy[WebSocketConnection]): Unmounted[Props, Unit, Unit] = component(Props(site, ws))
+  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
 }
 
 object SeqexecMain {
   final case class Props(site: Site, ctl: RouterCtl[SeqexecPages])
+
+  implicit val propsReuse: Reusability[Props] = Reusability.by(_.site)
 
   private val lbConnect = SeqexecCircuit.connect(_.uiModel.loginBox)
   private val logConnect = SeqexecCircuit.connect(_.uiModel.globalLog)
@@ -62,7 +69,7 @@ object SeqexecMain {
             ^.cls := "ui row",
             SeqexecStyles.shorterRow
           ),
-          wsConnect(ws => AppTitle(p.site, ws)),
+          wsConnect(ws => AppTitle(AppTitle.Props(p.site, ws()))),
           <.div(
             ^.cls := "ui row",
             SeqexecStyles.shorterRow,
@@ -94,7 +101,9 @@ object SeqexecMain {
         resourcesBusyConnect(ResourcesBox.apply),
         Footer(Footer.Props(p.ctl, p.site))
       )
-    ).build
+    )
+      .configure(Reusability.shouldComponentUpdate)
+    .build
 
   def apply(site: Site, ctl: RouterCtl[SeqexecPages]): Unmounted[Props, Unit, Unit] = component(Props(site, ctl))
 }
