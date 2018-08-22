@@ -3,7 +3,7 @@
 
 package seqexec.web.client.handlers
 
-import diode.{ActionHandler, ActionResult, Effect, ModelRW}
+import diode.{Action, ActionHandler, ActionResult, Effect, ModelRW}
 import seqexec.model.SequenceView
 import seqexec.model.events.SeqexecModelUpdate
 import seqexec.web.client.actions._
@@ -22,41 +22,46 @@ class InitialSyncHandler[M](modelRW: ModelRW[M, InitialSyncFocus]) extends Actio
   def runningSequence(s: SeqexecModelUpdate): Option[SequenceView] =
     s.view.queue.filter(_.status.isRunning).sortBy(_.id).headOption
 
-  def handle: PartialFunction[Any, ActionResult[M]] = {
-    // If there is a running sequence update the page to go there
-    case ServerMessage(s: SeqexecModelUpdate) if runningSequence(s).isDefined && value.firstLoad =>
-      val running = runningSequence(s)
-      running.fold(updated(value.copy(firstLoad = true))) { f =>
-        val effect = Effect(Future(SelectIdToDisplay(f.metadata.instrument, f.id, 0)))
-        updated(value.copy(firstLoad = false), effect)
-      }
+  def pageE(action: Action): Effect =
+    PageActionP.getOption(action).map(p => Effect(Future(NavigateTo(p)))).getOrElse(VoidEffect)
 
+  def handle: PartialFunction[Any, ActionResult[M]] = {
     // Otherwise, update the model to reflect the current page
     case ServerMessage(s: SeqexecModelUpdate) if value.firstLoad                                 =>
       // the page maybe not in sync with the tabs. Let's fix that
       val sids = s.view.queue.map(_.id)
+      val loaded = s.view.loaded.values.toList
       val effect = value.location match {
-        case p @ SequencePage(_, id, _) if sids.contains(id)       =>
+        case p @ SequencePage(_, id, _) if loaded.contains(id)     =>
           // We need to effect to update the reference
           Effect(Future(PageActionP.reverseGet(p)))
+
+        case SequencePage(_, _, _)                                 =>
+          // An unkown page was shown
+          val effect = loaded.headOption.flatMap { id =>
+            s.view.queue.find(_.id === id).map { s =>
+              val action = SelectIdToDisplay(s.metadata.instrument, id, 0)
+              Effect(Future(action)) >> pageE(action)
+            }
+          }
+          effect.getOrElse(VoidEffect)
 
         case p @ SequenceConfigPage(_, id, _) if sids.contains(id) =>
           // We need to effect to update the reference
           Effect(Future(PageActionP.reverseGet(p)))
 
         case p @ PreviewPage(i, id, st) if sids.contains(id)       =>
-          val isLoaded = s.view.loaded.values.toList.contains(id)
+          val isLoaded = loaded.contains(id)
           // We need to effect to update the reference
           if (isLoaded) {
             val action = SelectIdToDisplay(i, id, st)
-            val pageE = PageActionP.getOption(action).map(p => Effect(Future(NavigateTo(p)))).getOrElse(VoidEffect)
-            Effect(Future(action)) >> pageE
+            Effect(Future(action)) >> pageE(action)
           } else {
             Effect(Future(PageActionP.reverseGet(p)))
           }
 
         case PreviewConfigPage(i, id, st) if sids.contains(id)     =>
-          val isLoaded = s.view.loaded.values.toList.contains(id)
+          val isLoaded = loaded.contains(id)
           // We need to effect to update the reference
           if (isLoaded) {
             Effect(Future(ShowStepConfig(i, id, st)))

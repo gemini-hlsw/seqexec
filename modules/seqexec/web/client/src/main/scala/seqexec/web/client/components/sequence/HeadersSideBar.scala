@@ -76,7 +76,7 @@ object HeadersSideBar {
     def wvChanged(wv: WaterVapor): Callback =
       SeqexecCircuit.dispatchCB(UpdateWaterVapor(wv))
 
-    // scalastyle: off
+    // scalastyle:off
     def render(p: Props, s: State): VdomTagOf[Div] = {
       val enabled = p.model().status.canOperate
       val operatorEV = StateSnapshot(s.operatorText.getOrElse(""))(updateStateOp)
@@ -132,7 +132,7 @@ object HeadersSideBar {
         )
       )
     }
-    // scalastyle: on
+    // scalastyle:on
   }
 
   private val component = ScalaComponent.builder[Props]("HeadersSideBar")
