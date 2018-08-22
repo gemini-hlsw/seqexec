@@ -4,9 +4,7 @@
 package seqexec.server
 
 import cats.tests.CatsSuite
-import monocle.law.discipline.LensTests
 import seqexec.model.enum.Instrument
-import seqexec.model.SharedModelArbitraries._
 import gem.arb.ArbObservation
 import gem.Observation
 
@@ -14,14 +12,6 @@ import gem.Observation
   * Tests SeqexecServer Lenses
   */
 final class SeqexecServerLensesSpec extends CatsSuite with ArbObservation {
-  import SeqexecServerArbitraries._
-
-  checkAll("queues lens", LensTests(EngineState.queues))
-  checkAll("conditions lens", LensTests(EngineState.conditions))
-  checkAll("operator lens", LensTests(EngineState.operator))
-  checkAll("selected lens", LensTests(EngineState.selected))
-  checkAll("selected optional",
-           LensTests(EngineState.selectedML(Instrument.GPI)))
 
   private val seqId = Observation.Id.unsafeFromString("GS-2018B-Q-0-1")
   // Some sanity checks

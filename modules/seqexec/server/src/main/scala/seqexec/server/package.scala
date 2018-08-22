@@ -25,15 +25,12 @@ package server {
   @Lenses
   final case class ObserverSequence(observer: Option[Observer], seq: SequenceGen)
   @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
-  object ObserverSequence {
-    implicit val eq: Eq[ObserverSequence] = Eq.by(x => (x.observer, x.seq))
-  }
+  object ObserverSequence
+
   @Lenses
   final case class EngineState(queues: ExecutionQueues, selected: Map[Instrument, Observation.Id], conditions: Conditions, operator: Option[Operator], sequences: Map[Observation.Id, ObserverSequence], executionState: Engine.State)
   @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object EngineState {
-    implicit val eq: Eq[EngineState] = Eq.by(x => (x.queues, x.selected, x.conditions, x.operator, x.sequences))//, x.executionState))
-
     val default: EngineState = EngineState(Map(CalibrationQueueName -> Nil), Map.empty, Conditions.Default, None, Map.empty, Engine.State.empty)
 
     def selectedML(instrument: Instrument): Lens[EngineState, Option[Observation.Id]] = GenLens[EngineState](_.selected) ^|-> at(instrument)

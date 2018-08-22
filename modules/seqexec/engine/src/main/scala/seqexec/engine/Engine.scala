@@ -108,13 +108,13 @@ class Engine[D, U](stateL: Lens[D, Engine.State]) {
   private def switch(id: Observation.Id)(st: SequenceState): HandleP[Unit] =
     modifyS(id)(s => Sequence.State.status.set(st)(s))
 
-  private def start(id: Observation.Id, clientId: ClientID, f: D => Boolean): HandleP[Unit] =
+  private def start(id: Observation.Id, clientId: ClientID, userCheck: D => Boolean): HandleP[Unit] =
     getS(id).flatMap {
       case Some(seq) =>
         // No resources being used by other running sequences
         if (seq.status.isIdle || seq.status.isError)
           get.flatMap { st =>
-            if (f(st))
+            if (userCheck(st))
               putS(id)(Sequence.State.status.set(SequenceState.Running.init)(seq.skips.getOrElse(seq).rollback)) *>
                 send(Event.executing(id))
             // cannot run sequence
@@ -299,23 +299,23 @@ class Engine[D, U](stateL: Lens[D, Engine.State]) {
   @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
   private def run(ev: EventType)(implicit ec: ExecutionContext): HandleP[D] = {
     def handleUserEvent(ue: UserEventType): HandleP[Unit] = ue match {
-      case Start(id, _, clid, f)      => Logger.debug(s"Engine: Start requested for sequence $id") *> start(id, clid, f)
-      case Pause(id, _)               => Logger.debug("Engine: Pause requested") *> pause(id)
-      case CancelPause(id, _)         => Logger.debug("Engine: Pause canceled") *> cancelPause(id)
-      case Breakpoint(id, _, step, v) => Logger.debug(s"Engine: breakpoint changed for step $step to $v") *>
+      case Start(id, _, clid, userCheck) => Logger.debug(s"Engine: Start requested for sequence $id") *> start(id, clid, userCheck)
+      case Pause(id, _)                  => Logger.debug("Engine: Pause requested") *> pause(id)
+      case CancelPause(id, _)            => Logger.debug("Engine: Pause canceled") *> cancelPause(id)
+      case Breakpoint(id, _, step, v)    => Logger.debug(s"Engine: breakpoint changed for step $step to $v") *>
         modifyS(id)(_.setBreakpoint(step, v))
-      case SkipMark(id, _, step, v)   => Logger.debug(s"Engine: skip mark changed for step $step to $v") *>
+      case SkipMark(id, _, step, v)      => Logger.debug(s"Engine: skip mark changed for step $step to $v") *>
         modifyS(id)(_.setSkipMark(step, v))
-      case Poll(_)                    => Logger.debug("Engine: Polling current state")
-      case GetState(f)                => getState(f)
-      case ModifyState(f, _)          => modify(f)
-      case ModifyStateF(f, _)         => modify(f)
-      case ActionStop(id, f)          => Logger.debug("Engine: Action stop requested") *> actionStop(id, f)
-      case ActionResume(id, i, cont)  => Logger.debug("Engine: Action resume requested") *> actionResume(id, i, cont)
-      case LogDebug(msg)              => Logger.debug(msg)
-      case LogInfo(msg)               => Logger.info(msg)
-      case LogWarning(msg)            => Logger.warning(msg)
-      case LogError(msg)              => Logger.error(msg)
+      case Poll(_)                       => Logger.debug("Engine: Polling current state")
+      case GetState(f)                   => getState(f)
+      case ModifyState(f, _)             => modify(f)
+      case ModifyStateF(f, _)            => modify(f)
+      case ActionStop(id, f)             => Logger.debug("Engine: Action stop requested") *> actionStop(id, f)
+      case ActionResume(id, i, cont)     => Logger.debug("Engine: Action resume requested") *> actionResume(id, i, cont)
+      case LogDebug(msg)                 => Logger.debug(msg)
+      case LogInfo(msg)                  => Logger.info(msg)
+      case LogWarning(msg)               => Logger.warning(msg)
+      case LogError(msg)                 => Logger.error(msg)
     }
 
     def handleSystemEvent(se: SystemEvent): HandleP[Unit] = se match {

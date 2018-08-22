@@ -152,24 +152,30 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
     Scheduler[IO](corePoolSize = 1).flatMap { scheduler =>
       val fd = Duration(settings.odbQueuePollingInterval.toSeconds, TimeUnit.SECONDS)
       scheduler.fixedDelay[IO](fd).evalMap(_ => odbProxy.queuedSequences.value).map { x =>
-        Event.getState[executeEngine.ConcreteTypes](st => x.map(refreshSequenceList(_)(st)).valueOr(r => List(Event.logWarningMsg(SeqexecFailure.explain(r)))).some.filter(_.nonEmpty).map(Stream.emits(_).covary[IO]))
+        Event.getState[executeEngine.ConcreteTypes](st =>
+          x.map(refreshSequenceList(_)(st)).valueOr(r =>
+            List(Event.logWarningMsg(SeqexecFailure.explain(r)))
+          ).some.filter(_.nonEmpty).map(Stream.emits(_).covary[IO])
+        )
       }
     }
 
   def eventStream(q: EventQueue): Stream[IO, SeqexecEvent] = {
     executeEngine.process(q.dequeue.mergeHaltBoth(seqQueueRefreshStream))(EngineState.default).flatMap(x =>
-      Stream.eval(notifyODB(x))).map {
+      Stream.eval(notifyODB(x))).flatMap {
         case (ev, qState) =>
-          toSeqexecEvent(ev, qState)(
+          val sequences = qState.sequences.values.map(
+            s => qState.executionState.sequences.get(s.seq.id).map(x => viewSequence(s, x.toSequence, x))
+          ).collect{ case Some(x) => x }.toList
+          val event = toSeqexecEvent(ev, qState)(
             SequencesQueue(
               EngineState.selected.get(qState),
               EngineState.conditions.get(qState),
               EngineState.operator.get(qState),
-              qState.sequences.values.map(
-                s => qState.executionState.sequences.get(s.seq.id).map(x => viewSequence(s, x.toSequence, x))
-              ).collect{ case Some(x) => x }.toList
+              sequences
             )
           )
+          Stream.eval(updateMetrics[IO](ev, sequences).map(_ => event))
     }
   }
 
@@ -193,9 +199,11 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
     for {
       q   <- st.queues.get(name)
       seq <- st.executionState.sequences.get(seqId)
-    } yield if(!q.status(st).isRunning && !seq.status.isRunning && !seq.status.isCompleted && !q.contains(seqId))
+    } yield {
+      if (!q.status(st).isRunning && !seq.status.isRunning && !seq.status.isCompleted && !q.contains(seqId))
         (EngineState.queues ^|-? index(name)).modify(_ :+ seqId)(st)
       else st
+    }
   ).getOrElse(st)
 
   def addSequenceToQueue(q: EventQueue, queueName: String, seqId: Observation.Id): IO[Either[SeqexecFailure, Unit]] = q.enqueue1(
@@ -250,7 +258,7 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
   private def loadEvents(seqId: Observation.Id): List[executeEngine.EventType] = {
     val t: Either[SeqexecFailure, (List[SeqexecFailure], Option[SequenceGen])] = for {
       odbSeq       <- odbProxy.read(seqId)
-      progIdString <- odbSeq.config.extract(OCS_KEY / InstConstants.PROGRAMID_PROP).as[String].leftMap(ConfigUtilOps.explainExtractError)
+      progIdString <- odbSeq.config.extractAs[String](OCS_KEY / InstConstants.PROGRAMID_PROP).leftMap(ConfigUtilOps.explainExtractError)
       _            <- Either.catchNonFatal(IO.pure(SPProgramID.toProgramID(progIdString))).leftMap(e => SeqexecFailure.SeqexecException(e): SeqexecFailure)
     } yield translator.sequence(seqId, odbSeq)
 
@@ -271,14 +279,14 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
     def instrument(id: Observation.Id): Option[Instrument] = sequences.find(_.id === id).map(_.metadata.instrument)
     (e match {
       // TODO Add metrics for more events
-      case engine.EventUser(ue) => ue match {
+      case engine.EventUser(ue)   => ue match {
         case engine.Start(id, _, _, _) => instrument(id).map(sm.startRunning[F]).getOrElse(Sync[F].unit)
-        case _                      => Sync[F].unit
+        case _                         => Sync[F].unit
       }
       case engine.EventSystem(se) => se match {
         case _ => Sync[F].unit
       }
-      case _ => Sync[F].unit
+      case _                      => Sync[F].unit
     }).flatMap(_ => Sync[F].unit)
   }
 

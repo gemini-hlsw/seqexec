@@ -467,7 +467,7 @@ object SeqTranslate {
   }
 
   private def extractInstrument(config: Config): TrySeq[Instrument] = {
-    config.extract(INSTRUMENT_KEY / INSTRUMENT_NAME_PROP).as[String].asTrySeq.flatMap {
+    config.extractAs[String](INSTRUMENT_KEY / INSTRUMENT_NAME_PROP).asTrySeq.flatMap {
       case Flamingos2.name => TrySeq(Instrument.F2)
       case GmosSouth.name  => TrySeq(Instrument.GmosS)
       case GmosNorth.name  => TrySeq(Instrument.GmosN)

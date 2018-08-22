@@ -18,7 +18,7 @@ sealed trait UserEvent[D<:Engine.Types] {
   def username: String = user.foldMap(_.username)
 }
 
-final case class Start[D<:Engine.Types](id: Observation.Id, user: Option[UserDetails], clientId: ClientID, f: D#StateType => Boolean) extends UserEvent[D]
+final case class Start[D<:Engine.Types](id: Observation.Id, user: Option[UserDetails], clientId: ClientID, userCheck: D#StateType => Boolean) extends UserEvent[D]
 final case class Pause[D<:Engine.Types](id: Observation.Id, user: Option[UserDetails]) extends UserEvent[D]
 final case class CancelPause[D<:Engine.Types](id: Observation.Id, user: Option[UserDetails]) extends UserEvent[D]
 final case class Breakpoint[D<:Engine.Types](id: Observation.Id, user: Option[UserDetails], step: Step.Id, v: Boolean) extends UserEvent[D]

@@ -3,21 +3,22 @@
 
 package seqexec.server
 
-
-import cats.Eq
 import cats.implicits._
 import gem.Observation
 import seqexec.model.StepConfig
 import seqexec.model.enum.{Instrument, Resource}
 import seqexec.engine.{Step => EngineStep}
 
+/*
+ * SequenceGen keeps all the information extracted from the ODB sequence.
+ * It is combined with header parameters to build an engine.Sequence. It allows to rebuild the engine
+ * whenever any of those parameters change.
+ */
 final case class SequenceGen(id: Observation.Id, title: String, instrument: Instrument, steps: List[SequenceGen.Step]) {
   val resources: Set[Resource] = steps.foldMap(_.resources)
 }
 
 object SequenceGen {
-
-  implicit val eq: Eq[SequenceGen] = Eq.by(x => (x.id))
 
   final case class Step(id: Int, config: StepConfig, resources: Set[Resource], generator: HeaderExtraData => EngineStep)
 
