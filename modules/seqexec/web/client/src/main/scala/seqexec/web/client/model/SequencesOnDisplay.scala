@@ -12,6 +12,7 @@ import seqexec.model.SequenceView
 import seqexec.model.enum._
 import seqexec.web.common.Zipper
 import seqexec.web.client.circuit.SequenceObserverFocus
+import seqexec.web.client.ModelOps._
 
 // Model for the tabbed area of sequences
 final case class SequencesOnDisplay(sequences: Zipper[SequenceTab]) {
@@ -146,7 +147,7 @@ final case class SequencesOnDisplay(sequences: Zipper[SequenceTab]) {
 
   def selectedOperator: Option[SequenceObserverFocus] = {
     val f = sequences.focus
-    f.sequence.map { s => SequenceObserverFocus(s.metadata.instrument, s.id, s.metadata.observer) }.filter(_ => !f.isPreview)
+    f.sequence.map { s => SequenceObserverFocus(s.metadata.instrument, s.id, s.allStepsDone, s.metadata.observer) }.filter(_ => !f.isPreview)
   }
 }
 

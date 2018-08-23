@@ -32,7 +32,7 @@ package circuit {
 
   final case class StatusAndLoadedSequencesFocus(status: ClientStatus, sequences: List[SequenceInQueue], tableState: TableState[QueueTableBody.TableColumn]) extends UseValueEq
 
-  final case class SequenceObserverFocus(instrument: Instrument, obsId: Observation.Id, observer: Option[Observer]) extends UseValueEq
+  final case class SequenceObserverFocus(instrument: Instrument, obsId: Observation.Id, completed: Boolean, observer: Option[Observer]) extends UseValueEq
 
   final case class HeaderSideBarFocus(status: ClientStatus, conditions: Conditions, operator: Option[Operator], observer: Either[Observer, SequenceObserverFocus]) extends UseValueEq
 

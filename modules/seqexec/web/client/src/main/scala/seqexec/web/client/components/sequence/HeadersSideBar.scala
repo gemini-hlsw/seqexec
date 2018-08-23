@@ -69,7 +69,7 @@ object HeadersSideBar {
         case (s, p) =>
           p.sequenceObserver match {
             case Right(a) =>
-              Callback.when(a.observer.exists(_.some =!= s.observerText.map(Observer.apply)))(updateObserver(s.observerText.getOrElse("")))
+              Callback.when(a.observer.forall(_.some =!= s.observerText.map(Observer.apply)))(updateObserver(s.observerText.getOrElse("")))
             case Left(o) =>
               Callback.when(o.some =!= s.observerText.map(Observer.apply))(updateObserver(s.observerText.getOrElse("")))
           }
@@ -93,6 +93,7 @@ object HeadersSideBar {
       val operatorEV = StateSnapshot(s.operatorText.getOrElse(""))(updateStateOp)
       val observerEV = StateSnapshot(s.observerText.getOrElse(""))(updateStateOb)
       val instrument = p.sequenceObserver.map(i => i.instrument.show).getOrElse("Default")
+      val obsCompleted = p.sequenceObserver.map(_.completed).getOrElse(false)
       val observerField = s"Observer - $instrument"
       <.div(
         ^.cls := "ui secondary segment",
@@ -121,7 +122,7 @@ object HeadersSideBar {
                 InputEV.Props("observer", "observer",
                   observerEV,
                   placeholder = "Observer...",
-                  disabled = !enabled,
+                  disabled = !enabled || obsCompleted,
                   onBlur = _ => submitIfChangedOb
                 )
               )
