@@ -85,5 +85,9 @@ object ConfigUtilOps {
   implicit class ConfigSequenceOps(val c: ConfigSequence) extends AnyVal {
     // config syntax: cfgSequence.extract(key).as[Type]
     def extract(key: ItemKey): Extracted[ConfigSequence] = new Extracted(c, key)
+
+    // config syntax: cfgSequence.extractAs[Type](key)
+    def extractAs[A](key: ItemKey)(implicit clazz: ClassTag[A]): Either[ExtractFailure, A] =
+      new Extracted(c, key).as[A]
   }
 }

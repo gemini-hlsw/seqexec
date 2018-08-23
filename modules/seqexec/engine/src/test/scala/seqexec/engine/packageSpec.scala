@@ -5,22 +5,20 @@ package seqexec.engine
 
 import java.util.UUID
 import seqexec.engine.Sequence.State.Final
-import seqexec.model.{ StepConfig, StepState, Operator, SequenceState, SequenceMetadata }
-import seqexec.model.enum.Instrument.{F2, GmosS}
-import seqexec.model.enum.Resource
+import seqexec.model.{StepState, SequenceState}
+import seqexec.model.enum.Instrument.GmosS
 import seqexec.model.enum.Resource.TCS
 import seqexec.model.{ActionType, UserDetails}
 import fs2.async
 import fs2.async.mutable.Semaphore
 import fs2.Stream
 import gem.Observation
-import cats.data.Kleisli
 import cats.implicits._
 import cats.effect._
 import monocle.Lens
-import monocle.macros.GenLens
 import org.scalatest.Inside.inside
 import org.scalatest.{FlatSpec, NonImplicitAssertions}
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
@@ -59,24 +57,21 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
     _ <- IO(Thread.sleep(100))
   } yield Result.Error("There was an error in this action"))
 
+  private def always[D]: D => Boolean = _ => true
+
   val executions: List[List[Action]] = List(List(configureTcs, configureInst), List(observe))
-  val config: StepConfig = Map()
   val seqId: Observation.Id = Observation.Id.unsafeFromString("GS-2019A-Q-0-1")
-  val qs1: Engine.State[Unit] =
-    Engine.State[Unit](
-      userData = (),
+  val qs1: Engine.State =
+    Engine.State(
       sequences = Map(
         (seqId,
           Sequence.State.init(
             Sequence(
               id = Observation.Id.unsafeFromString("GS-2018B-Q-0-2"),
-              metadata = SequenceMetadata(F2, None, ""),
               steps = List(
                 Step.init(
                   id = 1,
                   fileId = None,
-                  config = config,
-                  resources = Set(Resource.TCS, F2),
                   executions = List(
                     List(configureTcs, configureInst), // Execution
                     List(observe) // Execution
@@ -85,8 +80,6 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
                 Step.init(
                   id = 2,
                   fileId = None,
-                  config = config,
-                  resources = Set(Resource.TCS, Resource.OI, F2),
                   executions = executions
                 )
               )
@@ -96,32 +89,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
       )
     )
 
-  private val seqG =
-    Sequence.State.init(
-      Sequence(
-        id = Observation.Id.unsafeFromString("GS-2018B-Q-0-3"),
-        metadata = SequenceMetadata(GmosS, None, ""),
-        steps = List(
-          Step.init(
-            1,
-            fileId = None,
-            config = config,
-            resources = Set(GmosS),
-            executions = executions
-          )
-        )
-      )
-    )
-
-  implicit object UnitCanGenerateActionMetadata extends ActionMetadataGenerator[Unit] {
-    override def generate(a: Unit)(v: ActionMetadata): ActionMetadata = v
-  }
-  private val executionEngine = new Engine[Unit, Unit]
-  private val seqId1 = seqId
-  private val seqId2 = Observation.Id.unsafeFromString("GS-2018A-Q-2-2")
-  private val seqId3 = Observation.Id.unsafeFromString("GS-2018A-Q-2-3")
-  private val qs2 = Engine.State[Unit]((), qs1.sequences + (seqId2 -> qs1.sequences(seqId1)))
-  private val qs3 = Engine.State[Unit]((), qs2.sequences + (seqId3 -> seqG))
+  private val executionEngine = new Engine[Engine.State, Unit](Lens.id)
   private val user = UserDetails("telops", "Telops")
 
   def isFinished(status: SequenceState): Boolean = status match {
@@ -132,14 +100,14 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
-  def runToCompletion(s0: Engine.State[Unit]): Option[Engine.State[Unit]] = {
-    executionEngine.process(Stream.eval(IO.pure(Event.start(seqId, user, UUID.randomUUID()))))(s0).drop(1).takeThrough(
+  def runToCompletion(s0: Engine.State): Option[Engine.State] = {
+    executionEngine.process(Stream.eval(IO.pure(Event.start[executionEngine.ConcreteTypes](seqId, user, UUID.randomUUID(), always))))(s0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
     ).compile.last.unsafeRunSync.map(_._2)
   }
 
   it should "be in Running status after starting" in {
-    val p = Stream.eval(IO.pure(Event.start(seqId, user, UUID.randomUUID())))
+    val p = Stream.eval(IO.pure(Event.start[executionEngine.ConcreteTypes](seqId, user, UUID.randomUUID(), always)))
     val qs = executionEngine.process(p)(qs1).take(1).compile.last.unsafeRunSync.map(_._2)
     assert(qs.exists(s => Sequence.State.isRunning(s.sequences(seqId))))
   }
@@ -154,26 +122,23 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
     assert(qs.exists(_.sequences(seqId).done.length === 2))
   }
 
-  private def actionPause: Option[Engine.State[Unit]] = {
-    val s0: Engine.State[Unit] = Engine.State[Unit]((),
-      Map((seqId, Sequence.State.init(Sequence(
+  private def actionPause: Option[Engine.State] = {
+    val s0: Engine.State = Engine.State(
+      Map(seqId -> Sequence.State.init(Sequence(
         id = Observation.Id.unsafeFromString("GS-2018B-Q-0-1"),
-        metadata = SequenceMetadata(GmosS, None, ""),
         steps = List(
           Step.init(
             id = 1,
             fileId = None,
-            config = config,
-            resources = Set(GmosS),
             executions = List(
               List(fromIO(ActionType.Undefined,
                 IO(Result.Paused(new Result.PauseContext {}))))
             )
           )
         )
-      ) ) ) )
+      ) ) )
     )
-    val p = Stream.eval(IO.pure(Event.start(seqId, user, UUID.randomUUID())))
+    val p = Stream.eval(IO.pure(Event.start[executionEngine.ConcreteTypes](seqId, user, UUID.randomUUID(), always)))
 
     //take(3): Start, Executing, Paused
     executionEngine.process(p)(s0).take(3).compile.last.unsafeRunSync.map(_._2)
@@ -200,37 +165,19 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
 
   }
 
-  it should "not run 2nd sequence because it's using the same resource" in {
-    val p = Stream.emits(List(Event.start(seqId1, user, UUID.randomUUID()), Event.start(seqId2, user, UUID.randomUUID()))).evalMap(IO.pure(_))
-    assert(
-      executionEngine.process(p)(qs2).take(6).compile.last.unsafeRunSync.map(_._2.sequences(seqId2)).exists(_.status === SequenceState.Idle)
-    )
-  }
-
-  it should "run 2nd sequence when there are no shared resources" in {
-    val p = Stream.emits(List(Event.start(seqId1, user, UUID.randomUUID()), Event.start(seqId3, user, UUID.randomUUID()))).evalMap(IO.pure(_))
-
-    assert(
-      executionEngine.process(p)(qs3).take(6).compile.last.unsafeRunSync.exists(t => Sequence.State.isRunning(t._2.sequences(seqId3)))
-    )
-  }
-
   "engine" should "keep processing input messages regardless of how long Actions take" in {
     val result = (for {
       q           <- Stream.eval(async.boundedQueue[IO, executionEngine.EventType](1))
       startedFlag <- Stream.eval(Semaphore.apply[IO](0))
       finishFlag  <- Stream.eval(Semaphore.apply[IO](0))
       r           <- {
-        val qs = Engine.State[Unit]((),
-          Map((seqId, Sequence.State.init(Sequence(
+        val qs = Engine.State(
+          Map(seqId -> Sequence.State.init(Sequence(
             id = Observation.Id.unsafeFromString("GS-2018B-Q-0-2"),
-            metadata = SequenceMetadata(GmosS, None, ""),
             steps = List(
               Step.init(
                 id = 1,
                 fileId = None,
-                config = config,
-                resources = Set(GmosS),
                 executions = List(
                   List(fromIO(ActionType.Configure(TCS),
                     startedFlag.increment *> finishFlag.decrement *> IO.pure(Result.OK(Result.Configured(TCS)))
@@ -238,40 +185,38 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
                 )
               )
             )
-          ))))
+          )))
         )
         Stream.eval(List(
           List[IO[Unit]](
-            q.enqueue1(Event.start(seqId, user, UUID.randomUUID())),
+            q.enqueue1(Event.start[executionEngine.ConcreteTypes](seqId, user, UUID.randomUUID(), always)),
             startedFlag.decrement,
             q.enqueue1(Event.nullEvent),
-            q.enqueue1(Event.getState[executionEngine.ConcreteTypes] { _ => finishFlag.increment *> IO.apply(None) })
+            q.enqueue1(Event.getState[executionEngine.ConcreteTypes] { _ => Stream.eval(finishFlag.increment).map(_ => Event.nullEvent).some })
           ).sequence,
           executionEngine.process(q.dequeue)(qs).drop(1).takeThrough(a => !isFinished(a._2.sequences(seqId).status)).compile.drain
         ).parSequence)
       }
     } yield r ).compile.last.unsafeRunTimed(5.seconds).flatten
 
-    assert(!result.isEmpty)
+    assert(result.isDefined)
   }
 
   "engine" should "not capture runtime exceptions." in {
     @SuppressWarnings(Array("org.wartremover.warts.Throw"))
-    def s0(e: Throwable): Engine.State[Unit] = Engine.State[Unit]((),
+    def s0(e: Throwable): Engine.State = Engine.State(
       Map((seqId, Sequence.State.init(Sequence(
         id = Observation.Id.unsafeFromString("GS-2018B-Q-0-4"),
-        metadata = SequenceMetadata(GmosS, None, ""),
         steps = List(
           Step.init(
             id = 1,
             fileId = None,
-            config = config,
-            resources = Set(GmosS),
             executions = List(
               List(fromIO(ActionType.Undefined,
                 IO.apply {
                   throw e
-                }))
+                }
+              ) )
             )
           )
         )
@@ -283,63 +228,14 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
     )
   }
 
-  case class DummyData(operator: Option[Operator])
-  implicit object DummyDataCanGenerateActionMetadata extends ActionMetadataGenerator[DummyData] {
-    override def generate(a: DummyData)(v: ActionMetadata): ActionMetadata = v.copy(operator = a.operator)
-  }
-  private val executionEngine2 = new Engine[DummyData, Unit]
-  case class DummyResult(operator: Option[Operator]) extends Result.RetVal
-  private val operatorL: Lens[DummyData, Option[Operator]] = GenLens[DummyData](_.operator)
-
-  "engine" should "pass parameters to Actions." in {
-
-    def setOperator(op: Operator): executionEngine2.StateType => executionEngine2.StateType = (Engine.State.userData[DummyData] ^|-> operatorL).set(op.some)
-
-    val opName = Operator("John")
-
-    val p = Stream.emits(List(Event.modifyState[executionEngine2.ConcreteTypes](setOperator(opName), ()), Event.start(seqId1, user, UUID.randomUUID()))).evalMap(IO.pure(_))
-    val s0 = Engine.State[DummyData](DummyData(None),
-      Map((seqId, Sequence.State.init(Sequence(
-        id = Observation.Id.unsafeFromString("GS-2018B-Q-0-5"),
-        metadata = SequenceMetadata(GmosS, None, ""),
-        steps = List(
-          Step.init(
-            id = 1,
-            fileId = None,
-            config = config,
-            resources = Set(GmosS),
-            executions = List(
-              List(Action(ActionType.Undefined, Kleisli(v => IO(Result.OK(DummyResult(v.operator)))), Action.State(Action.Idle, Nil)))
-            )
-          )
-        )
-      ) ) ) )
-    )
-
-    val sf = executionEngine2.process(p)(s0).drop(3).takeThrough(
-      a => !isFinished(a._2.sequences(seqId).status)
-    ).compile.last.unsafeRunSync.map(_._2)
-
-    assertResult(Some(Action.Completed(DummyResult(Some(opName))))){
-      for {
-        st <- sf
-        sq <- st.sequences.get(seqId)
-        st <- sq.done.headOption
-        as <- st.executions.headOption
-        ac <- as.headOption
-      } yield ac.state.runState
-    }
-  }
-
   it should "skip steps marked to be skipped at the beginning of the sequence." in {
-    val s0: Engine.State[Unit] = Engine.State[Unit]((),
+    val s0: Engine.State = Engine.State(
       Map((seqId, Sequence.State.init(Sequence(
         id = Observation.Id.unsafeFromString("GS-2018B-Q-0-6"),
-        metadata = SequenceMetadata(GmosS, None, ""),
         steps = List(
-          Step.init(id = 1, fileId = None, config = config, resources = Set(GmosS), executions = executions).copy(skipMark = Step.SkipMark(true)),
-          Step.init(id = 2, fileId = None, config = config, resources = Set(GmosS), executions = executions),
-          Step.init(id = 3, fileId = None, config = config, resources = Set(GmosS), executions = executions)
+          Step.init(id = 1, fileId = None, executions = executions).copy(skipMark = Step.SkipMark(true)),
+          Step.init(id = 2, fileId = None, executions = executions),
+          Step.init(id = 3, fileId = None, executions = executions)
         )
       ) ) ) )
     )
@@ -352,14 +248,13 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   }
 
   it should "skip steps marked to be skipped in the middle of the sequence." in {
-    val s0: Engine.State[Unit] = Engine.State[Unit]((),
+    val s0: Engine.State = Engine.State(
       Map((seqId, Sequence.State.init(Sequence(
         id = Observation.Id.unsafeFromString("GS-2018B-Q-0-7"),
-        metadata = SequenceMetadata(GmosS, None, ""),
         steps = List(
-          Step.init(id = 1, fileId = None, config = config, resources = Set(GmosS), executions = executions),
-          Step.init(id = 2, fileId = None, config = config, resources = Set(GmosS), executions = executions).copy(skipMark = Step.SkipMark(true)),
-          Step.init(id = 3, fileId = None, config = config, resources = Set(GmosS), executions = executions)
+          Step.init(id = 1, fileId = None, executions = executions),
+          Step.init(id = 2, fileId = None, executions = executions).copy(skipMark = Step.SkipMark(true)),
+          Step.init(id = 3, fileId = None, executions = executions)
         )
       ) ) ) )
     )
@@ -372,16 +267,15 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   }
 
   it should "skip several steps marked to be skipped." in {
-    val s0: Engine.State[Unit] = Engine.State[Unit]((),
+    val s0: Engine.State = Engine.State(
       Map((seqId, Sequence.State.init(Sequence(
         id = Observation.Id.unsafeFromString("GS-2018B-Q-0-8"),
-        metadata = SequenceMetadata(GmosS, None, ""),
         steps = List(
-          Step.init(id = 1, fileId = None, config = config, resources = Set(GmosS), executions = executions),
-          Step.init(id = 2, fileId = None, config = config, resources = Set(GmosS), executions = executions).copy(skipMark = Step.SkipMark(true)),
-          Step.init(id = 3, fileId = None, config = config, resources = Set(GmosS), executions = executions).copy(skipMark = Step.SkipMark(true)),
-          Step.init(id = 4, fileId = None, config = config, resources = Set(GmosS), executions = executions).copy(skipMark = Step.SkipMark(true)),
-          Step.init(id = 5, fileId = None, config = config, resources = Set(GmosS), executions = executions)
+          Step.init(id = 1, fileId = None, executions = executions),
+          Step.init(id = 2, fileId = None, executions = executions).copy(skipMark = Step.SkipMark(true)),
+          Step.init(id = 3, fileId = None, executions = executions).copy(skipMark = Step.SkipMark(true)),
+          Step.init(id = 4, fileId = None, executions = executions).copy(skipMark = Step.SkipMark(true)),
+          Step.init(id = 5, fileId = None, executions = executions)
         )
       ) ) ) )
     )
@@ -394,14 +288,13 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   }
 
   it should "skip steps marked to be skipped at the end of the sequence." in {
-    val s0: Engine.State[Unit] = Engine.State[Unit]((),
+    val s0: Engine.State = Engine.State(
       Map((seqId, Sequence.State.init(Sequence(
         id = Observation.Id.unsafeFromString("GS-2018B-Q-0-9"),
-        metadata = SequenceMetadata(GmosS, None, ""),
         steps = List(
-          Step.init(id = 1, fileId = None, config = config, resources = Set(GmosS), executions = executions),
-          Step.init(id = 2, fileId = None, config = config, resources = Set(GmosS), executions = executions),
-          Step.init(id = 3, fileId = None, config = config, resources = Set(GmosS), executions = executions).copy(skipMark = Step.SkipMark(true))
+          Step.init(id = 1, fileId = None, executions = executions),
+          Step.init(id = 2, fileId = None, executions = executions),
+          Step.init(id = 3, fileId = None, executions = executions).copy(skipMark = Step.SkipMark(true))
         )
       ) ) ) )
     )
@@ -415,12 +308,11 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   }
 
   it should "skip a step marked to be skipped even if it is the only one." in {
-    val s0: Engine.State[Unit] = Engine.State[Unit]((),
+    val s0: Engine.State = Engine.State(
       Map((seqId, Sequence.State.init(Sequence(
         id = Observation.Id.unsafeFromString("GS-2018B-Q-0-10"),
-        metadata = SequenceMetadata(GmosS, None, ""),
         steps = List(
-          Step.init(id = 1, fileId = None, config = config, resources = Set(GmosS), executions = executions).copy(skipMark = Step.SkipMark(true))
+          Step.init(id = 1, fileId = None, executions = executions).copy(skipMark = Step.SkipMark(true))
         )
       ) ) ) )
     )
@@ -433,15 +325,14 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   }
 
   it should "skip steps marked to be skipped at the beginning of the sequence, even if they have breakpoints." in {
-    val s0: Engine.State[Unit] = Engine.State[Unit]((),
+    val s0: Engine.State = Engine.State(
       Map((seqId, Sequence.State.init(Sequence(
         id = Observation.Id.unsafeFromString("GS-2018B-Q-0-11"),
-        metadata = SequenceMetadata(GmosS, None, ""),
         steps = List(
-          Step.init(id = 1, fileId = None, config = config, resources = Set(GmosS), executions = executions).copy(skipMark = Step.SkipMark(true)),
-          Step.init(id = 2, fileId = None, config = config, resources = Set(GmosS), executions = executions).copy(skipMark = Step.SkipMark(true),
+          Step.init(id = 1, fileId = None, executions = executions).copy(skipMark = Step.SkipMark(true)),
+          Step.init(id = 2, fileId = None, executions = executions).copy(skipMark = Step.SkipMark(true),
             breakpoint = Step.BreakpointMark(true)),
-          Step.init(id = 3, fileId = None, config = config, resources = Set(GmosS), executions = executions)
+          Step.init(id = 3, fileId = None, executions = executions)
         )
       ) ) ) )
     )
@@ -454,15 +345,14 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   }
 
   it should "skip the leading steps if marked to be skipped, even if they have breakpoints and are the last ones." in {
-    val s0: Engine.State[Unit] = Engine.State[Unit]((),
+    val s0: Engine.State = Engine.State(
       Map((seqId, Sequence.State.init(Sequence(
         Observation.Id.unsafeFromString("GS-2019A-Q-3"),
-        metadata = SequenceMetadata(GmosS, None, ""),
         steps = List(
-          Step.init(id = 1, fileId = None, config = config, resources = Set(GmosS), executions = executions).copy(skipped = Step.Skipped(true)),
-          Step.init(id = 2, fileId = None, config = config, resources = Set(GmosS), executions = executions).copy(skipMark = Step.SkipMark(true),
+          Step.init(id = 1, fileId = None, executions = executions).copy(skipped = Step.Skipped(true)),
+          Step.init(id = 2, fileId = None, executions = executions).copy(skipMark = Step.SkipMark(true),
             breakpoint = Step.BreakpointMark(true)),
-          Step.init(id = 2, fileId = None, config = config, resources = Set(GmosS), executions = executions).copy(skipMark = Step.SkipMark(true),
+          Step.init(id = 2, fileId = None, executions = executions).copy(skipMark = Step.SkipMark(true),
             breakpoint = Step.BreakpointMark(true))
         )
       ) ) ) )
@@ -477,16 +367,15 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   }
 
   it should "skip steps marked to be skipped in the middle of the sequence, but honoring breakpoints." in {
-    val s0: Engine.State[Unit] = Engine.State[Unit]((),
+    val s0: Engine.State = Engine.State(
       Map((seqId, Sequence.State.init(Sequence(
         id = Observation.Id.unsafeFromString("GS-2018B-Q-0-12"),
-        metadata = SequenceMetadata(GmosS, None, ""),
         steps = List(
-          Step.init(id = 1, fileId = None, config = config, resources = Set(GmosS), executions = executions),
-          Step.init(id = 2, fileId = None, config = config, resources = Set(GmosS), executions = executions).copy(skipMark = Step.SkipMark(true)),
-          Step.init(id = 3, fileId = None, config = config, resources = Set(GmosS), executions = executions).copy(skipMark = Step.SkipMark(true),
+          Step.init(id = 1, fileId = None, executions = executions),
+          Step.init(id = 2, fileId = None, executions = executions).copy(skipMark = Step.SkipMark(true)),
+          Step.init(id = 3, fileId = None, executions = executions).copy(skipMark = Step.SkipMark(true),
             breakpoint = Step.BreakpointMark(true)),
-          Step.init(id = 4, fileId = None, config = config, resources = Set(GmosS), executions = executions)
+          Step.init(id = 4, fileId = None, executions = executions)
         )
       ) ) ) )
     )

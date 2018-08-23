@@ -5,15 +5,15 @@ package seqexec.server
 
 import java.time.LocalDate
 
-import cats.data.Kleisli
+import cats.implicits._
 import cats.effect._
 import giapi.client.Giapi
 import giapi.client.gpi.GPIClient
 import gem.Observation
 import gem.enum.Site
-import seqexec.engine.{Action, Result, Sequence, Step}
+import seqexec.engine.{Engine, Action, Result, Sequence, Step}
 import seqexec.model.enum.Instrument.GmosS
-import seqexec.model.{ StepConfig, ActionType, SequenceMetadata, SequenceState }
+import seqexec.model.{ StepConfig, ActionType, SequenceState }
 import seqexec.server.SeqTranslate.ObserveContext
 import seqexec.server.keywords.DhsClientSim
 import seqexec.server.keywords.GDSClient
@@ -27,6 +27,7 @@ import edu.gemini.spModel.core.Peer
 import org.scalatest.FlatSpec
 import org.http4s.Uri._
 import squants.time.Seconds
+import monocle.Monocle._
 
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 @SuppressWarnings(Array("org.wartremover.warts.Throw"))
@@ -35,33 +36,38 @@ class SeqTranslateSpec extends FlatSpec {
   private val config: StepConfig = Map()
   private val fileId = "DummyFileId"
   private val seqId = Observation.Id.unsafeFromString("GS-2018A-Q-1-1")
-  private def observeActions(state: Action.ActionState): List[Action] = List(Action(ActionType.Observe, Kleisli(v => IO(Result.OK(Result.Observed(fileId)))), Action.State(state, Nil)))
-  private val s: Sequence.State = Sequence.State.status.set(SequenceState.Running.init)(Sequence.State.init(Sequence(
+  private def observeActions(state: Action.ActionState): List[Action] = List(Action(ActionType.Observe, IO(Result.OK(Result.Observed(fileId))), Action.State(state, Nil)))
+  private val seqg = SequenceGen(
     seqId,
-    SequenceMetadata(GmosS, None, ""),
-    List(
-      Step.init(
+    "",
+    GmosS,
+    List(SequenceGen.Step(
+      1,
+      config,
+      Set(GmosS),
+      _ => Step.init(
         1,
         None,
-        config,
-        Set(GmosS),
         List(observeActions(Action.Idle))
       )
-    )
-  ) ) )
+    ))
+  )
+
+  private val baseState: EngineState = (SeqexecEngine.loadSequenceEndo(seqId, seqg) >>>
+    (EngineState.executionState ^|-> Engine.State.sequences ^|-? index[Map[Observation.Id,Sequence.State], Observation.Id, Sequence.State](seqId) ^|-> Sequence.State.status).set(SequenceState.Running.init))(EngineState.default)
 
   // Observe started
-  private val s0: Sequence.State = s.start(0)
+  private val s0: EngineState = (EngineState.executionState ^|-> Engine.State.sequences ^|-? index(seqId)).modify(_.start(0))(baseState)
   // Observe pending
-  private val s1: Sequence.State = s
+  private val s1: EngineState = baseState
   // Observe completed
-  private val s2: Sequence.State = s.mark(0)(Result.OK(Result.Observed(fileId)))
+  private val s2: EngineState = (EngineState.executionState ^|-> Engine.State.sequences ^|-? index(seqId)).modify(_.mark(0)(Result.OK(Result.Observed(fileId))))(baseState)
   // Observe started, but with file Id already allocated
-  private val s3: Sequence.State = s.start(0).mark(0)(Result.Partial(Result.FileIdAllocated(fileId), Kleisli(_ => IO(Result.OK(Result.Observed(fileId))))))
+  private val s3: EngineState = (EngineState.executionState ^|-> Engine.State.sequences ^|-? index(seqId)).modify(_.start(0).mark(0)(Result.Partial(Result.FileIdAllocated(fileId), IO(Result.OK(Result.Observed(fileId))))))(baseState)
   // Observe paused
-  private val s4: Sequence.State = s.mark(0)(Result.Paused(ObserveContext(_ => SeqAction(Result.OK(Result.Observed(fileId))), Seconds(1))))
+  private val s4: EngineState = (EngineState.executionState ^|-> Engine.State.sequences ^|-? index(seqId)).modify(_.mark(0)(Result.Paused(ObserveContext(_ => SeqAction(Result.OK(Result.Observed(fileId))), Seconds(1)))))(baseState)
   // Observe failed
-  private val s5: Sequence.State = s.mark(0)(Result.Error("error"))
+  private val s5: EngineState = (EngineState.executionState ^|-> Engine.State.sequences ^|-? index(seqId)).modify(_.mark(0)(Result.Error("error")))(baseState)
 
   private val systems = SeqTranslate.Systems(
     new ODBProxy(new Peer("localhost", 8443, null), ODBProxy.DummyOdbCommands),

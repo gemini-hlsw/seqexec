@@ -4,9 +4,10 @@
 package seqexec.engine
 
 import java.util.UUID
-import seqexec.model.{ SequenceMetadata, SequenceState, StepConfig }
-import seqexec.model.enum.Instrument.F2
+
+import seqexec.model.SequenceState
 import seqexec.model.{ActionType, UserDetails}
+
 import scala.Function.const
 import org.scalatest.FlatSpec
 import org.scalatest.Inside.inside
@@ -19,6 +20,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 class SequenceSpec extends FlatSpec {
+
   private val seqId = Observation.Id.unsafeFromString("GS-2018A-Q-0-1")
 
   // All tests check the output of running a sequence against the expected sequence of updates.
@@ -52,19 +54,15 @@ class SequenceSpec extends FlatSpec {
 
   }
 
-  private val metadata = SequenceMetadata(F2, None, "")
   private val user = UserDetails("telops", "Telops")
-  implicit object UnitCanGenerateActionMetadata extends ActionMetadataGenerator[Unit] {
-    override def generate(a: Unit)(v: ActionMetadata): ActionMetadata = v
-  }
-  private val executionEngine = new Engine[Unit, Unit]
+  private val executionEngine = new Engine[Engine.State, Unit](monocle.Lens.id)
+
+  private def always[D]: D => Boolean = _ => true
 
   def simpleStep(id: Int, breakpoint: Boolean): Step =
     Step.init(
       id = id,
       fileId = None,
-      config = config,
-      resources = Set.empty,
       executions = List(
         List(action, action), // Execution
         List(action) // Execution
@@ -78,23 +76,21 @@ class SequenceSpec extends FlatSpec {
     case _                       => false
   }
 
-  def runToCompletion(s0: Engine.State[Unit]): Option[Engine.State[Unit]] = {
-    executionEngine.process(Stream.eval(IO.pure(Event.start(seqId, user, UUID.randomUUID))))(s0).drop(1).takeThrough(
+  def runToCompletion(s0: Engine.State): Option[Engine.State] = {
+    executionEngine.process(Stream.eval(IO.pure(Event.start[executionEngine.ConcreteTypes](seqId, user, UUID.randomUUID, always))))(s0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
     ).compile.last.unsafeRunSync.map(_._2)
   }
 
   it should "stop on breakpoints" in {
 
-    val qs0: Engine.State[Unit] =
-      Engine.State[Unit](
-        userData = (),
+    val qs0: Engine.State =
+      Engine.State(
         sequences = Map(
           (seqId,
             Sequence.State.init(
               Sequence(
                 id = seqId,
-                metadata = SequenceMetadata(F2, None, ""),
                 steps = List(simpleStep(1, breakpoint = false), simpleStep(2, breakpoint = true))
               )
             )
@@ -114,15 +110,13 @@ class SequenceSpec extends FlatSpec {
 
   it should "resume execution to completion after a breakpoint" in {
 
-    val qs0: Engine.State[Unit] =
-      Engine.State[Unit](
-        userData = (),
+    val qs0: Engine.State =
+      Engine.State(
         sequences = Map(
           (seqId,
             Sequence.State.init(
               Sequence(
                 id = seqId,
-                metadata = SequenceMetadata(F2, None, ""),
                 steps = List(simpleStep(1, breakpoint = false), simpleStep(2, breakpoint = true), simpleStep(3, breakpoint = false))
               )
             )
@@ -153,14 +147,13 @@ class SequenceSpec extends FlatSpec {
   private val result: Result = Result.OK(observeResult)
   private val action: Action = fromIO(ActionType.Undefined, IO(result))
   private val completedAction: Action = action.copy(state = Action.State(Action.Completed(observeResult), Nil))
-  private val config: StepConfig = Map()
   def simpleStep2(pending: List[Actions], focus: Execution, done: List[Results]): Step.Zipper = {
     val rollback: (Execution, List[Actions]) =  done.map(_.map(const(action))) ++ List(focus.execution.map(const(action))) ++ pending match {
       case Nil => (Execution.empty, Nil)
       case x::xs => (Execution(x), xs)
     }
 
-    Step.Zipper(1, None, config, Set.empty, breakpoint = Step.BreakpointMark(false), Step.SkipMark(false), pending, focus, done.map(_.map{r =>
+    Step.Zipper(1, None, breakpoint = Step.BreakpointMark(false), Step.SkipMark(false), pending, focus, done.map(_.map{r =>
       val x = fromIO(ActionType.Observe, IO(r))
       x.copy(state = Execution.actionStateFromResult(r)(x.state))
     }), rollback)
@@ -174,7 +167,7 @@ class SequenceSpec extends FlatSpec {
   val stepzar0: Step.Zipper = simpleStep2(Nil, Execution(List(completedAction, action)), Nil)
   val stepzar1: Step.Zipper = simpleStep2(List(List(action)), Execution(List(completedAction, completedAction)), List(List(result)))
 
-  def simpleSequenceZipper(focus: Step.Zipper): Sequence.Zipper = Sequence.Zipper(seqId, metadata, Nil, focus, Nil)
+  def simpleSequenceZipper(focus: Step.Zipper): Sequence.Zipper = Sequence.Zipper(seqId, Nil, focus, Nil)
   val seqz0: Sequence.Zipper   = simpleSequenceZipper(stepz0)
   val seqza0: Sequence.Zipper  = simpleSequenceZipper(stepza0)
   val seqza1: Sequence.Zipper  = simpleSequenceZipper(stepza1)
