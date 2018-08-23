@@ -9,6 +9,7 @@ import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.component.builder.Lifecycle.RenderScope
 import japgolly.scalajs.react.vdom.html_<^._
+import japgolly.scalajs.react.extra.Reusability
 import japgolly.scalajs.react._
 import seqexec.model.{Observer, UserDetails, SequenceState}
 import seqexec.model.enum.Instrument
@@ -22,11 +23,15 @@ import seqexec.web.client.semanticui.elements.label.Label
 import seqexec.web.client.semanticui.elements.button.Button
 import seqexec.web.client.semanticui.elements.popup.Popup
 import seqexec.web.client.components.SeqexecStyles
+import seqexec.web.client.reusability._
 import web.client.style._
 
 object InstrumentTab {
   final case class Props(router: RouterCtl[SeqexecPages], tab: AvailableTab, loggedIn: Boolean, user: Option[UserDetails])
   final case class State(loading: Boolean)
+
+  implicit val propsReuse: Reusability[Props] = Reusability.by(x => (x.tab, x.loggedIn, x.user))
+  implicit val stateReuse: Reusability[State] = Reusability.by(_.loading)
 
   type Backend = RenderScope[Props, State, Unit]
 
@@ -147,7 +152,16 @@ object InstrumentTab {
         )
 
       linkTo(b.props, linkPage)(if (isPreview) previewTabContent else tabContent)
-    }.build
+    }
+    .componentWillReceiveProps { f =>
+      val preview = f.nextProps.tab.isPreview
+      val id = f.nextProps.tab.id
+      val newId = f.currentProps.tab.id
+      // Reset the loading state if the id changes
+      Callback.when(preview && id =!= newId)(f.setState(State(false)))
+    }
+    .configure(Reusability.shouldComponentUpdate)
+    .build
 
   def apply(p: Props): Unmounted[Props, State, Unit] = component(p)
 }
@@ -156,6 +170,8 @@ object InstrumentTab {
   */
 object InstrumentsTabs {
   final case class Props(router: RouterCtl[SeqexecPages], loggedIn: Boolean)
+
+  implicit val propsReuse: Reusability[Props] = Reusability.by(_.loggedIn)
 
   private val component = ScalaComponent.builder[Props]("InstrumentsMenu")
     .stateless
@@ -171,7 +187,9 @@ object InstrumentsTabs {
           <.div()
         }
       }
-    ).build
+    )
+    .configure(Reusability.shouldComponentUpdate)
+    .build
 
   def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
 }
