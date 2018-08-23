@@ -7,13 +7,12 @@ import cats.implicits._
 import diode.{Action, ActionHandler, ActionResult, Effect, ModelRW, NoAction}
 import gem.Observation
 import gem.enum.Site
-import seqexec.model.{ Operator, SequencesQueue, SequenceView, UserDetails }
+import seqexec.model.{ Observer, Operator, SequencesQueue, SequenceView }
 import seqexec.web.client.model._
 import seqexec.web.client.ModelOps._
 import seqexec.web.client.actions._
 import seqexec.web.client.circuit._
 import seqexec.web.client.services.SeqexecWebClient
-import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
 /**
@@ -37,7 +36,6 @@ class SyncRequestsHandler[M](modelRW: ModelRW[M, Boolean]) extends ActionHandler
     List(handleSyncRequestOperation,
       handleSyncResult).combineAll
 }
-
 
 /**
   * Handles sequence execution actions
@@ -99,26 +97,6 @@ class ModalBoxHandler[M](openAction: Action, closeAction: Action, modelRW: Model
 }
 
 /**
-  * Handles actions related to opening/closing the login box
-  */
-class UserLoginHandler[M](modelRW: ModelRW[M, Option[UserDetails]]) extends ActionHandler(modelRW) with Handlers {
-  override def handle: PartialFunction[Any, ActionResult[M]] = {
-    case LoggedIn(u) =>
-      // Close the login box
-      val effect = Effect(Future(CloseLoginBox))
-      // Close the websocket and reconnect
-      val reconnect = Effect(Future(Reconnect))
-      updated(Some(u), reconnect + effect)
-
-    case Logout =>
-      val effect = Effect(SeqexecWebClient.logout().map(_ => NoAction))
-      val reConnect = Effect(Future(Reconnect))
-      // Remove the user and call logout
-      updated(None, effect + reConnect)
-  }
-}
-
-/**
  * Handles updates to the operator
  */
 class OperatorHandler[M](modelRW: ModelRW[M, Option[Operator]]) extends ActionHandler(modelRW) with Handlers {
@@ -150,6 +128,16 @@ class GlobalLogHandler[M](modelRW: ModelRW[M, GlobalLog]) extends ActionHandler(
 
     case ToggleLogArea =>
       updated(value.copy(display = value.display.toggle))
+  }
+}
+
+/**
+  * Handles updates to the defaultObserver
+  */
+class DefaultObserverHandler[M](modelRW: ModelRW[M, Observer]) extends ActionHandler(modelRW) with Handlers {
+  override def handle: PartialFunction[Any, ActionResult[M]] = {
+    case UpdateDefaultObserver(o) =>
+      updated(o)
   }
 }
 

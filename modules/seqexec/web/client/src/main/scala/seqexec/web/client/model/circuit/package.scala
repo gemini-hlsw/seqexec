@@ -19,7 +19,7 @@ import web.client.table._
 package circuit {
   // All these classes are focused views of the root model. They are used to only update small sections of the
   // UI even if other parts of the root model change
-  final case class WebSocketsFocus(location: Pages.SeqexecPages, sequences: SequencesQueue[SequenceView], user: Option[UserDetails], clientId: Option[ClientID], site: Option[Site]) extends UseValueEq
+  final case class WebSocketsFocus(location: Pages.SeqexecPages, sequences: SequencesQueue[SequenceView], user: Option[UserDetails], defaultObserver: Observer, clientId: Option[ClientID], site: Option[Site]) extends UseValueEq
 
   final case class InitialSyncFocus(location: Pages.SeqexecPages, firstLoad: Boolean) extends UseValueEq
 
@@ -34,11 +34,11 @@ package circuit {
 
   final case class SequenceObserverFocus(instrument: Instrument, obsId: Observation.Id, observer: Option[Observer]) extends UseValueEq
 
-  final case class HeaderSideBarFocus(status: ClientStatus, conditions: Conditions, operator: Option[Operator], observer: Option[SequenceObserverFocus]) extends UseValueEq
+  final case class HeaderSideBarFocus(status: ClientStatus, conditions: Conditions, operator: Option[Operator], observer: Either[Observer, SequenceObserverFocus]) extends UseValueEq
 
   final case class InstrumentStatusFocus(instrument: Instrument, active: Boolean, idState: Option[(Observation.Id, SequenceState)], runningStep: Option[RunningStep]) extends UseValueEq
 
-  final case class InstrumentTabFocus(tabs: NonEmptyList[AvailableTab], user: Option[UserDetails]) extends UseValueEq
+  final case class InstrumentTabFocus(tabs: NonEmptyList[AvailableTab], defaultObserver: Observer) extends UseValueEq
 
   final case class SequenceTabContentFocus(instrument: Option[Instrument], id: Option[Observation.Id], sequenceSelected: Boolean, logDisplayed: SectionVisibilityState) extends UseValueEq
 

@@ -11,12 +11,13 @@ import japgolly.scalajs.react.extra.Reusability
 import seqexec.model.enum.Instrument
 import seqexec.web.client.model.{ AvailableTab, ClientStatus, SectionVisibilityState, WebSocketConnection }
 import seqexec.web.client.circuit.StepsTableFocus
-import seqexec.model.{ Step, StepConfig, UserDetails }
+import seqexec.model.{ Observer, Step, StepConfig, UserDetails }
 
 package object reusability {
   implicit val instrumentReuse: Reusability[Instrument] = Reusability.byEq
   implicit val obsIdReuse: Reusability[Observation.Id] = Reusability.byEq
   implicit val siteReuse: Reusability[Site] = Reusability.byEq
+  implicit val observerReuse: Reusability[Observer] = Reusability.byEq
   implicit val stepConfigReuse: Reusability[StepConfig] = Reusability.byEq
   implicit val stepReuse: Reusability[Step] = Reusability.byEq
   implicit val clientStatusReuse: Reusability[ClientStatus] = Reusability.byEq

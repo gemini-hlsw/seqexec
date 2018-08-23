@@ -5,7 +5,7 @@ package seqexec.web.client.handlers
 
 import diode.{Action, ActionHandler, ActionResult, Effect, ModelRW, NoAction}
 import seqexec.model.enum.{ ActionStatus }
-import seqexec.model.{ SequencesQueue, SequenceView, StepState, SequenceState }
+import seqexec.model.{ Observer, SequencesQueue, SequenceView, StepState, SequenceState }
 import seqexec.model.events._
 import seqexec.web.client.lenses.{sequenceStepT, sequenceViewT}
 import seqexec.web.client.ModelOps._
@@ -51,7 +51,7 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus]) extends Act
     case ServerMessage(ConnectionOpenEvent(u, c)) =>
       // After connected to the Websocket request a refresh
       val refreshRequest = Effect(SeqexecWebClient.refresh(c).map(_ => NoAction))
-      updated(value.copy(user = u, clientId = Option(c)), refreshRequest)
+      updated(value.copy(user = u, defaultObserver = u.map(m => Observer(m.displayName)).getOrElse(value.defaultObserver), clientId = Option(c)), refreshRequest)
   }
 
   val stepCompletedMessage: PartialFunction[Any, ActionResult[M]] = {

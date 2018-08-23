@@ -8,7 +8,7 @@ import cats.implicits._
 import diode.data.Pot
 import gem.Observation
 import gem.enum.Site
-import seqexec.model.{ ClientID, Conditions, UserDetails, SequencesQueue, SequenceView }
+import seqexec.model.{ ClientID, Conditions, Observer, UserDetails, SequencesQueue, SequenceView }
 import seqexec.model.events._
 import seqexec.web.common.FixedLengthBuffer
 import seqexec.web.client.components.sequence.steps.StepConfigTable
@@ -70,6 +70,7 @@ final case class SeqexecUIModel(navLocation: Pages.SeqexecPages,
                           syncInProgress: Boolean,
                           configTableState: TableState[StepConfigTable.TableColumn],
                           queueTableState: TableState[QueueTableBody.TableColumn],
+                          defaultObserver: Observer,
                           firstLoad: Boolean)
 
 object SeqexecUIModel {
@@ -85,6 +86,7 @@ object SeqexecUIModel {
     syncInProgress = false,
     StepConfigTable.InitialTableState,
     QueueTableBody.InitialTableState.tableState,
+    Observer(""),
     firstLoad = true)
 }
 

@@ -57,7 +57,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
 
   // Model read-writers
   val webSocketFocusRW: ModelRW[SeqexecAppRootModel, WebSocketsFocus] =
-    zoomRW(m => WebSocketsFocus(m.uiModel.navLocation, m.uiModel.sequences, m.uiModel.user, m.clientId, m.site)) ((m, v) => m.copy(uiModel = m.uiModel.copy(sequences = v.sequences, user = v.user), clientId = v.clientId, site = v.site))
+    zoomRW(m => WebSocketsFocus(m.uiModel.navLocation, m.uiModel.sequences, m.uiModel.user, m.uiModel.defaultObserver, m.clientId, m.site)) ((m, v) => m.copy(uiModel = m.uiModel.copy(sequences = v.sequences, user = v.user, defaultObserver = v.defaultObserver), clientId = v.clientId, site = v.site))
 
   val initialSyncFocusRW: ModelRW[SeqexecAppRootModel, InitialSyncFocus] =
     zoomRW(m => InitialSyncFocus(m.uiModel.navLocation, m.uiModel.firstLoad)) ((m, v) => m.copy(uiModel = m.uiModel.copy(navLocation = v.location, firstLoad = v.firstLoad)))
@@ -86,13 +86,20 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
 
   // Reader for sequences on display
   val headerSideBarReader: ModelR[SeqexecAppRootModel, HeaderSideBarFocus] =
-    zoom(c => HeaderSideBarFocus(ClientStatus(c.uiModel.user, c.ws, c.uiModel.syncInProgress), c.uiModel.sequences.conditions, c.uiModel.sequences.operator, c.uiModel.sequencesOnDisplay.selectedOperator))
+    zoom { c =>
+      val clientStatus = ClientStatus(c.uiModel.user, c.ws, c.uiModel.syncInProgress)
+      val obs = c.uiModel.sequencesOnDisplay.selectedOperator match {
+        case Some(x) => x.asRight
+        case _       => c.uiModel.defaultObserver.asLeft
+      }
+      HeaderSideBarFocus(clientStatus, c.uiModel.sequences.conditions, c.uiModel.sequences.operator, obs)
+    }
 
   val logDisplayedReader: ModelR[SeqexecAppRootModel, SectionVisibilityState] =
     zoom(_.uiModel.globalLog.display)
 
   val tabsReader: ModelR[SeqexecAppRootModel, InstrumentTabFocus] =
-    zoom(_.uiModel.user).zip(zoom(_.uiModel.sequencesOnDisplay.availableTabs)).zoom {
+    zoom(_.uiModel.defaultObserver).zip(zoom(_.uiModel.sequencesOnDisplay.availableTabs)).zoom {
       case (u, tabs) => InstrumentTabFocus(tabs, u)
     }
 
@@ -168,6 +175,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   private val globalLogHandler         = new GlobalLogHandler(zoomTo(_.uiModel.globalLog))
   private val conditionsHandler        = new ConditionsHandler(zoomTo(_.uiModel.sequences.conditions))
   private val operatorHandler          = new OperatorHandler(zoomTo(_.uiModel.sequences.operator))
+  private val defaultObserverHandler   = new DefaultObserverHandler(zoomTo(_.uiModel.defaultObserver))
   // private val syncToAddedHandler       = new SyncToAddedRemovedRunHandler(zoomTo(_.uiModel.navLocation))
   private val remoteRequestsHandler    = new RemoteRequestsHandler(zoomTo(_.clientId))
   private val syncRequestsHandler      = new SyncRequestsHandler(zoomTo(_.uiModel.syncInProgress))
@@ -192,6 +200,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
     globalLogHandler,
     conditionsHandler,
     operatorHandler,
+    defaultObserverHandler,
     remoteRequestsHandler,
     syncRequestsHandler,
     navigationHandler,

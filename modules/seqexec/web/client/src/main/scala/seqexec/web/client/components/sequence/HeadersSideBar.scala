@@ -10,7 +10,7 @@ import seqexec.web.client.semanticui.elements.dropdown.DropdownMenu
 import seqexec.web.client.semanticui.elements.label.FormLabel
 import seqexec.web.client.semanticui.elements.input.InputEV
 import seqexec.web.client.circuit.{ HeaderSideBarFocus, SeqexecCircuit, SequenceObserverFocus }
-import seqexec.web.client.actions.{UpdateCloudCover, UpdateImageQuality, UpdateOperator, UpdateObserver, UpdateSkyBackground, UpdateWaterVapor}
+import seqexec.web.client.actions.{ UpdateCloudCover, UpdateImageQuality, UpdateOperator, UpdateDefaultObserver, UpdateObserver, UpdateSkyBackground, UpdateWaterVapor }
 import seqexec.web.client.components.SeqexecStyles
 import web.client.style._
 import japgolly.scalajs.react.component.Scala.Unmounted
@@ -28,7 +28,7 @@ import scala.concurrent.duration._
 object HeadersSideBar {
   final case class Props(model: ModelProxy[HeaderSideBarFocus]) {
     def canOperate: Boolean = model().status.canOperate
-    def sequenceObserver: Option[SequenceObserverFocus] = model().observer
+    def sequenceObserver: Either[Observer, SequenceObserverFocus] = model().observer
   }
 
   final case class State(operatorText: Option[String], observerText: Option[String])
@@ -42,7 +42,12 @@ object HeadersSideBar {
       $.props >>= { p => Callback.when(p.canOperate)(p.model.dispatchCB(UpdateOperator(Operator(name)))) }
 
     def updateObserver(name: String): Callback =
-      $.props >>= { p => Callback.when(p.canOperate)(p.sequenceObserver.map(a => p.model.dispatchCB(UpdateObserver(a.obsId, Observer(name)))).getOrEmpty) }
+      $.props >>= { p => Callback.when(p.canOperate){
+        p.sequenceObserver match {
+          case Right(a) => p.model.dispatchCB(UpdateObserver(a.obsId, Observer(name)))
+          case Left(_) => p.model.dispatchCB(UpdateDefaultObserver(Observer(name)))
+        }
+      }}
 
     def updateStateOp(value: Option[String], cb: Callback): Callback =
       $.modState(_.copy(operatorText = value)) >> cb
@@ -61,7 +66,13 @@ object HeadersSideBar {
 
     def submitIfChangedOb: Callback =
       ($.state zip $.props) >>= {
-        case (s, p) => Callback.when(p.model().observer.flatMap(_.observer).exists(_.some =!= s.observerText.map(Observer.apply)))(updateObserver(s.observerText.getOrElse("")))
+        case (s, p) =>
+          p.sequenceObserver match {
+            case Right(a) =>
+              Callback.when(a.observer.exists(_.some =!= s.observerText.map(Observer.apply)))(updateObserver(s.observerText.getOrElse("")))
+            case Left(o) =>
+              Callback.when(o.some =!= s.observerText.map(Observer.apply))(updateObserver(s.observerText.getOrElse("")))
+          }
       }
 
     def iqChanged(iq: ImageQuality): Callback =
@@ -81,9 +92,8 @@ object HeadersSideBar {
       val enabled = p.model().status.canOperate
       val operatorEV = StateSnapshot(s.operatorText.getOrElse(""))(updateStateOp)
       val observerEV = StateSnapshot(s.observerText.getOrElse(""))(updateStateOb)
-      val instrument = p.sequenceObserver.map(_.instrument).foldMap(i => s" - ${i.show}")
-      val instrumentEmpty = p.sequenceObserver.isEmpty
-      val observerField = s"Observer$instrument"
+      val instrument = p.sequenceObserver.map(i => i.instrument.show).getOrElse("Default")
+      val observerField = s"Observer - $instrument"
       <.div(
         ^.cls := "ui secondary segment",
         SeqexecStyles.headerSideBarStyle,
@@ -111,7 +121,7 @@ object HeadersSideBar {
                 InputEV.Props("observer", "observer",
                   observerEV,
                   placeholder = "Observer...",
-                  disabled = !enabled || instrumentEmpty,
+                  disabled = !enabled,
                   onBlur = _ => submitIfChangedOb
                 )
               )
@@ -141,12 +151,21 @@ object HeadersSideBar {
     .configure(TimerSupport.install)
     .componentWillMount(f => f.backend.$.props >>= { p =>
       p.model().operator.map(op => f.backend.updateStateOp(op.value.some, Callback.empty)).getOrEmpty *>
-      p.model().observer.map(ob => f.backend.updateStateOp(ob.observer.map(_.value), Callback.empty)).getOrEmpty
+      (p.sequenceObserver match {
+        case Right(a) =>
+          f.backend.updateStateOb(a.observer.map(_.value), Callback.empty)
+        case Left(o) =>
+        println(o)
+          f.backend.updateStateOb(o.value.some, Callback.empty)
+      })
     })
     .componentDidMount(_.backend.setupTimer)
     .componentWillReceiveProps { f =>
       val operator = f.nextProps.model().operator
-      val observer = f.nextProps.model().observer.flatMap(_.observer)
+      val observer = f.nextProps.sequenceObserver match {
+        case Right(a) => a.observer
+        case Left(o) => o.some
+      }
       // Update the operator field
       Callback.when((operator =!= f.state.operatorText.map(Operator.apply)) && operator.nonEmpty)(f.modState(_.copy(operatorText = operator.map(_.value)))) *>
       Callback.when((observer =!= f.state.observerText.map(Observer.apply)) && observer.nonEmpty)(f.modState(_.copy(observerText = observer.map(_.value))))

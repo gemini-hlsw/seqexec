@@ -11,7 +11,7 @@ import japgolly.scalajs.react.component.builder.Lifecycle.RenderScope
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.extra.Reusability
 import japgolly.scalajs.react._
-import seqexec.model.{Observer, UserDetails, SequenceState}
+import seqexec.model.{Observer, SequenceState}
 import seqexec.model.enum.Instrument
 import seqexec.web.client.actions.LoadSequence
 import seqexec.web.client.model.Pages._
@@ -27,10 +27,10 @@ import seqexec.web.client.reusability._
 import web.client.style._
 
 object InstrumentTab {
-  final case class Props(router: RouterCtl[SeqexecPages], tab: AvailableTab, loggedIn: Boolean, user: Option[UserDetails])
+  final case class Props(router: RouterCtl[SeqexecPages], tab: AvailableTab, loggedIn: Boolean, defaultObserver: Observer)
   final case class State(loading: Boolean)
 
-  implicit val propsReuse: Reusability[Props] = Reusability.by(x => (x.tab, x.loggedIn, x.user))
+  implicit val propsReuse: Reusability[Props] = Reusability.by(x => (x.tab, x.loggedIn, x.defaultObserver))
   implicit val stateReuse: Reusability[State] = Reusability.by(_.loading)
 
   type Backend = RenderScope[Props, State, Unit]
@@ -39,7 +39,7 @@ object InstrumentTab {
     e.preventDefaultCB *>
     e.stopPropagationCB *>
     b.setState(State(loading = true)) *>
-    b.props.user.map(u => SeqexecCircuit.dispatchCB(LoadSequence(Observer(u.displayName), inst, id))).getOrEmpty
+    SeqexecCircuit.dispatchCB(LoadSequence(b.props.defaultObserver, inst, id))
 
   private def showSequence(p: Props, page: SeqexecPages)(e: ReactEvent): Callback = {
     // prevent default to avoid the link jumping
@@ -177,7 +177,7 @@ object InstrumentsTabs {
     .stateless
     .render_P(p =>
       SeqexecCircuit.connect(SeqexecCircuit.tabsReader) { x =>
-        val tabs = x().tabs.toList.filter(_.nonEmpty).map(t => InstrumentTab(InstrumentTab.Props(p.router, t, p.loggedIn, x().user)): VdomNode)
+        val tabs = x().tabs.toList.filter(_.nonEmpty).map(t => InstrumentTab(InstrumentTab.Props(p.router, t, p.loggedIn, x().defaultObserver)): VdomNode)
         if (tabs.nonEmpty) {
           <.div(
             ^.cls := "ui attached tabular menu",
