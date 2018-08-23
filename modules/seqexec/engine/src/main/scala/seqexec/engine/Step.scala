@@ -119,8 +119,14 @@ object Step {
     def update(step: Step): Zipper = {
       val currentified = Zipper.currentify(step)
 
-      //If running, don't touch the executions, but update the rollback list so it takes the new executions if paused
-      (if (Step.status(toStep) === StepState.Running) currentified.map(c => this.copy(rolledback = c.rolledback))
+      //If running, only change the pending executions and the rollback definition.
+      (if (Step.status(toStep) === StepState.Running)
+        // Step updates should not change the number of Executions. If it does, the update will not apply unless
+        // the Step is paused and restarted.
+        if (step.executions.length === done.length + pending.length + 1)
+          currentified.map(c => this.copy(pending = c.pending.takeRight(pending.length), rolledback = c.rolledback))
+        else
+          currentified.map(c => this.copy(rolledback = c.rolledback))
       else currentified.map(_.copy(breakpoint = this.breakpoint, skipMark = this.skipMark))
       ).getOrElse(this)
     }

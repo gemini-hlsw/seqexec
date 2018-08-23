@@ -314,7 +314,7 @@ object Sequence {
       // Some rules:
       // 1. Done steps cannot change.
       // 2. Pending steps cannot turn to not pending.
-      // 3. Focus cannot change if running.
+      // 3. Running step cannot change done and focus executions
       // 4. Must preserve breakpoints and skip marks
       override def update(sequence: Sequence): State = {
         val updatedPending = sequence.steps.drop(zipper.done.length)
@@ -322,7 +322,9 @@ object Sequence {
         require(updatedPending.forall(Step.status(_) === StepState.Pending))
 
         updatedPending match {
-          case t::ts => zipperL.modify(zp => zp.copy(focus = zp.focus.update(t), pending = ts))(this)
+          case t::ts => zipperL.modify(zp => zp.copy(focus = zp.focus.update(t), pending = pending.zip(ts).map{
+            case (o, n) => n.copy(breakpoint = o.breakpoint, skipMark = o.skipMark)
+          }))(this)
           case _     => if(status.isRunning) this
                         else Final(Sequence(zipper.id, zipper.done), status)
         }
