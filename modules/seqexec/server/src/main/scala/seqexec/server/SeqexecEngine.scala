@@ -112,17 +112,17 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
                   seqId: Observation.Id,
                   user: UserDetails,
                   name: Observer): IO[Either[SeqexecFailure, Unit]] =
-    q.enqueue1(Event.logDebugMsg(s"SeqexecEngine: Setting Observer name to '$name' for sequence '$seqId' by ${user.username}")) *>
+    q.enqueue1(Event.logDebugMsg(s"SeqexecEngine: Setting Observer name to '$name' for sequence '${seqId.format}' by ${user.username}")) *>
         q.enqueue1(Event.modifyState[executeEngine.ConcreteTypes]((EngineState.sequences ^|-? index(seqId)).modify(ObserverSequence.observer.set(name.some)) >>> refreshSequence(seqId), SetObserver(seqId, user.some, name))).map(_.asRight)
 
   def loadSequence(q: EventQueue, i: Instrument, sid: Observation.Id, observer: Observer, user: UserDetails): IO[Either[SeqexecFailure, Unit]] =
     q.enqueue1(Event.logDebugMsg("SeqexecEngine: Updating loaded sequences")) *>
-    q.enqueue1(Event.setObserver(sid, user, observer)).map(_.asRight) *>
-    q.enqueue1(Event.modifyState[executeEngine.ConcreteTypes]((Engine.State.userData ^|-> EngineMetadata.selectedML(i)).set(sid.some), LoadSequence(i, sid, user.some))).map(_.asRight)
+    setObserver(q, sid, user, observer) *>
+    q.enqueue1(Event.modifyState[executeEngine.ConcreteTypes]((EngineState.selectedML(i)).set(sid.some), AddLoadedSequence(i, sid, user.some))).map(_.asRight)
 
   def clearLoadedSequences(q: EventQueue, user: UserDetails): IO[Either[SeqexecFailure, Unit]] =
     q.enqueue1(Event.logDebugMsg("SeqexecEngine: Updating loaded sequences")) *>
-    q.enqueue1(Event.modifyState[executeEngine.ConcreteTypes]((Engine.State.userData ^|-> EngineMetadata.selected).set(Map.empty), ClearLoadedSequences(user.some))).map(_.asRight)
+    q.enqueue1(Event.modifyState[executeEngine.ConcreteTypes]((EngineState.selected).set(Map.empty), ClearLoadedSequences(user.some))).map(_.asRight)
 
   def setConditions(q: EventQueue, conditions: Conditions, user: UserDetails): IO[Either[SeqexecFailure, Unit]] =
     q.enqueue1(Event.logDebugMsg("SeqexecEngine: Setting conditions")) *>
@@ -605,7 +605,8 @@ object SeqexecEngine extends SeqexecConfiguration {
     case NullSeqEvent                 => NullEvent
     case SetOperator(_, _)            => OperatorUpdated(svs)
     case SetObserver(_, _, _)         => ObserverUpdated(svs)
-    case SetSelectedSequence(i, s, _) => SelectedSequenceUpdate(i, s)
+    case AddLoadedSequence(i, s, _)   => LoadSequenceUpdated(i, s, svs)
+    case ClearLoadedSequences(_)      => ClearLoadedSequencesUpdated(svs)
     case SetConditions(_, _)          => ConditionsUpdated(svs)
     case SetImageQuality(_, _)        => ConditionsUpdated(svs)
     case SetWaterVapor(_, _)          => ConditionsUpdated(svs)

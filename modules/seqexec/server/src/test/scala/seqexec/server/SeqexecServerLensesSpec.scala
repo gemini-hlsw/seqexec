@@ -6,7 +6,7 @@ package seqexec.server
 import cats.Eq
 import cats.tests.CatsSuite
 import seqexec.model.enum.Instrument
-import seqexec.model.SeqexecModelArbitraries._
+import seqexec.engine
 import seqexec.server.SeqexecServerArbitraries._
 import gem.arb.ArbObservation
 import gem.Observation

@@ -20,8 +20,6 @@ class UserLoginHandler[M](modelRW: ModelRW[M, Option[UserDetails]]) extends Acti
       val effect = Effect(Future(CloseLoginBox))
       // Close the websocket and reconnect
       val reconnect = Effect(Future(Reconnect))
-      println("------>-")
-      println(u)
       updated(Some(u), reconnect + effect)
 
     case Logout =>

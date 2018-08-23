@@ -155,7 +155,6 @@ object HeadersSideBar {
         case Right(a) =>
           f.backend.updateStateOb(a.observer.map(_.value), Callback.empty)
         case Left(o) =>
-        println(o)
           f.backend.updateStateOb(o.value.some, Callback.empty)
       })
     })
