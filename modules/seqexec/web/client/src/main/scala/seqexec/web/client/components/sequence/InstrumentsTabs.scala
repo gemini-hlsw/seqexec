@@ -27,7 +27,7 @@ import seqexec.web.client.reusability._
 import web.client.style._
 
 object InstrumentTab {
-  final case class Props(router: RouterCtl[SeqexecPages], tab: AvailableTab, loggedIn: Boolean, defaultObserver: Observer)
+  final case class Props(router: RouterCtl[SeqexecPages], tab: AvailableTab, loggedIn: Boolean, defaultObserver: Observer, runningInstruments: List[Instrument])
   final case class State(loading: Boolean)
 
   implicit val propsReuse: Reusability[Props] = Reusability.by(x => (x.tab, x.loggedIn, x.defaultObserver))
@@ -79,6 +79,7 @@ object InstrumentTab {
       val status = b.props.tab.status
       val sequenceId = b.props.tab.id
       val instrument = b.props.tab.instrument
+      val running = instrument.exists(b.props.runningInstruments.contains)
       val isPreview = b.props.tab.isPreview
       val instName = instrument.foldMap(_.show)
       val dispName = if (isPreview) s"Preview: $instName" else instName
@@ -116,7 +117,7 @@ object InstrumentTab {
                   compact = true,
                   icon = Some(IconUpload),
                   color = "teal".some,
-                  disabled = b.state.loading,
+                  disabled = b.state.loading || running,
                   loading = b.state.loading,
                   onClickE = load(b, inst, id) _
                 )
@@ -177,10 +178,11 @@ object InstrumentsTabs {
     .stateless
     .render_P(p =>
       SeqexecCircuit.connect(SeqexecCircuit.tabsReader) { x =>
+        val runningInstruments = x().tabs.toList.collect { case AvailableTab(_, Some(SequenceState.Running(_, _)), Some(i), _, false, _) => i }
         val tabs = x().tabs.toList.filter(_.nonEmpty).sortBy {
           case t if t.isPreview => Int.MinValue.some
           case t                => t.instrument.map(_.ordinal)
-        }.map(t => InstrumentTab(InstrumentTab.Props(p.router, t, p.loggedIn, x().defaultObserver)): VdomNode)
+        }.map(t => InstrumentTab(InstrumentTab.Props(p.router, t, p.loggedIn, x().defaultObserver, runningInstruments)): VdomNode)
         if (tabs.nonEmpty) {
           <.div(
             ^.cls := "ui attached tabular menu",
