@@ -26,7 +26,7 @@ final class SeqexecServerLensesSpec extends CatsSuite with ArbObservation {
   implicit val stateEq: Eq[EngineState] = Eq.by(x => (x.queues, x.selected, x.conditions, x.operator, x.sequences, x.executionState))
 
   checkAll("selected optional",
-           LensTests(EngineState.selectedML(Instrument.GPI)))
+           LensTests(EngineState.instrumentLoadedL(Instrument.GPI)))
 
   private val seqId = Observation.Id.unsafeFromString("GS-2018B-Q-0-1")
   // Some sanity checks
@@ -35,7 +35,7 @@ final class SeqexecServerLensesSpec extends CatsSuite with ArbObservation {
       selected =
         Map(Instrument.F2 -> Observation.Id.unsafeFromString("GS-2018B-Q-1-1")))
     EngineState
-      .selectedML(Instrument.GPI)
+      .instrumentLoadedL(Instrument.GPI)
       .set(seqId.some)
       .apply(base) shouldEqual base.copy(
       selected = base.selected + (Instrument.GPI -> seqId))
@@ -46,7 +46,7 @@ final class SeqexecServerLensesSpec extends CatsSuite with ArbObservation {
         Map(Instrument.GPI -> Observation.Id.unsafeFromString("GS-2018B-Q-1-1"),
             Instrument.F2  -> Observation.Id.unsafeFromString("GS-2018B-Q-2-1")))
     EngineState
-      .selectedML(Instrument.GPI)
+      .instrumentLoadedL(Instrument.GPI)
       .set(seqId.some)
       .apply(base) shouldEqual base.copy(
       selected = base.selected.updated(Instrument.GPI, seqId))
