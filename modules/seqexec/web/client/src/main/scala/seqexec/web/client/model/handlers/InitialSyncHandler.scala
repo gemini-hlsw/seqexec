@@ -4,7 +4,7 @@
 package seqexec.web.client.handlers
 
 import diode.{Action, ActionHandler, ActionResult, Effect, ModelRW}
-import seqexec.model.SequenceView
+import seqexec.model.{ SequencesQueue, SequenceView }
 import seqexec.model.events.SeqexecModelUpdate
 import seqexec.web.client.actions._
 import seqexec.web.client.circuit._
@@ -25,9 +25,21 @@ class InitialSyncHandler[M](modelRW: ModelRW[M, InitialSyncFocus]) extends Actio
   def pageE(action: Action): Effect =
     PageActionP.getOption(action).map(p => Effect(Future(NavigateTo(p)))).getOrElse(VoidEffect)
 
+  def defaultPage(s: SequencesQueue[SequenceView]): Effect = {
+    val loaded = s.loaded.values.toList
+    // An unkown page was shown
+    val effect = loaded.headOption.flatMap { id =>
+      s.queue.find(_.id === id).map { s =>
+        val action = SelectIdToDisplay(s.metadata.instrument, id, 0)
+        Effect(Future(action)) >> pageE(action)
+      }
+    }
+    effect.getOrElse(VoidEffect)
+  }
+
   def handle: PartialFunction[Any, ActionResult[M]] = {
     // Otherwise, update the model to reflect the current page
-    case ServerMessage(s: SeqexecModelUpdate) if value.firstLoad                                 =>
+    case ServerMessage(s: SeqexecModelUpdate) if value.firstLoad =>
       // the page maybe not in sync with the tabs. Let's fix that
       val sids = s.view.queue.map(_.id)
       val loaded = s.view.loaded.values.toList
@@ -35,16 +47,6 @@ class InitialSyncHandler[M](modelRW: ModelRW[M, InitialSyncFocus]) extends Actio
         case p @ SequencePage(_, id, _) if loaded.contains(id)     =>
           // We need to effect to update the reference
           Effect(Future(PageActionP.reverseGet(p)))
-
-        case SequencePage(_, _, _)                                 =>
-          // An unkown page was shown
-          val effect = loaded.headOption.flatMap { id =>
-            s.view.queue.find(_.id === id).map { s =>
-              val action = SelectIdToDisplay(s.metadata.instrument, id, 0)
-              Effect(Future(action)) >> pageE(action)
-            }
-          }
-          effect.getOrElse(VoidEffect)
 
         case p @ SequenceConfigPage(_, id, _) if sids.contains(id) =>
           // We need to effect to update the reference
@@ -68,6 +70,10 @@ class InitialSyncHandler[M](modelRW: ModelRW[M, InitialSyncFocus]) extends Actio
           } else {
             Effect(Future(ShowPreviewStepConfig(i, id, st)))
           }
+
+        case Root | SequencePage(_, _, _) | PreviewPage(_, _, _) |
+          SequenceConfigPage(_, _, _) | PreviewConfigPage(_, _, _) =>
+          defaultPage(s.view)
 
         case _                                                     =>
           // No matches
