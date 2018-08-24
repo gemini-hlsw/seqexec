@@ -3,6 +3,7 @@
 
 package seqexec.web.client.components.sequence
 
+import cats.Order
 import cats.implicits._
 import gem.Observation
 import japgolly.scalajs.react.extra.router.RouterCtl
@@ -16,7 +17,7 @@ import seqexec.model.enum.Instrument
 import seqexec.web.client.actions.LoadSequence
 import seqexec.web.client.model.Pages._
 import seqexec.web.client.model.{ AvailableTab, RunningStep }
-import seqexec.web.client.circuit.SeqexecCircuit
+import seqexec.web.client.circuit.{ InstrumentTabFocus, SeqexecCircuit }
 import seqexec.web.client.semanticui._
 import seqexec.web.client.semanticui.elements.icon.Icon._
 import seqexec.web.client.semanticui.elements.label.Label
@@ -173,11 +174,20 @@ object InstrumentsTabs {
 
   implicit val propsReuse: Reusability[Props] = Reusability.by(_.loggedIn)
 
+  implicit val order: Order[AvailableTab] =
+    Order.by {
+      case t if t.isPreview => Int.MinValue.some
+      case t                => t.instrument.map(_.ordinal)
+    }
+
+  implicit val orderit: Order[InstrumentTabFocus] =
+    Order.by(_.tabs)
+
   private val component = ScalaComponent.builder[Props]("InstrumentsMenu")
     .stateless
     .render_P(p =>
       SeqexecCircuit.connect(SeqexecCircuit.tabsReader) { x =>
-        val tabs = x().tabs.toList.filter(_.nonEmpty).map(t => InstrumentTab(InstrumentTab.Props(p.router, t, p.loggedIn, x().defaultObserver)): VdomNode)
+        val tabs = x().tabs.toList.filter(_.nonEmpty).sorted.map(t => InstrumentTab(InstrumentTab.Props(p.router, t, p.loggedIn, x().defaultObserver)): VdomNode)
         if (tabs.nonEmpty) {
           <.div(
             ^.cls := "ui attached tabular menu",
