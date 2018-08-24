@@ -3,6 +3,7 @@
 
 package seqexec.web.client.handlers
 
+import cats.implicits._
 import diode.{Action, ActionHandler, ActionResult, Effect, ModelRW, NoAction}
 import seqexec.model.enum.{ ActionStatus }
 import seqexec.model.{ Observer, SequencesQueue, SequenceView, StepState, SequenceState }
@@ -13,8 +14,7 @@ import seqexec.web.client.actions._
 import seqexec.web.client.circuit._
 import seqexec.web.client.services.{Audio, SeqexecWebClient}
 import seqexec.web.client.services.WebpackResources._
-import cats.implicits._
-
+import seqexec.web.client.model.Pages.Root
 import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
@@ -77,6 +77,11 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus]) extends Act
       updated(value.copy(sequences = filterSequences(sv)), audioEffect + rememberCompleted)
   }
 
+  val sequenceUnloadedMessage: PartialFunction[Any, ActionResult[M]] = {
+    case ServerMessage(SequenceUnloaded(id, sv)) if value.sequences.queue.map(_.id).contains(id) =>
+      updated(value.copy(sequences = filterSequences(sv)), Effect(Future(NavigateTo(Root))))
+  }
+
   val sequenceOnErrorMessage: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(SequenceError(_, sv)) =>
       // Play audio when the sequence gets into an error state
@@ -117,11 +122,6 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus]) extends Act
 
   val sequenceLoadedMessage: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(SequenceLoaded(_, view)) =>
-      updated(value.copy(sequences = filterSequences(view)))
-  }
-
-  val sequenceUnloadedMessage: PartialFunction[Any, ActionResult[M]] = {
-    case ServerMessage(SequenceUnloaded(_, view)) =>
       updated(value.copy(sequences = filterSequences(view)))
   }
 

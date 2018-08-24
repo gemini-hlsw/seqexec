@@ -33,7 +33,7 @@ package server {
   object EngineState {
     val default: EngineState = EngineState(Map(CalibrationQueueName -> Nil), Map.empty, Conditions.Default, None, Map.empty, Engine.State.empty)
 
-    def selectedML(instrument: Instrument): Lens[EngineState, Option[Observation.Id]] = GenLens[EngineState](_.selected) ^|-> at(instrument)
+    def instrumentLoadedL(instrument: Instrument): Lens[EngineState, Option[Observation.Id]] = GenLens[EngineState](_.selected) ^|-> at(instrument)
 
   }
 

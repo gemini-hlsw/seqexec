@@ -118,7 +118,7 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
   def loadSequence(q: EventQueue, i: Instrument, sid: Observation.Id, observer: Observer, user: UserDetails): IO[Either[SeqexecFailure, Unit]] = {
     val lens =
       (EngineState.sequences ^|-? index(sid)).modify(ObserverSequence.observer.set(observer.some)) >>>
-       EngineState.selectedML(i).set(sid.some) >>>
+       EngineState.instrumentLoadedL(i).set(sid.some) >>>
        refreshSequence(sid)
     q.enqueue1(Event.logDebugMsg(s"SeqexecEngine: Loading sequence ${sid.format} on ${i.show} sequences")) *>
     q.enqueue1(Event.modifyState[executeEngine.ConcreteTypes](
@@ -329,7 +329,14 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
   private def unloadEvent(seqId: Observation.Id): executeEngine.EventType =
     Event.modifyState[executeEngine.ConcreteTypes](
       executeEngine.unload(seqId) >>>
-        {st => if(st.executionState.sequences.contains(seqId)) st else EngineState.sequences.modify(ss => ss - seqId)(st)},
+        { st =>
+          if (st.executionState.sequences.contains(seqId)) {
+            st
+          } else {
+            (EngineState.sequences.modify(ss => ss - seqId) >>>
+             EngineState.selected.modify(ss => ss.toList.filter{case (_, x) => x =!= seqId}.toMap))(st)
+          }
+      },
       UnloadSequence(seqId)
     )
 
