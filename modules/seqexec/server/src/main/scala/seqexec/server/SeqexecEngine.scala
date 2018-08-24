@@ -115,10 +115,17 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
     q.enqueue1(Event.logDebugMsg(s"SeqexecEngine: Setting Observer name to '$name' for sequence '${seqId.format}' by ${user.username}")) *>
         q.enqueue1(Event.modifyState[executeEngine.ConcreteTypes]((EngineState.sequences ^|-? index(seqId)).modify(ObserverSequence.observer.set(name.some)) >>> refreshSequence(seqId), SetObserver(seqId, user.some, name))).map(_.asRight)
 
-  def loadSequence(q: EventQueue, i: Instrument, sid: Observation.Id, observer: Observer, user: UserDetails): IO[Either[SeqexecFailure, Unit]] =
-    q.enqueue1(Event.logDebugMsg("SeqexecEngine: Updating loaded sequences")) *>
-    setObserver(q, sid, user, observer) *>
-    q.enqueue1(Event.modifyState[executeEngine.ConcreteTypes]((EngineState.selectedML(i)).set(sid.some), AddLoadedSequence(i, sid, user.some))).map(_.asRight)
+  def loadSequence(q: EventQueue, i: Instrument, sid: Observation.Id, observer: Observer, user: UserDetails): IO[Either[SeqexecFailure, Unit]] = {
+    val lens =
+      (EngineState.sequences ^|-? index(sid)).modify(ObserverSequence.observer.set(observer.some)) >>>
+       EngineState.selectedML(i).set(sid.some) >>>
+       refreshSequence(sid)
+    q.enqueue1(Event.logDebugMsg(s"SeqexecEngine: Loading sequence ${sid.format} on ${i.show} sequences")) *>
+    q.enqueue1(Event.modifyState[executeEngine.ConcreteTypes](
+      lens,
+      AddLoadedSequence(i, sid, user.some))
+    ).map(_.asRight)
+  }
 
   def clearLoadedSequences(q: EventQueue, user: UserDetails): IO[Either[SeqexecFailure, Unit]] =
     q.enqueue1(Event.logDebugMsg("SeqexecEngine: Updating loaded sequences")) *>
