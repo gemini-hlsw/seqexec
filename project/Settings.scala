@@ -88,7 +88,7 @@ object Settings {
     val scalaParsersVersion     = "1.1.1"
     val scalaXmlVerson          = "1.1.0"
 
-    val http4sVersion           = "0.18.15"
+    val http4sVersion           = "0.18.16"
     val squants                 = "1.3.0"
     val argonaut                = "6.2.2"
     val commonsHttp             = "2.0.2"
@@ -97,7 +97,7 @@ object Settings {
     val slf4j                   = "1.7.25"
     val log4s                   = "1.6.1"
     val logback                 = "1.2.3"
-    val janino                  = "3.0.8"
+    val janino                  = "3.0.9"
     val logstash                = "5.2"
     val knobs                   = "6.0.33"
     val monocleVersion          = "1.5.1-cats"
