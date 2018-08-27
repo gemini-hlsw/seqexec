@@ -78,7 +78,7 @@ object StepsTable {
                          onStepToRun: Int => Callback) {
     def status: ClientStatus           = stepsTable().status
     def steps: Option[StepsTableFocus] = stepsTable().stepsTable
-    val stepsList: List[Step]          = steps.map(_.steps).getOrElse(Nil)
+    val stepsList: List[Step]          = steps.foldMap(_.steps)
     def rowCount: Int                  = stepsList.length
 
     def rowGetter(idx: Int): StepRow =
@@ -101,6 +101,7 @@ object StepsTable {
     val showFPU: Boolean       = showProp(InstrumentProperties.FPU)
     val isPreview: Boolean     = steps.map(_.isPreview).getOrElse(false)
 
+    val canSetBreakpoint = canOperate && !isPreview
     val showObservingMode: Boolean = showProp(
       InstrumentProperties.ObservingMode)
   }
@@ -196,23 +197,24 @@ object StepsTable {
   /**
    * Class for the row depends on properties
    */
-  def rowClassName(b: Backend)(i: Int): String = ((i, b.props.rowGetter(i), b.props.canOperate, b.state.breakpointHover) match {
-    case (-1, _, _, _)                                                                     =>
-      // Header
-      SeqexecStyles.headerRowStyle
-    case (_, StepRow(s @ StandardStep(_, _, _, true, _, _, _, _)), true, _)                =>
-      // row with control elements and breakpoint
-      SeqexecStyles.stepRowWithBreakpointAndControl |+| stepRowStyle(s)
-    case (_, StepRow(s @ StandardStep(_, _, _, true, _, _, _, _)), false, _)               =>
-      // row with breakpoint
-      SeqexecStyles.stepRowWithBreakpoint |+| stepRowStyle(s)
-    case (j, StepRow(s @ StandardStep(_, _, _, false, _, _, _, _)), _, Some(k)) if j === k =>
-      // row with breakpoint and hover
-      SeqexecStyles.stepRowWithBreakpointHover |+| stepRowStyle(s)
-    case (_, StepRow(s), _, _)                                                             =>
-      // Regular row
-      SeqexecStyles.stepRow |+| stepRowStyle(s)
-  }).htmlClass
+  def rowClassName(b: Backend)(i: Int): String =
+    ((i, b.props.rowGetter(i), b.props.canSetBreakpoint, b.state.breakpointHover) match {
+      case (-1, _, _, _)                                                                     =>
+        // Header
+        SeqexecStyles.headerRowStyle
+      case (_, StepRow(s @ StandardStep(_, _, _, true, _, _, _, _)), true, _)                =>
+        // row with control elements and breakpoint
+        SeqexecStyles.stepRowWithBreakpointAndControl |+| stepRowStyle(s)
+      case (_, StepRow(s @ StandardStep(_, _, _, true, _, _, _, _)), false, _)               =>
+        // row with breakpoint
+        SeqexecStyles.stepRowWithBreakpoint |+| stepRowStyle(s)
+      case (j, StepRow(s @ StandardStep(_, _, _, false, _, _, _, _)), _, Some(k)) if j === k =>
+        // row with breakpoint and hover
+        SeqexecStyles.stepRowWithBreakpointHover |+| stepRowStyle(s)
+      case (_, StepRow(s), _, _)                                                             =>
+        // Regular row
+        SeqexecStyles.stepRow |+| stepRowStyle(s)
+    }).htmlClass
 
   /**
    * Height depending if we use offsets
@@ -439,7 +441,6 @@ object StepsTable {
         ColWidths.ObjectTypeWidth +
         ColWidths.SettingsWidth
     val controlWidth = s.width - colsWidth
-
     val stateCol = stateColumn(p, controlWidth)
 
     List(

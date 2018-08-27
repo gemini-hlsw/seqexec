@@ -5,17 +5,16 @@ package seqexec.web.client.components.sequence.steps
 
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.component.Scala.Unmounted
-// import japgolly.scalajs.react.extra.Reusability
+import japgolly.scalajs.react.extra.Reusability
 import japgolly.scalajs.react.vdom.html_<^._
 import seqexec.model.Step
 import seqexec.web.client.actions.{FlipSkipStep, FlipBreakpointStep}
 import seqexec.web.client.circuit.{ SeqexecCircuit, StepsTableFocus }
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.model.ClientStatus
-// import seqexec.web.client.lenses._
 import seqexec.web.client.semanticui.elements.icon.Icon
 import seqexec.web.client.semanticui.elements.icon.Icon._
-// import seqexec.web.client.reusability._
+import seqexec.web.client.reusability._
 import web.client.style._
 
 /**
@@ -31,6 +30,8 @@ object StepBreakStopCell {
                          heightChangeCB: Int => Callback) {
     val steps: List[Step] = focus.steps
   }
+
+  implicit val propsReuse: Reusability[Props] = Reusability.caseClassExcept[Props]('heightChangeCB, 'breakPointEnterCB, 'breakPointLeaveCB)
 
   // Request a to flip the breakpoint
   def flipBreakpoint(p: Props): Callback =
@@ -82,6 +83,7 @@ object StepBreakStopCell {
         ).when(canSetSkipMark)
       )
     }
+    .configure(Reusability.shouldComponentUpdate)
     .build
 
   def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
