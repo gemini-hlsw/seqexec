@@ -33,20 +33,22 @@ package server {
   object EngineState {
     val default: EngineState = EngineState(Map(CalibrationQueueName -> Nil), Map.empty, Conditions.Default, None, Map.empty, Engine.State.empty)
 
-    def selectedML(instrument: Instrument): Lens[EngineState, Option[Observation.Id]] = GenLens[EngineState](_.selected) ^|-> at(instrument)
+    def instrumentLoadedL(instrument: Instrument): Lens[EngineState, Option[Observation.Id]] = GenLens[EngineState](_.selected) ^|-> at(instrument)
+
   }
 
   sealed trait SeqEvent
   final case class SetOperator(name: Operator, user: Option[UserDetails]) extends SeqEvent
   final case class SetObserver(id: Observation.Id, user: Option[UserDetails], name: Observer) extends SeqEvent
   final case class SetConditions(conditions: Conditions, user: Option[UserDetails]) extends SeqEvent
-  final case class SetSelectedSequence(instrument: Instrument, sid: Observation.Id, user: Option[UserDetails]) extends SeqEvent
+  final case class LoadSequence(sid: Observation.Id) extends SeqEvent
+  final case class UnloadSequence(id: Observation.Id) extends SeqEvent
+  final case class AddLoadedSequence(instrument: Instrument, sid: Observation.Id, user: Option[UserDetails]) extends SeqEvent
+  final case class ClearLoadedSequences(user: Option[UserDetails]) extends SeqEvent
   final case class SetImageQuality(iq: ImageQuality, user: Option[UserDetails]) extends SeqEvent
   final case class SetWaterVapor(wv: WaterVapor, user: Option[UserDetails]) extends SeqEvent
   final case class SetSkyBackground(wv: SkyBackground, user: Option[UserDetails]) extends SeqEvent
   final case class SetCloudCover(cc: CloudCover, user: Option[UserDetails]) extends SeqEvent
-  final case class LoadSequence(id: Observation.Id) extends SeqEvent
-  final case class UnloadSequence(id: Observation.Id) extends SeqEvent
   case object NullSeqEvent extends SeqEvent
 
   sealed trait ControlStrategy

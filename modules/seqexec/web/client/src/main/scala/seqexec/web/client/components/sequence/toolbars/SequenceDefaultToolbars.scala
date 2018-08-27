@@ -78,6 +78,7 @@ object SequenceControl {
       val allowedToExecute = isLogged && isConnected
       val canSync = !syncInProgress && !s.syncRequested
       <.div(
+        SeqexecStyles.controlButtons,
         control.whenDefined { m =>
           val ControlModel(id, isPartiallyExecuted, nextStep, status, inConflict) = m
           val nextStepToRun = nextStep.getOrElse(0) + 1
@@ -114,6 +115,7 @@ object SequenceControl {
 /**
   * Toolbar for logged in users
   */
+@SuppressWarnings(Array("org.wartremover.warts.OptionPartial"))
 object SequenceDefaultToolbar {
   private val component = ScalaComponent.builder[SequenceStepsTableContainer.Props]("SequenceDefaultToolbar")
     .stateless
@@ -121,25 +123,16 @@ object SequenceDefaultToolbar {
       <.div(
         ^.cls := "ui grid",
         <.div(
-        ^.cls := "ui row",
+        ^.cls := "two column row",
           SeqexecStyles.shorterRow,
-          <.div(
-            ^.cls := "ui sixteen wide column",
-            p.sequenceObserverConnects.get(p.p().instrument).whenDefined(c => c(SequenceInfo.apply))
-          )
-        ),
-        <.div(
-          ^.cls := "ui row",
-          SeqexecStyles.shorterRow,
-          SeqexecStyles.lowerRow,
           <.div(
             ^.cls := "ui left floated column eight wide computer eight wide tablet only",
-            p.sequenceControlConnects.get(p.p().instrument).whenDefined(c => c(SequenceControl.apply))
+            SeqexecCircuit.connect(SeqexecCircuit.sequenceControlReader(p.statusAndStep.obsId))(SequenceControl.apply)
           ),
           <.div(
-            ^.cls := "ui right floated column eight wide computer eight wide tablet sixteen wide mobile",
-            SeqexecStyles.observerField.when(p.p().isLogged),
-            p.sequenceObserverConnects.get(p.p().instrument).whenDefined(c => c(m => SequenceObserverField(m)))
+            ^.cls := "ui right floated column",
+            SeqexecStyles.infoOnControl,
+            SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(p.statusAndStep.obsId))(p => SequenceInfo(SequenceInfo.Props(p)))
           )
         )
       )

@@ -35,9 +35,13 @@ object actions {
   case object Logout extends Action
 
   // Action to select a sequence for display
-  final case class SelectIdToDisplay(id: Observation.Id) extends Action
-  final case class SelectInstrumentToDisplay(i: Instrument) extends Action
-  final case class SelectSequenceConfig(id: Observation.Id, step: Int) extends Action
+  final case class SelectIdToDisplay(i: Instrument, id: Observation.Id, step: StepId) extends Action
+  // final case class SelectSequenceConfig(id: Observation.Id, step: StepId) extends Action
+  final case class SelectSequencePreview(i: Instrument, id: Observation.Id, step: StepId) extends Action
+  case object SelectEmptyPreview extends Action
+  case object SelectRoot extends Action
+  final case class ShowStepConfig(i: Instrument, id: Observation.Id, step: Int) extends Action
+  final case class ShowPreviewStepConfig(i: Instrument, id: Observation.Id, step: Int) extends Action
 
   // Actions related to executing sequences
   final case class RequestRun(s: Observation.Id) extends Action
@@ -66,8 +70,6 @@ object actions {
   final case class RunObsPauseFailed(s: Observation.Id) extends Action
   final case class RunObsResumeFailed(s: Observation.Id) extends Action
 
-  final case class ShowStepConfig(id: Observation.Id, step: Int) extends Action
-  final case class HideStepConfig(i: Instrument) extends Action
   final case class RememberCompleted(s: SequenceView) extends Action
 
   final case class AppendToLog(l: ServerLogMessage) extends Action
@@ -85,7 +87,8 @@ object actions {
 
   final case class FlipSkipStep(id: Observation.Id, step: Step) extends Action
   final case class FlipBreakpointStep(id: Observation.Id, step: Step) extends Action
-  final case class UpdateObserver(id: Observation.Id, name: String) extends Action
+  final case class UpdateObserver(id: Observation.Id, name: Observer) extends Action
+  final case class UpdateDefaultObserver(name: Observer) extends Action
   final case class UpdateOperator(name: Operator) extends Action
   final case class UpdateImageQuality(iq: ImageQuality) extends Action
   final case class UpdateCloudCover(cc: CloudCover) extends Action
@@ -94,6 +97,10 @@ object actions {
 
   final case class UpdateStepsConfigTableState(s: TableState[StepConfigTable.TableColumn]) extends Action
   final case class UpdateQueueTableState(s: TableState[QueueTableBody.TableColumn]) extends Action
+  final case class UpdateLoadedSequences(ids: List[Observation.Id]) extends Action
+  final case class UpdateOnLoadUpdate(i: Instrument, id: Observation.Id, loaded: List[Observation.Id]) extends Action
+  final case class LoadSequence(observer: Observer, i: Instrument, id: Observation.Id) extends Action
+  case object CleanSequences extends Action
 
   // Used for UI debugging
   final case class MarkStepAsRunning(s: Observation.Id, step: Int) extends Action

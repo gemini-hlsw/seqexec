@@ -4,32 +4,32 @@
 package seqexec.web.client.components.sequence
 
 import cats.implicits._
-import diode.react.ModelProxy
 import gem.enum.Site
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{CallbackTo, ScalaComponent, CatsReact}
 import japgolly.scalajs.react.component.Scala.Unmounted
+import japgolly.scalajs.react.extra.Reusability
 import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.CatsReact._
-import seqexec.web.client.components.sequence.toolbars.{SequenceDefaultToolbar, StepConfigToolbar, SequenceAnonymousToolbar}
-import seqexec.web.client.circuit.{SeqexecCircuit, StatusAndStepFocus, InstrumentTabContentFocus}
+import seqexec.web.client.components.sequence.toolbars.{ SequenceDefaultToolbar, StepConfigToolbar, SequenceAnonymousToolbar }
+import seqexec.web.client.circuit.{ SeqexecCircuit, StatusAndStepFocus, SequenceTabContentFocus }
 import seqexec.web.client.model.Pages.SeqexecPages
-import seqexec.web.client.model.{SectionOpen, SectionClosed}
-import seqexec.web.client.ModelOps._
+import seqexec.web.client.model.{ SectionOpen, SectionClosed }
 import seqexec.web.client.semanticui._
 import seqexec.web.client.semanticui.elements.message.IconMessage
 import seqexec.web.client.semanticui.elements.icon.Icon.IconInbox
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.components.sequence.steps.StepsTable
+import seqexec.web.client.reusability._
 import web.client.style._
 
 object SequenceStepsTableContainer {
-  final case class Props(router: RouterCtl[SeqexecPages], site: Site, p: ModelProxy[StatusAndStepFocus]) {
-    protected[sequence] val sequenceControlConnects = site.instruments.toList.fproduct(i => SeqexecCircuit.connect(SeqexecCircuit.sequenceControlReader(i))).toMap
-    private[sequence] val instrumentConnects = site.instruments.toList.fproduct(i => SeqexecCircuit.connect(SeqexecCircuit.stepsTableReader(i))).toMap
-    protected[sequence] val sequenceObserverConnects = site.instruments.toList.fproduct(i => SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(i))).toMap
-  }
+  final case class Props(router: RouterCtl[SeqexecPages], statusAndStep: StatusAndStepFocus)
   final case class State(nextStepToRun: Int)
+
+  implicit val ssReuse: Reusability[StatusAndStepFocus] = Reusability.byEq[StatusAndStepFocus]
+  implicit val propsReuse: Reusability[Props] = Reusability.by(_.statusAndStep)
+  implicit val stateReuse: Reusability[State] = Reusability.derive[State]
 
   private val ST = ReactS.Fix[State]
 
@@ -37,13 +37,20 @@ object SequenceStepsTableContainer {
     ST.set(State(step)).liftCB
 
   def toolbar(p: Props): VdomElement = {
-    val statusAndStep = p.p()
-    statusAndStep.stepConfigDisplayed.fold{
-      <.div(
-        SequenceDefaultToolbar(p).when(statusAndStep.isLogged),
-        SequenceAnonymousToolbar(p.site, statusAndStep.instrument).unless(statusAndStep.isLogged)
-      ): VdomElement
-    }(s => statusAndStep.id.fold(ReactFragment())(id => StepConfigToolbar(StepConfigToolbar.Props(p.router, p.site, statusAndStep.instrument, id, s, statusAndStep.totalSteps))))
+    val loggedIn            = p.statusAndStep.isLogged
+    val stepConfigDisplayed = p.statusAndStep.stepConfigDisplayed.isDefined
+    val isPreview           = p.statusAndStep.isPreview
+    val showDefault         = loggedIn && !stepConfigDisplayed && !isPreview
+    val showAnonymous       = !loggedIn && !stepConfigDisplayed
+    val showPreview         = isPreview && !stepConfigDisplayed
+
+    <.div(
+      SequenceDefaultToolbar(p).when(showDefault),
+      SequenceAnonymousToolbar(SequenceAnonymousToolbar.Props(p.statusAndStep.obsId)).when(showAnonymous || showPreview),
+      p.statusAndStep.stepConfigDisplayed.map { s =>
+        StepConfigToolbar(StepConfigToolbar.Props(p.router, p.statusAndStep.instrument, p.statusAndStep.obsId, s, p.statusAndStep.totalSteps, isPreview)).when(stepConfigDisplayed)
+      }.getOrElse(TagMod.empty)
+    )
   }
 
   private val component = ScalaComponent.builder[Props]("SequenceStepsTableContainer")
@@ -52,86 +59,86 @@ object SequenceStepsTableContainer {
       <.div(
         ^.height := "100%",
         toolbar(p),
-        p.instrumentConnects.get(p.p().instrument).whenDefined(x => x(m =>
-            StepsTable(StepsTable.Props(p.router, p.p().isLogged, m, x => $.runState(updateStepToRun(x))))))
+        SeqexecCircuit.connect(SeqexecCircuit.stepsTableReader(p.statusAndStep.obsId))(r =>
+            StepsTable(StepsTable.Props(p.router, p.statusAndStep.isLogged, r, x => $.runState(updateStepToRun(x)))))
       )
-    }.build
+    }
+    .configure(Reusability.shouldComponentUpdate)
+    .build
 
-  def apply(router: RouterCtl[SeqexecPages], site: Site, p: ModelProxy[StatusAndStepFocus]): Unmounted[Props, State, Unit] =
-    component(Props(router, site, p))
+  def apply(p: Props): Unmounted[Props, State, Unit] =
+    component(p)
 }
 
 /**
 * Content of a single tab with a sequence
 */
 object SequenceTabContent {
+  private val defaultContent = IconMessage(IconMessage.Props(IconInbox, Some("No sequence loaded"), IconMessage.Style.Warning))
 
-  final case class Props(router: RouterCtl[SeqexecPages], site: Site, p: ModelProxy[InstrumentTabContentFocus]) {
-    protected[sequence] val connect = SeqexecCircuit.connect(SeqexecCircuit.statusAndStepReader(p().instrument))
+  final case class Props(router: RouterCtl[SeqexecPages], p: SequenceTabContentFocus) {
+    val sequenceSelected: Boolean = p.id.isDefined
   }
+
+  implicit val stcfReuse: Reusability[SequenceTabContentFocus] = Reusability.derive[SequenceTabContentFocus]
+  implicit val propsReuse: Reusability[Props] = Reusability.by(_.p)
 
   private val component = ScalaComponent.builder[Props]("SequenceTabContent")
     .stateless
     .render_P { p =>
-      val InstrumentTabContentFocus(instrument, active, sequenceSelected, logDisplayed) = p.p()
+      val SequenceTabContentFocus(instrument, id, active, logDisplayed) = p.p
+      val content = id.map { i =>
+        SeqexecCircuit.connect(SeqexecCircuit.statusAndStepReader(i)) { x =>
+          x().map { st =>
+            SequenceStepsTableContainer(SequenceStepsTableContainer.Props(p.router, st)): VdomElement
+          }.getOrElse(defaultContent)
+        }
+      }.getOrElse {
+        defaultContent
+      }
+
       <.div(
         ^.cls := "ui attached secondary segment tab",
         ^.classSet(
           "active"    -> active
         ),
-        dataTab := instrument.show,
-        SeqexecStyles.emptyInstrumentTab.unless(sequenceSelected),
-        SeqexecStyles.emptyInstrumentTabLogShown.when(!sequenceSelected && logDisplayed === SectionOpen),
-        SeqexecStyles.emptyInstrumentTabLogHidden.when(!sequenceSelected && logDisplayed === SectionClosed),
-        SeqexecStyles.instrumentTabSegment.when(sequenceSelected),
-        SeqexecStyles.instrumentTabSegmentLogShown.when(sequenceSelected && logDisplayed === SectionOpen),
-        SeqexecStyles.instrumentTabSegmentLogHidden.when(sequenceSelected && logDisplayed === SectionClosed),
-        IconMessage(IconMessage.Props(IconInbox, Some("No sequence loaded"), IconMessage.Style.Warning)).unless(sequenceSelected),
-        p.connect(st => SequenceStepsTableContainer(p.router, p.site, st)).when(sequenceSelected)
+        dataTab := instrument.foldMap(_.show),
+        SeqexecStyles.emptyInstrumentTab.unless(p.sequenceSelected),
+        SeqexecStyles.emptyInstrumentTabLogShown.when(!p.sequenceSelected && logDisplayed === SectionOpen),
+        SeqexecStyles.emptyInstrumentTabLogHidden.when(!p.sequenceSelected && logDisplayed === SectionClosed),
+        SeqexecStyles.instrumentTabSegment.when(p.sequenceSelected),
+        SeqexecStyles.instrumentTabSegmentLogShown.when(p.sequenceSelected && logDisplayed === SectionOpen),
+        SeqexecStyles.instrumentTabSegmentLogHidden.when(p.sequenceSelected && logDisplayed === SectionClosed),
+        content
       )
     }
+    .configure(Reusability.shouldComponentUpdate)
     .build
 
-    def apply(router: RouterCtl[SeqexecPages], site: Site, p: ModelProxy[InstrumentTabContentFocus]): Unmounted[Props, Unit, Unit] =
-      component(Props(router, site, p))
+    def apply(p: Props): Unmounted[Props, Unit, Unit] =
+      component(p)
 }
 
-/**
- * Contains the area with tabs and the sequence body
- */
-object SequenceTabsBody {
-  final case class Props(router: RouterCtl[SeqexecPages], site: Site) {
-    protected[sequence] val instrumentConnects = site.instruments.toList.map(i => SeqexecCircuit.connect(SeqexecCircuit.instrumentTabContentReader(i)))
-  }
-
-  private val component = ScalaComponent.builder[Props]("SequenceTabsBody")
-    .stateless
-    .render_P(p =>
-      <.div(
-        InstrumentsTabs(InstrumentsTabs.Props(p.router, p.site)),
-        p.instrumentConnects.map(c => c(s => SequenceTabContent(p.router, p.site, s))).toList.toTagMod
-      )
-    ).build
-
-  def apply(router: RouterCtl[SeqexecPages], site: Site): Unmounted[Props, Unit, Unit] =
-    component(Props(router, site))
-}
 
 /**
  * Top level container of the sequence area
  */
 object SequenceArea {
   final case class Props(router: RouterCtl[SeqexecPages], site: Site)
+  implicit val propsReuse: Reusability[Props] = Reusability.by(_.site)
 
-  private val component = ScalaComponent.builder[Props]("QueueTableSection")
+  private val component = ScalaComponent.builder[Props]("SequenceArea")
     .stateless
     .render_P( p =>
       <.div(
         ^.cls := "ui sixteen wide column",
         SeqexecStyles.sequencesArea,
-        SequenceTabsBody(p.router, p.site)
+        SeqexecCircuit.connect(SeqexecCircuit.statusReader)(x => InstrumentsTabs(InstrumentsTabs.Props(p.router, x().isLogged))),
+        SeqexecCircuit.connect(SeqexecCircuit.sequenceTabs)(x => ReactFragment(x().toList.map(t => SequenceTabContent(SequenceTabContent.Props(p.router, t)): VdomNode): _*))
       )
-    ).build
+    )
+    .configure(Reusability.shouldComponentUpdate)
+    .build
 
-  def apply(router: RouterCtl[SeqexecPages], site: Site): Unmounted[Props, Unit, Unit] = component(Props(router, site))
+  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
 }

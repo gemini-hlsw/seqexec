@@ -13,7 +13,7 @@ import seqexec.model.enum.Instrument
   * Or a list of fully hydrated SequenceViews
   */
 final case class SequencesQueue[T](
-  selected:   Map[Instrument, Observation.Id],
+  loaded:     Map[Instrument, Observation.Id],
   conditions: Conditions,
   operator:   Option[Operator],
   queue:      List[T]
@@ -25,4 +25,3 @@ object SequencesQueue {
     Eq.by(x => (x.conditions, x.operator, x.queue))
 
 }
-

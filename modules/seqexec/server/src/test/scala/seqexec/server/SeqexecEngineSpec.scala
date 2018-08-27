@@ -53,7 +53,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers {
     instForceError = false,
     failAt = 0,
     10.seconds,
-    Giapi.giapiConnectionIO.connect.unsafeRunSync,
+    Giapi.giapiConnectionIO(scala.concurrent.ExecutionContext.Implicits.global).connect.unsafeRunSync,
     uri("http://localhost:8888/xmlrpc")
   )
 

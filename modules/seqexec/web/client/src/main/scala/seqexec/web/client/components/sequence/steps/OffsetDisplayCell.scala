@@ -4,6 +4,11 @@
 package seqexec.web.client.components.sequence.steps
 
 import cats.Eq
+import cats.implicits._
+import japgolly.scalajs.react._
+import japgolly.scalajs.react.component.Scala.Unmounted
+import japgolly.scalajs.react.vdom.html_<^._
+import japgolly.scalajs.react.extra.Reusability
 import seqexec.model.enum.Guiding
 import seqexec.model.Step
 import seqexec.model.{ Offset, OffsetAxis, TelescopeOffset }
@@ -12,12 +17,9 @@ import seqexec.web.client.lenses._
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.semanticui.elements.icon.Icon.{IconBan, IconCrosshairs}
 import seqexec.web.client.semanticui.Size
+import seqexec.web.client.reusability._
 import web.client.utils._
 import web.client.style._
-import japgolly.scalajs.react._
-import japgolly.scalajs.react.component.Scala.Unmounted
-import japgolly.scalajs.react.vdom.html_<^._
-import cats.implicits._
 
 /**
   * Utility methods to display offsets and calculate their widths
@@ -83,6 +85,10 @@ object OffsetsDisplayCell {
   import OffsetFns._
 
   final case class Props(offsetsDisplay: OffsetsDisplay, step: Step)
+
+  implicit val ofdReuse: Reusability[OffsetsDisplay] = Reusability.derive[OffsetsDisplay]
+  implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
+
   private val guidingIcon = IconCrosshairs.copyIcon(color = "green".some, size = Size.Large)
   private val noGuidingIcon = IconBan.copyIcon(size = Size.Large)
 
@@ -133,6 +139,7 @@ object OffsetsDisplayCell {
         case _ => <.div()
       }
     }
+    .configure(Reusability.shouldComponentUpdate)
     .build
 
   def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)

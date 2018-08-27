@@ -9,9 +9,9 @@ import gem.Observation
 import java.util.logging.LogRecord
 import org.scalajs.dom.ext.{Ajax, AjaxException}
 import org.scalajs.dom.XMLHttpRequest
-import seqexec.model.{ ClientID, Conditions, UserDetails, UserLoginRequest, Operator, SequencesQueue, Step }
+import seqexec.model.{ ClientID, Conditions, UserDetails, UserLoginRequest, Observer, Operator, SequencesQueue, Step }
 import seqexec.model.boopickle._
-import seqexec.model.enum.{ CloudCover, ImageQuality, SkyBackground, WaterVapor}
+import seqexec.model.enum.{ CloudCover, Instrument, ImageQuality, SkyBackground, WaterVapor}
 import seqexec.web.common.{HttpStatusCodes, LogMessage, RegularCommand}
 import seqexec.web.common.LogMessage._
 import scala.scalajs.js.URIUtils._
@@ -237,6 +237,17 @@ object SeqexecWebClient extends ModelBooPicklers {
     Ajax.post(
       url = s"$baseUrl/logout"
     ).map(_.responseText)
+
+
+  /**
+    * Load a sequence
+    */
+  def loadSequence(instrument: Instrument, id: Observation.Id, name: Observer): Future[RegularCommand] = {
+    Ajax.post(
+      url = s"$baseUrl/commands/load/${encodeURI(instrument.show)}/${encodeURI(id.format)}/${encodeURI(name.value)}",
+      responseType = "arraybuffer"
+    ).map(unpickle[RegularCommand])
+  }
 
   /**
     * Log record

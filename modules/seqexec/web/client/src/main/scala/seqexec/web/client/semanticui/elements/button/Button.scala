@@ -3,16 +3,16 @@
 
 package seqexec.web.client.semanticui.elements.button
 
-import seqexec.web.client.semanticui.Size
-import seqexec.web.client.semanticui._
-import seqexec.web.client.semanticui.elements.icon.Icon
-import web.client.style._
+import cats.Eq
+import cats.implicits._
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
-
-import cats.Eq
-import cats.implicits._
+import seqexec.web.client.semanticui.Size
+import seqexec.web.client.semanticui._
+import seqexec.web.client.semanticui.elements.icon.Icon
+import scala.scalajs.js
+import web.client.style._
 
 object Button {
   sealed trait ButtonState
@@ -74,8 +74,10 @@ object Button {
                          labeled: Labeled = NotLabeled,
                          compact: Boolean = false,
                          disabled: Boolean = false,
+                         loading: Boolean = false,
                          tabIndex: Option[Int] = None,
                          color: Option[String] = None,
+                         onClickE: js.UndefOr[ReactEvent => Callback] = js.undefined,
                          onClick: Callback = Callback.empty,
                          dataTooltip: Option[String] = None,
                          extraStyles: List[GStyle] = Nil)
@@ -95,6 +97,7 @@ object Button {
       "labeled"       -> (p.labeled === LeftLabeled),
       "right labeled" -> (p.labeled === RightLabeled),
       "disabled"      -> p.disabled,
+      "loading"       -> p.loading,
       "compact"       -> p.compact,
       "tiny"          -> (p.size === Size.Tiny),
       "mini"          -> (p.size === Size.Mini),
@@ -123,7 +126,11 @@ object Button {
               p.color.map(u => ^.cls := u).whenDefined,
               p.dataTooltip.map(t => dataTooltip := t).whenDefined,
               classSet(p),
-              ^.onClick --> p.onClick,
+              p.onClickE.map { h =>
+                ^.onClick ==> h
+              }.getOrElse {
+                ^.onClick --> p.onClick
+              },
               p.icon.whenDefined,
               c
             )
@@ -132,7 +139,11 @@ object Button {
               ^.cls := "ui button",
               ^.tabIndex :=? p.tabIndex,
               classSet(p),
-              ^.onClick --> p.onClick,
+              p.onClickE.map { h =>
+                ^.onClick ==> h
+              }.getOrElse {
+                ^.onClick --> p.onClick
+              },
               p.icon.whenDefined,
               c
             )

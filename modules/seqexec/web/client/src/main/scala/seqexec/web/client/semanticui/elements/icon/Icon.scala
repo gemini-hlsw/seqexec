@@ -7,6 +7,7 @@ import cats.Eq
 import seqexec.web.client.semanticui.Size
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{Callback, ScalaComponent}
+import japgolly.scalajs.react.extra.Reusability
 import cats.implicits._
 import web.client.style._
 
@@ -81,10 +82,13 @@ final case class Icon(p: Icon.Props, children: Seq[VdomNode]) {
         c
       )
     )
+    .configure(Reusability.shouldComponentUpdate)
     .build.withKey(p.key).apply(p)(children: _*)
 }
 
 object Icon {
+  implicit val iconProps: Reusability[Icon.Props] = Reusability.caseClassExcept[Icon.Props]('onClick)
+  implicit val reuse: Reusability[Icon] = Reusability.by(_.p)
   // // Web content icons
   // val IconAlarm: Icon             = Icon("alarm")
   // val IconAlarmSlash: Icon        = Icon("alarm slash")
@@ -185,7 +189,7 @@ object Icon {
   // val IconShareAlternateSquare: Icon  = Icon("share alternate square")
   // val IconShare: Icon                 = Icon("share")
   // val IconShareSquare: Icon           = Icon("share square")
-  // val IconSignIn: Icon                = Icon("sign in")
+  val IconSignIn: Icon                = Icon("sign in")
   val IconSignOut: Icon               = Icon("sign out")
   // val IconTheme: Icon                 = Icon("theme")
   // val IconTranslate: Icon             = Icon("translate")
@@ -193,7 +197,7 @@ object Icon {
   // val IconUnhide: Icon                = Icon("unhide")
   // val IconUnlockAlternate: Icon       = Icon("unlock alternate")
   // val IconUnlock: Icon                = Icon("unlock")
-  // val IconUpload: Icon                = Icon("upload")
+  val IconUpload: Icon                = Icon("upload")
   // val IconWait: Icon                  = Icon("wait")
   // val IconWizard: Icon                = Icon("wizard")
   // val IconWrite: Icon                 = Icon("write")
@@ -653,6 +657,7 @@ object Icon {
     case object Vertically extends Flipped
 
     implicit val equal: Eq[Flipped] = Eq.fromUniversalEquals
+    implicit val reuse: Reusability[Flipped] = Reusability.byRef[Flipped]
   }
 
   sealed trait Rotated
@@ -663,6 +668,7 @@ object Icon {
     case object CounterClockwise extends Rotated
 
     implicit val equal: Eq[Rotated] = Eq.fromUniversalEquals
+    implicit val reuse: Reusability[Rotated] = Reusability.byRef[Rotated]
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))

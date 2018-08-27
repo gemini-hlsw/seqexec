@@ -21,18 +21,17 @@ import react.virtualized._
 import scala.math.max
 import scala.scalajs.js
 import seqexec.model.enum.Instrument
-import seqexec.model.{ DaytimeCalibrationTargetName, SequenceState }
+import seqexec.model.{ UserDetails, DaytimeCalibrationTargetName, Observer, SequenceState }
 import seqexec.web.client.circuit._
 import seqexec.web.client.actions._
 import seqexec.web.client.model.Pages._
+import seqexec.web.client.model.RunningStep
 import seqexec.web.client.ModelOps._
-import seqexec.web.client.services.HtmlConstants.iconEmpty
-import seqexec.web.client.semanticui.elements.icon.Icon.{
-  IconAttention,
-  IconCheckmark,
-  IconCircleNotched,
-  IconSelectedRadio
-}
+import seqexec.web.client.semanticui.elements.icon.Icon.IconAttention
+import seqexec.web.client.semanticui.elements.icon.Icon.IconCheckmark
+import seqexec.web.client.semanticui.elements.icon.Icon.IconCircleNotched
+import seqexec.web.client.semanticui.elements.icon.Icon.IconRefresh
+import seqexec.web.client.semanticui.elements.icon.Icon.IconSelectedRadio
 import web.client.style._
 import web.client.utils._
 import web.client.table._
@@ -42,7 +41,7 @@ object QueueTableBody {
 
   private val PhoneCut                 = 400
   private val LargePhoneCut            = 570
-  private val IconColumnWidth          = 20
+  private val IconColumnWidth          = 25
   private val ObsIdColumnWidth         = 140
   private val StateColumnWidth         = 80
   private val InstrumentColumnWidth    = 80
@@ -137,17 +136,21 @@ object QueueTableBody {
                    s.targetName,
                    s.name,
                    s.active,
+                   s.loaded,
                    s.runningStep)
         }
-        .getOrElse(QueueRow.zero)
+        .getOrElse(QueueRow.Empty)
 
     val rowCount: Int =
       sequencesList.size
 
-    val isLogged: Boolean = sequences().isLogged
+    val canOperate: Boolean = sequences().status.canOperate
+
+    val user: Option[UserDetails] = sequences().status.u
   }
 
   final case class State(tableState: TableState[TableColumn],
+                         rowLoading: Option[Int],
                          loggedIn: Boolean) {
     // Update the columns' visibility based on logged in state
     private def logIn: State =
@@ -169,12 +172,20 @@ object QueueTableBody {
         }))(this)
 
     // Change the columns visibility depending on the logged in state
-    def loginState(isLogged: Boolean): State = {
-      val loginChanged = isLogged =!= loggedIn
+    def loginState(canOperate: Boolean): State = {
+      val loginChanged = canOperate =!= loggedIn
       State.userModified.modify(m =>
         UserModified.fromBool((m === IsModified) && !loginChanged))(
-        isLogged.fold(logIn, logOff))
+        canOperate.fold(logIn, logOff))
     }
+
+    // Reset loading of rows
+    def resetLoading(p: Props): State =
+      if (rowLoading.exists(i => p.rowGetter(i).loaded)) {
+        copy(rowLoading = None)
+      } else {
+        this
+      }
 
     // calculate the relative widths of each column based on content only
     // this should be renormalized against the actual tabel width
@@ -183,7 +194,7 @@ object QueueTableBody {
         this
       } else {
         val optimalSizes = sequences.foldLeft(columnsDefaultWidth) {
-          case (currWidths, SequenceInQueue(id, st, i, _, n, t, r)) =>
+          case (currWidths, SequenceInQueue(id, st, i, _, _, n, t, r)) =>
             val idWidth = max(currWidths.getOrElse(ObsIdColumn, 0),
                               tableTextWidth(id.format))
             val statusWidth =
@@ -260,7 +271,7 @@ object QueueTableBody {
       State.tableState.modify(_.applyOffset(column, delta))(this)
   }
 
-  val InitialTableState: State = State(TableState(NotModified, 0, all), false)
+  val InitialTableState: State = State(TableState(NotModified, 0, all), None, false)
 
   object State {
     // Lenses
@@ -288,7 +299,9 @@ object QueueTableBody {
     var targetName: Option[String]
     var name: String
     var active: Boolean
+    var loaded: Boolean
     var runningStep: Option[RunningStep]
+
   }
 
   // scalastyle:on
@@ -301,6 +314,7 @@ object QueueTableBody {
               targetName: Option[String],
               name: String,
               active: Boolean,
+              loaded: Boolean,
               runningStep: Option[RunningStep]): QueueRow = {
       val p = (new js.Object).asInstanceOf[QueueRow]
       p.obsId = obsId
@@ -310,6 +324,7 @@ object QueueTableBody {
       p.name = name
       p.active = active
       p.runningStep = runningStep
+      p.loaded = loaded
       p
     }
 
@@ -319,6 +334,7 @@ object QueueTableBody {
                                       Option[String],
                                       String,
                                       Boolean,
+                                      Boolean,
                                       Option[RunningStep])] =
       Some(
         (l.obsId,
@@ -327,37 +343,38 @@ object QueueTableBody {
          l.targetName,
          l.name,
          l.active,
+         l.loaded,
          l.runningStep))
 
-    def zero: QueueRow =
+    def Empty: QueueRow =
       apply(Observation.Id.unsafeFromString("Zero-1"),
             SequenceState.Idle,
             Instrument.F2,
             None,
             "",
             active = false,
+            loaded = false,
             None)
   }
 
-  private def showSequence(p: Props,
-                           i: Instrument,
-                           id: Observation.Id): Callback =
-    // Request to display the selected sequence
-    p.sequences.dispatchCB(NavigateTo(SequencePage(i, id, 0)))
-
-  private def linkTo(p: Props, page: SequencePage)(mod: TagMod*) =
+  private def linkTo(p: Props, page: SeqexecPages)(mod: TagMod*) =
     <.a(
       ^.href := p.ctl.urlFor(page).value,
-      ^.onClick --> showSequence(p, page.instrument, page.obsId),
-      p.ctl.setOnLinkClick(page),
+      ^.onClick ==> {_.preventDefaultCB},
       mod.toTagMod
     )
+
+  def pageOf(row: QueueRow): SeqexecPages =
+    if (row.loaded) {
+      SequencePage(row.instrument, row.obsId, 0)
+    } else {
+      PreviewPage(row.instrument, row.obsId, 0)
+    }
 
   private def linkedTextRenderer(p: Props)(
       f: QueueRow => TagMod): CellRenderer[js.Object, js.Object, QueueRow] =
     (_, _, _, row: QueueRow, _) => {
-      val page = SequencePage(row.instrument, row.obsId, 0)
-      linkTo(p, page)(SeqexecStyles.queueTextColumn, f(row))
+      linkTo(p, pageOf(row))(SeqexecStyles.queueTextColumn, f(row))
     }
 
   private def obsIdRenderer(p: Props) = linkedTextRenderer(p) { r =>
@@ -389,29 +406,33 @@ object QueueTableBody {
     <.p(SeqexecStyles.queueText, targetName)
   }
 
-  private def statusIconRenderer(p: Props): CellRenderer[js.Object, js.Object, QueueRow] =
-    (_, _, _, row: QueueRow, _) => {
+  private def statusIconRenderer(b: Backend): CellRenderer[js.Object, js.Object, QueueRow] =
+    (_, _, _, row: QueueRow, index) => {
+      val isFocused = row.active
       val icon: TagMod =
         row.status match {
-          case SequenceState.Completed =>
+          case SequenceState.Completed     =>
             IconCheckmark.copyIcon(fitted = true,
                                    extraStyles = List(SeqexecStyles.selectedIcon))
           case SequenceState.Running(_, _) =>
             IconCircleNotched.copyIcon(fitted = true,
                                        loading = true,
                                        extraStyles = List(SeqexecStyles.runningIcon))
-          case SequenceState.Failed(_) =>
-            IconAttention.copyIcon(fitted = true,
+          case SequenceState.Failed(_)     =>
+            IconAttention.copyIcon(fitted = true, color = "red".some,
                                    extraStyles = List(SeqexecStyles.selectedIcon))
-          case _ =>
-            if (row.active)
-              IconSelectedRadio.copyIcon(fitted = true,
+          case _ if b.state.rowLoading.exists(_ === index) =>
+            // Spinning icon while loading
+            IconRefresh.copyIcon(fitted = true, loading = true,
+                                       extraStyles = List(SeqexecStyles.runningIcon))
+          case _ if isFocused              =>
+            IconSelectedRadio.copyIcon(fitted = true,
                                          extraStyles = List(SeqexecStyles.selectedIcon))
-            else iconEmpty
+          case _                           =>
+            <.div()
         }
 
-      val page = SequencePage(row.instrument, row.obsId, 0)
-      linkTo(p, page)(
+      linkTo(b.props, pageOf(row))(
         SeqexecStyles.queueIconColumn,
         icon
       )
@@ -428,13 +449,13 @@ object QueueTableBody {
     ((i, p.rowGetter(i)) match {
       case (-1, _) =>
         SeqexecStyles.headerRowStyle
-      case (_, QueueRow(_, s, _, _, _, _, _)) if s == SequenceState.Completed =>
+      case (_, QueueRow(_, s, _, _, _, _, _, _)) if s == SequenceState.Completed =>
         SeqexecStyles.stepRow |+| SeqexecStyles.rowPositive
-      case (_, QueueRow(_, s, _, _, _, _, _)) if s.isRunning                  =>
+      case (_, QueueRow(_, s, _, _, _, _, _, _)) if s.isRunning                  =>
         SeqexecStyles.stepRow |+| SeqexecStyles.rowWarning
-      case (_, QueueRow(_, s, _, _, _, _, _)) if s.isError                    =>
+      case (_, QueueRow(_, s, _, _, _, _, _, _)) if s.isError                    =>
         SeqexecStyles.stepRow |+| SeqexecStyles.rowNegative
-      case (_, QueueRow(_, s, _, _, _, active, _))
+      case (_, QueueRow(_, s, _, _, _, _, active, _))
           if active && !s.isInProcess                                         =>
         SeqexecStyles.stepRow |+| SeqexecStyles.rowActive
       case _                                                                  =>
@@ -461,7 +482,7 @@ object QueueTableBody {
             width,
             dataKey = "status",
             label = "",
-            cellRenderer = statusIconRenderer(props),
+            cellRenderer = statusIconRenderer(b),
             headerRenderer = statusHeaderRenderer,
             className = SeqexecStyles.queueIconColumn.htmlClass
           ))
@@ -470,7 +491,6 @@ object QueueTableBody {
           Column.propsNoFlex(
             width,
             dataKey = "obsid",
-            minWidth = ObsIdColumnWidth,
             label = "Obs. ID",
             cellRenderer = obsIdRenderer(props),
             headerRenderer = resizableHeaderRenderer(resizeRow(ObsIdColumn)),
@@ -481,7 +501,6 @@ object QueueTableBody {
           Column.propsNoFlex(
             width,
             dataKey = "state",
-            minWidth = StateColumnWidth,
             label = "State",
             cellRenderer = stateRenderer(props),
             headerRenderer = resizableHeaderRenderer(resizeRow(StateColumn)),
@@ -492,7 +511,6 @@ object QueueTableBody {
           Column.propsNoFlex(
             width,
             dataKey = "instrument",
-            minWidth = InstrumentColumnWidth,
             label = "Instrument",
             cellRenderer = instrumentRenderer(props),
             headerRenderer =
@@ -504,7 +522,6 @@ object QueueTableBody {
           Column.propsNoFlex(
             width,
             dataKey = "instrument",
-            minWidth = InstrumentColumnWidth,
             label = "Instrument",
             cellRenderer = instrumentRenderer(props),
             className = QueueColumnStyle
@@ -514,7 +531,6 @@ object QueueTableBody {
           Column.propsNoFlex(
             width,
             dataKey = "obsName",
-            minWidth = ObsNameColumnWidth / 2,
             label = "Obs. Name",
             cellRenderer = obsNameRenderer(props),
             className = QueueColumnStyle
@@ -524,7 +540,6 @@ object QueueTableBody {
           Column.propsNoFlex(
             width,
             dataKey = "target",
-            minWidth = TargetNameColumnWidth / 2,
             label = "Target",
             cellRenderer = targetRenderer(props),
             headerRenderer =
@@ -539,6 +554,32 @@ object QueueTableBody {
     val s = State.scrollPosition.set(pos)(b.state)
     b.setState(s) *> SeqexecCircuit.dispatchCB(
       UpdateQueueTableState(s.tableState))
+  }
+
+  // Single click puts in preview or go to tab
+  def singleClick(b: Backend)(i: Int): Callback = {
+    val r = b.props.rowGetter(i)
+    val p = pageOf(r)
+    // If already loaded switch tabs or to preview
+    b.props.ctl.setUrlAndDispatchCB(p)
+  }
+
+  // Double click tries to load
+  def doubleClick(b: Backend)(i: Int): Callback = {
+    val r = b.props.rowGetter(i)
+    if (r.loaded) {
+      // If already loaded switch tabs
+      b.props.ctl.dispatchAndSetUrlCB(SelectIdToDisplay(r.instrument, r.obsId, 0))
+    } else { // Try to load it
+      (for {
+        u <- b.props.user
+        if (b.props.canOperate && i >= 0 && !r.loaded)
+      } yield {
+        val load = SeqexecCircuit.dispatchCB(LoadSequence(Observer(u.displayName), r.instrument, r.obsId))
+        val spin = b.modState(_.copy(rowLoading = i.some))
+        spin *> load
+      }).getOrEmpty
+    }
   }
 
   def table(b: Backend)(size: Size): VdomNode =
@@ -562,6 +603,8 @@ object QueueTableBody {
         headerClassName = SeqexecStyles.tableHeader.htmlClass,
         scrollTop = b.state.tableState.scrollPosition,
         onScroll = (_, _, pos) => updateScrollPosition(b, pos),
+        onRowDoubleClick = doubleClick(b),
+        onRowClick = singleClick(b),
         headerHeight = SeqexecStyles.headerHeight
       ),
       columns(b, size): _*
@@ -570,7 +613,7 @@ object QueueTableBody {
   def initialState(p: Props): State =
     InitialTableState
       .copy(tableState = p.startState)
-      .loginState(p.isLogged)
+      .loginState(p.canOperate)
       .withWidths(p.sequencesList)
 
   private val component = ScalaComponent
@@ -579,7 +622,7 @@ object QueueTableBody {
     .render($ => AutoSizer(AutoSizer.props(table($), disableHeight = true)))
     .componentWillReceiveProps { $ =>
       $.modState { s =>
-        s.loginState($.nextProps.isLogged).withWidths($.nextProps.sequencesList)
+        s.loginState($.nextProps.canOperate).withWidths($.nextProps.sequencesList).resetLoading($.nextProps)
       }
     }
     .build

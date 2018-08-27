@@ -4,7 +4,7 @@
 
 @background_color_5: #f5f5f5;
 @background_color_6: #f9fafb;
-@table_row_left_padding: 7px;
+@table_row_left_padding: 1em;
 @breakpoint_line_color: #a5673f;
 @gutter_end_color: rgba(
   34,
@@ -53,11 +53,26 @@ body {
 
 .SeqexecStyles-instrumentTabLabel {
   width: 100%;
+  text-align: center;
+}
+
+.SeqexecStyles-previewTabLabel {
+  width: 100%;
+  text-align: center;
+  display: flex;
+}
+
+.SeqexecStyles-previewTabId {
+  align-self: flex-start;
+}
+
+.SeqexecStyles-previewTabLoadButton {
+  align-self: flex-end;
+  margin-left: auto;
 }
 
 .SeqexecStyles-instrumentTab {
   min-width: 20%;
-  text-align: center;
 }
 
 .SeqexecStyles-activeInstrumentContent {
@@ -93,15 +108,16 @@ body {
 }
 
 .SeqexecStyles-emptyInstrumentTabLogShown {
-  height: ~"calc(100vh - 44.9em)";
+  height: ~"calc(100vh - 39.9em)";
 }
 
 .SeqexecStyles-emptyInstrumentTabLogHidden {
-  height: ~"calc(100vh - 30.2em)";
+  height: ~"calc(100vh - 25.2em)";
 }
 
 .SeqexecStyles-instrumentTabSegment {
   min-height: 20.4em;
+  padding: 0.4em !important;
 }
 
 .SeqexecStyles-instrumentTabSegmentLogHidden {
@@ -114,6 +130,14 @@ body {
 
 .SeqexecStyles-sequencesArea {
   .widerColumn;
+}
+
+.SeqexecStyles-controlButtons {
+  padding-bottom: 0.3em;
+}
+
+.SeqexecStyles-infoOnControl {
+  margin-top: 0.2em !important;
 }
 
 .SeqexecStyles-sequencesArea
@@ -346,6 +370,7 @@ body {
 
 .SeqexecStyles-paddedStepRow {
   padding-left: @table_row_left_padding;
+  padding-right: @table_row_left_padding;
 }
 
 .SeqexecStyles-stepRow {
@@ -488,12 +513,12 @@ body {
 }
 
 .SeqexecStyles-stepsListPane {
-  height: ~"calc(100% - 1.98em)";
+  height: ~"calc(100% - 2.5em)";
   margin-top: 1em;
 }
 
 .SeqexecStyles-stepsListPaneWithControls {
-  height: ~"calc(100% - 4.9em)";
+  height: ~"calc(100% - 2.9em)";
   margin-top: 1em;
 }
 
@@ -610,7 +635,7 @@ body {
 
 .SeqexecStyles-selectedIcon {
   .queueText;
-  margin-bottom: 5px !important;
+  margin-bottom: 7px !important;
 }
 
 .SeqexecStyles-runningIcon {
@@ -928,5 +953,13 @@ body {
   }
   .SeqexecStyles-logArea {
     padding: 0em !important;
+  }
+
+  .SeqexecStyles-instrumentTabSegmentLogHidden {
+    height: ~"calc(100vh - 21.1em)";
+  }
+
+  .SeqexecStyles-instrumentTabSegmentLogShown {
+    height: ~"calc(100vh - 35.8em)";
   }
 }

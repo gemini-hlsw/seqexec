@@ -11,11 +11,9 @@ import org.scalacheck.Arbitrary._
 import gem.Observation
 import java.time.Instant
 import seqexec.model.enum._
+import seqexec.model.SeqexecModelArbitraries._
 
-// Keep the arbitraries in a separate trait to improve caching
-@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
-object SequenceEventsArbitraries {
-  import SharedModelArbitraries._
+trait SequenceEventsArbitraries {
 
   implicit val coeArb = Arbitrary[ConnectionOpenEvent] {
     for {
@@ -72,11 +70,15 @@ object SequenceEventsArbitraries {
   implicit val opArb  = Arbitrary[OperatorUpdated] { arbitrary[SequencesQueue[SequenceView]].map(OperatorUpdated.apply) }
   implicit val obArb  = Arbitrary[ObserverUpdated] { arbitrary[SequencesQueue[SequenceView]].map(ObserverUpdated.apply) }
   implicit val cuArb  = Arbitrary[ConditionsUpdated] { arbitrary[SequencesQueue[SequenceView]].map(ConditionsUpdated.apply) }
-  implicit val suArb  = Arbitrary[SelectedSequenceUpdate] {
+  implicit val suArb  = Arbitrary[LoadSequenceUpdated] {
     for {
       i <- arbitrary[Instrument]
       o <- arbitrary[Observation.Id]
-    } yield SelectedSequenceUpdate(i, o)
+      s <- arbitrary[SequencesQueue[SequenceView]]
+    } yield LoadSequenceUpdated(i, o, s)
+  }
+  implicit val clsArb = Arbitrary[ClearLoadedSequencesUpdated] {
+    arbitrary[SequencesQueue[SequenceView]].map(ClearLoadedSequencesUpdated.apply)
   }
   implicit val serArb = Arbitrary[SequenceError] {
     for {
@@ -129,6 +131,8 @@ object SequenceEventsArbitraries {
         arbitrary[SequenceUpdated],
         arbitrary[SequencePaused],
         arbitrary[ExposurePaused],
+        arbitrary[LoadSequenceUpdated],
+        arbitrary[ClearLoadedSequencesUpdated],
         arbitrary[SequenceError]
     )
   }
@@ -138,7 +142,6 @@ object SequenceEventsArbitraries {
       arbitrary[ConnectionOpenEvent],
       arbitrary[NewLogMessage],
       arbitrary[ServerLogMessage],
-      arbitrary[SelectedSequenceUpdate],
       arbitrary[NullEvent.type]
     )
   }
@@ -212,3 +215,5 @@ object SequenceEventsArbitraries {
   implicit val nlmCogen: Cogen[NewLogMessage] =
     Cogen[String].contramap(_.msg)
 }
+
+object SequenceEventsArbitraries extends SequenceEventsArbitraries

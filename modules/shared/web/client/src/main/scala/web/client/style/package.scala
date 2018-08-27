@@ -4,6 +4,7 @@
 package web.client
 
 import japgolly.scalajs.react.vdom.html_<^._
+import japgolly.scalajs.react.extra.Reusability
 import cats.{Eq, Monoid}
 import cats.implicits._
 
@@ -18,6 +19,8 @@ package style {
     val Zero: GStyle = GStyle(Nil)
 
     implicit val eq: Eq[GStyle] = Eq.by(_.htmlClass)
+
+    implicit val reuse: Reusability[GStyle] = Reusability.by(_.htmlClass)
 
     implicit val monoid: Monoid[GStyle] =
       Monoid[List[String]].imap(GStyle.apply)(_.htmlClasses)

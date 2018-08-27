@@ -13,9 +13,10 @@ import scala.scalajs.js
 import seqexec.model.enum.{ Instrument, StepType }
 import seqexec.model.{ StepState, Step, StandardStep }
 import seqexec.web.client.lenses._
+import seqexec.web.client.model.ClientStatus
 import seqexec.web.client.model.Pages.SeqexecPages
 import seqexec.web.client.ModelOps._
-import seqexec.web.client.circuit.{ClientStatus, StepsTableAndStatusFocus, StepsTableFocus}
+import seqexec.web.client.circuit.{ StepsTableAndStatusFocus, StepsTableFocus }
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.components.sequence.steps.OffsetFns._
 import seqexec.web.client.semanticui.elements.icon.Icon._
@@ -90,6 +91,7 @@ object StepsTable {
     val showOffsets: Boolean   = showProp(InstrumentProperties.Offsets)
     val showDisperser: Boolean = showProp(InstrumentProperties.Disperser)
     val showFPU: Boolean       = showProp(InstrumentProperties.FPU)
+    val isPreview: Boolean     = steps.map(_.isPreview).getOrElse(false)
 
     val showObservingMode: Boolean = showProp(
       InstrumentProperties.ObservingMode)
@@ -128,7 +130,7 @@ object StepsTable {
       f: StepsTableFocus): CellRenderer[js.Object, js.Object, StepRow] =
     (_, _, _, row: StepRow, _) =>
       SettingsCell(
-        SettingsCell.Props(p.router, f.instrument, f.id, row.step.id))
+        SettingsCell.Props(p.router, f.instrument, f.id, row.step.id, p.isPreview))
 
   def stepProgressRenderer(
       f: StepsTableFocus,
@@ -464,11 +466,10 @@ object StepsTable {
     // Wire it up from VDOM
     def render(p: Props): VdomElement = {
       val settingsDisplayed = p.steps.forall(_.stepConfigDisplayed.isDefined)
+      val isTall = (p.status.isLogged || settingsDisplayed) && !p.isPreview
       <.div(
-        SeqexecStyles.stepsListPane.unless(
-          p.status.isLogged || settingsDisplayed),
-        SeqexecStyles.stepsListPaneWithControls.when(
-          p.status.isLogged || settingsDisplayed),
+        SeqexecStyles.stepsListPane.unless(isTall),
+        SeqexecStyles.stepsListPaneWithControls.when(isTall),
         p.steps.whenDefined { tab =>
           tab.stepConfigDisplayed
             .map { i =>

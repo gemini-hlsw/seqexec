@@ -4,11 +4,11 @@
 package seqexec.model
 
 import cats.tests.CatsSuite
-import SequenceEventsArbitraries._
-import SharedModelArbitraries._
 import monocle.law.discipline.{IsoTests, LensTests, OptionalTests, PrismTests, TraversalTests}
 import org.scalacheck.Arbitrary._
 import seqexec.model.enum._
+import seqexec.model.SeqexecModelArbitraries._
+import seqexec.model.SequenceEventsArbitraries._
 
 final class ModelLensesSpec extends CatsSuite with ModelLenses {
   checkAll("event observer name lens", LensTests(obsNameL))

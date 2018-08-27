@@ -42,7 +42,7 @@ import squants.space.LengthConversions._
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.duration._
-import seqexec.model.SharedModelArbitraries._
+import seqexec.model.SeqexecModelArbitraries._
 import seqexec.server.ghost.GHOSTController
 import seqexec.server.ghost.GHOSTController.GHOSTConfig
 

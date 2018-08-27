@@ -6,23 +6,25 @@ package seqexec.web.client.components.sequence.steps
 import cats.implicits._
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.component.Scala.Unmounted
+import japgolly.scalajs.react.extra.Reusability
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.extra.router.RouterCtl
 import gem.Observation
 import gem.enum.{GpiDisperser, GpiFilter, GpiObservingMode}
 import seqexec.model.enum.{ FPUMode, Instrument, StepType }
 import seqexec.model.{ Step, StepState }
-import seqexec.web.client.actions.{NavigateSilentTo, FlipSkipStep, FlipBreakpointStep}
+import seqexec.web.client.actions.{FlipSkipStep, FlipBreakpointStep}
 import seqexec.model.enumerations
-import seqexec.web.client.circuit.{ClientStatus, SeqexecCircuit, StepsTableFocus}
+import seqexec.web.client.circuit.{ SeqexecCircuit, StepsTableFocus }
 import seqexec.web.client.components.SeqexecStyles
-import seqexec.web.client.model.Pages
+import seqexec.web.client.model.{ClientStatus, Pages}
 import seqexec.web.client.lenses._
 import seqexec.web.client.semanticui.elements.label.Label
 import seqexec.web.client.semanticui.elements.icon.Icon
 import seqexec.web.client.semanticui.elements.icon.Icon._
 import seqexec.web.client.semanticui.Size
 import seqexec.web.client.services.HtmlConstants.iconEmpty
+import seqexec.web.client.reusability._
 import web.client.style._
 
 /**
@@ -35,8 +37,10 @@ object StepToolsCell {
                          rowHeight: Int,
                          heightChangeCB: Int => Callback)
 
+  implicit val propsReuse: Reusability[Props] = Reusability.caseClassExcept[Props]('heightChangeCB)
+
   private val component = ScalaComponent
-    .builder[Props]("StepIconCell")
+    .builder[Props]("StepToolsCell")
     .stateless
     .render_P { p =>
       <.div(
@@ -47,10 +51,11 @@ object StepToolsCell {
                                   p.step,
                                   p.rowHeight,
                                   p.heightChangeCB))
-          .when(p.clientStatus.isLogged),
+          .when(p.clientStatus.isLogged).unless(p.focus.isPreview),
         StepIconCell(p)
       )
     }
+    .configure(Reusability.shouldComponentUpdate)
     .build
 
   def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
@@ -164,6 +169,8 @@ object StepIconCell {
 object FPUCell {
   final case class Props(s: Step, i: Instrument)
 
+  implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
+
   private val component = ScalaComponent
     .builder[Props]("FPUCell")
     .stateless
@@ -186,6 +193,7 @@ object FPUCell {
         fpuValue.getOrElse("Unknown"): String
       )
     }
+    .configure(Reusability.shouldComponentUpdate)
     .build
 
   def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
@@ -196,6 +204,8 @@ object FPUCell {
   */
 object FilterCell {
   final case class Props(s: Step, i: Instrument)
+
+  implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
   private val gpiObsMode = GpiObservingMode.all.map(x => x.shortName -> x).toMap
 
@@ -231,6 +241,7 @@ object FilterCell {
         filterName(p.s).getOrElse("Unknown"): String
       )
     }
+    .configure(Reusability.shouldComponentUpdate)
     .build
 
   def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
@@ -241,6 +252,8 @@ object FilterCell {
   */
 object DisperserCell {
   final case class Props(s: Step, i: Instrument)
+
+  implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
   val gpiDispersers: Map[String, String] =
     GpiDisperser.all.map(x => x.shortName -> x.longName).toMap
@@ -272,6 +285,7 @@ object DisperserCell {
         displayedText
       )
     }
+    .configure(Reusability.shouldComponentUpdate)
     .build
 
   def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
@@ -282,6 +296,8 @@ object DisperserCell {
   */
 object ExposureTimeCell {
   final case class Props(s: Step, i: Instrument)
+
+  implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
   private val component = ScalaComponent
     .builder[Props]("ExposureTimeCell")
@@ -315,6 +331,7 @@ object ExposureTimeCell {
         displayedText
       )
     }
+    .configure(Reusability.shouldComponentUpdate)
     .build
 
   def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
@@ -327,9 +344,10 @@ object StepIdCell {
   private val component = ScalaComponent
     .builder[Int]("StepIdCell")
     .stateless
-    .render_P { p =>
+    .render_P( p =>
       <.div(s"${p + 1}")
-    }
+    )
+    .configure(Reusability.shouldComponentUpdate)
     .build
 
   def apply(i: Int): Unmounted[Int, Unit, Unit] = component(i)
@@ -339,18 +357,27 @@ object StepIdCell {
   * Component to link to the settings
   */
 object SettingsCell {
-  final case class Props(ctl: RouterCtl[Pages.SeqexecPages], instrument: Instrument, obsId: Observation.Id, index: Int)
+  final case class Props(ctl: RouterCtl[Pages.SeqexecPages], instrument: Instrument, obsId: Observation.Id, index: Int, isPreview: Boolean)
+
+  implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
+
   private val component = ScalaComponent.builder[Props]("SettingsCell")
     .stateless
     .render_P { p =>
-      val page = Pages.SequenceConfigPage(p.instrument, p.obsId, p.index + 1)
+      val page = if (p.isPreview) {
+        Pages.PreviewConfigPage(p.instrument, p.obsId, p.index + 1)
+      } else {
+        Pages.SequenceConfigPage(p.instrument, p.obsId, p.index + 1)
+      }
       <.div(
         SeqexecStyles.settingsCell,
         p.ctl.link(page)(
-          IconCaretRight.copyIcon(color = "black".some, onClick = SeqexecCircuit.dispatchCB(NavigateSilentTo(page)))
+          IconCaretRight.copyIcon(color = "black".some, onClick = p.ctl.setUrlAndDispatchCB(page))
         )
       )
-    }.build
+    }
+    .configure(Reusability.shouldComponentUpdate)
+    .build
 
   def apply(i: Props): Unmounted[Props, Unit, Unit] = component(i)
 }
@@ -360,6 +387,9 @@ object SettingsCell {
   */
 object ObjectTypeCell {
   final case class Props(step: Step, size: Size)
+
+  implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
+
   private val component = ScalaComponent
     .builder[Props]("ObjectTypeCell")
     .stateless
@@ -378,7 +408,9 @@ object ObjectTypeCell {
           Label(Label.Props(st.show, color = stepTypeColor.some, size = p.size))
         }.whenDefined
       )
-    }.build
+    }
+    .configure(Reusability.shouldComponentUpdate)
+    .build
 
   def apply(i: Props): Unmounted[Props, Unit, Unit] = component(i)
 }
@@ -388,6 +420,8 @@ object ObjectTypeCell {
   */
 object ObservingModeCell {
   final case class Props(s: Step)
+
+  implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
   private val obsNames =
     GpiObservingMode.all.map(x => x.shortName -> x.longName).toMap
@@ -401,6 +435,7 @@ object ObservingModeCell {
         instrumentObservingModeO.getOption(p.s).flatMap(obsNames.get).getOrElse("Unknown"): String
       )
     )
+    .configure(Reusability.shouldComponentUpdate)
     .build
 
   def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
