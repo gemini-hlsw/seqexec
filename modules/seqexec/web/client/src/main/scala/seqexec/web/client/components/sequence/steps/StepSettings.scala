@@ -13,9 +13,8 @@ import gem.Observation
 import gem.enum.{GpiDisperser, GpiFilter, GpiObservingMode}
 import seqexec.model.enum.{ FPUMode, Instrument, StepType }
 import seqexec.model.{ Step, StepState }
-import seqexec.web.client.actions.{FlipSkipStep, FlipBreakpointStep}
 import seqexec.model.enumerations
-import seqexec.web.client.circuit.{ SeqexecCircuit, StepsTableFocus }
+import seqexec.web.client.circuit.StepsTableFocus
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.model.{ClientStatus, Pages}
 import seqexec.web.client.lenses._
@@ -35,9 +34,11 @@ object StepToolsCell {
                          focus: StepsTableFocus,
                          step: Step,
                          rowHeight: Int,
+                         breakPointEnterCB: Int => Callback,
+                         breakPointLeaveCB: Int => Callback,
                          heightChangeCB: Int => Callback)
 
-  implicit val propsReuse: Reusability[Props] = Reusability.caseClassExcept[Props]('heightChangeCB)
+  implicit val propsReuse: Reusability[Props] = Reusability.caseClassExcept[Props]('heightChangeCB, 'breakPointEnterCB, 'breakPointLeaveCB)
 
   private val component = ScalaComponent
     .builder[Props]("StepToolsCell")
@@ -50,76 +51,14 @@ object StepToolsCell {
                                   p.focus,
                                   p.step,
                                   p.rowHeight,
+                                  p.breakPointEnterCB,
+                                  p.breakPointLeaveCB,
                                   p.heightChangeCB))
           .when(p.clientStatus.isLogged).unless(p.focus.isPreview),
         StepIconCell(p)
       )
     }
     .configure(Reusability.shouldComponentUpdate)
-    .build
-
-  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
-}
-
-/**
-  * Component to display an icon for the state
-  */
-object StepBreakStopCell {
-  final case class Props(clientStatus: ClientStatus,
-                         focus: StepsTableFocus,
-                         step: Step,
-                         rowHeight: Int,
-                         heightChangeCB: Int => Callback) {
-    val steps: List[Step] = focus.steps
-  }
-
-  // Request a to flip the breakpoint
-  def flipBreakpoint(p: Props): Callback =
-    Callback.when(p.clientStatus.isLogged)(SeqexecCircuit.dispatchCB(FlipBreakpointStep(p.focus.id, p.step)) >> p.heightChangeCB(p.step.id))
-
-  // Request a to flip the skip
-  def flipSkipped(p: Props): Callback =
-    Callback.when(p.clientStatus.isLogged)(SeqexecCircuit.dispatchCB(FlipSkipStep(p.focus.id, p.step)))
-
-  private def firstRunnableIndex(l: List[Step]): Int = l.zipWithIndex.find(!_._1.isFinished).map(_._2).getOrElse(l.length)
-
-  private val component = ScalaComponent
-    .builder[Props]("StepIconCell")
-    .stateless
-    .render_P { p =>
-      val canSetBreakpoint = p.clientStatus.isLogged && p.step.canSetBreakpoint(p.step.id, firstRunnableIndex(p.steps))
-      val canSetSkipMark = p.clientStatus.isLogged && p.step.canSetSkipmark
-      <.div(
-        SeqexecStyles.gutterCell,
-        ^.height := p.rowHeight.px,
-        <.div(
-          SeqexecStyles.breakPointHandle,
-          ^.onClick --> flipBreakpoint(p),
-          Icon.IconRemove
-            .copyIcon(color = Some("grey"),
-                      fitted = true,
-                      extraStyles = List(SeqexecStyles.breakPointOffIcon))
-            .when(p.step.breakpoint),
-          Icon.IconCaretDown
-            .copyIcon(color = Some("grey"),
-                      fitted = true,
-                      extraStyles = List(SeqexecStyles.breakPointOnIcon))
-            .unless(p.step.breakpoint)
-        ).when(canSetBreakpoint),
-        <.div(
-          SeqexecStyles.skipHandle,
-          ^.top := (p.rowHeight / 2 - SeqexecStyles.skipHandleHeight + 2).px,
-          IconPlusSquareOutline
-            .copyIcon(link = true, onClick = flipSkipped(p))
-            .when(p.step.skip),
-          IconMinusCircle
-            .copyIcon(link = true,
-                      color = Some("orange"),
-                      onClick = flipSkipped(p))
-            .unless(p.step.skip)
-        ).when(canSetSkipMark)
-      )
-    }
     .build
 
   def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)

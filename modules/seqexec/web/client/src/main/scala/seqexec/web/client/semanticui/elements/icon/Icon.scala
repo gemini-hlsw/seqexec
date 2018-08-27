@@ -32,7 +32,9 @@ final case class Icon(p: Icon.Props, children: Seq[VdomNode]) {
            color: Option[String] = None,
            extraStyles: List[GStyle] = Nil,
            key: String = "",
-           onClick: Callback = Callback.empty): Icon =
+           onClick: Callback = Callback.empty,
+           onMouseEnter: Callback = Callback.empty,
+           onMouseLeave: Callback = Callback.empty): Icon =
     copy(
       p = Icon.Props(id = p.id,
         disabled = disabled,
@@ -48,6 +50,8 @@ final case class Icon(p: Icon.Props, children: Seq[VdomNode]) {
         color = color,
         extraStyles = extraStyles,
         key = key,
+        onMouseEnter = onMouseEnter,
+        onMouseLeave = onMouseLeave,
         onClick = onClick),
       children = if (children.nonEmpty) children else this.children)
 
@@ -79,6 +83,8 @@ final case class Icon(p: Icon.Props, children: Seq[VdomNode]) {
           "inverted"                 -> p.inverted
         ),
         ^.onClick --> p.onClick,
+        ^.onMouseEnter --> p.onMouseEnter,
+        ^.onMouseLeave --> p.onMouseLeave,
         c
       )
     )
@@ -87,7 +93,7 @@ final case class Icon(p: Icon.Props, children: Seq[VdomNode]) {
 }
 
 object Icon {
-  implicit val iconProps: Reusability[Icon.Props] = Reusability.caseClassExcept[Icon.Props]('onClick)
+  implicit val iconProps: Reusability[Icon.Props] = Reusability.caseClassExcept[Icon.Props]('onClick, 'onMouseEnter, 'onMouseLeave)
   implicit val reuse: Reusability[Icon] = Reusability.by(_.p)
   // // Web content icons
   // val IconAlarm: Icon             = Icon("alarm")
@@ -686,6 +692,8 @@ object Icon {
                    color: Option[String] = None,
                    extraStyles: List[GStyle] = Nil,
                    key: String = "",
+                   onMouseEnter: Callback = Callback.empty,
+                   onMouseLeave: Callback = Callback.empty,
                    onClick: Callback = Callback.empty)
 
   // Used to call Icon directly on a jsx component declaration

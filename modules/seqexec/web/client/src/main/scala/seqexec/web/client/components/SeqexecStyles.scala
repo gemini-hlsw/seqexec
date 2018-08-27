@@ -161,6 +161,8 @@ object SeqexecStyles {
 
   val stepRowWithBreakpoint: GStyle = GStyle.fromString("SeqexecStyles-stepRowWithBreakpoint")
 
+  val stepRowWithBreakpointHover: GStyle = GStyle.fromString("SeqexecStyles-stepRowWithBreakpointHover")
+
   val stepRowWithBreakpointAndControl: GStyle = GStyle.fromString("SeqexecStyles-stepRowWithBreakpointAndControl")
 
   val centeredCell: GStyle = GStyle.fromString("SeqexecStyles-centeredCell")
@@ -179,7 +181,9 @@ object SeqexecStyles {
 
   val controlCell: GStyle = GStyle.fromString("SeqexecStyles-controlCell")
 
-  val breakPointHandle: GStyle = GStyle.fromString("SeqexecStyles-breakPointHandle")
+  val breakPointHandleOn: GStyle = GStyle.fromString("SeqexecStyles-breakPointHandleOn")
+
+  val breakPointHandleOff: GStyle = GStyle.fromString("SeqexecStyles-breakPointHandleOff")
 
   val skipHandleHeight: Int = 13
 

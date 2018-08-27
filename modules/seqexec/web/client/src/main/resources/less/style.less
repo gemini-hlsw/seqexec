@@ -484,6 +484,18 @@ body {
   );
 }
 
+.SeqexecStyles-stepRowWithBreakpointHover {
+  .stepRowWithBreakpoint();
+  background-color: @background;
+  background-image: linear-gradient(
+    to right,
+    @borderColor 0px,
+    @gutter_end_color 19px,
+    lighten(@breakpoint_line_color, 30%) 0px,
+    lighten(@breakpoint_line_color, 30%)
+  );
+}
+
 .SeqexecStyles-stepRowWithBreakpointAndControl {
   .stepRowWithBreakpoint();
   background-image: linear-gradient(
@@ -549,7 +561,7 @@ body {
   min-width: 42.3px;
 }
 
-.SeqexecStyles-breakPointHandle {
+.breakPointHandle() {
   position: relative;
   left: 3.82px;
   top: -4px;
@@ -559,8 +571,19 @@ body {
   opacity: 0.8;
   transition: all 0.1s ease-in-out;
   &:hover {
-    transform: scale(1.4) translateX(1px);
+    transform: scale(2);
   }
+}
+
+.SeqexecStyles-breakPointHandleOff {
+  .breakPointHandle();
+  &:hover {
+    left: 4.9px;
+  }
+}
+
+.SeqexecStyles-breakPointHandleOn {
+  .breakPointHandle();
 }
 
 .SeqexecStyles-skipHandle {
@@ -644,14 +667,22 @@ body {
 
 .SeqexecStyles-breakPointOnIcon {
   position: relative;
+  color: @grey;
   left: 3px;
   top: -5px;
+  &:hover {
+    color: darken(@grey, 20%);
+  }
 }
 
 .SeqexecStyles-breakPointOffIcon {
   position: relative;
+  color: @grey;
   left: 1px;
   top: -6px;
+  &:hover {
+    color: darken(@grey, 20%);
+  }
 }
 
 .clipboardIconMixin() {
