@@ -68,7 +68,12 @@ package circuit {
       Eq.by(x => (x.id, x.instrument, x.state, x.steps, x.stepConfigDisplayed, x.nextStepToRun, x.isPreview))
   }
 
-  final case class StepsTableAndStatusFocus(status: ClientStatus, stepsTable: Option[StepsTableFocus], configTableState: TableState[StepConfigTable.TableColumn]) extends UseValueEq
+  final case class StepsTableAndStatusFocus(status: ClientStatus, stepsTable: Option[StepsTableFocus], configTableState: TableState[StepConfigTable.TableColumn])
+
+  object StepsTableAndStatusFocus {
+    implicit val eq: Eq[StepsTableAndStatusFocus] =
+      Eq.by(x => (x.status, x.stepsTable, x.configTableState))
+  }
 
   final case class ControlModel(id: Observation.Id, isPartiallyExecuted: Boolean, nextStepToRun: Option[Int], status: SequenceState, inConflict: Boolean) extends UseValueEq
 

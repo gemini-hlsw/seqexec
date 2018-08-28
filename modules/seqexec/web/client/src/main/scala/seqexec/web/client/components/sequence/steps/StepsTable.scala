@@ -3,6 +3,8 @@
 
 package seqexec.web.client.components.sequence.steps
 
+import cats.Eq
+import cats.data.NonEmptyList
 import cats.implicits._
 import diode.react.ModelProxy
 import japgolly.scalajs.react._
@@ -10,6 +12,11 @@ import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.component.builder.Lifecycle.RenderScope
+import japgolly.scalajs.react.extra.Reusability
+import japgolly.scalajs.react.CatsReact._
+import japgolly.scalajs.react.raw.JsNumber
+import monocle.Lens
+import monocle.macros.GenLens
 import scala.scalajs.js
 import seqexec.model.enum.{ Instrument, StepType }
 import seqexec.model.{ StepState, Step, StandardStep }
@@ -46,6 +53,22 @@ object ColWidths {
   */
 object StepsTable {
   type Backend = RenderScope[Props, State, Unit]
+
+  sealed trait TableColumn
+  case object IconColumn extends TableColumn
+
+  object TableColumn {
+    implicit val equal: Eq[TableColumn] = Eq.fromUniversalEquals
+  }
+
+  val IconColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
+    IconColumn,
+    name = "status",
+    label = "",
+    visible = true,
+    FixedColumnWidth(ColWidths.ControlWidth))
+
+  val all: NonEmptyList[ColumnMeta[TableColumn]] = NonEmptyList.of(IconColumnMeta)
 
   val HeightWithOffsets: Int    = 40
   val BreakpointLineHeight: Int = 5
@@ -106,7 +129,25 @@ object StepsTable {
       InstrumentProperties.ObservingMode)
   }
 
-  final case class State(breakpointHover: Option[Int])
+  final case class State(tableState: TableState[TableColumn], breakpointHover: Option[Int])
+
+  object State {
+
+    val tableState: Lens[State, TableState[TableColumn]] =
+      GenLens[State](_.tableState)
+
+    val breakpointHover: Lens[State, Option[Int]] =
+      GenLens[State](_.breakpointHover)
+
+    val scrollPosition: Lens[State, JsNumber] =
+      tableState ^|-> TableState.scrollPosition[TableColumn]
+
+    val InitialTableState: State = State(TableState(NotModified, 0, all), None)
+  }
+
+  implicit val stsfReuse: Reusability[StepsTableAndStatusFocus] = Reusability.byEq
+  implicit val propsReuse: Reusability[Props] = Reusability.by(x => (x.canOperate, x.stepsTable()))
+  implicit val stateReuse: Reusability[State] = Reusability.by(_.breakpointHover)
 
   val controlHeaderRenderer: HeaderRenderer[js.Object] = (_, _, _, _, _, _) =>
     <.span(
@@ -455,6 +496,9 @@ object StepsTable {
     ).collect { case Some(x) => x }
   }
 
+  def updateScrollPosition(b: Backend, pos: JsNumber): Callback =
+    b.setState(State.scrollPosition.set(pos)(b.state))
+
   def stepsTableProps(b: Backend)(size: Size): Table.Props =
     Table.props(
       disableHeader = false,
@@ -471,7 +515,8 @@ object StepsTable {
       rowClassName = rowClassName(b) _,
       width = size.width.toInt,
       rowGetter = b.props.rowGetter _,
-      scrollTop = 0,
+      scrollTop = b.state.tableState.scrollPosition,
+      onScroll = (_, _, pos) => updateScrollPosition(b, pos),
       headerClassName = SeqexecStyles.tableHeader.htmlClass,
       headerHeight = SeqexecStyles.headerHeight
     )
@@ -483,11 +528,11 @@ object StepsTable {
     ref.get.flatMapCB(_.raw.recomputeRowsHeightsCB(index))
 
   private def rowBreakpointHoverOnCB(b: Backend)(index: Int): Callback =
-    (if (b.props.rowGetter(index).step.breakpoint) b.setState(State(None)) else b.setState(State(index.some))) *>
+    (if (b.props.rowGetter(index).step.breakpoint) b.modState(State.breakpointHover.set(None)) else b.modState(State.breakpointHover.set(index.some))) *>
     recomputeRowHeightsCB(index)
 
   private def rowBreakpointHoverOffCB(b: Backend)(index: Int): Callback =
-    b.setState(State(None)) *> recomputeRowHeightsCB(index)
+    b.modState(State.breakpointHover.set(None)) *> recomputeRowHeightsCB(index)
 
   def receive(cur: Props, next: Props): Callback = {
     // Recalculate the heights if needed
@@ -533,8 +578,9 @@ object StepsTable {
 
   private val component = ScalaComponent
     .builder[Props]("StepsTable")
-    .initialState(State(None))
+    .initialState(State.InitialTableState)
     .render(render)
+    .configure(Reusability.shouldComponentUpdate)
     .componentWillReceiveProps(x => receive(x.currentProps, x.nextProps))
     .build
 
