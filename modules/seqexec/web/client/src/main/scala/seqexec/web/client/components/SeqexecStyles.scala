@@ -14,6 +14,7 @@ object SeqexecStyles {
   val rowHeight: Int = 30
   val overscanRowCount: Int = 10
   val runningRowHeight: Int = 60
+  val TableBorderWidth: Double = 1.0
 
   val activeInstrumentLabel: GStyle = GStyle.fromString("SeqexecStyles-activeInstrumentLabel")
 

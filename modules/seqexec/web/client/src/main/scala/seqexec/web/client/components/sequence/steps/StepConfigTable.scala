@@ -83,14 +83,14 @@ object StepConfigTable {
     name    = "name",
     label   = "Name",
     visible = true,
-    width   = PercentageColumnWidth.Half)
+    width   = PercentageColumnWidth.unsafeFromDouble(percentage = 0.5, minWidth = 57.3833 + SeqexecStyles.TableBorderWidth))
 
   val ValueColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     column  = ValueColumn,
     name    = "value",
     label   = "Value",
     visible = true,
-    width   = PercentageColumnWidth.Half)
+    width   = PercentageColumnWidth.unsafeFromDouble(percentage = 0.5, minWidth = 60.0))
 
   val InitialTableState: TableState[TableColumn] = TableState[TableColumn](
     userModified   = NotModified,
@@ -171,7 +171,7 @@ object StepConfigTable {
     .builder[Props]("StepConfig")
     .initialStateFromProps(_.startState)
     .render { b =>
-      Table(settingsTableProps(b), b.state.columnBuilder(b.props.size.width, colBuilder(b)): _*)
+      Table(settingsTableProps(b), b.state.columnBuilder(b.props.size, colBuilder(b)): _*)
     }
     .build
 

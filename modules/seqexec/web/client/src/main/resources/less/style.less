@@ -765,6 +765,10 @@ body {
 
 .ReactVirtualized__Table__headerTruncatedText {
   flex: auto;
+  min-width: 20px;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
 }
 
 // Get the same background color as a button
@@ -859,7 +863,7 @@ body {
 
 .ReactVirtualized__Table__rowColumn {
   .borderLeft();
-  min-width: 0;
+  min-width: 20px;
   display: flex;
   align-items: center;
   font-size: small;

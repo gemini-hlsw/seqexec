@@ -30,7 +30,7 @@ object OffsetFns {
 
   object OffsetsDisplay {
     case object NoDisplay extends OffsetsDisplay
-    final case class DisplayOffsets(offsetsWidth: Int) extends OffsetsDisplay
+    final case class DisplayOffsets(offsetsWidth: Double) extends OffsetsDisplay
     implicit val eq: Eq[OffsetsDisplay] =
       Eq.by {
         case NoDisplay         => None
@@ -53,12 +53,12 @@ object OffsetFns {
   val offsetPText: Step => String = offsetText(OffsetAxis.AxisP) _
   val offsetQText: Step => String = offsetText(OffsetAxis.AxisQ) _
 
-  val pLabelWidth: Int = tableTextWidth(offsetAxis(OffsetAxis.AxisP))
-  val qLabelWidth: Int = tableTextWidth(offsetAxis(OffsetAxis.AxisQ))
+  val pLabelWidth: Double = tableTextWidth(offsetAxis(OffsetAxis.AxisP))
+  val qLabelWidth: Double = tableTextWidth(offsetAxis(OffsetAxis.AxisQ))
 
   // Calculate the widest offset step
-  private def sequenceOffsetWidthsF(steps: List[Step]): (Int, Int) =
-    steps.map(s => (tableTextWidth(offsetPText(s)), tableTextWidth(offsetQText(s)))).foldLeft((0, 0)) {
+  private def sequenceOffsetWidthsF(steps: List[Step]): (Double, Double) =
+    steps.map(s => (tableTextWidth(offsetPText(s)), tableTextWidth(offsetQText(s)))).foldLeft((0.0, 0.0)) {
       case ((p1, q1), (p2, q2)) => (p1.max(p2), q1.max(q2))
     }
 
@@ -68,7 +68,7 @@ object OffsetFns {
   }
 
   implicit class OffsetFnsOps(val steps: List[Step]) extends AnyVal {
-    def sequenceOffsetWidths: (Int, Int) = sequenceOffsetWidthsF(steps)
+    def sequenceOffsetWidths: (Double, Double) = sequenceOffsetWidthsF(steps)
     def areNonZeroOffsets: Boolean = areNonZeroOffsetsF(steps)
     // Find out if offsets should be displayed
     def offsetsDisplay: OffsetsDisplay = {
@@ -86,6 +86,7 @@ object OffsetsDisplayCell {
 
   final case class Props(offsetsDisplay: OffsetsDisplay, step: Step)
 
+  implicit val doubleReuse: Reusability[Double] = Reusability.double(0.0001)
   implicit val ofdReuse: Reusability[OffsetsDisplay] = Reusability.derive[OffsetsDisplay]
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
