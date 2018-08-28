@@ -75,7 +75,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
           val active = sod.idDisplayed(s.id)
           val loaded = sod.loadedIds.contains(s.id)
           val targetName = firstScienceStepTargetNameT.headOption(s)
-          SequenceInQueue(s.id, s.status, s.metadata.instrument, active, loaded, s.metadata.name, targetName, s.runningStep)
+          SequenceInQueue(s.id, s.status, s.metadata.instrument, active, loaded, s.metadata.name, targetName, s.runningStep, s.nextStepToRun)
         }
         StatusAndLoadedSequencesFocus(s, sequencesInQueue.sorted, queueTable)
     }

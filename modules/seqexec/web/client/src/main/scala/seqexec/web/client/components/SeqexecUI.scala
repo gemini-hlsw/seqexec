@@ -28,6 +28,8 @@ object SeqexecUI {
   def pageTitle(site: Site)(p: SeqexecPages): String = p match {
     case SequenceConfigPage(_, id, _) => s"Seqexec - ${id.format}"
     case SequencePage(_, id, _)       => s"Seqexec - ${id.format}"
+    case PreviewPage(_, id, _)        => s"Seqexec - ${id.format}"
+    case PreviewConfigPage(_, id, _)  => s"Seqexec - ${id.format}"
     case _                            => s"Seqexec - ${site.shortName}"
   }
 
@@ -41,14 +43,14 @@ object SeqexecUI {
   def sequencePageP(instrumentNames: Map[String, Instrument]): Prism[(String, String, Int), SequencePage] = Prism[(String, String, Int), SequencePage] {
     case (i, s, st) => (instrumentNames.get(i), Observation.Id.fromString(s)).mapN(SequencePage(_, _, StepIdDisplayed(st)))
   } {
-    p => (p.instrument.show, p.obsId.format, 0)
+    p => (p.instrument.show, p.obsId.format, p.step.step)
   }
 
   // Prism from url params to the preview page
   def previewPageP(instrumentNames: Map[String, Instrument]): Prism[(String, String, Int), PreviewPage] = Prism[(String, String, Int), PreviewPage] {
     case (i, s, st) => (instrumentNames.get(i), Observation.Id.fromString(s)).mapN(PreviewPage(_, _, StepIdDisplayed(st)))
   } {
-    p => (p.instrument.show, p.obsId.format, 0)
+    p => (p.instrument.show, p.obsId.format, p.step.step)
   }
 
   // Prism from url params to the preview page with config

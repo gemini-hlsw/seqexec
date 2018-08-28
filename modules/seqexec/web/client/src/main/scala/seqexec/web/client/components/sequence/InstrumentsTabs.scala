@@ -84,6 +84,7 @@ object InstrumentTab {
       val instName = instrument.foldMap(_.show)
       val dispName = if (isPreview) s"Preview: $instName" else instName
       val isLogged = b.props.loggedIn
+      val nextStepToRun = StepIdDisplayed(b.props.tab.runningStep.foldMap(_.last))
 
       val tabTitle = b.props.tab.runningStep match {
         case Some(RunningStep(current, total)) => s"${sequenceId.map(_.format).getOrElse("")} - ${current + 1}/$total"
@@ -104,7 +105,7 @@ object InstrumentTab {
 
       val linkPage: SeqexecPages =
         (sequenceId, instrument)
-          .mapN((id, inst) => if (isPreview) PreviewPage(inst, id, NextToRun) else SequencePage(inst, id, NextToRun))
+          .mapN((id, inst) => if (isPreview) PreviewPage(inst, id, nextStepToRun) else SequencePage(inst, id, nextStepToRun))
           .getOrElse(EmptyPreviewPage)
 
       val loadButton: Option[VdomNode] =

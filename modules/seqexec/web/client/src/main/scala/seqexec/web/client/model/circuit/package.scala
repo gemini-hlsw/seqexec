@@ -82,7 +82,7 @@ package circuit {
   }
 
 
-  final case class SequenceInQueue(id: Observation.Id, status: SequenceState, instrument: Instrument, active: Boolean, loaded: Boolean, name: String, targetName: Option[TargetName], runningStep: Option[RunningStep]) extends UseValueEq
+  final case class SequenceInQueue(id: Observation.Id, status: SequenceState, instrument: Instrument, active: Boolean, loaded: Boolean, name: String, targetName: Option[TargetName], runningStep: Option[RunningStep], nextStepToRun: Option[Int]) extends UseValueEq
 
   object SequenceInQueue {
     implicit val order: Order[SequenceInQueue] = Order.by(_.id)

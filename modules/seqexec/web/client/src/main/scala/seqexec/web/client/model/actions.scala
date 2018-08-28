@@ -35,8 +35,8 @@ object actions {
   case object Logout extends Action
 
   // Action to select a sequence for display
-  final case class SelectIdToDisplay(i: Instrument, id: Observation.Id, step: StepDisplayed) extends Action
-  final case class SelectSequencePreview(i: Instrument, id: Observation.Id, step: StepDisplayed) extends Action
+  final case class SelectIdToDisplay(i: Instrument, id: Observation.Id, step: StepIdDisplayed) extends Action
+  final case class SelectSequencePreview(i: Instrument, id: Observation.Id, step: StepIdDisplayed) extends Action
   case object SelectEmptyPreview extends Action
   case object SelectRoot extends Action
   final case class ShowStepConfig(i: Instrument, id: Observation.Id, step: Int) extends Action

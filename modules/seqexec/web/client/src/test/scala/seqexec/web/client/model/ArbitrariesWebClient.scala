@@ -18,7 +18,6 @@ import seqexec.model.SequenceEventsArbitraries.{slmArb, slmCogen}
 import seqexec.web.common.{ FixedLengthBuffer, Zipper }
 import seqexec.web.common.ArbitrariesWebCommon._
 import seqexec.web.client.model._
-import seqexec.web.client.model.Pages._
 import seqexec.web.client.circuit._
 import seqexec.web.client.model.Pages._
 import seqexec.web.client.components.sequence.steps.OffsetFns.OffsetsDisplay
@@ -213,21 +212,11 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
     Cogen[(SequenceTab, Boolean)]
       .contramap(x => (x.tab, x.active))
 
-  implicit val arbStepDisplayed: Arbitrary[StepDisplayed] =
-    Arbitrary {
-      for {
-        n  <- Gen.const(NextToRun)
-        id <- arbitrary[Int].map(StepIdDisplayed.apply)
-        d  <- Gen.oneOf(n, id)
-      } yield d
-    }
+  implicit val arbStepIdDisplayed: Arbitrary[StepIdDisplayed] =
+    Arbitrary(arbitrary[Int].map(StepIdDisplayed.apply))
 
-  implicit val StepDisplayedCogen: Cogen[StepDisplayed] =
-    Cogen[Option[Int]]
-      .contramap {
-        case StepIdDisplayed(i) => i.some
-        case NextToRun => none
-      }
+  implicit val stepDisplayedCogen: Cogen[StepIdDisplayed] =
+    Cogen[Int].contramap(_.step)
 
   implicit val arbStepsTableFocus: Arbitrary[StepsTableFocus] =
     Arbitrary {
@@ -280,12 +269,12 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
       for {
         i  <- arbitrary[Instrument]
         oi <- arbitrary[Observation.Id]
-        sd <- arbitrary[Int]
+        sd <- arbitrary[StepIdDisplayed]
       } yield PreviewPage(i, oi, sd)
     }
 
   implicit val previewPageCogen: Cogen[PreviewPage] =
-    Cogen[(Instrument, Observation.Id, Int)]
+    Cogen[(Instrument, Observation.Id, StepIdDisplayed)]
       .contramap(x => (x.instrument, x.obsId, x.step))
 
   implicit val arbSequencePage: Arbitrary[SequencePage] =
@@ -293,12 +282,12 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
       for {
         i  <- arbitrary[Instrument]
         oi <- arbitrary[Observation.Id]
-        sd <- arbitrary[Int]
+        sd <- arbitrary[StepIdDisplayed]
       } yield SequencePage(i, oi, sd)
     }
 
   implicit val sequencePageCogen: Cogen[SequencePage] =
-    Cogen[(Instrument, Observation.Id, Int)]
+    Cogen[(Instrument, Observation.Id, StepIdDisplayed)]
       .contramap(x => (x.instrument, x.obsId, x.step))
 
   implicit val arbPreviewConfigPage: Arbitrary[PreviewConfigPage] =
@@ -342,7 +331,7 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
     }
 
   implicit val seqexecPageCogen: Cogen[SeqexecPages] =
-    Cogen[Option[Option[Option[Either[(Instrument, Observation.Id, Int), Either[(Instrument, Observation.Id, Int), Either[(Instrument, Observation.Id, Int), (Instrument, Observation.Id, Int)]]]]]]].contramap {
+    Cogen[Option[Option[Option[Either[(Instrument, Observation.Id, StepIdDisplayed), Either[(Instrument, Observation.Id, StepIdDisplayed), Either[(Instrument, Observation.Id, Int), (Instrument, Observation.Id, Int)]]]]]]].contramap {
       case Root                        => None
       case SoundTest                   => Some(None)
       case EmptyPreviewPage            => Some(Some(None))

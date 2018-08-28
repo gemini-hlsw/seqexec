@@ -14,7 +14,7 @@ import seqexec.web.client.model.Pages._
 final class PagesSpec extends CatsSuite with ArbitrariesWebClient {
 
   checkAll("Eq[SeqexecPages]", EqTests[SeqexecPages].eqv)
-  checkAll("Eq[StepDisplayed]", EqTests[StepDisplayed].eqv)
+  checkAll("Eq[StepIdDisplayed]", EqTests[StepIdDisplayed].eqv)
 
   // lenses
   // checkAll("Prism[Action, SeqexecPages]", PrismTests(PageActionP))
