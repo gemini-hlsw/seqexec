@@ -19,12 +19,25 @@ import monocle.Prism
 object Pages {
   sealed trait SeqexecPages extends Product with Serializable
 
+  // Indicates which step to display
+  sealed trait StepDisplayed extends Product with Serializable
+  case object NextToRun extends StepDisplayed
+  final case class StepIdDisplayed(step: Int) extends StepDisplayed
+
+  object StepDisplayed {
+    implicit val equal: Eq[StepDisplayed] = Eq.instance {
+      case (NextToRun, NextToRun)                   => true
+      case (StepIdDisplayed(i), StepIdDisplayed(j)) => i === j
+      case _                                        => false
+    }
+  }
+
   case object Root extends SeqexecPages
   case object SoundTest extends SeqexecPages
   case object EmptyPreviewPage extends SeqexecPages
-  final case class PreviewPage(instrument: Instrument, obsId: Observation.Id, step: StepId) extends SeqexecPages
+  final case class PreviewPage(instrument: Instrument, obsId: Observation.Id, step: StepDisplayed) extends SeqexecPages
   final case class PreviewConfigPage(instrument: Instrument, obsId: Observation.Id, step: StepId) extends SeqexecPages
-  final case class SequencePage(instrument: Instrument, obsId: Observation.Id, step: StepId) extends SeqexecPages
+  final case class SequencePage(instrument: Instrument, obsId: Observation.Id, step: StepDisplayed) extends SeqexecPages
   final case class SequenceConfigPage(instrument: Instrument, obsId: Observation.Id, step: StepId) extends SeqexecPages
 
   implicit val equal: Eq[SeqexecPages] = Eq.instance {

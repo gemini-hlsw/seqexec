@@ -11,7 +11,7 @@ import gem.enum.Site
 import seqexec.model._
 import seqexec.model.enum._
 import seqexec.model.events._
-import seqexec.web.client.model._
+import seqexec.web.client.model.Pages._
 import seqexec.web.client.components.sequence.steps.StepConfigTable
 import seqexec.web.client.components.QueueTableBody
 import org.scalajs.dom.WebSocket
@@ -21,8 +21,8 @@ object actions {
 
   // scalastyle:off
   // Actions
-  final case class NavigateTo(page: Pages.SeqexecPages) extends Action
-  final case class NavigateSilentTo(page: Pages.SeqexecPages) extends Action
+  final case class NavigateTo(page: SeqexecPages) extends Action
+  final case class NavigateSilentTo(page: SeqexecPages) extends Action
   final case class Initialize(site: Site) extends Action
 
   // Actions to close and/open the login box
@@ -35,8 +35,8 @@ object actions {
   case object Logout extends Action
 
   // Action to select a sequence for display
-  final case class SelectIdToDisplay(i: Instrument, id: Observation.Id, step: StepId) extends Action
-  final case class SelectSequencePreview(i: Instrument, id: Observation.Id, step: StepId) extends Action
+  final case class SelectIdToDisplay(i: Instrument, id: Observation.Id, step: StepDisplayed) extends Action
+  final case class SelectSequencePreview(i: Instrument, id: Observation.Id, step: StepDisplayed) extends Action
   case object SelectEmptyPreview extends Action
   case object SelectRoot extends Action
   final case class ShowStepConfig(i: Instrument, id: Observation.Id, step: Int) extends Action

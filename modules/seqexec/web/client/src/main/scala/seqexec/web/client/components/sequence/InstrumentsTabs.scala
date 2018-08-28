@@ -104,7 +104,7 @@ object InstrumentTab {
 
       val linkPage: SeqexecPages =
         (sequenceId, instrument)
-          .mapN((id, inst) => if (isPreview) PreviewPage(inst, id, 0) else SequencePage(inst, id, 0))
+          .mapN((id, inst) => if (isPreview) PreviewPage(inst, id, NextToRun) else SequencePage(inst, id, NextToRun))
           .getOrElse(EmptyPreviewPage)
 
       val loadButton: Option[VdomNode] =

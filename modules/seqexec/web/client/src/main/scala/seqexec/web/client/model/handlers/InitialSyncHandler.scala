@@ -32,7 +32,7 @@ class InitialSyncHandler[M](modelRW: ModelRW[M, InitialSyncFocus]) extends Actio
     // An unkown page was shown
     val effect = loaded.headOption.flatMap { id =>
       s.queue.find(_.id === id).map { s =>
-        val action = SelectIdToDisplay(s.metadata.instrument, id, 0)
+        val action = SelectIdToDisplay(s.metadata.instrument, id, NextToRun)
         (pageE(action), Effect(Future(action)))
       }
     }

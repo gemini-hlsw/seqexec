@@ -18,6 +18,7 @@ import seqexec.model.SequenceEventsArbitraries.{slmArb, slmCogen}
 import seqexec.web.common.{ FixedLengthBuffer, Zipper }
 import seqexec.web.common.ArbitrariesWebCommon._
 import seqexec.web.client.model._
+import seqexec.web.client.model.Pages._
 import seqexec.web.client.circuit._
 import seqexec.web.client.model.Pages._
 import seqexec.web.client.components.sequence.steps.OffsetFns.OffsetsDisplay
@@ -211,6 +212,22 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
   implicit val sequenceTabActiveCogen: Cogen[SequenceTabActive] =
     Cogen[(SequenceTab, Boolean)]
       .contramap(x => (x.tab, x.active))
+
+  implicit val arbStepDisplayed: Arbitrary[StepDisplayed] =
+    Arbitrary {
+      for {
+        n  <- Gen.const(NextToRun)
+        id <- arbitrary[Int].map(StepIdDisplayed.apply)
+        d  <- Gen.oneOf(n, id)
+      } yield d
+    }
+
+  implicit val StepDisplayedCogen: Cogen[StepDisplayed] =
+    Cogen[Option[Int]]
+      .contramap {
+        case StepIdDisplayed(i) => i.some
+        case NextToRun => none
+      }
 
   implicit val arbStepsTableFocus: Arbitrary[StepsTableFocus] =
     Arbitrary {

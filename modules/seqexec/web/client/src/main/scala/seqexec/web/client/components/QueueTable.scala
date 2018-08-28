@@ -371,9 +371,9 @@ object QueueTableBody {
 
   def pageOf(row: QueueRow): SeqexecPages =
     if (row.loaded) {
-      SequencePage(row.instrument, row.obsId, 0)
+      SequencePage(row.instrument, row.obsId, NextToRun)
     } else {
-      PreviewPage(row.instrument, row.obsId, 0)
+      PreviewPage(row.instrument, row.obsId, NextToRun)
     }
 
   private def linkedTextRenderer(p: Props)(
@@ -574,7 +574,7 @@ object QueueTableBody {
     val r = b.props.rowGetter(i)
     if (r.loaded) {
       // If already loaded switch tabs
-      b.props.ctl.dispatchAndSetUrlCB(SelectIdToDisplay(r.instrument, r.obsId, 0))
+      b.props.ctl.dispatchAndSetUrlCB(SelectIdToDisplay(r.instrument, r.obsId, NextToRun))
     } else { // Try to load it
       (for {
         u <- b.props.user

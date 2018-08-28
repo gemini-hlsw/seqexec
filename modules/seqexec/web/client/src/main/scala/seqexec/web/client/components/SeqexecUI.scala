@@ -38,17 +38,17 @@ object SeqexecUI {
     p => (p.instrument.show, p.obsId.format, p.step)
   }
   // Prism from url params to sequence page
-  def sequencePageP(instrumentNames: Map[String, Instrument]): Prism[(String, String), SequencePage] = Prism[(String, String), SequencePage] {
-    case (i, s) => (instrumentNames.get(i), Observation.Id.fromString(s)).mapN(SequencePage(_, _, 0))
+  def sequencePageP(instrumentNames: Map[String, Instrument]): Prism[(String, String, Int), SequencePage] = Prism[(String, String, Int), SequencePage] {
+    case (i, s, st) => (instrumentNames.get(i), Observation.Id.fromString(s)).mapN(SequencePage(_, _, StepIdDisplayed(st)))
   } {
-    p => (p.instrument.show, p.obsId.format)
+    p => (p.instrument.show, p.obsId.format, 0)
   }
 
   // Prism from url params to the preview page
-  def previewPageP(instrumentNames: Map[String, Instrument]): Prism[(String, String), PreviewPage] = Prism[(String, String), PreviewPage] {
-    case (i, s) => (instrumentNames.get(i), Observation.Id.fromString(s)).mapN(PreviewPage(_, _, 0))
+  def previewPageP(instrumentNames: Map[String, Instrument]): Prism[(String, String, Int), PreviewPage] = Prism[(String, String, Int), PreviewPage] {
+    case (i, s, st) => (instrumentNames.get(i), Observation.Id.fromString(s)).mapN(PreviewPage(_, _, StepIdDisplayed(st)))
   } {
-    p => (p.instrument.show, p.obsId.format)
+    p => (p.instrument.show, p.obsId.format, 0)
   }
 
   // Prism from url params to the preview page with config
@@ -71,9 +71,9 @@ object SeqexecUI {
       | staticRoute("/preview", EmptyPreviewPage) ~> renderR(r => SeqexecMain(site, r))
       | dynamicRouteCT(("/" ~ string("[a-zA-Z0-9-]+") ~ "/" ~ string("[a-zA-Z0-9-]+") ~ "/configuration/" ~ int)
         .pmapL(configPageP(instrumentNames))) ~> dynRenderR((_: SequenceConfigPage, r) => SeqexecMain(site, r))
-      | dynamicRouteCT(("/" ~ string("[a-zA-Z0-9-]+") ~ "/" ~ string("[a-zA-Z0-9-]+"))
+      | dynamicRouteCT(("/" ~ string("[a-zA-Z0-9-]+") ~ "/" ~ string("[a-zA-Z0-9-]+") ~ "/step/" ~ int)
         .pmapL(sequencePageP(instrumentNames))) ~> dynRenderR((_: SequencePage, r) => SeqexecMain(site, r))
-      | dynamicRouteCT(("/preview/" ~ string("[a-zA-Z0-9-]+") ~ "/" ~ string("[a-zA-Z0-9-]+"))
+      | dynamicRouteCT(("/preview/" ~ string("[a-zA-Z0-9-]+") ~ "/" ~ string("[a-zA-Z0-9-]+") ~ "/step/" ~ int)
         .pmapL(previewPageP(instrumentNames))) ~> dynRenderR((_: PreviewPage, r) => SeqexecMain(site, r))
       | dynamicRouteCT(("/preview/" ~ string("[a-zA-Z0-9-]+") ~ "/" ~ string("[a-zA-Z0-9-]+") ~ "/configuration/" ~ int)
         .pmapL(previewConfigPageP(instrumentNames))) ~> dynRenderR((_: PreviewConfigPage, r) => SeqexecMain(site, r))

@@ -37,9 +37,9 @@ object StepConfigToolbar {
     .stateless
     .render_P { p =>
       val sequencePage = if (p.isPreview) {
-        PreviewPage(p.instrument, p.id, p.step)
+        PreviewPage(p.instrument, p.id, StepIdDisplayed(p.step))
       } else {
-        SequencePage(p.instrument, p.id, p.step)
+        SequencePage(p.instrument, p.id, StepIdDisplayed(p.step))
       }
       val nextStepPage = if (p.isPreview) {
         PreviewConfigPage(p.instrument, p.id, p.step + 2)
