@@ -236,9 +236,6 @@ object StepsTable {
     case (StepRow(s: Step), _) if s.status === StepState.Running                 =>
       // Row running
       SeqexecStyles.runningRowHeight
-    case (StepRow(StandardStep(i, _, _, false, _, _, _, _)), Some(j)) if i === j =>
-      // Row with breakpoint hovering
-      baseHeight(b.props) + BreakpointLineHeight
     case _                                                                       =>
       // default row
       baseHeight(b.props)
