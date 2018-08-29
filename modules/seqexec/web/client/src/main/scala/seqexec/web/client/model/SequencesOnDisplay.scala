@@ -51,18 +51,18 @@ final case class SequencesOnDisplay(sequences: Zipper[SequenceTab]) {
     }
 
   def updateFromQueue(s: SequencesQueue[SequenceView]): SequencesOnDisplay = {
-    updateLoaded(s.loaded.values.toList.map { id =>
+    val updated = updateLoaded(s.loaded.values.toList.map { id =>
       s.queue.find(_.id === id)
-    })
-    // sequences.map {
-    //   case InstrumentSequenceTab(_, Some(curr), _, _) => curr.id
-    //   case PreviewSequenceTab(Some(curr), _) => curr.id
-    // }
+    }).sequences.map {
+      case p @ PreviewSequenceTab(Some(curr), r) => s.queue.find(_.id === curr.id).map(s => PreviewSequenceTab(Some(s), r)).getOrElse(p)
+      case t => t
+    }
+    SequencesOnDisplay(updated)
   }
   /**
    * Replace the list of loaded sequences
    */
-  def updateLoaded(s: List[Option[SequenceView]]): SequencesOnDisplay = {
+  private def updateLoaded(s: List[Option[SequenceView]]): SequencesOnDisplay = {
     // Build the new tabs
     val instTabs = s.collect { case Some(x) => InstrumentSequenceTab(x.metadata.instrument, x.some, None, None)  }
     // Store current focus
