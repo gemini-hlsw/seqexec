@@ -21,8 +21,7 @@ import seqexec.server.gcal.GcalController._
 import seqexec.server.tcs.{CRFollow, TcsController, TcsControllerEpics}
 import seqexec.server.keywords._
 import seqexec.model.enum.Instrument
-import seqexec.model.Conditions
-import seqexec.model.Operator
+import seqexec.model.{Conditions, Operator, SequencesBatch}
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams
 import edu.gemini.spModel.gemini.gpi.Gpi.{Apodizer => LegacyApodizer}
@@ -149,7 +148,14 @@ object SeqexecServerArbitraries extends ArbTime {
 
   implicit val selectedCoGen: Cogen[Map[Instrument, Observation.Id]] =
     Cogen[List[(Instrument, Observation.Id)]].contramap(_.toList)
-  implicit val engineMetadataArb: Arbitrary[EngineState] = Arbitrary {
+  implicit val executionQueueArb: Arbitrary[ExecutionQueue] = Arbitrary {
+    for {
+      n <- arbitrary[String]
+      s <- arbitrary[SequencesBatch.CommandState]
+      q <- arbitrary[List[Observation.Id]]
+    } yield ExecutionQueue(n, s, q)
+  }
+  implicit val engineStateArb: Arbitrary[EngineState] = Arbitrary {
     for {
       q <- arbitrary[ExecutionQueues]
       s <- arbitrary[Map[Instrument, Observation.Id]]
