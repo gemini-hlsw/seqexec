@@ -3,7 +3,6 @@
 
 package seqexec.web.client.circuit
 
-import cats.Eq
 import cats.implicits._
 import cats.data.NonEmptyList
 import diode._
@@ -46,14 +45,6 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   private val logger = Logger.getLogger(SeqexecCircuit.getClass.getSimpleName)
   addProcessor(new LoggingProcessor[SeqexecAppRootModel]())
 
-  implicit def fastEq[A: Eq]: FastEq[A] = new FastEq[A] {
-    override def eqv(a: A, b: A): Boolean = a === b
-  }
-
-  implicit def fastNelEq[A: Eq]: FastEq[NonEmptyList[A]] = new FastEq[NonEmptyList[A]] {
-    override def eqv(a: NonEmptyList[A], b: NonEmptyList[A]): Boolean = a === b
-  }
-
   // Model read-writers
   val webSocketFocusRW: ModelRW[SeqexecAppRootModel, WebSocketsFocus] =
     zoomRW(m => WebSocketsFocus(m.uiModel.navLocation, m.uiModel.sequences, m.uiModel.user, m.uiModel.defaultObserver, m.clientId, m.site)) ((m, v) => m.copy(uiModel = m.uiModel.copy(sequences = v.sequences, user = v.user, defaultObserver = v.defaultObserver), clientId = v.clientId, site = v.site))
@@ -68,7 +59,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   val statusReader: ModelR[SeqexecAppRootModel, ClientStatus] = zoom(m => ClientStatus(m.uiModel.user, m.ws, m.uiModel.syncInProgress))
 
   // Reader to update the sequences in both parts of the model being used
-  val sequencesReaderRW: ModelRW[SeqexecAppRootModel, SequencesFocus] = zoomRW(m => SequencesFocus(m.uiModel.sequences, m.uiModel.sequencesOnDisplay))((m, v) => m.copy(uiModel = m.uiModel.copy(sequences = v.sequences, sequencesOnDisplay = v.sod)))
+  val sequencesReaderRW: ModelRW[SeqexecAppRootModel, SequencesFocus] = this.zoomRWL(SeqexecAppRootModel.uiModel ^|-> SequencesFocus.sequencesFocusL)
 
   // Some useful readers
   val statusAndLoadedSequencesReader: ModelR[SeqexecAppRootModel, StatusAndLoadedSequencesFocus] =
