@@ -22,7 +22,7 @@ import seqexec.web.client.actions.UpdateStepsConfigTableState
 import web.client.table._
 
 object StepConfigTable {
-  sealed trait TableColumn
+  sealed trait TableColumn extends Product with Serializable
   case object NameColumn  extends TableColumn
   case object ValueColumn extends TableColumn
 

@@ -50,10 +50,18 @@ object WebSocketConnection {
   */
 final case class GlobalLog(log: FixedLengthBuffer[ServerLogMessage], display: SectionVisibilityState)
 
+object GlobalLog {
+  implicit val eq: Eq[GlobalLog] = Eq.by(x => (x.log, x.display))
+}
+
 /**
  * Model to display a resource conflict
  */
 final case class ResourcesConflict(visibility: SectionVisibilityState, id: Option[Observation.Id])
+
+object ResourcesConflict {
+  implicit val eq: Eq[ResourcesConflict] = Eq.by(x => (x.visibility, x.id))
+}
 
 /**
   * Root of the UI Model of the application

@@ -3,9 +3,8 @@
 
 package seqexec.web.client.model
 
+import cats.Eq
 import cats.implicits._
-import gem.Observation
-import monocle.Getter
 import monocle.macros.Lenses
 import seqexec.model.{ Conditions, Observer, UserDetails, SequencesQueue, SequenceView }
 import seqexec.web.common.FixedLengthBuffer
@@ -47,7 +46,6 @@ object SeqexecUIModel {
     Observer(""),
     firstLoad = true)
 
-  def sequenceReader(id: Observation.Id): Getter[SeqexecUIModel, Option[SequenceView]] =
-    SeqexecUIModel.sequences composeGetter SequencesQueue.queueItemG[SequenceView](_.id === id)
-
+  implicit val eq: Eq[SeqexecUIModel] =
+    Eq.by(x => (x.navLocation, x.user, x.sequences, x.loginBox, x.resourceConflict, x.globalLog, x.sequencesOnDisplay, x.configTableState, x.queueTableState, x.defaultObserver, x.firstLoad))
 }

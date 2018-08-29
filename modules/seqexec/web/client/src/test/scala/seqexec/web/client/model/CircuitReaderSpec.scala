@@ -6,6 +6,7 @@ package seqexec.web.client
 import cats.kernel.laws.discipline._
 import cats.tests.CatsSuite
 import gem.Observation
+import monocle.law.discipline.LensTests
 import seqexec.web.client.circuit._
 import seqexec.web.client.circuit.SeqexecCircuit._
 import org.scalatest.prop.PropertyChecks
@@ -15,6 +16,7 @@ final class CircuitReaderSpec extends CatsSuite with PropertyChecks with Arbitra
   checkAll("Eq[SequenceTabContentFocus]", EqTests[SequenceTabContentFocus].eqv)
   checkAll("Eq[SequencesFocus]", EqTests[SequencesFocus].eqv)
   checkAll("Eq[SequenceInfoFocus]", EqTests[SequenceInfoFocus].eqv)
+  checkAll("sequencesFocusL", LensTests(SequencesFocus.sequencesFocusL))
 
   test("maintain reference equality for constant readers") {
       (webSocketFocusRW === webSocketFocusRW.value) should be(true)

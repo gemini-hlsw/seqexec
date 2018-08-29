@@ -27,8 +27,12 @@ final class ModelSpec extends CatsSuite with ArbitrariesWebClient {
   checkAll("Eq[SequenceTabActive]", EqTests[SequenceTabActive].eqv)
   checkAll("Eq[InstrumentSequenceTab]", EqTests[InstrumentSequenceTab].eqv)
   checkAll("Eq[PreviewSequenceTab]", EqTests[PreviewSequenceTab].eqv)
+  checkAll("Eq[Pages.SeqexecPages]", EqTests[Pages.SeqexecPages].eqv)
   checkAll("Eq[SequenceTab]", EqTests[SequenceTab].eqv)
   checkAll("Eq[SequencesOnDisplay]", EqTests[SequencesOnDisplay].eqv)
+  checkAll("Eq[ResourcesConflict]", EqTests[ResourcesConflict].eqv)
+  checkAll("Eq[GlobalLog]", EqTests[GlobalLog].eqv)
+  checkAll("Eq[SeqexecUIModel]", EqTests[SeqexecUIModel].eqv)
 
   // lenses
   checkAll("Lens[SequenceTab, Option[Int]]", LensTests(SequenceTab.stepConfigL))

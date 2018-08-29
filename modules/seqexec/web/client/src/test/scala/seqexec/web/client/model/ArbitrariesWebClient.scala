@@ -8,19 +8,24 @@ import diode.data._
 import gem.arb.ArbObservation
 import gem.Observation
 import seqexec.model.enum.Instrument
-import seqexec.model.{ Observer, TargetName, SequencesQueue, SequenceState, SequenceView, Step }
+import seqexec.model.{ Observer, TargetName, SequencesQueue, SequenceState, SequenceView, Step, UserDetails }
+import seqexec.model.events.ServerLogMessage
 import seqexec.model.SeqexecModelArbitraries._
+import seqexec.model.SequenceEventsArbitraries.{slmArb, slmCogen}
+import seqexec.web.common.{ FixedLengthBuffer, Zipper }
+import seqexec.web.common.ArbitrariesWebCommon._
 import seqexec.web.client.model._
 import seqexec.web.client.circuit._
-import seqexec.model.UserDetails
-import seqexec.web.common.Zipper
-import seqexec.web.common.ArbitrariesWebCommon._
+import seqexec.web.client.model.Pages._
 import seqexec.web.client.components.sequence.steps.OffsetFns.OffsetsDisplay
+import seqexec.web.client.components.sequence.steps.StepConfigTable
+import seqexec.web.client.components.QueueTableBody
 import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, _}
 import org.scalajs.dom.WebSocket
+import web.client.table.{ TableArbitraries, TableState }
 
-trait ArbitrariesWebClient extends ArbObservation {
+trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
 
   implicit val arbInstrumentSequenceTab: Arbitrary[InstrumentSequenceTab] =
     Arbitrary {
@@ -239,5 +244,138 @@ trait ArbitrariesWebClient extends ArbObservation {
     Cogen[(Boolean, Option[String], Option[Observer], Option[SequenceState], Option[TargetName])].contramap { x =>
       (x.isLogged, x.obsName, x.observer, x.status, x.targetName)
     }
+
+  implicit val arbPreviewPage: Arbitrary[PreviewPage] =
+    Arbitrary {
+      for {
+        i  <- arbitrary[Instrument]
+        oi <- arbitrary[Observation.Id]
+        sd <- arbitrary[Int]
+      } yield PreviewPage(i, oi, sd)
+    }
+
+  implicit val previewPageCogen: Cogen[PreviewPage] =
+    Cogen[(Instrument, Observation.Id, Int)]
+      .contramap(x => (x.instrument, x.obsId, x.step))
+
+  implicit val arbSequencePage: Arbitrary[SequencePage] =
+    Arbitrary {
+      for {
+        i  <- arbitrary[Instrument]
+        oi <- arbitrary[Observation.Id]
+        sd <- arbitrary[Int]
+      } yield SequencePage(i, oi, sd)
+    }
+
+  implicit val sequencePageCogen: Cogen[SequencePage] =
+    Cogen[(Instrument, Observation.Id, Int)]
+      .contramap(x => (x.instrument, x.obsId, x.step))
+
+  implicit val arbPreviewConfigPage: Arbitrary[PreviewConfigPage] =
+    Arbitrary {
+      for {
+        i  <- arbitrary[Instrument]
+        oi <- arbitrary[Observation.Id]
+        st <- Gen.posNum[Int]
+      } yield PreviewConfigPage(i, oi, st)
+    }
+
+  implicit val previewConfigPageCogen: Cogen[PreviewConfigPage] =
+    Cogen[(Instrument, Observation.Id, Int)]
+      .contramap(x => (x.instrument, x.obsId, x.step))
+
+  implicit val arbSequenceConfigPage: Arbitrary[SequenceConfigPage] =
+    Arbitrary {
+      for {
+        i  <- arbitrary[Instrument]
+        oi <- arbitrary[Observation.Id]
+        st <- Gen.posNum[Int]
+      } yield SequenceConfigPage(i, oi, st)
+    }
+
+  implicit val sequenceConfigPageCogen: Cogen[SequenceConfigPage] =
+    Cogen[(Instrument, Observation.Id, Int)]
+      .contramap(x => (x.instrument, x.obsId, x.step))
+
+  implicit val arbSeqexecPages: Arbitrary[SeqexecPages] =
+    Arbitrary {
+      for {
+        r  <- Gen.const(Root)
+        sc <- Gen.const(SoundTest)
+        ep <- Gen.const(EmptyPreviewPage)
+        pp <- arbitrary[PreviewPage]
+        sp <- arbitrary[SequencePage]
+        pc <- arbitrary[PreviewConfigPage]
+        sc <- arbitrary[SequenceConfigPage]
+        p  <- Gen.oneOf(r, sc, ep, pp, sp, pc, sc)
+      } yield p
+    }
+
+  implicit val seqexecPageCogen: Cogen[SeqexecPages] =
+    Cogen[Option[Option[Option[Either[(Instrument, Observation.Id, Int), Either[(Instrument, Observation.Id, Int), Either[(Instrument, Observation.Id, Int), (Instrument, Observation.Id, Int)]]]]]]].contramap {
+      case Root                        => None
+      case SoundTest                   => Some(None)
+      case EmptyPreviewPage            => Some(Some(None))
+      case PreviewPage(i, o, s)        => Some(Some(Some(Left((i, o, s)))))
+      case SequencePage(i, o, s)       => Some(Some(Some(Right(Left((i, o, s))))))
+      case SequenceConfigPage(i, o, s) => Some(Some(Some(Right(Right(Left((i, o, s)))))))
+      case PreviewConfigPage(i, o, s)  => Some(Some(Some(Right(Right(Right((i, o, s)))))))
+    }
+
+  implicit val arbResourcesConflict: Arbitrary[ResourcesConflict] =
+    Arbitrary {
+      for {
+        v  <- arbitrary[SectionVisibilityState]
+        id <- arbitrary[Option[Observation.Id]]
+      } yield ResourcesConflict(v, id)
+    }
+
+  implicit val resourcesConflictCogen: Cogen[ResourcesConflict] =
+    Cogen[(SectionVisibilityState, Option[Observation.Id])].contramap(x => (x.visibility, x.id))
+
+  implicit val arbGlobalLog: Arbitrary[GlobalLog] =
+    Arbitrary {
+      for {
+        b  <- arbitrary[FixedLengthBuffer[ServerLogMessage]]
+        v  <- arbitrary[SectionVisibilityState]
+      } yield GlobalLog(b, v)
+    }
+
+  implicit val globalLogCogen: Cogen[GlobalLog] =
+    Cogen[(FixedLengthBuffer[ServerLogMessage], SectionVisibilityState)].contramap(x => (x.log, x.display))
+
+  implicit val arbStepConfigTableTableColumn: Arbitrary[StepConfigTable.TableColumn] =
+    Arbitrary(Gen.oneOf(StepConfigTable.NameColumn, StepConfigTable.ValueColumn))
+
+  implicit val stepConfigTableColumnCogen: Cogen[StepConfigTable.TableColumn] =
+    Cogen[String].contramap(_.productPrefix)
+
+  implicit val arbQueueTableBodyTableColumn: Arbitrary[QueueTableBody.TableColumn] =
+    Arbitrary(Gen.oneOf(QueueTableBody.all.map(_.column).toList))
+
+  implicit val queueTableBodyTableColumnCogen: Cogen[QueueTableBody.TableColumn] =
+    Cogen[String].contramap(_.productPrefix)
+
+  implicit val arbSeqexecUIModel: Arbitrary[SeqexecUIModel] =
+    Arbitrary {
+      for {
+        navLocation        <- arbitrary[Pages.SeqexecPages]
+        user               <- arbitrary[Option[UserDetails]]
+        sequences          <- arbitrary[SequencesQueue[SequenceView]]
+        loginBox           <- arbitrary[SectionVisibilityState]
+        resourceConflict   <- arbitrary[ResourcesConflict]
+        globalLog          <- arbitrary[GlobalLog]
+        sequencesOnDisplay <- arbitrary[SequencesOnDisplay]
+        syncInProgress     <- arbitrary[Boolean]
+        configTableState   <- arbitrary[TableState[StepConfigTable.TableColumn]]
+        queueTableState    <- arbitrary[TableState[QueueTableBody.TableColumn]]
+        defaultObserver    <- arbitrary[Observer]
+        firstLoad          <- arbitrary[Boolean]
+      } yield SeqexecUIModel(navLocation, user, sequences, loginBox, resourceConflict, globalLog, sequencesOnDisplay, syncInProgress, configTableState, queueTableState, defaultObserver, firstLoad)
+    }
+
+  implicit val seqUIModelCogen: Cogen[SeqexecUIModel] =
+    Cogen[(Pages.SeqexecPages, Option[UserDetails], SequencesQueue[SequenceView], SectionVisibilityState, ResourcesConflict, GlobalLog, SequencesOnDisplay, Boolean, TableState[StepConfigTable.TableColumn], TableState[QueueTableBody.TableColumn], Observer, Boolean)]
+      .contramap(x => (x.navLocation, x.user, x.sequences, x.loginBox, x.resourceConflict, x.globalLog, x.sequencesOnDisplay, x.syncInProgress, x.configTableState, x.queueTableState, x.defaultObserver, x.firstLoad))
 
 }
