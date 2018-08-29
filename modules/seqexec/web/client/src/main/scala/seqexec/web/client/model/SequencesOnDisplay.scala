@@ -3,12 +3,11 @@
 
 package seqexec.web.client.model
 
+import cats.Eq
 import cats.implicits._
 import cats.data.NonEmptyList
-import diode.RootModelR
-import diode.data._
 import gem.Observation
-import seqexec.model.SequenceView
+import seqexec.model.{ SequencesQueue, SequenceView }
 import seqexec.model.enum._
 import seqexec.web.common.Zipper
 import seqexec.web.client.circuit.SequenceObserverFocus
@@ -37,19 +36,35 @@ final case class SequencesOnDisplay(sequences: Zipper[SequenceTab]) {
   /**
    * List of loaded sequence ids
    */
-  val loadedIds: List[Observation.Id] =
-    sequences.toList.collect {
-      case InstrumentSequenceTab(_, curr, _, _) => curr().map(_.id)
-    }.collect {
-      case Some(x) => x
+  val loadedId: List[Observation.Id] =
+    sequences.toNel.collect {
+      case InstrumentSequenceTab(_, Some(curr), _, _) => curr.id
     }
 
   /**
+   * List of sequence ids on tabs
+   */
+  val tabIds: List[Observation.Id] =
+    sequences.toNel.collect {
+      case InstrumentSequenceTab(_, Some(curr), _, _) => curr.id
+      case PreviewSequenceTab(Some(curr), _) => curr.id
+    }
+
+  def updateFromQueue(s: SequencesQueue[SequenceView]): SequencesOnDisplay = {
+    updateLoaded(s.loaded.values.toList.map { id =>
+      s.queue.find(_.id === id)
+    })
+    // sequences.map {
+    //   case InstrumentSequenceTab(_, Some(curr), _, _) => curr.id
+    //   case PreviewSequenceTab(Some(curr), _) => curr.id
+    // }
+  }
+  /**
    * Replace the list of loaded sequences
    */
-  def updateLoaded(s: List[RefTo[Option[SequenceView]]]): SequencesOnDisplay = {
+  def updateLoaded(s: List[Option[SequenceView]]): SequencesOnDisplay = {
     // Build the new tabs
-    val instTabs = s.fproduct(_()).collect { case (r, Some(x)) => InstrumentSequenceTab(x.metadata.instrument, r, None, None)  }
+    val instTabs = s.collect { case Some(x) => InstrumentSequenceTab(x.metadata.instrument, x.some, None, None)  }
     // Store current focus
     val currentFocus = sequences.focus
     // Save the current preview
@@ -70,17 +85,17 @@ final case class SequencesOnDisplay(sequences: Zipper[SequenceTab]) {
           case PreviewSequenceTab(_, _)          => false
         }
     }
-    copy(sequences = q.getOrElse(sequences))
+    copy(sequences = q.getOrElse(newZipper))
   }
 
   /**
    * Sets the passed sequences as preview. if it is already loaded, it will focus there instead
    */
-  def previewSequence(i: Instrument, s: RefTo[Option[SequenceView]]): SequencesOnDisplay = {
-    val obsId = s().map(_.id)
-    val isLoaded = obsId.exists(loadedIds.contains)
+  def previewSequence(i: Instrument, s: Option[SequenceView]): SequencesOnDisplay = {
+    val obsId = s.map(_.id)
+    val isLoaded = obsId.exists(loadedId.contains)
     // Replace the sequence for the instrument or the completed sequence and reset displaying a step
-    val seq = if (s().exists(x => x.metadata.instrument === i && !isLoaded)) {
+    val seq = if (s.exists(x => x.metadata.instrument === i && !isLoaded)) {
       val q = sequences.findFocus(_.isPreview).map(_.modify((SequenceTab.currentSequenceL.set(s) andThen SequenceTab.stepConfigL.set(None))(_)))
       q.getOrElse(sequences)
     } else if (isLoaded) {
@@ -102,8 +117,8 @@ final case class SequencesOnDisplay(sequences: Zipper[SequenceTab]) {
   def unsetPreviewOn(i: Observation.Id): SequencesOnDisplay = {
     // Remove any sequence in the preview
     val q = sequences.map {
-      case s @ PreviewSequenceTab(cur, _) if cur().exists(_.id === i) =>
-        SequenceTab.currentSequenceL.set(SequencesOnDisplay.emptySeqRef)(s)
+      case s @ PreviewSequenceTab(cur, _) if cur.exists(_.id === i) =>
+        SequenceTab.currentSequenceL.set(None)(s)
       case s                                                      =>
         s
     }
@@ -113,7 +128,7 @@ final case class SequencesOnDisplay(sequences: Zipper[SequenceTab]) {
   def unsetPreview: SequencesOnDisplay = {
     // Remove any sequence in the preview
     val q = sequences.map {
-      case s if s.isPreview => SequenceTab.currentSequenceL.set(SequencesOnDisplay.emptySeqRef)(s)
+      case s if s.isPreview => SequenceTab.currentSequenceL.set(None)(s)
       case s                => s
     }
     copy(sequences = q)
@@ -155,8 +170,9 @@ final case class SequencesOnDisplay(sequences: Zipper[SequenceTab]) {
   * Contains the sequences displayed on the instrument tabs. Note that they are references to sequences on the Queue
   */
 object SequencesOnDisplay {
-  val emptySeqRef: RefTo[Option[SequenceView]] = RefTo(new RootModelR(None))
-
-  // We need to initialize the model with some instruments but it will be shortly replaced by the actual list
+  // We need to initialize the model with something so we use preview
   val empty: SequencesOnDisplay = SequencesOnDisplay(Zipper.fromNel(NonEmptyList.of(SequenceTab.Empty)))
+
+  implicit val eq: Eq[SequencesOnDisplay] =
+    Eq.by(_.sequences)
 }

@@ -9,6 +9,7 @@ import cats.data.NonEmptyList
 import diode._
 import gem.Observation
 import gem.enum.Site
+import monocle.macros.Lenses
 import seqexec.model._
 import seqexec.model.enum._
 import seqexec.web.client.model._
@@ -20,6 +21,15 @@ package circuit {
   // All these classes are focused views of the root model. They are used to only update small sections of the
   // UI even if other parts of the root model change
   final case class WebSocketsFocus(location: Pages.SeqexecPages, sequences: SequencesQueue[SequenceView], user: Option[UserDetails], defaultObserver: Observer, clientId: Option[ClientID], site: Option[Site]) extends UseValueEq
+
+  @Lenses
+  final case class SequencesFocus(sequences: SequencesQueue[SequenceView], sod: SequencesOnDisplay)
+
+  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
+  object SequencesFocus {
+    implicit val eq: Eq[SequencesFocus] =
+      Eq.by(x => (x.sequences, x.sod))
+  }
 
   final case class InitialSyncFocus(location: Pages.SeqexecPages, firstLoad: Boolean) extends UseValueEq
 

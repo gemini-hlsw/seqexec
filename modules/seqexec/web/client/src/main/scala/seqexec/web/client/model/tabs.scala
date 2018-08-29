@@ -5,8 +5,6 @@ package seqexec.web.client.model
 
 import cats._
 import cats.implicits._
-import diode.RootModelR
-import diode.data._
 import gem.Observation
 import monocle.{Lens, Optional}
 import monocle.macros.Lenses
@@ -36,13 +34,13 @@ sealed trait SequenceTab {
 
   def instrument: Option[Instrument] = this match {
     case i: InstrumentSequenceTab => i.inst.some
-    case i: PreviewSequenceTab    => i.currentSequence().map(_.metadata.instrument)
+    case i: PreviewSequenceTab    => i.currentSequence.map(_.metadata.instrument)
   }
 
   def sequence: Option[SequenceView] = this match {
     // Returns the current sequence or if empty the last completed one
-    case i: InstrumentSequenceTab => i.currentSequence().orElse(i.completedSequence)
-    case i: PreviewSequenceTab    => i.currentSequence()
+    case i: InstrumentSequenceTab => i.currentSequence.orElse(i.completedSequence)
+    case i: PreviewSequenceTab    => i.currentSequence
   }
 
   def obsId: Option[Observation.Id] = sequence.map(_.id)
@@ -64,7 +62,7 @@ sealed trait SequenceTab {
 }
 
 @Lenses
-final case class InstrumentSequenceTab(inst: Instrument, currentSequence: RefTo[Option[SequenceView]], completedSequence: Option[SequenceView], stepConfig: Option[Int]) extends SequenceTab
+final case class InstrumentSequenceTab(inst: Instrument, currentSequence: Option[SequenceView], completedSequence: Option[SequenceView], stepConfig: Option[Int]) extends SequenceTab
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object InstrumentSequenceTab {
@@ -73,7 +71,7 @@ object InstrumentSequenceTab {
 }
 
 @Lenses
-final case class PreviewSequenceTab(currentSequence: RefTo[Option[SequenceView]], stepConfig: Option[Int]) extends SequenceTab
+final case class PreviewSequenceTab(currentSequence: Option[SequenceView], stepConfig: Option[Int]) extends SequenceTab
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object PreviewSequenceTab {
@@ -88,7 +86,7 @@ object SequenceTab {
       case (a: PreviewSequenceTab, b: PreviewSequenceTab)       => a === b
       case _                                                    => false
     }
-  val Empty: SequenceTab = PreviewSequenceTab(RefTo(new RootModelR(None)), None)
+  val Empty: SequenceTab = PreviewSequenceTab(None, None)
 
   // Some lenses
   val stepConfigL: Lens[SequenceTab, Option[Int]] = Lens[SequenceTab, Option[Int]] {
@@ -99,7 +97,7 @@ object SequenceTab {
     case t: PreviewSequenceTab    => t.copy(stepConfig = n)
   })
 
-  val currentSequenceL: Lens[SequenceTab, RefTo[Option[SequenceView]]] = Lens[SequenceTab, RefTo[Option[SequenceView]]] {
+  val currentSequenceL: Lens[SequenceTab, Option[SequenceView]] = Lens[SequenceTab, Option[SequenceView]] {
     case t: InstrumentSequenceTab => t.currentSequence
     case t: PreviewSequenceTab    => t.currentSequence
   }(n => a => a match {

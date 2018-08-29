@@ -4,29 +4,23 @@
 package seqexec.web.client
 
 import cats.data.NonEmptyList
-import diode.RootModelR
 import diode.data._
 import gem.arb.ArbObservation
 import gem.Observation
 import seqexec.model.enum.Instrument
-import seqexec.model.{ SequenceState, SequenceView, Step }
+import seqexec.model.{ Observer, TargetName, SequencesQueue, SequenceState, SequenceView, Step }
 import seqexec.model.SeqexecModelArbitraries._
 import seqexec.web.client.model._
 import seqexec.web.client.circuit._
 import seqexec.model.UserDetails
 import seqexec.web.common.Zipper
+import seqexec.web.common.ArbitrariesWebCommon._
 import seqexec.web.client.components.sequence.steps.OffsetFns.OffsetsDisplay
 import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, _}
 import org.scalajs.dom.WebSocket
 
 trait ArbitrariesWebClient extends ArbObservation {
-
-  implicit def arbRefTo[A <: AnyRef : Arbitrary]: Arbitrary[RefTo[A]] = Arbitrary {
-    arbitrary[A].map(x => RefTo(new RootModelR[A](x)))
-  }
-  implicit def refToCogen[A: Cogen]: Cogen[RefTo[A]] =
-    Cogen[A].contramap(_())
 
   implicit val arbInstrumentSequenceTab: Arbitrary[InstrumentSequenceTab] =
     Arbitrary {
@@ -35,25 +29,25 @@ trait ArbitrariesWebClient extends ArbObservation {
         idx <- arbitrary[Option[Int]]
         sv  <- arbitrary[Option[SequenceView]]
         pr  <- arbitrary[Option[SequenceView]]
-      } yield InstrumentSequenceTab(i, RefTo(new RootModelR(sv.map(k => k.copy(metadata = k.metadata.copy(instrument = i))))), pr, idx)
+      } yield InstrumentSequenceTab(i, sv.map(k => k.copy(metadata = k.metadata.copy(instrument = i))), pr, idx)
     }
 
   implicit val istCogen: Cogen[InstrumentSequenceTab] =
     Cogen[(Instrument, Option[SequenceView], Option[SequenceView], Option[Int])].contramap {
-      x => (x.inst, x.currentSequence(), x.completedSequence, x.stepConfig)
+      x => (x.inst, x.currentSequence, x.completedSequence, x.stepConfig)
     }
 
   implicit val arbPreviewSequenceTab: Arbitrary[PreviewSequenceTab] =
     Arbitrary {
       for {
         idx <- arbitrary[Option[Int]]
-        sv  <- arbitrary[RefTo[Option[SequenceView]]]
+        sv  <- arbitrary[Option[SequenceView]]
       } yield PreviewSequenceTab(sv, idx)
     }
 
   implicit val pstCogen: Cogen[PreviewSequenceTab] =
     Cogen[(Option[SequenceView], Option[Int])].contramap {
-      x => (x.currentSequence(), x.stepConfig)
+      x => (x.currentSequence, x.stepConfig)
     }
 
   implicit val arbSequenceTab: Arbitrary[SequenceTab] = Arbitrary {
@@ -76,6 +70,10 @@ trait ArbitrariesWebClient extends ArbObservation {
         SequencesOnDisplay(Zipper.fromNel(sequences))
       }
     }
+
+  implicit val sequencesOnDisplayCogen: Cogen[SequencesOnDisplay] =
+    Cogen[Zipper[SequenceTab]]
+      .contramap(_.sequences)
 
   implicit val arbOffsetsDisplay: Arbitrary[OffsetsDisplay] =
     Arbitrary {
@@ -136,24 +134,6 @@ trait ArbitrariesWebClient extends ArbObservation {
   implicit val cssCogen: Cogen[ClientStatus] =
     Cogen[(Option[UserDetails], WebSocketConnection, Boolean)].contramap(x => (x.u, x.w, x.syncInProgress))
 
-  implicit val arbStepsTableFocus: Arbitrary[StepsTableFocus] =
-    Arbitrary {
-      for {
-        id <- arbitrary[Observation.Id]
-        i  <- arbitrary[Instrument]
-        ss <- arbitrary[SequenceState]
-        s  <- arbitrary[List[Step]]
-        n  <- arbitrary[Option[Int]]
-        e  <- arbitrary[Option[Int]]
-        p  <- arbitrary[Boolean]
-      } yield StepsTableFocus(id, i, ss, s, n, e, p)
-    }
-
-  implicit val sstCogen: Cogen[StepsTableFocus] =
-    Cogen[(Observation.Id, Instrument, SequenceState, List[Step], Option[Int], Option[Int])].contramap { x =>
-      (x.id, x.instrument, x.state, x.steps, x.stepConfigDisplayed, x.nextStepToRun)
-    }
-
   implicit val arbRunningStep: Arbitrary[RunningStep] =
     Arbitrary {
       for {
@@ -212,4 +192,52 @@ trait ArbitrariesWebClient extends ArbObservation {
   implicit val sequenceTabActiveCogen: Cogen[SequenceTabActive] =
     Cogen[(SequenceTab, Boolean)]
       .contramap(x => (x.tab, x.active))
+
+  implicit val arbStepsTableFocus: Arbitrary[StepsTableFocus] =
+    Arbitrary {
+      for {
+        id <- arbitrary[Observation.Id]
+        i  <- arbitrary[Instrument]
+        ss <- arbitrary[SequenceState]
+        s  <- arbitrary[List[Step]]
+        n  <- arbitrary[Option[Int]]
+        e  <- arbitrary[Option[Int]]
+        p  <- arbitrary[Boolean]
+      } yield StepsTableFocus(id, i, ss, s, n, e, p)
+    }
+
+  implicit val sstCogen: Cogen[StepsTableFocus] =
+    Cogen[(Observation.Id, Instrument, SequenceState, List[Step], Option[Int], Option[Int])].contramap { x =>
+      (x.id, x.instrument, x.state, x.steps, x.stepConfigDisplayed, x.nextStepToRun)
+    }
+
+  implicit val arbSequencesFocus: Arbitrary[SequencesFocus] =
+    Arbitrary {
+      for {
+        s <- arbitrary[SequencesQueue[SequenceView]]
+        d <- arbitrary[SequencesOnDisplay]
+      } yield SequencesFocus(s, d)
+    }
+
+  implicit val sfCogen: Cogen[SequencesFocus] =
+    Cogen[(SequencesQueue[SequenceView], SequencesOnDisplay)].contramap { x =>
+      (x.sequences, x.sod)
+    }
+
+  implicit val arbSequenceInfoFocus: Arbitrary[SequenceInfoFocus] =
+    Arbitrary {
+      for {
+        l <- arbitrary[Boolean]
+        n <- arbitrary[Option[String]]
+        o <- arbitrary[Option[Observer]]
+        s <- arbitrary[Option[SequenceState]]
+        t <- arbitrary[Option[TargetName]]
+      } yield SequenceInfoFocus(l, n, o, s, t)
+    }
+
+  implicit val sifCogen: Cogen[SequenceInfoFocus] =
+    Cogen[(Boolean, Option[String], Option[Observer], Option[SequenceState], Option[TargetName])].contramap { x =>
+      (x.isLogged, x.obsName, x.observer, x.status, x.targetName)
+    }
+
 }
