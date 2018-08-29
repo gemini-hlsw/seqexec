@@ -57,7 +57,7 @@ trait SeqexecModelArbitraries extends ArbObservation {
   implicit val spsArb = Arbitrary[StepState] {
     for {
       v1 <- Gen.oneOf(StepState.Pending, StepState.Completed, StepState.Skipped, StepState.Running, StepState.Paused)
-      v2 <- arbitrary[String].map(StepState.Failed.apply)
+      v2 <- Gen.alphaStr.map(StepState.Failed.apply)
       r  <- Gen.oneOf(v1, v2)
     } yield r
   }

@@ -59,7 +59,12 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   val statusReader: ModelR[SeqexecAppRootModel, ClientStatus] = zoom(m => ClientStatus(m.uiModel.user, m.ws, m.uiModel.syncInProgress))
 
   // Reader to update the sequences in both parts of the model being used
-  val sequencesReaderRW: ModelRW[SeqexecAppRootModel, SequencesFocus] = this.zoomRWL(SeqexecAppRootModel.uiModel ^|-> SequencesFocus.sequencesFocusL)
+  val sequencesReaderRW: ModelRW[SeqexecAppRootModel, SequencesFocus] =
+    this.zoomRWL(SeqexecAppRootModel.uiModel ^|-> SequencesFocus.sequencesFocusL)
+
+  // Reader to update the selected sequences and location
+  val sodLocationReaderRW: ModelRW[SeqexecAppRootModel, SODLocationFocus] =
+    this.zoomRWL(SeqexecAppRootModel.uiModel ^|-> SODLocationFocus.sodLocationFocusL)
 
   // Some useful readers
   val statusAndLoadedSequencesReader: ModelR[SeqexecAppRootModel, StatusAndLoadedSequencesFocus] =
@@ -162,7 +167,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   private val syncRequestsHandler      = new SyncRequestsHandler(zoomTo(_.uiModel.syncInProgress))
   private val debuggingHandler         = new DebuggingHandler(zoomTo(_.uiModel.sequences))
   private val stepConfigStateHandler   = new StepConfigTableStateHandler(tableStateRW)
-  private val loadSequencesHandler     = new LoadedSequencesHandler(zoomTo(_.uiModel.sequencesOnDisplay))
+  private val loadSequencesHandler     = new LoadedSequencesHandler(sodLocationReaderRW)
   private val siteHandler              = new SiteHandler(zoomTo(_.site))
 
   def dispatchCB[A <: Action](a: A): Callback = Callback(dispatch(a))

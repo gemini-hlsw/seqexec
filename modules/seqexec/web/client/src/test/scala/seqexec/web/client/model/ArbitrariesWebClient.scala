@@ -378,4 +378,14 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
     Cogen[(Pages.SeqexecPages, Option[UserDetails], SequencesQueue[SequenceView], SectionVisibilityState, ResourcesConflict, GlobalLog, SequencesOnDisplay, Boolean, TableState[StepConfigTable.TableColumn], TableState[QueueTableBody.TableColumn], Observer, Boolean)]
       .contramap(x => (x.navLocation, x.user, x.sequences, x.loginBox, x.resourceConflict, x.globalLog, x.sequencesOnDisplay, x.syncInProgress, x.configTableState, x.queueTableState, x.defaultObserver, x.firstLoad))
 
+  implicit val arbSODLocationFocus: Arbitrary[SODLocationFocus] =
+    Arbitrary {
+      for {
+        navLocation        <- arbitrary[Pages.SeqexecPages]
+        sequencesOnDisplay <- arbitrary[SequencesOnDisplay]
+      } yield SODLocationFocus(navLocation, sequencesOnDisplay)
+    }
+
+  implicit val sodLocationFocusogen: Cogen[SODLocationFocus] =
+    Cogen[(Pages.SeqexecPages, SequencesOnDisplay)].contramap(x => (x.location, x.sod))
 }
