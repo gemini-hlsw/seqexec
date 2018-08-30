@@ -66,7 +66,18 @@ package circuit {
       Lens[SeqexecAppRootModel, SODLocationFocus](m => SODLocationFocus(m.uiModel.navLocation, m.uiModel.sequencesOnDisplay, m.clientId))(v => m => m.copy(clientId = v.clientId, uiModel = m.uiModel.copy(navLocation = v.location, sequencesOnDisplay = v.sod)))
   }
 
-  final case class InitialSyncFocus(location: Pages.SeqexecPages, firstLoad: Boolean) extends UseValueEq
+  @Lenses
+  final case class InitialSyncFocus(location: Pages.SeqexecPages, sod: SequencesOnDisplay, firstLoad: Boolean)
+
+  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
+  object InitialSyncFocus {
+    implicit val eq: Eq[InitialSyncFocus] =
+      Eq.by(x => (x.location, x.sod, x.firstLoad))
+
+    val initialSyncFocusL: Lens[SeqexecUIModel, InitialSyncFocus] =
+      Lens[SeqexecUIModel, InitialSyncFocus](m => InitialSyncFocus(m.navLocation, m.sequencesOnDisplay, m.firstLoad))(v => m => m.copy(navLocation = v.location, sequencesOnDisplay = v.sod, firstLoad = v.firstLoad))
+  }
+
 
   final case class SequenceInQueue(id: Observation.Id, status: SequenceState, instrument: Instrument, active: Boolean, loaded: Boolean, name: String, targetName: Option[TargetName], runningStep: Option[RunningStep]) extends UseValueEq
 

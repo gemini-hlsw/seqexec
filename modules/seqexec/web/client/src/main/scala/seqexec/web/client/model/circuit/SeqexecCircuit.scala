@@ -50,7 +50,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
     zoomRW(m => WebSocketsFocus(m.uiModel.navLocation, m.uiModel.sequences, m.uiModel.user, m.uiModel.defaultObserver, m.clientId, m.site)) ((m, v) => m.copy(uiModel = m.uiModel.copy(sequences = v.sequences, user = v.user, defaultObserver = v.defaultObserver), clientId = v.clientId, site = v.site))
 
   val initialSyncFocusRW: ModelRW[SeqexecAppRootModel, InitialSyncFocus] =
-    zoomRW(m => InitialSyncFocus(m.uiModel.navLocation, m.uiModel.firstLoad)) ((m, v) => m.copy(uiModel = m.uiModel.copy(navLocation = v.location, firstLoad = v.firstLoad)))
+    this.zoomRWL(SeqexecAppRootModel.uiModel ^|-> InitialSyncFocus.initialSyncFocusL)
 
   val tableStateRW: ModelRW[SeqexecAppRootModel, TableStates] =
     zoomRW(m => TableStates(m.uiModel.queueTableState, m.uiModel.configTableState)) ((m, v) => m.copy(uiModel = m.uiModel.copy(queueTableState = v.queueTable, configTableState = v.stepConfigTable)))
