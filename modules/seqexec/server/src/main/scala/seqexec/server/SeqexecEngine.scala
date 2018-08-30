@@ -120,7 +120,7 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
       (EngineState.sequences ^|-? index(sid)).modify(ObserverSequence.observer.set(observer.some)) >>>
        EngineState.instrumentLoadedL(i).set(sid.some) >>>
        refreshSequence(sid)
-    q.enqueue1(Event.logDebugMsg(s"SeqexecEngine: Loading sequence ${sid.format} on ${i.show} sequences")) *>
+    q.enqueue1(Event.logInfoMsg(s"User '${user.displayName}' loads sequence ${sid.format} on ${i.show}")) *>
     q.enqueue1(Event.modifyState[executeEngine.ConcreteTypes](
       lens withEvent  AddLoadedSequence(i, sid, user.some)
     )).map(_.asRight)
