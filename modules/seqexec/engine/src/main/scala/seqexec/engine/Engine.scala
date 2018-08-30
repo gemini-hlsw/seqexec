@@ -28,6 +28,7 @@ class Engine[D, U](stateL: Lens[D, Engine.State]) {
     override type EventData = U
   }
   type EventType = Event[ConcreteTypes]
+  type ResultType = EventResult[ConcreteTypes]
   type UserEventType = UserEvent[ConcreteTypes]
 
   /**
@@ -297,44 +298,43 @@ class Engine[D, U](stateL: Lens[D, Engine.State]) {
     * Main logical thread to handle events and produce output.
     */
   @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
-  private def run(ev: EventType)(implicit ec: ExecutionContext): HandleP[D] = {
-    def handleUserEvent(ue: UserEventType): HandleP[Unit] = ue match {
-      case Start(id, _, clid, userCheck) => Logger.debug(s"Engine: Start requested for sequence $id") *> start(id, clid, userCheck)
-      case Pause(id, _)                  => Logger.debug("Engine: Pause requested") *> pause(id)
-      case CancelPause(id, _)            => Logger.debug("Engine: Pause canceled") *> cancelPause(id)
+  private def run(ev: EventType)(implicit ec: ExecutionContext): HandleP[ResultType] = {
+    def handleUserEvent(ue: UserEventType): HandleP[ResultType] = ue match {
+      case Start(id, _, clid, userCheck) => Logger.debug(s"Engine: Start requested for sequence $id") *> start(id, clid, userCheck) *> pure(UserCommandResponse(ue, EventResult.Ok, None))
+      case Pause(id, _)                  => Logger.debug("Engine: Pause requested") *> pause(id) *> pure(UserCommandResponse(ue, EventResult.Ok, None))
+      case CancelPause(id, _)            => Logger.debug("Engine: Pause canceled") *> cancelPause(id) *> pure(UserCommandResponse(ue, EventResult.Ok, None))
       case Breakpoint(id, _, step, v)    => Logger.debug(s"Engine: breakpoint changed for step $step to $v") *>
-        modifyS(id)(_.setBreakpoint(step, v))
+        modifyS(id)(_.setBreakpoint(step, v)) *> pure(UserCommandResponse(ue, EventResult.Ok, None))
       case SkipMark(id, _, step, v)      => Logger.debug(s"Engine: skip mark changed for step $step to $v") *>
-        modifyS(id)(_.setSkipMark(step, v))
-      case Poll(_)                       => Logger.debug("Engine: Polling current state")
-      case GetState(f)                   => getState(f)
-      case ModifyState(f, _)             => modify(f)
-      case ModifyStateF(f, _)            => modify(f)
-      case ActionStop(id, f)             => Logger.debug("Engine: Action stop requested") *> actionStop(id, f)
-      case ActionResume(id, i, cont)     => Logger.debug("Engine: Action resume requested") *> actionResume(id, i, cont)
-      case LogDebug(msg)                 => Logger.debug(msg)
-      case LogInfo(msg)                  => Logger.info(msg)
-      case LogWarning(msg)               => Logger.warning(msg)
-      case LogError(msg)                 => Logger.error(msg)
+        modifyS(id)(_.setSkipMark(step, v)) *> pure(UserCommandResponse(ue, EventResult.Ok, None))
+      case Poll(_)                       => Logger.debug("Engine: Polling current state") *> pure(UserCommandResponse(ue, EventResult.Ok, None))
+      case GetState(f)                   => getState(f) *> pure(UserCommandResponse(ue, EventResult.Ok, None))
+      case ModifyState(f)                => userModify(f).map(r => UserCommandResponse[ConcreteTypes](ue, EventResult.Ok, Some(r)))
+      case ActionStop(id, f)             => Logger.debug("Engine: Action stop requested") *> actionStop(id, f) *> pure(UserCommandResponse(ue, EventResult.Ok, None))
+      case ActionResume(id, i, cont)     => Logger.debug("Engine: Action resume requested") *> actionResume(id, i, cont) *> pure(UserCommandResponse(ue, EventResult.Ok, None))
+      case LogDebug(msg)                 => Logger.debug(msg) *> pure(UserCommandResponse(ue, EventResult.Ok, None))
+      case LogInfo(msg)                  => Logger.info(msg) *> pure(UserCommandResponse(ue, EventResult.Ok, None))
+      case LogWarning(msg)               => Logger.warning(msg) *> pure(UserCommandResponse(ue, EventResult.Ok, None))
+      case LogError(msg)                 => Logger.error(msg) *> pure(UserCommandResponse(ue, EventResult.Ok, None))
     }
 
-    def handleSystemEvent(se: SystemEvent): HandleP[Unit] = se match {
-      case Completed(id, i, r)     => Logger.debug("Engine: Action completed") *> complete(id, i, r)
-      case PartialResult(id, i, r) => Logger.debug("Engine: Partial result") *> partialResult(id, i, r)
-      case Paused(id, i, r)        => Logger.debug("Engine: Action paused") *> actionPause(id, i, r)
-      case Failed(id, i, e)        => logError(e) *> fail(id)(i, e)
-      case Busy(id, _)             => Logger.warning(s"Cannot run sequence ${id.format} because required systems are in use.")
-      case BreakpointReached(_)    => Logger.debug("Engine: Breakpoint reached")
-      case Executed(id)            => Logger.debug("Engine: Execution completed") *> next(id)
-      case Executing(id)           => Logger.debug("Engine: Executing") *> execute(id)
-      case Finished(id)            => Logger.debug("Engine: Finished") *> switch(id)(SequenceState.Completed)
-      case Null                    => unit
+    def handleSystemEvent(se: SystemEvent): HandleP[ResultType] = se match {
+      case Completed(id, i, r)     => Logger.debug("Engine: Action completed") *> complete(id, i, r) *> pure(SystemUpdate(se, EventResult.Ok))
+      case PartialResult(id, i, r) => Logger.debug("Engine: Partial result") *> partialResult(id, i, r) *> pure(SystemUpdate(se, EventResult.Ok))
+      case Paused(id, i, r)        => Logger.debug("Engine: Action paused") *> actionPause(id, i, r) *> pure(SystemUpdate(se, EventResult.Ok))
+      case Failed(id, i, e)        => logError(e) *> fail(id)(i, e) *> pure(SystemUpdate(se, EventResult.Ok))
+      case Busy(id, _)             => Logger.warning(s"Cannot run sequence ${id.format} because required systems are in use.") *> pure(SystemUpdate(se, EventResult.Ok))
+      case BreakpointReached(_)    => Logger.debug("Engine: Breakpoint reached") *> pure(SystemUpdate(se, EventResult.Ok))
+      case Executed(id)            => Logger.debug("Engine: Execution completed") *> next(id) *> pure(SystemUpdate(se, EventResult.Ok))
+      case Executing(id)           => Logger.debug("Engine: Executing") *> execute(id) *> pure(SystemUpdate(se, EventResult.Ok))
+      case Finished(id)            => Logger.debug("Engine: Finished") *> switch(id)(SequenceState.Completed) *> pure(SystemUpdate(se, EventResult.Ok))
+      case Null                    => pure(SystemUpdate(se, EventResult.Ok))
     }
 
     (ev match {
       case EventUser(ue)   => handleUserEvent(ue)
       case EventSystem(se) => handleSystemEvent(se)
-    }) *> get
+    })
   }
 
   /** Traverse a process with a stateful computation. */
@@ -355,15 +355,17 @@ class Engine[D, U](stateL: Lens[D, Engine.State]) {
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.AnyVal", "org.wartremover.warts.ImplicitParameter"))
-  private def runE(ev: EventType, s: D)(implicit ec: ExecutionContext): IO[(D, (EventType, D), Stream[IO, EventType])] =
+  private def runE(ev: EventType, s: D)(implicit ec: ExecutionContext): IO[(D, (ResultType, D), Stream[IO, EventType])] =
     run(ev).run.run(s).map {
-      case (_, (si, p)) =>
-        (si, (ev, si), p.getOrElse(Stream.empty))
+      case (si, (r, p)) =>
+        (si, (r, si), p.getOrElse(Stream.empty))
     }
 
   @SuppressWarnings(Array("org.wartremover.warts.AnyVal", "org.wartremover.warts.ImplicitParameter"))
-  def process(input: Stream[IO, EventType])(qs: D)(implicit ec: ExecutionContext): Stream[IO, (EventType, D)] =
-    mapEvalState[EventType, D, (EventType, D)](input, qs, runE)
+  def process(input: Stream[IO, EventType])(qs: D)(implicit ec: ExecutionContext): Stream[IO, (ResultType, D)] =
+    mapEvalState[EventType, D, (ResultType, D)](input, qs, runE)
+
+  private def userModify(f: D => (D, U)): HandleP[U] = StateT[IO, D, U]( st => IO(f(st)) ).toHandleP
 
   // Functions for type bureaucracy
 
