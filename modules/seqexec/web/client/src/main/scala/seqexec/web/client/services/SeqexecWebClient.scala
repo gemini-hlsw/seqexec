@@ -242,9 +242,9 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
     * Load a sequence
     */
-  def loadSequence(instrument: Instrument, id: Observation.Id, name: Observer): Future[RegularCommand] = {
+  def loadSequence(instrument: Instrument, id: Observation.Id, name: Observer, clientId: ClientID): Future[RegularCommand] = {
     Ajax.post(
-      url = s"$baseUrl/commands/load/${encodeURI(instrument.show)}/${encodeURI(id.format)}/${encodeURI(name.value)}",
+      url = s"$baseUrl/commands/load/${encodeURI(instrument.show)}/${encodeURI(id.format)}/${encodeURI(name.value)}/$clientId",
       responseType = "arraybuffer"
     ).map(unpickle[RegularCommand])
   }

@@ -17,7 +17,7 @@ import monocle.macros.GenLens
 import monocle.function.At.at
 import monocle.function.At.atMap
 import seqexec.engine.Engine
-import seqexec.model.{Conditions, Observer, Operator, SequenceState}
+import seqexec.model.{ ClientID, Conditions, Observer, Operator, SequenceState }
 import seqexec.model.enum.{CloudCover, Instrument, ImageQuality, SkyBackground, WaterVapor}
 import seqexec.model.UserDetails
 
@@ -43,7 +43,7 @@ package server {
   final case class SetConditions(conditions: Conditions, user: Option[UserDetails]) extends SeqEvent
   final case class LoadSequence(sid: Observation.Id) extends SeqEvent
   final case class UnloadSequence(id: Observation.Id) extends SeqEvent
-  final case class AddLoadedSequence(instrument: Instrument, sid: Observation.Id, user: Option[UserDetails]) extends SeqEvent
+  final case class AddLoadedSequence(instrument: Instrument, sid: Observation.Id, user: UserDetails, clientId: ClientID) extends SeqEvent
   final case class ClearLoadedSequences(user: Option[UserDetails]) extends SeqEvent
   final case class SetImageQuality(iq: ImageQuality, user: Option[UserDetails]) extends SeqEvent
   final case class SetWaterVapor(wv: WaterVapor, user: Option[UserDetails]) extends SeqEvent

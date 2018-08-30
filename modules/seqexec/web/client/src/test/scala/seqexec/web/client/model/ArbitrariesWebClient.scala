@@ -8,7 +8,7 @@ import diode.data._
 import gem.arb.ArbObservation
 import gem.Observation
 import seqexec.model.enum.Instrument
-import seqexec.model.{ Observer, TargetName, SequencesQueue, SequenceState, SequenceView, Step, UserDetails }
+import seqexec.model.{ ClientID, Observer, TargetName, SequencesQueue, SequenceState, SequenceView, Step, UserDetails }
 import seqexec.model.events.ServerLogMessage
 import seqexec.model.SeqexecModelArbitraries._
 import seqexec.model.SequenceEventsArbitraries.{slmArb, slmCogen}
@@ -383,9 +383,10 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
       for {
         navLocation        <- arbitrary[Pages.SeqexecPages]
         sequencesOnDisplay <- arbitrary[SequencesOnDisplay]
-      } yield SODLocationFocus(navLocation, sequencesOnDisplay)
+        clientId           <- arbitrary[Option[ClientID]]
+      } yield SODLocationFocus(navLocation, sequencesOnDisplay, clientId)
     }
 
   implicit val sodLocationFocusogen: Cogen[SODLocationFocus] =
-    Cogen[(Pages.SeqexecPages, SequencesOnDisplay)].contramap(x => (x.location, x.sod))
+    Cogen[(Pages.SeqexecPages, SequencesOnDisplay, Option[ClientID])].contramap(x => (x.location, x.sod, x.clientId))
 }

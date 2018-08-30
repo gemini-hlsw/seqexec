@@ -76,7 +76,8 @@ trait SequenceEventsArbitraries extends ArbTime {
       i <- arbitrary[Instrument]
       o <- arbitrary[Observation.Id]
       s <- arbitrary[SequencesQueue[SequenceView]]
-    } yield LoadSequenceUpdated(i, o, s)
+      c <- arbitrary[ClientID]
+    } yield LoadSequenceUpdated(i, o, s, c)
   }
   implicit val clsArb = Arbitrary[ClearLoadedSequencesUpdated] {
     arbitrary[SequencesQueue[SequenceView]].map(ClearLoadedSequencesUpdated.apply)

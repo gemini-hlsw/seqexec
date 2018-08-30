@@ -131,8 +131,8 @@ class SeqexecCommandRoutes(auth: AuthenticationService, inputQueue: server.Event
         se.setCloudCover(inputQueue, cc, user) *> Ok(s"Set cloud cover to $cc")
       )
 
-    case POST -> Root / "load" / InstrumentVar(i) / ObsIdVar(obsId) / ObserverVar(observer) as user =>
-      se.loadSequence(inputQueue, i, obsId, observer, user) *> Ok(s"Set selected sequence $obsId for $i")
+    case POST -> Root / "load" / InstrumentVar(i) / ObsIdVar(obsId) / ObserverVar(observer) / ClientIDVar(clientId) as user =>
+      se.loadSequence(inputQueue, i, obsId, observer, user, clientId) *> Ok(s"Set selected sequence $obsId for $i")
 
     case POST -> Root / "unload" / "all" as user =>
       se.clearLoadedSequences(inputQueue, user) *> Ok(s"Queue cleared")

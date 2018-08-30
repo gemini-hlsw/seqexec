@@ -64,7 +64,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
 
   // Reader to update the selected sequences and location
   val sodLocationReaderRW: ModelRW[SeqexecAppRootModel, SODLocationFocus] =
-    this.zoomRWL(SeqexecAppRootModel.uiModel ^|-> SODLocationFocus.sodLocationFocusL)
+    this.zoomRWL(SODLocationFocus.sodLocationFocusL)
 
   // Some useful readers
   val statusAndLoadedSequencesReader: ModelR[SeqexecAppRootModel, StatusAndLoadedSequencesFocus] =
