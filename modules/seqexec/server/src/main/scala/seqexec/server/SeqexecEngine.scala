@@ -106,14 +106,14 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
 
   def setOperator(q: EventQueue, user: UserDetails, name: Operator): IO[Either[SeqexecFailure, Unit]] =
      q.enqueue1(Event.logDebugMsg(s"SeqexecEngine: Setting Operator name to '$name' by ${user.username}")) *>
-     q.enqueue1(Event.modifyState[executeEngine.ConcreteTypes](EngineState.operator.set(name.some) >>> refreshSequences >>> {(_, SetOperator(name, user.some))})).map(_.asRight)
+     q.enqueue1(Event.modifyState[executeEngine.ConcreteTypes](EngineState.operator.set(name.some) >>> refreshSequences withEvent SetOperator(name, user.some))).map(_.asRight)
 
   def setObserver(q: EventQueue,
                   seqId: Observation.Id,
                   user: UserDetails,
                   name: Observer): IO[Either[SeqexecFailure, Unit]] =
     q.enqueue1(Event.logDebugMsg(s"SeqexecEngine: Setting Observer name to '$name' for sequence '${seqId.format}' by ${user.username}")) *>
-        q.enqueue1(Event.modifyState[executeEngine.ConcreteTypes]((EngineState.sequences ^|-? index(seqId)).modify(ObserverSequence.observer.set(name.some)) >>> refreshSequence(seqId) >>> {(_, SetObserver(seqId, user.some, name))})).map(_.asRight)
+        q.enqueue1(Event.modifyState[executeEngine.ConcreteTypes]((EngineState.sequences ^|-? index(seqId)).modify(ObserverSequence.observer.set(name.some)) >>> refreshSequence(seqId) withEvent SetObserver(seqId, user.some, name))).map(_.asRight)
 
   def loadSequence(q: EventQueue, i: Instrument, sid: Observation.Id, observer: Observer, user: UserDetails): IO[Either[SeqexecFailure, Unit]] = {
     val lens =
@@ -122,33 +122,33 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
        refreshSequence(sid)
     q.enqueue1(Event.logDebugMsg(s"SeqexecEngine: Loading sequence ${sid.format} on ${i.show} sequences")) *>
     q.enqueue1(Event.modifyState[executeEngine.ConcreteTypes](
-      lens >>> {(_,  AddLoadedSequence(i, sid, user.some))}
+      lens withEvent  AddLoadedSequence(i, sid, user.some)
     )).map(_.asRight)
   }
 
   def clearLoadedSequences(q: EventQueue, user: UserDetails): IO[Either[SeqexecFailure, Unit]] =
     q.enqueue1(Event.logDebugMsg("SeqexecEngine: Updating loaded sequences")) *>
-    q.enqueue1(Event.modifyState[executeEngine.ConcreteTypes](EngineState.selected.set(Map.empty) >>> {(_, ClearLoadedSequences(user.some))})).map(_.asRight)
+    q.enqueue1(Event.modifyState[executeEngine.ConcreteTypes](EngineState.selected.set(Map.empty) withEvent ClearLoadedSequences(user.some))).map(_.asRight)
 
   def setConditions(q: EventQueue, conditions: Conditions, user: UserDetails): IO[Either[SeqexecFailure, Unit]] =
     q.enqueue1(Event.logDebugMsg("SeqexecEngine: Setting conditions")) *>
-    q.enqueue1(Event.modifyState[executeEngine.ConcreteTypes](EngineState.conditions.set(conditions) >>> refreshSequences >>> {(_, SetConditions(conditions, user.some))})).map(_.asRight)
+    q.enqueue1(Event.modifyState[executeEngine.ConcreteTypes](EngineState.conditions.set(conditions) >>> refreshSequences withEvent SetConditions(conditions, user.some))).map(_.asRight)
 
   def setImageQuality(q: EventQueue, iq: ImageQuality, user: UserDetails): IO[Either[SeqexecFailure, Unit]] =
     q.enqueue1(Event.logDebugMsg("SeqexecEngine: Setting image quality")) *>
-    q.enqueue1(Event.modifyState[executeEngine.ConcreteTypes]((EngineState.conditions ^|-> Conditions.iq).set(iq) >>> refreshSequences >>> {(_, SetImageQuality(iq, user.some))})).map(_.asRight)
+    q.enqueue1(Event.modifyState[executeEngine.ConcreteTypes]((EngineState.conditions ^|-> Conditions.iq).set(iq) >>> refreshSequences withEvent SetImageQuality(iq, user.some))).map(_.asRight)
 
   def setWaterVapor(q: EventQueue, wv: WaterVapor, user: UserDetails): IO[Either[SeqexecFailure, Unit]] =
     q.enqueue1(Event.logDebugMsg("SeqexecEngine: Setting water vapor")) *>
-    q.enqueue1(Event.modifyState[executeEngine.ConcreteTypes]((EngineState.conditions ^|-> Conditions.wv).set(wv) >>> refreshSequences >>> {(_, SetWaterVapor(wv, user.some))})).map(_.asRight)
+    q.enqueue1(Event.modifyState[executeEngine.ConcreteTypes]((EngineState.conditions ^|-> Conditions.wv).set(wv) >>> refreshSequences withEvent SetWaterVapor(wv, user.some))).map(_.asRight)
 
   def setSkyBackground(q: EventQueue, sb: SkyBackground, user: UserDetails): IO[Either[SeqexecFailure, Unit]] =
     q.enqueue1(Event.logDebugMsg("SeqexecEngine: Setting sky background")) *>
-    q.enqueue1(Event.modifyState[executeEngine.ConcreteTypes]((EngineState.conditions ^|-> Conditions.sb).set(sb) >>> refreshSequences >>> {(_, SetSkyBackground(sb, user.some))})).map(_.asRight)
+    q.enqueue1(Event.modifyState[executeEngine.ConcreteTypes]((EngineState.conditions ^|-> Conditions.sb).set(sb) >>> refreshSequences withEvent SetSkyBackground(sb, user.some))).map(_.asRight)
 
   def setCloudCover(q: EventQueue, cc: CloudCover, user: UserDetails): IO[Either[SeqexecFailure, Unit]] =
     q.enqueue1(Event.logDebugMsg("SeqexecEngine: Setting cloud cover")) *>
-    q.enqueue1(Event.modifyState[executeEngine.ConcreteTypes]((EngineState.conditions ^|-> Conditions.cc).set(cc) >>> refreshSequences >>> {(_, SetCloudCover(cc, user.some))})).map(_.asRight)
+    q.enqueue1(Event.modifyState[executeEngine.ConcreteTypes]((EngineState.conditions ^|-> Conditions.cc).set(cc) >>> refreshSequences withEvent SetCloudCover(cc, user.some))).map(_.asRight)
 
   def setSkipMark(q: EventQueue,
                   seqId: Observation.Id,
@@ -218,7 +218,7 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
   ).getOrElse(st)
 
   def addSequenceToQueue(q: EventQueue, queueName: String, seqId: Observation.Id): IO[Either[SeqexecFailure, Unit]] = q.enqueue1(
-    Event.modifyState[executeEngine.ConcreteTypes](addSeq(queueName, seqId) >>> {(_, NullSeqEvent)})
+    Event.modifyState[executeEngine.ConcreteTypes](addSeq(queueName, seqId) withEvent NullSeqEvent)
   ).map(_.asRight)
 
   private def removeSeq(name: String, seqId: Observation.Id): Endo[EngineState] = st => (
@@ -253,7 +253,7 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
   ).getOrElse(st)
 
   def moveSequenceInQueue(q: EventQueue, queueName: String, seqId: Observation.Id, d: Int): IO[Either[SeqexecFailure, Unit]] = q.enqueue1(
-    Event.modifyState[executeEngine.ConcreteTypes](moveSeq(queueName, seqId, d) >>> {(_, NullSeqEvent)})
+    Event.modifyState[executeEngine.ConcreteTypes](moveSeq(queueName, seqId, d) withEvent NullSeqEvent)
   ).map(_.asRight)
 
   def notifyODB(i: (executeEngine.ResultType, EngineState)): IO[(executeEngine.ResultType, EngineState)] = {
@@ -262,7 +262,7 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
       case (SystemUpdate(Executed(id), _), st) if st.executionState.sequences.get(id).exists(_.status === SequenceState.Idle) =>
         systems.odb.obsPause(id, "Sequence paused by user")
       case (SystemUpdate(Finished(id), _), _)     => systems.odb.sequenceEnd(id)
-      case _                                  => SeqAction(())
+      case _                                      => SeqAction(())
     }).value.map(_ => i)
   }
 
@@ -274,7 +274,7 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
     } yield translator.sequence(seqId, odbSeq)
 
     def loadSequenceEvent(seqg: SequenceGen): executeEngine.EventType =
-      Event.modifyState[executeEngine.ConcreteTypes](loadSequenceEndo(seqId, seqg) >>> {(_, LoadSequence(seqId))})
+      Event.modifyState[executeEngine.ConcreteTypes](loadSequenceEndo(seqId, seqg) withEvent LoadSequence(seqId))
 
     t.map {
       case (err :: _, None)  => List(Event.logDebugMsg(SeqexecFailure.explain(err)))
@@ -660,6 +660,10 @@ object SeqexecEngine extends SeqexecConfiguration {
       case engine.Paused(id, _, _)                                         => ExposurePaused(id, svs)
       case engine.BreakpointReached(id)                                    => SequencePaused(id, svs)
     }
+  }
+
+  implicit private final class WithEvent(f: Endo[EngineState]) {
+    def withEvent(ev: SeqEvent): EngineState => (EngineState, SeqEvent) = f >>> {(_, ev)}
   }
   // scalastyle:on
 
