@@ -164,7 +164,7 @@ class StepSpec extends FlatSpec {
         )
       )
     
-    def notFinished(v: (executionEngine.EventType, Engine.State)): Boolean =
+    def notFinished(v: (executionEngine.ResultType, Engine.State)): Boolean =
       !isFinished(v._2.sequences(seqId).status)
 
     val m = for {
@@ -329,13 +329,13 @@ class StepSpec extends FlatSpec {
       a => !isFinished(a._2.sequences(seqId).status)
     ).compile.toVector)}.unsafeRunSync
 
-    val actionsCompleted = qss.map(_._1).collect{case x@EventSystem(_: Completed[_]) => x}
+    val actionsCompleted = qss.map(_._1).collect{case SystemUpdate(x: Completed[_], _) => x}
     assert(actionsCompleted.length == 4)
 
-    val executionsCompleted = qss.map(_._1).collect{case x@EventSystem(_: Executed) => x}
+    val executionsCompleted = qss.map(_._1).collect{case SystemUpdate(x: Executed, _) => x}
     assert(executionsCompleted.length == 3)
 
-    val sequencesCompleted = qss.map(_._1).collect{case x@EventSystem(_: Finished) => x}
+    val sequencesCompleted = qss.map(_._1).collect{case SystemUpdate(x: Finished, _) => x}
     assert(sequencesCompleted.length == 1)
 
     inside (qss.lastOption.flatMap(_._2.sequences.get(seqId))) {
