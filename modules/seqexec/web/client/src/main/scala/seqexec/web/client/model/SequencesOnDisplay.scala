@@ -36,7 +36,7 @@ final case class SequencesOnDisplay(sequences: Zipper[SequenceTab]) {
   /**
    * List of loaded sequence ids
    */
-  val loadedId: List[Observation.Id] =
+  val loadedIds: List[Observation.Id] =
     sequences.toNel.collect {
       case InstrumentSequenceTab(_, Some(curr), _, _) => curr.id
     }
@@ -93,7 +93,7 @@ final case class SequencesOnDisplay(sequences: Zipper[SequenceTab]) {
    */
   def previewSequence(i: Instrument, s: Option[SequenceView]): SequencesOnDisplay = {
     val obsId = s.map(_.id)
-    val isLoaded = obsId.exists(loadedId.contains)
+    val isLoaded = obsId.exists(loadedIds.contains)
     // Replace the sequence for the instrument or the completed sequence and reset displaying a step
     val seq = if (s.exists(x => x.metadata.instrument === i && !isLoaded)) {
       val q = sequences.findFocus(_.isPreview).map(_.modify((SequenceTab.currentSequenceL.set(s) andThen SequenceTab.stepConfigL.set(None))(_)))
