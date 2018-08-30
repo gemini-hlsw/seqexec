@@ -97,8 +97,6 @@ object actions {
 
   final case class UpdateStepsConfigTableState(s: TableState[StepConfigTable.TableColumn]) extends Action
   final case class UpdateQueueTableState(s: TableState[QueueTableBody.TableColumn]) extends Action
-  final case class UpdateLoadedSequences(ids: List[Observation.Id]) extends Action
-  final case class UpdateOnLoadUpdate(i: Instrument, id: Observation.Id, loaded: List[Observation.Id]) extends Action
   final case class LoadSequence(observer: Observer, i: Instrument, id: Observation.Id) extends Action
   case object CleanSequences extends Action
 
@@ -112,7 +110,7 @@ object actions {
 
   implicit val show: Show[Action] = Show.show {
     case s @ ServerMessage(u @ SeqexecModelUpdate(view)) =>
-      s"${s.getClass.getSimpleName}(${u.getClass.getSimpleName}(${view.queue.map(s => (s.id, s.steps.collect(standardStep)))}))"
+      s"${s.getClass.getSimpleName}(${u.getClass.getSimpleName}, loaded: '${view.loaded.mkString(",")}', (${view.queue.map(s => (s"id: ${s.id.format}", s"steps: ${s.steps.length}", s.steps.slice(0, scala.math.min(s.steps.length, 20)).collect(standardStep)))}))"
     case s @ RememberCompleted(view)                     =>
       s"${s.getClass.getSimpleName}(${view.id})"
     case a                                               =>

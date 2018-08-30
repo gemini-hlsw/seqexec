@@ -11,7 +11,7 @@ object ArbitrariesWebCommon {
 
   implicit def arbFixedLengthBuffer[A: Arbitrary]: Arbitrary[FixedLengthBuffer[A]] =
     Arbitrary {
-      val maxSize = 1000
+      val maxSize = 100
       for {
         l <- Gen.choose(1, maxSize)
         s <- Gen.choose(0, l - 1)
@@ -24,7 +24,7 @@ object ArbitrariesWebCommon {
 
   implicit def arbZipper[A: Arbitrary]: Arbitrary[Zipper[A]] =
     Arbitrary {
-      val maxSize = 1000
+      val maxSize = 100
       for {
         h <- arbitrary[A]
         l <- Gen.choose(1, maxSize)

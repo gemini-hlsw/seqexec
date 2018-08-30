@@ -5,7 +5,6 @@ package seqexec.model
 
 import org.scalacheck.{Arbitrary, Cogen, Gen}
 import org.scalacheck.Arbitrary._
-import java.time.Instant
 import cats.implicits._
 import gem.Observation
 import gem.arb.ArbObservation
@@ -26,12 +25,6 @@ trait SeqexecModelArbitraries extends ArbObservation {
 
   implicit val clientIdArb: Arbitrary[ClientID] = Arbitrary(Gen.uuid)
 
-  implicit val instArb: Arbitrary[Instant] = Arbitrary {
-    for {
-      i <- Gen.choose(0L, Long.MaxValue)
-    } yield Instant.ofEpochMilli(i)
-  }
-
   implicit val levArb = Arbitrary[ServerLogLevel](Gen.oneOf(ServerLogLevel.INFO, ServerLogLevel.WARN, ServerLogLevel.ERROR))
   implicit val resArb = Arbitrary[Resource](Gen.oneOf(Resource.P1, Resource.OI, Resource.TCS, Resource.Gcal, Resource.Gems, Resource.Altair, Instrument.F2, Instrument.GmosS, Instrument.GmosN, Instrument.GPI, Instrument.GSAOI, Instrument.GNIRS, Instrument.NIRI, Instrument.NIFS))
   implicit val insArb = Arbitrary[Instrument](Gen.oneOf(Instrument.F2, Instrument.GmosS, Instrument.GmosN, Instrument.GPI, Instrument.GSAOI, Instrument.GNIRS, Instrument.NIRI, Instrument.NIFS))
@@ -51,7 +44,7 @@ trait SeqexecModelArbitraries extends ArbObservation {
     } yield UserDetails(u, n)
   }
 
-  implicit val obArb  = Arbitrary[Observer] { arbitrary[String].map(Observer.apply) }
+  implicit val obArb  = Arbitrary[Observer] { Gen.alphaStr.map(Observer.apply) }
   implicit val smArb  = Arbitrary[SequenceMetadata] {
     for {
       i <- arbitrary[Instrument]
@@ -64,7 +57,7 @@ trait SeqexecModelArbitraries extends ArbObservation {
   implicit val spsArb = Arbitrary[StepState] {
     for {
       v1 <- Gen.oneOf(StepState.Pending, StepState.Completed, StepState.Skipped, StepState.Running, StepState.Paused)
-      v2 <- arbitrary[String].map(StepState.Failed.apply)
+      v2 <- Gen.alphaStr.map(StepState.Failed.apply)
       r  <- Gen.oneOf(v1, v2)
     } yield r
   }

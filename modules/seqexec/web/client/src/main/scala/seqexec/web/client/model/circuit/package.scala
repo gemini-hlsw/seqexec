@@ -9,6 +9,8 @@ import cats.data.NonEmptyList
 import diode._
 import gem.Observation
 import gem.enum.Site
+import monocle.Lens
+import monocle.macros.Lenses
 import seqexec.model._
 import seqexec.model.enum._
 import seqexec.web.client.model._
@@ -16,10 +18,53 @@ import seqexec.web.client.components.sequence.steps.StepConfigTable
 import seqexec.web.client.components.QueueTableBody
 import web.client.table._
 
+package object circuit {
+  implicit def CircuitToOps[T <: AnyRef](c: Circuit[T]): CircuitOps[T] = new CircuitOps(c)
+
+  implicit def fastEq[A: Eq]: FastEq[A] = new FastEq[A] {
+    override def eqv(a: A, b: A): Boolean = a === b
+  }
+
+  implicit def fastNelEq[A: Eq]: FastEq[NonEmptyList[A]] = new FastEq[NonEmptyList[A]] {
+    override def eqv(a: NonEmptyList[A], b: NonEmptyList[A]): Boolean = a === b
+  }
+}
+
 package circuit {
+  /**
+   * This lets us use monocle lenses to create diode ModelRW instances
+   */
+  class CircuitOps[M <: AnyRef](circuit: Circuit[M]) {
+    def zoomRWL[A: Eq](lens: Lens[M, A]): ModelRW[M, A] = circuit.zoomRW(lens.get)((m, a) => lens.set(a)(m))(fastEq[A])
+  }
+
   // All these classes are focused views of the root model. They are used to only update small sections of the
   // UI even if other parts of the root model change
   final case class WebSocketsFocus(location: Pages.SeqexecPages, sequences: SequencesQueue[SequenceView], user: Option[UserDetails], defaultObserver: Observer, clientId: Option[ClientID], site: Option[Site]) extends UseValueEq
+
+  @Lenses
+  final case class SequencesFocus(sequences: SequencesQueue[SequenceView], sod: SequencesOnDisplay)
+
+  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
+  object SequencesFocus {
+    implicit val eq: Eq[SequencesFocus] =
+      Eq.by(x => (x.sequences, x.sod))
+
+    val sequencesFocusL: Lens[SeqexecUIModel, SequencesFocus] =
+      Lens[SeqexecUIModel, SequencesFocus](m => SequencesFocus(m.sequences, m.sequencesOnDisplay))(v => m => m.copy(sequences = v.sequences, sequencesOnDisplay = v.sod))
+  }
+
+  @Lenses
+  final case class SODLocationFocus(location: Pages.SeqexecPages, sod: SequencesOnDisplay)
+
+  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
+  object SODLocationFocus {
+    implicit val eq: Eq[SODLocationFocus] =
+      Eq.by(x => (x.location, x.sod))
+
+    val sodLocationFocusL: Lens[SeqexecUIModel, SODLocationFocus] =
+      Lens[SeqexecUIModel, SODLocationFocus](m => SODLocationFocus(m.navLocation, m.sequencesOnDisplay))(v => m => m.copy(navLocation = v.location, sequencesOnDisplay = v.sod))
+  }
 
   final case class InitialSyncFocus(location: Pages.SeqexecPages, firstLoad: Boolean) extends UseValueEq
 

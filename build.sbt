@@ -504,7 +504,7 @@ lazy val seqexec_web_client = project.in(file("modules/seqexec/web/client"))
     buildInfoObject := "OcsBuildInfo",
     buildInfoPackage := "seqexec.web.client"
   )
-  .dependsOn(web_client_common, seqexec_web_shared.js % "compile->compile;test->test", seqexec_model.js % "compile->compile;test->test")
+  .dependsOn(web_client_common % "compile->compile;test->test", seqexec_web_shared.js % "compile->compile;test->test", seqexec_model.js % "compile->compile;test->test")
 
 // List all the modules and their inter dependencies
 lazy val seqexec_server = project

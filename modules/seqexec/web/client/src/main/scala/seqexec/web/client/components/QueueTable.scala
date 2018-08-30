@@ -49,7 +49,7 @@ object QueueTableBody {
   private val TargetNameColumnWidth    = 140
   private val QueueColumnStyle: String = SeqexecStyles.queueTextColumn.htmlClass
 
-  sealed trait TableColumn
+  sealed trait TableColumn extends Product with Serializable
   case object IconColumn       extends TableColumn
   case object ObsIdColumn      extends TableColumn
   case object StateColumn      extends TableColumn

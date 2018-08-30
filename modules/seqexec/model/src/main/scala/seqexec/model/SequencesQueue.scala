@@ -6,12 +6,15 @@ package seqexec.model
 import cats._
 import cats.implicits._
 import gem.Observation
+import monocle.Getter
+import monocle.macros.Lenses
 import seqexec.model.enum.Instrument
 
 /**
   * Represents a queue with different levels of details. E.g. it could be a list of Ids
   * Or a list of fully hydrated SequenceViews
   */
+@Lenses
 final case class SequencesQueue[T](
   loaded:     Map[Instrument, Observation.Id],
   conditions: Conditions,
@@ -19,9 +22,12 @@ final case class SequencesQueue[T](
   queue:      List[T]
 )
 
+@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object SequencesQueue {
 
   implicit def equal[T: Eq]: Eq[SequencesQueue[T]] =
-    Eq.by(x => (x.conditions, x.operator, x.queue))
+    Eq.by(x => (x.loaded, x.conditions, x.operator, x.queue))
 
+  def queueItemG[T](predicate: T => Boolean): Getter[SequencesQueue[T], Option[T]] =
+    SequencesQueue.queue composeGetter Getter[List[T], Option[T]] { _.find(predicate) }
 }

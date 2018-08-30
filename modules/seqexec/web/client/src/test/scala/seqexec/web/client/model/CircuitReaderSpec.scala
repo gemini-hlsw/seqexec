@@ -6,6 +6,7 @@ package seqexec.web.client
 import cats.kernel.laws.discipline._
 import cats.tests.CatsSuite
 import gem.Observation
+// import monocle.law.discipline.LensTests
 import seqexec.web.client.circuit._
 import seqexec.web.client.circuit.SeqexecCircuit._
 import org.scalatest.prop.PropertyChecks
@@ -13,11 +14,17 @@ import org.scalatest.prop.PropertyChecks
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 final class CircuitReaderSpec extends CatsSuite with PropertyChecks with ArbitrariesWebClient {
   checkAll("Eq[SequenceTabContentFocus]", EqTests[SequenceTabContentFocus].eqv)
+  checkAll("Eq[SequencesFocus]", EqTests[SequencesFocus].eqv)
+  checkAll("Eq[SequenceInfoFocus]", EqTests[SequenceInfoFocus].eqv)
+  // checkAll("sequencesFocusL", LensTests(SequencesFocus.sequencesFocusL))
+  // checkAll("sodLocationFocusL", LensTests(SODLocationFocus.sodLocationFocusL))
 
   test("maintain reference equality for constant readers") {
       (webSocketFocusRW === webSocketFocusRW.value) should be(true)
       (initialSyncFocusRW === initialSyncFocusRW.value) should be(true)
       (tableStateRW === tableStateRW.value) should be(true)
+      (sequencesReaderRW === sequencesReaderRW.value) should be(true)
+      (sodLocationReaderRW === sodLocationReaderRW.value) should be(true)
       (statusAndLoadedSequencesReader === statusAndLoadedSequencesReader.value) should be(true)
       (statusReader === statusReader.value) should be(true)
       (sequenceInConflictReader === sequenceInConflictReader.value) should be(true)
@@ -35,7 +42,6 @@ final class CircuitReaderSpec extends CatsSuite with PropertyChecks with Arbitra
       (stepsTableReaderF(i) === stepsTableReaderF(i).value) should be(true)
       (stepsTableReader(i) === stepsTableReader(i).value) should be(true)
       (sequenceControlReader(i) === sequenceControlReader(i).value) should be(true)
-      (sequenceReader(i) === sequenceReader(i).value) should be(true)
     }
   }
 }

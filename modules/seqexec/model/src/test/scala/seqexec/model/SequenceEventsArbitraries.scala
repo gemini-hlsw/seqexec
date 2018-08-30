@@ -9,11 +9,12 @@ import org.scalacheck.Cogen
 import org.scalacheck.Gen
 import org.scalacheck.Arbitrary._
 import gem.Observation
+import gem.arb.ArbTime
 import java.time.Instant
 import seqexec.model.enum._
 import seqexec.model.SeqexecModelArbitraries._
 
-trait SequenceEventsArbitraries {
+trait SequenceEventsArbitraries extends ArbTime {
 
   implicit val coeArb = Arbitrary[ConnectionOpenEvent] {
     for {
@@ -63,7 +64,7 @@ trait SequenceEventsArbitraries {
     for {
       l <- arbitrary[ServerLogLevel]
       t <- arbitrary[Instant]
-      m <- arbitrary[String]
+      m <- Gen.alphaStr
     } yield ServerLogMessage(l, t, m)
   }
   implicit val neArb  = Arbitrary[NullEvent.type] { NullEvent }
@@ -211,6 +212,9 @@ trait SequenceEventsArbitraries {
 
   implicit val serCogen: Cogen[SequenceError] =
     Cogen[(Observation.Id, SequencesQueue[SequenceView])].contramap(x => (x.obsId, x.view))
+
+  implicit val slmCogen: Cogen[ServerLogMessage] =
+    Cogen[(ServerLogLevel, Instant, String)].contramap(x => (x.level, x.timestamp, x.msg))
 
   implicit val nlmCogen: Cogen[NewLogMessage] =
     Cogen[String].contramap(_.msg)
