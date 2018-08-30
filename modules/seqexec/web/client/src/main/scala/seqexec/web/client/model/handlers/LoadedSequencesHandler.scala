@@ -15,13 +15,13 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 /**
  * Handles updates to the selected sequences set
  */
-class LoadedSequencesHandler[M](modelRW: ModelRW[M, SODLocationFocus]) extends ActionHandler(modelRW) with Handlers {
+class LoadedSequencesHandler[M](modelRW: ModelRW[M, SODLocationFocus]) extends ActionHandler(modelRW) with Handlers[M, SODLocationFocus] {
   override def handle: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(LoadSequenceUpdated(i, sid, view)) =>
       // Update selected and the page
       val upSelected = SODLocationFocus.sod.modify(_.updateFromQueue(view).unsetPreviewOn(sid).focusOnSequence(i, sid))
       val upLocation = SODLocationFocus.location.set(SequencePage(i, sid, 0))
-      updated((upSelected >>> upLocation)(value))
+      updatedL(upSelected >>> upLocation)
 
     case ServerMessage(s: SeqexecModelUpdate) =>
       updated(SODLocationFocus.sod.modify(_.updateFromQueue(s.view))(value))

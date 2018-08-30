@@ -14,7 +14,7 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 /**
  * Handles updates to conditions
  */
-class ConditionsHandler[M](modelRW: ModelRW[M, Conditions]) extends ActionHandler(modelRW) with Handlers {
+class ConditionsHandler[M](modelRW: ModelRW[M, Conditions]) extends ActionHandler(modelRW) with Handlers[M, Conditions] {
   val iqHandle: PartialFunction[Any, ActionResult[M]] = {
     case UpdateImageQuality(iq) =>
       val updateE = Effect(SeqexecWebClient.setImageQuality(iq).map(_ => NoAction))

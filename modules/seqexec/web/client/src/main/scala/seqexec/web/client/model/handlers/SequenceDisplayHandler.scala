@@ -12,38 +12,38 @@ import seqexec.web.client.circuit._
 /**
   * Handles actions related to the changing the selection of the displayed sequence
   */
-class SequenceDisplayHandler[M](modelRW: ModelRW[M, SequencesFocus]) extends ActionHandler(modelRW) with Handlers {
+class SequenceDisplayHandler[M](modelRW: ModelRW[M, SequencesFocus]) extends ActionHandler(modelRW) with Handlers[M, SequencesFocus] {
   def handleSelectSequenceDisplay: PartialFunction[Any, ActionResult[M]] = {
     case SelectIdToDisplay(i, id, _) =>
-      updated(SequencesFocus.sod.modify(_.focusOnSequence(i, id).hideStepConfig)(value))
+      updatedL(SequencesFocus.sod.modify(_.focusOnSequence(i, id).hideStepConfig))
 
     case SelectSequencePreview(i, id, _) =>
       val seq = SequencesQueue.queueItemG[SequenceView](_.id === id).get(value.sequences)
-      updated(SequencesFocus.sod.modify(_.previewSequence(i, seq).hideStepConfig)(value))
+      updatedL(SequencesFocus.sod.modify(_.previewSequence(i, seq).hideStepConfig))
 
     case SelectEmptyPreview =>
-      updated(SequencesFocus.sod.modify(_.unsetPreview.focusOnPreview)(value))
+      updatedL(SequencesFocus.sod.modify(_.unsetPreview.focusOnPreview))
 
   }
 
   def handleShowHideStep: PartialFunction[Any, ActionResult[M]] = {
     case ShowPreviewStepConfig(i, id, step) =>
       val seq = SequencesQueue.queueItemG[SequenceView](_.id === id).get(value.sequences)
-      updated(SequencesFocus.sod.modify(_.previewSequence(i, seq).showStepConfig(id, step - 1))(value))
+      updatedL(SequencesFocus.sod.modify(_.previewSequence(i, seq).showStepConfig(id, step - 1)))
 
     case ShowStepConfig(i, id, step)        =>
-      updated(SequencesFocus.sod.modify(_.focusOnSequence(i, id).showStepConfig(id, step - 1))(value))
+      updatedL(SequencesFocus.sod.modify(_.focusOnSequence(i, id).showStepConfig(id, step - 1)))
 
   }
 
   def handleRememberCompleted: PartialFunction[Any, ActionResult[M]] = {
     case RememberCompleted(s) =>
-      updated(SequencesFocus.sod.modify(_.markCompleted(s))(value))
+      updatedL(SequencesFocus.sod.modify(_.markCompleted(s)))
   }
 
   def handleClean: PartialFunction[Any, ActionResult[M]] = {
     case CleanSequences =>
-      updated(SequencesFocus.sod.modify(_.cleanAll)(value))
+      updatedL(SequencesFocus.sod.modify(_.cleanAll))
   }
 
   override def handle: PartialFunction[Any, ActionResult[M]] =

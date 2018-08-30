@@ -18,7 +18,7 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
  * with the full model arrives.
  * Then we sync to the first running sequence or to the route we are currently on
  */
-class InitialSyncHandler[M](modelRW: ModelRW[M, InitialSyncFocus]) extends ActionHandler(modelRW) with Handlers {
+class InitialSyncHandler[M](modelRW: ModelRW[M, InitialSyncFocus]) extends ActionHandler(modelRW) with Handlers[M, InitialSyncFocus] {
   def runningSequence(s: SeqexecModelUpdate): Option[SequenceView] =
     s.view.queue.filter(_.status.isRunning).sortBy(_.id).headOption
 
