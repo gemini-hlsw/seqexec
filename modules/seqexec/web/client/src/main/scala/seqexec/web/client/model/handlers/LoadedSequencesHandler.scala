@@ -15,19 +15,26 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 /**
  * Handles updates to the selected sequences set
  */
-class LoadedSequencesHandler[M](modelRW: ModelRW[M, SODLocationFocus]) extends ActionHandler(modelRW) with Handlers {
+class LoadedSequencesHandler[M](modelRW: ModelRW[M, SODLocationFocus]) extends ActionHandler(modelRW) with Handlers[M, SODLocationFocus] {
   override def handle: PartialFunction[Any, ActionResult[M]] = {
-    case ServerMessage(LoadSequenceUpdated(i, sid, view)) =>
+    case ServerMessage(LoadSequenceUpdated(i, sid, view, cid)) =>
       // Update selected and the page
-      val upSelected = SODLocationFocus.sod.modify(_.updateFromQueue(view).unsetPreviewOn(sid).focusOnSequence(i, sid))
+      val upSelected = if (value.clientId.exists(_ === cid)) {
+        // if I requested the load also focus on it
+        SODLocationFocus.sod.modify(_.updateFromQueue(view).unsetPreviewOn(sid).focusOnSequence(i, sid))
+      } else {
+        SODLocationFocus.sod.modify(_.updateFromQueue(view).unsetPreviewOn(sid))
+      }
       val upLocation = SODLocationFocus.location.set(SequencePage(i, sid, 0))
-      updated((upSelected >>> upLocation)(value))
+      updatedL(upSelected >>> upLocation)
 
     case ServerMessage(s: SeqexecModelUpdate) =>
       updated(SODLocationFocus.sod.modify(_.updateFromQueue(s.view))(value))
 
     case LoadSequence(observer, i, id) =>
-      val loadSequence = Effect(SeqexecWebClient.loadSequence(i, id, observer).map(_ => NoAction))
+      val loadSequence = value.clientId
+        .map(cid => Effect(SeqexecWebClient.loadSequence(i, id, observer, cid).map(_ => NoAction)))
+        .getOrElse(VoidEffect)
       effectOnly(loadSequence)
   }
 }

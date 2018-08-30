@@ -45,7 +45,6 @@ trait Arbitraries extends gem.config.Arbitraries {
   val genTitle: Gen[String] =
     arbitrary[String].map(_.take(255).filter(_ != 0))
 
-
   // Step and Sequence
 
   def genBiasStepOf(i: Instrument): Gen[Step] =

@@ -28,7 +28,7 @@ import seqexec.web.client.services.log.ConsoleHandler
   * Handles the WebSocket connection and performs reconnection if needed
   */
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
-class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection]) extends ActionHandler(modelRW) with Handlers with ModelBooPicklers {
+class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection]) extends ActionHandler(modelRW) with Handlers[M, WebSocketConnection] with ModelBooPicklers {
 
   private implicit val runner = new RunAfterJS
   private val logger = Logger.getLogger(this.getClass.getSimpleName)

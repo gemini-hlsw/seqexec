@@ -18,7 +18,7 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 /**
 * Handles actions requesting sync
 */
-class SyncRequestsHandler[M](modelRW: ModelRW[M, Boolean]) extends ActionHandler(modelRW) with Handlers {
+class SyncRequestsHandler[M](modelRW: ModelRW[M, Boolean]) extends ActionHandler(modelRW) with Handlers[M, Boolean] {
   def handleSyncRequestOperation: PartialFunction[Any, ActionResult[M]] = {
     case RequestSync(s) =>
       updated(true, Effect(SeqexecWebClient.sync(s).map(r => if (r.queue.isEmpty) RunSyncFailed(s) else RunSync(s))))
@@ -40,7 +40,7 @@ class SyncRequestsHandler[M](modelRW: ModelRW[M, Boolean]) extends ActionHandler
 /**
   * Handles sequence execution actions
   */
-class SequenceExecutionHandler[M](modelRW: ModelRW[M, SequencesQueue[SequenceView]]) extends ActionHandler(modelRW) with Handlers {
+class SequenceExecutionHandler[M](modelRW: ModelRW[M, SequencesQueue[SequenceView]]) extends ActionHandler(modelRW) with Handlers[M, SequencesQueue[SequenceView]] {
   def handleUpdateObserver: PartialFunction[Any, ActionResult[M]] = {
     case UpdateObserver(sequenceId, name) =>
       val updateObserverE = Effect(SeqexecWebClient.setObserver(sequenceId, name.value).map(_ => NoAction))
@@ -75,7 +75,7 @@ class SequenceExecutionHandler[M](modelRW: ModelRW[M, SequencesQueue[SequenceVie
 /**
   * Handles actions related to opening/closing a modal
   */
-class ModalBoxHandler[M](openAction: Action, closeAction: Action, modelRW: ModelRW[M, SectionVisibilityState]) extends ActionHandler(modelRW) with Handlers {
+class ModalBoxHandler[M](openAction: Action, closeAction: Action, modelRW: ModelRW[M, SectionVisibilityState]) extends ActionHandler(modelRW) with Handlers[M, SectionVisibilityState] {
   def openModal: PartialFunction[Any, ActionResult[M]] = {
     case x if x == openAction && value === SectionClosed =>
       updated(SectionOpen)
@@ -99,7 +99,7 @@ class ModalBoxHandler[M](openAction: Action, closeAction: Action, modelRW: Model
 /**
  * Handles updates to the operator
  */
-class OperatorHandler[M](modelRW: ModelRW[M, Option[Operator]]) extends ActionHandler(modelRW) with Handlers {
+class OperatorHandler[M](modelRW: ModelRW[M, Option[Operator]]) extends ActionHandler(modelRW) with Handlers[M, Option[Operator]] {
   override def handle: PartialFunction[Any, ActionResult[M]] = {
     case UpdateOperator(name) =>
       val updateOperatorE = Effect(SeqexecWebClient.setOperator(name).map(_ => NoAction))
@@ -110,7 +110,7 @@ class OperatorHandler[M](modelRW: ModelRW[M, Option[Operator]]) extends ActionHa
 /**
  * Handles setting the site
  */
-class SiteHandler[M](modelRW: ModelRW[M, Option[Site]]) extends ActionHandler(modelRW) with Handlers {
+class SiteHandler[M](modelRW: ModelRW[M, Option[Site]]) extends ActionHandler(modelRW) with Handlers[M, Option[Site]] {
 
   override def handle: PartialFunction[Any, ActionResult[M]] = {
     case Initialize(site) =>
@@ -121,7 +121,7 @@ class SiteHandler[M](modelRW: ModelRW[M, Option[Site]]) extends ActionHandler(mo
 /**
   * Handles updates to the log
   */
-class GlobalLogHandler[M](modelRW: ModelRW[M, GlobalLog]) extends ActionHandler(modelRW) with Handlers {
+class GlobalLogHandler[M](modelRW: ModelRW[M, GlobalLog]) extends ActionHandler(modelRW) with Handlers[M, GlobalLog] {
   override def handle: PartialFunction[Any, ActionResult[M]] = {
     case AppendToLog(s) =>
       updated(value.copy(log = value.log.append(s)))
@@ -134,7 +134,7 @@ class GlobalLogHandler[M](modelRW: ModelRW[M, GlobalLog]) extends ActionHandler(
 /**
   * Handles updates to the defaultObserver
   */
-class DefaultObserverHandler[M](modelRW: ModelRW[M, Observer]) extends ActionHandler(modelRW) with Handlers {
+class DefaultObserverHandler[M](modelRW: ModelRW[M, Observer]) extends ActionHandler(modelRW) with Handlers[M, Observer] {
   override def handle: PartialFunction[Any, ActionResult[M]] = {
     case UpdateDefaultObserver(o) =>
       updated(o)
@@ -144,7 +144,7 @@ class DefaultObserverHandler[M](modelRW: ModelRW[M, Observer]) extends ActionHan
 /**
   * Handles setting what sequence is in conflict
   */
-class SequenceInConflictHandler[M](modelRW: ModelRW[M, Option[Observation.Id]]) extends ActionHandler(modelRW) with Handlers {
+class SequenceInConflictHandler[M](modelRW: ModelRW[M, Option[Observation.Id]]) extends ActionHandler(modelRW) with Handlers[M, Option[Observation.Id]] {
   override def handle: PartialFunction[Any, ActionResult[M]] = {
     case SequenceInConflict(id) =>
       updated(Some(id))
@@ -154,7 +154,7 @@ class SequenceInConflictHandler[M](modelRW: ModelRW[M, Option[Observation.Id]]) 
 /**
   * Handle for UI debugging events
   */
-class DebuggingHandler[M](modelRW: ModelRW[M, SequencesQueue[SequenceView]]) extends ActionHandler(modelRW) with Handlers {
+class DebuggingHandler[M](modelRW: ModelRW[M, SequencesQueue[SequenceView]]) extends ActionHandler(modelRW) with Handlers[M, SequencesQueue[SequenceView]] {
   override def handle: PartialFunction[Any, ActionResult[M]] = {
     case MarkStepAsRunning(obsId, step) =>
       updated(value.copy(queue = value.queue.collect {
@@ -167,7 +167,7 @@ class DebuggingHandler[M](modelRW: ModelRW[M, SequencesQueue[SequenceView]]) ext
 /**
   * Handle to preserve the steps table state
   */
-class StepConfigTableStateHandler[M](modelRW: ModelRW[M, TableStates]) extends ActionHandler(modelRW) with Handlers {
+class StepConfigTableStateHandler[M](modelRW: ModelRW[M, TableStates]) extends ActionHandler(modelRW) with Handlers[M, TableStates] {
   override def handle: PartialFunction[Any, ActionResult[M]] = {
     case UpdateStepsConfigTableState(state) =>
       updatedSilent(value.copy(stepConfigTable = state)) // We should only do silent updates as these change too quickly

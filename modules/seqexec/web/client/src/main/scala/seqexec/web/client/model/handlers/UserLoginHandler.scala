@@ -13,7 +13,7 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 /**
   * Handles actions related to opening/closing the login box
   */
-class UserLoginHandler[M](modelRW: ModelRW[M, Option[UserDetails]]) extends ActionHandler(modelRW) with Handlers {
+class UserLoginHandler[M](modelRW: ModelRW[M, Option[UserDetails]]) extends ActionHandler(modelRW) with Handlers[M, Option[UserDetails]] {
   override def handle: PartialFunction[Any, ActionResult[M]] = {
     case LoggedIn(u) =>
       // Close the login box

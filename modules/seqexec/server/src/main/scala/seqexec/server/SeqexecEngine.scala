@@ -115,14 +115,14 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
     q.enqueue1(Event.logDebugMsg(s"SeqexecEngine: Setting Observer name to '$name' for sequence '${seqId.format}' by ${user.username}")) *>
         q.enqueue1(Event.modifyState[executeEngine.ConcreteTypes]((EngineState.sequences ^|-? index(seqId)).modify(ObserverSequence.observer.set(name.some)) >>> refreshSequence(seqId) withEvent SetObserver(seqId, user.some, name))).map(_.asRight)
 
-  def loadSequence(q: EventQueue, i: Instrument, sid: Observation.Id, observer: Observer, user: UserDetails): IO[Either[SeqexecFailure, Unit]] = {
+  def loadSequence(q: EventQueue, i: Instrument, sid: Observation.Id, observer: Observer, user: UserDetails, clientId: ClientID): IO[Either[SeqexecFailure, Unit]] = {
     val lens =
       (EngineState.sequences ^|-? index(sid)).modify(ObserverSequence.observer.set(observer.some)) >>>
        EngineState.instrumentLoadedL(i).set(sid.some) >>>
        refreshSequence(sid)
-    q.enqueue1(Event.logDebugMsg(s"SeqexecEngine: Loading sequence ${sid.format} on ${i.show} sequences")) *>
+    q.enqueue1(Event.logInfoMsg(s"User '${user.displayName}' loads sequence ${sid.format} on ${i.show}")) *>
     q.enqueue1(Event.modifyState[executeEngine.ConcreteTypes](
-      lens withEvent  AddLoadedSequence(i, sid, user.some)
+      lens withEvent  AddLoadedSequence(i, sid, user, clientId)
     )).map(_.asRight)
   }
 
@@ -615,18 +615,18 @@ object SeqexecEngine extends SeqexecConfiguration {
   }
 
   private def modifyStateEvent(v: SeqEvent, svs: => SequencesQueue[SequenceView]): SeqexecEvent = v match {
-    case NullSeqEvent                 => NullEvent
-    case SetOperator(_, _)            => OperatorUpdated(svs)
-    case SetObserver(_, _, _)         => ObserverUpdated(svs)
-    case AddLoadedSequence(i, s, _)   => LoadSequenceUpdated(i, s, svs)
-    case ClearLoadedSequences(_)      => ClearLoadedSequencesUpdated(svs)
-    case SetConditions(_, _)          => ConditionsUpdated(svs)
-    case SetImageQuality(_, _)        => ConditionsUpdated(svs)
-    case SetWaterVapor(_, _)          => ConditionsUpdated(svs)
-    case SetSkyBackground(_, _)       => ConditionsUpdated(svs)
-    case SetCloudCover(_, _)          => ConditionsUpdated(svs)
-    case LoadSequence(id)             => SequenceLoaded(id, svs)
-    case UnloadSequence(id)           => SequenceUnloaded(id, svs)
+    case NullSeqEvent                  => NullEvent
+    case SetOperator(_, _)             => OperatorUpdated(svs)
+    case SetObserver(_, _, _)          => ObserverUpdated(svs)
+    case AddLoadedSequence(i, s, _, c) => LoadSequenceUpdated(i, s, svs, c)
+    case ClearLoadedSequences(_)       => ClearLoadedSequencesUpdated(svs)
+    case SetConditions(_, _)           => ConditionsUpdated(svs)
+    case SetImageQuality(_, _)         => ConditionsUpdated(svs)
+    case SetWaterVapor(_, _)           => ConditionsUpdated(svs)
+    case SetSkyBackground(_, _)        => ConditionsUpdated(svs)
+    case SetCloudCover(_, _)           => ConditionsUpdated(svs)
+    case LoadSequence(id)              => SequenceLoaded(id, svs)
+    case UnloadSequence(id)            => SequenceUnloaded(id, svs)
   }
 
   def toSeqexecEvent(ev: executeEngine.ResultType)(svs: => SequencesQueue[SequenceView]): SeqexecEvent = ev match {

@@ -8,7 +8,7 @@ import diode.{ActionHandler, ActionResult, /*Effect,*/ ModelRW}
 import seqexec.web.client.model._
 import seqexec.web.client.actions._
 
-class NavigationHandler[M](modelRW: ModelRW[M, Pages.SeqexecPages]) extends ActionHandler(modelRW) with Handlers {
+class NavigationHandler[M](modelRW: ModelRW[M, Pages.SeqexecPages]) extends ActionHandler(modelRW) with Handlers[M, Pages.SeqexecPages] {
   def handleNavigateTo: PartialFunction[Any, ActionResult[M]] = {
     case NavigateTo(page) =>
       updated(page)

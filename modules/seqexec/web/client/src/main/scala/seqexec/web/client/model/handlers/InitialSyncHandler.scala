@@ -18,23 +18,25 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
  * with the full model arrives.
  * Then we sync to the first running sequence or to the route we are currently on
  */
-class InitialSyncHandler[M](modelRW: ModelRW[M, InitialSyncFocus]) extends ActionHandler(modelRW) with Handlers {
+class InitialSyncHandler[M](modelRW: ModelRW[M, InitialSyncFocus]) extends ActionHandler(modelRW) with Handlers[M, InitialSyncFocus] {
   def runningSequence(s: SeqexecModelUpdate): Option[SequenceView] =
     s.view.queue.filter(_.status.isRunning).sortBy(_.id).headOption
 
-  def pageE(action: Action): Effect =
-    PageActionP.getOption(action).map(p => Effect(Future(NavigateTo(p)))).getOrElse(VoidEffect)
+  private def pageE(action: Action): InitialSyncFocus => InitialSyncFocus =
+    PageActionP.getOption(action).map(p => InitialSyncFocus.location.set(p)).getOrElse(identity)
 
-  def defaultPage(s: SequencesQueue[SequenceView]): Effect = {
+  private val noUpdate: InitialSyncFocus => InitialSyncFocus = identity
+
+  def defaultPage(s: SequencesQueue[SequenceView]): (InitialSyncFocus => InitialSyncFocus, Effect) = {
     val loaded = s.loaded.values.toList
     // An unkown page was shown
     val effect = loaded.headOption.flatMap { id =>
       s.queue.find(_.id === id).map { s =>
         val action = SelectIdToDisplay(s.metadata.instrument, id, 0)
-        Effect(Future(action)) >> pageE(action)
+        (pageE(action), Effect(Future(action)))
       }
     }
-    effect.getOrElse(VoidEffect)
+    effect.getOrElse((noUpdate, VoidEffect))
   }
 
   def handle: PartialFunction[Any, ActionResult[M]] = {
@@ -43,32 +45,38 @@ class InitialSyncHandler[M](modelRW: ModelRW[M, InitialSyncFocus]) extends Actio
       // the page maybe not in sync with the tabs. Let's fix that
       val sids = s.view.queue.map(_.id)
       val loaded = s.view.loaded.values.toList
-      val effect = value.location match {
+      // update will change the url if needed and effect cat
+      val (update, effect) = value.location match {
         case p @ SequencePage(_, id, _) if loaded.contains(id)     =>
-          // We need to effect to update the reference
-          Effect(Future(PageActionP.reverseGet(p)))
+          // We need to effect to update the page
+          (noUpdate, Effect(Future(PageActionP.reverseGet(p))))
+
+        case SequencePage(i, id, s) if sids.contains(id)           =>
+          // If the page is on the list but not loaded go to preview
+          val action = SelectSequencePreview(i, id, s)
+          (pageE(action), Effect(Future(action)))
 
         case p @ SequenceConfigPage(_, id, _) if sids.contains(id) =>
           // We need to effect to update the reference
-          Effect(Future(PageActionP.reverseGet(p)))
+          (noUpdate, Effect(Future(PageActionP.reverseGet(p))))
 
         case p @ PreviewPage(i, id, st) if sids.contains(id)       =>
           val isLoaded = loaded.contains(id)
           // We need to effect to update the reference
           if (isLoaded) {
             val action = SelectIdToDisplay(i, id, st)
-            Effect(Future(action)) >> pageE(action)
+            (pageE(action), Effect(Future(action)))
           } else {
-            Effect(Future(PageActionP.reverseGet(p)))
+            (noUpdate, Effect(Future(PageActionP.reverseGet(p))))
           }
 
         case PreviewConfigPage(i, id, st) if sids.contains(id)     =>
           val isLoaded = loaded.contains(id)
           // We need to effect to update the reference
           if (isLoaded) {
-            Effect(Future(ShowStepConfig(i, id, st)))
+            (noUpdate, Effect(Future(ShowStepConfig(i, id, st))))
           } else {
-            Effect(Future(ShowPreviewStepConfig(i, id, st)))
+            (noUpdate, Effect(Future(ShowPreviewStepConfig(i, id, st))))
           }
 
         case Root | SequencePage(_, _, _) | PreviewPage(_, _, _) |
@@ -77,8 +85,8 @@ class InitialSyncHandler[M](modelRW: ModelRW[M, InitialSyncFocus]) extends Actio
 
         case _                                                     =>
           // No matches
-          VoidEffect
+          (noUpdate, VoidEffect)
       }
-      updated(value.copy(firstLoad = false), Effect(Future(CleanSequences)) >> effect)
+      updatedLE(InitialSyncFocus.firstLoad.set(false) >>> update, Effect(Future(CleanSequences)) >> effect)
     }
 }

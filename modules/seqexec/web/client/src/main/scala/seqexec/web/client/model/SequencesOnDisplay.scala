@@ -114,10 +114,10 @@ final case class SequencesOnDisplay(sequences: Zipper[SequenceTab]) {
     copy(sequences = q.getOrElse(sequences))
   }
 
-  def unsetPreviewOn(i: Observation.Id): SequencesOnDisplay = {
-    // Remove any sequence in the preview
+  def unsetPreviewOn(id: Observation.Id): SequencesOnDisplay = {
+    // Remove the sequence in the preview if it matches id
     val q = sequences.map {
-      case s @ PreviewSequenceTab(cur, _) if cur.exists(_.id === i) =>
+      case s @ PreviewSequenceTab(cur, _) if cur.exists(_.id === id) =>
         SequenceTab.currentSequenceL.set(None)(s)
       case s                                                      =>
         s
