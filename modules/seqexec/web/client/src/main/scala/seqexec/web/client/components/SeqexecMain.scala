@@ -98,11 +98,11 @@ object SeqexecMain {
           )
         ),
         lbConnect(LoginBox.apply),
-        userNotificationConnect(p => UserNotificationBox(UserNotificationBox.Props(p))),
+        userNotificationConnect(p => UserNotificationBox(UserNotificationBox.Props(p()))),
         Footer(Footer.Props(p.ctl, p.site))
       )
     )
-      .configure(Reusability.shouldComponentUpdate)
+    .configure(Reusability.shouldComponentUpdate)
     .build
 
   def apply(site: Site, ctl: RouterCtl[SeqexecPages]): Unmounted[Props, Unit, Unit] = component(Props(site, ctl))

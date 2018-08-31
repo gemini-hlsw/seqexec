@@ -3,7 +3,6 @@
 
 package seqexec.web.client.components
 
-import diode.react.ModelProxy
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.extra.Reusability
@@ -21,7 +20,7 @@ import seqexec.web.client.reusability._
   */
 object UserNotificationBox {
 
-  final case class Props(notification: ModelProxy[UserNotificationState])
+  final case class Props(notification: UserNotificationState)
 
   implicit val propsReuse: Reusability[Props] = Reusability.by(_.notification)
 
@@ -29,7 +28,7 @@ object UserNotificationBox {
   private val component = ScalaComponent.builder[Props]("UserNotificationBox")
     .stateless
     .render_P { p =>
-      val UserNotificationState(_, not) = p.notification()
+      val UserNotificationState(_, not) = p.notification
       <.div(
         ^.cls := "ui tiny modal",
         not.map(h => Header(Notification.header(h))),
@@ -58,7 +57,7 @@ object UserNotificationBox {
 
         // Close the modal box if the model changes
         ctx.getDOMNode.toElement.foreach { dom =>
-          ctx.currentProps.notification() match {
+          ctx.currentProps.notification match {
             case UserNotificationState(SectionClosed, _) =>
               $(dom).modal("hide")
             case UserNotificationState(SectionOpen, _)   =>

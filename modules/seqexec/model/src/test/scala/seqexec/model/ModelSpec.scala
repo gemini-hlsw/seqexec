@@ -17,6 +17,8 @@ final class ModelSpec extends CatsSuite {
   checkAll("Eq[SystemName]", EqTests[SystemName].eqv)
   checkAll("Eq[StepConfig]", EqTests[StepConfig].eqv)
   checkAll("Order[Resource]", OrderTests[Resource].order)
+  checkAll("Eq[Resource]", EqTests[Resource].eqv)
+  checkAll("Eq[List]", EqTests[List[(Resource, ActionStatus)]].eqv)
   checkAll("Eq[Instrument]", EqTests[Instrument].eqv)
   checkAll("Eq[Operator]", EqTests[Operator].eqv)
   checkAll("Eq[Observer]", EqTests[Observer].eqv)
