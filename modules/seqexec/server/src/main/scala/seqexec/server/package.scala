@@ -19,9 +19,10 @@ import monocle.function.At.atMap
 import seqexec.engine.Engine
 import seqexec.model.{ ClientID, Conditions, Observer, Operator, SequenceState }
 import seqexec.model.enum.{CloudCover, Instrument, ImageQuality, SkyBackground, WaterVapor}
-import seqexec.model.UserDetails
+import seqexec.model.{UserDetails, Notification}
 
 package server {
+
   @Lenses
   final case class ObserverSequence(observer: Option[Observer], seq: SequenceGen)
   @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
@@ -49,6 +50,7 @@ package server {
   final case class SetWaterVapor(wv: WaterVapor, user: Option[UserDetails]) extends SeqEvent
   final case class SetSkyBackground(wv: SkyBackground, user: Option[UserDetails]) extends SeqEvent
   final case class SetCloudCover(cc: CloudCover, user: Option[UserDetails]) extends SeqEvent
+  final case class NotifyUser(memo: Notification, clientID: ClientID) extends SeqEvent
   case object NullSeqEvent extends SeqEvent
 
   sealed trait ControlStrategy

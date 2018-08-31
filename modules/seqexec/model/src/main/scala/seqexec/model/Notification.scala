@@ -1,0 +1,32 @@
+// Copyright (c) 2016-2018 Association of Universities for Research in Astronomy, Inc. (AURA)
+// For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
+
+package seqexec.model
+
+import gem.Observation
+import seqexec.model.enum.Instrument
+
+sealed trait Notification
+
+// Notification that user tried to run a sequence that used resource already in use
+final case class ResourceConflict(sid: Observation.Id) extends Notification
+// Notification that user tried to select a sequence for an instrument for which a sequence was already running
+final case class InstrumentInUse(sid: Observation.Id, ins: Instrument) extends Notification
+
+object Notification {
+  def header(n: Notification): String = n match {
+    case ResourceConflict(_)           => "Resource conflict"
+    case InstrumentInUse(_, _) => "Instrument busy"
+  }
+
+  def body(n: Notification): List[String] = n match {
+    case ResourceConflict(sid)              => List(
+      s"There is a conflict trying to run the sequence '${sid.format}'",
+      "Possibly another sequence is being executed on the same instrument"
+    )
+    case InstrumentInUse(sid, ins) => List(
+      s"Cannot select sequence '${sid.format}' for instrument '${ins.label}",
+      "Possibly another sequence is being executed on the same instrument"
+    )
+  }
+}

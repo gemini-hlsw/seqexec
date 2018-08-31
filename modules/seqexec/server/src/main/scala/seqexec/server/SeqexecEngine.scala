@@ -120,10 +120,17 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
       (EngineState.sequences ^|-? index(sid)).modify(ObserverSequence.observer.set(observer.some)) >>>
        EngineState.instrumentLoadedL(i).set(sid.some) >>>
        refreshSequence(sid)
+    def testRunning(st: EngineState):Boolean = (for {
+      sels <- st.selected.get(i)
+      sstate <- st.executionState.sequences.get(sels)
+    } yield sstate.status.isRunning).getOrElse(false)
+
     q.enqueue1(Event.logInfoMsg(s"User '${user.displayName}' loads sequence ${sid.format} on ${i.show}")) *>
-    q.enqueue1(Event.modifyState[executeEngine.ConcreteTypes](
-      lens withEvent  AddLoadedSequence(i, sid, user, clientId)
-    )).map(_.asRight)
+    q.enqueue1(Event.modifyState[executeEngine.ConcreteTypes]{ st => {
+      if (!testRunning(st)) (lens withEvent AddLoadedSequence(i, sid, user, clientId))(st)
+      else (st, NotifyUser(InstrumentInUse(sid, i), clientId))
+    } }
+    ).map(_.asRight)
   }
 
   def clearLoadedSequences(q: EventQueue, user: UserDetails): IO[Either[SeqexecFailure, Unit]] =
@@ -627,6 +634,8 @@ object SeqexecEngine extends SeqexecConfiguration {
     case SetCloudCover(_, _)           => ConditionsUpdated(svs)
     case LoadSequence(id)              => SequenceLoaded(id, svs)
     case UnloadSequence(id)            => SequenceUnloaded(id, svs)
+    // TODO: Use proper event to trigger pop-up on user side
+    case NotifyUser(_, _)              => NullEvent
   }
 
   def toSeqexecEvent(ev: executeEngine.ResultType)(svs: => SequencesQueue[SequenceView]): SeqexecEvent = ev match {
