@@ -55,7 +55,7 @@ object StepToolsCell {
                                   p.breakPointLeaveCB,
                                   p.heightChangeCB))
           .when(p.clientStatus.isLogged).unless(p.focus.isPreview),
-        StepIconCell(p)
+        StepIconCell(StepIconCell.Props(p.step.status, p.step.skip, p.focus.nextStepToRun.forall(_ === p.step.id)))
       )
     }
     .configure(Reusability.shouldComponentUpdate)
@@ -68,28 +68,32 @@ object StepToolsCell {
  * Component to display an icon for the state
  */
 object StepIconCell {
-  private def stepIcon(p: StepToolsCell.Props): VdomNode =
-    p.step.status match {
-      case StepState.Completed                                => IconCheckmark
-      case StepState.Running                                  => IconCircleNotched.copyIcon(loading = true)
-      case StepState.Failed(_)                                => IconAttention
-      case StepState.Skipped                                  => IconReply.copyIcon(fitted = true, rotated = Icon.Rotated.CounterClockwise)
-      case _ if p.step.skip                                   => IconReply.copyIcon(fitted = true, rotated = Icon.Rotated.CounterClockwise)
-      case _ if p.focus.nextStepToRun.forall(_ === p.step.id) => IconChevronRight
-      case _                                                  => iconEmpty
+  final case class Props(status: StepState, skip: Boolean, nextToRun: Boolean)
+
+  implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
+
+  private def stepIcon(p: Props): VdomNode =
+    p.status match {
+      case StepState.Completed => IconCheckmark
+      case StepState.Running   => IconCircleNotched.copyIcon(loading = true)
+      case StepState.Failed(_) => IconAttention
+      case StepState.Skipped   => IconReply.copyIcon(fitted = true, rotated = Icon.Rotated.CounterClockwise)
+      case _ if p.skip         => IconReply.copyIcon(fitted = true, rotated = Icon.Rotated.CounterClockwise)
+      case _ if p.nextToRun    => IconChevronRight
+      case _                   => iconEmpty
     }
 
-  private def stepStyle(p: StepToolsCell.Props): GStyle =
-    p.step.status match {
+  private def stepStyle(p: Props): GStyle =
+    p.status match {
       case StepState.Running   => SeqexecStyles.runningIconCell
       case StepState.Skipped   => SeqexecStyles.skippedIconCell
       case StepState.Failed(_) => SeqexecStyles.errorCell
-      case _ if p.step.skip    => SeqexecStyles.skippedIconCell
+      case _ if p.skip         => SeqexecStyles.skippedIconCell
       case _                   => SeqexecStyles.iconCell
     }
 
   private val component = ScalaComponent
-    .builder[StepToolsCell.Props]("StepIconCell")
+    .builder[Props]("StepIconCell")
     .stateless
     .render_P { p =>
       <.div(
@@ -97,9 +101,10 @@ object StepIconCell {
         stepIcon(p)
       )
     }
+    .configure(Reusability.shouldComponentUpdate)
     .build
 
-  def apply(p: StepToolsCell.Props): Unmounted[StepToolsCell.Props, Unit, Unit] = component(p)
+  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
 }
 
 /**
