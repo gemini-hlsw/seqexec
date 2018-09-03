@@ -96,6 +96,7 @@ object actions {
   final case class UpdateStepsConfigTableState(s: TableState[StepConfigTable.TableColumn]) extends Action
   final case class UpdateQueueTableState(s: TableState[QueueTableBody.TableColumn]) extends Action
   final case class LoadSequence(observer: Observer, i: Instrument, id: Observation.Id) extends Action
+  final case class SequenceLoadFailed(id: Observation.Id) extends Action
   case object CleanSequences extends Action
 
   // Used for UI debugging

@@ -96,6 +96,10 @@ package circuit {
 
   final case class InstrumentTabFocus(tabs: NonEmptyList[AvailableTab], defaultObserver: Observer) extends UseValueEq
 
+  object InstrumentTabFocus {
+    implicit val eq: Eq[InstrumentTabFocus] =
+      Eq.by(x => (x.tabs, x.defaultObserver))
+  }
   final case class SequenceTabContentFocus(instrument: Option[Instrument], id: Option[Observation.Id], sequenceSelected: Boolean, logDisplayed: SectionVisibilityState) extends UseValueEq
 
   object SequenceTabContentFocus {

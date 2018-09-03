@@ -94,9 +94,9 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
     zoom(_.uiModel.globalLog.display)
 
   val tabsReader: ModelR[SeqexecAppRootModel, InstrumentTabFocus] =
-    zoom(_.uiModel.defaultObserver).zip(zoom(_.uiModel.sequencesOnDisplay.availableTabs)).zoom {
+    zoom(_.uiModel.defaultObserver).zip(zoom(_.uiModel.sequencesOnDisplay.availableTabs)(fastEq[NonEmptyList[AvailableTab]])).zoom {
       case (u, tabs) => InstrumentTabFocus(tabs, u)
-    }
+    }(fastEq[InstrumentTabFocus])
 
   val sequenceTabs: ModelR[SeqexecAppRootModel, NonEmptyList[SequenceTabContentFocus]] =
     logDisplayedReader.zip(zoom(_.uiModel.sequencesOnDisplay)).zoom {
@@ -151,7 +151,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   private val initialSyncHandler       = new InitialSyncHandler(initialSyncFocusRW)
   private val navigationHandler        = new NavigationHandler(zoomTo(_.uiModel.navLocation))
   private val loginBoxHandler          = new ModalBoxHandler(OpenLoginBox, CloseLoginBox, zoomTo(_.uiModel.loginBox))
-  private val userNotBoxHandler        = new ModalBoxHandler(OpenUserNotificationBox, CloseUserNotificationBox, zoomTo(_.uiModel.notification.visibility))
+  private val notificationBoxHandler   = new ModalBoxHandler(OpenUserNotificationBox, CloseUserNotificationBox, zoomTo(_.uiModel.notification.visibility))
   private val userLoginHandler         = new UserLoginHandler(zoomTo(_.uiModel.user))
   private val userNotificationHandler  = new NotificationsHandler(zoomTo(_.uiModel.notification))
   private val sequenceDisplayHandler   = new SequenceDisplayHandler(sequencesReaderRW)
@@ -175,7 +175,9 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
     wsHandler,
     foldHandlers(serverMessagesHandler, initialSyncHandler, loadSequencesHandler, userNotificationHandler),
     sequenceExecHandler,
-    foldHandlers(userNotBoxHandler, loginBoxHandler, userLoginHandler),
+    notificationBoxHandler,
+    loginBoxHandler,
+    userLoginHandler,
     sequenceDisplayHandler,
     globalLogHandler,
     conditionsHandler,

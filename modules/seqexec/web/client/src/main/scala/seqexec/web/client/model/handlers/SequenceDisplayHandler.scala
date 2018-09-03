@@ -46,8 +46,14 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, SequencesFocus]) extends Act
       updatedL(SequencesFocus.sod.modify(_.cleanAll))
   }
 
+  def handleLoadFailed: PartialFunction[Any, ActionResult[M]] = {
+    case SequenceLoadFailed(id) =>
+      updatedL(SequencesFocus.sod.modify(_.loadingComplete(id)))
+  }
+
   override def handle: PartialFunction[Any, ActionResult[M]] =
     List(handleSelectSequenceDisplay,
       handleShowHideStep,
+      handleLoadFailed,
       handleRememberCompleted).combineAll
 }

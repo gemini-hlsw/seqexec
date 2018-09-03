@@ -30,7 +30,7 @@ object InstrumentTab {
   final case class Props(router: RouterCtl[SeqexecPages], tab: AvailableTab, loggedIn: Boolean, defaultObserver: Observer, runningInstruments: List[Instrument])
   final case class State(loading: Boolean)
 
-  implicit val propsReuse: Reusability[Props] = Reusability.by(x => (x.tab, x.loggedIn, x.defaultObserver))
+  implicit val propsReuse: Reusability[Props] = Reusability.by(x => (x.tab, x.loggedIn, x.defaultObserver, x.runningInstruments))
   implicit val stateReuse: Reusability[State] = Reusability.by(_.loading)
 
   type Backend = RenderScope[Props, State, Unit]
@@ -158,8 +158,11 @@ object InstrumentTab {
       val preview = f.nextProps.tab.isPreview
       val id = f.nextProps.tab.id
       val newId = f.currentProps.tab.id
+
+      val wasLoading = f.currentProps.tab.loading
+      val isLoading = f.nextProps.tab.loading
       // Reset the loading state if the id changes
-      Callback.when(preview && id =!= newId)(f.setState(State(false)))
+      Callback.when(preview && (id =!= newId || (wasLoading && !isLoading)))(f.setState(State(false)))
     }
     .configure(Reusability.shouldComponentUpdate)
     .build
@@ -179,7 +182,7 @@ object InstrumentsTabs {
     .stateless
     .render_P(p =>
       tabConnect { x =>
-        val runningInstruments = x().tabs.toList.collect { case AvailableTab(_, Some(SequenceState.Running(_, _)), Some(i), _, false, _) => i }
+        val runningInstruments = x().tabs.toList.collect { case AvailableTab(_, Some(SequenceState.Running(_, _)), Some(i), _, false, _, _) => i }
         val tabs = x().tabs.toList.filter(_.nonEmpty).sortBy {
           case t if t.isPreview => Int.MinValue.some
           case t                => t.instrument.map(_.ordinal)

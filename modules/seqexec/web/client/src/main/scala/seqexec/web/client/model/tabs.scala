@@ -12,13 +12,13 @@ import seqexec.model.{ SequenceState, SequenceView }
 import seqexec.model.enum._
 import seqexec.web.client.ModelOps._
 
-final case class AvailableTab(id: Option[Observation.Id], status: Option[SequenceState], instrument: Option[Instrument], runningStep: Option[RunningStep], isPreview: Boolean, active: Boolean) {
+final case class AvailableTab(id: Option[Observation.Id], status: Option[SequenceState], instrument: Option[Instrument], runningStep: Option[RunningStep], isPreview: Boolean, active: Boolean, loading: Boolean) {
   val nonEmpty: Boolean = id.isDefined
 }
 
 object AvailableTab {
   implicit val eq: Eq[AvailableTab] =
-    Eq.by(x => (x.id, x.status, x.instrument, x.runningStep, x.isPreview, x.active))
+    Eq.by(x => (x.id, x.status, x.instrument, x.runningStep, x.isPreview, x.active, x.loading))
 }
 
 final case class SequenceTabActive(tab: SequenceTab, active: Boolean)
@@ -59,6 +59,11 @@ sealed trait SequenceTab {
     case _: InstrumentSequenceTab => sequence.flatMap(_.runningStep)
     case _                        => none
   }
+
+  def loading: Boolean = this match {
+    case _: InstrumentSequenceTab => false
+    case p: PreviewSequenceTab    => p.isLoading
+  }
 }
 
 @Lenses
@@ -71,12 +76,12 @@ object InstrumentSequenceTab {
 }
 
 @Lenses
-final case class PreviewSequenceTab(currentSequence: Option[SequenceView], stepConfig: Option[Int]) extends SequenceTab
+final case class PreviewSequenceTab(currentSequence: Option[SequenceView], stepConfig: Option[Int], isLoading: Boolean) extends SequenceTab
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object PreviewSequenceTab {
   implicit val eq: Eq[PreviewSequenceTab] =
-    Eq.by(x => (x.currentSequence, x.stepConfig))
+    Eq.by(x => (x.currentSequence, x.stepConfig, x.isLoading))
 }
 
 object SequenceTab {
@@ -86,7 +91,7 @@ object SequenceTab {
       case (a: PreviewSequenceTab, b: PreviewSequenceTab)       => a === b
       case _                                                    => false
     }
-  val Empty: SequenceTab = PreviewSequenceTab(None, None)
+  val Empty: SequenceTab = PreviewSequenceTab(None, None, false)
 
   // Some lenses
   val stepConfigL: Lens[SequenceTab, Option[Int]] = Lens[SequenceTab, Option[Int]] {

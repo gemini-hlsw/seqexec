@@ -23,7 +23,7 @@ object UserNotificationBox {
 
   final case class Props(notification: ModelProxy[UserNotificationState])
 
-  implicit val propsReuse: Reusability[Props] = Reusability.by(_.notification())
+  implicit val propsReuse: Reusability[Props] = Reusability.by(_.notification)
 
   @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
   private val component = ScalaComponent.builder[Props]("UserNotificationBox")

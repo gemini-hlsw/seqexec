@@ -4,6 +4,7 @@
 package seqexec.web.client
 
 import diode.data.PotState
+import diode.react.ModelProxy
 import gem.Observation
 import gem.enum.Site
 import japgolly.scalajs.react.CatsReact._
@@ -31,4 +32,6 @@ package object reusability {
   implicit val availableTabsReuse      : Reusability[AvailableTab]             = Reusability.byEq
   implicit val userDetailsReuse        : Reusability[UserDetails]              = Reusability.byEq
   implicit val userNotificationReuse   : Reusability[UserNotificationState]    = Reusability.byEq
+
+  implicit def modelProxyReuse[A: Reusability]: Reusability[ModelProxy[A]] = Reusability.by(_())
 }

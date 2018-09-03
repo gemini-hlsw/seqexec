@@ -5,6 +5,7 @@ package seqexec.web.client.handlers
 
 import cats.implicits._
 import diode.{ ActionHandler, ActionResult, Effect, ModelRW }
+import seqexec.model.InstrumentInUse
 import seqexec.model.events.UserNotification
 import seqexec.web.client.model._
 import seqexec.web.client.actions._
@@ -14,15 +15,21 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 class NotificationsHandler[M](modelRW: ModelRW[M, UserNotificationState]) extends ActionHandler(modelRW) with Handlers[M, UserNotificationState] {
   def handleUserNotification: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(UserNotification(not, _)) =>
-      val lens = UserNotificationState.visibility.set(SectionOpen) >>> UserNotificationState.notification.set(not.some)
+      // Update the notification state
+      val lens = UserNotificationState.notification.set(not.some)
+      // Request opening the dialog box
       val openBoxE = Effect(Future(OpenUserNotificationBox))
-      updatedLE(lens, openBoxE)
+      // Update the model as load failed
+      val modelUpdateE = not match {
+        case InstrumentInUse(id, _) => Effect(Future(SequenceLoadFailed(id)))
+        case _                      => VoidEffect
+      }
+      updatedLE(lens, openBoxE >> modelUpdateE)
   }
 
   def handleCloseNotification: PartialFunction[Any, ActionResult[M]] = {
     case CloseUserNotificationBox =>
-      val lens = UserNotificationState.visibility.set(SectionClosed) >>> UserNotificationState.notification.set(none)
-      updatedL(lens)
+      updatedL(UserNotificationState.notification.set(none))
   }
 
   def handle: PartialFunction[Any, ActionResult[M]] =
