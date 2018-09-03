@@ -27,6 +27,7 @@ final case class SeqexecUIModel(navLocation: Pages.SeqexecPages,
                           configTableState: TableState[StepConfigTable.TableColumn],
                           queueTableState: TableState[QueueTableBody.TableColumn],
                           defaultObserver: Observer,
+                          notification: UserNotificationState,
                           firstLoad: Boolean)
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
@@ -44,6 +45,7 @@ object SeqexecUIModel {
     StepConfigTable.InitialTableState,
     QueueTableBody.InitialTableState.tableState,
     Observer(""),
+    UserNotificationState.Empty,
     firstLoad = true)
 
   implicit val eq: Eq[SeqexecUIModel] =

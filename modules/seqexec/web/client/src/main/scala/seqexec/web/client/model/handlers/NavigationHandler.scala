@@ -4,7 +4,7 @@
 package seqexec.web.client.handlers
 
 import cats.implicits._
-import diode.{ActionHandler, ActionResult, /*Effect,*/ ModelRW}
+import diode.{ActionHandler, ActionResult, ModelRW}
 import seqexec.web.client.model._
 import seqexec.web.client.actions._
 
