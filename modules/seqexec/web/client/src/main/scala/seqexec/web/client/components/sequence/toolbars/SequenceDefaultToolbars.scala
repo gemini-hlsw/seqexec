@@ -3,7 +3,7 @@
 
 package seqexec.web.client.components.sequence.toolbars
 
-import diode.react.ModelProxy
+import diode.react.{ ModelProxy, ReactConnectProxy }
 import cats.implicits._
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{Callback, CallbackTo, ScalaComponent, CatsReact}
@@ -12,10 +12,9 @@ import japgolly.scalajs.react.component.Scala.Unmounted
 import gem.Observation
 import mouse.all._
 import seqexec.model.SequenceState
-import seqexec.web.client.circuit.{SeqexecCircuit, SequenceControlFocus, ControlModel}
+import seqexec.web.client.circuit._
 import seqexec.web.client.actions.{RequestCancelPause, RequestPause, RequestSync, RequestRun}
 import seqexec.web.client.components.SeqexecStyles
-import seqexec.web.client.components.sequence.SequenceStepsTableContainer
 import seqexec.web.client.semanticui.elements.button.Button
 import seqexec.web.client.semanticui.elements.button.Button.LeftLabeled
 import seqexec.web.client.semanticui.elements.popup.Popup
@@ -117,7 +116,14 @@ object SequenceControl {
   */
 @SuppressWarnings(Array("org.wartremover.warts.OptionPartial"))
 object SequenceDefaultToolbar {
-  private val component = ScalaComponent.builder[SequenceStepsTableContainer.Props]("SequenceDefaultToolbar")
+  final case class Props(id: Observation.Id) {
+    val observerReader: ReactConnectProxy[SequenceInfoFocus] =
+      SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(id))
+    val controlReader: ReactConnectProxy[SequenceControlFocus] =
+      SeqexecCircuit.connect(SeqexecCircuit.sequenceControlReader(id))
+  }
+
+  private val component = ScalaComponent.builder[Props]("SequenceDefaultToolbar")
     .stateless
     .render_P ( p =>
       <.div(
@@ -127,16 +133,16 @@ object SequenceDefaultToolbar {
           SeqexecStyles.shorterRow,
           <.div(
             ^.cls := "ui left floated column eight wide computer eight wide tablet only",
-            SeqexecCircuit.connect(SeqexecCircuit.sequenceControlReader(p.statusAndStep.obsId))(SequenceControl.apply)
+            p.controlReader(SequenceControl.apply)
           ),
           <.div(
             ^.cls := "ui right floated column",
             SeqexecStyles.infoOnControl,
-            SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(p.statusAndStep.obsId))(p => SequenceInfo(SequenceInfo.Props(p)))
+            p.observerReader(p => SequenceInfo(SequenceInfo.Props(p)))
           )
         )
       )
     ).build
 
-  def apply(p: SequenceStepsTableContainer.Props): Unmounted[SequenceStepsTableContainer.Props, Unit, Unit] = component(p)
+  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
 }

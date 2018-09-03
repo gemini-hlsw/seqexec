@@ -3,19 +3,23 @@
 
 package seqexec.web.client.components.sequence.toolbars
 
+import diode.react.ReactConnectProxy
 import gem.Observation
-import seqexec.web.client.circuit.SeqexecCircuit
-import seqexec.web.client.components.SeqexecStyles
-import web.client.style._
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.component.Scala.Unmounted
+import seqexec.web.client.circuit.{ SeqexecCircuit, SequenceInfoFocus }
+import seqexec.web.client.components.SeqexecStyles
+import web.client.style._
 
 /**
   * Toolbar for anonymous users
   */
 object SequenceAnonymousToolbar {
-  final case class Props(id: Observation.Id)
+  final case class Props(id: Observation.Id) {
+    val sequenceConnect: ReactConnectProxy[SequenceInfoFocus] =
+      SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(id))
+  }
 
   private def component = ScalaComponent.builder[Props]("SequencesDefaultToolbar")
     .stateless
@@ -27,7 +31,7 @@ object SequenceAnonymousToolbar {
           <.div(
             ^.cls := "ui left column bottom aligned sixteen wide",
             SeqexecStyles.shorterRow,
-            SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(p.id))(p => SequenceInfo(SequenceInfo.Props(p)))
+            p.sequenceConnect(p => SequenceInfo(SequenceInfo.Props(p)))
           )
         )
       )

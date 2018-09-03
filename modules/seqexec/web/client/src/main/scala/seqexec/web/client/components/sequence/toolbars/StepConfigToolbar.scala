@@ -4,6 +4,7 @@
 package seqexec.web.client.components.sequence.toolbars
 
 import cats.implicits._
+import diode.react.ReactConnectProxy
 import gem.Observation
 import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.ScalaComponent
@@ -12,7 +13,7 @@ import japgolly.scalajs.react.component.Scala.Unmounted
 import seqexec.model.enum.Instrument
 import seqexec.web.client.model.Pages._
 import seqexec.web.client.model.RunningStep
-import seqexec.web.client.circuit.SeqexecCircuit
+import seqexec.web.client.circuit.{ SeqexecCircuit, SequenceInfoFocus }
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.semanticui.elements.button.ButtonGroup
 import seqexec.web.client.semanticui.elements.button.Button
@@ -27,7 +28,10 @@ import mouse.boolean._
   * Toolbar when displaying a step configuration
   */
 object StepConfigToolbar {
-  final case class Props(router: RouterCtl[SeqexecPages], instrument: Instrument, id: Observation.Id, step: Int, total: Int, isPreview: Boolean)
+  final case class Props(router: RouterCtl[SeqexecPages], instrument: Instrument, id: Observation.Id, step: Int, total: Int, isPreview: Boolean) {
+    val sequenceConnect: ReactConnectProxy[SequenceInfoFocus] =
+      SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(id))
+  }
 
   private val component = ScalaComponent.builder[Props]("StepConfigToolbar")
     .stateless
@@ -55,7 +59,7 @@ object StepConfigToolbar {
           SeqexecStyles.shorterRow,
           <.div(
             ^.cls := "left column bottom aligned sixteen wide computer ten wide tablet only",
-            SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(p.id))(p => SequenceInfo(SequenceInfo.Props(p)))
+            p.sequenceConnect(p => SequenceInfo(SequenceInfo.Props(p)))
           )
         ),
       <.div(

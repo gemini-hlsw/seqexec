@@ -173,11 +173,12 @@ object InstrumentsTabs {
   final case class Props(router: RouterCtl[SeqexecPages], loggedIn: Boolean)
 
   implicit val propsReuse: Reusability[Props] = Reusability.by(_.loggedIn)
+  private val tabConnect = SeqexecCircuit.connect(SeqexecCircuit.tabsReader)
 
   private val component = ScalaComponent.builder[Props]("InstrumentsMenu")
     .stateless
     .render_P(p =>
-      SeqexecCircuit.connect(SeqexecCircuit.tabsReader) { x =>
+      tabConnect { x =>
         val runningInstruments = x().tabs.toList.collect { case AvailableTab(_, Some(SequenceState.Running(_, _)), Some(i), _, false, _) => i }
         val tabs = x().tabs.toList.filter(_.nonEmpty).sortBy {
           case t if t.isPreview => Int.MinValue.some

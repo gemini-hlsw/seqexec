@@ -4,6 +4,7 @@
 package seqexec.web.client.components.sequence
 
 import cats.implicits._
+import diode.react.ReactConnectProxy
 import gem.enum.Site
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{CallbackTo, ScalaComponent, CatsReact}
@@ -12,7 +13,7 @@ import japgolly.scalajs.react.extra.Reusability
 import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.CatsReact._
 import seqexec.web.client.components.sequence.toolbars.{ SequenceDefaultToolbar, StepConfigToolbar, SequenceAnonymousToolbar }
-import seqexec.web.client.circuit.{ SeqexecCircuit, StatusAndStepFocus, SequenceTabContentFocus }
+import seqexec.web.client.circuit._
 import seqexec.web.client.model.Pages.SeqexecPages
 import seqexec.web.client.model.{ SectionOpen, SectionClosed }
 import seqexec.web.client.semanticui._
@@ -24,10 +25,11 @@ import seqexec.web.client.reusability._
 import web.client.style._
 
 object SequenceStepsTableContainer {
-  final case class Props(router: RouterCtl[SeqexecPages], statusAndStep: StatusAndStepFocus)
+  final case class Props(router: RouterCtl[SeqexecPages], statusAndStep: StatusAndStepFocus) {
+    val stepsConnect: ReactConnectProxy[StepsTableAndStatusFocus] = SeqexecCircuit.connect(SeqexecCircuit.stepsTableReader(statusAndStep.obsId))
+  }
   final case class State(nextStepToRun: Int)
 
-  implicit val ssReuse: Reusability[StatusAndStepFocus] = Reusability.byEq[StatusAndStepFocus]
   implicit val propsReuse: Reusability[Props] = Reusability.by(_.statusAndStep)
   implicit val stateReuse: Reusability[State] = Reusability.derive[State]
 
@@ -45,7 +47,7 @@ object SequenceStepsTableContainer {
     val showPreview         = isPreview && !stepConfigDisplayed
 
     <.div(
-      SequenceDefaultToolbar(p).when(showDefault),
+      SequenceDefaultToolbar(SequenceDefaultToolbar.Props(p.statusAndStep.obsId)).when(showDefault),
       SequenceAnonymousToolbar(SequenceAnonymousToolbar.Props(p.statusAndStep.obsId)).when(showAnonymous || showPreview),
       p.statusAndStep.stepConfigDisplayed.map { s =>
         StepConfigToolbar(StepConfigToolbar.Props(p.router, p.statusAndStep.instrument, p.statusAndStep.obsId, s, p.statusAndStep.totalSteps, isPreview)).when(stepConfigDisplayed)
@@ -59,8 +61,8 @@ object SequenceStepsTableContainer {
       <.div(
         ^.height := "100%",
         toolbar(p),
-        SeqexecCircuit.connect(SeqexecCircuit.stepsTableReader(p.statusAndStep.obsId))(r =>
-            StepsTable(StepsTable.Props(p.router, p.statusAndStep.isLogged, r, x => $.runState(updateStepToRun(x)))))
+        p.stepsConnect(r =>
+          StepsTable(StepsTable.Props(p.router, p.statusAndStep.isLogged, r, x => $.runState(updateStepToRun(x)))))
       )
     }
     .configure(Reusability.shouldComponentUpdate)
@@ -78,6 +80,7 @@ object SequenceTabContent {
 
   final case class Props(router: RouterCtl[SeqexecPages], p: SequenceTabContentFocus) {
     val sequenceSelected: Boolean = p.id.isDefined
+    val statusConnect: Option[ReactConnectProxy[Option[StatusAndStepFocus]]] = p.id.map(i => SeqexecCircuit.connect(SeqexecCircuit.statusAndStepReader(i)))
   }
 
   implicit val stcfReuse: Reusability[SequenceTabContentFocus] = Reusability.derive[SequenceTabContentFocus]
@@ -86,12 +89,10 @@ object SequenceTabContent {
   private val component = ScalaComponent.builder[Props]("SequenceTabContent")
     .stateless
     .render_P { p =>
-      val SequenceTabContentFocus(instrument, id, active, logDisplayed) = p.p
-      val content = id.map { i =>
-        SeqexecCircuit.connect(SeqexecCircuit.statusAndStepReader(i)) { x =>
-          x().map { st =>
-            SequenceStepsTableContainer(SequenceStepsTableContainer.Props(p.router, st)): VdomElement
-          }.getOrElse(defaultContent)
+      val SequenceTabContentFocus(instrument, _, active, logDisplayed) = p.p
+      val content = p.statusConnect.map { x =>
+        x { st =>
+          st().map(s => SequenceStepsTableContainer(SequenceStepsTableContainer.Props(p.router, s)): VdomElement).getOrElse(defaultContent)
         }
       }.getOrElse {
         defaultContent
@@ -126,6 +127,8 @@ object SequenceTabContent {
 object SequenceArea {
   final case class Props(router: RouterCtl[SeqexecPages], site: Site)
   implicit val propsReuse: Reusability[Props] = Reusability.by(_.site)
+  private val statusConnect = SeqexecCircuit.connect(SeqexecCircuit.statusReader)
+  private val tabsConnect = SeqexecCircuit.connect(SeqexecCircuit.sequenceTabs)
 
   private val component = ScalaComponent.builder[Props]("SequenceArea")
     .stateless
@@ -133,8 +136,8 @@ object SequenceArea {
       <.div(
         ^.cls := "ui sixteen wide column",
         SeqexecStyles.sequencesArea,
-        SeqexecCircuit.connect(SeqexecCircuit.statusReader)(x => InstrumentsTabs(InstrumentsTabs.Props(p.router, x().isLogged))),
-        SeqexecCircuit.connect(SeqexecCircuit.sequenceTabs)(x => ReactFragment(x().toList.map(t => SequenceTabContent(SequenceTabContent.Props(p.router, t)): VdomNode): _*))
+        statusConnect(x => InstrumentsTabs(InstrumentsTabs.Props(p.router, x().isLogged))),
+        tabsConnect(x => ReactFragment(x().toList.map(t => SequenceTabContent(SequenceTabContent.Props(p.router, t)): VdomNode): _*))
       )
     )
     .configure(Reusability.shouldComponentUpdate)
