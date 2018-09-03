@@ -635,7 +635,7 @@ object SeqexecEngine extends SeqexecConfiguration {
     case LoadSequence(id)              => SequenceLoaded(id, svs)
     case UnloadSequence(id)            => SequenceUnloaded(id, svs)
     // TODO: Use proper event to trigger pop-up on user side
-    case NotifyUser(_, _)              => NullEvent
+    case NotifyUser(m, cid)            => UserNotification(m, cid)
   }
 
   def toSeqexecEvent(ev: executeEngine.ResultType)(svs: => SequencesQueue[SequenceView]): SeqexecEvent = ev match {

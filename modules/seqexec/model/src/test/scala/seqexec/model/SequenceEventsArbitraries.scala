@@ -112,6 +112,13 @@ trait SequenceEventsArbitraries extends ArbTime {
     } yield FileIdStepExecuted(i, s)
   }
 
+  implicit val unArb = Arbitrary[UserNotification] {
+    for {
+      i <- arbitrary[Notification]
+      s <- arbitrary[ClientID]
+    } yield UserNotification(i, s)
+  }
+
   implicit val smuArb = Arbitrary[SeqexecModelUpdate] {
     Gen.oneOf[SeqexecModelUpdate](
         arbitrary[SequenceStart],
@@ -144,6 +151,7 @@ trait SequenceEventsArbitraries extends ArbTime {
       arbitrary[ConnectionOpenEvent],
       arbitrary[NewLogMessage],
       arbitrary[ServerLogMessage],
+      arbitrary[UserNotification],
       arbitrary[NullEvent.type]
     )
   }
@@ -219,6 +227,9 @@ trait SequenceEventsArbitraries extends ArbTime {
 
   implicit val nlmCogen: Cogen[NewLogMessage] =
     Cogen[String].contramap(_.msg)
+
+  implicit val unCogen: Cogen[UserNotification] =
+    Cogen[(Notification, ClientID)].contramap(x => (x.memo, x.clientId))
 }
 
 object SequenceEventsArbitraries extends SequenceEventsArbitraries

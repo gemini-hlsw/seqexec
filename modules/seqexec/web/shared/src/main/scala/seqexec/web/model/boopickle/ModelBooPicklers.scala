@@ -126,6 +126,7 @@ trait ModelBooPicklers extends GemModelBooPicklers {
     .addConcreteType[ExposurePaused]
     .addConcreteType[ResourcesBusy]
     .addConcreteType[ServerLogMessage]
+    .addConcreteType[UserNotification]
     .addConcreteType[NullEvent.type]
 
 }

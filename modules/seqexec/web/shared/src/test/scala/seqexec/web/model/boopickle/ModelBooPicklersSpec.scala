@@ -61,4 +61,5 @@ final class BoopicklingSpec extends CatsSuite with ModelBooPicklers {
   checkAll("Pickler[SkyBackground]", PicklerTests[SkyBackground].pickler)
   checkAll("Pickler[CloudCover]", PicklerTests[CloudCover].pickler)
   checkAll("Pickler[Conditions]", PicklerTests[Conditions].pickler)
+  checkAll("Pickler[UserNotification]", PicklerTests[UserNotification].pickler)
 }

@@ -234,6 +234,39 @@ trait SeqexecModelArbitraries extends ArbObservation {
 
   implicit val levCogen: Cogen[ServerLogLevel] =
     Cogen[String].contramap(_.productPrefix)
+
+  implicit val rcArb  = Arbitrary[ResourceConflict] {
+    for {
+      id <- arbitrary[Observation.Id]
+    } yield ResourceConflict(id)
+  }
+
+  implicit val rcCogen: Cogen[ResourceConflict] =
+    Cogen[Observation.Id].contramap(_.sid)
+
+  implicit val inArb  = Arbitrary[InstrumentInUse] {
+    for {
+      id <- arbitrary[Observation.Id]
+      i  <- arbitrary[Instrument]
+    } yield InstrumentInUse(id, i)
+  }
+
+  implicit val inCogen: Cogen[InstrumentInUse] =
+    Cogen[(Observation.Id, Instrument)].contramap(x => (x.sid, x.ins))
+
+  implicit val notArb  = Arbitrary[Notification] {
+    for {
+      r <- arbitrary[ResourceConflict]
+      a <- arbitrary[InstrumentInUse]
+      s <- Gen.oneOf(r, a)
+    } yield s
+  }
+
+  implicit val notCogen: Cogen[Notification] =
+    Cogen[Either[ResourceConflict, InstrumentInUse]].contramap {
+      case r: ResourceConflict => Left(r)
+      case i: InstrumentInUse  => Right(i)
+    }
 }
 
 object SeqexecModelArbitraries extends SeqexecModelArbitraries
