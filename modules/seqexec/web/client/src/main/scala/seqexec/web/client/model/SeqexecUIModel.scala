@@ -20,7 +20,6 @@ final case class SeqexecUIModel(navLocation: Pages.SeqexecPages,
                           user: Option[UserDetails],
                           sequences: SequencesQueue[SequenceView],
                           loginBox: SectionVisibilityState,
-                          resourceConflict: ResourcesConflict,
                           globalLog: GlobalLog,
                           sequencesOnDisplay: SequencesOnDisplay,
                           syncInProgress: Boolean,
@@ -38,7 +37,6 @@ object SeqexecUIModel {
     None,
     noSequencesLoaded,
     SectionClosed,
-    ResourcesConflict(SectionClosed, None),
     GlobalLog(FixedLengthBuffer.unsafeFromInt(500), SectionClosed),
     SequencesOnDisplay.empty,
     syncInProgress = false,
@@ -49,5 +47,5 @@ object SeqexecUIModel {
     firstLoad = true)
 
   implicit val eq: Eq[SeqexecUIModel] =
-    Eq.by(x => (x.navLocation, x.user, x.sequences, x.loginBox, x.resourceConflict, x.globalLog, x.sequencesOnDisplay, x.configTableState, x.queueTableState, x.defaultObserver, x.firstLoad))
+    Eq.by(x => (x.navLocation, x.user, x.sequences, x.loginBox, x.globalLog, x.sequencesOnDisplay, x.configTableState, x.queueTableState, x.defaultObserver, x.firstLoad))
 }

@@ -323,17 +323,6 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
       case PreviewConfigPage(i, o, s)  => Some(Some(Some(Right(Right(Right((i, o, s)))))))
     }
 
-  implicit val arbResourcesConflict: Arbitrary[ResourcesConflict] =
-    Arbitrary {
-      for {
-        v  <- arbitrary[SectionVisibilityState]
-        id <- arbitrary[Option[Observation.Id]]
-      } yield ResourcesConflict(v, id)
-    }
-
-  implicit val resourcesConflictCogen: Cogen[ResourcesConflict] =
-    Cogen[(SectionVisibilityState, Option[Observation.Id])].contramap(x => (x.visibility, x.id))
-
   implicit val arbUserNotificationState: Arbitrary[UserNotificationState] =
     Arbitrary {
       for {
@@ -375,7 +364,6 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
         user               <- arbitrary[Option[UserDetails]]
         sequences          <- arbitrary[SequencesQueue[SequenceView]]
         loginBox           <- arbitrary[SectionVisibilityState]
-        resourceConflict   <- arbitrary[ResourcesConflict]
         globalLog          <- arbitrary[GlobalLog]
         sequencesOnDisplay <- arbitrary[SequencesOnDisplay]
         syncInProgress     <- arbitrary[Boolean]
@@ -384,12 +372,12 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
         defaultObserver    <- arbitrary[Observer]
         notification       <- arbitrary[UserNotificationState]
         firstLoad          <- arbitrary[Boolean]
-      } yield SeqexecUIModel(navLocation, user, sequences, loginBox, resourceConflict, globalLog, sequencesOnDisplay, syncInProgress, configTableState, queueTableState, defaultObserver, notification, firstLoad)
+      } yield SeqexecUIModel(navLocation, user, sequences, loginBox, globalLog, sequencesOnDisplay, syncInProgress, configTableState, queueTableState, defaultObserver, notification, firstLoad)
     }
 
   implicit val seqUIModelCogen: Cogen[SeqexecUIModel] =
-    Cogen[(Pages.SeqexecPages, Option[UserDetails], SequencesQueue[SequenceView], SectionVisibilityState, ResourcesConflict, GlobalLog, SequencesOnDisplay, Boolean, TableState[StepConfigTable.TableColumn], TableState[QueueTableBody.TableColumn], Observer, UserNotificationState, Boolean)]
-      .contramap(x => (x.navLocation, x.user, x.sequences, x.loginBox, x.resourceConflict, x.globalLog, x.sequencesOnDisplay, x.syncInProgress, x.configTableState, x.queueTableState, x.defaultObserver, x.notification, x.firstLoad))
+    Cogen[(Pages.SeqexecPages, Option[UserDetails], SequencesQueue[SequenceView], SectionVisibilityState, GlobalLog, SequencesOnDisplay, Boolean, TableState[StepConfigTable.TableColumn], TableState[QueueTableBody.TableColumn], Observer, UserNotificationState, Boolean)]
+      .contramap(x => (x.navLocation, x.user, x.sequences, x.loginBox, x.globalLog, x.sequencesOnDisplay, x.syncInProgress, x.configTableState, x.queueTableState, x.defaultObserver, x.notification, x.firstLoad))
 
   implicit val arbSODLocationFocus: Arbitrary[SODLocationFocus] =
     Arbitrary {

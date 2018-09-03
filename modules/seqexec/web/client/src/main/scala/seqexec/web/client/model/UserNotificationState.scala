@@ -5,13 +5,16 @@ package seqexec.web.client.model
 
 import cats.Eq
 import cats.implicits._
+import monocle.macros.Lenses
 import seqexec.model.Notification
 
 /**
   * Utility class to display a generic notification sent by the server
   */
+@Lenses
 final case class UserNotificationState(visibility: SectionVisibilityState, notification: Option[Notification])
 
+@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object UserNotificationState {
   val Empty: UserNotificationState = UserNotificationState(SectionClosed, None)
 

@@ -20,7 +20,7 @@ object Notification {
     }
 
   def header(n: Notification): String = n match {
-    case ResourceConflict(_)           => "Resource conflict"
+    case ResourceConflict(_)   => "Resource conflict"
     case InstrumentInUse(_, _) => "Instrument busy"
   }
 

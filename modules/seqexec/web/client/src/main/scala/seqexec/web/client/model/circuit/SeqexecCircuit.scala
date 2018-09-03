@@ -16,7 +16,7 @@ import seqexec.web.client.model._
 import seqexec.web.client.lenses._
 import seqexec.web.client.handlers._
 import seqexec.web.client.ModelOps._
-import seqexec.web.client.actions.{AppendToLog, CloseLoginBox, CloseResourcesBox, OpenLoginBox, OpenResourcesBox, ServerMessage, show}
+import seqexec.web.client.actions.{AppendToLog, CloseLoginBox, CloseUserNotificationBox, OpenLoginBox, OpenUserNotificationBox, ServerMessage, show}
 import seqexec.web.client.components.sequence.steps.StepConfigTable
 import web.client.table._
 
@@ -78,9 +78,6 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
         }
         StatusAndLoadedSequencesFocus(s, sequencesInQueue.sorted, queueTable)
     }
-
-  // Reader to contain the sequence in conflict
-  val sequenceInConflictReader: ModelR[SeqexecAppRootModel, Option[Observation.Id]] = zoomTo(_.uiModel.resourceConflict.id)
 
   // Reader for sequences on display
   val headerSideBarReader: ModelR[SeqexecAppRootModel, HeaderSideBarFocus] =
@@ -144,9 +141,9 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
     }
 
   def sequenceControlReader(obsId: Observation.Id): ModelR[SeqexecAppRootModel, SequenceControlFocus] =
-    sequenceInConflictReader.zip(statusReader.zip(sequenceTab(obsId))).zoom {
-      case (inConflict, (status, SequenceTabActive(tab, _))) =>
-        SequenceControlFocus(status.isLogged, status.isConnected, tab.sequence.map(s => ControlModel(s.id, s.isPartiallyExecuted, s.nextStepToRun, s.status, inConflict.exists(_ === s.id))), status.syncInProgress)
+    statusReader.zip(sequenceTab(obsId)).zoom {
+      case (status, SequenceTabActive(tab, _)) =>
+        SequenceControlFocus(status.isLogged, status.isConnected, tab.sequence.map(s => ControlModel(s.id, s.isPartiallyExecuted, s.nextStepToRun, s.status)), status.syncInProgress)
     }
 
   private val wsHandler                = new WebSocketHandler(zoomTo(_.ws))
@@ -154,11 +151,11 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   private val initialSyncHandler       = new InitialSyncHandler(initialSyncFocusRW)
   private val navigationHandler        = new NavigationHandler(zoomTo(_.uiModel.navLocation))
   private val loginBoxHandler          = new ModalBoxHandler(OpenLoginBox, CloseLoginBox, zoomTo(_.uiModel.loginBox))
-  private val resourcesBoxHandler      = new ModalBoxHandler(OpenResourcesBox, CloseResourcesBox, zoomTo(_.uiModel.resourceConflict.visibility))
+  private val userNotBoxHandler        = new ModalBoxHandler(OpenUserNotificationBox, CloseUserNotificationBox, zoomTo(_.uiModel.notification.visibility))
   private val userLoginHandler         = new UserLoginHandler(zoomTo(_.uiModel.user))
+  private val userNotificationHandler  = new NotificationsHandler(zoomTo(_.uiModel.notification))
   private val sequenceDisplayHandler   = new SequenceDisplayHandler(sequencesReaderRW)
   private val sequenceExecHandler      = new SequenceExecutionHandler(zoomTo(_.uiModel.sequences))
-  private val resourcesConflictHandler = new SequenceInConflictHandler(zoomTo(_.uiModel.resourceConflict.id))
   private val globalLogHandler         = new GlobalLogHandler(zoomTo(_.uiModel.globalLog))
   private val conditionsHandler        = new ConditionsHandler(zoomTo(_.uiModel.sequences.conditions))
   private val operatorHandler          = new OperatorHandler(zoomTo(_.uiModel.sequences.operator))
@@ -176,12 +173,9 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
 
   override protected def actionHandler = composeHandlers(
     wsHandler,
-    foldHandlers(serverMessagesHandler, initialSyncHandler, loadSequencesHandler),
+    foldHandlers(serverMessagesHandler, initialSyncHandler, loadSequencesHandler, userNotificationHandler),
     sequenceExecHandler,
-    resourcesBoxHandler,
-    resourcesConflictHandler,
-    loginBoxHandler,
-    userLoginHandler,
+    foldHandlers(userNotBoxHandler, loginBoxHandler, userLoginHandler),
     sequenceDisplayHandler,
     globalLogHandler,
     conditionsHandler,

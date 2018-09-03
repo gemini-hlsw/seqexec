@@ -4,8 +4,7 @@
 package seqexec.web.client.handlers
 
 import cats.implicits._
-import diode.{Action, ActionHandler, ActionResult, Effect, ModelRW, NoAction}
-import gem.Observation
+import diode.{ ActionHandler, ActionResult, Effect, ModelRW, NoAction }
 import gem.enum.Site
 import seqexec.model.{ Observer, Operator, SequencesQueue, SequenceView }
 import seqexec.web.client.model._
@@ -73,30 +72,6 @@ class SequenceExecutionHandler[M](modelRW: ModelRW[M, SequencesQueue[SequenceVie
 }
 
 /**
-  * Handles actions related to opening/closing a modal
-  */
-class ModalBoxHandler[M](openAction: Action, closeAction: Action, modelRW: ModelRW[M, SectionVisibilityState]) extends ActionHandler(modelRW) with Handlers[M, SectionVisibilityState] {
-  def openModal: PartialFunction[Any, ActionResult[M]] = {
-    case x if x == openAction && value === SectionClosed =>
-      updated(SectionOpen)
-
-    case x if x == openAction                            =>
-      noChange
-  }
-
-  def closeModal: PartialFunction[Any, ActionResult[M]] = {
-    case x if x == closeAction && value === SectionOpen =>
-      updated(SectionClosed)
-
-    case x if x == closeAction                          =>
-      noChange
-  }
-
-  override def handle: PartialFunction[Any, ActionResult[M]] =
-    openModal |+| closeModal
-}
-
-/**
  * Handles updates to the operator
  */
 class OperatorHandler[M](modelRW: ModelRW[M, Option[Operator]]) extends ActionHandler(modelRW) with Handlers[M, Option[Operator]] {
@@ -138,16 +113,6 @@ class DefaultObserverHandler[M](modelRW: ModelRW[M, Observer]) extends ActionHan
   override def handle: PartialFunction[Any, ActionResult[M]] = {
     case UpdateDefaultObserver(o) =>
       updated(o)
-  }
-}
-
-/**
-  * Handles setting what sequence is in conflict
-  */
-class SequenceInConflictHandler[M](modelRW: ModelRW[M, Option[Observation.Id]]) extends ActionHandler(modelRW) with Handlers[M, Option[Observation.Id]] {
-  override def handle: PartialFunction[Any, ActionResult[M]] = {
-    case SequenceInConflict(id) =>
-      updated(Some(id))
   }
 }
 

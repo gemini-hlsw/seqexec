@@ -55,7 +55,7 @@ object SeqexecMain {
 
   private val lbConnect = SeqexecCircuit.connect(_.uiModel.loginBox)
   private val logConnect = SeqexecCircuit.connect(_.uiModel.globalLog)
-  private val resourcesBusyConnect = SeqexecCircuit.connect(_.uiModel.resourceConflict)
+  private val userNotificationConnect = SeqexecCircuit.connect(_.uiModel.notification)
   private val headerSideBarConnect = SeqexecCircuit.connect(SeqexecCircuit.headerSideBarReader)
   private val wsConnect = SeqexecCircuit.connect(_.ws)
 
@@ -98,7 +98,7 @@ object SeqexecMain {
           )
         ),
         lbConnect(LoginBox.apply),
-        resourcesBusyConnect(ResourcesBox.apply),
+        userNotificationConnect(p => UserNotificationBox(UserNotificationBox.Props(p))),
         Footer(Footer.Props(p.ctl, p.site))
       )
     )

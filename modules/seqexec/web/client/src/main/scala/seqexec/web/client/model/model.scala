@@ -6,7 +6,6 @@ package seqexec.web.client.model
 import cats._
 import cats.implicits._
 import diode.data.Pot
-import gem.Observation
 import gem.enum.Site
 import monocle.macros.Lenses
 import org.scalajs.dom.WebSocket
@@ -52,15 +51,6 @@ final case class GlobalLog(log: FixedLengthBuffer[ServerLogMessage], display: Se
 
 object GlobalLog {
   implicit val eq: Eq[GlobalLog] = Eq.by(x => (x.log, x.display))
-}
-
-/**
- * Model to display a resource conflict
- */
-final case class ResourcesConflict(visibility: SectionVisibilityState, id: Option[Observation.Id])
-
-object ResourcesConflict {
-  implicit val eq: Eq[ResourcesConflict] = Eq.by(x => (x.visibility, x.id))
 }
 
 /**
