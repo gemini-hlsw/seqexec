@@ -6,32 +6,38 @@ package seqexec.web.client.components
 import diode.react.ModelProxy
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
+import japgolly.scalajs.react.extra.Reusability
+import japgolly.scalajs.react.component.Scala.Unmounted
+import seqexec.model.Notification
 import seqexec.web.client.semanticui.elements.icon.Icon.IconCheckmark
 import seqexec.web.client.semanticui.elements.modal.{Content, Header}
 import seqexec.web.client.model._
 import seqexec.web.client.circuit.SeqexecCircuit
-import seqexec.web.client.actions.CloseResourcesBox
-import japgolly.scalajs.react.component.Scala.Unmounted
+import seqexec.web.client.actions.CloseUserNotificationBox
+import seqexec.web.client.reusability._
 
 /**
   * UI for the model displaying resource conflicts
   */
-object ResourcesBox {
+object UserNotificationBox {
 
-  final case class Props(visible: ModelProxy[ResourcesConflict])
+  final case class Props(notification: ModelProxy[UserNotificationState])
+
+  implicit val propsReuse: Reusability[Props] = Reusability.by(_.notification)
 
   @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
-  private val component = ScalaComponent.builder[Props]("ResourcesBox")
+  private val component = ScalaComponent.builder[Props]("UserNotificationBox")
     .stateless
     .render_P { p =>
-      val ResourcesConflict(_, id) = p.visible()
+      val UserNotificationState(_, not) = p.notification()
       <.div(
         ^.cls := "ui tiny modal",
-        Header("Resource conflict"),
-        Content(
-          <.p(s"There is a conflict trying to run the sequence '${id.map(_.format).getOrElse("")}'"),
-          <.p("Possibly another sequence is being executed on the same instrument")
-        ),
+        not.map(h => Header(Notification.header(h))),
+        not.map{h =>
+          Content(
+            <.div(Notification.body(h).toTagMod(<.p(_)))
+          )
+        },
         <.div(
           ^.cls := "actions",
           <.div(
@@ -52,16 +58,16 @@ object ResourcesBox {
 
         // Close the modal box if the model changes
         ctx.getDOMNode.toElement.foreach { dom =>
-          ctx.currentProps.visible() match {
-            case ResourcesConflict(SectionClosed, _) =>
+          ctx.currentProps.notification() match {
+            case UserNotificationState(SectionClosed, _) =>
               $(dom).modal("hide")
-            case ResourcesConflict(SectionOpen, _)   =>
+            case UserNotificationState(SectionOpen, _)   =>
               // Configure the modal to autofocus and to act properly on closing
               $(dom).modal(
                 JsModalOptions
                   .onHidden { () =>
                     // Need to call direct access as this is outside the event loop
-                    SeqexecCircuit.dispatch(CloseResourcesBox)
+                    SeqexecCircuit.dispatch(CloseUserNotificationBox)
                   }
               )
               // Show the modal box
@@ -69,7 +75,9 @@ object ResourcesBox {
           }
         }
       }
-    ).build
+    )
+    .configure(Reusability.shouldComponentUpdate)
+    .build
 
-  def apply(v: ModelProxy[ResourcesConflict]): Unmounted[Props, Unit, Unit] = component(Props(v))
+  def apply(v: Props): Unmounted[Props, Unit, Unit] = component(v)
 }

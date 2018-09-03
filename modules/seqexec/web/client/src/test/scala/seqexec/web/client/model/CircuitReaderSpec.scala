@@ -27,7 +27,6 @@ final class CircuitReaderSpec extends CatsSuite with PropertyChecks with Arbitra
       (sodLocationReaderRW === sodLocationReaderRW.value) should be(true)
       (statusAndLoadedSequencesReader === statusAndLoadedSequencesReader.value) should be(true)
       (statusReader === statusReader.value) should be(true)
-      (sequenceInConflictReader === sequenceInConflictReader.value) should be(true)
       (headerSideBarReader === headerSideBarReader.value) should be(true)
       (logDisplayedReader === logDisplayedReader.value) should be(true)
       (tabsReader === tabsReader.value) should be(true)

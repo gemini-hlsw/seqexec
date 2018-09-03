@@ -79,16 +79,16 @@ object SequenceControl {
       <.div(
         SeqexecStyles.controlButtons,
         control.whenDefined { m =>
-          val ControlModel(id, isPartiallyExecuted, nextStep, status, inConflict) = m
+          val ControlModel(id, isPartiallyExecuted, nextStep, status) = m
           val nextStepToRun = nextStep.getOrElse(0) + 1
           val runContinueTooltip = s"${isPartiallyExecuted.fold("Continue", "Run")} the sequence from the step $nextStepToRun"
           val runContinueButton = s"${isPartiallyExecuted.fold("Continue", "Run")} from step $nextStepToRun"
           List(
             // Sync button
-            controlButton(IconRefresh, "purple", $.runState(requestSync(id)), (!allowedToExecute || !canSync) && !inConflict, "Sync sequence", "Sync")
+            controlButton(IconRefresh, "purple", $.runState(requestSync(id)), (!allowedToExecute || !canSync), "Sync sequence", "Sync")
               .when(status.isIdle || status.isError),
             // Run button
-            controlButton(IconPlay, "blue", $.runState(requestRun(id)), (!allowedToExecute || !s.canRun) && !inConflict, runContinueTooltip, runContinueButton)
+            controlButton(IconPlay, "blue", $.runState(requestRun(id)), (!allowedToExecute || !s.canRun), runContinueTooltip, runContinueButton)
               .when(status.isIdle || status.isError),
             // Cancel pause button
             controlButton(IconBan, "brown", $.runState(requestCancelPause(id)), !allowedToExecute || !s.canCancelPause, "Cancel process to pause the sequence", "Cancel Pause")

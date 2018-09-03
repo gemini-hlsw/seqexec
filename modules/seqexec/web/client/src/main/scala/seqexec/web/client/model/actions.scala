@@ -27,16 +27,14 @@ object actions {
   // Actions to close and/open the login box
   case object OpenLoginBox extends Action
   case object CloseLoginBox extends Action
-  case object OpenResourcesBox extends Action
-  case object CloseResourcesBox extends Action
-  final case class SequenceInConflict(id: Observation.Id) extends Action
+  case object OpenUserNotificationBox extends Action
+  case object CloseUserNotificationBox extends Action
 
   final case class LoggedIn(u: UserDetails) extends Action
   case object Logout extends Action
 
   // Action to select a sequence for display
   final case class SelectIdToDisplay(i: Instrument, id: Observation.Id, step: StepId) extends Action
-  // final case class SelectSequenceConfig(id: Observation.Id, step: StepId) extends Action
   final case class SelectSequencePreview(i: Instrument, id: Observation.Id, step: StepId) extends Action
   case object SelectEmptyPreview extends Action
   case object SelectRoot extends Action
@@ -98,6 +96,7 @@ object actions {
   final case class UpdateStepsConfigTableState(s: TableState[StepConfigTable.TableColumn]) extends Action
   final case class UpdateQueueTableState(s: TableState[QueueTableBody.TableColumn]) extends Action
   final case class LoadSequence(observer: Observer, i: Instrument, id: Observation.Id) extends Action
+  final case class SequenceLoadFailed(id: Observation.Id) extends Action
   case object CleanSequences extends Action
 
   // Used for UI debugging

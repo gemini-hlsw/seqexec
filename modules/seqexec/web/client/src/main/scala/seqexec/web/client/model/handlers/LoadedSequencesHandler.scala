@@ -21,9 +21,9 @@ class LoadedSequencesHandler[M](modelRW: ModelRW[M, SODLocationFocus]) extends A
       // Update selected and the page
       val upSelected = if (value.clientId.exists(_ === cid)) {
         // if I requested the load also focus on it
-        SODLocationFocus.sod.modify(_.updateFromQueue(view).unsetPreviewOn(sid).focusOnSequence(i, sid))
+        SODLocationFocus.sod.modify(_.updateFromQueue(view).loadingComplete(sid).unsetPreviewOn(sid).focusOnSequence(i, sid))
       } else {
-        SODLocationFocus.sod.modify(_.updateFromQueue(view).unsetPreviewOn(sid))
+        SODLocationFocus.sod.modify(_.updateFromQueue(view).loadingComplete(sid).unsetPreviewOn(sid))
       }
       val upLocation = SODLocationFocus.location.set(SequencePage(i, sid, 0))
       updatedL(upSelected >>> upLocation)
@@ -35,6 +35,7 @@ class LoadedSequencesHandler[M](modelRW: ModelRW[M, SODLocationFocus]) extends A
       val loadSequence = value.clientId
         .map(cid => Effect(SeqexecWebClient.loadSequence(i, id, observer, cid).map(_ => NoAction)))
         .getOrElse(VoidEffect)
-      effectOnly(loadSequence)
+      val update = SODLocationFocus.sod.modify(_.markAsLoading(id))
+      updatedLE(update, loadSequence)
   }
 }

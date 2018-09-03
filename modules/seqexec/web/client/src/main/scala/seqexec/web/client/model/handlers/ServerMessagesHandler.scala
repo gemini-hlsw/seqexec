@@ -113,13 +113,6 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus]) extends Act
       updated(value.copy(sequences = filterSequences(svs)))
   }
 
-  val resourceBusyMessage: PartialFunction[Any, ActionResult[M]] = {
-    case ServerMessage(ResourcesBusy(id, _, _)) =>
-      val setConflictE = Effect(Future(SequenceInConflict(id)))
-      val openBoxE = Effect(Future(OpenResourcesBox))
-      effectOnly(setConflictE >> openBoxE)
-  }
-
   val sequenceLoadedMessage: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(SequenceLoaded(_, view)) =>
       updated(value.copy(sequences = filterSequences(view)))
@@ -149,7 +142,6 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus]) extends Act
       actionStoppedRequestMessage,
       sequenceLoadedMessage,
       sequenceUnloadedMessage,
-      resourceBusyMessage,
       modelUpdateMessage,
       defaultMessage).combineAll
 }

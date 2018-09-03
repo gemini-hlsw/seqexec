@@ -30,8 +30,8 @@ final class ModelSpec extends CatsSuite with ArbitrariesWebClient {
   checkAll("Eq[Pages.SeqexecPages]", EqTests[Pages.SeqexecPages].eqv)
   checkAll("Eq[SequenceTab]", EqTests[SequenceTab].eqv)
   checkAll("Eq[SequencesOnDisplay]", EqTests[SequencesOnDisplay].eqv)
-  checkAll("Eq[ResourcesConflict]", EqTests[ResourcesConflict].eqv)
   checkAll("Eq[GlobalLog]", EqTests[GlobalLog].eqv)
+  checkAll("Eq[UserNotificationState]", EqTests[UserNotificationState].eqv)
   checkAll("Eq[SeqexecUIModel]", EqTests[SeqexecUIModel].eqv)
 
   // lenses

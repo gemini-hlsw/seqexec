@@ -96,6 +96,10 @@ package circuit {
 
   final case class InstrumentTabFocus(tabs: NonEmptyList[AvailableTab], defaultObserver: Observer) extends UseValueEq
 
+  object InstrumentTabFocus {
+    implicit val eq: Eq[InstrumentTabFocus] =
+      Eq.by(x => (x.tabs, x.defaultObserver))
+  }
   final case class SequenceTabContentFocus(instrument: Option[Instrument], id: Option[Observation.Id], sequenceSelected: Boolean, logDisplayed: SectionVisibilityState) extends UseValueEq
 
   object SequenceTabContentFocus {
@@ -117,7 +121,7 @@ package circuit {
       Eq.by(x => (x.isLogged, x.instrument, x.obsId, x.stepConfigDisplayed, x.totalSteps, x.isPreview))
   }
 
-  final case class StepsTableFocus(id: Observation.Id, instrument: Instrument, state: SequenceState, steps: List[Step], stepConfigDisplayed: Option[Int], nextStepToRun: Option[Int], isPreview: Boolean) extends UseValueEq
+  final case class StepsTableFocus(id: Observation.Id, instrument: Instrument, state: SequenceState, steps: List[Step], stepConfigDisplayed: Option[Int], nextStepToRun: Option[Int], isPreview: Boolean)
 
   object StepsTableFocus {
     implicit val eq: Eq[StepsTableFocus] =
@@ -131,7 +135,7 @@ package circuit {
       Eq.by(x => (x.status, x.stepsTable, x.configTableState))
   }
 
-  final case class ControlModel(id: Observation.Id, isPartiallyExecuted: Boolean, nextStepToRun: Option[Int], status: SequenceState, inConflict: Boolean) extends UseValueEq
+  final case class ControlModel(id: Observation.Id, isPartiallyExecuted: Boolean, nextStepToRun: Option[Int], status: SequenceState) extends UseValueEq
 
   final case class SequenceControlFocus(isLogged: Boolean, isConnected: Boolean, control: Option[ControlModel], syncInProgress: Boolean) extends UseValueEq
 

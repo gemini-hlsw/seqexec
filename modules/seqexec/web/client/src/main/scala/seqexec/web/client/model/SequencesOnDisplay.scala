@@ -47,14 +47,14 @@ final case class SequencesOnDisplay(sequences: Zipper[SequenceTab]) {
   val tabIds: List[Observation.Id] =
     sequences.toNel.collect {
       case InstrumentSequenceTab(_, Some(curr), _, _) => curr.id
-      case PreviewSequenceTab(Some(curr), _) => curr.id
+      case PreviewSequenceTab(Some(curr), _, _)       => curr.id
     }
 
   def updateFromQueue(s: SequencesQueue[SequenceView]): SequencesOnDisplay = {
     val updated = updateLoaded(s.loaded.values.toList.map { id =>
       s.queue.find(_.id === id)
     }).sequences.map {
-      case p @ PreviewSequenceTab(Some(curr), r) => s.queue.find(_.id === curr.id).map(s => PreviewSequenceTab(Some(s), r)).getOrElse(p)
+      case p @ PreviewSequenceTab(Some(curr), r, _) => s.queue.find(_.id === curr.id).map(s => PreviewSequenceTab(Some(s), r, false)).getOrElse(p)
       case t => t
     }
     SequencesOnDisplay(updated)
@@ -75,14 +75,14 @@ final case class SequencesOnDisplay(sequences: Zipper[SequenceTab]) {
     val newZipper = Zipper[SequenceTab](Nil, onlyPreview, instTabs)
     // Restore focus
     val q = newZipper.findFocus {
-      case PreviewSequenceTab(_, _) if currentFocus.isPreview =>
+      case PreviewSequenceTab(_, _, _) if currentFocus.isPreview =>
         true
-      case PreviewSequenceTab(_, _) =>
+      case PreviewSequenceTab(_, _, _)                           =>
         false
-      case InstrumentSequenceTab(i, _, _, _)                  =>
+      case InstrumentSequenceTab(i, _, _, _)                     =>
         currentFocus match {
           case InstrumentSequenceTab(j, _, _, _) => i === j
-          case PreviewSequenceTab(_, _)          => false
+          case PreviewSequenceTab(_, _, _)       => false
         }
     }
     copy(sequences = q.getOrElse(newZipper))
@@ -117,9 +117,9 @@ final case class SequencesOnDisplay(sequences: Zipper[SequenceTab]) {
   def unsetPreviewOn(id: Observation.Id): SequencesOnDisplay = {
     // Remove the sequence in the preview if it matches id
     val q = sequences.map {
-      case s @ PreviewSequenceTab(cur, _) if cur.exists(_.id === id) =>
+      case s @ PreviewSequenceTab(cur, _, _) if cur.exists(_.id === id) =>
         SequenceTab.currentSequenceL.set(None)(s)
-      case s                                                      =>
+      case s                                                            =>
         s
     }
     copy(sequences = q)
@@ -154,7 +154,7 @@ final case class SequencesOnDisplay(sequences: Zipper[SequenceTab]) {
 
   def availableTabs: NonEmptyList[AvailableTab] =
     NonEmptyList.fromListUnsafe(sequences.withFocus.map {
-      case (i, a) => AvailableTab(i.sequence.map(_.id), i.sequence.map(_.status), i.instrument, i.runningStep, i.isPreview, a)
+      case (i, a) => AvailableTab(i.sequence.map(_.id), i.sequence.map(_.status), i.instrument, i.runningStep, i.isPreview, a, i.loading)
     }.toList)
 
   def cleanAll: SequencesOnDisplay =
@@ -163,6 +163,28 @@ final case class SequencesOnDisplay(sequences: Zipper[SequenceTab]) {
   def selectedOperator: Option[SequenceObserverFocus] = {
     val f = sequences.focus
     f.sequence.map { s => SequenceObserverFocus(s.metadata.instrument, s.id, s.allStepsDone, s.metadata.observer) }.filter(_ => !f.isPreview)
+  }
+
+  // Update the state when a load has failed
+  def loadingComplete(id: Observation.Id): SequencesOnDisplay = {
+    val q = sequences.map {
+      case s @ PreviewSequenceTab(cur, _, _) if cur.exists(_.id === id) =>
+        PreviewSequenceTab.isLoading.set(false)(s)
+      case s                                                            =>
+        s
+    }
+    copy(sequences = q)
+  }
+
+  // Update the state when a load starts
+  def markAsLoading(id: Observation.Id): SequencesOnDisplay = {
+    val q = sequences.map {
+      case s @ PreviewSequenceTab(cur, _, _) if cur.exists(_.id === id) =>
+        PreviewSequenceTab.isLoading.set(true)(s)
+      case s                                                            =>
+        s
+    }
+    copy(sequences = q)
   }
 }
 

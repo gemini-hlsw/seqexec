@@ -3,13 +3,12 @@
 
 package seqexec.model
 
-import seqexec.model.enum._
-import java.time.Instant
-
-import dhs.ImageFileId
 import cats.Eq
 import cats.implicits._
+import dhs.ImageFileId
 import gem.Observation
+import java.time.Instant
+import seqexec.model.enum._
 
 object events {
   implicit val instantEq: Eq[Instant] = Eq.fromUniversalEquals
@@ -237,12 +236,20 @@ object events {
         Eq.by(x => (x.obsId, x.view))
     }
 
+    final case class UserNotification(memo: Notification, clientId: ClientID) extends SeqexecEvent
+
+    object UserNotification{
+      implicit lazy val equal: Eq[UserNotification] =
+        Eq.by(x => (x.memo, x.clientId))
+    }
+
     implicit val equal: Eq[SeqexecEvent] =
       Eq.instance {
         case (a: ConnectionOpenEvent, b: ConnectionOpenEvent) => a === b
         case (a: SeqexecModelUpdate,  b: SeqexecModelUpdate)  => a === b
         case (a: NewLogMessage,       b: NewLogMessage)       => a === b
         case (a: ServerLogMessage,    b: ServerLogMessage)    => a === b
+        case (a: UserNotification,    b: UserNotification)    => a === b
         case (_: NullEvent.type,      _: NullEvent.type)      => true
         case _                                                => false
       }

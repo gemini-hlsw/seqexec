@@ -42,4 +42,7 @@ final class ModelSpec extends CatsSuite {
   checkAll("Eq[Conditions]", EqTests[Conditions].eqv)
   checkAll("Eq[ClientID]", EqTests[ClientID].eqv)
   checkAll("Eq[ServerLogLevel]", EqTests[ServerLogLevel].eqv)
+  checkAll("Eq[ResourceConflict]", EqTests[ResourceConflict].eqv)
+  checkAll("Eq[InstrumentInUse]", EqTests[InstrumentInUse].eqv)
+  checkAll("Eq[Notification]", EqTests[Notification].eqv)
 }

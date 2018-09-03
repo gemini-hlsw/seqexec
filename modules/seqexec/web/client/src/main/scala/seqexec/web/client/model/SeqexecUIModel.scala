@@ -20,13 +20,13 @@ final case class SeqexecUIModel(navLocation: Pages.SeqexecPages,
                           user: Option[UserDetails],
                           sequences: SequencesQueue[SequenceView],
                           loginBox: SectionVisibilityState,
-                          resourceConflict: ResourcesConflict,
                           globalLog: GlobalLog,
                           sequencesOnDisplay: SequencesOnDisplay,
                           syncInProgress: Boolean,
                           configTableState: TableState[StepConfigTable.TableColumn],
                           queueTableState: TableState[QueueTableBody.TableColumn],
                           defaultObserver: Observer,
+                          notification: UserNotificationState,
                           firstLoad: Boolean)
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
@@ -37,15 +37,15 @@ object SeqexecUIModel {
     None,
     noSequencesLoaded,
     SectionClosed,
-    ResourcesConflict(SectionClosed, None),
     GlobalLog(FixedLengthBuffer.unsafeFromInt(500), SectionClosed),
     SequencesOnDisplay.empty,
     syncInProgress = false,
     StepConfigTable.InitialTableState,
     QueueTableBody.InitialTableState.tableState,
     Observer(""),
+    UserNotificationState.Empty,
     firstLoad = true)
 
   implicit val eq: Eq[SeqexecUIModel] =
-    Eq.by(x => (x.navLocation, x.user, x.sequences, x.loginBox, x.resourceConflict, x.globalLog, x.sequencesOnDisplay, x.configTableState, x.queueTableState, x.defaultObserver, x.firstLoad))
+    Eq.by(x => (x.navLocation, x.user, x.sequences, x.loginBox, x.globalLog, x.sequencesOnDisplay, x.configTableState, x.queueTableState, x.defaultObserver, x.firstLoad))
 }
