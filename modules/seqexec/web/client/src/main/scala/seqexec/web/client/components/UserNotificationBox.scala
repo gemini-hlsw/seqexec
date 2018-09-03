@@ -6,26 +6,30 @@ package seqexec.web.client.components
 import diode.react.ModelProxy
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
+import japgolly.scalajs.react.extra.Reusability
+import japgolly.scalajs.react.component.Scala.Unmounted
 import seqexec.model.Notification
 import seqexec.web.client.semanticui.elements.icon.Icon.IconCheckmark
 import seqexec.web.client.semanticui.elements.modal.{Content, Header}
 import seqexec.web.client.model._
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.actions.CloseUserNotificationBox
-import japgolly.scalajs.react.component.Scala.Unmounted
+import seqexec.web.client.reusability._
 
 /**
   * UI for the model displaying resource conflicts
   */
 object UserNotificationBox {
 
-  final case class Props(visible: ModelProxy[UserNotificationState])
+  final case class Props(notification: ModelProxy[UserNotificationState])
+
+  implicit val propsReuse: Reusability[Props] = Reusability.by(_.notification())
 
   @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
   private val component = ScalaComponent.builder[Props]("UserNotificationBox")
     .stateless
     .render_P { p =>
-      val UserNotificationState(_, not) = p.visible()
+      val UserNotificationState(_, not) = p.notification()
       <.div(
         ^.cls := "ui tiny modal",
         not.map(h => Header(Notification.header(h))),
@@ -54,7 +58,7 @@ object UserNotificationBox {
 
         // Close the modal box if the model changes
         ctx.getDOMNode.toElement.foreach { dom =>
-          ctx.currentProps.visible() match {
+          ctx.currentProps.notification() match {
             case UserNotificationState(SectionClosed, _) =>
               $(dom).modal("hide")
             case UserNotificationState(SectionOpen, _)   =>
@@ -71,7 +75,9 @@ object UserNotificationBox {
           }
         }
       }
-    ).build
+    )
+    .configure(Reusability.shouldComponentUpdate)
+    .build
 
   def apply(v: Props): Unmounted[Props, Unit, Unit] = component(v)
 }
