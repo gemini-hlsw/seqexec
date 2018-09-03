@@ -48,7 +48,8 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
       for {
         idx <- arbitrary[Option[Int]]
         sv  <- arbitrary[Option[SequenceView]]
-      } yield PreviewSequenceTab(sv, idx)
+        lo  <- arbitrary[Boolean]
+      } yield PreviewSequenceTab(sv, idx, lo)
     }
 
   implicit val pstCogen: Cogen[PreviewSequenceTab] =
@@ -180,7 +181,8 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
         r <- arbitrary[Option[RunningStep]]
         p <- arbitrary[Boolean]
         a <- arbitrary[Boolean]
-      } yield AvailableTab(d, s, i, r, p, a)
+        l <- arbitrary[Boolean]
+      } yield AvailableTab(d, s, i, r, p, a, l)
     }
 
   implicit val availableTabCogen: Cogen[AvailableTab] =
