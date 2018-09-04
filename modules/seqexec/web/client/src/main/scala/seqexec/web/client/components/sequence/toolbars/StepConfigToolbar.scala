@@ -54,42 +54,38 @@ object StepConfigToolbar {
 
       <.div(
         ^.cls := "ui grid",
-        <.div(
-          ^.cls := "ui row",
-          SeqexecStyles.shorterRow,
-          <.div(
-            ^.cls := "left column bottom aligned sixteen wide computer ten wide tablet only",
-            p.sequenceConnect(p => SequenceInfo(SequenceInfo.Props(p)))
-          )
-        ),
       <.div(
-        ^.cls := "ui row two column",
+        ^.cls := "ui row three column",
         SeqexecStyles.shorterRow,
-        SeqexecStyles.lowerRow,
         <.div(
-          ^.cls := "ui left floated eight wide column",
+          ^.cls := "ui left floated two wide column",
           SeqexecStyles.shorterFields,
           // Back to sequence button
           p.router.link(sequencePage)
-            (Button(Button.Props(icon = Some(IconChevronLeft), labeled = LeftLabeled, onClick = p.router.setUrlAndDispatchCB(sequencePage)), "Back"))),
-          <.div(
-            ^.cls := "ui right floated eight wide column",
-            SeqexecStyles.shorterFields,
-            ButtonGroup(
-              ButtonGroup.Props(List(GStyle.fromString("right floated"))),
-              // Previous step button
-              (p.step > 0).option(p.router.link(prevStepPage)
-                (Button(Button.Props(icon = Some(IconChevronLeft), labeled = LeftLabeled, onClick = p.router.setUrlAndDispatchCB(prevStepPage)), "Prev"))),
-              Label(Label.Props(
-                RunningStep(p.step, p.total).show,
-                size = Size.Large,
-                extraStyles = List(SeqexecStyles.labelAsButton))),
-              // Next step button
-              (p.step < p.total - 1).option(p.router.link(nextStepPage)
-                (Button(Button.Props(icon = Some(IconChevronRight), labeled = RightLabeled, onClick = p.router.setUrlAndDispatchCB(nextStepPage)), "Next")))
-              )
+            (Button(Button.Props(icon = Some(IconChevronLeft), labeled = LeftLabeled, onClick = p.router.setUrlAndDispatchCB(sequencePage)), "Back"))
+        ),
+        <.div(
+          ^.cls := "left floated six wide column bottom aligned computer only",
+          p.sequenceConnect(p => SequenceInfo(SequenceInfo.Props(p)))
+        ),
+        <.div(
+          ^.cls := "ui right floated eight wide column",
+          SeqexecStyles.shorterFields,
+          ButtonGroup(
+            ButtonGroup.Props(List(GStyle.fromString("right floated"))),
+            // Previous step button
+            (p.step > 0).option(p.router.link(prevStepPage)
+              (Button(Button.Props(icon = Some(IconChevronLeft), labeled = LeftLabeled, onClick = p.router.setUrlAndDispatchCB(prevStepPage)), "Prev"))),
+            Label(Label.Props(
+              RunningStep(p.step, p.total).show,
+              size = Size.Large,
+              extraStyles = List(SeqexecStyles.labelAsButton))),
+            // Next step button
+            (p.step < p.total - 1).option(p.router.link(nextStepPage)
+              (Button(Button.Props(icon = Some(IconChevronRight), labeled = RightLabeled, onClick = p.router.setUrlAndDispatchCB(nextStepPage)), "Next")))
             )
           )
+        )
       )
     }.build
 
