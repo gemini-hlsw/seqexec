@@ -152,7 +152,7 @@ object SmartGcalDao {
     */
   def lookup(oid: Observation.Id, loc: Location.Middle): ExpansionResult[ExpandedSteps] =
     for {
-      o <- ObservationDao.selectStatic(oid).injectRight
+      o <- ObservationDao.fetchStatic(oid).injectRight
       s <- lookupʹ(StepDao.selectOne(oid, loc), loc, o._2)
     } yield s
 
@@ -184,7 +184,7 @@ object SmartGcalDao {
       }.void
 
     for {
-      obs   <- ObservationDao.selectStatic(oid).injectRight
+      obs   <- ObservationDao.fetchStatic(oid).injectRight
       steps <- StepDao.selectAll(oid).injectRight
       (locBefore, locAfter) = bounds(steps)
       gcal  <- lookupʹ(MaybeConnectionIO.fromOption(steps.get(loc)), loc, obs._2)

@@ -50,11 +50,17 @@ object Application {
           }
         }
 
-      // Select an observation by id.
+      // Fetch an observation by id.
       case GET -> Root / "api" / "fetch" / "obs" / o as gs =>
         withObsId(o) { oid =>
-          gs.queryObservationById(oid).flatMap { obs =>
-            Ok(obs.asJson)
+          gs.fetchObservationById(oid).flatMap { obs => Ok(obs.asJson) }
+        }
+
+      // Query an observation by id.
+      case GET -> Root / "api" / "query" / "obs" / o as gs =>
+        withObsId(o) { oid =>
+          gs.queryObservationById(oid).flatMap { o =>
+            o.fold(NotFound())(obs => Ok(obs.asJson))
           }
         }
     }

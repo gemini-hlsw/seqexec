@@ -57,7 +57,7 @@ object ProgramDao {
   def selectFull(pid: Program.Id): ConnectionIO[Option[Program]] =
     (for {
       t  <- OptionT(selectFlat(pid))
-      os <- OptionT.liftF(ObservationDao.selectAll(pid))
+      os <- OptionT.liftF(ObservationDao.queryAll(pid))
     } yield Program(pid, t, os)).value
 
   object Statements {

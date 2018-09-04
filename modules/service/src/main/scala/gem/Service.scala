@@ -28,11 +28,21 @@ final class Service[M[_]: Sync: LiftIO] private (private val xa: Transactor[M], 
     }
 
   /**
-   * Constuct a program that yields the `Observation` with the matching observation id.
+   * Constuct a program that yields the `Observation` with the matching
+   * observation id, raising an error if none.
    */
-  def queryObservationById(id: Observation.Id): M[Observation] =
+  def fetchObservationById(id: Observation.Id): M[Observation] =
+    log.log(user, s"fetchObservationById(${id.format})") {
+      ObservationDao.fetch(id).transact(xa)
+    }
+
+  /**
+   * Constuct a program that yields the `Observation` with the matching
+   * observation id wrapped in a `Some`, if any but `None` otherwise.
+   */
+  def queryObservationById(id: Observation.Id): M[Option[Observation]] =
     log.log(user, s"queryObservationById(${id.format})") {
-      ObservationDao.select(id).transact(xa)
+      ObservationDao.query(id).transact(xa)
     }
 
   /**

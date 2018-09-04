@@ -35,98 +35,161 @@ object ObservationDao {
            }.void
     } yield ()
 
-  /** Construct a program to select the specified observation, with the
-    * instrument but not targets nor steps.
-    */
-  def selectFlat(id: Observation.Id): ConnectionIO[(String, Instrument)] =
+  /**
+   * Construct a program to select the specified observation, with the
+   * instrument but not targets nor steps.  Raises an error if the indicated
+   * observation does not exist.
+   */
+  def fetchFlat(id: Observation.Id): ConnectionIO[(String, Instrument)] =
     Statements.selectFlat(id).unique
 
-  /** Construct a program to select the specified observation, with the
-    * targets and instrument type but not steps.
-    */
-  def selectTargets(id: Observation.Id): ConnectionIO[(String, TargetEnvironment)] =
+  /**
+   * Construct a program to query for the specified observation, with the
+   * instrument but not targets nor steps.
+   */
+  def queryFlat(id: Observation.Id): ConnectionIO[Option[(String, Instrument)]] =
+    Statements.selectFlat(id).option
+
+  /**
+   * Construct a program to select the specified observation, with the
+   * targets and instrument type but not steps.  Raises an error if the
+   * indicated observation does not exist.
+   */
+  def fetchTargets(id: Observation.Id): ConnectionIO[(String, TargetEnvironment)] =
     for {
-      o <- selectFlat(id)
+      o <- fetchFlat(id)
       t <- TargetEnvironmentDao.selectObs(id)
     } yield (o._1, t)
 
-  /** Construct a program to select the specified observation, with static
-    * config but not targets nor steps.
-    */
-  def selectStatic(id: Observation.Id): ConnectionIO[(String, StaticConfig)] =
+  /**
+   * Construct a program to query for the specified observation, with the
+   * targets and instrument type but not steps.
+   */
+  def queryTargets(id: Observation.Id): ConnectionIO[Option[(String, TargetEnvironment)]] =
     for {
-      o <- selectFlat(id)
+      o <- queryFlat(id)
+      t <- o.as(TargetEnvironmentDao.selectObs(id)).sequence
+    } yield o.map(_._1).product(t)
+
+  /**
+   * Construct a program to select the specified observation, with static
+   * config but not targets nor steps.  Raises an error if the indicated
+   * observation does not exist.
+   */
+  def fetchStatic(id: Observation.Id): ConnectionIO[(String, StaticConfig)] =
+    for {
+      o <- fetchFlat(id)
       c <- StaticConfigDao.select(id, o._2)
     } yield (o._1, c)
 
-  /** Construct a program to select the specified observation, with static
-    * config and steps but not targets.
-    */
-  def selectConfig(id: Observation.Id): ConnectionIO[(String, StaticConfig, TreeMap[Location.Middle, Step])] =
+  /**
+   * Construct a program to query for the specified observation, with static
+   * config but not targets nor steps.
+   */
+  def queryStatic(id: Observation.Id): ConnectionIO[Option[(String, StaticConfig)]] =
     for {
-      o  <- selectStatic(id)
+      o <- queryFlat(id)
+      c <- o.traverse(f => StaticConfigDao.select(id, f._2))
+    } yield o.map(_._1).product(c)
+
+  /**
+   * Construct a program to select the specified observation, with static
+   * config and steps but not targets.  Raises an error if the indicated
+   * observation does not exist.
+   */
+  def fetchConfig(id: Observation.Id): ConnectionIO[(String, StaticConfig, TreeMap[Location.Middle, Step])] =
+    for {
+      o  <- fetchStatic(id)
       ss <- StepDao.selectAll(id)
     } yield (o._1, o._2, ss)
 
-  /** Construct a program to select a fully specified observation, with targets,
-    * static config and steps.
-    */
-  @SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf"))
-  def select(id: Observation.Id): ConnectionIO[Observation] =
+  /**
+   * Construct a program to query for the specified observation, with static
+   * config and steps but not targets.
+   */
+  def queryConfig(id: Observation.Id): ConnectionIO[Option[(String, StaticConfig, TreeMap[Location.Middle, Step])]] =
     for {
-      o <- selectConfig(id)
+      o  <- queryStatic(id)
+      ss <- StepDao.selectAll(id)
+    } yield o.map(c => (c._1, c._2, ss))
+
+  /**
+   * Construct a program to select a fully specified observation, with targets,
+   * static config and steps.  Raises an error if the indicated observation does
+   * not exist.
+   */
+  def fetch(id: Observation.Id): ConnectionIO[Observation] =
+    for {
+      o <- fetchConfig(id)
       t <- TargetEnvironmentDao.selectObs(id)
     } yield Observation.unsafeAssemble(o._1, t, o._2, o._3.values.toList)
 
-  /** Construct a program to select the all obseravation ids for the specified
-    * science program.
-    */
-  def selectIds(pid: Program.Id): ConnectionIO[List[Observation.Id]] =
+  /**
+   * Construct a program to query for a fully specified observation, with
+   * targets, static config and steps.
+   */
+  def query(id: Observation.Id): ConnectionIO[Option[Observation]] =
+    for {
+      o <- queryConfig(id)
+      t <- o.as(TargetEnvironmentDao.selectObs(id)).sequence
+    } yield o.map2(t) { (oʹ, tʹ) =>
+      Observation.unsafeAssemble(oʹ._1, tʹ, oʹ._2, oʹ._3.values.toList)
+    }
+
+  /**
+   * Construct a program to query for all obseravation ids for the specified
+   * science program.
+   */
+  def queryIds(pid: Program.Id): ConnectionIO[List[Observation.Id]] =
     Statements.selectIds(pid).to[List]
 
-  /** Construct a program to select all observations for the specified science
-    * program, with the instrument but no targets nor steps.
-    */
-  def selectAllFlat(pid: Program.Id): ConnectionIO[TreeMap[Index, (String, Instrument)]] =
+  /**
+   * Construct a program to query for all observations for the specified science
+   * program, with the instrument but no targets nor steps.
+   */
+  def queryAllFlat(pid: Program.Id): ConnectionIO[TreeMap[Index, (String, Instrument)]] =
     Statements.selectAllFlat(pid)
       .map { case (a, b, c) => (a, (b, c)) } // :-\
       .to[List]
       .map(TreeMap.fromList(_))
 
-  /** Construct a program to select all observations for the specified science
-    * program, with the targets and the instrument type, but no steps.
-    */
-  def selectAllTarget(pid: Program.Id): ConnectionIO[TreeMap[Index, (String, TargetEnvironment, Instrument)]] =
-    (selectAllFlat(pid), TargetEnvironmentDao.selectProg(pid)).mapN { (rm, tm) =>
+  /**
+   * Construct a program to query for all observations for the specified science
+   * program, with the targets and the instrument type, but no steps.
+   */
+  def queryAllTarget(pid: Program.Id): ConnectionIO[TreeMap[Index, (String, TargetEnvironment, Instrument)]] =
+    (queryAllFlat(pid), TargetEnvironmentDao.selectProg(pid)).mapN { (rm, tm) =>
       rm.map { case (idx, (s, i)) =>
         idx -> ((s, tm(idx), i))
       }
     }
 
-  /** Construct a program to select all observations for the specified science
-    * program, with the static component but no targets nor steps.
-    */
-  def selectAllStatic(pid: Program.Id): ConnectionIO[TreeMap[Index, (String, StaticConfig)]] =
+  /**
+   * Construct a program to query for all observations for the specified science
+   * program, with the static component but no targets nor steps.
+   */
+  def queryAllStatic(pid: Program.Id): ConnectionIO[TreeMap[Index, (String, StaticConfig)]] =
     for {
-      ids <- selectIds(pid)
-      oss <- ids.traverse(selectStatic)
+      ids <- queryIds(pid)
+      oss <- ids.traverse(fetchStatic)
     } yield TreeMap.fromList(ids.map(_.index).zip(oss))
 
-  /** Construct a program to select all observations for the specified science
-    * program, with static component and steps but not targets.
-    */
-  def selectAllConfig(pid: Program.Id): ConnectionIO[TreeMap[Index, (String, StaticConfig, TreeMap[Location.Middle, Step])]] =
+  /**
+   * Construct a program to query for all observations for the specified science
+   * program, with static component and steps but not targets.
+   */
+  def queryAllConfig(pid: Program.Id): ConnectionIO[TreeMap[Index, (String, StaticConfig, TreeMap[Location.Middle, Step])]] =
     for {
-      ids <- selectIds(pid)
-      oss <- ids.traverse(selectConfig)
+      ids <- queryIds(pid)
+      oss <- ids.traverse(fetchConfig)
     } yield TreeMap.fromList(ids.map(_.index).zip(oss))
 
-  /** Construct a program to select all observations for the specified science
-    * program, with its targets, static component and steps.
-    */
-  @SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf"))
-  def selectAll(pid: Program.Id): ConnectionIO[TreeMap[Index, Observation]] =
-    (selectAllConfig(pid), TargetEnvironmentDao.selectProg(pid)).mapN { (rm, tm) =>
+  /**
+   * Construct a program to query for all observations for the specified science
+   * program, with its targets, static component and steps.
+   */
+  def queryAll(pid: Program.Id): ConnectionIO[TreeMap[Index, Observation]] =
+    (queryAllConfig(pid), TargetEnvironmentDao.selectProg(pid)).mapN { (rm, tm) =>
       rm.map {  case (idx, (t, sc, seq)) =>
         idx -> Observation.unsafeAssemble(t, tm(idx), sc, seq.values.toList)
       }
