@@ -152,14 +152,17 @@ object LogArea {
 
   private val ST = ReactS.Fix[State]
 
-  private val ClipboardWidth = 37
+  private val ClipboardWidth = 37.0
+  private val TimestampMinWidth = 90.1667 + SeqexecStyles.TableBorderWidth
+  private val LevelMinWidth = 59.3333 + SeqexecStyles.TableBorderWidth
+  private val MessageMinWidth = 89.35 + SeqexecStyles.TableBorderWidth
 
   val TimestampColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     column  = TimestampColumn,
     name    = "local",
     label   = "Timestamp",
     visible = true,
-    width   = PercentageColumnWidth.unsafeFromDouble(0.2)
+    width   = PercentageColumnWidth.unsafeFromDouble(0.2, TimestampMinWidth)
   )
 
   val LevelColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
@@ -167,7 +170,7 @@ object LogArea {
     name    = "level",
     label   = "Level",
     visible = true,
-    width   = PercentageColumnWidth.unsafeFromDouble(0.1)
+    width   = PercentageColumnWidth.unsafeFromDouble(0.1, LevelMinWidth)
   )
 
   val MsgColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
@@ -175,7 +178,7 @@ object LogArea {
     name    = "msg",
     label   = "Message",
     visible = true,
-    width   = PercentageColumnWidth.unsafeFromDouble(0.7)
+    width   = PercentageColumnWidth.unsafeFromDouble(0.7, MessageMinWidth)
   )
 
   val ClipboardColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
@@ -183,7 +186,7 @@ object LogArea {
     name    = "clip",
     label   = "",
     visible = true,
-    width   = FixedColumnWidth(ClipboardWidth)
+    width   = FixedColumnWidth.unsafeFromDouble(ClipboardWidth)
   )
 
   private val LogColumnStyle: String = SeqexecStyles.queueText.htmlClass
@@ -277,7 +280,7 @@ object LogArea {
         headerClassName = SeqexecStyles.tableHeader.htmlClass,
         headerHeight = SeqexecStyles.headerHeight
       ),
-      s.tableState.columnBuilder(size.width, colBuilder(b, size)): _*
+      s.tableState.columnBuilder(size, colBuilder(b, size)): _*
     ).vdomElement
   }
 

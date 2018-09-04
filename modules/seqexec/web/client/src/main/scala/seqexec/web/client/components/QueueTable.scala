@@ -39,14 +39,19 @@ import web.client.table._
 object QueueTableBody {
   type Backend = RenderScope[Props, State, Unit]
 
-  private val PhoneCut                 = 400
-  private val LargePhoneCut            = 570
-  private val IconColumnWidth          = 25
-  private val ObsIdColumnWidth         = 140
-  private val StateColumnWidth         = 80
-  private val InstrumentColumnWidth    = 80
-  private val ObsNameColumnWidth       = 140
-  private val TargetNameColumnWidth    = 140
+  private val PhoneCut                 = 400.0
+  private val LargePhoneCut            = 570.0
+  private val IconColumnWidth          = 25.0
+  private val ObsIdColumnWidth         = 140.0
+  private val ObsIdMinWidth            = 66.2167 + SeqexecStyles.TableBorderWidth
+  private val StateColumnWidth         = 80.0
+  private val StateMinWidth            = 53.3667 + SeqexecStyles.TableBorderWidth
+  private val InstrumentColumnWidth    = 80.0
+  private val InstrumentMinWidth       = 90.4333 + SeqexecStyles.TableBorderWidth
+  private val TargetNameColumnWidth    = 140.0
+  private val TargetMinWidth           = 60.0167 + SeqexecStyles.TableBorderWidth
+  private val ObsNameColumnWidth       = 140.0
+  private val ObsNameMinWidth          = 60.0167 + SeqexecStyles.TableBorderWidth
   private val QueueColumnStyle: String = SeqexecStyles.queueTextColumn.htmlClass
 
   sealed trait TableColumn extends Product with Serializable
@@ -66,42 +71,42 @@ object QueueTableBody {
     name = "status",
     label = "",
     visible = true,
-    FixedColumnWidth(IconColumnWidth))
+    FixedColumnWidth.unsafeFromDouble(IconColumnWidth))
 
   val ObsIdColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     ObsIdColumn,
     name = "obsid",
     label = "Obs. ID",
     visible = true,
-    PercentageColumnWidth.Full)
+    PercentageColumnWidth.unsafeFromDouble(1.0, ObsIdMinWidth))
 
   val StateColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     StateColumn,
     name = "state",
     label = "State",
     visible = true,
-    PercentageColumnWidth.Full)
+    PercentageColumnWidth.unsafeFromDouble(1.0, StateMinWidth))
 
   val InstrumentColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     InstrumentColumn,
     name = "instrument",
     label = "Instrument",
     visible = true,
-    PercentageColumnWidth.Full)
-
-  val ObsNameColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
-    ObsNameColumn,
-    name = "obsName",
-    label = "Obs. Name",
-    visible = true,
-    PercentageColumnWidth.Full)
+    PercentageColumnWidth.unsafeFromDouble(1.0, InstrumentMinWidth))
 
   val TargetNameColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     TargetNameColumn,
     name = "target",
     label = "Target",
     visible = true,
-    PercentageColumnWidth.Full)
+    PercentageColumnWidth.unsafeFromDouble(1.0, TargetMinWidth))
+
+  val ObsNameColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
+    ObsNameColumn,
+    name = "obsName",
+    label = "Obs. Name",
+    visible = true,
+    PercentageColumnWidth.unsafeFromDouble(1.0, ObsNameMinWidth))
 
   val all: NonEmptyList[ColumnMeta[TableColumn]] = NonEmptyList.of(
     IconColumnMeta,
@@ -111,7 +116,7 @@ object QueueTableBody {
     TargetNameColumnMeta,
     ObsNameColumnMeta)
 
-  val columnsDefaultWidth: Map[TableColumn, Int] = Map(
+  val columnsDefaultWidth: Map[TableColumn, Double] = Map(
     IconColumn       -> IconColumnWidth,
     ObsIdColumn      -> ObsIdColumnWidth,
     StateColumn      -> StateColumnWidth,
@@ -195,19 +200,19 @@ object QueueTableBody {
       } else {
         val optimalSizes = sequences.foldLeft(columnsDefaultWidth) {
           case (currWidths, SequenceInQueue(id, st, i, _, _, n, t, r)) =>
-            val idWidth = max(currWidths.getOrElse(ObsIdColumn, 0),
+            val idWidth = max(currWidths.getOrElse(ObsIdColumn, ObsIdMinWidth),
                               tableTextWidth(id.format))
             val statusWidth =
-              max(currWidths.getOrElse(StateColumn, 0),
+              max(currWidths.getOrElse(StateColumn, StateMinWidth),
                   tableTextWidth(statusText(st, r)))
             val instrumentWidth =
-              max(currWidths.getOrElse(InstrumentColumn, 0),
+              max(currWidths.getOrElse(InstrumentColumn, InstrumentMinWidth),
                   tableTextWidth(i.show))
-            val obsNameWidth =
-              max(currWidths.getOrElse(ObsNameColumn, 0), tableTextWidth(n))
             val targetNameWidth =
-              max(currWidths.getOrElse(TargetNameColumn, 0),
+              max(currWidths.getOrElse(TargetNameColumn, TargetMinWidth),
                   tableTextWidth(t.getOrElse("")))
+            val obsNameWidth =
+              max(currWidths.getOrElse(ObsNameColumn, ObsNameMinWidth), tableTextWidth(n))
 
             currWidths +
             (ObsIdColumn -> idWidth) +
@@ -226,10 +231,10 @@ object QueueTableBody {
           .sum
         // Normalize based on visibility
         State.columns.modify(_.map {
-          case c @ ColumnMeta(t, _, _, true, PercentageColumnWidth(_)) =>
-            PercentageColumnWidth.fromDouble(optimalSizes.getOrElse(t, 0).toDouble / width)
+          case c @ ColumnMeta(t, _, _, true, PercentageColumnWidth(_, m)) =>
+            PercentageColumnWidth.fromDouble(optimalSizes.getOrElse(t, m).toDouble / width, m)
               .fold(c)(w => c.copy(width = w))
-          case c                                                       =>
+          case c                                                          =>
             c
         })(this)
       }
@@ -267,8 +272,8 @@ object QueueTableBody {
           this
       }
 
-    def applyOffset(column: TableColumn, delta: Double): State =
-      State.tableState.modify(_.applyOffset(column, delta))(this)
+    def applyOffset(column: TableColumn, delta: Double, s: Size): State =
+      State.tableState.modify(_.applyOffset(column, delta, s))(this)
   }
 
   val InitialTableState: State = State(TableState(NotModified, 0, all), None, false)
@@ -470,7 +475,7 @@ object QueueTableBody {
     def resizeRow(c: TableColumn): (String, JsNumber) => Callback =
       (_, dx) => {
         val percentDelta = dx.toDouble / size.width
-        val ns           = b.state.applyOffset(c, percentDelta)
+        val ns           = b.state.applyOffset(c, percentDelta, size)
         b.setState(ns) *> SeqexecCircuit.dispatchCB(
           UpdateQueueTableState(ns.tableState))
       }

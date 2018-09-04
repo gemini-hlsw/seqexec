@@ -87,12 +87,12 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
   implicit val arbOffsetsDisplay: Arbitrary[OffsetsDisplay] =
     Arbitrary {
       for {
-        s <- Gen.option(Gen.posNum[Int])
+        s <- Gen.option(Gen.posNum[Double])
       } yield s.fold(OffsetsDisplay.NoDisplay: OffsetsDisplay)(OffsetsDisplay.DisplayOffsets.apply)
     }
 
   implicit val odCogen: Cogen[OffsetsDisplay] =
-    Cogen[Option[Int]].contramap {
+    Cogen[Option[Double]].contramap {
       case OffsetsDisplay.NoDisplay         => None
       case OffsetsDisplay.DisplayOffsets(i) => Some(i)
     }

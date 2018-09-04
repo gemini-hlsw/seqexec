@@ -20,16 +20,19 @@ trait TableArbitraries {
     Cogen[String].contramap(_.productPrefix)
 
   val genFixedColumnWidth: Gen[FixedColumnWidth] =
-    Gen.posNum[Int].map(FixedColumnWidth.apply)
+    Gen.posNum[Double].map(FixedColumnWidth.apply)
 
   implicit val fixedColumnWidthArb: Arbitrary[FixedColumnWidth] =
     Arbitrary(genFixedColumnWidth)
 
   implicit val fixedColumnWidthCogen: Cogen[FixedColumnWidth] =
-    Cogen[Int].contramap(_.width)
+    Cogen[Double].contramap(_.width)
 
   val genPercentageColumnWidth: Gen[PercentageColumnWidth] =
-    Gen.choose[Double](0, 1).map(PercentageColumnWidth.apply)
+    for {
+      p <- Gen.choose[Double](0, 1)
+      m <- Gen.choose[Double](0, 100)
+    } yield PercentageColumnWidth(p, m)
 
   implicit val percentageColumnWidthArb: Arbitrary[PercentageColumnWidth] =
     Arbitrary(genPercentageColumnWidth)

@@ -12,15 +12,15 @@ trait utils {
   type Ctx2D  = dom.CanvasRenderingContext2D
 
   @SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf"))
-  def textWidth(text: String, font: String): Int = {
+  def textWidth(text: String, font: String): Double = {
     val canvas = dom.document.createElement("canvas").asInstanceOf[Canvas]
     val ctx    = canvas.getContext("2d").asInstanceOf[Ctx2D]
     ctx.font = font
     val metrics = ctx.measureText(text)
-    math.round(metrics.width.toFloat)
+    metrics.width
   }
 
-  def tableTextWidth(text: String): Int = textWidth(text, "bold 14px sans-serif")
+  def tableTextWidth(text: String): Double = textWidth(text, "bold 14px sans-serif")
 
 }
 

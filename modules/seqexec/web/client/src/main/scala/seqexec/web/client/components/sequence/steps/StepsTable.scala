@@ -33,18 +33,18 @@ import web.client.style._
 import web.client.table._
 
 object ColWidths {
-  val ControlWidth: Int       = 40
-  val IdxWidth: Int           = 50
-  val StateWidth: Int         = 200
-  val StatusWidth: Int        = 100
-  val OffsetWidthBase: Int    = 75
-  val ExposureWidth: Int      = 75
-  val DisperserWidth: Int     = 100
-  val ObservingModeWidth: Int = 180
-  val FilterWidth: Int        = 100
-  val FPUWidth: Int           = 100
-  val ObjectTypeWidth: Int    = 75
-  val SettingsWidth: Int      = 34
+  val ControlWidth: Double       = 40
+  val IdxWidth: Double           = 50
+  val StateWidth: Double         = 200
+  val StatusWidth: Double        = 100
+  val OffsetWidthBase: Double    = 75
+  val ExposureWidth: Double      = 75
+  val DisperserWidth: Double     = 100
+  val ObservingModeWidth: Double = 180
+  val FilterWidth: Double        = 100
+  val FPUWidth: Double           = 100
+  val ObjectTypeWidth: Double    = 75
+  val SettingsWidth: Double      = 34
 }
 
 /**
@@ -65,7 +65,7 @@ object StepsTable {
     name = "status",
     label = "",
     visible = true,
-    FixedColumnWidth(ColWidths.ControlWidth))
+    FixedColumnWidth.unsafeFromDouble(ColWidths.ControlWidth))
 
   val all: NonEmptyList[ColumnMeta[TableColumn]] = NonEmptyList.of(IconColumnMeta)
 
@@ -322,7 +322,7 @@ object StepsTable {
           )))
 
   def offsetColumn(p: Props,
-                   offsetVisible: Boolean): (Option[Table.ColumnArg], Int) =
+                   offsetVisible: Boolean): (Option[Table.ColumnArg], Double) =
     p.offsetsDisplay match {
       case OffsetsDisplay.DisplayOffsets(x) if p.showOffsets =>
         val width = ColWidths.OffsetWidthBase + x
@@ -468,12 +468,12 @@ object StepsTable {
     val colsWidth =
       ColWidths.ControlWidth +
         ColWidths.IdxWidth +
-        offsetCol.fold(0)(_ => offsetWidth) +
-        exposureCol.fold(0)(_ => ColWidths.ExposureWidth) +
-        disperserCol.fold(0)(_ => ColWidths.DisperserWidth) +
-        filterCol.fold(0)(_ => ColWidths.FilterWidth) +
-        fpuCol.fold(0)(_ => ColWidths.FPUWidth) +
-        observingModeCol.fold(0)(_ => ColWidths.ObservingModeWidth) +
+        offsetCol.fold(0.0)(_ => offsetWidth) +
+        exposureCol.fold(0.0)(_ => ColWidths.ExposureWidth) +
+        disperserCol.fold(0.0)(_ => ColWidths.DisperserWidth) +
+        filterCol.fold(0.0)(_ => ColWidths.FilterWidth) +
+        fpuCol.fold(0.0)(_ => ColWidths.FPUWidth) +
+        observingModeCol.fold(0.0)(_ => ColWidths.ObservingModeWidth) +
         ColWidths.ObjectTypeWidth +
         ColWidths.SettingsWidth
     val controlWidth = s.width - colsWidth
