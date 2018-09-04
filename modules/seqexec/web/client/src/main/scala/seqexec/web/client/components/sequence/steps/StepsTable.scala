@@ -6,14 +6,12 @@ package seqexec.web.client.components.sequence.steps
 import cats.Eq
 import cats.data.NonEmptyList
 import cats.implicits._
-import diode.react.ModelProxy
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.component.builder.Lifecycle.RenderScope
 import japgolly.scalajs.react.extra.Reusability
-import japgolly.scalajs.react.CatsReact._
 import japgolly.scalajs.react.raw.JsNumber
 import monocle.Lens
 import monocle.macros.GenLens
@@ -29,6 +27,7 @@ import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.components.sequence.steps.OffsetFns._
 import seqexec.web.client.semanticui.elements.icon.Icon._
 import seqexec.web.client.semanticui.{Size => SSize}
+import seqexec.web.client.reusability._
 import react.virtualized._
 import web.client.style._
 import web.client.table._
@@ -97,10 +96,10 @@ object StepsTable {
 
   final case class Props(router: RouterCtl[SeqexecPages],
                          canOperate: Boolean,
-                         stepsTable: ModelProxy[StepsTableAndStatusFocus],
+                         stepsTable: StepsTableAndStatusFocus,
                          onStepToRun: Int => Callback) {
-    def status: ClientStatus           = stepsTable().status
-    def steps: Option[StepsTableFocus] = stepsTable().stepsTable
+    def status: ClientStatus           = stepsTable.status
+    val steps: Option[StepsTableFocus] = stepsTable.stepsTable
     val stepsList: List[Step]          = steps.foldMap(_.steps)
     def rowCount: Int                  = stepsList.length
 
@@ -108,7 +107,7 @@ object StepsTable {
       steps.flatMap(_.steps.lift(idx)).fold(StepRow.Zero)(StepRow.apply)
 
     val configTableState: TableState[StepConfigTable.TableColumn] =
-      stepsTable().configTableState
+      stepsTable.configTableState
     // Find out if offsets should be displayed
     val offsetsDisplay: OffsetsDisplay = stepsList.offsetsDisplay
     private def showProp(p: InstrumentProperties): Boolean =
@@ -145,8 +144,7 @@ object StepsTable {
     val InitialTableState: State = State(TableState(NotModified, 0, all), None)
   }
 
-  implicit val stsfReuse: Reusability[StepsTableAndStatusFocus] = Reusability.byEq
-  implicit val propsReuse: Reusability[Props] = Reusability.by(x => (x.canOperate, x.stepsTable()))
+  implicit val propsReuse: Reusability[Props] = Reusability.by(x => (x.canOperate, x.stepsTable))
   implicit val stateReuse: Reusability[State] = Reusability.by(_.breakpointHover)
 
   val controlHeaderRenderer: HeaderRenderer[js.Object] = (_, _, _, _, _, _) =>

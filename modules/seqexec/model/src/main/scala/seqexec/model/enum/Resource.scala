@@ -33,6 +33,7 @@ object Resource {
 
   implicit val ordering: Ordering[Resource] =
     order.toOrdering
+
 }
 
 sealed abstract class Instrument(ordinal: Int, label: String)
@@ -51,7 +52,7 @@ object Instrument {
   case object NIFS  extends Instrument(19, "NIFS")
 
   implicit val equal: Eq[Instrument] =
-    Eq.fromUniversalEquals
+    Eq.by(x => x: Resource)
 
   implicit val show: Show[Instrument] =
     Show.show(_.label)

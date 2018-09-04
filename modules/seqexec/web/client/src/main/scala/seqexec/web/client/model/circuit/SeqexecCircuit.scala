@@ -56,7 +56,8 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
     zoomRW(m => TableStates(m.uiModel.queueTableState, m.uiModel.configTableState)) ((m, v) => m.copy(uiModel = m.uiModel.copy(queueTableState = v.queueTable, configTableState = v.stepConfigTable)))
 
   // Reader to indicate the allowed interactions
-  val statusReader: ModelR[SeqexecAppRootModel, ClientStatus] = zoom(m => ClientStatus(m.uiModel.user, m.ws, m.uiModel.syncInProgress))
+  val statusReader: ModelR[SeqexecAppRootModel, ClientStatus] =
+    this.zoomL(ClientStatus.clientStatusFocusL)
 
   // Reader to update the sequences in both parts of the model being used
   val sequencesReaderRW: ModelRW[SeqexecAppRootModel, SequencesFocus] =
@@ -138,7 +139,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   def stepsTableReader(id: Observation.Id): ModelR[SeqexecAppRootModel, StepsTableAndStatusFocus] =
     statusReader.zip(stepsTableReaderF(id)).zip(configTableState).zoom {
       case ((s, f), t) => StepsTableAndStatusFocus(s, f, t)
-    }
+    }(fastEq[StepsTableAndStatusFocus])
 
   def sequenceControlReader(obsId: Observation.Id): ModelR[SeqexecAppRootModel, SequenceControlFocus] =
     statusReader.zip(sequenceTab(obsId)).zoom {

@@ -8,19 +8,29 @@ import cats.implicits._
 import seqexec.model.enum._
 
 sealed trait Step {
-  val id: StepId
-  val config: StepConfig
-  val status: StepState
-  val breakpoint: Boolean
-  val skip: Boolean
-  val fileId: Option[dhs.ImageFileId]
+  def id: StepId
+  def config: StepConfig
+  def status: StepState
+  def breakpoint: Boolean
+  def skip: Boolean
+  def fileId: Option[dhs.ImageFileId]
 }
 object Step {
   val Zero: Step = StandardStep(id = -1, config = Map.empty, status = StepState.Pending, breakpoint = false, skip = false, fileId = None, configStatus = Nil, observeStatus = ActionStatus.Pending)
 
   implicit val equal: Eq[Step] =
-    Eq.by { x =>
-      (x.id, x.config, x.status, x.breakpoint, x.skip, x.fileId)
+    Eq.instance {
+      case (x: StandardStep, y: StandardStep) =>
+        (x.id === y.id) &&
+        (x.config === y.config) &&
+        (x.status === y.status) &&
+        (x.breakpoint === y.breakpoint) &&
+        (x.skip === y.skip) &&
+        (x.fileId === y.fileId) &&
+        (x.configStatus === y.configStatus) &&
+        (x.observeStatus === y.observeStatus)
+      case _ =>
+        false
     }
 
   implicit class StepOps(val s: Step) extends AnyVal {
@@ -85,9 +95,6 @@ final case class StandardStep(
   observeStatus: ActionStatus
 ) extends Step
 object StandardStep {
-  implicit val equal: Eq[StandardStep] =
-    Eq.by { x =>
-      (x.id, x.config, x.status, x.breakpoint, x.skip, x.fileId, x.configStatus, x.observeStatus)
-    }
+  implicit val equal: Eq[StandardStep] = Eq.by(x => x: Step)
 }
 // Other kinds of Steps to be defined.

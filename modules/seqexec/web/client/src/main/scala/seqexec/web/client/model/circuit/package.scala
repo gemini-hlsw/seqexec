@@ -35,7 +35,10 @@ package circuit {
    * This lets us use monocle lenses to create diode ModelRW instances
    */
   class CircuitOps[M <: AnyRef](circuit: Circuit[M]) {
-    def zoomRWL[A: Eq](lens: Lens[M, A]): ModelRW[M, A] = circuit.zoomRW(lens.get)((m, a) => lens.set(a)(m))(fastEq[A])
+    def zoomRWL[A: Eq](lens: Lens[M, A]): ModelRW[M, A] =
+      circuit.zoomRW(lens.get)((m, a) => lens.set(a)(m))(fastEq[A])
+    def zoomL[A: Eq](lens: Lens[M, A]): ModelR[M, A] =
+      circuit.zoom[A](lens.get)(fastEq[A])
   }
 
   // All these classes are focused views of the root model. They are used to only update small sections of the
@@ -107,7 +110,7 @@ package circuit {
       Eq.by(x => (x.instrument, x.id, x.sequenceSelected, x.logDisplayed))
   }
 
-  final case class SequenceInfoFocus(isLogged: Boolean, obsName: Option[String], observer: Option[Observer], status: Option[SequenceState], targetName: Option[TargetName])
+  final case class SequenceInfoFocus(isLogged: Boolean, obsName: Option[String], observer: Option[Observer], status: Option[SequenceState], targetName: Option[TargetName]) extends UseValueEq
 
   object SequenceInfoFocus{
     implicit val eq: Eq[SequenceInfoFocus] =

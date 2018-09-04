@@ -5,6 +5,7 @@ package seqexec.web.client
 
 import diode.Action
 import cats.Show
+import cats.implicits._
 import gem.Observation
 import gem.enum.Site
 import seqexec.model._
@@ -109,7 +110,7 @@ object actions {
 
   implicit val show: Show[Action] = Show.show {
     case s @ ServerMessage(u @ SeqexecModelUpdate(view)) =>
-      s"${s.getClass.getSimpleName}(${u.getClass.getSimpleName}, loaded: '${view.loaded.mkString(",")}', (${view.queue.map(s => (s"id: ${s.id.format}", s"steps: ${s.steps.length}", s.steps.slice(0, scala.math.min(s.steps.length, 20)).collect(standardStep)))}))"
+      s"${s.getClass.getSimpleName}(${u.getClass.getSimpleName}, loaded: '${view.loaded.mkString(",")}', (${view.queue.map(s => (s"id: ${s.id.format}", s"steps: ${s.steps.length}", s.steps.filter(_.status === StepState.Running).slice(0, scala.math.min(s.steps.length, 20)).collect(standardStep)))}))"
     case s @ RememberCompleted(view)                     =>
       s"${s.getClass.getSimpleName}(${view.id})"
     case a                                               =>

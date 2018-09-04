@@ -62,4 +62,6 @@ final case class SeqexecAppRootModel(ws: WebSocketConnection, site: Option[Site]
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object SeqexecAppRootModel {
   val Initial: SeqexecAppRootModel = SeqexecAppRootModel(WebSocketConnection.Empty, None, None, SeqexecUIModel.Initial)
+
+  implicit val eq: Eq[SeqexecAppRootModel] = Eq.by(x => (x.ws, x.site, x.clientId, x.uiModel))
 }

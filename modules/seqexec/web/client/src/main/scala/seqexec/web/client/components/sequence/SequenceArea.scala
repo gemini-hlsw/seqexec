@@ -62,7 +62,7 @@ object SequenceStepsTableContainer {
         ^.height := "100%",
         toolbar(p),
         p.stepsConnect(r =>
-          StepsTable(StepsTable.Props(p.router, p.statusAndStep.isLogged, r, x => $.runState(updateStepToRun(x)))))
+          StepsTable(StepsTable.Props(p.router, p.statusAndStep.isLogged, r(), x => $.runState(updateStepToRun(x)))))
       )
     }
     .configure(Reusability.shouldComponentUpdate)

@@ -6,7 +6,9 @@ package seqexec.web.client
 import cats.data.NonEmptyList
 import diode.data._
 import gem.arb.ArbObservation
+import gem.arb.ArbEnumerated._
 import gem.Observation
+import gem.enum.Site
 import seqexec.model.enum.Instrument
 import seqexec.model.{ ClientID, Observer, TargetName, SequencesQueue, SequenceState, SequenceView }
 import seqexec.model.{ Notification, Step, UserDetails }
@@ -103,8 +105,16 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
   implicit val wsCogen: Cogen[WebSocket] =
     Cogen[String].contramap(_.url)
 
+  implicit def pendingStaleGen[A: Arbitrary]: Arbitrary[PendingStale[A]] =
+    Arbitrary {
+      for {
+        a <- arbitrary[A]
+        t <- Gen.posNum[Long]
+      } yield PendingStale(a, t)
+    }
+
   implicit def potArbitrary[A: Arbitrary]: Arbitrary[Pot[A]] =
-    Arbitrary(Gen.oneOf(Gen.const(Empty), Gen.const(Unavailable), arbitrary[A].map(Ready.apply), Gen.const(Pending()), arbitrary[A].map(PendingStale(_)), arbitrary[Throwable].map(Failed(_)), arbitrary[(A, Throwable)].map{ case (a, t) => FailedStale(a, t)}))
+    Arbitrary(Gen.oneOf(Gen.const(Empty), Gen.const(Unavailable), arbitrary[A].map(Ready.apply), Gen.const(Pending()), arbitrary[PendingStale[A]], arbitrary[Throwable].map(Failed(_)), arbitrary[(A, Throwable)].map{ case (a, t) => FailedStale(a, t)}))
 
   implicit def potCogen[A: Cogen]: Cogen[Pot[A]] =
     Cogen[Option[Option[Either[Long, Either[A, Either[(A, Long), Either[Throwable, (A, Throwable)]]]]]]].contramap {
@@ -392,4 +402,27 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
 
   implicit val sodLocationFocusogen: Cogen[SODLocationFocus] =
     Cogen[(Pages.SeqexecPages, SequencesOnDisplay, Option[ClientID])].contramap(x => (x.location, x.sod, x.clientId))
+
+  implicit val arbInitialSyncFocus: Arbitrary[InitialSyncFocus] =
+    Arbitrary {
+      for {
+        navLocation        <- arbitrary[Pages.SeqexecPages]
+        sequencesOnDisplay <- arbitrary[SequencesOnDisplay]
+        firstLoad          <- arbitrary[Boolean]
+      } yield InitialSyncFocus(navLocation, sequencesOnDisplay, firstLoad)
+    }
+
+  implicit val initialSyncFocusCogen: Cogen[InitialSyncFocus] =
+    Cogen[(Pages.SeqexecPages, SequencesOnDisplay, Boolean)].contramap(x => (x.location, x.sod, x.firstLoad))
+
+  implicit val arbSeqexecAppRootModel: Arbitrary[SeqexecAppRootModel] =
+    Arbitrary {
+      for {
+        ws       <- arbitrary[WebSocketConnection]
+        site     <- arbitrary[Option[Site]]
+        clientId <- arbitrary[Option[ClientID]]
+        uiModel  <- arbitrary[SeqexecUIModel]
+      } yield SeqexecAppRootModel(ws, site, clientId, uiModel)
+    }
+
 }
