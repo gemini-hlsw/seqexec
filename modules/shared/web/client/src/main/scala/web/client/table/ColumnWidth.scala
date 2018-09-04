@@ -10,25 +10,25 @@ import japgolly.scalajs.react.CatsReact._
 import mouse.boolean._
 
 sealed trait ColumnWidth
-sealed abstract class FixedColumnWidth(val width: Double)
-    extends ColumnWidth {
+sealed abstract class FixedColumnWidth(val width: Double) extends ColumnWidth {
   assert(width >= 0)
 
   override def toString: String = s"Fixed(${width}px)"
 }
-sealed abstract class PercentageColumnWidth(val percentage: Double,
-                                            val minWidth:   Double)
+sealed abstract class VariableColumnWidth(val percentage: Double,
+                                          val minWidth:   Double)
     extends ColumnWidth {
-  assert(percentage >= 0 && percentage <= 1)
+  assert(percentage > 0 && percentage <= 1)
   assert(minWidth >= 0)
-  override def toString: String = s"Percentage(${percentage}%, ${minWidth}px)"
+  override def toString: String =
+    s"Variable(${percentage}%, ${minWidth}px)"
 }
 
 object ColumnWidth {
   implicit val eq: Eq[ColumnWidth] =
-    Eq[Either[FixedColumnWidth, PercentageColumnWidth]].contramap {
-      case x: FixedColumnWidth      => x.asLeft
-      case x: PercentageColumnWidth => x.asRight
+    Eq[Either[FixedColumnWidth, VariableColumnWidth]].contramap {
+      case x: FixedColumnWidth    => x.asLeft
+      case x: VariableColumnWidth => x.asRight
     }
 
   implicit val reuse: Reusability[ColumnWidth] = Reusability.byEq
@@ -48,26 +48,37 @@ object FixedColumnWidth {
     Some(fc.width)
 }
 
-object PercentageColumnWidth {
-  implicit val eqPcw: Eq[PercentageColumnWidth] =
+object VariableColumnWidth {
+  implicit val eqPcw: Eq[VariableColumnWidth] =
     Eq.by(x => (x.percentage, x.minWidth))
-  private[table] def apply(p: Double, mp: Double) =
-    new PercentageColumnWidth(p, mp) {}
 
-  def fromDouble(percentage: Double,
-                 minWidth:   Double): Option[PercentageColumnWidth] =
-    (percentage >= 0 && percentage <= 1 && minWidth >= 0)
-      .option(PercentageColumnWidth(percentage, minWidth))
+  private final case class VariableColumnWidthI(override val percentage: Double,
+                                                override val minWidth:   Double)
+      extends VariableColumnWidth(percentage, minWidth)
+
+  private[table] def apply(
+    percentage: Double,
+    minWidth:   Double
+  ): VariableColumnWidth =
+    VariableColumnWidthI(percentage, minWidth)
+
+  def fromDouble(
+    percentage: Double,
+    minWidth:   Double
+  ): Option[VariableColumnWidth] =
+    (percentage > 0 && percentage <= 1 && minWidth > 0)
+      .option(VariableColumnWidth(percentage, minWidth))
 
   def unsafeFromDouble(percentage: Double,
-                       minWidth:   Double): PercentageColumnWidth =
+                       minWidth:   Double): VariableColumnWidth =
     fromDouble(percentage, minWidth).getOrElse(
       sys.error(s"Incorrect percentage/minWidth value $percentage/$minWidth"))
 
-  def unapply(pc: PercentageColumnWidth): Option[(Double, Double)] =
+  def unapply(
+    pc: VariableColumnWidth
+  ): Option[(Double, Double)] =
     Some((pc.percentage, pc.minWidth))
 
-  val Full: PercentageColumnWidth = PercentageColumnWidth(1, 0)
-  val Zero: PercentageColumnWidth = PercentageColumnWidth(0, 0)
-  val Half: PercentageColumnWidth = PercentageColumnWidth(0.5, 0)
+  val Full: VariableColumnWidth = VariableColumnWidth(1, 1)
+  val Half: VariableColumnWidth = VariableColumnWidth(0.5, 1)
 }

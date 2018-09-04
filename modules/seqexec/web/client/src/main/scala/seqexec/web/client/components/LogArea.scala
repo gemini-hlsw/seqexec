@@ -7,14 +7,15 @@ import cats.Eq
 import cats.data.NonEmptyList
 import cats.implicits._
 import mouse.all._
-import diode.react.ModelProxy
 import gem.enum.Site
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.component.builder.Lifecycle.RenderScope
+import japgolly.scalajs.react.extra.Reusability
 import japgolly.scalajs.react.CatsReact._
 import japgolly.scalajs.react.vdom.html_<^._
-import java.time.{Instant, LocalDateTime}
+import java.time.Instant
+import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import react.virtualized._
 import react.clipboard._
@@ -22,13 +23,18 @@ import scala.scalajs.js
 import seqexec.model.enum.ServerLogLevel
 import seqexec.model.events._
 import seqexec.web.client.semanticui.elements.checkbox.Checkbox
-import seqexec.web.client.semanticui.elements.icon.Icon.{IconCopy, IconAngleDoubleDown, IconAngleDoubleUp}
+import seqexec.web.client.semanticui.elements.icon.Icon.IconCopy
+import seqexec.web.client.semanticui.elements.icon.Icon.IconAngleDoubleDown
+import seqexec.web.client.semanticui.elements.icon.Icon.IconAngleDoubleUp
 import seqexec.web.client.semanticui.elements.button.Button
 import seqexec.web.client.semanticui.elements.button.Button.LeftLabeled
-import seqexec.web.client.semanticui.{Size => SSize}
-import seqexec.web.client.model.{GlobalLog, SectionOpen}
+import seqexec.web.client.semanticui.{ Size => SSize }
+import seqexec.web.client.model.GlobalLog
+import seqexec.web.client.model.SectionOpen
 import seqexec.web.client.actions.ToggleLogArea
 import seqexec.web.common.FixedLengthBuffer
+import seqexec.web.client.reusability._
+import seqexec.web.client.circuit.SeqexecCircuit
 import web.client.style._
 import web.client.table._
 
@@ -40,14 +46,12 @@ object CopyLogToClipboard {
     .builder[String]("CopyLogToClipboard")
     .stateless
     .render_P { p =>
-      // Callback
-      val onCopy: OnCopy = (_, _) => Callback.log(s"Copied $p")
       CopyToClipboard(
-        CopyToClipboard.props(p, onCopy = onCopy),
-        <.div(
-          IconCopy.copyIcon(link = true,
-                            extraStyles = List(SeqexecStyles.logIconRow))))
+        CopyToClipboard.props(p),
+        <.div(IconCopy.copyIcon(link        = true,
+                                extraStyles = List(SeqexecStyles.logIconRow))))
     }
+    .configure(Reusability.shouldComponentUpdate)
     .build
 
   def apply(p: String): Unmounted[String, Unit, Unit] = component(p)
@@ -75,27 +79,27 @@ object LogArea {
   // ScalaJS defined trait
   // scalastyle:off
   trait LogRow extends js.Object {
-    var local    : String // Formatted string
+    var local: String // Formatted string
     var timestamp: Instant
-    var level    : ServerLogLevel
-    var msg      : String
-    var clip     : String
+    var level: ServerLogLevel
+    var msg: String
+    var clip: String
   }
 
   // scalastyle:on
   object LogRow {
 
     @SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf"))
-    def apply(local    : String,
+    def apply(local:     String,
               timestamp: Instant,
-              level    : ServerLogLevel,
-              msg      : String): LogRow = {
+              level:     ServerLogLevel,
+              msg:       String): LogRow = {
       val p = (new js.Object).asInstanceOf[LogRow]
-      p.local = local
+      p.local     = local
       p.timestamp = timestamp
-      p.level = level
-      p.msg = msg
-      p.clip = ""
+      p.level     = level
+      p.msg       = msg
+      p.clip      = ""
       p
     }
 
@@ -105,8 +109,8 @@ object LogArea {
     val Default: LogRow = apply("", Instant.MAX, ServerLogLevel.INFO, "")
   }
 
-  final case class Props(site: Site, log: ModelProxy[GlobalLog]) {
-    val reverseLog: FixedLengthBuffer[ServerLogMessage] = log().log.reverse
+  final case class Props(site: Site, log: GlobalLog) {
+    val reverseLog: FixedLengthBuffer[ServerLogMessage] = log.log.reverse
 
     // Filter according to the levels on the controls
     private def levelFilter(s: State)(m: ServerLogMessage): Boolean =
@@ -127,7 +131,7 @@ object LogArea {
   }
 
   final case class State(selectedLevels: Map[ServerLogLevel, Boolean],
-                         tableState: TableState[TableColumn]) {
+                         tableState:     TableState[TableColumn]) {
 
     def updateLevel(level: ServerLogLevel, value: Boolean): State =
       copy(selectedLevels + (level -> value))
@@ -136,15 +140,21 @@ object LogArea {
       selectedLevels.getOrElse(level, false)
   }
 
+  implicit val propsReuse: Reusability[Props] =
+    Reusability.derive[Props]
+  implicit val tcReuse: Reusability[TableColumn] = Reusability.byRef
+  implicit val stateReuse: Reusability[State] =
+    Reusability.derive[State]
+
   object State {
 
     val DefaultTableState: TableState[TableColumn] = TableState[TableColumn](
       userModified   = NotModified,
       scrollPosition = 0,
-      columns        = NonEmptyList.of(TimestampColumnMeta,
-                                       LevelColumnMeta,
-                                       MsgColumnMeta,
-                                       ClipboardColumnMeta))
+      columns = NonEmptyList.of(TimestampColumnMeta,
+                                LevelColumnMeta,
+                                MsgColumnMeta,
+                                ClipboardColumnMeta))
 
     val Default: State =
       State(ServerLogLevel.all.map(_ -> true).toMap, DefaultTableState)
@@ -152,17 +162,17 @@ object LogArea {
 
   private val ST = ReactS.Fix[State]
 
-  private val ClipboardWidth = 37.0
+  private val ClipboardWidth    = 37.0
   private val TimestampMinWidth = 90.1667 + SeqexecStyles.TableBorderWidth
-  private val LevelMinWidth = 59.3333 + SeqexecStyles.TableBorderWidth
-  private val MessageMinWidth = 89.35 + SeqexecStyles.TableBorderWidth
+  private val LevelMinWidth     = 59.3333 + SeqexecStyles.TableBorderWidth
+  private val MessageMinWidth   = 89.35 + SeqexecStyles.TableBorderWidth
 
   val TimestampColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     column  = TimestampColumn,
     name    = "local",
     label   = "Timestamp",
     visible = true,
-    width   = PercentageColumnWidth.unsafeFromDouble(0.2, TimestampMinWidth)
+    width   = VariableColumnWidth.unsafeFromDouble(0.2, TimestampMinWidth)
   )
 
   val LevelColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
@@ -170,7 +180,7 @@ object LogArea {
     name    = "level",
     label   = "Level",
     visible = true,
-    width   = PercentageColumnWidth.unsafeFromDouble(0.1, LevelMinWidth)
+    width   = VariableColumnWidth.unsafeFromDouble(0.1, LevelMinWidth)
   )
 
   val MsgColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
@@ -178,7 +188,7 @@ object LogArea {
     name    = "msg",
     label   = "Message",
     visible = true,
-    width   = PercentageColumnWidth.unsafeFromDouble(0.7, MessageMinWidth)
+    width   = VariableColumnWidth.unsafeFromDouble(0.7, MessageMinWidth)
   )
 
   val ClipboardColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
@@ -213,20 +223,19 @@ object LogArea {
           ))
       case ColumnRenderArgs(ColumnMeta(MsgColumn, name, label, _, _), _, width, _) =>
         Column(
-          Column.propsNoFlex(
-            width     = width,
-            dataKey   = name,
-            label     = label,
-            className = LogColumnStyle))
+          Column.propsNoFlex(width     = width,
+                             dataKey   = name,
+                             label     = label,
+                             className = LogColumnStyle))
       case ColumnRenderArgs(ColumnMeta(c, name, label, _, _), _, width, _) =>
         Column(
           Column.propsNoFlex(
-            width          = width,
-            dataKey        = name,
-            label          = label,
+            width   = width,
+            dataKey = name,
+            label   = label,
             headerRenderer = resizableHeaderRenderer(b.state.tableState
               .resizeRow(c, size, x => b.runState(updateTableState(x)))),
-            className      = LogColumnStyle
+            className = LogColumnStyle
           ))
     }
 
@@ -271,16 +280,18 @@ object LogArea {
             "No log entries"
         ),
         overscanRowCount = SeqexecStyles.overscanRowCount,
-        height = 200,
-        rowCount = p.rowCount(s),
-        rowHeight = SeqexecStyles.rowHeight,
-        rowClassName = rowClassName(b) _,
-        width = size.width,
-        rowGetter = p.rowGetter(s) _,
-        headerClassName = SeqexecStyles.tableHeader.htmlClass,
-        headerHeight = SeqexecStyles.headerHeight
+        height           = 200,
+        rowCount         = p.rowCount(s),
+        rowHeight        = SeqexecStyles.rowHeight,
+        rowClassName     = rowClassName(b) _,
+        width            = size.width,
+        rowGetter        = p.rowGetter(s) _,
+        headerClassName  = SeqexecStyles.tableHeader.htmlClass,
+        headerHeight     = SeqexecStyles.headerHeight
       ),
-      s.tableState.columnBuilder(size, colBuilder(b, size)): _*
+      s.tableState.columnBuilder(size,
+                                 TableState.AllColsVisible,
+                                 colBuilder(b, size)): _*
     ).vdomElement
   }
 
@@ -291,10 +302,10 @@ object LogArea {
     .builder[Props]("LogArea")
     .initialState(State.Default)
     .renderPS { ($, p, s) =>
-      val toggleIcon = (p.log().display === SectionOpen)
+      val toggleIcon = (p.log.display === SectionOpen)
         .fold(IconAngleDoubleDown, IconAngleDoubleUp)
       val toggleText =
-        (p.log().display === SectionOpen).fold("Hide Log", "Show Log")
+        (p.log.display === SectionOpen).fold("Hide Log", "Show Log")
       <.div(
         ^.cls := "ui sixteen wide column",
         SeqexecStyles.logSegment,
@@ -312,7 +323,8 @@ object LogArea {
                                     labeled = LeftLabeled,
                                     compact = true,
                                     size    = SSize.Small,
-                                    onClick = p.log.dispatchCB(ToggleLogArea)),
+                                    onClick =
+                                      SeqexecCircuit.dispatchCB(ToggleLogArea)),
                        toggleText)
               ),
               <.div(
@@ -334,20 +346,20 @@ object LogArea {
                     }
                   )
                 )
-              ).when(p.log().display === SectionOpen)
+              ).when(p.log.display === SectionOpen)
             ),
             <.div(
               ^.cls := "ui row",
               SeqexecStyles.logTableRow,
               AutoSizer(AutoSizer.props(table($), disableHeight = true))
-            ).when(p.log().display === SectionOpen)
+            ).when(p.log.display === SectionOpen)
           )
         )
       )
     }
+    .configure(Reusability.shouldComponentUpdate)
     .build
 
-  def apply(site: Site,
-            p: ModelProxy[GlobalLog]): Unmounted[Props, State, Unit] =
+  def apply(site: Site, p: GlobalLog): Unmounted[Props, State, Unit] =
     component(Props(site, p))
 }

@@ -28,26 +28,26 @@ trait TableArbitraries {
   implicit val fixedColumnWidthCogen: Cogen[FixedColumnWidth] =
     Cogen[Double].contramap(_.width)
 
-  val genPercentageColumnWidth: Gen[PercentageColumnWidth] =
+  val genVariableColumnWidth: Gen[VariableColumnWidth] =
     for {
-      p <- Gen.choose[Double](0, 1)
+      w <- Gen.choose[Double](0, 100)
       m <- Gen.choose[Double](0, 100)
-    } yield PercentageColumnWidth(p, m)
+    } yield VariableColumnWidth.unsafeFromDouble(w, m)
 
-  implicit val percentageColumnWidthArb: Arbitrary[PercentageColumnWidth] =
-    Arbitrary(genPercentageColumnWidth)
+  implicit val VariableColumnWidthArb: Arbitrary[VariableColumnWidth] =
+    Arbitrary(genVariableColumnWidth)
 
-  implicit val percentColumnWidthCogen: Cogen[PercentageColumnWidth] =
-    Cogen[Double].contramap(_.percentage)
+  implicit val percentColumnWidthCogen: Cogen[VariableColumnWidth] =
+    Cogen[(Double, Double)].contramap(x => (x.percentage, x.minWidth))
 
   implicit val arbColumnWidth: Arbitrary[ColumnWidth] = Arbitrary {
-    Gen.oneOf(genFixedColumnWidth, genPercentageColumnWidth)
+    Gen.oneOf(genFixedColumnWidth, genVariableColumnWidth)
   }
 
   implicit val columnWidthCogen: Cogen[ColumnWidth] =
-    Cogen[Either[FixedColumnWidth, PercentageColumnWidth]].contramap {
+    Cogen[Either[FixedColumnWidth, VariableColumnWidth]].contramap {
       case x: FixedColumnWidth      => x.asLeft
-      case x: PercentageColumnWidth => x.asRight
+      case x: VariableColumnWidth => x.asRight
     }
 
   implicit val arbJsNumber: Arbitrary[JsNumber] = Arbitrary {

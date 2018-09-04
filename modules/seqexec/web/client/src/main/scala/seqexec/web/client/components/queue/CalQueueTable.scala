@@ -72,14 +72,14 @@ object CalQueueTable {
     name    = "obsid",
     label   = "Obs. ID",
     visible = true,
-    PercentageColumnWidth.unsafeFromDouble(0.5, ObsIdMinWidth))
+    VariableColumnWidth.unsafeFromDouble(0.5, ObsIdMinWidth))
 
   val InstrumentColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     InstrumentColumn,
     name    = "instrument",
     label   = "Instrument",
     visible = true,
-    PercentageColumnWidth.unsafeFromDouble(0.5, InstrumentMinWidth))
+    VariableColumnWidth.unsafeFromDouble(0.5, InstrumentMinWidth))
 
   val all: NonEmptyList[ColumnMeta[TableColumn]] =
     NonEmptyList.of(RemoveSeqMeta, ObsIdColumnMeta, InstrumentColumnMeta)
@@ -406,7 +406,7 @@ object CalQueueTable {
           val sortableList = SortableContainer.wrapC(
             Table.component,
             s.tableState
-              .columnBuilder(size, colBuilder(p, s, size))
+              .columnBuilder(size, TableState.AllColsVisible, colBuilder(p, s, size))
               .map(_.vdomElement))
 
           // If distance is 0 we can miss some events

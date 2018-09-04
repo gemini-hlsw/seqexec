@@ -10,6 +10,8 @@ import monocle.Lens
 import japgolly.scalajs.react.raw.JsNumber
 import japgolly.scalajs.react.Callback
 import react.virtualized._
+import scala.math.max
+import web.client.utils._
 import react.common.syntax._
 
 /**
@@ -18,30 +20,72 @@ import react.common.syntax._
 final case class TableState[A: Eq](userModified:   UserModified,
                                    scrollPosition: JsNumber,
                                    columns:        NonEmptyList[ColumnMeta[A]]) {
+  private def withVisibleCols(visibleFilter: (Size, A) => Boolean,
+                              s:             Size): TableState[A] =
+    TableState
+      .columns[A]
+      .modify(_.map {
+        case c @ ColumnMeta(i, _, _, true, _) if !visibleFilter(s, i) =>
+          ColumnMeta.visible.set(false)(c)
+        case c => c
+      })(this)
+
+  // width set aside for fixed width columns
+  private val fixedWidth = columns.collect {
+    case ColumnMeta(_, _, _, true, FixedColumnWidth(x)) => x
+  }.sum
 
   // Changes the relative widths when a column is being dragged
+  // delta is the change in percentage, negative to the left, positive to the right
   def applyOffset(column: A, delta: Double, s: Size): TableState[A] = {
-    val indexOf = columns.toList.indexWhere(_.column === column)
-    // Shift the selected column and the next one
-    val result = columns.toList.zipWithIndex.map {
-      case (c @ ColumnMeta(_, _, _, true, PercentageColumnWidth(x, min)), idx) if idx === indexOf     =>
-        val nv = x + delta
-        if (nv >= 0 && nv <= 1) {
-          c.copy(width = PercentageColumnWidth(nv, min))
-        } else {
-          c
-        }
-      case (c @ ColumnMeta(_, _, _, true, PercentageColumnWidth(x, min)), idx) if idx === indexOf + 1 =>
-        val nv = scala.math.max(min / s.width, x - delta)
-        if (nv >= 0 && nv <= 1) {
-          c.copy(width = PercentageColumnWidth(nv, min))
-        } else {
-          c
-        }
-      case (c, _)                                                                                => c
+    val cl      = columns.toList
+    val indexOf = cl.indexWhere(_.column === column)
+    val width   = s.width - fixedWidth
+    val refCol  = cl.lift(indexOf)
+    val nextCol = cl.lift(indexOf + 1)
+
+    if (delta === 0.0) {
+      this
+    } else {
+      // Shift the selected column and the next one
+      val result = columns.toList.zipWithIndex.map {
+        case (c @ ColumnMeta(_, _, _, true, VariableColumnWidth(curPct, min)),
+              idx) if idx === indexOf =>
+          val newPct    = curPct + delta
+          val newWidth  = max(min, width * newPct)
+          val actualPct = newWidth / width
+
+          val nextCanChange = nextCol.exists {
+            case ColumnMeta(_, _, _, true, VariableColumnWidth(nextPct, nextMin)) =>
+              nextMin < width * (nextPct - delta)
+          }
+
+          if (nextCanChange && newWidth <= s.width) {
+            ColumnMeta.width.set(VariableColumnWidth(actualPct, min))(c)
+          } else {
+            c
+          }
+        case (c @ ColumnMeta(_, _, _, true, VariableColumnWidth(curPct, min)),
+              idx) if idx === indexOf + 1 =>
+          val newPct    = curPct - delta
+          val newWidth  = max(min, width * newPct)
+          val actualPct = newWidth / width
+
+          val prevCanChange = refCol.exists {
+            case ColumnMeta(_, _, _, true, VariableColumnWidth(prevPct, prevMin)) =>
+              prevMin < width * (prevPct + delta)
+          }
+
+          if (prevCanChange && newWidth <= width) {
+            ColumnMeta.width.set(VariableColumnWidth(actualPct, min))(c)
+          } else {
+            c
+          }
+        case (c, _) => c
+      }
+      copy(userModified = IsModified,
+           columns      = NonEmptyList.fromListUnsafe(result))
     }
-    copy(userModified = IsModified,
-         columns      = NonEmptyList.fromListUnsafe(result))
   }
 
   // Return the width of a column from the actual column width
@@ -50,58 +94,74 @@ final case class TableState[A: Eq](userModified:   UserModified,
       .filter(c => c.column === column && c.visible)
       .map(_.width)
       .map {
-        case FixedColumnWidth(w)         => w.toDouble
-        case PercentageColumnWidth(f, m) => scala.math.max(m, f * s.width)
+        case FixedColumnWidth(w)       => w.toDouble
+        case VariableColumnWidth(f, m) => max(m, f * (s.width - fixedWidth))
       }
       .foldMap(identity)
 
   // Table can call this to build the columns
   def columnBuilder(
-    s:  Size,
-    cb: ColumnRenderArgs[A] => Table.ColumnArg): List[Table.ColumnArg] = {
-    val disposableWidth = math.max(0, s.width.toDouble - columns.collect {
-      case ColumnMeta(_, _, _, true, FixedColumnWidth(x)) => x
-    }.sum)
-    normalizeColumnsPercentages(s).columns.toList.zipWithIndex.map {
-      case (m @ ColumnMeta(_, _, _, true, FixedColumnWidth(w)), i) =>
-        cb.apply(ColumnRenderArgs(m, i, w, false))
-      case (m @ ColumnMeta(_, _, _, true, PercentageColumnWidth(p, mw)), i) =>
-        cb.apply(
-          ColumnRenderArgs(m,
-                           i,
-                           scala.math.max(mw, p * disposableWidth),
-                           i < (columns.length - 1)))
+    s:           Size,
+    visibleCols: (Size, A) => Boolean,
+    cb:          ColumnRenderArgs[A] => Table.ColumnArg
+  ): List[Table.ColumnArg] = {
+    val vc  = withVisibleCols(visibleCols, s)
+    val vcl = vc.columns.count(_.visible)
+    vc.normalizeColumnWidths(s)
+      .columns
+      .toList
+      .zipWithIndex
+      .map {
+        case (m @ ColumnMeta(_, _, _, true, FixedColumnWidth(w)), i) =>
+          cb(ColumnRenderArgs(m, i, w, false)).some
+
+        case (m @ ColumnMeta(_, _, _, true, VariableColumnWidth(p, mw)), i) =>
+          val beforeLast = i < (vcl - 1)
+          val w          = max((s.width - fixedWidth) * p, mw)
+          cb(ColumnRenderArgs(m, i, w, beforeLast)).some
+
+        case _ =>
+          None
+      }
+      .collect { case Some(c) => c }
+  }
+
+  // normalize the width
+  private def normalizeColumnWidths(s: Size): TableState[A] =
+    if (s.width > 0) {
+      // sum of all percentages to redistribute
+      val percentagesSum = columns.collect {
+        case ColumnMeta(_, _, _, true, VariableColumnWidth(p, m)) =>
+          scala.math.max(p, m / (s.width - fixedWidth))
+      }.sum
+      (TableState
+        .columns[A]
+        .modify(_.map {
+          case c @ ColumnMeta(_, _, _, true, VariableColumnWidth(p, min)) =>
+            c.copy(width = VariableColumnWidth(p / percentagesSum, min))
+          case c =>
+            c
+        }))(this)
+    } else {
+      this
     }
-  }
 
-  // normalize the percentages
-  def normalizeColumnsPercentages(s: Size): TableState[A] = {
-    val percentagesSum = columns.collect {
-      case ColumnMeta(_, _, _, true, PercentageColumnWidth(x, m)) => scala.math.max(x, m / s.width)
-    }.sum
-    TableState
-      .columns[A]
-      .modify(_.map {
-        case c @ ColumnMeta(_, _, _, true, PercentageColumnWidth(x, min)) =>
-          c.copy(width = PercentageColumnWidth(x / percentagesSum, min))
-        case c                                                            =>
-          c
-      })(this)
-  }
-
-  // Tell the model to resize a column
   def resizeRow(
     column: A,
     s:      Size,
-    cb:     TableState[A] => Callback): (String, JsNumber) => Callback =
+    cb:     TableState[A] => Callback
+  ): (String, JsNumber) => Callback =
     (_, dx) => {
-      val percentDelta = dx.toDouble / s.width.toDouble
-      val st           = applyOffset(column, percentDelta, s)
+      val delta = dx.toDouble / (s.width - fixedWidth)
+      val st = normalizeColumnWidths(s).applyOffset(column, delta, s)
       cb(st)
     }
+
 }
 
 object TableState {
+  def AllColsVisible[A](s: Size, a: A): Boolean = true
+
   implicit def eqTs[A: Eq]: Eq[TableState[A]] =
     Eq.by(x => (x.userModified, x.scrollPosition.toDouble, x.columns))
 

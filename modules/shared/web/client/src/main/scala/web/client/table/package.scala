@@ -12,6 +12,8 @@ import japgolly.scalajs.react.raw.JsNumber
 import japgolly.scalajs.react.Callback
 import japgolly.scalajs.react.React
 import japgolly.scalajs.react.extra.Reusability
+import japgolly.scalajs.react.extra._
+import monocle.macros.Lenses
 import org.scalajs.dom.MouseEvent
 import scala.scalajs.js
 import js.JSConverters._
@@ -33,12 +35,14 @@ package table {
   /**
     * Metadata for a column
     */
+  @Lenses
   final case class ColumnMeta[A](column:  A,
                                  name:    String,
                                  label:   String,
                                  visible: Boolean,
                                  width:   ColumnWidth)
 
+  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object ColumnMeta {
     implicit def eqCm[A: Eq]: Eq[ColumnMeta[A]] =
       Eq.by(x => (x.column, x.name, x.label, x.visible, x.width))
@@ -52,6 +56,12 @@ package table {
 package object table {
   val DragHandleWidth: Int = 12
 
+  private implicit val doubleReuse: Reusability[Double] =
+    Reusability.double(0.01)
+
+  implicit val sizeReuse: Reusability[Size] =
+    Reusability.by(x => (x.width, x.height))
+
   implicit def nelR[A: Reusability]: Reusability[NonEmptyList[A]] =
     Reusability.by(_.toList)
 
@@ -60,7 +70,7 @@ package object table {
 
   // Renderer for a resizable column
   def resizableHeaderRenderer(
-    rs: (String, JsNumber) => Callback): HeaderRenderer[js.Object] =
+    rs: => (String, JsNumber) => Callback): HeaderRenderer[js.Object] =
     (_, dataKey: String, _, label: VdomNode, _, _) =>
       React.Fragment.withKey(dataKey)(
         <.div(

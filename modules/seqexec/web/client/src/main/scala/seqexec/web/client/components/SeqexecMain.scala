@@ -92,7 +92,7 @@ object SeqexecMain {
             ^.cls := "ui row",
             // Add margin to avoid covering the footer
             SeqexecStyles.logArea,
-            logConnect(l => LogArea(p.site, l))
+            logConnect(l => LogArea(p.site, l()))
           )
         ),
         lbConnect(p => LoginBox(p())),

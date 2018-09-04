@@ -15,7 +15,6 @@ import japgolly.scalajs.react.component.builder.Lifecycle.RenderScope
 import japgolly.scalajs.react.extra.Reusability
 import japgolly.scalajs.react.CatsReact._
 import japgolly.scalajs.react.raw.JsNumber
-import mouse.all._
 import monocle.Lens
 import monocle.macros.GenLens
 import react.virtualized._
@@ -62,7 +61,7 @@ object SessionQueueTable {
   private val AddQueueColumnWidth   = 30.0
   private val ClassColumnWidth      = 26.0
   private val ObsIdColumnWidth      = 140.0
-  private val ObsIdMinWidth         = 66.2167 + SeqexecStyles.TableBorderWidth
+  private val ObsIdMinWidth         = 72.2667 + SeqexecStyles.TableBorderWidth // Measured valu e
   private val StateColumnWidth      = 80.0
   private val StateMinWidth         = 53.3667 + SeqexecStyles.TableBorderWidth
   private val InstrumentColumnWidth = 80.0
@@ -71,8 +70,6 @@ object SessionQueueTable {
   private val TargetMinWidth        = 60.0167 + SeqexecStyles.TableBorderWidth
   private val ObsNameColumnWidth    = 140.0
   private val ObsNameMinWidth       = 60.0167 + SeqexecStyles.TableBorderWidth
-  private val SessionQueueColumnStyle: String =
-    SeqexecStyles.queueTextColumn.htmlClass
 
   sealed trait TableColumn extends Product with Serializable
   case object IconColumn       extends TableColumn
@@ -114,35 +111,35 @@ object SessionQueueTable {
     name    = "obsid",
     label   = "Obs. ID",
     visible = true,
-    PercentageColumnWidth.unsafeFromDouble(1.0, ObsIdMinWidth))
+    VariableColumnWidth.unsafeFromDouble(0.1, ObsIdMinWidth))
 
   val StateColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     StateColumn,
     name    = "state",
     label   = "State",
     visible = true,
-    PercentageColumnWidth.unsafeFromDouble(1.0, StateMinWidth))
+    VariableColumnWidth.unsafeFromDouble(0.1, StateMinWidth))
 
   val InstrumentColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     InstrumentColumn,
     name    = "instrument",
     label   = "Instrument",
     visible = true,
-    PercentageColumnWidth.unsafeFromDouble(1.0, InstrumentMinWidth))
+    VariableColumnWidth.unsafeFromDouble(0.3, InstrumentMinWidth))
 
   val TargetNameColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     TargetNameColumn,
     name    = "target",
     label   = "Target",
     visible = true,
-    PercentageColumnWidth.unsafeFromDouble(1.0, TargetMinWidth))
+    VariableColumnWidth.unsafeFromDouble(0.25, TargetMinWidth))
 
   val ObsNameColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     ObsNameColumn,
     name    = "obsName",
     label   = "Obs. Name",
     visible = true,
-    PercentageColumnWidth.unsafeFromDouble(1.0, ObsNameMinWidth))
+    VariableColumnWidth.unsafeFromDouble(0.25, ObsNameMinWidth))
 
   val all: NonEmptyList[ColumnMeta[TableColumn]] = NonEmptyList.of(
     IconColumnMeta,
@@ -201,33 +198,10 @@ object SessionQueueTable {
   final case class State(tableState: TableState[TableColumn],
                          rowLoading: Option[Int],
                          loggedIn:   Boolean) {
-    // Update the columns' visibility based on logged in state
-    private def logIn: State =
-      State.columns
-        .modify(_.map(_.copy(visible = true)))
-        .andThen(State.loggedIn.set(true))(this)
-
-    // Update the columns' visibility based on logged off state
-    private def logOff: State =
-      State.loggedIn
-        .set(false)
-        .andThen(State.columns.modify(_.map {
-          case c @ ColumnMeta(ObsNameColumn, _, _, _, _) =>
-            c.copy(visible = false)
-          case c @ ColumnMeta(AddQueueColumn, _, _, _, _) =>
-            c.copy(visible = false)
-          case c @ ColumnMeta(TargetNameColumn, _, _, _, _) =>
-            c.copy(visible = false)
-          case c =>
-            c
-        }))(this)
-
-    // Change the columns visibility depending on the logged in state
     def loginState(canOperate: Boolean): State = {
       val loginChanged = canOperate =!= loggedIn
-      State.userModified.modify(m =>
-        UserModified.fromBool((m === IsModified) && !loginChanged))(
-        canOperate.fold(logIn, logOff))
+      (State.userModified.modify(m =>
+        UserModified.fromBool((m === IsModified) && !loginChanged)) >>> State.loggedIn.set(canOperate))(this)
     }
 
     // Reset loading of rows
@@ -244,88 +218,42 @@ object SessionQueueTable {
       if (tableState.userModified === IsModified) {
         this
       } else {
-        val optimalSizes = sequences.foldLeft(columnsDefaultWidth) {
-          case (currWidths,
-                SequenceInSessionQueue(id, st, i, _, _, n, _, t, r, _, _)) =>
-            val idWidth = max(
-              currWidths.getOrElse(ObsIdColumn, ObsIdMinWidth),
-              tableTextWidth(id.format)) + SeqexecStyles.TableRightPadding
-            val statusWidth =
-              max(currWidths.getOrElse(StateColumn, StateMinWidth),
-                  tableTextWidth(statusText(st, r)))
-            val instrumentWidth =
-              max(currWidths.getOrElse(InstrumentColumn, InstrumentMinWidth),
-                  tableTextWidth(i.show))
-            val targetNameWidth =
-              max(currWidths.getOrElse(TargetNameColumn, TargetMinWidth),
-                  tableTextWidth(t.getOrElse("")))
-            val obsNameWidth =
-              max(currWidths.getOrElse(ObsNameColumn, ObsNameMinWidth),
-                  tableTextWidth(n))
-
-            currWidths +
-              (ObsIdColumn -> idWidth) +
-              (StateColumn -> statusWidth) +
-              (InstrumentColumn -> instrumentWidth) +
-              (ObsNameColumn -> obsNameWidth) +
-              (TargetNameColumn -> targetNameWidth)
-        }
-        // Width as it would be adding all the visible columns
-        val width = optimalSizes
-          .filter {
-            case (c, _) =>
-              tableState.columns.find(_.column === c).forall(_.visible)
-          }
-          .values
-          .sum + ClassColumnWidth + (if (loggedIn) AddQueueColumnWidth else 0)
-        // Normalize based on visibility
-        State.columns.modify(_.map {
-          case c @ ColumnMeta(t, _, _, true, PercentageColumnWidth(_, m)) =>
-            PercentageColumnWidth
-              .fromDouble(optimalSizes.getOrElse(t, m).toDouble / width, m)
-              .fold(c)(w => c.copy(width = w))
-          case c =>
-            c
-        })(this)
+        println(sequences)
+        this
+        // State.tableState.modify(_.normalizeWeights(colWidths(sequences)))(this)
       }
-
-    // Returns a list of the visible columns with the suggested size
-    def visibleColumnsSizes(s: Size): List[(TableColumn, Double, Boolean)] = {
-      val fixedVisibleCols = if (loggedIn) 1 else 0
-      for {
-        (c, i) <- hideOnWidth(s).tableState.columns.toList.zipWithIndex
-        if c.visible
-      } yield
-        (c.column,
-         tableState.widthOf(c.column, s),
-         i === tableState.columns.filter(_.visible).length - fixedVisibleCols)
-    }
 
     // Hide some columns depending on width
-    private def hideOnWidth(s: Size): State =
+    def visibleColsFor(s: Size, t: TableColumn): Boolean =
       s.width match {
         case w if w < PhoneCut =>
-          State.columns.modify(_.map {
-            case c @ ColumnMeta(ObsNameColumn, _, _, _, _) =>
-              c.copy(visible = false)
-            case c @ ColumnMeta(TargetNameColumn, _, _, _, _) =>
-              c.copy(visible = false)
-            case c =>
-              c
-          })(this)
+        t match {
+            case ObsNameColumn =>
+              false
+            case TargetNameColumn =>
+              false
+            case AddQueueColumn =>
+              loggedIn
+              case _ =>
+              true
+          }
         case w if w < LargePhoneCut =>
-          State.columns.modify(_.map {
-            case c @ ColumnMeta(TargetNameColumn, _, _, _, _) =>
-              c.copy(visible = false)
-            case c =>
-              c
-          })(this)
+        t match {
+            case TargetNameColumn =>
+              false
+            case ObsNameColumn | AddQueueColumn =>
+              loggedIn
+            case _=>
+              true
+          }
         case _ =>
-          this
+          t match {
+            case TargetNameColumn | ObsNameColumn | AddQueueColumn =>
+              loggedIn
+              case _ =>
+          true
+        }
       }
-
-    def applyOffset(column: TableColumn, delta: Double, s: Size): State =
-      State.tableState.modify(_.applyOffset(column, delta, s))(this)
   }
 
   val InitialTableState: State =
@@ -348,6 +276,7 @@ object SessionQueueTable {
       tableState ^|-> TableState.scrollPosition[TableColumn]
   }
 
+  // Reusability
   implicit val tcReuse: Reusability[TableColumn] = Reusability.byRef
   implicit val sqSeFocusReuse: Reusability[SequenceInSessionQueue] =
     Reusability.byEq
@@ -643,118 +572,123 @@ object SessionQueueTable {
         SeqexecStyles.stepRow |+| SeqexecStyles.draggableRow
     }).htmlClass
 
-  // scalastyle:off
-  private def columns(b: Backend, size: Size): List[Table.ColumnArg] = {
-    val props = b.props
+    def colWidths(sequences: List[SequenceInSessionQueue]): Map[TableColumn, Double] =
+      // if (tableState.userModified === IsModified) {
+      //   this
+      // } else {
+        sequences.foldLeft(columnsDefaultWidth) {
+          case (currWidths,
+                SequenceInSessionQueue(id, st, i, _, _, n, _, t, r, _, _)) =>
+            val idWidth = max(
+              currWidths.getOrElse(ObsIdColumn, ObsIdMinWidth),
+              tableTextWidth(id.format)) + SeqexecStyles.TableRightPadding
+            val statusWidth =
+              max(currWidths.getOrElse(StateColumn, StateMinWidth),
+                  tableTextWidth(statusText(st, r)))
+            val instrumentWidth =
+              max(currWidths.getOrElse(InstrumentColumn, InstrumentMinWidth),
+                  tableTextWidth(i.show))
+            val targetNameWidth =
+              max(currWidths.getOrElse(TargetNameColumn, TargetMinWidth),
+                  tableTextWidth(t.getOrElse("")))
+            val obsNameWidth =
+              max(currWidths.getOrElse(ObsNameColumn, ObsNameMinWidth),
+                  tableTextWidth(n))
 
-    // Tell the model to resize a column
-    def resizeRow(c: TableColumn): (String, JsNumber) => Callback =
-      (_, dx) => {
-        val percentDelta = dx.toDouble / size.width
-        val ns           = b.state.applyOffset(c, percentDelta, size)
-        b.setState(ns) *> SeqexecCircuit.dispatchCB(
-          UpdateSessionQueueTableState(ns.tableState))
-      }
+            currWidths +
+              (ObsIdColumn -> idWidth) +
+              (StateColumn -> statusWidth) +
+              (InstrumentColumn -> instrumentWidth) +
+              (ObsNameColumn -> obsNameWidth) +
+              (TargetNameColumn -> targetNameWidth)
+        }
 
-    b.state.visibleColumnsSizes(size).collect {
-      case (IconColumn, width, _) =>
-        Column(
-          Column.propsNoFlex(
-            width,
-            dataKey        = "status",
-            label          = "",
-            cellRenderer   = statusIconRenderer(b),
-            headerRenderer = statusHeaderRenderer,
-            className      = SeqexecStyles.queueIconColumn.htmlClass
-          ))
-      case (AddQueueColumn, width, _) =>
-        Column(
-          Column.propsNoFlex(
-            width,
-            dataKey        = "obsClass",
-            label          = "",
-            cellRenderer   = addToQueueRenderer(b),
-            headerRenderer = addHeaderRenderer,
-            className      = SeqexecStyles.queueIconColumn.htmlClass
-          ))
-      case (ClassColumn, width, _) =>
-        Column(
-          Column.propsNoFlex(
-            width,
-            dataKey        = "obsClass",
-            label          = "",
-            cellRenderer   = classIconRenderer(b),
-            headerRenderer = timeHeaderRenderer,
-            className      = SeqexecStyles.queueIconColumn.htmlClass
-          ))
-      case (ObsIdColumn, width, _) =>
-        Column(
-          Column.propsNoFlex(
-            width,
-            dataKey        = "obsid",
-            label          = "Obs. ID",
-            cellRenderer   = obsIdRenderer(props),
-            headerRenderer = resizableHeaderRenderer(resizeRow(ObsIdColumn)),
-            className      = SessionQueueColumnStyle
-          ))
-      case (StateColumn, width, _) =>
-        Column(
-          Column.propsNoFlex(
-            width,
-            dataKey        = "state",
-            label          = "State",
-            cellRenderer   = stateRenderer(props),
-            headerRenderer = resizableHeaderRenderer(resizeRow(StateColumn)),
-            className      = SessionQueueColumnStyle
-          ))
-      case (InstrumentColumn, width, false) =>
-        Column(
-          Column.propsNoFlex(
-            width,
-            dataKey      = "instrument",
-            label        = "Instrument",
-            cellRenderer = instrumentRenderer(props),
-            headerRenderer =
-              resizableHeaderRenderer(resizeRow(InstrumentColumn)),
-            className = SessionQueueColumnStyle
-          ))
-      case (InstrumentColumn, width, true) =>
-        Column(
-          Column.propsNoFlex(
-            width,
-            dataKey      = "instrument",
-            label        = "Instrument",
-            cellRenderer = instrumentRenderer(props),
-            className    = SessionQueueColumnStyle
-          ))
-      case (ObsNameColumn, width, _) =>
-        Column(
-          Column.propsNoFlex(
-            width,
-            dataKey      = "obsName",
-            label        = "Obs. Name",
-            cellRenderer = obsNameRenderer(props),
-            className    = SessionQueueColumnStyle
-          ))
-      case (TargetNameColumn, width, _) =>
-        Column(
-          Column.propsNoFlex(
-            width,
-            dataKey      = "target",
-            label        = "Target",
-            cellRenderer = targetRenderer(props),
-            headerRenderer =
-              resizableHeaderRenderer(resizeRow(TargetNameColumn)),
-            className = SessionQueueColumnStyle
-          ))
-    }
+
+  private def renderer(c: TableColumn, b: Backend) = c match {
+    case IconColumn => statusIconRenderer(b)
+    case AddQueueColumn => addToQueueRenderer(b)
+    case ClassColumn =>classIconRenderer(b)
+    case ObsIdColumn => obsIdRenderer(b.props)
+    case StateColumn => stateRenderer(b.props)
+    case InstrumentColumn => instrumentRenderer(b.props)
+    case TargetNameColumn =>targetRenderer(b.props)
+    case ObsNameColumn =>obsNameRenderer(b.props)
   }
-  // scalastyle:on
+
+  private def fixedHeaderRenderer(c: TableColumn) = c match {
+    case IconColumn => statusHeaderRenderer
+    case AddQueueColumn => addHeaderRenderer
+    case ClassColumn => timeHeaderRenderer
+    case _ => defaultHeaderRendererS
+  }
+
+  private def columnStyle(c: TableColumn): Option[GStyle] =
+    c match {
+    case ObsIdColumn | StateColumn | InstrumentColumn | ObsNameColumn |  TargetNameColumn => SeqexecStyles.queueTextColumn.some
+    case _ => SeqexecStyles.queueIconColumn.some
+
+    }
 
   def updateScrollPosition(b: Backend, pos: JsNumber): Callback = {
     val s = State.scrollPosition.set(pos)(b.state)
     b.setState(s) *> SeqexecCircuit.dispatchCB(
       UpdateSessionQueueTableState(s.tableState))
+  }
+
+  // scalastyle:off
+  private def colBuilder(b: Backend, size: Size): ColumnRenderArgs[TableColumn] => Table.ColumnArg = tb => {
+    // val props = b.props
+
+  def updateScrollPosition(ts: TableState[TableColumn]): Callback = {
+    val s = State.tableState.set(ts)(b.state)
+    b.setState(s) *> SeqexecCircuit.dispatchCB(
+      UpdateSessionQueueTableState(s.tableState))
+  }
+
+    // Tell the model to resize a column
+    // def resizeRow(c: TableColumn): (String, JsNumber) => Callback =
+    //   (_, dx) => {
+    //     val ns           = b.state.applyOffset(c, dx.toDouble, size)
+    //     b.setState(ns) *> SeqexecCircuit.dispatchCB(
+    //       UpdateSessionQueueTableState(ns.tableState))
+    //   }
+
+    // implicit val s: cats.Show[ColumnWidth] = cats.Show.show[ColumnWidth] { x => x match {
+    //   case f: FixedColumnWidth => s"${f.width}px"
+    //   case p: VariableColumnWidth => f"${p.width.orEmpty}%.2f, ${p.minWidth}px"
+    // }}
+    //
+    println("BUILD cols")
+    println(tb)
+    tb match {
+
+        case ColumnRenderArgs(ColumnMeta(c, name, label, _, _),
+                              _,
+                              width,
+                              true) =>
+          Column(
+            Column.propsNoFlex(
+              width        = width,
+              dataKey      = name,
+              label        = label,
+              cellRenderer = renderer(c, b),
+              headerRenderer = resizableHeaderRenderer(
+                b.state.tableState.resizeRow(c, size, updateScrollPosition)),
+              className = columnStyle(c).foldMap(_.htmlClass)
+            ))
+        case ColumnRenderArgs(ColumnMeta(c, name, label, _, _),
+                              _,
+                              width,
+                              false) =>
+          Column(
+            Column.propsNoFlex(width        = width,
+                               dataKey      = name,
+                               label        = label,
+                               headerRenderer = fixedHeaderRenderer(c),
+                               cellRenderer = renderer(c, b),
+              className = columnStyle(c).foldMap(_.htmlClass)
+            ))
+    }
   }
 
   // Single click puts in preview or go to tab
@@ -811,7 +745,7 @@ object SessionQueueTable {
         headerHeight     = SeqexecStyles.headerHeight,
         rowRenderer      = draggableRowRenderer(b)
       ),
-      columns(b, size): _*
+      b.state.tableState.columnBuilder(size, b.state.visibleColsFor(_, _), colBuilder(b, size)): _*
     ).vdomElement
 
   def dragStart(b: Backend, obsId: Observation.Id)(

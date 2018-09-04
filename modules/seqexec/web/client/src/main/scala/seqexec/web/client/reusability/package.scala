@@ -14,6 +14,7 @@ import seqexec.model.enum.Instrument
 import seqexec.model.enum.BatchExecState
 import seqexec.model.enum.Resource
 import seqexec.model.enum.SystemName
+import seqexec.model.enum.ServerLogLevel
 import seqexec.model.Observer
 import seqexec.model.QueueId
 import seqexec.model.Step
@@ -36,6 +37,7 @@ import seqexec.web.client.model.ResourceRunOperation
 import seqexec.web.client.model.StartFromOperation
 import seqexec.web.client.model.TabSelected
 import seqexec.web.client.model.SoundSelection
+import seqexec.web.client.model.GlobalLog
 import seqexec.web.client.circuit._
 
 package object reusability {
@@ -84,8 +86,11 @@ package object reusability {
   implicit val qidReuse: Reusability[QueueId]              = Reusability.byEq
   implicit val bexReuse: Reusability[BatchExecState]       = Reusability.byRef
   implicit val soundReuse: Reusability[SoundSelection]     = Reusability.byRef
-
+  implicit val globalLogReuse: Reusability[GlobalLog]      = Reusability.byEq
+  implicit val sllReuse: Reusability[ServerLogLevel]       = Reusability.byEq
   implicit val resMap: Reusability[Map[Resource, ResourceRunOperation]] =
+    Reusability.map
+  implicit val sllbMap: Reusability[Map[ServerLogLevel, Boolean]] =
     Reusability.map
   implicit val resSMap: Reusability[SortedMap[Resource, ResourceRunOperation]] =
     Reusability.by(_.toMap)
