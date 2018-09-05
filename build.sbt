@@ -770,5 +770,6 @@ lazy val app_seqexec_server_gn = preventPublication(project.in(file("app/seqexec
   .settings(
     description := "Seqexec Gemini North server production",
     applicationConfName := "seqexec",
-    applicationConfSite := DeploymentSite.GN
+    applicationConfSite := DeploymentSite.GN,
+    mappings in Universal ++= (mappings in (app_seqexec_server, Universal)).value
   ).dependsOn(seqexec_server)
