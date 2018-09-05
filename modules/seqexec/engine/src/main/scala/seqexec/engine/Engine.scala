@@ -300,12 +300,12 @@ class Engine[D, U](stateL: Lens[D, Engine.State]) {
   @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
   private def run(ev: EventType)(implicit ec: ExecutionContext): HandleP[ResultType] = {
     def handleUserEvent(ue: UserEventType): HandleP[ResultType] = ue match {
-      case Start(id, _, clid, userCheck) => Logger.debug(s"Engine: Start requested for sequence $id") *> start(id, clid, userCheck) *> pure(UserCommandResponse(ue, EventResult.Ok, None))
-      case Pause(id, _)                  => Logger.debug("Engine: Pause requested") *> pause(id) *> pure(UserCommandResponse(ue, EventResult.Ok, None))
-      case CancelPause(id, _)            => Logger.debug("Engine: Pause canceled") *> cancelPause(id) *> pure(UserCommandResponse(ue, EventResult.Ok, None))
-      case Breakpoint(id, _, step, v)    => Logger.debug(s"Engine: breakpoint changed for step $step to $v") *>
+      case Start(id, _, clid, userCheck) => Logger.debug(s"Engine: Start requested for sequence ${id.format}") *> start(id, clid, userCheck) *> pure(UserCommandResponse(ue, EventResult.Ok, None))
+      case Pause(id, _)                  => Logger.debug(s"Engine: Pause requested for sequence ${id.format}") *> pause(id) *> pure(UserCommandResponse(ue, EventResult.Ok, None))
+      case CancelPause(id, _)            => Logger.debug(s"Engine: Pause canceled for sequence ${id.format}") *> cancelPause(id) *> pure(UserCommandResponse(ue, EventResult.Ok, None))
+      case Breakpoint(id, _, step, v)    => Logger.debug(s"Engine: breakpoint changed for sequence ${id.format} and step $step to $v") *>
         modifyS(id)(_.setBreakpoint(step, v)) *> pure(UserCommandResponse(ue, EventResult.Ok, None))
-      case SkipMark(id, _, step, v)      => Logger.debug(s"Engine: skip mark changed for step $step to $v") *>
+      case SkipMark(id, _, step, v)      => Logger.debug(s"Engine: skip mark changed for sequence ${id.format} and step $step to $v") *>
         modifyS(id)(_.setSkipMark(step, v)) *> pure(UserCommandResponse(ue, EventResult.Ok, None))
       case Poll(_)                       => Logger.debug("Engine: Polling current state") *> pure(UserCommandResponse(ue, EventResult.Ok, None))
       case GetState(f)                   => getState(f) *> pure(UserCommandResponse(ue, EventResult.Ok, None))
