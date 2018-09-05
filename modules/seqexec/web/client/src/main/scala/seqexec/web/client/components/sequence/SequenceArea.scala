@@ -86,7 +86,7 @@ object SequenceTabContent {
   private val component = ScalaComponent.builder[Props]("SequenceTabContent")
     .stateless
     .render_P { p =>
-      val SequenceTabContentFocus(instrument, _, active, logDisplayed) = p.p
+      val SequenceTabContentFocus(isLogged, instrument, _, active, logDisplayed) = p.p
       val content = p.statusConnect.map { x =>
         x { st =>
           st().map(s => SequenceStepsTableContainer(SequenceStepsTableContainer.Props(p.router, s)): VdomElement).getOrElse(defaultContent)
@@ -104,9 +104,12 @@ object SequenceTabContent {
         SeqexecStyles.emptyInstrumentTab.unless(p.sequenceSelected),
         SeqexecStyles.emptyInstrumentTabLogShown.when(!p.sequenceSelected && logDisplayed === SectionOpen),
         SeqexecStyles.emptyInstrumentTabLogHidden.when(!p.sequenceSelected && logDisplayed === SectionClosed),
-        SeqexecStyles.instrumentTabSegment.when(p.sequenceSelected),
-        SeqexecStyles.instrumentTabSegmentLogShown.when(p.sequenceSelected && logDisplayed === SectionOpen),
-        SeqexecStyles.instrumentTabSegmentLogHidden.when(p.sequenceSelected && logDisplayed === SectionClosed),
+        SeqexecStyles.instrumentTabSegment.when(p.sequenceSelected && isLogged),
+        SeqexecStyles.instrumentTabSegmentLogShown.when(p.sequenceSelected && isLogged && logDisplayed === SectionOpen),
+        SeqexecStyles.instrumentTabSegmentLogHidden.when(p.sequenceSelected && isLogged && logDisplayed === SectionClosed),
+        SeqexecStyles.instrumentTabSegmentUnauth.when(p.sequenceSelected && !isLogged),
+        SeqexecStyles.instrumentTabSegmentLogShownUnauth.when(p.sequenceSelected && !isLogged && logDisplayed === SectionOpen),
+        SeqexecStyles.instrumentTabSegmentLogHiddenUnauth.when(p.sequenceSelected && !isLogged && logDisplayed === SectionClosed),
         content
       )
     }

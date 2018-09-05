@@ -171,11 +171,12 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
   implicit val arbStcf: Arbitrary[SequenceTabContentFocus] =
     Arbitrary {
       for {
+        g <- arbitrary[Boolean]
         i <- arbitrary[Option[Instrument]]
         d <- arbitrary[Option[Observation.Id]]
         s <- arbitrary[Boolean]
         l <- arbitrary[SectionVisibilityState]
-      } yield SequenceTabContentFocus(i, d, s, l)
+      } yield SequenceTabContentFocus(g, i, d, s, l)
     }
 
   implicit val stcfCogen: Cogen[SequenceTabContentFocus] =

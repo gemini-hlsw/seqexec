@@ -550,10 +550,11 @@ object StepsTable {
   def render(b: Backend): VdomElement = {
     val p = b.props
     val settingsDisplayed = p.steps.forall(_.stepConfigDisplayed.isDefined)
-    val isTall = (p.status.isLogged || settingsDisplayed) && !p.isPreview
+    val hasControls = (p.status.isLogged && !p.isPreview) || settingsDisplayed
+    val noControls = (p.isPreview || !p.status.isLogged) && !settingsDisplayed
     <.div(
-      SeqexecStyles.stepsListPane.unless(isTall),
-      SeqexecStyles.stepsListPaneWithControls.when(isTall),
+      SeqexecStyles.stepsListPanePreview.when(noControls),
+      SeqexecStyles.stepsListPaneWithControls.when(hasControls),
       p.steps.whenDefined { tab =>
         tab.stepConfigDisplayed
           .map { i =>

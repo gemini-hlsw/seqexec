@@ -100,9 +100,9 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
     }(fastEq[InstrumentTabFocus])
 
   val sequenceTabs: ModelR[SeqexecAppRootModel, NonEmptyList[SequenceTabContentFocus]] =
-    logDisplayedReader.zip(zoom(_.uiModel.sequencesOnDisplay)).zoom {
-      case (log, SequencesOnDisplay(sequences)) => sequences.withFocus.map{
-        case (tab, active) => SequenceTabContentFocus(tab.instrument, tab.sequence.map(_.id), active, log)
+    statusReader.zip(logDisplayedReader.zip(zoom(_.uiModel.sequencesOnDisplay))).zoom {
+      case (s, (log, SequencesOnDisplay(sequences))) => sequences.withFocus.map{
+        case (tab, active) => SequenceTabContentFocus(s.isLogged, tab.instrument, tab.sequence.map(_.id), active, log)
       }.toNel
     }
 

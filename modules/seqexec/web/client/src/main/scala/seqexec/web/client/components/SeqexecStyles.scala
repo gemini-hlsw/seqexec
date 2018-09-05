@@ -50,6 +50,16 @@ object SeqexecStyles {
 
   val instrumentTabSegmentLogShown: GStyle = GStyle.fromString("SeqexecStyles-instrumentTabSegmentLogShown")
 
+  val instrumentTabSegmentUnauth: GStyle = GStyle.fromString("SeqexecStyles-instrumentTabSegmentUnauth")
+
+  val instrumentTabSegmentLogHiddenUnauth: GStyle = GStyle.fromString("SeqexecStyles-instrumentTabSegmentLogHiddenUnauth")
+
+  val instrumentTabSegmentLogShownUnauth: GStyle = GStyle.fromString("SeqexecStyles-instrumentTabSegmentLogShownUnauth")
+
+  val stepsListPanePreview: GStyle = GStyle.fromString("SeqexecStyles-stepsListPanePreview")
+
+  val stepsListPaneWithControls: GStyle = GStyle.fromString("SeqexecStyles-stepsListPaneWithControls")
+
   val controlButtons: GStyle = GStyle.fromString("SeqexecStyles-controlButtons")
 
   val infoOnControl: GStyle = GStyle.fromString("SeqexecStyles-infoOnControl")
@@ -171,10 +181,6 @@ object SeqexecStyles {
   val settingsCellHeader: GStyle = GStyle.fromString("SeqexecStyles-settingsCellHeader")
 
   val tableHeaderIcons: GStyle = GStyle.fromString("SeqexecStyles-tableHeaderIcons")
-
-  val stepsListPane: GStyle = GStyle.fromString("SeqexecStyles-stepsListPane")
-
-  val stepsListPaneWithControls: GStyle = GStyle.fromString("SeqexecStyles-stepsListPaneWithControls")
 
   val buttonsRow: GStyle = GStyle.fromString("SeqexecStyles-buttonsRow")
 
