@@ -247,15 +247,14 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
       for {
         l <- arbitrary[Boolean]
         n <- arbitrary[Option[String]]
-        o <- arbitrary[Option[Observer]]
         s <- arbitrary[Option[SequenceState]]
         t <- arbitrary[Option[TargetName]]
-      } yield SequenceInfoFocus(l, n, o, s, t)
+      } yield SequenceInfoFocus(l, n, s, t)
     }
 
   implicit val sifCogen: Cogen[SequenceInfoFocus] =
-    Cogen[(Boolean, Option[String], Option[Observer], Option[SequenceState], Option[TargetName])].contramap { x =>
-      (x.isLogged, x.obsName, x.observer, x.status, x.targetName)
+    Cogen[(Boolean, Option[String], Option[SequenceState], Option[TargetName])].contramap { x =>
+      (x.isLogged, x.obsName, x.status, x.targetName)
     }
 
   implicit val arbPreviewPage: Arbitrary[PreviewPage] =

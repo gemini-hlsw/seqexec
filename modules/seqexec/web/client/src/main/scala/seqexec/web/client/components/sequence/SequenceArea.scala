@@ -12,7 +12,7 @@ import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.extra.Reusability
 import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.CatsReact._
-import seqexec.web.client.components.sequence.toolbars.{ SequenceDefaultToolbar, StepConfigToolbar, SequenceAnonymousToolbar }
+import seqexec.web.client.components.sequence.toolbars.{ SequenceDefaultToolbar, StepConfigToolbar }
 import seqexec.web.client.circuit._
 import seqexec.web.client.model.Pages.SeqexecPages
 import seqexec.web.client.model.{ SectionOpen, SectionClosed }
@@ -43,12 +43,9 @@ object SequenceStepsTableContainer {
     val stepConfigDisplayed = p.statusAndStep.stepConfigDisplayed.isDefined
     val isPreview           = p.statusAndStep.isPreview
     val showDefault         = loggedIn && !stepConfigDisplayed && !isPreview
-    val showAnonymous       = !loggedIn && !stepConfigDisplayed
-    val showPreview         = isPreview && !stepConfigDisplayed
 
     <.div(
       SequenceDefaultToolbar(SequenceDefaultToolbar.Props(p.statusAndStep.obsId)).when(showDefault),
-      SequenceAnonymousToolbar(SequenceAnonymousToolbar.Props(p.statusAndStep.obsId)).when(showAnonymous || showPreview),
       p.statusAndStep.stepConfigDisplayed.map { s =>
         StepConfigToolbar(StepConfigToolbar.Props(p.router, p.statusAndStep.instrument, p.statusAndStep.obsId, s, p.statusAndStep.totalSteps, isPreview)).when(stepConfigDisplayed)
       }.getOrElse(TagMod.empty)

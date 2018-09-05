@@ -110,11 +110,11 @@ package circuit {
       Eq.by(x => (x.instrument, x.id, x.sequenceSelected, x.logDisplayed))
   }
 
-  final case class SequenceInfoFocus(isLogged: Boolean, obsName: Option[String], observer: Option[Observer], status: Option[SequenceState], targetName: Option[TargetName]) extends UseValueEq
+  final case class SequenceInfoFocus(isLogged: Boolean, obsName: Option[String], status: Option[SequenceState], targetName: Option[TargetName]) extends UseValueEq
 
   object SequenceInfoFocus{
     implicit val eq: Eq[SequenceInfoFocus] =
-      Eq.by(x => (x.isLogged, x.obsName, x.observer, x.status, x.targetName))
+      Eq.by(x => (x.isLogged, x.obsName, x.status, x.targetName))
   }
 
   final case class StatusAndStepFocus(isLogged: Boolean, instrument: Instrument, obsId: Observation.Id, stepConfigDisplayed: Option[Int], totalSteps: Int, isPreview: Boolean)

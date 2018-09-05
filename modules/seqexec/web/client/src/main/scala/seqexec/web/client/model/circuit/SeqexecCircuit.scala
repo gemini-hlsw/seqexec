@@ -117,7 +117,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
     statusReader.zip(sequenceTab(id)).zoom {
       case (status, SequenceTabActive(tab, _)) =>
         val targetName = tab.sequence.flatMap(firstScienceStepTargetNameT.headOption)
-        SequenceInfoFocus(status.isLogged, tab.sequence.map(_.metadata.name), tab.sequence.flatMap(_.metadata.observer), tab.sequence.map(_.status), targetName)
+        SequenceInfoFocus(status.isLogged, tab.sequence.map(_.metadata.name), tab.sequence.map(_.status), targetName)
     }
 
   def statusAndStepReader(id: Observation.Id): ModelR[SeqexecAppRootModel, Option[StatusAndStepFocus]] =

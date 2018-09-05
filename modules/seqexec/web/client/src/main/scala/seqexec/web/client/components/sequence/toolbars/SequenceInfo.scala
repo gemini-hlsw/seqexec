@@ -25,7 +25,7 @@ object SequenceInfo {
   private def component = ScalaComponent.builder[Props]("SequenceInfo")
     .stateless
     .render_P { p =>
-      val SequenceInfoFocus(isLogged, oName, observer, status, tName) = p.p()
+      val SequenceInfoFocus(isLogged, oName, status, tName) = p.p()
       val obsName = oName.filter(_.nonEmpty).getOrElse("Unknown.")
       val daytimeCalibrationTargetName: TagMod =
         Label(Label.Props(DaytimeCalibrationTargetName, basic = true, extraStyles = List(SeqexecStyles.daytimeCal)))
@@ -46,15 +46,7 @@ object SequenceInfo {
           <.div(
             ^.cls := "field",
             targetName
-          ).when(isLogged),
-          <.div(
-            ^.cls := "field",
-            Label(Label.Props("Observer:", basic = true, color = "red".some))
-          ).unless(isLogged),
-          <.div(
-            ^.cls := "field",
-            Label(Label.Props(observer.map(_.value).getOrElse("Unknown."), basic = true))
-          ).unless(isLogged)
+          ).when(isLogged)
         )
       )
     }.build
