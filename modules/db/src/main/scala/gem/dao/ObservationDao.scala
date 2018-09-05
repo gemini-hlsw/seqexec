@@ -37,7 +37,7 @@ object ObservationDao {
 
   /**
    * Construct a program to select the specified observation, with the
-   * instrument but not targets nor steps.  Raises an error if the indicated
+   * instrument but not targets nor steps.  Raises an exception if the indicated
    * observation does not exist.
    */
   def fetchFlat(id: Observation.Id): ConnectionIO[(String, Instrument)] =
@@ -52,7 +52,7 @@ object ObservationDao {
 
   /**
    * Construct a program to select the specified observation, with the
-   * targets and instrument type but not steps.  Raises an error if the
+   * targets and instrument type but not steps.  Raises an exception if the
    * indicated observation does not exist.
    */
   def fetchTargets(id: Observation.Id): ConnectionIO[(String, TargetEnvironment)] =
@@ -73,7 +73,7 @@ object ObservationDao {
 
   /**
    * Construct a program to select the specified observation, with static
-   * config but not targets nor steps.  Raises an error if the indicated
+   * config but not targets nor steps.  Raises an exception if the indicated
    * observation does not exist.
    */
   def fetchStatic(id: Observation.Id): ConnectionIO[(String, StaticConfig)] =
@@ -94,7 +94,7 @@ object ObservationDao {
 
   /**
    * Construct a program to select the specified observation, with static
-   * config and steps but not targets.  Raises an error if the indicated
+   * config and steps but not targets.  Raises an exception if the indicated
    * observation does not exist.
    */
   def fetchConfig(id: Observation.Id): ConnectionIO[(String, StaticConfig, TreeMap[Location.Middle, Step])] =
@@ -115,8 +115,8 @@ object ObservationDao {
 
   /**
    * Construct a program to select a fully specified observation, with targets,
-   * static config and steps.  Raises an error if the indicated observation does
-   * not exist.
+   * static config and steps.  Raises an exception if the indicated observation
+   * does not exist.
    */
   def fetch(id: Observation.Id): ConnectionIO[Observation] =
     for {
