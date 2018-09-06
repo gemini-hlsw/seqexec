@@ -116,24 +116,24 @@ object Step {
 
     val skip: Step = toStep.copy(skipped = Skipped(true))
 
-    def update(step: Step): Zipper = {
-      val currentified = Zipper.currentify(step)
-
-      //If running, only change the pending executions and the rollback definition.
-      (if (Step.status(toStep) === StepState.Running)
-        // Step updates should not change the number of Executions. If it does, the update will not apply unless
-        // the Step is paused and restarted.
-        if (step.executions.length === done.length + pending.length + 1)
-          currentified.map(c => this.copy(pending = c.pending.takeRight(pending.length), rolledback = c.rolledback))
-        else
-          currentified.map(c => this.copy(rolledback = c.rolledback))
-      else currentified.map(_.copy(breakpoint = this.breakpoint, skipMark = this.skipMark))
-      ).getOrElse(this)
-    }
+    def update(executions: List[Actions]): Zipper =
+      Zipper.calcRolledback(executions).map{ case r@(_, exes) =>
+        // Changing `pending` allows to propagate changes to non executed `executions`, even if the step is running
+        // Don't do it if the number of executions changes. In that case the update will only have an effect if
+        // the step is (re)started.
+        if (exes.length === done.length + pending.length) this.copy(pending = exes.takeRight(pending.length), rolledback = r)
+        else this.copy(rolledback = r)
+      }.getOrElse(this)
 
   }
 
   object Zipper {
+
+    private def calcRolledback(executions: List[Actions]): Option[(Execution, List[Actions])] = executions match {
+      case Nil => None
+      case exe :: exes =>
+        Execution.currentify(exe).map((_, exes))
+    }
 
     /**
       * Make a `Zipper` from a `Step` only if all the `Execution`s in the `Step` are
@@ -141,21 +141,17 @@ object Step {
       *
       */
     def currentify(step: Step): Option[Zipper] =
-      step.executions match {
-        case Nil         => None
-        case exe :: exes =>
-          Execution.currentify(exe).map(x =>
-            Zipper(
-              step.id,
-              step.fileId,
-              step.breakpoint,
-              step.skipMark,
-              exes,
-              x,
-              Nil,
-              (x, exes)
-            )
-          )
+      calcRolledback(step.executions).map{ case (x, exes) =>
+        Zipper(
+          step.id,
+          step.fileId,
+          step.breakpoint,
+          step.skipMark,
+          exes,
+          x,
+          Nil,
+          (x, exes)
+        )
       }
 
     val current: Lens[Zipper, Execution] =
