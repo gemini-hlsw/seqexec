@@ -41,16 +41,16 @@ object SeqexecUI {
   }
   // Prism from url params to sequence page
   def sequencePageP(instrumentNames: Map[String, Instrument]): Prism[(String, String, Int), SequencePage] = Prism[(String, String, Int), SequencePage] {
-    case (i, s, st) => (instrumentNames.get(i), Observation.Id.fromString(s)).mapN(SequencePage(_, _, StepIdDisplayed(st)))
+    case (i, s, st) => (instrumentNames.get(i), Observation.Id.fromString(s)).mapN(SequencePage(_, _, StepIdDisplayed(st - 1)))
   } {
-    p => (p.instrument.show, p.obsId.format, p.step.step)
+    p => (p.instrument.show, p.obsId.format, p.step.step + 1)
   }
 
   // Prism from url params to the preview page
   def previewPageP(instrumentNames: Map[String, Instrument]): Prism[(String, String, Int), PreviewPage] = Prism[(String, String, Int), PreviewPage] {
-    case (i, s, st) => (instrumentNames.get(i), Observation.Id.fromString(s)).mapN(PreviewPage(_, _, StepIdDisplayed(st)))
+    case (i, s, st) => (instrumentNames.get(i), Observation.Id.fromString(s)).mapN(PreviewPage(_, _, StepIdDisplayed(st - 1)))
   } {
-    p => (p.instrument.show, p.obsId.format, p.step.step)
+    p => (p.instrument.show, p.obsId.format, p.step.step + 1)
   }
 
   // Prism from url params to the preview page with config

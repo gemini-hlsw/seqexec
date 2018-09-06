@@ -30,6 +30,12 @@ object Pages {
       case (StepIdDisplayed(i), StepIdDisplayed(j)) => i === j
       case _                                        => false
     }
+
+    implicit val monoid: Monoid[StepIdDisplayed] = new Monoid[StepIdDisplayed] {
+      override def empty: StepIdDisplayed = StepIdDisplayed(0)
+      override def combine(x: StepIdDisplayed, y: StepIdDisplayed): StepIdDisplayed =
+        StepIdDisplayed(x.step + y.step)
+    }
   }
 
   case object Root extends SeqexecPages

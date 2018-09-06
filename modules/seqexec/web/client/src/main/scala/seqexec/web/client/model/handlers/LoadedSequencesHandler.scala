@@ -7,6 +7,7 @@ import cats.implicits._
 import diode.{ActionHandler, ActionResult, Effect, ModelRW, NoAction}
 import seqexec.model.events._
 import seqexec.web.client.model.Pages._
+import seqexec.web.client.ModelOps._
 import seqexec.web.client.actions._
 import seqexec.web.client.services.SeqexecWebClient
 import seqexec.web.client.circuit.SODLocationFocus
@@ -25,7 +26,8 @@ class LoadedSequencesHandler[M](modelRW: ModelRW[M, SODLocationFocus]) extends A
       } else {
         SODLocationFocus.sod.modify(_.updateFromQueue(view).loadingComplete(sid).unsetPreviewOn(sid))
       }
-      val upLocation = SODLocationFocus.location.set(SequencePage(i, sid, StepIdDisplayed(0)))
+      val nextStepToRun = view.queue.find(_.id === sid).foldMap(_.nextStepToRun)
+      val upLocation = SODLocationFocus.location.set(SequencePage(i, sid, nextStepToRun.foldMap(StepIdDisplayed.apply)))
       updatedL(upSelected >>> upLocation)
 
     case ServerMessage(s: SeqexecModelUpdate) =>

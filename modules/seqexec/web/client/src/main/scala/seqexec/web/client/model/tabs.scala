@@ -12,13 +12,13 @@ import seqexec.model.{ SequenceState, SequenceView }
 import seqexec.model.enum._
 import seqexec.web.client.ModelOps._
 
-final case class AvailableTab(id: Option[Observation.Id], status: Option[SequenceState], instrument: Option[Instrument], runningStep: Option[RunningStep], isPreview: Boolean, active: Boolean, loading: Boolean) {
+final case class AvailableTab(id: Option[Observation.Id], status: Option[SequenceState], instrument: Option[Instrument], runningStep: Option[RunningStep], nextStepToRun: Option[Int], isPreview: Boolean, active: Boolean, loading: Boolean) {
   val nonEmpty: Boolean = id.isDefined
 }
 
 object AvailableTab {
   implicit val eq: Eq[AvailableTab] =
-    Eq.by(x => (x.id, x.status, x.instrument, x.runningStep, x.isPreview, x.active, x.loading))
+    Eq.by(x => (x.id, x.status, x.instrument, x.runningStep, x.nextStepToRun, x.isPreview, x.active, x.loading))
 }
 
 final case class SequenceTabActive(tab: SequenceTab, active: Boolean)
@@ -59,6 +59,8 @@ sealed trait SequenceTab {
     case _: InstrumentSequenceTab => sequence.flatMap(_.runningStep)
     case _                        => none
   }
+
+  def nextStepToRun: Option[Int] = sequence.foldMap(_.nextStepToRun)
 
   def loading: Boolean = this match {
     case _: InstrumentSequenceTab => false
