@@ -33,6 +33,7 @@ import seqexec.web.client.reusability._
 import react.virtualized._
 import web.client.style._
 import web.client.table._
+import web.client.utils
 
 object ColWidths {
   val ControlWidth: Double       = 40
@@ -510,8 +511,9 @@ object StepsTable {
 
   def updateScrollPosition(b: Backend, pos: JsNumber): Callback = {
     val s = (State.userModified.set(IsModified) >>> State.scrollPosition.set(pos))(b.state)
-    b.setState(s) *>
-    b.props.obsId.map(id => SeqexecCircuit.dispatchCB(UpdateStepTableState(id, s.tableState))).getOrEmpty
+    (b.setState(s) *>
+    b.props.obsId.map(id => SeqexecCircuit.dispatchCB(UpdateStepTableState(id, s.tableState))).getOrEmpty).when(!utils.eq.eqv(pos, b.state.tableState.scrollPosition)) *>
+    Callback.empty
   }
 
   def startScrollTop(b: Backend): js.UndefOr[JsNumber] =

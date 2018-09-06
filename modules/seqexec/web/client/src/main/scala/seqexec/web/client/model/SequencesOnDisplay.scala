@@ -207,7 +207,10 @@ final case class SequencesOnDisplay(sequences: Zipper[SequenceTab]) {
         stepsTables.get(curr.id)
           .map(s => i.copy(tableState = s))
           .getOrElse(i)
-      case i @ PreviewSequenceTab(Some(curr), _, _, _) => stepsTables.get(curr.id).map(s => i.copy(tableState = s)).getOrElse(i)
+      case i @ PreviewSequenceTab(Some(curr), _, _, _) =>
+        stepsTables.get(curr.id)
+          .map(s => i.copy(tableState = s))
+          .getOrElse(i)
       case i => i
     })
 

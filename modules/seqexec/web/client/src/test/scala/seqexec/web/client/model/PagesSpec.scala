@@ -15,6 +15,7 @@ final class PagesSpec extends CatsSuite with ArbitrariesWebClient {
 
   checkAll("Eq[SeqexecPages]", EqTests[SeqexecPages].eqv)
   checkAll("Eq[StepIdDisplayed]", EqTests[StepIdDisplayed].eqv)
+  checkAll("Monoid[StepIdDisplayed]", MonoidTests[StepIdDisplayed].monoid)
 
   // lenses
   // checkAll("Prism[Action, SeqexecPages]", PrismTests(PageActionP))

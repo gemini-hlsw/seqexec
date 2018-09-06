@@ -20,16 +20,10 @@ object Pages {
   sealed trait SeqexecPages extends Product with Serializable
 
   // Indicates which step to display
-  // sealed trait StepDisplayed extends Product with Serializable
-  // case object NextToRun extends StepDisplayed
-  final case class StepIdDisplayed(step: Int)// extends StepDisplayed
+  final case class StepIdDisplayed(step: Int)
 
   object StepIdDisplayed {
-    implicit val equal: Eq[StepIdDisplayed] = Eq.instance {
-      // case (NextToRun, NextToRun)                   => true
-      case (StepIdDisplayed(i), StepIdDisplayed(j)) => i === j
-      case _                                        => false
-    }
+    implicit val equal: Eq[StepIdDisplayed] = Eq.fromUniversalEquals
 
     implicit val monoid: Monoid[StepIdDisplayed] = new Monoid[StepIdDisplayed] {
       override def empty: StepIdDisplayed = StepIdDisplayed(0)

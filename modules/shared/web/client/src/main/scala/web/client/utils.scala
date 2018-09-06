@@ -3,6 +3,8 @@
 
 package web.client
 
+import cats.Eq
+import cats.implicits._
 import japgolly.scalajs.react.raw.JsNumber
 import org.scalajs.dom
 import org.scalajs.dom.html
@@ -25,6 +27,14 @@ trait utils {
 }
 
 object utils extends utils {
+  implicit val eq: Eq[JsNumber] = Eq.instance { (d, e) => (d: Any, e: Any) match {
+    case (a: Float, b : Float)  => a === b
+    case (a: Double, b: Double) => a === b
+    case (a: Byte, b  : Byte)   => a === b
+    case (a: Short, b : Short)  => a === b
+    case (a: Int, b   : Int)    => a === b
+    case _                      => false
+  } }
 
   implicit class JsNumberOps(val d: JsNumber) extends AnyVal {
 

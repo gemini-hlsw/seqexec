@@ -386,7 +386,6 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
   implicit val stepsTableColumnCogen: Cogen[StepsTable.TableColumn] =
     Cogen[String].contramap(_.productPrefix)
 
-
   implicit val arbSeqexecUIModel: Arbitrary[SeqexecUIModel] =
     Arbitrary {
       for {
@@ -441,6 +440,20 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
         clientId <- arbitrary[Option[ClientID]]
         uiModel  <- arbitrary[SeqexecUIModel]
       } yield SeqexecAppRootModel(ws, site, clientId, uiModel)
+    }
+
+  implicit val arbTableStates: Arbitrary[TableStates] =
+    Arbitrary {
+      for {
+        qt <- arbitrary[TableState[QueueTableBody.TableColumn]]
+        ct <- arbitrary[TableState[StepConfigTable.TableColumn]]
+        st <- arbitrary[Map[Observation.Id, TableState[StepsTable.TableColumn]]]
+      } yield TableStates(qt, ct, st)
+    }
+
+  implicit val tableStatesCogen: Cogen[TableStates] =
+    Cogen[(TableState[QueueTableBody.TableColumn], TableState[StepConfigTable.TableColumn], List[(Observation.Id, TableState[StepsTable.TableColumn])])].contramap {
+      x => (x.queueTable, x.stepConfigTable, x.stepsTables.toList)
     }
 
 }
