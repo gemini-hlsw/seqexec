@@ -100,9 +100,9 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
     }(fastEq[InstrumentTabFocus])
 
   val sequenceTabs: ModelR[SeqexecAppRootModel, NonEmptyList[SequenceTabContentFocus]] =
-    logDisplayedReader.zip(zoom(_.uiModel.sequencesOnDisplay)).zoom {
-      case (log, SequencesOnDisplay(sequences)) => sequences.withFocus.map{
-        case (tab, active) => SequenceTabContentFocus(tab.instrument, tab.sequence.map(_.id), active, log)
+    statusReader.zip(logDisplayedReader.zip(zoom(_.uiModel.sequencesOnDisplay))).zoom {
+      case (s, (log, SequencesOnDisplay(sequences))) => sequences.withFocus.map{
+        case (tab, active) => SequenceTabContentFocus(s.isLogged, tab.instrument, tab.sequence.map(_.id), active, log)
       }.toNel
     }
 
@@ -117,7 +117,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
     statusReader.zip(sequenceTab(id)).zoom {
       case (status, SequenceTabActive(tab, _)) =>
         val targetName = tab.sequence.flatMap(firstScienceStepTargetNameT.headOption)
-        SequenceInfoFocus(status.isLogged, tab.sequence.map(_.metadata.name), tab.sequence.flatMap(_.metadata.observer), tab.sequence.map(_.status), targetName)
+        SequenceInfoFocus(status.isLogged, tab.sequence.map(_.metadata.name), tab.sequence.map(_.status), targetName)
     }
 
   def statusAndStepReader(id: Observation.Id): ModelR[SeqexecAppRootModel, Option[StatusAndStepFocus]] =

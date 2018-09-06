@@ -109,7 +109,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
 
       val stopTail: SeqAction[Result] = successTail
       val abortTail: SeqAction[Result] = sendObservationAborted(obsId, id) *>
-        SeqAction.fail(SeqexecFailure.Execution(s"Observation $id aborted by user."))
+        SeqAction.fail(SeqexecFailure.Execution(s"Observation ${obsId.format} aborted by user."))
 
       r match {
         case ObserveCommand.Success => successTail
