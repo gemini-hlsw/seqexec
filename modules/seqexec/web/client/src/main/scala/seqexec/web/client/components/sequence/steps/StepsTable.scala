@@ -98,10 +98,11 @@ object StepsTable {
                          canOperate: Boolean,
                          stepsTable: StepsTableAndStatusFocus,
                          onStepToRun: Int => Callback) {
-    def status: ClientStatus           = stepsTable.status
+    val status: ClientStatus           = stepsTable.status
     val steps: Option[StepsTableFocus] = stepsTable.stepsTable
     val stepsList: List[Step]          = steps.foldMap(_.steps)
-    def rowCount: Int                  = stepsList.length
+    val rowCount: Int                  = stepsList.length
+    val nextStepToRun: Int             = steps.foldMap(_.nextStepToRun).getOrElse(0)
 
     def rowGetter(idx: Int): StepRow =
       steps.flatMap(_.steps.lift(idx)).fold(StepRow.Zero)(StepRow.apply)
@@ -497,6 +498,20 @@ object StepsTable {
   def updateScrollPosition(b: Backend, pos: JsNumber): Callback =
     b.setState(State.scrollPosition.set(pos)(b.state))
 
+  def startScrollTop(b: Backend): js.UndefOr[JsNumber] =
+    if (b.state.tableState.userModified === IsModified) {
+      b.state.tableState.scrollPosition
+    } else {
+      js.undefined
+    }
+
+  def startScrollToIndex(b: Backend): Int =
+    if (b.state.tableState.userModified === IsModified) {
+      -1
+    } else {
+      b.props.nextStepToRun
+    }
+
   def stepsTableProps(b: Backend)(size: Size): Table.Props =
     Table.props(
       disableHeader = false,
@@ -513,8 +528,10 @@ object StepsTable {
       rowClassName = rowClassName(b) _,
       width = size.width.toInt,
       rowGetter = b.props.rowGetter _,
-      scrollTop = b.state.tableState.scrollPosition,
+      scrollToIndex = startScrollToIndex(b),
+      scrollTop = startScrollTop(b),
       onScroll = (_, _, pos) => updateScrollPosition(b, pos),
+      scrollToAlignment = ScrollToAlignment.Center,
       headerClassName = SeqexecStyles.tableHeader.htmlClass,
       headerHeight = SeqexecStyles.headerHeight
     )
