@@ -10,7 +10,6 @@ import seqexec.model.{ Observer, Operator, SequencesQueue, SequenceView }
 import seqexec.web.client.model._
 import seqexec.web.client.ModelOps._
 import seqexec.web.client.actions._
-import seqexec.web.client.circuit._
 import seqexec.web.client.services.SeqexecWebClient
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
@@ -126,18 +125,5 @@ class DebuggingHandler[M](modelRW: ModelRW[M, SequencesQueue[SequenceView]]) ext
         case v: SequenceView if v.id === obsId => v.showAsRunning(step)
         case v                                 => v
       }))
-  }
-}
-
-/**
-  * Handle to preserve the steps table state
-  */
-class StepConfigTableStateHandler[M](modelRW: ModelRW[M, TableStates]) extends ActionHandler(modelRW) with Handlers[M, TableStates] {
-  override def handle: PartialFunction[Any, ActionResult[M]] = {
-    case UpdateStepsConfigTableState(state) =>
-      updatedSilent(value.copy(stepConfigTable = state)) // We should only do silent updates as these change too quickly
-
-    case UpdateQueueTableState(state) =>
-      updatedSilent(value.copy(queueTable = state)) // We should only do silent updates as these change too quickly
   }
 }

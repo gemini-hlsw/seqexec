@@ -11,6 +11,8 @@ import monocle.macros.Lenses
 import seqexec.model.{ SequenceState, SequenceView }
 import seqexec.model.enum._
 import seqexec.web.client.ModelOps._
+import seqexec.web.client.components.sequence.steps.StepsTable
+import web.client.table._
 
 final case class AvailableTab(id: Option[Observation.Id], status: Option[SequenceState], instrument: Option[Instrument], runningStep: Option[RunningStep], nextStepToRun: Option[Int], isPreview: Boolean, active: Boolean, loading: Boolean) {
   val nonEmpty: Boolean = id.isDefined
@@ -31,6 +33,7 @@ object SequenceTabActive {
 }
 
 sealed trait SequenceTab {
+  val tableState: TableState[StepsTable.TableColumn]
 
   def instrument: Option[Instrument] = this match {
     case i: InstrumentSequenceTab => i.inst.some
@@ -69,21 +72,21 @@ sealed trait SequenceTab {
 }
 
 @Lenses
-final case class InstrumentSequenceTab(inst: Instrument, currentSequence: Option[SequenceView], completedSequence: Option[SequenceView], stepConfig: Option[Int]) extends SequenceTab
+final case class InstrumentSequenceTab(inst: Instrument, currentSequence: Option[SequenceView], completedSequence: Option[SequenceView], stepConfig: Option[Int], tableState: TableState[StepsTable.TableColumn]) extends SequenceTab
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object InstrumentSequenceTab {
   implicit val eq: Eq[InstrumentSequenceTab] =
-    Eq.by(x => (x.instrument, x.currentSequence, x.completedSequence, x.stepConfig))
+    Eq.by(x => (x.instrument, x.currentSequence, x.completedSequence, x.stepConfig, x.tableState))
 }
 
 @Lenses
-final case class PreviewSequenceTab(currentSequence: Option[SequenceView], stepConfig: Option[Int], isLoading: Boolean) extends SequenceTab
+final case class PreviewSequenceTab(currentSequence: Option[SequenceView], stepConfig: Option[Int], isLoading: Boolean, tableState: TableState[StepsTable.TableColumn]) extends SequenceTab
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object PreviewSequenceTab {
   implicit val eq: Eq[PreviewSequenceTab] =
-    Eq.by(x => (x.currentSequence, x.stepConfig, x.isLoading))
+    Eq.by(x => (x.currentSequence, x.stepConfig, x.isLoading, x.tableState))
 }
 
 object SequenceTab {
@@ -93,7 +96,7 @@ object SequenceTab {
       case (a: PreviewSequenceTab, b: PreviewSequenceTab)       => a === b
       case _                                                    => false
     }
-  val Empty: SequenceTab = PreviewSequenceTab(None, None, false)
+  val Empty: SequenceTab = PreviewSequenceTab(None, None, false, StepsTable.State.InitialTableState)
 
   // Some lenses
   val stepConfigL: Lens[SequenceTab, Option[Int]] = Lens[SequenceTab, Option[Int]] {

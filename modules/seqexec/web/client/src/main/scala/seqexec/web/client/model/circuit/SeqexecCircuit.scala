@@ -12,6 +12,7 @@ import java.util.logging.Logger
 import japgolly.scalajs.react.Callback
 import seqexec.model._
 import seqexec.model.events._
+import seqexec.web.client.actions._
 import seqexec.web.client.model._
 import seqexec.web.client.lenses._
 import seqexec.web.client.handlers._
@@ -26,10 +27,13 @@ import web.client.table._
 final class LoggingProcessor[M <: AnyRef] extends ActionProcessor[M] {
   private val logger = Logger.getLogger(this.getClass.getName)
   override def process(dispatch: Dispatcher, action: Any, next: Any => ActionResult[M], currentModel: M): ActionResult[M] = {
-    // log the action
+    // log some of the actions
     action match {
       case AppendToLog(_)                     =>
       case ServerMessage(_: ServerLogMessage) =>
+      case UpdateStepsConfigTableState(_)     =>
+      case UpdateQueueTableState(_)           =>
+      case UpdateStepTableState(_, _)         =>
       case a: Action                          => logger.info(s"Action: ${a.show}")
       case _                                  =>
     }
@@ -53,7 +57,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
     this.zoomRWL(SeqexecAppRootModel.uiModel ^|-> InitialSyncFocus.initialSyncFocusL)
 
   val tableStateRW: ModelRW[SeqexecAppRootModel, TableStates] =
-    zoomRW(m => TableStates(m.uiModel.queueTableState, m.uiModel.configTableState)) ((m, v) => m.copy(uiModel = m.uiModel.copy(queueTableState = v.queueTable, configTableState = v.stepConfigTable)))
+    this.zoomRWL(SeqexecAppRootModel.uiModel ^|-> TableStates.tableStateL)
 
   // Reader to indicate the allowed interactions
   val statusReader: ModelR[SeqexecAppRootModel, ClientStatus] =
@@ -132,7 +136,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
     sequenceTab(id).zoom {
       case SequenceTabActive(tab, _) =>
         tab.sequence.map { sequence =>
-          StepsTableFocus(sequence.id, sequence.metadata.instrument, sequence.status, sequence.steps, tab.stepConfigDisplayed, sequence.nextStepToRun, tab.isPreview)
+          StepsTableFocus(sequence.id, sequence.metadata.instrument, sequence.status, sequence.steps, tab.stepConfigDisplayed, sequence.nextStepToRun, tab.isPreview, tab.tableState)
         }
     }
 
@@ -164,7 +168,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   private val remoteRequestsHandler    = new RemoteRequestsHandler(zoomTo(_.clientId))
   private val syncRequestsHandler      = new SyncRequestsHandler(zoomTo(_.uiModel.syncInProgress))
   private val debuggingHandler         = new DebuggingHandler(zoomTo(_.uiModel.sequences))
-  private val stepConfigStateHandler   = new StepConfigTableStateHandler(tableStateRW)
+  private val tableStateHandler        = new TableStateHandler(tableStateRW)
   private val loadSequencesHandler     = new LoadedSequencesHandler(sodLocationReaderRW)
   private val siteHandler              = new SiteHandler(zoomTo(_.site))
 
@@ -188,7 +192,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
     syncRequestsHandler,
     navigationHandler,
     debuggingHandler,
-    stepConfigStateHandler,
+    tableStateHandler,
     siteHandler)
 
   /**

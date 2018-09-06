@@ -6,6 +6,7 @@ package seqexec.web.client.components.sequence.steps
 import cats.Eq
 import cats.data.NonEmptyList
 import cats.implicits._
+import gem.Observation
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.component.Scala.Unmounted
@@ -22,7 +23,8 @@ import seqexec.web.client.lenses._
 import seqexec.web.client.model.ClientStatus
 import seqexec.web.client.model.Pages.SeqexecPages
 import seqexec.web.client.ModelOps._
-import seqexec.web.client.circuit.{ StepsTableAndStatusFocus, StepsTableFocus }
+import seqexec.web.client.circuit.{ SeqexecCircuit, StepsTableAndStatusFocus, StepsTableFocus }
+import seqexec.web.client.actions.UpdateStepTableState
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.components.sequence.steps.OffsetFns._
 import seqexec.web.client.semanticui.elements.icon.Icon._
@@ -53,7 +55,7 @@ object ColWidths {
 object StepsTable {
   type Backend = RenderScope[Props, State, Unit]
 
-  sealed trait TableColumn
+  sealed trait TableColumn extends Product with Serializable
   case object IconColumn extends TableColumn
 
   object TableColumn {
@@ -98,11 +100,19 @@ object StepsTable {
                          canOperate: Boolean,
                          stepsTable: StepsTableAndStatusFocus,
                          onStepToRun: Int => Callback) {
-    val status: ClientStatus           = stepsTable.status
-    val steps: Option[StepsTableFocus] = stepsTable.stepsTable
-    val stepsList: List[Step]          = steps.foldMap(_.steps)
-    val rowCount: Int                  = stepsList.length
-    val nextStepToRun: Int             = steps.foldMap(_.nextStepToRun).getOrElse(0)
+    val status           : ClientStatus                    = stepsTable.status
+    val steps            : Option[StepsTableFocus]         = stepsTable.stepsTable
+    val obsId            : Option[Observation.Id]          = steps.map(_.id)
+    val tableState       : Option[TableState[TableColumn]] = steps.map(_.tableState)
+    val stepsList        : List[Step]                      = steps.foldMap(_.steps)
+    val rowCount         : Int                             = stepsList.length
+    val nextStepToRun    : Int                             = steps.foldMap(_.nextStepToRun).getOrElse(0)
+    val showDisperser    : Boolean                         = showProp(InstrumentProperties.Disperser)
+    val showFPU          : Boolean                         = showProp(InstrumentProperties.FPU)
+    val isPreview        : Boolean                         = steps.map(_.isPreview).getOrElse(false)
+    val canSetBreakpoint : Boolean                         = canOperate && !isPreview
+    val showObservingMode: Boolean                         = showProp(InstrumentProperties.ObservingMode)
+
 
     def rowGetter(idx: Int): StepRow =
       steps.flatMap(_.steps.lift(idx)).fold(StepRow.Zero)(StepRow.apply)
@@ -120,13 +130,10 @@ object StepsTable {
         case _                     => false
       }
 
-    val showDisperser: Boolean = showProp(InstrumentProperties.Disperser)
-    val showFPU: Boolean       = showProp(InstrumentProperties.FPU)
-    val isPreview: Boolean     = steps.map(_.isPreview).getOrElse(false)
-
-    val canSetBreakpoint = canOperate && !isPreview
-    val showObservingMode: Boolean = showProp(
-      InstrumentProperties.ObservingMode)
+    val startState: State =
+      tableState
+        .map(s => State.InitialState.copy(tableState = s))
+        .getOrElse(State.InitialState)
   }
 
   final case class State(tableState: TableState[TableColumn], breakpointHover: Option[Int])
@@ -142,7 +149,13 @@ object StepsTable {
     val scrollPosition: Lens[State, JsNumber] =
       tableState ^|-> TableState.scrollPosition[TableColumn]
 
-    val InitialTableState: State = State(TableState(NotModified, 0, all), None)
+    val userModified: Lens[State, UserModified] =
+      tableState ^|-> TableState.userModified[TableColumn]
+
+    val InitialTableState: TableState[TableColumn] =
+      TableState(NotModified, 0, all)
+
+    val InitialState: State = State(InitialTableState, None)
   }
 
   implicit val propsReuse: Reusability[Props] = Reusability.by(x => (x.canOperate, x.stepsTable))
@@ -495,8 +508,11 @@ object StepsTable {
     ).collect { case Some(x) => x }
   }
 
-  def updateScrollPosition(b: Backend, pos: JsNumber): Callback =
-    b.setState(State.scrollPosition.set(pos)(b.state))
+  def updateScrollPosition(b: Backend, pos: JsNumber): Callback = {
+    val s = (State.userModified.set(IsModified) >>> State.scrollPosition.set(pos))(b.state)
+    b.setState(s) *>
+    b.props.obsId.map(id => SeqexecCircuit.dispatchCB(UpdateStepTableState(id, s.tableState))).getOrEmpty
+  }
 
   def startScrollTop(b: Backend): js.UndefOr[JsNumber] =
     if (b.state.tableState.userModified === IsModified) {
@@ -594,7 +610,7 @@ object StepsTable {
 
   private val component = ScalaComponent
     .builder[Props]("StepsTable")
-    .initialState(State.InitialTableState)
+    .initialStateFromProps(_.startState)
     .render(render)
     .configure(Reusability.shouldComponentUpdate)
     .componentWillReceiveProps(x => receive(x.currentProps, x.nextProps))
