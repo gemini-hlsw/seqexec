@@ -178,7 +178,7 @@ final case class GPIController[F[_]: Sync](gpiClient: GPIClient[F],
         Configuration.single("gpi:selectSource.sourceIr",
                              (config.asu.ir === LegacyArtificialSource.ON)
                                .fold(1, 0)) |+|
-        Configuration.single("gpi:selectSource.deploy",
+        Configuration.single("gpi:configPolarizer.deploy",
                              (config.disperser === LegacyDisperser.WOLLASTON)
                                .fold(1, 0)) |+|
         Configuration.single("gpi:configPolarizer.angle", config.disperserAngle)
