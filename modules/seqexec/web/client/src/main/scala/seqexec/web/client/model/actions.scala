@@ -11,9 +11,10 @@ import gem.enum.Site
 import seqexec.model._
 import seqexec.model.enum._
 import seqexec.model.events._
-import seqexec.web.client.model._
+import seqexec.web.client.model.Pages._
 import seqexec.web.client.components.sequence.steps.StepConfigTable
 import seqexec.web.client.components.QueueTableBody
+import seqexec.web.client.components.sequence.steps.StepsTable
 import org.scalajs.dom.WebSocket
 import web.client.table._
 
@@ -21,8 +22,8 @@ object actions {
 
   // scalastyle:off
   // Actions
-  final case class NavigateTo(page: Pages.SeqexecPages) extends Action
-  final case class NavigateSilentTo(page: Pages.SeqexecPages) extends Action
+  final case class NavigateTo(page: SeqexecPages) extends Action
+  final case class NavigateSilentTo(page: SeqexecPages) extends Action
   final case class Initialize(site: Site) extends Action
 
   // Actions to close and/open the login box
@@ -35,8 +36,8 @@ object actions {
   case object Logout extends Action
 
   // Action to select a sequence for display
-  final case class SelectIdToDisplay(i: Instrument, id: Observation.Id, step: StepId) extends Action
-  final case class SelectSequencePreview(i: Instrument, id: Observation.Id, step: StepId) extends Action
+  final case class SelectIdToDisplay(i: Instrument, id: Observation.Id, step: StepIdDisplayed) extends Action
+  final case class SelectSequencePreview(i: Instrument, id: Observation.Id, step: StepIdDisplayed) extends Action
   case object SelectEmptyPreview extends Action
   case object SelectRoot extends Action
   final case class ShowStepConfig(i: Instrument, id: Observation.Id, step: Int) extends Action
@@ -96,6 +97,7 @@ object actions {
 
   final case class UpdateStepsConfigTableState(s: TableState[StepConfigTable.TableColumn]) extends Action
   final case class UpdateQueueTableState(s: TableState[QueueTableBody.TableColumn]) extends Action
+  final case class UpdateStepTableState(id: Observation.Id, s: TableState[StepsTable.TableColumn]) extends Action
   final case class LoadSequence(observer: Observer, i: Instrument, id: Observation.Id) extends Action
   final case class SequenceLoadFailed(id: Observation.Id) extends Action
   case object CleanSequences extends Action

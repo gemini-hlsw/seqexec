@@ -11,10 +11,12 @@ import gem.Observation
 import gem.enum.Site
 import monocle.Lens
 import monocle.macros.Lenses
+import monocle.function.At._
 import seqexec.model._
 import seqexec.model.enum._
 import seqexec.web.client.model._
 import seqexec.web.client.components.sequence.steps.StepConfigTable
+import seqexec.web.client.components.sequence.steps.StepsTable
 import seqexec.web.client.components.QueueTableBody
 import web.client.table._
 
@@ -82,7 +84,7 @@ package circuit {
   }
 
 
-  final case class SequenceInQueue(id: Observation.Id, status: SequenceState, instrument: Instrument, active: Boolean, loaded: Boolean, name: String, targetName: Option[TargetName], runningStep: Option[RunningStep]) extends UseValueEq
+  final case class SequenceInQueue(id: Observation.Id, status: SequenceState, instrument: Instrument, active: Boolean, loaded: Boolean, name: String, targetName: Option[TargetName], runningStep: Option[RunningStep], nextStepToRun: Option[Int]) extends UseValueEq
 
   object SequenceInQueue {
     implicit val order: Order[SequenceInQueue] = Order.by(_.id)
@@ -124,11 +126,11 @@ package circuit {
       Eq.by(x => (x.isLogged, x.instrument, x.obsId, x.stepConfigDisplayed, x.totalSteps, x.isPreview))
   }
 
-  final case class StepsTableFocus(id: Observation.Id, instrument: Instrument, state: SequenceState, steps: List[Step], stepConfigDisplayed: Option[Int], nextStepToRun: Option[Int], isPreview: Boolean)
+  final case class StepsTableFocus(id: Observation.Id, instrument: Instrument, state: SequenceState, steps: List[Step], stepConfigDisplayed: Option[Int], nextStepToRun: Option[Int], isPreview: Boolean, tableState: TableState[StepsTable.TableColumn])
 
   object StepsTableFocus {
     implicit val eq: Eq[StepsTableFocus] =
-      Eq.by(x => (x.id, x.instrument, x.state, x.steps, x.stepConfigDisplayed, x.nextStepToRun, x.isPreview))
+      Eq.by(x => (x.id, x.instrument, x.state, x.steps, x.stepConfigDisplayed, x.nextStepToRun, x.isPreview, x.tableState))
   }
 
   final case class StepsTableAndStatusFocus(status: ClientStatus, stepsTable: Option[StepsTableFocus], configTableState: TableState[StepConfigTable.TableColumn])
@@ -142,5 +144,19 @@ package circuit {
 
   final case class SequenceControlFocus(isLogged: Boolean, isConnected: Boolean, control: Option[ControlModel], syncInProgress: Boolean) extends UseValueEq
 
-  final case class TableStates(queueTable: TableState[QueueTableBody.TableColumn], stepConfigTable: TableState[StepConfigTable.TableColumn]) extends UseValueEq
+  @Lenses
+  final case class TableStates(queueTable: TableState[QueueTableBody.TableColumn], stepConfigTable: TableState[StepConfigTable.TableColumn], stepsTables: Map[Observation.Id, TableState[StepsTable.TableColumn]]) extends UseValueEq
+
+  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
+  object TableStates {
+    implicit val eq: Eq[TableStates] =
+      Eq.by(x => (x.queueTable, x.stepConfigTable, x.stepsTables))
+
+    val tableStateL: Lens[SeqexecUIModel, TableStates] =
+      Lens[SeqexecUIModel, TableStates](m => TableStates(m.queueTableState, m.configTableState, m.sequencesOnDisplay.stepsTables))(v => m => m.copy(queueTableState = v.queueTable, configTableState = v.stepConfigTable, sequencesOnDisplay = m.sequencesOnDisplay.updateStepsTableStates(v.stepsTables)))
+
+    def stepTableAt(id: Observation.Id): Lens[TableStates, Option[TableState[StepsTable.TableColumn]]] =
+      TableStates.stepsTables ^|-> at(id)
+  }
+
 }

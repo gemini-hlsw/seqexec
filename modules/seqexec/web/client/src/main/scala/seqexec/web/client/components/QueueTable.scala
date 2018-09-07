@@ -142,6 +142,7 @@ object QueueTableBody {
                    s.name,
                    s.active,
                    s.loaded,
+                   s.nextStepToRun,
                    s.runningStep)
         }
         .getOrElse(QueueRow.Empty)
@@ -199,7 +200,7 @@ object QueueTableBody {
         this
       } else {
         val optimalSizes = sequences.foldLeft(columnsDefaultWidth) {
-          case (currWidths, SequenceInQueue(id, st, i, _, _, n, t, r)) =>
+          case (currWidths, SequenceInQueue(id, st, i, _, _, n, t, r, _)) =>
             val idWidth = max(currWidths.getOrElse(ObsIdColumn, ObsIdMinWidth),
                               tableTextWidth(id.format))
             val statusWidth =
@@ -305,8 +306,8 @@ object QueueTableBody {
     var name: String
     var active: Boolean
     var loaded: Boolean
+    var nextStepToRun: Option[Int]
     var runningStep: Option[RunningStep]
-
   }
 
   // scalastyle:on
@@ -320,6 +321,7 @@ object QueueTableBody {
               name: String,
               active: Boolean,
               loaded: Boolean,
+              nextStepToRun: Option[Int],
               runningStep: Option[RunningStep]): QueueRow = {
       val p = (new js.Object).asInstanceOf[QueueRow]
       p.obsId = obsId
@@ -328,6 +330,7 @@ object QueueTableBody {
       p.targetName = targetName
       p.name = name
       p.active = active
+      p.nextStepToRun = nextStepToRun
       p.runningStep = runningStep
       p.loaded = loaded
       p
@@ -340,6 +343,7 @@ object QueueTableBody {
                                       String,
                                       Boolean,
                                       Boolean,
+                                      Option[Int],
                                       Option[RunningStep])] =
       Some(
         (l.obsId,
@@ -349,6 +353,7 @@ object QueueTableBody {
          l.name,
          l.active,
          l.loaded,
+         l.nextStepToRun,
          l.runningStep))
 
     def Empty: QueueRow =
@@ -359,6 +364,7 @@ object QueueTableBody {
             "",
             active = false,
             loaded = false,
+            None,
             None)
   }
 
@@ -371,9 +377,9 @@ object QueueTableBody {
 
   def pageOf(row: QueueRow): SeqexecPages =
     if (row.loaded) {
-      SequencePage(row.instrument, row.obsId, 0)
+      SequencePage(row.instrument, row.obsId, StepIdDisplayed(row.nextStepToRun.getOrElse(0)))
     } else {
-      PreviewPage(row.instrument, row.obsId, 0)
+      PreviewPage(row.instrument, row.obsId, StepIdDisplayed(row.nextStepToRun.getOrElse(0)))
     }
 
   private def linkedTextRenderer(p: Props)(
@@ -454,16 +460,16 @@ object QueueTableBody {
     ((i, p.rowGetter(i)) match {
       case (-1, _) =>
         SeqexecStyles.headerRowStyle
-      case (_, QueueRow(_, s, _, _, _, _, _, _)) if s == SequenceState.Completed =>
+      case (_, QueueRow(_, s, _, _, _, _, _, _, _)) if s == SequenceState.Completed =>
         SeqexecStyles.stepRow |+| SeqexecStyles.rowPositive
-      case (_, QueueRow(_, s, _, _, _, _, _, _)) if s.isRunning                  =>
+      case (_, QueueRow(_, s, _, _, _, _, _, _, _)) if s.isRunning                  =>
         SeqexecStyles.stepRow |+| SeqexecStyles.rowWarning
-      case (_, QueueRow(_, s, _, _, _, _, _, _)) if s.isError                    =>
+      case (_, QueueRow(_, s, _, _, _, _, _, _, _)) if s.isError                    =>
         SeqexecStyles.stepRow |+| SeqexecStyles.rowNegative
-      case (_, QueueRow(_, s, _, _, _, _, active, _))
-          if active && !s.isInProcess                                         =>
+      case (_, QueueRow(_, s, _, _, _, _, active, _, _))
+          if active && !s.isInProcess                                               =>
         SeqexecStyles.stepRow |+| SeqexecStyles.rowActive
-      case _                                                                  =>
+      case _                                                                        =>
         SeqexecStyles.stepRow
     }).htmlClass
 
@@ -574,7 +580,7 @@ object QueueTableBody {
     val r = b.props.rowGetter(i)
     if (r.loaded) {
       // If already loaded switch tabs
-      b.props.ctl.dispatchAndSetUrlCB(SelectIdToDisplay(r.instrument, r.obsId, 0))
+      b.props.ctl.dispatchAndSetUrlCB(SelectIdToDisplay(r.instrument, r.obsId, StepIdDisplayed(r.nextStepToRun.getOrElse(0))))
     } else { // Try to load it
       (for {
         u <- b.props.user

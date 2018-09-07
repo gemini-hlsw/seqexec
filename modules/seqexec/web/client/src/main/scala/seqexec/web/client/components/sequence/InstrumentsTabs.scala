@@ -84,6 +84,7 @@ object InstrumentTab {
       val instName = instrument.foldMap(_.show)
       val dispName = if (isPreview) s"Preview: $instName" else instName
       val isLogged = b.props.loggedIn
+      val nextStepToRun = StepIdDisplayed(b.props.tab.nextStepToRun.getOrElse(-1))
 
       val tabTitle = b.props.tab.runningStep match {
         case Some(RunningStep(current, total)) => s"${sequenceId.map(_.format).getOrElse("")} - ${current + 1}/$total"
@@ -104,7 +105,13 @@ object InstrumentTab {
 
       val linkPage: SeqexecPages =
         (sequenceId, instrument)
-          .mapN((id, inst) => if (isPreview) PreviewPage(inst, id, 0) else SequencePage(inst, id, 0))
+          .mapN((id, inst) =>
+            if (isPreview) {
+              PreviewPage(inst, id, nextStepToRun)
+            } else {
+              SequencePage(inst, id, nextStepToRun)
+            }
+          )
           .getOrElse(EmptyPreviewPage)
 
       val loadButton: Option[VdomNode] =
@@ -182,7 +189,7 @@ object InstrumentsTabs {
     .stateless
     .render_P(p =>
       tabConnect { x =>
-        val runningInstruments = x().tabs.toList.collect { case AvailableTab(_, Some(SequenceState.Running(_, _)), Some(i), _, false, _, _) => i }
+        val runningInstruments = x().tabs.toList.collect { case AvailableTab(_, Some(SequenceState.Running(_, _)), Some(i), _, _, false, _, _) => i }
         val tabs = x().tabs.toList.filter(_.nonEmpty).sortBy {
           case t if t.isPreview => Int.MinValue.some
           case t                => t.instrument.map(_.ordinal)

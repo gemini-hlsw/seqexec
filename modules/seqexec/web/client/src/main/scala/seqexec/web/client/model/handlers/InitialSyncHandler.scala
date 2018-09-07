@@ -9,6 +9,7 @@ import seqexec.model.events.SeqexecModelUpdate
 import seqexec.web.client.actions._
 import seqexec.web.client.circuit._
 import seqexec.web.client.model.Pages._
+import seqexec.web.client.ModelOps._
 import scala.concurrent.Future
 import cats.implicits._
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
@@ -32,7 +33,8 @@ class InitialSyncHandler[M](modelRW: ModelRW[M, InitialSyncFocus]) extends Actio
     // An unkown page was shown
     val effect = loaded.headOption.flatMap { id =>
       s.queue.find(_.id === id).map { s =>
-        val action = SelectIdToDisplay(s.metadata.instrument, id, 0)
+        val nextStep = StepIdDisplayed(s.runningStep.foldMap(_.last))
+        val action = SelectIdToDisplay(s.metadata.instrument, id, nextStep)
         (pageE(action), Effect(Future(action)))
       }
     }

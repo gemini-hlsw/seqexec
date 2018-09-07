@@ -22,6 +22,7 @@ final class CircuitReaderSpec extends CatsSuite with PropertyChecks with Arbitra
   // checkAll("sodLocationFocusL", LensTests(SODLocationFocus.sodLocationFocusL))
   // checkAll("initialSyncFocusL", LensTests(InitialSyncFocus.initialSyncFocusL))
   checkAll("clientStatusFocusL", LensTests(ClientStatus.clientStatusFocusL))
+  // checkAll("tableStateL", LensTests(TableStates.tableStateL))
 
   test("maintain reference equality for constant readers") {
       (webSocketFocusRW === webSocketFocusRW.value) should be(true)

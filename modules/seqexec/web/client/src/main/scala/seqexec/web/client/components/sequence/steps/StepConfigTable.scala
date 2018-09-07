@@ -124,7 +124,7 @@ object StepConfigTable {
 
   def updateScrollPosition(b: Backend, pos: JsNumber): Callback = {
     val s = TableState.scrollPosition[TableColumn].set(pos)(b.state)
-    b.setState(s) >> SeqexecCircuit.dispatchCB(UpdateStepsConfigTableState(s))
+    b.setState(s) *> SeqexecCircuit.dispatchCB(UpdateStepsConfigTableState(s))
   }
 
   def rowClassName(p: Props)(i: Int): String =

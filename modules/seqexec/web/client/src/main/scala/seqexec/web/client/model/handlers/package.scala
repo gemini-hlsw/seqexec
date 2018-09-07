@@ -18,6 +18,9 @@ package handlers {
     def updatedL(lens: T => T): ActionResult[M] =
       updated(lens(value))
 
+    def updatedSilentL(lens: T => T): ActionResult[M] =
+      updatedSilent(lens(value))
+
     def updatedLE(lens: T => T, effect: Effect): ActionResult[M] =
       updated(lens(value), effect)
   }
