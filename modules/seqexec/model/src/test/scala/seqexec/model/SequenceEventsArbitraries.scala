@@ -109,8 +109,7 @@ trait SequenceEventsArbitraries extends ArbTime {
     for {
       i <- arbitrary[Notification]
       c <- arbitrary[ClientID]
-      s <- arbitrary[SequencesQueue[SequenceView]]
-    } yield UserNotification(i, c, s)
+    } yield UserNotification(i, c)
   }
 
   implicit val smuArb = Arbitrary[SeqexecModelUpdate] {

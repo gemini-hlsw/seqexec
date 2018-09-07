@@ -25,6 +25,7 @@ package object reusability {
   implicit val clientStatusReuse       : Reusability[ClientStatus]             = Reusability.byEq
   implicit val stepsTableFocusReuse    : Reusability[StepsTableFocus]          = Reusability.byEq
   implicit val statusAndStepFocusReuse : Reusability[StatusAndStepFocus]       = Reusability.byEq
+  implicit val seqControlFocusReuse    : Reusability[SequenceControlFocus]     = Reusability.byEq
   implicit val stsfReuse               : Reusability[StepsTableAndStatusFocus] = Reusability.byEq
   implicit val sectonReuse             : Reusability[SectionVisibilityState]   = Reusability.byRef
   implicit val potStateReuse           : Reusability[PotState]                 = Reusability.byRef

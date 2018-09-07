@@ -14,7 +14,7 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
 class NotificationsHandler[M](modelRW: ModelRW[M, UserNotificationState]) extends ActionHandler(modelRW) with Handlers[M, UserNotificationState] {
   def handleUserNotification: PartialFunction[Any, ActionResult[M]] = {
-    case ServerMessage(UserNotification(not, _, _)) =>
+    case ServerMessage(UserNotification(not, _)) =>
       // Update the notification state
       val lens = UserNotificationState.notification.set(not.some)
       // Request opening the dialog box

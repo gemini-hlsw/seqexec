@@ -120,7 +120,6 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus]) extends Act
 
   val modelUpdateMessage: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(s: SeqexecModelUpdate) =>
-    println("Update")
       updated(value.copy(sequences = filterSequences(s.view)))
   }
 

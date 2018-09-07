@@ -9,6 +9,7 @@ import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{Callback, CallbackTo, ScalaComponent, CatsReact}
 import japgolly.scalajs.react.CatsReact._
 import japgolly.scalajs.react.component.Scala.Unmounted
+import japgolly.scalajs.react.extra.Reusability
 import gem.Observation
 import mouse.all._
 import seqexec.model.SequenceState
@@ -20,6 +21,7 @@ import seqexec.web.client.semanticui.elements.button.Button.LeftLabeled
 import seqexec.web.client.semanticui.elements.popup.Popup
 import seqexec.web.client.semanticui.elements.icon.Icon
 import seqexec.web.client.semanticui.elements.icon.Icon.{IconRefresh, IconPlay, IconPause, IconBan}
+import seqexec.web.client.reusability._
 import web.client.style._
 
 /**
@@ -45,6 +47,9 @@ object SequenceControl {
   object State {
     val Zero: State = State(runRequested = false, pauseRequested = false, syncRequested = false, cancelPauseRequested = false)
   }
+
+  implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
+  implicit val stateReuse: Reusability[State] = Reusability.derive[State]
 
   private val ST = ReactS.Fix[State]
 
@@ -110,7 +115,6 @@ object SequenceControl {
     }.componentWillReceiveProps { f =>
       // Update state of run requested and sync requested depending on the run state
       Callback.when(!f.nextProps.p.syncInProgress && f.state.syncRequested)(f.modState(_.copy(syncRequested = false))) *>
-      Callback.log(f.nextProps.p.control.map(_.status).exists(_.isRunning) && f.state.runRequested) *>
       Callback.when((!f.nextProps.runRequested || f.nextProps.p.control.map(_.status).exists(_.isRunning)) && f.state.runRequested)(f.modState(_.copy(runRequested = false)))
     }.build
 

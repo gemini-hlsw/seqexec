@@ -79,7 +79,6 @@ trait ModelLenses {
       case e @ ExposurePaused(_, _)            => e.copy(view = q)
       case e @ SequenceUpdated(_)              => e.copy(view = q)
       case e @ LoadSequenceUpdated(_, _, _, _) => e.copy(view = q)
-      case e @ UserNotification(_, _, _)       => e.copy(view = q)
       case e @ ClearLoadedSequencesUpdated(_)  => e.copy(view = q)
       case e                                   => e
     }

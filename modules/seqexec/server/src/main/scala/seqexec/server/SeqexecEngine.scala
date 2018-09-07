@@ -634,7 +634,7 @@ object SeqexecEngine extends SeqexecConfiguration {
     case SetCloudCover(_, _)           => ConditionsUpdated(svs)
     case LoadSequence(id)              => SequenceLoaded(id, svs)
     case UnloadSequence(id)            => SequenceUnloaded(id, svs)
-    case NotifyUser(m, cid)            => UserNotification(m, cid, svs)
+    case NotifyUser(m, cid)            => UserNotification(m, cid)
   }
 
   def toSeqexecEvent(ev: executeEngine.ResultType)(svs: => SequencesQueue[SequenceView]): SeqexecEvent = ev match {
@@ -660,7 +660,7 @@ object SeqexecEngine extends SeqexecConfiguration {
       case engine.PartialResult(_, _, Partial(FileIdAllocated(fileId), _)) => FileIdStepExecuted(fileId, svs)
       case engine.PartialResult(_, _, _)                                   => SequenceUpdated(svs)
       case engine.Failed(id, _, _)                                         => SequenceError(id, svs)
-      case engine.Busy(id, clientId)                                       => UserNotification(ResourceConflict(id), clientId, svs)
+      case engine.Busy(id, clientId)                                       => UserNotification(ResourceConflict(id), clientId)
       case engine.Executed(s)                                              => StepExecuted(s, svs)
       case engine.Executing(_)                                             => SequenceUpdated(svs)
       case engine.Finished(_)                                              => SequenceCompleted(svs)
