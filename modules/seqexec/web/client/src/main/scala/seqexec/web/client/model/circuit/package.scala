@@ -9,12 +9,13 @@ import cats.data.NonEmptyList
 import diode._
 import gem.Observation
 import gem.enum.Site
-import monocle.Lens
+import monocle.{ Getter, Lens }
 import monocle.macros.Lenses
 import monocle.function.At._
 import seqexec.model._
 import seqexec.model.enum._
 import seqexec.web.client.model._
+import seqexec.web.client.ModelOps._
 import seqexec.web.client.components.sequence.steps.StepConfigTable
 import seqexec.web.client.components.sequence.steps.StepsTable
 import seqexec.web.client.components.QueueTableBody
@@ -39,8 +40,12 @@ package circuit {
   class CircuitOps[M <: AnyRef](circuit: Circuit[M]) {
     def zoomRWL[A: Eq](lens: Lens[M, A]): ModelRW[M, A] =
       circuit.zoomRW(lens.get)((m, a) => lens.set(a)(m))(fastEq[A])
+
     def zoomL[A: Eq](lens: Lens[M, A]): ModelR[M, A] =
       circuit.zoom[A](lens.get)(fastEq[A])
+
+    def zoomG[A: Eq](getter: Getter[M, A]): ModelR[M, A] =
+      circuit.zoom[A](getter.get)(fastEq[A])
   }
 
   // All these classes are focused views of the root model. They are used to only update small sections of the
@@ -140,9 +145,23 @@ package circuit {
       Eq.by(x => (x.status, x.stepsTable, x.configTableState))
   }
 
-  final case class ControlModel(id: Observation.Id, isPartiallyExecuted: Boolean, nextStepToRun: Option[Int], status: SequenceState) extends UseValueEq
+  final case class ControlModel(id: Observation.Id, isPartiallyExecuted: Boolean, nextStepToRun: Option[Int], status: SequenceState, tabOperations: TabOperations)
 
-  final case class SequenceControlFocus(isLogged: Boolean, isConnected: Boolean, control: Option[ControlModel], syncInProgress: Boolean) extends UseValueEq
+  object ControlModel {
+    implicit val eq: Eq[ControlModel] =
+      Eq.by(x => (x.id, x.isPartiallyExecuted, x.nextStepToRun, x.status, x.tabOperations))
+
+    val controlModelG: Getter[SequenceTab, Option[ControlModel]] =
+      Getter[SequenceTab, Option[ControlModel]](t => t.sequence.map(s => ControlModel(s.id, s.isPartiallyExecuted, s.nextStepToRun, s.status, t.tabOperations)))
+  }
+
+  final case class SequenceControlFocus(canOperate: Boolean, control: Option[ControlModel], syncInProgress: Boolean)
+
+  object SequenceControlFocus {
+    implicit val eq: Eq[SequenceControlFocus] =
+      Eq.by(x => (x.canOperate, x.control, x.syncInProgress))
+
+  }
 
   @Lenses
   final case class TableStates(queueTable: TableState[QueueTableBody.TableColumn], stepConfigTable: TableState[StepConfigTable.TableColumn], stepsTables: Map[Observation.Id, TableState[StepsTable.TableColumn]]) extends UseValueEq

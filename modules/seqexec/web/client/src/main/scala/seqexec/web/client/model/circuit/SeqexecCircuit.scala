@@ -113,6 +113,9 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   val configTableState: ModelR[SeqexecAppRootModel, TableState[StepConfigTable.TableColumn]] =
     zoom(_.uiModel.configTableState)
 
+  val sequencesOnDisplayRW: ModelRW[SeqexecAppRootModel, SequencesOnDisplay] =
+    this.zoomRWL(SeqexecAppRootModel.uiModel ^|-> SeqexecUIModel.sequencesOnDisplay)
+
   def sequenceTab(id: Observation.Id): ModelR[SeqexecAppRootModel, SequenceTabActive] =
     // Returning the getOrElse part shouldn't happen but it simplifies the model notcarrying the Option up
     zoom(_.uiModel.sequencesOnDisplay.tab(id).getOrElse(SequenceTabActive.Empty))
@@ -148,8 +151,8 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   def sequenceControlReader(obsId: Observation.Id): ModelR[SeqexecAppRootModel, SequenceControlFocus] =
     statusReader.zip(sequenceTab(obsId)).zoom {
       case (status, SequenceTabActive(tab, _)) =>
-        SequenceControlFocus(status.isLogged, status.isConnected, tab.sequence.map(s => ControlModel(s.id, s.isPartiallyExecuted, s.nextStepToRun, s.status)), status.syncInProgress)
-    }
+        SequenceControlFocus(status.canOperate, ControlModel.controlModelG.get(tab), status.syncInProgress)
+    }(fastEq[SequenceControlFocus])
 
   private val wsHandler                = new WebSocketHandler(zoomTo(_.ws))
   private val serverMessagesHandler    = new ServerMessagesHandler(webSocketFocusRW)
@@ -170,6 +173,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   private val debuggingHandler         = new DebuggingHandler(zoomTo(_.uiModel.sequences))
   private val tableStateHandler        = new TableStateHandler(tableStateRW)
   private val loadSequencesHandler     = new LoadedSequencesHandler(sodLocationReaderRW)
+  private val operationsStateHandler   = new OperationsStateHandler(sequencesOnDisplayRW)
   private val siteHandler              = new SiteHandler(zoomTo(_.site))
 
   def dispatchCB[A <: Action](a: A): Callback = Callback(dispatch(a))
@@ -188,7 +192,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
     conditionsHandler,
     operatorHandler,
     defaultObserverHandler,
-    remoteRequestsHandler,
+    foldHandlers(remoteRequestsHandler, operationsStateHandler),
     syncRequestsHandler,
     navigationHandler,
     debuggingHandler,

@@ -26,7 +26,10 @@ import web.client.style._
   * Control buttons for the sequence
   */
 object SequenceControl {
-  final case class Props(p: ModelProxy[SequenceControlFocus])
+  final case class Props(p: SequenceControlFocus) {
+    def runRequested: Boolean = p.control.map(_.tabOperations.runRequested).getOrElse(false)
+  }
+
   final case class State(runRequested: Boolean, pauseRequested: Boolean, syncRequested: Boolean, cancelPauseRequested: Boolean) {
     val canRun: Boolean = !runRequested && !pauseRequested && !syncRequested
     val canPause: Boolean = !pauseRequested && !syncRequested
@@ -70,45 +73,48 @@ object SequenceControl {
       )
     )
 
+  def stateFromProps(p: Props): State =
+    State.Zero.copy(runRequested = p.runRequested)
+
   private def component = ScalaComponent.builder[Props]("SequencesDefaultToolbar")
-    .initialState(State.Zero)
+    .initialStateFromProps(stateFromProps)
     .renderPS { ($, p, s) =>
-      val SequenceControlFocus(isLogged, isConnected, control, syncInProgress) = p.p()
-      val allowedToExecute = isLogged && isConnected
+      val SequenceControlFocus(canOperate, control, syncInProgress) = p.p
       val canSync = !syncInProgress && !s.syncRequested
       <.div(
         SeqexecStyles.controlButtons,
         control.whenDefined { m =>
-          val ControlModel(id, isPartiallyExecuted, nextStep, status) = m
+          val ControlModel(id, isPartiallyExecuted, nextStep, status, _) = m
           val nextStepToRun = nextStep.getOrElse(0) + 1
           val runContinueTooltip = s"${isPartiallyExecuted.fold("Continue", "Run")} the sequence from the step $nextStepToRun"
           val runContinueButton = s"${isPartiallyExecuted.fold("Continue", "Run")} from step $nextStepToRun"
           List(
             // Sync button
-            controlButton(IconRefresh, "purple", $.runState(requestSync(id)), (!allowedToExecute || !canSync), "Sync sequence", "Sync")
+            controlButton(IconRefresh, "purple", $.runState(requestSync(id)), (!canOperate || !canSync), "Sync sequence", "Sync")
               .when(status.isIdle || status.isError),
             // Run button
-            controlButton(IconPlay, "blue", $.runState(requestRun(id)), (!allowedToExecute || !s.canRun), runContinueTooltip, runContinueButton)
+            controlButton(IconPlay, "blue", $.runState(requestRun(id)), (!canOperate || !s.canRun), runContinueTooltip, runContinueButton)
               .when(status.isIdle || status.isError),
             // Cancel pause button
-            controlButton(IconBan, "brown", $.runState(requestCancelPause(id)), !allowedToExecute || !s.canCancelPause, "Cancel process to pause the sequence", "Cancel Pause")
+            controlButton(IconBan, "brown", $.runState(requestCancelPause(id)), !canOperate || !s.canCancelPause, "Cancel process to pause the sequence", "Cancel Pause")
               .when(status.userStopRequested),
             // Pause button
-            controlButton(IconPause, "teal", $.runState(requestPause(id)), !allowedToExecute || !s.canPause, "Pause the sequence after the current step completes", "Pause")
+            controlButton(IconPause, "teal", $.runState(requestPause(id)), !canOperate || !s.canPause, "Pause the sequence after the current step completes", "Pause")
               .when(status.isRunning && !status.userStopRequested),
             // Resume
-            controlButton(IconPlay, "teal", $.runState(requestPause(id)), !allowedToExecute || !s.canResume, "Resume the sequence", s"Continue from step $nextStepToRun")
+            controlButton(IconPlay, "teal", $.runState(requestPause(id)), !canOperate || !s.canResume, "Resume the sequence", s"Continue from step $nextStepToRun")
               .when(status === SequenceState.Stopped)
           ).toTagMod
         }
       )
     }.componentWillReceiveProps { f =>
       // Update state of run requested and sync requested depending on the run state
-      Callback.when(!f.nextProps.p().syncInProgress && f.state.syncRequested)(f.modState(_.copy(syncRequested = false))) *>
-      Callback.when(f.nextProps.p().control.map(_.status).exists(_.isRunning) && f.state.runRequested)(f.modState(_.copy(runRequested = false)))
+      Callback.when(!f.nextProps.p.syncInProgress && f.state.syncRequested)(f.modState(_.copy(syncRequested = false))) *>
+      Callback.log(f.nextProps.p.control.map(_.status).exists(_.isRunning) && f.state.runRequested) *>
+      Callback.when((!f.nextProps.runRequested || f.nextProps.p.control.map(_.status).exists(_.isRunning)) && f.state.runRequested)(f.modState(_.copy(runRequested = false)))
     }.build
 
-  def apply(p: ModelProxy[SequenceControlFocus]): Unmounted[Props, State, Unit] = component(Props(p))
+  def apply(p: ModelProxy[SequenceControlFocus]): Unmounted[Props, State, Unit] = component(Props(p()))
 }
 
 /**

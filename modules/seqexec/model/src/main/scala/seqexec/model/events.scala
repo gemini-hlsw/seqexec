@@ -67,13 +67,13 @@ object events {
         case (a: SequencePauseCanceled,       b: SequencePauseCanceled)       => a === b
         case (a: SequenceRefreshed,           b: SequenceRefreshed)           => a === b
         case (a: ActionStopRequested,         b: ActionStopRequested)         => a === b
-        case (a: ResourcesBusy,               b: ResourcesBusy)               => a === b
         case (a: SequenceUpdated,             b: SequenceUpdated)             => a === b
         case (a: SequencePaused,              b: SequencePaused)              => a === b
         case (a: ExposurePaused,              b: ExposurePaused)              => a === b
         case (a: SequenceError,               b: SequenceError)               => a === b
         case (a: LoadSequenceUpdated,         b: LoadSequenceUpdated)         => a === b
         case (a: ClearLoadedSequencesUpdated, b: ClearLoadedSequencesUpdated) => a === b
+        case (a: UserNotification,            b: UserNotification)            => a === b
         case _                                                                => false
       }
 
@@ -201,13 +201,6 @@ object events {
         Eq.by(_.view)
     }
 
-    final case class ResourcesBusy(obsId: Observation.Id, view: SequencesQueue[SequenceView], clientId: ClientID) extends SeqexecModelUpdate with ForClient
-
-    object ResourcesBusy {
-      implicit lazy val equal: Eq[ResourcesBusy] =
-        Eq.by(x => (x.obsId, x.view, x.clientId))
-    }
-
     final case class SequenceUpdated(view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate
 
     object SequenceUpdated {
@@ -236,7 +229,7 @@ object events {
         Eq.by(x => (x.obsId, x.view))
     }
 
-    final case class UserNotification(memo: Notification, clientId: ClientID) extends SeqexecEvent
+    final case class UserNotification(memo: Notification, clientId: ClientID, view: SequencesQueue[SequenceView]) extends SeqexecModelUpdate with ForClient
 
     object UserNotification{
       implicit lazy val equal: Eq[UserNotification] =
@@ -249,7 +242,6 @@ object events {
         case (a: SeqexecModelUpdate,  b: SeqexecModelUpdate)  => a === b
         case (a: NewLogMessage,       b: NewLogMessage)       => a === b
         case (a: ServerLogMessage,    b: ServerLogMessage)    => a === b
-        case (a: UserNotification,    b: UserNotification)    => a === b
         case (_: NullEvent.type,      _: NullEvent.type)      => true
         case _                                                => false
       }

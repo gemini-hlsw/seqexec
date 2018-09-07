@@ -32,8 +32,23 @@ object SequenceTabActive {
   val Empty: SequenceTabActive = SequenceTabActive(SequenceTab.Empty, true)
 }
 
+/**
+ * Hold transient states while excuting an operation
+ */
+@Lenses
+final case class TabOperations(runRequested: Boolean)
+
+@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
+object TabOperations {
+  implicit val eq: Eq[TabOperations] =
+    Eq.by(_.runRequested)
+
+  val Default: TabOperations = TabOperations(false)
+}
+
 sealed trait SequenceTab {
   val tableState: TableState[StepsTable.TableColumn]
+  val tabOperations: TabOperations
 
   def instrument: Option[Instrument] = this match {
     case i: InstrumentSequenceTab => i.inst.some
@@ -72,21 +87,21 @@ sealed trait SequenceTab {
 }
 
 @Lenses
-final case class InstrumentSequenceTab(inst: Instrument, currentSequence: Option[SequenceView], completedSequence: Option[SequenceView], stepConfig: Option[Int], tableState: TableState[StepsTable.TableColumn]) extends SequenceTab
+final case class InstrumentSequenceTab(inst: Instrument, currentSequence: Option[SequenceView], completedSequence: Option[SequenceView], stepConfig: Option[Int], tableState: TableState[StepsTable.TableColumn], tabOperations: TabOperations) extends SequenceTab
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object InstrumentSequenceTab {
   implicit val eq: Eq[InstrumentSequenceTab] =
-    Eq.by(x => (x.instrument, x.currentSequence, x.completedSequence, x.stepConfig, x.tableState))
+    Eq.by(x => (x.instrument, x.currentSequence, x.completedSequence, x.stepConfig, x.tableState, x.tabOperations))
 }
 
 @Lenses
-final case class PreviewSequenceTab(currentSequence: Option[SequenceView], stepConfig: Option[Int], isLoading: Boolean, tableState: TableState[StepsTable.TableColumn]) extends SequenceTab
+final case class PreviewSequenceTab(currentSequence: Option[SequenceView], stepConfig: Option[Int], isLoading: Boolean, tableState: TableState[StepsTable.TableColumn], tabOperations: TabOperations) extends SequenceTab
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object PreviewSequenceTab {
   implicit val eq: Eq[PreviewSequenceTab] =
-    Eq.by(x => (x.currentSequence, x.stepConfig, x.isLoading, x.tableState))
+    Eq.by(x => (x.currentSequence, x.stepConfig, x.isLoading, x.tableState, x.tabOperations))
 }
 
 object SequenceTab {
@@ -96,7 +111,7 @@ object SequenceTab {
       case (a: PreviewSequenceTab, b: PreviewSequenceTab)       => a === b
       case _                                                    => false
     }
-  val Empty: SequenceTab = PreviewSequenceTab(None, None, false, StepsTable.State.InitialTableState)
+  val Empty: SequenceTab = PreviewSequenceTab(None, None, false, StepsTable.State.InitialTableState, TabOperations.Default)
 
   // Some lenses
   val stepConfigL: Lens[SequenceTab, Option[Int]] = Lens[SequenceTab, Option[Int]] {

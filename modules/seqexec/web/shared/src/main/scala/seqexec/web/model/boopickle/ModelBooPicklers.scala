@@ -124,7 +124,6 @@ trait ModelBooPicklers extends GemModelBooPicklers {
     .addConcreteType[SequenceError]
     .addConcreteType[SequencePaused]
     .addConcreteType[ExposurePaused]
-    .addConcreteType[ResourcesBusy]
     .addConcreteType[ServerLogMessage]
     .addConcreteType[UserNotification]
     .addConcreteType[NullEvent.type]
