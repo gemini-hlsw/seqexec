@@ -178,8 +178,6 @@ object SeqexecStyles {
 
   val centeredCell: GStyle = GStyle.fromString("SeqexecStyles-centeredCell")
 
-  val settingsCellHeader: GStyle = GStyle.fromString("SeqexecStyles-settingsCellHeader")
-
   val tableHeaderIcons: GStyle = GStyle.fromString("SeqexecStyles-tableHeaderIcons")
 
   val buttonsRow: GStyle = GStyle.fromString("SeqexecStyles-buttonsRow")

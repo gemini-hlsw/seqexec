@@ -423,22 +423,20 @@ object QueueTableBody {
       val icon: TagMod =
         row.status match {
           case SequenceState.Completed     =>
-            IconCheckmark.copyIcon(fitted = true,
-                                   extraStyles = List(SeqexecStyles.selectedIcon))
+            IconCheckmark.copyIcon(extraStyles = List(SeqexecStyles.selectedIcon))
           case SequenceState.Running(_, _) =>
             IconCircleNotched.copyIcon(fitted = true,
                                        loading = true,
                                        extraStyles = List(SeqexecStyles.runningIcon))
           case SequenceState.Failed(_)     =>
-            IconAttention.copyIcon(fitted = true, color = "red".some,
+            IconAttention.copyIcon(color = "red".some,
                                    extraStyles = List(SeqexecStyles.selectedIcon))
           case _ if b.state.rowLoading.exists(_ === index) =>
             // Spinning icon while loading
             IconRefresh.copyIcon(fitted = true, loading = true,
                                        extraStyles = List(SeqexecStyles.runningIcon))
           case _ if isFocused              =>
-            IconSelectedRadio.copyIcon(fitted = true,
-                                         extraStyles = List(SeqexecStyles.selectedIcon))
+            IconSelectedRadio.copyIcon(extraStyles = List(SeqexecStyles.selectedIcon))
           case _                           =>
             <.div()
         }

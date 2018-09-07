@@ -595,7 +595,7 @@ body {
   opacity: 0.8;
   transition: all 0.1s ease-in-out;
   &:hover {
-    transform: scale(2);
+    transform: translateX(-0.5px) scale(2);
   }
 }
 
@@ -608,18 +608,21 @@ body {
 
 .SeqexecStyles-breakPointHandleOn {
   .breakPointHandle();
+  &:hover {
+    transform: translateX(-0.5px) scale(2) translateY(1px);
+  }
 }
 
 .SeqexecStyles-skipHandle {
   position: absolute;
-  left: 2.1px;
+  left: 2.8px;
   height: 13px;
   width: 13px;
   cursor: pointer;
   opacity: 0.8;
   transition: all 0.1s ease-in-out;
   &:hover {
-    transform: scale(1.2);
+    transform: translateX(-0.5px) scale(1.2);
   }
 }
 
@@ -683,6 +686,7 @@ body {
 .SeqexecStyles-selectedIcon {
   .queueText;
   margin-bottom: 7px !important;
+  margin-right: 0px !important;
 }
 
 .SeqexecStyles-runningIcon {
@@ -692,8 +696,8 @@ body {
 .SeqexecStyles-breakPointOnIcon {
   position: relative;
   color: @grey;
-  left: 3px;
-  top: -5px;
+  left: 2.5px;
+  top: -6px;
   &:hover {
     color: darken(@grey, 20%);
   }
@@ -702,7 +706,7 @@ body {
 .SeqexecStyles-breakPointOffIcon {
   position: relative;
   color: @grey;
-  left: 1px;
+  left: 1.5px;
   top: -6px;
   &:hover {
     color: darken(@grey, 20%);
@@ -932,6 +936,7 @@ body {
   width: 100%;
   height: 100%;
 }
+
 .queueFullCell() {
   .fullCell;
   display: flex;
@@ -939,13 +944,14 @@ body {
   justify-content: flex-start;
   padding: 0px;
 }
+
 .queueCenterCell() {
-  .fullCell;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0px;
 }
+
 .SeqexecStyles-errorIcon {
   .queueText;
   margin-bottom: 6px !important;
