@@ -6,7 +6,7 @@ package seqexec.web.client.model
 import cats.Eq
 import monocle.macros.Lenses
 
-sealed trait RunOperation
+sealed trait RunOperation extends Product with Serializable
 object RunOperation {
   case object RunInFlight extends RunOperation
   case object RunIdle extends RunOperation

@@ -18,6 +18,7 @@ import seqexec.model.SequenceEventsArbitraries.{slmArb, slmCogen}
 import seqexec.web.common.{ FixedLengthBuffer, Zipper }
 import seqexec.web.common.ArbitrariesWebCommon._
 import seqexec.web.client.model._
+import seqexec.web.client.model.RunOperation
 import seqexec.web.client.circuit._
 import seqexec.web.client.model.Pages._
 import seqexec.web.client.components.sequence.steps.OffsetFns.OffsetsDisplay
@@ -31,11 +32,17 @@ import web.client.table.{ TableArbitraries, TableState }
 
 trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
 
+  implicit val arbRunOperation: Arbitrary[RunOperation] =
+    Arbitrary(Gen.oneOf(RunOperation.RunIdle, RunOperation.RunInFlight))
+
+  implicit val roCogen: Cogen[RunOperation] =
+    Cogen[String].contramap(_.productPrefix)
+
   implicit val arbTabOperations: Arbitrary[TabOperations] =
-    Arbitrary(arbitrary[Boolean].map(TabOperations.apply))
+    Arbitrary(arbitrary[RunOperation].map(TabOperations.apply))
 
   implicit val toCogen: Cogen[TabOperations] =
-    Cogen[Boolean].contramap(_.runRequested)
+    Cogen[RunOperation].contramap(_.runRequested)
 
   implicit val arbInstrumentSequenceTab: Arbitrary[InstrumentSequenceTab] =
     Arbitrary {
