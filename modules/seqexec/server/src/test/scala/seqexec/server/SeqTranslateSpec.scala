@@ -57,17 +57,17 @@ class SeqTranslateSpec extends FlatSpec {
     (EngineState.executionState ^|-> Engine.State.sequences ^|-? index[Map[Observation.Id,Sequence.State], Observation.Id, Sequence.State](seqId) ^|-> Sequence.State.status).set(SequenceState.Running.init))(EngineState.default)
 
   // Observe started
-  private val s0: EngineState = (EngineState.executionState ^|-> Engine.State.sequences ^|-? index(seqId)).modify(_.start(0))(baseState)
+  private val s0: EngineState = (EngineState.executionState ^|-? Engine.State.sequenceState(seqId)).modify(_.start(0))(baseState)
   // Observe pending
   private val s1: EngineState = baseState
   // Observe completed
-  private val s2: EngineState = (EngineState.executionState ^|-> Engine.State.sequences ^|-? index(seqId)).modify(_.mark(0)(Result.OK(Result.Observed(fileId))))(baseState)
+  private val s2: EngineState = (EngineState.executionState ^|-? Engine.State.sequenceState(seqId)).modify(_.mark(0)(Result.OK(Result.Observed(fileId))))(baseState)
   // Observe started, but with file Id already allocated
-  private val s3: EngineState = (EngineState.executionState ^|-> Engine.State.sequences ^|-? index(seqId)).modify(_.start(0).mark(0)(Result.Partial(Result.FileIdAllocated(fileId), IO(Result.OK(Result.Observed(fileId))))))(baseState)
+  private val s3: EngineState = (EngineState.executionState ^|-? Engine.State.sequenceState(seqId)).modify(_.start(0).mark(0)(Result.Partial(Result.FileIdAllocated(fileId), IO(Result.OK(Result.Observed(fileId))))))(baseState)
   // Observe paused
-  private val s4: EngineState = (EngineState.executionState ^|-> Engine.State.sequences ^|-? index(seqId)).modify(_.mark(0)(Result.Paused(ObserveContext(_ => SeqAction(Result.OK(Result.Observed(fileId))), Seconds(1)))))(baseState)
+  private val s4: EngineState = (EngineState.executionState ^|-? Engine.State.sequenceState(seqId)).modify(_.mark(0)(Result.Paused(ObserveContext(_ => SeqAction(Result.OK(Result.Observed(fileId))), Seconds(1)))))(baseState)
   // Observe failed
-  private val s5: EngineState = (EngineState.executionState ^|-> Engine.State.sequences ^|-? index(seqId)).modify(_.mark(0)(Result.Error("error")))(baseState)
+  private val s5: EngineState = (EngineState.executionState ^|-? Engine.State.sequenceState(seqId)).modify(_.mark(0)(Result.Error("error")))(baseState)
 
   private val systems = SeqTranslate.Systems(
     new ODBProxy(new Peer("localhost", 8443, null), ODBProxy.DummyOdbCommands),
