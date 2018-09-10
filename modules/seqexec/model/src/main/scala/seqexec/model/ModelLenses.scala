@@ -74,7 +74,6 @@ trait ModelLenses {
       case e @ SequencePauseCanceled(_)        => e.copy(view = q)
       case e @ SequenceRefreshed(_, _)         => e.copy(view = q)
       case e @ ActionStopRequested(_)          => e.copy(view = q)
-      case e @ ResourcesBusy(_, _, _)          => e.copy(view = q)
       case e @ SequenceError(_, _)             => e.copy(view = q)
       case e @ SequencePaused(_, _)            => e.copy(view = q)
       case e @ ExposurePaused(_, _)            => e.copy(view = q)

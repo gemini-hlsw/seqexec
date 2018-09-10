@@ -3,12 +3,11 @@
 
 package seqexec.web.client.handlers
 
+import cats.implicits._
 import diode.{ActionHandler, ActionResult, Effect, ModelRW}
 import seqexec.model.ClientID
 import seqexec.web.client.actions._
 import seqexec.web.client.services.SeqexecWebClient
-import cats.implicits._
-
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
 /**

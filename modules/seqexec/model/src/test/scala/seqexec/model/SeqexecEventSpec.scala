@@ -27,7 +27,6 @@ final class SeqexecEventSpec extends CatsSuite with SequenceEventsArbitraries {
   checkAll("Eq[SequencePauseCanceled]", EqTests[SequencePauseCanceled].eqv)
   checkAll("Eq[SequenceRefreshed]", EqTests[SequenceRefreshed].eqv)
   checkAll("Eq[ActionStopRequested]", EqTests[ActionStopRequested].eqv)
-  checkAll("Eq[ResourcesBusy]", EqTests[ResourcesBusy].eqv)
   checkAll("Eq[SequenceUpdated]", EqTests[SequenceUpdated].eqv)
   checkAll("Eq[SequencePaused]", EqTests[SequencePaused].eqv)
   checkAll("Eq[ExposurePaused]", EqTests[ExposurePaused].eqv)

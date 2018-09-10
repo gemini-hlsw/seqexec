@@ -5,7 +5,7 @@ package seqexec.web.client.handlers
 
 import cats.implicits._
 import diode.{ ActionHandler, ActionResult, Effect, ModelRW }
-import seqexec.model.InstrumentInUse
+import seqexec.model.{ InstrumentInUse, ResourceConflict }
 import seqexec.model.events.UserNotification
 import seqexec.web.client.model._
 import seqexec.web.client.actions._
@@ -22,7 +22,7 @@ class NotificationsHandler[M](modelRW: ModelRW[M, UserNotificationState]) extend
       // Update the model as load failed
       val modelUpdateE = not match {
         case InstrumentInUse(id, _) => Effect(Future(SequenceLoadFailed(id)))
-        case _                      => VoidEffect
+        case ResourceConflict(id)   => Effect(Future(RunStartFailed(id)))
       }
       updatedLE(lens, openBoxE >> modelUpdateE)
   }

@@ -52,13 +52,6 @@ trait SequenceEventsArbitraries extends ArbTime {
     } yield SequenceRefreshed(s, c)
   }
   implicit val asrArb = Arbitrary[ActionStopRequested] { arbitrary[SequencesQueue[SequenceView]].map(ActionStopRequested.apply) }
-  implicit val rcbArb = Arbitrary[ResourcesBusy] {
-    for {
-      i <- arbitrary[Observation.Id]
-      s <- arbitrary[SequencesQueue[SequenceView]]
-      c <- arbitrary[ClientID]
-    } yield ResourcesBusy(i, s, c)
-  }
   implicit val nlmArb = Arbitrary[NewLogMessage] { arbitrary[String].map(NewLogMessage.apply) }
   implicit val slmArb = Arbitrary[ServerLogMessage] {
     for {
@@ -115,8 +108,8 @@ trait SequenceEventsArbitraries extends ArbTime {
   implicit val unArb = Arbitrary[UserNotification] {
     for {
       i <- arbitrary[Notification]
-      s <- arbitrary[ClientID]
-    } yield UserNotification(i, s)
+      c <- arbitrary[ClientID]
+    } yield UserNotification(i, c)
   }
 
   implicit val smuArb = Arbitrary[SeqexecModelUpdate] {
@@ -136,7 +129,6 @@ trait SequenceEventsArbitraries extends ArbTime {
         arbitrary[SequencePauseCanceled],
         arbitrary[SequenceRefreshed],
         arbitrary[ActionStopRequested],
-        arbitrary[ResourcesBusy],
         arbitrary[SequenceUpdated],
         arbitrary[SequencePaused],
         arbitrary[ExposurePaused],
@@ -206,9 +198,6 @@ trait SequenceEventsArbitraries extends ArbTime {
 
   implicit val asrCogen: Cogen[ActionStopRequested] =
     Cogen[SequencesQueue[SequenceView]].contramap(_.view)
-
-  implicit val rcbCogen: Cogen[ResourcesBusy] =
-    Cogen[(Observation.Id, SequencesQueue[SequenceView], ClientID)].contramap(x => (x.obsId, x.view, x.clientId))
 
   implicit val supCogen: Cogen[SequenceUpdated] =
     Cogen[SequencesQueue[SequenceView]].contramap(_.view)

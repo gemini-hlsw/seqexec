@@ -18,6 +18,7 @@ import seqexec.model.SequenceEventsArbitraries.{slmArb, slmCogen}
 import seqexec.web.common.{ FixedLengthBuffer, Zipper }
 import seqexec.web.common.ArbitrariesWebCommon._
 import seqexec.web.client.model._
+import seqexec.web.client.model.RunOperation
 import seqexec.web.client.circuit._
 import seqexec.web.client.model.Pages._
 import seqexec.web.client.components.sequence.steps.OffsetFns.OffsetsDisplay
@@ -31,6 +32,18 @@ import web.client.table.{ TableArbitraries, TableState }
 
 trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
 
+  implicit val arbRunOperation: Arbitrary[RunOperation] =
+    Arbitrary(Gen.oneOf(RunOperation.RunIdle, RunOperation.RunInFlight))
+
+  implicit val roCogen: Cogen[RunOperation] =
+    Cogen[String].contramap(_.productPrefix)
+
+  implicit val arbTabOperations: Arbitrary[TabOperations] =
+    Arbitrary(arbitrary[RunOperation].map(TabOperations.apply))
+
+  implicit val toCogen: Cogen[TabOperations] =
+    Cogen[RunOperation].contramap(_.runRequested)
+
   implicit val arbInstrumentSequenceTab: Arbitrary[InstrumentSequenceTab] =
     Arbitrary {
       for {
@@ -39,12 +52,13 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
         sv  <- arbitrary[Option[SequenceView]]
         pr  <- arbitrary[Option[SequenceView]]
         ts  <- arbitrary[TableState[StepsTable.TableColumn]]
-      } yield InstrumentSequenceTab(i, sv.map(k => k.copy(metadata = k.metadata.copy(instrument = i))), pr, idx, ts)
+        to  <- arbitrary[TabOperations]
+      } yield InstrumentSequenceTab(i, sv.map(k => k.copy(metadata = k.metadata.copy(instrument = i))), pr, idx, ts, to)
     }
 
   implicit val istCogen: Cogen[InstrumentSequenceTab] =
-    Cogen[(Instrument, Option[SequenceView], Option[SequenceView], Option[Int], TableState[StepsTable.TableColumn])].contramap {
-      x => (x.inst, x.currentSequence, x.completedSequence, x.stepConfig, x.tableState)
+    Cogen[(Instrument, Option[SequenceView], Option[SequenceView], Option[Int], TableState[StepsTable.TableColumn], TabOperations)].contramap {
+      x => (x.inst, x.currentSequence, x.completedSequence, x.stepConfig, x.tableState, x.tabOperations)
     }
 
   implicit val arbPreviewSequenceTab: Arbitrary[PreviewSequenceTab] =
@@ -54,12 +68,13 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
         sv  <- arbitrary[Option[SequenceView]]
         lo  <- arbitrary[Boolean]
         ts  <- arbitrary[TableState[StepsTable.TableColumn]]
-      } yield PreviewSequenceTab(sv, idx, lo, ts)
+        to  <- arbitrary[TabOperations]
+      } yield PreviewSequenceTab(sv, idx, lo, ts, to)
     }
 
   implicit val pstCogen: Cogen[PreviewSequenceTab] =
-    Cogen[(Option[SequenceView], Option[Int], TableState[StepsTable.TableColumn])].contramap {
-      x => (x.currentSequence, x.stepConfig, x.tableState)
+    Cogen[(Option[SequenceView], Option[Int], TableState[StepsTable.TableColumn], TabOperations)].contramap {
+      x => (x.currentSequence, x.stepConfig, x.tableState, x.tabOperations)
     }
 
   implicit val arbSequenceTab: Arbitrary[SequenceTab] = Arbitrary {
