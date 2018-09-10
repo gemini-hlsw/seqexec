@@ -15,6 +15,7 @@ import mouse.all._
 import seqexec.model.SequenceState
 import seqexec.web.client.circuit._
 import seqexec.web.client.actions.{RequestCancelPause, RequestPause, RequestSync, RequestRun}
+import seqexec.web.client.model.RunOperation
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.semanticui.elements.button.Button
 import seqexec.web.client.semanticui.elements.button.Button.LeftLabeled
@@ -29,23 +30,23 @@ import web.client.style._
   */
 object SequenceControl {
   final case class Props(p: SequenceControlFocus) {
-    def runRequested: Boolean = p.control.map(_.tabOperations.runRequested).getOrElse(false)
+    def runRequested: RunOperation = p.control.map(_.tabOperations.runRequested).getOrElse(RunOperation.RunIdle)
   }
 
-  final case class State(runRequested: Boolean, pauseRequested: Boolean, syncRequested: Boolean, cancelPauseRequested: Boolean) {
-    val canRun: Boolean = !runRequested && !pauseRequested && !syncRequested
+  final case class State(runRequested: RunOperation, pauseRequested: Boolean, syncRequested: Boolean, cancelPauseRequested: Boolean) {
+    val canRun: Boolean = (runRequested === RunOperation.RunIdle) && !pauseRequested && !syncRequested
     val canPause: Boolean = !pauseRequested && !syncRequested
     val canCancelPause: Boolean = !pauseRequested && !syncRequested
-    val canResume: Boolean = !pauseRequested && !syncRequested && !runRequested
+    val canResume: Boolean = !pauseRequested && !syncRequested && (runRequested === RunOperation.RunIdle)
 
-    def requestRun: State = copy(runRequested = true, pauseRequested = false, syncRequested = false, cancelPauseRequested = false)
-    def requestSync: State = copy(runRequested = false, pauseRequested = false, syncRequested = true, cancelPauseRequested = false)
-    def requestPause: State = copy(runRequested = false, pauseRequested = true, syncRequested = false, cancelPauseRequested = false)
-    def requestCancelPause: State = copy(runRequested = false, pauseRequested = false, syncRequested = false, cancelPauseRequested = true)
+    def requestRun: State = copy(runRequested = RunOperation.RunInFlight, pauseRequested = false, syncRequested = false, cancelPauseRequested = false)
+    def requestSync: State = copy(runRequested = RunOperation.RunIdle, pauseRequested = false, syncRequested = true, cancelPauseRequested = false)
+    def requestPause: State = copy(runRequested = RunOperation.RunIdle, pauseRequested = true, syncRequested = false, cancelPauseRequested = false)
+    def requestCancelPause: State = copy(runRequested = RunOperation.RunIdle, pauseRequested = false, syncRequested = false, cancelPauseRequested = true)
   }
 
   object State {
-    val Zero: State = State(runRequested = false, pauseRequested = false, syncRequested = false, cancelPauseRequested = false)
+    val Zero: State = State(runRequested = RunOperation.RunIdle, pauseRequested = false, syncRequested = false, cancelPauseRequested = false)
   }
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
@@ -115,7 +116,7 @@ object SequenceControl {
     }.componentWillReceiveProps { f =>
       // Update state of run requested and sync requested depending on the run state
       Callback.when(!f.nextProps.p.syncInProgress && f.state.syncRequested)(f.modState(_.copy(syncRequested = false))) *>
-      Callback.when((!f.nextProps.runRequested || f.nextProps.p.control.map(_.status).exists(_.isRunning)) && f.state.runRequested)(f.modState(_.copy(runRequested = false)))
+      Callback.when(((f.nextProps.runRequested === RunOperation.RunIdle) || f.nextProps.p.control.map(_.status).exists(_.isRunning)) && f.state.runRequested === RunOperation.RunInFlight)(f.modState(_.copy(runRequested = RunOperation.RunIdle)))
     }.build
 
   def apply(p: ModelProxy[SequenceControlFocus]): Unmounted[Props, State, Unit] = component(Props(p()))

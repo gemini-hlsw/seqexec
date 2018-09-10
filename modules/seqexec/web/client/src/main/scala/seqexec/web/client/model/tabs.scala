@@ -32,20 +32,6 @@ object SequenceTabActive {
   val Empty: SequenceTabActive = SequenceTabActive(SequenceTab.Empty, true)
 }
 
-/**
- * Hold transient states while excuting an operation
- */
-@Lenses
-final case class TabOperations(runRequested: Boolean)
-
-@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
-object TabOperations {
-  implicit val eq: Eq[TabOperations] =
-    Eq.by(_.runRequested)
-
-  val Default: TabOperations = TabOperations(false)
-}
-
 sealed trait SequenceTab {
   val tableState: TableState[StepsTable.TableColumn]
   val tabOperations: TabOperations

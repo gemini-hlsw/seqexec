@@ -5,7 +5,7 @@ package seqexec.web.client.handlers
 
 import cats.implicits._
 import diode.{ActionHandler, ActionResult, ModelRW}
-import seqexec.web.client.model.{ SequencesOnDisplay, TabOperations }
+import seqexec.web.client.model.{ RunOperation, SequencesOnDisplay, TabOperations }
 import seqexec.web.client.actions._
 
 /**
@@ -14,7 +14,7 @@ import seqexec.web.client.actions._
 class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay]) extends ActionHandler(modelRW) with Handlers[M, SequencesOnDisplay] {
   def handleRequestOperation: PartialFunction[Any, ActionResult[M]] = {
     case RequestRun(id) =>
-      updated(value.markOperations(id, TabOperations.runRequested.set(true)))
+      updated(value.markOperations(id, TabOperations.runRequested.set(RunOperation.RunInFlight)))
   }
 
   def handleOperationResult: PartialFunction[Any, ActionResult[M]] = {
@@ -22,7 +22,7 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay]) extends
       noChange
 
     case RunStartFailed(id) =>
-      updated(value.markOperations(id, TabOperations.runRequested.set(false)))
+      updated(value.markOperations(id, TabOperations.runRequested.set(RunOperation.RunIdle)))
   }
 
   override def handle: PartialFunction[Any, ActionResult[M]] =
