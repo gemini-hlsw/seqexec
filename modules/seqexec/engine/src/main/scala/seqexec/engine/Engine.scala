@@ -12,10 +12,9 @@ import seqexec.engine.Result.{PartialVal, PauseContext, RetVal}
 import seqexec.model.{ClientID, SequenceState}
 import fs2.Stream
 import gem.Observation
-import monocle.Lens
+import monocle.{Lens, Optional}
 import monocle.macros.Lenses
-import monocle.function.At.at
-import monocle.function.At.atMap
+import monocle.function.Index.index
 import mouse.boolean._
 import org.log4s.getLogger
 
@@ -135,7 +134,7 @@ class Engine[D, U](stateL: Lens[D, Engine.State]) {
     */
   def load(id: Observation.Id, seq: Sequence): Endo[D] =
     stateL.modify(st =>
-      st.copy(sequences = st.sequences.get(id).map(t => st.sequences.updated(id, t.update(seq))
+      st.copy(sequences = st.sequences.get(id).map(t => st.sequences.updated(id, Sequence.State.reload(seq.steps, t))
         ).getOrElse(st.sequences.updated(id, Sequence.State.init(seq))))
     )
 
@@ -148,6 +147,15 @@ class Engine[D, U](stateL: Lens[D, Engine.State]) {
         ).getOrElse(st.sequences)
       )
     )
+
+  /**
+    * Refresh the steps executions of an existing sequence
+    * @param id sequence identifier
+    * @param steps List of new steps definitions
+    * @return
+    */
+  def update(id: Observation.Id, steps: List[Step]): Endo[D] =
+    (stateL ^|-? Engine.State.sequenceState(id)).modify(_.update(steps.map(_.executions)))
 
   /**
     * Adds the current `Execution` to the completed `Queue`, makes the next
@@ -388,10 +396,10 @@ class Engine[D, U](stateL: Lens[D, Engine.State]) {
     inspect(stateL.get(_).sequences.get(id).map(f))
 
   private def modifyS(id: Observation.Id)(f: Sequence.State => Sequence.State): HandleP[Unit] =
-    modify((stateL ^|-> Engine.State.sequenceState(id)).modify(s => s.map(f)))
+    modify((stateL ^|-? Engine.State.sequenceState(id)).modify(f))
 
   private def putS(id: Observation.Id)(s: Sequence.State): HandleP[Unit] =
-    modify((stateL ^|-> Engine.State.sequenceState(id)).set(s.some))
+    modify((stateL ^|-? Engine.State.sequenceState(id)).set(s))
 
   // For debugging
   def printSequenceState(id: Observation.Id): HandleP[Unit] =
@@ -407,8 +415,8 @@ object Engine {
 
   object State {
     def empty: State = State(Map.empty)
-    def atSequence(id: Observation.Id): Lens[Map[Observation.Id, Sequence.State], Option[Sequence.State]] = at(id)
-    def sequenceState[D](id: Observation.Id): Lens[State, Option[Sequence.State]] = State.sequences ^|-> atSequence(id)
+    private def atSequence(id: Observation.Id): Optional[Map[Observation.Id, Sequence.State], Sequence.State] = index(id)
+    def sequenceState[D](id: Observation.Id): Optional[State, Sequence.State] = State.sequences ^|-? atSequence(id)
   }
 
   abstract class Types {

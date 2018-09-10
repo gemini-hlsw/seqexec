@@ -562,7 +562,7 @@ lazy val seqexec_engine = project
   .in(file("modules/seqexec/engine"))
   .enablePlugins(AutomateHeaderPlugin)
   .enablePlugins(GitBranchPrompt)
-  .dependsOn(seqexec_model.jvm)
+  .dependsOn(seqexec_model.jvm % "compile->compile;test->test")
   .settings(commonSettings: _*)
   .settings(
     addCompilerPlugin(Plugins.kindProjectorPlugin),

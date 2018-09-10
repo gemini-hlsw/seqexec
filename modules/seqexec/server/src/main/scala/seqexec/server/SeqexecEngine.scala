@@ -607,18 +607,23 @@ object SeqexecEngine extends SeqexecConfiguration {
 
   }
 
-  private def toEngineSequence(id: Observation.Id, seq: SequenceGen, d: HeaderExtraData): Sequence = Sequence(id, seq.steps.map(_.generator(d)))
+  private def toStepList(seq: SequenceGen, d: HeaderExtraData): List[engine.Step] = seq.steps.map(_.generator(d))
+
+  private def toEngineSequence(id: Observation.Id, seq: SequenceGen, d: HeaderExtraData): Sequence = Sequence(id, toStepList(seq, d))
 
   private[server] def loadSequenceEndo(seqId: Observation.Id, seqg: SequenceGen): Endo[EngineState] =
     EngineState.sequences.modify(ss => ss + (seqId -> ObserverSequence(ss.get(seqId).flatMap(_.observer), seqg))) >>>
   (st => executeEngine.load(seqId, toEngineSequence(seqId, seqg, HeaderExtraData(st.conditions, st.operator, EngineState.sequences.get(st).get(seqId).flatMap(_.observer))))(st))
 
+  private[server] def updateSequenceEndo(seqId: Observation.Id, seqg: SequenceGen): Endo[EngineState] =
+    (st => executeEngine.update(seqId, toStepList(seqg, HeaderExtraData(st.conditions, st.operator, EngineState.sequences.get(st).get(seqId).flatMap(_.observer))))(st))
+
   private def refreshSequence(id: Observation.Id): Endo[EngineState] = (st:EngineState) => {
-    st.sequences.get(id).map(obsseq => loadSequenceEndo(id, obsseq.seq)).foldLeft(st){case (s, f) => f(s)}
+    st.sequences.get(id).map(obsseq => updateSequenceEndo(id, obsseq.seq)).foldLeft(st){case (s, f) => f(s)}
   }
 
   private val refreshSequences: Endo[EngineState] = (st:EngineState) => {
-    st.sequences.map{ case (id, obsseq) => loadSequenceEndo(id, obsseq.seq) }.foldLeft(st){case (s, f) => f(s)}
+    st.sequences.map{ case (id, obsseq) => updateSequenceEndo(id, obsseq.seq) }.foldLeft(st){case (s, f) => f(s)}
   }
 
   private def modifyStateEvent(v: SeqEvent, svs: => SequencesQueue[SequenceView]): SeqexecEvent = v match {

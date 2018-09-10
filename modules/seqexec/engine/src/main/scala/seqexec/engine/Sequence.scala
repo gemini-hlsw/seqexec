@@ -192,7 +192,13 @@ object Sequence {
 
     def start(i: Int): State
 
-    def update(sequence: Sequence): State
+    /**
+      * Updates the steps executions.
+      * It preserves the number of steps.
+      * @param stepDefs New executions.
+      * @return Updated state
+      */
+    def update(stepDefs: List[List[Actions]]): State
 
     /**
       * Unzip `State`. This creates a single `Sequence` with either completed `Step`s
@@ -231,12 +237,27 @@ object Sequence {
     }
 
     /**
-      * Initialize a `State` passing a `Queue` of pending `Sequence`s.
+      * Initialize a `State` passing a `Sequence` of pending `Step`s.
       */
     // TODO: Make this function `apply`?
     def init(q: Sequence): State =
       Sequence.Zipper.zipper(q).map(Zipper(_, SequenceState.Idle))
-        .getOrElse(Final(Sequence.empty(q.id), SequenceState.Idle))
+        .getOrElse(Final(q, SequenceState.Idle))
+
+    /**
+      * Rebuilds the state of a sequence with a new steps definition, but preserving breakpoints and skip marks
+      * The sequence must not be running.
+      * @param q New sequence definition
+      * @param st Old sequence state
+      * @return The new sequence state
+      */
+    def reload(steps: List[Step], st:State): State =
+      if(st.status.isRunning) st
+      else {
+        val oldSeq = st.toSequence
+        val updSteps = oldSeq.steps.zip(steps).map{ case (o, n) => n.copy(breakpoint =  o.breakpoint, skipMark = o.skipMark)} ++ steps.drop(oldSeq.steps.length)
+        init(oldSeq.copy(steps = updSteps))
+      }
 
     /**
       * This is the `State` in Zipper mode, which means is under execution.
@@ -313,23 +334,18 @@ object Sequence {
 
       // Some rules:
       // 1. Done steps cannot change.
-      // 2. Pending steps cannot turn to not pending.
-      // 3. Running step cannot change done or focus executions
-      // 4. Must preserve breakpoints and skip marks
-      override def update(sequence: Sequence): State = {
-        val updatedPending = sequence.steps.drop(zipper.done.length)
-
-        require(updatedPending.forall(Step.status(_) === StepState.Pending))
-
-        updatedPending match {
-          case t::ts => zipperL.modify(zp => zp.copy(focus = zp.focus.update(t), pending = pending.zip(ts).map{
-            case (o, n) => n.copy(breakpoint = o.breakpoint, skipMark = o.skipMark)
-          } ++ ts.drop(pending.length)))(this)
-          case _     => if(status.isRunning) this
-                        else Final(Sequence(zipper.id, zipper.done), status)
+      // 2. Running step cannot change `done` or `focus` executions
+      // 3. Must preserve breakpoints and skip marks
+      override def update(stepDefs: List[List[Actions]]): State =
+        stepDefs.drop(zipper.done.length) match {
+          case t :: ts => zipperL.modify(zp =>
+            zp.copy(
+              focus = zp.focus.update(t),
+              pending = pending.zip(ts).map{case (step, exes) => step.copy(executions = exes)} ++ pending.drop(ts.length)
+            )
+          )(this)
+          case _       => this
         }
-
-      }
 
       override val toSequence: Sequence = zipper.toSequence
 
@@ -364,7 +380,7 @@ object Sequence {
 
       override def start(i: Int): State = self
 
-      override def update(sequence: Sequence): State = self
+      override def update(stepDefs: List[List[Actions]]): State = self
 
       override val toSequence: Sequence = seq
 

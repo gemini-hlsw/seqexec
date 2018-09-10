@@ -273,7 +273,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers {
     val s0 = (SeqexecEngine.loadSequenceEndo(seqObsId1, sequence(seqObsId1)) >>>
       SeqexecEngine.loadSequenceEndo(seqObsId2, sequence(seqObsId2)) >>>
       (EngineState.queues ^|-? index(CalibrationQueueName)).modify(_ ++ List(seqObsId1, seqObsId2)) >>>
-      (EngineState.executionState ^|-> Engine.State.sequences ^|-? index(seqObsId1) ^|-> Sequence.State.status).set(SequenceState.Running.init))(EngineState.default)
+      (EngineState.executionState ^|-? Engine.State.sequenceState(seqObsId1) ^|-> Sequence.State.status).set(SequenceState.Running.init))(EngineState.default)
 
     (for {
       q <- async.boundedQueue[IO, executeEngine.EventType](10)
@@ -412,13 +412,13 @@ class SeqexecEngineSpec extends FlatSpec with Matchers {
   "SeqexecEngine" should "not run 2nd sequence because it's using the same resource" in {
     val s0 = (SeqexecEngine.loadSequenceEndo(seqObsId1, sequenceWithResources(seqObsId1, Set(Instrument.F2, TCS))) >>>
       SeqexecEngine.loadSequenceEndo(seqObsId2, sequenceWithResources(seqObsId2, Set(Instrument.F2))) >>>
-      (EngineState.executionState ^|-> Engine.State.sequences ^|-? index(seqObsId1) ^|-> Sequence.State.status).set(SequenceState.Running.init))(EngineState.default)
+      (EngineState.executionState ^|-? Engine.State.sequenceState(seqObsId1) ^|-> Sequence.State.status).set(SequenceState.Running.init))(EngineState.default)
 
     (for {
       q <- async.boundedQueue[IO, executeEngine.EventType](10)
       sf <- advanceOne(q, s0, seqexecEngine.start(q, seqObsId2, UserDetails("", ""), UUID.randomUUID()))
     } yield {
-      inside(sf.flatMap((EngineState.executionState ^|-> Engine.State.sequences ^|-? index(seqObsId2)).getOption).map(_.status)) {
+      inside(sf.flatMap((EngineState.executionState ^|-? Engine.State.sequenceState(seqObsId2)).getOption).map(_.status)) {
         case Some(status) => assert(status.isIdle)
       }
     }).unsafeRunSync
@@ -428,13 +428,13 @@ class SeqexecEngineSpec extends FlatSpec with Matchers {
   it should "run 2nd sequence when there are no shared resources" in {
     val s0 = (SeqexecEngine.loadSequenceEndo(seqObsId1, sequenceWithResources(seqObsId1, Set(Instrument.F2, TCS))) >>>
       SeqexecEngine.loadSequenceEndo(seqObsId2, sequenceWithResources(seqObsId2, Set(Instrument.GmosS))) >>>
-      (EngineState.executionState ^|-> Engine.State.sequences ^|-? index(seqObsId1) ^|-> Sequence.State.status).set(SequenceState.Running.init))(EngineState.default)
+      (EngineState.executionState ^|-? Engine.State.sequenceState(seqObsId1) ^|-> Sequence.State.status).set(SequenceState.Running.init))(EngineState.default)
 
     (for {
       q <- async.boundedQueue[IO, executeEngine.EventType](10)
       sf <- advanceOne(q, s0, seqexecEngine.start(q, seqObsId2, UserDetails("", ""), UUID.randomUUID()))
     } yield {
-      inside(sf.flatMap((EngineState.executionState ^|-> Engine.State.sequences ^|-? index(seqObsId2)).getOption).map(_.status)) {
+      inside(sf.flatMap((EngineState.executionState ^|-? Engine.State.sequenceState(seqObsId2)).getOption).map(_.status)) {
         case Some(status) => assert(status.isRunning)
       }
     }).unsafeRunSync
