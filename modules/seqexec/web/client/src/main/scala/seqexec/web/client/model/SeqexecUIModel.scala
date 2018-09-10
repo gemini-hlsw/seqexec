@@ -38,7 +38,7 @@ object SeqexecUIModel {
     noSequencesLoaded,
     SectionClosed,
     GlobalLog(FixedLengthBuffer.unsafeFromInt(500), SectionClosed),
-    SequencesOnDisplay.empty,
+    SequencesOnDisplay.Empty,
     syncInProgress = false,
     StepConfigTable.InitialTableState,
     QueueTableBody.InitialTableState.tableState,

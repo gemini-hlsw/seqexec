@@ -7,6 +7,8 @@ import cats.Eq
 import cats.implicits._
 import cats.data.NonEmptyList
 import gem.Observation
+import monocle.{ Optional, Traversal }
+import monocle.macros.Lenses
 import seqexec.model.{ SequencesQueue, SequenceView }
 import seqexec.model.enum._
 import seqexec.web.common.Zipper
@@ -16,46 +18,44 @@ import seqexec.web.client.ModelOps._
 import web.client.table._
 
 // Model for the tabbed area of sequences
-final case class SequencesOnDisplay(sequences: Zipper[SequenceTab]) {
+@Lenses
+final case class SequencesOnDisplay(tabs: Zipper[SeqexecTab]) {
   // Display a given step on the focused sequence
-  def showStepConfig(id: Observation.Id, i: Int): SequencesOnDisplay =
-    if (sequences.focus.obsId.exists(_ === id)) {
-      copy(sequences = sequences.modify(SequenceTab.stepConfigL.set(Some(i))(_)))
+  def showStepConfig(id: Observation.Id, i: Int): SequencesOnDisplay = {
+    if (SequencesOnDisplay.focusSequence.getOption(this).exists(_.obsId.exists(_ === id))) {
+      SequencesOnDisplay.tabs.modify(_.modify((SeqexecTab.sequenceTab ^|-> SequenceTab.stepConfigL).set(Some(i))))(this)
     } else {
       this
     }
+  }
 
   // Don't show steps for the sequence
   def hideStepConfig: SequencesOnDisplay =
-    copy(sequences = sequences.modify(SequenceTab.stepConfigL.set(None)(_)))
+    SequencesOnDisplay.tabs.modify(_.modify((SeqexecTab.sequenceTab ^|-> SequenceTab.stepConfigL).set(None)))(this)
 
+  // Focus on a tab for the instrument and id
   def focusOnSequence(inst: Instrument, id: Observation.Id): SequencesOnDisplay = {
-    // Replace the sequence for the instrument or the completed sequence and reset displaying a step
-    val q = sequences.findFocus(i => i.sequence.exists(s => s.id === id && s.metadata.instrument === inst))
-    copy(sequences = q.getOrElse(sequences))
+    val q = tabs.findFocusP {
+      case t: SequenceTab => t.sequence.exists(s => s.id === id && s.metadata.instrument === inst)
+    }
+    copy(tabs = q.getOrElse(tabs))
   }
 
   /**
    * List of loaded sequence ids
    */
-  val loadedIds: List[Observation.Id] =
-    sequences.toNel.collect {
+  def loadedIds: List[Observation.Id] =
+    tabs.toNel.collect {
       case InstrumentSequenceTab(_, Some(curr), _, _, _, _) => curr.id
     }
 
   /**
-   * List of sequence ids on tabs
+   * Replace the tabs when the core model is updated
    */
-  val tabIds: List[Observation.Id] =
-    sequences.toNel.collect {
-      case InstrumentSequenceTab(_, Some(curr), _, _, _, _) => curr.id
-      case PreviewSequenceTab(Some(curr), _, _, _, _)       => curr.id
-    }
-
   def updateFromQueue(s: SequencesQueue[SequenceView]): SequencesOnDisplay = {
     val updated = updateLoaded(s.loaded.values.toList.map { id =>
       s.queue.find(_.id === id)
-    }).sequences.map {
+    }).tabs.map {
       case p @ PreviewSequenceTab(Some(curr), r, _, t, o) =>
         s.queue.find(_.id === curr.id)
           .map(s => PreviewSequenceTab(Some(s), r, false, t, o))
@@ -64,145 +64,132 @@ final case class SequencesOnDisplay(sequences: Zipper[SequenceTab]) {
     }
     SequencesOnDisplay(updated)
   }
+
   /**
    * Replace the list of loaded sequences
    */
   private def updateLoaded(s: List[Option[SequenceView]]): SequencesOnDisplay = {
     // Build the new tabs
+    val currentInsTabs = SequencesOnDisplay.instrumentTabs.getAll(this)
     val instTabs = s.collect { case Some(x) =>
-      val curTableState = sequences.find(_.obsId.exists(_ === x.id)).map(_.tableState)
-      InstrumentSequenceTab(x.metadata.instrument, x.some, None, None, curTableState.getOrElse(StepsTable.State.InitialTableState), TabOperations.Default)
+      val curTableState = currentInsTabs.find(_.obsId.exists(_ === x.id)).map(_.tableState).getOrElse(StepsTable.State.InitialTableState)
+      InstrumentSequenceTab(x.metadata.instrument, x.some, None, None, curTableState, TabOperations.Default)
     }
     // Store current focus
-    val currentFocus = sequences.focus
+    val currentFocus = tabs.focus
     // Save the current preview
-    val onlyPreview = sequences.toList.filter{
-      case x => x.isPreview
-    }.headOption.getOrElse(SequenceTab.Empty)
+    val onlyPreview = SequencesOnDisplay.previewTab.headOption(this)
     // new zipper
-    val newZipper = Zipper[SequenceTab](Nil, onlyPreview, instTabs)
+    val newZipper = Zipper[SeqexecTab](Nil, onlyPreview.getOrElse(SequenceTab.Empty), instTabs)
     // Restore focus
     val q = newZipper.findFocus {
-      case PreviewSequenceTab(_, _, _, _, _) if currentFocus.isPreview =>
+      case _: PreviewSequenceTab if currentFocus.isPreview =>
         true
-      case PreviewSequenceTab(_, _, _, _, _)                           =>
+      case _: PreviewSequenceTab                           =>
         false
-      case InstrumentSequenceTab(i, _, _, _, _, _)                     =>
+      case _: CalibrationQueueTab                          =>
+        false
+      case InstrumentSequenceTab(i, _, _, _, _, _)         =>
         currentFocus match {
           case InstrumentSequenceTab(j, _, _, _, _, _) => i === j
-          case PreviewSequenceTab(_, _, _, _, _)       => false
+          case _: PreviewSequenceTab                   => false
+          case _: CalibrationQueueTab                  => false
         }
     }
-    copy(sequences = q.getOrElse(newZipper))
+    copy(tabs = q.getOrElse(newZipper))
   }
 
   /**
-   * Sets the passed sequences as preview. if it is already loaded, it will focus there instead
+   * Sets the sequence s as preview. if it is already loaded, it will focus there instead
    */
   def previewSequence(i: Instrument, s: Option[SequenceView]): SequencesOnDisplay = {
     val obsId = s.map(_.id)
     val isLoaded = obsId.exists(loadedIds.contains)
     // Replace the sequence for the instrument or the completed sequence and reset displaying a step
     val seq = if (s.exists(x => x.metadata.instrument === i && !isLoaded)) {
-      val q = sequences.findFocus(_.isPreview).map(_.modify((SequenceTab.currentSequenceL.set(s) andThen SequenceTab.stepConfigL.set(None))(_)))
-      q.getOrElse(sequences)
+      val q = tabs.findFocus(_.isPreview)
+        .map(_.modify(SeqexecTab.previewTab.modify((PreviewSequenceTab.currentSequence.set(s) andThen PreviewSequenceTab.stepConfig.set(None))(_))))
+      q
     } else if (isLoaded) {
-      sequences.findFocus(t => !t.isPreview && obsId === t.obsId).getOrElse(sequences)
+      tabs.findFocusP {
+        case InstrumentSequenceTab(_, Some(curr), _, _, _, _) => obsId.exists(_ === curr.id)
+      }
     } else {
-      sequences
+      tabs.some
     }
-    copy(sequences = seq)
+    copy(tabs = seq.getOrElse(tabs))
   }
 
   /**
    * Focus on the preview tab
    */
   def focusOnPreview: SequencesOnDisplay = {
-    val q = sequences.findFocus(_.isPreview)
-    copy(sequences = q.getOrElse(sequences))
+    val q = tabs.findFocus(_.isPreview)
+    copy(tabs = q.getOrElse(tabs))
   }
 
-  def unsetPreviewOn(id: Observation.Id): SequencesOnDisplay = {
+  def unsetPreviewOn(id: Observation.Id): SequencesOnDisplay =
     // Remove the sequence in the preview if it matches id
-    val q = sequences.map {
-      case s @ PreviewSequenceTab(cur, _, _, _, _) if cur.exists(_.id === id) =>
-        SequenceTab.currentSequenceL.set(None)(s)
-      case s                                                                  =>
-        s
-    }
-    copy(sequences = q)
-  }
+    (SequencesOnDisplay.previewTabById(id) ^|-> PreviewSequenceTab.currentSequence).set(None)(this)
 
-  def unsetPreview: SequencesOnDisplay = {
+  def unsetPreview: SequencesOnDisplay =
     // Remove any sequence in the preview
-    val q = sequences.map {
-      case s if s.isPreview => SequenceTab.currentSequenceL.set(None)(s)
-      case s                => s
-    }
-    copy(sequences = q)
-  }
+    (SequencesOnDisplay.previewTab ^|-> PreviewSequenceTab.currentSequence).set(None)(this)
 
-  // Is the id on the sequences area?
+  // Is the id focused?
   def idDisplayed(id: Observation.Id): Boolean =
-    sequences.withFocus.exists { case (s, a) => a && s.sequence.exists(_.id === id) }
+    tabs.withFocus.exists {
+      case (InstrumentSequenceTab(_, Some(curr), _, _, _, _), true) => curr.id === id
+      case (PreviewSequenceTab(Some(curr), _, _, _, _), true)       => curr.id === id
+      case _                                                        => false
+    }
 
-  def tab(id: Observation.Id): Option[SequenceTabActive] =
-    sequences.withFocus.find(_._1.obsId.exists(_ === id))
-      .map { case (i, a) => SequenceTabActive(i, a) }
-
-  // We'll set the passed SequenceView as completed for the given instruments
-  def markCompleted(completed: SequenceView): SequencesOnDisplay = {
-    val q = sequences.findFocus {
-      case t: InstrumentSequenceTab => t.instrument === completed.metadata.instrument.some
-      case _                        => false
-    }.map(_.modify(SequenceTab.completedSequenceO.set(completed.some)(_)))
-
-    copy(sequences = q.getOrElse(sequences))
-  }
+  def tab(id: Observation.Id): Option[SeqexecTabActive] =
+    tabs.withFocus.toList.collect {
+      case (i: SequenceTab, a) if i.obsId.exists(_ === id) =>
+        val selected = if (a) TabSelected.Selected else TabSelected.Background
+        SeqexecTabActive(i, selected)
+    }.headOption
 
   def availableTabs: NonEmptyList[AvailableTab] =
-    NonEmptyList.fromListUnsafe(sequences.withFocus.map {
-      case (i, a) => AvailableTab(i.sequence.map(_.id), i.sequence.map(_.status), i.instrument, i.runningStep, i.nextStepToRun, i.isPreview, a, i.loading)
-    }.toList)
+    NonEmptyList.fromListUnsafe(tabs.withFocus.toList.collect {
+      case (i: InstrumentSequenceTab, a) => AvailableTab(i.sequence.map(_.id), i.sequence.map(_.status), i.instrument, i.runningStep, i.nextStepToRun, i.isPreview, a, i.loading)
+      case (i: PreviewSequenceTab, a) => AvailableTab(i.sequence.map(_.id), i.sequence.map(_.status), i.instrument, i.runningStep, i.nextStepToRun, i.isPreview, a, i.loading)
+    })
 
   def cleanAll: SequencesOnDisplay =
-    SequencesOnDisplay.empty
+    SequencesOnDisplay.Empty
 
-  def selectedOperator: Option[SequenceObserverFocus] = {
-    val f = sequences.focus
-    f.sequence.map { s => SequenceObserverFocus(s.metadata.instrument, s.id, s.allStepsDone, s.metadata.observer) }.filter(_ => !f.isPreview)
-  }
+  /**
+   * Operator of the instrument tab if in focus
+   */
+  def selectedOperator: Option[SequenceObserverFocus] =
+    SequencesOnDisplay.focusSequence.getOption(this).collect {
+      case InstrumentSequenceTab(_, Some(s), _, _, _, _) =>
+        SequenceObserverFocus(s.metadata.instrument, s.id, s.allStepsDone, s.metadata.observer)
+    }
 
   // Update the state when a load has failed
-  def loadingComplete(id: Observation.Id): SequencesOnDisplay = {
-    val q = sequences.map {
-      case s @ PreviewSequenceTab(cur, _, _, _, _) if cur.exists(_.id === id) =>
-        PreviewSequenceTab.isLoading.set(false)(s)
-      case s                                                               =>
-        s
-    }
-    copy(sequences = q)
-  }
+  def loadingComplete(id: Observation.Id): SequencesOnDisplay =
+    (SequencesOnDisplay.previewTabById(id) ^|-> PreviewSequenceTab.isLoading).set(false)(this)
+
+  // We'll set the passed SequenceView as completed for the given instruments
+  def markCompleted(completed: SequenceView): SequencesOnDisplay =
+    (SequencesOnDisplay.instrumentTabFor(completed) ^|-> InstrumentSequenceTab.completedSequence).set(completed.some)(this)
 
   // Update the state when a load starts
-  def markAsLoading(id: Observation.Id): SequencesOnDisplay = {
-    val q = sequences.map {
-      case s @ PreviewSequenceTab(cur, _, _, _, _) if cur.exists(_.id === id) =>
-        PreviewSequenceTab.isLoading.set(true)(s)
-      case s                                                            =>
-        s
-    }
-    copy(sequences = q)
-  }
+  def markAsLoading(id: Observation.Id): SequencesOnDisplay =
+    (SequencesOnDisplay.previewTabById(id) ^|-> PreviewSequenceTab.isLoading).set(true)(this)
 
-  val stepsTables: Map[Observation.Id, TableState[StepsTable.TableColumn]] =
-    sequences.toNel.collect {
+
+  def stepsTables: Map[Observation.Id, TableState[StepsTable.TableColumn]] =
+    SequencesOnDisplay.sequenceTabs.getAll(this).collect {
       case InstrumentSequenceTab(_, Some(curr), _, _, tableState, _) => (curr.id, tableState)
       case PreviewSequenceTab(Some(curr), _, _, tableState, _)       => (curr.id, tableState)
     }.toMap
 
   def updateStepsTableStates(stepsTables: Map[Observation.Id, TableState[StepsTable.TableColumn]]): SequencesOnDisplay =
-    copy(sequences = sequences.map {
+    copy(tabs = tabs.map {
       case i @ InstrumentSequenceTab(_, Some(curr), _, _, _, _) =>
         stepsTables.get(curr.id)
           .map(s => i.copy(tableState = s))
@@ -214,24 +201,71 @@ final case class SequencesOnDisplay(sequences: Zipper[SequenceTab]) {
       case i => i
     })
 
-  def markOperations(id: Observation.Id, updater: TabOperations => TabOperations): SequencesOnDisplay = {
-    val q = sequences.map {
-      case t: InstrumentSequenceTab if t.obsId.exists(_ === id) =>
-        val p: SequenceTab = t.copy(tabOperations = updater(t.tabOperations))
-        p
-      case t                        => t
-    }
-    copy(sequences = q)
-  }
+  def markOperations(id: Observation.Id, updater: TabOperations => TabOperations): SequencesOnDisplay =
+    (SequencesOnDisplay.instrumentTabById(id) ^|-> InstrumentSequenceTab.tabOperations).modify(updater)(this)
+
 }
 
 /**
   * Contains the sequences displayed on the instrument tabs. Note that they are references to sequences on the Queue
   */
+@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object SequencesOnDisplay {
   // We need to initialize the model with something so we use preview
-  val empty: SequencesOnDisplay = SequencesOnDisplay(Zipper.fromNel(NonEmptyList.of(SequenceTab.Empty)))
+  val Empty: SequencesOnDisplay = SequencesOnDisplay(Zipper.fromNel[SeqexecTab](NonEmptyList.of(SequenceTab.Empty)))
 
   implicit val eq: Eq[SequencesOnDisplay] =
-    Eq.by(_.sequences)
+    Eq.by(_.tabs)
+
+  private def previewMatch(id: Observation.Id)(tab: SeqexecTab): Boolean =
+    tab match {
+      case PreviewSequenceTab(Some(curr), _, _, _, _) => curr.id === id
+      case _                                       => false
+    }
+
+  def previewTabById(id: Observation.Id): Traversal[SequencesOnDisplay, PreviewSequenceTab] =
+    SequencesOnDisplay.tabs ^|->> Zipper.unsafeFilterZ(previewMatch(id)) ^<-? SeqexecTab.previewTab
+
+  private def sequenceMatch(id: Observation.Id)(tab: SeqexecTab): Boolean =
+    tab match {
+      case InstrumentSequenceTab(_, Some(curr), _, _, _, _) => curr.id === id
+      case _                                                => false
+    }
+
+  def instrumentTabById(id: Observation.Id): Traversal[SequencesOnDisplay, InstrumentSequenceTab] =
+    SequencesOnDisplay.tabs ^|->> Zipper.unsafeFilterZ(sequenceMatch(id)) ^<-? SeqexecTab.instrumentTab
+
+  val previewTab: Traversal[SequencesOnDisplay, PreviewSequenceTab] =
+    SequencesOnDisplay.tabs ^|->> Zipper.unsafeFilterZ(_.isPreview) ^<-? SeqexecTab.previewTab
+
+  private def instrumentMatch(seq: SequenceView)(tab: SeqexecTab): Boolean =
+    tab match {
+      case InstrumentSequenceTab(inst, _, _, _, _, _) => inst === seq.metadata.instrument
+      case _                                            => false
+    }
+
+  def instrumentTabFor(seq: SequenceView): Traversal[SequencesOnDisplay, InstrumentSequenceTab] =
+    SequencesOnDisplay.tabs ^|->> Zipper.unsafeFilterZ(instrumentMatch(seq)) ^<-? SeqexecTab.instrumentTab
+
+  private def instrumentTab(tab: SeqexecTab): Boolean =
+    tab match {
+      case i: InstrumentSequenceTab => i.currentSequence.isDefined
+      case _                        => false
+    }
+
+  val instrumentTabs: Traversal[SequencesOnDisplay, InstrumentSequenceTab] =
+    SequencesOnDisplay.tabs ^|->> Zipper.unsafeFilterZ(instrumentTab) ^<-? SeqexecTab.instrumentTab
+
+  private def sequenceTab(tab: SeqexecTab): Boolean =
+    tab match {
+      case _: InstrumentSequenceTab => true
+      case _: PreviewSequenceTab    => true
+      case _                        => false
+    }
+
+  val sequenceTabs: Traversal[SequencesOnDisplay, SequenceTab] =
+    SequencesOnDisplay.tabs ^|->> Zipper.unsafeFilterZ(sequenceTab) ^<-? SeqexecTab.sequenceTab
+
+  val focusSequence: Optional[SequencesOnDisplay, SequenceTab] =
+    SequencesOnDisplay.tabs ^|-> Zipper.focus ^<-? SeqexecTab.sequenceTab
 }

@@ -386,6 +386,9 @@ lazy val seqexec_web_shared = crossProject(JVMPlatform, JSPlatform)
   .enablePlugins(AutomateHeaderPlugin)
   .enablePlugins(GitBranchPrompt)
   .disablePlugins(RevolverPlugin)
+  .settings(
+    addCompilerPlugin(Plugins.paradisePlugin)
+  )
   .jvmSettings(commonSettings)
   .jsSettings(commonJSSettings)
   .jsSettings(

@@ -5,10 +5,9 @@ package seqexec.web.client
 
 import cats.kernel.laws.discipline._
 import cats.tests.CatsSuite
-import monocle.law.discipline.{LensTests, OptionalTests}
+import monocle.law.discipline.LensTests
 import seqexec.web.client.components.sequence.steps.OffsetFns.OffsetsDisplay
 import seqexec.web.client.model._
-import seqexec.model.SeqexecModelArbitraries._
 import org.scalajs.dom.WebSocket
 import diode.data._
 
@@ -24,11 +23,13 @@ final class ModelSpec extends CatsSuite with ArbitrariesWebClient {
   checkAll("Eq[ClientStatus]", EqTests[ClientStatus].eqv)
   checkAll("Eq[RunningStep]", EqTests[RunningStep].eqv)
   checkAll("Eq[AvailableTab]", EqTests[AvailableTab].eqv)
-  checkAll("Eq[SequenceTabActive]", EqTests[SequenceTabActive].eqv)
+  checkAll("Eq[TabSelected]", EqTests[TabSelected].eqv)
+  checkAll("Eq[SeqexecTabActive]", EqTests[SeqexecTabActive].eqv)
+  checkAll("Eq[CalibrationQueueTab]", EqTests[CalibrationQueueTab].eqv)
   checkAll("Eq[InstrumentSequenceTab]", EqTests[InstrumentSequenceTab].eqv)
   checkAll("Eq[PreviewSequenceTab]", EqTests[PreviewSequenceTab].eqv)
   checkAll("Eq[Pages.SeqexecPages]", EqTests[Pages.SeqexecPages].eqv)
-  checkAll("Eq[SequenceTab]", EqTests[SequenceTab].eqv)
+  checkAll("Eq[SeqexecTab]", EqTests[SeqexecTab].eqv)
   checkAll("Eq[SequencesOnDisplay]", EqTests[SequencesOnDisplay].eqv)
   checkAll("Eq[GlobalLog]", EqTests[GlobalLog].eqv)
   checkAll("Eq[UserNotificationState]", EqTests[UserNotificationState].eqv)
@@ -38,6 +39,11 @@ final class ModelSpec extends CatsSuite with ArbitrariesWebClient {
 
   // lenses
   checkAll("Lens[SequenceTab, Option[Int]]", LensTests(SequenceTab.stepConfigL))
-  checkAll("Lens[SequenceTab, RefTo[Option[SequenceView]]]", LensTests(SequenceTab.currentSequenceL))
-  checkAll("Optional[SequenceTab, SequenceView]", OptionalTests(SequenceTab.completedSequenceO))
+
+  // Property generation errors
+  // checkAll("SeqexecTab.previewTab", PrismTests(SeqexecTab.previewTab))
+  // checkAll("SeqexecTab.instrumentTab", PrismTests(SeqexecTab.instrumentTab))
+  // checkAll("SeqexecTab.sequenceTab", PrismTests(SeqexecTab.sequenceTab))
+  // checkAll("SequencesOn.focusSequence", OptionalTests(SequencesOnDisplay.focusSequence))
+  // checkAll("SequencesOnDisplay.previewTab", TraversalTests(SequencesOnDisplay.previewTab))
 }

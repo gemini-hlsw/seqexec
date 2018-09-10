@@ -15,6 +15,7 @@ object RunOperation {
     Eq.fromUniversalEquals
 
 }
+
 /**
  * Hold transient states while excuting an operation
  */

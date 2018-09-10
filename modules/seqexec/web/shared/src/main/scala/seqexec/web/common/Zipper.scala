@@ -3,19 +3,34 @@
 
 package seqexec.web.common
 
+import cats._
 import cats.implicits._
 import cats.data.NonEmptyList
-import cats._
+import monocle.macros.Lenses
+import monocle.{ Prism, Traversal }
 
 /**
  * Minimal zipper based on scalaz's implementation
  * This is only meant for small collections. performance has not been optimized
  */
+@Lenses
 final case class Zipper[A](lefts: List[A], focus: A, rights: List[A]) {
   /**
     * Modify the focus
     */
   def modify(f: A => A): Zipper[A] = copy(lefts, f(focus), rights)
+
+  /**
+    * Modify the focus
+    */
+  def modifyP(p: Prism[A, A]): Zipper[A] = p.getOption(focus).map(f => copy(lefts, f, rights)).getOrElse(this)
+
+  /**
+    * Find and element and focus if successful
+    */
+  def findFocusP(p: PartialFunction[A, Boolean]): Option[Zipper[A]] =
+    // if (p.isDefined(focus)) findFocus
+    findFocus(p.lift andThen (_.getOrElse(false)))
 
   /**
     * Find and element and focus if successful
@@ -63,6 +78,7 @@ final case class Zipper[A](lefts: List[A], focus: A, rights: List[A]) {
   def toNel: NonEmptyList[A] = NonEmptyList.fromListUnsafe(toList)
 }
 
+@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object Zipper {
   def fromNel[A](ne: NonEmptyList[A]): Zipper[A] =
     Zipper(Nil, ne.head, ne.tail)
@@ -71,8 +87,47 @@ object Zipper {
     a.focus === b.focus && a.lefts === b.lefts && a.rights === b.rights
   }
 
-  implicit val functor: Functor[Zipper] = new Functor[Zipper] {
-    def map[A, B](fa: Zipper[A])(f: A => B): Zipper[B] =
-      Zipper(fa.lefts.map(f), f(fa.focus), fa.rights.map(f))
+  /**
+   * @typeclass Traverse
+   * Based on traverse implementation for List
+   */
+  implicit val instance: Traverse[Zipper] = new Traverse[Zipper] {
+    override def traverse[G[_], A, B](fa: Zipper[A])(f: A => G[B])(implicit G: Applicative[G]): G[Zipper[B]] =
+      (fa.lefts.traverse(f), f(fa.focus), fa.rights.traverse(f)).mapN {
+        case (l, f, r) => Zipper(l, f, r)
+      }
+
+    override def foldLeft[A, B](fa: Zipper[A], b: B)(f: (B, A) => B): B =
+      fa.toNel.foldLeft(b)(f)
+
+    override def foldRight[A, B](fa: Zipper[A], lb: Eval[B])(f: (A, Eval[B]) => Eval[B]): Eval[B] = {
+      def loop(as: Vector[A]): Eval[B] =
+        as match {
+          case h +: t => f(h, Eval.defer(loop(t)))
+          case _ => lb
+        }
+
+      Eval.defer(loop(fa.toList.toVector))
+    }
   }
+
+  def zipperT[A]: Traversal[Zipper[A], A] =
+    Traversal.fromTraverse
+
+  def unsafeFilterZ[A](predicate: A => Boolean): Traversal[Zipper[A], A] =
+    new Traversal[Zipper[A], A]{
+      override def modifyF[F[_]: Applicative](f: A => F[A])(s: Zipper[A]): F[Zipper[A]] = {
+        val lefts: F[List[A]] = s.lefts.collect {
+          case x if predicate(x) => f(x)
+          case x => x.pure[F]
+        }.sequence
+        val rights: F[List[A]] = s.rights.collect {
+          case x if predicate(x) => f(x)
+          case x => x.pure[F]
+        }.sequence
+        val focus: F[A] = if (predicate(s.focus)) f(s.focus) else s.focus.pure[F]
+        (lefts, focus, rights).mapN { (l, f, r) => Zipper(l, f, r)}
+      }
+    }
+
 }

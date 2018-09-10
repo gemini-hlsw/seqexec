@@ -6,6 +6,7 @@ package seqexec.web.client.handlers
 import cats.implicits._
 import diode.{ActionHandler, ActionResult, ModelRW}
 import seqexec.model.{ SequencesQueue, SequenceView }
+import seqexec.web.client.model.SequencesOnDisplay
 import seqexec.web.client.actions._
 import seqexec.web.client.circuit._
 
@@ -43,7 +44,7 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, SequencesFocus]) extends Act
 
   def handleClean: PartialFunction[Any, ActionResult[M]] = {
     case CleanSequences =>
-      updatedL(SequencesFocus.sod.modify(_.cleanAll))
+      updatedL(SequencesFocus.sod.set(SequencesOnDisplay.Empty))
   }
 
   def handleLoadFailed: PartialFunction[Any, ActionResult[M]] = {

@@ -32,6 +32,12 @@ import web.client.table.{ TableArbitraries, TableState }
 
 trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
 
+  implicit val arbTabSelected: Arbitrary[TabSelected] =
+    Arbitrary(Gen.oneOf(TabSelected.Selected, TabSelected.Background))
+
+  implicit val tsCogen: Cogen[TabSelected] =
+    Cogen[String].contramap(_.productPrefix)
+
   implicit val arbRunOperation: Arbitrary[RunOperation] =
     Arbitrary(Gen.oneOf(RunOperation.RunIdle, RunOperation.RunInFlight))
 
@@ -43,6 +49,18 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
 
   implicit val toCogen: Cogen[TabOperations] =
     Cogen[RunOperation].contramap(_.runRequested)
+
+  implicit val arbCalibrationQueueTab: Arbitrary[CalibrationQueueTab] =
+    Arbitrary {
+      for {
+        ts  <- arbitrary[TableState[StepsTable.TableColumn]]
+      } yield CalibrationQueueTab(ts)
+    }
+
+  implicit val cqtCogen: Cogen[CalibrationQueueTab] =
+    Cogen[TableState[StepsTable.TableColumn]].contramap {
+      x => x.tableState
+    }
 
   implicit val arbInstrumentSequenceTab: Arbitrary[InstrumentSequenceTab] =
     Arbitrary {
@@ -77,21 +95,31 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
       x => (x.currentSequence, x.stepConfig, x.tableState, x.tabOperations)
     }
 
+  implicit val arbSeqexecTab: Arbitrary[SeqexecTab] = Arbitrary {
+    Gen.frequency(10 -> arbitrary[InstrumentSequenceTab], 1 -> arbitrary[PreviewSequenceTab], 1 -> arbitrary[CalibrationQueueTab])
+  }
+
+  implicit val sxCogen: Cogen[SeqexecTab] =
+    Cogen[Either[CalibrationQueueTab, Either[PreviewSequenceTab, InstrumentSequenceTab]]].contramap {
+      case a: CalibrationQueueTab   => Left(a)
+      case a: PreviewSequenceTab    => Right(Left(a))
+      case a: InstrumentSequenceTab => Right(Right(a))
+    }
+
   implicit val arbSequenceTab: Arbitrary[SequenceTab] = Arbitrary {
     Gen.frequency(10 -> arbitrary[InstrumentSequenceTab], 1 -> arbitrary[PreviewSequenceTab])
   }
 
   implicit val stCogen: Cogen[SequenceTab] =
     Cogen[Either[PreviewSequenceTab, InstrumentSequenceTab]].contramap {
+      case a: PreviewSequenceTab    => Left(a)
       case a: InstrumentSequenceTab => Right(a)
-      case b: PreviewSequenceTab    => Left(b)
     }
 
   implicit val arbSequenceOnDisplay: Arbitrary[SequencesOnDisplay] =
     Arbitrary {
       for {
-        s <- Gen.nonEmptyListOf(arbitrary[SequenceTab])
-        if s.exists(_.sequence.isDefined)
+        s <- Gen.nonEmptyListOf(arbitrary[SeqexecTab])
       } yield {
         val sequences = NonEmptyList.of(s.headOption.getOrElse(SequenceTab.Empty), s.drop(1): _*)
         SequencesOnDisplay(Zipper.fromNel(sequences))
@@ -99,8 +127,8 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
     }
 
   implicit val sequencesOnDisplayCogen: Cogen[SequencesOnDisplay] =
-    Cogen[Zipper[SequenceTab]]
-      .contramap(_.sequences)
+    Cogen[Zipper[SeqexecTab]]
+      .contramap(_.tabs)
 
   implicit val arbOffsetsDisplay: Arbitrary[OffsetsDisplay] =
     Arbitrary {
@@ -219,16 +247,16 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
     Cogen[(Option[Observation.Id], Option[SequenceState], Option[Instrument], Option[Int], Option[RunningStep], Boolean, Boolean)]
       .contramap(x => (x.id, x.status, x.instrument, x.nextStepToRun, x.runningStep, x.isPreview, x.active))
 
-  implicit val arbSequenceTabActive: Arbitrary[SequenceTabActive] =
+  implicit val arbSeqexecTabActive: Arbitrary[SeqexecTabActive] =
     Arbitrary {
       for {
         d <- arbitrary[SequenceTab]
-        a <- arbitrary[Boolean]
-      } yield SequenceTabActive(d, a)
+        a <- arbitrary[TabSelected]
+      } yield SeqexecTabActive(d, a)
     }
 
-  implicit val sequenceTabActiveCogen: Cogen[SequenceTabActive] =
-    Cogen[(SequenceTab, Boolean)]
+  implicit val sequenceTabActiveCogen: Cogen[SeqexecTabActive] =
+    Cogen[(SeqexecTab, TabSelected)]
       .contramap(x => (x.tab, x.active))
 
   implicit val arbStepIdDisplayed: Arbitrary[StepIdDisplayed] =
