@@ -108,7 +108,7 @@ final case class SequencesOnDisplay(tabs: Zipper[SeqexecTab]) {
     // Replace the sequence for the instrument or the completed sequence and reset displaying a step
     val seq = if (s.exists(x => x.metadata.instrument === i && !isLoaded)) {
       val q = tabs.findFocus(_.isPreview)
-        .map(_.modify(SeqexecTab.previewTab.modify((PreviewSequenceTab.currentSequence.set(s) andThen PreviewSequenceTab.stepConfig.set(None))(_))))
+        .map(_.modify(SeqexecTab.previewTab.modify((PreviewSequenceTab.tableState.set(StepsTable.State.InitialTableState) >>> PreviewSequenceTab.currentSequence.set(s) >>> PreviewSequenceTab.stepConfig.set(None))(_))))
       q
     } else if (isLoaded) {
       tabs.findFocusP {
