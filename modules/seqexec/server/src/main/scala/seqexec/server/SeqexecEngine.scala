@@ -218,7 +218,7 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
       q   <- st.queues.get(qid)
       seq <- st.executionState.sequences.get(seqId)
     } yield {
-      if (q.status(st) =!= SequencesBatch.State.Running && !seq.status.isRunning && !seq.status.isCompleted && !q.queue.contains(seqId))
+      if (q.status(st) =!= BatchExecState.Running && !seq.status.isRunning && !seq.status.isCompleted && !q.queue.contains(seqId))
         (EngineState.queues ^|-? index(qid)).modify(_.addSeq(seqId))(st)
       else st
     }
@@ -231,7 +231,7 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
   private def removeSeq(qid: QueueId, seqId: Observation.Id): Endo[EngineState] = st => (
     for {
       q <- st.queues.get(qid)
-    } yield if(q.status(st) =!= SequencesBatch.State.Running && q.queue.contains(seqId))
+    } yield if(q.status(st) =!= BatchExecState.Running && q.queue.contains(seqId))
         (EngineState.queues ^|-? index(qid)).modify(_.removeSeq(seqId))(st)
       else st
   ).getOrElse(st)
@@ -243,7 +243,7 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
   private def moveSeq(qid: QueueId, seqId: Observation.Id, d: Int): Endo[EngineState] = st => (
     for {
       q <- st.queues.get(qid)
-    } yield if(q.status(st) =!= SequencesBatch.State.Running && q.queue.contains(seqId))
+    } yield if(q.status(st) =!= BatchExecState.Running && q.queue.contains(seqId))
         (EngineState.queues ^|-? index(qid)).modify(_.moveSeq(seqId, d))(st)
       else st
   ).getOrElse(st)
@@ -473,29 +473,28 @@ object SeqexecEngine extends SeqexecConfiguration {
     )
   }
 
+  /**
+    * Find the observations in an execution queue that would be run next, taking into account the resources
+    * required by each observation and teh resources currently in use and the resources . The order in the queue
+    * defines the priority of the observations.
+    * @param qid The execution queue id
+    * @param st The current engine state
+    * @return The set of all observations in the execution queue `qid` that can be started to run in parallel.
+    */
   def nextRunnableObservations(qid: QueueId)(st: EngineState): Set[Observation.Id] = {
-
-    def findRunnables(used: Set[Resource], obs: Map[Observation.Id, Set[Resource]], acc: Set[Observation.Id]): Set[Observation.Id] = {
-      if (obs.isEmpty) acc
-      else {
-        val next = obs.find(p => used.intersect(p._2).isEmpty)
-        next match {
-          case None => acc
-          case Some((id, res)) => findRunnables(used ++ res, obs - id, acc + id)
-        }
-      }
-    }
-
-    // Get sequence ids, resources and states
+    // For each observation id, retrieve the set of resources required to run that observation, and it current
+    // execution state
     val seqInfos = st.sequences.map { case (id, ObserverSequence(_, seq)) => id -> ((seq.resources, st.executionState.sequences.get(id))) }.collect { case (id, (res, Some(s))) => id -> ((res, s.status)) }
-    // Set of resources used by running sequences
+    // Set of resources used by all running sequences
     val used = seqInfos.collect { case (_, (res, status)) if (status.isRunning) => res }.foldRight(Set[Resource]())(_.union(_))
-    // resources for observations in queue that are not yet run
-    val obs = st.queues.get(qid).map(_.queue.map(id => id -> seqInfos.get(id)).collect {
+    // For each observations in the queue that is not yet run, retrieve the required resources
+    val obs = st.queues.get(qid).map(_.queue.fproduct(seqInfos.get).collect {
       case (id, Some((res, status))) if (!status.isRunning && !status.isCompleted) => id -> res
-    }.toMap).getOrElse(Map.empty)
+    }).orEmpty
 
-    findRunnables(used, obs, Set())
+    obs.foldLeft((used, Set[Observation.Id]())){ (b, o) =>
+      (o, b) match { case ((oid, res), (u, a)) => if(u.intersect(res).isEmpty) (u ++ res, a + oid) else (u, a) }
+    }._2
   }
 
   private def decodeTops(s: String): Map[String, String] =

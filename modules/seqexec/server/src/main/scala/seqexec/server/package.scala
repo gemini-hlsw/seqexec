@@ -19,7 +19,6 @@ import monocle.macros.GenLens
 import monocle.function.At.at
 import monocle.function.At.atMap
 import seqexec.engine.Engine
-import seqexec.model.SequencesBatch.{CommandState, State => BatchState}
 import seqexec.model.{ClientID, Conditions, Observer, Operator, SequenceState}
 import seqexec.model.enum._
 import seqexec.model.{Notification, UserDetails}
@@ -140,18 +139,18 @@ package object server {
     }
   }
 
-  implicit class ExecutionQueueOps(q: ExecutionQueue) {
-    def status(st: EngineState): BatchState = {
+  implicit class ExecutionQueueOps(val q: ExecutionQueue) extends AnyVal {
+    def status(st: EngineState): BatchExecState = {
       val statuses: Seq[SequenceState] = q.queue.map(st.executionState.sequences.get(_).map(_.status))
         .collect{ case Some(x) => x }
 
-      if(statuses.forall(_.isCompleted)) BatchState.Completed
+      if(statuses.forall(_.isCompleted)) BatchExecState.Completed
       else q.cmdState match {
-        case CommandState.Idle => BatchState.Idle
-        case CommandState.Run  => if(statuses.exists(_.isRunning)) BatchState.Running
-                                  else BatchState.Waiting
-        case CommandState.Stop => if(statuses.exists(_.isRunning)) BatchState.Stopping
-                                  else BatchState.Idle
+        case BatchCommandState.Idle => BatchExecState.Idle
+        case BatchCommandState.Run  => if(statuses.exists(_.isRunning)) BatchExecState.Running
+                                  else BatchExecState.Waiting
+        case BatchCommandState.Stop => if(statuses.exists(_.isRunning)) BatchExecState.Stopping
+                                  else BatchExecState.Idle
       }
     }
 

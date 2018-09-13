@@ -20,8 +20,8 @@ import seqexec.server.gcal.GcalController
 import seqexec.server.gcal.GcalController._
 import seqexec.server.tcs.{CRFollow, TcsController, TcsControllerEpics}
 import seqexec.server.keywords._
-import seqexec.model.enum.Instrument
-import seqexec.model.{Conditions, Operator, SequencesBatch}
+import seqexec.model.enum.{BatchCommandState, Instrument}
+import seqexec.model.{Conditions, Operator}
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams
 import edu.gemini.spModel.gemini.gpi.Gpi.{Apodizer => LegacyApodizer}
@@ -151,7 +151,7 @@ object SeqexecServerArbitraries extends ArbTime {
   implicit val executionQueueArb: Arbitrary[ExecutionQueue] = Arbitrary {
     for {
       n <- arbitrary[String]
-      s <- arbitrary[SequencesBatch.CommandState]
+      s <- arbitrary[BatchCommandState]
       q <- arbitrary[List[Observation.Id]]
     } yield ExecutionQueue(n, s, q)
   }

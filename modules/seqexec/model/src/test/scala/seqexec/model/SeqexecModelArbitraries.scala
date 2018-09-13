@@ -8,7 +8,6 @@ import org.scalacheck.Arbitrary._
 import cats.implicits._
 import gem.Observation
 import gem.arb.ArbObservation
-import seqexec.model.SequencesBatch.CommandState
 import seqexec.model.enum._
 
 trait SeqexecModelArbitraries extends ArbObservation {
@@ -269,10 +268,10 @@ trait SeqexecModelArbitraries extends ArbObservation {
       case i: InstrumentInUse  => Right(i)
     }
 
-  implicit val seqBatchCmdStateArb: Arbitrary[CommandState] = Arbitrary(
-    Gen.oneOf(CommandState.Idle, CommandState.Run, CommandState.Stop)
+  implicit val seqBatchCmdStateArb: Arbitrary[BatchCommandState] = Arbitrary(
+    Gen.oneOf(BatchCommandState.Idle, BatchCommandState.Run, BatchCommandState.Stop)
   )
-  implicit val seqBatchCmdStateCogen: Cogen[CommandState] =
+  implicit val seqBatchCmdStateCogen: Cogen[BatchCommandState] =
     Cogen[String].contramap(_.productPrefix)
 }
 

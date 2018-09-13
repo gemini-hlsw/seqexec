@@ -29,7 +29,7 @@ import seqexec.model.enum.{ActionStatus, CloudCover, ImageQuality, Instrument, R
 import seqexec.model.{ActionType, UserDetails}
 import seqexec.model.enum.Resource.TCS
 import monocle.Monocle._
-import seqexec.model.SequencesBatch.CommandState
+import seqexec.model.enum.BatchCommandState
 
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 @SuppressWarnings(Array("org.wartremover.warts.Throw"))
@@ -282,7 +282,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers {
     val s0 = (SeqexecEngine.loadSequenceEndo(seqObsId1, sequence(seqObsId1)) >>>
       SeqexecEngine.loadSequenceEndo(seqObsId2, sequence(seqObsId2)) >>>
       (EngineState.queues ^|-? index(CalibrationQueueId) ^|-> ExecutionQueue.queue).modify(_ ++ List(seqObsId1, seqObsId2)) >>>
-      (EngineState.queues ^|-? index(CalibrationQueueId) ^|-> ExecutionQueue.cmdState).set(CommandState.Run) >>>
+      (EngineState.queues ^|-? index(CalibrationQueueId) ^|-> ExecutionQueue.cmdState).set(BatchCommandState.Run) >>>
       (EngineState.executionState ^|-? Engine.State.sequenceState(seqObsId1) ^|-> Sequence.State.status).set(SequenceState.Running.init))(EngineState.default)
 
     (for {
