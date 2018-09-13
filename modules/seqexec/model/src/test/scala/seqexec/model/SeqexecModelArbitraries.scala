@@ -267,6 +267,12 @@ trait SeqexecModelArbitraries extends ArbObservation {
       case r: ResourceConflict => Left(r)
       case i: InstrumentInUse  => Right(i)
     }
+
+  implicit val seqBatchCmdStateArb: Arbitrary[BatchCommandState] = Arbitrary(
+    Gen.oneOf(BatchCommandState.Idle, BatchCommandState.Run, BatchCommandState.Stop)
+  )
+  implicit val seqBatchCmdStateCogen: Cogen[BatchCommandState] =
+    Cogen[String].contramap(_.productPrefix)
 }
 
 object SeqexecModelArbitraries extends SeqexecModelArbitraries

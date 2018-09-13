@@ -3,6 +3,8 @@
 
 package seqexec
 
+import java.util.UUID
+
 import cats.data._
 import cats.effect.{IO, Sync}
 import cats.implicits._
@@ -17,9 +19,9 @@ import monocle.macros.GenLens
 import monocle.function.At.at
 import monocle.function.At.atMap
 import seqexec.engine.Engine
-import seqexec.model.{ ClientID, Conditions, Observer, Operator, SequenceState }
-import seqexec.model.enum.{CloudCover, Instrument, ImageQuality, SkyBackground, WaterVapor}
-import seqexec.model.{UserDetails, Notification}
+import seqexec.model.{ClientID, Conditions, Observer, Operator, SequenceState}
+import seqexec.model.enum._
+import seqexec.model.{Notification, UserDetails}
 
 package server {
 
@@ -32,7 +34,7 @@ package server {
   final case class EngineState(queues: ExecutionQueues, selected: Map[Instrument, Observation.Id], conditions: Conditions, operator: Option[Operator], sequences: Map[Observation.Id, ObserverSequence], executionState: Engine.State)
   @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object EngineState {
-    val default: EngineState = EngineState(Map(CalibrationQueueName -> Nil), Map.empty, Conditions.Default, None, Map.empty, Engine.State.empty)
+    val default: EngineState = EngineState(Map(CalibrationQueueId -> ExecutionQueue.init(CalibrationQueueName)), Map.empty, Conditions.Default, None, Map.empty, Engine.State.empty)
 
     def instrumentLoadedL(instrument: Instrument): Lens[EngineState, Option[Observation.Id]] = GenLens[EngineState](_.selected) ^|-> at(instrument)
 
@@ -85,6 +87,7 @@ package object server {
     Eq[Int].contramap(_.ordinal())
 
   val CalibrationQueueName: String = "Calibration Queue"
+  val CalibrationQueueId: UUID = UUID.fromString("7156fa7e-48a6-49d1-a267-dbf3bbaa7577")
 
   type TrySeq[A] = Either[SeqexecFailure, A]
   type ApplicativeErrorSeq[F[_]] = ApplicativeError[F, SeqexecFailure]
@@ -100,8 +103,8 @@ package object server {
   type SeqObserve[A, B] = Reader[A, SeqAction[B]]
   type SeqObserveF[F[_], A, B] = Reader[A, SeqActionF[F, B]]
 
-  type ExecutionQueue = List[Observation.Id]
-  type ExecutionQueues = Map[String, ExecutionQueue]
+  type QueueId = UUID
+  type ExecutionQueues = Map[QueueId, ExecutionQueue]
 
   val executeEngine: Engine[EngineState, SeqEvent] = new Engine[EngineState, SeqEvent](EngineState.executionState)
 
@@ -125,13 +128,35 @@ package object server {
       ab.fold(a => Validated.Invalid(NonEmptyList.of(a)), b => Validated.Valid(b))
   }
 
-  implicit class ExecutionQueueOps(q: ExecutionQueue) {
-    def status(st: EngineState): SequenceState = {
-      val statuses: List[SequenceState] = q.map(st.executionState.sequences.get(_).map(_.status).getOrElse(SequenceState.Idle))
+  // This assumes that there is only one instance of e in l
+  private def moveElement[T](l: List[T], e: T, d: Int)(implicit eq: Eq[T]): List[T] = {
+    val idx = l.indexOf(e)
 
-      statuses.find(_.isRunning).orElse(statuses.find(_.isError)).orElse(statuses.find(_.isStopped))
-        .orElse(statuses.find(_.isIdle)).getOrElse(SequenceState.Completed)
+    if(d === 0 || idx<0) l
+    else {
+      val (h, t) = l.filterNot(_ === e).splitAt(idx+d)
+      (h :+ e) ++ t
     }
+  }
+
+  implicit class ExecutionQueueOps(val q: ExecutionQueue) extends AnyVal {
+    def status(st: EngineState): BatchExecState = {
+      val statuses: Seq[SequenceState] = q.queue.map(st.executionState.sequences.get(_).map(_.status))
+        .collect{ case Some(x) => x }
+
+      if(statuses.forall(_.isCompleted)) BatchExecState.Completed
+      else q.cmdState match {
+        case BatchCommandState.Idle => BatchExecState.Idle
+        case BatchCommandState.Run  => if(statuses.exists(_.isRunning)) BatchExecState.Running
+                                  else BatchExecState.Waiting
+        case BatchCommandState.Stop => if(statuses.exists(_.isRunning)) BatchExecState.Stopping
+                                  else BatchExecState.Idle
+      }
+    }
+
+    def addSeq(sid: Observation.Id): ExecutionQueue = q.copy(queue = q.queue :+ sid)
+    def removeSeq(sid: Observation.Id): ExecutionQueue = q.copy(queue = q.queue.filter(_ =!= sid))
+    def moveSeq(sid:Observation.Id, idx: Int): ExecutionQueue = q.copy(queue = moveElement(q.queue, sid, idx))
   }
 
   implicit class ControlStrategyOps(v: ControlStrategy) {
