@@ -15,7 +15,7 @@ import seqexec.model.{Observer, SequenceState}
 import seqexec.model.enum.Instrument
 import seqexec.web.client.actions.LoadSequence
 import seqexec.web.client.model.Pages._
-import seqexec.web.client.model.{ AvailableTab, RunningStep }
+import seqexec.web.client.model.{ AvailableTab, RunningStep, TabSelected }
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.semanticui._
 import seqexec.web.client.semanticui.elements.icon.Icon._
@@ -26,7 +26,7 @@ import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.reusability._
 import web.client.style._
 
-object InstrumentTab {
+object SequenceTab {
   final case class Props(router: RouterCtl[SeqexecPages], tab: AvailableTab, loggedIn: Boolean, defaultObserver: Observer, runningInstruments: List[Instrument])
   final case class State(loading: Boolean)
 
@@ -45,7 +45,7 @@ object InstrumentTab {
     // prevent default to avoid the link jumping
     e.preventDefaultCB *>
     // Request to display the selected sequence
-    p.router.setUrlAndDispatchCB(page).unless(p.tab.active) *>
+    p.router.setUrlAndDispatchCB(page).unless(p.tab.active === TabSelected.Selected) *>
     Callback.empty
   }
 
@@ -61,12 +61,12 @@ object InstrumentTab {
       ^.onClick ==> showSequence(p, page),
       ^.cls := "item",
       ^.classSet(
-        "active" -> active
+        "active" -> (active === TabSelected.Selected)
       ),
       IconAttention.copyIcon(color = Some("red")).when(hasError),
       SeqexecStyles.instrumentTab,
-      SeqexecStyles.inactiveInstrumentContent.unless(active),
-      SeqexecStyles.activeInstrumentContent.when(active),
+      SeqexecStyles.inactiveInstrumentContent.when(active === TabSelected.Background),
+      SeqexecStyles.activeInstrumentContent.when(active === TabSelected.Selected),
       dataTab := dataId,
       SeqexecStyles.errorTab.when(hasError),
       mod.toTagMod
@@ -176,24 +176,31 @@ object InstrumentTab {
 
   def apply(p: Props): Unmounted[Props, State, Unit] = component(p)
 }
+
 /**
   * Menu with tabs
   */
-object InstrumentsTabs {
-  final case class Props(router: RouterCtl[SeqexecPages], loggedIn: Boolean)
+object SeqexecTabs {
+  final case class Props(router: RouterCtl[SeqexecPages])
 
-  implicit val propsReuse: Reusability[Props] = Reusability.by(_.loggedIn)
+  implicit val propsReuse: Reusability[Props] = Reusability.always
   private val tabConnect = SeqexecCircuit.connect(SeqexecCircuit.tabsReader)
 
   private val component = ScalaComponent.builder[Props]("InstrumentsMenu")
     .stateless
     .render_P(p =>
       tabConnect { x =>
-        val runningInstruments = x().tabs.toList.collect { case AvailableTab(_, Some(SequenceState.Running(_, _)), Some(i), _, _, false, _, _) => i }
+        val runningInstruments = x().tabs.toList.collect {
+          case Right(AvailableTab(_, Some(SequenceState.Running(_, _)), Some(i), _, _, false, _, _)) => i
+        }
         val tabs = x().tabs.toList.filter(_.nonEmpty).sortBy {
-          case t if t.isPreview => Int.MinValue.some
-          case t                => t.instrument.map(_.ordinal)
-        }.map(t => InstrumentTab(InstrumentTab.Props(p.router, t, p.loggedIn, x().defaultObserver, runningInstruments)): VdomNode)
+          case Left(_)                 => Int.MinValue.some
+          case Right(t) if t.isPreview => (Int.MinValue - 1).some
+          case Right(t)                => t.instrument.map(_.ordinal)
+        }.map{
+          case Right(t) => SequenceTab(SequenceTab.Props(p.router, t, x().canOperate, x().defaultObserver, runningInstruments)): VdomNode
+          case Left(_) => EmptyVdom//SeqexecTab(SeqexecTab.Props(p.router, t, x().canOperate, x().defaultObserver, runningInstruments)): VdomNode
+        }
         if (tabs.nonEmpty) {
           <.div(
             ^.cls := "ui attached tabular menu",

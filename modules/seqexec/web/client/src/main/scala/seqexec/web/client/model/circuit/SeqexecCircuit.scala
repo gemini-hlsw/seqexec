@@ -98,10 +98,15 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   val logDisplayedReader: ModelR[SeqexecAppRootModel, SectionVisibilityState] =
     zoom(_.uiModel.globalLog.display)
 
-  val tabsReader: ModelR[SeqexecAppRootModel, InstrumentTabFocus] =
-    zoom(_.uiModel.defaultObserver).zip(zoom(_.uiModel.sequencesOnDisplay.availableTabs)(fastEq[NonEmptyList[AvailableTab]])).zoom {
-      case (u, tabs) => InstrumentTabFocus(tabs, u)
-    }(fastEq[InstrumentTabFocus])
+  val tabsReader: ModelR[SeqexecAppRootModel, InstrumentTabFocus] = {
+    val getter = SeqexecAppRootModel.uiModel composeGetter (SeqexecUIModel.sequencesOnDisplay composeGetter SequencesOnDisplay.availableTabsG).zip(SeqexecUIModel.defaultObserverG)
+    val constructor = ClientStatus.canOperateG.zip(getter) >>> { p =>
+      val (o, (t, ob)) = p
+      InstrumentTabFocus(o, t, ob)
+    }
+
+    this.zoomG(constructor)
+  }
 
   val sequenceTabs: ModelR[SeqexecAppRootModel, NonEmptyList[SequenceTabContentFocus]] =
     statusReader.zip(logDisplayedReader.zip(zoom(_.uiModel.sequencesOnDisplay))).zoom {

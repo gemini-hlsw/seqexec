@@ -104,12 +104,22 @@ package circuit {
 
   final case class InstrumentStatusFocus(instrument: Instrument, active: Boolean, idState: Option[(Observation.Id, SequenceState)], runningStep: Option[RunningStep]) extends UseValueEq
 
-  final case class InstrumentTabFocus(tabs: NonEmptyList[AvailableTab], defaultObserver: Observer) extends UseValueEq
+  sealed trait TabFocus extends Product with Serializable
+
+  final case class InstrumentTabFocus(canOperate: Boolean, tabs: NonEmptyList[Either[CalibrationQueueTabActive, AvailableTab]], defaultObserver: Observer) extends TabFocus
 
   object InstrumentTabFocus {
     implicit val eq: Eq[InstrumentTabFocus] =
-      Eq.by(x => (x.tabs, x.defaultObserver))
+      Eq.by(x => (x.canOperate, x.tabs, x.defaultObserver))
   }
+
+  final case class CalibrationQueueFocus(canOperate: Boolean, defaultObserver: Observer) extends TabFocus
+
+  object CalibrationQueueFocus {
+    implicit val eq: Eq[CalibrationQueueFocus] =
+      Eq.by(x => (x.canOperate, x.defaultObserver))
+  }
+
   final case class SequenceTabContentFocus(isLogged: Boolean, instrument: Option[Instrument], id: Option[Observation.Id], sequenceSelected: Boolean, logDisplayed: SectionVisibilityState) extends UseValueEq
 
   object SequenceTabContentFocus {

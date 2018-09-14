@@ -238,13 +238,13 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
         n <- arbitrary[Option[Int]]
         r <- arbitrary[Option[RunningStep]]
         p <- arbitrary[Boolean]
-        a <- arbitrary[Boolean]
+        a <- arbitrary[TabSelected]
         l <- arbitrary[Boolean]
       } yield AvailableTab(d, s, i, r, n, p, a, l)
     }
 
   implicit val availableTabCogen: Cogen[AvailableTab] =
-    Cogen[(Option[Observation.Id], Option[SequenceState], Option[Instrument], Option[Int], Option[RunningStep], Boolean, Boolean)]
+    Cogen[(Option[Observation.Id], Option[SequenceState], Option[Instrument], Option[Int], Option[RunningStep], Boolean, TabSelected)]
       .contramap(x => (x.id, x.status, x.instrument, x.nextStepToRun, x.runningStep, x.isPreview, x.active))
 
   implicit val arbSeqexecTabActive: Arbitrary[SeqexecTabActive] =

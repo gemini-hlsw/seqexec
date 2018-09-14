@@ -48,4 +48,6 @@ object SeqexecUIModel {
 
   implicit val eq: Eq[SeqexecUIModel] =
     Eq.by(x => (x.navLocation, x.user, x.sequences, x.loginBox, x.globalLog, x.sequencesOnDisplay, x.configTableState, x.queueTableState, x.defaultObserver, x.firstLoad))
+
+  val defaultObserverG = SeqexecUIModel.defaultObserver.asGetter
 }

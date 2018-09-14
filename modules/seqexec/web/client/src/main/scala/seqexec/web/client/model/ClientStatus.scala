@@ -5,7 +5,7 @@ package seqexec.web.client.model
 
 import cats.Eq
 import cats.implicits._
-import monocle.Lens
+import monocle.{ Getter, Lens }
 import seqexec.model.UserDetails
 
 /**
@@ -24,4 +24,7 @@ object ClientStatus {
   val clientStatusFocusL: Lens[SeqexecAppRootModel, ClientStatus] =
     Lens[SeqexecAppRootModel, ClientStatus](m => ClientStatus(m.uiModel.user, m.ws, m.uiModel.syncInProgress
     ))(v => m => m.copy(ws = v.w, uiModel = m.uiModel.copy(user = v.u, syncInProgress = v.syncInProgress)))
+
+  val canOperateG: Getter[SeqexecAppRootModel, Boolean] =
+    clientStatusFocusL composeGetter Getter[ClientStatus, Boolean](_.canOperate)
 }

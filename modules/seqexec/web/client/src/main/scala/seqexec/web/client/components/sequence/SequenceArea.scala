@@ -127,7 +127,6 @@ object SequenceTabContent {
 object SequenceArea {
   final case class Props(router: RouterCtl[SeqexecPages], site: Site)
   implicit val propsReuse: Reusability[Props] = Reusability.by(_.site)
-  private val statusConnect = SeqexecCircuit.connect(SeqexecCircuit.statusReader)
   private val tabsConnect = SeqexecCircuit.connect(SeqexecCircuit.sequenceTabs)
 
   private val component = ScalaComponent.builder[Props]("SequenceArea")
@@ -136,7 +135,7 @@ object SequenceArea {
       <.div(
         ^.cls := "ui sixteen wide column",
         SeqexecStyles.sequencesArea,
-        statusConnect(x => InstrumentsTabs(InstrumentsTabs.Props(p.router, x().isLogged))),
+        SeqexecTabs(SeqexecTabs.Props(p.router)),
         tabsConnect(x => ReactFragment(x().toList.map(t => SequenceTabContent(SequenceTabContent.Props(p.router, t)): VdomNode): _*))
       )
     )

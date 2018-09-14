@@ -7,7 +7,7 @@ import cats.Eq
 import cats.implicits._
 import cats.data.NonEmptyList
 import gem.Observation
-import monocle.{ Optional, Traversal }
+import monocle.{ Getter, Optional, Traversal }
 import monocle.macros.Lenses
 import seqexec.model.{ SequencesQueue, SequenceView }
 import seqexec.model.enum._
@@ -151,10 +151,11 @@ final case class SequencesOnDisplay(tabs: Zipper[SeqexecTab]) {
         SeqexecTabActive(i, selected)
     }.headOption
 
-  def availableTabs: NonEmptyList[AvailableTab] =
+    def availableTabs: NonEmptyList[Either[CalibrationQueueTabActive, AvailableTab]] =
     NonEmptyList.fromListUnsafe(tabs.withFocus.toList.collect {
-      case (i: InstrumentSequenceTab, a) => AvailableTab(i.sequence.map(_.id), i.sequence.map(_.status), i.instrument, i.runningStep, i.nextStepToRun, i.isPreview, a, i.loading)
-      case (i: PreviewSequenceTab, a) => AvailableTab(i.sequence.map(_.id), i.sequence.map(_.status), i.instrument, i.runningStep, i.nextStepToRun, i.isPreview, a, i.loading)
+      case (i: InstrumentSequenceTab, a) => AvailableTab(i.sequence.map(_.id), i.sequence.map(_.status), i.instrument, i.runningStep, i.nextStepToRun, i.isPreview, TabSelected.fromBoolean(a), i.loading).asRight
+      case (i: PreviewSequenceTab, a) => AvailableTab(i.sequence.map(_.id), i.sequence.map(_.status), i.instrument, i.runningStep, i.nextStepToRun, i.isPreview, TabSelected.fromBoolean(a), i.loading).asRight
+      case (i: CalibrationQueueTab, a) => CalibrationQueueTabActive(i, TabSelected.fromBoolean(a)).asLeft
     })
 
   def cleanAll: SequencesOnDisplay =
@@ -268,4 +269,7 @@ object SequencesOnDisplay {
 
   val focusSequence: Optional[SequencesOnDisplay, SequenceTab] =
     SequencesOnDisplay.tabs ^|-> Zipper.focus ^<-? SeqexecTab.sequenceTab
+
+  val availableTabsG: Getter[SequencesOnDisplay, NonEmptyList[Either[CalibrationQueueTabActive, AvailableTab]]] =
+    Getter(_.availableTabs)
 }
