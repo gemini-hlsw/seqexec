@@ -363,6 +363,7 @@ object TcsController {
     val all: NonEmptyList[Subsystem] = NonEmptyList.of(OIWFS, P1WFS, P2WFS, ScienceFold, HRProbe, Mount, M1, M2)
 
     implicit val show: Show[Subsystem] = Show.show { _.productPrefix }
+    implicit val equal: Eq[Subsystem] = Eq.fromUniversalEquals
   }
 
 }

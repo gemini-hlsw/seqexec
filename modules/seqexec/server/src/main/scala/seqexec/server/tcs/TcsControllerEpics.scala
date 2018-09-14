@@ -372,7 +372,7 @@ object TcsControllerEpics extends TcsController {
   private val agTimeout = Seconds(60)
 
   override def applyConfig(subsystems: NonEmptyList[Subsystem], tcs: TcsConfig): SeqAction[Unit] = {
-    def configSubsystem(subsystem: Subsystem): SeqAction[Unit] = subsystem match {
+    def configSubsystem(subsystem: Subsystem, tcs: TcsConfig): SeqAction[Unit] = subsystem match {
       case Subsystem.M1          => setM1Guide(tcs.gc.m1Guide)
       case Subsystem.M2          => setM2Guide(tcs.gc.m2Guide)
       case Subsystem.OIWFS       =>
@@ -389,12 +389,21 @@ object TcsControllerEpics extends TcsController {
       case Subsystem.ScienceFold => setScienceFoldPosition(tcs.agc.sfPos)
     }
 
-    subsystems.tail.foldLeft(configSubsystem(subsystems.head))((b, a) => b *> configSubsystem(a)) *>
+    val overrideHRProbe: Boolean = tcs.agc.sfPos.flatMap{
+      case ScienceFoldPosition.Position(_, inst) => getInstPort(inst).map(_ === 1)
+      case _                                     => None
+    }.getOrElse(false)
+
+    val subsyss = if(overrideHRProbe && !subsystems.exists(_ === Subsystem.HRProbe)) Subsystem.HRProbe :: subsystems
+      else subsystems
+    val cfg = if(overrideHRProbe) tcs.setAGConfig(tcs.agc.copy(hrwfsPos = HrwfsPickupPosition.Parked.some)) else tcs
+
+    subsyss.tail.foldLeft(configSubsystem(subsyss.head, cfg))((b, a) => b *> configSubsystem(a, cfg)) *>
       TcsEpics.instance.post *>
       EitherT.right(IO.apply(Log.debug("TCS configuration command post"))) *>
-      (if(subsystems.toList.contains(Subsystem.Mount))
+      (if(subsyss.toList.contains(Subsystem.Mount))
         TcsEpics.instance.waitInPosition(tcsTimeout) *> EitherT.right(IO.apply(Log.info("TCS inposition")))
-      else if(subsystems.toList.contains(Subsystem.ScienceFold))
+      else if(subsyss.toList.contains(Subsystem.ScienceFold))
         TcsEpics.instance.waitAGInPosition(agTimeout) *> EitherT.right(IO.apply(Log.debug("AG inposition")))
       else SeqAction.void)
   }
