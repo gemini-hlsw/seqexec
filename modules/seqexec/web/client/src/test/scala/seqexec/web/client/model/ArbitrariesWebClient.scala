@@ -4,6 +4,7 @@
 package seqexec.web.client
 
 import cats.data.NonEmptyList
+import cats.implicits._
 import diode.data._
 import gem.arb.ArbObservation
 import gem.arb.ArbEnumerated._
@@ -121,7 +122,7 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
       for {
         s <- Gen.nonEmptyListOf(arbitrary[SeqexecTab])
       } yield {
-        val sequences = NonEmptyList.of(s.headOption.getOrElse(SequenceTab.Empty), s.drop(1): _*)
+        val sequences = NonEmptyList.of(s.headOption.getOrElse(CalibrationQueueTab.Empty), s.drop(1): _*)
         SequencesOnDisplay(Zipper.fromNel(sequences))
       }
     }
@@ -228,6 +229,29 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
   implicit val stcfCogen: Cogen[SequenceTabContentFocus] =
     Cogen[(Option[Instrument], Option[Observation.Id], Boolean, SectionVisibilityState)]
       .contramap(x => (x.instrument, x.id, x.sequenceSelected, x.logDisplayed))
+
+  implicit val arbQtcf: Arbitrary[QueueTabContentFocus] =
+    Arbitrary {
+      for {
+        g <- arbitrary[Boolean]
+        s <- arbitrary[SectionVisibilityState]
+      } yield QueueTabContentFocus(g, s)
+    }
+
+  implicit val qtcfCogen: Cogen[QueueTabContentFocus] =
+    Cogen[(Boolean, SectionVisibilityState)]
+      .contramap(x => (x.canOperate, x.logDisplayed))
+
+  implicit val arbtcf: Arbitrary[TabContentFocus] = Arbitrary {
+    Gen.frequency(10 -> arbitrary[SequenceTabContentFocus], 4 -> arbitrary[QueueTabContentFocus])
+  }
+
+  implicit val tcfCogen: Cogen[TabContentFocus] =
+    Cogen[Either[QueueTabContentFocus, SequenceTabContentFocus]]
+      .contramap {
+        case t: SequenceTabContentFocus => t.asRight
+        case t: QueueTabContentFocus    => t.asLeft
+      }
 
   implicit val arbAvailableTab: Arbitrary[AvailableTab] =
     Arbitrary {
@@ -379,14 +403,15 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
     }
 
   implicit val seqexecPageCogen: Cogen[SeqexecPages] =
-    Cogen[Option[Option[Option[Either[(Instrument, Observation.Id, StepIdDisplayed), Either[(Instrument, Observation.Id, StepIdDisplayed), Either[(Instrument, Observation.Id, Int), (Instrument, Observation.Id, Int)]]]]]]].contramap {
+    Cogen[Option[Option[Option[Option[Either[(Instrument, Observation.Id, StepIdDisplayed), Either[(Instrument, Observation.Id, StepIdDisplayed), Either[(Instrument, Observation.Id, Int), (Instrument, Observation.Id, Int)]]]]]]]].contramap {
       case Root                        => None
-      case SoundTest                   => Some(None)
-      case EmptyPreviewPage            => Some(Some(None))
-      case PreviewPage(i, o, s)        => Some(Some(Some(Left((i, o, s)))))
-      case SequencePage(i, o, s)       => Some(Some(Some(Right(Left((i, o, s))))))
-      case SequenceConfigPage(i, o, s) => Some(Some(Some(Right(Right(Left((i, o, s)))))))
-      case PreviewConfigPage(i, o, s)  => Some(Some(Some(Right(Right(Right((i, o, s)))))))
+      case CalibrationQueuePage        => Some(None)
+      case SoundTest                   => Some(Some(None))
+      case EmptyPreviewPage            => Some(Some(Some(None)))
+      case PreviewPage(i, o, s)        => Some(Some(Some(Some(Left((i, o, s))))))
+      case SequencePage(i, o, s)       => Some(Some(Some(Some(Right(Left((i, o, s)))))))
+      case SequenceConfigPage(i, o, s) => Some(Some(Some(Some(Right(Right(Left((i, o, s))))))))
+      case PreviewConfigPage(i, o, s)  => Some(Some(Some(Some(Right(Right(Right((i, o, s))))))))
     }
 
   implicit val arbUserNotificationState: Arbitrary[UserNotificationState] =

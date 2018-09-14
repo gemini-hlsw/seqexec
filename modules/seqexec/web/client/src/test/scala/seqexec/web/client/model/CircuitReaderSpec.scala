@@ -15,7 +15,9 @@ import org.scalatest.prop.PropertyChecks
 
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 final class CircuitReaderSpec extends CatsSuite with PropertyChecks with ArbitrariesWebClient {
+  checkAll("Eq[TabContentFocus]", EqTests[TabContentFocus].eqv)
   checkAll("Eq[SequenceTabContentFocus]", EqTests[SequenceTabContentFocus].eqv)
+  checkAll("Eq[QueueTabContentFocus]", EqTests[QueueTabContentFocus].eqv)
   checkAll("Eq[SequencesFocus]", EqTests[SequencesFocus].eqv)
   checkAll("Eq[SequenceInfoFocus]", EqTests[SequenceInfoFocus].eqv)
   // checkAll("sequencesFocusL", LensTests(SequencesFocus.sequencesFocusL))
@@ -35,7 +37,7 @@ final class CircuitReaderSpec extends CatsSuite with PropertyChecks with Arbitra
       (headerSideBarReader === headerSideBarReader.value) should be(true)
       (logDisplayedReader === logDisplayedReader.value) should be(true)
       (tabsReader === tabsReader.value) should be(true)
-      (sequenceTabs === sequenceTabs.value) should be(true)
+      (seqexecTabs === seqexecTabs.value) should be(true)
       (configTableState === configTableState.value) should be(true)
     }
   test("maintain reference equality for id based readers") {

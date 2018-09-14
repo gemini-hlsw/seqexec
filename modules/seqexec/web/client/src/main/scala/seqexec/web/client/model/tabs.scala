@@ -48,7 +48,7 @@ object SeqexecTabActive {
   implicit val eq: Eq[SeqexecTabActive] =
     Eq.by(x => (x.tab, x.active))
 
-  val Empty: SeqexecTabActive = SeqexecTabActive(SequenceTab.Empty, TabSelected.Background)
+  val Empty: SeqexecTabActive = SeqexecTabActive(PreviewSequenceTab.Empty, TabSelected.Background)
 }
 
 sealed trait SeqexecTab {
@@ -80,6 +80,7 @@ final case class CalibrationQueueTab(tableState: TableState[StepsTable.TableColu
 }
 
 object CalibrationQueueTab {
+  val Empty: CalibrationQueueTab = CalibrationQueueTab(StepsTable.State.InitialTableState)
 
   implicit val eq: Eq[CalibrationQueueTab] =
     Eq.by(x => (x.tableState))
@@ -132,7 +133,6 @@ object SequenceTab {
       case (a: PreviewSequenceTab, b: PreviewSequenceTab)       => a === b
       case _                                                    => false
     }
-  val Empty: SequenceTab = PreviewSequenceTab(None, None, false, StepsTable.State.InitialTableState, TabOperations.Default)
 
   // Some lenses
   val stepConfigL: Lens[SequenceTab, Option[Int]] = Lens[SequenceTab, Option[Int]] {
@@ -168,6 +168,8 @@ final case class PreviewSequenceTab(currentSequence: Option[SequenceView],
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object PreviewSequenceTab {
+  val Empty: SequenceTab = PreviewSequenceTab(None, None, false, StepsTable.State.InitialTableState, TabOperations.Default)
+
   implicit val eq: Eq[PreviewSequenceTab] =
     Eq.by(x => (x.currentSequence, x.stepConfig, x.isLoading, x.tableState, x.tabOperations))
 }

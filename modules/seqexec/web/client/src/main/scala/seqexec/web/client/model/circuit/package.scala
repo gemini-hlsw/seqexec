@@ -104,27 +104,39 @@ package circuit {
 
   final case class InstrumentStatusFocus(instrument: Instrument, active: Boolean, idState: Option[(Observation.Id, SequenceState)], runningStep: Option[RunningStep]) extends UseValueEq
 
-  sealed trait TabFocus extends Product with Serializable
+  final case class TabFocus(canOperate: Boolean, tabs: NonEmptyList[Either[CalibrationQueueTabActive, AvailableTab]], defaultObserver: Observer)
 
-  final case class InstrumentTabFocus(canOperate: Boolean, tabs: NonEmptyList[Either[CalibrationQueueTabActive, AvailableTab]], defaultObserver: Observer) extends TabFocus
-
-  object InstrumentTabFocus {
-    implicit val eq: Eq[InstrumentTabFocus] =
+  object TabFocus {
+    implicit val eq: Eq[TabFocus] =
       Eq.by(x => (x.canOperate, x.tabs, x.defaultObserver))
   }
 
-  final case class CalibrationQueueFocus(canOperate: Boolean, defaultObserver: Observer) extends TabFocus
-
-  object CalibrationQueueFocus {
-    implicit val eq: Eq[CalibrationQueueFocus] =
-      Eq.by(x => (x.canOperate, x.defaultObserver))
+  sealed trait TabContentFocus extends Product with Serializable {
+    val canOperate: Boolean
+    val logDisplayed: SectionVisibilityState
   }
 
-  final case class SequenceTabContentFocus(isLogged: Boolean, instrument: Option[Instrument], id: Option[Observation.Id], sequenceSelected: Boolean, logDisplayed: SectionVisibilityState) extends UseValueEq
+  object TabContentFocus {
+    implicit val eq: Eq[TabContentFocus] =
+      Eq.instance {
+        case (a: SequenceTabContentFocus, b: SequenceTabContentFocus) => a === b
+        case (a: QueueTabContentFocus, b: QueueTabContentFocus) => a === b
+        case _ => false
+      }
+  }
+
+  final case class SequenceTabContentFocus(canOperate: Boolean, instrument: Option[Instrument], id: Option[Observation.Id], sequenceSelected: Boolean, logDisplayed: SectionVisibilityState) extends TabContentFocus
 
   object SequenceTabContentFocus {
     implicit val eq: Eq[SequenceTabContentFocus] =
-      Eq.by(x => (x.isLogged, x.instrument, x.id, x.sequenceSelected, x.logDisplayed))
+      Eq.by(x => (x.canOperate, x.instrument, x.id, x.sequenceSelected, x.logDisplayed))
+  }
+
+  final case class QueueTabContentFocus(canOperate: Boolean, logDisplayed: SectionVisibilityState) extends TabContentFocus
+
+  object QueueTabContentFocus {
+    implicit val eq: Eq[QueueTabContentFocus] =
+      Eq.by(x => (x.canOperate, x.logDisplayed))
   }
 
   final case class SequenceInfoFocus(isLogged: Boolean, obsName: Option[String], status: Option[SequenceState], targetName: Option[TargetName]) extends UseValueEq

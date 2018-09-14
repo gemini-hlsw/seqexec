@@ -73,27 +73,27 @@ final case class SequencesOnDisplay(tabs: Zipper[SeqexecTab]) {
     val currentInsTabs = SequencesOnDisplay.instrumentTabs.getAll(this)
     val instTabs = s.collect { case Some(x) =>
       val curTableState = currentInsTabs.find(_.obsId.exists(_ === x.id)).map(_.tableState).getOrElse(StepsTable.State.InitialTableState)
-      InstrumentSequenceTab(x.metadata.instrument, x.some, None, None, curTableState, TabOperations.Default)
+      InstrumentSequenceTab(x.metadata.instrument, x.some, None, None, curTableState, TabOperations.Default).some
     }
     // Store current focus
     val currentFocus = tabs.focus
     // Save the current preview
     val onlyPreview = SequencesOnDisplay.previewTab.headOption(this)
+    val sequenceTabs = (onlyPreview :: instTabs).collect { case Some(x) => x}
     // new zipper
-    val newZipper = Zipper[SeqexecTab](Nil, onlyPreview.getOrElse(SequenceTab.Empty), instTabs)
+    val newZipper = Zipper[SeqexecTab](Nil, CalibrationQueueTab.Empty, sequenceTabs)
     // Restore focus
     val q = newZipper.findFocus {
       case _: PreviewSequenceTab if currentFocus.isPreview =>
         true
       case _: PreviewSequenceTab                           =>
         false
-      case _: CalibrationQueueTab                          =>
-        false
+      case c: CalibrationQueueTab                          =>
+        currentFocus === c
       case InstrumentSequenceTab(i, _, _, _, _, _)         =>
         currentFocus match {
           case InstrumentSequenceTab(j, _, _, _, _, _) => i === j
-          case _: PreviewSequenceTab                   => false
-          case _: CalibrationQueueTab                  => false
+          case _                                       => false
         }
     }
     copy(tabs = q.getOrElse(newZipper))
@@ -118,6 +118,17 @@ final case class SequencesOnDisplay(tabs: Zipper[SeqexecTab]) {
       tabs.some
     }
     copy(tabs = seq.getOrElse(tabs))
+  }
+
+  /**
+   * Focus on the day calibration tab
+   */
+  def focusOnDayCal: SequencesOnDisplay = {
+    val q = tabs.findFocus {
+      case _: CalibrationQueueTab => true
+      case _ => false
+    }
+    copy(tabs = q.getOrElse(tabs))
   }
 
   /**
@@ -151,7 +162,7 @@ final case class SequencesOnDisplay(tabs: Zipper[SeqexecTab]) {
         SeqexecTabActive(i, selected)
     }.headOption
 
-    def availableTabs: NonEmptyList[Either[CalibrationQueueTabActive, AvailableTab]] =
+  def availableTabs: NonEmptyList[Either[CalibrationQueueTabActive, AvailableTab]] =
     NonEmptyList.fromListUnsafe(tabs.withFocus.toList.collect {
       case (i: InstrumentSequenceTab, a) => AvailableTab(i.sequence.map(_.id), i.sequence.map(_.status), i.instrument, i.runningStep, i.nextStepToRun, i.isPreview, TabSelected.fromBoolean(a), i.loading).asRight
       case (i: PreviewSequenceTab, a) => AvailableTab(i.sequence.map(_.id), i.sequence.map(_.status), i.instrument, i.runningStep, i.nextStepToRun, i.isPreview, TabSelected.fromBoolean(a), i.loading).asRight
@@ -213,7 +224,7 @@ final case class SequencesOnDisplay(tabs: Zipper[SeqexecTab]) {
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object SequencesOnDisplay {
   // We need to initialize the model with something so we use preview
-  val Empty: SequencesOnDisplay = SequencesOnDisplay(Zipper.fromNel[SeqexecTab](NonEmptyList.of(SequenceTab.Empty)))
+  val Empty: SequencesOnDisplay = SequencesOnDisplay(Zipper.fromNel[SeqexecTab](NonEmptyList.of(CalibrationQueueTab.Empty)))
 
   implicit val eq: Eq[SequencesOnDisplay] =
     Eq.by(_.tabs)

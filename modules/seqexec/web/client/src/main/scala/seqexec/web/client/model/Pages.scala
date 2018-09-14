@@ -35,6 +35,7 @@ object Pages {
   case object Root extends SeqexecPages
   case object SoundTest extends SeqexecPages
   case object EmptyPreviewPage extends SeqexecPages
+  case object CalibrationQueuePage extends SeqexecPages
   final case class PreviewPage(instrument: Instrument, obsId: Observation.Id, step: StepIdDisplayed) extends SeqexecPages
   final case class PreviewConfigPage(instrument: Instrument, obsId: Observation.Id, step: StepId) extends SeqexecPages
   final case class SequencePage(instrument: Instrument, obsId: Observation.Id, step: StepIdDisplayed) extends SeqexecPages
@@ -44,6 +45,7 @@ object Pages {
     case (Root, Root)                                               => true
     case (SoundTest, SoundTest)                                     => true
     case (EmptyPreviewPage, EmptyPreviewPage)                       => true
+    case (CalibrationQueuePage, CalibrationQueuePage)               => true
     case (SequencePage(i, o, s), SequencePage(j, p, r))             => i === j && o === p && s === r
     case (SequenceConfigPage(i, o, s), SequenceConfigPage(j, p, r)) => i === j && o === p && s === r
     case (PreviewPage(i, o, s), PreviewPage(j, p, r))               => i === j && o === p && s === r
@@ -55,6 +57,7 @@ object Pages {
   val PageActionP: Prism[Action, SeqexecPages] = Prism[Action, SeqexecPages]{
     case SelectRoot                         => Root.some
     case RequestSoundEcho                   => SoundTest.some
+    case SelectCalibrationQueue             => CalibrationQueuePage.some
     case SelectEmptyPreview                 => EmptyPreviewPage.some
     case SelectSequencePreview(i, id, step) => PreviewPage(i, id, step).some
     case ShowPreviewStepConfig(i, id, step) => PreviewConfigPage(i, id, step).some
@@ -64,6 +67,7 @@ object Pages {
     case Root                            => SelectRoot
     case SoundTest                       => RequestSoundEcho
     case EmptyPreviewPage                => SelectEmptyPreview
+    case CalibrationQueuePage            => SelectCalibrationQueue
     case PreviewPage(i, id, step)        => SelectSequencePreview(i, id, step)
     case PreviewConfigPage(i, id, step)  => ShowPreviewStepConfig(i, id, step)
     case SequencePage(i, id, step)       => SelectIdToDisplay(i, id, step)

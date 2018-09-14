@@ -95,25 +95,32 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
       HeaderSideBarFocus(clientStatus, c.uiModel.sequences.conditions, c.uiModel.sequences.operator, obs)
     }
 
-  val logDisplayedReader: ModelR[SeqexecAppRootModel, SectionVisibilityState] =
-    zoom(_.uiModel.globalLog.display)
 
-  val tabsReader: ModelR[SeqexecAppRootModel, InstrumentTabFocus] = {
+  val logDisplayedReader: ModelR[SeqexecAppRootModel, SectionVisibilityState] =
+    this.zoomL(SeqexecAppRootModel.logDisplayL)
+
+  val tabsReader: ModelR[SeqexecAppRootModel, TabFocus] = {
     val getter = SeqexecAppRootModel.uiModel composeGetter (SeqexecUIModel.sequencesOnDisplay composeGetter SequencesOnDisplay.availableTabsG).zip(SeqexecUIModel.defaultObserverG)
     val constructor = ClientStatus.canOperateG.zip(getter) >>> { p =>
       val (o, (t, ob)) = p
-      InstrumentTabFocus(o, t, ob)
+      TabFocus(o, t, ob)
     }
 
     this.zoomG(constructor)
   }
 
-  val sequenceTabs: ModelR[SeqexecAppRootModel, NonEmptyList[SequenceTabContentFocus]] =
-    statusReader.zip(logDisplayedReader.zip(zoom(_.uiModel.sequencesOnDisplay))).zoom {
-      case (s, (log, SequencesOnDisplay(sequences))) => NonEmptyList.fromListUnsafe(sequences.withFocus.toList.collect {
-        case (tab: SequenceTab, active) => SequenceTabContentFocus(s.isLogged, tab.instrument, tab.sequence.map(_.id), active, log)
+  val seqexecTabs: ModelR[SeqexecAppRootModel, NonEmptyList[TabContentFocus]] = {
+    val getter = SeqexecAppRootModel.logDisplayL.asGetter.zip(SeqexecAppRootModel.sequencesOnDisplayL.asGetter)
+    val constructor = ClientStatus.canOperateG.zip(getter) >>> { p =>
+      val (o, (log, SequencesOnDisplay(tabs))) = p
+      NonEmptyList.fromListUnsafe(tabs.withFocus.toList.collect {
+        case (tab: SequenceTab, active)  => SequenceTabContentFocus(o, tab.instrument, tab.sequence.map(_.id), active, log)
+        case (_: CalibrationQueueTab, _) => QueueTabContentFocus(o, log)
       })
     }
+
+    this.zoomG(constructor)
+  }
 
   val configTableState: ModelR[SeqexecAppRootModel, TableState[StepConfigTable.TableColumn]] =
     zoom(_.uiModel.configTableState)
