@@ -11,7 +11,7 @@ import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.extra.Reusability
-import seqexec.web.client.actions.SelectEmptyPreview
+import seqexec.web.client.actions.SelectCalibrationQueue
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.model.WebSocketConnection
 import seqexec.web.client.model.Pages._
@@ -34,7 +34,7 @@ object Footer {
 
   private def goHome(p: Props)(e: ReactEvent): Callback =
     e.preventDefaultCB *>
-    p.router.dispatchAndSetUrlCB(SelectEmptyPreview)
+    p.router.dispatchAndSetUrlCB(SelectCalibrationQueue)
 
   private val component = ScalaComponent.builder[Props]("SeqexecAppBar")
     .stateless

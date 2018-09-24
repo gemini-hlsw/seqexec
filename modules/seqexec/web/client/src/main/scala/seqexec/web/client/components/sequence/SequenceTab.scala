@@ -122,7 +122,7 @@ object SequenceTab {
             } else {
               SequencePage(inst, id, nextStepToRun)
           })
-          .getOrElse(EmptyPreviewPage)
+          .getOrElse(CalibrationQueuePage)
 
       val loadButton: Option[VdomNode] =
         (sequenceId, instrument)

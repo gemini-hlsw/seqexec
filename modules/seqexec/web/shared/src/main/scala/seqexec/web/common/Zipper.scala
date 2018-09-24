@@ -29,8 +29,12 @@ final case class Zipper[A](lefts: List[A], focus: A, rights: List[A]) {
     * Find and element and focus if successful
     */
   def findFocusP(p: PartialFunction[A, Boolean]): Option[Zipper[A]] =
-    // if (p.isDefined(focus)) findFocus
     findFocus(p.lift andThen (_.getOrElse(false)))
+
+  /**
+   * How many items are in the zipper
+   */
+  def length: Int = lefts.length + 1 + rights.length
 
   /**
     * Find and element and focus if successful

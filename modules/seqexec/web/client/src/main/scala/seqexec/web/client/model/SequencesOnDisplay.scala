@@ -79,7 +79,7 @@ final case class SequencesOnDisplay(tabs: Zipper[SeqexecTab]) {
     val currentFocus = tabs.focus
     // Save the current preview
     val onlyPreview = SequencesOnDisplay.previewTab.headOption(this)
-    val sequenceTabs = (onlyPreview :: instTabs).collect { case Some(x) => x}
+    val sequenceTabs = (onlyPreview :: instTabs).collect { case Some(x) => x }
     // new zipper
     val newZipper = Zipper[SeqexecTab](Nil, CalibrationQueueTab.Empty, sequenceTabs)
     // Restore focus
@@ -107,6 +107,11 @@ final case class SequencesOnDisplay(tabs: Zipper[SeqexecTab]) {
     val isLoaded = obsId.exists(loadedIds.contains)
     // Replace the sequence for the instrument or the completed sequence and reset displaying a step
     val seq = if (s.exists(x => x.metadata.instrument === i && !isLoaded)) {
+      // println("here")
+      // println(tabs.toNel.traverse {
+      //   case c: CalibrationQueueTab => NonEmptyList.of(c)
+      //   case t                      => NonEmptyList.of(t)
+      // })
       val q = withPreviewTab.tabs.findFocus(_.isPreview)
         .map(_.modify(SeqexecTab.previewTab.modify((PreviewSequenceTab.tableState.set(StepsTable.State.InitialTableState) >>> PreviewSequenceTab.currentSequence.set(s) >>> PreviewSequenceTab.stepConfig.set(None))(_))))
       q
@@ -135,11 +140,12 @@ final case class SequencesOnDisplay(tabs: Zipper[SeqexecTab]) {
    * Adds a preview tab if empty
    */
   def withPreviewTab: SequencesOnDisplay =
+    // Note Traversal.isEmpty isn't valid here
     if (SequencesOnDisplay.previewTab.isEmpty(this)) {
-      val ts = Zipper.fromNel(tabs.toNel.traverse {
+      val ts = Zipper.fromNel(tabs.toNel.flatMap {
         case c: CalibrationQueueTab => NonEmptyList.of(c, PreviewSequenceTab.Empty)
         case t                      => NonEmptyList.of(t)
-      }.flatten)
+      })
       SequencesOnDisplay.tabs.set(ts)(this)
     } else {
       this
@@ -154,12 +160,31 @@ final case class SequencesOnDisplay(tabs: Zipper[SeqexecTab]) {
   }
 
   def unsetPreviewOn(id: Observation.Id): SequencesOnDisplay =
-    // Remove the sequence in the preview if it matches id
-    (SequencesOnDisplay.previewTabById(id) ^|-> PreviewSequenceTab.currentSequence).set(None)(this)
-
-  def unsetPreview: SequencesOnDisplay =
-    // Remove any sequence in the preview
-    (SequencesOnDisplay.previewTab ^|-> PreviewSequenceTab.currentSequence).set(None)(this)
+    if (SequencesOnDisplay.previewTab.exist(_.obsId.exists(_ === id))(this)) {
+      // Store current focus
+      val currentFocus = tabs.focus
+      // Remove the sequence in the preview if it matches id
+      copy(tabs = Zipper.fromNel(NonEmptyList.fromListUnsafe(tabs.toList.filter {
+        case p: PreviewSequenceTab => p.obsId.exists(_ =!= id)
+        case _                     => true
+      })).findFocus {
+        case _: PreviewSequenceTab if currentFocus.isPreview  =>
+          true
+        case _: PreviewSequenceTab                            =>
+          false
+        case _: CalibrationQueueTab if currentFocus.isPreview =>
+          true
+        case c: CalibrationQueueTab                           =>
+          currentFocus === c
+        case InstrumentSequenceTab(i, _, _, _, _, _)          =>
+          currentFocus match {
+            case InstrumentSequenceTab(j, _, _, _, _, _) => i === j
+            case _                                       => false
+          }
+      }.getOrElse(tabs))
+    } else {
+      this
+    }
 
   // Is the id focused?
   def idDisplayed(id: Observation.Id): Boolean =

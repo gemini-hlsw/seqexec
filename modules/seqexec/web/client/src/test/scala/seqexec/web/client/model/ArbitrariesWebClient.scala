@@ -393,7 +393,7 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
       for {
         r  <- Gen.const(Root)
         sc <- Gen.const(SoundTest)
-        ep <- Gen.const(EmptyPreviewPage)
+        ep <- Gen.const(CalibrationQueuePage)
         pp <- arbitrary[PreviewPage]
         sp <- arbitrary[SequencePage]
         pc <- arbitrary[PreviewConfigPage]
@@ -403,15 +403,14 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
     }
 
   implicit val seqexecPageCogen: Cogen[SeqexecPages] =
-    Cogen[Option[Option[Option[Option[Either[(Instrument, Observation.Id, StepIdDisplayed), Either[(Instrument, Observation.Id, StepIdDisplayed), Either[(Instrument, Observation.Id, Int), (Instrument, Observation.Id, Int)]]]]]]]].contramap {
+    Cogen[Option[Option[Option[Either[(Instrument, Observation.Id, StepIdDisplayed), Either[(Instrument, Observation.Id, StepIdDisplayed), Either[(Instrument, Observation.Id, Int), (Instrument, Observation.Id, Int)]]]]]]].contramap {
       case Root                        => None
       case CalibrationQueuePage        => Some(None)
       case SoundTest                   => Some(Some(None))
-      case EmptyPreviewPage            => Some(Some(Some(None)))
-      case PreviewPage(i, o, s)        => Some(Some(Some(Some(Left((i, o, s))))))
-      case SequencePage(i, o, s)       => Some(Some(Some(Some(Right(Left((i, o, s)))))))
-      case SequenceConfigPage(i, o, s) => Some(Some(Some(Some(Right(Right(Left((i, o, s))))))))
-      case PreviewConfigPage(i, o, s)  => Some(Some(Some(Some(Right(Right(Right((i, o, s))))))))
+      case PreviewPage(i, o, s)        => Some(Some(Some(Left((i, o, s)))))
+      case SequencePage(i, o, s)       => Some(Some(Some(Right(Left((i, o, s))))))
+      case SequenceConfigPage(i, o, s) => Some(Some(Some(Right(Right(Left((i, o, s)))))))
+      case PreviewConfigPage(i, o, s)  => Some(Some(Some(Right(Right(Right((i, o, s)))))))
     }
 
   implicit val arbUserNotificationState: Arbitrary[UserNotificationState] =

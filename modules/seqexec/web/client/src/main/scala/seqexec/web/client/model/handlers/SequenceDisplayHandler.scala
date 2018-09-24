@@ -21,9 +21,9 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, SequencesFocus]) extends Act
       val seq = SequencesQueue.queueItemG[SequenceView](_.id === id).get(value.sequences)
       updatedL(SequencesFocus.sod.modify(_.previewSequence(i, seq)))
 
-    case SelectEmptyPreview =>
-      updatedL(SequencesFocus.sod.modify(_.unsetPreview.focusOnPreview))
-
+    // case SelectEmptyPreview =>
+    //   updatedL(SequencesFocus.sod.modify(_.unsetPreview.focusOnPreview))
+    //
     case SelectCalibrationQueue =>
       updatedL(SequencesFocus.sod.modify(_.focusOnDayCal))
 
