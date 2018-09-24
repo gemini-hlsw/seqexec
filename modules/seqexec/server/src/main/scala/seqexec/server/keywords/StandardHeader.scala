@@ -96,7 +96,7 @@ class StandardHeader[F[_]](
 
   private def m2TcsKeyword[B](v: SeqAction[B])(implicit d: DefaultHeaderValue[B]) = optTcsKeyword[B](TcsController.Subsystem.M2)(v)(d)
 
-  private def sfTcsKeyword[B](v: SeqAction[B])(implicit d: DefaultHeaderValue[B]) = optTcsKeyword[B](TcsController.Subsystem.ScienceFold)(v)(d)
+  private def sfTcsKeyword[B](v: SeqAction[B])(implicit d: DefaultHeaderValue[B]) = optTcsKeyword[B](TcsController.Subsystem.AGUnit)(v)(d)
 
   private val baseKeywords = List(
     buildString(SeqAction(OcsBuildInfo.version), KeywordName.SEQEXVER),
