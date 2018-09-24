@@ -104,12 +104,12 @@ object SequenceTabContent {
         SeqexecStyles.emptyInstrumentTab.unless(p.sequenceSelected),
         SeqexecStyles.emptyInstrumentTabLogShown.when(!p.sequenceSelected && logDisplayed === SectionOpen),
         SeqexecStyles.emptyInstrumentTabLogHidden.when(!p.sequenceSelected && logDisplayed === SectionClosed),
-        SeqexecStyles.instrumentTabSegment.when(p.sequenceSelected && isLogged),
-        SeqexecStyles.instrumentTabSegmentLogShown.when(p.sequenceSelected && isLogged && logDisplayed === SectionOpen),
-        SeqexecStyles.instrumentTabSegmentLogHidden.when(p.sequenceSelected && isLogged && logDisplayed === SectionClosed),
-        SeqexecStyles.instrumentTabSegmentUnauth.when(p.sequenceSelected && !isLogged),
-        SeqexecStyles.instrumentTabSegmentLogShownUnauth.when(p.sequenceSelected && !isLogged && logDisplayed === SectionOpen),
-        SeqexecStyles.instrumentTabSegmentLogHiddenUnauth.when(p.sequenceSelected && !isLogged && logDisplayed === SectionClosed),
+        SeqexecStyles.tabSegment.when(p.sequenceSelected && isLogged),
+        SeqexecStyles.tabSegmentLogShown.when(p.sequenceSelected && isLogged && logDisplayed === SectionOpen),
+        SeqexecStyles.tabSegmentLogHidden.when(p.sequenceSelected && isLogged && logDisplayed === SectionClosed),
+        SeqexecStyles.tabSegmentUnauth.when(p.sequenceSelected && !isLogged),
+        SeqexecStyles.tabSegmentLogShownUnauth.when(p.sequenceSelected && !isLogged && logDisplayed === SectionOpen),
+        SeqexecStyles.tabSegmentLogHiddenUnauth.when(p.sequenceSelected && !isLogged && logDisplayed === SectionClosed),
         content
       )
     }

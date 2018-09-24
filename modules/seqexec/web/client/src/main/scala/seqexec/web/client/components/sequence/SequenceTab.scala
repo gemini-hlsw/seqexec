@@ -70,11 +70,11 @@ object SequenceTab {
         "active" -> (active === TabSelected.Selected)
       ),
       IconAttention.copyIcon(color = Some("red")).when(hasError),
-      SeqexecStyles.instrumentTab,
-      SeqexecStyles.inactiveInstrumentContent.when(active === TabSelected.Background),
-      SeqexecStyles.activeInstrumentContent.when(active === TabSelected.Selected),
-      dataTab := dataId,
+      SeqexecStyles.tab,
+      SeqexecStyles.inactiveTabContent.when(active === TabSelected.Background),
+      SeqexecStyles.activeTabContent.when(active === TabSelected.Selected),
       SeqexecStyles.errorTab.when(hasError),
+      dataTab := dataId,
       mod.toTagMod
     )
   }
@@ -89,7 +89,7 @@ object SequenceTab {
       val running    = instrument.exists(b.props.runningInstruments.contains)
       val isPreview  = b.props.tab.isPreview
       val instName   = instrument.foldMap(_.show)
-      val dispName   = if (isPreview) s"Preview: ${b.props.tab.active} $instName" else instName
+      val dispName   = if (isPreview) s"Preview: $instName" else instName
       val isLogged   = b.props.loggedIn
       val nextStepToRun =
         StepIdDisplayed(b.props.tab.nextStepToRun.getOrElse(-1))
@@ -155,15 +155,15 @@ object SequenceTab {
 
       val tabContent: VdomNode =
         <.div(
-          SeqexecStyles.instrumentTabLabel,
+          SeqexecStyles.tabLabel,
           instrumentWithId
         )
 
       val previewTabContent: VdomNode =
         <.div(
           SeqexecStyles.previewTabLabel.when(isLogged && sequenceId.isDefined),
-          SeqexecStyles.instrumentTabLabel.unless(isLogged),
-          SeqexecStyles.instrumentTabLabel.when(sequenceId.isEmpty),
+          SeqexecStyles.tabLabel.unless(isLogged),
+          SeqexecStyles.tabLabel.when(sequenceId.isEmpty),
           <.div(
             SeqexecStyles.previewTabId,
             instrumentWithId

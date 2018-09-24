@@ -11,8 +11,9 @@ import japgolly.scalajs.react.CatsReact._
 import japgolly.scalajs.react.extra.Reusability
 import seqexec.model.enum.Instrument
 import seqexec.web.client.model.{ AvailableTab, ClientStatus }
-import seqexec.web.client.model.{ SectionVisibilityState, UserNotificationState }
-import seqexec.web.client.model.{ WebSocketConnection }
+import seqexec.web.client.model.SectionVisibilityState
+import seqexec.web.client.model.UserNotificationState
+import seqexec.web.client.model.WebSocketConnection
 import seqexec.web.client.model.{ RunOperation, TabSelected }
 import seqexec.web.client.circuit._
 import seqexec.model.{ Observer, Step, StepConfig, StepState, UserDetails }

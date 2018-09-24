@@ -107,15 +107,15 @@ final case class SequencesOnDisplay(tabs: Zipper[SeqexecTab]) {
     val isLoaded = obsId.exists(loadedIds.contains)
     // Replace the sequence for the instrument or the completed sequence and reset displaying a step
     val seq = if (s.exists(x => x.metadata.instrument === i && !isLoaded)) {
-      val q = tabs.findFocus(_.isPreview)
+      val q = withPreviewTab.tabs.findFocus(_.isPreview)
         .map(_.modify(SeqexecTab.previewTab.modify((PreviewSequenceTab.tableState.set(StepsTable.State.InitialTableState) >>> PreviewSequenceTab.currentSequence.set(s) >>> PreviewSequenceTab.stepConfig.set(None))(_))))
       q
     } else if (isLoaded) {
-      tabs.findFocusP {
+      withPreviewTab.tabs.findFocusP {
         case InstrumentSequenceTab(_, Some(curr), _, _, _, _) => obsId.exists(_ === curr.id)
       }
     } else {
-      tabs.some
+      withPreviewTab.tabs.some
     }
     copy(tabs = seq.getOrElse(tabs))
   }
@@ -126,10 +126,24 @@ final case class SequencesOnDisplay(tabs: Zipper[SeqexecTab]) {
   def focusOnDayCal: SequencesOnDisplay = {
     val q = tabs.findFocus {
       case _: CalibrationQueueTab => true
-      case _ => false
+      case _                      => false
     }
     copy(tabs = q.getOrElse(tabs))
   }
+
+  /**
+   * Adds a preview tab if empty
+   */
+  def withPreviewTab: SequencesOnDisplay =
+    if (SequencesOnDisplay.previewTab.isEmpty(this)) {
+      val ts = Zipper.fromNel(tabs.toNel.traverse {
+        case c: CalibrationQueueTab => NonEmptyList.of(c, PreviewSequenceTab.Empty)
+        case t                      => NonEmptyList.of(t)
+      }.flatten)
+      SequencesOnDisplay.tabs.set(ts)(this)
+    } else {
+      this
+    }
 
   /**
    * Focus on the preview tab

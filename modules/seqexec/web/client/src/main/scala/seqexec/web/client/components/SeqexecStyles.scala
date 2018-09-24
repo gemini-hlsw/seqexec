@@ -18,9 +18,9 @@ object SeqexecStyles {
 
   val activeInstrumentLabel: GStyle = GStyle.fromString("SeqexecStyles-activeInstrumentLabel")
 
-  val instrumentTab: GStyle = GStyle.fromString("SeqexecStyles-instrumentTab")
+  val tab: GStyle = GStyle.fromString("SeqexecStyles-tab")
 
-  val instrumentTabLabel: GStyle = GStyle.fromString("SeqexecStyles-instrumentTabLabel")
+  val tabLabel: GStyle = GStyle.fromString("SeqexecStyles-tabLabel")
 
   val previewTabLabel: GStyle = GStyle.fromString("SeqexecStyles-previewTabLabel")
 
@@ -28,9 +28,9 @@ object SeqexecStyles {
 
   val previewTabLoadButton: GStyle = GStyle.fromString("SeqexecStyles-previewTabLoadButton")
 
-  val activeInstrumentContent: GStyle = GStyle.fromString("SeqexecStyles-activeInstrumentContent")
+  val activeTabContent: GStyle = GStyle.fromString("SeqexecStyles-activeTabContent")
 
-  val inactiveInstrumentContent: GStyle = GStyle.fromString("SeqexecStyles-inactiveInstrumentContent")
+  val inactiveTabContent: GStyle = GStyle.fromString("SeqexecStyles-inactiveTabContent")
 
   val errorTab: GStyle = GStyle.fromString("SeqexecStyles-errorTab")
 
@@ -44,17 +44,17 @@ object SeqexecStyles {
 
   val emptyInstrumentTabLogHidden: GStyle = GStyle.fromString("SeqexecStyles-emptyInstrumentTabLogHidden")
 
-  val instrumentTabSegment: GStyle = GStyle.fromString("SeqexecStyles-instrumentTabSegment")
+  val tabSegment: GStyle = GStyle.fromString("SeqexecStyles-tabSegment")
 
-  val instrumentTabSegmentLogHidden: GStyle = GStyle.fromString("SeqexecStyles-instrumentTabSegmentLogHidden")
+  val tabSegmentLogHidden: GStyle = GStyle.fromString("SeqexecStyles-tabSegmentLogHidden")
 
-  val instrumentTabSegmentLogShown: GStyle = GStyle.fromString("SeqexecStyles-instrumentTabSegmentLogShown")
+  val tabSegmentLogShown: GStyle = GStyle.fromString("SeqexecStyles-tabSegmentLogShown")
 
-  val instrumentTabSegmentUnauth: GStyle = GStyle.fromString("SeqexecStyles-instrumentTabSegmentUnauth")
+  val tabSegmentUnauth: GStyle = GStyle.fromString("SeqexecStyles-tabSegmentUnauth")
 
-  val instrumentTabSegmentLogHiddenUnauth: GStyle = GStyle.fromString("SeqexecStyles-instrumentTabSegmentLogHiddenUnauth")
+  val tabSegmentLogHiddenUnauth: GStyle = GStyle.fromString("SeqexecStyles-tabSegmentLogHiddenUnauth")
 
-  val instrumentTabSegmentLogShownUnauth: GStyle = GStyle.fromString("SeqexecStyles-instrumentTabSegmentLogShownUnauth")
+  val tabSegmentLogShownUnauth: GStyle = GStyle.fromString("SeqexecStyles-tabSegmentLogShownUnauth")
 
   val stepsListPanePreview: GStyle = GStyle.fromString("SeqexecStyles-stepsListPanePreview")
 

@@ -43,10 +43,10 @@ object CalibrationQueueTab {
       ^.classSet(
         "active" -> (active === TabSelected.Selected)
       ),
-      SeqexecStyles.instrumentTab,
+      SeqexecStyles.tab,
       dataTab := "daycalqueue",
-      SeqexecStyles.inactiveInstrumentContent.when(active === TabSelected.Background),
-      SeqexecStyles.activeInstrumentContent.when(active === TabSelected.Selected),
+      SeqexecStyles.inactiveTabContent.when(active === TabSelected.Background),
+      SeqexecStyles.activeTabContent.when(active === TabSelected.Selected),
       mod.toTagMod
     )
   }
@@ -57,7 +57,7 @@ object CalibrationQueueTab {
     .render_P { p =>
       val tabContent: VdomNode =
         <.div(
-          SeqexecStyles.instrumentTabLabel,
+          SeqexecStyles.tabLabel,
           "Daytime Queue"
         )
 
