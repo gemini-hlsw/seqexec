@@ -353,10 +353,10 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     case Instrument.NIRI  => true
     case Instrument.GPI   => true
     case Instrument.GHOST => false
-    case _                      => false
+    case _                => false
   }
 
-  private def flatOrArcTcsSubsystems(inst: Instrument): NonEmptyList[TcsController.Subsystem] = NonEmptyList.of(ScienceFold, (if (hasOI(inst)) List(OIWFS) else List.empty): _*)
+  private def flatOrArcTcsSubsystems(inst: Instrument): NonEmptyList[TcsController.Subsystem] = NonEmptyList.of(AGUnit, (if (hasOI(inst)) List(OIWFS) else List.empty): _*)
 
   private def calcSystems(stepType: StepType): TrySeq[List[System[IO]]] = {
     stepType match {

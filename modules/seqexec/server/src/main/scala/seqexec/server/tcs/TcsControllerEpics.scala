@@ -3,7 +3,7 @@
 
 package seqexec.server.tcs
 
-import seqexec.server.tcs.TcsController._
+import seqexec.server.tcs.TcsController.{HrwfsConfig, _}
 import seqexec.model.enum.Instrument
 import seqexec.server.{EpicsCodex, EpicsCommand, SeqAction, SeqexecFailure, TrySeq}
 import edu.gemini.spModel.core.Wavelength
@@ -252,7 +252,7 @@ object TcsControllerEpics extends TcsController {
   } yield if (hwParked) HrwfsPickupPosition.Parked
     else hwPos
 
-  private def getAGConfig: TrySeq[AGConfig] = TrySeq(AGConfig(getScienceFoldPosition, getHrwfsPickupPosition))
+  private def getAGConfig: TrySeq[AGConfig] = TrySeq(AGConfig(getScienceFoldPosition, getHrwfsPickupPosition.map(HrwfsConfig.Manual)))
 
   private def getIAA: TrySeq[InstrumentAlignAngle] = {
     for {
@@ -340,9 +340,25 @@ object TcsControllerEpics extends TcsController {
     case _ => TcsEpics.instance.hrwfsPosCmd.setHrwfsPos(encode(hrwfsPos))
   }
 
-  private def setScienceFoldPosition(p: Option[ScienceFoldPosition]): SeqAction[Unit] = p.map(setScienceFoldConfig).getOrElse(SeqAction(()))
+  private def setAGUnit(c: AGConfig): SeqAction[Unit] = {
+    val sf = c.sfPos.map(setScienceFoldConfig)
+    val hr = c.hrwfs.flatMap{
+      case HrwfsConfig.Manual(h) => setHRPickupConfig(h).some
+      case HrwfsConfig.Auto      => {
+        c.sfPos.flatMap{
+          case ScienceFoldPosition.Position(_, inst) => getInstPort(inst).map(_ === 1)
+          case _                                     => None
+        }.flatMap(park => if(park) setHRPickupConfig(HrwfsPickupPosition.Parked).some else None)
+      }
+    }
 
-  private def setHrProbePosition(p: Option[HrwfsPickupPosition]): SeqAction[Unit] = p.map(setHRPickupConfig).getOrElse(SeqAction(()))
+    (sf, hr) match {
+      case (Some(a), Some(b)) => a *> b
+      case (Some(a), None)    => a
+      case (None, Some(b))    => b
+      case _                  => SeqAction(())
+    }
+  }
 
   implicit private val encodeMountGuideConfig: EncodeEpicsValue[MountGuideOption, String] = EncodeEpicsValue((op: MountGuideOption)
   => op match {
@@ -372,29 +388,28 @@ object TcsControllerEpics extends TcsController {
   private val agTimeout = Seconds(60)
 
   override def applyConfig(subsystems: NonEmptyList[Subsystem], tcs: TcsConfig): SeqAction[Unit] = {
-    def configSubsystem(subsystem: Subsystem): SeqAction[Unit] = subsystem match {
-      case Subsystem.M1          => setM1Guide(tcs.gc.m1Guide)
-      case Subsystem.M2          => setM2Guide(tcs.gc.m2Guide)
-      case Subsystem.OIWFS       =>
+    def configSubsystem(subsystem: Subsystem, tcs: TcsConfig): SeqAction[Unit] = subsystem match {
+      case Subsystem.M1     => setM1Guide(tcs.gc.m1Guide)
+      case Subsystem.M2     => setM2Guide(tcs.gc.m2Guide)
+      case Subsystem.OIWFS  =>
         setProbeTrackingConfig(TcsEpics.instance.oiwfsProbeGuideCmd, tcs.gtc.oiwfs.self) *>
           setGuiderWfs(TcsEpics.instance.oiwfsObserveCmd, TcsEpics.instance.oiwfsStopObserveCmd, tcs.ge.oiwfs.self)
-      case Subsystem.P1WFS       =>
+      case Subsystem.P1WFS  =>
         setProbeTrackingConfig(TcsEpics.instance.pwfs1ProbeGuideCmd, tcs.gtc.pwfs1.self) *>
           setGuiderWfs(TcsEpics.instance.pwfs1ObserveCmd, TcsEpics.instance.pwfs1StopObserveCmd, tcs.ge.pwfs1.self)
-      case Subsystem.P2WFS       =>
+      case Subsystem.P2WFS  =>
         setProbeTrackingConfig(TcsEpics.instance.pwfs2ProbeGuideCmd, tcs.gtc.pwfs2.self) *>
           setGuiderWfs(TcsEpics.instance.pwfs2ObserveCmd, TcsEpics.instance.pwfs2StopObserveCmd, tcs.ge.pwfs2.self)
-      case Subsystem.Mount       => setTelescopeConfig(tcs.tc)
-      case Subsystem.HRProbe     => setHrProbePosition(tcs.agc.hrwfsPos)
-      case Subsystem.ScienceFold => setScienceFoldPosition(tcs.agc.sfPos)
+      case Subsystem.Mount  => setTelescopeConfig(tcs.tc)
+      case Subsystem.AGUnit => setAGUnit(tcs.agc)
     }
 
-    subsystems.tail.foldLeft(configSubsystem(subsystems.head))((b, a) => b *> configSubsystem(a)) *>
+    subsystems.tail.foldLeft(configSubsystem(subsystems.head, tcs))((b, a) => b *> configSubsystem(a, tcs)) *>
       TcsEpics.instance.post *>
       EitherT.right(IO.apply(Log.debug("TCS configuration command post"))) *>
       (if(subsystems.toList.contains(Subsystem.Mount))
         TcsEpics.instance.waitInPosition(tcsTimeout) *> EitherT.right(IO.apply(Log.info("TCS inposition")))
-      else if(subsystems.toList.contains(Subsystem.ScienceFold))
+      else if(subsystems.toList.intersect(List(Subsystem.P1WFS, Subsystem.P2WFS, Subsystem.AGUnit)).nonEmpty)
         TcsEpics.instance.waitAGInPosition(agTimeout) *> EitherT.right(IO.apply(Log.debug("AG inposition")))
       else SeqAction.void)
   }

@@ -39,7 +39,7 @@ object TcsControllerSim extends TcsController {
       GuiderSensorOptionP1(GuiderSensorOff),
       GuiderSensorOptionP2(GuiderSensorOff),
       GuiderSensorOptionOI(GuiderSensorOff)),
-    AGConfig(ScienceFoldPosition.Parked.some, HrwfsPickupPosition.Parked.some),
+    AGConfig(ScienceFoldPosition.Parked.some, HrwfsConfig.Manual(HrwfsPickupPosition.Parked).some),
     InstrumentAlignAngle(Degrees(0.0))
   ))
 

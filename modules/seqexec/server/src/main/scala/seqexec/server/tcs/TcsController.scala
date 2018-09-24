@@ -176,6 +176,13 @@ object TcsController {
     implicit val show: Show[HrwfsPickupPosition] = Show.fromToString
   }
 
+  sealed trait HrwfsConfig
+  object HrwfsConfig {
+    case object Auto                                  extends HrwfsConfig
+    final case class Manual(pos: HrwfsPickupPosition) extends HrwfsConfig
+    implicit val show: Show[HrwfsConfig] = Show.fromToString
+  }
+
   /** Enumerated type for light source. */
   sealed trait LightSource
   object LightSource {
@@ -329,7 +336,7 @@ object TcsController {
     def setOiwfsGuiderSensorOption(v: GuiderSensorOption): GuidersEnabled = this.copy(oiwfs = GuiderSensorOptionOI(v))
   }
 
-  final case class AGConfig(sfPos: Option[ScienceFoldPosition], hrwfsPos: Option[HrwfsPickupPosition])
+  final case class AGConfig(sfPos: Option[ScienceFoldPosition], hrwfs: Option[HrwfsConfig])
 
   final case class InstrumentAlignAngle(self: Angle) extends AnyVal
 
@@ -341,28 +348,35 @@ object TcsController {
     agc: AGConfig,
     iaa: InstrumentAlignAngle
   ) {
-    def setGuideConfig(v: GuideConfig): TcsConfig = TcsConfig(v, tc, gtc, ge, agc, iaa)
-    def setTelescopeConfig(v: TelescopeConfig): TcsConfig = TcsConfig(gc, v, gtc, ge, agc, iaa)
-    def setGuidersTrackingConfig(v: GuidersTrackingConfig): TcsConfig = TcsConfig(gc, tc, v, ge, agc, iaa)
-    def setGuidersEnabled(v: GuidersEnabled): TcsConfig = TcsConfig(gc, tc, gtc, v, agc, iaa)
-    def setAGConfig(v: AGConfig): TcsConfig = TcsConfig(gc, tc, gtc, ge, v, iaa)
-    def setIAA(v: InstrumentAlignAngle): TcsConfig = TcsConfig(gc, tc, gtc, ge, agc, v)
+    def setGuideConfig(v: GuideConfig): TcsConfig = this.copy(gc = v)
+    def setTelescopeConfig(v: TelescopeConfig): TcsConfig = this.copy(tc = v)
+    def setGuidersTrackingConfig(v: GuidersTrackingConfig): TcsConfig = this.copy(gtc = v)
+    def setGuidersEnabled(v: GuidersEnabled): TcsConfig = this.copy(ge = v)
+    def setAGConfig(v: AGConfig): TcsConfig = this.copy(agc = v)
+    def setIAA(v: InstrumentAlignAngle): TcsConfig = this.copy(iaa = v)
   }
 
   sealed trait Subsystem extends Product with Serializable
   object Subsystem {
-    case object OIWFS       extends Subsystem
-    case object P1WFS       extends Subsystem
-    case object P2WFS       extends Subsystem
-    case object ScienceFold extends Subsystem
-    case object HRProbe     extends Subsystem
-    case object Mount       extends Subsystem
-    case object M1          extends Subsystem
-    case object M2          extends Subsystem
+    // Instrument internal WFS
+    case object OIWFS  extends Subsystem
+    // Peripheral WFS 1
+    case object P1WFS  extends Subsystem
+    // Peripheral WFS 2
+    case object P2WFS  extends Subsystem
+    // Internal AG mechanisms (science fold, AC arm)
+    case object AGUnit extends Subsystem
+    // Mount and cass-rotator
+    case object Mount  extends Subsystem
+    // Primary mirror
+    case object M1     extends Subsystem
+    // Secondary mirror
+    case object M2     extends Subsystem
 
-    val all: NonEmptyList[Subsystem] = NonEmptyList.of(OIWFS, P1WFS, P2WFS, ScienceFold, HRProbe, Mount, M1, M2)
+    val all: NonEmptyList[Subsystem] = NonEmptyList.of(OIWFS, P1WFS, P2WFS, AGUnit, Mount, M1, M2)
 
     implicit val show: Show[Subsystem] = Show.show { _.productPrefix }
+    implicit val equal: Eq[Subsystem] = Eq.fromUniversalEquals
   }
 
 }
