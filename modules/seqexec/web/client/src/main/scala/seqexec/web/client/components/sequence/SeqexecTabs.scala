@@ -36,7 +36,7 @@ object SeqexecTabs {
         val tabs = x().tabs.toList
           .sortBy {
             case Left(_)                 => Int.MinValue.some
-            case Right(t) if t.isPreview => (Int.MinValue - 1).some
+            case Right(t) if t.isPreview => (Int.MinValue + 1).some
             case Right(t)                => t.instrument.map(_.ordinal)
           }
           .map {

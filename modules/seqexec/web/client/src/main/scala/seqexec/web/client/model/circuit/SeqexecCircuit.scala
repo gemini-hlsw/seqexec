@@ -129,7 +129,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
     this.zoomRWL(SeqexecAppRootModel.uiModel ^|-> SeqexecUIModel.sequencesOnDisplay)
 
   def sequenceTab(id: Observation.Id): ModelR[SeqexecAppRootModel, SeqexecTabActive] =
-    // Returning the getOrElse part shouldn't happen but it simplifies the model notcarrying the Option up
+    // Returning the getOrElse part shouldn't happen but it simplifies the model not carrying the Option up
     zoom(_.uiModel.sequencesOnDisplay.tab(id).getOrElse(SeqexecTabActive.Empty))
 
   def sequenceObserverReader(id: Observation.Id): ModelR[SeqexecAppRootModel, SequenceInfoFocus] =

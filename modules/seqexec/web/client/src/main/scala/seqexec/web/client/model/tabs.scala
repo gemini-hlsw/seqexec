@@ -48,7 +48,7 @@ object SeqexecTabActive {
   implicit val eq: Eq[SeqexecTabActive] =
     Eq.by(x => (x.tab, x.active))
 
-  val Empty: SeqexecTabActive = SeqexecTabActive(PreviewSequenceTab.Empty, TabSelected.Background)
+  val Empty: SeqexecTabActive = SeqexecTabActive(EmptySequenceTab, TabSelected.Background)
 }
 
 sealed trait SeqexecTab {
@@ -92,13 +92,15 @@ sealed trait SequenceTab extends SeqexecTab {
 
   def instrument: Option[Instrument] = this match {
     case i: InstrumentSequenceTab => i.inst.some
-    case i: PreviewSequenceTab    => i.currentSequence.map(_.metadata.instrument)
+    case i: PreviewSequenceTab    => i.currentSequence.metadata.instrument.some
+    case _: EmptySequenceTab.type => none
   }
 
   def sequence: Option[SequenceView] = this match {
     // Returns the current sequence or if empty the last completed one
     case i: InstrumentSequenceTab => i.currentSequence.orElse(i.completedSequence)
-    case i: PreviewSequenceTab    => i.currentSequence
+    case i: PreviewSequenceTab    => i.currentSequence.some
+    case _: EmptySequenceTab.type => none
   }
 
   def obsId: Option[Observation.Id] = sequence.map(_.id)
@@ -106,6 +108,7 @@ sealed trait SequenceTab extends SeqexecTab {
   def stepConfigDisplayed: Option[Int] = this match {
     case i: InstrumentSequenceTab => i.stepConfig
     case i: PreviewSequenceTab    => i.stepConfig
+    case _: EmptySequenceTab.type => none
   }
 
   def isPreview: Boolean = this match {
@@ -123,6 +126,7 @@ sealed trait SequenceTab extends SeqexecTab {
   def loading: Boolean = this match {
     case _: InstrumentSequenceTab => false
     case p: PreviewSequenceTab    => p.isLoading
+    case _: EmptySequenceTab.type => false
   }
 }
 
@@ -131,6 +135,7 @@ object SequenceTab {
     Eq.instance {
       case (a: InstrumentSequenceTab, b: InstrumentSequenceTab) => a === b
       case (a: PreviewSequenceTab, b: PreviewSequenceTab)       => a === b
+      case (_: EmptySequenceTab.type, _: EmptySequenceTab.type) => true
       case _                                                    => false
     }
 
@@ -138,9 +143,11 @@ object SequenceTab {
   val stepConfigL: Lens[SequenceTab, Option[Int]] = Lens[SequenceTab, Option[Int]] {
     case t: InstrumentSequenceTab => t.stepConfig
     case t: PreviewSequenceTab    => t.stepConfig
+    case _: EmptySequenceTab.type => none
   }(n => a => a match {
     case t: InstrumentSequenceTab => t.copy(stepConfig = n)
     case t: PreviewSequenceTab    => t.copy(stepConfig = n)
+    case t: EmptySequenceTab.type => t
   })
 
 }
@@ -160,7 +167,7 @@ object InstrumentSequenceTab {
 }
 
 @Lenses
-final case class PreviewSequenceTab(currentSequence: Option[SequenceView],
+final case class PreviewSequenceTab(currentSequence: SequenceView,
                                     stepConfig: Option[Int],
                                     isLoading: Boolean,
                                     tableState: TableState[StepsTable.TableColumn],
@@ -168,8 +175,12 @@ final case class PreviewSequenceTab(currentSequence: Option[SequenceView],
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object PreviewSequenceTab {
-  val Empty: SequenceTab = PreviewSequenceTab(None, None, false, StepsTable.State.InitialTableState, TabOperations.Default)
-
   implicit val eq: Eq[PreviewSequenceTab] =
     Eq.by(x => (x.currentSequence, x.stepConfig, x.isLoading, x.tableState, x.tabOperations))
+}
+
+final case object EmptySequenceTab extends SequenceTab {
+  override type TC = StepsTable.TableColumn
+  val tableState: TableState[StepsTable.TableColumn] = StepsTable.State.InitialTableState
+  val tabOperations: TabOperations = TabOperations.Default
 }

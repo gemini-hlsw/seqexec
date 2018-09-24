@@ -27,7 +27,7 @@ final class SequencesOnDisplaySpec extends CatsSuite with ArbitrariesWebClient {
                          Nil,
                          None)
     val sod =
-      SequencesOnDisplay.Empty.previewSequence(s.metadata.instrument, Some(s))
+      SequencesOnDisplay.Empty.previewSequence(s.metadata.instrument, s)
     sod.tabs.length should be(2)
   }
   test("Focus on preview") {
@@ -38,7 +38,7 @@ final class SequencesOnDisplaySpec extends CatsSuite with ArbitrariesWebClient {
                          Nil,
                          None)
     val sod =
-      SequencesOnDisplay.Empty.previewSequence(s.metadata.instrument, Some(s))
+      SequencesOnDisplay.Empty.previewSequence(s.metadata.instrument, s)
     // focus on preview
     sod.tabs.focus.isPreview should be(true)
   }
@@ -50,7 +50,7 @@ final class SequencesOnDisplaySpec extends CatsSuite with ArbitrariesWebClient {
                          Nil,
                          None)
     val sod =
-      SequencesOnDisplay.Empty.previewSequence(s.metadata.instrument, Some(s))
+      SequencesOnDisplay.Empty.previewSequence(s.metadata.instrument, s)
     // Unset unknow
     sod.tabs.focus.isPreview should be(true)
   }
@@ -63,7 +63,7 @@ final class SequencesOnDisplaySpec extends CatsSuite with ArbitrariesWebClient {
                          Nil,
                          None)
     val sod =
-      SequencesOnDisplay.Empty.previewSequence(s.metadata.instrument, Some(s))
+      SequencesOnDisplay.Empty.previewSequence(s.metadata.instrument, s)
 
     // Remove unknown
     val sod2 = sod.unsetPreviewOn(Observation.Id.unsafeFromString("GS-2018A-Q-0-3"))
@@ -102,7 +102,7 @@ final class SequencesOnDisplaySpec extends CatsSuite with ArbitrariesWebClient {
 
     val obs2 = Observation.Id.unsafeFromString("GS-2018A-Q-0-2")
     val s2 = SequenceView(obs2, m, SequenceState.Idle, Nil, None)
-    val sod2 = sod.previewSequence(s2.metadata.instrument, Some(s2))
+    val sod2 = sod.previewSequence(s2.metadata.instrument, s2)
 
     sod2.tabs.length should be(3)
     sod2.tabs.toList.lift(2) should matchPattern {
@@ -110,7 +110,7 @@ final class SequencesOnDisplaySpec extends CatsSuite with ArbitrariesWebClient {
           if s.exists(_.id === obsId) =>
     }
     sod2.tabs.focus should matchPattern {
-      case PreviewSequenceTab(s, _, _, _, _) if s.exists(_.id === obs2) =>
+      case PreviewSequenceTab(s, _, _, _, _) if s.id === obs2 =>
     }
   }
 }

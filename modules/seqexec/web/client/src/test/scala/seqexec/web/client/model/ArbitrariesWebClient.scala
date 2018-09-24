@@ -84,7 +84,7 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
     Arbitrary {
       for {
         idx <- arbitrary[Option[Int]]
-        sv  <- arbitrary[Option[SequenceView]]
+        sv  <- arbitrary[SequenceView]
         lo  <- arbitrary[Boolean]
         ts  <- arbitrary[TableState[StepsTable.TableColumn]]
         to  <- arbitrary[TabOperations]
@@ -92,8 +92,19 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
     }
 
   implicit val pstCogen: Cogen[PreviewSequenceTab] =
-    Cogen[(Option[SequenceView], Option[Int], TableState[StepsTable.TableColumn], TabOperations)].contramap {
+    Cogen[(SequenceView, Option[Int], TableState[StepsTable.TableColumn], TabOperations)].contramap {
       x => (x.currentSequence, x.stepConfig, x.tableState, x.tabOperations)
+    }
+
+  implicit val arbEmptySequenceTab: Arbitrary[EmptySequenceTab.type] =
+    Arbitrary {
+      Gen.const(EmptySequenceTab)
+    }
+
+  implicit val estCogen: Cogen[EmptySequenceTab.type] =
+    Cogen[Boolean].contramap {
+      case _: EmptySequenceTab.type => true
+      case _ => false
     }
 
   implicit val arbSeqexecTab: Arbitrary[SeqexecTab] = Arbitrary {
@@ -101,10 +112,11 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
   }
 
   implicit val sxCogen: Cogen[SeqexecTab] =
-    Cogen[Either[CalibrationQueueTab, Either[PreviewSequenceTab, InstrumentSequenceTab]]].contramap {
+    Cogen[Either[CalibrationQueueTab, Either[PreviewSequenceTab, Either[InstrumentSequenceTab, EmptySequenceTab.type]]]].contramap {
       case a: CalibrationQueueTab   => Left(a)
       case a: PreviewSequenceTab    => Right(Left(a))
-      case a: InstrumentSequenceTab => Right(Right(a))
+      case a: InstrumentSequenceTab => Right(Right(Left(a)))
+      case a: EmptySequenceTab.type => Right(Right(Right(a)))
     }
 
   implicit val arbSequenceTab: Arbitrary[SequenceTab] = Arbitrary {
@@ -112,9 +124,10 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
   }
 
   implicit val stCogen: Cogen[SequenceTab] =
-    Cogen[Either[PreviewSequenceTab, InstrumentSequenceTab]].contramap {
+    Cogen[Either[PreviewSequenceTab, Either[InstrumentSequenceTab, EmptySequenceTab.type]]].contramap {
       case a: PreviewSequenceTab    => Left(a)
-      case a: InstrumentSequenceTab => Right(a)
+      case a: InstrumentSequenceTab => Right(Left(a))
+      case a: EmptySequenceTab.type => Right(Right(a))
     }
 
   implicit val arbSequenceOnDisplay: Arbitrary[SequencesOnDisplay] =

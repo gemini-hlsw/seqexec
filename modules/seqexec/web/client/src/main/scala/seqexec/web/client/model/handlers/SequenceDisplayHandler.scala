@@ -19,11 +19,12 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, SequencesFocus]) extends Act
 
     case SelectSequencePreview(i, id, _) =>
       val seq = SequencesQueue.queueItemG[SequenceView](_.id === id).get(value.sequences)
-      updatedL(SequencesFocus.sod.modify(_.previewSequence(i, seq)))
+      seq.map { s =>
+        updatedL(SequencesFocus.sod.modify(_.previewSequence(i, s)))
+      }.getOrElse {
+        noChange
+      }
 
-    // case SelectEmptyPreview =>
-    //   updatedL(SequencesFocus.sod.modify(_.unsetPreview.focusOnPreview))
-    //
     case SelectCalibrationQueue =>
       updatedL(SequencesFocus.sod.modify(_.focusOnDayCal))
 
@@ -32,7 +33,11 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, SequencesFocus]) extends Act
   def handleShowHideStep: PartialFunction[Any, ActionResult[M]] = {
     case ShowPreviewStepConfig(i, id, step) =>
       val seq = SequencesQueue.queueItemG[SequenceView](_.id === id).get(value.sequences)
-      updatedL(SequencesFocus.sod.modify(_.previewSequence(i, seq).showStepConfig(id, step - 1)))
+      seq.map { s =>
+        updatedL(SequencesFocus.sod.modify(_.previewSequence(i, s).showStepConfig(id, step - 1)))
+      }.getOrElse {
+        noChange
+      }
 
     case ShowStepConfig(i, id, step)        =>
       updatedL(SequencesFocus.sod.modify(_.focusOnSequence(i, id).showStepConfig(id, step - 1)))
