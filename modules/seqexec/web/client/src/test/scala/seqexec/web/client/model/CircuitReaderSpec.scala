@@ -14,7 +14,10 @@ import seqexec.web.client.circuit.SeqexecCircuit._
 import org.scalatest.prop.PropertyChecks
 
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
-final class CircuitReaderSpec extends CatsSuite with PropertyChecks with ArbitrariesWebClient {
+final class CircuitReaderSpec
+    extends CatsSuite
+    with PropertyChecks
+    with ArbitrariesWebClient {
   checkAll("Eq[TabContentFocus]", EqTests[TabContentFocus].eqv)
   checkAll("Eq[SequenceTabContentFocus]", EqTests[SequenceTabContentFocus].eqv)
   checkAll("Eq[QueueTabContentFocus]", EqTests[QueueTabContentFocus].eqv)
@@ -27,21 +30,21 @@ final class CircuitReaderSpec extends CatsSuite with PropertyChecks with Arbitra
   // checkAll("tableStateL", LensTests(TableStates.tableStateL))
 
   test("maintain reference equality for constant readers") {
-      (webSocketFocusRW === webSocketFocusRW.value) should be(true)
-      (initialSyncFocusRW === initialSyncFocusRW.value) should be(true)
-      (tableStateRW === tableStateRW.value) should be(true)
-      (sequencesReaderRW === sequencesReaderRW.value) should be(true)
-      (sodLocationReaderRW === sodLocationReaderRW.value) should be(true)
-      (statusAndLoadedSequencesReader === statusAndLoadedSequencesReader.value) should be(true)
-      (statusReader === statusReader.value) should be(true)
-      (headerSideBarReader === headerSideBarReader.value) should be(true)
-      (logDisplayedReader === logDisplayedReader.value) should be(true)
-      (tabsReader === tabsReader.value) should be(true)
-      (seqexecTabs === seqexecTabs.value) should be(true)
-      (configTableState === configTableState.value) should be(true)
-    }
+    (webSocketFocusRW === webSocketFocusRW.value) should be(true)
+    (initialSyncFocusRW === initialSyncFocusRW.value) should be(true)
+    (tableStateRW === tableStateRW.value) should be(true)
+    (sequencesReaderRW === sequencesReaderRW.value) should be(true)
+    (sodLocationReaderRW === sodLocationReaderRW.value) should be(true)
+    (statusAndLoadedSequencesReader === statusAndLoadedSequencesReader.value) should be(true)
+    (statusReader === statusReader.value) should be(true)
+    (headerSideBarReader === headerSideBarReader.value) should be(true)
+    (logDisplayedReader === logDisplayedReader.value) should be(true)
+    (tabsReader === tabsReader.value) should be(true)
+    (seqexecTabs === seqexecTabs.value) should be(true)
+    (configTableState === configTableState.value) should be(true)
+  }
   test("maintain reference equality for id based readers") {
-    forAll{ (i: Observation.Id) =>
+    forAll { (i: Observation.Id) =>
       (sequenceTab(i) === sequenceTab(i).value) should be(true)
       (sequenceObserverReader(i) === sequenceObserverReader(i).value) should be(true)
       (statusAndStepReader(i) === statusAndStepReader(i).value) should be(true)

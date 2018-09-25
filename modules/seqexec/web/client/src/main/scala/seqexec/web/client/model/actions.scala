@@ -22,9 +22,9 @@ object actions {
 
   // scalastyle:off
   // Actions
-  final case class NavigateTo(page: SeqexecPages) extends Action
+  final case class NavigateTo(page:       SeqexecPages) extends Action
   final case class NavigateSilentTo(page: SeqexecPages) extends Action
-  final case class Initialize(site: Site) extends Action
+  final case class Initialize(site:       Site) extends Action
 
   // Actions to close and/open the login box
   case object OpenLoginBox extends Action
@@ -36,39 +36,49 @@ object actions {
   case object Logout extends Action
 
   // Action to select a sequence for display
-  final case class SelectIdToDisplay(i: Instrument, id: Observation.Id, step: StepIdDisplayed) extends Action
-  final case class SelectSequencePreview(i: Instrument, id: Observation.Id, step: StepIdDisplayed) extends Action
+  final case class SelectIdToDisplay(i:    Instrument,
+                                     id:   Observation.Id,
+                                     step: StepIdDisplayed)
+      extends Action
+  final case class SelectSequencePreview(i:    Instrument,
+                                         id:   Observation.Id,
+                                         step: StepIdDisplayed)
+      extends Action
   case object SelectCalibrationQueue extends Action
   case object SelectRoot extends Action
-  final case class ShowStepConfig(i: Instrument, id: Observation.Id, step: Int) extends Action
-  final case class ShowPreviewStepConfig(i: Instrument, id: Observation.Id, step: Int) extends Action
+  final case class ShowStepConfig(i: Instrument, id: Observation.Id, step: Int)
+      extends Action
+  final case class ShowPreviewStepConfig(i:    Instrument,
+                                         id:   Observation.Id,
+                                         step: Int)
+      extends Action
 
   // Actions related to executing sequences
-  final case class RequestRun(s: Observation.Id) extends Action
-  final case class RequestSync(s: Observation.Id) extends Action
-  final case class RequestPause(s: Observation.Id) extends Action
+  final case class RequestRun(s:         Observation.Id) extends Action
+  final case class RequestSync(s:        Observation.Id) extends Action
+  final case class RequestPause(s:       Observation.Id) extends Action
   final case class RequestCancelPause(s: Observation.Id) extends Action
-  final case class RequestStop(id: Observation.Id, step: Int) extends Action
-  final case class RequestAbort(id: Observation.Id, step: Int) extends Action
-  final case class RequestObsPause(id: Observation.Id, step: Int) extends Action
-  final case class RequestObsResume(id: Observation.Id, step: Int) extends Action
+  final case class RequestStop(id:       Observation.Id, step: Int) extends Action
+  final case class RequestAbort(id:      Observation.Id, step: Int) extends Action
+  final case class RequestObsPause(id:   Observation.Id, step: Int) extends Action
+  final case class RequestObsResume(id:  Observation.Id, step: Int) extends Action
   case object RequestSoundEcho extends Action
 
-  final case class RunStarted(s: Observation.Id) extends Action
-  final case class RunPaused(s: Observation.Id) extends Action
-  final case class RunCancelPaused(s: Observation.Id) extends Action
-  final case class RunSync(s: Observation.Id) extends Action
-  final case class RunStartFailed(s: Observation.Id) extends Action
-  final case class RunPauseFailed(s: Observation.Id) extends Action
+  final case class RunStarted(s:           Observation.Id) extends Action
+  final case class RunPaused(s:            Observation.Id) extends Action
+  final case class RunCancelPaused(s:      Observation.Id) extends Action
+  final case class RunSync(s:              Observation.Id) extends Action
+  final case class RunStartFailed(s:       Observation.Id) extends Action
+  final case class RunPauseFailed(s:       Observation.Id) extends Action
   final case class RunCancelPauseFailed(s: Observation.Id) extends Action
-  final case class RunSyncFailed(s: Observation.Id) extends Action
-  final case class RunStop(s: Observation.Id) extends Action
-  final case class RunStopFailed(s: Observation.Id) extends Action
-  final case class RunAbort(s: Observation.Id) extends Action
-  final case class RunAbortFailed(s: Observation.Id) extends Action
-  final case class RunObsPause(s: Observation.Id) extends Action
-  final case class RunObsPauseFailed(s: Observation.Id) extends Action
-  final case class RunObsResumeFailed(s: Observation.Id) extends Action
+  final case class RunSyncFailed(s:        Observation.Id) extends Action
+  final case class RunStop(s:              Observation.Id) extends Action
+  final case class RunStopFailed(s:        Observation.Id) extends Action
+  final case class RunAbort(s:             Observation.Id) extends Action
+  final case class RunAbortFailed(s:       Observation.Id) extends Action
+  final case class RunObsPause(s:          Observation.Id) extends Action
+  final case class RunObsPauseFailed(s:    Observation.Id) extends Action
+  final case class RunObsResumeFailed(s:   Observation.Id) extends Action
 
   final case class RememberCompleted(s: SequenceView) extends Action
 
@@ -80,25 +90,33 @@ object actions {
   case object WSClose extends Action
   case object Reconnect extends Action
   case object Connecting extends Action
-  final case class Connected(ws: WebSocket, delay: Int) extends Action
+  final case class Connected(ws:          WebSocket, delay: Int) extends Action
   final case class ConnectionRetry(delay: Int) extends Action
-  final case class ConnectionError(s: String) extends Action
-  final case class ServerMessage(e: SeqexecEvent) extends Action
+  final case class ConnectionError(s:     String) extends Action
+  final case class ServerMessage(e:       SeqexecEvent) extends Action
 
-  final case class FlipSkipStep(id: Observation.Id, step: Step) extends Action
+  final case class FlipSkipStep(id:       Observation.Id, step: Step) extends Action
   final case class FlipBreakpointStep(id: Observation.Id, step: Step) extends Action
+
   final case class UpdateObserver(id: Observation.Id, name: Observer) extends Action
   final case class UpdateDefaultObserver(name: Observer) extends Action
-  final case class UpdateOperator(name: Operator) extends Action
-  final case class UpdateImageQuality(iq: ImageQuality) extends Action
-  final case class UpdateCloudCover(cc: CloudCover) extends Action
-  final case class UpdateSkyBackground(sb: SkyBackground) extends Action
-  final case class UpdateWaterVapor(wv: WaterVapor) extends Action
+  final case class UpdateOperator(name:        Operator) extends Action
+  final case class UpdateImageQuality(iq:      ImageQuality) extends Action
+  final case class UpdateCloudCover(cc:        CloudCover) extends Action
+  final case class UpdateSkyBackground(sb:     SkyBackground) extends Action
+  final case class UpdateWaterVapor(wv:        WaterVapor) extends Action
 
-  final case class UpdateStepsConfigTableState(s: TableState[StepConfigTable.TableColumn]) extends Action
-  final case class UpdateQueueTableState(s: TableState[QueueTableBody.TableColumn]) extends Action
-  final case class UpdateStepTableState(id: Observation.Id, s: TableState[StepsTable.TableColumn]) extends Action
-  final case class LoadSequence(observer: Observer, i: Instrument, id: Observation.Id) extends Action
+  final case class UpdateStepsConfigTableState(s: TableState[StepConfigTable.TableColumn])
+      extends Action
+  final case class UpdateQueueTableState(s: TableState[QueueTableBody.TableColumn])
+      extends Action
+  final case class UpdateStepTableState(id: Observation.Id,
+                                        s:  TableState[StepsTable.TableColumn])
+      extends Action
+  final case class LoadSequence(observer: Observer,
+                                i:        Instrument,
+                                id:       Observation.Id)
+      extends Action
   final case class SequenceLoadFailed(id: Observation.Id) extends Action
   case object CleanSequences extends Action
 
@@ -112,10 +130,12 @@ object actions {
 
   implicit val show: Show[Action] = Show.show {
     case s @ ServerMessage(u @ SeqexecModelUpdate(view)) =>
-      s"${s.getClass.getSimpleName}(${u.getClass.getSimpleName}, loaded: '${view.loaded.mkString(",")}', (${view.queue.map(s => (s"id: ${s.id.format}", s"steps: ${s.steps.length}", s.steps.filter(_.status === StepState.Running).slice(0, scala.math.min(s.steps.length, 20)).collect(standardStep)))}))"
-    case s @ RememberCompleted(view)                     =>
+      val someSteps = view.queue.map(s =>
+        (s"id: ${s.id.format}", s"steps: ${s.steps.length}", s.steps.filter(_.status === StepState.Running).slice(0, scala.math.min(s.steps.length, 20)).collect(standardStep)))
+      s"${s.getClass.getSimpleName}(${u.getClass.getSimpleName}, loaded: '${view.loaded.mkString(",")}', $someSteps)"
+    case s @ RememberCompleted(view)                    =>
       s"${s.getClass.getSimpleName}(${view.id})"
-    case a                                               =>
+    case a                                              =>
       s"$a"
   }
 }

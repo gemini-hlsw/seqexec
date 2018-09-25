@@ -6,32 +6,40 @@ package seqexec.web.client.model
 import cats.Eq
 import cats.implicits._
 import monocle.macros.Lenses
-import seqexec.model.{ Conditions, Observer, UserDetails, SequencesQueue, SequenceView }
+import seqexec.model.{
+  Conditions,
+  Observer,
+  SequenceView,
+  SequencesQueue,
+  UserDetails
+}
 import seqexec.web.common.FixedLengthBuffer
 import seqexec.web.client.components.sequence.steps.StepConfigTable
 import seqexec.web.client.components.QueueTableBody
 import web.client.table._
 
 /**
- * UI model, changes here will update the UI
- */
+  * UI model, changes here will update the UI
+  */
 @Lenses
-final case class SeqexecUIModel(navLocation: Pages.SeqexecPages,
-                          user: Option[UserDetails],
-                          sequences: SequencesQueue[SequenceView],
-                          loginBox: SectionVisibilityState,
-                          globalLog: GlobalLog,
-                          sequencesOnDisplay: SequencesOnDisplay,
-                          syncInProgress: Boolean,
-                          configTableState: TableState[StepConfigTable.TableColumn],
-                          queueTableState: TableState[QueueTableBody.TableColumn],
-                          defaultObserver: Observer,
-                          notification: UserNotificationState,
-                          firstLoad: Boolean)
+final case class SeqexecUIModel(
+    navLocation:        Pages.SeqexecPages,
+    user:               Option[UserDetails],
+    sequences:          SequencesQueue[SequenceView],
+    loginBox:           SectionVisibilityState,
+    globalLog:          GlobalLog,
+    sequencesOnDisplay: SequencesOnDisplay,
+    syncInProgress:     Boolean,
+    configTableState:   TableState[StepConfigTable.TableColumn],
+    queueTableState:    TableState[QueueTableBody.TableColumn],
+    defaultObserver:    Observer,
+    notification:       UserNotificationState,
+    firstLoad:          Boolean)
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object SeqexecUIModel {
-  val noSequencesLoaded: SequencesQueue[SequenceView] = SequencesQueue[SequenceView](Map.empty, Conditions.Default, None, Nil)
+  val noSequencesLoaded: SequencesQueue[SequenceView] =
+    SequencesQueue[SequenceView](Map.empty, Conditions.Default, None, Nil)
   val Initial: SeqexecUIModel = SeqexecUIModel(
     Pages.Root,
     None,
@@ -44,10 +52,22 @@ object SeqexecUIModel {
     QueueTableBody.InitialTableState.tableState,
     Observer(""),
     UserNotificationState.Empty,
-    firstLoad = true)
+    firstLoad = true
+  )
 
   implicit val eq: Eq[SeqexecUIModel] =
-    Eq.by(x => (x.navLocation, x.user, x.sequences, x.loginBox, x.globalLog, x.sequencesOnDisplay, x.configTableState, x.queueTableState, x.defaultObserver, x.firstLoad))
+    Eq.by(
+      x =>
+        (x.navLocation,
+         x.user,
+         x.sequences,
+         x.loginBox,
+         x.globalLog,
+         x.sequencesOnDisplay,
+         x.configTableState,
+         x.queueTableState,
+         x.defaultObserver,
+         x.firstLoad))
 
   val defaultObserverG = SeqexecUIModel.defaultObserver.asGetter
 }

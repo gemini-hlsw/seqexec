@@ -8,8 +8,8 @@ import cats.implicits._
 import diode.data.Pot
 import org.scalajs.dom.WebSocket
 
-final case class WebSocketConnection(ws: Pot[WebSocket],
-                                     nextAttempt: Int,
+final case class WebSocketConnection(ws:            Pot[WebSocket],
+                                     nextAttempt:   Int,
                                      autoReconnect: Boolean)
 
 object WebSocketConnection {

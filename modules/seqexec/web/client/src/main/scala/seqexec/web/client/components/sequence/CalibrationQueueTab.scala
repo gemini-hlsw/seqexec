@@ -12,14 +12,13 @@ import japgolly.scalajs.react._
 import seqexec.web.client.model.Pages._
 import seqexec.web.client.model.{ CalibrationQueueTabActive, TabSelected }
 import seqexec.web.client.semanticui._
-// import seqexec.web.client.semanticui.elements.icon.Icon._
-// import seqexec.web.client.semanticui.elements.popup.Popup
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.reusability._
 import web.client.style._
 
 object CalibrationQueueTab {
-  final case class Props(router: RouterCtl[SeqexecPages], tab: CalibrationQueueTabActive)
+  final case class Props(router: RouterCtl[SeqexecPages],
+                         tab:    CalibrationQueueTabActive)
 
   implicit val propsReuse: Reusability[Props] =
     Reusability.by(_.tab.active)
@@ -34,7 +33,7 @@ object CalibrationQueueTab {
       Callback.empty
 
   private def linkTo(p: Props, page: SeqexecPages)(mod: TagMod*) = {
-    val active     = p.tab.active
+    val active = p.tab.active
 
     <.a(
       ^.href := p.router.urlFor(page).value,

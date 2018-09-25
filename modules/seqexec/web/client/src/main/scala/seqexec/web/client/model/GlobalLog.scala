@@ -13,7 +13,7 @@ import seqexec.web.common.FixedLengthBuffer
   * Keeps a list of log entries for display
   */
 @Lenses
-final case class GlobalLog(log: FixedLengthBuffer[ServerLogMessage],
+final case class GlobalLog(log:     FixedLengthBuffer[ServerLogMessage],
                            display: SectionVisibilityState)
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))

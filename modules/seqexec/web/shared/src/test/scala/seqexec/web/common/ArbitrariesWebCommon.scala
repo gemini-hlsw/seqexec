@@ -4,7 +4,7 @@
 package seqexec.web.common
 
 import org.scalacheck.Arbitrary.arbitrary
-import org.scalacheck.{Arbitrary, Cogen, Gen}
+import org.scalacheck.{ Arbitrary, Cogen, Gen }
 import cats.data.NonEmptyList
 
 object ArbitrariesWebCommon {

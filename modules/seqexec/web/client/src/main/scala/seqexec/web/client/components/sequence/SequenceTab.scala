@@ -11,11 +11,11 @@ import japgolly.scalajs.react.component.builder.Lifecycle.RenderScope
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.extra.Reusability
 import japgolly.scalajs.react._
-import seqexec.model.{Observer, SequenceState}
+import seqexec.model.{ Observer, SequenceState }
 import seqexec.model.enum.Instrument
 import seqexec.web.client.actions.LoadSequence
 import seqexec.web.client.model.Pages._
-import seqexec.web.client.model.{AvailableTab, RunningStep, TabSelected}
+import seqexec.web.client.model.{ AvailableTab, RunningStep, TabSelected }
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.semanticui._
 import seqexec.web.client.semanticui.elements.icon.Icon._
@@ -27,15 +27,16 @@ import seqexec.web.client.reusability._
 import web.client.style._
 
 object SequenceTab {
-  final case class Props(router: RouterCtl[SeqexecPages],
-                         tab: AvailableTab,
-                         loggedIn: Boolean,
-                         defaultObserver: Observer,
+  final case class Props(router:             RouterCtl[SeqexecPages],
+                         tab:                AvailableTab,
+                         loggedIn:           Boolean,
+                         defaultObserver:    Observer,
                          runningInstruments: List[Instrument])
-  final case class State(loading: Boolean)
+  final case class State(loading:            Boolean)
 
   implicit val propsReuse: Reusability[Props] =
-    Reusability.by(x => (x.tab, x.loggedIn, x.defaultObserver, x.runningInstruments))
+    Reusability.by(x =>
+      (x.tab, x.loggedIn, x.defaultObserver, x.runningInstruments))
   implicit val stateReuse: Reusability[State] = Reusability.by(_.loading)
 
   type Backend = RenderScope[Props, State, Unit]
@@ -131,12 +132,12 @@ object SequenceTab {
               Popup.Props("button", s"Load sequence ${id.format}"),
               Button(
                 Button.Props(
-                  size = Size.Large,
-                  compact = true,
-                  icon = Some(IconUpload),
-                  color = "teal".some,
+                  size     = Size.Large,
+                  compact  = true,
+                  icon     = Some(IconUpload),
+                  color    = "teal".some,
                   disabled = b.state.loading || running,
-                  loading = b.state.loading,
+                  loading  = b.state.loading,
                   onClickE = load(b, inst, id) _
                 )
               )
@@ -148,8 +149,8 @@ object SequenceTab {
           <.div(SeqexecStyles.activeInstrumentLabel, dispName),
           Label(
             Label.Props(tabTitle,
-                        color = color,
-                        icon = icon,
+                        color       = color,
+                        icon        = icon,
                         extraStyles = List(SeqexecStyles.labelPointer)))
         )
 

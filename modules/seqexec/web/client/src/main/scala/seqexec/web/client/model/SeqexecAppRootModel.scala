@@ -13,10 +13,10 @@ import seqexec.model.ClientID
   * Root of the UI Model of the application
   */
 @Lenses
-final case class SeqexecAppRootModel(ws: WebSocketConnection,
-                                     site: Option[Site],
+final case class SeqexecAppRootModel(ws:       WebSocketConnection,
+                                     site:     Option[Site],
                                      clientId: Option[ClientID],
-                                     uiModel: SeqexecUIModel)
+                                     uiModel:  SeqexecUIModel)
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object SeqexecAppRootModel {

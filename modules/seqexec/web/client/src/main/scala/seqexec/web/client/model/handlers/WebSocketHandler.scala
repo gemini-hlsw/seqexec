@@ -6,15 +6,15 @@ package seqexec.web.client.handlers
 import boopickle.DefaultBasic._
 import cats.implicits._
 import diode.util.RunAfterJS
-import diode.{Action, ActionHandler, ActionResult, Effect, ModelRW, NoAction}
-import diode.data.{Pending, Pot, Ready}
-import java.util.logging.{Level, Logger}
+import diode.{ Action, ActionHandler, ActionResult, Effect, ModelRW, NoAction }
+import diode.data.{ Pending, Pot, Ready }
+import java.util.logging.{ Level, Logger }
 import java.time.Instant
 import mouse.all._
 import org.scalajs.dom._
 import scala.concurrent.Future
 import scala.concurrent.duration._
-import scala.scalajs.js.typedarray.{ArrayBuffer, TypedArrayBuffer}
+import scala.scalajs.js.typedarray.{ ArrayBuffer, TypedArrayBuffer }
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import seqexec.model.boopickle.ModelBooPicklers
 import seqexec.model.enum.ServerLogLevel
@@ -30,7 +30,7 @@ import seqexec.web.client.services.log.ConsoleHandler
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection]) extends ActionHandler(modelRW) with Handlers[M, WebSocketConnection] with ModelBooPicklers {
 
-  private implicit val runner: _root_.diode.util.RunAfterJS = new RunAfterJS
+  private implicit val runner = new RunAfterJS
   private val logger = Logger.getLogger(this.getClass.getSimpleName)
   // Reconfigure to avoid sending ajax events in this logger
   logger.setUseParentHandlers(false)
