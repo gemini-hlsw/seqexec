@@ -4,7 +4,8 @@
 package seqexec.web.common
 
 import cats.kernel.laws.discipline.EqTests
-//import cats.laws.discipline.FunctorTests
+import cats.laws.discipline.{ FunctorTests, TraverseTests }
+import monocle.law.discipline.TraversalTests
 import cats.tests.CatsSuite
 
 /**
@@ -18,6 +19,11 @@ final class ZipperSpec extends CatsSuite {
     forAll { (l: List[Int], r: List[Int]) =>
       val z = Zipper(l, 0, r)
       assert(z.modify(_ => 1) !== z)
+    }
+  }
+  test("Zipper length") {
+    forAll { (l: Zipper[Int]) =>
+      assert(l.length > 0)
     }
   }
   test("support exists") {
@@ -53,12 +59,18 @@ final class ZipperSpec extends CatsSuite {
     forAll { (l: List[Int], r: List[Int]) =>
       val u = Zipper(l, 0, r)
       val e = u.findFocus(x => r.headOption.forall(x === _))
-      val m = l.forall(x => e.exists(_.focus === x)) || r.headOption.forall(x => e.exists(_.focus === x))
+      val m = l.forall(x => e.exists(_.focus === x)) ||
+        r.headOption.forall(x => e.exists(_.focus === x))
       assert(m)
     }
   }
 
-  // For some reason this fails in travis
-//  checkAll("Functor[Zipper]", FunctorTests[Zipper].functor)
+  checkAll("Functor[Zipper]", FunctorTests[Zipper].functor[Int, Int, Int])
+  checkAll("Traversable[Zipper]",
+           TraverseTests[Zipper].traverse[Int, Int, Int, Int, Option, Option])
   checkAll("Eq[Zipper]", EqTests[Zipper[Int]].eqv)
+  checkAll("Zipper.zipperT", TraversalTests(Zipper.zipperT[Int]))
+  // The zippers are unlawful
+  // checkAll("Zipper.filterValue", TraversalTests(Zipper.filterValue[Int](_ % 2 === 0)))
+  // checkAll("Zipper.filterZ", TraversalTests(Zipper.filterZ[Int](_ % 2 === 0)))
 }

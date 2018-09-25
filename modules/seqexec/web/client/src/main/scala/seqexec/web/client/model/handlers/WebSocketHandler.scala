@@ -6,15 +6,15 @@ package seqexec.web.client.handlers
 import boopickle.DefaultBasic._
 import cats.implicits._
 import diode.util.RunAfterJS
-import diode.{Action, ActionHandler, ActionResult, Effect, ModelRW, NoAction}
-import diode.data.{Pending, Pot, Ready}
-import java.util.logging.{Level, Logger}
+import diode.{ Action, ActionHandler, ActionResult, Effect, ModelRW, NoAction }
+import diode.data.{ Pending, Pot, Ready }
+import java.util.logging.{ Level, Logger }
 import java.time.Instant
 import mouse.all._
 import org.scalajs.dom._
 import scala.concurrent.Future
 import scala.concurrent.duration._
-import scala.scalajs.js.typedarray.{ArrayBuffer, TypedArrayBuffer}
+import scala.scalajs.js.typedarray.{ ArrayBuffer, TypedArrayBuffer }
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import seqexec.model.boopickle.ModelBooPicklers
 import seqexec.model.enum.ServerLogLevel

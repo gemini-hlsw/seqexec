@@ -4,7 +4,7 @@
 package seqexec.web.common
 
 import org.scalacheck.Arbitrary.arbitrary
-import org.scalacheck.{Arbitrary, Cogen, Gen}
+import org.scalacheck.{ Arbitrary, Cogen, Gen }
 import cats.data.NonEmptyList
 
 object ArbitrariesWebCommon {
@@ -27,7 +27,7 @@ object ArbitrariesWebCommon {
       val maxSize = 100
       for {
         h <- arbitrary[A]
-        l <- Gen.choose(1, maxSize)
+        l <- Gen.choose(0, maxSize)
         d <- Gen.listOfN(l, arbitrary[A])
       } yield Zipper.fromNel(NonEmptyList.of(h, d: _*))
     }

@@ -12,7 +12,7 @@ import japgolly.scalajs.react.extra.Reusability
 import gem.enum.Site
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.model.Pages._
-import seqexec.web.client.components.sequence.{HeadersSideBar, SequenceArea}
+import seqexec.web.client.components.tabs.TabsArea
 import seqexec.web.client.model.WebSocketConnection
 import seqexec.web.client.reusability._
 import web.client.style._
@@ -88,7 +88,7 @@ object SeqexecMain {
           <.div(
             ^.cls := "ui row",
             SeqexecStyles.shorterRow,
-            SequenceArea(SequenceArea.Props(p.ctl, p.site))
+            TabsArea(TabsArea.Props(p.ctl, p.site))
           ),
           <.div(
             ^.cls := "ui row",

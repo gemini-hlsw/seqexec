@@ -51,7 +51,7 @@ body {
   text-align: center;
 }
 
-.SeqexecStyles-instrumentTabLabel {
+.SeqexecStyles-tabLabel {
   width: 100%;
   text-align: center;
 }
@@ -72,16 +72,16 @@ body {
   margin-left: auto;
 }
 
-.SeqexecStyles-instrumentTab {
+.SeqexecStyles-tab {
   min-width: 20%;
   outline: none;
 }
 
-.SeqexecStyles-activeInstrumentContent {
+.SeqexecStyles-activeTabContent {
   background-color: @secondaryBackground !important;
 }
 
-.SeqexecStyles-inactiveInstrumentContent {
+.SeqexecStyles-inactiveTabContent {
   border-top: @border !important;
   border-left: @border !important;
   border-top-left-radius: @borderRadius;
@@ -117,20 +117,20 @@ body {
   height: ~"calc(100vh - 25.2em)";
 }
 
-.SeqexecStyles-instrumentTabSegment {
+.SeqexecStyles-tabSegment {
   min-height: 20.4em;
   padding: 0.4em !important;
 }
 
-.SeqexecStyles-instrumentTabSegmentLogHidden {
+.SeqexecStyles-tabSegmentLogHidden {
   height: ~"calc(100vh - 30.1em)";
 }
 
-.SeqexecStyles-instrumentTabSegmentLogShown {
+.SeqexecStyles-tabSegmentLogShown {
   height: ~"calc(100vh - 44.8em)";
 }
 
-.SeqexecStyles-instrumentTabSegmentUnauth {
+.SeqexecStyles-tabSegmentUnauth {
   min-height: 18.4em;
   padding-right: 0.4em !important;
   padding-left: 0.4em !important;
@@ -138,11 +138,11 @@ body {
   padding-bottom: 0.4em !important;
 }
 
-.SeqexecStyles-instrumentTabSegmentLogHiddenUnauth {
+.SeqexecStyles-tabSegmentLogHiddenUnauth {
   height: ~"calc(100vh - 30.1em)";
 }
 
-.SeqexecStyles-instrumentTabSegmentLogShownUnauth {
+.SeqexecStyles-tabSegmentLogShownUnauth {
   height: ~"calc(100vh - 44.8em)";
 }
 
@@ -174,7 +174,7 @@ body {
 .SeqexecStyles-sequencesArea
   > div
   > .tabular.menu
-  > .SeqexecStyles-inactiveInstrumentContent:last-child {
+  > .SeqexecStyles-inactiveTabContent:last-child {
   border-right: @border !important;
 }
 
@@ -986,7 +986,7 @@ body {
     max-height: 10.1em;
     min-height: 10.1em;
   }
-  .SeqexecStyles-instrumentTabSegment {
+  .SeqexecStyles-tabSegment {
     .mobileSegment;
     min-height: 32.3em;
   }
@@ -1011,11 +1011,11 @@ body {
     padding: 0em !important;
   }
 
-  .SeqexecStyles-instrumentTabSegmentLogHidden {
+  .SeqexecStyles-tabSegmentLogHidden {
     height: ~"calc(100vh - 21.1em)";
   }
 
-  .SeqexecStyles-instrumentTabSegmentLogShown {
+  .SeqexecStyles-tabSegmentLogShown {
     height: ~"calc(100vh - 35.8em)";
   }
   .SeqexecStyles-emptyInstrumentTab {
@@ -1034,17 +1034,17 @@ body {
     margin-top: 0.1em !important;
     margin-bottom: 0.1em !important;
   }
-  .SeqexecStyles-instrumentTabSegmentUnauth {
+  .SeqexecStyles-tabSegmentUnauth {
     padding-right: 0.1em !important;
     padding-left: 0.1em !important;
     padding-top: 0.1em !important;
     padding-bottom: 0.1em !important;
   }
-  .SeqexecStyles-instrumentTabSegmentLogHiddenUnauth {
+  .SeqexecStyles-tabSegmentLogHiddenUnauth {
     height: ~"calc(100vh - 21.1em)";
   }
 
-  .SeqexecStyles-instrumentTabSegmentLogShownUnauth {
+  .SeqexecStyles-tabSegmentLogShownUnauth {
     height: ~"calc(100vh - 35.9em)";
   }
 }

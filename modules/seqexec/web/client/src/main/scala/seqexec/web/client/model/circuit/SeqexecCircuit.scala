@@ -95,20 +95,33 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
       HeaderSideBarFocus(clientStatus, c.uiModel.sequences.conditions, c.uiModel.sequences.operator, obs)
     }
 
+
   val logDisplayedReader: ModelR[SeqexecAppRootModel, SectionVisibilityState] =
-    zoom(_.uiModel.globalLog.display)
+    this.zoomL(SeqexecAppRootModel.logDisplayL)
 
-  val tabsReader: ModelR[SeqexecAppRootModel, InstrumentTabFocus] =
-    zoom(_.uiModel.defaultObserver).zip(zoom(_.uiModel.sequencesOnDisplay.availableTabs)(fastEq[NonEmptyList[AvailableTab]])).zoom {
-      case (u, tabs) => InstrumentTabFocus(tabs, u)
-    }(fastEq[InstrumentTabFocus])
-
-  val sequenceTabs: ModelR[SeqexecAppRootModel, NonEmptyList[SequenceTabContentFocus]] =
-    statusReader.zip(logDisplayedReader.zip(zoom(_.uiModel.sequencesOnDisplay))).zoom {
-      case (s, (log, SequencesOnDisplay(sequences))) => sequences.withFocus.map{
-        case (tab, active) => SequenceTabContentFocus(s.isLogged, tab.instrument, tab.sequence.map(_.id), active, log)
-      }.toNel
+  val tabsReader: ModelR[SeqexecAppRootModel, TabFocus] = {
+    val getter = SeqexecAppRootModel.uiModel composeGetter (SeqexecUIModel.sequencesOnDisplay composeGetter SequencesOnDisplay.availableTabsG).zip(SeqexecUIModel.defaultObserverG)
+    val constructor = ClientStatus.canOperateG.zip(getter) >>> { case (o, (t, ob)) =>
+      TabFocus(o, t, ob)
     }
+
+    this.zoomG(constructor)
+  }
+
+  val seqexecTabs: ModelR[SeqexecAppRootModel, NonEmptyList[TabContentFocus]] = {
+    val getter = SeqexecAppRootModel.logDisplayL.asGetter.zip(SeqexecAppRootModel.sequencesOnDisplayL.asGetter)
+    val constructor = ClientStatus.canOperateG.zip(getter) >>> { p =>
+      val (o, (log, SequencesOnDisplay(tabs))) = p
+      NonEmptyList.fromListUnsafe(tabs.withFocus.toList.collect {
+        case (tab: SequenceTab, active)       =>
+          SequenceTabContentFocus(o, tab.instrument, tab.sequence.map(_.id), TabSelected.fromBoolean(active), log)
+        case (_: CalibrationQueueTab, active) =>
+          QueueTabContentFocus(o, TabSelected.fromBoolean(active), log)
+      })
+    }
+
+    this.zoomG(constructor)
+  }
 
   val configTableState: ModelR[SeqexecAppRootModel, TableState[StepConfigTable.TableColumn]] =
     zoom(_.uiModel.configTableState)
@@ -116,20 +129,20 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   val sequencesOnDisplayRW: ModelRW[SeqexecAppRootModel, SequencesOnDisplay] =
     this.zoomRWL(SeqexecAppRootModel.uiModel ^|-> SeqexecUIModel.sequencesOnDisplay)
 
-  def sequenceTab(id: Observation.Id): ModelR[SeqexecAppRootModel, SequenceTabActive] =
-    // Returning the getOrElse part shouldn't happen but it simplifies the model notcarrying the Option up
-    zoom(_.uiModel.sequencesOnDisplay.tab(id).getOrElse(SequenceTabActive.Empty))
+  def sequenceTab(id: Observation.Id): ModelR[SeqexecAppRootModel, SeqexecTabActive] =
+    // Returning the getOrElse part shouldn't happen but it simplifies the model not carrying the Option up
+    zoom(_.uiModel.sequencesOnDisplay.tab(id).getOrElse(SeqexecTabActive.Empty))
 
   def sequenceObserverReader(id: Observation.Id): ModelR[SeqexecAppRootModel, SequenceInfoFocus] =
     statusReader.zip(sequenceTab(id)).zoom {
-      case (status, SequenceTabActive(tab, _)) =>
+      case (status, SeqexecTabActive(tab, _)) =>
         val targetName = tab.sequence.flatMap(firstScienceStepTargetNameT.headOption)
         SequenceInfoFocus(status.isLogged, tab.sequence.map(_.metadata.name), tab.sequence.map(_.status), targetName)
     }
 
   def statusAndStepReader(id: Observation.Id): ModelR[SeqexecAppRootModel, Option[StatusAndStepFocus]] =
     statusReader.zip(sequenceTab(id)).zoom {
-      case (status, SequenceTabActive(tab, _)) =>
+      case (status, SeqexecTabActive(tab, _)) =>
         tab.sequence.map { t =>
           StatusAndStepFocus(status.isLogged, t.metadata.instrument, t.id, tab.stepConfigDisplayed, t.steps.length, tab.isPreview)
         }
@@ -137,7 +150,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
 
   def stepsTableReaderF(id: Observation.Id): ModelR[SeqexecAppRootModel, Option[StepsTableFocus]] =
     sequenceTab(id).zoom {
-      case SequenceTabActive(tab, _) =>
+      case SeqexecTabActive(tab, _) =>
         tab.sequence.map { sequence =>
           StepsTableFocus(sequence.id, sequence.metadata.instrument, sequence.status, sequence.steps, tab.stepConfigDisplayed, sequence.nextStepToRun, tab.isPreview, tab.tableState)
         }
@@ -150,7 +163,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
 
   def sequenceControlReader(obsId: Observation.Id): ModelR[SeqexecAppRootModel, SequenceControlFocus] =
     statusReader.zip(sequenceTab(obsId)).zoom {
-      case (status, SequenceTabActive(tab, _)) =>
+      case (status, SeqexecTabActive(tab, _)) =>
         SequenceControlFocus(status.canOperate, ControlModel.controlModelG.get(tab), status.syncInProgress)
     }(fastEq[SequenceControlFocus])
 

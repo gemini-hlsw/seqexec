@@ -11,7 +11,7 @@ import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.extra.Reusability
-import seqexec.web.client.actions.SelectEmptyPreview
+import seqexec.web.client.actions.SelectCalibrationQueue
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.model.WebSocketConnection
 import seqexec.web.client.model.Pages._
@@ -30,13 +30,14 @@ object Footer {
   implicit val propsReuse: Reusability[Props] = Reusability.by(_.site)
 
   private val userConnect = SeqexecCircuit.connect(SeqexecCircuit.statusReader)
-  private val wsConnect = SeqexecCircuit.connect(_.ws)
+  private val wsConnect   = SeqexecCircuit.connect(_.ws)
 
   private def goHome(p: Props)(e: ReactEvent): Callback =
     e.preventDefaultCB *>
-    p.router.dispatchAndSetUrlCB(SelectEmptyPreview)
+      p.router.dispatchAndSetUrlCB(SelectCalibrationQueue)
 
-  private val component = ScalaComponent.builder[Props]("SeqexecAppBar")
+  private val component = ScalaComponent
+    .builder[Props]("SeqexecAppBar")
     .stateless
     .render_P(p =>
       <.div(
@@ -49,8 +50,7 @@ object Footer {
         HeaderItem(HeaderItem.Props(OcsBuildInfo.version, sub = true)),
         wsConnect(ConnectionState.apply),
         userConnect(ControlMenu.apply)
-      )
-    )
+    ))
     .componentDidMount(ctx =>
       Callback {
         // Mount the Semantic component using jQuery
@@ -58,9 +58,11 @@ object Footer {
         import web.client.facades.semanticui.SemanticUIVisibility._
 
         // Pick the top bar and make it stay visible regardless of scrolling
-        ctx.getDOMNode.foreach { dom => $(dom).visibility(JsVisiblityOptions.visibilityType("fixed").offset(0)) }
-      }
-    )
+        ctx.getDOMNode.foreach { dom =>
+          $(dom).visibility(
+            JsVisiblityOptions.visibilityType("fixed").offset(0))
+        }
+    })
     .configure(Reusability.shouldComponentUpdate)
     .build
 
@@ -76,30 +78,32 @@ object ConnectionState {
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
-  def formatTime(delay: Int): String = if (delay < 1000) {
-    f"${delay / 1000.0}%.1f"
-  } else {
-    f"${delay / 1000}%d"
-  }
+  def formatTime(delay: Int): String =
+    if (delay < 1000) {
+      f"${delay / 1000.0}%.1f"
+    } else {
+      f"${delay / 1000}%d"
+    }
 
-  private val component = ScalaComponent.builder[Props]("ConnectionState")
+  private val component = ScalaComponent
+    .builder[Props]("ConnectionState")
     .stateless
-    .render_P( p =>
+    .render_P(p =>
       <.div(
         ^.cls := "ui header item sub",
-        p.u.ws.renderPending(t =>
-          <.div(
-            IconAttention.copyIcon(color = Option("red")),
-            <.span(
-              SeqexecStyles.errorText,
-              s"Connection lost, retrying in ${formatTime(p.u.nextAttempt)} [s] ..."
-            )
-          )
-        )
-      )
-    )
+        p.u.ws.renderPending(
+          t =>
+            <.div(
+              IconAttention.copyIcon(color = Option("red")),
+              <.span(
+                SeqexecStyles.errorText,
+                s"Connection lost, retrying in ${formatTime(p.u.nextAttempt)} [s] ..."
+              )
+          ))
+    ))
     .configure(Reusability.shouldComponentUpdate)
     .build
 
-  def apply(u: ModelProxy[WebSocketConnection]): Unmounted[Props, Unit, Unit] = component(Props(u()))
+  def apply(u: ModelProxy[WebSocketConnection]): Unmounted[Props, Unit, Unit] =
+    component(Props(u()))
 }

@@ -103,7 +103,7 @@ echo "--- :webpack: Webpack"
 ###
 ### WEIGH
 ###
-if [ "$BUILDKITE" = "true" ] && [ -n "$GITHUB_TOKEN" ]; then
+if [ "$BUILDKITE" = "true" ] && [ -n "$GITHUB_TOKEN" ] && [ -n "$BUILDKITE_PULL_REQUEST" ]; then
   echo "--- :github: Calculate assets' sizes"
   $BUILDKITE_BUILD_CHECKOUT_PATH/build/weigh.sh
 fi

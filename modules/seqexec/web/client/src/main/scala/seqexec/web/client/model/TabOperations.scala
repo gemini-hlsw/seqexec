@@ -15,9 +15,10 @@ object RunOperation {
     Eq.fromUniversalEquals
 
 }
+
 /**
- * Hold transient states while excuting an operation
- */
+  * Hold transient states while excuting an operation
+  */
 @Lenses
 final case class TabOperations(runRequested: RunOperation)
 
