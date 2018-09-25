@@ -67,15 +67,15 @@ object ModelOps {
 
     def flipSkipMarkAtStep(step: Step): SequenceView =
       s.copy(steps = s.steps.collect {
-        case st: StandardStep if st == step => st.copy(skip = !st.skip)
-        case st                             => st
+        case st: StandardStep if st.id === step.id => st.copy(skip = !st.skip)
+        case st                                    => st
       })
 
     def flipBreakpointAtStep(step: Step): SequenceView =
       s.copy(steps = s.steps.collect {
-        case st: StandardStep if st == step =>
+        case st: StandardStep if st.id === step.id =>
           st.copy(breakpoint = !st.breakpoint)
-        case st => st
+        case st                                    => st
       })
 
     def nextStepToRun: Option[Int] =

@@ -10,6 +10,7 @@ import seqexec.web.client.model._
 /**
   * Handles actions related to opening/closing a modal
   */
+@SuppressWarnings(Array("org.wartremover.warts.Equals"))
 class ModalBoxHandler[M](openAction: Action, closeAction: Action, modelRW: ModelRW[M, SectionVisibilityState]) extends ActionHandler(modelRW) with Handlers[M, SectionVisibilityState] {
   def openModal: PartialFunction[Any, ActionResult[M]] = {
     case x if x == openAction && value === SectionClosed =>

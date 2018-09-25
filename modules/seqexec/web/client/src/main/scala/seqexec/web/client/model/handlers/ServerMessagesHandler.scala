@@ -73,7 +73,7 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus]) extends Act
     case ServerMessage(SequenceCompleted(sv)) =>
       // Play audio when the sequence completes
       val audioEffect = Effect(Future(SequenceCompleteAudio.play()).map(_ => NoAction))
-      val rememberCompleted = Effect(Future(sv.queue.find(_.status == SequenceState.Completed).fold(NoAction: Action)(RememberCompleted.apply)))
+      val rememberCompleted = Effect(Future(sv.queue.find(_.status === SequenceState.Completed).fold(NoAction: Action)(RememberCompleted.apply)))
       updated(value.copy(sequences = filterSequences(sv)), audioEffect + rememberCompleted)
   }
 
