@@ -1,7 +1,7 @@
 // Copyright (c) 2016-2018 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
-package seqexec.web.client.components.sequence
+package seqexec.web.client.components
 
 import diode.react.ModelProxy
 import seqexec.model.enum.{ CloudCover, ImageQuality, SkyBackground, WaterVapor }
@@ -11,7 +11,6 @@ import seqexec.web.client.semanticui.elements.label.FormLabel
 import seqexec.web.client.semanticui.elements.input.InputEV
 import seqexec.web.client.circuit.{ HeaderSideBarFocus, SeqexecCircuit, SequenceObserverFocus }
 import seqexec.web.client.actions.{ UpdateCloudCover, UpdateImageQuality, UpdateOperator, UpdateDefaultObserver, UpdateObserver, UpdateSkyBackground, UpdateWaterVapor }
-import seqexec.web.client.components.SeqexecStyles
 import web.client.style._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.{BackendScope, Callback, ScalaComponent}

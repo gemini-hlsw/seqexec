@@ -281,7 +281,7 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
         g <- arbitrary[Boolean]
         i <- arbitrary[Option[Instrument]]
         d <- arbitrary[Option[Observation.Id]]
-        s <- arbitrary[Boolean]
+        s <- arbitrary[TabSelected]
         l <- arbitrary[SectionVisibilityState]
       } yield SequenceTabContentFocus(g, i, d, s, l)
     }
@@ -289,21 +289,22 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
   implicit val stcfCogen: Cogen[SequenceTabContentFocus] =
     Cogen[(Option[Instrument],
            Option[Observation.Id],
-           Boolean,
+           TabSelected,
            SectionVisibilityState)]
-      .contramap(x => (x.instrument, x.id, x.sequenceSelected, x.logDisplayed))
+      .contramap(x => (x.instrument, x.id, x.active, x.logDisplayed))
 
   implicit val arbQtcf: Arbitrary[QueueTabContentFocus] =
     Arbitrary {
       for {
         g <- arbitrary[Boolean]
+        a <- arbitrary[TabSelected]
         s <- arbitrary[SectionVisibilityState]
-      } yield QueueTabContentFocus(g, s)
+      } yield QueueTabContentFocus(g, a, s)
     }
 
   implicit val qtcfCogen: Cogen[QueueTabContentFocus] =
-    Cogen[(Boolean, SectionVisibilityState)]
-      .contramap(x => (x.canOperate, x.logDisplayed))
+    Cogen[(Boolean, TabSelected, SectionVisibilityState)]
+      .contramap(x => (x.canOperate, x.active, x.logDisplayed))
 
   implicit val arbtcf: Arbitrary[TabContentFocus] = Arbitrary {
     Gen.frequency(10 -> arbitrary[SequenceTabContentFocus],

@@ -171,6 +171,7 @@ package circuit {
   sealed trait TabContentFocus extends Product with Serializable {
     val canOperate: Boolean
     val logDisplayed: SectionVisibilityState
+    val active: TabSelected
   }
 
   object TabContentFocus {
@@ -182,26 +183,27 @@ package circuit {
       }
   }
 
-  final case class SequenceTabContentFocus(canOperate:       Boolean,
-                                           instrument:       Option[Instrument],
-                                           id:               Option[Observation.Id],
-                                           sequenceSelected: Boolean,
-                                           logDisplayed:     SectionVisibilityState)
+  final case class SequenceTabContentFocus(canOperate:   Boolean,
+                                           instrument:   Option[Instrument],
+                                           id:           Option[Observation.Id],
+                                           active:       TabSelected,
+                                           logDisplayed: SectionVisibilityState)
       extends TabContentFocus
 
   object SequenceTabContentFocus {
     implicit val eq: Eq[SequenceTabContentFocus] =
       Eq.by(x =>
-        (x.canOperate, x.instrument, x.id, x.sequenceSelected, x.logDisplayed))
+        (x.canOperate, x.instrument, x.id, x.active, x.logDisplayed))
   }
 
   final case class QueueTabContentFocus(canOperate:   Boolean,
+                                        active:       TabSelected,
                                         logDisplayed: SectionVisibilityState)
       extends TabContentFocus
 
   object QueueTabContentFocus {
     implicit val eq: Eq[QueueTabContentFocus] =
-      Eq.by(x => (x.canOperate, x.logDisplayed))
+      Eq.by(x => (x.canOperate, x.active, x.logDisplayed))
   }
 
   final case class SequenceInfoFocus(isLogged:   Boolean,

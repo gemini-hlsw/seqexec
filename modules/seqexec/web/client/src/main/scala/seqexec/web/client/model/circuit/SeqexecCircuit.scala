@@ -114,8 +114,10 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
     val constructor = ClientStatus.canOperateG.zip(getter) >>> { p =>
       val (o, (log, SequencesOnDisplay(tabs))) = p
       NonEmptyList.fromListUnsafe(tabs.withFocus.toList.collect {
-        case (tab: SequenceTab, active)  => SequenceTabContentFocus(o, tab.instrument, tab.sequence.map(_.id), active, log)
-        case (_: CalibrationQueueTab, _) => QueueTabContentFocus(o, log)
+        case (tab: SequenceTab, active)       =>
+          SequenceTabContentFocus(o, tab.instrument, tab.sequence.map(_.id), TabSelected.fromBoolean(active), log)
+        case (_: CalibrationQueueTab, active) =>
+          QueueTabContentFocus(o, TabSelected.fromBoolean(active), log)
       })
     }
 
