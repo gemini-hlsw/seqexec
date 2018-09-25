@@ -17,7 +17,7 @@ object TestAuthenticationService extends AuthService {
 
   override def authenticateUser(username: String, password: String): IO[AuthResult] = IO.pure {
     cannedUsers.collectFirst {
-      case (ud@UserDetails(u, _), p) if u == username && p == password => ud
+      case (ud@UserDetails(u, _), p) if u === username && p === password => ud
     }.fold(BadCredentials(username).asLeft[UserDetails])(_.asRight)
   }
 }
