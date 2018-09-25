@@ -101,8 +101,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
 
   val tabsReader: ModelR[SeqexecAppRootModel, TabFocus] = {
     val getter = SeqexecAppRootModel.uiModel composeGetter (SeqexecUIModel.sequencesOnDisplay composeGetter SequencesOnDisplay.availableTabsG).zip(SeqexecUIModel.defaultObserverG)
-    val constructor = ClientStatus.canOperateG.zip(getter) >>> { p =>
-      val (o, (t, ob)) = p
+    val constructor = ClientStatus.canOperateG.zip(getter) >>> { case (o, (t, ob)) =>
       TabFocus(o, t, ob)
     }
 

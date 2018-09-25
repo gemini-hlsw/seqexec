@@ -26,11 +26,9 @@ object ClientStatus {
   val clientStatusFocusL: Lens[SeqexecAppRootModel, ClientStatus] =
     Lens[SeqexecAppRootModel, ClientStatus](m =>
       ClientStatus(m.uiModel.user, m.ws, m.uiModel.syncInProgress))(
-      v =>
-        m =>
-          m.copy(ws = v.w,
-                 uiModel = m.uiModel.copy(user = v.u,
-                                          syncInProgress = v.syncInProgress)))
+      v => m => m.copy(ws = v.w,
+                       uiModel = m.uiModel.copy(user = v.u,
+                                                syncInProgress = v.syncInProgress)))
 
   val canOperateG: Getter[SeqexecAppRootModel, Boolean] =
     clientStatusFocusL.composeGetter(

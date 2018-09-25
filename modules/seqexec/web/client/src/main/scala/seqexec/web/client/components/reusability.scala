@@ -19,31 +19,24 @@ import seqexec.web.client.circuit._
 import seqexec.model.{ Observer, Step, StepConfig, StepState, UserDetails }
 
 package object reusability {
-  implicit val stepStateReuse: Reusability[StepState]       = Reusability.byEq
-  implicit val instrumentReuse: Reusability[Instrument]     = Reusability.byEq
-  implicit val obsIdReuse: Reusability[Observation.Id]      = Reusability.byEq
-  implicit val siteReuse: Reusability[Site]                 = Reusability.byEq
-  implicit val observerReuse: Reusability[Observer]         = Reusability.byEq
-  implicit val stepConfigReuse: Reusability[StepConfig]     = Reusability.byEq
-  implicit val stepReuse: Reusability[Step]                 = Reusability.byEq
-  implicit val clientStatusReuse: Reusability[ClientStatus] = Reusability.byEq
-  implicit val stepsTableFocusReuse: Reusability[StepsTableFocus] =
-    Reusability.byEq
-  implicit val statusAndStepFocusReuse: Reusability[StatusAndStepFocus] =
-    Reusability.byEq
-  implicit val seqControlFocusReuse: Reusability[SequenceControlFocus] =
-    Reusability.byEq
-  implicit val stsfReuse: Reusability[StepsTableAndStatusFocus] =
-    Reusability.byEq
-  implicit val tabSelReuse: Reusability[TabSelected] = Reusability.byRef
-  implicit val sectonReuse: Reusability[SectionVisibilityState] =
-    Reusability.byRef
-  implicit val potStateReuse: Reusability[PotState] = Reusability.byRef
-  implicit val webSocketConnectionReuse: Reusability[WebSocketConnection] =
-    Reusability.by(_.ws.state)
-  implicit val runOperationReuse: Reusability[RunOperation]  = Reusability.byRef
-  implicit val availableTabsReuse: Reusability[AvailableTab] = Reusability.byEq
-  implicit val userDetailsReuse: Reusability[UserDetails]    = Reusability.byEq
-  implicit val userNotificationReuse: Reusability[UserNotificationState] =
-    Reusability.byEq
+  implicit val stepStateReuse: Reusability[StepState]          = Reusability.byEq
+  implicit val instrumentReuse: Reusability[Instrument]        = Reusability.byEq
+  implicit val obsIdReuse: Reusability[Observation.Id]         = Reusability.byEq
+  implicit val siteReuse: Reusability[Site]                    = Reusability.byEq
+  implicit val observerReuse: Reusability[Observer]            = Reusability.byEq
+  implicit val stepConfigReuse: Reusability[StepConfig]        = Reusability.byEq
+  implicit val stepReuse: Reusability[Step]                    = Reusability.byEq
+  implicit val clientStatusReuse: Reusability[ClientStatus]    = Reusability.byEq
+  implicit val stTbFocusReuse: Reusability[StepsTableFocus]    = Reusability.byEq
+  implicit val stASFocusReuse: Reusability[StatusAndStepFocus] = Reusability.byEq
+  implicit val sCFocusReuse: Reusability[SequenceControlFocus] = Reusability.byEq
+  implicit val stfReuse: Reusability[StepsTableAndStatusFocus] = Reusability.byEq
+  implicit val tabSelReuse: Reusability[TabSelected]           = Reusability.byRef
+  implicit val sectReuse: Reusability[SectionVisibilityState]  = Reusability.byRef
+  implicit val potStateReuse: Reusability[PotState]            = Reusability.byRef
+  implicit val webSCeuse: Reusability[WebSocketConnection]     = Reusability.by(_.ws.state)
+  implicit val runOperationReuse: Reusability[RunOperation]    = Reusability.byRef
+  implicit val availableTabsReuse: Reusability[AvailableTab]   = Reusability.byEq
+  implicit val userDetailsReuse: Reusability[UserDetails]      = Reusability.byEq
+  implicit val usrNotReuse: Reusability[UserNotificationState] = Reusability.byEq
 }

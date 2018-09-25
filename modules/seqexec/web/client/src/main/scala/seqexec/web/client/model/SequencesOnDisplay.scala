@@ -232,8 +232,7 @@ final case class SequencesOnDisplay(tabs: Zipper[SeqexecTab]) {
         SeqexecTabActive(i, selected)
     }.headOption
 
-  def availableTabs
-    : NonEmptyList[Either[CalibrationQueueTabActive, AvailableTab]] =
+  def availableTabs : NonEmptyList[Either[CalibrationQueueTabActive, AvailableTab]] =
     NonEmptyList.fromListUnsafe(tabs.withFocus.toList.collect {
       case (i: InstrumentSequenceTab, a) =>
         AvailableTab(i.sequence.map(_.id),
@@ -314,8 +313,7 @@ final case class SequencesOnDisplay(tabs: Zipper[SeqexecTab]) {
   def markOperations(
       id:      Observation.Id,
       updater: TabOperations => TabOperations): SequencesOnDisplay =
-    (SequencesOnDisplay.instrumentTabById(id) ^|-> InstrumentSequenceTab.tabOperations)
-      .modify(updater)(this)
+    (SequencesOnDisplay.instrumentTabById(id) ^|-> InstrumentSequenceTab.tabOperations).modify(updater)(this)
 
 }
 

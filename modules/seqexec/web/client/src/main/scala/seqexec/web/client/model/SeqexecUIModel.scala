@@ -6,13 +6,8 @@ package seqexec.web.client.model
 import cats.Eq
 import cats.implicits._
 import monocle.macros.Lenses
-import seqexec.model.{
-  Conditions,
-  Observer,
-  SequenceView,
-  SequencesQueue,
-  UserDetails
-}
+import seqexec.model.{ Conditions, Observer, SequenceView }
+import seqexec.model.{ SequencesQueue, UserDetails }
 import seqexec.web.common.FixedLengthBuffer
 import seqexec.web.client.components.sequence.steps.StepConfigTable
 import seqexec.web.client.components.QueueTableBody
