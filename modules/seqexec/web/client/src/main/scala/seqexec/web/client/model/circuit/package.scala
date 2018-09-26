@@ -71,10 +71,11 @@ package circuit {
     implicit val eq: Eq[SequencesFocus] =
       Eq.by(x => (x.sequences, x.sod))
 
-    val sequencesFocusL: Lens[SeqexecUIModel, SequencesFocus] =
-      Lens[SeqexecUIModel, SequencesFocus](m =>
-        SequencesFocus(m.sequences, m.sequencesOnDisplay))(v => m =>
-          m.copy(sequences = v.sequences, sequencesOnDisplay = v.sod))
+    val sequencesFocusL: Lens[SeqexecAppRootModel, SequencesFocus] =
+      Lens[SeqexecAppRootModel, SequencesFocus](m =>
+        SequencesFocus(m.sequences, m.uiModel.sequencesOnDisplay))(v => m =>
+          m.copy(sequences = v.sequences, uiModel = m.uiModel.copy(sequencesOnDisplay = v.sod)))
+
   }
 
   @Lenses
@@ -192,8 +193,7 @@ package circuit {
 
   object SequenceTabContentFocus {
     implicit val eq: Eq[SequenceTabContentFocus] =
-      Eq.by(x =>
-        (x.canOperate, x.instrument, x.id, x.active, x.logDisplayed))
+      Eq.by(x => (x.canOperate, x.instrument, x.id, x.active, x.logDisplayed))
   }
 
   final case class QueueTabContentFocus(canOperate:   Boolean,
@@ -307,29 +307,29 @@ package circuit {
   }
 
   @Lenses
-  final case class TableStates(
+  final case class AppTableStates(
       queueTable:      TableState[QueueTableBody.TableColumn],
       stepConfigTable: TableState[StepConfigTable.TableColumn],
       stepsTables:     Map[Observation.Id, TableState[StepsTable.TableColumn]])
       extends UseValueEq
 
   @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
-  object TableStates {
-    implicit val eq: Eq[TableStates] =
+  object AppTableStates {
+    implicit val eq: Eq[AppTableStates] =
       Eq.by(x => (x.queueTable, x.stepConfigTable, x.stepsTables))
 
-    val tableStateL: Lens[SeqexecUIModel, TableStates] =
-      Lens[SeqexecUIModel, TableStates](
-        m => TableStates(m.queueTableState,
+    val tableStateL: Lens[SeqexecUIModel, AppTableStates] =
+      Lens[SeqexecUIModel, AppTableStates](
+        m => AppTableStates(m.queueTableState,
                          m.configTableState,
                          m.sequencesOnDisplay.stepsTables))(
         v => m => m.copy(queueTableState  = v.queueTable,
                          configTableState = v.stepConfigTable,
                          sequencesOnDisplay = m.sequencesOnDisplay
-                           .updateStepsTableStates(v.stepsTables)))
+                           .updateTableStates(v.stepsTables)))
 
-    def stepTableAt(id: Observation.Id): Lens[TableStates, Option[TableState[StepsTable.TableColumn]]] =
-      TableStates.stepsTables ^|-> at(id)
+    def stepTableAt(id: Observation.Id): Lens[AppTableStates, Option[TableState[StepsTable.TableColumn]]] =
+      AppTableStates.stepsTables ^|-> at(id)
   }
 
 }

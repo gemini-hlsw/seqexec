@@ -16,18 +16,19 @@ import seqexec.model.enum.Instrument
   */
 @Lenses
 final case class SequencesQueue[T](
-  loaded:     Map[Instrument, Observation.Id],
-  conditions: Conditions,
-  operator:   Option[Operator],
-  queue:      List[T]
+  loaded:       Map[Instrument, Observation.Id],
+  conditions:   Conditions,
+  operator:     Option[Operator],
+  sessionQueue: List[T]
 )
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object SequencesQueue {
 
   implicit def equal[T: Eq]: Eq[SequencesQueue[T]] =
-    Eq.by(x => (x.loaded, x.conditions, x.operator, x.queue))
+    Eq.by(x => (x.loaded, x.conditions, x.operator, x.sessionQueue))
 
-  def queueItemG[T](predicate: T => Boolean): Getter[SequencesQueue[T], Option[T]] =
-    SequencesQueue.queue composeGetter Getter[List[T], Option[T]] { _.find(predicate) }
+  def queueItemG[T](pred: T => Boolean): Getter[SequencesQueue[T], Option[T]] =
+    SequencesQueue.sessionQueue
+      .composeGetter(Getter[List[T], Option[T]](_.find(pred)))
 }

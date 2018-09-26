@@ -26,7 +26,7 @@ class LoadedSequencesHandler[M](modelRW: ModelRW[M, SODLocationFocus]) extends A
       } else {
         SODLocationFocus.sod.modify(_.updateFromQueue(view).loadingComplete(sid).unsetPreviewOn(sid))
       }
-      val nextStepToRun = view.queue.find(_.id === sid).foldMap(_.nextStepToRun)
+      val nextStepToRun = view.sessionQueue.find(_.id === sid).foldMap(_.nextStepToRun)
       val upLocation = SODLocationFocus.location.set(SequencePage(i, sid, nextStepToRun.foldMap(StepIdDisplayed.apply)))
       updatedL(upSelected >>> upLocation)
 

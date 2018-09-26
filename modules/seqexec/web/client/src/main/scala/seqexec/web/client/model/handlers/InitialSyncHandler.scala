@@ -21,7 +21,7 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
  */
 class InitialSyncHandler[M](modelRW: ModelRW[M, InitialSyncFocus]) extends ActionHandler(modelRW) with Handlers[M, InitialSyncFocus] {
   def runningSequence(s: SeqexecModelUpdate): Option[SequenceView] =
-    s.view.queue.filter(_.status.isRunning).sortBy(_.id).headOption
+    s.view.sessionQueue.filter(_.status.isRunning).sortBy(_.id).headOption
 
   private def pageE(action: Action): InitialSyncFocus => InitialSyncFocus =
     PageActionP.getOption(action).map(p => InitialSyncFocus.location.set(p)).getOrElse(identity)
@@ -32,7 +32,7 @@ class InitialSyncHandler[M](modelRW: ModelRW[M, InitialSyncFocus]) extends Actio
     val loaded = s.loaded.values.toList
     // An unkown page was shown
     val effect = loaded.headOption.flatMap { id =>
-      s.queue.find(_.id === id).map { s =>
+      s.sessionQueue.find(_.id === id).map { s =>
         val nextStep = StepIdDisplayed(s.runningStep.foldMap(_.last))
         val action = SelectIdToDisplay(s.metadata.instrument, id, nextStep)
         (pageE(action), Effect(Future(action)))
@@ -45,7 +45,7 @@ class InitialSyncHandler[M](modelRW: ModelRW[M, InitialSyncFocus]) extends Actio
     // Otherwise, update the model to reflect the current page
     case ServerMessage(s: SeqexecModelUpdate) if value.firstLoad =>
       // the page maybe not in sync with the tabs. Let's fix that
-      val sids = s.view.queue.map(_.id)
+      val sids = s.view.sessionQueue.map(_.id)
       val loaded = s.view.loaded.values.toList
       // update will change the url if needed and effect cat
       val (update, effect) = value.location match {

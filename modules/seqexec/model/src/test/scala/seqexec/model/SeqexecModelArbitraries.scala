@@ -3,7 +3,9 @@
 
 package seqexec.model
 
-import org.scalacheck.{Arbitrary, Cogen, Gen}
+import org.scalacheck.Arbitrary
+import org.scalacheck.Cogen
+import org.scalacheck.Gen
 import org.scalacheck.Arbitrary._
 import cats.implicits._
 import gem.Observation
@@ -53,7 +55,7 @@ trait SeqexecModelArbitraries extends ArbObservation {
     } yield SequenceMetadata(i, o, n)
   }
 
-  implicit val opArb  = Arbitrary[Operator] { arbitrary[String].map(Operator.apply) }
+  implicit val opArb  = Arbitrary[Operator] { Gen.alphaStr.map(Operator.apply) }
   implicit val spsArb = Arbitrary[StepState] {
     for {
       v1 <- Gen.oneOf(StepState.Pending, StepState.Completed, StepState.Skipped, StepState.Running, StepState.Paused)
@@ -94,10 +96,29 @@ trait SeqexecModelArbitraries extends ArbObservation {
   }
 
   implicit val snArb  = Arbitrary(Gen.oneOf(SystemName.all))
+
+  def asciiStr: Gen[String] =
+    Gen.listOf(Gen.alphaChar).map(_.mkString)
+
+  val stepItemG: Gen[(String, String)] =
+    for {
+      a <- asciiStr
+      b <- asciiStr
+    } yield (a, b)
+
+  val parametersGen: Gen[Parameters] = Gen.chooseNum(0, 10).flatMap(s => Gen.mapOfN[String, String](s, stepItemG))
+
+  val stepConfigG: Gen[(SystemName, Parameters)] =
+    for {
+      a <- arbitrary[SystemName]
+      b <- parametersGen
+    } yield (a, b)
+
+  val stepConfigGen: Gen[StepConfig] = Gen.chooseNum(0, 3).flatMap(s => Gen.mapOfN[SystemName, Parameters](s, stepConfigG))
   implicit val steArb = Arbitrary[Step] {
     for {
       id <- arbitrary[StepId]
-      c  <- arbitrary[StepConfig]
+      c  <- stepConfigGen
       s  <- arbitrary[StepState]
       b  <- arbitrary[Boolean]
       k  <- arbitrary[Boolean]
@@ -108,7 +129,7 @@ trait SeqexecModelArbitraries extends ArbObservation {
   implicit val stsArb = Arbitrary[StandardStep] {
     for {
       id <- arbitrary[StepId]
-      c  <- arbitrary[StepConfig]
+      c  <- stepConfigGen
       s  <- arbitrary[StepState]
       b  <- arbitrary[Boolean]
       k  <- arbitrary[Boolean]
@@ -197,7 +218,7 @@ trait SeqexecModelArbitraries extends ArbObservation {
     Cogen[(Observation.Id, SequenceMetadata, SequenceState, List[Step], Option[Int])].contramap(s => (s.id, s.metadata, s.status, s.steps, s.willStopIn))
 
   implicit def sqCogen[A: Cogen]: Cogen[SequencesQueue[A]] =
-    Cogen[(Conditions, Option[Operator], List[A])].contramap(s => (s.conditions, s.operator, s.queue))
+    Cogen[(Conditions, Option[Operator], List[A])].contramap(s => (s.conditions, s.operator, s.sessionQueue))
 
   implicit val offPCogen: Cogen[TelescopeOffset.P] =
     Cogen[Double].contramap(_.value)

@@ -6,10 +6,15 @@ package seqexec.model
 import seqexec.model.enum._
 import seqexec.model.events._
 
-import monocle.{Lens, Optional, Prism, Traversal}
-import monocle.macros.{GenLens, GenPrism}
-import monocle.function.At.{at, atMap}
-import monocle.function.FilterIndex.{filterIndex}
+import monocle.Lens
+import monocle.Optional
+import monocle.Prism
+import monocle.Traversal
+import monocle.macros.GenLens
+import monocle.macros.GenPrism
+import monocle.function.At.at
+import monocle.function.At.atMap
+import monocle.function.FilterIndex.filterIndex
 import monocle.unsafe.MapTraversal._
 import monocle.std.option.some
 import monocle.Iso
@@ -19,18 +24,24 @@ import cats.implicits._
 import mouse.all._
 
 trait ModelLenses {
-    // Some useful Monocle lenses
-  val obsNameL: Lens[SequenceView, String] = GenLens[SequenceView](_.metadata.name)
+  // Some useful Monocle lenses
+  val obsNameL: Lens[SequenceView, String] =
+    GenLens[SequenceView](_.metadata.name)
   // From step to standard step
   val standardStepP: Prism[Step, StandardStep] = GenPrism[Step, StandardStep]
-  val eachStepT: Traversal[List[Step], Step] = Traversal.fromTraverse[List, Step]
+  val eachStepT: Traversal[List[Step], Step] =
+    Traversal.fromTraverse[List, Step]
   val obsStepsL: Lens[SequenceView, List[Step]] = GenLens[SequenceView](_.steps)
-  val eachViewT: Traversal[List[SequenceView], SequenceView] = Traversal.fromTraverse[List, SequenceView]
-  val sequencesQueueL: Lens[SequencesQueue[SequenceView], List[SequenceView]] = GenLens[SequencesQueue[SequenceView]](_.queue)
+  val eachViewT: Traversal[List[SequenceView], SequenceView] =
+    Traversal.fromTraverse[List, SequenceView]
+  val sessionQueueL: Lens[SequencesQueue[SequenceView], List[SequenceView]] =
+    GenLens[SequencesQueue[SequenceView]](_.sessionQueue)
   // from standard step to config
-  val stepConfigL: Lens[StandardStep, StepConfig] = GenLens[StandardStep](_.config)
+  val stepConfigL: Lens[StandardStep, StepConfig] =
+    GenLens[StandardStep](_.config)
   // Prism to focus on only the SeqexecEvents that have a queue
-  val sequenceEventsP: Prism[SeqexecEvent, SeqexecModelUpdate] = GenPrism[SeqexecEvent, SeqexecModelUpdate]
+  val sequenceEventsP: Prism[SeqexecEvent, SeqexecModelUpdate] =
+    GenPrism[SeqexecEvent, SeqexecModelUpdate]
   // Required for type correctness
   val stepConfigRoot: Iso[Map[SystemName, Parameters], Map[SystemName, Parameters]] = Iso.id[Map[SystemName, Parameters]]
   val parametersRoot: Iso[Map[ParamName, ParamValue], Map[ParamName, ParamValue]] = Iso.id[Map[ParamName, ParamValue]]
@@ -81,12 +92,11 @@ trait ModelLenses {
       case e @ LoadSequenceUpdated(_, _, _, _) => e.copy(view = q)
       case e @ ClearLoadedSequencesUpdated(_)  => e.copy(view = q)
       case e                                   => e
-    }
-  )
+    })
 
   val sequenceViewT: Traversal[SeqexecModelUpdate, SequenceView] =
     sequenceQueueViewL ^|->  // Find the sequence view
-    sequencesQueueL    ^|->> // Find the queue
+    sessionQueueL      ^|->> // Find the queue
     eachViewT                // each sequence on the queue
 
   val sequenceStepT: Traversal[SequenceView, StandardStep] =
@@ -98,7 +108,7 @@ trait ModelLenses {
   val sequenceNameT: Traversal[SeqexecEvent, ObservationName] =
     sequenceEventsP    ^|->  // Events with model updates
     sequenceQueueViewL ^|->  // Find the sequence view
-    sequencesQueueL    ^|->> // Find the queue
+    sessionQueueL      ^|->> // Find the queue
     eachViewT          ^|->  // each sequence on the queue
     obsNameL              // sequence's observation name
 
@@ -106,7 +116,7 @@ trait ModelLenses {
   val sequenceConfigT: Traversal[SeqexecEvent, StepConfig] =
     sequenceEventsP    ^|->  // Events with model updates
     sequenceQueueViewL ^|->  // Find the sequence view
-    sequencesQueueL    ^|->> // Find the queue
+    sessionQueueL      ^|->> // Find the queue
     eachViewT          ^|->  // each sequence on the queue
     obsStepsL          ^|->> // sequence steps
     eachStepT          ^<-?  // each step
@@ -114,11 +124,14 @@ trait ModelLenses {
     stepConfigL             // configuration of the step
 
   def filterEntry[K, V](predicate: (K, V) => Boolean): Traversal[Map[K, V], V] =
-    new Traversal[Map[K, V], V]{
+    new Traversal[Map[K, V], V] {
       def modifyF[F[_]: Applicative](f: V => F[V])(s: Map[K, V]): F[Map[K, V]] =
-        s.toList.traverse{ case (k, v) =>
-          (if(predicate(k, v)) f(v) else v.pure[F]).tupleLeft(k)
-        }.map(kvs => kvs.toMap)
+        s.toList
+          .traverse {
+            case (k, v) =>
+              (if (predicate(k, v)) f(v) else v.pure[F]).tupleLeft(k)
+          }
+          .map(kvs => kvs.toMap)
     }
 
   // Find the Parameters of the steps containing science steps
@@ -158,7 +171,8 @@ trait ModelLenses {
   val observeCoaddsO: Optional[Step, Int] =
     stepObserveOptional(SystemName.Observe, "coadds", stringToIntP)
 
-  val stringToFPUModeP: Prism[String, FPUMode] = Prism(FPUMode.fromString)(_.show)
+  val stringToFPUModeP: Prism[String, FPUMode] =
+    Prism(FPUMode.fromString)(_.show)
   // Composite lens to find the instrument fpu model
   val instrumentFPUModeO: Optional[Step, FPUMode] =
     stepObserveOptional(SystemName.Instrument, "fpuMode", stringToFPUModeP)
@@ -169,7 +183,9 @@ trait ModelLenses {
 
   // Composite lens to find the instrument fpu custom mask
   val instrumentFPUCustomMaskO: Optional[Step, String] =
-    stepObserveOptional(SystemName.Instrument, "fpuCustomMask", Iso.id[String].asPrism)
+    stepObserveOptional(SystemName.Instrument,
+                        "fpuCustomMask",
+                        Iso.id[String].asPrism)
 
   // Composite lens to find the instrument filter
   val instrumentFilterO: Optional[Step, String] =
@@ -177,24 +193,33 @@ trait ModelLenses {
 
   // Composite lens to find the instrument disperser for GMOS
   val instrumentDisperserO: Optional[Step, String] =
-    stepObserveOptional(SystemName.Instrument, "disperser", Iso.id[String].asPrism)
+    stepObserveOptional(SystemName.Instrument,
+                        "disperser",
+                        Iso.id[String].asPrism)
 
   // Composite lens to find the instrument observing mode on GPI
   val instrumentObservingModeO: Optional[Step, String] =
-    stepObserveOptional(SystemName.Instrument, "observingMode", Iso.id[String].asPrism)
+    stepObserveOptional(SystemName.Instrument,
+                        "observingMode",
+                        Iso.id[String].asPrism)
 
   // Composite lens to find the central wavelength for a disperser
   val instrumentDisperserLambdaO: Optional[Step, Double] =
-    stepObserveOptional(SystemName.Instrument, "disperserLambda", stringToDoubleP)
+    stepObserveOptional(SystemName.Instrument,
+                        "disperserLambda",
+                        stringToDoubleP)
 
   // Lens to find p offset
   def telescopeOffsetO(x: OffsetAxis): Optional[Step, Double] =
     stepObserveOptional(SystemName.Telescope, x.configItem, stringToDoubleP)
 
-  val telescopeOffsetPO: Optional[Step, TelescopeOffset.P] = telescopeOffsetO(OffsetAxis.AxisP) ^<-> telescopeOffsetPI
-  val telescopeOffsetQO: Optional[Step, TelescopeOffset.Q] = telescopeOffsetO(OffsetAxis.AxisQ) ^<-> telescopeOffsetQI
+  val telescopeOffsetPO: Optional[Step, TelescopeOffset.P] = telescopeOffsetO(
+    OffsetAxis.AxisP) ^<-> telescopeOffsetPI
+  val telescopeOffsetQO: Optional[Step, TelescopeOffset.Q] = telescopeOffsetO(
+    OffsetAxis.AxisQ) ^<-> telescopeOffsetQI
 
-  val stringToGuidingP: Prism[String, Guiding] = Prism(Guiding.fromString)(_.configValue)
+  val stringToGuidingP: Prism[String, Guiding] =
+    Prism(Guiding.fromString)(_.configValue)
 
   // Lens to find guidingWith configurations
   val telescopeGuidingWithT: Traversal[Step, Guiding] =

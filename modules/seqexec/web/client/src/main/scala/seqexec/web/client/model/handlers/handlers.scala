@@ -19,7 +19,7 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 class SyncRequestsHandler[M](modelRW: ModelRW[M, Boolean]) extends ActionHandler(modelRW) with Handlers[M, Boolean] {
   def handleSyncRequestOperation: PartialFunction[Any, ActionResult[M]] = {
     case RequestSync(s) =>
-      updated(true, Effect(SeqexecWebClient.sync(s).map(r => if (r.queue.isEmpty) RunSyncFailed(s) else RunSync(s))))
+      updated(true, Effect(SeqexecWebClient.sync(s).map(r => if (r.sessionQueue.isEmpty) RunSyncFailed(s) else RunSync(s))))
   }
 
   def handleSyncResult: PartialFunction[Any, ActionResult[M]] = {
@@ -42,7 +42,7 @@ class SequenceExecutionHandler[M](modelRW: ModelRW[M, SequencesQueue[SequenceVie
   def handleUpdateObserver: PartialFunction[Any, ActionResult[M]] = {
     case UpdateObserver(sequenceId, name) =>
       val updateObserverE = Effect(SeqexecWebClient.setObserver(sequenceId, name.value).map(_ => NoAction))
-      val updatedSequences = value.copy(queue = value.queue.collect {
+      val updatedSequences = value.copy(sessionQueue = value.sessionQueue.collect {
         case s if s.id === sequenceId =>
           s.copy(metadata = s.metadata.copy(observer = Some(name)))
         case s                        => s
@@ -53,14 +53,14 @@ class SequenceExecutionHandler[M](modelRW: ModelRW[M, SequencesQueue[SequenceVie
   def handleFlipSkipBreakpoint: PartialFunction[Any, ActionResult[M]] = {
     case FlipSkipStep(sequenceId, step) =>
       val skipRequest = Effect(SeqexecWebClient.skip(sequenceId, step.flipSkip).map(_ => NoAction))
-      updated(value.copy(queue = value.queue.collect {
+      updated(value.copy(sessionQueue = value.sessionQueue.collect {
         case s if s.id === sequenceId => s.flipSkipMarkAtStep(step)
         case s                        => s
       }), skipRequest)
 
     case FlipBreakpointStep(sequenceId, step) =>
       val breakpointRequest = Effect(SeqexecWebClient.breakpoint(sequenceId, step.flipBreakpoint).map(_ => NoAction))
-      updated(value.copy(queue = value.queue.collect {
+      updated(value.copy(sessionQueue = value.sessionQueue.collect {
         case s if s.id === sequenceId => s.flipBreakpointAtStep(step)
         case s                        => s
       }), breakpointRequest)
@@ -121,7 +121,7 @@ class DefaultObserverHandler[M](modelRW: ModelRW[M, Observer]) extends ActionHan
 class DebuggingHandler[M](modelRW: ModelRW[M, SequencesQueue[SequenceView]]) extends ActionHandler(modelRW) with Handlers[M, SequencesQueue[SequenceView]] {
   override def handle: PartialFunction[Any, ActionResult[M]] = {
     case MarkStepAsRunning(obsId, step) =>
-      updated(value.copy(queue = value.queue.collect {
+      updated(value.copy(sessionQueue = value.sessionQueue.collect {
         case v: SequenceView if v.id === obsId => v.showAsRunning(step)
         case v                                 => v
       }))

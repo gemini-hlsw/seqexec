@@ -51,13 +51,13 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
 
   // Model read-writers
   val webSocketFocusRW: ModelRW[SeqexecAppRootModel, WebSocketsFocus] =
-    zoomRW(m => WebSocketsFocus(m.uiModel.navLocation, m.uiModel.sequences, m.uiModel.user, m.uiModel.defaultObserver, m.clientId, m.site)) ((m, v) => m.copy(uiModel = m.uiModel.copy(sequences = v.sequences, user = v.user, defaultObserver = v.defaultObserver), clientId = v.clientId, site = v.site))
+    zoomRW(m => WebSocketsFocus(m.uiModel.navLocation, m.sequences, m.uiModel.user, m.uiModel.defaultObserver, m.clientId, m.site)) ((m, v) => m.copy(sequences = v.sequences, uiModel = m.uiModel.copy(user = v.user, defaultObserver = v.defaultObserver), clientId = v.clientId, site = v.site))
 
   val initialSyncFocusRW: ModelRW[SeqexecAppRootModel, InitialSyncFocus] =
     this.zoomRWL(SeqexecAppRootModel.uiModel ^|-> InitialSyncFocus.initialSyncFocusL)
 
-  val tableStateRW: ModelRW[SeqexecAppRootModel, TableStates] =
-    this.zoomRWL(SeqexecAppRootModel.uiModel ^|-> TableStates.tableStateL)
+  val tableStateRW: ModelRW[SeqexecAppRootModel, AppTableStates] =
+    this.zoomRWL(SeqexecAppRootModel.uiModel ^|-> AppTableStates.tableStateL)
 
   // Reader to indicate the allowed interactions
   val statusReader: ModelR[SeqexecAppRootModel, ClientStatus] =
@@ -65,7 +65,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
 
   // Reader to update the sequences in both parts of the model being used
   val sequencesReaderRW: ModelRW[SeqexecAppRootModel, SequencesFocus] =
-    this.zoomRWL(SeqexecAppRootModel.uiModel ^|-> SequencesFocus.sequencesFocusL)
+    this.zoomRWL(SequencesFocus.sequencesFocusL)
 
   // Reader to update the selected sequences and location
   val sodLocationReaderRW: ModelRW[SeqexecAppRootModel, SODLocationFocus] =
@@ -73,7 +73,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
 
   // Some useful readers
   val statusAndLoadedSequencesReader: ModelR[SeqexecAppRootModel, StatusAndLoadedSequencesFocus] =
-    statusReader.zip(zoom(_.uiModel.sequences.queue).zip(zoom(_.uiModel.sequencesOnDisplay).zip(zoom(_.uiModel.queueTableState)))).zoom {
+    statusReader.zip(zoom(_.sequences.sessionQueue).zip(zoom(_.uiModel.sequencesOnDisplay).zip(zoom(_.uiModel.queueTableState)))).zoom {
       case (s, (queue, (sod, queueTable))) =>
         val sequencesInQueue = queue.map { s =>
           val active = sod.idDisplayed(s.id)
@@ -92,7 +92,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
         case Some(x) => x.asRight
         case _       => c.uiModel.defaultObserver.asLeft
       }
-      HeaderSideBarFocus(clientStatus, c.uiModel.sequences.conditions, c.uiModel.sequences.operator, obs)
+      HeaderSideBarFocus(clientStatus, c.sequences.conditions, c.sequences.operator, obs)
     }
 
 
@@ -176,14 +176,14 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   private val userLoginHandler         = new UserLoginHandler(zoomTo(_.uiModel.user))
   private val userNotificationHandler  = new NotificationsHandler(zoomTo(_.uiModel.notification))
   private val sequenceDisplayHandler   = new SequenceDisplayHandler(sequencesReaderRW)
-  private val sequenceExecHandler      = new SequenceExecutionHandler(zoomTo(_.uiModel.sequences))
+  private val sequenceExecHandler      = new SequenceExecutionHandler(zoomTo(_.sequences))
   private val globalLogHandler         = new GlobalLogHandler(zoomTo(_.uiModel.globalLog))
-  private val conditionsHandler        = new ConditionsHandler(zoomTo(_.uiModel.sequences.conditions))
-  private val operatorHandler          = new OperatorHandler(zoomTo(_.uiModel.sequences.operator))
+  private val conditionsHandler        = new ConditionsHandler(zoomTo(_.sequences.conditions))
+  private val operatorHandler          = new OperatorHandler(zoomTo(_.sequences.operator))
   private val defaultObserverHandler   = new DefaultObserverHandler(zoomTo(_.uiModel.defaultObserver))
   private val remoteRequestsHandler    = new RemoteRequestsHandler(zoomTo(_.clientId))
   private val syncRequestsHandler      = new SyncRequestsHandler(zoomTo(_.uiModel.syncInProgress))
-  private val debuggingHandler         = new DebuggingHandler(zoomTo(_.uiModel.sequences))
+  private val debuggingHandler         = new DebuggingHandler(zoomTo(_.sequences))
   private val tableStateHandler        = new TableStateHandler(tableStateRW)
   private val loadSequencesHandler     = new LoadedSequencesHandler(sodLocationReaderRW)
   private val operationsStateHandler   = new OperationsStateHandler(sequencesOnDisplayRW)

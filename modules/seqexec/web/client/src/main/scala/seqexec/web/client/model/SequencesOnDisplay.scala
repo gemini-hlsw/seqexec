@@ -59,10 +59,10 @@ final case class SequencesOnDisplay(tabs: Zipper[SeqexecTab]) {
     */
   def updateFromQueue(s: SequencesQueue[SequenceView]): SequencesOnDisplay = {
     val updated = updateLoaded(s.loaded.values.toList.map { id =>
-      s.queue.find(_.id === id)
+      s.sessionQueue.find(_.id === id)
     }).tabs.map {
       case p @ PreviewSequenceTab(curr, r, _, t, o) =>
-        s.queue
+        s.sessionQueue
           .find(_.id === curr.id)
           .map(s => PreviewSequenceTab(s, r, false, t, o))
           .getOrElse(p)
@@ -295,7 +295,7 @@ final case class SequencesOnDisplay(tabs: Zipper[SeqexecTab]) {
       }
       .toMap
 
-  def updateStepsTableStates(stepsTables: Map[Observation.Id, TableState[StepsTable.TableColumn]]): SequencesOnDisplay =
+  def updateTableStates(stepsTables: Map[Observation.Id, TableState[StepsTable.TableColumn]]): SequencesOnDisplay =
     copy(tabs = tabs.map {
       case i @ InstrumentSequenceTab(_, Some(curr), _, _, _, _) =>
         stepsTables
