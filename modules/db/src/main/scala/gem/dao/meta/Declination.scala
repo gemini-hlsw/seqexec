@@ -11,7 +11,7 @@ trait DeclinationMeta {
   import AngleMeta._
 
   implicit val DeclinationMeta: Meta[Declination] =
-    AngleMetaAsMicroarcseconds.xmap(Declination.fromAngle.unsafeGet(_), _.toAngle)
+    AngleMetaAsMicroarcseconds.timap(Declination.fromAngle.unsafeGet(_))(_.toAngle)
 
 }
 object DeclinationMeta extends DeclinationMeta

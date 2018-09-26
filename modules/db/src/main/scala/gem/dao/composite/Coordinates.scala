@@ -11,11 +11,17 @@ import gem.math._
 trait CoordinatesComposite {
 
   /** Coordinates composite, laid out in natural order, in microarcseconds. */
-  implicit val CoordinatesComposite: Composite[Coordinates] =
-    CoordinatesCompositeLemmas.CoordinatesComposite
+  implicit val CoordinatesRead: Read[Coordinates] =
+    CoordinatesCompositeLemmas.CoordinatesRead
 
-  implicit val CoordinatesOptionComposite: Composite[Option[Coordinates]] =
-    CoordinatesCompositeLemmas.CoordinatesOptionComposite
+  implicit val CoordinatesOptionRead: Read[Option[Coordinates]] =
+    CoordinatesCompositeLemmas.CoordinatesOptionRead
+
+  implicit val CoordinatesWrite: Write[Coordinates] =
+    CoordinatesCompositeLemmas.CoordinatesWrite
+
+  implicit val CoordinatesOptionWrite: Write[Option[Coordinates]] =
+    CoordinatesCompositeLemmas.CoordinatesOptionWrite
 
 }
 object CoordinatesComposite extends CoordinatesComposite
@@ -25,7 +31,10 @@ private object CoordinatesCompositeLemmas {
   import DeclinationMeta._
   import RightAscensionMeta._
 
-  val CoordinatesComposite: Composite[Coordinates] = implicitly
-  val CoordinatesOptionComposite: Composite[Option[Coordinates]] = implicitly
+  val CoordinatesRead: Read[Coordinates] = implicitly
+  val CoordinatesOptionRead: Read[Option[Coordinates]] = implicitly
+
+  val CoordinatesWrite: Write[Coordinates] = implicitly
+  val CoordinatesOptionWrite: Write[Option[Coordinates]] = implicitly
 
 }

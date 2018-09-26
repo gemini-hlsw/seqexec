@@ -12,11 +12,17 @@ import gem.optics.Format
  */
 class FormatOps[A, B](f: Format[A, B]) {
 
-  def toComposite(implicit mb: Composite[A]): Composite[B] =
-    mb.imap(f.unsafeGet(_))(f.reverseGet)
+  def toRead(implicit mb: Read[A]): Read[B] =
+    mb.map(f.unsafeGet(_))
 
-  def toOptionComposite(implicit mb: Composite[Option[A]]): Composite[Option[B]] =
-    mb.imap(_.map(a => f.unsafeGet(a)))(_.map(f.reverseGet))
+  def toOptionRead(implicit mb: Read[Option[A]]): Read[Option[B]] =
+    mb.map(_.map(a => f.unsafeGet(a)))
+
+ def toWrite(implicit mb: Write[A]): Write[B] =
+    mb.contramap(f.reverseGet)
+
+  def toOptionWrite(implicit mb: Write[Option[A]]): Write[Option[B]] =
+    mb.contramap(_.map(f.reverseGet))
 
 }
 

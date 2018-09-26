@@ -10,7 +10,7 @@ trait LevelMeta {
 
   // Java Log Levels (not nullable)
   implicit val levelMeta: Meta[Level] =
-    Meta[String].xmap(Level.parse, _.getName)
+    Meta[String].timap(Level.parse)(_.getName)
 
 }
 object LevelMeta extends LevelMeta

@@ -12,12 +12,20 @@ trait EphemerisKeyComposite {
   import FormatComposite._
 
   /** Map an EphemerisKey as an (EphemerisKeyType, String) pair. */
-  implicit val CompositeEphemerisKey: Composite[EphemerisKey] =
-    EphemerisKey.fromTypeAndDes.toComposite
+  implicit val ReadEphemerisKey: Read[EphemerisKey] =
+    EphemerisKey.fromTypeAndDes.toRead
 
   /** Map an Option[EphemerisKey] as a nullable (EphemerisKeyType, String) pair. */
-  implicit lazy val CompositeOptionEphemerisKey: Composite[Option[EphemerisKey]] =
-    EphemerisKey.fromTypeAndDes.toOptionComposite
+  implicit lazy val ReadOptionEphemerisKey: Read[Option[EphemerisKey]] =
+    EphemerisKey.fromTypeAndDes.toOptionRead
+
+  /** Map an EphemerisKey as an (EphemerisKeyType, String) pair. */
+  implicit val WriteEphemerisKey: Write[EphemerisKey] =
+    EphemerisKey.fromTypeAndDes.toWrite
+
+  /** Map an Option[EphemerisKey] as a nullable (EphemerisKeyType, String) pair. */
+  implicit lazy val WriteOptionEphemerisKey: Write[Option[EphemerisKey]] =
+    EphemerisKey.fromTypeAndDes.toOptionWrite
 
 }
 object EphemerisKeyComposite extends EphemerisKeyComposite

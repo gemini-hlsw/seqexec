@@ -58,7 +58,8 @@ object Settings {
       "-Ywarn-unused:patvars",             // Warn if a variable bound in a pattern is unused.
       "-Ywarn-unused:privates",            // Warn if a private member is unused.
       "-Ywarn-value-discard",              // Warn when non-Unit expression results are unused.
-      "-Ybackend-parallelism", JRuntime.getRuntime.availableProcessors.toString // Run some tasks in parallel
+      "-Ybackend-parallelism", JRuntime.getRuntime.availableProcessors.toString, // Run some tasks in parallel
+      "-Yrangepos"
     )
   }
 
@@ -81,10 +82,10 @@ object Settings {
     val scalaJSReactSortable    = "0.0.1"
 
     // Scala libraries
-    val catsEffectVersion       = "0.10.1"
+    val catsEffectVersion       = "1.0.0"
     val catsVersion             = "1.4.0"
     val mouseVersion            = "0.18"
-    val fs2Version              = "0.10.5"
+    val fs2Version              = "1.0.0-RC1"
     val shapelessVersion        = "2.3.3"
     val attoVersion             = "0.6.3"
     val scalaParsersVersion     = "1.1.1"
@@ -104,7 +105,7 @@ object Settings {
     val knobs                   = "6.0.33"
     val monocleVersion          = "1.5.1-cats"
     val circeVersion            = "0.10.0"
-    val doobieVersion           = "0.5.3"
+    val doobieVersion           = "0.6.0-M3"
     val flywayVersion           = "5.1.4"
     val tucoVersion             = "0.3.1"
     val declineVersion          = "0.4.2"

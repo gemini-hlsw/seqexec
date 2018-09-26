@@ -134,21 +134,28 @@ object StaticConfigDao {
 
       // We need to define this explicitly because we're ignoring the nod and
       // shuffle and custom ROIs.
-      implicit val GmosCommonStaticComposite: Composite[GmosCommonStaticConfig] =
-        Composite[(GmosDetector, MosPreImaging)].imap(
-          (t: (GmosDetector, MosPreImaging)) => GmosCommonStaticConfig(t._1, t._2, None, Set.empty))(
+      implicit val GmosCommonStaticRead: Read[GmosCommonStaticConfig] =
+        Read[(GmosDetector, MosPreImaging)].map {
+          (t: (GmosDetector, MosPreImaging)) => GmosCommonStaticConfig(t._1, t._2, None, Set.empty)
+        }
+
+      implicit val GmosCommonStaticWrite: Write[GmosCommonStaticConfig] =
+        Write[(GmosDetector, MosPreImaging)].contramap(
           (s: GmosCommonStaticConfig)        => (s.detector, s.mosPreImaging)
         )
 
       implicit val MetaGmosShuffleOffset: Meta[GmosShuffleOffset] =
-        Meta[Int].xmap(GmosShuffleOffset.unsafeFromRowCount, _.detectorRows)
+        Meta[Int].timap(GmosShuffleOffset.unsafeFromRowCount)(_.detectorRows)
 
       implicit val MetaGmosShuffleCycles: Meta[GmosShuffleCycles] =
-        Meta[Int].xmap(GmosShuffleCycles.unsafeFromCycleCount, _.toInt)
+        Meta[Int].timap(GmosShuffleCycles.unsafeFromCycleCount)(_.toInt)
 
-      implicit val GmosCustomRoiEntryComposite: Composite[GmosCustomRoiEntry] =
-        Composite[(Short, Short, Short, Short)].imap(
-          (t: (Short, Short, Short, Short)) => GmosCustomRoiEntry.unsafeFromDescription(t._1, t._2, t._3, t._4))(
+      implicit val GmosCustomRoiEntryRead: Read[GmosCustomRoiEntry] =
+        Read[(Short, Short, Short, Short)].map(
+          (t: (Short, Short, Short, Short)) => GmosCustomRoiEntry.unsafeFromDescription(t._1, t._2, t._3, t._4))
+
+      implicit val GmosCustomRoiEntryWrite: Write[GmosCustomRoiEntry] =
+        Write[(Short, Short, Short, Short)].contramap(
           (r: GmosCustomRoiEntry)           => (r.xMin, r.yMin, r.xRange, r.yRange)
         )
 

@@ -3,13 +3,16 @@
 
 package gem.dao
 
-import cats.effect.IO
+import cats.effect.{ IO, ContextShift }
 import doobie._, doobie.implicits._
 import java.time.{Duration, Instant}
 
 
 trait TimedSample {
   type Result
+
+  private implicit val contextShift: ContextShift[IO] =
+    IO.contextShift(scala.concurrent.ExecutionContext.global)
 
   val xa: Transactor[IO] =
     DatabaseConfiguration.forTesting.transactor[IO]

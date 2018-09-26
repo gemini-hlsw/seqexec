@@ -11,7 +11,7 @@ trait EnumeratedMeta {
 
   // Enumerated by tag as DISTINCT (identifier)
   implicit def enumeratedMeta[A >: Null : TypeTag](implicit ev: Enumerated[A]): Meta[A] =
-    Distinct.string("identifier").xmap[A](ev.unsafeFromTag(_), ev.tag(_))
+    Distinct.string("identifier").timap[A](ev.unsafeFromTag(_))(ev.tag(_))
 
 }
 object EnumeratedMeta extends EnumeratedMeta

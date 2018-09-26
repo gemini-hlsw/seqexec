@@ -3,7 +3,7 @@
 
 package gem.dao
 
-import cats.effect.Async
+import cats.effect.{ Async, ContextShift }
 import doobie._
 
 /** Configuration for a database connection. */
@@ -15,7 +15,7 @@ final case class DatabaseConfiguration(
 ) {
 
   /** A transactor in F using the connection values provided by this configuration. */
-  def transactor[F[_]: Async]: Transactor[F] =
+  def transactor[F[_]: Async: ContextShift]: Transactor[F] =
     Transactor.fromDriverManager[F](driver, connectUrl, userName, password)
 
 }

@@ -11,11 +11,11 @@ trait OffsetMeta {
 
   // OffsetP maps to a signed angle in arcseconds
   implicit val OffsetPMeta: Meta[Offset.P] =
-    AngleMetaAsSignedArcseconds.xmap(Offset.P(_), _.toAngle)
+    AngleMetaAsSignedArcseconds.timap(Offset.P(_))(_.toAngle)
 
   // OffsetQ maps to a signed angle in arcseconds
   implicit val OffsetQMeta: Meta[Offset.Q] =
-    AngleMetaAsSignedArcseconds.xmap(Offset.Q(_), _.toAngle)
+    AngleMetaAsSignedArcseconds.timap(Offset.Q(_))(_.toAngle)
 
 }
 object OffsetMeta extends OffsetMeta

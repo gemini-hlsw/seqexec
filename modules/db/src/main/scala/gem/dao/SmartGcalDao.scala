@@ -87,9 +87,9 @@ object SmartGcalDao {
     // Workaround for issue https://github.com/functional-streams-for-scala/fs2/issues/1099
     val tups = entries.map(t => (t._1, t._2, t._3))
     GcalDao.bulkInsertSmartGcal(entries.map(_._4))
-      .segmentN(tups.size)
+      .chunkN(tups.size)
       .flatMap { rows =>
-        Stream.eval(update.updateMany(tups.zip(rows.force.toVector)))
+        Stream.eval(update.updateMany(tups.zip(rows.toVector)))
       }
 
     /* https://github.com/functional-streams-for-scala/fs2/issues/1099

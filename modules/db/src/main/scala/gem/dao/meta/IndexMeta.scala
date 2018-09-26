@@ -12,7 +12,7 @@ trait IndexMeta {
   // Index has a DISTINCT type due to its check constraint so we
   // need a fine-grained mapping here to satisfy the query checker.
   implicit val IndexMeta: Meta[Index] =
-    Distinct.short("id_index").xmap(Index.fromShort.unsafeGet, _.toShort)
+    Distinct.short("id_index").timap(Index.fromShort.unsafeGet)(_.toShort)
 
 }
 object IndexMeta extends IndexMeta

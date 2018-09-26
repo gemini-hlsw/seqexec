@@ -4,7 +4,7 @@
 package gem.dao
 package check
 
-import cats.effect.IO
+import cats.effect.{ IO, ContextShift }
 import doobie.Transactor
 import doobie.scalatest.imports._
 import gem._
@@ -18,6 +18,9 @@ import scala.collection.immutable.{ TreeMap, TreeSet }
 
 /** Trait for tests that check statement syntax and mappings. */
 trait Check extends FlatSpec with Matchers with IOChecker {
+
+  private implicit val contextShift: ContextShift[IO] =
+    IO.contextShift(scala.concurrent.ExecutionContext.global)
 
   val transactor: Transactor[IO] =
     DatabaseConfiguration.forTesting.transactor[IO]

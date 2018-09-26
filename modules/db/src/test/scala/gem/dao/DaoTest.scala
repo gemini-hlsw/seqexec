@@ -3,7 +3,7 @@
 
 package gem.dao
 
-import cats.effect.IO
+import cats.effect.{ IO, ContextShift }
 import doobie._, doobie.implicits._
 import gem.Program
 import gem.syntax.prism._
@@ -14,6 +14,9 @@ import scala.collection.immutable.TreeMap
   */
 trait DaoTest extends gem.Arbitraries {
   val pid = Program.Id.fromString.unsafeGet("GS-1234A-Q-1")
+
+  private implicit val contextShift: ContextShift[IO] =
+    IO.contextShift(scala.concurrent.ExecutionContext.global)
 
   protected val xa: Transactor[IO] =
     Transactor.after.set(DatabaseConfiguration.forTesting.transactor[IO], HC.rollback)

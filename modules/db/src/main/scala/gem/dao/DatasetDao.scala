@@ -31,7 +31,7 @@ object DatasetDao {
     private final case class StepId(toInt: Int)
     private object StepId {
       implicit val StepIdMeta: Meta[StepId] =
-        Distinct.integer("id_index").xmap(StepId(_), _.toInt)
+        Distinct.integer("id_index").timap(StepId(_))(_.toInt)
     }
 
     // This uses the internal unique serial number for steps, which is a code smell.
