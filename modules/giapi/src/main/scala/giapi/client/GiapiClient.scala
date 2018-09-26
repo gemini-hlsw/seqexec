@@ -20,13 +20,13 @@ trait GiapiClient[F[_]] {
         configuration
       ), GiapiClient.DefaultCommandTimeout)
 
-    def observe[A: Show](dataLabel: A, expTime: FiniteDuration): F[CommandResult] =
-      giapi.command(
-        Command(
-          SequenceCommand.OBSERVE,
-          Activity.PRESET_START,
-          Configuration.single(commands.DataLabelCfg, dataLabel)
-        ), expTime)
+  def observe[A: Show](dataLabel: A, expTime: FiniteDuration): F[CommandResult] =
+    giapi.command(
+      Command(
+        SequenceCommand.OBSERVE,
+        Activity.PRESET_START,
+        Configuration.single(commands.DataLabelCfg, dataLabel)
+      ), expTime)
 }
 
 object GiapiClient {
