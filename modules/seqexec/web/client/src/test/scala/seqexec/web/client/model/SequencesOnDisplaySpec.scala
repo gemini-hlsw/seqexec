@@ -6,10 +6,15 @@ package seqexec.web.client
 import cats.tests.CatsSuite
 import gem.Observation
 import seqexec.model.enum.Instrument
-import seqexec.model.{ SequenceMetadata, SequenceView, SequencesQueue }
-import seqexec.model.{ Conditions, SequenceState }
-import seqexec.web.client.model.{ PreviewSequenceTab, SequencesOnDisplay }
-import seqexec.web.client.model.{ CalibrationQueueTab, InstrumentSequenceTab }
+import seqexec.model.SequenceMetadata
+import seqexec.model.SequenceView
+import seqexec.model.SequencesQueue
+import seqexec.model.Conditions
+import seqexec.model.SequenceState
+import seqexec.web.client.model.PreviewSequenceTab
+import seqexec.web.client.model.SequencesOnDisplay
+import seqexec.web.client.model.CalibrationQueueTab
+import seqexec.web.client.model.InstrumentSequenceTab
 
 /**
   * Tests Sequences on display class

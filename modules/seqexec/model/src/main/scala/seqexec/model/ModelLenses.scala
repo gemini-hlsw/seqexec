@@ -43,8 +43,10 @@ trait ModelLenses {
   val sequenceEventsP: Prism[SeqexecEvent, SeqexecModelUpdate] =
     GenPrism[SeqexecEvent, SeqexecModelUpdate]
   // Required for type correctness
-  val stepConfigRoot: Iso[Map[SystemName, Parameters], Map[SystemName, Parameters]] = Iso.id[Map[SystemName, Parameters]]
-  val parametersRoot: Iso[Map[ParamName, ParamValue], Map[ParamName, ParamValue]] = Iso.id[Map[ParamName, ParamValue]]
+  val stepConfigRoot: Iso[Map[SystemName, Parameters], Map[SystemName, Parameters]] =
+    Iso.id[Map[SystemName, Parameters]]
+  val parametersRoot: Iso[Map[ParamName, ParamValue], Map[ParamName, ParamValue]] =
+    Iso.id[Map[ParamName, ParamValue]]
 
   // Focus on a param value
   def paramValueL(param: ParamName): Lens[Parameters, Option[String]] =
@@ -135,21 +137,29 @@ trait ModelLenses {
     }
 
   // Find the Parameters of the steps containing science steps
-  val scienceStepT: Traversal[StepConfig, Parameters] = filterEntry[SystemName, Parameters] {
-    case (s, p) => s === SystemName.Observe && p.exists {
-      case (k, v) => k === SystemName.Observe.withParam("observeType") && v === "OBJECT"
+  val scienceStepT: Traversal[StepConfig, Parameters] =
+    filterEntry[SystemName, Parameters] {
+      case (s, p) =>
+        s === SystemName.Observe && p.exists {
+          case (k, v) =>
+            k === SystemName.Observe.withParam("observeType") && v === "OBJECT"
+        }
     }
-  }
 
   val scienceTargetNameO: Optional[Parameters, TargetName] =
     paramValueL(SystemName.Observe.withParam("object")) ^<-? // find the target name
     some                                                     // focus on the option
 
-  val stringToStepTypeP: Prism[String, StepType] = Prism(StepType.fromString)(_.show)
-  private[model] def telescopeOffsetPI: Iso[Double, TelescopeOffset.P] = Iso(TelescopeOffset.P.apply)(_.value)
-  private[model] def telescopeOffsetQI: Iso[Double, TelescopeOffset.Q] = Iso(TelescopeOffset.Q.apply)(_.value)
-  val stringToDoubleP: Prism[String, Double] = Prism((x: String) => x.parseDouble.toOption)(_.show)
-  val stringToIntP: Prism[String, Int] = Prism((x: String) => x.parseInt.toOption)(_.show)
+  val stringToStepTypeP: Prism[String, StepType] =
+    Prism(StepType.fromString)(_.show)
+  private[model] def telescopeOffsetPI: Iso[Double, TelescopeOffset.P] =
+    Iso(TelescopeOffset.P.apply)(_.value)
+  private[model] def telescopeOffsetQI: Iso[Double, TelescopeOffset.Q] =
+    Iso(TelescopeOffset.Q.apply)(_.value)
+  val stringToDoubleP: Prism[String, Double] =
+    Prism((x: String) => x.parseDouble.toOption)(_.show)
+  val stringToIntP: Prism[String, Int] =
+    Prism((x: String) => x.parseInt.toOption)(_.show)
 
   def stepObserveOptional[A](systemName: SystemName, param: String, prism: Prism[String, A]): Optional[Step, A] =
     standardStepP                            ^|-> // which is a standard step

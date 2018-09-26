@@ -4,15 +4,26 @@
 package seqexec.web.client.handlers
 
 import cats.implicits._
-import diode.{Action, ActionHandler, ActionResult, Effect, ModelRW, NoAction}
-import seqexec.model.enum.{ ActionStatus }
-import seqexec.model.{ Observer, SequencesQueue, SequenceView, StepState, SequenceState }
+import diode.Action
+import diode.ActionHandler
+import diode.ActionResult
+import diode.Effect
+import diode.ModelRW
+import diode.NoAction
+import seqexec.model.enum.ActionStatus
+import seqexec.model.Observer
+import seqexec.model.SequencesQueue
+import seqexec.model.SequenceView
+import seqexec.model.StepState
+import seqexec.model.SequenceState
 import seqexec.model.events._
-import seqexec.web.client.lenses.{sequenceStepT, sequenceViewT}
+import seqexec.web.client.lenses.sequenceStepT
+import seqexec.web.client.lenses.sequenceViewT
 import seqexec.web.client.ModelOps._
 import seqexec.web.client.actions._
 import seqexec.web.client.circuit._
-import seqexec.web.client.services.{Audio, SeqexecWebClient}
+import seqexec.web.client.services.Audio
+import seqexec.web.client.services.SeqexecWebClient
 import seqexec.web.client.services.WebpackResources._
 import seqexec.web.client.model.Pages.Root
 import scala.concurrent.Future
@@ -21,7 +32,9 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 /**
   * Handles messages received over the WS channel
   */
-class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus]) extends ActionHandler(modelRW) with Handlers[M, WebSocketsFocus] {
+class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
+    extends ActionHandler(modelRW)
+    with Handlers[M, WebSocketsFocus] {
   // Global references to audio files
   private val SequencePausedAudio = new Audio(SequencePausedResource.resource)
   private val ExposurePausedAudio = new Audio(ExposurePausedResource.resource)
@@ -33,7 +46,10 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus]) extends Act
   // but we don't know how to display them, so let's filter them out
   private def filterSequences(sequences: SequencesQueue[SequenceView]): SequencesQueue[SequenceView] =
     sequences.copy(sessionQueue = sequences.sessionQueue.filter {
-      case SequenceView(_, metadata, _, _, _) => value.site.map(_.instruments.toList.contains(metadata.instrument)).getOrElse(false)
+      case SequenceView(_, metadata, _, _, _) =>
+        value.site
+          .map(_.instruments.toList.contains(metadata.instrument))
+          .getOrElse(false)
     })
 
   val soundCheck: PartialFunction[Any, ActionResult[M]] = {
@@ -130,7 +146,8 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus]) extends Act
   }
 
   override def handle: PartialFunction[Any, ActionResult[M]] =
-    List(soundCheck,
+    List(
+      soundCheck,
       logMessage,
       stepCompletedMessage,
       connectionOpenMessage,
@@ -143,5 +160,6 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus]) extends Act
       sequenceLoadedMessage,
       sequenceUnloadedMessage,
       modelUpdateMessage,
-      defaultMessage).combineAll
+      defaultMessage
+    ).combineAll
 }

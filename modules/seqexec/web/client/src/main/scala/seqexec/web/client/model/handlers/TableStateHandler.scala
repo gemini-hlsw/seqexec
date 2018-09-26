@@ -3,14 +3,18 @@
 
 package seqexec.web.client.handlers
 
-import diode.{ ActionHandler, ActionResult, ModelRW }
+import diode.ActionHandler
+import diode.ActionResult
+import diode.ModelRW
 import seqexec.web.client.actions._
 import seqexec.web.client.circuit._
 
 /**
   * Handle to preserve the steps table state
   */
-class TableStateHandler[M](modelRW: ModelRW[M, AppTableStates]) extends ActionHandler(modelRW) with Handlers[M, AppTableStates] {
+class TableStateHandler[M](modelRW: ModelRW[M, AppTableStates])
+    extends ActionHandler(modelRW)
+    with Handlers[M, AppTableStates] {
   override def handle: PartialFunction[Any, ActionResult[M]] = {
     case UpdateStepsConfigTableState(state) =>
       updatedSilentL(AppTableStates.stepConfigTable.set(state)) // We should only do silent updates as these change too quickly

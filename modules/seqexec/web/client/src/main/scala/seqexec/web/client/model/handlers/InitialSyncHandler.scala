@@ -3,8 +3,13 @@
 
 package seqexec.web.client.handlers
 
-import diode.{Action, ActionHandler, ActionResult, Effect, ModelRW}
-import seqexec.model.{ SequencesQueue, SequenceView }
+import diode.Action
+import diode.ActionHandler
+import diode.ActionResult
+import diode.Effect
+import diode.ModelRW
+import seqexec.model.SequencesQueue
+import seqexec.model.SequenceView
 import seqexec.model.events.SeqexecModelUpdate
 import seqexec.web.client.actions._
 import seqexec.web.client.circuit._
@@ -15,16 +20,21 @@ import cats.implicits._
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
 /**
- * This handler is called only once. It will be triggered when the first message
- * with the full model arrives.
- * Then we sync to the first running sequence or to the route we are currently on
- */
-class InitialSyncHandler[M](modelRW: ModelRW[M, InitialSyncFocus]) extends ActionHandler(modelRW) with Handlers[M, InitialSyncFocus] {
+  * This handler is called only once. It will be triggered when the first message
+  * with the full model arrives.
+  * Then we sync to the first running sequence or to the route we are currently on
+  */
+class InitialSyncHandler[M](modelRW: ModelRW[M, InitialSyncFocus])
+    extends ActionHandler(modelRW)
+    with Handlers[M, InitialSyncFocus] {
   def runningSequence(s: SeqexecModelUpdate): Option[SequenceView] =
     s.view.sessionQueue.filter(_.status.isRunning).sortBy(_.id).headOption
 
   private def pageE(action: Action): InitialSyncFocus => InitialSyncFocus =
-    PageActionP.getOption(action).map(p => InitialSyncFocus.location.set(p)).getOrElse(identity)
+    PageActionP
+      .getOption(action)
+      .map(p => InitialSyncFocus.location.set(p))
+      .getOrElse(identity)
 
   private val noUpdate: InitialSyncFocus => InitialSyncFocus = identity
 
@@ -34,7 +44,7 @@ class InitialSyncHandler[M](modelRW: ModelRW[M, InitialSyncFocus]) extends Actio
     val effect = loaded.headOption.flatMap { id =>
       s.sessionQueue.find(_.id === id).map { s =>
         val nextStep = StepIdDisplayed(s.runningStep.foldMap(_.last))
-        val action = SelectIdToDisplay(s.metadata.instrument, id, nextStep)
+        val action   = SelectIdToDisplay(s.metadata.instrument, id, nextStep)
         (pageE(action), Effect(Future(action)))
       }
     }
@@ -45,7 +55,7 @@ class InitialSyncHandler[M](modelRW: ModelRW[M, InitialSyncFocus]) extends Actio
     // Otherwise, update the model to reflect the current page
     case ServerMessage(s: SeqexecModelUpdate) if value.firstLoad =>
       // the page maybe not in sync with the tabs. Let's fix that
-      val sids = s.view.sessionQueue.map(_.id)
+      val sids   = s.view.sessionQueue.map(_.id)
       val loaded = s.view.loaded.values.toList
       // update will change the url if needed and effect cat
       val (update, effect) = value.location match {
@@ -82,13 +92,14 @@ class InitialSyncHandler[M](modelRW: ModelRW[M, InitialSyncFocus]) extends Actio
           }
 
         case Root | SequencePage(_, _, _) | PreviewPage(_, _, _) |
-          SequenceConfigPage(_, _, _) | PreviewConfigPage(_, _, _) =>
+            SequenceConfigPage(_, _, _) | PreviewConfigPage(_, _, _) =>
           defaultPage(s.view)
 
         case _                                                     =>
           // No matches
           (noUpdate, VoidEffect)
       }
-      updatedLE(InitialSyncFocus.firstLoad.set(false) >>> update, Effect(Future(CleanSequences)) >> effect)
-    }
+      updatedLE(InitialSyncFocus.firstLoad.set(false) >>> update,
+                Effect(Future(CleanSequences)) >> effect)
+  }
 }

@@ -11,13 +11,21 @@ import gem.arb.ArbEnumerated._
 import gem.Observation
 import gem.enum.Site
 import seqexec.model.enum.Instrument
-import seqexec.model.{ ClientID, Observer, TargetName }
-import seqexec.model.{ SequenceState, SequenceView, SequencesQueue }
-import seqexec.model.{ Notification, Step, UserDetails }
+import seqexec.model.ClientID
+import seqexec.model.Observer
+import seqexec.model.TargetName
+import seqexec.model.SequenceState
+import seqexec.model.SequenceView
+import seqexec.model.SequencesQueue
+import seqexec.model.Notification
+import seqexec.model.Step
+import seqexec.model.UserDetails
 import seqexec.model.events.ServerLogMessage
 import seqexec.model.SeqexecModelArbitraries._
-import seqexec.model.SequenceEventsArbitraries.{ slmArb, slmCogen }
-import seqexec.web.common.{ FixedLengthBuffer, Zipper }
+import seqexec.model.SequenceEventsArbitraries.slmArb
+import seqexec.model.SequenceEventsArbitraries.slmCogen
+import seqexec.web.common.FixedLengthBuffer
+import seqexec.web.common.Zipper
 import seqexec.web.common.ArbitrariesWebCommon._
 import seqexec.web.client.model._
 import seqexec.web.client.model.RunOperation
@@ -28,9 +36,11 @@ import seqexec.web.client.components.sequence.steps.StepConfigTable
 import seqexec.web.client.components.sequence.steps.StepsTable
 import seqexec.web.client.components.QueueTableBody
 import org.scalacheck.Arbitrary._
-import org.scalacheck.{ Arbitrary, _ }
+import org.scalacheck.Arbitrary
+import org.scalacheck._
 import org.scalajs.dom.WebSocket
-import web.client.table.{ TableArbitraries, TableState }
+import web.client.table.TableArbitraries
+import web.client.table.TableState
 
 trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
 

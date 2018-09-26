@@ -29,9 +29,34 @@ trait SeqexecModelArbitraries extends ArbObservation {
 
   implicit val clientIdArb: Arbitrary[ClientID] = Arbitrary(Gen.uuid)
 
-  implicit val levArb = Arbitrary[ServerLogLevel](Gen.oneOf(ServerLogLevel.INFO, ServerLogLevel.WARN, ServerLogLevel.ERROR))
-  implicit val resArb = Arbitrary[Resource](Gen.oneOf(Resource.P1, Resource.OI, Resource.TCS, Resource.Gcal, Resource.Gems, Resource.Altair, Instrument.F2, Instrument.GmosS, Instrument.GmosN, Instrument.GPI, Instrument.GSAOI, Instrument.GNIRS, Instrument.NIRI, Instrument.NIFS))
-  implicit val insArb = Arbitrary[Instrument](Gen.oneOf(Instrument.F2, Instrument.GmosS, Instrument.GmosN, Instrument.GPI, Instrument.GSAOI, Instrument.GNIRS, Instrument.NIRI, Instrument.NIFS))
+  implicit val levArb = Arbitrary[ServerLogLevel](
+    Gen.oneOf(ServerLogLevel.INFO, ServerLogLevel.WARN, ServerLogLevel.ERROR))
+  implicit val resArb = Arbitrary[Resource](
+    Gen.oneOf(
+      Resource.P1,
+      Resource.OI,
+      Resource.TCS,
+      Resource.Gcal,
+      Resource.Gems,
+      Resource.Altair,
+      Instrument.F2,
+      Instrument.GmosS,
+      Instrument.GmosN,
+      Instrument.GPI,
+      Instrument.GSAOI,
+      Instrument.GNIRS,
+      Instrument.NIRI,
+      Instrument.NIFS
+    ))
+  implicit val insArb = Arbitrary[Instrument](
+    Gen.oneOf(Instrument.F2,
+              Instrument.GmosS,
+              Instrument.GmosN,
+              Instrument.GPI,
+              Instrument.GSAOI,
+              Instrument.GNIRS,
+              Instrument.NIRI,
+              Instrument.NIFS))
 
   implicit val executionQueueArb: Arbitrary[ExecutionQueue] = Arbitrary {
     for {
@@ -49,15 +74,15 @@ trait SeqexecModelArbitraries extends ArbObservation {
     } yield b
   }
 
-  implicit val udArb  = Arbitrary[UserDetails] {
+  implicit val udArb = Arbitrary[UserDetails] {
     for {
       u <- arbitrary[String]
       n <- arbitrary[String]
     } yield UserDetails(u, n)
   }
 
-  implicit val obArb  = Arbitrary[Observer] { Gen.alphaStr.map(Observer.apply) }
-  implicit val smArb  = Arbitrary[SequenceMetadata] {
+  implicit val obArb = Arbitrary[Observer] { Gen.alphaStr.map(Observer.apply) }
+  implicit val smArb = Arbitrary[SequenceMetadata] {
     for {
       i <- arbitrary[Instrument]
       o <- arbitrary[Option[Observer]]
@@ -65,16 +90,25 @@ trait SeqexecModelArbitraries extends ArbObservation {
     } yield SequenceMetadata(i, o, n)
   }
 
-  implicit val opArb  = Arbitrary[Operator] { Gen.alphaStr.map(Operator.apply) }
+  implicit val opArb = Arbitrary[Operator] { Gen.alphaStr.map(Operator.apply) }
   implicit val spsArb = Arbitrary[StepState] {
     for {
-      v1 <- Gen.oneOf(StepState.Pending, StepState.Completed, StepState.Skipped, StepState.Running, StepState.Paused)
+      v1 <- Gen.oneOf(StepState.Pending,
+                      StepState.Completed,
+                      StepState.Skipped,
+                      StepState.Running,
+                      StepState.Paused)
       v2 <- Gen.alphaStr.map(StepState.Failed.apply)
       r  <- Gen.oneOf(v1, v2)
     } yield r
   }
 
-  implicit val acsArb = Arbitrary[ActionStatus](Gen.oneOf(ActionStatus.Pending, ActionStatus.Completed, ActionStatus.Running, ActionStatus.Paused, ActionStatus.Failed))
+  implicit val acsArb = Arbitrary[ActionStatus](
+    Gen.oneOf(ActionStatus.Pending,
+              ActionStatus.Completed,
+              ActionStatus.Running,
+              ActionStatus.Paused,
+              ActionStatus.Failed))
 
   implicit val sqrArb = Arbitrary[SequenceState.Running] {
     for {
@@ -85,16 +119,18 @@ trait SeqexecModelArbitraries extends ArbObservation {
 
   implicit val sqsArb = Arbitrary[SequenceState] {
     for {
-      f <- Gen.oneOf(SequenceState.Completed, SequenceState.Idle, SequenceState.Stopped)
+      f <- Gen.oneOf(SequenceState.Completed,
+                     SequenceState.Idle,
+                     SequenceState.Stopped)
       r <- arbitrary[SequenceState.Running]
       a <- arbitrary[String].map(SequenceState.Failed.apply)
       s <- Gen.oneOf(f, r, a)
     } yield s
   }
-  implicit val ccArb  = Arbitrary[CloudCover](Gen.oneOf(CloudCover.all))
-  implicit val wvArb  = Arbitrary[WaterVapor](Gen.oneOf(WaterVapor.all))
-  implicit val sbArb  = Arbitrary[SkyBackground](Gen.oneOf(SkyBackground.all))
-  implicit val iqArb  = Arbitrary[ImageQuality](Gen.oneOf(ImageQuality.all))
+  implicit val ccArb = Arbitrary[CloudCover](Gen.oneOf(CloudCover.all))
+  implicit val wvArb = Arbitrary[WaterVapor](Gen.oneOf(WaterVapor.all))
+  implicit val sbArb = Arbitrary[SkyBackground](Gen.oneOf(SkyBackground.all))
+  implicit val iqArb = Arbitrary[ImageQuality](Gen.oneOf(ImageQuality.all))
 
   implicit val conArb = Arbitrary[Conditions] {
     for {
@@ -105,7 +141,7 @@ trait SeqexecModelArbitraries extends ArbObservation {
     } yield Conditions(cc, iq, sb, wv)
   }
 
-  implicit val snArb  = Arbitrary(Gen.oneOf(SystemName.all))
+  implicit val snArb = Arbitrary(Gen.oneOf(SystemName.all))
 
   def asciiStr: Gen[String] =
     Gen.listOf(Gen.alphaChar).map(_.mkString)
@@ -116,7 +152,8 @@ trait SeqexecModelArbitraries extends ArbObservation {
       b <- asciiStr
     } yield (a, b)
 
-  val parametersGen: Gen[Parameters] = Gen.chooseNum(0, 10).flatMap(s => Gen.mapOfN[String, String](s, stepItemG))
+  val parametersGen: Gen[Parameters] =
+    Gen.chooseNum(0, 10).flatMap(s => Gen.mapOfN[String, String](s, stepItemG))
 
   val stepConfigG: Gen[(SystemName, Parameters)] =
     for {
@@ -124,16 +161,26 @@ trait SeqexecModelArbitraries extends ArbObservation {
       b <- parametersGen
     } yield (a, b)
 
-  val stepConfigGen: Gen[StepConfig] = Gen.chooseNum(0, 3).flatMap(s => Gen.mapOfN[SystemName, Parameters](s, stepConfigG))
+  val stepConfigGen: Gen[StepConfig] = Gen
+    .chooseNum(0, 3)
+    .flatMap(s => Gen.mapOfN[SystemName, Parameters](s, stepConfigG))
   implicit val steArb = Arbitrary[Step] {
     for {
       id <- arbitrary[StepId]
-      c  <- stepConfigGen
-      s  <- arbitrary[StepState]
-      b  <- arbitrary[Boolean]
-      k  <- arbitrary[Boolean]
-      f  <- arbitrary[Option[dhs.ImageFileId]]
-    } yield new StandardStep(id = id, config = c, status = s, breakpoint = b, skip = k, fileId = f, configStatus = Nil, observeStatus = ActionStatus.Pending)
+      c <- stepConfigGen
+      s <- arbitrary[StepState]
+      b <- arbitrary[Boolean]
+      k <- arbitrary[Boolean]
+      f <- arbitrary[Option[dhs.ImageFileId]]
+    } yield
+      new StandardStep(id            = id,
+                       config        = c,
+                       status        = s,
+                       breakpoint    = b,
+                       skip          = k,
+                       fileId        = f,
+                       configStatus  = Nil,
+                       observeStatus = ActionStatus.Pending)
   }
 
   implicit val stsArb = Arbitrary[StandardStep] {
@@ -146,12 +193,22 @@ trait SeqexecModelArbitraries extends ArbObservation {
       f  <- arbitrary[Option[dhs.ImageFileId]]
       cs <- arbitrary[List[(Resource, ActionStatus)]]
       os <- arbitrary[ActionStatus]
-    } yield new StandardStep(id = id, config = c, status = s, breakpoint = b, skip = k, fileId = f, configStatus = cs, observeStatus = os)
+    } yield
+      new StandardStep(id            = id,
+                       config        = c,
+                       status        = s,
+                       breakpoint    = b,
+                       skip          = k,
+                       fileId        = f,
+                       configStatus  = cs,
+                       observeStatus = os)
   }
 
   implicit val styArb = Arbitrary(Gen.oneOf(StepType.all))
-  implicit val guiArb = Arbitrary[Guiding](Gen.oneOf(Guiding.Park, Guiding.Guide, Guiding.Freeze))
-  implicit val fpmArb = Arbitrary[FPUMode](Gen.oneOf(FPUMode.BuiltIn, FPUMode.Custom))
+  implicit val guiArb =
+    Arbitrary[Guiding](Gen.oneOf(Guiding.Park, Guiding.Guide, Guiding.Freeze))
+  implicit val fpmArb =
+    Arbitrary[FPUMode](Gen.oneOf(FPUMode.BuiltIn, FPUMode.Custom))
   implicit val telOffPArb = Arbitrary[TelescopeOffset.P] {
     for {
       d <- Gen.choose(-999.0, 999.0)
@@ -168,7 +225,7 @@ trait SeqexecModelArbitraries extends ArbObservation {
       q <- arbitrary[TelescopeOffset.Q]
     } yield TelescopeOffset(p, q)
   }
-  implicit val svArb  = Arbitrary[SequenceView] {
+  implicit val svArb = Arbitrary[SequenceView] {
     for {
       id <- arbitrary[Observation.Id]
       m  <- arbitrary[SequenceMetadata]
@@ -207,10 +264,33 @@ trait SeqexecModelArbitraries extends ArbObservation {
     Cogen[String].contramap(_.productPrefix)
 
   implicit val stepCogen: Cogen[Step] =
-    Cogen[(StepId, Map[SystemName, Map[String, String]], StepState, Boolean, Boolean, Option[dhs.ImageFileId])].contramap(s => (s.id, s.config, s.status, s.breakpoint, s.skip, s.fileId))
+    Cogen[(StepId,
+           Map[SystemName, Map[String, String]],
+           StepState,
+           Boolean,
+           Boolean,
+           Option[dhs.ImageFileId])].contramap(s =>
+      (s.id, s.config, s.status, s.breakpoint, s.skip, s.fileId))
 
   implicit val standardStepCogen: Cogen[StandardStep] =
-    Cogen[(StepId, Map[SystemName, Map[String, String]], StepState, Boolean, Boolean, Option[dhs.ImageFileId], List[(Resource, ActionStatus)], ActionStatus)].contramap(s => (s.id, s.config, s.status, s.breakpoint, s.skip, s.fileId, s.configStatus, s.observeStatus))
+    Cogen[
+      (StepId,
+       Map[SystemName, Map[String, String]],
+       StepState,
+       Boolean,
+       Boolean,
+       Option[dhs.ImageFileId],
+       List[(Resource, ActionStatus)],
+       ActionStatus)].contramap(
+      s =>
+        (s.id,
+         s.config,
+         s.status,
+         s.breakpoint,
+         s.skip,
+         s.fileId,
+         s.configStatus,
+         s.observeStatus))
 
   implicit val sqsCogen: Cogen[SequenceState] =
     Cogen[String].contramap(_.productPrefix)
@@ -222,13 +302,20 @@ trait SeqexecModelArbitraries extends ArbObservation {
     Cogen[(String, String)].contramap(u => (u.username, u.displayName))
 
   implicit val smCogen: Cogen[SequenceMetadata] =
-    Cogen[(Instrument, Option[Observer], String)].contramap(s => (s.instrument, s.observer, s.name))
+    Cogen[(Instrument, Option[Observer], String)].contramap(s =>
+      (s.instrument, s.observer, s.name))
 
   implicit val svCogen: Cogen[SequenceView] =
-    Cogen[(Observation.Id, SequenceMetadata, SequenceState, List[Step], Option[Int])].contramap(s => (s.id, s.metadata, s.status, s.steps, s.willStopIn))
+    Cogen[(Observation.Id,
+           SequenceMetadata,
+           SequenceState,
+           List[Step],
+           Option[Int])].contramap(s =>
+      (s.id, s.metadata, s.status, s.steps, s.willStopIn))
 
   implicit def sqCogen[A: Cogen]: Cogen[SequencesQueue[A]] =
-    Cogen[(Conditions, Option[Operator], List[A])].contramap(s => (s.conditions, s.operator, s.sessionQueue))
+    Cogen[(Conditions, Option[Operator], List[A])].contramap(s =>
+      (s.conditions, s.operator, s.sessionQueue))
 
   implicit val offPCogen: Cogen[TelescopeOffset.P] =
     Cogen[Double].contramap(_.value)
@@ -258,7 +345,8 @@ trait SeqexecModelArbitraries extends ArbObservation {
     Cogen[String].contramap(_.productPrefix)
 
   implicit val conCogen: Cogen[Conditions] =
-    Cogen[(CloudCover, ImageQuality, SkyBackground, WaterVapor)].contramap(c => (c.cc, c.iq, c.sb, c.wv))
+    Cogen[(CloudCover, ImageQuality, SkyBackground, WaterVapor)].contramap(c =>
+      (c.cc, c.iq, c.sb, c.wv))
 
   implicit val cidCogen: Cogen[ClientID] =
     Cogen[String].contramap(_.toString)
@@ -266,7 +354,7 @@ trait SeqexecModelArbitraries extends ArbObservation {
   implicit val levCogen: Cogen[ServerLogLevel] =
     Cogen[String].contramap(_.productPrefix)
 
-  implicit val rcArb  = Arbitrary[ResourceConflict] {
+  implicit val rcArb = Arbitrary[ResourceConflict] {
     for {
       id <- arbitrary[Observation.Id]
     } yield ResourceConflict(id)
@@ -275,7 +363,7 @@ trait SeqexecModelArbitraries extends ArbObservation {
   implicit val rcCogen: Cogen[ResourceConflict] =
     Cogen[Observation.Id].contramap(_.sid)
 
-  implicit val inArb  = Arbitrary[InstrumentInUse] {
+  implicit val inArb = Arbitrary[InstrumentInUse] {
     for {
       id <- arbitrary[Observation.Id]
       i  <- arbitrary[Instrument]
@@ -285,7 +373,7 @@ trait SeqexecModelArbitraries extends ArbObservation {
   implicit val inCogen: Cogen[InstrumentInUse] =
     Cogen[(Observation.Id, Instrument)].contramap(x => (x.sid, x.ins))
 
-  implicit val notArb  = Arbitrary[Notification] {
+  implicit val notArb = Arbitrary[Notification] {
     for {
       r <- arbitrary[ResourceConflict]
       a <- arbitrary[InstrumentInUse]
@@ -300,7 +388,9 @@ trait SeqexecModelArbitraries extends ArbObservation {
     }
 
   implicit val seqBatchCmdStateArb: Arbitrary[BatchCommandState] = Arbitrary(
-    Gen.oneOf(BatchCommandState.Idle, BatchCommandState.Run, BatchCommandState.Stop)
+    Gen.oneOf(BatchCommandState.Idle,
+              BatchCommandState.Run,
+              BatchCommandState.Stop)
   )
 
   implicit val seqBatchCmdStateCogen: Cogen[BatchCommandState] =

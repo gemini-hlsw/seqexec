@@ -4,7 +4,11 @@
 package seqexec.web.client.handlers
 
 import cats.implicits._
-import diode.{ActionHandler, ActionResult, Effect, ModelRW, NoAction}
+import diode.ActionHandler
+import diode.ActionResult
+import diode.Effect
+import diode.ModelRW
+import diode.NoAction
 import seqexec.model.events._
 import seqexec.web.client.model.Pages._
 import seqexec.web.client.ModelOps._
@@ -14,20 +18,29 @@ import seqexec.web.client.circuit.SODLocationFocus
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
 /**
- * Handles updates to the selected sequences set
- */
-class LoadedSequencesHandler[M](modelRW: ModelRW[M, SODLocationFocus]) extends ActionHandler(modelRW) with Handlers[M, SODLocationFocus] {
+  * Handles updates to the selected sequences set
+  */
+class LoadedSequencesHandler[M](modelRW: ModelRW[M, SODLocationFocus])
+    extends ActionHandler(modelRW)
+    with Handlers[M, SODLocationFocus] {
   override def handle: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(LoadSequenceUpdated(i, sid, view, cid)) =>
       // Update selected and the page
       val upSelected = if (value.clientId.exists(_ === cid)) {
         // if I requested the load also focus on it
-        SODLocationFocus.sod.modify(_.updateFromQueue(view).loadingComplete(sid).unsetPreviewOn(sid).focusOnSequence(i, sid))
+        SODLocationFocus.sod.modify(
+          _.updateFromQueue(view)
+            .loadingComplete(sid)
+            .unsetPreviewOn(sid)
+            .focusOnSequence(i, sid))
       } else {
-        SODLocationFocus.sod.modify(_.updateFromQueue(view).loadingComplete(sid).unsetPreviewOn(sid))
+        SODLocationFocus.sod.modify(
+          _.updateFromQueue(view).loadingComplete(sid).unsetPreviewOn(sid))
       }
-      val nextStepToRun = view.sessionQueue.find(_.id === sid).foldMap(_.nextStepToRun)
-      val upLocation = SODLocationFocus.location.set(SequencePage(i, sid, nextStepToRun.foldMap(StepIdDisplayed.apply)))
+      val nextStepToRun =
+        view.sessionQueue.find(_.id === sid).foldMap(_.nextStepToRun)
+      val upLocation = SODLocationFocus.location.set(
+        SequencePage(i, sid, nextStepToRun.foldMap(StepIdDisplayed.apply)))
       updatedL(upSelected >>> upLocation)
 
     case ServerMessage(s: SeqexecModelUpdate) =>

@@ -3,13 +3,15 @@
 
 package seqexec.web.client
 
-import cats.{ Eq, Order }
+import cats.Eq
+import cats.Order
 import cats.implicits._
 import cats.data.NonEmptyList
 import diode._
 import gem.Observation
 import gem.enum.Site
-import monocle.{ Getter, Lens }
+import monocle.Getter
+import monocle.Lens
 import monocle.macros.Lenses
 import monocle.function.At._
 import seqexec.model._
@@ -134,9 +136,9 @@ package circuit {
   }
 
   final case class StatusAndLoadedSequencesFocus(
-      status:     ClientStatus,
-      sequences:  List[SequenceInQueue],
-      tableState: TableState[QueueTableBody.TableColumn])
+    status:     ClientStatus,
+    sequences:  List[SequenceInQueue],
+    tableState: TableState[QueueTableBody.TableColumn])
       extends UseValueEq
 
   final case class SequenceObserverFocus(instrument: Instrument,
@@ -146,23 +148,23 @@ package circuit {
       extends UseValueEq
 
   final case class HeaderSideBarFocus(
-      status:     ClientStatus,
-      conditions: Conditions,
-      operator:   Option[Operator],
-      observer:   Either[Observer, SequenceObserverFocus])
+    status:     ClientStatus,
+    conditions: Conditions,
+    operator:   Option[Operator],
+    observer:   Either[Observer, SequenceObserverFocus])
       extends UseValueEq
 
   final case class InstrumentStatusFocus(
-      instrument:  Instrument,
-      active:      Boolean,
-      idState:     Option[(Observation.Id, SequenceState)],
-      runningStep: Option[RunningStep])
+    instrument:  Instrument,
+    active:      Boolean,
+    idState:     Option[(Observation.Id, SequenceState)],
+    runningStep: Option[RunningStep])
       extends UseValueEq
 
   final case class TabFocus(
-      canOperate:      Boolean,
-      tabs:            NonEmptyList[Either[CalibrationQueueTabActive, AvailableTab]],
-      defaultObserver: Observer)
+    canOperate:      Boolean,
+    tabs:            NonEmptyList[Either[CalibrationQueueTabActive, AvailableTab]],
+    defaultObserver: Observer)
 
   object TabFocus {
     implicit val eq: Eq[TabFocus] =
@@ -237,14 +239,14 @@ package circuit {
   }
 
   final case class StepsTableFocus(
-      id:                  Observation.Id,
-      instrument:          Instrument,
-      state:               SequenceState,
-      steps:               List[Step],
-      stepConfigDisplayed: Option[Int],
-      nextStepToRun:       Option[Int],
-      isPreview:           Boolean,
-      tableState:          TableState[StepsTable.TableColumn])
+    id:                  Observation.Id,
+    instrument:          Instrument,
+    state:               SequenceState,
+    steps:               List[Step],
+    stepConfigDisplayed: Option[Int],
+    nextStepToRun:       Option[Int],
+    isPreview:           Boolean,
+    tableState:          TableState[StepsTable.TableColumn])
 
   object StepsTableFocus {
     implicit val eq: Eq[StepsTableFocus] =
@@ -261,9 +263,9 @@ package circuit {
   }
 
   final case class StepsTableAndStatusFocus(
-      status:           ClientStatus,
-      stepsTable:       Option[StepsTableFocus],
-      configTableState: TableState[StepConfigTable.TableColumn])
+    status:           ClientStatus,
+    stepsTable:       Option[StepsTableFocus],
+    configTableState: TableState[StepConfigTable.TableColumn])
 
   object StepsTableAndStatusFocus {
     implicit val eq: Eq[StepsTableAndStatusFocus] =
@@ -308,9 +310,9 @@ package circuit {
 
   @Lenses
   final case class AppTableStates(
-      queueTable:      TableState[QueueTableBody.TableColumn],
-      stepConfigTable: TableState[StepConfigTable.TableColumn],
-      stepsTables:     Map[Observation.Id, TableState[StepsTable.TableColumn]])
+    queueTable:      TableState[QueueTableBody.TableColumn],
+    stepConfigTable: TableState[StepConfigTable.TableColumn],
+    stepsTables:     Map[Observation.Id, TableState[StepsTable.TableColumn]])
       extends UseValueEq
 
   @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))

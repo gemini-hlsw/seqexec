@@ -130,8 +130,14 @@ object actions {
 
   implicit val show: Show[Action] = Show.show {
     case s @ ServerMessage(u @ SeqexecModelUpdate(view)) =>
-      val someSteps = view.sessionQueue.map(s =>
-        (s"id: ${s.id.format}", s"steps: ${s.steps.length}", s.steps.filter(_.status === StepState.Running).slice(0, scala.math.min(s.steps.length, 20)).collect(standardStep)))
+      val someSteps = view.sessionQueue.map(
+        s =>
+          (s"id: ${s.id.format}",
+           s"steps: ${s.steps.length}",
+           s.steps
+             .filter(_.status === StepState.Running)
+             .slice(0, scala.math.min(s.steps.length, 20))
+             .collect(standardStep)))
       val dayCalQueue = view.queues.values.map(_.queue).mkString(",")
       s"${s.getClass.getSimpleName}(${u.getClass.getSimpleName}, dayCal: '${dayCalQueue}', loaded: '${view.loaded.mkString(",")}', $someSteps)"
     case s @ RememberCompleted(view)                    =>
