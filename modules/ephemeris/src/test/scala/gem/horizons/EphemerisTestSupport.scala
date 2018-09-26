@@ -7,7 +7,7 @@ import gem.math.{ Angle, Coordinates, EphemerisCoordinates, Offset }
 import gem.syntax.treemap._
 import gem.util.Timestamp
 
-import cats.effect.IO
+import cats.effect.{ IO, ContextShift }
 import fs2.Stream
 
 import java.io.InputStream
@@ -15,10 +15,15 @@ import java.time.{ LocalDateTime, ZoneOffset }
 import java.time.format.DateTimeFormatter
 
 import scala.collection.immutable.TreeMap
+import scala.concurrent.ExecutionContext
 import scala.io.Source
 
 
 trait EphemerisTestSupport {
+
+  private implicit val contextShift: ContextShift[IO] =
+    IO.contextShift(scala.concurrent.ExecutionContext.global)
+
   val TimeFormat: DateTimeFormatter =
     DateTimeFormatter.ofPattern("yyyy-MMM-dd HH:mm:ss.SSS")
 
@@ -47,7 +52,7 @@ trait EphemerisTestSupport {
     getClass.getResourceAsStream(s"$n.eph")
 
   def stream(n: String): Stream[IO, String] =
-    fs2.io.readInputStream(IO(inputStream(n)), 128)
+    fs2.io.readInputStream(IO(inputStream(n)), 128, ExecutionContext.global)
           .through(fs2.text.utf8Decode)
 
   def load(n: String): String =

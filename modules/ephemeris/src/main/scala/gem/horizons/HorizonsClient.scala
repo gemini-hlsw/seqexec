@@ -7,12 +7,12 @@ import gem.enum.Site
 
 import cats.ApplicativeError
 import cats.data.Reader
-import cats.effect.IO
+import cats.effect.{ IO, ContextShift, Resource }
 import cats.implicits._
 
 import org.http4s._
 import org.http4s.client.Client
-import org.http4s.client.blaze.{ BlazeClientConfig, Http1Client }
+import org.http4s.client.blaze.BlazeClientBuilder
 
 import fs2.Stream
 //import fs2.async.mutable.Semaphore
@@ -25,11 +25,15 @@ import java.time.ZoneOffset.UTC
 import java.time.format.DateTimeFormatter
 import java.util.Locale.US
 
+import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
 /** A client for interacting with the JPL horizons service.
   */
 object HorizonsClient {
+
+  private implicit val contextShift: ContextShift[IO] =
+    IO.contextShift(scala.concurrent.ExecutionContext.global)
 
   /** A global mutex for limiting concurrent connections to Horizons. */
 //  private val mutex: Semaphore[IO] =
@@ -38,13 +42,13 @@ object HorizonsClient {
   /** A stream that emits a single client that will be shut down automatically. An global mutex
     * ensures that only one such stream exists at a time.
     */
-  val client: Stream[IO, Client[IO]] = {
+  val client: Resource[IO, Client[IO]] = {
     // By using the singleton type here we prove that the mutex is a constant value. This guards
     // against someone accidentally refactoring it into a method.
 //    val mutexʹ: mutex.type = mutex
-    val client = Http1Client.stream[IO](BlazeClientConfig.defaultConfig.copy(responseHeaderTimeout = 20.seconds))
+    val client = BlazeClientBuilder[IO](ExecutionContext.global).withResponseHeaderTimeout(20.seconds)
 //    Stream.bracket(mutexʹ.decrement)(_ => client, _ => mutexʹ.increment)
-    client
+    client.resource
   }
 
   /** Horizons service URL. */
@@ -98,14 +102,14 @@ object HorizonsClient {
 
   /** Creates a `Stream` of results from the horizons server when executed. */
   val stream: ParamReader[Stream[IO, String]] =
-    request.map { r => client.flatMap { _.streaming(r) { _.body.through(utf8Decode) } } }
+    request.map { r => Stream.resource(client).flatMap { _.streaming(r) { _.body.through(utf8Decode) } } }
 
   /** Retrieves all the horizons server outout into a single String. */
   val fetch: ParamReader[IO[String]] =
     request.map { r =>
-      client.flatMap { c =>
-        Stream.eval(c.expect[String](r))
-      }.compile.last.map(_.getOrElse(sys.error("unpossible: empty stream")))
+      client.use { c =>
+        c.expect[String](r)
+      }
     }
 
 }

@@ -91,7 +91,7 @@ object Settings {
     val scalaParsersVersion     = "1.1.1"
     val scalaXmlVerson          = "1.1.1"
 
-    val http4sVersion           = "0.18.19"
+    val http4sVersion           = "0.19.0-M4"
     val squants                 = "1.3.0"
     val argonaut                = "6.2.2"
     val commonsHttp             = "2.0.2"

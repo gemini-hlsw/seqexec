@@ -6,9 +6,12 @@ package gem.sql
 import doobie._, doobie.implicits._
 import gem.sql.enum._
 import java.nio.file._
-import cats.implicits._, cats.effect.IO
+import cats.implicits._, cats.effect.{ IO, ContextShift }
 
 object Main {
+
+  private implicit val contextShift: ContextShift[IO] =
+    IO.contextShift(scala.concurrent.ExecutionContext.global)
 
   val xa: Transactor[IO] =
     Transactor.fromDriverManager[IO](

@@ -13,7 +13,6 @@ import gem.horizons.EphemerisCompression._
 
 import cats._
 import cats.effect._
-import cats.effect.implicits._
 import cats.implicits._
 
 import doobie._, doobie.implicits._
@@ -38,7 +37,7 @@ final case class HorizonsEphemerisUpdater[M[_]: Monad: LiftIO](xa: Transactor[M]
     (for {
       meta <- EphemerisDao.selectMeta(key, site)
       rnge <- EphemerisDao.selectTimes(key, site)
-      soln <- HorizonsSolutionRefQuery(key).lookup.liftIO[ConnectionIO]
+      soln <- HorizonsSolutionRefQuery(key).lookup.to[ConnectionIO]
     } yield EphemerisContext(key, site, meta, rnge, soln)).transact(xa)
 
 
@@ -48,8 +47,8 @@ final case class HorizonsEphemerisUpdater[M[_]: Monad: LiftIO](xa: Transactor[M]
   def update(key: EphemerisKey.Horizons, site: Site): M[Unit] =
 
     for {
-      time <- Timestamp.now.liftIO[M]
-      sem  <- Semester.current(site).liftIO[M]
+      time <- Timestamp.now.to[M]
+      sem  <- Semester.current(site).to[M]
       ctx  <- report(key, site)
       _    <- updateIfNecessary(ctx, time, sem).transact(xa)
     } yield ()
@@ -71,7 +70,7 @@ final case class HorizonsEphemerisUpdater[M[_]: Monad: LiftIO](xa: Transactor[M]
 
     qs.foldMap(_.streamEphemeris)
       .through(standardAccelerationCompression)
-      .translate(λ[IO ~> ConnectionIO](_.liftIO[ConnectionIO]))
+      .translate(λ[IO ~> ConnectionIO](_.to[ConnectionIO]))
   }
 
 
