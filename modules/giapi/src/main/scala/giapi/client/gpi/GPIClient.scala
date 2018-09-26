@@ -218,7 +218,6 @@ object GPIExample extends App {
             f <- client.observe("TEST_S20180509", 5.seconds) // observe
             _ <- client.park // Park at the end
           } yield f
-        // r is IO[CommandResult]
         Stream.eval(r.map(println)) // scalastyle:ignore
       },
       _.close
