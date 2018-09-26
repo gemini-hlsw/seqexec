@@ -313,7 +313,7 @@ object StepsTable {
           Column.propsNoFlex(
             controlWidth,
             "state",
-            label = "Control",
+            label = "Execution Progress",
             className = SeqexecStyles.paddedStepRow.htmlClass,
             cellRenderer = stepProgressRenderer(i, p))))
 
