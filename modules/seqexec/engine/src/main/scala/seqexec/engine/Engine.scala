@@ -39,7 +39,7 @@ class Engine[D, U](stateL: Lens[D, Engine.State]) {
   private def switch(id: Observation.Id)(st: SequenceState): HandleType[Unit] =
     modifyS(id)(s => Sequence.State.status.set(st)(s))
 
-  private def start(id: Observation.Id, clientId: ClientID, userCheck: D => Boolean): HandleType[Unit] =
+  def start(id: Observation.Id, clientId: ClientID, userCheck: D => Boolean): HandleType[Unit] =
     getS(id).flatMap {
       case Some(seq) =>
         // No resources being used by other running sequences
@@ -303,11 +303,11 @@ class Engine[D, U](stateL: Lens[D, Engine.State]) {
 
   // Functions for type bureaucracy
 
-  private def pure[A](a: A): HandleType[A] = Applicative[HandleType].pure(a)
+  def pure[A](a: A): HandleType[A] = Applicative[HandleType].pure(a)
 
-  private val unit: HandleType[Unit] = pure(())
+  val unit: HandleType[Unit] = pure(())
 
-  private val get: HandleType[D] =
+  val get: HandleType[D] =
     StateT.get[IO, D].toHandleP
 
   private def inspect[A](f: D => A): HandleType[A] =

@@ -52,6 +52,7 @@ package server {
   final case class SetSkyBackground(wv: SkyBackground, user: Option[UserDetails]) extends SeqEvent
   final case class SetCloudCover(cc: CloudCover, user: Option[UserDetails]) extends SeqEvent
   final case class NotifyUser(memo: Notification, clientID: ClientID) extends SeqEvent
+  final case class StartQueue(qid: QueueId, clientID: ClientID) extends SeqEvent
   case object NullSeqEvent extends SeqEvent
 
   sealed trait ControlStrategy

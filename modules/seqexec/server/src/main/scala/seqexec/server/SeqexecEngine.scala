@@ -253,6 +253,21 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
     Event.modifyState[executeEngine.ConcreteTypes]((moveSeq(qid, seqId, d) withEvent NullSeqEvent).toHandle)
   ).map(_.asRight)
 
+  private def runQueue(qid: QueueId, clientId: ClientID): executeEngine.HandleType[Unit] =
+    executeEngine.get.map(nextRunnableObservations(qid)).flatMap(_.map(executeEngine.start(_, clientId, {_ => true})).fold(executeEngine.unit)(_ *> _))
+
+  def startQueue(q: EventQueue, qid: QueueId, clientId: ClientID): IO[Either[SeqexecFailure, Unit]] = q.enqueue1(
+    Event.modifyState[executeEngine.ConcreteTypes](executeEngine.get.flatMap{ st => {
+      (EngineState.queues ^|-? index(qid)).getOption(st).map {
+        _.status(st) match {
+          case BatchExecState.Idle     => ((EngineState.queues ^|-? index(qid) ^|-> ExecutionQueue.cmdState).set(BatchCommandState.Run) >>> {(_, ())}).toHandle *> runQueue(qid, clientId)
+          case BatchExecState.Stopping => ((EngineState.queues ^|-? index(qid) ^|-> ExecutionQueue.cmdState).set(BatchCommandState.Run) >>> {(_, ())}).toHandle
+          case _                       => executeEngine.unit
+        }
+      }.getOrElse(executeEngine.unit)
+    }}.map(_ => StartQueue(qid, clientId)))
+  ).map(_.asRight)
+
   def notifyODB(i: (executeEngine.ResultType, EngineState)): IO[(executeEngine.ResultType, EngineState)] = {
     (i match {
       case (SystemUpdate(Failed(id, _, e), _), _) => systems.odb.obsAbort(id, e.msg)
@@ -345,10 +360,10 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
     (loads ++ unloads).toList
   }
 
-  implicit private final class ToHandle(f: EngineState => (EngineState, SeqEvent)) {
+  implicit private final class ToHandle[A](f: EngineState => (EngineState, A)) {
     import Engine.HandleToHandleP
-    val toHandle: Engine.HandleP[EngineState, Event[executeEngine.ConcreteTypes], SeqEvent] =
-      StateT[IO, EngineState, SeqEvent]{ st => IO(f(st)) }.toHandleP
+    def toHandle: Engine.HandleP[EngineState, Event[executeEngine.ConcreteTypes], A] =
+      StateT[IO, EngineState, A]{ st => IO(f(st)) }.toHandleP
   }
 
 }
@@ -659,6 +674,7 @@ object SeqexecEngine extends SeqexecConfiguration {
     case LoadSequence(id)              => SequenceLoaded(id, svs)
     case UnloadSequence(id)            => SequenceUnloaded(id, svs)
     case NotifyUser(m, cid)            => UserNotification(m, cid)
+    case StartQueue(_, _)              => NullEvent
   }
 
   def toSeqexecEvent(ev: executeEngine.ResultType)(svs: => SequencesQueue[SequenceView]): SeqexecEvent = ev match {
@@ -694,7 +710,7 @@ object SeqexecEngine extends SeqexecConfiguration {
     }
   }
 
-  implicit private final class WithEvent(f: Endo[EngineState]) {
+  implicit private final class WithEvent(val f: Endo[EngineState]) extends AnyVal {
     def withEvent(ev: SeqEvent): EngineState => (EngineState, SeqEvent) = f >>> {(_, ev)}
   }
   // scalastyle:on
