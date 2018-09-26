@@ -167,7 +167,6 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
         s <- Gen.listOfN(l, arbitrary[SeqexecTab])
       } yield {
         val sequences = NonEmptyList.of(c, s: _*)
-        println(s"seq ${sequences.length}")
         SequencesOnDisplay(Zipper.fromNel(sequences))
       }
     }
