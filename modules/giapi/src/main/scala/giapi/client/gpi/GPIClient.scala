@@ -3,19 +3,19 @@
 
 package giapi.client.gpi
 
-import cats.Show
 import cats.implicits._
 import edu.gemini.aspen.giapi.commands.{Activity, SequenceCommand}
 import fs2.Stream
 import giapi.client.commands.{Command, CommandResult, Configuration}
-import giapi.client.{Giapi, commands}
+import giapi.client.{Giapi, GiapiClient}
 import mouse.boolean._
+
 import scala.concurrent.duration._
 
 /**
   * Client for GPI
   */
-class GPIClient[F[_]](giapi: Giapi[F]) {
+class GPIClient[F[_]](override val giapi: Giapi[F]) extends GiapiClient[F] {
   // GPI documentation specify 60 seconds as the max time to move muchanism
   val DefaultCommandTimeout: FiniteDuration = 60.seconds
 
@@ -82,14 +82,6 @@ class GPIClient[F[_]](giapi: Giapi[F]) {
       Command(SequenceCommand.END_GUIDE,
               Activity.PRESET_START,
               Configuration.Zero), DefaultCommandTimeout)
-
-  def observe[A: Show](dataLabel: A, expTime: FiniteDuration): F[CommandResult] =
-    giapi.command(
-      Command(
-        SequenceCommand.OBSERVE,
-        Activity.PRESET_START,
-        Configuration.single(commands.DataLabelCfg, dataLabel)
-      ), expTime)
 
   def endObserve: F[CommandResult] =
     giapi.command(
@@ -181,14 +173,6 @@ class GPIClient[F[_]](giapi: Giapi[F]) {
       ),
       DefaultCommandTimeout
     )
-
-  def genericApply(configuration: Configuration): F[CommandResult] =
-    giapi.command(
-      Command(
-        SequenceCommand.APPLY,
-        Activity.PRESET_START,
-        configuration
-      ), DefaultCommandTimeout)
 }
 
 object GPIExample extends App {
@@ -234,6 +218,7 @@ object GPIExample extends App {
             f <- client.observe("TEST_S20180509", 5.seconds) // observe
             _ <- client.park // Park at the end
           } yield f
+        // r is IO[CommandResult]
         Stream.eval(r.map(println)) // scalastyle:ignore
       },
       _.close
