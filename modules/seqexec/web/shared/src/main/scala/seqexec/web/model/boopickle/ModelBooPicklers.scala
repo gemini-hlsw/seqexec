@@ -95,6 +95,13 @@ trait ModelBooPicklers extends GemModelBooPicklers {
     .addConcreteType[ServerLogLevel.WARN.type]
     .addConcreteType[ServerLogLevel.ERROR.type]
 
+  implicit val batchCommandPickler = compositePickler[BatchCommandState]
+    .addConcreteType[BatchCommandState.Idle.type]
+    .addConcreteType[BatchCommandState.Run.type]
+    .addConcreteType[BatchCommandState.Stop.type]
+
+  implicit val executionQueuePickler = generatePickler[ExecutionQueue]
+
   implicit val sequenceQueueIdPickler = generatePickler[SequencesQueue[Observation.Id]]
 
   implicit val sequenceQueueViewPickler = generatePickler[SequencesQueue[SequenceView]]

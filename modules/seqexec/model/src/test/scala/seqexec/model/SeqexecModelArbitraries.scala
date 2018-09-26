@@ -20,9 +20,11 @@ trait SeqexecModelArbitraries extends ArbObservation {
   implicit def sequencesQueueArb[A](implicit arb: Arbitrary[A]): Arbitrary[SequencesQueue[A]] = Arbitrary {
     for {
       b <- Gen.listOfN[A](maxListSize, arb.arbitrary)
+      c <- arbitrary[Conditions]
+      o <- arbitrary[Option[Operator]]
       // We are already testing serialization of conditions and Strings
       // Let's reduce the test space by only testing the list of items
-    } yield SequencesQueue(Map.empty, Conditions.Default, Some(Operator("operator")), b)
+    } yield SequencesQueue(Map.empty, c, o, Map.empty, b)
   }
 
   implicit val clientIdArb: Arbitrary[ClientID] = Arbitrary(Gen.uuid)
@@ -30,6 +32,14 @@ trait SeqexecModelArbitraries extends ArbObservation {
   implicit val levArb = Arbitrary[ServerLogLevel](Gen.oneOf(ServerLogLevel.INFO, ServerLogLevel.WARN, ServerLogLevel.ERROR))
   implicit val resArb = Arbitrary[Resource](Gen.oneOf(Resource.P1, Resource.OI, Resource.TCS, Resource.Gcal, Resource.Gems, Resource.Altair, Instrument.F2, Instrument.GmosS, Instrument.GmosN, Instrument.GPI, Instrument.GSAOI, Instrument.GNIRS, Instrument.NIRI, Instrument.NIFS))
   implicit val insArb = Arbitrary[Instrument](Gen.oneOf(Instrument.F2, Instrument.GmosS, Instrument.GmosN, Instrument.GPI, Instrument.GSAOI, Instrument.GNIRS, Instrument.NIRI, Instrument.NIFS))
+
+  implicit val executionQueueArb: Arbitrary[ExecutionQueue] = Arbitrary {
+    for {
+      n <- arbitrary[String]
+      s <- arbitrary[BatchCommandState]
+      q <- arbitrary[List[Observation.Id]]
+    } yield ExecutionQueue(n, s, q)
+  }
 
   implicit val actArb = Arbitrary[ActionType] {
     for {
@@ -292,8 +302,13 @@ trait SeqexecModelArbitraries extends ArbObservation {
   implicit val seqBatchCmdStateArb: Arbitrary[BatchCommandState] = Arbitrary(
     Gen.oneOf(BatchCommandState.Idle, BatchCommandState.Run, BatchCommandState.Stop)
   )
+
   implicit val seqBatchCmdStateCogen: Cogen[BatchCommandState] =
     Cogen[String].contramap(_.productPrefix)
+
+  implicit val exQueueCmdStateCogen: Cogen[ExecutionQueue] =
+    Cogen[(String, BatchCommandState, List[Observation.Id])]
+      .contramap(x => (x.name, x.cmdState, x.queue))
 }
 
 object SeqexecModelArbitraries extends SeqexecModelArbitraries

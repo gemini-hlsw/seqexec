@@ -7,12 +7,12 @@ import boopickle.Default._
 import cats.implicits._
 import gem.Observation
 import java.util.logging.LogRecord
-import org.scalajs.dom.ext.{Ajax, AjaxException}
+import org.scalajs.dom.ext.Ajax
 import org.scalajs.dom.XMLHttpRequest
 import seqexec.model.{ ClientID, Conditions, UserDetails, UserLoginRequest, Observer, Operator, SequencesQueue, Step }
 import seqexec.model.boopickle._
 import seqexec.model.enum.{ CloudCover, Instrument, ImageQuality, SkyBackground, WaterVapor}
-import seqexec.web.common.{HttpStatusCodes, LogMessage, RegularCommand}
+import seqexec.web.common.{LogMessage, RegularCommand}
 import seqexec.web.common.LogMessage._
 import scala.scalajs.js.URIUtils._
 import scala.concurrent.Future
@@ -39,11 +39,6 @@ object SeqexecWebClient extends ModelBooPicklers {
       responseType = "arraybuffer"
     )
     .map(unpickle[SequencesQueue[Observation.Id]])
-    .recover {
-      case AjaxException(xhr) if xhr.status == HttpStatusCodes.NotFound  =>
-        // If not found, we'll consider it like an empty response
-        SequencesQueue(Map.empty, Conditions.Default, None, Nil)
-    }
 
   /**
     * Requests the backend to execute a sequence

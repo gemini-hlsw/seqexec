@@ -81,7 +81,7 @@ final class SequencesOnDisplaySpec extends CatsSuite with ArbitrariesWebClient {
     val queue  = List(s)
     val loaded = Map((Instrument.GPI: Instrument) -> obsId)
     val sod = SequencesOnDisplay.Empty.updateFromQueue(
-      SequencesQueue(loaded, Conditions.Default, None, queue))
+      SequencesQueue(loaded, Conditions.Default, None, Map.empty, queue))
     sod.tabs.length should be(2)
     sod.tabs.toList.lift(1) should matchPattern {
       case Some(InstrumentSequenceTab(_, s, _, _, _, _))
@@ -95,7 +95,7 @@ final class SequencesOnDisplaySpec extends CatsSuite with ArbitrariesWebClient {
     val queue  = List(s)
     val loaded = Map((Instrument.GPI: Instrument) -> obsId)
     val sod = SequencesOnDisplay.Empty.updateFromQueue(
-      SequencesQueue(loaded, Conditions.Default, None, queue))
+      SequencesQueue(loaded, Conditions.Default, None, Map.empty, queue))
 
     val obs2 = Observation.Id.unsafeFromString("GS-2018A-Q-0-2")
     val s2   = SequenceView(obs2, m, SequenceState.Idle, Nil, None)

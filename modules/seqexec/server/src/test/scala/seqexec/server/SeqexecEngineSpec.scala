@@ -24,7 +24,7 @@ import seqexec.engine.Result.PauseContext
 import seqexec.engine._
 import seqexec.server.SeqexecEngine.Settings
 import seqexec.server.keywords.GDSClient
-import seqexec.model.{Conditions, Observer, Operator, SequenceState}
+import seqexec.model.{ExecutionQueue, Conditions, Observer, Operator, SequenceState}
 import seqexec.model.enum.{ActionStatus, CloudCover, ImageQuality, Instrument, Resource, SkyBackground, WaterVapor}
 import seqexec.model.{ActionType, UserDetails}
 import seqexec.model.enum.Resource.TCS

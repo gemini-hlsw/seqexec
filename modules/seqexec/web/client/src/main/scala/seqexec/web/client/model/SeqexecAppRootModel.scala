@@ -25,8 +25,8 @@ final case class SeqexecAppRootModel(sequences: SequencesQueue[SequenceView],
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object SeqexecAppRootModel {
-  private val NoSequencesLoaded: SequencesQueue[SequenceView] =
-    SequencesQueue[SequenceView](Map.empty, Conditions.Default, None, Nil)
+  val NoSequencesLoaded: SequencesQueue[SequenceView] =
+    SequencesQueue[SequenceView](Map.empty, Conditions.Default, None, Map.empty, Nil)
 
   val Initial: SeqexecAppRootModel = SeqexecAppRootModel(
     NoSequencesLoaded,

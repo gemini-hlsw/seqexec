@@ -47,4 +47,5 @@ final class ModelSpec extends CatsSuite {
   checkAll("Eq[ResourceConflict]", EqTests[ResourceConflict].eqv)
   checkAll("Eq[InstrumentInUse]", EqTests[InstrumentInUse].eqv)
   checkAll("Eq[Notification]", EqTests[Notification].eqv)
+  checkAll("Eq[ExecutionQueue]", EqTests[ExecutionQueue].eqv)
 }

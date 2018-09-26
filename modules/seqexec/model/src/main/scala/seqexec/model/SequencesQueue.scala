@@ -19,6 +19,7 @@ final case class SequencesQueue[T](
   loaded:       Map[Instrument, Observation.Id],
   conditions:   Conditions,
   operator:     Option[Operator],
+  queues:       Map[QueueId, ExecutionQueue],
   sessionQueue: List[T]
 )
 
@@ -26,7 +27,7 @@ final case class SequencesQueue[T](
 object SequencesQueue {
 
   implicit def equal[T: Eq]: Eq[SequencesQueue[T]] =
-    Eq.by(x => (x.loaded, x.conditions, x.operator, x.sessionQueue))
+    Eq.by(x => (x.loaded, x.conditions, x.operator, x.queues, x.sessionQueue))
 
   def queueItemG[T](pred: T => Boolean): Getter[SequencesQueue[T], Option[T]] =
     SequencesQueue.sessionQueue

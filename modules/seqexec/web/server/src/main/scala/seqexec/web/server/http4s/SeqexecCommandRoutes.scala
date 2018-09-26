@@ -4,7 +4,6 @@
 package seqexec.web.server.http4s
 
 import cats.effect.IO
-import gem.Observation
 import seqexec.server.Commands
 import seqexec.server.SeqexecEngine
 import seqexec.server
@@ -61,8 +60,7 @@ class SeqexecCommandRoutes(auth: AuthenticationService, inputQueue: server.Event
     case GET -> Root / ObsIdVar(obsId) / "sync" as _ =>
       for {
         u     <- se.load(inputQueue, obsId)
-        resp  <- u.fold(_ => NotFound(s"Not found sequence $obsId"), _ =>
-          Ok(SequencesQueue[Observation.Id](Map.empty, Conditions.Default, None, List(obsId))))
+        resp  <- u.fold(_ => NotFound(s"Not found sequence $obsId"), _ => Ok("Sync requested"))
       } yield resp
 
    case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "skip" / bp as user =>

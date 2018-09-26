@@ -190,6 +190,7 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
               EngineState.selected.get(qState),
               EngineState.conditions.get(qState),
               EngineState.operator.get(qState),
+              Map.empty,
               sequences
             )
           )
