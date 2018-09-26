@@ -52,12 +52,12 @@ object SeqexecWebClient extends ModelBooPicklers {
     Unpickle[A].fromBytes(ab)
   }
 
-  def sync(id: Observation.Id): Future[SequencesQueue[Observation.Id]] =
-    Ajax.get(
+  def sync(id: Observation.Id): Future[String] =
+    Ajax.post(
       url = s"$baseUrl/commands/${encodeURI(id.format)}/sync",
       responseType = "arraybuffer"
     )
-    .map(unpickle[SequencesQueue[Observation.Id]])
+    .map(_ => id.format)
 
   /**
     * Requests the backend to execute a sequence

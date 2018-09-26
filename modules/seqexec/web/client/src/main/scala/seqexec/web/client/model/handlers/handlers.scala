@@ -28,7 +28,7 @@ class SyncRequestsHandler[M](modelRW: ModelRW[M, Boolean])
     with Handlers[M, Boolean] {
   def handleSyncRequestOperation: PartialFunction[Any, ActionResult[M]] = {
     case RequestSync(s) =>
-      updated(true, Effect(SeqexecWebClient.sync(s).map(r => if (r.sessionQueue.isEmpty) RunSyncFailed(s) else RunSync(s))))
+      updated(true, Effect(SeqexecWebClient.sync(s).map(r => RunSync(s))))
   }
 
   def handleSyncResult: PartialFunction[Any, ActionResult[M]] = {
