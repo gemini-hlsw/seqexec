@@ -41,13 +41,15 @@ import web.client.style._
   */
 object SequenceControl {
   final case class Props(p: SequenceControlFocus) {
-    val runRequested: RunOperation = p.control
-      .map(_.tabOperations.runRequested)
-      .getOrElse(RunOperation.RunIdle)
+    val runRequested: RunOperation =
+      p.control
+        .map(_.tabOperations.runRequested)
+        .getOrElse(RunOperation.RunIdle)
 
-    val syncRequested: SyncOperation = p.control
-      .map(_.tabOperations.syncRequested)
-      .getOrElse(SyncOperation.SyncIdle)
+    val syncRequested: SyncOperation =
+      p.control
+        .map(_.tabOperations.syncRequested)
+        .getOrElse(SyncOperation.SyncIdle)
 
     val isRunning: Boolean = p.control.map(_.status).exists(_.isRunning)
   }
@@ -102,24 +104,20 @@ object SequenceControl {
   private val ST = ReactS.Fix[State]
 
   def requestRun(s: Observation.Id): CatsReact.ReactST[CallbackTo, State, Unit] =
-    ST.retM(SeqexecCircuit.dispatchCB(RequestRun(s))) >> ST
-      .mod(_.requestRun)
-      .liftCB
+    ST.retM(SeqexecCircuit.dispatchCB(RequestRun(s))) >>
+      ST.mod(_.requestRun).liftCB
 
   def requestSync(s: Observation.Id): CatsReact.ReactST[CallbackTo, State, Unit] =
-    ST.retM(SeqexecCircuit.dispatchCB(RequestSync(s))) >> ST
-      .mod(_.requestSync)
-      .liftCB
+    ST.retM(SeqexecCircuit.dispatchCB(RequestSync(s))) >>
+      ST.mod(_.requestSync).liftCB
 
   def requestPause(s: Observation.Id): CatsReact.ReactST[CallbackTo, State, Unit] =
-    ST.retM(SeqexecCircuit.dispatchCB(RequestPause(s))) >> ST
-      .mod(_.requestPause)
-      .liftCB
+    ST.retM(SeqexecCircuit.dispatchCB(RequestPause(s))) >>
+      ST.mod(_.requestPause).liftCB
 
   def requestCancelPause(s: Observation.Id): CatsReact.ReactST[CallbackTo, State, Unit] =
-    ST.retM(SeqexecCircuit.dispatchCB(RequestCancelPause(s))) >> ST
-      .mod(_.requestCancelPause)
-      .liftCB
+    ST.retM(SeqexecCircuit.dispatchCB(RequestCancelPause(s))) >>
+      ST.mod(_.requestCancelPause).liftCB
 
   private def controlButton(icon:     Icon,
                             color:    String,
