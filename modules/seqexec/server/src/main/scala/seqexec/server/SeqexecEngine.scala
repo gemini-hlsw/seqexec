@@ -179,7 +179,7 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
     }
 
   def eventStream(q: EventQueue): Stream[IO, SeqexecEvent] = {
-    executeEngine.process(q.dequeue.mergeHaltBoth(seqQueueRefreshStream))(EngineState.default).flatMap(x =>
+    executeEngine.process(iterateQueues)(q.dequeue.mergeHaltBoth(seqQueueRefreshStream))(EngineState.default).flatMap(x =>
       Stream.eval(notifyODB(x))).flatMap {
         case (ev, qState) =>
           val sequences = qState.sequences.values.map(
@@ -260,13 +260,19 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
     Event.modifyState[executeEngine.ConcreteTypes](executeEngine.get.flatMap{ st => {
       (EngineState.queues ^|-? index(qid)).getOption(st).map {
         _.status(st) match {
-          case BatchExecState.Idle     => ((EngineState.queues ^|-? index(qid) ^|-> ExecutionQueue.cmdState).set(BatchCommandState.Run) >>> {(_, ())}).toHandle *> runQueue(qid, clientId)
-          case BatchExecState.Stopping => ((EngineState.queues ^|-? index(qid) ^|-> ExecutionQueue.cmdState).set(BatchCommandState.Run) >>> {(_, ())}).toHandle
+          case BatchExecState.Idle     => ((EngineState.queues ^|-? index(qid) ^|-> ExecutionQueue.cmdState).set(BatchCommandState.Run(clientId)) >>> {(_, ())}).toHandle *> runQueue(qid, clientId)
+          case BatchExecState.Stopping => ((EngineState.queues ^|-? index(qid) ^|-> ExecutionQueue.cmdState).set(BatchCommandState.Run(clientId)) >>> {(_, ())}).toHandle
           case _                       => executeEngine.unit
         }
       }.getOrElse(executeEngine.unit)
     }}.map(_ => StartQueue(qid, clientId)))
   ).map(_.asRight)
+
+  // It assumes only one queue can run at a time
+  private val iterateQueues: PartialFunction[SystemEvent, executeEngine.HandleType[Unit]] = {
+    case Finished(_) => executeEngine.get.map(st => st.queues.collect{
+      case (qid, q@ExecutionQueue(_, BatchCommandState.Run(clid), _)) if q.status(st) =!= BatchExecState.Completed => (qid, clid) }.headOption).flatMap(_.map{ case (qid, clid) => runQueue(qid, clid) }.getOrElse(executeEngine.unit))
+  }
 
   def notifyODB(i: (executeEngine.ResultType, EngineState)): IO[(executeEngine.ResultType, EngineState)] = {
     (i match {

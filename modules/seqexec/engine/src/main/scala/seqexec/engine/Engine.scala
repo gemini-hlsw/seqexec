@@ -232,7 +232,7 @@ class Engine[D, U](stateL: Lens[D, Engine.State]) {
     * Main logical thread to handle events and produce output.
     */
   @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
-  private def run(ev: EventType)(implicit ec: ExecutionContext): HandleType[ResultType] = {
+  private def run(userReact: PartialFunction[SystemEvent, HandleType[Unit]])(ev: EventType)(implicit ec: ExecutionContext): HandleType[ResultType] = {
     def handleUserEvent(ue: UserEventType): HandleType[ResultType] = ue match {
       case Start(id, _, clid, userCheck) => Logger.debug(s"Engine: Start requested for sequence ${id.format}") *> start(id, clid, userCheck) *> pure(UserCommandResponse(ue, EventResult.Ok, None))
       case Pause(id, _)                  => Logger.debug(s"Engine: Pause requested for sequence ${id.format}") *> pause(id) *> pure(UserCommandResponse(ue, EventResult.Ok, None))
@@ -267,7 +267,7 @@ class Engine[D, U](stateL: Lens[D, Engine.State]) {
 
     (ev match {
       case EventUser(ue)   => handleUserEvent(ue)
-      case EventSystem(se) => handleSystemEvent(se)
+      case EventSystem(se) => handleSystemEvent(se).flatMap(x => userReact.applyOrElse(se, (_:SystemEvent) => unit).map(_ => x))
     })
   }
 
@@ -289,15 +289,15 @@ class Engine[D, U](stateL: Lens[D, Engine.State]) {
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.AnyVal", "org.wartremover.warts.ImplicitParameter"))
-  private def runE(ev: EventType, s: D)(implicit ec: ExecutionContext): IO[(D, (ResultType, D), Stream[IO, EventType])] =
-    run(ev).run.run(s).map {
+  private def runE(userReact: PartialFunction[SystemEvent, HandleType[Unit]])(ev: EventType, s: D)(implicit ec: ExecutionContext): IO[(D, (ResultType, D), Stream[IO, EventType])] =
+    run(userReact)(ev).run.run(s).map {
       case (si, (r, p)) =>
         (si, (r, si), p.getOrElse(Stream.empty))
     }
 
   @SuppressWarnings(Array("org.wartremover.warts.AnyVal", "org.wartremover.warts.ImplicitParameter"))
-  def process(input: Stream[IO, EventType])(qs: D)(implicit ec: ExecutionContext): Stream[IO, (ResultType, D)] =
-    mapEvalState[EventType, D, (ResultType, D)](input, qs, runE)
+  def process(userReact: PartialFunction[SystemEvent, HandleType[Unit]])(input: Stream[IO, EventType])(qs: D)(implicit ec: ExecutionContext): Stream[IO, (ResultType, D)] =
+    mapEvalState[EventType, D, (ResultType, D)](input, qs, runE(userReact))
 
   //private def userModify(f: D => (D, U)): HandleType[U] = StateT[IO, D, U]( st => IO(f(st)) ).toHandleP
 

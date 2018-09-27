@@ -145,10 +145,10 @@ package object server {
 
       if(statuses.forall(_.isCompleted)) BatchExecState.Completed
       else q.cmdState match {
-        case BatchCommandState.Idle => BatchExecState.Idle
-        case BatchCommandState.Run  => if(statuses.exists(_.isRunning)) BatchExecState.Running
+        case BatchCommandState.Idle   => BatchExecState.Idle
+        case BatchCommandState.Run(_) => if(statuses.exists(_.isRunning)) BatchExecState.Running
                                   else BatchExecState.Waiting
-        case BatchCommandState.Stop => if(statuses.exists(_.isRunning)) BatchExecState.Stopping
+        case BatchCommandState.Stop   => if(statuses.exists(_.isRunning)) BatchExecState.Stopping
                                   else BatchExecState.Idle
       }
     }

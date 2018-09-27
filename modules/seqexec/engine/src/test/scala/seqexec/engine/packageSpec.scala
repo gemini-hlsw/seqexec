@@ -101,14 +101,14 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
 
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def runToCompletion(s0: Engine.State): Option[Engine.State] = {
-    executionEngine.process(Stream.eval(IO.pure(Event.start[executionEngine.ConcreteTypes](seqId, user, UUID.randomUUID(), always))))(s0).drop(1).takeThrough(
+    executionEngine.process(PartialFunction.empty)(Stream.eval(IO.pure(Event.start[executionEngine.ConcreteTypes](seqId, user, UUID.randomUUID(), always))))(s0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
     ).compile.last.unsafeRunSync.map(_._2)
   }
 
   it should "be in Running status after starting" in {
     val p = Stream.eval(IO.pure(Event.start[executionEngine.ConcreteTypes](seqId, user, UUID.randomUUID(), always)))
-    val qs = executionEngine.process(p)(qs1).take(1).compile.last.unsafeRunSync.map(_._2)
+    val qs = executionEngine.process(PartialFunction.empty)(p)(qs1).take(1).compile.last.unsafeRunSync.map(_._2)
     assert(qs.exists(s => Sequence.State.isRunning(s.sequences(seqId))))
   }
 
@@ -141,7 +141,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
     val p = Stream.eval(IO.pure(Event.start[executionEngine.ConcreteTypes](seqId, user, UUID.randomUUID(), always)))
 
     //take(3): Start, Executing, Paused
-    executionEngine.process(p)(s0).take(3).compile.last.unsafeRunSync.map(_._2)
+    executionEngine.process(PartialFunction.empty)(p)(s0).take(3).compile.last.unsafeRunSync.map(_._2)
   }
 
   "sequence state" should "stay as running when action pauses itself" in {
@@ -156,7 +156,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   "engine" should "run sequence to completion after resuming a paused action" in {
     val p = Stream.eval(IO.pure(Event.actionResume(seqId, 0, IO(Result.OK(Result.Configured(GmosS))))))
 
-    val result = actionPause.flatMap(executionEngine.process(p)(_).drop(1).takeThrough(
+    val result = actionPause.flatMap(executionEngine.process(PartialFunction.empty)(p)(_).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
     ).compile.last.unsafeRunTimed(5.seconds))
     val qso = result.flatMap(_.map(_._2))
@@ -194,7 +194,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
             q.enqueue1(Event.nullEvent),
             q.enqueue1(Event.getState[executionEngine.ConcreteTypes] { _ => Stream.eval(finishFlag.increment).map(_ => Event.nullEvent).some })
           ).sequence,
-          executionEngine.process(q.dequeue)(qs).drop(1).takeThrough(a => !isFinished(a._2.sequences(seqId).status)).compile.drain
+          executionEngine.process(PartialFunction.empty)(q.dequeue)(qs).drop(1).takeThrough(a => !isFinished(a._2.sequences(seqId).status)).compile.drain
         ).parSequence)
       }
     } yield r ).compile.last.unsafeRunTimed(5.seconds).flatten

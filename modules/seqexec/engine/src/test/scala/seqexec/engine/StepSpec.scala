@@ -121,13 +121,13 @@ class StepSpec extends FlatSpec {
   }
 
   def runToCompletion(s0: Engine.State): Option[Engine.State] = {
-    executionEngine.process(Stream.eval(IO.pure(Event.start[executionEngine.ConcreteTypes](seqId, user, UUID.randomUUID, always))))(s0).drop(1).takeThrough(
+    executionEngine.process(PartialFunction.empty)(Stream.eval(IO.pure(Event.start[executionEngine.ConcreteTypes](seqId, user, UUID.randomUUID, always))))(s0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
     ).compile.last.unsafeRunSync.map(_._2)
   }
 
   def runToCompletionL(s0: Engine.State): List[Engine.State] = {
-    executionEngine.process(Stream.eval(IO.pure(Event.start[executionEngine.ConcreteTypes](seqId, user, UUID.randomUUID, always))))(s0).drop(1).takeThrough(
+    executionEngine.process(PartialFunction.empty)(Stream.eval(IO.pure(Event.start[executionEngine.ConcreteTypes](seqId, user, UUID.randomUUID, always))))(s0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
     ).compile.toVector.unsafeRunSync.map(_._2).toList
   }
@@ -171,7 +171,7 @@ class StepSpec extends FlatSpec {
       k <- q
       o <- Stream.apply(qs0(k))
       _ <- Stream.eval(k.enqueue1(startEvent))
-      u <- executionEngine.process(k.dequeue)(o).drop(1).takeThrough(notFinished).map(_._2)
+      u <- executionEngine.process(PartialFunction.empty)(k.dequeue)(o).drop(1).takeThrough(notFinished).map(_._2)
     } yield u.sequences(seqId)
 
     inside (m.compile.last.unsafeRunSync()) {
@@ -214,7 +214,7 @@ class StepSpec extends FlatSpec {
 
     val qs1: Stream[IO, Option[Sequence.State]] =
       for {
-        u <- executionEngine.process(Stream.eval(IO.pure(startEvent)))(qs0).take(1)
+        u <- executionEngine.process(PartialFunction.empty)(Stream.eval(IO.pure(startEvent)))(qs0).take(1)
       } yield u._2.sequences.get(seqId)
 
     inside (qs1.compile.last.unsafeRunSync()) {
@@ -254,7 +254,7 @@ class StepSpec extends FlatSpec {
         )
       )
 
-    val qs1 = executionEngine.process(Stream.eval(IO.pure(Event.cancelPause(seqId, user))))(qs0).take(1).compile.last.unsafeRunSync.map(_._2)
+    val qs1 = executionEngine.process(PartialFunction.empty)(Stream.eval(IO.pure(Event.cancelPause(seqId, user))))(qs0).take(1).compile.last.unsafeRunSync.map(_._2)
 
     inside (qs1.flatMap(_.sequences.get(seqId))) {
       case Some(Sequence.State.Zipper(_, status)) =>
@@ -286,7 +286,7 @@ class StepSpec extends FlatSpec {
           )
         )
       )
-    val qss = executionEngine.process(Stream.eval(IO.pure(Event.pause(seqId, user))))(qs0).take(1).compile.last.unsafeRunSync.map(_._2)
+    val qss = executionEngine.process(PartialFunction.empty)(Stream.eval(IO.pure(Event.pause(seqId, user))))(qs0).take(1).compile.last.unsafeRunSync.map(_._2)
 
     inside (qss.flatMap(_.sequences.get(seqId))) {
       case Some(Sequence.State.Zipper(zipper, status)) =>
@@ -325,7 +325,7 @@ class StepSpec extends FlatSpec {
         )
       )
 
-    val qss = q.flatMap { k => k.enqueue1(Event.start(seqId, user, UUID.randomUUID, always)).flatMap(_ => executionEngine.process(k.dequeue)(qs0).drop(1).takeThrough(
+    val qss = q.flatMap { k => k.enqueue1(Event.start(seqId, user, UUID.randomUUID, always)).flatMap(_ => executionEngine.process(PartialFunction.empty)(k.dequeue)(qs0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
     ).compile.toVector)}.unsafeRunSync
 

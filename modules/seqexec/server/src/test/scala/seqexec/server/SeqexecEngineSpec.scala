@@ -178,10 +178,10 @@ class SeqexecEngineSpec extends FlatSpec with Matchers {
   private val sm = SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry()).unsafeRunSync
   private val seqexecEngine = SeqexecEngine(GDSClient.alwaysOkClient, defaultSettings, sm)
   private def advanceOne(q: EventQueue, s0: EngineState, put: IO[Either[SeqexecFailure, Unit]]): IO[Option[EngineState]] =
-    (put *> executeEngine.process(q.dequeue)(s0).take(1).compile.last).map(_.map(_._2))
+    (put *> executeEngine.process(PartialFunction.empty)(q.dequeue)(s0).take(1).compile.last).map(_.map(_._2))
 
   private def advanceN(q: EventQueue, s0: EngineState, put: IO[Either[SeqexecFailure, Unit]], n: Long): IO[Option[EngineState]] =
-    (put *> executeEngine.process(q.dequeue)(s0).take(n).compile.last).map(_.map(_._2))
+    (put *> executeEngine.process(PartialFunction.empty)(q.dequeue)(s0).take(n).compile.last).map(_.map(_._2))
 
   private val seqId1 = "GS-2018B-Q-0-1"
   private val seqObsId1 = Observation.Id.unsafeFromString(seqId1)
@@ -282,7 +282,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers {
     val s0 = (SeqexecEngine.loadSequenceEndo(seqObsId1, sequence(seqObsId1)) >>>
       SeqexecEngine.loadSequenceEndo(seqObsId2, sequence(seqObsId2)) >>>
       (EngineState.queues ^|-? index(CalibrationQueueId) ^|-> ExecutionQueue.queue).modify(_ ++ List(seqObsId1, seqObsId2)) >>>
-      (EngineState.queues ^|-? index(CalibrationQueueId) ^|-> ExecutionQueue.cmdState).set(BatchCommandState.Run) >>>
+      (EngineState.queues ^|-? index(CalibrationQueueId) ^|-> ExecutionQueue.cmdState).set(BatchCommandState.Run(java.util.UUID.randomUUID())) >>>
       (EngineState.executionState ^|-? Engine.State.sequenceState(seqObsId1) ^|-> Sequence.State.status).set(SequenceState.Running.init))(EngineState.default)
 
     (for {
