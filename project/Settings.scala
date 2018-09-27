@@ -65,7 +65,7 @@ object Settings {
 
   /** Library versions */
   object LibraryVersions {
-    val scalaVersion = "2.12.6"
+    val scalaVersion = "2.12.7"
 
     // ScalaJS libraries
     val scalaDom                = "0.9.6"

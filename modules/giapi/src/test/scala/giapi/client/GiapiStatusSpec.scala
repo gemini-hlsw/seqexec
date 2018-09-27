@@ -3,7 +3,7 @@
 
 package giapi.client
 
-import cats.effect.IO
+import cats.effect.{ ContextShift, IO, Resource }
 import cats.tests.CatsSuite
 import edu.gemini.aspen.giapi.status.impl.BasicStatus
 import edu.gemini.aspen.giapi.util.jms.JmsKeys
@@ -17,7 +17,7 @@ import edu.gemini.jms.api.{
   DestinationType,
   JmsSimpleMessageSelector
 }
-import fs2.Stream
+import scala.concurrent.ExecutionContext
 
 final case class GmpStatus(amq: ActiveMQJmsProvider,
                      dispatcher: JmsStatusDispatcher,
@@ -75,79 +75,48 @@ final class GiapiStatusSpec extends CatsSuite {
   val intItemName = "item:a"
   val strItemName = "item:b"
 
+  implicit val ioContextShift: ContextShift[IO] =
+    IO.contextShift(ExecutionContext.global)
+
+  def client(amqUrl: String, intItemName: String, strItemName: String): Resource[IO, (GmpStatus, Giapi[IO])] =
+    for {
+      g <- Resource.make(GmpStatus.createGmpStatus(amqUrl, intItemName, strItemName))(GmpStatus.closeGmpStatus)
+      c <- Resource.make(Giapi.giapiConnection[IO](amqUrl, ExecutionContext.global).connect)(_.close)
+    } yield (g, c)
+
   test("Test reading an existing status item") {
-    val result = Stream.bracket(
-      GmpStatus.createGmpStatus(GmpStatus.amqUrl("tests1"), intItemName, strItemName))(
-      _ =>
-        Stream.bracket(
-          Giapi
-            .giapiConnection[IO](GmpStatus.amqUrlConnect("tests1"), scala.concurrent.ExecutionContext.Implicits.global)
-            .connect)(c => Stream.eval(c.get[Int](intItemName)), _.close),
-      GmpStatus.closeGmpStatus
-    )
-    result.compile.last.unsafeRunSync should contain(1)
+    client(GmpStatus.amqUrl("tests1"), intItemName, strItemName).use { case (_, c) =>
+      c.get[Int](intItemName)
+     } .unsafeRunSync shouldBe 1
   }
 
   test("Test reading an status with string type") {
-    val result = Stream.bracket(
-      GmpStatus.createGmpStatus(GmpStatus.amqUrl("tests2"), intItemName, strItemName))(
-      _ =>
-        Stream.bracket(
-          Giapi
-            .giapiConnection[IO](GmpStatus.amqUrlConnect("tests2"), scala.concurrent.ExecutionContext.Implicits.global)
-            .connect)(c => Stream.eval(c.get[String](strItemName)), _.close),
-      GmpStatus.closeGmpStatus
-    )
-    result.compile.last.attempt.unsafeRunSync should matchPattern {
-      case Right(Some("one")) =>
-    }
+    client(GmpStatus.amqUrl("tests2"), intItemName, strItemName).use { case (_, c) =>
+      c.get[String](strItemName)
+    } .attempt.unsafeRunSync shouldBe Right("one")
   }
 
   test("Test reading an unknown status item") {
-    val result = Stream.bracket(
-      GmpStatus.createGmpStatus(GmpStatus.amqUrl("tests3"), intItemName, strItemName))(
-      _ =>
-        Stream.bracket(
-          Giapi
-            .giapiConnection[IO](GmpStatus.amqUrlConnect("tests3"), scala.concurrent.ExecutionContext.Implicits.global)
-            .connect)(c => Stream.eval(c.get[Int]("item:u")), _.close),
-      GmpStatus.closeGmpStatus
-    )
-    result.compile.drain.attempt.unsafeRunSync should matchPattern {
+    client(GmpStatus.amqUrl("tests3"), intItemName, strItemName).use { case (_, c) =>
+      c.get[Int]("item:u")
+    } .attempt.unsafeRunSync should matchPattern {
       case Left(GiapiException(_)) =>
     }
   }
 
   test("Test reading an unknown status item as optional") {
-    val result = Stream.bracket(
-      GmpStatus.createGmpStatus(GmpStatus.amqUrl("tests4"), intItemName, strItemName))(
-      _ =>
-        Stream.bracket(
-          Giapi
-            .giapiConnection[IO](GmpStatus.amqUrlConnect("tests4"), scala.concurrent.ExecutionContext.Implicits.global)
-            .connect)(c => Stream.eval(c.getO[Int]("item:u")), _.close),
-      GmpStatus.closeGmpStatus
-    )
-    result.compile.last.unsafeRunSync should matchPattern {
-      case Some(None) =>
-    }
+    client(GmpStatus.amqUrl("tests4"), intItemName, strItemName).use { case (_, c) =>
+      c.getO[Int]("item:u")
+    } .unsafeRunSync shouldBe None
   }
 
   test("Closing connection should terminate") {
     // This should fail but we are mostly concerned with ensuring that it terminates
-    val result = Stream.bracket(
-      GmpStatus.createGmpStatus(GmpStatus.amqUrl("tests5"), intItemName, strItemName))(
-      g =>
-        Stream.bracket(
-          Giapi
-            .giapiConnection[IO](GmpStatus.amqUrlConnect("tests5"), scala.concurrent.ExecutionContext.Implicits.global)
-            .connect)(
-          c => Stream.eval(GmpStatus.closeGmpStatus(g) >> c.get[Int](intItemName)),
-          _.close),
-      GmpStatus.closeGmpStatus
-    )
-    result.compile.drain.attempt.unsafeRunSync should matchPattern {
+    client(GmpStatus.amqUrl("tests5"), intItemName, strItemName).use { case (g, c) =>
+      GmpStatus.closeGmpStatus(g) >> c.get[Int](intItemName)
+    } .attempt.unsafeRunSync should matchPattern {
       case Left(GiapiException(_)) =>
     }
   }
+
 }
