@@ -167,11 +167,11 @@ trait SeqexecModelArbitraries extends ArbObservation {
   implicit val steArb = Arbitrary[Step] {
     for {
       id <- arbitrary[StepId]
-      c <- stepConfigGen
-      s <- arbitrary[StepState]
-      b <- arbitrary[Boolean]
-      k <- arbitrary[Boolean]
-      f <- arbitrary[Option[dhs.ImageFileId]]
+      c  <- stepConfigGen
+      s  <- arbitrary[StepState]
+      b  <- arbitrary[Boolean]
+      k  <- arbitrary[Boolean]
+      f  <- arbitrary[Option[dhs.ImageFileId]]
     } yield
       new StandardStep(id            = id,
                        config        = c,
@@ -363,6 +363,13 @@ trait SeqexecModelArbitraries extends ArbObservation {
   implicit val rcCogen: Cogen[ResourceConflict] =
     Cogen[Observation.Id].contramap(_.sid)
 
+  implicit val rfArb = Arbitrary[RequestFailed] {
+    Gen.alphaStr.map(RequestFailed.apply)
+  }
+
+  implicit val rfCogen: Cogen[RequestFailed] =
+    Cogen[String].contramap(_.msg)
+
   implicit val inArb = Arbitrary[InstrumentInUse] {
     for {
       id <- arbitrary[Observation.Id]
@@ -377,15 +384,18 @@ trait SeqexecModelArbitraries extends ArbObservation {
     for {
       r <- arbitrary[ResourceConflict]
       a <- arbitrary[InstrumentInUse]
-      s <- Gen.oneOf(r, a)
+      f <- arbitrary[RequestFailed]
+      s <- Gen.oneOf(r, a, f)
     } yield s
   }
 
   implicit val notCogen: Cogen[Notification] =
-    Cogen[Either[ResourceConflict, InstrumentInUse]].contramap {
-      case r: ResourceConflict => Left(r)
-      case i: InstrumentInUse  => Right(i)
-    }
+    Cogen[Either[ResourceConflict, Either[InstrumentInUse, RequestFailed]]]
+      .contramap {
+        case r: ResourceConflict => Left(r)
+        case i: InstrumentInUse  => Right(Left(i))
+        case f: RequestFailed    => Right(Right(f))
+      }
 
   implicit val seqBatchCmdStateArb: Arbitrary[BatchCommandState] = Arbitrary(
     Gen.oneOf(BatchCommandState.Idle,

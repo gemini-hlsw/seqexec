@@ -55,7 +55,7 @@ object SeqexecWebClient extends ModelBooPicklers {
   def sync(id: Observation.Id): Future[Unit] =
     Ajax
       .post(
-        url          = s"$baseUrl/commands/${encodeURI(id.format)}/syc",
+        url          = s"$baseUrl/commands/${encodeURI(id.format)}/sync",
         responseType = "arraybuffer"
       )
       .map(_ => ())

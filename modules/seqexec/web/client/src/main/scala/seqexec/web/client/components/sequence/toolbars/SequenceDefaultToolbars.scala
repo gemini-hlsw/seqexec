@@ -14,6 +14,7 @@ import japgolly.scalajs.react.CatsReact
 import japgolly.scalajs.react.CatsReact._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.extra.Reusability
+import japgolly.scalajs.react.component.builder.Lifecycle.RenderScope
 import gem.Observation
 import mouse.all._
 import seqexec.model.SequenceState
@@ -40,6 +41,8 @@ import web.client.style._
   * Control buttons for the sequence
   */
 object SequenceControl {
+  type Backend = RenderScope[Props, State, Unit]
+
   final case class Props(p: SequenceControlFocus) {
     val runRequested: RunOperation =
       p.control
@@ -61,7 +64,7 @@ object SequenceControl {
     val syncIdle: Boolean = syncRequested === SyncOperation.SyncIdle
     val canRun: Boolean =
       (runRequested === RunOperation.RunIdle) && !pauseRequested && syncIdle
-    val canPause: Boolean = !pauseRequested && syncIdle
+    val canPause: Boolean       = !pauseRequested && syncIdle
     val canCancelPause: Boolean = !pauseRequested && syncIdle
     val canResume: Boolean =
       !pauseRequested && syncIdle && (runRequested === RunOperation.RunIdle)
@@ -138,64 +141,86 @@ object SequenceControl {
   def stateFromProps(p: Props): State =
     State.Zero.copy(runRequested = p.runRequested)
 
+  private def syncButton(b: Backend, id: Observation.Id, canOperate: Boolean, canSync: Boolean) =
+    controlButton(icon     = IconRefresh,
+                  color    = "purple",
+                  onClick  = b.runState(requestSync(id)),
+                  disabled = (!canOperate || !canSync),
+                  tooltip  = "Sync sequence",
+                  text     = "Sync")
+
+  private def runButton(b: Backend, id: Observation.Id, isPartiallyExecuted: Boolean, nextStepToRun: Int, canOperate: Boolean, canRun: Boolean) = {
+    val runContinueTooltip =
+      s"${isPartiallyExecuted.fold("Continue", "Run")} the sequence from the step $nextStepToRun"
+    val runContinueButton =
+      s"${isPartiallyExecuted.fold("Continue", "Run")} from step $nextStepToRun"
+    controlButton(icon     = IconPlay,
+                  color    = "blue",
+                  onClick  = b.runState(requestRun(id)),
+                  disabled = (!canOperate || !canRun),
+                  tooltip  = runContinueTooltip,
+                  text     = runContinueButton)
+  }
+
+  private def cancelPauseButton(b: Backend, id: Observation.Id, canOperate: Boolean, canCancelPause: Boolean) =
+    controlButton(
+      icon     = IconBan,
+      color    = "brown",
+      onClick  = b.runState(requestCancelPause(id)),
+      disabled = !canOperate || !canCancelPause,
+      tooltip  = "Cancel process to pause the sequence",
+      text     = "Cancel Pause"
+    )
+
+  private def pauseButton(b: Backend, id: Observation.Id, canOperate: Boolean, canPause: Boolean) =
+    controlButton(
+      icon     = IconPause,
+      color    = "teal",
+      onClick  = b.runState(requestPause(id)),
+      disabled = !canOperate || !canPause,
+      tooltip  = "Pause the sequence after the current step completes",
+      text     = "Pause"
+    )
+
+  private def resumeButton(b: Backend, id: Observation.Id, nextStepToRun: Int, canOperate: Boolean, canResume: Boolean) =
+    controlButton(
+      icon     = IconPlay,
+      color    = "teal",
+      onClick  = b.runState(requestPause(id)),
+      disabled = !canOperate || !canResume,
+      tooltip  = "Resume the sequence",
+      text     = s"Continue from step $nextStepToRun"
+    )
+
   private def component =
     ScalaComponent
       .builder[Props]("SequencesDefaultToolbar")
       .initialStateFromProps(stateFromProps)
-      .renderPS { ($, p, s) =>
+      .renderPS { (b, p, s) =>
         val SequenceControlFocus(canOperate, control) = p.p
         <.div(
           SeqexecStyles.controlButtons,
           control.whenDefined { m =>
-            val ControlModel(id, isPartiallyExecuted, nextStep, status, to) = m
+            val ControlModel(id, partial, nextStep, status, to) = m
 
-            val syncInProgress     = to.syncRequested === SyncOperation.SyncInFlight
-            val canSync            = !syncInProgress && s.syncIdle
-            val nextStepToRun      = nextStep.getOrElse(0) + 1
-            val runContinueTooltip =
-              s"${isPartiallyExecuted.fold("Continue", "Run")} the sequence from the step $nextStepToRun"
-            val runContinueButton  =
-              s"${isPartiallyExecuted.fold("Continue", "Run")} from step $nextStepToRun"
+            val syncInProgress = to.syncRequested === SyncOperation.SyncInFlight
+            val canSync        = !syncInProgress && s.syncIdle
+            val nextStepToRun  = nextStep.getOrElse(0) + 1
             List(
               // Sync button
-              controlButton(icon = IconRefresh,
-                            color    = "purple",
-                            onClick  = $.runState(requestSync(id)),
-                            disabled = (!canOperate || !canSync),
-                            tooltip  = "Sync sequence",
-                            text     = "Sync")
+              syncButton(b, id, canOperate, canSync)
                 .when(status.isIdle || status.isError),
               // Run button
-              controlButton(icon = IconPlay,
-                            color    = "blue",
-                            onClick  = $.runState(requestRun(id)),
-                            disabled = (!canOperate || !s.canRun),
-                            tooltip  = runContinueTooltip,
-                            text     = runContinueButton)
+              runButton(b, id, partial, nextStepToRun, canOperate, s.canRun)
                 .when(status.isIdle || status.isError),
               // Cancel pause button
-              controlButton(icon = IconBan,
-                            color    = "brown",
-                            onClick  = $.runState(requestCancelPause(id)),
-                            disabled = !canOperate || !s.canCancelPause,
-                            tooltip  = "Cancel process to pause the sequence",
-                            text     = "Cancel Pause")
+              cancelPauseButton(b, id, canOperate, s.canCancelPause)
                 .when(status.userStopRequested),
               // Pause button
-              controlButton(icon = IconPause,
-                            color    = "teal",
-                            onClick  = $.runState(requestPause(id)),
-                            disabled = !canOperate || !s.canPause,
-                            tooltip  = "Pause the sequence after the current step completes",
-                            text     = "Pause")
+              pauseButton(b, id, canOperate, s.canPause)
                 .when(status.isRunning && !status.userStopRequested),
               // Resume
-              controlButton(icon = IconPlay,
-                            color    = "teal",
-                            onClick  = $.runState(requestPause(id)),
-                            disabled = !canOperate || !s.canResume,
-                            tooltip  = "Resume the sequence",
-                            text     = s"Continue from step $nextStepToRun")
+              resumeButton(b, id, nextStepToRun, canOperate, s.canResume)
                 .when(status === SequenceState.Stopped)
             ).toTagMod
           }
@@ -219,7 +244,6 @@ object SequenceControl {
 /**
   * Toolbar for logged in users
   */
-@SuppressWarnings(Array("org.wartremover.warts.OptionPartial"))
 object SequenceDefaultToolbar {
   final case class Props(id: Observation.Id) {
     val observerReader: ReactConnectProxy[SequenceInfoFocus] =

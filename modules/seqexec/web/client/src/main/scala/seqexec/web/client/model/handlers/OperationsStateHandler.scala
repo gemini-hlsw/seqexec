@@ -6,7 +6,11 @@ package seqexec.web.client.handlers
 import cats.implicits._
 import diode.ActionHandler
 import diode.ActionResult
+import diode.Effect
 import diode.ModelRW
+import scala.concurrent.Future
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
+import seqexec.model.RequestFailed
 import seqexec.web.client.model.SyncOperation
 import seqexec.web.client.model.RunOperation
 import seqexec.web.client.model.SequencesOnDisplay
@@ -21,7 +25,16 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
     with Handlers[M, SequencesOnDisplay] {
   def handleRequestOperation: PartialFunction[Any, ActionResult[M]] = {
     case RequestRun(id) =>
-      updated(value.markOperations(id, TabOperations.runRequested.set(RunOperation.RunInFlight)))
+      updated(
+        value.markOperations(
+          id,
+          TabOperations.runRequested.set(RunOperation.RunInFlight)))
+
+    case RequestSync(id) =>
+      updated(
+        value.markOperations(
+          id,
+          TabOperations.syncRequested.set(SyncOperation.SyncInFlight)))
   }
 
   def handleOperationResult: PartialFunction[Any, ActionResult[M]] = {
@@ -35,10 +48,13 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
           TabOperations.runRequested.set(RunOperation.RunIdle)))
 
     case RunSyncFailed(id) =>
-      updated(
-        value.markOperations(
-          id,
-          TabOperations.syncRequested.set(SyncOperation.SyncIdle)))
+      val msg = s"Failed to sync sequence ${id.format}"
+      val notification = Effect(
+        Future(RequestFailedNotification(RequestFailed(msg))))
+      updated(value.markOperations(
+                id,
+                TabOperations.syncRequested.set(SyncOperation.SyncIdle)),
+              notification)
   }
 
   override def handle: PartialFunction[Any, ActionResult[M]] =

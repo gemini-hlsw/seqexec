@@ -4,15 +4,22 @@
 package seqexec.web.client.handlers
 
 import cats.implicits._
-import diode.{ ActionHandler, ActionResult, Effect, ModelRW }
-import seqexec.model.{ InstrumentInUse, ResourceConflict }
+import diode.ActionHandler
+import diode.ActionResult
+import diode.Effect
+import diode.ModelRW
+import seqexec.model.InstrumentInUse
+import seqexec.model.ResourceConflict
+import seqexec.model.RequestFailed
 import seqexec.model.events.UserNotification
 import seqexec.web.client.model._
 import seqexec.web.client.actions._
 import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
-class NotificationsHandler[M](modelRW: ModelRW[M, UserNotificationState]) extends ActionHandler(modelRW) with Handlers[M, UserNotificationState] {
+class NotificationsHandler[M](modelRW: ModelRW[M, UserNotificationState])
+    extends ActionHandler(modelRW)
+    with Handlers[M, UserNotificationState] {
   def handleUserNotification: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(UserNotification(not, _)) =>
       // Update the notification state
@@ -23,6 +30,7 @@ class NotificationsHandler[M](modelRW: ModelRW[M, UserNotificationState]) extend
       val modelUpdateE = not match {
         case InstrumentInUse(id, _) => Effect(Future(SequenceLoadFailed(id)))
         case ResourceConflict(id)   => Effect(Future(RunStartFailed(id)))
+        case RequestFailed(_)       => VoidEffect
       }
       updatedLE(lens, openBoxE >> modelUpdateE)
   }
@@ -32,6 +40,12 @@ class NotificationsHandler[M](modelRW: ModelRW[M, UserNotificationState]) extend
       updatedL(UserNotificationState.notification.set(none))
   }
 
+  def handleRequestFailedNotification: PartialFunction[Any, ActionResult[M]] = {
+    case RequestFailedNotification(n) =>
+      val openBoxE = Effect(Future(OpenUserNotificationBox))
+      updatedLE(UserNotificationState.notification.set(n.some), openBoxE)
+  }
+
   def handle: PartialFunction[Any, ActionResult[M]] =
-    handleUserNotification
+    List(handleUserNotification, handleRequestFailedNotification).combineAll
 }

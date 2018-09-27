@@ -130,8 +130,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
     this.zoomRWL(SeqexecAppRootModel.uiModel ^|-> SeqexecUIModel.sequencesOnDisplay)
 
   def sequenceTab(id: Observation.Id): ModelR[SeqexecAppRootModel, SeqexecTabActive] =
-    // Returning the getOrElse part shouldn't happen but it simplifies the model not carrying the Option up
-    zoom(_.uiModel.sequencesOnDisplay.tab(id).getOrElse(SeqexecTabActive.Empty))
+    this.zoomG((SeqexecAppRootModel.uiModel ^|-> SeqexecUIModel.sequencesOnDisplay).composeGetter(SequencesOnDisplay.tabG(id)))
 
   def sequenceObserverReader(id: Observation.Id): ModelR[SeqexecAppRootModel, SequenceInfoFocus] =
     statusReader.zip(sequenceTab(id)).zoom {
@@ -161,11 +160,13 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
       case ((s, f), t) => StepsTableAndStatusFocus(s, f, t)
     }(fastEq[StepsTableAndStatusFocus])
 
-  def sequenceControlReader(obsId: Observation.Id): ModelR[SeqexecAppRootModel, SequenceControlFocus] =
-    statusReader.zip(sequenceTab(obsId)).zoom {
-      case (status, SeqexecTabActive(tab, _)) =>
-        SequenceControlFocus(status.canOperate, ControlModel.controlModelG.get(tab))
-    }(fastEq[SequenceControlFocus])
+  def sequenceControlReader(id: Observation.Id): ModelR[SeqexecAppRootModel, SequenceControlFocus] = {
+    val getter = (SeqexecAppRootModel.uiModel ^|-> SeqexecUIModel.sequencesOnDisplay).composeGetter(SequencesOnDisplay.tabG(id))
+    val constructor = ClientStatus.canOperateG.zip(getter) >>> { case (status, SeqexecTabActive(tab, _)) =>
+        SequenceControlFocus(status, ControlModel.controlModelG.get(tab))
+    }
+    this.zoomG(constructor)
+  }
 
   private val wsHandler                = new WebSocketHandler(zoomTo(_.ws))
   private val serverMessagesHandler    = new ServerMessagesHandler(webSocketFocusRW)

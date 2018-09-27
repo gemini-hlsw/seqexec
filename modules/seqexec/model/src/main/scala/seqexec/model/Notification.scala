@@ -15,24 +15,32 @@ object Notification {
     Eq.instance {
       case (a: ResourceConflict, b: ResourceConflict) => a === b
       case (a: InstrumentInUse, b: InstrumentInUse)   => a === b
-
+      case (a: RequestFailed, b: RequestFailed)       => a === b
       case _                                          => false
     }
 
   def header(n: Notification): String = n match {
     case ResourceConflict(_)   => "Resource conflict"
     case InstrumentInUse(_, _) => "Instrument busy"
+    case RequestFailed(_)      => "Request failed"
   }
 
   def body(n: Notification): List[String] = n match {
-    case ResourceConflict(sid)              => List(
-      s"There is a conflict trying to run the sequence '${sid.format}'",
-      "Possibly another sequence is being executed on the same instrument"
-    )
-    case InstrumentInUse(sid, ins) => List(
-      s"Cannot select sequence '${sid.format}' for instrument '${ins.label}",
-      "Possibly another sequence is being executed on the same instrument"
-    )
+    case ResourceConflict(sid) =>
+      List(
+        s"There is a conflict trying to run the sequence '${sid.format}'",
+        "Possibly another sequence is being executed on the same instrument"
+      )
+    case InstrumentInUse(sid, ins) =>
+      List(
+        s"Cannot select sequence '${sid.format}' for instrument '${ins.label}",
+        "Possibly another sequence is being executed on the same instrument"
+      )
+    case RequestFailed(msg) =>
+      List(
+        s"Request to the seqexec server failed:",
+        msg
+      )
   }
 }
 
@@ -44,9 +52,18 @@ object ResourceConflict {
 }
 
 // Notification that user tried to select a sequence for an instrument for which a sequence was already running
-final case class InstrumentInUse(sid: Observation.Id, ins: Instrument) extends Notification
+final case class InstrumentInUse(sid: Observation.Id, ins: Instrument)
+    extends Notification
 
 object InstrumentInUse {
   implicit lazy val eq: Eq[InstrumentInUse] =
     Eq.by(x => (x.sid, x.ins))
+}
+
+// Notification that a request to the backend failed
+final case class RequestFailed(msg: String) extends Notification
+
+object RequestFailed {
+  implicit lazy val eq: Eq[RequestFailed] =
+    Eq.by(_.msg)
 }
