@@ -143,11 +143,12 @@ exports.minifyCSS = ({ options }) => ({
 // Support js minification
 exports.minifyJavaScript = () => ({
   optimization: {
-    minimize: false, // Enable minification at some point in time
+    minimize: true,
     minimizer: [
       new UglifyWebpackPlugin({
-        uglifyOptions: { mangle: false },
-        sourceMap: true
+        parallel: true,
+        uglifyOptions: { mangle: true },
+        sourceMap: false
       })
     ]
   }
