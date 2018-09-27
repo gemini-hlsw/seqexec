@@ -298,13 +298,12 @@ package circuit {
                            t.tabOperations)))
   }
 
-  final case class SequenceControlFocus(canOperate:     Boolean,
-                                        control:        Option[ControlModel],
-                                        syncInProgress: Boolean)
+  final case class SequenceControlFocus(canOperate: Boolean,
+                                        control:    Option[ControlModel])
 
   object SequenceControlFocus {
     implicit val eq: Eq[SequenceControlFocus] =
-      Eq.by(x => (x.canOperate, x.control, x.syncInProgress))
+      Eq.by(x => (x.canOperate, x.control))
 
   }
 

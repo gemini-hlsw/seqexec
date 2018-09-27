@@ -3,18 +3,22 @@
 
 package seqexec.web.client.handlers
 
-import cats.implicits._
-import diode.{ActionHandler, ActionResult, Effect, ModelRW}
+import diode.ActionHandler
+import diode.ActionResult
+import diode.Effect
+import diode.ModelRW
 import seqexec.model.ClientID
 import seqexec.web.client.actions._
 import seqexec.web.client.services.SeqexecWebClient
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
 /**
-* Handles actions sending requests to the backend
-*/
-class RemoteRequestsHandler[M](modelRW: ModelRW[M, Option[ClientID]]) extends ActionHandler(modelRW) with Handlers[M, Option[ClientID]] {
-  def handleRequestOperation: PartialFunction[Any, ActionResult[M]] = {
+  * Handles actions sending requests to the backend
+  */
+class RemoteRequestsHandler[M](modelRW: ModelRW[M, Option[ClientID]])
+    extends ActionHandler(modelRW)
+    with Handlers[M, Option[ClientID]] {
+  override def handle: PartialFunction[Any, ActionResult[M]] = {
     case RequestRun(s) =>
       val effect = value.map(clientId => Effect(SeqexecWebClient.run(s, clientId).map(r => if (r.error) RunStartFailed(s) else RunStarted(s)))).getOrElse(VoidEffect)
       effectOnly(effect)
@@ -37,23 +41,16 @@ class RemoteRequestsHandler[M](modelRW: ModelRW[M, Option[ClientID]]) extends Ac
     case RequestObsResume(id, step) =>
       effectOnly(Effect(SeqexecWebClient.resumeObs(id, step).map(r => if (r.error) RunObsResumeFailed(id) else RunObsPause(id))))
 
+    case RequestSync(s) =>
+      effectOnly(
+        Effect(
+          SeqexecWebClient
+            .sync(s)
+            .map(_ => RunSync(s))
+            .recover {
+              case _ => RunSyncFailed(s)
+            }))
+
   }
 
-  def handleOperationResult: PartialFunction[Any, ActionResult[M]] = {
-    case RunStarted(_) =>
-      noChange
-
-    case RunStartFailed(_) =>
-      noChange
-
-    case RunPaused(_) =>
-      noChange
-
-    case RunPauseFailed(_) =>
-      noChange
-  }
-
-  override def handle: PartialFunction[Any, ActionResult[M]] =
-    List(handleRequestOperation,
-      handleOperationResult).combineAll
 }
