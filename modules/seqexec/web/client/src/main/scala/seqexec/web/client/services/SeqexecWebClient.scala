@@ -7,22 +7,41 @@ import boopickle.Default._
 import cats.implicits._
 import gem.Observation
 import java.util.logging.LogRecord
-import org.scalajs.dom.ext.{Ajax, AjaxException}
+import org.scalajs.dom.ext.Ajax
 import org.scalajs.dom.XMLHttpRequest
-import seqexec.model.{ ClientID, Conditions, UserDetails, UserLoginRequest, Observer, Operator, SequencesQueue, Step }
+import seqexec.model.ClientID
+import seqexec.model.Conditions
+import seqexec.model.UserDetails
+import seqexec.model.UserLoginRequest
+import seqexec.model.Observer
+import seqexec.model.Operator
+import seqexec.model.Step
 import seqexec.model.boopickle._
-import seqexec.model.enum.{ CloudCover, Instrument, ImageQuality, SkyBackground, WaterVapor}
-import seqexec.web.common.{HttpStatusCodes, LogMessage, RegularCommand}
+import seqexec.model.enum.CloudCover
+import seqexec.model.enum.Instrument
+import seqexec.model.enum.ImageQuality
+import seqexec.model.enum.SkyBackground
+import seqexec.model.enum.WaterVapor
+import seqexec.web.common.LogMessage
+import seqexec.web.common.RegularCommand
 import seqexec.web.common.LogMessage._
 import scala.scalajs.js.URIUtils._
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.scalajs.js.typedarray.{ArrayBuffer, TypedArrayBuffer}
+import scala.scalajs.js.typedarray.ArrayBuffer
+import scala.scalajs.js.typedarray.TypedArrayBuffer
 
 /**
   * Encapsulates remote calls to the Seqexec Web API
   */
-@SuppressWarnings(Array("org.wartremover.warts.Equals", "org.wartremover.warts.ImplicitParameter", "org.wartremover.warts.NonUnitStatements", "org.wartremover.warts.OptionPartial", "org.wartremover.warts.Throw"))
+@SuppressWarnings(
+  Array(
+    "org.wartremover.warts.Equals",
+    "org.wartremover.warts.ImplicitParameter",
+    "org.wartremover.warts.NonUnitStatements",
+    "org.wartremover.warts.OptionPartial",
+    "org.wartremover.warts.Throw"
+  ))
 object SeqexecWebClient extends ModelBooPicklers {
   private val baseUrl = "/api/seqexec"
 
@@ -33,17 +52,12 @@ object SeqexecWebClient extends ModelBooPicklers {
     Unpickle[A].fromBytes(ab)
   }
 
-  def sync(id: Observation.Id): Future[SequencesQueue[Observation.Id]] =
-    Ajax.get(
+  def sync(id: Observation.Id): Future[String] =
+    Ajax.post(
       url = s"$baseUrl/commands/${encodeURI(id.format)}/sync",
       responseType = "arraybuffer"
     )
-    .map(unpickle[SequencesQueue[Observation.Id]])
-    .recover {
-      case AjaxException(xhr) if xhr.status == HttpStatusCodes.NotFound  =>
-        // If not found, we'll consider it like an empty response
-        SequencesQueue(Map.empty, Conditions.Default, None, Nil)
-    }
+    .map(_ => id.format)
 
   /**
     * Requests the backend to execute a sequence

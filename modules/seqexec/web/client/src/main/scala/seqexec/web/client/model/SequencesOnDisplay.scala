@@ -7,9 +7,12 @@ import cats.Eq
 import cats.implicits._
 import cats.data.NonEmptyList
 import gem.Observation
-import monocle.{ Getter, Optional, Traversal }
+import monocle.Getter
+import monocle.Optional
+import monocle.Traversal
 import monocle.macros.Lenses
-import seqexec.model.{ SequenceView, SequencesQueue }
+import seqexec.model.SequenceView
+import seqexec.model.SequencesQueue
 import seqexec.model.enum._
 import seqexec.web.common.Zipper
 import seqexec.web.client.circuit.SequenceObserverFocus
@@ -59,10 +62,10 @@ final case class SequencesOnDisplay(tabs: Zipper[SeqexecTab]) {
     */
   def updateFromQueue(s: SequencesQueue[SequenceView]): SequencesOnDisplay = {
     val updated = updateLoaded(s.loaded.values.toList.map { id =>
-      s.queue.find(_.id === id)
+      s.sessionQueue.find(_.id === id)
     }).tabs.map {
       case p @ PreviewSequenceTab(curr, r, _, t, o) =>
-        s.queue
+        s.sessionQueue
           .find(_.id === curr.id)
           .map(s => PreviewSequenceTab(s, r, false, t, o))
           .getOrElse(p)
@@ -125,8 +128,8 @@ final case class SequencesOnDisplay(tabs: Zipper[SeqexecTab]) {
     val seq = if (s.metadata.instrument === i && !isLoaded) {
       val update =
         PreviewSequenceTab.tableState.set(StepsTable.State.InitialTableState) >>>
-        PreviewSequenceTab.currentSequence.set(s) >>>
-        PreviewSequenceTab.stepConfig.set(None)
+          PreviewSequenceTab.currentSequence.set(s) >>>
+          PreviewSequenceTab.stepConfig.set(None)
       val q = withPreviewTab(s).tabs
         .findFocus(_.isPreview)
         .map(_.modify(SeqexecTab.previewTab.modify(update)))
@@ -295,7 +298,7 @@ final case class SequencesOnDisplay(tabs: Zipper[SeqexecTab]) {
       }
       .toMap
 
-  def updateStepsTableStates(stepsTables: Map[Observation.Id, TableState[StepsTable.TableColumn]]): SequencesOnDisplay =
+  def updateTableStates(stepsTables: Map[Observation.Id, TableState[StepsTable.TableColumn]]): SequencesOnDisplay =
     copy(tabs = tabs.map {
       case i @ InstrumentSequenceTab(_, Some(curr), _, _, _, _) =>
         stepsTables
@@ -324,7 +327,8 @@ final case class SequencesOnDisplay(tabs: Zipper[SeqexecTab]) {
 object SequencesOnDisplay {
   // We need to initialize the model with something so we use preview
   val Empty: SequencesOnDisplay =
-    SequencesOnDisplay(Zipper.fromNel[SeqexecTab](NonEmptyList.of(CalibrationQueueTab.Empty)))
+    SequencesOnDisplay(
+      Zipper.fromNel[SeqexecTab](NonEmptyList.of(CalibrationQueueTab.Empty)))
 
   implicit val eq: Eq[SequencesOnDisplay] =
     Eq.by(_.tabs)

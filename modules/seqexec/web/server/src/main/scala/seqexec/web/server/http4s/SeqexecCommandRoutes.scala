@@ -4,7 +4,6 @@
 package seqexec.web.server.http4s
 
 import cats.effect.IO
-import gem.Observation
 import seqexec.server.Commands
 import seqexec.server.SeqexecEngine
 import seqexec.server
@@ -58,11 +57,10 @@ class SeqexecCommandRoutes(auth: AuthenticationService, inputQueue: server.Event
        resp   <- Ok(s"Set breakpoint in step $stepId of sequence $obsId")
      } yield resp
 
-    case GET -> Root / ObsIdVar(obsId) / "sync" as _ =>
+    case POST -> Root / ObsIdVar(obsId) / "sync" as _ =>
       for {
         u     <- se.load(inputQueue, obsId)
-        resp  <- u.fold(_ => NotFound(s"Not found sequence $obsId"), _ =>
-          Ok(SequencesQueue[Observation.Id](Map.empty, Conditions.Default, None, List(obsId))))
+        resp  <- u.fold(_ => NotFound(s"Not found sequence $obsId"), _ => Ok(s"Sync requested for ${obsId.format}"))
       } yield resp
 
    case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "skip" / bp as user =>
@@ -70,7 +68,6 @@ class SeqexecCommandRoutes(auth: AuthenticationService, inputQueue: server.Event
        newVal <- IO.fromEither(Either.catchNonFatal(bp.toBoolean))
        _      <- se.setSkipMark(inputQueue, obsId, user, stepId, newVal)
        resp   <- Ok(s"Set skip mark in step $stepId of sequence $obsId")
-
      } yield resp
 
    case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "stop" as _ =>

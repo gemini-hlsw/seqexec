@@ -30,7 +30,8 @@ final class ModelSpec extends CatsSuite {
   checkAll("Eq[ActionType]", EqTests[ActionType].eqv)
   checkAll("Eq[SequenceMetadata]", EqTests[SequenceMetadata].eqv)
   checkAll("Eq[SequenceView]", EqTests[SequenceView].eqv)
-  checkAll("Eq[SequencesQueue[SequenceView]]", EqTests[SequencesQueue[SequenceView]].eqv)
+  checkAll("Eq[SequencesQueue[SequenceView]]",
+           EqTests[SequencesQueue[SequenceView]].eqv)
   checkAll("Eq[StepType]", EqTests[StepType].eqv)
   checkAll("Order[TelescopeOffset.P]", OrderTests[TelescopeOffset.P].order)
   checkAll("Order[TelescopeOffset.Q]", OrderTests[TelescopeOffset.Q].order)
@@ -47,4 +48,5 @@ final class ModelSpec extends CatsSuite {
   checkAll("Eq[ResourceConflict]", EqTests[ResourceConflict].eqv)
   checkAll("Eq[InstrumentInUse]", EqTests[InstrumentInUse].eqv)
   checkAll("Eq[Notification]", EqTests[Notification].eqv)
+  checkAll("Eq[ExecutionQueue]", EqTests[ExecutionQueue].eqv)
 }

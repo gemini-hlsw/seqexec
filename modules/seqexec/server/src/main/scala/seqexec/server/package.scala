@@ -3,8 +3,6 @@
 
 package seqexec
 
-import java.util.UUID
-
 import cats.data._
 import cats.effect.{IO, Sync}
 import cats.implicits._
@@ -13,13 +11,14 @@ import edu.gemini.spModel.`type`.SequenceableSpType
 import edu.gemini.spModel.guide.StandardGuideOptions
 import fs2.async.mutable.Queue
 import gem.Observation
+import java.util.UUID
 import monocle.macros.Lenses
 import monocle.Lens
 import monocle.macros.GenLens
 import monocle.function.At.at
 import monocle.function.At.atMap
 import seqexec.engine.Engine
-import seqexec.model.{ClientID, Conditions, Observer, Operator, SequenceState}
+import seqexec.model.{ClientID, ExecutionQueue, QueueId, Conditions, Observer, Operator, SequenceState}
 import seqexec.model.enum._
 import seqexec.model.{Notification, UserDetails}
 
@@ -103,7 +102,6 @@ package object server {
   type SeqObserve[A, B] = Reader[A, SeqAction[B]]
   type SeqObserveF[F[_], A, B] = Reader[A, SeqActionF[F, B]]
 
-  type QueueId = UUID
   type ExecutionQueues = Map[QueueId, ExecutionQueue]
 
   val executeEngine: Engine[EngineState, SeqEvent] = new Engine[EngineState, SeqEvent](EngineState.executionState)

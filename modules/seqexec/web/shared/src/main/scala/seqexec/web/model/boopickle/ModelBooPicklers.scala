@@ -15,7 +15,15 @@ import seqexec.model.events._
   * Boopickle can auto derived encoders but it is preferred to make
   * them explicitly
   */
-@SuppressWarnings(Array("org.wartremover.warts.Equals", "org.wartremover.warts.PublicInference", "org.wartremover.warts.ImplicitParameter", "org.wartremover.warts.NonUnitStatements", "org.wartremover.warts.Throw", "org.wartremover.warts.OptionPartial"))
+@SuppressWarnings(
+  Array(
+    "org.wartremover.warts.Equals",
+    "org.wartremover.warts.PublicInference",
+    "org.wartremover.warts.ImplicitParameter",
+    "org.wartremover.warts.NonUnitStatements",
+    "org.wartremover.warts.Throw",
+    "org.wartremover.warts.OptionPartial"
+  ))
 trait ModelBooPicklers extends GemModelBooPicklers {
   //**********************
   // IMPORTANT The order of the picklers is very relevant to the generated size
@@ -33,7 +41,8 @@ trait ModelBooPicklers extends GemModelBooPicklers {
 
   implicit val userDetailsPickler = generatePickler[UserDetails]
 
-  implicit val instantPickler = transformPickler((t: Long) => Instant.ofEpochMilli(t))(_.toEpochMilli)
+  implicit val instantPickler =
+    transformPickler((t: Long) => Instant.ofEpochMilli(t))(_.toEpochMilli)
 
   implicit val cloudCoverPickler = compositePickler[CloudCover]
     .addConcreteType[CloudCover.Any.type]
@@ -95,9 +104,18 @@ trait ModelBooPicklers extends GemModelBooPicklers {
     .addConcreteType[ServerLogLevel.WARN.type]
     .addConcreteType[ServerLogLevel.ERROR.type]
 
-  implicit val sequenceQueueIdPickler = generatePickler[SequencesQueue[Observation.Id]]
+  implicit val batchCommandPickler = compositePickler[BatchCommandState]
+    .addConcreteType[BatchCommandState.Idle.type]
+    .addConcreteType[BatchCommandState.Run.type]
+    .addConcreteType[BatchCommandState.Stop.type]
 
-  implicit val sequenceQueueViewPickler = generatePickler[SequencesQueue[SequenceView]]
+  implicit val executionQueuePickler = generatePickler[ExecutionQueue]
+
+  implicit val sequenceQueueIdPickler =
+    generatePickler[SequencesQueue[Observation.Id]]
+
+  implicit val sequenceQueueViewPickler =
+    generatePickler[SequencesQueue[SequenceView]]
 
   // Composite pickler for the seqexec event hierarchy
   // It is not strictly need but reduces the size of the js

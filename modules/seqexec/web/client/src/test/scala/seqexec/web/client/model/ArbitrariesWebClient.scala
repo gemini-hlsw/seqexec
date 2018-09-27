@@ -11,13 +11,21 @@ import gem.arb.ArbEnumerated._
 import gem.Observation
 import gem.enum.Site
 import seqexec.model.enum.Instrument
-import seqexec.model.{ ClientID, Observer, TargetName }
-import seqexec.model.{ SequenceState, SequenceView, SequencesQueue }
-import seqexec.model.{ Notification, Step, UserDetails }
+import seqexec.model.ClientID
+import seqexec.model.Observer
+import seqexec.model.TargetName
+import seqexec.model.SequenceState
+import seqexec.model.SequenceView
+import seqexec.model.SequencesQueue
+import seqexec.model.Notification
+import seqexec.model.Step
+import seqexec.model.UserDetails
 import seqexec.model.events.ServerLogMessage
 import seqexec.model.SeqexecModelArbitraries._
-import seqexec.model.SequenceEventsArbitraries.{ slmArb, slmCogen }
-import seqexec.web.common.{ FixedLengthBuffer, Zipper }
+import seqexec.model.SequenceEventsArbitraries.slmArb
+import seqexec.model.SequenceEventsArbitraries.slmCogen
+import seqexec.web.common.FixedLengthBuffer
+import seqexec.web.common.Zipper
 import seqexec.web.common.ArbitrariesWebCommon._
 import seqexec.web.client.model._
 import seqexec.web.client.model.RunOperation
@@ -28,9 +36,11 @@ import seqexec.web.client.components.sequence.steps.StepConfigTable
 import seqexec.web.client.components.sequence.steps.StepsTable
 import seqexec.web.client.components.QueueTableBody
 import org.scalacheck.Arbitrary._
-import org.scalacheck.{ Arbitrary, _ }
+import org.scalacheck.Arbitrary
+import org.scalacheck._
 import org.scalajs.dom.WebSocket
-import web.client.table.{ TableArbitraries, TableState }
+import web.client.table.TableArbitraries
+import web.client.table.TableState
 
 trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
 
@@ -162,11 +172,11 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
   implicit val arbSequenceOnDisplay: Arbitrary[SequencesOnDisplay] =
     Arbitrary {
       for {
-        s <- Gen.nonEmptyListOf(arbitrary[SeqexecTab])
+        c <- arbitrary[CalibrationQueueTab]
+        l <- Gen.chooseNum(0, 4)
+        s <- Gen.listOfN(l, arbitrary[SeqexecTab])
       } yield {
-        val sequences =
-          NonEmptyList.of(s.headOption.getOrElse(CalibrationQueueTab.Empty),
-                          s.drop(1): _*)
+        val sequences = NonEmptyList.of(c, s: _*)
         SequencesOnDisplay(Zipper.fromNel(sequences))
       }
     }
@@ -561,7 +571,6 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
       for {
         navLocation        <- arbitrary[Pages.SeqexecPages]
         user               <- arbitrary[Option[UserDetails]]
-        sequences          <- arbitrary[SequencesQueue[SequenceView]]
         loginBox           <- arbitrary[SectionVisibilityState]
         globalLog          <- arbitrary[GlobalLog]
         sequencesOnDisplay <- arbitrary[SequencesOnDisplay]
@@ -575,7 +584,6 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
         SeqexecUIModel(
           navLocation,
           user,
-          sequences,
           loginBox,
           globalLog,
           sequencesOnDisplay,
@@ -592,7 +600,6 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
     Cogen[
       (Pages.SeqexecPages,
        Option[UserDetails],
-       SequencesQueue[SequenceView],
        SectionVisibilityState,
        GlobalLog,
        SequencesOnDisplay,
@@ -606,7 +613,6 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
         x =>
           (x.navLocation,
            x.user,
-           x.sequences,
            x.loginBox,
            x.globalLog,
            x.sequencesOnDisplay,
@@ -646,23 +652,24 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
   implicit val arbSeqexecAppRootModel: Arbitrary[SeqexecAppRootModel] =
     Arbitrary {
       for {
-        ws       <- arbitrary[WebSocketConnection]
-        site     <- arbitrary[Option[Site]]
-        clientId <- arbitrary[Option[ClientID]]
-        uiModel  <- arbitrary[SeqexecUIModel]
-      } yield SeqexecAppRootModel(ws, site, clientId, uiModel)
+        sequences <- arbitrary[SequencesQueue[SequenceView]]
+        ws        <- arbitrary[WebSocketConnection]
+        site      <- arbitrary[Option[Site]]
+        clientId  <- arbitrary[Option[ClientID]]
+        uiModel   <- arbitrary[SeqexecUIModel]
+      } yield SeqexecAppRootModel(sequences, ws, site, clientId, uiModel)
     }
 
-  implicit val arbTableStates: Arbitrary[TableStates] =
+  implicit val arbAppTableStates: Arbitrary[AppTableStates] =
     Arbitrary {
       for {
         qt <- arbitrary[TableState[QueueTableBody.TableColumn]]
         ct <- arbitrary[TableState[StepConfigTable.TableColumn]]
         st <- arbitrary[Map[Observation.Id, TableState[StepsTable.TableColumn]]]
-      } yield TableStates(qt, ct, st)
+      } yield AppTableStates(qt, ct, st)
     }
 
-  implicit val tableStatesCogen: Cogen[TableStates] =
+  implicit val appTableStatesCogen: Cogen[AppTableStates] =
     Cogen[(TableState[QueueTableBody.TableColumn],
            TableState[StepConfigTable.TableColumn],
            List[(Observation.Id, TableState[StepsTable.TableColumn])])]

@@ -3,13 +3,15 @@
 
 package seqexec.web.client
 
-import cats.{ Eq, Order }
+import cats.Eq
+import cats.Order
 import cats.implicits._
 import cats.data.NonEmptyList
 import diode._
 import gem.Observation
 import gem.enum.Site
-import monocle.{ Getter, Lens }
+import monocle.Getter
+import monocle.Lens
 import monocle.macros.Lenses
 import monocle.function.At._
 import seqexec.model._
@@ -71,10 +73,11 @@ package circuit {
     implicit val eq: Eq[SequencesFocus] =
       Eq.by(x => (x.sequences, x.sod))
 
-    val sequencesFocusL: Lens[SeqexecUIModel, SequencesFocus] =
-      Lens[SeqexecUIModel, SequencesFocus](m =>
-        SequencesFocus(m.sequences, m.sequencesOnDisplay))(v => m =>
-          m.copy(sequences = v.sequences, sequencesOnDisplay = v.sod))
+    val sequencesFocusL: Lens[SeqexecAppRootModel, SequencesFocus] =
+      Lens[SeqexecAppRootModel, SequencesFocus](m =>
+        SequencesFocus(m.sequences, m.uiModel.sequencesOnDisplay))(v => m =>
+          m.copy(sequences = v.sequences, uiModel = m.uiModel.copy(sequencesOnDisplay = v.sod)))
+
   }
 
   @Lenses
@@ -133,9 +136,9 @@ package circuit {
   }
 
   final case class StatusAndLoadedSequencesFocus(
-      status:     ClientStatus,
-      sequences:  List[SequenceInQueue],
-      tableState: TableState[QueueTableBody.TableColumn])
+    status:     ClientStatus,
+    sequences:  List[SequenceInQueue],
+    tableState: TableState[QueueTableBody.TableColumn])
       extends UseValueEq
 
   final case class SequenceObserverFocus(instrument: Instrument,
@@ -145,23 +148,23 @@ package circuit {
       extends UseValueEq
 
   final case class HeaderSideBarFocus(
-      status:     ClientStatus,
-      conditions: Conditions,
-      operator:   Option[Operator],
-      observer:   Either[Observer, SequenceObserverFocus])
+    status:     ClientStatus,
+    conditions: Conditions,
+    operator:   Option[Operator],
+    observer:   Either[Observer, SequenceObserverFocus])
       extends UseValueEq
 
   final case class InstrumentStatusFocus(
-      instrument:  Instrument,
-      active:      Boolean,
-      idState:     Option[(Observation.Id, SequenceState)],
-      runningStep: Option[RunningStep])
+    instrument:  Instrument,
+    active:      Boolean,
+    idState:     Option[(Observation.Id, SequenceState)],
+    runningStep: Option[RunningStep])
       extends UseValueEq
 
   final case class TabFocus(
-      canOperate:      Boolean,
-      tabs:            NonEmptyList[Either[CalibrationQueueTabActive, AvailableTab]],
-      defaultObserver: Observer)
+    canOperate:      Boolean,
+    tabs:            NonEmptyList[Either[CalibrationQueueTabActive, AvailableTab]],
+    defaultObserver: Observer)
 
   object TabFocus {
     implicit val eq: Eq[TabFocus] =
@@ -192,8 +195,7 @@ package circuit {
 
   object SequenceTabContentFocus {
     implicit val eq: Eq[SequenceTabContentFocus] =
-      Eq.by(x =>
-        (x.canOperate, x.instrument, x.id, x.active, x.logDisplayed))
+      Eq.by(x => (x.canOperate, x.instrument, x.id, x.active, x.logDisplayed))
   }
 
   final case class QueueTabContentFocus(canOperate:   Boolean,
@@ -237,14 +239,14 @@ package circuit {
   }
 
   final case class StepsTableFocus(
-      id:                  Observation.Id,
-      instrument:          Instrument,
-      state:               SequenceState,
-      steps:               List[Step],
-      stepConfigDisplayed: Option[Int],
-      nextStepToRun:       Option[Int],
-      isPreview:           Boolean,
-      tableState:          TableState[StepsTable.TableColumn])
+    id:                  Observation.Id,
+    instrument:          Instrument,
+    state:               SequenceState,
+    steps:               List[Step],
+    stepConfigDisplayed: Option[Int],
+    nextStepToRun:       Option[Int],
+    isPreview:           Boolean,
+    tableState:          TableState[StepsTable.TableColumn])
 
   object StepsTableFocus {
     implicit val eq: Eq[StepsTableFocus] =
@@ -261,9 +263,9 @@ package circuit {
   }
 
   final case class StepsTableAndStatusFocus(
-      status:           ClientStatus,
-      stepsTable:       Option[StepsTableFocus],
-      configTableState: TableState[StepConfigTable.TableColumn])
+    status:           ClientStatus,
+    stepsTable:       Option[StepsTableFocus],
+    configTableState: TableState[StepConfigTable.TableColumn])
 
   object StepsTableAndStatusFocus {
     implicit val eq: Eq[StepsTableAndStatusFocus] =
@@ -307,29 +309,29 @@ package circuit {
   }
 
   @Lenses
-  final case class TableStates(
-      queueTable:      TableState[QueueTableBody.TableColumn],
-      stepConfigTable: TableState[StepConfigTable.TableColumn],
-      stepsTables:     Map[Observation.Id, TableState[StepsTable.TableColumn]])
+  final case class AppTableStates(
+    queueTable:      TableState[QueueTableBody.TableColumn],
+    stepConfigTable: TableState[StepConfigTable.TableColumn],
+    stepsTables:     Map[Observation.Id, TableState[StepsTable.TableColumn]])
       extends UseValueEq
 
   @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
-  object TableStates {
-    implicit val eq: Eq[TableStates] =
+  object AppTableStates {
+    implicit val eq: Eq[AppTableStates] =
       Eq.by(x => (x.queueTable, x.stepConfigTable, x.stepsTables))
 
-    val tableStateL: Lens[SeqexecUIModel, TableStates] =
-      Lens[SeqexecUIModel, TableStates](
-        m => TableStates(m.queueTableState,
+    val tableStateL: Lens[SeqexecUIModel, AppTableStates] =
+      Lens[SeqexecUIModel, AppTableStates](
+        m => AppTableStates(m.queueTableState,
                          m.configTableState,
                          m.sequencesOnDisplay.stepsTables))(
         v => m => m.copy(queueTableState  = v.queueTable,
                          configTableState = v.stepConfigTable,
                          sequencesOnDisplay = m.sequencesOnDisplay
-                           .updateStepsTableStates(v.stepsTables)))
+                           .updateTableStates(v.stepsTables)))
 
-    def stepTableAt(id: Observation.Id): Lens[TableStates, Option[TableState[StepsTable.TableColumn]]] =
-      TableStates.stepsTables ^|-> at(id)
+    def stepTableAt(id: Observation.Id): Lens[AppTableStates, Option[TableState[StepsTable.TableColumn]]] =
+      AppTableStates.stepsTables ^|-> at(id)
   }
 
 }
