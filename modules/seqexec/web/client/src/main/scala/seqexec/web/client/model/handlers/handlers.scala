@@ -21,29 +21,6 @@ import seqexec.web.client.services.SeqexecWebClient
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
 /**
-  * Handles actions requesting sync
-  */
-class SyncRequestsHandler[M](modelRW: ModelRW[M, Boolean])
-    extends ActionHandler(modelRW)
-    with Handlers[M, Boolean] {
-  def handleSyncRequestOperation: PartialFunction[Any, ActionResult[M]] = {
-    case RequestSync(s) =>
-      updated(true, Effect(SeqexecWebClient.sync(s).map(r => RunSync(s))))
-  }
-
-  def handleSyncResult: PartialFunction[Any, ActionResult[M]] = {
-    case RunSyncFailed(_) =>
-      updated(false)
-
-    case RunSync(_) =>
-      updated(false)
-  }
-
-  override def handle: PartialFunction[Any, ActionResult[M]] =
-    List(handleSyncRequestOperation, handleSyncResult).combineAll
-}
-
-/**
   * Handles sequence execution actions
   */
 class SequenceExecutionHandler[M](

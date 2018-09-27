@@ -395,4 +395,17 @@ object SequencesOnDisplay {
   def loadingL(id: Observation.Id): Traversal[SequencesOnDisplay, Boolean] =
     SequencesOnDisplay.previewTabById(id) ^|-> PreviewSequenceTab.isLoading
 
+  def tabG(id: Observation.Id): Getter[SequencesOnDisplay, SeqexecTabActive] =
+    SequencesOnDisplay.tabs.asGetter >>> {
+      _.withFocus.toList
+        .collect {
+          case (i: SequenceTab, a) if i.obsId.exists(_ === id) =>
+            val selected =
+              if (a) TabSelected.Selected else TabSelected.Background
+            SeqexecTabActive(i, selected)
+        }
+        .headOption
+        // Returning the getOrElse part shouldn't happen but it simplifies the model not carrying the Option up
+        .getOrElse(SeqexecTabActive.Empty)
+    }
 }

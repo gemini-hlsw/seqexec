@@ -56,11 +56,23 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
   implicit val roCogen: Cogen[RunOperation] =
     Cogen[String].contramap(_.productPrefix)
 
+  implicit val arbSyncOperation: Arbitrary[SyncOperation] =
+    Arbitrary(Gen.oneOf(SyncOperation.SyncIdle, SyncOperation.SyncInFlight))
+
+  implicit val soCogen: Cogen[SyncOperation] =
+    Cogen[String].contramap(_.productPrefix)
+
   implicit val arbTabOperations: Arbitrary[TabOperations] =
-    Arbitrary(arbitrary[RunOperation].map(TabOperations.apply))
+    Arbitrary {
+      for {
+        r <- arbitrary[RunOperation]
+        s <- arbitrary[SyncOperation]
+      } yield TabOperations(r, s)
+    }
 
   implicit val toCogen: Cogen[TabOperations] =
-    Cogen[RunOperation].contramap(_.runRequested)
+    Cogen[(RunOperation, SyncOperation)].contramap(x =>
+      (x.runRequested, x.syncRequested))
 
   implicit val arbCalibrationQueueTab: Arbitrary[CalibrationQueueTab] =
     Arbitrary {
@@ -259,14 +271,12 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
     Arbitrary {
       for {
         u <- arbitrary[Option[UserDetails]]
-        ws <- arbitrary[WebSocketConnection]
-        s <- arbitrary[Boolean]
-      } yield ClientStatus(u, ws, s)
+        w <- arbitrary[WebSocketConnection]
+      } yield ClientStatus(u, w)
     }
 
   implicit val cssCogen: Cogen[ClientStatus] =
-    Cogen[(Option[UserDetails], WebSocketConnection, Boolean)].contramap(x =>
-      (x.u, x.w, x.syncInProgress))
+    Cogen[(Option[UserDetails], WebSocketConnection)].contramap(x => (x.u, x.w))
 
   implicit val arbRunningStep: Arbitrary[RunningStep] =
     Arbitrary {
@@ -587,7 +597,6 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
           loginBox,
           globalLog,
           sequencesOnDisplay,
-          syncInProgress,
           configTableState,
           queueTableState,
           defaultObserver,
@@ -603,7 +612,6 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
        SectionVisibilityState,
        GlobalLog,
        SequencesOnDisplay,
-       Boolean,
        TableState[StepConfigTable.TableColumn],
        TableState[QueueTableBody.TableColumn],
        Observer,
@@ -616,7 +624,6 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
            x.loginBox,
            x.globalLog,
            x.sequencesOnDisplay,
-           x.syncInProgress,
            x.configTableState,
            x.queueTableState,
            x.defaultObserver,

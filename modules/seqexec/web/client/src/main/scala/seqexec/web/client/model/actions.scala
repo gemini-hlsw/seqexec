@@ -117,7 +117,8 @@ object actions {
                                 i:        Instrument,
                                 id:       Observation.Id)
       extends Action
-  final case class SequenceLoadFailed(id: Observation.Id) extends Action
+  final case class SequenceLoadFailed(id:       Observation.Id) extends Action
+  final case class RequestFailedNotification(r: RequestFailed) extends Action
   case object CleanSequences extends Action
 
   // Used for UI debugging

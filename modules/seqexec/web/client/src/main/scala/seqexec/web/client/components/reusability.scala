@@ -10,13 +10,20 @@ import gem.enum.Site
 import japgolly.scalajs.react.CatsReact._
 import japgolly.scalajs.react.extra.Reusability
 import seqexec.model.enum.Instrument
-import seqexec.web.client.model.{ AvailableTab, ClientStatus }
+import seqexec.web.client.model.AvailableTab
+import seqexec.web.client.model.ClientStatus
 import seqexec.web.client.model.SectionVisibilityState
 import seqexec.web.client.model.UserNotificationState
 import seqexec.web.client.model.WebSocketConnection
-import seqexec.web.client.model.{ RunOperation, TabSelected }
+import seqexec.web.client.model.RunOperation
+import seqexec.web.client.model.SyncOperation
+import seqexec.web.client.model.TabSelected
 import seqexec.web.client.circuit._
-import seqexec.model.{ Observer, Step, StepConfig, StepState, UserDetails }
+import seqexec.model.Observer
+import seqexec.model.Step
+import seqexec.model.StepConfig
+import seqexec.model.StepState
+import seqexec.model.UserDetails
 
 package object reusability {
   implicit val stepStateReuse: Reusability[StepState]          = Reusability.byEq
@@ -36,6 +43,7 @@ package object reusability {
   implicit val potStateReuse: Reusability[PotState]            = Reusability.byRef
   implicit val webSCeuse: Reusability[WebSocketConnection]     = Reusability.by(_.ws.state)
   implicit val runOperationReuse: Reusability[RunOperation]    = Reusability.byRef
+  implicit val syncOperationReuse: Reusability[SyncOperation]  = Reusability.byRef
   implicit val availableTabsReuse: Reusability[AvailableTab]   = Reusability.byEq
   implicit val userDetailsReuse: Reusability[UserDetails]      = Reusability.byEq
   implicit val usrNotReuse: Reusability[UserNotificationState] = Reusability.byEq
