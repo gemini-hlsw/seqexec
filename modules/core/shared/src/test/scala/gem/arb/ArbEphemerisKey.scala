@@ -35,7 +35,7 @@ trait ArbEphemerisKey {
 
   private val perturbations: List[String => Gen[String]] =
     List(
-      s => arbitrary[String],             // swap for a random string
+      _ => arbitrary[String],             // swap for a random string
       s => Gen.const(s.replace("2", "0")) // create a leading zero, perhaps
     )
 

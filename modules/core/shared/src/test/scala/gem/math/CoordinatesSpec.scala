@@ -92,7 +92,7 @@ final class CoordinatesSpec extends CatsSuite {
   }
 
   test("angularDistance must be 90° between either pole and any point on the equator, regardless of RA, within 1µas") {
-    forAll { (ra1: RA, ra2: RA, dec: Dec, b: Boolean) =>
+    forAll { (ra1: RA, ra2: RA, b: Boolean) =>
       val pole  = Coordinates(ra1, if (b) Dec.Min else Dec.Max)
       val point = Coordinates(ra2, Dec.Zero)
       val delta = point.angularDistance(pole)
