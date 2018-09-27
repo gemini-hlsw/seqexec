@@ -164,14 +164,12 @@ object StepsTable {
 
   val controlHeaderRenderer: HeaderRenderer[js.Object] = (_, _, _, _, _, _) =>
     <.span(
-      SeqexecStyles.centeredCell,
       ^.title := "Control",
       IconSettings
   )
 
   val settingsHeaderRenderer: HeaderRenderer[js.Object] = (_, _, _, _, _, _) =>
     <.span(
-      SeqexecStyles.settingsCellHeader,
       ^.title := "Settings",
       IconBrowser
   )

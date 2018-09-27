@@ -21,14 +21,6 @@ object WebpackResources {
     def resource: String = r.show
   }
 
-  @JSImport("semantic-ui-less/semantic.less", JSImport.Default)
-  @js.native
-  object SemanticUILessResource extends WebpackResource
-
-  @JSImport("less/style.less", JSImport.Default)
-  @js.native
-  object SeqexecLessResource extends WebpackResource
-
   @JSImport("sounds/sequencepaused.mp3", JSImport.Default)
   @js.native
   object SequencePausedResource extends WebpackResource
