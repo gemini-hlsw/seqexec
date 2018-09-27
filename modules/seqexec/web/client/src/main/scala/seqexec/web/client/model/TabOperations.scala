@@ -4,6 +4,7 @@
 package seqexec.web.client.model
 
 import cats.Eq
+import cats.implicits._
 import monocle.macros.Lenses
 
 sealed trait RunOperation extends Product with Serializable
@@ -16,16 +17,28 @@ object RunOperation {
 
 }
 
+sealed trait SyncOperation extends Product with Serializable
+object SyncOperation {
+  case object SyncInFlight extends SyncOperation
+  case object SyncIdle extends SyncOperation
+
+  implicit val eq: Eq[SyncOperation] =
+    Eq.fromUniversalEquals
+
+}
+
 /**
   * Hold transient states while excuting an operation
   */
 @Lenses
-final case class TabOperations(runRequested: RunOperation)
+final case class TabOperations(runRequested:  RunOperation,
+                               syncRequested: SyncOperation)
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object TabOperations {
   implicit val eq: Eq[TabOperations] =
-    Eq.by(_.runRequested)
+    Eq.by(x => (x.runRequested, x.syncRequested))
 
-  val Default: TabOperations = TabOperations(RunOperation.RunIdle)
+  val Default: TabOperations =
+    TabOperations(RunOperation.RunIdle, SyncOperation.SyncIdle)
 }

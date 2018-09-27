@@ -87,7 +87,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   // Reader for sequences on display
   val headerSideBarReader: ModelR[SeqexecAppRootModel, HeaderSideBarFocus] =
     zoom { c =>
-      val clientStatus = ClientStatus(c.uiModel.user, c.ws, c.uiModel.syncInProgress)
+      val clientStatus = ClientStatus(c.uiModel.user, c.ws)
       val obs = c.uiModel.sequencesOnDisplay.selectedOperator match {
         case Some(x) => x.asRight
         case _       => c.uiModel.defaultObserver.asLeft
@@ -164,7 +164,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   def sequenceControlReader(obsId: Observation.Id): ModelR[SeqexecAppRootModel, SequenceControlFocus] =
     statusReader.zip(sequenceTab(obsId)).zoom {
       case (status, SeqexecTabActive(tab, _)) =>
-        SequenceControlFocus(status.canOperate, ControlModel.controlModelG.get(tab), status.syncInProgress)
+        SequenceControlFocus(status.canOperate, ControlModel.controlModelG.get(tab))
     }(fastEq[SequenceControlFocus])
 
   private val wsHandler                = new WebSocketHandler(zoomTo(_.ws))
@@ -182,7 +182,6 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   private val operatorHandler          = new OperatorHandler(zoomTo(_.sequences.operator))
   private val defaultObserverHandler   = new DefaultObserverHandler(zoomTo(_.uiModel.defaultObserver))
   private val remoteRequestsHandler    = new RemoteRequestsHandler(zoomTo(_.clientId))
-  private val syncRequestsHandler      = new SyncRequestsHandler(zoomTo(_.uiModel.syncInProgress))
   private val debuggingHandler         = new DebuggingHandler(zoomTo(_.sequences))
   private val tableStateHandler        = new TableStateHandler(tableStateRW)
   private val loadSequencesHandler     = new LoadedSequencesHandler(sodLocationReaderRW)
@@ -206,7 +205,6 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
     operatorHandler,
     defaultObserverHandler,
     foldHandlers(remoteRequestsHandler, operationsStateHandler),
-    syncRequestsHandler,
     navigationHandler,
     debuggingHandler,
     tableStateHandler,
