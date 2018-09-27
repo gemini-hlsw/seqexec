@@ -3,19 +3,19 @@
 
 package giapi.client.gpi
 
-import cats.Show
 import cats.implicits._
 import edu.gemini.aspen.giapi.commands.{Activity, SequenceCommand}
 import fs2.Stream
 import giapi.client.commands.{Command, CommandResult, Configuration}
-import giapi.client.{Giapi, commands}
+import giapi.client.{Giapi, GiapiClient}
 import mouse.boolean._
+
 import scala.concurrent.duration._
 
 /**
   * Client for GPI
   */
-class GPIClient[F[_]](giapi: Giapi[F]) {
+class GPIClient[F[_]](override val giapi: Giapi[F]) extends GiapiClient[F] {
   // GPI documentation specify 60 seconds as the max time to move muchanism
   val DefaultCommandTimeout: FiniteDuration = 60.seconds
 
@@ -36,87 +36,6 @@ class GPIClient[F[_]](giapi: Giapi[F]) {
   /////////////////////
   def heartbeatS: F[Stream[F, Int]] =
     giapi.stream[Int]("gpi:heartbeat")
-
-  ///////////////////
-  // General commands
-  ///////////////////
-  def test: F[CommandResult] =
-    giapi.command(
-      Command(SequenceCommand.TEST, Activity.PRESET_START, Configuration.Zero),
-      DefaultCommandTimeout)
-
-  def init: F[CommandResult] =
-    giapi.command(
-      Command(SequenceCommand.INIT, Activity.PRESET_START, Configuration.Zero),
-      DefaultCommandTimeout)
-
-  def datum: F[CommandResult] =
-    giapi.command(
-      Command(SequenceCommand.DATUM, Activity.PRESET_START, Configuration.Zero),
-      DefaultCommandTimeout)
-
-  def park: F[CommandResult] =
-    giapi.command(
-      Command(SequenceCommand.PARK, Activity.PRESET_START, Configuration.Zero),
-      DefaultCommandTimeout)
-
-  def verify: F[CommandResult] =
-    giapi.command(
-      Command(SequenceCommand.VERIFY,
-              Activity.PRESET_START,
-              Configuration.Zero), DefaultCommandTimeout)
-
-  def endVerify: F[CommandResult] =
-    giapi.command(
-      Command(SequenceCommand.END_VERIFY,
-              Activity.PRESET_START,
-              Configuration.Zero), DefaultCommandTimeout)
-
-  def guide: F[CommandResult] =
-    giapi.command(
-      Command(SequenceCommand.GUIDE, Activity.PRESET_START, Configuration.Zero),
-      DefaultCommandTimeout)
-
-  def endGuide: F[CommandResult] =
-    giapi.command(
-      Command(SequenceCommand.END_GUIDE,
-              Activity.PRESET_START,
-              Configuration.Zero), DefaultCommandTimeout)
-
-  def observe[A: Show](dataLabel: A, expTime: FiniteDuration): F[CommandResult] =
-    giapi.command(
-      Command(
-        SequenceCommand.OBSERVE,
-        Activity.PRESET_START,
-        Configuration.single(commands.DataLabelCfg, dataLabel)
-      ), expTime)
-
-  def endObserve: F[CommandResult] =
-    giapi.command(
-      Command(SequenceCommand.END_OBSERVE,
-              Activity.PRESET_START,
-              Configuration.Zero), DefaultCommandTimeout)
-
-  def pause: F[CommandResult] =
-    giapi.command(
-      Command(SequenceCommand.PAUSE, Activity.PRESET_START, Configuration.Zero),
-      DefaultCommandTimeout)
-
-  def continue: F[CommandResult] =
-    giapi.command(
-      Command(SequenceCommand.CONTINUE,
-              Activity.PRESET_START,
-              Configuration.Zero), DefaultCommandTimeout)
-
-  def stop: F[CommandResult] =
-    giapi.command(
-      Command(SequenceCommand.STOP, Activity.PRESET_START, Configuration.Zero),
-      DefaultCommandTimeout)
-
-  def abort: F[CommandResult] =
-    giapi.command(
-      Command(SequenceCommand.ABORT, Activity.PRESET_START, Configuration.Zero),
-      DefaultCommandTimeout)
 
   ////////////////////////
   // GPI Specific commands
@@ -181,14 +100,6 @@ class GPIClient[F[_]](giapi: Giapi[F]) {
       ),
       DefaultCommandTimeout
     )
-
-  def genericApply(configuration: Configuration): F[CommandResult] =
-    giapi.command(
-      Command(
-        SequenceCommand.APPLY,
-        Activity.PRESET_START,
-        configuration
-      ), DefaultCommandTimeout)
 }
 
 object GPIExample extends App {
