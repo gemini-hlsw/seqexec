@@ -52,6 +52,7 @@ package server {
   final case class SetSkyBackground(wv: SkyBackground, user: Option[UserDetails]) extends SeqEvent
   final case class SetCloudCover(cc: CloudCover, user: Option[UserDetails]) extends SeqEvent
   final case class NotifyUser(memo: Notification, clientID: ClientID) extends SeqEvent
+  final case class StartQueue(qid: QueueId, clientID: ClientID) extends SeqEvent
   case object NullSeqEvent extends SeqEvent
 
   sealed trait ControlStrategy
@@ -144,10 +145,10 @@ package object server {
 
       if(statuses.forall(_.isCompleted)) BatchExecState.Completed
       else q.cmdState match {
-        case BatchCommandState.Idle => BatchExecState.Idle
-        case BatchCommandState.Run  => if(statuses.exists(_.isRunning)) BatchExecState.Running
+        case BatchCommandState.Idle   => BatchExecState.Idle
+        case BatchCommandState.Run(_) => if(statuses.exists(_.isRunning)) BatchExecState.Running
                                   else BatchExecState.Waiting
-        case BatchCommandState.Stop => if(statuses.exists(_.isRunning)) BatchExecState.Stopping
+        case BatchCommandState.Stop   => if(statuses.exists(_.isRunning)) BatchExecState.Stopping
                                   else BatchExecState.Idle
       }
     }

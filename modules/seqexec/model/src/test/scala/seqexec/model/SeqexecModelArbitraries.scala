@@ -397,10 +397,14 @@ trait SeqexecModelArbitraries extends ArbObservation {
         case f: RequestFailed    => Right(Right(f))
       }
 
+  implicit val seqBatchCmdRunArb: Arbitrary[BatchCommandState.Run] =  Arbitrary {
+    for {
+      clid <- arbitrary[ClientID]
+    } yield BatchCommandState.Run(clid)
+  }
+
   implicit val seqBatchCmdStateArb: Arbitrary[BatchCommandState] = Arbitrary(
-    Gen.oneOf(BatchCommandState.Idle,
-              BatchCommandState.Run,
-              BatchCommandState.Stop)
+    Gen.frequency((2, Gen.oneOf(BatchCommandState.Idle, BatchCommandState.Stop)), (1, arbitrary[BatchCommandState.Run]))
   )
 
   implicit val seqBatchCmdStateCogen: Cogen[BatchCommandState] =

@@ -106,7 +106,7 @@ trait ModelBooPicklers extends GemModelBooPicklers {
 
   implicit val batchCommandPickler = compositePickler[BatchCommandState]
     .addConcreteType[BatchCommandState.Idle.type]
-    .addConcreteType[BatchCommandState.Run.type]
+    .addConcreteType[BatchCommandState.Run]
     .addConcreteType[BatchCommandState.Stop.type]
 
   implicit val executionQueuePickler = generatePickler[ExecutionQueue]

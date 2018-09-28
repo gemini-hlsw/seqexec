@@ -14,7 +14,7 @@ import java.time.LocalDate
 import java.util.UUID
 
 import org.scalatest.Inside.inside
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.{FlatSpec, Matchers, NonImplicitAssertions}
 import org.http4s.Uri._
 
 import scala.concurrent.duration._
@@ -24,7 +24,7 @@ import seqexec.engine.Result.PauseContext
 import seqexec.engine._
 import seqexec.server.SeqexecEngine.Settings
 import seqexec.server.keywords.GDSClient
-import seqexec.model.{ExecutionQueue, Conditions, Observer, Operator, SequenceState}
+import seqexec.model.{Conditions, ExecutionQueue, Observer, Operator, SequenceState}
 import seqexec.model.enum.{ActionStatus, CloudCover, ImageQuality, Instrument, Resource, SkyBackground, WaterVapor}
 import seqexec.model.{ActionType, UserDetails}
 import seqexec.model.enum.Resource.TCS
@@ -33,7 +33,7 @@ import seqexec.model.enum.BatchCommandState
 
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 @SuppressWarnings(Array("org.wartremover.warts.Throw"))
-class SeqexecEngineSpec extends FlatSpec with Matchers {
+class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertions {
   private val defaultSettings = Settings(Site.GS,
     odbHost = "localhost",
     date = LocalDate.of(2017, 1, 1),
@@ -178,10 +178,10 @@ class SeqexecEngineSpec extends FlatSpec with Matchers {
   private val sm = SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry()).unsafeRunSync
   private val seqexecEngine = SeqexecEngine(GDSClient.alwaysOkClient, defaultSettings, sm)
   private def advanceOne(q: EventQueue, s0: EngineState, put: IO[Either[SeqexecFailure, Unit]]): IO[Option[EngineState]] =
-    (put *> executeEngine.process(q.dequeue)(s0).take(1).compile.last).map(_.map(_._2))
+    (put *> seqexecEngine.stream(q.dequeue)(s0).take(1).compile.last).map(_.map(_._2))
 
   private def advanceN(q: EventQueue, s0: EngineState, put: IO[Either[SeqexecFailure, Unit]], n: Long): IO[Option[EngineState]] =
-    (put *> executeEngine.process(q.dequeue)(s0).take(n).compile.last).map(_.map(_._2))
+    (put *> seqexecEngine.stream(q.dequeue)(s0).take(n).compile.last).map(_.map(_._2))
 
   private val seqId1 = "GS-2018B-Q-0-1"
   private val seqObsId1 = Observation.Id.unsafeFromString(seqId1)
@@ -282,7 +282,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers {
     val s0 = (SeqexecEngine.loadSequenceEndo(seqObsId1, sequence(seqObsId1)) >>>
       SeqexecEngine.loadSequenceEndo(seqObsId2, sequence(seqObsId2)) >>>
       (EngineState.queues ^|-? index(CalibrationQueueId) ^|-> ExecutionQueue.queue).modify(_ ++ List(seqObsId1, seqObsId2)) >>>
-      (EngineState.queues ^|-? index(CalibrationQueueId) ^|-> ExecutionQueue.cmdState).set(BatchCommandState.Run) >>>
+      (EngineState.queues ^|-? index(CalibrationQueueId) ^|-> ExecutionQueue.cmdState).set(BatchCommandState.Run(java.util.UUID.randomUUID())) >>>
       (EngineState.executionState ^|-? Engine.State.sequenceState(seqObsId1) ^|-> Sequence.State.status).set(SequenceState.Running.init))(EngineState.default)
 
     (for {
@@ -371,6 +371,24 @@ class SeqexecEngineSpec extends FlatSpec with Matchers {
     val r = SeqexecEngine.nextRunnableObservations(CalibrationQueueId)(s0)
 
     assert(r.isEmpty)
+  }
+
+  "SeqexecEngine startQueue" should "run sequences in queue" in {
+    // seqObsId1 and seqObsId2 can be run immediately, but seqObsId3 must be run after seqObsId1
+    val s0 = (SeqexecEngine.loadSequenceEndo(seqObsId1, sequenceWithResources(seqObsId1, Set(Instrument.F2))) >>>
+          SeqexecEngine.loadSequenceEndo(seqObsId2, sequenceWithResources(seqObsId2, Set(Instrument.GmosS))) >>>
+          SeqexecEngine.loadSequenceEndo(seqObsId3, sequenceWithResources(seqObsId3, Set(Instrument.F2))) >>>
+          (EngineState.queues ^|-? index(CalibrationQueueId) ^|-> ExecutionQueue.queue).set(List(seqObsId1, seqObsId2, seqObsId3)))(EngineState.default)
+
+    def testCompleted(oid: Observation.Id)(st: EngineState): Boolean = st.executionState.sequences.get(oid).map(_.status.isCompleted).getOrElse(false)
+
+    (for {
+      q <- async.boundedQueue[IO, executeEngine.EventType](10)
+      _ <- seqexecEngine.startQueue(q, CalibrationQueueId, UUID.randomUUID)
+      sf <- seqexecEngine.stream(q.dequeue)(s0).map(_._2).takeThrough(_.executionState.sequences.values.exists(_.status.isRunning)).compile.last
+    } yield inside(sf) {
+      case Some(s) => assert(testCompleted(seqObsId1)(s) && testCompleted(seqObsId2)(s) && testCompleted(seqObsId3)(s))
+    } ).unsafeRunSync
   }
 
   "SeqexecEngine setOperator" should "set operator's name" in {

@@ -33,7 +33,7 @@ final case class GetState[D<:Engine.Types](f: D#StateType => Option[Stream[IO, E
 }
 // Generic event to put a function in the main Process process, which changes the state
 // depending on the current state
-final case class ModifyState[D<:Engine.Types](f: D#StateType => (D#StateType, D#EventData)) extends UserEvent[D] {
+final case class ModifyState[D<:Engine.Types](f: Handle[D#StateType, Event[D], D#EventData]) extends UserEvent[D] {
   val user: Option[UserDetails] = None
 }
 // Calls a user given function in the main Stream process to stop an Action.
