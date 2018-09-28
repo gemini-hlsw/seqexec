@@ -20,6 +20,7 @@ import giapi.client.gpi.GPIClient
 import seqexec.engine
 import seqexec.engine.Result.{FileIdAllocated, Partial}
 import seqexec.engine.{Step => _, _}
+import seqexec.engine.Handle
 import seqexec.model._
 import seqexec.model.enum._
 import seqexec.model.events._
@@ -198,8 +199,8 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
     }
   }
 
-  private[server] def stream(p: Stream[IO, executeEngine.EventType])(s0: EngineState): Stream[IO, (executeEngine.ResultType, EngineState)] = executeEngine.process(iterateQueues)(p)(s0)
-
+  private[server] def stream(p: Stream[IO, executeEngine.EventType])(s0: EngineState): Stream[IO, (executeEngine.ResultType, EngineState)] =
+    executeEngine.process(iterateQueues)(p)(s0)
 
   def stopObserve(q: EventQueue, seqId: Observation.Id): IO[Unit] = q.enqueue1(
     Event.actionStop[executeEngine.ConcreteTypes](seqId, translator.stopObserve(seqId))
@@ -370,9 +371,9 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
   }
 
   implicit private final class ToHandle[A](f: EngineState => (EngineState, A)) {
-    import Engine.HandleToHandleP
-    def toHandle: Engine.HandleP[EngineState, Event[executeEngine.ConcreteTypes], A] =
-      StateT[IO, EngineState, A]{ st => IO(f(st)) }.toHandleP
+    import Handle.StateToHandle
+    def toHandle: Handle[EngineState, Event[executeEngine.ConcreteTypes], A] =
+      StateT[IO, EngineState, A]{ st => IO(f(st)) }.toHandle
   }
 
 }

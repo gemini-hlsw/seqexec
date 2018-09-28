@@ -21,7 +21,6 @@ import org.log4s.getLogger
 import scala.concurrent.ExecutionContext
 
 class Engine[D, U](stateL: Lens[D, Engine.State]) {
-  import Engine._
 
   class ConcreteTypes extends Engine.Types {
     override type StateType = D
@@ -30,8 +29,7 @@ class Engine[D, U](stateL: Lens[D, Engine.State]) {
   type EventType = Event[ConcreteTypes]
   type ResultType = EventResult[ConcreteTypes]
   type UserEventType = UserEvent[ConcreteTypes]
-  type HandleType[A] = HandleP[D, EventType, A]
-
+  type HandleType[A] = Handle[D, EventType, A]
 
   /**
     * Changes the `Status` and returns the new `Queue.State`.
@@ -152,16 +150,16 @@ class Engine[D, U](stateL: Lens[D, Engine.State]) {
         val u: List[Stream[IO, EventType]] = seq.current.actions.map(_.gen).zipWithIndex.map(x => act(id, x))
         val v: Stream[IO, EventType] = Stream.emits(u).join(u.length)
         val w: List[HandleType[Unit]] = seq.current.actions.indices.map(i => modifyS(id)(_.start(i))).toList
-        w.sequence *> HandleP.fromStream(v)
+        w.sequence *> Handle.fromStream(v)
     }.getOrElse(unit)
     )
   }
 
   private def getState(f: D => Option[Stream[IO, EventType]]): HandleType[Unit] =
-    get.flatMap(s => HandleP[D, EventType, Unit](f(s).pure[Handle[D, ?]].map(((), _))))
+    get.flatMap(s => Handle[D, EventType, Unit](f(s).pure[StateT[IO, D, ?]].map(((), _))))
 
   private def actionStop(id: Observation.Id, f: D => Option[Stream[IO, EventType]]): HandleType[Unit] =
-    getS(id).flatMap(_.map(s => if (Sequence.State.isRunning(s)) HandleP(StateT[IO, D, (Unit, Option[Stream[IO, EventType]])](st => IO((st, ((), f(st)))))) *> modifyS(id)(Sequence.State.internalStopSet(true)) else unit).getOrElse(unit))
+    getS(id).flatMap(_.map(s => if (Sequence.State.isRunning(s)) Handle(StateT[IO, D, (Unit, Option[Stream[IO, EventType]])](st => IO((st, ((), f(st)))))) *> modifyS(id)(Sequence.State.internalStopSet(true)) else unit).getOrElse(unit))
 
   /**
     * Given the index of the completed `Action` in the current `Execution`, it
@@ -171,7 +169,7 @@ class Engine[D, U](stateL: Lens[D, Engine.State]) {
     */
   private def complete[R <: RetVal](id: Observation.Id, i: Int, r: Result.OK[R]): HandleType[Unit] = modifyS(id)(_.mark(i)(r)) *>
     getS(id).flatMap(_.flatMap(
-      _.current.execution.forall(Action.completed).option(HandleP.fromStream[D, EventType](Stream(executed(id))))
+      _.current.execution.forall(Action.completed).option(Handle.fromStream[D, EventType](Stream(executed(id))))
     ).getOrElse(unit))
 
   private def partialResult[R <: PartialVal](id: Observation.Id, i: Int, p: Result.Partial[R]): HandleType[Unit] = modifyS(id)(_.mark(i)(p))
@@ -180,7 +178,7 @@ class Engine[D, U](stateL: Lens[D, Engine.State]) {
 
   private def actionResume(id: Observation.Id, i: Int, cont: IO[Result]): HandleType[Unit] = getS(id).flatMap(_.map { s =>
     if (Sequence.State.isRunning(s) && s.current.execution.lift(i).exists(Action.paused))
-      modifyS(id)(_.start(i)) *> HandleP.fromStream(act(id, (cont, i)))
+      modifyS(id)(_.start(i)) *> Handle.fromStream(act(id, (cont, i)))
     else unit
   }.getOrElse(unit))
 
@@ -226,7 +224,7 @@ class Engine[D, U](stateL: Lens[D, Engine.State]) {
   /**
     * Enqueue `Event` in the Handle.
     */
-  private def send(ev: EventType): HandleType[Unit] = HandleP.fromStream(Stream(ev))
+  private def send(ev: EventType): HandleType[Unit] = Handle.fromStream(Stream(ev))
 
   /**
     * Main logical thread to handle events and produce output.
@@ -299,22 +297,21 @@ class Engine[D, U](stateL: Lens[D, Engine.State]) {
   def process(userReact: PartialFunction[SystemEvent, HandleType[Unit]])(input: Stream[IO, EventType])(qs: D)(implicit ec: ExecutionContext): Stream[IO, (ResultType, D)] =
     mapEvalState[EventType, D, (ResultType, D)](input, qs, runE(userReact))
 
-  //private def userModify(f: D => (D, U)): HandleType[U] = StateT[IO, D, U]( st => IO(f(st)) ).toHandleP
-
   // Functions for type bureaucracy
 
   def pure[A](a: A): HandleType[A] = Applicative[HandleType].pure(a)
 
-  val unit: HandleType[Unit] = pure(())
+  val unit: HandleType[Unit] =
+    Handle.unit
 
   val get: HandleType[D] =
-    StateT.get[IO, D].toHandleP
+    Handle.get
 
   private def inspect[A](f: D => A): HandleType[A] =
-    StateT.inspect[IO, D, A](f).toHandleP
+    Handle.inspect(f)
 
   private def modify(f: D => D): HandleType[Unit] =
-    StateT.modify[IO, D](f).toHandleP
+    Handle.modify(f)
 
   private def getS(id: Observation.Id): HandleType[Option[Sequence.State]] = get.map(stateL.get(_).sequences.get(id))
 
@@ -348,76 +345,6 @@ object Engine {
   abstract class Types {
     type StateType
     type EventData
-  }
-
-
-  /**
-    * Type constructor where all Seqexec side effect are managed.
-    *
-    * It's named `Handle` after `fs2.Handle` in order to give a hint in a future
-    * migration.
-    */
-  type Handle[D, A] = StateT[IO, D, A]
-
-  /*
-   * HandleP is a Stream which has as a side effect a State machine inside a IO, which can produce other
-   * Streams as output.
-   *
-   * Its type parameters are:
-   * A: Type of the output (usually Unit)
-   * V: Type of the events
-   * D: Type of the state machine state.
-   */
-  final case class HandleP[D, V, A](run: Handle[D, (A, Option[Stream[IO, V]])])
-  object HandleP {
-    def fromStream[D, V](p: Stream[IO, V]): HandleP[D, V, Unit] = {
-      HandleP[D, V, Unit](Applicative[Handle[D, ?]].pure[(Unit, Option[Stream[IO, V]])](((), Some(p))))
-    }
-  }
-
-  implicit def handlePInstances[D, V]: Monad[HandleP[D, V, ?]] = new Monad[HandleP[D, V, ?]] {
-    private def concatOpP[F[_]](op1: Option[Stream[F, V]],
-                          op2: Option[Stream[F, V]]): Option[Stream[F, V]] = (op1, op2) match {
-      case (None, None)         => None
-      case (Some(p1), None)     => Some(p1)
-      case (None, Some(p2))     => Some(p2)
-      case (Some(p1), Some(p2)) => Some(p1 ++ p2)
-    }
-
-    override def pure[A](a: A): HandleP[D, V, A] = HandleP(Applicative[Handle[D, ?]].pure((a, None)))
-
-    override def flatMap[A, B](fa: HandleP[D, V, A])(f: A => HandleP[D, V, B]): HandleP[D, V, B] = HandleP[D, V, B](
-      fa.run.flatMap {
-        case (a, op1) => f(a).run.map{
-          case (b, op2) => (b, concatOpP(op1, op2))
-        }
-      }
-    )
-
-    // Kudos to @tpolecat
-    def tailRecM[A, B](a: A)(f: A => HandleP[D, V, Either[A, B]]): HandleP[D, V, B] = {
-      // We don't really care what this type is
-      type Unused = Option[Stream[IO, V]]
-
-      // Construct a StateT that delegates to IO's tailRecM
-      val st: StateT[IO, D, (B, Unused)] =
-        StateT { s =>
-          Monad[IO].tailRecM[(D, A), (D, (B, Unused))]((s, a)) {
-            case (s, a) =>
-              f(a).run.run(s).map {
-                case (sʹ, (Left(a), _))  => Left((sʹ, a))
-                case (sʹ, (Right(b), u)) => Right((sʹ, (b, u)))
-              }
-          }
-        }
-
-      // Done
-      HandleP(st)
-    }
-  }
-
-  implicit class HandleToHandleP[D, V, A](self: Handle[D, A]) {
-    def toHandleP: HandleP[D, V, A] = HandleP(self.map((_, None)))
   }
 
 }
