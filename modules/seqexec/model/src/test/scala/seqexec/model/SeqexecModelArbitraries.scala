@@ -15,6 +15,22 @@ import seqexec.model.enum._
 trait SeqexecModelArbitraries extends ArbObservation {
 
   private val maxListSize = 2
+  
+  implicit val opArb = Arbitrary[Operator] { Gen.alphaStr.map(Operator.apply) }
+
+  implicit val ccArb = Arbitrary[CloudCover](Gen.oneOf(CloudCover.all))
+  implicit val wvArb = Arbitrary[WaterVapor](Gen.oneOf(WaterVapor.all))
+  implicit val sbArb = Arbitrary[SkyBackground](Gen.oneOf(SkyBackground.all))
+  implicit val iqArb = Arbitrary[ImageQuality](Gen.oneOf(ImageQuality.all))
+
+  implicit val conArb = Arbitrary[Conditions] {
+    for {
+      cc <- arbitrary[CloudCover]
+      iq <- arbitrary[ImageQuality]
+      sb <- arbitrary[SkyBackground]
+      wv <- arbitrary[WaterVapor]
+    } yield Conditions(cc, iq, sb, wv)
+  }
 
   // N.B. We don't want to auto derive this to limit the size of the lists for performance reasons
   implicit def sequencesQueueArb[A](implicit arb: Arbitrary[A]): Arbitrary[SequencesQueue[A]] = Arbitrary {
@@ -90,7 +106,6 @@ trait SeqexecModelArbitraries extends ArbObservation {
     } yield SequenceMetadata(i, o, n)
   }
 
-  implicit val opArb = Arbitrary[Operator] { Gen.alphaStr.map(Operator.apply) }
   implicit val spsArb = Arbitrary[StepState] {
     for {
       v1 <- Gen.oneOf(StepState.Pending,
@@ -127,20 +142,6 @@ trait SeqexecModelArbitraries extends ArbObservation {
       s <- Gen.oneOf(f, r, a)
     } yield s
   }
-  implicit val ccArb = Arbitrary[CloudCover](Gen.oneOf(CloudCover.all))
-  implicit val wvArb = Arbitrary[WaterVapor](Gen.oneOf(WaterVapor.all))
-  implicit val sbArb = Arbitrary[SkyBackground](Gen.oneOf(SkyBackground.all))
-  implicit val iqArb = Arbitrary[ImageQuality](Gen.oneOf(ImageQuality.all))
-
-  implicit val conArb = Arbitrary[Conditions] {
-    for {
-      cc <- arbitrary[CloudCover]
-      iq <- arbitrary[ImageQuality]
-      sb <- arbitrary[SkyBackground]
-      wv <- arbitrary[WaterVapor]
-    } yield Conditions(cc, iq, sb, wv)
-  }
-
   implicit val snArb = Arbitrary(Gen.oneOf(SystemName.all))
 
   def asciiStr: Gen[String] =
