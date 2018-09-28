@@ -179,7 +179,7 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
     }
 
   def eventStream(q: EventQueue): Stream[IO, SeqexecEvent] = {
-    executeEngine.process(iterateQueues)(q.dequeue.mergeHaltBoth(seqQueueRefreshStream))(EngineState.default).flatMap(x =>
+    stream(q.dequeue.mergeHaltBoth(seqQueueRefreshStream))(EngineState.default).flatMap(x =>
       Stream.eval(notifyODB(x))).flatMap {
         case (ev, qState) =>
           val sequences = qState.sequences.values.map(
@@ -197,6 +197,9 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
           Stream.eval(updateMetrics[IO](ev, sequences).map(_ => event))
     }
   }
+
+  private[server] def stream(p: Stream[IO, executeEngine.EventType])(s0: EngineState): Stream[IO, (executeEngine.ResultType, EngineState)] = executeEngine.process(iterateQueues)(p)(s0)
+
 
   def stopObserve(q: EventQueue, seqId: Observation.Id): IO[Unit] = q.enqueue1(
     Event.actionStop[executeEngine.ConcreteTypes](seqId, translator.stopObserve(seqId))
