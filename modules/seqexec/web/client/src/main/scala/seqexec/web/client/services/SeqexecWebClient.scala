@@ -10,6 +10,7 @@ import java.util.logging.LogRecord
 import org.scalajs.dom.ext.Ajax
 import org.scalajs.dom.XMLHttpRequest
 import seqexec.model.ClientID
+import seqexec.model.QueueId
 import seqexec.model.Conditions
 import seqexec.model.UserDetails
 import seqexec.model.UserLoginRequest
@@ -319,5 +320,27 @@ object SeqexecWebClient extends ModelBooPicklers {
         url = s"$baseUrl/site"
       )
       .map(_.responseText)
+
+  /**
+    * Add a sequence from a queue
+    */
+  def addSequenceToQueue(queueId: QueueId, id: Observation.Id): Future[Unit] =
+    Ajax
+      .post(
+        url          = s"$baseUrl/queue/${encodeURI(queueId.show)}/add/${encodeURI(id.format)}",
+        responseType = "arraybuffer"
+      )
+      .map(_ => ())
+
+  /**
+    * Remove a sequence from a queue
+    */
+  def removeSequenceToQueue(queueId: QueueId, id: Observation.Id): Future[Unit] =
+    Ajax
+      .post(
+        url          = s"$baseUrl/queue/${encodeURI(queueId.show)}/remove/${encodeURI(id.format)}",
+        responseType = "arraybuffer"
+      )
+      .map(_ => ())
 
 }
