@@ -230,7 +230,7 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
   ).getOrElse(st)
 
   def addSequenceToQueue(q: EventQueue, qid: QueueId, seqId: Observation.Id): IO[Either[SeqexecFailure, Unit]] = q.enqueue1(
-    Event.modifyState[executeEngine.ConcreteTypes]((addSeq(qid, seqId) withEvent NullSeqEvent).toHandle)
+    Event.modifyState[executeEngine.ConcreteTypes]((addSeq(qid, seqId) withEvent UpdateQueue(qid)).toHandle)
   ).map(_.asRight)
 
   private def removeSeq(qid: QueueId, seqId: Observation.Id): Endo[EngineState] = st => (
@@ -242,7 +242,7 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
   ).getOrElse(st)
 
   def removeSequenceFromQueue(q: EventQueue, qid: QueueId, seqId: Observation.Id): IO[Either[SeqexecFailure, Unit]] = q.enqueue1(
-    Event.modifyState[executeEngine.ConcreteTypes]((removeSeq(qid, seqId) withEvent NullSeqEvent).toHandle)
+    Event.modifyState[executeEngine.ConcreteTypes]((removeSeq(qid, seqId) withEvent UpdateQueue(qid)).toHandle)
   ).map(_.asRight)
 
   private def moveSeq(qid: QueueId, seqId: Observation.Id, d: Int): Endo[EngineState] = st => (
@@ -254,7 +254,7 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
   ).getOrElse(st)
 
   def moveSequenceInQueue(q: EventQueue, qid: QueueId, seqId: Observation.Id, d: Int): IO[Either[SeqexecFailure, Unit]] = q.enqueue1(
-    Event.modifyState[executeEngine.ConcreteTypes]((moveSeq(qid, seqId, d) withEvent NullSeqEvent).toHandle)
+    Event.modifyState[executeEngine.ConcreteTypes]((moveSeq(qid, seqId, d) withEvent UpdateQueue(qid)).toHandle)
   ).map(_.asRight)
 
   private def runQueue(qid: QueueId, clientId: ClientID): executeEngine.HandleType[Unit] =
@@ -684,6 +684,7 @@ object SeqexecEngine extends SeqexecConfiguration {
     case LoadSequence(id)              => SequenceLoaded(id, svs)
     case UnloadSequence(id)            => SequenceUnloaded(id, svs)
     case NotifyUser(m, cid)            => UserNotification(m, cid)
+    case UpdateQueue(_)                => QueueUpdated(svs)
     case StartQueue(_, _)              => NullEvent
   }
 

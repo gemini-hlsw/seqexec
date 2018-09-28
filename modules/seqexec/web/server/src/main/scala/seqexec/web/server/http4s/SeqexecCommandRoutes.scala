@@ -130,12 +130,21 @@ class SeqexecCommandRoutes(auth:       AuthenticationService,
       req.req.decode[CloudCover](cc =>
         se.setCloudCover(inputQueue, cc, user) *> Ok(s"Set cloud cover to $cc"))
 
-    case POST -> Root / "load" / InstrumentVar(i) / ObsIdVar(obsId) / ObserverVar(observer) / ClientIDVar(clientId) as user =>
+    case POST -> Root / "load" / InstrumentVar(i) / ObsIdVar(obsId) / ObserverVar(
+          observer) / ClientIDVar(clientId) as user =>
       se.loadSequence(inputQueue, i, obsId, observer, user, clientId) *>
         Ok(s"Set selected sequence $obsId for $i")
 
     case POST -> Root / "unload" / "all" as user =>
       se.clearLoadedSequences(inputQueue, user) *> Ok(s"Queue cleared")
+
+    case POST -> Root / "queue" / QueueIdVar(qid) / "add" / ObsIdVar(obsId) as _ =>
+      se.addSequenceToQueue(inputQueue, qid, obsId) *>
+        Ok(s"${obsId.format} added to queue $qid")
+
+    case POST -> Root / "queue" / QueueIdVar(qid) / "remove" / ObsIdVar(obsId) as _ =>
+      se.removeSequenceFromQueue(inputQueue, qid, obsId) *>
+        Ok(s"${obsId.format} removed from queue $qid")
   }
 
   val refreshCommand: HttpService[IO] = HttpService[IO] {

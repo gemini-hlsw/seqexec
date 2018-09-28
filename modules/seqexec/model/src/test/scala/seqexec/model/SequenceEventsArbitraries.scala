@@ -114,30 +114,31 @@ trait SequenceEventsArbitraries extends ArbTime {
 
   implicit val smuArb = Arbitrary[SeqexecModelUpdate] {
     Gen.oneOf[SeqexecModelUpdate](
-        arbitrary[SequenceStart],
-        arbitrary[StepExecuted],
-        arbitrary[FileIdStepExecuted],
-        arbitrary[SequenceCompleted],
-        arbitrary[SequenceLoaded],
-        arbitrary[SequenceUnloaded],
-        arbitrary[StepBreakpointChanged],
-        arbitrary[OperatorUpdated],
-        arbitrary[ObserverUpdated],
-        arbitrary[ConditionsUpdated],
-        arbitrary[StepSkipMarkChanged],
-        arbitrary[SequencePauseRequested],
-        arbitrary[SequencePauseCanceled],
-        arbitrary[SequenceRefreshed],
-        arbitrary[ActionStopRequested],
-        arbitrary[SequenceUpdated],
-        arbitrary[SequencePaused],
-        arbitrary[ExposurePaused],
-        arbitrary[LoadSequenceUpdated],
-        arbitrary[ClearLoadedSequencesUpdated],
-        arbitrary[SequenceError]
+      arbitrary[SequenceStart],
+      arbitrary[StepExecuted],
+      arbitrary[FileIdStepExecuted],
+      arbitrary[SequenceCompleted],
+      arbitrary[SequenceLoaded],
+      arbitrary[SequenceUnloaded],
+      arbitrary[StepBreakpointChanged],
+      arbitrary[OperatorUpdated],
+      arbitrary[ObserverUpdated],
+      arbitrary[ConditionsUpdated],
+      arbitrary[StepSkipMarkChanged],
+      arbitrary[SequencePauseRequested],
+      arbitrary[SequencePauseCanceled],
+      arbitrary[SequenceRefreshed],
+      arbitrary[ActionStopRequested],
+      arbitrary[SequenceUpdated],
+      arbitrary[SequencePaused],
+      arbitrary[ExposurePaused],
+      arbitrary[LoadSequenceUpdated],
+      arbitrary[ClearLoadedSequencesUpdated],
+      arbitrary[QueueUpdated],
+      arbitrary[SequenceError]
     )
   }
-  implicit val seArb  = Arbitrary[SeqexecEvent] {
+  implicit val seArb = Arbitrary[SeqexecEvent] {
     Gen.oneOf[SeqexecEvent](
       arbitrary[SeqexecModelUpdate],
       arbitrary[ConnectionOpenEvent],
