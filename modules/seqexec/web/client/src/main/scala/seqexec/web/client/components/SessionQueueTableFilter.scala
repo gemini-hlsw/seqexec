@@ -39,7 +39,7 @@ object SessionQueueTableFilter {
     .builder[Unit]("SessionQueueTableFilter")
     .stateless
     .render_P(
-      p =>
+      _ =>
         filterConnect { f =>
           val filter = f()
           <.div(

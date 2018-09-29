@@ -91,7 +91,7 @@ object ConnectionState {
       <.div(
         ^.cls := "ui header item sub",
         p.u.ws.renderPending(
-          t =>
+          _ =>
             <.div(
               IconAttention.copyIcon(color = Option("red")),
               <.span(

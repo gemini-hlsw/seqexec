@@ -225,7 +225,7 @@ object SmartGcalImporter extends DoobieClient {
 
   def runc: IO[Unit] =
     for {
-      u <- UserDao.selectRootUser.transact(xa)
+      _ <- UserDao.selectRootUser.transact(xa)
       l <- Log.newLog[IO]("smartgcal importer", xa)
       _ <- checkSmartDir
       _ <- configureLogging[IO]

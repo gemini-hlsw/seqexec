@@ -137,7 +137,7 @@ object GPIExample extends App {
         val r =
           for {
             _ <- client.calExitShutter(true) // Open the shutter
-            - <- client.observingMode("Y_coron") // Change observing mode
+            _ <- client.observingMode("Y_coron") // Change observing mode
             _ <- client.ifsConfigure(1.5, 1, 4) // Configure the IFS
             f <- client.observe("TEST_S20180509", 30.seconds) // observe
             _ <- client.park // Park at the end

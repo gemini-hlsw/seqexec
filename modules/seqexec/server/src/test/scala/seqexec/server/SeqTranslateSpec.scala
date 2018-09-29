@@ -32,8 +32,7 @@ import squants.time.Seconds
 import seqexec.server.Response.Observed
 import seqexec.server.ghost.GHOSTController
 
-@SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
-@SuppressWarnings(Array("org.wartremover.warts.Throw"))
+@SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements", "org.wartremover.warts.Throw"))
 class SeqTranslateSpec extends FlatSpec {
 
   private val config: StepConfig = Map()

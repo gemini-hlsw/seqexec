@@ -37,7 +37,7 @@ trait ArbAngle {
 
   private val perturbations: List[String => Gen[String]] =
     List(
-      s => arbitrary[String],             // swap for a random string
+      _ => arbitrary[String],             // swap for a random string
       s => Gen.const(s.replace(":", " ")) // replace colons with spaces (ok)
     )
 

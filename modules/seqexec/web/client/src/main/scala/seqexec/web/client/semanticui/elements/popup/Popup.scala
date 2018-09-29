@@ -19,7 +19,7 @@ object Popup {
 
   private val component = ScalaComponent.builder[Props]("Popup")
     .stateless
-    .renderPC{($, p, c) =>
+    .renderPC{($, _, _) =>
       // This is in principle unsafe but we are only allowing Elements on the constructor
       VdomElement($.propsChildren.only().asInstanceOf[React.Element])
     }

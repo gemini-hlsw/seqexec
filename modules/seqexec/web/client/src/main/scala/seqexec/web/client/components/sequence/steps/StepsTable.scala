@@ -429,71 +429,60 @@ object StepsTable {
 
   def disperserColumn(p:                Props,
                       disperserVisible: Boolean): Option[Table.ColumnArg] =
-    for {
-      col <- p.steps.map(
-        s =>
-          Column(
-            Column.propsNoFlex(
-              ColWidths.DisperserWidth,
-              "disperser",
-              label        = "Disperser",
-              className    = SeqexecStyles.centeredCell.htmlClass,
-              cellRenderer = stepDisperserRenderer(s.instrument)
-            )))
-      if p.showDisperser
-      if disperserVisible
-    } yield col
+    p.steps
+      .map(s =>
+        Column(
+          Column.propsNoFlex(
+            ColWidths.DisperserWidth,
+            "disperser",
+            label = "Disperser",
+            className = SeqexecStyles.centeredCell.htmlClass,
+            cellRenderer = stepDisperserRenderer(s.instrument)
+          )))
+      .filter(_ => p.showDisperser && disperserVisible)
 
   def exposureColumn(p:               Props,
                      exposureVisible: Boolean): Option[Table.ColumnArg] =
-    for {
-      col <- p.steps.map(
-        i =>
-          Column(
-            Column.propsNoFlex(
-              ColWidths.ExposureWidth,
-              "exposure",
-              label        = "Exposure",
-              className    = SeqexecStyles.centeredCell.htmlClass,
-              cellRenderer = stepExposureRenderer(i.instrument)
-            )))
-      if p.showExposure
-      if exposureVisible
-    } yield col
+    p.steps
+      .map(i =>
+        Column(
+          Column.propsNoFlex(
+            ColWidths.ExposureWidth,
+            "exposure",
+            label = "Exposure",
+            className = SeqexecStyles.centeredCell.htmlClass,
+            cellRenderer = stepExposureRenderer(i.instrument)
+          )))
+      .filter(_ => exposureVisible)
 
   def fpuColumn(p: Props, fpuVisible: Boolean): Option[Table.ColumnArg] =
-    for {
-      col <- p.steps.map(
-        i =>
-          Column(
-            Column.propsNoFlex(ColWidths.FPUWidth,
-                               "fpu",
-                               label        = "FPU",
-                               className    = SeqexecStyles.centeredCell.htmlClass,
-                               cellRenderer = stepFPURenderer(i.instrument))))
-      if p.showFPU
-      if fpuVisible
-    } yield col
+    p.steps
+      .map( i =>
+        Column(
+          Column.propsNoFlex(
+            ColWidths.FPUWidth,
+            "fpu",
+            label = "FPU",
+            className = SeqexecStyles.centeredCell.htmlClass,
+            cellRenderer = stepFPURenderer(i.instrument))))
+      .filter(_ => p.showFPU && fpuVisible)
 
   def observingModeColumn(p: Props): Option[Table.ColumnArg] =
-    for {
-      col <- p.steps.map(
-        i =>
-          Column(
-            Column.propsNoFlex(
-              ColWidths.ObservingModeWidth,
-              "obsMode",
-              label        = "Observing Mode",
-              className    = SeqexecStyles.centeredCell.htmlClass,
-              cellRenderer = stepObsModeRenderer
-            )))
-      if p.showObservingMode
-    } yield col
+    p.steps
+      .map( _ =>
+        Column(
+          Column.propsNoFlex(
+            ColWidths.ObservingModeWidth,
+            "obsMode",
+            label = "Observing Mode",
+            className = SeqexecStyles.centeredCell.htmlClass,
+            cellRenderer = stepObsModeRenderer
+          )))
+      .filter(_ => p.showObservingMode)
 
   def filterColumn(p: Props, filterVisible: Boolean): Option[Table.ColumnArg] =
-    for {
-      col <- p.steps.map(
-        i =>
+    p.steps
+      .map( i =>
           Column(
             Column.propsNoFlex(
               ColWidths.FilterWidth,
@@ -502,21 +491,19 @@ object StepsTable {
               className    = SeqexecStyles.centeredCell.htmlClass,
               cellRenderer = stepFilterRenderer(i.instrument)
             )))
-      if p.showFilter
-      if filterVisible
-    } yield col
+      .filter(_ => p.showFilter && filterVisible)
 
   def typeColumn(p: Props, objectSize: SSize): Option[Table.ColumnArg] =
-    p.steps.map(i => {
-      Column(
-        Column.propsNoFlex(
-          ColWidths.ObjectTypeWidth,
-          "type",
-          label        = "Type",
-          className    = SeqexecStyles.centeredCell.htmlClass,
-          cellRenderer = stepObjectTypeRenderer(objectSize)
-        ))
-    })
+    p.steps.map(
+      _ =>
+        Column(
+          Column.propsNoFlex(
+            ColWidths.ObjectTypeWidth,
+            "type",
+            label = "Type",
+            className = SeqexecStyles.centeredCell.htmlClass,
+            cellRenderer = stepObjectTypeRenderer(objectSize)
+          )))
 
   def settingsColumn(p: Props): Option[Table.ColumnArg] =
     p.steps.map(
@@ -664,14 +651,14 @@ object StepsTable {
     (className:        String,
      columns:          Array[VdomNode],
      index:            Int,
-     isScrolling:      Boolean,
+     _:                Boolean,
      key:              String,
-     rowData:          StepRow,
+     _:                StepRow,
      onRowClick:       Option[OnRowClick],
      onRowDoubleClick: Option[OnRowClick],
-     onRowMouseOut:    Option[OnRowClick],
-     onRowMouseOver:   Option[OnRowClick],
-     onRowRightClick:  Option[OnRowClick],
+     _:                Option[OnRowClick],
+     _:                Option[OnRowClick],
+     _:                Option[OnRowClick],
      style:            Style) => {
       <.div(
         ^.cls := className,

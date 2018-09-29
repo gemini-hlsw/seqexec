@@ -81,7 +81,7 @@ class QueueRequestsHandler[M](modelRW: ModelRW[M, QueueRequestsFocus])
   def handleRemoveSeqCal: PartialFunction[Any, ActionResult[M]] = {
     case RequestRemoveSeqCal(qid, id) =>
       value.clientId
-        .map { cid =>
+        .map { _ =>
           effectOnly(
             requestEffect2((qid, id),
                            SeqexecWebClient.removeSequenceFromQueue,

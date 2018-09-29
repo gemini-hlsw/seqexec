@@ -40,7 +40,7 @@ trait ArbDataset {
   val strings: Gen[String] =
     arbitrary[Dataset.Label].map(Dataset.Label.fromString.reverseGet).flatMapOneOf(
       Gen.const,                            // Do nothing, or
-      s => arbitrary[String],               // Replace with an arbitrary String, or
+      _ => arbitrary[String],               // Replace with an arbitrary String, or
       s => Gen.const(s.replace("-0", "-")), // remove a leading zero.
     )
 
