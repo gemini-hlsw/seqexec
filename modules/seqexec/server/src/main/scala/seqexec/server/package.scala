@@ -4,9 +4,13 @@
 package seqexec
 
 import cats.data._
-import cats.effect.{IO, Sync}
+import cats.effect.IO
+import cats.effect.Sync
 import cats.implicits._
-import cats.{Applicative, ApplicativeError, Eq, Functor}
+import cats.Applicative
+import cats.ApplicativeError
+import cats.Eq
+import cats.Functor
 import edu.gemini.spModel.`type`.SequenceableSpType
 import edu.gemini.spModel.guide.StandardGuideOptions
 import fs2.async.mutable.Queue
@@ -18,9 +22,16 @@ import monocle.macros.GenLens
 import monocle.function.At.at
 import monocle.function.At.atMap
 import seqexec.engine.Engine
-import seqexec.model.{ClientID, ExecutionQueue, QueueId, Conditions, Observer, Operator, SequenceState}
+import seqexec.model.ClientID
+import seqexec.model.ExecutionQueue
+import seqexec.model.QueueId
+import seqexec.model.Conditions
+import seqexec.model.Observer
+import seqexec.model.Operator
+import seqexec.model.SequenceState
 import seqexec.model.enum._
-import seqexec.model.{Notification, UserDetails}
+import seqexec.model.Notification
+import seqexec.model.UserDetails
 
 package server {
 
@@ -53,6 +64,7 @@ package server {
   final case class SetCloudCover(cc: CloudCover, user: Option[UserDetails]) extends SeqEvent
   final case class NotifyUser(memo: Notification, clientID: ClientID) extends SeqEvent
   final case class StartQueue(qid: QueueId, clientID: ClientID) extends SeqEvent
+  final case class UpdateQueue(qid: QueueId) extends SeqEvent
   case object NullSeqEvent extends SeqEvent
 
   sealed trait ControlStrategy
