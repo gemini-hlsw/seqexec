@@ -6,9 +6,12 @@ package seqexec.web.client.model
 import cats._
 import cats.implicits._
 import gem.Observation
-import monocle.{ Lens, Prism }
-import monocle.macros.{ GenPrism, Lenses }
-import seqexec.model.{ SequenceState, SequenceView }
+import monocle.Lens
+import monocle.Prism
+import monocle.macros.GenPrism
+import monocle.macros.Lenses
+import seqexec.model.SequenceState
+import seqexec.model.SequenceView
 import seqexec.model.enum._
 import seqexec.web.client.ModelOps._
 import seqexec.web.client.components.sequence.steps.StepsTable
@@ -20,12 +23,21 @@ final case class AvailableTab(id: Option[Observation.Id], status: Option[Sequenc
 
 object AvailableTab {
   implicit val eq: Eq[AvailableTab] =
-    Eq.by(x => (x.id, x.status, x.instrument, x.runningStep, x.nextStepToRun, x.isPreview, x.active, x.loading))
+    Eq.by(
+      x =>
+        (x.id,
+         x.status,
+         x.instrument,
+         x.runningStep,
+         x.nextStepToRun,
+         x.isPreview,
+         x.active,
+         x.loading))
 }
 
 final case class CalibrationQueueTabActive(calibrationTab: CalibrationQueueTab, active: TabSelected)
 
-object CalibrationQueueTabActive{
+object CalibrationQueueTabActive {
   implicit val eq: Eq[CalibrationQueueTabActive] =
     Eq.by(x => (x.calibrationTab, x.active))
 }
@@ -48,7 +60,6 @@ object SeqexecTabActive {
   implicit val eq: Eq[SeqexecTabActive] =
     Eq.by(x => (x.tab, x.active))
 
-  val Empty: SeqexecTabActive = SeqexecTabActive(EmptySequenceTab, TabSelected.Background)
 }
 
 sealed trait SeqexecTab {
@@ -66,9 +77,12 @@ object SeqexecTab {
       case _                                                => false
     }
 
-  val previewTab: Prism[SeqexecTab, PreviewSequenceTab] = GenPrism[SeqexecTab, PreviewSequenceTab]
-  val instrumentTab: Prism[SeqexecTab, InstrumentSequenceTab] = GenPrism[SeqexecTab, InstrumentSequenceTab]
-  val sequenceTab: Prism[SeqexecTab, SequenceTab] = Prism.partial[SeqexecTab, SequenceTab] {
+  val previewTab: Prism[SeqexecTab, PreviewSequenceTab] =
+    GenPrism[SeqexecTab, PreviewSequenceTab]
+  val instrumentTab: Prism[SeqexecTab, InstrumentSequenceTab] =
+    GenPrism[SeqexecTab, InstrumentSequenceTab]
+  val sequenceTab: Prism[SeqexecTab, SequenceTab] =
+    Prism.partial[SeqexecTab, SequenceTab] {
       case p: PreviewSequenceTab    => p
       case i: InstrumentSequenceTab => i
     }(identity)
@@ -80,7 +94,8 @@ final case class CalibrationQueueTab(tableState: TableState[StepsTable.TableColu
 }
 
 object CalibrationQueueTab {
-  val Empty: CalibrationQueueTab = CalibrationQueueTab(StepsTable.State.InitialTableState)
+  val Empty: CalibrationQueueTab =
+    CalibrationQueueTab(StepsTable.State.InitialTableState)
 
   implicit val eq: Eq[CalibrationQueueTab] =
     Eq.by(x => (x.tableState))
@@ -93,14 +108,12 @@ sealed trait SequenceTab extends SeqexecTab {
   def instrument: Option[Instrument] = this match {
     case i: InstrumentSequenceTab => i.inst.some
     case i: PreviewSequenceTab    => i.currentSequence.metadata.instrument.some
-    case _: EmptySequenceTab.type => none
   }
 
   def sequence: Option[SequenceView] = this match {
     // Returns the current sequence or if empty the last completed one
     case i: InstrumentSequenceTab => i.currentSequence.orElse(i.completedSequence)
     case i: PreviewSequenceTab    => i.currentSequence.some
-    case _: EmptySequenceTab.type => none
   }
 
   def obsId: Option[Observation.Id] = sequence.map(_.id)
@@ -108,7 +121,6 @@ sealed trait SequenceTab extends SeqexecTab {
   def stepConfigDisplayed: Option[Int] = this match {
     case i: InstrumentSequenceTab => i.stepConfig
     case i: PreviewSequenceTab    => i.stepConfig
-    case _: EmptySequenceTab.type => none
   }
 
   def isPreview: Boolean = this match {
@@ -126,7 +138,6 @@ sealed trait SequenceTab extends SeqexecTab {
   def loading: Boolean = this match {
     case _: InstrumentSequenceTab => false
     case p: PreviewSequenceTab    => p.isLoading
-    case _: EmptySequenceTab.type => false
   }
 }
 
@@ -135,7 +146,6 @@ object SequenceTab {
     Eq.instance {
       case (a: InstrumentSequenceTab, b: InstrumentSequenceTab) => a === b
       case (a: PreviewSequenceTab, b: PreviewSequenceTab)       => a === b
-      case (_: EmptySequenceTab.type, _: EmptySequenceTab.type) => true
       case _                                                    => false
     }
 
@@ -143,11 +153,9 @@ object SequenceTab {
   val stepConfigL: Lens[SequenceTab, Option[Int]] = Lens[SequenceTab, Option[Int]] {
     case t: InstrumentSequenceTab => t.stepConfig
     case t: PreviewSequenceTab    => t.stepConfig
-    case _: EmptySequenceTab.type => none
   }(n => a => a match {
     case t: InstrumentSequenceTab => t.copy(stepConfig = n)
     case t: PreviewSequenceTab    => t.copy(stepConfig = n)
-    case t: EmptySequenceTab.type => t
   })
 
 }
@@ -163,7 +171,14 @@ final case class InstrumentSequenceTab(inst: Instrument,
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object InstrumentSequenceTab {
   implicit val eq: Eq[InstrumentSequenceTab] =
-    Eq.by(x => (x.instrument, x.currentSequence, x.completedSequence, x.stepConfig, x.tableState, x.tabOperations))
+    Eq.by(
+      x =>
+        (x.instrument,
+         x.currentSequence,
+         x.completedSequence,
+         x.stepConfig,
+         x.tableState,
+         x.tabOperations))
 }
 
 @Lenses
@@ -176,11 +191,11 @@ final case class PreviewSequenceTab(currentSequence: SequenceView,
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object PreviewSequenceTab {
   implicit val eq: Eq[PreviewSequenceTab] =
-    Eq.by(x => (x.currentSequence, x.stepConfig, x.isLoading, x.tableState, x.tabOperations))
-}
-
-final case object EmptySequenceTab extends SequenceTab {
-  override type TC = StepsTable.TableColumn
-  val tableState: TableState[StepsTable.TableColumn] = StepsTable.State.InitialTableState
-  val tabOperations: TabOperations = TabOperations.Default
+    Eq.by(
+      x =>
+        (x.currentSequence,
+         x.stepConfig,
+         x.isLoading,
+         x.tableState,
+         x.tabOperations))
 }

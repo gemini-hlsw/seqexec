@@ -5,7 +5,9 @@ package seqexec.web.client.components.sequence.steps
 
 import diode.react.ReactConnectProxy
 import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.{ CallbackTo, CatsReact, ScalaComponent }
+import japgolly.scalajs.react.CallbackTo
+import japgolly.scalajs.react.CatsReact
+import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.extra.Reusability
 import japgolly.scalajs.react.extra.router.RouterCtl
@@ -34,10 +36,10 @@ object StepsTableContainer {
     ST.set(State(step)).liftCB
 
   def toolbar(p: Props): VdomElement = {
-    val loggedIn            = p.statusAndStep.isLogged
+    val canOperate          = p.statusAndStep.canOperate
     val stepConfigDisplayed = p.statusAndStep.stepConfigDisplayed.isDefined
     val isPreview           = p.statusAndStep.isPreview
-    val showDefault         = loggedIn && !stepConfigDisplayed && !isPreview
+    val showDefault         = canOperate && !stepConfigDisplayed && !isPreview
 
     <.div(
       SequenceDefaultToolbar(
@@ -51,7 +53,8 @@ object StepsTableContainer {
                                     s,
                                     p.statusAndStep.totalSteps,
                                     isPreview)).when(stepConfigDisplayed)
-        }.getOrElse(TagMod.empty)
+        }
+        .getOrElse(TagMod.empty)
     )
   }
 
@@ -62,12 +65,13 @@ object StepsTableContainer {
       <.div(
         ^.height := "100%",
         toolbar(p),
-        p.stepsConnect(r =>
-          StepsTable(
-            StepsTable.Props(p.router,
-                             p.statusAndStep.isLogged,
-                             r(),
-                             x => $.runState(updateStepToRun(x)))))
+        p.stepsConnect(
+          r =>
+            StepsTable(
+              StepsTable.Props(p.router,
+                               p.statusAndStep.canOperate,
+                               r(),
+                               x => $.runState(updateStepToRun(x)))))
       )
     }
     .configure(Reusability.shouldComponentUpdate)

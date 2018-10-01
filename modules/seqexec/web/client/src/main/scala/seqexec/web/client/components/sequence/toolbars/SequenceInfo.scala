@@ -8,48 +8,61 @@ import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.semanticui.elements.label.Label
 import seqexec.web.client.semanticui.elements.icon.Icon.IconCheckmark
 import seqexec.web.client.semanticui.Size
-import seqexec.model.{ SequenceState, DaytimeCalibrationTargetName }
+import seqexec.model.SequenceState
+import seqexec.model.DaytimeCalibrationTargetName
 import web.client.style._
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.component.Scala.Unmounted
-import diode.react.ModelProxy
 import cats.implicits._
 
 /**
   * Display the name of the sequence and the observer
   */
 object SequenceInfo {
-  final case class Props(p: ModelProxy[SequenceInfoFocus])
+  final case class Props(p: SequenceInfoFocus)
 
-  private def component = ScalaComponent.builder[Props]("SequenceInfo")
-    .stateless
-    .render_P { p =>
-      val SequenceInfoFocus(isLogged, oName, status, tName) = p.p()
-      val obsName = oName.filter(_.nonEmpty).getOrElse("Unknown.")
-      val daytimeCalibrationTargetName: TagMod =
-        Label(Label.Props(DaytimeCalibrationTargetName, basic = true, extraStyles = List(SeqexecStyles.daytimeCal)))
-      val targetName = tName.filter(_.nonEmpty).fold(daytimeCalibrationTargetName)(t => Label(Label.Props(t, basic = true)))
-      <.div(
-        ^.cls := "ui form",
+  private def component =
+    ScalaComponent
+      .builder[Props]("SequenceInfo")
+      .stateless
+      .render_P { p =>
+        val SequenceInfoFocus(isLogged, oName, status, tName) = p.p
+        val obsName                                           = oName.filter(_.nonEmpty).getOrElse("Unknown.")
+        val daytimeCalibrationTargetName: TagMod =
+          Label(
+            Label.Props(DaytimeCalibrationTargetName,
+                        basic       = true,
+                        extraStyles = List(SeqexecStyles.daytimeCal)))
+        val targetName = tName
+          .filter(_.nonEmpty)
+          .fold(daytimeCalibrationTargetName)(t =>
+            Label(Label.Props(t, basic = true)))
         <.div(
-          ^.cls := "fields",
-          SeqexecStyles.fieldsNoBottom,
+          ^.cls := "ui form",
           <.div(
-            ^.cls := "field",
-            Label(Label.Props("Sequence Complete", color = "green".some, icon = IconCheckmark.some, size = Size.Big))
-          ).when(status.forall(_ === SequenceState.Completed)),
-          <.div(
-            ^.cls := "field",
-            Label(Label.Props(obsName, basic = true))
-          ).when(isLogged),
-          <.div(
-            ^.cls := "field",
-            targetName
-          ).when(isLogged)
+            ^.cls := "fields",
+            SeqexecStyles.fieldsNoBottom,
+            <.div(
+              ^.cls := "field",
+              Label(
+                Label.Props("Sequence Complete",
+                            color = "green".some,
+                            icon  = IconCheckmark.some,
+                            size  = Size.Big))
+            ).when(status.forall(_ === SequenceState.Completed)),
+            <.div(
+              ^.cls := "field",
+              Label(Label.Props(obsName, basic = true))
+            ).when(isLogged),
+            <.div(
+              ^.cls := "field",
+              targetName
+            ).when(isLogged)
+          )
         )
-      )
-    }.build
+      }
+      .build
 
   def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
 }
