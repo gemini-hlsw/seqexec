@@ -24,6 +24,7 @@ import seqexec.web.client.actions.RequestPause
 import seqexec.web.client.actions.RequestSync
 import seqexec.web.client.actions.RequestRun
 import seqexec.web.client.model.RunOperation
+import seqexec.web.client.model.PauseOperation
 import seqexec.web.client.model.SyncOperation
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.semanticui.elements.button.Button
@@ -54,49 +55,55 @@ object SequenceControl {
         .map(_.tabOperations.syncRequested)
         .getOrElse(SyncOperation.SyncIdle)
 
+    val pauseRequested: PauseOperation =
+      p.control
+        .map(_.tabOperations.pauseRequested)
+        .getOrElse(PauseOperation.PauseIdle)
+
     val isRunning: Boolean = p.control.map(_.status).exists(_.isRunning)
   }
 
   final case class State(runRequested:         RunOperation,
-                         pauseRequested:       Boolean,
+                         pauseRequested:       PauseOperation,
                          syncRequested:        SyncOperation,
                          cancelPauseRequested: Boolean) {
-    val syncIdle: Boolean = syncRequested === SyncOperation.SyncIdle
+    val syncIdle: Boolean  = syncRequested === SyncOperation.SyncIdle
+    val pauseIdle: Boolean = pauseRequested === PauseOperation.PauseIdle
     val canRun: Boolean =
-      (runRequested === RunOperation.RunIdle) && !pauseRequested && syncIdle
-    val canPause: Boolean       = !pauseRequested && syncIdle
-    val canCancelPause: Boolean = !pauseRequested && syncIdle
+      (runRequested === RunOperation.RunIdle) && pauseIdle && syncIdle
+    val canPause: Boolean       = pauseIdle && syncIdle
+    val canCancelPause: Boolean = pauseIdle && syncIdle
     val canResume: Boolean =
-      !pauseRequested && syncIdle && (runRequested === RunOperation.RunIdle)
+      pauseIdle && syncIdle && (runRequested === RunOperation.RunIdle)
 
     def requestRun: State =
       copy(runRequested         = RunOperation.RunInFlight,
-           pauseRequested       = false,
+           pauseRequested       = PauseOperation.PauseIdle,
            syncRequested        = SyncOperation.SyncIdle,
            cancelPauseRequested = false)
 
     def requestSync: State =
       copy(runRequested         = RunOperation.RunIdle,
-           pauseRequested       = false,
+           pauseRequested       = PauseOperation.PauseIdle,
            syncRequested        = SyncOperation.SyncInFlight,
            cancelPauseRequested = false)
 
     def requestPause: State =
       copy(runRequested         = RunOperation.RunIdle,
-           pauseRequested       = true,
+           pauseRequested       = PauseOperation.PauseInFlight,
            syncRequested        = SyncOperation.SyncIdle,
            cancelPauseRequested = false)
 
     def requestCancelPause: State =
       copy(runRequested         = RunOperation.RunIdle,
-           pauseRequested       = false,
+           pauseRequested       = PauseOperation.PauseIdle,
            syncRequested        = SyncOperation.SyncIdle,
            cancelPauseRequested = true)
   }
 
   object State {
-    val Zero: State = State(runRequested         = RunOperation.RunIdle,
-                            pauseRequested       = false,
+    val Zero: State = State(runRequested = RunOperation.RunIdle,
+                            pauseRequested       = PauseOperation.PauseIdle,
                             syncRequested        = SyncOperation.SyncIdle,
                             cancelPauseRequested = false)
   }
@@ -233,7 +240,10 @@ object SequenceControl {
           f.modState(_.copy(syncRequested = SyncOperation.SyncIdle))) *>
           Callback.when(
             ((f.nextProps.runRequested === RunOperation.RunIdle) || f.nextProps.isRunning) && f.state.runRequested === RunOperation.RunInFlight)(
-            f.modState(_.copy(runRequested = RunOperation.RunIdle)))
+            f.modState(_.copy(runRequested = RunOperation.RunIdle))) *>
+          Callback.when(
+            !(f.nextProps.pauseRequested === PauseOperation.PauseInFlight) || !f.state.pauseIdle)(
+            f.modState(_.copy(pauseRequested = PauseOperation.PauseIdle)))
       }
       .build
 

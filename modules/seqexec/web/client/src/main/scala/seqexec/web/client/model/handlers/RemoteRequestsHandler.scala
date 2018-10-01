@@ -4,6 +4,7 @@
 package seqexec.web.client.handlers
 
 import cats.implicits._
+import diode.Action
 import diode.ActionHandler
 import diode.ActionResult
 import diode.Effect
@@ -11,6 +12,7 @@ import diode.ModelRW
 import seqexec.model.ClientID
 import seqexec.web.client.actions._
 import seqexec.web.client.services.SeqexecWebClient
+import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
 /**
@@ -36,28 +38,35 @@ class RemoteRequestsHandler[M](modelRW: ModelRW[M, Option[ClientID]])
       effectOnly(effect)
   }
 
+  private def requestEffect[A, B <: Action, C <: Action](
+      a: A,
+      f: A => Future[Unit],
+      m: A => B,
+      r: A => C): Effect =
+    Effect(
+      f(a)
+        .map(_ => m(a))
+        .recover {
+          case _ => r(a)
+        }
+    )
+
   def handlePause: PartialFunction[Any, ActionResult[M]] = {
-    case RequestPause(s) =>
+    case RequestPause(id) =>
       effectOnly(
-        Effect(
-          SeqexecWebClient
-            .pause(s)
-            .map(r => RunPaused(s))
-            .recover {
-              case _ => RunPauseFailed(s)
-            }))
+        requestEffect(id,
+                      SeqexecWebClient.pause,
+                      RunPaused.apply,
+                      RunPauseFailed.apply))
   }
 
   def handleCancelPause: PartialFunction[Any, ActionResult[M]] = {
-    case RequestCancelPause(s) =>
+    case RequestCancelPause(id) =>
       effectOnly(
-        Effect(
-          SeqexecWebClient
-            .cancelPause(s)
-            .map(r => RunCancelPaused(s))
-            .recover {
-              case _ => RunCancelPauseFailed(s)
-            }))
+        requestEffect(id,
+                      SeqexecWebClient.cancelPause,
+                      RunCancelPaused.apply,
+                      RunCancelPauseFailed.apply))
   }
 
   def handleStop: PartialFunction[Any, ActionResult[M]] = {
@@ -109,15 +118,12 @@ class RemoteRequestsHandler[M](modelRW: ModelRW[M, Option[ClientID]])
   }
 
   def handleSync: PartialFunction[Any, ActionResult[M]] = {
-    case RequestSync(s) =>
+    case RequestSync(id) =>
       effectOnly(
-        Effect(
-          SeqexecWebClient
-            .sync(s)
-            .map(_ => RunSync(s))
-            .recover {
-              case _ => RunSyncFailed(s)
-            }))
+        requestEffect(id,
+                      SeqexecWebClient.sync,
+                      RunSync.apply,
+                      RunSyncFailed.apply))
   }
 
   override def handle: PartialFunction[Any, ActionResult[M]] =

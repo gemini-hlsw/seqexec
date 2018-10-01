@@ -15,6 +15,7 @@ import seqexec.web.client.model.ClientStatus
 import seqexec.web.client.model.SectionVisibilityState
 import seqexec.web.client.model.UserNotificationState
 import seqexec.web.client.model.WebSocketConnection
+import seqexec.web.client.model.PauseOperation
 import seqexec.web.client.model.RunOperation
 import seqexec.web.client.model.SyncOperation
 import seqexec.web.client.model.TabSelected
@@ -44,6 +45,7 @@ package object reusability {
   implicit val webSCeuse: Reusability[WebSocketConnection]     = Reusability.by(_.ws.state)
   implicit val runOperationReuse: Reusability[RunOperation]    = Reusability.byRef
   implicit val syncOperationReuse: Reusability[SyncOperation]  = Reusability.byRef
+  implicit val psOperationReuse: Reusability[PauseOperation]   = Reusability.byRef
   implicit val availableTabsReuse: Reusability[AvailableTab]   = Reusability.byEq
   implicit val userDetailsReuse: Reusability[UserDetails]      = Reusability.byEq
   implicit val usrNotReuse: Reusability[UserNotificationState] = Reusability.byEq
