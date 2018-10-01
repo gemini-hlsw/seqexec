@@ -311,6 +311,23 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
     }).unsafeRunSync
   }
 
+  "SeqexecEngine clearQueue" should
+    "remove all sequences from queue" in {
+    val s0 = (SeqexecEngine.loadSequenceEndo(seqObsId1, sequence(seqObsId1)) >>>
+      SeqexecEngine.loadSequenceEndo(seqObsId2, sequence(seqObsId2)) >>>
+      SeqexecEngine.loadSequenceEndo(seqObsId3, sequence(seqObsId3)) >>>
+      (EngineState.queues ^|-? index(CalibrationQueueId) ^|-> ExecutionQueue.queue).modify(_ ++ List(seqObsId1, seqObsId2, seqObsId3)))(EngineState.default)
+
+    (for {
+      q <- async.boundedQueue[IO, executeEngine.EventType](10)
+      sf <- advanceOne(q, s0, seqexecEngine.clearQueue(q, CalibrationQueueId))
+    } yield {
+      inside(sf.flatMap(x => EngineState.queues.get(x).get(CalibrationQueueId))) {
+        case Some(exq) => exq.queue shouldBe List.empty
+      }
+    }).unsafeRunSync
+  }
+
   "SeqexecEngine removeSequenceFromQueue" should
     "remove sequence id from queue" in {
     val s0 = (SeqexecEngine.loadSequenceEndo(seqObsId1, sequence(seqObsId1)) >>>
