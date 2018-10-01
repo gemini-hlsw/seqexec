@@ -218,6 +218,21 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
     Event.getState[executeEngine.ConcreteTypes](translator.resumePaused(seqId))
   )
 
+  private def addSeqs(qid: QueueId, seqIds: List[Observation.Id]): Endo[EngineState] = st => (
+    for {
+      q    <- st.queues.get(qid)
+      seqs <- seqIds.filter(sid => st.executionState.sequences.get(sid).map(seq => !seq.status.isRunning && !seq.status.isCompleted && !q.queue.contains(sid)).getOrElse(false)).some.filter(_.nonEmpty)
+    } yield {
+      if (q.status(st) =!= BatchExecState.Running)
+        (EngineState.queues ^|-? index(qid)).modify(_.addSeqs(seqs))(st)
+      else st
+    }
+  ).getOrElse(st)
+
+  def addSequencesToQueue(q: EventQueue, qid: QueueId, seqIds: List[Observation.Id]): IO[Either[SeqexecFailure, Unit]] = q.enqueue1(
+    Event.modifyState[executeEngine.ConcreteTypes]((addSeqs(qid, seqIds) withEvent UpdateQueue(qid)).toHandle)
+  ).map(_.asRight)
+
   private def addSeq(qid: QueueId, seqId: Observation.Id): Endo[EngineState] = st => (
     for {
       q   <- st.queues.get(qid)
