@@ -166,6 +166,7 @@ package object server {
     }
 
     def addSeq(sid: Observation.Id): ExecutionQueue = q.copy(queue = q.queue :+ sid)
+    def addSeqs(sids: List[Observation.Id]): ExecutionQueue = q.copy(queue = q.queue ++ sids)
     def removeSeq(sid: Observation.Id): ExecutionQueue = q.copy(queue = q.queue.filter(_ =!= sid))
     def moveSeq(sid:Observation.Id, idx: Int): ExecutionQueue = q.copy(queue = moveElement(q.queue, sid, idx))
   }

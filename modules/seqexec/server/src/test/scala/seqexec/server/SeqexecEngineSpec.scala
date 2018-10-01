@@ -262,6 +262,55 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
     }).unsafeRunSync
   }
 
+  "SeqexecEngine addSequencesToQueue" should
+    "add sequence ids to queue" in {
+    val s0 = (SeqexecEngine.loadSequenceEndo(seqObsId1, sequence(seqObsId1)) >>>
+      SeqexecEngine.loadSequenceEndo(seqObsId2, sequence(seqObsId2)) >>>
+      SeqexecEngine.loadSequenceEndo(seqObsId3, sequence(seqObsId3)))(EngineState.default)
+
+    (for {
+      q <- async.boundedQueue[IO, executeEngine.EventType](10)
+      sf <- advanceOne(q, s0, seqexecEngine.addSequencesToQueue(q, CalibrationQueueId, List(seqObsId1, seqObsId2, seqObsId3)))
+    } yield {
+      inside(sf.flatMap(x => EngineState.queues.get(x).get(CalibrationQueueId))) {
+        case Some(exq) => exq.queue shouldBe List(seqObsId1, seqObsId2, seqObsId3)
+      }
+    }).unsafeRunSync
+  }
+
+  it should "not add sequence id if sequence is running or completed" in {
+    val s0 = (SeqexecEngine.loadSequenceEndo(seqObsId1, sequence(seqObsId1)) >>>
+      SeqexecEngine.loadSequenceEndo(seqObsId2, sequence(seqObsId2)) >>>
+      SeqexecEngine.loadSequenceEndo(seqObsId3, sequence(seqObsId3)) >>>
+      (EngineState.executionState ^|-> Engine.State.sequences ^|-? index[Map[Observation.Id,Sequence.State], Observation.Id, Sequence.State](seqObsId1) ^|-> Sequence.State.status).set(SequenceState.Running.init) >>>
+      (EngineState.executionState ^|-> Engine.State.sequences ^|-? index[Map[Observation.Id,Sequence.State], Observation.Id, Sequence.State](seqObsId2) ^|-> Sequence.State.status).set(SequenceState.Completed))(EngineState.default)
+
+    (for {
+      q <- async.boundedQueue[IO, executeEngine.EventType](10)
+      sf <- advanceOne(q, s0,
+        seqexecEngine.addSequencesToQueue(q, CalibrationQueueId, List(seqObsId1, seqObsId2, seqObsId3)))
+    } yield {
+      inside(sf.flatMap(x => EngineState.queues.get(x).get(CalibrationQueueId))) {
+        case Some(exq) => exq.queue shouldBe List(seqObsId3)
+      }
+    }).unsafeRunSync
+  }
+
+  it should "not add sequence id if already in queue" in {
+    val s0 = (SeqexecEngine.loadSequenceEndo(seqObsId1, sequence(seqObsId1)) >>>
+      SeqexecEngine.loadSequenceEndo(seqObsId2, sequence(seqObsId2)) >>>
+      (EngineState.queues ^|-? index(CalibrationQueueId) ^|-> ExecutionQueue.queue).modify(_ :+ seqObsId1))(EngineState.default)
+
+    (for {
+      q <- async.boundedQueue[IO, executeEngine.EventType](10)
+      sf <- advanceOne(q, s0, seqexecEngine.addSequencesToQueue(q, CalibrationQueueId, List(seqObsId1, seqObsId2)))
+    } yield {
+      inside(sf.flatMap(x => EngineState.queues.get(x).get(CalibrationQueueId))) {
+        case Some(exq) => exq.queue shouldBe List(seqObsId1, seqObsId2)
+      }
+    }).unsafeRunSync
+  }
+
   "SeqexecEngine removeSequenceFromQueue" should
     "remove sequence id from queue" in {
     val s0 = (SeqexecEngine.loadSequenceEndo(seqObsId1, sequence(seqObsId1)) >>>
