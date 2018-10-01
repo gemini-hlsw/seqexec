@@ -62,17 +62,24 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
   implicit val soCogen: Cogen[SyncOperation] =
     Cogen[String].contramap(_.productPrefix)
 
+  implicit val arbPauseOperation: Arbitrary[PauseOperation] =
+    Arbitrary(Gen.oneOf(PauseOperation.PauseIdle, PauseOperation.PauseInFlight))
+
+  implicit val poCogen: Cogen[PauseOperation] =
+    Cogen[String].contramap(_.productPrefix)
+
   implicit val arbTabOperations: Arbitrary[TabOperations] =
     Arbitrary {
       for {
         r <- arbitrary[RunOperation]
         s <- arbitrary[SyncOperation]
-      } yield TabOperations(r, s)
+        p <- arbitrary[PauseOperation]
+      } yield TabOperations(r, s, p)
     }
 
   implicit val toCogen: Cogen[TabOperations] =
-    Cogen[(RunOperation, SyncOperation)].contramap(x =>
-      (x.runRequested, x.syncRequested))
+    Cogen[(RunOperation, SyncOperation, PauseOperation)].contramap(x =>
+      (x.runRequested, x.syncRequested, x.pauseRequested))
 
   implicit val arbCalibrationQueueTab: Arbitrary[CalibrationQueueTab] =
     Arbitrary {

@@ -27,18 +27,31 @@ object SyncOperation {
 
 }
 
+sealed trait PauseOperation extends Product with Serializable
+object PauseOperation {
+  case object PauseInFlight extends PauseOperation
+  case object PauseIdle extends PauseOperation
+
+  implicit val eq: Eq[PauseOperation] =
+    Eq.fromUniversalEquals
+
+}
+
 /**
   * Hold transient states while excuting an operation
   */
 @Lenses
-final case class TabOperations(runRequested:  RunOperation,
-                               syncRequested: SyncOperation)
+final case class TabOperations(runRequested:   RunOperation,
+                               syncRequested:  SyncOperation,
+                               pauseRequested: PauseOperation)
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object TabOperations {
   implicit val eq: Eq[TabOperations] =
-    Eq.by(x => (x.runRequested, x.syncRequested))
+    Eq.by(x => (x.runRequested, x.syncRequested, x.pauseRequested))
 
   val Default: TabOperations =
-    TabOperations(RunOperation.RunIdle, SyncOperation.SyncIdle)
+    TabOperations(RunOperation.RunIdle,
+                  SyncOperation.SyncIdle,
+                  PauseOperation.PauseIdle)
 }

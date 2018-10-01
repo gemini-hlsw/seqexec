@@ -272,12 +272,14 @@ package circuit {
       Eq.by(x => (x.status, x.stepsTable, x.configTableState))
   }
 
+  @Lenses
   final case class ControlModel(id:                  Observation.Id,
                                 isPartiallyExecuted: Boolean,
                                 nextStepToRun:       Option[Int],
                                 status:              SequenceState,
                                 tabOperations:       TabOperations)
 
+  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object ControlModel {
     implicit val eq: Eq[ControlModel] =
       Eq.by(
@@ -298,9 +300,11 @@ package circuit {
                            t.tabOperations)))
   }
 
+  @Lenses
   final case class SequenceControlFocus(canOperate: Boolean,
                                         control:    Option[ControlModel])
 
+  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object SequenceControlFocus {
     implicit val eq: Eq[SequenceControlFocus] =
       Eq.by(x => (x.canOperate, x.control))

@@ -11,6 +11,7 @@ import diode.ModelRW
 import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import seqexec.model.RequestFailed
+import seqexec.web.client.model.PauseOperation
 import seqexec.web.client.model.SyncOperation
 import seqexec.web.client.model.RunOperation
 import seqexec.web.client.model.SequencesOnDisplay
@@ -35,6 +36,12 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
         value.markOperations(
           id,
           TabOperations.syncRequested.set(SyncOperation.SyncInFlight)))
+
+    case RequestPause(id) =>
+      updated(
+        value.markOperations(
+          id,
+          TabOperations.pauseRequested.set(PauseOperation.PauseInFlight)))
   }
 
   def handleOperationResult: PartialFunction[Any, ActionResult[M]] = {
@@ -54,6 +61,15 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
       updated(value.markOperations(
                 id,
                 TabOperations.syncRequested.set(SyncOperation.SyncIdle)),
+              notification)
+
+    case RunPauseFailed(id) =>
+      val msg = s"Failed to pause sequence ${id.format}"
+      val notification = Effect(
+        Future(RequestFailedNotification(RequestFailed(msg))))
+      updated(value.markOperations(
+                id,
+                TabOperations.pauseRequested.set(PauseOperation.PauseIdle)),
               notification)
   }
 
