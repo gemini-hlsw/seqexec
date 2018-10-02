@@ -457,6 +457,25 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
     } ).unsafeRunSync
   }
 
+  "SeqexecEngine stopQueue" should "stop running the sequences in the queue" in {
+    // seqObsId1 and seqObsId2 will be run immediately, but seqObsId3 must be run after seqObsId1, and is the only one that will not run because of the stopQueue
+    val s0 = (SeqexecEngine.loadSequenceEndo(seqObsId1, sequenceWithResources(seqObsId1, Set(Instrument.F2))) >>>
+          SeqexecEngine.loadSequenceEndo(seqObsId2, sequenceWithResources(seqObsId2, Set(Instrument.GmosS))) >>>
+          SeqexecEngine.loadSequenceEndo(seqObsId3, sequenceWithResources(seqObsId3, Set(Instrument.F2))) >>>
+          (EngineState.queues ^|-? index(CalibrationQueueId) ^|-> ExecutionQueue.queue).set(List(seqObsId1, seqObsId2, seqObsId3)))(EngineState.default)
+
+    def testCompleted(oid: Observation.Id)(st: EngineState): Boolean = st.executionState.sequences.get(oid).map(_.status.isCompleted).getOrElse(false)
+
+    (for {
+      q <- async.boundedQueue[IO, executeEngine.EventType](10)
+      _ <- seqexecEngine.startQueue(q, CalibrationQueueId, UUID.randomUUID)
+      _ <- seqexecEngine.stopQueue(q, CalibrationQueueId, UUID.randomUUID)
+      sf <- seqexecEngine.stream(q.dequeue)(s0).map(_._2).takeThrough(_.executionState.sequences.values.exists(_.status.isRunning)).compile.last
+    } yield inside(sf) {
+      case Some(s) => assert(!(testCompleted(seqObsId3)(s)))
+    } ).unsafeRunSync
+  }
+
   "SeqexecEngine setOperator" should "set operator's name" in {
     val operator = Operator("Joe")
     val s0 = EngineState.default
