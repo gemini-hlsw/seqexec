@@ -8,6 +8,6 @@ final case class TelnetdConfiguration(port: Int)
 object TelnetdConfiguration {
 
   val forTesting: TelnetdConfiguration =
-    apply(9091)
+    apply(9092)
 
 }

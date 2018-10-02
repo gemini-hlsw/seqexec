@@ -111,7 +111,7 @@ object Settings {
     val circeVersion            = "0.10.0"
     val doobieVersion           = "0.6.0-M3"
     val flywayVersion           = "5.1.4"
-    val tucoVersion             = "0.3.1"
+    val tucoVersion             = "0.4.1-SNAPSHOT"
     val declineVersion          = "0.4.2"
 
     // test libraries

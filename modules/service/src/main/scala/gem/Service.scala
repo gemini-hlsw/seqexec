@@ -5,18 +5,17 @@ package gem
 
 import cats.implicits._
 import cats.effect._
-import cats.effect.implicits._
 import doobie._, doobie.implicits._
 import gem.dao._
 import gem.enum._
 import gem.horizons.EphemerisContext
 import gem.util.Timestamp
 import monocle.Lens
-
+import scala.concurrent.ExecutionContext
 import java.nio.file.Path
 
 
-final class Service[M[_]: Sync: LiftIO] private (private val xa: Transactor[M], val log: Log[M], val user: User[ProgramRole]) {
+final class Service[M[_]: Sync: LiftIO: ContextShift] private (private val xa: Transactor[M], val log: Log[M], val user: User[ProgramRole]) {
 
   /**
    * Construct a program that yields a list of `(Program.Id, String)` whose name or id contains the
@@ -87,6 +86,9 @@ final class Service[M[_]: Sync: LiftIO] private (private val xa: Transactor[M], 
 
     import gem.ocs2.{ Importer, OdbClient }
 
+    private implicit val ioContextShift: ContextShift[IO] =
+      IO.contextShift(ExecutionContext.global)
+
     /**
      * Constructs a program that fetches the corresponding observation from the
      * indicated ODB and then stores it in the database, replacing any
@@ -94,7 +96,7 @@ final class Service[M[_]: Sync: LiftIO] private (private val xa: Transactor[M], 
      */
     def importObservation(host: String, oid: Observation.Id): M[Either[String, Unit]] =
       log.log(user, s"ocs2.importObservation($host, $oid)") {
-        OdbClient.fetchObservation[IO](host, oid).liftIO[M].flatMap { _.traverse { case (o, ds) =>
+        OdbClient.fetchObservation[IO](host, oid).to[M].flatMap { _.traverse { case (o, ds) =>
           Importer.importObservation(oid, o, ds).transact(xa)
         }}
       }
@@ -106,7 +108,7 @@ final class Service[M[_]: Sync: LiftIO] private (private val xa: Transactor[M], 
      */
     def importProgram(host: String, pid: Program.Id): M[Either[String, Unit]] =
       log.log(user, s"ocs2.importProgram($host, $pid)") {
-        OdbClient.fetchProgram[IO](host, pid).liftIO[M].flatMap { _.traverse { case (p, ds) =>
+        OdbClient.fetchProgram[IO](host, pid).to[M].flatMap { _.traverse { case (p, ds) =>
           Importer.importProgram(p, ds).transact(xa)
         }}
       }
@@ -115,16 +117,16 @@ final class Service[M[_]: Sync: LiftIO] private (private val xa: Transactor[M], 
 
 object Service {
 
-  def user[M[_]: Sync: LiftIO]: Lens[Service[M], User[ProgramRole]] =
+  def user[M[_]: Sync: LiftIO: ContextShift]: Lens[Service[M], User[ProgramRole]] =
     Lens[Service[M], User[ProgramRole]](_.user)(a => b => new Service(b.xa, b.log, a))
 
-  def apply[M[_]: Sync: LiftIO](xa: Transactor[M], log: Log[M], user: User[ProgramRole]): Service[M] =
+  def apply[M[_]: Sync: LiftIO: ContextShift](xa: Transactor[M], log: Log[M], user: User[ProgramRole]): Service[M] =
     new Service(xa, log, user)
 
   /**
    * Construct a program that verifies a user's id and password and returns a `Service`.
    */
-  def tryLogin[M[_]: Sync: LiftIO](
+  def tryLogin[M[_]: Sync: LiftIO: ContextShift](
     user: User.Id, pass: String, xa: Transactor[M], log: Log[M]
   ): M[Option[Service[M]]] =
     xa.trans.apply(UserDao.selectUserʹ(user, pass)).map {
@@ -135,7 +137,7 @@ object Service {
   /**
    * Like `tryLogin`, but for previously-authenticated users.
    */
-  def service[M[_]: Sync: LiftIO](
+  def service[M[_]: Sync: LiftIO: ContextShift](
     user: User.Id, xa: Transactor[M], log: Log[M]
   ): M[Option[Service[M]]] =
     xa.trans.apply(UserDao.selectUser(user)).map {
