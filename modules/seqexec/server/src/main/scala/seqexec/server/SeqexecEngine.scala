@@ -300,8 +300,11 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
   ).map(_.asRight)
 
   private def stopSequencesInQueue(qid: QueueId): executeEngine.HandleType[Unit] =
-    executeEngine.get.map(st => (EngineState.queues ^|-? index(qid)).getOption(st).map(_.queue.filter(sid => (EngineState.executionState ^|-> Engine.State.sequences ^|-? index(sid)).getOption(st).map(_.status.isRunning).getOrElse(false))).getOrElse(List.empty)).flatMap(_.map(executeEngine.pause).fold(executeEngine.unit)(_ *> _))
-
+    executeEngine.get.map(st =>
+      (EngineState.queues ^|-? index(qid)).getOption(st)
+        .foldMap(_.queue.filter(sid => (EngineState.executionState ^|-> Engine.State.sequences ^|-? index(sid))
+          .getOption(st).map(_.status.isRunning).getOrElse(false)))
+    ).flatMap(_.map(executeEngine.pause).fold(executeEngine.unit)(_ *> _))
 
   def stopQueue(q: EventQueue, qid: QueueId, clientId: ClientID): IO[Either[SeqexecFailure, Unit]] = q.enqueue1(
     Event.modifyState[executeEngine.ConcreteTypes](executeEngine.get.flatMap{ st =>
