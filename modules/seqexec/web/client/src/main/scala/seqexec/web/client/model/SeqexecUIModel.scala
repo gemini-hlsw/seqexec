@@ -27,6 +27,7 @@ final case class SeqexecUIModel(
   queueTableState:    TableState[QueueTableBody.TableColumn],
   defaultObserver:    Observer,
   notification:       UserNotificationState,
+  queues:             CalibrationQueues,
   firstLoad:          Boolean)
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
@@ -41,6 +42,7 @@ object SeqexecUIModel {
     QueueTableBody.InitialTableState.tableState,
     Observer(""),
     UserNotificationState.Empty,
+    CalibrationQueues.Default,
     firstLoad = true
   )
 
@@ -55,6 +57,8 @@ object SeqexecUIModel {
          x.configTableState,
          x.queueTableState,
          x.defaultObserver,
+         x.notification,
+         x.queues,
          x.firstLoad))
 
   val defaultObserverG = SeqexecUIModel.defaultObserver.asGetter

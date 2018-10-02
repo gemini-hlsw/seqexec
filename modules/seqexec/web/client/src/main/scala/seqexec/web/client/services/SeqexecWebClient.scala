@@ -335,11 +335,10 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
     * Add a sequence from a queue
     */
-  def addSequencesToQueue(queueId: QueueId,
-                          ids:     List[Observation.Id]): Future[Unit] =
+  def addSequencesToQueue(ids: List[Observation.Id])(qid: QueueId): Future[Unit] =
     Ajax
       .post(
-        url          = s"$baseUrl/queue/${encodeURI(queueId.show)}/add",
+        url          = s"$baseUrl/commands/queue/${encodeURI(qid.show)}/add",
         responseType = "arraybuffer",
         data         = Pickle.intoBytes(ids)
       )

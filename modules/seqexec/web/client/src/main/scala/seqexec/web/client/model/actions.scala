@@ -80,6 +80,11 @@ object actions {
   final case class RunObsPauseFailed(s:    Observation.Id) extends Action
   final case class RunObsResumeFailed(s:   Observation.Id) extends Action
 
+  // Queue actions
+  final case class RequestAllDayCal(qid:   QueueId) extends Action
+  final case class AllDayCalCompleted(qid: QueueId) extends Action
+  final case class AllDayCalFailed(qid:    QueueId) extends Action
+
   final case class RememberCompleted(s: SequenceView) extends Action
 
   final case class AppendToLog(l: ServerLogMessage) extends Action

@@ -224,15 +224,15 @@ object Settings {
       "io.suzaku" %%% "diode"       % LibraryVersions.diode,
       "io.suzaku" %%% "diode-react" % LibraryVersions.diodeReact
     ))
-    val ScalaJSDom              = Def.setting("org.scala-js"      %%% "scalajs-dom"               % LibraryVersions.scalaDom)
-    val ScalaJSReactVirtualized = Def.setting("io.github.cquiroz" %%% "scalajs-react-virtualized" % LibraryVersions.scalaJSReactVirtualized)
-    val ScalaJSReactDraggable   = Def.setting("io.github.cquiroz" %%% "scalajs-react-draggable"   % LibraryVersions.scalaJSReactDraggable)
-    val ScalaJSReactSortable    = Def.setting("io.github.cquiroz" %%% "scalajs-react-sortable-hoc"    % LibraryVersions.scalaJSReactSortable)
-    val ScalaJSReactClipboard   = Def.setting("io.github.cquiroz" %%% "scalajs-react-clipboard"   % LibraryVersions.scalaJSReactClipboard)
-    val JQuery                  = Def.setting("org.querki"        %%% "jquery-facade"             % LibraryVersions.scalaJQuery)
-    val BooPickle               = Def.setting("io.suzaku"         %%% "boopickle"                 % LibraryVersions.booPickle)
-    val JavaTimeJS              = Def.setting("io.github.cquiroz" %%% "scala-java-time"           % LibraryVersions.javaTimeJS)
-    val JavaLogJS               = Def.setting("org.scala-js"      %%% "scalajs-java-logging"      % LibraryVersions.javaLogJS)
+    val ScalaJSDom              = Def.setting("org.scala-js"      %%% "scalajs-dom"                % LibraryVersions.scalaDom)
+    val ScalaJSReactVirtualized = Def.setting("io.github.cquiroz" %%% "scalajs-react-virtualized"  % LibraryVersions.scalaJSReactVirtualized)
+    val ScalaJSReactDraggable   = Def.setting("io.github.cquiroz" %%% "scalajs-react-draggable"    % LibraryVersions.scalaJSReactDraggable)
+    val ScalaJSReactSortable    = Def.setting("io.github.cquiroz" %%% "scalajs-react-sortable-hoc" % LibraryVersions.scalaJSReactSortable)
+    val ScalaJSReactClipboard   = Def.setting("io.github.cquiroz" %%% "scalajs-react-clipboard"    % LibraryVersions.scalaJSReactClipboard)
+    val JQuery                  = Def.setting("org.querki"        %%% "jquery-facade"              % LibraryVersions.scalaJQuery)
+    val BooPickle               = Def.setting("io.suzaku"         %%% "boopickle"                  % LibraryVersions.booPickle)
+    val JavaTimeJS              = Def.setting("io.github.cquiroz" %%% "scala-java-time"            % LibraryVersions.javaTimeJS)
+    val JavaLogJS               = Def.setting("org.scala-js"      %%% "scalajs-java-logging"       % LibraryVersions.javaLogJS)
 
     // OCS Libraries, these should become modules in the future
     val SpModelCore = "edu.gemini.ocs"    %% "edu-gemini-spmodel-core"        % LibraryVersions.ocsVersion

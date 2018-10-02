@@ -364,6 +364,14 @@ package circuit {
     implicit val eq: Eq[SequenceControlFocus] =
       Eq.by(x => (x.canOperate, x.control))
 
+    def seqControlG(id: Observation.Id): Getter[SeqexecAppRootModel, Option[SequenceControlFocus]] = {
+      val getter = SeqexecAppRootModel.sequencesOnDisplayL.composeGetter(SequencesOnDisplay.tabG(id))
+      ClientStatus.canOperateG.zip(getter) >>> {
+        case (status, Some(SeqexecTabActive(tab, _))) =>
+          SequenceControlFocus(status, ControlModel.controlModelG.get(tab)).some
+        case _ => none
+      }
+    }
   }
 
   @Lenses

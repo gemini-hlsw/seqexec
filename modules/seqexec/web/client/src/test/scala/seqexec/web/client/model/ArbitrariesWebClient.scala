@@ -12,6 +12,7 @@ import gem.Observation
 import gem.enum.Site
 import seqexec.model.enum.Instrument
 import seqexec.model.ClientID
+import seqexec.model.QueueId
 import seqexec.model.Observer
 import seqexec.model.TargetName
 import seqexec.model.SequenceState
@@ -80,6 +81,24 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
   implicit val toCogen: Cogen[TabOperations] =
     Cogen[(RunOperation, SyncOperation, PauseOperation)].contramap(x =>
       (x.runRequested, x.syncRequested, x.pauseRequested))
+
+  implicit val arbAddDayCalOperation: Arbitrary[AddDayCalOperation] =
+    Arbitrary(
+      Gen.oneOf(AddDayCalOperation.AddDayCalIdle,
+                AddDayCalOperation.AddDayCalInFlight))
+
+  implicit val adCogen: Cogen[AddDayCalOperation] =
+    Cogen[String].contramap(_.productPrefix)
+
+  implicit val arbQueueOperations: Arbitrary[QueueOperations] =
+    Arbitrary {
+      for {
+        r <- arbitrary[AddDayCalOperation]
+      } yield QueueOperations(r)
+    }
+
+  implicit val qoCogen: Cogen[QueueOperations] =
+    Cogen[AddDayCalOperation].contramap(x => x.addDayCalRequested)
 
   implicit val arbCalibrationQueueTab: Arbitrary[CalibrationQueueTab] =
     Arbitrary {
@@ -568,6 +587,16 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
   implicit val stepsTableColumnCogen: Cogen[StepsTable.TableColumn] =
     Cogen[String].contramap(_.productPrefix)
 
+  implicit val arbCalQueues: Arbitrary[CalibrationQueues] =
+    Arbitrary {
+      for {
+        ops <- arbitrary[Map[QueueId, QueueOperations]]
+      } yield CalibrationQueues(ops)
+    }
+
+  implicit val calQueuesCogen: Cogen[CalibrationQueues] =
+    Cogen[List[(QueueId, QueueOperations)]].contramap(_.ops.toList)
+
   implicit val arbSeqexecUIModel: Arbitrary[SeqexecUIModel] =
     Arbitrary {
       for {
@@ -581,6 +610,7 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
         queueTableState    <- arbitrary[TableState[QueueTableBody.TableColumn]]
         defaultObserver    <- arbitrary[Observer]
         notification       <- arbitrary[UserNotificationState]
+        queues             <- arbitrary[CalibrationQueues]
         firstLoad          <- arbitrary[Boolean]
       } yield
         SeqexecUIModel(
@@ -593,6 +623,7 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
           queueTableState,
           defaultObserver,
           notification,
+          queues,
           firstLoad
         )
     }
@@ -608,6 +639,7 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
        TableState[QueueTableBody.TableColumn],
        Observer,
        UserNotificationState,
+       CalibrationQueues,
        Boolean)]
       .contramap(
         x =>
@@ -620,6 +652,7 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
            x.queueTableState,
            x.defaultObserver,
            x.notification,
+           x.queues,
            x.firstLoad))
 
   implicit val arbSODLocationFocus: Arbitrary[SODLocationFocus] =

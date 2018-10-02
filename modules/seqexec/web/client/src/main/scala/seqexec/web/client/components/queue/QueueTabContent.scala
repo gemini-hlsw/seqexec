@@ -7,9 +7,11 @@ import cats.implicits._
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.component.Scala.Unmounted
+import seqexec.model.CalibrationQueueId
 import seqexec.web.client.semanticui._
 import seqexec.web.client.semanticui.elements.message.IconMessage
 import seqexec.web.client.semanticui.elements.icon.Icon.IconInbox
+import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.model.SectionClosed
 import seqexec.web.client.model.SectionOpen
 import seqexec.web.client.model.SectionVisibilityState
@@ -22,7 +24,10 @@ import web.client.style._
   */
 object QueueTabContent {
   final case class Props(active:       TabSelected,
-                         logDisplayed: SectionVisibilityState)
+                         logDisplayed: SectionVisibilityState) {
+    protected[queue] val dayCalConnect =
+      SeqexecCircuit.connect(SeqexecCircuit.queueControlReader(CalibrationQueueId))
+  }
 
   private val defaultContent = IconMessage(
     IconMessage
@@ -32,24 +37,23 @@ object QueueTabContent {
     .builder[Props]("QueueTabContent")
     .stateless
     .render_P { p =>
-      ReactFragment(
-        // <.div(
-        //   ^.height := "100%",
+      <.div(
+        ^.cls := "ui attached secondary segment tab",
+        ^.classSet(
+          "active" -> (p.active === TabSelected.Selected)
+        ),
+        dataTab := "daycal",
+        SeqexecStyles.emptyInstrumentTab,
+        SeqexecStyles.emptyInstrumentTabLogShown
+          .when(p.logDisplayed =!= SectionOpen),
+        SeqexecStyles.emptyInstrumentTabLogHidden
+          .when(p.logDisplayed =!= SectionClosed),
         <.div(
-          ^.cls := "ui attached secondary segment tab",
-          ^.classSet(
-            "active" -> (p.active === TabSelected.Selected)
-          ),
-          dataTab := "daycal",
-          SeqexecStyles.emptyInstrumentTab,
-          SeqexecStyles.emptyInstrumentTabLogShown
-            .when(p.logDisplayed =!= SectionOpen),
-          SeqexecStyles.emptyInstrumentTabLogHidden
-            .when(p.logDisplayed =!= SectionClosed),
-          <.div(
-            QueueToolbar.Props().cmp,
-            defaultContent
-          )
+          p.dayCalConnect(_() match {
+            case Some(x) => QueueToolbar.Props(CalibrationQueueId, x).cmp
+            case _       => ReactFragment()
+          }),
+          defaultContent
         )
       )
     }
