@@ -15,9 +15,8 @@ import scala.concurrent.duration._
 /**
   * Client for GPI
   */
-class GPIClient[F[_]](override val giapi: Giapi[F]) extends GiapiClient[F] {
-  // GPI documentation specify 60 seconds as the max time to move mechanism
-  val DefaultCommandTimeout: FiniteDuration = 60.seconds
+final class GPIClient[F[_]](override val giapi: Giapi[F]) extends GiapiClient[F] {
+  import GiapiClient.DefaultCommandTimeout
 
   ///////////////
   // Status items

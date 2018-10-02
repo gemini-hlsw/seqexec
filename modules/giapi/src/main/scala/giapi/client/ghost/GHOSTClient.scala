@@ -4,15 +4,10 @@ import cats.implicits._
 import fs2.Stream
 import giapi.client.{Giapi, GiapiClient}
 
-import scala.concurrent.duration._
-
 /**
   * Client for GHOST
   */
-class GHOSTClient[F[_]](override val giapi: Giapi[F]) extends GiapiClient[F] {
-  // TODO: Should this be moved to the GIAPIClient? Or will GHOST have a specific value?
-  val DefaultCommandTimeout: FiniteDuration = 60.seconds
-}
+final class GHOSTClient[F[_]](override val giapi: Giapi[F]) extends GiapiClient[F]
 
 object GHOSTExample extends App {
 

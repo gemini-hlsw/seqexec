@@ -105,6 +105,5 @@ trait GiapiClient[F[_]] {
 }
 
 object GiapiClient {
-  // GPI documentation specify 60 seconds as the max time to move mechanism.
   val DefaultCommandTimeout: FiniteDuration = 60.seconds
 }
