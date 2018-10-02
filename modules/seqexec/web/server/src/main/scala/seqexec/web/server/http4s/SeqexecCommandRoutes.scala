@@ -145,6 +145,10 @@ class SeqexecCommandRoutes(auth:       AuthenticationService,
     case POST -> Root / "queue" / QueueIdVar(qid) / "remove" / ObsIdVar(obsId) as _ =>
       se.removeSequenceFromQueue(inputQueue, qid, obsId) *>
         Ok(s"${obsId.format} removed from queue $qid")
+
+    case POST -> Root / "queue" / QueueIdVar(qid) / "clear" as _ =>
+      se.clearQueue(inputQueue, qid) *>
+        Ok(s"All sequences removed from queue $qid")
   }
 
   val refreshCommand: HttpService[IO] = HttpService[IO] {

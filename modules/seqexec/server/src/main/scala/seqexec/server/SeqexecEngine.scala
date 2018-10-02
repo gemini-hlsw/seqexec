@@ -272,6 +272,18 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
     Event.modifyState[executeEngine.ConcreteTypes]((moveSeq(qid, seqId, d) withEvent UpdateQueue(qid)).toHandle)
   ).map(_.asRight)
 
+  private def clearQ(qid: QueueId): Endo[EngineState]= st => (
+    for {
+      q <- st.queues.get(qid)
+    } yield if(q.status(st) =!= BatchExecState.Running)
+        (EngineState.queues ^|-? index(qid)).modify(_.clear)(st)
+      else st
+  ).getOrElse(st)
+
+  def clearQueue(q: EventQueue, qid: QueueId): IO[Either[SeqexecFailure, Unit]] = q.enqueue1(
+    Event.modifyState[executeEngine.ConcreteTypes]((clearQ(qid) withEvent UpdateQueue(qid)).toHandle)
+  ).map(_.asRight)
+
   private def runQueue(qid: QueueId, clientId: ClientID): executeEngine.HandleType[Unit] =
     executeEngine.get.map(nextRunnableObservations(qid)).flatMap(_.map(executeEngine.start(_, clientId, {_ => true})).fold(executeEngine.unit)(_ *> _))
 
