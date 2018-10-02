@@ -53,7 +53,7 @@ class Engine[D, U](stateL: Lens[D, Engine.State]) {
       case None      => unit
     }
 
-  private def pause(id: Observation.Id): HandleType[Unit] = modifyS(id)(Sequence.State.userStopSet(true))
+  def pause(id: Observation.Id): HandleType[Unit] = modifyS(id)(Sequence.State.userStopSet(true))
 
   private def cancelPause(id: Observation.Id): HandleType[Unit] = modifyS(id)(Sequence.State.userStopSet(false))
 

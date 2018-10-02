@@ -64,6 +64,7 @@ package server {
   final case class SetCloudCover(cc: CloudCover, user: Option[UserDetails]) extends SeqEvent
   final case class NotifyUser(memo: Notification, clientID: ClientID) extends SeqEvent
   final case class StartQueue(qid: QueueId, clientID: ClientID) extends SeqEvent
+  final case class StopQueue(qid: QueueId, clientID: ClientID) extends SeqEvent
   final case class UpdateQueue(qid: QueueId) extends SeqEvent
   case object NullSeqEvent extends SeqEvent
 

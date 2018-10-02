@@ -299,6 +299,22 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
     }}.map(_ => StartQueue(qid, clientId)))
   ).map(_.asRight)
 
+  private def stopSequencesInQueue(qid: QueueId): executeEngine.HandleType[Unit] =
+    executeEngine.get.map(st => (EngineState.queues ^|-? index(qid)).getOption(st).map(_.queue.filter(sid => (EngineState.executionState ^|-> Engine.State.sequences ^|-? index(sid)).getOption(st).map(_.status.isRunning).getOrElse(false))).getOrElse(List.empty)).flatMap(_.map(executeEngine.pause).fold(executeEngine.unit)(_ *> _))
+
+
+  def stopQueue(q: EventQueue, qid: QueueId, clientId: ClientID): IO[Either[SeqexecFailure, Unit]] = q.enqueue1(
+    Event.modifyState[executeEngine.ConcreteTypes](executeEngine.get.flatMap{ st =>
+      (EngineState.queues ^|-? index(qid)).getOption(st).map {
+        _.status(st) match {
+          case BatchExecState.Running => ((EngineState.queues ^|-? index(qid) ^|-> ExecutionQueue.cmdState).set(BatchCommandState.Stop) >>> {(_, ())}).toHandle *> stopSequencesInQueue(qid)
+          case BatchExecState.Waiting => ((EngineState.queues ^|-? index(qid) ^|-> ExecutionQueue.cmdState).set(BatchCommandState.Stop) >>> {(_, ())}).toHandle
+          case _                      => executeEngine.unit
+        }
+      }.getOrElse(executeEngine.unit)
+    }.map(_ => StopQueue(qid, clientId)))
+  ).map(_.asRight)
+
   // It assumes only one queue can run at a time
   private val iterateQueues: PartialFunction[SystemEvent, executeEngine.HandleType[Unit]] = {
     case Finished(_) => executeEngine.get.map(st => st.queues.collect{
@@ -713,6 +729,7 @@ object SeqexecEngine extends SeqexecConfiguration {
     case NotifyUser(m, cid)            => UserNotification(m, cid)
     case UpdateQueue(_)                => QueueUpdated(svs)
     case StartQueue(_, _)              => NullEvent
+    case StopQueue(_, _)               => NullEvent
   }
 
   def toSeqexecEvent(ev: executeEngine.ResultType)(svs: => SequencesQueue[SequenceView]): SeqexecEvent = ev match {
