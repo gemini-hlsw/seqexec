@@ -55,5 +55,10 @@ trait Var {
         case _       => None
       }
   }
+
+  object IntVar {
+    def unapply(str: String): Option[Int] =
+      Either.catchNonFatal(str.toInt).toOption
+  }
 }
 package object http4s extends Var
