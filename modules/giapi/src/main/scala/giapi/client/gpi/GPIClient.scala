@@ -10,8 +10,6 @@ import giapi.client.commands.{Command, CommandResult, Configuration}
 import giapi.client.{Giapi, GiapiClient}
 import mouse.boolean._
 
-import scala.concurrent.duration._
-
 /**
   * Client for GPI
   */
