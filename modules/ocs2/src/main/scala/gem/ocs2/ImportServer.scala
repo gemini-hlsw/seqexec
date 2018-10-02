@@ -4,9 +4,8 @@
 package gem
 package ocs2
 
-import cats.effect.IO
+import cats.effect.{ ContextShift, IO, IOApp, ExitCode }
 import cats.implicits._
-import fs2.{Stream, StreamApp}
 import gem.dao.DatabaseConfiguration
 import org.http4s._
 import org.http4s.dsl.io._
@@ -14,14 +13,12 @@ import org.http4s.server.blaze.BlazeBuilder
 
 import java.util.logging.Logger
 
-import scala.concurrent.ExecutionContext
-
 /** A server that accepts HTTP requests to import observations or programs from
   * an OCS2 ODB.  If the corresponding observation or program has already been
   * loaded, it is deleted and wholly replaced by the latest version from the
   * ODB.
   */
-final class ImportServer(ocsHost: String) {
+final class ImportServer(ocsHost: String)(implicit ev: ContextShift[IO]) {
 
   private val xa = DatabaseConfiguration.forTesting.transactor[IO]
 
@@ -59,13 +56,13 @@ final class ImportServer(ocsHost: String) {
   }
 }
 
-object ImportServer extends StreamApp[IO] {
+object ImportServer extends IOApp {
   private val Log = Logger.getLogger(ImportServer.getClass.getName)
 
   // Port where our http service will run.
   val port: Int = 8989
 
-  def stream(args: List[String], requestShutdown: IO[Unit]): Stream[IO, StreamApp.ExitCode] = {
+  def run(args: List[String]): IO[ExitCode] = {
 
     val hostName = args match {
       case Nil       => "localhost"
@@ -76,7 +73,7 @@ object ImportServer extends StreamApp[IO] {
 
     val importServer = new ImportServer(hostName)
 
-    val service = HttpService[IO] {
+    val service = HttpRoutes.of[IO] {
       case GET -> Root / "obs" / obsId =>
         importServer.importObservation(obsId)
 
@@ -87,7 +84,9 @@ object ImportServer extends StreamApp[IO] {
     BlazeBuilder[IO]
       .bindHttp(8989, "localhost")
       .mountService(service, "/import")
-      .serve(implicitly, ExecutionContext.global)
+      .resource.use(_ => IO.never)
+      .start
+      .as(ExitCode.Success)
 
   }
 }

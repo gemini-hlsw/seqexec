@@ -3,15 +3,19 @@
 
 package gem.ocs2
 
-import cats.effect.Effect
+import cats.effect.{ ContextShift, Effect, IO }
 import cats.implicits._
 import doobie._, doobie.implicits._
 import gem.dao.meta._
 import doobie.postgres.implicits._
 import java.util.logging.{ Level, Logger }
+import scala.concurrent.ExecutionContext
 
 /** Shared support for import applications using Doobie. */
 trait DoobieClient extends ProgramIdMeta with IndexMeta {
+
+  implicit val ioContextShift: ContextShift[IO] =
+    IO.contextShift(ExecutionContext.global)
 
   def configureLogging[M[_]: Effect]: M[Unit] =
     Effect[M].delay(

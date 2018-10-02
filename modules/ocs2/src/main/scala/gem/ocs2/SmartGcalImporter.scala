@@ -204,16 +204,18 @@ object SmartGcalImporter extends DoobieClient {
                     indexer:        ConnectionIO[Int]): IO[Unit] = {
 
     def lines(l: GcalLampType): Stream[IO, SmartGcalLine[K]] =
-      io.file.readAll[IO](new File(dir, fileName(instFilePrefix, l)).toPath, 4096)
-          .through(text.utf8Decode)
-          .through(text.lines)
-          .filter(_.trim.nonEmpty)
-          .map(_.split(',').map(_.trim).toList)
-          .map(parseLine(_, l, parser))
+      Stream.resource(ExecutionContexts.cachedThreadPool[IO]).flatMap { bec =>
+        io.file.readAll[IO](new File(dir, fileName(instFilePrefix, l)).toPath, bec, 4096)
+            .through(text.utf8Decode)
+            .through(text.lines)
+            .filter(_.trim.nonEmpty)
+            .map(_.split(',').map(_.trim).toList)
+            .map(parseLine(_, l, parser))
+      }
 
     val prog = (lines(GcalLampType.Arc) ++ lines(GcalLampType.Flat))
-      .segmentN(4096)
-      .flatMap { v => writer(v.force.toVector).transact(xa) }
+      .chunkN(4096)
+      .flatMap { c => writer(c.toVector).transact(xa) }
 
     for {
       _ <- IO(println(s"Importing $instFilePrefix ...")) // scalastyle:ignore
@@ -225,7 +227,7 @@ object SmartGcalImporter extends DoobieClient {
 
   def runc: IO[Unit] =
     for {
-      u <- UserDao.selectRootUser.transact(xa)
+      _ <- UserDao.selectRootUser.transact(xa)
       l <- Log.newLog[IO]("smartgcal importer", xa)
       _ <- checkSmartDir
       _ <- configureLogging[IO]
