@@ -127,43 +127,31 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
     zoom(_.uiModel.configTableState)
 
   val sequencesOnDisplayRW: ModelRW[SeqexecAppRootModel, SequencesOnDisplay] =
-    this.zoomRWL(SeqexecAppRootModel.uiModel ^|-> SeqexecUIModel.sequencesOnDisplay)
+    this.zoomRWL(SeqexecAppRootModel.sequencesOnDisplayL)
 
-  def sequenceTab(id: Observation.Id): ModelR[SeqexecAppRootModel, SeqexecTabActive] =
-    this.zoomG((SeqexecAppRootModel.uiModel ^|-> SeqexecUIModel.sequencesOnDisplay).composeGetter(SequencesOnDisplay.tabG(id)))
+  def sequenceTab(id: Observation.Id): ModelR[SeqexecAppRootModel, Option[SeqexecTabActive]] =
+    this.zoomG(SeqexecAppRootModel.sequencesOnDisplayL.composeGetter(SequencesOnDisplay.tabG(id)))
 
-  def sequenceObserverReader(id: Observation.Id): ModelR[SeqexecAppRootModel, SequenceInfoFocus] =
-    statusReader.zip(sequenceTab(id)).zoom {
-      case (status, SeqexecTabActive(tab, _)) =>
-        val targetName = tab.sequence.flatMap(firstScienceStepTargetNameT.headOption)
-        SequenceInfoFocus(status.isLogged, tab.sequence.map(_.metadata.name), tab.sequence.map(_.status), targetName)
-    }
+  def sequenceObserverReader(id: Observation.Id): ModelR[SeqexecAppRootModel, Option[SequenceInfoFocus]] =
+    this.zoomG(SequenceInfoFocus.sequenceInfoG(id))
 
   def statusAndStepReader(id: Observation.Id): ModelR[SeqexecAppRootModel, Option[StatusAndStepFocus]] =
-    statusReader.zip(sequenceTab(id)).zoom {
-      case (status, SeqexecTabActive(tab, _)) =>
-        tab.sequence.map { t =>
-          StatusAndStepFocus(status.isLogged, t.metadata.instrument, t.id, tab.stepConfigDisplayed, t.steps.length, tab.isPreview)
-        }
-    }
+    this.zoomG(StatusAndStepFocus.statusAndStepG(id))
 
   def stepsTableReaderF(id: Observation.Id): ModelR[SeqexecAppRootModel, Option[StepsTableFocus]] =
-    sequenceTab(id).zoom {
-      case SeqexecTabActive(tab, _) =>
-        tab.sequence.map { sequence =>
-          StepsTableFocus(sequence.id, sequence.metadata.instrument, sequence.status, sequence.steps, tab.stepConfigDisplayed, sequence.nextStepToRun, tab.isPreview, tab.tableState)
-        }
-    }
+    this.zoomG(StepsTableFocus.stepsTableG(id))
 
   def stepsTableReader(id: Observation.Id): ModelR[SeqexecAppRootModel, StepsTableAndStatusFocus] =
     statusReader.zip(stepsTableReaderF(id)).zip(configTableState).zoom {
       case ((s, f), t) => StepsTableAndStatusFocus(s, f, t)
     }(fastEq[StepsTableAndStatusFocus])
 
-  def sequenceControlReader(id: Observation.Id): ModelR[SeqexecAppRootModel, SequenceControlFocus] = {
-    val getter = (SeqexecAppRootModel.uiModel ^|-> SeqexecUIModel.sequencesOnDisplay).composeGetter(SequencesOnDisplay.tabG(id))
-    val constructor = ClientStatus.canOperateG.zip(getter) >>> { case (status, SeqexecTabActive(tab, _)) =>
-        SequenceControlFocus(status, ControlModel.controlModelG.get(tab))
+  def sequenceControlReader(id: Observation.Id): ModelR[SeqexecAppRootModel, Option[SequenceControlFocus]] = {
+    val getter = SeqexecAppRootModel.sequencesOnDisplayL.composeGetter(SequencesOnDisplay.tabG(id))
+    val constructor = ClientStatus.canOperateG.zip(getter) >>> {
+      case (status, Some(SeqexecTabActive(tab, _))) =>
+        SequenceControlFocus(status, ControlModel.controlModelG.get(tab)).some
+      case _ => none
     }
     this.zoomG(constructor)
   }

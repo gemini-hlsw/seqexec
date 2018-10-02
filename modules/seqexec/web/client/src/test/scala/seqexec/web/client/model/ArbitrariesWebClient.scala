@@ -146,17 +146,6 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
       (x.currentSequence, x.stepConfig, x.tableState, x.tabOperations)
     }
 
-  implicit val arbEmptySequenceTab: Arbitrary[EmptySequenceTab.type] =
-    Arbitrary {
-      Gen.const(EmptySequenceTab)
-    }
-
-  implicit val estCogen: Cogen[EmptySequenceTab.type] =
-    Cogen[Boolean].contramap {
-      case _: EmptySequenceTab.type => true
-      case _                        => false
-    }
-
   implicit val arbSeqexecTab: Arbitrary[SeqexecTab] = Arbitrary {
     Gen.frequency(10 -> arbitrary[InstrumentSequenceTab],
                   1 -> arbitrary[PreviewSequenceTab],
@@ -165,13 +154,11 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
 
   implicit val sxCogen: Cogen[SeqexecTab] =
     Cogen[Either[CalibrationQueueTab,
-                 Either[PreviewSequenceTab,
-                        Either[InstrumentSequenceTab, EmptySequenceTab.type]]]]
+                 Either[PreviewSequenceTab, InstrumentSequenceTab]]]
       .contramap {
         case a: CalibrationQueueTab   => Left(a)
         case a: PreviewSequenceTab    => Right(Left(a))
-        case a: InstrumentSequenceTab => Right(Right(Left(a)))
-        case a: EmptySequenceTab.type => Right(Right(Right(a)))
+        case a: InstrumentSequenceTab => Right(Right(a))
       }
 
   implicit val arbSequenceTab: Arbitrary[SequenceTab] = Arbitrary {
@@ -180,12 +167,10 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
   }
 
   implicit val stCogen: Cogen[SequenceTab] =
-    Cogen[Either[PreviewSequenceTab,
-                 Either[InstrumentSequenceTab, EmptySequenceTab.type]]]
+    Cogen[Either[PreviewSequenceTab, InstrumentSequenceTab]]
       .contramap {
         case a: PreviewSequenceTab    => Left(a)
-        case a: InstrumentSequenceTab => Right(Left(a))
-        case a: EmptySequenceTab.type => Right(Right(a))
+        case a: InstrumentSequenceTab => Right(a)
       }
 
   implicit val arbSequenceOnDisplay: Arbitrary[SequencesOnDisplay] =
@@ -265,8 +250,8 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
     Arbitrary {
       for {
         ws <- arbitrary[Pot[WebSocket]]
-        a <- arbitrary[Int]
-        r <- arbitrary[Boolean]
+        a  <- arbitrary[Int]
+        r  <- arbitrary[Boolean]
       } yield WebSocketConnection(ws, a, r)
     }
 
@@ -452,7 +437,7 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
   implicit val sifCogen: Cogen[SequenceInfoFocus] =
     Cogen[(Boolean, Option[String], Option[SequenceState], Option[TargetName])]
       .contramap { x =>
-        (x.isLogged, x.obsName, x.status, x.targetName)
+        (x.canOperate, x.obsName, x.status, x.targetName)
       }
 
   implicit val arbPreviewPage: Arbitrary[PreviewPage] =
