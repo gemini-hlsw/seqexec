@@ -16,6 +16,7 @@ import monocle.macros.Lenses
 import monocle.function.At._
 import seqexec.model._
 import seqexec.model.enum._
+import seqexec.web.client.lenses.firstScienceStepTargetNameT
 import seqexec.web.client.model._
 import seqexec.web.client.ModelOps._
 import seqexec.web.client.components.sequence.steps.StepConfigTable
@@ -75,8 +76,9 @@ package circuit {
 
     val sequencesFocusL: Lens[SeqexecAppRootModel, SequencesFocus] =
       Lens[SeqexecAppRootModel, SequencesFocus](m =>
-        SequencesFocus(m.sequences, m.uiModel.sequencesOnDisplay))(v => m =>
-          m.copy(sequences = v.sequences, uiModel = m.uiModel.copy(sequencesOnDisplay = v.sod)))
+        SequencesFocus(m.sequences, m.uiModel.sequencesOnDisplay))(
+        v => m => m.copy(sequences = v.sequences,
+                         uiModel   = m.uiModel.copy(sequencesOnDisplay = v.sod)))
 
   }
 
@@ -93,11 +95,11 @@ package circuit {
     val sodLocationFocusL: Lens[SeqexecAppRootModel, SODLocationFocus] =
       Lens[SeqexecAppRootModel, SODLocationFocus](
         m => SODLocationFocus(m.uiModel.navLocation,
-                              m.uiModel.sequencesOnDisplay,
-                              m.clientId))(
+                                   m.uiModel.sequencesOnDisplay,
+                                   m.clientId))(
         v => m => m.copy(clientId = v.clientId,
-                         uiModel = m.uiModel.copy(navLocation = v.location,
-                                                  sequencesOnDisplay = v.sod)))
+                                    uiModel = m.uiModel.copy(navLocation = v.location,
+                                                             sequencesOnDisplay = v.sod)))
   }
 
   @Lenses
@@ -114,8 +116,8 @@ package circuit {
       Lens[SeqexecUIModel, InitialSyncFocus](m =>
         InitialSyncFocus(m.navLocation, m.sequencesOnDisplay, m.firstLoad))(
         v => m => m.copy(navLocation        = v.location,
-                         sequencesOnDisplay = v.sod,
-                         firstLoad          = v.firstLoad))
+                   sequencesOnDisplay = v.sod,
+                   firstLoad          = v.firstLoad))
   }
 
   final case class SequenceInQueue(id:            Observation.Id,
@@ -208,7 +210,7 @@ package circuit {
       Eq.by(x => (x.canOperate, x.active, x.logDisplayed))
   }
 
-  final case class SequenceInfoFocus(isLogged:   Boolean,
+  final case class SequenceInfoFocus(canOperate: Boolean,
                                      obsName:    Option[String],
                                      status:     Option[SequenceState],
                                      targetName: Option[TargetName])
@@ -216,10 +218,25 @@ package circuit {
 
   object SequenceInfoFocus {
     implicit val eq: Eq[SequenceInfoFocus] =
-      Eq.by(x => (x.isLogged, x.obsName, x.status, x.targetName))
+      Eq.by(x => (x.canOperate, x.obsName, x.status, x.targetName))
+
+    def sequenceInfoG(id: Observation.Id): Getter[SeqexecAppRootModel, Option[SequenceInfoFocus]] = {
+      val getter =
+        SeqexecAppRootModel.sequencesOnDisplayL.composeGetter(SequencesOnDisplay.tabG(id))
+      ClientStatus.canOperateG.zip(getter) >>> {
+        case (status, Some(SeqexecTabActive(tab, _))) =>
+          val targetName =
+            tab.sequence.flatMap(firstScienceStepTargetNameT.headOption)
+          SequenceInfoFocus(status,
+                            tab.sequence.map(_.metadata.name),
+                            tab.sequence.map(_.status),
+                            targetName).some
+        case _ => none
+      }
+    }
   }
 
-  final case class StatusAndStepFocus(isLogged:            Boolean,
+  final case class StatusAndStepFocus(canOperate:          Boolean,
                                       instrument:          Instrument,
                                       obsId:               Observation.Id,
                                       stepConfigDisplayed: Option[Int],
@@ -230,12 +247,31 @@ package circuit {
     implicit val eq: Eq[StatusAndStepFocus] =
       Eq.by(
         x =>
-          (x.isLogged,
+          (x.canOperate,
            x.instrument,
            x.obsId,
            x.stepConfigDisplayed,
            x.totalSteps,
            x.isPreview))
+
+    def statusAndStepG(id: Observation.Id): Getter[SeqexecAppRootModel, Option[StatusAndStepFocus]] = {
+      val getter =
+        SeqexecAppRootModel.sequencesOnDisplayL.composeGetter(SequencesOnDisplay.tabG(id))
+      ClientStatus.canOperateG.zip(getter) >>> {
+        case (canOperate, st) =>
+          st.flatMap {
+            case SeqexecTabActive(tab, _) =>
+              tab.sequence.map { t =>
+                StatusAndStepFocus(canOperate,
+                                   t.metadata.instrument,
+                                   t.id,
+                                   tab.stepConfigDisplayed,
+                                   t.steps.length,
+                                   tab.isPreview)
+              }
+          }
+      }
+    }
   }
 
   final case class StepsTableFocus(
@@ -260,6 +296,24 @@ package circuit {
            x.nextStepToRun,
            x.isPreview,
            x.tableState))
+
+    def stepsTableG(id: Observation.Id): Getter[SeqexecAppRootModel, Option[StepsTableFocus]] =
+      SeqexecAppRootModel.sequencesOnDisplayL.composeGetter(
+        SequencesOnDisplay.tabG(id)) >>> {
+        _.flatMap {
+          case SeqexecTabActive(tab, _) =>
+            tab.sequence.map { sequence =>
+              StepsTableFocus(sequence.id,
+                              sequence.metadata.instrument,
+                              sequence.status,
+                              sequence.steps,
+                              tab.stepConfigDisplayed,
+                              sequence.nextStepToRun,
+                              tab.isPreview,
+                              tab.tableState)
+            }
+        }
+      }
   }
 
   final case class StepsTableAndStatusFocus(
@@ -270,6 +324,7 @@ package circuit {
   object StepsTableAndStatusFocus {
     implicit val eq: Eq[StepsTableAndStatusFocus] =
       Eq.by(x => (x.status, x.stepsTable, x.configTableState))
+
   }
 
   @Lenses

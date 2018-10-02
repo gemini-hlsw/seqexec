@@ -3,7 +3,6 @@
 
 package seqexec.web.client.components.sequence.toolbars
 
-import diode.react.ModelProxy
 import diode.react.ReactConnectProxy
 import cats.implicits._
 import japgolly.scalajs.react.vdom.html_<^._
@@ -247,8 +246,8 @@ object SequenceControl {
       }
       .build
 
-  def apply(p: ModelProxy[SequenceControlFocus]): Unmounted[Props, State, Unit] =
-    component(Props(p()))
+  def apply(p: Props): Unmounted[Props, State, Unit] =
+    component(p)
 }
 
 /**
@@ -256,9 +255,9 @@ object SequenceControl {
   */
 object SequenceDefaultToolbar {
   final case class Props(id: Observation.Id) {
-    val observerReader: ReactConnectProxy[SequenceInfoFocus] =
+    val observerReader: ReactConnectProxy[Option[SequenceInfoFocus]] =
       SeqexecCircuit.connect(SeqexecCircuit.sequenceObserverReader(id))
-    val controlReader: ReactConnectProxy[SequenceControlFocus] =
+    val controlReader: ReactConnectProxy[Option[SequenceControlFocus]] =
       SeqexecCircuit.connect(SeqexecCircuit.sequenceControlReader(id))
   }
 
@@ -273,12 +272,19 @@ object SequenceDefaultToolbar {
           SeqexecStyles.shorterRow,
           <.div(
             ^.cls := "ui left floated column eight wide computer eight wide tablet only",
-            p.controlReader(SequenceControl.apply)
+            p.controlReader(_() match {
+                case Some(c) => SequenceControl(SequenceControl.Props(c))
+                case _       => ReactFragment()
+              }
+            )
           ),
           <.div(
             ^.cls := "ui right floated column",
             SeqexecStyles.infoOnControl,
-            p.observerReader(p => SequenceInfo(SequenceInfo.Props(p)))
+            p.observerReader(_() match {
+              case Some(p) => SequenceInfo(SequenceInfo.Props(p))
+              case _       => ReactFragment()
+            })
           )
         )
     ))
