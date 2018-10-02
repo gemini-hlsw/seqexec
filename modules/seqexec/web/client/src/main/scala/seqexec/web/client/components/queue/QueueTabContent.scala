@@ -10,8 +10,10 @@ import japgolly.scalajs.react.component.Scala.Unmounted
 import seqexec.web.client.semanticui._
 import seqexec.web.client.semanticui.elements.message.IconMessage
 import seqexec.web.client.semanticui.elements.icon.Icon.IconInbox
-import seqexec.web.client.model.{ SectionClosed, SectionOpen }
-import seqexec.web.client.model.{ SectionVisibilityState, TabSelected }
+import seqexec.web.client.model.SectionClosed
+import seqexec.web.client.model.SectionOpen
+import seqexec.web.client.model.SectionVisibilityState
+import seqexec.web.client.model.TabSelected
 import seqexec.web.client.components.SeqexecStyles
 import web.client.style._
 
@@ -30,18 +32,25 @@ object QueueTabContent {
     .builder[Props]("QueueTabContent")
     .stateless
     .render_P { p =>
-      <.div(
-        ^.cls := "ui attached secondary segment tab",
-        ^.classSet(
-          "active" -> (p.active === TabSelected.Selected)
-        ),
-        dataTab := "daycal",
-        SeqexecStyles.emptyInstrumentTab,
-        SeqexecStyles.emptyInstrumentTabLogShown
-          .when(p.logDisplayed =!= SectionOpen),
-        SeqexecStyles.emptyInstrumentTabLogHidden
-          .when(p.logDisplayed =!= SectionClosed),
-        defaultContent
+      ReactFragment(
+        // <.div(
+        //   ^.height := "100%",
+        <.div(
+          ^.cls := "ui attached secondary segment tab",
+          ^.classSet(
+            "active" -> (p.active === TabSelected.Selected)
+          ),
+          dataTab := "daycal",
+          SeqexecStyles.emptyInstrumentTab,
+          SeqexecStyles.emptyInstrumentTabLogShown
+            .when(p.logDisplayed =!= SectionOpen),
+          SeqexecStyles.emptyInstrumentTabLogHidden
+            .when(p.logDisplayed =!= SectionClosed),
+          <.div(
+            QueueToolbar.Props().cmp,
+            defaultContent
+          )
+        )
       )
     }
     .build

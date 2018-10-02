@@ -1,0 +1,24 @@
+// Copyright (c) 2016-2018 Association of Universities for Research in Astronomy, Inc. (AURA)
+// For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
+
+package web.client.table
+
+import japgolly.scalajs.react.vdom.html_<^._
+import japgolly.scalajs.react.{CtorType, ScalaComponent}
+import japgolly.scalajs.react.component.Scala.Component
+import react.virtualized._
+
+object SortableRow {
+  final case class Props(p: react.virtualized.raw.RawRowRendererParameter)
+
+  val component: Component[Props, Unit, Unit, CtorType.Props] = ScalaComponent.builder[Props]("SortableRow")
+    .render_P{ p =>
+      <.div(
+        // ^.className := "sortable-hoc-item sortable-hoc-stylizedItem",
+        // SortableView.handl
+        raw.defaultRowRenderer(p.p)
+      )
+    }
+    .build
+
+}

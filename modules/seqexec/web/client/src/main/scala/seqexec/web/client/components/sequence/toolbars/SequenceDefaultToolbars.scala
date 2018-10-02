@@ -26,10 +26,7 @@ import seqexec.web.client.model.RunOperation
 import seqexec.web.client.model.PauseOperation
 import seqexec.web.client.model.SyncOperation
 import seqexec.web.client.components.SeqexecStyles
-import seqexec.web.client.semanticui.elements.button.Button
-import seqexec.web.client.semanticui.elements.button.Button.LeftLabeled
-import seqexec.web.client.semanticui.elements.popup.Popup
-import seqexec.web.client.semanticui.elements.icon.Icon
+import seqexec.web.client.semanticui.controlButton
 import seqexec.web.client.semanticui.elements.icon.Icon.IconRefresh
 import seqexec.web.client.semanticui.elements.icon.Icon.IconPlay
 import seqexec.web.client.semanticui.elements.icon.Icon.IconPause
@@ -128,26 +125,13 @@ object SequenceControl {
     ST.retM(SeqexecCircuit.dispatchCB(RequestCancelPause(s))) >>
       ST.mod(_.requestCancelPause).liftCB
 
-  private def controlButton(icon:     Icon,
-                            color:    String,
-                            onClick:  Callback,
-                            disabled: Boolean,
-                            tooltip:  String,
-                            text:     String) =
-    Popup(Popup.Props("button", tooltip),
-          Button(
-            Button.Props(icon     = Some(icon),
-                         labeled  = LeftLabeled,
-                         onClick  = onClick,
-                         color    = Some(color),
-                         disabled = disabled),
-            text
-          ))
-
   def stateFromProps(p: Props): State =
     State.Zero.copy(runRequested = p.runRequested)
 
-  private def syncButton(b: Backend, id: Observation.Id, canOperate: Boolean, canSync: Boolean) =
+  private def syncButton(b:          Backend,
+                         id:         Observation.Id,
+                         canOperate: Boolean,
+                         canSync:    Boolean) =
     controlButton(icon     = IconRefresh,
                   color    = "purple",
                   onClick  = b.runState(requestSync(id)),
@@ -155,7 +139,12 @@ object SequenceControl {
                   tooltip  = "Sync sequence",
                   text     = "Sync")
 
-  private def runButton(b: Backend, id: Observation.Id, isPartiallyExecuted: Boolean, nextStepToRun: Int, canOperate: Boolean, canRun: Boolean) = {
+  private def runButton(b:                   Backend,
+                        id:                  Observation.Id,
+                        isPartiallyExecuted: Boolean,
+                        nextStepToRun:       Int,
+                        canOperate:          Boolean,
+                        canRun:              Boolean) = {
     val runContinueTooltip =
       s"${isPartiallyExecuted.fold("Continue", "Run")} the sequence from the step $nextStepToRun"
     val runContinueButton =
@@ -168,7 +157,10 @@ object SequenceControl {
                   text     = runContinueButton)
   }
 
-  private def cancelPauseButton(b: Backend, id: Observation.Id, canOperate: Boolean, canCancelPause: Boolean) =
+  private def cancelPauseButton(b:              Backend,
+                                id:             Observation.Id,
+                                canOperate:     Boolean,
+                                canCancelPause: Boolean) =
     controlButton(
       icon     = IconBan,
       color    = "brown",
@@ -178,7 +170,10 @@ object SequenceControl {
       text     = "Cancel Pause"
     )
 
-  private def pauseButton(b: Backend, id: Observation.Id, canOperate: Boolean, canPause: Boolean) =
+  private def pauseButton(b:          Backend,
+                          id:         Observation.Id,
+                          canOperate: Boolean,
+                          canPause:   Boolean) =
     controlButton(
       icon     = IconPause,
       color    = "teal",
@@ -188,7 +183,11 @@ object SequenceControl {
       text     = "Pause"
     )
 
-  private def resumeButton(b: Backend, id: Observation.Id, nextStepToRun: Int, canOperate: Boolean, canResume: Boolean) =
+  private def resumeButton(b:             Backend,
+                           id:            Observation.Id,
+                           nextStepToRun: Int,
+                           canOperate:    Boolean,
+                           canResume:     Boolean) =
     controlButton(
       icon     = IconPlay,
       color    = "teal",
@@ -273,10 +272,9 @@ object SequenceDefaultToolbar {
           <.div(
             ^.cls := "ui left floated column eight wide computer eight wide tablet only",
             p.controlReader(_() match {
-                case Some(c) => SequenceControl(SequenceControl.Props(c))
-                case _       => ReactFragment()
-              }
-            )
+              case Some(c) => SequenceControl(SequenceControl.Props(c))
+              case _       => ReactFragment()
+            })
           ),
           <.div(
             ^.cls := "ui right floated column",

@@ -11,9 +11,12 @@ import japgolly.scalajs.react.raw.JsNumber
 import japgolly.scalajs.react.Callback
 import org.scalajs.dom.MouseEvent
 import scala.scalajs.js
+import js.JSConverters._
 import monocle.Lens
 import mouse.boolean._
 import react.virtualized._
+import react.virtualized.raw
+import react.sortable._
 import react.draggable._
 import web.client.utils._
 
@@ -230,4 +233,38 @@ package object table {
           <.span(^.cls := "DragHandleIcon", "⋮")
         )
     )
+
+  def sortableRowRenderer[C <: js.Object]: RowRenderer[C] =
+    (className: String,
+     columns: Array[VdomNode],
+     index: Int,
+     isScrolling: Boolean,
+     key: String,
+     rowData: C,
+     onRowClick: Option[OnRowClick],
+     onRowDoubleClick: Option[OnRowClick],
+     onRowMouseOut: Option[OnRowClick],
+     onRowMouseOver: Option[OnRowClick],
+     onRowRightClick: Option[OnRowClick],
+     style: Style) => {
+      val sortableItem = SortableElement.wrap(SortableRow.component)
+      sortableItem(
+        SortableElement.Props(index = index))(SortableRow.Props(
+          raw.RawRowRendererParameter(
+            className,
+            columns.map(_.rawNode).toJSArray,
+            index,
+            isScrolling,
+            key,
+            rowData,
+            onRowClick.map(_.toJsCallback).orUndefined,
+            onRowDoubleClick.map(_.toJsCallback).orUndefined,
+            onRowMouseOut.map(_.toJsCallback).orUndefined,
+            onRowMouseOver.map(_.toJsCallback).orUndefined,
+            onRowRightClick.map(_.toJsCallback).orUndefined,
+            Style.toJsObject(style)
+          ))
+        )
+
+    }
 }
