@@ -4,6 +4,11 @@
 package seqexec.web.server.http4s
 
 import cats.effect.IO
+import cats.implicits._
+import gem.Observation
+import org.http4s._
+import org.http4s.dsl.io._
+import org.http4s.server.middleware.GZip
 import seqexec.server.SeqexecEngine
 import seqexec.server
 import seqexec.model.enum.CloudCover
@@ -15,10 +20,6 @@ import seqexec.web.server.http4s.encoder._
 import seqexec.web.server.security.AuthenticationService
 import seqexec.web.server.security.Http4sAuthentication
 import seqexec.web.server.security.TokenRefresher
-import org.http4s._
-import org.http4s.dsl.io._
-import org.http4s.server.middleware.GZip
-import cats.implicits._
 
 /**
   * Rest Endpoints under the /api route
@@ -137,6 +138,13 @@ class SeqexecCommandRoutes(auth:       AuthenticationService,
 
     case POST -> Root / "unload" / "all" as user =>
       se.clearLoadedSequences(inputQueue, user) *> Ok(s"Queue cleared")
+
+    case req @ POST -> Root / "queue" / QueueIdVar(qid) / "add" as _ =>
+      req.req.decode[List[Observation.Id]](
+        ids =>
+          se.addSequencesToQueue(inputQueue, qid, ids) *>
+            Ok(s"${ids.map(_.format).mkString(",")} added to queue $qid")
+      )
 
     case POST -> Root / "queue" / QueueIdVar(qid) / "add" / ObsIdVar(obsId) as _ =>
       se.addSequenceToQueue(inputQueue, qid, obsId) *>

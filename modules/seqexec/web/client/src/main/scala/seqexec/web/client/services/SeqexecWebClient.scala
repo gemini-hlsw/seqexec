@@ -333,6 +333,19 @@ object SeqexecWebClient extends ModelBooPicklers {
       .map(_ => ())
 
   /**
+    * Add a sequence from a queue
+    */
+  def addSequencesToQueue(queueId: QueueId,
+                          ids:     List[Observation.Id]): Future[Unit] =
+    Ajax
+      .post(
+        url          = s"$baseUrl/queue/${encodeURI(queueId.show)}/add",
+        responseType = "arraybuffer",
+        data         = Pickle.intoBytes(ids)
+      )
+      .map(_ => ())
+
+  /**
     * Remove a sequence from a queue
     */
   def removeSequenceToQueue(queueId: QueueId, id: Observation.Id): Future[Unit] =
