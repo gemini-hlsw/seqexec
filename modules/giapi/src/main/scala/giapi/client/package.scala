@@ -89,7 +89,7 @@ package client {
       * Note that commands can end in ERROR or COMPLETED
       * Giapi has an extra case where we have a command ACCEPTED and it will complete in the future
       * That makes handling easier with callbacks on Java land but on IO-land it makes more sense to
-      * wait for ERROR/COMPLETED and do async calls avobe this level
+      * wait for ERROR/COMPLETED and do async calls above this level
       *
       * This decision may be review in the future
       */
