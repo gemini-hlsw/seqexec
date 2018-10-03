@@ -40,7 +40,6 @@ import edu.gemini.spModel.core.{Peer, SPProgramID}
 import edu.gemini.spModel.obscomp.InstConstants
 import edu.gemini.spModel.seqcomp.SeqConfigNames.OCS_KEY
 import fs2.{Scheduler, Stream}
-import giapi.client.ghost.GHOSTClient
 import org.http4s.client.Client
 import org.http4s.Uri
 import knobs.Config
