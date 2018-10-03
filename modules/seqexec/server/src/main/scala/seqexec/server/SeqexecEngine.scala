@@ -44,7 +44,6 @@ import org.http4s.client.Client
 import org.http4s.Uri
 import knobs.Config
 import mouse.all._
-import seqexec.server.ghost.GHOSTController
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
@@ -467,7 +466,6 @@ object SeqexecEngine extends SeqexecConfiguration {
                             ghostGDS: Uri)
   def apply(httpClient: Client[IO], settings: Settings, c: SeqexecMetrics): SeqexecEngine = new SeqexecEngine(httpClient, settings, c)
 
-  // Couldn't find this on Scalaz
   def splitWhere[A](l: List[A])(p: A => Boolean): (List[A], List[A]) =
     l.splitAt(l.indexWhere(p))
 
