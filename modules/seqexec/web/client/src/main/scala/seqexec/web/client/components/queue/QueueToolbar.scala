@@ -29,7 +29,7 @@ import web.client.style._
   * Toolbar for logged in users
   */
 object QueueToolbar {
-  final case class Props(queueId: QueueId, control: QueueControlFocus) {
+  final case class Props(queueId: QueueId, control: CalQueueControlFocus) {
     def cmp: Unmounted[Props, State, Unit] = component(this)
   }
 
@@ -60,7 +60,7 @@ object QueueToolbar {
   private val component = ScalaComponent
     .builder[Props]("QueueToolbar")
     .initialState(State.Zero)
-    .renderPS{(b, p, s) =>
+    .renderPS { (b, p, s) =>
       val canOperate = p.control.canOperate
       <.div(
         ^.cls := "ui grid",
@@ -81,7 +81,8 @@ object QueueToolbar {
             )
           )
         )
-    )}
+      )
+    }
     .componentWillReceiveProps { f =>
       // Update state of operations
       Callback.when(f.nextProps.control.ops =!= f.state.ops)(
