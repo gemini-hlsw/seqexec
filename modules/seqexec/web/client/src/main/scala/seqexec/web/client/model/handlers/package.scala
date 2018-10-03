@@ -4,7 +4,11 @@
 package seqexec.web.client
 
 import cats.Monoid
-import diode.{Action, ActionHandler, ActionResult, Effect, NoAction}
+import diode.Action
+import diode.ActionHandler
+import diode.ActionResult
+import diode.Effect
+import diode.NoAction
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -23,6 +27,19 @@ package handlers {
 
     def updatedLE(lens: T => T, effect: Effect): ActionResult[M] =
       updated(lens(value), effect)
+
+    def requestEffect[A, B <: Action, C <: Action](a: A,
+                                                   f: A => Future[Unit],
+                                                   m: A => B,
+                                                   r: A => C): Effect =
+      Effect(
+        f(a)
+          .map(_ => m(a))
+          .recover {
+            case _ => r(a)
+          }
+      )
+
   }
 }
 

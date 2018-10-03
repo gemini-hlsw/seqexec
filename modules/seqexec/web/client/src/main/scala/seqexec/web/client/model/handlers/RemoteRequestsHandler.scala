@@ -4,7 +4,6 @@
 package seqexec.web.client.handlers
 
 import cats.implicits._
-import diode.Action
 import diode.ActionHandler
 import diode.ActionResult
 import diode.Effect
@@ -12,7 +11,6 @@ import diode.ModelRW
 import seqexec.model.ClientID
 import seqexec.web.client.actions._
 import seqexec.web.client.services.SeqexecWebClient
-import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
 /**
@@ -37,19 +35,6 @@ class RemoteRequestsHandler[M](modelRW: ModelRW[M, Option[ClientID]])
         .getOrElse(VoidEffect)
       effectOnly(effect)
   }
-
-  private def requestEffect[A, B <: Action, C <: Action](
-      a: A,
-      f: A => Future[Unit],
-      m: A => B,
-      r: A => C): Effect =
-    Effect(
-      f(a)
-        .map(_ => m(a))
-        .recover {
-          case _ => r(a)
-        }
-    )
 
   def handlePause: PartialFunction[Any, ActionResult[M]] = {
     case RequestPause(id) =>

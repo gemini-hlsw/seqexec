@@ -25,6 +25,7 @@ import seqexec.engine._
 import seqexec.server.SeqexecEngine.Settings
 import seqexec.server.keywords.GDSClient
 import seqexec.model.{Conditions, ExecutionQueue, Observer, Operator, SequenceState}
+import seqexec.model.CalibrationQueueId
 import seqexec.model.enum.{ActionStatus, CloudCover, ImageQuality, Instrument, Resource, SkyBackground, WaterVapor}
 import seqexec.model.{ActionType, UserDetails}
 import seqexec.model.enum.Resource.TCS

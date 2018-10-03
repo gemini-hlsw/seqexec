@@ -21,4 +21,8 @@ package object model {
   implicit val stEq: Eq[StepConfig]     = Eq.fromUniversalEquals
   implicit val clientIdEq: Eq[ClientID] = Eq.fromUniversalEquals
   val DaytimeCalibrationTargetName      = "Daytime calibration"
+
+  val CalibrationQueueName: String = "Calibration Queue"
+  val CalibrationQueueId: ClientID = UUID.fromString("7156fa7e-48a6-49d1-a267-dbf3bbaa7577")
+
 }

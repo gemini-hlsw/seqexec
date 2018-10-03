@@ -1,12 +1,13 @@
 import sbt._
-import java.lang.{Runtime => JRuntime}
+import java.lang.{ Runtime => JRuntime }
 import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
 
 /**
- * Application settings and dependencies
- */
+  * Application settings and dependencies
+  */
 object Settings {
   object Definitions {
+
     /** The name of the application */
     val name = "ocs3"
 
@@ -74,9 +75,10 @@ object Settings {
     val javaTimeJS              = "2.0.0-M13"
     val javaLogJS               = "0.1.5"
     val scalaJQuery             = "1.2"
-    val scalaJSReactVirtualized = "0.3.4"
+    val scalaJSReactVirtualized = "0.3.5"
     val scalaJSReactClipboard   = "0.4.0"
     val scalaJSReactDraggable   = "0.1.1"
+    val scalaJSReactSortable    = "0.0.1"
 
     // Scala libraries
     val catsEffectVersion       = "0.10.1"
@@ -86,7 +88,7 @@ object Settings {
     val shapelessVersion        = "2.3.3"
     val attoVersion             = "0.6.3"
     val scalaParsersVersion     = "1.1.1"
-    val scalaXmlVerson          = "1.1.0"
+    val scalaXmlVerson          = "1.1.1"
 
     val http4sVersion           = "0.18.19"
     val squants                 = "1.3.0"
@@ -222,14 +224,15 @@ object Settings {
       "io.suzaku" %%% "diode"       % LibraryVersions.diode,
       "io.suzaku" %%% "diode-react" % LibraryVersions.diodeReact
     ))
-    val ScalaJSDom              = Def.setting("org.scala-js"      %%% "scalajs-dom"               % LibraryVersions.scalaDom)
-    val ScalaJSReactVirtualized = Def.setting("io.github.cquiroz" %%% "scalajs-react-virtualized" % LibraryVersions.scalaJSReactVirtualized)
-    val ScalaJSReactDraggable   = Def.setting("io.github.cquiroz" %%% "scalajs-react-draggable"   % LibraryVersions.scalaJSReactDraggable)
-    val ScalaJSReactClipboard   = Def.setting("io.github.cquiroz" %%% "scalajs-react-clipboard"   % LibraryVersions.scalaJSReactClipboard)
-    val JQuery                  = Def.setting("org.querki"        %%% "jquery-facade"             % LibraryVersions.scalaJQuery)
-    val BooPickle               = Def.setting("io.suzaku"         %%% "boopickle"                 % LibraryVersions.booPickle)
-    val JavaTimeJS              = Def.setting("io.github.cquiroz" %%% "scala-java-time"           % LibraryVersions.javaTimeJS)
-    val JavaLogJS               = Def.setting("org.scala-js"      %%% "scalajs-java-logging"      % LibraryVersions.javaLogJS)
+    val ScalaJSDom              = Def.setting("org.scala-js"      %%% "scalajs-dom"                % LibraryVersions.scalaDom)
+    val ScalaJSReactVirtualized = Def.setting("io.github.cquiroz" %%% "scalajs-react-virtualized"  % LibraryVersions.scalaJSReactVirtualized)
+    val ScalaJSReactDraggable   = Def.setting("io.github.cquiroz" %%% "scalajs-react-draggable"    % LibraryVersions.scalaJSReactDraggable)
+    val ScalaJSReactSortable    = Def.setting("io.github.cquiroz" %%% "scalajs-react-sortable-hoc" % LibraryVersions.scalaJSReactSortable)
+    val ScalaJSReactClipboard   = Def.setting("io.github.cquiroz" %%% "scalajs-react-clipboard"    % LibraryVersions.scalaJSReactClipboard)
+    val JQuery                  = Def.setting("org.querki"        %%% "jquery-facade"              % LibraryVersions.scalaJQuery)
+    val BooPickle               = Def.setting("io.suzaku"         %%% "boopickle"                  % LibraryVersions.booPickle)
+    val JavaTimeJS              = Def.setting("io.github.cquiroz" %%% "scala-java-time"            % LibraryVersions.javaTimeJS)
+    val JavaLogJS               = Def.setting("org.scala-js"      %%% "scalajs-java-logging"       % LibraryVersions.javaLogJS)
 
     // OCS Libraries, these should become modules in the future
     val SpModelCore = "edu.gemini.ocs"    %% "edu-gemini-spmodel-core"        % LibraryVersions.ocsVersion

@@ -6,7 +6,8 @@ package seqexec.web.client.semanticui.elements.icon
 import cats.Eq
 import seqexec.web.client.semanticui.Size
 import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.{Callback, ScalaComponent}
+import japgolly.scalajs.react.Callback
+import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.extra.Reusability
 import cats.implicits._
 import web.client.style._
@@ -93,41 +94,43 @@ final case class Icon(p: Icon.Props, children: Seq[VdomNode]) {
 }
 
 object Icon {
-  implicit val iconProps: Reusability[Icon.Props] = Reusability.caseClassExcept[Icon.Props]('onClick, 'onMouseEnter, 'onMouseLeave)
+  implicit val iconProps: Reusability[Icon.Props] = Reusability
+    .caseClassExcept[Icon.Props]('onClick, 'onMouseEnter, 'onMouseLeave)
   implicit val reuse: Reusability[Icon] = Reusability.by(_.p)
-  val IconBrowser: Icon           = Icon("browser")
-  val IconDropdown: Icon          = Icon("dropdown")
-  val IconInbox: Icon             = Icon("inbox")
-  val IconSettings: Icon          = Icon("settings")
-  val IconBan: Icon               = Icon("ban")
-  val IconLock: Icon              = Icon("lock")
-  val IconRefresh: Icon           = Icon("refresh")
-  val IconReply: Icon             = Icon("reply")
-  val IconSignIn: Icon            = Icon("sign in")
-  val IconSignOut: Icon           = Icon("sign out")
-  val IconUpload: Icon            = Icon("upload")
-  val IconUser: Icon              = Icon("user")
-  val IconCircleNotched: Icon     = Icon("circle notched")
-  val IconCrosshairs: Icon        = Icon("crosshairs")
-  val IconCheckmark: Icon         = Icon("checkmark")
-  val IconMinusCircle: Icon       = Icon("minus circle")
-  val IconPlusSquareOutline: Icon = Icon("plus square outline")
-  val IconRemove: Icon            = Icon("remove")
-  val IconSelectedRadio: Icon     = Icon("dot circle outline")
-  val IconAngleDoubleDown: Icon   = Icon("angle double down")
-  val IconAngleDoubleUp: Icon     = Icon("angle double up")
-  val IconCaretDown: Icon         = Icon("caret down")
-  val IconCaretRight: Icon        = Icon("caret right")
-  val IconChevronLeft: Icon       = Icon("chevron left")
-  val IconChevronRight: Icon      = Icon("chevron right")
-  val IconTrash: Icon             = Icon("trash")
-  val IconPause: Icon             = Icon("pause")
-  val IconPlay: Icon              = Icon("play")
-  val IconStop: Icon              = Icon("stop")
-  val IconStopCircle: Icon        = Icon("stop circle")
-  val IconCopy: Icon              = Icon("copy outline")
-  val IconAttention: Icon         = Icon("attention")
-  val IconClose: Icon             = Icon("close")
+  val IconBrowser: Icon                 = Icon("browser")
+  val IconDropdown: Icon                = Icon("dropdown")
+  val IconInbox: Icon                   = Icon("inbox")
+  val IconSettings: Icon                = Icon("settings")
+  val IconBan: Icon                     = Icon("ban")
+  val IconLock: Icon                    = Icon("lock")
+  val IconRefresh: Icon                 = Icon("refresh")
+  val IconReply: Icon                   = Icon("reply")
+  val IconSignIn: Icon                  = Icon("sign in")
+  val IconSignOut: Icon                 = Icon("sign out")
+  val IconUpload: Icon                  = Icon("upload")
+  val IconUser: Icon                    = Icon("user")
+  val IconCircleNotched: Icon           = Icon("circle notched")
+  val IconCrosshairs: Icon              = Icon("crosshairs")
+  val IconCheckmark: Icon               = Icon("checkmark")
+  val IconMinusCircle: Icon             = Icon("minus circle")
+  val IconPlusSquareOutline: Icon       = Icon("plus square outline")
+  val IconRemove: Icon                  = Icon("remove")
+  val IconSelectedRadio: Icon           = Icon("dot circle outline")
+  val IconAngleDoubleDown: Icon         = Icon("angle double down")
+  val IconAngleDoubleUp: Icon           = Icon("angle double up")
+  val IconCaretDown: Icon               = Icon("caret down")
+  val IconCaretRight: Icon              = Icon("caret right")
+  val IconChevronLeft: Icon             = Icon("chevron left")
+  val IconChevronRight: Icon            = Icon("chevron right")
+  val IconTrash: Icon                   = Icon("trash")
+  val IconPause: Icon                   = Icon("pause")
+  val IconPlay: Icon                    = Icon("play")
+  val IconStop: Icon                    = Icon("stop")
+  val IconStopCircle: Icon              = Icon("stop circle")
+  val IconCopy: Icon                    = Icon("copy outline")
+  val IconAttention: Icon               = Icon("attention")
+  val IconClose: Icon                   = Icon("close")
+  val IconCloneOutline: Icon            = Icon("clone outline")
 
   sealed trait Flipped
 
@@ -136,7 +139,7 @@ object Icon {
     case object Horizontally extends Flipped
     case object Vertically extends Flipped
 
-    implicit val equal: Eq[Flipped] = Eq.fromUniversalEquals
+    implicit val equal: Eq[Flipped]          = Eq.fromUniversalEquals
     implicit val reuse: Reusability[Flipped] = Reusability.byRef[Flipped]
   }
 

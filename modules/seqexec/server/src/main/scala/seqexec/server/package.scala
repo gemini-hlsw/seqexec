@@ -15,7 +15,6 @@ import edu.gemini.spModel.`type`.SequenceableSpType
 import edu.gemini.spModel.guide.StandardGuideOptions
 import fs2.async.mutable.Queue
 import gem.Observation
-import java.util.UUID
 import monocle.macros.Lenses
 import monocle.Lens
 import monocle.macros.GenLens
@@ -23,6 +22,8 @@ import monocle.function.At.at
 import monocle.function.At.atMap
 import seqexec.engine.Engine
 import seqexec.model.ClientID
+import seqexec.model.CalibrationQueueId
+import seqexec.model.CalibrationQueueName
 import seqexec.model.ExecutionQueue
 import seqexec.model.QueueId
 import seqexec.model.Conditions
@@ -98,9 +99,6 @@ package object server {
 
   implicit val sgoEq: Eq[StandardGuideOptions.Value] =
     Eq[Int].contramap(_.ordinal())
-
-  val CalibrationQueueName: String = "Calibration Queue"
-  val CalibrationQueueId: UUID = UUID.fromString("7156fa7e-48a6-49d1-a267-dbf3bbaa7577")
 
   type TrySeq[A] = Either[SeqexecFailure, A]
   type ApplicativeErrorSeq[F[_]] = ApplicativeError[F, SeqexecFailure]
