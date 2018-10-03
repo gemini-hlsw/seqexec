@@ -4,20 +4,21 @@
 package gem
 package web
 
+import cats._
 import cats.data._
-import cats.effect.IO
+import cats.effect._
 import cats.implicits._
 import gem.{ Service => GemService }
 import io.circe.generic.auto._
 import java.time.Instant
 import org.http4s._
 import org.http4s.circe._
-import org.http4s.dsl.io._
+import org.http4s.dsl._
 import org.http4s.server._
 
 /**
  * A middleware that provides a login endpoint and implements JWT-based authorization, lifting
- * authenticated services that rely on a GemService[IO] (as our main app service does).
+ * authenticated services that rely on a GemService[F] (as our main app service does).
  */
 object Gatekeeper {
 
@@ -35,8 +36,8 @@ object Gatekeeper {
   object GemToken {
 
     /** Construct a token, issued now and valid for `expiresIn` seconds. */
-    def create(user: User[_], expiresIn: Long): IO[GemToken] =
-      IO {
+    def create[F[_]: Sync](user: User[_], expiresIn: Long): F[GemToken] =
+      Sync[F].delay {
         val now = Instant.now()
         new GemToken(
           iat = now.getEpochSecond,
@@ -50,29 +51,29 @@ object Gatekeeper {
      * algorithm and secret key also defined in the environment.
      */
     @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
-    def encode(env: Environment, user: User[_]): IO[String] =
+    def encode[F[_]: Sync](env: Environment[F], user: User[_]): F[String] =
       create(user, env.config.jwt.ttlSeconds).map(env.encodeJwt(_))
 
     /**
      * Like `encode`, but embeds the encoded JWT in a cooke with environment-specified
      * name.
      */
-    def cookie(env: Environment, user: User[_]): IO[Cookie] =
-      encode(env, user).map(Cookie(env.config.jwt.cookieName, _))
+    def cookie[F[_]: Sync](env: Environment[F], user: User[_]): F[ResponseCookie] =
+      encode(env, user).map(ResponseCookie(env.config.jwt.cookieName, _))
 
     /**
      * Decode an encoded GemToken if possible, otherwise return an error string to be included
      * in the Forbidden() body.
      */
     @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
-    def decode(env: Environment, encoded: String): IO[Either[String, GemToken]] =
+    def decode[F[_]](env: Environment[F], encoded: String): F[Either[String, GemToken]] =
       env.decodeJwt[GemToken](encoded)
 
     /** Like `decode`, but pulls the encoded value from the envronment-defined cookie. */
-    def decodeFromCookie(env: Environment, req: Request[IO]): IO[Either[String, GemToken]] =
+    def decodeFromCookie[F[_]: Applicative](env: Environment[F], req: Request[F]): F[Either[String, GemToken]] =
       req.findCookie(env.config.jwt.cookieName) match {
         case Some(c) => GemToken.decode(env, c.content)
-        case None    => IO.pure(Left(s"Cookie ${env.config.jwt.cookieName} not present."))
+        case None    => s"Cookie ${env.config.jwt.cookieName} not present.".asLeft.pure[F]
       }
 
   }
@@ -82,8 +83,9 @@ object Gatekeeper {
 
   /** A service that listens to /login and issues new cookies. */
   @SuppressWarnings(Array("org.wartremover.warts.PublicInference")) // false positive on decodeJson
-  def login(env: Environment): HttpService[IO] =
-    HttpService[IO] {
+  def login[F[_]: Sync](env: Environment[F]): HttpRoutes[F] = {
+    val dsl = new Http4sDsl[F] {}; import dsl._
+    HttpRoutes.of[F] {
       // curl -i -d '{ "uid": "bobdole", "pass": "banana" }' localhost:8080/login
       case req @ POST -> Root / "login" =>
         req.decodeJson[LoginRequest].flatMap { case LoginRequest(u, p) =>
@@ -93,6 +95,7 @@ object Gatekeeper {
           }
         }
     }
+  }
 
   /**
    * Given an AuthedService and an Environment that knows how to authenticate user cookies, yield a
@@ -100,10 +103,11 @@ object Gatekeeper {
    * is a bit more complex than normal services because we must work in OptionT to handle the case
    * where `delegate` doesn't respond.
    */
-  def authenticate(env: Environment, delegate: AuthedService[GemService[IO], IO]): HttpService[IO] =
-    Kleisli[OptionT[IO, ?], Request[IO], Response[IO]] {
+  def authenticate[F[_]: Sync](env: Environment[F], delegate: AuthedService[GemService[F], F]): HttpRoutes[F] =
+    Kleisli[OptionT[F, ?], Request[F], Response[F]] {
       // curl -i -b gem.jwt=... localhost:8080/something/else
       case req =>
+        val dsl = new Http4sDsl[F] {}; import dsl._
         OptionT.liftF(GemToken.decodeFromCookie(env, req)).flatMap {
           case Left(msg)  => OptionT.liftF(Forbidden(msg))
           case Right(jwt) =>
@@ -123,7 +127,7 @@ object Gatekeeper {
    * do this because we need a way to encode/decode tokens, as well as way to log users in.
    */
   @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
-  def apply(env: Environment): AuthMiddleware[IO, GemService[IO]] = delegate =>
+  def apply[F[_]: Sync](env: Environment[F]): AuthMiddleware[F, GemService[F]] = delegate =>
     login(env) <+> authenticate(env, delegate)
 
 }
