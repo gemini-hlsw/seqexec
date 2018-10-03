@@ -29,6 +29,7 @@ import seqexec.server.ConfigUtilOps._
 import seqexec.server.keywords._
 import seqexec.server.flamingos2.{Flamingos2ControllerEpics, Flamingos2ControllerSim, Flamingos2ControllerSimBad, Flamingos2Epics}
 import seqexec.server.gcal.{GcalControllerEpics, GcalControllerSim, GcalEpics}
+import seqexec.server.ghost.GHOSTController
 import seqexec.server.gmos.{GmosControllerSim, GmosEpics, GmosNorthControllerEpics, GmosSouthControllerEpics}
 import seqexec.server.gnirs.{GnirsControllerEpics, GnirsControllerSim, GnirsEpics}
 import seqexec.server.gpi.GPIController
@@ -70,7 +71,7 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
     settings.gmosControl.command.fold(GmosNorthControllerEpics, GmosControllerSim.north),
     settings.gnirsControl.command.fold(GnirsControllerEpics, GnirsControllerSim),
     GPIController(new GPIClient(settings.gpiGiapi), gpiGDS),
-    GHOSTController(new GHOSTClient(settings.ghostGiapi), ghostGDS)
+    GHOSTController(ghostGDS)
   )
 
   private val translatorSettings = SeqTranslate.Settings(
