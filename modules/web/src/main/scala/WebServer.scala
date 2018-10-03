@@ -15,7 +15,7 @@ import org.http4s.syntax.kleisli._
 object WebServer {
 
   // Single-element stream that creates and yields a web server, guaranteeing cleanup.
-  def server[F[_]: ConcurrentEffect](cfg: WebConfiguration.WebServer, root: HttpRoutes[F]): Resource[F, Server[F]] =
+  private def server[F[_]: ConcurrentEffect](cfg: WebConfiguration.WebServer, root: HttpRoutes[F]): Resource[F, Server[F]] =
     BlazeServerBuilder[F]
       .bindHttp(cfg.port, cfg.host)
       .withHttpApp(root.orNotFound).resource

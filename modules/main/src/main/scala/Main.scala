@@ -4,13 +4,11 @@
 package gem.main
 
 import cats.data.StateT
-import cats.effect.IO
+import cats.effect._
 import gem.dao.{ DatabaseConfiguration => DBC }
-import fs2.{ Stream, StreamApp }
 
 /** Main entry point for gem. Starts up web and telnet servers. */
-object Main extends StreamApp[IO] {
-  import StreamApp.ExitCode
+object Main extends IOApp {
 
   // When we start the app with docker we pass a few config values as environment variables, which
   // we substitute over the default properties. We will eventually plug in a real config layer here.
@@ -39,13 +37,14 @@ object Main extends StreamApp[IO] {
 
   }
 
-  override def stream(args: List[String], requestShutdown: IO[Unit]): Stream[IO, ExitCode] =
-    for {
-      cfg <- Stream.eval(config)
-      _   <- MainServer.stream(cfg)
-      _   <- Stream.eval(IO(Console.println("Press a key to exit."))) // scalastyle:off
-      _   <- Stream.eval(IO(scala.io.StdIn.readLine()))
-      _   <- Stream.eval(requestShutdown)
-    } yield ExitCode(0)
+  def run(args: List[String]): IO[ExitCode] =
+    config.flatMap { cfg =>
+      MainServer.resource[IO](cfg).use { _ =>
+        for {
+          _ <- IO(Console.println("Press a key to exit.")) // scalastyle:off
+          _ <- IO(scala.io.StdIn.readLine())
+        } yield ExitCode.Success
+      }
+    }
 
 }
