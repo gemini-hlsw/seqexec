@@ -156,7 +156,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
     this.zoomG(CalQueueControlFocus.queueControlG(id))
 
   def calQueueReader(id: QueueId): ModelR[SeqexecAppRootModel, Option[CalQueueFocus]] =
-    this.zoomG(CalQueueFocus.queueControlG(id))
+    this.zoomG(CalQueueFocus.calQueueG(id))
 
   private val wsHandler                = new WebSocketHandler(zoomTo(_.ws))
   private val serverMessagesHandler    = new ServerMessagesHandler(webSocketFocusRW)
