@@ -39,10 +39,12 @@ import edu.gemini.spModel.core.{Peer, SPProgramID}
 import edu.gemini.spModel.obscomp.InstConstants
 import edu.gemini.spModel.seqcomp.SeqConfigNames.OCS_KEY
 import fs2.{Scheduler, Stream}
+import giapi.client.ghost.GHOSTClient
 import org.http4s.client.Client
 import org.http4s.Uri
 import knobs.Config
 import mouse.all._
+import seqexec.server.ghost.GHOSTController
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
@@ -56,6 +58,8 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
 
   val gpiGDS: GDSClient = GDSClient(settings.gpiGdsControl.command.fold(httpClient, GDSClient.alwaysOkClient), settings.gpiGDS)
 
+  val ghostGDS: GDSClient = GDSClient(settings.ghostControl.command.fold(httpClient, GDSClient.alwaysOkClient), settings.ghostGDS)
+
   private val systems = SeqTranslate.Systems(
     odbProxy,
     settings.dhsControl.command.fold(DhsClientHttp(settings.dhsURI), DhsClientSim(settings.date)),
@@ -66,7 +70,8 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
     settings.gmosControl.command.fold(GmosSouthControllerEpics, GmosControllerSim.south),
     settings.gmosControl.command.fold(GmosNorthControllerEpics, GmosControllerSim.north),
     settings.gnirsControl.command.fold(GnirsControllerEpics, GnirsControllerSim),
-    GPIController(new GPIClient(settings.gpiGiapi), gpiGDS)
+    GPIController(new GPIClient(settings.gpiGiapi), gpiGDS),
+    GHOSTController(new GHOSTClient(settings.ghostGiapi), ghostGDS)
   )
 
   private val translatorSettings = SeqTranslate.Settings(
@@ -447,6 +452,7 @@ object SeqexecEngine extends SeqexecConfiguration {
                             gnirsControl: ControlStrategy,
                             gpiControl: ControlStrategy,
                             gpiGdsControl: ControlStrategy,
+                            ghostGdsControl: ControlStrategy,
                             gsaoiControl: ControlStrategy,
                             gwsControl: ControlStrategy,
                             nifsControl: ControlStrategy,
@@ -457,7 +463,9 @@ object SeqexecEngine extends SeqexecConfiguration {
                             failAt: Int,
                             odbQueuePollingInterval: Duration,
                             gpiGiapi: Giapi[IO],
-                            gpiGDS: Uri)
+                            ghostGiapi: Giapi[IO],
+                            gpiGDS: Uri,
+                            ghostGDS: Uri)
   def apply(httpClient: Client[IO], settings: Settings, c: SeqexecMetrics): SeqexecEngine = new SeqexecEngine(httpClient, settings, c)
 
   // Couldn't find this on Scalaz
