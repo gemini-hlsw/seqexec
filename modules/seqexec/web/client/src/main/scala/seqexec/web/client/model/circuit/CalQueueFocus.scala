@@ -6,7 +6,6 @@ package seqexec.web.client.circuit
 import cats.Eq
 import cats.implicits._
 import monocle.Getter
-import monocle.Optional
 import monocle.macros.Lenses
 import monocle.std
 import monocle.function.At.at
@@ -15,24 +14,24 @@ import seqexec.model.QueueId
 import seqexec.web.client.model._
 
 @Lenses
-final case class CalQueueControlFocus(canOperate: Boolean, ops: QueueOperations)
+final case class CalQueueFocus(canOperate: Boolean, ops: QueueOperations)
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
-object CalQueueControlFocus {
-  implicit val eq: Eq[CalQueueControlFocus] =
+object CalQueueFocus {
+  implicit val eq: Eq[CalQueueFocus] =
     Eq.by(x => (x.canOperate, x.ops))
 
-  def optQueue(id: QueueId): Optional[SeqexecAppRootModel, QueueOperations] =
-    SeqexecAppRootModel.uiModel ^|->
-    SeqexecUIModel.queues       ^|->
-    CalibrationQueues.ops       ^|->
-    at(id)                      ^<-?
-    std.option.some
+  def queueControlG(id: QueueId): Getter[SeqexecAppRootModel, Option[CalQueueFocus]] = {
+    val optQueue =
+      SeqexecAppRootModel.uiModel ^|->
+      SeqexecUIModel.queues       ^|->
+      CalibrationQueues.ops       ^|->
+      at(id)                      ^<-?
+      std.option.some
 
-  def queueControlG(id: QueueId): Getter[SeqexecAppRootModel, Option[CalQueueControlFocus]] = {
-    ClientStatus.canOperateG.zip(Getter(optQueue(id).getOption)) >>> {
+    ClientStatus.canOperateG.zip(Getter(optQueue.getOption)) >>> {
       case (status, Some(c)) =>
-        CalQueueControlFocus(status, c).some
+        CalQueueFocus(status, c).some
       case _ =>
         none
     }

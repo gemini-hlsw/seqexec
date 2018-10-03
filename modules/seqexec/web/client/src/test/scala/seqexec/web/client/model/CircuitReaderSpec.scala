@@ -7,10 +7,12 @@ import cats.kernel.laws.discipline._
 import cats.tests.CatsSuite
 import gem.Observation
 import monocle.law.discipline.LensTests
-import seqexec.web.client.model.ClientStatus
+import seqexec.model.QueueId
 import seqexec.web.client.model._
 import seqexec.web.client.circuit._
 import seqexec.web.client.circuit.SeqexecCircuit._
+import org.scalacheck.Gen
+import org.scalacheck.Arbitrary
 import org.scalatest.prop.PropertyChecks
 
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
@@ -18,6 +20,9 @@ final class CircuitReaderSpec
     extends CatsSuite
     with PropertyChecks
     with ArbitrariesWebClient {
+  // This shouldn't be needed but otherwise we get random errors on .js
+  implicit val queueIdArb: Arbitrary[QueueId] = Arbitrary(Gen.uuid)
+
   checkAll("Eq[TabContentFocus]", EqTests[TabContentFocus].eqv)
   checkAll("Eq[SequenceTabContentFocus]", EqTests[SequenceTabContentFocus].eqv)
   checkAll("Eq[QueueTabContentFocus]", EqTests[QueueTabContentFocus].eqv)
@@ -42,6 +47,8 @@ final class CircuitReaderSpec
     (tabsReader === tabsReader.value) should be(true)
     (seqexecTabs === seqexecTabs.value) should be(true)
     (configTableState === configTableState.value) should be(true)
+    (queueOperationsRW === queueOperationsRW.value) should be(true)
+    (sequencesOnDisplayRW === sequencesOnDisplayRW.value) should be(true)
   }
   test("maintain reference equality for id based readers") {
     forAll { (i: Observation.Id) =>
@@ -51,6 +58,12 @@ final class CircuitReaderSpec
       (stepsTableReaderF(i) === stepsTableReaderF(i).value) should be(true)
       (stepsTableReader(i) === stepsTableReader(i).value) should be(true)
       (sequenceControlReader(i) === sequenceControlReader(i).value) should be(true)
+    }
+  }
+  test("maintain reference equality for queue id based readers") {
+    forAll { (i: QueueId) =>
+      (calQueueControlReader(i) === calQueueControlReader(i).value) should be(true)
+      (calQueueReader(i) === calQueueReader(i).value) should be(true)
     }
   }
 }
