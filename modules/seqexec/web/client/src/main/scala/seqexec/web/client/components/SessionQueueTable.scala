@@ -21,7 +21,10 @@ import react.virtualized._
 import scala.math.max
 import scala.scalajs.js
 import seqexec.model.enum.Instrument
-import seqexec.model.{ UserDetails, DaytimeCalibrationTargetName, Observer, SequenceState }
+import seqexec.model.UserDetails
+import seqexec.model.DaytimeCalibrationTargetName
+import seqexec.model.Observer
+import seqexec.model.SequenceState
 import seqexec.web.client.circuit._
 import seqexec.web.client.actions._
 import seqexec.web.client.model.Pages._
@@ -36,7 +39,7 @@ import web.client.style._
 import web.client.utils._
 import web.client.table._
 
-object QueueTableBody {
+object SessionQueueTableBody {
   type Backend = RenderScope[Props, State, Unit]
 
   private val PhoneCut                 = 400.0
@@ -52,7 +55,7 @@ object QueueTableBody {
   private val TargetMinWidth           = 60.0167 + SeqexecStyles.TableBorderWidth
   private val ObsNameColumnWidth       = 140.0
   private val ObsNameMinWidth          = 60.0167 + SeqexecStyles.TableBorderWidth
-  private val QueueColumnStyle: String = SeqexecStyles.queueTextColumn.htmlClass
+  private val SessionQueueColumnStyle: String = SeqexecStyles.queueTextColumn.htmlClass
 
   sealed trait TableColumn extends Product with Serializable
   case object IconColumn       extends TableColumn
@@ -68,43 +71,43 @@ object QueueTableBody {
 
   val IconColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     IconColumn,
-    name = "status",
-    label = "",
+    name    = "status",
+    label   = "",
     visible = true,
     FixedColumnWidth.unsafeFromDouble(IconColumnWidth))
 
   val ObsIdColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     ObsIdColumn,
-    name = "obsid",
-    label = "Obs. ID",
+    name    = "obsid",
+    label   = "Obs. ID",
     visible = true,
     PercentageColumnWidth.unsafeFromDouble(1.0, ObsIdMinWidth))
 
   val StateColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     StateColumn,
-    name = "state",
-    label = "State",
+    name    = "state",
+    label   = "State",
     visible = true,
     PercentageColumnWidth.unsafeFromDouble(1.0, StateMinWidth))
 
   val InstrumentColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     InstrumentColumn,
-    name = "instrument",
-    label = "Instrument",
+    name    = "instrument",
+    label   = "Instrument",
     visible = true,
     PercentageColumnWidth.unsafeFromDouble(1.0, InstrumentMinWidth))
 
   val TargetNameColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     TargetNameColumn,
-    name = "target",
-    label = "Target",
+    name    = "target",
+    label   = "Target",
     visible = true,
     PercentageColumnWidth.unsafeFromDouble(1.0, TargetMinWidth))
 
   val ObsNameColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     ObsNameColumn,
-    name = "obsName",
-    label = "Obs. Name",
+    name    = "obsName",
+    label   = "Obs. Name",
     visible = true,
     PercentageColumnWidth.unsafeFromDouble(1.0, ObsNameMinWidth))
 
@@ -125,27 +128,27 @@ object QueueTableBody {
     ObsNameColumn    -> ObsNameColumnWidth
   )
 
-  final case class Props(ctl: RouterCtl[SeqexecPages],
+  final case class Props(ctl:       RouterCtl[SeqexecPages],
                          sequences: ModelProxy[StatusAndLoadedSequencesFocus]) {
-    val sequencesList: List[SequenceInQueue] = sequences().sequences
+    val sequencesList: List[SequenceInSessionQueue] = sequences().sequences
 
     val startState: TableState[TableColumn] = sequences().tableState
 
-    def rowGetter(i: Int): QueueRow =
+    def rowGetter(i: Int): SessionQueueRow =
       sequencesList
         .lift(i)
         .map { s =>
-          QueueRow(s.id,
-                   s.status,
-                   s.instrument,
-                   s.targetName,
-                   s.name,
-                   s.active,
-                   s.loaded,
-                   s.nextStepToRun,
-                   s.runningStep)
+          SessionQueueRow(s.id,
+                          s.status,
+                          s.instrument,
+                          s.targetName,
+                          s.name,
+                          s.active,
+                          s.loaded,
+                          s.nextStepToRun,
+                          s.runningStep)
         }
-        .getOrElse(QueueRow.Empty)
+        .getOrElse(SessionQueueRow.Empty)
 
     val rowCount: Int =
       sequencesList.size
@@ -157,7 +160,7 @@ object QueueTableBody {
 
   final case class State(tableState: TableState[TableColumn],
                          rowLoading: Option[Int],
-                         loggedIn: Boolean) {
+                         loggedIn:   Boolean) {
     // Update the columns' visibility based on logged in state
     private def logIn: State =
       State.columns
@@ -195,12 +198,12 @@ object QueueTableBody {
 
     // calculate the relative widths of each column based on content only
     // this should be renormalized against the actual tabel width
-    def withWidths(sequences: List[SequenceInQueue]): State =
+    def withWidths(sequences: List[SequenceInSessionQueue]): State =
       if (tableState.userModified === IsModified) {
         this
       } else {
         val optimalSizes = sequences.foldLeft(columnsDefaultWidth) {
-          case (currWidths, SequenceInQueue(id, st, i, _, _, n, t, r, _)) =>
+          case (currWidths, SequenceInSessionQueue(id, st, i, _, _, n, t, r, _)) =>
             val idWidth = max(currWidths.getOrElse(ObsIdColumn, ObsIdMinWidth),
                               tableTextWidth(id.format))
             val statusWidth =
@@ -213,14 +216,15 @@ object QueueTableBody {
               max(currWidths.getOrElse(TargetNameColumn, TargetMinWidth),
                   tableTextWidth(t.getOrElse("")))
             val obsNameWidth =
-              max(currWidths.getOrElse(ObsNameColumn, ObsNameMinWidth), tableTextWidth(n))
+              max(currWidths.getOrElse(ObsNameColumn, ObsNameMinWidth),
+                  tableTextWidth(n))
 
             currWidths +
-            (ObsIdColumn -> idWidth) +
-            (StateColumn -> statusWidth) +
-            (InstrumentColumn -> instrumentWidth) +
-            (ObsNameColumn -> obsNameWidth) +
-            (TargetNameColumn -> targetNameWidth)
+              (ObsIdColumn -> idWidth) +
+              (StateColumn -> statusWidth) +
+              (InstrumentColumn -> instrumentWidth) +
+              (ObsNameColumn -> obsNameWidth) +
+              (TargetNameColumn -> targetNameWidth)
         }
         // Width as it would be adding all the visible columns
         val width = optimalSizes
@@ -233,7 +237,8 @@ object QueueTableBody {
         // Normalize based on visibility
         State.columns.modify(_.map {
           case c @ ColumnMeta(t, _, _, true, PercentageColumnWidth(_, m)) =>
-            PercentageColumnWidth.fromDouble(optimalSizes.getOrElse(t, m).toDouble / width, m)
+            PercentageColumnWidth
+              .fromDouble(optimalSizes.getOrElse(t, m).toDouble / width, m)
               .fold(c)(w => c.copy(width = w))
           case c                                                          =>
             c
@@ -277,7 +282,8 @@ object QueueTableBody {
       State.tableState.modify(_.applyOffset(column, delta, s))(this)
   }
 
-  val InitialTableState: State = State(TableState(NotModified, 0, all), None, false)
+  val InitialTableState: State =
+    State(TableState(NotModified, 0, all), None, false)
 
   object State {
     // Lenses
@@ -298,7 +304,7 @@ object QueueTableBody {
 
   // ScalaJS defined trait
   // scalastyle:off
-  trait QueueRow extends js.Object {
+  trait SessionQueueRow extends js.Object {
     var obsId: Observation.Id
     var status: SequenceState
     var instrument: Instrument
@@ -311,40 +317,41 @@ object QueueTableBody {
   }
 
   // scalastyle:on
-  object QueueRow {
+  object SessionQueueRow {
 
     @SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf"))
-    def apply(obsId: Observation.Id,
-              status: SequenceState,
-              instrument: Instrument,
-              targetName: Option[String],
-              name: String,
-              active: Boolean,
-              loaded: Boolean,
+    def apply(obsId:         Observation.Id,
+              status:        SequenceState,
+              instrument:    Instrument,
+              targetName:    Option[String],
+              name:          String,
+              active:        Boolean,
+              loaded:        Boolean,
               nextStepToRun: Option[Int],
-              runningStep: Option[RunningStep]): QueueRow = {
-      val p = (new js.Object).asInstanceOf[QueueRow]
-      p.obsId = obsId
-      p.status = status
-      p.instrument = instrument
-      p.targetName = targetName
-      p.name = name
-      p.active = active
+              runningStep:   Option[RunningStep]): SessionQueueRow = {
+      val p = (new js.Object).asInstanceOf[SessionQueueRow]
+      p.obsId         = obsId
+      p.status        = status
+      p.instrument    = instrument
+      p.targetName    = targetName
+      p.name          = name
+      p.active        = active
       p.nextStepToRun = nextStepToRun
-      p.runningStep = runningStep
-      p.loaded = loaded
+      p.runningStep   = runningStep
+      p.loaded        = loaded
       p
     }
 
-    def unapply(l: QueueRow): Option[(Observation.Id,
-                                      SequenceState,
-                                      Instrument,
-                                      Option[String],
-                                      String,
-                                      Boolean,
-                                      Boolean,
-                                      Option[Int],
-                                      Option[RunningStep])] =
+    def unapply(l: SessionQueueRow):
+      Option[(Observation.Id,
+         SequenceState,
+         Instrument,
+         Option[String],
+         String,
+         Boolean,
+         Boolean,
+         Option[Int],
+         Option[RunningStep])] =
       Some(
         (l.obsId,
          l.status,
@@ -356,7 +363,7 @@ object QueueTableBody {
          l.nextStepToRun,
          l.runningStep))
 
-    def Empty: QueueRow =
+    def Empty: SessionQueueRow =
       apply(Observation.Id.unsafeFromString("Zero-1"),
             SequenceState.Idle,
             Instrument.F2,
@@ -371,20 +378,24 @@ object QueueTableBody {
   private def linkTo(p: Props, page: SeqexecPages)(mod: TagMod*) =
     <.a(
       ^.href := p.ctl.urlFor(page).value,
-      ^.onClick ==> {_.preventDefaultCB},
+      ^.onClick ==> { _.preventDefaultCB },
       mod.toTagMod
     )
 
-  def pageOf(row: QueueRow): SeqexecPages =
+  def pageOf(row: SessionQueueRow): SeqexecPages =
     if (row.loaded) {
-      SequencePage(row.instrument, row.obsId, StepIdDisplayed(row.nextStepToRun.getOrElse(0)))
+      SequencePage(row.instrument,
+                   row.obsId,
+                   StepIdDisplayed(row.nextStepToRun.getOrElse(0)))
     } else {
-      PreviewPage(row.instrument, row.obsId, StepIdDisplayed(row.nextStepToRun.getOrElse(0)))
+      PreviewPage(row.instrument,
+                  row.obsId,
+                  StepIdDisplayed(row.nextStepToRun.getOrElse(0)))
     }
 
   private def linkedTextRenderer(p: Props)(
-      f: QueueRow => TagMod): CellRenderer[js.Object, js.Object, QueueRow] =
-    (_, _, _, row: QueueRow, _) => {
+      f: SessionQueueRow => TagMod): CellRenderer[js.Object, js.Object, SessionQueueRow] =
+    (_, _, _, row: SessionQueueRow, _) => {
       linkTo(p, pageOf(row))(SeqexecStyles.queueTextColumn, f(row))
     }
 
@@ -396,7 +407,7 @@ object QueueTableBody {
     <.p(SeqexecStyles.queueText, r.name)
   }
 
-  private def statusText(status: SequenceState,
+  private def statusText(status:      SequenceState,
                          runningStep: Option[RunningStep]): String =
     s"${status.show} ${runningStep.map(u => s" ${u.show}").getOrElse("")}"
 
@@ -417,27 +428,32 @@ object QueueTableBody {
     <.p(SeqexecStyles.queueText, targetName)
   }
 
-  private def statusIconRenderer(b: Backend): CellRenderer[js.Object, js.Object, QueueRow] =
-    (_, _, _, row: QueueRow, index) => {
+  private def statusIconRenderer(b: Backend): CellRenderer[js.Object, js.Object, SessionQueueRow] =
+    (_, _, _, row: SessionQueueRow, index) => {
       val isFocused = row.active
       val icon: TagMod =
         row.status match {
-          case SequenceState.Completed     =>
-            IconCheckmark.copyIcon(extraStyles = List(SeqexecStyles.selectedIcon))
+          case SequenceState.Completed =>
+            IconCheckmark.copyIcon(
+              extraStyles = List(SeqexecStyles.selectedIcon))
           case SequenceState.Running(_, _) =>
-            IconCircleNotched.copyIcon(fitted = true,
+            IconCircleNotched.copyIcon(fitted  = true,
                                        loading = true,
-                                       extraStyles = List(SeqexecStyles.runningIcon))
-          case SequenceState.Failed(_)     =>
+                                       extraStyles =
+                                         List(SeqexecStyles.runningIcon))
+          case SequenceState.Failed(_) =>
             IconAttention.copyIcon(color = "red".some,
-                                   extraStyles = List(SeqexecStyles.selectedIcon))
+                                   extraStyles =
+                                     List(SeqexecStyles.selectedIcon))
           case _ if b.state.rowLoading.exists(_ === index) =>
             // Spinning icon while loading
-            IconRefresh.copyIcon(fitted = true, loading = true,
-                                       extraStyles = List(SeqexecStyles.runningIcon))
-          case _ if isFocused              =>
-            IconSelectedRadio.copyIcon(extraStyles = List(SeqexecStyles.selectedIcon))
-          case _                           =>
+            IconRefresh.copyIcon(fitted      = true,
+                                 loading     = true,
+                                 extraStyles = List(SeqexecStyles.runningIcon))
+          case _ if isFocused =>
+            IconSelectedRadio.copyIcon(
+              extraStyles = List(SeqexecStyles.selectedIcon))
+          case _ =>
             <.div()
         }
 
@@ -458,13 +474,13 @@ object QueueTableBody {
     ((i, p.rowGetter(i)) match {
       case (-1, _) =>
         SeqexecStyles.headerRowStyle
-      case (_, QueueRow(_, s, _, _, _, _, _, _, _)) if s == SequenceState.Completed =>
+      case (_, SessionQueueRow(_, s, _, _, _, _, _, _, _)) if s == SequenceState.Completed =>
         SeqexecStyles.stepRow |+| SeqexecStyles.rowPositive
-      case (_, QueueRow(_, s, _, _, _, _, _, _, _)) if s.isRunning                  =>
+      case (_, SessionQueueRow(_, s, _, _, _, _, _, _, _)) if s.isRunning                  =>
         SeqexecStyles.stepRow |+| SeqexecStyles.rowWarning
-      case (_, QueueRow(_, s, _, _, _, _, _, _, _)) if s.isError                    =>
+      case (_, SessionQueueRow(_, s, _, _, _, _, _, _, _)) if s.isError                    =>
         SeqexecStyles.stepRow |+| SeqexecStyles.rowNegative
-      case (_, QueueRow(_, s, _, _, _, _, active, _, _))
+      case (_, SessionQueueRow(_, s, _, _, _, _, active, _, _))
           if active && !s.isInProcess                                               =>
         SeqexecStyles.stepRow |+| SeqexecStyles.rowActive
       case _                                                                        =>
@@ -481,7 +497,7 @@ object QueueTableBody {
         val percentDelta = dx.toDouble / size.width
         val ns           = b.state.applyOffset(c, percentDelta, size)
         b.setState(ns) *> SeqexecCircuit.dispatchCB(
-          UpdateQueueTableState(ns.tableState))
+          UpdateSessionQueueTableState(ns.tableState))
       }
 
     b.state.visibleColumnsSizes(size).collect {
@@ -489,71 +505,71 @@ object QueueTableBody {
         Column(
           Column.propsNoFlex(
             width,
-            dataKey = "status",
-            label = "",
-            cellRenderer = statusIconRenderer(b),
+            dataKey        = "status",
+            label          = "",
+            cellRenderer   = statusIconRenderer(b),
             headerRenderer = statusHeaderRenderer,
-            className = SeqexecStyles.queueIconColumn.htmlClass
+            className      = SeqexecStyles.queueIconColumn.htmlClass
           ))
       case (ObsIdColumn, width, _) =>
         Column(
           Column.propsNoFlex(
             width,
-            dataKey = "obsid",
-            label = "Obs. ID",
-            cellRenderer = obsIdRenderer(props),
+            dataKey        = "obsid",
+            label          = "Obs. ID",
+            cellRenderer   = obsIdRenderer(props),
             headerRenderer = resizableHeaderRenderer(resizeRow(ObsIdColumn)),
-            className = QueueColumnStyle
+            className      = SessionQueueColumnStyle
           ))
       case (StateColumn, width, _) =>
         Column(
           Column.propsNoFlex(
             width,
-            dataKey = "state",
-            label = "State",
-            cellRenderer = stateRenderer(props),
+            dataKey        = "state",
+            label          = "State",
+            cellRenderer   = stateRenderer(props),
             headerRenderer = resizableHeaderRenderer(resizeRow(StateColumn)),
-            className = QueueColumnStyle
+            className      = SessionQueueColumnStyle
           ))
       case (InstrumentColumn, width, false) =>
         Column(
           Column.propsNoFlex(
             width,
-            dataKey = "instrument",
-            label = "Instrument",
+            dataKey      = "instrument",
+            label        = "Instrument",
             cellRenderer = instrumentRenderer(props),
             headerRenderer =
               resizableHeaderRenderer(resizeRow(InstrumentColumn)),
-            className = QueueColumnStyle
+            className = SessionQueueColumnStyle
           ))
       case (InstrumentColumn, width, true) =>
         Column(
           Column.propsNoFlex(
             width,
-            dataKey = "instrument",
-            label = "Instrument",
+            dataKey      = "instrument",
+            label        = "Instrument",
             cellRenderer = instrumentRenderer(props),
-            className = QueueColumnStyle
+            className    = SessionQueueColumnStyle
           ))
       case (ObsNameColumn, width, _) =>
         Column(
           Column.propsNoFlex(
             width,
-            dataKey = "obsName",
-            label = "Obs. Name",
+            dataKey      = "obsName",
+            label        = "Obs. Name",
             cellRenderer = obsNameRenderer(props),
-            className = QueueColumnStyle
+            className    = SessionQueueColumnStyle
           ))
       case (TargetNameColumn, width, _) =>
         Column(
           Column.propsNoFlex(
             width,
-            dataKey = "target",
-            label = "Target",
+            dataKey      = "target",
+            label        = "Target",
             cellRenderer = targetRenderer(props),
             headerRenderer =
               resizableHeaderRenderer(resizeRow(TargetNameColumn)),
-            className = QueueColumnStyle
+            className = SessionQueueColumnStyle
           ))
     }
   }
@@ -562,7 +578,7 @@ object QueueTableBody {
   def updateScrollPosition(b: Backend, pos: JsNumber): Callback = {
     val s = State.scrollPosition.set(pos)(b.state)
     b.setState(s) *> SeqexecCircuit.dispatchCB(
-      UpdateQueueTableState(s.tableState))
+      UpdateSessionQueueTableState(s.tableState))
   }
 
   // Single click puts in preview or go to tab
@@ -578,13 +594,17 @@ object QueueTableBody {
     val r = b.props.rowGetter(i)
     if (r.loaded) {
       // If already loaded switch tabs
-      b.props.ctl.dispatchAndSetUrlCB(SelectIdToDisplay(r.instrument, r.obsId, StepIdDisplayed(r.nextStepToRun.getOrElse(0))))
+      b.props.ctl.dispatchAndSetUrlCB(
+        SelectIdToDisplay(r.instrument,
+                          r.obsId,
+                          StepIdDisplayed(r.nextStepToRun.getOrElse(0))))
     } else { // Try to load it
       (for {
         u <- b.props.user
-        if (b.props.canOperate && i >= 0 && !r.loaded)
+        if b.props.canOperate && i >= 0 && !r.loaded
       } yield {
-        val load = SeqexecCircuit.dispatchCB(LoadSequence(Observer(u.displayName), r.instrument, r.obsId))
+        val load = SeqexecCircuit.dispatchCB(
+          LoadSequence(Observer(u.displayName), r.instrument, r.obsId))
         val spin = b.modState(_.copy(rowLoading = i.some))
         spin *> load
       }).getOrEmpty
@@ -600,21 +620,21 @@ object QueueTableBody {
             ^.cls := "ui center aligned segment noRows",
             SeqexecStyles.noRowsSegment,
             ^.height := 216.px,
-            "Queue empty"
+            "Session queue empty"
         ),
         overscanRowCount = SeqexecStyles.overscanRowCount,
-        height = 216,
-        rowCount = b.props.rowCount,
-        rowHeight = SeqexecStyles.rowHeight,
-        rowClassName = rowClassName(b.props) _,
-        width = size.width.toInt,
-        rowGetter = b.props.rowGetter _,
-        headerClassName = SeqexecStyles.tableHeader.htmlClass,
-        scrollTop = b.state.tableState.scrollPosition,
-        onScroll = (_, _, pos) => updateScrollPosition(b, pos),
+        height           = 216,
+        rowCount         = b.props.rowCount,
+        rowHeight        = SeqexecStyles.rowHeight,
+        rowClassName     = rowClassName(b.props) _,
+        width            = size.width.toInt,
+        rowGetter        = b.props.rowGetter _,
+        headerClassName  = SeqexecStyles.tableHeader.htmlClass,
+        scrollTop        = b.state.tableState.scrollPosition,
+        onScroll         = (_, _, pos) => updateScrollPosition(b, pos),
         onRowDoubleClick = doubleClick(b),
-        onRowClick = singleClick(b),
-        headerHeight = SeqexecStyles.headerHeight
+        onRowClick       = singleClick(b),
+        headerHeight     = SeqexecStyles.headerHeight
       ),
       columns(b, size): _*
     ).vdomElement
@@ -626,18 +646,21 @@ object QueueTableBody {
       .withWidths(p.sequencesList)
 
   private val component = ScalaComponent
-    .builder[Props]("QueueTableBody")
+    .builder[Props]("SessionQueueTableBody")
     .initialStateFromProps(initialState)
     .render($ => AutoSizer(AutoSizer.props(table($), disableHeight = true)))
     .componentWillReceiveProps { $ =>
       $.modState { s =>
-        s.loginState($.nextProps.canOperate).withWidths($.nextProps.sequencesList).resetLoading($.nextProps)
+        s.loginState($.nextProps.canOperate)
+          .withWidths($.nextProps.sequencesList)
+          .resetLoading($.nextProps)
       }
     }
     .build
 
   def apply(ctl: RouterCtl[SeqexecPages],
-            p: ModelProxy[StatusAndLoadedSequencesFocus]): Unmounted[Props, State, Unit] =
+            p:   ModelProxy[StatusAndLoadedSequencesFocus])
+    : Unmounted[Props, State, Unit] =
     component(Props(ctl, p))
 
 }

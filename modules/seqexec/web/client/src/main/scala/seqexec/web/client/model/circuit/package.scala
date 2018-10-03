@@ -21,7 +21,7 @@ import seqexec.web.client.model._
 import seqexec.web.client.ModelOps._
 import seqexec.web.client.components.sequence.steps.StepConfigTable
 import seqexec.web.client.components.sequence.steps.StepsTable
-import seqexec.web.client.components.QueueTableBody
+import seqexec.web.client.components.SessionQueueTableBody
 import web.client.table._
 
 package object circuit {
@@ -120,27 +120,27 @@ package circuit {
                    firstLoad          = v.firstLoad))
   }
 
-  final case class SequenceInQueue(id:            Observation.Id,
-                                   status:        SequenceState,
-                                   instrument:    Instrument,
-                                   active:        Boolean,
-                                   loaded:        Boolean,
-                                   name:          String,
-                                   targetName:    Option[TargetName],
-                                   runningStep:   Option[RunningStep],
-                                   nextStepToRun: Option[Int])
+  final case class SequenceInSessionQueue(id:            Observation.Id,
+                                          status:        SequenceState,
+                                          instrument:    Instrument,
+                                          active:        Boolean,
+                                          loaded:        Boolean,
+                                          name:          String,
+                                          targetName:    Option[TargetName],
+                                          runningStep:   Option[RunningStep],
+                                          nextStepToRun: Option[Int])
       extends UseValueEq
 
-  object SequenceInQueue {
-    implicit val order: Order[SequenceInQueue] = Order.by(_.id)
-    implicit val ordering: scala.math.Ordering[SequenceInQueue] =
+  object SequenceInSessionQueue {
+    implicit val order: Order[SequenceInSessionQueue] = Order.by(_.id)
+    implicit val ordering: scala.math.Ordering[SequenceInSessionQueue] =
       order.toOrdering
   }
 
   final case class StatusAndLoadedSequencesFocus(
     status:     ClientStatus,
-    sequences:  List[SequenceInQueue],
-    tableState: TableState[QueueTableBody.TableColumn])
+    sequences:  List[SequenceInSessionQueue],
+    tableState: TableState[SessionQueueTableBody.TableColumn])
       extends UseValueEq
 
   final case class SequenceObserverFocus(instrument: Instrument,
@@ -376,7 +376,7 @@ package circuit {
 
   @Lenses
   final case class AppTableStates(
-    queueTable:      TableState[QueueTableBody.TableColumn],
+    queueTable:      TableState[SessionQueueTableBody.TableColumn],
     stepConfigTable: TableState[StepConfigTable.TableColumn],
     stepsTables:     Map[Observation.Id, TableState[StepsTable.TableColumn]])
       extends UseValueEq

@@ -14,14 +14,14 @@ import seqexec.model.QueueId
 import seqexec.web.client.model._
 
 @Lenses
-final case class QueueControlFocus(canOperate: Boolean, ops: QueueOperations)
+final case class CalQueueControlFocus(canOperate: Boolean, ops: QueueOperations)
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
-object QueueControlFocus {
-  implicit val eq: Eq[QueueControlFocus] =
+object CalQueueControlFocus {
+  implicit val eq: Eq[CalQueueControlFocus] =
     Eq.by(x => (x.canOperate, x.ops))
 
-  def queueControlG(id: QueueId): Getter[SeqexecAppRootModel, Option[QueueControlFocus]] = {
+  def queueControlG(id: QueueId): Getter[SeqexecAppRootModel, Option[CalQueueControlFocus]] = {
     val optQueue =
       SeqexecAppRootModel.uiModel ^|->
       SeqexecUIModel.queues       ^|->
@@ -31,7 +31,7 @@ object QueueControlFocus {
 
     ClientStatus.canOperateG.zip(Getter(optQueue.getOption)) >>> {
       case (status, Some(c)) =>
-        QueueControlFocus(status, c).some
+        CalQueueControlFocus(status, c).some
       case _ =>
         none
     }

@@ -10,7 +10,7 @@ import seqexec.model.Observer
 import seqexec.model.UserDetails
 import seqexec.web.common.FixedLengthBuffer
 import seqexec.web.client.components.sequence.steps.StepConfigTable
-import seqexec.web.client.components.QueueTableBody
+import seqexec.web.client.components.SessionQueueTableBody
 import web.client.table._
 
 /**
@@ -24,7 +24,7 @@ final case class SeqexecUIModel(
   globalLog:          GlobalLog,
   sequencesOnDisplay: SequencesOnDisplay,
   configTableState:   TableState[StepConfigTable.TableColumn],
-  queueTableState:    TableState[QueueTableBody.TableColumn],
+  queueTableState:    TableState[SessionQueueTableBody.TableColumn],
   defaultObserver:    Observer,
   notification:       UserNotificationState,
   queues:             CalibrationQueues,
@@ -39,7 +39,7 @@ object SeqexecUIModel {
     GlobalLog(FixedLengthBuffer.unsafeFromInt(500), SectionClosed),
     SequencesOnDisplay.Empty,
     StepConfigTable.InitialTableState,
-    QueueTableBody.InitialTableState.tableState,
+    SessionQueueTableBody.InitialTableState.tableState,
     Observer(""),
     UserNotificationState.Empty,
     CalibrationQueues.Default,

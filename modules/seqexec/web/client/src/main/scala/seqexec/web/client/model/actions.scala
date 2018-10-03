@@ -13,7 +13,7 @@ import seqexec.model.enum._
 import seqexec.model.events._
 import seqexec.web.client.model.Pages._
 import seqexec.web.client.components.sequence.steps.StepConfigTable
-import seqexec.web.client.components.QueueTableBody
+import seqexec.web.client.components.SessionQueueTableBody
 import seqexec.web.client.components.sequence.steps.StepsTable
 import org.scalajs.dom.WebSocket
 import web.client.table._
@@ -113,7 +113,7 @@ object actions {
 
   final case class UpdateStepsConfigTableState(s: TableState[StepConfigTable.TableColumn])
       extends Action
-  final case class UpdateQueueTableState(s: TableState[QueueTableBody.TableColumn])
+  final case class UpdateSessionQueueTableState(s: TableState[SessionQueueTableBody.TableColumn])
       extends Action
   final case class UpdateStepTableState(id: Observation.Id,
                                         s:  TableState[StepsTable.TableColumn])

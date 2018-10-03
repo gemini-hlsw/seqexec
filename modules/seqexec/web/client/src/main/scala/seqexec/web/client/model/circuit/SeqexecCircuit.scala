@@ -32,7 +32,7 @@ final class LoggingProcessor[M <: AnyRef] extends ActionProcessor[M] {
       case AppendToLog(_)                     =>
       case ServerMessage(_: ServerLogMessage) =>
       case UpdateStepsConfigTableState(_)     =>
-      case UpdateQueueTableState(_)           =>
+      case UpdateSessionQueueTableState(_)    =>
       case UpdateStepTableState(_, _)         =>
       case a: Action                          => logger.info(s"Action: ${a.show}")
       case _                                  =>
@@ -83,7 +83,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
           val active = sod.idDisplayed(s.id)
           val loaded = sod.loadedIds.contains(s.id)
           val targetName = firstScienceStepTargetNameT.headOption(s)
-          SequenceInQueue(s.id, s.status, s.metadata.instrument, active, loaded, s.metadata.name, targetName, s.runningStep, s.nextStepToRun)
+          SequenceInSessionQueue(s.id, s.status, s.metadata.instrument, active, loaded, s.metadata.name, targetName, s.runningStep, s.nextStepToRun)
         }
         StatusAndLoadedSequencesFocus(s, sequencesInQueue.sorted, queueTable)
     }
@@ -98,7 +98,6 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
       }
       HeaderSideBarFocus(clientStatus, c.sequences.conditions, c.sequences.operator, obs)
     }
-
 
   val logDisplayedReader: ModelR[SeqexecAppRootModel, SectionVisibilityState] =
     this.zoomL(SeqexecAppRootModel.logDisplayL)
@@ -153,8 +152,8 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   def sequenceControlReader(id: Observation.Id): ModelR[SeqexecAppRootModel, Option[SequenceControlFocus]] =
     this.zoomG(SequenceControlFocus.seqControlG(id))
 
-  def queueControlReader(id: QueueId): ModelR[SeqexecAppRootModel, Option[QueueControlFocus]] =
-    this.zoomG(QueueControlFocus.queueControlG(id))
+  def calQueueControlReader(id: QueueId): ModelR[SeqexecAppRootModel, Option[CalQueueControlFocus]] =
+    this.zoomG(CalQueueControlFocus.queueControlG(id))
 
   private val wsHandler                = new WebSocketHandler(zoomTo(_.ws))
   private val serverMessagesHandler    = new ServerMessagesHandler(webSocketFocusRW)

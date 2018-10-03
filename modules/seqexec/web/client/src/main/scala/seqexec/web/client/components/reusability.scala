@@ -53,5 +53,5 @@ package object reusability {
   implicit val usrNotReuse: Reusability[UserNotificationState] = Reusability.byEq
   implicit val dcAddReuse: Reusability[AddDayCalOperation]     = Reusability.byRef
   implicit val qoReuse: Reusability[QueueOperations]           = Reusability.byEq
-  implicit val qfReuse: Reusability[QueueControlFocus]         = Reusability.byEq
+  implicit val qfReuse: Reusability[CalQueueControlFocus]      = Reusability.byEq
 }

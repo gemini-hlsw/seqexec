@@ -25,8 +25,9 @@ import web.client.style._
 object QueueTabContent {
   final case class Props(active:       TabSelected,
                          logDisplayed: SectionVisibilityState) {
-    protected[queue] val dayCalConnect =
-      SeqexecCircuit.connect(SeqexecCircuit.queueControlReader(CalibrationQueueId))
+    protected[queue] val dayCalConnectOps =
+      SeqexecCircuit.connect(
+        SeqexecCircuit.calQueueControlReader(CalibrationQueueId))
   }
 
   private val defaultContent = IconMessage(
@@ -49,7 +50,7 @@ object QueueTabContent {
         SeqexecStyles.emptyInstrumentTabLogHidden
           .when(p.logDisplayed =!= SectionClosed),
         <.div(
-          p.dayCalConnect(_() match {
+          p.dayCalConnectOps(_() match {
             case Some(x) => QueueToolbar.Props(CalibrationQueueId, x).cmp
             case _       => ReactFragment()
           }),

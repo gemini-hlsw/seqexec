@@ -19,7 +19,7 @@ class TableStateHandler[M](modelRW: ModelRW[M, AppTableStates])
     case UpdateStepsConfigTableState(state) =>
       updatedSilentL(AppTableStates.stepConfigTable.set(state)) // We should only do silent updates as these change too quickly
 
-    case UpdateQueueTableState(state) =>
+    case UpdateSessionQueueTableState(state) =>
       updatedSilentL(AppTableStates.queueTable.set(state)) // We should only do silent updates as these change too quickly
 
     case UpdateStepTableState(id, state) =>

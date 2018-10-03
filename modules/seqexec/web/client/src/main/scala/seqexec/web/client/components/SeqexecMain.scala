@@ -22,7 +22,8 @@ object AppTitle {
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
-  private val component = ScalaComponent.builder[Props]("SeqexecTitle")
+  private val component = ScalaComponent
+    .builder[Props]("SeqexecTitle")
     .stateless
     .render_P(p =>
       <.div(
@@ -53,13 +54,14 @@ object SeqexecMain {
 
   implicit val propsReuse: Reusability[Props] = Reusability.by(_.site)
 
-  private val lbConnect = SeqexecCircuit.connect(_.uiModel.loginBox)
+  private val lbConnect  = SeqexecCircuit.connect(_.uiModel.loginBox)
   private val logConnect = SeqexecCircuit.connect(_.uiModel.globalLog)
   private val userNotificationConnect = SeqexecCircuit.connect(_.uiModel.notification)
   private val headerSideBarConnect = SeqexecCircuit.connect(SeqexecCircuit.headerSideBarReader)
   private val wsConnect = SeqexecCircuit.connect(_.ws)
 
-  private val component = ScalaComponent.builder[Props]("SeqexecUI")
+  private val component = ScalaComponent
+    .builder[Props]("SeqexecUI")
     .stateless
     .render_P(p =>
       <.div(
@@ -77,7 +79,7 @@ object SeqexecMain {
             <.div(
               ^.cls := "sixteen wide mobile ten wide tablet ten wide computer column",
               SeqexecStyles.queueArea,
-              QueueTableSection(p.ctl)
+              SessionQueueTableSection(p.ctl)
             ),
             <.div(
               ^.cls := "six wide column tablet computer only",
@@ -98,10 +100,10 @@ object SeqexecMain {
           )
         ),
         lbConnect(LoginBox.apply),
-        userNotificationConnect(p => UserNotificationBox(UserNotificationBox.Props(p()))),
+        userNotificationConnect(p =>
+          UserNotificationBox(UserNotificationBox.Props(p()))),
         Footer(Footer.Props(p.ctl, p.site))
-      )
-    )
+    ))
     .configure(Reusability.shouldComponentUpdate)
     .build
 
