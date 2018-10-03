@@ -69,15 +69,18 @@ object QueueToolbar {
           SeqexecStyles.shorterRow,
           <.div(
             ^.cls := "ui left floated column",
-            controlButton(
-              icon =
-                if (s.addDayCalRunning) IconRefresh.copyIcon(loading = true)
-                else IconCloneOutline,
-              color    = "blue",
-              onClick  = b.runState(allDayCal(p.queueId)),
-              disabled = !canOperate || s.addDayCalRunning,
-              tooltip  = "Add all daytime calibrations on the session queue",
-              text     = "Add all day cal"
+            <.div(
+              SeqexecStyles.controlButtons,
+              controlButton(
+                icon =
+                  if (s.addDayCalRunning) IconRefresh.copyIcon(loading = true)
+                  else IconCloneOutline,
+                color    = "blue",
+                onClick  = b.runState(allDayCal(p.queueId)),
+                disabled = !canOperate || s.addDayCalRunning,
+                tooltip  = "Add all sequences on the session queue",
+                text     = "Add all"
+              )
             )
           )
         )

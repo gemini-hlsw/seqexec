@@ -6,6 +6,8 @@ package web.client
 import cats.Eq
 import cats.implicits._
 import japgolly.scalajs.react.raw.JsNumber
+import japgolly.scalajs.react.extra.Reusability
+import japgolly.scalajs.react.CatsReact._
 import org.scalajs.dom
 import org.scalajs.dom.html
 
@@ -22,19 +24,24 @@ trait utils {
     metrics.width
   }
 
-  def tableTextWidth(text: String): Double = textWidth(text, "bold 14px sans-serif")
+  def tableTextWidth(text: String): Double =
+    textWidth(text, "bold 14px sans-serif")
 
 }
 
 object utils extends utils {
-  implicit val eq: Eq[JsNumber] = Eq.instance { (d, e) => (d: Any, e: Any) match {
-    case (a: Float, b : Float)  => a === b
-    case (a: Double, b: Double) => a === b
-    case (a: Byte, b  : Byte)   => a === b
-    case (a: Short, b : Short)  => a === b
-    case (a: Int, b   : Int)    => a === b
-    case _                      => false
-  } }
+  implicit val eq: Eq[JsNumber] = Eq.instance { (d, e) =>
+    (d: Any, e: Any) match {
+      case (a: Float, b: Float)   => a === b
+      case (a: Double, b: Double) => a === b
+      case (a: Byte, b: Byte)     => a === b
+      case (a: Short, b: Short)   => a === b
+      case (a: Int, b: Int)       => a === b
+      case _                      => false
+    }
+  }
+
+  implicit val reuse: Reusability[JsNumber] = Reusability.byEq
 
   implicit class JsNumberOps(val d: JsNumber) extends AnyVal {
 
