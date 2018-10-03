@@ -396,9 +396,9 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
         toInstrumentSys(inst).map(GnirsHeader.header(_, gnirsReader, tcsKReader))
       case Instrument.GPI    =>
         toInstrumentSys(inst).map(GPIHeader.header(_, systems.gpi.gdsClient, tcsKReader, ObsKeywordReaderImpl(config, site)))
-      case Instrument.GHOST    =>
-        toInstrumentSys(inst).map(GHOSTHeader.header(_, systems.ghost.gdsClient, tcsKReader, ObsKeywordReaderImpl(config, site)))
-      case _                       =>
+      case Instrument.GHOST  =>
+        GHOSTHeader.header().asRight
+      case _                 =>
         TrySeq.fail(Unexpected(s"Instrument $inst not supported."))
     }
   }
