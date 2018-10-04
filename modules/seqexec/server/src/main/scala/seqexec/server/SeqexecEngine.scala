@@ -594,11 +594,21 @@ object SeqexecEngine extends SeqexecConfiguration {
 
   // TODO: Initialization is a bit of a mess, with a mix of effectful and effectless code, and values
   // that should go from one to the other. This should be improved.
-  def giapiConnection: Kleisli[IO, Config, Giapi[IO]] = Kleisli { cfg: Config =>
+  def gpiGiapiConnection: Kleisli[IO, Config, Giapi[IO]] = Kleisli { cfg: Config =>
     val gpiControl = cfg.require[ControlStrategy]("seqexec-engine.systemControl.gpi")
     val gpiUrl  = cfg.require[String]("seqexec-engine.gpiUrl")
     if (gpiControl.command) {
       Giapi.giapiConnection[IO](gpiUrl, scala.concurrent.ExecutionContext.Implicits.global).connect
+    } else {
+      Giapi.giapiConnectionIO(scala.concurrent.ExecutionContext.Implicits.global).connect
+    }
+  }
+
+  def ghostGiapiConnection: Kleisli[IO, Config, Giapi[IO]] = Kleisli { cfg: Config =>
+    val ghostControl = cfg.require[ControlStrategy]("seqexec-engine.systemControl.ghost")
+    val ghostUrl = cfg.require[String]("seqexec-engine.ghostUrl")
+    if (ghostControl.command) {
+      Giapi.giapiConnection[IO](ghostUrl, scala.concurrent.ExecutionContext.Implicits.global).connect
     } else {
       Giapi.giapiConnectionIO(scala.concurrent.ExecutionContext.Implicits.global).connect
     }
