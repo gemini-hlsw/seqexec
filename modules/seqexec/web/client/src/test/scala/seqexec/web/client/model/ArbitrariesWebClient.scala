@@ -90,11 +90,20 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
   implicit val adCogen: Cogen[AddDayCalOperation] =
     Cogen[String].contramap(_.productPrefix)
 
+  implicit val arbClearAllCalOperation: Arbitrary[ClearAllCalOperation] =
+    Arbitrary(
+      Gen.oneOf(ClearAllCalOperation.ClearAllCalIdle,
+                ClearAllCalOperation.ClearAllCalInFlight))
+
+  implicit val caqCogen: Cogen[ClearAllCalOperation] =
+    Cogen[String].contramap(_.productPrefix)
+
   implicit val arbQueueOperations: Arbitrary[QueueOperations] =
     Arbitrary {
       for {
         r <- arbitrary[AddDayCalOperation]
-      } yield QueueOperations(r)
+        c <- arbitrary[ClearAllCalOperation]
+      } yield QueueOperations(r, c)
     }
 
   implicit val qoCogen: Cogen[QueueOperations] =

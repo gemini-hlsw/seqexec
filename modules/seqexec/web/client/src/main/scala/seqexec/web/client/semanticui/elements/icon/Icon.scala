@@ -131,6 +131,7 @@ object Icon {
   val IconAttention: Icon               = Icon("attention")
   val IconClose: Icon                   = Icon("close")
   val IconCloneOutline: Icon            = Icon("clone outline")
+  val IconTrashOutline: Icon            = Icon("trash alternate outline")
 
   sealed trait Flipped
 
