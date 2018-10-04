@@ -152,7 +152,7 @@ object GDSClient {
     * Client for testing always returns ok
     */
   val alwaysOkClient: Client[IO] = {
-    val service = HttpService[IO] {
+    val service = HttpRoutes.of[IO] {
       case _ =>
         val response =
           <methodResponse>
@@ -162,8 +162,8 @@ object GDSClient {
               </param>
             </params>
           </methodResponse>
-        Response(Status.Ok).withBody(response)
+        Response[IO](Status.Ok).withEntity(response).pure[IO]
     }
-    Client.fromHttpService(service)
+    Client.fromHttpApp(service.orNotFound)
   }
 }

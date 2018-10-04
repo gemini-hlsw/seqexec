@@ -88,7 +88,7 @@ object Gcal {
 
     SeqAction.either(
       for {
-        lm   <- lamps
+        _    <- lamps
         ar   <- arLamp.map(_.map(ArLampState.apply))
         cuar <- cuarLamp.map(_.map(CuArLampState.apply))
         thar <- tharLamp.map(_.map(ThArLampState.apply))

@@ -3,9 +3,9 @@
 
 package seqexec.server
 
-import cats.effect.IO
+import cats.effect.{ ContextShift, IO, Timer }
 import cats.implicits._
-import fs2.async
+import fs2.concurrent
 import gem.Observation
 import gem.enum.Site
 import giapi.client.Giapi
@@ -18,7 +18,7 @@ import org.scalatest.{FlatSpec, Matchers, NonImplicitAssertions}
 import org.http4s.Uri._
 
 import scala.concurrent.duration._
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.ExecutionContext
 import seqexec.engine
 import seqexec.engine.Result.PauseContext
 import seqexec.engine._
@@ -32,7 +32,18 @@ import seqexec.model.enum.BatchCommandState
 
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 @SuppressWarnings(Array("org.wartremover.warts.Throw"))
+<<<<<<< HEAD
 class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertions {
+=======
+class SeqexecEngineSpec extends FlatSpec with Matchers {
+
+  implicit val ioContextShift: ContextShift[IO] =
+    IO.contextShift(ExecutionContext.global)
+
+  implicit val ioTimer: Timer[IO] =
+    IO.timer(ExecutionContext.global)
+
+>>>>>>> seqexec server
   private val defaultSettings = Settings(Site.GS,
     odbHost = "localhost",
     date = LocalDate.of(2017, 1, 1),
@@ -210,7 +221,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
     val s0 = SeqexecEngine.loadSequenceEndo(seqObsId1, sequence(seqObsId1))(EngineState.default)
 
     (for {
-      q <- async.boundedQueue[IO, executeEngine.EventType](10)
+      q <- concurrent.Queue.bounded[IO, executeEngine.EventType](10)
       sf <- advanceOne(q, s0, seqexecEngine.addSequenceToQueue(q, CalibrationQueueId, seqObsId1))
     } yield {
       inside(sf.flatMap(x => EngineState.queues.get(x).get(CalibrationQueueId))) {
@@ -223,7 +234,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
     val s0 = SeqexecEngine.loadSequenceEndo(seqObsId1, sequence(seqObsId1))(EngineState.default)
 
     (for {
-      q <- async.boundedQueue[IO, executeEngine.EventType](10)
+      q <- concurrent.Queue.bounded[IO, executeEngine.EventType](10)
       sf <- advanceOne(q, s0, seqexecEngine.addSequenceToQueue(q, CalibrationQueueId, badObsId))
     } yield {
       inside(sf.flatMap(x => EngineState.queues.get(x).get(CalibrationQueueId))) {
@@ -239,7 +250,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
       (EngineState.executionState ^|-> Engine.State.sequences ^|-? index[Map[Observation.Id,Sequence.State], Observation.Id, Sequence.State](seqObsId2) ^|-> Sequence.State.status).set(SequenceState.Completed))(EngineState.default)
 
     (for {
-      q <- async.boundedQueue[IO, executeEngine.EventType](10)
+      q <- concurrent.Queue.bounded[IO, executeEngine.EventType](10)
       sf <- advanceN(q, s0,
         seqexecEngine.addSequenceToQueue(q, CalibrationQueueId, seqObsId1) *>
         seqexecEngine.addSequenceToQueue(q, CalibrationQueueId, seqObsId2),
@@ -256,7 +267,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
       (EngineState.queues ^|-? index(CalibrationQueueId) ^|-> ExecutionQueue.queue).modify(_ :+ seqObsId1))(EngineState.default)
 
     (for {
-      q <- async.boundedQueue[IO, executeEngine.EventType](10)
+      q <- concurrent.Queue.bounded[IO, executeEngine.EventType](10)
       sf <- advanceOne(q, s0, seqexecEngine.addSequenceToQueue(q, CalibrationQueueId, seqObsId1))
     } yield {
       inside(sf.flatMap(x => EngineState.queues.get(x).get(CalibrationQueueId))) {
@@ -338,7 +349,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
       (EngineState.queues ^|-? index(CalibrationQueueId) ^|-> ExecutionQueue.queue).modify(_ ++ List(seqObsId1, seqObsId2)))(EngineState.default)
 
     (for {
-      q <- async.boundedQueue[IO, executeEngine.EventType](10)
+      q <- concurrent.Queue.bounded[IO, executeEngine.EventType](10)
       sf <- advanceOne(q, s0, seqexecEngine.removeSequenceFromQueue(q, CalibrationQueueId, seqObsId1))
     } yield {
       inside(sf.flatMap(x => EngineState.queues.get(x).get(CalibrationQueueId))) {
@@ -356,7 +367,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
       (EngineState.executionState ^|-? Engine.State.sequenceState(seqObsId1) ^|-> Sequence.State.status).set(SequenceState.Running.init))(EngineState.default)
 
     (for {
-      q <- async.boundedQueue[IO, executeEngine.EventType](10)
+      q <- concurrent.Queue.bounded[IO, executeEngine.EventType](10)
       sf <- advanceOne(q, s0, seqexecEngine.removeSequenceFromQueue(q, CalibrationQueueId, seqObsId1))
     } yield {
       inside(sf.flatMap(x => EngineState.queues.get(x).get(CalibrationQueueId))) {
@@ -374,7 +385,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
 
     def testAdvance(obsId: Observation.Id, n: Int): Option[EngineState] =
       (for {
-        q <- async.boundedQueue[IO, executeEngine.EventType](10)
+        q <- concurrent.Queue.bounded[IO, executeEngine.EventType](10)
         r <- advanceOne(q, s0, seqexecEngine.moveSequenceInQueue(q, CalibrationQueueId, obsId, n))
       } yield r).unsafeRunSync
 
@@ -568,7 +579,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
     val operator = Operator("Joe")
     val s0 = EngineState.default
     (for {
-      q <- async.boundedQueue[IO, executeEngine.EventType](10)
+      q <- concurrent.Queue.bounded[IO, executeEngine.EventType](10)
       sf <- advanceN(q, s0, seqexecEngine.setOperator(q, UserDetails("", ""), operator), 2)
     } yield {
       inside(sf.flatMap(EngineState.operator.get)) {
@@ -582,7 +593,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
     val s0 = EngineState.default
 
     (for {
-      q <- async.boundedQueue[IO, executeEngine.EventType](10)
+      q <- concurrent.Queue.bounded[IO, executeEngine.EventType](10)
       sf <- advanceN(q, s0, seqexecEngine.setImageQuality(q, iq, UserDetails("", "")), 2)
     } yield {
       inside(sf.map((EngineState.conditions ^|-> Conditions.iq).get)) {
@@ -596,7 +607,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
     val wv = WaterVapor.Percent80
     val s0 = EngineState.default
     (for {
-      q <- async.boundedQueue[IO, executeEngine.EventType](10)
+      q <- concurrent.Queue.bounded[IO, executeEngine.EventType](10)
       sf <- advanceN(q, s0, seqexecEngine.setWaterVapor(q, wv, UserDetails("", "")), 2)
     } yield {
       inside(sf.map((EngineState.conditions ^|-> Conditions.wv).get(_))) {
@@ -609,7 +620,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
     val cc = CloudCover.Percent70
     val s0 = EngineState.default
     (for {
-      q <- async.boundedQueue[IO, executeEngine.EventType](10)
+      q <- concurrent.Queue.bounded[IO, executeEngine.EventType](10)
       sf <- advanceN(q, s0, seqexecEngine.setCloudCover(q, cc, UserDetails("", "")), 2)
     } yield {
       inside(sf.map((EngineState.conditions ^|-> Conditions.cc).get(_))) {
@@ -622,7 +633,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
     val sb = SkyBackground.Percent50
     val s0 = EngineState.default
     (for {
-      q <- async.boundedQueue[IO, executeEngine.EventType](10)
+      q <- concurrent.Queue.bounded[IO, executeEngine.EventType](10)
       sf <- advanceN(q, s0, seqexecEngine.setSkyBackground(q, sb, UserDetails("", "")), 2)
     } yield {
       inside(sf.map((EngineState.conditions ^|-> Conditions.sb).get(_))) {
@@ -635,7 +646,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
     val observer = Observer("Joe")
     val s0 = SeqexecEngine.loadSequenceEndo(seqObsId1, sequence(seqObsId1))(EngineState.default)
     (for {
-      q <- async.boundedQueue[IO, executeEngine.EventType](10)
+      q <- concurrent.Queue.bounded[IO, executeEngine.EventType](10)
       sf <- advanceN(q, s0, seqexecEngine.setObserver(q, seqObsId1, UserDetails("", ""), observer), 2)
     } yield {
       inside(sf.flatMap((EngineState.sequences ^|-? index(seqObsId1)).getOption).flatMap(_.observer)) {
@@ -653,8 +664,13 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
         SequenceState.Running.init))(EngineState.default)
 
     (for {
+<<<<<<< HEAD
       q <- async.boundedQueue[IO, executeEngine.EventType](10)
       sf <- advanceOne(q, s0, seqexecEngine.start(q, seqObsId2, UserDetails("", ""), clientId))
+=======
+      q <- concurrent.Queue.bounded[IO, executeEngine.EventType](10)
+      sf <- advanceOne(q, s0, seqexecEngine.start(q, seqObsId2, UserDetails("", ""), UUID.randomUUID()))
+>>>>>>> seqexec server
     } yield {
       inside(sf.flatMap((EngineState.executionState ^|-? Engine.State.sequenceState(seqObsId2)).getOption).map(_.status)) {
         case Some(status) => assert(status.isIdle)
@@ -672,8 +688,13 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
         SequenceState.Running.init))(EngineState.default)
 
     (for {
+<<<<<<< HEAD
       q <- async.boundedQueue[IO, executeEngine.EventType](10)
       sf <- advanceOne(q, s0, seqexecEngine.start(q, seqObsId2, UserDetails("", ""), clientId))
+=======
+      q <- concurrent.Queue.bounded[IO, executeEngine.EventType](10)
+      sf <- advanceOne(q, s0, seqexecEngine.start(q, seqObsId2, UserDetails("", ""), UUID.randomUUID()))
+>>>>>>> seqexec server
     } yield {
       inside(sf.flatMap((EngineState.executionState ^|-? Engine.State.sequenceState(seqObsId2)).getOption).map(_.status)) {
         case Some(status) => assert(status.isRunning)

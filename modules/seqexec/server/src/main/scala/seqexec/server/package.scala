@@ -13,7 +13,7 @@ import cats.Eq
 import cats.Functor
 import edu.gemini.spModel.`type`.SequenceableSpType
 import edu.gemini.spModel.guide.StandardGuideOptions
-import fs2.async.mutable.Queue
+import fs2.concurrent.Queue
 import gem.Observation
 import monocle.macros.Lenses
 import monocle.Lens
