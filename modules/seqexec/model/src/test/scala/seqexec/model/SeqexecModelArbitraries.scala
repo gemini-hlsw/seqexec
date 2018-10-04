@@ -15,7 +15,7 @@ import seqexec.model.enum._
 trait SeqexecModelArbitraries extends ArbObservation {
 
   private val maxListSize = 2
-  
+
   implicit val opArb = Arbitrary[Operator] { Gen.alphaStr.map(Operator.apply) }
 
   implicit val ccArb = Arbitrary[CloudCover](Gen.oneOf(CloudCover.all))
@@ -102,7 +102,7 @@ trait SeqexecModelArbitraries extends ArbObservation {
     for {
       i <- arbitrary[Instrument]
       o <- arbitrary[Option[Observer]]
-      n <- arbitrary[String]
+      n <- Gen.alphaStr
     } yield SequenceMetadata(i, o, n)
   }
 
@@ -398,14 +398,16 @@ trait SeqexecModelArbitraries extends ArbObservation {
         case f: RequestFailed    => Right(Right(f))
       }
 
-  implicit val seqBatchCmdRunArb: Arbitrary[BatchCommandState.Run] =  Arbitrary {
+  implicit val seqBatchCmdRunArb: Arbitrary[BatchCommandState.Run] = Arbitrary {
     for {
       clid <- arbitrary[ClientID]
     } yield BatchCommandState.Run(clid)
   }
 
   implicit val seqBatchCmdStateArb: Arbitrary[BatchCommandState] = Arbitrary(
-    Gen.frequency((2, Gen.oneOf(BatchCommandState.Idle, BatchCommandState.Stop)), (1, arbitrary[BatchCommandState.Run]))
+    Gen.frequency(
+      (2, Gen.oneOf(BatchCommandState.Idle, BatchCommandState.Stop)),
+      (1, arbitrary[BatchCommandState.Run]))
   )
 
   implicit val seqBatchCmdStateCogen: Cogen[BatchCommandState] =

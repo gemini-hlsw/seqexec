@@ -6,6 +6,7 @@ package seqexec.web.client.circuit
 import cats.Eq
 import cats.implicits._
 import monocle.Getter
+import monocle.Optional
 import monocle.macros.Lenses
 import monocle.std
 import monocle.function.At.at
@@ -21,15 +22,15 @@ object CalQueueControlFocus {
   implicit val eq: Eq[CalQueueControlFocus] =
     Eq.by(x => (x.canOperate, x.ops))
 
-  def queueControlG(id: QueueId): Getter[SeqexecAppRootModel, Option[CalQueueControlFocus]] = {
-    val optQueue =
-      SeqexecAppRootModel.uiModel ^|->
-      SeqexecUIModel.queues       ^|->
-      CalibrationQueues.ops       ^|->
-      at(id)                      ^<-?
-      std.option.some
+  def optQueue(id: QueueId): Optional[SeqexecAppRootModel, QueueOperations] =
+    SeqexecAppRootModel.uiModel ^|->
+    SeqexecUIModel.queues       ^|->
+    CalibrationQueues.ops       ^|->
+    at(id)                      ^<-?
+    std.option.some
 
-    ClientStatus.canOperateG.zip(Getter(optQueue.getOption)) >>> {
+  def queueControlG(id: QueueId): Getter[SeqexecAppRootModel, Option[CalQueueControlFocus]] = {
+    ClientStatus.canOperateG.zip(Getter(optQueue(id).getOption)) >>> {
       case (status, Some(c)) =>
         CalQueueControlFocus(status, c).some
       case _ =>

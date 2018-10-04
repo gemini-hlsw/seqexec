@@ -28,6 +28,8 @@ object QueueTabContent {
     protected[queue] val dayCalConnectOps =
       SeqexecCircuit.connect(
         SeqexecCircuit.calQueueControlReader(CalibrationQueueId))
+    protected[queue] val dayCalConnect =
+      SeqexecCircuit.connect(SeqexecCircuit.calQueueReader(CalibrationQueueId))
   }
 
   private val defaultContent = IconMessage(
@@ -44,17 +46,25 @@ object QueueTabContent {
           "active" -> (p.active === TabSelected.Selected)
         ),
         dataTab := "daycal",
-        SeqexecStyles.emptyInstrumentTab,
-        SeqexecStyles.emptyInstrumentTabLogShown
-          .when(p.logDisplayed =!= SectionOpen),
-        SeqexecStyles.emptyInstrumentTabLogHidden
-          .when(p.logDisplayed =!= SectionClosed),
+        SeqexecStyles.tabSegment,
+        SeqexecStyles.tabSegmentLogShown
+          .when(p.logDisplayed === SectionOpen),
+        SeqexecStyles.tabSegmentLogHidden
+          .when(p.logDisplayed === SectionClosed),
         <.div(
+          ^.height := "100%",
           p.dayCalConnectOps(_() match {
             case Some(x) => QueueToolbar.Props(CalibrationQueueId, x).cmp
             case _       => ReactFragment()
           }),
-          defaultContent
+          p.dayCalConnect(_() match {
+            case Some(x) =>
+              <.div(
+                ^.height := "100%",
+                CalQueueTable.Props(CalibrationQueueId, x).cmp
+              )
+            case _ => defaultContent
+          })
         )
       )
     }
