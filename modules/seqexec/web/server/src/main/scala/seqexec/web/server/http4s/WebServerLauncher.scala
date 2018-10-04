@@ -176,12 +176,15 @@ object WebServerLauncher extends StreamApp[IO] with LogInitialization with Seqex
   def stream(args: List[String], requestShutdown: IO[Unit]): Stream[IO, ExitCode] = {
     def engineIO(httpClient: Client[IO], collector: CollectorRegistry): IO[SeqexecEngine] =
       for {
-        _     <- configLog // Initialize log before the engine is setup
-        c     <- config
-        site  <- IO.pure(c.require[Site]("seqexec-engine.site"))
-        giapi <- SeqexecEngine.giapiConnection.run(c)
-        seqc  <- SeqexecEngine.seqexecConfiguration(giapi).run(c)
-        met   <- SeqexecMetrics.build[IO](site, collector)
+        _          <- configLog // Initialize log before the engine is setup
+        c          <- config
+        site       <- IO.pure(c.require[Site]("seqexec-engine.site"))
+        giapiGPI   <- SeqexecEngine.giapiConnection("seqexec-engine.systemControl.gpi",
+                                                    "seqexec-engine.gpiUrl").run(c)
+        giapiGHOST <- SeqexecEngine.giapiConnection("seqexec-engine.systemControl.ghost",
+                                                    "seqexec-engine.ghostUrl").run(c)
+        seqc       <- SeqexecEngine.seqexecConfiguration(giapiGPI, giapiGHOST).run(c)
+        met        <- SeqexecMetrics.build[IO](site, collector)
       } yield SeqexecEngine(httpClient, seqc, met)
 
     def webServerIO(in: Queue[IO, executeEngine.EventType], out: Topic[IO, SeqexecEvent], et: SeqexecEngine, pe: PrometheusExportService[IO]): IO[Stream[IO, ExitCode]] =

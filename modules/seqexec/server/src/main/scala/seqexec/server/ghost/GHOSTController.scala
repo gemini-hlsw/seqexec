@@ -7,13 +7,16 @@ import cats.implicits._
 import cats.{Eq, Show}
 import cats.effect.Sync
 import gem.math.{Angle, HourAngle}
+import giapi.client.ghost.GHOSTClient
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.SeqActionF
 import seqexec.server.keywords.GDSClient
+
 import scala.concurrent.duration.Duration
 import org.log4s._
 
-final case class GHOSTController[F[_]: Sync](gdsClient: GDSClient) {
+final case class GHOSTController[F[_]: Sync](gpiClient: GHOSTClient[F],
+                                             gdsClient: GDSClient) {
   import GHOSTController._
   val log: Logger = getLogger
 

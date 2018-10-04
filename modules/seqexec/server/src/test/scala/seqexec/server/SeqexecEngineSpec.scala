@@ -47,6 +47,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
     gnirsControl = Simulated,
     gpiControl = Simulated,
     gpiGdsControl = Simulated,
+    ghostGdsControl = Simulated,
     gsaoiControl = Simulated,
     gwsControl = Simulated,
     nifsControl = Simulated,
@@ -57,6 +58,8 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
     failAt = 0,
     10.seconds,
     Giapi.giapiConnectionIO(scala.concurrent.ExecutionContext.Implicits.global).connect.unsafeRunSync,
+    Giapi.giapiConnectionIO(scala.concurrent.ExecutionContext.Implicits.global).connect.unsafeRunSync,
+    uri("http://localhost:8888/xmlrpc"),
     uri("http://localhost:8888/xmlrpc")
   )
 

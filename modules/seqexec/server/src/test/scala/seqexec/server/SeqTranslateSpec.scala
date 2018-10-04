@@ -11,9 +11,9 @@ import giapi.client.Giapi
 import giapi.client.gpi.GPIClient
 import gem.Observation
 import gem.enum.Site
-import seqexec.engine.{Engine, Action, Result, Sequence, Step}
+import seqexec.engine.{Action, Engine, Result, Sequence, Step}
 import seqexec.model.enum.Instrument.GmosS
-import seqexec.model.{ StepConfig, ActionType, SequenceState }
+import seqexec.model.{ActionType, SequenceState, StepConfig}
 import seqexec.server.SeqTranslate.ObserveContext
 import seqexec.server.keywords.DhsClientSim
 import seqexec.server.keywords.GDSClient
@@ -24,10 +24,12 @@ import seqexec.server.gnirs.GnirsControllerSim
 import seqexec.server.tcs.TcsControllerSim
 import seqexec.server.gpi.GPIController
 import edu.gemini.spModel.core.Peer
+import giapi.client.ghost.GHOSTClient
 import org.scalatest.FlatSpec
 import org.http4s.Uri._
 import squants.time.Seconds
 import monocle.Monocle._
+import seqexec.server.ghost.GHOSTController
 
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 @SuppressWarnings(Array("org.wartremover.warts.Throw"))
@@ -79,7 +81,9 @@ class SeqTranslateSpec extends FlatSpec {
     GmosControllerSim.north,
     GnirsControllerSim,
     GPIController(new GPIClient(Giapi.giapiConnectionIO(scala.concurrent.ExecutionContext.Implicits.global).connect.unsafeRunSync),
-    new GDSClient(GDSClient.alwaysOkClient, uri("http://localhost:8888/xmlrpc")))
+    new GDSClient(GDSClient.alwaysOkClient, uri("http://localhost:8888/xmlrpc"))),
+    GHOSTController(new GHOSTClient[IO](Giapi.giapiConnectionIO(scala.concurrent.ExecutionContext.Implicits.global).connect.unsafeRunSync),
+    new GDSClient(GDSClient.alwaysOkClient, uri("hhttp://localhost:8888/xmlrpc")))
   )
 
   private val translatorSettings = SeqTranslate.Settings(tcsKeywords = false, f2Keywords = false, gwsKeywords = false,

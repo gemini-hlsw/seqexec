@@ -18,11 +18,10 @@ import gem.Observation
 import gem.enum.Site
 import mouse.all._
 import org.log4s._
-import org.http4s.Uri._
 import seqexec.engine.Result.{Configured, FileIdAllocated, Observed}
 import seqexec.engine.{Action, Event, Result, Sequence, Step, fromIO}
-import seqexec.model.enum.{ Instrument, Resource }
-import seqexec.model.{ StepState, ActionType }
+import seqexec.model.enum.{Instrument, Resource}
+import seqexec.model.{ActionType, StepState}
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.SeqTranslate.{Settings, Systems}
@@ -31,7 +30,7 @@ import seqexec.server.InstrumentSystem._
 import seqexec.server.flamingos2.{Flamingos2, Flamingos2Controller, Flamingos2Header}
 import seqexec.server.keywords._
 import seqexec.server.gpi.{GPI, GPIController, GPIHeader}
-import seqexec.server.ghost.{GHOST, GHOSTController}
+import seqexec.server.ghost.{GHOST, GHOSTController, GHOSTHeader}
 import seqexec.server.gcal._
 import seqexec.server.gmos.{GmosController, GmosHeader, GmosNorth, GmosSouth}
 import seqexec.server.gws.{DummyGwsKeywordsReader, GwsHeader, GwsKeywordsReaderImpl}
@@ -336,7 +335,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     case Instrument.GmosN => TrySeq(GmosNorth(systems.gmosNorth, systems.dhs))
     case Instrument.GNIRS => TrySeq(Gnirs(systems.gnirs, systems.dhs))
     case Instrument.GPI   => TrySeq(GPI(systems.gpi))
-    case Instrument.GHOST => TrySeq(GHOST(GHOSTController[IO](GDSClient(GDSClient.alwaysOkClient, uri("http://localhost:8888/xmlrpc"))))) // todo put the controller on systems
+    case Instrument.GHOST => TrySeq(GHOST(systems.ghost))
     case _                      => TrySeq.fail(Unexpected(s"Instrument $inst not supported."))
   }
 
@@ -396,13 +395,9 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
         toInstrumentSys(inst).map(GnirsHeader.header(_, gnirsReader, tcsKReader))
       case Instrument.GPI    =>
         toInstrumentSys(inst).map(GPIHeader.header(_, systems.gpi.gdsClient, tcsKReader, ObsKeywordReaderImpl(config, site)))
-      case Instrument.GHOST    =>
-        // TODO Do an actual GHOST header
-        new Header() {
-          def sendAfter(id: ImageFileId) = SeqAction.void
-          def sendBefore(obsId: Observation.Id, id: ImageFileId) = SeqAction.void
-        }.asRight
-      case _                       =>
+      case Instrument.GHOST  =>
+        GHOSTHeader.header().asRight
+      case _                 =>
         TrySeq.fail(Unexpected(s"Instrument $inst not supported."))
     }
   }
@@ -449,7 +444,8 @@ object SeqTranslate {
                       gmosSouth: GmosController.GmosSouthController,
                       gmosNorth: GmosController.GmosNorthController,
                       gnirs: GnirsController,
-                      gpi: GPIController[IO]
+                      gpi: GPIController[IO],
+                      ghost: GHOSTController[IO]
                     )
 
   final case class Settings(
