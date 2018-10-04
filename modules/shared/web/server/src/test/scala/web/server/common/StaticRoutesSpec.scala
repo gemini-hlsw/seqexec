@@ -11,6 +11,7 @@ import org.http4s.headers.{`Cache-Control`, `Content-Type`}
 import org.scalatest.{EitherValues, FlatSpec, Matchers}
 
 import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext // N.B. using global for our blocking context here
 
 @SuppressWarnings(Array("org.wartremover.warts.Throw", "org.wartremover.warts.NonUnitStatements", "org.wartremover.warts.Throw"))
 class StaticRoutesSpec extends FlatSpec with Matchers with EitherValues with UriFunctions {
@@ -45,24 +46,24 @@ class StaticRoutesSpec extends FlatSpec with Matchers with EitherValues with Uri
 
   "StaticRoutes regular files" should
     "return a file if present on resources" in {
-      val service = new StaticRoutes(false, builtAtMillis).service
+      val service = new StaticRoutes(false, builtAtMillis, ExecutionContext.global).service
       service.apply(Request(uri = uri("/css/test.css"))).value.map(_.map(_.status)).unsafeRunSync should contain(Status.Ok)
-      service.apply(Request(uri = uri("/css/test.css"))).value.map(_.map(_.headers)).unsafeRunSync.getOrElse(Headers.empty) should contain (`Content-Type`(`text/css`))
+      service.apply(Request(uri = uri("/css/test.css"))).value.map(_.map(_.headers)).unsafeRunSync.getOrElse(Headers.empty) should contain (`Content-Type`(text.css))
     }
     it should "not leak the application configuration file" in {
-      val service = new StaticRoutes(true, builtAtMillis).service
+      val service = new StaticRoutes(true, builtAtMillis, ExecutionContext.global).service
       service.apply(Request(uri = uri("/app.conf"))).value.map(_.map(_.status)).unsafeRunSync shouldBe empty
     }
     it should "cache them for a year on production mode" in {
-      val service = new StaticRoutes(false, builtAtMillis).service
+      val service = new StaticRoutes(false, builtAtMillis, ExecutionContext.global).service
       service.apply(Request(uri = uri("/css/test.css"))).value.map(_.map(_.headers)).unsafeRunSync.getOrElse(Headers.empty) should contain (`Cache-Control`(NonEmptyList.of(`max-age`(31536000.seconds))))
     }
     it should "not cache them on dev mode" in {
-      val service = new StaticRoutes(true, builtAtMillis).service
+      val service = new StaticRoutes(true, builtAtMillis, ExecutionContext.global).service
       service.apply(Request(uri = uri("/css/test.css"))).value.map(_.map(_.headers)).unsafeRunSync.getOrElse(Headers.empty) should not contain `Cache-Control`(NonEmptyList.of(`max-age`(31536000.seconds)))
     }
     it should "support fingerprinting" in {
-      val service = new StaticRoutes(true, builtAtMillis).service
+      val service = new StaticRoutes(true, builtAtMillis, ExecutionContext.global).service
       service.apply(Request(uri = Uri.fromString(s"/css/test.$builtAtMillis.css").toOption.fold(uri("/"))(x => x))).value.map(_.map(_.status)).unsafeRunSync() should contain(Status.Ok)
     }
 }
