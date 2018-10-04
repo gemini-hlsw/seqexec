@@ -5,7 +5,7 @@ package seqexec.engine
 
 import cats._
 import cats.data.StateT
-import cats.effect.IO
+import cats.effect.{ Concurrent, IO }
 import cats.implicits._
 import seqexec.engine.Event._
 import seqexec.engine.Result.{PartialVal, PauseContext, RetVal}
@@ -17,8 +17,6 @@ import monocle.macros.Lenses
 import monocle.function.Index.index
 import mouse.boolean._
 import org.log4s.getLogger
-
-import scala.concurrent.ExecutionContext
 
 class Engine[D, U](stateL: Lens[D, Engine.State]) {
 
@@ -141,16 +139,16 @@ class Engine[D, U](stateL: Lens[D, Engine.State]) {
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
-  private def execute(id: Observation.Id)(implicit ec: ExecutionContext): HandleType[Unit] = {
+  private def execute(id: Observation.Id)(implicit ev: Concurrent[IO]): HandleType[Unit] = {
     get.flatMap(st => stateL.get(st).sequences.get(id).map {
       case seq@Sequence.State.Final(_, _) =>
         // The sequence is marked as completed here
         putS(id)(seq) *> send(finished(id))
       case seq                            =>
         val u: List[Stream[IO, EventType]] = seq.current.actions.map(_.gen).zipWithIndex.map(x => act(id, x))
-        val v: Stream[IO, EventType] = Stream.emits(u).join(u.length)
+        val v: Stream[IO, EventType] = Stream.emits(u).parJoin(u.length)
         val w: List[HandleType[Unit]] = seq.current.actions.indices.map(i => modifyS(id)(_.start(i))).toList
-        w.sequence *> Handle.fromStream(v)
+        w.sequence *> HandleP.fromStream(v)
     }.getOrElse(unit)
     )
   }
@@ -230,7 +228,7 @@ class Engine[D, U](stateL: Lens[D, Engine.State]) {
     * Main logical thread to handle events and produce output.
     */
   @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
-  private def run(userReact: PartialFunction[SystemEvent, HandleType[Unit]])(ev: EventType)(implicit ec: ExecutionContext): HandleType[ResultType] = {
+  private def run(userReact: PartialFunction[SystemEvent, HandleType[Unit]])(ev: EventType)(implicit ci: Concurrent[IO]): HandleType[ResultType] = {
     def handleUserEvent(ue: UserEventType): HandleType[ResultType] = ue match {
       case Start(id, _, clid, userCheck) => Logger.debug(s"Engine: Start requested for sequence ${id.format}") *> start(id, clid, userCheck) *> pure(UserCommandResponse(ue, EventResult.Ok, None))
       case Pause(id, _)                  => Logger.debug(s"Engine: Pause requested for sequence ${id.format}") *> pause(id) *> pure(UserCommandResponse(ue, EventResult.Ok, None))
@@ -274,10 +272,10 @@ class Engine[D, U](stateL: Lens[D, Engine.State]) {
   // initalState: state
   // f takes an event and the current state, it produces a new state, a new value B and more actions
   @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
-  def mapEvalState[A, S, B](input: Stream[IO, A], initialState: S, f: (A, S) => IO[(S, B, Stream[IO, A])])(implicit ec: ExecutionContext): Stream[IO, B] = {
-    Stream.eval(fs2.async.unboundedQueue[IO, Stream[IO, A]]).flatMap { q =>
+  def mapEvalState[A, S, B](input: Stream[IO, A], initialState: S, f: (A, S) => IO[(S, B, Stream[IO, A])])(implicit ev: Concurrent[IO]): Stream[IO, B] = {
+    Stream.eval(fs2.concurrent.Queue.unbounded[IO, Stream[IO, A]]).flatMap { q =>
       Stream.eval_(q.enqueue1(input)) ++
-        q.dequeue.joinUnbounded.evalMapAccumulate(initialState) { (s, a) =>
+        q.dequeue.parJoinUnbounded.evalMapAccumulate(initialState) { (s, a) =>
           f(a, s).flatMap {
             case (ns, b, st) =>
               q.enqueue1(st) >> IO.pure((ns, b))
@@ -287,14 +285,14 @@ class Engine[D, U](stateL: Lens[D, Engine.State]) {
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.AnyVal", "org.wartremover.warts.ImplicitParameter"))
-  private def runE(userReact: PartialFunction[SystemEvent, HandleType[Unit]])(ev: EventType, s: D)(implicit ec: ExecutionContext): IO[(D, (ResultType, D), Stream[IO, EventType])] =
+  private def runE(userReact: PartialFunction[SystemEvent, HandleType[Unit]])(ev: EventType, s: D)(implicit ci: Concurrent[IO]): IO[(D, (ResultType, D), Stream[IO, EventType])] =
     run(userReact)(ev).run.run(s).map {
       case (si, (r, p)) =>
         (si, (r, si), p.getOrElse(Stream.empty))
     }
 
   @SuppressWarnings(Array("org.wartremover.warts.AnyVal", "org.wartremover.warts.ImplicitParameter"))
-  def process(userReact: PartialFunction[SystemEvent, HandleType[Unit]])(input: Stream[IO, EventType])(qs: D)(implicit ec: ExecutionContext): Stream[IO, (ResultType, D)] =
+  def process(userReact: PartialFunction[SystemEvent, HandleType[Unit]])(input: Stream[IO, EventType])(qs: D)(implicit ev: Concurrent[IO]): Stream[IO, (ResultType, D)] =
     mapEvalState[EventType, D, (ResultType, D)](input, qs, runE(userReact))
 
   // Functions for type bureaucracy
