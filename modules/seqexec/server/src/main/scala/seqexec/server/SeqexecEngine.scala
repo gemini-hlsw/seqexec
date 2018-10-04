@@ -40,6 +40,7 @@ import edu.gemini.spModel.core.{Peer, SPProgramID}
 import edu.gemini.spModel.obscomp.InstConstants
 import edu.gemini.spModel.seqcomp.SeqConfigNames.OCS_KEY
 import fs2.{Scheduler, Stream}
+import giapi.client.ghost.GHOSTClient
 import org.http4s.client.Client
 import org.http4s.Uri
 import knobs.Config
@@ -70,7 +71,7 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
     settings.gmosControl.command.fold(GmosNorthControllerEpics, GmosControllerSim.north),
     settings.gnirsControl.command.fold(GnirsControllerEpics, GnirsControllerSim),
     GPIController(new GPIClient(settings.gpiGiapi), gpiGDS),
-    GHOSTController(ghostGDS)
+    GHOSTController(new GHOSTClient(settings.ghostGiapi), ghostGDS)
   )
 
   private val translatorSettings = SeqTranslate.Settings(
@@ -604,7 +605,7 @@ object SeqexecEngine extends SeqexecConfiguration {
   }
 
   // scalastyle:off
-  def seqexecConfiguration(gpiGiapi: Giapi[IO]): Kleisli[IO, Config, Settings] = Kleisli { cfg: Config =>
+  def seqexecConfiguration(gpiGiapi: Giapi[IO], ghostGiapi: Giapi[IO]): Kleisli[IO, Config, Settings] = Kleisli { cfg: Config =>
     val site                    = cfg.require[Site]("seqexec-engine.site")
     val odbHost                 = cfg.require[String]("seqexec-engine.odb")
     val dhsServer               = cfg.require[String]("seqexec-engine.dhsServer")
@@ -612,6 +613,7 @@ object SeqexecEngine extends SeqexecConfiguration {
     val f2Control               = cfg.require[ControlStrategy]("seqexec-engine.systemControl.f2")
     val gcalControl             = cfg.require[ControlStrategy]("seqexec-engine.systemControl.gcal")
     val ghostControl            = cfg.require[ControlStrategy]("seqexec-engine.systemControl.ghost")
+    val ghostGdsControl         = cfg.require[ControlStrategy]("seqexec-engine.systemControl.ghostGds")
     val gmosControl             = cfg.require[ControlStrategy]("seqexec-engine.systemControl.gmos")
     val gnirsControl            = cfg.require[ControlStrategy]("seqexec-engine.systemControl.gnirs")
     val gpiControl              = cfg.require[ControlStrategy]("seqexec-engine.systemControl.gpi")
@@ -623,6 +625,7 @@ object SeqexecEngine extends SeqexecConfiguration {
     val tcsControl              = cfg.require[ControlStrategy]("seqexec-engine.systemControl.tcs")
     val odbNotifications        = cfg.require[Boolean]("seqexec-engine.odbNotifications")
     val gpiGDS                  = cfg.require[Uri]("seqexec-engine.gpiGDS")
+    val ghostGDS                = cfg.require[Uri]("seqexec-engine.ghostGDS")
     val instForceError          = cfg.require[Boolean]("seqexec-engine.instForceError")
     val failAt                  = cfg.require[Int]("seqexec-engine.failAt")
     val odbQueuePollingInterval = cfg.require[Duration]("seqexec-engine.odbQueuePollingInterval")
@@ -686,6 +689,7 @@ object SeqexecEngine extends SeqexecConfiguration {
                        gnirsControl,
                        gpiControl,
                        gpiGdsControl,
+                       ghostGdsControl,
                        gsaoiControl,
                        gwsControl,
                        nifsControl,
@@ -695,7 +699,9 @@ object SeqexecEngine extends SeqexecConfiguration {
                        instForceError,
                        failAt,
                        odbQueuePollingInterval,
+                       ghostGiapi,
                        gpiGiapi,
+                       ghostGDS,
                        gpiGDS)
       )
 

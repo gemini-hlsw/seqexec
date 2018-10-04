@@ -180,7 +180,8 @@ object WebServerLauncher extends StreamApp[IO] with LogInitialization with Seqex
         c     <- config
         site  <- IO.pure(c.require[Site]("seqexec-engine.site"))
         giapi <- SeqexecEngine.giapiConnection.run(c)
-        seqc  <- SeqexecEngine.seqexecConfiguration(giapi).run(c)
+        // TODO: Pretty sure thhat this is wrong.
+        seqc  <- SeqexecEngine.seqexecConfiguration(giapi, giapi).run(c)
         met   <- SeqexecMetrics.build[IO](site, collector)
       } yield SeqexecEngine(httpClient, seqc, met)
 
