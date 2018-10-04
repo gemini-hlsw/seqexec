@@ -275,9 +275,8 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
   private def clearQ(qid: QueueId): Endo[EngineState]= st => (
     for {
       q <- st.queues.get(qid)
-    } yield if(q.status(st) =!= BatchExecState.Running)
-        (EngineState.queues ^|-? index(qid)).modify(_.clear)(st)
-      else st
+      if (q.status(st) =!= BatchExecState.Running)
+    } yield (EngineState.queues ^|-? index(qid)).modify(_.clear)(st)
   ).getOrElse(st)
 
   def clearQueue(q: EventQueue, qid: QueueId): IO[Either[SeqexecFailure, Unit]] = q.enqueue1(

@@ -54,7 +54,7 @@ object QueueTabContent {
         <.div(
           ^.height := "100%",
           p.dayCalConnectOps(_() match {
-            case Some(x) => QueueToolbar.Props(CalibrationQueueId, x).cmp
+            case Some(x) => CalQueueToolbar.Props(CalibrationQueueId, x).cmp
             case _       => ReactFragment()
           }),
           p.dayCalConnect(_() match {

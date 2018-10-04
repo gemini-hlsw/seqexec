@@ -18,6 +18,7 @@ import seqexec.web.client.actions.RequestAllDayCal
 import seqexec.web.client.model.CalibrationQueues
 import seqexec.web.client.model.QueueOperations
 import seqexec.web.client.model.AddDayCalOperation
+import seqexec.web.client.model.ClearAllCalOperation
 import seqexec.web.client.actions._
 
 /**
@@ -26,17 +27,31 @@ import seqexec.web.client.actions._
 class QueueOperationsHandler[M](modelRW: ModelRW[M, CalibrationQueues])
     extends ActionHandler(modelRW)
     with Handlers[M, CalibrationQueues] {
+
   private def addDayCalL(qid: QueueId) =
     CalibrationQueues.ops ^|-> at(qid) ^<-? std.option.some ^|-> QueueOperations.addDayCalRequested
+
+  private def clearAllCalL(qid: QueueId) =
+    CalibrationQueues.ops ^|-> at(qid) ^<-? std.option.some ^|-> QueueOperations.clearAllCalRequested
+
   def handleAddAllDayCal: PartialFunction[Any, ActionResult[M]] = {
     case RequestAllDayCal(qid) =>
       updatedL(addDayCalL(qid).set(AddDayCalOperation.AddDayCalInFlight))
 
   }
 
+  def handleClearAllCal: PartialFunction[Any, ActionResult[M]] = {
+    case RequestClearAllCal(qid) =>
+      updatedL(clearAllCalL(qid).set(ClearAllCalOperation.ClearAllCalInFlight))
+
+  }
+
   def handleRequestResultOk: PartialFunction[Any, ActionResult[M]] = {
     case AllDayCalCompleted(qid) =>
       updatedL(addDayCalL(qid).set(AddDayCalOperation.AddDayCalIdle))
+
+    case ClearAllCalCompleted(qid) =>
+      updatedL(clearAllCalL(qid).set(ClearAllCalOperation.ClearAllCalIdle))
   }
 
   def handleRequestResultFailed: PartialFunction[Any, ActionResult[M]] = {
@@ -46,7 +61,17 @@ class QueueOperationsHandler[M](modelRW: ModelRW[M, CalibrationQueues])
         Future(RequestFailedNotification(RequestFailed(msg))))
       updatedLE(addDayCalL(qid).set(AddDayCalOperation.AddDayCalIdle),
                 notification)
+
+    case ClearAllCalFailed(qid) =>
+      val msg = s"Failed to clear the cal sequences"
+      val notification = Effect(
+        Future(RequestFailedNotification(RequestFailed(msg))))
+      updatedLE(clearAllCalL(qid).set(ClearAllCalOperation.ClearAllCalIdle),
+                notification)
   }
   override def handle: PartialFunction[Any, ActionResult[M]] =
-    List(handleAddAllDayCal, handleRequestResultOk, handleRequestResultFailed).combineAll
+    List(handleAddAllDayCal,
+         handleClearAllCal,
+         handleRequestResultOk,
+         handleRequestResultFailed).combineAll
 }

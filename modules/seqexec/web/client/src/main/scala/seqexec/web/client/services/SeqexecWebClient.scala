@@ -333,6 +333,17 @@ object SeqexecWebClient extends ModelBooPicklers {
       .map(_ => ())
 
   /**
+    * Clears a sequence
+    */
+  def clearQueue(queueId: QueueId): Future[Unit] =
+    Ajax
+      .post(
+        url          = s"$baseUrl/commands/queue/${encodeURI(queueId.show)}/clear",
+        responseType = "arraybuffer"
+      )
+      .map(_ => ())
+
+  /**
     * Add a sequence from a queue
     */
   def addSequencesToQueue(ids: List[Observation.Id])(qid: QueueId): Future[Unit] =

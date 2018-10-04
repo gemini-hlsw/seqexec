@@ -4,6 +4,7 @@
 package seqexec.web.client.model
 
 import cats.Eq
+import cats.implicits._
 import monocle.macros.Lenses
 
 sealed trait AddDayCalOperation extends Product with Serializable
@@ -16,17 +17,29 @@ object AddDayCalOperation {
 
 }
 
+sealed trait ClearAllCalOperation extends Product with Serializable
+object ClearAllCalOperation {
+  case object ClearAllCalInFlight extends ClearAllCalOperation
+  case object ClearAllCalIdle extends ClearAllCalOperation
+
+  implicit val eq: Eq[ClearAllCalOperation] =
+    Eq.fromUniversalEquals
+
+}
+
 /**
   * Hold transient states while excuting an operation on the queue
   */
 @Lenses
-final case class QueueOperations(addDayCalRequested: AddDayCalOperation)
+final case class QueueOperations(addDayCalRequested:   AddDayCalOperation,
+                                 clearAllCalRequested: ClearAllCalOperation)
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object QueueOperations {
   implicit val eq: Eq[QueueOperations] =
-    Eq.by(x => (x.addDayCalRequested))
+    Eq.by(x => (x.addDayCalRequested, x.clearAllCalRequested))
 
   val Default: QueueOperations =
-    QueueOperations(AddDayCalOperation.AddDayCalIdle)
+    QueueOperations(AddDayCalOperation.AddDayCalIdle,
+                    ClearAllCalOperation.ClearAllCalIdle)
 }
