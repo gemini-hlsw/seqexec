@@ -13,6 +13,7 @@ import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.component.Js.Unmounted
 import japgolly.scalajs.react.component.builder.Lifecycle.RenderScope
 import japgolly.scalajs.react.extra.Reusability
+import japgolly.scalajs.react.raw.JsNumber
 import monocle.macros.Lenses
 import react.virtualized._
 import react.sortable._
@@ -22,6 +23,7 @@ import seqexec.model.enum.Instrument
 import seqexec.web.client.circuit._
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.reusability._
+import seqexec.web.client.actions.UpdateCalTableState
 import web.client.table._
 
 /**
@@ -74,9 +76,7 @@ object CalQueueTable {
     def cmp: Unmounted[js.Object, Null] = {
       val view         = component
       val sortableList = SortableContainer.wrap(view)
-      sortableList(
-        SortableContainer.Props()
-      )(this)
+      sortableList(SortableContainer.Props())(this)
     }
   }
 
@@ -85,7 +85,9 @@ object CalQueueTable {
 
   @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object State {
-    val Zero: State = State(TableState(NotModified, 0, all))
+    val InitialTableState: TableState[TableColumn] =
+      TableState(NotModified, 0, all)
+    val Zero: State = State(InitialTableState)
   }
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
@@ -136,7 +138,8 @@ object CalQueueTable {
     size: Size): ColumnRenderArgs[TableColumn] => Table.ColumnArg = tb => {
     val state = b.state
     def updateState(s: TableState[TableColumn]): Callback =
-      b.modState(State.tableState.set(s))
+      b.modState(State.tableState.set(s)) *>
+        SeqexecCircuit.dispatchCB(UpdateCalTableState(b.props.queueId, s))
 
     tb match {
       case ColumnRenderArgs(ColumnMeta(c, name, label, _, _), _, width, true) =>
@@ -171,6 +174,12 @@ object CalQueueTable {
         SeqexecStyles.stepRow
     }).htmlClass
 
+  def updateScrollPosition(b: Backend, pos: JsNumber): Callback = {
+    val s = (State.tableState ^|-> TableState.scrollPosition).set(pos)(b.state)
+    b.setState(s) *>
+      SeqexecCircuit.dispatchCB(UpdateCalTableState(b.props.queueId, s.tableState))
+  }
+
   def table(b: Backend)(size: Size): VdomNode =
     Table(
       Table.props(
@@ -190,17 +199,22 @@ object CalQueueTable {
         width            = size.width.toInt,
         rowGetter        = b.props.rowGetter _,
         headerClassName  = SeqexecStyles.tableHeader.htmlClass,
-        // onScroll         = (_, _, pos) => updateScrollPosition(b, pos),
-        rowRenderer  = sortableRowRenderer,
-        headerHeight = SeqexecStyles.headerHeight
+        scrollTop        = b.state.tableState.scrollPosition,
+        onScroll         = (_, _, pos) => updateScrollPosition(b, pos),
+        rowRenderer      = sortableRowRenderer,
+        headerHeight     = SeqexecStyles.headerHeight
       ),
       b.state.tableState.columnBuilder(size, colBuilder(b, size)): _*
     ).vdomElement
 
+  def initialState(p: Props): State =
+    State.Zero
+      .copy(tableState = p.data.tableState)
+
   private val component = ScalaComponent
     .builder[Props]("CalQueueTable")
-    .initialState(State.Zero)
-    .renderPS { (b, _, _) =>
+    .initialStateFromProps(initialState)
+    .renderP { (b, _) =>
       <.div(
         SeqexecStyles.stepsListPaneWithControls,
         AutoSizer(AutoSizer.props(table(b)))

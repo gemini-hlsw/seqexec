@@ -25,9 +25,10 @@ object CalQueueControlFocus {
   def optQueue(id: QueueId): Optional[SeqexecAppRootModel, QueueOperations] =
     SeqexecAppRootModel.uiModel ^|->
     SeqexecUIModel.queues       ^|->
-    CalibrationQueues.ops       ^|->
+    CalibrationQueues.queues    ^|->
     at(id)                      ^<-?
-    std.option.some
+    std.option.some             ^|->
+    CalQueueState.ops
 
   def queueControlG(id: QueueId): Getter[SeqexecAppRootModel, Option[CalQueueControlFocus]] = {
     ClientStatus.canOperateG.zip(Getter(optQueue(id).getOption)) >>> {

@@ -35,6 +35,7 @@ import seqexec.web.client.model.Pages._
 import seqexec.web.client.components.sequence.steps.OffsetFns.OffsetsDisplay
 import seqexec.web.client.components.sequence.steps.StepConfigTable
 import seqexec.web.client.components.sequence.steps.StepsTable
+import seqexec.web.client.components.queue.CalQueueTable
 import seqexec.web.client.components.SessionQueueTableBody
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Arbitrary
@@ -596,15 +597,35 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
   implicit val stepsTableColumnCogen: Cogen[StepsTable.TableColumn] =
     Cogen[String].contramap(_.productPrefix)
 
+  implicit val arbCalQueueTableTableColumn
+    : Arbitrary[CalQueueTable.TableColumn] =
+    Arbitrary(
+      Gen.oneOf(CalQueueTable.ObsIdColumn, CalQueueTable.InstrumentColumn))
+
+  implicit val calTableColumnCogen: Cogen[CalQueueTable.TableColumn] =
+    Cogen[String].contramap(_.productPrefix)
+
+  implicit val arbCalQueuesState: Arbitrary[CalQueueState] =
+    Arbitrary {
+      for {
+        ops <- arbitrary[QueueOperations]
+        ts  <- arbitrary[TableState[CalQueueTable.TableColumn]]
+      } yield CalQueueState(ops, ts)
+    }
+
+  implicit val calQueuesStateCogen: Cogen[CalQueueState] =
+    Cogen[(QueueOperations, TableState[CalQueueTable.TableColumn])]
+      .contramap(x => (x.ops, x.tableState))
+
   implicit val arbCalQueues: Arbitrary[CalibrationQueues] =
     Arbitrary {
       for {
-        ops <- arbitrary[Map[QueueId, QueueOperations]]
+        ops <- arbitrary[Map[QueueId, CalQueueState]]
       } yield CalibrationQueues(ops)
     }
 
   implicit val calQueuesCogen: Cogen[CalibrationQueues] =
-    Cogen[List[(QueueId, QueueOperations)]].contramap(_.ops.toList)
+    Cogen[List[(QueueId, CalQueueState)]].contramap(_.queues.toList)
 
   implicit val arbSeqexecUIModel: Arbitrary[SeqexecUIModel] =
     Arbitrary {
@@ -707,7 +728,8 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
         qt <- arbitrary[TableState[SessionQueueTableBody.TableColumn]]
         ct <- arbitrary[TableState[StepConfigTable.TableColumn]]
         st <- arbitrary[Map[Observation.Id, TableState[StepsTable.TableColumn]]]
-      } yield AppTableStates(qt, ct, st)
+        kt <- arbitrary[Map[QueueId, TableState[CalQueueTable.TableColumn]]]
+      } yield AppTableStates(qt, ct, st, kt)
     }
 
   implicit val appTableStatesCogen: Cogen[AppTableStates] =
