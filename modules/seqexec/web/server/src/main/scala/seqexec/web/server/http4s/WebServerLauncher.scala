@@ -179,8 +179,10 @@ object WebServerLauncher extends StreamApp[IO] with LogInitialization with Seqex
         _          <- configLog // Initialize log before the engine is setup
         c          <- config
         site       <- IO.pure(c.require[Site]("seqexec-engine.site"))
-        giapiGPI   <- SeqexecEngine.gpiGiapiConnection.run(c)
-        giapiGHOST <- SeqexecEngine.ghostGiapiConnection.run(c)
+        giapiGPI   <- SeqexecEngine.giapiConnection("seqexec-engine.systemControl.gpi",
+                                                    "seqexec-engine.gpiUrl").run(c)
+        giapiGHOST <- SeqexecEngine.giapiConnection("seqexec-engine.systemControl.ghost",
+                                                    "seqexec-engine.ghostUrl").run(c)
         seqc       <- SeqexecEngine.seqexecConfiguration(giapiGPI, giapiGHOST).run(c)
         met        <- SeqexecMetrics.build[IO](site, collector)
       } yield SeqexecEngine(httpClient, seqc, met)
