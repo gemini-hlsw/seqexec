@@ -443,14 +443,14 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
     assert(r.isEmpty)
   }
 
+  def testCompleted(oid: Observation.Id)(st: EngineState): Boolean = st.executionState.sequences.get(oid).map(_.status.isCompleted).getOrElse(false)
+
   "SeqexecEngine startQueue" should "run sequences in queue" in {
     // seqObsId1 and seqObsId2 can be run immediately, but seqObsId3 must be run after seqObsId1
     val s0 = (SeqexecEngine.loadSequenceEndo(seqObsId1, sequenceWithResources(seqObsId1, Set(Instrument.F2))) >>>
           SeqexecEngine.loadSequenceEndo(seqObsId2, sequenceWithResources(seqObsId2, Set(Instrument.GmosS))) >>>
           SeqexecEngine.loadSequenceEndo(seqObsId3, sequenceWithResources(seqObsId3, Set(Instrument.F2))) >>>
           (EngineState.queues ^|-? index(CalibrationQueueId) ^|-> ExecutionQueue.queue).set(List(seqObsId1, seqObsId2, seqObsId3)))(EngineState.default)
-
-    def testCompleted(oid: Observation.Id)(st: EngineState): Boolean = st.executionState.sequences.get(oid).map(_.status.isCompleted).getOrElse(false)
 
     (for {
       q <- async.boundedQueue[IO, executeEngine.EventType](10)
@@ -468,8 +468,6 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
           SeqexecEngine.loadSequenceEndo(seqObsId3, sequenceWithResources(seqObsId3, Set(Instrument.F2))) >>>
           (EngineState.queues ^|-? index(CalibrationQueueId) ^|-> ExecutionQueue.queue).set(List(seqObsId1, seqObsId2, seqObsId3)))(EngineState.default)
 
-    def testCompleted(oid: Observation.Id)(st: EngineState): Boolean = st.executionState.sequences.get(oid).map(_.status.isCompleted).getOrElse(false)
-
     (for {
       q <- async.boundedQueue[IO, executeEngine.EventType](10)
       _ <- seqexecEngine.startQueue(q, CalibrationQueueId, UUID.randomUUID)
@@ -477,6 +475,20 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
       sf <- seqexecEngine.stream(q.dequeue)(s0).map(_._2).takeThrough(_.executionState.sequences.values.exists(_.status.isRunning)).compile.last
     } yield inside(sf) {
       case Some(s) => assert(!(testCompleted(seqObsId3)(s)))
+    } ).unsafeRunSync
+  }
+
+  "SeqexecEngine start sequence" should "not run sequence if running queue needs the same resources" in {
+    val s0 = (SeqexecEngine.loadSequenceEndo(seqObsId1, sequenceWithResources(seqObsId1, Set(Instrument.F2))) >>>
+      SeqexecEngine.loadSequenceEndo(seqObsId2, sequenceWithResources(seqObsId2, Set(Instrument.GmosS))) >>>
+      SeqexecEngine.loadSequenceEndo(seqObsId3, sequenceWithResources(seqObsId3, Set(Instrument.F2))) >>>
+      (EngineState.queues ^|-? index(CalibrationQueueId)).modify(x => x.copy(cmdState = BatchCommandState.Run(UUID.randomUUID), queue = List(seqObsId1, seqObsId2))))(EngineState.default)
+
+    (for {
+      q <- async.boundedQueue[IO, executeEngine.EventType](10)
+      sf <- advanceOne(q, s0, seqexecEngine.start(q, seqObsId3, UserDetails("", ""),UUID.randomUUID))
+    } yield inside(sf.flatMap(_.executionState.sequences.get(seqObsId3))) {
+      case Some(s) => assert(s.status === SequenceState.Idle)
     } ).unsafeRunSync
   }
 
