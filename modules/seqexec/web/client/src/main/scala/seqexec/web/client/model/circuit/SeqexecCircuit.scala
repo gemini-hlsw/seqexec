@@ -183,6 +183,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   private val operationsStateHandler   = new OperationsStateHandler(sequencesOnDisplayRW)
   private val siteHandler              = new SiteHandler(zoomTo(_.site))
   private val queueOpsHandler          = new QueueOperationsHandler(queueOperationsRW)
+  private val queueStateHandler        = new QueueStateHandler(queueOperationsRW)
 
   def dispatchCB[A <: Action](a: A): Callback = Callback(dispatch(a))
 
@@ -190,7 +191,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
 
   override protected def actionHandler = composeHandlers(
     wsHandler,
-    foldHandlers(serverMessagesHandler, initialSyncHandler, loadSequencesHandler, userNotificationHandler),
+    foldHandlers(serverMessagesHandler, initialSyncHandler, loadSequencesHandler, userNotificationHandler, queueStateHandler),
     sequenceExecHandler,
     notificationBoxHandler,
     loginBoxHandler,

@@ -10,7 +10,6 @@ import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.extra.Reusability
 import seqexec.model.QueueId
-// import seqexec.model.enum.BatchCommandState
 import seqexec.web.client.circuit._
 import seqexec.web.client.actions.RequestAllDayCal
 import seqexec.web.client.actions.RequestClearAllCal
@@ -135,10 +134,11 @@ object CalQueueToolbar {
               clearAllButton(p),
               runButton(p).unless(p.queueRunning),
               stopButton(p).when(p.queueRunning)
-            )
+          )
           )
         )
-    ))
+      )
+    )
     .configure(Reusability.shouldComponentUpdate)
     .build
 
