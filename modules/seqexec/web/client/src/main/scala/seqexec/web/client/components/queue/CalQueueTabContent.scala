@@ -22,7 +22,7 @@ import web.client.style._
 /**
   * Content of the queue tab
   */
-object QueueTabContent {
+object CalQueueTabContent {
   final case class Props(active:       TabSelected,
                          logDisplayed: SectionVisibilityState) {
     protected[queue] val dayCalConnectOps =
@@ -37,7 +37,7 @@ object QueueTabContent {
       .Props(IconInbox, Some("Work in progress"), IconMessage.Style.Warning))
 
   private val component = ScalaComponent
-    .builder[Props]("QueueTabContent")
+    .builder[Props]("CalQueueTabContent")
     .stateless
     .render_P { p =>
       <.div(

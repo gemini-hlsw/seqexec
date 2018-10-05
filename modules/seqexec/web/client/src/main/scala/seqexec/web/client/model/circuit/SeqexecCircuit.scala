@@ -119,7 +119,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
         case (tab: SequenceTab, active)       =>
           SequenceTabContentFocus(o, tab.instrument, tab.sequence.map(_.id), TabSelected.fromBoolean(active), log)
         case (_: CalibrationQueueTab, active) =>
-          QueueTabContentFocus(o, TabSelected.fromBoolean(active), log)
+          CalQueueTabContentFocus(o, TabSelected.fromBoolean(active), log)
       })
     }
 

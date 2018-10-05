@@ -88,6 +88,9 @@ object actions {
   final case class RequestClearAllCal(qid:   QueueId) extends Action
   final case class ClearAllCalCompleted(qid: QueueId) extends Action
   final case class ClearAllCalFailed(qid:    QueueId) extends Action
+  final case class RequestRunCal(qid:        QueueId) extends Action
+  final case class RunCalCompleted(qid:      QueueId) extends Action
+  final case class RunCalFailed(qid:         QueueId) extends Action
 
   final case class RememberCompleted(s: SequenceView) extends Action
 

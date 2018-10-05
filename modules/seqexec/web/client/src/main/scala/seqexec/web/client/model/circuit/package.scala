@@ -182,7 +182,7 @@ package circuit {
     implicit val eq: Eq[TabContentFocus] =
       Eq.instance {
         case (a: SequenceTabContentFocus, b: SequenceTabContentFocus) => a === b
-        case (a: QueueTabContentFocus, b: QueueTabContentFocus)       => a === b
+        case (a: CalQueueTabContentFocus, b: CalQueueTabContentFocus) => a === b
         case _                                                        => false
       }
   }
@@ -199,13 +199,13 @@ package circuit {
       Eq.by(x => (x.canOperate, x.instrument, x.id, x.active, x.logDisplayed))
   }
 
-  final case class QueueTabContentFocus(canOperate:   Boolean,
-                                        active:       TabSelected,
-                                        logDisplayed: SectionVisibilityState)
+  final case class CalQueueTabContentFocus(canOperate:   Boolean,
+                                           active:       TabSelected,
+                                           logDisplayed: SectionVisibilityState)
       extends TabContentFocus
 
-  object QueueTabContentFocus {
-    implicit val eq: Eq[QueueTabContentFocus] =
+  object CalQueueTabContentFocus {
+    implicit val eq: Eq[CalQueueTabContentFocus] =
       Eq.by(x => (x.canOperate, x.active, x.logDisplayed))
   }
 
