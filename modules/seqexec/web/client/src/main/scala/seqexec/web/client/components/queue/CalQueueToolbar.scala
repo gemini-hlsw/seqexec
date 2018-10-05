@@ -19,6 +19,7 @@ import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.semanticui.elements.icon.Icon.IconRefresh
 import seqexec.web.client.semanticui.elements.icon.Icon.IconCloneOutline
 import seqexec.web.client.semanticui.elements.icon.Icon.IconTrashOutline
+import seqexec.web.client.semanticui.elements.icon.Icon.IconPlay
 import seqexec.web.client.semanticui.controlButton
 import seqexec.web.client.reusability._
 import web.client.style._
@@ -71,6 +72,18 @@ object CalQueueToolbar {
       text     = "Clear"
     )
 
+  private def runButton(p: Props) =
+    controlButton(
+      icon =
+        if (p.clearCalRunning) IconRefresh.copyIcon(loading = true)
+        else IconPlay,
+      color    = "blue",
+      onClick  = clearAllCal(p.queueId),
+      disabled = !p.canOperate || p.clearCalRunning,
+      tooltip  = "Run the calibration queue",
+      text     = "Run"
+    )
+
   private val component = ScalaComponent
     .builder[Props]("CalQueueToolbar")
     .render_P(p =>
@@ -84,7 +97,8 @@ object CalQueueToolbar {
             <.div(
               SeqexecStyles.controlButtons,
               addAllButton(p),
-              clearAllButton(p)
+              clearAllButton(p),
+              runButton(p)
             )
           )
         )

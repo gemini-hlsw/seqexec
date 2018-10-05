@@ -55,7 +55,7 @@ object CalQueueTabContent {
           ^.height := "100%",
           p.dayCalConnectOps(_() match {
             case Some(x) => CalQueueToolbar.Props(CalibrationQueueId, x).cmp
-            case _       => ReactFragment()
+            case _       => <.div()
           }),
           p.dayCalConnect(_() match {
             case Some(x) =>

@@ -49,6 +49,7 @@ final class CircuitReaderSpec
     (configTableState === configTableState.value) should be(true)
     (queueOperationsRW === queueOperationsRW.value) should be(true)
     (sequencesOnDisplayRW === sequencesOnDisplayRW.value) should be(true)
+    (queueFocusRW === queueFocusRW.value) should be(true)
   }
   test("maintain reference equality for id based readers") {
     forAll { (i: Observation.Id) =>

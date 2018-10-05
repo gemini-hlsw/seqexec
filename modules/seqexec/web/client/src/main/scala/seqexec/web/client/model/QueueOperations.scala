@@ -27,19 +27,48 @@ object ClearAllCalOperation {
 
 }
 
+sealed trait RunCalOperation extends Product with Serializable
+object RunCalOperation {
+  case object RunCalInFlight extends RunCalOperation
+  case object RunCalIdle extends RunCalOperation
+
+  implicit val eq: Eq[RunCalOperation] =
+    Eq.fromUniversalEquals
+
+}
+
+sealed trait StopCalOperation extends Product with Serializable
+object StopCalOperation {
+  case object StopCalInFlight extends StopCalOperation
+  case object StopCalIdle extends StopCalOperation
+
+  implicit val eq: Eq[StopCalOperation] =
+    Eq.fromUniversalEquals
+
+}
+
 /**
   * Hold transient states while excuting an operation on the queue
   */
 @Lenses
 final case class QueueOperations(addDayCalRequested:   AddDayCalOperation,
-                                 clearAllCalRequested: ClearAllCalOperation)
+                                 clearAllCalRequested: ClearAllCalOperation,
+                                 runCalRequested:      RunCalOperation,
+                                 stopCalRequested:     StopCalOperation)
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object QueueOperations {
   implicit val eq: Eq[QueueOperations] =
-    Eq.by(x => (x.addDayCalRequested, x.clearAllCalRequested))
+    Eq.by(
+      x =>
+        (x.addDayCalRequested,
+         x.clearAllCalRequested,
+         x.runCalRequested,
+         x.stopCalRequested))
 
   val Default: QueueOperations =
     QueueOperations(AddDayCalOperation.AddDayCalIdle,
-                    ClearAllCalOperation.ClearAllCalIdle)
+                    ClearAllCalOperation.ClearAllCalIdle,
+                    RunCalOperation.RunCalIdle,
+                    StopCalOperation.StopCalIdle)
 }

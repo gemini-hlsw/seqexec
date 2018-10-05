@@ -132,6 +132,9 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   val sequencesOnDisplayRW: ModelRW[SeqexecAppRootModel, SequencesOnDisplay] =
     this.zoomRWL(SeqexecAppRootModel.sequencesOnDisplayL)
 
+  val queueFocusRW: ModelRW[SeqexecAppRootModel, (Option[ClientID], SequencesQueue[SequenceView])] =
+    zoomRW(m => (m.clientId, m.sequences)) ((m, v) => m.copy(clientId = v._1, sequences = v._2))
+
   def sequenceTab(id: Observation.Id): ModelR[SeqexecAppRootModel, Option[SeqexecTabActive]] =
     this.zoomG(SeqexecAppRootModel.sequencesOnDisplayL.composeGetter(SequencesOnDisplay.tabG(id)))
 
@@ -173,7 +176,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   private val operatorHandler          = new OperatorHandler(zoomTo(_.sequences.operator))
   private val defaultObserverHandler   = new DefaultObserverHandler(zoomTo(_.uiModel.defaultObserver))
   private val remoteRequestsHandler    = new RemoteRequestsHandler(zoomTo(_.clientId))
-  private val queueRequestsHandler     = new QueueRequestsHandler(zoomTo(_.sequences))
+  private val queueRequestsHandler     = new QueueRequestsHandler(queueFocusRW)
   private val debuggingHandler         = new DebuggingHandler(zoomTo(_.sequences))
   private val tableStateHandler        = new TableStateHandler(tableStateRW)
   private val loadSequencesHandler     = new LoadedSequencesHandler(sodLocationReaderRW)
