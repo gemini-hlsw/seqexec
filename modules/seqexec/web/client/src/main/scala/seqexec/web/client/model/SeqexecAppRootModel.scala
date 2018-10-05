@@ -7,8 +7,13 @@ import cats._
 import cats.implicits._
 import gem.enum.Site
 import monocle.Lens
+import monocle.Traversal
 import monocle.macros.Lenses
+import monocle.function.FilterIndex.filterIndex
+import monocle.unsafe.MapTraversal._
 import seqexec.model.Conditions
+import seqexec.model.ExecutionQueue
+import seqexec.model.QueueId
 import seqexec.model.SequenceView
 import seqexec.model.SequencesQueue
 import seqexec.model.ClientID
@@ -44,6 +49,11 @@ object SeqexecAppRootModel {
 
   val sequencesOnDisplayL: Lens[SeqexecAppRootModel, SequencesOnDisplay] =
     SeqexecAppRootModel.uiModel ^|-> SeqexecUIModel.sequencesOnDisplay
+
+  def executionQueuesT(id: QueueId): Traversal[SeqexecAppRootModel, ExecutionQueue] =
+    SeqexecAppRootModel.sequences               ^|->
+      SequencesQueue.queues                     ^|->>
+      filterIndex((qid: QueueId) => qid === id)
 
   implicit val eq: Eq[SeqexecAppRootModel] =
     Eq.by(x => (x.sequences, x.ws, x.site, x.clientId, x.uiModel))

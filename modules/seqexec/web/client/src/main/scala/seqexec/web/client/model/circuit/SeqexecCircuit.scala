@@ -119,7 +119,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
         case (tab: SequenceTab, active)       =>
           SequenceTabContentFocus(o, tab.instrument, tab.sequence.map(_.id), TabSelected.fromBoolean(active), log)
         case (_: CalibrationQueueTab, active) =>
-          QueueTabContentFocus(o, TabSelected.fromBoolean(active), log)
+          CalQueueTabContentFocus(o, TabSelected.fromBoolean(active), log)
       })
     }
 
@@ -131,6 +131,9 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
 
   val sequencesOnDisplayRW: ModelRW[SeqexecAppRootModel, SequencesOnDisplay] =
     this.zoomRWL(SeqexecAppRootModel.sequencesOnDisplayL)
+
+  val queueFocusRW: ModelRW[SeqexecAppRootModel, (Option[ClientID], SequencesQueue[SequenceView])] =
+    zoomRW(m => (m.clientId, m.sequences)) ((m, v) => m.copy(clientId = v._1, sequences = v._2))
 
   def sequenceTab(id: Observation.Id): ModelR[SeqexecAppRootModel, Option[SeqexecTabActive]] =
     this.zoomG(SeqexecAppRootModel.sequencesOnDisplayL.composeGetter(SequencesOnDisplay.tabG(id)))
@@ -173,13 +176,14 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   private val operatorHandler          = new OperatorHandler(zoomTo(_.sequences.operator))
   private val defaultObserverHandler   = new DefaultObserverHandler(zoomTo(_.uiModel.defaultObserver))
   private val remoteRequestsHandler    = new RemoteRequestsHandler(zoomTo(_.clientId))
-  private val queueRequestsHandler     = new QueueRequestsHandler(zoomTo(_.sequences))
+  private val queueRequestsHandler     = new QueueRequestsHandler(queueFocusRW)
   private val debuggingHandler         = new DebuggingHandler(zoomTo(_.sequences))
   private val tableStateHandler        = new TableStateHandler(tableStateRW)
   private val loadSequencesHandler     = new LoadedSequencesHandler(sodLocationReaderRW)
   private val operationsStateHandler   = new OperationsStateHandler(sequencesOnDisplayRW)
   private val siteHandler              = new SiteHandler(zoomTo(_.site))
   private val queueOpsHandler          = new QueueOperationsHandler(queueOperationsRW)
+  private val queueStateHandler        = new QueueStateHandler(queueOperationsRW)
 
   def dispatchCB[A <: Action](a: A): Callback = Callback(dispatch(a))
 
@@ -187,7 +191,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
 
   override protected def actionHandler = composeHandlers(
     wsHandler,
-    foldHandlers(serverMessagesHandler, initialSyncHandler, loadSequencesHandler, userNotificationHandler),
+    foldHandlers(serverMessagesHandler, initialSyncHandler, loadSequencesHandler, userNotificationHandler, queueStateHandler),
     sequenceExecHandler,
     notificationBoxHandler,
     loginBoxHandler,

@@ -12,11 +12,8 @@ import monocle.Traversal
 import monocle.macros.Lenses
 import monocle.function.Each.each
 import monocle.function.Each.listEach
-import monocle.function.FilterIndex.filterIndex
-import monocle.unsafe.MapTraversal._
 import seqexec.model.ExecutionQueue
 import seqexec.model.QueueId
-import seqexec.model.SequencesQueue
 import seqexec.web.client.model._
 import seqexec.web.client.components.queue.CalQueueTable
 import web.client.table.TableState
@@ -36,10 +33,8 @@ object CalQueueFocus {
   def calQueueG(id: QueueId): Getter[SeqexecAppRootModel, Option[CalQueueFocus]] = {
     // All ids on the queue
     val ids: Traversal[SeqexecAppRootModel, Observation.Id] =
-      SeqexecAppRootModel.sequences               ^|->
-        SequencesQueue.queues                     ^|->>
-        filterIndex((qid: QueueId) => qid === id) ^|->
-        ExecutionQueue.queue                      ^|->>
+      SeqexecAppRootModel.executionQueuesT(id) ^|->
+        ExecutionQueue.queue                   ^|->>
         each
 
     // All metadata of the given obs

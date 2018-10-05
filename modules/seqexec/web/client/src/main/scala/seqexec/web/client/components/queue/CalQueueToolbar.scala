@@ -13,12 +13,18 @@ import seqexec.model.QueueId
 import seqexec.web.client.circuit._
 import seqexec.web.client.actions.RequestAllDayCal
 import seqexec.web.client.actions.RequestClearAllCal
+import seqexec.web.client.actions.RequestRunCal
+import seqexec.web.client.actions.RequestStopCal
 import seqexec.web.client.model.AddDayCalOperation
+import seqexec.web.client.model.RunCalOperation
+import seqexec.web.client.model.StopCalOperation
 import seqexec.web.client.model.ClearAllCalOperation
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.semanticui.elements.icon.Icon.IconRefresh
 import seqexec.web.client.semanticui.elements.icon.Icon.IconCloneOutline
 import seqexec.web.client.semanticui.elements.icon.Icon.IconTrashOutline
+import seqexec.web.client.semanticui.elements.icon.Icon.IconPlay
+import seqexec.web.client.semanticui.elements.icon.Icon.IconStop
 import seqexec.web.client.semanticui.controlButton
 import seqexec.web.client.reusability._
 import web.client.style._
@@ -37,6 +43,17 @@ object CalQueueToolbar {
 
     val addDayCalRunning: Boolean =
       control.ops.addDayCalRequested === AddDayCalOperation.AddDayCalInFlight
+
+    val runRunning: Boolean =
+      control.ops.runCalRequested === RunCalOperation.RunCalInFlight
+
+    val stopRunning: Boolean =
+      control.ops.stopCalRequested === StopCalOperation.StopCalInFlight
+
+    val anyRunning: Boolean =
+      clearCalRunning || addDayCalRunning || runRunning || stopRunning
+
+    val queueRunning: Boolean = control.state.running
   }
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
@@ -47,6 +64,12 @@ object CalQueueToolbar {
   def clearAllCal(id: QueueId): Callback =
     SeqexecCircuit.dispatchCB(RequestClearAllCal(id))
 
+  def runCal(id: QueueId): Callback =
+    SeqexecCircuit.dispatchCB(RequestRunCal(id))
+
+  def stopCal(id: QueueId): Callback =
+    SeqexecCircuit.dispatchCB(RequestStopCal(id))
+
   private def addAllButton(p: Props) =
     controlButton(
       icon =
@@ -54,7 +77,7 @@ object CalQueueToolbar {
         else IconCloneOutline,
       color    = "blue",
       onClick  = allDayCal(p.queueId),
-      disabled = !p.canOperate || p.addDayCalRunning,
+      disabled = !p.canOperate || p.anyRunning || p.queueRunning,
       tooltip  = "Add all sequences on the session queue",
       text     = "Add all"
     )
@@ -66,9 +89,33 @@ object CalQueueToolbar {
         else IconTrashOutline,
       color    = "brown",
       onClick  = clearAllCal(p.queueId),
-      disabled = !p.canOperate || p.clearCalRunning,
+      disabled = !p.canOperate || p.anyRunning || p.queueRunning,
       tooltip  = "Remove all sequences on the calibration queue",
       text     = "Clear"
+    )
+
+  private def runButton(p: Props) =
+    controlButton(
+      icon =
+        if (p.runRunning) IconRefresh.copyIcon(loading = true)
+        else IconPlay,
+      color    = "blue",
+      onClick  = runCal(p.queueId),
+      disabled = !p.canOperate || p.anyRunning,
+      tooltip  = "Run the calibration queue",
+      text     = "Run"
+    )
+
+  private def stopButton(p: Props) =
+    controlButton(
+      icon =
+        if (p.runRunning) IconRefresh.copyIcon(loading = true)
+        else IconStop,
+      color    = "teal",
+      onClick  = stopCal(p.queueId),
+      disabled = !p.canOperate || p.anyRunning,
+      tooltip  = "Stop the calibration queue",
+      text     = "Stop"
     )
 
   private val component = ScalaComponent
@@ -84,11 +131,14 @@ object CalQueueToolbar {
             <.div(
               SeqexecStyles.controlButtons,
               addAllButton(p),
-              clearAllButton(p)
-            )
+              clearAllButton(p),
+              runButton(p).unless(p.queueRunning),
+              stopButton(p).when(p.queueRunning)
+          )
           )
         )
-    ))
+      )
+    )
     .configure(Reusability.shouldComponentUpdate)
     .build
 

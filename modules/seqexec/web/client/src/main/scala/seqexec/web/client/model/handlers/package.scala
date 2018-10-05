@@ -14,10 +14,13 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 package handlers {
   trait Handlers[M, T] { this: ActionHandler[M, T] =>
-    implicit def pfMonoid[A, B]: Monoid[PartialFunction[A, B]] = new Monoid[PartialFunction[A, B]] {
-      override def empty = PartialFunction.empty[A, B]
-      override def combine(x: PartialFunction[A, B], y: PartialFunction[A, B]): PartialFunction[A, B] = x.orElse(y)
-    }
+    implicit def pfMonoid[A, B]: Monoid[PartialFunction[A, B]] =
+      new Monoid[PartialFunction[A, B]] {
+        override def empty = PartialFunction.empty[A, B]
+        override def combine(x: PartialFunction[A, B],
+                             y: PartialFunction[A, B]): PartialFunction[A, B] =
+          x.orElse(y)
+      }
 
     def updatedL(lens: T => T): ActionResult[M] =
       updated(lens(value))
@@ -37,6 +40,19 @@ package handlers {
           .map(_ => m(a))
           .recover {
             case _ => r(a)
+          }
+      )
+
+    def requestEffect2[A, B, C <: Action, D <: Action](
+      a: (A, B),
+      f: (A, B) => Future[Unit],
+      m: A => C,
+      r: A => D): Effect =
+      Effect(
+        f(a._1, a._2)
+          .map(_ => m(a._1))
+          .recover {
+            case _ => r(a._1)
           }
       )
 

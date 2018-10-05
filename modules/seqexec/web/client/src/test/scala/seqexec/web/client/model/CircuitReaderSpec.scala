@@ -25,7 +25,7 @@ final class CircuitReaderSpec
 
   checkAll("Eq[TabContentFocus]", EqTests[TabContentFocus].eqv)
   checkAll("Eq[SequenceTabContentFocus]", EqTests[SequenceTabContentFocus].eqv)
-  checkAll("Eq[QueueTabContentFocus]", EqTests[QueueTabContentFocus].eqv)
+  checkAll("Eq[CalQueueTabContentFocus]", EqTests[CalQueueTabContentFocus].eqv)
   checkAll("Eq[SequencesFocus]", EqTests[SequencesFocus].eqv)
   checkAll("Eq[SequenceInfoFocus]", EqTests[SequenceInfoFocus].eqv)
   // checkAll("sequencesFocusL", LensTests(SequencesFocus.sequencesFocusL))
@@ -49,6 +49,7 @@ final class CircuitReaderSpec
     (configTableState === configTableState.value) should be(true)
     (queueOperationsRW === queueOperationsRW.value) should be(true)
     (sequencesOnDisplayRW === sequencesOnDisplayRW.value) should be(true)
+    (queueFocusRW === queueFocusRW.value) should be(true)
   }
   test("maintain reference equality for id based readers") {
     forAll { (i: Observation.Id) =>

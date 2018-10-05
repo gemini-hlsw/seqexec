@@ -12,6 +12,7 @@ import gem.Observation
 import gem.arb.ArbTime
 import java.time.Instant
 import seqexec.model.enum._
+import seqexec.model.enum.QueueManipulationOp._
 import seqexec.model.SeqexecModelArbitraries._
 
 trait SequenceEventsArbitraries extends ArbTime {
@@ -87,8 +88,17 @@ trait SequenceEventsArbitraries extends ArbTime {
   implicit val cuArb = Arbitrary[ConditionsUpdated] {
     arbitrary[SequencesQueue[SequenceView]].map(ConditionsUpdated.apply)
   }
+  implicit val qmArb = Arbitrary[QueueManipulationOp] {
+    for {
+      q <- arbitrary[QueueId]
+      m <- Gen.oneOf(Modified(q), Started(q), Stopped(q))
+    } yield m
+  }
   implicit val quArb = Arbitrary[QueueUpdated] {
-    arbitrary[SequencesQueue[SequenceView]].map(QueueUpdated.apply)
+    for {
+      o <- arbitrary[QueueManipulationOp]
+      s <- arbitrary[SequencesQueue[SequenceView]]
+    } yield QueueUpdated(o, s)
   }
   implicit val suArb = Arbitrary[LoadSequenceUpdated] {
     for {

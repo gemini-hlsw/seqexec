@@ -5,7 +5,10 @@ package seqexec.web.client.model
 
 import cats._
 import cats.implicits._
+import monocle.Optional
 import monocle.macros.Lenses
+import monocle.function.At.at
+import monocle.std
 import seqexec.model.CalibrationQueueId
 import seqexec.model.QueueId
 import seqexec.web.client.components.queue.CalQueueTable
@@ -51,4 +54,23 @@ object CalibrationQueues {
 
   val Default: CalibrationQueues =
     CalibrationQueues(Map(CalibrationQueueId -> CalQueueState.Default))
+
+  def calQueueStateL(qid: QueueId): Optional[CalibrationQueues, QueueOperations] =
+    CalibrationQueues.queues ^|->
+      at(qid)                ^<-?
+      std.option.some        ^|->
+      CalQueueState.ops
+
+  def runCalL(qid: QueueId): Optional[CalibrationQueues, RunCalOperation] =
+    calQueueStateL(qid) ^|-> QueueOperations.runCalRequested
+
+  def stopCalL(qid: QueueId): Optional[CalibrationQueues, StopCalOperation] =
+    calQueueStateL(qid) ^|-> QueueOperations.stopCalRequested
+
+  def addDayCalL(qid: QueueId): Optional[CalibrationQueues, AddDayCalOperation] =
+    calQueueStateL(qid) ^|-> QueueOperations.addDayCalRequested
+
+  def clearAllCalL(qid: QueueId): Optional[CalibrationQueues, ClearAllCalOperation] =
+    calQueueStateL(qid) ^|-> QueueOperations.clearAllCalRequested
+
 }

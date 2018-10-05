@@ -13,7 +13,7 @@ import seqexec.web.client.circuit._
 import seqexec.web.client.model.Pages.SeqexecPages
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.components.sequence.steps.SequenceTabContent
-import seqexec.web.client.components.queue.QueueTabContent
+import seqexec.web.client.components.queue.CalQueueTabContent
 import seqexec.web.client.reusability._
 import web.client.style._
 
@@ -37,8 +37,9 @@ object TabsArea {
           ReactFragment(x().toList.collect {
             case t: SequenceTabContentFocus =>
               SequenceTabContent(SequenceTabContent.Props(p.router, t)): VdomNode
-            case t                          =>
-              QueueTabContent(QueueTabContent.Props(t.active, t.logDisplayed)): VdomNode
+            case t =>
+              CalQueueTabContent(
+                CalQueueTabContent.Props(t.active, t.logDisplayed)): VdomNode
           }: _*))
     ))
     .configure(Reusability.shouldComponentUpdate)

@@ -99,12 +99,28 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
   implicit val caqCogen: Cogen[ClearAllCalOperation] =
     Cogen[String].contramap(_.productPrefix)
 
+  implicit val arbRunCalOperation: Arbitrary[RunCalOperation] =
+    Arbitrary(
+      Gen.oneOf(RunCalOperation.RunCalIdle, RunCalOperation.RunCalInFlight))
+
+  implicit val rcCogen: Cogen[RunCalOperation] =
+    Cogen[String].contramap(_.productPrefix)
+
+  implicit val arbStopCalOperation: Arbitrary[StopCalOperation] =
+    Arbitrary(
+      Gen.oneOf(StopCalOperation.StopCalIdle, StopCalOperation.StopCalInFlight))
+
+  implicit val scCogen: Cogen[StopCalOperation] =
+    Cogen[String].contramap(_.productPrefix)
+
   implicit val arbQueueOperations: Arbitrary[QueueOperations] =
     Arbitrary {
       for {
         r <- arbitrary[AddDayCalOperation]
         c <- arbitrary[ClearAllCalOperation]
-      } yield QueueOperations(r, c)
+        u <- arbitrary[RunCalOperation]
+        s <- arbitrary[StopCalOperation]
+      } yield QueueOperations(r, c, u, s)
     }
 
   implicit val qoCogen: Cogen[QueueOperations] =
@@ -334,29 +350,29 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
            SectionVisibilityState)]
       .contramap(x => (x.instrument, x.id, x.active, x.logDisplayed))
 
-  implicit val arbQtcf: Arbitrary[QueueTabContentFocus] =
+  implicit val arbQtcf: Arbitrary[CalQueueTabContentFocus] =
     Arbitrary {
       for {
         g <- arbitrary[Boolean]
         a <- arbitrary[TabSelected]
         s <- arbitrary[SectionVisibilityState]
-      } yield QueueTabContentFocus(g, a, s)
+      } yield CalQueueTabContentFocus(g, a, s)
     }
 
-  implicit val qtcfCogen: Cogen[QueueTabContentFocus] =
+  implicit val qtcfCogen: Cogen[CalQueueTabContentFocus] =
     Cogen[(Boolean, TabSelected, SectionVisibilityState)]
       .contramap(x => (x.canOperate, x.active, x.logDisplayed))
 
   implicit val arbtcf: Arbitrary[TabContentFocus] = Arbitrary {
     Gen.frequency(10 -> arbitrary[SequenceTabContentFocus],
-                  4 -> arbitrary[QueueTabContentFocus])
+                  4 -> arbitrary[CalQueueTabContentFocus])
   }
 
   implicit val tcfCogen: Cogen[TabContentFocus] =
-    Cogen[Either[QueueTabContentFocus, SequenceTabContentFocus]]
+    Cogen[Either[CalQueueTabContentFocus, SequenceTabContentFocus]]
       .contramap {
         case t: SequenceTabContentFocus => t.asRight
-        case t: QueueTabContentFocus    => t.asLeft
+        case t: CalQueueTabContentFocus => t.asLeft
       }
 
   implicit val arbAvailableTab: Arbitrary[AvailableTab] =

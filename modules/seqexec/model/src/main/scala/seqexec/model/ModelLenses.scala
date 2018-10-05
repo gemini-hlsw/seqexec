@@ -93,7 +93,7 @@ trait ModelLenses {
       case e @ SequenceUpdated(_)              => e.copy(view = q)
       case e @ LoadSequenceUpdated(_, _, _, _) => e.copy(view = q)
       case e @ ClearLoadedSequencesUpdated(_)  => e.copy(view = q)
-      case e @ QueueUpdated(_)                 => e.copy(view = q)
+      case e @ QueueUpdated(_, _)              => e.copy(view = q)
       case e                                   => e
     })
 
