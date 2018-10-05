@@ -18,6 +18,7 @@ import seqexec.web.client.actions.RequestAllDayCal
 import seqexec.web.client.model.CalibrationQueues
 import seqexec.web.client.model.QueueOperations
 import seqexec.web.client.model.AddDayCalOperation
+import seqexec.web.client.model.CalQueueState
 import seqexec.web.client.model.ClearAllCalOperation
 import seqexec.web.client.actions._
 
@@ -28,11 +29,17 @@ class QueueOperationsHandler[M](modelRW: ModelRW[M, CalibrationQueues])
     extends ActionHandler(modelRW)
     with Handlers[M, CalibrationQueues] {
 
+  private def calQueueStateL(qid: QueueId) =
+    CalibrationQueues.queues ^|->
+      at(qid)                ^<-?
+      std.option.some        ^|->
+      CalQueueState.ops
+
   private def addDayCalL(qid: QueueId) =
-    CalibrationQueues.ops ^|-> at(qid) ^<-? std.option.some ^|-> QueueOperations.addDayCalRequested
+    calQueueStateL(qid) ^|-> QueueOperations.addDayCalRequested
 
   private def clearAllCalL(qid: QueueId) =
-    CalibrationQueues.ops ^|-> at(qid) ^<-? std.option.some ^|-> QueueOperations.clearAllCalRequested
+    calQueueStateL(qid) ^|-> QueueOperations.clearAllCalRequested
 
   def handleAddAllDayCal: PartialFunction[Any, ActionResult[M]] = {
     case RequestAllDayCal(qid) =>

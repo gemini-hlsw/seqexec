@@ -8,15 +8,47 @@ import cats.implicits._
 import monocle.macros.Lenses
 import seqexec.model.CalibrationQueueId
 import seqexec.model.QueueId
+import seqexec.web.client.components.queue.CalQueueTable
+import web.client.table.TableState
 
 @Lenses
-final case class CalibrationQueues(ops: Map[QueueId, QueueOperations])
+final case class CalQueueState(
+  ops:        QueueOperations,
+  tableState: TableState[CalQueueTable.TableColumn])
+
+@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
+object CalQueueState {
+  implicit val eq: Eq[CalQueueState] =
+    Eq.by(x => (x.ops, x.tableState))
+
+  val Default: CalQueueState =
+    CalQueueState(QueueOperations.Default,
+                  CalQueueTable.State.InitialTableState)
+}
+
+@Lenses
+final case class CalibrationQueues(queues: Map[QueueId, CalQueueState]) {
+  val queueTables: Map[QueueId, TableState[CalQueueTable.TableColumn]] =
+    queues.mapValues(_.tableState)
+
+  def updateTableStates(queueTs: Map[QueueId, TableState[CalQueueTable.TableColumn]]): CalibrationQueues =
+    copy(queues = queues.map {
+      case (i, st) if queueTs.contains(i) =>
+        (i,
+         queueTs
+           .get(i)
+           .map(CalQueueState.tableState.set)
+           .map(_(st))
+           .getOrElse(st))
+      case i => i
+    })
+}
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object CalibrationQueues {
   implicit val eq: Eq[CalibrationQueues] =
-    Eq.by(x => (x.ops))
+    Eq.by(_.queues)
 
   val Default: CalibrationQueues =
-    CalibrationQueues(Map(CalibrationQueueId -> QueueOperations.Default))
+    CalibrationQueues(Map(CalibrationQueueId -> CalQueueState.Default))
 }

@@ -13,7 +13,6 @@ import gem.enum.Site
 import monocle.Getter
 import monocle.Lens
 import monocle.macros.Lenses
-import monocle.function.At._
 import seqexec.model._
 import seqexec.model.enum._
 import seqexec.web.client.lenses.firstScienceStepTargetNameT
@@ -372,32 +371,6 @@ package circuit {
         case _ => none
       }
     }
-  }
-
-  @Lenses
-  final case class AppTableStates(
-    queueTable:      TableState[SessionQueueTableBody.TableColumn],
-    stepConfigTable: TableState[StepConfigTable.TableColumn],
-    stepsTables:     Map[Observation.Id, TableState[StepsTable.TableColumn]])
-      extends UseValueEq
-
-  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
-  object AppTableStates {
-    implicit val eq: Eq[AppTableStates] =
-      Eq.by(x => (x.queueTable, x.stepConfigTable, x.stepsTables))
-
-    val tableStateL: Lens[SeqexecUIModel, AppTableStates] =
-      Lens[SeqexecUIModel, AppTableStates](
-        m => AppTableStates(m.queueTableState,
-                         m.configTableState,
-                         m.sequencesOnDisplay.stepsTables))(
-        v => m => m.copy(queueTableState  = v.queueTable,
-                         configTableState = v.stepConfigTable,
-                         sequencesOnDisplay = m.sequencesOnDisplay
-                           .updateTableStates(v.stepsTables)))
-
-    def stepTableAt(id: Observation.Id): Lens[AppTableStates, Option[TableState[StepsTable.TableColumn]]] =
-      AppTableStates.stepsTables ^|-> at(id)
   }
 
 }

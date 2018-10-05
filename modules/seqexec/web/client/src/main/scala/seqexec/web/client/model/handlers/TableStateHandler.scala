@@ -23,6 +23,9 @@ class TableStateHandler[M](modelRW: ModelRW[M, AppTableStates])
       updatedSilentL(AppTableStates.queueTable.set(state)) // We should only do silent updates as these change too quickly
 
     case UpdateStepTableState(id, state) =>
-      updatedSilentL(AppTableStates.stepTableAt(id).set(Some(state))) // We should only do silent updates as these change too quickly
+      updatedSilentL(AppTableStates.stepTableAtL(id).set(Some(state))) // We should only do silent updates as these change too quickly
+
+    case UpdateCalTableState(id, state) =>
+      updatedSilentL(AppTableStates.queueTableAtL(id).set(Some(state))) // We should only do silent updates as these change too quickly
   }
 }
