@@ -741,9 +741,9 @@ object SeqexecEngine extends SeqexecConfiguration {
     case LoadSequence(id)              => SequenceLoaded(id, svs)
     case UnloadSequence(id)            => SequenceUnloaded(id, svs)
     case NotifyUser(m, cid)            => UserNotification(m, cid)
-    case UpdateQueue(_)                => QueueUpdated(svs)
-    case StartQueue(_, _)              => NullEvent
-    case StopQueue(_, _)               => NullEvent
+    case UpdateQueue(qid)              => QueueUpdated(QueueManipulationOp.Modified(qid), svs)
+    case StartQueue(qid, _)            => QueueUpdated(QueueManipulationOp.Started(qid), svs)
+    case StopQueue(qid, _)             => QueueUpdated(QueueManipulationOp.Stopped(qid), svs)
   }
 
   def toSeqexecEvent(ev: executeEngine.ResultType)(svs: => SequencesQueue[SequenceView]): SeqexecEvent = ev match {

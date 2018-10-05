@@ -51,8 +51,10 @@ object CalQueueToolbar {
     val stopRunning: Boolean =
       control.ops.stopCalRequested === StopCalOperation.StopCalInFlight
 
-    // val isRunning: Boolean =
-    //   control.state === BatchCommandState.Running
+    val anyRunning: Boolean =
+      clearCalRunning || addDayCalRunning || runRunning || stopRunning
+
+    val queueRunning: Boolean = control.state.running
   }
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
@@ -76,7 +78,7 @@ object CalQueueToolbar {
         else IconCloneOutline,
       color    = "blue",
       onClick  = allDayCal(p.queueId),
-      disabled = !p.canOperate || p.addDayCalRunning,
+      disabled = !p.canOperate || p.anyRunning || p.queueRunning,
       tooltip  = "Add all sequences on the session queue",
       text     = "Add all"
     )
@@ -88,7 +90,7 @@ object CalQueueToolbar {
         else IconTrashOutline,
       color    = "brown",
       onClick  = clearAllCal(p.queueId),
-      disabled = !p.canOperate || p.clearCalRunning,
+      disabled = !p.canOperate || p.anyRunning || p.queueRunning,
       tooltip  = "Remove all sequences on the calibration queue",
       text     = "Clear"
     )
@@ -100,7 +102,7 @@ object CalQueueToolbar {
         else IconPlay,
       color    = "blue",
       onClick  = runCal(p.queueId),
-      disabled = !p.canOperate || p.runRunning,
+      disabled = !p.canOperate || p.anyRunning,
       tooltip  = "Run the calibration queue",
       text     = "Run"
     )
@@ -112,7 +114,7 @@ object CalQueueToolbar {
         else IconStop,
       color    = "teal",
       onClick  = stopCal(p.queueId),
-      disabled = !p.canOperate || p.stopRunning,
+      disabled = !p.canOperate || p.anyRunning,
       tooltip  = "Stop the calibration queue",
       text     = "Stop"
     )
@@ -131,8 +133,8 @@ object CalQueueToolbar {
               SeqexecStyles.controlButtons,
               addAllButton(p),
               clearAllButton(p),
-              runButton(p),
-              stopButton(p)
+              runButton(p).unless(p.queueRunning),
+              stopButton(p).when(p.queueRunning)
             )
           )
         )

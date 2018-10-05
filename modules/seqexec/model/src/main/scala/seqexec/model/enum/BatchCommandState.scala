@@ -6,7 +6,12 @@ package seqexec.model.enum
 import cats.Eq
 import seqexec.model.ClientID
 
-sealed trait BatchCommandState extends Product with Serializable
+sealed trait BatchCommandState extends Product with Serializable {
+  def running: Boolean = this match {
+    case BatchCommandState.Idle | BatchCommandState.Stop => false
+    case BatchCommandState.Run(_)                        => true
+  }
+}
 
 object BatchCommandState {
   case object Idle extends BatchCommandState
