@@ -10,10 +10,13 @@ import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.extra.Reusability
 import seqexec.model.QueueId
+// import seqexec.model.enum.BatchCommandState
 import seqexec.web.client.circuit._
 import seqexec.web.client.actions.RequestAllDayCal
 import seqexec.web.client.actions.RequestClearAllCal
+import seqexec.web.client.actions.RequestRunCal
 import seqexec.web.client.model.AddDayCalOperation
+import seqexec.web.client.model.RunCalOperation
 import seqexec.web.client.model.ClearAllCalOperation
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.semanticui.elements.icon.Icon.IconRefresh
@@ -38,6 +41,12 @@ object CalQueueToolbar {
 
     val addDayCalRunning: Boolean =
       control.ops.addDayCalRequested === AddDayCalOperation.AddDayCalInFlight
+
+    val runRunning: Boolean =
+      control.ops.runCalRequested === RunCalOperation.RunCalInFlight
+
+    // val isRunning: Boolean =
+    //   control.state === BatchCommandState.Running
   }
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
@@ -47,6 +56,9 @@ object CalQueueToolbar {
 
   def clearAllCal(id: QueueId): Callback =
     SeqexecCircuit.dispatchCB(RequestClearAllCal(id))
+
+  def runCal(id: QueueId): Callback =
+    SeqexecCircuit.dispatchCB(RequestRunCal(id))
 
   private def addAllButton(p: Props) =
     controlButton(
@@ -75,11 +87,11 @@ object CalQueueToolbar {
   private def runButton(p: Props) =
     controlButton(
       icon =
-        if (p.clearCalRunning) IconRefresh.copyIcon(loading = true)
+        if (p.runRunning) IconRefresh.copyIcon(loading = true)
         else IconPlay,
       color    = "blue",
-      onClick  = clearAllCal(p.queueId),
-      disabled = !p.canOperate || p.clearCalRunning,
+      onClick  = runCal(p.queueId),
+      disabled = !p.canOperate || p.runRunning,
       tooltip  = "Run the calibration queue",
       text     = "Run"
     )

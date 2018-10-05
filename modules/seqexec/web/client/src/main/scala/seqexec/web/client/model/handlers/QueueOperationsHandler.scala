@@ -14,12 +14,13 @@ import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import seqexec.model.RequestFailed
 import seqexec.model.QueueId
-import seqexec.web.client.actions.RequestAllDayCal
 import seqexec.web.client.model.CalibrationQueues
 import seqexec.web.client.model.QueueOperations
 import seqexec.web.client.model.AddDayCalOperation
 import seqexec.web.client.model.CalQueueState
 import seqexec.web.client.model.ClearAllCalOperation
+import seqexec.web.client.model.RunCalOperation
+import seqexec.web.client.actions.RequestAllDayCal
 import seqexec.web.client.actions._
 
 /**
@@ -41,6 +42,9 @@ class QueueOperationsHandler[M](modelRW: ModelRW[M, CalibrationQueues])
   private def clearAllCalL(qid: QueueId) =
     calQueueStateL(qid) ^|-> QueueOperations.clearAllCalRequested
 
+  private def runCalL(qid: QueueId) =
+    calQueueStateL(qid) ^|-> QueueOperations.runCalRequested
+
   def handleAddAllDayCal: PartialFunction[Any, ActionResult[M]] = {
     case RequestAllDayCal(qid) =>
       updatedL(addDayCalL(qid).set(AddDayCalOperation.AddDayCalInFlight))
@@ -53,12 +57,21 @@ class QueueOperationsHandler[M](modelRW: ModelRW[M, CalibrationQueues])
 
   }
 
+  def handleRunCal: PartialFunction[Any, ActionResult[M]] = {
+    case RequestRunCal(qid) =>
+      updatedL(runCalL(qid).set(RunCalOperation.RunCalInFlight))
+
+  }
+
   def handleRequestResultOk: PartialFunction[Any, ActionResult[M]] = {
     case AllDayCalCompleted(qid) =>
       updatedL(addDayCalL(qid).set(AddDayCalOperation.AddDayCalIdle))
 
     case ClearAllCalCompleted(qid) =>
       updatedL(clearAllCalL(qid).set(ClearAllCalOperation.ClearAllCalIdle))
+
+    case RunCalCompleted(qid) =>
+      updatedL(runCalL(qid).set(RunCalOperation.RunCalIdle))
   }
 
   def handleRequestResultFailed: PartialFunction[Any, ActionResult[M]] = {
@@ -75,10 +88,18 @@ class QueueOperationsHandler[M](modelRW: ModelRW[M, CalibrationQueues])
         Future(RequestFailedNotification(RequestFailed(msg))))
       updatedLE(clearAllCalL(qid).set(ClearAllCalOperation.ClearAllCalIdle),
                 notification)
+
+    case RunCalFailed(qid) =>
+      val msg = s"Failed to execute the cal queue"
+      val notification = Effect(
+        Future(RequestFailedNotification(RequestFailed(msg))))
+      updatedLE(runCalL(qid).set(RunCalOperation.RunCalIdle), notification)
   }
+
   override def handle: PartialFunction[Any, ActionResult[M]] =
     List(handleAddAllDayCal,
          handleClearAllCal,
+         handleRunCal,
          handleRequestResultOk,
          handleRequestResultFailed).combineAll
 }

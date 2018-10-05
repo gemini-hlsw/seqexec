@@ -7,6 +7,7 @@ import cats.implicits._
 import diode.ActionHandler
 import diode.ActionResult
 import diode.ModelRW
+import seqexec.model.ClientID
 import seqexec.model.SequencesQueue
 import seqexec.model.SequenceView
 import seqexec.web.client.actions._
@@ -15,13 +16,14 @@ import seqexec.web.client.services.SeqexecWebClient
 /**
   * Handles actions sending requests to the backend
   */
-class QueueRequestsHandler[M](modelRW: ModelRW[M, SequencesQueue[SequenceView]])
+class QueueRequestsHandler[M](
+  modelRW: ModelRW[M, (Option[ClientID], SequencesQueue[SequenceView])])
     extends ActionHandler(modelRW)
-    with Handlers[M, SequencesQueue[SequenceView]] {
+    with Handlers[M, (Option[ClientID], SequencesQueue[SequenceView])] {
 
   def handleAddAllDayCal: PartialFunction[Any, ActionResult[M]] = {
     case RequestAllDayCal(qid) =>
-      val ids = value.sessionQueue.map(_.id)
+      val ids = value._2.sessionQueue.map(_.id)
       effectOnly(
         requestEffect(qid,
                       SeqexecWebClient.addSequencesToQueue(ids),
@@ -38,7 +40,20 @@ class QueueRequestsHandler[M](modelRW: ModelRW[M, SequencesQueue[SequenceView]])
                       ClearAllCalFailed.apply))
   }
 
+  def handleRunCal: PartialFunction[Any, ActionResult[M]] = {
+    case RequestRunCal(qid) =>
+      value._1
+        .map { cid =>
+          effectOnly(
+            requestEffect2((qid, cid),
+                           SeqexecWebClient.runQueue,
+                           RunCalCompleted.apply,
+                           RunCalFailed.apply))
+        }
+        .getOrElse(noChange)
+  }
+
   override def handle: PartialFunction[Any, ActionResult[M]] =
-    List(handleAddAllDayCal, handleClearAllCal).combineAll
+    List(handleAddAllDayCal, handleClearAllCal, handleRunCal).combineAll
 
 }
