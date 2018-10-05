@@ -53,7 +53,20 @@ class QueueRequestsHandler[M](
         .getOrElse(noChange)
   }
 
+  def handleStopCal: PartialFunction[Any, ActionResult[M]] = {
+    case RequestStopCal(qid) =>
+      value._1
+        .map { cid =>
+          effectOnly(
+            requestEffect2((qid, cid),
+                           SeqexecWebClient.stopQueue,
+                           StopCalCompleted.apply,
+                           StopCalFailed.apply))
+        }
+        .getOrElse(noChange)
+  }
+
   override def handle: PartialFunction[Any, ActionResult[M]] =
-    List(handleAddAllDayCal, handleClearAllCal, handleRunCal).combineAll
+    List(handleAddAllDayCal, handleClearAllCal, handleRunCal, handleStopCal).combineAll
 
 }

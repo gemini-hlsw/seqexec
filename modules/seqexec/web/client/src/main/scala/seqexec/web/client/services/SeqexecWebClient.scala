@@ -349,7 +349,20 @@ object SeqexecWebClient extends ModelBooPicklers {
   def runQueue(queueId: QueueId, clientId: ClientID): Future[Unit] =
     Ajax
       .post(
-        url          = s"$baseUrl/commands/queue/${encodeURI(queueId.show)}/run/${encodeURI(clientId.show)}",
+        url =
+          s"$baseUrl/commands/queue/${encodeURI(queueId.show)}/run/${encodeURI(clientId.show)}",
+        responseType = "arraybuffer"
+      )
+      .map(_ => ())
+
+  /**
+    * Stops a queue
+    */
+  def stopQueue(queueId: QueueId, clientId: ClientID): Future[Unit] =
+    Ajax
+      .post(
+        url =
+          s"$baseUrl/commands/queue/${encodeURI(queueId.show)}/stop/${encodeURI(clientId.show)}",
         responseType = "arraybuffer"
       )
       .map(_ => ())

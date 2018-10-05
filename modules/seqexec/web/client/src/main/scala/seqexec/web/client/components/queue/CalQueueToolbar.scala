@@ -15,14 +15,17 @@ import seqexec.web.client.circuit._
 import seqexec.web.client.actions.RequestAllDayCal
 import seqexec.web.client.actions.RequestClearAllCal
 import seqexec.web.client.actions.RequestRunCal
+import seqexec.web.client.actions.RequestStopCal
 import seqexec.web.client.model.AddDayCalOperation
 import seqexec.web.client.model.RunCalOperation
+import seqexec.web.client.model.StopCalOperation
 import seqexec.web.client.model.ClearAllCalOperation
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.semanticui.elements.icon.Icon.IconRefresh
 import seqexec.web.client.semanticui.elements.icon.Icon.IconCloneOutline
 import seqexec.web.client.semanticui.elements.icon.Icon.IconTrashOutline
 import seqexec.web.client.semanticui.elements.icon.Icon.IconPlay
+import seqexec.web.client.semanticui.elements.icon.Icon.IconStop
 import seqexec.web.client.semanticui.controlButton
 import seqexec.web.client.reusability._
 import web.client.style._
@@ -45,6 +48,9 @@ object CalQueueToolbar {
     val runRunning: Boolean =
       control.ops.runCalRequested === RunCalOperation.RunCalInFlight
 
+    val stopRunning: Boolean =
+      control.ops.stopCalRequested === StopCalOperation.StopCalInFlight
+
     // val isRunning: Boolean =
     //   control.state === BatchCommandState.Running
   }
@@ -59,6 +65,9 @@ object CalQueueToolbar {
 
   def runCal(id: QueueId): Callback =
     SeqexecCircuit.dispatchCB(RequestRunCal(id))
+
+  def stopCal(id: QueueId): Callback =
+    SeqexecCircuit.dispatchCB(RequestStopCal(id))
 
   private def addAllButton(p: Props) =
     controlButton(
@@ -96,6 +105,18 @@ object CalQueueToolbar {
       text     = "Run"
     )
 
+  private def stopButton(p: Props) =
+    controlButton(
+      icon =
+        if (p.runRunning) IconRefresh.copyIcon(loading = true)
+        else IconStop,
+      color    = "teal",
+      onClick  = stopCal(p.queueId),
+      disabled = !p.canOperate || p.stopRunning,
+      tooltip  = "Stop the calibration queue",
+      text     = "Stop"
+    )
+
   private val component = ScalaComponent
     .builder[Props]("CalQueueToolbar")
     .render_P(p =>
@@ -110,7 +131,8 @@ object CalQueueToolbar {
               SeqexecStyles.controlButtons,
               addAllButton(p),
               clearAllButton(p),
-              runButton(p)
+              runButton(p),
+              stopButton(p)
             )
           )
         )

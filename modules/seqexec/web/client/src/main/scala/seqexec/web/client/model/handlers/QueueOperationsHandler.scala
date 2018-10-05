@@ -20,6 +20,7 @@ import seqexec.web.client.model.AddDayCalOperation
 import seqexec.web.client.model.CalQueueState
 import seqexec.web.client.model.ClearAllCalOperation
 import seqexec.web.client.model.RunCalOperation
+import seqexec.web.client.model.StopCalOperation
 import seqexec.web.client.actions.RequestAllDayCal
 import seqexec.web.client.actions._
 
@@ -45,6 +46,9 @@ class QueueOperationsHandler[M](modelRW: ModelRW[M, CalibrationQueues])
   private def runCalL(qid: QueueId) =
     calQueueStateL(qid) ^|-> QueueOperations.runCalRequested
 
+  private def stopCalL(qid: QueueId) =
+    calQueueStateL(qid) ^|-> QueueOperations.stopCalRequested
+
   def handleAddAllDayCal: PartialFunction[Any, ActionResult[M]] = {
     case RequestAllDayCal(qid) =>
       updatedL(addDayCalL(qid).set(AddDayCalOperation.AddDayCalInFlight))
@@ -63,6 +67,12 @@ class QueueOperationsHandler[M](modelRW: ModelRW[M, CalibrationQueues])
 
   }
 
+  def handleStopCal: PartialFunction[Any, ActionResult[M]] = {
+    case RequestStopCal(qid) =>
+      updatedL(stopCalL(qid).set(StopCalOperation.StopCalInFlight))
+
+  }
+
   def handleRequestResultOk: PartialFunction[Any, ActionResult[M]] = {
     case AllDayCalCompleted(qid) =>
       updatedL(addDayCalL(qid).set(AddDayCalOperation.AddDayCalIdle))
@@ -72,6 +82,9 @@ class QueueOperationsHandler[M](modelRW: ModelRW[M, CalibrationQueues])
 
     case RunCalCompleted(qid) =>
       updatedL(runCalL(qid).set(RunCalOperation.RunCalIdle))
+
+    case StopCalCompleted(qid) =>
+      updatedL(stopCalL(qid).set(StopCalOperation.StopCalIdle))
   }
 
   def handleRequestResultFailed: PartialFunction[Any, ActionResult[M]] = {
@@ -94,12 +107,19 @@ class QueueOperationsHandler[M](modelRW: ModelRW[M, CalibrationQueues])
       val notification = Effect(
         Future(RequestFailedNotification(RequestFailed(msg))))
       updatedLE(runCalL(qid).set(RunCalOperation.RunCalIdle), notification)
+
+    case StopCalFailed(qid) =>
+      val msg = s"Failed to stop queue execution"
+      val notification = Effect(
+        Future(RequestFailedNotification(RequestFailed(msg))))
+      updatedLE(stopCalL(qid).set(StopCalOperation.StopCalIdle), notification)
   }
 
   override def handle: PartialFunction[Any, ActionResult[M]] =
     List(handleAddAllDayCal,
          handleClearAllCal,
          handleRunCal,
+         handleStopCal,
          handleRequestResultOk,
          handleRequestResultFailed).combineAll
 }
