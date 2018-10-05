@@ -294,11 +294,20 @@ final class TcsEpics(epicsService: CaService, tops: Map[String, String]) {
 
   object oiwfsProbeGuideConfig extends ProbeGuideConfig("oi", tcsState)
 
+  private val tcsStabilizeTime = 1.seconds
+
+  private val filteredInPositionAttr: CaAttribute[String] = new CaWindowStabilizer[String](inPositionAttr, java.time.Duration.ofMillis(tcsStabilizeTime.toMillis))
+  def filteredInPosition: Option[String] = Option(filteredInPositionAttr.value())
+
   // This functions returns a Task that, when run, will wait up to `timeout`
   // seconds for the TCS in-position flag to set to TRUE
-  def waitInPosition(timeout: Time): SeqAction[Unit] = waitForValue(inPositionAttr, "TRUE", timeout,
+  def waitInPosition(timeout: Time): SeqAction[Unit] = waitForValue(filteredInPositionAttr, "TRUE", timeout,
     "TCS inposition flag")
 
+  private val agStabilizeTime = 1.seconds
+
+  private val filteredAGInPositionAttr: CaAttribute[java.lang.Double] = new CaWindowStabilizer[java.lang.Double](agInPositionAttr, java.time.Duration.ofMillis(agStabilizeTime.toMillis))
+  def filteredAGInPosition: Option[Double] = Option(filteredAGInPositionAttr.value()).map(_.doubleValue)
 
   // `waitAGInPosition` works like `waitInPosition`, but for the AG in-position flag.
   /* TODO: AG inposition can take up to 1[s] to react to a TCS command. If the value is read before that, it may induce
@@ -306,7 +315,7 @@ final class TcsEpics(epicsService: CaService, tops: Map[String, String]) {
    */
   private val AGSettleTime = 1100.milliseconds
   def waitAGInPosition(timeout: Time): SeqAction[Unit] = SeqAction(Thread.sleep(AGSettleTime.toMilliseconds.toLong)) *>
-    waitForValue[java.lang.Double](agInPositionAttr, 1.0, timeout, "AG inposition flag")
+    waitForValue[java.lang.Double](filteredAGInPositionAttr, 1.0, timeout, "AG inposition flag")
 
   def hourAngle: Option[String] = Option(tcsState.getStringAttribute("ha").value)
 
