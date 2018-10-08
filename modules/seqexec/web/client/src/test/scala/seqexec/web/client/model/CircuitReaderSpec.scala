@@ -32,6 +32,7 @@ final class CircuitReaderSpec
   // checkAll("sodLocationFocusL", LensTests(SODLocationFocus.sodLocationFocusL))
   // checkAll("initialSyncFocusL", LensTests(InitialSyncFocus.initialSyncFocusL))
   checkAll("clientStatusFocusL", LensTests(ClientStatus.clientStatusFocusL))
+  // checkAll("webSocketFocusL", LensTests(WebSocketsFocus.webSocketFocusL))
   // checkAll("tableStateL", LensTests(TableStates.tableStateL))
 
   test("maintain reference equality for constant readers") {
@@ -46,7 +47,6 @@ final class CircuitReaderSpec
     (logDisplayedReader === logDisplayedReader.value) should be(true)
     (tabsReader === tabsReader.value) should be(true)
     (seqexecTabs === seqexecTabs.value) should be(true)
-    (configTableState === configTableState.value) should be(true)
     (queueOperationsRW === queueOperationsRW.value) should be(true)
     (sequencesOnDisplayRW === sequencesOnDisplayRW.value) should be(true)
     (queueFocusRW === queueFocusRW.value) should be(true)

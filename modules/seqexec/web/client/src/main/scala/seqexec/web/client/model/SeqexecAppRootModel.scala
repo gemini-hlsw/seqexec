@@ -17,6 +17,8 @@ import seqexec.model.QueueId
 import seqexec.model.SequenceView
 import seqexec.model.SequencesQueue
 import seqexec.model.ClientID
+import seqexec.web.client.components.sequence.steps.StepConfigTable
+import web.client.table._
 
 /**
   * Root of the UI Model of the application
@@ -45,14 +47,20 @@ object SeqexecAppRootModel {
     SeqexecUIModel.Initial)
 
   val logDisplayL: Lens[SeqexecAppRootModel, SectionVisibilityState] =
-    SeqexecAppRootModel.uiModel ^|-> SeqexecUIModel.globalLog ^|-> GlobalLog.display
+    SeqexecAppRootModel.uiModel ^|->
+      SeqexecUIModel.globalLog  ^|->
+      GlobalLog.display
 
   val sequencesOnDisplayL: Lens[SeqexecAppRootModel, SequencesOnDisplay] =
     SeqexecAppRootModel.uiModel ^|-> SeqexecUIModel.sequencesOnDisplay
 
-  def executionQueuesT(id: QueueId): Traversal[SeqexecAppRootModel, ExecutionQueue] =
-    SeqexecAppRootModel.sequences               ^|->
-      SequencesQueue.queues                     ^|->>
+  val configTableStateL: Lens[SeqexecAppRootModel, TableState[StepConfigTable.TableColumn]] =
+    SeqexecAppRootModel.uiModel ^|-> SeqexecUIModel.configTableState
+
+  def executionQueuesT(
+    id: QueueId): Traversal[SeqexecAppRootModel, ExecutionQueue] =
+    SeqexecAppRootModel.sequences ^|->
+      SequencesQueue.queues       ^|->>
       filterIndex((qid: QueueId) => qid === id)
 
   implicit val eq: Eq[SeqexecAppRootModel] =

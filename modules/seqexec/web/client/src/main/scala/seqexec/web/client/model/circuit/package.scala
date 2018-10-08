@@ -9,7 +9,6 @@ import cats.implicits._
 import cats.data.NonEmptyList
 import diode._
 import gem.Observation
-import gem.enum.Site
 import monocle.Getter
 import monocle.Lens
 import monocle.macros.Lenses
@@ -18,7 +17,6 @@ import seqexec.model.enum._
 import seqexec.web.client.lenses.firstScienceStepTargetNameT
 import seqexec.web.client.model._
 import seqexec.web.client.ModelOps._
-import seqexec.web.client.components.sequence.steps.StepConfigTable
 import seqexec.web.client.components.sequence.steps.StepsTable
 import seqexec.web.client.components.SessionQueueTableBody
 import web.client.table._
@@ -56,14 +54,6 @@ package circuit {
 
   // All these classes are focused views of the root model. They are used to only update small sections of the
   // UI even if other parts of the root model change
-  final case class WebSocketsFocus(location:        Pages.SeqexecPages,
-                                   sequences:       SequencesQueue[SequenceView],
-                                   user:            Option[UserDetails],
-                                   defaultObserver: Observer,
-                                   clientId:        Option[ClientID],
-                                   site:            Option[Site])
-      extends UseValueEq
-
   @Lenses
   final case class SequencesFocus(sequences: SequencesQueue[SequenceView],
                                   sod:       SequencesOnDisplay)
@@ -76,8 +66,10 @@ package circuit {
     val sequencesFocusL: Lens[SeqexecAppRootModel, SequencesFocus] =
       Lens[SeqexecAppRootModel, SequencesFocus](m =>
         SequencesFocus(m.sequences, m.uiModel.sequencesOnDisplay))(
-        v => m => m.copy(sequences = v.sequences,
-                         uiModel   = m.uiModel.copy(sequencesOnDisplay = v.sod)))
+        v =>
+          m =>
+            m.copy(sequences = v.sequences,
+                   uiModel   = m.uiModel.copy(sequencesOnDisplay = v.sod)))
 
   }
 
@@ -93,12 +85,15 @@ package circuit {
 
     val sodLocationFocusL: Lens[SeqexecAppRootModel, SODLocationFocus] =
       Lens[SeqexecAppRootModel, SODLocationFocus](
-        m => SODLocationFocus(m.uiModel.navLocation,
-                                   m.uiModel.sequencesOnDisplay,
-                                   m.clientId))(
-        v => m => m.copy(clientId = v.clientId,
-                                    uiModel = m.uiModel.copy(navLocation = v.location,
-                                                             sequencesOnDisplay = v.sod)))
+        m =>
+          SODLocationFocus(m.uiModel.navLocation,
+                           m.uiModel.sequencesOnDisplay,
+                           m.clientId))(
+        v =>
+          m =>
+            m.copy(clientId = v.clientId,
+                   uiModel = m.uiModel.copy(navLocation = v.location,
+                                            sequencesOnDisplay = v.sod)))
   }
 
   @Lenses
@@ -114,7 +109,9 @@ package circuit {
     val initialSyncFocusL: Lens[SeqexecUIModel, InitialSyncFocus] =
       Lens[SeqexecUIModel, InitialSyncFocus](m =>
         InitialSyncFocus(m.navLocation, m.sequencesOnDisplay, m.firstLoad))(
-        v => m => m.copy(navLocation        = v.location,
+        v =>
+          m =>
+            m.copy(navLocation        = v.location,
                    sequencesOnDisplay = v.sod,
                    firstLoad          = v.firstLoad))
   }
@@ -140,19 +137,6 @@ package circuit {
     status:     ClientStatus,
     sequences:  List[SequenceInSessionQueue],
     tableState: TableState[SessionQueueTableBody.TableColumn])
-      extends UseValueEq
-
-  final case class SequenceObserverFocus(instrument: Instrument,
-                                         obsId:      Observation.Id,
-                                         completed:  Boolean,
-                                         observer:   Option[Observer])
-      extends UseValueEq
-
-  final case class HeaderSideBarFocus(
-    status:     ClientStatus,
-    conditions: Conditions,
-    operator:   Option[Operator],
-    observer:   Either[Observer, SequenceObserverFocus])
       extends UseValueEq
 
   final case class InstrumentStatusFocus(
@@ -221,7 +205,8 @@ package circuit {
 
     def sequenceInfoG(id: Observation.Id): Getter[SeqexecAppRootModel, Option[SequenceInfoFocus]] = {
       val getter =
-        SeqexecAppRootModel.sequencesOnDisplayL.composeGetter(SequencesOnDisplay.tabG(id))
+        SeqexecAppRootModel.sequencesOnDisplayL.composeGetter(
+          SequencesOnDisplay.tabG(id))
       ClientStatus.canOperateG.zip(getter) >>> {
         case (status, Some(SeqexecTabActive(tab, _))) =>
           val targetName =
@@ -255,7 +240,8 @@ package circuit {
 
     def statusAndStepG(id: Observation.Id): Getter[SeqexecAppRootModel, Option[StatusAndStepFocus]] = {
       val getter =
-        SeqexecAppRootModel.sequencesOnDisplayL.composeGetter(SequencesOnDisplay.tabG(id))
+        SeqexecAppRootModel.sequencesOnDisplayL.composeGetter(
+          SequencesOnDisplay.tabG(id))
       ClientStatus.canOperateG.zip(getter) >>> {
         case (canOperate, st) =>
           st.flatMap {
@@ -315,17 +301,6 @@ package circuit {
       }
   }
 
-  final case class StepsTableAndStatusFocus(
-    status:           ClientStatus,
-    stepsTable:       Option[StepsTableFocus],
-    configTableState: TableState[StepConfigTable.TableColumn])
-
-  object StepsTableAndStatusFocus {
-    implicit val eq: Eq[StepsTableAndStatusFocus] =
-      Eq.by(x => (x.status, x.stepsTable, x.configTableState))
-
-  }
-
   @Lenses
   final case class ControlModel(id:                  Observation.Id,
                                 isPartiallyExecuted: Boolean,
@@ -346,7 +321,9 @@ package circuit {
 
     val controlModelG: Getter[SequenceTab, Option[ControlModel]] =
       Getter[SequenceTab, Option[ControlModel]](
-        t => t.sequence.map( s =>
+        t =>
+          t.sequence.map(
+            s =>
               ControlModel(s.id,
                            s.isPartiallyExecuted,
                            s.nextStepToRun,
@@ -364,7 +341,8 @@ package circuit {
       Eq.by(x => (x.canOperate, x.control))
 
     def seqControlG(id: Observation.Id): Getter[SeqexecAppRootModel, Option[SequenceControlFocus]] = {
-      val getter = SeqexecAppRootModel.sequencesOnDisplayL.composeGetter(SequencesOnDisplay.tabG(id))
+      val getter = SeqexecAppRootModel.sequencesOnDisplayL.composeGetter(
+        SequencesOnDisplay.tabG(id))
       ClientStatus.canOperateG.zip(getter) >>> {
         case (status, Some(SeqexecTabActive(tab, _))) =>
           SequenceControlFocus(status, ControlModel.controlModelG.get(tab)).some
