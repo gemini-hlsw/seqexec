@@ -38,10 +38,8 @@ object HeaderSideBarFocus {
   val headerSideBarG: Getter[SeqexecAppRootModel, HeaderSideBarFocus] =
     Getter[SeqexecAppRootModel, HeaderSideBarFocus] { c =>
       val clientStatus = ClientStatus(c.uiModel.user, c.ws)
-      val obs = c.uiModel.sequencesOnDisplay.selectedOperator match {
-        case Some(x) => x.asRight
-        case _       => c.uiModel.defaultObserver.asLeft
-      }
+      val obs = c.uiModel.sequencesOnDisplay.selectedOperator
+        .toRight(c.uiModel.defaultObserver)
       HeaderSideBarFocus(clientStatus,
                          c.sequences.conditions,
                          c.sequences.operator,
