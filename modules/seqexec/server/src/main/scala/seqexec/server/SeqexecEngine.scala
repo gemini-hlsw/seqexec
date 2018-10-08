@@ -89,12 +89,18 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
     q.enqueue(Stream.emits(loadEvents(seqId))).map(_.asRight).compile.last.attempt.map(_.bimap(SeqexecFailure.SeqexecException.apply, _ => ()))
 
   private def checkResources(seqId: Observation.Id)(st: EngineState): Boolean = {
-    def filterSeqResources(f: Sequence.State => Boolean)(sid: Observation.Id, resources: Set[Resource]): Set[Resource] = st.executionState.sequences.get(sid).filter(f).fold(Set.empty[Resource])(_ => resources)
-    // Resources used by runing sequences
-    val used = st.sequences.mapValues(_.seq.resources).map(Function.tupled(filterSeqResources(_.status.isRunning))).toList.foldMap(identity)
+    def filterSeqResources(f: Sequence.State => Boolean)
+                          (sid: Observation.Id, resources: Set[Resource]): Set[Resource] =
+      st.executionState.sequences.get(sid).filter(f).fold(Set.empty[Resource])(_ => resources)
+    // Resources used by running sequences
+    val used = st.sequences.mapValues(_.seq.resources)
+      .map(Function.tupled(filterSeqResources(_.status.isRunning))).toList.foldMap(identity)
     // Resources that will be used by sequences in running queues
-    val usedByQueues = st.queues.filter{ case (_, q) => q.status(st) === BatchExecState.Running || q.status(st) === BatchExecState.Waiting }
-      .map{case (_, q) => q.queue.map(sid => st.sequences.get(sid).map(x => (sid, x.seq.resources)).map(Function.tupled(filterSeqResources(_.status.isIdle)))).collect{case Some(x) => x}}.toList.flatten.foldMap(identity)
+    val usedByQueues = st.queues
+      .filter{ case (_, q) => q.status(st) === BatchExecState.Running || q.status(st) === BatchExecState.Waiting }
+      .map{case (_, q) => q.queue.map(sid => st.sequences.get(sid).map(x => (sid, x.seq.resources))
+        .map(Function.tupled(filterSeqResources(_.status.isIdle)))
+      ).collect{case Some(x) => x} }.toList.flatten.foldMap(identity)
 
     st.sequences.get(seqId).map(_.seq.resources.intersect(used ++ usedByQueues).isEmpty).getOrElse(false)
   }
