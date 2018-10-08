@@ -10,55 +10,71 @@ import web.client.style._
   */
 object SeqexecStyles {
 
-  val headerHeight: Int = 33
-  val rowHeight: Int = 30
-  val overscanRowCount: Int = 10
-  val runningRowHeight: Int = 60
+  val headerHeight: Int        = 33
+  val rowHeight: Int           = 30
+  val overscanRowCount: Int    = 10
+  val runningRowHeight: Int    = 60
   val TableBorderWidth: Double = 1.0
 
-  val activeInstrumentLabel: GStyle = GStyle.fromString("SeqexecStyles-activeInstrumentLabel")
+  val activeInstrumentLabel: GStyle =
+    GStyle.fromString("SeqexecStyles-activeInstrumentLabel")
 
   val tab: GStyle = GStyle.fromString("SeqexecStyles-tab")
 
   val tabLabel: GStyle = GStyle.fromString("SeqexecStyles-tabLabel")
 
-  val previewTabLabel: GStyle = GStyle.fromString("SeqexecStyles-previewTabLabel")
+  val previewTabLabel: GStyle =
+    GStyle.fromString("SeqexecStyles-previewTabLabel")
 
   val previewTabId: GStyle = GStyle.fromString("SeqexecStyles-previewTabId")
 
-  val previewTabLoadButton: GStyle = GStyle.fromString("SeqexecStyles-previewTabLoadButton")
+  val previewTabLoadButton: GStyle =
+    GStyle.fromString("SeqexecStyles-previewTabLoadButton")
 
-  val activeTabContent: GStyle = GStyle.fromString("SeqexecStyles-activeTabContent")
+  val activeTabContent: GStyle =
+    GStyle.fromString("SeqexecStyles-activeTabContent")
 
-  val inactiveTabContent: GStyle = GStyle.fromString("SeqexecStyles-inactiveTabContent")
+  val inactiveTabContent: GStyle =
+    GStyle.fromString("SeqexecStyles-inactiveTabContent")
 
   val errorTab: GStyle = GStyle.fromString("SeqexecStyles-errorTab")
 
   val fieldsNoBottom: GStyle = GStyle.fromString("SeqexecStyles-fieldsNoBottom")
 
-  val headerSideBarStyle: GStyle = GStyle.fromString("SeqexecStyles-headerSidebarStyle")
+  val headerSideBarStyle: GStyle =
+    GStyle.fromString("SeqexecStyles-headerSidebarStyle")
 
-  val emptyInstrumentTab: GStyle = GStyle.fromString("SeqexecStyles-emptyInstrumentTab")
+  val emptyInstrumentTab: GStyle =
+    GStyle.fromString("SeqexecStyles-emptyInstrumentTab")
 
-  val emptyInstrumentTabLogShown: GStyle = GStyle.fromString("SeqexecStyles-emptyInstrumentTabLogShown")
+  val emptyInstrumentTabLogShown: GStyle =
+    GStyle.fromString("SeqexecStyles-emptyInstrumentTabLogShown")
 
-  val emptyInstrumentTabLogHidden: GStyle = GStyle.fromString("SeqexecStyles-emptyInstrumentTabLogHidden")
+  val emptyInstrumentTabLogHidden: GStyle =
+    GStyle.fromString("SeqexecStyles-emptyInstrumentTabLogHidden")
 
   val tabSegment: GStyle = GStyle.fromString("SeqexecStyles-tabSegment")
 
-  val tabSegmentLogHidden: GStyle = GStyle.fromString("SeqexecStyles-tabSegmentLogHidden")
+  val tabSegmentLogHidden: GStyle =
+    GStyle.fromString("SeqexecStyles-tabSegmentLogHidden")
 
-  val tabSegmentLogShown: GStyle = GStyle.fromString("SeqexecStyles-tabSegmentLogShown")
+  val tabSegmentLogShown: GStyle =
+    GStyle.fromString("SeqexecStyles-tabSegmentLogShown")
 
-  val tabSegmentUnauth: GStyle = GStyle.fromString("SeqexecStyles-tabSegmentUnauth")
+  val tabSegmentUnauth: GStyle =
+    GStyle.fromString("SeqexecStyles-tabSegmentUnauth")
 
-  val tabSegmentLogHiddenUnauth: GStyle = GStyle.fromString("SeqexecStyles-tabSegmentLogHiddenUnauth")
+  val tabSegmentLogHiddenUnauth: GStyle =
+    GStyle.fromString("SeqexecStyles-tabSegmentLogHiddenUnauth")
 
-  val tabSegmentLogShownUnauth: GStyle = GStyle.fromString("SeqexecStyles-tabSegmentLogShownUnauth")
+  val tabSegmentLogShownUnauth: GStyle =
+    GStyle.fromString("SeqexecStyles-tabSegmentLogShownUnauth")
 
-  val stepsListPanePreview: GStyle = GStyle.fromString("SeqexecStyles-stepsListPanePreview")
+  val stepsListPanePreview: GStyle =
+    GStyle.fromString("SeqexecStyles-stepsListPanePreview")
 
-  val stepsListPaneWithControls: GStyle = GStyle.fromString("SeqexecStyles-stepsListPaneWithControls")
+  val stepsListPaneWithControls: GStyle =
+    GStyle.fromString("SeqexecStyles-stepsListPaneWithControls")
 
   val controlButtons: GStyle = GStyle.fromString("SeqexecStyles-controlButtons")
 
@@ -77,7 +93,8 @@ object SeqexecStyles {
 
   val logSegment: GStyle = GStyle.fromString("SeqexecStyles-logSegment")
 
-  val logSecondarySegment: GStyle = GStyle.fromString("SeqexecStyles-logSecondarySegment")
+  val logSecondarySegment: GStyle =
+    GStyle.fromString("SeqexecStyles-logSecondarySegment")
 
   val logControlRow: GStyle = GStyle.fromString("SeqexecStyles-logControlRow")
 
@@ -85,13 +102,15 @@ object SeqexecStyles {
 
   val selectorFields: GStyle = GStyle.fromString("SeqexecStyles-selectorFields")
 
-  val queueTextColumn: GStyle = GStyle.fromString("SeqexecStyles-queueTextColumn")
+  val queueTextColumn: GStyle =
+    GStyle.fromString("SeqexecStyles-queueTextColumn")
 
   val queueText: GStyle = GStyle.fromString("SeqexecStyles-queueText")
 
   val daytimeCal: GStyle = GStyle.fromString("SeqexecStyles-daytimeCal")
 
-  val queueIconColumn: GStyle = GStyle.fromString("SeqexecStyles-queueIconColumn")
+  val queueIconColumn: GStyle =
+    GStyle.fromString("SeqexecStyles-queueIconColumn")
 
   val queueListPane: GStyle = GStyle.fromString("SeqexecStyles-queueListPane")
 
@@ -99,13 +118,16 @@ object SeqexecStyles {
 
   val shorterRow: GStyle = GStyle.fromString("SeqexecStyles-shorterRow")
 
+  val titleRow: GStyle = GStyle.fromString("SeqexecStyles-titleRow")
+
   val blinking: GStyle = GStyle.fromString("SeqexecStyles-blinking")
 
   val queueAreaRow: GStyle = GStyle.fromString("SeqexecStyles-queueAreaRow")
 
   val queueArea: GStyle = GStyle.fromString("SeqexecStyles-queueArea")
 
-  val headerSideBarArea: GStyle = GStyle.fromString("SeqexecStyles-headerSidebarArea")
+  val headerSideBarArea: GStyle =
+    GStyle.fromString("SeqexecStyles-headerSidebarArea")
 
   val logArea: GStyle = GStyle.fromString("SeqexecStyles-logArea")
 
@@ -117,13 +139,16 @@ object SeqexecStyles {
 
   val configLabel: GStyle = GStyle.fromString("SeqexecStyles-configLabel")
 
-  val observationProgressRow: GStyle = GStyle.fromString("SeqexecStyles-observationProgressRow")
+  val observationProgressRow: GStyle =
+    GStyle.fromString("SeqexecStyles-observationProgressRow")
 
-  val observationProgressBar: GStyle = GStyle.fromString("SeqexecStyles-observationProgressBar")
+  val observationProgressBar: GStyle =
+    GStyle.fromString("SeqexecStyles-observationProgressBar")
 
   val observationBar: GStyle = GStyle.fromString("SeqexecStyles-observationBar")
 
-  val observationLabel: GStyle = GStyle.fromString("SeqexecStyles-observationLabel")
+  val observationLabel: GStyle =
+    GStyle.fromString("SeqexecStyles-observationLabel")
 
   val guidingCell: GStyle = GStyle.fromString("SeqexecStyles-guidingCell")
 
@@ -133,7 +158,8 @@ object SeqexecStyles {
 
   val configuringRow: GStyle = GStyle.fromString("SeqexecStyles-configuringRow")
 
-  val specialStateLabel: GStyle = GStyle.fromString("SeqexecStyles-specialStateLabel")
+  val specialStateLabel: GStyle =
+    GStyle.fromString("SeqexecStyles-specialStateLabel")
 
   val subsystems: GStyle = GStyle.fromString("SeqexecStyles-subsystems")
 
@@ -170,15 +196,19 @@ object SeqexecStyles {
 
   val rowNone: GStyle = GStyle.Zero
 
-  val stepRowWithBreakpoint: GStyle = GStyle.fromString("SeqexecStyles-stepRowWithBreakpoint")
+  val stepRowWithBreakpoint: GStyle =
+    GStyle.fromString("SeqexecStyles-stepRowWithBreakpoint")
 
-  val stepRowWithBreakpointHover: GStyle = GStyle.fromString("SeqexecStyles-stepRowWithBreakpointHover")
+  val stepRowWithBreakpointHover: GStyle =
+    GStyle.fromString("SeqexecStyles-stepRowWithBreakpointHover")
 
-  val stepRowWithBreakpointAndControl: GStyle = GStyle.fromString("SeqexecStyles-stepRowWithBreakpointAndControl")
+  val stepRowWithBreakpointAndControl: GStyle =
+    GStyle.fromString("SeqexecStyles-stepRowWithBreakpointAndControl")
 
   val centeredCell: GStyle = GStyle.fromString("SeqexecStyles-centeredCell")
 
-  val tableHeaderIcons: GStyle = GStyle.fromString("SeqexecStyles-tableHeaderIcons")
+  val tableHeaderIcons: GStyle =
+    GStyle.fromString("SeqexecStyles-tableHeaderIcons")
 
   val buttonsRow: GStyle = GStyle.fromString("SeqexecStyles-buttonsRow")
 
@@ -186,19 +216,23 @@ object SeqexecStyles {
 
   val controlCell: GStyle = GStyle.fromString("SeqexecStyles-controlCell")
 
-  val breakPointHandleOn: GStyle = GStyle.fromString("SeqexecStyles-breakPointHandleOn")
+  val breakPointHandleOn: GStyle =
+    GStyle.fromString("SeqexecStyles-breakPointHandleOn")
 
-  val breakPointHandleOff: GStyle = GStyle.fromString("SeqexecStyles-breakPointHandleOff")
+  val breakPointHandleOff: GStyle =
+    GStyle.fromString("SeqexecStyles-breakPointHandleOff")
 
   val skipHandleHeight: Int = 13
 
   val skipHandle: GStyle = GStyle.fromString("SeqexecStyles-skipHandle")
 
-  val runningIconCell: GStyle = GStyle.fromString("SeqexecStyles-runningIconCell")
+  val runningIconCell: GStyle =
+    GStyle.fromString("SeqexecStyles-runningIconCell")
 
   val errorCell: GStyle = GStyle.fromString("SeqexecStyles-errorCell")
 
-  val skippedIconCell: GStyle = GStyle.fromString("SeqexecStyles-skippedIconCell")
+  val skippedIconCell: GStyle =
+    GStyle.fromString("SeqexecStyles-skippedIconCell")
 
   val iconCell: GStyle = GStyle.fromString("SeqexecStyles-iconCell")
 
@@ -212,19 +246,24 @@ object SeqexecStyles {
 
   val runningIcon: GStyle = GStyle.fromString("SeqexecStyles-runningIcon")
 
-  val breakPointOnIcon: GStyle = GStyle.fromString("SeqexecStyles-breakPointOnIcon")
+  val breakPointOnIcon: GStyle =
+    GStyle.fromString("SeqexecStyles-breakPointOnIcon")
 
-  val breakPointOffIcon: GStyle = GStyle.fromString("SeqexecStyles-breakPointOffIcon")
+  val breakPointOffIcon: GStyle =
+    GStyle.fromString("SeqexecStyles-breakPointOffIcon")
 
-  val clipboardIconDiv: GStyle = GStyle.fromString("SeqexecStyles-clipboardIconDiv")
+  val clipboardIconDiv: GStyle =
+    GStyle.fromString("SeqexecStyles-clipboardIconDiv")
 
-  val clipboardIconHeader: GStyle = GStyle.fromString("SeqexecStyles-clipboardIconHeader")
+  val clipboardIconHeader: GStyle =
+    GStyle.fromString("SeqexecStyles-clipboardIconHeader")
 
   val tableHeader: GStyle = GStyle.fromString("SeqexecStyles-tableHeader")
 
   val controlCellRow: GStyle = GStyle.fromString("SeqexecStyles-controlCellRow")
 
-  val settingsCellRow: GStyle = GStyle.fromString("SeqexecStyles-settingsCellRow")
+  val settingsCellRow: GStyle =
+    GStyle.fromString("SeqexecStyles-settingsCellRow")
 
   val labelAsButton: GStyle = GStyle.fromString("SeqexecStyles-labelAsButton")
 }
