@@ -84,6 +84,8 @@ object CalQueueTable {
   final case class Props(queueId: QueueId, data: CalQueueFocus) {
     val rowCount: Int = data.seqs.size
 
+    val canOperate: Boolean = data.canOperate
+
     def rowGetter(i: Int): CalQueueRow =
       data.seqs
         .lift(i)
@@ -270,7 +272,8 @@ object CalQueueTable {
     .initialStateFromProps(initialState)
     .renderP { (b, _) =>
       <.div(
-        SeqexecStyles.stepsListPaneWithControls,
+        SeqexecStyles.stepsListPaneWithControls.when(b.props.canOperate),
+        SeqexecStyles.stepsListPanePreview.unless(b.props.canOperate),
         AutoSizer(AutoSizer.props(table(b)))
       )
     }

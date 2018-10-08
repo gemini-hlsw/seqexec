@@ -4,6 +4,7 @@
 package seqexec.model.enum
 
 import cats.Eq
+import cats.Show
 
 sealed trait BatchExecState extends Product with Serializable
 
@@ -15,4 +16,13 @@ object BatchExecState {
   case object Completed extends BatchExecState // All sequences in the queue were run to completion.
 
   implicit val equal: Eq[BatchExecState] = Eq.fromUniversalEquals
+
+  implicit val show: Show[BatchExecState] = Show.show {
+    case Idle      => "Idle"
+    case Running   => "Running"
+    case Waiting   => "Waiting"
+    case Stopping  => "Stopping"
+    case Completed => "Completed"
+
+  }
 }
