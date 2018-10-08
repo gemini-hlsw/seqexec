@@ -26,23 +26,19 @@ object AppTitle {
     .builder[Props]("SeqexecTitle")
     .stateless
     .render_P(p =>
-      <.div(
-        ^.cls := "ui row",
-        SeqexecStyles.shorterRow,
+      <.h4(
+        ^.cls := "ui horizontal divider header",
+        SeqexecStyles.titleRow,
         SeqexecStyles.notInMobile,
-        <.h4(
-          ^.cls := "ui horizontal divider header",
-          s"Seqexec ${p.site.shortName}",
-          p.ws.ws.renderPending(_ =>
+        s"Seqexec ${p.site.shortName}",
+        p.ws.ws.renderPending(
+          _ =>
             <.div(
               SeqexecStyles.errorText,
               SeqexecStyles.blinking,
               "Connection lost"
-            )
-          )
-        )
-      )
-    )
+          ))
+    ))
     .configure(Reusability.shouldComponentUpdate)
     .build
 
