@@ -714,6 +714,35 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
     Cogen[(Pages.SeqexecPages, SequencesOnDisplay, Option[ClientID])]
       .contramap(x => (x.location, x.sod, x.clientId))
 
+  implicit val arbWebSocketsFocus: Arbitrary[WebSocketsFocus] =
+    Arbitrary {
+      for {
+        navLocation <- arbitrary[Pages.SeqexecPages]
+        sequences   <- arbitrary[SequencesQueue[SequenceView]]
+        user        <- arbitrary[Option[UserDetails]]
+        observer    <- arbitrary[Observer]
+        clientId    <- arbitrary[Option[ClientID]]
+        site        <- arbitrary[Option[Site]]
+      } yield
+        WebSocketsFocus(navLocation, sequences, user, observer, clientId, site)
+    }
+
+  implicit val wsfCogen: Cogen[WebSocketsFocus] =
+    Cogen[(Pages.SeqexecPages,
+           SequencesQueue[SequenceView],
+           Option[UserDetails],
+           Observer,
+           Option[ClientID],
+           Option[Site])]
+      .contramap(
+        x =>
+          (x.location,
+           x.sequences,
+           x.user,
+           x.defaultObserver,
+           x.clientId,
+           x.site))
+
   implicit val arbInitialSyncFocus: Arbitrary[InitialSyncFocus] =
     Arbitrary {
       for {

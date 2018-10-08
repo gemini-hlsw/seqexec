@@ -17,16 +17,23 @@ import seqexec.web.client.model._
 import seqexec.web.client.lenses._
 import seqexec.web.client.handlers._
 import seqexec.web.client.ModelOps._
-import seqexec.web.client.actions.{AppendToLog, CloseLoginBox, CloseUserNotificationBox, OpenLoginBox, OpenUserNotificationBox, ServerMessage, show}
-import seqexec.web.client.components.sequence.steps.StepConfigTable
-import web.client.table._
+import seqexec.web.client.actions.AppendToLog
+import seqexec.web.client.actions.CloseLoginBox
+import seqexec.web.client.actions.CloseUserNotificationBox
+import seqexec.web.client.actions.OpenLoginBox
+import seqexec.web.client.actions.OpenUserNotificationBox
+import seqexec.web.client.actions.ServerMessage
+import seqexec.web.client.actions.show
 
 /**
- * Diode processor to log some of the action to aid in debugging
- */
+  * Diode processor to log some of the action to aid in debugging
+  */
 final class LoggingProcessor[M <: AnyRef] extends ActionProcessor[M] {
   private val logger = Logger.getLogger(this.getClass.getName)
-  override def process(dispatch: Dispatcher, action: Any, next: Any => ActionResult[M], currentModel: M): ActionResult[M] = {
+  override def process(dispatch:     Dispatcher,
+                       action:       Any,
+                       next:         Any => ActionResult[M],
+                       currentModel: M): ActionResult[M] = {
     // log some of the actions
     action match {
       case AppendToLog(_)                     =>
@@ -34,6 +41,7 @@ final class LoggingProcessor[M <: AnyRef] extends ActionProcessor[M] {
       case UpdateStepsConfigTableState(_)     =>
       case UpdateSessionQueueTableState(_)    =>
       case UpdateStepTableState(_, _)         =>
+      case UpdateCalTableState(_, _)          =>
       case a: Action                          => logger.info(s"Action: ${a.show}")
       case _                                  =>
     }
@@ -45,13 +53,15 @@ final class LoggingProcessor[M <: AnyRef] extends ActionProcessor[M] {
 /**
   * Contains the Diode circuit to manipulate the page
   */
-object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[SeqexecAppRootModel] {
+object SeqexecCircuit
+    extends Circuit[SeqexecAppRootModel]
+    with ReactConnector[SeqexecAppRootModel] {
   private val logger = Logger.getLogger(SeqexecCircuit.getClass.getSimpleName)
   addProcessor(new LoggingProcessor[SeqexecAppRootModel]())
 
   // Model read-writers
   val webSocketFocusRW: ModelRW[SeqexecAppRootModel, WebSocketsFocus] =
-    zoomRW(m => WebSocketsFocus(m.uiModel.navLocation, m.sequences, m.uiModel.user, m.uiModel.defaultObserver, m.clientId, m.site)) ((m, v) => m.copy(sequences = v.sequences, uiModel = m.uiModel.copy(user = v.user, defaultObserver = v.defaultObserver), clientId = v.clientId, site = v.site))
+    this.zoomRWL(WebSocketsFocus.webSocketFocusL)
 
   val initialSyncFocusRW: ModelRW[SeqexecAppRootModel, InitialSyncFocus] =
     this.zoomRWL(SeqexecAppRootModel.uiModel ^|-> InitialSyncFocus.initialSyncFocusL)
@@ -90,14 +100,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
 
   // Reader for sequences on display
   val headerSideBarReader: ModelR[SeqexecAppRootModel, HeaderSideBarFocus] =
-    zoom { c =>
-      val clientStatus = ClientStatus(c.uiModel.user, c.ws)
-      val obs = c.uiModel.sequencesOnDisplay.selectedOperator match {
-        case Some(x) => x.asRight
-        case _       => c.uiModel.defaultObserver.asLeft
-      }
-      HeaderSideBarFocus(clientStatus, c.sequences.conditions, c.sequences.operator, obs)
-    }
+    this.zoomG(HeaderSideBarFocus.headerSideBarG)
 
   val logDisplayedReader: ModelR[SeqexecAppRootModel, SectionVisibilityState] =
     this.zoomL(SeqexecAppRootModel.logDisplayL)
@@ -116,8 +119,12 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
     val constructor = ClientStatus.canOperateG.zip(getter) >>> { p =>
       val (o, (log, SequencesOnDisplay(tabs))) = p
       NonEmptyList.fromListUnsafe(tabs.withFocus.toList.collect {
-        case (tab: SequenceTab, active)       =>
-          SequenceTabContentFocus(o, tab.instrument, tab.sequence.map(_.id), TabSelected.fromBoolean(active), log)
+        case (tab: SequenceTab, active) =>
+          SequenceTabContentFocus(o,
+                                  tab.instrument,
+                                  tab.sequence.map(_.id),
+                                  TabSelected.fromBoolean(active),
+                                  log)
         case (_: CalibrationQueueTab, active) =>
           CalQueueTabContentFocus(o, TabSelected.fromBoolean(active), log)
       })
@@ -126,9 +133,6 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
     this.zoomG(constructor)
   }
 
-  val configTableState: ModelR[SeqexecAppRootModel, TableState[StepConfigTable.TableColumn]] =
-    zoom(_.uiModel.configTableState)
-
   val sequencesOnDisplayRW: ModelRW[SeqexecAppRootModel, SequencesOnDisplay] =
     this.zoomRWL(SeqexecAppRootModel.sequencesOnDisplayL)
 
@@ -136,7 +140,8 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
     zoomRW(m => (m.clientId, m.sequences)) ((m, v) => m.copy(clientId = v._1, sequences = v._2))
 
   def sequenceTab(id: Observation.Id): ModelR[SeqexecAppRootModel, Option[SeqexecTabActive]] =
-    this.zoomG(SeqexecAppRootModel.sequencesOnDisplayL.composeGetter(SequencesOnDisplay.tabG(id)))
+    this.zoomG(SeqexecAppRootModel.sequencesOnDisplayL
+      .composeGetter(SequencesOnDisplay.tabG(id)))
 
   def sequenceObserverReader(id: Observation.Id): ModelR[SeqexecAppRootModel, Option[SequenceInfoFocus]] =
     this.zoomG(SequenceInfoFocus.sequenceInfoG(id))
@@ -148,9 +153,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
     this.zoomG(StepsTableFocus.stepsTableG(id))
 
   def stepsTableReader(id: Observation.Id): ModelR[SeqexecAppRootModel, StepsTableAndStatusFocus] =
-    statusReader.zip(stepsTableReaderF(id)).zip(configTableState).zoom {
-      case ((s, f), t) => StepsTableAndStatusFocus(s, f, t)
-    }(fastEq[StepsTableAndStatusFocus])
+    this.zoomG(StepsTableAndStatusFocus.stepsTableAndStatusFocusG(id))
 
   def sequenceControlReader(id: Observation.Id): ModelR[SeqexecAppRootModel, Option[SequenceControlFocus]] =
     this.zoomG(SequenceControlFocus.seqControlG(id))
@@ -189,24 +192,30 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
 
   override protected def initialModel = SeqexecAppRootModel.Initial
 
-  override protected def actionHandler = composeHandlers(
-    wsHandler,
-    foldHandlers(serverMessagesHandler, initialSyncHandler, loadSequencesHandler, userNotificationHandler, queueStateHandler),
-    sequenceExecHandler,
-    notificationBoxHandler,
-    loginBoxHandler,
-    userLoginHandler,
-    sequenceDisplayHandler,
-    globalLogHandler,
-    conditionsHandler,
-    operatorHandler,
-    defaultObserverHandler,
-    foldHandlers(remoteRequestsHandler, operationsStateHandler),
-    foldHandlers(queueRequestsHandler, queueOpsHandler),
-    navigationHandler,
-    debuggingHandler,
-    tableStateHandler,
-    siteHandler)
+  override protected def actionHandler =
+    composeHandlers(
+      wsHandler,
+      foldHandlers(serverMessagesHandler,
+                   initialSyncHandler,
+                   loadSequencesHandler,
+                   userNotificationHandler,
+                   queueStateHandler),
+      sequenceExecHandler,
+      notificationBoxHandler,
+      loginBoxHandler,
+      userLoginHandler,
+      sequenceDisplayHandler,
+      globalLogHandler,
+      conditionsHandler,
+      operatorHandler,
+      defaultObserverHandler,
+      foldHandlers(remoteRequestsHandler, operationsStateHandler),
+      foldHandlers(queueRequestsHandler, queueOpsHandler),
+      navigationHandler,
+      debuggingHandler,
+      tableStateHandler,
+      siteHandler
+    )
 
   /**
     * Handles a fatal error most likely during action processing
@@ -219,8 +228,7 @@ object SeqexecCircuit extends Circuit[SeqexecAppRootModel] with ReactConnector[S
   /**
     * Handle a non-fatal error, such as dispatching an action with no action handler.
     */
-  override def handleError(msg: String): Unit = {
+  override def handleError(msg: String): Unit =
     logger.severe(s"Action error $msg")
-  }
 
 }
