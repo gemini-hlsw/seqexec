@@ -280,6 +280,24 @@ body {
   animation-direction: alternate;
 }
 
+@keyframes calTableFlash {
+  0% {
+    box-shadow: 0 0 5px darkcyan;
+  }
+  50% {
+    box-shadow: none;
+  }
+  100% {
+    box-shadow: 0 0 5px darkcyan;
+  }
+}
+
+.SeqexecStyles-calTableBorder {
+  animation-name: calTableFlash;
+  animation-duration: 1s;
+  animation-iteration-count: 2;
+}
+
 .SeqexecStyles-queueAreaRow {
   .appSegment;
 }

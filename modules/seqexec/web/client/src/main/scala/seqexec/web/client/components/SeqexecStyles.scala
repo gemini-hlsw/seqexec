@@ -266,4 +266,6 @@ object SeqexecStyles {
     GStyle.fromString("SeqexecStyles-settingsCellRow")
 
   val labelAsButton: GStyle = GStyle.fromString("SeqexecStyles-labelAsButton")
+
+  val calTableBorder: GStyle = GStyle.fromString("SeqexecStyles-calTableBorder")
 }

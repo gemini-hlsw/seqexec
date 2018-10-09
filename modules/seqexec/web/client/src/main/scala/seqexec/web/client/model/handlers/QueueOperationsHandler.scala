@@ -29,6 +29,7 @@ class QueueOperationsHandler[M](modelRW: ModelRW[M, CalibrationQueues])
   def handleAddAllDayCal: PartialFunction[Any, ActionResult[M]] = {
     case RequestAllDayCal(qid) =>
       updatedL(
+        CalibrationQueues.calLastOpO(qid).set(none) >>>
         CalibrationQueues
           .addDayCalL(qid)
           .set(AddDayCalOperation.AddDayCalInFlight))
@@ -38,6 +39,7 @@ class QueueOperationsHandler[M](modelRW: ModelRW[M, CalibrationQueues])
   def handleClearAllCal: PartialFunction[Any, ActionResult[M]] = {
     case RequestClearAllCal(qid) =>
       updatedL(
+        CalibrationQueues.calLastOpO(qid).set(none) >>>
         CalibrationQueues
           .clearAllCalL(qid)
           .set(ClearAllCalOperation.ClearAllCalInFlight))
@@ -47,6 +49,7 @@ class QueueOperationsHandler[M](modelRW: ModelRW[M, CalibrationQueues])
   def handleRunCal: PartialFunction[Any, ActionResult[M]] = {
     case RequestRunCal(qid) =>
       updatedL(
+        CalibrationQueues.calLastOpO(qid).set(none) >>>
         CalibrationQueues.runCalL(qid).set(RunCalOperation.RunCalInFlight))
 
   }
@@ -54,6 +57,7 @@ class QueueOperationsHandler[M](modelRW: ModelRW[M, CalibrationQueues])
   def handleStopCal: PartialFunction[Any, ActionResult[M]] = {
     case RequestStopCal(qid) =>
       updatedL(
+        CalibrationQueues.calLastOpO(qid).set(none) >>>
         CalibrationQueues.stopCalL(qid).set(StopCalOperation.StopCalInFlight))
 
   }
@@ -61,6 +65,7 @@ class QueueOperationsHandler[M](modelRW: ModelRW[M, CalibrationQueues])
   def handleSeqOps: PartialFunction[Any, ActionResult[M]] = {
     case RequestRemoveSeqCal(qid, id) =>
       updatedL(
+        CalibrationQueues.calLastOpO(qid).set(none) >>>
         CalibrationQueues.modifyOrAddSeqOps(
           qid,
           id,

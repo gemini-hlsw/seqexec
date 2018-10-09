@@ -20,6 +20,7 @@ import react.sortable._
 import scala.scalajs.js
 import seqexec.model.QueueId
 import seqexec.model.enum.Instrument
+import seqexec.model.enum.QueueManipulationOp
 import seqexec.web.client.model.QueueSeqOperations
 import seqexec.web.client.model.RemoveSeqQueue
 import seqexec.web.client.circuit._
@@ -97,10 +98,16 @@ object CalQueueTable {
     def seqState(id: Observation.Id): Option[QueueSeqOperations] =
       CalQueueFocus.seqQueueOpsT(id).headOption(data)
 
-    def cmp: Unmounted[js.Object, Null] = {
+    val clearOp: Boolean = data.lastOp match {
+      case Some(QueueManipulationOp.Clear(_)) => true
+      case _                                  => false
+    }
+
+    val cmp: Unmounted[js.Object, Null] = {
       val view         = component
       val sortableList = SortableContainer.wrap(view)
-      sortableList(SortableContainer.Props())(this)
+      val p            = SortableContainer.Props()
+      sortableList(p)(this)
     }
   }
 
@@ -150,12 +157,14 @@ object CalQueueTable {
       <.p(SeqexecStyles.queueTextColumn, r.obsId.format)
     }
 
-  private val instrumentRenderer: CellRenderer[js.Object, js.Object, CalQueueRow] =
+  private val instrumentRenderer
+    : CellRenderer[js.Object, js.Object, CalQueueRow] =
     (_, _, _, r: CalQueueRow, _) => {
       <.p(SeqexecStyles.queueTextColumn, r.instrument.show)
     }
 
-  private def removeSeqRenderer(p: Props): CellRenderer[js.Object, js.Object, CalQueueRow] =
+  private def removeSeqRenderer(
+    p: Props): CellRenderer[js.Object, js.Object, CalQueueRow] =
     (_, _, _, r: CalQueueRow, _) => {
       Button(
         Button.Props(
@@ -253,7 +262,9 @@ object CalQueueTable {
         scrollTop        = b.state.tableState.scrollPosition,
         onScroll         = (_, _, pos) => updateScrollPosition(b, pos),
         rowRenderer      = sortableRowRenderer,
-        headerHeight     = SeqexecStyles.headerHeight
+        headerHeight     = SeqexecStyles.headerHeight,
+        gridClassName =
+          if (b.props.clearOp) SeqexecStyles.calTableBorder.htmlClass else ""
       ),
       b.state.tableState.columnBuilder(size, colBuilder(b, size)): _*
     ).vdomElement

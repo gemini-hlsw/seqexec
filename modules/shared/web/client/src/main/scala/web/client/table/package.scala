@@ -269,7 +269,7 @@ package object table {
      onRowRightClick:  Option[OnRowClick],
      style:            Style) => {
       val sortableItem = SortableElement.wrap(SortableRow.component)
-      sortableItem(SortableElement.Props(index = index))(
+      sortableItem(SortableElement.Props(index = index, key = key))(
         SortableRow.Props(raw.RawRowRendererParameter(
           className,
           columns.map(_.rawNode).toJSArray,
