@@ -187,6 +187,7 @@ object SeqexecCircuit
   private val siteHandler              = new SiteHandler(zoomTo(_.site))
   private val queueOpsHandler          = new QueueOperationsHandler(queueOperationsRW)
   private val queueStateHandler        = new QueueStateHandler(queueOperationsRW)
+  private val openConnectionHandler    = new OpenConnectionHandler(zoomTo(_.uiModel.queues))
 
   def dispatchCB[A <: Action](a: A): Callback = Callback(dispatch(a))
 
@@ -199,6 +200,7 @@ object SeqexecCircuit
                    initialSyncHandler,
                    loadSequencesHandler,
                    userNotificationHandler,
+                   openConnectionHandler,
                    queueStateHandler),
       sequenceExecHandler,
       notificationBoxHandler,

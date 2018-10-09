@@ -37,10 +37,13 @@ package table {
   }
 
   sealed trait ColumnWidth // extends Product with Serializable
-  sealed abstract class FixedColumnWidth(val width: Double) extends ColumnWidth {
+  sealed abstract class FixedColumnWidth(val width: Double)
+      extends ColumnWidth {
     assert(width >= 0)
   }
-  sealed abstract class PercentageColumnWidth(val percentage: Double, val minWidth: Double) extends ColumnWidth {
+  sealed abstract class PercentageColumnWidth(val percentage: Double,
+                                              val minWidth:   Double)
+      extends ColumnWidth {
     assert(percentage >= 0 && percentage <= 1)
     assert(minWidth >= 0)
   }
@@ -75,11 +78,13 @@ package table {
     private[table] def apply(p: Double, mp: Double) =
       new PercentageColumnWidth(p, mp) {}
 
-    def fromDouble(percentage: Double, minWidth: Double): Option[PercentageColumnWidth] =
+    def fromDouble(percentage: Double,
+                   minWidth:   Double): Option[PercentageColumnWidth] =
       (percentage >= 0 && percentage <= 1 && minWidth >= 0)
         .option(PercentageColumnWidth(percentage, minWidth))
 
-    def unsafeFromDouble(percentage: Double, minWidth: Double): PercentageColumnWidth =
+    def unsafeFromDouble(percentage: Double,
+                         minWidth:   Double): PercentageColumnWidth =
       fromDouble(percentage, minWidth).getOrElse(
         sys.error(s"Incorrect percentage/minWidth value $percentage/$minWidth"))
 
@@ -147,8 +152,8 @@ package table {
         case ColumnMeta(_, _, _, true, FixedColumnWidth(x)) => x
       }.sum)
       normalizeColumnsPercentages(s).columns.toList.zipWithIndex.map {
-        case (m @ ColumnMeta(_, _, _, true, FixedColumnWidth(w)), i)         =>
-          cb.apply(ColumnRenderArgs(m, i, w, i < (columns.length - 1)))
+        case (m @ ColumnMeta(_, _, _, true, FixedColumnWidth(w)), i) =>
+          cb.apply(ColumnRenderArgs(m, i, w, false))
         case (m @ ColumnMeta(_, _, _, true, PercentageColumnWidth(p, mw)), i) =>
           cb.apply(ColumnRenderArgs(m,
                                    i,

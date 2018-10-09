@@ -20,6 +20,7 @@ import web.client.table.TableState
 @Lenses
 final case class CalQueueFocus(
   canOperate: Boolean,
+  loggedIn:   Boolean,
   seqs:       List[CalQueueSeq],
   tableState: TableState[CalQueueTable.TableColumn])
 
@@ -49,11 +50,12 @@ object CalQueueFocus {
     val calQueueSeqG = (s: SeqexecAppRootModel) =>
       ids.getAll(s).map(i => calSeq(i).get(s))
 
-    ClientStatus.canOperateG.zip(Getter(calQueueSeqG).zip(calTS(id).asGetter)) >>> {
+    ClientStatus.clientStatusFocusL.asGetter
+      .zip(Getter(calQueueSeqG).zip(calTS(id).asGetter)) >>> {
       case (status, (ids, ts)) =>
-        CalQueueFocus(status,
-                      ids.collect { case Some(x) => x },
-                      ts.getOrElse(CalQueueTable.State.InitialTableState)).some
+        CalQueueFocus(status.canOperate, status.isLogged, ids.collect {
+          case Some(x) => x
+        }, ts.getOrElse(CalQueueTable.State.ROTableState)).some
       case _ =>
         none
     }

@@ -66,7 +66,24 @@ class QueueRequestsHandler[M](
         .getOrElse(noChange)
   }
 
+  def handleRemoveSeqCal: PartialFunction[Any, ActionResult[M]] = {
+    case RequestRemoveSeqCal(qid, id) =>
+      value._1
+        .map { cid =>
+          effectOnly(
+            requestEffect2((qid, id),
+                           SeqexecWebClient.removeSequenceFromQueue,
+                           StopCalCompleted.apply,
+                           StopCalFailed.apply))
+        }
+        .getOrElse(noChange)
+  }
+
   override def handle: PartialFunction[Any, ActionResult[M]] =
-    List(handleAddAllDayCal, handleClearAllCal, handleRunCal, handleStopCal).combineAll
+    List(handleAddAllDayCal,
+         handleClearAllCal,
+         handleRunCal,
+         handleStopCal,
+         handleRemoveSeqCal).combineAll
 
 }

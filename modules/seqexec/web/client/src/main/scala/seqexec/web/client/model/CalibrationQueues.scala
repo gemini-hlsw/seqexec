@@ -6,9 +6,12 @@ package seqexec.web.client.model
 import cats._
 import cats.implicits._
 import monocle.Optional
+import monocle.Traversal
 import monocle.macros.Lenses
 import monocle.function.At.at
 import monocle.std
+import monocle.function.Each.each
+import monocle.unsafe.MapTraversal.mapEach
 import seqexec.model.CalibrationQueueId
 import seqexec.model.QueueId
 import seqexec.web.client.components.queue.CalQueueTable
@@ -25,8 +28,7 @@ object CalQueueState {
     Eq.by(x => (x.ops, x.tableState))
 
   val Default: CalQueueState =
-    CalQueueState(QueueOperations.Default,
-                  CalQueueTable.State.InitialTableState)
+    CalQueueState(QueueOperations.Default, CalQueueTable.State.ROTableState)
 }
 
 @Lenses
@@ -60,6 +62,11 @@ object CalibrationQueues {
       at(qid)                ^<-?
       std.option.some        ^|->
       CalQueueState.ops
+
+  def tableStatesT: Traversal[CalibrationQueues, TableState[CalQueueTable.TableColumn]] =
+    CalibrationQueues.queues ^|->>
+      each                   ^|->
+      CalQueueState.tableState
 
   def runCalL(qid: QueueId): Optional[CalibrationQueues, RunCalOperation] =
     calQueueStateL(qid) ^|-> QueueOperations.runCalRequested
