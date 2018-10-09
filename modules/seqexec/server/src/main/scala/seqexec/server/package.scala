@@ -123,7 +123,7 @@ package object server {
   object SeqAction {
     def apply[A](a: => A): SeqAction[A]          = EitherT(IO.apply(TrySeq(a)))
     def either[A](a: => TrySeq[A]): SeqAction[A] = EitherT(IO.apply(a))
-    def fail[A](p: SeqexecFailure): SeqAction[A] = EitherT(IO.apply(TrySeq.fail(p)))
+    def fail[A](p: SeqexecFailure): SeqAction[A] = EitherT(IO.apply(TrySeq.fail[A](p)))
     def void: SeqAction[Unit]                    = SeqAction.apply(())
   }
 
@@ -156,11 +156,11 @@ package object server {
 
       if(statuses.forall(_.isCompleted)) BatchExecState.Completed
       else q.cmdState match {
-        case BatchCommandState.Idle   => BatchExecState.Idle
-        case BatchCommandState.Run(_) => if(statuses.exists(_.isRunning)) BatchExecState.Running
-                                  else BatchExecState.Waiting
-        case BatchCommandState.Stop   => if(statuses.exists(_.isRunning)) BatchExecState.Stopping
-                                  else BatchExecState.Idle
+        case BatchCommandState.Idle         => BatchExecState.Idle
+        case BatchCommandState.Run(_, _, _) => if(statuses.exists(_.isRunning)) BatchExecState.Running
+                                               else BatchExecState.Waiting
+        case BatchCommandState.Stop         => if(statuses.exists(_.isRunning)) BatchExecState.Stopping
+                                               else BatchExecState.Idle
       }
     }
 

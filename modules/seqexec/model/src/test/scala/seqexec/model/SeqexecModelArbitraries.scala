@@ -400,8 +400,10 @@ trait SeqexecModelArbitraries extends ArbObservation {
 
   implicit val seqBatchCmdRunArb: Arbitrary[BatchCommandState.Run] = Arbitrary {
     for {
+      observer <- arbitrary[Observer]
+      user <- arbitrary[UserDetails]
       clid <- arbitrary[ClientID]
-    } yield BatchCommandState.Run(clid)
+    } yield BatchCommandState.Run(observer, user, clid)
   }
 
   implicit val seqBatchCmdStateArb: Arbitrary[BatchCommandState] = Arbitrary(

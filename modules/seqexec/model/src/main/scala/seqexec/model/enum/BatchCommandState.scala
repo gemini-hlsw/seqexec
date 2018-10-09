@@ -4,18 +4,18 @@
 package seqexec.model.enum
 
 import cats.Eq
-import seqexec.model.ClientID
+import seqexec.model.{ClientID, Observer, UserDetails}
 
 sealed trait BatchCommandState extends Product with Serializable {
   def running: Boolean = this match {
     case BatchCommandState.Idle | BatchCommandState.Stop => false
-    case BatchCommandState.Run(_)                        => true
+    case BatchCommandState.Run(_, _, _)                  => true
   }
 }
 
 object BatchCommandState {
   case object Idle extends BatchCommandState
-  final case class Run(clientId: ClientID) extends BatchCommandState
+  final case class Run(observer: Observer, user: UserDetails, clientId: ClientID) extends BatchCommandState
   case object Stop extends BatchCommandState
 
   implicit val equal: Eq[BatchCommandState] = Eq.fromUniversalEquals
