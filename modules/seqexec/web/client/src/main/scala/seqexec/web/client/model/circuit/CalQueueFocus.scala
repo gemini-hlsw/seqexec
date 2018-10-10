@@ -13,7 +13,7 @@ import monocle.macros.Lenses
 import monocle.function.Each.each
 import monocle.function.Each.listEach
 import monocle.function.FilterIndex.filterIndex
-import seqexec.model.ExecutionQueue
+import seqexec.model.ExecutionQueueView
 import seqexec.model.QueueId
 import seqexec.web.client.model._
 import seqexec.web.client.components.queue.CalQueueTable

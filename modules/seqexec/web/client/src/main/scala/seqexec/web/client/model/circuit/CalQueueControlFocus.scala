@@ -11,7 +11,7 @@ import monocle.Traversal
 import monocle.macros.Lenses
 import monocle.std
 import monocle.function.At.at
-import seqexec.model.ExecutionQueue
+import seqexec.model.ExecutionQueueView
 import seqexec.model.QueueId
 import seqexec.model.enum.BatchCommandState
 import seqexec.web.client.model._

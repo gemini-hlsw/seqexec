@@ -20,7 +20,6 @@ class OpenConnectionHandler[M](modelRW: ModelRW[M, CalibrationQueues])
 
   override def handle: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(ConnectionOpenEvent(u, _)) =>
-      // After connected to the Websocket request a refresh
       val ts = u
         .map(_ => CalQueueTable.State.EditableTableState)
         .getOrElse(CalQueueTable.State.ROTableState)

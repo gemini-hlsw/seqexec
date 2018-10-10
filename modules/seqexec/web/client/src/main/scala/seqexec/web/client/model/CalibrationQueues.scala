@@ -76,6 +76,12 @@ object CalibrationQueues {
       at(oid)                ^<-?
       std.option.some
 
+  def calStateSeqOpsT(qid: QueueId): Optional[CalibrationQueues, SortedMap[Observation.Id, QueueSeqOperations]] =
+    CalibrationQueues.queues ^|->
+      at(qid)                ^<-?
+      std.option.some        ^|->
+      CalQueueState.seqOps
+
   def tableStatesT: Traversal[CalibrationQueues, TableState[CalQueueTable.TableColumn]] =
     CalibrationQueues.queues   ^|->>
       each                     ^|->
@@ -113,8 +119,22 @@ object CalibrationQueues {
                         oid: Observation.Id,
                         m:   QueueSeqOperations => QueueSeqOperations)
     : CalibrationQueues => CalibrationQueues =
-    CalibrationQueues.addSeqOps(qid, oid) >>> CalibrationQueues
-      .calQueueStateSeqOpsO(qid, oid)
-      .modify(m)
+    addSeqOps(qid, oid) >>> calQueueStateSeqOpsO(qid, oid).modify(m)
+
+  def modifyAllSeqOps(qid:  QueueId,
+                      oids: List[Observation.Id],
+                      m:    QueueSeqOperations => QueueSeqOperations)
+    : CalibrationQueues => CalibrationQueues =
+    calStateSeqOpsT(qid).modify {
+      _.map {
+        case (i, s) if oids.contains(i) => (i, m(s))
+        case i                          => i
+      }
+    }
+
+  def removeSeqOps(
+    qid:  QueueId,
+    oids: List[Observation.Id]): CalibrationQueues => CalibrationQueues =
+    calStateSeqOpsT(qid).modify(_.filterKeys(!oids.contains(_)))
 
 }

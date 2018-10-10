@@ -25,6 +25,11 @@ class QueueStateHandler[M](modelRW: ModelRW[M, CalibrationQueues])
       updatedL(CalibrationQueues.runCalL(qid).set(RunCalOperation.RunCalIdle))
 
     case ServerMessage(QueueUpdated(QueueManipulationOp.Stopped(qid), _)) =>
-      updatedL(CalibrationQueues.stopCalL(qid).set(StopCalOperation.StopCalIdle))
+      updatedL(
+        CalibrationQueues.stopCalL(qid).set(StopCalOperation.StopCalIdle))
+
+    case ServerMessage(
+        QueueUpdated(QueueManipulationOp.RemovedSeqs(qid, seqs), _)) =>
+      updatedL(CalibrationQueues.removeSeqOps(qid, seqs))
   }
 }
