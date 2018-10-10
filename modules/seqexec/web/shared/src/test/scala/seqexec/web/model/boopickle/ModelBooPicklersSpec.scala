@@ -58,7 +58,7 @@ final class BoopicklingSpec extends CatsSuite with ModelBooPicklers {
   checkAll("Pickler[ExposurePaused]", PicklerTests[ExposurePaused].pickler)
   checkAll("Pickler[BatchCommandState]",
            PicklerTests[BatchCommandState].pickler)
-  checkAll("Pickler[ExecutionQueue]", PicklerTests[ExecutionQueue].pickler)
+  checkAll("Pickler[ExecutionQueueView]", PicklerTests[ExecutionQueueView].pickler)
   checkAll("Pickler[SequencesQueue[Observation.Id]]",
            PicklerTests[SequencesQueue[Observation.Id]].pickler)
   checkAll("Pickler[ImageQuality]", PicklerTests[ImageQuality].pickler)

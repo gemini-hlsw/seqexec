@@ -22,11 +22,7 @@ import seqexec.web.client.model.RunOperation
 import seqexec.web.client.model.SyncOperation
 import seqexec.web.client.model.TabSelected
 import seqexec.web.client.circuit._
-import seqexec.model.Observer
-import seqexec.model.Step
-import seqexec.model.StepConfig
-import seqexec.model.StepState
-import seqexec.model.UserDetails
+import seqexec.model.{Observer, QueueId, Step, StepConfig, StepState, UserDetails}
 
 package object reusability {
   implicit val stepStateReuse: Reusability[StepState]          = Reusability.byEq
@@ -55,4 +51,5 @@ package object reusability {
   implicit val qoReuse: Reusability[QueueOperations]           = Reusability.byEq
   implicit val qfReuse: Reusability[CalQueueControlFocus]      = Reusability.byEq
   implicit val cqfReuse: Reusability[CalQueueFocus]            = Reusability.byEq
+  implicit val qidReuse: Reusability[QueueId]                  = Reusability.byEq
 }

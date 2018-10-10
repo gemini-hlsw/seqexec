@@ -4,7 +4,7 @@
 package seqexec.engine
 
 import seqexec.engine.Result._
-import seqexec.model.ClientID
+import seqexec.model.ClientId
 import gem.Observation
 
 /**
@@ -15,7 +15,7 @@ final case class Completed[R<:RetVal](id: Observation.Id, i: Int, r: OK[R]) exte
 final case class PartialResult[R<:PartialVal](id: Observation.Id, i: Int, r: Partial[R]) extends SystemEvent
 final case class Paused[C <: PauseContext](id: Observation.Id, i: Int, r: Result.Paused[C]) extends SystemEvent
 final case class Failed(id: Observation.Id, i: Int, e: Result.Error) extends SystemEvent
-final case class Busy(id: Observation.Id, clientId: ClientID) extends SystemEvent
+final case class Busy(id: Observation.Id, clientId: ClientId) extends SystemEvent
 final case class BreakpointReached(id: Observation.Id) extends SystemEvent
 final case class Executed(id: Observation.Id) extends SystemEvent
 final case class Executing(id: Observation.Id) extends SystemEvent

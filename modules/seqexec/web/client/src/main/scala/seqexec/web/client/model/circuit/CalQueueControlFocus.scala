@@ -12,8 +12,7 @@ import monocle.macros.Lenses
 import monocle.std
 import monocle.function.At.at
 import monocle.function.At.atMap
-import seqexec.model.ExecutionQueue
-import seqexec.model.QueueId
+import seqexec.model.{ExecutionQueueView, QueueId}
 import seqexec.model.enum.BatchCommandState
 import seqexec.web.client.model._
 
@@ -37,7 +36,7 @@ object CalQueueControlFocus {
 
   def queueState(id: QueueId): Traversal[SeqexecAppRootModel, BatchCommandState] =
     SeqexecAppRootModel.executionQueuesT(id) ^|->
-      ExecutionQueue.cmdState
+      ExecutionQueueView.cmdState
 
   def queueControlG(id: QueueId): Getter[SeqexecAppRootModel, Option[CalQueueControlFocus]] =
     ClientStatus.canOperateG.zip(

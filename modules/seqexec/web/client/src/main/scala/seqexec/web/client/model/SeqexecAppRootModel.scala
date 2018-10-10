@@ -11,12 +11,7 @@ import monocle.Traversal
 import monocle.macros.Lenses
 import monocle.function.FilterIndex.filterIndex
 import monocle.unsafe.MapTraversal._
-import seqexec.model.Conditions
-import seqexec.model.ExecutionQueue
-import seqexec.model.QueueId
-import seqexec.model.SequenceView
-import seqexec.model.SequencesQueue
-import seqexec.model.ClientID
+import seqexec.model.{ClientId, Conditions, ExecutionQueueView, QueueId, SequenceView, SequencesQueue}
 import seqexec.web.client.components.sequence.steps.StepConfigTable
 import web.client.table._
 
@@ -27,7 +22,7 @@ import web.client.table._
 final case class SeqexecAppRootModel(sequences: SequencesQueue[SequenceView],
                                      ws:        WebSocketConnection,
                                      site:      Option[Site],
-                                     clientId:  Option[ClientID],
+                                     clientId:  Option[ClientId],
                                      uiModel:   SeqexecUIModel)
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
@@ -58,7 +53,7 @@ object SeqexecAppRootModel {
     SeqexecAppRootModel.uiModel ^|-> SeqexecUIModel.configTableState
 
   def executionQueuesT(
-    id: QueueId): Traversal[SeqexecAppRootModel, ExecutionQueue] =
+    id: QueueId): Traversal[SeqexecAppRootModel, ExecutionQueueView] =
     SeqexecAppRootModel.sequences ^|->
       SequencesQueue.queues       ^|->>
       filterIndex((qid: QueueId) => qid === id)

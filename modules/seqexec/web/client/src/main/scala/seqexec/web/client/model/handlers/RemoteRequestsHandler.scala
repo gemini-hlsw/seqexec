@@ -8,7 +8,7 @@ import diode.ActionHandler
 import diode.ActionResult
 import diode.Effect
 import diode.ModelRW
-import seqexec.model.ClientID
+import seqexec.model.ClientId
 import seqexec.web.client.actions._
 import seqexec.web.client.services.SeqexecWebClient
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
@@ -16,9 +16,9 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 /**
   * Handles actions sending requests to the backend
   */
-class RemoteRequestsHandler[M](modelRW: ModelRW[M, Option[ClientID]])
+class RemoteRequestsHandler[M](modelRW: ModelRW[M, Option[ClientId]])
     extends ActionHandler(modelRW)
-    with Handlers[M, Option[ClientID]] {
+    with Handlers[M, Option[ClientId]] {
 
   def handleRun: PartialFunction[Any, ActionResult[M]] = {
     case RequestRun(s) =>

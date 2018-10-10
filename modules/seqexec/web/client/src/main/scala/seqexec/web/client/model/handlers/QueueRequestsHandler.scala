@@ -7,7 +7,7 @@ import cats.implicits._
 import diode.ActionHandler
 import diode.ActionResult
 import diode.ModelRW
-import seqexec.model.ClientID
+import seqexec.model.ClientId
 import seqexec.model.SequencesQueue
 import seqexec.model.SequenceView
 import seqexec.web.client.actions._
@@ -17,9 +17,9 @@ import seqexec.web.client.services.SeqexecWebClient
   * Handles actions sending requests to the backend
   */
 class QueueRequestsHandler[M](
-  modelRW: ModelRW[M, (Option[ClientID], SequencesQueue[SequenceView])])
+  modelRW: ModelRW[M, (Option[ClientId], SequencesQueue[SequenceView])])
     extends ActionHandler(modelRW)
-    with Handlers[M, (Option[ClientID], SequencesQueue[SequenceView])] {
+    with Handlers[M, (Option[ClientId], SequencesQueue[SequenceView])] {
 
   def handleAddAllDayCal: PartialFunction[Any, ActionResult[M]] = {
     case RequestAllDayCal(qid) =>

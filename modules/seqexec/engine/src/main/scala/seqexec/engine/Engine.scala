@@ -9,7 +9,7 @@ import cats.effect.IO
 import cats.implicits._
 import seqexec.engine.Event._
 import seqexec.engine.Result.{PartialVal, PauseContext, RetVal}
-import seqexec.model.{ClientID, SequenceState}
+import seqexec.model.{ClientId, SequenceState}
 import fs2.Stream
 import gem.Observation
 import monocle.{Lens, Optional}
@@ -37,7 +37,7 @@ class Engine[D, U](stateL: Lens[D, Engine.State]) {
   private def switch(id: Observation.Id)(st: SequenceState): HandleType[Unit] =
     modifyS(id)(s => Sequence.State.status.set(st)(s))
 
-  def start(id: Observation.Id, clientId: ClientID, userCheck: D => Boolean): HandleType[Unit] =
+  def start(id: Observation.Id, clientId: ClientId, userCheck: D => Boolean): HandleType[Unit] =
     getS(id).flatMap {
       case Some(seq) =>
         // No resources being used by other running sequences

@@ -11,7 +11,7 @@ import gem.arb.ArbEnumerated._
 import gem.Observation
 import gem.enum.Site
 import seqexec.model.enum.Instrument
-import seqexec.model.ClientID
+import seqexec.model.ClientId
 import seqexec.model.QueueId
 import seqexec.model.Observer
 import seqexec.model.TargetName
@@ -706,12 +706,12 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
       for {
         navLocation        <- arbitrary[Pages.SeqexecPages]
         sequencesOnDisplay <- arbitrary[SequencesOnDisplay]
-        clientId           <- arbitrary[Option[ClientID]]
+        clientId           <- arbitrary[Option[ClientId]]
       } yield SODLocationFocus(navLocation, sequencesOnDisplay, clientId)
     }
 
   implicit val sodLocationFocusogen: Cogen[SODLocationFocus] =
-    Cogen[(Pages.SeqexecPages, SequencesOnDisplay, Option[ClientID])]
+    Cogen[(Pages.SeqexecPages, SequencesOnDisplay, Option[ClientId])]
       .contramap(x => (x.location, x.sod, x.clientId))
 
   implicit val arbWebSocketsFocus: Arbitrary[WebSocketsFocus] =
@@ -721,7 +721,7 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
         sequences   <- arbitrary[SequencesQueue[SequenceView]]
         user        <- arbitrary[Option[UserDetails]]
         observer    <- arbitrary[Observer]
-        clientId    <- arbitrary[Option[ClientID]]
+        clientId    <- arbitrary[Option[ClientId]]
         site        <- arbitrary[Option[Site]]
       } yield
         WebSocketsFocus(navLocation, sequences, user, observer, clientId, site)
@@ -732,7 +732,7 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
            SequencesQueue[SequenceView],
            Option[UserDetails],
            Observer,
-           Option[ClientID],
+           Option[ClientId],
            Option[Site])]
       .contramap(
         x =>
@@ -762,7 +762,7 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
         sequences <- arbitrary[SequencesQueue[SequenceView]]
         ws        <- arbitrary[WebSocketConnection]
         site      <- arbitrary[Option[Site]]
-        clientId  <- arbitrary[Option[ClientID]]
+        clientId  <- arbitrary[Option[ClientId]]
         uiModel   <- arbitrary[SeqexecUIModel]
       } yield SeqexecAppRootModel(sequences, ws, site, clientId, uiModel)
     }

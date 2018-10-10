@@ -12,8 +12,7 @@ import monocle.Traversal
 import monocle.macros.Lenses
 import monocle.function.Each.each
 import monocle.function.Each.listEach
-import seqexec.model.ExecutionQueue
-import seqexec.model.QueueId
+import seqexec.model.{ExecutionQueueView, QueueId}
 import seqexec.web.client.model._
 import seqexec.web.client.components.queue.CalQueueTable
 import web.client.table.TableState
@@ -34,7 +33,7 @@ object CalQueueFocus {
     // All ids on the queue
     val ids: Traversal[SeqexecAppRootModel, Observation.Id] =
       SeqexecAppRootModel.executionQueuesT(id) ^|->
-        ExecutionQueue.queue                   ^|->>
+        ExecutionQueueView.queue               ^|->>
         each
 
     // All metadata of the given obs

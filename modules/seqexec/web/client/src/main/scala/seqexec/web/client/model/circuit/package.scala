@@ -76,7 +76,7 @@ package circuit {
   @Lenses
   final case class SODLocationFocus(location: Pages.SeqexecPages,
                                     sod:      SequencesOnDisplay,
-                                    clientId: Option[ClientID])
+                                    clientId: Option[ClientId])
 
   @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object SODLocationFocus {
