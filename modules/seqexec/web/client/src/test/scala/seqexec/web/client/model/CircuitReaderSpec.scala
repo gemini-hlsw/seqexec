@@ -8,11 +8,10 @@ import cats.tests.CatsSuite
 import gem.Observation
 import monocle.law.discipline.LensTests
 import seqexec.model.QueueId
+import seqexec.model.SeqexecModelArbitraries.queueIdArb
 import seqexec.web.client.model._
 import seqexec.web.client.circuit._
 import seqexec.web.client.circuit.SeqexecCircuit._
-import org.scalacheck.Gen
-import org.scalacheck.Arbitrary
 import org.scalatest.prop.PropertyChecks
 
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
@@ -20,8 +19,6 @@ final class CircuitReaderSpec
     extends CatsSuite
     with PropertyChecks
     with ArbitrariesWebClient {
-  // This shouldn't be needed but otherwise we get random errors on .js
-  implicit val queueIdArb: Arbitrary[QueueId] = Arbitrary(Gen.uuid)
 
   checkAll("Eq[TabContentFocus]", EqTests[TabContentFocus].eqv)
   checkAll("Eq[SequenceTabContentFocus]", EqTests[SequenceTabContentFocus].eqv)

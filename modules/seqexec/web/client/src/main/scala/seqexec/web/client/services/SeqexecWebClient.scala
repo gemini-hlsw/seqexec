@@ -9,7 +9,7 @@ import gem.Observation
 import java.util.logging.LogRecord
 import org.scalajs.dom.ext.Ajax
 import org.scalajs.dom.XMLHttpRequest
-import seqexec.model.ClientID
+import seqexec.model.ClientId
 import seqexec.model.QueueId
 import seqexec.model.Conditions
 import seqexec.model.UserDetails
@@ -63,10 +63,10 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
     * Requests the backend to execute a sequence
     */
-  def run(id: Observation.Id, clientId: ClientID): Future[Unit] =
+  def run(id: Observation.Id, clientId: ClientId): Future[Unit] =
     Ajax
       .post(
-        url          = s"$baseUrl/commands/${encodeURI(id.format)}/start/$clientId",
+        url          = s"$baseUrl/commands/${encodeURI(id.format)}/start/${encodeURI(clientId.self.show)}",
         responseType = "arraybuffer"
       )
       .map(_ => ())
@@ -223,10 +223,10 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
     * Requests the backend to send a copy of the current state
     */
-  def refresh(clientId: ClientID): Future[Unit] =
+  def refresh(clientId: ClientId): Future[Unit] =
     Ajax
       .get(
-        url          = s"$baseUrl/commands/refresh/$clientId",
+        url          = s"$baseUrl/commands/refresh/${encodeURI(clientId.self.show)}",
         responseType = "arraybuffer"
       )
       .map(_ => ())
@@ -281,10 +281,10 @@ object SeqexecWebClient extends ModelBooPicklers {
   def loadSequence(instrument: Instrument,
                    id:         Observation.Id,
                    name:       Observer,
-                   clientId:   ClientID): Future[Unit] =
+                   clientId:   ClientId): Future[Unit] =
     Ajax
       .post(
-        url          = s"$baseUrl/commands/load/${encodeURI(instrument.show)}/${encodeURI(id.format)}/${encodeURI(name.value)}/$clientId",
+        url          = s"$baseUrl/commands/load/${encodeURI(instrument.show)}/${encodeURI(id.format)}/${encodeURI(name.value)}/${encodeURI(clientId.self.show)}",
         responseType = "arraybuffer"
       )
       .map(_ => ())
@@ -327,7 +327,7 @@ object SeqexecWebClient extends ModelBooPicklers {
   def addSequenceToQueue(queueId: QueueId, id: Observation.Id): Future[Unit] =
     Ajax
       .post(
-        url          = s"$baseUrl/queue/${encodeURI(queueId.show)}/add/${encodeURI(id.format)}",
+        url          = s"$baseUrl/queue/${encodeURI(queueId.self.show)}/add/${encodeURI(id.format)}",
         responseType = "arraybuffer"
       )
       .map(_ => ())
@@ -338,7 +338,7 @@ object SeqexecWebClient extends ModelBooPicklers {
   def clearQueue(queueId: QueueId): Future[Unit] =
     Ajax
       .post(
-        url          = s"$baseUrl/commands/queue/${encodeURI(queueId.show)}/clear",
+        url          = s"$baseUrl/commands/queue/${encodeURI(queueId.self.show)}/clear",
         responseType = "arraybuffer"
       )
       .map(_ => ())
@@ -346,11 +346,11 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
     * Runs a queue
     */
-  def runQueue(queueId: QueueId, clientId: ClientID): Future[Unit] =
+  def runQueue(queueId: QueueId, clientId: ClientId): Future[Unit] =
     Ajax
       .post(
         url =
-          s"$baseUrl/commands/queue/${encodeURI(queueId.show)}/run/${encodeURI(clientId.show)}",
+          s"$baseUrl/commands/queue/${encodeURI(queueId.self.show)}/run/${encodeURI(clientId.self.show)}",
         responseType = "arraybuffer"
       )
       .map(_ => ())
@@ -358,11 +358,11 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
     * Stops a queue
     */
-  def stopQueue(queueId: QueueId, clientId: ClientID): Future[Unit] =
+  def stopQueue(queueId: QueueId, clientId: ClientId): Future[Unit] =
     Ajax
       .post(
         url =
-          s"$baseUrl/commands/queue/${encodeURI(queueId.show)}/stop/${encodeURI(clientId.show)}",
+          s"$baseUrl/commands/queue/${encodeURI(queueId.self.show)}/stop/${encodeURI(clientId.self.show)}",
         responseType = "arraybuffer"
       )
       .map(_ => ())
@@ -373,7 +373,7 @@ object SeqexecWebClient extends ModelBooPicklers {
   def addSequencesToQueue(ids: List[Observation.Id])(qid: QueueId): Future[Unit] =
     Ajax
       .post(
-        url          = s"$baseUrl/commands/queue/${encodeURI(qid.show)}/add",
+        url          = s"$baseUrl/commands/queue/${encodeURI(qid.self.show)}/add",
         responseType = "arraybuffer",
         data         = Pickle.intoBytes(ids)
       )
@@ -385,7 +385,7 @@ object SeqexecWebClient extends ModelBooPicklers {
   def removeSequenceToQueue(queueId: QueueId, id: Observation.Id): Future[Unit] =
     Ajax
       .post(
-        url          = s"$baseUrl/queue/${encodeURI(queueId.show)}/remove/${encodeURI(id.format)}",
+        url          = s"$baseUrl/queue/${encodeURI(queueId.self.show)}/remove/${encodeURI(id.format)}",
         responseType = "arraybuffer"
       )
       .map(_ => ())

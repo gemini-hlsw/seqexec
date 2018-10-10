@@ -20,7 +20,7 @@ trait SequenceEventsArbitraries extends ArbTime {
   implicit val coeArb = Arbitrary[ConnectionOpenEvent] {
     for {
       u  <- arbitrary[Option[UserDetails]]
-      id <- arbitrary[ClientID]
+      id <- arbitrary[ClientId]
     } yield ConnectionOpenEvent(u, id)
   }
   implicit val sseArb = Arbitrary[SequenceStart] {
@@ -62,7 +62,7 @@ trait SequenceEventsArbitraries extends ArbTime {
   implicit val srfArb = Arbitrary[SequenceRefreshed] {
     for {
       s <- arbitrary[SequencesQueue[SequenceView]]
-      c <- arbitrary[ClientID]
+      c <- arbitrary[ClientId]
     } yield SequenceRefreshed(s, c)
   }
   implicit val asrArb = Arbitrary[ActionStopRequested] {
@@ -105,7 +105,7 @@ trait SequenceEventsArbitraries extends ArbTime {
       i <- arbitrary[Instrument]
       o <- arbitrary[Observation.Id]
       s <- arbitrary[SequencesQueue[SequenceView]]
-      c <- arbitrary[ClientID]
+      c <- arbitrary[ClientId]
     } yield LoadSequenceUpdated(i, o, s, c)
   }
   implicit val clsArb = Arbitrary[ClearLoadedSequencesUpdated] {
@@ -147,7 +147,7 @@ trait SequenceEventsArbitraries extends ArbTime {
   implicit val unArb = Arbitrary[UserNotification] {
     for {
       i <- arbitrary[Notification]
-      c <- arbitrary[ClientID]
+      c <- arbitrary[ClientId]
     } yield UserNotification(i, c)
   }
 
@@ -235,7 +235,7 @@ trait SequenceEventsArbitraries extends ArbTime {
     Cogen[SequencesQueue[SequenceView]].contramap(_.view)
 
   implicit val srfCogen: Cogen[SequenceRefreshed] =
-    Cogen[(ClientID, SequencesQueue[SequenceView])]
+    Cogen[(ClientId, SequencesQueue[SequenceView])]
       .contramap(x => (x.clientId, x.view))
 
   implicit val asrCogen: Cogen[ActionStopRequested] =
@@ -264,7 +264,7 @@ trait SequenceEventsArbitraries extends ArbTime {
     Cogen[String].contramap(_.msg)
 
   implicit val unCogen: Cogen[UserNotification] =
-    Cogen[(Notification, ClientID)].contramap(x => (x.memo, x.clientId))
+    Cogen[(Notification, ClientId)].contramap(x => (x.memo, x.clientId))
 }
 
 object SequenceEventsArbitraries extends SequenceEventsArbitraries

@@ -3,6 +3,8 @@
 
 package seqexec.model
 
+import java.util.UUID
+
 import org.scalacheck.Arbitrary
 import org.scalacheck.Cogen
 import org.scalacheck.Gen
@@ -43,7 +45,14 @@ trait SeqexecModelArbitraries extends ArbObservation {
     } yield SequencesQueue(Map.empty, c, o, Map.empty, b)
   }
 
-  implicit val clientIdArb: Arbitrary[ClientID] = Arbitrary(Gen.uuid)
+  implicit val arbitraryUUID: Arbitrary[UUID] = Arbitrary(Gen.uuid)
+
+  implicit val cogenUUID: Cogen[UUID] =
+    Cogen[(Long, Long)].contramap(u => (u.getMostSignificantBits, u.getLeastSignificantBits))
+
+  implicit val clientIdArb: Arbitrary[ClientId] = Arbitrary{
+    arbitrary[UUID].map(ClientId)
+  }
 
   implicit val levArb = Arbitrary[ServerLogLevel](
     Gen.oneOf(ServerLogLevel.INFO, ServerLogLevel.WARN, ServerLogLevel.ERROR))
@@ -74,13 +83,12 @@ trait SeqexecModelArbitraries extends ArbObservation {
               Instrument.NIRI,
               Instrument.NIFS))
 
-  implicit val executionQueueArb: Arbitrary[ExecutionQueue] = Arbitrary {
-    for {
-      n <- arbitrary[String]
-      s <- arbitrary[BatchCommandState]
-      q <- arbitrary[List[Observation.Id]]
-    } yield ExecutionQueue(n, s, q)
+  implicit val queueIdArb: Arbitrary[QueueId] = Arbitrary{
+    arbitrary[UUID].map(QueueId)
   }
+
+  implicit val qidCogen: Cogen[QueueId] =
+    Cogen[UUID].contramap(_.self)
 
   implicit val actArb = Arbitrary[ActionType] {
     for {
@@ -274,15 +282,16 @@ trait SeqexecModelArbitraries extends ArbObservation {
       (s.id, s.config, s.status, s.breakpoint, s.skip, s.fileId))
 
   implicit val standardStepCogen: Cogen[StandardStep] =
-    Cogen[
-      (StepId,
-       Map[SystemName, Map[String, String]],
-       StepState,
-       Boolean,
-       Boolean,
-       Option[dhs.ImageFileId],
-       List[(Resource, ActionStatus)],
-       ActionStatus)].contramap(
+    Cogen[(
+      StepId,
+      Map[SystemName, Map[String, String]],
+      StepState,
+      Boolean,
+      Boolean,
+      Option[dhs.ImageFileId],
+      List[(Resource, ActionStatus)],
+      ActionStatus
+    )].contramap(
       s =>
         (s.id,
          s.config,
@@ -291,7 +300,8 @@ trait SeqexecModelArbitraries extends ArbObservation {
          s.skip,
          s.fileId,
          s.configStatus,
-         s.observeStatus))
+         s.observeStatus)
+    )
 
   implicit val sqsCogen: Cogen[SequenceState] =
     Cogen[String].contramap(_.productPrefix)
@@ -349,8 +359,8 @@ trait SeqexecModelArbitraries extends ArbObservation {
     Cogen[(CloudCover, ImageQuality, SkyBackground, WaterVapor)].contramap(c =>
       (c.cc, c.iq, c.sb, c.wv))
 
-  implicit val cidCogen: Cogen[ClientID] =
-    Cogen[String].contramap(_.toString)
+  implicit val cidCogen: Cogen[ClientId] =
+    Cogen[UUID].contramap(_.self)
 
   implicit val levCogen: Cogen[ServerLogLevel] =
     Cogen[String].contramap(_.productPrefix)
@@ -402,7 +412,7 @@ trait SeqexecModelArbitraries extends ArbObservation {
     for {
       observer <- arbitrary[Observer]
       user <- arbitrary[UserDetails]
-      clid <- arbitrary[ClientID]
+      clid <- arbitrary[ClientId]
     } yield BatchCommandState.Run(observer, user, clid)
   }
 
@@ -413,11 +423,33 @@ trait SeqexecModelArbitraries extends ArbObservation {
   )
 
   implicit val seqBatchCmdStateCogen: Cogen[BatchCommandState] =
+    Cogen[(String, Option[Observer], Option[UserDetails], Option[ClientId])].contramap{
+      case r@BatchCommandState.Run(obs, usd, cid) => (r.productPrefix, obs.some, usd.some, cid.some)
+      case o                            => (o.productPrefix, None, None, None)
+    }
+
+  implicit val seqBatchXStateArb: Arbitrary[BatchExecState] = Arbitrary(
+    Gen.oneOf(BatchExecState.Idle, BatchExecState.Waiting, BatchExecState.Running, BatchExecState.Stopping,
+      BatchExecState.Completed)
+  )
+
+  implicit val seqBatchXStateCogen: Cogen[BatchExecState] =
     Cogen[String].contramap(_.productPrefix)
 
-  implicit val exQueueCmdStateCogen: Cogen[ExecutionQueue] =
-    Cogen[(String, BatchCommandState, List[Observation.Id])]
-      .contramap(x => (x.name, x.cmdState, x.queue))
+  implicit val executionQueueViewArb: Arbitrary[ExecutionQueueView] = Arbitrary {
+    for {
+      id <- arbitrary[QueueId]
+      n  <- arbitrary[String]
+      s  <- arbitrary[BatchCommandState]
+      xs <- arbitrary[BatchExecState]
+      q  <- arbitrary[List[Observation.Id]]
+    } yield ExecutionQueueView(id, n, s, xs, q)
+  }
+
+  implicit val executionQueueViewCogen: Cogen[ExecutionQueueView] =
+    Cogen[(QueueId, String, BatchCommandState, BatchExecState, List[Observation.Id])]
+      .contramap(x => (x.id, x.name, x.cmdState, x.execState, x.queue))
+
 }
 
 object SeqexecModelArbitraries extends SeqexecModelArbitraries

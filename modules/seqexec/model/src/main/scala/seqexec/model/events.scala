@@ -19,7 +19,7 @@ object events {
   }
 
   sealed trait ForClient extends SeqexecEvent {
-    def clientId: ClientID
+    def clientId: ClientId
   }
 
   // TODO: msg should be LogMsg but it does IO when getting a timestamp, it
@@ -42,7 +42,7 @@ object events {
     case _                      => false
   }
 
-  final case class ConnectionOpenEvent(u: Option[UserDetails], clientId: ClientID) extends SeqexecEvent
+  final case class ConnectionOpenEvent(u: Option[UserDetails], clientId: ClientId) extends SeqexecEvent
 
   object ConnectionOpenEvent {
     implicit lazy val equal: Eq[ConnectionOpenEvent] =
@@ -144,7 +144,7 @@ object events {
       Eq.by(x => (x.op, x.view))
   }
 
-  final case class LoadSequenceUpdated(i: Instrument, sid: Observation.Id, view: SequencesQueue[SequenceView], clientId: ClientID) extends SeqexecModelUpdate
+  final case class LoadSequenceUpdated(i: Instrument, sid: Observation.Id, view: SequencesQueue[SequenceView], clientId: ClientId) extends SeqexecModelUpdate
 
   object LoadSequenceUpdated {
     implicit lazy val equal: Eq[LoadSequenceUpdated] =
@@ -193,7 +193,7 @@ object events {
       Eq.by(_.view)
   }
 
-  final case class SequenceRefreshed(view: SequencesQueue[SequenceView], clientId: ClientID) extends SeqexecModelUpdate with ForClient
+  final case class SequenceRefreshed(view: SequencesQueue[SequenceView], clientId: ClientId) extends SeqexecModelUpdate with ForClient
 
   object SequenceRefreshed {
     implicit lazy val equal: Eq[SequenceRefreshed] =
@@ -235,7 +235,7 @@ object events {
       Eq.by(x => (x.obsId, x.view))
   }
 
-  final case class UserNotification(memo: Notification, clientId: ClientID) extends ForClient
+  final case class UserNotification(memo: Notification, clientId: ClientId) extends ForClient
 
   object UserNotification{
     implicit lazy val equal: Eq[UserNotification] =

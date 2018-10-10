@@ -4,8 +4,7 @@
 package seqexec.model.enum
 
 import cats.Eq
-import cats.implicits._
-import seqexec.model.QueueId
+import seqexec.model.{QueueId, queueIdEq}
 
 sealed trait QueueManipulationOp extends Product with Serializable {
   val qid: QueueId
