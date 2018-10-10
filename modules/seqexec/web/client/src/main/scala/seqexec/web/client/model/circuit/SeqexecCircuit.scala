@@ -212,7 +212,7 @@ object SeqexecCircuit
       operatorHandler,
       defaultObserverHandler,
       foldHandlers(remoteRequestsHandler, operationsStateHandler),
-      foldHandlers(queueRequestsHandler, queueOpsHandler),
+      foldHandlers( queueOpsHandler, queueRequestsHandler),
       navigationHandler,
       debuggingHandler,
       tableStateHandler,

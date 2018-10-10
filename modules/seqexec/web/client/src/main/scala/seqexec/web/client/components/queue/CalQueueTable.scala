@@ -20,6 +20,8 @@ import react.sortable._
 import scala.scalajs.js
 import seqexec.model.QueueId
 import seqexec.model.enum.Instrument
+import seqexec.web.client.model.QueueSeqOperations
+import seqexec.web.client.model.RemoveSeqQueue
 import seqexec.web.client.circuit._
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.reusability._
@@ -27,6 +29,7 @@ import seqexec.web.client.actions.RequestRemoveSeqCal
 import seqexec.web.client.actions.UpdateCalTableState
 import seqexec.web.client.semanticui.elements.button.Button
 import seqexec.web.client.semanticui.elements.icon.Icon.IconTimes
+import seqexec.web.client.semanticui.elements.icon.Icon.IconRefresh
 import seqexec.web.client.semanticui.{ Size => SSize }
 import web.client.table._
 
@@ -88,6 +91,9 @@ object CalQueueTable {
           CalQueueRow(s.id, s.i)
         }
         .getOrElse(CalQueueRow.Empty)
+
+    def seqState(id: Observation.Id): Option[QueueSeqOperations] =
+      CalQueueFocus.seqQueueOpsT(id).headOption(data)
 
     def cmp: Unmounted[js.Object, Null] = {
       val view         = component
@@ -157,7 +163,11 @@ object CalQueueTable {
           disabled = !p.data.canOperate,
           onClick =
             SeqexecCircuit.dispatchCB(RequestRemoveSeqCal(p.queueId, r.obsId)),
-          icon = IconTimes.some
+          icon = p
+            .seqState(r.obsId)
+            .filter(_.removeSeqQueue === RemoveSeqQueue.RemoveSeqQueueInFlight)
+            .fold(IconTimes)(_ => IconRefresh.copyIcon(loading = true))
+            .some
         ))
     }
 
