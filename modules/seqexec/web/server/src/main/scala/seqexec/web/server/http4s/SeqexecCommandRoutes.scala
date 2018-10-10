@@ -133,7 +133,7 @@ class SeqexecCommandRoutes(auth:       AuthenticationService,
 
     case POST -> Root / "load" / InstrumentVar(i) / ObsIdVar(obsId) / ObserverVar(
           observer) / ClientIDVar(clientId) as user =>
-      se.loadSequence(inputQueue, i, obsId, observer, user, clientId) *>
+      se.selectSequence(inputQueue, i, obsId, observer, user, clientId) *>
         Ok(s"Set selected sequence $obsId for $i")
 
     case POST -> Root / "unload" / "all" as user =>
@@ -162,8 +162,8 @@ class SeqexecCommandRoutes(auth:       AuthenticationService,
       se.clearQueue(inputQueue, qid) *>
         Ok(s"All sequences removed from queue $qid")
 
-    case POST -> Root / "queue" / QueueIdVar(qid) / "run" / ClientIDVar(clientId) as _ =>
-      se.startQueue(inputQueue, qid, clientId) *>
+    case POST -> Root / "queue" / QueueIdVar(qid) / "run" / ObserverVar(observer) / ClientIDVar(clientId) as user =>
+      se.startQueue(inputQueue, qid, observer, user, clientId) *>
         Ok(s"Started queue $qid")
 
     case POST -> Root / "queue" / QueueIdVar(qid) / "stop" / ClientIDVar(clientId) as _ =>
