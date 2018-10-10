@@ -109,4 +109,12 @@ object CalibrationQueues {
         case i => i
       })
 
+  def modifyOrAddSeqOps(qid: QueueId,
+                        oid: Observation.Id,
+                        m:   QueueSeqOperations => QueueSeqOperations)
+    : CalibrationQueues => CalibrationQueues =
+    CalibrationQueues.addSeqOps(qid, oid) >>> CalibrationQueues
+      .calQueueStateSeqOpsO(qid, oid)
+      .modify(m)
+
 }

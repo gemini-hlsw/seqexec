@@ -8,6 +8,7 @@ import diode.ActionHandler
 import diode.ActionResult
 import diode.ModelRW
 import seqexec.model.ClientId
+import seqexec.model.QueueId
 import seqexec.model.SequencesQueue
 import seqexec.model.SequenceView
 import seqexec.web.client.actions._
@@ -73,8 +74,8 @@ class QueueRequestsHandler[M](
           effectOnly(
             requestEffect2((qid, id),
                            SeqexecWebClient.removeSequenceFromQueue,
-                           StopCalCompleted.apply,
-                           StopCalFailed.apply))
+                           RemoveSeqCalCompleted.apply,
+                           RemoveSeqCalFailed.apply(_: QueueId, id)))
         }
         .getOrElse(noChange)
   }

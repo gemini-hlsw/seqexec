@@ -61,10 +61,10 @@ class QueueOperationsHandler[M](modelRW: ModelRW[M, CalibrationQueues])
   def handleSeqOps: PartialFunction[Any, ActionResult[M]] = {
     case RequestRemoveSeqCal(qid, id) =>
       updatedL(
-        (CalibrationQueues.addSeqOps(qid, id) >>> CalibrationQueues
-          .calQueueStateSeqOpsO(qid, id)
-          .modify(
-            _.copy(removeSeqQueue = RemoveSeqQueue.RemoveSeqQueueInFlight))))
+        CalibrationQueues.modifyOrAddSeqOps(
+          qid,
+          id,
+          _.copy(removeSeqQueue = RemoveSeqQueue.RemoveSeqQueueInFlight)))
 
   }
 
@@ -119,6 +119,16 @@ class QueueOperationsHandler[M](modelRW: ModelRW[M, CalibrationQueues])
       updatedLE(
         CalibrationQueues.stopCalL(qid).set(StopCalOperation.StopCalIdle),
         notification)
+
+    case RemoveSeqCalFailed(qid, id) =>
+      val msg = s"Failed to remove sequence ${id.format} from the queue"
+      val notification = Effect(
+        Future(RequestFailedNotification(RequestFailed(msg))))
+      updatedLE(CalibrationQueues.modifyOrAddSeqOps(
+                  qid,
+                  id,
+                  _.copy(removeSeqQueue = RemoveSeqQueue.RemoveSeqQueueIdle)),
+                notification)
   }
 
   override def handle: PartialFunction[Any, ActionResult[M]] =
