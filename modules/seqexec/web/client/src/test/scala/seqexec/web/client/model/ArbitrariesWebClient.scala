@@ -10,6 +10,7 @@ import gem.arb.ArbObservation
 import gem.arb.ArbEnumerated._
 import gem.Observation
 import gem.enum.Site
+import scala.collection.immutable.SortedMap
 import seqexec.model.enum.Instrument
 import seqexec.model.ClientId
 import seqexec.model.QueueId
@@ -126,6 +127,15 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
   implicit val qoCogen: Cogen[QueueOperations] =
     Cogen[AddDayCalOperation].contramap(x => x.addDayCalRequested)
 
+  implicit val arbRemoveSeqQueue: Arbitrary[RemoveSeqQueue] =
+    Arbitrary {
+      Gen.oneOf(RemoveSeqQueue.RemoveSeqQueueIdle,
+                RemoveSeqQueue.RemoveSeqQueueInFlight)
+    }
+
+  implicit val rsqCogen: Cogen[RemoveSeqQueue] =
+    Cogen[String].contramap(_.productPrefix)
+
   implicit val arbCalibrationQueueTab: Arbitrary[CalibrationQueueTab] =
     Arbitrary {
       for {
@@ -137,6 +147,17 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
     Cogen[TableState[StepsTable.TableColumn]].contramap { x =>
       x.tableState
     }
+
+  implicit val arbQueueSeqOperations: Arbitrary[QueueSeqOperations] =
+    Arbitrary {
+      for {
+        r <- arbitrary[RemoveSeqQueue]
+      } yield QueueSeqOperations(r)
+    }
+
+  implicit val sopCogen: Cogen[QueueSeqOperations] =
+    Cogen[RemoveSeqQueue].contramap(x => x.removeSeqQueue)
+
 
   implicit val arbInstrumentSequenceTab: Arbitrary[InstrumentSequenceTab] =
     Arbitrary {
@@ -626,7 +647,8 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
       for {
         ops <- arbitrary[QueueOperations]
         ts  <- arbitrary[TableState[CalQueueTable.TableColumn]]
-      } yield CalQueueState(ops, ts)
+        sop <- arbitrary[SortedMap[Observation.Id, QueueSeqOperations]]
+      } yield CalQueueState(ops, ts, sop)
     }
 
   implicit val calQueuesStateCogen: Cogen[CalQueueState] =
@@ -636,7 +658,7 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
   implicit val arbCalQueues: Arbitrary[CalibrationQueues] =
     Arbitrary {
       for {
-        ops <- arbitrary[Map[QueueId, CalQueueState]]
+        ops <- arbitrary[SortedMap[QueueId, CalQueueState]]
       } yield CalibrationQueues(ops)
     }
 

@@ -16,6 +16,7 @@ import seqexec.web.client.model.AddDayCalOperation
 import seqexec.web.client.model.ClearAllCalOperation
 import seqexec.web.client.model.RunCalOperation
 import seqexec.web.client.model.StopCalOperation
+import seqexec.web.client.model.RemoveSeqQueue
 import seqexec.web.client.actions._
 
 /**
@@ -54,6 +55,16 @@ class QueueOperationsHandler[M](modelRW: ModelRW[M, CalibrationQueues])
     case RequestStopCal(qid) =>
       updatedL(
         CalibrationQueues.stopCalL(qid).set(StopCalOperation.StopCalInFlight))
+
+  }
+
+  def handleSeqOps: PartialFunction[Any, ActionResult[M]] = {
+    case RequestRemoveSeqCal(qid, id) =>
+      updatedL(
+        CalibrationQueues.modifyOrAddSeqOps(
+          qid,
+          id,
+          _.copy(removeSeqQueue = RemoveSeqQueue.RemoveSeqQueueInFlight)))
 
   }
 
@@ -108,6 +119,16 @@ class QueueOperationsHandler[M](modelRW: ModelRW[M, CalibrationQueues])
       updatedLE(
         CalibrationQueues.stopCalL(qid).set(StopCalOperation.StopCalIdle),
         notification)
+
+    case RemoveSeqCalFailed(qid, id) =>
+      val msg = s"Failed to remove sequence ${id.format} from the queue"
+      val notification = Effect(
+        Future(RequestFailedNotification(RequestFailed(msg))))
+      updatedLE(CalibrationQueues.modifyOrAddSeqOps(
+                  qid,
+                  id,
+                  _.copy(removeSeqQueue = RemoveSeqQueue.RemoveSeqQueueIdle)),
+                notification)
   }
 
   override def handle: PartialFunction[Any, ActionResult[M]] =
@@ -115,6 +136,7 @@ class QueueOperationsHandler[M](modelRW: ModelRW[M, CalibrationQueues])
          handleClearAllCal,
          handleRunCal,
          handleStopCal,
+         handleSeqOps,
          handleRequestResultOk,
          handleRequestResultFailed).combineAll
 }

@@ -12,21 +12,30 @@ import monocle.Traversal
 import monocle.macros.Lenses
 import monocle.function.Each.each
 import monocle.function.Each.listEach
-import seqexec.model.{ExecutionQueueView, QueueId}
+import monocle.function.FilterIndex.filterIndex
+import seqexec.model.ExecutionQueueView
+import seqexec.model.QueueId
 import seqexec.web.client.model._
 import seqexec.web.client.components.queue.CalQueueTable
 import web.client.table.TableState
+import scala.collection.immutable.SortedMap
 
 @Lenses
 final case class CalQueueFocus(
   canOperate: Boolean,
+  loggedIn:   Boolean,
   seqs:       List[CalQueueSeq],
-  tableState: TableState[CalQueueTable.TableColumn])
+  tableState: TableState[CalQueueTable.TableColumn],
+  seqOps:     SortedMap[Observation.Id, QueueSeqOperations])
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object CalQueueFocus {
   implicit val eq: Eq[CalQueueFocus] =
-    Eq.by(x => (x.canOperate, x.seqs, x.tableState))
+    Eq.by(x => (x.canOperate, x.seqs, x.seqOps, x.tableState))
+
+  def seqQueueOpsT(id: Observation.Id): Traversal[CalQueueFocus, QueueSeqOperations] =
+    CalQueueFocus.seqOps                               ^|->>
+      filterIndex((oid: Observation.Id) => oid === id)
 
   // A fairly complicated getter
   def calQueueG(id: QueueId): Getter[SeqexecAppRootModel, Option[CalQueueFocus]] = {
@@ -40,20 +49,34 @@ object CalQueueFocus {
     def calSeq(id: Observation.Id): Getter[SeqexecAppRootModel, Option[CalQueueSeq]] =
       SeqexecAppRootModel.sequences.composeGetter(CalQueueSeq.calQueueSeqG(id))
 
-    def calTS(id: QueueId): Lens[SeqexecAppRootModel, Option[TableState[CalQueueTable.TableColumn]]] =
-      SeqexecAppRootModel.uiModel  ^|->
-        AppTableStates.tableStateL ^|->
+    def calTS(id: QueueId): Lens[SeqexecAppRootModel,
+                         Option[TableState[CalQueueTable.TableColumn]]] =
+      SeqexecAppRootModel.uiModel        ^|->
+        AppTableStates.tableStateL       ^|->
         AppTableStates.queueTableAtL(id)
 
     // combine
     val calQueueSeqG = (s: SeqexecAppRootModel) =>
       ids.getAll(s).map(i => calSeq(i).get(s))
 
-    ClientStatus.canOperateG.zip(Getter(calQueueSeqG).zip(calTS(id).asGetter)) >>> {
-      case (status, (ids, ts)) =>
-        CalQueueFocus(status,
-                      ids.collect { case Some(x) => x },
-                      ts.getOrElse(CalQueueTable.State.InitialTableState)).some
+    val seqOpsL =
+      SeqexecAppRootModel.uiModel                 ^|->
+        SeqexecUIModel.queues                     ^|->
+        CalibrationQueues.queues                  ^|->>
+        filterIndex((qid: QueueId) => qid === id) ^|->
+        CalQueueState.seqOps
+
+    ClientStatus.clientStatusFocusL.asGetter
+      .zip(
+        Getter(calQueueSeqG).zip(
+          calTS(id).asGetter.zip(Getter(seqOpsL.headOption)))) >>> {
+      case (status, (ids, (ts, seqOps))) =>
+        val obsIds = ids.collect { case Some(x) => x }
+        CalQueueFocus(status.canOperate,
+                      status.isLogged,
+                      obsIds,
+                      ts.getOrElse(CalQueueTable.State.ROTableState),
+                      seqOps.getOrElse(SortedMap.empty)).some
       case _ =>
         none
     }

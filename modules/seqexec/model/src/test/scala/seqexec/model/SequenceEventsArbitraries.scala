@@ -91,7 +91,8 @@ trait SequenceEventsArbitraries extends ArbTime {
   implicit val qmArb = Arbitrary[QueueManipulationOp] {
     for {
       q <- arbitrary[QueueId]
-      m <- Gen.oneOf(Modified(q), Started(q), Stopped(q))
+      i <- arbitrary[List[Observation.Id]]
+      m <- Gen.oneOf(Moved(q), Started(q), Stopped(q), Clear(q), AddedSeqs(q, i), RemovedSeqs(q, i))
     } yield m
   }
   implicit val quArb = Arbitrary[QueueUpdated] {

@@ -8,6 +8,7 @@ import diode.ActionHandler
 import diode.ActionResult
 import diode.ModelRW
 import seqexec.model.ClientId
+import seqexec.model.QueueId
 import seqexec.model.SequencesQueue
 import seqexec.model.SequenceView
 import seqexec.web.client.actions._
@@ -66,7 +67,24 @@ class QueueRequestsHandler[M](
         .getOrElse(noChange)
   }
 
+  def handleRemoveSeqCal: PartialFunction[Any, ActionResult[M]] = {
+    case RequestRemoveSeqCal(qid, id) =>
+      value._1
+        .map { cid =>
+          effectOnly(
+            requestEffect2((qid, id),
+                           SeqexecWebClient.removeSequenceFromQueue,
+                           RemoveSeqCalCompleted.apply,
+                           RemoveSeqCalFailed.apply(_: QueueId, id)))
+        }
+        .getOrElse(noChange)
+  }
+
   override def handle: PartialFunction[Any, ActionResult[M]] =
-    List(handleAddAllDayCal, handleClearAllCal, handleRunCal, handleStopCal).combineAll
+    List(handleAddAllDayCal,
+         handleClearAllCal,
+         handleRunCal,
+         handleStopCal,
+         handleRemoveSeqCal).combineAll
 
 }

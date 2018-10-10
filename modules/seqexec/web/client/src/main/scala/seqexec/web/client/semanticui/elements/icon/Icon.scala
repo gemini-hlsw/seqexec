@@ -20,77 +20,83 @@ final case class Icon(p: Icon.Props, children: Seq[VdomNode]) {
 
   // Custom copy constructor to avoid passing the id again
   @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
-  def copyIcon(disabled: Boolean = false,
-           loading: Boolean = false,
-           fitted: Boolean = false,
-           size: Size = Size.NotSized,
-           link: Boolean = false,
-           flipped: Flipped = Flipped.NotFlipped,
-           rotated: Rotated = Rotated.NotRotated,
-           circular: Boolean = false,
-           bordered: Boolean = false,
-           inverted: Boolean = false,
-           color: Option[String] = None,
-           extraStyles: List[GStyle] = Nil,
-           key: String = "",
-           onClick: Callback = Callback.empty,
-           onMouseEnter: Callback = Callback.empty,
-           onMouseLeave: Callback = Callback.empty): Icon =
+  def copyIcon(disabled:     Boolean        = false,
+               loading:      Boolean        = false,
+               fitted:       Boolean        = false,
+               size:         Size           = Size.NotSized,
+               link:         Boolean        = false,
+               flipped:      Flipped        = Flipped.NotFlipped,
+               rotated:      Rotated        = Rotated.NotRotated,
+               circular:     Boolean        = false,
+               bordered:     Boolean        = false,
+               inverted:     Boolean        = false,
+               color:        Option[String] = None,
+               extraStyles:  List[GStyle]   = Nil,
+               key:          String         = "",
+               onClick:      Callback       = Callback.empty,
+               onMouseEnter: Callback       = Callback.empty,
+               onMouseLeave: Callback       = Callback.empty): Icon =
     copy(
-      p = Icon.Props(id = p.id,
-        disabled = disabled,
-        loading = loading,
-        fitted = fitted,
-        size = size,
-        link = link,
-        flipped = flipped,
-        rotated = rotated,
-        circular = circular,
-        bordered = bordered,
-        inverted = inverted,
-        color = color,
-        extraStyles = extraStyles,
-        key = key,
+      p = Icon.Props(
+        id           = p.id,
+        disabled     = disabled,
+        loading      = loading,
+        fitted       = fitted,
+        size         = size,
+        link         = link,
+        flipped      = flipped,
+        rotated      = rotated,
+        circular     = circular,
+        bordered     = bordered,
+        inverted     = inverted,
+        color        = color,
+        extraStyles  = extraStyles,
+        key          = key,
         onMouseEnter = onMouseEnter,
         onMouseLeave = onMouseLeave,
-        onClick = onClick),
-      children = if (children.nonEmpty) children else this.children)
-
-  private def component = ScalaComponent.builder[Props]("Icon")
-    .stateless
-    .renderPC((_, p, c) =>
-      <.i(
-        ^.cls := s"${p.id} icon",
-        p.extraStyles.map(geminiStyleToTagMod).toTagMod,
-        ^.cls :=? p.color,
-        ^.classSet(
-          "disabled"                 -> p.disabled,
-          "loading"                  -> p.loading,
-          "fitted"                   -> p.fitted,
-          "tiny"                     -> (p.size === Size.Tiny),
-          "mini"                     -> (p.size === Size.Mini),
-          "small"                    -> (p.size === Size.Small),
-          "large"                    -> (p.size === Size.Large),
-          "big"                      -> (p.size === Size.Big),
-          "huge"                     -> (p.size === Size.Huge),
-          "massive"                  -> (p.size === Size.Massive),
-          "link"                     -> p.link,
-          "horizontally flipped"     -> (p.flipped === Flipped.Horizontally),
-          "vertically flipped"       -> (p.flipped === Flipped.Vertically),
-          "clockwise rotated"        -> (p.rotated === Rotated.Clockwise),
-          "counterclockwise rotated" -> (p.rotated === Rotated.CounterClockwise),
-          "circular"                 -> p.circular,
-          "bordered"                 -> p.bordered,
-          "inverted"                 -> p.inverted
-        ),
-        ^.onClick --> p.onClick,
-        ^.onMouseEnter --> p.onMouseEnter,
-        ^.onMouseLeave --> p.onMouseLeave,
-        c
-      )
+        onClick      = onClick
+      ),
+      children = if (children.nonEmpty) children else this.children
     )
-    .configure(Reusability.shouldComponentUpdate)
-    .build.withKey(p.key).apply(p)(children: _*)
+
+  private def component =
+    ScalaComponent
+      .builder[Props]("Icon")
+      .stateless
+      .renderPC((_, p, c) =>
+        <.i(
+          ^.cls := s"${p.id} icon",
+          p.extraStyles.map(geminiStyleToTagMod).toTagMod,
+          ^.cls :=? p.color,
+          ^.classSet(
+            "disabled" -> p.disabled,
+            "loading" -> p.loading,
+            "fitted" -> p.fitted,
+            "tiny" -> (p.size === Size.Tiny),
+            "mini" -> (p.size === Size.Mini),
+            "small" -> (p.size === Size.Small),
+            "large" -> (p.size === Size.Large),
+            "big" -> (p.size === Size.Big),
+            "huge" -> (p.size === Size.Huge),
+            "massive" -> (p.size === Size.Massive),
+            "link" -> p.link,
+            "horizontally flipped" -> (p.flipped === Flipped.Horizontally),
+            "vertically flipped" -> (p.flipped === Flipped.Vertically),
+            "clockwise rotated" -> (p.rotated === Rotated.Clockwise),
+            "counterclockwise rotated" -> (p.rotated === Rotated.CounterClockwise),
+            "circular" -> p.circular,
+            "bordered" -> p.bordered,
+            "inverted" -> p.inverted
+          ),
+          ^.onClick --> p.onClick,
+          ^.onMouseEnter --> p.onMouseEnter,
+          ^.onMouseLeave --> p.onMouseLeave,
+          c
+      ))
+      .configure(Reusability.shouldComponentUpdate)
+      .build
+      .withKey(p.key)
+      .apply(p)(children: _*)
 }
 
 object Icon {
@@ -132,6 +138,7 @@ object Icon {
   val IconClose: Icon                   = Icon("close")
   val IconCloneOutline: Icon            = Icon("clone outline")
   val IconTrashOutline: Icon            = Icon("trash alternate outline")
+  val IconTimes: Icon                   = Icon("times")
 
   sealed trait Flipped
 
@@ -151,28 +158,28 @@ object Icon {
     case object Clockwise extends Rotated
     case object CounterClockwise extends Rotated
 
-    implicit val equal: Eq[Rotated] = Eq.fromUniversalEquals
+    implicit val equal: Eq[Rotated]          = Eq.fromUniversalEquals
     implicit val reuse: Reusability[Rotated] = Reusability.byRef[Rotated]
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
-  final case class Props(id: String,
-                   disabled: Boolean = false,
-                   loading: Boolean = false,
-                   fitted: Boolean = false,
-                   size: Size = Size.NotSized,
-                   link: Boolean = false,
-                   flipped: Flipped = Flipped.NotFlipped,
-                   rotated: Rotated = Rotated.NotRotated,
-                   circular: Boolean = false,
-                   bordered: Boolean = false,
-                   inverted: Boolean = false,
-                   color: Option[String] = None,
-                   extraStyles: List[GStyle] = Nil,
-                   key: String = "",
-                   onMouseEnter: Callback = Callback.empty,
-                   onMouseLeave: Callback = Callback.empty,
-                   onClick: Callback = Callback.empty)
+  final case class Props(id:           String,
+                         disabled:     Boolean = false,
+                         loading:      Boolean = false,
+                         fitted:       Boolean = false,
+                         size:         Size = Size.NotSized,
+                         link:         Boolean = false,
+                         flipped:      Flipped = Flipped.NotFlipped,
+                         rotated:      Rotated = Rotated.NotRotated,
+                         circular:     Boolean = false,
+                         bordered:     Boolean = false,
+                         inverted:     Boolean = false,
+                         color:        Option[String] = None,
+                         extraStyles:  List[GStyle] = Nil,
+                         key:          String = "",
+                         onMouseEnter: Callback = Callback.empty,
+                         onMouseLeave: Callback = Callback.empty,
+                         onClick:      Callback = Callback.empty)
 
   // Used to call Icon directly on a jsx component declaration
   implicit def icon2TagMod(i: Icon): VdomElement = i.component

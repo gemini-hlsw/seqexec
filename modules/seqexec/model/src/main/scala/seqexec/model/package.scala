@@ -24,9 +24,18 @@ package object model {
 
   implicit val queueIdEq: Eq[QueueId] = Eq.by(x => x.self)
   implicit val queueIdShow: Show[QueueId] = Show.fromToString
+  implicit val queueIdOrder: Order[QueueId] =
+    Order.by(_.self)
+  implicit val queueIdOrdering: scala.math.Ordering[QueueId] =
+    queueIdOrder.toOrdering
+
   implicit val stEq: Eq[StepConfig]     = Eq.fromUniversalEquals
   implicit val clientIdEq: Eq[ClientId] = Eq.by(x => x.self)
   implicit val clientIdShow: Show[ClientId] = Show.fromToString
+  implicit val clientIdOrder: Order[ClientId] =
+    Order.by(_.self)
+  implicit val clientIdOrdering: scala.math.Ordering[ClientId] =
+    clientIdOrder.toOrdering
   val DaytimeCalibrationTargetName      = "Daytime calibration"
 
   val CalibrationQueueName: String = "Calibration Queue"
