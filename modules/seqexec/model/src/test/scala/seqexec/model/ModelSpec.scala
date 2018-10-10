@@ -43,10 +43,10 @@ final class ModelSpec extends CatsSuite {
   checkAll("Eq[ImageQuality]", EqTests[ImageQuality].eqv)
   checkAll("Eq[SkyBackground]", EqTests[SkyBackground].eqv)
   checkAll("Eq[Conditions]", EqTests[Conditions].eqv)
-  checkAll("Eq[ClientID]", EqTests[ClientID].eqv)
+  checkAll("Eq[ClientID]", EqTests[ClientId].eqv)
   checkAll("Eq[ServerLogLevel]", EqTests[ServerLogLevel].eqv)
   checkAll("Eq[ResourceConflict]", EqTests[ResourceConflict].eqv)
   checkAll("Eq[InstrumentInUse]", EqTests[InstrumentInUse].eqv)
   checkAll("Eq[Notification]", EqTests[Notification].eqv)
-  checkAll("Eq[ExecutionQueue]", EqTests[ExecutionQueue].eqv)
+  checkAll("Eq[ExecutionQueueView]", EqTests[ExecutionQueueView].eqv)
 }

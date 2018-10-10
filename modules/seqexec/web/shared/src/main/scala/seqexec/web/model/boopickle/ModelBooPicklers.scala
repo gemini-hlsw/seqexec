@@ -6,6 +6,7 @@ package seqexec.model.boopickle
 import boopickle.Default._
 import gem.Observation
 import java.time.Instant
+
 import seqexec.model._
 import seqexec.model.enum._
 import seqexec.model.events._
@@ -114,7 +115,14 @@ trait ModelBooPicklers extends GemModelBooPicklers {
     .addConcreteType[BatchCommandState.Run]
     .addConcreteType[BatchCommandState.Stop.type]
 
-  implicit val executionQueuePickler = generatePickler[ExecutionQueue]
+  implicit val batchExecStatePickler = compositePickler[BatchExecState]
+    .addConcreteType[BatchExecState.Idle.type]
+    .addConcreteType[BatchExecState.Waiting.type]
+    .addConcreteType[BatchExecState.Running.type]
+    .addConcreteType[BatchExecState.Stopping.type]
+    .addConcreteType[BatchExecState.Completed.type]
+
+  implicit val executionQueuePickler = generatePickler[ExecutionQueueView]
 
   implicit val sequenceQueueIdPickler =
     generatePickler[SequencesQueue[Observation.Id]]

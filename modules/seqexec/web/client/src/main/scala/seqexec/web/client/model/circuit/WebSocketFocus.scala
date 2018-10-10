@@ -17,7 +17,7 @@ final case class WebSocketsFocus(location:        Pages.SeqexecPages,
                                  sequences:       SequencesQueue[SequenceView],
                                  user:            Option[UserDetails],
                                  defaultObserver: Observer,
-                                 clientId:        Option[ClientID],
+                                 clientId:        Option[ClientId],
                                  site:            Option[Site])
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))

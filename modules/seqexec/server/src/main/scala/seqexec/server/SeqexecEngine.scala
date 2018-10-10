@@ -105,7 +105,7 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
     st.sequences.get(seqId).map(_.seq.resources.intersect(used ++ usedByQueues).isEmpty).getOrElse(false)
   }
 
-  def start(q: EventQueue, id: Observation.Id, user: UserDetails, clientId: ClientID): IO[Either[SeqexecFailure, Unit]] =
+  def start(q: EventQueue, id: Observation.Id, user: UserDetails, clientId: ClientId): IO[Either[SeqexecFailure, Unit]] =
     q.enqueue1(Event.start[executeEngine.ConcreteTypes](id, user, clientId, checkResources(id))).map(_.asRight)
 
   def requestPause(q: EventQueue, id: Observation.Id, user: UserDetails): IO[Either[SeqexecFailure, Unit]] =
@@ -132,7 +132,7 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
     q.enqueue1(Event.logDebugMsg(s"SeqexecEngine: Setting Observer name to '$name' for sequence '${seqId.format}' by ${user.username}")) *>
         q.enqueue1(Event.modifyState[executeEngine.ConcreteTypes](((EngineState.sequences ^|-? index(seqId)).modify(ObserverSequence.observer.set(name.some)) >>> refreshSequence(seqId) withEvent SetObserver(seqId, user.some, name)).toHandle)).map(_.asRight)
 
-  def selectSequenceEvent(i: Instrument, sid: Observation.Id, observer: Observer, user: UserDetails, clientId: ClientID): executeEngine.EventType= {
+  def selectSequenceEvent(i: Instrument, sid: Observation.Id, observer: Observer, user: UserDetails, clientId: ClientId): executeEngine.EventType= {
     val lens =
       (EngineState.sequences ^|-? index(sid)).modify(ObserverSequence.observer.set(observer.some)) >>>
        EngineState.instrumentLoadedL(i).set(sid.some) >>>
@@ -148,7 +148,7 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
     }).toHandle }
   }
 
-  def selectSequence(q: EventQueue, i: Instrument, sid: Observation.Id, observer: Observer, user: UserDetails, clientId: ClientID): IO[Either[SeqexecFailure, Unit]] =
+  def selectSequence(q: EventQueue, i: Instrument, sid: Observation.Id, observer: Observer, user: UserDetails, clientId: ClientId): IO[Either[SeqexecFailure, Unit]] =
     q.enqueue1(Event.logInfoMsg(s"User '${user.displayName}' loads sequence ${sid.format} on ${i.show}")) *>
     q.enqueue1(selectSequenceEvent(i, sid, observer, user, clientId)).map(_.asRight)
 
@@ -183,7 +183,7 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
                   v: Boolean): IO[Either[SeqexecFailure, Unit]] =
     q.enqueue1(Event.skip(seqId, user, stepId, v)).map(_.asRight)
 
-  def requestRefresh(q: EventQueue, clientId: ClientID): IO[Unit] = q.enqueue1(Event.poll(clientId))
+  def requestRefresh(q: EventQueue, clientId: ClientId): IO[Unit] = q.enqueue1(Event.poll(clientId))
 
   def seqQueueRefreshStream: Stream[IO, executeEngine.EventType] =
     Scheduler[IO](corePoolSize = 1).flatMap { scheduler =>
@@ -197,6 +197,10 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
       }
     }
 
+  private def executionQueueViews(st: EngineState): Map[QueueId, ExecutionQueueView] = {
+    st.queues.map{case (qid, q) => qid -> ExecutionQueueView(qid, q.name, q.cmdState, q.status(st), q.queue) }
+  }
+
   def eventStream(q: EventQueue): Stream[IO, SeqexecEvent] = {
     stream(q.dequeue.mergeHaltBoth(seqQueueRefreshStream))(EngineState.default).flatMap(x =>
       Stream.eval(notifyODB(x))).flatMap {
@@ -209,7 +213,7 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
               EngineState.selected.get(qState),
               EngineState.conditions.get(qState),
               EngineState.operator.get(qState),
-              EngineState.queues.get(qState),
+              executionQueueViews(qState),
               sequences
             )
           )
@@ -301,7 +305,7 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
     Event.modifyState[executeEngine.ConcreteTypes]((clearQ(qid) withEvent UpdateQueue(qid)).toHandle)
   ).map(_.asRight)
 
-  private def runQueue(qid: QueueId, observer: Observer, user: UserDetails, clientId: ClientID): executeEngine.HandleType[Unit] = {
+  private def runQueue(qid: QueueId, observer: Observer, user: UserDetails, clientId: ClientId): executeEngine.HandleType[Unit] = {
     def setObserverAndSelect(sid: Observation.Id): executeEngine.HandleType[Unit] = Handle(StateT[IO, EngineState, (Unit, Option[Stream[IO, executeEngine.EventType]])]{ st:EngineState => IO(
       (EngineState.sequences ^|-? index(sid)).getOption(st).map{ obsseq =>
         (EngineState.sequences.modify(_ + (sid -> obsseq.copy(observer = observer.some))) >>>
@@ -321,7 +325,7 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
       .fold(executeEngine.unit)(_ *> _))
   }
 
-  def startQueue(q: EventQueue, qid: QueueId, observer: Observer, user: UserDetails, clientId: ClientID): IO[Either[SeqexecFailure, Unit]] = q.enqueue1(
+  def startQueue(q: EventQueue, qid: QueueId, observer: Observer, user: UserDetails, clientId: ClientId): IO[Either[SeqexecFailure, Unit]] = q.enqueue1(
     Event.modifyState[executeEngine.ConcreteTypes](executeEngine.get.flatMap{ st => {
       (EngineState.queues ^|-? index(qid)).getOption(st).map {
         _.status(st) match {
@@ -340,7 +344,7 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
           .getOption(st).map(_.status.isRunning).getOrElse(false)))
     ).flatMap(_.map(executeEngine.pause).fold(executeEngine.unit)(_ *> _))
 
-  def stopQueue(q: EventQueue, qid: QueueId, clientId: ClientID): IO[Either[SeqexecFailure, Unit]] = q.enqueue1(
+  def stopQueue(q: EventQueue, qid: QueueId, clientId: ClientId): IO[Either[SeqexecFailure, Unit]] = q.enqueue1(
     Event.modifyState[executeEngine.ConcreteTypes](executeEngine.get.flatMap{ st =>
       (EngineState.queues ^|-? index(qid)).getOption(st).map {
         _.status(st) match {

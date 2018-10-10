@@ -4,11 +4,11 @@
 package seqexec.engine
 
 import java.util.UUID
+
 import seqexec.engine.Sequence.State.Final
-import seqexec.model.{StepState, SequenceState}
+import seqexec.model.{ActionType, ClientId, SequenceState, StepState, UserDetails}
 import seqexec.model.enum.Instrument.GmosS
 import seqexec.model.enum.Resource.TCS
-import seqexec.model.{ActionType, UserDetails}
 import fs2.async
 import fs2.async.mutable.Semaphore
 import fs2.Stream
@@ -58,6 +58,8 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   } yield Result.Error("There was an error in this action"))
 
   private def always[D]: D => Boolean = _ => true
+  
+  private val clientId: ClientId = ClientId(UUID.randomUUID)
 
   val executions: List[List[Action]] = List(List(configureTcs, configureInst), List(observe))
   val seqId: Observation.Id = Observation.Id.unsafeFromString("GS-2019A-Q-0-1")
@@ -101,13 +103,13 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
 
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def runToCompletion(s0: Engine.State): Option[Engine.State] = {
-    executionEngine.process(PartialFunction.empty)(Stream.eval(IO.pure(Event.start[executionEngine.ConcreteTypes](seqId, user, UUID.randomUUID(), always))))(s0).drop(1).takeThrough(
+    executionEngine.process(PartialFunction.empty)(Stream.eval(IO.pure(Event.start[executionEngine.ConcreteTypes](seqId, user, clientId, always))))(s0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
     ).compile.last.unsafeRunSync.map(_._2)
   }
 
   it should "be in Running status after starting" in {
-    val p = Stream.eval(IO.pure(Event.start[executionEngine.ConcreteTypes](seqId, user, UUID.randomUUID(), always)))
+    val p = Stream.eval(IO.pure(Event.start[executionEngine.ConcreteTypes](seqId, user, clientId, always)))
     val qs = executionEngine.process(PartialFunction.empty)(p)(qs1).take(1).compile.last.unsafeRunSync.map(_._2)
     assert(qs.exists(s => Sequence.State.isRunning(s.sequences(seqId))))
   }
@@ -138,7 +140,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
         )
       ) ) )
     )
-    val p = Stream.eval(IO.pure(Event.start[executionEngine.ConcreteTypes](seqId, user, UUID.randomUUID(), always)))
+    val p = Stream.eval(IO.pure(Event.start[executionEngine.ConcreteTypes](seqId, user, clientId, always)))
 
     //take(3): Start, Executing, Paused
     executionEngine.process(PartialFunction.empty)(p)(s0).take(3).compile.last.unsafeRunSync.map(_._2)
@@ -189,7 +191,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
         )
         Stream.eval(List(
           List[IO[Unit]](
-            q.enqueue1(Event.start[executionEngine.ConcreteTypes](seqId, user, UUID.randomUUID(), always)),
+            q.enqueue1(Event.start[executionEngine.ConcreteTypes](seqId, user, clientId, always)),
             startedFlag.decrement,
             q.enqueue1(Event.nullEvent),
             q.enqueue1(Event.getState[executionEngine.ConcreteTypes] { _ => Stream.eval(finishFlag.increment).map(_ => Event.nullEvent).some })

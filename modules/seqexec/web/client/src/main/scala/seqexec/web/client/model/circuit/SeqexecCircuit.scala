@@ -136,7 +136,7 @@ object SeqexecCircuit
   val sequencesOnDisplayRW: ModelRW[SeqexecAppRootModel, SequencesOnDisplay] =
     this.zoomRWL(SeqexecAppRootModel.sequencesOnDisplayL)
 
-  val queueFocusRW: ModelRW[SeqexecAppRootModel, (Option[ClientID], SequencesQueue[SequenceView])] =
+  val queueFocusRW: ModelRW[SeqexecAppRootModel, (Option[ClientId], SequencesQueue[SequenceView])] =
     zoomRW(m => (m.clientId, m.sequences)) ((m, v) => m.copy(clientId = v._1, sequences = v._2))
 
   def sequenceTab(id: Observation.Id): ModelR[SeqexecAppRootModel, Option[SeqexecTabActive]] =

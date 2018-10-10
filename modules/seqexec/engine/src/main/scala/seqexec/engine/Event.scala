@@ -7,7 +7,7 @@ import cats.effect.IO
 import cats.implicits._
 import fs2.Stream
 import gem.Observation
-import seqexec.model.ClientID
+import seqexec.model.ClientId
 import seqexec.model.UserDetails
 
 /**
@@ -19,12 +19,12 @@ final case class EventSystem(se: SystemEvent) extends Event[Nothing]
 
 object Event {
 
-  def start[D<:Engine.Types](id: Observation.Id, user: UserDetails, clientId: ClientID, userCheck: D#StateType => Boolean): Event[D] = EventUser[D](Start[D](id, user.some, clientId, userCheck))
+  def start[D<:Engine.Types](id: Observation.Id, user: UserDetails, clientId: ClientId, userCheck: D#StateType => Boolean): Event[D] = EventUser[D](Start[D](id, user.some, clientId, userCheck))
   def pause[D<:Engine.Types](id: Observation.Id, user: UserDetails): Event[D] = EventUser[D](Pause(id, user.some))
   def cancelPause[D<:Engine.Types](id: Observation.Id, user: UserDetails): Event[D] = EventUser[D](CancelPause(id, user.some))
   def breakpoint[D<:Engine.Types](id: Observation.Id, user: UserDetails, step: Step.Id, v: Boolean): Event[D] = EventUser[D](Breakpoint(id, user.some, step, v))
   def skip[D<:Engine.Types](id: Observation.Id, user: UserDetails, step: Step.Id, v: Boolean): Event[D] = EventUser[D](SkipMark(id, user.some, step, v))
-  def poll(clientId: ClientID): Event[Nothing] = EventUser(Poll(clientId))
+  def poll(clientId: ClientId): Event[Nothing] = EventUser(Poll(clientId))
   def getState[D<:Engine.Types](f: D#StateType => Option[Stream[IO, Event[D]]]): Event[D] = EventUser[D](GetState[D](f))
   def modifyState[D<:Engine.Types](f: Handle[D#StateType, Event[D], D#EventData]): Event[D] = EventUser[D](ModifyState[D](f))
   def actionStop[D<:Engine.Types](id: Observation.Id, f: D#StateType => Option[Stream[IO, Event[D]]]): Event[D] = EventUser[D](ActionStop(id, f))
@@ -39,7 +39,7 @@ object Event {
   def partial[R<:Result.PartialVal](id: Observation.Id, i: Int, r: Result.Partial[R]): Event[Nothing] = EventSystem(PartialResult(id, i, r))
   def paused[C <: Result.PauseContext](id: Observation.Id, i: Int, c: Result.Paused[C]): Event[Nothing] = EventSystem(Paused(id, i, c))
   def breakpointReached(id: Observation.Id): Event[Nothing] = EventSystem(BreakpointReached(id))
-  def busy(id: Observation.Id, clientId: ClientID): Event[Nothing] = EventSystem(Busy(id, clientId))
+  def busy(id: Observation.Id, clientId: ClientId): Event[Nothing] = EventSystem(Busy(id, clientId))
   def executed(id: Observation.Id): Event[Nothing] = EventSystem(Executed(id))
   def executing(id: Observation.Id): Event[Nothing] = EventSystem(Executing(id))
   def finished(id: Observation.Id): Event[Nothing] = EventSystem(Finished(id))

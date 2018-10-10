@@ -9,7 +9,7 @@ import seqexec.model.QueueId
 import seqexec.model.Observer
 import seqexec.model.Operator
 import seqexec.model.enum.Instrument
-import seqexec.model.ClientID
+import seqexec.model.ClientId
 
 trait Var {
   object ObsIdVar {
@@ -33,13 +33,13 @@ trait Var {
   }
 
   object ClientIDVar {
-    def unapply(str: String): Option[ClientID] =
-      Either.catchNonFatal(java.util.UUID.fromString(str)).toOption
+    def unapply(str: String): Option[ClientId] =
+      Either.catchNonFatal(ClientId(java.util.UUID.fromString(str))).toOption
   }
 
   object QueueIdVar {
     def unapply(str: String): Option[QueueId] =
-      Either.catchNonFatal(java.util.UUID.fromString(str)).toOption
+      Either.catchNonFatal(QueueId(java.util.UUID.fromString(str))).toOption
   }
 
   object PosIntVar {

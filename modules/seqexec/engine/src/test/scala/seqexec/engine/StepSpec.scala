@@ -7,9 +7,8 @@ import java.util.UUID
 
 import cats.effect.IO
 import seqexec.model.enum.Instrument.GmosS
-import seqexec.model.{SequenceState, StepState}
+import seqexec.model.{ActionType, ClientId, SequenceState, StepState, UserDetails}
 import seqexec.model.enum.Resource
-import seqexec.model.{ActionType, UserDetails}
 import fs2.async.mutable.Queue
 import fs2.{Stream, async}
 import gem.Observation
@@ -17,6 +16,7 @@ import monocle.Lens
 import org.scalatest.Inside._
 import org.scalatest.Matchers._
 import org.scalatest._
+
 import scala.Function.const
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -35,6 +35,7 @@ class StepSpec extends FlatSpec {
   private val action: Action = fromIO(ActionType.Undefined, IO(result))
   private val actionCompleted: Action = action.copy(state = Action.State(Action.Completed(observeResult), Nil))
   private def always[D]: D => Boolean = _ => true
+  private val clientId: ClientId = ClientId(UUID.randomUUID)
   
   def simpleStep(pending: List[Actions], focus: Execution, done: List[Results]): Step.Zipper = {
     val rollback: (Execution, List[Actions]) = done.map(_.map(const(action))) ++ List(focus.execution.map(const(action))) ++ pending match {
@@ -56,7 +57,7 @@ class StepSpec extends FlatSpec {
   val stepzr2: Step.Zipper  = simpleStep(Nil, Execution(List(actionCompleted, actionCompleted)), List(List(result)))
   val stepzar0: Step.Zipper = simpleStep(Nil, Execution(List(actionCompleted, action)), Nil)
   val stepzar1: Step.Zipper = simpleStep(List(List(action)), Execution(List(actionCompleted, actionCompleted)), List(List(result)))
-  private val startEvent = Event.start[executionEngine.ConcreteTypes](seqId, user, UUID.randomUUID, always)
+  private val startEvent = Event.start[executionEngine.ConcreteTypes](seqId, user, clientId, always)
   //scalastyle:off console.io
   /**
     * Emulates TCS configuration in the real world.
@@ -109,7 +110,7 @@ class StepSpec extends FlatSpec {
 
   def triggerStart(q: IO[async.mutable.Queue[IO, executionEngine.EventType]]): Action = fromIO(ActionType.Undefined,
     for {
-      _ <- q.map(_.enqueue1(Event.start(seqId, user, UUID.randomUUID, always)))
+      _ <- q.map(_.enqueue1(Event.start(seqId, user, clientId, always)))
       // Same case that the pause action
     } yield Result.OK(Result.Configured(Resource.TCS)))
 
@@ -121,13 +122,13 @@ class StepSpec extends FlatSpec {
   }
 
   def runToCompletion(s0: Engine.State): Option[Engine.State] = {
-    executionEngine.process(PartialFunction.empty)(Stream.eval(IO.pure(Event.start[executionEngine.ConcreteTypes](seqId, user, UUID.randomUUID, always))))(s0).drop(1).takeThrough(
+    executionEngine.process(PartialFunction.empty)(Stream.eval(IO.pure(Event.start[executionEngine.ConcreteTypes](seqId, user, clientId, always))))(s0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
     ).compile.last.unsafeRunSync.map(_._2)
   }
 
   def runToCompletionL(s0: Engine.State): List[Engine.State] = {
-    executionEngine.process(PartialFunction.empty)(Stream.eval(IO.pure(Event.start[executionEngine.ConcreteTypes](seqId, user, UUID.randomUUID, always))))(s0).drop(1).takeThrough(
+    executionEngine.process(PartialFunction.empty)(Stream.eval(IO.pure(Event.start[executionEngine.ConcreteTypes](seqId, user, clientId, always))))(s0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
     ).compile.toVector.unsafeRunSync.map(_._2).toList
   }
@@ -325,7 +326,7 @@ class StepSpec extends FlatSpec {
         )
       )
 
-    val qss = q.flatMap { k => k.enqueue1(Event.start(seqId, user, UUID.randomUUID, always)).flatMap(_ => executionEngine.process(PartialFunction.empty)(k.dequeue)(qs0).drop(1).takeThrough(
+    val qss = q.flatMap { k => k.enqueue1(Event.start(seqId, user, clientId, always)).flatMap(_ => executionEngine.process(PartialFunction.empty)(k.dequeue)(qs0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
     ).compile.toVector)}.unsafeRunSync
 

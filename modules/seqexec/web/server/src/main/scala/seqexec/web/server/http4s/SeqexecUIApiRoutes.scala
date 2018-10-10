@@ -8,7 +8,7 @@ import java.util.UUID
 import cats.data.NonEmptyList
 import cats.effect.IO
 import cats.implicits._
-import seqexec.model.ClientID
+import seqexec.model.ClientId
 import seqexec.model._
 import seqexec.model.boopickle._
 import seqexec.model.events._
@@ -117,7 +117,7 @@ class SeqexecUIApiRoutes(site: String, devMode: Boolean, auth: AuthenticationSer
         }
 
         // Messages with a clientId are only sent to the matching cliend
-        def filterOutOnClientId(clientId: ClientID) = (e: SeqexecEvent) => e match {
+        def filterOutOnClientId(clientId: ClientId) = (e: SeqexecEvent) => e match {
           case e: ForClient if e.clientId =!= clientId => false
           case _                                       => true
         }
@@ -126,10 +126,10 @@ class SeqexecUIApiRoutes(site: String, devMode: Boolean, auth: AuthenticationSer
         val anonymizeF: SeqexecEvent => SeqexecEvent = user.fold(_ => anonymize _, _ => identity _)
         // Create a client specific process
 
-        def initialEvent(clientId: ClientID): Stream[IO, WebSocketFrame] =
+        def initialEvent(clientId: ClientId): Stream[IO, WebSocketFrame] =
           Stream.emit(Binary(trimmedArray(ConnectionOpenEvent(user.toOption, clientId): SeqexecEvent)))
 
-        def engineEvents(clientId: ClientID): Stream[IO, WebSocketFrame]  =
+        def engineEvents(clientId: ClientId): Stream[IO, WebSocketFrame]  =
           engineOutput.subscribe(1).map(anonymizeF).filter(filterOutNull).filter(filterOutOnClientId(clientId)).map(v => Binary(trimmedArray(v)))
 
         // We don't care about messages sent over ws by clients
@@ -137,7 +137,7 @@ class SeqexecUIApiRoutes(site: String, devMode: Boolean, auth: AuthenticationSer
 
         // Create a client specific websocket
         for {
-          clientId <- IO.apply(UUID.randomUUID())
+          clientId <- IO.apply(ClientId(UUID.randomUUID()))
           initial  = initialEvent(clientId)
           streams  = pingStream.mergeHaltBoth(engineEvents(clientId))
           ws       <- WebSocketBuilder[IO].build(initial ++ streams, clientEventsSink)

@@ -21,10 +21,9 @@ import monocle.macros.GenLens
 import monocle.function.At.at
 import monocle.function.At.atMap
 import seqexec.engine.Engine
-import seqexec.model.ClientID
+import seqexec.model.ClientId
 import seqexec.model.CalibrationQueueId
 import seqexec.model.CalibrationQueueName
-import seqexec.model.ExecutionQueue
 import seqexec.model.QueueId
 import seqexec.model.Conditions
 import seqexec.model.Observer
@@ -57,15 +56,15 @@ package server {
   final case class SetConditions(conditions: Conditions, user: Option[UserDetails]) extends SeqEvent
   final case class LoadSequence(sid: Observation.Id) extends SeqEvent
   final case class UnloadSequence(id: Observation.Id) extends SeqEvent
-  final case class AddLoadedSequence(instrument: Instrument, sid: Observation.Id, user: UserDetails, clientId: ClientID) extends SeqEvent
+  final case class AddLoadedSequence(instrument: Instrument, sid: Observation.Id, user: UserDetails, clientId: ClientId) extends SeqEvent
   final case class ClearLoadedSequences(user: Option[UserDetails]) extends SeqEvent
   final case class SetImageQuality(iq: ImageQuality, user: Option[UserDetails]) extends SeqEvent
   final case class SetWaterVapor(wv: WaterVapor, user: Option[UserDetails]) extends SeqEvent
   final case class SetSkyBackground(wv: SkyBackground, user: Option[UserDetails]) extends SeqEvent
   final case class SetCloudCover(cc: CloudCover, user: Option[UserDetails]) extends SeqEvent
-  final case class NotifyUser(memo: Notification, clientID: ClientID) extends SeqEvent
-  final case class StartQueue(qid: QueueId, clientID: ClientID) extends SeqEvent
-  final case class StopQueue(qid: QueueId, clientID: ClientID) extends SeqEvent
+  final case class NotifyUser(memo: Notification, clientID: ClientId) extends SeqEvent
+  final case class StartQueue(qid: QueueId, clientID: ClientId) extends SeqEvent
+  final case class StopQueue(qid: QueueId, clientID: ClientId) extends SeqEvent
   final case class UpdateQueue(qid: QueueId) extends SeqEvent
   case object NullSeqEvent extends SeqEvent
 

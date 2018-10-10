@@ -19,7 +19,7 @@ final case class SequencesQueue[T](
   loaded:       Map[Instrument, Observation.Id],
   conditions:   Conditions,
   operator:     Option[Operator],
-  queues:       Map[QueueId, ExecutionQueue],
+  queues:       Map[QueueId, ExecutionQueueView],
   sessionQueue: List[T]
 )
 

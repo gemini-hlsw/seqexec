@@ -7,7 +7,7 @@ import cats.effect.IO
 import cats.implicits._
 import fs2.Stream
 import gem.Observation
-import seqexec.model.ClientID
+import seqexec.model.ClientId
 import seqexec.model.UserDetails
 
 /**
@@ -18,12 +18,12 @@ sealed trait UserEvent[D<:Engine.Types] {
   def username: String = user.foldMap(_.username)
 }
 
-final case class Start[D<:Engine.Types](id: Observation.Id, user: Option[UserDetails], clientId: ClientID, userCheck: D#StateType => Boolean) extends UserEvent[D]
+final case class Start[D<:Engine.Types](id: Observation.Id, user: Option[UserDetails], clientId: ClientId, userCheck: D#StateType => Boolean) extends UserEvent[D]
 final case class Pause[D<:Engine.Types](id: Observation.Id, user: Option[UserDetails]) extends UserEvent[D]
 final case class CancelPause[D<:Engine.Types](id: Observation.Id, user: Option[UserDetails]) extends UserEvent[D]
 final case class Breakpoint[D<:Engine.Types](id: Observation.Id, user: Option[UserDetails], step: Step.Id, v: Boolean) extends UserEvent[D]
 final case class SkipMark[D<:Engine.Types](id: Observation.Id, user: Option[UserDetails], step: Step.Id, v: Boolean) extends UserEvent[D]
-final case class Poll[D<:Engine.Types](clientId: ClientID) extends UserEvent[D] {
+final case class Poll[D<:Engine.Types](clientId: ClientId) extends UserEvent[D] {
   val user: Option[UserDetails] = None
 }
 // Generic event to put a function in the main Stream process, which takes an

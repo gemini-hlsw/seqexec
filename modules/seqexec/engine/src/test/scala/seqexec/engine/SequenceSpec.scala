@@ -5,8 +5,7 @@ package seqexec.engine
 
 import java.util.UUID
 
-import seqexec.model.SequenceState
-import seqexec.model.{ActionType, UserDetails}
+import seqexec.model.{ActionType, ClientId, SequenceState, UserDetails}
 
 import scala.Function.const
 import org.scalatest.FlatSpec
@@ -77,7 +76,7 @@ class SequenceSpec extends FlatSpec {
   }
 
   def runToCompletion(s0: Engine.State): Option[Engine.State] = {
-    executionEngine.process(PartialFunction.empty)(Stream.eval(IO.pure(Event.start[executionEngine.ConcreteTypes](seqId, user, UUID.randomUUID, always))))(s0).drop(1).takeThrough(
+    executionEngine.process(PartialFunction.empty)(Stream.eval(IO.pure(Event.start[executionEngine.ConcreteTypes](seqId, user, ClientId(UUID.randomUUID), always))))(s0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
     ).compile.last.unsafeRunSync.map(_._2)
   }
