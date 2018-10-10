@@ -3,19 +3,23 @@
 
 package seqexec.server.ghost
 
+import cats.data.EitherT
 import cats.implicits._
 import cats.{Eq, Show}
 import cats.effect.Sync
 import gem.math.{Angle, HourAngle}
+import giapi.client.commands.CommandResultException
 import giapi.client.ghost.GHOSTClient
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.SeqActionF
 import seqexec.server.keywords.GDSClient
 
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration._
 import org.log4s._
+import seqexec.server.SeqexecFailure.{Execution, SeqexecException}
+import squants.time.Time
 
-final case class GHOSTController[F[_]: Sync](gpiClient: GHOSTClient[F],
+final case class GHOSTController[F[_]: Sync](ghostClient: GHOSTClient[F],
                                              gdsClient: GDSClient) {
   import GHOSTController._
   val log: Logger = getLogger
@@ -23,8 +27,13 @@ final case class GHOSTController[F[_]: Sync](gpiClient: GHOSTClient[F],
   def applyConfig(config: GHOSTConfig): SeqActionF[F, Unit] =
     SeqActionF.apply(log.info(s"Configuring $config"))
 
-  def observe(fileId: ImageFileId): SeqActionF[F, ImageFileId] =
-    SeqActionF.apply(fileId)
+  def observe(fileId: ImageFileId, expTime: Time): SeqActionF[F, ImageFileId] =
+    EitherT(ghostClient.observe(fileId, expTime.toMilliseconds.milliseconds).map(_ => fileId).attempt)
+      .leftMap {
+        case CommandResultException(_, "Message cannot be null") => Execution("Unhandled observe command")
+        case CommandResultException(_, m)                        => Execution(m)
+        case f                                                   => SeqexecException(f)
+      }
 
   def endObserve: SeqActionF[F, Unit] = SeqActionF.void
 }
