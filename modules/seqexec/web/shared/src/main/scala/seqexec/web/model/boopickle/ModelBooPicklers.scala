@@ -101,6 +101,7 @@ trait ModelBooPicklers extends GemModelBooPicklers {
   implicit val stepConfigPickler = generatePickler[SequenceView]
 
   implicit val queueOpPickler = compositePickler[QueueManipulationOp]
+    .addConcreteType[QueueManipulationOp.Clear]
     .addConcreteType[QueueManipulationOp.Started]
     .addConcreteType[QueueManipulationOp.Stopped]
     .addConcreteType[QueueManipulationOp.Moved]
