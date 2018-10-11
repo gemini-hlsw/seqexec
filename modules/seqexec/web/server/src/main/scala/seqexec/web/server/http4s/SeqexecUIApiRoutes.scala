@@ -22,11 +22,13 @@ import org.http4s._
 import org.http4s.dsl.io._
 import org.http4s.server.middleware.GZip
 import org.http4s.server.websocket.WebSocketBuilder
-import org.http4s.websocket.WebsocketBits._
+import org.http4s.websocket.WebSocketFrame
+import org.http4s.websocket.WebSocketFrame.{ Binary, Ping }
 import org.http4s.headers.`WWW-Authenticate`
 import org.log4s._
 import scala.concurrent.duration._
 import scala.math._
+import scodec.bits.ByteVector
 
 /**
   * Rest Endpoints under the /api route
@@ -127,10 +129,10 @@ class SeqexecUIApiRoutes(site: String, devMode: Boolean, auth: AuthenticationSer
         // Create a client specific process
 
         def initialEvent(clientId: ClientId): Stream[IO, WebSocketFrame] =
-          Stream.emit(Binary(trimmedArray(ConnectionOpenEvent(user.toOption, clientId): SeqexecEvent)))
+          Stream.emit(Binary(ByteVector(trimmedArray(ConnectionOpenEvent(user.toOption, clientId): SeqexecEvent))))
 
         def engineEvents(clientId: ClientId): Stream[IO, WebSocketFrame]  =
-          engineOutput.subscribe(1).map(anonymizeF).filter(filterOutNull).filter(filterOutOnClientId(clientId)).map(v => Binary(trimmedArray(v)))
+          engineOutput.subscribe(1).map(anonymizeF).filter(filterOutNull).filter(filterOutOnClientId(clientId)).map(v => Binary(ByteVector(trimmedArray(v))))
 
         // We don't care about messages sent over ws by clients
         val clientEventsSink: Sink[IO, WebSocketFrame] = Sink(_ => IO.unit)

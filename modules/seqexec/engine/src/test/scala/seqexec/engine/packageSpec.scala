@@ -195,7 +195,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
         Stream.eval(List(
           List[IO[Unit]](
             q.enqueue1(Event.start[executionEngine.ConcreteTypes](seqId, user, clientId, always)),
-            startedFlag.decrement,
+            startedFlag.acquire,
             q.enqueue1(Event.nullEvent),
             q.enqueue1(Event.getState[executionEngine.ConcreteTypes] { _ => Stream.eval(finishFlag.release).map(_ => Event.nullEvent).some })
           ).sequence,

@@ -148,7 +148,7 @@ class Engine[D, U](stateL: Lens[D, Engine.State]) {
         val u: List[Stream[IO, EventType]] = seq.current.actions.map(_.gen).zipWithIndex.map(x => act(id, x))
         val v: Stream[IO, EventType] = Stream.emits(u).parJoin(u.length)
         val w: List[HandleType[Unit]] = seq.current.actions.indices.map(i => modifyS(id)(_.start(i))).toList
-        w.sequence *> HandleP.fromStream(v)
+        w.sequence *> Handle.fromStream(v)
     }.getOrElse(unit)
     )
   }
@@ -293,7 +293,7 @@ class Engine[D, U](stateL: Lens[D, Engine.State]) {
 
   @SuppressWarnings(Array("org.wartremover.warts.AnyVal", "org.wartremover.warts.ImplicitParameter"))
   def process(userReact: PartialFunction[SystemEvent, HandleType[Unit]])(input: Stream[IO, EventType])(qs: D)(implicit ev: Concurrent[IO]): Stream[IO, (ResultType, D)] =
-    mapEvalState[EventType, D, (ResultType, D)](input, qs, runE(userReact))
+    mapEvalState[EventType, D, (ResultType, D)](input, qs, runE(userReact)(_, _))
 
   // Functions for type bureaucracy
 

@@ -102,7 +102,13 @@ object HorizonsClient {
 
   /** Creates a `Stream` of results from the horizons server when executed. */
   val stream: ParamReader[Stream[IO, String]] =
-    request.map { r => Stream.resource(client).flatMap { _.streaming(r) { _.body.through(utf8Decode) } } }
+    request.map { r =>
+      for {
+        c <- Stream.resource(client)
+        a <- Stream.eval(r).flatMap(c.stream)
+        s <- a.body.through(utf8Decode)
+      } yield s
+    }
 
   /** Retrieves all the horizons server outout into a single String. */
   val fetch: ParamReader[IO[String]] =

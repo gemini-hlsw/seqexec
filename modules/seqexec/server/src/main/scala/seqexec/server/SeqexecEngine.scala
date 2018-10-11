@@ -8,7 +8,7 @@ import java.time.LocalDate
 import java.util.concurrent.TimeUnit
 
 import cats._
-import cats.data.Kleisli
+import cats.data.{ Kleisli, StateT }
 import cats.effect.{ ConcurrentEffect, ContextShift, IO, Sync, Timer }
 import cats.implicits._
 import monocle.Monocle._
@@ -17,6 +17,7 @@ import edu.gemini.epics.acm.CaService
 import gem.Observation
 import gem.enum.Site
 import giapi.client.Giapi
+import giapi.client.ghost.GHOSTClient
 import giapi.client.gpi.GPIClient
 import seqexec.engine
 import seqexec.engine.Result.{FileIdAllocated, Partial}
@@ -40,7 +41,7 @@ import edu.gemini.seqexec.odb.SmartGcal
 import edu.gemini.spModel.core.{Peer, SPProgramID}
 import edu.gemini.spModel.obscomp.InstConstants
 import edu.gemini.spModel.seqcomp.SeqConfigNames.OCS_KEY
-import fs2.Stream
+import fs2.{ Pure, Stream }
 import org.http4s.client.Client
 import org.http4s.Uri
 import knobs.Config
@@ -309,7 +310,7 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
         (EngineState.sequences.modify(_ + (sid -> obsseq.copy(observer = observer.some))) >>>
           refreshSequence(sid) >>>
           EngineState.instrumentLoadedL(obsseq.seq.instrument).set(sid.some) >>>
-          {(_, ((), Stream[executeEngine.EventType](
+          {(_, ((), Stream[Pure, executeEngine.EventType](
             Event.modifyState[executeEngine.ConcreteTypes](
               { {s:EngineState => s} withEvent(AddLoadedSequence(obsseq.seq.instrument, sid, user, clientId))}.toHandle
             )
