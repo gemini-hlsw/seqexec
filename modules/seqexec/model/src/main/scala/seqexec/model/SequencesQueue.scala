@@ -8,6 +8,7 @@ import cats.implicits._
 import gem.Observation
 import monocle.Getter
 import monocle.macros.Lenses
+import scala.collection.immutable.SortedMap
 import seqexec.model.enum.Instrument
 
 /**
@@ -19,7 +20,7 @@ final case class SequencesQueue[T](
   loaded:       Map[Instrument, Observation.Id],
   conditions:   Conditions,
   operator:     Option[Operator],
-  queues:       Map[QueueId, ExecutionQueueView],
+  queues:       SortedMap[QueueId, ExecutionQueueView],
   sessionQueue: List[T]
 )
 

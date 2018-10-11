@@ -41,7 +41,9 @@ final case class CalibrationQueues(queues: SortedMap[QueueId, CalQueueState]) {
   val queueTables: SortedMap[QueueId, TableState[CalQueueTable.TableColumn]] =
     queues.mapValues(_.tableState)
 
-  def updateTableStates(queueTs: Map[QueueId, TableState[CalQueueTable.TableColumn]]): CalibrationQueues =
+  def updateTableStates(
+    queueTs: Map[QueueId, TableState[CalQueueTable.TableColumn]]
+  ): CalibrationQueues =
     copy(queues = queues.map {
       case (i, st) if queueTs.contains(i) =>
         (i,
@@ -62,13 +64,18 @@ object CalibrationQueues {
   val Default: CalibrationQueues =
     CalibrationQueues(SortedMap(CalibrationQueueId -> CalQueueState.Default))
 
-  def calQueueStateL(qid: QueueId): Optional[CalibrationQueues, QueueOperations] =
+  def calQueueStateL(
+    qid: QueueId
+  ): Optional[CalibrationQueues, QueueOperations] =
     CalibrationQueues.queues ^|->
       at(qid)                ^<-?
       std.option.some        ^|->
       CalQueueState.ops
 
-  def calQueueStateSeqOpsO(qid: QueueId, oid: Observation.Id): Optional[CalibrationQueues, QueueSeqOperations] =
+  def calQueueStateSeqOpsO(
+    qid: QueueId,
+    oid: Observation.Id
+  ): Optional[CalibrationQueues, QueueSeqOperations] =
     CalibrationQueues.queues ^|->
       at(qid)                ^<-?
       std.option.some        ^|->
@@ -76,13 +83,17 @@ object CalibrationQueues {
       at(oid)                ^<-?
       std.option.some
 
-  def calStateSeqOpsT(qid: QueueId): Optional[CalibrationQueues, SortedMap[Observation.Id, QueueSeqOperations]] =
+  def calStateSeqOpsT(
+    qid: QueueId
+  ): Optional[CalibrationQueues,
+              SortedMap[Observation.Id, QueueSeqOperations]] =
     CalibrationQueues.queues ^|->
       at(qid)                ^<-?
       std.option.some        ^|->
       CalQueueState.seqOps
 
-  def tableStatesT: Traversal[CalibrationQueues, TableState[CalQueueTable.TableColumn]] =
+  def tableStatesT
+    : Traversal[CalibrationQueues, TableState[CalQueueTable.TableColumn]] =
     CalibrationQueues.queues   ^|->>
       each                     ^|->
       CalQueueState.tableState
@@ -94,15 +105,19 @@ object CalibrationQueues {
     calQueueStateL(qid) ^|-> QueueOperations.stopCalRequested
 
   def addDayCalL(
-    qid: QueueId): Optional[CalibrationQueues, AddDayCalOperation] =
+    qid: QueueId
+  ): Optional[CalibrationQueues, AddDayCalOperation] =
     calQueueStateL(qid) ^|-> QueueOperations.addDayCalRequested
 
   def clearAllCalL(
-    qid: QueueId): Optional[CalibrationQueues, ClearAllCalOperation] =
+    qid: QueueId
+  ): Optional[CalibrationQueues, ClearAllCalOperation] =
     calQueueStateL(qid) ^|-> QueueOperations.clearAllCalRequested
 
-  def addSeqOps(qid: QueueId,
-                oid: Observation.Id): CalibrationQueues => CalibrationQueues =
+  def addSeqOps(
+    qid: QueueId,
+    oid: Observation.Id
+  ): CalibrationQueues => CalibrationQueues =
     c =>
       c.copy(queues = c.queues.map {
         case (i, st) if qid === i =>
@@ -115,16 +130,18 @@ object CalibrationQueues {
         case i => i
       })
 
-  def modifyOrAddSeqOps(qid: QueueId,
-                        oid: Observation.Id,
-                        m:   QueueSeqOperations => QueueSeqOperations)
-    : CalibrationQueues => CalibrationQueues =
+  def modifyOrAddSeqOps(
+    qid: QueueId,
+    oid: Observation.Id,
+    m:   QueueSeqOperations => QueueSeqOperations
+  ): CalibrationQueues => CalibrationQueues =
     addSeqOps(qid, oid) >>> calQueueStateSeqOpsO(qid, oid).modify(m)
 
-  def modifyAllSeqOps(qid:  QueueId,
-                      oids: List[Observation.Id],
-                      m:    QueueSeqOperations => QueueSeqOperations)
-    : CalibrationQueues => CalibrationQueues =
+  def modifyAllSeqOps(
+    qid:  QueueId,
+    oids: List[Observation.Id],
+    m:    QueueSeqOperations => QueueSeqOperations
+  ): CalibrationQueues => CalibrationQueues =
     calStateSeqOpsT(qid).modify {
       _.map {
         case (i, s) if oids.contains(i) => (i, m(s))
@@ -134,7 +151,8 @@ object CalibrationQueues {
 
   def removeSeqOps(
     qid:  QueueId,
-    oids: List[Observation.Id]): CalibrationQueues => CalibrationQueues =
+    oids: List[Observation.Id]
+  ): CalibrationQueues => CalibrationQueues =
     calStateSeqOpsT(qid).modify(_.filterKeys(!oids.contains(_)))
 
 }

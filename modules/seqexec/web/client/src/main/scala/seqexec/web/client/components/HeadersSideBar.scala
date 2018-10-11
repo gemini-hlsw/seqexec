@@ -4,17 +4,33 @@
 package seqexec.web.client.components
 
 import diode.react.ModelProxy
-import seqexec.model.enum.{ CloudCover, ImageQuality, SkyBackground, WaterVapor }
-import seqexec.model.{ Observer, Operator }
+import seqexec.model.enum.CloudCover
+import seqexec.model.enum.ImageQuality
+import seqexec.model.enum.SkyBackground
+import seqexec.model.enum.WaterVapor
+import seqexec.model.Observer
+import seqexec.model.Operator
 import seqexec.web.client.semanticui.elements.dropdown.DropdownMenu
 import seqexec.web.client.semanticui.elements.label.FormLabel
 import seqexec.web.client.semanticui.elements.input.InputEV
-import seqexec.web.client.circuit.{ HeaderSideBarFocus, SeqexecCircuit, SequenceObserverFocus }
-import seqexec.web.client.actions.{ UpdateCloudCover, UpdateImageQuality, UpdateOperator, UpdateDefaultObserver, UpdateObserver, UpdateSkyBackground, UpdateWaterVapor }
+import seqexec.web.client.circuit.HeaderSideBarFocus
+import seqexec.web.client.circuit.SeqexecCircuit
+import seqexec.web.client.circuit.SequenceObserverFocus
+import seqexec.web.client.circuit.DayCalObserverFocus
+import seqexec.web.client.actions.UpdateCloudCover
+import seqexec.web.client.actions.UpdateImageQuality
+import seqexec.web.client.actions.UpdateOperator
+import seqexec.web.client.actions.UpdateDefaultObserver
+import seqexec.web.client.actions.UpdateObserver
+import seqexec.web.client.actions.UpdateSkyBackground
+import seqexec.web.client.actions.UpdateWaterVapor
 import web.client.style._
 import japgolly.scalajs.react.component.Scala.Unmounted
-import japgolly.scalajs.react.{BackendScope, Callback, ScalaComponent}
-import japgolly.scalajs.react.extra.{StateSnapshot, TimerSupport}
+import japgolly.scalajs.react.BackendScope
+import japgolly.scalajs.react.Callback
+import japgolly.scalajs.react.ScalaComponent
+import japgolly.scalajs.react.extra.StateSnapshot
+import japgolly.scalajs.react.extra.TimerSupport
 import japgolly.scalajs.react.vdom.html_<^._
 import org.scalajs.dom.html.Div
 import cats.implicits._
@@ -27,26 +43,38 @@ import scala.concurrent.duration._
 object HeadersSideBar {
   final case class Props(model: ModelProxy[HeaderSideBarFocus]) {
     def canOperate: Boolean = model().status.canOperate
-    def sequenceObserver: Either[Observer, SequenceObserverFocus] = model().observer
+    def selectedObserver
+      : Either[Observer, Either[DayCalObserverFocus, SequenceObserverFocus]] =
+      model().observer
   }
 
-  final case class State(operatorText: Option[String], observerText: Option[String])
+  final case class State(operatorText: Option[String],
+                         observerText: Option[String])
 
   object State {
     implicit val equals: Eq[State] = Eq.fromUniversalEquals
   }
 
-  class Backend(val $: BackendScope[Props, State]) extends TimerSupport {
+  class Backend(val $ : BackendScope[Props, State]) extends TimerSupport {
     def updateOperator(name: String): Callback =
-      $.props >>= { p => Callback.when(p.canOperate)(p.model.dispatchCB(UpdateOperator(Operator(name)))) }
+      $.props >>= { p =>
+        Callback.when(p.canOperate)(
+          p.model.dispatchCB(UpdateOperator(Operator(name))))
+      }
 
     def updateObserver(name: String): Callback =
-      $.props >>= { p => Callback.when(p.canOperate){
-        p.sequenceObserver match {
-          case Right(a) => p.model.dispatchCB(UpdateObserver(a.obsId, Observer(name)))
-          case Left(_) => p.model.dispatchCB(UpdateDefaultObserver(Observer(name)))
+      $.props >>= { p =>
+        Callback.when(p.canOperate) {
+          p.selectedObserver match {
+            case Right(Right(a)) =>
+              p.model.dispatchCB(UpdateObserver(a.obsId, Observer(name)))
+            case Right(Left(_))  =>
+              p.model.dispatchCB(UpdateDefaultObserver(Observer(name)))
+            case Left(_)         =>
+              p.model.dispatchCB(UpdateDefaultObserver(Observer(name)))
+          }
         }
-      }}
+      }
 
     def updateStateOp(value: Option[String], cb: Callback): Callback =
       $.modState(_.copy(operatorText = value)) >> cb
@@ -59,18 +87,28 @@ object HeadersSideBar {
       setInterval(submitIfChangedOp *> submitIfChangedOb, 2.second)
 
     def submitIfChangedOp: Callback =
-      ($.state zip $.props) >>= {
-        case (s, p) => Callback.when(p.model().operator =!= s.operatorText.map(Operator.apply))(updateOperator(s.operatorText.getOrElse("")))
+      ($.state.zip($.props)) >>= {
+        case (s, p) =>
+          Callback.when(
+            p.model().operator =!= s.operatorText.map(Operator.apply))(
+            updateOperator(s.operatorText.getOrElse("")))
       }
 
     def submitIfChangedOb: Callback =
-      ($.state zip $.props) >>= {
+      ($.state.zip($.props)) >>= {
         case (s, p) =>
-          p.sequenceObserver match {
-            case Right(a) =>
-              Callback.when(a.observer.forall(_.some =!= s.observerText.map(Observer.apply)))(updateObserver(s.observerText.getOrElse("")))
+          p.selectedObserver match {
+            case Right(Right(a)) =>
+              Callback.when(
+                a.observer.forall(
+                  _.some =!= s.observerText.map(Observer.apply)))(
+                updateObserver(s.observerText.getOrElse("")))
+            case Right(Left(_)) =>
+              // We cannot change the queue obs yet
+              Callback.empty
             case Left(o) =>
-              Callback.when(o.some =!= s.observerText.map(Observer.apply))(updateObserver(s.observerText.getOrElse("")))
+              Callback.when(o.some =!= s.observerText.map(Observer.apply))(
+                updateObserver(s.observerText.getOrElse("")))
           }
       }
 
@@ -89,10 +127,15 @@ object HeadersSideBar {
     // scalastyle:off
     def render(p: Props, s: State): VdomTagOf[Div] = {
       val enabled = p.model().status.canOperate
-      val operatorEV = StateSnapshot(s.operatorText.getOrElse(""))(updateStateOp)
-      val observerEV = StateSnapshot(s.observerText.getOrElse(""))(updateStateOb)
-      val instrument = p.sequenceObserver.map(i => i.instrument.show).getOrElse("Default")
-      val obsCompleted = p.sequenceObserver.map(_.completed).getOrElse(false)
+      val operatorEV =
+        StateSnapshot(s.operatorText.getOrElse(""))(updateStateOp)
+      val observerEV =
+        StateSnapshot(s.observerText.getOrElse(""))(updateStateOb)
+      val instrument = p.selectedObserver
+        .map(i => i.fold(_ => "Daycal", _.instrument.show))
+        .getOrElse("Default")
+      val obsCompleted =
+        p.selectedObserver.map(_.fold(_ => false, _.completed)).getOrElse(false)
       val observerField = s"Observer - $instrument"
       <.div(
         ^.cls := "ui secondary segment",
@@ -106,38 +149,62 @@ object HeadersSideBar {
               ^.cls := "eight wide field",
               FormLabel(FormLabel.Props("Operator", Some("operator"))),
               InputEV(
-                InputEV.Props("operator", "operator",
-                  operatorEV,
-                  placeholder = "Operator...",
-                  disabled = !enabled,
-                  onBlur = _ => submitIfChangedOp
-                )
+                InputEV.Props("operator",
+                              "operator",
+                              operatorEV,
+                              placeholder = "Operator...",
+                              disabled    = !enabled,
+                              onBlur      = _ => submitIfChangedOp)
               )
             ),
             <.div(
               ^.cls := "eight wide field",
               FormLabel(FormLabel.Props(observerField, Some("observer"))),
               InputEV(
-                InputEV.Props("observer", "observer",
-                  observerEV,
-                  placeholder = "Observer...",
-                  disabled = !enabled || obsCompleted,
-                  onBlur = _ => submitIfChangedOb
-                )
+                InputEV.Props("observer",
+                              "observer",
+                              observerEV,
+                              placeholder = "Observer...",
+                              disabled    = !enabled || obsCompleted,
+                              onBlur      = _ => submitIfChangedOb)
               )
             )
           ),
           <.div(
             ^.cls := "two fields",
             SeqexecStyles.fieldsNoBottom,
-            DropdownMenu(DropdownMenu.Props("Image Quality", p.model().conditions.iq.some, "Select", ImageQuality.all, disabled = !enabled, iqChanged)),
-            DropdownMenu(DropdownMenu.Props("Cloud Cover", p.model().conditions.cc.some, "Select", CloudCover.all, disabled = !enabled, ccChanged))
+            DropdownMenu(
+              DropdownMenu.Props("Image Quality",
+                                 p.model().conditions.iq.some,
+                                 "Select",
+                                 ImageQuality.all,
+                                 disabled = !enabled,
+                                 iqChanged)),
+            DropdownMenu(
+              DropdownMenu.Props("Cloud Cover",
+                                 p.model().conditions.cc.some,
+                                 "Select",
+                                 CloudCover.all,
+                                 disabled = !enabled,
+                                 ccChanged))
           ),
           <.div(
             ^.cls := "two fields",
             SeqexecStyles.fieldsNoBottom,
-            DropdownMenu(DropdownMenu.Props("Water Vapor", p.model().conditions.wv.some, "Select", WaterVapor.all, disabled = !enabled, wvChanged)),
-            DropdownMenu(DropdownMenu.Props("Sky Background", p.model().conditions.sb.some, "Select", SkyBackground.all, disabled = !enabled, sbChanged))
+            DropdownMenu(
+              DropdownMenu.Props("Water Vapor",
+                                 p.model().conditions.wv.some,
+                                 "Select",
+                                 WaterVapor.all,
+                                 disabled = !enabled,
+                                 wvChanged)),
+            DropdownMenu(
+              DropdownMenu.Props("Sky Background",
+                                 p.model().conditions.sb.some,
+                                 "Select",
+                                 SkyBackground.all,
+                                 disabled = !enabled,
+                                 sbChanged))
           )
         )
       )
@@ -145,32 +212,46 @@ object HeadersSideBar {
     // scalastyle:on
   }
 
-  private val component = ScalaComponent.builder[Props]("HeadersSideBar")
+  private val component = ScalaComponent
+    .builder[Props]("HeadersSideBar")
     .initialState(State(None, None))
     .renderBackend[Backend]
     .configure(TimerSupport.install)
-    .componentWillMount(f => f.backend.$.props >>= { p =>
-      p.model().operator.map(op => f.backend.updateStateOp(op.value.some, Callback.empty)).getOrEmpty *>
-      (p.sequenceObserver match {
-        case Right(a) =>
-          f.backend.updateStateOb(a.observer.map(_.value), Callback.empty)
-        case Left(o) =>
-          f.backend.updateStateOb(o.value.some, Callback.empty)
-      })
+    .componentWillMount(f =>
+      f.backend.$.props >>= { p =>
+        p.model()
+          .operator
+          .map(op => f.backend.updateStateOp(op.value.some, Callback.empty))
+          .getOrEmpty *>
+          (p.selectedObserver match {
+            case Right(Right(a)) =>
+              f.backend.updateStateOb(a.observer.map(_.value), Callback.empty)
+            case Right(Left(_)) =>
+              Callback.empty
+            case Left(o) =>
+              f.backend.updateStateOb(o.value.some, Callback.empty)
+          })
     })
     .componentDidMount(_.backend.setupTimer)
     .componentWillReceiveProps { f =>
       val operator = f.nextProps.model().operator
-      val observer = f.nextProps.sequenceObserver match {
-        case Right(a) => a.observer
+      val observer = f.nextProps.selectedObserver match {
+        case Right(Right(a)) => a.observer
+        case Right(Left(_)) =>
+          none
         case Left(o) => o.some
       }
-      // Update the operator field
-      Callback.when((operator =!= f.state.operatorText.map(Operator.apply)) && operator.nonEmpty)(f.modState(_.copy(operatorText = operator.map(_.value)))) *>
-      Callback.when((observer =!= f.state.observerText.map(Observer.apply)) && observer.nonEmpty)(f.modState(_.copy(observerText = observer.map(_.value))))
+      // Update the operator and observator fields
+      Callback.when((operator =!= f.state.operatorText
+        .map(Operator.apply)) && operator.nonEmpty)(
+        f.modState(_.copy(operatorText = operator.map(_.value)))) *>
+        Callback.when((observer =!= f.state.observerText
+          .map(Observer.apply)) && observer.nonEmpty)(
+          f.modState(_.copy(observerText = observer.map(_.value))))
     }
     .build
 
-  def apply(model: ModelProxy[HeaderSideBarFocus]): Unmounted[Props, State, Backend] =
+  def apply(
+    model: ModelProxy[HeaderSideBarFocus]): Unmounted[Props, State, Backend] =
     component(Props(model))
 }

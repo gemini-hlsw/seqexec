@@ -9,9 +9,17 @@ import gem.enum.Site
 import monocle.Lens
 import monocle.Traversal
 import monocle.macros.Lenses
+import monocle.function.Each.each
+// import monocle.function.Each.listEach
+// import monocle.std.option.some
 import monocle.function.FilterIndex.filterIndex
-import monocle.unsafe.MapTraversal._
-import seqexec.model.{ClientId, Conditions, ExecutionQueueView, QueueId, SequenceView, SequencesQueue}
+import scala.collection.immutable.SortedMap
+import seqexec.model.ClientId
+import seqexec.model.Conditions
+import seqexec.model.ExecutionQueueView
+import seqexec.model.QueueId
+import seqexec.model.SequenceView
+import seqexec.model.SequencesQueue
 import seqexec.web.client.components.sequence.steps.StepConfigTable
 import web.client.table._
 
@@ -31,7 +39,7 @@ object SeqexecAppRootModel {
     SequencesQueue[SequenceView](Map.empty,
                                  Conditions.Default,
                                  None,
-                                 Map.empty,
+                                 SortedMap.empty,
                                  Nil)
 
   val Initial: SeqexecAppRootModel = SeqexecAppRootModel(
@@ -43,20 +51,27 @@ object SeqexecAppRootModel {
 
   val logDisplayL: Lens[SeqexecAppRootModel, SectionVisibilityState] =
     SeqexecAppRootModel.uiModel ^|->
-      SeqexecUIModel.globalLog  ^|->
+      SeqexecUIModel.globalLog ^|->
       GlobalLog.display
 
   val sequencesOnDisplayL: Lens[SeqexecAppRootModel, SequencesOnDisplay] =
     SeqexecAppRootModel.uiModel ^|-> SeqexecUIModel.sequencesOnDisplay
 
-  val configTableStateL: Lens[SeqexecAppRootModel, TableState[StepConfigTable.TableColumn]] =
+  val configTableStateL
+    : Lens[SeqexecAppRootModel, TableState[StepConfigTable.TableColumn]] =
     SeqexecAppRootModel.uiModel ^|-> SeqexecUIModel.configTableState
 
   def executionQueuesT(
-    id: QueueId): Traversal[SeqexecAppRootModel, ExecutionQueueView] =
+    id: QueueId
+  ): Traversal[SeqexecAppRootModel, ExecutionQueueView] =
     SeqexecAppRootModel.sequences ^|->
-      SequencesQueue.queues       ^|->>
+      SequencesQueue.queues ^|->>
       filterIndex((qid: QueueId) => qid === id)
+
+  val queuesT: Traversal[SeqexecAppRootModel, ExecutionQueueView] =
+    SeqexecAppRootModel.sequences ^|->
+      SequencesQueue.queues ^|->>
+      each
 
   implicit val eq: Eq[SeqexecAppRootModel] =
     Eq.by(x => (x.sequences, x.ws, x.site, x.clientId, x.uiModel))
