@@ -76,7 +76,7 @@ final class SequencesOnDisplaySpec extends CatsSuite with ArbitrariesWebClient {
     val sod3 = sod.unsetPreviewOn(obsId)
     sod3.tabs.length should be(1)
     sod3.tabs.focus should matchPattern {
-      case CalibrationQueueTab(_) =>
+      case CalibrationQueueTab(_, _) =>
     }
   }
   test("Update loaded") {

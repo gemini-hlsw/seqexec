@@ -161,7 +161,7 @@ object actions {
              .filter(_.status === StepState.Running)
              .slice(0, scala.math.min(s.steps.length, 20))
              .collect(standardStep)))
-      val dayCalQueue = view.queues.values.map(_.queue).mkString(",")
+      val dayCalQueue = view.queues.values.map(x => s"${x.execState} ${x.queue}").mkString(",")
       s"${s.getClass.getSimpleName}(${u.getClass.getSimpleName}, dayCal: '${dayCalQueue}', loaded: '${view.loaded.mkString(",")}', $someSteps)"
     case s @ RememberCompleted(view)                    =>
       s"${s.getClass.getSimpleName}(${view.id})"

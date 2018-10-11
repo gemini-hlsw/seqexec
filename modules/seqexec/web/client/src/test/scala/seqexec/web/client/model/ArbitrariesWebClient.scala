@@ -12,6 +12,7 @@ import gem.Observation
 import gem.enum.Site
 import scala.collection.immutable.SortedMap
 import seqexec.model.enum.Instrument
+import seqexec.model.enum.BatchExecState
 import seqexec.model.ClientId
 import seqexec.model.QueueId
 import seqexec.model.Observer
@@ -140,12 +141,13 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
     Arbitrary {
       for {
         ts <- arbitrary[TableState[StepsTable.TableColumn]]
-      } yield CalibrationQueueTab(ts)
+        st <- arbitrary[BatchExecState]
+      } yield CalibrationQueueTab(ts, st)
     }
 
   implicit val cqtCogen: Cogen[CalibrationQueueTab] =
-    Cogen[TableState[StepsTable.TableColumn]].contramap { x =>
-      x.tableState
+    Cogen[(TableState[StepsTable.TableColumn], BatchExecState)].contramap { x =>
+      (x.tableState, x.state)
     }
 
   implicit val arbQueueSeqOperations: Arbitrary[QueueSeqOperations] =

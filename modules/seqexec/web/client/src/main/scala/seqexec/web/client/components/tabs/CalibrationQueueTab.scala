@@ -9,9 +9,13 @@ import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.extra.Reusability
 import japgolly.scalajs.react._
+import seqexec.model.enum.BatchExecState
 import seqexec.web.client.model.Pages._
-import seqexec.web.client.model.{ CalibrationQueueTabActive, TabSelected }
+import seqexec.web.client.model.CalibrationQueueTabActive
+import seqexec.web.client.model.TabSelected
 import seqexec.web.client.semanticui._
+import seqexec.web.client.semanticui.elements.label.Label
+import seqexec.web.client.semanticui.elements.icon.Icon._
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.reusability._
 import web.client.style._
@@ -21,7 +25,7 @@ object CalibrationQueueTab {
                          tab:    CalibrationQueueTabActive)
 
   implicit val propsReuse: Reusability[Props] =
-    Reusability.by(_.tab.active)
+    Reusability.by(x => (x.tab.active, x.tab.calibrationTab.state))
 
   private def showCalibrationQueue(p: Props, page: SeqexecPages)(e: ReactEvent): Callback =
     // prevent default to avoid the link jumping
@@ -54,10 +58,28 @@ object CalibrationQueueTab {
     .builder[Props]("CalibrationQueueTab")
     .stateless
     .render_P { p =>
+      val icon = p.tab.calibrationTab.state match {
+        case BatchExecState.Running =>
+          IconCircleNotched.copyIcon(loading = true)
+        case BatchExecState.Completed => IconCheckmark
+        case _                        => IconSelectedRadio
+      }
+
+      val color = p.tab.calibrationTab.state match {
+        case BatchExecState.Running   => "orange"
+        case BatchExecState.Completed => "green"
+        case _                        => "grey"
+      }
+
       val tabContent: VdomNode =
         <.div(
           SeqexecStyles.tabLabel,
-          "Daytime Queue"
+          <.div(SeqexecStyles.activeInstrumentLabel, "Daytime Queue"),
+          Label(
+            Label.Props(p.tab.calibrationTab.state.show,
+                        color       = color.some,
+                        icon        = icon.some,
+                        extraStyles = List(SeqexecStyles.labelPointer)))
         )
 
       linkTo(p, CalibrationQueuePage)(tabContent)

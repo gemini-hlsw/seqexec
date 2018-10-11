@@ -10,6 +10,7 @@ import gem.enum.Site
 import japgolly.scalajs.react.CatsReact._
 import japgolly.scalajs.react.extra.Reusability
 import seqexec.model.enum.Instrument
+import seqexec.model.enum.BatchExecState
 import seqexec.web.client.model.AvailableTab
 import seqexec.web.client.model.ClientStatus
 import seqexec.web.client.model.SectionVisibilityState
@@ -52,4 +53,5 @@ package object reusability {
   implicit val qfReuse: Reusability[CalQueueControlFocus]      = Reusability.byEq
   implicit val cqfReuse: Reusability[CalQueueFocus]            = Reusability.byEq
   implicit val qidReuse: Reusability[QueueId]                  = Reusability.byEq
+  implicit val bexReuse: Reusability[BatchExecState]           = Reusability.byRef
 }

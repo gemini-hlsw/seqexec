@@ -10,9 +10,9 @@ import monocle.macros.Lenses
 import seqexec.model.enum.BatchCommandState
 
 @Lenses
-final case class ExecutionQueue(name:     String,
-                                cmdState: BatchCommandState,
-                                queue:    List[Observation.Id])
+final case class ExecutionQueue(name:      String,
+                                cmdState:  BatchCommandState,
+                                queue:     List[Observation.Id])
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object ExecutionQueue {

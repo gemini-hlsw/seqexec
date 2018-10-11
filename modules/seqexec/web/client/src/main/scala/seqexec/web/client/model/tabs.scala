@@ -88,17 +88,17 @@ object SeqexecTab {
     }(identity)
 }
 
-final case class CalibrationQueueTab(tableState: TableState[StepsTable.TableColumn]) extends SeqexecTab {
+final case class CalibrationQueueTab(tableState: TableState[StepsTable.TableColumn], state: BatchExecState) extends SeqexecTab {
   type TC = StepsTable.TableColumn
   val isPreview: Boolean = false
 }
 
 object CalibrationQueueTab {
   val Empty: CalibrationQueueTab =
-    CalibrationQueueTab(StepsTable.State.InitialTableState)
+    CalibrationQueueTab(StepsTable.State.InitialTableState, BatchExecState.Idle)
 
   implicit val eq: Eq[CalibrationQueueTab] =
-    Eq.by(x => (x.tableState))
+    Eq.by(x => (x.tableState, x.state))
 }
 
 sealed trait SequenceTab extends SeqexecTab {

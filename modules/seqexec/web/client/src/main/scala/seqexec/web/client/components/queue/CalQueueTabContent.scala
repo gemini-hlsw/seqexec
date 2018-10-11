@@ -23,7 +23,8 @@ import web.client.style._
   * Content of the queue tab
   */
 object CalQueueTabContent {
-  final case class Props(active:       TabSelected,
+  final case class Props(canOperate:   Boolean,
+                         active:       TabSelected,
                          logDisplayed: SectionVisibilityState) {
     protected[queue] val dayCalConnectOps =
       SeqexecCircuit.connect(
@@ -54,9 +55,10 @@ object CalQueueTabContent {
         <.div(
           ^.height := "100%",
           p.dayCalConnectOps(_() match {
-            case Some(x) => CalQueueToolbar.Props(CalibrationQueueId, x).cmp
-            case _       => <.div()
-          }),
+              case Some(x) => CalQueueToolbar.Props(CalibrationQueueId, x).cmp
+              case _       => <.div()
+            })
+            .when(p.canOperate),
           p.dayCalConnect(_() match {
             case Some(x) =>
               <.div(
@@ -65,7 +67,7 @@ object CalQueueTabContent {
               )
             case _ => defaultContent
           })
-        )
+        ).when(p.active === TabSelected.Selected)
       )
     }
     .build
