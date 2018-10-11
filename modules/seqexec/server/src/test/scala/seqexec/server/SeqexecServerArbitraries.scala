@@ -20,7 +20,7 @@ import seqexec.server.gcal.GcalController
 import seqexec.server.gcal.GcalController._
 import seqexec.server.tcs.{CRFollow, TcsController, TcsControllerEpics}
 import seqexec.server.keywords._
-import seqexec.model.enum.{BatchCommandState, Instrument}
+import seqexec.model.enum.{BatchCommandState, BatchExecState, Instrument}
 import seqexec.model.{Conditions, Operator}
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams
@@ -305,13 +305,14 @@ object SeqexecServerArbitraries extends ArbTime {
     for {
       n <- arbitrary[String]
       s <- arbitrary[BatchCommandState]
+      e <- arbitrary[BatchExecState]
       q <- arbitrary[List[Observation.Id]]
-    } yield ExecutionQueue(n, s, q)
+    } yield ExecutionQueue(n, s, e, q)
   }
 
   implicit val executionQueueCogen: Cogen[ExecutionQueue] =
-    Cogen[(String, BatchCommandState, List[Observation.Id])]
-      .contramap(x => (x.name, x.cmdState, x.queue))
+    Cogen[(String, BatchCommandState, BatchExecState, List[Observation.Id])]
+      .contramap(x => (x.name, x.cmdState, x.execState, x.queue))
 
 
 }

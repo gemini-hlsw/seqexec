@@ -241,6 +241,12 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
     Event.getState[executeEngine.ConcreteTypes](translator.resumePaused(seqId))
   )
 
+  def queueO(qid: QueueId): Optional[EngineState, ExecutionQueue] =
+    EngineState.queues ^|-? index(qid)
+
+  def cmdStateO(qid: QueueId): Optional[EngineState, BatchCommandState] =
+    queueO(qid) ^|-> ExecutionQueue.cmdState
+
   private def addSeqs(qid: QueueId, seqIds: List[Observation.Id]): Endo[EngineState] = st => (
     for {
       q    <- st.queues.get(qid)
@@ -320,7 +326,7 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
 
   def startQueue(q: EventQueue, qid: QueueId, observer: Observer, user: UserDetails, clientId: ClientId): IO[Either[SeqexecFailure, Unit]] = q.enqueue1(
     Event.modifyState[executeEngine.ConcreteTypes](executeEngine.get.flatMap{ st => {
-      (EngineState.queues ^|-? index(qid)).getOption(st).map {
+      queueO(qid).getOption(st).map {
         _.status(st) match {
           case BatchExecState.Idle     => ((EngineState.queues ^|-? index(qid) ^|-> ExecutionQueue.cmdState).set(BatchCommandState.Run(observer, user, clientId)) >>> {(_, ())}).toHandle *> runQueue(qid, observer, user, clientId)
           case BatchExecState.Stopping => ((EngineState.queues ^|-? index(qid) ^|-> ExecutionQueue.cmdState).set(BatchCommandState.Run(observer, user, clientId)) >>> {(_, ())}).toHandle
@@ -339,10 +345,10 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
 
   def stopQueue(q: EventQueue, qid: QueueId, clientId: ClientId): IO[Either[SeqexecFailure, Unit]] = q.enqueue1(
     Event.modifyState[executeEngine.ConcreteTypes](executeEngine.get.flatMap{ st =>
-      queueO(qid).getOption(st).map { q =>
-        q.status(st) match {
-          case BatchExecState.Running => (cmdStateO(qid).set(BatchCommandState.Stop) >>> execStateO(qid).set(q.status(st)) >>> {(_, ())}).toHandle *> stopSequencesInQueue(qid)
-          case BatchExecState.Waiting => (cmdStateO(qid).set(BatchCommandState.Stop) >>> execStateO(qid).set(q.status(st)) >>> {(_, ())}).toHandle
+      queueO(qid).getOption(st).map {
+        _.status(st) match {
+          case BatchExecState.Running => (cmdStateO(qid).set(BatchCommandState.Stop) >>> {(_, ())}).toHandle *> stopSequencesInQueue(qid)
+          case BatchExecState.Waiting => (cmdStateO(qid).set(BatchCommandState.Stop) >>> {(_, ())}).toHandle
           case _                      => executeEngine.unit
         }
       }.getOrElse(executeEngine.unit)
@@ -352,7 +358,7 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
   // It assumes only one queue can run at a time
   private val iterateQueues: PartialFunction[SystemEvent, executeEngine.HandleType[Unit]] = {
     case Finished(_) => executeEngine.get.map(st => st.queues.collect{
-      case (qid, q@ExecutionQueue(_, BatchCommandState.Run(observer, user, clid), _))
+      case (qid, q@ExecutionQueue(_, BatchCommandState.Run(observer, user, clid), _, _))
         if q.status(st) =!= BatchExecState.Completed =>
           (qid, observer, user, clid)
     }.headOption).flatMap(_.map(Function.tupled(runQueue)).getOrElse(executeEngine.unit))
