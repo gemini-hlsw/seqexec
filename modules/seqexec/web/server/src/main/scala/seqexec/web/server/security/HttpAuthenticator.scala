@@ -20,7 +20,7 @@ import cats.effect.IO
 class Http4sAuthentication(auth: AuthenticationService) {
   private val cookieService = CookiesService(auth.config.cookieName, auth.config.useSSL, auth.sessionTimeout.toSeconds.toLong)
 
-  def loginCookie(user: UserDetails): IO[Cookie] = cookieService.loginCookie(auth, user)
+  def loginCookie(user: UserDetails): IO[ResponseCookie] = cookieService.loginCookie(auth, user)
 
   private def authRequest(request: Request[IO]) = {
     val authResult = for {
@@ -51,12 +51,12 @@ class Http4sAuthentication(auth: AuthenticationService) {
   * It has some cost as it needs to decode/encode the cookie with JWT
   */
 object TokenRefresher {
-  private def replaceCookie(service: HttpService[IO], auth: Http4sAuthentication)(result: AuthResult): Kleisli[OptionT[IO, ?], Request[IO], Response[IO]] = Kleisli { request =>
+  private def replaceCookie(service: HttpRoutes[IO], auth: Http4sAuthentication)(result: AuthResult): Kleisli[OptionT[IO, ?], Request[IO], Response[IO]] = Kleisli { request =>
     result.fold(_ => service(request), u =>
       OptionT.liftF(auth.loginCookie(u)) >>= { c => service.map(_.addCookie(c)).apply(request) })
   }
 
-  def apply(service: HttpService[IO], auth: Http4sAuthentication): HttpService[IO] = auth.optAuthUser.flatMap(replaceCookie(service, auth))
+  def apply(service: HttpRoutes[IO], auth: Http4sAuthentication): HttpRoutes[IO] = auth.optAuthUser.flatMap(replaceCookie(service, auth))
 }
 
 trait CookiesService {
@@ -64,12 +64,12 @@ trait CookiesService {
   def ssl: Boolean
   def ttl: Long
 
-  def buildCookie(token: String): IO[Cookie] =
+  def buildCookie(token: String): IO[ResponseCookie] =
     IO.apply {
       HttpDate.fromInstant(Instant.now().plusSeconds(ttl))
-    }.map { exp => Cookie(name, token, path = "/".some, expires = exp.toOption, secure = ssl, httpOnly = true) }
+    }.map { exp => ResponseCookie(name, token, path = "/".some, expires = exp.toOption, secure = ssl, httpOnly = true) }
 
-  def loginCookie(auth: AuthenticationService, user: UserDetails): IO[Cookie] =
+  def loginCookie(auth: AuthenticationService, user: UserDetails): IO[ResponseCookie] =
     auth.buildToken(user) >>= buildCookie
 }
 

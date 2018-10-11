@@ -172,12 +172,10 @@ class SeqexecCommandRoutes(auth:       AuthenticationService,
 
   }
 
-  val refreshCommand: HttpService[IO] = HttpService[IO] {
+  val refreshCommand: HttpRoutes[IO] = HttpRoutes.of[IO] {
     case GET -> Root / "refresh" / ClientIDVar(clientId) =>
       se.requestRefresh(inputQueue, clientId) *> NoContent()
   }
 
-  val service: HttpService[IO] =
-    refreshCommand <+>
-      TokenRefresher(GZip(httpAuthentication.reqAuth(commandServices)), httpAuthentication)
+  val service: HttpRoutes[IO] = refreshCommand <+> TokenRefresher(GZip(httpAuthentication.reqAuth(commandServices)), httpAuthentication)
 }

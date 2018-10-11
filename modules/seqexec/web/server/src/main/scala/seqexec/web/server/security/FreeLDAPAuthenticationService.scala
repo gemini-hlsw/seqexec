@@ -4,13 +4,12 @@
 package seqexec.web.server.security
 
 import cats._
-import cats.effect.IO
+import cats.effect._
 import cats.free.Free
 import cats.implicits._
 import com.unboundid.ldap.sdk._
 import seqexec.model.UserDetails
 import seqexec.web.server.security.AuthenticationService.AuthResult
-import fs2.Stream
 import org.log4s.getLogger
 
 /**
@@ -97,20 +96,27 @@ class FreeLDAPAuthenticationService(hosts: List[(String, Int)]) extends AuthServ
     // We should always return the domain
     val usernameWithDomain = if (username.endsWith(Domain)) username else s"$username$Domain"
 
-    Stream.bracket(IO(failoverServerSet.getConnection))(c => Stream.eval(runIO(authenticationAndName(usernameWithDomain, password), c)), c => IO(c.close())).compile.last.attempt.map {
+    val rsrc =
+      for {
+        c <- Resource.make(IO(failoverServerSet.getConnection))(c => IO(c.close()))
+        x <- Resource.liftF(runIO(authenticationAndName(usernameWithDomain, password), c).attempt)
+      } yield x
+
+    rsrc.use {
       case Left(e: LDAPException) if e.getResultCode === ResultCode.NO_SUCH_OBJECT      =>
         Log.error(e)(s"Exception connection to LDAP server: ${e.getExceptionMessage}")
-        BadCredentials(username).asLeft
+        BadCredentials(username).asLeft.pure[IO]
       case Left(e: LDAPException) if e.getResultCode === ResultCode.INVALID_CREDENTIALS =>
         Log.error(e)(s"Exception connection to LDAP server: ${e.getExceptionMessage}")
-        UserNotFound(username).asLeft
+        UserNotFound(username).asLeft.pure[IO]
       case Left(e: LDAPException)                                                       =>
         Log.error(e)(s"Exception connection to LDAP server: ${e.getExceptionMessage}")
-        GenericFailure("LDAP Authentication error").asLeft
+        GenericFailure("LDAP Authentication error").asLeft.pure[IO]
       case Left(e: Throwable)                                                           =>
-        GenericFailure(e.getMessage).asLeft
+        GenericFailure(e.getMessage).asLeft.pure[IO]
       case Right(u)                                                                     =>
-        u.fold(UserNotFound(username).asLeft[UserDetails])(_.asRight)
+        u.asRight.pure[IO]
     }
   }
+
 }

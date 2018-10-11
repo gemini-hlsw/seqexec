@@ -3,23 +3,29 @@
 
 package seqexec.web.server.http4s
 
-import cats.effect.IO
+import cats.effect.{ ContextShift, IO, Timer }
 import seqexec.model.events._
 import seqexec.web.server.security.{AuthenticationConfig, AuthenticationService, LDAPConfig}
-import fs2.async.mutable.Topic
-import fs2.{Stream, async}
+import fs2.concurrent.Topic
+import fs2.Stream
 import org.http4s._
 import org.http4s.syntax.StringSyntax
 import org.scalatest.{FlatSpec, Matchers, NonImplicitAssertions}
 import squants.time._
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.ExecutionContext
 
 @SuppressWarnings(Array("org.wartremover.warts.Throw", "org.wartremover.warts.ImplicitParameter", "org.wartremover.warts.NonUnitStatements", "org.wartremover.warts.Equals", "org.wartremover.warts.OptionPartial"))
 class SeqexecUIApiRoutesSpec extends FlatSpec with Matchers with UriFunctions with StringSyntax with NonImplicitAssertions {
 
+  implicit val ioContextShift: ContextShift[IO] =
+    IO.contextShift(ExecutionContext.global)
+
+  implicit val ioTimer: Timer[IO] =
+    IO.timer(ExecutionContext.global)
+
   private val config = AuthenticationConfig(devMode = true, Hours(8), "token", "abc", useSSL = false, LDAPConfig(Nil))
   private val authService = AuthenticationService(config)
-  val out: Stream[IO, Topic[IO, SeqexecEvent]] = Stream.eval(async.topic[IO, SeqexecEvent](NullEvent))
+  val out: Stream[IO, Topic[IO, SeqexecEvent]] = Stream.eval(Topic[IO, SeqexecEvent](NullEvent))
 
   private val service =
     for {
