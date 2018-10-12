@@ -143,7 +143,7 @@ final class CaApplyRecord {
         if(dir!=null) {
             dir.setValue(directive);
         } else {
-            throw new CAException("Tried to read from unbound channel  " + epicsName + DIR_SUFFIX);
+            throw new CAException("Tried to write to unbound channel  " + epicsName + DIR_SUFFIX);
         }
     }
     
