@@ -146,17 +146,17 @@ final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements Ca
 
             try {
                 apply.setDir(CadDirective.START);
+                if (timeout > 0) {
+                    timeoutFuture = executor.schedule(new Runnable() {
+                        @Override
+                        public void run() {
+                            CaApplySenderImpl.this.onTimeout();
+                        }
+                    }, timeout, timeoutUnit);
+                }
             } catch (CAException | TimeoutException e) {
                 failCommand(cm, e);
-            }
-
-            if (timeout > 0) {
-                timeoutFuture = executor.schedule(new Runnable() {
-                    @Override
-                    public void run() {
-                        CaApplySenderImpl.this.onTimeout();
-                    }
-                }, timeout, timeoutUnit);
+                currentState = IdleState;
             }
         }
 
