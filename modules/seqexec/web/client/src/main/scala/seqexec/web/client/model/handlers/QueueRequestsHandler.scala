@@ -9,8 +9,6 @@ import diode.ActionResult
 import diode.ModelRW
 import seqexec.model.ClientId
 import seqexec.model.QueueId
-// import seqexec.model.SequencesQueue
-// import seqexec.model.SequenceView
 import seqexec.web.client.actions._
 import seqexec.web.client.circuit.QueueRequestsFocus
 import seqexec.web.client.services.SeqexecWebClient
@@ -46,7 +44,7 @@ class QueueRequestsHandler[M](modelRW: ModelRW[M, QueueRequestsFocus])
   def handleRunCal: PartialFunction[Any, ActionResult[M]] = {
     case RequestRunCal(qid) =>
       (value.clientId,
-       value.queuesObserver.get(qid).getOrElse(value.defaultObserver).some)
+       value.queuesObserver.get(qid).orElse(value.calTabObserver))
         .mapN { (cid, obs) =>
           effectOnly(
             requestEffect2(

@@ -11,6 +11,8 @@ import monocle.Getter
 import monocle.Optional
 import monocle.Traversal
 import monocle.macros.Lenses
+import monocle.std
+import seqexec.model.Observer
 import seqexec.model.SequenceView
 import seqexec.model.SequencesQueue
 import seqexec.model.CalibrationQueueId
@@ -63,6 +65,19 @@ final case class SequencesOnDisplay(tabs: Zipper[SeqexecTab]) {
     }
 
   /**
+    * Update the observer for the cal tab
+    */
+  def updateCalTabObserver(o: Observer): SequencesOnDisplay = {
+    val q = tabs.map {
+      case c @ CalibrationQueueTab(_, _, _) =>
+        CalibrationQueueTab.observer.set(o.some)(c)
+      case i =>
+        i
+    }
+    copy(tabs = q)
+  }
+
+  /**
     * Replace the tabs when the core model is updated
     */
   def updateFromQueue(s: SequencesQueue[SequenceView]): SequencesOnDisplay = {
@@ -78,12 +93,13 @@ final case class SequencesOnDisplay(tabs: Zipper[SeqexecTab]) {
         s.queues
           .get(CalibrationQueueId)
           .map { q =>
-            q.cmdState match {
+            val t = q.cmdState match {
               case BatchCommandState.Run(o, _, _) =>
                 CalibrationQueueTab.observer.set(o.some)(c)
               case _ =>
                 c
             }
+            CalibrationQueueTab.state.set(q.execState)(t)
           }
           .getOrElse(c)
       case t => t
@@ -422,6 +438,11 @@ object SequencesOnDisplay {
 
   val focusQueue: Optional[SequencesOnDisplay, CalibrationQueueTab] =
     SequencesOnDisplay.tabs ^|-> Zipper.focus ^<-? SeqexecTab.calibrationTab
+
+  val calTabObserver: Optional[SequencesOnDisplay, Observer] =
+    focusQueue                     ^|->
+      CalibrationQueueTab.observer ^<-?
+      std.option.some
 
   val availableTabsG
     : Getter[SequencesOnDisplay,

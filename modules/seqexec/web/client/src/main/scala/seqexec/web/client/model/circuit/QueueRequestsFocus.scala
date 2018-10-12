@@ -5,13 +5,9 @@ package seqexec.web.client.circuit
 
 import cats.Eq
 import cats.implicits._
-// import monocle.Getter
 import monocle.Lens
-// import monocle.Traversal
+import monocle.Optional
 import monocle.macros.Lenses
-// import monocle.function.Each.each
-// import monocle.function.Each.listEach
-// import monocle.function.FilterIndex.filtersIndex
 import scala.collection.immutable.SortedMap
 import seqexec.model.ClientId
 import seqexec.model.QueueId
@@ -22,18 +18,19 @@ import seqexec.model.SequencesQueue
 import seqexec.model.SequenceView
 import seqexec.web.client.model.SeqexecAppRootModel
 import seqexec.web.client.model.SeqexecUIModel
+import seqexec.web.client.model.SequencesOnDisplay
 
 @Lenses
 final case class QueueRequestsFocus(
-  clientId:        Option[ClientId],
-  sequences:       SequencesQueue[SequenceView],
-  defaultObserver: Observer,
-  queuesObserver:  SortedMap[QueueId, Observer])
+  clientId:       Option[ClientId],
+  sequences:      SequencesQueue[SequenceView],
+  calTabObserver: Option[Observer],
+  queuesObserver: SortedMap[QueueId, Observer])
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object QueueRequestsFocus {
   implicit val eq: Eq[QueueRequestsFocus] =
-    Eq.by(x => (x.clientId, x.sequences, x.defaultObserver, x.queuesObserver))
+    Eq.by(x => (x.clientId, x.sequences, x.calTabObserver, x.queuesObserver))
 
   def observers(m: SeqexecAppRootModel): SortedMap[QueueId, Observer] =
     SortedMap(SeqexecAppRootModel.queuesT.getAll(m).collect {
@@ -41,8 +38,10 @@ object QueueRequestsFocus {
         (id, o)
     }: _*)
 
-  val defaultObserverL: Lens[SeqexecAppRootModel, Observer] =
-    SeqexecAppRootModel.uiModel ^|-> SeqexecUIModel.defaultObserver
+  val calTabObserverL: Optional[SeqexecAppRootModel, Observer] =
+    SeqexecAppRootModel.uiModel         ^|->
+      SeqexecUIModel.sequencesOnDisplay ^|-?
+      SequencesOnDisplay.calTabObserver
 
   // This lens is read only but a getter is not usable in diode
   val unsafeQueueRequestsFocusL: Lens[SeqexecAppRootModel, QueueRequestsFocus] =
@@ -50,7 +49,7 @@ object QueueRequestsFocus {
       m =>
         QueueRequestsFocus(m.clientId,
                            m.sequences,
-                           defaultObserverL.get(m),
+                           calTabObserverL.getOption(m),
                            observers(m)))(v =>
       m => m.copy(clientId = v.clientId, sequences = v.sequences))
 

@@ -18,6 +18,7 @@ import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.circuit.SequenceObserverFocus
 import seqexec.web.client.circuit.DayCalObserverFocus
 import seqexec.web.client.actions.UpdateCloudCover
+import seqexec.web.client.actions.UpdateCalTabObserver
 import seqexec.web.client.actions.UpdateImageQuality
 import seqexec.web.client.actions.UpdateOperator
 import seqexec.web.client.actions.UpdateDefaultObserver
@@ -68,9 +69,9 @@ object HeadersSideBar {
           p.selectedObserver match {
             case Right(Right(a)) =>
               p.model.dispatchCB(UpdateObserver(a.obsId, Observer(name)))
-            case Right(Left(_))  =>
-              p.model.dispatchCB(UpdateDefaultObserver(Observer(name)))
-            case Left(_)         =>
+            case Right(Left(_)) =>
+              p.model.dispatchCB(UpdateCalTabObserver(Observer(name)))
+            case Left(_) =>
               p.model.dispatchCB(UpdateDefaultObserver(Observer(name)))
           }
         }
@@ -103,9 +104,11 @@ object HeadersSideBar {
                 a.observer.forall(
                   _.some =!= s.observerText.map(Observer.apply)))(
                 updateObserver(s.observerText.getOrElse("")))
-            case Right(Left(_)) =>
-              // We cannot change the queue obs yet
-              Callback.empty
+            case Right(Left(a)) =>
+              Callback.when(
+                a.observer.forall(
+                  _.some =!= s.observerText.map(Observer.apply)))(
+                updateObserver(s.observerText.getOrElse("")))
             case Left(o) =>
               Callback.when(o.some =!= s.observerText.map(Observer.apply))(
                 updateObserver(s.observerText.getOrElse("")))
@@ -237,9 +240,8 @@ object HeadersSideBar {
       val operator = f.nextProps.model().operator
       val observer = f.nextProps.selectedObserver match {
         case Right(Right(a)) => a.observer
-        case Right(Left(_)) =>
-          none
-        case Left(o) => o.some
+        case Right(Left(a))  => a.observer
+        case Left(o)         => o.some
       }
       // Update the operator and observator fields
       Callback.when((operator =!= f.state.operatorText
