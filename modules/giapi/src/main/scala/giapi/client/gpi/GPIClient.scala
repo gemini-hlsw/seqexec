@@ -133,7 +133,7 @@ object GPIExample extends cats.effect.IOApp {
     }
 
   def putLn(a: Any): IO[Unit] =
-    IO.delay(println(a))
+    IO.delay(println(a)) // scalastyle:off console.io
 
   def run(args: List[String]): IO[ExitCode] =
     for {

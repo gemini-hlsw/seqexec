@@ -15,7 +15,7 @@ object Main extends IOApp {
   override def run(args: List[String]): IO[ExitCode] =
     server.use { _ =>
       for {
-        _ <- IO(Console.println("Press a key to exit.")) // scalastyle:of
+        _ <- IO(Console.println("Press a key to exit.")) // scalastyle:ignore
         _ <- IO(scala.io.StdIn.readLine())
       } yield ExitCode.Success
     }

@@ -38,7 +38,7 @@ object GHOSTExample extends IOApp {
     ghostClient.use { client =>
       for {
         r <- client.observe("TEST_S20180509", 5.seconds)
-        _ <- IO(println(r))
+        _ <- IO(println(r)) // scalastyle:off console.io
       } yield ExitCode.Success
     }
 

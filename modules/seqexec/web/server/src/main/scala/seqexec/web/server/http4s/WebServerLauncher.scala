@@ -207,6 +207,7 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
   }
 
   /** Reads the configuration and launches the web server */
+  // scalastyle:off
   def run(args: List[String]): IO[ExitCode] = {
 
     def blockingExecutionContext: Resource[IO, ExecutionContext] = {
@@ -260,5 +261,6 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
     r.use(_ => IO.never)
 
   }
+  // scalastyle:on
 
 }

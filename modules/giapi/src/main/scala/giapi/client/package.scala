@@ -138,7 +138,7 @@ package client {
 
     private def streamItem[F[_]: ConcurrentEffect, A: ItemGetter](
       agg:        StatusHandlerAggregate,
-      statusItem: String,
+      statusItem: String
     ): F[Stream[F, A]] =
       Sync[F].delay {
 
