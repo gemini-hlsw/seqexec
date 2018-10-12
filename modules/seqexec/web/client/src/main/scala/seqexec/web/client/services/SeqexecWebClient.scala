@@ -341,7 +341,7 @@ object SeqexecWebClient extends ModelBooPicklers {
     Ajax
       .post(
         url =
-          s"$baseUrl/commands/queue/${encodeURI(queueId.show)}/remove/${encodeURI(id.format)}",
+          s"$baseUrl/commands/queue/${encodeURI(queueId.self.show)}/remove/${encodeURI(id.format)}",
         responseType = "arraybuffer"
       )
       .map(_ => ())
