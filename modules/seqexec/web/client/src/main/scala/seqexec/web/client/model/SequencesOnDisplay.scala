@@ -343,8 +343,8 @@ final case class SequencesOnDisplay(tabs: Zipper[SeqexecTab]) {
       .toMap
 
   def updateTableStates(
-    stepsTables: Map[Observation.Id, TableState[StepsTable.TableColumn]])
-    : SequencesOnDisplay =
+    stepsTables: Map[Observation.Id, TableState[StepsTable.TableColumn]]
+  ): SequencesOnDisplay =
     copy(tabs = tabs.map {
       case i @ InstrumentSequenceTab(_, Some(curr), _, _, _, _) =>
         stepsTables
@@ -361,7 +361,8 @@ final case class SequencesOnDisplay(tabs: Zipper[SeqexecTab]) {
 
   def markOperations(
     id:      Observation.Id,
-    updater: TabOperations => TabOperations): SequencesOnDisplay =
+    updater: TabOperations => TabOperations
+  ): SequencesOnDisplay =
     (SequencesOnDisplay.instrumentTabById(id) ^|-> InstrumentSequenceTab.tabOperations)
       .modify(updater)(this)
 
@@ -387,7 +388,8 @@ object SequencesOnDisplay {
     }
 
   def previewTabById(
-    id: Observation.Id): Traversal[SequencesOnDisplay, PreviewSequenceTab] =
+    id: Observation.Id
+  ): Traversal[SequencesOnDisplay, PreviewSequenceTab] =
     SequencesOnDisplay.tabs ^|->> Zipper.unsafeFilterZ(previewMatch(id)) ^<-? SeqexecTab.previewTab
 
   private def sequenceMatch(id: Observation.Id)(tab: SeqexecTab): Boolean =
@@ -397,7 +399,8 @@ object SequencesOnDisplay {
     }
 
   def instrumentTabById(
-    id: Observation.Id): Traversal[SequencesOnDisplay, InstrumentSequenceTab] =
+    id: Observation.Id
+  ): Traversal[SequencesOnDisplay, InstrumentSequenceTab] =
     SequencesOnDisplay.tabs ^|->> Zipper.unsafeFilterZ(sequenceMatch(id)) ^<-? SeqexecTab.instrumentTab
 
   val previewTab: Traversal[SequencesOnDisplay, PreviewSequenceTab] =
@@ -411,8 +414,11 @@ object SequencesOnDisplay {
     }
 
   def instrumentTabFor(
-    seq: SequenceView): Traversal[SequencesOnDisplay, InstrumentSequenceTab] =
-    SequencesOnDisplay.tabs ^|->> Zipper.unsafeFilterZ(instrumentMatch(seq)) ^<-? SeqexecTab.instrumentTab
+    seq: SequenceView
+  ): Traversal[SequencesOnDisplay, InstrumentSequenceTab] =
+    SequencesOnDisplay.tabs                      ^|->>
+      Zipper.unsafeFilterZ(instrumentMatch(seq)) ^<-?
+      SeqexecTab.instrumentTab
 
   private def instrumentTab(tab: SeqexecTab): Boolean =
     tab match {
@@ -421,7 +427,9 @@ object SequencesOnDisplay {
     }
 
   val instrumentTabs: Traversal[SequencesOnDisplay, InstrumentSequenceTab] =
-    SequencesOnDisplay.tabs ^|->> Zipper.unsafeFilterZ(instrumentTab) ^<-? SeqexecTab.instrumentTab
+    SequencesOnDisplay.tabs               ^|->>
+      Zipper.unsafeFilterZ(instrumentTab) ^<-?
+      SeqexecTab.instrumentTab
 
   private def sequenceTab(tab: SeqexecTab): Boolean =
     tab match {
@@ -431,7 +439,9 @@ object SequencesOnDisplay {
     }
 
   val sequenceTabs: Traversal[SequencesOnDisplay, SequenceTab] =
-    SequencesOnDisplay.tabs ^|->> Zipper.unsafeFilterZ(sequenceTab) ^<-? SeqexecTab.sequenceTab
+    SequencesOnDisplay.tabs             ^|->>
+      Zipper.unsafeFilterZ(sequenceTab) ^<-?
+      SeqexecTab.sequenceTab
 
   val focusSequence: Optional[SequencesOnDisplay, SequenceTab] =
     SequencesOnDisplay.tabs ^|-> Zipper.focus ^<-? SeqexecTab.sequenceTab
@@ -456,7 +466,8 @@ object SequencesOnDisplay {
     SequencesOnDisplay.previewTabById(id) ^|-> PreviewSequenceTab.isLoading
 
   def tabG(
-    id: Observation.Id): Getter[SequencesOnDisplay, Option[SeqexecTabActive]] =
+    id: Observation.Id
+  ): Getter[SequencesOnDisplay, Option[SeqexecTabActive]] =
     SequencesOnDisplay.tabs.asGetter >>> {
       _.withFocus.toList.collect {
         case (i: SequenceTab, a) if i.obsId.exists(_ === id) =>

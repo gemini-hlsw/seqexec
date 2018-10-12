@@ -66,8 +66,10 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
   val connectionOpenMessage: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(ConnectionOpenEvent(u, c)) =>
       // After connected to the Websocket request a refresh
-      val refreshRequest = Effect(SeqexecWebClient.refresh(c).map(_ => NoAction))
-      updated(value.copy(user = u, defaultObserver = u.map(m => Observer(m.displayName)).getOrElse(value.defaultObserver), clientId = Option(c)), refreshRequest)
+      val refreshRequestE = Effect(SeqexecWebClient.refresh(c).map(_ => NoAction))
+      // This is a hack
+      val calQueueObserverE = u.map(m => Effect(Future(UpdateCalTabObserver(Observer(m.displayName))))).getOrElse(VoidEffect)
+      updated(value.copy(user = u, defaultObserver = u.map(m => Observer(m.displayName)).getOrElse(value.defaultObserver), clientId = Option(c)), refreshRequestE + calQueueObserverE)
   }
 
   val stepCompletedMessage: PartialFunction[Any, ActionResult[M]] = {

@@ -10,8 +10,6 @@ import monocle.Lens
 import monocle.Traversal
 import monocle.macros.Lenses
 import monocle.function.Each.each
-// import monocle.function.Each.listEach
-// import monocle.std.option.some
 import monocle.function.FilterIndex.filterIndex
 import scala.collection.immutable.SortedMap
 import seqexec.model.ClientId
@@ -51,7 +49,7 @@ object SeqexecAppRootModel {
 
   val logDisplayL: Lens[SeqexecAppRootModel, SectionVisibilityState] =
     SeqexecAppRootModel.uiModel ^|->
-      SeqexecUIModel.globalLog ^|->
+      SeqexecUIModel.globalLog  ^|->
       GlobalLog.display
 
   val sequencesOnDisplayL: Lens[SeqexecAppRootModel, SequencesOnDisplay] =
@@ -64,13 +62,13 @@ object SeqexecAppRootModel {
   def executionQueuesT(
     id: QueueId
   ): Traversal[SeqexecAppRootModel, ExecutionQueueView] =
-    SeqexecAppRootModel.sequences ^|->
-      SequencesQueue.queues ^|->>
+    SeqexecAppRootModel.sequences               ^|->
+      SequencesQueue.queues                     ^|->>
       filterIndex((qid: QueueId) => qid === id)
 
   val queuesT: Traversal[SeqexecAppRootModel, ExecutionQueueView] =
     SeqexecAppRootModel.sequences ^|->
-      SequencesQueue.queues ^|->>
+      SequencesQueue.queues       ^|->>
       each
 
   implicit val eq: Eq[SeqexecAppRootModel] =

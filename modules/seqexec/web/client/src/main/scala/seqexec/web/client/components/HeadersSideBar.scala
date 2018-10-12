@@ -229,8 +229,8 @@ object HeadersSideBar {
           (p.selectedObserver match {
             case Right(Right(a)) =>
               f.backend.updateStateOb(a.observer.map(_.value), Callback.empty)
-            case Right(Left(_)) =>
-              Callback.empty
+            case Right(Left(a)) =>
+              f.backend.updateStateOb(a.observer.map(_.value), Callback.empty)
             case Left(o) =>
               f.backend.updateStateOb(o.value.some, Callback.empty)
           })
