@@ -142,12 +142,13 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
       for {
         ts <- arbitrary[TableState[StepsTable.TableColumn]]
         st <- arbitrary[BatchExecState]
-      } yield CalibrationQueueTab(ts, st)
+        o  <- arbitrary[Option[Observer]]
+      } yield CalibrationQueueTab(ts, st, o)
     }
 
   implicit val cqtCogen: Cogen[CalibrationQueueTab] =
-    Cogen[(TableState[StepsTable.TableColumn], BatchExecState)].contramap { x =>
-      (x.tableState, x.state)
+    Cogen[(TableState[StepsTable.TableColumn], BatchExecState, Option[Observer])].contramap { x =>
+      (x.tableState, x.state, x.observer)
     }
 
   implicit val arbQueueSeqOperations: Arbitrary[QueueSeqOperations] =

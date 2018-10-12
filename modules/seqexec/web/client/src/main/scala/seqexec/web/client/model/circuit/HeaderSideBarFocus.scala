@@ -10,6 +10,7 @@ import monocle.Getter
 import monocle.macros.Lenses
 import seqexec.model._
 import seqexec.model.enum.Instrument
+import seqexec.model.QueueId
 import seqexec.web.client.model._
 
 final case class SequenceObserverFocus(instrument: Instrument,
@@ -20,7 +21,14 @@ final case class SequenceObserverFocus(instrument: Instrument,
 object SequenceObserverFocus {
   implicit val eq: Eq[SequenceObserverFocus] =
     Eq.by(x => (x.instrument, x.obsId, x.completed, x.observer))
+}
 
+final case class DayCalObserverFocus(queueId:  QueueId,
+                                     observer: Option[Observer])
+
+object DayCalObserverFocus {
+  implicit val eq: Eq[DayCalObserverFocus] =
+    Eq.by(x => (x.queueId, x.observer))
 }
 
 @Lenses
@@ -28,7 +36,8 @@ final case class HeaderSideBarFocus(
   status:     ClientStatus,
   conditions: Conditions,
   operator:   Option[Operator],
-  observer:   Either[Observer, SequenceObserverFocus])
+  observer: Either[Observer,
+                   Either[DayCalObserverFocus, SequenceObserverFocus]])
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object HeaderSideBarFocus {
@@ -38,7 +47,7 @@ object HeaderSideBarFocus {
   val headerSideBarG: Getter[SeqexecAppRootModel, HeaderSideBarFocus] =
     Getter[SeqexecAppRootModel, HeaderSideBarFocus] { c =>
       val clientStatus = ClientStatus(c.uiModel.user, c.ws)
-      val obs = c.uiModel.sequencesOnDisplay.selectedOperator
+      val obs = c.uiModel.sequencesOnDisplay.selectedObserver
         .toRight(c.uiModel.defaultObserver)
       HeaderSideBarFocus(clientStatus,
                          c.sequences.conditions,

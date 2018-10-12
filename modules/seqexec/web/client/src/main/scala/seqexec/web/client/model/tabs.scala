@@ -10,6 +10,7 @@ import monocle.Lens
 import monocle.Prism
 import monocle.macros.GenPrism
 import monocle.macros.Lenses
+import seqexec.model.Observer
 import seqexec.model.SequenceState
 import seqexec.model.SequenceView
 import seqexec.model.enum._
@@ -17,7 +18,14 @@ import seqexec.web.client.ModelOps._
 import seqexec.web.client.components.sequence.steps.StepsTable
 import web.client.table._
 
-final case class AvailableTab(id: Option[Observation.Id], status: Option[SequenceState], instrument: Option[Instrument], runningStep: Option[RunningStep], nextStepToRun: Option[Int], isPreview: Boolean, active: TabSelected, loading: Boolean) {
+final case class AvailableTab(id:            Option[Observation.Id],
+                              status:        Option[SequenceState],
+                              instrument:    Option[Instrument],
+                              runningStep:   Option[RunningStep],
+                              nextStepToRun: Option[Int],
+                              isPreview:     Boolean,
+                              active:        TabSelected,
+                              loading:       Boolean) {
   val nonEmpty: Boolean = id.isDefined
 }
 
@@ -35,7 +43,8 @@ object AvailableTab {
          x.loading))
 }
 
-final case class CalibrationQueueTabActive(calibrationTab: CalibrationQueueTab, active: TabSelected)
+final case class CalibrationQueueTabActive(calibrationTab: CalibrationQueueTab,
+                                           active:         TabSelected)
 
 object CalibrationQueueTabActive {
   implicit val eq: Eq[CalibrationQueueTabActive] =
@@ -81,6 +90,8 @@ object SeqexecTab {
     GenPrism[SeqexecTab, PreviewSequenceTab]
   val instrumentTab: Prism[SeqexecTab, InstrumentSequenceTab] =
     GenPrism[SeqexecTab, InstrumentSequenceTab]
+  val calibrationTab: Prism[SeqexecTab, CalibrationQueueTab] =
+    GenPrism[SeqexecTab, CalibrationQueueTab]
   val sequenceTab: Prism[SeqexecTab, SequenceTab] =
     Prism.partial[SeqexecTab, SequenceTab] {
       case p: PreviewSequenceTab    => p
@@ -88,17 +99,25 @@ object SeqexecTab {
     }(identity)
 }
 
-final case class CalibrationQueueTab(tableState: TableState[StepsTable.TableColumn], state: BatchExecState) extends SeqexecTab {
+@Lenses
+final case class CalibrationQueueTab(
+  tableState: TableState[StepsTable.TableColumn],
+  state:      BatchExecState,
+  observer:   Option[Observer])
+    extends SeqexecTab {
   type TC = StepsTable.TableColumn
   val isPreview: Boolean = false
 }
 
+@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object CalibrationQueueTab {
   val Empty: CalibrationQueueTab =
-    CalibrationQueueTab(StepsTable.State.InitialTableState, BatchExecState.Idle)
+    CalibrationQueueTab(StepsTable.State.InitialTableState,
+                        BatchExecState.Idle,
+                        None)
 
   implicit val eq: Eq[CalibrationQueueTab] =
-    Eq.by(x => (x.tableState, x.state))
+    Eq.by(x => (x.tableState, x.state, x.observer))
 }
 
 sealed trait SequenceTab extends SeqexecTab {
@@ -150,23 +169,28 @@ object SequenceTab {
     }
 
   // Some lenses
-  val stepConfigL: Lens[SequenceTab, Option[Int]] = Lens[SequenceTab, Option[Int]] {
-    case t: InstrumentSequenceTab => t.stepConfig
-    case t: PreviewSequenceTab    => t.stepConfig
-  }(n => a => a match {
-    case t: InstrumentSequenceTab => t.copy(stepConfig = n)
-    case t: PreviewSequenceTab    => t.copy(stepConfig = n)
-  })
+  val stepConfigL: Lens[SequenceTab, Option[Int]] =
+    Lens[SequenceTab, Option[Int]] {
+      case t: InstrumentSequenceTab => t.stepConfig
+      case t: PreviewSequenceTab    => t.stepConfig
+    }(n =>
+      a =>
+        a match {
+          case t: InstrumentSequenceTab => t.copy(stepConfig = n)
+          case t: PreviewSequenceTab    => t.copy(stepConfig = n)
+    })
 
 }
 
 @Lenses
-final case class InstrumentSequenceTab(inst: Instrument,
-                                       currentSequence: Option[SequenceView],
-                                       completedSequence: Option[SequenceView],
-                                       stepConfig: Option[Int],
-                                       tableState: TableState[StepsTable.TableColumn],
-                                       tabOperations: TabOperations) extends SequenceTab
+final case class InstrumentSequenceTab(
+  inst:              Instrument,
+  currentSequence:   Option[SequenceView],
+  completedSequence: Option[SequenceView],
+  stepConfig:        Option[Int],
+  tableState:        TableState[StepsTable.TableColumn],
+  tabOperations:     TabOperations)
+    extends SequenceTab
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object InstrumentSequenceTab {
@@ -182,11 +206,13 @@ object InstrumentSequenceTab {
 }
 
 @Lenses
-final case class PreviewSequenceTab(currentSequence: SequenceView,
-                                    stepConfig: Option[Int],
-                                    isLoading: Boolean,
-                                    tableState: TableState[StepsTable.TableColumn],
-                                    tabOperations: TabOperations) extends SequenceTab
+final case class PreviewSequenceTab(
+  currentSequence: SequenceView,
+  stepConfig:      Option[Int],
+  isLoading:       Boolean,
+  tableState:      TableState[StepsTable.TableColumn],
+  tabOperations:   TabOperations)
+    extends SequenceTab
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object PreviewSequenceTab {

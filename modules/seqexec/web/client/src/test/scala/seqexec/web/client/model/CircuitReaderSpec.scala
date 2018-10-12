@@ -30,7 +30,7 @@ final class CircuitReaderSpec
   // checkAll("initialSyncFocusL", LensTests(InitialSyncFocus.initialSyncFocusL))
   checkAll("clientStatusFocusL", LensTests(ClientStatus.clientStatusFocusL))
   // checkAll("webSocketFocusL", LensTests(WebSocketsFocus.webSocketFocusL))
-  // checkAll("tableStateL", LensTests(TableStates.tableStateL))
+  // checkAll("tableStateL", LensTests(AppTableStates.tableStateL))
 
   test("maintain reference equality for constant readers") {
     (webSocketFocusRW === webSocketFocusRW.value) should be(true)

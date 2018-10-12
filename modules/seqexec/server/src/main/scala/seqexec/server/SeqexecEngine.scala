@@ -46,7 +46,7 @@ import org.http4s.client.Client
 import org.http4s.Uri
 import knobs.Config
 import mouse.all._
-
+import scala.collection.immutable.SortedMap
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
@@ -198,8 +198,10 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
       }
     }
 
-  private def executionQueueViews(st: EngineState): Map[QueueId, ExecutionQueueView] = {
-    st.queues.map{case (qid, q) => qid -> ExecutionQueueView(qid, q.name, q.cmdState, q.status(st), q.queue) }
+  private def executionQueueViews(st: EngineState): SortedMap[QueueId, ExecutionQueueView] = {
+    SortedMap(st.queues.map {
+      case (qid, q) => qid -> ExecutionQueueView(qid, q.name, q.cmdState, q.status(st), q.queue)
+    }.toList: _*)
   }
 
   def eventStream(q: EventQueue): Stream[IO, SeqexecEvent] = {

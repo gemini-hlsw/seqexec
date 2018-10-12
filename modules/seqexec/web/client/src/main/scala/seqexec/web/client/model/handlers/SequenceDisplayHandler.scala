@@ -4,8 +4,11 @@
 package seqexec.web.client.handlers
 
 import cats.implicits._
-import diode.{ ActionHandler, ActionResult, ModelRW }
-import seqexec.model.{ SequenceView, SequencesQueue }
+import diode.ActionHandler
+import diode.ActionResult
+import diode.ModelRW
+import seqexec.model.SequenceView
+import seqexec.model.SequencesQueue
 import seqexec.web.client.actions._
 import seqexec.web.client.circuit._
 
@@ -35,6 +38,11 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, SequencesFocus])
     case SelectCalibrationQueue =>
       updatedL(SequencesFocus.sod.modify(_.focusOnDayCal))
 
+  }
+
+  def handleCalTabObserver: PartialFunction[Any, ActionResult[M]] = {
+    case UpdateCalTabObserver(o) =>
+      updatedL(SequencesFocus.sod.modify(_.updateCalTabObserver(o)))
   }
 
   def handleShowHideStep: PartialFunction[Any, ActionResult[M]] = {
@@ -78,5 +86,6 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, SequencesFocus])
     List(handleSelectSequenceDisplay,
          handleShowHideStep,
          handleLoadFailed,
+         handleCalTabObserver,
          handleRememberCompleted).combineAll
 }
