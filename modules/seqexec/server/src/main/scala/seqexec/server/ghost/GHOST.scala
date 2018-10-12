@@ -10,14 +10,17 @@ import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import edu.gemini.spModel.gemini.ghost.Ghost
 import gem.math.{Angle, HourAngle}
+
 import scala.concurrent.duration._
 import seqexec.model.dhs.ImageFileId
-import seqexec.model.enum.{ Instrument, Resource }
+import seqexec.model.enum.{Instrument, Resource}
 import seqexec.server.ConfigUtilOps._
 import seqexec.server._
 import seqexec.server.keywords.{GDSClient, GDSInstrument, KeywordsClient}
 import seqexec.server.ghost.GHOSTController._
 import squants.time.{Seconds, Time}
+
+import scala.reflect.ClassTag
 
 final case class GHOST[F[_]: Sync](controller: GHOSTController[F])
     extends InstrumentSystem[F]
@@ -62,20 +65,11 @@ object GHOST {
 
   val sfName: String = "GHOST"
 
-  private def hmsAngle(config: Config, name: String): Option[HourAngle] =
-    config.extractAs[HourAngle](INSTRUMENT_KEY / name).toOption
-
-  private def dmsAngle(config: Config, name: String): Option[Angle] =
-    config.extractAs[Angle](INSTRUMENT_KEY / name).toOption
-
-  private def targetName(config: Config, name: String): Option[String] =
-    config.extractAs[String](INSTRUMENT_KEY / name).toOption
-
   // We always want a GHOSTConfig at this point, so don't use a for comprehension as not all parameters will be
   // present and we don't want the for to bork prematurely with a missing key error.
   def fromSequenceConfig[F[_]: Sync](config: Config): SeqActionF[F, GHOSTConfig] = {
-    def extractor[A](name: String): Option[A] =
-      config.extractAs[A](INSTRUMENT_KEY / name).toOption
+    def extractor[A : ClassTag](propName: String): Option[A] =
+      config.extractAs[A](INSTRUMENT_KEY / propName).toOption
 
     EitherT {
       Sync[F].delay {
