@@ -29,7 +29,6 @@ class QueueOperationsHandler[M](modelRW: ModelRW[M, CalibrationQueues])
   def handleAddAllDayCal: PartialFunction[Any, ActionResult[M]] = {
     case RequestAllDayCal(qid) =>
       updatedL(
-        CalibrationQueues.calLastOpO(qid).set(none) >>>
         CalibrationQueues
           .addDayCalL(qid)
           .set(AddDayCalOperation.AddDayCalInFlight))
@@ -39,7 +38,6 @@ class QueueOperationsHandler[M](modelRW: ModelRW[M, CalibrationQueues])
   def handleClearAllCal: PartialFunction[Any, ActionResult[M]] = {
     case RequestClearAllCal(qid) =>
       updatedL(
-        CalibrationQueues.calLastOpO(qid).set(none) >>>
         CalibrationQueues
           .clearAllCalL(qid)
           .set(ClearAllCalOperation.ClearAllCalInFlight))

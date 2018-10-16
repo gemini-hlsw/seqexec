@@ -45,7 +45,7 @@ object CalQueueTable {
   case object ObsIdColumn extends TableColumn
   case object InstrumentColumn extends TableColumn
 
-  private val RemoveColumnWidth  = 30.0
+  private val RemoveColumnWidth  = 34.0
   private val ObsIdMinWidth      = 66.2167 + SeqexecStyles.TableBorderWidth
   private val InstrumentMinWidth = 90.4333 + SeqexecStyles.TableBorderWidth
 
@@ -103,6 +103,14 @@ object CalQueueTable {
       case _                                  => false
     }
 
+    val addedRows: List[Observation.Id] = data.lastOp match {
+      case Some(QueueManipulationOp.AddedSeqs(_, x)) => x
+      case _                                         => Nil
+    }
+
+    println(data.lastOp)
+    println(addedRows)
+
     val cmp: Unmounted[js.Object, Null] = {
       val view         = component
       val sortableList = SortableContainer.wrap(view)
@@ -152,35 +160,40 @@ object CalQueueTable {
       apply(Observation.Id.unsafeFromString("Default-1"), Instrument.F2)
   }
 
-  private val obsIdRenderer: CellRenderer[js.Object, js.Object, CalQueueRow] =
+  val obsIdRenderer: CellRenderer[js.Object, js.Object, CalQueueRow] =
     (_, _, _, r: CalQueueRow, _) => {
       <.p(SeqexecStyles.queueTextColumn, r.obsId.format)
     }
 
-  private val instrumentRenderer
-    : CellRenderer[js.Object, js.Object, CalQueueRow] =
+  val instrumentRenderer: CellRenderer[js.Object, js.Object, CalQueueRow] =
     (_, _, _, r: CalQueueRow, _) => {
       <.p(SeqexecStyles.queueTextColumn, r.instrument.show)
     }
 
-  private def removeSeqRenderer(
+  def removeSeqRenderer(
     p: Props): CellRenderer[js.Object, js.Object, CalQueueRow] =
-    (_, _, _, r: CalQueueRow, _) => {
-      Button(
-        Button.Props(
-          size     = SSize.Mini,
-          basic    = false,
-          color    = "brown".some,
-          disabled = !p.data.canOperate,
-          onClick =
-            SeqexecCircuit.dispatchCB(RequestRemoveSeqCal(p.queueId, r.obsId)),
-          icon = p
-            .seqState(r.obsId)
-            .filter(_.removeSeqQueue === RemoveSeqQueue.RemoveSeqQueueInFlight)
-            .fold(IconTimes)(_ => IconRefresh.copyIcon(loading = true))
-            .some
-        ))
-    }
+    (_, _, _, r: CalQueueRow, _) =>
+      <.div(
+        SeqexecStyles.centeredCell,
+        ^.width := 100.pct,
+        ^.height := 100.pct,
+        Button(
+          Button.Props(
+            size     = SSize.Mini,
+            basic    = false,
+            color    = "brown".some,
+            disabled = !p.data.canOperate,
+            compact  = true,
+            onClick =
+              SeqexecCircuit.dispatchCB(RequestRemoveSeqCal(p.queueId, r.obsId)),
+              extraStyles = List(SeqexecStyles.autoMargin),
+            icon = p
+              .seqState(r.obsId)
+              .filter(_.removeSeqQueue === RemoveSeqQueue.RemoveSeqQueueInFlight)
+              .fold(IconTimes)(_ => IconRefresh.copyIcon(loading = true))
+              .some
+          ))
+      )
 
   private def colBuilder(
     b:    Backend,
@@ -229,6 +242,8 @@ object CalQueueTable {
     ((i, p.rowGetter(i)) match {
       case (-1, _) =>
         SeqexecStyles.headerRowStyle
+      case (_, CalQueueRow(i, _)) if p.addedRows.contains(i) =>
+        SeqexecStyles.stepRow |+| SeqexecStyles.calRowBackground
       case _ =>
         SeqexecStyles.stepRow
     }).htmlClass

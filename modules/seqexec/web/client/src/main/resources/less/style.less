@@ -282,20 +282,48 @@ body {
 
 @keyframes calTableFlash {
   0% {
-    box-shadow: 0 0 5px darkcyan;
-  }
-  50% {
     box-shadow: none;
   }
-  100% {
-    box-shadow: 0 0 5px darkcyan;
+  50% {
+    box-shadow: 0 0 8px darken(lightblue, 20%);
+  }
+  0% {
+    box-shadow: none;
   }
 }
 
 .SeqexecStyles-calTableBorder {
   animation-name: calTableFlash;
   animation-duration: 1s;
+  animation-timing-function: linear;
   animation-iteration-count: 2;
+}
+
+@keyframes calRowFlash {
+  0% {
+    background: none;
+    color: inherit;
+  }
+  50% {
+    background: lightblue;
+    color: @white;
+  }
+  100% {
+    background: none;
+    color: inherit;
+  }
+}
+
+.SeqexecStyles-calRowBackground {
+  animation-name: calRowFlash;
+  animation-duration: 0.7s;
+  animation-timing-function: linear;
+  animation-fill-mode: both;
+  animation-iteration-count: 2;
+}
+
+.SeqexecStyles-autoMargin {
+  margin: auto;
 }
 
 .SeqexecStyles-queueAreaRow {
