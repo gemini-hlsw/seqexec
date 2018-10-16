@@ -156,43 +156,6 @@ package circuit {
       Eq.by(x => (x.canOperate, x.tabs, x.defaultObserver))
   }
 
-  sealed trait TabContentFocus extends Product with Serializable {
-    val canOperate: Boolean
-    val logDisplayed: SectionVisibilityState
-    val active: TabSelected
-  }
-
-  object TabContentFocus {
-    implicit val eq: Eq[TabContentFocus] =
-      Eq.instance {
-        case (a: SequenceTabContentFocus, b: SequenceTabContentFocus) => a === b
-        case (a: CalQueueTabContentFocus, b: CalQueueTabContentFocus) => a === b
-        case _                                                        => false
-      }
-  }
-
-  final case class SequenceTabContentFocus(canOperate:   Boolean,
-                                           instrument:   Option[Instrument],
-                                           id:           Option[Observation.Id],
-                                           active:       TabSelected,
-                                           logDisplayed: SectionVisibilityState)
-      extends TabContentFocus
-
-  object SequenceTabContentFocus {
-    implicit val eq: Eq[SequenceTabContentFocus] =
-      Eq.by(x => (x.canOperate, x.instrument, x.id, x.active, x.logDisplayed))
-  }
-
-  final case class CalQueueTabContentFocus(canOperate:   Boolean,
-                                           active:       TabSelected,
-                                           logDisplayed: SectionVisibilityState)
-      extends TabContentFocus
-
-  object CalQueueTabContentFocus {
-    implicit val eq: Eq[CalQueueTabContentFocus] =
-      Eq.by(x => (x.canOperate, x.active, x.logDisplayed))
-  }
-
   final case class SequenceInfoFocus(canOperate: Boolean,
                                      obsName:    Option[String],
                                      status:     Option[SequenceState],
@@ -203,7 +166,9 @@ package circuit {
     implicit val eq: Eq[SequenceInfoFocus] =
       Eq.by(x => (x.canOperate, x.obsName, x.status, x.targetName))
 
-    def sequenceInfoG(id: Observation.Id): Getter[SeqexecAppRootModel, Option[SequenceInfoFocus]] = {
+    def sequenceInfoG(
+      id: Observation.Id
+    ): Getter[SeqexecAppRootModel, Option[SequenceInfoFocus]] = {
       val getter =
         SeqexecAppRootModel.sequencesOnDisplayL.composeGetter(
           SequencesOnDisplay.tabG(id))
@@ -238,7 +203,9 @@ package circuit {
            x.totalSteps,
            x.isPreview))
 
-    def statusAndStepG(id: Observation.Id): Getter[SeqexecAppRootModel, Option[StatusAndStepFocus]] = {
+    def statusAndStepG(
+      id: Observation.Id
+    ): Getter[SeqexecAppRootModel, Option[StatusAndStepFocus]] = {
       val getter =
         SeqexecAppRootModel.sequencesOnDisplayL.composeGetter(
           SequencesOnDisplay.tabG(id))
@@ -282,7 +249,9 @@ package circuit {
            x.isPreview,
            x.tableState))
 
-    def stepsTableG(id: Observation.Id): Getter[SeqexecAppRootModel, Option[StepsTableFocus]] =
+    def stepsTableG(
+      id: Observation.Id
+    ): Getter[SeqexecAppRootModel, Option[StepsTableFocus]] =
       SeqexecAppRootModel.sequencesOnDisplayL.composeGetter(
         SequencesOnDisplay.tabG(id)) >>> {
         _.flatMap {
@@ -340,7 +309,8 @@ package circuit {
     implicit val eq: Eq[SequenceControlFocus] =
       Eq.by(x => (x.canOperate, x.control))
 
-    def seqControlG(id: Observation.Id): Getter[SeqexecAppRootModel, Option[SequenceControlFocus]] = {
+    def seqControlG(id: Observation.Id)
+      : Getter[SeqexecAppRootModel, Option[SequenceControlFocus]] = {
       val getter = SeqexecAppRootModel.sequencesOnDisplayL.composeGetter(
         SequencesOnDisplay.tabG(id))
       ClientStatus.canOperateG.zip(getter) >>> {

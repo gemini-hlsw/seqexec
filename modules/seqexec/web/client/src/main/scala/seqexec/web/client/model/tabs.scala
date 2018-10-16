@@ -147,6 +147,11 @@ sealed trait SequenceTab extends SeqexecTab {
     case _                        => true
   }
 
+  def isComplete: Boolean = this match {
+    case InstrumentSequenceTab(_, _, Some(_), _, _, _) => true
+    case _                                             => false
+  }
+
   def runningStep: Option[RunningStep] = this match {
     case _: InstrumentSequenceTab => sequence.flatMap(_.runningStep)
     case _                        => none

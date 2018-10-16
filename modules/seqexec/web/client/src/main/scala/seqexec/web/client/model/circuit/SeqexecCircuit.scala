@@ -114,24 +114,8 @@ object SeqexecCircuit
     this.zoomG(constructor)
   }
 
-  val seqexecTabs: ModelR[SeqexecAppRootModel, NonEmptyList[TabContentFocus]] = {
-    val getter = SeqexecAppRootModel.logDisplayL.asGetter.zip(SeqexecAppRootModel.sequencesOnDisplayL.asGetter)
-    val constructor = ClientStatus.canOperateG.zip(getter) >>> { p =>
-      val (o, (log, SequencesOnDisplay(tabs))) = p
-      NonEmptyList.fromListUnsafe(tabs.withFocus.toList.collect {
-        case (tab: SequenceTab, active) =>
-          SequenceTabContentFocus(o,
-                                  tab.instrument,
-                                  tab.sequence.map(_.id),
-                                  TabSelected.fromBoolean(active),
-                                  log)
-        case (_: CalibrationQueueTab, active) =>
-          CalQueueTabContentFocus(o, TabSelected.fromBoolean(active), log)
-      })
-    }
-
-    this.zoomG(constructor)
-  }
+  val seqexecTabs: ModelR[SeqexecAppRootModel, NonEmptyList[TabContentFocus]] =
+    this.zoomG(TabContentFocus.tabContentFocusG)
 
   val sequencesOnDisplayRW: ModelRW[SeqexecAppRootModel, SequencesOnDisplay] =
     this.zoomRWL(SeqexecAppRootModel.sequencesOnDisplayL)

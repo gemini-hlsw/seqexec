@@ -67,11 +67,6 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, SequencesFocus])
 
   }
 
-  def handleRememberCompleted: PartialFunction[Any, ActionResult[M]] = {
-    case RememberCompleted(s) =>
-      updatedL(SequencesFocus.sod.modify(_.markCompleted(s)))
-  }
-
   def handleClean: PartialFunction[Any, ActionResult[M]] = {
     case CleanSequences =>
       updatedL(SequencesFocus.sod.modify(_.cleanAll))
@@ -79,13 +74,12 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, SequencesFocus])
 
   def handleLoadFailed: PartialFunction[Any, ActionResult[M]] = {
     case SequenceLoadFailed(id) =>
-      updatedL(SequencesFocus.sod.modify(_.loadingComplete(id)))
+      updatedL(SequencesFocus.sod.modify(_.loadingFailed(id)))
   }
 
   override def handle: PartialFunction[Any, ActionResult[M]] =
     List(handleSelectSequenceDisplay,
          handleShowHideStep,
          handleLoadFailed,
-         handleCalTabObserver,
-         handleRememberCompleted).combineAll
+         handleCalTabObserver).combineAll
 }
