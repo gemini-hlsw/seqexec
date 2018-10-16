@@ -13,6 +13,7 @@ import monocle.std
 import monocle.function.At.at
 import seqexec.model.ExecutionQueueView
 import seqexec.model.QueueId
+import seqexec.model.SequencesQueue
 import seqexec.model.enum.BatchCommandState
 import seqexec.model.enum.BatchExecState
 import seqexec.web.client.model._
@@ -21,12 +22,18 @@ import seqexec.web.client.model._
 final case class CalQueueControlFocus(canOperate: Boolean,
                                       state:      BatchCommandState,
                                       execState:  BatchExecState,
-                                      ops:        QueueOperations)
+                                      ops:        QueueOperations,
+                                      queueSize:  Int)
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object CalQueueControlFocus {
   implicit val eq: Eq[CalQueueControlFocus] =
-    Eq.by(x => (x.canOperate, x.state, x.execState, x.ops))
+    Eq.by(x => (x.canOperate, x.state, x.execState, x.ops, x.queueSize))
+
+  val allQueues: Getter[SeqexecAppRootModel, Int] =
+    (SeqexecAppRootModel.sequences ^|-> SequencesQueue.queues).asGetter >>> {
+      _.foldMap(_.queue.size)
+    }
 
   def optQueue(id: QueueId): Optional[SeqexecAppRootModel, QueueOperations] =
     SeqexecAppRootModel.uiModel ^|->
@@ -36,7 +43,9 @@ object CalQueueControlFocus {
       std.option.some           ^|->
       CalQueueState.ops
 
-  def cmdStateT(id: QueueId): Traversal[SeqexecAppRootModel, BatchCommandState] =
+  def cmdStateT(
+    id: QueueId
+  ): Traversal[SeqexecAppRootModel, BatchCommandState] =
     SeqexecAppRootModel.executionQueuesT(id) ^|->
       ExecutionQueueView.cmdState
 
@@ -44,13 +53,17 @@ object CalQueueControlFocus {
     SeqexecAppRootModel.executionQueuesT(id) ^|->
       ExecutionQueueView.execState
 
-  def queueControlG(id: QueueId): Getter[SeqexecAppRootModel, Option[CalQueueControlFocus]] =
+  def queueControlG(
+    id: QueueId
+  ): Getter[SeqexecAppRootModel, Option[CalQueueControlFocus]] =
     ClientStatus.canOperateG.zip(
       Getter(optQueue(id).getOption)
-        .zip(Getter(cmdStateT(id).headOption)
-          .zip(Getter(execStateT(id).headOption)))) >>> {
-      case (status, (Some(c), (Some(s), Some(e)))) =>
-        CalQueueControlFocus(status, s, e, c).some
+        .zip(
+          Getter(cmdStateT(id).headOption)
+            .zip(Getter(execStateT(id).headOption)
+              .zip(allQueues)))) >>> {
+      case (status, (Some(c), (Some(s), (Some(e), qs)))) =>
+        CalQueueControlFocus(status, s, e, c, qs).some
       case _ =>
         none
     }
