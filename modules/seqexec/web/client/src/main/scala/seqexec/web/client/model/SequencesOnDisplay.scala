@@ -327,8 +327,12 @@ final case class SequencesOnDisplay(tabs: Zipper[SeqexecTab]) {
       }
 
   // Update the state when load has completed
-  def loadingComplete(obsId: Observation.Id,
-                      i:     Instrument): SequencesOnDisplay = {
+  def loadingComplete(
+    obsId: Observation.Id,
+    i:     Instrument
+  ): SequencesOnDisplay = {
+    // This is a bit tricky. When we load we need to remove existing completed sequences
+    // As this is a client side only state it won't be cleaned automatically
     val cleaned = copy(
       tabs = Zipper.fromNel(NonEmptyList.fromListUnsafe(tabs.toList.filter {
         case InstrumentSequenceTab(inst, _, Some(_), _, _, _) => inst =!= i
@@ -338,6 +342,7 @@ final case class SequencesOnDisplay(tabs: Zipper[SeqexecTab]) {
     SequencesOnDisplay.loadingL(obsId).set(false)(cleaned)
   }
 
+  // Reset the loading state client-side
   def loadingFailed(obsId: Observation.Id): SequencesOnDisplay =
     SequencesOnDisplay.loadingL(obsId).set(false)(this)
 
@@ -435,7 +440,7 @@ object SequencesOnDisplay {
   def instrumentTabFor(
     i: Instrument
   ): Traversal[SequencesOnDisplay, InstrumentSequenceTab] =
-    SequencesOnDisplay.tabs ^|->>
+    SequencesOnDisplay.tabs                    ^|->>
       Zipper.unsafeFilterZ(instrumentMatch(i)) ^<-?
       SeqexecTab.instrumentTab
 
@@ -458,7 +463,7 @@ object SequencesOnDisplay {
     }
 
   val sequenceTabs: Traversal[SequencesOnDisplay, SequenceTab] =
-    SequencesOnDisplay.tabs ^|->>
+    SequencesOnDisplay.tabs             ^|->>
       Zipper.unsafeFilterZ(sequenceTab) ^<-?
       SeqexecTab.sequenceTab
 
@@ -469,9 +474,9 @@ object SequencesOnDisplay {
     }
 
   val completedTabs: Traversal[SequencesOnDisplay, SequenceView] =
-    SequencesOnDisplay.tabs ^|->>
-      Zipper.unsafeFilterZ(completedTab) ^<-?
-      SeqexecTab.instrumentTab ^|->
+    SequencesOnDisplay.tabs                   ^|->>
+      Zipper.unsafeFilterZ(completedTab)      ^<-?
+      SeqexecTab.instrumentTab                ^|->
       InstrumentSequenceTab.completedSequence ^<-?
       std.option.some
 

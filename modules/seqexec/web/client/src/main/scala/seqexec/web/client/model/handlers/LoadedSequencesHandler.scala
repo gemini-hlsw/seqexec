@@ -45,6 +45,7 @@ class LoadedSequencesHandler[M](modelRW: ModelRW[M, SODLocationFocus])
       updatedL(upSelected >>> upLocation)
 
     case ServerMessage(SequenceCompleted(sv)) =>
+      // When a a sequence completes we keep the state client side
       sv.sessionQueue
         .find(_.status === SequenceState.Completed)
         .map { k =>
