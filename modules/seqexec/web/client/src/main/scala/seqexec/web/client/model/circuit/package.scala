@@ -174,13 +174,21 @@ package circuit {
   final case class SequenceTabContentFocus(canOperate:   Boolean,
                                            instrument:   Option[Instrument],
                                            id:           Option[Observation.Id],
+                                           completed:    Boolean,
                                            active:       TabSelected,
                                            logDisplayed: SectionVisibilityState)
       extends TabContentFocus
 
   object SequenceTabContentFocus {
     implicit val eq: Eq[SequenceTabContentFocus] =
-      Eq.by(x => (x.canOperate, x.instrument, x.id, x.active, x.logDisplayed))
+      Eq.by(
+        x =>
+          (x.canOperate,
+           x.instrument,
+           x.id,
+           x.completed,
+           x.active,
+           x.logDisplayed))
   }
 
   final case class CalQueueTabContentFocus(canOperate:   Boolean,
@@ -203,7 +211,8 @@ package circuit {
     implicit val eq: Eq[SequenceInfoFocus] =
       Eq.by(x => (x.canOperate, x.obsName, x.status, x.targetName))
 
-    def sequenceInfoG(id: Observation.Id): Getter[SeqexecAppRootModel, Option[SequenceInfoFocus]] = {
+    def sequenceInfoG(id: Observation.Id)
+      : Getter[SeqexecAppRootModel, Option[SequenceInfoFocus]] = {
       val getter =
         SeqexecAppRootModel.sequencesOnDisplayL.composeGetter(
           SequencesOnDisplay.tabG(id))
@@ -238,7 +247,8 @@ package circuit {
            x.totalSteps,
            x.isPreview))
 
-    def statusAndStepG(id: Observation.Id): Getter[SeqexecAppRootModel, Option[StatusAndStepFocus]] = {
+    def statusAndStepG(id: Observation.Id)
+      : Getter[SeqexecAppRootModel, Option[StatusAndStepFocus]] = {
       val getter =
         SeqexecAppRootModel.sequencesOnDisplayL.composeGetter(
           SequencesOnDisplay.tabG(id))
@@ -282,7 +292,8 @@ package circuit {
            x.isPreview,
            x.tableState))
 
-    def stepsTableG(id: Observation.Id): Getter[SeqexecAppRootModel, Option[StepsTableFocus]] =
+    def stepsTableG(id: Observation.Id)
+      : Getter[SeqexecAppRootModel, Option[StepsTableFocus]] =
       SeqexecAppRootModel.sequencesOnDisplayL.composeGetter(
         SequencesOnDisplay.tabG(id)) >>> {
         _.flatMap {
@@ -340,7 +351,8 @@ package circuit {
     implicit val eq: Eq[SequenceControlFocus] =
       Eq.by(x => (x.canOperate, x.control))
 
-    def seqControlG(id: Observation.Id): Getter[SeqexecAppRootModel, Option[SequenceControlFocus]] = {
+    def seqControlG(id: Observation.Id)
+      : Getter[SeqexecAppRootModel, Option[SequenceControlFocus]] = {
       val getter = SeqexecAppRootModel.sequencesOnDisplayL.composeGetter(
         SequencesOnDisplay.tabG(id))
       ClientStatus.canOperateG.zip(getter) >>> {

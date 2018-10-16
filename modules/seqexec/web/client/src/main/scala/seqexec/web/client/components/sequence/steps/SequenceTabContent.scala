@@ -12,7 +12,8 @@ import japgolly.scalajs.react.extra.Reusability
 import japgolly.scalajs.react.extra.router.RouterCtl
 import seqexec.web.client.circuit._
 import seqexec.web.client.model.Pages.SeqexecPages
-import seqexec.web.client.model.{ SectionClosed, SectionOpen }
+import seqexec.web.client.model.SectionClosed
+import seqexec.web.client.model.SectionOpen
 import seqexec.web.client.model.TabSelected
 import seqexec.web.client.semanticui._
 import seqexec.web.client.semanticui.elements.message.IconMessage
@@ -47,6 +48,7 @@ object SequenceTabContent {
     .render_P { p =>
       val SequenceTabContentFocus(isLogged,
                                   instrument,
+                                  _,
                                   _,
                                   active,
                                   logDisplayed) = p.p

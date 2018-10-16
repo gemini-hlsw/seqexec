@@ -123,6 +123,7 @@ object SeqexecCircuit
           SequenceTabContentFocus(o,
                                   tab.instrument,
                                   tab.sequence.map(_.id),
+                                  tab.isComplete,
                                   TabSelected.fromBoolean(active),
                                   log)
         case (_: CalibrationQueueTab, active) =>

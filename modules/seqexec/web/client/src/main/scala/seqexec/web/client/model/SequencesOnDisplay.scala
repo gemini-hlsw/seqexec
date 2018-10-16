@@ -81,9 +81,14 @@ final case class SequencesOnDisplay(tabs: Zipper[SeqexecTab]) {
     * Replace the tabs when the core model is updated
     */
   def updateFromQueue(s: SequencesQueue[SequenceView]): SequencesOnDisplay = {
+    // Sequences in view stored after completion
+    val cids: List[Option[SequenceView]] = SequencesOnDisplay.completedTabs
+      .getAll(this)
+      .filterNot(x => s.loaded.values.toList.contains(x.id))
+      .map(_.some)
     val updated = updateLoaded(s.loaded.values.toList.map { id =>
       s.sessionQueue.find(_.id === id)
-    }).tabs.map {
+    } ::: cids).tabs.map {
       case p @ PreviewSequenceTab(curr, r, _, t, o) =>
         s.sessionQueue
           .find(_.id === curr.id)
@@ -116,13 +121,16 @@ final case class SequencesOnDisplay(tabs: Zipper[SeqexecTab]) {
     val currentInsTabs = SequencesOnDisplay.instrumentTabs.getAll(this)
     val instTabs = s.collect {
       case Some(x) =>
-        val curTableState = currentInsTabs
+        val tab = currentInsTabs
           .find(_.obsId.exists(_ === x.id))
+        val curTableState = tab
           .map(_.tableState)
           .getOrElse(StepsTable.State.InitialTableState)
+        val completed = tab
+          .flatMap(_.completedSequence)
         InstrumentSequenceTab(x.metadata.instrument,
                               x.some,
-                              None,
+                              completed,
                               None,
                               curTableState,
                               TabOperations.Default).some
@@ -318,13 +326,24 @@ final case class SequencesOnDisplay(tabs: Zipper[SeqexecTab]) {
         }
       }
 
-  // Update the state when a load has failed
-  def loadingComplete(id: Observation.Id): SequencesOnDisplay =
-    SequencesOnDisplay.loadingL(id).set(false)(this)
+  // Update the state when load has completed
+  def loadingComplete(obsId: Observation.Id,
+                      i:     Instrument): SequencesOnDisplay = {
+    val cleaned = copy(
+      tabs = Zipper.fromNel(NonEmptyList.fromListUnsafe(tabs.toList.filter {
+        case InstrumentSequenceTab(inst, _, Some(_), _, _, _) => inst =!= i
+        case _                                                => true
+      })))
+
+    SequencesOnDisplay.loadingL(obsId).set(false)(cleaned)
+  }
+
+  def loadingFailed(obsId: Observation.Id): SequencesOnDisplay =
+    SequencesOnDisplay.loadingL(obsId).set(false)(this)
 
   // We'll set the passed SequenceView as completed for the given instruments
   def markCompleted(completed: SequenceView): SequencesOnDisplay =
-    (SequencesOnDisplay.instrumentTabFor(completed) ^|-> InstrumentSequenceTab.completedSequence)
+    (SequencesOnDisplay.instrumentTabFor(completed.metadata.instrument) ^|-> InstrumentSequenceTab.completedSequence)
       .set(completed.some)(this)
 
   // Update the state when a load starts
@@ -406,18 +425,18 @@ object SequencesOnDisplay {
   val previewTab: Traversal[SequencesOnDisplay, PreviewSequenceTab] =
     SequencesOnDisplay.tabs ^|->> Zipper.unsafeFilterZ(_.isPreview) ^<-? SeqexecTab.previewTab
 
-  private def instrumentMatch(seq: SequenceView)(tab: SeqexecTab): Boolean =
+  private def instrumentMatch(i: Instrument)(tab: SeqexecTab): Boolean =
     tab match {
       case InstrumentSequenceTab(inst, _, _, _, _, _) =>
-        inst === seq.metadata.instrument
+        inst === i
       case _ => false
     }
 
   def instrumentTabFor(
-    seq: SequenceView
+    i: Instrument
   ): Traversal[SequencesOnDisplay, InstrumentSequenceTab] =
-    SequencesOnDisplay.tabs                      ^|->>
-      Zipper.unsafeFilterZ(instrumentMatch(seq)) ^<-?
+    SequencesOnDisplay.tabs ^|->>
+      Zipper.unsafeFilterZ(instrumentMatch(i)) ^<-?
       SeqexecTab.instrumentTab
 
   private def instrumentTab(tab: SeqexecTab): Boolean =
@@ -439,9 +458,22 @@ object SequencesOnDisplay {
     }
 
   val sequenceTabs: Traversal[SequencesOnDisplay, SequenceTab] =
-    SequencesOnDisplay.tabs             ^|->>
+    SequencesOnDisplay.tabs ^|->>
       Zipper.unsafeFilterZ(sequenceTab) ^<-?
       SeqexecTab.sequenceTab
+
+  private def completedTab(tab: SeqexecTab): Boolean =
+    tab match {
+      case InstrumentSequenceTab(_, _, Some(_), _, _, _) => true
+      case _                                             => false
+    }
+
+  val completedTabs: Traversal[SequencesOnDisplay, SequenceView] =
+    SequencesOnDisplay.tabs ^|->>
+      Zipper.unsafeFilterZ(completedTab) ^<-?
+      SeqexecTab.instrumentTab ^|->
+      InstrumentSequenceTab.completedSequence ^<-?
+      std.option.some
 
   val focusSequence: Optional[SequencesOnDisplay, SequenceTab] =
     SequencesOnDisplay.tabs ^|-> Zipper.focus ^<-? SeqexecTab.sequenceTab

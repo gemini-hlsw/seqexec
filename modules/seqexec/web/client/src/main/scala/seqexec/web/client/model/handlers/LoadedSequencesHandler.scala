@@ -9,6 +9,7 @@ import diode.ActionResult
 import diode.Effect
 import diode.ModelRW
 import diode.NoAction
+import seqexec.model.SequenceState
 import seqexec.model.events._
 import seqexec.web.client.model.Pages._
 import seqexec.web.client.ModelOps._
@@ -30,12 +31,12 @@ class LoadedSequencesHandler[M](modelRW: ModelRW[M, SODLocationFocus])
         // if I requested the load also focus on it
         SODLocationFocus.sod.modify(
           _.updateFromQueue(view)
-            .loadingComplete(sid)
+            .loadingComplete(sid, i)
             .unsetPreviewOn(sid)
             .focusOnSequence(i, sid))
       } else {
         SODLocationFocus.sod.modify(
-          _.updateFromQueue(view).loadingComplete(sid).unsetPreviewOn(sid))
+          _.updateFromQueue(view).loadingComplete(sid, i).unsetPreviewOn(sid))
       }
       val nextStepToRun =
         view.sessionQueue.find(_.id === sid).foldMap(_.nextStepToRun)
@@ -43,12 +44,28 @@ class LoadedSequencesHandler[M](modelRW: ModelRW[M, SODLocationFocus])
         SequencePage(i, sid, nextStepToRun.foldMap(StepIdDisplayed.apply)))
       updatedL(upSelected >>> upLocation)
 
+    case ServerMessage(SequenceCompleted(sv)) =>
+      sv.sessionQueue
+        .find(_.status === SequenceState.Completed)
+        .map { k =>
+          updatedL(
+            SODLocationFocus.sod.modify(_.markCompleted(k).updateFromQueue(sv)))
+        }
+        .getOrElse {
+          noChange
+        }
+
     case ServerMessage(s: SeqexecModelUpdate) =>
-      updated(SODLocationFocus.sod.modify(_.updateFromQueue(s.view))(value))
+      updatedL(SODLocationFocus.sod.modify(_.updateFromQueue(s.view)))
 
     case LoadSequence(observer, i, id) =>
       val loadSequence = value.clientId
-        .map(cid => Effect(SeqexecWebClient.loadSequence(i, id, observer, cid).map(_ => NoAction)))
+        .map(
+          cid =>
+            Effect(
+              SeqexecWebClient
+                .loadSequence(i, id, observer, cid)
+                .map(_ => NoAction)))
         .getOrElse(VoidEffect)
       val update = SODLocationFocus.sod.modify(_.markAsLoading(id))
       updatedLE(update, loadSequence)

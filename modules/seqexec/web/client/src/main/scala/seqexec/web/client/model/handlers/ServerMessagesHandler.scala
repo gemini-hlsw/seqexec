@@ -4,7 +4,6 @@
 package seqexec.web.client.handlers
 
 import cats.implicits._
-import diode.Action
 import diode.ActionHandler
 import diode.ActionResult
 import diode.Effect
@@ -15,7 +14,6 @@ import seqexec.model.Observer
 import seqexec.model.SequencesQueue
 import seqexec.model.SequenceView
 import seqexec.model.StepState
-import seqexec.model.SequenceState
 import seqexec.model.events._
 import seqexec.web.client.lenses.sequenceStepT
 import seqexec.web.client.lenses.sequenceViewT
@@ -74,11 +72,11 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
 
   val stepCompletedMessage: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(e @ StepExecuted(obsId, sv)) =>
-    val curStep =
-      for {
-          obs      <- sequenceViewT.find(_.id === obsId)(e)
-          curSIdx  <- obs.runningStep.map(_.last)
-          curStep  <- sequenceStepT.find(_.id === curSIdx)(obs)
+      val curStep =
+        for {
+          obs     <- sequenceViewT.find(_.id === obsId)(e)
+          curSIdx <- obs.runningStep.map(_.last)
+          curStep <- sequenceStepT.find(_.id === curSIdx)(obs)
           if curStep.observeStatus === ActionStatus.Pending && curStep.status === StepState.Running
           if curStep.configStatus.map(_._2).forall(_ === ActionStatus.Pending)
         } yield curStep
@@ -90,9 +88,9 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
   val sequenceCompletedMessage: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(SequenceCompleted(sv)) =>
       // Play audio when the sequence completes
-      val audioEffect = Effect(Future(SequenceCompleteAudio.play()).map(_ => NoAction))
-      val rememberCompleted = Effect(Future(sv.sessionQueue.find(_.status === SequenceState.Completed).fold(NoAction: Action)(RememberCompleted.apply)))
-      updated(value.copy(sequences = filterSequences(sv)), audioEffect + rememberCompleted)
+      val audioEffect = Effect(
+        Future(SequenceCompleteAudio.play()).map(_ => NoAction))
+      updated(value.copy(sequences = filterSequences(sv)), audioEffect)
   }
 
   val sequenceUnloadedMessage: PartialFunction[Any, ActionResult[M]] = {
@@ -103,21 +101,24 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
   val sequenceOnErrorMessage: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(SequenceError(_, sv)) =>
       // Play audio when the sequence gets into an error state
-      val audioEffect = Effect(Future(SequenceErrorAudio.play()).map(_ => NoAction))
+      val audioEffect = Effect(
+        Future(SequenceErrorAudio.play()).map(_ => NoAction))
       updated(value.copy(sequences = filterSequences(sv)), audioEffect)
   }
 
   val sequencePausedMessage: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(SequencePaused(_, sv)) =>
       // Play audio when the sequence gets paused
-      val audioEffect = Effect(Future(SequencePausedAudio.play()).map(_ => NoAction))
+      val audioEffect = Effect(
+        Future(SequencePausedAudio.play()).map(_ => NoAction))
       updated(value.copy(sequences = filterSequences(sv)), audioEffect)
   }
 
   val exposurePausedMessage: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(ExposurePaused(_, sv)) =>
       // Play audio when the sequence gets paused
-      val audioEffect = Effect(Future(ExposurePausedAudio.play()).map(_ => NoAction))
+      val audioEffect = Effect(
+        Future(ExposurePausedAudio.play()).map(_ => NoAction))
       updated(value.copy(sequences = filterSequences(sv)), audioEffect)
   }
 
