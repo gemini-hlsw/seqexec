@@ -374,6 +374,7 @@ object TcsController {
     case object M2     extends Subsystem
 
     val all: NonEmptyList[Subsystem] = NonEmptyList.of(OIWFS, P1WFS, P2WFS, AGUnit, Mount, M1, M2)
+    val allButOI: NonEmptyList[Subsystem] = NonEmptyList.of(P1WFS, P2WFS, AGUnit, Mount, M1, M2)
 
     implicit val show: Show[Subsystem] = Show.show { _.productPrefix }
     implicit val equal: Eq[Subsystem] = Eq.fromUniversalEquals
