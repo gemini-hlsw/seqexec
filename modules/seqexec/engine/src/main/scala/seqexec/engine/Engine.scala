@@ -310,7 +310,7 @@ class Engine[D, U](stateL: Lens[D, Engine.State]) {
   private def inspect[A](f: D => A): HandleType[A] =
     Handle.inspect(f)
 
-  private def modify(f: D => D): HandleType[Unit] =
+  def modify(f: D => D): HandleType[Unit] =
     Handle.modify(f)
 
   private def getS(id: Observation.Id): HandleType[Option[Sequence.State]] = get.map(stateL.get(_).sequences.get(id))

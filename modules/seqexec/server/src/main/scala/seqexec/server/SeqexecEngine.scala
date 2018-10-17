@@ -249,34 +249,38 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
   def cmdStateO(qid: QueueId): Optional[EngineState, BatchCommandState] =
     queueO(qid) ^|-> ExecutionQueue.cmdState
 
-  private def addSeqs(qid: QueueId, seqIds: List[Observation.Id]): Endo[EngineState] = st => (
-    for {
-      q    <- st.queues.get(qid)
-      seqs <- seqIds.filter(sid => st.executionState.sequences.get(sid).map(seq => !seq.status.isRunning && !seq.status.isCompleted && !q.queue.contains(sid)).getOrElse(false)).some.filter(_.nonEmpty)
-      if (q.status(st) =!= BatchExecState.Running)
-    } yield queueO(qid).modify(_.addSeqs(seqs))(st)
-  ).getOrElse(st)
+  private def addSeqs(qid: QueueId, seqIds: List[Observation.Id]): executeEngine.HandleType[Unit] =
+    executeEngine.get.flatMap{ st => (
+      for {
+        q <- st.queues.get(qid)
+        seqs <- seqIds.filter(sid => st.executionState.sequences.get(sid)
+          .map(seq => !seq.status.isRunning && !seq.status.isCompleted && !q.queue.contains(sid))
+          .getOrElse(false)).some.filter(_.nonEmpty)
+        if (!seqs.isEmpty)
+      } yield executeEngine.modify(queueO(qid).modify(_.addSeqs(seqs))) *>
+        ((q.cmdState, q.status(st)) match {
+        case (_, BatchExecState.Completed)       => ((EngineState.queues ^|-? index(qid) ^|-> ExecutionQueue.cmdState)
+          .set(BatchCommandState.Idle) >>> {(_, ())}).toHandle
+        case (BatchCommandState.Run(o, u, c), _) => runQueue(qid, o, u, c)
+        case _                                   => executeEngine.unit
+      })
+    ).getOrElse(executeEngine.unit)}
 
-  def addSequencesToQueue(q: EventQueue, qid: QueueId, seqIds: List[Observation.Id]): IO[Either[SeqexecFailure, Unit]] = q.enqueue1(
-    Event.modifyState[executeEngine.ConcreteTypes]((addSeqs(qid, seqIds) withEvent UpdateQueueAdd(qid, seqIds)).toHandle)
+  def addSequencesToQueue(q: EventQueue, qid: QueueId, seqIds: List[Observation.Id])
+  : IO[Either[SeqexecFailure, Unit]] = q.enqueue1(
+    Event.modifyState[executeEngine.ConcreteTypes](addSeqs(qid, seqIds)
+      .map[executeEngine.ConcreteTypes#EventData](_ => UpdateQueueAdd(qid, seqIds)))
   ).map(_.asRight)
 
-  private def addSeq(qid: QueueId, seqId: Observation.Id): Endo[EngineState] = st => (
-    for {
-      q   <- st.queues.get(qid)
-      seq <- st.executionState.sequences.get(seqId)
-      if (q.status(st) =!= BatchExecState.Running && !seq.status.isRunning && !seq.status.isCompleted && !q.queue.contains(seqId))
-    } yield queueO(qid).modify(_.addSeq(seqId))(st)
-  ).getOrElse(st)
-
-  def addSequenceToQueue(q: EventQueue, qid: QueueId, seqId: Observation.Id): IO[Either[SeqexecFailure, Unit]] = q.enqueue1(
-    Event.modifyState[executeEngine.ConcreteTypes]((addSeq(qid, seqId) withEvent UpdateQueueAdd(qid, List(seqId))).toHandle)
-  ).map(_.asRight)
+  def addSequenceToQueue(q: EventQueue, qid: QueueId, seqId: Observation.Id): IO[Either[SeqexecFailure, Unit]] =
+    addSequencesToQueue(q, qid, List(seqId))
 
   private def removeSeq(qid: QueueId, seqId: Observation.Id): Endo[EngineState] = st => (
     for {
       q <- st.queues.get(qid)
-      if (q.status(st) =!= BatchExecState.Running && q.queue.contains(seqId))
+      if (q.queue.contains(seqId))
+      if (q.status(st) =!= BatchExecState.Running || st.executionState.sequences.get(seqId)
+        .map(seq => !seq.status.isRunning && !seq.status.isCompleted).getOrElse(true))
     } yield queueO(qid).modify(_.removeSeq(seqId))(st)
   ).getOrElse(st)
 
@@ -287,7 +291,7 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
   private def moveSeq(qid: QueueId, seqId: Observation.Id, d: Int): Endo[EngineState] = st => (
     for {
       q <- st.queues.get(qid)
-      if (q.status(st) =!= BatchExecState.Running && q.queue.contains(seqId))
+      if (q.queue.contains(seqId))
     } yield queueO(qid).modify(_.moveSeq(seqId, d))(st)
   ).getOrElse(st)
 
@@ -328,10 +332,12 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
 
   def startQueue(q: EventQueue, qid: QueueId, observer: Observer, user: UserDetails, clientId: ClientId): IO[Either[SeqexecFailure, Unit]] = q.enqueue1(
     Event.modifyState[executeEngine.ConcreteTypes](executeEngine.get.flatMap{ st => {
-      queueO(qid).getOption(st).map {
+      queueO(qid).getOption(st).filter(!_.queue.isEmpty).map {
         _.status(st) match {
-          case BatchExecState.Idle     => ((EngineState.queues ^|-? index(qid) ^|-> ExecutionQueue.cmdState).set(BatchCommandState.Run(observer, user, clientId)) >>> {(_, ())}).toHandle *> runQueue(qid, observer, user, clientId)
-          case BatchExecState.Stopping => ((EngineState.queues ^|-? index(qid) ^|-> ExecutionQueue.cmdState).set(BatchCommandState.Run(observer, user, clientId)) >>> {(_, ())}).toHandle
+          case BatchExecState.Idle |
+               BatchExecState.Stopping => ((EngineState.queues ^|-? index(qid) ^|-> ExecutionQueue.cmdState)
+            .set(BatchCommandState.Run(observer, user, clientId)) >>> {(_, ())}).toHandle *>
+            runQueue(qid, observer, user, clientId)
           case _                       => executeEngine.unit
         }
       }.getOrElse(executeEngine.unit)
@@ -349,7 +355,8 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
     Event.modifyState[executeEngine.ConcreteTypes](executeEngine.get.flatMap{ st =>
       queueO(qid).getOption(st).map {
         _.status(st) match {
-          case BatchExecState.Running => (cmdStateO(qid).set(BatchCommandState.Stop) >>> {(_, ())}).toHandle *> stopSequencesInQueue(qid)
+          case BatchExecState.Running => (cmdStateO(qid).set(BatchCommandState.Stop) >>> {(_, ())}).toHandle *>
+            stopSequencesInQueue(qid)
           case BatchExecState.Waiting => (cmdStateO(qid).set(BatchCommandState.Stop) >>> {(_, ())}).toHandle
           case _                      => executeEngine.unit
         }
@@ -443,7 +450,8 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
             st
           } else {
             (EngineState.sequences.modify(ss => ss - seqId) >>>
-             EngineState.selected.modify(ss => ss.toList.filter{case (_, x) => x =!= seqId}.toMap))(st)
+             EngineState.selected.modify(ss => ss.toList.filter{case (_, x) => x =!= seqId}.toMap) >>>
+             EngineState.queues.modify(_.mapValues(ExecutionQueue.queue.modify(_.filterNot(_ === seqId)))))(st)
           }
       } withEvent UnloadSequence(seqId)).toHandle
     )
@@ -609,7 +617,7 @@ object SeqexecEngine extends SeqexecConfiguration {
     val seqInfos = st.sequences.map { case (id, ObserverSequence(_, seq)) => id -> ((seq.resources, st.executionState.sequences.get(id))) }.collect { case (id, (res, Some(s))) => id -> ((res, s.status)) }
     // Set of resources used by all running sequences
     val used = seqInfos.collect { case (_, (res, status)) if (status.isRunning) => res }.foldRight(Set[Resource]())(_.union(_))
-    // For each observations in the queue that is not yet run, retrieve the required resources
+    // For each observation in the queue that is not yet run, retrieve the required resources
     val obs = st.queues.get(qid).map(_.queue.fproduct(seqInfos.get).collect {
       case (id, Some((res, status))) if (!status.isRunning && !status.isCompleted) => id -> res
     }).orEmpty
