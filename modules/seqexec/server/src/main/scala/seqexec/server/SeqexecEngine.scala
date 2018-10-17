@@ -450,7 +450,8 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
             st
           } else {
             (EngineState.sequences.modify(ss => ss - seqId) >>>
-             EngineState.selected.modify(ss => ss.toList.filter{case (_, x) => x =!= seqId}.toMap))(st)
+             EngineState.selected.modify(ss => ss.toList.filter{case (_, x) => x =!= seqId}.toMap) >>>
+             EngineState.queues.modify(_.mapValues(ExecutionQueue.queue.modify(_.filterNot(_ === seqId)))))(st)
           }
       } withEvent UnloadSequence(seqId)).toHandle
     )
