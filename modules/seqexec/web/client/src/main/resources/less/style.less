@@ -301,16 +301,16 @@ body {
 
 @keyframes calRowFlash {
   0% {
-    background: none;
-    color: inherit;
+    background-color: @background;
+    // color: inherit;
   }
   50% {
-    background: lightblue;
-    color: @white;
+    background-color: lightblue;
+    // color: @white;
   }
   100% {
-    background: none;
-    color: inherit;
+    background-color: @background;
+    // color: inherit;
   }
 }
 
@@ -318,7 +318,7 @@ body {
   animation-name: calRowFlash;
   animation-duration: 0.7s;
   animation-timing-function: linear;
-  animation-fill-mode: both;
+  animation-fill-mode: none;
   animation-iteration-count: 2;
 }
 
@@ -472,8 +472,20 @@ body {
   outline: none;
 }
 
+@keyframes pullUpRow {
+  0% {
+    transform: none;
+  }
+  100% {
+    transform: translateY(-100%);
+  }
+}
+
 .SeqexecStyles-draggableRow {
-  .borderTop() !important;
+  animation-name: pullUpRow;
+  animation-duration: 0.5s;
+  animation-timing-function: linear;
+  animation-iteration-count: 1;
 }
 
 .SeqexecStyles-observeConfig {

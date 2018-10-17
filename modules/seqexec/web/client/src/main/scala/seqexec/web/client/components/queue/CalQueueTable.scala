@@ -108,8 +108,19 @@ object CalQueueTable {
       case _                                         => Nil
     }
 
-    println(data.lastOp)
-    println(addedRows)
+    val upLifted: List[Int] = {
+      data.seqs.zipWithIndex
+        .find {
+          case (s, _) =>
+            seqState(s.id).exists(
+              _.removeSeqQueue === RemoveSeqQueue.RemoveSeqQueueInFlight)
+        }
+        .map(_._2)
+        .map { i =>
+          ((i + 1) to rowCount).toList
+        }
+        .getOrElse(Nil)
+    }
 
     val cmp: Unmounted[js.Object, Null] = {
       val view         = component
@@ -184,16 +195,17 @@ object CalQueueTable {
             color    = "brown".some,
             disabled = !p.data.canOperate,
             compact  = true,
-            onClick =
-              SeqexecCircuit.dispatchCB(RequestRemoveSeqCal(p.queueId, r.obsId)),
-              extraStyles = List(SeqexecStyles.autoMargin),
+            onClick = SeqexecCircuit.dispatchCB(
+              RequestRemoveSeqCal(p.queueId, r.obsId)),
+            extraStyles = List(SeqexecStyles.autoMargin),
             icon = p
               .seqState(r.obsId)
-              .filter(_.removeSeqQueue === RemoveSeqQueue.RemoveSeqQueueInFlight)
+              .filter(
+                _.removeSeqQueue === RemoveSeqQueue.RemoveSeqQueueInFlight)
               .fold(IconTimes)(_ => IconRefresh.copyIcon(loading = true))
               .some
           ))
-      )
+    )
 
   private def colBuilder(
     b:    Backend,
@@ -244,9 +256,7 @@ object CalQueueTable {
         SeqexecStyles.headerRowStyle
       case (_, CalQueueRow(i, _)) if p.addedRows.contains(i) =>
         SeqexecStyles.stepRow |+| SeqexecStyles.calRowBackground
-      case (r, CalQueueRow(i, _)) if p.addedRows.contains(i) && r > 0 =>
-        SeqexecStyles.stepRow |+| SeqexecStyles.draggableRow |+| SeqexecStyles.calRowBackground
-      case (r, _) if r > 0 =>
+      case (i, _) if p.upLifted.contains(i) =>
         SeqexecStyles.stepRow |+| SeqexecStyles.draggableRow
       case _ =>
         SeqexecStyles.stepRow
@@ -258,6 +268,9 @@ object CalQueueTable {
       SeqexecCircuit.dispatchCB(
         UpdateCalTableState(b.props.queueId, s.tableState))
   }
+
+  private def collapsableStyle: (Int, Style) => Style =
+    (_, s) => s
 
   def table(b: Backend)(size: Size): VdomNode =
     Table(
@@ -280,7 +293,7 @@ object CalQueueTable {
         headerClassName  = SeqexecStyles.tableHeader.htmlClass,
         scrollTop        = b.state.tableState.scrollPosition,
         onScroll         = (_, _, pos) => updateScrollPosition(b, pos),
-        rowRenderer      = sortableRowRenderer,
+        rowRenderer      = sortableRowRenderer(collapsableStyle),
         headerHeight     = SeqexecStyles.headerHeight,
         gridClassName =
           if (b.props.clearOp) SeqexecStyles.calTableBorder.htmlClass else ""
