@@ -347,7 +347,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
     }).unsafeRunSync
   }
 
-  it should "not remove sequence id if queue is running" in {
+  it should "not remove sequence id if sequence is running" in {
     val s0 = (SeqexecEngine.loadSequenceEndo(seqObsId1, sequence(seqObsId1)) >>>
       SeqexecEngine.loadSequenceEndo(seqObsId2, sequence(seqObsId2)) >>>
       (EngineState.queues ^|-? index(CalibrationQueueId) ^|-> ExecutionQueue.queue).modify(_ ++ List(seqObsId1, seqObsId2)) >>>

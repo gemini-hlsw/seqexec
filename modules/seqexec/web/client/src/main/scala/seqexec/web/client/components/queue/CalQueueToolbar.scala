@@ -53,7 +53,7 @@ object CalQueueToolbar {
     val anyRunning: Boolean =
       clearCalRunning || addDayCalRunning || runRunning || stopRunning
 
-    val queueRunning: Boolean = control.state.running
+    val queueRunning: Boolean = control.execState.running
   }
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]

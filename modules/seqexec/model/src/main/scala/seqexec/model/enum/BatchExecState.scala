@@ -6,7 +6,13 @@ package seqexec.model.enum
 import cats.Eq
 import cats.Show
 
-sealed trait BatchExecState extends Product with Serializable
+sealed trait BatchExecState extends Product with Serializable {
+  def running: Boolean = this match {
+    case BatchExecState.Running |
+         BatchExecState.Waiting => true
+    case _                      => false
+  }
+}
 
 object BatchExecState {
   case object Idle extends BatchExecState // Queue is not running, and has unfinished sequences.
