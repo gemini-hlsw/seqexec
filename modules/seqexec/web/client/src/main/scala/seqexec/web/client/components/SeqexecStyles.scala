@@ -273,4 +273,6 @@ object SeqexecStyles {
     GStyle.fromString("SeqexecStyles-calRowBackground")
 
   val autoMargin: GStyle = GStyle.fromString("SeqexecStyles-autoMargin")
+
+  val draggableRow: GStyle = GStyle.fromString("SeqexecStyles-draggableRow")
 }

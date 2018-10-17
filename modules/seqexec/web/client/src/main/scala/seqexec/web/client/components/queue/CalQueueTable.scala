@@ -45,7 +45,7 @@ object CalQueueTable {
   case object ObsIdColumn extends TableColumn
   case object InstrumentColumn extends TableColumn
 
-  private val RemoveColumnWidth  = 34.0
+  private val RemoveColumnWidth  = 30.0
   private val ObsIdMinWidth      = 66.2167 + SeqexecStyles.TableBorderWidth
   private val InstrumentMinWidth = 90.4333 + SeqexecStyles.TableBorderWidth
 
@@ -162,12 +162,12 @@ object CalQueueTable {
 
   val obsIdRenderer: CellRenderer[js.Object, js.Object, CalQueueRow] =
     (_, _, _, r: CalQueueRow, _) => {
-      <.p(SeqexecStyles.queueTextColumn, r.obsId.format)
+      <.p(SeqexecStyles.queueText, r.obsId.format)
     }
 
   val instrumentRenderer: CellRenderer[js.Object, js.Object, CalQueueRow] =
     (_, _, _, r: CalQueueRow, _) => {
-      <.p(SeqexecStyles.queueTextColumn, r.instrument.show)
+      <.p(SeqexecStyles.queueText, r.instrument.show)
     }
 
   def removeSeqRenderer(
@@ -219,7 +219,7 @@ object CalQueueTable {
             cellRenderer = renderer(c),
             headerRenderer = resizableHeaderRenderer(
               state.tableState.resizeRow(c, size, updateState)),
-            className = SeqexecStyles.paddedStepRow.htmlClass
+            className = SeqexecStyles.queueTextColumn.htmlClass
           ))
       case ColumnRenderArgs(ColumnMeta(c, name, label, _, _),
                             _,
@@ -232,7 +232,7 @@ object CalQueueTable {
                              cellRenderer = renderer(c),
                              className =
                                if (c === InstrumentColumn)
-                                 SeqexecStyles.paddedStepRow.htmlClass
+                                 SeqexecStyles.queueTextColumn.htmlClass
                                else "")
         )
     }
@@ -244,6 +244,10 @@ object CalQueueTable {
         SeqexecStyles.headerRowStyle
       case (_, CalQueueRow(i, _)) if p.addedRows.contains(i) =>
         SeqexecStyles.stepRow |+| SeqexecStyles.calRowBackground
+      case (r, CalQueueRow(i, _)) if p.addedRows.contains(i) && r > 0 =>
+        SeqexecStyles.stepRow |+| SeqexecStyles.draggableRow |+| SeqexecStyles.calRowBackground
+      case (r, _) if r > 0 =>
+        SeqexecStyles.stepRow |+| SeqexecStyles.draggableRow
       case _ =>
         SeqexecStyles.stepRow
     }).htmlClass
