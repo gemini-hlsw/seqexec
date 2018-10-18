@@ -7,7 +7,7 @@ import seqexec.model.enum._
 import seqexec.model._
 import seqexec.model.events._
 import cats.tests.CatsSuite
-import _root_.boopickle.Default._
+import _root_.boopickle.DefaultBasic._
 import org.scalacheck.Arbitrary._
 import seqexec.model.SeqexecModelArbitraries._
 import seqexec.model.SequenceEventsArbitraries._
@@ -66,5 +66,15 @@ final class BoopicklingSpec extends CatsSuite with ModelBooPicklers {
   checkAll("Pickler[SkyBackground]", PicklerTests[SkyBackground].pickler)
   checkAll("Pickler[CloudCover]", PicklerTests[CloudCover].pickler)
   checkAll("Pickler[Conditions]", PicklerTests[Conditions].pickler)
+  checkAll("Pickler[Notification]", PicklerTests[Notification].pickler)
   checkAll("Pickler[UserNotification]", PicklerTests[UserNotification].pickler)
+  checkAll("Pickler[UserLoginRequest]", PicklerTests[UserLoginRequest].pickler)
+  checkAll("Pickler[Instrument]", PicklerTests[Instrument].pickler)
+  checkAll("Pickler[Resource]", PicklerTests[Resource].pickler)
+  checkAll("Pickler[SystemName]", PicklerTests[SystemName].pickler)
+  checkAll("Pickler[SequenceState]", PicklerTests[SequenceState].pickler)
+  checkAll("Pickler[StepState]", PicklerTests[StepState].pickler)
+  checkAll("Pickler[ActionStatus]", PicklerTests[ActionStatus].pickler)
+  checkAll("Pickler[StandardStep]", PicklerTests[StandardStep].pickler)
+  checkAll("Pickler[QueueId]", PicklerTests[QueueId].pickler)
 }

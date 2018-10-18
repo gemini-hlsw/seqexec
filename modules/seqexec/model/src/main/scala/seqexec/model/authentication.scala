@@ -7,6 +7,11 @@ import cats.Eq
 
 // Shared classes used for authentication
 final case class UserLoginRequest(username: String, password: String)
+
+object UserLoginRequest {
+  implicit val eq: Eq[UserLoginRequest] = Eq.fromUniversalEquals
+}
+
 final case class UserDetails(username: String, displayName: String)
 
 object UserDetails {

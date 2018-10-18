@@ -3,7 +3,7 @@
 
 package seqexec.model.boopickle
 
-import boopickle.Default._
+import boopickle.DefaultBasic._
 import cats.Eq
 import cats.tests.CatsSuite
 import gem.{ProgramId, Observation}
