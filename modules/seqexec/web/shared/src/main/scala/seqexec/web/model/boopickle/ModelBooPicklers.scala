@@ -4,6 +4,7 @@
 package seqexec.model.boopickle
 
 import boopickle.DefaultBasic._
+import cats.Traverse
 import cats.implicits._
 import gem.Observation
 import java.time.Instant
@@ -27,30 +28,36 @@ import seqexec.model.events._
     "org.wartremover.warts.OptionPartial"
   ))
 trait ModelBooPicklers extends GemModelBooPicklers {
-  //**********************
-  // IMPORTANT The order of the picklers is very relevant to the generated size
-  // add them with care
-  //**********************
+  def valuesMap[F[_]: Traverse, A, B](c: F[A], f: A => B): Map[B, A] =
+    c.fproduct(f).map(_.swap).toList.toMap
+
+  val instrumentIdx = valuesMap(Instrument.all, (x: Instrument) => x.ordinal)
+
   implicit val instrumentPickler = transformPickler(
     (t: Int) =>
-      Instrument.all
-        .find(_.ordinal === t)
+      instrumentIdx
+        .get(t)
         .getOrElse(throw new RuntimeException("Failed to decode instrument")))(
     _.ordinal)
 
+  val resourceIdx =
+    valuesMap(Instrument.allResources, (x: Resource) => x.ordinal)
+
   implicit val resourcePickler = transformPickler(
     (t: Int) =>
-      Instrument.allResources
-        .find(_.ordinal === t)
+      resourceIdx
+        .get(t)
         .getOrElse(throw new RuntimeException("Failed to decode resource")))(
     _.ordinal)
 
   implicit val operatorPickler = generatePickler[Operator]
 
+  val sysNameIdx = valuesMap(SystemName.all, (x: SystemName) => x.system)
+
   implicit val systemNamePickler = transformPickler(
     (t: String) =>
-      SystemName.all
-        .find(_.system === t)
+      sysNameIdx
+        .get(t)
         .getOrElse(throw new RuntimeException("Failed to decode system name")))(
     _.system)
 
@@ -61,30 +68,41 @@ trait ModelBooPicklers extends GemModelBooPicklers {
   implicit val instantPickler =
     transformPickler((t: Long) => Instant.ofEpochMilli(t))(_.toEpochMilli)
 
+  val cloudCoverIdx = valuesMap(CloudCover.all, (x: CloudCover) => x.toInt)
+
   implicit val cloudCoverPickler = transformPickler(
     (t: Int) =>
-      CloudCover.all
-        .find(_.toInt === t)
+      cloudCoverIdx
+        .get(t)
         .getOrElse(throw new RuntimeException("Failed to decode cloud cover")))(
     _.toInt)
 
+  val imageQualityIdx =
+    valuesMap(ImageQuality.all, (x: ImageQuality) => x.toInt)
+
   implicit val imageQualityPickler = transformPickler((t: Int) =>
-    ImageQuality.all
-      .find(_.toInt === t)
+    imageQualityIdx
+      .get(t)
       .getOrElse(throw new RuntimeException("Failed to decode image quality")))(
     _.toInt)
 
+  val skyBackgroundIdx =
+    valuesMap(SkyBackground.all, (x: SkyBackground) => x.toInt)
+
   implicit val skyBackgroundPickler = transformPickler(
     (t: Int) =>
-      SkyBackground.all
-        .find(_.toInt === t)
-        .getOrElse(throw new RuntimeException(
-          "Failed to decode sky background")))(_.toInt)
+      skyBackgroundIdx
+        .get(t)
+        .getOrElse(
+          throw new RuntimeException("Failed to decode sky background")))(
+    _.toInt)
+
+  val waterVaporIdx = valuesMap(WaterVapor.all, (x: WaterVapor) => x.toInt)
 
   implicit val waterVaporPickler = transformPickler(
     (t: Int) =>
-      WaterVapor.all
-        .find(_.toInt === t)
+      waterVaporIdx
+        .get(t)
         .getOrElse(throw new RuntimeException("Failed to decode water vapor")))(
     _.toInt)
 
@@ -112,14 +130,13 @@ trait ModelBooPicklers extends GemModelBooPicklers {
                                     (3 -> ActionStatus.Paused),
                                     (4 -> ActionStatus.Failed))
 
-  implicit val actionStatusPickler =
-    transformPickler(
-      (t: Int) =>
-        actionStatusIdx
-          .get(t)
-          .getOrElse(
-            throw new RuntimeException("Falied to decode action status")))(t =>
-      actionStatusIdx.find { case (_, v) => v === t }.map(_._1).getOrElse(-1))
+  implicit val actionStatusPickler = transformPickler(
+    (t: Int) =>
+      actionStatusIdx
+        .get(t)
+        .getOrElse(
+          throw new RuntimeException("Falied to decode action status")))(t =>
+    actionStatusIdx.find { case (_, v) => v === t }.map(_._1).getOrElse(-1))
 
   implicit val stepStatePendingPickler = generatePickler[StepState.Pending.type]
   implicit val stepStateCompletedPickler =
@@ -170,14 +187,13 @@ trait ModelBooPicklers extends GemModelBooPicklers {
                                  (1 -> ServerLogLevel.WARN),
                                  (2 -> ServerLogLevel.ERROR))
 
-  implicit val serverLogLevelPickler =
-    transformPickler(
-      (t: Int) =>
-        serverLogIdx
-          .get(t)
-          .getOrElse(
-            throw new RuntimeException("Falied to decode server log level")))(
-      t => serverLogIdx.find { case (_, v) => v === t }.map(_._1).getOrElse(-1))
+  implicit val serverLogLevelPickler = transformPickler(
+    (t: Int) =>
+      serverLogIdx
+        .get(t)
+        .getOrElse(
+          throw new RuntimeException("Falied to decode server log level")))(t =>
+    serverLogIdx.find { case (_, v) => v === t }.map(_._1).getOrElse(-1))
 
   implicit val clientIdPickler = generatePickler[ClientId]
   implicit val batchCommandStateIdlePickler =
@@ -197,14 +213,13 @@ trait ModelBooPicklers extends GemModelBooPicklers {
                                       (3 -> BatchExecState.Stopping),
                                       (4 -> BatchExecState.Completed))
 
-  implicit val batchExecStatePickler =
-    transformPickler(
-      (t: Int) =>
-        batchExecStateIdx
-          .get(t)
-          .getOrElse(throw new RuntimeException(
-            "Falied to decode batch exec state")))(t =>
-      batchExecStateIdx.find { case (_, v) => v === t }.map(_._1).getOrElse(-1))
+  implicit val batchExecStatePickler = transformPickler(
+    (t: Int) =>
+      batchExecStateIdx
+        .get(t)
+        .getOrElse(
+          throw new RuntimeException("Falied to decode batch exec state")))(t =>
+    batchExecStateIdx.find { case (_, v) => v === t }.map(_._1).getOrElse(-1))
 
   implicit val executionQueuePickler = generatePickler[ExecutionQueueView]
 
