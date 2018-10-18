@@ -50,7 +50,7 @@ object CalQueueToolbar {
     val stopRunning: Boolean =
       control.ops.stopCalRequested === StopCalOperation.StopCalInFlight
 
-    val anyRunning: Boolean =
+    val anyInFlight: Boolean =
       clearCalRunning || addDayCalRunning || runRunning || stopRunning
 
     val queueRunning: Boolean = control.execState.running
@@ -77,7 +77,7 @@ object CalQueueToolbar {
         else IconCloneOutline,
       color    = "blue",
       onClick  = allDayCal(p.queueId),
-      disabled = !p.canOperate || p.anyRunning || p.queueRunning,
+      disabled = !p.canOperate || p.anyInFlight || p.queueRunning,
       tooltip  = "Add all sequences on the session queue",
       text     = "Add all"
     )
@@ -89,7 +89,7 @@ object CalQueueToolbar {
         else IconTrashOutline,
       color    = "brown",
       onClick  = clearAllCal(p.queueId),
-      disabled = !p.canOperate || p.anyRunning || p.queueRunning,
+      disabled = !p.canOperate || p.anyInFlight || p.queueRunning,
       tooltip  = "Remove all sequences on the calibration queue",
       text     = "Clear"
     )
@@ -101,7 +101,7 @@ object CalQueueToolbar {
         else IconPlay,
       color    = "blue",
       onClick  = runCal(p.queueId),
-      disabled = !p.canOperate || p.anyRunning,
+      disabled = !p.canOperate || p.anyInFlight,
       tooltip  = "Run the calibration queue",
       text     = "Run"
     )
@@ -113,7 +113,7 @@ object CalQueueToolbar {
         else IconStop,
       color    = "teal",
       onClick  = stopCal(p.queueId),
-      disabled = !p.canOperate || p.anyRunning,
+      disabled = !p.canOperate || p.anyInFlight,
       tooltip  = "Stop the calibration queue",
       text     = "Stop"
     )
@@ -130,11 +130,12 @@ object CalQueueToolbar {
             ^.cls := "ui left floated column",
             <.div(
               SeqexecStyles.controlButtons,
-              addAllButton(p),
-              clearAllButton(p),
-              runButton(p).unless(p.queueRunning),
+              addAllButton(p).unless(p.queueRunning),
+              clearAllButton(p).unless(
+                p.queueRunning || p.control.queueSize === 0),
+              runButton(p).unless(p.queueRunning || p.control.queueSize === 0),
               stopButton(p).when(p.queueRunning)
-          )
+            )
           )
         )
       )

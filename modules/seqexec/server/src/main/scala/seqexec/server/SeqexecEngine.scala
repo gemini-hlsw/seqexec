@@ -366,7 +366,7 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
 
   // It assumes only one queue can run at a time
   private val iterateQueues: PartialFunction[SystemEvent, executeEngine.HandleType[Unit]] = {
-    case Finished(_) => executeEngine.get.map(st => st.queues.collect{
+    case Finished(_) => executeEngine.get.map(st => st.queues.collect {
       case (qid, q@ExecutionQueue(_, BatchCommandState.Run(observer, user, clid), _))
         if q.status(st) =!= BatchExecState.Completed =>
           (qid, observer, user, clid)
