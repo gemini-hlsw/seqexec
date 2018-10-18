@@ -97,8 +97,11 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
     val used = st.sequences.mapValues(_.seq.resources)
       .map(Function.tupled(filterSeqResources(_.status.isRunning))).toList.foldMap(identity)
     // Resources that will be used by sequences in running queues
-    def failedInQueue(q: ExecutionQueue): Set[Resource] = q.queue.map(sid => st.sequences.get(sid).map(x => (sid, Set(x.seq.instrument: Resource))).map(Function.tupled(filterSeqResources(_.status.isError)))
-      ).collect{case Some(x) => x}.foldMap(identity)
+    def failedInQueue(q: ExecutionQueue): Set[Resource] = q.queue.map(sid =>
+      st.sequences.get(sid).map(x => (sid, Set(x.seq.instrument: Resource))).map(
+        Function.tupled(filterSeqResources(_.status.isError))
+      )
+    ).collect{case Some(x) => x}.foldMap(identity)
 
     val usedByQueues = st.queues
       .filter{ case (_, q) => q.status(st) === BatchExecState.Running || q.status(st) === BatchExecState.Waiting }
@@ -126,16 +129,19 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
                     v: Boolean): IO[Either[SeqexecFailure, Unit]] =
     q.enqueue1(Event.breakpoint(seqId, user, stepId, v)).map(_.asRight)
 
-  def setOperator(q: EventQueue, user: UserDetails, name: Operator): IO[Either[SeqexecFailure, Unit]] =
-     q.enqueue1(Event.logDebugMsg(s"SeqexecEngine: Setting Operator name to '$name' by ${user.username}")) *>
-     q.enqueue1(Event.modifyState[executeEngine.ConcreteTypes]((EngineState.operator.set(name.some) >>> refreshSequences withEvent SetOperator(name, user.some)).toHandle)).map(_.asRight)
+  def setOperator(q: EventQueue, user: UserDetails, name: Operator): IO[Either[SeqexecFailure,
+    Unit]] = q.enqueue1(Event.logDebugMsg(s"SeqexecEngine: Setting Operator name to '$name' by " +
+    s"${user.username}")) *> q.enqueue1(Event.modifyState[executeEngine.ConcreteTypes](
+    (EngineState.operator.set(name.some) >>> refreshSequences withEvent SetOperator(name,
+      user.some)).toHandle)).map(_.asRight)
 
   def setObserver(q: EventQueue,
                   seqId: Observation.Id,
                   user: UserDetails,
                   name: Observer): IO[Either[SeqexecFailure, Unit]] =
     q.enqueue1(Event.logDebugMsg(s"SeqexecEngine: Setting Observer name to '$name' for sequence '${seqId.format}' by ${user.username}")) *>
-        q.enqueue1(Event.modifyState[executeEngine.ConcreteTypes](((EngineState.sequences ^|-? index(seqId)).modify(ObserverSequence.observer.set(name.some)) >>> refreshSequence(seqId) withEvent SetObserver(seqId, user.some, name)).toHandle)).map(_.asRight)
+        q.enqueue1(Event.modifyState[executeEngine.ConcreteTypes](
+          ((EngineState.sequences ^|-? index(seqId)).modify(ObserverSequence.observer.set(name.some)) >>> refreshSequence(seqId) withEvent SetObserver(seqId, user.some, name)).toHandle)).map(_.asRight)
 
   def selectSequenceEvent(i: Instrument, sid: Observation.Id, observer: Observer, user: UserDetails, clientId: ClientId): executeEngine.EventType= {
     val lens =
@@ -228,7 +234,8 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
     }
   }
 
-  private[server] def stream(p: Stream[IO, executeEngine.EventType])(s0: EngineState): Stream[IO, (executeEngine.ResultType, EngineState)] =
+  private[server] def stream(p: Stream[IO, executeEngine.EventType])(s0: EngineState)
+  : Stream[IO, (executeEngine.ResultType, EngineState)] =
     executeEngine.process(iterateQueues)(p)(s0)
 
   def stopObserve(q: EventQueue, seqId: Observation.Id): IO[Unit] = q.enqueue1(
@@ -296,8 +303,10 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
         })
     ).getOrElse(executeEngine.unit)}
 
-  def removeSequenceFromQueue(q: EventQueue, qid: QueueId, seqId: Observation.Id): IO[Either[SeqexecFailure, Unit]] = q.enqueue1(
-    Event.modifyState[executeEngine.ConcreteTypes](removeSeq(qid, seqId).map[executeEngine.ConcreteTypes#EventData](_ => UpdateQueueRemove(qid, List(seqId))))
+  def removeSequenceFromQueue(q: EventQueue, qid: QueueId, seqId: Observation.Id)
+  : IO[Either[SeqexecFailure, Unit]] = q.enqueue1(
+    Event.modifyState[executeEngine.ConcreteTypes](removeSeq(qid, seqId)
+      .map[executeEngine.ConcreteTypes#EventData](_ => UpdateQueueRemove(qid, List(seqId))))
   ).map(_.asRight)
 
   private def moveSeq(qid: QueueId, seqId: Observation.Id, d: Int): Endo[EngineState] = st => (
@@ -307,8 +316,10 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
     } yield queueO(qid).modify(_.moveSeq(seqId, d))(st)
   ).getOrElse(st)
 
-  def moveSequenceInQueue(q: EventQueue, qid: QueueId, seqId: Observation.Id, d: Int): IO[Either[SeqexecFailure, Unit]] = q.enqueue1(
-    Event.modifyState[executeEngine.ConcreteTypes]((moveSeq(qid, seqId, d) withEvent UpdateQueueMoved(qid)).toHandle)
+  def moveSequenceInQueue(q: EventQueue, qid: QueueId, seqId: Observation.Id, d: Int)
+  : IO[Either[SeqexecFailure, Unit]] = q.enqueue1(
+    Event.modifyState[executeEngine.ConcreteTypes](
+      (moveSeq(qid, seqId, d) withEvent UpdateQueueMoved(qid)).toHandle)
   ).map(_.asRight)
 
   private def clearQ(qid: QueueId): Endo[EngineState]= st => (
@@ -319,9 +330,15 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
   ).getOrElse(st)
 
   def clearQueue(q: EventQueue, qid: QueueId): IO[Either[SeqexecFailure, Unit]] = q.enqueue1(
-    Event.modifyState[executeEngine.ConcreteTypes]((clearQ(qid) withEvent UpdateQueueClear(qid)).toHandle)
+    Event.modifyState[executeEngine.ConcreteTypes](
+      (clearQ(qid) withEvent UpdateQueueClear(qid)).toHandle)
   ).map(_.asRight)
 
+
+  /* Most of the magic for the ExecutionQueue is done here and in nextRunnableObservations.
+   * runQueue finds the next eligible sequences in queue qid, and starts them. If called in a queue
+   * that already have all possible sequences running, it does nothing.
+   */
   private def runQueue(qid: QueueId, observer: Observer, user: UserDetails, clientId: ClientId): executeEngine.HandleType[Unit] = {
     def setObserverAndSelect(sid: Observation.Id): executeEngine.HandleType[Unit] = Handle(StateT[IO, EngineState, (Unit, Option[Stream[IO, executeEngine.EventType]])]{ st:EngineState => IO(
       (EngineState.sequences ^|-? index(sid)).getOption(st).map{ obsseq =>
@@ -330,7 +347,9 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
           EngineState.instrumentLoadedL(obsseq.seq.instrument).set(sid.some) >>>
           {(_, ((), Stream[executeEngine.EventType](
             Event.modifyState[executeEngine.ConcreteTypes](
-              { {s:EngineState => s} withEvent(AddLoadedSequence(obsseq.seq.instrument, sid, user, clientId))}.toHandle
+              { {s:EngineState => s} withEvent
+                AddLoadedSequence(obsseq.seq.instrument, sid, user, clientId)
+              }.toHandle
             )
           ).covary[IO].some))}
         )(st)
@@ -344,7 +363,7 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
 
   def startQueue(q: EventQueue, qid: QueueId, observer: Observer, user: UserDetails, clientId: ClientId): IO[Either[SeqexecFailure, Unit]] = q.enqueue1(
     Event.modifyState[executeEngine.ConcreteTypes](executeEngine.get.flatMap{ st => {
-      queueO(qid).getOption(st).filter(!_.queue.isEmpty).map {
+      queueO(qid).getOption(st).filterNot(_.queue.isEmpty).map {
         _.status(st) match {
           case BatchExecState.Idle |
                BatchExecState.Stopping => ((EngineState.queues ^|-? index(qid) ^|-> ExecutionQueue.cmdState)
@@ -616,12 +635,15 @@ object SeqexecEngine extends SeqexecConfiguration {
   }
 
   /**
-    * Find the observations in an execution queue that would be run next, taking into account the resources
-    * required by each observation and teh resources currently in use and the resources . The order in the queue
-    * defines the priority of the observations.
+    * Find the observations in an execution queue that would be run next, taking into account the
+    * resources required by each observation and the resources currently in use.
+    * The order in the queue defines the priority of the observations.
+    * Failed sequences in the queue keep their instruments taken, preventing that the queue starts
+    * other sequences for those isntruments.
     * @param qid The execution queue id
     * @param st The current engine state
-    * @return The set of all observations in the execution queue `qid` that can be started to run in parallel.
+    * @return The set of all observations in the execution queue `qid` that can be started to run
+    *         in parallel.
     */
   def nextRunnableObservations(qid: QueueId)(st: EngineState): Set[Observation.Id] = {
     // For each observation id, retrieve the set of resources required to run that observation, and it current
