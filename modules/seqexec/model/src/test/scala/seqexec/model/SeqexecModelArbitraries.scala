@@ -462,6 +462,18 @@ trait SeqexecModelArbitraries extends ArbObservation {
            List[Observation.Id])]
       .contramap(x => (x.id, x.name, x.cmdState, x.execState, x.queue))
 
+  implicit val arbUserLoginRequest: Arbitrary[UserLoginRequest] =
+    Arbitrary {
+      for {
+        u <- arbitrary[String]
+        p <- arbitrary[String]
+      } yield UserLoginRequest(u, p)
+    }
+
+  implicit val userLoginRequestCogen: Cogen[UserLoginRequest] =
+    Cogen[(String, String)].contramap(x =>
+      (x.username, x.password))
+
 }
 
 object SeqexecModelArbitraries extends SeqexecModelArbitraries

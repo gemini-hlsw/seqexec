@@ -66,4 +66,7 @@ object Instrument {
   val all: NonEmptyList[Instrument] =
     gsInstruments.concatNel(gnInstruments)
 
+  val allResources: NonEmptyList[Resource] =
+    NonEmptyList.of(Resource.P1, Resource.OI, Resource.TCS, Resource.Gcal, Resource.Gems, Resource.Altair) ::: Instrument.all
+
 }
