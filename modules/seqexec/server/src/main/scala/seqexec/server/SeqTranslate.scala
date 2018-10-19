@@ -355,16 +355,20 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
     case _                => false
   }
 
-  private def flatOrArcTcsSubsystems(inst: Instrument): NonEmptyList[TcsController.Subsystem] = NonEmptyList.of(AGUnit, (if (hasOI(inst)) List(OIWFS) else List.empty): _*)
+  private def flatOrArcTcsSubsystems(inst: Instrument): NonEmptyList[TcsController.Subsystem] =
+    NonEmptyList.of(AGUnit, (if (hasOI(inst)) List(OIWFS) else List.empty): _*)
 
   private def calcSystems(stepType: StepType): TrySeq[List[System[IO]]] = {
     stepType match {
-      case CelestialObject(inst) => toInstrumentSys(inst).map(_ :: List(Tcs(systems.tcs, all, ScienceFoldPosition.Position(TcsController.LightSource.Sky, inst)), Gcal(systems.gcal, site == Site.GS)))
-      case FlatOrArc(inst)       => toInstrumentSys(inst).map(_ :: List(Tcs(systems.tcs, flatOrArcTcsSubsystems(inst), ScienceFoldPosition.Position(TcsController.LightSource.GCAL, inst)), Gcal(systems.gcal, site == Site.GS)))
+      case CelestialObject(inst) => toInstrumentSys(inst).map(_ :: List(Tcs(systems.tcs,
+        if(hasOI(inst)) all else allButOI, ScienceFoldPosition.Position(TcsController.LightSource.Sky, inst)),
+        Gcal(systems.gcal, site == Site.GS)))
+      case FlatOrArc(inst)       => toInstrumentSys(inst).map(_ :: List(Tcs(systems.tcs,
+        flatOrArcTcsSubsystems(inst), ScienceFoldPosition.Position(TcsController.LightSource.GCAL, inst)),
+        Gcal(systems.gcal, site == Site.GS)))
       case DarkOrBias(inst)      => toInstrumentSys(inst).map(List(_))
       case _                     => TrySeq.fail(Unexpected(s"Unsupported step type $stepType"))
     }
-
   }
 
   // I cannot use a sealed trait as base, because I cannot have all systems in one source file (too big),

@@ -15,8 +15,7 @@ object MainServer {
   // Run flyway migrations
   private def migrate[F[_]: Sync](db: DatabaseConfiguration): F[Int] =
     Sync[F].delay {
-      val flyway = new Flyway()
-      flyway.setDataSource(db.connectUrl, db.userName, db.password);
+      val flyway = Flyway.configure.dataSource(db.connectUrl, db.userName, db.password).load
       flyway.migrate()
     }
 

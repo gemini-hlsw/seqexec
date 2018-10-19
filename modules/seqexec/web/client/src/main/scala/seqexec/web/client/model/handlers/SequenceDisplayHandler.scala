@@ -4,8 +4,11 @@
 package seqexec.web.client.handlers
 
 import cats.implicits._
-import diode.{ ActionHandler, ActionResult, ModelRW }
-import seqexec.model.{ SequenceView, SequencesQueue }
+import diode.ActionHandler
+import diode.ActionResult
+import diode.ModelRW
+import seqexec.model.SequenceView
+import seqexec.model.SequencesQueue
 import seqexec.web.client.actions._
 import seqexec.web.client.circuit._
 
@@ -37,6 +40,11 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, SequencesFocus])
 
   }
 
+  def handleCalTabObserver: PartialFunction[Any, ActionResult[M]] = {
+    case UpdateCalTabObserver(o) =>
+      updatedL(SequencesFocus.sod.modify(_.updateCalTabObserver(o)))
+  }
+
   def handleShowHideStep: PartialFunction[Any, ActionResult[M]] = {
     case ShowPreviewStepConfig(i, id, step) =>
       val seq = SequencesQueue
@@ -59,11 +67,6 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, SequencesFocus])
 
   }
 
-  def handleRememberCompleted: PartialFunction[Any, ActionResult[M]] = {
-    case RememberCompleted(s) =>
-      updatedL(SequencesFocus.sod.modify(_.markCompleted(s)))
-  }
-
   def handleClean: PartialFunction[Any, ActionResult[M]] = {
     case CleanSequences =>
       updatedL(SequencesFocus.sod.modify(_.cleanAll))
@@ -71,12 +74,12 @@ class SequenceDisplayHandler[M](modelRW: ModelRW[M, SequencesFocus])
 
   def handleLoadFailed: PartialFunction[Any, ActionResult[M]] = {
     case SequenceLoadFailed(id) =>
-      updatedL(SequencesFocus.sod.modify(_.loadingComplete(id)))
+      updatedL(SequencesFocus.sod.modify(_.loadingFailed(id)))
   }
 
   override def handle: PartialFunction[Any, ActionResult[M]] =
     List(handleSelectSequenceDisplay,
          handleShowHideStep,
          handleLoadFailed,
-         handleRememberCompleted).combineAll
+         handleCalTabObserver).combineAll
 }

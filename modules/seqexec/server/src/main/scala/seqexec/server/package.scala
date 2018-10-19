@@ -156,11 +156,12 @@ package object server {
       val statuses: Seq[SequenceState] = q.queue.map(st.executionState.sequences.get(_).map(_.status))
         .collect{ case Some(x) => x }
 
-      if(statuses.forall(_.isCompleted)) BatchExecState.Completed
-      else q.cmdState match {
+
+      q.cmdState match {
         case BatchCommandState.Idle         => BatchExecState.Idle
-        case BatchCommandState.Run(_, _, _) => if(statuses.exists(_.isRunning)) BatchExecState.Running
-                                               else BatchExecState.Waiting
+        case BatchCommandState.Run(_, _, _) => if(statuses.forall(_.isCompleted)) BatchExecState.Completed
+                                               else if(statuses.exists(_.isRunning)) BatchExecState.Running
+                                                    else BatchExecState.Waiting
         case BatchCommandState.Stop         => if(statuses.exists(_.isRunning)) BatchExecState.Stopping
                                                else BatchExecState.Idle
       }

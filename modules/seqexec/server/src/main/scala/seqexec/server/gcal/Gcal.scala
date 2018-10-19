@@ -6,11 +6,15 @@ package seqexec.server.gcal
 import cats._
 import cats.implicits._
 import cats.effect.IO
+import cats.data.EitherT
 import java.util.{Set => JSet}
+
 import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.gemini.calunit.CalUnitConstants._
 import edu.gemini.spModel.gemini.calunit.CalUnitParams.Lamp
 import edu.gemini.spModel.seqcomp.SeqConfigNames.CALIBRATION_KEY
+import org.log4s.{Logger, getLogger}
+
 import scala.Function.const
 import scala.collection.JavaConverters._
 import seqexec.model.enum.Resource
@@ -25,13 +29,21 @@ import seqexec.server._
 final case class Gcal(controller: GcalController, isCP: Boolean) extends System[IO] {
   import Gcal._
 
+  private val Log: Logger = getLogger
+
   override val resource: Resource = Resource.Gcal
 
   /**
     * Called to configure a system, returns a IO[Either[SeqexecFailure, ConfigResult]]
     */
-  override def configure(config: Config): SeqAction[ConfigResult[IO]] = (controller.getConfig, fromSequenceConfig(config, isCP)).mapN(diffConfiguration)
-    .flatMap(controller.applyConfig).map(const(ConfigResult(this)))
+  override def configure(config: Config): SeqAction[ConfigResult[IO]] = for{
+    _ <- EitherT.right(IO(Log.info("Start GCAL configuration")))
+    reqCfg <- fromSequenceConfig(config, isCP)
+    _ <- EitherT.right(IO(Log.debug(s"GCAL configuration: ${reqCfg.show}")))
+    currCfg <- controller.getConfig
+    ret <- controller.applyConfig(diffConfiguration(currCfg, reqCfg)).map(const(ConfigResult(this)))
+    _ <- EitherT.right(IO(Log.info("Completed GCAL configuration")))
+  } yield ret
 
   override def notifyObserveStart: SeqAction[Unit] = SeqAction.void
 

@@ -3,7 +3,7 @@
 
 package seqexec.model.boopickle
 
-import boopickle.Default._
+import boopickle.DefaultBasic._
 import gem.{ProgramId, Observation}
 import gem.math.Index
 import java.time.{LocalDate, Year}

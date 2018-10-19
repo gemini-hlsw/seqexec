@@ -159,7 +159,10 @@ final case class ObsKeywordReaderImpl(config: Config, site: Site) extends ObsKey
 
   override def getOiwfsGuide: SeqAction[StandardGuideOptions.Value] =
     SeqAction.either(config.extractAs[StandardGuideOptions.Value](new ItemKey(TELESCOPE_KEY, GUIDE_WITH_OIWFS_PROP))
-      .leftMap(explainExtractError))
+      .recoverWith[ConfigUtilOps.ExtractFailure, StandardGuideOptions.Value] {
+        case ConfigUtilOps.KeyNotFound(_)         => StandardGuideOptions.Value.park.asRight
+        case e@ConfigUtilOps.ConversionError(_,_) => e.asLeft
+      }.leftMap(explainExtractError))
 
   override def getAowfsGuide: SeqAction[StandardGuideOptions.Value] =
     SeqAction.either(config.extractAs[StandardGuideOptions.Value](new ItemKey(TELESCOPE_KEY, Tcs.GUIDE_WITH_AOWFS_PROP))

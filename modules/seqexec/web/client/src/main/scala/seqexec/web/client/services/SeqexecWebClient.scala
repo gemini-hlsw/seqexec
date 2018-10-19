@@ -341,7 +341,7 @@ object SeqexecWebClient extends ModelBooPicklers {
     Ajax
       .post(
         url =
-          s"$baseUrl/commands/queue/${encodeURI(queueId.show)}/remove/${encodeURI(id.format)}",
+          s"$baseUrl/commands/queue/${encodeURI(queueId.self.show)}/remove/${encodeURI(id.format)}",
         responseType = "arraybuffer"
       )
       .map(_ => ())
@@ -360,11 +360,14 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
     * Runs a queue
     */
-  def runQueue(queueId: QueueId, clientId: ClientId): Future[Unit] =
+  def runQueue(queueId:  QueueId,
+               clientId: ClientId,
+               observer: Observer): Future[Unit] =
     Ajax
       .post(
         url =
-          s"$baseUrl/commands/queue/${encodeURI(queueId.self.show)}/run/${encodeURI(clientId.self.show)}",
+          s"$baseUrl/commands/queue/${encodeURI(queueId.self.show)}/run/${encodeURI(
+            observer.value)}/${encodeURI(clientId.self.show)}",
         responseType = "arraybuffer"
       )
       .map(_ => ())

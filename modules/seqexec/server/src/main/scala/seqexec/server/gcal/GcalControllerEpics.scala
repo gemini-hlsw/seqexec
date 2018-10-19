@@ -4,13 +4,18 @@
 package seqexec.server.gcal
 
 import cats.implicits._
+import squants.Time
 import edu.gemini.spModel.gemini.calunit.CalUnitParams.{Diffuser, Filter, Shutter}
 import edu.gemini.seqexec.server.gcal.BinaryOnOff
 import seqexec.server.{EpicsCodex, SeqAction}
+import squants.time.Seconds
 
 object GcalControllerEpics extends GcalController {
   import EpicsCodex._
   import GcalController._
+
+  // Default value from Tcl Seqexec
+  private val SetupTimeout: Time = Seconds(60)
 
   implicit private val decodeLampState: DecodeEpicsValue[BinaryOnOff, LampState] = DecodeEpicsValue {
     (v: BinaryOnOff) =>
@@ -172,10 +177,10 @@ object GcalControllerEpics extends GcalController {
         config.diffuser.map(v => GcalEpics.instance.diffuserCmd.setName(encode(v)))
       ).collect { case Some(x) => x }
 
-    if (params.isEmpty) SeqAction(())
-    else for {
-      _ <- params.sequence
-      _ <- GcalEpics.instance.post
-    } yield ()
+    if (params.isEmpty) SeqAction.void
+    else params.sequence *>
+      GcalEpics.instance.lampsCmd.setTimeout(SetupTimeout) *>
+      GcalEpics.instance.post *>
+      SeqAction.void
   }
 }

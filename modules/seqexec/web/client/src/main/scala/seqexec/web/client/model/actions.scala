@@ -99,8 +99,6 @@ object actions {
   final case class RemoveSeqCalCompleted(qid: QueueId) extends Action
   final case class RemoveSeqCalFailed(qid:    QueueId, id: Observation.Id) extends Action
 
-  final case class RememberCompleted(s: SequenceView) extends Action
-
   final case class AppendToLog(l: ServerLogMessage) extends Action
   final case object ToggleLogArea extends Action
 
@@ -119,6 +117,7 @@ object actions {
 
   final case class UpdateObserver(id: Observation.Id, name: Observer) extends Action
   final case class UpdateDefaultObserver(name: Observer) extends Action
+  final case class UpdateCalTabObserver(name:  Observer) extends Action
   final case class UpdateOperator(name:        Operator) extends Action
   final case class UpdateImageQuality(iq:      ImageQuality) extends Action
   final case class UpdateCloudCover(cc:        CloudCover) extends Action
@@ -163,8 +162,6 @@ object actions {
              .collect(standardStep)))
       val dayCalQueue = view.queues.values.map(x => s"${x.execState} ${x.queue}").mkString(",")
       s"${s.getClass.getSimpleName}(${u.getClass.getSimpleName}, dayCal: '${dayCalQueue}', loaded: '${view.loaded.mkString(",")}', $someSteps)"
-    case s @ RememberCompleted(view)                    =>
-      s"${s.getClass.getSimpleName}(${view.id})"
     case a                                              =>
       s"$a"
   }

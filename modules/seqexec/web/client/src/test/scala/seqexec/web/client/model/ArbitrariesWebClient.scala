@@ -142,13 +142,16 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
       for {
         ts <- arbitrary[TableState[StepsTable.TableColumn]]
         st <- arbitrary[BatchExecState]
-      } yield CalibrationQueueTab(ts, st)
+        o  <- arbitrary[Option[Observer]]
+      } yield CalibrationQueueTab(ts, st, o)
     }
 
   implicit val cqtCogen: Cogen[CalibrationQueueTab] =
-    Cogen[(TableState[StepsTable.TableColumn], BatchExecState)].contramap { x =>
-      (x.tableState, x.state)
-    }
+    Cogen[
+      (TableState[StepsTable.TableColumn], BatchExecState, Option[Observer])]
+      .contramap { x =>
+        (x.tableState, x.state, x.observer)
+      }
 
   implicit val arbQueueSeqOperations: Arbitrary[QueueSeqOperations] =
     Arbitrary {
@@ -159,7 +162,6 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
 
   implicit val sopCogen: Cogen[QueueSeqOperations] =
     Cogen[RemoveSeqQueue].contramap(x => x.removeSeqQueue)
-
 
   implicit val arbInstrumentSequenceTab: Arbitrary[InstrumentSequenceTab] =
     Arbitrary {
@@ -361,9 +363,10 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
         g <- arbitrary[Boolean]
         i <- arbitrary[Option[Instrument]]
         d <- arbitrary[Option[Observation.Id]]
+        c <- arbitrary[Boolean]
         s <- arbitrary[TabSelected]
         l <- arbitrary[SectionVisibilityState]
-      } yield SequenceTabContentFocus(g, i, d, s, l)
+      } yield SequenceTabContentFocus(g, i, d, c, s, l)
     }
 
   implicit val stcfCogen: Cogen[SequenceTabContentFocus] =

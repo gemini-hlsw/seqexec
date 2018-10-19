@@ -273,7 +273,7 @@ object SequenceDefaultToolbar {
             ^.cls := "ui left floated column eight wide computer eight wide tablet only",
             p.controlReader(_() match {
               case Some(c) => SequenceControl(SequenceControl.Props(c))
-              case _       => ReactFragment()
+              case _       => <.div()
             })
           ),
           <.div(
@@ -281,7 +281,7 @@ object SequenceDefaultToolbar {
             SeqexecStyles.infoOnControl,
             p.observerReader(_() match {
               case Some(p) => SequenceInfo(SequenceInfo.Props(p))
-              case _       => ReactFragment()
+              case _       => <.div()
             })
           )
         )

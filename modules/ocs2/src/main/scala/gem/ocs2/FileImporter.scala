@@ -36,8 +36,7 @@ object FileImporter extends DoobieClient {
 
   val clean: IO[Int] =
     IO {
-      val flyway = new Flyway()
-      flyway.setDataSource(conf.connectUrl, conf.userName, conf.password)
+      val flyway = Flyway.configure.dataSource(conf.connectUrl, conf.userName, conf.password).load
       flyway.clean()
       flyway.migrate()
     }

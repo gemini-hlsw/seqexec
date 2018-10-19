@@ -5,6 +5,7 @@ package seqexec.web.client
 
 import cats.tests.CatsSuite
 import gem.Observation
+import scala.collection.immutable.SortedMap
 import seqexec.model.enum.Instrument
 import seqexec.model.SequenceMetadata
 import seqexec.model.SequenceView
@@ -76,7 +77,7 @@ final class SequencesOnDisplaySpec extends CatsSuite with ArbitrariesWebClient {
     val sod3 = sod.unsetPreviewOn(obsId)
     sod3.tabs.length should be(1)
     sod3.tabs.focus should matchPattern {
-      case CalibrationQueueTab(_, _) =>
+      case CalibrationQueueTab(_, _, _) =>
     }
   }
   test("Update loaded") {
@@ -86,7 +87,7 @@ final class SequencesOnDisplaySpec extends CatsSuite with ArbitrariesWebClient {
     val queue  = List(s)
     val loaded = Map((Instrument.GPI: Instrument) -> obsId)
     val sod = SequencesOnDisplay.Empty.updateFromQueue(
-      SequencesQueue(loaded, Conditions.Default, None, Map.empty, queue))
+      SequencesQueue(loaded, Conditions.Default, None, SortedMap.empty, queue))
     sod.tabs.length should be(2)
     sod.tabs.toList.lift(1) should matchPattern {
       case Some(InstrumentSequenceTab(_, s, _, _, _, _))
@@ -100,7 +101,7 @@ final class SequencesOnDisplaySpec extends CatsSuite with ArbitrariesWebClient {
     val queue  = List(s)
     val loaded = Map((Instrument.GPI: Instrument) -> obsId)
     val sod = SequencesOnDisplay.Empty.updateFromQueue(
-      SequencesQueue(loaded, Conditions.Default, None, Map.empty, queue))
+      SequencesQueue(loaded, Conditions.Default, None, SortedMap.empty, queue))
 
     val obs2 = Observation.Id.unsafeFromString("GS-2018A-Q-0-2")
     val s2   = SequenceView(obs2, m, SequenceState.Idle, Nil, None)

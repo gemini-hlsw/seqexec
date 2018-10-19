@@ -3,7 +3,7 @@
 
 package seqexec.server.gcal
 
-import cats.Eq
+import cats.{Eq, Show}
 import cats.implicits._
 import seqexec.server.SeqAction
 import edu.gemini.spModel.gemini.calunit.CalUnitParams.Shutter
@@ -118,5 +118,19 @@ object GcalController {
       Some(ir), Some(sh), Some(flt), Some(diff))
 
   }
+
+  implicit val gcalConfigShow: Show[GcalConfig] = Show.show( config =>
+    List(
+      s"lampAr = ${config.lampAr}",
+      s"lampCuar = ${config.lampCuAr}",
+      s"lampQH = ${config.lampQh}",
+      s"lampThAr = ${config.lampThAr}",
+      s"lampXe = ${config.lampXe}",
+      s"lampIr = ${config.lampIr}",
+      s"shutter = ${config.shutter}",
+      s"filter = ${config.filter}",
+      s"diffuser = ${config.diffuser}"
+    ).mkString
+  )
 
 }
