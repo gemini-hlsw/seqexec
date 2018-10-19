@@ -85,13 +85,13 @@ object Settings {
     val catsEffectVersion       = "1.0.0"
     val catsVersion             = "1.4.0"
     val mouseVersion            = "0.18"
-    val fs2Version              = "1.0.0-RC1"
+    val fs2Version              = "1.0.0"
     val shapelessVersion        = "2.3.3"
     val attoVersion             = "0.6.3"
     val scalaParsersVersion     = "1.1.1"
     val scalaXmlVerson          = "1.1.1"
 
-    val http4sVersion           = "0.19.0-M4"
+    val http4sVersion           = "0.19.0"
     val squants                 = "1.3.0"
     val argonaut                = "6.2.2"
     val commonsHttp             = "2.0.2"
@@ -102,13 +102,13 @@ object Settings {
     val logback                 = "1.2.3"
     val janino                  = "3.0.10"
     val logstash                = "5.2"
-    val knobs                   = "6.0.33"
+    val knobs                   = "7.0.24"
     val monocleVersion          = "1.5.1-cats"
     val circeVersion            = "0.10.0"
-    val doobieVersion           = "0.6.0-M3"
-    val flywayVersion           = "5.1.4"
+    val doobieVersion           = "0.6.0"
+    val flywayVersion           = "5.2.0"
     val tucoVersion             = "0.4.1"
-    val declineVersion          = "0.4.2"
+    val declineVersion          = "0.5.1"
 
     // test libraries
     val scalaTest               = "3.0.5"
@@ -179,7 +179,7 @@ object Settings {
     val Log4s                  = "org.log4s"                          %%  "log4s"                    % LibraryVersions.log4s
     val PrometheusClient       = "io.prometheus"                      %   "simpleclient_common"      % LibraryVersions.prometheusClient
     val Logging                = Seq(JuliSlf4j, Log4s) ++ Logback
-    val Knobs                  = "io.verizon.knobs"                   %%  "core"                     % LibraryVersions.knobs
+    val Knobs                  = "io.getnelson.knobs"                 %%  "core"                     % LibraryVersions.knobs
     val OpenCSV                = "net.sf.opencsv"                     %   "opencsv"                  % LibraryVersions.opencsv
     val Squants                = Def.setting("org.typelevel"          %%% "squants"                  % LibraryVersions.squants)
     val ScalaXml               = Def.setting("org.scala-lang.modules" %%% "scala-xml"                % LibraryVersions.scalaXmlVerson)
@@ -272,7 +272,7 @@ object Settings {
   object PluginVersions {
     // Compiler plugins
     val paradiseVersion    = "2.1.1"
-    val kpVersion          = "0.9.7"
+    val kpVersion          = "0.9.8"
   }
 
   object Plugins {
