@@ -103,12 +103,34 @@ object CalQueueTable {
       case _                                  => false
     }
 
+    /**
+      * Rows added on the last operation
+      */
     val addedRows: List[Observation.Id] = data.lastOp match {
       case Some(QueueManipulationOp.AddedSeqs(_, x)) => x
       case _                                         => Nil
     }
 
-    val upLifted: List[Int] = {
+    /**
+      * Rows deleted on the last operation
+      */
+    val removedRows: List[Int] = data.lastOp match {
+      case Some(QueueManipulationOp.RemovedSeqs(_, _, i)) => i
+      case _                                              => Nil
+    }
+
+    val afterDeletedRows: List[Int] =
+      data.seqs.zipWithIndex
+        .find {
+          case (_, i) => removedRows.contains(i)
+        }
+        .map(_._2)
+        .map { i =>
+          (i to rowCount).toList
+        }
+        .getOrElse(Nil)
+
+    val upLifted: List[Int] =
       data.seqs.zipWithIndex
         .find {
           case (s, _) =>
@@ -120,7 +142,6 @@ object CalQueueTable {
           ((i + 1) to rowCount).toList
         }
         .getOrElse(Nil)
-    }
 
     val cmp: Unmounted[js.Object, Null] = {
       val view         = component
@@ -256,8 +277,10 @@ object CalQueueTable {
         SeqexecStyles.headerRowStyle
       case (_, CalQueueRow(i, _)) if p.addedRows.contains(i) =>
         SeqexecStyles.stepRow |+| SeqexecStyles.calRowBackground
+      case (i, CalQueueRow(_, _)) if p.afterDeletedRows.contains(i) =>
+        SeqexecStyles.stepRow |+| SeqexecStyles.calRowBackground
       case (i, _) if p.upLifted.contains(i) =>
-        SeqexecStyles.stepRow |+| SeqexecStyles.draggableRow
+        SeqexecStyles.stepRow |+| SeqexecStyles.deletedRow
       case _ =>
         SeqexecStyles.stepRow
     }).htmlClass
