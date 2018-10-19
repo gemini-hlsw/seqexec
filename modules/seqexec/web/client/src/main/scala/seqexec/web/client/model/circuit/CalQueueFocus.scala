@@ -41,6 +41,29 @@ object CalQueueFocus {
     CalQueueFocus.seqOps                               ^|->>
       filterIndex((oid: Observation.Id) => oid === id)
 
+  // All metadata of the given obs
+  def calSeq(
+    id: Observation.Id
+  ): Getter[SeqexecAppRootModel, Option[CalQueueSeq]] =
+    SeqexecAppRootModel.sequences.composeGetter(CalQueueSeq.calQueueSeqG(id))
+
+  def calTS(
+    id: QueueId
+  ): Lens[SeqexecAppRootModel, Option[TableState[CalQueueTable.TableColumn]]] =
+    SeqexecAppRootModel.uiModel        ^|->
+      AppTableStates.tableStateL       ^|->
+      AppTableStates.queueTableAtL(id)
+
+  private def seqOpsL(id: QueueId) =
+    SeqexecAppRootModel.uiModel             ^|->
+      SeqexecUIModel.queues                 ^|-?
+      CalibrationQueues.calStateSeqOpsT(id)
+
+  private def qLastOpL(id: QueueId) =
+    SeqexecAppRootModel.uiModel        ^|->
+      SeqexecUIModel.queues            ^|-?
+      CalibrationQueues.calLastOpO(id)
+
   // A fairly complicated getter
   def calQueueG(
     id: QueueId
@@ -51,38 +74,14 @@ object CalQueueFocus {
         ExecutionQueueView.queue               ^|->>
         each
 
-    // All metadata of the given obs
-    def calSeq(
-      id: Observation.Id
-    ): Getter[SeqexecAppRootModel, Option[CalQueueSeq]] =
-      SeqexecAppRootModel.sequences.composeGetter(CalQueueSeq.calQueueSeqG(id))
-
-    def calTS(
-      id: QueueId
-    ): Lens[SeqexecAppRootModel,
-                         Option[TableState[CalQueueTable.TableColumn]]] =
-      SeqexecAppRootModel.uiModel        ^|->
-        AppTableStates.tableStateL       ^|->
-        AppTableStates.queueTableAtL(id)
-
     // combine
     val calQueueSeqG = (s: SeqexecAppRootModel) =>
       ids.getAll(s).map(i => calSeq(i).get(s))
 
-    val seqOpsL =
-      SeqexecAppRootModel.uiModel             ^|->
-        SeqexecUIModel.queues                 ^|-?
-        CalibrationQueues.calStateSeqOpsT(id)
-
-    val qLastOpL =
-      SeqexecAppRootModel.uiModel        ^|->
-        SeqexecUIModel.queues            ^|-?
-        CalibrationQueues.calLastOpO(id)
-
     ClientStatus.clientStatusFocusL.asGetter
       .zip(
-        Getter(calQueueSeqG).zip(calTS(id).asGetter.zip(
-          Getter(seqOpsL.getOption).zip(Getter(qLastOpL.getOption))))) >>> {
+        Getter(calQueueSeqG).zip(calTS(id).asGetter.zip(Getter(
+          seqOpsL(id).getOption).zip(Getter(qLastOpL(id).getOption))))) >>> {
       case (status, (ids, (ts, (seqOps, lastOp)))) =>
         val obsIds = ids.collect { case Some(x) => x }
         CalQueueFocus(status.canOperate,

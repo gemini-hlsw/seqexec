@@ -14,10 +14,12 @@ import japgolly.scalajs.react.component.Js.Unmounted
 import japgolly.scalajs.react.component.builder.Lifecycle.RenderScope
 import japgolly.scalajs.react.extra.Reusability
 import japgolly.scalajs.react.raw.JsNumber
+import japgolly.scalajs.react.extra.TimerSupport
 import monocle.macros.Lenses
 import react.virtualized._
 import react.sortable._
 import scala.scalajs.js
+import scala.concurrent.duration._
 import seqexec.model.QueueId
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.QueueManipulationOp
@@ -28,6 +30,7 @@ import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.reusability._
 import seqexec.web.client.actions.RequestRemoveSeqCal
 import seqexec.web.client.actions.UpdateCalTableState
+// import seqexec.web.client.actions.CleanQueueOp
 import seqexec.web.client.semanticui.elements.button.Button
 import seqexec.web.client.semanticui.elements.icon.Icon.IconTimes
 import seqexec.web.client.semanticui.elements.icon.Icon.IconRefresh
@@ -38,7 +41,9 @@ import web.client.table._
   * Calibration queue table
   */
 object CalQueueTable {
-  type Backend = RenderScope[Props, State, Unit]
+  class CalQueueTableBackend extends TimerSupport
+
+  type Backend = RenderScope[Props, State, CalQueueTableBackend]
 
   sealed trait TableColumn extends Product with Serializable
   case object RemoveSeqColumn extends TableColumn
@@ -152,7 +157,8 @@ object CalQueueTable {
   }
 
   @Lenses
-  final case class State(tableState: TableState[TableColumn])
+  final case class State(tableState:        TableState[TableColumn],
+                         animationRendered: Boolean)
 
   @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object State {
@@ -160,12 +166,13 @@ object CalQueueTable {
       TableState(NotModified, 0, all)
     val ROTableState: TableState[TableColumn] =
       TableState(NotModified, 0, ro)
-    val DefaultRO: State       = State(ROTableState)
-    val DefaultEditable: State = State(EditableTableState)
+    val DefaultRO: State = State(ROTableState, animationRendered = false)
+    val DefaultEditable: State =
+      State(EditableTableState, animationRendered = false)
   }
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
-  implicit val stateReuse: Reusability[State] = Reusability.derive[State]
+  implicit val stateReuse: Reusability[State] = Reusability.by(_.tableState)
 
   // ScalaJS defined trait
   // scalastyle:off
@@ -271,15 +278,17 @@ object CalQueueTable {
     }
   }
 
-  def rowClassName(p: Props)(i: Int): String =
+  def rowClassName(p: Props, s: State)(i: Int): String =
     ((i, p.rowGetter(i)) match {
       case (-1, _) =>
         SeqexecStyles.headerRowStyle
-      case (_, CalQueueRow(i, _)) if p.addedRows.contains(i) =>
+      case (_, CalQueueRow(i, _))
+          if p.addedRows.contains(i) && !s.animationRendered =>
         SeqexecStyles.stepRow |+| SeqexecStyles.calRowBackground
-      case (i, CalQueueRow(_, _)) if p.afterDeletedRows.contains(i) =>
+      case (i, CalQueueRow(_, _))
+          if p.afterDeletedRows.contains(i) && !s.animationRendered =>
         SeqexecStyles.stepRow |+| SeqexecStyles.calRowBackground
-      case (i, _) if p.upLifted.contains(i) =>
+      case (i, _) if p.upLifted.contains(i) && !s.animationRendered =>
         SeqexecStyles.stepRow |+| SeqexecStyles.deletedRow
       case _ =>
         SeqexecStyles.stepRow
@@ -310,7 +319,7 @@ object CalQueueTable {
         height           = size.height.toInt,
         rowCount         = b.props.rowCount,
         rowHeight        = SeqexecStyles.rowHeight,
-        rowClassName     = rowClassName(b.props) _,
+        rowClassName     = rowClassName(b.props, b.state) _,
         width            = size.width.toInt,
         rowGetter        = b.props.rowGetter _,
         headerClassName  = SeqexecStyles.tableHeader.htmlClass,
@@ -319,7 +328,9 @@ object CalQueueTable {
         rowRenderer      = sortableRowRenderer(collapsableStyle),
         headerHeight     = SeqexecStyles.headerHeight,
         gridClassName =
-          if (b.props.clearOp) SeqexecStyles.calTableBorder.htmlClass else ""
+          if (b.props.clearOp && !b.state.animationRendered)
+            SeqexecStyles.calTableBorder.htmlClass
+          else ""
       ),
       b.state.tableState.columnBuilder(size, colBuilder(b, size)): _*
     ).vdomElement
@@ -336,14 +347,20 @@ object CalQueueTable {
   private val component = ScalaComponent
     .builder[Props]("CalQueueTable")
     .initialStateFromProps(initialState)
-    .renderP { (b, _) =>
+    .backend(_ => new CalQueueTableBackend)
+    .render( b =>
       <.div(
         SeqexecStyles.stepsListPaneWithControls.when(b.props.canOperate),
         SeqexecStyles.stepsListPanePreview.unless(b.props.canOperate),
         AutoSizer(AutoSizer.props(table(b)))
       )
-    }
+    )
+    .componentDidMount(c =>
+      // Reset the animation in 1 sec
+      c.backend.setInterval(c.modState(_.copy(animationRendered = true)),
+                            1.second))
     .configure(Reusability.shouldComponentUpdate)
+    .configure(TimerSupport.install)
     .build
 
 }

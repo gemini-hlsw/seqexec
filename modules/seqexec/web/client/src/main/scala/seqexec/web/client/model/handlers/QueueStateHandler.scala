@@ -39,7 +39,7 @@ class QueueStateHandler[M](modelRW: ModelRW[M, CalibrationQueues])
       updatedL(CalibrationQueues.calLastOpO(qid).set(m.some))
 
     case ServerMessage(
-        QueueUpdated(m @ QueueManipulationOp.RemovedSeqs(qid, seqs), _)) =>
+        QueueUpdated(m @ QueueManipulationOp.RemovedSeqs(qid, seqs, _), _)) =>
       updatedL(
         CalibrationQueues.calLastOpO(qid).set(m.some) >>> CalibrationQueues
           .removeSeqOps(qid, seqs))
