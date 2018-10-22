@@ -151,7 +151,8 @@ object CalQueueTable {
     val cmp: Unmounted[js.Object, Null] = {
       val view         = component
       val sortableList = SortableContainer.wrap(view)
-      val p            = SortableContainer.Props()
+      // If distance is 0 we can miss some events
+      val p            = SortableContainer.Props(distance = 3)
       sortableList(p)(this)
     }
   }
@@ -209,6 +210,9 @@ object CalQueueTable {
       <.p(SeqexecStyles.queueText, r.instrument.show)
     }
 
+  private def removeSeq(qid: QueueId, sid: Observation.Id): Callback =
+    SeqexecCircuit.dispatchCB(RequestRemoveSeqCal(qid, sid))
+
   def removeSeqRenderer(
     p: Props): CellRenderer[js.Object, js.Object, CalQueueRow] =
     (_, _, _, r: CalQueueRow, _) =>
@@ -223,14 +227,13 @@ object CalQueueTable {
             color    = "brown".some,
             disabled = !p.data.canOperate,
             compact  = true,
-            onClick = SeqexecCircuit.dispatchCB(
-              RequestRemoveSeqCal(p.queueId, r.obsId)),
+            onClick = removeSeq(p.queueId, r.obsId),
             extraStyles = List(SeqexecStyles.autoMargin),
             icon = p
               .seqState(r.obsId)
               .filter(
                 _.removeSeqQueue === RemoveSeqQueue.RemoveSeqQueueInFlight)
-              .fold(IconTimes)(_ => IconRefresh.copyIcon(loading = true))
+              .fold(IconTimes.copyIcon(onClick = removeSeq(p.queueId, r.obsId)))(_ => IconRefresh.copyIcon(loading = true))
               .some
           ))
     )
