@@ -3,6 +3,7 @@
 
 package seqexec.web.client.handlers
 
+import cats.implicits._
 import diode.ActionHandler
 import diode.ActionResult
 import diode.ModelRW
@@ -21,15 +22,26 @@ class QueueStateHandler[M](modelRW: ModelRW[M, CalibrationQueues])
     with Handlers[M, CalibrationQueues] {
 
   override def handle: PartialFunction[Any, ActionResult[M]] = {
-    case ServerMessage(QueueUpdated(QueueManipulationOp.Started(qid), _)) =>
-      updatedL(CalibrationQueues.runCalL(qid).set(RunCalOperation.RunCalIdle))
-
-    case ServerMessage(QueueUpdated(QueueManipulationOp.Stopped(qid), _)) =>
+    case ServerMessage(QueueUpdated(m @ QueueManipulationOp.Started(qid), _)) =>
       updatedL(
-        CalibrationQueues.stopCalL(qid).set(StopCalOperation.StopCalIdle))
+        CalibrationQueues.calLastOpO(qid).set(m.some) >>>
+          CalibrationQueues.runCalL(qid).set(RunCalOperation.RunCalIdle))
+
+    case ServerMessage(QueueUpdated(m @ QueueManipulationOp.Stopped(qid), _)) =>
+      updatedL(
+        CalibrationQueues.calLastOpO(qid).set(m.some) >>>
+          CalibrationQueues.stopCalL(qid).set(StopCalOperation.StopCalIdle))
+
+    case ServerMessage(QueueUpdated(m @ QueueManipulationOp.AddedSeqs(qid, _), _)) =>
+      updatedL(CalibrationQueues.calLastOpO(qid).set(m.some))
+
+    case ServerMessage(QueueUpdated(m @ QueueManipulationOp.Clear(qid), _)) =>
+      updatedL(CalibrationQueues.calLastOpO(qid).set(m.some))
 
     case ServerMessage(
-        QueueUpdated(QueueManipulationOp.RemovedSeqs(qid, seqs), _)) =>
-      updatedL(CalibrationQueues.removeSeqOps(qid, seqs))
+        QueueUpdated(m @ QueueManipulationOp.RemovedSeqs(qid, seqs, _), _)) =>
+      updatedL(
+        CalibrationQueues.calLastOpO(qid).set(m.some) >>> CalibrationQueues
+          .removeSeqOps(qid, seqs))
   }
 }

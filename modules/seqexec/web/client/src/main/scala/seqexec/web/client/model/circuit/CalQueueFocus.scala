@@ -17,6 +17,7 @@ import seqexec.model.ExecutionQueueView
 import seqexec.model.QueueId
 import seqexec.web.client.model._
 import seqexec.web.client.components.queue.CalQueueTable
+import seqexec.model.enum.QueueManipulationOp
 import web.client.table.TableState
 import scala.collection.immutable.SortedMap
 
@@ -26,57 +27,69 @@ final case class CalQueueFocus(
   loggedIn:   Boolean,
   seqs:       List[CalQueueSeq],
   tableState: TableState[CalQueueTable.TableColumn],
-  seqOps:     SortedMap[Observation.Id, QueueSeqOperations])
+  seqOps:     SortedMap[Observation.Id, QueueSeqOperations],
+  lastOp:     Option[QueueManipulationOp])
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object CalQueueFocus {
   implicit val eq: Eq[CalQueueFocus] =
-    Eq.by(x => (x.canOperate, x.seqs, x.seqOps, x.tableState))
+    Eq.by(x => (x.canOperate, x.seqs, x.seqOps, x.tableState, x.lastOp))
 
-  def seqQueueOpsT(id: Observation.Id): Traversal[CalQueueFocus, QueueSeqOperations] =
+  def seqQueueOpsT(
+    id: Observation.Id
+  ): Traversal[CalQueueFocus, QueueSeqOperations] =
     CalQueueFocus.seqOps                               ^|->>
       filterIndex((oid: Observation.Id) => oid === id)
 
+  // All metadata of the given obs
+  def calSeq(
+    id: Observation.Id
+  ): Getter[SeqexecAppRootModel, Option[CalQueueSeq]] =
+    SeqexecAppRootModel.sequences.composeGetter(CalQueueSeq.calQueueSeqG(id))
+
+  def calTS(
+    id: QueueId
+  ): Lens[SeqexecAppRootModel, Option[TableState[CalQueueTable.TableColumn]]] =
+    SeqexecAppRootModel.uiModel        ^|->
+      AppTableStates.tableStateL       ^|->
+      AppTableStates.queueTableAtL(id)
+
+  private def seqOpsL(id: QueueId) =
+    SeqexecAppRootModel.uiModel             ^|->
+      SeqexecUIModel.queues                 ^|-?
+      CalibrationQueues.calStateSeqOpsT(id)
+
+  private def qLastOpL(id: QueueId) =
+    SeqexecAppRootModel.uiModel        ^|->
+      SeqexecUIModel.queues            ^|-?
+      CalibrationQueues.calLastOpO(id)
+
   // A fairly complicated getter
-  def calQueueG(id: QueueId): Getter[SeqexecAppRootModel, Option[CalQueueFocus]] = {
+  def calQueueG(
+    id: QueueId
+  ): Getter[SeqexecAppRootModel, Option[CalQueueFocus]] = {
     // All ids on the queue
     val ids: Traversal[SeqexecAppRootModel, Observation.Id] =
       SeqexecAppRootModel.executionQueuesT(id) ^|->
         ExecutionQueueView.queue               ^|->>
         each
 
-    // All metadata of the given obs
-    def calSeq(id: Observation.Id): Getter[SeqexecAppRootModel, Option[CalQueueSeq]] =
-      SeqexecAppRootModel.sequences.composeGetter(CalQueueSeq.calQueueSeqG(id))
-
-    def calTS(id: QueueId): Lens[SeqexecAppRootModel,
-                         Option[TableState[CalQueueTable.TableColumn]]] =
-      SeqexecAppRootModel.uiModel        ^|->
-        AppTableStates.tableStateL       ^|->
-        AppTableStates.queueTableAtL(id)
-
     // combine
     val calQueueSeqG = (s: SeqexecAppRootModel) =>
       ids.getAll(s).map(i => calSeq(i).get(s))
 
-    val seqOpsL =
-      SeqexecAppRootModel.uiModel                 ^|->
-        SeqexecUIModel.queues                     ^|->
-        CalibrationQueues.queues                  ^|->>
-        filterIndex((qid: QueueId) => qid === id) ^|->
-        CalQueueState.seqOps
-
     ClientStatus.clientStatusFocusL.asGetter
       .zip(
-        Getter(calQueueSeqG).zip(
-          calTS(id).asGetter.zip(Getter(seqOpsL.headOption)))) >>> {
-      case (status, (ids, (ts, seqOps))) =>
+        Getter(calQueueSeqG).zip(calTS(id).asGetter.zip(Getter(
+          seqOpsL(id).getOption).zip(Getter(qLastOpL(id).getOption))))) >>> {
+      case (status, (ids, (ts, (seqOps, lastOp)))) =>
         val obsIds = ids.collect { case Some(x) => x }
         CalQueueFocus(status.canOperate,
                       status.isLogged,
                       obsIds,
                       ts.getOrElse(CalQueueTable.State.ROTableState),
-                      seqOps.getOrElse(SortedMap.empty)).some
+                      seqOps.getOrElse(SortedMap.empty),
+                      lastOp.flatten).some
       case _ =>
         none
     }

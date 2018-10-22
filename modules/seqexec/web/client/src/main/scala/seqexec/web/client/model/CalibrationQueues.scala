@@ -17,23 +17,26 @@ import scala.collection.immutable.SortedMap
 import seqexec.model.CalibrationQueueId
 import seqexec.model.QueueId
 import seqexec.web.client.components.queue.CalQueueTable
+import seqexec.model.enum.QueueManipulationOp
 import web.client.table.TableState
 
 @Lenses
 final case class CalQueueState(
   ops:        QueueOperations,
   tableState: TableState[CalQueueTable.TableColumn],
-  seqOps:     SortedMap[Observation.Id, QueueSeqOperations])
+  seqOps:     SortedMap[Observation.Id, QueueSeqOperations],
+  lastOp:     Option[QueueManipulationOp])
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object CalQueueState {
   implicit val eq: Eq[CalQueueState] =
-    Eq.by(x => (x.ops, x.seqOps, x.tableState))
+    Eq.by(x => (x.ops, x.seqOps, x.tableState, x.lastOp))
 
   val Default: CalQueueState =
     CalQueueState(QueueOperations.Default,
                   CalQueueTable.State.ROTableState,
-                  SortedMap.empty)
+                  SortedMap.empty,
+                  None)
 }
 
 @Lenses
@@ -64,33 +67,37 @@ object CalibrationQueues {
   val Default: CalibrationQueues =
     CalibrationQueues(SortedMap(CalibrationQueueId -> CalQueueState.Default))
 
+  def queueO(
+    qid: QueueId
+  ): Optional[CalibrationQueues, CalQueueState] =
+    CalibrationQueues.queues ^|->
+      at(qid)                ^<-?
+      std.option.some
+
   def calQueueStateL(
     qid: QueueId
   ): Optional[CalibrationQueues, QueueOperations] =
-    CalibrationQueues.queues ^|->
-      at(qid)                ^<-?
-      std.option.some        ^|->
-      CalQueueState.ops
+    queueO(qid) ^|-> CalQueueState.ops
+
+  def calLastOpO(
+    qid: QueueId
+  ): Optional[CalibrationQueues, Option[QueueManipulationOp]] =
+    queueO(qid) ^|-> CalQueueState.lastOp
 
   def calQueueStateSeqOpsO(
     qid: QueueId,
     oid: Observation.Id
   ): Optional[CalibrationQueues, QueueSeqOperations] =
-    CalibrationQueues.queues ^|->
-      at(qid)                ^<-?
-      std.option.some        ^|->
-      CalQueueState.seqOps   ^|->
-      at(oid)                ^<-?
+    queueO(qid)            ^|->
+      CalQueueState.seqOps ^|->
+      at(oid)              ^<-?
       std.option.some
 
   def calStateSeqOpsT(
     qid: QueueId
   ): Optional[CalibrationQueues,
               SortedMap[Observation.Id, QueueSeqOperations]] =
-    CalibrationQueues.queues ^|->
-      at(qid)                ^<-?
-      std.option.some        ^|->
-      CalQueueState.seqOps
+    queueO(qid) ^|-> CalQueueState.seqOps
 
   def tableStatesT
     : Traversal[CalibrationQueues, TableState[CalQueueTable.TableColumn]] =

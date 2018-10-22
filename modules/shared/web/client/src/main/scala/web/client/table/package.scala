@@ -4,6 +4,7 @@
 package web.client
 
 import cats.Eq
+import cats.Monoid
 import cats.data.NonEmptyList
 import cats.implicits._
 import japgolly.scalajs.react.vdom.html_<^._
@@ -255,7 +256,14 @@ package object table {
         )
     )
 
-  def sortableRowRenderer[C <: js.Object]: RowRenderer[C] =
+  implicit val styleMonoid: Monoid[Style] = new Monoid[Style] {
+    override val empty: Style = Style(Map.empty)
+    override def combine(a: Style, b: Style): Style =
+      Style(a.styles ++ b.styles)
+  }
+
+  def sortableRowRenderer[C <: js.Object](
+    extraStyle: (Int, Style) => Style): RowRenderer[C] =
     (className:        String,
      columns:          Array[VdomNode],
      index:            Int,
@@ -269,7 +277,9 @@ package object table {
      onRowRightClick:  Option[OnRowClick],
      style:            Style) => {
       val sortableItem = SortableElement.wrap(SortableRow.component)
-      sortableItem(SortableElement.Props(index = index))(
+      val mergedStyle = Style.toJsObject(style |+| extraStyle(index, style))
+      sortableItem(
+        SortableElement.Props(index = index, key = key, style = mergedStyle))(
         SortableRow.Props(raw.RawRowRendererParameter(
           className,
           columns.map(_.rawNode).toJSArray,
@@ -282,7 +292,7 @@ package object table {
           onRowMouseOut.map(_.toJsCallback).orUndefined,
           onRowMouseOver.map(_.toJsCallback).orUndefined,
           onRowRightClick.map(_.toJsCallback).orUndefined,
-          Style.toJsObject(style)
+          mergedStyle
         )))
 
     }

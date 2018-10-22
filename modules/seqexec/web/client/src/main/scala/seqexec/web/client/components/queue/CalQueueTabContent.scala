@@ -7,6 +7,7 @@ import cats.implicits._
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.component.Scala.Unmounted
+import japgolly.scalajs.react.extra.Reusability
 import seqexec.model.CalibrationQueueId
 import seqexec.web.client.semanticui._
 import seqexec.web.client.semanticui.elements.message.IconMessage
@@ -17,6 +18,7 @@ import seqexec.web.client.model.SectionOpen
 import seqexec.web.client.model.SectionVisibilityState
 import seqexec.web.client.model.TabSelected
 import seqexec.web.client.components.SeqexecStyles
+import seqexec.web.client.reusability._
 import web.client.style._
 
 /**
@@ -32,6 +34,8 @@ object CalQueueTabContent {
     protected[queue] val dayCalConnect =
       SeqexecCircuit.connect(SeqexecCircuit.calQueueReader(CalibrationQueueId))
   }
+
+  implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
   private val defaultContent = IconMessage(
     IconMessage
@@ -70,6 +74,7 @@ object CalQueueTabContent {
         ).when(p.active === TabSelected.Selected)
       )
     }
+    .configure(Reusability.shouldComponentUpdate)
     .build
 
   def apply(p: Props): Unmounted[Props, Unit, Unit] =
