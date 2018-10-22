@@ -155,7 +155,7 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
     wartremoverExcluded += sourceManaged.value / "main" / "java" / "time" / "zone" / "TzdbZoneRulesProvider.scala",
     // We only care about these two timezones. UTC is implicitly included
     zonesFilter         := {(z: String) => z == "America/Santiago" || z == "Pacific/Honolulu"},
-    dbVersion           := TzdbPlugin.Version("2018e")
+    dbVersion           := TzdbPlugin.Version("2018f")
   )
   .jsSettings(commonJSSettings)
   .jvmSettings(
@@ -432,7 +432,7 @@ lazy val seqexec_web_client = project.in(file("modules/seqexec/web/client"))
   .settings(
     wartremoverExcluded                      += sourceManaged.value / "main" / "java" / "time" / "zone" / "TzdbZoneRulesProvider.scala",
     zonesFilter                              := {(z: String) => z == "America/Santiago" || z == "Pacific/Honolulu"},
-    dbVersion                                := TzdbPlugin.Version("2018e"),
+    dbVersion                                := TzdbPlugin.Version("2018f"),
     // Needed for Monocle macros
     addCompilerPlugin(Plugins.paradisePlugin),
     // Configurations for webpack

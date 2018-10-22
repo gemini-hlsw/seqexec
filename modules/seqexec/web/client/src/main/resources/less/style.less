@@ -280,6 +280,52 @@ body {
   animation-direction: alternate;
 }
 
+@keyframes calTableFlash {
+  0% {
+    box-shadow: none;
+  }
+  50% {
+    box-shadow: 0 0 8px darken(lightblue, 20%);
+  }
+  0% {
+    box-shadow: none;
+  }
+}
+
+.SeqexecStyles-calTableBorder {
+  animation-name: calTableFlash;
+  animation-duration: 1s;
+  animation-timing-function: linear;
+  animation-iteration-count: 2;
+}
+
+@keyframes calRowFlash {
+  0% {
+    background-color: @background;
+    // color: inherit;
+  }
+  50% {
+    background-color: lightblue;
+    // color: @white;
+  }
+  100% {
+    background-color: @background;
+    // color: inherit;
+  }
+}
+
+.SeqexecStyles-calRowBackground {
+  animation-name: calRowFlash;
+  animation-duration: 0.7s;
+  animation-timing-function: linear;
+  animation-fill-mode: none;
+  animation-iteration-count: 2;
+}
+
+.SeqexecStyles-autoMargin {
+  margin: auto !important;
+}
+
 .SeqexecStyles-queueAreaRow {
   .appSegment;
 }
@@ -424,6 +470,24 @@ body {
   overflow: unset !important;
   .borderTop();
   outline: none;
+}
+
+@keyframes pullUpRow {
+  0% {
+    transform: none;
+  }
+  100% {
+    transform: translateY(-100%);
+  }
+}
+
+.SeqexecStyles-deletedRow {
+  animation-name: pullUpRow;
+  animation-duration: 0.5s;
+  animation-timing-function: linear;
+  animation-iteration-count: 1;
+  animation-delay: 0.2s;
+  animation-fill-mode: forwards;
 }
 
 .SeqexecStyles-observeConfig {

@@ -13,6 +13,7 @@ import gem.enum.Site
 import scala.collection.immutable.SortedMap
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.BatchExecState
+import seqexec.model.enum.QueueManipulationOp
 import seqexec.model.ClientId
 import seqexec.model.QueueId
 import seqexec.model.Observer
@@ -27,6 +28,7 @@ import seqexec.model.events.ServerLogMessage
 import seqexec.model.SeqexecModelArbitraries._
 import seqexec.model.SequenceEventsArbitraries.slmArb
 import seqexec.model.SequenceEventsArbitraries.slmCogen
+import seqexec.model.SequenceEventsArbitraries.qmArb
 import seqexec.web.common.FixedLengthBuffer
 import seqexec.web.common.Zipper
 import seqexec.web.common.ArbitrariesWebCommon._
@@ -653,7 +655,8 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
         ops <- arbitrary[QueueOperations]
         ts  <- arbitrary[TableState[CalQueueTable.TableColumn]]
         sop <- arbitrary[SortedMap[Observation.Id, QueueSeqOperations]]
-      } yield CalQueueState(ops, ts, sop)
+        lOp <- arbitrary[Option[QueueManipulationOp]]
+      } yield CalQueueState(ops, ts, sop, lOp)
     }
 
   implicit val calQueuesStateCogen: Cogen[CalQueueState] =

@@ -4,18 +4,17 @@
 package web.client
 
 import cats.Eq
+import cats.Monoid
 import cats.data.NonEmptyList
 import cats.implicits._
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.raw.JsNumber
 import japgolly.scalajs.react.Callback
 import japgolly.scalajs.react.extra.Reusability
-import japgolly.scalajs.react.CatsReact._
 import org.scalajs.dom.MouseEvent
 import scala.scalajs.js
 import js.JSConverters._
 import monocle.Lens
-import mouse.boolean._
 import react.virtualized._
 import react.virtualized.raw
 import react.sortable._
@@ -23,78 +22,6 @@ import react.draggable._
 import web.client.utils._
 
 package table {
-
-  sealed trait UserModified extends Product with Serializable
-  case object IsModified extends UserModified
-  case object NotModified extends UserModified
-
-  object UserModified {
-    implicit val eq: Eq[UserModified] = Eq.fromUniversalEquals
-
-    implicit val reuse: Reusability[UserModified] = Reusability.byRef
-
-    def fromBool(b: Boolean): UserModified = if (b) IsModified else NotModified
-  }
-
-  sealed trait ColumnWidth // extends Product with Serializable
-  sealed abstract class FixedColumnWidth(val width: Double)
-      extends ColumnWidth {
-    assert(width >= 0)
-  }
-  sealed abstract class PercentageColumnWidth(val percentage: Double,
-                                              val minWidth:   Double)
-      extends ColumnWidth {
-    assert(percentage >= 0 && percentage <= 1)
-    assert(minWidth >= 0)
-  }
-
-  object ColumnWidth {
-    implicit val eq: Eq[ColumnWidth] =
-      Eq[Either[FixedColumnWidth, PercentageColumnWidth]].contramap {
-        case x: FixedColumnWidth      => x.asLeft
-        case x: PercentageColumnWidth => x.asRight
-      }
-
-    implicit val reuse: Reusability[ColumnWidth] = Reusability.byEq
-  }
-
-  object FixedColumnWidth {
-    implicit val eqFcw: Eq[FixedColumnWidth] = Eq.by(_.width)
-    private[table] def apply(p: Double) = new FixedColumnWidth(p) {}
-
-    def fromDouble(width: Double): Option[FixedColumnWidth] =
-      (width >= 0).option(FixedColumnWidth(width))
-
-    def unsafeFromDouble(width: Double): FixedColumnWidth =
-      fromDouble(width).getOrElse(sys.error(s"Incorrect width value $width"))
-
-    def unapply(fc: FixedColumnWidth): Option[Double] =
-      Some(fc.width)
-  }
-
-  object PercentageColumnWidth {
-    implicit val eqPcw: Eq[PercentageColumnWidth] =
-      Eq.by(x => (x.percentage, x.minWidth))
-    private[table] def apply(p: Double, mp: Double) =
-      new PercentageColumnWidth(p, mp) {}
-
-    def fromDouble(percentage: Double,
-                   minWidth:   Double): Option[PercentageColumnWidth] =
-      (percentage >= 0 && percentage <= 1 && minWidth >= 0)
-        .option(PercentageColumnWidth(percentage, minWidth))
-
-    def unsafeFromDouble(percentage: Double,
-                         minWidth:   Double): PercentageColumnWidth =
-      fromDouble(percentage, minWidth).getOrElse(
-        sys.error(s"Incorrect percentage/minWidth value $percentage/$minWidth"))
-
-    def unapply(pc: PercentageColumnWidth): Option[(Double, Double)] =
-      Some((pc.percentage, pc.minWidth))
-
-    val Full: PercentageColumnWidth = PercentageColumnWidth(1, 0)
-    val Zero: PercentageColumnWidth = PercentageColumnWidth(0, 0)
-    val Half: PercentageColumnWidth = PercentageColumnWidth(0.5, 0)
-  }
 
   final case class ColumnRenderArgs[A](meta:      ColumnMeta[A],
                                        index:     Int,
@@ -155,10 +82,11 @@ package table {
         case (m @ ColumnMeta(_, _, _, true, FixedColumnWidth(w)), i) =>
           cb.apply(ColumnRenderArgs(m, i, w, false))
         case (m @ ColumnMeta(_, _, _, true, PercentageColumnWidth(p, mw)), i) =>
-          cb.apply(ColumnRenderArgs(m,
-                                   i,
-                                   scala.math.max(mw, p * disposableWidth),
-                                   i < (columns.length - 1)))
+          cb.apply(
+            ColumnRenderArgs(m,
+                             i,
+                             scala.math.max(mw, p * disposableWidth),
+                             i < (columns.length - 1)))
       }
     }
 
@@ -255,7 +183,14 @@ package object table {
         )
     )
 
-  def sortableRowRenderer[C <: js.Object]: RowRenderer[C] =
+  implicit val styleMonoid: Monoid[Style] = new Monoid[Style] {
+    override val empty: Style = Style(Map.empty)
+    override def combine(a: Style, b: Style): Style =
+      Style(a.styles ++ b.styles)
+  }
+
+  def sortableRowRenderer[C <: js.Object](
+    extraStyle: (Int, Style) => Style): RowRenderer[C] =
     (className:        String,
      columns:          Array[VdomNode],
      index:            Int,
@@ -269,7 +204,9 @@ package object table {
      onRowRightClick:  Option[OnRowClick],
      style:            Style) => {
       val sortableItem = SortableElement.wrap(SortableRow.component)
-      sortableItem(SortableElement.Props(index = index))(
+      val mergedStyle  = Style.toJsObject(style |+| extraStyle(index, style))
+      sortableItem(
+        SortableElement.Props(index = index, key = key, style = mergedStyle))(
         SortableRow.Props(raw.RawRowRendererParameter(
           className,
           columns.map(_.rawNode).toJSArray,
@@ -282,7 +219,7 @@ package object table {
           onRowMouseOut.map(_.toJsCallback).orUndefined,
           onRowMouseOver.map(_.toJsCallback).orUndefined,
           onRowRightClick.map(_.toJsCallback).orUndefined,
-          Style.toJsObject(style)
+          mergedStyle
         )))
 
     }

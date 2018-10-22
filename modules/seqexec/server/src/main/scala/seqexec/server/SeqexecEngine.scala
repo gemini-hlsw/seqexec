@@ -305,8 +305,10 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
 
   def removeSequenceFromQueue(q: EventQueue, qid: QueueId, seqId: Observation.Id)
   : IO[Either[SeqexecFailure, Unit]] = q.enqueue1(
-    Event.modifyState[executeEngine.ConcreteTypes](removeSeq(qid, seqId)
-      .map[executeEngine.ConcreteTypes#EventData](_ => UpdateQueueRemove(qid, List(seqId))))
+    Event.modifyState[executeEngine.ConcreteTypes](
+      executeEngine.get.flatMap(st => removeSeq(qid, seqId)
+        .map(_ => UpdateQueueRemove(qid, List(seqId), st.queues.get(qid)
+          .map(_.queue.indexOf(seqId)).toList))))
   ).map(_.asRight)
 
   private def moveSeq(qid: QueueId, seqId: Observation.Id, d: Int): Endo[EngineState] = st => (
@@ -836,7 +838,7 @@ object SeqexecEngine extends SeqexecConfiguration {
     case UnloadSequence(id)            => SequenceUnloaded(id, svs)
     case NotifyUser(m, cid)            => UserNotification(m, cid)
     case UpdateQueueAdd(qid, seqs)     => QueueUpdated(QueueManipulationOp.AddedSeqs(qid, seqs), svs)
-    case UpdateQueueRemove(qid, seqs)  => QueueUpdated(QueueManipulationOp.RemovedSeqs(qid, seqs), svs)
+    case UpdateQueueRemove(qid, s, p)  => QueueUpdated(QueueManipulationOp.RemovedSeqs(qid, s, p), svs)
     case UpdateQueueMoved(qid)         => QueueUpdated(QueueManipulationOp.Moved(qid), svs)
     case UpdateQueueClear(qid)         => QueueUpdated(QueueManipulationOp.Clear(qid), svs)
     case StartQueue(qid, _)            => QueueUpdated(QueueManipulationOp.Started(qid), svs)
