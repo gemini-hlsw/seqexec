@@ -1052,25 +1052,34 @@ body {
   padding-right: 0 !important;
   padding-left: 0 !important;
 }
+
 .noselect() {
   -moz-user-select: none;
   user-select: none;
 }
+
 .SeqexecStyles-noselect {
   .noselect;
 }
+
 .SeqexecStyles-draggableRow {
   .noselect;
 }
+
 .SeqexecStyles-draggedRowHelper {
   box-shadow: 0 5px 5px -5px rgba(0, 0, 0, 0.2),
     0 -5px 5px -5px rgba(0, 0, 0, 0.2);
   background-color: @selectableInvertedBackground;
+  border-bottom: @border;
+  border-left: @border;
+  border-right: @border;
   cursor: row-resize;
 }
+
 .SeqexecStyles-draggedRowHelper.horizontalItem {
   cursor: col-resize;
 }
+
 .SeqexecStyles-draggedRowHelper.gridItem {
   background-color: transparent;
   white-space: nowrap;

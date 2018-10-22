@@ -29,6 +29,7 @@ import seqexec.web.client.circuit._
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.reusability._
 import seqexec.web.client.actions.RequestRemoveSeqCal
+import seqexec.web.client.actions.RequestMoveCal
 import seqexec.web.client.actions.UpdateCalTableState
 import seqexec.web.client.semanticui.elements.button.Button
 import seqexec.web.client.semanticui.elements.icon.Icon.IconTimes
@@ -334,6 +335,17 @@ object CalQueueTable {
           else ""
       )
 
+    def requestMove(c: IndexChange): Callback =
+      b.props >>= { p =>
+        p.data.seqs
+          .map(_.id)
+          .lift(c.oldIndex)
+          .map(i =>
+            SeqexecCircuit.dispatchCB(
+              RequestMoveCal(p.queueId, i, c.newIndex - c.oldIndex)))
+          .getOrEmpty
+      }
+
     def render(p: Props, s: State): VdomElement =
       <.div(
         SeqexecStyles.stepsListPaneWithControls.when(p.canOperate),
@@ -347,7 +359,7 @@ object CalQueueTable {
 
           // If distance is 0 we can miss some events
           val cp = SortableContainer.Props(
-            onSortEnd = p => Callback.log(s"end $p"),
+            onSortEnd = requestMove,
             helperClass =
               (SeqexecStyles.noselect |+| SeqexecStyles.draggedRowHelper).htmlClass,
             distance = 3)

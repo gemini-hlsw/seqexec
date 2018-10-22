@@ -67,7 +67,7 @@ package server {
   final case class StopQueue(qid: QueueId, clientID: ClientId) extends SeqEvent
   final case class UpdateQueueAdd(qid: QueueId, seqs: List[Observation.Id]) extends SeqEvent
   final case class UpdateQueueRemove(qid: QueueId, seqs: List[Observation.Id], pos: List[Int]) extends SeqEvent
-  final case class UpdateQueueMoved(qid: QueueId) extends SeqEvent
+  final case class UpdateQueueMoved(qid: QueueId, cid: ClientId) extends SeqEvent
   final case class UpdateQueueClear(qid: QueueId) extends SeqEvent
   case object NullSeqEvent extends SeqEvent
 
@@ -141,12 +141,13 @@ package object server {
   }
 
   // This assumes that there is only one instance of e in l
-  private def moveElement[T](l: List[T], e: T, d: Int)(implicit eq: Eq[T]): List[T] = {
+  private def moveElement[T](l: List[T], e: T, delta: Int)(implicit eq: Eq[T]): List[T] = {
     val idx = l.indexOf(e)
 
-    if(d === 0 || idx<0) l
-    else {
-      val (h, t) = l.filterNot(_ === e).splitAt(idx+d)
+    if (delta === 0 || idx < 0) {
+      l
+    } else {
+      val (h, t) = l.filterNot(_ === e).splitAt(idx + delta)
       (h :+ e) ++ t
     }
   }
@@ -170,7 +171,7 @@ package object server {
     def addSeq(sid: Observation.Id): ExecutionQueue = q.copy(queue = q.queue :+ sid)
     def addSeqs(sids: List[Observation.Id]): ExecutionQueue = q.copy(queue = q.queue ++ sids)
     def removeSeq(sid: Observation.Id): ExecutionQueue = q.copy(queue = q.queue.filter(_ =!= sid))
-    def moveSeq(sid:Observation.Id, idx: Int): ExecutionQueue = q.copy(queue = moveElement(q.queue, sid, idx))
+    def moveSeq(sid:Observation.Id, delta: Int): ExecutionQueue = q.copy(queue = moveElement(q.queue, sid, delta))
     def clear: ExecutionQueue = q.copy(queue = List.empty)
   }
 

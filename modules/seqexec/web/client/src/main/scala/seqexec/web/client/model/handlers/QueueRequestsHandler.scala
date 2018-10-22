@@ -82,11 +82,28 @@ class QueueRequestsHandler[M](modelRW: ModelRW[M, QueueRequestsFocus])
         .getOrElse(noChange)
   }
 
+  def handleMoveCal: PartialFunction[Any, ActionResult[M]] = {
+    case RequestMoveCal(qid, oid, i) =>
+      value.clientId
+        .map { cid =>
+          effectOnly(
+            requestEffect2((qid, cid),
+                           SeqexecWebClient.moveSequenceQueue(_: QueueId,
+                                                              oid,
+                                                              i,
+                                                              _: ClientId),
+                           RunCalCompleted.apply,
+                           RunCalFailed.apply))
+        }
+        .getOrElse(noChange)
+  }
+
   override def handle: PartialFunction[Any, ActionResult[M]] =
     List(handleAddAllDayCal,
          handleClearAllCal,
          handleRunCal,
          handleStopCal,
+         handleMoveCal,
          handleRemoveSeqCal).combineAll
 
 }

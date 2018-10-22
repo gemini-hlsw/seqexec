@@ -311,17 +311,17 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
           .map(_.queue.indexOf(seqId)).toList))))
   ).map(_.asRight)
 
-  private def moveSeq(qid: QueueId, seqId: Observation.Id, d: Int): Endo[EngineState] = st => (
+  private def moveSeq(qid: QueueId, seqId: Observation.Id, delta: Int): Endo[EngineState] = st => (
     for {
       q <- st.queues.get(qid)
       if (q.queue.contains(seqId))
-    } yield queueO(qid).modify(_.moveSeq(seqId, d))(st)
+    } yield queueO(qid).modify(_.moveSeq(seqId, delta))(st)
   ).getOrElse(st)
 
-  def moveSequenceInQueue(q: EventQueue, qid: QueueId, seqId: Observation.Id, d: Int)
+  def moveSequenceInQueue(q: EventQueue, qid: QueueId, seqId: Observation.Id, delta: Int, cid: ClientId)
   : IO[Either[SeqexecFailure, Unit]] = q.enqueue1(
     Event.modifyState[executeEngine.ConcreteTypes](
-      (moveSeq(qid, seqId, d) withEvent UpdateQueueMoved(qid)).toHandle)
+      (moveSeq(qid, seqId, delta) withEvent UpdateQueueMoved(qid, cid)).toHandle)
   ).map(_.asRight)
 
   private def clearQ(qid: QueueId): Endo[EngineState]= st => (
@@ -831,7 +831,7 @@ object SeqexecEngine extends SeqexecConfiguration {
     case NotifyUser(m, cid)            => UserNotification(m, cid)
     case UpdateQueueAdd(qid, seqs)     => QueueUpdated(QueueManipulationOp.AddedSeqs(qid, seqs), svs)
     case UpdateQueueRemove(qid, s, p)  => QueueUpdated(QueueManipulationOp.RemovedSeqs(qid, s, p), svs)
-    case UpdateQueueMoved(qid)         => QueueUpdated(QueueManipulationOp.Moved(qid), svs)
+    case UpdateQueueMoved(qid, cid)    => QueueUpdated(QueueManipulationOp.Moved(qid, cid), svs)
     case UpdateQueueClear(qid)         => QueueUpdated(QueueManipulationOp.Clear(qid), svs)
     case StartQueue(qid, _)            => QueueUpdated(QueueManipulationOp.Started(qid), svs)
     case StopQueue(qid, _)             => QueueUpdated(QueueManipulationOp.Stopped(qid), svs)
