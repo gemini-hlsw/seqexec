@@ -1052,6 +1052,34 @@ body {
   padding-right: 0 !important;
   padding-left: 0 !important;
 }
+.noselect() {
+  -moz-user-select: none;
+  user-select: none;
+}
+.SeqexecStyles-noselect {
+  .noselect;
+}
+.SeqexecStyles-draggableRow {
+  .noselect;
+}
+.SeqexecStyles-draggedRowHelper {
+  box-shadow: 0 5px 5px -5px rgba(0, 0, 0, 0.2),
+    0 -5px 5px -5px rgba(0, 0, 0, 0.2);
+  background-color: @selectableInvertedBackground;
+  cursor: row-resize;
+}
+.SeqexecStyles-draggedRowHelper.horizontalItem {
+  cursor: col-resize;
+}
+.SeqexecStyles-draggedRowHelper.gridItem {
+  background-color: transparent;
+  white-space: nowrap;
+  box-shadow: none;
+  .wrapper {
+    background-color: @selectableInvertedBackground;
+    box-shadow: 0 0 7px rgba(0, 0, 0, 0.15);
+  }
+}
 @media only screen and (max-width: 767px) {
   .SeqexecStyles-notInMobile {
     display: none !important;

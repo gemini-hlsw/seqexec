@@ -275,4 +275,12 @@ object SeqexecStyles {
   val autoMargin: GStyle = GStyle.fromString("SeqexecStyles-autoMargin")
 
   val deletedRow: GStyle = GStyle.fromString("SeqexecStyles-deletedRow")
+
+  val noselect: GStyle = GStyle.fromString("SeqexecStyles-noselect")
+
+  val draggedRowHelper: GStyle =
+    GStyle.fromString("SeqexecStyles-draggedRowHelper")
+
+  val draggableRow: GStyle =
+    GStyle.fromString("SeqexecStyles-draggableRow")
 }
