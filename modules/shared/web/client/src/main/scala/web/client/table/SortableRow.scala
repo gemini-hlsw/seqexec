@@ -15,8 +15,6 @@ object SortableRow {
   val component: Component[Props, Unit, Unit, CtorType.Props] = ScalaComponent
     .builder[Props]("SortableRow")
     .render_P { p =>
-      // ^.className := "sortable-hoc-item sortable-hoc-stylizedItem",
-      // SortableView.handl
       raw.defaultRowRenderer(p.p)
     }
     .build
