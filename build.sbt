@@ -258,10 +258,9 @@ lazy val web = project
   .settings(
     addCompilerPlugin(Plugins.kindProjectorPlugin),
     libraryDependencies ++= Seq(
-      Slf4jSimple,
       Http4sCirce,
       JwtCore
-    ) ++ Http4s
+    ) ++ Http4s ++ Logging
   )
 
 lazy val ui = project
