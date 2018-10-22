@@ -247,7 +247,7 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
 
     val r: Resource[IO, ExitCode] =
       for {
-        cli    <- BlazeClientBuilder[IO](null).resource
+        cli    <- BlazeClientBuilder[IO](ExecutionContext.global).resource
         inq    <- Resource.liftF(Queue.bounded[IO, executeEngine.EventType](10))
         out    <- Resource.liftF(Topic[IO, SeqexecEvent](NullEvent))
         pe     <- Resource.liftF(PrometheusExportService.build[IO])
