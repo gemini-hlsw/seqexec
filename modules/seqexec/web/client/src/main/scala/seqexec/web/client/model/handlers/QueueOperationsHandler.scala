@@ -48,7 +48,13 @@ class QueueOperationsHandler[M](modelRW: ModelRW[M, CalibrationQueues])
     case RequestRunCal(qid) =>
       updatedL(
         CalibrationQueues.calLastOpO(qid).set(none) >>>
-        CalibrationQueues.runCalL(qid).set(RunCalOperation.RunCalInFlight))
+          CalibrationQueues.runCalL(qid).set(RunCalOperation.RunCalInFlight))
+
+  }
+
+  def handleClearLastOp: PartialFunction[Any, ActionResult[M]] = {
+    case ClearLastQueueOp(qid) =>
+      updatedL(CalibrationQueues.calLastOpO(qid).set(none))
 
   }
 
@@ -56,7 +62,7 @@ class QueueOperationsHandler[M](modelRW: ModelRW[M, CalibrationQueues])
     case RequestStopCal(qid) =>
       updatedL(
         CalibrationQueues.calLastOpO(qid).set(none) >>>
-        CalibrationQueues.stopCalL(qid).set(StopCalOperation.StopCalInFlight))
+          CalibrationQueues.stopCalL(qid).set(StopCalOperation.StopCalInFlight))
 
   }
 
@@ -64,10 +70,10 @@ class QueueOperationsHandler[M](modelRW: ModelRW[M, CalibrationQueues])
     case RequestRemoveSeqCal(qid, id) =>
       updatedL(
         CalibrationQueues.calLastOpO(qid).set(none) >>>
-        CalibrationQueues.modifyOrAddSeqOps(
-          qid,
-          id,
-          _.copy(removeSeqQueue = RemoveSeqQueue.RemoveSeqQueueInFlight)))
+          CalibrationQueues.modifyOrAddSeqOps(
+            qid,
+            id,
+            _.copy(removeSeqQueue = RemoveSeqQueue.RemoveSeqQueueInFlight)))
 
   }
 
@@ -141,5 +147,6 @@ class QueueOperationsHandler[M](modelRW: ModelRW[M, CalibrationQueues])
          handleStopCal,
          handleSeqOps,
          handleRequestResultOk,
+         handleClearLastOp,
          handleRequestResultFailed).combineAll
 }

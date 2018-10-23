@@ -29,6 +29,7 @@ import seqexec.web.client.model.RemoveSeqQueue
 import seqexec.web.client.circuit._
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.reusability._
+import seqexec.web.client.actions.ClearLastQueueOp
 import seqexec.web.client.actions.RequestRemoveSeqCal
 import seqexec.web.client.actions.RequestMoveCal
 import seqexec.web.client.actions.UpdateCalTableState
@@ -347,6 +348,15 @@ object CalQueueTable {
           .getOrEmpty
       }
 
+    def resetAnim: Callback =
+      b.modState(_.copy(animationRendered = true)) *>
+        b.props >>= { p =>
+        SeqexecCircuit.dispatchCB(ClearLastQueueOp(p.queueId))
+      }
+
+    def allowAnim: Callback =
+      b.modState(_.copy(animationRendered = false))
+
     def render(p: Props, s: State): VdomElement =
       <.div(
         SeqexecStyles.stepsListPaneWithControls.when(p.canOperate),
@@ -360,11 +370,12 @@ object CalQueueTable {
 
           // If distance is 0 we can miss some events
           val cp = SortableContainer.Props(
-            onSortEnd = requestMove,
+            onSortEnd         = requestMove,
             shouldCancelStart = _ => CallbackTo(!p.data.canOperate),
             helperClass =
               (SeqexecStyles.noselect |+| SeqexecStyles.draggedRowHelper).htmlClass,
-            distance = 3)
+            distance = 3
+          )
           sortableList(cp)(table(p, s)(size))
         })
       )
@@ -384,10 +395,19 @@ object CalQueueTable {
     .builder[Props]("CalQueueTable")
     .initialStateFromProps(initialState)
     .renderBackend[CalQueueTableBackend]
-    .componentDidMount(c =>
-      // Reset the animation in 1 sec
-      c.backend.setInterval(c.modState(_.copy(animationRendered = true)),
-                            1.second))
+    .componentWillMount { c =>
+      // If on load we have an op don't animate
+      c.backend.resetAnim.when(c.props.data.lastOp.isDefined) *>
+        Callback.empty
+    }
+    .componentWillReceiveProps { c =>
+      // This is a bit tricky. if the last op has changed we allow animation
+      val opChanged = c.nextProps.data.lastOp =!= c.currentProps.data.lastOp
+      c.backend.allowAnim.when(opChanged) *>
+        // And then we reset the state to avoid re running the anim
+        c.backend.setTimeout(c.backend.resetAnim, 1.5.second).when(opChanged) *>
+        Callback.empty
+    }
     .configure(Reusability.shouldComponentUpdate)
     .configure(TimerSupport.install)
     .build
