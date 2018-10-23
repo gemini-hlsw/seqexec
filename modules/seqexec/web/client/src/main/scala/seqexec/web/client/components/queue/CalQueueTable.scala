@@ -9,6 +9,7 @@ import cats.data.NonEmptyList
 import gem.Observation
 import japgolly.scalajs.react.BackendScope
 import japgolly.scalajs.react.Callback
+import japgolly.scalajs.react.CallbackTo
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.component.Scala.Unmounted
@@ -360,6 +361,7 @@ object CalQueueTable {
           // If distance is 0 we can miss some events
           val cp = SortableContainer.Props(
             onSortEnd = requestMove,
+            shouldCancelStart = _ => CallbackTo(!p.data.canOperate),
             helperClass =
               (SeqexecStyles.noselect |+| SeqexecStyles.draggedRowHelper).htmlClass,
             distance = 3)
@@ -368,8 +370,6 @@ object CalQueueTable {
       )
 
   }
-
-  // type Backend = RenderScope[Props, State, CalQueueTableBackend]
 
   def initialState(p: Props): State =
     if (p.data.loggedIn) {
