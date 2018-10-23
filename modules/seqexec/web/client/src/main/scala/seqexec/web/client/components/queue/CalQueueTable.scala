@@ -90,13 +90,26 @@ object CalQueueTable {
 
     val canOperate: Boolean = data.canOperate
 
-    def rowGetter(i: Int): CalQueueRow =
-      data.seqs
+    def moveSeq[T: Eq](list: List[T], i: Int, value: T): List[T] = {
+      val (front, back) = list.splitAt(i)
+      front.filterNot(_ === value) ++ List(value) ++ back.filterNot(_ === value)
+    }
+
+    def rowGetter(s: State)(i: Int): CalQueueRow = {
+      val moved = s.moved
+        .flatMap { c =>
+          data.seqs.lift(c.oldIndex).map { o =>
+            moveSeq(data.seqs, c.newIndex, o)
+          }
+        }
+        .getOrElse(data.seqs)
+      moved
         .lift(i)
         .map { s =>
           CalQueueRow(s.id, s.i)
         }
         .getOrElse(CalQueueRow.Empty)
+    }
 
     def seqState(id: Observation.Id): Option[QueueSeqOperations] =
       CalQueueFocus.seqQueueOpsT(id).headOption(data)
@@ -150,7 +163,8 @@ object CalQueueTable {
 
   @Lenses
   final case class State(tableState:        TableState[TableColumn],
-                         animationRendered: Boolean)
+                         animationRendered: Boolean,
+                         moved:             Option[IndexChange])
 
   @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object State {
@@ -158,13 +172,17 @@ object CalQueueTable {
       TableState(NotModified, 0, all)
     val ROTableState: TableState[TableColumn] =
       TableState(NotModified, 0, ro)
-    val DefaultRO: State = State(ROTableState, animationRendered = false)
+    val DefaultRO: State =
+      State(ROTableState, animationRendered = false, moved = None)
     val DefaultEditable: State =
-      State(EditableTableState, animationRendered = false)
+      State(EditableTableState, animationRendered = false, moved = None)
   }
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
-  implicit val stateReuse: Reusability[State] = Reusability.by(_.tableState)
+  implicit val icReuse: Reusability[IndexChange] =
+    Reusability.derive[IndexChange]
+  implicit val stateReuse: Reusability[State] =
+    Reusability.by(x => (x.tableState, x.moved))
 
   // ScalaJS defined trait
   // scalastyle:off
@@ -282,7 +300,7 @@ object CalQueueTable {
     }
 
     def rowClassName(p: Props, s: State)(i: Int): String =
-      ((i, p.rowGetter(i)) match {
+      ((i, p.rowGetter(s)(i)) match {
         case (-1, _) =>
           SeqexecStyles.headerRowStyle
         case (_, CalQueueRow(i, _))
@@ -325,7 +343,7 @@ object CalQueueTable {
         rowHeight        = SeqexecStyles.rowHeight,
         rowClassName     = rowClassName(p, s) _,
         width            = size.width.toInt,
-        rowGetter        = p.rowGetter _,
+        rowGetter        = p.rowGetter(s) _,
         headerClassName  = SeqexecStyles.tableHeader.htmlClass,
         scrollTop        = s.tableState.scrollPosition,
         onScroll         = (_, _, pos) => updateScrollPosition(pos),
@@ -338,7 +356,7 @@ object CalQueueTable {
       )
 
     def requestMove(c: IndexChange): Callback =
-      b.props >>= { p =>
+      (b.props >>= { p =>
         p.data.seqs
           .map(_.id)
           .lift(c.oldIndex)
@@ -346,7 +364,7 @@ object CalQueueTable {
             SeqexecCircuit.dispatchCB(
               RequestMoveCal(p.queueId, i, c.newIndex - c.oldIndex)))
           .getOrEmpty
-      }
+      }) *> b.modState(_.copy(moved = c.some))
 
     def resetAnim: Callback =
       b.modState(_.copy(animationRendered = true)) *>
@@ -356,6 +374,9 @@ object CalQueueTable {
 
     def allowAnim: Callback =
       b.modState(_.copy(animationRendered = false))
+
+    def resetMoved: Callback =
+      b.modState(_.copy(moved = none))
 
     def render(p: Props, s: State): VdomElement =
       <.div(
@@ -406,7 +427,7 @@ object CalQueueTable {
       c.backend.allowAnim.when(opChanged) *>
         // And then we reset the state to avoid re running the anim
         c.backend.setTimeout(c.backend.resetAnim, 1.5.second).when(opChanged) *>
-        Callback.empty
+        c.backend.resetMoved
     }
     .configure(Reusability.shouldComponentUpdate)
     .configure(TimerSupport.install)
