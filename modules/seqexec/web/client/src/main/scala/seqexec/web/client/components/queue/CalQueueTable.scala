@@ -135,6 +135,14 @@ object CalQueueTable {
       case _                                              => Nil
     }
 
+    /**
+      * Rows deleted on the last operation
+      */
+    val movedRows: List[Observation.Id] = data.lastOp match {
+      case Some(QueueManipulationOp.Moved(_, _, o, _)) => List(o)
+      case _                                           => Nil
+    }
+
     val afterDeletedRows: List[Int] =
       data.seqs.zipWithIndex
         .find {
@@ -305,6 +313,9 @@ object CalQueueTable {
           SeqexecStyles.headerRowStyle
         case (_, CalQueueRow(i, _))
             if p.addedRows.contains(i) && !s.animationRendered =>
+          SeqexecStyles.stepRow |+| SeqexecStyles.draggableRow |+| SeqexecStyles.calRowBackground
+        case (_, CalQueueRow(i, _))
+            if p.movedRows.contains(i) && !s.animationRendered =>
           SeqexecStyles.stepRow |+| SeqexecStyles.draggableRow |+| SeqexecStyles.calRowBackground
         case (i, CalQueueRow(_, _))
             if p.afterDeletedRows.contains(i) && !s.animationRendered =>
