@@ -378,6 +378,16 @@ object CalQueueTable {
     def resetMoved: Callback =
       b.modState(_.copy(moved = none))
 
+    def updateVisibleCols: Callback =
+      b.props >>= { p =>
+        val cols = if (p.data.loggedIn) {
+          State.DefaultEditable.tableState.columns
+        } else {
+          State.DefaultRO.tableState.columns
+        }
+        b.modState(s => s.copy(tableState = s.tableState.copy(columns = cols)))
+      }
+
     def render(p: Props, s: State): VdomElement =
       <.div(
         SeqexecStyles.stepsListPaneWithControls.when(p.canOperate),
@@ -427,7 +437,8 @@ object CalQueueTable {
       c.backend.allowAnim.when(opChanged) *>
         // And then we reset the state to avoid re running the anim
         c.backend.setTimeout(c.backend.resetAnim, 1.5.second).when(opChanged) *>
-        c.backend.resetMoved
+        c.backend.resetMoved *>
+        c.backend.updateVisibleCols
     }
     .configure(Reusability.shouldComponentUpdate)
     .configure(TimerSupport.install)
