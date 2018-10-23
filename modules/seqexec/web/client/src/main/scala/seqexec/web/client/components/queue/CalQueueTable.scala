@@ -447,7 +447,7 @@ object CalQueueTable {
       val opChanged = c.nextProps.data.lastOp =!= c.currentProps.data.lastOp
       c.backend.allowAnim.when(opChanged) *>
         // And then we reset the state to avoid re running the anim
-        c.backend.setTimeout(c.backend.resetAnim, 1.5.second).when(opChanged) *>
+        c.backend.setTimeout(c.backend.resetAnim, 1.second).when(opChanged) *>
         c.backend.resetMoved *>
         c.backend.updateVisibleCols
     }
