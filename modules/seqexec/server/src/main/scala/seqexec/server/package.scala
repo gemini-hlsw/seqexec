@@ -67,7 +67,7 @@ package server {
   final case class StopQueue(qid: QueueId, clientID: ClientId) extends SeqEvent
   final case class UpdateQueueAdd(qid: QueueId, seqs: List[Observation.Id]) extends SeqEvent
   final case class UpdateQueueRemove(qid: QueueId, seqs: List[Observation.Id], pos: List[Int]) extends SeqEvent
-  final case class UpdateQueueMoved(qid: QueueId, cid: ClientId) extends SeqEvent
+  final case class UpdateQueueMoved(qid: QueueId, cid: ClientId, oid: Observation.Id, pos: Int) extends SeqEvent
   final case class UpdateQueueClear(qid: QueueId) extends SeqEvent
   case object NullSeqEvent extends SeqEvent
 

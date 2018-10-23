@@ -14,7 +14,10 @@ sealed trait QueueManipulationOp extends Product with Serializable {
 }
 
 object QueueManipulationOp {
-  final case class Moved(qid: QueueId, cid: ClientId)
+  final case class Moved(qid: QueueId,
+                         cid: ClientId,
+                         oid: Observation.Id,
+                         pos: Int)
       extends QueueManipulationOp
   final case class Started(qid:   QueueId) extends QueueManipulationOp
   final case class Stopped(qid:   QueueId) extends QueueManipulationOp
@@ -27,7 +30,8 @@ object QueueManipulationOp {
       extends QueueManipulationOp
 
   implicit val equal: Eq[QueueManipulationOp] = Eq.instance {
-    case (Moved(a, c), Moved(b, d))         => a === b && c === d
+    case (Moved(a, c, e, g), Moved(b, d, f, h)) =>
+      a === b && c === d && e === f && g === h
     case (Started(a), Started(b))           => a === b
     case (Stopped(a), Stopped(b))           => a === b
     case (Clear(a), Clear(b))               => a === b

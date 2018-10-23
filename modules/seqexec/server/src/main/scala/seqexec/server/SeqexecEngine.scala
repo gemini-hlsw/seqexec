@@ -321,10 +321,10 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
   def moveSequenceInQueue(q: EventQueue, qid: QueueId, seqId: Observation.Id, delta: Int, cid: ClientId)
   : IO[Either[SeqexecFailure, Unit]] = q.enqueue1(
     Event.modifyState[executeEngine.ConcreteTypes](
-      (moveSeq(qid, seqId, delta) withEvent UpdateQueueMoved(qid, cid)).toHandle)
-  ).map(_.asRight)
+      executeEngine.get.flatMap(st => (moveSeq(qid, seqId, delta) withEvent UpdateQueueMoved(qid, cid, seqId, 0)).toHandle))
+    ).map(_.asRight)
 
-  private def clearQ(qid: QueueId): Endo[EngineState]= st => (
+  private def clearQ(qid: QueueId): Endo[EngineState] = st => (
     for {
       q <- st.queues.get(qid)
       if (q.status(st) =!= BatchExecState.Running)
@@ -816,25 +816,25 @@ object SeqexecEngine extends SeqexecConfiguration {
   }
 
   private def modifyStateEvent(v: SeqEvent, svs: => SequencesQueue[SequenceView]): SeqexecEvent = v match {
-    case NullSeqEvent                  => NullEvent
-    case SetOperator(_, _)             => OperatorUpdated(svs)
-    case SetObserver(_, _, _)          => ObserverUpdated(svs)
-    case AddLoadedSequence(i, s, _, c) => LoadSequenceUpdated(i, s, svs, c)
-    case ClearLoadedSequences(_)       => ClearLoadedSequencesUpdated(svs)
-    case SetConditions(_, _)           => ConditionsUpdated(svs)
-    case SetImageQuality(_, _)         => ConditionsUpdated(svs)
-    case SetWaterVapor(_, _)           => ConditionsUpdated(svs)
-    case SetSkyBackground(_, _)        => ConditionsUpdated(svs)
-    case SetCloudCover(_, _)           => ConditionsUpdated(svs)
-    case LoadSequence(id)              => SequenceLoaded(id, svs)
-    case UnloadSequence(id)            => SequenceUnloaded(id, svs)
-    case NotifyUser(m, cid)            => UserNotification(m, cid)
-    case UpdateQueueAdd(qid, seqs)     => QueueUpdated(QueueManipulationOp.AddedSeqs(qid, seqs), svs)
-    case UpdateQueueRemove(qid, s, p)  => QueueUpdated(QueueManipulationOp.RemovedSeqs(qid, s, p), svs)
-    case UpdateQueueMoved(qid, cid)    => QueueUpdated(QueueManipulationOp.Moved(qid, cid), svs)
-    case UpdateQueueClear(qid)         => QueueUpdated(QueueManipulationOp.Clear(qid), svs)
-    case StartQueue(qid, _)            => QueueUpdated(QueueManipulationOp.Started(qid), svs)
-    case StopQueue(qid, _)             => QueueUpdated(QueueManipulationOp.Stopped(qid), svs)
+    case NullSeqEvent                       => NullEvent
+    case SetOperator(_, _)                  => OperatorUpdated(svs)
+    case SetObserver(_, _, _)               => ObserverUpdated(svs)
+    case AddLoadedSequence(i, s, _, c)      => LoadSequenceUpdated(i, s, svs, c)
+    case ClearLoadedSequences(_)            => ClearLoadedSequencesUpdated(svs)
+    case SetConditions(_, _)                => ConditionsUpdated(svs)
+    case SetImageQuality(_, _)              => ConditionsUpdated(svs)
+    case SetWaterVapor(_, _)                => ConditionsUpdated(svs)
+    case SetSkyBackground(_, _)             => ConditionsUpdated(svs)
+    case SetCloudCover(_, _)                => ConditionsUpdated(svs)
+    case LoadSequence(id)                   => SequenceLoaded(id, svs)
+    case UnloadSequence(id)                 => SequenceUnloaded(id, svs)
+    case NotifyUser(m, cid)                 => UserNotification(m, cid)
+    case UpdateQueueAdd(qid, seqs)          => QueueUpdated(QueueManipulationOp.AddedSeqs(qid, seqs), svs)
+    case UpdateQueueRemove(qid, s, p)       => QueueUpdated(QueueManipulationOp.RemovedSeqs(qid, s, p), svs)
+    case UpdateQueueMoved(qid, cid, oid, p) => QueueUpdated(QueueManipulationOp.Moved(qid, cid, oid, p), svs)
+    case UpdateQueueClear(qid)              => QueueUpdated(QueueManipulationOp.Clear(qid), svs)
+    case StartQueue(qid, _)                 => QueueUpdated(QueueManipulationOp.Started(qid), svs)
+    case StopQueue(qid, _)                  => QueueUpdated(QueueManipulationOp.Stopped(qid), svs)
   }
 
   def toSeqexecEvent(ev: executeEngine.ResultType)(svs: => SequencesQueue[SequenceView]): SeqexecEvent = ev match {

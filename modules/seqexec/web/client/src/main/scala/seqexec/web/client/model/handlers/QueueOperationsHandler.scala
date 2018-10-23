@@ -134,7 +134,9 @@ class QueueOperationsHandler[M](modelRW: ModelRW[M, CalibrationQueues])
       updatedLE(
         CalibrationQueues.stopCalL(qid).set(StopCalOperation.StopCalIdle),
         notification)
+  }
 
+  def handleSeqRequestResultFailed: PartialFunction[Any, ActionResult[M]] = {
     case RemoveSeqCalFailed(qid, id) =>
       val msg = s"Failed to remove sequence ${id.format} from the queue"
       val notification = Effect(
@@ -164,5 +166,6 @@ class QueueOperationsHandler[M](modelRW: ModelRW[M, CalibrationQueues])
          handleSeqOps,
          handleRequestResultOk,
          handleClearLastOp,
+         handleSeqRequestResultFailed,
          handleRequestResultFailed).combineAll
 }
