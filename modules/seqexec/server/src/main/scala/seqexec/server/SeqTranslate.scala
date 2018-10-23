@@ -18,7 +18,6 @@ import gem.Observation
 import gem.enum.Site
 import mouse.all._
 import org.log4s._
-import seqexec.engine.Result.{Configured, FileIdAllocated, Observed}
 import seqexec.engine.{Action, Event, Result, Sequence, Step, fromF}
 import seqexec.model.enum.{Instrument, Resource}
 import seqexec.model.{ActionType, StepState}
@@ -132,39 +131,43 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
 
   private def step(obsId: Observation.Id, i: Int, config: Config, nextToRun: Int,
                    datasets: Map[Int, ExecutedDataset]): TrySeq[SequenceGen.Step] = {
-    def buildStep(inst: InstrumentSystem[IO], sys: List[System[IO]], headers: Reader[HeaderExtraData,List[Header]]): HeaderExtraData => Step[IO] = ctx => {
+    def buildStep(inst: InstrumentSystem[IO], sys: List[System[IO]],
+                  headers: Reader[HeaderExtraData, List[Header]]): SequenceGen.Step = {
       val initialStepExecutions: List[List[Action[IO]]] =
-        if (i === 0) List(List(systems.odb.sequenceStart(obsId, "").map(_ => Result.Ignored).toAction(ActionType.Undefined)))
+        if (i === 0)
+          List(List(systems.odb.sequenceStart(obsId, "")
+            .map(_ => Ignored).toAction(ActionType.Undefined)))
         else Nil
 
-      val regularStepExecutions: List[List[Action[IO]]] =
-        List(
-          sys.map { x =>
-            val kind = ActionType.Configure(resourceFromSystem(x))
-            x.configure(config).map(_ => Result.Configured(x.resource)).toAction(kind)
-          },
-          List(Action(ActionType.Observe, observe(config, obsId, inst, sys.filterNot(inst.equals)
-            , headers)(ctx), Action.State(Action.Idle, Nil))))
+      def regularStepExecutions(ctx:HeaderExtraData): List[List[Action[IO]]] = List(
+        sys.map { x =>
+          val kind = ActionType.Configure(resourceFromSystem(x))
+          x.configure(config).map(_ => Configured(x.resource)).toAction(kind)
+        },
+        List(Action(ActionType.Observe, observe(config, obsId, inst, sys.filterNot(inst.equals),
+          headers)(ctx), Action.State(Action.Idle, Nil)))
+      )
+
       extractStatus(config) match {
-        case StepState.Pending if i >= nextToRun => Step.init[IO](
-          id = i,
-          fileId = None,
-          executions = initialStepExecutions ++ regularStepExecutions
+        case StepState.Pending if i >= nextToRun => SequenceGen.PendingStep(
+          i,
+          config.toStepConfig,
+          calcResources(sys),
+          ctx => Step.init[IO](
+            id = i,
+            executions = initialStepExecutions ++ regularStepExecutions(ctx)
+          )
         )
-        case StepState.Pending => Step.init[IO](
-          id = i,
-          fileId = datasets.get(i + 1).map(_.filename), // Note that steps on datasets are indexed starting on 1
-          // TODO: Is it possible to reconstruct done executions from the ODB?
-          executions = Nil
-        ).copy(skipped = Step.Skipped(true))
-        // TODO: This case should be for completed Steps only. Fail when step
-        // status is unknown.
-        case _ => Step.init[IO](
-          id = i,
-          fileId = datasets.get(i + 1).map(_.filename), // Note that steps on datasets are indexed starting on 1
-          // TODO: Is it possible to reconstruct done executions from the ODB?
-          executions = Nil
-        ).copy(skipped = Step.Skipped(extractSkipped(config)))
+        case StepState.Pending                   => SequenceGen.SkippedStep(
+          i,
+          config.toStepConfig
+        )
+        // TODO: This case should be for completed Steps only. Fail when step status is unknown.
+        case _                                   => SequenceGen.CompletedStep(
+          i,
+          config.toStepConfig,
+          datasets.get(i + 1).map(_.filename)
+        )
       }
     }
 
@@ -173,7 +176,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
       inst      <- toInstrumentSys(stepType.instrument)
       systems   <- calcSystems(stepType)
       headers   <- calcHeaders(config, stepType)
-    } yield SequenceGen.Step(i, config.toStepConfig, calcResources(systems), buildStep(inst, systems, headers))
+    } yield buildStep(inst, systems, headers)
   }
   //scalastyle:on
 
@@ -186,12 +189,6 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
       case "complete" => StepState.Completed
       case "skipped"  => StepState.Skipped
       case kw         => StepState.Failed("Unexpected status keyword: " ++ kw)
-    }
-
-  private def extractSkipped(config: Config): Boolean =
-    config.getItemValue(new ItemKey("observe:status")).show match {
-      case "skipped" => true
-      case _         => false
     }
 
   def sequence(obsId: Observation.Id, sequence: SeqexecSequence):
@@ -512,7 +509,7 @@ object SeqTranslate {
     }.flatten
   }
 
-  implicit class ResponseToResult(val r: Either[SeqexecFailure, Result.Response]) extends AnyVal {
+  implicit class ResponseToResult(val r: Either[SeqexecFailure, Response]) extends AnyVal {
     def toResult: Result = r.fold(e => Result.Error(SeqexecFailure.explain(e)), r => Result.OK(r))
   }
 
@@ -524,7 +521,7 @@ object SeqTranslate {
     def toResult: Result = r.fold(e => Result.Error(SeqexecFailure.explain(e)), r => Result.OK(Configured(r.sys.resource)))
   }
 
-  implicit class ActionResponseToAction[A <: Result.Response](val x: SeqAction[A]) extends AnyVal {
+  implicit class ActionResponseToAction[A <: Response](val x: SeqAction[A]) extends AnyVal {
     def toAction(kind: ActionType): Action[IO] = fromF[IO](kind, x.value.map(_.toResult))
   }
 

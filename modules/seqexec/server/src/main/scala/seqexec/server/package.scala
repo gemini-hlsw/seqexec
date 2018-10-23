@@ -21,6 +21,7 @@ import monocle.macros.GenLens
 import monocle.function.At.at
 import monocle.function.At.atMap
 import seqexec.engine.Engine
+import seqexec.engine.Result.{PartialVal, RetVal}
 import seqexec.model.ClientId
 import seqexec.model.CalibrationQueueId
 import seqexec.model.CalibrationQueueName
@@ -32,6 +33,7 @@ import seqexec.model.SequenceState
 import seqexec.model.enum._
 import seqexec.model.Notification
 import seqexec.model.UserDetails
+import seqexec.model.dhs.ImageFileId
 
 package server {
 
@@ -92,6 +94,13 @@ package server {
   object HeaderExtraData {
     val default: HeaderExtraData = HeaderExtraData(Conditions.Default, None, None)
   }
+
+  sealed trait Response extends RetVal
+  final case class Configured(resource: Resource) extends Response
+  final case class Observed(fileId: ImageFileId) extends Response
+  object Ignored extends Response
+
+  final case class FileIdAllocated(fileId: ImageFileId) extends PartialVal
 
 }
 

@@ -4,7 +4,6 @@
 package seqexec.engine
 
 import cats.Eq
-import seqexec.model.enum.Resource
 import monocle.function.Index.{index, listIndex}
 import monocle.syntax.apply._
 import mouse.boolean._
@@ -111,10 +110,4 @@ object Result {
     implicit val eq: Eq[Error] = Eq.fromUniversalEquals
   }
 
-  sealed trait Response extends RetVal
-  final case class Configured(resource: Resource) extends Response
-  final case class Observed(fileId: FileId) extends Response
-  object Ignored extends Response
-
-  final case class FileIdAllocated(fileId: FileId) extends PartialVal
 }

@@ -60,16 +60,22 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
     tag[GhostSettings][Uri](uri("http://localhost:8888/xmlrpc"))
   )
 
-  def configureIO(resource: Resource): IO[Result] = IO.apply(Result.OK(Result.Configured(resource)))
+  def configureIO(resource: Resource): IO[Result] = IO.apply(Result.OK(Configured(resource)))
   def pendingAction(resource: Resource): Action[IO] =
     engine.fromF[IO](ActionType.Configure(resource), configureIO(resource))
-  def running(resource: Resource): Action[IO] = pendingAction(resource).copy(state = Action.State(Action.Started, Nil))
-  def done(resource: Resource): Action[IO] = pendingAction(resource).copy(state = Action.State(Action.Completed(Result.Configured(resource)), Nil))
+  def running(resource: Resource): Action[IO] = pendingAction(resource).copy(state = Action.State(
+    Action.Started, Nil))
+  def done(resource: Resource): Action[IO] = pendingAction(resource).copy(state = Action.State(
+    Action.Completed(Configured(resource)), Nil))
   val fileId = "fileId"
-  def observing: Action[IO] = engine.fromF[IO](ActionType.Observe, IO.apply(Result.OK(Result.Observed(fileId)))).copy(state = Action.State(Action.Started, Nil))
-  def fileIdReady: Action[IO] = observing.copy(state = Action.State(Action.Started, List(Result.FileIdAllocated(fileId))))
-  def observed: Action[IO] = observing.copy(state = Action.State(Action.Completed(Result.Observed(fileId)), List(Result.FileIdAllocated(fileId))))
-  def paused: Action[IO] = observing.copy(state = Action.State(Action.Paused(new PauseContext{}), List(Result.FileIdAllocated(fileId))))
+  def observing: Action[IO] = engine.fromF[IO](ActionType.Observe,
+    IO.apply(Result.OK(Observed(fileId)))).copy(state = Action.State(Action.Started, Nil))
+  def fileIdReady: Action[IO] = observing.copy(state = Action.State(Action.Started,
+    List(FileIdAllocated(fileId))))
+  def observed: Action[IO] = observing.copy(state = Action.State(Action.Completed(Observed(fileId)),
+    List(FileIdAllocated(fileId))))
+  def paused: Action[IO] = observing.copy(state = Action.State(Action.Paused(new PauseContext{}),
+    List(FileIdAllocated(fileId))))
 
   "SeqexecEngine configStatus" should
     "build empty without tasks" in {
@@ -195,13 +201,14 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
     id,
     "",
     Instrument.F2,
-    List(SequenceGen.Step(1, Map(), Set.empty, _ => Step.init(1, None, List(List(pendingAction(Instrument.F2))))))
+    List(SequenceGen.PendingStep(1, Map(), Set.empty, _ => Step.init(1, List(List(pendingAction
+    (Instrument.F2))))))
   )
   private def sequenceWithResources(id: Observation.Id, ins: Instrument, resources: Set[Resource]): SequenceGen = SequenceGen(
     id,
     "",
     ins,
-    List(SequenceGen.Step(1, Map(), resources, _ => Step.init(1, None, List(List(pendingAction(ins))))))
+    List(SequenceGen.PendingStep(1, Map(), resources, _ => Step.init(1, List(List(pendingAction(ins))))))
   )
 
   "SeqexecEngine addSequenceToQueue" should

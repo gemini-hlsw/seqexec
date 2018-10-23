@@ -40,20 +40,19 @@ class SeqTranslateSpec extends FlatSpec {
   private val fileId = "DummyFileId"
   private val seqId = Observation.Id.unsafeFromString("GS-2018A-Q-1-1")
   private def observeActions(state: Action.ActionState): List[Action[IO]] = List(
-    Action(ActionType.Observe, Stream.emit(Result.OK(Result.Observed(fileId))).covary[IO],
+    Action(ActionType.Observe, Stream.emit(Result.OK(Observed(fileId))).covary[IO],
       Action.State(state, Nil))
   )
   private val seqg = SequenceGen(
     seqId,
     "",
     GmosS,
-    List(SequenceGen.Step(
+    List(SequenceGen.PendingStep(
       1,
       config,
       Set(GmosS),
       _ => Step.init(
         1,
-        None,
         List(observeActions(Action.Idle))
       )
     ))
@@ -72,13 +71,13 @@ class SeqTranslateSpec extends FlatSpec {
   private val s1: EngineState = baseState
   // Observe completed
   private val s2: EngineState = (EngineState.executionState ^|-? Engine.State.sequenceState(seqId))
-    .modify(_.mark(0)(Result.OK(Result.Observed(fileId))))(baseState)
+    .modify(_.mark(0)(Result.OK(Observed(fileId))))(baseState)
   // Observe started, but with file Id already allocated
   private val s3: EngineState = (EngineState.executionState ^|-? Engine.State.sequenceState(seqId))
-    .modify(_.start(0).mark(0)(Result.Partial(Result.FileIdAllocated(fileId))))(baseState)
+    .modify(_.start(0).mark(0)(Result.Partial(FileIdAllocated(fileId))))(baseState)
   // Observe paused
   private val s4: EngineState = (EngineState.executionState ^|-? Engine.State.sequenceState(seqId))
-    .modify(_.mark(0)(Result.Paused(ObserveContext(_ => SeqAction(Result.OK(Result.Observed
+    .modify(_.mark(0)(Result.Paused(ObserveContext(_ => SeqAction(Result.OK(Observed
     (fileId))), Seconds(1)))))(baseState)
   // Observe failed
   private val s5: EngineState = (EngineState.executionState ^|-? Engine.State.sequenceState(seqId))

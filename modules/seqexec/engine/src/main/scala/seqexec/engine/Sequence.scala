@@ -313,15 +313,7 @@ object Sequence {
 
         val currentExecutionL: Lens[Zipper[F], Execution[F]] = zipperL ^|-> Sequence.Zipper.current
 
-        val currentFileIdL: Lens[Zipper[F], Option[FileId]] =
-          zipperL ^|-> Sequence.Zipper.focus ^|-> Step.Zipper.fileId
-
-        val z: Zipper[F] = r match {
-            case Result.Partial(Result.FileIdAllocated(fileId)) => currentFileIdL.set(fileId.some)(self)
-            case _                                              => self
-          }
-
-        currentExecutionL.modify(_.mark(i)(r))(z)
+        currentExecutionL.modify(_.mark(i)(r))(self)
 
       }
 

@@ -61,7 +61,6 @@ class SequenceSpec extends FlatSpec {
   def simpleStep(id: Int, breakpoint: Boolean): Step[IO] =
     Step.init(
       id = id,
-      fileId = None,
       executions = List(
         List(action, action), // Execution
         List(action) // Execution
@@ -142,17 +141,17 @@ class SequenceSpec extends FlatSpec {
   }
 
   // TODO: Share these fixtures with StepSpec
-  private val observeResult: Result.Response = Result.Observed("dummyId")
-  private val result: Result = Result.OK(observeResult)
+  private object DummyResult extends Result.RetVal
+  private val result: Result = Result.OK(DummyResult)
   private val action: Action[IO] = fromF[IO](ActionType.Undefined, IO(result))
-  private val completedAction: Action[IO] = action.copy(state = Action.State(Action.Completed(observeResult), Nil))
+  private val completedAction: Action[IO] = action.copy(state = Action.State(Action.Completed(DummyResult), Nil))
   def simpleStep2(pending: List[Actions[IO]], focus: Execution[IO], done: List[Results]): Step.Zipper[IO] = {
     val rollback: (Execution[IO], List[Actions[IO]]) =  done.map(_.map(const(action))) ++ List(focus.execution.map(const(action))) ++ pending match {
       case Nil => (Execution.empty, Nil)
       case x::xs => (Execution(x), xs)
     }
 
-    Step.Zipper(1, None, breakpoint = Step.BreakpointMark(false), Step.SkipMark(false), pending, focus, done.map(_.map{r =>
+    Step.Zipper(1, breakpoint = Step.BreakpointMark(false), Step.SkipMark(false), pending, focus, done.map(_.map{r =>
       val x = fromF[IO](ActionType.Observe, IO(r))
       x.copy(state = Execution.actionStateFromResult(r)(x.state))
     }), rollback)

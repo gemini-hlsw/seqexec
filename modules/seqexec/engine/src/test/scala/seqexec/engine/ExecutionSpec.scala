@@ -9,10 +9,10 @@ import seqexec.model.ActionType
 
 class ExecutionSpec extends FlatSpec with Matchers {
 
-  private val observeResult: Result.Response = Result.Observed("dummyId")
-  private val ok: Result = Result.OK(observeResult)
+  private object DummyResult extends Result.RetVal
+  private val ok: Result = Result.OK(DummyResult)
   private val completedAction: Action[Id] = fromF[Id](ActionType.Observe, ok).copy(state =
-    Action.State(Action.Completed(observeResult), Nil))
+    Action.State(Action.Completed(DummyResult), Nil))
   private val action: Action[Id] = fromF[Id](ActionType.Observe, ok)
   private val curr: Execution[Id] = Execution(List(completedAction, action))
 

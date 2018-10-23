@@ -74,7 +74,4 @@ package object engine {
 
   type Results = List[Result]
 
-  type FileId = String
-
-
 }

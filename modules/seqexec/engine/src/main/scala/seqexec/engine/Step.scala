@@ -14,7 +14,6 @@ import monocle.macros.GenLens
   */
 final case class Step[F[_]](
   id: Step.Id,
-  fileId: Option[FileId],
   breakpoint: Step.BreakpointMark,
   skipped: Step.Skipped,
   skipMark: Step.SkipMark,
@@ -30,8 +29,7 @@ object Step {
   final case class Skipped(self: Boolean) extends AnyVal
 
   def init[F[_]](id: Id,
-           fileId: Option[FileId],
-           executions: List[List[Action[F]]]): Step[F] = Step(id, fileId, BreakpointMark(false),
+           executions: List[List[Action[F]]]): Step[F] = Step(id, BreakpointMark(false),
     Skipped(false), SkipMark(false), executions)
 
   /**
@@ -62,7 +60,6 @@ object Step {
     */
   final case class Zipper[F[_]](
     id: Int,
-    fileId: Option[FileId],
     breakpoint: BreakpointMark,
     skipMark: SkipMark,
     pending: List[Actions[F]],
@@ -97,7 +94,7 @@ object Step {
       */
     val uncurrentify: Option[Step[F]] =
       if (pending.isEmpty) focus.uncurrentify.map(
-        x => Step(id, fileId, breakpoint, Skipped(false), skipMark, x :: done)
+        x => Step(id, breakpoint, Skipped(false), skipMark, x :: done)
       )
       else None
 
@@ -108,7 +105,6 @@ object Step {
     val toStep: Step[F] =
       Step(
         id,
-        fileId,
         breakpoint,
         Skipped(false),
         skipMark,
@@ -146,7 +142,6 @@ object Step {
       calcRolledback(step.executions).map{ case (x, exes) =>
         Zipper(
           step.id,
-          step.fileId,
           step.breakpoint,
           step.skipMark,
           exes,
@@ -158,9 +153,6 @@ object Step {
 
     def current[F[_]]: Lens[Zipper[F], Execution[F]] =
       GenLens[Zipper[F]](_.focus)
-
-    def fileId[F[_]]: Lens[Zipper[F], Option[FileId]] =
-      GenLens[Zipper[F]](_.fileId)
 
   }
 

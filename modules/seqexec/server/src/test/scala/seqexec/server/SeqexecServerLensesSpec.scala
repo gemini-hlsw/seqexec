@@ -8,6 +8,7 @@ import cats.effect.IO
 import cats.tests.CatsSuite
 import seqexec.model.enum.Instrument
 import seqexec.engine
+import SequenceGen._
 import seqexec.server.SeqexecServerArbitraries._
 import gem.arb.ArbObservation
 import gem.Observation
@@ -19,7 +20,16 @@ import monocle.law.discipline.LensTests
 final class SeqexecServerLensesSpec extends CatsSuite with ArbObservation {
 
   implicit val steppEq: Eq[HeaderExtraData => engine.Step[IO]] = Eq.fromUniversalEquals
-  implicit val stepgEq: Eq[SequenceGen.Step] = Eq.by(x => (x.id, x.config, x.resources, x.generator))
+  implicit val pndstepgEq: Eq[PendingStep] = Eq.by(x => (x.id, x.config, x.resources, x
+    .generator))
+  implicit val skipstepgEq: Eq[SkippedStep] = Eq.by(x => (x.id, x.config))
+  implicit val cmpstepgEq: Eq[CompletedStep] = Eq.by(x => (x.id, x.config, x.fileId))
+  implicit val stepqEq: Eq[Step] = Eq.instance{
+    case (a:PendingStep, b:PendingStep)     => a === b
+    case (a:SkippedStep, b:SkippedStep)     => a === b
+    case (a:CompletedStep, b:CompletedStep) => a === b
+    case _                                  => false
+  }
   implicit val seqgEq: Eq[SequenceGen] = Eq.by(x => (x.id, x.title, x.instrument, x.steps))
   implicit val obsseqEq: Eq[ObserverSequence] = Eq.by(x => (x.observer, x.seq))
   implicit val seqstateEq: Eq[engine.Sequence.State[IO]] = Eq.fromUniversalEquals

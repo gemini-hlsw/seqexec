@@ -19,7 +19,7 @@ import gem.enum.Site
 import giapi.client.Giapi
 import giapi.client.gpi.GPIClient
 import seqexec.engine
-import seqexec.engine.Result.{FileIdAllocated, Partial}
+import seqexec.engine.Result.Partial
 import seqexec.engine.{Step => _, _}
 import seqexec.engine.Handle
 import seqexec.model._
@@ -46,6 +46,8 @@ import org.http4s.client.Client
 import org.http4s.Uri
 import knobs.Config
 import mouse.all._
+import seqexec.model.dhs.ImageFileId
+
 import scala.collection.immutable.SortedMap
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
@@ -585,8 +587,16 @@ object SeqexecEngine extends SeqexecConfiguration {
       case _                 => configStatus(step.executions)
     }
 
-  protected[server] def observeStatus(executions: List[List[engine.Action[IO]]]): ActionStatus =
-    executions.flatten.find(_.kind === ActionType.Observe).map(a => actionStateToStatus(a.state.runState)).getOrElse(ActionStatus.Pending)
+  private def observeAction(executions: List[List[engine.Action[IO]]]): Option[Action[IO]] =
+    executions.flatten.find(_.kind === ActionType.Observe)
+
+  private[server] def observeStatus(executions: List[List[engine.Action[IO]]]): ActionStatus =
+    observeAction(executions).map(a => actionStateToStatus(a.state.runState)).getOrElse(
+      ActionStatus.Pending)
+
+  private def fileId(executions: List[List[engine.Action[IO]]]): Option[ImageFileId] =
+    observeAction(executions).flatMap(_.state.partials.collect{ case FileIdAllocated(fid) => fid}
+      .headOption)
 
   def viewStep(stepg: SequenceGen.Step, step: engine.Step[IO]): StandardStep = {
     val configStatus = stepConfigStatus(step)
@@ -598,7 +608,9 @@ object SeqexecEngine extends SeqexecConfiguration {
       skip = step.skipMark.self,
       configStatus = configStatus,
       observeStatus = observeStatus(step.executions),
-      fileId = step.fileId
+      fileId = fileId(step.executions).orElse(stepg.some.collect{
+        case SequenceGen.CompletedStep(_, _, fileId) => fileId
+      }.flatten)
     )
   }
 
@@ -763,7 +775,7 @@ object SeqexecEngine extends SeqexecConfiguration {
   }
 
   private def toStepList(seq: SequenceGen, d: HeaderExtraData): List[engine.Step[IO]] =
-    seq.steps.map(_.generator(d))
+    seq.steps.map(_.generate(d))
 
   private def toEngineSequence(id: Observation.Id, seq: SequenceGen, d: HeaderExtraData)
   : Sequence[IO] = Sequence(id, toStepList(seq, d))
