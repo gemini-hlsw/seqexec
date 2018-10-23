@@ -12,28 +12,28 @@ import monocle.macros.GenLens
 /**
   * A list of `Step`s grouped by target and instrument.
   */
-final case class Sequence(
+final case class Sequence[F[_]](
   id: Observation.Id,
-  steps: List[Step]
+  steps: List[Step[F]]
 )
 
 object Sequence {
 
-  def empty[A](id: Observation.Id): Sequence = Sequence(id, Nil)
+  def empty[F[_]](id: Observation.Id): Sequence[F] = Sequence(id, Nil)
 
   /**
     * Sequence Zipper. This structure is optimized for the actual `Sequence`
     * execution.
     *
     */
-  final case class Zipper(
+  final case class Zipper[F[_]](
     id: Observation.Id,
-    pending: List[Step],
-    focus: Step.Zipper,
-    done: List[Step]
+    pending: List[Step[F]],
+    focus: Step.Zipper[F],
+    done: List[Step[F]]
   ) {
 
-    private val (toSkip, remaining): (List[Step], List[Step]) = pending.span(st => st.skipMark.self)
+    private val (toSkip, remaining): (List[Step[F]], List[Step[F]]) = pending.span(st => st.skipMark.self)
 
     /**
       * Runs the next execution. If the current `Step` is completed it adds the
@@ -45,11 +45,11 @@ object Sequence {
       *
       * It skips steps, but honoring breakpoints.
       */
-    val next: Option[Zipper] =
+    val next: Option[Zipper[F]] =
       focus.next match {
         // Step completed
         case None      =>
-          val (toSkip, remaining): (List[Step], List[Step]) = pending.span(st => st.skipMark.self && !st.breakpoint.self)
+          val (toSkip, remaining): (List[Step[F]], List[Step[F]]) = pending.span(st => st.skipMark.self && !st.breakpoint.self)
           remaining match {
             case Nil => None
             case stepp :: stepps => (Step.Zipper.currentify(stepp), focus.uncurrentify).mapN (
@@ -60,10 +60,10 @@ object Sequence {
         case Some(stz) => Some(Zipper(id, pending, stz, done))
       }
 
-    def rollback: Zipper = this.copy(focus = focus.rollback)
+    def rollback: Zipper[F] = this.copy(focus = focus.rollback)
 
     //Skips steps before starting a sequence.
-    def skips: Option[Zipper] = {
+    def skips: Option[Zipper[F]] = {
       if (focus.skipMark.self) {
         remaining match {
           case Nil => None
@@ -81,7 +81,7 @@ object Sequence {
       * This is a special way of *unzipping* a `Zipper`.
       *
       */
-    val uncurrentify: Option[Sequence] =
+    val uncurrentify: Option[Sequence[F]] =
       if (remaining.isEmpty)
         if(focus.skipMark.self) Sequence(id, (done :+ focus.skip) ::: toSkip.map(_.copy(skipped = Step.Skipped(true)))).some
         else focus.uncurrentify.map(x => Sequence(id, (done :+ x) ::: toSkip.map(_.copy(skipped = Step.Skipped(true)))))
@@ -91,7 +91,7 @@ object Sequence {
       * Unzip a `Zipper`. This creates a single `Sequence` with either
       * completed `Step`s or pending `Step`s.
       */
-    val toSequence: Sequence =
+    val toSequence: Sequence[F] =
       Sequence(
         id,
         // TODO: Functor composition?
@@ -106,7 +106,7 @@ object Sequence {
       * `Sequence` are pending. This is a special way of *zipping* a `Sequence`.
       *
       */
-    def currentify(seq: Sequence): Option[Zipper] =
+    def currentify[F[_]](seq: Sequence[F]): Option[Zipper[F]] =
       seq.steps match {
         case Nil           => None
         case step :: steps =>
@@ -115,7 +115,7 @@ object Sequence {
           )
       }
 
-    def zipper(seq: Sequence): Option[Zipper] =
+    def zipper[F[_]](seq: Sequence[F]): Option[Zipper[F]] =
       separate(seq).flatMap {
         case (pending, done)   => pending match {
           case Nil             => None
@@ -128,9 +128,9 @@ object Sequence {
 
     // We would use MonadPlus' `separate` if we wanted to separate Actions or
     // Results, but here we want only Steps.
-    private def separate(seq: Sequence): Option[(List[Step], List[Step])] = {
+    private def separate[F[_]](seq: Sequence[F]): Option[(List[Step[F]], List[Step[F]])] = {
 
-      seq.steps.foldLeftM[Option, (List[Step], List[Step])]((Nil, Nil))(
+      seq.steps.foldLeftM[Option, (List[Step[F]], List[Step[F]])]((Nil, Nil))(
         (acc, step) =>
         if (Step.status(step) === StepState.Pending)
           Some(acc.leftMap(_ :+ step))
@@ -141,15 +141,15 @@ object Sequence {
 
     }
 
-    val focus: Lens[Zipper, Step.Zipper] =
-      GenLens[Zipper](_.focus)
+    def focus[F[_]]: Lens[Zipper[F], Step.Zipper[F]] =
+      GenLens[Zipper[F]](_.focus)
 
-    val current: Lens[Zipper, Execution] =
+    def current[F[_]]: Lens[Zipper[F], Execution[F]] =
       focus ^|-> Step.Zipper.current
 
   }
 
-  sealed trait State {
+  sealed trait State[F[_]] {
 
     /**
       * Returns a new `State` where the next pending `Step` is been made the
@@ -159,28 +159,28 @@ object Sequence {
       * If the current `Step` has `Execution`s not completed or there are no more
       * pending `Step`s it returns `None`.
       */
-    val next: Option[State]
+    val next: Option[State[F]]
 
     val status: SequenceState
 
-    val pending: List[Step]
+    val pending: List[Step[F]]
 
-    def rollback: State
+    def rollback: State[F]
 
-    def skips: Option[State]
+    def skips: Option[State[F]]
 
-    def setBreakpoint(stepId: Step.Id, v: Boolean): State
+    def setBreakpoint(stepId: Step.Id, v: Boolean): State[F]
 
-    def setSkipMark(stepId: Step.Id, v: Boolean): State
+    def setSkipMark(stepId: Step.Id, v: Boolean): State[F]
 
     def getCurrentBreakpoint: Boolean
 
     /**
       * Current Execution
       */
-    val current: Execution
+    val current: Execution[F]
 
-    val done: List[Step]
+    val done: List[Step[F]]
 
     /**
       * Given an index of a current `Action` it replaces such `Action` with the
@@ -188,9 +188,9 @@ object Sequence {
       *
       * If the index doesn't exist, the new `State` is returned unmodified.
       */
-    def mark(i: Int)(r: Result): State
+    def mark(i: Int)(r: Result): State[F]
 
-    def start(i: Int): State
+    def start(i: Int): State[F]
 
     /**
       * Updates the steps executions.
@@ -198,40 +198,40 @@ object Sequence {
       * @param stepDefs New executions.
       * @return Updated state
       */
-    def update(stepDefs: List[List[Actions]]): State
+    def update(stepDefs: List[List[Actions[F]]]): State[F]
 
     /**
       * Unzip `State`. This creates a single `Sequence` with either completed `Step`s
       * or pending `Step`s.
       */
-    val toSequence: Sequence
+    val toSequence: Sequence[F]
 
   }
 
   object State {
 
-    val status: Lens[State, SequenceState] =
+    def status[F[_]]: Lens[State[F], SequenceState] =
     // `State` doesn't provide `.copy`
-      Lens[State, SequenceState](_.status)(s => {
+      Lens[State[F], SequenceState](_.status)(s => {
         case Zipper(st, _) => Zipper(st, s)
         case Final(st, _)  => Final(st, s)
       })
 
-    def isRunning(st: State): Boolean = st.status.isRunning
+    def isRunning[F[_]](st: State[F]): Boolean = st.status.isRunning
 
-    def userStopRequested(st: State): Boolean = st.status.userStopRequested
+    def userStopRequested[F[_]](st: State[F]): Boolean = st.status.userStopRequested
 
-    def anyStopRequested(st: State): Boolean = st.status match {
+    def anyStopRequested[F[_]](st: State[F]): Boolean = st.status match {
       case SequenceState.Running(u, i) => u || i
       case _                           => false
     }
 
-    def userStopSet(v: Boolean): State => State = status.modify {
+    def userStopSet[F[_]](v: Boolean): State[F] => State[F] = status.modify {
       case r@SequenceState.Running(_, _) => r.copy(userStop = v)
       case r                             => r
     }
 
-    def internalStopSet(v: Boolean): State => State = status.modify {
+    def internalStopSet[F[_]](v: Boolean): State[F] => State[F] = status.modify {
       case r@SequenceState.Running(_, _) => r.copy(internalStop = v)
       case r                             => r
     }
@@ -240,8 +240,8 @@ object Sequence {
       * Initialize a `State` passing a `Sequence` of pending `Step`s.
       */
     // TODO: Make this function `apply`?
-    def init(q: Sequence): State =
-      Sequence.Zipper.zipper(q).map(Zipper(_, SequenceState.Idle))
+    def init[F[_]](q: Sequence[F]): State[F] =
+      Sequence.Zipper.zipper[F](q).map(Zipper(_, SequenceState.Idle))
         .getOrElse(Final(q, SequenceState.Idle))
 
     /**
@@ -251,7 +251,7 @@ object Sequence {
       * @param st Old sequence state
       * @return The new sequence state
       */
-    def reload(steps: List[Step], st:State): State =
+    def reload[F[_]](steps: List[Step[F]], st:State[F]): State[F] =
       if(st.status.isRunning) st
       else {
         val oldSeq = st.toSequence
@@ -263,18 +263,19 @@ object Sequence {
       * This is the `State` in Zipper mode, which means is under execution.
       *
       */
-    final case class Zipper(zipper: Sequence.Zipper, status: SequenceState) extends State { self =>
+    final case class Zipper[F[_]](zipper: Sequence.Zipper[F], status: SequenceState) extends
+      State[F] { self =>
 
-      override val next: Option[State] = zipper.next match {
+      override val next: Option[State[F]] = zipper.next match {
         // Last execution
-        case None    => zipper.uncurrentify.map(Final(_, status))
+        case None    => zipper.uncurrentify.map(Final[F](_, status))
         case Some(x) => Zipper(x, status).some
       }
 
       /**
         * Current Execution
         */
-      override val current: Execution =
+      override val current: Execution[F] =
         // Queue
         zipper
           // Step
@@ -282,51 +283,51 @@ object Sequence {
           // Execution
           .focus
 
-      override val pending: List[Step] = zipper.pending
+      override val pending: List[Step[F]] = zipper.pending
 
-      override def rollback: Zipper = self.copy(zipper = zipper.rollback)
+      override def rollback: Zipper[F] = self.copy(zipper = zipper.rollback)
 
-      override def skips: Option[State] = zipper.skips match {
+      override def skips: Option[State[F]] = zipper.skips match {
         // Last execution
-        case None    => zipper.uncurrentify.map(Final(_, status))
+        case None    => zipper.uncurrentify.map(Final[F](_, status))
         case Some(x) => Zipper(x, status).some
       }
 
-      override def setBreakpoint(stepId: Step.Id, v: Boolean): State = self.copy(zipper =
+      override def setBreakpoint(stepId: Step.Id, v: Boolean): State[F] = self.copy(zipper =
         zipper.copy(pending =
           zipper.pending.map(s => if(s.id == stepId) s.copy(breakpoint = Step.BreakpointMark(v)) else s)))
 
-      override def setSkipMark(stepId: Step.Id, v: Boolean): State = self.copy(zipper =
+      override def setSkipMark(stepId: Step.Id, v: Boolean): State[F] = self.copy(zipper =
         if(zipper.focus.id == stepId) zipper.copy(focus = zipper.focus.copy(skipMark = Step.SkipMark(v)))
         else zipper.copy(pending =
           zipper.pending.map(s => if(s.id == stepId) s.copy(skipMark = Step.SkipMark(v)) else s)))
 
       override def getCurrentBreakpoint: Boolean = zipper.focus.breakpoint.self && zipper.focus.done.isEmpty
 
-      override val done: List[Step] = zipper.done
+      override val done: List[Step[F]] = zipper.done
 
-      private val zipperL: Lens[Zipper, Sequence.Zipper] =
-        GenLens[Zipper](_.zipper)
+      private val zipperL: Lens[Zipper[F], Sequence.Zipper[F]] =
+        GenLens[Zipper[F]](_.zipper)
 
-      override def mark(i: Int)(r: Result): State = {
+      override def mark(i: Int)(r: Result): State[F] = {
 
-        val currentExecutionL: Lens[Zipper, Execution] = zipperL ^|-> Sequence.Zipper.current
+        val currentExecutionL: Lens[Zipper[F], Execution[F]] = zipperL ^|-> Sequence.Zipper.current
 
-        val currentFileIdL: Lens[Zipper, Option[FileId]] =
+        val currentFileIdL: Lens[Zipper[F], Option[FileId]] =
           zipperL ^|-> Sequence.Zipper.focus ^|-> Step.Zipper.fileId
 
-        val z: Zipper = r match {
-            case Result.Partial(Result.FileIdAllocated(fileId), _) => currentFileIdL.set(fileId.some)(self)
-            case _                                                 => self
+        val z: Zipper[F] = r match {
+            case Result.Partial(Result.FileIdAllocated(fileId)) => currentFileIdL.set(fileId.some)(self)
+            case _                                              => self
           }
 
         currentExecutionL.modify(_.mark(i)(r))(z)
 
       }
 
-      override def start(i: Int): State = {
+      override def start(i: Int): State[F] = {
 
-        val currentExecutionL: Lens[Zipper, Execution] = zipperL ^|-> Sequence.Zipper.current
+        val currentExecutionL: Lens[Zipper[F], Execution[F]] = zipperL ^|-> Sequence.Zipper.current
 
         currentExecutionL.modify(_.start(i))(self)
 
@@ -336,7 +337,7 @@ object Sequence {
       // 1. Done steps cannot change.
       // 2. Running step cannot change `done` or `focus` executions
       // 3. Must preserve breakpoints and skip marks
-      override def update(stepDefs: List[List[Actions]]): State =
+      override def update(stepDefs: List[List[Actions[F]]]): State[F] =
         stepDefs.drop(zipper.done.length) match {
           case t :: ts => zipperL.modify(zp =>
             zp.copy(
@@ -347,7 +348,7 @@ object Sequence {
           case _       => this
         }
 
-      override val toSequence: Sequence = zipper.toSequence
+      override val toSequence: Sequence[F] = zipper.toSequence
 
     }
 
@@ -356,33 +357,33 @@ object Sequence {
       * only completed `Step`s.
       *
       */
-    final case class Final(seq: Sequence, status: SequenceState) extends State { self =>
+    final case class Final[F[_]](seq: Sequence[F], status: SequenceState) extends State[F] { self =>
 
-      override val next: Option[State] = None
+      override val next: Option[State[F]] = None
 
-      override val current: Execution = Execution.empty
+      override val current: Execution[F] = Execution.empty
 
-      override val pending: List[Step] = Nil
+      override val pending: List[Step[F]] = Nil
 
-      override def rollback: Final = self
+      override def rollback: Final[F] = self
 
-      override def skips: Option[State] = self.some
+      override def skips: Option[State[F]] = self.some
 
-      override def setBreakpoint(stepId: Step.Id, v: Boolean): State = self
+      override def setBreakpoint(stepId: Step.Id, v: Boolean): State[F] = self
 
-      override def setSkipMark(stepId: Step.Id, v: Boolean): State = self
+      override def setSkipMark(stepId: Step.Id, v: Boolean): State[F] = self
 
       override def getCurrentBreakpoint: Boolean = false
 
-      override val done: List[Step] = seq.steps
+      override val done: List[Step[F]] = seq.steps
 
-      override def mark(i: Int)(r: Result): State = self
+      override def mark(i: Int)(r: Result): State[F] = self
 
-      override def start(i: Int): State = self
+      override def start(i: Int): State[F] = self
 
-      override def update(stepDefs: List[List[Actions]]): State = self
+      override def update(stepDefs: List[List[Actions[F]]]): State[F] = self
 
-      override val toSequence: Sequence = seq
+      override val toSequence: Sequence[F] = seq
 
     }
 

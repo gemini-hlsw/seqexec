@@ -58,7 +58,7 @@ class SequenceSpec extends FlatSpec {
 
   private def always[D]: D => Boolean = _ => true
 
-  def simpleStep(id: Int, breakpoint: Boolean): Step =
+  def simpleStep(id: Int, breakpoint: Boolean): Step[IO] =
     Step.init(
       id = id,
       fileId = None,
@@ -144,37 +144,37 @@ class SequenceSpec extends FlatSpec {
   // TODO: Share these fixtures with StepSpec
   private val observeResult: Result.Response = Result.Observed("dummyId")
   private val result: Result = Result.OK(observeResult)
-  private val action: Action = fromIO(ActionType.Undefined, IO(result))
-  private val completedAction: Action = action.copy(state = Action.State(Action.Completed(observeResult), Nil))
-  def simpleStep2(pending: List[Actions], focus: Execution, done: List[Results]): Step.Zipper = {
-    val rollback: (Execution, List[Actions]) =  done.map(_.map(const(action))) ++ List(focus.execution.map(const(action))) ++ pending match {
+  private val action: Action[IO] = fromF[IO](ActionType.Undefined, IO(result))
+  private val completedAction: Action[IO] = action.copy(state = Action.State(Action.Completed(observeResult), Nil))
+  def simpleStep2(pending: List[Actions[IO]], focus: Execution[IO], done: List[Results]): Step.Zipper[IO] = {
+    val rollback: (Execution[IO], List[Actions[IO]]) =  done.map(_.map(const(action))) ++ List(focus.execution.map(const(action))) ++ pending match {
       case Nil => (Execution.empty, Nil)
       case x::xs => (Execution(x), xs)
     }
 
     Step.Zipper(1, None, breakpoint = Step.BreakpointMark(false), Step.SkipMark(false), pending, focus, done.map(_.map{r =>
-      val x = fromIO(ActionType.Observe, IO(r))
+      val x = fromF[IO](ActionType.Observe, IO(r))
       x.copy(state = Execution.actionStateFromResult(r)(x.state))
     }), rollback)
   }
-  val stepz0: Step.Zipper   = simpleStep2(Nil, Execution.empty, Nil)
-  val stepza0: Step.Zipper  = simpleStep2(List(List(action)), Execution.empty, Nil)
-  val stepza1: Step.Zipper  = simpleStep2(List(List(action)), Execution(List(completedAction)), Nil)
-  val stepzr0: Step.Zipper  = simpleStep2(Nil, Execution.empty, List(List(result)))
-  val stepzr1: Step.Zipper  = simpleStep2(Nil, Execution(List(completedAction, completedAction)), Nil)
-  val stepzr2: Step.Zipper  = simpleStep2(Nil, Execution(List(completedAction, completedAction)), List(List(result)))
-  val stepzar0: Step.Zipper = simpleStep2(Nil, Execution(List(completedAction, action)), Nil)
-  val stepzar1: Step.Zipper = simpleStep2(List(List(action)), Execution(List(completedAction, completedAction)), List(List(result)))
+  val stepz0: Step.Zipper[IO]   = simpleStep2(Nil, Execution.empty, Nil)
+  val stepza0: Step.Zipper[IO]  = simpleStep2(List(List(action)), Execution.empty, Nil)
+  val stepza1: Step.Zipper[IO]  = simpleStep2(List(List(action)), Execution(List(completedAction)), Nil)
+  val stepzr0: Step.Zipper[IO]  = simpleStep2(Nil, Execution.empty, List(List(result)))
+  val stepzr1: Step.Zipper[IO]  = simpleStep2(Nil, Execution(List(completedAction, completedAction)), Nil)
+  val stepzr2: Step.Zipper[IO]  = simpleStep2(Nil, Execution(List(completedAction, completedAction)), List(List(result)))
+  val stepzar0: Step.Zipper[IO] = simpleStep2(Nil, Execution(List(completedAction, action)), Nil)
+  val stepzar1: Step.Zipper[IO] = simpleStep2(List(List(action)), Execution(List(completedAction, completedAction)), List(List(result)))
 
-  def simpleSequenceZipper(focus: Step.Zipper): Sequence.Zipper = Sequence.Zipper(seqId, Nil, focus, Nil)
-  val seqz0: Sequence.Zipper   = simpleSequenceZipper(stepz0)
-  val seqza0: Sequence.Zipper  = simpleSequenceZipper(stepza0)
-  val seqza1: Sequence.Zipper  = simpleSequenceZipper(stepza1)
-  val seqzr0: Sequence.Zipper  = simpleSequenceZipper(stepzr0)
-  val seqzr1: Sequence.Zipper  = simpleSequenceZipper(stepzr1)
-  val seqzr2: Sequence.Zipper  = simpleSequenceZipper(stepzr2)
-  val seqzar0: Sequence.Zipper = simpleSequenceZipper(stepzar0)
-  val seqzar1: Sequence.Zipper = simpleSequenceZipper(stepzar1)
+  def simpleSequenceZipper(focus: Step.Zipper[IO]): Sequence.Zipper[IO] = Sequence.Zipper(seqId, Nil, focus, Nil)
+  val seqz0: Sequence.Zipper[IO]   = simpleSequenceZipper(stepz0)
+  val seqza0: Sequence.Zipper[IO]  = simpleSequenceZipper(stepza0)
+  val seqza1: Sequence.Zipper[IO]  = simpleSequenceZipper(stepza1)
+  val seqzr0: Sequence.Zipper[IO]  = simpleSequenceZipper(stepzr0)
+  val seqzr1: Sequence.Zipper[IO]  = simpleSequenceZipper(stepzr1)
+  val seqzr2: Sequence.Zipper[IO]  = simpleSequenceZipper(stepzr2)
+  val seqzar0: Sequence.Zipper[IO] = simpleSequenceZipper(stepzar0)
+  val seqzar1: Sequence.Zipper[IO] = simpleSequenceZipper(stepzar1)
 
   "next" should "be None when there are no more pending executions" in {
     assert(seqz0.next.isEmpty)

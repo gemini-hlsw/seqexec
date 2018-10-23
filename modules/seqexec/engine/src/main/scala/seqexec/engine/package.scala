@@ -3,15 +3,15 @@
 
 package seqexec
 
-import cats.effect.IO
+import fs2.Stream
 import seqexec.engine.Result.{Error, PartialVal, PauseContext, RetVal}
 import seqexec.model.ActionType
 
 package engine {
 
-  final case class Action(
+  final case class Action[F[_]](
     kind: ActionType,
-    gen: IO[Result],
+    gen: Stream[F, Result],
     state: Action.State
   )
   object Action {
@@ -30,23 +30,23 @@ package engine {
     final case class Completed[V <: RetVal](r: V) extends ActionState
     final case class Failed(e: Error) extends ActionState
 
-    def errored(ar: Action): Boolean = ar.state.runState match {
+    def errored[F[_]](ar: Action[F]): Boolean = ar.state.runState match {
       case Action.Failed(_) => true
       case _                => false
     }
 
-    def finished(ar: Action): Boolean = ar.state.runState match {
+    def finished[F[_]](ar: Action[F]): Boolean = ar.state.runState match {
       case Action.Failed(_)    => true
       case Action.Completed(_) => true
       case _                   => false
     }
 
-    def completed(ar: Action): Boolean = ar.state.runState match {
+    def completed[F[_]](ar: Action[F]): Boolean = ar.state.runState match {
       case Action.Completed(_) => true
       case _                   => false
     }
 
-    def paused(ar: Action): Boolean = ar.state.runState match {
+    def paused[F[_]](ar: Action[F]): Boolean = ar.state.runState match {
       case Action.Paused(_) => true
       case _                => false
     }
@@ -62,14 +62,15 @@ package object engine {
     * This represents an actual real-world action to be done in the underlying
     * systems.
     */
-  def fromIO(kind: ActionType, t: IO[Result]): Action = Action(kind, t, Action.State(Action.Idle, Nil))
+  def fromF[F[_]](kind: ActionType, t: F[Result]): Action[F] = Action(kind, Stream.eval(t), Action
+    .State(Action.Idle, Nil))
 
   /**
     * An `Execution` is a group of `Action`s that need to be run in parallel
     * without interruption. A *sequential* `Execution` can be represented with
     * an `Execution` with a single `Action`.
     */
-  type Actions = List[Action]
+  type Actions[F[_]] = List[Action[F]]
 
   type Results = List[Result]
 

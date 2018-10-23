@@ -3,6 +3,7 @@
 
 package seqexec.server
 
+import cats.effect.IO
 import cats.implicits._
 import gem.Observation
 import seqexec.model.StepConfig
@@ -20,6 +21,7 @@ final case class SequenceGen(id: Observation.Id, title: String, instrument: Inst
 
 object SequenceGen {
 
-  final case class Step(id: Int, config: StepConfig, resources: Set[Resource], generator: HeaderExtraData => EngineStep)
+  final case class Step(id: Int, config: StepConfig, resources: Set[Resource],
+                        generator: HeaderExtraData => EngineStep[IO])
 
 }

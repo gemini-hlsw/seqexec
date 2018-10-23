@@ -61,15 +61,15 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
   )
 
   def configureIO(resource: Resource): IO[Result] = IO.apply(Result.OK(Result.Configured(resource)))
-  def pendingAction(resource: Resource): Action =
-    engine.fromIO(ActionType.Configure(resource), configureIO(resource))
-  def running(resource: Resource): Action = pendingAction(resource).copy(state = Action.State(Action.Started, Nil))
-  def done(resource: Resource): Action = pendingAction(resource).copy(state = Action.State(Action.Completed(Result.Configured(resource)), Nil))
+  def pendingAction(resource: Resource): Action[IO] =
+    engine.fromF[IO](ActionType.Configure(resource), configureIO(resource))
+  def running(resource: Resource): Action[IO] = pendingAction(resource).copy(state = Action.State(Action.Started, Nil))
+  def done(resource: Resource): Action[IO] = pendingAction(resource).copy(state = Action.State(Action.Completed(Result.Configured(resource)), Nil))
   val fileId = "fileId"
-  def observing: Action = engine.fromIO(ActionType.Observe, IO.apply(Result.OK(Result.Observed(fileId)))).copy(state = Action.State(Action.Started, Nil))
-  def fileIdReady: Action = observing.copy(state = Action.State(Action.Started, List(Result.FileIdAllocated(fileId))))
-  def observed: Action = observing.copy(state = Action.State(Action.Completed(Result.Observed(fileId)), List(Result.FileIdAllocated(fileId))))
-  def paused: Action = observing.copy(state = Action.State(Action.Paused(new PauseContext{}), List(Result.FileIdAllocated(fileId))))
+  def observing: Action[IO] = engine.fromF[IO](ActionType.Observe, IO.apply(Result.OK(Result.Observed(fileId)))).copy(state = Action.State(Action.Started, Nil))
+  def fileIdReady: Action[IO] = observing.copy(state = Action.State(Action.Started, List(Result.FileIdAllocated(fileId))))
+  def observed: Action[IO] = observing.copy(state = Action.State(Action.Completed(Result.Observed(fileId)), List(Result.FileIdAllocated(fileId))))
+  def paused: Action[IO] = observing.copy(state = Action.State(Action.Paused(new PauseContext{}), List(Result.FileIdAllocated(fileId))))
 
   "SeqexecEngine configStatus" should
     "build empty without tasks" in {
@@ -77,33 +77,33 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
     }
     it should "be all running if none has a result" in {
       val status = List(Resource.TCS -> ActionStatus.Running)
-      val executions: List[List[Action]] = List(
+      val executions: List[List[Action[IO]]] = List(
         List(running(Resource.TCS)))
       SeqexecEngine.configStatus(executions) shouldBe status
     }
     it should "be all running if none has a result 2" in {
       val status = List(Resource.TCS -> ActionStatus.Running, Instrument.GmosN -> ActionStatus.Running)
-      val executions: List[List[Action]] = List(
+      val executions: List[List[Action[IO]]] = List(
         List(running(Resource.TCS), running(Instrument.GmosN)))
       SeqexecEngine.configStatus(executions) shouldBe status
     }
     it should "be some complete and some running if none has a result even when the previous execution is complete" in {
       val status = List(Resource.TCS -> ActionStatus.Completed, Instrument.GmosN -> ActionStatus.Running)
-      val executions: List[List[Action]] = List(
+      val executions: List[List[Action[IO]]] = List(
         List(done(Resource.TCS)),
         List(done(Resource.TCS), running(Instrument.GmosN)))
       SeqexecEngine.configStatus(executions) shouldBe status
     }
     it should "be some complete and some pending if one will be done in the future" in {
       val status = List(Resource.TCS -> ActionStatus.Completed, Instrument.GmosN -> ActionStatus.Running)
-      val executions: List[List[Action]] = List(
+      val executions: List[List[Action[IO]]] = List(
         List(running(Instrument.GmosN)),
         List(done(Resource.TCS), done(Instrument.GmosN))
       )
       SeqexecEngine.configStatus(executions) shouldBe status
     }
     it should "stop at the first with running steps" in {
-      val executions: List[List[Action]] = List(
+      val executions: List[List[Action[IO]]] = List(
         List(running(Instrument.GmosN)),
         List(running(Instrument.GmosN), running(Resource.TCS))
       )
@@ -111,7 +111,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
       SeqexecEngine.configStatus(executions) shouldBe status
     }
     it should "stop evaluating where at least one is running even while some are done" in {
-      val executions: List[List[Action]] = List(
+      val executions: List[List[Action[IO]]] = List(
         List(done(Resource.TCS), done(Instrument.GmosN)),
         List(done(Resource.TCS), running(Instrument.GmosN)),
         List(pendingAction(Resource.TCS), pendingAction(Instrument.GmosN), pendingAction(Resource.Gcal)))
@@ -125,25 +125,25 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
     }
     it should "be all pending while one is running" in {
       val status = List(Resource.TCS -> ActionStatus.Pending)
-      val executions: List[List[Action]] = List(
+      val executions: List[List[Action[IO]]] = List(
         List(pendingAction(Resource.TCS)))
       SeqexecEngine.pendingConfigStatus(executions) shouldBe status
     }
     it should "be all pending with mixed" in {
       val status = List(Resource.TCS -> ActionStatus.Pending, Instrument.GmosN -> ActionStatus.Pending)
-      val executions: List[List[Action]] = List(
+      val executions: List[List[Action[IO]]] = List(
         List(pendingAction(Resource.TCS), done(Instrument.GmosN)))
       SeqexecEngine.pendingConfigStatus(executions) shouldBe status
     }
     it should "be all pending on mixed combinations" in {
       val status = List(Resource.TCS -> ActionStatus.Pending, Instrument.GmosN -> ActionStatus.Pending)
-      val executions: List[List[Action]] = List(
+      val executions: List[List[Action[IO]]] = List(
         List(done(Resource.TCS)),
         List(done(Resource.TCS), pendingAction(Instrument.GmosN)))
       SeqexecEngine.pendingConfigStatus(executions) shouldBe status
     }
     it should "be all pending with multiple resources" in {
-      val executions: List[List[Action]] = List(
+      val executions: List[List[Action[IO]]] = List(
         List(done(Resource.TCS), pendingAction(Instrument.GmosN)),
         List(done(Resource.TCS), pendingAction(Instrument.GmosN)),
         List(done(Resource.TCS), pendingAction(Instrument.GmosN), pendingAction(Resource.Gcal)))
@@ -156,22 +156,22 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
       SeqexecEngine.observeStatus(Nil) shouldBe ActionStatus.Pending
     }
     it should "be running if there is an action observe" in {
-      val executions: List[List[Action]] = List(
+      val executions: List[List[Action[IO]]] = List(
         List(done(Resource.TCS), observing))
       SeqexecEngine.observeStatus(executions) shouldBe ActionStatus.Running
     }
     it should "be done if there is a result observe" in {
-      val executions: List[List[Action]] = List(
+      val executions: List[List[Action[IO]]] = List(
         List(done(Resource.TCS), observed))
       SeqexecEngine.observeStatus(executions) shouldBe ActionStatus.Completed
     }
     it should "be running if there is a partial result with the file id" in {
-      val executions: List[List[Action]] = List(
+      val executions: List[List[Action[IO]]] = List(
         List(done(Resource.TCS), fileIdReady))
       SeqexecEngine.observeStatus(executions) shouldBe ActionStatus.Running
     }
     it should "be paused if there is a paused observe" in {
-      val executions: List[List[Action]] = List(
+      val executions: List[List[Action[IO]]] = List(
         List(done(Resource.TCS), paused))
       SeqexecEngine.observeStatus(executions) shouldBe ActionStatus.Paused
     }
@@ -234,8 +234,10 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
   it should "not add sequence id if sequence is running or completed" in {
     val s0 = (SeqexecEngine.loadSequenceEndo(seqObsId1, sequence(seqObsId1)) >>>
       SeqexecEngine.loadSequenceEndo(seqObsId2, sequence(seqObsId2)) >>>
-      (EngineState.executionState ^|-> Engine.State.sequences ^|-? index[Map[Observation.Id,Sequence.State], Observation.Id, Sequence.State](seqObsId1) ^|-> Sequence.State.status).set(SequenceState.Running.init) >>>
-      (EngineState.executionState ^|-> Engine.State.sequences ^|-? index[Map[Observation.Id,Sequence.State], Observation.Id, Sequence.State](seqObsId2) ^|-> Sequence.State.status).set(SequenceState.Completed))(EngineState.default)
+      (EngineState.executionState ^|-> Engine.State.sequences ^|-? index[Map[Observation.Id,
+        Sequence.State[IO]], Observation.Id, Sequence.State[IO]](seqObsId1) ^|-> Sequence.State
+        .status).set(SequenceState.Running.init) >>>
+      (EngineState.executionState ^|-> Engine.State.sequences ^|-? index[Map[Observation.Id,Sequence.State[IO]], Observation.Id, Sequence.State[IO]](seqObsId2) ^|-> Sequence.State.status).set(SequenceState.Completed))(EngineState.default)
 
     (for {
       q <- async.boundedQueue[IO, executeEngine.EventType](10)
@@ -284,8 +286,8 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
     val s0 = (SeqexecEngine.loadSequenceEndo(seqObsId1, sequence(seqObsId1)) >>>
       SeqexecEngine.loadSequenceEndo(seqObsId2, sequence(seqObsId2)) >>>
       SeqexecEngine.loadSequenceEndo(seqObsId3, sequence(seqObsId3)) >>>
-      (EngineState.executionState ^|-> Engine.State.sequences ^|-? index[Map[Observation.Id,Sequence.State], Observation.Id, Sequence.State](seqObsId1) ^|-> Sequence.State.status).set(SequenceState.Running.init) >>>
-      (EngineState.executionState ^|-> Engine.State.sequences ^|-? index[Map[Observation.Id,Sequence.State], Observation.Id, Sequence.State](seqObsId2) ^|-> Sequence.State.status).set(SequenceState.Completed))(EngineState.default)
+      (EngineState.executionState ^|-> Engine.State.sequences ^|-? index[Map[Observation.Id,Sequence.State[IO]], Observation.Id, Sequence.State[IO]](seqObsId1) ^|-> Sequence.State.status).set(SequenceState.Running.init) >>>
+      (EngineState.executionState ^|-> Engine.State.sequences ^|-? index[Map[Observation.Id,Sequence.State[IO]], Observation.Id, Sequence.State[IO]](seqObsId2) ^|-> Sequence.State.status).set(SequenceState.Completed))(EngineState.default)
 
     (for {
       q <- async.boundedQueue[IO, executeEngine.EventType](10)

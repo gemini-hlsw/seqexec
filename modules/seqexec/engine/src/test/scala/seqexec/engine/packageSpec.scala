@@ -29,7 +29,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
     * Emulates TCS configuration in the real world.
     *
     */
-  val configureTcs: Action  = fromIO(ActionType.Configure(TCS),
+  val configureTcs: Action[IO] = fromF[IO](ActionType.Configure(TCS),
     for {
       _ <- IO(Thread.sleep(200))
     } yield Result.OK(Result.Configured(TCS)))
@@ -38,7 +38,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
     * Emulates Instrument configuration in the real world.
     *
     */
-  val configureInst: Action  = fromIO(ActionType.Configure(GmosS),
+  val configureInst: Action[IO] = fromF[IO](ActionType.Configure(GmosS),
     for {
     _ <- IO(Thread.sleep(200))
   } yield Result.OK(Result.Configured(GmosS)))
@@ -47,21 +47,21 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
     * Emulates an observation in the real world.
     *
     */
-  val observe: Action  = fromIO(ActionType.Observe,
+  val observe: Action[IO] = fromF[IO](ActionType.Observe,
   for {
     _ <- IO(Thread.sleep(200))
   } yield Result.OK(Result.Observed("DummyFileId")))
 
-  val faulty: Action  = fromIO(ActionType.Undefined,
+  val faulty: Action[IO] = fromF[IO](ActionType.Undefined,
   for {
     _ <- IO(Thread.sleep(100))
   } yield Result.Error("There was an error in this action"))
 
   private def always[D]: D => Boolean = _ => true
-  
+
   private val clientId: ClientId = ClientId(UUID.randomUUID)
 
-  val executions: List[List[Action]] = List(List(configureTcs, configureInst), List(observe))
+  val executions: List[List[Action[IO] ]] = List(List(configureTcs, configureInst), List(observe))
   val seqId: Observation.Id = Observation.Id.unsafeFromString("GS-2019A-Q-0-1")
   val qs1: Engine.State =
     Engine.State(
@@ -133,7 +133,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
             id = 1,
             fileId = None,
             executions = List(
-              List(fromIO(ActionType.Undefined,
+              List(fromF[IO](ActionType.Undefined,
                 IO(Result.Paused(new Result.PauseContext {}))))
             )
           )
@@ -156,7 +156,8 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   }
 
   "engine" should "run sequence to completion after resuming a paused action" in {
-    val p = Stream.eval(IO.pure(Event.actionResume(seqId, 0, IO(Result.OK(Result.Configured(GmosS))))))
+    val p = Stream.eval(IO.pure(Event.actionResume(seqId, 0, Stream.eval(IO(Result.OK(Result
+      .Configured(GmosS)))))))
 
     val result = actionPause.flatMap(executionEngine.process(PartialFunction.empty)(p)(_).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
@@ -181,7 +182,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
                 id = 1,
                 fileId = None,
                 executions = List(
-                  List(fromIO(ActionType.Configure(TCS),
+                  List(fromF[IO](ActionType.Configure(TCS),
                     startedFlag.increment *> finishFlag.decrement *> IO.pure(Result.OK(Result.Configured(TCS)))
                   ))
                 )
@@ -214,7 +215,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
             id = 1,
             fileId = None,
             executions = List(
-              List(fromIO(ActionType.Undefined,
+              List(fromF[IO](ActionType.Undefined,
                 IO.apply {
                   throw e
                 }

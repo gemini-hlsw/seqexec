@@ -19,7 +19,7 @@ import gem.enum.Site
 import mouse.all._
 import org.log4s._
 import seqexec.engine.Result.{Configured, FileIdAllocated, Observed}
-import seqexec.engine.{Action, Event, Result, Sequence, Step, fromIO}
+import seqexec.engine.{Action, Event, Result, Sequence, Step, fromF}
 import seqexec.model.enum.{Instrument, Resource}
 import seqexec.model.{ActionType, StepState}
 import seqexec.model.dhs.ImageFileId
@@ -73,7 +73,8 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
   //scalastyle:off
   private def observe(config: Config, obsId: Observation.Id, inst: InstrumentSystem[IO],
                       otherSys: List[System[IO]], headers: Reader[HeaderExtraData, List[Header]])
-                     (ctx: HeaderExtraData): SeqAction[Result.Partial[FileIdAllocated]] = {
+                     (ctx: HeaderExtraData): Stream[IO, Result]
+  = {
     val dataId: SeqAction[String] = EitherT(IO.apply(
       config.extract(OBSERVE_KEY / DATA_LABEL_PROP).as[String].leftMap(e =>
       SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))))
@@ -118,31 +119,39 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
       }
     }
 
-    for {
+    val x = Stream.eval((for {
       id <- dhsFileId(inst)
-    } yield Result.Partial(FileIdAllocated(id), doObserve(id).value.map(_.toResult))
+    } yield id).value)
+
+    x.flatMap[Result]{
+      case Right(id) => Stream.emit[Result](Result.Partial(FileIdAllocated(id))).covary[IO] ++
+        Stream.eval[IO, Result](doObserve(id).value.map(_.toResult))
+      case Left(e)   => Stream.emit[Result](Result.Error(SeqexecFailure.explain(e))).covary[IO]
+    }
   }
 
-  private def step(obsId: Observation.Id, i: Int, config: Config, nextToRun: Int, datasets: Map[Int, ExecutedDataset]): TrySeq[SequenceGen.Step] = {
-    def buildStep(inst: InstrumentSystem[IO], sys: List[System[IO]], headers: Reader[HeaderExtraData,List[Header]]): HeaderExtraData => Step = ctx => {
-      val initialStepExecutions: List[List[Action]] =
+  private def step(obsId: Observation.Id, i: Int, config: Config, nextToRun: Int,
+                   datasets: Map[Int, ExecutedDataset]): TrySeq[SequenceGen.Step] = {
+    def buildStep(inst: InstrumentSystem[IO], sys: List[System[IO]], headers: Reader[HeaderExtraData,List[Header]]): HeaderExtraData => Step[IO] = ctx => {
+      val initialStepExecutions: List[List[Action[IO]]] =
         if (i === 0) List(List(systems.odb.sequenceStart(obsId, "").map(_ => Result.Ignored).toAction(ActionType.Undefined)))
         else Nil
 
-      val regularStepExecutions: List[List[Action]] =
+      val regularStepExecutions: List[List[Action[IO]]] =
         List(
           sys.map { x =>
             val kind = ActionType.Configure(resourceFromSystem(x))
             x.configure(config).map(_ => Result.Configured(x.resource)).toAction(kind)
           },
-          List(Action(ActionType.Observe, observe(config, obsId, inst, sys.filterNot(inst.equals), headers)(ctx).value.map(_.toResult), Action.State(Action.Idle, Nil))))
+          List(Action(ActionType.Observe, observe(config, obsId, inst, sys.filterNot(inst.equals)
+            , headers)(ctx), Action.State(Action.Idle, Nil))))
       extractStatus(config) match {
-        case StepState.Pending if i >= nextToRun => Step.init(
+        case StepState.Pending if i >= nextToRun => Step.init[IO](
           id = i,
           fileId = None,
           executions = initialStepExecutions ++ regularStepExecutions
         )
-        case StepState.Pending => Step.init(
+        case StepState.Pending => Step.init[IO](
           id = i,
           fileId = datasets.get(i + 1).map(_.filename), // Note that steps on datasets are indexed starting on 1
           // TODO: Is it possible to reconstruct done executions from the ODB?
@@ -150,7 +159,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
         ).copy(skipped = Step.Skipped(true))
         // TODO: This case should be for completed Steps only. Fail when step
         // status is unknown.
-        case _ => Step.init(
+        case _ => Step.init[IO](
           id = i,
           fileId = datasets.get(i + 1).map(_.filename), // Note that steps on datasets are indexed starting on 1
           // TODO: Is it possible to reconstruct done executions from the ODB?
@@ -218,12 +227,12 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
   }
 
   private def deliverObserveCmd(seqId: Observation.Id, f: ObserveControl => Option[SeqAction[Unit]])(st: EngineState):  Option[Stream[IO, executeEngine.EventType]] = {
-    def isObserving(v: Action): Boolean = v.kind === ActionType.Observe && (v.state.runState match {
+    def isObserving(v: Action[IO]): Boolean = v.kind === ActionType.Observe && (v.state.runState match {
       case Action.Started               => true
       case _                            => false
     })
 
-    def seqCmd(seqState: Sequence.State, instrument: Instrument): Option[Stream[IO, executeEngine.EventType]] =
+    def seqCmd(seqState: Sequence.State[IO], instrument: Instrument): Option[Stream[IO, executeEngine.EventType]] =
       toInstrumentSys(instrument).toOption.flatMap(x => f(x.observeControl)).flatMap {
         v => seqState.current.execution.exists(isObserving).option(Stream.eval(v.value.map(handleError)))
       }
@@ -275,21 +284,24 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
       ret <- c.t(r)
     } yield ret).value.map(_.toResult)
 
-    def seqCmd(seqState: Sequence.State, instrument: Instrument): Option[Stream[IO, executeEngine.EventType]] = {
+    def seqCmd(seqState: Sequence.State[IO], instrument: Instrument): Option[Stream[IO,
+      executeEngine.EventType]] = {
 
       val observeIndex: Option[(ObserveContext, Int)] =
-        seqState.current.execution.zipWithIndex.find(_._1.kind === ActionType.Observe).flatMap { case (a, i) =>
-          a.state.runState match {
+        seqState.current.execution.zipWithIndex.find(_._1.kind === ActionType.Observe).flatMap {
+          case (a, i) => a.state.runState match {
             case Action.Paused(c: ObserveContext) => Some((c, i))
             case _ => none
           }
         }
 
-      val u: Option[Time => SeqAction[ObserveCommand.Result]] = toInstrumentSys(instrument).toOption.flatMap(x => f(x.observeControl))
+      val u: Option[Time => SeqAction[ObserveCommand.Result]] = toInstrumentSys(instrument)
+        .toOption.flatMap(x => f(x.observeControl))
       (u, observeIndex).mapN {
         (cmd, t) =>
           t match {
-            case (c, i) => Stream.eval(IO(Event.actionResume(seqId, i, resumeIO(c, cmd(c.expTime)))))
+            case (c, i) => Stream.eval(IO(Event.actionResume(seqId, i,
+              Stream.eval(resumeIO(c, cmd(c.expTime))))))
           }
       }
     }
@@ -513,11 +525,11 @@ object SeqTranslate {
   }
 
   implicit class ActionResponseToAction[A <: Result.Response](val x: SeqAction[A]) extends AnyVal {
-    def toAction(kind: ActionType): Action = fromIO(kind, x.value.map(_.toResult))
+    def toAction(kind: ActionType): Action[IO] = fromF[IO](kind, x.value.map(_.toResult))
   }
 
   implicit class ConfigResultToAction(val x: SeqAction[ConfigResult[IO]]) extends AnyVal {
-    def toAction(kind: ActionType): Action = fromIO(kind, x.value.map(_.toResult))
+    def toAction(kind: ActionType): Action[IO] = fromF[IO](kind, x.value.map(_.toResult))
   }
 
   final case class ObserveContext(t: ObserveCommand.Result => SeqAction[Result], expTime: Time) extends Result.PauseContext

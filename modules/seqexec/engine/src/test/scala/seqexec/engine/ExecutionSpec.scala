@@ -3,7 +3,7 @@
 
 package seqexec.engine
 
-import cats.effect.IO
+import cats.Id
 import org.scalatest._
 import seqexec.model.ActionType
 
@@ -11,9 +11,10 @@ class ExecutionSpec extends FlatSpec with Matchers {
 
   private val observeResult: Result.Response = Result.Observed("dummyId")
   private val ok: Result = Result.OK(observeResult)
-  private val completedAction: Action = fromIO(ActionType.Observe, IO(ok)).copy(state = Action.State(Action.Completed(observeResult), Nil))
-  private val action: Action = fromIO(ActionType.Observe, IO(ok))
-  private val curr: Execution = Execution(List(completedAction, action))
+  private val completedAction: Action[Id] = fromF[Id](ActionType.Observe, ok).copy(state =
+    Action.State(Action.Completed(observeResult), Nil))
+  private val action: Action[Id] = fromF[Id](ActionType.Observe, ok)
+  private val curr: Execution[Id] = Execution(List(completedAction, action))
 
   "currentify" should "be None only when an Execution is empty" in {
     assert(Execution.currentify(List(action, action)).nonEmpty)
