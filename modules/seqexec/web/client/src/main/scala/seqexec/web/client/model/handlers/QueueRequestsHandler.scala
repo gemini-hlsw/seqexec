@@ -92,8 +92,8 @@ class QueueRequestsHandler[M](modelRW: ModelRW[M, QueueRequestsFocus])
                                                               oid,
                                                               i,
                                                               _: ClientId),
-                           RunCalCompleted.apply,
-                           RunCalFailed.apply))
+                           MoveCalCompleted.apply,
+                           MoveCalFailed.apply(_: QueueId, oid)))
         }
         .getOrElse(noChange)
   }

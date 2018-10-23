@@ -4,6 +4,7 @@
 package seqexec.web.client.model
 
 import cats.Eq
+import cats.implicits._
 import monocle.macros.Lenses
 
 sealed trait RemoveSeqQueue extends Product with Serializable
@@ -16,17 +17,29 @@ object RemoveSeqQueue {
 
 }
 
+sealed trait MoveSeqQueue extends Product with Serializable
+object MoveSeqQueue {
+  case object MoveSeqQueueInFlight extends MoveSeqQueue
+  case object MoveSeqQueueIdle extends MoveSeqQueue
+
+  implicit val eq: Eq[MoveSeqQueue] =
+    Eq.fromUniversalEquals
+
+}
+
 /**
   * Hold transient states while excuting an operation on a queue element
   */
 @Lenses
-final case class QueueSeqOperations(removeSeqQueue: RemoveSeqQueue)
+final case class QueueSeqOperations(removeSeqQueue: RemoveSeqQueue,
+                                    moveSeqQueue:   MoveSeqQueue)
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object QueueSeqOperations {
   implicit val eq: Eq[QueueSeqOperations] =
-    Eq.by(x => (x.removeSeqQueue))
+    Eq.by(x => (x.removeSeqQueue, x.moveSeqQueue))
 
   val Default: QueueSeqOperations =
-    QueueSeqOperations(RemoveSeqQueue.RemoveSeqQueueIdle)
+    QueueSeqOperations(RemoveSeqQueue.RemoveSeqQueueIdle,
+                       MoveSeqQueue.MoveSeqQueueInFlight)
 }
