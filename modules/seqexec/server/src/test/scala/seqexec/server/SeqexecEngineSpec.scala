@@ -375,7 +375,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
     def testAdvance(obsId: Observation.Id, n: Int): Option[EngineState] =
       (for {
         q <- async.boundedQueue[IO, executeEngine.EventType](10)
-        r <- advanceOne(q, s0, seqexecEngine.moveSequenceInQueue(q, CalibrationQueueId, obsId, n))
+        r <- advanceOne(q, s0, seqexecEngine.moveSequenceInQueue(q, CalibrationQueueId, obsId, n, clientId))
       } yield r).unsafeRunSync
 
     val sf1 = testAdvance(seqObsId2, -1)

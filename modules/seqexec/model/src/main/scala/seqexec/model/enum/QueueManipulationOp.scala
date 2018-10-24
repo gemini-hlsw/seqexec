@@ -6,6 +6,7 @@ package seqexec.model.enum
 import cats.Eq
 import cats.implicits._
 import gem.Observation
+import seqexec.model.ClientId
 import seqexec.model.QueueId
 
 sealed trait QueueManipulationOp extends Product with Serializable {
@@ -13,7 +14,11 @@ sealed trait QueueManipulationOp extends Product with Serializable {
 }
 
 object QueueManipulationOp {
-  final case class Moved(qid:     QueueId) extends QueueManipulationOp
+  final case class Moved(qid: QueueId,
+                         cid: ClientId,
+                         oid: Observation.Id,
+                         pos: Int)
+      extends QueueManipulationOp
   final case class Started(qid:   QueueId) extends QueueManipulationOp
   final case class Stopped(qid:   QueueId) extends QueueManipulationOp
   final case class Clear(qid:     QueueId) extends QueueManipulationOp
@@ -25,7 +30,8 @@ object QueueManipulationOp {
       extends QueueManipulationOp
 
   implicit val equal: Eq[QueueManipulationOp] = Eq.instance {
-    case (Moved(a), Moved(b))               => a === b
+    case (Moved(a, c, e, g), Moved(b, d, f, h)) =>
+      a === b && c === d && e === f && g === h
     case (Started(a), Started(b))           => a === b
     case (Stopped(a), Stopped(b))           => a === b
     case (Clear(a), Clear(b))               => a === b

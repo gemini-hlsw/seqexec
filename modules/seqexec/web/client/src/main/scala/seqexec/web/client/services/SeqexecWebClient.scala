@@ -324,18 +324,6 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
     * Add a sequence from a queue
     */
-  def addSequenceToQueue(queueId: QueueId, id: Observation.Id): Future[Unit] =
-    Ajax
-      .post(
-        url =
-          s"$baseUrl/queue/${encodeURI(queueId.self.show)}/add/${encodeURI(id.format)}",
-        responseType = "arraybuffer"
-      )
-      .map(_ => ())
-
-  /**
-    * Add a sequence from a queue
-    */
   def removeSequenceFromQueue(queueId: QueueId,
                               id:      Observation.Id): Future[Unit] =
     Ajax
@@ -397,12 +385,13 @@ object SeqexecWebClient extends ModelBooPicklers {
       .map(_ => ())
 
   /**
-    * Remove a sequence from a queue
+    * Stops a queue
     */
-  def removeSequenceToQueue(queueId: QueueId, id: Observation.Id): Future[Unit] =
+  def moveSequenceQueue(queueId: QueueId, obsId: Observation.Id, pos: Int, clientId: ClientId): Future[Unit] =
     Ajax
       .post(
-        url          = s"$baseUrl/queue/${encodeURI(queueId.self.show)}/remove/${encodeURI(id.format)}",
+        url =
+          s"$baseUrl/commands/queue/${encodeURI(queueId.self.show)}/move/${encodeURI(obsId.self.format)}/$pos/${encodeURI(clientId.self.show)}",
         responseType = "arraybuffer"
       )
       .map(_ => ())

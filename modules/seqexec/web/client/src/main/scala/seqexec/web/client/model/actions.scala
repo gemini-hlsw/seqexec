@@ -98,6 +98,11 @@ object actions {
       extends Action
   final case class RemoveSeqCalCompleted(qid: QueueId) extends Action
   final case class RemoveSeqCalFailed(qid:    QueueId, id: Observation.Id) extends Action
+  final case class RequestMoveCal(qid:  QueueId, id: Observation.Id, pos: Int)
+      extends Action
+  final case class MoveCalCompleted(qid: QueueId) extends Action
+  final case class MoveCalFailed(qid:    QueueId, id: Observation.Id) extends Action
+  final case class ClearLastQueueOp(qid: QueueId) extends Action
 
   final case class AppendToLog(l: ServerLogMessage) extends Action
   final case object ToggleLogArea extends Action

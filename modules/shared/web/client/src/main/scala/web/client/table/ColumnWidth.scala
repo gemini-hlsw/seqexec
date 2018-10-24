@@ -13,12 +13,15 @@ sealed trait ColumnWidth
 sealed abstract class FixedColumnWidth(val width: Double)
     extends ColumnWidth {
   assert(width >= 0)
+
+  override def toString: String = s"Fixed(${width}px)"
 }
 sealed abstract class PercentageColumnWidth(val percentage: Double,
                                             val minWidth:   Double)
     extends ColumnWidth {
   assert(percentage >= 0 && percentage <= 1)
   assert(minWidth >= 0)
+  override def toString: String = s"Percentage(${percentage}%, ${minWidth}px)"
 }
 
 object ColumnWidth {
