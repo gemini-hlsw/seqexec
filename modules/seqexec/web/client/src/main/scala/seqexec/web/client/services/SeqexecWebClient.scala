@@ -17,12 +17,12 @@ import seqexec.model.UserLoginRequest
 import seqexec.model.Observer
 import seqexec.model.Operator
 import seqexec.model.Step
-import seqexec.model.boopickle._
 import seqexec.model.enum.CloudCover
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.ImageQuality
 import seqexec.model.enum.SkyBackground
 import seqexec.model.enum.WaterVapor
+import seqexec.web.model.boopickle._
 import seqexec.web.common.LogMessage
 import seqexec.web.common.LogMessage._
 import scala.scalajs.js.URIUtils._

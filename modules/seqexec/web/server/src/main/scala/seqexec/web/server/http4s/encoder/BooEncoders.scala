@@ -10,7 +10,6 @@ import org.http4s.EntityDecoder
 import org.http4s.EntityEncoder
 import org.http4s.booPickle._
 import seqexec.model._
-import seqexec.model.boopickle.GemModelBooPicklers
 import seqexec.model.enum.CloudCover
 import seqexec.model.enum.ImageQuality
 import seqexec.model.enum.SkyBackground
@@ -19,6 +18,7 @@ import seqexec.model.Conditions
 import seqexec.model.Operator
 import seqexec.web.common.LogMessage
 import seqexec.web.common.LogMessage._
+import seqexec.web.model.boopickle.GemModelBooPicklers
 
 /**
   * Contains http4s implicit encoders of model objects
