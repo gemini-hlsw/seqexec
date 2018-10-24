@@ -8,6 +8,7 @@ import diode.react.ReactConnectProxy
 import gem.Observation
 import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.ScalaComponent
+import japgolly.scalajs.react.React
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import seqexec.model.enum.Instrument
@@ -80,7 +81,7 @@ object StepConfigToolbar {
             ^.cls := "left floated six wide column bottom aligned computer only",
             p.sequenceConnect(_() match {
               case Some(p) => SequenceInfo(SequenceInfo.Props(p))
-              case _       => ReactFragment()
+              case _       => React.Fragment()
             })
           ),
           <.div(

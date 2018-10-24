@@ -21,7 +21,7 @@ import seqexec.web.common.Zipper
 import seqexec.web.client.circuit.SequenceObserverFocus
 import seqexec.web.client.circuit.DayCalObserverFocus
 import seqexec.web.client.components.sequence.steps.StepsTable
-import seqexec.web.client.ModelOps._
+import seqexec.web.client.model.ModelOps._
 import web.client.table._
 
 // Model for the tabbed area of sequences
@@ -168,8 +168,10 @@ final case class SequencesOnDisplay(tabs: Zipper[SeqexecTab]) {
     val isLoaded = loadedIds.contains(s.id)
     // Replace the sequence for the instrument or the completed sequence and reset displaying a step
     val seq = if (s.metadata.instrument === i && !isLoaded) {
+      val newPreview = SequencesOnDisplay.previewTabById(obsId).isEmpty(this)
+      val tsUpd = (ts: TableState[StepsTable.TableColumn]) => if (newPreview) StepsTable.State.InitialTableState else ts
       val update =
-        PreviewSequenceTab.tableState.set(StepsTable.State.InitialTableState) >>>
+          PreviewSequenceTab.tableState.modify(tsUpd) >>>
           PreviewSequenceTab.currentSequence.set(s) >>>
           PreviewSequenceTab.stepConfig.set(None)
       val q = withPreviewTab(s).tabs

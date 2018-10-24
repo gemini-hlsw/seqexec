@@ -14,9 +14,9 @@ import monocle.Lens
 import monocle.macros.Lenses
 import seqexec.model._
 import seqexec.model.enum._
-import seqexec.web.client.lenses.firstScienceStepTargetNameT
+import seqexec.web.client.model.lenses.firstScienceStepTargetNameT
 import seqexec.web.client.model._
-import seqexec.web.client.ModelOps._
+import seqexec.web.client.model.ModelOps._
 import seqexec.web.client.components.sequence.steps.StepsTable
 import seqexec.web.client.components.SessionQueueTableBody
 import web.client.table._

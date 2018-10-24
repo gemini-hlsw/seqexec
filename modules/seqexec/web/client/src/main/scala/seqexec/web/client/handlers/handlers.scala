@@ -15,7 +15,7 @@ import seqexec.model.Operator
 import seqexec.model.SequencesQueue
 import seqexec.model.SequenceView
 import seqexec.web.client.model._
-import seqexec.web.client.ModelOps._
+import seqexec.web.client.model.ModelOps._
 import seqexec.web.client.actions._
 import seqexec.web.client.services.SeqexecWebClient
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue

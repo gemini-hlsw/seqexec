@@ -14,9 +14,9 @@ import seqexec.model._
 import seqexec.model.events._
 import seqexec.web.client.actions._
 import seqexec.web.client.model._
-import seqexec.web.client.lenses._
+import seqexec.web.client.model.lenses._
 import seqexec.web.client.handlers._
-import seqexec.web.client.ModelOps._
+import seqexec.web.client.model.ModelOps._
 import seqexec.web.client.actions.AppendToLog
 import seqexec.web.client.actions.CloseLoginBox
 import seqexec.web.client.actions.CloseUserNotificationBox

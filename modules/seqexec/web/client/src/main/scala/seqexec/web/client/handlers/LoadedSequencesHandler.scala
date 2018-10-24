@@ -12,7 +12,7 @@ import diode.NoAction
 import seqexec.model.SequenceState
 import seqexec.model.events._
 import seqexec.web.client.model.Pages._
-import seqexec.web.client.ModelOps._
+import seqexec.web.client.model.ModelOps._
 import seqexec.web.client.actions._
 import seqexec.web.client.services.SeqexecWebClient
 import seqexec.web.client.circuit.SODLocationFocus

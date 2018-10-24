@@ -68,17 +68,17 @@ object Settings {
 
     // ScalaJS libraries
     val scalaDom                = "0.9.6"
-    val scalajsReact            = "1.2.3"
+    val scalajsReact            = "1.3.1"
     val booPickle               = "1.3.0"
-    val diode                   = "1.1.3"
-    val diodeReact              = "1.1.3.120"
+    val diode                   = "1.1.4"
+    val diodeReact              = "1.1.4.131"
     val javaTimeJS              = "2.0.0-M13"
     val javaLogJS               = "0.1.5"
     val scalaJQuery             = "1.2"
-    val scalaJSReactVirtualized = "0.3.5"
-    val scalaJSReactClipboard   = "0.4.0"
-    val scalaJSReactDraggable   = "0.1.1"
-    val scalaJSReactSortable    = "0.0.4"
+    val scalaJSReactVirtualized = "0.4.2"
+    val scalaJSReactClipboard   = "0.5.2"
+    val scalaJSReactDraggable   = "0.2.2"
+    val scalaJSReactSortable    = "0.1.0"
 
     // Scala libraries
     val catsEffectVersion       = "0.10.1"
@@ -117,12 +117,12 @@ object Settings {
     val jUnitInterface          = "0.11"
 
     // Pure JS libraries
-    val reactJS                 = "16.2.0"
+    val reactJS                 = "16.5.1"
     val jQuery                  = "3.2.1"
     val semanticUI              = "2.3.1"
     val ocsVersion              = "2018101.1.3"
     val uglifyJs                = "1.2.4"
-    val reactVirtualized        = "9.20.1"
+    val reactVirtualized        = "9.21.0"
     val reactDraggable          = "3.0.5"
 
     val apacheXMLRPC            = "3.1.3"
