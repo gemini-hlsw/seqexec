@@ -144,18 +144,11 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
       Shapeless.value,
       Atto.value
     ) ++ Monocle.value
-  )
-  .jsConfigure(
-    _.enablePlugins(TzdbPlugin)
   ).jvmConfigure(
     _.enablePlugins(AutomateHeaderPlugin)
   ).jsSettings(
-    libraryDependencies +=
-      JavaTimeJS.value,
-    wartremoverExcluded += sourceManaged.value / "main" / "java" / "time" / "zone" / "TzdbZoneRulesProvider.scala",
-    // We only care about these two timezones. UTC is implicitly included
-    zonesFilter         := {(z: String) => z == "America/Santiago" || z == "Pacific/Honolulu"},
-    dbVersion           := TzdbPlugin.Version("2018f")
+    libraryDependencies ++=
+      Seq(JavaTimeJS.value, GeminiLocales.value)
   )
   .jsSettings(commonJSSettings)
   .jvmSettings(
@@ -424,16 +417,12 @@ lazy val seqexec_web_server = project.in(file("modules/seqexec/web/server"))
 lazy val seqexec_web_client = project.in(file("modules/seqexec/web/client"))
   .enablePlugins(ScalaJSPlugin)
   .enablePlugins(ScalaJSBundlerPlugin)
-  .enablePlugins(TzdbPlugin)
   .enablePlugins(BuildInfoPlugin)
   .enablePlugins(AutomateHeaderPlugin)
   .enablePlugins(GitBranchPrompt)
   .disablePlugins(RevolverPlugin)
   .settings(commonJSSettings: _*)
   .settings(
-    wartremoverExcluded                      += sourceManaged.value / "main" / "java" / "time" / "zone" / "TzdbZoneRulesProvider.scala",
-    zonesFilter                              := {(z: String) => z == "America/Santiago" || z == "Pacific/Honolulu"},
-    dbVersion                                := TzdbPlugin.Version("2018f"),
     // Needed for Monocle macros
     addCompilerPlugin(Plugins.paradisePlugin),
     // Configurations for webpack
@@ -501,7 +490,8 @@ lazy val seqexec_web_client = project.in(file("modules/seqexec/web/client"))
       JavaTimeJS.value,
       JavaLogJS.value,
       ScalaJSReactVirtualized.value,
-      ScalaJSReactClipboard.value
+      ScalaJSReactClipboard.value,
+      GeminiLocales.value
     ) ++ ReactScalaJS.value ++ Diode.value
   )
   .settings(
