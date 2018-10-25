@@ -6,10 +6,12 @@ package seqexec.server.ghost
 import cats.data.Reader
 import cats.data.EitherT
 import cats.effect.{IO, Sync}
+import cats.implicits._
 import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import edu.gemini.spModel.gemini.ghost.Ghost
 import gem.math.{Angle, HourAngle}
+import gem.optics.Format
 
 import scala.concurrent.duration._
 import seqexec.model.dhs.ImageFileId
@@ -65,51 +67,53 @@ object GHOST {
 
   val sfName: String = "GHOST"
 
-  // We always want a GHOSTConfig at this point, so don't use a for comprehension as not all parameters will be
-  // present and we don't want the for to bork prematurely with a missing key error.
   def fromSequenceConfig[F[_]: Sync](config: Config): SeqActionF[F, GHOSTConfig] = {
     def extractor[A : ClassTag](propName: String): Option[A] =
       config.extractAs[A](INSTRUMENT_KEY / propName).toOption
 
+    def angleExtractor[A <: Angle](fmt: Format[String, A])(propName: String): Either[ExtractFailure, Option[A]] = {
+      // 1. content = None: nothing to process, so Right(None).
+      // 2. process content = Some(a) indicating success, so Right(Some(a))
+      // 3. process content = None indicating failure, so Left(error)
+      val content: Option[String] = extractor[String](propName)
+      val result: Option[Option[A]] = content.map(fmt.getOption)
+      result.map {
+        case None       => Left(ConversionError(INSTRUMENT_KEY / propName,
+                                                s"Could not parse $propName content: ${content.getOrElse("")}"))
+        case other      => Right(other)
+      }.getOrElse(Right(None))
+    }
+    val raExtractor = angleExtractor[HourAngle](HourAngle.fromStringHMS) _
+    val decExtractor = angleExtractor[Angle](Angle.fromStringDMS) _
+
     EitherT {
       Sync[F].delay {
-        // This has the shortcoming that a failure in HourAngle or Angle parsing will result in a None instead
-        // of in a SeqexecFailure, but for this preliminary phase, don't worry about it, as this is just for
-        // basic testing.
-        val baseRAHMS          = extractor[HourAngle](Ghost.BaseRAHMS)
-        val baseDecDMS         = extractor[Angle    ](Ghost.BaseDecDMS)
+        (for {
+          baseRAHMS     <- raExtractor(Ghost.BaseRAHMS)
+          baseDecDMS    <- decExtractor(Ghost.BaseDecDMS)
 
-        val srifu1Name         = extractor[String   ](Ghost.SRIFU1Name)
-        val srifu1CoordsRAHMS  = extractor[HourAngle](Ghost.SRIFU1RAHMS)
-        val srifu1CoordsDecDMS = extractor[Angle    ](Ghost.SRIFU1DecDMS)
+          srifu1Name    = extractor[String](Ghost.SRIFU1Name)
+          srifu1RAHMS   <- raExtractor(Ghost.SRIFU1RAHMS)
+          srifu1DecHDMS <- decExtractor(Ghost.SRIFU1DecDMS)
 
-        val srifu2Name         = extractor[String   ](Ghost.SRIFU2Name)
-        val srifu2CoordsRAHMS  = extractor[HourAngle](Ghost.SRIFU2RAHMS)
-        val srifu2CoordsDecDMS = extractor[Angle    ](Ghost.SRIFU2DecDMS)
+          srifu2Name    = extractor[String](Ghost.SRIFU2Name)
+          srifu2RAHMS   <- raExtractor(Ghost.SRIFU2RAHMS)
+          srifu2DecHDMS <- decExtractor(Ghost.SRIFU2DecDMS)
 
-        val hrifu1Name         = extractor[String   ](Ghost.HRIFU1Name)
-        val hrifu1CoordsRAHMS  = extractor[HourAngle](Ghost.HRIFU1RAHMS)
-        val hrifu1CoordsDecDMS = extractor[Angle    ](Ghost.HRIFU1DecDMS)
+          hrifu1Name    = extractor[String](Ghost.HRIFU1Name)
+          hrifu1RAHMS   <- raExtractor(Ghost.HRIFU1RAHMS)
+          hrifu1DecHDMS <- decExtractor(Ghost.HRIFU1DecDMS)
 
-        val hrifu2CoordsRAHMS  = extractor[HourAngle](Ghost.HRIFU2RAHMS)
-        val hrifu2CoordsDecDMS = extractor[Angle    ](Ghost.HRIFU2DecDMS)
+          hrifu2RAHMS   <- raExtractor(Ghost.HRIFU2RAHMS)
+          hrifu2DecHDMS <- decExtractor(Ghost.HRIFU2DecDMS)
 
-        Right(GHOSTConfig(
-          baseRAHMS,
-          baseDecDMS,
-          1.minute,
-          srifu1Name,
-          srifu1CoordsRAHMS,
-          srifu1CoordsDecDMS,
-          srifu2Name,
-          srifu2CoordsRAHMS,
-          srifu2CoordsDecDMS,
-          hrifu1Name,
-          hrifu1CoordsRAHMS,
-          hrifu1CoordsDecDMS,
-          hrifu2CoordsRAHMS,
-          hrifu2CoordsDecDMS
-        )): Either[SeqexecFailure, GHOSTConfig]
+        } yield GHOSTConfig(
+          baseRAHMS, baseDecDMS, 1.minute,
+          srifu1Name, srifu1RAHMS, srifu1DecHDMS,
+          srifu2Name, srifu2RAHMS, srifu2DecHDMS,
+          hrifu1Name, hrifu1RAHMS, hrifu1DecHDMS,
+          hrifu2RAHMS, hrifu2DecHDMS))
+          .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
       }
     }
   }
