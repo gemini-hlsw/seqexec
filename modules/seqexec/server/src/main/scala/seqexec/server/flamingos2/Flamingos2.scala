@@ -6,6 +6,7 @@ package seqexec.server.flamingos2
 import cats.data.{EitherT, Reader}
 import cats.effect.IO
 import cats.implicits._
+import fs2.Stream
 import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2._
 import edu.gemini.spModel.obscomp.InstConstants.{DARK_OBSERVE_TYPE, OBSERVE_TYPE_PROP}
@@ -51,6 +52,9 @@ final case class Flamingos2(f2Controller: Flamingos2Controller, dhsClient: DhsCl
   override def calcObserveTime(config: Config): Time =
     config.extractAs[JDouble](OBSERVE_KEY / EXPOSURE_TIME_PROP)
       .map(x => Seconds(x.toDouble)).getOrElse(Seconds(360))
+
+  override def observeProgress(config: Config): Stream[IO, Progress] = f2Controller
+    .observeProgress(calcObserveTime(config))
 }
 
 object Flamingos2 {

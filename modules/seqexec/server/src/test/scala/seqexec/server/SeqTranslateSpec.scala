@@ -30,6 +30,7 @@ import org.scalatest.FlatSpec
 import org.http4s.Uri._
 import squants.time.Seconds
 import monocle.Monocle._
+import seqexec.server.Response.Observed
 import seqexec.server.ghost.GHOSTController
 
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
@@ -47,7 +48,7 @@ class SeqTranslateSpec extends FlatSpec {
     seqId,
     "",
     GmosS,
-    List(SequenceGen.PendingStep(
+    List(SequenceGen.PendingStepGen(
       1,
       config,
       Set(GmosS),

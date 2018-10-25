@@ -7,6 +7,7 @@ import cats._
 import cats.data.{EitherT, NonEmptyList, Reader}
 import cats.effect.IO
 import cats.implicits._
+import scala.concurrent.ExecutionContext.Implicits.global
 import edu.gemini.seqexec.odb.{ExecutedDataset, SeqexecSequence}
 import edu.gemini.spModel.ao.AOConstants._
 import edu.gemini.spModel.config2.{Config, ItemKey}
@@ -104,7 +105,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
         _ <- headers(ctx).reverseMap(_.sendAfter(id)).sequence
         _ <- closeImage(id)
         _ <- sendDataEnd(obsId, id, dataId)
-      } yield Result.OK(Observed(id))
+      } yield Result.OK(Response.Observed(id))
 
       val stopTail: SeqAction[Result] = successTail
       val abortTail: SeqAction[Result] = sendObservationAborted(obsId, id) *>
@@ -118,38 +119,35 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
       }
     }
 
-    val x = Stream.eval((for {
-      id <- dhsFileId(inst)
-    } yield id).value)
-
-    x.flatMap[Result]{
+    Stream.eval(dhsFileId(inst).value).flatMap[Result]{
       case Right(id) => Stream.emit[Result](Result.Partial(FileIdAllocated(id))).covary[IO] ++
-        Stream.eval[IO, Result](doObserve(id).value.map(_.toResult))
+        inst.observeProgress(config).map(Result.Partial(_)).mergeHaltR(Stream.eval[IO, Result](doObserve(id)
+          .value.map(_.toResult)))
       case Left(e)   => Stream.emit[Result](Result.Error(SeqexecFailure.explain(e))).covary[IO]
     }
   }
 
   private def step(obsId: Observation.Id, i: Int, config: Config, nextToRun: Int,
-                   datasets: Map[Int, ExecutedDataset]): TrySeq[SequenceGen.Step] = {
+                   datasets: Map[Int, ExecutedDataset]): TrySeq[SequenceGen.StepGen] = {
     def buildStep(inst: InstrumentSystem[IO], sys: List[System[IO]],
-                  headers: Reader[HeaderExtraData, List[Header]]): SequenceGen.Step = {
+                  headers: Reader[HeaderExtraData, List[Header]]): SequenceGen.StepGen = {
       val initialStepExecutions: List[List[Action[IO]]] =
         if (i === 0)
           List(List(systems.odb.sequenceStart(obsId, "")
-            .map(_ => Ignored).toAction(ActionType.Undefined)))
+            .map(_ => Response.Ignored).toAction(ActionType.Undefined)))
         else Nil
 
       def regularStepExecutions(ctx:HeaderExtraData): List[List[Action[IO]]] = List(
         sys.map { x =>
           val kind = ActionType.Configure(resourceFromSystem(x))
-          x.configure(config).map(_ => Configured(x.resource)).toAction(kind)
+          x.configure(config).map(_ => Response.Configured(x.resource)).toAction(kind)
         },
         List(Action(ActionType.Observe, observe(config, obsId, inst, sys.filterNot(inst.equals),
           headers)(ctx), Action.State(Action.Idle, Nil)))
       )
 
       extractStatus(config) match {
-        case StepState.Pending if i >= nextToRun => SequenceGen.PendingStep(
+        case StepState.Pending if i >= nextToRun => SequenceGen.PendingStepGen(
           i,
           config.toStepConfig,
           calcResources(sys),
@@ -158,12 +156,12 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
             executions = initialStepExecutions ++ regularStepExecutions(ctx)
           )
         )
-        case StepState.Pending                   => SequenceGen.SkippedStep(
+        case StepState.Pending                   => SequenceGen.SkippedStepGen(
           i,
           config.toStepConfig
         )
         // TODO: This case should be for completed Steps only. Fail when step status is unknown.
-        case _                                   => SequenceGen.CompletedStep(
+        case _                                   => SequenceGen.CompletedStepGen(
           i,
           config.toStepConfig,
           datasets.get(i + 1).map(_.filename)
@@ -518,7 +516,8 @@ object SeqTranslate {
   }
 
   implicit class ConfigResultToResult[A <: Result.PartialVal](val r: Either[SeqexecFailure, ConfigResult[IO]]) extends AnyVal {
-    def toResult: Result = r.fold(e => Result.Error(SeqexecFailure.explain(e)), r => Result.OK(Configured(r.sys.resource)))
+    def toResult: Result = r.fold(e => Result.Error(SeqexecFailure.explain(e)), r => Result.OK(
+      Response.Configured(r.sys.resource)))
   }
 
   implicit class ActionResponseToAction[A <: Response](val x: SeqAction[A]) extends AnyVal {

@@ -20,14 +20,14 @@ import monocle.law.discipline.LensTests
 final class SeqexecServerLensesSpec extends CatsSuite with ArbObservation {
 
   implicit val steppEq: Eq[HeaderExtraData => engine.Step[IO]] = Eq.fromUniversalEquals
-  implicit val pndstepgEq: Eq[PendingStep] = Eq.by(x => (x.id, x.config, x.resources, x
+  implicit val pndstepgEq: Eq[PendingStepGen] = Eq.by(x => (x.id, x.config, x.resources, x
     .generator))
-  implicit val skipstepgEq: Eq[SkippedStep] = Eq.by(x => (x.id, x.config))
-  implicit val cmpstepgEq: Eq[CompletedStep] = Eq.by(x => (x.id, x.config, x.fileId))
-  implicit val stepqEq: Eq[Step] = Eq.instance{
-    case (a:PendingStep, b:PendingStep)     => a === b
-    case (a:SkippedStep, b:SkippedStep)     => a === b
-    case (a:CompletedStep, b:CompletedStep) => a === b
+  implicit val skipstepgEq: Eq[SkippedStepGen] = Eq.by(x => (x.id, x.config))
+  implicit val cmpstepgEq: Eq[CompletedStepGen] = Eq.by(x => (x.id, x.config, x.fileId))
+  implicit val stepqEq: Eq[StepGen] = Eq.instance{
+    case (a:PendingStepGen, b:PendingStepGen)     => a === b
+    case (a:SkippedStepGen, b:SkippedStepGen)     => a === b
+    case (a:CompletedStepGen, b:CompletedStepGen) => a === b
     case _                                  => false
   }
   implicit val seqgEq: Eq[SequenceGen] = Eq.by(x => (x.id, x.title, x.instrument, x.steps))

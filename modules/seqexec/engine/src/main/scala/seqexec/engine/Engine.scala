@@ -31,6 +31,7 @@ class Engine[D, U](stateL: Lens[D, Engine.State]) {
   type HandleType[A] = Handle[D, EventType, A]
 
   /**
+    *
     * Changes the `Status` and returns the new `Queue.State`.
     */
   private def switch(id: Observation.Id)(st: SequenceState): HandleType[Unit] =
@@ -337,8 +338,7 @@ class Engine[D, U](stateL: Lens[D, Engine.State]) {
 
   // For debugging
   def printSequenceState(id: Observation.Id): HandleType[Unit] =
-    getSs(id)((qs: Sequence.State[IO]) => StateT.liftF(IO.pure(println(qs)))).void
-  // scalastyle:ignore
+    getSs(id)((qs: Sequence.State[IO]) => StateT.liftF(IO.pure(println(qs)))).void // scalastyle:ignore
 
 }
 

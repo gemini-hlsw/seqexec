@@ -37,6 +37,8 @@ import seqexec.model.dhs.ImageFileId
 
 package server {
 
+  import squants.Time
+
   @Lenses
   final case class ObserverSequence(observer: Option[Observer], seq: SequenceGen)
   @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
@@ -96,11 +98,21 @@ package server {
   }
 
   sealed trait Response extends RetVal
-  final case class Configured(resource: Resource) extends Response
-  final case class Observed(fileId: ImageFileId) extends Response
-  object Ignored extends Response
+  object Response {
+
+    final case class Configured(resource: Resource) extends Response
+
+    final case class Observed(fileId: ImageFileId) extends Response
+
+    object Ignored extends Response
+
+  }
 
   final case class FileIdAllocated(fileId: ImageFileId) extends PartialVal
+  final case class RemainingTime(self: Time) extends AnyVal
+  final case class Progress(total: Time, remaining: RemainingTime) extends PartialVal {
+    val progress: Time = total - remaining.self
+  }
 
 }
 

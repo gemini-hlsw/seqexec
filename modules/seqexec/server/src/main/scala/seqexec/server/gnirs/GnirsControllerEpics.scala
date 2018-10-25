@@ -14,9 +14,13 @@ import org.log4s.getLogger
 import squants.{Length, Seconds, Time}
 import squants.space.LengthConversions._
 import squants.electro.Millivolts
+import squants.time.TimeConversions._
 
 import scala.math.abs
 import cats.implicits._
+import fs2.Stream
+
+import scala.util.Try
 
 object GnirsControllerEpics extends GnirsController {
   private val Log = getLogger
@@ -273,6 +277,12 @@ object GnirsControllerEpics extends GnirsController {
 
   private def smartSetDoubleParam(relTolerance: Double)(v: Double, get: => Option[Double], set: SeqAction[Unit]): List[SeqAction[Unit]] =
     if(get.forall(x => (v === 0.0 && x =!= 0.0) || abs((x - v)/v) > relTolerance)) List(set) else Nil
+
+  override def observeProgress(total: Time): Stream[IO, Progress] = ProgressUtil.fromFOption(IO(
+    GnirsEpics.instance.countDown.flatMap(x => Try(x.toDouble).toOption)
+      .map(c => Progress(total, RemainingTime(c.seconds)))
+  ))
+
 
   private val DefaultTimeout: Time = Seconds(60)
   private val ReadoutTimeout: Time = Seconds(300)

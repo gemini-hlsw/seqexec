@@ -4,6 +4,7 @@
 package seqexec.server
 
 import cats.effect.IO
+import fs2.Stream
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.keywords.KeywordsClient
 import edu.gemini.spModel.config2.Config
@@ -20,6 +21,7 @@ trait InstrumentSystem[F[_]] extends System[F] {
   //Expected total observe lapse, used to calculate timeout
   def calcObserveTime(config: Config): Time
   def keywordsClient: KeywordsClient[IO]
+  def observeProgress(config: Config): Stream[F, Progress]
 }
 
 object InstrumentSystem {

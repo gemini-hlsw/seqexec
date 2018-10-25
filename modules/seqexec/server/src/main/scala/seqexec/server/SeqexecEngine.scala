@@ -598,7 +598,7 @@ object SeqexecEngine extends SeqexecConfiguration {
     observeAction(executions).flatMap(_.state.partials.collect{ case FileIdAllocated(fid) => fid}
       .headOption)
 
-  def viewStep(stepg: SequenceGen.Step, step: engine.Step[IO]): StandardStep = {
+  def viewStep(stepg: SequenceGen.StepGen, step: engine.Step[IO]): StandardStep = {
     val configStatus = stepConfigStatus(step)
     StandardStep(
       id = step.id,
@@ -609,7 +609,7 @@ object SeqexecEngine extends SeqexecConfiguration {
       configStatus = configStatus,
       observeStatus = observeStatus(step.executions),
       fileId = fileId(step.executions).orElse(stepg.some.collect{
-        case SequenceGen.CompletedStep(_, _, fileId) => fileId
+        case SequenceGen.CompletedStepGen(_, _, fileId) => fileId
       }.flatten)
     )
   }

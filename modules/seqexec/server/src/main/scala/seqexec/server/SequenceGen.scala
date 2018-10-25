@@ -16,41 +16,43 @@ import seqexec.model.dhs.ImageFileId
  * It is combined with header parameters to build an engine.Sequence. It allows to rebuild the
  * engine sequence whenever any of those parameters change.
  */
-final case class SequenceGen(id: Observation.Id, title: String, instrument: Instrument, steps: List[SequenceGen.Step]) {
+final case class SequenceGen(id: Observation.Id, title: String,
+                             instrument: Instrument,
+                             steps: List[SequenceGen.StepGen]) {
   val resources: Set[Resource] = steps.collect{
-    case SequenceGen.PendingStep(_, _, resources, _) => resources
+    case SequenceGen.PendingStepGen(_, _, resources, _) => resources
   }.foldMap(identity(_))
 }
 
 object SequenceGen {
 
-  sealed trait Step {
+  sealed trait StepGen {
     val id: Int
     val config: StepConfig
 
     def generate(ctx: HeaderExtraData): EngineStep[IO] = this match {
-      case PendingStep(_, _, _, g) => g(ctx)
-      case SkippedStep(id, _)      => EngineStep.init[IO](id, Nil).copy(skipped =
+      case PendingStepGen(_, _, _, g) => g(ctx)
+      case SkippedStepGen(id, _)      => EngineStep.init[IO](id, Nil).copy(skipped =
         EngineStep.Skipped(true))
-      case CompletedStep(id, _, _) => EngineStep.init[IO](id, Nil)
+      case CompletedStepGen(id, _, _) => EngineStep.init[IO](id, Nil)
     }
   }
 
-  final case class PendingStep(override val id: Int,
-                               override val config: StepConfig,
-                               resources: Set[Resource],
-                               generator: HeaderExtraData => EngineStep[IO]
-                             ) extends Step
+  final case class PendingStepGen(override val id: Int,
+                                  override val config: StepConfig,
+                                  resources: Set[Resource],
+                                  generator: HeaderExtraData => EngineStep[IO]
+                             ) extends StepGen
 
-  final case class SkippedStep(override val id: Int,
-                               override val config: StepConfig
-                              ) extends Step
+  final case class SkippedStepGen(override val id: Int,
+                                  override val config: StepConfig
+                              ) extends StepGen
 
   // Receiving a sequence from the ODB with a completed step without an image file id would be
   // weird, but I still use an Option just in case
-  final case class CompletedStep(override val id: Int,
-                                 override val config: StepConfig,
-                                 fileId: Option[ImageFileId]
-                                ) extends Step
+  final case class CompletedStepGen(override val id: Int,
+                                    override val config: StepConfig,
+                                    fileId: Option[ImageFileId]
+                                ) extends StepGen
 
 }

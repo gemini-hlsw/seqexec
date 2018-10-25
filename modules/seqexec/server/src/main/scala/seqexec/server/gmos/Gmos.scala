@@ -90,6 +90,9 @@ abstract class Gmos[T<:GmosController.SiteDependentTypes](controller: GmosContro
   override def calcObserveTime(config: Config): Time =
     config.extractAs[JDouble](OBSERVE_KEY / EXPOSURE_TIME_PROP)
       .map(v => Seconds(v.toDouble)).getOrElse(Seconds(10000))
+
+  override def observeProgress(config: Config): fs2.Stream[IO, Progress] = controller
+    .observeProgress(calcObserveTime(config))
 }
 
 object Gmos {

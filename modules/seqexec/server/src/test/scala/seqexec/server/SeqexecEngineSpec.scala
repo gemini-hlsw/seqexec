@@ -60,19 +60,19 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
     tag[GhostSettings][Uri](uri("http://localhost:8888/xmlrpc"))
   )
 
-  def configureIO(resource: Resource): IO[Result] = IO.apply(Result.OK(Configured(resource)))
+  def configureIO(resource: Resource): IO[Result] = IO.apply(Result.OK(Response.Configured(resource)))
   def pendingAction(resource: Resource): Action[IO] =
     engine.fromF[IO](ActionType.Configure(resource), configureIO(resource))
   def running(resource: Resource): Action[IO] = pendingAction(resource).copy(state = Action.State(
     Action.Started, Nil))
   def done(resource: Resource): Action[IO] = pendingAction(resource).copy(state = Action.State(
-    Action.Completed(Configured(resource)), Nil))
+    Action.Completed(Response.Configured(resource)), Nil))
   val fileId = "fileId"
   def observing: Action[IO] = engine.fromF[IO](ActionType.Observe,
-    IO.apply(Result.OK(Observed(fileId)))).copy(state = Action.State(Action.Started, Nil))
+    IO.apply(Result.OK(Response.Observed(fileId)))).copy(state = Action.State(Action.Started, Nil))
   def fileIdReady: Action[IO] = observing.copy(state = Action.State(Action.Started,
     List(FileIdAllocated(fileId))))
-  def observed: Action[IO] = observing.copy(state = Action.State(Action.Completed(Observed(fileId)),
+  def observed: Action[IO] = observing.copy(state = Action.State(Action.Completed(Response.Observed(fileId)),
     List(FileIdAllocated(fileId))))
   def paused: Action[IO] = observing.copy(state = Action.State(Action.Paused(new PauseContext{}),
     List(FileIdAllocated(fileId))))
@@ -201,14 +201,14 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
     id,
     "",
     Instrument.F2,
-    List(SequenceGen.PendingStep(1, Map(), Set.empty, _ => Step.init(1, List(List(pendingAction
+    List(SequenceGen.PendingStepGen(1, Map(), Set.empty, _ => Step.init(1, List(List(pendingAction
     (Instrument.F2))))))
   )
   private def sequenceWithResources(id: Observation.Id, ins: Instrument, resources: Set[Resource]): SequenceGen = SequenceGen(
     id,
     "",
     ins,
-    List(SequenceGen.PendingStep(1, Map(), resources, _ => Step.init(1, List(List(pendingAction(ins))))))
+    List(SequenceGen.PendingStepGen(1, Map(), resources, _ => Step.init(1, List(List(pendingAction(ins))))))
   )
 
   "SeqexecEngine addSequenceToQueue" should
