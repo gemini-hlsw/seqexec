@@ -71,20 +71,18 @@ object GHOST {
     def extractor[A : ClassTag](propName: String): Option[A] =
       config.extractAs[A](INSTRUMENT_KEY / propName).toOption
 
-    def angleExtractor[A <: Angle](fmt: Format[String, A])(propName: String): Either[ExtractFailure, Option[A]] = {
-      // 1. content = None: nothing to process, so Right(None).
-      // 2. process content = Some(a) indicating success, so Right(Some(a))
-      // 3. process content = None indicating failure, so Left(error)
-      val content: Option[String] = extractor[String](propName)
-      val result: Option[Option[A]] = content.map(fmt.getOption)
-      result.map {
-        case None       => Left(ConversionError(INSTRUMENT_KEY / propName,
-                                                s"Could not parse $propName content: ${content.getOrElse("")}"))
-        case other      => Right(other)
+    def formatExtractor[A](fmt: Format[String, A]): String => Either[ExtractFailure, Option[A]] = { propName =>
+      // 1. If content is None, trivial success, so Right(None).
+      // 2. If processed content is Some(a), success, so Right(Some(content)).
+      // 3. If processed content is None, failure, so Left(error).
+      extractor[String](propName).map(fmt.getOption).map {
+        case None => Left(ConversionError(INSTRUMENT_KEY / propName, s"Could not parse $propName"))
+        case other => Right(other)
       }.getOrElse(Right(None))
     }
-    val raExtractor = angleExtractor[HourAngle](HourAngle.fromStringHMS) _
-    val decExtractor = angleExtractor[Angle](Angle.fromStringDMS) _
+
+    val raExtractor = formatExtractor[HourAngle](HourAngle.fromStringHMS)
+    val decExtractor = formatExtractor[Angle](Angle.fromStringDMS)
 
     EitherT {
       Sync[F].delay {
