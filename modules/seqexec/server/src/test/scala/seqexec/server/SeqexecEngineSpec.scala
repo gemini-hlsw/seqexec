@@ -12,23 +12,22 @@ import giapi.client.Giapi
 import io.prometheus.client._
 import java.time.LocalDate
 import java.util.UUID
-
 import org.scalatest.Inside.inside
 import org.scalatest.{FlatSpec, Matchers, NonImplicitAssertions}
 import org.http4s.Uri._
-
+import org.http4s.Uri
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 import seqexec.engine
 import seqexec.engine.Result.PauseContext
 import seqexec.engine._
-import seqexec.server.SeqexecEngine.Settings
 import seqexec.server.keywords.GDSClient
 import seqexec.model.{ActionType, CalibrationQueueId, ClientId, Conditions, Observer, Operator, SequenceState, UserDetails}
 import seqexec.model.enum._
 import seqexec.model.enum.Resource.TCS
 import monocle.Monocle._
 import seqexec.model.enum.BatchCommandState
+import shapeless.tag
 
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 @SuppressWarnings(Array("org.wartremover.warts.Throw"))
@@ -55,10 +54,10 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
     instForceError = false,
     failAt = 0,
     10.seconds,
-    Giapi.giapiConnectionIO(scala.concurrent.ExecutionContext.Implicits.global).connect.unsafeRunSync,
-    Giapi.giapiConnectionIO(scala.concurrent.ExecutionContext.Implicits.global).connect.unsafeRunSync,
-    uri("http://localhost:8888/xmlrpc"),
-    uri("http://localhost:8888/xmlrpc")
+    tag[GpiSettings][Giapi[IO]](Giapi.giapiConnectionIO(scala.concurrent.ExecutionContext.Implicits.global).connect.unsafeRunSync),
+    tag[GhostSettings][Giapi[IO]](Giapi.giapiConnectionIO(scala.concurrent.ExecutionContext.Implicits.global).connect.unsafeRunSync),
+    tag[GpiSettings][Uri](uri("http://localhost:8888/xmlrpc")),
+    tag[GhostSettings][Uri](uri("http://localhost:8888/xmlrpc"))
   )
 
   def configureIO(resource: Resource): IO[Result] = IO.apply(Result.OK(Result.Configured(resource)))

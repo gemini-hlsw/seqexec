@@ -29,6 +29,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import seqexec.model.events._
 import seqexec.server
 import seqexec.server.{SeqexecMetrics, SeqexecConfiguration, SeqexecEngine, executeEngine}
+import seqexec.server.GpiSettings
+import seqexec.server.GhostSettings
 import seqexec.web.server.OcsBuildInfo
 import seqexec.web.server.logging.AppenderForClients
 import seqexec.web.server.security.{AuthenticationConfig, AuthenticationService, LDAPConfig}
@@ -179,9 +181,9 @@ object WebServerLauncher extends StreamApp[IO] with LogInitialization with Seqex
         _          <- configLog // Initialize log before the engine is setup
         c          <- config
         site       <- IO.pure(c.require[Site]("seqexec-engine.site"))
-        giapiGPI   <- SeqexecEngine.giapiConnection("seqexec-engine.systemControl.gpi",
+        giapiGPI   <- SeqexecEngine.giapiConnection[GpiSettings]("seqexec-engine.systemControl.gpi",
                                                     "seqexec-engine.gpiUrl").run(c)
-        giapiGHOST <- SeqexecEngine.giapiConnection("seqexec-engine.systemControl.ghost",
+        giapiGHOST <- SeqexecEngine.giapiConnection[GhostSettings]("seqexec-engine.systemControl.ghost",
                                                     "seqexec-engine.ghostUrl").run(c)
         seqc       <- SeqexecEngine.seqexecConfiguration(giapiGPI, giapiGHOST).run(c)
         met        <- SeqexecMetrics.build[IO](site, collector)
