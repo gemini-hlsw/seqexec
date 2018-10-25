@@ -8,6 +8,10 @@ import giapi.client.Giapi
 import java.time.LocalDate
 import org.http4s.Uri
 import scala.concurrent.duration.Duration
+import shapeless.tag.@@
+
+trait GpiSettings
+trait GhostSettings
 
 final case class Settings[F[_]](site:                    Site,
                                 odbHost:                 String,
@@ -31,7 +35,7 @@ final case class Settings[F[_]](site:                    Site,
                                 instForceError:          Boolean,
                                 failAt:                  Int,
                                 odbQueuePollingInterval: Duration,
-                                gpiGiapi:                Giapi[F],
-                                ghostGiapi:              Giapi[F],
-                                gpiGDS:                  Uri,
-                                ghostGDS:                Uri)
+                                gpiGiapi:                Giapi[F] @@ GpiSettings,
+                                ghostGiapi:              Giapi[F] @@ GhostSettings,
+                                gpiGDS:                  Uri @@ GpiSettings,
+                                ghostGDS:                Uri @@ GhostSettings)

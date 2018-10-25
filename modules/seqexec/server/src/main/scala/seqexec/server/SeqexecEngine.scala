@@ -49,6 +49,8 @@ import mouse.all._
 import scala.collection.immutable.SortedMap
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
+import shapeless.tag.@@
+import shapeless.tag
 
 class SeqexecEngine(httpClient: Client[IO], settings: Settings[IO], sm: SeqexecMetrics) {
   import SeqexecEngine._
@@ -646,18 +648,18 @@ object SeqexecEngine extends SeqexecConfiguration {
 
   // TODO: Initialization is a bit of a mess, with a mix of effectful and effectless code, and values
   // that should go from one to the other. This should be improved.
-  def giapiConnection(controlName: String, urlName: String): Kleisli[IO, Config, Giapi[IO]] = Kleisli { cfg: Config =>
+  def giapiConnection[T](controlName: String, urlName: String): Kleisli[IO, Config, Giapi[IO] @@ T] = Kleisli { cfg: Config =>
     val control = cfg.require[ControlStrategy](controlName)
     val url  = cfg.require[String](urlName)
-    if (control.command) {
+    (if (control.command) {
       Giapi.giapiConnection[IO](url, scala.concurrent.ExecutionContext.Implicits.global).connect
     } else {
       Giapi.giapiConnectionIO(scala.concurrent.ExecutionContext.Implicits.global).connect
-    }
+    }).map(tag[T][Giapi[IO]](_)) // Tag the connection
   }
 
   // scalastyle:off
-  def seqexecConfiguration(gpiGiapi: Giapi[IO], ghostGiapi: Giapi[IO]): Kleisli[IO, Config, Settings[IO]] = Kleisli { cfg: Config =>
+  def seqexecConfiguration(gpiGiapi: Giapi[IO] @@ GpiSettings, ghostGiapi: Giapi[IO] @@ GhostSettings): Kleisli[IO, Config, Settings[IO]] = Kleisli { cfg: Config =>
     val site                    = cfg.require[Site]("seqexec-engine.site")
     val odbHost                 = cfg.require[String]("seqexec-engine.odb")
     val dhsServer               = cfg.require[String]("seqexec-engine.dhsServer")
@@ -676,8 +678,8 @@ object SeqexecEngine extends SeqexecConfiguration {
     val niriControl             = cfg.require[ControlStrategy]("seqexec-engine.systemControl.niri")
     val tcsControl              = cfg.require[ControlStrategy]("seqexec-engine.systemControl.tcs")
     val odbNotifications        = cfg.require[Boolean]("seqexec-engine.odbNotifications")
-    val gpiGDS                  = cfg.require[Uri]("seqexec-engine.gpiGDS")
-    val ghostGDS                = cfg.require[Uri]("seqexec-engine.ghostGDS")
+    val gpiGDS                  = tag[GpiSettings][Uri](cfg.require[Uri]("seqexec-engine.gpiGDS"))
+    val ghostGDS                = tag[GhostSettings][Uri](cfg.require[Uri]("seqexec-engine.ghostGDS"))
     val instForceError          = cfg.require[Boolean]("seqexec-engine.instForceError")
     val failAt                  = cfg.require[Int]("seqexec-engine.failAt")
     val odbQueuePollingInterval = cfg.require[Duration]("seqexec-engine.odbQueuePollingInterval")
