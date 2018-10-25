@@ -50,7 +50,7 @@ import scala.collection.immutable.SortedMap
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
-class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm: SeqexecMetrics) {
+class SeqexecEngine(httpClient: Client[IO], settings: Settings[IO], sm: SeqexecMetrics) {
   import SeqexecEngine._
 
   val odbProxy: ODBProxy = new ODBProxy(new Peer(settings.odbHost, 8443, null),
@@ -75,7 +75,7 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
     GHOSTController(new GHOSTClient(settings.ghostGiapi), ghostGDS)
   )
 
-  private val translatorSettings = SeqTranslate.Settings(
+  private val translatorSettings = TranslateSettings(
     tcsKeywords = settings.tcsControl.realKeywords,
     f2Keywords = settings.f2Control.realKeywords,
     gwsKeywords = settings.gwsControl.realKeywords,
@@ -507,44 +507,8 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
 
 }
 
-// Configuration stuff
 object SeqexecEngine extends SeqexecConfiguration {
-  sealed trait GPIKeywords
-
-  object GPIKeywords {
-    case object GPIKeywordsSimulated extends GPIKeywords
-    case object GPIKeywordsGDS extends GPIKeywords
-
-    implicit val eq: Eq[GPIKeywords] = Eq.fromUniversalEquals
-  }
-
-  final case class Settings(site: Site,
-                            odbHost: String,
-                            date: LocalDate,
-                            dhsURI: String,
-                            dhsControl: ControlStrategy,
-                            f2Control: ControlStrategy,
-                            gcalControl: ControlStrategy,
-                            ghostControl: ControlStrategy,
-                            gmosControl: ControlStrategy,
-                            gnirsControl: ControlStrategy,
-                            gpiControl: ControlStrategy,
-                            gpiGdsControl: ControlStrategy,
-                            ghostGdsControl: ControlStrategy,
-                            gsaoiControl: ControlStrategy,
-                            gwsControl: ControlStrategy,
-                            nifsControl: ControlStrategy,
-                            niriControl: ControlStrategy,
-                            tcsControl: ControlStrategy,
-                            odbNotifications: Boolean,
-                            instForceError: Boolean,
-                            failAt: Int,
-                            odbQueuePollingInterval: Duration,
-                            gpiGiapi: Giapi[IO],
-                            ghostGiapi: Giapi[IO],
-                            gpiGDS: Uri,
-                            ghostGDS: Uri)
-  def apply(httpClient: Client[IO], settings: Settings, c: SeqexecMetrics): SeqexecEngine = new SeqexecEngine(httpClient, settings, c)
+  def apply(httpClient: Client[IO], settings: Settings[IO], c: SeqexecMetrics): SeqexecEngine = new SeqexecEngine(httpClient, settings, c)
 
   def splitWhere[A](l: List[A])(p: A => Boolean): (List[A], List[A]) =
     l.splitAt(l.indexWhere(p))
@@ -693,7 +657,7 @@ object SeqexecEngine extends SeqexecConfiguration {
   }
 
   // scalastyle:off
-  def seqexecConfiguration(gpiGiapi: Giapi[IO], ghostGiapi: Giapi[IO]): Kleisli[IO, Config, Settings] = Kleisli { cfg: Config =>
+  def seqexecConfiguration(gpiGiapi: Giapi[IO], ghostGiapi: Giapi[IO]): Kleisli[IO, Config, Settings[IO]] = Kleisli { cfg: Config =>
     val site                    = cfg.require[Site]("seqexec-engine.site")
     val odbHost                 = cfg.require[String]("seqexec-engine.odb")
     val dhsServer               = cfg.require[String]("seqexec-engine.dhsServer")
@@ -787,10 +751,10 @@ object SeqexecEngine extends SeqexecConfiguration {
                        instForceError,
                        failAt,
                        odbQueuePollingInterval,
-                       ghostGiapi,
                        gpiGiapi,
-                       ghostGDS,
-                       gpiGDS)
+                       ghostGiapi,
+                       gpiGDS,
+                       ghostGDS)
       )
 
 
