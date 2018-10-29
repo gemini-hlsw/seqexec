@@ -67,7 +67,7 @@ object CalQueueTabContent {
             case Some(x) =>
               <.div(
                 ^.height := "100%",
-                CalQueueTable.Props(CalibrationQueueId, x).cmp
+                CalQueueTable(CalQueueTable.Props(CalibrationQueueId, x))
               )
             case _ => defaultContent
           })

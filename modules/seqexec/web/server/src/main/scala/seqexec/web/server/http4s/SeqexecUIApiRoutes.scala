@@ -10,8 +10,8 @@ import cats.effect.{ Concurrent, IO, Timer }
 import cats.implicits._
 import seqexec.model.ClientId
 import seqexec.model._
-import seqexec.model.boopickle._
 import seqexec.model.events._
+import seqexec.web.model.boopickle._
 import seqexec.web.server.http4s.encoder._
 import seqexec.web.server.security.AuthenticationService.AuthResult
 import seqexec.web.server.security.{AuthenticationService, Http4sAuthentication, TokenRefresher}

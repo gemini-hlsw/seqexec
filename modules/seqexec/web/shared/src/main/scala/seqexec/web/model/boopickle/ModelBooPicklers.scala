@@ -1,7 +1,7 @@
 // Copyright (c) 2016-2018 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
-package seqexec.model.boopickle
+package seqexec.web.model.boopickle
 
 import boopickle.DefaultBasic._
 import cats.Traverse
@@ -162,6 +162,7 @@ trait ModelBooPicklers extends GemModelBooPicklers {
   implicit val sequenceMetadataPickler = generatePickler[SequenceMetadata]
 
   implicit val stepConfigPickler = generatePickler[SequenceView]
+  implicit val clientIdPickler = generatePickler[ClientId]
 
   implicit val queueIdPickler      = generatePickler[QueueId]
   implicit val queueOpMovedPickler = generatePickler[QueueManipulationOp.Moved]
@@ -195,7 +196,6 @@ trait ModelBooPicklers extends GemModelBooPicklers {
           throw new RuntimeException("Falied to decode server log level")))(t =>
     serverLogIdx.find { case (_, v) => v === t }.map(_._1).getOrElse(-1))
 
-  implicit val clientIdPickler = generatePickler[ClientId]
   implicit val batchCommandStateIdlePickler =
     generatePickler[BatchCommandState.Idle.type]
   implicit val batchCommandStateRun = generatePickler[BatchCommandState.Run]

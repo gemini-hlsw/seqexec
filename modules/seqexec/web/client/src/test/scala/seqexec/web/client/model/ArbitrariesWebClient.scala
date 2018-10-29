@@ -139,6 +139,15 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
   implicit val rsqCogen: Cogen[RemoveSeqQueue] =
     Cogen[String].contramap(_.productPrefix)
 
+  implicit val arbMoveSeqQueue: Arbitrary[MoveSeqQueue] =
+    Arbitrary {
+      Gen.oneOf(MoveSeqQueue.MoveSeqQueueIdle,
+                MoveSeqQueue.MoveSeqQueueInFlight)
+    }
+
+  implicit val msqCogen: Cogen[MoveSeqQueue] =
+    Cogen[String].contramap(_.productPrefix)
+
   implicit val arbCalibrationQueueTab: Arbitrary[CalibrationQueueTab] =
     Arbitrary {
       for {
@@ -159,11 +168,13 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
     Arbitrary {
       for {
         r <- arbitrary[RemoveSeqQueue]
-      } yield QueueSeqOperations(r)
+        m <- arbitrary[MoveSeqQueue]
+      } yield QueueSeqOperations(r, m)
     }
 
   implicit val sopCogen: Cogen[QueueSeqOperations] =
-    Cogen[RemoveSeqQueue].contramap(x => x.removeSeqQueue)
+    Cogen[(RemoveSeqQueue, MoveSeqQueue)]
+      .contramap(x => (x.removeSeqQueue, x.moveSeqQueue))
 
   implicit val arbInstrumentSequenceTab: Arbitrary[InstrumentSequenceTab] =
     Arbitrary {

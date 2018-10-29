@@ -86,7 +86,7 @@ class SeqTranslateSpec extends FlatSpec {
     new GDSClient(GDSClient.alwaysOkClient, uri("hhttp://localhost:8888/xmlrpc")))
   )
 
-  private val translatorSettings = SeqTranslate.Settings(tcsKeywords = false, f2Keywords = false, gwsKeywords = false,
+  private val translatorSettings = TranslateSettings(tcsKeywords = false, f2Keywords = false, gwsKeywords = false,
     gcalKeywords = false, gmosKeywords = false, gnirsKeywords = false)
 
   private val translator = SeqTranslate(Site.GS, systems, translatorSettings)

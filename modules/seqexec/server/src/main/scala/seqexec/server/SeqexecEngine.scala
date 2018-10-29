@@ -48,8 +48,10 @@ import knobs.Config
 import mouse.all._
 import scala.collection.immutable.SortedMap
 import scala.concurrent.duration._
+import shapeless.tag.@@
+import shapeless.tag
 
-class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm: SeqexecMetrics)(
+class SeqexecEngine(httpClient: Client[IO], settings: Settings[IO], sm: SeqexecMetrics)(
   implicit ceio: ConcurrentEffect[IO], tio: Timer[IO]
 ) {
   import SeqexecEngine._
@@ -76,7 +78,7 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
     GHOSTController(new GHOSTClient(settings.ghostGiapi), ghostGDS)
   )
 
-  private val translatorSettings = SeqTranslate.Settings(
+  private val translatorSettings = TranslateSettings(
     tcsKeywords = settings.tcsControl.realKeywords,
     f2Keywords = settings.f2Control.realKeywords,
     gwsKeywords = settings.gwsControl.realKeywords,
@@ -311,20 +313,20 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
           .map(_.queue.indexOf(seqId)).toList))))
   ).map(_.asRight)
 
-  private def moveSeq(qid: QueueId, seqId: Observation.Id, d: Int): Endo[EngineState] = st => (
+  private def moveSeq(qid: QueueId, seqId: Observation.Id, delta: Int): Endo[EngineState] = st => (
     for {
       q <- st.queues.get(qid)
       if (q.queue.contains(seqId))
-    } yield queueO(qid).modify(_.moveSeq(seqId, d))(st)
+    } yield queueO(qid).modify(_.moveSeq(seqId, delta))(st)
   ).getOrElse(st)
 
-  def moveSequenceInQueue(q: EventQueue, qid: QueueId, seqId: Observation.Id, d: Int)
+  def moveSequenceInQueue(q: EventQueue, qid: QueueId, seqId: Observation.Id, delta: Int, cid: ClientId)
   : IO[Either[SeqexecFailure, Unit]] = q.enqueue1(
     Event.modifyState[executeEngine.ConcreteTypes](
-      (moveSeq(qid, seqId, d) withEvent UpdateQueueMoved(qid)).toHandle)
-  ).map(_.asRight)
+      executeEngine.get.flatMap(st => (moveSeq(qid, seqId, delta) withEvent UpdateQueueMoved(qid, cid, seqId, 0)).toHandle))
+    ).map(_.asRight)
 
-  private def clearQ(qid: QueueId): Endo[EngineState]= st => (
+  private def clearQ(qid: QueueId): Endo[EngineState] = st => (
     for {
       q <- st.queues.get(qid)
       if (q.status(st) =!= BatchExecState.Running)
@@ -507,45 +509,9 @@ class SeqexecEngine(httpClient: Client[IO], settings: SeqexecEngine.Settings, sm
 
 }
 
-// Configuration stuff
 object SeqexecEngine extends SeqexecConfiguration {
-  sealed trait GPIKeywords
 
-  object GPIKeywords {
-    case object GPIKeywordsSimulated extends GPIKeywords
-    case object GPIKeywordsGDS extends GPIKeywords
-
-    implicit val eq: Eq[GPIKeywords] = Eq.fromUniversalEquals
-  }
-
-  final case class Settings(site: Site,
-                            odbHost: String,
-                            date: LocalDate,
-                            dhsURI: String,
-                            dhsControl: ControlStrategy,
-                            f2Control: ControlStrategy,
-                            gcalControl: ControlStrategy,
-                            ghostControl: ControlStrategy,
-                            gmosControl: ControlStrategy,
-                            gnirsControl: ControlStrategy,
-                            gpiControl: ControlStrategy,
-                            gpiGdsControl: ControlStrategy,
-                            ghostGdsControl: ControlStrategy,
-                            gsaoiControl: ControlStrategy,
-                            gwsControl: ControlStrategy,
-                            nifsControl: ControlStrategy,
-                            niriControl: ControlStrategy,
-                            tcsControl: ControlStrategy,
-                            odbNotifications: Boolean,
-                            instForceError: Boolean,
-                            failAt: Int,
-                            odbQueuePollingInterval: Duration,
-                            gpiGiapi: Giapi[IO],
-                            ghostGiapi: Giapi[IO],
-                            gpiGDS: Uri,
-                            ghostGDS: Uri)
-
-  def apply(httpClient: Client[IO], settings: Settings, c: SeqexecMetrics)(
+  def apply(httpClient: Client[IO], settings: Settings[IO], c: SeqexecMetrics)(
     implicit ceio: ConcurrentEffect[IO],
               tio: Timer[IO]
   ): SeqexecEngine = new SeqexecEngine(httpClient, settings, c)
@@ -686,22 +652,22 @@ object SeqexecEngine extends SeqexecConfiguration {
 
   // TODO: Initialization is a bit of a mess, with a mix of effectful and effectless code, and values
   // that should go from one to the other. This should be improved.
-  def giapiConnection(controlName: String, urlName: String)(
+  def giapiConnection[T](controlName: String, urlName: String)(
     implicit ev: ConcurrentEffect[IO]
-  ): Kleisli[IO, Config, Giapi[IO]] = Kleisli { cfg: Config =>
-    val gpiControl = cfg.require[ControlStrategy](controlName)
-    val gpiUrl  = cfg.require[String](urlName)
-    if (gpiControl.command) {
-      Giapi.giapiConnection[IO](gpiUrl, scala.concurrent.ExecutionContext.Implicits.global).connect
+  ): Kleisli[IO, Config, Giapi[IO] @@ T] = Kleisli { cfg: Config =>
+    val control = cfg.require[ControlStrategy](controlName)
+    val url  = cfg.require[String](urlName)
+    if (control.command) {
+      Giapi.giapiConnection[IO](url, scala.concurrent.ExecutionContext.Implicits.global).connect
     } else {
       Giapi.giapiConnectionIO(scala.concurrent.ExecutionContext.Implicits.global).connect
     }
-  }
+  } .map(tag[T][Giapi[IO]](_)) // Tag the connection
 
   // scalastyle:off
-  def seqexecConfiguration(gpiGiapi: Giapi[IO], ghostGiapi: Giapi[IO])(
+  def seqexecConfiguration(gpiGiapi: Giapi[IO] @@ GpiSettings, ghostGiapi: Giapi[IO] @@ GhostSettings)(
     implicit cs: ContextShift[IO]
-  ): Kleisli[IO, Config, Settings] = Kleisli { cfg: Config =>
+  ): Kleisli[IO, Config, Settings[IO]] = Kleisli { cfg: Config =>
     val site                    = cfg.require[Site]("seqexec-engine.site")
     val odbHost                 = cfg.require[String]("seqexec-engine.odb")
     val dhsServer               = cfg.require[String]("seqexec-engine.dhsServer")
@@ -720,8 +686,8 @@ object SeqexecEngine extends SeqexecConfiguration {
     val niriControl             = cfg.require[ControlStrategy]("seqexec-engine.systemControl.niri")
     val tcsControl              = cfg.require[ControlStrategy]("seqexec-engine.systemControl.tcs")
     val odbNotifications        = cfg.require[Boolean]("seqexec-engine.odbNotifications")
-    val gpiGDS                  = cfg.require[Uri]("seqexec-engine.gpiGDS")
-    val ghostGDS                = cfg.require[Uri]("seqexec-engine.ghostGDS")
+    val gpiGDS                  = tag[GpiSettings][Uri](cfg.require[Uri]("seqexec-engine.gpiGDS"))
+    val ghostGDS                = tag[GhostSettings][Uri](cfg.require[Uri]("seqexec-engine.ghostGDS"))
     val instForceError          = cfg.require[Boolean]("seqexec-engine.instForceError")
     val failAt                  = cfg.require[Int]("seqexec-engine.failAt")
     val odbQueuePollingInterval = cfg.require[Duration]("seqexec-engine.odbQueuePollingInterval")
@@ -795,10 +761,10 @@ object SeqexecEngine extends SeqexecConfiguration {
                        instForceError,
                        failAt,
                        odbQueuePollingInterval,
-                       ghostGiapi,
                        gpiGiapi,
-                       ghostGDS,
-                       gpiGDS)
+                       ghostGiapi,
+                       gpiGDS,
+                       ghostGDS)
       )
 
 
@@ -824,25 +790,25 @@ object SeqexecEngine extends SeqexecConfiguration {
   }
 
   private def modifyStateEvent(v: SeqEvent, svs: => SequencesQueue[SequenceView]): SeqexecEvent = v match {
-    case NullSeqEvent                  => NullEvent
-    case SetOperator(_, _)             => OperatorUpdated(svs)
-    case SetObserver(_, _, _)          => ObserverUpdated(svs)
-    case AddLoadedSequence(i, s, _, c) => LoadSequenceUpdated(i, s, svs, c)
-    case ClearLoadedSequences(_)       => ClearLoadedSequencesUpdated(svs)
-    case SetConditions(_, _)           => ConditionsUpdated(svs)
-    case SetImageQuality(_, _)         => ConditionsUpdated(svs)
-    case SetWaterVapor(_, _)           => ConditionsUpdated(svs)
-    case SetSkyBackground(_, _)        => ConditionsUpdated(svs)
-    case SetCloudCover(_, _)           => ConditionsUpdated(svs)
-    case LoadSequence(id)              => SequenceLoaded(id, svs)
-    case UnloadSequence(id)            => SequenceUnloaded(id, svs)
-    case NotifyUser(m, cid)            => UserNotification(m, cid)
-    case UpdateQueueAdd(qid, seqs)     => QueueUpdated(QueueManipulationOp.AddedSeqs(qid, seqs), svs)
-    case UpdateQueueRemove(qid, s, p)  => QueueUpdated(QueueManipulationOp.RemovedSeqs(qid, s, p), svs)
-    case UpdateQueueMoved(qid)         => QueueUpdated(QueueManipulationOp.Moved(qid), svs)
-    case UpdateQueueClear(qid)         => QueueUpdated(QueueManipulationOp.Clear(qid), svs)
-    case StartQueue(qid, _)            => QueueUpdated(QueueManipulationOp.Started(qid), svs)
-    case StopQueue(qid, _)             => QueueUpdated(QueueManipulationOp.Stopped(qid), svs)
+    case NullSeqEvent                       => NullEvent
+    case SetOperator(_, _)                  => OperatorUpdated(svs)
+    case SetObserver(_, _, _)               => ObserverUpdated(svs)
+    case AddLoadedSequence(i, s, _, c)      => LoadSequenceUpdated(i, s, svs, c)
+    case ClearLoadedSequences(_)            => ClearLoadedSequencesUpdated(svs)
+    case SetConditions(_, _)                => ConditionsUpdated(svs)
+    case SetImageQuality(_, _)              => ConditionsUpdated(svs)
+    case SetWaterVapor(_, _)                => ConditionsUpdated(svs)
+    case SetSkyBackground(_, _)             => ConditionsUpdated(svs)
+    case SetCloudCover(_, _)                => ConditionsUpdated(svs)
+    case LoadSequence(id)                   => SequenceLoaded(id, svs)
+    case UnloadSequence(id)                 => SequenceUnloaded(id, svs)
+    case NotifyUser(m, cid)                 => UserNotification(m, cid)
+    case UpdateQueueAdd(qid, seqs)          => QueueUpdated(QueueManipulationOp.AddedSeqs(qid, seqs), svs)
+    case UpdateQueueRemove(qid, s, p)       => QueueUpdated(QueueManipulationOp.RemovedSeqs(qid, s, p), svs)
+    case UpdateQueueMoved(qid, cid, oid, p) => QueueUpdated(QueueManipulationOp.Moved(qid, cid, oid, p), svs)
+    case UpdateQueueClear(qid)              => QueueUpdated(QueueManipulationOp.Clear(qid), svs)
+    case StartQueue(qid, _)                 => QueueUpdated(QueueManipulationOp.Started(qid), svs)
+    case StopQueue(qid, _)                  => QueueUpdated(QueueManipulationOp.Stopped(qid), svs)
   }
 
   def toSeqexecEvent(ev: executeEngine.ResultType)(svs: => SequencesQueue[SequenceView]): SeqexecEvent = ev match {

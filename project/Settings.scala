@@ -79,7 +79,7 @@ object Settings {
     val scalaJSReactVirtualized = "0.3.5"
     val scalaJSReactClipboard   = "0.4.0"
     val scalaJSReactDraggable   = "0.1.1"
-    val scalaJSReactSortable    = "0.0.2"
+    val scalaJSReactSortable    = "0.0.4"
 
     // Scala libraries
     val catsEffectVersion       = "1.0.0"
@@ -140,6 +140,7 @@ object Settings {
     val gmpCmdClientBridge      = "0.6.2"
     val guava                   = "25.0-jre"
     val prometheusClient        = "0.5.0"
+    val geminiLocales           = "0.1.0-2018f"
   }
 
   /**
@@ -234,6 +235,7 @@ object Settings {
     val BooPickle               = Def.setting("io.suzaku"         %%% "boopickle"                  % LibraryVersions.booPickle)
     val JavaTimeJS              = Def.setting("io.github.cquiroz" %%% "scala-java-time"            % LibraryVersions.javaTimeJS)
     val JavaLogJS               = Def.setting("org.scala-js"      %%% "scalajs-java-logging"       % LibraryVersions.javaLogJS)
+    val GeminiLocales           = Def.setting("edu.gemini"        %%% "gemini-locales"             % LibraryVersions.geminiLocales)
 
     // OCS Libraries, these should become modules in the future
     val SpModelCore = "edu.gemini.ocs"    %% "edu-gemini-spmodel-core"        % LibraryVersions.ocsVersion

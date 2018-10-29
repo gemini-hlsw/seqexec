@@ -24,7 +24,7 @@ import seqexec.model.enum.{Instrument, Resource}
 import seqexec.model.{ActionType, StepState}
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.ConfigUtilOps._
-import seqexec.server.SeqTranslate.{Settings, Systems}
+import seqexec.server.SeqTranslate.Systems
 import seqexec.server.SeqexecFailure.{Unexpected, UnrecognizedInstrument}
 import seqexec.server.InstrumentSystem._
 import seqexec.server.flamingos2.{Flamingos2, Flamingos2Controller, Flamingos2Header}
@@ -39,7 +39,7 @@ import seqexec.server.tcs.TcsController.ScienceFoldPosition
 import seqexec.server.gnirs._
 import squants.Time
 
-class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
+class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
   private val Log = getLogger
 
   implicit val show: Show[InstrumentSystem[IO]] = Show.show(_.resource.show)
@@ -437,7 +437,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: Settings) {
 }
 
 object SeqTranslate {
-  def apply(site: Site, systems: Systems, settings: Settings): SeqTranslate = new SeqTranslate(site, systems, settings)
+  def apply(site: Site, systems: Systems, settings: TranslateSettings): SeqTranslate = new SeqTranslate(site, systems, settings)
 
   final case class Systems(
                       odb: ODBProxy,
@@ -451,16 +451,6 @@ object SeqTranslate {
                       gpi: GPIController[IO],
                       ghost: GHOSTController[IO]
                     )
-
-  final case class Settings(
-                      tcsKeywords: Boolean,
-                      f2Keywords: Boolean,
-                      gwsKeywords: Boolean,
-                      gcalKeywords: Boolean,
-                      gmosKeywords: Boolean,
-                      gnirsKeywords: Boolean
-                     )
-
 
   private sealed trait StepType {
     val instrument: Instrument

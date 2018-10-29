@@ -3,10 +3,11 @@
 
 package web.client
 
+import cats.Eq
+import cats.Monoid
+import cats.implicits._
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.extra.Reusability
-import cats.{Eq, Monoid}
-import cats.implicits._
 
 package style {
   final case class GStyle(htmlClasses: List[String]) {

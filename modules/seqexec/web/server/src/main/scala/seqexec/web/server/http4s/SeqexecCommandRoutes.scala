@@ -154,9 +154,9 @@ class SeqexecCommandRoutes(auth:       AuthenticationService,
       se.removeSequenceFromQueue(inputQueue, qid, obsId) *>
         Ok(s"${obsId.format} removed from queue $qid")
 
-    case POST -> Root / "queue" / QueueIdVar(qid) / "move" / ObsIdVar(obsId) / IntVar(mv) as _ =>
-      se.moveSequenceInQueue(inputQueue, qid, obsId, mv) *>
-        Ok(s"{obsId.format} moved $mv positions inside queue $qid")
+    case POST -> Root / "queue" / QueueIdVar(qid) / "move" / ObsIdVar(obsId) / IntVar(delta) / ClientIDVar(clientId) as _ =>
+      se.moveSequenceInQueue(inputQueue, qid, obsId, delta, clientId) *>
+        Ok(s"${obsId.format} moved $delta positions in queue $qid")
 
     case POST -> Root / "queue" / QueueIdVar(qid) / "clear" as _ =>
       se.clearQueue(inputQueue, qid) *>

@@ -17,12 +17,12 @@ import seqexec.model.UserLoginRequest
 import seqexec.model.Observer
 import seqexec.model.Operator
 import seqexec.model.Step
-import seqexec.model.boopickle._
 import seqexec.model.enum.CloudCover
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.ImageQuality
 import seqexec.model.enum.SkyBackground
 import seqexec.model.enum.WaterVapor
+import seqexec.web.model.boopickle._
 import seqexec.web.common.LogMessage
 import seqexec.web.common.LogMessage._
 import scala.scalajs.js.URIUtils._
@@ -324,18 +324,6 @@ object SeqexecWebClient extends ModelBooPicklers {
   /**
     * Add a sequence from a queue
     */
-  def addSequenceToQueue(queueId: QueueId, id: Observation.Id): Future[Unit] =
-    Ajax
-      .post(
-        url =
-          s"$baseUrl/queue/${encodeURI(queueId.self.show)}/add/${encodeURI(id.format)}",
-        responseType = "arraybuffer"
-      )
-      .map(_ => ())
-
-  /**
-    * Add a sequence from a queue
-    */
   def removeSequenceFromQueue(queueId: QueueId,
                               id:      Observation.Id): Future[Unit] =
     Ajax
@@ -397,12 +385,13 @@ object SeqexecWebClient extends ModelBooPicklers {
       .map(_ => ())
 
   /**
-    * Remove a sequence from a queue
+    * Stops a queue
     */
-  def removeSequenceToQueue(queueId: QueueId, id: Observation.Id): Future[Unit] =
+  def moveSequenceQueue(queueId: QueueId, obsId: Observation.Id, pos: Int, clientId: ClientId): Future[Unit] =
     Ajax
       .post(
-        url          = s"$baseUrl/queue/${encodeURI(queueId.self.show)}/remove/${encodeURI(id.format)}",
+        url =
+          s"$baseUrl/commands/queue/${encodeURI(queueId.self.show)}/move/${encodeURI(obsId.self.format)}/$pos/${encodeURI(clientId.self.show)}",
         responseType = "arraybuffer"
       )
       .map(_ => ())
