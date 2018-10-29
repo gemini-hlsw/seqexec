@@ -19,9 +19,9 @@ import mouse.all._
 import org.http4s.client.blaze._
 import org.http4s.client.Client
 import org.http4s.HttpRoutes
+import org.http4s.metrics.prometheus.Prometheus
 import org.http4s.server.blaze.BlazeServerBuilder
-import org.http4s.server.prometheus.{PrometheusExportService}
-import org.http4s.server.prometheus.{PrometheusMetrics, PrometheusExportService}
+import org.http4s.server.middleware.Metrics
 import org.http4s.server.Router
 import org.http4s.server.Server
 import org.http4s.server.SSLKeyStoreSupport.StoreInfo
@@ -134,11 +134,11 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
     inputs: server.EventQueue,
     outputs: Topic[IO, SeqexecEvent],
     se: SeqexecEngine,
-    pe: PrometheusExportService[IO],
+    cr: CollectorRegistry,
     bec: ExecutionContext
   )(conf: WebServerConfiguration): Resource[IO, Server[IO]] = {
 
-    val metricsMiddleware = PrometheusMetrics[IO](pe.collectorRegistry)
+    val metricsMiddleware = Metrics[IO](Prometheus(cr, "seqexec-web-server")) _
 
     def build(all: HttpRoutes[IO]): Resource[IO, Server[IO]] = {
 
@@ -161,10 +161,7 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
       "/api"                  -> new SeqexecUIApiRoutes(conf.site, conf.devMode, as, outputs).service
     )
 
-    for {
-      static <- Resource.liftF(metricsMiddleware(router))
-      blaze  <- build(pe.routes <+> static)
-    } yield blaze
+    build(metricsMiddleware(router))
 
   }
 
@@ -232,7 +229,7 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
       in:  Queue[IO, executeEngine.EventType],
       out: Topic[IO, SeqexecEvent],
       et:  SeqexecEngine,
-      pe:  PrometheusExportService[IO],
+      cr:  CollectorRegistry,
       bec: ExecutionContext
     ): Resource[IO, Unit] =
       for {
@@ -242,7 +239,7 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
         _  <- Resource.liftF(logStart.run(wc))
         _  <- Resource.liftF(logToClients(out))
         _  <- redirectWebServer(wc)
-        _  <- webServer(as, in, out, et, pe, bec)(wc)
+        _  <- webServer(as, in, out, et, cr, bec)(wc)
       } yield ()
 
     val r: Resource[IO, ExitCode] =
@@ -250,10 +247,10 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
         cli    <- BlazeClientBuilder[IO](ExecutionContext.global).resource
         inq    <- Resource.liftF(Queue.bounded[IO, executeEngine.EventType](10))
         out    <- Resource.liftF(Topic[IO, SeqexecEvent](NullEvent))
-        pe     <- Resource.liftF(PrometheusExportService.build[IO])
-        engine <- Resource.liftF(engineIO(cli, pe.collectorRegistry))
+        cr     <- Resource.liftF(IO(new CollectorRegistry))
+        engine <- Resource.liftF(engineIO(cli, cr))
         bec    <- blockingExecutionContext
-        web    <- webServerIO(inq, out, engine, pe, bec)
+        web    <- webServerIO(inq, out, engine, cr, bec)
         f      <- Resource.liftF(engine.eventStream(inq).to(out.publish).compile.drain.start)
       } yield ExitCode.Success
 

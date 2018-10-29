@@ -20,7 +20,7 @@ object MainServer {
     }
 
   /** A single-element stream that starts the server up and shuts it down on exit. */
-  def resource[F[_]: ConcurrentEffect: ContextShift](cfg: MainConfiguration)(
+  def resource[F[_]: ConcurrentEffect: ContextShift: Timer](cfg: MainConfiguration)(
     implicit ev: ContextShift[IO]
   ): Resource[F, Unit] =
     for {

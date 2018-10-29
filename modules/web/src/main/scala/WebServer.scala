@@ -15,13 +15,13 @@ import org.http4s.syntax.kleisli._
 object WebServer {
 
   // Single-element stream that creates and yields a web server, guaranteeing cleanup.
-  private def server[F[_]: ConcurrentEffect](cfg: WebConfiguration.WebServer, root: HttpRoutes[F]): Resource[F, Server[F]] =
+  private def server[F[_]: ConcurrentEffect: Timer](cfg: WebConfiguration.WebServer, root: HttpRoutes[F]): Resource[F, Server[F]] =
     BlazeServerBuilder[F]
       .bindHttp(cfg.port, cfg.host)
       .withHttpApp(root.orNotFound).resource
 
   /** Resource that creates and yields a web server, guaranteeing cleanup. */
-  def resource[F[_]: ConcurrentEffect: ContextShift](web: WebConfiguration, db: DatabaseConfiguration)(
+  def resource[F[_]: ConcurrentEffect: ContextShift: Timer](web: WebConfiguration, db: DatabaseConfiguration)(
     implicit ev: ContextShift[IO]
   ): Resource[F, Server[F]] =
     for {

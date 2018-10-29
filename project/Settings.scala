@@ -91,7 +91,7 @@ object Settings {
     val scalaParsersVersion     = "1.1.1"
     val scalaXmlVerson          = "1.1.1"
 
-    val http4sVersion           = "0.19.0-M4"
+    val http4sVersion           = "0.20.0-M1"
     val squants                 = "1.3.0"
     val argonaut                = "6.2.2"
     val commonsHttp             = "2.0.2"
@@ -192,7 +192,7 @@ object Settings {
     val Http4sBoopickle        = "org.http4s"                         %%  "http4s-boopickle"                 % LibraryVersions.http4sVersion
     val Http4sCirce            = "org.http4s"                         %%  "http4s-circe"                     % LibraryVersions.http4sVersion
     val Http4sXml              = "org.http4s"                         %%  "http4s-scala-xml"                 % LibraryVersions.http4sVersion
-    val Http4sPrometheus       = "org.http4s"                         %%  "http4s-prometheus-server-metrics" % LibraryVersions.http4sVersion
+    val Http4sPrometheus       = "org.http4s"                         %%  "http4s-prometheus-metrics" % LibraryVersions.http4sVersion
     val Flyway                 = "org.flywaydb"                       %   "flyway-core"                      % LibraryVersions.flywayVersion
     val Atto                   = Def.setting("org.tpolecat"           %%% "atto-core"                        % LibraryVersions.attoVersion)
     val Monocle                = Def.setting(Seq(
