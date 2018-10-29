@@ -18,6 +18,10 @@ package-lock.json
 calibrations/
 .metals/
 
+# hydra
+.hydra/
+project/hydra.sbt
+
 # sbt specific
 .cache
 .history

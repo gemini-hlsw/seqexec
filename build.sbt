@@ -342,7 +342,7 @@ lazy val giapi = project
     libraryDependencies ++= Seq(GmpStatusGateway % "test", GmpStatusDatabase % "test", GmpCmdJmsBridge % "test", NopSlf4j % "test"),
     excludeDependencies ++= Seq(
       // Remove to silence logging on tests
-      ExclusionRule("ch.qos.logback", "logback-classic")
+      ExclusionRule("ch.qos.logback", "logback-classic", "jar", Vector(Test), CrossVersion.binary)
     )
   )
 
