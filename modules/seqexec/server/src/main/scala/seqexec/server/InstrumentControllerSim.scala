@@ -15,6 +15,7 @@ import seqexec.server.SeqexecFailure.SeqexecException
 import gov.aps.jca.TimeoutException
 import mouse.all._
 import org.log4s.getLogger
+import seqexec.server.InstrumentSystem.ElapsedTime
 import squants.time.{Seconds, Time}
 
 import scala.annotation.tailrec
@@ -107,7 +108,8 @@ class InstrumentControllerSim(name: String, useTimeout: Boolean) {
     observeTic(stop = false, abort = true, pause = false, 1000, None)
   } )
 
-  def observeCountdown(total: Time): Stream[IO, Progress] = ProgressUtil.countdown[IO](total)
+  def observeCountdown(total: Time, elapsed: ElapsedTime): Stream[IO, Progress] =
+    ProgressUtil.countdown[IO](total, elapsed.self)
 
 }
 

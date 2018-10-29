@@ -53,8 +53,8 @@ final case class Flamingos2(f2Controller: Flamingos2Controller, dhsClient: DhsCl
     config.extractAs[JDouble](OBSERVE_KEY / EXPOSURE_TIME_PROP)
       .map(x => Seconds(x.toDouble)).getOrElse(Seconds(360))
 
-  override def observeProgress(config: Config): Stream[IO, Progress] = f2Controller
-    .observeProgress(calcObserveTime(config))
+  override def observeProgress(total: Time, elapsed: InstrumentSystem.ElapsedTime): Stream[IO, Progress] = f2Controller
+    .observeProgress(total)
 }
 
 object Flamingos2 {

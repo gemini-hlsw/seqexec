@@ -149,7 +149,7 @@ object Flamingos2ControllerEpics extends Flamingos2Controller {
   } yield ()
 
   override def observeProgress(total: Time): fs2.Stream[IO, Progress] =
-    ProgressUtil.countdown[IO](total)
+    ProgressUtil.countdown[IO](total, Seconds(0))
 
   val ReadoutTimeout: Time = Seconds(300)
   val DefaultTimeout: Time = Seconds(60)

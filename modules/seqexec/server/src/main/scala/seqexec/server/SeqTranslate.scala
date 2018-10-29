@@ -7,6 +7,7 @@ import cats._
 import cats.data.{EitherT, NonEmptyList, Reader}
 import cats.effect.IO
 import cats.implicits._
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import edu.gemini.seqexec.odb.{ExecutedDataset, SeqexecSequence}
 import edu.gemini.spModel.ao.AOConstants._
@@ -38,6 +39,7 @@ import seqexec.server.tcs._
 import seqexec.server.tcs.TcsController.ScienceFoldPosition
 import seqexec.server.gnirs._
 import squants.Time
+import squants.time.TimeConversions._
 
 class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
   private val Log = getLogger
@@ -121,8 +123,9 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
 
     Stream.eval(dhsFileId(inst).value).flatMap[Result]{
       case Right(id) => Stream.emit[Result](Result.Partial(FileIdAllocated(id))).covary[IO] ++
-        inst.observeProgress(config).map(Result.Partial(_)).mergeHaltR(Stream.eval[IO, Result](doObserve(id)
-          .value.map(_.toResult)))
+        inst.observeProgress(inst.calcObserveTime(config), ElapsedTime(0.0.seconds))
+          .map(Result.Partial(_))
+          .mergeHaltR(Stream.eval[IO, Result](doObserve(id).value.map(_.toResult)))
       case Left(e)   => Stream.emit[Result](Result.Error(SeqexecFailure.explain(e))).covary[IO]
     }
   }
@@ -272,7 +275,10 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
     deliverObserveCmd(seqId, f)
   }
 
-  private def pausedCommand(seqId: Observation.Id, f: ObserveControl => Option[Time => SeqAction[ObserveCommand.Result]]): EngineState => Option[Stream[IO, executeEngine.EventType]] = st => {
+  private def pausedCommand(seqId: Observation.Id,
+                            f: ObserveControl => Option[Time => SeqAction[ObserveCommand.Result]],
+                            useCountdown: Boolean)
+  : EngineState => Option[Stream[IO,executeEngine.EventType]] = st => {
 
     def resumeIO(c: ObserveContext, resumeCmd: SeqAction[ObserveCommand.Result]): IO[Result] = (for {
       r <- resumeCmd
@@ -282,21 +288,33 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
     def seqCmd(seqState: Sequence.State[IO], instrument: Instrument): Option[Stream[IO,
       executeEngine.EventType]] = {
 
-      val observeIndex: Option[(ObserveContext, Int)] =
+      val inst = toInstrumentSys(instrument).toOption
+
+      val observeIndex: Option[(ObserveContext, Option[Time], Int)] =
         seqState.current.execution.zipWithIndex.find(_._1.kind === ActionType.Observe).flatMap {
           case (a, i) => a.state.runState match {
-            case Action.Paused(c: ObserveContext) => Some((c, i))
+            case Action.Paused(c: ObserveContext) => Some((c, a.state.partials.collectFirst{
+              case x@Progress(_, _) => x.progress}, i))
             case _ => none
           }
         }
 
-      val u: Option[Time => SeqAction[ObserveCommand.Result]] = toInstrumentSys(instrument)
-        .toOption.flatMap(x => f(x.observeControl))
-      (u, observeIndex).mapN {
-        (cmd, t) =>
+      val u: Option[Time => SeqAction[ObserveCommand.Result]] =
+        inst.flatMap(x => f(x.observeControl))
+
+      (u, observeIndex, inst).mapN {
+        (cmd, t, ins) =>
           t match {
-            case (c, i) => Stream.eval(IO(Event.actionResume(seqId, i,
-              Stream.eval(resumeIO(c, cmd(c.expTime))))))
+            case (c, to, i) =>
+              if(useCountdown)
+                Stream.eval(IO(Event.actionResume(seqId, i,
+                  ins.observeProgress(c.expTime, ElapsedTime(to.getOrElse(0.0.seconds)))
+                    .map(Result.Partial(_))
+                    .mergeHaltR(Stream.eval(resumeIO(c, cmd(c.expTime))))
+                )))
+              else
+                Stream.eval(IO(Event.actionResume(seqId, i,
+                  Stream.eval(resumeIO(c, cmd(c.expTime))))))
           }
       }
     }
@@ -314,7 +332,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
       case _                                                 => none
     }
 
-    pausedCommand(seqId, f)
+    pausedCommand(seqId, f, useCountdown = true)
   }
 
   private def stopPaused(seqId: Observation.Id): EngineState => Option[Stream[IO, executeEngine.EventType]] = {
@@ -323,7 +341,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
       case _                                             => none
     }
 
-    pausedCommand(seqId, f)
+    pausedCommand(seqId, f, useCountdown = false)
   }
 
   private def abortPaused(seqId: Observation.Id): EngineState => Option[Stream[IO, executeEngine.EventType]] = {
@@ -332,7 +350,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
       case _                                              => none
     }
 
-    pausedCommand(seqId, f)
+    pausedCommand(seqId, f, useCountdown = false)
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))

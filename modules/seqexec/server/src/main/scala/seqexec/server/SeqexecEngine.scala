@@ -403,11 +403,11 @@ class SeqexecEngine(httpClient: Client[IO], settings: Settings[IO], sm: SeqexecM
 
   // It assumes only one queue can run at a time
   private val iterateQueues: PartialFunction[SystemEvent, executeEngine.HandleType[Unit]] = {
-    case Finished(_) => executeEngine.get.map(st => st.queues.collect {
+    case Finished(_) => executeEngine.get.map(st => st.queues.collectFirst {
       case (qid, q@ExecutionQueue(_, BatchCommandState.Run(observer, user, clid), _))
         if q.status(st) =!= BatchExecState.Completed =>
           (qid, observer, user, clid)
-    }.headOption).flatMap(_.map(Function.tupled(runQueue)).getOrElse(executeEngine.unit))
+    }).flatMap(_.map(Function.tupled(runQueue)).getOrElse(executeEngine.unit))
   }
 
   def notifyODB(i: (executeEngine.ResultType, EngineState)): IO[(executeEngine.ResultType, EngineState)] = {
@@ -595,8 +595,9 @@ object SeqexecEngine extends SeqexecConfiguration {
       ActionStatus.Pending)
 
   private def fileId(executions: List[List[engine.Action[IO]]]): Option[ImageFileId] =
-    observeAction(executions).flatMap(_.state.partials.collect{ case FileIdAllocated(fid) => fid}
-      .headOption)
+    observeAction(executions).flatMap(_.state.partials.collectFirst{
+      case FileIdAllocated(fid) => fid
+    })
 
   def viewStep(stepg: SequenceGen.StepGen, step: engine.Step[IO]): StandardStep = {
     val configStatus = stepConfigStatus(step)

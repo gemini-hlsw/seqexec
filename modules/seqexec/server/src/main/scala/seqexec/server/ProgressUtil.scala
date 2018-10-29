@@ -8,7 +8,6 @@ import cats.data.StateT
 import cats.effect.Effect
 import fs2.{Scheduler, Stream}
 import squants.time.{Milliseconds, Time}
-import squants.time.TimeConversions._
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import scala.concurrent.duration.{FiniteDuration, SECONDS}
@@ -31,7 +30,7 @@ object ProgressUtil {
     Scheduler[F](1).flatMap(sch =>
       sch.awakeEvery(PollPeriod).evalMapAccumulate(s0){case (st, t) => fs(t).run(st)}.map(_._2))
 
-  def countdown[F[_]: Effect: Applicative](total: Time): Stream[F, Progress] = {
+  def countdown[F[_]: Effect: Applicative](total: Time, elapsed: Time): Stream[F, Progress] = {
     val r = ProgressUtil.fromStateTParam[F, Time] {
       t: FiniteDuration =>
         StateT[F, Time, Progress](st => {
@@ -39,7 +38,7 @@ object ProgressUtil {
           Applicative[F].pure((progress, Progress(total, RemainingTime(total - progress))))
         })
     }
-    r(0.seconds)
+    r(elapsed)
   }
 
 }

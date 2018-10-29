@@ -61,7 +61,7 @@ final case class GHOST[F[_]: Sync](controller: GHOSTController[F])
 
   override def calcObserveTime(config: Config): Time = Seconds(360)
 
-  override def observeProgress(config: Config): Stream[F, Progress] = Stream.empty
+  override def observeProgress(total: Time, elapsed: InstrumentSystem.ElapsedTime): Stream[F, Progress] = Stream.empty
 }
 
 object GHOST {

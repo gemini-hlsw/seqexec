@@ -13,8 +13,10 @@ import seqexec.server.flamingos2.Flamingos2Controller.Flamingos2Config
 import seqexec.server.{InstrumentControllerSim, ObserveCommand, Progress, SeqAction, TrySeq}
 import org.log4s.getLogger
 import squants.Time
+import squants.time.TimeConversions._
 import cats.implicits._
 import fs2.Stream
+import seqexec.server.InstrumentSystem.ElapsedTime
 
 object Flamingos2ControllerSim extends Flamingos2Controller {
   private val sim = InstrumentControllerSim("FLAMINGOS-2")
@@ -29,7 +31,8 @@ object Flamingos2ControllerSim extends Flamingos2Controller {
 
   override def endObserve: SeqAction[Unit] = sim.endObserve
 
-  override def observeProgress(total: Time): Stream[IO, Progress] = sim.observeCountdown(total)
+  override def observeProgress(total: Time): Stream[IO, Progress] = sim.observeCountdown(total,
+    ElapsedTime(0.seconds))
 }
 
 /**
@@ -61,5 +64,6 @@ final case class Flamingos2ControllerSimBad(failAt: Int) extends Flamingos2Contr
 
   override def endObserve: SeqAction[Unit] = sim.endObserve
 
-  override def observeProgress(total: Time): Stream[IO, Progress] = sim.observeCountdown(total)
+  override def observeProgress(total: Time): Stream[IO, Progress] = sim.observeCountdown(total,
+    ElapsedTime(0.seconds))
 }

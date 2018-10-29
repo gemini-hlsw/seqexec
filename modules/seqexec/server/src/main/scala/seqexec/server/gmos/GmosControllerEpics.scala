@@ -22,6 +22,7 @@ import cats.effect.IO
 import cats.implicits._
 import fs2.Stream
 import mouse.all._
+import seqexec.server.InstrumentSystem.ElapsedTime
 
 class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosControllerEpics.Encoders[T])(cfg: GmosController.Config[T]) extends GmosController[T] {
   private val Log = getLogger
@@ -243,9 +244,10 @@ class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosCo
     _   <- EitherT.right(IO(Log.info("Completed aborting Gmos observation")))
   } yield if(ret === ObserveCommand.Success) ObserveCommand.Aborted else ret
 
-  override def observeProgress(total: Time): Stream[IO, Progress] = ProgressUtil.fromFOption(IO(
-    GmosEpics.instance.countdown.map(c => Progress(total, RemainingTime(c.seconds)))
-  ))
+  override def observeProgress(total: Time, elapsed: ElapsedTime): Stream[IO, Progress] =
+    ProgressUtil.fromFOption(IO(
+      GmosEpics.instance.countdown.map(c => Progress(total, RemainingTime(c.seconds)))
+    ))
 }
 
 object GmosControllerEpics {

@@ -14,7 +14,7 @@ import squants.{Length, Time}
 
 import scala.concurrent.duration.Duration
 import cats.implicits._
-import edu.gemini.spModel.config2.Config
+import seqexec.server.InstrumentSystem.ElapsedTime
 
 trait GmosController[T<:GmosController.SiteDependentTypes] {
   import GmosController._
@@ -44,7 +44,7 @@ trait GmosController[T<:GmosController.SiteDependentTypes] {
 
   def abortPaused: SeqAction[ObserveCommand.Result]
 
-  def observeProgress(total: Time): fs2.Stream[IO, Progress]
+  def observeProgress(total: Time, elapsed: ElapsedTime): fs2.Stream[IO, Progress]
 
 }
 

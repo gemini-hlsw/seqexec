@@ -5,6 +5,7 @@ package seqexec.server.gmos
 
 import cats.effect.IO
 import seqexec.model.dhs.ImageFileId
+import seqexec.server.InstrumentSystem.ElapsedTime
 import seqexec.server.gmos.GmosController.{GmosConfig, NorthTypes, SiteDependentTypes, SouthTypes}
 import seqexec.server.{InstrumentControllerSim, ObserveCommand, Progress, SeqAction}
 import squants.Time
@@ -34,7 +35,8 @@ private class GmosControllerSim[T<:SiteDependentTypes](name: String) extends Gmo
 
   override def abortPaused: SeqAction[ObserveCommand.Result] = sim.abortPaused
 
-  override def observeProgress(total: Time): fs2.Stream[IO, Progress] = sim.observeCountdown(total)
+  override def observeProgress(total: Time, elapsed: ElapsedTime): fs2.Stream[IO, Progress] =
+    sim.observeCountdown(total, elapsed)
 
 }
 

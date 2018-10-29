@@ -63,7 +63,7 @@ final case class GPI[F[_]: Sync](controller: GPIController[F])
      coa      <- config.extractAs[JInt](OBSERVE_KEY / COADDS_PROP).map(_.toInt)
      } yield Seconds(2.2 * exp * coa + 300)).getOrElse(Milliseconds(100))
 
-  override def observeProgress(config: Config): Stream[F, Progress] = Stream.empty
+  override def observeProgress(total: Time, elapsed: InstrumentSystem.ElapsedTime): Stream[F, Progress] = Stream.empty
 }
 
 object GPI {

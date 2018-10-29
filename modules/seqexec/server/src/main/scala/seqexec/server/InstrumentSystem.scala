@@ -21,7 +21,7 @@ trait InstrumentSystem[F[_]] extends System[F] {
   //Expected total observe lapse, used to calculate timeout
   def calcObserveTime(config: Config): Time
   def keywordsClient: KeywordsClient[IO]
-  def observeProgress(config: Config): Stream[F, Progress]
+  def observeProgress(total: Time, elapsed: InstrumentSystem.ElapsedTime): Stream[F, Progress]
 }
 
 object InstrumentSystem {
@@ -46,4 +46,6 @@ object InstrumentSystem {
   // Special class for infrared instrument, because they cannot pause/resume
   final case class InfraredControl(stop: StopObserveCmd, abort: AbortObserveCmd)
       extends ObserveControl
+
+  final case class ElapsedTime(self: Time) extends AnyVal
 }

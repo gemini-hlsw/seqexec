@@ -51,8 +51,8 @@ final case class Gnirs(controller: GnirsController, dhsClient: DhsClient) extend
 
   override def notifyObserveStart = SeqAction.void
 
-  override def observeProgress(config: Config): fs2.Stream[IO, Progress] =
-    controller.observeProgress(calcObserveTime(config))
+  override def observeProgress(total: Time, elapsed: ElapsedTime): fs2.Stream[IO, Progress] =
+    controller.observeProgress(total)
 }
 
 object Gnirs {
