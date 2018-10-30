@@ -24,28 +24,6 @@ final case class GHOSTController[F[_]: Sync](ghostClient: GHOSTClient[F],
   import GHOSTController._
   val Log: Logger = getLogger
 
-  private sealed abstract class BundleConfig(val configName: String)
-  private final case object StandardBundleConfig extends BundleConfig("lo")
-  private final case object HighResBundleConfig extends BundleConfig("hi")
-
-  private sealed abstract class IFUNum(val ifuNum: Int) {
-    val ifuStr = s"ghost:cc:cu:ifu$ifuNum"
-  }
-  private final case object IFU1 extends IFUNum(1)
-  private final case object IFU2 extends IFUNum(ifuNum = 2)
-
-  private sealed abstract class IFUTargetType(val targetType: Int)
-  private object IFUTargetType {
-    def determineType(name: Option[String]): IFUTargetType = name match {
-      case None        => IFUTargetNone
-      case Some("Sky") => IFUTargetSky
-      case _           => IFUTargetObject
-    }
-  }
-  private final case object IFUTargetNone extends IFUTargetType(0)
-  private final case object IFUTargetSky  extends IFUTargetType(1)
-  private final case object IFUTargetObject extends IFUTargetType(2)
-
   // TODO: Are GIAPI parameters maintained between applies? Here is a use case that requires more information:
   // 1. We observe in standard resolution mode using both IFUs on targets.
   // 2. We observe in high resolution mode using only IFU1 on a target.
@@ -57,31 +35,40 @@ final case class GHOSTController[F[_]: Sync](ghostClient: GHOSTClient[F],
                         nameOpt: Option[String],
                         raOpt: Option[HourAngle],
                         decOpt: Option[Angle],
-                        bundleConfig: BundleConfig): Configuration =
-      (for {
-        name <- nameOpt
-        ra   <- raOpt
-        dec  <- decOpt
-      } yield {
-        Configuration.single(ifuNum.ifuStr + ".target", IFUTargetType.determineType(nameOpt).targetType) |+|
-          Configuration.single(ifuNum.ifuStr + ".ra", ra.toDoubleDegrees) |+|
-          Configuration.single(ifuNum.ifuStr + ".dec", dec.toDoubleDegrees) |+|
-          Configuration.single(ifuNum.ifuStr + ".bundle", bundleConfig.configName)
-      }).getOrElse(Configuration.Zero)
+                        bundleConfig: BundleConfig): Configuration = {
+    def cfg[P](paramName: String, paramVal: P) =
+      Configuration.single(s"${ifuNum.ifuStr}.$paramName", paramVal)
+
+    val config = for {
+      _   <- nameOpt // We only do this because we want Configuration.Zero if there is no target name.
+      ra  <- raOpt
+      dec <- decOpt
+    } yield {
+      cfg("target", IFUTargetType.determineType(nameOpt).targetType) |+|
+        cfg("ra", ra.toDoubleDegrees) |+|
+        cfg("dec", dec.toDoubleDegrees) |+|
+        cfg("bundle", bundleConfig.configName)
+    }
+
+    config.getOrElse(Configuration.Zero)
+  }
 
   private def srifuConfig(config: GHOSTConfig): Configuration =
-    ifuConfig(IFU1, config.srifu1Name, config.srifu1CoordsRAHMS, config.srifu1CoordsDecDMS, StandardBundleConfig) |+|
-    ifuConfig(IFU2, config.srifu2Name, config.srifu2CoordsRAHMS, config.srifu2CoordsDecDMS, StandardBundleConfig)
+    ifuConfig(IFUNum.IFU1, config.srifu1Name, config.srifu1CoordsRAHMS,
+      config.srifu1CoordsDecDMS, BundleConfig.Standard) |+|
+      ifuConfig(IFUNum.IFU2, config.srifu2Name, config.srifu2CoordsRAHMS,
+        config.srifu2CoordsDecDMS, BundleConfig.Standard)
 
   private def hrifuConfig(config: GHOSTConfig): Configuration =
-    ifuConfig(IFU2, config.hrifu1Name, config.hrifu1CoordsRAHMS, config.hrifu1CoordsDecDMS, HighResBundleConfig) |+|
-      ifuConfig(IFU2, config.srifu2Name, config.srifu2CoordsRAHMS, config.srifu2CoordsDecDMS, StandardBundleConfig)
+    ifuConfig(IFUNum.IFU2, config.hrifu1Name, config.hrifu1CoordsRAHMS,
+      config.hrifu1CoordsDecDMS, BundleConfig.HighRes) |+|
+      ifuConfig(IFUNum.IFU2, config.srifu2Name, config.srifu2CoordsRAHMS, config.srifu2CoordsDecDMS,
+        BundleConfig.HighRes)
 
   // If the srifu parameters are defined, use them; otherwise, use the hrifu parameters.
   // TODO: What do we do with the base position explicit override?
   // TODO: This was not on the list of provided parameter names.
-  private
-  def ghostConfig(config: GHOSTConfig): SeqActionF[F, CommandResult] = {
+  private def ghostConfig(config: GHOSTConfig): SeqActionF[F, CommandResult] = {
     val giapiApply = srifuConfig(config) |+| hrifuConfig(config)
 
     EitherT(ghostClient.genericApply(giapiApply).attempt)
@@ -95,11 +82,10 @@ final case class GHOSTController[F[_]: Sync](ghostClient: GHOSTClient[F],
 
   def applyConfig(config: GHOSTConfig): SeqActionF[F, Unit] =
     for {
-      _ <- EitherT.liftF(Sync[F].delay(Log.debug("Start GHOST configuration")))
-      _ <- EitherT.liftF(Sync[F].delay(Log.debug(s"GHOST configuration $config")))
+      _ <- SeqActionF.apply(Log.debug("Start GHOST configuration"))
+      _ <- SeqActionF.apply(Log.debug(s"GHOST configuration $config"))
       _ <- ghostConfig(config)
-      _ <- EitherT.liftF(
-        Sync[F].delay(Log.debug("Completed GHOST configuration")))
+      _ <- SeqActionF.apply(Log.debug("Completed GHOST configuration"))
     } yield ()
 
   def observe(fileId: ImageFileId, expTime: Time): SeqActionF[F, ImageFileId] =
@@ -114,6 +100,32 @@ final case class GHOSTController[F[_]: Sync](ghostClient: GHOSTClient[F],
 }
 
 object GHOSTController {
+  sealed abstract class BundleConfig(val configName: String)
+  object BundleConfig {
+    case object Standard extends BundleConfig("lo")
+    case object HighRes extends BundleConfig("hi")
+  }
+
+  sealed abstract class IFUNum(val ifuNum: Int) {
+    val ifuStr = s"ghost:cc:cu:ifu$ifuNum"
+  }
+  object IFUNum {
+    case object IFU1 extends IFUNum(1)
+    case object IFU2 extends IFUNum(ifuNum = 2)
+  }
+
+  sealed abstract class IFUTargetType(val targetType: Int)
+  object IFUTargetType {
+    case object NoTarget extends IFUTargetType(0)
+    case object SkyPosition extends IFUTargetType(1)
+    case object Target extends IFUTargetType(2)
+
+    def determineType(name: Option[String]): IFUTargetType = name match {
+      case None        => NoTarget
+      case Some("Sky") => SkyPosition
+      case _           => Target
+    }
+  }
 
   /**
     * TODO: This is a hack for the 2018 testing. We simply accept all parameters from the ODB as Options, and
