@@ -36,7 +36,7 @@ final case class GHOSTController[F[_]: Sync](ghostClient: GHOSTClient[F],
                         raOpt: Option[HourAngle],
                         decOpt: Option[Angle],
                         bundleConfig: BundleConfig): Configuration = {
-    def cfg[P](paramName: String, paramVal: P) =
+    def cfg[P: Show](paramName: String, paramVal: P) =
       Configuration.single(s"${ifuNum.ifuStr}.$paramName", paramVal)
 
     val config = for {
@@ -107,7 +107,7 @@ object GHOSTController {
   }
 
   sealed abstract class IFUNum(val ifuNum: Int) {
-    val ifuStr = s"ghost:cc:cu:ifu$ifuNum"
+    val ifuStr: String = s"ghost:cc:cu:ifu$ifuNum"
   }
   object IFUNum {
     case object IFU1 extends IFUNum(1)
