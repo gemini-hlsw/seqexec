@@ -110,15 +110,15 @@ object GHOSTController {
     val ifuStr: String = s"ghost:cc:cu:ifu$ifuNum"
   }
   object IFUNum {
-    case object IFU1 extends IFUNum(1)
+    case object IFU1 extends IFUNum(ifuNum = 1)
     case object IFU2 extends IFUNum(ifuNum = 2)
   }
 
   sealed abstract class IFUTargetType(val targetType: Int)
   object IFUTargetType {
-    case object NoTarget extends IFUTargetType(0)
-    case object SkyPosition extends IFUTargetType(1)
-    case object Target extends IFUTargetType(2)
+    case object NoTarget extends IFUTargetType(targetType = 0)
+    case object SkyPosition extends IFUTargetType(targetType = 1)
+    case object Target extends IFUTargetType(targetType = 2)
 
     def determineType(name: Option[String]): IFUTargetType = name match {
       case None        => NoTarget

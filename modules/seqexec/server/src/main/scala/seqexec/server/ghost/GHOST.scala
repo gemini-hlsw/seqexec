@@ -106,7 +106,7 @@ object GHOST {
           hrifu2DecHDMS <- decExtractor(Ghost.HRIFU2DecDMS)
 
         } yield {
-          val hrifu2Name = if (hrifu2RAHMS.isDefined) Some("Sky") else None
+          val hrifu2Name = hrifu2RAHMS.as("Sky")
           GHOSTConfig(
             baseRAHMS, baseDecDMS, 1.minute,
             srifu1Name, srifu1RAHMS, srifu1DecHDMS,
