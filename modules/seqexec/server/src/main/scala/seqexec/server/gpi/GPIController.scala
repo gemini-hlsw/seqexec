@@ -195,11 +195,10 @@ final case class GPIController[F[_]: Sync](gpiClient: GPIClient[F],
 
   def applyConfig(config: GPIConfig): SeqActionF[F, Unit] =
     for {
-      _ <- EitherT.liftF(Sync[F].delay(Log.debug("Start GPI configuration")))
-      _ <- EitherT.liftF(Sync[F].delay(Log.debug(s"GPI configuration $config")))
+      _ <- SeqActionF.apply(Log.debug("Start GPI configuration"))
+      _ <- SeqActionF.apply(Log.debug(s"GPI configuration $config"))
       _ <- gpiConfig(config)
-      _ <- EitherT.liftF(
-            Sync[F].delay(Log.debug("Completed GPI configuration")))
+      _ <- SeqActionF.apply(Log.debug("Completed GPI configuration"))
     } yield ()
 
   def observe(fileId: ImageFileId, expTime: Time): SeqActionF[F, ImageFileId] =
