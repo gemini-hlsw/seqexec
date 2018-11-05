@@ -440,8 +440,8 @@ lazy val seqexec_web_client = project.in(file("modules/seqexec/web/client"))
     webpackExtraArgs                         := Seq("--progress", "true"),
     emitSourceMaps                           := false,
     parallelExecution in Test                := false,
-    // Requires the DOM for tests
-    requiresDOM in Test                      := true,
+    version in installJsdom                  := "12.0.0",
+    requireJsDomEnv in Test                  := true,
     // Use yarn as it is faster than npm
     useYarn                                  := true,
     // JS dependencies via npm
