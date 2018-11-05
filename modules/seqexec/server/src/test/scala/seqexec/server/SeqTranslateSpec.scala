@@ -12,7 +12,7 @@ import giapi.client.Giapi
 import giapi.client.gpi.GPIClient
 import gem.Observation
 import gem.enum.Site
-import seqexec.engine.{Action, Engine, Result, Sequence, Step}
+import seqexec.engine.{Action, Result, Sequence, Step}
 import seqexec.model.enum.Instrument.GmosS
 import seqexec.model.{ActionType, SequenceState, StepConfig}
 import seqexec.server.SeqTranslate.ObserveContext
@@ -29,7 +29,6 @@ import giapi.client.ghost.GHOSTClient
 import org.scalatest.FlatSpec
 import org.http4s.Uri._
 import squants.time.Seconds
-import monocle.Monocle._
 import seqexec.server.Response.Observed
 import seqexec.server.ghost.GHOSTController
 
@@ -60,28 +59,26 @@ class SeqTranslateSpec extends FlatSpec {
   )
 
   private val baseState: EngineState = (SeqexecEngine.loadSequenceEndo(seqId, seqg) >>>
-    (EngineState.executionState ^|-> Engine.State.sequences ^|-? index[Map[Observation.Id,
-      Sequence.State[IO]], Observation.Id, Sequence.State[IO]](seqId) ^|-> Sequence.State.status)
-      .set
-    (SequenceState.Running.init))(EngineState.default)
+    (EngineState.sequenceStateIndex(seqId) ^|-> Sequence.State.status).set(
+      SequenceState.Running.init))(EngineState.default)
 
   // Observe started
-  private val s0: EngineState = (EngineState.executionState ^|-? Engine.State.sequenceState(seqId))
+  private val s0: EngineState = EngineState.sequenceStateIndex(seqId)
     .modify(_.start(0))(baseState)
   // Observe pending
   private val s1: EngineState = baseState
   // Observe completed
-  private val s2: EngineState = (EngineState.executionState ^|-? Engine.State.sequenceState(seqId))
+  private val s2: EngineState = EngineState.sequenceStateIndex(seqId)
     .modify(_.mark(0)(Result.OK(Observed(fileId))))(baseState)
   // Observe started, but with file Id already allocated
-  private val s3: EngineState = (EngineState.executionState ^|-? Engine.State.sequenceState(seqId))
+  private val s3: EngineState = EngineState.sequenceStateIndex(seqId)
     .modify(_.start(0).mark(0)(Result.Partial(FileIdAllocated(fileId))))(baseState)
   // Observe paused
-  private val s4: EngineState = (EngineState.executionState ^|-? Engine.State.sequenceState(seqId))
+  private val s4: EngineState = EngineState.sequenceStateIndex(seqId)
     .modify(_.mark(0)(Result.Paused(ObserveContext(_ => SeqAction(Result.OK(Observed
     (fileId))), Seconds(1)))))(baseState)
   // Observe failed
-  private val s5: EngineState = (EngineState.executionState ^|-? Engine.State.sequenceState(seqId))
+  private val s5: EngineState = EngineState.sequenceStateIndex(seqId)
     .modify(_.mark(0)(Result.Error("error")))(baseState)
 
   private val systems = SeqTranslate.Systems(

@@ -12,10 +12,10 @@ import seqexec.model.enum.Resource
 import fs2.async.mutable.Queue
 import fs2.{Stream, async}
 import gem.Observation
-import monocle.Lens
 import org.scalatest.Inside._
 import org.scalatest.Matchers._
 import org.scalatest._
+import seqexec.engine.TestUtil.TestState
 
 import scala.Function.const
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -26,7 +26,7 @@ class StepSpec extends FlatSpec {
   private val seqId = Observation.Id.unsafeFromString("GS-2017B-Q-1-1")
   private val user = UserDetails("telops", "Telops")
 
-  private val executionEngine = new Engine[Engine.State, Unit](Lens.id)
+  private val executionEngine = new Engine[TestState, Unit](TestState)
 
   private object DummyResult extends Result.RetVal
   private val result = Result.OK(DummyResult)
@@ -126,13 +126,13 @@ class StepSpec extends FlatSpec {
     case _                       => false
   }
 
-  def runToCompletion(s0: Engine.State): Option[Engine.State] = {
+  def runToCompletion(s0: TestState): Option[TestState] = {
     executionEngine.process(PartialFunction.empty)(Stream.eval(IO.pure(Event.start[executionEngine.ConcreteTypes](seqId, user, clientId, always))))(s0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
     ).compile.last.unsafeRunSync.map(_._2)
   }
 
-  def runToCompletionL(s0: Engine.State): List[Engine.State] = {
+  def runToCompletionL(s0: TestState): List[TestState] = {
     executionEngine.process(PartialFunction.empty)(Stream.eval(IO.pure(Event.start[executionEngine.ConcreteTypes](seqId, user, clientId, always))))(s0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
     ).compile.toVector.unsafeRunSync.map(_._2).toList
@@ -147,8 +147,8 @@ class StepSpec extends FlatSpec {
   // The difficult part is to set the pause command to interrupts the step execution in the middle.
   "pause" should "stop execution in response to a pause command" in {
     val q: Stream[IO, Queue[IO, executionEngine.EventType]] = Stream.eval(async.boundedQueue[IO, executionEngine.EventType](10))
-    def qs0(q: async.mutable.Queue[IO, executionEngine.EventType]): Engine.State =
-      Engine.State(
+    def qs0(q: async.mutable.Queue[IO, executionEngine.EventType]): TestState =
+      TestState(
         sequences = Map(
           (seqId,
             Sequence.State.init(
@@ -169,7 +169,7 @@ class StepSpec extends FlatSpec {
         )
       )
 
-    def notFinished(v: (executionEngine.ResultType, Engine.State)): Boolean =
+    def notFinished(v: (executionEngine.ResultType, TestState)): Boolean =
       !isFinished(v._2.sequences(seqId).status)
 
     val m = for {
@@ -192,8 +192,8 @@ class StepSpec extends FlatSpec {
 
   it should "resume execution from the non-running state in response to a resume command, rolling back a partially run step." in {
     // Engine state with one idle sequence partially executed. One Step completed, two to go.
-    val qs0: Engine.State =
-      Engine.State(
+    val qs0: TestState =
+      TestState(
         sequences = Map(
           (seqId,
             Sequence.State.Zipper(
@@ -233,8 +233,8 @@ class StepSpec extends FlatSpec {
   }
 
   it should "cancel a pause request in response to a cancel pause command." in {
-    val qs0: Engine.State =
-      Engine.State(
+    val qs0: TestState =
+      TestState(
         sequences = Map(
           (seqId,
             Sequence.State.Zipper(
@@ -267,8 +267,8 @@ class StepSpec extends FlatSpec {
   }
 
   "engine" should "ignore pause command if step is not being executed." in {
-    val qs0: Engine.State =
-      Engine.State(
+    val qs0: TestState =
+      TestState(
         sequences = Map(
           (seqId,
             Sequence.State.init(
@@ -303,8 +303,8 @@ class StepSpec extends FlatSpec {
   // Be careful that start command doesn't run an already running sequence.
   "engine" should "ignore start command if step is already running." in {
     val q = async.boundedQueue[IO, executionEngine.EventType](10)
-    val qs0: Engine.State =
-      Engine.State(
+    val qs0: TestState =
+      TestState(
         sequences = Map(
           (seqId,
             Sequence.State.init(
@@ -348,8 +348,8 @@ class StepSpec extends FlatSpec {
   // For this test, one of the actions in the step must produce an error as result.
   "engine" should "stop execution and propagate error when an Action ends in error." in {
     val errMsg = "Dummy error"
-    val qs0: Engine.State =
-      Engine.State(
+    val qs0: TestState =
+      TestState(
         sequences = Map(
           (seqId,
             Sequence.State.init(
@@ -391,8 +391,8 @@ class StepSpec extends FlatSpec {
     case class RetValDouble(v: Double) extends Result.RetVal
     case class PartialValDouble(v: Double) extends Result.PartialVal
 
-    val qs0: Engine.State =
-      Engine.State(
+    val qs0: TestState =
+      TestState(
         sequences = Map(
           (seqId,
             Sequence.State.init(

@@ -236,9 +236,9 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
       }
 
     for {
-      seqg <- st.sequences.seq.get(seqId)
-      seq  <- st.executionState.sequences.get(seqId)
-      r    <- seqCmd(seq, seqg.seq.instrument)
+      seqg   <- st.sequences.seq.get(seqId)
+      obsseq <- st.sequences.get(seqId)
+      r      <- seqCmd(obsseq.seq, seqg.seqGen.instrument)
     } yield r
 
   }
@@ -320,9 +320,9 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
     }
 
     for {
-      seqg <- st.sequences.seq.get(seqId)
-      seq  <- st.executionState.sequences.get(seqId)
-      r    <- seqCmd(seq, seqg.seq.instrument)
+      seqg   <- st.sequences.seq.get(seqId)
+      obsseq <- st.sequences.get(seqId)
+      r      <- seqCmd(obsseq.seq, seqg.seqGen.instrument)
     } yield r
   }
 
