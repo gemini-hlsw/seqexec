@@ -102,8 +102,8 @@ final case class GHOSTController[F[_]: Sync](ghostClient: GHOSTClient[F],
 object GHOSTController {
   sealed abstract class BundleConfig(val configName: String)
   object BundleConfig {
-    case object Standard extends BundleConfig("lo")
-    case object HighRes extends BundleConfig("hi")
+    case object Standard extends BundleConfig(configName = "lo")
+    case object HighRes extends BundleConfig(configName = "hi")
   }
 
   sealed abstract class IFUNum(val ifuNum: Int) {
