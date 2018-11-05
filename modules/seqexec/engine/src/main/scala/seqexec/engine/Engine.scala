@@ -263,10 +263,11 @@ class Engine[D, U](stateL: Lens[D, Engine.State]) {
       case Null                    => pure(SystemUpdate(se, EventResult.Ok))
     }
 
-    (ev match {
+    ev match {
       case EventUser(ue)   => handleUserEvent(ue)
-      case EventSystem(se) => handleSystemEvent(se).flatMap(x => userReact.applyOrElse(se, (_:SystemEvent) => unit).map(_ => x))
-    })
+      case EventSystem(se) => handleSystemEvent(se).flatMap(x =>
+        userReact.applyOrElse(se, (_:SystemEvent) =>  unit).map(_ => x))
+    }
   }
 
   /** Traverse a process with a stateful computation. */
@@ -274,27 +275,33 @@ class Engine[D, U](stateL: Lens[D, Engine.State]) {
   // initalState: state
   // f takes an event and the current state, it produces a new state, a new value B and more actions
   @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
-  def mapEvalState[A, S, B](input: Stream[IO, A], initialState: S, f: (A, S) => IO[(S, B, Stream[IO, A])])(implicit ec: ExecutionContext): Stream[IO, B] = {
+  def mapEvalState[A, S, B](input: Stream[IO, A],
+                            initialState: S, f: (A, S) => IO[(S, B, Option[Stream[IO, A]])])
+                           (implicit ec: ExecutionContext): Stream[IO, B] = {
     Stream.eval(fs2.async.unboundedQueue[IO, Stream[IO, A]]).flatMap { q =>
       Stream.eval_(q.enqueue1(input)) ++
         q.dequeue.joinUnbounded.evalMapAccumulate(initialState) { (s, a) =>
           f(a, s).flatMap {
-            case (ns, b, st) =>
-              q.enqueue1(st) >> IO.pure((ns, b))
+            case (ns, b, None)     => IO.pure((ns, b))
+            case (ns, b, Some(st)) => q.enqueue1(st) >> IO.pure((ns, b))
           }
         }.map(_._2)
     }
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.AnyVal", "org.wartremover.warts.ImplicitParameter"))
-  private def runE(userReact: PartialFunction[SystemEvent, HandleType[Unit]])(ev: EventType, s: D)(implicit ec: ExecutionContext): IO[(D, (ResultType, D), Stream[IO, EventType])] =
+  private def runE(userReact: PartialFunction[SystemEvent, HandleType[Unit]])
+                  (ev: EventType,s: D)
+                  (implicit ec: ExecutionContext)
+  : IO[(D, (ResultType, D), Option[Stream[IO, EventType]])] =
     run(userReact)(ev).run.run(s).map {
-      case (si, (r, p)) =>
-        (si, (r, si), p.getOrElse(Stream.empty))
+      case (si, (r, p)) => (si, (r, si), p)
     }
 
   @SuppressWarnings(Array("org.wartremover.warts.AnyVal", "org.wartremover.warts.ImplicitParameter"))
-  def process(userReact: PartialFunction[SystemEvent, HandleType[Unit]])(input: Stream[IO, EventType])(qs: D)(implicit ec: ExecutionContext): Stream[IO, (ResultType, D)] =
+  def process(userReact: PartialFunction[SystemEvent, HandleType[Unit]])
+             (input: Stream[IO, EventType])(qs: D)(implicit ec: ExecutionContext)
+  : Stream[IO, (ResultType, D)] =
     mapEvalState[EventType, D, (ResultType, D)](input, qs, runE(userReact))
 
   // Functions for type bureaucracy
