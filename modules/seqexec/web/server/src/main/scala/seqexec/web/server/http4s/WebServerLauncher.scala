@@ -20,6 +20,7 @@ import org.http4s.client.blaze._
 import org.http4s.client.Client
 import org.http4s.HttpRoutes
 import org.http4s.metrics.prometheus.Prometheus
+import org.http4s.metrics.prometheus.PrometheusExportService
 import org.http4s.server.blaze.BlazeServerBuilder
 import org.http4s.server.middleware.Metrics
 import org.http4s.server.Router
@@ -35,7 +36,6 @@ import seqexec.server.GpiSettings
 import seqexec.server.GhostSettings
 import seqexec.web.server.OcsBuildInfo
 import seqexec.web.server.logging.AppenderForClients
-import seqexec.web.server.OcsBuildInfo
 import seqexec.web.server.security.{AuthenticationConfig, AuthenticationService, LDAPConfig}
 import squants.time.Hours
 import web.server.common.{LogInitialization, RedirectToHttpsRoutes, StaticRoutes}
@@ -141,8 +141,6 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
     bec: ExecutionContext
   )(conf: WebServerConfiguration): Resource[IO, Server[IO]] = {
 
-    val metricsMiddleware = Metrics[IO](Prometheus(cr, "seqexec-web-server")) _
-
     def build(all: HttpRoutes[IO]): Resource[IO, Server[IO]] = {
 
       val builder =
@@ -160,11 +158,14 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
 
     val router = Router[IO](
       "/"                     -> new StaticRoutes(conf.devMode, OcsBuildInfo.builtAtMillis, bec).service,
+      "/"                     -> PrometheusExportService[IO](cr).routes,
       "/api/seqexec/commands" -> new SeqexecCommandRoutes(as, inputs, se).service,
       "/api"                  -> new SeqexecUIApiRoutes(conf.site, conf.devMode, as, outputs).service
     )
 
-    build(metricsMiddleware(router))
+    val metricsMiddleware = Metrics[IO](Prometheus(cr, "seqexec"))(router)
+
+    build(metricsMiddleware)
 
   }
 
