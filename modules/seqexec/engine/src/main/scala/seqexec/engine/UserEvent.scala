@@ -43,7 +43,8 @@ final case class ActionStop[D <: Engine.Types](id: Observation.Id, f: D#StateTyp
 }
 
 // Uses `cont` to resume execution of a paused Action. If the Action is not paused, it does nothing.
-final case class ActionResume[D<:Engine.Types](id: Observation.Id, i: Int, cont: IO[Result]) extends UserEvent[D] {
+final case class ActionResume[D<:Engine.Types](id: Observation.Id, i: Int, cont: Stream[IO,
+  Result]) extends UserEvent[D] {
   val user: Option[UserDetails] = None
 }
 

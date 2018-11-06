@@ -25,43 +25,44 @@ import scala.concurrent.duration._
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 class packageSpec extends FlatSpec with NonImplicitAssertions {
 
+  object DummyResult extends Result.RetVal
   /**
     * Emulates TCS configuration in the real world.
     *
     */
-  val configureTcs: Action  = fromIO(ActionType.Configure(TCS),
+  val configureTcs: Action[IO] = fromF[IO](ActionType.Configure(TCS),
     for {
       _ <- IO(Thread.sleep(200))
-    } yield Result.OK(Result.Configured(TCS)))
+    } yield Result.OK(DummyResult))
 
   /**
     * Emulates Instrument configuration in the real world.
     *
     */
-  val configureInst: Action  = fromIO(ActionType.Configure(GmosS),
+  val configureInst: Action[IO] = fromF[IO](ActionType.Configure(GmosS),
     for {
     _ <- IO(Thread.sleep(200))
-  } yield Result.OK(Result.Configured(GmosS)))
+  } yield Result.OK(DummyResult))
 
   /**
     * Emulates an observation in the real world.
     *
     */
-  val observe: Action  = fromIO(ActionType.Observe,
+  val observe: Action[IO] = fromF[IO](ActionType.Observe,
   for {
     _ <- IO(Thread.sleep(200))
-  } yield Result.OK(Result.Observed("DummyFileId")))
+  } yield Result.OK(DummyResult))
 
-  val faulty: Action  = fromIO(ActionType.Undefined,
+  val faulty: Action[IO] = fromF[IO](ActionType.Undefined,
   for {
     _ <- IO(Thread.sleep(100))
   } yield Result.Error("There was an error in this action"))
 
   private def always[D]: D => Boolean = _ => true
-  
+
   private val clientId: ClientId = ClientId(UUID.randomUUID)
 
-  val executions: List[List[Action]] = List(List(configureTcs, configureInst), List(observe))
+  val executions: List[List[Action[IO] ]] = List(List(configureTcs, configureInst), List(observe))
   val seqId: Observation.Id = Observation.Id.unsafeFromString("GS-2019A-Q-0-1")
   val qs1: Engine.State =
     Engine.State(
@@ -73,7 +74,6 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
               steps = List(
                 Step.init(
                   id = 1,
-                  fileId = None,
                   executions = List(
                     List(configureTcs, configureInst), // Execution
                     List(observe) // Execution
@@ -81,7 +81,6 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
                 ),
                 Step.init(
                   id = 2,
-                  fileId = None,
                   executions = executions
                 )
               )
@@ -131,9 +130,8 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
         steps = List(
           Step.init(
             id = 1,
-            fileId = None,
             executions = List(
-              List(fromIO(ActionType.Undefined,
+              List(fromF[IO](ActionType.Undefined,
                 IO(Result.Paused(new Result.PauseContext {}))))
             )
           )
@@ -156,7 +154,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   }
 
   "engine" should "run sequence to completion after resuming a paused action" in {
-    val p = Stream.eval(IO.pure(Event.actionResume(seqId, 0, IO(Result.OK(Result.Configured(GmosS))))))
+    val p = Stream.eval(IO.pure(Event.actionResume(seqId, 0, Stream.eval(IO(Result.OK(DummyResult))))))
 
     val result = actionPause.flatMap(executionEngine.process(PartialFunction.empty)(p)(_).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
@@ -179,10 +177,9 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
             steps = List(
               Step.init(
                 id = 1,
-                fileId = None,
                 executions = List(
-                  List(fromIO(ActionType.Configure(TCS),
-                    startedFlag.increment *> finishFlag.decrement *> IO.pure(Result.OK(Result.Configured(TCS)))
+                  List(fromF[IO](ActionType.Configure(TCS),
+                    startedFlag.increment *> finishFlag.decrement *> IO.pure(Result.OK(DummyResult))
                   ))
                 )
               )
@@ -212,9 +209,8 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
         steps = List(
           Step.init(
             id = 1,
-            fileId = None,
             executions = List(
-              List(fromIO(ActionType.Undefined,
+              List(fromF[IO](ActionType.Undefined,
                 IO.apply {
                   throw e
                 }
@@ -235,9 +231,9 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
       Map((seqId, Sequence.State.init(Sequence(
         id = Observation.Id.unsafeFromString("GS-2018B-Q-0-6"),
         steps = List(
-          Step.init(id = 1, fileId = None, executions = executions).copy(skipMark = Step.SkipMark(true)),
-          Step.init(id = 2, fileId = None, executions = executions),
-          Step.init(id = 3, fileId = None, executions = executions)
+          Step.init(id = 1, executions = executions).copy(skipMark = Step.SkipMark(true)),
+          Step.init(id = 2, executions = executions),
+          Step.init(id = 3, executions = executions)
         )
       ) ) ) )
     )
@@ -254,9 +250,9 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
       Map((seqId, Sequence.State.init(Sequence(
         id = Observation.Id.unsafeFromString("GS-2018B-Q-0-7"),
         steps = List(
-          Step.init(id = 1, fileId = None, executions = executions),
-          Step.init(id = 2, fileId = None, executions = executions).copy(skipMark = Step.SkipMark(true)),
-          Step.init(id = 3, fileId = None, executions = executions)
+          Step.init(id = 1, executions = executions),
+          Step.init(id = 2, executions = executions).copy(skipMark = Step.SkipMark(true)),
+          Step.init(id = 3, executions = executions)
         )
       ) ) ) )
     )
@@ -273,11 +269,11 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
       Map((seqId, Sequence.State.init(Sequence(
         id = Observation.Id.unsafeFromString("GS-2018B-Q-0-8"),
         steps = List(
-          Step.init(id = 1, fileId = None, executions = executions),
-          Step.init(id = 2, fileId = None, executions = executions).copy(skipMark = Step.SkipMark(true)),
-          Step.init(id = 3, fileId = None, executions = executions).copy(skipMark = Step.SkipMark(true)),
-          Step.init(id = 4, fileId = None, executions = executions).copy(skipMark = Step.SkipMark(true)),
-          Step.init(id = 5, fileId = None, executions = executions)
+          Step.init(id = 1, executions = executions),
+          Step.init(id = 2, executions = executions).copy(skipMark = Step.SkipMark(true)),
+          Step.init(id = 3, executions = executions).copy(skipMark = Step.SkipMark(true)),
+          Step.init(id = 4, executions = executions).copy(skipMark = Step.SkipMark(true)),
+          Step.init(id = 5, executions = executions)
         )
       ) ) ) )
     )
@@ -294,9 +290,9 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
       Map((seqId, Sequence.State.init(Sequence(
         id = Observation.Id.unsafeFromString("GS-2018B-Q-0-9"),
         steps = List(
-          Step.init(id = 1, fileId = None, executions = executions),
-          Step.init(id = 2, fileId = None, executions = executions),
-          Step.init(id = 3, fileId = None, executions = executions).copy(skipMark = Step.SkipMark(true))
+          Step.init(id = 1, executions = executions),
+          Step.init(id = 2, executions = executions),
+          Step.init(id = 3, executions = executions).copy(skipMark = Step.SkipMark(true))
         )
       ) ) ) )
     )
@@ -314,7 +310,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
       Map((seqId, Sequence.State.init(Sequence(
         id = Observation.Id.unsafeFromString("GS-2018B-Q-0-10"),
         steps = List(
-          Step.init(id = 1, fileId = None, executions = executions).copy(skipMark = Step.SkipMark(true))
+          Step.init(id = 1, executions = executions).copy(skipMark = Step.SkipMark(true))
         )
       ) ) ) )
     )
@@ -331,10 +327,10 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
       Map((seqId, Sequence.State.init(Sequence(
         id = Observation.Id.unsafeFromString("GS-2018B-Q-0-11"),
         steps = List(
-          Step.init(id = 1, fileId = None, executions = executions).copy(skipMark = Step.SkipMark(true)),
-          Step.init(id = 2, fileId = None, executions = executions).copy(skipMark = Step.SkipMark(true),
+          Step.init(id = 1, executions = executions).copy(skipMark = Step.SkipMark(true)),
+          Step.init(id = 2, executions = executions).copy(skipMark = Step.SkipMark(true),
             breakpoint = Step.BreakpointMark(true)),
-          Step.init(id = 3, fileId = None, executions = executions)
+          Step.init(id = 3, executions = executions)
         )
       ) ) ) )
     )
@@ -351,10 +347,10 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
       Map((seqId, Sequence.State.init(Sequence(
         Observation.Id.unsafeFromString("GS-2019A-Q-3"),
         steps = List(
-          Step.init(id = 1, fileId = None, executions = executions).copy(skipped = Step.Skipped(true)),
-          Step.init(id = 2, fileId = None, executions = executions).copy(skipMark = Step.SkipMark(true),
+          Step.init(id = 1, executions = executions).copy(skipped = Step.Skipped(true)),
+          Step.init(id = 2, executions = executions).copy(skipMark = Step.SkipMark(true),
             breakpoint = Step.BreakpointMark(true)),
-          Step.init(id = 2, fileId = None, executions = executions).copy(skipMark = Step.SkipMark(true),
+          Step.init(id = 2, executions = executions).copy(skipMark = Step.SkipMark(true),
             breakpoint = Step.BreakpointMark(true))
         )
       ) ) ) )
@@ -373,11 +369,11 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
       Map((seqId, Sequence.State.init(Sequence(
         id = Observation.Id.unsafeFromString("GS-2018B-Q-0-12"),
         steps = List(
-          Step.init(id = 1, fileId = None, executions = executions),
-          Step.init(id = 2, fileId = None, executions = executions).copy(skipMark = Step.SkipMark(true)),
-          Step.init(id = 3, fileId = None, executions = executions).copy(skipMark = Step.SkipMark(true),
+          Step.init(id = 1, executions = executions),
+          Step.init(id = 2, executions = executions).copy(skipMark = Step.SkipMark(true)),
+          Step.init(id = 3, executions = executions).copy(skipMark = Step.SkipMark(true),
             breakpoint = Step.BreakpointMark(true)),
-          Step.init(id = 4, fileId = None, executions = executions)
+          Step.init(id = 4,  executions = executions)
         )
       ) ) ) )
     )

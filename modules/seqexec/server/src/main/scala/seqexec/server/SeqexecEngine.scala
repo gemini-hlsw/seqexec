@@ -19,7 +19,7 @@ import gem.enum.Site
 import giapi.client.Giapi
 import giapi.client.gpi.GPIClient
 import seqexec.engine
-import seqexec.engine.Result.{FileIdAllocated, Partial}
+import seqexec.engine.Result.Partial
 import seqexec.engine.{Step => _, _}
 import seqexec.engine.Handle
 import seqexec.model._
@@ -46,6 +46,8 @@ import org.http4s.client.Client
 import org.http4s.Uri
 import knobs.Config
 import mouse.all._
+import seqexec.model.dhs.ImageFileId
+
 import scala.collection.immutable.SortedMap
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
@@ -92,7 +94,7 @@ class SeqexecEngine(httpClient: Client[IO], settings: Settings[IO], sm: SeqexecM
     q.enqueue(Stream.emits(loadEvents(seqId))).map(_.asRight).compile.last.attempt.map(_.bimap(SeqexecFailure.SeqexecException.apply, _ => ()))
 
   private def checkResources(seqId: Observation.Id)(st: EngineState): Boolean = {
-    def filterSeqResources(f: Sequence.State => Boolean)
+    def filterSeqResources(f: Sequence.State[IO] => Boolean)
                           (sid: Observation.Id, resources: Set[Resource]): Set[Resource] =
       st.executionState.sequences.get(sid).filter(f).fold(Set.empty[Resource])(_ => resources)
     // Resources used by running sequences
@@ -401,11 +403,11 @@ class SeqexecEngine(httpClient: Client[IO], settings: Settings[IO], sm: SeqexecM
 
   // It assumes only one queue can run at a time
   private val iterateQueues: PartialFunction[SystemEvent, executeEngine.HandleType[Unit]] = {
-    case Finished(_) => executeEngine.get.map(st => st.queues.collect {
+    case Finished(_) => executeEngine.get.map(st => st.queues.collectFirst {
       case (qid, q@ExecutionQueue(_, BatchCommandState.Run(observer, user, clid), _))
         if q.status(st) =!= BatchExecState.Completed =>
           (qid, observer, user, clid)
-    }.headOption).flatMap(_.map(Function.tupled(runQueue)).getOrElse(executeEngine.unit))
+    }).flatMap(_.map(Function.tupled(runQueue)).getOrElse(executeEngine.unit))
   }
 
   def notifyODB(i: (executeEngine.ResultType, EngineState)): IO[(executeEngine.ResultType, EngineState)] = {
@@ -453,9 +455,9 @@ class SeqexecEngine(httpClient: Client[IO], settings: Settings[IO], sm: SeqexecM
     }).flatMap(_ => Sync[F].unit)
   }
 
-  def viewSequence(obsSeq: ObserverSequence, seq: Sequence, st: Sequence.State): SequenceView = {
+  def viewSequence(obsSeq: ObserverSequence, seq: Sequence[IO], st: Sequence.State[IO]): SequenceView = {
 
-    def engineSteps(seq: Sequence): List[Step] = {
+    def engineSteps(seq: Sequence[IO]): List[Step] = {
 
       // TODO: Calculate the whole status here and remove `Engine.Step.status`
       // This will be easier once the exact status labels in the UI are fixed.
@@ -531,13 +533,13 @@ object SeqexecEngine extends SeqexecConfiguration {
     case _                       => Nil
   }
 
-  private[server] def separateActions(ls: List[Action]): (List[Action], List[Action]) =  ls.partition{ _.state.runState match {
+  private[server] def separateActions(ls: List[Action[IO]]): (List[Action[IO]], List[Action[IO]]) =  ls.partition{ _.state.runState match {
     case engine.Action.Completed(_) => false
     case engine.Action.Failed(_)    => false
     case _                          => true
   } }
 
-  private[server] def configStatus(executions: List[List[engine.Action]]): List[(Resource, ActionStatus)] = {
+  private[server] def configStatus(executions: List[List[engine.Action[IO]]]): List[(Resource, ActionStatus)] = {
     // Remove undefined actions
     val ex = executions.filter { !separateActions(_)._2.exists(_.kind === ActionType.Undefined) }
     // Split where at least one is running
@@ -569,7 +571,7 @@ object SeqexecEngine extends SeqexecConfiguration {
   /**
    * Calculates the config status for pending steps
    */
-  private[server] def pendingConfigStatus(executions: List[List[engine.Action]]): List[(Resource, ActionStatus)] =
+  private[server] def pendingConfigStatus(executions: List[List[engine.Action[IO]]]): List[(Resource, ActionStatus)] =
     executions.map {
       s => separateActions(s).bimap(_.map(_.kind).flatMap(kindToResource), _.map(_.kind).flatMap(kindToResource))
     }.flatMap {
@@ -579,16 +581,25 @@ object SeqexecEngine extends SeqexecConfiguration {
   /**
    * Overall pending status for a step
    */
-  private def stepConfigStatus(step: engine.Step): List[(Resource, ActionStatus)] =
+  private def stepConfigStatus(step: engine.Step[IO]): List[(Resource, ActionStatus)] =
     engine.Step.status(step) match {
       case StepState.Pending => pendingConfigStatus(step.executions)
       case _                 => configStatus(step.executions)
     }
 
-  protected[server] def observeStatus(executions: List[List[engine.Action]]): ActionStatus =
-    executions.flatten.find(_.kind === ActionType.Observe).map(a => actionStateToStatus(a.state.runState)).getOrElse(ActionStatus.Pending)
+  private def observeAction(executions: List[List[engine.Action[IO]]]): Option[Action[IO]] =
+    executions.flatten.find(_.kind === ActionType.Observe)
 
-  def viewStep(stepg: SequenceGen.Step, step: engine.Step): StandardStep = {
+  private[server] def observeStatus(executions: List[List[engine.Action[IO]]]): ActionStatus =
+    observeAction(executions).map(a => actionStateToStatus(a.state.runState)).getOrElse(
+      ActionStatus.Pending)
+
+  private def fileId(executions: List[List[engine.Action[IO]]]): Option[ImageFileId] =
+    observeAction(executions).flatMap(_.state.partials.collectFirst{
+      case FileIdAllocated(fid) => fid
+    })
+
+  def viewStep(stepg: SequenceGen.StepGen, step: engine.Step[IO]): StandardStep = {
     val configStatus = stepConfigStatus(step)
     StandardStep(
       id = step.id,
@@ -598,7 +609,9 @@ object SeqexecEngine extends SeqexecConfiguration {
       skip = step.skipMark.self,
       configStatus = configStatus,
       observeStatus = observeStatus(step.executions),
-      fileId = step.fileId
+      fileId = fileId(step.executions).orElse(stepg.some.collect{
+        case SequenceGen.CompletedStepGen(_, _, fileId) => fileId
+      }.flatten)
     )
   }
 
@@ -762,9 +775,11 @@ object SeqexecEngine extends SeqexecConfiguration {
 
   }
 
-  private def toStepList(seq: SequenceGen, d: HeaderExtraData): List[engine.Step] = seq.steps.map(_.generator(d))
+  private def toStepList(seq: SequenceGen, d: HeaderExtraData): List[engine.Step[IO]] =
+    seq.steps.map(_.generate(d))
 
-  private def toEngineSequence(id: Observation.Id, seq: SequenceGen, d: HeaderExtraData): Sequence = Sequence(id, toStepList(seq, d))
+  private def toEngineSequence(id: Observation.Id, seq: SequenceGen, d: HeaderExtraData)
+  : Sequence[IO] = Sequence(id, toStepList(seq, d))
 
   private[server] def loadSequenceEndo(seqId: Observation.Id, seqg: SequenceGen): Endo[EngineState] =
     EngineState.sequences.modify(ss => ss + (seqId -> ObserverSequence(ss.get(seqId).flatMap(_.observer), seqg))) >>>
@@ -822,17 +837,17 @@ object SeqexecEngine extends SeqexecConfiguration {
     }
     case engine.SystemUpdate(se, _)             => se match {
       // TODO: Sequence completed event not emited by engine.
-      case engine.Completed(_, _, _)                                       => SequenceUpdated(svs)
-      case engine.PartialResult(_, _, Partial(FileIdAllocated(fileId), _)) => FileIdStepExecuted(fileId, svs)
-      case engine.PartialResult(_, _, _)                                   => SequenceUpdated(svs)
-      case engine.Failed(id, _, _)                                         => SequenceError(id, svs)
-      case engine.Busy(id, clientId)                                       => UserNotification(ResourceConflict(id), clientId)
-      case engine.Executed(s)                                              => StepExecuted(s, svs)
-      case engine.Executing(_)                                             => SequenceUpdated(svs)
-      case engine.Finished(_)                                              => SequenceCompleted(svs)
-      case engine.Null                                                     => NullEvent
-      case engine.Paused(id, _, _)                                         => ExposurePaused(id, svs)
-      case engine.BreakpointReached(id)                                    => SequencePaused(id, svs)
+      case engine.Completed(_, _, _)                                    => SequenceUpdated(svs)
+      case engine.PartialResult(_, _, Partial(FileIdAllocated(fileId))) => FileIdStepExecuted(fileId, svs)
+      case engine.PartialResult(_, _, _)                                => SequenceUpdated(svs)
+      case engine.Failed(id, _, _)                                      => SequenceError(id, svs)
+      case engine.Busy(id, clientId)                                    => UserNotification(ResourceConflict(id), clientId)
+      case engine.Executed(s)                                           => StepExecuted(s, svs)
+      case engine.Executing(_)                                          => SequenceUpdated(svs)
+      case engine.Finished(_)                                           => SequenceCompleted(svs)
+      case engine.Null                                                  => NullEvent
+      case engine.Paused(id, _, _)                                      => ExposurePaused(id, svs)
+      case engine.BreakpointReached(id)                                 => SequencePaused(id, svs)
     }
   }
 

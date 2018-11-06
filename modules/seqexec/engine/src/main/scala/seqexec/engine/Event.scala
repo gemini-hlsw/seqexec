@@ -28,7 +28,8 @@ object Event {
   def getState[D<:Engine.Types](f: D#StateType => Option[Stream[IO, Event[D]]]): Event[D] = EventUser[D](GetState[D](f))
   def modifyState[D<:Engine.Types](f: Handle[D#StateType, Event[D], D#EventData]): Event[D] = EventUser[D](ModifyState[D](f))
   def actionStop[D<:Engine.Types](id: Observation.Id, f: D#StateType => Option[Stream[IO, Event[D]]]): Event[D] = EventUser[D](ActionStop(id, f))
-  def actionResume[D<:Engine.Types](id: Observation.Id, i: Int, c: IO[Result]): Event[D] = EventUser[D](ActionResume(id, i, c))
+  def actionResume[D<:Engine.Types](id: Observation.Id, i: Int, c: Stream[IO, Result]): Event[D] =
+    EventUser[D](ActionResume(id, i, c))
   def logDebugMsg[D<:Engine.Types](msg: String): Event[D] = EventUser[D](LogDebug(msg))
   def logInfoMsg[D<:Engine.Types](msg: String): Event[D] = EventUser[D](LogInfo(msg))
   def logWarningMsg[D<:Engine.Types](msg: String): Event[D] = EventUser[D](LogWarning(msg))

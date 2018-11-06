@@ -12,13 +12,12 @@ import monocle.macros.GenLens
 /**
   * A list of `Executions` grouped by observation.
   */
-final case class Step(
+final case class Step[F[_]](
   id: Step.Id,
-  fileId: Option[FileId],
   breakpoint: Step.BreakpointMark,
   skipped: Step.Skipped,
   skipMark: Step.SkipMark,
-  executions: List[List[Action]]
+  executions: List[List[Action[F]]]
 )
 
 object Step {
@@ -29,14 +28,14 @@ object Step {
   final case class SkipMark(self: Boolean) extends AnyVal
   final case class Skipped(self: Boolean) extends AnyVal
 
-  def init(id: Id,
-           fileId: Option[FileId],
-           executions: List[List[Action]]): Step = Step(id, fileId, BreakpointMark(false), Skipped(false), SkipMark(false), executions)
+  def init[F[_]](id: Id,
+           executions: List[List[Action[F]]]): Step[F] = Step(id, BreakpointMark(false),
+    Skipped(false), SkipMark(false), executions)
 
   /**
     * Calculate the `Step` `Status` based on the underlying `Action`s.
     */
-  def status(step: Step): StepState = {
+  def status[F[_]](step: Step[F]): StepState = {
 
     if(step.skipped.self) StepState.Skipped
     else
@@ -59,15 +58,14 @@ object Step {
     * Step Zipper. This structure is optimized for the actual `Step` execution.
     *
     */
-  final case class Zipper(
+  final case class Zipper[F[_]](
     id: Int,
-    fileId: Option[FileId],
     breakpoint: BreakpointMark,
     skipMark: SkipMark,
-    pending: List[Actions],
-    focus: Execution,
-    done: List[Actions],
-    rolledback: (Execution, List[Actions])
+    pending: List[Actions[F]],
+    focus: Execution[F],
+    done: List[Actions[F]],
+    rolledback: (Execution[F], List[Actions[F]])
   ) { self =>
 
     /**
@@ -77,7 +75,7 @@ object Step {
       * If there are still `Action`s that have not finished in `Current` or if
       * there are no more pending `Execution`s it returns `None`.
       */
-    val next: Option[Zipper] =
+    val next: Option[Zipper[F]] =
       pending match {
         case Nil           => None
         case exep :: exeps =>
@@ -86,7 +84,7 @@ object Step {
           )
       }
 
-    def rollback: Zipper =
+    def rollback: Zipper[F] =
       self.copy(pending = rolledback._2, focus = rolledback._1, done = Nil)
 
     /**
@@ -94,9 +92,9 @@ object Step {
       * This is a special way of *unzipping* a `Zipper`.
       *
       */
-    val uncurrentify: Option[Step] =
+    val uncurrentify: Option[Step[F]] =
       if (pending.isEmpty) focus.uncurrentify.map(
-        x => Step(id, fileId, breakpoint, Skipped(false), skipMark, x :: done)
+        x => Step(id, breakpoint, Skipped(false), skipMark, x :: done)
       )
       else None
 
@@ -104,19 +102,18 @@ object Step {
       * Unzip a `Zipper`. This creates a single `Step` with either completed
       * `Exection`s or pending `Execution`s.
       */
-    val toStep: Step =
+    val toStep: Step[F] =
       Step(
         id,
-        fileId,
         breakpoint,
         Skipped(false),
         skipMark,
         done ++ List(focus.execution) ++ pending
       )
 
-    val skip: Step = toStep.copy(skipped = Skipped(true))
+    val skip: Step[F] = toStep.copy(skipped = Skipped(true))
 
-    def update(executions: List[Actions]): Zipper =
+    def update(executions: List[Actions[F]]): Zipper[F] =
       Zipper.calcRolledback(executions).map{ case r@(_, exes) =>
         // Changing `pending` allows to propagate changes to non executed `executions`, even if the step is running
         // Don't do it if the number of executions changes. In that case the update will only have an effect if
@@ -129,7 +126,8 @@ object Step {
 
   object Zipper {
 
-    private def calcRolledback(executions: List[Actions]): Option[(Execution, List[Actions])] = executions match {
+    private def calcRolledback[F[_]](executions: List[Actions[F]]): Option[(Execution[F], List[Actions[F]])
+      ] = executions match {
       case Nil => None
       case exe :: exes =>
         Execution.currentify(exe).map((_, exes))
@@ -140,11 +138,10 @@ object Step {
       * pending. This is a special way of *zipping* a `Step`.
       *
       */
-    def currentify(step: Step): Option[Zipper] =
+    def currentify[F[_]](step: Step[F]): Option[Zipper[F]] =
       calcRolledback(step.executions).map{ case (x, exes) =>
         Zipper(
           step.id,
-          step.fileId,
           step.breakpoint,
           step.skipMark,
           exes,
@@ -154,11 +151,8 @@ object Step {
         )
       }
 
-    val current: Lens[Zipper, Execution] =
-      GenLens[Zipper](_.focus)
-
-    val fileId: Lens[Zipper, Option[FileId]] =
-      GenLens[Zipper](_.fileId)
+    def current[F[_]]: Lens[Zipper[F], Execution[F]] =
+      GenLens[Zipper[F]](_.focus)
 
   }
 

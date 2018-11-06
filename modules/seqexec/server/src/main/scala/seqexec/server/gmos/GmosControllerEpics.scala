@@ -6,7 +6,7 @@ package seqexec.server.gmos
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.EpicsCodex.EncodeEpicsValue
 import seqexec.server.gmos.GmosController.Config.{Beam, InBeam, OutOfBeam, ROI}
-import seqexec.server.{EpicsCodex, ObserveCommand, SeqAction, SeqexecFailure}
+import seqexec.server.{EpicsCodex, ObserveCommand, Progress, ProgressUtil, RemainingTime, SeqAction, SeqexecFailure}
 import seqexec.server.EpicsUtil.smartSetParam
 import edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpReadMode
 import edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpGain
@@ -16,11 +16,13 @@ import edu.gemini.spModel.gemini.gmos.GmosCommonType.Order
 import edu.gemini.spModel.gemini.gmos.GmosSouthType.{DisperserSouth => Disperser}
 import org.log4s.getLogger
 import squants.{Length, Seconds, Time}
-import cats._
+import squants.time.TimeConversions._
 import cats.data.EitherT
 import cats.effect.IO
 import cats.implicits._
+import fs2.Stream
 import mouse.all._
+import seqexec.server.InstrumentSystem.ElapsedTime
 
 class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosControllerEpics.Encoders[T])(cfg: GmosController.Config[T]) extends GmosController[T] {
   private val Log = getLogger
@@ -241,6 +243,11 @@ class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosCo
     ret <- GmosEpics.instance.abortAndWait.post
     _   <- EitherT.right(IO(Log.info("Completed aborting Gmos observation")))
   } yield if(ret === ObserveCommand.Success) ObserveCommand.Aborted else ret
+
+  override def observeProgress(total: Time, elapsed: ElapsedTime): Stream[IO, Progress] =
+    ProgressUtil.fromFOption(IO(
+      GmosEpics.instance.countdown.map(c => Progress(total, RemainingTime(c.seconds)))
+    ))
 }
 
 object GmosControllerEpics {

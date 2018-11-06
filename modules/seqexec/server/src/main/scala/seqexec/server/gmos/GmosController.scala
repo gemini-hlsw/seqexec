@@ -4,6 +4,7 @@
 package seqexec.server.gmos
 
 import cats.Show
+import cats.effect.IO
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.gmos.GmosController.Config.DCConfig
 import seqexec.server.SeqexecFailure.Unexpected
@@ -13,6 +14,7 @@ import squants.{Length, Time}
 
 import scala.concurrent.duration.Duration
 import cats.implicits._
+import seqexec.server.InstrumentSystem.ElapsedTime
 
 trait GmosController[T<:GmosController.SiteDependentTypes] {
   import GmosController._
@@ -41,6 +43,8 @@ trait GmosController[T<:GmosController.SiteDependentTypes] {
   def stopPaused: SeqAction[ObserveCommand.Result]
 
   def abortPaused: SeqAction[ObserveCommand.Result]
+
+  def observeProgress(total: Time, elapsed: ElapsedTime): fs2.Stream[IO, Progress]
 
 }
 

@@ -7,6 +7,7 @@ import cats.data.Reader
 import cats.data.EitherT
 import cats.effect.{IO, Sync}
 import cats.implicits._
+import fs2.Stream
 import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import edu.gemini.spModel.gemini.ghost.Ghost
@@ -59,6 +60,8 @@ final case class GHOST[F[_]: Sync](controller: GHOSTController[F])
   override def notifyObserveStart: SeqActionF[F, Unit] = SeqActionF.void
 
   override def calcObserveTime(config: Config): Time = Seconds(360)
+
+  override def observeProgress(total: Time, elapsed: InstrumentSystem.ElapsedTime): Stream[F, Progress] = Stream.empty
 }
 
 object GHOST {

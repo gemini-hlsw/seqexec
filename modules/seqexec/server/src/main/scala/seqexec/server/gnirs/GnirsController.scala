@@ -3,10 +3,11 @@
 
 package seqexec.server.gnirs
 
+import cats.effect.IO
 import cats.{Eq, Show}
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.gnirs.GnirsController.GnirsConfig
-import seqexec.server.{ObserveCommand, SeqAction}
+import seqexec.server.{ObserveCommand, Progress, SeqAction}
 import squants.{Length, Time}
 
 trait GnirsController {
@@ -21,6 +22,8 @@ trait GnirsController {
   def stopObserve: SeqAction[Unit]
 
   def abortObserve: SeqAction[Unit]
+
+  def observeProgress(total: Time): fs2.Stream[IO, Progress]
 
 }
 

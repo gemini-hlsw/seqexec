@@ -28,91 +28,96 @@ class StepSpec extends FlatSpec {
 
   private val executionEngine = new Engine[Engine.State, Unit](Lens.id)
 
-  private val observeResult = Result.Observed("dummyId")
-  private val result = Result.OK(observeResult)
+  private object DummyResult extends Result.RetVal
+  private val result = Result.OK(DummyResult)
   private val failure = Result.Error("Dummy error")
-  private val actionFailed =  fromIO(ActionType.Undefined, IO(failure)).copy(state = Action.State(Action.Failed(failure), Nil))
-  private val action: Action = fromIO(ActionType.Undefined, IO(result))
-  private val actionCompleted: Action = action.copy(state = Action.State(Action.Completed(observeResult), Nil))
+  private val actionFailed =  fromF[IO](ActionType.Undefined, IO(failure)).copy(state = Action.State
+  (Action.Failed(failure), Nil))
+  private val action: Action[IO] = fromF[IO](ActionType.Undefined, IO(result))
+  private val actionCompleted: Action[IO] = action.copy(state = Action.State(Action.Completed(DummyResult), Nil))
   private def always[D]: D => Boolean = _ => true
   private val clientId: ClientId = ClientId(UUID.randomUUID)
-  
-  def simpleStep(pending: List[Actions], focus: Execution, done: List[Results]): Step.Zipper = {
-    val rollback: (Execution, List[Actions]) = done.map(_.map(const(action))) ++ List(focus.execution.map(const(action))) ++ pending match {
+
+  def simpleStep(pending: List[Actions[IO]], focus: Execution[IO], done: List[Results]): Step.Zipper[IO] = {
+    val rollback: (Execution[IO], List[Actions[IO]]) = done.map(_.map(const(action))) ++ List(focus.execution.map(const(action))) ++ pending match {
       case Nil => (Execution.empty, Nil)
       case x::xs => (Execution(x), xs)
     }
 
-    Step.Zipper(1, None, breakpoint = Step.BreakpointMark(false), skipMark = Step.SkipMark(false), pending, focus, done.map(_.map{ r =>
-      val x = fromIO(ActionType.Observe, IO(r))
+    Step.Zipper(1, breakpoint = Step.BreakpointMark(false), skipMark = Step.SkipMark(false), pending, focus, done.map(_.map{ r =>
+      val x = fromF[IO](ActionType.Observe, IO(r))
       x.copy(state = Execution.actionStateFromResult(r)(x.state))
     }), rollback)
   }
 
-  val stepz0: Step.Zipper   = simpleStep(Nil, Execution.empty, Nil)
-  val stepza0: Step.Zipper  = simpleStep(List(List(action)), Execution.empty, Nil)
-  val stepza1: Step.Zipper  = simpleStep(List(List(action)), Execution(List(actionCompleted)), Nil)
-  val stepzr0: Step.Zipper  = simpleStep(Nil, Execution.empty, List(List(result)))
-  val stepzr1: Step.Zipper  = simpleStep(Nil, Execution(List(actionCompleted, actionCompleted)), Nil)
-  val stepzr2: Step.Zipper  = simpleStep(Nil, Execution(List(actionCompleted, actionCompleted)), List(List(result)))
-  val stepzar0: Step.Zipper = simpleStep(Nil, Execution(List(actionCompleted, action)), Nil)
-  val stepzar1: Step.Zipper = simpleStep(List(List(action)), Execution(List(actionCompleted, actionCompleted)), List(List(result)))
+  val stepz0: Step.Zipper[IO]   = simpleStep(Nil, Execution.empty, Nil)
+  val stepza0: Step.Zipper[IO]  = simpleStep(List(List(action)), Execution.empty, Nil)
+  val stepza1: Step.Zipper[IO]  = simpleStep(List(List(action)), Execution(List(actionCompleted))
+    , Nil)
+  val stepzr0: Step.Zipper[IO]  = simpleStep(Nil, Execution.empty, List(List(result)))
+  val stepzr1: Step.Zipper[IO]  = simpleStep(Nil, Execution(List(actionCompleted,
+    actionCompleted)), Nil)
+  val stepzr2: Step.Zipper[IO]  = simpleStep(Nil, Execution(List(actionCompleted,
+    actionCompleted)), List(List(result)))
+  val stepzar0: Step.Zipper[IO] = simpleStep(Nil, Execution(List(actionCompleted, action)), Nil)
+  val stepzar1: Step.Zipper[IO] = simpleStep(List(List(action)), Execution(List(actionCompleted,
+    actionCompleted)), List(List(result)))
   private val startEvent = Event.start[executionEngine.ConcreteTypes](seqId, user, clientId, always)
   //scalastyle:off console.io
   /**
     * Emulates TCS configuration in the real world.
     *
     */
-  val configureTcs: Action  = fromIO(ActionType.Configure(Resource.TCS),
+  val configureTcs: Action[IO] = fromF[IO](ActionType.Configure(Resource.TCS),
     for {
       _ <- IO(println("System: Start TCS configuration"))
       _ <- IO(Thread.sleep(200))
       _ <- IO(println ("System: Complete TCS configuration"))
-    } yield Result.OK(Result.Configured(Resource.TCS)))
+    } yield Result.OK(DummyResult))
 
   /**
     * Emulates Instrument configuration in the real world.
     *
     */
-  val configureInst: Action  = fromIO(ActionType.Configure(GmosS),
+  val configureInst: Action[IO] = fromF[IO](ActionType.Configure(GmosS),
     for {
       _ <- IO(println("System: Start Instrument configuration"))
       _ <- IO(Thread.sleep(150))
       _ <- IO(println("System: Complete Instrument configuration"))
-    } yield Result.OK(Result.Configured(GmosS)))
+    } yield Result.OK(DummyResult))
 
   /**
     * Emulates an observation in the real world.
     *
     */
-  val observe: Action  = fromIO(ActionType.Observe,
+  val observe: Action[IO] = fromF[IO](ActionType.Observe,
     for {
     _ <- IO(println("System: Start observation"))
     _ <- IO(Thread.sleep(200))
     _ <- IO(println ("System: Complete observation"))
-  } yield Result.OK(Result.Observed("DummyFileId")))
+  } yield Result.OK(DummyResult))
   //scalastyle:on console.io
 
-  def error(errMsg: String): Action  = fromIO(ActionType.Undefined,
+  def error(errMsg: String): Action[IO] = fromF[IO](ActionType.Undefined,
     IO {
       Thread.sleep(200)
       Result.Error(errMsg)
     }
   )
 
-  def triggerPause(q: async.mutable.Queue[IO, executionEngine.EventType]): Action = fromIO(ActionType.Undefined,
+  def triggerPause(q: async.mutable.Queue[IO, executionEngine.EventType]): Action[IO] = fromF[IO](ActionType.Undefined,
     for {
       _ <- q.enqueue1(Event.pause(seqId, user))
       // There is not a distinct result for Pause because the Pause action is a
       // trick for testing but we don't need to support it in real life, the pause
       // input event is enough.
-    } yield Result.OK(Result.Configured(Resource.TCS)))
+    } yield Result.OK(DummyResult))
 
-  def triggerStart(q: IO[async.mutable.Queue[IO, executionEngine.EventType]]): Action = fromIO(ActionType.Undefined,
+  def triggerStart(q: IO[async.mutable.Queue[IO, executionEngine.EventType]]): Action[IO] = fromF[IO](ActionType.Undefined,
     for {
       _ <- q.map(_.enqueue1(Event.start(seqId, user, clientId, always)))
       // Same case that the pause action
-    } yield Result.OK(Result.Configured(Resource.TCS)))
+    } yield Result.OK(DummyResult))
 
   def isFinished(status: SequenceState): Boolean = status match {
     case SequenceState.Idle      => true
@@ -152,7 +157,6 @@ class StepSpec extends FlatSpec {
                 steps = List(
                   Step.init(
                     id = 1,
-                    fileId = None,
                     executions = List(
                       List(configureTcs, configureInst, triggerPause(q)), // Execution
                       List(observe) // Execution
@@ -164,7 +168,7 @@ class StepSpec extends FlatSpec {
           )
         )
       )
-    
+
     def notFinished(v: (executionEngine.ResultType, Engine.State)): Boolean =
       !isFinished(v._2.sequences(seqId).status)
 
@@ -178,7 +182,7 @@ class StepSpec extends FlatSpec {
     inside (m.compile.last.unsafeRunSync()) {
       case Some(Sequence.State.Zipper(zipper, status)) =>
         inside (zipper.focus.toStep) {
-          case Step(_, _, _, _, _, ex1::ex2::Nil) =>
+          case Step(_, _, _, _, ex1::ex2::Nil) =>
             assert( Execution(ex1).results.length == 3 && Execution(ex2).actions.length == 1)
         }
         status should be (SequenceState.Idle)
@@ -198,7 +202,6 @@ class StepSpec extends FlatSpec {
                 pending = Nil,
                 focus = Step.Zipper(
                   id = 2,
-                  fileId = None,
                   breakpoint = Step.BreakpointMark(false),
                   skipMark = Step.SkipMark(false),
                   pending = Nil,
@@ -213,7 +216,7 @@ class StepSpec extends FlatSpec {
         )
       )
 
-    val qs1: Stream[IO, Option[Sequence.State]] =
+    val qs1: Stream[IO, Option[Sequence.State[IO]]] =
       for {
         u <- executionEngine.process(PartialFunction.empty)(Stream.eval(IO.pure(startEvent)))(qs0).take(1)
       } yield u._2.sequences.get(seqId)
@@ -221,7 +224,7 @@ class StepSpec extends FlatSpec {
     inside (qs1.compile.last.unsafeRunSync()) {
       case Some(Some(Sequence.State.Zipper(zipper, status))) =>
         inside (zipper.focus.toStep) {
-          case Step(_, _, _, _, _, ex1::ex2::Nil) =>
+          case Step(_, _, _, _, ex1::ex2::Nil) =>
             assert(Execution(ex1).actions.length == 2 && Execution(ex2).actions.length == 1)
         }
         assert(status.isRunning)
@@ -240,7 +243,6 @@ class StepSpec extends FlatSpec {
                 pending = Nil,
                 focus = Step.Zipper(
                   id = 2,
-                  fileId = None,
                   breakpoint = Step.BreakpointMark(false),
                   skipMark = Step.SkipMark(false),
                   pending = Nil,
@@ -275,7 +277,6 @@ class StepSpec extends FlatSpec {
                 steps = List(
                   Step.init(
                     id = 1,
-                    fileId = None,
                     executions = List(
                       List(configureTcs, configureInst), // Execution
                       List(observe) // Execution
@@ -292,7 +293,7 @@ class StepSpec extends FlatSpec {
     inside (qss.flatMap(_.sequences.get(seqId))) {
       case Some(Sequence.State.Zipper(zipper, status)) =>
         inside (zipper.focus.toStep) {
-          case Step(_, _, _, _, _, ex1::ex2::Nil) =>
+          case Step(_, _, _, _, ex1::ex2::Nil) =>
             assert( Execution(ex1).actions.length == 2 && Execution(ex2).actions.length == 1)
         }
         status should be (SequenceState.Idle)
@@ -312,7 +313,6 @@ class StepSpec extends FlatSpec {
                 steps = List(
                   Step.init(
                     id = 1,
-                    fileId = None,
                     executions = List(
                       List(configureTcs, configureInst), // Execution
                       List(triggerStart(q)), // Execution
@@ -358,7 +358,6 @@ class StepSpec extends FlatSpec {
                 steps = List(
                   Step.init(
                     id = 1,
-                    fileId = None,
                     executions = List(
                       List(configureTcs, configureInst), // Execution
                       List(error(errMsg)),
@@ -378,7 +377,7 @@ class StepSpec extends FlatSpec {
       case Some(Sequence.State.Zipper(zipper, status)) =>
         inside (zipper.focus.toStep) {
           // Check that the sequence stopped midway
-          case Step(_, _, _, _, _, ex1::ex2::ex3::Nil) =>
+          case Step(_, _, _, _, ex1::ex2::ex3::Nil) =>
             assert( Execution(ex1).results.length == 2 && Execution(ex2).results.length == 1 && Execution(ex3).actions.length == 1)
         }
         // And that it ended in error
@@ -402,17 +401,15 @@ class StepSpec extends FlatSpec {
                 steps = List(
                   Step.init(
                     id = 1,
-                    fileId = None,
                     executions = List(
                       List(
-                        fromIO(ActionType.Undefined,
-                          IO(
-                            Result.Partial(
-                              PartialValDouble(0.5),
-                              IO(Result.OK(RetValDouble(1.0))
-                              )
-                            )
-                          )
+                        Action(
+                          ActionType.Undefined,
+                          Stream.emits(List(
+                            Result.Partial(PartialValDouble(0.5)),
+                            Result.OK(RetValDouble(1.0))
+                          )).covary[IO],
+                          Action.State(Action.Idle, Nil)
                         )
                       )
                     )
@@ -463,12 +460,12 @@ class StepSpec extends FlatSpec {
     assert(stepzar1.next.nonEmpty)
   }
 
-  val step0: Step = Step.init(1, None, List(Nil))
-  val step1: Step = Step.init(1, None, List(List(action)))
-  val step2: Step = Step.init(2, None, List(List(action, action), List(action)))
+  val step0: Step[IO] = Step.init(1, List(Nil))
+  val step1: Step[IO] = Step.init(1, List(List(action)))
+  val step2: Step[IO] = Step.init(2, List(List(action, action), List(action)))
 
   "currentify" should "be None only when a Step is empty of executions" in {
-    assert(Step.Zipper.currentify(Step.init(0, None, Nil)).isEmpty)
+    assert(Step.Zipper.currentify(Step.init(0, Nil)).isEmpty)
     assert(Step.Zipper.currentify(step0).isEmpty)
     assert(Step.Zipper.currentify(step1).nonEmpty)
     assert(Step.Zipper.currentify(step2).nonEmpty)
@@ -483,7 +480,6 @@ class StepSpec extends FlatSpec {
       Step.status(
         Step.Zipper(
           id = 1,
-          fileId = None,
           breakpoint = Step.BreakpointMark(false),
           skipMark = Step.SkipMark(false),
           pending = Nil,
@@ -500,7 +496,6 @@ class StepSpec extends FlatSpec {
       Step.status(
         Step.Zipper(
           id = 1,
-          fileId = None,
           breakpoint = Step.BreakpointMark(false),
           skipMark = Step.SkipMark(false),
           pending = Nil,
@@ -517,7 +512,6 @@ class StepSpec extends FlatSpec {
       Step.status(
         Step.Zipper(
           id = 1,
-          fileId = None,
           breakpoint = Step.BreakpointMark(false),
           skipMark = Step.SkipMark(false),
           pending = Nil,
@@ -534,7 +528,6 @@ class StepSpec extends FlatSpec {
       Step.status(
         Step.Zipper(
           id = 1,
-          fileId = None,
           breakpoint = Step.BreakpointMark(false),
           skipMark = Step.SkipMark(false),
           pending = Nil,
@@ -551,7 +544,6 @@ class StepSpec extends FlatSpec {
       Step.status(
         Step.Zipper(
           id = 1,
-          fileId = None,
           breakpoint = Step.BreakpointMark(false),
           skipMark = Step.SkipMark(false),
           pending = Nil,

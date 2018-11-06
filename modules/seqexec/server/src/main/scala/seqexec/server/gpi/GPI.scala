@@ -11,12 +11,15 @@ import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.gemini.gpi.Gpi._
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import java.lang.{Boolean => JBoolean, Double => JDouble, Integer => JInt}
+
+import fs2.Stream
 import seqexec.model.dhs.ImageFileId
-import seqexec.model.enum.{ Instrument, Resource }
+import seqexec.model.enum.{Instrument, Resource}
 import seqexec.server.ConfigUtilOps._
 import seqexec.server._
 import seqexec.server.gpi.GPIController._
 import seqexec.server.keywords.{GDSClient, GDSInstrument, KeywordsClient}
+
 import scala.concurrent.duration._
 import squants.time.{Milliseconds, Seconds, Time}
 
@@ -59,6 +62,8 @@ final case class GPI[F[_]: Sync](controller: GPIController[F])
      exp      <- config.extractAs[JDouble](OBSERVE_KEY / EXPOSURE_TIME_PROP)
      coa      <- config.extractAs[JInt](OBSERVE_KEY / COADDS_PROP).map(_.toInt)
      } yield Seconds(2.2 * exp * coa + 300)).getOrElse(Milliseconds(100))
+
+  override def observeProgress(total: Time, elapsed: InstrumentSystem.ElapsedTime): Stream[F, Progress] = Stream.empty
 }
 
 object GPI {

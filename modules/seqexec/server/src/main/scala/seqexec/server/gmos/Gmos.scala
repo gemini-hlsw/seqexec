@@ -82,7 +82,7 @@ abstract class Gmos[T<:GmosController.SiteDependentTypes](controller: GmosContro
 
   override def notifyObserveEnd: SeqAction[Unit] = controller.endObserve
 
-  override def notifyObserveStart = SeqAction.void
+  override def notifyObserveStart: SeqAction[Unit] = SeqAction.void
 
   override def configure(config: Config): SeqAction[ConfigResult[IO]] =
     fromSequenceConfig(config).flatMap(controller.applyConfig).map(_ => ConfigResult(this))
@@ -90,6 +90,9 @@ abstract class Gmos[T<:GmosController.SiteDependentTypes](controller: GmosContro
   override def calcObserveTime(config: Config): Time =
     config.extractAs[JDouble](OBSERVE_KEY / EXPOSURE_TIME_PROP)
       .map(v => Seconds(v.toDouble)).getOrElse(Seconds(10000))
+
+  override def observeProgress(total: Time, elapsed: ElapsedTime): fs2.Stream[IO, Progress] = controller
+    .observeProgress(total, elapsed)
 }
 
 object Gmos {
