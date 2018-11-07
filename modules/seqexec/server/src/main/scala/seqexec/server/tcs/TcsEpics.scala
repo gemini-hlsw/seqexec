@@ -451,6 +451,7 @@ final class TcsEpics(epicsService: CaService, tops: Map[String, String]) {
   def gnirsPort: Option[Int] = instPort("nirs")
   def nifsPort: Option[Int] = instPort("nifs")
   def gmosPort: Option[Int] = instPort("gmos")
+  def ghostPort: Option[Int] = instPort("ghost")
 }
 
 object TcsEpics extends EpicsSystem[TcsEpics] {
