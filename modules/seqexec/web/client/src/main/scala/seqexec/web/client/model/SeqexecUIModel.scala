@@ -28,6 +28,7 @@ final case class SeqexecUIModel(
   defaultObserver:    Observer,
   notification:       UserNotificationState,
   queues:             CalibrationQueues,
+  obsProgress:        ObservationsProgress,
   firstLoad:          Boolean)
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
@@ -43,6 +44,7 @@ object SeqexecUIModel {
     Observer(""),
     UserNotificationState.Empty,
     CalibrationQueues.Default,
+    ObservationsProgress.Empty,
     firstLoad = true
   )
 
