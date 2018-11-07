@@ -156,6 +156,12 @@ trait SequenceEventsArbitraries extends ArbTime {
     } yield UserNotification(i, c)
   }
 
+  implicit val oprArb = Arbitrary[ObservationProgressEvent] {
+    for {
+      p <- arbitrary[ObservationProgress]
+    } yield ObservationProgressEvent(p)
+  }
+
   implicit val smuArb = Arbitrary[SeqexecModelUpdate] {
     Gen.oneOf[SeqexecModelUpdate](
       arbitrary[SequenceStart],
@@ -189,6 +195,7 @@ trait SequenceEventsArbitraries extends ArbTime {
       arbitrary[NewLogMessage],
       arbitrary[ServerLogMessage],
       arbitrary[UserNotification],
+      arbitrary[ObservationProgressEvent],
       arbitrary[NullEvent.type]
     )
   }
@@ -270,6 +277,9 @@ trait SequenceEventsArbitraries extends ArbTime {
 
   implicit val unCogen: Cogen[UserNotification] =
     Cogen[(Notification, ClientId)].contramap(x => (x.memo, x.clientId))
+
+  implicit val oprCogen: Cogen[ObservationProgressEvent] =
+    Cogen[ObservationProgress].contramap(_.progress)
 }
 
 object SequenceEventsArbitraries extends SequenceEventsArbitraries

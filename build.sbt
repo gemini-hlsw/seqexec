@@ -543,7 +543,7 @@ lazy val seqexec_model = crossProject(JVMPlatform, JSPlatform)
   .enablePlugins(GitBranchPrompt)
   .settings(
     addCompilerPlugin(Plugins.paradisePlugin),
-    libraryDependencies ++= Seq(Mouse.value, BooPickle.value) ++ Monocle.value
+    libraryDependencies ++= Seq(Squants.value, Mouse.value, BooPickle.value) ++ Monocle.value
   )
   .jvmSettings(
     commonSettings)

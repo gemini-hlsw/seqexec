@@ -83,19 +83,19 @@ object Settings {
     // Scala libraries
     val catsEffectVersion       = "0.10.1"
     val catsVersion             = "1.4.0"
-    val mouseVersion            = "0.18"
+    val mouseVersion            = "0.19"
     val fs2Version              = "0.10.5"
     val shapelessVersion        = "2.3.3"
-    val attoVersion             = "0.6.3"
+    val attoVersion             = "0.6.4"
     val scalaParsersVersion     = "1.1.1"
     val scalaXmlVerson          = "1.1.1"
 
-    val http4sVersion           = "0.18.19"
-    val squants                 = "1.3.0"
+    val http4sVersion           = "0.18.21"
+    val squants                 = "1.4.0"
     val argonaut                = "6.2.2"
     val commonsHttp             = "2.0.2"
     val unboundId               = "3.2.1"
-    val jwt                     = "0.18.0"
+    val jwt                     = "0.19.0"
     val slf4j                   = "1.7.25"
     val log4s                   = "1.6.1"
     val logback                 = "1.2.3"
@@ -103,7 +103,7 @@ object Settings {
     val logstash                = "5.2"
     val knobs                   = "6.0.33"
     val monocleVersion          = "1.5.1-cats"
-    val circeVersion            = "0.10.0"
+    val circeVersion            = "0.10.1"
     val doobieVersion           = "0.5.3"
     val flywayVersion           = "5.1.4"
     val tucoVersion             = "0.3.1"
@@ -272,7 +272,7 @@ object Settings {
   object PluginVersions {
     // Compiler plugins
     val paradiseVersion    = "2.1.1"
-    val kpVersion          = "0.9.7"
+    val kpVersion          = "0.9.8"
   }
 
   object Plugins {

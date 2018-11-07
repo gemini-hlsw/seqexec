@@ -852,6 +852,7 @@ object SeqexecEngine extends SeqexecConfiguration {
     case engine.SystemUpdate(se, _)             => se match {
       // TODO: Sequence completed event not emited by engine.
       case engine.Completed(_, _, _)                                    => SequenceUpdated(svs)
+      case engine.PartialResult(i, s, Partial(Progress(t, r)))          => ObservationProgressEvent(ObservationProgress(i, s, t, r.self))
       case engine.PartialResult(_, _, Partial(FileIdAllocated(fileId))) => FileIdStepExecuted(fileId, svs)
       case engine.PartialResult(_, _, _)                                => SequenceUpdated(svs)
       case engine.Failed(id, _, _)                                      => SequenceError(id, svs)
