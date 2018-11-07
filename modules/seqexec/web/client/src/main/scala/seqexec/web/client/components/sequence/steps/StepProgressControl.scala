@@ -9,9 +9,11 @@ import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.extra.Reusability
 import seqexec.model.dhs.ImageFileId
-import seqexec.model.enum.{ ActionStatus, Resource }
+import seqexec.model.enum.ActionStatus
+import seqexec.model.enum.Resource
 import seqexec.model.StepState
-import seqexec.model.{ StandardStep, Step }
+import seqexec.model.StandardStep
+import seqexec.model.Step
 import seqexec.web.client.circuit.StepsTableFocus
 import seqexec.web.client.model.ClientStatus
 import seqexec.web.client.model.ModelOps._
@@ -26,7 +28,9 @@ import web.client.style._
   * Component to display the step state and control
   */
 object StepProgressCell {
-  final case class Props(clientStatus: ClientStatus, focus: StepsTableFocus, step: Step) {
+  final case class Props(clientStatus: ClientStatus,
+                         focus:        StepsTableFocus,
+                         step:         Step) {
     val steps: List[Step] = focus.steps
   }
 
@@ -49,7 +53,10 @@ object StepProgressCell {
   }
 
   def statusLabel(system: Resource, status: ActionStatus): VdomNode =
-    Label(Label.Props(s"${system.show}", color = labelColor(status).some, icon = labelIcon(status)))
+    Label(
+      Label.Props(s"${system.show}",
+                  color = labelColor(status).some,
+                  icon  = labelIcon(status)))
 
   def stepSystemsStatus(step: StandardStep): VdomElement =
     <.div(
@@ -67,11 +74,16 @@ object StepProgressCell {
   def controlButtonsActive(props: Props): Boolean =
     props.clientStatus.isLogged && props.focus.state.isRunning && (props.step.isObserving || props.step.isObservePaused || props.focus.state.userStopRequested)
 
-  def stepObservationStatusAndFile(props: Props, fileId: ImageFileId): VdomElement =
+  def stepObservationStatusAndFile(props:  Props,
+                                   fileId: ImageFileId): VdomElement =
     <.div(
       SeqexecStyles.configuringRow,
-      ObservationProgressBar(fileId),
-      StepsControlButtons(props.focus.id, props.focus.instrument, props.focus.state, props.step).when(controlButtonsActive(props))
+      ObservationProgressBar(
+        ObservationProgressBar.Props(props.focus.id, fileId)),
+      StepsControlButtons(props.focus.id,
+                          props.focus.instrument,
+                          props.focus.state,
+                          props.step).when(controlButtonsActive(props))
     )
 
   def stepObservationStatus(props: Props): VdomElement =
@@ -81,7 +93,10 @@ object StepProgressCell {
         SeqexecStyles.specialStateLabel,
         props.step.show
       ),
-      StepsControlButtons(props.focus.id, props.focus.instrument, props.focus.state, props.step).when(controlButtonsActive(props))
+      StepsControlButtons(props.focus.id,
+                          props.focus.instrument,
+                          props.focus.state,
+                          props.step).when(controlButtonsActive(props))
     )
 
   def stepObservationPausing(props: Props): VdomElement =
@@ -91,7 +106,10 @@ object StepProgressCell {
         SeqexecStyles.specialStateLabel,
         props.focus.state.show
       ),
-      StepsControlButtons(props.focus.id, props.focus.instrument, props.focus.state, props.step).when(controlButtonsActive(props))
+      StepsControlButtons(props.focus.id,
+                          props.focus.instrument,
+                          props.focus.state,
+                          props.step).when(controlButtonsActive(props))
     )
 
   def stepPaused(props: Props): VdomElement =
@@ -124,7 +142,8 @@ object StepProgressCell {
         <.p(SeqexecStyles.componentLabel, props.step.show)
     }
 
-  private val component = ScalaComponent.builder[Props]("StepProgressCell")
+  private val component = ScalaComponent
+    .builder[Props]("StepProgressCell")
     .stateless
     .render_P(stepDisplay)
     .configure(Reusability.shouldComponentUpdate)

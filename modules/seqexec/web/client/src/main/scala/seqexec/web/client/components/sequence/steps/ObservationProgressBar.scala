@@ -3,20 +3,28 @@
 
 package seqexec.web.client.components.sequence.steps
 
-import seqexec.model.dhs.ImageFileId
-import seqexec.web.client.components.SeqexecStyles
-import web.client.style._
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
+import gem.Observation
+import seqexec.model.dhs.ImageFileId
+import seqexec.web.client.components.SeqexecStyles
+import seqexec.web.client.circuit.SeqexecCircuit
+import web.client.style._
 
 /**
- * Component to wrap the progress bar
- */
+  * Component to wrap the progress bar
+  */
 object ObservationProgressBar {
-  private val component = ScalaComponent.builder[ImageFileId]("ObservationProgressBar")
+  final case class Props(obsId: Observation.Id, fileId: ImageFileId) {
+    protected[steps] val connect =
+      SeqexecCircuit.connect(SeqexecCircuit.obsProgressReader(obsId))
+  }
+
+  private val component = ScalaComponent
+    .builder[Props]("ObservationProgressBar")
     .stateless
-    .render_P(fileId =>
+    .render_P(p =>
       <.div(
         SeqexecStyles.observationProgressRow,
         <.div(
@@ -25,18 +33,17 @@ object ObservationProgressBar {
           <.div(
             ^.cls := "bar",
             SeqexecStyles.observationBar,
-            <.div(
-              ^.cls := "progress")
+            <.div(^.cls := "progress")
           )
         ),
         <.div(
           ^.cls := "label",
           SeqexecStyles.observationLabel,
-          fileId
+          p.connect(x => <.div(s"${x()}")),
+          p.fileId
         )
-      )
-    )
+    ))
     .build
 
-  def apply(p: ImageFileId): Unmounted[ImageFileId, Unit, Unit] = component(p)
+  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
 }
