@@ -3,15 +3,16 @@
 
 package seqexec.web.model.boopickle
 
+import _root_.boopickle.DefaultBasic._
+import cats.tests.CatsSuite
+import gem.Observation
+import org.scalacheck.Arbitrary._
 import seqexec.model.enum._
 import seqexec.model._
 import seqexec.model.events._
-import cats.tests.CatsSuite
-import _root_.boopickle.DefaultBasic._
-import org.scalacheck.Arbitrary._
 import seqexec.model.SeqexecModelArbitraries._
 import seqexec.model.SequenceEventsArbitraries._
-import gem.Observation
+import squants.time.Time
 
 /**
   * Tests Serialization/Deserialization using BooPickle
@@ -51,14 +52,18 @@ final class BoopicklingSpec extends CatsSuite with ModelBooPicklers {
            PicklerTests[LoadSequenceUpdated].pickler)
   checkAll("Pickler[ClearLoadedSequencesUpdated.type]",
            PicklerTests[ClearLoadedSequencesUpdated].pickler)
-  checkAll("Pickler[QueueManipulationOp]", PicklerTests[QueueManipulationOp].pickler)
+  checkAll("Pickler[QueueManipulationOp]",
+           PicklerTests[QueueManipulationOp].pickler)
+  checkAll("Pickler[ObservationProgressEvent]",
+           PicklerTests[ObservationProgressEvent].pickler)
   checkAll("Pickler[QueueUpdated]", PicklerTests[QueueUpdated].pickler)
   checkAll("Pickler[SequenceError]", PicklerTests[SequenceError].pickler)
   checkAll("Pickler[SequencePaused]", PicklerTests[SequencePaused].pickler)
   checkAll("Pickler[ExposurePaused]", PicklerTests[ExposurePaused].pickler)
   checkAll("Pickler[BatchCommandState]",
            PicklerTests[BatchCommandState].pickler)
-  checkAll("Pickler[ExecutionQueueView]", PicklerTests[ExecutionQueueView].pickler)
+  checkAll("Pickler[ExecutionQueueView]",
+           PicklerTests[ExecutionQueueView].pickler)
   checkAll("Pickler[SequencesQueue[Observation.Id]]",
            PicklerTests[SequencesQueue[Observation.Id]].pickler)
   checkAll("Pickler[ImageQuality]", PicklerTests[ImageQuality].pickler)
@@ -77,4 +82,7 @@ final class BoopicklingSpec extends CatsSuite with ModelBooPicklers {
   checkAll("Pickler[ActionStatus]", PicklerTests[ActionStatus].pickler)
   checkAll("Pickler[StandardStep]", PicklerTests[StandardStep].pickler)
   checkAll("Pickler[QueueId]", PicklerTests[QueueId].pickler)
+  checkAll("Pickler[Time]", PicklerTests[Time].pickler)
+  checkAll("Pickler[ObservationProgress]",
+           PicklerTests[ObservationProgress].pickler)
 }

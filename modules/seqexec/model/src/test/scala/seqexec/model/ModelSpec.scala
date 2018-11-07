@@ -7,6 +7,8 @@ import cats.tests.CatsSuite
 import cats.kernel.laws.discipline._
 import seqexec.model.enum._
 import seqexec.model.SeqexecModelArbitraries._
+import squants.time.Time
+import squants.time.TimeUnit
 
 /**
   * Tests Model typeclasses
@@ -52,4 +54,6 @@ final class ModelSpec extends CatsSuite {
   checkAll("Eq[Notification]", EqTests[Notification].eqv)
   checkAll("Eq[ExecutionQueueView]", EqTests[ExecutionQueueView].eqv)
   checkAll("Eq[ObservationProgress]", EqTests[ObservationProgress].eqv)
+  checkAll("Eq[TimeUnit]", EqTests[TimeUnit].eqv)
+  checkAll("Eq[Time]", EqTests[Time].eqv)
 }

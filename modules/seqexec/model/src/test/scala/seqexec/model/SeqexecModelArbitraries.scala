@@ -14,9 +14,8 @@ import org.scalacheck.Gen
 import org.scalacheck.Arbitrary._
 import scala.collection.immutable.SortedMap
 import scala.concurrent.duration.Duration
-import squants.time.Time
+import squants.time._
 import seqexec.model.enum._
-import seqexec.model.dhs.ImageFileId
 
 trait SeqexecModelArbitraries extends ArbObservation {
 
@@ -475,8 +474,22 @@ trait SeqexecModelArbitraries extends ArbObservation {
     }
 
   implicit val userLoginRequestCogen: Cogen[UserLoginRequest] =
-    Cogen[(String, String)].contramap(x =>
-      (x.username, x.password))
+    Cogen[(String, String)].contramap(x => (x.username, x.password))
+
+  implicit val arbTimeUnit: Arbitrary[TimeUnit] =
+    Arbitrary {
+      Gen.oneOf(Nanoseconds,
+                Microseconds,
+                Milliseconds,
+                Seconds,
+                Minutes,
+                Hours,
+                Days)
+    }
+
+  implicit val timeUnitCogen: Cogen[TimeUnit] =
+    Cogen[String]
+      .contramap(_.symbol)
 
   implicit val arbTime: Arbitrary[Time] =
     Arbitrary {
@@ -490,15 +503,16 @@ trait SeqexecModelArbitraries extends ArbObservation {
   implicit val arbObservationProgress: Arbitrary[ObservationProgress] =
     Arbitrary {
       for {
-        f <- arbitrary[ImageFileId]
+        o <- arbitrary[Observation.Id]
+        s <- arbitrary[Int]
         t <- arbitrary[Time]
         r <- arbitrary[Time]
-      } yield ObservationProgress(f, t, r)
+      } yield ObservationProgress(o, s, t, r)
     }
 
   implicit val observationInProgressCogen: Cogen[ObservationProgress] =
-    Cogen[(ImageFileId, Time, Time)]
-      .contramap(x => (x.fileId, x.total, x.remaining))
+    Cogen[(Observation.Id, Int, Time, Time)]
+      .contramap(x => (x.obsId, x.step, x.total, x.remaining))
 
 }
 

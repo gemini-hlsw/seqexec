@@ -6,7 +6,7 @@ package seqexec
 import cats._
 import cats.implicits._
 import java.util.UUID
-import squants.Time
+import squants.time.Time
 import squants.time.TimeUnit
 import seqexec.model.enum._
 
@@ -46,7 +46,8 @@ package object model {
 
   implicit val timeUnit: Eq[TimeUnit] =
     Eq.by(_.symbol)
+
   implicit val timeEq: Eq[Time] =
-    Eq.by(t => (t.value, t.unit))
+    Eq.by(_.toMilliseconds.value)
 
 }
