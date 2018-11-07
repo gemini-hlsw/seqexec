@@ -18,6 +18,9 @@ object ProgressUtil {
   def fromF[F[_]: Effect](f: F[Progress]): Stream[F, Progress] = Scheduler[F](1).flatMap(
     sch => sch.awakeEvery(PollPeriod).evalMap(_ => f))
 
+  def fromFParam[F[_]: Effect](f: FiniteDuration => F[Progress]): Stream[F, Progress] = Scheduler[F](1).flatMap(
+    sch => sch.awakeEvery(PollPeriod).evalMap(f))
+
   def fromFOption[F[_]: Effect](f: F[Option[Progress]]): Stream[F, Progress] = Scheduler[F](1)
     .flatMap(sch => sch.awakeEvery(PollPeriod).evalMap(_ => f).collect{case Some(p) => p})
 
@@ -30,15 +33,12 @@ object ProgressUtil {
     Scheduler[F](1).flatMap(sch =>
       sch.awakeEvery(PollPeriod).evalMapAccumulate(s0){case (st, t) => fs(t).run(st)}.map(_._2))
 
-  def countdown[F[_]: Effect: Applicative](total: Time, elapsed: Time): Stream[F, Progress] = {
-    val r = ProgressUtil.fromStateTParam[F, Time] {
-      t: FiniteDuration =>
-        StateT[F, Time, Progress](st => {
-          val progress = Milliseconds(t.toMillis) + st
-          Applicative[F].pure((progress, Progress(total, RemainingTime(total - progress))))
-        })
+  def countdown[F[_]: Effect: Applicative](total: Time, elapsed: Time): Stream[F, Progress] =
+    ProgressUtil.fromFParam[F] {
+      t: FiniteDuration => {
+          val progress = Milliseconds(t.toMillis) + elapsed
+          Applicative[F].pure(Progress(total, RemainingTime(total - progress)))
+        }
     }
-    r(elapsed)
-  }
 
 }
