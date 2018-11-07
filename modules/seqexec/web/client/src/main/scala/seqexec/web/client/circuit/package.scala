@@ -4,7 +4,6 @@
 package seqexec.web.client
 
 import cats.Eq
-import cats.Order
 import cats.implicits._
 import cats.data.NonEmptyList
 import diode._
@@ -18,7 +17,6 @@ import seqexec.web.client.model.lenses.firstScienceStepTargetNameT
 import seqexec.web.client.model._
 import seqexec.web.client.model.ModelOps._
 import seqexec.web.client.components.sequence.steps.StepsTable
-import seqexec.web.client.components.SessionQueueTableBody
 import web.client.table._
 
 package object circuit {
@@ -116,45 +114,12 @@ package circuit {
                    firstLoad          = v.firstLoad))
   }
 
-  final case class SequenceInSessionQueue(id:            Observation.Id,
-                                          status:        SequenceState,
-                                          instrument:    Instrument,
-                                          active:        Boolean,
-                                          loaded:        Boolean,
-                                          name:          String,
-                                          targetName:    Option[TargetName],
-                                          runningStep:   Option[RunningStep],
-                                          nextStepToRun: Option[Int])
-      extends UseValueEq
-
-  object SequenceInSessionQueue {
-    implicit val order: Order[SequenceInSessionQueue] = Order.by(_.id)
-    implicit val ordering: scala.math.Ordering[SequenceInSessionQueue] =
-      order.toOrdering
-  }
-
-  final case class StatusAndLoadedSequencesFocus(
-    status:     ClientStatus,
-    sequences:  List[SequenceInSessionQueue],
-    tableState: TableState[SessionQueueTableBody.TableColumn])
-      extends UseValueEq
-
   final case class InstrumentStatusFocus(
     instrument:  Instrument,
     active:      Boolean,
     idState:     Option[(Observation.Id, SequenceState)],
     runningStep: Option[RunningStep])
       extends UseValueEq
-
-  final case class TabFocus(
-    canOperate:      Boolean,
-    tabs:            NonEmptyList[Either[CalibrationQueueTabActive, AvailableTab]],
-    defaultObserver: Observer)
-
-  object TabFocus {
-    implicit val eq: Eq[TabFocus] =
-      Eq.by(x => (x.canOperate, x.tabs, x.defaultObserver))
-  }
 
   final case class SequenceInfoFocus(canOperate: Boolean,
                                      obsName:    Option[String],

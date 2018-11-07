@@ -128,10 +128,11 @@ final case class SequencesOnDisplay(tabs: Zipper[SeqexecTab]) {
           .getOrElse(StepsTable.State.InitialTableState)
         val completed = tab
           .flatMap(_.completedSequence)
+        val stepConfig = tab.flatMap(_.stepConfig)
         InstrumentSequenceTab(x.metadata.instrument,
                               x.some,
                               completed,
-                              None,
+                              stepConfig,
                               curTableState,
                               TabOperations.Default).some
     }
@@ -169,9 +170,10 @@ final case class SequencesOnDisplay(tabs: Zipper[SeqexecTab]) {
     // Replace the sequence for the instrument or the completed sequence and reset displaying a step
     val seq = if (s.metadata.instrument === i && !isLoaded) {
       val newPreview = SequencesOnDisplay.previewTabById(obsId).isEmpty(this)
-      val tsUpd = (ts: TableState[StepsTable.TableColumn]) => if (newPreview) StepsTable.State.InitialTableState else ts
+      val tsUpd = (ts: TableState[StepsTable.TableColumn]) =>
+        if (newPreview) StepsTable.State.InitialTableState else ts
       val update =
-          PreviewSequenceTab.tableState.modify(tsUpd) >>>
+        PreviewSequenceTab.tableState.modify(tsUpd) >>>
           PreviewSequenceTab.currentSequence.set(s) >>>
           PreviewSequenceTab.stepConfig.set(None)
       val q = withPreviewTab(s).tabs

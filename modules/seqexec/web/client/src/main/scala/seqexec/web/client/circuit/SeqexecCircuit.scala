@@ -36,14 +36,15 @@ final class LoggingProcessor[M <: AnyRef] extends ActionProcessor[M] {
                        currentModel: M): ActionResult[M] = {
     // log some of the actions
     action match {
-      case AppendToLog(_)                     =>
-      case ServerMessage(_: ServerLogMessage) =>
-      case UpdateStepsConfigTableState(_)     =>
-      case UpdateSessionQueueTableState(_)    =>
-      case UpdateStepTableState(_, _)         =>
-      case UpdateCalTableState(_, _)          =>
-      case a: Action                          => logger.info(s"Action: ${a.show}")
-      case _                                  =>
+      case AppendToLog(_)                             =>
+      case ServerMessage(_: ServerLogMessage)         =>
+      case ServerMessage(_: ObservationProgressEvent) =>
+      case UpdateStepsConfigTableState(_)             =>
+      case UpdateSessionQueueTableState(_)            =>
+      case UpdateStepTableState(_, _)                 =>
+      case UpdateCalTableState(_, _)                  =>
+      case a: Action                                  => logger.info(s"Action: ${a.show}")
+      case _                                          =>
     }
     // call the next processor
     next(action)
@@ -64,7 +65,8 @@ object SeqexecCircuit
     this.zoomRWL(WebSocketsFocus.webSocketFocusL)
 
   val initialSyncFocusRW: ModelRW[SeqexecAppRootModel, InitialSyncFocus] =
-    this.zoomRWL(SeqexecAppRootModel.uiModel ^|-> InitialSyncFocus.initialSyncFocusL)
+    this.zoomRWL(
+      SeqexecAppRootModel.uiModel ^|-> InitialSyncFocus.initialSyncFocusL)
 
   val tableStateRW: ModelRW[SeqexecAppRootModel, AppTableStates] =
     this.zoomRWL(SeqexecAppRootModel.uiModel ^|-> AppTableStates.tableStateL)
@@ -105,14 +107,8 @@ object SeqexecCircuit
   val logDisplayedReader: ModelR[SeqexecAppRootModel, SectionVisibilityState] =
     this.zoomL(SeqexecAppRootModel.logDisplayL)
 
-  val tabsReader: ModelR[SeqexecAppRootModel, TabFocus] = {
-    val getter = SeqexecAppRootModel.uiModel composeGetter (SeqexecUIModel.sequencesOnDisplay composeGetter SequencesOnDisplay.availableTabsG).zip(SeqexecUIModel.defaultObserverG)
-    val constructor = ClientStatus.canOperateG.zip(getter) >>> { case (o, (t, ob)) =>
-      TabFocus(o, t, ob)
-    }
-
-    this.zoomG(constructor)
-  }
+  val tabsReader: ModelR[SeqexecAppRootModel, TabFocus] =
+    this.zoomG(TabFocus.tabFocusG)
 
   val seqexecTabs: ModelR[SeqexecAppRootModel, NonEmptyList[TabContentFocus]] =
     this.zoomG(TabContentFocus.tabContentFocusG)
@@ -123,29 +119,46 @@ object SeqexecCircuit
   val queueFocusRW: ModelRW[SeqexecAppRootModel, QueueRequestsFocus] =
     this.zoomRWL(QueueRequestsFocus.unsafeQueueRequestsFocusL)
 
-  def sequenceTab(id: Observation.Id): ModelR[SeqexecAppRootModel, Option[SeqexecTabActive]] =
-    this.zoomG(SeqexecAppRootModel.sequencesOnDisplayL
-      .composeGetter(SequencesOnDisplay.tabG(id)))
+  def sequenceTab(
+    id: Observation.Id
+  ): ModelR[SeqexecAppRootModel, Option[SeqexecTabActive]] =
+    this.zoomG(
+      SeqexecAppRootModel.sequencesOnDisplayL
+        .composeGetter(SequencesOnDisplay.tabG(id)))
 
-  def sequenceObserverReader(id: Observation.Id): ModelR[SeqexecAppRootModel, Option[SequenceInfoFocus]] =
+  def sequenceObserverReader(
+    id: Observation.Id
+  ): ModelR[SeqexecAppRootModel, Option[SequenceInfoFocus]] =
     this.zoomG(SequenceInfoFocus.sequenceInfoG(id))
 
-  def statusAndStepReader(id: Observation.Id): ModelR[SeqexecAppRootModel, Option[StatusAndStepFocus]] =
+  def statusAndStepReader(
+    id: Observation.Id
+  ): ModelR[SeqexecAppRootModel, Option[StatusAndStepFocus]] =
     this.zoomG(StatusAndStepFocus.statusAndStepG(id))
 
-  def stepsTableReaderF(id: Observation.Id): ModelR[SeqexecAppRootModel, Option[StepsTableFocus]] =
+  def stepsTableReaderF(
+    id: Observation.Id
+  ): ModelR[SeqexecAppRootModel, Option[StepsTableFocus]] =
     this.zoomG(StepsTableFocus.stepsTableG(id))
 
-  def stepsTableReader(id: Observation.Id): ModelR[SeqexecAppRootModel, StepsTableAndStatusFocus] =
+  def stepsTableReader(
+    id: Observation.Id
+  ): ModelR[SeqexecAppRootModel, StepsTableAndStatusFocus] =
     this.zoomG(StepsTableAndStatusFocus.stepsTableAndStatusFocusG(id))
 
-  def sequenceControlReader(id: Observation.Id): ModelR[SeqexecAppRootModel, Option[SequenceControlFocus]] =
+  def sequenceControlReader(
+    id: Observation.Id
+  ): ModelR[SeqexecAppRootModel, Option[SequenceControlFocus]] =
     this.zoomG(SequenceControlFocus.seqControlG(id))
 
-  def calQueueControlReader(id: QueueId): ModelR[SeqexecAppRootModel, Option[CalQueueControlFocus]] =
+  def calQueueControlReader(
+    id: QueueId
+  ): ModelR[SeqexecAppRootModel, Option[CalQueueControlFocus]] =
     this.zoomG(CalQueueControlFocus.queueControlG(id))
 
-  def calQueueReader(id: QueueId): ModelR[SeqexecAppRootModel, Option[CalQueueFocus]] =
+  def calQueueReader(
+    id: QueueId
+  ): ModelR[SeqexecAppRootModel, Option[CalQueueFocus]] =
     this.zoomG(CalQueueFocus.calQueueG(id))
 
   private val wsHandler                = new WebSocketHandler(zoomTo(_.ws))
@@ -196,7 +209,7 @@ object SeqexecCircuit
       operatorHandler,
       defaultObserverHandler,
       foldHandlers(remoteRequestsHandler, operationsStateHandler),
-      foldHandlers( queueOpsHandler, queueRequestsHandler),
+      foldHandlers(queueOpsHandler, queueRequestsHandler),
       navigationHandler,
       debuggingHandler,
       tableStateHandler,
