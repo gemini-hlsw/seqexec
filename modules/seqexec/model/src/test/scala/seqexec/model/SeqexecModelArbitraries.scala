@@ -7,12 +7,16 @@ import cats.implicits._
 import java.util.UUID
 import gem.Observation
 import gem.arb.ArbObservation
+import gem.arb.ArbTime.arbSDuration
 import org.scalacheck.Arbitrary
 import org.scalacheck.Cogen
 import org.scalacheck.Gen
 import org.scalacheck.Arbitrary._
 import scala.collection.immutable.SortedMap
+import scala.concurrent.duration.Duration
+import squants.time.Time
 import seqexec.model.enum._
+import seqexec.model.dhs.ImageFileId
 
 trait SeqexecModelArbitraries extends ArbObservation {
 
@@ -473,6 +477,28 @@ trait SeqexecModelArbitraries extends ArbObservation {
   implicit val userLoginRequestCogen: Cogen[UserLoginRequest] =
     Cogen[(String, String)].contramap(x =>
       (x.username, x.password))
+
+  implicit val arbTime: Arbitrary[Time] =
+    Arbitrary {
+      arbitrary[Duration].map(Time.apply)
+    }
+
+  implicit val timeCogen: Cogen[Time] =
+    Cogen[Long]
+      .contramap(_.millis)
+
+  implicit val arbObservationProgress: Arbitrary[ObservationProgress] =
+    Arbitrary {
+      for {
+        f <- arbitrary[ImageFileId]
+        t <- arbitrary[Time]
+        r <- arbitrary[Time]
+      } yield ObservationProgress(f, t, r)
+    }
+
+  implicit val observationInProgressCogen: Cogen[ObservationProgress] =
+    Cogen[(ImageFileId, Time, Time)]
+      .contramap(x => (x.fileId, x.total, x.remaining))
 
 }
 

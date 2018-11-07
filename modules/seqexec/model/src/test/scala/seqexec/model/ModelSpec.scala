@@ -51,4 +51,5 @@ final class ModelSpec extends CatsSuite {
   checkAll("Eq[InstrumentInUse]", EqTests[InstrumentInUse].eqv)
   checkAll("Eq[Notification]", EqTests[Notification].eqv)
   checkAll("Eq[ExecutionQueueView]", EqTests[ExecutionQueueView].eqv)
+  checkAll("Eq[ObservationProgress]", EqTests[ObservationProgress].eqv)
 }
