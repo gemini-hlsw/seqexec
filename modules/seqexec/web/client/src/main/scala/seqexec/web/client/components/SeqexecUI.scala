@@ -17,7 +17,7 @@ import scala.scalajs.js.timers.SetTimeoutHandle
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.actions.WSConnect
 import seqexec.web.client.model.Pages._
-import seqexec.web.client.ModelOps._
+import seqexec.web.client.model.ModelOps._
 import seqexec.web.client.actions.{NavigateSilentTo, RequestSoundEcho}
 import seqexec.model.enum.Instrument
 

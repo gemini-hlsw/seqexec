@@ -19,11 +19,12 @@ import monocle.macros.GenLens
 import scala.scalajs.js
 import seqexec.model.enum.{ Instrument, StepType }
 import seqexec.model.{ StepState, Step, StandardStep }
-import seqexec.web.client.lenses._
+import seqexec.web.client.model.lenses._
 import seqexec.web.client.model.ClientStatus
 import seqexec.web.client.model.Pages.SeqexecPages
-import seqexec.web.client.ModelOps._
-import seqexec.web.client.circuit.{ SeqexecCircuit, StepsTableAndStatusFocus, StepsTableFocus }
+import seqexec.web.client.model.ModelOps._
+import seqexec.web.client.circuit.SeqexecCircuit
+import seqexec.web.client.circuit.{ StepsTableAndStatusFocus, StepsTableFocus }
 import seqexec.web.client.actions.UpdateStepTableState
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.components.sequence.steps.OffsetFns._
@@ -33,7 +34,7 @@ import seqexec.web.client.reusability._
 import react.virtualized._
 import web.client.style._
 import web.client.table._
-import web.client.utils
+import web.client.utils._
 
 object ColWidths {
   val ControlWidth: Double       = 40
@@ -114,7 +115,6 @@ object StepsTable {
     val canSetBreakpoint : Boolean                         = canOperate && !isPreview
     val showObservingMode: Boolean                         = showProp(InstrumentProperties.ObservingMode)
 
-
     def rowGetter(idx: Int): StepRow =
       steps.flatMap(_.steps.lift(idx)).fold(StepRow.Zero)(StepRow.apply)
 
@@ -160,7 +160,8 @@ object StepsTable {
   }
 
   implicit val propsReuse: Reusability[Props] = Reusability.by(x => (x.canOperate, x.stepsTable))
-  implicit val stateReuse: Reusability[State] = Reusability.by(_.breakpointHover)
+  implicit val tcReuse: Reusability[TableColumn] = Reusability.byRef
+  implicit val stateReuse: Reusability[State] = Reusability.by(x => (x.tableState, x.breakpointHover))
 
   val controlHeaderRenderer: HeaderRenderer[js.Object] = (_, _, _, _, _, _) =>
     <.span(
@@ -508,15 +509,15 @@ object StepsTable {
   }
 
   def updateScrollPosition(b: Backend, pos: JsNumber): Callback = {
-    val s = (State.userModified.set(IsModified) >>> State.scrollPosition.set(pos))(b.state)
-    (b.setState(s) *>
-    b.props.obsId.map(id => SeqexecCircuit.dispatchCB(UpdateStepTableState(id, s.tableState))).getOrEmpty).when(!utils.eq.eqv(pos, b.state.tableState.scrollPosition)) *>
+    val s = (State.userModified.set(IsModified) >>> State.scrollPosition.set(pos))
+    b.modState(s) *>
+    b.props.obsId.map(id => SeqexecCircuit.dispatchCB(UpdateStepTableState(id, s(b.state).tableState))).getOrEmpty *>
     Callback.empty
   }
 
-  def startScrollTop(b: Backend): js.UndefOr[JsNumber] =
-    if (b.state.tableState.userModified === IsModified) {
-      b.state.tableState.scrollPosition
+  def startScrollTop(state: State): js.UndefOr[JsNumber] =
+    if (state.tableState.userModified === IsModified) {
+      state.tableState.scrollPosition
     } else {
       js.undefined
     }
@@ -545,12 +546,13 @@ object StepsTable {
       width = size.width.toInt,
       rowGetter = b.props.rowGetter _,
       scrollToIndex = startScrollToIndex(b),
-      scrollTop = startScrollTop(b),
-      onScroll = (_, _, pos) => updateScrollPosition(b, pos),
+      scrollTop = startScrollTop(b.state),
+      onScroll = (a, _, pos) => updateScrollPosition(b, pos).when(a.toDouble > 0) *> Callback.empty,
       scrollToAlignment = ScrollToAlignment.Center,
       headerClassName = SeqexecStyles.tableHeader.htmlClass,
       headerHeight = SeqexecStyles.headerHeight
     )
+
 
   // Create a ref
   private val ref = Ref.toJsComponent(Table.component)
@@ -571,10 +573,10 @@ object StepsTable {
     val differentStepsStates: List[Callback] = stepsPairs.collect {
       // if step status changes recalculate
       case (cur, prev) if cur.status =!= prev.status =>
-        ref.get.flatMapCB(_.raw.recomputeRowsHeightsCB(cur.id)).toCallback
+        recomputeRowHeightsCB(cur.id)
       // if breakpoint state changes recalculate
       case (cur, prev) if cur.breakpoint =!= prev.breakpoint =>
-        ref.get.flatMapCB(_.raw.recomputeRowsHeightsCB(cur.id)).toCallback
+        recomputeRowHeightsCB(cur.id)
     }
     Callback.sequence(differentStepsStates)
   }

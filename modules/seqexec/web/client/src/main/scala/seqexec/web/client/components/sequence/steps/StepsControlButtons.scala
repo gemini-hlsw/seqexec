@@ -14,7 +14,7 @@ import seqexec.model._
 import seqexec.model.enum._
 import seqexec.model.operations.ObservationOperations._
 import seqexec.model.operations._
-import seqexec.web.client.ModelOps._
+import seqexec.web.client.model.ModelOps._
 import seqexec.web.client.actions.{RequestAbort, RequestObsPause, RequestObsResume, RequestStop}
 import seqexec.web.client.circuit.{SeqexecCircuit, StepsTableFocus}
 import seqexec.web.client.components.SeqexecStyles

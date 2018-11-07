@@ -1,7 +1,7 @@
 // Copyright (c) 2016-2018 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
-package seqexec.web.client
+package seqexec.web.client.model
 
 import cats.Show
 import cats.implicits._
@@ -9,7 +9,6 @@ import cats.data.NonEmptyList
 import gem.enum.Site
 import seqexec.model.enum.{ ActionStatus, Instrument, Resource }
 import seqexec.model.{ StepState, SequenceState, Step, StandardStep }
-import seqexec.web.client.model.RunningStep
 import seqexec.model.SequenceView
 
 /**

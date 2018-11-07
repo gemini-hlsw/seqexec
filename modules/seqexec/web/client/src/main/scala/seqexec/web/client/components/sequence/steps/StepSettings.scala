@@ -17,7 +17,7 @@ import seqexec.model.enumerations
 import seqexec.web.client.circuit.StepsTableFocus
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.model.{ClientStatus, Pages}
-import seqexec.web.client.lenses._
+import seqexec.web.client.model.lenses._
 import seqexec.web.client.semanticui.elements.label.Label
 import seqexec.web.client.semanticui.elements.icon.Icon
 import seqexec.web.client.semanticui.elements.icon.Icon._
