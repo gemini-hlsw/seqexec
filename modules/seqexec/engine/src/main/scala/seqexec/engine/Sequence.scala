@@ -247,7 +247,7 @@ object Sequence {
     /**
       * Rebuilds the state of a sequence with a new steps definition, but preserving breakpoints and skip marks
       * The sequence must not be running.
-      * @param q New sequence definition
+      * @param steps New sequence definition
       * @param st Old sequence state
       * @return The new sequence state
       */

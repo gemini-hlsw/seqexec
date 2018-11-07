@@ -14,6 +14,7 @@ import org.scalatest.Matchers._
 import cats.effect.IO
 import fs2.Stream
 import gem.Observation
+import seqexec.engine.TestUtil.TestState
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -54,7 +55,7 @@ class SequenceSpec extends FlatSpec {
   }
 
   private val user = UserDetails("telops", "Telops")
-  private val executionEngine = new Engine[Engine.State, Unit](monocle.Lens.id)
+  private val executionEngine = new Engine[TestState, Unit](TestState)
 
   private def always[D]: D => Boolean = _ => true
 
@@ -74,7 +75,7 @@ class SequenceSpec extends FlatSpec {
     case _                       => false
   }
 
-  def runToCompletion(s0: Engine.State): Option[Engine.State] = {
+  def runToCompletion(s0: TestState): Option[TestState] = {
     executionEngine.process(PartialFunction.empty)(Stream.eval(IO.pure(Event.start[executionEngine.ConcreteTypes](seqId, user, ClientId(UUID.randomUUID), always))))(s0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
     ).compile.last.unsafeRunSync.map(_._2)
@@ -82,8 +83,8 @@ class SequenceSpec extends FlatSpec {
 
   it should "stop on breakpoints" in {
 
-    val qs0: Engine.State =
-      Engine.State(
+    val qs0: TestState =
+      TestState(
         sequences = Map(
           (seqId,
             Sequence.State.init(
@@ -108,8 +109,8 @@ class SequenceSpec extends FlatSpec {
 
   it should "resume execution to completion after a breakpoint" in {
 
-    val qs0: Engine.State =
-      Engine.State(
+    val qs0: TestState =
+      TestState(
         sequences = Map(
           (seqId,
             Sequence.State.init(

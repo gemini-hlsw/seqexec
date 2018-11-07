@@ -15,9 +15,9 @@ import fs2.Stream
 import gem.Observation
 import cats.implicits._
 import cats.effect._
-import monocle.Lens
 import org.scalatest.Inside.inside
 import org.scalatest.{FlatSpec, NonImplicitAssertions}
+import seqexec.engine.TestUtil.TestState
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
@@ -64,8 +64,8 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
 
   val executions: List[List[Action[IO] ]] = List(List(configureTcs, configureInst), List(observe))
   val seqId: Observation.Id = Observation.Id.unsafeFromString("GS-2019A-Q-0-1")
-  val qs1: Engine.State =
-    Engine.State(
+  val qs1: TestState =
+    TestState(
       sequences = Map(
         (seqId,
           Sequence.State.init(
@@ -90,7 +90,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
       )
     )
 
-  private val executionEngine = new Engine[Engine.State, Unit](Lens.id)
+  private val executionEngine = new Engine[TestState, Unit](TestState)
   private val user = UserDetails("telops", "Telops")
 
   def isFinished(status: SequenceState): Boolean = status match {
@@ -101,7 +101,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
-  def runToCompletion(s0: Engine.State): Option[Engine.State] = {
+  def runToCompletion(s0: TestState): Option[TestState] = {
     executionEngine.process(PartialFunction.empty)(Stream.eval(IO.pure(Event.start[executionEngine.ConcreteTypes](seqId, user, clientId, always))))(s0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
     ).compile.last.unsafeRunSync.map(_._2)
@@ -123,8 +123,8 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
     assert(qs.exists(_.sequences(seqId).done.length === 2))
   }
 
-  private def actionPause: Option[Engine.State] = {
-    val s0: Engine.State = Engine.State(
+  private def actionPause: Option[TestState] = {
+    val s0: TestState = TestState(
       Map(seqId -> Sequence.State.init(Sequence(
         id = Observation.Id.unsafeFromString("GS-2018B-Q-0-1"),
         steps = List(
@@ -171,7 +171,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
       startedFlag <- Stream.eval(Semaphore.apply[IO](0))
       finishFlag  <- Stream.eval(Semaphore.apply[IO](0))
       r           <- {
-        val qs = Engine.State(
+        val qs = TestState(
           Map(seqId -> Sequence.State.init(Sequence(
             id = Observation.Id.unsafeFromString("GS-2018B-Q-0-2"),
             steps = List(
@@ -203,7 +203,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
 
   "engine" should "not capture runtime exceptions." in {
     @SuppressWarnings(Array("org.wartremover.warts.Throw"))
-    def s0(e: Throwable): Engine.State = Engine.State(
+    def s0(e: Throwable): TestState = TestState(
       Map((seqId, Sequence.State.init(Sequence(
         id = Observation.Id.unsafeFromString("GS-2018B-Q-0-4"),
         steps = List(
@@ -227,7 +227,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   }
 
   it should "skip steps marked to be skipped at the beginning of the sequence." in {
-    val s0: Engine.State = Engine.State(
+    val s0: TestState = TestState(
       Map((seqId, Sequence.State.init(Sequence(
         id = Observation.Id.unsafeFromString("GS-2018B-Q-0-6"),
         steps = List(
@@ -246,7 +246,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   }
 
   it should "skip steps marked to be skipped in the middle of the sequence." in {
-    val s0: Engine.State = Engine.State(
+    val s0: TestState = TestState(
       Map((seqId, Sequence.State.init(Sequence(
         id = Observation.Id.unsafeFromString("GS-2018B-Q-0-7"),
         steps = List(
@@ -265,7 +265,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   }
 
   it should "skip several steps marked to be skipped." in {
-    val s0: Engine.State = Engine.State(
+    val s0: TestState = TestState(
       Map((seqId, Sequence.State.init(Sequence(
         id = Observation.Id.unsafeFromString("GS-2018B-Q-0-8"),
         steps = List(
@@ -286,7 +286,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   }
 
   it should "skip steps marked to be skipped at the end of the sequence." in {
-    val s0: Engine.State = Engine.State(
+    val s0: TestState = TestState(
       Map((seqId, Sequence.State.init(Sequence(
         id = Observation.Id.unsafeFromString("GS-2018B-Q-0-9"),
         steps = List(
@@ -306,7 +306,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   }
 
   it should "skip a step marked to be skipped even if it is the only one." in {
-    val s0: Engine.State = Engine.State(
+    val s0: TestState = TestState(
       Map((seqId, Sequence.State.init(Sequence(
         id = Observation.Id.unsafeFromString("GS-2018B-Q-0-10"),
         steps = List(
@@ -323,7 +323,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   }
 
   it should "skip steps marked to be skipped at the beginning of the sequence, even if they have breakpoints." in {
-    val s0: Engine.State = Engine.State(
+    val s0: TestState = TestState(
       Map((seqId, Sequence.State.init(Sequence(
         id = Observation.Id.unsafeFromString("GS-2018B-Q-0-11"),
         steps = List(
@@ -343,7 +343,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   }
 
   it should "skip the leading steps if marked to be skipped, even if they have breakpoints and are the last ones." in {
-    val s0: Engine.State = Engine.State(
+    val s0: TestState = TestState(
       Map((seqId, Sequence.State.init(Sequence(
         Observation.Id.unsafeFromString("GS-2019A-Q-3"),
         steps = List(
@@ -365,7 +365,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   }
 
   it should "skip steps marked to be skipped in the middle of the sequence, but honoring breakpoints." in {
-    val s0: Engine.State = Engine.State(
+    val s0: TestState = TestState(
       Map((seqId, Sequence.State.init(Sequence(
         id = Observation.Id.unsafeFromString("GS-2018B-Q-0-12"),
         steps = List(

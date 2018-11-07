@@ -96,25 +96,25 @@ class SeqexecEngine(httpClient: Client[IO], settings: Settings[IO], sm: SeqexecM
   private def checkResources(seqId: Observation.Id)(st: EngineState): Boolean = {
     def filterSeqResources(f: Sequence.State[IO] => Boolean)
                           (sid: Observation.Id, resources: Set[Resource]): Set[Resource] =
-      st.executionState.sequences.get(sid).filter(f).fold(Set.empty[Resource])(_ => resources)
+      st.sequences.get(sid).filter(s => f(s.seq)).fold(Set.empty[Resource])(_ => resources)
     // Resources used by running sequences
-    val used = st.sequences.mapValues(_.seq.resources)
+    val used = st.sequences.mapValues(_.seqGen.resources)
       .map(Function.tupled(filterSeqResources(_.status.isRunning))).toList.foldMap(identity)
     // Resources that will be used by sequences in running queues
     def failedInQueue(q: ExecutionQueue): Set[Resource] = q.queue.map(sid =>
-      st.sequences.get(sid).map(x => (sid, Set(x.seq.instrument: Resource))).map(
+      st.sequences.get(sid).map(x => (sid, Set(x.seqGen.instrument: Resource))).map(
         Function.tupled(filterSeqResources(_.status.isError))
       )
     ).collect{case Some(x) => x}.foldMap(identity)
 
     val usedByQueues = st.queues
       .filter{ case (_, q) => q.status(st) === BatchExecState.Running || q.status(st) === BatchExecState.Waiting }
-      .map{case (_, q) => q.queue.map(sid => st.sequences.get(sid).map(x => (sid, x.seq.resources))
+      .map{case (_, q) => q.queue.map(sid => st.sequences.get(sid).map(x => (sid, x.seqGen.resources))
         .filter{case (_, res) => res.intersect(failedInQueue(q)).isEmpty}
         .map(Function.tupled(filterSeqResources(_.status.isIdle)))
       ).collect{case Some(x) => x} }.toList.flatten.foldMap(identity)
 
-    st.sequences.get(seqId).map(_.seq.resources.intersect(used ++ usedByQueues).isEmpty).getOrElse(false)
+    st.sequences.get(seqId).map(_.seqGen.resources.intersect(used ++ usedByQueues).isEmpty).getOrElse(false)
   }
 
   def start(q: EventQueue, id: Observation.Id, user: UserDetails, clientId: ClientId): IO[Either[SeqexecFailure, Unit]] =
@@ -145,17 +145,17 @@ class SeqexecEngine(httpClient: Client[IO], settings: Settings[IO], sm: SeqexecM
                   name: Observer): IO[Either[SeqexecFailure, Unit]] =
     q.enqueue1(Event.logDebugMsg(s"SeqexecEngine: Setting Observer name to '$name' for sequence '${seqId.format}' by ${user.username}")) *>
         q.enqueue1(Event.modifyState[executeEngine.ConcreteTypes](
-          ((EngineState.sequences ^|-? index(seqId)).modify(ObserverSequence.observer.set(name.some)) >>> refreshSequence(seqId) withEvent SetObserver(seqId, user.some, name)).toHandle)).map(_.asRight)
+          ((EngineState.sequences ^|-? index(seqId)).modify(SequenceData.observer.set(name.some)) >>> refreshSequence(seqId) withEvent SetObserver(seqId, user.some, name)).toHandle)).map(_.asRight)
 
   def selectSequenceEvent(i: Instrument, sid: Observation.Id, observer: Observer, user: UserDetails, clientId: ClientId): executeEngine.EventType= {
     val lens =
-      (EngineState.sequences ^|-? index(sid)).modify(ObserverSequence.observer.set(observer.some)) >>>
+      (EngineState.sequences ^|-? index(sid)).modify(SequenceData.observer.set(observer.some)) >>>
        EngineState.instrumentLoadedL(i).set(sid.some) >>>
        refreshSequence(sid)
     def testRunning(st: EngineState):Boolean = (for {
-      sels <- st.selected.get(i)
-      sstate <- st.executionState.sequences.get(sels)
-    } yield sstate.status.isRunning).getOrElse(false)
+      sels   <- st.selected.get(i)
+      obsseq <- st.sequences.get(sels)
+    } yield obsseq.seq.status.isRunning).getOrElse(false)
 
     Event.modifyState[executeEngine.ConcreteTypes]{ ((st: EngineState) => {
       if (!testRunning(st)) (lens withEvent AddLoadedSequence(i, sid, user, clientId))(st)
@@ -222,9 +222,7 @@ class SeqexecEngine(httpClient: Client[IO], settings: Settings[IO], sm: SeqexecM
     stream(q.dequeue.mergeHaltBoth(seqQueueRefreshStream))(EngineState.default).flatMap(x =>
       Stream.eval(notifyODB(x))).flatMap {
         case (ev, qState) =>
-          val sequences = qState.sequences.values.map(
-            s => qState.executionState.sequences.get(s.seq.id).map(x => viewSequence(s, x.toSequence, x))
-          ).collect{ case Some(x) => x }.toList
+          val sequences = qState.sequences.values.map(viewSequence).toList
           val event = toSeqexecEvent(ev)(
             SequencesQueue(
               EngineState.selected.get(qState),
@@ -268,8 +266,8 @@ class SeqexecEngine(httpClient: Client[IO], settings: Settings[IO], sm: SeqexecM
     executeEngine.get.flatMap{ st => (
       for {
         q <- st.queues.get(qid)
-        seqs <- seqIds.filter(sid => st.executionState.sequences.get(sid)
-          .map(seq => !seq.status.isRunning && !seq.status.isCompleted && !q.queue.contains(sid))
+        seqs <- seqIds.filter(sid => st.sequences.get(sid)
+          .map(os => !os.seq.status.isRunning && !os.seq.status.isCompleted && !q.queue.contains(sid))
           .getOrElse(false)).some.filter(_.nonEmpty)
         if (!seqs.isEmpty)
       } yield executeEngine.modify(queueO(qid).modify(_.addSeqs(seqs))) *>
@@ -295,7 +293,7 @@ class SeqexecEngine(httpClient: Client[IO], settings: Settings[IO], sm: SeqexecM
       for {
         q <- st.queues.get(qid)
         if (q.queue.contains(seqId))
-        sstOp = st.executionState.sequences.get(seqId).map(_.status)
+        sstOp = st.sequences.get(seqId).map(_.seq.status)
         if (q.status(st) =!= BatchExecState.Running ||
           sstOp.map(sst => !sst.isRunning && !sst.isCompleted).getOrElse(true))
       } yield executeEngine.modify(queueO(qid).modify(_.removeSeq(seqId))) *>
@@ -350,11 +348,11 @@ class SeqexecEngine(httpClient: Client[IO], settings: Settings[IO], sm: SeqexecM
       (EngineState.sequences ^|-? index(sid)).getOption(st).map{ obsseq =>
         (EngineState.sequences.modify(_ + (sid -> obsseq.copy(observer = observer.some))) >>>
           refreshSequence(sid) >>>
-          EngineState.instrumentLoadedL(obsseq.seq.instrument).set(sid.some) >>>
+          EngineState.instrumentLoadedL(obsseq.seqGen.instrument).set(sid.some) >>>
           {(_, ((), Stream[executeEngine.EventType](
             Event.modifyState[executeEngine.ConcreteTypes](
               { {s:EngineState => s} withEvent
-                AddLoadedSequence(obsseq.seq.instrument, sid, user, clientId)
+                AddLoadedSequence(obsseq.seqGen.instrument, sid, user, clientId)
               }.toHandle
             )
           ).covary[IO].some))}
@@ -384,7 +382,7 @@ class SeqexecEngine(httpClient: Client[IO], settings: Settings[IO], sm: SeqexecM
   private def stopSequencesInQueue(qid: QueueId): executeEngine.HandleType[Unit] =
     executeEngine.get.map(st =>
       queueO(qid).getOption(st)
-        .foldMap(_.queue.filter(sid => (EngineState.executionState ^|-> Engine.State.sequences ^|-? index(sid))
+        .foldMap(_.queue.filter(sid => EngineState.sequenceStateIndex(sid)
           .getOption(st).map(_.status.isRunning).getOrElse(false)))
     ).flatMap(_.map(executeEngine.pause).fold(executeEngine.unit)(_ *> _))
 
@@ -413,7 +411,8 @@ class SeqexecEngine(httpClient: Client[IO], settings: Settings[IO], sm: SeqexecM
   def notifyODB(i: (executeEngine.ResultType, EngineState)): IO[(executeEngine.ResultType, EngineState)] = {
     (i match {
       case (SystemUpdate(Failed(id, _, e), _), _) => systems.odb.obsAbort(id, e.msg)
-      case (SystemUpdate(Executed(id), _), st) if st.executionState.sequences.get(id).exists(_.status === SequenceState.Idle) =>
+      case (SystemUpdate(Executed(id), _), st) if EngineState.sequenceStateIndex(id).getOption(st)
+        .exists(_.status === SequenceState.Idle) =>
         systems.odb.obsPause(id, "Sequence paused by user")
       case (SystemUpdate(Finished(id), _), _)     => systems.odb.sequenceEnd(id)
       case _                                  => SeqAction(())
@@ -428,7 +427,11 @@ class SeqexecEngine(httpClient: Client[IO], settings: Settings[IO], sm: SeqexecM
     } yield translator.sequence(seqId, odbSeq)
 
     def loadSequenceEvent(seqg: SequenceGen): executeEngine.EventType =
-      Event.modifyState[executeEngine.ConcreteTypes]((loadSequenceEndo(seqId, seqg) withEvent LoadSequence(seqId)).toHandle)
+      Event.modifyState[executeEngine.ConcreteTypes](( {st:EngineState => st.sequences.get(seqId)
+        .map(os => {
+          val newseq = os.copy(seqGen = seqg)
+          EngineState.atSequence(seqId).set(newseq) >>> updateSequenceEndo(seqId, newseq)
+        }).getOrElse(loadSequenceEndo(seqId, seqg))(st)} withEvent LoadSequence(seqId)).toHandle)
 
     t.map {
       case (err :: _, None)  => List(Event.logDebugMsg(SeqexecFailure.explain(err)))
@@ -455,13 +458,14 @@ class SeqexecEngine(httpClient: Client[IO], settings: Settings[IO], sm: SeqexecM
     }).flatMap(_ => Sync[F].unit)
   }
 
-  def viewSequence(obsSeq: ObserverSequence, seq: Sequence[IO], st: Sequence.State[IO]): SequenceView = {
-
+  def viewSequence(obsSeq: SequenceData): SequenceView = {
+    val st = obsSeq.seq
+    val seq = st.toSequence
     def engineSteps(seq: Sequence[IO]): List[Step] = {
 
       // TODO: Calculate the whole status here and remove `Engine.Step.status`
       // This will be easier once the exact status labels in the UI are fixed.
-      obsSeq.seq.steps.zip(seq.steps).map(Function.tupled(viewStep)) match {
+      obsSeq.seqGen.steps.zip(seq.steps).map(Function.tupled(viewStep)) match {
         // The sequence could be empty
         case Nil => Nil
         // Find first Pending Step when no Step is Running and mark it as Running
@@ -476,20 +480,18 @@ class SeqexecEngine(httpClient: Client[IO], settings: Settings[IO], sm: SeqexecM
     }
 
     // TODO: Implement willStopIn
-    SequenceView(seq.id, SequenceMetadata(obsSeq.seq.instrument, obsSeq.observer, obsSeq.seq.title), st.status, engineSteps(seq), None)
+    SequenceView(seq.id, SequenceMetadata(obsSeq.seqGen.instrument, obsSeq.observer, obsSeq.seqGen.title), st.status, engineSteps(seq), None)
   }
 
   private def unloadEvent(seqId: Observation.Id): executeEngine.EventType =
-    Event.modifyState[executeEngine.ConcreteTypes]((
-      executeEngine.unload(seqId) >>>
-        { st =>
-          if (st.executionState.sequences.contains(seqId)) {
-            st
-          } else {
+    Event.modifyState[executeEngine.ConcreteTypes](
+      ( { st:EngineState =>
+          if (executeEngine.canUnload(seqId)(st)) {
             (EngineState.sequences.modify(ss => ss - seqId) >>>
              EngineState.selected.modify(ss => ss.toList.filter{case (_, x) => x =!= seqId}.toMap) >>>
              EngineState.queues.modify(_.mapValues(ExecutionQueue.queue.modify(_.filterNot(_ === seqId)))))(st)
           }
+          else st
       } withEvent UnloadSequence(seqId)).toHandle
     )
 
@@ -629,7 +631,10 @@ object SeqexecEngine extends SeqexecConfiguration {
   def nextRunnableObservations(qid: QueueId)(st: EngineState): Set[Observation.Id] = {
     // For each observation id, retrieve the set of resources required to run that observation, and it current
     // execution state
-    val seqInfos = st.sequences.map { case (id, ObserverSequence(_, seq)) => id -> ((seq.resources, st.executionState.sequences.get(id))) }.collect { case (id, (res, Some(s))) => id -> ((res, s.status)) }
+    val seqInfos = st.sequences.map { case (id, SequenceData(_, seq, _)) =>
+      id -> ((seq.resources, EngineState.sequenceStateIndex(id).getOption(st))) }.collect {
+        case (id, (res, Some(s))) => id -> ((res, s.status))
+      }
     // Set of resources used by all running sequences
     val used = seqInfos.collect { case (_, (res, status)) if (status.isRunning) => res }.foldRight(Set[Resource]())(_.union(_))
     // For each observation in the queue that is not yet run, retrieve the required resources
@@ -637,7 +642,10 @@ object SeqexecEngine extends SeqexecConfiguration {
       case (id, Some((res, status))) if (!status.isRunning && !status.isCompleted) => id -> res
     }).orEmpty
 
-    val seqIns = st.sequences.map { case (id, ObserverSequence(_, seq)) => id -> ((seq.instrument, st.executionState.sequences.get(id))) }.collect { case (id, (ins, Some(s))) => id -> ((ins, s.status)) }
+    val seqIns = st.sequences.map { case (id, SequenceData(_, seq, _)) =>
+      id -> ((seq.instrument, EngineState.sequenceStateIndex(id).getOption(st))) }.collect {
+        case (id, (ins, Some(s))) => id -> ((ins, s.status))
+      }
     // Calculate instruments reserved by failed sequences in the queue
     val resFailed: Set[Resource] = st.queues.get(qid).map(_.queue.fproduct(seqIns.get).collect {
       case (_, Some((ins, status))) if (status.isError) => ins
@@ -781,19 +789,25 @@ object SeqexecEngine extends SeqexecConfiguration {
   private def toEngineSequence(id: Observation.Id, seq: SequenceGen, d: HeaderExtraData)
   : Sequence[IO] = Sequence(id, toStepList(seq, d))
 
-  private[server] def loadSequenceEndo(seqId: Observation.Id, seqg: SequenceGen): Endo[EngineState] =
-    EngineState.sequences.modify(ss => ss + (seqId -> ObserverSequence(ss.get(seqId).flatMap(_.observer), seqg))) >>>
-  (st => executeEngine.load(seqId, toEngineSequence(seqId, seqg, HeaderExtraData(st.conditions, st.operator, EngineState.sequences.get(st).get(seqId).flatMap(_.observer))))(st))
+  private[server] def loadSequenceEndo(seqId: Observation.Id, seqg: SequenceGen)
+  : Endo[EngineState] = st =>
+    EngineState.sequences.modify(ss => ss + (seqId -> SequenceData(None, seqg,
+      executeEngine.load(toEngineSequence(seqId, seqg,
+        HeaderExtraData(st.conditions, st.operator, None)
+      ))
+    )))(st)
 
-  private[server] def updateSequenceEndo(seqId: Observation.Id, seqg: SequenceGen): Endo[EngineState] =
-    (st => executeEngine.update(seqId, toStepList(seqg, HeaderExtraData(st.conditions, st.operator, EngineState.sequences.get(st).get(seqId).flatMap(_.observer))))(st))
+  private[server] def updateSequenceEndo(seqId: Observation.Id, obsseq: SequenceData)
+  : Endo[EngineState] = st =>
+    executeEngine.update(seqId, toStepList(obsseq.seqGen, HeaderExtraData(st.conditions,
+      st.operator, obsseq.observer)))(st)
 
   private def refreshSequence(id: Observation.Id): Endo[EngineState] = (st:EngineState) => {
-    st.sequences.get(id).map(obsseq => updateSequenceEndo(id, obsseq.seq)).foldLeft(st){case (s, f) => f(s)}
+    st.sequences.get(id).map(obsseq => updateSequenceEndo(id, obsseq)).foldLeft(st){case (s, f) => f(s)}
   }
 
   private val refreshSequences: Endo[EngineState] = (st:EngineState) => {
-    st.sequences.map{ case (id, obsseq) => updateSequenceEndo(id, obsseq.seq) }.foldLeft(st){case (s, f) => f(s)}
+    st.sequences.map{ case (id, obsseq) => updateSequenceEndo(id, obsseq) }.foldLeft(st){case (s, f) => f(s)}
   }
 
   private def modifyStateEvent(v: SeqEvent, svs: => SequencesQueue[SequenceView]): SeqexecEvent = v match {

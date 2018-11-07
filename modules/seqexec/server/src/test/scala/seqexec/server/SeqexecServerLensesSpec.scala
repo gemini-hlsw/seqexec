@@ -28,13 +28,13 @@ final class SeqexecServerLensesSpec extends CatsSuite with ArbObservation {
     case (a:PendingStepGen, b:PendingStepGen)     => a === b
     case (a:SkippedStepGen, b:SkippedStepGen)     => a === b
     case (a:CompletedStepGen, b:CompletedStepGen) => a === b
-    case _                                  => false
+    case _                                        => false
   }
   implicit val seqgEq: Eq[SequenceGen] = Eq.by(x => (x.id, x.title, x.instrument, x.steps))
-  implicit val obsseqEq: Eq[ObserverSequence] = Eq.by(x => (x.observer, x.seq))
+  implicit val obsseqEq: Eq[SequenceData] = Eq.by(x => (x.observer, x.seqGen))
   implicit val seqstateEq: Eq[engine.Sequence.State[IO]] = Eq.fromUniversalEquals
-  implicit val execstateEq: Eq[engine.Engine.State] = Eq.by(x => x.sequences)
-  implicit val stateEq: Eq[EngineState] = Eq.by(x => (x.queues, x.selected, x.conditions, x.operator, x.sequences, x.executionState))
+  implicit val stateEq: Eq[EngineState] = Eq.by(x =>
+    (x.queues, x.selected, x.conditions, x.operator, x.sequences))
 
   checkAll("selected optional",
            LensTests(EngineState.instrumentLoadedL(Instrument.GPI)))

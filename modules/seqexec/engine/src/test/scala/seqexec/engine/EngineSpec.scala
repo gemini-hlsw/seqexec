@@ -11,12 +11,13 @@ import gem.arb.ArbObservation
 import monocle.law.discipline.OptionalTests
 import org.scalacheck.{Arbitrary, Cogen}
 import org.scalacheck.Arbitrary._
+import seqexec.engine.TestUtil.TestState
 import seqexec.model.SeqexecModelArbitraries._
 import seqexec.model.SequenceState
 
 final class EngineSpec extends CatsSuite with ArbObservation {
   implicit val seqstateEq: Eq[Sequence.State[IO]] = Eq.fromUniversalEquals
-  implicit val execstateEq: Eq[Engine.State] = Eq.by(x => x.sequences)
+  implicit val execstateEq: Eq[TestState] = Eq.by(x => x.sequences)
 
   implicit val sequenceArb: Arbitrary[Sequence[IO]] = Arbitrary{
     for{
@@ -33,13 +34,14 @@ final class EngineSpec extends CatsSuite with ArbObservation {
 
   implicit val sequenceStateCogen: Cogen[Sequence.State[IO]] = Cogen[Observation.Id].contramap(_.toSequence.id)
 
-  implicit val engineStateArb: Arbitrary[Engine.State] = Arbitrary {
+  implicit val engineStateArb: Arbitrary[TestState] = Arbitrary {
     for {
       q <- arbitrary[Map[Observation.Id, Sequence.State[IO]]]
-    } yield Engine.State(q)
+    } yield TestState(q)
   }
 
   checkAll("sequence optional",
-           OptionalTests[Engine.State, Sequence.State[IO], Observation.Id](Engine.State.sequenceState))
+           OptionalTests[TestState, Sequence.State[IO], Observation.Id](TestState
+             .sequenceStateIndex))
 
 }
