@@ -14,13 +14,12 @@ import seqexec.model.events.ObservationProgressEvent
 /**
   * Handles updates to obs progress
   */
-class ObservationsProgressHandler[M](
-  modelRW: ModelRW[M, ObservationsProgress])
+class ObservationsProgressHandler[M](modelRW: ModelRW[M, ObservationsProgress])
     extends ActionHandler(modelRW)
     with Handlers[M, ObservationsProgress] {
 
   override def handle: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(ObservationProgressEvent(e)) =>
       updatedL(ObservationsProgress.progressByIdL(e.obsId).set(e.some))
-    }
+  }
 }

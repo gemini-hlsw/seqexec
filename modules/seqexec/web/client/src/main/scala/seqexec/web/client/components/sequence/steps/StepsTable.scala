@@ -494,12 +494,7 @@ object StepsTable {
   // Columns for the table
   private def columns(b: Backend, s: Size): List[Table.ColumnArg] = {
     val p = b.props
-    val (offsetVisible,
-         exposureVisible,
-         disperserVisible,
-         fpuVisible,
-         filterVisible,
-         objectSize) =
+    val (offsetVisible, exposureVisible, disperserVisible, fpuVisible, filterVisible, objectSize) =
       s.width match {
         case w if w < PhoneCut =>
           (false, false, false, false, false, SSize.Tiny)
