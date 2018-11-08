@@ -241,15 +241,24 @@ class Engine[D, U](stateL: Engine.State[D]) {
     }
 
     def handleSystemEvent(se: SystemEvent): HandleType[ResultType] = se match {
-      case Completed(id, i, r)     => Logger.debug("Engine: Action completed") *> complete(id, i, r) *> pure(SystemUpdate(se, EventResult.Ok))
-      case PartialResult(id, i, r) => Logger.debug("Engine: Partial result") *> partialResult(id, i, r) *> pure(SystemUpdate(se, EventResult.Ok))
-      case Paused(id, i, r)        => Logger.debug("Engine: Action paused") *> actionPause(id, i, r) *> pure(SystemUpdate(se, EventResult.Ok))
-      case Failed(id, i, e)        => logError(e) *> fail(id)(i, e) *> pure(SystemUpdate(se, EventResult.Ok))
-      case Busy(id, _)             => Logger.warning(s"Cannot run sequence ${id.format} because required systems are in use.") *> pure(SystemUpdate(se, EventResult.Ok))
-      case BreakpointReached(_)    => Logger.debug("Engine: Breakpoint reached") *> pure(SystemUpdate(se, EventResult.Ok))
-      case Executed(id)            => Logger.debug("Engine: Execution completed") *> next(id) *> pure(SystemUpdate(se, EventResult.Ok))
-      case Executing(id)           => Logger.debug("Engine: Executing") *> execute(id) *> pure(SystemUpdate(se, EventResult.Ok))
-      case Finished(id)            => Logger.debug("Engine: Finished") *> switch(id)(SequenceState.Completed) *> pure(SystemUpdate(se, EventResult.Ok))
+      case Completed(id, i, r)     => Logger.debug(s"Engine: From sequence ${id.format}: Action " +
+        s"completed ($r)") *> complete(id, i, r) *> pure(SystemUpdate(se, EventResult.Ok))
+      case PartialResult(id, i, r) => Logger.debug(s"Engine: From sequence ${id.format}: Partial " +
+        s"result ($r)") *> partialResult(id, i, r) *> pure(SystemUpdate(se, EventResult.Ok))
+      case Paused(id, i, r)        => Logger.debug("Engine: Action paused") *>
+        actionPause(id, i, r) *> pure(SystemUpdate(se, EventResult.Ok))
+      case Failed(id, i, e)        => logError(e) *> fail(id)(i, e) *>
+        pure(SystemUpdate(se, EventResult.Ok))
+      case Busy(id, _)             => Logger.warning(s"Cannot run sequence ${id.format} because " +
+        s"required systems are in use.") *> pure(SystemUpdate(se, EventResult.Ok))
+      case BreakpointReached(_)    => Logger.debug("Engine: Breakpoint reached") *>
+        pure(SystemUpdate(se, EventResult.Ok))
+      case Executed(id)            => Logger.debug("Engine: Execution completed") *>
+        next(id) *> pure(SystemUpdate(se, EventResult.Ok))
+      case Executing(id)           => Logger.debug("Engine: Executing") *>
+        execute(id) *> pure(SystemUpdate(se, EventResult.Ok))
+      case Finished(id)            => Logger.debug("Engine: Finished") *>
+        switch(id)(SequenceState.Completed) *> pure(SystemUpdate(se, EventResult.Ok))
       case Null                    => pure(SystemUpdate(se, EventResult.Ok))
     }
 

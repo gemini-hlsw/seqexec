@@ -245,7 +245,7 @@ class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosCo
   } yield if(ret === ObserveCommand.Success) ObserveCommand.Aborted else ret
 
   override def observeProgress(total: Time, elapsed: ElapsedTime): Stream[IO, Progress] =
-    ProgressUtil.fromFOption(IO(
+    ProgressUtil.fromFOption(_ => IO(
       GmosEpics.instance.countdown.map(c => Progress(total, RemainingTime(c.seconds)))
     ))
 }
