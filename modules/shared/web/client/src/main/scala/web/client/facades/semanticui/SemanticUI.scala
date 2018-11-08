@@ -133,8 +133,9 @@ object SemanticUIProgress {
         new JsProgressOptionBuilder(_)) {
     def total(v: Long): JsProgressOptionBuilder = jsOpt("total", v)
     def value(v: Long): JsProgressOptionBuilder = jsOpt("value", v)
-    def percent(v: Int): JsProgressOptionBuilder = jsOpt("percent", v)
+    def percent(v: Double): JsProgressOptionBuilder = jsOpt("percent", v)
     def debug(v: Boolean): JsProgressOptionBuilder = jsOpt("debug", v)
+    def onChange[A](t: js.Function3[js.Any, js.Any, js.Any, A]): JsProgressOptionBuilder = jsOpt("onChange", t)
   }
 
   @js.native

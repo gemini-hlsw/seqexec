@@ -43,12 +43,14 @@ object Progress {
         c
       )
     }
-    .componentWillReceiveProps(ctx =>
+    .componentDidUpdate(ctx =>
       Callback {
         ctx.getDOMNode.toElement.foreach { dom =>
+          val percent =
+            ctx.currentProps.value.toDouble/ctx.currentProps.total.toDouble
           $(dom).progress(
             JsProgressOptions
-              .percent((100 * ctx.nextProps.value / ctx.nextProps.total).toInt)
+              .percent(100 * percent)
           )
         }
     })
@@ -56,7 +58,8 @@ object Progress {
       Callback {
         ctx.getDOMNode.toElement.foreach { dom =>
           $(dom).progress(
-            JsProgressOptions.percent(0)
+            JsProgressOptions
+              .percent(0.0)
           )
         }
     })
