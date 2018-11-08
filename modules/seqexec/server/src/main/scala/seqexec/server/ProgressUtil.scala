@@ -7,38 +7,32 @@ import cats.Applicative
 import cats.data.StateT
 import cats.effect.Effect
 import fs2.{Scheduler, Stream}
-import squants.time.{Milliseconds, Time}
-import scala.concurrent.ExecutionContext.Implicits.global
+import squants.time.{Milliseconds, Seconds, Time}
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.{FiniteDuration, SECONDS}
 
 object ProgressUtil {
   private val PollPeriod = FiniteDuration(1, SECONDS)
 
-  def fromF[F[_]: Effect](f: F[Progress]): Stream[F, Progress] = Scheduler[F](1).flatMap(
-    sch => sch.awakeEvery(PollPeriod).evalMap(_ => f))
+  def fromF[F[_]: Effect](f: FiniteDuration => F[Progress]): Stream[F, Progress] =
+    Scheduler[F](1).flatMap(sch => sch.awakeEvery(PollPeriod).evalMap(f))
 
-  def fromFParam[F[_]: Effect](f: FiniteDuration => F[Progress]): Stream[F, Progress] = Scheduler[F](1).flatMap(
-    sch => sch.awakeEvery(PollPeriod).evalMap(f))
+  def fromFOption[F[_]: Effect](f: FiniteDuration => F[Option[Progress]]): Stream[F, Progress] = Scheduler[F](1)
+    .flatMap(sch => sch.awakeEvery(PollPeriod).evalMap(f).collect{case Some(p) => p})
 
-  def fromFOption[F[_]: Effect](f: F[Option[Progress]]): Stream[F, Progress] = Scheduler[F](1)
-    .flatMap(sch => sch.awakeEvery(PollPeriod).evalMap(_ => f).collect{case Some(p) => p})
-
-  def fromStateT[F[_]: Effect, S](s: StateT[F, S, Progress]): S => Stream[F, Progress] = s0 =>
-    Scheduler[F](1).flatMap(sch =>
-      sch.awakeEvery(PollPeriod).evalMapAccumulate(s0){case (st, _) => s.run(st)}.map(_._2))
-
-  def fromStateTParam[F[_]: Effect, S](fs: FiniteDuration => StateT[F, S, Progress])
+  def fromStateT[F[_]: Effect, S](fs: FiniteDuration => StateT[F, S, Progress])
   : S => Stream[F, Progress] = s0 =>
     Scheduler[F](1).flatMap(sch =>
       sch.awakeEvery(PollPeriod).evalMapAccumulate(s0){case (st, t) => fs(t).run(st)}.map(_._2))
 
   def countdown[F[_]: Effect: Applicative](total: Time, elapsed: Time): Stream[F, Progress] =
-    ProgressUtil.fromFParam[F] {
+    ProgressUtil.fromF[F] {
       t: FiniteDuration => {
           val progress = Milliseconds(t.toMillis) + elapsed
-          Applicative[F].pure(Progress(total, RemainingTime(total - progress)))
+          val remaining = total - progress
+          val clipped = if(remaining.value >= 0.0) remaining else Seconds(0.0)
+          Applicative[F].pure(Progress(total, RemainingTime(clipped)))
         }
-    }
-
+    }.takeThrough(_.remaining.self.value > 0.0)
 }
