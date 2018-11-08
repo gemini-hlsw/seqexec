@@ -314,12 +314,15 @@ object StepsTable {
     */
   def rowHeight(b: Backend)(i: Int): Int =
     (b.props.rowGetter(i), b.state.breakpointHover) match {
-      case (StepRow(StandardStep(_, _, _, true, _, _, _, _)), _) =>
-        // Row with a breakpoint set
-        baseHeight(b.props) + BreakpointLineHeight
+      case (StepRow(StandardStep(_, _, s, true, _, _, _, _)), _) if s === StepState.Running =>
+        // Row running with a breakpoint set
+        SeqexecStyles.runningRowHeight + BreakpointLineHeight
       case (StepRow(s: Step), _) if s.status === StepState.Running =>
         // Row running
         SeqexecStyles.runningRowHeight
+      case (StepRow(StandardStep(_, _, _, true, _, _, _, _)), _) =>
+        // Row with a breakpoint set
+        baseHeight(b.props) + BreakpointLineHeight
       case _ =>
         // default row
         baseHeight(b.props)
