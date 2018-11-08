@@ -110,6 +110,8 @@ object StepsTable {
     val rowCount         : Int                             = stepsList.length
     val nextStepToRun    : Int                             = steps.foldMap(_.nextStepToRun).getOrElse(0)
     val showDisperser    : Boolean                         = showProp(InstrumentProperties.Disperser)
+    val showExposure     : Boolean                         = showProp(InstrumentProperties.Exposure)
+    val showFilter       : Boolean                         = showProp(InstrumentProperties.Filter)
     val showFPU          : Boolean                         = showProp(InstrumentProperties.FPU)
     val isPreview        : Boolean                         = steps.map(_.isPreview).getOrElse(false)
     val canSetBreakpoint : Boolean                         = canOperate && !isPreview
@@ -381,6 +383,7 @@ object StepsTable {
                     className = SeqexecStyles.centeredCell.htmlClass,
                     cellRenderer = stepExposureRenderer(i.instrument)
                   )))
+      if p.showExposure
       if exposureVisible
     } yield col
 
@@ -416,17 +419,20 @@ object StepsTable {
 
   def filterColumn(p: Props,
                    filterVisible: Boolean): Option[Table.ColumnArg] =
-    p.steps
-      .map(
-        i =>
-          Column(Column.propsNoFlex(
-            ColWidths.FilterWidth,
-            "filter",
-            label = "Filter",
-            className = SeqexecStyles.centeredCell.htmlClass,
-            cellRenderer = stepFilterRenderer(i.instrument)
-          )))
-      .filter(_ => filterVisible)
+    for {
+      col <- p.steps.map(
+              i =>
+                Column(
+                  Column.propsNoFlex(
+                    ColWidths.FilterWidth,
+                    "filter",
+                     label = "Filter",
+                     className = SeqexecStyles.centeredCell.htmlClass,
+                     cellRenderer = stepFilterRenderer(i.instrument)
+      )))
+      if p.showFilter
+      if filterVisible
+    } yield col
 
   def typeColumn(p: Props, objectSize: SSize): Option[Table.ColumnArg] =
     p.steps.map(
