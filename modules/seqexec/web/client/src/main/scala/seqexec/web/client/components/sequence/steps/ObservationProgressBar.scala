@@ -35,7 +35,7 @@ object ObservationProgressBar {
         SeqexecStyles.observationProgressRow,
         p.connect(x =>
           x() match {
-            case Some(ObservationProgress(_, _, r, t)) =>
+            case Some(ObservationProgress(_, r, t)) =>
               val label =
                 if (t.millis > 0) p.fileId else s"${p.fileId} - Completing..."
               Progress(Progress.Props(
@@ -49,7 +49,16 @@ object ObservationProgressBar {
                 labelCls    = List(SeqexecStyles.observationLabel)
               ))
             case _ =>
-              <.div(s"Start observing ${p.fileId}")
+              Progress(Progress.Props(
+                p.fileId,
+                total       = 100,
+                value       = 0,
+                indicating  = false,
+                progress    = true,
+                progressCls = List(SeqexecStyles.observationProgressBar),
+                barCls      = List(SeqexecStyles.observationBar),
+                labelCls    = List(SeqexecStyles.observationLabel)
+              ))
         })
     ))
     .configure(Reusability.shouldComponentUpdate)

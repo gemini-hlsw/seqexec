@@ -17,18 +17,27 @@ import scala.collection.immutable.SortedMap
   * UI record of the remaining time for observations
   */
 @Lenses
-final case class ObservationsProgress(
+final case class AllObservationsProgressState(
   obsProgress: SortedMap[Observation.Id, ObservationProgress])
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
-object ObservationsProgress {
-  val Empty: ObservationsProgress = ObservationsProgress(SortedMap.empty)
+object AllObservationsProgressState {
+  val Empty: AllObservationsProgressState = AllObservationsProgressState(
+    SortedMap.empty)
 
-  implicit val eq: Eq[ObservationsProgress] =
+  implicit val eq: Eq[AllObservationsProgressState] =
     Eq.by(_.obsProgress)
 
+  def progressStateL(
+    obsId: Observation.Id,
+  ): Lens[SeqexecAppRootModel, Option[ObservationProgress]] =
+    SeqexecAppRootModel.uiModel  ^|->
+      SeqexecUIModel.obsProgress ^|->
+      progressByIdL(obsId)
+
   def progressByIdL(
-    obsId: Observation.Id
-  ): Lens[ObservationsProgress, Option[ObservationProgress]] =
-    ObservationsProgress.obsProgress ^|-> at(obsId)
+    obsId: Observation.Id,
+  ): Lens[AllObservationsProgressState, Option[ObservationProgress]] =
+    AllObservationsProgressState.obsProgress ^|-> at(obsId)
+
 }

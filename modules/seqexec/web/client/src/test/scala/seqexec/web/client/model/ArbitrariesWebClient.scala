@@ -685,15 +685,17 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
   implicit val calQueuesCogen: Cogen[CalibrationQueues] =
     Cogen[List[(QueueId, CalQueueState)]].contramap(_.queues.toList)
 
-  implicit val arbObservationsProgress: Arbitrary[ObservationsProgress] =
+  implicit val arbAllObservationsProgressState
+    : Arbitrary[AllObservationsProgressState] =
     Arbitrary {
       for {
         ops <- arbitrary[SortedMap[Observation.Id, ObservationProgress]]
-      } yield ObservationsProgress(ops)
+      } yield AllObservationsProgressState(ops)
     }
 
-  implicit val obsProgressCogen: Cogen[ObservationsProgress] =
-    Cogen[List[(Observation.Id, ObservationProgress)]].contramap(_.obsProgress.toList)
+  implicit val obsProgressCogen: Cogen[AllObservationsProgressState] =
+    Cogen[List[(Observation.Id, ObservationProgress)]]
+      .contramap(_.obsProgress.toList)
 
   implicit val arbSeqexecUIModel: Arbitrary[SeqexecUIModel] =
     Arbitrary {
@@ -709,7 +711,7 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
         defaultObserver    <- arbitrary[Observer]
         notification       <- arbitrary[UserNotificationState]
         queues             <- arbitrary[CalibrationQueues]
-        progress           <- arbitrary[ObservationsProgress]
+        progress           <- arbitrary[AllObservationsProgressState]
         firstLoad          <- arbitrary[Boolean]
       } yield
         SeqexecUIModel(
@@ -740,7 +742,7 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
        Observer,
        UserNotificationState,
        CalibrationQueues,
-       ObservationsProgress,
+       AllObservationsProgressState,
        Boolean)]
       .contramap(
         x =>

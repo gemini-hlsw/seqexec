@@ -121,12 +121,9 @@ object SeqexecCircuit
     this.zoomG(SequenceInfoFocus.sequenceInfoG(id))
 
   def obsProgressReader(
-    id: Observation.Id
+    id: Observation.Id,
   ): ModelR[SeqexecAppRootModel, Option[ObservationProgress]] =
-    this.zoomL(
-      SeqexecAppRootModel.uiModel             ^|->
-      SeqexecUIModel.obsProgress              ^|->
-      ObservationsProgress.progressByIdL(id))
+    this.zoomL(AllObservationsProgressState.progressStateL(id))
 
   def statusAndStepReader(
     id: Observation.Id
@@ -182,7 +179,7 @@ object SeqexecCircuit
   private val queueOpsHandler          = new QueueOperationsHandler(queueOperationsRW)
   private val queueStateHandler        = new QueueStateHandler(queueOperationsRW)
   private val openConnectionHandler    = new OpenConnectionHandler(zoomTo(_.uiModel.queues))
-  private val observationsProgHandler  = new ObservationsProgressHandler(zoomTo(_.uiModel.obsProgress))
+  private val observationsProgHandler  = new ObservationsProgressStateHandler(zoomTo(_.uiModel.obsProgress))
 
   def dispatchCB[A <: Action](a: A): Callback = Callback(dispatch(a))
 
