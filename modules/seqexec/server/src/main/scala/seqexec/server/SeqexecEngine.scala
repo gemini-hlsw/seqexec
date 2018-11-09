@@ -859,18 +859,23 @@ object SeqexecEngine extends SeqexecConfiguration {
     }
     case engine.SystemUpdate(se, _)             => se match {
       // TODO: Sequence completed event not emited by engine.
-      case engine.Completed(_, _, _)                                    => SequenceUpdated(svs)
-      case engine.PartialResult(i, s, Partial(Progress(t, r)))          => ObservationProgressEvent(ObservationProgress(i, s, t, r.self))
-      case engine.PartialResult(_, _, Partial(FileIdAllocated(fileId))) => FileIdStepExecuted(fileId, svs)
-      case engine.PartialResult(_, _, _)                                => SequenceUpdated(svs)
-      case engine.Failed(id, _, _)                                      => SequenceError(id, svs)
-      case engine.Busy(id, clientId)                                    => UserNotification(ResourceConflict(id), clientId)
-      case engine.Executed(s)                                           => StepExecuted(s, svs)
-      case engine.Executing(_)                                          => SequenceUpdated(svs)
-      case engine.Finished(_)                                           => SequenceCompleted(svs)
-      case engine.Null                                                  => NullEvent
-      case engine.Paused(id, _, _)                                      => ExposurePaused(id, svs)
-      case engine.BreakpointReached(id)                                 => SequencePaused(id, svs)
+      case engine.Completed(_, _, _, _)                                    => SequenceUpdated(svs)
+      case engine.PartialResult(i, s, _, Partial(Progress(t, r)))          =>
+        ObservationProgressEvent(ObservationProgress(i, s, t, r.self))
+      case engine.PartialResult(_, _, _, Partial(FileIdAllocated(fileId))) =>
+        FileIdStepExecuted(fileId, svs)
+      case engine.PartialResult(_, _, _, _)                                => SequenceUpdated(svs)
+      case engine.Failed(id, _, _)                                         => SequenceError(id, svs)
+      case engine.Busy(id, clientId)                                       =>
+        UserNotification(ResourceConflict(id), clientId)
+      case engine.Executed(s)                                              => StepExecuted(s, svs)
+      case engine.Executing(_)                                             => SequenceUpdated(svs)
+      case engine.Finished(_)                                              => SequenceCompleted(svs)
+      case engine.Null                                                     => NullEvent
+      case engine.Paused(id, _, _)                                         => ExposurePaused(id,
+        svs)
+      case engine.BreakpointReached(id)                                    => SequencePaused(id,
+        svs)
     }
   }
 
