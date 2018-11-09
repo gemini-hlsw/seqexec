@@ -3,12 +3,14 @@
 
 package seqexec.web.client.components.sequence.steps
 
+import cats.implicits._
+import gem.Observation
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.extra.Reusability
 import japgolly.scalajs.react.extra.TimerSupport
-import gem.Observation
+import java.time.Duration
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.ObservationProgress
 import seqexec.web.client.components.SeqexecStyles
@@ -22,8 +24,8 @@ import web.client.style._
 
 object SmoothProgressBar {
   val periodUpdate: Int = 100
-  final case class Props(label: String, total: Long, value: Long)
-  final case class State(total: Long, value:   Long)
+  final case class Props(fileId: String, total: Long, value: Long)
+  final case class State(total:  Long, value:   Long)
 
   object State {
     def fromProps(p: Props): State = State(p.total, p.value)
@@ -37,16 +39,58 @@ object SmoothProgressBar {
       setInterval(
         b.modState(x => x.copy(value = min(x.total, x.value + periodUpdate))),
         periodUpdate.millisecond)
-    def newProps(p: Props): Callback = b.setState(State.fromProps(p))
+    def newStateFromProps(p: Props): Callback = b.setState(State.fromProps(p))
+    def tickTotal: Callback = b.props.zip(b.state) >>= {
+      case (p, s) =>
+        val next = s.value + periodUpdate
+        b.modState(x => x.copy(value = min(p.total, x.value + periodUpdate)))
+          .when(next < p.value) *>
+          Callback.empty
+    }
+  }
+
+  def encodeDuration(duration: Duration): String = {
+    val oneMinute  = 60
+    val twoMinutes = oneMinute * 2
+    val oneHour    = oneMinute * 60
+    val twoHours   = oneHour * 2
+    val oneDay     = oneHour * 24
+
+    def toString(result: List[String], seconds: Long): List[String] =
+      seconds match {
+        case seconds if seconds <= 0 =>
+          List.empty[String]
+        case seconds if seconds === 1 =>
+          result ::: List(s"${seconds} second")
+        case seconds if seconds < oneMinute =>
+          result ::: List(s"${seconds} seconds")
+        case seconds if seconds >= oneMinute && seconds < twoMinutes =>
+          s"${seconds / oneMinute} minute" :: toString(result,
+                                                       seconds % oneMinute)
+        case seconds if seconds >= oneMinute && seconds < oneHour =>
+          s"${seconds / oneMinute} minutes" :: toString(result,
+                                                        seconds % oneMinute)
+        case seconds if seconds >= oneHour && seconds < twoHours =>
+          s"${seconds / oneHour} hour" :: toString(result, seconds % oneHour)
+        case seconds if seconds >= twoHours && seconds < oneDay =>
+          s"${seconds / oneHour} hours" :: toString(result, seconds % oneHour)
+      }
+
+    toString(List.empty[String], duration.getSeconds).mkString(", ")
   }
 
   private val component = ScalaComponent
     .builder[Props]("ObservationProgressBar")
     .initialStateFromProps(State.fromProps)
     .backend(x => new Backend(x))
-    .render_PS((p, s) =>
+    .render_PS { (p, s) =>
+      val remaining = Duration.ofMillis(s.total - s.value)
+      val label =
+        if (s.value > 0) s"${p.fileId} - ${encodeDuration(remaining)}"
+        else s"${p.fileId} - Completing..."
+
       Progress(Progress.Props(
-        label       = p.label,
+        label       = label,
         total       = p.total,
         value       = s.value,
         indicating  = s.value < s.total,
@@ -54,9 +98,10 @@ object SmoothProgressBar {
         progressCls = List(SeqexecStyles.observationProgressBar),
         barCls      = List(SeqexecStyles.observationBar),
         labelCls    = List(SeqexecStyles.observationLabel)
-      )))
+      ))
+    }
     .componentDidMount(_.backend.setupTimer)
-    .componentWillReceiveProps(x => x.backend.newProps(x.nextProps))
+    .componentWillReceiveProps(x => x.backend.newStateFromProps(x.nextProps))
     .configure(TimerSupport.install)
     .configure(Reusability.shouldComponentUpdate)
     .build
@@ -84,10 +129,8 @@ object ObservationProgressBar {
         p.connect(x =>
           x() match {
             case Some(ObservationProgress(_, r, t)) =>
-              val label =
-                if (t.millis > 0) p.fileId else s"${p.fileId} - Completing..."
               SmoothProgressBar(
-                SmoothProgressBar.Props(label,
+                SmoothProgressBar.Props(p.fileId,
                                         r.millis,
                                         r.millis - max(0, t.millis)))
             case _ =>
