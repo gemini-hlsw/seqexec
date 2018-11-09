@@ -20,6 +20,7 @@ object Progress {
                          value:       Long,
                          indicating:  Boolean = false,
                          progress:    Boolean = false,
+                         color:       Option[String] = None,
                          progressCls: List[GStyle] = Nil,
                          barCls:      List[GStyle],
                          labelCls:    List[GStyle] = Nil)
@@ -27,9 +28,10 @@ object Progress {
   private val component = ScalaComponent
     .builder[Props]("Progress")
     .stateless
-    .renderPC { (_, p, c) =>
+    .renderPC( (_, p, c) =>
       <.div(
         ^.cls := "ui progress",
+        p.color.map(u => ^.cls := u).whenDefined,
         ^.classSet(
           "indicating" -> p.indicating
         ),
@@ -42,7 +44,7 @@ object Progress {
               p.label),
         c
       )
-    }
+    )
     .componentDidUpdate(ctx =>
       Callback {
         ctx.getDOMNode.toElement.foreach { dom =>
@@ -51,6 +53,7 @@ object Progress {
           $(dom).progress(
             JsProgressOptions
               .percent(100 * percent)
+              .precision(0)
           )
         }
     })
@@ -62,6 +65,7 @@ object Progress {
           $(dom).progress(
             JsProgressOptions
               .percent(100 * percent)
+              .precision(0)
           )
         }
     })

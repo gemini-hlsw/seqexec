@@ -23,7 +23,10 @@ import scala.math.min
 import web.client.style._
 
 object SmoothProgressBar {
-  val periodUpdate: Int = 100
+  val periodUpdate: Int = 50
+  // This depends on the server side frequency of updates
+  val remoteUpdatePeriod: Int = 1000
+
   final case class Props(fileId: String,
                          total:  Long,
                          value:  Long,
@@ -46,7 +49,7 @@ object SmoothProgressBar {
 
     def tickTotal: Callback = b.props.zip(b.state) >>= {
       case (p, s) =>
-        val next = s.value + periodUpdate
+        val next = min(s.value + periodUpdate, p.value + remoteUpdatePeriod)
         b.modState(x => x.copy(value = min(p.total, next)))
           .when(!s.skipStep && !p.paused) *>
           b.modState(x => x.copy(skipStep = false)) *>
@@ -99,11 +102,10 @@ object SmoothProgressBar {
         else s"${p.fileId} - Completing..."
 
       Progress(Progress.Props(
-        label       = label,
-        total       = p.total,
-        value       = s.value,
-        indicating  = s.value < s.total,
-        progress    = true,
+        label = label,
+        total = p.total,
+        value = s.value,
+        color       = "blue".some,
         progressCls = List(SeqexecStyles.observationProgressBar),
         barCls      = List(SeqexecStyles.observationBar),
         labelCls    = List(SeqexecStyles.observationLabel)
@@ -148,10 +150,9 @@ object ObservationProgressBar {
             case _ =>
               Progress(Progress.Props(
                 if (p.paused) s"${p.fileId} - Paused" else p.fileId,
-                total       = 100,
-                value       = 0,
-                indicating  = false,
-                progress    = true,
+                total = 100,
+                value = 0,
+                color       = "blue".some,
                 progressCls = List(SeqexecStyles.observationProgressBar),
                 barCls      = List(SeqexecStyles.observationBar),
                 labelCls    = List(SeqexecStyles.observationLabel)
