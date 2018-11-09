@@ -125,24 +125,27 @@ class Engine[D, U](stateL: Engine.State[D]) {
     */
   // Send the expected event when the `Action` is executed
   // It doesn't catch run time exceptions. If desired, the Action has to do it itself.
-  private def act(id: Observation.Id, t: (Stream[IO, Result], Int)): Stream[IO, EventType] = t match {
+  private def act(id: Observation.Id, stepId: Step.Id, t: (Stream[IO, Result], Int))
+  : Stream[IO, EventType] = t match {
     case (gen, i) =>
       gen.map {
-        case r@Result.OK(_)         => completed(id, i, r)
-        case r@Result.Partial(_)    => partial(id, i, r)
-        case e@Result.Error(_)      => failed(id, i, e)
-        case r@Result.Paused(_)     => paused(id, i, r)
+        case r@Result.OK(_)      => completed(id, stepId, i, r)
+        case r@Result.Partial(_) => partial(id, stepId, i, r)
+        case e@Result.Error(_)   => failed(id, i, e)
+        case r@Result.Paused(_)  => paused(id, i, r)
       }
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
   private def execute(id: Observation.Id)(implicit ec: ExecutionContext): HandleType[Unit] = {
     get.flatMap(st => stateL.sequenceStateIndex(id).getOption(st).map {
-      case seq@Sequence.State.Final(_, _) =>
+      case seq@Sequence.State.Final(_, _)  =>
         // The sequence is marked as completed here
         putS(id)(seq) *> send(finished(id))
-      case seq                            =>
-        val u: List[Stream[IO, EventType]] = seq.current.actions.map(_.gen).zipWithIndex.map(x => act(id, x))
+      case seq@Sequence.State.Zipper(z, _) =>
+        val stepId = z.focus.toStep.id
+        val u: List[Stream[IO, EventType]] = seq.current.actions.map(_.gen).zipWithIndex.map(x =>
+          act(id, stepId, x))
         val v: Stream[IO, EventType] = Stream.emits(u).join(u.length)
         val w: List[HandleType[Unit]] = seq.current.actions.indices.map(i => modifyS(id)(_.start(i))).toList
         w.sequence *> Handle.fromStream(v)
@@ -172,10 +175,10 @@ class Engine[D, U](stateL: Engine.State[D]) {
 
   private def actionResume(id: Observation.Id, i: Int, cont: Stream[IO, Result])
   : HandleType[Unit] =
-    getS(id).flatMap(_.map { s =>
-    if (Sequence.State.isRunning(s) && s.current.execution.lift(i).exists(Action.paused))
-      modifyS(id)(_.start(i)) *> Handle.fromStream(act(id, (cont, i)))
-    else unit
+    getS(id).flatMap(_.collect {
+      case s@Sequence.State.Zipper(z, _)
+        if (Sequence.State.isRunning(s) && s.current.execution.lift(i).exists(Action.paused)) =>
+          modifyS(id)(_.start(i)) *> Handle.fromStream(act(id, z.focus.toStep.id, (cont, i)))
   }.getOrElse(unit))
 
   /**
@@ -247,25 +250,28 @@ class Engine[D, U](stateL: Engine.State[D]) {
     }
 
     def handleSystemEvent(se: SystemEvent): HandleType[ResultType] = se match {
-      case Completed(id, i, r)     => Logger.debug(s"Engine: From sequence ${id.format}: Action " +
-        s"completed ($r)") *> complete(id, i, r) *> pure(SystemUpdate(se, EventResult.Ok))
-      case PartialResult(id, i, r) => Logger.debug(s"Engine: From sequence ${id.format}: Partial " +
-        s"result ($r)") *> partialResult(id, i, r) *> pure(SystemUpdate(se, EventResult.Ok))
-      case Paused(id, i, r)        => Logger.debug("Engine: Action paused") *>
+      case Completed(id, _, i, r)        => Logger.debug(
+        s"Engine: From sequence ${id.format}: Action completed ($r)") *> complete(id, i, r) *>
+        pure(SystemUpdate(se, EventResult.Ok))
+      case PartialResult(id, _, i, r) => Logger.debug(
+        s"Engine: From sequence ${id.format}: Partial result ($r)")  *> partialResult(id, i, r) *>
+        pure(SystemUpdate(se, EventResult.Ok))
+      case Paused(id, i, r)           => Logger.debug("Engine: Action paused") *>
         actionPause(id, i, r) *> pure(SystemUpdate(se, EventResult.Ok))
-      case Failed(id, i, e)        => logError(e) *> fail(id)(i, e) *>
+      case Failed(id, i, e)           => logError(e) *> fail(id)(i, e) *>
         pure(SystemUpdate(se, EventResult.Ok))
-      case Busy(id, _)             => Logger.warning(s"Cannot run sequence ${id.format} because " +
+      case Busy(id, _)                => Logger.warning(s"Cannot run sequence ${id.format} " +
+        s"because " +
         s"required systems are in use.") *> pure(SystemUpdate(se, EventResult.Ok))
-      case BreakpointReached(_)    => Logger.debug("Engine: Breakpoint reached") *>
+      case BreakpointReached(_)       => Logger.debug("Engine: Breakpoint reached") *>
         pure(SystemUpdate(se, EventResult.Ok))
-      case Executed(id)            => Logger.debug("Engine: Execution completed") *>
+      case Executed(id)               => Logger.debug("Engine: Execution completed") *>
         next(id) *> pure(SystemUpdate(se, EventResult.Ok))
-      case Executing(id)           => Logger.debug("Engine: Executing") *>
+      case Executing(id)              => Logger.debug("Engine: Executing") *>
         execute(id) *> pure(SystemUpdate(se, EventResult.Ok))
-      case Finished(id)            => Logger.debug("Engine: Finished") *>
+      case Finished(id)               => Logger.debug("Engine: Finished") *>
         switch(id)(SequenceState.Completed) *> pure(SystemUpdate(se, EventResult.Ok))
-      case Null                    => pure(SystemUpdate(se, EventResult.Ok))
+      case Null                       => pure(SystemUpdate(se, EventResult.Ok))
     }
 
     ev match {
