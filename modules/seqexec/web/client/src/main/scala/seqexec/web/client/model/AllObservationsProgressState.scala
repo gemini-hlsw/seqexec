@@ -22,21 +22,21 @@ final case class AllObservationsProgressState(
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object AllObservationsProgressState {
-  val Empty: AllObservationsProgressState = AllObservationsProgressState(
-    SortedMap.empty)
+  val Empty: AllObservationsProgressState =
+    AllObservationsProgressState(SortedMap.empty)
 
   implicit val eq: Eq[AllObservationsProgressState] =
     Eq.by(_.obsProgress)
 
   def progressStateL(
-    obsId: Observation.Id,
+    obsId: Observation.Id
   ): Lens[SeqexecAppRootModel, Option[ObservationProgress]] =
     SeqexecAppRootModel.uiModel  ^|->
       SeqexecUIModel.obsProgress ^|->
       progressByIdL(obsId)
 
   def progressByIdL(
-    obsId: Observation.Id,
+    obsId: Observation.Id
   ): Lens[AllObservationsProgressState, Option[ObservationProgress]] =
     AllObservationsProgressState.obsProgress ^|-> at(obsId)
 

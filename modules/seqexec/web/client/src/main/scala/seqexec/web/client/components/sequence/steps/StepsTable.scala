@@ -260,12 +260,13 @@ object StepsTable {
       ObjectTypeCell(ObjectTypeCell.Props(row.step, size))
 
   private def stepRowStyle(step: Step): GStyle = step match {
-    case s if s.hasError                     => SeqexecStyles.rowError
-    case s if s.status === StepState.Running => SeqexecStyles.rowWarning
-    case s if s.status === StepState.Paused  => SeqexecStyles.rowNegative
-    case s if s.status === StepState.Skipped => SeqexecStyles.rowActive
-    case s if s.isFinished                   => SeqexecStyles.rowDone
-    case _                                   => SeqexecStyles.stepRow
+    case s if s.hasError                       => SeqexecStyles.rowError
+    case s if s.status === StepState.Running   => SeqexecStyles.rowWarning
+    case s if s.status === StepState.Paused    => SeqexecStyles.rowNegative
+    case s if s.status === StepState.Completed => SeqexecStyles.rowDone
+    case s if s.status === StepState.Skipped   => SeqexecStyles.rowActive
+    case s if s.isFinished                     => SeqexecStyles.rowDone
+    case _                                     => SeqexecStyles.stepRow
   }
 
   /**
