@@ -67,6 +67,8 @@ class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection])
           Either.catchNonFatal(Unpickle[SeqexecEvent].fromBytes(byteBuffer)) match {
             case Right(event: ServerLogMessage) =>
               SeqexecCircuit.dispatch(ServerMessage(event))
+            case Right(event: ObservationProgressEvent) =>
+              SeqexecCircuit.dispatch(ServerMessage(event))
             case Right(event)                   =>
               logger.info(s"Decoding event: ${event.getClass}")
               SeqexecCircuit.dispatch(ServerMessage(event))

@@ -19,6 +19,7 @@ import seqexec.model.QueueId
 import seqexec.model.SequenceView
 import seqexec.model.SequencesQueue
 import seqexec.web.client.components.sequence.steps.StepConfigTable
+import seqexec.web.client.components.SessionQueueTableBody
 import web.client.table._
 
 /**
@@ -54,6 +55,13 @@ object SeqexecAppRootModel {
 
   val sequencesOnDisplayL: Lens[SeqexecAppRootModel, SequencesOnDisplay] =
     SeqexecAppRootModel.uiModel ^|-> SeqexecUIModel.sequencesOnDisplay
+
+  val sessionQueueL: Lens[SeqexecAppRootModel, List[SequenceView]] =
+    SeqexecAppRootModel.sequences ^|-> SequencesQueue.sessionQueue
+
+  val queueTableStateL
+    : Lens[SeqexecAppRootModel, TableState[SessionQueueTableBody.TableColumn]] =
+    SeqexecAppRootModel.uiModel ^|-> SeqexecUIModel.queueTableState
 
   val configTableStateL
     : Lens[SeqexecAppRootModel, TableState[StepConfigTable.TableColumn]] =

@@ -5,7 +5,8 @@ import Common._
 import AppsCommon._
 import sbt.Keys._
 import NativePackagerHelper._
-import sbtcrossproject.{crossProject, CrossType}
+import sbtcrossproject.crossProject
+import sbtcrossproject.CrossType
 import com.typesafe.sbt.packager.docker._
 
 name := Settings.Definitions.name

@@ -9,9 +9,11 @@ import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.extra.Reusability
 import seqexec.model.dhs.ImageFileId
-import seqexec.model.enum.{ ActionStatus, Resource }
+import seqexec.model.enum.ActionStatus
+import seqexec.model.enum.Resource
 import seqexec.model.StepState
-import seqexec.model.{ StandardStep, Step }
+import seqexec.model.StandardStep
+import seqexec.model.Step
 import seqexec.web.client.circuit.StepsTableFocus
 import seqexec.web.client.model.ClientStatus
 import seqexec.web.client.model.ModelOps._
@@ -26,7 +28,9 @@ import web.client.style._
   * Component to display the step state and control
   */
 object StepProgressCell {
-  final case class Props(clientStatus: ClientStatus, focus: StepsTableFocus, step: Step) {
+  final case class Props(clientStatus: ClientStatus,
+                         focus:        StepsTableFocus,
+                         step:         Step) {
     val steps: List[Step] = focus.steps
   }
 
@@ -49,7 +53,10 @@ object StepProgressCell {
   }
 
   def statusLabel(system: Resource, status: ActionStatus): VdomNode =
-    Label(Label.Props(s"${system.show}", color = labelColor(status).some, icon = labelIcon(status)))
+    Label(
+      Label.Props(s"${system.show}",
+                  color = labelColor(status).some,
+                  icon  = labelIcon(status)))
 
   def stepSystemsStatus(step: StandardStep): VdomElement =
     <.div(
@@ -67,21 +74,29 @@ object StepProgressCell {
   def controlButtonsActive(props: Props): Boolean =
     props.clientStatus.isLogged && props.focus.state.isRunning && (props.step.isObserving || props.step.isObservePaused || props.focus.state.userStopRequested)
 
-  def stepObservationStatusAndFile(props: Props, fileId: ImageFileId): VdomElement =
+  def stepObservationStatusAndFile(
+    props:  Props,
+    fileId: ImageFileId
+  ): VdomElement =
     <.div(
       SeqexecStyles.configuringRow,
-      ObservationProgressBar(fileId),
-      StepsControlButtons(props.focus.id, props.focus.instrument, props.focus.state, props.step).when(controlButtonsActive(props))
+      ObservationProgressBar(
+        ObservationProgressBar.Props(props.focus.id, fileId, paused = false)),
+      StepsControlButtons(props.focus.id,
+                          props.focus.instrument,
+                          props.focus.state,
+                          props.step).when(controlButtonsActive(props))
     )
 
-  def stepObservationStatus(props: Props): VdomElement =
+  def stepObservationPaused(props: Props, fileId: ImageFileId): VdomElement =
     <.div(
       SeqexecStyles.configuringRow,
-      <.div(
-        SeqexecStyles.specialStateLabel,
-        props.step.show
-      ),
-      StepsControlButtons(props.focus.id, props.focus.instrument, props.focus.state, props.step).when(controlButtonsActive(props))
+      ObservationProgressBar(
+        ObservationProgressBar.Props(props.focus.id, fileId, paused = true)),
+      StepsControlButtons(props.focus.id,
+                          props.focus.instrument,
+                          props.focus.state,
+                          props.step).when(controlButtonsActive(props))
     )
 
   def stepObservationPausing(props: Props): VdomElement =
@@ -91,7 +106,10 @@ object StepProgressCell {
         SeqexecStyles.specialStateLabel,
         props.focus.state.show
       ),
-      StepsControlButtons(props.focus.id, props.focus.instrument, props.focus.state, props.step).when(controlButtonsActive(props))
+      StepsControlButtons(props.focus.id,
+                          props.focus.instrument,
+                          props.focus.state,
+                          props.step).when(controlButtonsActive(props))
     )
 
   def stepPaused(props: Props): VdomElement =
@@ -102,29 +120,35 @@ object StepProgressCell {
 
   def stepDisplay(props: Props): VdomElement =
     (props.focus.state, props.step) match {
-      case (f, StandardStep(_, _, StepState.Running, _, _, _, _, _)) if f.userStopRequested =>
+      case (f, StandardStep(_, _, StepState.Running, _, _, _, _, _))
+          if f.userStopRequested =>
         // Case pause at the sequence level
         stepObservationPausing(props)
-      case (_, s @ StandardStep(_, _, StepState.Running, _, _, None, _, _))                 =>
+      case (_, s @ StandardStep(_, _, StepState.Running, _, _, None, _, _)) =>
         // Case configuring, label and status icons
         stepSystemsStatus(s)
-      case (_, s) if s.isObservePaused                                                      =>
+      case (_, s @ StandardStep(_, _, _, _, _, Some(fileId), _, _))
+          if s.isObservePaused =>
         // Case for exposure paused, label and control buttons
-        stepObservationStatus(props)
-      case (_, StandardStep(_, _, StepState.Running, _, _, Some(fileId), _, _))             =>
+        stepObservationPaused(props, fileId)
+      case (_,
+            StandardStep(_, _, StepState.Running, _, _, Some(fileId), _, _)) =>
         // Case for a exposure onging, progress bar and control buttons
         stepObservationStatusAndFile(props, fileId)
-      case (_, s) if s.wasSkipped                                                           =>
+      case (_, s) if s.wasSkipped =>
         <.p("Skipped")
-      case (_, _) if props.step.skip                                                        =>
+      case (_, _) if props.step.skip =>
         <.p("Skip")
-      case (_, StandardStep(_, _, StepState.Completed, _, _, Some(fileId), _, _))             =>
+      case (
+          _,
+          StandardStep(_, _, StepState.Completed, _, _, Some(fileId), _, _)) =>
         <.p(SeqexecStyles.componentLabel, fileId)
-      case (_, _)                                                                           =>
+      case (_, _) =>
         <.p(SeqexecStyles.componentLabel, props.step.show)
     }
 
-  private val component = ScalaComponent.builder[Props]("StepProgressCell")
+  private val component = ScalaComponent
+    .builder[Props]("StepProgressCell")
     .stateless
     .render_P(stepDisplay)
     .configure(Reusability.shouldComponentUpdate)

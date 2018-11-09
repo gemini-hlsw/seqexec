@@ -114,18 +114,10 @@ package circuit {
                    firstLoad          = v.firstLoad))
   }
 
-  final case class InstrumentStatusFocus(
-    instrument:  Instrument,
-    active:      Boolean,
-    idState:     Option[(Observation.Id, SequenceState)],
-    runningStep: Option[RunningStep])
-      extends UseValueEq
-
   final case class SequenceInfoFocus(canOperate: Boolean,
                                      obsName:    Option[String],
                                      status:     Option[SequenceState],
                                      targetName: Option[TargetName])
-      extends UseValueEq
 
   object SequenceInfoFocus {
     implicit val eq: Eq[SequenceInfoFocus] =

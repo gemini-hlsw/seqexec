@@ -14,9 +14,7 @@ import seqexec.model._
 import seqexec.model.events._
 import seqexec.web.client.actions._
 import seqexec.web.client.model._
-import seqexec.web.client.model.lenses._
 import seqexec.web.client.handlers._
-import seqexec.web.client.model.ModelOps._
 import seqexec.web.client.actions.AppendToLog
 import seqexec.web.client.actions.CloseLoginBox
 import seqexec.web.client.actions.CloseUserNotificationBox
@@ -87,18 +85,9 @@ object SeqexecCircuit
   val sodLocationReaderRW: ModelRW[SeqexecAppRootModel, SODLocationFocus] =
     this.zoomRWL(SODLocationFocus.sodLocationFocusL)
 
-  // Some useful readers
-  val statusAndLoadedSequencesReader: ModelR[SeqexecAppRootModel, StatusAndLoadedSequencesFocus] =
-    statusReader.zip(zoom(_.sequences.sessionQueue).zip(zoom(_.uiModel.sequencesOnDisplay).zip(zoom(_.uiModel.queueTableState)))).zoom {
-      case (s, (queue, (sod, queueTable))) =>
-        val sequencesInQueue = queue.map { s =>
-          val active = sod.idDisplayed(s.id)
-          val loaded = sod.loadedIds.contains(s.id)
-          val targetName = firstScienceStepTargetNameT.headOption(s)
-          SequenceInSessionQueue(s.id, s.status, s.metadata.instrument, active, loaded, s.metadata.name, targetName, s.runningStep, s.nextStepToRun)
-        }
-        StatusAndLoadedSequencesFocus(s, sequencesInQueue.sorted, queueTable)
-    }
+  val statusAndLoadedSequencesReader
+    : ModelR[SeqexecAppRootModel, StatusAndLoadedSequencesFocus] =
+    this.zoomG(StatusAndLoadedSequencesFocus.statusAndLoadedSequencesG)
 
   // Reader for sequences on display
   val headerSideBarReader: ModelR[SeqexecAppRootModel, HeaderSideBarFocus] =
@@ -130,6 +119,11 @@ object SeqexecCircuit
     id: Observation.Id
   ): ModelR[SeqexecAppRootModel, Option[SequenceInfoFocus]] =
     this.zoomG(SequenceInfoFocus.sequenceInfoG(id))
+
+  def obsProgressReader(
+    id: Observation.Id
+  ): ModelR[SeqexecAppRootModel, Option[ObservationProgress]] =
+    this.zoomL(AllObservationsProgressState.progressStateL(id))
 
   def statusAndStepReader(
     id: Observation.Id
@@ -185,6 +179,7 @@ object SeqexecCircuit
   private val queueOpsHandler          = new QueueOperationsHandler(queueOperationsRW)
   private val queueStateHandler        = new QueueStateHandler(queueOperationsRW)
   private val openConnectionHandler    = new OpenConnectionHandler(zoomTo(_.uiModel.queues))
+  private val observationsProgHandler  = new ObservationsProgressStateHandler(zoomTo(_.uiModel.obsProgress))
 
   def dispatchCB[A <: Action](a: A): Callback = Callback(dispatch(a))
 
@@ -198,7 +193,8 @@ object SeqexecCircuit
                    loadSequencesHandler,
                    userNotificationHandler,
                    openConnectionHandler,
-                   queueStateHandler),
+                   queueStateHandler,
+                   observationsProgHandler),
       sequenceExecHandler,
       notificationBoxHandler,
       loginBoxHandler,

@@ -17,19 +17,23 @@ import japgolly.scalajs.react.raw.JsNumber
 import monocle.Lens
 import monocle.macros.GenLens
 import scala.scalajs.js
-import seqexec.model.enum.{ Instrument, StepType }
-import seqexec.model.{ StepState, Step, StandardStep }
+import seqexec.model.enum.Instrument
+import seqexec.model.enum.StepType
+import seqexec.model.StepState
+import seqexec.model.Step
+import seqexec.model.StandardStep
 import seqexec.web.client.model.lenses._
 import seqexec.web.client.model.ClientStatus
 import seqexec.web.client.model.Pages.SeqexecPages
 import seqexec.web.client.model.ModelOps._
 import seqexec.web.client.circuit.SeqexecCircuit
-import seqexec.web.client.circuit.{ StepsTableAndStatusFocus, StepsTableFocus }
+import seqexec.web.client.circuit.StepsTableAndStatusFocus
+import seqexec.web.client.circuit.StepsTableFocus
 import seqexec.web.client.actions.UpdateStepTableState
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.components.sequence.steps.OffsetFns._
 import seqexec.web.client.semanticui.elements.icon.Icon._
-import seqexec.web.client.semanticui.{Size => SSize}
+import seqexec.web.client.semanticui.{ Size => SSize }
 import seqexec.web.client.reusability._
 import react.virtualized._
 import web.client.style._
@@ -66,12 +70,13 @@ object StepsTable {
 
   val IconColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     IconColumn,
-    name = "status",
-    label = "",
+    name    = "status",
+    label   = "",
     visible = true,
     FixedColumnWidth.unsafeFromDouble(ColWidths.ControlWidth))
 
-  val all: NonEmptyList[ColumnMeta[TableColumn]] = NonEmptyList.of(IconColumnMeta)
+  val all: NonEmptyList[ColumnMeta[TableColumn]] =
+    NonEmptyList.of(IconColumnMeta)
 
   val HeightWithOffsets: Int    = 40
   val BreakpointLineHeight: Int = 5
@@ -98,9 +103,9 @@ object StepsTable {
     val Zero: StepRow = apply(Step.Zero)
   }
 
-  final case class Props(router: RouterCtl[SeqexecPages],
-                         canOperate: Boolean,
-                         stepsTable: StepsTableAndStatusFocus,
+  final case class Props(router:      RouterCtl[SeqexecPages],
+                         canOperate:  Boolean,
+                         stepsTable:  StepsTableAndStatusFocus,
                          onStepToRun: Int => Callback) {
     val status           : ClientStatus                    = stepsTable.status
     val steps            : Option[StepsTableFocus]         = stepsTable.stepsTable
@@ -127,7 +132,7 @@ object StepsTable {
     private def showProp(p: InstrumentProperties): Boolean =
       steps.exists(s => s.instrument.displayItems.contains(p))
 
-    val showOffsets: Boolean   =
+    val showOffsets: Boolean =
       stepsList.headOption.flatMap(stepTypeO.getOption) match {
         case Some(StepType.Object) => showProp(InstrumentProperties.Offsets)
         case _                     => false
@@ -139,7 +144,8 @@ object StepsTable {
         .getOrElse(State.InitialState)
   }
 
-  final case class State(tableState: TableState[TableColumn], breakpointHover: Option[Int])
+  final case class State(tableState:      TableState[TableColumn],
+                         breakpointHover: Option[Int])
 
   object State {
 
@@ -161,9 +167,11 @@ object StepsTable {
     val InitialState: State = State(InitialTableState, None)
   }
 
-  implicit val propsReuse: Reusability[Props] = Reusability.by(x => (x.canOperate, x.stepsTable))
+  implicit val propsReuse: Reusability[Props] =
+    Reusability.by(x => (x.canOperate, x.stepsTable))
   implicit val tcReuse: Reusability[TableColumn] = Reusability.byRef
-  implicit val stateReuse: Reusability[State] = Reusability.by(x => (x.tableState, x.breakpointHover))
+  implicit val stateReuse: Reusability[State] =
+    Reusability.by(x => (x.tableState, x.breakpointHover))
 
   val controlHeaderRenderer: HeaderRenderer[js.Object] = (_, _, _, _, _, _) =>
     <.span(
@@ -177,11 +185,13 @@ object StepsTable {
       IconBrowser
   )
 
-  def stepControlRenderer(f: StepsTableFocus,
-                          b: Backend,
-                          rowBreakpointHoverOnCB: Int => Callback,
-                          rowBreakpointHoverOffCB: Int => Callback,
-                          recomputeHeightsCB: Int => Callback): CellRenderer[js.Object, js.Object, StepRow] =
+  def stepControlRenderer(
+    f:                       StepsTableFocus,
+    b:                       Backend,
+    rowBreakpointHoverOnCB:  Int => Callback,
+    rowBreakpointHoverOffCB: Int => Callback,
+    recomputeHeightsCB:      Int => Callback
+  ): CellRenderer[js.Object, js.Object, StepRow] =
     (_, _, _, row: StepRow, _) =>
       StepToolsCell(
         StepToolsCell.Props(b.props.status,
@@ -196,39 +206,47 @@ object StepsTable {
     (_, _, _, row: StepRow, _) => StepIdCell(row.step.id)
 
   def settingsControlRenderer(
-      p: Props,
-      f: StepsTableFocus): CellRenderer[js.Object, js.Object, StepRow] =
+    p: Props,
+    f: StepsTableFocus
+  ): CellRenderer[js.Object, js.Object, StepRow] =
     (_, _, _, row: StepRow, _) =>
       SettingsCell(
-        SettingsCell.Props(p.router, f.instrument, f.id, row.step.id, p.isPreview))
+        SettingsCell
+          .Props(p.router, f.instrument, f.id, row.step.id, p.isPreview))
 
   def stepProgressRenderer(
-      f: StepsTableFocus,
-      p: Props): CellRenderer[js.Object, js.Object, StepRow] =
+    f: StepsTableFocus,
+    p: Props
+  ): CellRenderer[js.Object, js.Object, StepRow] =
     (_, _, _, row: StepRow, _) =>
       StepProgressCell(StepProgressCell.Props(p.status, f, row.step))
 
-  def stepStatusRenderer(offsetsDisplay: OffsetsDisplay)
-    : CellRenderer[js.Object, js.Object, StepRow] =
+  def stepStatusRenderer(
+    offsetsDisplay: OffsetsDisplay
+  ): CellRenderer[js.Object, js.Object, StepRow] =
     (_, _, _, row: StepRow, _) =>
       OffsetsDisplayCell(OffsetsDisplayCell.Props(offsetsDisplay, row.step))
 
   def stepDisperserRenderer(
-      i: Instrument): CellRenderer[js.Object, js.Object, StepRow] =
+    i: Instrument
+  ): CellRenderer[js.Object, js.Object, StepRow] =
     (_, _, _, row: StepRow, _) =>
       DisperserCell(DisperserCell.Props(row.step, i))
 
   def stepExposureRenderer(
-      i: Instrument): CellRenderer[js.Object, js.Object, StepRow] =
+    i: Instrument
+  ): CellRenderer[js.Object, js.Object, StepRow] =
     (_, _, _, row: StepRow, _) =>
       ExposureTimeCell(ExposureTimeCell.Props(row.step, i))
 
   def stepFilterRenderer(
-      i: Instrument): CellRenderer[js.Object, js.Object, StepRow] =
+    i: Instrument
+  ): CellRenderer[js.Object, js.Object, StepRow] =
     (_, _, _, row: StepRow, _) => FilterCell(FilterCell.Props(row.step, i))
 
   def stepFPURenderer(
-      i: Instrument): CellRenderer[js.Object, js.Object, StepRow] =
+    i: Instrument
+  ): CellRenderer[js.Object, js.Object, StepRow] =
     (_, _, _, row: StepRow, _) => FPUCell(FPUCell.Props(row.step, i))
 
   val stepObsModeRenderer: CellRenderer[js.Object, js.Object, StepRow] =
@@ -236,44 +254,55 @@ object StepsTable {
       ObservingModeCell(ObservingModeCell.Props(row.step))
 
   def stepObjectTypeRenderer(
-      size: SSize): CellRenderer[js.Object, js.Object, StepRow] =
+    size: SSize
+  ): CellRenderer[js.Object, js.Object, StepRow] =
     (_, _, _, row: StepRow, _) =>
       ObjectTypeCell(ObjectTypeCell.Props(row.step, size))
 
   private def stepRowStyle(step: Step): GStyle = step match {
-    case s if s.hasError                     => SeqexecStyles.rowError
-    case s if s.status === StepState.Running => SeqexecStyles.rowWarning
-    case s if s.status === StepState.Paused  => SeqexecStyles.rowNegative
-    case s if s.status === StepState.Skipped => SeqexecStyles.rowActive
-    case s if s.isFinished                   => SeqexecStyles.rowDone
-    case _                                   => SeqexecStyles.stepRow
+    case s if s.hasError                       => SeqexecStyles.rowError
+    case s if s.status === StepState.Running   => SeqexecStyles.rowWarning
+    case s if s.status === StepState.Paused    => SeqexecStyles.rowNegative
+    case s if s.status === StepState.Completed => SeqexecStyles.rowDone
+    case s if s.status === StepState.Skipped   => SeqexecStyles.rowActive
+    case s if s.isFinished                     => SeqexecStyles.rowDone
+    case _                                     => SeqexecStyles.stepRow
   }
 
   /**
-   * Class for the row depends on properties
-   */
+    * Class for the row depends on properties
+    */
   def rowClassName(b: Backend)(i: Int): String =
-    ((i, b.props.rowGetter(i), b.props.canSetBreakpoint, b.state.breakpointHover) match {
-      case (-1, _, _, _)                                                                     =>
+    ((i,
+      b.props.rowGetter(i),
+      b.props.canSetBreakpoint,
+      b.state.breakpointHover) match {
+      case (-1, _, _, _) =>
         // Header
         SeqexecStyles.headerRowStyle
-      case (_, StepRow(s @ StandardStep(_, _, _, true, _, _, _, _)), true, _)                =>
+      case (_, StepRow(s @ StandardStep(_, _, _, true, _, _, _, _)), true, _) =>
         // row with control elements and breakpoint
         SeqexecStyles.stepRowWithBreakpointAndControl |+| stepRowStyle(s)
-      case (_, StepRow(s @ StandardStep(_, _, _, true, _, _, _, _)), false, _)               =>
+      case (_,
+            StepRow(s @ StandardStep(_, _, _, true, _, _, _, _)),
+            false,
+            _) =>
         // row with breakpoint
         SeqexecStyles.stepRowWithBreakpoint |+| stepRowStyle(s)
-      case (j, StepRow(s @ StandardStep(_, _, _, false, _, _, _, _)), _, Some(k)) if j === k =>
+      case (j,
+            StepRow(s @ StandardStep(_, _, _, false, _, _, _, _)),
+            _,
+            Some(k)) if j === k =>
         // row with breakpoint and hover
         SeqexecStyles.stepRowWithBreakpointHover |+| stepRowStyle(s)
-      case (_, StepRow(s), _, _)                                                             =>
+      case (_, StepRow(s), _, _) =>
         // Regular row
         SeqexecStyles.stepRow |+| stepRowStyle(s)
     }).htmlClass
 
   /**
-   * Height depending if we use offsets
-   */
+    * Height depending if we use offsets
+    */
   def baseHeight(p: Props): Int =
     if (p.showOffsets) {
       HeightWithOffsets
@@ -282,19 +311,23 @@ object StepsTable {
     }
 
   /**
-   * Calculates the row height depending on conditions
-   */
-  def rowHeight(b: Backend)(i: Int): Int = (b.props.rowGetter(i), b.state.breakpointHover) match {
-    case (StepRow(StandardStep(_, _, _, true, _, _, _, _)), _)                   =>
-      // Row with a breakpoint set
-      baseHeight(b.props) + BreakpointLineHeight
-    case (StepRow(s: Step), _) if s.status === StepState.Running                 =>
-      // Row running
-      SeqexecStyles.runningRowHeight
-    case _                                                                       =>
-      // default row
-      baseHeight(b.props)
-  }
+    * Calculates the row height depending on conditions
+    */
+  def rowHeight(b: Backend)(i: Int): Int =
+    (b.props.rowGetter(i), b.state.breakpointHover) match {
+      case (StepRow(StandardStep(_, _, s, true, _, _, _, _)), _) if s === StepState.Running =>
+        // Row running with a breakpoint set
+        SeqexecStyles.runningRowHeight + BreakpointLineHeight
+      case (StepRow(s: Step), _) if s.status === StepState.Running =>
+        // Row running
+        SeqexecStyles.runningRowHeight
+      case (StepRow(StandardStep(_, _, _, true, _, _, _, _)), _) =>
+        // Row with a breakpoint set
+        baseHeight(b.props) + BreakpointLineHeight
+      case _ =>
+        // default row
+        baseHeight(b.props)
+    }
 
   private val PhoneCut      = 412
   private val LargePhoneCut = 767
@@ -303,20 +336,19 @@ object StepsTable {
     Column(
       Column.propsNoFlex(ColWidths.IdxWidth,
                          "idx",
-                         label = "Step",
-                         className = SeqexecStyles.paddedStepRow.htmlClass,
+                         label        = "Step",
+                         className    = SeqexecStyles.paddedStepRow.htmlClass,
                          cellRenderer = stepIdRenderer))
 
   def stateColumn(p: Props, controlWidth: Double): Option[Table.ColumnArg] =
     p.steps.map(
       i =>
         Column(
-          Column.propsNoFlex(
-            controlWidth,
-            "state",
-            label = "Execution Progress",
-            className = SeqexecStyles.paddedStepRow.htmlClass,
-            cellRenderer = stepProgressRenderer(i, p))))
+          Column.propsNoFlex(controlWidth,
+                             "state",
+                             label        = "Execution Progress",
+                             className    = SeqexecStyles.paddedStepRow.htmlClass,
+                             cellRenderer = stepProgressRenderer(i, p))))
 
   def iconColumn(b: Backend): Option[Table.ColumnArg] =
     b.props.steps.map(
@@ -327,17 +359,17 @@ object StepsTable {
             "ctl",
             label = "Icon",
             cellRenderer = stepControlRenderer(i,
-              b,
-              rowBreakpointHoverOnCB(b),
-              rowBreakpointHoverOffCB(b),
-              recomputeRowHeightsCB),
-            className = SeqexecStyles.controlCellRow.htmlClass,
+                                               b,
+                                               rowBreakpointHoverOnCB(b),
+                                               rowBreakpointHoverOffCB(b),
+                                               recomputeRowHeightsCB),
+            className      = SeqexecStyles.controlCellRow.htmlClass,
             headerRenderer = controlHeaderRenderer,
             headerClassName =
               (SeqexecStyles.centeredCell |+| SeqexecStyles.tableHeaderIcons).htmlClass
           )))
 
-  def offsetColumn(p: Props,
+  def offsetColumn(p:             Props,
                    offsetVisible: Boolean): (Option[Table.ColumnArg], Double) =
     p.offsetsDisplay match {
       case OffsetsDisplay.DisplayOffsets(x) if p.showOffsets =>
@@ -353,24 +385,24 @@ object StepsTable {
       case _ => (None, 0)
     }
 
-  def disperserColumn(p: Props,
+  def disperserColumn(p:                Props,
                       disperserVisible: Boolean): Option[Table.ColumnArg] =
     for {
       col <- p.steps.map(
-              s =>
-                Column(
-                  Column.propsNoFlex(
-                    ColWidths.DisperserWidth,
-                    "disperser",
-                    label = "Disperser",
-                    className = SeqexecStyles.centeredCell.htmlClass,
-                    cellRenderer = stepDisperserRenderer(s.instrument)
-                  )))
+        s =>
+          Column(
+            Column.propsNoFlex(
+              ColWidths.DisperserWidth,
+              "disperser",
+              label        = "Disperser",
+              className    = SeqexecStyles.centeredCell.htmlClass,
+              cellRenderer = stepDisperserRenderer(s.instrument)
+            )))
       if p.showDisperser
       if disperserVisible
     } yield col
 
-  def exposureColumn(p: Props,
+  def exposureColumn(p:               Props,
                      exposureVisible: Boolean): Option[Table.ColumnArg] =
     for {
       col <- p.steps.map(
@@ -390,14 +422,13 @@ object StepsTable {
   def fpuColumn(p: Props, fpuVisible: Boolean): Option[Table.ColumnArg] =
     for {
       col <- p.steps.map(
-              i =>
-                Column(
-                  Column.propsNoFlex(
-                    ColWidths.FPUWidth,
-                    "fpu",
-                    label = "FPU",
-                    className = SeqexecStyles.centeredCell.htmlClass,
-                    cellRenderer = stepFPURenderer(i.instrument))))
+        i =>
+          Column(
+            Column.propsNoFlex(ColWidths.FPUWidth,
+                               "fpu",
+                               label        = "FPU",
+                               className    = SeqexecStyles.centeredCell.htmlClass,
+                               cellRenderer = stepFPURenderer(i.instrument))))
       if p.showFPU
       if fpuVisible
     } yield col
@@ -405,15 +436,15 @@ object StepsTable {
   def observingModeColumn(p: Props): Option[Table.ColumnArg] =
     for {
       col <- p.steps.map(
-              i =>
-                Column(
-                  Column.propsNoFlex(
-                    ColWidths.ObservingModeWidth,
-                    "obsMode",
-                    label = "Observing Mode",
-                    className = SeqexecStyles.centeredCell.htmlClass,
-                    cellRenderer = stepObsModeRenderer
-                  )))
+        i =>
+          Column(
+            Column.propsNoFlex(
+              ColWidths.ObservingModeWidth,
+              "obsMode",
+              label        = "Observing Mode",
+              className    = SeqexecStyles.centeredCell.htmlClass,
+              cellRenderer = stepObsModeRenderer
+            )))
       if p.showObservingMode
     } yield col
 
@@ -441,8 +472,8 @@ object StepsTable {
           Column.propsNoFlex(
             ColWidths.ObjectTypeWidth,
             "type",
-            label = "Type",
-            className = SeqexecStyles.centeredCell.htmlClass,
+            label        = "Type",
+            className    = SeqexecStyles.centeredCell.htmlClass,
             cellRenderer = stepObjectTypeRenderer(objectSize)
           )))
 
@@ -453,9 +484,9 @@ object StepsTable {
           Column.propsNoFlex(
             ColWidths.SettingsWidth,
             "set",
-            label = "",
-            cellRenderer = settingsControlRenderer(p, i),
-            className = SeqexecStyles.settingsCellRow.htmlClass,
+            label          = "",
+            cellRenderer   = settingsControlRenderer(p, i),
+            className      = SeqexecStyles.settingsCellRow.htmlClass,
             headerRenderer = settingsHeaderRenderer,
             headerClassName =
               (SeqexecStyles.centeredCell |+| SeqexecStyles.tableHeaderIcons).htmlClass
@@ -466,11 +497,11 @@ object StepsTable {
     val p = b.props
     val (offsetVisible, exposureVisible, disperserVisible, fpuVisible, filterVisible, objectSize) =
       s.width match {
-        case w if w < PhoneCut      =>
+        case w if w < PhoneCut =>
           (false, false, false, false, false, SSize.Tiny)
         case w if w < LargePhoneCut =>
           (false, true, false, false, false, SSize.Small)
-        case _                      =>
+        case _ =>
           (b.props.showOffsets, true, true, true, true, SSize.Small)
       }
 
@@ -497,7 +528,7 @@ object StepsTable {
         ColWidths.ObjectTypeWidth +
         ColWidths.SettingsWidth
     val controlWidth = s.width - colsWidth
-    val stateCol = stateColumn(p, controlWidth)
+    val stateCol     = stateColumn(p, controlWidth)
 
     List(
       iconCol,
@@ -515,10 +546,15 @@ object StepsTable {
   }
 
   def updateScrollPosition(b: Backend, pos: JsNumber): Callback = {
-    val s = (State.userModified.set(IsModified) >>> State.scrollPosition.set(pos))
+    val s = (State.userModified.set(IsModified) >>>
+     State.scrollPosition.set(pos))
     b.modState(s) *>
-    b.props.obsId.map(id => SeqexecCircuit.dispatchCB(UpdateStepTableState(id, s(b.state).tableState))).getOrEmpty *>
-    Callback.empty
+      b.props.obsId
+        .map(id =>
+          SeqexecCircuit.dispatchCB(
+            UpdateStepTableState(id, s(b.state).tableState)))
+        .getOrEmpty *>
+      Callback.empty
   }
 
   def startScrollTop(state: State): js.UndefOr[JsNumber] =
@@ -545,20 +581,20 @@ object StepsTable {
           "No Steps"
       ),
       overscanRowCount = SeqexecStyles.overscanRowCount,
-      height = size.height.toInt,
-      rowCount = b.props.rowCount,
-      rowHeight = rowHeight(b) _,
-      rowClassName = rowClassName(b) _,
-      width = size.width.toInt,
-      rowGetter = b.props.rowGetter _,
-      scrollToIndex = startScrollToIndex(b),
-      scrollTop = startScrollTop(b.state),
-      onScroll = (a, _, pos) => updateScrollPosition(b, pos).when(a.toDouble > 0) *> Callback.empty,
+      height           = size.height.toInt,
+      rowCount         = b.props.rowCount,
+      rowHeight        = rowHeight(b) _,
+      rowClassName     = rowClassName(b) _,
+      width            = size.width.toInt,
+      rowGetter        = b.props.rowGetter _,
+      scrollToIndex    = startScrollToIndex(b),
+      scrollTop        = startScrollTop(b.state),
+      onScroll         = (a, _, pos) =>
+        updateScrollPosition(b, pos).when(a.toDouble > 0) *> Callback.empty,
       scrollToAlignment = ScrollToAlignment.Center,
-      headerClassName = SeqexecStyles.tableHeader.htmlClass,
-      headerHeight = SeqexecStyles.headerHeight
+      headerClassName   = SeqexecStyles.tableHeader.htmlClass,
+      headerHeight      = SeqexecStyles.headerHeight
     )
-
 
   // Create a ref
   private val ref = Ref.toJsComponent(Table.component)
@@ -567,8 +603,10 @@ object StepsTable {
     ref.get.flatMapCB(_.raw.recomputeRowsHeightsCB(index))
 
   private def rowBreakpointHoverOnCB(b: Backend)(index: Int): Callback =
-    (if (b.props.rowGetter(index).step.breakpoint) b.modState(State.breakpointHover.set(None)) else b.modState(State.breakpointHover.set(index.some))) *>
-    recomputeRowHeightsCB(index)
+    (if (b.props.rowGetter(index).step.breakpoint)
+       b.modState(State.breakpointHover.set(None))
+     else b.modState(State.breakpointHover.set(index.some))) *>
+      recomputeRowHeightsCB(index)
 
   private def rowBreakpointHoverOffCB(b: Backend)(index: Int): Callback =
     b.modState(State.breakpointHover.set(None)) *> recomputeRowHeightsCB(index)
@@ -589,10 +627,10 @@ object StepsTable {
 
   // Wire it up from VDOM
   def render(b: Backend): VdomElement = {
-    val p = b.props
+    val p                 = b.props
     val settingsDisplayed = p.steps.forall(_.stepConfigDisplayed.isDefined)
-    val hasControls = (p.status.isLogged && !p.isPreview) || settingsDisplayed
-    val noControls = (p.isPreview || !p.status.isLogged) && !settingsDisplayed
+    val hasControls       = (p.status.isLogged && !p.isPreview) || settingsDisplayed
+    val noControls        = (p.isPreview || !p.status.isLogged) && !settingsDisplayed
     <.div(
       SeqexecStyles.stepsListPanePreview.when(noControls),
       SeqexecStyles.stepsListPaneWithControls.when(hasControls),
@@ -614,7 +652,6 @@ object StepsTable {
       }
     )
   }
-
 
   private val component = ScalaComponent
     .builder[Props]("StepsTable")

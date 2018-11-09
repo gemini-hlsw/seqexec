@@ -24,6 +24,7 @@ import seqexec.model.SequencesQueue
 import seqexec.model.Notification
 import seqexec.model.Step
 import seqexec.model.UserDetails
+import seqexec.model.ObservationProgress
 import seqexec.model.events.ServerLogMessage
 import seqexec.model.SeqexecModelArbitraries._
 import seqexec.model.SequenceEventsArbitraries.slmArb
@@ -684,6 +685,18 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
   implicit val calQueuesCogen: Cogen[CalibrationQueues] =
     Cogen[List[(QueueId, CalQueueState)]].contramap(_.queues.toList)
 
+  implicit val arbAllObservationsProgressState
+    : Arbitrary[AllObservationsProgressState] =
+    Arbitrary {
+      for {
+        ops <- arbitrary[SortedMap[Observation.Id, ObservationProgress]]
+      } yield AllObservationsProgressState(ops)
+    }
+
+  implicit val obsProgressCogen: Cogen[AllObservationsProgressState] =
+    Cogen[List[(Observation.Id, ObservationProgress)]]
+      .contramap(_.obsProgress.toList)
+
   implicit val arbSeqexecUIModel: Arbitrary[SeqexecUIModel] =
     Arbitrary {
       for {
@@ -698,6 +711,7 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
         defaultObserver    <- arbitrary[Observer]
         notification       <- arbitrary[UserNotificationState]
         queues             <- arbitrary[CalibrationQueues]
+        progress           <- arbitrary[AllObservationsProgressState]
         firstLoad          <- arbitrary[Boolean]
       } yield
         SeqexecUIModel(
@@ -711,6 +725,7 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
           defaultObserver,
           notification,
           queues,
+          progress,
           firstLoad
         )
     }
@@ -727,6 +742,7 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
        Observer,
        UserNotificationState,
        CalibrationQueues,
+       AllObservationsProgressState,
        Boolean)]
       .contramap(
         x =>
@@ -740,6 +756,7 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
            x.defaultObserver,
            x.notification,
            x.queues,
+           x.obsProgress,
            x.firstLoad))
 
   implicit val arbSODLocationFocus: Arbitrary[SODLocationFocus] =
