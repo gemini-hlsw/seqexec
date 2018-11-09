@@ -131,11 +131,14 @@ object SemanticUIProgress {
   class JsProgressOptionBuilder(val dict: OptMap)
       extends JSOptionBuilder[JsProgressOptions, JsProgressOptionBuilder](
         new JsProgressOptionBuilder(_)) {
-    def total(v: Long): JsProgressOptionBuilder = jsOpt("total", v)
-    def value(v: Long): JsProgressOptionBuilder = jsOpt("value", v)
-    def percent(v: Double): JsProgressOptionBuilder = jsOpt("percent", v)
-    def debug(v: Boolean): JsProgressOptionBuilder = jsOpt("debug", v)
-    def onChange[A](t: js.Function3[js.Any, js.Any, js.Any, A]): JsProgressOptionBuilder = jsOpt("onChange", t)
+    def total(v:     Long): JsProgressOptionBuilder    = jsOpt("total", v)
+    def value(v:     Long): JsProgressOptionBuilder    = jsOpt("value", v)
+    def percent(v:   Double): JsProgressOptionBuilder  = jsOpt("percent", v)
+    def debug(v:     Boolean): JsProgressOptionBuilder = jsOpt("debug", v)
+    def precision(v: Int): JsProgressOptionBuilder     = jsOpt("precision", v)
+    def onChange[A](
+      t: js.Function3[js.Any, js.Any, js.Any, A]): JsProgressOptionBuilder =
+      jsOpt("onChange", t)
   }
 
   @js.native

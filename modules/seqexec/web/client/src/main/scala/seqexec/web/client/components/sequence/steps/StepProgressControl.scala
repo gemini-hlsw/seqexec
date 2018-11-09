@@ -81,20 +81,18 @@ object StepProgressCell {
     <.div(
       SeqexecStyles.configuringRow,
       ObservationProgressBar(
-        ObservationProgressBar.Props(props.focus.id, fileId)),
+        ObservationProgressBar.Props(props.focus.id, fileId, paused = false)),
       StepsControlButtons(props.focus.id,
                           props.focus.instrument,
                           props.focus.state,
                           props.step).when(controlButtonsActive(props))
     )
 
-  def stepObservationStatus(props: Props): VdomElement =
+  def stepObservationPaused(props: Props, fileId: ImageFileId): VdomElement =
     <.div(
       SeqexecStyles.configuringRow,
-      <.div(
-        SeqexecStyles.specialStateLabel,
-        props.step.show
-      ),
+      ObservationProgressBar(
+        ObservationProgressBar.Props(props.focus.id, fileId, paused = true)),
       StepsControlButtons(props.focus.id,
                           props.focus.instrument,
                           props.focus.state,
@@ -129,9 +127,10 @@ object StepProgressCell {
       case (_, s @ StandardStep(_, _, StepState.Running, _, _, None, _, _)) =>
         // Case configuring, label and status icons
         stepSystemsStatus(s)
-      case (_, s) if s.isObservePaused =>
+      case (_, s @ StandardStep(_, _, _, _, _, Some(fileId), _, _))
+          if s.isObservePaused =>
         // Case for exposure paused, label and control buttons
-        stepObservationStatus(props)
+        stepObservationPaused(props, fileId)
       case (_,
             StandardStep(_, _, StepState.Running, _, _, Some(fileId), _, _)) =>
         // Case for a exposure onging, progress bar and control buttons

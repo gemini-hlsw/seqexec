@@ -47,7 +47,7 @@ object Progress {
       Callback {
         ctx.getDOMNode.toElement.foreach { dom =>
           val percent =
-            ctx.currentProps.value.toDouble/ctx.currentProps.total.toDouble
+            ctx.currentProps.value.toDouble / ctx.currentProps.total.toDouble
           $(dom).progress(
             JsProgressOptions
               .percent(100 * percent)
@@ -57,9 +57,11 @@ object Progress {
     .componentDidMount(ctx =>
       Callback {
         ctx.getDOMNode.toElement.foreach { dom =>
+          val percent =
+            ctx.props.value.toDouble / ctx.props.total.toDouble
           $(dom).progress(
             JsProgressOptions
-              .percent(0.0)
+              .percent(100 * percent)
           )
         }
     })

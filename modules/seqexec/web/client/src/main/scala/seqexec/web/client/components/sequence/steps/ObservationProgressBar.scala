@@ -24,27 +24,32 @@ import web.client.style._
 
 object SmoothProgressBar {
   val periodUpdate: Int = 100
-  final case class Props(fileId: String, total: Long, value: Long)
-  final case class State(total:  Long, value:   Long)
+  final case class Props(fileId: String,
+                         total:  Long,
+                         value:  Long,
+                         paused: Boolean)
+  final case class State(total:  Long, value: Long, skipStep: Boolean)
 
   object State {
-    def fromProps(p: Props): State = State(p.total, p.value)
+    def fromProps(p: Props): State = State(p.total, p.value, false)
   }
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
-  implicit val stateReuse: Reusability[State] = Reusability.never
+  implicit val stateReuse: Reusability[State] = Reusability.derive[State]
 
   class Backend(b: BackendScope[Props, State]) extends TimerSupport {
     def setupTimer: Callback =
-      setInterval(
-        b.modState(x => x.copy(value = min(x.total, x.value + periodUpdate))),
-        periodUpdate.millisecond)
-    def newStateFromProps(p: Props): Callback = b.setState(State.fromProps(p))
+      setInterval(tickTotal, periodUpdate.millisecond)
+
+    def newStateFromProps(p: Props): Callback =
+      b.modState(s => State(p.total, p.value, s.value > p.value))
+
     def tickTotal: Callback = b.props.zip(b.state) >>= {
       case (p, s) =>
         val next = s.value + periodUpdate
-        b.modState(x => x.copy(value = min(p.total, x.value + periodUpdate)))
-          .when(next < p.value) *>
+        b.modState(x => x.copy(value = min(p.total, next)))
+          .when(!s.skipStep && !p.paused) *>
+          b.modState(x => x.copy(skipStep = false)) *>
           Callback.empty
     }
   }
@@ -84,9 +89,13 @@ object SmoothProgressBar {
     .initialStateFromProps(State.fromProps)
     .backend(x => new Backend(x))
     .render_PS { (p, s) =>
-      val remaining = Duration.ofMillis(s.total - s.value)
+      val remaining   = Duration.ofMillis(s.total - s.value)
+      val durationStr = encodeDuration(remaining)
+      val remainingStr =
+        if (durationStr.isEmpty) " - Completing..." else s" - $durationStr"
       val label =
-        if (s.value > 0) s"${p.fileId} - ${encodeDuration(remaining)}"
+        if (p.paused) s"${p.fileId} - Paused - $durationStr"
+        else if (s.value > 0) s"${p.fileId}$remainingStr"
         else s"${p.fileId} - Completing..."
 
       Progress(Progress.Props(
@@ -113,7 +122,9 @@ object SmoothProgressBar {
   * Component to wrap the progress bar
   */
 object ObservationProgressBar {
-  final case class Props(obsId: Observation.Id, fileId: ImageFileId) {
+  final case class Props(obsId:  Observation.Id,
+                         fileId: ImageFileId,
+                         paused: Boolean) {
     protected[steps] val connect =
       SeqexecCircuit.connect(SeqexecCircuit.obsProgressReader(obsId))
   }
@@ -132,10 +143,11 @@ object ObservationProgressBar {
               SmoothProgressBar(
                 SmoothProgressBar.Props(p.fileId,
                                         r.millis,
-                                        r.millis - max(0, t.millis)))
+                                        r.millis - max(0, t.millis),
+                                        p.paused))
             case _ =>
               Progress(Progress.Props(
-                p.fileId,
+                if (p.paused) s"${p.fileId} - Paused" else p.fileId,
                 total       = 100,
                 value       = 0,
                 indicating  = false,
