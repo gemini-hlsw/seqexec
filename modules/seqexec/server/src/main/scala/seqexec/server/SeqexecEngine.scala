@@ -427,11 +427,11 @@ class SeqexecEngine(httpClient: Client[IO], settings: Settings[IO], sm: SeqexecM
     } yield translator.sequence(seqId, odbSeq)
 
     def loadSequenceEvent(seqg: SequenceGen): executeEngine.EventType =
-      Event.modifyState[executeEngine.ConcreteTypes](( {st:EngineState => st.sequences.get(seqId)
-        .map(os => {
-          val newseq = os.copy(seqGen = seqg)
-          EngineState.atSequence(seqId).set(newseq) >>> updateSequenceEndo(seqId, newseq)
-        }).getOrElse(loadSequenceEndo(seqId, seqg))(st)} withEvent LoadSequence(seqId)).toHandle)
+      Event.modifyState[executeEngine.ConcreteTypes](( { st:EngineState =>
+        st.sequences.get(seqId).fold(loadSequenceEndo(seqId, seqg))(
+          _ => reloadSequenceEndo(seqId, seqg)
+        )(st)
+      } withEvent LoadSequence(seqId)).toHandle)
 
     t.map {
       case (err :: _, None)  => List(Event.logDebugMsg(SeqexecFailure.explain(err)))
@@ -796,6 +796,14 @@ object SeqexecEngine extends SeqexecConfiguration {
         HeaderExtraData(st.conditions, st.operator, None)
       ))
     )))(st)
+
+  private[server] def reloadSequenceEndo(seqId: Observation.Id, seqg: SequenceGen)
+  : Endo[EngineState] = st => EngineState.atSequence(seqId).modify(sd => sd.copy(
+    seqGen = seqg,
+    seq = executeEngine.reload(sd.seq, toStepList(seqg, HeaderExtraData(st.conditions,
+      st.operator, sd.observer
+    )))
+  ))(st)
 
   private[server] def updateSequenceEndo(seqId: Observation.Id, obsseq: SequenceData)
   : Endo[EngineState] = st =>

@@ -61,13 +61,19 @@ class Engine[D, U](stateL: Engine.State[D]) {
   def load(seq: Sequence[IO]): Sequence.State[IO] = Sequence.State.init(seq)
 
   /**
+    * Redefines an existing sequence. Changes the step actions, removes steps, adds new steps.
+    */
+  def reload(seq: Sequence.State[IO], steps: List[Step[IO]]): Sequence.State[IO] =
+    Sequence.State.reload(steps, seq)
+
+  /**
     * Tells if a sequence can be safely removed
     */
   def canUnload(id: Observation.Id)(st: D): Boolean =
     stateL.sequenceStateIndex(id).getOption(st).map(!Sequence.State.isRunning(_)).getOrElse(true)
 
   /**
-    * Refresh the steps executions of an existing sequence
+    * Refresh the steps executions of an existing sequence. Does not add nor remove steps.
     * @param id sequence identifier
     * @param steps List of new steps definitions
     * @return
