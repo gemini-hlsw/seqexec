@@ -504,14 +504,15 @@ trait SeqexecModelArbitraries extends ArbObservation {
     Arbitrary {
       for {
         o <- arbitrary[Observation.Id]
+        s <- arbitrary[StepId]
         t <- arbitrary[Time]
         r <- arbitrary[Time]
-      } yield ObservationProgress(o, t, r)
+      } yield ObservationProgress(o, s, t, r)
     }
 
   implicit val observationInProgressCogen: Cogen[ObservationProgress] =
-    Cogen[(Observation.Id, Time, Time)]
-      .contramap(x => (x.obsId, x.total, x.remaining))
+    Cogen[(Observation.Id, StepId, Time, Time)]
+      .contramap(x => (x.obsId, x.stepId, x.total, x.remaining))
 
 }
 

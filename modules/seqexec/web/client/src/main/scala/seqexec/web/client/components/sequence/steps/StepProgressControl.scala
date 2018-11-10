@@ -16,6 +16,7 @@ import seqexec.model.enum.Instrument
 import seqexec.model.StepState
 import seqexec.model.StandardStep
 import seqexec.model.Step
+import seqexec.model.StepId
 import seqexec.model.SequenceState
 import seqexec.web.client.model.ClientStatus
 import seqexec.web.client.model.ModelOps._
@@ -79,12 +80,14 @@ object StepProgressCell {
 
   def stepObservationStatusAndFile(
     props:  Props,
+    stepId: StepId,
     fileId: ImageFileId
   ): VdomElement =
     <.div(
       SeqexecStyles.configuringRow,
       ObservationProgressBar(
-        ObservationProgressBar.Props(props.obsId, fileId, paused = false)),
+        ObservationProgressBar
+          .Props(props.obsId, stepId, fileId, paused = false)),
       StepsControlButtons(
         StepsControlButtons.Props(props.obsId,
                                   props.instrument,
@@ -94,11 +97,14 @@ object StepProgressCell {
         .when(controlButtonsActive(props))
     )
 
-  def stepObservationPaused(props: Props, fileId: ImageFileId): VdomElement =
+  def stepObservationPaused(props:  Props,
+                            stepId: StepId,
+                            fileId: ImageFileId): VdomElement =
     <.div(
       SeqexecStyles.configuringRow,
       ObservationProgressBar(
-        ObservationProgressBar.Props(props.obsId, fileId, paused = true)),
+        ObservationProgressBar
+          .Props(props.obsId, stepId, fileId, paused = true)),
       StepsControlButtons(
         StepsControlButtons.Props(props.obsId,
                                   props.instrument,
@@ -139,14 +145,14 @@ object StepProgressCell {
       case (_, s @ StandardStep(_, _, StepState.Running, _, _, None, _, _)) =>
         // Case configuring, label and status icons
         stepSystemsStatus(s)
-      case (_, s @ StandardStep(_, _, _, _, _, Some(fileId), _, _))
+      case (_, s @ StandardStep(i, _, _, _, _, Some(fileId), _, _))
           if s.isObservePaused =>
         // Case for exposure paused, label and control buttons
-        stepObservationPaused(props, fileId)
+        stepObservationPaused(props, i, fileId)
       case (_,
-            StandardStep(_, _, StepState.Running, _, _, Some(fileId), _, _)) =>
+            StandardStep(i, _, StepState.Running, _, _, Some(fileId), _, _)) =>
         // Case for a exposure onging, progress bar and control buttons
-        stepObservationStatusAndFile(props, fileId)
+        stepObservationStatusAndFile(props, i, fileId)
       case (_, s) if s.wasSkipped =>
         <.p("Skipped")
       case (_, _) if props.step.skip =>

@@ -23,6 +23,7 @@ import seqexec.model.SequenceView
 import seqexec.model.SequencesQueue
 import seqexec.model.Notification
 import seqexec.model.Step
+import seqexec.model.StepId
 import seqexec.model.UserDetails
 import seqexec.model.ObservationProgress
 import seqexec.model.events.ServerLogMessage
@@ -689,12 +690,12 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
     : Arbitrary[AllObservationsProgressState] =
     Arbitrary {
       for {
-        ops <- arbitrary[SortedMap[Observation.Id, ObservationProgress]]
+        ops <- arbitrary[SortedMap[(Observation.Id, StepId), ObservationProgress]]
       } yield AllObservationsProgressState(ops)
     }
 
   implicit val obsProgressCogen: Cogen[AllObservationsProgressState] =
-    Cogen[List[(Observation.Id, ObservationProgress)]]
+    Cogen[List[((Observation.Id, StepId), ObservationProgress)]]
       .contramap(_.obsProgress.toList)
 
   implicit val arbSeqexecUIModel: Arbitrary[SeqexecUIModel] =

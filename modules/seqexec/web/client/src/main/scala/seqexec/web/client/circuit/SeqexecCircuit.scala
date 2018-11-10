@@ -121,9 +121,10 @@ object SeqexecCircuit
     this.zoomG(SequenceInfoFocus.sequenceInfoG(id))
 
   def obsProgressReader(
-    id: Observation.Id
+    id:     Observation.Id,
+    stepId: StepId
   ): ModelR[SeqexecAppRootModel, Option[ObservationProgress]] =
-    this.zoomL(AllObservationsProgressState.progressStateL(id))
+    this.zoomL(AllObservationsProgressState.progressStateL(id, stepId))
 
   def statusAndStepReader(
     id: Observation.Id
