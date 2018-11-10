@@ -26,7 +26,7 @@ object ProgressUtil {
     Scheduler[F](1).flatMap(sch =>
       sch.awakeEvery(PollPeriod).evalMapAccumulate(s0){case (st, t) => fs(t).run(st)}.map(_._2))
 
-  def countdown[F[_]: Effect: Applicative](total: Time, elapsed: Time): Stream[F, Progress] =
+  def countdown[F[_]: Effect](total: Time, elapsed: Time): Stream[F, Progress] =
     ProgressUtil.fromF[F] {
       t: FiniteDuration => {
           val progress = Milliseconds(t.toMillis) + elapsed

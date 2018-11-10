@@ -4,7 +4,7 @@
 package seqexec.server.gpi
 
 import cats.data.EitherT
-import cats.effect.{IO, Sync}
+import cats.effect.{Effect, IO, Sync}
 import cats.implicits._
 import cats.data.Reader
 import edu.gemini.spModel.config2.Config
@@ -23,7 +23,7 @@ import seqexec.server.keywords.{GDSClient, GDSInstrument, KeywordsClient}
 import scala.concurrent.duration._
 import squants.time.{Milliseconds, Seconds, Time}
 
-final case class GPI[F[_]: Sync](controller: GPIController[F])
+final case class GPI[F[_]: Effect](controller: GPIController[F])
     extends InstrumentSystem[F]
     with GDSInstrument {
   override val gdsClient: GDSClient = controller.gdsClient
@@ -63,7 +63,8 @@ final case class GPI[F[_]: Sync](controller: GPIController[F])
      coa      <- config.extractAs[JInt](OBSERVE_KEY / COADDS_PROP).map(_.toInt)
      } yield Seconds(2.2 * exp * coa + 300)).getOrElse(Milliseconds(100))
 
-  override def observeProgress(total: Time, elapsed: InstrumentSystem.ElapsedTime): Stream[F, Progress] = Stream.empty
+  override def observeProgress(total: Time, elapsed: InstrumentSystem.ElapsedTime)
+  : Stream[F, Progress] = ProgressUtil.countdown[F](total, elapsed.self)
 }
 
 object GPI {
