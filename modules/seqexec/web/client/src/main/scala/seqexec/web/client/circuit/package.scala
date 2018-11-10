@@ -16,8 +16,6 @@ import seqexec.model.enum._
 import seqexec.web.client.model.lenses.firstScienceStepTargetNameT
 import seqexec.web.client.model._
 import seqexec.web.client.model.ModelOps._
-import seqexec.web.client.components.sequence.steps.StepsTable
-import web.client.table._
 
 package object circuit {
   implicit def CircuitToOps[T <: AnyRef](c: Circuit[T]): CircuitOps[T] =
@@ -181,50 +179,6 @@ package circuit {
           }
       }
     }
-  }
-
-  final case class StepsTableFocus(
-    id:                  Observation.Id,
-    instrument:          Instrument,
-    state:               SequenceState,
-    steps:               List[Step],
-    stepConfigDisplayed: Option[Int],
-    nextStepToRun:       Option[Int],
-    isPreview:           Boolean,
-    tableState:          TableState[StepsTable.TableColumn])
-
-  object StepsTableFocus {
-    implicit val eq: Eq[StepsTableFocus] =
-      Eq.by(
-        x =>
-          (x.id,
-           x.instrument,
-           x.state,
-           x.steps,
-           x.stepConfigDisplayed,
-           x.nextStepToRun,
-           x.isPreview,
-           x.tableState))
-
-    def stepsTableG(
-      id: Observation.Id
-    ): Getter[SeqexecAppRootModel, Option[StepsTableFocus]] =
-      SeqexecAppRootModel.sequencesOnDisplayL.composeGetter(
-        SequencesOnDisplay.tabG(id)) >>> {
-        _.flatMap {
-          case SeqexecTabActive(tab, _) =>
-            tab.sequence.map { sequence =>
-              StepsTableFocus(sequence.id,
-                              sequence.metadata.instrument,
-                              sequence.status,
-                              sequence.steps,
-                              tab.stepConfigDisplayed,
-                              sequence.nextStepToRun,
-                              tab.isPreview,
-                              tab.tableState)
-            }
-        }
-      }
   }
 
   @Lenses

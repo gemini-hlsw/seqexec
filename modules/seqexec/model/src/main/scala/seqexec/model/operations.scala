@@ -33,53 +33,77 @@ object operations {
   }
 
   sealed trait SupportedOperations {
-    /**
-     * Sorted list of operations supported at the sequence level
-     */
-    def observationOperations(s: Step): List[ObservationOperations]
 
     /**
-     * Sorted list of operations supported at the observation (row) level
-     */
+      * Sorted list of operations supported at the sequence level
+      */
+    def observationOperations(
+      isObservePaused: Boolean): List[ObservationOperations]
+
+    /**
+      * Sorted list of operations supported at the observation (row) level
+      */
     def sequenceOperations: List[SequenceOperations]
   }
 
   private val F2SupportedOperations = new SupportedOperations {
-    def observationOperations(s: Step): List[ObservationOperations] = Nil
+    def observationOperations(
+      isObservePaused: Boolean): List[ObservationOperations] = Nil
     def sequenceOperations: List[SequenceOperations] = Nil
   }
 
   private val GmosSupportedOperations = new SupportedOperations {
-    def observationOperations(s: Step): List[ObservationOperations] =
-      s.isObservePaused.fold(List(ObservationOperations.ResumeObservation, ObservationOperations.StopObservation, ObservationOperations.AbortObservation), List(ObservationOperations.PauseObservation, ObservationOperations.StopObservation, ObservationOperations.AbortObservation))
+    def observationOperations(
+      isObservePaused: Boolean): List[ObservationOperations] =
+      isObservePaused.fold(
+        List(ObservationOperations.ResumeObservation,
+             ObservationOperations.StopObservation,
+             ObservationOperations.AbortObservation),
+        List(ObservationOperations.PauseObservation,
+             ObservationOperations.StopObservation,
+             ObservationOperations.AbortObservation)
+      )
 
     def sequenceOperations: List[SequenceOperations] = Nil
   }
 
   private val GnirsSupportedOperations = new SupportedOperations {
-    def observationOperations(s: Step): List[ObservationOperations] =
-      s.isObservePaused.fold(List(ObservationOperations.StopObservation, ObservationOperations.AbortObservation), List(ObservationOperations.StopObservation, ObservationOperations.AbortObservation))
+    def observationOperations(
+      isObservePaused: Boolean): List[ObservationOperations] =
+      isObservePaused.fold(
+        List(ObservationOperations.StopObservation,
+             ObservationOperations.AbortObservation),
+        List(ObservationOperations.StopObservation,
+             ObservationOperations.AbortObservation)
+      )
 
     def sequenceOperations: List[SequenceOperations] = Nil
   }
 
   private val NilSupportedOperations = new SupportedOperations {
-    def observationOperations(s: Step): List[ObservationOperations] = Nil
+    def observationOperations(
+      isObservePaused: Boolean): List[ObservationOperations] = Nil
     def sequenceOperations: List[SequenceOperations] = Nil
   }
 
   private val instrumentOperations: Map[Instrument, SupportedOperations] = Map(
-    (F2    -> F2SupportedOperations),
+    (F2 -> F2SupportedOperations),
     (GmosS -> GmosSupportedOperations),
     (GmosN -> GmosSupportedOperations),
     (GNIRS -> GnirsSupportedOperations)
   )
 
-  final implicit class SupportedOperationsOps(val i: Instrument) extends AnyVal {
-    def observationOperations(s: Step): List[ObservationOperations] =
-      instrumentOperations.getOrElse(i, NilSupportedOperations).observationOperations(s)
+  final implicit class SupportedOperationsOps(val i: Instrument)
+      extends AnyVal {
+    def observationOperations(
+      isObservePaused: Boolean): List[ObservationOperations] =
+      instrumentOperations
+        .getOrElse(i, NilSupportedOperations)
+        .observationOperations(isObservePaused)
     def sequenceOperations: List[SequenceOperations] =
-      instrumentOperations.getOrElse(i, NilSupportedOperations).sequenceOperations
+      instrumentOperations
+        .getOrElse(i, NilSupportedOperations)
+        .sequenceOperations
   }
 
 }
