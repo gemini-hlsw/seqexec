@@ -4,6 +4,7 @@
 package seqexec.web.client.components.sequence.steps
 
 import cats.implicits._
+import gem.Observation
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.component.Scala.Unmounted
@@ -11,10 +12,11 @@ import japgolly.scalajs.react.extra.Reusability
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.ActionStatus
 import seqexec.model.enum.Resource
+import seqexec.model.enum.Instrument
 import seqexec.model.StepState
 import seqexec.model.StandardStep
 import seqexec.model.Step
-import seqexec.web.client.circuit.StepsTableFocus
+import seqexec.model.SequenceState
 import seqexec.web.client.model.ClientStatus
 import seqexec.web.client.model.ModelOps._
 import seqexec.web.client.components.SeqexecStyles
@@ -29,10 +31,10 @@ import web.client.style._
   */
 object StepProgressCell {
   final case class Props(clientStatus: ClientStatus,
-                         focus:        StepsTableFocus,
-                         step:         Step) {
-    val steps: List[Step] = focus.steps
-  }
+                         instrument:   Instrument,
+                         obsId:        Observation.Id,
+                         state:        SequenceState,
+                         step:         Step)
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
@@ -72,7 +74,8 @@ object StepProgressCell {
     )
 
   def controlButtonsActive(props: Props): Boolean =
-    props.clientStatus.isLogged && props.focus.state.isRunning && (props.step.isObserving || props.step.isObservePaused || props.focus.state.userStopRequested)
+    props.clientStatus.isLogged && props.state.isRunning &&
+      (props.step.isObserving || props.step.isObservePaused || props.state.userStopRequested)
 
   def stepObservationStatusAndFile(
     props:  Props,
@@ -81,22 +84,28 @@ object StepProgressCell {
     <.div(
       SeqexecStyles.configuringRow,
       ObservationProgressBar(
-        ObservationProgressBar.Props(props.focus.id, fileId, paused = false)),
-      StepsControlButtons(props.focus.id,
-                          props.focus.instrument,
-                          props.focus.state,
-                          props.step).when(controlButtonsActive(props))
+        ObservationProgressBar.Props(props.obsId, fileId, paused = false)),
+      StepsControlButtons(
+        StepsControlButtons.Props(props.obsId,
+                                  props.instrument,
+                                  props.state,
+                                  props.step.id,
+                                  props.step.isObservePaused))
+        .when(controlButtonsActive(props))
     )
 
   def stepObservationPaused(props: Props, fileId: ImageFileId): VdomElement =
     <.div(
       SeqexecStyles.configuringRow,
       ObservationProgressBar(
-        ObservationProgressBar.Props(props.focus.id, fileId, paused = true)),
-      StepsControlButtons(props.focus.id,
-                          props.focus.instrument,
-                          props.focus.state,
-                          props.step).when(controlButtonsActive(props))
+        ObservationProgressBar.Props(props.obsId, fileId, paused = true)),
+      StepsControlButtons(
+        StepsControlButtons.Props(props.obsId,
+                                  props.instrument,
+                                  props.state,
+                                  props.step.id,
+                                  props.step.isObservePaused))
+        .when(controlButtonsActive(props))
     )
 
   def stepObservationPausing(props: Props): VdomElement =
@@ -104,12 +113,15 @@ object StepProgressCell {
       SeqexecStyles.configuringRow,
       <.div(
         SeqexecStyles.specialStateLabel,
-        props.focus.state.show
+        props.state.show
       ),
-      StepsControlButtons(props.focus.id,
-                          props.focus.instrument,
-                          props.focus.state,
-                          props.step).when(controlButtonsActive(props))
+      StepsControlButtons(
+        StepsControlButtons.Props(props.obsId,
+                                  props.instrument,
+                                  props.state,
+                                  props.step.id,
+                                  props.step.isObservePaused))
+        .when(controlButtonsActive(props))
     )
 
   def stepPaused(props: Props): VdomElement =
@@ -119,7 +131,7 @@ object StepProgressCell {
     )
 
   def stepDisplay(props: Props): VdomElement =
-    (props.focus.state, props.step) match {
+    (props.state, props.step) match {
       case (f, StandardStep(_, _, StepState.Running, _, _, _, _, _))
           if f.userStopRequested =>
         // Case pause at the sequence level

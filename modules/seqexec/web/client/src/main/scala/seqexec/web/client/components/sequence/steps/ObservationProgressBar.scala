@@ -11,6 +11,7 @@ import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.extra.Reusability
 import japgolly.scalajs.react.extra.TimerSupport
 import java.time.Duration
+import monocle.macros.Lenses
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.ObservationProgress
 import seqexec.web.client.components.SeqexecStyles
@@ -31,8 +32,11 @@ object SmoothProgressBar {
                          total:  Long,
                          value:  Long,
                          paused: Boolean)
-  final case class State(total:  Long, value: Long, skipStep: Boolean)
 
+  @Lenses
+  final case class State(total: Long, value: Long, skipStep: Boolean)
+
+  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object State {
     def fromProps(p: Props): State = State(p.total, p.value, false)
   }
@@ -50,9 +54,9 @@ object SmoothProgressBar {
     def tickTotal: Callback = b.props.zip(b.state) >>= {
       case (p, s) =>
         val next = min(s.value + periodUpdate, p.value + remoteUpdatePeriod)
-        b.modState(x => x.copy(value = min(p.total, next)))
+        b.modState(State.value.set(min(p.total, next)))
           .when(!s.skipStep && !p.paused) *>
-          b.modState(x => x.copy(skipStep = false)) *>
+          b.modState(State.skipStep.set(false)) *>
           Callback.empty
     }
   }
@@ -102,9 +106,9 @@ object SmoothProgressBar {
         else s"${p.fileId} - Completing..."
 
       Progress(Progress.Props(
-        label = label,
-        total = p.total,
-        value = s.value,
+        label       = label,
+        total       = p.total,
+        value       = s.value,
         color       = "blue".some,
         progressCls = List(SeqexecStyles.observationProgressBar),
         barCls      = List(SeqexecStyles.observationBar),
@@ -150,8 +154,8 @@ object ObservationProgressBar {
             case _ =>
               Progress(Progress.Props(
                 if (p.paused) s"${p.fileId} - Paused" else p.fileId,
-                total = 100,
-                value = 0,
+                total       = 100,
+                value       = 0,
                 color       = "blue".some,
                 progressCls = List(SeqexecStyles.observationProgressBar),
                 barCls      = List(SeqexecStyles.observationBar),
