@@ -19,7 +19,7 @@ import seqexec.model.QueueId
 import seqexec.model.SequenceView
 import seqexec.model.SequencesQueue
 import seqexec.web.client.components.sequence.steps.StepConfigTable
-import seqexec.web.client.components.SessionQueueTableBody
+import seqexec.web.client.components.SessionQueueTable
 import web.client.table._
 
 /**
@@ -60,7 +60,7 @@ object SeqexecAppRootModel {
     SeqexecAppRootModel.sequences ^|-> SequencesQueue.sessionQueue
 
   val queueTableStateL
-    : Lens[SeqexecAppRootModel, TableState[SessionQueueTableBody.TableColumn]] =
+    : Lens[SeqexecAppRootModel, TableState[SessionQueueTable.TableColumn]] =
     SeqexecAppRootModel.uiModel ^|-> SeqexecUIModel.queueTableState
 
   val configTableStateL

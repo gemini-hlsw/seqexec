@@ -42,7 +42,7 @@ import seqexec.web.client.components.sequence.steps.OffsetFns.OffsetsDisplay
 import seqexec.web.client.components.sequence.steps.StepConfigTable
 import seqexec.web.client.components.sequence.steps.StepsTable
 import seqexec.web.client.components.queue.CalQueueTable
-import seqexec.web.client.components.SessionQueueTableBody
+import seqexec.web.client.components.SessionQueueTable
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Arbitrary
 import org.scalacheck._
@@ -642,10 +642,10 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
   implicit val stepConfigTableColumnCogen: Cogen[StepConfigTable.TableColumn] =
     Cogen[String].contramap(_.productPrefix)
 
-  implicit val arbQueueTableBodyTableColumn: Arbitrary[SessionQueueTableBody.TableColumn] =
-    Arbitrary(Gen.oneOf(SessionQueueTableBody.all.map(_.column).toList))
+  implicit val arbQueueTableBodyTableColumn: Arbitrary[SessionQueueTable.TableColumn] =
+    Arbitrary(Gen.oneOf(SessionQueueTable.all.map(_.column).toList))
 
-  implicit val queueTableBodyTableColumnCogen: Cogen[SessionQueueTableBody.TableColumn] =
+  implicit val queueTableBodyTableColumnCogen: Cogen[SessionQueueTable.TableColumn] =
     Cogen[String].contramap(_.productPrefix)
 
   implicit val arbStepsTableTableColumn: Arbitrary[StepsTable.TableColumn] =
@@ -708,7 +708,7 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
         sequencesOnDisplay <- arbitrary[SequencesOnDisplay]
         syncInProgress     <- arbitrary[Boolean]
         configTableState   <- arbitrary[TableState[StepConfigTable.TableColumn]]
-        queueTableState    <- arbitrary[TableState[SessionQueueTableBody.TableColumn]]
+        queueTableState    <- arbitrary[TableState[SessionQueueTable.TableColumn]]
         defaultObserver    <- arbitrary[Observer]
         notification       <- arbitrary[UserNotificationState]
         queues             <- arbitrary[CalibrationQueues]
@@ -739,7 +739,7 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
        GlobalLog,
        SequencesOnDisplay,
        TableState[StepConfigTable.TableColumn],
-       TableState[SessionQueueTableBody.TableColumn],
+       TableState[SessionQueueTable.TableColumn],
        Observer,
        UserNotificationState,
        CalibrationQueues,
@@ -829,7 +829,7 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
   implicit val arbAppTableStates: Arbitrary[AppTableStates] =
     Arbitrary {
       for {
-        qt <- arbitrary[TableState[SessionQueueTableBody.TableColumn]]
+        qt <- arbitrary[TableState[SessionQueueTable.TableColumn]]
         ct <- arbitrary[TableState[StepConfigTable.TableColumn]]
         st <- arbitrary[Map[Observation.Id, TableState[StepsTable.TableColumn]]]
         kt <- arbitrary[Map[QueueId, TableState[CalQueueTable.TableColumn]]]
@@ -837,7 +837,7 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
     }
 
   implicit val appTableStatesCogen: Cogen[AppTableStates] =
-    Cogen[(TableState[SessionQueueTableBody.TableColumn],
+    Cogen[(TableState[SessionQueueTable.TableColumn],
            TableState[StepConfigTable.TableColumn],
            List[(Observation.Id, TableState[StepsTable.TableColumn])])]
       .contramap { x =>

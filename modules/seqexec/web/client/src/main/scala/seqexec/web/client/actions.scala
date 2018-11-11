@@ -14,7 +14,7 @@ import seqexec.model.events._
 import seqexec.web.client.model.Pages._
 import seqexec.web.client.components.sequence.steps.StepConfigTable
 import seqexec.web.client.components.sequence.steps.StepsTable
-import seqexec.web.client.components.SessionQueueTableBody
+import seqexec.web.client.components.SessionQueueTable
 import seqexec.web.client.components.queue.CalQueueTable
 import org.scalajs.dom.WebSocket
 import web.client.table._
@@ -131,7 +131,7 @@ object actions {
 
   final case class UpdateStepsConfigTableState(s: TableState[StepConfigTable.TableColumn])
       extends Action
-  final case class UpdateSessionQueueTableState(s: TableState[SessionQueueTableBody.TableColumn])
+  final case class UpdateSessionQueueTableState(s: TableState[SessionQueueTable.TableColumn])
       extends Action
   final case class UpdateStepTableState(id: Observation.Id,
                                         s:  TableState[StepsTable.TableColumn])
