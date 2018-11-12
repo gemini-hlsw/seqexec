@@ -43,19 +43,21 @@ object SequenceInSessionQueue {
 final case class StatusAndLoadedSequencesFocus(
   status:     ClientStatus,
   sequences:  List[SequenceInSessionQueue],
-  tableState: TableState[SessionQueueTable.TableColumn])
+  tableState: TableState[SessionQueueTable.TableColumn],
+  queueFilter: SessionQueueFilter)
 
 object StatusAndLoadedSequencesFocus {
   implicit val eq: Eq[StatusAndLoadedSequencesFocus] =
-    Eq.by(x => (x.status, x.sequences, x.tableState))
+    Eq.by(x => (x.status, x.sequences, x.tableState, x.queueFilter))
 
   val statusAndLoadedSequencesG
     : Getter[SeqexecAppRootModel, StatusAndLoadedSequencesFocus] =
     ClientStatus.clientStatusFocusL.asGetter.zip(
       SeqexecAppRootModel.sessionQueueL.asGetter.zip(
-        SeqexecAppRootModel.sequencesOnDisplayL.asGetter
-          .zip(SeqexecAppRootModel.queueTableStateL.asGetter))) >>> {
-      case (s, (queue, (sod, queueTable))) =>
+        SeqexecAppRootModel.sequencesOnDisplayL.asGetter.zip(
+          SeqexecAppRootModel.queueTableStateL.asGetter.zip(
+          SeqexecAppRootModel.sessionQueueFilterL.asGetter)))) >>> {
+      case (s, (queue, (sod, (queueTable, filter)))) =>
         val sequencesInQueue = queue.map { s =>
           val active     = sod.idDisplayed(s.id)
           val loaded     = sod.loadedIds.contains(s.id)
@@ -72,6 +74,6 @@ object StatusAndLoadedSequencesFocus {
         }
         StatusAndLoadedSequencesFocus(s,
                                       sequencesInQueue.sortBy(_.id),
-                                      queueTable)
+                                      queueTable, filter)
     }
 }
