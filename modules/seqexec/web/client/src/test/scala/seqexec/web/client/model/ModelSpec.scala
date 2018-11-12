@@ -5,11 +5,14 @@ package seqexec.web.client
 
 import cats.kernel.laws.discipline._
 import cats.tests.CatsSuite
-import monocle.law.discipline.LensTests
-import seqexec.web.client.components.sequence.steps.OffsetFns.OffsetsDisplay
-import seqexec.web.client.model._
-import org.scalajs.dom.WebSocket
 import diode.data._
+import monocle.law.discipline.LensTests
+import org.scalajs.dom.WebSocket
+import seqexec.web.client.components.sequence.steps.OffsetFns.OffsetsDisplay
+import seqexec.web.client.components.sequence.steps.StepConfigTable
+import seqexec.web.client.components.SessionQueueTable
+import seqexec.web.client.model._
+import web.client.table.TableState
 
 /**
   * Tests Client typeclasses
@@ -33,6 +36,13 @@ final class ModelSpec extends CatsSuite with ArbitrariesWebClient {
   checkAll("Eq[SequencesOnDisplay]", EqTests[SequencesOnDisplay].eqv)
   checkAll("Eq[GlobalLog]", EqTests[GlobalLog].eqv)
   checkAll("Eq[UserNotificationState]", EqTests[UserNotificationState].eqv)
+  checkAll("Eq[CalibrationQueues]", EqTests[CalibrationQueues].eqv)
+  checkAll("Eq[AllObservationsProgressState]",
+           EqTests[AllObservationsProgressState].eqv)
+  checkAll("Eq[SessionQueueFilter]", EqTests[SessionQueueFilter].eqv)
+  checkAll("Eq[SectionVisibilityState]", EqTests[SectionVisibilityState].eqv)
+  checkAll("Eq[TableState[StepConfigTable.TableColumn]", EqTests[TableState[StepConfigTable.TableColumn]].eqv)
+  checkAll("Eq[TableState[SessionQueueTable.TableColumn]", EqTests[TableState[SessionQueueTable.TableColumn]].eqv)
   // checkAll("Eq[SeqexecUIModel]", EqTests[SeqexecUIModel].eqv)
   checkAll("Eq[RunOperation]", EqTests[RunOperation].eqv)
   checkAll("Eq[SyncOperation]", EqTests[SyncOperation].eqv)

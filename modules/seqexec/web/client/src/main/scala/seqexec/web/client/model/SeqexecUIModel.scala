@@ -29,6 +29,7 @@ final case class SeqexecUIModel(
   notification:       UserNotificationState,
   queues:             CalibrationQueues,
   obsProgress:        AllObservationsProgressState,
+  sessionQueueFilter: SessionQueueFilter,
   firstLoad:          Boolean)
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
@@ -45,6 +46,7 @@ object SeqexecUIModel {
     UserNotificationState.Empty,
     CalibrationQueues.Default,
     AllObservationsProgressState.Empty,
+    SessionQueueFilter.NoFilter,
     firstLoad = true
   )
 
@@ -61,6 +63,7 @@ object SeqexecUIModel {
          x.defaultObserver,
          x.notification,
          x.queues,
+         x.sessionQueueFilter,
          x.firstLoad))
 
   val defaultObserverG = SeqexecUIModel.defaultObserver.asGetter
