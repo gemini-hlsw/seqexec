@@ -9,12 +9,13 @@ import gem.Observation
 import squants.Time
 
 final case class ObservationProgress(obsId:     Observation.Id,
+                                     stepId:    StepId,
                                      total:     Time,
                                      remaining: Time)
 
 object ObservationProgress {
 
   implicit val equal: Eq[ObservationProgress] =
-    Eq.by(x => (x.obsId, x.total, x.remaining))
+    Eq.by(x => (x.obsId, x.stepId, x.total, x.remaining))
 
 }

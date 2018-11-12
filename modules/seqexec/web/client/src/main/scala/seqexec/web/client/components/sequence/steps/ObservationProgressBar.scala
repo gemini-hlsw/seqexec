@@ -14,6 +14,7 @@ import java.time.Duration
 import monocle.macros.Lenses
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.ObservationProgress
+import seqexec.model.StepId
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.reusability._
@@ -129,10 +130,11 @@ object SmoothProgressBar {
   */
 object ObservationProgressBar {
   final case class Props(obsId:  Observation.Id,
+                         stepId: StepId,
                          fileId: ImageFileId,
                          paused: Boolean) {
     protected[steps] val connect =
-      SeqexecCircuit.connect(SeqexecCircuit.obsProgressReader(obsId))
+      SeqexecCircuit.connect(SeqexecCircuit.obsProgressReader(obsId, stepId))
   }
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
@@ -145,7 +147,7 @@ object ObservationProgressBar {
         SeqexecStyles.observationProgressRow,
         p.connect(x =>
           x() match {
-            case Some(ObservationProgress(_, r, t)) =>
+            case Some(ObservationProgress(_, _, r, t)) =>
               SmoothProgressBar(
                 SmoothProgressBar.Props(p.fileId,
                                         r.millis,

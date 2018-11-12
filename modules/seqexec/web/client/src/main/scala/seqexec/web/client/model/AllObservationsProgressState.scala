@@ -11,6 +11,7 @@ import monocle.macros.Lenses
 import monocle.function.At.at
 import monocle.function.At.atSortedMap
 import seqexec.model.ObservationProgress
+import seqexec.model.StepId
 import scala.collection.immutable.SortedMap
 
 /**
@@ -18,7 +19,7 @@ import scala.collection.immutable.SortedMap
   */
 @Lenses
 final case class AllObservationsProgressState(
-  obsProgress: SortedMap[Observation.Id, ObservationProgress])
+  obsProgress: SortedMap[(Observation.Id, StepId), ObservationProgress])
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object AllObservationsProgressState {
@@ -29,15 +30,17 @@ object AllObservationsProgressState {
     Eq.by(_.obsProgress)
 
   def progressStateL(
-    obsId: Observation.Id
+    obsId:  Observation.Id,
+    stepId: StepId
   ): Lens[SeqexecAppRootModel, Option[ObservationProgress]] =
-    SeqexecAppRootModel.uiModel  ^|->
+    SeqexecAppRootModel.uiModel ^|->
       SeqexecUIModel.obsProgress ^|->
-      progressByIdL(obsId)
+      progressByIdL(obsId, stepId)
 
   def progressByIdL(
-    obsId: Observation.Id
+    obsId:  Observation.Id,
+    stepId: StepId
   ): Lens[AllObservationsProgressState, Option[ObservationProgress]] =
-    AllObservationsProgressState.obsProgress ^|-> at(obsId)
+    AllObservationsProgressState.obsProgress ^|-> at((obsId, stepId))
 
 }

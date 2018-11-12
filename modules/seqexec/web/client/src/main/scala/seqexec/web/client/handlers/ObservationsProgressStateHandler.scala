@@ -26,7 +26,10 @@ class ObservationsProgressStateHandler[M](
 
   override def handle: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(ObservationProgressEvent(e)) =>
-      updatedL(AllObservationsProgressState.progressByIdL(e.obsId).set(e.some))
+      updatedL(
+        AllObservationsProgressState
+          .progressByIdL(e.obsId, e.stepId)
+          .set(e.some))
 
     // Remove the progress once the step completes
     case ServerMessage(e @ StepExecuted(obsId, _)) =>
@@ -38,7 +41,9 @@ class ObservationsProgressStateHandler[M](
           if curStep.observeStatus === ActionStatus.Completed && !curStep.isObservePaused
         } yield
           updatedL(
-            AllObservationsProgressState.progressByIdL(e.obsId).set(none))
+            AllObservationsProgressState
+              .progressByIdL(e.obsId, curSIdx)
+              .set(none))
 
       upd.getOrElse(noChange)
   }
