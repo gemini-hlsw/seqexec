@@ -100,9 +100,9 @@ object SmoothProgressBar {
       val remaining   = Duration.ofMillis(s.total - s.value)
       val durationStr = encodeDuration(remaining)
       val remainingStr =
-        if (durationStr.isEmpty) " - Completing..." else s" - $durationStr"
+        if (durationStr.isEmpty) " - Completing..." else s" - $durationStr left"
       val label =
-        if (p.paused) s"${p.fileId} - Paused - $durationStr"
+        if (p.paused) s"${p.fileId} - Paused - $durationStr left"
         else if (s.value > 0) s"${p.fileId}$remainingStr"
         else s"${p.fileId} - Completing..."
 
