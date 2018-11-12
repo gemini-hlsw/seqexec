@@ -26,12 +26,14 @@ object SessionQueueTableSection {
       p =>
         <.div(
           SeqexecStyles.queueListPane,
-          sequencesConnect(c => SessionQueueTableBody(p, c))
+          sequencesConnect(c => SessionQueueTable(p, c()))
       ))
     .configure(Reusability.shouldComponentUpdate)
     .build
 
-  def apply(ctl: RouterCtl[SeqexecPages]): Unmounted[RouterCtl[SeqexecPages], Unit, Unit] =
+  def apply(
+    ctl: RouterCtl[SeqexecPages]
+  ): Unmounted[RouterCtl[SeqexecPages], Unit, Unit] =
     component(ctl)
 
 }
@@ -53,7 +55,9 @@ object SessionQueueArea {
     .configure(Reusability.shouldComponentUpdate)
     .build
 
-  def apply(ctl: RouterCtl[SeqexecPages]): Unmounted[RouterCtl[SeqexecPages], Unit, Unit] =
+  def apply(
+    ctl: RouterCtl[SeqexecPages]
+  ): Unmounted[RouterCtl[SeqexecPages], Unit, Unit] =
     component(ctl)
 
 }
