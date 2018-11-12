@@ -167,7 +167,8 @@ class GmosEpics(epicsService: CaService, tops: Map[String, String]) {
 
   def dhsConnected: Option[String] = Option(dcState.getStringAttribute("dhsConnected").value)
 
-  def countdown: Option[Double] = Option(dcState.getStringAttribute("countdown").value).map(_.toDouble)
+  def countdown: Option[Double] = Option(dcState.getDoubleAttribute("countdown").value)
+    .map(_.toDouble)
 
   def gainSetting: Option[Int] = Option(dcState.getIntegerAttribute("gainSetting").value).map(_.toInt)
 
