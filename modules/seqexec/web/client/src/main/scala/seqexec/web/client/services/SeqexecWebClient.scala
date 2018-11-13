@@ -302,21 +302,11 @@ object SeqexecWebClient extends ModelBooPicklers {
       .map(_.responseText)
 
   /**
-    * Start client session, it is just informative
-    */
-  def start(): Future[String] =
-    Ajax
-      .post(
-        url = s"$baseUrl/start"
-      )
-      .map(_.responseText)
-
-  /**
     * Read the site of the server
     */
   def site(): Future[String] =
     Ajax
-      .get(
+      .post(
         url = s"$baseUrl/site"
       )
       .map(_.responseText)
