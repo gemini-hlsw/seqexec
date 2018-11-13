@@ -15,9 +15,9 @@ import seqexec.model.SequencesQueue
 import seqexec.model.SequenceView
 import seqexec.model.StepState
 import seqexec.model.events._
-import seqexec.web.client.lenses.sequenceStepT
-import seqexec.web.client.lenses.sequenceViewT
-import seqexec.web.client.ModelOps._
+import seqexec.web.client.model.lenses.sequenceStepT
+import seqexec.web.client.model.lenses.sequenceViewT
+import seqexec.web.client.model.ModelOps._
 import seqexec.web.client.actions._
 import seqexec.web.client.circuit._
 import seqexec.web.client.services.Audio

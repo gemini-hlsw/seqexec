@@ -10,6 +10,7 @@ import cats.implicits._
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.raw.JsNumber
 import japgolly.scalajs.react.Callback
+import japgolly.scalajs.react.React
 import japgolly.scalajs.react.extra.Reusability
 import org.scalajs.dom.MouseEvent
 import scala.scalajs.js
@@ -59,7 +60,7 @@ package object table {
   def resizableHeaderRenderer(
     rs: (String, JsNumber) => Callback): HeaderRenderer[js.Object] =
     (_, dataKey: String, _, label: VdomNode, _, _) =>
-      ReactFragment.withKey(dataKey)(
+      React.Fragment.withKey(dataKey)(
         <.div(
           ^.cls := "ReactVirtualized__Table__headerTruncatedText",
           label
@@ -80,6 +81,11 @@ package object table {
     override val empty: Style = Style(Map.empty)
     override def combine(a: Style, b: Style): Style =
       Style(a.styles ++ b.styles)
+  }
+
+  private implicit class ClickCallbackOps(val cb: OnRowClick) extends AnyVal {
+    def toJsCallback: raw.RawOnRowEvent =
+      (i: raw.RawIndexParameter) => cb(i.index).runNow()
   }
 
   def sortableRowRenderer[C <: js.Object](

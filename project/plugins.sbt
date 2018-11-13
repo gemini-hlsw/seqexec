@@ -39,7 +39,7 @@ addSbtPlugin("com.dwijnand"       % "sbt-dynver"               % "3.0.0")
 addSbtPlugin("org.wartremover"    % "sbt-wartremover"          % "2.3.7")
 
 // Use NPM modules rather than webjars
-addSbtPlugin("ch.epfl.scala"      % "sbt-scalajs-bundler"      % "0.13.1")
+addSbtPlugin("ch.epfl.scala"      % "sbt-scalajs-bundler"      % "0.14.0")
 
 // Used to find dependencies
 addSbtPlugin("net.virtual-void"   % "sbt-dependency-graph"     % "0.9.0")

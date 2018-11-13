@@ -12,8 +12,8 @@ import japgolly.scalajs.react.extra.Reusability
 import seqexec.model.enum.Guiding
 import seqexec.model.Step
 import seqexec.model.{ Offset, OffsetAxis, TelescopeOffset }
-import seqexec.web.client.lenses.{telescopeOffsetPO, telescopeOffsetQO}
-import seqexec.web.client.lenses._
+import seqexec.web.client.model.lenses.{telescopeOffsetPO, telescopeOffsetQO}
+import seqexec.web.client.model.lenses._
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.semanticui.elements.icon.Icon.{IconBan, IconCrosshairs}
 import seqexec.web.client.semanticui.Size

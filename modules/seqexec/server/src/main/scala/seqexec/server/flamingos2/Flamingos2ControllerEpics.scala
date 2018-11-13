@@ -4,11 +4,12 @@
 package seqexec.server.flamingos2
 
 import cats.data.EitherT
-import cats.effect.IO
+import cats.effect.{ IO, Timer }
 import seqexec.model.dhs.ImageFileId
-import seqexec.server.{EpicsCodex, SeqAction}
+import seqexec.server.{EpicsCodex, ObserveCommand, Progress, ProgressUtil, SeqAction}
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.{Decker, Filter, ReadoutMode, WindowCover, _}
 import org.log4s.getLogger
+import scala.concurrent.ExecutionContext
 import squants.{Seconds, Time}
 
 object Flamingos2ControllerEpics extends Flamingos2Controller {
@@ -135,18 +136,23 @@ object Flamingos2ControllerEpics extends Flamingos2Controller {
     _ <- EitherT.right(IO(Log.debug("Completed Flamingos2 configuration")))
   } yield ()
 
-  override def observe(fileId: ImageFileId, expTime: Time): SeqAction[ImageFileId] = for {
+  override def observe(fileId: ImageFileId, expTime: Time): SeqAction[ObserveCommand.Result] = for {
     _ <- Flamingos2Epics.instance.observeCmd.setLabel(fileId)
     _ <- Flamingos2Epics.instance.observeCmd.setTimeout(expTime + ReadoutTimeout)
     _ <- Flamingos2Epics.instance.observeCmd.post
-  } yield fileId
+  } yield ObserveCommand.Success
 
   override def endObserve: SeqAction[Unit] =  for {
-      _ <- EitherT.right(IO(Log.debug("Send endObserve to Flamingos2")))
-      _ <- Flamingos2Epics.instance.endObserveCmd.setTimeout(DefaultTimeout)
-      _ <- Flamingos2Epics.instance.endObserveCmd.mark
-      _ <- Flamingos2Epics.instance.endObserveCmd.post
-    } yield ()
+    _ <- EitherT.right(IO(Log.debug("Send endObserve to Flamingos2")))
+    _ <- Flamingos2Epics.instance.endObserveCmd.setTimeout(DefaultTimeout)
+    _ <- Flamingos2Epics.instance.endObserveCmd.mark
+    _ <- Flamingos2Epics.instance.endObserveCmd.post
+  } yield ()
+
+  override def observeProgress(total: Time): fs2.Stream[IO, Progress] = {
+    implicit val ioTimer: Timer[IO] = IO.timer(ExecutionContext.global)
+    ProgressUtil.countdown[IO](total, Seconds(0))
+  }
 
   val ReadoutTimeout: Time = Seconds(300)
   val DefaultTimeout: Time = Seconds(60)

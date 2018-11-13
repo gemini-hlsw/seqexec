@@ -11,9 +11,12 @@ import gem.Observation
   * Events generated internally by the Engine.
   */
 sealed trait SystemEvent
-final case class Completed[R<:RetVal](id: Observation.Id, i: Int, r: OK[R]) extends SystemEvent
-final case class PartialResult[R<:PartialVal](id: Observation.Id, i: Int, r: Partial[R]) extends SystemEvent
-final case class Paused[C <: PauseContext](id: Observation.Id, i: Int, r: Result.Paused[C]) extends SystemEvent
+final case class Completed[R<:RetVal](id: Observation.Id, stepId: Step.Id, i: Int, r: OK[R])
+  extends SystemEvent
+final case class PartialResult[R<:PartialVal](sid: Observation.Id, stepId: Step.Id, i: Int,
+                                             r: Partial[R]) extends SystemEvent
+final case class Paused[C <: PauseContext](id: Observation.Id, i: Int, r: Result.Paused[C])
+  extends SystemEvent
 final case class Failed(id: Observation.Id, i: Int, e: Result.Error) extends SystemEvent
 final case class Busy(id: Observation.Id, clientId: ClientId) extends SystemEvent
 final case class BreakpointReached(id: Observation.Id) extends SystemEvent

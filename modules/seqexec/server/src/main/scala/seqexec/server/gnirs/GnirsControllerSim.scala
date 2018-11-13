@@ -3,10 +3,13 @@
 
 package seqexec.server.gnirs
 
+import cats.effect.IO
 import seqexec.model.dhs.ImageFileId
+import seqexec.server.InstrumentSystem.ElapsedTime
 import seqexec.server.gnirs.GnirsController.GnirsConfig
-import seqexec.server.{InstrumentControllerSim, ObserveCommand, SeqAction}
+import seqexec.server.{InstrumentControllerSim, ObserveCommand, Progress, SeqAction}
 import squants.Time
+import squants.time.TimeConversions._
 
 object GnirsControllerSim extends GnirsController {
 
@@ -23,4 +26,6 @@ object GnirsControllerSim extends GnirsController {
 
   override def endObserve: SeqAction[Unit] = sim.endObserve
 
+  override def observeProgress(total: Time): fs2.Stream[IO, Progress] =
+    sim.observeCountdown(total, ElapsedTime(0.seconds))
 }

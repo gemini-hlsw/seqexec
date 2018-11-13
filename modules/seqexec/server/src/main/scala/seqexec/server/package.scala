@@ -16,11 +16,12 @@ import edu.gemini.spModel.guide.StandardGuideOptions
 import fs2.concurrent.Queue
 import gem.Observation
 import monocle.macros.Lenses
-import monocle.Lens
+import monocle.{Lens, Optional}
 import monocle.macros.GenLens
-import monocle.function.At.at
-import monocle.function.At.atMap
+import monocle.function.Index._
+import monocle.function.At._
 import seqexec.engine.Engine
+import seqexec.engine.Result.{PartialVal, RetVal}
 import seqexec.model.ClientId
 import seqexec.model.CalibrationQueueId
 import seqexec.model.CalibrationQueueName
@@ -32,22 +33,35 @@ import seqexec.model.SequenceState
 import seqexec.model.enum._
 import seqexec.model.Notification
 import seqexec.model.UserDetails
+import seqexec.model.dhs.ImageFileId
 
 package server {
+  import seqexec.engine.Sequence
+
+  import squants.Time
 
   @Lenses
-  final case class ObserverSequence(observer: Option[Observer], seq: SequenceGen)
+  final case class SequenceData(observer: Option[Observer],
+                                seqGen: SequenceGen,
+                                seq: Sequence.State[IO])
+
   @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
-  object ObserverSequence
+  object SequenceData
 
   @Lenses
-  final case class EngineState(queues: ExecutionQueues, selected: Map[Instrument, Observation.Id], conditions: Conditions, operator: Option[Operator], sequences: Map[Observation.Id, ObserverSequence], executionState: Engine.State)
+  final case class EngineState(queues: ExecutionQueues, selected: Map[Instrument, Observation.Id], conditions: Conditions, operator: Option[Operator], sequences: Map[Observation.Id, SequenceData])
   @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
-  object EngineState {
-    val default: EngineState = EngineState(Map(CalibrationQueueId -> ExecutionQueue.init(CalibrationQueueName)), Map.empty, Conditions.Default, None, Map.empty, Engine.State.empty)
+  object EngineState extends Engine.State[EngineState]{
+    val default: EngineState = EngineState(Map(CalibrationQueueId -> ExecutionQueue.init(CalibrationQueueName)), Map.empty, Conditions.Default, None, Map.empty)
 
     def instrumentLoadedL(instrument: Instrument): Lens[EngineState, Option[Observation.Id]] = GenLens[EngineState](_.selected) ^|-> at(instrument)
 
+    def atSequence(sid:Observation.Id): Optional[EngineState, SequenceData] =
+      EngineState.sequences ^|-? index(sid)
+
+    override def sequenceStateIndex(sid: Observation.Id)
+    : Optional[EngineState, Sequence.State[IO]] =
+      atSequence(sid) ^|-> SequenceData.seq
   }
 
   sealed trait SeqEvent
@@ -93,6 +107,23 @@ package server {
     val default: HeaderExtraData = HeaderExtraData(Conditions.Default, None, None)
   }
 
+  sealed trait Response extends RetVal
+  object Response {
+
+    final case class Configured(resource: Resource) extends Response
+
+    final case class Observed(fileId: ImageFileId) extends Response
+
+    object Ignored extends Response
+
+  }
+
+  final case class FileIdAllocated(fileId: ImageFileId) extends PartialVal
+  final case class RemainingTime(self: Time) extends AnyVal
+  final case class Progress(total: Time, remaining: RemainingTime) extends PartialVal {
+    val progress: Time = total - remaining.self
+  }
+
 }
 
 package object server {
@@ -118,7 +149,7 @@ package object server {
 
   type ExecutionQueues = Map[QueueId, ExecutionQueue]
 
-  val executeEngine: Engine[EngineState, SeqEvent] = new Engine[EngineState, SeqEvent](EngineState.executionState)
+  val executeEngine: Engine[EngineState, SeqEvent] = new Engine[EngineState, SeqEvent](EngineState)
 
   type EventQueue = Queue[IO, executeEngine.EventType]
 
@@ -154,9 +185,9 @@ package object server {
 
   implicit class ExecutionQueueOps(val q: ExecutionQueue) extends AnyVal {
     def status(st: EngineState): BatchExecState = {
-      val statuses: Seq[SequenceState] = q.queue.map(st.executionState.sequences.get(_).map(_.status))
+      val statuses: Seq[SequenceState] = q.queue.map(sid => st.sequences.get(sid))
         .collect{ case Some(x) => x }
-
+        .map(_.seq.status)
 
       q.cmdState match {
         case BatchCommandState.Idle         => BatchExecState.Idle

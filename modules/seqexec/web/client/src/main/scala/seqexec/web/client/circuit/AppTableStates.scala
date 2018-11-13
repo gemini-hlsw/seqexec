@@ -13,13 +13,13 @@ import seqexec.model._
 import seqexec.web.client.model._
 import seqexec.web.client.components.sequence.steps.StepConfigTable
 import seqexec.web.client.components.sequence.steps.StepsTable
-import seqexec.web.client.components.SessionQueueTableBody
+import seqexec.web.client.components.SessionQueueTable
 import seqexec.web.client.components.queue.CalQueueTable
 import web.client.table._
 
 @Lenses
 final case class AppTableStates(
-  queueTable:      TableState[SessionQueueTableBody.TableColumn],
+  queueTable:      TableState[SessionQueueTable.TableColumn],
   stepConfigTable: TableState[StepConfigTable.TableColumn],
   stepsTables:     Map[Observation.Id, TableState[StepsTable.TableColumn]],
   queueTables:     Map[QueueId, TableState[CalQueueTable.TableColumn]])
@@ -47,9 +47,13 @@ object AppTableStates {
               .updateTableStates(v.queueTables)
       ))
 
-  def stepTableAtL(id: Observation.Id): Lens[AppTableStates, Option[TableState[StepsTable.TableColumn]]] =
+  def stepTableAtL(
+    id: Observation.Id
+  ): Lens[AppTableStates, Option[TableState[StepsTable.TableColumn]]] =
     AppTableStates.stepsTables ^|-> at(id)
 
-  def queueTableAtL(id: QueueId): Lens[AppTableStates, Option[TableState[CalQueueTable.TableColumn]]] =
+  def queueTableAtL(
+    id: QueueId
+  ): Lens[AppTableStates, Option[TableState[CalQueueTable.TableColumn]]] =
     AppTableStates.queueTables ^|-> at(id)
 }

@@ -3,9 +3,12 @@
 
 package seqexec.server.flamingos2
 
+import cats.Show
+import cats.effect.IO
 import cats.kernel.Eq
+import fs2.Stream
 import seqexec.model.dhs.ImageFileId
-import seqexec.server.SeqAction
+import seqexec.server.{ObserveCommand, Progress, SeqAction}
 
 import scala.concurrent.duration.Duration
 import squants.Time
@@ -21,9 +24,12 @@ trait Flamingos2Controller {
 
   def applyConfig(config: Flamingos2Config): SeqAction[Unit]
 
-  def observe(fileId: ImageFileId, expTime: Time): SeqAction[ImageFileId]
+  def observe(fileId: ImageFileId, expTime: Time): SeqAction[ObserveCommand.Result]
 
   def endObserve: SeqAction[Unit]
+
+  def observeProgress(total: Time): Stream[IO, Progress]
+
 }
 
 object Flamingos2Controller {
@@ -93,5 +99,7 @@ object Flamingos2Controller {
     def setCCConfig(ccConfig: CCConfig): Flamingos2Config = this.copy(cc = ccConfig)
     def setDCConfig(dcConfig: DCConfig): Flamingos2Config = this.copy(dc = dcConfig)
   }
+
+  implicit def configShow: Show[Flamingos2Config] = Show.fromToString
 
 }

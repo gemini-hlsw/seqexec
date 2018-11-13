@@ -15,48 +15,10 @@ import seqexec.model.Operator
 import seqexec.model.SequencesQueue
 import seqexec.model.SequenceView
 import seqexec.web.client.model._
-import seqexec.web.client.ModelOps._
+import seqexec.web.client.model.ModelOps._
 import seqexec.web.client.actions._
 import seqexec.web.client.services.SeqexecWebClient
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
-
-/**
-  * Handles sequence execution actions
-  */
-class SequenceExecutionHandler[M](
-  modelRW: ModelRW[M, SequencesQueue[SequenceView]])
-    extends ActionHandler(modelRW)
-    with Handlers[M, SequencesQueue[SequenceView]] {
-  def handleUpdateObserver: PartialFunction[Any, ActionResult[M]] = {
-    case UpdateObserver(sequenceId, name) =>
-      val updateObserverE = Effect(SeqexecWebClient.setObserver(sequenceId, name.value).map(_ => NoAction))
-      val updatedSequences = value.copy(sessionQueue = value.sessionQueue.collect {
-        case s if s.id === sequenceId =>
-          s.copy(metadata = s.metadata.copy(observer = Some(name)))
-        case s                        => s
-      })
-      updated(updatedSequences, updateObserverE)
-  }
-
-  def handleFlipSkipBreakpoint: PartialFunction[Any, ActionResult[M]] = {
-    case FlipSkipStep(sequenceId, step) =>
-      val skipRequest = Effect(SeqexecWebClient.skip(sequenceId, step.flipSkip).map(_ => NoAction))
-      updated(value.copy(sessionQueue = value.sessionQueue.collect {
-        case s if s.id === sequenceId => s.flipSkipMarkAtStep(step)
-        case s                        => s
-      }), skipRequest)
-
-    case FlipBreakpointStep(sequenceId, step) =>
-      val breakpointRequest = Effect(SeqexecWebClient.breakpoint(sequenceId, step.flipBreakpoint).map(_ => NoAction))
-      updated(value.copy(sessionQueue = value.sessionQueue.collect {
-        case s if s.id === sequenceId => s.flipBreakpointAtStep(step)
-        case s                        => s
-      }), breakpointRequest)
-  }
-
-  override def handle: PartialFunction[Any, ActionResult[M]] =
-    List(handleUpdateObserver, handleFlipSkipBreakpoint).combineAll
-}
 
 /**
   * Handles updates to the operator
@@ -66,7 +28,8 @@ class OperatorHandler[M](modelRW: ModelRW[M, Option[Operator]])
     with Handlers[M, Option[Operator]] {
   override def handle: PartialFunction[Any, ActionResult[M]] = {
     case UpdateOperator(name) =>
-      val updateOperatorE = Effect(SeqexecWebClient.setOperator(name).map(_ => NoAction))
+      val updateOperatorE = Effect(
+        SeqexecWebClient.setOperator(name).map(_ => NoAction))
       updated(name.some, updateOperatorE)
   }
 }

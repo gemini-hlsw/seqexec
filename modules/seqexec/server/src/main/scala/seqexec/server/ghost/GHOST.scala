@@ -7,6 +7,7 @@ import cats.data.Reader
 import cats.data.EitherT
 import cats.effect.{IO, Sync}
 import cats.implicits._
+import fs2.Stream
 import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import edu.gemini.spModel.gemini.ghost.Ghost
@@ -59,6 +60,8 @@ final case class GHOST[F[_]: Sync](controller: GHOSTController[F])
   override def notifyObserveStart: SeqActionF[F, Unit] = SeqActionF.void
 
   override def calcObserveTime(config: Config): Time = Seconds(360)
+
+  override def observeProgress(total: Time, elapsed: InstrumentSystem.ElapsedTime): Stream[F, Progress] = Stream.empty
 }
 
 object GHOST {
@@ -105,12 +108,15 @@ object GHOST {
           hrifu2RAHMS   <- raExtractor(Ghost.HRIFU2RAHMS)
           hrifu2DecHDMS <- decExtractor(Ghost.HRIFU2DecDMS)
 
-        } yield GHOSTConfig(
-          baseRAHMS, baseDecDMS, 1.minute,
-          srifu1Name, srifu1RAHMS, srifu1DecHDMS,
-          srifu2Name, srifu2RAHMS, srifu2DecHDMS,
-          hrifu1Name, hrifu1RAHMS, hrifu1DecHDMS,
-          hrifu2RAHMS, hrifu2DecHDMS))
+        } yield {
+          val hrifu2Name = hrifu2RAHMS.as("Sky")
+          GHOSTConfig(
+            baseRAHMS, baseDecDMS, 1.minute,
+            srifu1Name, srifu1RAHMS, srifu1DecHDMS,
+            srifu2Name, srifu2RAHMS, srifu2DecHDMS,
+            hrifu1Name, hrifu1RAHMS, hrifu1DecHDMS,
+            hrifu2Name, hrifu2RAHMS, hrifu2DecHDMS)}
+          )
           .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
       }
     }

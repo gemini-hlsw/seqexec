@@ -8,10 +8,10 @@ import cats.Traverse
 import cats.implicits._
 import gem.Observation
 import java.time.Instant
-
 import seqexec.model._
 import seqexec.model.enum._
 import seqexec.model.events._
+import squants.time.TimeConversions._
 
 /**
   * Contains boopickle implicit picklers of model objects
@@ -162,7 +162,7 @@ trait ModelBooPicklers extends GemModelBooPicklers {
   implicit val sequenceMetadataPickler = generatePickler[SequenceMetadata]
 
   implicit val stepConfigPickler = generatePickler[SequenceView]
-  implicit val clientIdPickler = generatePickler[ClientId]
+  implicit val clientIdPickler   = generatePickler[ClientId]
 
   implicit val queueIdPickler      = generatePickler[QueueId]
   implicit val queueOpMovedPickler = generatePickler[QueueManipulationOp.Moved]
@@ -269,10 +269,13 @@ trait ModelBooPicklers extends GemModelBooPicklers {
   implicit val serverLogMessagePickler    = generatePickler[ServerLogMessage]
   implicit val userNotificationPickler    = generatePickler[UserNotification]
   implicit val queueUpdatedPickler        = generatePickler[QueueUpdated]
+  implicit val timeProgressPickler =
+    transformPickler((t: Double) => t.milliseconds)(_.toMilliseconds.value)
+  implicit val observationProgressPickler = generatePickler[ObservationProgress]
+  implicit val obsProgressPickler         = generatePickler[ObservationProgressEvent]
   implicit val nullEventPickler           = generatePickler[NullEvent.type]
 
   // Composite pickler for the seqexec event hierarchy
-  // It is not strictly need but reduces the size of the js
   implicit val eventsPickler = compositePickler[SeqexecEvent]
     .addConcreteType[ConnectionOpenEvent]
     .addConcreteType[SequenceStart]
@@ -299,6 +302,7 @@ trait ModelBooPicklers extends GemModelBooPicklers {
     .addConcreteType[ServerLogMessage]
     .addConcreteType[UserNotification]
     .addConcreteType[QueueUpdated]
+    .addConcreteType[ObservationProgressEvent]
     .addConcreteType[NullEvent.type]
 
   implicit val userLoginPickler = generatePickler[UserLoginRequest]

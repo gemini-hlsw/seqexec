@@ -48,7 +48,7 @@ object SeqexecTabs {
         if (tabs.nonEmpty) {
           <.div(
             ^.cls := "ui attached tabular menu",
-            ReactFragment(tabs: _*)
+            React.Fragment(tabs: _*)
           )
         } else {
           <.div()

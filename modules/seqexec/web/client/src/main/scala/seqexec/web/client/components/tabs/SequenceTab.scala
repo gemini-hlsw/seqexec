@@ -145,7 +145,7 @@ object SequenceTab {
           .filter(_ => isPreview && isLogged)
 
       val instrumentWithId =
-        ReactFragment(
+        React.Fragment(
           <.div(SeqexecStyles.activeInstrumentLabel, dispName),
           Label(
             Label.Props(tabTitle,

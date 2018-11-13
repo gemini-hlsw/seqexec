@@ -14,9 +14,7 @@ import seqexec.model._
 import seqexec.model.events._
 import seqexec.web.client.actions._
 import seqexec.web.client.model._
-import seqexec.web.client.lenses._
 import seqexec.web.client.handlers._
-import seqexec.web.client.ModelOps._
 import seqexec.web.client.actions.AppendToLog
 import seqexec.web.client.actions.CloseLoginBox
 import seqexec.web.client.actions.CloseUserNotificationBox
@@ -36,14 +34,15 @@ final class LoggingProcessor[M <: AnyRef] extends ActionProcessor[M] {
                        currentModel: M): ActionResult[M] = {
     // log some of the actions
     action match {
-      case AppendToLog(_)                     =>
-      case ServerMessage(_: ServerLogMessage) =>
-      case UpdateStepsConfigTableState(_)     =>
-      case UpdateSessionQueueTableState(_)    =>
-      case UpdateStepTableState(_, _)         =>
-      case UpdateCalTableState(_, _)          =>
-      case a: Action                          => logger.info(s"Action: ${a.show}")
-      case _                                  =>
+      case AppendToLog(_)                             =>
+      case ServerMessage(_: ServerLogMessage)         =>
+      case ServerMessage(_: ObservationProgressEvent) =>
+      case UpdateStepsConfigTableState(_)             =>
+      case UpdateSessionQueueTableState(_)            =>
+      case UpdateStepTableState(_, _)                 =>
+      case UpdateCalTableState(_, _)                  =>
+      case a: Action                                  => logger.info(s"Action: ${a.show}")
+      case _                                          =>
     }
     // call the next processor
     next(action)
@@ -64,7 +63,8 @@ object SeqexecCircuit
     this.zoomRWL(WebSocketsFocus.webSocketFocusL)
 
   val initialSyncFocusRW: ModelRW[SeqexecAppRootModel, InitialSyncFocus] =
-    this.zoomRWL(SeqexecAppRootModel.uiModel ^|-> InitialSyncFocus.initialSyncFocusL)
+    this.zoomRWL(
+      SeqexecAppRootModel.uiModel ^|-> InitialSyncFocus.initialSyncFocusL)
 
   val tableStateRW: ModelRW[SeqexecAppRootModel, AppTableStates] =
     this.zoomRWL(SeqexecAppRootModel.uiModel ^|-> AppTableStates.tableStateL)
@@ -85,18 +85,9 @@ object SeqexecCircuit
   val sodLocationReaderRW: ModelRW[SeqexecAppRootModel, SODLocationFocus] =
     this.zoomRWL(SODLocationFocus.sodLocationFocusL)
 
-  // Some useful readers
-  val statusAndLoadedSequencesReader: ModelR[SeqexecAppRootModel, StatusAndLoadedSequencesFocus] =
-    statusReader.zip(zoom(_.sequences.sessionQueue).zip(zoom(_.uiModel.sequencesOnDisplay).zip(zoom(_.uiModel.queueTableState)))).zoom {
-      case (s, (queue, (sod, queueTable))) =>
-        val sequencesInQueue = queue.map { s =>
-          val active = sod.idDisplayed(s.id)
-          val loaded = sod.loadedIds.contains(s.id)
-          val targetName = firstScienceStepTargetNameT.headOption(s)
-          SequenceInSessionQueue(s.id, s.status, s.metadata.instrument, active, loaded, s.metadata.name, targetName, s.runningStep, s.nextStepToRun)
-        }
-        StatusAndLoadedSequencesFocus(s, sequencesInQueue.sorted, queueTable)
-    }
+  val statusAndLoadedSequencesReader
+    : ModelR[SeqexecAppRootModel, StatusAndLoadedSequencesFocus] =
+    this.zoomG(StatusAndLoadedSequencesFocus.statusAndLoadedSequencesG)
 
   // Reader for sequences on display
   val headerSideBarReader: ModelR[SeqexecAppRootModel, HeaderSideBarFocus] =
@@ -105,14 +96,8 @@ object SeqexecCircuit
   val logDisplayedReader: ModelR[SeqexecAppRootModel, SectionVisibilityState] =
     this.zoomL(SeqexecAppRootModel.logDisplayL)
 
-  val tabsReader: ModelR[SeqexecAppRootModel, TabFocus] = {
-    val getter = SeqexecAppRootModel.uiModel composeGetter (SeqexecUIModel.sequencesOnDisplay composeGetter SequencesOnDisplay.availableTabsG).zip(SeqexecUIModel.defaultObserverG)
-    val constructor = ClientStatus.canOperateG.zip(getter) >>> { case (o, (t, ob)) =>
-      TabFocus(o, t, ob)
-    }
-
-    this.zoomG(constructor)
-  }
+  val tabsReader: ModelR[SeqexecAppRootModel, TabFocus] =
+    this.zoomG(TabFocus.tabFocusG)
 
   val seqexecTabs: ModelR[SeqexecAppRootModel, NonEmptyList[TabContentFocus]] =
     this.zoomG(TabContentFocus.tabContentFocusG)
@@ -123,29 +108,52 @@ object SeqexecCircuit
   val queueFocusRW: ModelRW[SeqexecAppRootModel, QueueRequestsFocus] =
     this.zoomRWL(QueueRequestsFocus.unsafeQueueRequestsFocusL)
 
-  def sequenceTab(id: Observation.Id): ModelR[SeqexecAppRootModel, Option[SeqexecTabActive]] =
-    this.zoomG(SeqexecAppRootModel.sequencesOnDisplayL
-      .composeGetter(SequencesOnDisplay.tabG(id)))
+  def sequenceTab(
+    id: Observation.Id
+  ): ModelR[SeqexecAppRootModel, Option[SeqexecTabActive]] =
+    this.zoomG(
+      SeqexecAppRootModel.sequencesOnDisplayL
+        .composeGetter(SequencesOnDisplay.tabG(id)))
 
-  def sequenceObserverReader(id: Observation.Id): ModelR[SeqexecAppRootModel, Option[SequenceInfoFocus]] =
+  def sequenceObserverReader(
+    id: Observation.Id
+  ): ModelR[SeqexecAppRootModel, Option[SequenceInfoFocus]] =
     this.zoomG(SequenceInfoFocus.sequenceInfoG(id))
 
-  def statusAndStepReader(id: Observation.Id): ModelR[SeqexecAppRootModel, Option[StatusAndStepFocus]] =
+  def obsProgressReader(
+    id:     Observation.Id,
+    stepId: StepId
+  ): ModelR[SeqexecAppRootModel, Option[ObservationProgress]] =
+    this.zoomL(AllObservationsProgressState.progressStateL(id, stepId))
+
+  def statusAndStepReader(
+    id: Observation.Id
+  ): ModelR[SeqexecAppRootModel, Option[StatusAndStepFocus]] =
     this.zoomG(StatusAndStepFocus.statusAndStepG(id))
 
-  def stepsTableReaderF(id: Observation.Id): ModelR[SeqexecAppRootModel, Option[StepsTableFocus]] =
+  def stepsTableReaderF(
+    id: Observation.Id
+  ): ModelR[SeqexecAppRootModel, Option[StepsTableFocus]] =
     this.zoomG(StepsTableFocus.stepsTableG(id))
 
-  def stepsTableReader(id: Observation.Id): ModelR[SeqexecAppRootModel, StepsTableAndStatusFocus] =
+  def stepsTableReader(
+    id: Observation.Id
+  ): ModelR[SeqexecAppRootModel, StepsTableAndStatusFocus] =
     this.zoomG(StepsTableAndStatusFocus.stepsTableAndStatusFocusG(id))
 
-  def sequenceControlReader(id: Observation.Id): ModelR[SeqexecAppRootModel, Option[SequenceControlFocus]] =
+  def sequenceControlReader(
+    id: Observation.Id
+  ): ModelR[SeqexecAppRootModel, Option[SequenceControlFocus]] =
     this.zoomG(SequenceControlFocus.seqControlG(id))
 
-  def calQueueControlReader(id: QueueId): ModelR[SeqexecAppRootModel, Option[CalQueueControlFocus]] =
+  def calQueueControlReader(
+    id: QueueId
+  ): ModelR[SeqexecAppRootModel, Option[CalQueueControlFocus]] =
     this.zoomG(CalQueueControlFocus.queueControlG(id))
 
-  def calQueueReader(id: QueueId): ModelR[SeqexecAppRootModel, Option[CalQueueFocus]] =
+  def calQueueReader(
+    id: QueueId
+  ): ModelR[SeqexecAppRootModel, Option[CalQueueFocus]] =
     this.zoomG(CalQueueFocus.calQueueG(id))
 
   private val wsHandler                = new WebSocketHandler(zoomTo(_.ws))
@@ -172,6 +180,7 @@ object SeqexecCircuit
   private val queueOpsHandler          = new QueueOperationsHandler(queueOperationsRW)
   private val queueStateHandler        = new QueueStateHandler(queueOperationsRW)
   private val openConnectionHandler    = new OpenConnectionHandler(zoomTo(_.uiModel.queues))
+  private val observationsProgHandler  = new ObservationsProgressStateHandler(zoomTo(_.uiModel.obsProgress))
 
   def dispatchCB[A <: Action](a: A): Callback = Callback(dispatch(a))
 
@@ -185,7 +194,8 @@ object SeqexecCircuit
                    loadSequencesHandler,
                    userNotificationHandler,
                    openConnectionHandler,
-                   queueStateHandler),
+                   queueStateHandler,
+                   observationsProgHandler),
       sequenceExecHandler,
       notificationBoxHandler,
       loginBoxHandler,
@@ -196,7 +206,7 @@ object SeqexecCircuit
       operatorHandler,
       defaultObserverHandler,
       foldHandlers(remoteRequestsHandler, operationsStateHandler),
-      foldHandlers( queueOpsHandler, queueRequestsHandler),
+      foldHandlers(queueOpsHandler, queueRequestsHandler),
       navigationHandler,
       debuggingHandler,
       tableStateHandler,

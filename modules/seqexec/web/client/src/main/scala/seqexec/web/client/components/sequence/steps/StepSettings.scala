@@ -10,102 +10,23 @@ import japgolly.scalajs.react.extra.Reusability
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.extra.router.RouterCtl
 import gem.Observation
-import gem.enum.{GpiDisperser, GpiFilter, GpiObservingMode}
-import seqexec.model.enum.{ FPUMode, Instrument, StepType }
-import seqexec.model.{ Step, StepState }
+import gem.enum.GpiDisperser
+import gem.enum.GpiFilter
+import gem.enum.GpiObservingMode
+import seqexec.model.enum.FPUMode
+import seqexec.model.enum.Instrument
+import seqexec.model.enum.StepType
+import seqexec.model.Step
+import seqexec.model.StepState
 import seqexec.model.enumerations
-import seqexec.web.client.circuit.StepsTableFocus
 import seqexec.web.client.components.SeqexecStyles
-import seqexec.web.client.model.{ClientStatus, Pages}
-import seqexec.web.client.lenses._
+import seqexec.web.client.model.Pages
+import seqexec.web.client.model.lenses._
 import seqexec.web.client.semanticui.elements.label.Label
-import seqexec.web.client.semanticui.elements.icon.Icon
 import seqexec.web.client.semanticui.elements.icon.Icon._
 import seqexec.web.client.semanticui.Size
-import seqexec.web.client.services.HtmlConstants.iconEmpty
 import seqexec.web.client.reusability._
 import web.client.style._
-
-/**
-  * Component to display an icon for the state
-  */
-object StepToolsCell {
-  final case class Props(clientStatus: ClientStatus,
-                         focus: StepsTableFocus,
-                         step: Step,
-                         rowHeight: Int,
-                         breakPointEnterCB: Int => Callback,
-                         breakPointLeaveCB: Int => Callback,
-                         heightChangeCB: Int => Callback)
-
-  implicit val propsReuse: Reusability[Props] = Reusability.caseClassExcept[Props]('heightChangeCB, 'breakPointEnterCB, 'breakPointLeaveCB)
-
-  private val component = ScalaComponent
-    .builder[Props]("StepToolsCell")
-    .stateless
-    .render_P { p =>
-      <.div(
-        SeqexecStyles.controlCell,
-        StepBreakStopCell(
-          StepBreakStopCell.Props(p.clientStatus,
-                                  p.focus,
-                                  p.step,
-                                  p.rowHeight,
-                                  p.breakPointEnterCB,
-                                  p.breakPointLeaveCB,
-                                  p.heightChangeCB))
-          .when(p.clientStatus.isLogged).unless(p.focus.isPreview),
-        StepIconCell(StepIconCell.Props(p.step.status, p.step.skip, p.focus.nextStepToRun.forall(_ === p.step.id)))
-      )
-    }
-    .configure(Reusability.shouldComponentUpdate)
-    .build
-
-  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
-}
-
-/**
- * Component to display an icon for the state
- */
-object StepIconCell {
-  final case class Props(status: StepState, skip: Boolean, nextToRun: Boolean)
-
-  implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
-
-  private def stepIcon(p: Props): VdomNode =
-    p.status match {
-      case StepState.Completed => IconCheckmark
-      case StepState.Running   => IconCircleNotched.copyIcon(loading = true)
-      case StepState.Failed(_) => IconAttention
-      case StepState.Skipped   => IconReply.copyIcon(fitted = true, rotated = Icon.Rotated.CounterClockwise)
-      case _ if p.skip         => IconReply.copyIcon(fitted = true, rotated = Icon.Rotated.CounterClockwise)
-      case _ if p.nextToRun    => IconChevronRight
-      case _                   => iconEmpty
-    }
-
-  private def stepStyle(p: Props): GStyle =
-    p.status match {
-      case StepState.Running   => SeqexecStyles.runningIconCell
-      case StepState.Skipped   => SeqexecStyles.skippedIconCell
-      case StepState.Failed(_) => SeqexecStyles.errorCell
-      case _ if p.skip         => SeqexecStyles.skippedIconCell
-      case _                   => SeqexecStyles.iconCell
-    }
-
-  private val component = ScalaComponent
-    .builder[Props]("StepIconCell")
-    .stateless
-    .render_P { p =>
-      <.div(
-        stepStyle(p),
-        stepIcon(p)
-      )
-    }
-    .configure(Reusability.shouldComponentUpdate)
-    .build
-
-  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
-}
 
 /**
   * Component to display the FPU
@@ -127,9 +48,12 @@ object FPUCell {
       }
 
       val fpuValue = for {
-        mode <- instrumentFPUModeO.getOption(p.s).orElse(FPUMode.BuiltIn.some) // If the instrument has no fpu mode default to built in
-        fpuL = if (mode === FPUMode.BuiltIn) instrumentFPUO else instrumentFPUCustomMaskO
-        fpu  <- fpuL.getOption(p.s)
+        mode <- instrumentFPUModeO
+          .getOption(p.s)
+          .orElse(FPUMode.BuiltIn.some) // If the instrument has no fpu mode default to built in
+        fpuL = if (mode === FPUMode.BuiltIn) instrumentFPUO
+        else instrumentFPUCustomMaskO
+        fpu <- fpuL.getOption(p.s)
       } yield nameMapper.getOrElse(fpu, fpu)
 
       <.div(
@@ -158,26 +82,36 @@ object FilterCell {
 
   def gpiFilter: Step => Option[String] = s => {
     // Read the filter, if not found deduce it from the obs mode
-    val f: Option[GpiFilter] = instrumentFilterO.getOption(s).flatMap(gpiFiltersMap.get).orElse {
-      for {
-        m <- instrumentObservingModeO.getOption(s)
-        o <- gpiObsMode.get(m)
-        f <- o.filter
-      } yield f
-    }
+    val f: Option[GpiFilter] =
+      instrumentFilterO.getOption(s).flatMap(gpiFiltersMap.get).orElse {
+        for {
+          m <- instrumentObservingModeO.getOption(s)
+          o <- gpiObsMode.get(m)
+          f <- o.filter
+        } yield f
+      }
     f.map(_.longName)
   }
 
-  private val component = ScalaComponent.builder[Props]("FilterCell")
+  private val component = ScalaComponent
+    .builder[Props]("FilterCell")
     .stateless
     .render_P { p =>
-
       def filterName(s: Step): Option[String] = p.i match {
-        case Instrument.GmosS => instrumentFilterO.getOption(s).flatMap(enumerations.filter.GmosSFilter.get)
-        case Instrument.GmosN => instrumentFilterO.getOption(s).flatMap(enumerations.filter.GmosNFilter.get)
-        case Instrument.F2    => instrumentFilterO.getOption(s).flatMap(enumerations.filter.F2Filter.get)
-        case Instrument.GPI   => gpiFilter(s)
-        case _                => None
+        case Instrument.GmosS =>
+          instrumentFilterO
+            .getOption(s)
+            .flatMap(enumerations.filter.GmosSFilter.get)
+        case Instrument.GmosN =>
+          instrumentFilterO
+            .getOption(s)
+            .flatMap(enumerations.filter.GmosNFilter.get)
+        case Instrument.F2 =>
+          instrumentFilterO
+            .getOption(s)
+            .flatMap(enumerations.filter.F2Filter.get)
+        case Instrument.GPI => gpiFilter(s)
+        case _              => None
       }
 
       <.div(
@@ -266,9 +200,17 @@ object ExposureTimeCell {
       )
 
       val displayedText: TagMod = (coadds, exposureTime) match {
-        case (c, Some(e)) if c.exists(_ > 1) => (List(<.span(^.display := "inline-block", s"${c.foldMap(_.show)} "), <.span(^.display := "inline-block", ^.verticalAlign := "none", "\u2A2F"), <.span(^.display := "inline-block", s"${formatExposureTime(e)}")) ::: seconds).toTagMod
-        case (_, Some(e))                    => ((s"${formatExposureTime(e)}": VdomNode) :: seconds).toTagMod
-        case _                               => EmptyVdom
+        case (c, Some(e)) if c.exists(_ > 1) =>
+          (List(
+            <.span(^.display := "inline-block", s"${c.foldMap(_.show)} "),
+            <.span(^.display := "inline-block",
+                   ^.verticalAlign := "none",
+                   "\u2A2F"),
+            <.span(^.display := "inline-block", s"${formatExposureTime(e)}")
+          ) ::: seconds).toTagMod
+        case (_, Some(e)) =>
+          ((s"${formatExposureTime(e)}": VdomNode) :: seconds).toTagMod
+        case _ => EmptyVdom
       }
 
       <.div(
@@ -288,9 +230,7 @@ object StepIdCell {
   private val component = ScalaComponent
     .builder[Int]("StepIdCell")
     .stateless
-    .render_P( p =>
-      <.div(s"${p + 1}")
-    )
+    .render_P(p => <.div(s"${p + 1}"))
     .configure(Reusability.shouldComponentUpdate)
     .build
 
@@ -301,11 +241,16 @@ object StepIdCell {
   * Component to link to the settings
   */
 object SettingsCell {
-  final case class Props(ctl: RouterCtl[Pages.SeqexecPages], instrument: Instrument, obsId: Observation.Id, index: Int, isPreview: Boolean)
+  final case class Props(ctl:        RouterCtl[Pages.SeqexecPages],
+                         instrument: Instrument,
+                         obsId:      Observation.Id,
+                         index:      Int,
+                         isPreview:  Boolean)
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
-  private val component = ScalaComponent.builder[Props]("SettingsCell")
+  private val component = ScalaComponent
+    .builder[Props]("SettingsCell")
     .stateless
     .render_P { p =>
       val page = if (p.isPreview) {
@@ -316,7 +261,8 @@ object SettingsCell {
       <.div(
         SeqexecStyles.settingsCell,
         p.ctl.link(page)(
-          IconCaretRight.copyIcon(color = "black".some, onClick = p.ctl.setUrlAndDispatchCB(page))
+          IconCaretRight.copyIcon(color   = "black".some,
+                                  onClick = p.ctl.setUrlAndDispatchCB(page))
         )
       )
     }
@@ -339,19 +285,22 @@ object ObjectTypeCell {
     .stateless
     .render_P { p =>
       <.div( // Column object type
-        stepTypeO.getOption(p.step).map { st =>
-          val stepTypeColor = st match {
-            case _ if p.step.status === StepState.Completed => "light gray"
-            case StepType.Object                            => "green"
-            case StepType.Arc                               => "violet"
-            case StepType.Flat                              => "grey"
-            case StepType.Bias                              => "teal"
-            case StepType.Dark                              => "black"
-            case StepType.Calibration                       => "blue"
+        stepTypeO
+          .getOption(p.step)
+          .map { st =>
+            val stepTypeColor = st match {
+              case _ if p.step.status === StepState.Completed => "light gray"
+              case StepType.Object                            => "green"
+              case StepType.Arc                               => "violet"
+              case StepType.Flat                              => "grey"
+              case StepType.Bias                              => "teal"
+              case StepType.Dark                              => "black"
+              case StepType.Calibration                       => "blue"
+            }
+            Label(
+              Label.Props(st.show, color = stepTypeColor.some, size = p.size))
           }
-          Label(Label.Props(st.show, color = stepTypeColor.some, size = p.size))
-        }.whenDefined
-      )
+          .whenDefined)
     }
     .configure(Reusability.shouldComponentUpdate)
     .build
@@ -373,12 +322,15 @@ object ObservingModeCell {
   private val component = ScalaComponent
     .builder[Props]("ObsModeCell")
     .stateless
-    .render_P ( p =>
-      <.div(
-        SeqexecStyles.componentLabel,
-        instrumentObservingModeO.getOption(p.s).flatMap(obsNames.get).getOrElse("Unknown"): String
-      )
-    )
+    .render_P(
+      p =>
+        <.div(
+          SeqexecStyles.componentLabel,
+          instrumentObservingModeO
+            .getOption(p.s)
+            .flatMap(obsNames.get)
+            .getOrElse("Unknown"): String
+      ))
     .configure(Reusability.shouldComponentUpdate)
     .build
 

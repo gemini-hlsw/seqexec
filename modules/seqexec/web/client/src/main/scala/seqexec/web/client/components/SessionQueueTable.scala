@@ -6,13 +6,14 @@ package seqexec.web.client.components
 import cats.implicits._
 import cats.data.NonEmptyList
 import cats.Eq
-import diode.react.ModelProxy
 import gem.Observation
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.component.builder.Lifecycle.RenderScope
+import japgolly.scalajs.react.extra.Reusability
+import japgolly.scalajs.react.CatsReact._
 import japgolly.scalajs.react.raw.JsNumber
 import mouse.all._
 import monocle.Lens
@@ -29,33 +30,35 @@ import seqexec.web.client.circuit._
 import seqexec.web.client.actions._
 import seqexec.web.client.model.Pages._
 import seqexec.web.client.model.RunningStep
-import seqexec.web.client.ModelOps._
+import seqexec.web.client.model.ModelOps._
 import seqexec.web.client.semanticui.elements.icon.Icon.IconAttention
 import seqexec.web.client.semanticui.elements.icon.Icon.IconCheckmark
 import seqexec.web.client.semanticui.elements.icon.Icon.IconCircleNotched
 import seqexec.web.client.semanticui.elements.icon.Icon.IconRefresh
 import seqexec.web.client.semanticui.elements.icon.Icon.IconSelectedRadio
+import seqexec.web.client.reusability._
 import web.client.style._
 import web.client.utils._
 import web.client.table._
 
-object SessionQueueTableBody {
+object SessionQueueTable {
   type Backend = RenderScope[Props, State, Unit]
 
-  private val PhoneCut                 = 400.0
-  private val LargePhoneCut            = 570.0
-  private val IconColumnWidth          = 25.0
-  private val ObsIdColumnWidth         = 140.0
-  private val ObsIdMinWidth            = 66.2167 + SeqexecStyles.TableBorderWidth
-  private val StateColumnWidth         = 80.0
-  private val StateMinWidth            = 53.3667 + SeqexecStyles.TableBorderWidth
-  private val InstrumentColumnWidth    = 80.0
-  private val InstrumentMinWidth       = 90.4333 + SeqexecStyles.TableBorderWidth
-  private val TargetNameColumnWidth    = 140.0
-  private val TargetMinWidth           = 60.0167 + SeqexecStyles.TableBorderWidth
-  private val ObsNameColumnWidth       = 140.0
-  private val ObsNameMinWidth          = 60.0167 + SeqexecStyles.TableBorderWidth
-  private val SessionQueueColumnStyle: String = SeqexecStyles.queueTextColumn.htmlClass
+  private val PhoneCut              = 400.0
+  private val LargePhoneCut         = 570.0
+  private val IconColumnWidth       = 25.0
+  private val ObsIdColumnWidth      = 140.0
+  private val ObsIdMinWidth         = 66.2167 + SeqexecStyles.TableBorderWidth
+  private val StateColumnWidth      = 80.0
+  private val StateMinWidth         = 53.3667 + SeqexecStyles.TableBorderWidth
+  private val InstrumentColumnWidth = 80.0
+  private val InstrumentMinWidth    = 90.4333 + SeqexecStyles.TableBorderWidth
+  private val TargetNameColumnWidth = 140.0
+  private val TargetMinWidth        = 60.0167 + SeqexecStyles.TableBorderWidth
+  private val ObsNameColumnWidth    = 140.0
+  private val ObsNameMinWidth       = 60.0167 + SeqexecStyles.TableBorderWidth
+  private val SessionQueueColumnStyle: String =
+    SeqexecStyles.queueTextColumn.htmlClass
 
   sealed trait TableColumn extends Product with Serializable
   case object IconColumn       extends TableColumn
@@ -120,19 +123,19 @@ object SessionQueueTableBody {
     ObsNameColumnMeta)
 
   val columnsDefaultWidth: Map[TableColumn, Double] = Map(
-    IconColumn       -> IconColumnWidth,
-    ObsIdColumn      -> ObsIdColumnWidth,
-    StateColumn      -> StateColumnWidth,
+    IconColumn -> IconColumnWidth,
+    ObsIdColumn -> ObsIdColumnWidth,
+    StateColumn -> StateColumnWidth,
     InstrumentColumn -> InstrumentColumnWidth,
     TargetNameColumn -> TargetNameColumnWidth,
-    ObsNameColumn    -> ObsNameColumnWidth
+    ObsNameColumn -> ObsNameColumnWidth
   )
 
   final case class Props(ctl:       RouterCtl[SeqexecPages],
-                         sequences: ModelProxy[StatusAndLoadedSequencesFocus]) {
-    val sequencesList: List[SequenceInSessionQueue] = sequences().sequences
+                         sequences: StatusAndLoadedSequencesFocus) {
+    val sequencesList: List[SequenceInSessionQueue] = sequences.sequences
 
-    val startState: TableState[TableColumn] = sequences().tableState
+    val startState: TableState[TableColumn] = sequences.tableState
 
     def rowGetter(i: Int): SessionQueueRow =
       sequencesList
@@ -153,9 +156,9 @@ object SessionQueueTableBody {
     val rowCount: Int =
       sequencesList.size
 
-    val canOperate: Boolean = sequences().status.canOperate
+    val canOperate: Boolean = sequences.status.canOperate
 
-    val user: Option[UserDetails] = sequences().status.u
+    val user: Option[UserDetails] = sequences.status.u
   }
 
   final case class State(tableState: TableState[TableColumn],
@@ -302,6 +305,14 @@ object SessionQueueTableBody {
       tableState ^|-> TableState.scrollPosition[TableColumn]
   }
 
+  implicit val tcReuse: Reusability[TableColumn] = Reusability.byRef
+  implicit val sqSeFocusReuse: Reusability[SequenceInSessionQueue] =
+    Reusability.byEq
+  implicit val stSeFocusReuse: Reusability[StatusAndLoadedSequencesFocus] =
+    Reusability.by(x => (x.status, x.sequences, x.tableState))
+  implicit val propsReuse: Reusability[Props] = Reusability.by(_.sequences)
+  implicit val stateReuse: Reusability[State] = Reusability.derive[State]
+
   // ScalaJS defined trait
   // scalastyle:off
   trait SessionQueueRow extends js.Object {
@@ -343,15 +354,15 @@ object SessionQueueTableBody {
     }
 
     def unapply(l: SessionQueueRow):
-      Option[(Observation.Id,
-         SequenceState,
-         Instrument,
-         Option[String],
-         String,
-         Boolean,
-         Boolean,
-         Option[Int],
-         Option[RunningStep])] =
+     Option[(Observation.Id,
+       SequenceState,
+       Instrument,
+       Option[String],
+       String,
+       Boolean,
+       Boolean,
+       Option[Int],
+       Option[RunningStep])] =
       Some(
         (l.obsId,
          l.status,
@@ -394,7 +405,8 @@ object SessionQueueTableBody {
     }
 
   private def linkedTextRenderer(p: Props)(
-      f: SessionQueueRow => TagMod): CellRenderer[js.Object, js.Object, SessionQueueRow] =
+    f:                              SessionQueueRow => TagMod
+  ): CellRenderer[js.Object, js.Object, SessionQueueRow] =
     (_, _, _, row: SessionQueueRow, _) => {
       linkTo(p, pageOf(row))(SeqexecStyles.queueTextColumn, f(row))
     }
@@ -428,7 +440,9 @@ object SessionQueueTableBody {
     <.p(SeqexecStyles.queueText, targetName)
   }
 
-  private def statusIconRenderer(b: Backend): CellRenderer[js.Object, js.Object, SessionQueueRow] =
+  private def statusIconRenderer(
+    b: Backend
+  ): CellRenderer[js.Object, js.Object, SessionQueueRow] =
     (_, _, _, row: SessionQueueRow, index) => {
       val isFocused = row.active
       val icon: TagMod =
@@ -646,9 +660,10 @@ object SessionQueueTableBody {
       .withWidths(p.sequencesList)
 
   private val component = ScalaComponent
-    .builder[Props]("SessionQueueTableBody")
+    .builder[Props]("SessionQueueTable")
     .initialStateFromProps(initialState)
     .render($ => AutoSizer(AutoSizer.props(table($), disableHeight = true)))
+    .configure(Reusability.shouldComponentUpdate)
     .componentWillReceiveProps { $ =>
       $.modState { s =>
         s.loginState($.nextProps.canOperate)
@@ -658,9 +673,10 @@ object SessionQueueTableBody {
     }
     .build
 
-  def apply(ctl: RouterCtl[SeqexecPages],
-            p:   ModelProxy[StatusAndLoadedSequencesFocus])
-    : Unmounted[Props, State, Unit] =
+  def apply(
+    ctl: RouterCtl[SeqexecPages],
+    p:   StatusAndLoadedSequencesFocus
+  ): Unmounted[Props, State, Unit] =
     component(Props(ctl, p))
 
 }

@@ -1,7 +1,7 @@
 // Copyright (c) 2016-2018 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
-package seqexec.web.client
+package seqexec.web.client.model
 
 import cats.Show
 import cats.implicits._
@@ -9,7 +9,6 @@ import cats.data.NonEmptyList
 import gem.enum.Site
 import seqexec.model.enum.{ ActionStatus, Instrument, Resource }
 import seqexec.model.{ StepState, SequenceState, Step, StandardStep }
-import seqexec.web.client.model.RunningStep
 import seqexec.model.SequenceView
 
 /**
@@ -119,6 +118,8 @@ object ModelOps {
   sealed trait InstrumentProperties
 
   object InstrumentProperties {
+    case object Exposure      extends InstrumentProperties
+    case object Filter        extends InstrumentProperties
     case object Disperser     extends InstrumentProperties
     case object Offsets       extends InstrumentProperties
     case object FPU           extends InstrumentProperties
@@ -129,23 +130,39 @@ object ModelOps {
 
     def displayItems: Set[InstrumentProperties] = i match {
       case Instrument.F2 =>
-        Set(InstrumentProperties.Offsets, InstrumentProperties.FPU)
+        Set(InstrumentProperties.Exposure,
+            InstrumentProperties.Filter,
+            InstrumentProperties.Offsets,
+            InstrumentProperties.FPU)
       case Instrument.GmosS =>
-        Set(InstrumentProperties.Offsets,
+        Set(InstrumentProperties.Exposure,
+            InstrumentProperties.Filter,
+            InstrumentProperties.Offsets,
             InstrumentProperties.Disperser,
             InstrumentProperties.FPU)
       case Instrument.GmosN =>
-        Set(InstrumentProperties.Offsets,
+        Set(InstrumentProperties.Exposure,
+            InstrumentProperties.Filter,
+            InstrumentProperties.Offsets,
             InstrumentProperties.Disperser,
             InstrumentProperties.FPU)
       case Instrument.GNIRS =>
-        Set(InstrumentProperties.Offsets,
+        Set(InstrumentProperties.Exposure,
+            InstrumentProperties.Filter,
+            InstrumentProperties.Offsets,
             InstrumentProperties.Disperser,
             InstrumentProperties.FPU)
       case Instrument.GPI =>
-        Set(InstrumentProperties.ObservingMode, InstrumentProperties.Disperser)
+        Set(InstrumentProperties.Exposure,
+            InstrumentProperties.Filter,
+            InstrumentProperties.ObservingMode,
+            InstrumentProperties.Disperser)
       case Instrument.GHOST => Set.empty
-      case _                => Set(InstrumentProperties.Offsets, InstrumentProperties.FPU)
+      case _                =>
+        Set(InstrumentProperties.Exposure,
+            InstrumentProperties.Filter,
+            InstrumentProperties.Offsets,
+            InstrumentProperties.FPU)
     }
   }
 

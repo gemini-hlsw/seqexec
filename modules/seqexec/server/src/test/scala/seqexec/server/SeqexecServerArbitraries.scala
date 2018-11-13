@@ -257,7 +257,7 @@ object SeqexecServerArbitraries extends ArbTime {
       Some(srifu1name), Some(srifu1RA), Some(srifu1Dec),
       Some(srifu2name), Some(srifu1RA), Some(srifu1Dec),
       None, None, None,
-      None, None)
+      None, None, None)
     }
 
   implicit val ghostCogen: Cogen[GHOSTController.GHOSTConfig] =
@@ -265,12 +265,12 @@ object SeqexecServerArbitraries extends ArbTime {
       Option[String], Option[HourAngle], Option[Angle],
       Option[String], Option[HourAngle], Option[Angle],
       Option[String], Option[HourAngle], Option[Angle],
-      Option[HourAngle], Option[Angle])]
+      Option[String], Option[HourAngle], Option[Angle])]
     .contramap(x => (x.baseRAHMS, x.baseDecDMS, x.expTime,
       x.srifu2Name, x.srifu1CoordsRAHMS, x.srifu1CoordsDecDMS,
       x.srifu2Name, x.srifu2CoordsRAHMS, x.srifu2CoordsDecDMS,
       x.hrifu1Name, x.hrifu1CoordsRAHMS, x.hrifu1CoordsDecDMS,
-      x.hrifu2CoordsRAHMS, x.hrifu2CoordsDecDMS
+      x.hrifu2Name, x.hrifu2CoordsRAHMS, x.hrifu2CoordsDecDMS
     ))
 
   implicit val keywordTypeArb: Arbitrary[KeywordType] = Arbitrary {

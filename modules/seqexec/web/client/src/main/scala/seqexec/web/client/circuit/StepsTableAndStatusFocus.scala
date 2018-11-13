@@ -20,11 +20,13 @@ object StepsTableAndStatusFocus {
   implicit val eq: Eq[StepsTableAndStatusFocus] =
     Eq.by(x => (x.status, x.stepsTable, x.configTableState))
 
-  def stepsTableAndStatusFocusG(id: Observation.Id): Getter[SeqexecAppRootModel, StepsTableAndStatusFocus] =
+  def stepsTableAndStatusFocusG(
+    id: Observation.Id): Getter[SeqexecAppRootModel, StepsTableAndStatusFocus] =
     ClientStatus.clientStatusFocusL.asGetter
-    .zip(StepsTableFocus
-        .stepsTableG(id)
-        .zip(SeqexecAppRootModel.configTableStateL.asGetter)) >>> {
+      .zip(
+        StepsTableFocus
+          .stepsTableG(id)
+          .zip(SeqexecAppRootModel.configTableStateL.asGetter)) >>> {
       case (s, (f, t)) => StepsTableAndStatusFocus(s, f, t)
     }
 

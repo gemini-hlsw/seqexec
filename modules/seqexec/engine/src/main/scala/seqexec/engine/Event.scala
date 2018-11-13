@@ -28,15 +28,19 @@ object Event {
   def getState[D<:Engine.Types](f: D#StateType => Option[Stream[IO, Event[D]]]): Event[D] = EventUser[D](GetState[D](f))
   def modifyState[D<:Engine.Types](f: Handle[D#StateType, Event[D], D#EventData]): Event[D] = EventUser[D](ModifyState[D](f))
   def actionStop[D<:Engine.Types](id: Observation.Id, f: D#StateType => Option[Stream[IO, Event[D]]]): Event[D] = EventUser[D](ActionStop(id, f))
-  def actionResume[D<:Engine.Types](id: Observation.Id, i: Int, c: IO[Result]): Event[D] = EventUser[D](ActionResume(id, i, c))
+  def actionResume[D<:Engine.Types](id: Observation.Id, i: Int, c: Stream[IO, Result]): Event[D] =
+    EventUser[D](ActionResume(id, i, c))
   def logDebugMsg[D<:Engine.Types](msg: String): Event[D] = EventUser[D](LogDebug(msg))
   def logInfoMsg[D<:Engine.Types](msg: String): Event[D] = EventUser[D](LogInfo(msg))
   def logWarningMsg[D<:Engine.Types](msg: String): Event[D] = EventUser[D](LogWarning(msg))
   def logErrorMsg[D<:Engine.Types](msg: String): Event[D] = EventUser[D](LogError(msg))
 
   def failed(id: Observation.Id, i: Int, e: Result.Error): Event[Nothing] = EventSystem(Failed(id, i, e))
-  def completed[R<:Result.RetVal](id: Observation.Id, i: Int, r: Result.OK[R]): Event[Nothing] = EventSystem(Completed(id, i, r))
-  def partial[R<:Result.PartialVal](id: Observation.Id, i: Int, r: Result.Partial[R]): Event[Nothing] = EventSystem(PartialResult(id, i, r))
+  def completed[R<:Result.RetVal](id: Observation.Id, stepId: Step.Id, i: Int, r: Result.OK[R])
+  : Event[Nothing] = EventSystem(Completed(id, stepId, i, r))
+  def partial[R<:Result.PartialVal](id: Observation.Id, stepId: Step.Id, i: Int,
+                                    r: Result.Partial[R]): Event[Nothing] =
+    EventSystem(PartialResult(id, stepId, i, r))
   def paused[C <: Result.PauseContext](id: Observation.Id, i: Int, c: Result.Paused[C]): Event[Nothing] = EventSystem(Paused(id, i, c))
   def breakpointReached(id: Observation.Id): Event[Nothing] = EventSystem(BreakpointReached(id))
   def busy(id: Observation.Id, clientId: ClientId): Event[Nothing] = EventSystem(Busy(id, clientId))

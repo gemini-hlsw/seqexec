@@ -50,6 +50,9 @@ final case class Gnirs(controller: GnirsController, dhsClient: DhsClient) extend
   override def notifyObserveEnd: SeqAction[Unit] = controller.endObserve
 
   override def notifyObserveStart = SeqAction.void
+
+  override def observeProgress(total: Time, elapsed: ElapsedTime): fs2.Stream[IO, Progress] =
+    controller.observeProgress(total)
 }
 
 object Gnirs {

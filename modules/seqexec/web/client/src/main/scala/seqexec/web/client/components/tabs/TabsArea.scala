@@ -6,6 +6,7 @@ package seqexec.web.client.components.tabs
 import gem.enum.Site
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.ScalaComponent
+import japgolly.scalajs.react.React
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.extra.Reusability
 import japgolly.scalajs.react.extra.router.RouterCtl
@@ -34,7 +35,7 @@ object TabsArea {
         SeqexecStyles.sequencesArea,
         SeqexecTabs(SeqexecTabs.Props(p.router)),
         tabsConnect(x =>
-          ReactFragment(x().toList.collect {
+          React.Fragment(x().toList.collect {
             case t: SequenceTabContentFocus =>
               SequenceTabContent(SequenceTabContent.Props(p.router, t)): VdomNode
             case t =>

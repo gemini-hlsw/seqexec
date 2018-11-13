@@ -12,13 +12,11 @@ import seqexec.engine.Result.{PartialVal, PauseContext, RetVal}
 import seqexec.model.{ClientId, SequenceState}
 import fs2.Stream
 import gem.Observation
-import monocle.{Lens, Optional}
-import monocle.macros.Lenses
-import monocle.function.Index.index
+import monocle.Optional
 import mouse.boolean._
 import org.log4s.getLogger
 
-class Engine[D, U](stateL: Lens[D, Engine.State]) {
+class Engine[D, U](stateL: Engine.State[D]) {
 
   class ConcreteTypes extends Engine.Types {
     override type StateType = D
@@ -33,7 +31,7 @@ class Engine[D, U](stateL: Lens[D, Engine.State]) {
     * Changes the `Status` and returns the new `Queue.State`.
     */
   private def switch(id: Observation.Id)(st: SequenceState): HandleType[Unit] =
-    modifyS(id)(s => Sequence.State.status.set(st)(s))
+    modifyS(id)(Sequence.State.status.set(st))
 
   def start(id: Observation.Id, clientId: ClientId, userCheck: D => Boolean): HandleType[Unit] =
     getS(id).flatMap {
@@ -56,33 +54,30 @@ class Engine[D, U](stateL: Lens[D, Engine.State]) {
   private def cancelPause(id: Observation.Id): HandleType[Unit] = modifyS(id)(Sequence.State.userStopSet(false))
 
   /**
-    * Load a Sequence
-    * If the sequence already exists, it only updates the pending steps.
+    * Builds the initial state of a sequence
     */
-  def load(id: Observation.Id, seq: Sequence): Endo[D] =
-    stateL.modify(st =>
-      st.copy(sequences = st.sequences.get(id).map(t => st.sequences.updated(id, Sequence.State.reload(seq.steps, t))
-        ).getOrElse(st.sequences.updated(id, Sequence.State.init(seq))))
-    )
-
-  def unload(id: Observation.Id): Endo[D] =
-    stateL.modify(
-      st => st.copy(sequences =
-        st.sequences.get(id).map(t =>
-          if (Sequence.State.isRunning(t)) st.sequences
-          else st.sequences - id
-        ).getOrElse(st.sequences)
-      )
-    )
+  def load(seq: Sequence[IO]): Sequence.State[IO] = Sequence.State.init(seq)
 
   /**
-    * Refresh the steps executions of an existing sequence
+    * Redefines an existing sequence. Changes the step actions, removes steps, adds new steps.
+    */
+  def reload(seq: Sequence.State[IO], steps: List[Step[IO]]): Sequence.State[IO] =
+    Sequence.State.reload(steps, seq)
+
+  /**
+    * Tells if a sequence can be safely removed
+    */
+  def canUnload(id: Observation.Id)(st: D): Boolean =
+    stateL.sequenceStateIndex(id).getOption(st).map(!Sequence.State.isRunning(_)).getOrElse(true)
+
+  /**
+    * Refresh the steps executions of an existing sequence. Does not add nor remove steps.
     * @param id sequence identifier
     * @param steps List of new steps definitions
     * @return
     */
-  def update(id: Observation.Id, steps: List[Step]): Endo[D] =
-    (stateL ^|-? Engine.State.sequenceState(id)).modify(_.update(steps.map(_.executions)))
+  def update(id: Observation.Id, steps: List[Step[IO]]): Endo[D] =
+    stateL.sequenceStateIndex(id).modify(_.update(steps.map(_.executions)))
 
   /**
     * Adds the current `Execution` to the completed `Queue`, makes the next
@@ -98,7 +93,7 @@ class Engine[D, U](stateL: Lens[D, Engine.State]) {
             case None =>
               send(finished(id))
             // Final State
-            case Some(qs: Sequence.State.Final) =>
+            case Some(qs: Sequence.State.Final[IO]) =>
               putS(id)(qs) *> send(finished(id))
             // Execution completed
             case Some(qs) =>
@@ -110,7 +105,7 @@ class Engine[D, U](stateL: Lens[D, Engine.State]) {
             case None =>
               send(finished(id))
             // Final State
-            case Some(qs: Sequence.State.Final) =>
+            case Some(qs: Sequence.State.Final[IO]) =>
               putS(id)(qs) *> send(finished(id))
             // Execution completed. Check breakpoint here
             case Some(qs) =>
@@ -128,29 +123,31 @@ class Engine[D, U](stateL: Lens[D, Engine.State]) {
     */
   // Send the expected event when the `Action` is executed
   // It doesn't catch run time exceptions. If desired, the Action has to do it itself.
-  private def act(id: Observation.Id, t: (IO[Result], Int)): Stream[IO, EventType] = t match {
+  private def act(id: Observation.Id, stepId: Step.Id, t: (Stream[IO, Result], Int))
+  : Stream[IO, EventType] = t match {
     case (gen, i) =>
-      Stream.eval(gen).flatMap {
-        case r@Result.OK(_)         => Stream(completed(id, i, r))
-        case r@Result.Partial(_, c) => Stream(partial(id, i, r)) ++ act(id, (c, i))
-        case e@Result.Error(_)      => Stream(failed(id, i, e))
-        case r@Result.Paused(_)     => Stream(paused(id, i, r))
+      gen.map {
+        case r@Result.OK(_)      => completed(id, stepId, i, r)
+        case r@Result.Partial(_) => partial(id, stepId, i, r)
+        case e@Result.Error(_)   => failed(id, i, e)
+        case r@Result.Paused(_)  => paused(id, i, r)
       }
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
   private def execute(id: Observation.Id)(implicit ev: Concurrent[IO]): HandleType[Unit] = {
-    get.flatMap(st => stateL.get(st).sequences.get(id).map {
-      case seq@Sequence.State.Final(_, _) =>
+    get.flatMap(st => stateL.sequenceStateIndex(id).getOption(st).map {
+      case seq@Sequence.State.Final(_, _)  =>
         // The sequence is marked as completed here
         putS(id)(seq) *> send(finished(id))
-      case seq                            =>
-        val u: List[Stream[IO, EventType]] = seq.current.actions.map(_.gen).zipWithIndex.map(x => act(id, x))
+      case seq@Sequence.State.Zipper(z, _) =>
+        val stepId = z.focus.toStep.id
+        val u: List[Stream[IO, EventType]] = seq.current.actions.map(_.gen).zipWithIndex.map(x =>
+          act(id, stepId, x))
         val v: Stream[IO, EventType] = Stream.emits(u).parJoin(u.length)
         val w: List[HandleType[Unit]] = seq.current.actions.indices.map(i => modifyS(id)(_.start(i))).toList
         w.sequence *> Handle.fromStream(v)
-    }.getOrElse(unit)
-    )
+    }.getOrElse(unit) )
   }
 
   private def getState(f: D => Option[Stream[IO, EventType]]): HandleType[Unit] =
@@ -174,10 +171,12 @@ class Engine[D, U](stateL: Lens[D, Engine.State]) {
 
   def actionPause[C <: PauseContext](id: Observation.Id, i: Int, p: Result.Paused[C]): HandleType[Unit] = modifyS(id)(s => Sequence.State.internalStopSet(false)(s).mark(i)(p))
 
-  private def actionResume(id: Observation.Id, i: Int, cont: IO[Result]): HandleType[Unit] = getS(id).flatMap(_.map { s =>
-    if (Sequence.State.isRunning(s) && s.current.execution.lift(i).exists(Action.paused))
-      modifyS(id)(_.start(i)) *> Handle.fromStream(act(id, (cont, i)))
-    else unit
+  private def actionResume(id: Observation.Id, i: Int, cont: Stream[IO, Result])
+  : HandleType[Unit] =
+    getS(id).flatMap(_.collect {
+      case s@Sequence.State.Zipper(z, _)
+        if (Sequence.State.isRunning(s) && s.current.execution.lift(i).exists(Action.paused)) =>
+          modifyS(id)(_.start(i)) *> Handle.fromStream(act(id, z.focus.toStep.id, (cont, i)))
   }.getOrElse(unit))
 
   /**
@@ -249,22 +248,35 @@ class Engine[D, U](stateL: Lens[D, Engine.State]) {
     }
 
     def handleSystemEvent(se: SystemEvent): HandleType[ResultType] = se match {
-      case Completed(id, i, r)     => Logger.debug("Engine: Action completed") *> complete(id, i, r) *> pure(SystemUpdate(se, EventResult.Ok))
-      case PartialResult(id, i, r) => Logger.debug("Engine: Partial result") *> partialResult(id, i, r) *> pure(SystemUpdate(se, EventResult.Ok))
-      case Paused(id, i, r)        => Logger.debug("Engine: Action paused") *> actionPause(id, i, r) *> pure(SystemUpdate(se, EventResult.Ok))
-      case Failed(id, i, e)        => logError(e) *> fail(id)(i, e) *> pure(SystemUpdate(se, EventResult.Ok))
-      case Busy(id, _)             => Logger.warning(s"Cannot run sequence ${id.format} because required systems are in use.") *> pure(SystemUpdate(se, EventResult.Ok))
-      case BreakpointReached(_)    => Logger.debug("Engine: Breakpoint reached") *> pure(SystemUpdate(se, EventResult.Ok))
-      case Executed(id)            => Logger.debug("Engine: Execution completed") *> next(id) *> pure(SystemUpdate(se, EventResult.Ok))
-      case Executing(id)           => Logger.debug("Engine: Executing") *> execute(id) *> pure(SystemUpdate(se, EventResult.Ok))
-      case Finished(id)            => Logger.debug("Engine: Finished") *> switch(id)(SequenceState.Completed) *> pure(SystemUpdate(se, EventResult.Ok))
-      case Null                    => pure(SystemUpdate(se, EventResult.Ok))
+      case Completed(id, _, i, r)        => Logger.debug(
+        s"Engine: From sequence ${id.format}: Action completed ($r)") *> complete(id, i, r) *>
+        pure(SystemUpdate(se, EventResult.Ok))
+      case PartialResult(id, _, i, r) => Logger.debug(
+        s"Engine: From sequence ${id.format}: Partial result ($r)")  *> partialResult(id, i, r) *>
+        pure(SystemUpdate(se, EventResult.Ok))
+      case Paused(id, i, r)           => Logger.debug("Engine: Action paused") *>
+        actionPause(id, i, r) *> pure(SystemUpdate(se, EventResult.Ok))
+      case Failed(id, i, e)           => logError(e) *> fail(id)(i, e) *>
+        pure(SystemUpdate(se, EventResult.Ok))
+      case Busy(id, _)                => Logger.warning(s"Cannot run sequence ${id.format} " +
+        s"because " +
+        s"required systems are in use.") *> pure(SystemUpdate(se, EventResult.Ok))
+      case BreakpointReached(_)       => Logger.debug("Engine: Breakpoint reached") *>
+        pure(SystemUpdate(se, EventResult.Ok))
+      case Executed(id)               => Logger.debug("Engine: Execution completed") *>
+        next(id) *> pure(SystemUpdate(se, EventResult.Ok))
+      case Executing(id)              => Logger.debug("Engine: Executing") *>
+        execute(id) *> pure(SystemUpdate(se, EventResult.Ok))
+      case Finished(id)               => Logger.debug("Engine: Finished") *>
+        switch(id)(SequenceState.Completed) *> pure(SystemUpdate(se, EventResult.Ok))
+      case Null                       => pure(SystemUpdate(se, EventResult.Ok))
     }
 
-    (ev match {
+    ev match {
       case EventUser(ue)   => handleUserEvent(ue)
-      case EventSystem(se) => handleSystemEvent(se).flatMap(x => userReact.applyOrElse(se, (_:SystemEvent) => unit).map(_ => x))
-    })
+      case EventSystem(se) => handleSystemEvent(se).flatMap(x =>
+        userReact.applyOrElse(se, (_:SystemEvent) =>  unit).map(_ => x))
+    }
   }
 
   /** Traverse a process with a stateful computation. */
@@ -272,27 +284,33 @@ class Engine[D, U](stateL: Lens[D, Engine.State]) {
   // initalState: state
   // f takes an event and the current state, it produces a new state, a new value B and more actions
   @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
-  def mapEvalState[A, S, B](input: Stream[IO, A], initialState: S, f: (A, S) => IO[(S, B, Stream[IO, A])])(implicit ev: Concurrent[IO]): Stream[IO, B] = {
+  def mapEvalState[A, S, B](input: Stream[IO, A],
+                            initialState: S, f: (A, S) => IO[(S, B, Option[Stream[IO, A]])])
+                           (implicit ev: Concurrent[IO]): Stream[IO, B] = {
     Stream.eval(fs2.concurrent.Queue.unbounded[IO, Stream[IO, A]]).flatMap { q =>
       Stream.eval_(q.enqueue1(input)) ++
         q.dequeue.parJoinUnbounded.evalMapAccumulate(initialState) { (s, a) =>
           f(a, s).flatMap {
-            case (ns, b, st) =>
-              q.enqueue1(st) >> IO.pure((ns, b))
+            case (ns, b, None)     => IO.pure((ns, b))
+            case (ns, b, Some(st)) => q.enqueue1(st) >> IO.pure((ns, b))
           }
         }.map(_._2)
     }
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.AnyVal", "org.wartremover.warts.ImplicitParameter"))
-  private def runE(userReact: PartialFunction[SystemEvent, HandleType[Unit]])(ev: EventType, s: D)(implicit ci: Concurrent[IO]): IO[(D, (ResultType, D), Stream[IO, EventType])] =
+  private def runE(userReact: PartialFunction[SystemEvent, HandleType[Unit]])
+                  (ev: EventType,s: D)
+                  (implicit ci: Concurrent[IO])
+  : IO[(D, (ResultType, D), Option[Stream[IO, EventType]])] =
     run(userReact)(ev).run.run(s).map {
-      case (si, (r, p)) =>
-        (si, (r, si), p.getOrElse(Stream.empty))
+      case (si, (r, p)) => (si, (r, si), p)
     }
 
   @SuppressWarnings(Array("org.wartremover.warts.AnyVal", "org.wartremover.warts.ImplicitParameter"))
-  def process(userReact: PartialFunction[SystemEvent, HandleType[Unit]])(input: Stream[IO, EventType])(qs: D)(implicit ev: Concurrent[IO]): Stream[IO, (ResultType, D)] =
+  def process(userReact: PartialFunction[SystemEvent, HandleType[Unit]])
+             (input: Stream[IO, EventType])(qs: D)(implicit ev: Concurrent[IO])
+  : Stream[IO, (ResultType, D)] =
     mapEvalState[EventType, D, (ResultType, D)](input, qs, runE(userReact)(_, _))
 
   // Functions for type bureaucracy
@@ -311,33 +329,28 @@ class Engine[D, U](stateL: Lens[D, Engine.State]) {
   def modify(f: D => D): HandleType[Unit] =
     Handle.modify(f)
 
-  private def getS(id: Observation.Id): HandleType[Option[Sequence.State]] = get.map(stateL.get(_).sequences.get(id))
+  private def getS(id: Observation.Id): HandleType[Option[Sequence.State[IO]]] =
+    get.map(stateL.sequenceStateIndex(id).getOption(_))
 
-  private def getSs[A](id: Observation.Id)(f: Sequence.State => A): HandleType[Option[A]] =
-    inspect(stateL.get(_).sequences.get(id).map(f))
+  private def getSs[A](id: Observation.Id)(f: Sequence.State[IO] => A): HandleType[Option[A]] =
+    inspect(stateL.sequenceStateIndex(id).getOption(_).map(f))
 
-  private def modifyS(id: Observation.Id)(f: Sequence.State => Sequence.State): HandleType[Unit] =
-    modify((stateL ^|-? Engine.State.sequenceState(id)).modify(f))
+  private def modifyS(id: Observation.Id)(f: Sequence.State[IO] => Sequence.State[IO]): HandleType[Unit] =
+    modify(stateL.sequenceStateIndex(id).modify(f))
 
-  private def putS(id: Observation.Id)(s: Sequence.State): HandleType[Unit] =
-    modify((stateL ^|-? Engine.State.sequenceState(id)).set(s))
+  private def putS(id: Observation.Id)(s: Sequence.State[IO]): HandleType[Unit] =
+    modify(stateL.sequenceStateIndex(id).set(s))
 
   // For debugging
   def printSequenceState(id: Observation.Id): HandleType[Unit] =
-    getSs(id)((qs: Sequence.State) => StateT.liftF(IO.pure(println(qs)))).void // scalastyle:ignore
+    getSs(id)((qs: Sequence.State[IO]) => StateT.liftF(IO.pure(println(qs)))).void // scalastyle:ignore
 
 }
 
-@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object Engine {
 
-  @Lenses
-  final case class State(sequences: Map[Observation.Id, Sequence.State])
-
-  object State {
-    def empty: State = State(Map.empty)
-    private def atSequence(id: Observation.Id): Optional[Map[Observation.Id, Sequence.State], Sequence.State] = index(id)
-    def sequenceState[D](id: Observation.Id): Optional[State, Sequence.State] = State.sequences ^|-? atSequence(id)
+  trait State[D] {
+    def sequenceStateIndex(sid: Observation.Id): Optional[D, Sequence.State[IO]]
   }
 
   abstract class Types {

@@ -2366,6 +2366,12 @@
             <description>GPI Port</description>
             <top>ag</top>
         </attribute>
+        <attribute name="ghostPort">
+            <channel>port:ghost.VAL</channel>
+            <type>INTEGER</type>
+            <description>GHOST Port</description>
+            <top>ag</top>
+        </attribute>
     </Status>
     <Status name="pwfs1state">
         <top>pwfs1</top>

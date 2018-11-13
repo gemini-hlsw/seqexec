@@ -7,15 +7,17 @@ import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
 
 import cats.Show
 import cats.data.EitherT
-import cats.effect.IO
+import cats.effect.{ IO, Timer }
 import cats.implicits._
+import fs2.Stream
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.SeqexecFailure.SeqexecException
 import gov.aps.jca.TimeoutException
 import mouse.all._
 import org.log4s.getLogger
-import squants.Time
-import squants.time.Seconds
+import scala.concurrent.ExecutionContext
+import seqexec.server.InstrumentSystem.ElapsedTime
+import squants.time.{Seconds, Time}
 
 import scala.annotation.tailrec
 
@@ -91,7 +93,8 @@ class InstrumentControllerSim(name: String, useTimeout: Boolean) {
   def resumePaused: SeqAction[ObserveCommand.Result] = EitherT( IO {
     Log.info(s"Simulate resuming $name observation")
     pauseFlag.set(false)
-    observeTic(stop = false, abort = false, pause = false, remainingTime.get, useTimeout.option(remainingTime.get + 2 * tic))
+    observeTic(stop = false, abort = false, pause = false, remainingTime.get,
+      useTimeout.option(remainingTime.get + 2 * tic))
   } )
 
   def stopPaused: SeqAction[ObserveCommand.Result] = EitherT( IO {
@@ -105,6 +108,11 @@ class InstrumentControllerSim(name: String, useTimeout: Boolean) {
     pauseFlag.set(false)
     observeTic(stop = false, abort = true, pause = false, 1000, None)
   } )
+
+  def observeCountdown(total: Time, elapsed: ElapsedTime): Stream[IO, Progress] = {
+    implicit val ioTimer: Timer[IO] = IO.timer(ExecutionContext.global)
+    ProgressUtil.countdown[IO](total, elapsed.self)
+  }
 
 }
 

@@ -4,8 +4,6 @@
 package seqexec.engine
 
 import cats.Eq
-import cats.effect.IO
-import seqexec.model.enum.Resource
 import monocle.function.Index.{index, listIndex}
 import monocle.syntax.apply._
 import mouse.boolean._
@@ -15,15 +13,15 @@ import mouse.boolean._
   * information about which `Action`s have been completed.
   *
   */
-final case class Execution(execution: List[Action]) {
+final case class Execution[F[_]](execution: List[Action[F]]) {
 
   import Execution._
 
   val isEmpty: Boolean = execution.isEmpty
 
-  val actions: List[Action] = execution.filter(_.state.runState.isIdle)
+  val actions: List[Action[F]] = execution.filter(_.state.runState.isIdle)
 
-  val results: List[Action] = execution.filter(Action.finished)
+  val results: List[Action[F]] = execution.filter(Action.finished)
 
   /**
     * Calculate `Execution` `Status` based on the underlying `Action`s.
@@ -40,7 +38,7 @@ final case class Execution(execution: List[Action]) {
     * Obtain the resulting `Execution` only if all actions have been completed.
     *
     */
-  val uncurrentify: Option[Actions] =
+  val uncurrentify: Option[Actions[F]] =
     (execution.nonEmpty && finished(this)).option(results)
 
   /**
@@ -48,40 +46,40 @@ final case class Execution(execution: List[Action]) {
     *
     * If the index doesn't exist, `Current` is returned unmodified.
     */
-  def mark(i: Int)(r: Result): Execution =
+  def mark(i: Int)(r: Result): Execution[F] =
     Execution((execution &|-? index(i)).modify(a => a.copy(state = actionStateFromResult(r)(a.state))))
 
-  def start(i: Int): Execution =
+  def start(i: Int): Execution[F] =
     Execution((execution &|-? index(i)).modify(a => a.copy(state = a.state.copy(runState = Action.Started))))
 }
 
 object Execution {
 
-  val empty: Execution = Execution(Nil)
+  def empty[F[_]]: Execution[F] = Execution[F](Nil)
 
   /**
     * Make an `Execution` `Current` only if all the `Action`s in the execution
     * are pending.
     */
-  def currentify(as: Actions): Option[Execution] =
+  def currentify[F[_]](as: Actions[F]): Option[Execution[F]] =
     (as.nonEmpty && as.forall(_.state.runState.isIdle)).option(Execution(as))
 
-  def errored(ex: Execution): Boolean = ex.execution.exists(_.state.runState match {
+  def errored[F[_]](ex: Execution[F]): Boolean = ex.execution.exists(_.state.runState match {
     case Action.Failed(_) => true
     case _                => false
   })
 
-  def finished(ex: Execution): Boolean = ex.execution.forall(_.state.runState match {
+  def finished[F[_]](ex: Execution[F]): Boolean = ex.execution.forall(_.state.runState match {
     case Action.Completed(_) => true
     case Action.Failed(_)    => true
     case _                   => false
   })
 
-  def progressRatio(ex: Execution): (Int, Int) = (ex.results.length, ex.execution.length)
+  def progressRatio[F[_]](ex: Execution[F]): (Int, Int) = (ex.results.length, ex.execution.length)
 
   def actionStateFromResult(r: Result): (Action.State => Action.State) = s => r match {
     case Result.OK(x)         => s.copy(runState = Action.Completed(x))
-    case Result.Partial(x, _) => s.copy(partials = x :: s.partials )
+    case Result.Partial(x) => s.copy(partials = x :: s.partials )
     case Result.Paused(c)     => s.copy(runState = Action.Paused(c))
     case e@Result.Error(_)    => s.copy(runState = Action.Failed(e))
   }
@@ -102,7 +100,7 @@ object Result {
   trait PauseContext
 
   final case class OK[R <: RetVal](response: R) extends Result
-  final case class Partial[R <: PartialVal](response: R, continuation: IO[Result]) extends Result
+  final case class Partial[R <: PartialVal](response: R) extends Result
   final case class Paused[C <: PauseContext](ctx: PauseContext) extends Result
   // TODO: Replace the message by a richer Error type like `SeqexecFailure`
   final case class Error(msg: String) extends Result {
@@ -112,10 +110,4 @@ object Result {
     implicit val eq: Eq[Error] = Eq.fromUniversalEquals
   }
 
-  sealed trait Response extends RetVal
-  final case class Configured(resource: Resource) extends Response
-  final case class Observed(fileId: FileId) extends Response
-  object Ignored extends Response
-
-  final case class FileIdAllocated(fileId: FileId) extends PartialVal
 }

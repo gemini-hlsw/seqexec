@@ -5,7 +5,8 @@ import Common._
 import AppsCommon._
 import sbt.Keys._
 import NativePackagerHelper._
-import sbtcrossproject.{crossProject, CrossType}
+import sbtcrossproject.crossProject
+import sbtcrossproject.CrossType
 import com.typesafe.sbt.packager.docker._
 
 name := Settings.Definitions.name
@@ -439,8 +440,8 @@ lazy val seqexec_web_client = project.in(file("modules/seqexec/web/client"))
     webpackExtraArgs                         := Seq("--progress", "true"),
     emitSourceMaps                           := false,
     parallelExecution in Test                := false,
-    // Requires the DOM for tests
-    requiresDOM in Test                      := true,
+    version in installJsdom                  := "12.0.0",
+    requireJsDomEnv in Test                  := true,
     // Use yarn as it is faster than npm
     useYarn                                  := true,
     // JS dependencies via npm
@@ -542,7 +543,7 @@ lazy val seqexec_model = crossProject(JVMPlatform, JSPlatform)
   .enablePlugins(GitBranchPrompt)
   .settings(
     addCompilerPlugin(Plugins.paradisePlugin),
-    libraryDependencies ++= Seq(Mouse.value, BooPickle.value) ++ Monocle.value
+    libraryDependencies ++= Seq(Squants.value, Mouse.value, BooPickle.value) ++ Monocle.value
   )
   .jvmSettings(
     commonSettings)

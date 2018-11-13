@@ -58,10 +58,9 @@ object Footer {
         import web.client.facades.semanticui.SemanticUIVisibility._
 
         // Pick the top bar and make it stay visible regardless of scrolling
-        ctx.getDOMNode.foreach { dom =>
-          $(dom).visibility(
-            JsVisiblityOptions.visibilityType("fixed").offset(0))
-        }
+        val dom = ctx.getDOMNode.asMounted().asElement()
+        $(dom).visibility(
+          JsVisiblityOptions.visibilityType("fixed").offset(0))
     })
     .configure(Reusability.shouldComponentUpdate)
     .build

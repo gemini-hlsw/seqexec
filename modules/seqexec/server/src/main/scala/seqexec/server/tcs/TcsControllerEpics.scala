@@ -175,7 +175,8 @@ object TcsControllerEpics extends TcsController {
     case Instrument.NIRI   => TcsEpics.instance.niriPort
     case Instrument.GNIRS  => TcsEpics.instance.gnirsPort
     case Instrument.NIFS   => TcsEpics.instance.nifsPort
-    case _                       => None
+    case Instrument.GHOST  => TcsEpics.instance.ghostPort
+    case _                 => None
   }).flatMap(p => if (p === 0) None else Some(p))
 
   // Decoding and encoding the science fold position require some common definitions, therefore I put them inside an

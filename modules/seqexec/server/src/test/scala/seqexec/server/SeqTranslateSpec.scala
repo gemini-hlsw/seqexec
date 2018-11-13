@@ -7,11 +7,13 @@ import java.time.LocalDate
 
 import cats.implicits._
 import cats.effect._
+import fs2.Stream
 import giapi.client.Giapi
 import giapi.client.gpi.GPIClient
 import gem.Observation
 import gem.enum.Site
-import seqexec.engine.{Action, Engine, Result, Sequence, Step}
+import scala.concurrent.ExecutionContext
+import seqexec.engine.{Action, Result, Sequence, Step}
 import seqexec.model.enum.Instrument.GmosS
 import seqexec.model.{ActionType, SequenceState, StepConfig}
 import seqexec.server.SeqTranslate.ObserveContext
@@ -28,48 +30,60 @@ import giapi.client.ghost.GHOSTClient
 import org.scalatest.FlatSpec
 import org.http4s.Uri._
 import squants.time.Seconds
-import monocle.Monocle._
+import seqexec.server.Response.Observed
 import seqexec.server.ghost.GHOSTController
 
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 @SuppressWarnings(Array("org.wartremover.warts.Throw"))
 class SeqTranslateSpec extends FlatSpec {
 
+  implicit val ioTimer: Timer[IO] = IO.timer(ExecutionContext.global)
+  implicit val csTimer: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
+
   private val config: StepConfig = Map()
   private val fileId = "DummyFileId"
   private val seqId = Observation.Id.unsafeFromString("GS-2018A-Q-1-1")
-  private def observeActions(state: Action.ActionState): List[Action] = List(Action(ActionType.Observe, IO(Result.OK(Result.Observed(fileId))), Action.State(state, Nil)))
+  private def observeActions(state: Action.ActionState): List[Action[IO]] = List(
+    Action(ActionType.Observe, Stream.emit(Result.OK(Observed(fileId))).covary[IO],
+      Action.State(state, Nil))
+  )
   private val seqg = SequenceGen(
     seqId,
     "",
     GmosS,
-    List(SequenceGen.Step(
+    List(SequenceGen.PendingStepGen(
       1,
       config,
       Set(GmosS),
       _ => Step.init(
         1,
-        None,
         List(observeActions(Action.Idle))
       )
     ))
   )
 
   private val baseState: EngineState = (SeqexecEngine.loadSequenceEndo(seqId, seqg) >>>
-    (EngineState.executionState ^|-> Engine.State.sequences ^|-? index[Map[Observation.Id,Sequence.State], Observation.Id, Sequence.State](seqId) ^|-> Sequence.State.status).set(SequenceState.Running.init))(EngineState.default)
+    (EngineState.sequenceStateIndex(seqId) ^|-> Sequence.State.status).set(
+      SequenceState.Running.init))(EngineState.default)
 
   // Observe started
-  private val s0: EngineState = (EngineState.executionState ^|-? Engine.State.sequenceState(seqId)).modify(_.start(0))(baseState)
+  private val s0: EngineState = EngineState.sequenceStateIndex(seqId)
+    .modify(_.start(0))(baseState)
   // Observe pending
   private val s1: EngineState = baseState
   // Observe completed
-  private val s2: EngineState = (EngineState.executionState ^|-? Engine.State.sequenceState(seqId)).modify(_.mark(0)(Result.OK(Result.Observed(fileId))))(baseState)
+  private val s2: EngineState = EngineState.sequenceStateIndex(seqId)
+    .modify(_.mark(0)(Result.OK(Observed(fileId))))(baseState)
   // Observe started, but with file Id already allocated
-  private val s3: EngineState = (EngineState.executionState ^|-? Engine.State.sequenceState(seqId)).modify(_.start(0).mark(0)(Result.Partial(Result.FileIdAllocated(fileId), IO(Result.OK(Result.Observed(fileId))))))(baseState)
+  private val s3: EngineState = EngineState.sequenceStateIndex(seqId)
+    .modify(_.start(0).mark(0)(Result.Partial(FileIdAllocated(fileId))))(baseState)
   // Observe paused
-  private val s4: EngineState = (EngineState.executionState ^|-? Engine.State.sequenceState(seqId)).modify(_.mark(0)(Result.Paused(ObserveContext(_ => SeqAction(Result.OK(Result.Observed(fileId))), Seconds(1)))))(baseState)
+  private val s4: EngineState = EngineState.sequenceStateIndex(seqId)
+    .modify(_.mark(0)(Result.Paused(ObserveContext(_ => SeqAction(Result.OK(Observed
+    (fileId))), Seconds(1)))))(baseState)
   // Observe failed
-  private val s5: EngineState = (EngineState.executionState ^|-? Engine.State.sequenceState(seqId)).modify(_.mark(0)(Result.Error("error")))(baseState)
+  private val s5: EngineState = EngineState.sequenceStateIndex(seqId)
+    .modify(_.mark(0)(Result.Error("error")))(baseState)
 
   private val systems = SeqTranslate.Systems(
     new ODBProxy(new Peer("localhost", 8443, null), ODBProxy.DummyOdbCommands),
@@ -92,21 +106,21 @@ class SeqTranslateSpec extends FlatSpec {
   private val translator = SeqTranslate(Site.GS, systems, translatorSettings)
 
   "SeqTranslate" should "trigger stopObserve command only if exposure is in progress" in {
-    assert(translator.stopObserve(seqId)(s0).isDefined)
-    assert(translator.stopObserve(seqId)(s1).isEmpty)
-    assert(translator.stopObserve(seqId)(s2).isEmpty)
-    assert(translator.stopObserve(seqId)(s3).isDefined)
-    assert(translator.stopObserve(seqId)(s4).isDefined)
-    assert(translator.stopObserve(seqId)(s5).isEmpty)
+    assert(translator.stopObserve(seqId).apply(s0).isDefined)
+    assert(translator.stopObserve(seqId).apply(s1).isEmpty)
+    assert(translator.stopObserve(seqId).apply(s2).isEmpty)
+    assert(translator.stopObserve(seqId).apply(s3).isDefined)
+    assert(translator.stopObserve(seqId).apply(s4).isDefined)
+    assert(translator.stopObserve(seqId).apply(s5).isEmpty)
   }
 
   "SeqTranslate" should "trigger abortObserve command only if exposure is in progress" in {
-    assert(translator.abortObserve(seqId)(s0).isDefined)
-    assert(translator.abortObserve(seqId)(s1).isEmpty)
-    assert(translator.abortObserve(seqId)(s2).isEmpty)
-    assert(translator.abortObserve(seqId)(s3).isDefined)
-    assert(translator.abortObserve(seqId)(s4).isDefined)
-    assert(translator.abortObserve(seqId)(s5).isEmpty)
+    assert(translator.abortObserve(seqId).apply(s0).isDefined)
+    assert(translator.abortObserve(seqId).apply(s1).isEmpty)
+    assert(translator.abortObserve(seqId).apply(s2).isEmpty)
+    assert(translator.abortObserve(seqId).apply(s3).isDefined)
+    assert(translator.abortObserve(seqId).apply(s4).isDefined)
+    assert(translator.abortObserve(seqId).apply(s5).isEmpty)
   }
 
 }

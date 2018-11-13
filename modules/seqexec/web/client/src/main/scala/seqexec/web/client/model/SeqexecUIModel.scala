@@ -10,7 +10,7 @@ import seqexec.model.Observer
 import seqexec.model.UserDetails
 import seqexec.web.common.FixedLengthBuffer
 import seqexec.web.client.components.sequence.steps.StepConfigTable
-import seqexec.web.client.components.SessionQueueTableBody
+import seqexec.web.client.components.SessionQueueTable
 import web.client.table._
 
 /**
@@ -24,10 +24,11 @@ final case class SeqexecUIModel(
   globalLog:          GlobalLog,
   sequencesOnDisplay: SequencesOnDisplay,
   configTableState:   TableState[StepConfigTable.TableColumn],
-  queueTableState:    TableState[SessionQueueTableBody.TableColumn],
+  queueTableState:    TableState[SessionQueueTable.TableColumn],
   defaultObserver:    Observer,
   notification:       UserNotificationState,
   queues:             CalibrationQueues,
+  obsProgress:        AllObservationsProgressState,
   firstLoad:          Boolean)
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
@@ -39,10 +40,11 @@ object SeqexecUIModel {
     GlobalLog(FixedLengthBuffer.unsafeFromInt(500), SectionClosed),
     SequencesOnDisplay.Empty,
     StepConfigTable.InitialTableState,
-    SessionQueueTableBody.InitialTableState.tableState,
+    SessionQueueTable.InitialTableState.tableState,
     Observer(""),
     UserNotificationState.Empty,
     CalibrationQueues.Default,
+    AllObservationsProgressState.Empty,
     firstLoad = true
   )
 
