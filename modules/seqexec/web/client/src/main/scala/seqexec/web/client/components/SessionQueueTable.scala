@@ -633,11 +633,11 @@ object SessionQueueTable {
           <.div(
             ^.cls := "ui center aligned segment noRows",
             SeqexecStyles.noRowsSegment,
-            ^.height := 216.px,
+            ^.height := 180.px,
             "Session queue empty"
         ),
         overscanRowCount = SeqexecStyles.overscanRowCount,
-        height           = 216,
+        height           = 180,
         rowCount         = b.props.rowCount,
         rowHeight        = SeqexecStyles.rowHeight,
         rowClassName     = rowClassName(b.props) _,

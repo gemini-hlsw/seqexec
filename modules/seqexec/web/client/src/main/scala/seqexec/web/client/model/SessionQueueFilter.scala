@@ -4,19 +4,29 @@
 package seqexec.web.client.model
 
 import cats.Eq
-import cats.implicits._
 import monocle.macros.Lenses
+
+sealed trait ObsClass
+
+object ObsClass {
+  case object All extends ObsClass
+  case object Daytime extends ObsClass
+  case object Nighttime extends ObsClass
+
+  implicit val eq: Eq[ObsClass] =
+    Eq.fromUniversalEquals
+}
 
 /**
   * Model of a filter for the session queue
   */
 @Lenses
-final case class SessionQueueFilter(classExcluded: List[String])
+final case class SessionQueueFilter(obsClass: ObsClass)
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object SessionQueueFilter {
   implicit val eq: Eq[SessionQueueFilter] =
-    Eq.by(_.classExcluded)
+    Eq.by(_.obsClass)
 
-  val NoFilter: SessionQueueFilter = SessionQueueFilter(List.empty)
+  val NoFilter: SessionQueueFilter = SessionQueueFilter(ObsClass.All)
 }

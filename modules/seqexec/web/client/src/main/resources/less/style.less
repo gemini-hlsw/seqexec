@@ -245,7 +245,6 @@ body {
 .SeqexecStyles-queueListPane {
   padding: 0px !important;
   margin-top: 0;
-  overflow: auto;
 }
 
 .SeqexecStyles-labelPointer {
@@ -297,6 +296,19 @@ body {
   animation-duration: 1s;
   animation-timing-function: linear;
   animation-iteration-count: 2;
+}
+
+.SeqexecStyles-filterPane {
+  // height: 40px;
+  border-top: none !important;
+  margin-left: 0px !important;
+  margin-right: 0px !important;
+  width: calc(100%) !important;
+  max-width: calc(100%) !important;
+  // border-top: @footerBorder;
+  // background: @footerBackground;
+  // text-align: @footerAlign;
+  // color: @footerColor;
 }
 
 @keyframes calRowFlash {
@@ -1046,8 +1058,8 @@ body {
   }
 
   .SeqexecStyles-queueListPane {
-    max-height: 216px;
-    min-height: 216px;
+    max-height: 180px;
+    min-height: 180px;
   }
 }
 .mobileSegment() {

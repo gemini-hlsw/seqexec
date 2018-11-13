@@ -12,6 +12,7 @@ import seqexec.model._
 import seqexec.model.enum._
 import seqexec.model.events._
 import seqexec.web.client.model.Pages._
+import seqexec.web.client.model.SessionQueueFilter
 import seqexec.web.client.components.sequence.steps.StepConfigTable
 import seqexec.web.client.components.sequence.steps.StepsTable
 import seqexec.web.client.components.SessionQueueTable
@@ -146,6 +147,8 @@ object actions {
   final case class SequenceLoadFailed(id:       Observation.Id) extends Action
   final case class RequestFailedNotification(r: RequestFailed) extends Action
   case object CleanSequences extends Action
+
+  final case class UpdateSessionFilter(f: SessionQueueFilter => SessionQueueFilter) extends Action
 
   // Used for UI debugging
   final case class MarkStepAsRunning(s: Observation.Id, step: Int) extends Action

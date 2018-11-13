@@ -283,4 +283,7 @@ object SeqexecStyles {
 
   val draggableRow: GStyle =
     GStyle.fromString("SeqexecStyles-draggableRow")
+
+  val filterPane: GStyle =
+    GStyle.fromString("SeqexecStyles-filterPane")
 }
