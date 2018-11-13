@@ -12,6 +12,7 @@ import org.http4s._
 import org.http4s.dsl.io._
 import org.http4s.client.dsl.Http4sClientDsl
 import org.http4s.scalaxml._
+import org.http4s.implicits._
 import scala.xml.Elem
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.SeqexecFailure

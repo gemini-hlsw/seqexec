@@ -10,7 +10,7 @@ import org.http4s.{HttpRoutes, Uri}
 
 class RedirectToHttpsRoutes(toPort: Int, externalName: String) {
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
-  val baseUri: Uri = Uri.fromString(s"https://$externalName:$toPort").getOrElse(uri("/"))
+  val baseUri: Uri = Uri.fromString(s"https://$externalName:$toPort").getOrElse(Uri.uri("/"))
 
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   val service: HttpRoutes[IO] = HttpRoutes.of {

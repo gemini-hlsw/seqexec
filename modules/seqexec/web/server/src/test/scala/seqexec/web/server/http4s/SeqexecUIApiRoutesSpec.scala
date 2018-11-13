@@ -10,12 +10,13 @@ import fs2.concurrent.Topic
 import fs2.Stream
 import org.http4s._
 import org.http4s.syntax.StringSyntax
+import org.http4s.Uri.uri
 import org.scalatest.{FlatSpec, Matchers, NonImplicitAssertions}
 import squants.time._
 import scala.concurrent.ExecutionContext
 
 @SuppressWarnings(Array("org.wartremover.warts.Throw", "org.wartremover.warts.ImplicitParameter", "org.wartremover.warts.NonUnitStatements", "org.wartremover.warts.Equals", "org.wartremover.warts.OptionPartial"))
-class SeqexecUIApiRoutesSpec extends FlatSpec with Matchers with UriFunctions with StringSyntax with NonImplicitAssertions {
+class SeqexecUIApiRoutesSpec extends FlatSpec with Matchers with StringSyntax with NonImplicitAssertions {
 
   implicit val ioContextShift: ContextShift[IO] =
     IO.contextShift(ExecutionContext.global)

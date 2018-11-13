@@ -8,13 +8,14 @@ import org.http4s.CacheDirective.`max-age`
 import org.http4s.MediaType._
 import org.http4s._
 import org.http4s.headers.{`Cache-Control`, `Content-Type`}
+import org.http4s.Uri.uri
 import org.scalatest.{EitherValues, FlatSpec, Matchers}
 
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext // N.B. using global for our blocking context here
 
 @SuppressWarnings(Array("org.wartremover.warts.Throw", "org.wartremover.warts.NonUnitStatements", "org.wartremover.warts.Throw"))
-class StaticRoutesSpec extends FlatSpec with Matchers with EitherValues with UriFunctions {
+class StaticRoutesSpec extends FlatSpec with Matchers with EitherValues {
   private val builtAtMillis = 1000L
 
   def index(devMode: Boolean): String = {
