@@ -14,10 +14,13 @@ import seqexec.model.events._
 import seqexec.web.model.boopickle._
 import seqexec.web.server.http4s.encoder._
 import seqexec.web.server.security.AuthenticationService.AuthResult
-import seqexec.web.server.security.{AuthenticationService, Http4sAuthentication, TokenRefresher}
+import seqexec.web.server.security.AuthenticationService
+import seqexec.web.server.security.Http4sAuthentication
+import seqexec.web.server.security.TokenRefresher
 import seqexec.web.common.LogMessage
 import fs2.concurrent.Topic
-import fs2.{ Sink, Stream }
+import fs2.Sink
+import fs2.Stream
 import org.http4s._
 import org.http4s.dsl.io._
 import org.http4s.server.middleware.GZip
@@ -33,7 +36,10 @@ import scodec.bits.ByteVector
 /**
   * Rest Endpoints under the /api route
   */
-class SeqexecUIApiRoutes(site: String, devMode: Boolean, auth: AuthenticationService, engineOutput: Topic[IO, SeqexecEvent])(
+class SeqexecUIApiRoutes(site: String,
+                         devMode: Boolean,
+                         auth: AuthenticationService,
+                         engineOutput: Topic[IO, SeqexecEvent])(
   implicit cio: Concurrent[IO],
            tio: Timer[IO]
 ) extends BooEncoders with ModelLenses {
@@ -42,7 +48,8 @@ class SeqexecUIApiRoutes(site: String, devMode: Boolean, auth: AuthenticationSer
   private val clientLog = getLogger
 
   private val unauthorized =
-    Unauthorized(`WWW-Authenticate`(NonEmptyList.of(Challenge("jwt", "seqexec"))))
+    Unauthorized(
+      `WWW-Authenticate`(NonEmptyList.of(Challenge("jwt", "seqexec"))))
 
   // Handles authentication
   private val httpAuthentication = new Http4sAuthentication(auth)
@@ -97,14 +104,12 @@ class SeqexecUIApiRoutes(site: String, devMode: Boolean, auth: AuthenticationSer
           IO(clientLog.info(s"$userName on ${auth.req.remoteAddr.getOrElse("Unknown")}: ${msg.msg}")) *> Ok("")
         }
 
-      case auth @ POST -> Root / "seqexec" / "start" as user =>
+      case auth @ POST -> Root / "seqexec" / "site" as user =>
         val userName = user.fold(_ => "Anonymous", _.displayName)
-        // Always return ok
-        IO(clientLog.info(s"$userName connected from ${auth.req.remoteHost.getOrElse("Unknown")}")) *> Ok("")
-
-      case GET -> Root / "seqexec" / "site" as _ =>
-        // Return the site of the current server
-        Ok(site)
+        // Login start
+        IO(clientLog.info(
+          s"$userName connected from ${auth.req.remoteHost.getOrElse("Unknown")}")) *>
+          Ok(site)
 
       case GET -> Root / "seqexec" / "events" as user        =>
         // Stream seqexec events to clients and a ping

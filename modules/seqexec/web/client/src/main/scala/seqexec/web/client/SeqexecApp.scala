@@ -5,14 +5,17 @@ package seqexec.web.client
 
 import cats.effect.IO
 import gem.enum.Site
-import java.util.logging.{Level, Logger}
+import java.util.logging.Level
+import java.util.logging.Logger
 import org.scalajs.dom.document
 import org.scalajs.dom.raw.Element
-import scala.scalajs.js.annotation.{JSExport, JSExportTopLevel}
+import scala.scalajs.js.annotation.JSExport
+import scala.scalajs.js.annotation.JSExportTopLevel
 import seqexec.web.client.components.SeqexecUI
 import seqexec.web.client.services.log.ConsoleHandler
 import seqexec.web.client.services.SeqexecWebClient
-import seqexec.web.client.actions.{Initialize, WSClose}
+import seqexec.web.client.actions.Initialize
+import seqexec.web.client.actions.WSClose
 import seqexec.web.client.circuit.SeqexecCircuit
 
 /**
@@ -32,12 +35,9 @@ object SeqexecApp {
     // Using the root logger setup the handlers
     val rootLogger = Logger.getLogger("seqexec")
     rootLogger.addHandler(new ConsoleHandler(Level.INFO))
-
-    SeqexecWebClient.start()
-    ()
   }
 
-  def setupSite: IO[Site] = IO.fromFuture {
+  def serverSite: IO[Site] = IO.fromFuture {
     IO {
       import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -73,7 +73,7 @@ object SeqexecApp {
     (for {
       _           <- setupLogFormat
       _           <- setupLogger
-      seqexecSite <- setupSite
+      seqexecSite <- serverSite
       _           <- initializeDataModel(seqexecSite)
       router      <- SeqexecUI.router(seqexecSite)
       node        <- renderingNode
