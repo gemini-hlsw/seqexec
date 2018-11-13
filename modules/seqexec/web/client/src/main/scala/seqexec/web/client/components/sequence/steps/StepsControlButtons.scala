@@ -38,15 +38,15 @@ object StepsControlButtons {
                          sequenceState:   SequenceState,
                          stepId:          Int,
                          isObservePaused: Boolean)
+
   final case class State(stopRequested:   Boolean,
                          abortRequested:  Boolean,
                          pauseRequested:  Boolean,
                          resumeRequested: Boolean) {
-    val canPause: Boolean = !stopRequested && !abortRequested
-    val canAbort
-      : Boolean = !stopRequested && !pauseRequested && !resumeRequested
-    val canStop
-      : Boolean            = !abortRequested && !pauseRequested && !resumeRequested
+
+    val canPause: Boolean  = !stopRequested && !abortRequested
+    val canAbort: Boolean  = !stopRequested && !pauseRequested
+    val canStop: Boolean   = !abortRequested && !pauseRequested
     val canResume: Boolean = canPause
   }
 
@@ -74,16 +74,16 @@ object StepsControlButtons {
   private val ST = ReactS.Fix[State]
 
   def requestStop(id: Observation.Id, stepId: Int): Callback =
-    Callback(SeqexecCircuit.dispatch(RequestStop(id, stepId)))
+    SeqexecCircuit.dispatchCB(RequestStop(id, stepId))
 
   def requestAbort(id: Observation.Id, stepId: Int): Callback =
-    Callback(SeqexecCircuit.dispatch(RequestAbort(id, stepId)))
+    SeqexecCircuit.dispatchCB(RequestAbort(id, stepId))
 
   def requestObsPause(id: Observation.Id, stepId: Int): Callback =
-    Callback(SeqexecCircuit.dispatch(RequestObsPause(id, stepId)))
+    SeqexecCircuit.dispatchCB(RequestObsPause(id, stepId))
 
   def requestObsResume(id: Observation.Id, stepId: Int): Callback =
-    Callback(SeqexecCircuit.dispatch(RequestObsResume(id, stepId)))
+    SeqexecCircuit.dispatchCB(RequestObsResume(id, stepId))
 
   def handleStop(id:     Observation.Id,
                  stepId: Int): CatsReact.ReactST[CallbackTo, State, Unit] =
