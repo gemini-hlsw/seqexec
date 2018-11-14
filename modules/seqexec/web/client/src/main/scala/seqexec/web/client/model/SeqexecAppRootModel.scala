@@ -53,6 +53,10 @@ object SeqexecAppRootModel {
       SeqexecUIModel.globalLog  ^|->
       GlobalLog.display
 
+  val sessionQueueFilterL: Lens[SeqexecAppRootModel, SessionQueueFilter] =
+    SeqexecAppRootModel.uiModel ^|->
+      SeqexecUIModel.sessionQueueFilter
+
   val sequencesOnDisplayL: Lens[SeqexecAppRootModel, SequencesOnDisplay] =
     SeqexecAppRootModel.uiModel ^|-> SeqexecUIModel.sequencesOnDisplay
 

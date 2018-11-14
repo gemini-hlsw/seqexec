@@ -11,7 +11,7 @@ import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.extra.Reusability
 import seqexec.model.QueueId
 import seqexec.web.client.circuit._
-import seqexec.web.client.actions.RequestAllDayCal
+import seqexec.web.client.actions.RequestAllSelectedSequences
 import seqexec.web.client.actions.RequestClearAllCal
 import seqexec.web.client.actions.RequestRunCal
 import seqexec.web.client.actions.RequestStopCal
@@ -59,7 +59,7 @@ object CalQueueToolbar {
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
   def allDayCal(id: QueueId): Callback =
-    SeqexecCircuit.dispatchCB(RequestAllDayCal(id))
+    SeqexecCircuit.dispatchCB(RequestAllSelectedSequences(id))
 
   def clearAllCal(id: QueueId): Callback =
     SeqexecCircuit.dispatchCB(RequestClearAllCal(id))
@@ -78,8 +78,13 @@ object CalQueueToolbar {
       color    = "blue",
       onClick  = allDayCal(p.queueId),
       disabled = !p.canOperate || p.anyInFlight || p.queueRunning,
-      tooltip  = "Add all sequences on the session queue",
-      text     = "Add all"
+      tooltip =
+        if (p.control.selectedSeq > 0)
+          s"Add ${p.control.selectedSeq} sequences on the session queue"
+        else "Add all sequences on the session queue",
+      text =
+        if (p.control.selectedSeq > 0) s"Add ${p.control.selectedSeq} seqs."
+        else "Add all"
     )
 
   private def clearAllButton(p: Props) =
@@ -138,8 +143,7 @@ object CalQueueToolbar {
             )
           )
         )
-      )
-    )
+    ))
     .configure(Reusability.shouldComponentUpdate)
     .build
 

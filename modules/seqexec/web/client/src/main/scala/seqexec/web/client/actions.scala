@@ -12,6 +12,7 @@ import seqexec.model._
 import seqexec.model.enum._
 import seqexec.model.events._
 import seqexec.web.client.model.Pages._
+import seqexec.web.client.model.SessionQueueFilter
 import seqexec.web.client.components.sequence.steps.StepConfigTable
 import seqexec.web.client.components.sequence.steps.StepsTable
 import seqexec.web.client.components.SessionQueueTable
@@ -82,27 +83,25 @@ object actions {
   final case class RunObsResumeFailed(s:   Observation.Id) extends Action
 
   // Queue actions
-  final case class RequestAllDayCal(qid:     QueueId) extends Action
-  final case class AllDayCalCompleted(qid:   QueueId) extends Action
-  final case class AllDayCalFailed(qid:      QueueId) extends Action
-  final case class RequestClearAllCal(qid:   QueueId) extends Action
-  final case class ClearAllCalCompleted(qid: QueueId) extends Action
-  final case class ClearAllCalFailed(qid:    QueueId) extends Action
-  final case class RequestRunCal(qid:        QueueId) extends Action
-  final case class RunCalCompleted(qid:      QueueId) extends Action
-  final case class RunCalFailed(qid:         QueueId) extends Action
-  final case class RequestStopCal(qid:       QueueId) extends Action
-  final case class StopCalCompleted(qid:     QueueId) extends Action
-  final case class StopCalFailed(qid:        QueueId) extends Action
-  final case class RequestRemoveSeqCal(qid:  QueueId, id: Observation.Id)
-      extends Action
-  final case class RemoveSeqCalCompleted(qid: QueueId) extends Action
-  final case class RemoveSeqCalFailed(qid:    QueueId, id: Observation.Id) extends Action
-  final case class RequestMoveCal(qid:  QueueId, id: Observation.Id, pos: Int)
-      extends Action
-  final case class MoveCalCompleted(qid: QueueId) extends Action
-  final case class MoveCalFailed(qid:    QueueId, id: Observation.Id) extends Action
-  final case class ClearLastQueueOp(qid: QueueId) extends Action
+  final case class RequestAllSelectedSequences(qid: QueueId)                               extends Action
+  final case class AllDayCalCompleted(qid:          QueueId)                               extends Action
+  final case class AllDayCalFailed(qid:             QueueId)                               extends Action
+  final case class RequestClearAllCal(qid:          QueueId)                               extends Action
+  final case class ClearAllCalCompleted(qid:        QueueId)                               extends Action
+  final case class ClearAllCalFailed(qid:           QueueId)                               extends Action
+  final case class RequestRunCal(qid:               QueueId)                               extends Action
+  final case class RunCalCompleted(qid:             QueueId)                               extends Action
+  final case class RunCalFailed(qid:                QueueId)                               extends Action
+  final case class RequestStopCal(qid:              QueueId)                               extends Action
+  final case class StopCalCompleted(qid:            QueueId)                               extends Action
+  final case class StopCalFailed(qid:               QueueId)                               extends Action
+  final case class RequestRemoveSeqCal(qid:         QueueId, id: Observation.Id)           extends Action
+  final case class RemoveSeqCalCompleted(qid:       QueueId)                               extends Action
+  final case class RemoveSeqCalFailed(qid:          QueueId, id: Observation.Id)           extends Action
+  final case class RequestMoveCal(qid:              QueueId, id: Observation.Id, pos: Int) extends Action
+  final case class MoveCalCompleted(qid:            QueueId)                               extends Action
+  final case class MoveCalFailed(qid:               QueueId, id: Observation.Id)           extends Action
+  final case class ClearLastQueueOp(qid:            QueueId)                               extends Action
 
   final case class AppendToLog(l: ServerLogMessage) extends Action
   final case object ToggleLogArea extends Action
@@ -146,6 +145,8 @@ object actions {
   final case class SequenceLoadFailed(id:       Observation.Id) extends Action
   final case class RequestFailedNotification(r: RequestFailed) extends Action
   case object CleanSequences extends Action
+
+  final case class UpdateSessionFilter(f: SessionQueueFilter => SessionQueueFilter) extends Action
 
   // Used for UI debugging
   final case class MarkStepAsRunning(s: Observation.Id, step: Int) extends Action

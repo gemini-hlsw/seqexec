@@ -89,6 +89,9 @@ object SeqexecCircuit
     : ModelR[SeqexecAppRootModel, StatusAndLoadedSequencesFocus] =
     this.zoomG(StatusAndLoadedSequencesFocus.statusAndLoadedSequencesG)
 
+  val sessionQueueFilterReader: ModelR[SeqexecAppRootModel, SessionQueueFilter] =
+    this.zoomL(SeqexecAppRootModel.sessionQueueFilterL)
+
   // Reader for sequences on display
   val headerSideBarReader: ModelR[SeqexecAppRootModel, HeaderSideBarFocus] =
     this.zoomG(HeaderSideBarFocus.headerSideBarG)
@@ -181,6 +184,7 @@ object SeqexecCircuit
   private val queueStateHandler        = new QueueStateHandler(queueOperationsRW)
   private val openConnectionHandler    = new OpenConnectionHandler(zoomTo(_.uiModel.queues))
   private val observationsProgHandler  = new ObservationsProgressStateHandler(zoomTo(_.uiModel.obsProgress))
+  private val sessionFilterHandler     = new SessionQueueFilterHandler(zoomTo(_.uiModel.sessionQueueFilter))
 
   def dispatchCB[A <: Action](a: A): Callback = Callback(dispatch(a))
 
@@ -210,7 +214,8 @@ object SeqexecCircuit
       navigationHandler,
       debuggingHandler,
       tableStateHandler,
-      siteHandler
+      siteHandler,
+      sessionFilterHandler
     )
 
   /**

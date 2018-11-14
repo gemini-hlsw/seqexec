@@ -19,16 +19,18 @@ import seqexec.model.enum.BatchExecState
 import seqexec.web.client.model._
 
 @Lenses
-final case class CalQueueControlFocus(canOperate: Boolean,
-                                      state:      BatchCommandState,
-                                      execState:  BatchExecState,
-                                      ops:        QueueOperations,
-                                      queueSize:  Int)
+final case class CalQueueControlFocus(canOperate:  Boolean,
+                                      state:       BatchCommandState,
+                                      execState:   BatchExecState,
+                                      ops:         QueueOperations,
+                                      queueSize:   Int,
+                                      selectedSeq: Int)
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object CalQueueControlFocus {
   implicit val eq: Eq[CalQueueControlFocus] =
-    Eq.by(x => (x.canOperate, x.state, x.execState, x.ops, x.queueSize))
+    Eq.by(x =>
+      (x.canOperate, x.state, x.execState, x.ops, x.queueSize, x.selectedSeq))
 
   val allQueues: Getter[SeqexecAppRootModel, Int] =
     (SeqexecAppRootModel.sequences ^|-> SequencesQueue.queues).asGetter >>> {
@@ -61,9 +63,10 @@ object CalQueueControlFocus {
         .zip(
           Getter(cmdStateT(id).headOption)
             .zip(Getter(execStateT(id).headOption)
-              .zip(allQueues)))) >>> {
-      case (status, (Some(c), (Some(s), (Some(e), qs)))) =>
-        CalQueueControlFocus(status, s, e, c, qs).some
+              .zip(allQueues.zip(
+                StatusAndLoadedSequencesFocus.filteredSequencesG))))) >>> {
+      case (status, (Some(c), (Some(s), (Some(e), (qs, f))))) =>
+        CalQueueControlFocus(status, s, e, c, qs, f.length).some
       case _ =>
         none
     }
