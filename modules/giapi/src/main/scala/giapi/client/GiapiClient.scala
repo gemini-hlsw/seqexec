@@ -60,13 +60,13 @@ trait GiapiClient[F[_]] {
         Activity.PRESET_START,
         Configuration.Zero), DefaultCommandTimeout)
 
-  def observe[A: Show](dataLabel: A, expTime: FiniteDuration): F[CommandResult] =
+  def observe[A: Show](dataLabel: A, timeout: FiniteDuration): F[CommandResult] =
     giapi.command(
       Command(
         SequenceCommand.OBSERVE,
         Activity.PRESET_START,
         Configuration.single(commands.DataLabelCfg, dataLabel)
-      ), expTime)
+      ), timeout)
 
   def endObserve: F[CommandResult] =
     giapi.command(
