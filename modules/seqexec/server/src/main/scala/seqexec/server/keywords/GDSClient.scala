@@ -4,6 +4,7 @@
 package seqexec.server.keywords
 
 import cats.effect.IO
+import cats.effect.Timer
 import cats.data.EitherT
 import cats.implicits._
 import gem.Observation
@@ -11,8 +12,11 @@ import org.http4s.client.Client
 import org.http4s._
 import org.http4s.dsl.io._
 import org.http4s.client.dsl.Http4sClientDsl
+import org.http4s.client.middleware.Retry
+import org.http4s.client.middleware.RetryPolicy
 import org.http4s.scalaxml._
 import org.http4s.implicits._
+import scala.concurrent.duration._
 import scala.xml.Elem
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.SeqexecFailure
@@ -21,8 +25,22 @@ import seqexec.server.SeqActionF
 /**
   * Gemini Data service client
   */
-final case class GDSClient(client: Client[IO], gdsUri: Uri)
+final case class GDSClient(base: Client[IO], gdsUri: Uri)(implicit timer: Timer[IO])
     extends Http4sClientDsl[IO] {
+
+  @SuppressWarnings(Array("org.wartremover.warts.Var"))
+  private val client = {
+    val max = 2
+    var attemptsCounter = 1
+    val policy = RetryPolicy[IO] { attempts: Int =>
+      if (attempts >= max) None
+      else {
+        attemptsCounter = attemptsCounter + 1
+        Some(10.milliseconds)
+      }
+    }
+    Retry(policy)(base)
+  }
 
   // Build an xml rpc request to store keywords
   private def storeKeywords(id: ImageFileId, ks: KeywordBag): Elem =
