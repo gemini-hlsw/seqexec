@@ -28,7 +28,7 @@ class QueueOperationsHandler[M](modelRW: ModelRW[M, CalibrationQueues])
     with Handlers[M, CalibrationQueues] {
 
   def handleAddAllDayCal: PartialFunction[Any, ActionResult[M]] = {
-    case RequestAllDayCal(qid) =>
+    case RequestAllSelectedSequences(qid) =>
       updatedL(
         CalibrationQueues
           .addDayCalL(qid)
@@ -159,13 +159,15 @@ class QueueOperationsHandler[M](modelRW: ModelRW[M, CalibrationQueues])
   }
 
   override def handle: PartialFunction[Any, ActionResult[M]] =
-    List(handleAddAllDayCal,
-         handleClearAllCal,
-         handleRunCal,
-         handleStopCal,
-         handleSeqOps,
-         handleRequestResultOk,
-         handleClearLastOp,
-         handleSeqRequestResultFailed,
-         handleRequestResultFailed).combineAll
+    List(
+      handleAddAllDayCal,
+      handleClearAllCal,
+      handleRunCal,
+      handleStopCal,
+      handleSeqOps,
+      handleRequestResultOk,
+      handleClearLastOp,
+      handleSeqRequestResultFailed,
+      handleRequestResultFailed
+    ).combineAll
 }

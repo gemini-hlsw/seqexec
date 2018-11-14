@@ -6,9 +6,11 @@ package seqexec.web.client.model
 import cats.Eq
 import cats.implicits._
 import monocle.macros.Lenses
+import seqexec.model.SequenceView
 import seqexec.web.client.circuit.SequenceInSessionQueue
+import seqexec.web.client.model.lenses.obsClassT
 
-sealed trait ObsClass
+sealed trait ObsClass extends Product with Serializable
 
 object ObsClass {
   case object All extends ObsClass
@@ -45,6 +47,23 @@ final case class SessionQueueFilter(obsClass: ObsClass) {
       case ObsClass.Daytime   => seq.filter(_.obsClass === ObsClass.Daytime)
       case ObsClass.Nighttime => seq.filter(_.obsClass === ObsClass.Nighttime)
     }
+
+  def filterS(seq: List[SequenceView]): List[SequenceView] =
+    obsClass match {
+      case ObsClass.All => seq
+      case ObsClass.Daytime =>
+        seq.filter(
+          obsClassT
+            .headOption(_)
+            .map(ObsClass.fromString) === ObsClass.Daytime.some)
+      case ObsClass.Nighttime =>
+        seq.filter(
+          obsClassT
+            .headOption(_)
+            .map(ObsClass.fromString) === ObsClass.Nighttime.some)
+    }
+
+  def isFilterApplied: Boolean = obsClass =!= ObsClass.All
 }
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))

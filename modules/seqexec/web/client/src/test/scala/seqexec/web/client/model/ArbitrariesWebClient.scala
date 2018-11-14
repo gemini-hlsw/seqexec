@@ -698,16 +698,23 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
     Cogen[List[((Observation.Id, StepId), ObservationProgress)]]
       .contramap(_.obsProgress.toList)
 
+  implicit val arbObsClass: Arbitrary[ObsClass] =
+    Arbitrary(
+      Gen.oneOf(ObsClass.All, ObsClass.Daytime, ObsClass.Nighttime))
+
+  implicit val obsClassCogen: Cogen[ObsClass] =
+    Cogen[String].contramap(_.productPrefix)
+
   implicit val arbSessionQueueFilter: Arbitrary[SessionQueueFilter] =
     Arbitrary {
       for {
-        ce <- arbitrary[List[String]]
+        ce <- arbitrary[ObsClass]
       } yield SessionQueueFilter(ce)
     }
 
   implicit val obsQueueFilter: Cogen[SessionQueueFilter] =
-    Cogen[List[String]]
-      .contramap(_.classExcluded)
+    Cogen[ObsClass]
+      .contramap(_.obsClass)
 
   implicit val arbSeqexecUIModel: Arbitrary[SeqexecUIModel] =
     Arbitrary {

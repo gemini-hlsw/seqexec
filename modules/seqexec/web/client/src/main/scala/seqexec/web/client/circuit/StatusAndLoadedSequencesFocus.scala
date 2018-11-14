@@ -41,6 +41,30 @@ object SequenceInSessionQueue {
          x.targetName,
          x.runningStep,
          x.nextStepToRun))
+
+  def toSequenceInSessionQueue(
+    sod:   SequencesOnDisplay,
+    queue: List[SequenceView]): List[SequenceInSessionQueue] =
+    queue.map { s =>
+      val active     = sod.idDisplayed(s.id)
+      val loaded     = sod.loadedIds.contains(s.id)
+      val targetName = firstScienceStepTargetNameT.headOption(s)
+      val obsClass = obsClassT
+        .headOption(s)
+        .map(ObsClass.fromString)
+        .getOrElse(ObsClass.Nighttime)
+      SequenceInSessionQueue(s.id,
+                             s.status,
+                             s.metadata.instrument,
+                             active,
+                             loaded,
+                             s.metadata.name,
+                             obsClass,
+                             targetName,
+                             s.runningStep,
+                             s.nextStepToRun)
+    }
+
 }
 
 final case class StatusAndLoadedSequencesFocus(
@@ -53,36 +77,30 @@ object StatusAndLoadedSequencesFocus {
   implicit val eq: Eq[StatusAndLoadedSequencesFocus] =
     Eq.by(x => (x.status, x.sequences, x.tableState, x.queueFilter))
 
+  private val sessionQueueG = SeqexecAppRootModel.sessionQueueL.asGetter
+  private val sessionQueueFilterG =
+    SeqexecAppRootModel.sessionQueueFilterL.asGetter
+  private val sodG = SeqexecAppRootModel.sequencesOnDisplayL.asGetter
+
   val statusAndLoadedSequencesG
     : Getter[SeqexecAppRootModel, StatusAndLoadedSequencesFocus] =
     ClientStatus.clientStatusFocusL.asGetter.zip(
-      SeqexecAppRootModel.sessionQueueL.asGetter.zip(
-        SeqexecAppRootModel.sequencesOnDisplayL.asGetter.zip(
-          SeqexecAppRootModel.queueTableStateL.asGetter
-            .zip(SeqexecAppRootModel.sessionQueueFilterL.asGetter)))) >>> {
+      sessionQueueG.zip(sodG.zip(SeqexecAppRootModel.queueTableStateL.asGetter
+        .zip(sessionQueueFilterG)))) >>> {
       case (s, (queue, (sod, (queueTable, filter)))) =>
-        val sequencesInQueue = queue.map { s =>
-          val active     = sod.idDisplayed(s.id)
-          val loaded     = sod.loadedIds.contains(s.id)
-          val targetName = firstScienceStepTargetNameT.headOption(s)
-          val obsClass = obsClassT
-            .headOption(s)
-            .map(ObsClass.fromString)
-            .getOrElse(ObsClass.Nighttime)
-          SequenceInSessionQueue(s.id,
-                                 s.status,
-                                 s.metadata.instrument,
-                                 active,
-                                 loaded,
-                                 s.metadata.name,
-                                 obsClass,
-                                 targetName,
-                                 s.runningStep,
-                                 s.nextStepToRun)
-        }
         StatusAndLoadedSequencesFocus(s,
-                                      sequencesInQueue.sortBy(_.id),
+                                      SequenceInSessionQueue
+                                        .toSequenceInSessionQueue(sod, queue)
+                                        .sortBy(_.id),
                                       queueTable,
                                       filter)
     }
+  val filteredSequencesG
+    : Getter[SeqexecAppRootModel, List[SequenceInSessionQueue]] = {
+    sessionQueueFilterG.zip(sessionQueueG.zip(sodG)) >>> {
+      case (f, (s, sod)) =>
+        f.filter(SequenceInSessionQueue.toSequenceInSessionQueue(sod, s))
+    }
+  }
+
 }

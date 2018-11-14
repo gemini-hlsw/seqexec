@@ -248,15 +248,15 @@ trait ModelLenses {
   // Composite lens to find the step config
   val firstScienceTargetNameT: Traversal[SeqexecEvent, TargetName] =
     sequenceConfigT      ^|->> // sequence configuration
-      scienceStepT       ^|-? // science steps
-      scienceTargetNameO // science target name
+      scienceStepT       ^|-?  // science steps
+      scienceTargetNameO       // science target name
 
   // Composite lens to find the sequence obs class
   val obsClassT: Traversal[SequenceView, String] =
     obsStepsL       ^|->> // observation steps
-      eachStepT     ^<-? // each step
-      standardStepP ^|-> // only standard steps
-      stepConfigL   ^|-? // get step config
+      eachStepT     ^<-?  // each step
+      standardStepP ^|->  // only standard steps
+      stepConfigL   ^|-?  // get step config
       configParamValueO(SystemName.Observe, "class")
 
   // Composite lens to find the target name on observation

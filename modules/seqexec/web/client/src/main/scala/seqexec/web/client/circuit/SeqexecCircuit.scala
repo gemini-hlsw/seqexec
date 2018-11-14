@@ -89,8 +89,7 @@ object SeqexecCircuit
     : ModelR[SeqexecAppRootModel, StatusAndLoadedSequencesFocus] =
     this.zoomG(StatusAndLoadedSequencesFocus.statusAndLoadedSequencesG)
 
-  val sessionQueueFilterReader
-    : ModelR[SeqexecAppRootModel, SessionQueueFilter] =
+  val sessionQueueFilterReader: ModelR[SeqexecAppRootModel, SessionQueueFilter] =
     this.zoomL(SeqexecAppRootModel.sessionQueueFilterL)
 
   // Reader for sequences on display

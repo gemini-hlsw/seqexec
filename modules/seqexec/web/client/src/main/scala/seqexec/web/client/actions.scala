@@ -83,27 +83,25 @@ object actions {
   final case class RunObsResumeFailed(s:   Observation.Id) extends Action
 
   // Queue actions
-  final case class RequestAllDayCal(qid:     QueueId) extends Action
-  final case class AllDayCalCompleted(qid:   QueueId) extends Action
-  final case class AllDayCalFailed(qid:      QueueId) extends Action
-  final case class RequestClearAllCal(qid:   QueueId) extends Action
-  final case class ClearAllCalCompleted(qid: QueueId) extends Action
-  final case class ClearAllCalFailed(qid:    QueueId) extends Action
-  final case class RequestRunCal(qid:        QueueId) extends Action
-  final case class RunCalCompleted(qid:      QueueId) extends Action
-  final case class RunCalFailed(qid:         QueueId) extends Action
-  final case class RequestStopCal(qid:       QueueId) extends Action
-  final case class StopCalCompleted(qid:     QueueId) extends Action
-  final case class StopCalFailed(qid:        QueueId) extends Action
-  final case class RequestRemoveSeqCal(qid:  QueueId, id: Observation.Id)
-      extends Action
-  final case class RemoveSeqCalCompleted(qid: QueueId) extends Action
-  final case class RemoveSeqCalFailed(qid:    QueueId, id: Observation.Id) extends Action
-  final case class RequestMoveCal(qid:  QueueId, id: Observation.Id, pos: Int)
-      extends Action
-  final case class MoveCalCompleted(qid: QueueId) extends Action
-  final case class MoveCalFailed(qid:    QueueId, id: Observation.Id) extends Action
-  final case class ClearLastQueueOp(qid: QueueId) extends Action
+  final case class RequestAllSelectedSequences(qid: QueueId)                               extends Action
+  final case class AllDayCalCompleted(qid:          QueueId)                               extends Action
+  final case class AllDayCalFailed(qid:             QueueId)                               extends Action
+  final case class RequestClearAllCal(qid:          QueueId)                               extends Action
+  final case class ClearAllCalCompleted(qid:        QueueId)                               extends Action
+  final case class ClearAllCalFailed(qid:           QueueId)                               extends Action
+  final case class RequestRunCal(qid:               QueueId)                               extends Action
+  final case class RunCalCompleted(qid:             QueueId)                               extends Action
+  final case class RunCalFailed(qid:                QueueId)                               extends Action
+  final case class RequestStopCal(qid:              QueueId)                               extends Action
+  final case class StopCalCompleted(qid:            QueueId)                               extends Action
+  final case class StopCalFailed(qid:               QueueId)                               extends Action
+  final case class RequestRemoveSeqCal(qid:         QueueId, id: Observation.Id)           extends Action
+  final case class RemoveSeqCalCompleted(qid:       QueueId)                               extends Action
+  final case class RemoveSeqCalFailed(qid:          QueueId, id: Observation.Id)           extends Action
+  final case class RequestMoveCal(qid:              QueueId, id: Observation.Id, pos: Int) extends Action
+  final case class MoveCalCompleted(qid:            QueueId)                               extends Action
+  final case class MoveCalFailed(qid:               QueueId, id: Observation.Id)           extends Action
+  final case class ClearLastQueueOp(qid:            QueueId)                               extends Action
 
   final case class AppendToLog(l: ServerLogMessage) extends Action
   final case object ToggleLogArea extends Action

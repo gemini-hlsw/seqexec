@@ -27,7 +27,7 @@ object SessionQueueTableSection {
         React.Fragment(
           <.div(
             SeqexecStyles.queueListPane,
-            sequencesConnect(c => SessionQueueTable(p, c())),
+            sequencesConnect(c => SessionQueueTable(p, c()))
           ),
           SessionQueueTableFilter()
       ))
