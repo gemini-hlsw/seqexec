@@ -23,11 +23,17 @@ object SessionQueueTableFilter {
 
   def onlyDayTime: Callback =
     SeqexecCircuit.dispatchCB(
-      UpdateSessionFilter(SessionQueueFilter.obsClass.set(ObsClass.Daytime)))
+      UpdateSessionFilter(SessionQueueFilter.obsClass.modify {
+        case ObsClass.Daytime => ObsClass.All
+        case _                => ObsClass.Daytime
+      }))
 
   def onlyNightTime: Callback =
     SeqexecCircuit.dispatchCB(
-      UpdateSessionFilter(SessionQueueFilter.obsClass.set(ObsClass.Nighttime)))
+      UpdateSessionFilter(SessionQueueFilter.obsClass.modify {
+        case ObsClass.Nighttime => ObsClass.All
+        case _                  => ObsClass.Nighttime
+      }))
 
   private val component = ScalaComponent
     .builder[Unit]("SessionQueueTableFilter")
@@ -42,7 +48,7 @@ object SessionQueueTableFilter {
             <.a(
               ^.cls := "item",
               ^.classSet(
-                "active" -> !filter.dayTimeSelected
+                "active" -> filter.dayTimeSelected
               ),
               <.i(
                 ^.cls := "sun icon"
@@ -53,7 +59,7 @@ object SessionQueueTableFilter {
             <.a(
               ^.cls := "item",
               ^.classSet(
-                "active" -> !filter.nightTimeSelected
+                "active" -> filter.nightTimeSelected
               ),
               <.i(
                 ^.cls := "moon icon"
