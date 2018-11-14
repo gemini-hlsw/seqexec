@@ -50,7 +50,7 @@ final case class GDSClient(client: Client[IO], gdsUri: Uri)
   def setKeywords(id: ImageFileId, ks: KeywordBag): SeqActionF[IO, Unit] = {
     // Build the request
     val xmlRpc      = storeKeywords(id, ks)
-    val postRequest = POST(gdsUri, xmlRpc)
+    val postRequest = POST(xmlRpc, gdsUri)
 
     // Do the request
     client
@@ -86,7 +86,7 @@ final case class GDSClient(client: Client[IO], gdsUri: Uri)
                       ks: KeywordBag): SeqActionF[IO, Unit] = {
     // Build the request
     val xmlRpc      = openObservationRPC(obsId, id, ks)
-    val postRequest = POST(gdsUri, xmlRpc)
+    val postRequest = POST(xmlRpc, gdsUri)
 
     // Do the request
     client
@@ -112,7 +112,7 @@ final case class GDSClient(client: Client[IO], gdsUri: Uri)
   def closeObservation(id: ImageFileId): SeqActionF[IO, Unit] = {
     // Build the request
     val xmlRpc      = closeObservationRPC(id)
-    val postRequest = POST(gdsUri, xmlRpc)
+    val postRequest = POST(xmlRpc, gdsUri)
 
     // Do the request
     client
