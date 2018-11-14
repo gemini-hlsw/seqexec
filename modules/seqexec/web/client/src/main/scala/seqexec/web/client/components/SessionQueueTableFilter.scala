@@ -21,46 +21,53 @@ object SessionQueueTableFilter {
   private val filterConnect =
     SeqexecCircuit.connect(SeqexecCircuit.sessionQueueFilterReader)
 
-  def onlyDayTime(f: SessionQueueFilter): Callback =
-    Callback.log(s"$f")
+  def onlyDayTime: Callback =
+    SeqexecCircuit.dispatchCB(
+      UpdateSessionFilter(SessionQueueFilter.obsClass.set(ObsClass.Daytime)))
 
   def onlyNightTime: Callback =
-    SeqexecCircuit.dispatchCB(UpdateSessionFilter(SessionQueueFilter.obsClass.set(ObsClass.Nighttime)))
+    SeqexecCircuit.dispatchCB(
+      UpdateSessionFilter(SessionQueueFilter.obsClass.set(ObsClass.Nighttime)))
 
   private val component = ScalaComponent
     .builder[Unit]("SessionQueueTableFilter")
     .stateless
     .render_P(
       p =>
-        filterConnect{f =>
+        filterConnect { f =>
           val filter = f()
           <.div(
             ^.cls := "ui icon bottom attached compact tiny menu",
             SeqexecStyles.filterPane,
             <.a(
               ^.cls := "item",
+              ^.classSet(
+                "active" -> !filter.dayTimeSelected
+              ),
               <.i(
                 ^.cls := "sun icon"
               ),
-              ^.onClick --> onlyDayTime(filter),
+              ^.onClick --> onlyDayTime,
               " Daytime"
             ),
             <.a(
-              ^.cls := "active item",
+              ^.cls := "item",
+              ^.classSet(
+                "active" -> !filter.nightTimeSelected
+              ),
               <.i(
                 ^.cls := "moon icon"
               ),
               ^.onClick --> onlyNightTime,
               " Nighttime"
             )
-        )
+          )
       }
     )
     .configure(Reusability.shouldComponentUpdate)
     .build
 
-  def apply(
-  ): Unmounted[Unit, Unit, Unit] =
+  def apply(): Unmounted[Unit, Unit, Unit] =
     component()
 
 }

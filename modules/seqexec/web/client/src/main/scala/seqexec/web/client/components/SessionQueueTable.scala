@@ -29,7 +29,9 @@ import seqexec.model.SequenceState
 import seqexec.web.client.circuit._
 import seqexec.web.client.actions._
 import seqexec.web.client.model.Pages._
+import seqexec.web.client.model.ObsClass
 import seqexec.web.client.model.RunningStep
+import seqexec.web.client.model.SessionQueueFilter
 import seqexec.web.client.model.ModelOps._
 import seqexec.web.client.semanticui.elements.icon.Icon.IconAttention
 import seqexec.web.client.semanticui.elements.icon.Icon.IconCheckmark
@@ -133,7 +135,8 @@ object SessionQueueTable {
 
   final case class Props(ctl:       RouterCtl[SeqexecPages],
                          sequences: StatusAndLoadedSequencesFocus) {
-    val sequencesList: List[SequenceInSessionQueue] = sequences.sequences
+    val sequencesList: List[SequenceInSessionQueue] =
+      sequences.queueFilter.filter(sequences.sequences)
 
     val startState: TableState[TableColumn] = sequences.tableState
 
@@ -146,6 +149,7 @@ object SessionQueueTable {
                           s.instrument,
                           s.targetName,
                           s.name,
+                          s.obsClass,
                           s.active,
                           s.loaded,
                           s.nextStepToRun,
@@ -206,7 +210,8 @@ object SessionQueueTable {
         this
       } else {
         val optimalSizes = sequences.foldLeft(columnsDefaultWidth) {
-          case (currWidths, SequenceInSessionQueue(id, st, i, _, _, n, t, r, _)) =>
+          case (currWidths,
+                SequenceInSessionQueue(id, st, i, _, _, n, _, t, r, _)) =>
             val idWidth = max(currWidths.getOrElse(ObsIdColumn, ObsIdMinWidth),
                               tableTextWidth(id.format))
             val statusWidth =
@@ -308,8 +313,10 @@ object SessionQueueTable {
   implicit val tcReuse: Reusability[TableColumn] = Reusability.byRef
   implicit val sqSeFocusReuse: Reusability[SequenceInSessionQueue] =
     Reusability.byEq
+  implicit val qfReuse: Reusability[SessionQueueFilter] =
+    Reusability.byEq
   implicit val stSeFocusReuse: Reusability[StatusAndLoadedSequencesFocus] =
-    Reusability.by(x => (x.status, x.sequences, x.tableState))
+    Reusability.by(x => (x.status, x.sequences, x.tableState, x.queueFilter))
   implicit val propsReuse: Reusability[Props] = Reusability.by(_.sequences)
   implicit val stateReuse: Reusability[State] = Reusability.derive[State]
 
@@ -321,6 +328,7 @@ object SessionQueueTable {
     var instrument: Instrument
     var targetName: Option[String]
     var name: String
+    var obsClass: ObsClass
     var active: Boolean
     var loaded: Boolean
     var nextStepToRun: Option[Int]
@@ -336,6 +344,7 @@ object SessionQueueTable {
               instrument:    Instrument,
               targetName:    Option[String],
               name:          String,
+              obsClass:      ObsClass,
               active:        Boolean,
               loaded:        Boolean,
               nextStepToRun: Option[Int],
@@ -346,6 +355,7 @@ object SessionQueueTable {
       p.instrument    = instrument
       p.targetName    = targetName
       p.name          = name
+      p.obsClass      = obsClass
       p.active        = active
       p.nextStepToRun = nextStepToRun
       p.runningStep   = runningStep
@@ -354,11 +364,12 @@ object SessionQueueTable {
     }
 
     def unapply(l: SessionQueueRow):
-     Option[(Observation.Id,
+      Option[(Observation.Id,
        SequenceState,
        Instrument,
        Option[String],
        String,
+       ObsClass,
        Boolean,
        Boolean,
        Option[Int],
@@ -369,6 +380,7 @@ object SessionQueueTable {
          l.instrument,
          l.targetName,
          l.name,
+         l.obsClass,
          l.active,
          l.loaded,
          l.nextStepToRun,
@@ -380,6 +392,7 @@ object SessionQueueTable {
             Instrument.F2,
             None,
             "",
+            ObsClass.Nighttime,
             active = false,
             loaded = false,
             None,
@@ -488,16 +501,17 @@ object SessionQueueTable {
     ((i, p.rowGetter(i)) match {
       case (-1, _) =>
         SeqexecStyles.headerRowStyle
-      case (_, SessionQueueRow(_, s, _, _, _, _, _, _, _)) if s == SequenceState.Completed =>
+      case (_, SessionQueueRow(_, s, _, _, _, _, _, _, _, _))
+          if s == SequenceState.Completed =>
         SeqexecStyles.stepRow |+| SeqexecStyles.rowPositive
-      case (_, SessionQueueRow(_, s, _, _, _, _, _, _, _)) if s.isRunning                  =>
+      case (_, SessionQueueRow(_, s, _, _, _, _, _, _, _, _)) if s.isRunning =>
         SeqexecStyles.stepRow |+| SeqexecStyles.rowWarning
-      case (_, SessionQueueRow(_, s, _, _, _, _, _, _, _)) if s.isError                    =>
+      case (_, SessionQueueRow(_, s, _, _, _, _, _, _, _, _)) if s.isError =>
         SeqexecStyles.stepRow |+| SeqexecStyles.rowNegative
-      case (_, SessionQueueRow(_, s, _, _, _, _, active, _, _))
-          if active && !s.isInProcess                                               =>
+      case (_, SessionQueueRow(_, s, _, _, _, _, _, active, _, _))
+          if active && !s.isInProcess =>
         SeqexecStyles.stepRow |+| SeqexecStyles.rowActive
-      case _                                                                        =>
+      case _ =>
         SeqexecStyles.stepRow
     }).htmlClass
 
