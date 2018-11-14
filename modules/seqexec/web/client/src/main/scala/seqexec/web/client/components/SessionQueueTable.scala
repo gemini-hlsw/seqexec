@@ -38,6 +38,8 @@ import seqexec.web.client.semanticui.elements.icon.Icon.IconCheckmark
 import seqexec.web.client.semanticui.elements.icon.Icon.IconCircleNotched
 import seqexec.web.client.semanticui.elements.icon.Icon.IconRefresh
 import seqexec.web.client.semanticui.elements.icon.Icon.IconSelectedRadio
+import seqexec.web.client.semanticui.elements.icon.Icon.IconSun
+import seqexec.web.client.semanticui.elements.icon.Icon.IconMoon
 import seqexec.web.client.reusability._
 import web.client.style._
 import web.client.utils._
@@ -49,6 +51,7 @@ object SessionQueueTable {
   private val PhoneCut              = 400.0
   private val LargePhoneCut         = 570.0
   private val IconColumnWidth       = 25.0
+  private val ClassColumnWidth      = 26.0
   private val ObsIdColumnWidth      = 140.0
   private val ObsIdMinWidth         = 66.2167 + SeqexecStyles.TableBorderWidth
   private val StateColumnWidth      = 80.0
@@ -64,6 +67,7 @@ object SessionQueueTable {
 
   sealed trait TableColumn extends Product with Serializable
   case object IconColumn       extends TableColumn
+  case object ClassColumn      extends TableColumn
   case object ObsIdColumn      extends TableColumn
   case object StateColumn      extends TableColumn
   case object InstrumentColumn extends TableColumn
@@ -80,6 +84,13 @@ object SessionQueueTable {
     label   = "",
     visible = true,
     FixedColumnWidth.unsafeFromDouble(IconColumnWidth))
+
+  val ClassColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
+    ClassColumn,
+    name    = "class",
+    label   = "",
+    visible = true,
+    FixedColumnWidth.unsafeFromDouble(ClassColumnWidth))
 
   val ObsIdColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     ObsIdColumn,
@@ -118,6 +129,7 @@ object SessionQueueTable {
 
   val all: NonEmptyList[ColumnMeta[TableColumn]] = NonEmptyList.of(
     IconColumnMeta,
+    ClassColumnMeta,
     ObsIdColumnMeta,
     StateColumnMeta,
     InstrumentColumnMeta,
@@ -126,6 +138,7 @@ object SessionQueueTable {
 
   val columnsDefaultWidth: Map[TableColumn, Double] = Map(
     IconColumn -> IconColumnWidth,
+    ClassColumn -> ClassColumnWidth,
     ObsIdColumn -> ObsIdColumnWidth,
     StateColumn -> StateColumnWidth,
     InstrumentColumn -> InstrumentColumnWidth,
@@ -490,6 +503,26 @@ object SessionQueueTable {
       )
     }
 
+  private def classIconRenderer(
+    b: Backend
+  ): CellRenderer[js.Object, js.Object, SessionQueueRow] =
+    (_, _, _, row: SessionQueueRow, index) => {
+      val icon: TagMod =
+        row.obsClass match {
+          case ObsClass.Daytime =>
+            IconSun.copyIcon(extraStyles = List(SeqexecStyles.selectedIcon))
+          case ObsClass.Nighttime =>
+            IconMoon.copyIcon(extraStyles = List(SeqexecStyles.selectedIcon))
+          case _ =>
+            <.div()
+        }
+
+      linkTo(b.props, pageOf(row))(
+        SeqexecStyles.queueIconColumn,
+        icon
+      )
+    }
+
   private val statusHeaderRenderer: HeaderRenderer[js.Object] =
     (_, _, _, _, _, _) =>
       <.div(
@@ -536,6 +569,16 @@ object SessionQueueTable {
             dataKey        = "status",
             label          = "",
             cellRenderer   = statusIconRenderer(b),
+            headerRenderer = statusHeaderRenderer,
+            className      = SeqexecStyles.queueIconColumn.htmlClass
+          ))
+      case (ClassColumn, width, _) =>
+        Column(
+          Column.propsNoFlex(
+            width,
+            dataKey        = "obsClass",
+            label          = "",
+            cellRenderer   = classIconRenderer(b),
             headerRenderer = statusHeaderRenderer,
             className      = SeqexecStyles.queueIconColumn.htmlClass
           ))

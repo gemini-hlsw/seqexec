@@ -139,6 +139,8 @@ object Icon {
   val IconCloneOutline: Icon            = Icon("clone outline")
   val IconTrashOutline: Icon            = Icon("trash alternate outline")
   val IconTimes: Icon                   = Icon("times")
+  val IconSun: Icon                     = Icon("sun")
+  val IconMoon: Icon                    = Icon("moon")
 
   sealed trait Flipped
 
