@@ -9,7 +9,7 @@ import seqexec.web.client.semanticui.elements.label.Label
 import seqexec.web.client.semanticui.elements.icon.Icon.IconCheckmark
 import seqexec.web.client.semanticui.Size
 import seqexec.model.SequenceState
-import seqexec.model.DaytimeCalibrationTargetName
+import seqexec.model.UnknownTargetName
 import web.client.style._
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.vdom.html_<^._
@@ -31,7 +31,7 @@ object SequenceInfo {
         val obsName                                           = oName.filter(_.nonEmpty).getOrElse("Unknown.")
         val daytimeCalibrationTargetName: TagMod =
           Label(
-            Label.Props(DaytimeCalibrationTargetName,
+            Label.Props(UnknownTargetName,
                         basic       = true,
                         extraStyles = List(SeqexecStyles.daytimeCal)))
         val targetName = tName
