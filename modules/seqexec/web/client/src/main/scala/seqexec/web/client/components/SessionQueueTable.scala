@@ -457,12 +457,9 @@ object SessionQueueTable {
     <.p(SeqexecStyles.queueText, r.instrument.show)
   }
 
-  private val daytimeCalibrationTargetName: TagMod =
-    <.span(SeqexecStyles.daytimeCal, UnknownTargetName)
-
   private def targetRenderer(p: Props) = linkedTextRenderer(p) { r =>
     val targetName =
-      r.targetName.fold(daytimeCalibrationTargetName)(x => x: TagMod)
+      r.targetName.fold(<.span(UnknownTargetName): TagMod)(x => x: TagMod)
     <.p(SeqexecStyles.queueText, targetName)
   }
 

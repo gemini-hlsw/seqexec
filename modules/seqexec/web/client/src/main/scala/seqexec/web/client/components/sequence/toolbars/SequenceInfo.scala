@@ -29,14 +29,13 @@ object SequenceInfo {
       .render_P { p =>
         val SequenceInfoFocus(isLogged, oName, status, tName) = p.p
         val obsName                                           = oName.filter(_.nonEmpty).getOrElse("Unknown.")
-        val daytimeCalibrationTargetName: TagMod =
+        val unknownTargetName: TagMod =
           Label(
             Label.Props(UnknownTargetName,
-                        basic       = true,
-                        extraStyles = List(SeqexecStyles.daytimeCal)))
+                        basic       = true))
         val targetName = tName
           .filter(_.nonEmpty)
-          .fold(daytimeCalibrationTargetName)(t =>
+          .fold(unknownTargetName)(t =>
             Label(Label.Props(t, basic = true)))
         <.div(
           ^.cls := "ui form",
