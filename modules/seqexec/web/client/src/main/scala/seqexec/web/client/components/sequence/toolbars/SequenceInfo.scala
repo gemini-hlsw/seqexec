@@ -9,7 +9,7 @@ import seqexec.web.client.semanticui.elements.label.Label
 import seqexec.web.client.semanticui.elements.icon.Icon.IconCheckmark
 import seqexec.web.client.semanticui.Size
 import seqexec.model.SequenceState
-import seqexec.model.DaytimeCalibrationTargetName
+import seqexec.model.UnknownTargetName
 import web.client.style._
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.vdom.html_<^._
@@ -29,14 +29,13 @@ object SequenceInfo {
       .render_P { p =>
         val SequenceInfoFocus(isLogged, oName, status, tName) = p.p
         val obsName                                           = oName.filter(_.nonEmpty).getOrElse("Unknown.")
-        val daytimeCalibrationTargetName: TagMod =
+        val unknownTargetName: TagMod =
           Label(
-            Label.Props(DaytimeCalibrationTargetName,
-                        basic       = true,
-                        extraStyles = List(SeqexecStyles.daytimeCal)))
+            Label.Props(UnknownTargetName,
+                        basic       = true))
         val targetName = tName
           .filter(_.nonEmpty)
-          .fold(daytimeCalibrationTargetName)(t =>
+          .fold(unknownTargetName)(t =>
             Label(Label.Props(t, basic = true)))
         <.div(
           ^.cls := "ui form",

@@ -23,7 +23,7 @@ import scala.math.max
 import scala.scalajs.js
 import seqexec.model.enum.Instrument
 import seqexec.model.UserDetails
-import seqexec.model.DaytimeCalibrationTargetName
+import seqexec.model.UnknownTargetName
 import seqexec.model.Observer
 import seqexec.model.SequenceState
 import seqexec.web.client.circuit._
@@ -457,12 +457,9 @@ object SessionQueueTable {
     <.p(SeqexecStyles.queueText, r.instrument.show)
   }
 
-  private val daytimeCalibrationTargetName: TagMod =
-    <.span(SeqexecStyles.daytimeCal, DaytimeCalibrationTargetName)
-
   private def targetRenderer(p: Props) = linkedTextRenderer(p) { r =>
     val targetName =
-      r.targetName.fold(daytimeCalibrationTargetName)(x => x: TagMod)
+      r.targetName.fold(<.span(UnknownTargetName): TagMod)(x => x: TagMod)
     <.p(SeqexecStyles.queueText, targetName)
   }
 

@@ -107,8 +107,6 @@ object SeqexecStyles {
 
   val queueText: GStyle = GStyle.fromString("SeqexecStyles-queueText")
 
-  val daytimeCal: GStyle = GStyle.fromString("SeqexecStyles-daytimeCal")
-
   val queueIconColumn: GStyle =
     GStyle.fromString("SeqexecStyles-queueIconColumn")
 
