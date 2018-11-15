@@ -96,6 +96,7 @@ object actions {
   final case class StopCalCompleted(qid:            QueueId)                               extends Action
   final case class StopCalFailed(qid:               QueueId)                               extends Action
   final case class RequestRemoveSeqCal(qid:         QueueId, id: Observation.Id)           extends Action
+  final case class RequestAddSeqCal(qid:            QueueId, id: Observation.Id)           extends Action
   final case class RemoveSeqCalCompleted(qid:       QueueId)                               extends Action
   final case class RemoveSeqCalFailed(qid:          QueueId, id: Observation.Id)           extends Action
   final case class RequestMoveCal(qid:              QueueId, id: Observation.Id, pos: Int) extends Action
