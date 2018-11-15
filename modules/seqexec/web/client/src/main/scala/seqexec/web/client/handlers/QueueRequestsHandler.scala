@@ -32,6 +32,15 @@ class QueueRequestsHandler[M](modelRW: ModelRW[M, QueueRequestsFocus])
                       AllDayCalFailed.apply))
   }
 
+  def handleAddDayCal: PartialFunction[Any, ActionResult[M]] = {
+    case RequestAddSeqCal(qid, oid) =>
+      effectOnly(
+        requestEffect(qid,
+                      SeqexecWebClient.addSequenceToQueue(oid),
+                      AllDayCalCompleted.apply,
+                      AllDayCalFailed.apply))
+  }
+
   def handleClearAllCal: PartialFunction[Any, ActionResult[M]] = {
     case RequestClearAllCal(qid) =>
       effectOnly(
@@ -100,6 +109,7 @@ class QueueRequestsHandler[M](modelRW: ModelRW[M, QueueRequestsFocus])
 
   override def handle: PartialFunction[Any, ActionResult[M]] =
     List(handleAddAllDayCal,
+         handleAddDayCal,
          handleClearAllCal,
          handleRunCal,
          handleStopCal,

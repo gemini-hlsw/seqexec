@@ -141,6 +141,7 @@ object Icon {
   val IconTimes: Icon                   = Icon("times")
   val IconSun: Icon                     = Icon("sun")
   val IconMoon: Icon                    = Icon("moon")
+  val IconQueue: Icon                   = Icon("chevron down")
   val IconVolumeOff: Icon               = Icon("volume off")
   val IconVolumeUp: Icon                = Icon("volume up")
 
