@@ -158,6 +158,8 @@ object Icon {
   val IconVolumeUp: Icon                = Icon("volume up")
   val IconSquareOutline: Icon           = Icon("square outline")
   val IconCheckSquareOutline: Icon      = Icon("check square outline")
+  val IconCalendarOutline: Icon         = Icon("calendar alternate outline")
+  val IconClockOutline: Icon            = Icon("clock outline")
 
   sealed trait Flipped
 

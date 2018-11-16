@@ -54,11 +54,11 @@ object SeqexecAppRootModel {
 
   val logDisplayL: Lens[SeqexecAppRootModel, SectionVisibilityState] =
     SeqexecAppRootModel.uiModel ^|->
-      SeqexecUIModel.globalLog ^|->
+      SeqexecUIModel.globalLog  ^|->
       GlobalLog.display
 
   val sessionQueueFilterL: Lens[SeqexecAppRootModel, SessionQueueFilter] =
-    SeqexecAppRootModel.uiModel ^|->
+    SeqexecAppRootModel.uiModel         ^|->
       SeqexecUIModel.sessionQueueFilter
 
   val sequencesOnDisplayL: Lens[SeqexecAppRootModel, SequencesOnDisplay] =
@@ -81,18 +81,18 @@ object SeqexecAppRootModel {
   def executionQueuesT(
     id: QueueId
   ): Traversal[SeqexecAppRootModel, ExecutionQueueView] =
-    SeqexecAppRootModel.sequences ^|->
-      SequencesQueue.queues ^|->>
+    SeqexecAppRootModel.sequences               ^|->
+      SequencesQueue.queues                     ^|->>
       filterIndex((qid: QueueId) => qid === id)
 
   val queuesT: Traversal[SeqexecAppRootModel, ExecutionQueueView] =
     SeqexecAppRootModel.sequences ^|->
-      SequencesQueue.queues ^|->>
+      SequencesQueue.queues       ^|->>
       each
 
   val dayCalG: Getter[SeqexecAppRootModel, Option[ExecutionQueueView]] =
-    (SeqexecAppRootModel.sequences ^|->
-      SequencesQueue.queues ^|->
+    (SeqexecAppRootModel.sequences     ^|->
+      SequencesQueue.queues            ^|->
       at(CalibrationQueueId)).asGetter
 
   implicit val eq: Eq[SeqexecAppRootModel] =

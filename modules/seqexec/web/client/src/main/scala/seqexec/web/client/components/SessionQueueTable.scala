@@ -43,6 +43,8 @@ import seqexec.web.client.semanticui.elements.icon.Icon.IconSun
 import seqexec.web.client.semanticui.elements.icon.Icon.IconMoon
 import seqexec.web.client.semanticui.elements.icon.Icon.IconSquareOutline
 import seqexec.web.client.semanticui.elements.icon.Icon.IconCheckSquareOutline
+import seqexec.web.client.semanticui.elements.icon.Icon.IconCalendarOutline
+import seqexec.web.client.semanticui.elements.icon.Icon.IconClockOutline
 import seqexec.web.client.reusability._
 import web.client.style._
 import web.client.utils._
@@ -70,13 +72,13 @@ object SessionQueueTable {
     SeqexecStyles.queueTextColumn.htmlClass
 
   sealed trait TableColumn extends Product with Serializable
-  case object IconColumn extends TableColumn
-  case object AddQueueColumn extends TableColumn
-  case object ClassColumn extends TableColumn
-  case object ObsIdColumn extends TableColumn
-  case object StateColumn extends TableColumn
+  case object IconColumn       extends TableColumn
+  case object AddQueueColumn   extends TableColumn
+  case object ClassColumn      extends TableColumn
+  case object ObsIdColumn      extends TableColumn
+  case object StateColumn      extends TableColumn
   case object InstrumentColumn extends TableColumn
-  case object ObsNameColumn extends TableColumn
+  case object ObsNameColumn    extends TableColumn
   case object TargetNameColumn extends TableColumn
 
   object TableColumn {
@@ -396,8 +398,8 @@ object SessionQueueTable {
       p
     }
 
-    def unapply(l: SessionQueueRow): Option[
-      (Observation.Id,
+    def unapply(l: SessionQueueRow):
+      Option[(Observation.Id,
        SequenceState,
        Instrument,
        Option[String],
@@ -581,6 +583,31 @@ object SessionQueueTable {
         ^.width := IconColumnWidth.px
     )
 
+  def addAll: Callback =
+    SeqexecCircuit.dispatchCB(RequestAllSelectedSequences(CalibrationQueueId))
+
+  private val addHeaderRenderer: HeaderRenderer[js.Object] =
+    (_, _, _, _, _, _) =>
+      <.div(
+        ^.title := "Queue",
+        ^.width := (AddQueueColumnWidth - 1).px,
+        SeqexecStyles.selectedIcon,
+        SeqexecStyles.centeredCell,
+        IconCalendarOutline.copyIcon(fitted  = true,
+                                     link    = true,
+                                     onClick = addAll)
+    )
+
+  private val timeHeaderRenderer: HeaderRenderer[js.Object] =
+    (_, _, _, _, _, _) =>
+      <.div(
+        ^.title := "Obs. class",
+        ^.width := (ClassColumnWidth - 1).px,
+        SeqexecStyles.selectedIcon,
+        SeqexecStyles.centeredCell,
+        IconClockOutline.copyIcon(fitted = true)
+    )
+
   def rowClassName(p: Props)(i: Int): String =
     ((i, p.rowGetter(i)) match {
       case (-1, _) =>
@@ -631,7 +658,17 @@ object SessionQueueTable {
             dataKey        = "obsClass",
             label          = "",
             cellRenderer   = addToQueueRenderer(b),
-            headerRenderer = statusHeaderRenderer,
+            headerRenderer = addHeaderRenderer,
+            className      = SeqexecStyles.queueIconColumn.htmlClass
+          ))
+      case (ClassColumn, width, _) =>
+        Column(
+          Column.propsNoFlex(
+            width,
+            dataKey        = "obsClass",
+            label          = "",
+            cellRenderer   = classIconRenderer(b),
+            headerRenderer = timeHeaderRenderer,
             className      = SeqexecStyles.queueIconColumn.htmlClass
           ))
       case (ObsIdColumn, width, _) =>
@@ -643,16 +680,6 @@ object SessionQueueTable {
             cellRenderer   = obsIdRenderer(props),
             headerRenderer = resizableHeaderRenderer(resizeRow(ObsIdColumn)),
             className      = SessionQueueColumnStyle
-          ))
-      case (ClassColumn, width, _) =>
-        Column(
-          Column.propsNoFlex(
-            width,
-            dataKey        = "obsClass",
-            label          = "",
-            cellRenderer   = classIconRenderer(b),
-            headerRenderer = statusHeaderRenderer,
-            className      = SeqexecStyles.queueIconColumn.htmlClass
           ))
       case (StateColumn, width, _) =>
         Column(
