@@ -10,7 +10,6 @@ import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.extra.Reusability
 import japgolly.scalajs.react.extra.TimerSupport
-import java.time.Duration
 import monocle.macros.Lenses
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.ObservationProgress
@@ -62,49 +61,17 @@ object SmoothProgressBar {
     }
   }
 
-  def encodeDuration(duration: Duration): String = {
-    val oneMinute  = 60
-    val twoMinutes = oneMinute * 2
-    val oneHour    = oneMinute * 60
-    val twoHours   = oneHour * 2
-    val oneDay     = oneHour * 24
-
-    def toString(result: List[String], seconds: Long): List[String] =
-      seconds match {
-        case seconds if seconds <= 0 =>
-          List.empty[String]
-        case seconds if seconds === 1 =>
-          result ::: List(s"${seconds} second")
-        case seconds if seconds < oneMinute =>
-          result ::: List(s"${seconds} seconds")
-        case seconds if seconds >= oneMinute && seconds < twoMinutes =>
-          s"${seconds / oneMinute} minute" :: toString(result,
-                                                       seconds % oneMinute)
-        case seconds if seconds >= oneMinute && seconds < oneHour =>
-          s"${seconds / oneMinute} minutes" :: toString(result,
-                                                        seconds % oneMinute)
-        case seconds if seconds >= oneHour && seconds < twoHours =>
-          s"${seconds / oneHour} hour" :: toString(result, seconds % oneHour)
-        case seconds if seconds >= twoHours && seconds < oneDay =>
-          s"${seconds / oneHour} hours" :: toString(result, seconds % oneHour)
-      }
-
-    toString(List.empty[String], duration.getSeconds).mkString(", ")
-  }
-
   private val component = ScalaComponent
     .builder[Props]("ObservationProgressBar")
     .initialStateFromProps(State.fromProps)
     .backend(x => new Backend(x))
     .render_PS { (p, s) =>
-      val remaining   = Duration.ofMillis(s.total - s.value)
-      val durationStr = encodeDuration(remaining)
-      val remainingStr =
-        if (durationStr.isEmpty) " - Completing..." else s" - $durationStr left"
+      val remaining   = (s.total - s.value) / 1000
+      val durationStr = if (remaining > 1) s"$remaining seconds" else "1 second"
       val label =
         if (p.paused) s"${p.fileId} - Paused - $durationStr left"
-        else if (s.value > 0) s"${p.fileId}$remainingStr"
-        else s"${p.fileId} - Completing..."
+        else if (remaining > 0) s"${p.fileId} - $durationStr left"
+        else s"${p.fileId} - Reading out..."
 
       Progress(Progress.Props(
         label       = label,
