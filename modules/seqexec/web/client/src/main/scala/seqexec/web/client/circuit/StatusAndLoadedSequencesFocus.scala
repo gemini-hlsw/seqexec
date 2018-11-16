@@ -25,7 +25,8 @@ final case class SequenceInSessionQueue(id:            Observation.Id,
                                         obsClass:      ObsClass,
                                         targetName:    Option[TargetName],
                                         runningStep:   Option[RunningStep],
-                                        nextStepToRun: Option[Int])
+                                        nextStepToRun: Option[Int],
+                                        inDayCalQueue: Boolean)
 
 object SequenceInSessionQueue {
   implicit val eq: Eq[SequenceInSessionQueue] =
@@ -40,11 +41,14 @@ object SequenceInSessionQueue {
          x.obsClass,
          x.targetName,
          x.runningStep,
-         x.nextStepToRun))
+         x.nextStepToRun,
+         x.inDayCalQueue))
 
   def toSequenceInSessionQueue(
-    sod:   SequencesOnDisplay,
-    queue: List[SequenceView]): List[SequenceInSessionQueue] =
+    sod:    SequencesOnDisplay,
+    queue:  List[SequenceView],
+    dayCal: List[Observation.Id]
+  ): List[SequenceInSessionQueue] =
     queue.map { s =>
       val active     = sod.idDisplayed(s.id)
       val loaded     = sod.loadedIds.contains(s.id)
@@ -62,7 +66,8 @@ object SequenceInSessionQueue {
                              obsClass,
                              targetName,
                              s.runningStep,
-                             s.nextStepToRun)
+                             s.nextStepToRun,
+                             dayCal.contains(s.id))
     }
 
 }
@@ -86,20 +91,25 @@ object StatusAndLoadedSequencesFocus {
     : Getter[SeqexecAppRootModel, StatusAndLoadedSequencesFocus] =
     ClientStatus.clientStatusFocusL.asGetter.zip(
       sessionQueueG.zip(sodG.zip(SeqexecAppRootModel.queueTableStateL.asGetter
-        .zip(sessionQueueFilterG)))) >>> {
-      case (s, (queue, (sod, (queueTable, filter)))) =>
-        StatusAndLoadedSequencesFocus(s,
-                                      SequenceInSessionQueue
-                                        .toSequenceInSessionQueue(sod, queue)
-                                        .sortBy(_.id),
-                                      queueTable,
-                                      filter)
+        .zip(sessionQueueFilterG.zip(SeqexecAppRootModel.dayCalG))))) >>> {
+      case (s, (queue, (sod, (queueTable, (filter, dayCal))))) =>
+        StatusAndLoadedSequencesFocus(
+          s,
+          SequenceInSessionQueue
+            .toSequenceInSessionQueue(sod, queue, dayCal.foldMap(_.queue))
+            .sortBy(_.id),
+          queueTable,
+          filter)
     }
+
   val filteredSequencesG
     : Getter[SeqexecAppRootModel, List[SequenceInSessionQueue]] = {
-    sessionQueueFilterG.zip(sessionQueueG.zip(sodG)) >>> {
-      case (f, (s, sod)) =>
-        f.filter(SequenceInSessionQueue.toSequenceInSessionQueue(sod, s))
+    sessionQueueFilterG.zip(
+      sessionQueueG.zip(sodG.zip(SeqexecAppRootModel.dayCalG))) >>> {
+      case (f, (s, (sod, dayCal))) =>
+        f.filter(
+          SequenceInSessionQueue
+            .toSequenceInSessionQueue(sod, s, dayCal.foldMap(_.queue)))
     }
   }
 
