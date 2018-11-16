@@ -119,6 +119,8 @@ object actions {
   final case class FlipSkipStep(id:       Observation.Id, step: Step) extends Action
   final case class FlipBreakpointStep(id: Observation.Id, step: Step) extends Action
 
+  final case object FlipSoundOnOff extends Action
+
   final case class UpdateObserver(id: Observation.Id, name: Observer) extends Action
   final case class UpdateDefaultObserver(name: Observer) extends Action
   final case class UpdateCalTabObserver(name:  Observer) extends Action
