@@ -67,6 +67,9 @@ object SeqexecAppRootModel {
     : Lens[SeqexecAppRootModel, TableState[SessionQueueTable.TableColumn]] =
     SeqexecAppRootModel.uiModel ^|-> SeqexecUIModel.queueTableState
 
+  val soundSettingL: Lens[SeqexecAppRootModel, SoundSelection] =
+    SeqexecAppRootModel.uiModel ^|-> SeqexecUIModel.sound
+
   val configTableStateL
     : Lens[SeqexecAppRootModel, TableState[StepConfigTable.TableColumn]] =
     SeqexecAppRootModel.uiModel ^|-> SeqexecUIModel.configTableState

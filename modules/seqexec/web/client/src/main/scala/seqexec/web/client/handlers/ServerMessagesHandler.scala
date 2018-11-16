@@ -18,6 +18,7 @@ import seqexec.model.events._
 import seqexec.web.client.model.lenses.sequenceStepT
 import seqexec.web.client.model.lenses.sequenceViewT
 import seqexec.web.client.model.ModelOps._
+import seqexec.web.client.model.SoundSelection
 import seqexec.web.client.actions._
 import seqexec.web.client.circuit._
 import seqexec.web.client.services.Audio
@@ -41,7 +42,7 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
     SequenceCompleteResource.resource)
   private val StepBeepAudio = new Audio(BeepResource.resource)
 
-  val loggedIn: Boolean           = value.user.isDefined
+  def loggedIn: Boolean           = value.sound === SoundSelection.SoundOn
   def ifLoggedIn[A]: A => Boolean = (_: A) => loggedIn
 
   // It is legal do put sequences of the other sites on the queue
