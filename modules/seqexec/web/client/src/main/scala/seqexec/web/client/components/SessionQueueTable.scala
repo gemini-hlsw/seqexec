@@ -563,6 +563,11 @@ object SessionQueueTable {
     (_, _, _, row: SessionQueueRow, index) => {
       linkTo(b.props, pageOf(row))(
         SeqexecStyles.queueIconColumn,
+        ^.title := (if (row.inDayCalQueue) {
+                      "Remove from daycal queue"
+                    } else {
+                      "Add to daycal queue"
+                    }),
         if (row.inDayCalQueue) {
           IconCheckSquareOutline.copyIcon(extraStyles =
                                             List(SeqexecStyles.selectedIcon),
@@ -589,7 +594,7 @@ object SessionQueueTable {
   private val addHeaderRenderer: HeaderRenderer[js.Object] =
     (_, _, _, _, _, _) =>
       <.div(
-        ^.title := "Queue",
+        ^.title := "Add all to queue",
         ^.width := (AddQueueColumnWidth - 1).px,
         SeqexecStyles.selectedIcon,
         SeqexecStyles.centeredCell,
