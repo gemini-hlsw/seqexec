@@ -222,17 +222,27 @@ object GnirsControllerEpics extends GnirsController {
   }
 
   private def setDCParams(config: DCConfig): SeqAction[EpicsCommand.Result] = {
-    val (lowNoise, digitalAvgs) = readModeEncoder.encode(config.readMode)
+
     val expTimeTolerance = 0.0001
     val biasTolerance = 0.0001
 
-    val params = smartSetDoubleParam(expTimeTolerance)(config.exposureTime.toSeconds,
-        epicsSys.exposureTime, dcCmd.setExposureTime(config.exposureTime.toSeconds)) ++
-      smartSetParam(config.coadds, epicsSys.numCoadds, dcCmd.setCoadds(config.coadds)) ++
-      smartSetDoubleParam(biasTolerance)(encode(config.wellDepth), epicsSys.detBias,
-        dcCmd.setDetBias(encode(config.wellDepth))) ++
-      smartSetParam(lowNoise, epicsSys.lowNoise, dcCmd.setLowNoise(lowNoise)) ++
-      smartSetParam(digitalAvgs, epicsSys.digitalAvgs, dcCmd.setDigitalAvgs(digitalAvgs))
+    val (lowNoise, digitalAvgs) = readModeEncoder.encode(config.readMode)
+
+    val expTimeWriter = smartSetDoubleParam(expTimeTolerance)(config.exposureTime.toSeconds,
+      epicsSys.exposureTime, dcCmd.setExposureTime(config.exposureTime.toSeconds))
+
+    val coaddsWriter = smartSetParam(config.coadds, epicsSys.numCoadds,
+      dcCmd.setCoadds(config.coadds))
+
+    val biasWriter =smartSetDoubleParam(biasTolerance)(encode(config.wellDepth), epicsSys.detBias,
+      dcCmd.setDetBias(encode(config.wellDepth)))
+
+    val lowNoiseWriter = smartSetParam(lowNoise, epicsSys.lowNoise, dcCmd.setLowNoise(lowNoise))
+
+    val digitalAvgsWriter = smartSetParam(digitalAvgs, epicsSys.digitalAvgs,
+      dcCmd.setDigitalAvgs(digitalAvgs))
+
+    val params =  expTimeWriter ++ coaddsWriter ++ biasWriter ++ lowNoiseWriter ++ digitalAvgsWriter
 
     if(params.isEmpty) SeqAction(EpicsCommand.Completed)
     else params.sequence.map(_ => ()) *>
