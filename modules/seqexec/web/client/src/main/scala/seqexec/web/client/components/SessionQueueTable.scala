@@ -26,6 +26,7 @@ import seqexec.model.UserDetails
 import seqexec.model.UnknownTargetName
 import seqexec.model.Observer
 import seqexec.model.SequenceState
+import seqexec.model.CalibrationQueueId
 import seqexec.web.client.circuit._
 import seqexec.web.client.actions._
 import seqexec.web.client.model.Pages._
@@ -40,6 +41,11 @@ import seqexec.web.client.semanticui.elements.icon.Icon.IconRefresh
 import seqexec.web.client.semanticui.elements.icon.Icon.IconSelectedRadio
 import seqexec.web.client.semanticui.elements.icon.Icon.IconSun
 import seqexec.web.client.semanticui.elements.icon.Icon.IconMoon
+import seqexec.web.client.semanticui.elements.icon.Icon.IconCircleOutline
+import seqexec.web.client.semanticui.elements.icon.Icon.IconCheckCircleOutline
+import seqexec.web.client.semanticui.elements.icon.Icon.IconCalendarOutline
+import seqexec.web.client.semanticui.elements.icon.Icon.IconClockOutline
+import seqexec.web.client.semanticui.{ Size => SSize }
 import seqexec.web.client.reusability._
 import web.client.style._
 import web.client.utils._
@@ -51,6 +57,7 @@ object SessionQueueTable {
   private val PhoneCut              = 400.0
   private val LargePhoneCut         = 570.0
   private val IconColumnWidth       = 25.0
+  private val AddQueueColumnWidth   = 30.0
   private val ClassColumnWidth      = 26.0
   private val ObsIdColumnWidth      = 140.0
   private val ObsIdMinWidth         = 66.2167 + SeqexecStyles.TableBorderWidth
@@ -67,6 +74,7 @@ object SessionQueueTable {
 
   sealed trait TableColumn extends Product with Serializable
   case object IconColumn       extends TableColumn
+  case object AddQueueColumn   extends TableColumn
   case object ClassColumn      extends TableColumn
   case object ObsIdColumn      extends TableColumn
   case object StateColumn      extends TableColumn
@@ -91,6 +99,13 @@ object SessionQueueTable {
     label   = "",
     visible = true,
     FixedColumnWidth.unsafeFromDouble(ClassColumnWidth))
+
+  val AddQueueColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
+    AddQueueColumn,
+    name    = "",
+    label   = "",
+    visible = true,
+    FixedColumnWidth.unsafeFromDouble(AddQueueColumnWidth))
 
   val ObsIdColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     ObsIdColumn,
@@ -129,6 +144,7 @@ object SessionQueueTable {
 
   val all: NonEmptyList[ColumnMeta[TableColumn]] = NonEmptyList.of(
     IconColumnMeta,
+    AddQueueColumnMeta,
     ClassColumnMeta,
     ObsIdColumnMeta,
     StateColumnMeta,
@@ -138,6 +154,7 @@ object SessionQueueTable {
 
   val columnsDefaultWidth: Map[TableColumn, Double] = Map(
     IconColumn -> IconColumnWidth,
+    AddQueueColumn -> AddQueueColumnWidth,
     ClassColumn -> ClassColumnWidth,
     ObsIdColumn -> ObsIdColumnWidth,
     StateColumn -> StateColumnWidth,
@@ -166,7 +183,8 @@ object SessionQueueTable {
                           s.active,
                           s.loaded,
                           s.nextStepToRun,
-                          s.runningStep)
+                          s.runningStep,
+                          s.inDayCalQueue)
         }
         .getOrElse(SessionQueueRow.Empty)
 
@@ -192,11 +210,13 @@ object SessionQueueTable {
       State.loggedIn
         .set(false)
         .andThen(State.columns.modify(_.map {
-          case c @ ColumnMeta(ObsNameColumn, _, _, _, _)    =>
+          case c @ ColumnMeta(ObsNameColumn, _, _, _, _) =>
+            c.copy(visible = false)
+          case c @ ColumnMeta(AddQueueColumn, _, _, _, _) =>
             c.copy(visible = false)
           case c @ ColumnMeta(TargetNameColumn, _, _, _, _) =>
             c.copy(visible = false)
-          case c                                            =>
+          case c =>
             c
         }))(this)
 
@@ -224,7 +244,7 @@ object SessionQueueTable {
       } else {
         val optimalSizes = sequences.foldLeft(columnsDefaultWidth) {
           case (currWidths,
-                SequenceInSessionQueue(id, st, i, _, _, n, _, t, r, _)) =>
+                SequenceInSessionQueue(id, st, i, _, _, n, _, t, r, _, _)) =>
             val idWidth = max(currWidths.getOrElse(ObsIdColumn, ObsIdMinWidth),
                               tableTextWidth(id.format))
             val statusWidth =
@@ -261,7 +281,7 @@ object SessionQueueTable {
             PercentageColumnWidth
               .fromDouble(optimalSizes.getOrElse(t, m).toDouble / width, m)
               .fold(c)(w => c.copy(width = w))
-          case c                                                          =>
+          case c =>
             c
         })(this)
       }
@@ -279,23 +299,23 @@ object SessionQueueTable {
     // Hide some columns depending on width
     private def hideOnWidth(s: Size): State =
       s.width match {
-        case w if w < PhoneCut      =>
+        case w if w < PhoneCut =>
           State.columns.modify(_.map {
-            case c @ ColumnMeta(ObsNameColumn, _, _, _, _)    =>
+            case c @ ColumnMeta(ObsNameColumn, _, _, _, _) =>
               c.copy(visible = false)
             case c @ ColumnMeta(TargetNameColumn, _, _, _, _) =>
               c.copy(visible = false)
-            case c                                            =>
+            case c =>
               c
           })(this)
         case w if w < LargePhoneCut =>
           State.columns.modify(_.map {
             case c @ ColumnMeta(TargetNameColumn, _, _, _, _) =>
               c.copy(visible = false)
-            case c                                            =>
+            case c =>
               c
           })(this)
-        case _                      =>
+        case _ =>
           this
       }
 
@@ -346,6 +366,7 @@ object SessionQueueTable {
     var loaded: Boolean
     var nextStepToRun: Option[Int]
     var runningStep: Option[RunningStep]
+    var inDayCalQueue: Boolean
   }
 
   // scalastyle:on
@@ -361,7 +382,8 @@ object SessionQueueTable {
               active:        Boolean,
               loaded:        Boolean,
               nextStepToRun: Option[Int],
-              runningStep:   Option[RunningStep]): SessionQueueRow = {
+              runningStep:   Option[RunningStep],
+              inDayCalQueue: Boolean): SessionQueueRow = {
       val p = (new js.Object).asInstanceOf[SessionQueueRow]
       p.obsId         = obsId
       p.status        = status
@@ -373,6 +395,7 @@ object SessionQueueTable {
       p.nextStepToRun = nextStepToRun
       p.runningStep   = runningStep
       p.loaded        = loaded
+      p.inDayCalQueue = inDayCalQueue
       p
     }
 
@@ -386,7 +409,8 @@ object SessionQueueTable {
        Boolean,
        Boolean,
        Option[Int],
-       Option[RunningStep])] =
+       Option[RunningStep],
+       Boolean)] =
       Some(
         (l.obsId,
          l.status,
@@ -397,19 +421,23 @@ object SessionQueueTable {
          l.active,
          l.loaded,
          l.nextStepToRun,
-         l.runningStep))
+         l.runningStep,
+         l.inDayCalQueue))
 
     def Empty: SessionQueueRow =
-      apply(Observation.Id.unsafeFromString("Zero-1"),
-            SequenceState.Idle,
-            Instrument.F2,
-            None,
-            "",
-            ObsClass.Nighttime,
-            active = false,
-            loaded = false,
-            None,
-            None)
+      apply(
+        Observation.Id.unsafeFromString("Zero-1"),
+        SequenceState.Idle,
+        Instrument.F2,
+        None,
+        "",
+        ObsClass.Nighttime,
+        active = false,
+        loaded = false,
+        None,
+        None,
+        inDayCalQueue = false
+      )
   }
 
   private def linkTo(p: Props, page: SeqexecPages)(mod: TagMod*) =
@@ -520,6 +548,44 @@ object SessionQueueTable {
       )
     }
 
+  def addToQueueE(id: Observation.Id)(e: ReactEvent): Callback =
+    e.stopPropagationCB *>
+      e.preventDefaultCB *>
+      SeqexecCircuit.dispatchCB(RequestAddSeqCal(CalibrationQueueId, id))
+
+  def removeFromQueueE(id: Observation.Id)(e: ReactEvent): Callback =
+    e.stopPropagationCB *>
+      e.preventDefaultCB *>
+      SeqexecCircuit.dispatchCB(RequestRemoveSeqCal(CalibrationQueueId, id))
+
+  private def addToQueueRenderer(
+    b: Backend
+  ): CellRenderer[js.Object, js.Object, SessionQueueRow] =
+    (_, _, _, row: SessionQueueRow, index) => {
+      linkTo(b.props, pageOf(row))(
+        SeqexecStyles.queueIconColumn,
+        ^.title := (if (row.inDayCalQueue) {
+                      "Remove from daycal queue"
+                    } else {
+                      "Add to daycal queue"
+                    }),
+        if (row.inDayCalQueue) {
+          IconCheckCircleOutline.copyIcon(size   = SSize.Large,
+                                          fitted = true,
+                                          extraStyles =
+                                            List(SeqexecStyles.selectedIcon),
+                                          onClickE =
+                                            removeFromQueueE(row.obsId) _)
+        } else {
+          IconCircleOutline.copyIcon(size   = SSize.Large,
+                                     fitted = true,
+                                     extraStyles =
+                                       List(SeqexecStyles.selectedIcon),
+                                     onClickE = addToQueueE(row.obsId) _)
+        }
+      )
+    }
+
   private val statusHeaderRenderer: HeaderRenderer[js.Object] =
     (_, _, _, _, _, _) =>
       <.div(
@@ -527,18 +593,44 @@ object SessionQueueTable {
         ^.width := IconColumnWidth.px
     )
 
+  def addAll: Callback =
+    SeqexecCircuit.dispatchCB(RequestAllSelectedSequences(CalibrationQueueId))
+
+  private val addHeaderRenderer: HeaderRenderer[js.Object] =
+    (_, _, _, _, _, _) =>
+      <.div(
+        ^.title := "Add all to queue",
+        ^.width := (AddQueueColumnWidth - 1).px,
+        SeqexecStyles.selectedIcon,
+        SeqexecStyles.centeredCell,
+        IconCalendarOutline.copyIcon(fitted  = true,
+                                     link    = true,
+                                     onClick = addAll)
+    )
+
+  private val timeHeaderRenderer: HeaderRenderer[js.Object] =
+    (_, _, _, _, _, _) =>
+      <.div(
+        ^.title := "Obs. class",
+        ^.width := (ClassColumnWidth - 1).px,
+        SeqexecStyles.selectedIcon,
+        SeqexecStyles.centeredCell,
+        IconClockOutline.copyIcon(fitted = true)
+    )
+
   def rowClassName(p: Props)(i: Int): String =
     ((i, p.rowGetter(i)) match {
       case (-1, _) =>
         SeqexecStyles.headerRowStyle
-      case (_, SessionQueueRow(_, s, _, _, _, _, _, _, _, _))
+      case (_, SessionQueueRow(_, s, _, _, _, _, _, _, _, _, _))
           if s == SequenceState.Completed =>
         SeqexecStyles.stepRow |+| SeqexecStyles.rowPositive
-      case (_, SessionQueueRow(_, s, _, _, _, _, _, _, _, _)) if s.isRunning =>
+      case (_, SessionQueueRow(_, s, _, _, _, _, _, _, _, _, _))
+          if s.isRunning =>
         SeqexecStyles.stepRow |+| SeqexecStyles.rowWarning
-      case (_, SessionQueueRow(_, s, _, _, _, _, _, _, _, _)) if s.isError =>
+      case (_, SessionQueueRow(_, s, _, _, _, _, _, _, _, _, _)) if s.isError =>
         SeqexecStyles.stepRow |+| SeqexecStyles.rowNegative
-      case (_, SessionQueueRow(_, s, _, _, _, _, _, active, _, _))
+      case (_, SessionQueueRow(_, s, _, _, _, _, _, active, _, _, _))
           if active && !s.isInProcess =>
         SeqexecStyles.stepRow |+| SeqexecStyles.rowActive
       case _ =>
@@ -569,6 +661,16 @@ object SessionQueueTable {
             headerRenderer = statusHeaderRenderer,
             className      = SeqexecStyles.queueIconColumn.htmlClass
           ))
+      case (AddQueueColumn, width, _) =>
+        Column(
+          Column.propsNoFlex(
+            width,
+            dataKey        = "obsClass",
+            label          = "",
+            cellRenderer   = addToQueueRenderer(b),
+            headerRenderer = addHeaderRenderer,
+            className      = SeqexecStyles.queueIconColumn.htmlClass
+          ))
       case (ClassColumn, width, _) =>
         Column(
           Column.propsNoFlex(
@@ -576,7 +678,7 @@ object SessionQueueTable {
             dataKey        = "obsClass",
             label          = "",
             cellRenderer   = classIconRenderer(b),
-            headerRenderer = statusHeaderRenderer,
+            headerRenderer = timeHeaderRenderer,
             className      = SeqexecStyles.queueIconColumn.htmlClass
           ))
       case (ObsIdColumn, width, _) =>

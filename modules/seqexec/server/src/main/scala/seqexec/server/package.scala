@@ -54,13 +54,17 @@ package server {
   object EngineState extends Engine.State[EngineState]{
     val default: EngineState = EngineState(Map(CalibrationQueueId -> ExecutionQueue.init(CalibrationQueueName)), Map.empty, Conditions.Default, None, Map.empty)
 
-    def instrumentLoadedL(instrument: Instrument): Lens[EngineState, Option[Observation.Id]] = GenLens[EngineState](_.selected) ^|-> at(instrument)
+    def instrumentLoadedL(
+      instrument: Instrument
+    ): Lens[EngineState, Option[Observation.Id]] =
+      GenLens[EngineState](_.selected) ^|-> at(instrument)
 
     def atSequence(sid:Observation.Id): Optional[EngineState, SequenceData] =
       EngineState.sequences ^|-? index(sid)
 
-    override def sequenceStateIndex(sid: Observation.Id)
-    : Optional[EngineState, Sequence.State[IO]] =
+    override def sequenceStateIndex(
+      sid: Observation.Id
+    ): Optional[EngineState, Sequence.State[IO]] =
       atSequence(sid) ^|-> SequenceData.seq
   }
 
