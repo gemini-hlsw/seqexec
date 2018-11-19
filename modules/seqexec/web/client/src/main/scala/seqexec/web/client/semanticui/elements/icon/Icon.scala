@@ -156,8 +156,8 @@ object Icon {
   val IconMoon: Icon                    = Icon("moon")
   val IconVolumeOff: Icon               = Icon("volume off")
   val IconVolumeUp: Icon                = Icon("volume up")
-  val IconSquareOutline: Icon           = Icon("square outline")
-  val IconCheckSquareOutline: Icon      = Icon("check square outline")
+  val IconCircleOutline: Icon           = Icon("circle outline")
+  val IconCheckCircleOutline: Icon      = Icon("check circle outline")
   val IconCalendarOutline: Icon         = Icon("calendar alternate outline")
   val IconClockOutline: Icon            = Icon("clock outline")
 

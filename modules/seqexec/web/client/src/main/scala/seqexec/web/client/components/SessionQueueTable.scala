@@ -41,10 +41,11 @@ import seqexec.web.client.semanticui.elements.icon.Icon.IconRefresh
 import seqexec.web.client.semanticui.elements.icon.Icon.IconSelectedRadio
 import seqexec.web.client.semanticui.elements.icon.Icon.IconSun
 import seqexec.web.client.semanticui.elements.icon.Icon.IconMoon
-import seqexec.web.client.semanticui.elements.icon.Icon.IconSquareOutline
-import seqexec.web.client.semanticui.elements.icon.Icon.IconCheckSquareOutline
+import seqexec.web.client.semanticui.elements.icon.Icon.IconCircleOutline
+import seqexec.web.client.semanticui.elements.icon.Icon.IconCheckCircleOutline
 import seqexec.web.client.semanticui.elements.icon.Icon.IconCalendarOutline
 import seqexec.web.client.semanticui.elements.icon.Icon.IconClockOutline
+import seqexec.web.client.semanticui.{ Size => SSize }
 import seqexec.web.client.reusability._
 import web.client.style._
 import web.client.utils._
@@ -569,12 +570,16 @@ object SessionQueueTable {
                       "Add to daycal queue"
                     }),
         if (row.inDayCalQueue) {
-          IconCheckSquareOutline.copyIcon(extraStyles =
+          IconCheckCircleOutline.copyIcon(size   = SSize.Large,
+                                          fitted = true,
+                                          extraStyles =
                                             List(SeqexecStyles.selectedIcon),
                                           onClickE =
                                             removeFromQueueE(row.obsId) _)
         } else {
-          IconSquareOutline.copyIcon(extraStyles =
+          IconCircleOutline.copyIcon(size   = SSize.Large,
+                                     fitted = true,
+                                     extraStyles =
                                        List(SeqexecStyles.selectedIcon),
                                      onClickE = addToQueueE(row.obsId) _)
         }
