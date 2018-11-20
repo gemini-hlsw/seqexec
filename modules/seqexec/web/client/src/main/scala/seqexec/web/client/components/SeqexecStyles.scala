@@ -15,6 +15,7 @@ object SeqexecStyles {
   val overscanRowCount: Int    = 10
   val runningRowHeight: Int    = 60
   val TableBorderWidth: Double = 1.0
+  val TableRightPadding: Int   = 13
 
   val activeInstrumentLabel: GStyle =
     GStyle.fromString("SeqexecStyles-activeInstrumentLabel")
@@ -284,4 +285,7 @@ object SeqexecStyles {
 
   val filterPane: GStyle =
     GStyle.fromString("SeqexecStyles-filterPane")
+
+  val filterActiveButton: GStyle =
+    GStyle.fromString("SeqexecStyles-filterActiveButton")
 }

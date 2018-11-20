@@ -246,7 +246,7 @@ object SessionQueueTable {
           case (currWidths,
                 SequenceInSessionQueue(id, st, i, _, _, n, _, t, r, _, _)) =>
             val idWidth = max(currWidths.getOrElse(ObsIdColumn, ObsIdMinWidth),
-                              tableTextWidth(id.format))
+                              tableTextWidth(id.format)) + SeqexecStyles.TableRightPadding
             val statusWidth =
               max(currWidths.getOrElse(StateColumn, StateMinWidth),
                   tableTextWidth(statusText(st, r)))
@@ -274,7 +274,7 @@ object SessionQueueTable {
               tableState.columns.find(_.column === c).forall(_.visible)
           }
           .values
-          .sum
+          .sum + ClassColumnWidth + (if (loggedIn) AddQueueColumnWidth else 0)
         // Normalize based on visibility
         State.columns.modify(_.map {
           case c @ ColumnMeta(t, _, _, true, PercentageColumnWidth(_, m)) =>
@@ -287,14 +287,16 @@ object SessionQueueTable {
       }
 
     // Returns a list of the visible columns with the suggested size
-    def visibleColumnsSizes(s: Size): List[(TableColumn, Double, Boolean)] =
+    def visibleColumnsSizes(s: Size): List[(TableColumn, Double, Boolean)] = {
+      val fixedVisibleCols = if (loggedIn) 1 else 0
       for {
         (c, i) <- hideOnWidth(s).tableState.columns.toList.zipWithIndex
         if c.visible
       } yield
         (c.column,
          tableState.widthOf(c.column, s),
-         i === tableState.columns.filter(_.visible).length - 1)
+         i === tableState.columns.filter(_.visible).length - fixedVisibleCols)
+    }
 
     // Hide some columns depending on width
     private def hideOnWidth(s: Size): State =
