@@ -9,8 +9,10 @@ import cats.effect.concurrent._
 import cats.effect.implicits._
 import cats.implicits._
 import edu.gemini.aspen.giapi.commands.HandlerResponse.Response
-import edu.gemini.aspen.giapi.status.{StatusHandler, StatusItem}
-import edu.gemini.aspen.giapi.statusservice.{StatusHandlerAggregate, StatusService}
+import edu.gemini.aspen.giapi.status.StatusHandler
+import edu.gemini.aspen.giapi.status.StatusItem
+import edu.gemini.aspen.giapi.statusservice.StatusHandlerAggregate
+import edu.gemini.aspen.giapi.statusservice.StatusService
 import edu.gemini.aspen.giapi.util.jms.status.StatusGetter
 import edu.gemini.aspen.gmp.commands.jms.client.CommandSenderClient
 import edu.gemini.aspen.giapi.commands.SequenceCommand
@@ -262,7 +264,7 @@ package client {
             c   <- build(ref)                                  // Build the interpreter
           } yield c
       }
-      // scalastyle:on
+    // scalastyle:on
 
     /**
       * Interpreter on Id

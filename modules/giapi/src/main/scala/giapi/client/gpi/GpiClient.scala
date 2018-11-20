@@ -4,18 +4,23 @@
 package giapi.client.gpi
 
 import cats.implicits._
-import edu.gemini.aspen.giapi.commands.{Activity, SequenceCommand}
+import cats.effect.Sync
+import edu.gemini.aspen.giapi.commands.Activity
+import edu.gemini.aspen.giapi.commands.SequenceCommand
 import fs2.Stream
 import giapi.client.commands.{Command, CommandResult, Configuration}
 import giapi.client.{Giapi, GiapiClient}
 import giapi.client.syntax.giapiconfig._
+import giapi.client.GiapiDb
+import giapi.client.StatusValue
 import mouse.boolean._
 
 /**
   * Client for GPI
   */
-final class GpiClient[F[_]](override val giapi: Giapi[F]) extends GiapiClient[F] {
+final class GpiClient[F[_]: Sync](override val giapi: Giapi[F]) extends GiapiClient[F] {
   import GiapiClient.DefaultCommandTimeout
+  private val statusDb = GiapiDb.newDb[F]
 
   ///////////////
   // Status items
@@ -98,6 +103,23 @@ final class GpiClient[F[_]](override val giapi: Giapi[F]) extends GiapiClient[F]
       ),
       DefaultCommandTimeout
     )
+
+  override def genericApply(configuration: Configuration): F[CommandResult] = {
+    def smartApply(fpu: Option[StatusValue]): F[CommandResult] = {
+      println(fpu)
+      giapi.command(Command(
+                      SequenceCommand.APPLY,
+                      Activity.PRESET_START,
+                      configuration
+                    ),
+                    DefaultCommandTimeout)
+    }
+    for {
+      s   <- statusDb
+      fpu <- s.value("gpi:fpu")
+      r   <- smartApply(fpu)
+    } yield r
+  }
 }
 
 object GPIExample extends cats.effect.IOApp {
@@ -143,4 +165,3 @@ object GPIExample extends cats.effect.IOApp {
     } yield ExitCode.Success
 
 }
-
