@@ -47,9 +47,7 @@ object SessionQueueTableFilter {
             SeqexecStyles.filterPane,
             <.a(
               ^.cls := "item",
-              ^.classSet(
-                "active" -> filter.dayTimeSelected
-              ),
+              SeqexecStyles.filterActiveButton.when(filter.dayTimeSelected),
               <.i(
                 ^.cls := "sun icon"
               ),
@@ -58,9 +56,7 @@ object SessionQueueTableFilter {
             ),
             <.a(
               ^.cls := "item",
-              ^.classSet(
-                "active" -> filter.nightTimeSelected
-              ),
+              SeqexecStyles.filterActiveButton.when(filter.nightTimeSelected),
               <.i(
                 ^.cls := "moon icon"
               ),

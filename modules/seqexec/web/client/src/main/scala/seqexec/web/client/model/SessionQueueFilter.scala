@@ -32,13 +32,13 @@ object ObsClass {
 @Lenses
 final case class SessionQueueFilter(obsClass: ObsClass) {
   val dayTimeSelected: Boolean = obsClass match {
-    case ObsClass.All | ObsClass.Daytime => true
-    case _                               => false
+    case ObsClass.Daytime => true
+    case _                => false
   }
 
   val nightTimeSelected: Boolean = obsClass match {
-    case ObsClass.All | ObsClass.Nighttime => true
-    case _                                 => false
+    case ObsClass.Nighttime => true
+    case _                  => false
   }
 
   def filter(seq: List[SequenceInSessionQueue]): List[SequenceInSessionQueue] =
