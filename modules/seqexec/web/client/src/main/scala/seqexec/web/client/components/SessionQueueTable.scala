@@ -245,8 +245,9 @@ object SessionQueueTable {
         val optimalSizes = sequences.foldLeft(columnsDefaultWidth) {
           case (currWidths,
                 SequenceInSessionQueue(id, st, i, _, _, n, _, t, r, _, _)) =>
-            val idWidth = max(currWidths.getOrElse(ObsIdColumn, ObsIdMinWidth),
-                              tableTextWidth(id.format)) + SeqexecStyles.TableRightPadding
+            val idWidth = max(
+              currWidths.getOrElse(ObsIdColumn, ObsIdMinWidth),
+              tableTextWidth(id.format)) + SeqexecStyles.TableRightPadding
             val statusWidth =
               max(currWidths.getOrElse(StateColumn, StateMinWidth),
                   tableTextWidth(statusText(st, r)))
@@ -446,6 +447,7 @@ object SessionQueueTable {
     <.a(
       ^.href := p.ctl.urlFor(page).value,
       ^.onClick ==> { _.preventDefaultCB },
+      ^.draggable := false,
       mod.toTagMod
     )
 
@@ -626,17 +628,17 @@ object SessionQueueTable {
         SeqexecStyles.headerRowStyle
       case (_, SessionQueueRow(_, s, _, _, _, _, _, _, _, _, _))
           if s == SequenceState.Completed =>
-        SeqexecStyles.stepRow |+| SeqexecStyles.rowPositive
+        SeqexecStyles.stepRow |+| SeqexecStyles.draggableRow |+| SeqexecStyles.rowPositive
       case (_, SessionQueueRow(_, s, _, _, _, _, _, _, _, _, _))
           if s.isRunning =>
-        SeqexecStyles.stepRow |+| SeqexecStyles.rowWarning
+        SeqexecStyles.stepRow |+| SeqexecStyles.draggableRow |+| SeqexecStyles.rowWarning
       case (_, SessionQueueRow(_, s, _, _, _, _, _, _, _, _, _)) if s.isError =>
-        SeqexecStyles.stepRow |+| SeqexecStyles.rowNegative
+        SeqexecStyles.stepRow |+| SeqexecStyles.draggableRow |+| SeqexecStyles.rowNegative
       case (_, SessionQueueRow(_, s, _, _, _, _, _, active, _, _, _))
           if active && !s.isInProcess =>
-        SeqexecStyles.stepRow |+| SeqexecStyles.rowActive
+        SeqexecStyles.stepRow |+| SeqexecStyles.draggableRow |+| SeqexecStyles.rowActive
       case _ =>
-        SeqexecStyles.stepRow
+        SeqexecStyles.stepRow |+| SeqexecStyles.draggableRow
     }).htmlClass
 
   // scalastyle:off
@@ -806,10 +808,43 @@ object SessionQueueTable {
         onScroll         = (_, _, pos) => updateScrollPosition(b, pos),
         onRowDoubleClick = doubleClick(b),
         onRowClick       = singleClick(b),
-        headerHeight     = SeqexecStyles.headerHeight
+        headerHeight     = SeqexecStyles.headerHeight,
+        rowRenderer      = draggableRowRenderer(b)
       ),
       columns(b, size): _*
     ).vdomElement
+
+  def dragStart(b: Backend, obsId: Observation.Id)(
+    e:             ReactDragEvent): Callback =
+    Callback {
+      e.dataTransfer.setData("text/plain", obsId.format)
+    }.when(b.props.canOperate) *> Callback.empty
+
+  private def draggableRowRenderer(b: Backend) =
+    (className:        String,
+     columns:          Array[VdomNode],
+     index:            Int,
+     isScrolling:      Boolean,
+     key:              String,
+     rowData:          SessionQueueRow,
+     onRowClick:       Option[OnRowClick],
+     onRowDoubleClick: Option[OnRowClick],
+     onRowMouseOut:    Option[OnRowClick],
+     onRowMouseOver:   Option[OnRowClick],
+     onRowRightClick:  Option[OnRowClick],
+     style:            Style) => {
+      <.div(
+        ^.cls := className,
+        ^.draggable := b.props.canOperate,
+        ^.key := key,
+        ^.role := "row",
+        ^.onDragStart ==> dragStart(b, rowData.obsId),
+        ^.style := Style.toJsObject(style),
+        ^.onClick -->? onRowClick.map(h => h(index)),
+        ^.onDoubleClick -->? onRowDoubleClick.map(h => h(index)),
+        columns.toTagMod
+      ): VdomElement
+    }
 
   def initialState(p: Props): State =
     InitialTableState
