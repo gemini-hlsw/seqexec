@@ -809,17 +809,18 @@ object SessionQueueTable {
         onRowDoubleClick = doubleClick(b),
         onRowClick       = singleClick(b),
         headerHeight     = SeqexecStyles.headerHeight,
-        rowRenderer      = draggableRowRenderer
+        rowRenderer      = draggableRowRenderer(b)
       ),
       columns(b, size): _*
     ).vdomElement
 
-  def dragStart(obsId: Observation.Id)(e: ReactDragEvent): Callback =
+  def dragStart(b: Backend, obsId: Observation.Id)(
+    e:             ReactDragEvent): Callback =
     Callback {
       e.dataTransfer.setData("text/plain", obsId.format)
-    }
+    }.when(b.props.canOperate) *> Callback.empty
 
-  private def draggableRowRenderer =
+  private def draggableRowRenderer(b: Backend) =
     (className:        String,
      columns:          Array[VdomNode],
      index:            Int,
@@ -834,10 +835,10 @@ object SessionQueueTable {
      style:            Style) => {
       <.div(
         ^.cls := className,
-        ^.draggable := true,
+        ^.draggable := b.props.canOperate,
         ^.key := key,
         ^.role := "row",
-        ^.onDragStart ==> dragStart(rowData.obsId),
+        ^.onDragStart ==> dragStart(b, rowData.obsId),
         ^.style := Style.toJsObject(style),
         ^.onClick -->? onRowClick.map(h => h(index)),
         ^.onDoubleClick -->? onRowDoubleClick.map(h => h(index)),
