@@ -288,4 +288,7 @@ object SeqexecStyles {
 
   val filterActiveButton: GStyle =
     GStyle.fromString("SeqexecStyles-filterActiveButton")
+
+  val dropOnTab: GStyle =
+    GStyle.fromString("SeqexecStyles-dropOnTab")
 }
