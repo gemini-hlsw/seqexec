@@ -148,12 +148,14 @@ object StepsTable {
 
     val startState: State =
       tableState
-        .map(s => State.InitialState.copy(tableState = s))
+        .map(s =>
+          State.InitialState.copy(tableState = s, selected = selectedStep))
         .getOrElse(State.InitialState)
   }
 
   final case class State(tableState:      TableState[TableColumn],
-                         breakpointHover: Option[Int])
+                         breakpointHover: Option[Int],
+                         selected:        Option[StepId]) // We have this on the step too but this allows faster rerendering
 
   object State {
 
@@ -162,6 +164,9 @@ object StepsTable {
 
     val breakpointHover: Lens[State, Option[Int]] =
       GenLens[State](_.breakpointHover)
+
+    val selected: Lens[State, Option[StepId]] =
+      GenLens[State](_.selected)
 
     val scrollPosition: Lens[State, JsNumber] =
       tableState ^|-> TableState.scrollPosition[TableColumn]
@@ -172,14 +177,14 @@ object StepsTable {
     val InitialTableState: TableState[TableColumn] =
       TableState(NotModified, 0, all)
 
-    val InitialState: State = State(InitialTableState, None)
+    val InitialState: State = State(InitialTableState, None, None)
   }
 
   implicit val propsReuse: Reusability[Props] =
     Reusability.by(x => (x.canOperate, x.stepsTable))
   implicit val tcReuse: Reusability[TableColumn] = Reusability.byRef
   implicit val stateReuse: Reusability[State] =
-    Reusability.by(x => (x.tableState, x.breakpointHover))
+    Reusability.by(x => (x.tableState, x.breakpointHover, x.selected))
 
   val controlHeaderRenderer: HeaderRenderer[js.Object] = (_, _, _, _, _, _) =>
     <.span(
@@ -198,7 +203,7 @@ object StepsTable {
 
   def stepControlRenderer(
     f:                       StepsTableFocus,
-    props:                   Props,
+    b:                       Backend,
     rowBreakpointHoverOnCB:  Int => Callback,
     rowBreakpointHoverOffCB: Int => Callback,
     recomputeHeightsCB:      Int => Callback
@@ -206,9 +211,9 @@ object StepsTable {
     (_, _, _, row: StepRow, _) =>
       StepToolsCell(
         StepToolsCell.Props(
-          props.status,
+          b.props.status,
           row.step,
-          rowHeight(props)(row.step.id),
+          rowHeight(b)(row.step.id),
           f.isPreview,
           f.nextStepToRun,
           f.id,
@@ -232,17 +237,17 @@ object StepsTable {
 
   def stepProgressRenderer(
     f: StepsTableFocus,
-    p: Props
+    b: Backend
   ): CellRenderer[js.Object, js.Object, StepRow] =
     (_, _, _, row: StepRow, _) =>
       StepProgressCell(
-        StepProgressCell.Props(p.status,
+        StepProgressCell.Props(b.props.status,
                                f.instrument,
                                f.id,
                                f.state,
                                row.step,
-                               p.selectedStep,
-                               p.isPreview))
+                               b.state.selected,
+                               b.props.isPreview))
 
   def stepStatusRenderer(
     offsetsDisplay: OffsetsDisplay
@@ -336,14 +341,14 @@ object StepsTable {
   /**
     * Calculates the row height depending on conditions
     */
-  def rowHeight(props: Props)(i: Int): Int =
-    props.rowGetter(i) match {
+  def rowHeight(b: Backend)(i: Int): Int =
+    b.props.rowGetter(i) match {
       case StepRow(StandardStep(_, _, s, true, _, _, _, _))
           if s === StepState.Running =>
         // Row running with a breakpoint set
         SeqexecStyles.runningRowHeight + BreakpointLineHeight
       case StepRow(StandardStep(i, _, _, _, _, _, _, _))
-          if props.selectedStep.exists(_ === i) && props.canControlSubsystems(
+          if b.state.selected.exists(_ === i) && b.props.canControlSubsystems(
             i) =>
         // Selected
         SeqexecStyles.runningRowHeight
@@ -352,10 +357,10 @@ object StepsTable {
         SeqexecStyles.runningRowHeight
       case StepRow(StandardStep(_, _, _, true, _, _, _, _)) =>
         // Row with a breakpoint set
-        baseHeight(props) + BreakpointLineHeight
+        baseHeight(b.props) + BreakpointLineHeight
       case _ =>
         // default row
-        baseHeight(props)
+        baseHeight(b.props)
     }
 
   private val PhoneCut      = 412
@@ -369,8 +374,8 @@ object StepsTable {
                          className    = SeqexecStyles.paddedStepRow.htmlClass,
                          cellRenderer = stepIdRenderer))
 
-  def stateColumn(p: Props, controlWidth: Double): Option[Table.ColumnArg] =
-    p.steps.map(
+  def stateColumn(b: Backend, controlWidth: Double): Option[Table.ColumnArg] =
+    b.props.steps.map(
       i =>
         Column(
           Column
@@ -378,7 +383,7 @@ object StepsTable {
                          "state",
                          label        = "Execution Progress",
                          className    = SeqexecStyles.paddedStepRow.htmlClass,
-                         cellRenderer = stepProgressRenderer(i, p))
+                         cellRenderer = stepProgressRenderer(i, b))
       ))
 
   def iconColumn(b: Backend): Option[Table.ColumnArg] =
@@ -390,7 +395,7 @@ object StepsTable {
             "ctl",
             label = "Icon",
             cellRenderer = stepControlRenderer(i,
-                                               b.props,
+                                               b,
                                                rowBreakpointHoverOnCB(b),
                                                rowBreakpointHoverOffCB(b),
                                                recomputeRowHeightsCB),
@@ -559,7 +564,7 @@ object StepsTable {
         ColWidths.ObjectTypeWidth +
         ColWidths.SettingsWidth
     val controlWidth = s.width - colsWidth
-    val stateCol     = stateColumn(p, controlWidth)
+    val stateCol     = stateColumn(b, controlWidth)
 
     List(
       iconCol,
@@ -603,11 +608,14 @@ object StepsTable {
     }
 
   // Single click puts the row as selected
-  def singleClick(p: Props)(i: Int): Callback =
-    p.obsId.map { id =>
-      SeqexecCircuit
-        .dispatchCB(UpdateSelectedStep(id, i))
-        .when(p.canControlSubsystems(i)) *> Callback.empty
+  def singleClick(b: Backend)(i: Int): Callback =
+    b.props.obsId.map { id =>
+      (SeqexecCircuit
+        .dispatchCB(UpdateSelectedStep(id, i)) *>
+        b.modState(State.selected.set(Some(i))) *>
+        recomputeRowHeightsCB(min(b.state.selected.getOrElse(i), i)))
+        .when(b.props.canControlSubsystems(i)) *>
+        Callback.empty
     }.getOrEmpty
 
   def stepsTableProps(b: Backend)(size: Size): Table.Props =
@@ -622,13 +630,13 @@ object StepsTable {
       overscanRowCount = SeqexecStyles.overscanRowCount,
       height           = size.height.toInt,
       rowCount         = b.props.rowCount,
-      rowHeight        = rowHeight(b.props) _,
+      rowHeight        = rowHeight(b) _,
       rowClassName     = rowClassName(b) _,
       width            = size.width.toInt,
       rowGetter        = b.props.rowGetter _,
       scrollToIndex    = startScrollToIndex(b),
       scrollTop        = startScrollTop(b.state),
-      onRowClick       = singleClick(b.props),
+      onRowClick       = singleClick(b),
       onScroll = (a, _, pos) =>
         updateScrollPosition(b, pos).when(a.toDouble > 0) *> Callback.empty,
       scrollToAlignment = ScrollToAlignment.Center,
@@ -651,24 +659,29 @@ object StepsTable {
   def rowBreakpointHoverOffCB(b: Backend)(index: Int): Callback =
     b.modState(State.breakpointHover.set(None)) *> recomputeRowHeightsCB(index)
 
-  def receive(cur: Props, next: Props): Callback = {
+  def receive(cur: Props, next: Props, s: State): Callback = {
     // Recalculate the heights if needed
     val stepsPairs = next.stepsList.zip(cur.stepsList)
-    val differentStepsStates: List[Callback] = stepsPairs.collect {
+    val differentStepsStates: List[StepId] = stepsPairs.collect {
       // if step status changes recalculate
       case (cur, prev) if cur.status =!= prev.status =>
-        recomputeRowHeightsCB(cur.id)
+        cur.id
       // if breakpoint state changes recalculate
       case (cur, prev) if cur.breakpoint =!= prev.breakpoint =>
-        recomputeRowHeightsCB(cur.id)
+        cur.id
     }
-    val selectedCB =
+    val selected: Option[StepId] =
       (cur.selectedStep, next.selectedStep)
         .mapN { (c, n) =>
-          recomputeRowHeightsCB(min(c, n))
+          min(c, n)
         }
-        .filter(_ => cur.selectedStep =!= next.selectedStep)
-    Callback.sequence(selectedCB.getOrEmpty :: differentStepsStates)
+        .filter(_ => s.selected =!= next.selectedStep)
+    (selected.toList ::: differentStepsStates)
+      .minimumOption
+      .map {
+        recomputeRowHeightsCB
+      }
+      .getOrEmpty
   }
 
   // Wire it up from VDOM
@@ -704,7 +717,8 @@ object StepsTable {
     .initialStateFromProps(_.startState)
     .render(render)
     .configure(Reusability.shouldComponentUpdate)
-    .componentWillReceiveProps(x => receive(x.currentProps, x.nextProps))
+    .componentWillReceiveProps(x =>
+      receive(x.currentProps, x.nextProps, x.state))
     .build
 
   def apply(p: Props): Unmounted[Props, State, Unit] = component(p)
