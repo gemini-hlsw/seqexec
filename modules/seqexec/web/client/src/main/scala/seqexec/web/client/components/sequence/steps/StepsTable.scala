@@ -153,9 +153,10 @@ object StepsTable {
         .getOrElse(State.InitialState)
   }
 
-  final case class State(tableState:      TableState[TableColumn],
-                         breakpointHover: Option[Int],
-                         selected:        Option[StepId]) // We have this on the step too but this allows faster rerendering
+  final case class State(
+    tableState:      TableState[TableColumn],
+    breakpointHover: Option[Int],
+    selected:        Option[StepId]) // We have this on the step too but this allows faster rerendering
 
   object State {
 
@@ -641,8 +642,41 @@ object StepsTable {
         updateScrollPosition(b, pos).when(a.toDouble > 0) *> Callback.empty,
       scrollToAlignment = ScrollToAlignment.Center,
       headerClassName   = SeqexecStyles.tableHeader.htmlClass,
-      headerHeight      = SeqexecStyles.headerHeight
+      headerHeight      = SeqexecStyles.headerHeight,
+      rowRenderer       = stopsRowRenderer
     )
+
+  // We want clicks to be processed only if the click is not on the first row with the breakpoint/skip controls
+  private def allowedClick(index: Int, onRowClick: Option[OnRowClick])(
+    e:                            ReactMouseEvent): Callback =
+    onRowClick
+      .filter(_ => e.clientX > ColWidths.ControlWidth)
+      .map(h => h(index))
+      .getOrEmpty
+
+  private def stopsRowRenderer =
+    (className:        String,
+     columns:          Array[VdomNode],
+     index:            Int,
+     isScrolling:      Boolean,
+     key:              String,
+     rowData:          StepRow,
+     onRowClick:       Option[OnRowClick],
+     onRowDoubleClick: Option[OnRowClick],
+     onRowMouseOut:    Option[OnRowClick],
+     onRowMouseOver:   Option[OnRowClick],
+     onRowRightClick:  Option[OnRowClick],
+     style:            Style) => {
+      <.div(
+        ^.cls := className,
+        ^.key := key,
+        ^.role := "row",
+        ^.style := Style.toJsObject(style),
+        ^.onClick ==> allowedClick(index, onRowClick),
+        ^.onDoubleClick -->? onRowDoubleClick.map(h => h(index)),
+        columns.toTagMod
+      ): VdomElement
+    }
 
   // Create a ref
   private val ref = Ref.toJsComponent(Table.component)
@@ -676,12 +710,9 @@ object StepsTable {
           min(c, n)
         }
         .filter(_ => s.selected =!= next.selectedStep)
-    (selected.toList ::: differentStepsStates)
-      .minimumOption
-      .map {
-        recomputeRowHeightsCB
-      }
-      .getOrEmpty
+    (selected.toList ::: differentStepsStates).minimumOption.map {
+      recomputeRowHeightsCB
+    }.getOrEmpty
   }
 
   // Wire it up from VDOM
