@@ -39,18 +39,25 @@ final case class GHOSTController[F[_]: Sync](ghostClient: GHOSTClient[F],
     def cfg[P: Show](paramName: String, paramVal: P) =
       Configuration.single(s"${ifuNum.ifuStr}.$paramName", paramVal)
 
-    val config = for {
-      _   <- nameOpt // We only do this because we want Configuration.Zero if there is no target name.
-      ra  <- raOpt
-      dec <- decOpt
-    } yield {
-      cfg("target", IFUTargetType.determineType(nameOpt).targetType) |+|
-        cfg("ra", ra.toDoubleDegrees) |+|
-        cfg("dec", dec.toDoubleDegrees) |+|
-        cfg("bundle", bundleConfig.configName)
-    }
+    (nameOpt, raOpt, decOpt) match {
+      // Case 1: IFU is in use here for an actual position.
+      case (Some(name), Some(ra), Some(dec)) =>
+        val ifuTargetType = IFUTargetType.determineType(nameOpt)
+        cfg("target", ifuTargetType.targetType) |+|
+          cfg("type", DemandType.DemandRADec.demandType) |+|
+          cfg("ra", ra.toDoubleDegrees) |+|
+          cfg("dec", dec.toDoubleDegrees) |+|
+          cfg("bundle", bundleConfig.determineType(ifuTargetType).configName)
 
-    config.getOrElse(Configuration.Zero)
+      // Case 2: IFU is explicitly excluded from use.
+      case (Some(name), None, None) =>
+        cfg("target", IFUTargetType.NoTarget.targetType) |+|
+          cfg("type", DemandType.DemandPark.demandType)
+
+      // Case 3: IFU is not in this mode. Look to other mode (e.g. high res).
+      case _ =>
+        Configuration.Zero
+    }
   }
 
   private def srifuConfig(config: GHOSTConfig): Configuration =
@@ -66,6 +73,7 @@ final case class GHOSTController[F[_]: Sync](ghostClient: GHOSTClient[F],
         BundleConfig.HighRes)
 
   // If the srifu parameters are defined, use them; otherwise, use the hrifu parameters.
+  // Which set of parameters is determined completely by which of srifuName and hrifuName is set.
   // TODO: What do we do with the base position explicit override?
   // TODO: This was not on the list of provided parameter names.
   private def ghostConfig(config: GHOSTConfig): SeqActionF[F, CommandResult] = {
@@ -100,10 +108,16 @@ final case class GHOSTController[F[_]: Sync](ghostClient: GHOSTClient[F],
 }
 
 object GHOSTController {
-  sealed abstract class BundleConfig(val configName: String)
+  sealed abstract class BundleConfig(val configName: String) {
+    def determineType(t: IFUTargetType): BundleConfig = t match {
+      case IFUTargetType.SkyPosition => BundleConfig.Sky
+      case _                         => this
+    }
+  }
   object BundleConfig {
-    case object Standard extends BundleConfig(configName = "lo")
-    case object HighRes extends BundleConfig(configName = "hi")
+    case object Standard extends BundleConfig(configName = "IFU_LORES")
+    case object HighRes  extends BundleConfig(configName = "IFU_HRES")
+    case object Sky      extends BundleConfig(configName = "IFU_SKY")
   }
 
   sealed abstract class IFUNum(val ifuNum: Int) {
@@ -125,6 +139,13 @@ object GHOSTController {
       case Some("Sky") => SkyPosition
       case _           => Target
     }
+  }
+
+  sealed abstract class DemandType(val demandType: String)
+  object DemandType {
+    // Future DemandTypes: HALT, HOME, XY
+    case object DemandRADec extends DemandType("IFU_DEMAND_RADEC")
+    case object DemandPark extends DemandType("IFU_DEMAND_PARK")
   }
 
   /**
