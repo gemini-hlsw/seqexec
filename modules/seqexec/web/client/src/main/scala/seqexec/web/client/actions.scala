@@ -138,6 +138,8 @@ object actions {
   final case class UpdateStepTableState(id: Observation.Id,
                                         s:  TableState[StepsTable.TableColumn])
       extends Action
+  final case class UpdateSelectedStep(id: Observation.Id, step: StepId)
+      extends Action
   final case class UpdateCalTableState(id: QueueId,
                                         s:  TableState[CalQueueTable.TableColumn])
       extends Action

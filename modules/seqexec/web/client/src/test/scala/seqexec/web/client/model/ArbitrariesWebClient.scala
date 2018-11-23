@@ -187,12 +187,14 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
         pr  <- arbitrary[Option[SequenceView]]
         ts  <- arbitrary[TableState[StepsTable.TableColumn]]
         to  <- arbitrary[TabOperations]
+        se  <- arbitrary[Option[StepId]]
       } yield
         InstrumentSequenceTab(
           i,
           sv.map(k => k.copy(metadata = k.metadata.copy(instrument = i))),
           pr,
           idx,
+          se,
           ts,
           to)
     }
@@ -201,13 +203,15 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
     Cogen[(Instrument,
            Option[SequenceView],
            Option[SequenceView],
-           Option[Int],
+           Option[StepId],
+           Option[StepId],
            TableState[StepsTable.TableColumn],
            TabOperations)].contramap { x =>
       (x.inst,
        x.currentSequence,
        x.completedSequence,
        x.stepConfig,
+       x.selectedStep,
        x.tableState,
        x.tabOperations)
     }
@@ -475,9 +479,10 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
         s  <- arbitrary[List[Step]]
         n  <- arbitrary[Option[Int]]
         e  <- arbitrary[Option[Int]]
+        se <- arbitrary[Option[StepId]]
         p  <- arbitrary[Boolean]
         ts <- arbitrary[TableState[StepsTable.TableColumn]]
-      } yield StepsTableFocus(id, i, ss, s, n, e, p, ts)
+      } yield StepsTableFocus(id, i, ss, s, n, e, se, p, ts)
     }
 
   implicit val sstCogen: Cogen[StepsTableFocus] =
@@ -486,7 +491,8 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
            SequenceState,
            List[Step],
            Option[Int],
-           Option[Int],
+           Option[StepId],
+           Option[StepId],
            TableState[StepsTable.TableColumn])].contramap { x =>
       (x.id,
        x.instrument,
@@ -494,6 +500,7 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
        x.steps,
        x.stepConfigDisplayed,
        x.nextStepToRun,
+       x.selectedStep,
        x.tableState)
     }
 

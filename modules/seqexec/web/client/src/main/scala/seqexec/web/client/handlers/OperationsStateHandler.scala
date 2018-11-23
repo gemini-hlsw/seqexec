@@ -73,6 +73,11 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
               notification)
   }
 
+  def handleSelectedStep: PartialFunction[Any, ActionResult[M]] = {
+    case UpdateSelectedStep(id, step) =>
+      updated(value.selectStep(id, step))
+  }
+
   override def handle: PartialFunction[Any, ActionResult[M]] =
-    List(handleRequestOperation, handleOperationResult).combineAll
+    List(handleRequestOperation, handleOperationResult, handleSelectedStep).combineAll
 }
