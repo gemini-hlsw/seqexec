@@ -35,7 +35,13 @@ object StepProgressCell {
                          instrument:   Instrument,
                          obsId:        Observation.Id,
                          state:        SequenceState,
-                         step:         Step)
+                         step:         Step,
+                         selectedStep: Option[StepId],
+                         isPreview:    Boolean) {
+
+    def stepSelected(i: StepId): Boolean =
+      selectedStep.exists(_ === i) && !isPreview && clientStatus.isLogged
+  }
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
@@ -130,6 +136,25 @@ object StepProgressCell {
         .when(controlButtonsActive(props))
     )
 
+  def stepSubsystemControl(props: Props): VdomElement =
+    <.div(
+      SeqexecStyles.configuringRow,
+      <.div(
+        SeqexecStyles.specialStateLabel,
+        props.state.show
+      ),
+      props.step match {
+        case step: StandardStep =>
+          SubsystemControlCell(
+            SubsystemControlCell.Props(props.obsId,
+                                       props.instrument,
+                                       step.id,
+                                       step.configStatus.map(_._1)))
+        case _ =>
+          <.div()
+      }
+    )
+
   def stepPaused(props: Props): VdomElement =
     <.div(
       SeqexecStyles.configuringRow,
@@ -161,7 +186,10 @@ object StepProgressCell {
           _,
           StandardStep(_, _, StepState.Completed, _, _, Some(fileId), _, _)) =>
         <.p(SeqexecStyles.componentLabel, fileId)
-      case (_, _) =>
+      case (_, StandardStep(i, _, StepState.Pending, _, _, _, _, _))
+          if props.stepSelected(i) =>
+        stepSubsystemControl(props)
+      case _ =>
         <.p(SeqexecStyles.componentLabel, props.step.show)
     }
 

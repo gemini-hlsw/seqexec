@@ -41,6 +41,7 @@ final class LoggingProcessor[M <: AnyRef] extends ActionProcessor[M] {
       case UpdateSessionQueueTableState(_)            =>
       case UpdateStepTableState(_, _)                 =>
       case UpdateCalTableState(_, _)                  =>
+      case UpdateSelectedStep(_, _)                   =>
       case a: Action                                  => logger.info(s"Action: ${a.show}")
       case _                                          =>
     }

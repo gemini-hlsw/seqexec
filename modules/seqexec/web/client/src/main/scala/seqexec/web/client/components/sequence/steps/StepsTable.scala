@@ -124,11 +124,14 @@ object StepsTable {
     val showFPU: Boolean                            = showProp(InstrumentProperties.FPU)
     val isPreview: Boolean                          = steps.map(_.isPreview).getOrElse(false)
     val canSetBreakpoint: Boolean                   = canOperate && !isPreview
-    val showObservingMode: Boolean = showProp(
-      InstrumentProperties.ObservingMode)
+    val showObservingMode: Boolean =
+      showProp(InstrumentProperties.ObservingMode)
 
     def rowGetter(idx: Int): StepRow =
       steps.flatMap(_.steps.lift(idx)).fold(StepRow.Zero)(StepRow.apply)
+
+    def canControlSubsystems(idx: StepId): Boolean =
+      !rowGetter(idx).step.isFinished && canOperate && !isPreview
 
     val configTableState: TableState[StepConfigTable.TableColumn] =
       stepsTable.configTableState
@@ -195,7 +198,7 @@ object StepsTable {
 
   def stepControlRenderer(
     f:                       StepsTableFocus,
-    b:                       Backend,
+    props:                   Props,
     rowBreakpointHoverOnCB:  Int => Callback,
     rowBreakpointHoverOffCB: Int => Callback,
     recomputeHeightsCB:      Int => Callback
@@ -203,9 +206,9 @@ object StepsTable {
     (_, _, _, row: StepRow, _) =>
       StepToolsCell(
         StepToolsCell.Props(
-          b.props.status,
+          props.status,
           row.step,
-          rowHeight(b)(row.step.id),
+          rowHeight(props)(row.step.id),
           f.isPreview,
           f.nextStepToRun,
           f.id,
@@ -233,7 +236,13 @@ object StepsTable {
   ): CellRenderer[js.Object, js.Object, StepRow] =
     (_, _, _, row: StepRow, _) =>
       StepProgressCell(
-        StepProgressCell.Props(p.status, f.instrument, f.id, f.state, row.step))
+        StepProgressCell.Props(p.status,
+                               f.instrument,
+                               f.id,
+                               f.state,
+                               row.step,
+                               p.selectedStep,
+                               p.isPreview))
 
   def stepStatusRenderer(
     offsetsDisplay: OffsetsDisplay
@@ -327,25 +336,26 @@ object StepsTable {
   /**
     * Calculates the row height depending on conditions
     */
-  def rowHeight(b: Backend)(i: Int): Int =
-    (b.props.rowGetter(i), b.props.selectedStep) match {
-      case (StepRow(StandardStep(_, _, s, true, _, _, _, _)), _)
+  def rowHeight(props: Props)(i: Int): Int =
+    props.rowGetter(i) match {
+      case StepRow(StandardStep(_, _, s, true, _, _, _, _))
           if s === StepState.Running =>
         // Row running with a breakpoint set
         SeqexecStyles.runningRowHeight + BreakpointLineHeight
-      case (StepRow(s @ StandardStep(_, _, _, _, _, _, _, _)), sel)
-          if !s.isFinished && sel === Some(i) && !b.props.isPreview =>
+      case StepRow(StandardStep(i, _, _, _, _, _, _, _))
+          if props.selectedStep.exists(_ === i) && props.canControlSubsystems(
+            i) =>
         // Selected
         SeqexecStyles.runningRowHeight
-      case (StepRow(s: Step), _) if s.status === StepState.Running =>
+      case StepRow(s: Step) if s.status === StepState.Running =>
         // Row running
         SeqexecStyles.runningRowHeight
-      case (StepRow(StandardStep(_, _, _, true, _, _, _, _)), _) =>
+      case StepRow(StandardStep(_, _, _, true, _, _, _, _)) =>
         // Row with a breakpoint set
-        baseHeight(b.props) + BreakpointLineHeight
+        baseHeight(props) + BreakpointLineHeight
       case _ =>
         // default row
-        baseHeight(b.props)
+        baseHeight(props)
     }
 
   private val PhoneCut      = 412
@@ -380,7 +390,7 @@ object StepsTable {
             "ctl",
             label = "Icon",
             cellRenderer = stepControlRenderer(i,
-                                               b,
+                                               b.props,
                                                rowBreakpointHoverOnCB(b),
                                                rowBreakpointHoverOffCB(b),
                                                recomputeRowHeightsCB),
@@ -597,7 +607,7 @@ object StepsTable {
     p.obsId.map { id =>
       SeqexecCircuit
         .dispatchCB(UpdateSelectedStep(id, i))
-        .unless(p.isPreview || p.rowGetter(i).step.isFinished) *> Callback.empty
+        .when(p.canControlSubsystems(i)) *> Callback.empty
     }.getOrEmpty
 
   def stepsTableProps(b: Backend)(size: Size): Table.Props =
@@ -612,7 +622,7 @@ object StepsTable {
       overscanRowCount = SeqexecStyles.overscanRowCount,
       height           = size.height.toInt,
       rowCount         = b.props.rowCount,
-      rowHeight        = rowHeight(b) _,
+      rowHeight        = rowHeight(b.props) _,
       rowClassName     = rowClassName(b) _,
       width            = size.width.toInt,
       rowGetter        = b.props.rowGetter _,
