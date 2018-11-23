@@ -66,6 +66,11 @@ object actions {
   final case class RequestObsResume(id:  Observation.Id, step: Int) extends Action
   case object RequestSoundEcho extends Action
 
+  final case class RequestResourceRun(id:       Observation.Id,
+                                      step:     StepId,
+                                      resource: Resource)
+      extends Action
+
   final case class RunStarted(s:           Observation.Id) extends Action
   final case class RunPaused(s:            Observation.Id) extends Action
   final case class RunCancelPaused(s:      Observation.Id) extends Action
@@ -141,7 +146,7 @@ object actions {
   final case class UpdateSelectedStep(id: Observation.Id, step: StepId)
       extends Action
   final case class UpdateCalTableState(id: QueueId,
-                                        s:  TableState[CalQueueTable.TableColumn])
+                                       s:  TableState[CalQueueTable.TableColumn])
       extends Action
   final case class LoadSequence(observer: Observer,
                                 i:        Instrument,

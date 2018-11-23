@@ -146,10 +146,8 @@ object StepProgressCell {
       props.step match {
         case step: StandardStep =>
           SubsystemControlCell(
-            SubsystemControlCell.Props(props.obsId,
-                                       props.instrument,
-                                       step.id,
-                                       step.configStatus.map(_._1)))
+            SubsystemControlCell
+              .Props(props.obsId, step.id, step.configStatus.map(_._1)))
         case _ =>
           <.div()
       }
