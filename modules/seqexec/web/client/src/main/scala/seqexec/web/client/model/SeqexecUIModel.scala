@@ -13,6 +13,20 @@ import seqexec.web.client.components.sequence.steps.StepConfigTable
 import seqexec.web.client.components.SessionQueueTable
 import web.client.table._
 
+sealed trait SoundSelection extends Product with Serializable
+
+object SoundSelection {
+  case object SoundOn extends SoundSelection
+  case object SoundOff extends SoundSelection
+
+  implicit val eq: Eq[SoundSelection] = Eq.fromUniversalEquals
+
+  def flip: SoundSelection => SoundSelection = _ match {
+    case SoundSelection.SoundOn  => SoundSelection.SoundOff
+    case SoundSelection.SoundOff => SoundSelection.SoundOn
+  }
+}
+
 /**
   * UI model, changes here will update the UI
   */
@@ -29,6 +43,8 @@ final case class SeqexecUIModel(
   notification:       UserNotificationState,
   queues:             CalibrationQueues,
   obsProgress:        AllObservationsProgressState,
+  sessionQueueFilter: SessionQueueFilter,
+  sound:              SoundSelection,
   firstLoad:          Boolean)
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
@@ -45,6 +61,8 @@ object SeqexecUIModel {
     UserNotificationState.Empty,
     CalibrationQueues.Default,
     AllObservationsProgressState.Empty,
+    SessionQueueFilter.NoFilter,
+    SoundSelection.SoundOn,
     firstLoad = true
   )
 
@@ -61,6 +79,8 @@ object SeqexecUIModel {
          x.defaultObserver,
          x.notification,
          x.queues,
+         x.sessionQueueFilter,
+         x.sound,
          x.firstLoad))
 
   val defaultObserverG = SeqexecUIModel.defaultObserver.asGetter

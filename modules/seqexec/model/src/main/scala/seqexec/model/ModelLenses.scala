@@ -64,14 +64,18 @@ trait ModelLenses {
     at(system)          // subsystem name
 
   // Param name of a StepConfig
-  def configParamValueO(system: SystemName, param: String): Optional[StepConfig, String] =
+  def configParamValueO(
+    system: SystemName,
+    param: String
+  ): Optional[StepConfig, String] =
     systemConfigL(system)                ^<-? // observe parameters
     some                                 ^|-> // focus on the option
     paramValueL(system.withParam(param)) ^<-? // find the target name
     some                                      // focus on the option
 
   // Focus on the sequence view
-  val sequenceQueueViewL: Lens[SeqexecModelUpdate, SequencesQueue[SequenceView]] = Lens[SeqexecModelUpdate, SequencesQueue[SequenceView]](_.view)(q => {
+  val sequenceQueueViewL: Lens[SeqexecModelUpdate, SequencesQueue[SequenceView]] =
+    Lens[SeqexecModelUpdate, SequencesQueue[SequenceView]](_.view)(q => {
       case e @ SequenceStart(_)                => e.copy(view = q)
       case e @ StepExecuted(_, _)              => e.copy(view = q)
       case e @ FileIdStepExecuted(_, _)        => e.copy(view = q)
@@ -243,9 +247,17 @@ trait ModelLenses {
 
   // Composite lens to find the step config
   val firstScienceTargetNameT: Traversal[SeqexecEvent, TargetName] =
-    sequenceConfigT     ^|->> // sequence configuration
-    scienceStepT        ^|-?  // science steps
-    scienceTargetNameO        // science target name
+    sequenceConfigT      ^|->> // sequence configuration
+      scienceStepT       ^|-?  // science steps
+      scienceTargetNameO       // science target name
+
+  // Composite lens to find the sequence obs class
+  val obsClassT: Traversal[SequenceView, String] =
+    obsStepsL       ^|->> // observation steps
+      eachStepT     ^<-?  // each step
+      standardStepP ^|->  // only standard steps
+      stepConfigL   ^|-?  // get step config
+      configParamValueO(SystemName.Observe, "class")
 
   // Composite lens to find the target name on observation
   val observeTargetNameT: Traversal[SeqexecEvent, TargetName] =

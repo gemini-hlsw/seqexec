@@ -24,33 +24,12 @@ object SessionQueueTableSection {
     .stateless
     .render_P(
       p =>
-        <.div(
-          SeqexecStyles.queueListPane,
-          sequencesConnect(c => SessionQueueTable(p, c()))
-      ))
-    .configure(Reusability.shouldComponentUpdate)
-    .build
-
-  def apply(
-    ctl: RouterCtl[SeqexecPages]
-  ): Unmounted[RouterCtl[SeqexecPages], Unit, Unit] =
-    component(ctl)
-
-}
-
-/**
-  * Displays the elements on the queue
-  */
-object SessionQueueArea {
-
-  private val component = ScalaComponent
-    .builder[RouterCtl[SeqexecPages]]("SessionQueueArea")
-    .stateless
-    .render_P(
-      p =>
-        <.div(
-          ^.cls := "twelve wide column",
-          SessionQueueTableSection(p)
+        React.Fragment(
+          <.div(
+            SeqexecStyles.queueListPane,
+            sequencesConnect(c => SessionQueueTable(p, c()))
+          ),
+          SessionQueueTableFilter()
       ))
     .configure(Reusability.shouldComponentUpdate)
     .build

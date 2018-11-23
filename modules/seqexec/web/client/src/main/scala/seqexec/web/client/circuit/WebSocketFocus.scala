@@ -11,6 +11,7 @@ import monocle.macros.Lenses
 import seqexec.model._
 import seqexec.web.client.model.Pages
 import seqexec.web.client.model.SeqexecAppRootModel
+import seqexec.web.client.model.SoundSelection
 
 @Lenses
 final case class WebSocketsFocus(location:        Pages.SeqexecPages,
@@ -18,7 +19,8 @@ final case class WebSocketsFocus(location:        Pages.SeqexecPages,
                                  user:            Option[UserDetails],
                                  defaultObserver: Observer,
                                  clientId:        Option[ClientId],
-                                 site:            Option[Site])
+                                 site:            Option[Site],
+                                 sound:           SoundSelection)
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object WebSocketsFocus {
@@ -34,12 +36,14 @@ object WebSocketsFocus {
                         m.uiModel.user,
                         m.uiModel.defaultObserver,
                         m.clientId,
-                        m.site))(
+                        m.site,
+                        m.uiModel.sound))(
       v =>
         m =>
           m.copy(sequences = v.sequences,
                  uiModel = m.uiModel.copy(user = v.user,
-                                          defaultObserver = v.defaultObserver),
+                                          defaultObserver = v.defaultObserver,
+                                          sound           = v.sound),
                  clientId = v.clientId,
                  site     = v.site))
 }

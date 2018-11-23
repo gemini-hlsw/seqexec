@@ -15,6 +15,7 @@ object SeqexecStyles {
   val overscanRowCount: Int    = 10
   val runningRowHeight: Int    = 60
   val TableBorderWidth: Double = 1.0
+  val TableRightPadding: Int   = 13
 
   val activeInstrumentLabel: GStyle =
     GStyle.fromString("SeqexecStyles-activeInstrumentLabel")
@@ -106,8 +107,6 @@ object SeqexecStyles {
     GStyle.fromString("SeqexecStyles-queueTextColumn")
 
   val queueText: GStyle = GStyle.fromString("SeqexecStyles-queueText")
-
-  val daytimeCal: GStyle = GStyle.fromString("SeqexecStyles-daytimeCal")
 
   val queueIconColumn: GStyle =
     GStyle.fromString("SeqexecStyles-queueIconColumn")
@@ -283,4 +282,13 @@ object SeqexecStyles {
 
   val draggableRow: GStyle =
     GStyle.fromString("SeqexecStyles-draggableRow")
+
+  val filterPane: GStyle =
+    GStyle.fromString("SeqexecStyles-filterPane")
+
+  val filterActiveButton: GStyle =
+    GStyle.fromString("SeqexecStyles-filterActiveButton")
+
+  val dropOnTab: GStyle =
+    GStyle.fromString("SeqexecStyles-dropOnTab")
 }

@@ -10,22 +10,33 @@ import cats.data.Reader
 import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.gemini.gpi.Gpi._
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
-import java.lang.{Boolean => JBoolean, Double => JDouble, Integer => JInt}
-
+import java.lang.{ Boolean => JBoolean }
+import java.lang.{ Double => JDouble }
+import java.lang.{ Integer => JInt }
 import fs2.Stream
 import seqexec.model.dhs.ImageFileId
-import seqexec.model.enum.{Instrument, Resource}
+import seqexec.model.enum.Instrument
+import seqexec.model.enum.Resource
 import seqexec.server.ConfigUtilOps._
 import seqexec.server._
 import seqexec.server.gpi.GPIController._
-import seqexec.server.keywords.{GDSClient, GDSInstrument, KeywordsClient}
-
+import seqexec.server.keywords.GDSClient
+import seqexec.server.keywords.GDSInstrument
+import seqexec.server.keywords.KeywordsClient
 import scala.concurrent.duration._
-import squants.time.{Milliseconds, Seconds, Time}
+import squants.time.Milliseconds
+import squants.time.Seconds
+import squants.time.Time
 
 final case class GPI[F[_]: Sync: Timer](controller: GPIController[F])
     extends InstrumentSystem[F]
     with GDSInstrument {
+  // Taken from the gpi isd
+  val readoutOverhead: Time  = Seconds(4)
+  val writeOverhead: Time    = Seconds(2)
+  val perCoaddOverhead: Time = Seconds(2.7)
+  val timeoutTolerance: Time  = Seconds(30)
+
   override val gdsClient: GDSClient = controller.gdsClient
 
   override val keywordsClient: KeywordsClient[IO] = this
@@ -40,10 +51,11 @@ final case class GPI[F[_]: Sync: Timer](controller: GPIController[F])
     InstrumentSystem.Uncontrollable
 
   override def observe(
-      config: Config): SeqObserveF[F, ImageFileId, ObserveCommand.Result] =
+    config: Config
+  ): SeqObserveF[F, ImageFileId, ObserveCommand.Result] =
     Reader { fileId =>
       controller
-        .observe(fileId, calcObserveTime(config))
+        .observe(fileId, timeoutTolerance + calcObserveTime(config))
         .map(_ => ObserveCommand.Success: ObserveCommand.Result)
     }
 
@@ -57,14 +69,22 @@ final case class GPI[F[_]: Sync: Timer](controller: GPIController[F])
 
   override def notifyObserveStart: SeqActionF[F, Unit] = SeqActionF.void
 
-  override def calcObserveTime(config: Config): Time =
-    (for {
-     exp      <- config.extractAs[JDouble](OBSERVE_KEY / EXPOSURE_TIME_PROP)
-     coa      <- config.extractAs[JInt](OBSERVE_KEY / COADDS_PROP).map(_.toInt)
-     } yield Seconds(2.2 * exp * coa + 300)).getOrElse(Milliseconds(100))
+  override def calcObserveTime(config: Config): Time = {
+    val obsTime =
+      for {
+        exp      <- config.extractAs[JDouble](OBSERVE_KEY / EXPOSURE_TIME_PROP)
+        coa      <- config.extractAs[JInt](OBSERVE_KEY / COADDS_PROP).map(_.toInt)
+      } yield
+        (Seconds(exp.toDouble) + perCoaddOverhead) * coa.toDouble + readoutOverhead + writeOverhead
+    obsTime.getOrElse(Milliseconds(100))
+  }
 
-  override def observeProgress(total: Time, elapsed: InstrumentSystem.ElapsedTime)
-  : Stream[F, Progress] = ProgressUtil.countdown[F](total, elapsed.self)
+  override def observeProgress(
+    total:   Time,
+    elapsed: InstrumentSystem.ElapsedTime
+  ): Stream[F, Progress] =
+    ProgressUtil.countdown[F](total, elapsed.self)
+
 }
 
 object GPI {
@@ -81,7 +101,8 @@ object GPI {
     } yield AOFlags(useAo, useCal, aoOptimize, alignFpm, magH, magI)
 
   private def gpiASU(
-      config: Config): Either[ExtractFailure, ArtificialSources] =
+    config: Config
+  ): Either[ExtractFailure, ArtificialSources] =
     for {
       ir          <- config.extractAs[ArtificialSource](INSTRUMENT_KEY / IR_LASER_LAMP_PROP)
       vis         <- config.extractAs[ArtificialSource](INSTRUMENT_KEY / VISIBLE_LASER_LAMP_PROP)
@@ -98,7 +119,8 @@ object GPI {
       referenceArm <- config.extractAs[Shutter](INSTRUMENT_KEY / REFERENCE_ARM_SHUTTER_PROP)
     } yield Shutters(entrance, calEntrance, scienceArm, referenceArm)
 
-  private def gpiMode(config: Config): Either[ExtractFailure, Either[ObservingMode, NonStandardModeParams]] =
+  private def gpiMode(config: Config)
+    : Either[ExtractFailure, Either[ObservingMode, NonStandardModeParams]] =
     config
       .extractAs[ObservingMode](INSTRUMENT_KEY / OBSERVING_MODE_PROP)
       .flatMap { mode =>

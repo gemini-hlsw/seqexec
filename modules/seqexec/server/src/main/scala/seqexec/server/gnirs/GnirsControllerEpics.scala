@@ -5,29 +5,32 @@ package seqexec.server.gnirs
 
 import cats.Eq
 import cats.data.EitherT
+import cats.implicits._
 import cats.effect.{ IO, Timer }
 import seqexec.model.dhs.ImageFileId
 import seqexec.server._
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams.{Camera, Decker, Disperser, ReadMode}
+import fs2.Stream
 import org.log4s.getLogger
 import scala.concurrent.ExecutionContext
 import squants.{Length, Seconds, Time}
 import squants.space.LengthConversions._
+import seqexec.model.dhs.ImageFileId
+import seqexec.server._
 import squants.electro.Millivolts
+import squants.space.LengthConversions._
 import squants.time.TimeConversions._
+import squants.{Length, Seconds, Time}
 
 import scala.math.abs
-import cats.implicits._
-import fs2.Stream
-
 import scala.util.Try
 
 object GnirsControllerEpics extends GnirsController {
   private val Log = getLogger
 
-  import GnirsController._
   import EpicsCodex._
+  import GnirsController._
 
   private def epicsSys = GnirsEpics.instance
   private def ccCmd = epicsSys.configCCCmd
@@ -167,7 +170,7 @@ object GnirsControllerEpics extends GnirsController {
     case s:Spectrography => setGrating(s, c) ++ setPrism(s, c)
   }
 
-  private def autoFilter(w: Length): GnirsController.Filter2Pos = {
+  private def autoFilter(wavel: Length): GnirsController.Filter2Pos = {
     val table = List(
       GnirsController.Filter2Pos.X -> 1.17,
       GnirsController.Filter2Pos.J -> 1.42,
@@ -177,7 +180,9 @@ object GnirsControllerEpics extends GnirsController {
       GnirsController.Filter2Pos.M -> 6.0
     ).map{ case (f, w) => (f, w.nanometers) }
 
-    table.foldRight[GnirsController.Filter2Pos](GnirsController.Filter2Pos.XD){ case (t, v) => if(w < t._2) t._1 else v}
+    table.foldRight[GnirsController.Filter2Pos](GnirsController.Filter2Pos.XD){
+      case (t, v) => if(wavel < t._2) t._1 else v
+    }
   }
 
   private def setFilter2(f: Filter2, w: Wavelength): List[SeqAction[Unit]] = {
@@ -222,13 +227,30 @@ object GnirsControllerEpics extends GnirsController {
   }
 
   private def setDCParams(config: DCConfig): SeqAction[EpicsCommand.Result] = {
+
+    val expTimeTolerance = 0.0001
+    val biasTolerance = 0.0001
+
     val (lowNoise, digitalAvgs) = readModeEncoder.encode(config.readMode)
 
-    dcCmd.setExposureTime(config.exposureTime.toSeconds) *>
-      dcCmd.setCoadds(config.coadds) *>
-      dcCmd.setDetBias(encode(config.wellDepth)) *>
-      dcCmd.setLowNoise(lowNoise) *>
-      dcCmd.setDigitalAvgs(digitalAvgs)*>
+    val expTimeWriter = smartSetDoubleParam(expTimeTolerance)(config.exposureTime.toSeconds,
+      epicsSys.exposureTime, dcCmd.setExposureTime(config.exposureTime.toSeconds))
+
+    val coaddsWriter = smartSetParam(config.coadds, epicsSys.numCoadds,
+      dcCmd.setCoadds(config.coadds))
+
+    val biasWriter =smartSetDoubleParam(biasTolerance)(encode(config.wellDepth), epicsSys.detBias,
+      dcCmd.setDetBias(encode(config.wellDepth)))
+
+    val lowNoiseWriter = smartSetParam(lowNoise, epicsSys.lowNoise, dcCmd.setLowNoise(lowNoise))
+
+    val digitalAvgsWriter = smartSetParam(digitalAvgs, epicsSys.digitalAvgs,
+      dcCmd.setDigitalAvgs(digitalAvgs))
+
+    val params =  expTimeWriter ++ coaddsWriter ++ biasWriter ++ lowNoiseWriter ++ digitalAvgsWriter
+
+    if(params.isEmpty) SeqAction(EpicsCommand.Completed)
+    else params.sequence.map(_ => ()) *>
       dcCmd.setTimeout(DefaultTimeout) *>
       dcCmd.post
   }

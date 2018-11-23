@@ -73,6 +73,10 @@ object SeqexecCircuit
   val statusReader: ModelR[SeqexecAppRootModel, ClientStatus] =
     this.zoomL(ClientStatus.clientStatusFocusL)
 
+  // Reader to read/write the sound setting
+  val soundSettingReader: ModelR[SeqexecAppRootModel, SoundSelection] =
+    this.zoomL(SeqexecAppRootModel.soundSettingL)
+
   // Reader for the queue operations
   val queueOperationsRW: ModelRW[SeqexecAppRootModel, CalibrationQueues] =
     this.zoomRWL(SeqexecAppRootModel.uiModel ^|-> SeqexecUIModel.queues)
@@ -88,6 +92,9 @@ object SeqexecCircuit
   val statusAndLoadedSequencesReader
     : ModelR[SeqexecAppRootModel, StatusAndLoadedSequencesFocus] =
     this.zoomG(StatusAndLoadedSequencesFocus.statusAndLoadedSequencesG)
+
+  val sessionQueueFilterReader: ModelR[SeqexecAppRootModel, SessionQueueFilter] =
+    this.zoomL(SeqexecAppRootModel.sessionQueueFilterL)
 
   // Reader for sequences on display
   val headerSideBarReader: ModelR[SeqexecAppRootModel, HeaderSideBarFocus] =
@@ -181,6 +188,8 @@ object SeqexecCircuit
   private val queueStateHandler        = new QueueStateHandler(queueOperationsRW)
   private val openConnectionHandler    = new OpenConnectionHandler(zoomTo(_.uiModel.queues))
   private val observationsProgHandler  = new ObservationsProgressStateHandler(zoomTo(_.uiModel.obsProgress))
+  private val sessionFilterHandler     = new SessionQueueFilterHandler(zoomTo(_.uiModel.sessionQueueFilter))
+  private val soundHandler             = new SoundOnOffHandler(zoomTo(_.uiModel.sound))
 
   def dispatchCB[A <: Action](a: A): Callback = Callback(dispatch(a))
 
@@ -210,7 +219,9 @@ object SeqexecCircuit
       navigationHandler,
       debuggingHandler,
       tableStateHandler,
-      siteHandler
+      siteHandler,
+      sessionFilterHandler,
+      soundHandler
     )
 
   /**

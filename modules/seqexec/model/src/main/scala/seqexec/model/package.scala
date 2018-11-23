@@ -38,7 +38,7 @@ package object model {
     Order.by(_.self)
   implicit val clientIdOrdering: scala.math.Ordering[ClientId] =
     clientIdOrder.toOrdering
-  val DaytimeCalibrationTargetName = "Daytime calibration"
+  val UnknownTargetName = "None"
 
   val CalibrationQueueName: String = "Calibration Queue"
   val CalibrationQueueId: QueueId =

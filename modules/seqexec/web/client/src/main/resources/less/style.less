@@ -51,9 +51,24 @@ body {
   text-align: center;
 }
 
+.SeqexecStyles-filterActiveButton {
+  background-color: @positiveColor !important;
+  box-shadow: none !important;
+  color: @invertedTextColor !important;
+  &:hover {
+    background-color: @positiveColorHover !important;
+    color: @invertedTextColor !important;
+  }
+}
+
 .SeqexecStyles-tabLabel {
   width: 100%;
   text-align: center;
+  pointer-events: none;
+}
+
+.SeqexecStyles-dropOnTab {
+  background-color: darken(@secondaryBackground, 10%) !important;
 }
 
 .SeqexecStyles-previewTabLabel {
@@ -232,11 +247,6 @@ body {
   white-space: nowrap;
 }
 
-.SeqexecStyles-daytimeCal {
-  font-weight: bold;
-  font-style: italic;
-}
-
 .SeqexecStyles-queueIconColumn {
   min-width: 20px;
   .queueCenterCell;
@@ -245,7 +255,6 @@ body {
 .SeqexecStyles-queueListPane {
   padding: 0px !important;
   margin-top: 0;
-  overflow: auto;
 }
 
 .SeqexecStyles-labelPointer {
@@ -297,6 +306,14 @@ body {
   animation-duration: 1s;
   animation-timing-function: linear;
   animation-iteration-count: 2;
+}
+
+.SeqexecStyles-filterPane {
+  border-top: none !important;
+  margin-left: 0px !important;
+  margin-right: 0px !important;
+  width: calc(100%) !important;
+  max-width: calc(100%) !important;
 }
 
 @keyframes calRowFlash {
@@ -1046,8 +1063,8 @@ body {
   }
 
   .SeqexecStyles-queueListPane {
-    max-height: 216px;
-    min-height: 216px;
+    max-height: 180px;
+    min-height: 180px;
   }
 }
 .mobileSegment() {

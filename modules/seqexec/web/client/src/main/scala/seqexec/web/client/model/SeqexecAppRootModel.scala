@@ -7,8 +7,11 @@ import cats._
 import cats.implicits._
 import gem.enum.Site
 import monocle.Lens
+import monocle.Getter
 import monocle.Traversal
 import monocle.macros.Lenses
+import monocle.function.At.at
+import monocle.function.At.atSortedMap
 import monocle.function.Each.each
 import monocle.function.FilterIndex.filterIndex
 import scala.collection.immutable.SortedMap
@@ -18,6 +21,7 @@ import seqexec.model.ExecutionQueueView
 import seqexec.model.QueueId
 import seqexec.model.SequenceView
 import seqexec.model.SequencesQueue
+import seqexec.model.CalibrationQueueId
 import seqexec.web.client.components.sequence.steps.StepConfigTable
 import seqexec.web.client.components.SessionQueueTable
 import web.client.table._
@@ -53,6 +57,10 @@ object SeqexecAppRootModel {
       SeqexecUIModel.globalLog  ^|->
       GlobalLog.display
 
+  val sessionQueueFilterL: Lens[SeqexecAppRootModel, SessionQueueFilter] =
+    SeqexecAppRootModel.uiModel         ^|->
+      SeqexecUIModel.sessionQueueFilter
+
   val sequencesOnDisplayL: Lens[SeqexecAppRootModel, SequencesOnDisplay] =
     SeqexecAppRootModel.uiModel ^|-> SeqexecUIModel.sequencesOnDisplay
 
@@ -62,6 +70,9 @@ object SeqexecAppRootModel {
   val queueTableStateL
     : Lens[SeqexecAppRootModel, TableState[SessionQueueTable.TableColumn]] =
     SeqexecAppRootModel.uiModel ^|-> SeqexecUIModel.queueTableState
+
+  val soundSettingL: Lens[SeqexecAppRootModel, SoundSelection] =
+    SeqexecAppRootModel.uiModel ^|-> SeqexecUIModel.sound
 
   val configTableStateL
     : Lens[SeqexecAppRootModel, TableState[StepConfigTable.TableColumn]] =
@@ -78,6 +89,11 @@ object SeqexecAppRootModel {
     SeqexecAppRootModel.sequences ^|->
       SequencesQueue.queues       ^|->>
       each
+
+  val dayCalG: Getter[SeqexecAppRootModel, Option[ExecutionQueueView]] =
+    (SeqexecAppRootModel.sequences     ^|->
+      SequencesQueue.queues            ^|->
+      at(CalibrationQueueId)).asGetter
 
   implicit val eq: Eq[SeqexecAppRootModel] =
     Eq.by(x => (x.sequences, x.ws, x.site, x.clientId, x.uiModel))

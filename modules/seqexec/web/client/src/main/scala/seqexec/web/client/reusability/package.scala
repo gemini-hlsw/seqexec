@@ -29,6 +29,7 @@ import seqexec.web.client.model.QueueOperations
 import seqexec.web.client.model.RunOperation
 import seqexec.web.client.model.SyncOperation
 import seqexec.web.client.model.TabSelected
+import seqexec.web.client.model.SoundSelection
 import seqexec.web.client.circuit._
 
 package object reusability {
@@ -68,4 +69,5 @@ package object reusability {
   implicit val cqfReuse: Reusability[CalQueueFocus]        = Reusability.byEq
   implicit val qidReuse: Reusability[QueueId]              = Reusability.byEq
   implicit val bexReuse: Reusability[BatchExecState]       = Reusability.byRef
+  implicit val soundReuse: Reusability[SoundSelection]     = Reusability.byRef
 }

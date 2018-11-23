@@ -698,6 +698,31 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
     Cogen[List[((Observation.Id, StepId), ObservationProgress)]]
       .contramap(_.obsProgress.toList)
 
+  implicit val arbObsClass: Arbitrary[ObsClass] =
+    Arbitrary(
+      Gen.oneOf(ObsClass.All, ObsClass.Daytime, ObsClass.Nighttime))
+
+  implicit val obsClassCogen: Cogen[ObsClass] =
+    Cogen[String].contramap(_.productPrefix)
+
+  implicit val arbSessionQueueFilter: Arbitrary[SessionQueueFilter] =
+    Arbitrary {
+      for {
+        ce <- arbitrary[ObsClass]
+      } yield SessionQueueFilter(ce)
+    }
+
+  implicit val obsQueueFilter: Cogen[SessionQueueFilter] =
+    Cogen[ObsClass]
+      .contramap(_.obsClass)
+
+  implicit val arbSoundSelection: Arbitrary[SoundSelection] =
+    Arbitrary(
+      Gen.oneOf(SoundSelection.SoundOn, SoundSelection.SoundOff))
+
+  implicit val soundSelClassCogen: Cogen[SoundSelection] =
+    Cogen[String].contramap(_.productPrefix)
+
   implicit val arbSeqexecUIModel: Arbitrary[SeqexecUIModel] =
     Arbitrary {
       for {
@@ -706,13 +731,14 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
         loginBox           <- arbitrary[SectionVisibilityState]
         globalLog          <- arbitrary[GlobalLog]
         sequencesOnDisplay <- arbitrary[SequencesOnDisplay]
-        syncInProgress     <- arbitrary[Boolean]
         configTableState   <- arbitrary[TableState[StepConfigTable.TableColumn]]
         queueTableState    <- arbitrary[TableState[SessionQueueTable.TableColumn]]
         defaultObserver    <- arbitrary[Observer]
         notification       <- arbitrary[UserNotificationState]
         queues             <- arbitrary[CalibrationQueues]
         progress           <- arbitrary[AllObservationsProgressState]
+        filter             <- arbitrary[SessionQueueFilter]
+        sound              <- arbitrary[SoundSelection]
         firstLoad          <- arbitrary[Boolean]
       } yield
         SeqexecUIModel(
@@ -727,6 +753,8 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
           notification,
           queues,
           progress,
+          filter,
+          sound,
           firstLoad
         )
     }
@@ -744,6 +772,8 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
        UserNotificationState,
        CalibrationQueues,
        AllObservationsProgressState,
+       SessionQueueFilter,
+       SoundSelection,
        Boolean)]
       .contramap(
         x =>
@@ -758,6 +788,8 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
            x.notification,
            x.queues,
            x.obsProgress,
+           x.sessionQueueFilter,
+           x.sound,
            x.firstLoad))
 
   implicit val arbSODLocationFocus: Arbitrary[SODLocationFocus] =
@@ -782,8 +814,9 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
         observer    <- arbitrary[Observer]
         clientId    <- arbitrary[Option[ClientId]]
         site        <- arbitrary[Option[Site]]
+        sound       <- arbitrary[SoundSelection]
       } yield
-        WebSocketsFocus(navLocation, sequences, user, observer, clientId, site)
+        WebSocketsFocus(navLocation, sequences, user, observer, clientId, site, sound)
     }
 
   implicit val wsfCogen: Cogen[WebSocketsFocus] =
@@ -792,7 +825,8 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
            Option[UserDetails],
            Observer,
            Option[ClientId],
-           Option[Site])]
+           Option[Site],
+           SoundSelection)]
       .contramap(
         x =>
           (x.location,
@@ -800,7 +834,8 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
            x.user,
            x.defaultObserver,
            x.clientId,
-           x.site))
+           x.site,
+           x.sound))
 
   implicit val arbInitialSyncFocus: Arbitrary[InitialSyncFocus] =
     Arbitrary {

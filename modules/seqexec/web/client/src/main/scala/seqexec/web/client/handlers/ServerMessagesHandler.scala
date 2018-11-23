@@ -18,6 +18,7 @@ import seqexec.model.events._
 import seqexec.web.client.model.lenses.sequenceStepT
 import seqexec.web.client.model.lenses.sequenceViewT
 import seqexec.web.client.model.ModelOps._
+import seqexec.web.client.model.SoundSelection
 import seqexec.web.client.actions._
 import seqexec.web.client.circuit._
 import seqexec.web.client.services.Audio
@@ -36,13 +37,18 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
   // Global references to audio files
   private val SequencePausedAudio = new Audio(SequencePausedResource.resource)
   private val ExposurePausedAudio = new Audio(ExposurePausedResource.resource)
-  private val SequenceErrorAudio = new Audio(SequenceErrorResource.resource)
-  private val SequenceCompleteAudio = new Audio(SequenceCompleteResource.resource)
+  private val SequenceErrorAudio  = new Audio(SequenceErrorResource.resource)
+  private val SequenceCompleteAudio = new Audio(
+    SequenceCompleteResource.resource)
   private val StepBeepAudio = new Audio(BeepResource.resource)
+
+  def loggedIn: Boolean           = value.sound === SoundSelection.SoundOn
+  def ifLoggedIn[A]: A => Boolean = (_: A) => loggedIn
 
   // It is legal do put sequences of the other sites on the queue
   // but we don't know how to display them, so let's filter them out
-  private def filterSequences(sequences: SequencesQueue[SequenceView]): SequencesQueue[SequenceView] =
+  private def filterSequences(
+    sequences: SequencesQueue[SequenceView]): SequencesQueue[SequenceView] =
     sequences.copy(sessionQueue = sequences.sessionQueue.filter {
       case SequenceView(_, metadata, _, _, _) =>
         value.site
@@ -52,7 +58,8 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
 
   val soundCheck: PartialFunction[Any, ActionResult[M]] = {
     case RequestSoundEcho =>
-      val soundEffect = Effect(Future(SequenceCompleteAudio.play()).map(_ => NoAction))
+      val soundEffect = Effect(
+        Future(SequenceCompleteAudio.play()).map(_ => NoAction))
       effectOnly(soundEffect)
   }
 
@@ -64,10 +71,20 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
   val connectionOpenMessage: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(ConnectionOpenEvent(u, c)) =>
       // After connected to the Websocket request a refresh
-      val refreshRequestE = Effect(SeqexecWebClient.refresh(c).map(_ => NoAction))
+      val refreshRequestE = Effect(
+        SeqexecWebClient.refresh(c).map(_ => NoAction))
       // This is a hack
-      val calQueueObserverE = u.map(m => Effect(Future(UpdateCalTabObserver(Observer(m.displayName))))).getOrElse(VoidEffect)
-      updated(value.copy(user = u, defaultObserver = u.map(m => Observer(m.displayName)).getOrElse(value.defaultObserver), clientId = Option(c)), refreshRequestE + calQueueObserverE)
+      val calQueueObserverE = u
+        .map(m => Effect(Future(UpdateCalTabObserver(Observer(m.displayName)))))
+        .getOrElse(VoidEffect)
+      updated(
+        value.copy(user = u,
+                   defaultObserver = u
+                     .map(m => Observer(m.displayName))
+                     .getOrElse(value.defaultObserver),
+                   clientId = Option(c)),
+        refreshRequestE + calQueueObserverE
+      )
   }
 
   val stepCompletedMessage: PartialFunction[Any, ActionResult[M]] = {
@@ -81,44 +98,57 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
           if curStep.configStatus.map(_._2).forall(_ === ActionStatus.Pending)
         } yield curStep
 
-      val audioEffect = curStep.fold(VoidEffect)(_ => Effect(Future(StepBeepAudio.play()).map(_ => NoAction)))
+      val audioEffect = curStep
+        .filter(ifLoggedIn)
+        .fold(VoidEffect)(_ =>
+          Effect(Future(StepBeepAudio.play()).map(_ => NoAction)))
       updated(value.copy(sequences = filterSequences(sv)), audioEffect)
   }
 
   val sequenceCompletedMessage: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(SequenceCompleted(sv)) =>
       // Play audio when the sequence completes
-      val audioEffect = Effect(
-        Future(SequenceCompleteAudio.play()).map(_ => NoAction))
+      val audioEffect =
+        if (loggedIn)
+          Effect(Future(SequenceCompleteAudio.play()).map(_ => NoAction))
+        else VoidEffect
       updated(value.copy(sequences = filterSequences(sv)), audioEffect)
   }
 
   val sequenceUnloadedMessage: PartialFunction[Any, ActionResult[M]] = {
-    case ServerMessage(SequenceUnloaded(id, sv)) if value.sequences.sessionQueue.map(_.id).contains(id) =>
-      updated(value.copy(sequences = filterSequences(sv)), Effect(Future(NavigateTo(Root))))
+    case ServerMessage(SequenceUnloaded(id, sv))
+        if value.sequences.sessionQueue.map(_.id).contains(id) =>
+      updated(value.copy(sequences = filterSequences(sv)),
+              Effect(Future(NavigateTo(Root))))
   }
 
   val sequenceOnErrorMessage: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(SequenceError(_, sv)) =>
       // Play audio when the sequence gets into an error state
-      val audioEffect = Effect(
-        Future(SequenceErrorAudio.play()).map(_ => NoAction))
+      val audioEffect =
+        if (loggedIn)
+          Effect(Future(SequenceErrorAudio.play()).map(_ => NoAction))
+        else VoidEffect
       updated(value.copy(sequences = filterSequences(sv)), audioEffect)
   }
 
   val sequencePausedMessage: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(SequencePaused(_, sv)) =>
       // Play audio when the sequence gets paused
-      val audioEffect = Effect(
-        Future(SequencePausedAudio.play()).map(_ => NoAction))
+      val audioEffect =
+        if (loggedIn)
+          Effect(Future(SequencePausedAudio.play()).map(_ => NoAction))
+        else VoidEffect
       updated(value.copy(sequences = filterSequences(sv)), audioEffect)
   }
 
   val exposurePausedMessage: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(ExposurePaused(_, sv)) =>
       // Play audio when the sequence gets paused
-      val audioEffect = Effect(
-        Future(ExposurePausedAudio.play()).map(_ => NoAction))
+      val audioEffect =
+        if (loggedIn)
+          Effect(Future(ExposurePausedAudio.play()).map(_ => NoAction))
+        else VoidEffect
       updated(value.copy(sequences = filterSequences(sv)), audioEffect)
   }
 

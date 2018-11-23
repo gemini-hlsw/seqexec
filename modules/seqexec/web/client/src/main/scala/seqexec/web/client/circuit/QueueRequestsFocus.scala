@@ -19,13 +19,15 @@ import seqexec.model.SequenceView
 import seqexec.web.client.model.SeqexecAppRootModel
 import seqexec.web.client.model.SeqexecUIModel
 import seqexec.web.client.model.SequencesOnDisplay
+import seqexec.web.client.model.SessionQueueFilter
 
 @Lenses
 final case class QueueRequestsFocus(
   clientId:       Option[ClientId],
   sequences:      SequencesQueue[SequenceView],
   calTabObserver: Option[Observer],
-  queuesObserver: SortedMap[QueueId, Observer])
+  queuesObserver: SortedMap[QueueId, Observer],
+  seqFilter:      SessionQueueFilter)
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object QueueRequestsFocus {
@@ -50,7 +52,8 @@ object QueueRequestsFocus {
         QueueRequestsFocus(m.clientId,
                            m.sequences,
                            calTabObserverL.getOption(m),
-                           observers(m)))(v =>
+                           observers(m),
+                           SeqexecAppRootModel.sessionQueueFilterL.get(m)))(v =>
       m => m.copy(clientId = v.clientId, sequences = v.sequences))
 
 }

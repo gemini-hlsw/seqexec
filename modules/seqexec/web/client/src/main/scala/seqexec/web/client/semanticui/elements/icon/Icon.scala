@@ -4,12 +4,14 @@
 package seqexec.web.client.semanticui.elements.icon
 
 import cats.Eq
+import cats.implicits._
 import seqexec.web.client.semanticui.Size
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.Callback
+import japgolly.scalajs.react.ReactEvent
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.extra.Reusability
-import cats.implicits._
+import scala.scalajs.js
 import web.client.style._
 
 /**
@@ -20,22 +22,23 @@ final case class Icon(p: Icon.Props, children: Seq[VdomNode]) {
 
   // Custom copy constructor to avoid passing the id again
   @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
-  def copyIcon(disabled:     Boolean        = false,
-               loading:      Boolean        = false,
-               fitted:       Boolean        = false,
-               size:         Size           = Size.NotSized,
-               link:         Boolean        = false,
-               flipped:      Flipped        = Flipped.NotFlipped,
-               rotated:      Rotated        = Rotated.NotRotated,
-               circular:     Boolean        = false,
-               bordered:     Boolean        = false,
-               inverted:     Boolean        = false,
-               color:        Option[String] = None,
-               extraStyles:  List[GStyle]   = Nil,
-               key:          String         = "",
-               onClick:      Callback       = Callback.empty,
-               onMouseEnter: Callback       = Callback.empty,
-               onMouseLeave: Callback       = Callback.empty): Icon =
+  def copyIcon(disabled:     Boolean                            = false,
+               loading:      Boolean                            = false,
+               fitted:       Boolean                            = false,
+               size:         Size                               = Size.NotSized,
+               link:         Boolean                            = false,
+               flipped:      Flipped                            = Flipped.NotFlipped,
+               rotated:      Rotated                            = Rotated.NotRotated,
+               circular:     Boolean                            = false,
+               bordered:     Boolean                            = false,
+               inverted:     Boolean                            = false,
+               color:        Option[String]                     = None,
+               extraStyles:  List[GStyle]                       = Nil,
+               key:          String                             = "",
+               onClickE:     js.UndefOr[ReactEvent => Callback] = js.undefined,
+               onClick:      Callback                           = Callback.empty,
+               onMouseEnter: Callback                           = Callback.empty,
+               onMouseLeave: Callback                           = Callback.empty): Icon =
     copy(
       p = Icon.Props(
         id           = p.id,
@@ -54,6 +57,7 @@ final case class Icon(p: Icon.Props, children: Seq[VdomNode]) {
         key          = key,
         onMouseEnter = onMouseEnter,
         onMouseLeave = onMouseLeave,
+        onClickE     = onClickE,
         onClick      = onClick
       ),
       children = if (children.nonEmpty) children else this.children
@@ -88,7 +92,13 @@ final case class Icon(p: Icon.Props, children: Seq[VdomNode]) {
             "bordered" -> p.bordered,
             "inverted" -> p.inverted
           ),
-          ^.onClick --> p.onClick,
+          p.onClickE
+            .map { h =>
+              ^.onClick ==> h
+            }
+            .getOrElse {
+              ^.onClick --> p.onClick
+            },
           ^.onMouseEnter --> p.onMouseEnter,
           ^.onMouseLeave --> p.onMouseLeave,
           c
@@ -101,7 +111,10 @@ final case class Icon(p: Icon.Props, children: Seq[VdomNode]) {
 
 object Icon {
   implicit val iconProps: Reusability[Icon.Props] = Reusability
-    .caseClassExcept[Icon.Props]('onClick, 'onMouseEnter, 'onMouseLeave)
+    .caseClassExcept[Icon.Props]('onClick,
+                                 'onClickE,
+                                 'onMouseEnter,
+                                 'onMouseLeave)
   implicit val reuse: Reusability[Icon] = Reusability.by(_.p)
   val IconBrowser: Icon                 = Icon("browser")
   val IconDropdown: Icon                = Icon("dropdown")
@@ -139,6 +152,14 @@ object Icon {
   val IconCloneOutline: Icon            = Icon("clone outline")
   val IconTrashOutline: Icon            = Icon("trash alternate outline")
   val IconTimes: Icon                   = Icon("times")
+  val IconSun: Icon                     = Icon("sun")
+  val IconMoon: Icon                    = Icon("moon")
+  val IconVolumeOff: Icon               = Icon("volume off")
+  val IconVolumeUp: Icon                = Icon("volume up")
+  val IconCircleOutline: Icon           = Icon("circle outline")
+  val IconCheckCircleOutline: Icon      = Icon("check circle outline")
+  val IconCalendarOutline: Icon         = Icon("calendar alternate outline")
+  val IconClockOutline: Icon            = Icon("clock outline")
 
   sealed trait Flipped
 
@@ -179,7 +200,9 @@ object Icon {
                          key:          String = "",
                          onMouseEnter: Callback = Callback.empty,
                          onMouseLeave: Callback = Callback.empty,
-                         onClick:      Callback = Callback.empty)
+                         onClickE: js.UndefOr[ReactEvent => Callback] =
+                           js.undefined,
+                         onClick: Callback = Callback.empty)
 
   // Used to call Icon directly on a jsx component declaration
   implicit def icon2TagMod(i: Icon): VdomElement = i.component

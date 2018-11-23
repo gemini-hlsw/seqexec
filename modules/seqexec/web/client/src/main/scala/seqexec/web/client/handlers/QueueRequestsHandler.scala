@@ -23,11 +23,20 @@ class QueueRequestsHandler[M](modelRW: ModelRW[M, QueueRequestsFocus])
     with Handlers[M, QueueRequestsFocus] {
 
   def handleAddAllDayCal: PartialFunction[Any, ActionResult[M]] = {
-    case RequestAllDayCal(qid) =>
-      val ids = value.sequences.sessionQueue.map(_.id)
+    case RequestAllSelectedSequences(qid) =>
+      val ids = value.seqFilter.filterS(value.sequences.sessionQueue).map(_.id)
       effectOnly(
         requestEffect(qid,
                       SeqexecWebClient.addSequencesToQueue(ids),
+                      AllDayCalCompleted.apply,
+                      AllDayCalFailed.apply))
+  }
+
+  def handleAddDayCal: PartialFunction[Any, ActionResult[M]] = {
+    case RequestAddSeqCal(qid, oid) =>
+      effectOnly(
+        requestEffect(qid,
+                      SeqexecWebClient.addSequenceToQueue(oid),
                       AllDayCalCompleted.apply,
                       AllDayCalFailed.apply))
   }
@@ -100,6 +109,7 @@ class QueueRequestsHandler[M](modelRW: ModelRW[M, QueueRequestsFocus])
 
   override def handle: PartialFunction[Any, ActionResult[M]] =
     List(handleAddAllDayCal,
+         handleAddDayCal,
          handleClearAllCal,
          handleRunCal,
          handleStopCal,
