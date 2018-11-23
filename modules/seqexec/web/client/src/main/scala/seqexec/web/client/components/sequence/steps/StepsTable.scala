@@ -17,6 +17,7 @@ import japgolly.scalajs.react.raw.JsNumber
 import monocle.Lens
 import monocle.macros.GenLens
 import scala.scalajs.js
+import scala.math.min
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.StepType
 import seqexec.model.StepState
@@ -146,12 +147,16 @@ object StepsTable {
   }
 
   final case class State(tableState:      TableState[TableColumn],
-                         breakpointHover: Option[Int])
+                         breakpointHover: Option[Int],
+                         selected:        Option[Int])
 
   object State {
 
     val tableState: Lens[State, TableState[TableColumn]] =
       GenLens[State](_.tableState)
+
+    val selected: Lens[State, Option[Int]] =
+      GenLens[State](_.selected)
 
     val breakpointHover: Lens[State, Option[Int]] =
       GenLens[State](_.breakpointHover)
@@ -165,14 +170,14 @@ object StepsTable {
     val InitialTableState: TableState[TableColumn] =
       TableState(NotModified, 0, all)
 
-    val InitialState: State = State(InitialTableState, None)
+    val InitialState: State = State(InitialTableState, None, None)
   }
 
   implicit val propsReuse: Reusability[Props] =
     Reusability.by(x => (x.canOperate, x.stepsTable))
   implicit val tcReuse: Reusability[TableColumn] = Reusability.byRef
   implicit val stateReuse: Reusability[State] =
-    Reusability.by(x => (x.tableState, x.breakpointHover))
+    Reusability.by(x => (x.tableState, x.breakpointHover, x.selected))
 
   val controlHeaderRenderer: HeaderRenderer[js.Object] = (_, _, _, _, _, _) =>
     <.span(
@@ -324,11 +329,15 @@ object StepsTable {
     * Calculates the row height depending on conditions
     */
   def rowHeight(b: Backend)(i: Int): Int =
-    (b.props.rowGetter(i), b.state.breakpointHover) match {
+    (b.props.rowGetter(i), b.state.selected) match {
       case (StepRow(StandardStep(_, _, s, true, _, _, _, _)), _)
           if s === StepState.Running =>
         // Row running with a breakpoint set
         SeqexecStyles.runningRowHeight + BreakpointLineHeight
+      case (StepRow(s @ StandardStep(_, _, _, _, _, _, _, _)), sel)
+          if !s.isFinished && sel === Some(i) =>
+        // Selected
+        SeqexecStyles.runningRowHeight
       case (StepRow(s: Step), _) if s.status === StepState.Running =>
         // Row running
         SeqexecStyles.runningRowHeight
@@ -584,6 +593,12 @@ object StepsTable {
       b.props.nextStepToRun
     }
 
+  // Single click puts the row as selected
+  def singleClick(b: Backend)(i: Int): Callback =
+    (b.modState(State.selected.set(Some(i))) *> recomputeRowHeightsCB(
+      min(i, b.state.selected.getOrElse(i))))
+      .unless(b.props.rowGetter(i).step.isFinished) *> Callback.empty
+
   def stepsTableProps(b: Backend)(size: Size): Table.Props =
     Table.props(
       disableHeader = false,
@@ -602,6 +617,7 @@ object StepsTable {
       rowGetter        = b.props.rowGetter _,
       scrollToIndex    = startScrollToIndex(b),
       scrollTop        = startScrollTop(b.state),
+      onRowClick       = singleClick(b),
       onScroll = (a, _, pos) =>
         updateScrollPosition(b, pos).when(a.toDouble > 0) *> Callback.empty,
       scrollToAlignment = ScrollToAlignment.Center,
