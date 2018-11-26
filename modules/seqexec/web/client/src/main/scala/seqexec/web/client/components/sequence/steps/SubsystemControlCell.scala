@@ -20,6 +20,7 @@ import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.model.ResourceRunOperation
 import seqexec.web.client.semanticui.elements.button.Button
 import seqexec.web.client.semanticui.elements.popup.Popup
+import seqexec.web.client.semanticui.elements.icon.Icon.IconCircleNotched
 import seqexec.web.client.semanticui.Size
 import seqexec.web.client.reusability._
 import web.client.style._
@@ -42,22 +43,35 @@ object SubsystemControlCell {
     r:      Resource
   ): Callback = SeqexecCircuit.dispatchCB(RequestResourceRun(id, stepId, r))
 
+  private val RunningIcon = IconCircleNotched.copyIcon(
+    fitted      = true,
+    loading     = true,
+    extraStyles = List(SeqexecStyles.runningIcon))
+
   private val component = ScalaComponent
     .builder[Props]("SubsystemControl")
     .render_P { p =>
       <.div(
         SeqexecStyles.notInMobile,
         p.resources.map { r =>
+          val inExecution =
+            p.resourcesCalls
+              .get(r)
+              .map(_ === ResourceRunOperation.ResourceRunInFlight)
+              .getOrElse(false)
           Popup(
             Popup.Props("button", s"Configure ${r.show}"),
             Button(
               Button.Props(
-                size  = Size.Small,
-                color = Some("blue"),
-                disabled = p.resourcesCalls
+                size     = Size.Small,
+                color    = Some("blue"),
+                disabled = inExecution,
+                labeled =
+                  if (inExecution) Button.LeftLabeled else Button.NotLabeled,
+                icon = p.resourcesCalls
                   .get(r)
-                  .map(_ === ResourceRunOperation.ResourceRunInFlight)
-                  .getOrElse(false),
+                  .filter(_ === ResourceRunOperation.ResourceRunInFlight)
+                  .map(_ => RunningIcon),
                 onClick = requestResourceCall(p.id, p.stepId, r)
               ),
               r.show

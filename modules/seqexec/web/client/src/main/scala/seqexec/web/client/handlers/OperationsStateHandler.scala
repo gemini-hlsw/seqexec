@@ -16,6 +16,7 @@ import seqexec.web.client.model.SyncOperation
 import seqexec.web.client.model.RunOperation
 import seqexec.web.client.model.SequencesOnDisplay
 import seqexec.web.client.model.TabOperations
+import seqexec.web.client.model.ResourceRunOperation
 import seqexec.web.client.actions._
 
 /**
@@ -42,6 +43,18 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
         value.markOperations(
           id,
           TabOperations.pauseRequested.set(PauseOperation.PauseInFlight)))
+
+    case RequestResourceRun(id, _, r) =>
+      // TODO Remove this when the response comes over the WS channel
+      updated(
+        value.markOperations(
+          id,
+          TabOperations
+            .resourceRun(r)
+            .set(ResourceRunOperation.ResourceRunInFlight.some)))
+
+    case RunResource(id, _, r) =>
+      updated(value.markOperations(id, TabOperations.resourceRun(r).set(none)))
   }
 
   def handleOperationResult: PartialFunction[Any, ActionResult[M]] = {
