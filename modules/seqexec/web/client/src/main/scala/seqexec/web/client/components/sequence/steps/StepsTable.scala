@@ -619,7 +619,8 @@ object StepsTable {
         .dispatchCB(UpdateSelectedStep(id, i)) *>
         b.modState(State.selected.set(Some(i))) *>
         recomputeRowHeightsCB(min(b.state.selected.getOrElse(i), i)))
-        .when(b.props.canControlSubsystems(i)) *>
+        .when(b.props
+          .canControlSubsystems(i) && !b.props.tabOperations.resourceInFlight) *>
         Callback.empty
     }.getOrEmpty
 
@@ -714,7 +715,13 @@ object StepsTable {
           min(c, n)
         }
         .filter(_ => s.selected =!= next.selectedStep)
-    (selected.toList ::: differentStepsStates).minimumOption.map {
+    val running: Option[StepId] =
+      if (cur.tabOperations.resourceRunRequested =!= next.tabOperations.resourceRunRequested) {
+        next.selectedStep
+      } else {
+        none
+      }
+    (running.toList ::: selected.toList ::: differentStepsStates).minimumOption.map {
       recomputeRowHeightsCB
     }.getOrEmpty
   }

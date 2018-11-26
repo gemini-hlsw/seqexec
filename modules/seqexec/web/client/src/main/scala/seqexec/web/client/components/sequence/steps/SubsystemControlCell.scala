@@ -8,6 +8,7 @@ import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.Callback
 import japgolly.scalajs.react.ScalaComponent
+import japgolly.scalajs.react.ReactEvent
 import japgolly.scalajs.react.extra.Reusability
 import japgolly.scalajs.react.extra.Reusability._
 import gem.Observation
@@ -41,7 +42,9 @@ object SubsystemControlCell {
     id:     Observation.Id,
     stepId: StepId,
     r:      Resource
-  ): Callback = SeqexecCircuit.dispatchCB(RequestResourceRun(id, stepId, r))
+  )(e:      ReactEvent): Callback =
+    e.preventDefaultCB *> e.stopPropagationCB *>
+      SeqexecCircuit.dispatchCB(RequestResourceRun(id, stepId, r))
 
   private val RunningIcon = IconCircleNotched.copyIcon(
     fitted      = true,
@@ -72,7 +75,7 @@ object SubsystemControlCell {
                   .get(r)
                   .filter(_ === ResourceRunOperation.ResourceRunInFlight)
                   .map(_ => RunningIcon),
-                onClick = requestResourceCall(p.id, p.stepId, r)
+                onClickE = requestResourceCall(p.id, p.stepId, r) _
               ),
               r.show
             )

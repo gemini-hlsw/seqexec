@@ -60,7 +60,12 @@ final case class TabOperations(
   runRequested:         RunOperation,
   syncRequested:        SyncOperation,
   pauseRequested:       PauseOperation,
-  resourceRunRequested: SortedMap[Resource, ResourceRunOperation])
+  resourceRunRequested: SortedMap[Resource, ResourceRunOperation]) {
+  // Indicate if any resource is being executed
+  def resourceInFlight: Boolean =
+    resourceRunRequested.exists(
+      _._2 === ResourceRunOperation.ResourceRunInFlight)
+}
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object TabOperations {

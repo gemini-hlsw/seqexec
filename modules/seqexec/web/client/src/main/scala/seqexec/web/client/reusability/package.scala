@@ -46,7 +46,18 @@ package object reusability {
   implicit val stepReuse: Reusability[Step]                 = Reusability.byEq
   implicit val seqStateReuse: Reusability[SequenceState]    = Reusability.byEq
   implicit val clientStatusReuse: Reusability[ClientStatus] = Reusability.byEq
-  implicit val stTbFocusReuse: Reusability[StepsTableFocus] = Reusability.byEq
+  implicit val stTbFocusReuse: Reusability[StepsTableFocus] =
+    Reusability.by { x =>
+      (x.id,
+       x.instrument,
+       x.state,
+       x.steps,
+       x.stepConfigDisplayed,
+       x.nextStepToRun,
+       x.selectedStep,
+       x.isPreview,
+       x.tableState) // Don't include tabOperations on the check
+    }
   implicit val stASFocusReuse: Reusability[StatusAndStepFocus] =
     Reusability.byEq
   implicit val sCFocusReuse: Reusability[SequenceControlFocus] =
