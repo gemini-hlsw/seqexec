@@ -652,8 +652,9 @@ object StepsTable {
     )
 
   // We want clicks to be processed only if the click is not on the first row with the breakpoint/skip controls
-  private def allowedClick(index: Int, onRowClick: Option[OnRowClick])(
-    e:                            ReactMouseEvent): Callback =
+  private def allowedClick(
+    index: Int,
+    onRowClick: Option[OnRowClick])(e: ReactMouseEvent): Callback =
     onRowClick
       .filter(_ => e.clientX > ColWidths.ControlWidth)
       .map(h => h(index))
