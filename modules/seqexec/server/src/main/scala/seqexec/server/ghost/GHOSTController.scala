@@ -39,9 +39,9 @@ final case class GHOSTController[F[_]: Sync](ghostClient: GHOSTClient[F],
     def cfg[P: Show](paramName: String, paramVal: P) =
       Configuration.single(s"${ifuNum.ifuStr}.$paramName", paramVal)
 
-    (nameOpt, raOpt, decOpt) match {
+    (raOpt, decOpt) match {
       // Case 1: IFU is in use here for an actual position.
-      case (Some(name@_), Some(ra), Some(dec)) =>
+      case (Some(ra), Some(dec)) if nameOpt.isDefined =>
         val ifuTargetType = IFUTargetType.determineType(nameOpt)
         cfg("target", ifuTargetType.targetType) |+|
           cfg("type", DemandType.DemandRADec.demandType) |+|
@@ -50,7 +50,7 @@ final case class GHOSTController[F[_]: Sync](ghostClient: GHOSTClient[F],
           cfg("bundle", bundleConfig.determineType(ifuTargetType).configName)
 
       // Case 2: IFU is explicitly excluded from use.
-      case (Some(name@_), None, None) =>
+      case (None, None) if nameOpt.isDefined =>
         cfg("target", IFUTargetType.NoTarget.targetType) |+|
           cfg("type", DemandType.DemandPark.demandType)
 
