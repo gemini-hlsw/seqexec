@@ -114,7 +114,7 @@ final case class GHOSTController[F[_]: Sync](ghostClient: GHOSTClient[F],
 
   // We use a dummy observation for now, since at this point, we cannot actually observe using the instrument.
   def observe(fileId: ImageFileId, expTime: Time): SeqActionF[F, ImageFileId] =
-    SeqActionF.apply(fileId)
+    SeqActionF.apply((fileId, expTime)._1) // suppress unused error
   //    EitherT(ghostClient.observe(fileId, expTime.toMilliseconds.milliseconds).map(_ => fileId).attempt)
   //      .leftMap {
   //        case CommandResultException(_, "Message cannot be null") => Execution("Unhandled observe command")
