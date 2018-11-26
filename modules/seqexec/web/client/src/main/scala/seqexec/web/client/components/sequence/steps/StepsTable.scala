@@ -26,6 +26,7 @@ import seqexec.model.StepId
 import seqexec.model.StandardStep
 import seqexec.web.client.model.lenses._
 import seqexec.web.client.model.ClientStatus
+import seqexec.web.client.model.TabOperations
 import seqexec.web.client.model.Pages.SeqexecPages
 import seqexec.web.client.model.ModelOps._
 import seqexec.web.client.circuit.SeqexecCircuit
@@ -118,12 +119,14 @@ object StepsTable {
     val selectedStep: Option[StepId]                = steps.flatMap(_.selectedStep)
     val rowCount: Int                               = stepsList.length
     val nextStepToRun: Int                          = steps.foldMap(_.nextStepToRun).getOrElse(0)
-    val showDisperser: Boolean                      = showProp(InstrumentProperties.Disperser)
-    val showExposure: Boolean                       = showProp(InstrumentProperties.Exposure)
-    val showFilter: Boolean                         = showProp(InstrumentProperties.Filter)
-    val showFPU: Boolean                            = showProp(InstrumentProperties.FPU)
-    val isPreview: Boolean                          = steps.map(_.isPreview).getOrElse(false)
-    val canSetBreakpoint: Boolean                   = canOperate && !isPreview
+    val tabOperations: TabOperations =
+      steps.map(_.tabOperations).getOrElse(TabOperations.Default)
+    val showDisperser: Boolean    = showProp(InstrumentProperties.Disperser)
+    val showExposure: Boolean     = showProp(InstrumentProperties.Exposure)
+    val showFilter: Boolean       = showProp(InstrumentProperties.Filter)
+    val showFPU: Boolean          = showProp(InstrumentProperties.FPU)
+    val isPreview: Boolean        = steps.map(_.isPreview).getOrElse(false)
+    val canSetBreakpoint: Boolean = canOperate && !isPreview
     val showObservingMode: Boolean =
       showProp(InstrumentProperties.ObservingMode)
 
@@ -248,7 +251,8 @@ object StepsTable {
                                f.state,
                                row.step,
                                b.state.selected,
-                               b.props.isPreview))
+                               b.props.isPreview,
+                               b.props.tabOperations.resourceRunRequested))
 
   def stepStatusRenderer(
     offsetsDisplay: OffsetsDisplay

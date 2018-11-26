@@ -24,7 +24,8 @@ final case class StepsTableFocus(id:                  Observation.Id,
                                  nextStepToRun:       Option[StepId],
                                  selectedStep:        Option[StepId],
                                  isPreview:           Boolean,
-                                 tableState:          TableState[StepsTable.TableColumn])
+                                 tableState:          TableState[StepsTable.TableColumn],
+                                 tabOperations:       TabOperations)
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object StepsTableFocus {
@@ -39,7 +40,8 @@ object StepsTableFocus {
          x.nextStepToRun,
          x.selectedStep,
          x.isPreview,
-         x.tableState))
+         x.tableState,
+         x.tabOperations))
 
   def stepsTableG(
     id: Observation.Id
@@ -59,7 +61,8 @@ object StepsTableFocus {
               tab.selectedStep
                 .orElse(sequence.nextStepToRun), // start with the nextstep selected
               tab.isPreview,
-              tab.tableState
+              tab.tableState,
+              tab.tabOperations
             )
           }
       }

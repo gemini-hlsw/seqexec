@@ -4,84 +4,70 @@
 package seqexec.web.client.components.sequence.steps
 
 import cats.implicits._
-import japgolly.scalajs.react.CatsReact._
-import japgolly.scalajs.react.CatsReact
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.Callback
-import japgolly.scalajs.react.CallbackTo
 import japgolly.scalajs.react.ScalaComponent
+import japgolly.scalajs.react.extra.Reusability
+import japgolly.scalajs.react.extra.Reusability._
 import gem.Observation
-import monocle.Optional
-import monocle.macros.Lenses
-import monocle.function.At.at
-import monocle.function.At.atSortedMap
-import monocle.std
 import scala.collection.immutable.SortedMap
 import seqexec.model.enum._
 import seqexec.model.StepId
 import seqexec.web.client.actions.RequestResourceRun
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.components.SeqexecStyles
+import seqexec.web.client.model.ResourceRunOperation
 import seqexec.web.client.semanticui.elements.button.Button
 import seqexec.web.client.semanticui.elements.popup.Popup
 import seqexec.web.client.semanticui.Size
+import seqexec.web.client.reusability._
 import web.client.style._
 
 /**
   * Contains the control buttons for each subsystem
   */
 object SubsystemControlCell {
-  final case class Props(id:        Observation.Id,
-                         stepId:    Int,
-                         resources: List[Resource])
+  final case class Props(
+    id:             Observation.Id,
+    stepId:         Int,
+    resources:      List[Resource],
+    resourcesCalls: SortedMap[Resource, ResourceRunOperation])
 
-  @Lenses
-  final case class State(resources: SortedMap[Resource, Boolean])
+  implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
-  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
-  object State {
-    def resource(r: Resource): Optional[State, Boolean] =
-      State.resources ^|->
-        at(r) ^<-?
-        std.option.some
-  }
-
-  private val ST = ReactS.Fix[State]
-
-  def requestResourceCall(id:     Observation.Id,
-                          stepId: StepId,
-                          r:      Resource): Callback =
-    SeqexecCircuit.dispatchCB(RequestResourceRun(id, stepId, r))
-
-  def handleResourceCall(
+  def requestResourceCall(
     id:     Observation.Id,
     stepId: StepId,
-    r:      Resource): CatsReact.ReactST[CallbackTo, State, Unit] =
-    ST.retM(requestResourceCall(id, stepId, r)) >> ST
-      .mod(State.resource(r).set(true))
-      .liftCB
+    r:      Resource
+  ): Callback = SeqexecCircuit.dispatchCB(RequestResourceRun(id, stepId, r))
 
   private val component = ScalaComponent
     .builder[Props]("SubsystemControl")
-    .initialStateFromProps(p =>
-      State(SortedMap(p.resources.fproduct(_ => false): _*)))
-    .renderPS { ($, p, s) =>
+    .render_P { p =>
       <.div(
         SeqexecStyles.notInMobile,
         p.resources.map { r =>
           Popup(
             Popup.Props("button", s"Configure ${r.show}"),
-            Button(Button.Props(size  = Size.Small,
-                                color = Some("blue"),
-                                onClick = $.runState(
-                                  handleResourceCall(p.id, p.stepId, r))),
-                   r.show)
+            Button(
+              Button.Props(
+                size  = Size.Small,
+                color = Some("blue"),
+                disabled = p.resourcesCalls
+                  .get(r)
+                  .map(_ === ResourceRunOperation.ResourceRunInFlight)
+                  .getOrElse(false),
+                onClick = requestResourceCall(p.id, p.stepId, r)
+              ),
+              r.show
+            )
           )
         }.toTagMod
       )
     }
+    .configure(Reusability.shouldComponentUpdate)
     .build
 
-  def apply(p: Props): Unmounted[Props, State, Unit] = component(p)
+  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
 }

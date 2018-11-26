@@ -71,6 +71,13 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
                 id,
                 TabOperations.pauseRequested.set(PauseOperation.PauseIdle)),
               notification)
+
+    case RunResourceFailed(id, _, r) =>
+      val msg = s"Failed to run ${r.show} for sequence ${id.format}"
+      val notification = Effect(
+        Future(RequestFailedNotification(RequestFailed(msg))))
+      updated(value.markOperations(id, TabOperations.resourceRun(r).set(none)),
+              notification)
   }
 
   def handleSelectedStep: PartialFunction[Any, ActionResult[M]] = {

@@ -5,7 +5,12 @@ package seqexec.web.client.model
 
 import cats.Eq
 import cats.implicits._
+import monocle.Lens
 import monocle.macros.Lenses
+import monocle.function.At.at
+import monocle.function.At.atSortedMap
+import seqexec.model.enum.Resource
+import scala.collection.immutable.SortedMap
 
 sealed trait RunOperation extends Product with Serializable
 object RunOperation {
@@ -37,21 +42,43 @@ object PauseOperation {
 
 }
 
+sealed trait ResourceRunOperation extends Product with Serializable
+object ResourceRunOperation {
+  case object ResourceRunInFlight extends ResourceRunOperation
+  case object ResourceRunIdle extends ResourceRunOperation
+
+  implicit val eq: Eq[ResourceRunOperation] =
+    Eq.fromUniversalEquals
+
+}
+
 /**
   * Hold transient states while excuting an operation
   */
 @Lenses
-final case class TabOperations(runRequested:   RunOperation,
-                               syncRequested:  SyncOperation,
-                               pauseRequested: PauseOperation)
+final case class TabOperations(
+  runRequested:         RunOperation,
+  syncRequested:        SyncOperation,
+  pauseRequested:       PauseOperation,
+  resourceRunRequested: SortedMap[Resource, ResourceRunOperation])
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object TabOperations {
   implicit val eq: Eq[TabOperations] =
-    Eq.by(x => (x.runRequested, x.syncRequested, x.pauseRequested))
+    Eq.by(
+      x =>
+        (x.runRequested,
+         x.syncRequested,
+         x.pauseRequested,
+         x.resourceRunRequested))
+
+  def resourceRun(
+    r: Resource): Lens[TabOperations, Option[ResourceRunOperation]] =
+    TabOperations.resourceRunRequested ^|-> at(r)
 
   val Default: TabOperations =
     TabOperations(RunOperation.RunIdle,
                   SyncOperation.SyncIdle,
-                  PauseOperation.PauseIdle)
+                  PauseOperation.PauseIdle,
+                  SortedMap.empty)
 }

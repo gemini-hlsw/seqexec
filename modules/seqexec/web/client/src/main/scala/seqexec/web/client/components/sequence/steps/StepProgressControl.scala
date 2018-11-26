@@ -9,6 +9,7 @@ import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.extra.Reusability
+import scala.collection.immutable.SortedMap
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.ActionStatus
 import seqexec.model.enum.Resource
@@ -19,6 +20,7 @@ import seqexec.model.Step
 import seqexec.model.StepId
 import seqexec.model.SequenceState
 import seqexec.web.client.model.ClientStatus
+import seqexec.web.client.model.ResourceRunOperation
 import seqexec.web.client.model.ModelOps._
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.semanticui.elements.icon.Icon
@@ -31,13 +33,15 @@ import web.client.style._
   * Component to display the step state and control
   */
 object StepProgressCell {
-  final case class Props(clientStatus: ClientStatus,
-                         instrument:   Instrument,
-                         obsId:        Observation.Id,
-                         state:        SequenceState,
-                         step:         Step,
-                         selectedStep: Option[StepId],
-                         isPreview:    Boolean) {
+  final case class Props(
+    clientStatus:         ClientStatus,
+    instrument:           Instrument,
+    obsId:                Observation.Id,
+    state:                SequenceState,
+    step:                 Step,
+    selectedStep:         Option[StepId],
+    isPreview:            Boolean,
+    resourceRunRequested: SortedMap[Resource, ResourceRunOperation]) {
 
     def stepSelected(i: StepId): Boolean =
       selectedStep.exists(_ === i) && !isPreview && clientStatus.isLogged
@@ -147,7 +151,10 @@ object StepProgressCell {
         case step: StandardStep =>
           SubsystemControlCell(
             SubsystemControlCell
-              .Props(props.obsId, step.id, step.configStatus.map(_._1)))
+              .Props(props.obsId,
+                     step.id,
+                     step.configStatus.map(_._1),
+                     props.resourceRunRequested))
         case _ =>
           <.div()
       }

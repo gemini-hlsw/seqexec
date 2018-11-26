@@ -8,6 +8,7 @@ import diode.ActionHandler
 import diode.ActionResult
 import diode.Effect
 import diode.ModelRW
+import gem.Observation
 import seqexec.model.ClientId
 import seqexec.web.client.actions._
 import seqexec.web.client.services.SeqexecWebClient
@@ -111,6 +112,17 @@ class RemoteRequestsHandler[M](modelRW: ModelRW[M, Option[ClientId]])
                       RunSyncFailed.apply))
   }
 
+  def handleResourceRun: PartialFunction[Any, ActionResult[M]] = {
+    case RequestResourceRun(id, step, resource) =>
+      effectOnly(
+        requestEffect(
+          id,
+          SeqexecWebClient.runResource(step, resource),
+          (id: Observation.Id) => RunResource(id, step, resource),
+          (id: Observation.Id) => RunResourceFailed(id, step, resource)
+        ))
+  }
+
   override def handle: PartialFunction[Any, ActionResult[M]] =
     List(handleRun,
          handlePause,
@@ -119,6 +131,7 @@ class RemoteRequestsHandler[M](modelRW: ModelRW[M, Option[ClientId]])
          handleAbort,
          handleObsPause,
          handleObsResume,
-         handleSync).combineAll
+         handleSync,
+         handleResourceRun).combineAll
 
 }
