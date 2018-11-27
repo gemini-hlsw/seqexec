@@ -9,6 +9,7 @@ import seqexec.model.QueueId
 import seqexec.model.Observer
 import seqexec.model.Operator
 import seqexec.model.enum.Instrument
+import seqexec.model.enum.Resource
 import seqexec.model.ClientId
 
 trait Var {
@@ -45,6 +46,11 @@ trait Var {
   object PosIntVar {
     def unapply(str: String): Option[Int] =
       Either.catchNonFatal(str.toInt).toOption.filter(_ >= 0)
+  }
+
+  object ResourceVar {
+    def unapply(str: String): Option[Resource] =
+      Instrument.allResources.find(_.show === str)
   }
 
   object BooleanVar {

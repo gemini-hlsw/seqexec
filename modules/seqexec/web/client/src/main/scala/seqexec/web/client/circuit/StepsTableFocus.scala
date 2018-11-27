@@ -16,15 +16,16 @@ import seqexec.web.client.components.sequence.steps.StepsTable
 import web.client.table._
 
 @Lenses
-final case class StepsTableFocus(
-  id:                  Observation.Id,
-  instrument:          Instrument,
-  state:               SequenceState,
-  steps:               List[Step],
-  stepConfigDisplayed: Option[Int],
-  nextStepToRun:       Option[Int],
-  isPreview:           Boolean,
-  tableState:          TableState[StepsTable.TableColumn])
+final case class StepsTableFocus(id:                  Observation.Id,
+                                 instrument:          Instrument,
+                                 state:               SequenceState,
+                                 steps:               List[Step],
+                                 stepConfigDisplayed: Option[Int],
+                                 nextStepToRun:       Option[StepId],
+                                 selectedStep:        Option[StepId],
+                                 isPreview:           Boolean,
+                                 tableState:          TableState[StepsTable.TableColumn],
+                                 tabOperations:       TabOperations)
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object StepsTableFocus {
@@ -37,8 +38,10 @@ object StepsTableFocus {
          x.steps,
          x.stepConfigDisplayed,
          x.nextStepToRun,
+         x.selectedStep,
          x.isPreview,
-         x.tableState))
+         x.tableState,
+         x.tabOperations))
 
   def stepsTableG(
     id: Observation.Id
@@ -48,14 +51,19 @@ object StepsTableFocus {
       _.flatMap {
         case SeqexecTabActive(tab, _) =>
           tab.sequence.map { sequence =>
-            StepsTableFocus(sequence.id,
-                            sequence.metadata.instrument,
-                            sequence.status,
-                            sequence.steps,
-                            tab.stepConfigDisplayed,
-                            sequence.nextStepToRun,
-                            tab.isPreview,
-                            tab.tableState)
+            StepsTableFocus(
+              sequence.id,
+              sequence.metadata.instrument,
+              sequence.status,
+              sequence.steps,
+              tab.stepConfigDisplayed,
+              sequence.nextStepToRun,
+              tab.selectedStep
+                .orElse(sequence.nextStepToRun), // start with the nextstep selected
+              tab.isPreview,
+              tab.tableState,
+              tab.tabOperations
+            )
           }
       }
     }

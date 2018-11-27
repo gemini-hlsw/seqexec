@@ -22,6 +22,7 @@ import seqexec.model.enum.Instrument
 import seqexec.model.enum.ImageQuality
 import seqexec.model.enum.SkyBackground
 import seqexec.model.enum.WaterVapor
+import seqexec.model.enum.Resource
 import seqexec.web.model.boopickle._
 import seqexec.web.common.LogMessage
 import seqexec.web.common.LogMessage._
@@ -393,6 +394,18 @@ object SeqexecWebClient extends ModelBooPicklers {
       .post(
         url =
           s"$baseUrl/commands/queue/${encodeURI(queueId.self.show)}/move/${encodeURI(obsId.self.format)}/$pos/${encodeURI(clientId.self.show)}",
+        responseType = "arraybuffer"
+      )
+      .map(_ => ())
+
+  /**
+    * Runs a reusource
+    */
+  def runResource(pos: Int, resource: Resource)(obsId: Observation.Id): Future[Unit] =
+    Ajax
+      .post(
+        url =
+          s"$baseUrl/commands/execute/${encodeURI(obsId.self.format)}/$pos/${encodeURI(resource.show)}",
         responseType = "arraybuffer"
       )
       .map(_ => ())

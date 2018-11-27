@@ -38,13 +38,17 @@ object StepBreakStopCell {
                                        'breakPointLeaveCB)
 
   // Request a to flip the breakpoint
-  def flipBreakpoint(p: Props): Callback =
+  def flipBreakpoint(p: Props)(e: ReactEvent): Callback =
+    e.preventDefaultCB *>
+    e.stopPropagationCB *>
     Callback.when(p.clientStatus.canOperate)(
       SeqexecCircuit.dispatchCB(FlipBreakpointStep(p.obsId, p.step)) >> p
         .heightChangeCB(p.step.id))
 
   // Request a to flip the skip
-  def flipSkipped(p: Props): Callback =
+  def flipSkipped(p: Props)(e: ReactEvent): Callback =
+    e.preventDefaultCB *>
+    e.stopPropagationCB *>
     Callback.when(p.clientStatus.canOperate)(
       SeqexecCircuit.dispatchCB(FlipSkipStep(p.obsId, p.step)))
 
@@ -61,7 +65,7 @@ object StepBreakStopCell {
         <.div(
           SeqexecStyles.breakPointHandleOff.when(p.step.breakpoint),
           SeqexecStyles.breakPointHandleOn.unless(p.step.breakpoint),
-          ^.onClick --> flipBreakpoint(p),
+          ^.onClick ==> flipBreakpoint(p),
           Icon.IconRemove
             .copyIcon(fitted       = true,
                       onMouseEnter = p.breakPointEnterCB(p.step.id),
@@ -79,12 +83,12 @@ object StepBreakStopCell {
           SeqexecStyles.skipHandle,
           ^.top := (p.rowHeight / 2 - SeqexecStyles.skipHandleHeight + 2).px,
           IconPlusSquareOutline
-            .copyIcon(link = true, onClick = flipSkipped(p))
+            .copyIcon(link = true, onClickE = flipSkipped(p) _)
             .when(p.step.skip),
           IconMinusCircle
             .copyIcon(link    = true,
                       color   = Some("orange"),
-                      onClick = flipSkipped(p))
+                      onClickE = flipSkipped(p) _)
             .unless(p.step.skip)
         ).when(canSetSkipMark)
       )

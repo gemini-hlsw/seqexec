@@ -9,8 +9,10 @@ import gem.Observation
 import gem.enum.Site
 import japgolly.scalajs.react.CatsReact._
 import japgolly.scalajs.react.extra.Reusability
+import scala.collection.immutable.SortedMap
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.BatchExecState
+import seqexec.model.enum.Resource
 import seqexec.model.Observer
 import seqexec.model.QueueId
 import seqexec.model.Step
@@ -28,6 +30,7 @@ import seqexec.web.client.model.PauseOperation
 import seqexec.web.client.model.QueueOperations
 import seqexec.web.client.model.RunOperation
 import seqexec.web.client.model.SyncOperation
+import seqexec.web.client.model.ResourceRunOperation
 import seqexec.web.client.model.TabSelected
 import seqexec.web.client.model.SoundSelection
 import seqexec.web.client.circuit._
@@ -35,6 +38,7 @@ import seqexec.web.client.circuit._
 package object reusability {
   implicit val stepStateReuse: Reusability[StepState]       = Reusability.byEq
   implicit val instrumentReuse: Reusability[Instrument]     = Reusability.byEq
+  implicit val resourceReuse: Reusability[Resource]         = Reusability.byEq
   implicit val obsIdReuse: Reusability[Observation.Id]      = Reusability.byEq
   implicit val siteReuse: Reusability[Site]                 = Reusability.byEq
   implicit val observerReuse: Reusability[Observer]         = Reusability.byEq
@@ -42,7 +46,18 @@ package object reusability {
   implicit val stepReuse: Reusability[Step]                 = Reusability.byEq
   implicit val seqStateReuse: Reusability[SequenceState]    = Reusability.byEq
   implicit val clientStatusReuse: Reusability[ClientStatus] = Reusability.byEq
-  implicit val stTbFocusReuse: Reusability[StepsTableFocus] = Reusability.byEq
+  implicit val stTbFocusReuse: Reusability[StepsTableFocus] =
+    Reusability.by { x =>
+      (x.id,
+       x.instrument,
+       x.state,
+       x.steps,
+       x.stepConfigDisplayed,
+       x.nextStepToRun,
+       x.selectedStep,
+       x.isPreview,
+       x.tableState) // Don't include tabOperations on the check
+    }
   implicit val stASFocusReuse: Reusability[StatusAndStepFocus] =
     Reusability.byEq
   implicit val sCFocusReuse: Reusability[SequenceControlFocus] =
@@ -59,6 +74,8 @@ package object reusability {
   implicit val syncOperationReuse: Reusability[SyncOperation] =
     Reusability.byRef
   implicit val psOperationReuse: Reusability[PauseOperation] = Reusability.byRef
+  implicit val rrOperationReuse: Reusability[ResourceRunOperation] =
+    Reusability.byRef
   implicit val availableTabsReuse: Reusability[AvailableTab] = Reusability.byEq
   implicit val userDetailsReuse: Reusability[UserDetails]    = Reusability.byEq
   implicit val usrNotReuse: Reusability[UserNotificationState] =
@@ -70,4 +87,9 @@ package object reusability {
   implicit val qidReuse: Reusability[QueueId]              = Reusability.byEq
   implicit val bexReuse: Reusability[BatchExecState]       = Reusability.byRef
   implicit val soundReuse: Reusability[SoundSelection]     = Reusability.byRef
+
+  implicit val resMap: Reusability[Map[Resource, ResourceRunOperation]] =
+    Reusability.map
+  implicit val resSMap: Reusability[SortedMap[Resource, ResourceRunOperation]] =
+    Reusability.by(_.toMap)
 }
