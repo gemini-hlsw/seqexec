@@ -7,7 +7,8 @@ import edu.gemini.seqexec.server.tcs.{BinaryOnOff, BinaryYesNo}
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams
 import gem.arb.ArbTime
-import gem.arb.ArbAngle._
+import gem.arb.ArbDeclination._
+import gem.arb.ArbRightAscension._
 import gem.arb.ArbEnumerated._
 import gem.Observation
 import gem.enum.KeywordName
@@ -34,7 +35,7 @@ import edu.gemini.spModel.gemini.gpi.Gpi.{Lyot => LegacyLyot}
 import edu.gemini.spModel.gemini.gpi.Gpi.{ObservingMode => LegacyObservingMode}
 import edu.gemini.spModel.gemini.gpi.Gpi.{PupilCamera => LegacyPupilCamera}
 import edu.gemini.spModel.gemini.gpi.Gpi.{Shutter => LegacyShutter}
-import gem.math.{Angle, HourAngle}
+import gem.math.{Declination, RightAscension}
 import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, Cogen, Gen}
 import squants.space.LengthConversions._
@@ -245,14 +246,14 @@ object SeqexecServerArbitraries extends ArbTime {
 
   implicit val ghostConfigArb: Arbitrary[GHOSTController.GHOSTConfig] = Arbitrary {
     for {
-      baseRA <- arbitrary[HourAngle]
-      baseDec <- arbitrary[Angle]
+      baseRA <- arbitrary[RightAscension]
+      baseDec <- arbitrary[Declination]
       srifu1name <- arbitrary[String]
-      srifu1RA <- arbitrary[HourAngle]
-      srifu1Dec <- arbitrary[Angle]
+      srifu1RA <- arbitrary[RightAscension]
+      srifu1Dec <- arbitrary[Declination]
       srifu2name <- arbitrary[String]
-      srifu2RA <- arbitrary[HourAngle]
-      srifu2Dec <- arbitrary[Angle]
+      srifu2RA <- arbitrary[RightAscension]
+      srifu2Dec <- arbitrary[Declination]
     } yield GHOSTConfig(Some(baseRA), Some(baseDec), 60.seconds,
       Some(srifu1name), Some(srifu1RA), Some(srifu1Dec),
       Some(srifu2name), Some(srifu1RA), Some(srifu1Dec),
@@ -261,11 +262,11 @@ object SeqexecServerArbitraries extends ArbTime {
     }
 
   implicit val ghostCogen: Cogen[GHOSTController.GHOSTConfig] =
-    Cogen[(Option[HourAngle], Option[Angle], Duration,
-      Option[String], Option[HourAngle], Option[Angle],
-      Option[String], Option[HourAngle], Option[Angle],
-      Option[String], Option[HourAngle], Option[Angle],
-      Option[String], Option[HourAngle], Option[Angle])]
+    Cogen[(Option[RightAscension], Option[Declination], Duration,
+      Option[String], Option[RightAscension], Option[Declination],
+      Option[String], Option[RightAscension], Option[Declination],
+      Option[String], Option[RightAscension], Option[Declination],
+      Option[String], Option[RightAscension], Option[Declination])]
     .contramap(x => (x.baseRAHMS, x.baseDecDMS, x.expTime,
       x.srifu2Name, x.srifu1CoordsRAHMS, x.srifu1CoordsDecDMS,
       x.srifu2Name, x.srifu2CoordsRAHMS, x.srifu2CoordsDecDMS,

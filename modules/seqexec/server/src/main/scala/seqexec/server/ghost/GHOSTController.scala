@@ -7,7 +7,7 @@ import cats.data.EitherT
 import cats.implicits._
 import cats.{Eq, Show}
 import cats.effect.Sync
-import gem.math.{Angle, Declination, HourAngle, RightAscension}
+import gem.math.{Declination, RightAscension}
 import giapi.client.commands.{CommandResult, CommandResultException, Configuration}
 import giapi.client.ghost.GHOSTClient
 import seqexec.model.dhs.ImageFileId
@@ -45,8 +45,8 @@ final case class GHOSTController[F[_]: Sync](ghostClient: GHOSTClient[F],
         val ifuTargetType = IFUTargetType.determineType(nameOpt)
         cfg("target", ifuTargetType.targetType) |+|
           cfg("type", DemandType.DemandRADec.demandType) |+|
-          cfg("ra", ra.) |+|
-          cfg("dec", dec.toDoubleDegrees) |+|
+          cfg("ra", ra.toHourAngle.toDoubleDegrees) |+|
+          cfg("dec", dec.toAngle.toSignedDoubleDegrees) |+|
           cfg("bundle", bundleConfig.determineType(ifuTargetType).configName)
 
       // Case 2: IFU is explicitly excluded from use.
@@ -173,21 +173,21 @@ object GHOSTController {
     * will force others to be None. Eventually, we will want to represent all the target information in a type-safe
     * way that GHOST uses in the ODB.
     */
-  final case class GHOSTConfig(baseRAHMS: Option[HourAngle],
-                               baseDecDMS: Option[Angle],
+  final case class GHOSTConfig(baseRAHMS: Option[RightAscension],
+                               baseDecDMS: Option[Declination],
                                expTime: Duration,
                                srifu1Name: Option[String],
-                               srifu1CoordsRAHMS: Option[HourAngle],
-                               srifu1CoordsDecDMS: Option[Angle],
+                               srifu1CoordsRAHMS: Option[RightAscension],
+                               srifu1CoordsDecDMS: Option[Declination],
                                srifu2Name: Option[String],
-                               srifu2CoordsRAHMS: Option[HourAngle],
-                               srifu2CoordsDecDMS: Option[Angle],
+                               srifu2CoordsRAHMS: Option[RightAscension],
+                               srifu2CoordsDecDMS: Option[Declination],
                                hrifu1Name: Option[String],
-                               hrifu1CoordsRAHMS: Option[HourAngle],
-                               hrifu1CoordsDecDMS: Option[Angle],
+                               hrifu1CoordsRAHMS: Option[RightAscension],
+                               hrifu1CoordsDecDMS: Option[Declination],
                                hrifu2Name: Option[String],
-                               hrifu2CoordsRAHMS: Option[HourAngle],
-                               hrifu2CoordsDecDMS: Option[Angle])
+                               hrifu2CoordsRAHMS: Option[RightAscension],
+                               hrifu2CoordsDecDMS: Option[Declination])
 
   object GHOSTConfig {
     private implicit val durationEq: Eq[Duration] = Eq.by(_.toMillis)
