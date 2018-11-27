@@ -11,7 +11,7 @@ import fs2.Stream
 import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import edu.gemini.spModel.gemini.ghost.Ghost
-import gem.math.{Angle, HourAngle}
+import gem.math.{Coordinates, Declination, RightAscension}
 import gem.optics.Format
 
 import scala.concurrent.duration._
@@ -84,8 +84,8 @@ object GHOST {
       }.getOrElse(Right(None))
     }
 
-    val raExtractor = formatExtractor[HourAngle](HourAngle.fromStringHMS)
-    val decExtractor = formatExtractor[Angle](Angle.fromStringDMS)
+    val raExtractor = formatExtractor[RightAscension](RightAscension.fromStringHMS)
+    val decExtractor = formatExtractor[Declination](Declination.fromStringSignedDMS)
 
     EitherT {
       Sync[F].delay {
@@ -111,13 +111,13 @@ object GHOST {
         } yield {
           val hrifu2Name = hrifu2RAHMS.as("Sky")
           GHOSTConfig(
-            baseRAHMS, baseDecDMS, 1.minute,
-            srifu1Name, srifu1RAHMS, srifu1DecHDMS,
-            srifu2Name, srifu2RAHMS, srifu2DecHDMS,
-            hrifu1Name, hrifu1RAHMS, hrifu1DecHDMS,
-            hrifu2Name, hrifu2RAHMS, hrifu2DecHDMS)}
-          )
-          .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
+            (baseRAHMS, baseDecDMS).mapN(Coordinates.apply),
+            1.minute,
+            srifu1Name, (srifu1RAHMS, srifu1DecHDMS).mapN(Coordinates.apply),
+            srifu2Name, (srifu2RAHMS, srifu2DecHDMS).mapN(Coordinates.apply),
+            hrifu1Name, (hrifu1RAHMS, hrifu1DecHDMS).mapN(Coordinates.apply),
+            hrifu2Name, (hrifu2RAHMS, hrifu2DecHDMS).mapN(Coordinates.apply))}
+          ).leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
       }
     }
   }

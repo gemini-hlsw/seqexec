@@ -7,7 +7,7 @@ import cats.data.EitherT
 import cats.implicits._
 import cats.{Eq, Show}
 import cats.effect.Sync
-import gem.math.{Angle, HourAngle}
+import gem.math.Coordinates
 import giapi.client.commands.{CommandResult, CommandResultException, Configuration}
 import giapi.client.ghost.GHOSTClient
 import seqexec.model.dhs.ImageFileId
@@ -33,24 +33,23 @@ final case class GHOSTController[F[_]: Sync](ghostClient: GHOSTClient[F],
   // Right now, this only generate a config if the name, RA, and dec are defined: otherwise, we get the empty config.
   private def ifuConfig(ifuNum: IFUNum,
                         nameOpt: Option[String],
-                        raOpt: Option[HourAngle],
-                        decOpt: Option[Angle],
+                        coordsOpt: Option[Coordinates],
                         bundleConfig: BundleConfig): Configuration = {
     def cfg[P: Show](paramName: String, paramVal: P) =
       Configuration.single(s"${ifuNum.ifuStr}.$paramName", paramVal)
 
-    (raOpt, decOpt) match {
+    coordsOpt match {
       // Case 1: IFU is in use here for an actual position.
-      case (Some(ra), Some(dec)) if nameOpt.isDefined =>
+      case Some(coords) if nameOpt.isDefined =>
         val ifuTargetType = IFUTargetType.determineType(nameOpt)
         cfg("target", ifuTargetType.targetType) |+|
           cfg("type", DemandType.DemandRADec.demandType) |+|
-          cfg("ra", ra.toDoubleDegrees) |+|
-          cfg("dec", dec.toDoubleDegrees) |+|
+          cfg("ra", coords.ra.toHourAngle.toDoubleDegrees) |+|
+          cfg("dec", coords.dec.toAngle.toSignedDoubleDegrees) |+|
           cfg("bundle", bundleConfig.determineType(ifuTargetType).configName)
 
       // Case 2: IFU is explicitly excluded from use.
-      case (None, None) if nameOpt.isDefined =>
+      case None if nameOpt.isDefined =>
         cfg("target", IFUTargetType.NoTarget.targetType) |+|
           cfg("type", DemandType.DemandPark.demandType)
 
@@ -61,18 +60,14 @@ final case class GHOSTController[F[_]: Sync](ghostClient: GHOSTClient[F],
   }
 
   private def ifu1Config(config: GHOSTConfig): Configuration = {
-    val srConfig = ifuConfig(IFUNum.IFU1, config.srifu1Name, config.srifu1CoordsRAHMS,
-      config.srifu1CoordsDecDMS, BundleConfig.Standard)
-    val hrConfig = ifuConfig(IFUNum.IFU2, config.hrifu1Name, config.hrifu1CoordsRAHMS,
-      config.hrifu1CoordsDecDMS, BundleConfig.HighRes)
+    val srConfig = ifuConfig(IFUNum.IFU1, config.srifu1Name, config.srifu1Coords, BundleConfig.Standard)
+    val hrConfig = ifuConfig(IFUNum.IFU2, config.hrifu1Name, config.hrifu1Coords, BundleConfig.HighRes)
     srConfig |+| hrConfig
   }
 
   private def ifu2Config(config: GHOSTConfig): Configuration = {
-    val srConfig = ifuConfig(IFUNum.IFU2, config.srifu2Name, config.srifu2CoordsRAHMS,
-      config.srifu2CoordsDecDMS, BundleConfig.Standard)
-    val hrConfig = ifuConfig(IFUNum.IFU2, config.hrifu2Name, config.srifu2CoordsRAHMS, config.srifu2CoordsDecDMS,
-      BundleConfig.HighRes)
+    val srConfig = ifuConfig(IFUNum.IFU2, config.srifu2Name, config.srifu2Coords, BundleConfig.Standard)
+    val hrConfig = ifuConfig(IFUNum.IFU2, config.hrifu2Name, config.srifu2Coords, BundleConfig.HighRes)
     srConfig |+| hrConfig
   }
 
@@ -173,41 +168,31 @@ object GHOSTController {
     * will force others to be None. Eventually, we will want to represent all the target information in a type-safe
     * way that GHOST uses in the ODB.
     */
-  final case class GHOSTConfig(baseRAHMS: Option[HourAngle],
-                               baseDecDMS: Option[Angle],
+  final case class GHOSTConfig(baseCoords: Option[Coordinates],
                                expTime: Duration,
                                srifu1Name: Option[String],
-                               srifu1CoordsRAHMS: Option[HourAngle],
-                               srifu1CoordsDecDMS: Option[Angle],
+                               srifu1Coords: Option[Coordinates],
                                srifu2Name: Option[String],
-                               srifu2CoordsRAHMS: Option[HourAngle],
-                               srifu2CoordsDecDMS: Option[Angle],
+                               srifu2Coords: Option[Coordinates],
                                hrifu1Name: Option[String],
-                               hrifu1CoordsRAHMS: Option[HourAngle],
-                               hrifu1CoordsDecDMS: Option[Angle],
+                               hrifu1Coords: Option[Coordinates],
                                hrifu2Name: Option[String],
-                               hrifu2CoordsRAHMS: Option[HourAngle],
-                               hrifu2CoordsDecDMS: Option[Angle])
+                               hrifu2Coords: Option[Coordinates])
 
   object GHOSTConfig {
     private implicit val durationEq: Eq[Duration] = Eq.by(_.toMillis)
     implicit val eq: Eq[GHOSTConfig] = Eq.by(
       x =>
-        (x.baseRAHMS,
-          x.baseDecDMS,
+        (x.baseCoords,
           x.expTime,
           x.srifu1Name,
-          x.srifu1CoordsRAHMS,
-          x.srifu1CoordsDecDMS,
+          x.srifu1Coords,
           x.srifu2Name,
-          x.srifu2CoordsRAHMS,
-          x.srifu2CoordsDecDMS,
+          x.srifu2Coords,
           x.hrifu1Name,
-          x.hrifu1CoordsRAHMS,
-          x.hrifu1CoordsDecDMS,
+          x.hrifu1Coords,
           x.hrifu2Name,
-          x.hrifu2CoordsRAHMS,
-          x.hrifu2CoordsDecDMS))
+          x.hrifu2Coords))
 
     implicit val show: Show[GHOSTConfig] = Show.fromToString
   }

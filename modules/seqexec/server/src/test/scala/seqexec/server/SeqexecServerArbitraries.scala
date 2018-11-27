@@ -7,7 +7,7 @@ import edu.gemini.seqexec.server.tcs.{BinaryOnOff, BinaryYesNo}
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams
 import gem.arb.ArbTime
-import gem.arb.ArbAngle._
+import gem.arb.ArbCoordinates._
 import gem.arb.ArbEnumerated._
 import gem.Observation
 import gem.enum.KeywordName
@@ -34,7 +34,7 @@ import edu.gemini.spModel.gemini.gpi.Gpi.{Lyot => LegacyLyot}
 import edu.gemini.spModel.gemini.gpi.Gpi.{ObservingMode => LegacyObservingMode}
 import edu.gemini.spModel.gemini.gpi.Gpi.{PupilCamera => LegacyPupilCamera}
 import edu.gemini.spModel.gemini.gpi.Gpi.{Shutter => LegacyShutter}
-import gem.math.{Angle, HourAngle}
+import gem.math.Coordinates
 import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, Cogen, Gen}
 import squants.space.LengthConversions._
@@ -245,32 +245,28 @@ object SeqexecServerArbitraries extends ArbTime {
 
   implicit val ghostConfigArb: Arbitrary[GHOSTController.GHOSTConfig] = Arbitrary {
     for {
-      baseRA <- arbitrary[HourAngle]
-      baseDec <- arbitrary[Angle]
+      basePos    <- arbitrary[Coordinates]
       srifu1name <- arbitrary[String]
-      srifu1RA <- arbitrary[HourAngle]
-      srifu1Dec <- arbitrary[Angle]
+      srifu1Pos  <- arbitrary[Coordinates]
       srifu2name <- arbitrary[String]
-      srifu2RA <- arbitrary[HourAngle]
-      srifu2Dec <- arbitrary[Angle]
-    } yield GHOSTConfig(Some(baseRA), Some(baseDec), 60.seconds,
-      Some(srifu1name), Some(srifu1RA), Some(srifu1Dec),
-      Some(srifu2name), Some(srifu1RA), Some(srifu1Dec),
-      None, None, None,
-      None, None, None)
+      srifu2Pos  <- arbitrary[Coordinates]
+    } yield GHOSTConfig(Some(basePos), 60.seconds,
+      Some(srifu1name), Some(srifu1Pos),
+      Some(srifu2name), Some(srifu2Pos),
+      None, None, None, None)
     }
 
   implicit val ghostCogen: Cogen[GHOSTController.GHOSTConfig] =
-    Cogen[(Option[HourAngle], Option[Angle], Duration,
-      Option[String], Option[HourAngle], Option[Angle],
-      Option[String], Option[HourAngle], Option[Angle],
-      Option[String], Option[HourAngle], Option[Angle],
-      Option[String], Option[HourAngle], Option[Angle])]
-    .contramap(x => (x.baseRAHMS, x.baseDecDMS, x.expTime,
-      x.srifu2Name, x.srifu1CoordsRAHMS, x.srifu1CoordsDecDMS,
-      x.srifu2Name, x.srifu2CoordsRAHMS, x.srifu2CoordsDecDMS,
-      x.hrifu1Name, x.hrifu1CoordsRAHMS, x.hrifu1CoordsDecDMS,
-      x.hrifu2Name, x.hrifu2CoordsRAHMS, x.hrifu2CoordsDecDMS
+    Cogen[(Option[Coordinates], Duration,
+      Option[String], Option[Coordinates],
+      Option[String], Option[Coordinates],
+      Option[String], Option[Coordinates],
+      Option[String], Option[Coordinates])]
+    .contramap(x => (x.baseCoords, x.expTime,
+      x.srifu2Name, x.srifu1Coords,
+      x.srifu2Name, x.srifu2Coords,
+      x.hrifu1Name, x.hrifu1Coords,
+      x.hrifu2Name, x.hrifu2Coords
     ))
 
   implicit val keywordTypeArb: Arbitrary[KeywordType] = Arbitrary {
