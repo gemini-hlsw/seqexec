@@ -9,6 +9,7 @@ import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.extra.Reusability
+import scala.collection.immutable.SortedMap
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.ActionStatus
 import seqexec.model.enum.Resource
@@ -19,6 +20,7 @@ import seqexec.model.Step
 import seqexec.model.StepId
 import seqexec.model.SequenceState
 import seqexec.web.client.model.ClientStatus
+import seqexec.web.client.model.ResourceRunOperation
 import seqexec.web.client.model.ModelOps._
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.semanticui.elements.icon.Icon
@@ -31,11 +33,19 @@ import web.client.style._
   * Component to display the step state and control
   */
 object StepProgressCell {
-  final case class Props(clientStatus: ClientStatus,
-                         instrument:   Instrument,
-                         obsId:        Observation.Id,
-                         state:        SequenceState,
-                         step:         Step)
+  final case class Props(
+    clientStatus:         ClientStatus,
+    instrument:           Instrument,
+    obsId:                Observation.Id,
+    state:                SequenceState,
+    step:                 Step,
+    selectedStep:         Option[StepId],
+    isPreview:            Boolean,
+    resourceRunRequested: SortedMap[Resource, ResourceRunOperation]) {
+
+    def stepSelected(i: StepId): Boolean =
+      selectedStep.exists(_ === i) && !isPreview && clientStatus.isLogged
+  }
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
@@ -130,6 +140,26 @@ object StepProgressCell {
         .when(controlButtonsActive(props))
     )
 
+  def stepSubsystemControl(props: Props): VdomElement =
+    <.div(
+      SeqexecStyles.configuringRow,
+      <.div(
+        SeqexecStyles.specialStateLabel,
+        props.state.show
+      ),
+      props.step match {
+        case step: StandardStep =>
+          SubsystemControlCell(
+            SubsystemControlCell
+              .Props(props.obsId,
+                     step.id,
+                     step.configStatus.map(_._1),
+                     props.resourceRunRequested))
+        case _ =>
+          <.div()
+      }
+    )
+
   def stepPaused(props: Props): VdomElement =
     <.div(
       SeqexecStyles.configuringRow,
@@ -161,7 +191,10 @@ object StepProgressCell {
           _,
           StandardStep(_, _, StepState.Completed, _, _, Some(fileId), _, _)) =>
         <.p(SeqexecStyles.componentLabel, fileId)
-      case (_, _) =>
+      case (_, StandardStep(i, _, StepState.Pending, _, _, _, _, _))
+          if props.stepSelected(i) =>
+        stepSubsystemControl(props)
+      case _ =>
         <.p(SeqexecStyles.componentLabel, props.step.show)
     }
 
