@@ -100,7 +100,7 @@ class SequenceSpec extends FlatSpec {
     val qs1 = runToCompletion(qs0)
 
     inside (qs1.map(_.sequences(seqId))) {
-      case Some(Sequence.State.Zipper(zipper, status)) =>
+      case Some(Sequence.State.Zipper(zipper, status, _)) =>
         assert(zipper.done.length == 1 && zipper.pending.isEmpty)
         status should be (SequenceState.Idle)
     }
@@ -127,7 +127,7 @@ class SequenceSpec extends FlatSpec {
 
     // Check that there is something left to run
     inside (qs1.map(_.sequences(seqId))) {
-      case Some(Sequence.State.Zipper(zipper, _)) =>
+      case Some(Sequence.State.Zipper(zipper, _, _)) =>
         assert(zipper.pending.nonEmpty)
     }
 
@@ -185,6 +185,106 @@ class SequenceSpec extends FlatSpec {
     assert(seqzr2.next.isEmpty)
     assert(seqzar0.next.isEmpty)
     assert(seqzar1.next.nonEmpty)
+  }
+
+  "startSingle" should "mark a single Action as started" in {
+    val seq = Sequence.State.init(
+      Sequence(
+          id = seqId,
+          steps = List(simpleStep(1, breakpoint = false), simpleStep(2, breakpoint = false))
+        )
+      )
+
+    val c = ActionCoordsInSeq(1, ExecutionIndex(0), ActionIndex(1))
+
+    assert(seq.startSingle(c).getSingleState(c) === Action.Started)
+
+  }
+
+  it should "not start single Action from completed Step" in {
+    val seq1 = Sequence.State.init(
+      Sequence(
+        id = seqId,
+        steps = List(
+          Step.init(
+            id = 1,
+            executions = List(
+              List(completedAction, completedAction), // Execution
+              List(completedAction) // Execution
+            )
+          ),
+          Step.init(
+            id = 2,
+            executions = List(
+              List(action, action), // Execution
+              List(action) // Execution
+            )
+          )
+        )
+      )
+    )
+    val seq2 = Sequence.State.Final(
+      Sequence(
+        id = seqId,
+        steps = List(
+          Step.init(
+            id = 1,
+            executions = List(
+              List(completedAction, completedAction), // Execution
+              List(completedAction) // Execution
+            )
+          )
+        )
+      ),
+      SequenceState.Completed
+    )
+    val c1 = ActionCoordsInSeq(1, ExecutionIndex(0), ActionIndex(0))
+
+    assert(seq1.startSingle(c1).getSingleState(c1).isIdle)
+    assert(seq2.startSingle(c1).getSingleState(c1).isIdle)
+
+  }
+
+  "failSingle" should "mark a single running Action as failed" in {
+    val c = ActionCoordsInSeq(1, ExecutionIndex(0), ActionIndex(0))
+    val seq = Sequence.State.init(
+      Sequence(
+        id = seqId,
+        steps = List(
+          Step.init(
+            id = 1,
+            executions = List(
+              List(action, action), // Execution
+              List(action) // Execution
+            )
+          )
+        )
+      )
+    ).startSingle(c)
+    val c2 = ActionCoordsInSeq(1, ExecutionIndex(1), ActionIndex(0))
+
+    assert(seq.failSingle(c, Result.Error("")).getSingleState(c).errored)
+    assert(seq.failSingle(c2, Result.Error("")).getSingleState(c2).isIdle)
+  }
+
+  "completeSingle" should "mark a single running Action as failed" in {
+    val c = ActionCoordsInSeq(1, ExecutionIndex(0), ActionIndex(0))
+    val seq = Sequence.State.init(
+      Sequence(
+        id = seqId,
+        steps = List(
+          Step.init(
+            id = 1,
+            executions = List(
+              List(action, action), // Execution
+              List(action) // Execution
+            )
+          )
+        )
+      )
+    ).startSingle(c)
+
+    assert(seq.completeSingle(c).getSingleState(c).isIdle)
   }
 
 }
