@@ -7,7 +7,7 @@ import cats.data.EitherT
 import cats.implicits._
 import cats.{Eq, Show}
 import cats.effect.Sync
-import gem.math.{Angle, HourAngle}
+import gem.math.{Angle, Declination, HourAngle, RightAscension}
 import giapi.client.commands.{CommandResult, CommandResultException, Configuration}
 import giapi.client.ghost.GHOSTClient
 import seqexec.model.dhs.ImageFileId
@@ -33,8 +33,8 @@ final case class GHOSTController[F[_]: Sync](ghostClient: GHOSTClient[F],
   // Right now, this only generate a config if the name, RA, and dec are defined: otherwise, we get the empty config.
   private def ifuConfig(ifuNum: IFUNum,
                         nameOpt: Option[String],
-                        raOpt: Option[HourAngle],
-                        decOpt: Option[Angle],
+                        raOpt: Option[RightAscension],
+                        decOpt: Option[Declination],
                         bundleConfig: BundleConfig): Configuration = {
     def cfg[P: Show](paramName: String, paramVal: P) =
       Configuration.single(s"${ifuNum.ifuStr}.$paramName", paramVal)
@@ -45,7 +45,7 @@ final case class GHOSTController[F[_]: Sync](ghostClient: GHOSTClient[F],
         val ifuTargetType = IFUTargetType.determineType(nameOpt)
         cfg("target", ifuTargetType.targetType) |+|
           cfg("type", DemandType.DemandRADec.demandType) |+|
-          cfg("ra", ra.toDoubleDegrees) |+|
+          cfg("ra", ra.) |+|
           cfg("dec", dec.toDoubleDegrees) |+|
           cfg("bundle", bundleConfig.determineType(ifuTargetType).configName)
 
