@@ -25,7 +25,7 @@ import seqexec.engine.Handle
 import seqexec.model._
 import seqexec.model.enum._
 import seqexec.model.events._
-import seqexec.model.{ActionType, UserDetails}
+import seqexec.model.{ActionType, UserDetails, StepId}
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.keywords._
 import seqexec.server.flamingos2.{Flamingos2ControllerEpics, Flamingos2ControllerSim, Flamingos2ControllerSimBad, Flamingos2Epics}
@@ -129,7 +129,7 @@ class SeqexecEngine(httpClient: Client[IO], settings: Settings[IO], sm: SeqexecM
   def setBreakpoint(q: EventQueue,
                     seqId: Observation.Id,
                     user: UserDetails,
-                    stepId: seqexec.engine.Step.Id,
+                    stepId: StepId,
                     v: Boolean): IO[Either[SeqexecFailure, Unit]] =
     q.enqueue1(Event.breakpoint(seqId, user, stepId, v)).map(_.asRight)
 
@@ -194,7 +194,7 @@ class SeqexecEngine(httpClient: Client[IO], settings: Settings[IO], sm: SeqexecM
   def setSkipMark(q: EventQueue,
                   seqId: Observation.Id,
                   user: UserDetails,
-                  stepId: seqexec.engine.Step.Id,
+                  stepId: StepId,
                   v: Boolean): IO[Either[SeqexecFailure, Unit]] =
     q.enqueue1(Event.skip(seqId, user, stepId, v)).map(_.asRight)
 
@@ -876,6 +876,8 @@ object SeqexecEngine extends SeqexecConfiguration {
         svs)
       case engine.BreakpointReached(id)                                    => SequencePaused(id,
         svs)
+      case engine.SingleRunCompleted(_, _)                                 => NullEvent
+      case engine.SingleRunFailed(_, _)                                    => NullEvent
     }
   }
 

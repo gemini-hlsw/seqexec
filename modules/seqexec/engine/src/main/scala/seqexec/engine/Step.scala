@@ -3,8 +3,7 @@
 
 package seqexec.engine
 
-import seqexec.model.StepState
-
+import seqexec.model.{StepId, StepState}
 import cats.implicits._
 import monocle.Lens
 import monocle.macros.GenLens
@@ -13,23 +12,21 @@ import monocle.macros.GenLens
   * A list of `Executions` grouped by observation.
   */
 final case class Step[F[_]](
-  id: Step.Id,
-  breakpoint: Step.BreakpointMark,
-  skipped: Step.Skipped,
-  skipMark: Step.SkipMark,
-  executions: List[List[Action[F]]]
+                             id: StepId,
+                             breakpoint: Step.BreakpointMark,
+                             skipped: Step.Skipped,
+                             skipMark: Step.SkipMark,
+                             executions: List[List[Action[F]]]
 )
 
 object Step {
-
-  type Id = Int
 
   final case class BreakpointMark(self: Boolean) extends AnyVal
   final case class SkipMark(self: Boolean) extends AnyVal
   final case class Skipped(self: Boolean) extends AnyVal
 
-  def init[F[_]](id: Id,
-           executions: List[List[Action[F]]]): Step[F] = Step(id, BreakpointMark(false),
+  def init[F[_]](id: StepId,
+                 executions: List[List[Action[F]]]): Step[F] = Step(id, BreakpointMark(false),
     Skipped(false), SkipMark(false), executions)
 
   /**
@@ -44,7 +41,7 @@ object Step {
         case Action.Failed(Result.Error(msg)) => msg.some
         case _                                => None
         // Return error or continue with the rest of the checks
-      }}.map(StepState.Failed).getOrElse(
+      }}.map[StepState](StepState.Failed).getOrElse(
         // All actions in this Step were completed successfully, or the Step is empty.
         if (step.executions.flatten.forall(Action.completed)) StepState.Completed
         else if (step.executions.flatten.forall(_.state.runState.isIdle)) StepState.Pending
