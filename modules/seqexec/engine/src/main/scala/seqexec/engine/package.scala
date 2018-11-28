@@ -20,6 +20,39 @@ package engine {
 
     sealed trait ActionState {
       def isIdle: Boolean = false
+
+      def errored: Boolean = this match {
+        case Action.Failed(_) => true
+        case _                => false
+      }
+
+      def finished: Boolean = this match {
+        case Action.Failed(_)    => true
+        case Action.Completed(_) => true
+        case _                   => false
+      }
+
+      def completed: Boolean = this match {
+        case Action.Completed(_) => true
+        case _                   => false
+      }
+
+      def paused: Boolean = this match {
+        case Action.Paused(_) => true
+        case _                => false
+      }
+
+      def active: Boolean = this match {
+        case Action.Paused(_) |
+             Action.Started     => true
+        case _                  => false
+      }
+
+      def started: Boolean = this match {
+        case Action.Started => true
+        case _              => false
+      }
+
     }
 
     case object Idle extends ActionState {
@@ -30,26 +63,15 @@ package engine {
     final case class Completed[V <: RetVal](r: V) extends ActionState
     final case class Failed(e: Error) extends ActionState
 
-    def errored[F[_]](ar: Action[F]): Boolean = ar.state.runState match {
-      case Action.Failed(_) => true
-      case _                => false
-    }
+    def errored[F[_]](ar: Action[F]): Boolean = ar.state.runState.errored
 
-    def finished[F[_]](ar: Action[F]): Boolean = ar.state.runState match {
-      case Action.Failed(_)    => true
-      case Action.Completed(_) => true
-      case _                   => false
-    }
+    def finished[F[_]](ar: Action[F]): Boolean = ar.state.runState.finished
 
-    def completed[F[_]](ar: Action[F]): Boolean = ar.state.runState match {
-      case Action.Completed(_) => true
-      case _                   => false
-    }
+    def completed[F[_]](ar: Action[F]): Boolean = ar.state.runState.completed
 
-    def paused[F[_]](ar: Action[F]): Boolean = ar.state.runState match {
-      case Action.Paused(_) => true
-      case _                => false
-    }
+    def paused[F[_]](ar: Action[F]): Boolean = ar.state.runState.paused
+
+    def active[F[_]](ar: Action[F]): Boolean = ar.state.runState.active
   }
 
 }

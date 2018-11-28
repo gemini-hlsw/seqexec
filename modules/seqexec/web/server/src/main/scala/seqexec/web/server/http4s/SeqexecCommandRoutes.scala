@@ -9,6 +9,8 @@ import gem.Observation
 import org.http4s._
 import org.http4s.dsl.io._
 import org.http4s.server.middleware.GZip
+import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext.Implicits.global
 import seqexec.server.SeqexecEngine
 import seqexec.server
 import seqexec.model.enum.CloudCover
@@ -169,6 +171,11 @@ class SeqexecCommandRoutes(auth:       AuthenticationService,
     case POST -> Root / "queue" / QueueIdVar(qid) / "stop" / ClientIDVar(clientId) as _ =>
       se.stopQueue(inputQueue, qid, clientId) *>
         Ok(s"Stopped from queue $qid")
+
+    case POST -> Root / "execute" / ObsIdVar(oid) / PosIntVar(step) / ResourceVar(resource) as _ =>
+      // Just simulate a delay
+      IO.sleep(2.seconds)(IO.timer(global)) *>
+        Ok(s"Run ${resource.show} from config at ${oid.format}/$step")
 
   }
 

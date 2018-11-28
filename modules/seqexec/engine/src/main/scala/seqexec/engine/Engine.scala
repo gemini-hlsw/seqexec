@@ -9,7 +9,7 @@ import cats.effect.{ Concurrent, IO }
 import cats.implicits._
 import seqexec.engine.Event._
 import seqexec.engine.Result.{PartialVal, PauseContext, RetVal}
-import seqexec.model.{ClientId, SequenceState}
+import seqexec.model.{ClientId, SequenceState, StepId}
 import fs2.Stream
 import gem.Observation
 import monocle.Optional
@@ -64,11 +64,40 @@ class Engine[D, U](stateL: Engine.State[D]) {
   def reload(seq: Sequence.State[IO], steps: List[Step[IO]]): Sequence.State[IO] =
     Sequence.State.reload(steps, seq)
 
+  def startSingle(c: ActionCoords): HandleType[EventResult.Outcome] = get.flatMap { st =>
+    val x = for {
+      seq <- stateL.sequenceStateIndex(c.sid).getOption(st)
+      if (seq.status.isIdle || seq.status.isError) && !seq.getSingleState(c.actCoords).active
+      act <- seq.getSingleAction(c.actCoords)
+    } yield act.gen
+
+    x.map(p =>
+      modifyS(c.sid)(_.startSingle(c.actCoords)) *>
+      Handle.fromStream[D, EventType](
+        p.map{
+          case r@Result.OK(_)    => singleRunCompleted(c, r)
+          case e@Result.Error(_) => singleRunFailed(c, e)
+          case r                 =>
+            singleRunFailed(c, Result.Error(s"Unhandled result for single run action: $r"))
+        }
+      ).map[EventResult.Outcome](_ => EventResult.Ok)
+    ).getOrElse(pure[EventResult.Outcome](EventResult.Failure))
+
+  }
+
+  private def completeSingleRun(c: ActionCoords): HandleType[Unit] = modifyS(c.sid)(
+    _.completeSingle(c.actCoords)
+  )
+
+  private def failSingleRun(c: ActionCoords, e: Result.Error): HandleType[Unit] = modifyS(c.sid)(
+    _.failSingle(c.actCoords, e)
+  )
+
   /**
     * Tells if a sequence can be safely removed
     */
   def canUnload(id: Observation.Id)(st: D): Boolean =
-    stateL.sequenceStateIndex(id).getOption(st).map(!Sequence.State.isRunning(_)).getOrElse(true)
+    stateL.sequenceStateIndex(id).getOption(st).forall(!Sequence.State.isRunning(_))
 
   /**
     * Refresh the steps executions of an existing sequence. Does not add nor remove steps.
@@ -123,7 +152,7 @@ class Engine[D, U](stateL: Engine.State[D]) {
     */
   // Send the expected event when the `Action` is executed
   // It doesn't catch run time exceptions. If desired, the Action has to do it itself.
-  private def act(id: Observation.Id, stepId: Step.Id, t: (Stream[IO, Result], Int))
+  private def act(id: Observation.Id, stepId: StepId, t: (Stream[IO, Result], Int))
   : Stream[IO, EventType] = t match {
     case (gen, i) =>
       gen.map {
@@ -140,7 +169,7 @@ class Engine[D, U](stateL: Engine.State[D]) {
       case seq@Sequence.State.Final(_, _)  =>
         // The sequence is marked as completed here
         putS(id)(seq) *> send(finished(id))
-      case seq@Sequence.State.Zipper(z, _) =>
+      case seq@Sequence.State.Zipper(z, _, _) =>
         val stepId = z.focus.toStep.id
         val u: List[Stream[IO, EventType]] = seq.current.actions.map(_.gen).zipWithIndex.map(x =>
           act(id, stepId, x))
@@ -174,8 +203,8 @@ class Engine[D, U](stateL: Engine.State[D]) {
   private def actionResume(id: Observation.Id, i: Int, cont: Stream[IO, Result])
   : HandleType[Unit] =
     getS(id).flatMap(_.collect {
-      case s@Sequence.State.Zipper(z, _)
-        if (Sequence.State.isRunning(s) && s.current.execution.lift(i).exists(Action.paused)) =>
+      case s@Sequence.State.Zipper(z, _, _)
+        if Sequence.State.isRunning(s) && s.current.execution.lift(i).exists(Action.paused) =>
           modifyS(id)(_.start(i)) *> Handle.fromStream(act(id, z.focus.toStep.id, (cont, i)))
   }.getOrElse(unit))
 
@@ -223,55 +252,61 @@ class Engine[D, U](stateL: Engine.State[D]) {
     */
   private def send(ev: EventType): HandleType[Unit] = Handle.fromStream(Stream(ev))
 
+  private def handleUserEvent(ue: UserEventType): HandleType[ResultType] = ue match {
+    case Start(id, _, clid, userCheck) => Logger.debug(s"Engine: Start requested for sequence ${id.format}") *> start(id, clid, userCheck) *> pure(UserCommandResponse(ue, EventResult.Ok, None))
+    case Pause(id, _)                  => Logger.debug(s"Engine: Pause requested for sequence ${id.format}") *> pause(id) *> pure(UserCommandResponse(ue, EventResult.Ok, None))
+    case CancelPause(id, _)            => Logger.debug(s"Engine: Pause canceled for sequence ${id.format}") *> cancelPause(id) *> pure(UserCommandResponse(ue, EventResult.Ok, None))
+    case Breakpoint(id, _, step, v)    => Logger.debug(s"Engine: breakpoint changed for sequence ${id.format} and step $step to $v") *>
+      modifyS(id)(_.setBreakpoint(step, v)) *> pure(UserCommandResponse(ue, EventResult.Ok, None))
+    case SkipMark(id, _, step, v)      => Logger.debug(s"Engine: skip mark changed for sequence ${id.format} and step $step to $v") *>
+      modifyS(id)(_.setSkipMark(step, v)) *> pure(UserCommandResponse(ue, EventResult.Ok, None))
+    case Poll(_)                       => Logger.debug("Engine: Polling current state") *> pure(UserCommandResponse(ue, EventResult.Ok, None))
+    case GetState(f)                   => getState(f) *> pure(UserCommandResponse(ue, EventResult.Ok, None))
+    case ModifyState(f)                => f.map(r => UserCommandResponse[ConcreteTypes](ue, EventResult.Ok, Some(r)))
+    case ActionStop(id, f)             => Logger.debug("Engine: Action stop requested") *> actionStop(id, f) *> pure(UserCommandResponse(ue, EventResult.Ok, None))
+    case ActionResume(id, i, cont)     => Logger.debug("Engine: Action resume requested") *> actionResume(id, i, cont) *> pure(UserCommandResponse(ue, EventResult.Ok, None))
+    case LogDebug(msg)                 => Logger.debug(msg) *> pure(UserCommandResponse(ue, EventResult.Ok, None))
+    case LogInfo(msg)                  => Logger.info(msg) *> pure(UserCommandResponse(ue, EventResult.Ok, None))
+    case LogWarning(msg)               => Logger.warning(msg) *> pure(UserCommandResponse(ue, EventResult.Ok, None))
+    case LogError(msg)                 => Logger.error(msg) *> pure(UserCommandResponse(ue, EventResult.Ok, None))
+  }
+
+  private def handleSystemEvent(se: SystemEvent)(implicit ci: Concurrent[IO]): HandleType[ResultType] = se match {
+    case Completed(id, _, i, r)        => Logger.debug(
+      s"Engine: From sequence ${id.format}: Action completed ($r)") *> complete(id, i, r) *>
+      pure(SystemUpdate(se, EventResult.Ok))
+    case PartialResult(id, _, i, r) => Logger.debug(
+      s"Engine: From sequence ${id.format}: Partial result ($r)")  *> partialResult(id, i, r) *>
+      pure(SystemUpdate(se, EventResult.Ok))
+    case Paused(id, i, r)           => Logger.debug("Engine: Action paused") *>
+      actionPause(id, i, r) *> pure(SystemUpdate(se, EventResult.Ok))
+    case Failed(id, i, e)           => logError(e) *> fail(id)(i, e) *>
+      pure(SystemUpdate(se, EventResult.Ok))
+    case Busy(id, _)                => Logger.warning(s"Cannot run sequence ${id.format} " +
+      s"because " +
+      s"required systems are in use.") *> pure(SystemUpdate(se, EventResult.Ok))
+    case BreakpointReached(_)       => Logger.debug("Engine: Breakpoint reached") *>
+      pure(SystemUpdate(se, EventResult.Ok))
+    case Executed(id)               => Logger.debug("Engine: Execution completed") *>
+      next(id) *> pure(SystemUpdate(se, EventResult.Ok))
+    case Executing(id)              => Logger.debug("Engine: Executing") *>
+      execute(id) *> pure(SystemUpdate(se, EventResult.Ok))
+    case Finished(id)               => Logger.debug("Engine: Finished") *>
+      switch(id)(SequenceState.Completed) *> pure(SystemUpdate(se, EventResult.Ok))
+    case SingleRunCompleted(c, r)   =>
+      Logger.debug(s"Engine: single action $c completed with result $r") *>
+        completeSingleRun(c) *> pure(SystemUpdate(se, EventResult.Ok))
+    case SingleRunFailed(c, e)      =>
+      Logger.debug(s"Engine: single action $c failed with error $e") *>
+        failSingleRun(c, e) *> pure(SystemUpdate(se, EventResult.Ok))
+    case Null                       => pure(SystemUpdate(se, EventResult.Ok))
+  }
+
   /**
     * Main logical thread to handle events and produce output.
     */
   @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
   private def run(userReact: PartialFunction[SystemEvent, HandleType[Unit]])(ev: EventType)(implicit ci: Concurrent[IO]): HandleType[ResultType] = {
-    def handleUserEvent(ue: UserEventType): HandleType[ResultType] = ue match {
-      case Start(id, _, clid, userCheck) => Logger.debug(s"Engine: Start requested for sequence ${id.format}") *> start(id, clid, userCheck) *> pure(UserCommandResponse(ue, EventResult.Ok, None))
-      case Pause(id, _)                  => Logger.debug(s"Engine: Pause requested for sequence ${id.format}") *> pause(id) *> pure(UserCommandResponse(ue, EventResult.Ok, None))
-      case CancelPause(id, _)            => Logger.debug(s"Engine: Pause canceled for sequence ${id.format}") *> cancelPause(id) *> pure(UserCommandResponse(ue, EventResult.Ok, None))
-      case Breakpoint(id, _, step, v)    => Logger.debug(s"Engine: breakpoint changed for sequence ${id.format} and step $step to $v") *>
-        modifyS(id)(_.setBreakpoint(step, v)) *> pure(UserCommandResponse(ue, EventResult.Ok, None))
-      case SkipMark(id, _, step, v)      => Logger.debug(s"Engine: skip mark changed for sequence ${id.format} and step $step to $v") *>
-        modifyS(id)(_.setSkipMark(step, v)) *> pure(UserCommandResponse(ue, EventResult.Ok, None))
-      case Poll(_)                       => Logger.debug("Engine: Polling current state") *> pure(UserCommandResponse(ue, EventResult.Ok, None))
-      case GetState(f)                   => getState(f) *> pure(UserCommandResponse(ue, EventResult.Ok, None))
-      case ModifyState(f)                => f.map(r => UserCommandResponse[ConcreteTypes](ue, EventResult.Ok, Some(r)))
-      case ActionStop(id, f)             => Logger.debug("Engine: Action stop requested") *> actionStop(id, f) *> pure(UserCommandResponse(ue, EventResult.Ok, None))
-      case ActionResume(id, i, cont)     => Logger.debug("Engine: Action resume requested") *> actionResume(id, i, cont) *> pure(UserCommandResponse(ue, EventResult.Ok, None))
-      case LogDebug(msg)                 => Logger.debug(msg) *> pure(UserCommandResponse(ue, EventResult.Ok, None))
-      case LogInfo(msg)                  => Logger.info(msg) *> pure(UserCommandResponse(ue, EventResult.Ok, None))
-      case LogWarning(msg)               => Logger.warning(msg) *> pure(UserCommandResponse(ue, EventResult.Ok, None))
-      case LogError(msg)                 => Logger.error(msg) *> pure(UserCommandResponse(ue, EventResult.Ok, None))
-    }
-
-    def handleSystemEvent(se: SystemEvent): HandleType[ResultType] = se match {
-      case Completed(id, _, i, r)        => Logger.debug(
-        s"Engine: From sequence ${id.format}: Action completed ($r)") *> complete(id, i, r) *>
-        pure(SystemUpdate(se, EventResult.Ok))
-      case PartialResult(id, _, i, r) => Logger.debug(
-        s"Engine: From sequence ${id.format}: Partial result ($r)")  *> partialResult(id, i, r) *>
-        pure(SystemUpdate(se, EventResult.Ok))
-      case Paused(id, i, r)           => Logger.debug("Engine: Action paused") *>
-        actionPause(id, i, r) *> pure(SystemUpdate(se, EventResult.Ok))
-      case Failed(id, i, e)           => logError(e) *> fail(id)(i, e) *>
-        pure(SystemUpdate(se, EventResult.Ok))
-      case Busy(id, _)                => Logger.warning(s"Cannot run sequence ${id.format} " +
-        s"because " +
-        s"required systems are in use.") *> pure(SystemUpdate(se, EventResult.Ok))
-      case BreakpointReached(_)       => Logger.debug("Engine: Breakpoint reached") *>
-        pure(SystemUpdate(se, EventResult.Ok))
-      case Executed(id)               => Logger.debug("Engine: Execution completed") *>
-        next(id) *> pure(SystemUpdate(se, EventResult.Ok))
-      case Executing(id)              => Logger.debug("Engine: Executing") *>
-        execute(id) *> pure(SystemUpdate(se, EventResult.Ok))
-      case Finished(id)               => Logger.debug("Engine: Finished") *>
-        switch(id)(SequenceState.Completed) *> pure(SystemUpdate(se, EventResult.Ok))
-      case Null                       => pure(SystemUpdate(se, EventResult.Ok))
-    }
-
     ev match {
       case EventUser(ue)   => handleUserEvent(ue)
       case EventSystem(se) => handleSystemEvent(se).flatMap(x =>

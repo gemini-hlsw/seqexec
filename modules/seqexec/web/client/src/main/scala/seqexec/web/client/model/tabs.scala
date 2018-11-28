@@ -11,6 +11,7 @@ import monocle.Prism
 import monocle.macros.GenPrism
 import monocle.macros.Lenses
 import seqexec.model.Observer
+import seqexec.model.StepId
 import seqexec.model.SequenceState
 import seqexec.model.SequenceView
 import seqexec.model.enum._
@@ -148,8 +149,8 @@ sealed trait SequenceTab extends SeqexecTab {
   }
 
   def isComplete: Boolean = this match {
-    case InstrumentSequenceTab(_, _, Some(_), _, _, _) => true
-    case _                                             => false
+    case InstrumentSequenceTab(_, _, Some(_), _, _, _, _) => true
+    case _                                                => false
   }
 
   def runningStep: Option[RunningStep] = this match {
@@ -163,6 +164,11 @@ sealed trait SequenceTab extends SeqexecTab {
     case _: InstrumentSequenceTab => false
     case p: PreviewSequenceTab    => p.isLoading
   }
+
+  def selectedStep: Option[StepId] = this match {
+    case i: InstrumentSequenceTab => i.selected
+    case _                        => none
+  }
 }
 
 object SequenceTab {
@@ -174,8 +180,8 @@ object SequenceTab {
     }
 
   // Some lenses
-  val stepConfigL: Lens[SequenceTab, Option[Int]] =
-    Lens[SequenceTab, Option[Int]] {
+  val stepConfigL: Lens[SequenceTab, Option[StepId]] =
+    Lens[SequenceTab, Option[StepId]] {
       case t: InstrumentSequenceTab => t.stepConfig
       case t: PreviewSequenceTab    => t.stepConfig
     }(n =>
@@ -192,7 +198,8 @@ final case class InstrumentSequenceTab(
   inst:              Instrument,
   currentSequence:   Option[SequenceView],
   completedSequence: Option[SequenceView],
-  stepConfig:        Option[Int],
+  stepConfig:        Option[StepId],
+  selected:          Option[StepId],
   tableState:        TableState[StepsTable.TableColumn],
   tabOperations:     TabOperations)
     extends SequenceTab
@@ -206,6 +213,7 @@ object InstrumentSequenceTab {
          x.currentSequence,
          x.completedSequence,
          x.stepConfig,
+         x.selectedStep,
          x.tableState,
          x.tabOperations))
 }

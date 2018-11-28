@@ -7,7 +7,7 @@ import cats.data.EitherT
 import cats.implicits._
 import cats.{Eq, Show}
 import cats.effect.Sync
-import gem.math.{Angle, HourAngle}
+import gem.math.Coordinates
 import giapi.client.commands.{CommandResult, CommandResultException, Configuration}
 import giapi.client.ghost.GHOSTClient
 import seqexec.model.dhs.ImageFileId
@@ -33,43 +33,62 @@ final case class GHOSTController[F[_]: Sync](ghostClient: GHOSTClient[F],
   // Right now, this only generate a config if the name, RA, and dec are defined: otherwise, we get the empty config.
   private def ifuConfig(ifuNum: IFUNum,
                         nameOpt: Option[String],
-                        raOpt: Option[HourAngle],
-                        decOpt: Option[Angle],
+                        coordsOpt: Option[Coordinates],
                         bundleConfig: BundleConfig): Configuration = {
     def cfg[P: Show](paramName: String, paramVal: P) =
       Configuration.single(s"${ifuNum.ifuStr}.$paramName", paramVal)
 
-    val config = for {
-      _   <- nameOpt // We only do this because we want Configuration.Zero if there is no target name.
-      ra  <- raOpt
-      dec <- decOpt
-    } yield {
-      cfg("target", IFUTargetType.determineType(nameOpt).targetType) |+|
-        cfg("ra", ra.toDoubleDegrees) |+|
-        cfg("dec", dec.toDoubleDegrees) |+|
-        cfg("bundle", bundleConfig.configName)
-    }
+    coordsOpt match {
+      // Case 1: IFU is in use here for an actual position.
+      case Some(coords) if nameOpt.isDefined =>
+        val ifuTargetType = IFUTargetType.determineType(nameOpt)
+        cfg("target", ifuTargetType.targetType) |+|
+          cfg("type", DemandType.DemandRADec.demandType) |+|
+          cfg("ra", coords.ra.toHourAngle.toDoubleDegrees) |+|
+          cfg("dec", coords.dec.toAngle.toSignedDoubleDegrees) |+|
+          cfg("bundle", bundleConfig.determineType(ifuTargetType).configName)
 
-    config.getOrElse(Configuration.Zero)
+      // Case 2: IFU is explicitly excluded from use.
+      case None if nameOpt.isDefined =>
+        cfg("target", IFUTargetType.NoTarget.targetType) |+|
+          cfg("type", DemandType.DemandPark.demandType)
+
+      // Case 3: IFU is not in this mode. Look to other mode (e.g. high res).
+      case _ =>
+        Configuration.Zero
+    }
   }
 
-  private def srifuConfig(config: GHOSTConfig): Configuration =
-    ifuConfig(IFUNum.IFU1, config.srifu1Name, config.srifu1CoordsRAHMS,
-      config.srifu1CoordsDecDMS, BundleConfig.Standard) |+|
-      ifuConfig(IFUNum.IFU2, config.srifu2Name, config.srifu2CoordsRAHMS,
-        config.srifu2CoordsDecDMS, BundleConfig.Standard)
+  private def ifu1Config(config: GHOSTConfig): Configuration = {
+    val srConfig = ifuConfig(IFUNum.IFU1, config.srifu1Name, config.srifu1Coords, BundleConfig.Standard)
+    val hrConfig = ifuConfig(IFUNum.IFU2, config.hrifu1Name, config.hrifu1Coords, BundleConfig.HighRes)
+    srConfig |+| hrConfig
+  }
 
-  private def hrifuConfig(config: GHOSTConfig): Configuration =
-    ifuConfig(IFUNum.IFU2, config.hrifu1Name, config.hrifu1CoordsRAHMS,
-      config.hrifu1CoordsDecDMS, BundleConfig.HighRes) |+|
-      ifuConfig(IFUNum.IFU2, config.srifu2Name, config.srifu2CoordsRAHMS, config.srifu2CoordsDecDMS,
-        BundleConfig.HighRes)
+  private def ifu2Config(config: GHOSTConfig): Configuration = {
+    val srConfig = ifuConfig(IFUNum.IFU2, config.srifu2Name, config.srifu2Coords, BundleConfig.Standard)
+    val hrConfig = ifuConfig(IFUNum.IFU2, config.hrifu2Name, config.srifu2Coords, BundleConfig.HighRes)
+    srConfig |+| hrConfig
+  }
+
 
   // If the srifu parameters are defined, use them; otherwise, use the hrifu parameters.
-  // TODO: What do we do with the base position explicit override?
-  // TODO: This was not on the list of provided parameter names.
+  // Which set of parameters to use is determined completely by which of srifuName and hrifuName is set.
+  // If neither is set, we do not use the IFU and request to be parked.
   private def ghostConfig(config: GHOSTConfig): SeqActionF[F, CommandResult] = {
-    val giapiApply = srifuConfig(config) |+| hrifuConfig(config)
+    val giapiApplyUF1Config = ifu1Config(config)
+    val giapiApplyUF1Modified = if (giapiApplyUF1Config === Configuration.Zero) {
+      Configuration.single(s"${IFUNum.IFU1.ifuStr}.target", IFUTargetType.NoTarget.targetType) |+|
+        Configuration.single(s"${IFUNum.IFU1.ifuStr}.type", DemandType.DemandPark.demandType)
+    } else giapiApplyUF1Config
+
+    val giapiApplyUF2Config = ifu2Config(config)
+    val giapiApplyUF2Modified = if (giapiApplyUF2Config === Configuration.Zero) {
+      Configuration.single(s"${IFUNum.IFU2.ifuStr}.target", IFUTargetType.NoTarget.targetType) |+|
+        Configuration.single(s"${IFUNum.IFU2.ifuStr}.type", DemandType.DemandPark.demandType)
+    } else giapiApplyUF2Config
+
+    val giapiApply = giapiApplyUF1Modified |+| giapiApplyUF2Modified
 
     EitherT(ghostClient.genericApply(giapiApply).attempt)
       .leftMap {
@@ -88,22 +107,30 @@ final case class GHOSTController[F[_]: Sync](ghostClient: GHOSTClient[F],
       _ <- SeqActionF.apply(Log.debug("Completed GHOST configuration"))
     } yield ()
 
+  // We use a dummy observation for now, since at this point, we cannot actually observe using the instrument.
   def observe(fileId: ImageFileId, expTime: Time): SeqActionF[F, ImageFileId] =
-    EitherT(ghostClient.observe(fileId, expTime.toMilliseconds.milliseconds).map(_ => fileId).attempt)
-      .leftMap {
-        case CommandResultException(_, "Message cannot be null") => Execution("Unhandled observe command")
-        case CommandResultException(_, m)                        => Execution(m)
-        case f                                                   => SeqexecException(f)
-      }
+    SeqActionF.apply((fileId, expTime)._1) // suppress unused error
+  //    EitherT(ghostClient.observe(fileId, expTime.toMilliseconds.milliseconds).map(_ => fileId).attempt)
+  //      .leftMap {
+  //        case CommandResultException(_, "Message cannot be null") => Execution("Unhandled observe command")
+  //        case CommandResultException(_, m)                        => Execution(m)
+  //        case f                                                   => SeqexecException(f)
+  //      }
 
   def endObserve: SeqActionF[F, Unit] = SeqActionF.void
 }
 
 object GHOSTController {
-  sealed abstract class BundleConfig(val configName: String)
+  sealed abstract class BundleConfig(val configName: String) {
+    def determineType(t: IFUTargetType): BundleConfig = t match {
+      case IFUTargetType.SkyPosition => BundleConfig.Sky
+      case _                         => this
+    }
+  }
   object BundleConfig {
-    case object Standard extends BundleConfig(configName = "lo")
-    case object HighRes extends BundleConfig(configName = "hi")
+    case object Standard extends BundleConfig(configName = "IFU_LORES")
+    case object HighRes  extends BundleConfig(configName = "IFU_HRES")
+    case object Sky      extends BundleConfig(configName = "IFU_SKY")
   }
 
   sealed abstract class IFUNum(val ifuNum: Int) {
@@ -114,17 +141,24 @@ object GHOSTController {
     case object IFU2 extends IFUNum(ifuNum = 2)
   }
 
-  sealed abstract class IFUTargetType(val targetType: Int)
+  sealed abstract class IFUTargetType(val targetType: String)
   object IFUTargetType {
-    case object NoTarget extends IFUTargetType(targetType = 0)
-    case object SkyPosition extends IFUTargetType(targetType = 1)
-    case object Target extends IFUTargetType(targetType = 2)
+    case object NoTarget extends IFUTargetType(targetType = "IFU_TARGET_NONE")
+    case object SkyPosition extends IFUTargetType(targetType = "IFU_TARGET_SKY")
+    case object Target extends IFUTargetType(targetType = "IFU_TARGET_OBJECT")
 
     def determineType(name: Option[String]): IFUTargetType = name match {
       case None        => NoTarget
       case Some("Sky") => SkyPosition
       case _           => Target
     }
+  }
+
+  sealed abstract class DemandType(val demandType: String)
+  object DemandType {
+    // Future DemandTypes: HALT, HOME, XY
+    case object DemandRADec extends DemandType("IFU_DEMAND_RADEC")
+    case object DemandPark extends DemandType("IFU_DEMAND_PARK")
   }
 
   /**
@@ -134,41 +168,31 @@ object GHOSTController {
     * will force others to be None. Eventually, we will want to represent all the target information in a type-safe
     * way that GHOST uses in the ODB.
     */
-  final case class GHOSTConfig(baseRAHMS: Option[HourAngle],
-                               baseDecDMS: Option[Angle],
+  final case class GHOSTConfig(baseCoords: Option[Coordinates],
                                expTime: Duration,
                                srifu1Name: Option[String],
-                               srifu1CoordsRAHMS: Option[HourAngle],
-                               srifu1CoordsDecDMS: Option[Angle],
+                               srifu1Coords: Option[Coordinates],
                                srifu2Name: Option[String],
-                               srifu2CoordsRAHMS: Option[HourAngle],
-                               srifu2CoordsDecDMS: Option[Angle],
+                               srifu2Coords: Option[Coordinates],
                                hrifu1Name: Option[String],
-                               hrifu1CoordsRAHMS: Option[HourAngle],
-                               hrifu1CoordsDecDMS: Option[Angle],
+                               hrifu1Coords: Option[Coordinates],
                                hrifu2Name: Option[String],
-                               hrifu2CoordsRAHMS: Option[HourAngle],
-                               hrifu2CoordsDecDMS: Option[Angle])
+                               hrifu2Coords: Option[Coordinates])
 
   object GHOSTConfig {
     private implicit val durationEq: Eq[Duration] = Eq.by(_.toMillis)
     implicit val eq: Eq[GHOSTConfig] = Eq.by(
       x =>
-        (x.baseRAHMS,
-         x.baseDecDMS,
-         x.expTime,
-         x.srifu1Name,
-         x.srifu1CoordsRAHMS,
-         x.srifu1CoordsDecDMS,
-         x.srifu2Name,
-         x.srifu2CoordsRAHMS,
-         x.srifu2CoordsDecDMS,
-         x.hrifu1Name,
-         x.hrifu1CoordsRAHMS,
-         x.hrifu1CoordsDecDMS,
-         x.hrifu2Name,
-         x.hrifu2CoordsRAHMS,
-         x.hrifu2CoordsDecDMS))
+        (x.baseCoords,
+          x.expTime,
+          x.srifu1Name,
+          x.srifu1Coords,
+          x.srifu2Name,
+          x.srifu2Coords,
+          x.hrifu1Name,
+          x.hrifu1Coords,
+          x.hrifu2Name,
+          x.hrifu2Coords))
 
     implicit val show: Show[GHOSTConfig] = Show.fromToString
   }

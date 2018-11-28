@@ -184,7 +184,7 @@ class StepSpec extends FlatSpec {
     } yield u.sequences(seqId)
 
     inside (m.compile.last.unsafeRunSync()) {
-      case Some(Sequence.State.Zipper(zipper, status)) =>
+      case Some(Sequence.State.Zipper(zipper, status, _)) =>
         inside (zipper.focus.toStep) {
           case Step(_, _, _, _, ex1::ex2::Nil) =>
             assert( Execution(ex1).results.length == 3 && Execution(ex2).actions.length == 1)
@@ -214,7 +214,8 @@ class StepSpec extends FlatSpec {
                   rolledback = (Execution(List(configureTcs, configureInst)), List(List(observe)))),
                 done = Nil
               ),
-              SequenceState.Idle
+              SequenceState.Idle,
+              Map.empty
             )
           )
         )
@@ -226,7 +227,7 @@ class StepSpec extends FlatSpec {
       } yield u._2.sequences.get(seqId)
 
     inside (qs1.compile.last.unsafeRunSync()) {
-      case Some(Some(Sequence.State.Zipper(zipper, status))) =>
+      case Some(Some(Sequence.State.Zipper(zipper, status, _))) =>
         inside (zipper.focus.toStep) {
           case Step(_, _, _, _, ex1::ex2::Nil) =>
             assert(Execution(ex1).actions.length == 2 && Execution(ex2).actions.length == 1)
@@ -255,7 +256,8 @@ class StepSpec extends FlatSpec {
                   rolledback = (Execution(List(configureTcs, configureInst)), List(List(observe)))),
                 done = Nil
               ),
-              SequenceState.Running(userStop = true, internalStop = false)
+              SequenceState.Running(userStop = true, internalStop = false),
+              Map.empty
             )
           )
         )
@@ -264,7 +266,7 @@ class StepSpec extends FlatSpec {
     val qs1 = executionEngine.process(PartialFunction.empty)(Stream.eval(IO.pure(Event.cancelPause(seqId, user))))(qs0).take(1).compile.last.unsafeRunSync.map(_._2)
 
     inside (qs1.flatMap(_.sequences.get(seqId))) {
-      case Some(Sequence.State.Zipper(_, status)) =>
+      case Some(Sequence.State.Zipper(_, status, _)) =>
         assert(status.isRunning)
     }
 
@@ -295,7 +297,7 @@ class StepSpec extends FlatSpec {
     val qss = executionEngine.process(PartialFunction.empty)(Stream.eval(IO.pure(Event.pause(seqId, user))))(qs0).take(1).compile.last.unsafeRunSync.map(_._2)
 
     inside (qss.flatMap(_.sequences.get(seqId))) {
-      case Some(Sequence.State.Zipper(zipper, status)) =>
+      case Some(Sequence.State.Zipper(zipper, status, _)) =>
         inside (zipper.focus.toStep) {
           case Step(_, _, _, _, ex1::ex2::Nil) =>
             assert( Execution(ex1).actions.length == 2 && Execution(ex2).actions.length == 1)
@@ -378,7 +380,7 @@ class StepSpec extends FlatSpec {
     val qs1 = runToCompletion(qs0)
 
     inside (qs1.flatMap(_.sequences.get(seqId))) {
-      case Some(Sequence.State.Zipper(zipper, status)) =>
+      case Some(Sequence.State.Zipper(zipper, status, _)) =>
         inside (zipper.focus.toStep) {
           // Check that the sequence stopped midway
           case Step(_, _, _, _, ex1::ex2::ex3::Nil) =>
@@ -428,7 +430,7 @@ class StepSpec extends FlatSpec {
     val qss = runToCompletionL(qs0)
 
     inside (qss.drop(1).headOption.flatMap(_.sequences.get(seqId))) {
-      case Some(Sequence.State.Zipper(zipper, status)) =>
+      case Some(Sequence.State.Zipper(zipper, status, _)) =>
         inside (zipper.focus.focus.execution.headOption) {
           case Some(Action(_, _, Action.State(Action.Started, v::_))) => v shouldEqual PartialValDouble(0.5)
         }

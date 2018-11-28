@@ -7,7 +7,7 @@ import cats.Eq
 import cats.Show
 
 sealed trait BatchExecState extends Product with Serializable {
-  def running: Boolean = this match {
+  val running: Boolean = this match {
     case BatchExecState.Running |
          BatchExecState.Waiting => true
     case _                      => false

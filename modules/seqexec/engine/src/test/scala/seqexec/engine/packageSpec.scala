@@ -4,6 +4,7 @@
 package seqexec.engine
 
 import java.util.UUID
+import java.util.concurrent.atomic.AtomicInteger
 
 import seqexec.engine.Sequence.State.Final
 import seqexec.model.{ActionType, ClientId, SequenceState, StepState, UserDetails}
@@ -386,6 +387,45 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
 
     inside (sf.map(_.sequences(seqId).done.map(Step.status))) {
       case Some(stepSs) => assert(stepSs === List(StepState.Completed, StepState.Skipped))
+    }
+  }
+
+  it should "run single Action" in {
+    val dummy = new AtomicInteger(0)
+    val markVal = 1
+    val stepId = 1
+    val s0: TestState = TestState(
+      Map((seqId, Sequence.State.init(Sequence(
+        id = seqId,
+        steps = List(
+          Step.init(id = stepId, executions = List(List(
+            fromF[IO](ActionType.Undefined, IO{
+              dummy.set(markVal)
+              Result.OK(DummyResult)
+            }))
+          ))
+        )
+      ) ) ) )
+    )
+
+    val c = ActionCoordsInSeq(stepId, ExecutionIndex(0), ActionIndex(0))
+    val event = Event.modifyState[executionEngine.ConcreteTypes](
+      executionEngine.startSingle(ActionCoords(seqId, c)).map(_ => ())
+    )
+    val sfs = executionEngine.process(PartialFunction.empty)(Stream.eval(IO.pure(event)))(s0)
+      .map(_._2).take(2).compile.toList.unsafeRunSync
+
+    /*
+     * First state update must have the action started.
+     * Second state update must have the action finished.
+     * The value in `dummy` must change. That is prove that the `Action` run.
+     */
+    inside (sfs) {
+      case a::b::_ => {
+        assert(TestState.sequenceStateIndex(seqId).getOption(a).exists(_.getSingleState(c).started))
+        assert(TestState.sequenceStateIndex(seqId).getOption(b).exists(_.getSingleState(c).isIdle))
+        assert(dummy.get === markVal)
+      }
     }
   }
 
