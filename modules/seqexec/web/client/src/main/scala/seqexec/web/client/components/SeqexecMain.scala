@@ -95,7 +95,7 @@ object SeqexecMain {
             logConnect(l => LogArea(p.site, l))
           )
         ),
-        lbConnect(LoginBox.apply),
+        lbConnect(p => LoginBox(p())),
         userNotificationConnect(p =>
           UserNotificationBox(UserNotificationBox.Props(p()))),
         Footer(Footer.Props(p.ctl, p.site))
