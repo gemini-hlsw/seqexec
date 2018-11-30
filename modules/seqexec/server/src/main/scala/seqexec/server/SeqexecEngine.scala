@@ -93,16 +93,16 @@ class SeqexecEngine(httpClient: Client[IO], settings: Settings[IO], sm: SeqexecM
   def load(q: EventQueue, seqId: Observation.Id): IO[Either[SeqexecFailure, Unit]] =
     q.enqueue(Stream.emits(loadEvents(seqId))).map(_.asRight).compile.last.attempt.map(_.bimap(SeqexecFailure.SeqexecException.apply, _ => ()))
 
+  // TODO: this is too much guessing. We should have proper tracking of systems' state.
+  def failedInstruments(st: EngineState): Set[Resource] = st.sequences.values.toList.mapFilter(s =>
+    s.seq.status.isError.option(s.seqGen.instrument)).toSet
+
   private def checkResources(seqId: Observation.Id)(st: EngineState): Boolean = {
     // Resources used by running sequences
     val used = resourcesInUse(st)
 
-    // TODO: this is too much guessing. We should have proper tracking of systems' state.
-    val failedInstruments: Set[Resource] = st.sequences.values.toList.mapFilter(s =>
-      s.seq.status.isError.option(s.seqGen.instrument)).toSet
-
     // Resources that will be used by sequences in running queues
-    val reservedByQueues = resourcesReserved(failedInstruments, st)
+    val reservedByQueues = resourcesReserved(failedInstruments(st), st)
 
     st.sequences.get(seqId).exists(_.seqGen.resources.intersect(used ++ reservedByQueues).isEmpty)
 
@@ -405,12 +405,8 @@ class SeqexecEngine(httpClient: Client[IO], settings: Settings[IO], sm: SeqexecM
     // Resources used by running sequences
     val used = resourcesInUse(st)
 
-    // TODO: this is too much guessing. We should have proper tracking of systems' state.
-    val failedInstruments: Set[Resource] = st.sequences.values.toList.mapFilter(s =>
-      s.seq.status.isError.option(s.seqGen.instrument)).toSet
-
     // Resources reserved by running queues, excluding `sid` to prevent self blocking
-    val reservedByQueues = resourcesReserved(failedInstruments,
+    val reservedByQueues = resourcesReserved(failedInstruments(st),
       EngineState.sequences.modify(_ - sid)(st))
 
     !(used ++ reservedByQueues).contains(sys)
@@ -501,8 +497,6 @@ class SeqexecEngine(httpClient: Client[IO], settings: Settings[IO], sm: SeqexecM
     }
     def engineSteps(seq: Sequence[IO]): List[Step] = {
 
-      // TODO: Calculate the whole status here and remove `Engine.Step.status`
-      // This will be easier once the exact status labels in the UI are fixed.
       obsSeq.seqGen.steps.zip(seq.steps).map{
         case (a, b) => viewStep(a, b, resources(a).mapFilter(x =>
           obsSeq.seqGen.configActionCoord(a.id, x)

@@ -4,7 +4,6 @@
 package seqexec.server
 
 import cats.Eq
-import cats.effect.IO
 import cats.tests.CatsSuite
 import seqexec.model.enum.Instrument
 import seqexec.engine
@@ -13,7 +12,7 @@ import seqexec.server.SeqexecServerArbitraries._
 import gem.arb.ArbObservation
 import gem.Observation
 import monocle.law.discipline.LensTests
-import seqexec.engine.{Action, Actions, Result}
+import seqexec.engine.{Action, Actions}
 
 /**
   * Tests SeqexecServer Lenses
@@ -21,11 +20,10 @@ import seqexec.engine.{Action, Actions, Result}
 final class SeqexecServerLensesSpec extends CatsSuite with ArbObservation {
 
   // I tried to go down the rabbit hole with the Eqs, but it is not worth it for what they are used.
-  implicit val streamEq: Eq[fs2.Stream[IO, Result]] = Eq.fromUniversalEquals
   implicit val actStateEq: Eq[Action.State] = Eq.fromUniversalEquals
-  implicit val actionEq: Eq[Action[IO]] = Eq.by(x => (x.kind, x.gen, x.state))
-  implicit val steppEq: Eq[HeaderExtraData => List[Actions[IO]]] = Eq.fromUniversalEquals
-  implicit val stepActionsGenEq: Eq[StepActionsGen] = Eq.by(x => (x.pre))
+  implicit def actionEq[F[_]]: Eq[Action[F]] = Eq.by(x => (x.kind, x.state))
+  implicit def steppEq[F[_]]: Eq[HeaderExtraData => List[Actions[F]]] = Eq.fromUniversalEquals
+  implicit val stepActionsGenEq: Eq[StepActionsGen] = Eq.by(x => (x.pre, x.configs, x.post))
   implicit val pndstepgEq: Eq[PendingStepGen] = Eq.by(x => (x.id, x.config, x.resources, x
     .generator))
   implicit val skipstepgEq: Eq[SkippedStepGen] = Eq.by(x => (x.id, x.config))
@@ -38,7 +36,7 @@ final class SeqexecServerLensesSpec extends CatsSuite with ArbObservation {
   }
   implicit val seqgEq: Eq[SequenceGen] = Eq.by(x => (x.id, x.title, x.instrument, x.steps))
   implicit val obsseqEq: Eq[SequenceData] = Eq.by(x => (x.observer, x.seqGen))
-  implicit val seqstateEq: Eq[engine.Sequence.State[IO]] = Eq.fromUniversalEquals
+  implicit def seqstateEq[F[_]]: Eq[engine.Sequence.State[F]] = Eq.fromUniversalEquals
   implicit val stateEq: Eq[EngineState] = Eq.by(x =>
     (x.queues, x.selected, x.conditions, x.operator, x.sequences))
 
