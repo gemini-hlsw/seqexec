@@ -12,10 +12,12 @@ import giapi.client.Giapi
 import io.prometheus.client._
 import java.time.LocalDate
 import java.util.UUID
+
 import org.scalatest.Inside.inside
 import org.scalatest.{FlatSpec, Matchers, NonImplicitAssertions}
 import org.http4s.Uri._
 import org.http4s.Uri
+
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 import seqexec.engine
@@ -26,7 +28,6 @@ import seqexec.model.{ActionType, CalibrationQueueId, ClientId, Conditions, Obse
 import seqexec.model.enum._
 import seqexec.model.enum.Resource.TCS
 import monocle.Monocle._
-import seqexec.model.enum.BatchCommandState
 import shapeless.tag
 
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
@@ -201,14 +202,19 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
     id,
     "",
     Instrument.F2,
-    List(SequenceGen.PendingStepGen(1, Map(), Set.empty, _ => Step.init(1, List(List(pendingAction
-    (Instrument.F2))))))
+    List(SequenceGen.PendingStepGen(1, Map(), Set.empty, SequenceGen.StepActionsGen(List(),
+      Map(), _ => List(List(pendingAction(Instrument.F2)))
+    )))
   )
   private def sequenceWithResources(id: Observation.Id, ins: Instrument, resources: Set[Resource]): SequenceGen = SequenceGen(
     id,
     "",
     ins,
-    List(SequenceGen.PendingStepGen(1, Map(), resources, _ => Step.init(1, List(List(pendingAction(ins))))))
+    List(SequenceGen.PendingStepGen(1, Map(), resources,
+      SequenceGen.StepActionsGen(List(), resources.map(r => r -> pendingAction(r)).toMap,
+        _ =>List()
+      )
+    ))
   )
 
   "SeqexecEngine addSequenceToQueue" should
@@ -558,7 +564,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
       sf <- seqexecEngine.stream(q.dequeue)(s0).map(_._2)
         .takeThrough(_.sequences.values.exists(_.seq.status.isRunning)).compile.last
     } yield inside(sf) {
-      case Some(s) => assert(!(testCompleted(seqObsId3)(s)))
+      case Some(s) => assert(!testCompleted(seqObsId3)(s))
     } ).unsafeRunSync
   }
 
@@ -673,7 +679,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
       q <- async.boundedQueue[IO, executeEngine.EventType](10)
       sf <- advanceOne(q, s0, seqexecEngine.start(q, seqObsId2, UserDetails("", ""), clientId))
     } yield {
-      inside(sf.flatMap((EngineState.sequenceStateIndex(seqObsId2)).getOption).map(_.status)) {
+      inside(sf.flatMap(EngineState.sequenceStateIndex(seqObsId2).getOption).map(_.status)) {
         case Some(status) => assert(status.isIdle)
       }
     }).unsafeRunSync
@@ -692,8 +698,82 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
       q <- async.boundedQueue[IO, executeEngine.EventType](10)
       sf <- advanceOne(q, s0, seqexecEngine.start(q, seqObsId2, UserDetails("", ""), clientId))
     } yield {
-      inside(sf.flatMap((EngineState.sequenceStateIndex(seqObsId2)).getOption).map(_.status)) {
+      inside(sf.flatMap(EngineState.sequenceStateIndex(seqObsId2).getOption).map(_.status)) {
         case Some(status) => assert(status.isRunning)
+      }
+    }).unsafeRunSync
+  }
+
+  "SeqexecEngine configSystem" should "run a system configuration" in {
+    val s0 = SeqexecEngine.loadSequenceEndo(seqObsId1, sequenceWithResources(seqObsId1,
+      Instrument.F2, Set(Instrument.F2, TCS)))(EngineState.default)
+
+    (for {
+      q <- async.boundedQueue[IO, executeEngine.EventType](10)
+      sf <- advanceOne(q, s0, seqexecEngine.configSystem(q, seqObsId1, 1, TCS))
+    } yield {
+      inside(sf.flatMap((EngineState.sequences ^|-? index(seqObsId1)).getOption)) {
+        case Some(s) => assertResult(Some(Action.Started))(
+          s.seqGen.configActionCoord(1, TCS).map(s.seq.getSingleState)
+        )
+      }
+    }).unsafeRunSync
+  }
+
+  it should "not run a system configuration if sequence is running" in {
+    val s0 = (SeqexecEngine.loadSequenceEndo(seqObsId1, sequenceWithResources(seqObsId1,
+        Instrument.F2, Set(Instrument.F2, TCS))) >>>
+      (EngineState.sequenceStateIndex(seqObsId1) ^|-> Sequence.State.status).set(
+        SequenceState.Running.init))(EngineState.default)
+
+    (for {
+      q <- async.boundedQueue[IO, executeEngine.EventType](10)
+      sf <- advanceOne(q, s0, seqexecEngine.configSystem(q, seqObsId1, 1, TCS))
+    } yield {
+      inside(sf.flatMap((EngineState.sequences ^|-? index(seqObsId1)).getOption)) {
+        case Some(s) => assertResult(Some(Action.Idle))(
+          s.seqGen.configActionCoord(1, TCS).map(s.seq.getSingleState)
+        )
+      }
+    }).unsafeRunSync
+  }
+
+  it should "not run a system configuration if system is in use" in {
+    val s0 = (SeqexecEngine.loadSequenceEndo(seqObsId1, sequenceWithResources(seqObsId1,
+        Instrument.F2, Set(Instrument.F2, TCS))) >>>
+      SeqexecEngine.loadSequenceEndo(seqObsId2, sequenceWithResources(seqObsId2,
+        Instrument.F2, Set(Instrument.F2))) >>>
+      (EngineState.sequenceStateIndex(seqObsId1) ^|-> Sequence.State.status).set(
+        SequenceState.Running.init))(EngineState.default)
+
+    (for {
+      q <- async.boundedQueue[IO, executeEngine.EventType](10)
+      sf <- advanceOne(q, s0, seqexecEngine.configSystem(q, seqObsId2, 1, Instrument.F2))
+    } yield {
+      inside(sf.flatMap((EngineState.sequences ^|-? index(seqObsId2)).getOption)) {
+        case Some(s) => assertResult(Some(Action.Idle))(
+          s.seqGen.configActionCoord(1, Instrument.F2).map(s.seq.getSingleState)
+        )
+      }
+    }).unsafeRunSync
+  }
+
+  it should "run a system configuration when other sequence is running with other systems" in {
+    val s0 = (SeqexecEngine.loadSequenceEndo(seqObsId1, sequenceWithResources(seqObsId1,
+        Instrument.F2, Set(Instrument.GmosS, TCS))) >>>
+      SeqexecEngine.loadSequenceEndo(seqObsId2, sequenceWithResources(seqObsId2,
+        Instrument.F2, Set(Instrument.F2))) >>>
+      (EngineState.sequenceStateIndex(seqObsId1) ^|-> Sequence.State.status).set(
+        SequenceState.Running.init))(EngineState.default)
+
+    (for {
+      q <- async.boundedQueue[IO, executeEngine.EventType](10)
+      sf <- advanceOne(q, s0, seqexecEngine.configSystem(q, seqObsId2, 1, Instrument.F2))
+    } yield {
+      inside(sf.flatMap((EngineState.sequences ^|-? index(seqObsId2)).getOption)) {
+        case Some(s) => assertResult(Some(Action.Started))(
+          s.seqGen.configActionCoord(1, Instrument.F2).map(s.seq.getSingleState)
+        )
       }
     }).unsafeRunSync
   }

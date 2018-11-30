@@ -34,19 +34,12 @@ import seqexec.model.enum._
 import seqexec.model.Notification
 import seqexec.model.UserDetails
 import seqexec.model.dhs.ImageFileId
+import seqexec.model.StepId
 
 package server {
   import seqexec.engine.Sequence
 
   import squants.Time
-
-  @Lenses
-  final case class SequenceData(observer: Option[Observer],
-                                seqGen: SequenceGen,
-                                seq: Sequence.State[IO])
-
-  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
-  object SequenceData
 
   @Lenses
   final case class EngineState(queues: ExecutionQueues, selected: Map[Instrument, Observation.Id], conditions: Conditions, operator: Option[Operator], sequences: Map[Observation.Id, SequenceData])
@@ -87,6 +80,8 @@ package server {
   final case class UpdateQueueRemove(qid: QueueId, seqs: List[Observation.Id], pos: List[Int]) extends SeqEvent
   final case class UpdateQueueMoved(qid: QueueId, cid: ClientId, oid: Observation.Id, pos: Int) extends SeqEvent
   final case class UpdateQueueClear(qid: QueueId) extends SeqEvent
+  final case class StartSysConfig(sid: Observation.Id, stepIs: StepId, res: Resource)
+    extends SeqEvent
   case object NullSeqEvent extends SeqEvent
 
   sealed trait ControlStrategy

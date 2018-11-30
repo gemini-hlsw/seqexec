@@ -217,6 +217,8 @@ object Sequence {
 
     def getSingleAction(c: ActionCoordsInSeq): Option[Action[F]]
 
+    val getSingleActionStates: Map[ActionCoordsInSeq, Action.ActionState]
+
     def clearSingles: State[F]
 
   }
@@ -356,27 +358,29 @@ object Sequence {
 
       override val toSequence: Sequence[F] = zipper.toSequence
 
-      def startSingle(c: ActionCoordsInSeq): State[F] =
+      override def startSingle(c: ActionCoordsInSeq): State[F] =
         if(zipper.done.find(_.id === c.stepId).isDefined)
           self
         else self.copy(singleRuns = singleRuns + (c -> Action.Started))
 
-      def failSingle(c: ActionCoordsInSeq, err: Result.Error): State[F] =
+      override def failSingle(c: ActionCoordsInSeq, err: Result.Error): State[F] =
         if(getSingleState(c).started)
           self.copy(singleRuns = singleRuns + (c -> Action.Failed(err)))
         else
           self
 
-      def completeSingle(c: ActionCoordsInSeq): State[F] =
+      override def completeSingle(c: ActionCoordsInSeq): State[F] =
         if(getSingleState(c).started)
           self.copy(singleRuns = singleRuns - c)
         else
           self
 
-      def getSingleState(c: ActionCoordsInSeq): Action.ActionState =
+      override def getSingleState(c: ActionCoordsInSeq): Action.ActionState =
         singleRuns.getOrElse(c, Action.Idle)
 
-      def getSingleAction(c: ActionCoordsInSeq): Option[Action[F]] = for {
+      override val getSingleActionStates: Map[ActionCoordsInSeq, Action.ActionState] = singleRuns
+
+      override def getSingleAction(c: ActionCoordsInSeq): Option[Action[F]] = for {
         step <- toSequence.steps.find(_.id === c.stepId)
         exec <- step.executions.get(c.execIdx.self)
         act  <- exec.get(c.actIdx.self)
@@ -425,6 +429,8 @@ object Sequence {
       override def completeSingle(c: ActionCoordsInSeq): State[F] = self
 
       override def getSingleState(c: ActionCoordsInSeq): Action.ActionState = Action.Idle
+
+      override val getSingleActionStates: Map[ActionCoordsInSeq, Action.ActionState] = Map.empty
 
       override def getSingleAction(c: ActionCoordsInSeq): Option[Action[F]] = None
 

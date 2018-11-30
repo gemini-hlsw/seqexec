@@ -13,13 +13,19 @@ import seqexec.server.SeqexecServerArbitraries._
 import gem.arb.ArbObservation
 import gem.Observation
 import monocle.law.discipline.LensTests
+import seqexec.engine.{Action, Actions, Result}
 
 /**
   * Tests SeqexecServer Lenses
   */
 final class SeqexecServerLensesSpec extends CatsSuite with ArbObservation {
 
-  implicit val steppEq: Eq[HeaderExtraData => engine.Step[IO]] = Eq.fromUniversalEquals
+  // I tried to go down the rabbit hole with the Eqs, but it is not worth it for what they are used.
+  implicit val streamEq: Eq[fs2.Stream[IO, Result]] = Eq.fromUniversalEquals
+  implicit val actStateEq: Eq[Action.State] = Eq.fromUniversalEquals
+  implicit val actionEq: Eq[Action[IO]] = Eq.by(x => (x.kind, x.gen, x.state))
+  implicit val steppEq: Eq[HeaderExtraData => List[Actions[IO]]] = Eq.fromUniversalEquals
+  implicit val stepActionsGenEq: Eq[StepActionsGen] = Eq.by(x => (x.pre))
   implicit val pndstepgEq: Eq[PendingStepGen] = Eq.by(x => (x.id, x.config, x.resources, x
     .generator))
   implicit val skipstepgEq: Eq[SkippedStepGen] = Eq.by(x => (x.id, x.config))
