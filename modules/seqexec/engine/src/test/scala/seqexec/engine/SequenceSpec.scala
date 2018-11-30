@@ -267,7 +267,7 @@ class SequenceSpec extends FlatSpec {
     assert(seq.failSingle(c2, Result.Error("")).getSingleState(c2).isIdle)
   }
 
-  "completeSingle" should "mark a single running Action as failed" in {
+  "completeSingle" should "mark a single running Action as completed" in {
     val c = ActionCoordsInSeq(1, ExecutionIndex(0), ActionIndex(0))
     val seq = Sequence.State.init(
       Sequence(
@@ -284,7 +284,7 @@ class SequenceSpec extends FlatSpec {
       )
     ).startSingle(c)
 
-    assert(seq.completeSingle(c).getSingleState(c).isIdle)
+    assert(seq.completeSingle(c, DummyResult).getSingleState(c).completed)
   }
 
 }

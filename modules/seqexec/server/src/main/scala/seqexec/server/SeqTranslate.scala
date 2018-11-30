@@ -20,7 +20,7 @@ import gem.Observation
 import gem.enum.Site
 import mouse.all._
 import org.log4s._
-import seqexec.engine.{Action, Event, Result, Sequence, Step, fromF}
+import seqexec.engine.{Action, Event, Result, Sequence, fromF}
 import seqexec.model.enum.{Instrument, Resource}
 import seqexec.model.{ActionType, StepState}
 import seqexec.model.dhs.ImageFileId
@@ -28,6 +28,7 @@ import seqexec.server.ConfigUtilOps._
 import seqexec.server.SeqTranslate.Systems
 import seqexec.server.SeqexecFailure.{Unexpected, UnrecognizedInstrument}
 import seqexec.server.InstrumentSystem._
+import seqexec.server.SequenceGen.StepActionsGen
 import seqexec.server.flamingos2.{Flamingos2, Flamingos2Controller, Flamingos2Header}
 import seqexec.server.keywords._
 import seqexec.server.gpi.{GPI, GPIController, GPIHeader}
@@ -77,9 +78,9 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
                       otherSys: List[System[IO]], headers: Reader[HeaderExtraData, List[Header]])
                      (ctx: HeaderExtraData): Stream[IO, Result]
   = {
-    val dataId: SeqAction[String] = EitherT(IO.apply(
+    val dataId: SeqAction[String] = SeqAction.either(
       config.extract(OBSERVE_KEY / DATA_LABEL_PROP).as[String].leftMap(e =>
-      SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))))
+      SeqexecFailure.Unexpected(ConfigUtilOps.explain(e))))
 
     def notifyObserveStart: SeqAction[Unit] = otherSys.map(_.notifyObserveStart).sequence.map(_ => ())
 
@@ -140,11 +141,13 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
             .map(_ => Response.Ignored).toAction(ActionType.Undefined)))
         else Nil
 
-      def regularStepExecutions(ctx:HeaderExtraData): List[List[Action[IO]]] = List(
-        sys.map { x =>
-          val kind = ActionType.Configure(resourceFromSystem(x))
-          x.configure(config).map(_ => Response.Configured(x.resource)).toAction(kind)
-        },
+      val configs: Map[Resource, Action[IO]] = sys.map { x =>
+        val res = resourceFromSystem(x)
+        val kind = ActionType.Configure(res)
+
+        (res -> x.configure(config).map(_ => Response.Configured(x.resource)).toAction(kind))
+      }.toMap
+      def rest(ctx:HeaderExtraData): List[List[Action[IO]]] = List(
         List(Action(ActionType.Observe, observe(config, obsId, inst, sys.filterNot(inst.equals),
           headers)(ctx), Action.State(Action.Idle, Nil)))
       )
@@ -154,10 +157,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
           i,
           config.toStepConfig,
           calcResources(sys),
-          ctx => Step.init[IO](
-            id = i,
-            executions = initialStepExecutions ++ regularStepExecutions(ctx)
-          )
+          StepActionsGen(initialStepExecutions, configs, rest)
         )
         case StepState.Pending                   => SequenceGen.SkippedStepGen(
           i,

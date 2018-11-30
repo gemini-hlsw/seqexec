@@ -12,7 +12,7 @@ import giapi.client.Giapi
 import giapi.client.gpi.GPIClient
 import gem.Observation
 import gem.enum.Site
-import seqexec.engine.{Action, Result, Sequence, Step}
+import seqexec.engine.{Action, Result, Sequence}
 import seqexec.model.enum.Instrument.GmosS
 import seqexec.model.{ActionType, SequenceState, StepConfig}
 import seqexec.server.SeqTranslate.ObserveContext
@@ -51,10 +51,7 @@ class SeqTranslateSpec extends FlatSpec {
       1,
       config,
       Set(GmosS),
-      _ => Step.init(
-        1,
-        List(observeActions(Action.Idle))
-      )
+      SequenceGen.StepActionsGen(List(), Map(), _ => List(observeActions(Action.Idle)))
     ))
   )
 

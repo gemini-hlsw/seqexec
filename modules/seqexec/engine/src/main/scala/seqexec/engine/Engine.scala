@@ -87,9 +87,8 @@ class Engine[D, U](stateL: Engine.State[D]) {
 
   }
 
-  private def completeSingleRun(c: ActionCoords): HandleType[Unit] = modifyS(c.sid)(
-    _.completeSingle(c.actCoords)
-  )
+  private def completeSingleRun[V <: RetVal](c: ActionCoords, r: V): HandleType[Unit] =
+    modifyS(c.sid)(_.completeSingle(c.actCoords, r))
 
   private def failSingleRun(c: ActionCoords, e: Result.Error): HandleType[Unit] = modifyS(c.sid)(
     _.failSingle(c.actCoords, e)
@@ -297,7 +296,7 @@ class Engine[D, U](stateL: Engine.State[D]) {
       switch(id)(SequenceState.Completed) *> pure(SystemUpdate(se, EventResult.Ok))
     case SingleRunCompleted(c, r)   =>
       Logger.debug(s"Engine: single action $c completed with result $r") *>
-        completeSingleRun(c) *> pure(SystemUpdate(se, EventResult.Ok))
+        completeSingleRun(c, r.response) *> pure(SystemUpdate(se, EventResult.Ok))
     case SingleRunFailed(c, e)      =>
       Logger.debug(s"Engine: single action $c failed with error $e") *>
         failSingleRun(c, e) *> pure(SystemUpdate(se, EventResult.Ok))
