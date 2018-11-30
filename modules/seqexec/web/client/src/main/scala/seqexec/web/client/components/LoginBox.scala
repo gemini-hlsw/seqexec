@@ -3,21 +3,24 @@
 
 package seqexec.web.client.components
 
-import diode.react.ModelProxy
+import cats.implicits._
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
+import monocle.macros.Lenses
 import seqexec.model.UserDetails
 import seqexec.web.client.semanticui.elements.icon.Icon._
 import seqexec.web.client.model._
-import seqexec.web.client.actions.{CloseLoginBox, LoggedIn}
+import seqexec.web.client.actions.CloseLoginBox
+import seqexec.web.client.actions.LoggedIn
+import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.semanticui.elements.button.Button
-import seqexec.web.client.semanticui.elements.modal.{Content, Header}
+import seqexec.web.client.semanticui.elements.modal.Content
+import seqexec.web.client.semanticui.elements.modal.Header
 import seqexec.web.client.semanticui.elements.label.FormLabel
 import seqexec.web.client.services.SeqexecWebClient
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.TagOf
 import org.scalajs.dom.html.Div
-import cats.implicits._
 import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
@@ -25,41 +28,54 @@ import scala.concurrent.ExecutionContext.Implicits.global
   */
 object LoginBox {
 
-  final case class Props(visible: ModelProxy[SectionVisibilityState])
+  final case class Props(visible: SectionVisibilityState)
 
-  final case class State(username: String, password: String, progressMsg: Option[String], errorMsg: Option[String])
+  @Lenses
+  final case class State(username:    String,
+                         password:    String,
+                         progressMsg: Option[String],
+                         errorMsg:    Option[String])
 
-  private val empty = State("", "", None, None)
+  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
+  object State {
+    val Empty: State = State("", "", None, None)
+  }
 
   private val formId = "login"
 
-  class Backend($: BackendScope[Props, State]) {
+  class Backend(b: BackendScope[Props, State]) {
     def pwdMod(e: ReactEventFromInput): CallbackTo[Unit] = {
       // Capture the value outside setState, react reuses the events
       val v = e.target.value
-      $.modState(_.copy(password = v))
+      b.modState(State.password.set(v))
     }
 
     def userMod(e: ReactEventFromInput): CallbackTo[Unit] = {
       val v = e.target.value
-      $.modState(_.copy(username = v))
+      b.modState(State.username.set(v))
     }
 
-    def loggedInEvent(u: UserDetails): Callback = $.modState(_ => empty) >> $.props >>= {_.visible.dispatchCB(LoggedIn(u))}
-    def updateProgressMsg(m: String): Callback = $.modState(_.copy(progressMsg = Some(m), errorMsg = None))
-    def updateErrorMsg(m: String): Callback = $.modState(_.copy(errorMsg = Some(m), progressMsg = None))
-    def closeBox: Callback = $.modState(_ => empty) >> $.props >>= {_.visible.dispatchCB(CloseLoginBox)}
+    def loggedInEvent(u: UserDetails): Callback =
+      b.setState(State.Empty) >> SeqexecCircuit.dispatchCB(LoggedIn(u))
+    def updateProgressMsg(m: String): Callback =
+      b.modState(State.progressMsg.set(m.some) >>> State.errorMsg.set(none))
+    def updateErrorMsg(m: String): Callback =
+      b.modState(State.errorMsg.set(m.some) >>> State.progressMsg.set(none))
+    def closeBox: Callback =
+      b.setState(State.Empty) >> SeqexecCircuit.dispatchCB(CloseLoginBox)
 
-    def attemptLogin: Callback = $.state >>= { s =>
+    def attemptLogin: Callback = b.state >>= { s =>
       // Change the UI and call login on the remote backend
       updateProgressMsg("Authenticating...") >>
-      Callback.future(
-        SeqexecWebClient.login(s.username, s.password)
-          .map(loggedInEvent)
-          .recover {
-            case _: Exception => updateErrorMsg("Login failed, check username/password")
-          }
-      )
+        Callback.future(
+          SeqexecWebClient
+            .login(s.username, s.password)
+            .map(loggedInEvent)
+            .recover {
+              case _: Exception =>
+                updateErrorMsg("Login failed, check username/password")
+            }
+        )
     }
 
     private def toolbar(s: State) =
@@ -69,24 +85,31 @@ object LoginBox {
           ^.cls := "ui grid",
           <.div(
             ^.cls := "middle aligned row",
-            s.progressMsg.map( m =>
-              <.div(
-                ^.cls := "left floated left aligned six wide column",
-                IconCircleNotched.copyIcon(loading = true),
-                m
-              )
-            ).whenDefined,
-            s.errorMsg.map( m =>
-              <.div(
-                ^.cls := "left floated left aligned six wide column red",
-                IconAttention,
-                m
-              )
-            ).whenDefined,
+            s.progressMsg
+              .map(
+                m =>
+                  <.div(
+                    ^.cls := "left floated left aligned six wide column",
+                    IconCircleNotched.copyIcon(loading = true),
+                    m
+                ))
+              .whenDefined,
+            s.errorMsg
+              .map(
+                m =>
+                  <.div(
+                    ^.cls := "left floated left aligned six wide column red",
+                    IconAttention,
+                    m
+                ))
+              .whenDefined,
             <.div(
               ^.cls := "right floated right aligned ten wide column",
-              Button(Button.Props(onClick = closeBox), "Cancel"),
-              Button(Button.Props(onClick = attemptLogin, buttonType = Button.SubmitType, form = Some(formId)), "Login")
+              Button(Button.Props(onClick    = closeBox), "Cancel"),
+              Button(Button.Props(onClick    = attemptLogin,
+                                  buttonType = Button.SubmitType,
+                                  form       = Some(formId)),
+                     "Login")
             )
           )
         )
@@ -98,17 +121,17 @@ object LoginBox {
         Header("Login"),
         Content(
           <.form(
-            ^.cls :="ui form",
+            ^.cls := "ui form",
             ^.id := formId,
             ^.method := "post",
             ^.action := "#",
             <.div(
-              ^.cls :="required field",
+              ^.cls := "required field",
               FormLabel(FormLabel.Props("Username", Some("username"))),
               <.div(
-                ^.cls :="ui icon input",
+                ^.cls := "ui icon input",
                 <.input(
-                  ^.`type` :="text",
+                  ^.`type` := "text",
                   ^.placeholder := "Username",
                   ^.name := "username",
                   ^.id := "username",
@@ -119,12 +142,12 @@ object LoginBox {
               )
             ),
             <.div(
-              ^.cls :="required field",
+              ^.cls := "required field",
               FormLabel(FormLabel.Props("Password", Some("password"))),
               <.div(
                 ^.cls := "ui icon input",
                 <.input(
-                  ^.`type` :="password",
+                  ^.`type` := "password",
                   ^.placeholder := "Password",
                   ^.name := "password",
                   ^.id := "password",
@@ -141,8 +164,9 @@ object LoginBox {
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
-  private val component = ScalaComponent.builder[Props]("Login")
-    .initialState(State("", "", None, None))
+  private val component = ScalaComponent
+    .builder[Props]("Login")
+    .initialState(State.Empty)
     .renderBackend[Backend]
     .componentDidUpdate(ctx =>
       Callback {
@@ -153,27 +177,29 @@ object LoginBox {
         import web.client.facades.semanticui.SemanticUIModal._
 
         // Close the modal box if the model changes
-        ctx.getDOMNode.toElement.foreach { dom =>
-          if (ctx.currentProps.visible() === SectionClosed) {
-            $(dom).modal("hide")
-          }
-          if (ctx.currentProps.visible() === SectionOpen) {
-            // Configure the modal to autofocus and to act properly on closing
-            $(dom).modal(
-              JsModalOptions
-                .autofocus(true)
-                .onHidden { () =>
-                  // Need to call direct access as this is outside the event loop
-                  ctx.setState(empty)
-                  ctx.currentProps.visible.dispatchCB(CloseLoginBox)
-                }
-            )
-            // Show the modal box
-            $(dom).modal("show")
-          }
+        ctx.getDOMNode.toElement.foreach {
+          dom =>
+            if (ctx.prevProps.visible =!= ctx.currentProps.visible && ctx.currentProps.visible === SectionClosed) {
+              $(dom).modal("hide")
+            }
+            if (ctx.prevProps.visible =!= ctx.currentProps.visible && ctx.currentProps.visible === SectionOpen) {
+              // Configure the modal to autofocus and to act properly on closing
+              $(dom).modal(
+                JsModalOptions
+                  .autofocus(true)
+                  .onHidden { () =>
+                    // Need to call direct access as this is outside the event loop
+                    (ctx.setState(State.Empty) *>
+                      SeqexecCircuit.dispatchCB(CloseLoginBox)).runNow
+                  }
+              )
+              // Show the modal box
+              $(dom).modal("show")
+            }
         }
-      }
-    ).build
+    })
+    .build
 
-  def apply(v: ModelProxy[SectionVisibilityState]): Unmounted[Props, State, Backend] = component(Props(v))
+  def apply(v: SectionVisibilityState): Unmounted[Props, State, Backend] =
+    component(Props(v))
 }
