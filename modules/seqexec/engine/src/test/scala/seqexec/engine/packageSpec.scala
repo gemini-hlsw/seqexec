@@ -419,7 +419,8 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
     inside (sfs) {
       case a::b::_ => {
         assert(TestState.sequenceStateIndex(seqId).getOption(a).exists(_.getSingleState(c).started))
-        assert(TestState.sequenceStateIndex(seqId).getOption(b).exists(_.getSingleState(c).isIdle))
+        assert(TestState.sequenceStateIndex(seqId).getOption(b).exists(_.getSingleState(c)
+          .completed))
         assert(dummy.get === markVal)
       }
     }

@@ -68,8 +68,7 @@ object SubsystemControlCell {
               Button.Props(
                 size     = Size.Small,
                 color    = Some("blue"),
-                // disabled = inExecution,
-                disabled = true, // Disable to run in production
+                disabled = inExecution,
                 labeled =
                   if (inExecution) Button.LeftLabeled else Button.NotLabeled,
                 icon = p.resourcesCalls

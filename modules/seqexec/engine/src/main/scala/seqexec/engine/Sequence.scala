@@ -8,6 +8,7 @@ import gem.Observation
 import cats.implicits._
 import monocle.Lens
 import monocle.macros.GenLens
+import seqexec.engine.Result.RetVal
 
 /**
   * A list of `Step`s grouped by target and instrument.
@@ -211,7 +212,7 @@ object Sequence {
 
     def failSingle(c: ActionCoordsInSeq, err: Result.Error): State[F]
 
-    def completeSingle(c: ActionCoordsInSeq): State[F]
+    def completeSingle[V <: RetVal](c: ActionCoordsInSeq, r: V): State[F]
 
     def getSingleState(c: ActionCoordsInSeq): Action.ActionState
 
@@ -369,9 +370,9 @@ object Sequence {
         else
           self
 
-      override def completeSingle(c: ActionCoordsInSeq): State[F] =
+      override def completeSingle[V <: RetVal](c: ActionCoordsInSeq, r: V): State[F] =
         if(getSingleState(c).started)
-          self.copy(singleRuns = singleRuns - c)
+          self.copy(singleRuns = singleRuns + (c -> Action.Completed(r)))
         else
           self
 
@@ -426,7 +427,8 @@ object Sequence {
 
       override def failSingle(c: ActionCoordsInSeq, err: Result.Error): State[F] = self
 
-      override def completeSingle(c: ActionCoordsInSeq): State[F] = self
+      override def completeSingle[V <: RetVal](c: ActionCoordsInSeq, r: V): State[F]
+        = self
 
       override def getSingleState(c: ActionCoordsInSeq): Action.ActionState = Action.Idle
 
