@@ -100,6 +100,9 @@ final class Flamingos2Epics(epicsService: CaService, tops: Map[String, String]) 
 
   def windowCover: Option[String] = Option(f2State.getStringAttribute("windowCover").value)
 
+  def countdown: Option[Int] = Option(f2State.getIntegerAttribute("countdown").value)
+    .map(_.toInt)
+
   // For FITS keywords
   def health: Option[String] = Option(f2State.getStringAttribute("INHEALTH").value)
 
