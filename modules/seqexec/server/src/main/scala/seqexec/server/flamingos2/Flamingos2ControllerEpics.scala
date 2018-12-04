@@ -6,7 +6,7 @@ package seqexec.server.flamingos2
 import cats.data.EitherT
 import cats.effect.IO
 import seqexec.model.dhs.ImageFileId
-import seqexec.server.{EpicsCodex, ObserveCommand, Progress, ProgressUtil, RemainingTime, SeqAction}
+import seqexec.server.{EpicsCodex, EpicsUtil, ObserveCommand, Progress, SeqAction}
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.{Decker, Filter, ReadoutMode, WindowCover, _}
 import org.log4s.getLogger
 import squants.{Seconds, Time}
@@ -133,9 +133,9 @@ object Flamingos2ControllerEpics extends Flamingos2Controller {
     _ <- Flamingos2Epics.instance.endObserveCmd.post
   } yield ()
 
-  override def observeProgress(total: Time): fs2.Stream[IO, Progress] = ProgressUtil.fromFOption(
-    _ => IO(Flamingos2Epics.instance.countdown.map(c => Progress(total, RemainingTime(c.seconds))))
-  )
+  override def observeProgress(total: Time): fs2.Stream[IO, Progress] =
+    EpicsUtil.countdown[IO](total, IO(Flamingos2Epics.instance.countdown.map(_.seconds)),
+      IO(Flamingos2Epics.instance.observeState))
 
   val ReadoutTimeout: Time = Seconds(300)
   val DefaultTimeout: Time = Seconds(60)

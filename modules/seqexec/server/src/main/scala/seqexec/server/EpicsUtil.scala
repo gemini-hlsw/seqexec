@@ -16,8 +16,9 @@ import org.log4s._
 import squants.Time
 import cats._
 import cats.data.EitherT
-import cats.effect.IO
+import cats.effect.{Effect, IO}
 import cats.implicits._
+import fs2.Stream
 
 trait EpicsCommand {
   import EpicsCommand._
@@ -244,5 +245,15 @@ object EpicsUtil {
 
   def smartSetParam[A: Eq](v: A, get: => Option[A], set: SeqAction[Unit]): SeqAction[Unit] =
     if(get =!= v.some) set else SeqAction.void
+
+  def countdown[F[_]: Effect](total: Time, remT: F[Option[Time]],
+                              obsState: F[Option[CarStateGeneric]]): Stream[F, Progress] =
+    ProgressUtil.fromFOption(_ => (remT, obsState).mapN { case (rem, st) =>
+      for{
+        c <- rem
+        s <- st
+        if s.isBusy
+      } yield Progress(total, RemainingTime(c))
+    })
 
 }

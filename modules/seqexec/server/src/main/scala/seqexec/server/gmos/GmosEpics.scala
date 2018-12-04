@@ -8,10 +8,8 @@ import java.lang.{Double => JDouble}
 import edu.gemini.epics.acm._
 import seqexec.server.EpicsCommand.setParameter
 import seqexec.server.gmos.GmosEpics.{RoiParameters, RoiStatus}
-import seqexec.server.{EpicsCommand, EpicsSystem, ObserveCommand, SeqAction, SeqexecFailure}
-import seqexec.server.EpicsUtil._
+import seqexec.server.{EpicsCommand, EpicsSystem, ObserveCommand, SeqAction}
 import org.log4s.{Logger, getLogger}
-import squants.Time
 
 import scala.collection.breakOut
 import scala.concurrent.duration._
@@ -194,13 +192,9 @@ class GmosEpics(epicsService: CaService, tops: Map[String, String]) {
 
   def dcName: Option[String] = Option(dcState.getStringAttribute("gmosdc").value)
 
-  private val observeCAttr: Option[CaAttribute[CarState]] = Option(dcState.addEnum("observeC",
-    GMOS_TOP + "dc:observeC", classOf[CarState]))
-  def observeC: Option[CarState] = observeCAttr.map(_.value)
-
-  def waitObserve(t: Time): SeqAction[CarState] = observeCAttr.map(attr =>
-    waitForValues(attr, List(CarState.IDLE, CarState.ERROR, CarState.PAUSED),t , "GMOS observe state")).getOrElse(
-    SeqAction.fail(SeqexecFailure.Unexpected(s"Cannot access ${GMOS_TOP}dc:observeC")))
+  private val observeCAttr: CaAttribute[CarState] = dcState.addEnum("observeC",
+    GMOS_TOP + "dc:observeC", classOf[CarState])
+  def observeState: Option[CarState] = Option(observeCAttr.value)
 
   // CC status values
 

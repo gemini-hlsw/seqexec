@@ -296,10 +296,11 @@ object GnirsControllerEpics extends GnirsController {
   private def smartSetDoubleParam(relTolerance: Double)(v: Double, get: => Option[Double], set: SeqAction[Unit]): List[SeqAction[Unit]] =
     if(get.forall(x => (v === 0.0 && x =!= 0.0) || abs((x - v)/v) > relTolerance)) List(set) else Nil
 
-  override def observeProgress(total: Time): Stream[IO, Progress] = ProgressUtil.fromFOption(_ => IO(
-    GnirsEpics.instance.countDown.flatMap(x => Try(x.toDouble).toOption)
-      .map(c => Progress(total, RemainingTime(c.seconds)))
-  ))
+  override def observeProgress(total: Time): Stream[IO, Progress] =
+    EpicsUtil.countdown[IO](total,
+      IO(GnirsEpics.instance.countDown.flatMap(x => Try(x.toDouble).toOption).map(_.seconds)),
+      IO(GnirsEpics.instance.observeState)
+    )
 
 
   private val DefaultTimeout: Time = Seconds(60)

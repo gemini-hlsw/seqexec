@@ -80,7 +80,7 @@ final class Flamingos2Epics(epicsService: CaService, tops: Map[String, String]) 
 
   }
 
-  private val f2State = epicsService.getStatusAcceptor("flamingos2::dcstatus")
+  private val f2State = epicsService.getStatusAcceptor("flamingos2::status")
 
   def exposureTime: Option[String] = Option(f2State.getStringAttribute("exposureTime").value)
 
@@ -102,6 +102,10 @@ final class Flamingos2Epics(epicsService: CaService, tops: Map[String, String]) 
 
   def countdown: Option[Int] = Option(f2State.getIntegerAttribute("countdown").value)
     .map(_.toInt)
+
+  private val observeCAttr: CaAttribute[CarState] = f2State.addEnum("observeState",
+    F2_TOP + "observeC.VAL", classOf[CarState])
+  def observeState: Option[CarState] = Option(observeCAttr.value)
 
   // For FITS keywords
   def health: Option[String] = Option(f2State.getStringAttribute("INHEALTH").value)

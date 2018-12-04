@@ -6,7 +6,7 @@ package seqexec.server.gmos
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.EpicsCodex.EncodeEpicsValue
 import seqexec.server.gmos.GmosController.Config.{Beam, InBeam, OutOfBeam, ROI}
-import seqexec.server.{EpicsCodex, ObserveCommand, Progress, ProgressUtil, RemainingTime, SeqAction, SeqexecFailure}
+import seqexec.server.{EpicsCodex, EpicsUtil, ObserveCommand, Progress, SeqAction, SeqexecFailure}
 import seqexec.server.EpicsUtil.smartSetParam
 import edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpReadMode
 import edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpGain
@@ -245,9 +245,8 @@ class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosCo
   } yield if(ret === ObserveCommand.Success) ObserveCommand.Aborted else ret
 
   override def observeProgress(total: Time, elapsed: ElapsedTime): Stream[IO, Progress] =
-    ProgressUtil.fromFOption(_ => IO(
-      GmosEpics.instance.countdown.map(c => Progress(total, RemainingTime(c.seconds)))
-    ))
+    EpicsUtil.countdown[IO](total, IO(GmosEpics.instance.countdown.map(_.seconds)),
+      IO(GmosEpics.instance.observeState))
 }
 
 object GmosControllerEpics {
