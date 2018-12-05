@@ -253,7 +253,8 @@ object EpicsUtil {
         c <- rem
         s <- st
         if s.isBusy
-      } yield Progress(total, RemainingTime(c))
-    })
+      } yield Progress(if(total>c) total else c, RemainingTime(c))
+    }).dropWhile(_.remaining.self.value === 0.0) // drop leading zeros
+      .takeThrough(_.remaining.self.value > 0.0) // drop all tailing zeros but the first one
 
 }

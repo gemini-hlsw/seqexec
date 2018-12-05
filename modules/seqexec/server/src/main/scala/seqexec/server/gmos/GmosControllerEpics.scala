@@ -6,8 +6,13 @@ package seqexec.server.gmos
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.EpicsCodex.EncodeEpicsValue
 import seqexec.server.gmos.GmosController.Config.{Beam, InBeam, OutOfBeam, ROI}
-import seqexec.server.{EpicsCodex, EpicsUtil, ObserveCommand, Progress, SeqAction, SeqexecFailure}
+import seqexec.server.EpicsCodex
+import seqexec.server.EpicsUtil
 import seqexec.server.EpicsUtil.smartSetParam
+import seqexec.server.ObserveCommand
+import seqexec.server.Progress
+import seqexec.server.SeqAction
+import seqexec.server.SeqexecFailure
 import edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpReadMode
 import edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpGain
 import edu.gemini.spModel.gemini.gmos.GmosCommonType.AmpCount
@@ -70,7 +75,7 @@ class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosCo
 
   private def setShutterState(s: ShutterState): SeqAction[Unit] = s match {
     case UnsetShutter => SeqAction.void
-    case s            => DC.setShutterState(encode(s))
+    case sh           => DC.setShutterState(encode(sh))
   }
 
   private def roiNumUsed(s: RegionsOfInterest): Int = s.rois match {
