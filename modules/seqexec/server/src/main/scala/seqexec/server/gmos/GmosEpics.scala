@@ -8,10 +8,8 @@ import java.lang.{Double => JDouble}
 import edu.gemini.epics.acm._
 import seqexec.server.EpicsCommand.setParameter
 import seqexec.server.gmos.GmosEpics.{RoiParameters, RoiStatus}
-import seqexec.server.{EpicsCommand, EpicsSystem, ObserveCommand, SeqAction, SeqexecFailure}
-import seqexec.server.EpicsUtil._
+import seqexec.server.{EpicsCommand, EpicsSystem, ObserveCommand, SeqAction}
 import org.log4s.{Logger, getLogger}
-import squants.Time
 
 import scala.collection.breakOut
 import scala.concurrent.duration._
@@ -35,7 +33,8 @@ class GmosEpics(epicsService: CaService, tops: Map[String, String]) {
     val stageMode: Option[CaParameter[String]] = cs.map(_.getString("stageMode"))
     def setStageMode(v: String): SeqAction[Unit] = setParameter(stageMode, v)
 
-    val useElectronicOffsetting: Option[CaParameter[Integer]] = cs.map(_.addInteger("useElectronicOffsetting", GMOS_TOP + "wfs:followA.K", "Enable electronic Offsets", false))
+    val useElectronicOffsetting: Option[CaParameter[Integer]] = cs.map(_.addInteger
+    ("useElectronicOffsetting", s"{GMOS_TOP}wfs:followA.K", "Enable electronic Offsets", false))
     def setElectronicOffsetting(v: Integer): SeqAction[Unit] = setParameter(useElectronicOffsetting, v)
 
     val filter1: Option[CaParameter[String]] = cs.map(_.getString("filter1"))
@@ -71,7 +70,7 @@ class GmosEpics(epicsService: CaService, tops: Map[String, String]) {
 
   private val stopCS: Option[CaCommandSender] = Option(epicsService.getCommandSender("gmos::stop"))
   private val observeAS: Option[CaApplySender] = Option(epicsService.createObserveSender("gmos::observeCmd",
-      GMOS_TOP + "apply", GMOS_TOP + "applyC", GMOS_TOP + "dc:observeC", false, GMOS_TOP + "stop", GMOS_TOP + "abort", ""))
+      s"${GMOS_TOP}apply", s"${GMOS_TOP}applyC", s"${GMOS_TOP}dc:observeC", false, s"${GMOS_TOP}stop", s"${GMOS_TOP}abort", ""))
 
   object continueCmd extends ObserveCommand {
     override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gmos::continue"))
@@ -109,7 +108,7 @@ class GmosEpics(epicsService: CaService, tops: Map[String, String]) {
   object configDCCmd extends EpicsCommand {
     override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gmos::dcconfig"))
 
-    val roiNumUsed: Option[CaParameter[JDouble]] = cs.map(_.addDouble("roiNumUsed", GMOS_TOP + "dc:roiNumrois", "Number of ROI used", false))
+    val roiNumUsed: Option[CaParameter[JDouble]] = cs.map(_.addDouble("roiNumUsed", s"${GMOS_TOP}dc:roiNumrois", "Number of ROI used", false))
     def setRoiNumUsed(v: Int): SeqAction[Unit] = setParameter(roiNumUsed, java.lang.Double.valueOf(v.toDouble))
 
     val rois: Map[Int, RoiParameters] = (1 to 5).map(i => i -> RoiParameters(cs, i))(breakOut)
@@ -129,10 +128,10 @@ class GmosEpics(epicsService: CaService, tops: Map[String, String]) {
     val gainSetting: Option[CaParameter[Integer]] = cs.map(_.getInteger("gainSetting"))
     def setGainSetting(v: Int): SeqAction[Unit] = setParameter(gainSetting, Integer.valueOf(v))
 
-    val ccdXBinning: Option[CaParameter[JDouble]] = cs.map(_.addDouble("ccdXBinning", GMOS_TOP + "dc:roiXBin", "CCD X Binning Value", false))
+    val ccdXBinning: Option[CaParameter[JDouble]] = cs.map(_.addDouble("ccdXBinning", s"${GMOS_TOP}dc:roiXBin", "CCD X Binning Value", false))
     def setCcdXBinning(v: Int): SeqAction[Unit] = setParameter(ccdXBinning, java.lang.Double.valueOf(v.toDouble))
 
-    val ccdYBinning: Option[CaParameter[JDouble]] = cs.map(_.addDouble("ccdYBinning", GMOS_TOP + "dc:roiYBin", "CCD Y Binning Value", false))
+    val ccdYBinning: Option[CaParameter[JDouble]] = cs.map(_.addDouble("ccdYBinning", s"${GMOS_TOP}dc:roiYBin", "CCD Y Binning Value", false))
     def setCcdYBinning(v: Int): SeqAction[Unit] = setParameter(ccdYBinning, java.lang.Double.valueOf(v.toDouble))
 
     val nsPairs: Option[CaParameter[Integer]] = cs.map(_.getInteger("nsPairs"))
@@ -194,13 +193,9 @@ class GmosEpics(epicsService: CaService, tops: Map[String, String]) {
 
   def dcName: Option[String] = Option(dcState.getStringAttribute("gmosdc").value)
 
-  private val observeCAttr: Option[CaAttribute[CarState]] = Option(dcState.addEnum("observeC",
-    GMOS_TOP + "dc:observeC", classOf[CarState]))
-  def observeC: Option[CarState] = observeCAttr.map(_.value)
-
-  def waitObserve(t: Time): SeqAction[CarState] = observeCAttr.map(attr =>
-    waitForValues(attr, List(CarState.IDLE, CarState.ERROR, CarState.PAUSED),t , "GMOS observe state")).getOrElse(
-    SeqAction.fail(SeqexecFailure.Unexpected(s"Cannot access ${GMOS_TOP}dc:observeC")))
+  private val observeCAttr: CaAttribute[CarState] = dcState.addEnum("observeC",
+    s"${GMOS_TOP}dc:observeC", classOf[CarState])
+  def observeState: Option[CarState] = Option(observeCAttr.value)
 
   // CC status values
 

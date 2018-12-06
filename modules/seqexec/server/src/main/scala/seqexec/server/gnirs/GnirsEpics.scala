@@ -146,6 +146,10 @@ class GnirsEpics(epicsService: CaService, tops: Map[String, String]) {
 
   def lowNoise: Option[Int] = Option(dcState.getIntegerAttribute("lowNoise").value).map(_.toInt)
 
+  private val observeCAttr: CaAttribute[CarStateGEM5] = dcState.addEnum("observeState",
+    GNIRS_TOP + "dc:observeC.VAL", classOf[CarStateGEM5])
+  def observeState: Option[CarStateGEM5] = Option(observeCAttr.value)
+
   def dhcConnected: Option[Int] = Option(dcState.getIntegerAttribute("dhcConnected").value).map(_.toInt)
 
   def minInt: Option[Double] = Option(dcState.getDoubleAttribute("minInt").value).map(_.toDouble)

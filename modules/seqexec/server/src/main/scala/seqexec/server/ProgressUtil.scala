@@ -26,6 +26,12 @@ object ProgressUtil {
     Scheduler[F](1).flatMap(sch =>
       sch.awakeEvery(PollPeriod).evalMapAccumulate(s0){case (st, t) => fs(t).run(st)}.map(_._2))
 
+  def fromStateTOption[F[_]: Effect, S](fs: FiniteDuration => StateT[F, S, Option[Progress]])
+  : S => Stream[F, Progress] = s0 =>
+    Scheduler[F](1).flatMap(sch =>
+      sch.awakeEvery(PollPeriod).evalMapAccumulate(s0){case (st, t) => fs(t).run(st)}.map(_._2))
+      .collect{ case Some(p) => p }
+
   def countdown[F[_]: Effect](total: Time, elapsed: Time): Stream[F, Progress] =
     ProgressUtil.fromF[F] {
       t: FiniteDuration => {
