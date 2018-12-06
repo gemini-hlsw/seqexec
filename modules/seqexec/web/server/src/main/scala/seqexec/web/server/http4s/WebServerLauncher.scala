@@ -88,7 +88,7 @@ object WebServerLauncher extends StreamApp[IO] with LogInitialization with Seqex
     }
 
   // Configuration of the authentication service
-  val authConf: Kleisli[IO, WebServerConfiguration, AuthenticationConfig] = Kleisli { conf =>
+  val authConf: Kleisli[IO, WebServerConfiguration, AuthenticationConfig] = Kleisli { _ =>
     for {
       ld <- ldapConf
       cfg <- config
@@ -202,7 +202,7 @@ object WebServerLauncher extends StreamApp[IO] with LogInitialization with Seqex
     // I have taken this from the examples at:
     // https://github.com/gvolpe/advanced-http4s/blob/master/src/main/scala/com/github/gvolpe/fs2/PubSub.scala
     // It's not very clear why we need to run this inside a Scheduler
-    Scheduler[IO](corePoolSize = 4).flatMap { implicit S =>
+    Scheduler[IO](corePoolSize = 4).flatMap { _ =>
       for {
         cli    <- Http1Client.stream[IO]()
         inq    <- Stream.eval(async.boundedQueue[IO, executeEngine.EventType](10))

@@ -608,13 +608,13 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
     Arbitrary {
       for {
         r  <- Gen.const(Root)
-        sc <- Gen.const(SoundTest)
+        st <- Gen.const(SoundTest)
         ep <- Gen.const(CalibrationQueuePage)
         pp <- arbitrary[PreviewPage]
         sp <- arbitrary[SequencePage]
         pc <- arbitrary[PreviewConfigPage]
         sc <- arbitrary[SequenceConfigPage]
-        p  <- Gen.oneOf(r, sc, ep, pp, sp, pc, sc)
+        p  <- Gen.oneOf(r, st, ep, pp, sp, pc, sc)
       } yield p
     }
 

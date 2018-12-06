@@ -7,7 +7,6 @@ package arb
 import gem.math.{ HourAngle, RightAscension }
 import org.scalacheck._
 import org.scalacheck.Arbitrary._
-import org.scalacheck.Cogen._
 
 trait ArbRightAscension {
   import ArbAngle._

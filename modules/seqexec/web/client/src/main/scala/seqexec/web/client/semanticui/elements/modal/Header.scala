@@ -11,7 +11,7 @@ import japgolly.scalajs.react.vdom.html_<^._
 object Header {
   private val component = ScalaComponent.builder[Unit]("Header")
     .stateless
-    .renderPC((_, p, c) =>
+    .renderPC((_, _, c) =>
       <.div(
         ^.cls := "header",
         c

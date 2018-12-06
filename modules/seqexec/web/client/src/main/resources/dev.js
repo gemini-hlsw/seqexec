@@ -25,8 +25,8 @@ $.fn.popup = require("semantic-ui-popup");
 
 if (module.hot) {
   module.hot.dispose(data => {
-    App.seqexec.SeqexecApp.stop();
+    App.SeqexecApp.stop();
   });
   module.hot.accept();
-  App.seqexec.SeqexecApp.start();
+  App.SeqexecApp.start();
 }

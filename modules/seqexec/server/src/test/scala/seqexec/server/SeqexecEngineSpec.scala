@@ -30,8 +30,7 @@ import seqexec.model.enum.Resource.TCS
 import monocle.Monocle._
 import shapeless.tag
 
-@SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
-@SuppressWarnings(Array("org.wartremover.warts.Throw"))
+@SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements", "org.wartremover.warts.Throw"))
 class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertions {
   private val defaultSettings = Settings(Site.GS,
     odbHost = "localhost",

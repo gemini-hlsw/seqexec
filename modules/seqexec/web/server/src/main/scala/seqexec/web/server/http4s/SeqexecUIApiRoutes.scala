@@ -90,7 +90,7 @@ class SeqexecUIApiRoutes(site:         String,
     AuthedService {
       // Route used for testing only
       case GET  -> Root  / "log" / count as _ if devMode =>
-        for {i <- 0 until min(1000, max(0, count.toInt))} {
+        for {_ <- 0 until min(1000, max(0, count.toInt))} {
           clientLog.info("info")
           clientLog.warn("warn")
           clientLog.error("error")

@@ -7,7 +7,6 @@ package arb
 import gem.math.{ Angle, Declination }
 import org.scalacheck._
 import org.scalacheck.Arbitrary._
-import org.scalacheck.Cogen._
 
 trait ArbDeclination {
   import ArbAngle._

@@ -22,7 +22,7 @@ object DropdownMenu {
                    defaultSelectText: String,
                    items: List[A],
                    disabled: Boolean,
-                   onChange: A => Callback = (a: A) => Callback.empty)
+                   onChange: A => Callback = (_: A) => Callback.empty)
 
   private def component[A: Show] = ScalaComponent.builder[Props[A]]("DropDownMenu")
     .stateless
@@ -59,7 +59,7 @@ object DropdownMenu {
         ctx.getDOMNode.toElement.foreach { dom =>
           $(dom).find(".ui.dropdown").dropdown(
             JsDropdownOptions
-              .onChange { (value: String, text: String) =>
+              .onChange { (_: String, text: String) =>
                 // We need to run the callback explicitly as we are outside the event loop
                 ctx.props.items.find(_.show === text).map(ctx.props.onChange).foreach(_.runNow)
               }

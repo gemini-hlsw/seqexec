@@ -306,10 +306,9 @@ class SeqexecEngine(httpClient: Client[IO], settings: Settings[IO], sm: SeqexecM
   ).map(_.asRight)
 
   private def moveSeq(qid: QueueId, seqId: Observation.Id, delta: Int): Endo[EngineState] = st => (
-    for {
-      q <- st.queues.get(qid)
-      if q.queue.contains(seqId)
-    } yield queueO(qid).modify(_.moveSeq(seqId, delta))(st)
+    st.queues.get(qid).filter(_.queue.contains(seqId)).map {_ =>
+      queueO(qid).modify(_.moveSeq(seqId, delta))(st)
+    }
   ).getOrElse(st)
 
   def moveSequenceInQueue(q: EventQueue, qid: QueueId, seqId: Observation.Id, delta: Int, cid: ClientId)
@@ -320,10 +319,9 @@ class SeqexecEngine(httpClient: Client[IO], settings: Settings[IO], sm: SeqexecM
     ).map(_.asRight)
 
   private def clearQ(qid: QueueId): Endo[EngineState] = st => (
-    for {
-      q <- st.queues.get(qid)
-      if q.status(st) =!= BatchExecState.Running
-    } yield queueO(qid).modify(_.clear)(st)
+    st.queues.get(qid).filter(_.status(st) =!= BatchExecState.Running).map { _ =>
+      queueO(qid).modify(_.clear)(st)
+    }
   ).getOrElse(st)
 
   def clearQueue(q: EventQueue, qid: QueueId): IO[Either[SeqexecFailure, Unit]] = q.enqueue1(

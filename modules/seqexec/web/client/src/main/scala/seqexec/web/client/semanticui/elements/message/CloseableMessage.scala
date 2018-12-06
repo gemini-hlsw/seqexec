@@ -48,7 +48,7 @@ object CloseableMessage extends Message {
         import org.scalajs.dom.Element
 
         ctx.getDOMNode.toElement.foreach { dom =>
-          $(dom).on("click", (e: Element, ev: Any) =>
+          $(dom).on("click", (e: Element, _: Any) =>
             $(e).closest(".message").transition("fade")
           )
         }

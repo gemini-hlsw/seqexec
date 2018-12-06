@@ -23,8 +23,8 @@ object InputEV {
                    inputType: InputType = TextInput,
                    placeholder: String = "",
                    disabled: Boolean = false,
-                   onChange: ChangeCallback = s => Callback.empty, // callback for parents of this component
-                   onBlur: ChangeCallback = s => Callback.empty)
+                   onChange: ChangeCallback = _ => Callback.empty, // callback for parents of this component
+                   onBlur: ChangeCallback = _ => Callback.empty)
 
   @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
   final case class State(value: String, changed: Boolean = false)
