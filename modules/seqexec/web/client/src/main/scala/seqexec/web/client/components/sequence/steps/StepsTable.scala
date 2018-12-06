@@ -453,7 +453,7 @@ object StepsTable {
             className = SeqexecStyles.centeredCell.htmlClass,
             cellRenderer = stepExposureRenderer(i.instrument)
           )))
-      .filter(_ => exposureVisible)
+      .filter(_ => p.showExposure && exposureVisible)
 
   def fpuColumn(p: Props, fpuVisible: Boolean): Option[Table.ColumnArg] =
     p.steps
