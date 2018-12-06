@@ -140,6 +140,7 @@ object Flamingos2ControllerEpics extends Flamingos2Controller {
         val m = if (total >= st) total else st
         val p = for {
           obst <- Flamingos2Epics.instance.observeState
+          dummy = obst // Hack to avoid scala/bug#11175
           if obst.isBusy
           rem <- Flamingos2Epics.instance.countdown.map(_.seconds)
         } yield Progress(m, RemainingTime(rem))

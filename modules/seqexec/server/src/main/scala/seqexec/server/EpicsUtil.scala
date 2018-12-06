@@ -252,6 +252,7 @@ object EpicsUtil {
       for{
         c <- rem
         s <- st
+        dummy = s // Hack to avoid scala/bug#11175
         if s.isBusy
       } yield Progress(if(total>c) total else c, RemainingTime(c))
     }).dropWhile(_.remaining.self.value === 0.0) // drop leading zeros
