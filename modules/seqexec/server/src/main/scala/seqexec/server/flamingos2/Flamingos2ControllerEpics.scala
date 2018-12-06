@@ -3,10 +3,11 @@
 
 package seqexec.server.flamingos2
 
-import cats.data.EitherT
+import cats.data.{EitherT, StateT}
 import cats.effect.IO
+import cats.implicits._
 import seqexec.model.dhs.ImageFileId
-import seqexec.server.{EpicsCodex, EpicsUtil, ObserveCommand, Progress, SeqAction}
+import seqexec.server.{EpicsCodex, ObserveCommand, Progress, ProgressUtil, RemainingTime, SeqAction}
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.{Decker, Filter, ReadoutMode, WindowCover, _}
 import org.log4s.getLogger
 import squants.{Seconds, Time}
@@ -133,9 +134,22 @@ object Flamingos2ControllerEpics extends Flamingos2Controller {
     _ <- Flamingos2Epics.instance.endObserveCmd.post
   } yield ()
 
-  override def observeProgress(total: Time): fs2.Stream[IO, Progress] =
-    EpicsUtil.countdown[IO](total, IO(Flamingos2Epics.instance.countdown.map(_.seconds)),
-      IO(Flamingos2Epics.instance.observeState))
+  override def observeProgress(total: Time): fs2.Stream[IO, Progress] = {
+    val s = ProgressUtil.fromStateTOption[IO, Time](_ => StateT[IO, Time, Option[Progress]] { st =>
+      IO {
+        val m = if (total >= st) total else st
+        val p = for {
+          obst <- Flamingos2Epics.instance.observeState
+          if obst.isBusy
+          rem <- Flamingos2Epics.instance.countdown.map(_.seconds)
+        } yield Progress(m, RemainingTime(rem))
+        (m, p)
+      }
+    })
+    s(total).dropWhile(_.remaining.self.value === 0.0) // drop leading zeros
+      .takeThrough(_.remaining.self.value > 0.0) // drop all tailing zeros but the first one
+
+  }
 
   val ReadoutTimeout: Time = Seconds(300)
   val DefaultTimeout: Time = Seconds(60)
