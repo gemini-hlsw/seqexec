@@ -24,7 +24,7 @@ $.fn.modal = require("semantic-ui-modal");
 $.fn.popup = require("semantic-ui-popup");
 
 if (module.hot) {
-  module.hot.dispose(data => {
+  module.hot.dispose(() => {
     App.SeqexecApp.stop();
   });
   module.hot.accept();
