@@ -24,6 +24,7 @@ import org.http4s.HttpService
 import org.http4s.server.Router
 import org.http4s.server.prometheus.{PrometheusMetrics, PrometheusExportService}
 import org.http4s.server.prometheus.{PrometheusExportService}
+import org.http4s.server.middleware.Logger
 import org.log4s._
 import scala.concurrent.ExecutionContext.Implicits.global
 import seqexec.model.events._
@@ -130,7 +131,7 @@ object WebServerLauncher extends StreamApp[IO] with LogInitialization with Seqex
             "/api/seqexec/commands" -> new SeqexecCommandRoutes(as, inputs, se).service,
             "/api" -> new SeqexecUIApiRoutes(conf.site, conf.devMode, as, outputs).service)
     for {
-      static <- Stream.eval(metricsMiddleware(router))
+      static <- Stream.eval(metricsMiddleware(Logger(logHeaders = true, logBody = false)(router))) // bodies are binary encoded
       blaze <- build(pe.service <+> static)
     } yield blaze
   }
