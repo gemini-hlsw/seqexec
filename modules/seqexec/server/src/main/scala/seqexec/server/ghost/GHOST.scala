@@ -116,8 +116,8 @@ object GHOST {
             srifu1Name, (srifu1RAHMS, srifu1DecHDMS).mapN(Coordinates.apply),
             srifu2Name, (srifu2RAHMS, srifu2DecHDMS).mapN(Coordinates.apply),
             hrifu1Name, (hrifu1RAHMS, hrifu1DecHDMS).mapN(Coordinates.apply),
-            hrifu2Name, (hrifu2RAHMS, hrifu2DecHDMS).mapN(Coordinates.apply))}
-          ).leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
+            hrifu2Name, (hrifu2RAHMS, hrifu2DecHDMS).mapN(Coordinates.apply))
+        }).leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
       }
     }
   }
