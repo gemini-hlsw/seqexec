@@ -16,6 +16,7 @@ import seqexec.server.keywords.GDSClient
 
 import scala.concurrent.duration._
 import org.log4s._
+import seqexec.server.ConfigUtilOps.{ContentError, ExtractFailure}
 import seqexec.server.SeqexecFailure.{Execution, SeqexecException}
 import squants.time.Time
 
@@ -196,9 +197,9 @@ object GHOSTController {
     final case class TargetPlusSky(override val baseCoords: Option[Coordinates],
                                    override val expTime: Duration,
                                    override val ifu1Coordinates: Coordinates,
-                                   ifu2Coordinatess: Coordinates) extends StandardResolutionMode {
+                                   ifu2Coordinates: Coordinates) extends StandardResolutionMode {
       override def ifu2Config: Configuration =
-        ifuConfig(IFUNum.IFU2, IFUTargetType.SkyPosition, ifu2Coordinatess, BundleConfig.Sky)
+        ifuConfig(IFUNum.IFU2, IFUTargetType.SkyPosition, ifu2Coordinates, BundleConfig.Sky)
     }
 
     final case class SkyPlusTarget(override val baseCoords: Option[Coordinates],
@@ -249,7 +250,7 @@ object GHOSTController {
   // These are the parameters passed to GHOST from the WDBA.
   // We use them to determine the type of configuration being used by GHOST, and instantiate it.
   object GHOSTConfig {
-    def parse(baseCoords: Option[Coordinates],
+    def apply(baseCoords: Option[Coordinates],
               expTime: Duration,
               srifu1Name: Option[String],
               srifu1Coords: Option[Coordinates],
@@ -258,14 +259,14 @@ object GHOSTController {
               hrifu1Name: Option[String],
               hrifu1Coords: Option[Coordinates],
               hrifu2Name: Option[String],
-              hrifu2Coords: Option[Coordinates]): Option[GHOSTConfig] = {
+              hrifu2Coords: Option[Coordinates]): Either[ExtractFailure, GHOSTConfig] = {
       import IFUTargetType._
 
       val sifu1 = determineType(srifu1Name)
       val sifu2 = determineType(srifu2Name)
       val hifu1 = determineType(hrifu1Name)
       val hifu2 = determineType(hrifu2Name)
-      (sifu1, sifu2, hifu1, hifu2) match {
+      val extracted = (sifu1, sifu2, hifu1, hifu2) match {
         case (Target, NoTarget, NoTarget, NoTarget) =>
           srifu1Coords.map(StandardResolutionMode.SingleTarget.apply(baseCoords, expTime, _))
         case (Target, Target, NoTarget, NoTarget) =>
@@ -280,6 +281,10 @@ object GHOSTController {
           (hrifu1Coords, hrifu2Coords).mapN(HighResolutionMode.TargetPlusSky.apply(baseCoords, expTime, _, _))
         case _ =>
           None
+      }
+      extracted match {
+        case Some(config) => Right(config)
+        case None         => Left(ContentError("Response does not constitute a valid GHOST configuration"))
       }
     }
 

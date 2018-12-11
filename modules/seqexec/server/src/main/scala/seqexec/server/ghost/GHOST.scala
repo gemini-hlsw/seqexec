@@ -108,15 +108,15 @@ object GHOST {
           hrifu2RAHMS   <- raExtractor(Ghost.HRIFU2RAHMS)
           hrifu2DecHDMS <- decExtractor(Ghost.HRIFU2DecDMS)
 
-        } yield {
-          val hrifu2Name = hrifu2RAHMS.as("Sky")
-          GHOSTConfig(
+          config <- GHOSTConfig(
             (baseRAHMS, baseDecDMS).mapN(Coordinates.apply),
             1.minute,
             srifu1Name, (srifu1RAHMS, srifu1DecHDMS).mapN(Coordinates.apply),
             srifu2Name, (srifu2RAHMS, srifu2DecHDMS).mapN(Coordinates.apply),
             hrifu1Name, (hrifu1RAHMS, hrifu1DecHDMS).mapN(Coordinates.apply),
-            hrifu2Name, (hrifu2RAHMS, hrifu2DecHDMS).mapN(Coordinates.apply))
+            hrifu2RAHMS.as("Sky"), (hrifu2RAHMS, hrifu2DecHDMS).mapN(Coordinates.apply))
+        } yield {
+          config
         }).leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
       }
     }
