@@ -42,7 +42,7 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
     private final short MRK_PRESET = 2;
     private final short MRK_IDLE = 0;
 
-    private final Boolean trace = true;
+    private final Boolean trace = false;
 
     private long timeout;
     private TimeUnit timeoutUnit;
