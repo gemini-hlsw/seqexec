@@ -63,8 +63,9 @@ object Flamingos2ControllerEpics extends Flamingos2Controller {
     case FocalPlaneUnit.Custom(s)   => ("null", s)
   }
 
-  implicit val encodeFilterPosition: EncodeEpicsValue[Filter, String] = EncodeEpicsValue {
-    case Filter.OPEN    => "Open"
+  // Removed obsolete filter positions Open and DK_G0807
+  implicit val encodeFilterPosition: EncodeEpicsValue[Filter, Option[String]] =
+    EncodeEpicsValue.applyO {
     case Filter.Y       => "Y_G0811"
     case Filter.F1056   => "F1056"
     case Filter.F1063   => "F1063"
@@ -75,7 +76,6 @@ object Flamingos2ControllerEpics extends Flamingos2Controller {
     case Filter.K_SHORT => "Ks_G0804"
     case Filter.JH      => "JH_G0809"
     case Filter.HK      => "HK_G0806"
-    case Filter.DARK    => "DK_G0807"
     case Filter.K_BLUE  => "K-blue_G0814"
     case Filter.K_RED   => "K-red_G0815"
   }
@@ -101,12 +101,13 @@ object Flamingos2ControllerEpics extends Flamingos2Controller {
 
   def setCCConfig(cc: CCConfig): SeqAction[Unit] = {
     val fpu = encode(cc.fpu)
+    val filter = encode(cc.f)
     for {
       _ <- Flamingos2Epics.instance.configCmd.setWindowCover(encode(cc.w))
       _ <- Flamingos2Epics.instance.configCmd.setDecker(encode(cc.d))
       _ <- Flamingos2Epics.instance.configCmd.setMOS(fpu._1)
       _ <- Flamingos2Epics.instance.configCmd.setMask(fpu._2)
-      _ <- Flamingos2Epics.instance.configCmd.setFilter(encode(cc.f))
+      _ <- filter.map(Flamingos2Epics.instance.configCmd.setFilter).getOrElse(SeqAction.void)
       _ <- Flamingos2Epics.instance.configCmd.setLyot(encode(cc.l))
       _ <- Flamingos2Epics.instance.configCmd.setGrism(encode(cc.g))
     } yield ()

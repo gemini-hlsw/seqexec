@@ -158,6 +158,7 @@ object EpicsCodex {
 
   object EncodeEpicsValue {
     def apply[A, T](f: A => T): EncodeEpicsValue[A, T] = (a: A) => f(a)
+    def applyO[A, T](f: PartialFunction[A, T]): EncodeEpicsValue[A, Option[T]] = (a: A) => f.lift(a)
   }
 
   def encode[A, T](a: A)(implicit e: EncodeEpicsValue[A, T]): T = e.encode(a)
