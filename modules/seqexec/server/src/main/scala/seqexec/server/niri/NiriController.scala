@@ -1,3 +1,6 @@
+// Copyright (c) 2016-2018 Association of Universities for Research in Astronomy, Inc. (AURA)
+// For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
+
 package seqexec.server.niri
 
 import cats.Show
@@ -5,7 +8,7 @@ import cats.effect.IO
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.niri.NiriController.NiriConfig
 import seqexec.server.{ObserveCommand, Progress, SeqAction}
-import squants.{Length, Time}
+import squants.Time
 
 trait NiriController {
 
@@ -34,17 +37,13 @@ object NiriController {
   type Disperser = edu.gemini.spModel.gemini.niri.Niri.Disperser
   type Mask = edu.gemini.spModel.gemini.niri.Niri.Mask
 
-  sealed trait WindowCover
-  object WindowCover {
-    case object Closed extends WindowCover
-    case object Open extends  WindowCover
-  }
-
   sealed trait ReadMode
   object ReadMode {
     case object LowRN extends ReadMode
     case object MediumRN extends ReadMode
+    case object MediumRNDeep extends ReadMode
     case object HighRN extends ReadMode
+    case object ThermalIR extends ReadMode
   }
 
   final case class DCConfig(exposureTime: ExposureTime,
@@ -52,14 +51,17 @@ object NiriController {
                             readMode: ReadMode,
                             builtInROI: BuiltInROI
                            )
-  final case class CCConfig(windowCover: WindowCover,
-                            camera: Camera,
-                            beamSplitter: BeamSplitter,
-                            filter: Filter,
-                            focus: Focus,
-                            disperser: Disperser,
-                            mask: Mask
-                           )
+  sealed trait CCConfig
+  case object Dark extends CCConfig
+
+  final case class Common(camera: Camera,
+                          beamSplitter: BeamSplitter,
+                          filter: Filter,
+                          focus: Focus,
+                          disperser: Disperser,
+                          mask: Mask
+                         ) extends CCConfig
+
   final case class NiriConfig(cc: CCConfig, dc: DCConfig)
 
   implicit val cfgShow: Show[NiriConfig] = Show.fromToString
