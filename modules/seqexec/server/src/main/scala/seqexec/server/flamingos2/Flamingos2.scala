@@ -47,7 +47,7 @@ final case class Flamingos2(f2Controller: Flamingos2Controller, dhsClient: DhsCl
 
   override def notifyObserveEnd: SeqAction[Unit] = f2Controller.endObserve
 
-  override def notifyObserveStart = SeqAction.void
+  override def notifyObserveStart: SeqAction[Unit] = SeqAction.void
 
   override def calcObserveTime(config: Config): Time =
     config.extractAs[JDouble](OBSERVE_KEY / EXPOSURE_TIME_PROP)
@@ -121,10 +121,13 @@ object Flamingos2 {
       p <- config.extractAs[WindowCover](INSTRUMENT_KEY / WINDOW_COVER_PROP).recover { case _:ConfigUtilOps.ExtractFailure => windowCoverFromObserveType(obsType)}
       q <- config.extractAs[Decker](INSTRUMENT_KEY / DECKER_PROP)
       r <- fpuConfig(config)
-      s <- config.extractAs[Filter](INSTRUMENT_KEY / FILTER_PROP)
+      f <- config.extractAs[Filter](INSTRUMENT_KEY / FILTER_PROP)
+      s <- if(f.isObsolete) ContentError(s"Obsolete filter ${f.displayValue}").asLeft
+           else f.asRight
       t <- config.extractAs[LyotWheel](INSTRUMENT_KEY / LYOT_WHEEL_PROP)
       u <- config.extractAs[Disperser](INSTRUMENT_KEY / DISPERSER_PROP).map(disperserFromObserveType(obsType, _))
-    } yield CCConfig(p, q, r, s, t, u)).leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
+    } yield CCConfig(p, q, r, s, t, u)).leftMap(e => SeqexecFailure.Unexpected
+    (ConfigUtilOps.explain(e)))
 
   def dcConfigFromSequenceConfig(config: Config): TrySeq[DCConfig] =
     (for {
