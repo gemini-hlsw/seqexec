@@ -11,7 +11,7 @@ import seqexec.server.{InstrumentControllerSim, ObserveCommand, Progress, SeqAct
 import squants.Time
 import squants.time.TimeConversions._
 
-class NiriControllerSim extends NiriController {
+object NiriControllerSim extends NiriController {
 
   private val sim: InstrumentControllerSim = InstrumentControllerSim(s"NIRI")
 

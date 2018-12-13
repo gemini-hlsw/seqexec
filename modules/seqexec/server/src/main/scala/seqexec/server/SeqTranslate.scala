@@ -39,6 +39,7 @@ import seqexec.server.gws.{DummyGwsKeywordsReader, GwsHeader, GwsKeywordsReaderI
 import seqexec.server.tcs._
 import seqexec.server.tcs.TcsController.ScienceFoldPosition
 import seqexec.server.gnirs._
+import seqexec.server.niri.{Niri, NiriController, NiriHeader}
 import squants.Time
 import squants.time.TimeConversions._
 
@@ -145,7 +146,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
         val res = resourceFromSystem(x)
         val kind = ActionType.Configure(res)
 
-        (res -> x.configure(config).map(_ => Response.Configured(x.resource)).toAction(kind))
+        res -> x.configure(config).map(_ => Response.Configured(x.resource)).toAction(kind)
       }.toMap
       def rest(ctx:HeaderExtraData): List[List[Action[IO]]] = List(
         List(Action(ActionType.Observe, observe(config, obsId, inst, sys.filterNot(inst.equals),
@@ -361,7 +362,8 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
     case Instrument.GNIRS => TrySeq(Gnirs(systems.gnirs, systems.dhs))
     case Instrument.GPI   => TrySeq(GPI(systems.gpi))
     case Instrument.GHOST => TrySeq(GHOST(systems.ghost))
-    case _                      => TrySeq.fail(Unexpected(s"Instrument $inst not supported."))
+    case Instrument.NIRI  => TrySeq(Niri(systems.niri, systems.dhs))
+    case _                => TrySeq.fail(Unexpected(s"Instrument $inst not supported."))
   }
 
   private def calcResources(sys: List[System[IO]]): Set[Resource] =
@@ -407,7 +409,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
     case Gnirs(_, _)      => Instrument.GNIRS
     case GPI(_)           => Instrument.GPI
     case GHOST(_)         => Instrument.GHOST
-
+    case Niri(_, _)       => Instrument.NIRI
   }
 
   private def calcInstHeader(config: Config, inst: Instrument): TrySeq[Header] = {
@@ -426,6 +428,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
         toInstrumentSys(inst).map(GPIHeader.header(_, systems.gpi.gdsClient, tcsKReader, ObsKeywordReaderImpl(config, site)))
       case Instrument.GHOST  =>
         GHOSTHeader.header().asRight
+      case Instrument.NIRI   => NiriHeader.header.asRight
       case _                 =>
         TrySeq.fail(Unexpected(s"Instrument $inst not supported."))
     }
@@ -474,7 +477,8 @@ object SeqTranslate {
                       gmosNorth: GmosController.GmosNorthController,
                       gnirs: GnirsController,
                       gpi: GPIController[IO],
-                      ghost: GHOSTController[IO]
+                      ghost: GHOSTController[IO],
+                      niri: NiriController
                     )
 
   private sealed trait StepType {
@@ -489,6 +493,7 @@ object SeqTranslate {
       case Gnirs.name      => TrySeq(Instrument.GNIRS)
       case GPI.name        => TrySeq(Instrument.GPI)
       case GHOST.name      => TrySeq(Instrument.GHOST)
+      case Niri.name       => TrySeq(Instrument.NIRI)
       case ins             => TrySeq.fail(UnrecognizedInstrument(s"inst $ins"))
     }
   }
