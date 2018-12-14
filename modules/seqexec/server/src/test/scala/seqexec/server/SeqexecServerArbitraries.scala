@@ -248,71 +248,78 @@ object SeqexecServerArbitraries extends ArbTime {
     for {
       basePos <- arbitrary[Option[Coordinates]]
       exp <- arbitrary[ExposureTime]
+      srifu1Name <- arbitrary[String]
       srifu1Pos <- arbitrary[Coordinates]
-    } yield GHOSTController.StandardResolutionMode.SingleTarget(basePos, exp, srifu1Pos)
+    } yield GHOSTController.StandardResolutionMode.SingleTarget(basePos, exp, srifu1Name, srifu1Pos)
 
   implicit val ghostSRSingleTargetConfigCogen: Cogen[GHOSTController.StandardResolutionMode.SingleTarget] =
-    Cogen[(Option[Coordinates], ExposureTime, Coordinates)]
-      .contramap(x => (x.baseCoords, x.expTime, x.ifu1Coordinates))
+    Cogen[(Option[Coordinates], ExposureTime, String, Coordinates)]
+      .contramap(x => (x.baseCoords, x.expTime, x.ifu1TargetName, x.ifu1Coordinates))
 
   val ghostSRDualTargetConfigGen: Gen[GHOSTController.StandardResolutionMode.DualTarget] =
     for {
       basePos    <- arbitrary[Option[Coordinates]]
       exp        <- arbitrary[ExposureTime]
+      srifu1Name <- arbitrary[String]
       srifu1Pos  <- arbitrary[Coordinates]
+      srifu2Name <- arbitrary[String]
       srifu2Pos  <- arbitrary[Coordinates]
-    } yield GHOSTController.StandardResolutionMode.DualTarget(basePos, exp, srifu1Pos, srifu2Pos)
+    } yield GHOSTController.StandardResolutionMode.DualTarget(basePos, exp, srifu1Name, srifu1Pos, srifu2Name, srifu2Pos)
 
   implicit val ghostSRDualTargetConfigCogen: Cogen[GHOSTController.StandardResolutionMode.DualTarget] =
-    Cogen[(Option[Coordinates], ExposureTime, Coordinates, Coordinates)]
-      .contramap(x => (x.baseCoords, x.expTime, x.ifu1Coordinates, x.ifu2Coordinates))
+    Cogen[(Option[Coordinates], ExposureTime, String, Coordinates, String, Coordinates)]
+      .contramap(x => (x.baseCoords, x.expTime, x.ifu1TargetName, x.ifu1Coordinates, x.ifu2TargetName, x.ifu2Coordinates))
 
   val ghostSRTargetSkyConfigGen: Gen[GHOSTController.StandardResolutionMode.TargetPlusSky] =
     for {
       basePos    <- arbitrary[Option[Coordinates]]
       exp        <- arbitrary[ExposureTime]
+      srifu1Name <- arbitrary[String]
       srifu1Pos  <- arbitrary[Coordinates]
       srifu2Pos  <- arbitrary[Coordinates]
-    } yield GHOSTController.StandardResolutionMode.TargetPlusSky(basePos, exp, srifu1Pos, srifu2Pos)
+    } yield GHOSTController.StandardResolutionMode.TargetPlusSky(basePos, exp, srifu1Name, srifu1Pos, srifu2Pos)
 
   implicit val ghostSRTargetSkyConfigCogen: Cogen[GHOSTController.StandardResolutionMode.TargetPlusSky] =
-    Cogen[(Option[Coordinates], ExposureTime, Coordinates, Coordinates)]
-      .contramap(x => (x.baseCoords, x.expTime, x.ifu1Coordinates, x.ifu2Coordinates))
+    Cogen[(Option[Coordinates], ExposureTime, String, Coordinates, Coordinates)]
+      .contramap(x => (x.baseCoords, x.expTime, x.ifu1TargetName, x.ifu1Coordinates, x.ifu2Coordinates))
 
   implicit val ghostSRSkyTargetConfigGen: Gen[GHOSTController.StandardResolutionMode.SkyPlusTarget] =
     for {
       basePos    <- arbitrary[Option[Coordinates]]
       exp        <- arbitrary[ExposureTime]
       srifu1Pos  <- arbitrary[Coordinates]
+      srifu2Name <- arbitrary[String]
       srifu2Pos  <- arbitrary[Coordinates]
-    } yield GHOSTController.StandardResolutionMode.SkyPlusTarget(basePos, exp, srifu1Pos, srifu2Pos)
+    } yield GHOSTController.StandardResolutionMode.SkyPlusTarget(basePos, exp, srifu1Pos, srifu2Name, srifu2Pos)
 
   implicit val ghostSRSkyTargetConfigCogen: Cogen[GHOSTController.StandardResolutionMode.SkyPlusTarget] =
-    Cogen[(Option[Coordinates], ExposureTime, Coordinates, Coordinates)]
-      .contramap(x => (x.baseCoords, x.expTime, x.ifu1Coordinates, x.ifu2Coordinates))
+    Cogen[(Option[Coordinates], ExposureTime, Coordinates, String, Coordinates)]
+      .contramap(x => (x.baseCoords, x.expTime, x.ifu1Coordinates, x.ifu2TargetName, x.ifu2Coordinates))
 
   implicit val ghostHRSingleTargetConfigGen: Gen[GHOSTController.HighResolutionMode.SingleTarget] =
     for {
       basePos   <- arbitrary[Option[Coordinates]]
       exp       <- arbitrary[ExposureTime]
-      srifu1Pos <- arbitrary[Coordinates]
-    } yield GHOSTController.HighResolutionMode.SingleTarget(basePos, exp, srifu1Pos)
+      hrifu1Name <- arbitrary[String]
+      hrifu1Pos <- arbitrary[Coordinates]
+    } yield GHOSTController.HighResolutionMode.SingleTarget(basePos, exp, hrifu1Name, hrifu1Pos)
 
   implicit val ghostHRSingleTargetConfigCogen: Cogen[GHOSTController.HighResolutionMode.SingleTarget] =
-    Cogen[(Option[Coordinates], ExposureTime, Coordinates)]
-      .contramap(x => (x.baseCoords, x.expTime, x.ifu1Coordinates))
+    Cogen[(Option[Coordinates], ExposureTime, String, Coordinates)]
+      .contramap(x => (x.baseCoords, x.expTime, x.ifu1TargetName, x.ifu1Coordinates))
 
   implicit val ghostHRTargetPlusSkyConfigGen: Gen[GHOSTController.HighResolutionMode.TargetPlusSky] =
     for {
-      basePos   <- arbitrary[Option[Coordinates]]
-      exp       <- arbitrary[ExposureTime]
-      srifu1Pos <- arbitrary[Coordinates]
-      srifu2Pos <- arbitrary[Coordinates]
-    } yield GHOSTController.HighResolutionMode.TargetPlusSky(basePos, exp, srifu1Pos, srifu2Pos)
+      basePos    <- arbitrary[Option[Coordinates]]
+      exp        <- arbitrary[ExposureTime]
+      hrifu1Name <- arbitrary[String]
+      hrifu1Pos  <- arbitrary[Coordinates]
+      hrifu2Pos  <- arbitrary[Coordinates]
+    } yield GHOSTController.HighResolutionMode.TargetPlusSky(basePos, exp, hrifu1Name, hrifu1Pos, hrifu2Pos)
 
   implicit val ghostHRTargetSkyConfigCogen: Cogen[GHOSTController.HighResolutionMode.TargetPlusSky] =
-    Cogen[(Option[Coordinates], ExposureTime, Coordinates, Coordinates)]
-      .contramap(x => (x.baseCoords, x.expTime, x.ifu1Coordinates, x.ifu2Coordinates))
+    Cogen[(Option[Coordinates], ExposureTime, String, Coordinates, Coordinates)]
+      .contramap(x => (x.baseCoords, x.expTime, x.ifu1TargetName, x.ifu1Coordinates, x.ifu2Coordinates))
 
   implicit val ghostConfigArb: Arbitrary[GHOSTConfig] = Arbitrary {
     Gen.oneOf(
@@ -323,6 +330,81 @@ object SeqexecServerArbitraries extends ArbTime {
       ghostHRSingleTargetConfigGen,
       ghostHRTargetPlusSkyConfigGen)
   }
+
+  object GhostHelpers {
+    def extractSRIFU1Name(x: GHOSTController.GHOSTConfig): Option[String] = x match {
+      case GHOSTController.StandardResolutionMode.SingleTarget(_, _, name, _)     => Some(name)
+      case GHOSTController.StandardResolutionMode.DualTarget(_, _, name, _, _, _) => Some(name)
+      case GHOSTController.StandardResolutionMode.TargetPlusSky(_, _, name, _, _) => Some(name)
+      case _: GHOSTController.StandardResolutionMode.SkyPlusTarget                => Some("Sky")
+      case _                                                                      => None
+    }
+
+    def extractSRIFU1Coordinates(x: GHOSTController.GHOSTConfig): Option[Coordinates] = x match {
+      case c: GHOSTController.StandardResolutionMode => Some(c.ifu1Coordinates)
+      case _                                         => None
+    }
+
+    def extractSRIFU2Name(x: GHOSTController.GHOSTConfig): Option[String] = x match {
+      case GHOSTController.StandardResolutionMode.DualTarget(_, _, _, _, name, _) => Some(name)
+      case _: GHOSTController.StandardResolutionMode.TargetPlusSky                => Some("Sky")
+      case GHOSTController.StandardResolutionMode.SkyPlusTarget(_, _, _, name, _) => Some(name)
+      case _                                                                      => None
+    }
+
+    def extractSRIFU2Coordinates(x: GHOSTController.GHOSTConfig): Option[Coordinates] = x match {
+      case GHOSTController.StandardResolutionMode.DualTarget(_, _, _, _, _, coords) => Some(coords)
+      case GHOSTController.StandardResolutionMode.TargetPlusSky(_, _, _, _, coords) => Some(coords)
+      case GHOSTController.StandardResolutionMode.SkyPlusTarget(_, _, _, _, coords) => Some(coords)
+      case _                                                                        => None
+    }
+
+    def extractHRIFU1Name(x: GHOSTController.GHOSTConfig): Option[String] = x match {
+      case c: GHOSTController.HighResolutionMode => Some(c.ifu1TargetName)
+      case _                                     => None
+    }
+
+    def extractHRIFU1Coordinates(x: GHOSTController.GHOSTConfig): Option[Coordinates] = x match {
+      case c: GHOSTController.HighResolutionMode => Some(c.ifu1Coordinates)
+      case _                                     => None
+    }
+
+    def extractHRIFU2Name(x: GHOSTController.GHOSTConfig): Option[String] = x match {
+      case _: GHOSTController.HighResolutionMode.TargetPlusSky => Some("Sky")
+      case _                                                   => None
+    }
+
+    def extractHRIFU2Coordinates(x: GHOSTController.GHOSTConfig): Option[Coordinates] = x match {
+      case c: GHOSTController.HighResolutionMode.TargetPlusSky => Some(c.ifu2Coordinates)
+      case _                                                   => None
+    }
+  }
+
+  implicit val ghostConfigCoGen: Cogen[GHOSTController.GHOSTConfig] = {
+    import GhostHelpers._
+    Cogen[(Option[Coordinates],
+      Duration,
+      Option[String],
+      Option[Coordinates],
+      Option[String],
+      Option[Coordinates],
+      Option[String],
+      Option[Coordinates],
+      Option[String],
+      Option[Coordinates])]
+      .contramap(
+        x => (x.baseCoords,
+          x.expTime,
+          extractSRIFU1Name(x),
+          extractSRIFU1Coordinates(x),
+          extractSRIFU2Name(x),
+          extractSRIFU2Coordinates(x),
+          extractHRIFU1Name(x),
+          extractHRIFU1Coordinates(x),
+          extractHRIFU2Name(x),
+          extractHRIFU2Coordinates(x)
+        ))}
+
 
   implicit val keywordTypeArb: Arbitrary[KeywordType] = Arbitrary {
     Gen.oneOf(TypeInt8, TypeInt16, TypeInt32, TypeFloat, TypeDouble, TypeBoolean, TypeString)

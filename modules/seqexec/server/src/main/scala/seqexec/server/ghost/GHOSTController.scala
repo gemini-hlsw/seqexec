@@ -109,12 +109,12 @@ object GHOSTController {
   object IFUTargetType {
     case object NoTarget extends IFUTargetType(targetType = "IFU_TARGET_NONE")
     case object SkyPosition extends IFUTargetType(targetType = "IFU_TARGET_SKY")
-    case object Target extends IFUTargetType(targetType = "IFU_TARGET_OBJECT")
+    case class Target(name: String) extends IFUTargetType(targetType = "IFU_TARGET_OBJECT")
 
     def determineType(name: Option[String]): IFUTargetType = name match {
       case None        => NoTarget
       case Some("Sky") => SkyPosition
-      case _           => Target
+      case Some(x)     => Target(x)
     }
 
     implicit val IFUTargetTypeShow: Show[IFUTargetType] = Show.show(_.targetType)
@@ -157,14 +157,17 @@ object GHOSTController {
     def ifu1Coordinates: Coordinates
 
     override def ifu1TargetType: IFUTargetType = this match {
-      case _: SingleTarget | _: DualTarget | _: TargetPlusSky => IFUTargetType.Target
-      case _: SkyPlusTarget                                   => IFUTargetType.SkyPosition
+      case s: SingleTarget   => IFUTargetType.Target(s.ifu1TargetName)
+      case d: DualTarget     => IFUTargetType.Target(d.ifu1TargetName)
+      case ts: TargetPlusSky => IFUTargetType.Target(ts.ifu1TargetName)
+      case _: SkyPlusTarget  => IFUTargetType.SkyPosition
     }
 
     override def ifu2TargetType: IFUTargetType = this match {
-      case _: SingleTarget                  => IFUTargetType.NoTarget
-      case _: DualTarget | _: SkyPlusTarget => IFUTargetType.Target
-      case _: TargetPlusSky                 => IFUTargetType.SkyPosition
+      case _: SingleTarget   => IFUTargetType.NoTarget
+      case d: DualTarget     => IFUTargetType.Target(d.ifu2TargetName)
+      case st: SkyPlusTarget => IFUTargetType.Target(st.ifu2TargetName)
+      case _: TargetPlusSky  => IFUTargetType.SkyPosition
     }
 
     override def ifu1BundleType: BundleConfig = this match {
@@ -180,22 +183,27 @@ object GHOSTController {
   }
 
   object StandardResolutionMode {
-    final case class SingleTarget(override val baseCoords: Option[Coordinates], override val expTime: Duration,
-                                  ifu1Coordinates: Coordinates) extends StandardResolutionMode {
+    final case class SingleTarget(override val baseCoords: Option[Coordinates],
+                                  override val expTime: Duration,
+                                  ifu1TargetName: String,
+                                  override val ifu1Coordinates: Coordinates) extends StandardResolutionMode {
       override def ifu2Config: Configuration =
         ifuPark(IFUNum.IFU2)
     }
 
     final case class DualTarget(override val baseCoords: Option[Coordinates],
                                 override val expTime: Duration,
+                                ifu1TargetName: String,
                                 override val ifu1Coordinates: Coordinates,
+                                ifu2TargetName: String,
                                 ifu2Coordinates: Coordinates) extends StandardResolutionMode {
       override def ifu2Config: Configuration =
-        ifuConfig(IFUNum.IFU2, IFUTargetType.Target, ifu2Coordinates, BundleConfig.Standard)
+        ifuConfig(IFUNum.IFU2, IFUTargetType.Target(ifu2TargetName), ifu2Coordinates, BundleConfig.Standard)
     }
 
     final case class TargetPlusSky(override val baseCoords: Option[Coordinates],
                                    override val expTime: Duration,
+                                   ifu1TargetName: String,
                                    override val ifu1Coordinates: Coordinates,
                                    ifu2Coordinates: Coordinates) extends StandardResolutionMode {
       override def ifu2Config: Configuration =
@@ -205,9 +213,10 @@ object GHOSTController {
     final case class SkyPlusTarget(override val baseCoords: Option[Coordinates],
                                    override val expTime: Duration,
                                    override val ifu1Coordinates: Coordinates,
+                                   ifu2TargetName: String,
                                    ifu2Coordinates: Coordinates) extends StandardResolutionMode {
       override def ifu2Config: Configuration =
-        ifuConfig(IFUNum.IFU2, IFUTargetType.Target, ifu2Coordinates, BundleConfig.Standard)
+        ifuConfig(IFUNum.IFU2, IFUTargetType.Target(ifu2TargetName), ifu2Coordinates, BundleConfig.Standard)
 
     }
   }
@@ -217,7 +226,9 @@ object GHOSTController {
 
     override def ifu1BundleType: BundleConfig = BundleConfig.HighRes
 
-    override def ifu1TargetType: IFUTargetType = IFUTargetType.Target
+    def ifu1TargetName: String
+
+    override def ifu1TargetType: IFUTargetType = IFUTargetType.Target(ifu1TargetName)
 
     override def ifu2TargetType: IFUTargetType = this match {
       case _: SingleTarget  => IFUTargetType.NoTarget
@@ -233,6 +244,7 @@ object GHOSTController {
   object HighResolutionMode {
     final case class SingleTarget(override val baseCoords: Option[Coordinates],
                                   override val expTime: Duration,
+                                  override val ifu1TargetName: String,
                                   override val ifu1Coordinates: Coordinates) extends HighResolutionMode {
       override def ifu2Config: Configuration =
         ifuPark(IFUNum.IFU2)
@@ -240,6 +252,7 @@ object GHOSTController {
 
     final case class TargetPlusSky(override val baseCoords: Option[Coordinates],
                                    override val expTime: Duration,
+                                   override val ifu1TargetName: String,
                                    override val ifu1Coordinates: Coordinates,
                                    ifu2Coordinates: Coordinates) extends HighResolutionMode {
       override def ifu2Config: Configuration =
@@ -267,18 +280,18 @@ object GHOSTController {
       val hifu1 = determineType(hrifu1Name)
       val hifu2 = determineType(hrifu2Name)
       val extracted = (sifu1, sifu2, hifu1, hifu2) match {
-        case (Target, NoTarget, NoTarget, NoTarget) =>
-          srifu1Coords.map(StandardResolutionMode.SingleTarget.apply(baseCoords, expTime, _))
-        case (Target, Target, NoTarget, NoTarget) =>
-          (srifu1Coords, srifu2Coords).mapN(StandardResolutionMode.DualTarget.apply(baseCoords, expTime, _, _))
-        case (Target, SkyPosition, NoTarget, NoTarget) =>
-          (srifu1Coords, srifu2Coords).mapN(StandardResolutionMode.TargetPlusSky.apply(baseCoords, expTime, _, _))
-        case (SkyPosition, Target, NoTarget, NoTarget) =>
-          (srifu1Coords, srifu2Coords).mapN(StandardResolutionMode.SkyPlusTarget.apply(baseCoords, expTime, _, _))
-        case (NoTarget, NoTarget, Target, NoTarget) =>
-          hrifu1Coords.map(HighResolutionMode.SingleTarget.apply(baseCoords, expTime, _))
-        case (NoTarget, NoTarget, Target, SkyPosition) =>
-          (hrifu1Coords, hrifu2Coords).mapN(HighResolutionMode.TargetPlusSky.apply(baseCoords, expTime, _, _))
+        case (Target(t), NoTarget, NoTarget, NoTarget) =>
+          srifu1Coords.map(StandardResolutionMode.SingleTarget.apply(baseCoords, expTime, t, _))
+        case (Target(t1), Target(t2), NoTarget, NoTarget) =>
+          (srifu1Coords, srifu2Coords).mapN(StandardResolutionMode.DualTarget.apply(baseCoords, expTime, t1, _, t2, _))
+        case (Target(t), SkyPosition, NoTarget, NoTarget) =>
+          (srifu1Coords, srifu2Coords).mapN(StandardResolutionMode.TargetPlusSky.apply(baseCoords, expTime, t, _, _))
+        case (SkyPosition, Target(t), NoTarget, NoTarget) =>
+          (srifu1Coords, srifu2Coords).mapN(StandardResolutionMode.SkyPlusTarget.apply(baseCoords, expTime, _, t, _))
+        case (NoTarget, NoTarget, Target(t), NoTarget) =>
+          hrifu1Coords.map(HighResolutionMode.SingleTarget.apply(baseCoords, expTime, t, _))
+        case (NoTarget, NoTarget, Target(t), SkyPosition) =>
+          (hrifu1Coords, hrifu2Coords).mapN(HighResolutionMode.TargetPlusSky.apply(baseCoords, expTime, t, _, _))
         case _ =>
           None
       }
