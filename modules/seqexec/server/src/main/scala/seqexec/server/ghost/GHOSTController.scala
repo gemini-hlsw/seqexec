@@ -89,7 +89,7 @@ object GHOSTController {
 
   object BundleConfig {
     case object Standard extends BundleConfig(configName = "IFU_LORES")
-    case object HighRes  extends BundleConfig(configName = "IFU_HRES")
+    case object HighRes  extends BundleConfig(configName = "IFU_HIRES")
     case object Sky      extends BundleConfig(configName = "IFU_SKY")
 
     implicit val showBundleConfig: Show[BundleConfig] = Show.show(_.configName)
@@ -109,7 +109,7 @@ object GHOSTController {
   object IFUTargetType {
     case object NoTarget extends IFUTargetType(targetType = "IFU_TARGET_NONE")
     case object SkyPosition extends IFUTargetType(targetType = "IFU_TARGET_SKY")
-    case class Target(name: String) extends IFUTargetType(targetType = "IFU_TARGET_OBJECT")
+    final case class Target(name: String) extends IFUTargetType(targetType = "IFU_TARGET_OBJECT")
 
     def determineType(name: Option[String]): IFUTargetType = name match {
       case None        => NoTarget
