@@ -31,6 +31,7 @@ import org.http4s.Uri._
 import squants.time.Seconds
 import seqexec.server.Response.Observed
 import seqexec.server.ghost.GHOSTController
+import seqexec.server.niri.NiriControllerSim
 
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements", "org.wartremover.warts.Throw"))
 class SeqTranslateSpec extends FlatSpec {
@@ -89,7 +90,8 @@ class SeqTranslateSpec extends FlatSpec {
     GPIController(new GPIClient(Giapi.giapiConnectionIO(scala.concurrent.ExecutionContext.Implicits.global).connect.unsafeRunSync),
     new GDSClient(GDSClient.alwaysOkClient, uri("http://localhost:8888/xmlrpc"))),
     GHOSTController(new GHOSTClient[IO](Giapi.giapiConnectionIO(scala.concurrent.ExecutionContext.Implicits.global).connect.unsafeRunSync),
-    new GDSClient(GDSClient.alwaysOkClient, uri("hhttp://localhost:8888/xmlrpc")))
+    new GDSClient(GDSClient.alwaysOkClient, uri("hhttp://localhost:8888/xmlrpc"))),
+    NiriControllerSim
   )
 
   private val translatorSettings = TranslateSettings(tcsKeywords = false, f2Keywords = false, gwsKeywords = false,
