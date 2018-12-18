@@ -1,0 +1,1842 @@
+openapi: 3.0.2
+info:
+  title: ToO Triggering with TOMs Sample API
+  
+  description: |
+    An exploration of API ideas with just enough detail for addressing some of the "ToO Triggering with TOMs" user story.
+    
+    **Experimental, not for actual use.**
+    
+    Notes:
+      * The servers don't actually exist.  They are meant to be suggestive.
+      * We're not trying for a complete Gemini API nor a complete specification for this example.  Just an attempt to play with API ideas and get a feel for it.
+      * Default generation of the model from the Scala code probably won't produce a very nice model for the API.  I think we'll want to use custom codecs.
+      * We might want to explore generating OpenAPI specifications directly from the code using [Rho](https://github.com/http4s/rho) or something.  I don't think it is sustainable in the long run having the documentation be separate from the code.
+      
+    Open Issues:  
+      * How much, if any, defaulting is appropriate.  There are many parameters for, say, GMOS that can be tweaked but many of them have reasonable defaults.  For example, should we require that the ROI be explicitly specified when if it is usually `FullFrame`?  I've left a lot of parameters optional in these cases but we may want to rethink that.
+      * Should enum options be more human-friendly? For example `u'` instead of `UPrime`. I think not because there should be no expectation that these values are meant to be displayed directly in a UI.  That would mean changing what we exchange in order to tweak a display value in the menu of the API. Missing is an instrument description API where display values, etc. might be better specified.
+      * Floating point values will be banned from the storage model because they cannot be precisely represented or transported. I assume we should do the same for the public API but this requires API programmers to work with unexpected units, like angstroms instead of µm or µas instead of arcseconds.
+      
+  version: "1"
+  
+servers:
+  - url: https://api.gemini.edu/v1
+    description: Production API Server
+  - url: https://api.staging.gemini.edu/v1
+    description: Staging Test API Server
+    
+paths:
+  /login:
+    post:
+      summary: Logs in and returns the authentication cookie.
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        description: A JSON object containing the user and password
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequestObject'
+      security: [] # no authentication required to try login
+      responses:
+        '200':
+          description: >
+            Succcessfully authenticated. The user information is encoded in a Jason Web Token cookie named `gem.jwt`. You need to include this in subsequent requests.
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+              description: Adds authentication cookie
+              
+        '401':
+          description: >
+            Login failure.
+
+  /status:
+    get:
+      summary: Get status for both Gemini sites.
+      description: Combines availability and observing conditions for both Gemini North and Gemini South into a single result.
+      tags:
+        - Status
+      parameters:
+        - $ref: '#/components/parameters/siteParam'
+      security: [] # no authentication required
+      responses:
+        '200':
+          description: Status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusObject'
+
+  /status/sub:
+    post:
+      summary: Subscribe to cross-site observatory status.
+      description: >
+        Register a callback that will be notified with any updates to observatory status. (Details here such as how often, what happens when there are problems etc.)
+      tags:
+        - Status
+      requestBody:
+        $ref: '#/components/requestBodies/callbackRequestBody'
+      callbacks:
+        availabilityUpdate:
+          '{$request.body#/callbackUrl}':
+            post:
+              requestBody:
+                required: true
+                content:
+                  application/json:
+                    schema:
+                      $ref: '#/components/schemas/StatusObject'
+              responses:
+                '200':
+                  description: Expected response code from provided server
+      responses:
+        '201':
+          description: Webhook created
+
+
+  /status/{site}:
+    get:
+      summary: Get site-specific status.
+      description: Combines availability and observing conditions into a single result.
+      tags:
+        - Status
+      parameters:
+        - $ref: '#/components/parameters/siteParam'
+      security: [] # no authentication required
+      responses:
+        '200':
+          description: Status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SiteSpecificStatusObject'
+
+  /status/{site}/sub:
+    post:
+      summary: Subscribe to observatory status.
+      description: >
+        Register a callback that will be notified with any updates to observatory status. (Details here such as how often, what happens when there are problems etc.)
+      tags:
+        - Status
+      parameters:
+        - $ref: '#/components/parameters/siteParam'
+      requestBody:
+        $ref: '#/components/requestBodies/callbackRequestBody'
+      callbacks:
+        availabilityUpdate:
+          '{$request.body#/callbackUrl}':
+            post:
+              requestBody:
+                required: true
+                content:
+                  application/json:
+                    schema:
+                      $ref: '#/components/schemas/SiteSpecificStatusObject'
+              responses:
+                '200':
+                  description: Expected response code from provided server
+      responses:
+        '201':
+          description: Webhook created
+           
+  /status/{site}/availability:
+    get:
+      summary: Get just the  availability part of the status.
+      description: >
+        Returns just the subset of status information that is related to observatory availability.  See `/status/{site}` for complete status information.
+      tags:
+        - Status
+      parameters:
+        - $ref: '#/components/parameters/siteParam'
+      security: [] # no authentication required
+      responses:
+        '200':
+          description: Availability status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AvailabilityObject'
+                
+    put:
+      summary: Update observatory availability status.
+      tags:
+        - Status
+      parameters:
+        - $ref: '#/components/parameters/siteParam'
+      requestBody:
+        required: true
+        description: A JSON object containing availability status.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AvailabilityObject'
+            example: # Note, for some reason examples: with a ref do not work here so providing one inline
+              availability: OpenNoToO
+              message: Reserved for queue observing time.
+      responses:
+        '200':
+          description: Successful update of observatory availability.
+        '403':
+          description: User not authorized to perform this operation.
+          
+  /status/{site}/availability/sub:
+    post:
+      summary: Subscribe to availability status updates.
+      description: >
+        Register a callback that will be notified with any updates to observatory availability. (Details here such as how often, what happens when there are problems etc.)
+      tags:
+        - Status
+
+      parameters:
+        - $ref: '#/components/parameters/siteParam'
+      requestBody:
+        $ref: '#/components/requestBodies/callbackRequestBody'
+      callbacks:
+        availabilityUpdate:
+          '{$request.body#/callbackUrl}':
+            post:
+              requestBody:
+                required: true
+                content:
+                  application/json:
+                    schema:
+                      $ref: '#/components/schemas/AvailabilityObject'
+              responses:
+                '200':
+                  description: Expected response code from provided server
+      responses:
+        '201':
+          description: Webhook created
+           
+  /status/{site}/observingConditions:
+    get:
+      summary: Get just the  observing conditions part of the status.
+      description: >
+        Returns just the subset of status information that is related to observing conditions.  See `/status/{site}` for complete status information.
+      tags:
+        - Status
+      parameters:
+        - $ref: '#/components/parameters/siteParam'
+      security: [] # no authentication required
+      responses:
+        '200':
+          description: Observing conditions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ObservingConditionsObject'
+                
+  /status/{site}/observingConditions/sub:
+    post:
+      summary: Subscribe to observing conditions updates.
+      description: >
+        Register a callback that will be notified with any updates to observing conditions. (Details here such as how often, what happens when there are problems etc.)
+      tags:
+        - Status
+      parameters:
+        - $ref: '#/components/parameters/siteParam'
+      requestBody:
+        $ref: '#/components/requestBodies/callbackRequestBody'
+      callbacks:
+        availabilityUpdate:
+          '{$request.body#/callbackUrl}':
+            post:
+              requestBody:
+                required: true
+                content:
+                  application/json:
+                    schema:
+                      $ref: '#/components/schemas/ObservingConditionsObject'
+              responses:
+                '200':
+                  description: Expected response code from provided server
+      responses:
+        '201':
+          description: Webhook created
+
+  /ephemerides/{site}:
+    post:
+      summary: Upload new user-supplied ephemeris file.
+      description: |
+        Uploads a user-supplied ephemeris file in horizons format and returns a key that may be used to update or retrieve it.  The maximum supported file may contain up to one value per minute for one year.  Ephemeris files are necessarily site-specific so the corresponding site must be specified.
+      tags:
+        - Ephemerides
+      parameters:
+        - $ref: '#/components/parameters/siteParam'
+      requestBody:
+        description: Formatted ephemeris file.
+        required: true
+        content:
+          text/plain:
+            schema:
+              type: string
+              example: |
+                ***************************************************************************************
+                 Date__(UT)__HR:MN Date_________JDUT     R.A.___(ICRF/J2000.0)___DEC dRA*cosD d(DEC)/dt
+                ***************************************************************************************
+                $$SOE
+                 2018-Dec-12 09:27 2458464.893750000     04 27 05.4037 -33 40 49.484  -2.39575   0.44439
+                 2018-Dec-12 09:28 2458464.894444444     04 27 05.4005 -33 40 49.477  -2.39558   0.44443
+                 2018-Dec-12 09:29 2458464.895138889     04 27 05.3973 -33 40 49.470  -2.39540   0.44447
+                 2018-Dec-12 09:30 2458464.895833334     04 27 05.3941 -33 40 49.462  -2.39523   0.44451
+                $$EOE
+      responses:
+        '201':
+          description: Successful upload, returning the ephemeris key associated with the ephemeris. The key may be subsequently used in `GET /ephemerides/{key}` to retrieve the file and `PUT /ephemerides/{key}` to update it.
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/EphemerisKeyString'
+              example:
+                UserSupplied_764
+        '400':
+          description: Cannot parse ephemeris file.
+        '403':
+          description: User not authorized to perform this operation.  Must be a staff user or a user associated with an active program.
+        '413':
+          description: Ephemeris file too large.
+
+  /ephemerides/{site}/{key}:
+    get:
+      summary: Retrieve ephemeris file. Ephemeris files are necessarily site-specific so the corresponding site must be specified.
+      tags:
+        - Ephemerides
+      parameters:
+        - $ref: '#/components/parameters/siteParam'
+        - $ref: '#/components/parameters/ephemerisKeyParam'
+      responses:
+        '200':
+          description: Success, the corresponding ephemeris in horizons format.
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: |
+                  ***************************************************************************************
+                   Date__(UT)__HR:MN Date_________JDUT     R.A.___(ICRF/J2000.0)___DEC dRA*cosD d(DEC)/dt
+                  ***************************************************************************************
+                  $$SOE
+                   2018-Dec-12 09:27 2458464.893750000     04 27 05.4037 -33 40 49.484  -2.39575   0.44439
+                   2018-Dec-12 09:28 2458464.894444444     04 27 05.4005 -33 40 49.477  -2.39558   0.44443
+                   2018-Dec-12 09:29 2458464.895138889     04 27 05.3973 -33 40 49.470  -2.39540   0.44447
+                   2018-Dec-12 09:30 2458464.895833334     04 27 05.3941 -33 40 49.462  -2.39523   0.44451
+                  $$EOE
+        '403':
+          description: User does not have the permission to view this ephemeris.
+        '404':
+          description: There is no ephemeris associated with the given key.
+    
+    put:
+      summary: Update associated ephemeris. Ephemeris files are necessarily site-specific so the corresponding site must be specified.
+      tags:
+        - Ephemerides
+      parameters:
+        - $ref: '#/components/parameters/siteParam'
+        - $ref: '#/components/parameters/ephemerisKeyParam'
+      requestBody:
+        description: Formatted ephemeris file.
+        required: true
+        content:
+          text/plain:
+            schema:
+              type: string
+              example: |
+                ***************************************************************************************
+                 Date__(UT)__HR:MN Date_________JDUT     R.A.___(ICRF/J2000.0)___DEC dRA*cosD d(DEC)/dt
+                ***************************************************************************************
+                $$SOE
+                 2018-Dec-12 09:27 2458464.893750000     04 27 05.4037 -33 40 49.484  -2.39575   0.44439
+                 2018-Dec-12 09:28 2458464.894444444     04 27 05.4005 -33 40 49.477  -2.39558   0.44443
+                 2018-Dec-12 09:29 2458464.895138889     04 27 05.3973 -33 40 49.470  -2.39540   0.44447
+                 2018-Dec-12 09:30 2458464.895833334     04 27 05.3941 -33 40 49.462  -2.39523   0.44451
+                $$EOE
+      responses:
+        '200':
+          description: Successful update.
+        '403':
+          description: User does not have the permission to update this ephemeris.
+        '404':
+          description: There is no ephemeris associated with the given site and buekey.  First use `POST /ephemerides` to create it.
+        
+  /ephemerides/{site}/keys:
+    get:
+      summary: List available ephemeris keys. 
+      description: >
+        List the ephemeris keys associated with programs that the user has permission to see.  Ephemeris files are necessarily site-specific so the corresponding site must be specified.
+      tags:
+        - Ephemerides
+      parameters:
+        - $ref: '#/components/parameters/siteParam'
+        - $ref: '#/components/parameters/limitParam'
+        - $ref: '#/components/parameters/offsetParam'
+      responses:
+        '200':
+          description: List of ephemeris keys.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EphemerisKeyString'
+              example:
+                - "UserSupplied_527"
+                - "UserSupplied_628"
+
+          
+  /observations/{programId}:
+    post:
+      summary: Submit a new observation in the corresponding program.
+      description: >
+        Adds a new observation to the database and returns its observation ID.
+      tags:
+        - Observations
+      parameters:
+        - $ref: '#/components/parameters/programIdParam'
+      requestBody:
+        required: true
+        description: A JSON object containing an observation definition.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ObservationObject'
+      responses:
+        '201':
+          description: Created a new observation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ObservationIdString'
+        '400':
+          description: The observation didn't match the expected schema or could not be configured as specified.
+        '403':
+          description: User not authorized to perform this operation.
+        '404':
+          description: Program not found.
+
+  /observations/{programId}/ids:
+    get:
+      summary: List available observations associated with the program. 
+      description: >
+        List the observations associated with the corresponding program if the user has permission to see them.
+      tags:
+        - Observations
+      parameters:
+        - $ref: '#/components/parameters/programIdParam'
+        - $ref: '#/components/parameters/limitParam'
+        - $ref: '#/components/parameters/offsetParam'
+      responses:
+        '200':
+          description: List of observation ids.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ObservationIdString'
+              example:
+                - G2019A-Q-100-1
+                - G2019A-Q-100-2
+        '403':
+          description: User not authorized to perform this operation.
+        '404':
+          description: Program not found.
+          
+  /observations/{observationId}:
+    get:
+      summary: Retrieve the observation with the given id.
+      description: >
+        Fetches the corresponding observation if the user has permission to see it.
+      tags:
+        - Observations
+      parameters:
+        - $ref: '#/components/parameters/observationIdParam'
+      responses:
+        '200':
+          description: Observation description.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ObservationObject'
+        '403':
+          description: User not authorized to perform this operation.
+        '404':
+          description: Observation not found.
+
+    put:
+      summary: Updates the observation with the given id.
+      description: >
+        Updates the corresponding observation if the user has permission to see it.
+      tags:
+        - Observations
+      parameters:
+        - $ref: '#/components/parameters/observationIdParam'
+      requestBody:
+        required: true
+        description: A JSON object containing an observation definition.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ObservationObject'
+      responses:
+        '200':
+          description: Success, observation updated.
+        '403':
+          description: User not authorized to perform this operation.
+        '404':
+          description: Observation not found
+
+components:
+  parameters:
+    ephemerisKeyParam:
+      name: key
+      description: Ephemeris key
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/EphemerisKeyString'
+      
+    limitParam:
+      name: limit
+      description: The maximum number of items to return in a single result.
+      in: query
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+        maximum: 100
+        default: 50
+      required: false
+      
+    observationIdParam:
+      name: observationId
+      description: Observation ID.
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/ObservationIdString'
+      example:
+        G2019A-Q-100-1
+    
+    offsetParam:
+      name: offset
+      description: The number of items to skip before starting to collect the result set.
+      in: query
+      schema:
+        type: integer
+        format: int32
+        minimum: 0
+        default: 0
+      required: false
+      
+    programIdParam:
+      name: programId
+      description: Program ID.
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/ProgramIdString'
+      example:
+        G2019A-Q-100
+            
+    siteParam:
+      name: site
+      description: The corresponding Gemini site.
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/SiteEnum'
+      
+  schemas:
+    AsterismSingleTargetObject:
+      type: object
+      description: >
+        "Normal" single-target asterism that is appropriate for single-detector instruments.
+      properties:
+        target:
+          $ref: '#/components/schemas/TargetObject'
+      required:
+        - target
+            
+    AvailabilityEnum:
+      type: string
+      description: |
+        * `OpenForToO`: Open and accepting ToO requests
+        * `OpenNoToO`: Open but not accepting ToO requests
+        * `Closed`: Not open
+      enum:
+        - OpenForToO
+        - OpenNoToO
+        - Closed
+        
+    AvailabilityObject:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          readOnly: true
+          description: >
+            Time since the availability information last changed.  This value is present in results but ignored in a `put`.
+        availability: 
+          $ref: '#/components/schemas/AvailabilityEnum'
+        message:
+          type: string
+          description: Optional explanation of the availability status.
+      required:
+        - availability
+      example:
+        timestamp: 2018-12-11T02:03:04:05Z
+        availability: Closed
+        message: Closed for scheduled maintenance.
+        
+    CallbackUrlObject:
+      type: object
+      properties:
+        callbackUrl:
+          type: string
+          description: Your server address to which update events should be sent
+          format: uri
+          example: https://myserver.com/send/callback/here
+      required:
+        - callbackUrl
+        
+    CoAddsInteger:
+      type: integer
+      format: int32
+      description: >
+        Instrument coadd count, minimum 1.
+      minimum: 1
+                        
+    CoordinatesObject:
+      type: object
+      properties:
+        ra:
+          type: string
+          pattern: '^([-+])?(\d\d?):(\d\d?):(\d\d?\.?\d*)$'
+          description: Right Ascension in sexagesimal HH:MM:SS format.
+        dec:
+          type: string
+          pattern: '^([-+])?(\d\d?\d?):(\d\d?):(\d\d?\.?\d*)$'
+          description: Declination in sexagesimal +/-DD:MM:SS format.
+      required:
+        - ra
+        - dec
+      example:
+        ra : '18:36:56.336'
+        dec : '+38:47:01.28'
+        
+    DurationObject:
+      type: object
+      description: >
+        Defines a duration of time in seconds, along with an optional number of nanoseconds-of-second to represent fractional seconds.  For example, 7.5 seconds would be represnted as:
+          ```
+          {
+            seconds: 7
+            nanoOfSecond: 500000000
+          }
+          ```
+          A precise integral of seconds may skip `nanoOfSecond`.  For example, one hour would be:
+          ```
+          {
+            seconds: 3600
+          }
+          ```
+      properties:
+        seconds:
+          type: integer
+          format: int64
+          description: integral seconds of the duration
+        nanoOfSecond:
+          type: integer
+          format: int64
+          description: nanosecond-of-second
+          minimum: 0
+          maximum: 999999999
+      required:
+        - seconds
+      example:
+        seconds: 7
+        nanoOfSecond: 500000000
+        
+    EphemerisKeyString:
+      type: string
+      description: Reference to an ephemeris for a non-sidereal object.  Either a key that can be used for an horizons lookup or else a reference to a user-supplied ephemeris.
+      pattern: '^(AsteroidNew_.+)|(AsteroidOld_-?\d+)|(Comet_.+)|(MajorBody_-?\d+)|(UserSupplied_\d+)$'
+      example: MajorBody_606
+
+    GcalArcEnum:
+      type: string
+      description: >
+        GCAL arc lamp options.
+      enum:
+        - Ar
+        - ThAr
+        - CuAr
+        - Xe
+    
+    GcalArcsObject:
+      type: object
+      description: >
+        Non-empty collection of arcs.  One arc must be specified in `arc`.  Additional arcs may optionally be combined with this arc. Includes `lampType` descriminator with value `arc`.
+      allOf:
+        - $ref: '#/components/schemas/GcalLampBaseObject'
+        - type: object
+          properties:
+            arc:
+              $ref: '#/components/schemas/GcalArcEnum'
+            combineWith:
+              type: array
+              description: Additional arcs to use with `arc`, if any.
+              items:
+                $ref: '#/components/schemas/GcalArcEnum'
+          required:
+            - arc
+        
+    GcalContinuumEnum:
+      type: string
+      description: >
+        Gcal continuum lamp options.
+      enum:
+        - 'IR grey body - low'
+        - 'IR grey body - high'
+        - 'Quartz Hologen'
+        
+    GcalContinuumObject:
+      type: object
+      description: >
+        GCAL Continuum lamp with `lampType` discriminator `continuum`.
+      allOf:
+        - $ref: '#/components/schemas/GcalLampBaseObject'
+        - type: object
+          properties:
+            lamp:
+              $ref: '#/components/schemas/GcalContinuumEnum'
+          required:
+            - lamp
+            
+    GcalDiffuserEnum:
+      type: string
+      description: >
+        GCAL diffuser options.
+      enum:
+        - Ir
+        - Visible
+            
+    GcalFilterEnum:
+      type: string
+      description: >
+        GCAL filter options.
+      enum:
+        - None
+        - Gmos
+        - Hros
+        - Nir
+        - Nd10
+        - Nd16
+        - Nd20
+        - Nd30
+        - Nd40
+        - Nd45
+        - Nd50
+        
+    GcalLampBaseObject:
+      type: object
+      description: |
+        Base GCAL lamp object defining the descriminator `lampType` with options
+        * `arc`
+        * `continuum`
+      properties:
+        lampType:
+          type: string
+      discriminator:
+        propertyName: lampType
+        mapping:
+          arc: '#/components/schemas/GcalArcsObject'
+          continuum: '#/components/schemas/GcalContinuumObject'
+      required:
+        - lampType
+        
+    GcalLampObject:
+      type: object
+      description: >
+        GCAL lamp, which is one or more arcs or a continuum lamp.  The `lampType` discriminator may be used to distinguish the two cases (`arc` or `continuum`).
+      oneOf:
+        - $ref: '#/components/schemas/GcalArcsObject'
+        - $ref: '#/components/schemas/GcalContinuumObject'
+        
+    GcalObject:
+      type: object
+      description: >
+        GCAL calibration configuration.
+      properties:
+        lamp:
+          $ref: '#/components/schemas/GcalLampObject'
+        filter:
+          $ref: '#/components/schemas/GcalFilterEnum'
+        diffuser:
+          $ref: '#/components/schemas/GcalDiffuserEnum'
+        shutter:
+          $ref: '#/components/schemas/GcalShutterEnum'
+        exposureTime:
+          $ref: '#/components/schemas/DurationObject'
+        coadds:
+          $ref: '#/components/schemas/CoAddsInteger'
+      required:
+        - lamp
+        - filter
+        - diffuser
+        - shutter
+        - exposureTime
+        - coadds
+
+        
+    GhostAsterismBaseObject:
+      type: object
+      description: |
+        Base asterism for GHOST observations defining the `asterismType` discriminator.  The possible values are
+        * srTarget - GHOST standard resolution single target
+        * srDualTarget - GHOST standard resolution dual target
+        * srTargetPlusSky - GHOST standard resolution target(SRIFU1)+sky(SRIFU2)
+        * srSkyPlusTarget - GHOST standard resolution sky(SRIFU1)+target(SRIFU2)
+        * hrTarget - GHOST high resolution single target
+        * hrTargetPlusSky - GHOST high resolution target+sky(SRIFU1)
+      properties:
+        asterismType:
+          type: string
+      discriminator:
+        propertyName: asterismType
+        mapping:
+          srTarget: '#/components/schemas/GhostAsterismSingleTargetObject'
+          srDualTarget: '#/components/schemas/GhostAsterismDualTargetObject'
+          srTargetPlusSky: '#/components/schemas/GhostAsterismTargetAndSkyObject'
+          srSkyPlusTarget: '#/components/schemas/GhostAsterismTargetAndSkyObject'
+          hrTarget: '#/components/schemas/GhostAsterismSingleTargetObject'
+          hrTargetPlusSky: '#/components/schemas/GhostAsterismTargetAndSkyObject'
+      required:
+          - asterismType
+          
+    GcalShutterEnum:
+      type: string
+      description: >
+        GCAL shutter options.
+      enum:
+        - Open
+        - Closed
+        
+    GhostAsterismDualTargetObject:
+      type: object
+      description: >
+        GHOST standard resolution dual target asterism.  It requires two GHOST targets where `ghostTarget1` is understood to be assigned to IFU1 and `ghostTarget2` is assigned to IFU2. `asterismType` is `srDualTarget`.
+      allOf:
+        - $ref: '#/components/schemas/GhostAsterismBaseObject'
+        - type: object
+          properties:
+            ghostTarget1:
+              $ref: '#/components/schemas/GhostTargetObject'
+            ghostTarget2:
+              $ref: '#/components/schemas/GhostTargetObject'
+            overriddenBase:
+              $ref: '#/components/schemas/CoordinatesObject'
+          required:
+            - ghostTarget1
+            - ghostTarget2
+
+    GhostAsterismObject:
+      type: object
+      description: >
+        Describes the science target(s) and associated per-target configuration for GHOST observations. The different asterism types are distinguished by the `asterismType` discriminator.
+      oneOf:
+        - $ref: '#/components/schemas/GhostAsterismSingleTargetObject'
+        - $ref: '#/components/schemas/GhostAsterismDualTargetObject'
+        - $ref: '#/components/schemas/GhostAsterismTargetAndSkyObject'
+        
+    GhostAsterismSingleTargetObject:
+      type: object
+      description: >
+        GHOST single target asterism.  It requires a GHOST target and supports an optional explicit base position that may differ from the target itself.  `asterismType` is one of:
+          * `srTarget` - standard resolution (IFU1) single target
+          * `hrTarget` - high resolution single target
+      allOf:
+        - $ref: '#/components/schemas/GhostAsterismBaseObject'
+        - type: object
+          properties:
+            ghostTarget:
+              $ref: '#/components/schemas/GhostTargetObject'
+            overriddenBase:
+              $ref: '#/components/schemas/CoordinatesObject'
+          required:
+            - ghostTarget
+
+    GhostAsterismTargetAndSkyObject:
+      type: object
+      description: >
+        GHOST target+sky or sky+target (depending on the `asterismType`).  It requires a GHOST target and a sky position. `asterismType` is one of:
+          * `srTargetPlusSky` - standard resolution where IFU1 is assigned the target and IFU2 the sky position
+          * `srSkyPlusTarget` - standard resolution where IFU1 is assigned the sky position and IFU2 the target.
+          * `hrTargetPlusSky` - high resolution target and a sky position
+      allOf:
+        - $ref: '#/components/schemas/GhostAsterismBaseObject'
+        - type: object
+          properties:
+            ghostTarget:
+              $ref: '#/components/schemas/GhostTargetObject'
+            sky:
+              $ref: '#/components/schemas/CoordinatesObject'
+            overriddenBase:
+              $ref: '#/components/schemas/CoordinatesObject'
+          required:
+            - ghostTarget
+            - sky
+            
+    GhostGuideFiberStateEnum:
+      type: string
+      description: >
+        Whether to enable or disable GHOST guide fibers.
+      enum:
+        - Enabled
+        - Disabled
+                    
+    GhostObservationObject:
+      type: object
+      description: >
+        Placeholder GHOST observation definition (`instrument` discriminator set to `ghost`). It is assumed that PWFS2 is used for guiding and that guiding is usually not specified since the best available guide star will be automatically selected.
+      allOf:
+        - $ref: '#/components/schemas/ObservationBaseObject'
+        - $ref: '#/components/schemas/GhostAsterismObject'
+        - type: object
+          properties:
+            guideStar:
+              $ref: '#/components/schemas/TargetObject'
+            alternateGuideStars:
+              type: array
+              description: >
+                By default, no guide star is needed since the best available guide star should be found automatically.  An explicit option may be set with `guideStar` however and any number of alternatives may be included as well in case the `guideStar` choice doesn't work out in practice.
+              items:
+                $ref: '#/components/schemas/TargetObject'
+    
+    GhostTargetObject:
+      type: object
+      description: >
+        GHOST target with optional explicit guide fiber state.
+      properties:
+        target:
+          $ref: '#/components/schemas/TargetObject'
+        guideFiber:
+          $ref: '#/components/schemas/GhostGuideFiberStateEnum'
+      required:
+        - target
+        
+    GmosAmpCountEnum:
+      type: string
+      description: >
+        GMOS amp count
+      enum:
+        - Three
+        - Six
+        - Twelve
+        
+    GmosAmpGainEnum:
+      type: string
+      description: >
+        GMOS amp gain
+      enum:
+        - Low
+        - High
+        
+    GmosAmpReadModeEnum:
+      type: string
+      description: >
+        GMOS amp read mode
+      enum:
+        - Slow
+        - Fast
+        
+    GmosBinningEnum:
+      type: object
+      description: >
+        GMOS X and Y binning options.
+      enum:
+        - One
+        - Two
+        - Four
+        
+    GmosCcdReadout:
+      type: object
+      description: >
+        GMOS CCD readout.
+      properties:  
+        xBinning:
+          $ref: '#/components/schemas/GmosBinningEnum'
+        yBinning:
+          $ref: '#/components/schemas/GmosBinningEnum'
+        ampCount:
+          $ref: '#/components/schemas/GmosAmpCountEnum'
+        ampGain:
+          $ref: '#/components/schemas/GmosAmpGainEnum'
+        ampReadMode:
+          $ref: '#/components/schemas/GmosAmpReadModeEnum'
+      required:
+        - xBinning
+        - yBinning
+        - ampCount
+        - ampGain
+        - ampReadMode
+                
+    GmosCommonDynamicConfigObject:
+      type: object
+      description: >
+        Shared dynamic configuration (may change step-to-step in the sequence) for both GMOS North and South
+      properties:
+        ccdReadout:
+          $ref: '#/components/schemas/GmosCcdReadout'
+        dtaxOffset:
+          $ref: '#/components/schemas/GmosDtaxEnum'
+        exposureTime:
+          $ref: '#/components/schemas/DurationObject'
+        roi:
+          $ref: '#/components/schemas/GmosRoiEnum'
+      required:
+        - ccdReadout
+        - exposureTime
+        
+    GmosCommonStaticConfigObject:
+      type: object
+      description: >
+        Shared static configuration for both GMOS North and South
+      properties:
+        detector:
+          $ref: '#/components/schemas/GmosDetectorEnum'
+        mosPreImaging:
+          $ref: '#/components/schemas/MosPreImagingBoolean'
+        nodAndShuffle:
+          $ref: '#/components/schemas/GmosNodAndShuffleObject'
+        customRois:
+          type: array
+          items:
+            $ref: '#/components/schemas/GmosCustomRoiEntryObject'
+        
+    GmosCustomMaskObject:
+      type: object
+      description: >
+        GMOS custom mask definition which is available as an alternative to using a builtin FPU.
+      properties:
+        fpuType:
+          type: string
+          description: A discriminator used in defining an FPU.  Must have value `customMask`.
+        maskDefinitionFilename:
+          type: string
+        slitWidth:
+          $ref: '#/components/schemas/GmosCustomSlitWidthEnum'
+      required:
+        - fpuType
+        - maskDefinitionFilename
+        - slitWidth
+        
+    GmosCustomRoiEntryObject:
+      type: object
+      description: >
+        GMOS custom ROI entry definition.
+      properties:
+        xMin:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 32767
+        yMin:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 32767
+        xRange:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 32767
+        yRange:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 32767
+      required:
+        - xMin
+        - yMin
+        - xRange
+        - yRange
+        
+    GmosCustomSlitWidthEnum:
+      type: string
+      description: >
+        GMOS custom slit width options (arcsecs)
+      enum:
+        - CustomWidth_0_25
+        - CustomWidth_0_50
+        - CustomWidth_0_75
+        - CustomWidth_1_00
+        - CustomWidth_1_50
+        - CustomWidth_2_00
+        - CustomWidth_5_00
+ 
+    GmosDetectorEnum:
+      type: string
+      description: >
+        GMOS South detector option.  Only HAMAMATSU is supported in new observations, but E2V will appear in old observations.
+      enum:
+        - E2V
+        - HAMAMATSU
+      default:
+        HAMAMATSU
+        
+    GmosDisperserOrderEnum:
+      type: string
+      description:
+        GMOS disperser order options
+      enum:
+        - Zero
+        - One
+        - Two
+      default:
+        One
+        
+    GmosDtaxEnum:
+      type: string
+      description: >
+        GMOS detector translation X offset.
+      enum:
+        - MinusSix
+        - MinusFive
+        - MinusFour
+        - MinusThree
+        - MinusTwo
+        - MinusOne
+        - Zero
+        - One
+        - Two
+        - Three
+        - Four
+        - Five
+        - Six
+      default:
+        Zero
+        
+    GmosEOffsettingEnum:
+      type: string
+      description: >
+        Whether to use electronic offsetting in a GMOS nod-and-shuffle.
+      enum:
+        - On
+        - Off
+        
+    GmosGratingBaseObject:
+      type: object
+      description: >
+        Common GMOS parameters that apply when using a grating.
+      properties:
+        order:
+          $ref: '#/components/schemas/GmosDisperserOrderEnum'
+        wavelength:
+          $ref: '#/components/schemas/WavelengthInteger'
+      required:
+        - wavelength
+        
+    GmosNodAndShuffleObject:
+      type: object
+      description: >
+        GMOS nod-and-shuffle configuration.
+      properties:
+        posA:
+          $ref: '#/components/schemas/OffsetObject'
+        posB:
+          $ref: '#/components/schemas/OffsetObject'
+        eOffset:
+          $ref: '#/components/schemas/GmosEOffsettingEnum'
+        shuffle:
+          type: integer
+          format: int32
+          minimum: 1
+          description: offset in detector rows
+        cycles:
+          type: integer
+          format: int32
+          minimum: 1
+          description: nod-and-shuffle cycle count
+      required:
+        - posA
+        - posB
+        - eOffset
+        - shuffle
+        - cycles
+        
+    GmosRoiEnum:
+      type: string
+      description: >
+        GMOS region of interest options
+      enum:
+        - FullFrame
+        - Ccd2
+        - CentralSpectrum
+        - CentralStamp
+        - TopSpectrum
+        - BottomSpectrum
+        - Cusom
+      default:
+        FullFrame
+        
+    GmosSouthDisperserEnum:
+      type: string
+      description: >
+        GMOS South disperser options
+      enum:
+        - B12000_G5321
+        - R831_G5322
+        - B600_G5323
+        - R600_G5324
+        - R400_G5325
+        - R150_G5326
+        
+    GmosSouthDynamicConfigObject:
+      type: object
+      description: >
+        GMOS South dynamic step configuration.  It is "dynamic" in that it may change from one step to the next.
+      allOf:
+        - $ref: '#/components/schemas/GmosCommonDynamicConfigObject'
+        - type: object
+          properties:
+            grating:
+              $ref: '#/components/schemas/GmosSouthGratingObject'
+            filter:
+              $ref: '#/components/schemas/GmosSouthFilterEnum'
+            fpu:
+              oneOf:
+                - $ref: '#/components/schemas/GmosCustomMaskObject'
+                - $ref: '#/components/schemas/GmosSouthFpuObject'
+              discriminator:
+                propertyName: fpuType
+                mapping:
+                  customMask: '#/components/schemas/GmosCustomMaskObject'
+                  builtin: '#/components/schemas/GmosSouthFpuObject'
+              
+    GmosSouthFilterEnum:
+      type: string
+      description: >
+        GMOS South filter options.
+      enum:
+        - UPrime
+        - GPrime
+        - RPrime
+        - IPrime
+        - ZPrime
+        - Z
+        - Y
+        - GG455
+        - OG515
+        - RG610
+        - RG780
+        - CaT
+        - HartmannA_RPrime
+        - HartmannB_RPrime
+        - GPrime_GG455
+        - GPrime_OG515
+        - RPrime_RG610
+        - IPrime_RG780
+        - IPrime_CaT
+        - ZPrime_CaT
+        - Ha
+        - SII
+        - HaC
+        - OIII
+        - OIIIC
+        - HeII
+        - HeIIC
+        - Lya395
+
+    GmosSouthFpuEnum:
+      type: string
+      description: >
+        GMOS South focal plane unit options
+      enum:
+        - Ifu1
+        - Ifu2
+        - Ifu3
+        - Bhros
+        - IfuN
+        - IfuNB
+        - IfuNR
+        - Ns1
+        - Ns2
+        - Ns3
+        - Ns4
+        - Ns5
+        - LongSlit_0_25
+        - LongSlit_0_50
+        - LongSlit_0_75
+        - LongSlit_1_00
+        - LongSlit_1_50
+        - LongSlit_2_00
+        - LongSlit_5_00
+        
+    GmosSouthFpuObject:
+      type: object
+      description: >
+        Combines a GMOS South FPU option with an `fpuType` discriminator to facilitate processing of a GMOS South dynamic config.
+      properties:
+        fpuType:
+          type: string
+          description: FPU type discriminator with required value `builtin`.
+        value:
+          $ref: '#/components/schemas/GmosSouthFpuEnum'
+      required:
+        - fpuType
+        - value
+
+    GmosSouthGratingObject:
+      type: object
+      description: >
+        GMOS South grating parameters.
+      allOf:
+        - type: object
+          properties:
+            disperser:
+              $ref: '#/components/schemas/GmosSouthDisperserEnum'
+          required:
+            - disperser
+        - $ref: '#/components/schemas/GmosGratingBaseObject'    
+        
+    GmosSouthObservationObject:
+      type: object
+      description: >
+        A GMOS South observation (`instrument` disciminator set to `gmosSouth`).  Guide star information is optional and usually not specified since the best available guide star will be automatically selected.
+      allOf:
+        - $ref: '#/components/schemas/ObservationBaseObject'
+        - $ref: '#/components/schemas/AsterismSingleTargetObject'
+        - type: object
+          properties:
+            guideStar:
+              $ref: '#/components/schemas/GuideTargetOiPwfsObject'
+            alternateGuideStars:
+              type: array
+              description: >
+                By default, no guide star is needed since the best available guide star should be found automatically.  An explicit option may be set with `guideStar` however and any number of alternatives may be included as well in case the `guideStar` choice doesn't work out in practice.
+              items:
+                $ref: '#/components/schemas/GuideTargetOiPwfsObject'
+            userTargets:
+              type: array
+              items:
+                $ref: '#/components/schemas/UserTargetObject'
+            staticConfig:
+              $ref: '#/components/schemas/GmosSouthStaticConfigObject'
+            executedSteps:
+              type: array
+              description: >
+                Previously executed steps.  These cannot be updated since the correspond to actual datasets.
+              items:
+                $ref: '#/components/schemas/GmosSouthStepObject'
+              readOnly: true  
+            steps:
+              type: array
+              description: >
+                Planned (remaining) step sequence for this observation.
+              items:
+                $ref: '#/components/schemas/GmosSouthStepObject'
+
+    GmosSouthStageModeEnum:
+      type: string
+      description: >
+        GMOS South stage mode
+      enum:
+        - NoFollow
+        - FollowXyz
+        - FollowXy
+        - FollowZ
+      default:
+        FollowXyz
+        
+    GmosSouthStaticConfigObject:
+      type: object
+      description: >
+        The part of a GMOS South instrument configuration that cannot change from step to step in a sequence.
+      allOf:
+        - $ref: '#/components/schemas/GmosCommonStaticConfigObject'
+        - type: object
+          properties:
+            stageMode:
+              $ref: '#/components/schemas/GmosSouthStageModeEnum'
+
+    GmosSouthStepObject:
+      type: object
+      description: >
+        A single GMOS south sequence step, producing a corresponding dataset.
+      allOf:
+        - $ref: '#/components/schemas/StepObject'
+        - type: object
+          properties:
+            gmosSouth:
+              $ref: '#/components/schemas/GmosSouthDynamicConfigObject'
+          required:
+            - gmosSouth
+              
+    GuideOptionsOiPwfsEnum:
+      type: string
+      description: >
+        Guider options for most instruments with an OIWFS, which include PWFS1 and PWFS2 as well as the OIWFS.
+      enum:
+        - OIWFS
+        - PWFS1
+        - PWFS2
+    
+    GuideTargetOiPwfsObject:
+      type: object
+      description: >
+        Combines a target definition with a corresponding guider, which OIWFS and PWFS are the only alternatives.
+      properties:
+        guider:
+          $ref: '#/components/schemas/GuideOptionsOiPwfsEnum'
+        target:
+          $ref: '#/components/schemas/TargetObject'
+      required:
+        - guider
+        - target
+        
+    LoginRequestObject:
+      type: object
+      properties:
+        uid:
+          type: string
+        pass:
+          type: string
+      required:
+        - uid
+        - pass
+      example:
+        uid: bobdole
+        pass: banana
+        
+    MosPreImagingBoolean:
+      type: boolean
+      description: >
+        Set to `true` if this is an imaging observation that will be used for MOS design.
+      default:
+        false
+        
+    ObservationBaseObject:
+      type: object
+      description: |
+        Observation description, which is instrument-specific.  The base object defines the `instrument` discriminator with possible values:
+        * `ghost`
+        * `gmosSouth`
+      properties:
+        id:
+          $ref: '#/components/schemas/ObservationIdString'
+        instrument:
+          type: string
+      discriminator:
+        propertyName: instrument
+        mapping:
+          ghost: '#/components/schemas/GhostObservationObject'
+          gmosSouth: '#/components/schemas/GmosSouthObservationObject'
+        required:
+          - instrument
+        
+    ObservationIdString:
+      type: string
+      description: >
+        Reference to an observation.  (This is a placeholder because observation id format has not been determined. If the semester is included, it might just come to mean "when the corresponding program was first added" but say nothing about when the program "expires".)
+      pattern: '^\d\d\d\d[AB]-[A-Z]+-\d+-\d+$'
+      readOnly: true
+      example:
+        2019A-Q-100-1
+        
+    ObservationObject:
+      type: object
+      description: >
+        Instrument-specific observation description. (Additional instruments would be added here.)
+      oneOf:
+        - $ref: '#/components/schemas/GhostObservationObject'
+        - $ref: '#/components/schemas/GmosSouthObservationObject'
+      example:
+        instrument: gmosSouth
+        target:
+          name: canopus
+          targetType: sidereal
+          ra: '06:23:57.110'
+          dec: '-52:41:44.38'
+          epoch: 'J2000.000'
+          parallax: 468828000000
+          radialVelocity: 20385
+        steps:
+          - stepType: science
+            gmosSouth:
+              ccdReadout:
+                xBinning: 2
+                yBinning: 2
+              ampCount: 12
+              ampGain: Low
+              ampReadMode: Slow
+              exposureTime: 
+                seconds: 1170
+              grating:
+                disperser: R400_G5325
+                wavelength: 7400
+              filter: OG515_G0330
+              fpu:
+                fpuType: customMask
+                maskDefinitionFilename: 'G2018BQ113-02'
+                slitWidth: CustomWidth_1_00
+          - stepType: smartGcal
+            smartType: Flat
+            gmosSouth:
+              ccdReadout:
+                xBinning: 2
+                yBinning: 2
+              ampCount: 12
+              ampGain: Low
+              ampReadMode: Slow
+              exposureTime: 
+                seconds: 1170
+              grating:
+                disperser: R400_G5325
+                wavelength: 7400
+              filter: OG515_G0330
+              fpu:
+                fpuType: customMask
+                maskDefinitionFilename: 'G2018BQ113-02'
+                slitWidth: CustomWidth_1_00
+      
+
+    ObservingConditionsObject:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          readOnly: true
+        temperature:
+          type: integer
+          format: int32
+          readOnly: true
+          description: Temperature in degrees Celsius.
+        windDirection:
+          type: integer
+          format: int32
+          readOnly: true
+          description: |
+            Wind direction in degrees
+            *   0 degrees = North
+            *  90 degrees = East
+            * 180 degrees = South
+            * 270 degrees = West
+        windSpeed:
+          type: integer
+          format: int32
+          readOnly: true
+          description: |
+            Wind speed in cm/s
+        # etc., etc.
+      example:
+        timestamp: 2018-12-11T03:04:05:06Z
+        temperature: 14
+        windDirection: 83
+        windSpeed: 3980
+        
+    OffsetObject:
+      type: object
+      description: >
+        Offset in p and q.  Both `p` and `q` are represented in µas to ensure a precise integral value is used for information exchange.
+      properties:
+        p:
+          type: integer
+          format: int64
+          description: Offset in p represented in µas
+          default: 0
+        q:
+          type: integer
+          format: int64
+          description: Offset in q represented in µas
+          default: 0
+
+    ProgramIdString:
+      type: string
+      description: >
+        Reference to a program.  (This is a placeholder because program id format has not been determined. If the semester is included, it might just come to mean "when the corresponding program was first added" but say nothing about when the program "expires".)
+      pattern: '^\d\d\d\d[AB]-[A-Z]+-\d+$'
+      readOnly: true
+      example:
+        2019A-Q-100
+
+    ProperMotionObject:
+      type: object
+      description: >
+        Time-parameterized coordinates, based on an observed position at some point in time (called the `epoch`) and measured velocities in distance (`radialVelocity`; i.e., doppler shift) and position (`properVelocity`) per year.
+      allOf:
+        - $ref: '#/components/schemas/CoordinatesObject'
+        - type: object
+          properties:
+            epoch:
+              type: string
+              pattern: '^[BJ]\d\d\d\d.\d\d\d$'
+            properVelocity:
+              $ref: '#/components/schemas/OffsetObject'
+            radialVelocity:
+              type: integer
+              format: int32
+              description: m/s
+            parallax:
+              type: integer
+              format: int64
+              description: µas
+          required:
+            - epoch
+      example:
+        baseCoordinates:
+          ra : '06:23:57.110'
+          dec : '-52:41:44.38'
+        epoch: 'J2000.000'
+        properVelocity:
+          p: 19930
+          q: 23240
+        radialVelocity: 20385
+        parallax: 468828000000
+
+    TargetObject:
+      description: >
+        A named sidereal or non-sidereal target. The target tracking is specified with a `targetType` discriminator with value `nonsidereal` or `sidereal` and a corresponding non-sidereal ephemeris key or sidereal proper motion.
+      oneOf:
+        - $ref: '#/components/schemas/TrackingNonsiderealObject'
+        - $ref: '#/components/schemas/TrackingSiderealObject'
+      properties:
+        name:
+          type: string
+      required:
+        - name
+        
+    TrackingBaseObject:
+      type: object
+      description: |
+        Base tracking object defining the `targetType` discriminator. The possible values are
+        * `nonsidereal`
+        * `sidereal`
+      properties:
+        targetType:
+          type: string
+      discriminator:
+        propertyName: targetType
+        mapping:
+          nonsidereal: '#/components/schemas/TrackingNonsiderealObject'
+          sidereal: '#/components/schemas/TrackingSiderealObject'
+      required:
+        - targetType
+        
+    TrackingNonsiderealObject:
+      description: >
+        Combines a target type discriminator (whose value should be `nonsidereal`) with an ephemeris key.
+      allOf:
+        - $ref: '#/components/schemas/TrackingBaseObject'
+        - type: object
+          properties:
+            ephemerisKey:
+              $ref: '#/components/schemas/EphemerisKeyString'
+          required:
+            - ephemerisKey
+      example:
+        targetType: nonsidereal
+        ephemerisKey: MajorBody_606
+        
+              
+    TrackingSiderealObject:
+      description: |
+        Combines a target type discriminator (whose value should be `sidereal`) with a proper motion object.
+      allOf:
+        - $ref: '#/components/schemas/TrackingBaseObject'
+        - $ref: '#/components/schemas/ProperMotionObject'
+      example:
+        targetType: sidereal
+        ra: '06:23:57.110'
+        dec: '-52:41:44.38'
+        epoch: 'J2000.000'
+        parallax: 468828000000
+        radialVelocity: 20385
+
+    
+    SiteEnum:
+      type: string
+      enum:
+        - GN
+        - GS
+        
+    SiteSpecificStatusObject:
+      type: object
+      properties:
+        availability:
+          $ref: '#/components/schemas/AvailabilityObject'
+        observingConditions:
+          $ref: '#/components/schemas/ObservingConditionsObject'
+      required:
+        - availability
+        - observingConditions
+        
+    SmartGcalTypeEnum:
+      type: string
+      description: >
+        Smart GCAL type options:
+      enum:
+        - Arc
+        - Flat
+        - DayBaseline
+        - NightBaseline
+          
+    StatusObject:
+      type: object
+      properties:
+        gn:
+          $ref: '#/components/schemas/SiteSpecificStatusObject'
+        gs:
+          $ref: '#/components/schemas/SiteSpecificStatusObject'
+      required:
+        - gn
+        - gs
+        
+    StepBaseObject:
+      type: object
+      description: |
+        Defines a `stepType` discriminator that all steps must support.  Step type options are
+        * bias
+        * dark
+        * gcal
+        * science
+        * smartGcal
+      properties:
+        stepType:
+          type: string
+      discriminator:
+        propertyName: stepType
+        mapping:
+          bias: '#/components/schemas/StepNoConfigObject'
+          dark: '#/components/schemas/StepNoConfigObject'
+          gcal: '#/components/scheams/StepGcalObject'
+          smartGcal: '#/components/schemas/StepSmartGcalObject'
+      required:
+        - stepType
+        
+    StepGcalObject:
+      type: object
+      description: >
+        A manual GCAL configuration step with `stepType` discriminator value `gcal`.
+      allOf:
+        - $ref: '#/components/schemas/StepBaseObject'
+        - $ref: '#/components/schemas/GcalObject'
+
+    StepNoConfigObject:
+      type: object
+      description: >
+        A bias or dark step, depending on the `stepType` discriminator values `bias` or `dark`.
+      allOf:
+        - $ref: '#/components/schemas/StepBaseObject'
+        
+    StepObject:
+      type: object
+      description: >
+        The non-instrument portion of the step configuration.  Meant to be combined with the dynamic step configuration for particular instruments.
+      oneOf:
+        - $ref: '#/components/schemas/StepNoConfigObject'
+        - $ref: '#/components/schemas/StepGcalObject'
+        - $ref: '#/components/schemas/StepScienceObject'
+        - $ref: '#/components/schemas/StepSmartGcalObject'
+        
+    StepSmartGcalObject:
+      type: object
+      description: >
+        A smart GCAL step, with `stepType` set to `smartGcal`.
+      allOf:
+        - $ref: '#/components/schemas/StepBaseObject'
+        - type: object
+          properties:
+            smartType:
+              $ref: '#/components/schemas/SmartGcalTypeEnum'
+          required:
+            - smartType
+            
+    StepScienceObject:
+      type: object
+      description: >
+        A science-data step with `stepType` set to `science`.
+      allOf:
+        - $ref: '#/components/schemas/StepBaseObject'
+        - $ref: '#/components/schemas/OffsetObject'
+        
+    UserTargetEnum:
+      type: string
+      enum:
+        - BlindOffset
+        - OffAxis
+        - Tuning
+        - Other
+        
+    UserTargetObject:
+      type: object
+      description: >
+        User targets combine a type (intended purpose) with a target.
+      properties:
+        userTargetType:
+          $ref: '#/components/schemas/UserTargetEnum'
+        target:
+          $ref: '#/components/schemas/TargetObject'
+      required:
+        - userTargetType
+        - target
+        
+    WavelengthInteger:
+      type: integer
+      description: >
+        An exact wavelength represented in unsigned integral angstroms in the range [0 .. 2147483647] which means that the largest representable wavelength is 214.7483647 mm.
+      format: int64
+      minimum: 0
+      maximum: 2147483647
+          
+  examples:
+    coordinatesExample:
+      summary: Coordinates
+      value:
+        ra : '18:36:56.336000'
+        dec : '+38:47:01.280000'
+      
+    properVelocityExample:
+      value:
+        p: 19930
+        q: 23240
+        
+    properMotionExample:
+      value:
+        baseCoordinates:
+          $ref: '#/components/examples/coordinatesExample'
+        epoch: 'J2000.000'
+        properVelocity:
+          $ref: '#/components/examples/properVelocityExample'
+        radialVelocity: 20385
+        parallax: 468828000000
+    
+    siderealTargetExample:
+      value:
+        name: Vega
+        tracking:
+          $ref: '#/components/examples/properMotionExample'
+    
+  requestBodies:
+    callbackRequestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CallbackUrlObject'
+            
+                
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: gem.jwt
+      
+security: 
+  - cookieAuth: []
