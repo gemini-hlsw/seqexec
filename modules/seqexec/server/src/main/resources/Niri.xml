@@ -1,0 +1,297 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Records xmlns="http://www.gemini.edu/CaSchema">
+    <!--
+    NIRI is a bit weird, in that it has records spread over two tops.
+    NIS is like the instrument sequencer top. Its main apply record links to all the others.
+    There are strange things, like almost all mechanisms are under NIS:, but the window cover is
+    under niri:
+    -->
+    <Top name="niri">niri</Top>
+    <Top name="nis">NIS</Top>
+    <Apply name="niri::dcapply">
+        <top>niri</top>
+        <apply>dc:apply</apply>
+        <car>dc:applyC</car>
+        <gem5>true</gem5>
+        <description>DC Primary Apply Record</description>
+        <command name="niri::abort">
+            <record>dc:abort</record>
+            <description>Abort observation</description>
+        </command>
+        <command name="niri::pause">
+            <record>dc:pause</record>
+            <description>Pause observation</description>
+        </command>
+        <command name="niri::observe">
+            <record>dc:observe</record>
+            <description>Observe</description>
+            <parameter name="label">
+                <channel>dc:observe.A</channel>
+                <type>STRING</type>
+                <description>DHS data label</description>
+            </parameter>
+        </command>
+        <command name="niri::continue">
+            <record>dc:continue</record>
+            <description>Continue observation</description>
+        </command>
+        <command name="niri::stop">
+            <record>dc:stop</record>
+            <description>Stop observation</description>
+        </command>
+    </Apply>
+    <Apply name="niri::apply">
+        <top>niri</top>
+        <apply>apply</apply>
+        <car>applyC</car>
+        <description>NIS Primary Apply Record </description>
+        <command name="niri::endObserve">
+            <record>endObserve</record>
+            <description>Notify end of observation</description>
+        </command>
+        <command name="niri:config">
+            <record>cc:covSel</record>
+            <description>Window Cover control</description>
+            <parameter name = "windowCover">
+                <channel>cc:covSel.A</channel>
+                <type>STRING</type>
+            </parameter>
+        </command>
+    </Apply>
+    <Apply name="nis::apply">
+        <top>nis</top>
+        <apply>apply</apply>
+        <car>applyC</car>
+        <description>NIS Primary Apply Record </description>
+        <command name="nis::config">
+            <description>Setup a Configuration</description>
+            <!--<parameter name="disperser">-->
+                <!--<channel>grism:menu</channel>-->
+                <!--<type>STRING</type>-->
+                <!--<description>grism</description>-->
+            <!--</parameter>-->
+            <!--<parameter name="readMode">-->
+                <!--<channel>readmode:menu</channel>-->
+                <!--<type>STRING</type>-->
+                <!--<description>readmode</description>-->
+            <!--</parameter>-->
+            <parameter name="numCoAdds">
+                <channel>dcSetup:cad.H</channel>
+                <type>INTEGER</type>
+                <description>Coadds</description>
+            </parameter>
+            <!--<parameter name="mask">-->
+                <!--<channel>fpmask:menu</channel>-->
+                <!--<type>STRING</type>-->
+                <!--<description>fpmask</description>-->
+            <!--</parameter>-->
+            <!--<parameter name="camera">-->
+                <!--<channel>camera:menu</channel>-->
+                <!--<type>STRING</type>-->
+                <!--<description>camera</description>-->
+            <!--</parameter>-->
+            <!--<parameter name="beamSplitter">-->
+                <!--<channel>beamsplit:menu</channel>-->
+                <!--<type>STRING</type>-->
+                <!--<description>beamsplitter</description>-->
+            <!--</parameter>-->
+            <parameter name="exposureTime">
+                <channel>dcSetup:cad.F</channel>
+                <type>DOUBLE</type>
+                <description>Integration time for IS</description>
+            </parameter>
+            <!--<parameter name="builtinROI">-->
+                <!--<channel>roi:menu</channel>-->
+                <!--<type>STRING</type>-->
+                <!--<description>Builtin ROI</description>-->
+            <!--</parameter>-->
+            <parameter name="filter">
+                <channel>filter:cad.A</channel>
+                <type>STRING</type>
+                <description>filter</description>
+            </parameter>
+            <parameter name="focus">
+                <channel>focus:cad.E</channel>
+                <type>STRING</type>
+                <description>focus</description>
+            </parameter>
+        </command>
+    </Apply>
+    <Status name="niri::status">
+        <top>niri</top>
+        <attribute name="BEAMSPLT">
+            <channel>cc:spltName.VAL</channel>
+            <type>STRING</type>
+            <description>niri keyword</description>
+        </attribute>
+        <attribute name="FILTER1">
+            <channel>cc:filt1Name.VAL</channel>
+            <type>STRING</type>
+            <description>niri keyword</description>
+        </attribute>
+        <attribute name="FOCUSNAM">
+            <channel>cc:focName.VAL</channel>
+            <type>STRING</type>
+            <description>niri keyword</description>
+        </attribute>
+        <attribute name="FOCUSPOS">
+            <channel>cc:focPos.VAL</channel>
+            <type>DOUBLE</type>
+            <description>niri keyword</description>
+        </attribute>
+        <attribute name="FPMASK">
+            <channel>cc:foplName.VAL</channel>
+            <type>STRING</type>
+            <description>niri keyword</description>
+        </attribute>
+        <attribute name="PVIEW">
+            <channel>cc:puvwName.VAL</channel>
+            <type>STRING</type>
+            <description>niri keyword</description>
+        </attribute>
+        <attribute name="CAMERA">
+            <channel>cc:sterName.VAL</channel>
+            <type>STRING</type>
+            <description>niri keyword</description>
+        </attribute>
+        <attribute name="WINDCOVR">
+            <channel>cc:covName.VAL</channel>
+            <type>STRING</type>
+            <description>niri keyword</description>
+        </attribute>
+        <attribute name="FILTER3">
+            <channel>cc:filt3Name</channel>
+            <type>STRING</type>
+            <description>niri keyword</description>
+        </attribute>
+        <attribute name="FILTER2">
+            <channel>cc:filt2Name</channel>
+            <type>STRING</type>
+            <description>niri keyword</description>
+        </attribute>
+    </Status>
+    <Status name="niri::dcstatus">
+        <top>niri</top>
+        <description>niri status</description>
+        <attribute name="dhcConnected">
+            <channel>dc:sad:dhsConnected</channel>
+            <type>INTEGER</type>
+            <description>Dhs status</description>
+        </attribute>
+        <!--<attribute name="arrayActivated">-->
+            <!--<channel>dc:activate</channel>-->
+            <!--<type>STRING</type>-->
+            <!--<description>Array status  </description>-->
+        <!--</attribute>-->
+        <attribute name="minInt">
+            <channel>dc:minInt.VAL</channel>
+            <type>DOUBLE</type>
+            <description>minInt</description>
+        </attribute>
+        <attribute name="intTime">
+            <channel>dc:obsSetup.VALG</channel>
+            <type>DOUBLE</type>
+            <description>intTime</description>
+        </attribute>
+        <attribute name="numCoAdds">
+            <channel>dc:obsSetup.VALE</channel>
+            <type>INTEGER</type>
+            <description>numCoAdds</description>
+        </attribute>
+        <attribute name="TDETABS">
+            <channel>dc:footLGain.VAL</channel>
+            <type>DOUBLE</type>
+            <description>niri keyword</description>
+        </attribute>
+        <attribute name="UCODENAM">
+            <channel>dc:arSetup.VALB</channel>
+            <type>STRING</type>
+            <description>niri keyword</description>
+        </attribute>
+        <attribute name="VDET">
+            <channel>dc:c80_95:a1</channel>
+            <type>DOUBLE</type>
+            <description>niri keyword</description>
+        </attribute>
+        <attribute name="FRMSPCYCL">
+            <channel>dc:ucFrmsPCycle</channel>
+            <type>INTEGER</type>
+            <description>niri keyword</description>
+        </attribute>
+        <attribute name="VSET">
+            <channel>dc:c64_79:a12</channel>
+            <type>DOUBLE</type>
+            <description>niri keyword</description>
+        </attribute>
+        <attribute name="OBSEPOCH">
+            <channel>dc:sad:obsepoch</channel>
+            <type>DOUBLE</type>
+            <description>niri keyword</description>
+        </attribute>
+        <attribute name="TMOUNT">
+            <channel>dc:mntLGain</channel>
+            <type>DOUBLE</type>
+            <description>niri keyword</description>
+        </attribute>
+        <attribute name="VGGCL1">
+            <channel>dc:c64_79:a0</channel>
+            <type>DOUBLE</type>
+            <description>niri keyword</description>
+        </attribute>
+        <attribute name="ARRAYTYP">
+            <channel>dc:detType</channel>
+            <type>STRING</type>
+            <description>niri keyword</description>
+        </attribute>
+        <attribute name="NDAVGS">
+            <channel>dc:obsSetup.VALC</channel>
+            <type>INTEGER</type>
+            <description>niri keyword</description>
+        </attribute>
+        <attribute name="VDDCL1">
+            <channel>dc:c48_63:a13</channel>
+            <type>DOUBLE</type>
+            <description>niri keyword</description>
+        </attribute>
+        <attribute name="LNRS">
+            <channel>dc:obsSetup.VALD</channel>
+            <type>INTEGER</type>
+            <description>niri keyword</description>
+        </attribute>
+        <attribute name="hdrtiming">
+            <channel>dc:obsSetup.VALN</channel>
+            <type>INTEGER</type>
+            <description>niri keyword</description>
+        </attribute>
+        <attribute name="ARRAYID">
+            <channel>dc:detID</channel>
+            <type>STRING</type>
+            <description>niri keyword</description>
+        </attribute>
+        <attribute name="VDDCL2">
+            <channel>dc:c64_79:a14</channel>
+            <type>DOUBLE</type>
+            <description>niri keyword</description>
+        </attribute>
+        <attribute name="UCODETYP">
+            <channel>dc:uCodeType</channel>
+            <type>INTEGER</type>
+            <description>niri keyword</description>
+        </attribute>
+        <attribute name="VDDUC">
+            <channel>dc:c80_95:a10</channel>
+            <type>DOUBLE</type>
+            <description>niri keyword</description>
+        </attribute>
+        <attribute name="VGGCL2">
+            <channel>dc:c64_79:a11</channel>
+            <type>DOUBLE</type>
+            <description>niri keyword</description>
+        </attribute>
+        <attribute name="MODE">
+            <channel>dc:obsSetup.VALM</channel>
+            <type>INTEGER</type>
+            <description>niri keyword</description>
+        </attribute>
+    </Status>
+</Records>
