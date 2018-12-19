@@ -56,7 +56,8 @@ object GmosController {
     @SuppressWarnings(Array("org.wartremover.warts.LeakingSealed"))
     case class BuiltInFPU(fpu: T#FPU) extends GmosFPU
 
-    case class GmosDisperser(disperser: T#Disperser, order: Option[DisperserOrder], lambda: Option[Length])
+    case class GmosDisperser(disperser: T#Disperser, order: Option[DisperserOrder],
+      lambda: Option[Length])
 
     case class CCConfig(
       filter: T#Filter,

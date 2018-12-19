@@ -598,6 +598,11 @@
             <type>DOUBLE</type>
             <description>Detector translation X pos (microns)</description>
         </attribute>
+        <attribute name="dtaXOffset">
+            <channel>sad:cc:dtaXoffset</channel>
+            <type>DOUBLE</type>
+            <description>Detector translation X pos offset (microns)</description>
+        </attribute>
         <attribute name="dtay">
             <channel>sad:cc:dtaY</channel>
             <type>DOUBLE</type>
