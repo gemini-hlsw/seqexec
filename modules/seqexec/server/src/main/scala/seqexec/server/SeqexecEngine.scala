@@ -25,7 +25,7 @@ import seqexec.engine.Handle
 import seqexec.model._
 import seqexec.model.enum._
 import seqexec.model.events._
-import seqexec.model.{ActionType, UserDetails, StepId}
+import seqexec.model.{ActionType, StepId, UserDetails}
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.keywords._
 import seqexec.server.flamingos2.{Flamingos2ControllerEpics, Flamingos2ControllerSim, Flamingos2ControllerSimBad, Flamingos2Epics}
@@ -42,7 +42,6 @@ import edu.gemini.spModel.core.{Peer, SPProgramID}
 import edu.gemini.spModel.obscomp.InstConstants
 import edu.gemini.spModel.seqcomp.SeqConfigNames.OCS_KEY
 import fs2.{Scheduler, Stream}
-import giapi.client.ghost.GHOSTClient
 import org.http4s.client.Client
 import org.http4s.Uri
 import knobs.Config

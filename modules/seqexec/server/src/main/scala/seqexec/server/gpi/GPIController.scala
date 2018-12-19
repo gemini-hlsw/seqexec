@@ -4,14 +4,11 @@
 package seqexec.server.gpi
 
 import cats.{Eq, Show}
-import cats.data.EitherT
 import cats.effect.Sync
 import cats.implicits._
 import edu.gemini.spModel.gemini.gpi.Gpi.{Apodizer => LegacyApodizer}
 import edu.gemini.spModel.gemini.gpi.Gpi.{Adc => LegacyAdc}
-import edu.gemini.spModel.gemini.gpi.Gpi.{
-  ArtificialSource => LegacyArtificialSource
-}
+import edu.gemini.spModel.gemini.gpi.Gpi.{ArtificialSource => LegacyArtificialSource}
 import edu.gemini.spModel.gemini.gpi.Gpi.{Disperser => LegacyDisperser}
 import edu.gemini.spModel.gemini.gpi.Gpi.{FPM => LegacyFPM}
 import edu.gemini.spModel.gemini.gpi.Gpi.{Filter => LegacyFilter}
@@ -19,16 +16,14 @@ import edu.gemini.spModel.gemini.gpi.Gpi.{Lyot => LegacyLyot}
 import edu.gemini.spModel.gemini.gpi.Gpi.{ObservingMode => LegacyObservingMode}
 import edu.gemini.spModel.gemini.gpi.Gpi.{PupilCamera => LegacyPupilCamera}
 import edu.gemini.spModel.gemini.gpi.Gpi.{Shutter => LegacyShutter}
-import giapi.client.commands.{CommandResult, CommandResultException, Configuration}
+import giapi.client.commands.Configuration
 import giapi.client.gpi.GPIClient
 import mouse.boolean._
-import org.log4s.getLogger
+
 import scala.concurrent.duration._
-import seqexec.model.dhs.ImageFileId
 import seqexec.server.keywords.GDSClient
-import seqexec.server.SeqActionF
-import seqexec.server.SeqexecFailure.{Execution, SeqexecException}
-import squants.time.Time
+import seqexec.server.giapi.GiapiInstrumentController
+import seqexec.server.gpi.GPIController.GPIConfig
 
 object GPILookupTables {
 
@@ -97,12 +92,15 @@ object GPILookupTables {
   )
 }
 
-final case class GPIController[F[_]: Sync](gpiClient: GPIClient[F],
-                                           gdsClient: GDSClient) {
+final case class GPIController[F[_]: Sync](override val client: GPIClient[F],
+                                           override val gdsClient: GDSClient)
+  extends GiapiInstrumentController[F, GPIConfig, GPIClient[F]] {
+
   import GPIController._
   import GPILookupTables._
-  private val Log             = getLogger
+
   private val UNKNOWN_SETTING = "UNKNOWN"
+  override val name = "GPI"
 
   private def obsModeConfiguration(config: GPIConfig): Configuration =
     config.mode.fold(
@@ -125,92 +123,65 @@ final case class GPIController[F[_]: Sync](gpiClient: GPIClient[F],
     )
 
   // scalastyle:off
-  def gpiConfig(config: GPIConfig): SeqActionF[F, CommandResult] = {
-    val giapiApply =
-      Configuration.single("gpi:selectAdc.deploy",
-                           (config.adc === LegacyAdc.IN)
-                             .fold(1, 0)) |+|
-        Configuration.single("gpi:configAo.useAo",
-                             config.aoFlags.useAo
-                               .fold(1, 0)) |+|
-        Configuration.single("gpi:configAo.useCal",
-                             config.aoFlags.useCal
-                               .fold(1, 0)) |+|
-        Configuration.single("gpi:configCal.fpmPinholeBias",
-                             (config.aoFlags.alignFpm)
-                               .fold(1, 0)) |+|
-        Configuration.single("gpi:configAo.optimize",
-                             config.aoFlags.aoOptimize
-                               .fold(1, 0)) |+|
-        Configuration.single("gpi:configIfs.integrationTime",
-                             (config.expTime.toMillis / 1000.0)) |+|
-        Configuration.single("gpi:configIfs.numCoadds", config.coAdds) |+|
-        Configuration.single("gpi:configAo.magnitudeI", config.aoFlags.magI) |+|
-        Configuration.single("gpi:configAo.magnitudeH", config.aoFlags.magH) |+|
-        Configuration.single(
-          "gpi:selectShutter.calEntranceShutter",
-          (config.shutters.calEntranceShutter === LegacyShutter.OPEN)
-            .fold(1, 0)) |+|
-        Configuration.single(
-          "gpi:selectShutter.calReferenceShutter",
-          (config.shutters.calReferenceShutter === LegacyShutter.OPEN)
-            .fold(1, 0)) |+|
-        Configuration.single(
-          "gpi:selectShutter.calScienceShutter",
-          (config.shutters.calScienceShutter === LegacyShutter.OPEN)
-            .fold(1, 0)) |+|
-        Configuration.single(
-          "gpi:selectShutter.entranceShutter",
-          (config.shutters.entranceShutter === LegacyShutter.OPEN)
-            .fold(1, 0)) |+|
-        Configuration.single("gpi:selectShutter.calExitShutter", "-1") |+|
-        Configuration.single("gpi:selectPupilCamera.deploy",
-                             (config.pc === LegacyPupilCamera.IN)
-                               .fold(1, 0)) |+|
-        Configuration.single("gpi:selectSource.sourceSCatten",
-                             config.asu.attenuation) |+|
-        Configuration.single("gpi:selectSource.sourceSCpower",
-                             (config.asu.sc === LegacyArtificialSource.ON)
-                               .fold(100, 0)) |+|
-        Configuration.single("gpi:selectSource.sourceVis",
-                             (config.asu.vis === LegacyArtificialSource.ON)
-                               .fold(1, 0)) |+|
-        Configuration.single("gpi:selectSource.sourceIr",
-                             (config.asu.ir === LegacyArtificialSource.ON)
-                               .fold(1, 0)) |+|
-        Configuration.single("gpi:configPolarizer.deploy",
-                             (config.disperser === LegacyDisperser.WOLLASTON)
-                               .fold(1, 0)) |+|
-        Configuration.single("gpi:configPolarizer.angle", config.disperserAngle)
-
-      EitherT(gpiClient.genericApply(giapiApply |+| obsModeConfiguration(config)).attempt)
-        .leftMap {
-          // The GMP sends these cryptic messages but we can do better
-          case CommandResultException(_, "Message cannot be null") => Execution("Unhandled Apply command")
-          case CommandResultException(_, m)                        => Execution(m)
-          case f                                                   => SeqexecException(f)
-        }
+  override def configuration(config: GPIConfig): Configuration = {
+    Configuration.single("gpi:selectAdc.deploy",
+      (config.adc === LegacyAdc.IN)
+        .fold(1, 0)) |+|
+      Configuration.single("gpi:configAo.useAo",
+        config.aoFlags.useAo
+          .fold(1, 0)) |+|
+      Configuration.single("gpi:configAo.useCal",
+        config.aoFlags.useCal
+          .fold(1, 0)) |+|
+      Configuration.single("gpi:configCal.fpmPinholeBias",
+        config.aoFlags.alignFpm
+          .fold(1, 0)) |+|
+      Configuration.single("gpi:configAo.optimize",
+        config.aoFlags.aoOptimize
+          .fold(1, 0)) |+|
+      Configuration.single("gpi:configIfs.integrationTime",
+        config.expTime.toMillis / 1000.0) |+|
+      Configuration.single("gpi:configIfs.numCoadds", config.coAdds) |+|
+      Configuration.single("gpi:configAo.magnitudeI", config.aoFlags.magI) |+|
+      Configuration.single("gpi:configAo.magnitudeH", config.aoFlags.magH) |+|
+      Configuration.single(
+        "gpi:selectShutter.calEntranceShutter",
+        (config.shutters.calEntranceShutter === LegacyShutter.OPEN)
+          .fold(1, 0)) |+|
+      Configuration.single(
+        "gpi:selectShutter.calReferenceShutter",
+        (config.shutters.calReferenceShutter === LegacyShutter.OPEN)
+          .fold(1, 0)) |+|
+      Configuration.single(
+        "gpi:selectShutter.calScienceShutter",
+        (config.shutters.calScienceShutter === LegacyShutter.OPEN)
+          .fold(1, 0)) |+|
+      Configuration.single(
+        "gpi:selectShutter.entranceShutter",
+        (config.shutters.entranceShutter === LegacyShutter.OPEN)
+          .fold(1, 0)) |+|
+      Configuration.single("gpi:selectShutter.calExitShutter", "-1") |+|
+      Configuration.single("gpi:selectPupilCamera.deploy",
+        (config.pc === LegacyPupilCamera.IN)
+          .fold(1, 0)) |+|
+      Configuration.single("gpi:selectSource.sourceSCatten",
+        config.asu.attenuation) |+|
+      Configuration.single("gpi:selectSource.sourceSCpower",
+        (config.asu.sc === LegacyArtificialSource.ON)
+          .fold(100, 0)) |+|
+      Configuration.single("gpi:selectSource.sourceVis",
+        (config.asu.vis === LegacyArtificialSource.ON)
+          .fold(1, 0)) |+|
+      Configuration.single("gpi:selectSource.sourceIr",
+        (config.asu.ir === LegacyArtificialSource.ON)
+          .fold(1, 0)) |+|
+      Configuration.single("gpi:configPolarizer.deploy",
+        (config.disperser === LegacyDisperser.WOLLASTON)
+          .fold(1, 0)) |+|
+      Configuration.single("gpi:configPolarizer.angle", config.disperserAngle) |+|
+        obsModeConfiguration(config)
   }
   // scalastyle:on
-
-  def applyConfig(config: GPIConfig): SeqActionF[F, Unit] =
-    for {
-      _ <- SeqActionF.apply(Log.debug("Start GPI configuration"))
-      _ <- SeqActionF.apply(Log.debug(s"GPI configuration $config"))
-      _ <- gpiConfig(config)
-      _ <- SeqActionF.apply(Log.debug("Completed GPI configuration"))
-    } yield ()
-
-  def observe(fileId: ImageFileId, expTime: Time): SeqActionF[F, ImageFileId] =
-    EitherT(gpiClient.observe(fileId, expTime.toMilliseconds.milliseconds).map(_ => fileId).attempt)
-      .leftMap {
-        case CommandResultException(_, "Message cannot be null") => Execution("Unhandled observe command")
-        case CommandResultException(_, m)                        => Execution(m)
-        case f                                                   => SeqexecException(f)
-      }
-
-  def endObserve: SeqActionF[F, Unit] =
-    SeqActionF.void
 }
 
 object GPIController {
