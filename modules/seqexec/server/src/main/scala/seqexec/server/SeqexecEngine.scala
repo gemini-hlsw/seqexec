@@ -17,6 +17,7 @@ import edu.gemini.epics.acm.CaService
 import gem.Observation
 import gem.enum.Site
 import giapi.client.Giapi
+import giapi.client.ghost.GHOSTClient
 import giapi.client.gpi.GPIClient
 import seqexec.engine
 import seqexec.engine.Result.Partial

@@ -14,8 +14,8 @@ import seqexec.server.keywords.GDSClient
 import scala.concurrent.duration._
 import org.log4s._
 import seqexec.server.ConfigUtilOps.{ContentError, ExtractFailure}
+import seqexec.server.GiapiInstrumentController
 import seqexec.server.ghost.GHOSTController.GHOSTConfig
-import seqexec.server.giapi.GiapiInstrumentController
 
 final case class GHOSTController[F[_]: Sync](override val client: GHOSTClient[F],
                                              override val gdsClient: GDSClient)

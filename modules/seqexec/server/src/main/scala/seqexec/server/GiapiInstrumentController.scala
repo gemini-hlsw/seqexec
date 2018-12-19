@@ -1,7 +1,7 @@
 // Copyright (c) 2016-2018 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
-package seqexec.server.giapi
+package seqexec.server
 
 import cats.data.EitherT
 import cats.effect.Sync
@@ -9,13 +9,12 @@ import cats.implicits._
 import giapi.client.GiapiClient
 import giapi.client.commands.{CommandResult, CommandResultException, Configuration}
 import org.log4s.getLogger
+import seqexec.model.dhs.ImageFileId
+import seqexec.server.SeqexecFailure.{Execution, SeqexecException}
+import seqexec.server.keywords.GDSClient
+import squants.time.Time
 
 import scala.concurrent.duration._
-import seqexec.model.dhs.ImageFileId
-import seqexec.server.keywords.GDSClient
-import seqexec.server.SeqActionF
-import seqexec.server.SeqexecFailure.{Execution, SeqexecException}
-import squants.time.Time
 
 /**
   * Superclass for all GIAPI instrument controllers.

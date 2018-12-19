@@ -19,10 +19,10 @@ import edu.gemini.spModel.gemini.gpi.Gpi.{Shutter => LegacyShutter}
 import giapi.client.commands.Configuration
 import giapi.client.gpi.GPIClient
 import mouse.boolean._
+import seqexec.server.GiapiInstrumentController
 
 import scala.concurrent.duration._
 import seqexec.server.keywords.GDSClient
-import seqexec.server.giapi.GiapiInstrumentController
 import seqexec.server.gpi.GPIController.GPIConfig
 
 object GPILookupTables {
