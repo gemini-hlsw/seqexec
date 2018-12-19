@@ -245,9 +245,6 @@ object EpicsUtil {
     os.map(_.setTimeout(t.toMilliseconds.toLong, MILLISECONDS).asRight).getOrElse(SeqexecFailure.Unexpected("Unable to set timeout for EPICS command.").asLeft)
   }
 
-//  def smartSetParam[A: Eq](v: A, get: => Option[A], set: SeqAction[Unit]): SeqAction[Unit] =
-//    if(get =!= v.some) set else SeqAction.void
-
   def smartSetParam[A: Eq](v: A, get: => Option[A], set: SeqAction[Unit]): List[SeqAction[Unit]] =
     if(get =!= v.some) List(set) else Nil
 

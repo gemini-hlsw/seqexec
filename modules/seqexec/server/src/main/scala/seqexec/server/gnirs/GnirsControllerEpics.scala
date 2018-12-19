@@ -223,7 +223,9 @@ object GnirsControllerEpics extends GnirsController {
   private def setDCParams(config: DCConfig): SeqAction[EpicsCommand.Result] = {
 
     val expTimeTolerance = 0.0001
-    val biasTolerance = 0.0001
+    // Old Seqexec has an absolute tolerance of 0.05V, which is 16.7% relative tolerance for
+    // 0.3V bias
+    val biasTolerance = 0.15
 
     val (lowNoise, digitalAvgs) = readModeEncoder.encode(config.readMode)
 
@@ -233,7 +235,8 @@ object GnirsControllerEpics extends GnirsController {
     val coaddsWriter = smartSetParam(config.coadds, epicsSys.numCoadds,
       dcCmd.setCoadds(config.coadds))
 
-    val biasWriter =smartSetDoubleParam(biasTolerance)(encode(config.wellDepth), epicsSys.detBias,
+    // Value read from the instrument is the negative of what was set
+    val biasWriter = smartSetDoubleParam(biasTolerance)(-encode(config.wellDepth), epicsSys.detBias,
       dcCmd.setDetBias(encode(config.wellDepth)))
 
     val lowNoiseWriter = smartSetParam(lowNoise, epicsSys.lowNoise, dcCmd.setLowNoise(lowNoise))
@@ -297,13 +300,6 @@ object GnirsControllerEpics extends GnirsController {
 
     s.replaceAll(pattern, "")
   }
-
-//  private def smartSetParam[A: Eq](v: A, get: => Option[A], set: SeqAction[Unit]): List[SeqAction[Unit]] =
-//    if(get =!= v.some) List(set) else Nil
-//
-//  private def smartSetDoubleParam(relTolerance: Double)(v: Double, get: => Option[Double], set: SeqAction[Unit]): List[SeqAction[Unit]] =
-//    if(get.forall(x => (v === 0.0 && x =!= 0.0) || abs((x - v)/v) > relTolerance))
-//  List(set) else Nil
 
   override def observeProgress(total: Time): Stream[IO, Progress] =
     EpicsUtil.countdown[IO](total,
