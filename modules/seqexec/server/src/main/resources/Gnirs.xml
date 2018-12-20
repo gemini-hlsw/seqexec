@@ -207,7 +207,7 @@
             <type>INTEGER</type>
             <description>Low Noise Rds</description>
         </attribute>
-        <attribute name="dhcConnected">
+        <attribute name="dhsConnected">
             <channel>sad:dc:dhsConnected</channel>
             <type>INTEGER</type>
             <description>Dhs status</description>
