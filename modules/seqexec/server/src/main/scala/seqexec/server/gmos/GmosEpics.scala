@@ -175,7 +175,7 @@ class GmosEpics(epicsService: CaService, tops: Map[String, String]) {
 
   def bExpCount: Option[Int] = Option(dcState.getIntegerAttribute("bexpcnt").value).map(_.toInt)
 
-  def ampCount: Option[Int] = Option(dcState.getIntegerAttribute("ampCount").value).map(_.toInt)
+  def ampCount: Option[String] = Option(dcState.getStringAttribute("ampCount").value)
 
   def shutterState: Option[String] = Option(dcState.getStringAttribute("shutterState").value)
 
@@ -256,6 +256,9 @@ class GmosEpics(epicsService: CaService, tops: Map[String, String]) {
   def dtaY: Option[Double] = Option(state.getDoubleAttribute("dtay").value).map(_.toDouble)
 
   def dtaX: Option[Double] = Option(state.getDoubleAttribute("dtax").value).map(_.toDouble)
+
+  def dtaXOffset: Option[Double] = Option(state.getDoubleAttribute("dtaXOffset").value)
+    .map(_.toDouble)
 
   def gratingWavel: Option[Double] = Option(state.getDoubleAttribute("adjgrwlen").value).map(_.toDouble)
 

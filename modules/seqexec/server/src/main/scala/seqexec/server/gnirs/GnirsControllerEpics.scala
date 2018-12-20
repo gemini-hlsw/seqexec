@@ -3,7 +3,6 @@
 
 package seqexec.server.gnirs
 
-import cats.Eq
 import cats.data.EitherT
 import cats.effect.IO
 import cats.implicits._
@@ -13,12 +12,12 @@ import fs2.Stream
 import org.log4s.getLogger
 import seqexec.model.dhs.ImageFileId
 import seqexec.server._
+import seqexec.server.EpicsUtil._
 import squants.electro.Millivolts
 import squants.space.LengthConversions._
 import squants.time.TimeConversions._
 import squants.{Length, Seconds, Time}
 
-import scala.math.abs
 import scala.util.Try
 
 object GnirsControllerEpics extends GnirsController {
@@ -224,7 +223,9 @@ object GnirsControllerEpics extends GnirsController {
   private def setDCParams(config: DCConfig): SeqAction[EpicsCommand.Result] = {
 
     val expTimeTolerance = 0.0001
-    val biasTolerance = 0.0001
+    // Old Seqexec has an absolute tolerance of 0.05V, which is 16.7% relative tolerance for
+    // 0.3V bias
+    val biasTolerance = 0.15
 
     val (lowNoise, digitalAvgs) = readModeEncoder.encode(config.readMode)
 
@@ -234,7 +235,8 @@ object GnirsControllerEpics extends GnirsController {
     val coaddsWriter = smartSetParam(config.coadds, epicsSys.numCoadds,
       dcCmd.setCoadds(config.coadds))
 
-    val biasWriter =smartSetDoubleParam(biasTolerance)(encode(config.wellDepth), epicsSys.detBias,
+    // Value read from the instrument is the negative of what was set
+    val biasWriter = smartSetDoubleParam(biasTolerance)(-encode(config.wellDepth), epicsSys.detBias,
       dcCmd.setDetBias(encode(config.wellDepth)))
 
     val lowNoiseWriter = smartSetParam(lowNoise, epicsSys.lowNoise, dcCmd.setLowNoise(lowNoise))
@@ -299,18 +301,11 @@ object GnirsControllerEpics extends GnirsController {
     s.replaceAll(pattern, "")
   }
 
-  private def smartSetParam[A: Eq](v: A, get: => Option[A], set: SeqAction[Unit]): List[SeqAction[Unit]] =
-    if(get =!= v.some) List(set) else Nil
-
-  private def smartSetDoubleParam(relTolerance: Double)(v: Double, get: => Option[Double], set: SeqAction[Unit]): List[SeqAction[Unit]] =
-    if(get.forall(x => (v === 0.0 && x =!= 0.0) || abs((x - v)/v) > relTolerance)) List(set) else Nil
-
   override def observeProgress(total: Time): Stream[IO, Progress] =
     EpicsUtil.countdown[IO](total,
       IO(GnirsEpics.instance.countDown.flatMap(x => Try(x.toDouble).toOption).map(_.seconds)),
       IO(GnirsEpics.instance.observeState)
     )
-
 
   private val DefaultTimeout: Time = Seconds(60)
   private val ReadoutTimeout: Time = Seconds(300)

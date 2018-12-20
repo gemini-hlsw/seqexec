@@ -19,6 +19,7 @@ import cats.data.EitherT
 import cats.effect.{Effect, IO}
 import cats.implicits._
 import fs2.Stream
+import scala.math.abs
 
 trait EpicsCommand {
   import EpicsCommand._
@@ -28,7 +29,7 @@ trait EpicsCommand {
   def post: SeqAction[Result] =
     safe {
       EitherT {
-        IO.async[TrySeq[Result]] { (f: (Either[Throwable, TrySeq[Result]]) => Unit) =>
+        IO.async[TrySeq[Result]] { (f: Either[Throwable, TrySeq[Result]] => Unit) =>
           cs.map { ccs =>
             ccs.postCallback {
               new CaCommandListener {
@@ -115,7 +116,7 @@ trait ObserveCommand {
   def post: SeqAction[Result] =
     EpicsCommand.safe {
       EitherT {
-        IO.async[TrySeq[Result]] { (f: (Either[Throwable, TrySeq[Result]]) => Unit) =>
+        IO.async[TrySeq[Result]] { (f: Either[Throwable, TrySeq[Result]] => Unit) =>
           os.map { oos =>
             oos.postCallback {
               new CaCommandListener {
@@ -244,8 +245,12 @@ object EpicsUtil {
     os.map(_.setTimeout(t.toMilliseconds.toLong, MILLISECONDS).asRight).getOrElse(SeqexecFailure.Unexpected("Unable to set timeout for EPICS command.").asLeft)
   }
 
-  def smartSetParam[A: Eq](v: A, get: => Option[A], set: SeqAction[Unit]): SeqAction[Unit] =
-    if(get =!= v.some) set else SeqAction.void
+  def smartSetParam[A: Eq](v: A, get: => Option[A], set: SeqAction[Unit]): List[SeqAction[Unit]] =
+    if(get =!= v.some) List(set) else Nil
+
+  def smartSetDoubleParam(relTolerance: Double)(v: Double, get: => Option[Double], set: SeqAction[Unit]): List[SeqAction[Unit]] =
+    if(get.forall(x => (v === 0.0 && x =!= 0.0) || abs((x - v)/v) > relTolerance))
+  List(set) else Nil
 
   def countdown[F[_]: Effect](total: Time, remT: F[Option[Time]],
                               obsState: F[Option[CarStateGeneric]]): Stream[F, Progress] =
