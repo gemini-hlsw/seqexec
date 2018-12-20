@@ -42,7 +42,7 @@ final case class Gnirs(controller: GnirsController, dhsClient: DhsClient) extend
   override def calcObserveTime(config: Config): Time =
     (extractExposureTime(config), extractCoadds(config)).mapN(_ * _.toDouble).getOrElse(10000.seconds)
 
-  override val resource: Resource = Instrument.GNIRS
+  override val resource: Resource = Instrument.Gnirs
 
   override def configure(config: Config): SeqAction[ConfigResult[IO]] =
     SeqAction.either(fromSequenceConfig(config)).flatMap(controller.applyConfig).map(_ => ConfigResult(this))

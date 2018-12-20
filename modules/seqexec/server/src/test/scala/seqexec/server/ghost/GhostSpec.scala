@@ -5,7 +5,7 @@ package seqexec.server.ghost
 
 import cats.kernel.laws.discipline._
 import cats.tests.CatsSuite
-import seqexec.server.ghost.GHOSTController._
+import seqexec.server.ghost.GhostController._
 
 /**
   * Tests GHOST Config typeclasses
@@ -13,5 +13,5 @@ import seqexec.server.ghost.GHOSTController._
 final class GhostSpec extends CatsSuite {
   import seqexec.server.SeqexecServerArbitraries._
 
-  checkAll("Eq[GHOSTConfig]", EqTests[GHOSTConfig].eqv)
+  checkAll("Eq[GHOSTConfig]", EqTests[GhostConfig].eqv)
 }

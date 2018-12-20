@@ -5,7 +5,7 @@ package seqexec.server.gpi
 
 import cats.kernel.laws.discipline._
 import cats.tests.CatsSuite
-import seqexec.server.gpi.GPIController._
+import seqexec.server.gpi.GpiController._
 
 /**
   * Tests GPI Config typeclasses
@@ -17,5 +17,5 @@ final class GpiSpec extends CatsSuite {
   checkAll("Eq[ArtificialSources]", EqTests[ArtificialSources].eqv)
   checkAll("Eq[Shutters]", EqTests[Shutters].eqv)
   checkAll("Eq[NonStandardModeParams]", EqTests[NonStandardModeParams].eqv)
-  checkAll("Eq[GPIConfig]", EqTests[GPIConfig].eqv)
+  checkAll("Eq[GPIConfig]", EqTests[GpiConfig].eqv)
 }

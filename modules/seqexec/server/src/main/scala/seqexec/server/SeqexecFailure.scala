@@ -36,13 +36,13 @@ object SeqexecFailure {
   final case class Timeout(msg: String) extends SeqexecFailure
 
   /** Sequence loading errors */
-  final case class ODBSeqError(fail: SeqFailure) extends SeqexecFailure
+  final case class OdbSeqError(fail: SeqFailure) extends SeqexecFailure
 
   /** Exception thrown while communicating with the GDS */
-  final case class GDSException(ex: Throwable, url: Uri) extends SeqexecFailure
+  final case class GdsException(ex: Throwable, url: Uri) extends SeqexecFailure
 
   /** XMLRPC error while communicating with the GDS */
-  final case class GDSXMLError(msg: String, url: Uri) extends SeqexecFailure
+  final case class GdsXmlError(msg: String, url: Uri) extends SeqexecFailure
 
   def explain(f: SeqexecFailure): String = f match {
     case UnrecognizedInstrument(name) => s"Unrecognized instrument: $name"
@@ -55,10 +55,10 @@ object SeqexecFailure {
     case Unexpected(msg)              => s"Unexpected error: $msg"
     case Timeout(msg)                 => s"Timeout while waiting for $msg"
     case EmptySequence(title)         => s"Attempt to enqueue empty sequence $title"
-    case ODBSeqError(fail)            => SeqFailure.explain(fail)
-    case GDSException(ex, url)        =>
+    case OdbSeqError(fail)            => SeqFailure.explain(fail)
+    case GdsException(ex, url)        =>
       s"Failure connecting with GDS at $url: ${ex.getMessage}"
-    case GDSXMLError(msg, url)        => s"XML RPC error with GDS at $url: $msg"
+    case GdsXmlError(msg, url)        => s"XML RPC error with GDS at $url: $msg"
   }
 
 }

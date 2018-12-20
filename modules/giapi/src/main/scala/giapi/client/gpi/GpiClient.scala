@@ -13,7 +13,7 @@ import mouse.boolean._
 /**
   * Client for GPI
   */
-final class GPIClient[F[_]](override val giapi: Giapi[F]) extends GiapiClient[F] {
+final class GpiClient[F[_]](override val giapi: Giapi[F]) extends GiapiClient[F] {
   import GiapiClient.DefaultCommandTimeout
 
   ///////////////
@@ -112,7 +112,7 @@ object GPIExample extends App {
         .connect)(
       giapi => {
         val client =
-          new GPIClient[IO](giapi)
+          new GpiClient[IO](giapi)
         val r =
           for {
             hs <- client.heartbeatS.flatMap(_.take(3).compile.toVector)
@@ -133,7 +133,7 @@ object GPIExample extends App {
         .connect)(
       giapi => {
         val client =
-          new GPIClient[IO](giapi)
+          new GpiClient[IO](giapi)
         val r =
           for {
             _ <- client.calExitShutter(true) // Open the shutter

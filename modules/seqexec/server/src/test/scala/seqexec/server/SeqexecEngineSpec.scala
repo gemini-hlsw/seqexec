@@ -23,7 +23,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import seqexec.engine
 import seqexec.engine.Result.PauseContext
 import seqexec.engine._
-import seqexec.server.keywords.GDSClient
+import seqexec.server.keywords.GdsClient
 import seqexec.model.{ActionType, CalibrationQueueId, ClientId, Conditions, Observer, Operator, SequenceState, UserDetails}
 import seqexec.model.enum._
 import seqexec.model.enum.Resource.TCS
@@ -183,7 +183,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
     }
 
   private val sm = SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry()).unsafeRunSync
-  private val seqexecEngine = SeqexecEngine(GDSClient.alwaysOkClient, defaultSettings, sm)
+  private val seqexecEngine = SeqexecEngine(GdsClient.alwaysOkClient, defaultSettings, sm)
   private def advanceOne(q: EventQueue, s0: EngineState, put: IO[Either[SeqexecFailure, Unit]]): IO[Option[EngineState]] =
     (put *> seqexecEngine.stream(q.dequeue)(s0).take(1).compile.last).map(_.map(_._2))
 
@@ -435,7 +435,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
       SeqexecEngine.loadSequenceEndo(seqObsId2, sequenceWithResources(seqObsId2,
         Instrument.GmosS, Set(Instrument.GmosS, TCS))) >>>
       SeqexecEngine.loadSequenceEndo(seqObsId3, sequenceWithResources(seqObsId3,
-        Instrument.GSAOI, Set(Instrument.GSAOI, TCS))) >>>
+        Instrument.Gsaoi, Set(Instrument.Gsaoi, TCS))) >>>
       (EngineState.queues ^|-? index(CalibrationQueueId) ^|-> ExecutionQueue.queue).set(
         List(seqObsId1, seqObsId2, seqObsId3)))(EngineState.default)
 
@@ -449,7 +449,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
       SeqexecEngine.loadSequenceEndo(seqObsId2, sequenceWithResources(seqObsId2,
         Instrument.GmosS, Set(Instrument.GmosS))) >>>
       SeqexecEngine.loadSequenceEndo(seqObsId3, sequenceWithResources(seqObsId3,
-        Instrument.GSAOI, Set(Instrument.GSAOI))) >>>
+        Instrument.Gsaoi, Set(Instrument.Gsaoi))) >>>
       (EngineState.queues ^|-? index(CalibrationQueueId) ^|-> ExecutionQueue.queue).set(
         List(seqObsId1, seqObsId2, seqObsId3)))(EngineState.default)
 

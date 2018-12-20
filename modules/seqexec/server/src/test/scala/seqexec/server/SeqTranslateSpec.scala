@@ -9,7 +9,7 @@ import cats.implicits._
 import cats.effect._
 import fs2.Stream
 import giapi.client.Giapi
-import giapi.client.gpi.GPIClient
+import giapi.client.gpi.GpiClient
 import gem.Observation
 import gem.enum.Site
 import seqexec.engine.{Action, Result, Sequence}
@@ -17,20 +17,20 @@ import seqexec.model.enum.Instrument.GmosS
 import seqexec.model.{ActionType, SequenceState, StepConfig}
 import seqexec.server.SeqTranslate.ObserveContext
 import seqexec.server.keywords.DhsClientSim
-import seqexec.server.keywords.GDSClient
+import seqexec.server.keywords.GdsClient
 import seqexec.server.flamingos2.Flamingos2ControllerSim
 import seqexec.server.gcal.GcalControllerSim
 import seqexec.server.gmos.GmosControllerSim
 import seqexec.server.gnirs.GnirsControllerSim
 import seqexec.server.tcs.TcsControllerSim
-import seqexec.server.gpi.GPIController
+import seqexec.server.gpi.GpiController
 import edu.gemini.spModel.core.Peer
-import giapi.client.ghost.GHOSTClient
+import giapi.client.ghost.GhostClient
 import org.scalatest.FlatSpec
 import org.http4s.Uri._
 import squants.time.Seconds
 import seqexec.server.Response.Observed
-import seqexec.server.ghost.GHOSTController
+import seqexec.server.ghost.GhostController
 import seqexec.server.niri.NiriControllerSim
 
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements", "org.wartremover.warts.Throw"))
@@ -79,7 +79,7 @@ class SeqTranslateSpec extends FlatSpec {
     .modify(_.mark(0)(Result.Error("error")))(baseState)
 
   private val systems = SeqTranslate.Systems(
-    new ODBProxy(new Peer("localhost", 8443, null), ODBProxy.DummyOdbCommands),
+    new OdbProxy(new Peer("localhost", 8443, null), OdbProxy.DummyOdbCommands),
     DhsClientSim(LocalDate.of(2016, 4, 15)),
     TcsControllerSim,
     GcalControllerSim,
@@ -87,10 +87,10 @@ class SeqTranslateSpec extends FlatSpec {
     GmosControllerSim.south,
     GmosControllerSim.north,
     GnirsControllerSim,
-    GPIController(new GPIClient(Giapi.giapiConnectionIO(scala.concurrent.ExecutionContext.Implicits.global).connect.unsafeRunSync),
-    new GDSClient(GDSClient.alwaysOkClient, uri("http://localhost:8888/xmlrpc"))),
-    GHOSTController(new GHOSTClient[IO](Giapi.giapiConnectionIO(scala.concurrent.ExecutionContext.Implicits.global).connect.unsafeRunSync),
-    new GDSClient(GDSClient.alwaysOkClient, uri("hhttp://localhost:8888/xmlrpc"))),
+    GpiController(new GpiClient(Giapi.giapiConnectionIO(scala.concurrent.ExecutionContext.Implicits.global).connect.unsafeRunSync),
+    new GdsClient(GdsClient.alwaysOkClient, uri("http://localhost:8888/xmlrpc"))),
+    GhostController(new GhostClient[IO](Giapi.giapiConnectionIO(scala.concurrent.ExecutionContext.Implicits.global).connect.unsafeRunSync),
+    new GdsClient(GdsClient.alwaysOkClient, uri("hhttp://localhost:8888/xmlrpc"))),
     NiriControllerSim
   )
 

@@ -20,7 +20,7 @@ import seqexec.server.SeqActionF
 /**
   * Gemini Data service client
   */
-final case class GDSClient(client: Client[IO], gdsUri: Uri)
+final case class GdsClient(client: Client[IO], gdsUri: Uri)
     extends Http4sClientDsl[IO] {
 
   // Build an xml rpc request to store keywords
@@ -38,10 +38,10 @@ final case class GDSClient(client: Client[IO], gdsUri: Uri)
     </methodCall>
 
   private def handleConnectionError(e: Throwable): SeqexecFailure =
-    SeqexecFailure.GDSException(e, gdsUri)
+    SeqexecFailure.GdsException(e, gdsUri)
 
   private def handleXmlError(xml: Elem): SeqActionF[IO, Unit] =
-    EitherT.fromEither(GDSClient.checkError(xml, gdsUri))
+    EitherT.fromEither(GdsClient.checkError(xml, gdsUri))
 
   /**
     * Set the keywords for an image
@@ -137,7 +137,7 @@ final case class GDSClient(client: Client[IO], gdsUri: Uri)
     </param>
 }
 
-object GDSClient {
+object GdsClient {
 
   def checkError(e: Elem, gdsUri: Uri): Either[SeqexecFailure, Unit] = {
     val v = for {
@@ -145,7 +145,7 @@ object GDSClient {
       if (m \ "name").text === "faultString"
     } yield (m \ "value").text.trim
     v.headOption.fold(().asRight[SeqexecFailure])(
-      SeqexecFailure.GDSXMLError(_, gdsUri).asLeft[Unit])
+      SeqexecFailure.GdsXmlError(_, gdsUri).asLeft[Unit])
   }
 
   /**

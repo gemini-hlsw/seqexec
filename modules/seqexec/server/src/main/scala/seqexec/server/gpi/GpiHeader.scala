@@ -12,10 +12,10 @@ import seqexec.server.keywords._
 import seqexec.server.tcs.TcsKeywordsReader
 import seqexec.server.tcs.CRFollow
 
-object GPIHeader {
+object GpiHeader {
 
   def header(inst: InstrumentSystem[IO],
-             gdsClient: GDSClient,
+             gdsClient: GdsClient,
              tcsKeywordsReader: TcsKeywordsReader,
              obsKeywordsReader: ObsKeywordsReader): Header =
     new Header {

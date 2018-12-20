@@ -110,7 +110,7 @@ object FilterCell {
           instrumentFilterO
             .getOption(s)
             .flatMap(enumerations.filter.F2Filter.get)
-        case Instrument.GPI => gpiFilter(s)
+        case Instrument.Gpi => gpiFilter(s)
         case _              => None
       }
 
@@ -143,7 +143,7 @@ object DisperserCell {
       val nameMapper: Map[String, String] = p.i match {
         case Instrument.GmosS => enumerations.disperser.GmosSDisperser
         case Instrument.GmosN => enumerations.disperser.GmosNDisperser
-        case Instrument.GPI   => gpiDispersers
+        case Instrument.Gpi   => gpiDispersers
         case _                => Map.empty
       }
 

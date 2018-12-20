@@ -8,10 +8,10 @@ import org.http4s.Uri._
 import scala.xml.XML
 
 @SuppressWarnings(Array("org.wartremover.warts.Throw"))
-final class GDSClientSpec extends CatsSuite {
+final class GdsClientSpec extends CatsSuite {
   test("GDSClient should reject bad responses") {
     val xml = XML.load(getClass.getResource("/gds-bad-resp.xml"))
-    GDSClient
+    GdsClient
       .checkError(xml, uri("http://localhost:8888/xmlrpc"))
       .isLeft shouldEqual true
   }

@@ -3,63 +3,33 @@
 
 package seqexec.server.ghost
 
-import cats.data.EitherT
 import cats.implicits._
 import cats.{Eq, Show}
 import cats.effect.Sync
 import gem.math.Coordinates
-import giapi.client.commands.{CommandResult, CommandResultException, Configuration}
-import giapi.client.ghost.GHOSTClient
-import seqexec.model.dhs.ImageFileId
-import seqexec.server.SeqActionF
-import seqexec.server.keywords.GDSClient
+import giapi.client.commands.Configuration
+import giapi.client.ghost.GhostClient
+import seqexec.server.keywords.GdsClient
 
 import scala.concurrent.duration._
 import org.log4s._
 import seqexec.server.ConfigUtilOps.{ContentError, ExtractFailure}
-import seqexec.server.SeqexecFailure.{Execution, SeqexecException}
-import squants.time.Time
+import seqexec.server.GiapiInstrumentController
+import seqexec.server.ghost.GhostController.GhostConfig
 
-final case class GHOSTController[F[_]: Sync](ghostClient: GHOSTClient[F],
-                                             gdsClient: GDSClient) {
-  import GHOSTController._
+final case class GhostController[F[_]: Sync](override val client: GhostClient[F],
+                                             override val gdsClient: GdsClient)
+  extends GiapiInstrumentController[F, GhostConfig, GhostClient[F]] {
+
+  import GhostController._
   val Log: Logger = getLogger
 
-  // If the srifu parameters are defined, use them; otherwise, use the hrifu parameters.
-  // Which set of parameters to use is determined completely by which of srifuName and hrifuName is set.
-  // If neither is set, we do not use the IFU and request to be parked.
-  private def ghostConfig(config: GHOSTConfig): SeqActionF[F, CommandResult] = {
-    EitherT(ghostClient.genericApply(config.config).attempt)
-      .leftMap {
-        // The GMP sends these cryptic messages but we can do better
-        case CommandResultException(_, "Message cannot be null") => Execution("Unhandled Apply command")
-        case CommandResultException(_, m)                        => Execution(m)
-        case f                                                   => SeqexecException(f)
-      }
-  }
+  override val name = "GHOST"
 
-  def applyConfig(config: GHOSTConfig): SeqActionF[F, Unit] =
-    for {
-      _ <- SeqActionF.apply(Log.debug("Start GHOST configuration"))
-      _ <- SeqActionF.apply(Log.debug(s"GHOST configuration $config"))
-      _ <- ghostConfig(config)
-      _ <- SeqActionF.apply(Log.debug("Completed GHOST configuration"))
-    } yield ()
-
-  // TODO: We use a dummy observation for now, since at this point, we cannot actually observe using the instrument.
-  def observe(fileId: ImageFileId, expTime: Time): SeqActionF[F, ImageFileId] =
-    SeqActionF.apply((fileId, expTime)._1) // suppress unused error
-  //    EitherT(ghostClient.observe(fileId, expTime.toMilliseconds.milliseconds).map(_ => fileId).attempt)
-  //      .leftMap {
-  //        case CommandResultException(_, "Message cannot be null") => Execution("Unhandled observe command")
-  //        case CommandResultException(_, m)                        => Execution(m)
-  //        case f                                                   => SeqexecException(f)
-  //      }
-
-  def endObserve: SeqActionF[F, Unit] = SeqActionF.void
+  override def configuration(config: GhostConfig): Configuration = config.configuration
 }
 
-object GHOSTController {
+object GhostController {
   private def ifuConfig(ifuNum: IFUNum,
                         ifuTargetType: IFUTargetType,
                         coordinates: Coordinates,
@@ -120,7 +90,6 @@ object GHOSTController {
     implicit val IFUTargetTypeShow: Show[IFUTargetType] = Show.show(_.targetType)
   }
 
-
   sealed trait DemandType {
     def demandType: String
   }
@@ -134,7 +103,7 @@ object GHOSTController {
   }
 
   // GHOST has a number of different possible configuration modes: we add types for them here.
-  sealed trait GHOSTConfig {
+  sealed trait GhostConfig {
     def baseCoords: Option[Coordinates]
     def expTime: Duration
 
@@ -148,10 +117,10 @@ object GHOSTController {
       ifuConfig(IFUNum.IFU1, ifu1TargetType, ifu1Coordinates, ifu1BundleType)
     def ifu2Config: Configuration
 
-    def config: Configuration = ifu1Config |+| ifu2Config
+    def configuration: Configuration = ifu1Config |+| ifu2Config
   }
 
-  sealed trait StandardResolutionMode extends GHOSTConfig {
+  sealed trait StandardResolutionMode extends GhostConfig {
     import StandardResolutionMode._
 
     def ifu1Coordinates: Coordinates
@@ -221,7 +190,7 @@ object GHOSTController {
     }
   }
 
-  sealed trait HighResolutionMode extends GHOSTConfig {
+  sealed trait HighResolutionMode extends GhostConfig {
     import HighResolutionMode._
 
     override def ifu1BundleType: BundleConfig = BundleConfig.HighRes
@@ -262,7 +231,7 @@ object GHOSTController {
 
   // These are the parameters passed to GHOST from the WDBA.
   // We use them to determine the type of configuration being used by GHOST, and instantiate it.
-  object GHOSTConfig {
+  object GhostConfig {
     def apply(baseCoords: Option[Coordinates],
               expTime: Duration,
               srifu1Name: Option[String],
@@ -272,7 +241,7 @@ object GHOSTController {
               hrifu1Name: Option[String],
               hrifu1Coords: Option[Coordinates],
               hrifu2Name: Option[String],
-              hrifu2Coords: Option[Coordinates]): Either[ExtractFailure, GHOSTConfig] = {
+              hrifu2Coords: Option[Coordinates]): Either[ExtractFailure, GhostConfig] = {
       import IFUTargetType._
 
       val sifu1 = determineType(srifu1Name)
@@ -301,7 +270,7 @@ object GHOSTController {
       }
     }
 
-    implicit val eq: Eq[GHOSTConfig] = Eq.fromUniversalEquals
-    implicit val show: Show[GHOSTConfig] = Show.fromToString
+    implicit val eq: Eq[GhostConfig] = Eq.fromUniversalEquals
+    implicit val show: Show[GhostConfig] = Show.fromToString
   }
 }

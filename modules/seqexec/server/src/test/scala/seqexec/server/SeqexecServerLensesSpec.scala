@@ -41,7 +41,7 @@ final class SeqexecServerLensesSpec extends CatsSuite with ArbObservation {
     (x.queues, x.selected, x.conditions, x.operator, x.sequences))
 
   checkAll("selected optional",
-           LensTests(EngineState.instrumentLoadedL(Instrument.GPI)))
+           LensTests(EngineState.instrumentLoadedL(Instrument.Gpi)))
 
   private val seqId = Observation.Id.unsafeFromString("GS-2018B-Q-0-1")
   // Some sanity checks
@@ -50,20 +50,20 @@ final class SeqexecServerLensesSpec extends CatsSuite with ArbObservation {
       selected =
         Map(Instrument.F2 -> Observation.Id.unsafeFromString("GS-2018B-Q-1-1")))
     EngineState
-      .instrumentLoadedL(Instrument.GPI)
+      .instrumentLoadedL(Instrument.Gpi)
       .set(seqId.some)
       .apply(base) shouldEqual base.copy(
-      selected = base.selected + (Instrument.GPI -> seqId))
+      selected = base.selected + (Instrument.Gpi -> seqId))
   }
   test("Support replacing loaded sequences") {
     val base = EngineState.default.copy(
       selected =
-        Map(Instrument.GPI -> Observation.Id.unsafeFromString("GS-2018B-Q-1-1"),
+        Map(Instrument.Gpi -> Observation.Id.unsafeFromString("GS-2018B-Q-1-1"),
             Instrument.F2  -> Observation.Id.unsafeFromString("GS-2018B-Q-2-1")))
     EngineState
-      .instrumentLoadedL(Instrument.GPI)
+      .instrumentLoadedL(Instrument.Gpi)
       .set(seqId.some)
       .apply(base) shouldEqual base.copy(
-      selected = base.selected.updated(Instrument.GPI, seqId))
+      selected = base.selected.updated(Instrument.Gpi, seqId))
   }
 }

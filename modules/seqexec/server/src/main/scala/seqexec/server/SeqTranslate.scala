@@ -31,8 +31,8 @@ import seqexec.server.InstrumentSystem._
 import seqexec.server.SequenceGen.StepActionsGen
 import seqexec.server.flamingos2.{Flamingos2, Flamingos2Controller, Flamingos2Header}
 import seqexec.server.keywords._
-import seqexec.server.gpi.{GPI, GPIController, GPIHeader}
-import seqexec.server.ghost.{GHOST, GHOSTController, GHOSTHeader}
+import seqexec.server.gpi.{Gpi, GpiController, GpiHeader}
+import seqexec.server.ghost.{Ghost, GhostController, GhostHeader}
 import seqexec.server.gcal._
 import seqexec.server.gmos.{GmosController, GmosHeader, GmosNorth, GmosSouth}
 import seqexec.server.gws.{DummyGwsKeywordsReader, GwsHeader, GwsKeywordsReaderImpl}
@@ -359,10 +359,10 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
     case Instrument.F2    => TrySeq(Flamingos2(systems.flamingos2, systems.dhs))
     case Instrument.GmosS => TrySeq(GmosSouth(systems.gmosSouth, systems.dhs))
     case Instrument.GmosN => TrySeq(GmosNorth(systems.gmosNorth, systems.dhs))
-    case Instrument.GNIRS => TrySeq(Gnirs(systems.gnirs, systems.dhs))
-    case Instrument.GPI   => TrySeq(GPI(systems.gpi))
-    case Instrument.GHOST => TrySeq(GHOST(systems.ghost))
-    case Instrument.NIRI  => TrySeq(Niri(systems.niri, systems.dhs))
+    case Instrument.Gnirs => TrySeq(Gnirs(systems.gnirs, systems.dhs))
+    case Instrument.Gpi   => TrySeq(Gpi(systems.gpi))
+    case Instrument.Ghost => TrySeq(Ghost(systems.ghost))
+    case Instrument.Niri  => TrySeq(Niri(systems.niri, systems.dhs))
     case _                => TrySeq.fail(Unexpected(s"Instrument $inst not supported."))
   }
 
@@ -375,10 +375,10 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
     case Instrument.F2    => true
     case Instrument.GmosS => true
     case Instrument.GmosN => true
-    case Instrument.NIFS  => true
-    case Instrument.NIRI  => true
-    case Instrument.GPI   => true
-    case Instrument.GHOST => false
+    case Instrument.Nifs  => true
+    case Instrument.Niri  => true
+    case Instrument.Gpi   => true
+    case Instrument.Ghost => false
     case _                => false
   }
 
@@ -406,10 +406,10 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
     case GmosNorth(_, _)  => Instrument.GmosN
     case GmosSouth(_, _)  => Instrument.GmosS
     case Flamingos2(_, _) => Instrument.F2
-    case Gnirs(_, _)      => Instrument.GNIRS
-    case GPI(_)           => Instrument.GPI
-    case GHOST(_)         => Instrument.GHOST
-    case Niri(_, _)       => Instrument.NIRI
+    case Gnirs(_, _)      => Instrument.Gnirs
+    case Gpi(_)           => Instrument.Gpi
+    case Ghost(_)         => Instrument.Ghost
+    case Niri(_, _)       => Instrument.Niri
   }
 
   private def calcInstHeader(config: Config, inst: Instrument): TrySeq[Header] = {
@@ -421,14 +421,14 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
            Instrument.GmosN  =>
         val gmosInstReader = if (settings.gmosKeywords) GmosHeader.InstKeywordReaderImpl else GmosHeader.DummyInstKeywordReader
         toInstrumentSys(inst).map(GmosHeader.header(_, GmosHeader.ObsKeywordsReaderImpl(config), gmosInstReader, tcsKReader))
-      case Instrument.GNIRS  =>
+      case Instrument.Gnirs  =>
         val gnirsReader = if(settings.gnirsKeywords) GnirsKeywordReaderImpl else GnirsKeywordReaderDummy
         toInstrumentSys(inst).map(GnirsHeader.header(_, gnirsReader, tcsKReader))
-      case Instrument.GPI    =>
-        toInstrumentSys(inst).map(GPIHeader.header(_, systems.gpi.gdsClient, tcsKReader, ObsKeywordReaderImpl(config, site)))
-      case Instrument.GHOST  =>
-        GHOSTHeader.header().asRight
-      case Instrument.NIRI   => NiriHeader.header.asRight
+      case Instrument.Gpi    =>
+        toInstrumentSys(inst).map(GpiHeader.header(_, systems.gpi.gdsClient, tcsKReader, ObsKeywordReaderImpl(config, site)))
+      case Instrument.Ghost  =>
+        GhostHeader.header().asRight
+      case Instrument.Niri   => NiriHeader.header.asRight
       case _                 =>
         TrySeq.fail(Unexpected(s"Instrument $inst not supported."))
     }
@@ -468,17 +468,17 @@ object SeqTranslate {
   def apply(site: Site, systems: Systems, settings: TranslateSettings): SeqTranslate = new SeqTranslate(site, systems, settings)
 
   final case class Systems(
-                      odb: ODBProxy,
-                      dhs: DhsClient,
-                      tcs: TcsController,
-                      gcal: GcalController,
-                      flamingos2: Flamingos2Controller,
-                      gmosSouth: GmosController.GmosSouthController,
-                      gmosNorth: GmosController.GmosNorthController,
-                      gnirs: GnirsController,
-                      gpi: GPIController[IO],
-                      ghost: GHOSTController[IO],
-                      niri: NiriController
+                            odb: OdbProxy,
+                            dhs: DhsClient,
+                            tcs: TcsController,
+                            gcal: GcalController,
+                            flamingos2: Flamingos2Controller,
+                            gmosSouth: GmosController.GmosSouthController,
+                            gmosNorth: GmosController.GmosNorthController,
+                            gnirs: GnirsController,
+                            gpi: GpiController[IO],
+                            ghost: GhostController[IO],
+                            niri: NiriController
                     )
 
   private sealed trait StepType {
@@ -490,10 +490,10 @@ object SeqTranslate {
       case Flamingos2.name => TrySeq(Instrument.F2)
       case GmosSouth.name  => TrySeq(Instrument.GmosS)
       case GmosNorth.name  => TrySeq(Instrument.GmosN)
-      case Gnirs.name      => TrySeq(Instrument.GNIRS)
-      case GPI.name        => TrySeq(Instrument.GPI)
-      case GHOST.name      => TrySeq(Instrument.GHOST)
-      case Niri.name       => TrySeq(Instrument.NIRI)
+      case Gnirs.name      => TrySeq(Instrument.Gnirs)
+      case Gpi.name        => TrySeq(Instrument.Gpi)
+      case Ghost.name      => TrySeq(Instrument.Ghost)
+      case Niri.name       => TrySeq(Instrument.Niri)
       case ins             => TrySeq.fail(UnrecognizedInstrument(s"inst $ins"))
     }
   }
@@ -506,7 +506,7 @@ object SeqTranslate {
   private final case class FlatOrArc(override val instrument: Instrument) extends StepType
   private final case class DarkOrBias(override val instrument: Instrument) extends StepType
   private case object AlignAndCalib extends StepType {
-    override val instrument: Instrument = Instrument.GPI
+    override val instrument: Instrument = Instrument.Gpi
   }
 
   private def calcStepType(config: Config): TrySeq[StepType] = {
