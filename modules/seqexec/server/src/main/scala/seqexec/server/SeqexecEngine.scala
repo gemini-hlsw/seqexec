@@ -35,7 +35,7 @@ import seqexec.server.ghost.GhostController
 import seqexec.server.gmos.{GmosControllerSim, GmosEpics, GmosNorthControllerEpics, GmosSouthControllerEpics}
 import seqexec.server.gnirs.{GnirsControllerEpics, GnirsControllerSim, GnirsEpics}
 import seqexec.server.gpi.GpiController
-import seqexec.server.niri.NiriControllerSim
+import seqexec.server.niri.{NiriControllerSim, NiriEpics}
 import seqexec.server.gws.GwsEpics
 import seqexec.server.tcs.{TcsControllerEpics, TcsControllerSim, TcsEpics}
 import edu.gemini.seqexec.odb.SmartGcal
@@ -307,11 +307,10 @@ class SeqexecEngine(httpClient: Client[IO], settings: Settings[IO], sm: SeqexecM
           .map(_.queue.indexOf(seqId)).toList))))
   ).map(_.asRight)
 
-  private def moveSeq(qid: QueueId, seqId: Observation.Id, delta: Int): Endo[EngineState] = st => (
+  private def moveSeq(qid: QueueId, seqId: Observation.Id, delta: Int): Endo[EngineState] = st =>
     st.queues.get(qid).filter(_.queue.contains(seqId)).map {_ =>
       queueO(qid).modify(_.moveSeq(seqId, delta))(st)
-    }
-  ).getOrElse(st)
+    }.getOrElse(st)
 
   def moveSequenceInQueue(q: EventQueue, qid: QueueId, seqId: Observation.Id, delta: Int, cid: ClientId)
   : IO[Either[SeqexecFailure, Unit]] = q.enqueue1(
@@ -320,11 +319,10 @@ class SeqexecEngine(httpClient: Client[IO], settings: Settings[IO], sm: SeqexecM
         cid, seqId, 0)).toHandle))
     ).map(_.asRight)
 
-  private def clearQ(qid: QueueId): Endo[EngineState] = st => (
+  private def clearQ(qid: QueueId): Endo[EngineState] = st =>
     st.queues.get(qid).filter(_.status(st) =!= BatchExecState.Running).map { _ =>
       queueO(qid).modify(_.clear)(st)
-    }
-  ).getOrElse(st)
+    }.getOrElse(st)
 
   def clearQueue(q: EventQueue, qid: QueueId): IO[Either[SeqexecFailure, Unit]] = q.enqueue1(
     Event.modifyState[executeEngine.ConcreteTypes](
@@ -801,14 +799,17 @@ object SeqexecEngine extends SeqexecConfiguration {
     // More instruments to be added to the list here
     val epicsInstruments = site match {
       case Site.GS => List((f2Control, Flamingos2Epics), (gmosControl, GmosEpics))
-      case Site.GN => List((gmosControl, GmosEpics), (gnirsControl, GnirsEpics))
+      case Site.GN => List((gmosControl, GmosEpics), (gnirsControl, GnirsEpics),
+        (niriControl, NiriEpics)
+      )
     }
     val epicsSystems = epicsInstruments ++ List(
       (tcsControl, TcsEpics),
       (gwsControl, GwsEpics),
       (gcalControl, GcalEpics)
     )
-    val epicsInit: IO[List[Unit]] = caInit *> epicsSystems.filter(_._1.connect).map(x => initEpicsSystem(x._2, tops)).parSequence
+    val epicsInit: IO[List[Unit]] = caInit *> epicsSystems.filter(_._1.connect)
+      .map(x => initEpicsSystem(x._2, tops)).parSequence
 
     val smartGcal = smartGcalEnable.fold(initSmartGCal(smartGCalHost, smartGCalDir), IO.unit)
 
