@@ -101,7 +101,7 @@ object ModelOps {
             status = StepState.Running,
             configStatus = List((Resource.TCS, ActionStatus.Pending),
                                 (Resource.Gcal, ActionStatus.Running),
-                                (Instrument.GPI, ActionStatus.Completed))
+                                (Instrument.Gpi, ActionStatus.Completed))
           )
         case s => s
       })
@@ -146,18 +146,18 @@ object ModelOps {
             InstrumentProperties.Offsets,
             InstrumentProperties.Disperser,
             InstrumentProperties.FPU)
-      case Instrument.GNIRS =>
+      case Instrument.Gnirs =>
         Set(InstrumentProperties.Exposure,
             InstrumentProperties.Filter,
             InstrumentProperties.Offsets,
             InstrumentProperties.Disperser,
             InstrumentProperties.FPU)
-      case Instrument.GPI =>
+      case Instrument.Gpi =>
         Set(InstrumentProperties.Exposure,
             InstrumentProperties.Filter,
             InstrumentProperties.ObservingMode,
             InstrumentProperties.Disperser)
-      case Instrument.GHOST => Set.empty
+      case Instrument.Ghost => Set.empty
       case _                =>
         Set(InstrumentProperties.Exposure,
             InstrumentProperties.Filter,

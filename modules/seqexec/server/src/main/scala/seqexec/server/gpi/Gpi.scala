@@ -21,29 +21,29 @@ import seqexec.model.enum.Instrument
 import seqexec.model.enum.Resource
 import seqexec.server.ConfigUtilOps._
 import seqexec.server._
-import seqexec.server.gpi.GPIController._
-import seqexec.server.keywords.GDSClient
-import seqexec.server.keywords.GDSInstrument
+import seqexec.server.gpi.GpiController._
+import seqexec.server.keywords.GdsClient
+import seqexec.server.keywords.GdsInstrument
 import seqexec.server.keywords.KeywordsClient
 import scala.concurrent.duration._
 import squants.time.Milliseconds
 import squants.time.Seconds
 import squants.time.Time
 
-final case class GPI[F[_]: Effect](controller: GPIController[F])
+final case class Gpi[F[_]: Effect](controller: GpiController[F])
     extends InstrumentSystem[F]
-    with GDSInstrument {
+    with GdsInstrument {
   // Taken from the gpi isd
   val readoutOverhead: Time  = Seconds(4)
   val writeOverhead: Time    = Seconds(2)
   val perCoaddOverhead: Time = Seconds(2.7)
   val timeoutTolerance: Time  = Seconds(30)
 
-  override val gdsClient: GDSClient = controller.gdsClient
+  override val gdsClient: GdsClient = controller.gdsClient
 
   override val keywordsClient: KeywordsClient[IO] = this
 
-  override val resource: Resource = Instrument.GPI
+  override val resource: Resource = Instrument.Gpi
 
   override val sfName: String = "GPI"
 
@@ -62,7 +62,7 @@ final case class GPI[F[_]: Effect](controller: GPIController[F])
     }
 
   override def configure(config: Config): SeqActionF[F, ConfigResult[F]] =
-    GPI
+    Gpi
       .fromSequenceConfig[F](config)
       .flatMap(controller.applyConfig)
       .map(_ => ConfigResult(this))
@@ -89,7 +89,7 @@ final case class GPI[F[_]: Effect](controller: GPIController[F])
 
 }
 
-object GPI {
+object Gpi {
   val name: String = INSTRUMENT_NAME_PROP
 
   private def gpiAoFlags(config: Config): Either[ExtractFailure, AOFlags] =
@@ -136,7 +136,7 @@ object GPI {
         } else mode.asLeft.asRight
       }
 
-  def fromSequenceConfig[F[_]: Sync](config: Config): SeqActionF[F, GPIConfig] =
+  def fromSequenceConfig[F[_]: Sync](config: Config): SeqActionF[F, GpiConfig] =
     EitherT(Sync[F].delay(
       (for {
         adc      <- config.extractAs[Adc](INSTRUMENT_KEY / ADC_PROP)
@@ -152,7 +152,7 @@ object GPI {
         asu      <- gpiASU(config)
         pc       <- config.extractAs[PupilCamera](INSTRUMENT_KEY / PUPUL_CAMERA_PROP)
         ao       <- gpiAoFlags(config)
-      } yield GPIConfig(adc, exp, coa, mode, pol, polA, shutters, asu, pc, ao))
+      } yield GpiConfig(adc, exp, coa, mode, pol, polA, shutters, asu, pc, ao))
         .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
     ))
 

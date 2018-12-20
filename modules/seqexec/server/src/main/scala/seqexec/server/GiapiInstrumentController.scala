@@ -11,7 +11,7 @@ import giapi.client.commands.{CommandResult, CommandResultException, Configurati
 import org.log4s.getLogger
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.SeqexecFailure.{Execution, SeqexecException}
-import seqexec.server.keywords.GDSClient
+import seqexec.server.keywords.GdsClient
 import squants.time.Time
 
 import scala.concurrent.duration._
@@ -23,7 +23,7 @@ abstract class GiapiInstrumentController[F[_]: Sync, CFG, C <: GiapiClient[F]] {
   private val Log = getLogger
 
   def client: C
-  def gdsClient: GDSClient
+  def gdsClient: GdsClient
   def name: String
   def configuration(config: CFG): Configuration
 

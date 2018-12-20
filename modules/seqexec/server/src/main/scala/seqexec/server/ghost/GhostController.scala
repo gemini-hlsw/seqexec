@@ -8,28 +8,28 @@ import cats.{Eq, Show}
 import cats.effect.Sync
 import gem.math.Coordinates
 import giapi.client.commands.Configuration
-import giapi.client.ghost.GHOSTClient
-import seqexec.server.keywords.GDSClient
+import giapi.client.ghost.GhostClient
+import seqexec.server.keywords.GdsClient
 
 import scala.concurrent.duration._
 import org.log4s._
 import seqexec.server.ConfigUtilOps.{ContentError, ExtractFailure}
 import seqexec.server.GiapiInstrumentController
-import seqexec.server.ghost.GHOSTController.GHOSTConfig
+import seqexec.server.ghost.GhostController.GhostConfig
 
-final case class GHOSTController[F[_]: Sync](override val client: GHOSTClient[F],
-                                             override val gdsClient: GDSClient)
-  extends GiapiInstrumentController[F, GHOSTConfig, GHOSTClient[F]] {
+final case class GhostController[F[_]: Sync](override val client: GhostClient[F],
+                                             override val gdsClient: GdsClient)
+  extends GiapiInstrumentController[F, GhostConfig, GhostClient[F]] {
 
-  import GHOSTController._
+  import GhostController._
   val Log: Logger = getLogger
 
   override val name = "GHOST"
 
-  override def configuration(config: GHOSTConfig): Configuration = config.configuration
+  override def configuration(config: GhostConfig): Configuration = config.configuration
 }
 
-object GHOSTController {
+object GhostController {
   private def ifuConfig(ifuNum: IFUNum,
                         ifuTargetType: IFUTargetType,
                         coordinates: Coordinates,
@@ -103,7 +103,7 @@ object GHOSTController {
   }
 
   // GHOST has a number of different possible configuration modes: we add types for them here.
-  sealed trait GHOSTConfig {
+  sealed trait GhostConfig {
     def baseCoords: Option[Coordinates]
     def expTime: Duration
 
@@ -120,7 +120,7 @@ object GHOSTController {
     def configuration: Configuration = ifu1Config |+| ifu2Config
   }
 
-  sealed trait StandardResolutionMode extends GHOSTConfig {
+  sealed trait StandardResolutionMode extends GhostConfig {
     import StandardResolutionMode._
 
     def ifu1Coordinates: Coordinates
@@ -190,7 +190,7 @@ object GHOSTController {
     }
   }
 
-  sealed trait HighResolutionMode extends GHOSTConfig {
+  sealed trait HighResolutionMode extends GhostConfig {
     import HighResolutionMode._
 
     override def ifu1BundleType: BundleConfig = BundleConfig.HighRes
@@ -231,7 +231,7 @@ object GHOSTController {
 
   // These are the parameters passed to GHOST from the WDBA.
   // We use them to determine the type of configuration being used by GHOST, and instantiate it.
-  object GHOSTConfig {
+  object GhostConfig {
     def apply(baseCoords: Option[Coordinates],
               expTime: Duration,
               srifu1Name: Option[String],
@@ -241,7 +241,7 @@ object GHOSTController {
               hrifu1Name: Option[String],
               hrifu1Coords: Option[Coordinates],
               hrifu2Name: Option[String],
-              hrifu2Coords: Option[Coordinates]): Either[ExtractFailure, GHOSTConfig] = {
+              hrifu2Coords: Option[Coordinates]): Either[ExtractFailure, GhostConfig] = {
       import IFUTargetType._
 
       val sifu1 = determineType(srifu1Name)
@@ -270,7 +270,7 @@ object GHOSTController {
       }
     }
 
-    implicit val eq: Eq[GHOSTConfig] = Eq.fromUniversalEquals
-    implicit val show: Show[GHOSTConfig] = Show.fromToString
+    implicit val eq: Eq[GhostConfig] = Eq.fromUniversalEquals
+    implicit val show: Show[GhostConfig] = Show.fromToString
   }
 }

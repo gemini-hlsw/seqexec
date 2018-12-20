@@ -10,9 +10,9 @@ import giapi.client.{Giapi, GiapiClient}
 /**
   * Client for GHOST
   */
-final class GHOSTClient[F[_]](override val giapi: Giapi[F]) extends GiapiClient[F]
+final class GhostClient[F[_]](override val giapi: Giapi[F]) extends GiapiClient[F]
 
-object GHOSTExample extends App {
+object GhostExample extends App {
 
   import cats.effect.IO
   import scala.concurrent.duration._
@@ -38,7 +38,7 @@ object GHOSTExample extends App {
         .connect)(
       giapi => {
         val client =
-          new GHOSTClient[IO](giapi)
+          new GhostClient[IO](giapi)
         val r = for {
           f <- client.observe("TEST_S20180509", 5.seconds)
         } yield f

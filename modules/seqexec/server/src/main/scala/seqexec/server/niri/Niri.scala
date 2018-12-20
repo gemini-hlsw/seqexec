@@ -47,7 +47,7 @@ final case class Niri(controller: NiriController, dhsClient: DhsClient)
   : fs2.Stream[IO, Progress] = controller.observeProgress(total)
 
   override val dhsInstrumentName: String = "NIRI"
-  override val resource: Resource = Instrument.NIRI
+  override val resource: Resource = Instrument.Niri
 
   /**
     * Called to configure a system

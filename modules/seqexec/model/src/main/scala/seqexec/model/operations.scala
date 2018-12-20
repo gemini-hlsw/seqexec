@@ -103,8 +103,8 @@ object operations {
     F2 -> F2SupportedOperations,
     GmosS -> GmosSupportedOperations,
     GmosN -> GmosSupportedOperations,
-    GNIRS -> GnirsSupportedOperations,
-    NIRI -> NiriSupportedOperations
+    Gnirs -> GnirsSupportedOperations,
+    Niri -> NiriSupportedOperations
   )
 
   final implicit class SupportedOperationsOps(val i: Instrument)

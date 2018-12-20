@@ -13,11 +13,11 @@ import edu.gemini.wdba.session.client.WDBA_XmlRpc_SessionClient
 import gem.Observation
 import seqexec.model.dhs.ImageFileId
 
-class ODBProxy(val loc: Peer, cmds: ODBProxy.OdbCommands) {
+class OdbProxy(val loc: Peer, cmds: OdbProxy.OdbCommands) {
 
   def host(): Peer = loc
   def read(oid: Observation.Id): Either[SeqexecFailure, SeqexecSequence] =
-    SeqExecService.client(loc).sequence(new SPObservationID(oid.format)).leftMap(SeqexecFailure.ODBSeqError)
+    SeqExecService.client(loc).sequence(new SPObservationID(oid.format)).leftMap(SeqexecFailure.OdbSeqError)
 
   val queuedSequences: SeqAction[List[Observation.Id]] = cmds.queuedSequences()
   val datasetStart: (Observation.Id, String, ImageFileId) => SeqAction[Boolean] = cmds.datasetStart
@@ -31,7 +31,7 @@ class ODBProxy(val loc: Peer, cmds: ODBProxy.OdbCommands) {
 
 }
 
-object ODBProxy {
+object OdbProxy {
   trait OdbCommands {
     def queuedSequences(): SeqAction[List[Observation.Id]]
     def datasetStart(obsId: Observation.Id, dataId: String, fileId: ImageFileId): SeqAction[Boolean]

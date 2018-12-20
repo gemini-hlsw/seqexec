@@ -8,7 +8,7 @@ import seqexec.model.dhs.ImageFileId
 import seqexec.server.SeqAction
 import seqexec.server.keywords._
 
-object GHOSTHeader {
+object GhostHeader {
 
   def header(): Header =
     new Header {

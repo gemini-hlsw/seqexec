@@ -17,8 +17,8 @@ import edu.gemini.epics.acm.CaService
 import gem.Observation
 import gem.enum.Site
 import giapi.client.Giapi
-import giapi.client.ghost.GHOSTClient
-import giapi.client.gpi.GPIClient
+import giapi.client.ghost.GhostClient
+import giapi.client.gpi.GpiClient
 import seqexec.engine
 import seqexec.engine.Result.Partial
 import seqexec.engine.{Step => _, _}
@@ -31,10 +31,10 @@ import seqexec.server.ConfigUtilOps._
 import seqexec.server.keywords._
 import seqexec.server.flamingos2.{Flamingos2ControllerEpics, Flamingos2ControllerSim, Flamingos2ControllerSimBad, Flamingos2Epics}
 import seqexec.server.gcal.{GcalControllerEpics, GcalControllerSim, GcalEpics}
-import seqexec.server.ghost.GHOSTController
+import seqexec.server.ghost.GhostController
 import seqexec.server.gmos.{GmosControllerSim, GmosEpics, GmosNorthControllerEpics, GmosSouthControllerEpics}
 import seqexec.server.gnirs.{GnirsControllerEpics, GnirsControllerSim, GnirsEpics}
-import seqexec.server.gpi.GPIController
+import seqexec.server.gpi.GpiController
 import seqexec.server.niri.NiriControllerSim
 import seqexec.server.gws.GwsEpics
 import seqexec.server.tcs.{TcsControllerEpics, TcsControllerSim, TcsEpics}
@@ -58,13 +58,13 @@ import shapeless.tag
 class SeqexecEngine(httpClient: Client[IO], settings: Settings[IO], sm: SeqexecMetrics) {
   import SeqexecEngine._
 
-  val odbProxy: ODBProxy = new ODBProxy(new Peer(settings.odbHost, 8443, null),
-    if (settings.odbNotifications) ODBProxy.OdbCommandsImpl(new Peer(settings.odbHost, 8442, null))
-    else ODBProxy.DummyOdbCommands)
+  val odbProxy: OdbProxy = new OdbProxy(new Peer(settings.odbHost, 8443, null),
+    if (settings.odbNotifications) OdbProxy.OdbCommandsImpl(new Peer(settings.odbHost, 8442, null))
+    else OdbProxy.DummyOdbCommands)
 
-  val gpiGDS: GDSClient = GDSClient(settings.gpiGdsControl.command.fold(httpClient, GDSClient.alwaysOkClient), settings.gpiGDS)
+  val gpiGDS: GdsClient = GdsClient(settings.gpiGdsControl.command.fold(httpClient, GdsClient.alwaysOkClient), settings.gpiGDS)
 
-  val ghostGDS: GDSClient = GDSClient(settings.ghostControl.command.fold(httpClient, GDSClient.alwaysOkClient), settings.ghostGDS)
+  val ghostGDS: GdsClient = GdsClient(settings.ghostControl.command.fold(httpClient, GdsClient.alwaysOkClient), settings.ghostGDS)
 
   private val systems = SeqTranslate.Systems(
     odbProxy,
@@ -76,8 +76,8 @@ class SeqexecEngine(httpClient: Client[IO], settings: Settings[IO], sm: SeqexecM
     settings.gmosControl.command.fold(GmosSouthControllerEpics, GmosControllerSim.south),
     settings.gmosControl.command.fold(GmosNorthControllerEpics, GmosControllerSim.north),
     settings.gnirsControl.command.fold(GnirsControllerEpics, GnirsControllerSim),
-    GPIController(new GPIClient(settings.gpiGiapi), gpiGDS),
-    GHOSTController(new GHOSTClient(settings.ghostGiapi), ghostGDS),
+    GpiController(new GpiClient(settings.gpiGiapi), gpiGDS),
+    GhostController(new GhostClient(settings.ghostGiapi), ghostGDS),
     settings.niriControl.command.fold(NiriControllerSim, NiriControllerSim)
   )
 

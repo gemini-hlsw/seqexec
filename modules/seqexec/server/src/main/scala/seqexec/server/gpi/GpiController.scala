@@ -17,15 +17,15 @@ import edu.gemini.spModel.gemini.gpi.Gpi.{ObservingMode => LegacyObservingMode}
 import edu.gemini.spModel.gemini.gpi.Gpi.{PupilCamera => LegacyPupilCamera}
 import edu.gemini.spModel.gemini.gpi.Gpi.{Shutter => LegacyShutter}
 import giapi.client.commands.Configuration
-import giapi.client.gpi.GPIClient
+import giapi.client.gpi.GpiClient
 import mouse.boolean._
 import seqexec.server.GiapiInstrumentController
 
 import scala.concurrent.duration._
-import seqexec.server.keywords.GDSClient
-import seqexec.server.gpi.GPIController.GPIConfig
+import seqexec.server.keywords.GdsClient
+import seqexec.server.gpi.GpiController.GpiConfig
 
-object GPILookupTables {
+object GpiLookupTables {
 
   val apodizerLUT: Map[LegacyApodizer, String] = Map(
     LegacyApodizer.CLEAR     -> "CLEAR",
@@ -92,17 +92,17 @@ object GPILookupTables {
   )
 }
 
-final case class GPIController[F[_]: Sync](override val client: GPIClient[F],
-                                           override val gdsClient: GDSClient)
-  extends GiapiInstrumentController[F, GPIConfig, GPIClient[F]] {
+final case class GpiController[F[_]: Sync](override val client: GpiClient[F],
+                                           override val gdsClient: GdsClient)
+  extends GiapiInstrumentController[F, GpiConfig, GpiClient[F]] {
 
-  import GPIController._
-  import GPILookupTables._
+  import GpiController._
+  import GpiLookupTables._
 
   private val UNKNOWN_SETTING = "UNKNOWN"
   override val name = "GPI"
 
-  private def obsModeConfiguration(config: GPIConfig): Configuration =
+  private def obsModeConfiguration(config: GpiConfig): Configuration =
     config.mode.fold(
       m =>
         Configuration.single("gpi:observationMode.mode",
@@ -123,7 +123,7 @@ final case class GPIController[F[_]: Sync](override val client: GPIClient[F],
     )
 
   // scalastyle:off
-  override def configuration(config: GPIConfig): Configuration = {
+  override def configuration(config: GpiConfig): Configuration = {
     Configuration.single("gpi:selectAdc.deploy",
       (config.adc === LegacyAdc.IN)
         .fold(1, 0)) |+|
@@ -184,7 +184,7 @@ final case class GPIController[F[_]: Sync](override val client: GPIClient[F],
   // scalastyle:on
 }
 
-object GPIController {
+object GpiController {
 
   implicit val apodizerEq: Eq[LegacyApodizer] = Eq.by(_.displayValue)
 
@@ -255,7 +255,7 @@ object GPIController {
     implicit val show: Show[NonStandardModeParams] = Show.fromToString
   }
 
-  final case class GPIConfig(
+  final case class GpiConfig(
       adc: LegacyAdc,
       expTime: Duration,
       coAdds: Int,
@@ -267,9 +267,9 @@ object GPIController {
       pc: LegacyPupilCamera,
       aoFlags: AOFlags)
 
-  object GPIConfig {
+  object GpiConfig {
     private implicit val durationEq: Eq[Duration] = Eq.by(_.toMillis)
-    implicit val eq: Eq[GPIConfig] = Eq.by(
+    implicit val eq: Eq[GpiConfig] = Eq.by(
       x =>
         (x.adc,
          x.expTime,
@@ -281,6 +281,6 @@ object GPIController {
          x.asu,
          x.pc,
          x.aoFlags))
-    implicit val show: Show[GPIConfig] = Show.fromToString
+    implicit val show: Show[GpiConfig] = Show.fromToString
   }
 }
