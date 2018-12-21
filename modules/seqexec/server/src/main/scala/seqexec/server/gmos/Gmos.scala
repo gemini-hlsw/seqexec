@@ -12,8 +12,11 @@ import edu.gemini.spModel.gemini.gmos.InstGmosCommon._
 import edu.gemini.spModel.obscomp.InstConstants.{EXPOSURE_TIME_PROP, _}
 import edu.gemini.spModel.seqcomp.SeqConfigNames.{INSTRUMENT_KEY, OBSERVE_KEY}
 import java.lang.{Double => JDouble, Integer => JInt}
+
+import edu.gemini.spModel.gemini.gmos.GmosCommonType
 import mouse.all._
 import org.log4s.{Logger, getLogger}
+
 import scala.concurrent.duration._
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.ConfigUtilOps.{ContentError, ConversionError, _}
@@ -22,6 +25,7 @@ import seqexec.server.gmos.GmosController.Config._
 import seqexec.server.gmos.GmosController.SiteDependentTypes
 import seqexec.server.keywords.{DhsInstrument, KeywordsClient}
 import seqexec.server._
+import squants.space.Length
 import squants.{Seconds, Time}
 import squants.space.LengthConversions._
 
@@ -54,6 +58,20 @@ abstract class Gmos[T<:GmosController.SiteDependentTypes](controller: GmosContro
     }
   }
 
+  private def calcDisperser(disp: T#Disperser, order: Option[DisperserOrder], wl: Option[Length])
+  : Either[ConfigUtilOps.ExtractFailure, configTypes.GmosDisperser] =
+    if(configTypes.isMirror(disp))
+      configTypes.GmosDisperser.Mirror.asRight[ConfigUtilOps.ExtractFailure]
+    else order.map{o =>
+      if(o === GmosCommonType.Order.ZERO)
+        configTypes.GmosDisperser.Order0(disp).asRight[ConfigUtilOps.ExtractFailure]
+      else wl.map(w => configTypes.GmosDisperser.OrderN(disp, o, w)
+        .asRight[ConfigUtilOps.ExtractFailure]).getOrElse(
+          ConfigUtilOps.ContentError(s"Disperser order ${o.displayValue} is missing a wavelength.")
+          .asLeft
+        )
+    }.getOrElse(ConfigUtilOps.ContentError(s"Disperser is missing an order.").asLeft)
+
   private def ccConfigFromSequenceConfig(config: Config): TrySeq[configTypes.CCConfig] =
     (for {
       filter           <- ss.extractFilter(config)
@@ -67,7 +85,7 @@ abstract class Gmos[T<:GmosController.SiteDependentTypes](controller: GmosContro
       dtax             <- config.extractAs[DTAX](INSTRUMENT_KEY / DTAX_OFFSET_PROP)
       adc              <- config.extractAs[ADC](INSTRUMENT_KEY / ADC_PROP)
       electronicOffset =  config.extractAs[UseElectronicOffset](INSTRUMENT_KEY / USE_ELECTRONIC_OFFSETTING_PROP)
-      disperser = configTypes.GmosDisperser(disp, disperserOrder.toOption, disperserLambda.toOption)
+      disperser        <- calcDisperser(disp, disperserOrder.toOption, disperserLambda.toOption)
     } yield configTypes.CCConfig(filter, disperser, fpu, stageMode, dtax, adc, electronicOffset.toOption)).leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
 
   private def fromSequenceConfig(config: Config): SeqAction[GmosController.GmosConfig[T]] = EitherT( IO ( for {

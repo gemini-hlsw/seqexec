@@ -14,6 +14,8 @@ import squants.{Length, Time}
 
 import scala.concurrent.duration.Duration
 import cats.implicits._
+import cats.kernel.Eq
+import edu.gemini.spModel.gemini.gmos.{GmosNorthType, GmosSouthType}
 import seqexec.server.InstrumentSystem.ElapsedTime
 
 trait GmosController[T<:GmosController.SiteDependentTypes] {
@@ -50,14 +52,24 @@ trait GmosController[T<:GmosController.SiteDependentTypes] {
 
 object GmosController {
 
-  final class Config[T<:SiteDependentTypes] {
+  sealed abstract class Config[T<:SiteDependentTypes] {
     import Config._
 
     @SuppressWarnings(Array("org.wartremover.warts.LeakingSealed"))
     case class BuiltInFPU(fpu: T#FPU) extends GmosFPU
 
-    case class GmosDisperser(disperser: T#Disperser, order: Option[DisperserOrder],
-      lambda: Option[Length])
+    sealed trait GmosDisperser
+    object GmosDisperser {
+      case object Mirror extends GmosDisperser
+      @SuppressWarnings(Array("org.wartremover.warts.LeakingSealed"))
+      case class Order0(disperser: T#Disperser) extends GmosDisperser
+      @SuppressWarnings(Array("org.wartremover.warts.LeakingSealed"))
+      case class OrderN(disperser: T#Disperser, order: DisperserOrder, lambda: Length)
+        extends GmosDisperser
+    }
+
+    val mirror: T#Disperser
+    def isMirror(v: T#Disperser): Boolean
 
     case class CCConfig(
       filter: T#Filter,
@@ -150,6 +162,8 @@ object GmosController {
     type FPU
     type GmosStageMode
     type Disperser
+
+    val disperserEq: Eq[Disperser]
   }
 
   final class SouthTypes extends SiteDependentTypes {
@@ -157,9 +171,14 @@ object GmosController {
     override type FPU           = edu.gemini.spModel.gemini.gmos.GmosSouthType.FPUnitSouth
     override type GmosStageMode = edu.gemini.spModel.gemini.gmos.GmosSouthType.StageModeSouth
     override type Disperser     = edu.gemini.spModel.gemini.gmos.GmosSouthType.DisperserSouth
+
+    override val disperserEq: Eq[GmosSouthType.DisperserSouth] = Eq.fromUniversalEquals
   }
 
-  type SouthConfigTypes = Config[SouthTypes]
+  final class SouthConfigTypes extends Config[SouthTypes] {
+    override val mirror = edu.gemini.spModel.gemini.gmos.GmosSouthType.DisperserSouth.MIRROR
+    override def isMirror(v: GmosSouthType.DisperserSouth): Boolean = v === mirror
+  }
   val southConfigTypes: SouthConfigTypes = new SouthConfigTypes
 
   final class NorthTypes extends SiteDependentTypes {
@@ -167,9 +186,14 @@ object GmosController {
     override type FPU           = edu.gemini.spModel.gemini.gmos.GmosNorthType.FPUnitNorth
     override type GmosStageMode = edu.gemini.spModel.gemini.gmos.GmosNorthType.StageModeNorth
     override type Disperser     = edu.gemini.spModel.gemini.gmos.GmosNorthType.DisperserNorth
+
+    override val disperserEq: Eq[GmosNorthType.DisperserNorth] = Eq.fromUniversalEquals
   }
 
-  type NorthConfigTypes = Config[NorthTypes]
+  final class NorthConfigTypes extends Config[NorthTypes] {
+    override val mirror = edu.gemini.spModel.gemini.gmos.GmosNorthType.DisperserNorth.MIRROR
+    override def isMirror(v: GmosNorthType.DisperserNorth): Boolean = v === mirror
+  }
   val northConfigTypes: NorthConfigTypes = new NorthConfigTypes
 
   // This is a trick to allow using a type from a class parameter to define the type of another class parameter
