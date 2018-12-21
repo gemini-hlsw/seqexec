@@ -151,6 +151,8 @@ object GhostController {
     }
   }
 
+  private implicit val durationEq: Eq[Duration] = Eq.by(_.toMillis)
+
   object StandardResolutionMode {
     final case class SingleTarget(override val baseCoords: Option[Coordinates],
                                   override val expTime: Duration,
@@ -159,6 +161,9 @@ object GhostController {
       override def ifu2Config: Configuration =
         ifuPark(IFUNum.IFU2)
     }
+
+    implicit val srmSingleTargetEq: Eq[SingleTarget] = Eq.by(x =>
+      (x.baseCoords, x.expTime, x.ifu1TargetName, x.ifu1Coordinates))
 
     final case class DualTarget(override val baseCoords: Option[Coordinates],
                                 override val expTime: Duration,
@@ -170,6 +175,10 @@ object GhostController {
         ifuConfig(IFUNum.IFU2, IFUTargetType.Target(ifu2TargetName), ifu2Coordinates, BundleConfig.Standard)
     }
 
+    implicit val srmDualTargetEq: Eq[DualTarget] = Eq.by(x =>
+      (x.baseCoords, x.expTime, x.ifu1TargetName, x.ifu1Coordinates, x.ifu2TargetName, x.ifu2Coordinates)
+    )
+
     final case class TargetPlusSky(override val baseCoords: Option[Coordinates],
                                    override val expTime: Duration,
                                    ifu1TargetName: String,
@@ -178,6 +187,9 @@ object GhostController {
       override def ifu2Config: Configuration =
         ifuConfig(IFUNum.IFU2, IFUTargetType.SkyPosition, ifu2Coordinates, BundleConfig.Sky)
     }
+
+    implicit val srmTargetPlusSkyEq: Eq[TargetPlusSky] = Eq.by(x =>
+      (x.baseCoords, x.expTime, x.ifu1TargetName, x.ifu1Coordinates, x.ifu2Coordinates))
 
     final case class SkyPlusTarget(override val baseCoords: Option[Coordinates],
                                    override val expTime: Duration,
@@ -188,6 +200,9 @@ object GhostController {
         ifuConfig(IFUNum.IFU2, IFUTargetType.Target(ifu2TargetName), ifu2Coordinates, BundleConfig.Standard)
 
     }
+
+    implicit val srmSkyPlusTargetEq: Eq[SkyPlusTarget] = Eq.by(x =>
+      (x.baseCoords, x.expTime, x.ifu1Coordinates, x.ifu2TargetName, x.ifu2Coordinates))
   }
 
   sealed trait HighResolutionMode extends GhostConfig {
@@ -219,6 +234,9 @@ object GhostController {
         ifuPark(IFUNum.IFU2)
     }
 
+    implicit val hrSingleTargetEq: Eq[SingleTarget] = Eq.by(x =>
+      (x.baseCoords, x.expTime, x.ifu1TargetName, x.ifu1Coordinates))
+
     final case class TargetPlusSky(override val baseCoords: Option[Coordinates],
                                    override val expTime: Duration,
                                    override val ifu1TargetName: String,
@@ -227,6 +245,9 @@ object GhostController {
       override def ifu2Config: Configuration =
         ifuConfig(IFUNum.IFU2, IFUTargetType.SkyPosition, ifu2Coordinates, BundleConfig.Sky)
     }
+
+    implicit val hrTargetPlusSkyEq: Eq[TargetPlusSky] = Eq.by(x =>
+      (x.baseCoords, x.expTime, x.ifu1TargetName, x.ifu1Coordinates, x.ifu2Coordinates))
   }
 
   // These are the parameters passed to GHOST from the WDBA.
@@ -270,7 +291,19 @@ object GhostController {
       }
     }
 
-    implicit val eq: Eq[GhostConfig] = Eq.fromUniversalEquals
+    import GhostController.{StandardResolutionMode => SRM, HighResolutionMode => HRM}
+    implicit val eq: Eq[GhostConfig] = Eq.instance { (a, b) =>
+      (a: Any, b: Any) match {
+        case (a: SRM.SingleTarget,  b: SRM.SingleTarget)  => a === b
+        case (a: SRM.DualTarget,    b: SRM.DualTarget)    => a === b
+        case (a: SRM.TargetPlusSky, b: SRM.TargetPlusSky) => a === b
+        case (a: SRM.SkyPlusTarget, b: SRM.SkyPlusTarget) => a === b
+        case (a: HRM.SingleTarget,  b: HRM.SingleTarget)  => a === b
+        case (a: HRM.TargetPlusSky, b: HRM.TargetPlusSky) => a === b
+        case _ => false
+      }
+    }
+
     implicit val show: Show[GhostConfig] = Show.fromToString
   }
 }
