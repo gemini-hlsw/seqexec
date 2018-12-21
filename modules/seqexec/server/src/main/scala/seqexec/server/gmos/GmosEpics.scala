@@ -14,6 +14,7 @@ import org.log4s.{Logger, getLogger}
 import scala.collection.breakOut
 import scala.concurrent.duration._
 import cats.implicits._
+import mouse.all._
 
 class GmosEpics(epicsService: CaService, tops: Map[String, String]) {
 
@@ -225,7 +226,8 @@ class GmosEpics(epicsService: CaService, tops: Map[String, String]) {
 
   def disperserOrder: Option[Int] = Option(state.getIntegerAttribute("disperserOrder").value).map(_.toInt)
 
-  def disperserParked: Option[Int] = Option(state.getIntegerAttribute("disperserParked").value).map(_.toInt)
+  def disperserParked: Option[Boolean] = Option(state.getIntegerAttribute("disperserParked").value)
+    .map(_.toInt =!= 0)
 
   def disperserId: Option[Int] = Option(state.getIntegerAttribute("disperserID").value).map(_.toInt)
 
@@ -259,6 +261,9 @@ class GmosEpics(epicsService: CaService, tops: Map[String, String]) {
 
   def dtaXOffset: Option[Double] = Option(state.getDoubleAttribute("dtaXOffset").value)
     .map(_.toDouble)
+
+  def dtaXCenter: Option[Double] = Option(state.getStringAttribute("dtaXOffset").value)
+    .flatMap(_.parseDouble.toOption)
 
   def gratingWavel: Option[Double] = Option(state.getDoubleAttribute("adjgrwlen").value).map(_.toDouble)
 

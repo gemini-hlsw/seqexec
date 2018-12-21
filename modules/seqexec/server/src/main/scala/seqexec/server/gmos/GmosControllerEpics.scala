@@ -7,7 +7,6 @@ import cats.data.EitherT
 import cats.effect.IO
 import cats.implicits._
 import edu.gemini.spModel.gemini.gmos.GmosCommonType._
-import edu.gemini.spModel.gemini.gmos.GmosSouthType.{DisperserSouth => Disperser}
 import edu.gemini.spModel.gemini.gmos.InstGmosCommon.UseElectronicOffsettingRuling
 import fs2.Stream
 import mouse.all._
@@ -146,29 +145,59 @@ class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosCo
       smartSetParam(filter2, GmosEpics.instance.filter2, CC.setFilter2(filter2))
   }
 
-  @SuppressWarnings(Array("org.wartremover.warts.Equals"))
-  def setDisperser(d: GmosController.Config[T]#GmosDisperser): List[SeqAction[Unit]] = {
-    // TODO: add support for Enum parameters in acm, and then define Enum type for disperserMode
+  def setDisperser(d: T#Disperser): List[SeqAction[Unit]] = {
+    val encodedVal = encoders.disperser.encode(d)
+    val s = smartSetParam(encodedVal.toUpperCase,
+      GmosEpics.instance.disperser.map(_.toUpperCase),
+      CC.setDisperser(encodedVal)
+    )
+    // Force setting if disperser is parked
+    if (s.isEmpty)
+      smartSetParam(false, GmosEpics.instance.disperserParked, CC.setDisperser(encodedVal))
+    else s
+  }
+
+  def setOrder(o: DisperserOrder): List[SeqAction[Unit]] = smartSetParam(
+    disperserOrderEncoderInt.encode(o), GmosEpics.instance.disperserOrder,
+    CC.setDisperserOrder(disperserOrderEncoder.encode(o))
+  )
+
+  def setDisperserParams(d: GmosController.Config[T]#GmosDisperser): List[SeqAction[Unit]] = {
+    // TODO: define Enum type for disperserMode
     val disperserMode0 = "WLEN"
     val disperserMode1 = "SEL"
-    val disperser = encoders.disperser.encode(d.disperser)
 
     def disperserModeDecode(v: Int): String = if (v === 0) disperserMode0 else disperserMode1
 
-    smartSetParam(disperser.toUpperCase, GmosEpics.instance.disperser.map(_.toUpperCase),
-      CC.setDisperser(disperser)) ++
+    val set = d match {
+      case cfg.GmosDisperser.Mirror =>
+        val s = setDisperser(cfg.mirror)
+        //If disperser is set, force mode configuration
+        if (s.isEmpty) Nil else s ++ List(CC.setDisperserMode(disperserMode0))
+      case cfg.GmosDisperser.Order0(d) =>
+        val s0 = setDisperser(d)
+        // If disperser is set, force order configuration
+        val s = if(s0.isEmpty) setOrder(Order.ZERO)
+                else CC.setDisperserOrder(disperserOrderEncoder.encode(Order.ZERO)) :: s0
+        //If disperser or order are set, force mode configuration
+        if (s.isEmpty) Nil else s ++ List(CC.setDisperserMode(disperserMode0))
+      case cfg.GmosDisperser.OrderN(d, o, w) =>
+        val s0 = setDisperser(d)
+        val s = (if(s0.isEmpty) setOrder(o)
+                else CC.setDisperserOrder(disperserOrderEncoder.encode(o)) :: s0) ++
+                smartSetParam(encode(w), GmosEpics.instance.disperserWavel,
+                  CC.setDisperserLambda(encode(w))
+        )
+        //If disperser, order or wavelength are set, force mode configuration
+        if (s.isEmpty) Nil else s ++ List(CC.setDisperserMode(disperserMode0))
+      //TODO Improve data model to remove this case. It is here because search includes types of
+      // both sites.
+      case _                   => List.empty
+    }
+    if(set.isEmpty)
       smartSetParam(disperserMode0, GmosEpics.instance.disperserMode.map(disperserModeDecode),
-        CC.setDisperserMode(disperserMode0)) ++
-      d.order.filter(_ => d.disperser != Disperser.MIRROR)
-        .map(o => smartSetParam(
-          disperserOrderEncoderInt.encode(o), GmosEpics.instance.disperserOrder,
-          CC.setDisperserOrder(disperserOrderEncoder.encode(o))
-        )).toList.flatten ++
-      d.lambda.filter(_ => d.disperser != Disperser.MIRROR && !d.order.contains(Order.ZERO))
-        .map(o => smartSetParam(encode(o), GmosEpics.instance.disperserWavel,
-          CC.setDisperserLambda(encode(o))
-        )).toList.flatten
-
+        CC.setDisperserMode(disperserMode0))
+    else set
   }
 
   def setFPU(cc: GmosFPU): List[SeqAction[Unit]] = {
@@ -217,13 +246,16 @@ class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosCo
 
     val offsetInMicrons =  v.intValue.toDouble * PixelsToMicrons
 
-    smartSetDoubleParam(Tolerance)(offsetInMicrons, GmosEpics.instance.dtaXOffset,
+    // It seems that the reported dtaXOffset is absolute, but the applied offset is relative to
+    // XCenter value
+    smartSetDoubleParam(Tolerance)(offsetInMicrons,
+      (GmosEpics.instance.dtaXOffset, GmosEpics.instance.dtaXCenter)mapN(_-_),
       CC.setDtaXOffset(offsetInMicrons))
   }
 
   def setCCConfig(cc: GmosController.Config[T]#CCConfig): List[SeqAction[Unit]] = {
     setFilters(cc.filter) ++
-      setDisperser(cc.disperser) ++
+      setDisperserParams(cc.disperser) ++
       setFPU(cc.fpu) ++
       setStage(cc.stage) ++
       setDtaXOffset(cc.dtaX) ++
