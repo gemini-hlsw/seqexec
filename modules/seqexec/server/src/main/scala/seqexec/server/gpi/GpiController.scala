@@ -268,7 +268,6 @@ object GpiController {
       aoFlags: AOFlags)
 
   object GpiConfig {
-    private implicit val durationEq: Eq[Duration] = Eq.by(_.toMillis)
     implicit val eq: Eq[GpiConfig] = Eq.by(
       x =>
         (x.adc,

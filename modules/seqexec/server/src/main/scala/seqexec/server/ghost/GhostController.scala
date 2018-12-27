@@ -151,8 +151,6 @@ object GhostController {
     }
   }
 
-  private implicit val durationEq: Eq[Duration] = Eq.by(_.toMillis)
-
   object StandardResolutionMode {
     final case class SingleTarget(override val baseCoords: Option[Coordinates],
                                   override val expTime: Duration,

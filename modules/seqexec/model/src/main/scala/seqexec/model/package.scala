@@ -48,6 +48,6 @@ package object model {
     Eq.by(_.symbol)
 
   implicit val timeEq: Eq[Time] =
-    Eq.by(_.toMilliseconds.value)
+    Eq.by(_.toMilliseconds)
 
 }
