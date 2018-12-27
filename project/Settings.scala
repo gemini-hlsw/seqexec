@@ -73,18 +73,18 @@ object Settings {
     val booPickle               = "1.3.0"
     val diode                   = "1.1.4"
     val diodeReact              = "1.1.4.131"
-    val javaTimeJS              = "2.0.0-M13"
+    val javaTimeJS              = "2.0.0-RC1"
     val javaLogJS               = "0.1.5"
     val scalaJQuery             = "1.2"
-    val scalaJSReactVirtualized = "0.4.2"
+    val scalaJSReactVirtualized = "0.4.3"
     val scalaJSReactClipboard   = "0.5.2"
-    val scalaJSReactDraggable   = "0.2.2"
-    val scalaJSReactSortable    = "0.1.0"
+    val scalaJSReactDraggable   = "0.2.3"
+    val scalaJSReactSortable    = "0.1.1"
 
     // Scala libraries
     val catsEffectVersion       = "0.10.1"
-    val catsVersion             = "1.4.0"
-    val mouseVersion            = "0.19"
+    val catsVersion             = "1.5.0"
+    val mouseVersion            = "0.20"
     val fs2Version              = "0.10.5"
     val shapelessVersion        = "2.3.3"
     val attoVersion             = "0.6.4"
@@ -124,7 +124,7 @@ object Settings {
     val ocsVersion              = "2018101.1.3"
     val uglifyJs                = "1.2.4"
     val reactVirtualized        = "9.21.0"
-    val reactDraggable          = "3.0.5"
+    val reactDraggable          = "3.1.1"
 
     val apacheXMLRPC            = "3.1.3"
     val opencsv                 = "2.1"
@@ -139,7 +139,7 @@ object Settings {
     val gmpStatusDatabase       = "0.3.2"
     val gmpCmdClientBridge      = "0.6.2"
     val guava                   = "25.0-jre"
-    val prometheusClient        = "0.5.0"
+    val prometheusClient        = "0.6.0"
     val geminiLocales           = "0.1.0-2018f"
   }
 
@@ -273,7 +273,7 @@ object Settings {
   object PluginVersions {
     // Compiler plugins
     val paradiseVersion    = "2.1.1"
-    val kpVersion          = "0.9.8"
+    val kpVersion          = "0.9.9"
   }
 
   object Plugins {
