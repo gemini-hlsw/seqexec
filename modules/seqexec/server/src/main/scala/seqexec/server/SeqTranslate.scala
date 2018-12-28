@@ -468,7 +468,7 @@ object SeqTranslate {
   def apply(site: Site, systems: Systems, settings: TranslateSettings): SeqTranslate = new SeqTranslate(site, systems, settings)
 
   final case class Systems(
-                            odb: OdbProxy,
+                            odb: OdbProxy[IO],
                             dhs: DhsClient,
                             tcs: TcsController,
                             gcal: GcalController,

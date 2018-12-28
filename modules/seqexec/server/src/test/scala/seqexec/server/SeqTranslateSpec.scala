@@ -79,7 +79,7 @@ class SeqTranslateSpec extends FlatSpec {
     .modify(_.mark(0)(Result.Error("error")))(baseState)
 
   private val systems = SeqTranslate.Systems(
-    new OdbProxy(new Peer("localhost", 8443, null), OdbProxy.DummyOdbCommands),
+    new OdbProxy(new Peer("localhost", 8443, null), new OdbProxy.DummyOdbCommands),
     DhsClientSim(LocalDate.of(2016, 4, 15)),
     TcsControllerSim,
     GcalControllerSim,

@@ -15,7 +15,7 @@ import seqexec.engine.Event
 import seqexec.engine.Sequence
 import seqexec.server.ConfigUtilOps._
 
-final class ODBSequencesLoader(odbProxy: OdbProxy, translator: SeqTranslate) {
+final class ODBSequencesLoader[F[_]: Applicative](odbProxy: OdbProxy[F], translator: SeqTranslate) {
   private def unloadEvent(seqId: Observation.Id): executeEngine.EventType =
     Event.modifyState[executeEngine.ConcreteTypes](
       { st: EngineState =>
@@ -29,7 +29,7 @@ final class ODBSequencesLoader(odbProxy: OdbProxy, translator: SeqTranslate) {
       }.withEvent(UnloadSequence(seqId)).toHandle
     )
 
-  def loadEvents[F[_]: Applicative](
+  def loadEvents(
     seqId: Observation.Id): List[executeEngine.EventType] = {
     val t: Either[SeqexecFailure, (List[SeqexecFailure], Option[SequenceGen])] =
       for {
@@ -63,11 +63,11 @@ final class ODBSequencesLoader(odbProxy: OdbProxy, translator: SeqTranslate) {
       .valueOr(e => List(Event.logDebugMsg(SeqexecFailure.explain(e))))
   }
 
-  def refreshSequenceList[F[_]: Applicative](odbList: Seq[Observation.Id])(
+  def refreshSequenceList(odbList: Seq[Observation.Id])(
     st: EngineState): List[executeEngine.EventType] = {
     val seqexecList = st.sequences.keys.toSeq
 
-    val loads = odbList.diff(seqexecList).flatMap(loadEvents[F])
+    val loads = odbList.diff(seqexecList).flatMap(loadEvents)
 
     val unloads = seqexecList.diff(odbList).map(unloadEvent)
 
