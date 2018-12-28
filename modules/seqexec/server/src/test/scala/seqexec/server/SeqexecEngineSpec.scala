@@ -218,7 +218,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
 
   "SeqexecEngine addSequenceToQueue" should
     "add sequence id to queue" in {
-    val s0 = SeqexecEngine.loadSequenceEndo(seqObsId1, sequence(seqObsId1))(EngineState.default)
+    val s0 = ODBSequencesLoader.loadSequenceEndo(seqObsId1, sequence(seqObsId1))(EngineState.default)
 
     (for {
       q <- async.boundedQueue[IO, executeEngine.EventType](10)
@@ -231,7 +231,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
   }
   it should "not add sequence id if sequence does not exists" in {
     val badObsId = Observation.Id.unsafeFromString("NonExistent-1")
-    val s0 = SeqexecEngine.loadSequenceEndo(seqObsId1, sequence(seqObsId1))(EngineState.default)
+    val s0 = ODBSequencesLoader.loadSequenceEndo(seqObsId1, sequence(seqObsId1))(EngineState.default)
 
     (for {
       q <- async.boundedQueue[IO, executeEngine.EventType](10)
@@ -244,8 +244,8 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
   }
 
   it should "not add sequence id if sequence is running or completed" in {
-    val s0 = (SeqexecEngine.loadSequenceEndo(seqObsId1, sequence(seqObsId1)) >>>
-      SeqexecEngine.loadSequenceEndo(seqObsId2, sequence(seqObsId2)) >>>
+    val s0 = (ODBSequencesLoader.loadSequenceEndo(seqObsId1, sequence(seqObsId1)) >>>
+      ODBSequencesLoader.loadSequenceEndo(seqObsId2, sequence(seqObsId2)) >>>
       (EngineState.sequenceStateIndex(seqObsId1) ^|-> Sequence.State.status)
         .set(SequenceState.Running.init) >>>
       (EngineState.sequenceStateIndex(seqObsId2) ^|-> Sequence.State.status)
@@ -266,7 +266,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
   }
 
   it should "not add sequence id if already in queue" in {
-    val s0 = (SeqexecEngine.loadSequenceEndo(seqObsId1, sequence(seqObsId1)) >>>
+    val s0 = (ODBSequencesLoader.loadSequenceEndo(seqObsId1, sequence(seqObsId1)) >>>
       (EngineState.queues ^|-? index(CalibrationQueueId) ^|-> ExecutionQueue.queue).modify(_ :+ seqObsId1))(EngineState.default)
 
     (for {
@@ -281,9 +281,9 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
 
   "SeqexecEngine addSequencesToQueue" should
     "add sequence ids to queue" in {
-    val s0 = (SeqexecEngine.loadSequenceEndo(seqObsId1, sequence(seqObsId1)) >>>
-      SeqexecEngine.loadSequenceEndo(seqObsId2, sequence(seqObsId2)) >>>
-      SeqexecEngine.loadSequenceEndo(seqObsId3, sequence(seqObsId3)))(EngineState.default)
+    val s0 = (ODBSequencesLoader.loadSequenceEndo(seqObsId1, sequence(seqObsId1)) >>>
+      ODBSequencesLoader.loadSequenceEndo(seqObsId2, sequence(seqObsId2)) >>>
+      ODBSequencesLoader.loadSequenceEndo(seqObsId3, sequence(seqObsId3)))(EngineState.default)
 
     (for {
       q <- async.boundedQueue[IO, executeEngine.EventType](10)
@@ -296,9 +296,9 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
   }
 
   it should "not add sequence id if sequence is running or completed" in {
-    val s0 = (SeqexecEngine.loadSequenceEndo(seqObsId1, sequence(seqObsId1)) >>>
-      SeqexecEngine.loadSequenceEndo(seqObsId2, sequence(seqObsId2)) >>>
-      SeqexecEngine.loadSequenceEndo(seqObsId3, sequence(seqObsId3)) >>>
+    val s0 = (ODBSequencesLoader.loadSequenceEndo(seqObsId1, sequence(seqObsId1)) >>>
+      ODBSequencesLoader.loadSequenceEndo(seqObsId2, sequence(seqObsId2)) >>>
+      ODBSequencesLoader.loadSequenceEndo(seqObsId3, sequence(seqObsId3)) >>>
       (EngineState.sequenceStateIndex(seqObsId1) ^|-> Sequence.State.status)
         .set(SequenceState.Running.init) >>>
       (EngineState.sequenceStateIndex(seqObsId2) ^|-> Sequence.State.status)
@@ -317,8 +317,8 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
   }
 
   it should "not add sequence id if already in queue" in {
-    val s0 = (SeqexecEngine.loadSequenceEndo(seqObsId1, sequence(seqObsId1)) >>>
-      SeqexecEngine.loadSequenceEndo(seqObsId2, sequence(seqObsId2)) >>>
+    val s0 = (ODBSequencesLoader.loadSequenceEndo(seqObsId1, sequence(seqObsId1)) >>>
+      ODBSequencesLoader.loadSequenceEndo(seqObsId2, sequence(seqObsId2)) >>>
       (EngineState.queues ^|-? index(CalibrationQueueId) ^|-> ExecutionQueue.queue).modify(_ :+ seqObsId1))(EngineState.default)
 
     (for {
@@ -333,9 +333,9 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
 
   "SeqexecEngine clearQueue" should
     "remove all sequences from queue" in {
-    val s0 = (SeqexecEngine.loadSequenceEndo(seqObsId1, sequence(seqObsId1)) >>>
-      SeqexecEngine.loadSequenceEndo(seqObsId2, sequence(seqObsId2)) >>>
-      SeqexecEngine.loadSequenceEndo(seqObsId3, sequence(seqObsId3)) >>>
+    val s0 = (ODBSequencesLoader.loadSequenceEndo(seqObsId1, sequence(seqObsId1)) >>>
+      ODBSequencesLoader.loadSequenceEndo(seqObsId2, sequence(seqObsId2)) >>>
+      ODBSequencesLoader.loadSequenceEndo(seqObsId3, sequence(seqObsId3)) >>>
       (EngineState.queues ^|-? index(CalibrationQueueId) ^|-> ExecutionQueue.queue).modify(_ ++ List(seqObsId1, seqObsId2, seqObsId3)))(EngineState.default)
 
     (for {
@@ -350,8 +350,8 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
 
   "SeqexecEngine removeSequenceFromQueue" should
     "remove sequence id from queue" in {
-    val s0 = (SeqexecEngine.loadSequenceEndo(seqObsId1, sequence(seqObsId1)) >>>
-      SeqexecEngine.loadSequenceEndo(seqObsId2, sequence(seqObsId2)) >>>
+    val s0 = (ODBSequencesLoader.loadSequenceEndo(seqObsId1, sequence(seqObsId1)) >>>
+      ODBSequencesLoader.loadSequenceEndo(seqObsId2, sequence(seqObsId2)) >>>
       (EngineState.queues ^|-? index(CalibrationQueueId) ^|-> ExecutionQueue.queue).modify(_ ++ List(seqObsId1, seqObsId2)))(EngineState.default)
 
     (for {
@@ -365,8 +365,8 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
   }
 
   it should "not remove sequence id if sequence is running" in {
-    val s0 = (SeqexecEngine.loadSequenceEndo(seqObsId1, sequence(seqObsId1)) >>>
-      SeqexecEngine.loadSequenceEndo(seqObsId2, sequence(seqObsId2)) >>>
+    val s0 = (ODBSequencesLoader.loadSequenceEndo(seqObsId1, sequence(seqObsId1)) >>>
+      ODBSequencesLoader.loadSequenceEndo(seqObsId2, sequence(seqObsId2)) >>>
       (EngineState.queues ^|-? index(CalibrationQueueId) ^|-> ExecutionQueue.queue).modify(_ ++ List(seqObsId1, seqObsId2)) >>>
       (EngineState.queues ^|-? index(CalibrationQueueId) ^|-> ExecutionQueue.cmdState).set(
         BatchCommandState.Run(Observer(""), UserDetails("", ""), clientId)) >>>
@@ -385,9 +385,9 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
 
   "SeqexecEngine moveSequenceInQueue" should
     "move sequence id inside queue" in {
-    val s0 = (SeqexecEngine.loadSequenceEndo(seqObsId1, sequence(seqObsId1)) >>>
-      SeqexecEngine.loadSequenceEndo(seqObsId2, sequence(seqObsId2)) >>>
-      SeqexecEngine.loadSequenceEndo(seqObsId3, sequence(seqObsId3)) >>>
+    val s0 = (ODBSequencesLoader.loadSequenceEndo(seqObsId1, sequence(seqObsId1)) >>>
+      ODBSequencesLoader.loadSequenceEndo(seqObsId2, sequence(seqObsId2)) >>>
+      ODBSequencesLoader.loadSequenceEndo(seqObsId3, sequence(seqObsId3)) >>>
       (EngineState.queues ^|-? index(CalibrationQueueId) ^|-> ExecutionQueue.queue).modify(_ ++ List(seqObsId1, seqObsId2, seqObsId3)))(EngineState.default)
 
     def testAdvance(obsId: Observation.Id, n: Int): Option[EngineState] =
@@ -430,11 +430,11 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
     assert(r.isEmpty)
   }
   it should "return only the first observation that uses a common resource" in {
-    val s0 = (SeqexecEngine.loadSequenceEndo(seqObsId1, sequenceWithResources(seqObsId1,
+    val s0 = (ODBSequencesLoader.loadSequenceEndo(seqObsId1, sequenceWithResources(seqObsId1,
         Instrument.F2, Set(Instrument.F2, TCS))) >>>
-      SeqexecEngine.loadSequenceEndo(seqObsId2, sequenceWithResources(seqObsId2,
+      ODBSequencesLoader.loadSequenceEndo(seqObsId2, sequenceWithResources(seqObsId2,
         Instrument.GmosS, Set(Instrument.GmosS, TCS))) >>>
-      SeqexecEngine.loadSequenceEndo(seqObsId3, sequenceWithResources(seqObsId3,
+      ODBSequencesLoader.loadSequenceEndo(seqObsId3, sequenceWithResources(seqObsId3,
         Instrument.Gsaoi, Set(Instrument.Gsaoi, TCS))) >>>
       (EngineState.queues ^|-? index(CalibrationQueueId) ^|-> ExecutionQueue.queue).set(
         List(seqObsId1, seqObsId2, seqObsId3)))(EngineState.default)
@@ -444,11 +444,11 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
     r shouldBe Set(seqObsId1)
   }
   it should "return all observations with disjointed resource sets" in {
-    val s0 = (SeqexecEngine.loadSequenceEndo(seqObsId1, sequenceWithResources(seqObsId1,
+    val s0 = (ODBSequencesLoader.loadSequenceEndo(seqObsId1, sequenceWithResources(seqObsId1,
       Instrument.F2, Set(Instrument.F2))) >>>
-      SeqexecEngine.loadSequenceEndo(seqObsId2, sequenceWithResources(seqObsId2,
+      ODBSequencesLoader.loadSequenceEndo(seqObsId2, sequenceWithResources(seqObsId2,
         Instrument.GmosS, Set(Instrument.GmosS))) >>>
-      SeqexecEngine.loadSequenceEndo(seqObsId3, sequenceWithResources(seqObsId3,
+      ODBSequencesLoader.loadSequenceEndo(seqObsId3, sequenceWithResources(seqObsId3,
         Instrument.Gsaoi, Set(Instrument.Gsaoi))) >>>
       (EngineState.queues ^|-? index(CalibrationQueueId) ^|-> ExecutionQueue.queue).set(
         List(seqObsId1, seqObsId2, seqObsId3)))(EngineState.default)
@@ -458,11 +458,11 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
     r shouldBe Set(seqObsId1, seqObsId2, seqObsId3)
   }
   it should "not return observations with resources in use" in {
-    val s0 = (SeqexecEngine.loadSequenceEndo(seqObsId1, sequenceWithResources(seqObsId1,
+    val s0 = (ODBSequencesLoader.loadSequenceEndo(seqObsId1, sequenceWithResources(seqObsId1,
         Instrument.F2, Set(Instrument.F2, TCS))) >>>
-      SeqexecEngine.loadSequenceEndo(seqObsId2, sequenceWithResources(seqObsId2,
+      ODBSequencesLoader.loadSequenceEndo(seqObsId2, sequenceWithResources(seqObsId2,
         Instrument.GmosS, Set(Instrument.GmosS, TCS))) >>>
-      SeqexecEngine.loadSequenceEndo(seqObsId3, sequenceWithResources(seqObsId3,
+      ODBSequencesLoader.loadSequenceEndo(seqObsId3, sequenceWithResources(seqObsId3,
         Instrument.F2, Set(Instrument.F2))) >>>
       (EngineState.queues ^|-? index(CalibrationQueueId) ^|-> ExecutionQueue.queue).set(
         List(seqObsId2, seqObsId3)) >>>
@@ -479,11 +479,11 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
 
   "SeqexecEngine startQueue" should "run sequences in queue" in {
     // seqObsId1 and seqObsId2 can be run immediately, but seqObsId3 must be run after seqObsId1
-    val s0 = (SeqexecEngine.loadSequenceEndo(seqObsId1, sequenceWithResources(seqObsId1,
+    val s0 = (ODBSequencesLoader.loadSequenceEndo(seqObsId1, sequenceWithResources(seqObsId1,
         Instrument.F2, Set(Instrument.F2))) >>>
-      SeqexecEngine.loadSequenceEndo(seqObsId2, sequenceWithResources(seqObsId2,
+      ODBSequencesLoader.loadSequenceEndo(seqObsId2, sequenceWithResources(seqObsId2,
         Instrument.GmosS, Set(Instrument.GmosS))) >>>
-      SeqexecEngine.loadSequenceEndo(seqObsId3, sequenceWithResources(seqObsId3,
+      ODBSequencesLoader.loadSequenceEndo(seqObsId3, sequenceWithResources(seqObsId3,
         Instrument.F2, Set(Instrument.F2))) >>>
       (EngineState.queues ^|-? index(CalibrationQueueId) ^|-> ExecutionQueue.queue).set(
         List(seqObsId1, seqObsId2, seqObsId3)))(EngineState.default)
@@ -501,11 +501,11 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
   it should "set observer for all sequences in queue" in {
     val observer = Observer("John Doe")
     // seqObsId1 and seqObsId2 can be run immediately, but seqObsId3 must be run after seqObsId1
-    val s0 = (SeqexecEngine.loadSequenceEndo(seqObsId1, sequenceWithResources(seqObsId1,
+    val s0 = (ODBSequencesLoader.loadSequenceEndo(seqObsId1, sequenceWithResources(seqObsId1,
         Instrument.F2, Set(Instrument.F2))) >>>
-      SeqexecEngine.loadSequenceEndo(seqObsId2, sequenceWithResources(seqObsId2,
+      ODBSequencesLoader.loadSequenceEndo(seqObsId2, sequenceWithResources(seqObsId2,
         Instrument.GmosS, Set(Instrument.GmosS))) >>>
-      SeqexecEngine.loadSequenceEndo(seqObsId3, sequenceWithResources(seqObsId3,
+      ODBSequencesLoader.loadSequenceEndo(seqObsId3, sequenceWithResources(seqObsId3,
         Instrument.F2, Set(Instrument.F2))) >>>
       (EngineState.queues ^|-? index(CalibrationQueueId) ^|-> ExecutionQueue.queue).set(
         List(seqObsId1, seqObsId2, seqObsId3)))(EngineState.default)
@@ -526,11 +526,11 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
 
   it should "load the sequences to the corresponding instruments" in {
     // seqObsId1 and seqObsId2 can be run immediately, but seqObsId3 must be run after seqObsId1
-    val s0 = (SeqexecEngine.loadSequenceEndo(seqObsId1, sequenceWithResources(seqObsId1,
+    val s0 = (ODBSequencesLoader.loadSequenceEndo(seqObsId1, sequenceWithResources(seqObsId1,
         Instrument.F2, Set(Instrument.F2))) >>>
-      SeqexecEngine.loadSequenceEndo(seqObsId2, sequenceWithResources(seqObsId2,
+      ODBSequencesLoader.loadSequenceEndo(seqObsId2, sequenceWithResources(seqObsId2,
         Instrument.GmosS, Set(Instrument.GmosS))) >>>
-      SeqexecEngine.loadSequenceEndo(seqObsId3, sequenceWithResources(seqObsId3,
+      ODBSequencesLoader.loadSequenceEndo(seqObsId3, sequenceWithResources(seqObsId3,
         Instrument.F2, Set(Instrument.F2))) >>>
       (EngineState.queues ^|-? index(CalibrationQueueId) ^|-> ExecutionQueue.queue).set(
         List(seqObsId1, seqObsId2, seqObsId3)))(EngineState.default)
@@ -547,11 +547,11 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
 
   "SeqexecEngine stopQueue" should "stop running the sequences in the queue" in {
     // seqObsId1 and seqObsId2 will be run immediately, but seqObsId3 must be run after seqObsId1, and is the only one that will not run because of the stopQueue
-    val s0 = (SeqexecEngine.loadSequenceEndo(seqObsId1, sequenceWithResources(seqObsId1,
+    val s0 = (ODBSequencesLoader.loadSequenceEndo(seqObsId1, sequenceWithResources(seqObsId1,
         Instrument.F2, Set(Instrument.F2))) >>>
-      SeqexecEngine.loadSequenceEndo(seqObsId2, sequenceWithResources(seqObsId2,
+      ODBSequencesLoader.loadSequenceEndo(seqObsId2, sequenceWithResources(seqObsId2,
         Instrument.GmosS, Set(Instrument.GmosS))) >>>
-      SeqexecEngine.loadSequenceEndo(seqObsId3, sequenceWithResources(seqObsId3,
+      ODBSequencesLoader.loadSequenceEndo(seqObsId3, sequenceWithResources(seqObsId3,
         Instrument.F2, Set(Instrument.F2))) >>>
       (EngineState.queues ^|-? index(CalibrationQueueId) ^|-> ExecutionQueue.queue).set(
         List(seqObsId1, seqObsId2, seqObsId3)))(EngineState.default)
@@ -568,11 +568,11 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
   }
 
   "SeqexecEngine start sequence" should "not run sequence if running queue needs the same resources" in {
-    val s0 = (SeqexecEngine.loadSequenceEndo(seqObsId1, sequenceWithResources(seqObsId1,
+    val s0 = (ODBSequencesLoader.loadSequenceEndo(seqObsId1, sequenceWithResources(seqObsId1,
         Instrument.F2, Set(Instrument.F2))) >>>
-      SeqexecEngine.loadSequenceEndo(seqObsId2, sequenceWithResources(seqObsId2,
+      ODBSequencesLoader.loadSequenceEndo(seqObsId2, sequenceWithResources(seqObsId2,
         Instrument.GmosS, Set(Instrument.GmosS))) >>>
-      SeqexecEngine.loadSequenceEndo(seqObsId3, sequenceWithResources(seqObsId3,
+      ODBSequencesLoader.loadSequenceEndo(seqObsId3, sequenceWithResources(seqObsId3,
         Instrument.F2, Set(Instrument.F2))) >>>
       (EngineState.queues ^|-? index(CalibrationQueueId)).modify(x => x.copy(cmdState =
         BatchCommandState.Run(Observer(""), UserDetails("", ""), clientId), queue = List(seqObsId1,
@@ -655,7 +655,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
 
   "SeqexecEngine setObserver" should "set observer's name" in {
     val observer = Observer("Joe")
-    val s0 = SeqexecEngine.loadSequenceEndo(seqObsId1, sequence(seqObsId1))(EngineState.default)
+    val s0 = ODBSequencesLoader.loadSequenceEndo(seqObsId1, sequence(seqObsId1))(EngineState.default)
     (for {
       q <- async.boundedQueue[IO, executeEngine.EventType](10)
       sf <- advanceN(q, s0, seqexecEngine.setObserver(q, seqObsId1, UserDetails("", ""), observer), 2)
@@ -667,9 +667,9 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
   }
 
   "SeqexecEngine" should "not run 2nd sequence because it's using the same resource" in {
-    val s0 = (SeqexecEngine.loadSequenceEndo(seqObsId1, sequenceWithResources(seqObsId1,
+    val s0 = (ODBSequencesLoader.loadSequenceEndo(seqObsId1, sequenceWithResources(seqObsId1,
         Instrument.F2, Set(Instrument.F2, TCS))) >>>
-      SeqexecEngine.loadSequenceEndo(seqObsId2, sequenceWithResources(seqObsId2,
+      ODBSequencesLoader.loadSequenceEndo(seqObsId2, sequenceWithResources(seqObsId2,
         Instrument.F2, Set(Instrument.F2))) >>>
       (EngineState.sequenceStateIndex(seqObsId1) ^|-> Sequence.State.status).set(
         SequenceState.Running.init))(EngineState.default)
@@ -686,9 +686,9 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
   }
 
   it should "run 2nd sequence when there are no shared resources" in {
-    val s0 = (SeqexecEngine.loadSequenceEndo(seqObsId1, sequenceWithResources(seqObsId1,
+    val s0 = (ODBSequencesLoader.loadSequenceEndo(seqObsId1, sequenceWithResources(seqObsId1,
         Instrument.F2, Set(Instrument.F2, TCS))) >>>
-      SeqexecEngine.loadSequenceEndo(seqObsId2, sequenceWithResources(seqObsId2,
+      ODBSequencesLoader.loadSequenceEndo(seqObsId2, sequenceWithResources(seqObsId2,
         Instrument.GmosS, Set(Instrument.GmosS))) >>>
       (EngineState.sequenceStateIndex(seqObsId1) ^|-> Sequence.State.status).set(
         SequenceState.Running.init))(EngineState.default)
@@ -704,7 +704,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
   }
 
   "SeqexecEngine configSystem" should "run a system configuration" in {
-    val s0 = SeqexecEngine.loadSequenceEndo(seqObsId1, sequenceWithResources(seqObsId1,
+    val s0 = ODBSequencesLoader.loadSequenceEndo(seqObsId1, sequenceWithResources(seqObsId1,
       Instrument.F2, Set(Instrument.F2, TCS)))(EngineState.default)
 
     (for {
@@ -720,7 +720,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
   }
 
   it should "not run a system configuration if sequence is running" in {
-    val s0 = (SeqexecEngine.loadSequenceEndo(seqObsId1, sequenceWithResources(seqObsId1,
+    val s0 = (ODBSequencesLoader.loadSequenceEndo(seqObsId1, sequenceWithResources(seqObsId1,
         Instrument.F2, Set(Instrument.F2, TCS))) >>>
       (EngineState.sequenceStateIndex(seqObsId1) ^|-> Sequence.State.status).set(
         SequenceState.Running.init))(EngineState.default)
@@ -738,9 +738,9 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
   }
 
   it should "not run a system configuration if system is in use" in {
-    val s0 = (SeqexecEngine.loadSequenceEndo(seqObsId1, sequenceWithResources(seqObsId1,
+    val s0 = (ODBSequencesLoader.loadSequenceEndo(seqObsId1, sequenceWithResources(seqObsId1,
         Instrument.F2, Set(Instrument.F2, TCS))) >>>
-      SeqexecEngine.loadSequenceEndo(seqObsId2, sequenceWithResources(seqObsId2,
+      ODBSequencesLoader.loadSequenceEndo(seqObsId2, sequenceWithResources(seqObsId2,
         Instrument.F2, Set(Instrument.F2))) >>>
       (EngineState.sequenceStateIndex(seqObsId1) ^|-> Sequence.State.status).set(
         SequenceState.Running.init))(EngineState.default)
@@ -758,9 +758,9 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
   }
 
   it should "run a system configuration when other sequence is running with other systems" in {
-    val s0 = (SeqexecEngine.loadSequenceEndo(seqObsId1, sequenceWithResources(seqObsId1,
+    val s0 = (ODBSequencesLoader.loadSequenceEndo(seqObsId1, sequenceWithResources(seqObsId1,
         Instrument.F2, Set(Instrument.GmosS, TCS))) >>>
-      SeqexecEngine.loadSequenceEndo(seqObsId2, sequenceWithResources(seqObsId2,
+      ODBSequencesLoader.loadSequenceEndo(seqObsId2, sequenceWithResources(seqObsId2,
         Instrument.F2, Set(Instrument.F2))) >>>
       (EngineState.sequenceStateIndex(seqObsId1) ^|-> Sequence.State.status).set(
         SequenceState.Running.init))(EngineState.default)
