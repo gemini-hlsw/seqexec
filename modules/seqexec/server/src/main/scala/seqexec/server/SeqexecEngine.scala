@@ -39,7 +39,8 @@ import seqexec.server.gws.GwsEpics
 import seqexec.server.tcs.{TcsControllerEpics, TcsControllerSim, TcsEpics}
 import edu.gemini.seqexec.odb.SmartGcal
 import edu.gemini.spModel.core.Peer
-import fs2.{Scheduler, Stream}
+import fs2.Scheduler
+import fs2.Stream
 import org.http4s.client.Client
 import org.http4s.Uri
 import knobs.Config
@@ -55,9 +56,9 @@ import shapeless.tag
 class SeqexecEngine(httpClient: Client[IO], settings: Settings[IO], sm: SeqexecMetrics) {
   import SeqexecEngine._
 
-  val odbProxy: OdbProxy = new OdbProxy(new Peer(settings.odbHost, 8443, null),
-    if (settings.odbNotifications) OdbProxy.OdbCommandsImpl(new Peer(settings.odbHost, 8442, null))
-    else OdbProxy.DummyOdbCommands)
+  val odbProxy: OdbProxy[IO] = new OdbProxy[IO](new Peer(settings.odbHost, 8443, null),
+    if (settings.odbNotifications) OdbProxy.OdbCommandsImpl[IO](new Peer(settings.odbHost, 8442, null))
+    else new OdbProxy.DummyOdbCommands[IO])
 
   val gpiGDS: GdsClient = GdsClient(settings.gpiGdsControl.command.fold(httpClient, GdsClient.alwaysOkClient), settings.gpiGDS)
 
@@ -92,7 +93,7 @@ class SeqexecEngine(httpClient: Client[IO], settings: Settings[IO], sm: SeqexecM
   private val odbLoader = new ODBSequencesLoader(odbProxy, translator)
 
   def load(q: EventQueue, seqId: Observation.Id): IO[Either[SeqexecFailure, Unit]] =
-    q.enqueue(Stream.emits(odbLoader.loadEvents[IO](seqId))).map(_.asRight).compile.last.attempt.map(_.bimap(SeqexecFailure.SeqexecException.apply, _ => ()))
+    q.enqueue(Stream.emits(odbLoader.loadEvents(seqId))).map(_.asRight).compile.last.attempt.map(_.bimap(SeqexecFailure.SeqexecException.apply, _ => ()))
 
   // TODO: this is too much guessing. We should have proper tracking of systems' state.
   def failedInstruments(st: EngineState): Set[Resource] = st.sequences.values.toList.mapFilter(s =>
@@ -195,9 +196,10 @@ class SeqexecEngine(httpClient: Client[IO], settings: Settings[IO], sm: SeqexecM
   def seqQueueRefreshStream: Stream[IO, executeEngine.EventType] =
     Scheduler[IO](corePoolSize = 1).flatMap { scheduler =>
       val fd = Duration(settings.odbQueuePollingInterval.toSeconds, TimeUnit.SECONDS)
-      scheduler.fixedDelay[IO](fd).evalMap(_ => odbProxy.queuedSequences.value).map { x =>
+      scheduler.fixedDelay[IO](fd).evalMap(_ =>
+        odbProxy.queuedSequences.value).map { x =>
         Event.getState[executeEngine.ConcreteTypes](st =>
-          x.map(odbLoader.refreshSequenceList[IO](_)(st)).valueOr(r =>
+          x.map(odbLoader.refreshSequenceList(_)(st)).valueOr(r =>
             List(Event.logWarningMsg(SeqexecFailure.explain(r)))
           ).some.filter(_.nonEmpty).map(Stream.emits(_).covary[IO])
         )
