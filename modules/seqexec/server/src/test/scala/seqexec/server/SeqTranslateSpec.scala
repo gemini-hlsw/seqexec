@@ -55,7 +55,7 @@ class SeqTranslateSpec extends FlatSpec {
     ))
   )
 
-  private val baseState: EngineState = (SeqexecEngine.loadSequenceEndo(seqId, seqg) >>>
+  private val baseState: EngineState = (ODBSequencesLoader.loadSequenceEndo(seqId, seqg) >>>
     (EngineState.sequenceStateIndex(seqId) ^|-> Sequence.State.status).set(
       SequenceState.Running.init))(EngineState.default)
 
