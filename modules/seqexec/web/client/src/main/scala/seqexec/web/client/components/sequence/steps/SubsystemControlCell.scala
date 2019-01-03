@@ -74,7 +74,7 @@ object SubsystemControlCell {
                 icon = p.resourcesCalls
                   .get(r)
                   .filter(_ === ResourceRunOperation.ResourceRunInFlight)
-                  .map(_ => RunningIcon),
+                  .as(RunningIcon),
                 onClickE = requestResourceCall(p.id, p.stepId, r) _
               ),
               r.show

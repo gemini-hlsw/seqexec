@@ -59,7 +59,7 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
   val soundCheck: PartialFunction[Any, ActionResult[M]] = {
     case RequestSoundEcho =>
       val soundEffect = Effect(
-        Future(SequenceCompleteAudio.play()).map(_ => NoAction))
+        Future(SequenceCompleteAudio.play()).as(NoAction))
       effectOnly(soundEffect)
   }
 
@@ -71,8 +71,7 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
   val connectionOpenMessage: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(ConnectionOpenEvent(u, c)) =>
       // After connected to the Websocket request a refresh
-      val refreshRequestE = Effect(
-        SeqexecWebClient.refresh(c).map(_ => NoAction))
+      val refreshRequestE = Effect(SeqexecWebClient.refresh(c).as(NoAction))
       // This is a hack
       val calQueueObserverE = u
         .map(m => Effect(Future(UpdateCalTabObserver(Observer(m.displayName)))))
@@ -101,7 +100,7 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
       val audioEffect = curStep
         .filter(ifLoggedIn)
         .fold(VoidEffect)(_ =>
-          Effect(Future(StepBeepAudio.play()).map(_ => NoAction)))
+          Effect(Future(StepBeepAudio.play()).as(NoAction)))
       updated(value.copy(sequences = filterSequences(sv)), audioEffect)
   }
 
@@ -110,7 +109,7 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
       // Play audio when the sequence completes
       val audioEffect =
         if (loggedIn)
-          Effect(Future(SequenceCompleteAudio.play()).map(_ => NoAction))
+          Effect(Future(SequenceCompleteAudio.play()).as(NoAction))
         else VoidEffect
       updated(value.copy(sequences = filterSequences(sv)), audioEffect)
   }
@@ -127,7 +126,7 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
       // Play audio when the sequence gets into an error state
       val audioEffect =
         if (loggedIn)
-          Effect(Future(SequenceErrorAudio.play()).map(_ => NoAction))
+          Effect(Future(SequenceErrorAudio.play()).as(NoAction))
         else VoidEffect
       updated(value.copy(sequences = filterSequences(sv)), audioEffect)
   }
@@ -137,7 +136,7 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
       // Play audio when the sequence gets paused
       val audioEffect =
         if (loggedIn)
-          Effect(Future(SequencePausedAudio.play()).map(_ => NoAction))
+          Effect(Future(SequencePausedAudio.play()).as(NoAction))
         else VoidEffect
       updated(value.copy(sequences = filterSequences(sv)), audioEffect)
   }
@@ -147,7 +146,7 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
       // Play audio when the sequence gets paused
       val audioEffect =
         if (loggedIn)
-          Effect(Future(ExposurePausedAudio.play()).map(_ => NoAction))
+          Effect(Future(ExposurePausedAudio.play()).as(NoAction))
         else VoidEffect
       updated(value.copy(sequences = filterSequences(sv)), audioEffect)
   }

@@ -25,25 +25,31 @@ class SequenceExecutionHandler[M](
     with Handlers[M, SequencesQueue[SequenceView]] {
   def handleUpdateObserver: PartialFunction[Any, ActionResult[M]] = {
     case UpdateObserver(sequenceId, name) =>
-      val updateObserverE = Effect(SeqexecWebClient.setObserver(sequenceId, name.value).map(_ => NoAction))
-      val updatedSequences = value.copy(sessionQueue = value.sessionQueue.collect {
-        case s if s.id === sequenceId =>
-          s.copy(metadata = s.metadata.copy(observer = Some(name)))
-        case s                        => s
-      })
+      val updateObserverE = Effect(
+        SeqexecWebClient.setObserver(sequenceId, name.value).as(NoAction))
+      val updatedSequences =
+        value.copy(sessionQueue = value.sessionQueue.collect {
+          case s if s.id === sequenceId =>
+            s.copy(metadata = s.metadata.copy(observer = Some(name)))
+          case s => s
+        })
       updated(updatedSequences, updateObserverE)
   }
 
   def handleFlipSkipBreakpoint: PartialFunction[Any, ActionResult[M]] = {
     case FlipSkipStep(sequenceId, step) =>
-      val skipRequest = Effect(SeqexecWebClient.skip(sequenceId, step.flipSkip).map(_ => NoAction))
+      val skipRequest = Effect(
+        SeqexecWebClient.skip(sequenceId, step.flipSkip).as(NoAction))
       updated(value.copy(sessionQueue = value.sessionQueue.collect {
         case s if s.id === sequenceId => s.flipSkipMarkAtStep(step)
         case s                        => s
       }), skipRequest)
 
     case FlipBreakpointStep(sequenceId, step) =>
-      val breakpointRequest = Effect(SeqexecWebClient.breakpoint(sequenceId, step.flipBreakpoint).map(_ => NoAction))
+      val breakpointRequest = Effect(
+        SeqexecWebClient
+          .breakpoint(sequenceId, step.flipBreakpoint)
+          .as(NoAction))
       updated(value.copy(sessionQueue = value.sessionQueue.collect {
         case s if s.id === sequenceId => s.flipBreakpointAtStep(step)
         case s                        => s
