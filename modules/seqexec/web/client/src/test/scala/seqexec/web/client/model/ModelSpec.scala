@@ -43,6 +43,7 @@ final class ModelSpec extends CatsSuite with ArbitrariesWebClient {
   checkAll("Eq[SectionVisibilityState]", EqTests[SectionVisibilityState].eqv)
   checkAll("Eq[TableState[StepConfigTable.TableColumn]", EqTests[TableState[StepConfigTable.TableColumn]].eqv)
   checkAll("Eq[TableState[SessionQueueTable.TableColumn]", EqTests[TableState[SessionQueueTable.TableColumn]].eqv)
+  checkAll("Eq[SoundSelection]", EqTests[SoundSelection].eqv)
   // checkAll("Eq[SeqexecUIModel]", EqTests[SeqexecUIModel].eqv)
   checkAll("Eq[RunOperation]", EqTests[RunOperation].eqv)
   checkAll("Eq[SyncOperation]", EqTests[SyncOperation].eqv)

@@ -109,8 +109,7 @@ object StepsTable {
 
   final case class Props(router:      RouterCtl[SeqexecPages],
                          canOperate:  Boolean,
-                         stepsTable:  StepsTableAndStatusFocus,
-                         onStepToRun: Int => Callback) {
+                         stepsTable:  StepsTableAndStatusFocus) {
     val status: ClientStatus                        = stepsTable.status
     val steps: Option[StepsTableFocus]              = stepsTable.stepsTable
     val obsId: Option[Observation.Id]               = steps.map(_.id)

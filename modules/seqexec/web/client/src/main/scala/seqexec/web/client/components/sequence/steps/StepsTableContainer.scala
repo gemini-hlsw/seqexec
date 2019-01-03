@@ -5,13 +5,10 @@ package seqexec.web.client.components.sequence.steps
 
 import diode.react.ReactConnectProxy
 import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.CallbackTo
-import japgolly.scalajs.react.CatsReact
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.extra.Reusability
 import japgolly.scalajs.react.extra.router.RouterCtl
-import japgolly.scalajs.react.CatsReact._
 import seqexec.web.client.components.sequence.toolbars.SequenceDefaultToolbar
 import seqexec.web.client.components.sequence.toolbars.StepConfigToolbar
 import seqexec.web.client.circuit._
@@ -25,15 +22,8 @@ object StepsTableContainer {
       SeqexecCircuit.connect(
         SeqexecCircuit.stepsTableReader(statusAndStep.obsId))
   }
-  final case class State(nextStepToRun: Int)
 
   implicit val propsReuse: Reusability[Props] = Reusability.by(_.statusAndStep)
-  implicit val stateReuse: Reusability[State] = Reusability.derive[State]
-
-  private val ST = ReactS.Fix[State]
-
-  def updateStepToRun(step: Int): CatsReact.ReactST[CallbackTo, State, Unit] =
-    ST.set(State(step)).liftCB
 
   def toolbar(p: Props): VdomElement = {
     val canOperate          = p.statusAndStep.canOperate
@@ -60,8 +50,8 @@ object StepsTableContainer {
 
   private val component = ScalaComponent
     .builder[Props]("StepsTableContainer")
-    .initialState(State(0))
-    .renderP { ($, p) =>
+    .stateless
+    .render_P { p =>
       <.div(
         ^.height := "100%",
         toolbar(p),
@@ -70,13 +60,12 @@ object StepsTableContainer {
             StepsTable(
               StepsTable.Props(p.router,
                                p.statusAndStep.canOperate,
-                               r(),
-                               x => $.runState(updateStepToRun(x)))))
+                               r())))
       )
     }
     .configure(Reusability.shouldComponentUpdate)
     .build
 
-  def apply(p: Props): Unmounted[Props, State, Unit] =
+  def apply(p: Props): Unmounted[Props, Unit, Unit] =
     component(p)
 }
