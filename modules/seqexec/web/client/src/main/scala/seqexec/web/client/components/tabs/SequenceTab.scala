@@ -11,11 +11,14 @@ import japgolly.scalajs.react.component.builder.Lifecycle.RenderScope
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.extra.Reusability
 import japgolly.scalajs.react._
-import seqexec.model.{ Observer, SequenceState }
+import seqexec.model.Observer
+import seqexec.model.SequenceState
 import seqexec.model.enum.Instrument
 import seqexec.web.client.actions.LoadSequence
 import seqexec.web.client.model.Pages._
-import seqexec.web.client.model.{ AvailableTab, RunningStep, TabSelected }
+import seqexec.web.client.model.AvailableTab
+import seqexec.web.client.model.RunningStep
+import seqexec.web.client.model.TabSelected
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.semanticui._
 import seqexec.web.client.semanticui.elements.icon.Icon._
@@ -60,8 +63,8 @@ object SequenceTab {
     val active     = p.tab.active
     val isPreview  = p.tab.isPreview
     val instrument = p.tab.instrument
-    val dataId     = if (isPreview) "preview" else instrument.foldMap(_.show)
-    val hasError   = p.tab.status.exists(_.isError)
+    val dataId     = if (isPreview) "preview" else instrument.show
+    val hasError   = p.tab.status.isError
 
     <.a(
       ^.href := p.router.urlFor(page).value,
@@ -87,9 +90,9 @@ object SequenceTab {
       val status     = b.props.tab.status
       val sequenceId = b.props.tab.id
       val instrument = b.props.tab.instrument
-      val running    = instrument.exists(b.props.runningInstruments.contains)
+      val running    = b.props.runningInstruments.contains(instrument)
       val isPreview  = b.props.tab.isPreview
-      val instName   = instrument.foldMap(_.show)
+      val instName   = instrument.show
       val dispName   = if (isPreview) s"Preview: $instName" else instName
       val isLogged   = b.props.loggedIn
       val nextStepToRun =
@@ -97,60 +100,54 @@ object SequenceTab {
 
       val tabTitle = b.props.tab.runningStep match {
         case Some(RunningStep(current, total)) =>
-          s"${sequenceId.map(_.format).getOrElse("")} - ${current + 1}/$total"
-        case _                                 =>
-          sequenceId.map(_.format).getOrElse("Empty")
+          s"${sequenceId.format} - ${current + 1}/$total"
+        case _ =>
+          sequenceId.format
       }
 
-      val icon = status.flatMap {
+      val icon = status match {
         case SequenceState.Running(_, _) =>
-          IconCircleNotched.copyIcon(loading = true).some
-        case SequenceState.Completed     => IconCheckmark.some
-        case _                           => IconSelectedRadio.some
+          IconCircleNotched.copyIcon(loading = true)
+        case SequenceState.Completed => IconCheckmark
+        case _                       => IconSelectedRadio
       }
 
-      val color = status.flatMap {
-        case SequenceState.Running(_, _) => "orange".some
-        case SequenceState.Completed     => "green".some
-        case _                           => "grey".some
+      val color = status match {
+        case SequenceState.Running(_, _) => "orange"
+        case SequenceState.Completed     => "green"
+        case _                           => "grey"
       }
 
       val linkPage: SeqexecPages =
-        (sequenceId, instrument)
-          .mapN((id, inst) =>
-            if (isPreview) {
-              PreviewPage(inst, id, nextStepToRun)
-            } else {
-              SequencePage(inst, id, nextStepToRun)
-          })
-          .getOrElse(CalibrationQueuePage)
+        if (isPreview) {
+          PreviewPage(instrument, sequenceId, nextStepToRun)
+        } else {
+          SequencePage(instrument, sequenceId, nextStepToRun)
+        }
 
-      val loadButton: Option[VdomNode] =
-        (sequenceId, instrument)
-          .mapN((id, inst) =>
-            Popup(
-              Popup.Props("button", s"Load sequence ${id.format}"),
-              Button(
-                Button.Props(
-                  size     = Size.Large,
-                  compact  = true,
-                  icon     = Some(IconUpload),
-                  color    = "teal".some,
-                  disabled = b.state.loading || running,
-                  loading  = b.state.loading,
-                  onClickE = load(b, inst, id) _
-                )
-              )
-            ): VdomNode)
-          .filter(_ => isPreview && isLogged)
+      val loadButton: TagMod =
+        (Popup(
+          Popup.Props("button", s"Load sequence ${sequenceId.format}"),
+          Button(
+            Button.Props(
+              size     = Size.Large,
+              compact  = true,
+              icon     = Some(IconUpload),
+              color    = "teal".some,
+              disabled = b.state.loading || running,
+              loading  = b.state.loading,
+              onClickE = load(b, instrument, sequenceId) _
+            )
+          )
+        ): VdomNode).when(isPreview && isLogged)
 
       val instrumentWithId =
         React.Fragment(
           <.div(SeqexecStyles.activeInstrumentLabel, dispName),
           Label(
             Label.Props(tabTitle,
-                        color       = color,
-                        icon        = icon,
+                        color       = color.some,
+                        icon        = icon.some,
                         extraStyles = List(SeqexecStyles.labelPointer)))
         )
 
@@ -162,9 +159,8 @@ object SequenceTab {
 
       val previewTabContent: VdomNode =
         <.div(
-          SeqexecStyles.previewTabLabel.when(isLogged && sequenceId.isDefined),
+          SeqexecStyles.previewTabLabel.when(isLogged),
           SeqexecStyles.tabLabel.unless(isLogged),
-          SeqexecStyles.tabLabel.when(sequenceId.isEmpty),
           <.div(
             SeqexecStyles.previewTabId,
             instrumentWithId

@@ -32,10 +32,8 @@ object SequenceTabContent {
 
   final case class Props(router: RouterCtl[SeqexecPages],
                          p:      SequenceTabContentFocus) {
-    val sequenceSelected: Boolean = p.id.isDefined
-    val statusConnect: Option[ReactConnectProxy[Option[StatusAndStepFocus]]] =
-      p.id.map(i =>
-        SeqexecCircuit.connect(SeqexecCircuit.statusAndStepReader(i)))
+    val tableTypeConnect: ReactConnectProxy[Option[StepsTableTypeSelection]] =
+      SeqexecCircuit.connect(SeqexecCircuit.stepsTableType(p.id))
   }
 
   implicit val stcfReuse: Reusability[SequenceTabContentFocus] =
@@ -49,46 +47,32 @@ object SequenceTabContent {
       val SequenceTabContentFocus(isLogged,
                                   instrument,
                                   _,
-                                  _,
+                                  // _,
                                   active,
                                   logDisplayed) = p.p
-      val content = p.statusConnect
-        .map { x =>
-          x { st =>
-            st()
-              .map(s =>
-                StepsTableContainer(StepsTableContainer.Props(p.router, s)): VdomElement)
-              .getOrElse(defaultContent)
-          }
-        }
-        .getOrElse {
-          defaultContent
-        }
+      val content = p.tableTypeConnect { st =>
+        st()
+          .map(s =>
+            StepsTableContainer(StepsTableContainer.Props(p.router, s)): VdomElement)
+          .getOrElse(defaultContent)
+      }
 
       <.div(
         ^.cls := "ui attached secondary segment tab",
         ^.classSet(
           "active" -> (active === TabSelected.Selected)
         ),
-        dataTab := instrument.foldMap(_.show),
-        SeqexecStyles.emptyInstrumentTab.unless(p.sequenceSelected),
-        SeqexecStyles.emptyInstrumentTabLogShown
-          .when(!p.sequenceSelected && logDisplayed === SectionOpen),
-        SeqexecStyles.emptyInstrumentTabLogHidden
-          .when(!p.sequenceSelected && logDisplayed === SectionClosed),
-        SeqexecStyles.tabSegment.when(p.sequenceSelected && isLogged),
+        dataTab := instrument.show,
+        SeqexecStyles.tabSegment.when(isLogged),
         SeqexecStyles.tabSegmentLogShown
-          .when(p.sequenceSelected && isLogged && logDisplayed === SectionOpen),
+          .when(isLogged && logDisplayed === SectionOpen),
         SeqexecStyles.tabSegmentLogHidden
-          .when(
-            p.sequenceSelected && isLogged && logDisplayed === SectionClosed),
-        SeqexecStyles.tabSegmentUnauth.when(p.sequenceSelected && !isLogged),
+          .when(isLogged && logDisplayed === SectionClosed),
+        SeqexecStyles.tabSegmentUnauth.when(!isLogged),
         SeqexecStyles.tabSegmentLogShownUnauth
-          .when(
-            p.sequenceSelected && !isLogged && logDisplayed === SectionOpen),
+          .when(!isLogged && logDisplayed === SectionOpen),
         SeqexecStyles.tabSegmentLogHiddenUnauth
-          .when(
-            p.sequenceSelected && !isLogged && logDisplayed === SectionClosed),
+          .when(!isLogged && logDisplayed === SectionClosed),
         content
       )
     }

@@ -113,8 +113,8 @@ package circuit {
   }
 
   final case class SequenceInfoFocus(canOperate: Boolean,
-                                     obsName:    Option[String],
-                                     status:     Option[SequenceState],
+                                     obsName:    String,
+                                     status:     SequenceState,
                                      targetName: Option[TargetName])
 
   object SequenceInfoFocus {
@@ -130,10 +130,10 @@ package circuit {
       ClientStatus.canOperateG.zip(getter) >>> {
         case (status, Some(SeqexecTabActive(tab, _))) =>
           val targetName =
-            tab.sequence.flatMap(firstScienceStepTargetNameT.headOption)
+            firstScienceStepTargetNameT.headOption(tab.sequence)
           SequenceInfoFocus(status,
-                            tab.sequence.map(_.metadata.name),
-                            tab.sequence.map(_.status),
+                            tab.sequence.metadata.name,
+                            tab.sequence.status,
                             targetName).some
         case _ => none
       }
@@ -166,16 +166,14 @@ package circuit {
           SequencesOnDisplay.tabG(id))
       ClientStatus.canOperateG.zip(getter) >>> {
         case (canOperate, st) =>
-          st.flatMap {
+          st.map {
             case SeqexecTabActive(tab, _) =>
-              tab.sequence.map { t =>
-                StatusAndStepFocus(canOperate,
-                                   t.metadata.instrument,
-                                   t.id,
-                                   tab.stepConfigDisplayed,
-                                   t.steps.length,
-                                   tab.isPreview)
-              }
+              StatusAndStepFocus(canOperate,
+                                 tab.sequence.metadata.instrument,
+                                 tab.obsId,
+                                 tab.stepConfigDisplayed,
+                                 tab.sequence.steps.length,
+                                 tab.isPreview)
           }
       }
     }
@@ -199,21 +197,19 @@ package circuit {
            x.status,
            x.tabOperations))
 
-    val controlModelG: Getter[SequenceTab, Option[ControlModel]] =
-      Getter[SequenceTab, Option[ControlModel]](
+    val controlModelG: Getter[SequenceTab, ControlModel] =
+      Getter[SequenceTab, ControlModel](
         t =>
-          t.sequence.map(
-            s =>
-              ControlModel(s.id,
-                           s.isPartiallyExecuted,
-                           s.nextStepToRun,
-                           s.status,
-                           t.tabOperations)))
+          ControlModel(t.obsId,
+                       t.sequence.isPartiallyExecuted,
+                       t.sequence.nextStepToRun,
+                       t.sequence.status,
+                       t.tabOperations))
   }
 
   @Lenses
   final case class SequenceControlFocus(canOperate: Boolean,
-                                        control:    Option[ControlModel])
+                                        control:    ControlModel)
 
   @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object SequenceControlFocus {

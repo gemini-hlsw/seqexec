@@ -149,6 +149,11 @@ object SeqexecCircuit
   ): ModelR[SeqexecAppRootModel, StepsTableAndStatusFocus] =
     this.zoomG(StepsTableAndStatusFocus.stepsTableAndStatusFocusG(id))
 
+  def stepsTableType(
+    id: Observation.Id
+  ): ModelR[SeqexecAppRootModel, Option[StepsTableTypeSelection]] =
+    this.zoomG(StepsTableTypeSelection.stepsTableTypeG(id))
+
   def sequenceControlReader(
     id: Observation.Id
   ): ModelR[SeqexecAppRootModel, Option[SequenceControlFocus]] =

@@ -35,8 +35,8 @@ object TabContentFocus {
         case (tab: SequenceTab, active) =>
           SequenceTabContentFocus(o,
                                   tab.instrument,
-                                  tab.sequence.map(_.id),
-                                  tab.isComplete,
+                                  tab.sequence.id,
+                                  // tab.isComplete,
                                   TabSelected.fromBoolean(active),
                                   log)
         case (_: CalibrationQueueTab, active) =>
@@ -47,17 +47,15 @@ object TabContentFocus {
 }
 
 final case class SequenceTabContentFocus(canOperate:   Boolean,
-                                         instrument:   Option[Instrument],
-                                         id:           Option[Observation.Id],
-                                         completed:    Boolean,
+                                         instrument:   Instrument,
+                                         id:           Observation.Id,
                                          active:       TabSelected,
                                          logDisplayed: SectionVisibilityState)
     extends TabContentFocus
 
 object SequenceTabContentFocus {
   implicit val eq: Eq[SequenceTabContentFocus] =
-    Eq.by(x =>
-      (x.canOperate, x.instrument, x.id, x.completed, x.active, x.logDisplayed))
+    Eq.by(x => (x.canOperate, x.instrument, x.id, x.active, x.logDisplayed))
 }
 
 final case class CalQueueTabContentFocus(canOperate:   Boolean,

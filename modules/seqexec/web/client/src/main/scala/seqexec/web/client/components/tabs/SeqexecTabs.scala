@@ -28,21 +28,27 @@ object SeqexecTabs {
     .stateless
     .render_P(p =>
       tabConnect { x =>
-        val runningInstruments = x().tabs.toList.collect {
+        val tabsL = x().tabs.toList
+        val runningInstruments = tabsL.collect {
           case Right(
-              AvailableTab(_, Some(SequenceState.Running(_, _)), Some(i), _, _, false, _, _)) =>
+              AvailableTab(_, SequenceState.Running(_, _), i, _, _, false, _, _)) =>
             i
         }
-        val tabs = x().tabs.toList
+        val tabs = tabsL
           .sortBy {
-            case Left(_)                 => Int.MinValue.some
-            case Right(t) if t.isPreview => (Int.MinValue + 1).some
-            case Right(t)                => t.instrument.map(_.ordinal)
+            case Left(_)                 => Int.MinValue
+            case Right(t) if t.isPreview => (Int.MinValue + 1)
+            case Right(t)                => t.instrument.ordinal
           }
           .map {
             case Right(t) =>
-              SequenceTab(SequenceTab.Props(p.router, t, x().canOperate, x().defaultObserver, runningInstruments)): VdomNode
-            case Left(t)  =>
+              SequenceTab(
+                SequenceTab.Props(p.router,
+                                  t,
+                                  x().canOperate,
+                                  x().defaultObserver,
+                                  runningInstruments)): VdomNode
+            case Left(t) =>
               CalibrationQueueTab(CalibrationQueueTab.Props(p.router, t)): VdomNode
           }
         if (tabs.nonEmpty) {
