@@ -39,11 +39,11 @@ final case class Flamingos2(f2Controller: Flamingos2Controller, dhsClient: DhsCl
 
   // FLAMINGOS-2 does not support abort or stop.
   override def observe(config: Config): SeqObserve[ImageFileId, ObserveCommand.Result] = Reader {
-    fileId => f2Controller.observe(fileId, calcObserveTime(config)).map(_ => ObserveCommand.Success)
+    fileId => f2Controller.observe(fileId, calcObserveTime(config)).as(ObserveCommand.Success)
   }
 
   override def configure(config: Config): SeqAction[ConfigResult[IO]] =
-    fromSequenceConfig(config).flatMap(f2Controller.applyConfig).map(_ => ConfigResult(this))
+    fromSequenceConfig(config).flatMap(f2Controller.applyConfig).as(ConfigResult(this))
 
   override def notifyObserveEnd: SeqAction[Unit] = f2Controller.endObserve
 

@@ -423,7 +423,7 @@ object TcsControllerEpics extends TcsController {
     _ <- EitherT.right(IO.apply(Log.info("TCS guide command post")))
   } yield ()
 
-  override def notifyObserveStart: SeqAction[Unit] = TcsEpics.instance.observe.mark *> TcsEpics.instance.post.map(_ => ())
+  override def notifyObserveStart: SeqAction[Unit] = TcsEpics.instance.observe.mark *> TcsEpics.instance.post.void
 
-  override def notifyObserveEnd: SeqAction[Unit] = TcsEpics.instance.endObserve.mark *> TcsEpics.instance.post.map(_ => ())
+  override def notifyObserveEnd: SeqAction[Unit] = TcsEpics.instance.endObserve.mark *> TcsEpics.instance.post.void
 }

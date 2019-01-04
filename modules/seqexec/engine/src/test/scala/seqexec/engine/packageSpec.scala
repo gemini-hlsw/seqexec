@@ -192,7 +192,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
             q.enqueue1(Event.start[executionEngine.ConcreteTypes](seqId, user, clientId, always)),
             startedFlag.decrement,
             q.enqueue1(Event.nullEvent),
-            q.enqueue1(Event.getState[executionEngine.ConcreteTypes] { _ => Stream.eval(finishFlag.increment).map(_ => Event.nullEvent).some })
+            q.enqueue1(Event.getState[executionEngine.ConcreteTypes] { _ => Stream.eval(finishFlag.increment).as(Event.nullEvent).some })
           ).sequence,
           executionEngine.process(PartialFunction.empty)(q.dequeue)(qs).drop(1).takeThrough(a => !isFinished(a._2.sequences(seqId).status)).compile.drain
         ).parSequence)
@@ -406,7 +406,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
 
     val c = ActionCoordsInSeq(stepId, ExecutionIndex(0), ActionIndex(0))
     val event = Event.modifyState[executionEngine.ConcreteTypes](
-      executionEngine.startSingle(ActionCoords(seqId, c)).map(_ => ())
+      executionEngine.startSingle(ActionCoords(seqId, c)).void
     )
     val sfs = executionEngine.process(PartialFunction.empty)(Stream.eval(IO.pure(event)))(s0)
       .map(_._2).take(2).compile.toList.unsafeRunSync

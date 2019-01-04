@@ -103,7 +103,7 @@ abstract class Gmos[T<:GmosController.SiteDependentTypes](controller: GmosContro
   override def notifyObserveStart: SeqAction[Unit] = SeqAction.void
 
   override def configure(config: Config): SeqAction[ConfigResult[IO]] =
-    fromSequenceConfig(config).flatMap(controller.applyConfig).map(_ => ConfigResult(this))
+    fromSequenceConfig(config).flatMap(controller.applyConfig).as(ConfigResult(this))
 
   override def calcObserveTime(config: Config): Time =
     config.extractAs[JDouble](OBSERVE_KEY / EXPOSURE_TIME_PROP)

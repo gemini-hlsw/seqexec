@@ -81,7 +81,7 @@ final case class Tcs(tcsController: TcsController, subsystems: NonEmptyList[Subs
         _ <- tcsController.guide(tcsConfig.gc)
       } yield ConfigResult(this)
     else
-      tcsController.applyConfig(subsystems, tcsConfig).map(_ => ConfigResult(this))
+      tcsController.applyConfig(subsystems, tcsConfig).as(ConfigResult(this))
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.Overloading"))

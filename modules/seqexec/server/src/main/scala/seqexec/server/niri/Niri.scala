@@ -54,7 +54,7 @@ final case class Niri(controller: NiriController, dhsClient: DhsClient)
     */
   override def configure(config: Config): SeqActionF[IO, ConfigResult[IO]] =
     SeqAction.either(fromSequenceConfig(config))
-      .flatMap(controller.applyConfig).map(_ => ConfigResult(this))
+      .flatMap(controller.applyConfig).as(ConfigResult(this))
 
   override def notifyObserveStart: SeqActionF[IO, Unit] = SeqAction.void
 

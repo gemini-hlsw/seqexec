@@ -46,7 +46,7 @@ abstract class GiapiInstrumentController[F[_]: Sync, CFG, C <: GiapiClient[F]] {
     } yield ()
 
   def observe(fileId: ImageFileId, expTime: Time): SeqActionF[F, ImageFileId] =
-    EitherT(client.observe(fileId, expTime.toMilliseconds.milliseconds).map(_ => fileId).attempt)
+    EitherT(client.observe(fileId, expTime.toMilliseconds.milliseconds).as(fileId).attempt)
       .leftMap {
         case CommandResultException(_, "Message cannot be null") => Execution("Unhandled observe command")
         case CommandResultException(_, m)                        => Execution(m)
