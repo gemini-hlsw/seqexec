@@ -4,23 +4,24 @@
 package seqexec.web.client.components.sequence.steps
 
 import cats.implicits._
+import diode.react.ReactConnectProxy
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.extra.Reusability
 import japgolly.scalajs.react.extra.router.RouterCtl
+import seqexec.model.Step
 import seqexec.web.client.circuit._
 import seqexec.web.client.model.Pages.SeqexecPages
 import seqexec.web.client.model.SectionClosed
 import seqexec.web.client.model.SectionOpen
 import seqexec.web.client.model.TabSelected
-import seqexec.web.client.semanticui._
+import seqexec.web.client.semanticui.{ Size => _, _ }
 import seqexec.web.client.components.sequence.toolbars.SequenceDefaultToolbar
 import seqexec.web.client.components.sequence.toolbars.StepConfigToolbar
-// import seqexec.web.client.semanticui.elements.message.IconMessage
-// import seqexec.web.client.semanticui.elements.icon.Icon.IconInbox
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.reusability._
+import react.virtualized._
 import web.client.style._
 
 /**
@@ -28,7 +29,11 @@ import web.client.style._
   */
 object SequenceTabContent {
   final case class Props(router: RouterCtl[SeqexecPages],
-                         p:      SequenceTabContentFocus)
+                         p:      SequenceTabContentFocus) {
+
+    val stepsConnect: ReactConnectProxy[StepsTableAndStatusFocus] =
+      SeqexecCircuit.connect(SeqexecCircuit.stepsTableReader(p.id))
+  }
 
   implicit val stcfReuse: Reusability[SequenceTabContentFocus] =
     Reusability.derive[SequenceTabContentFocus]
@@ -36,38 +41,42 @@ object SequenceTabContent {
 
   def toolbar(router: RouterCtl[SeqexecPages],
               p:      SequenceTabContentFocus): VdomElement =
-    <.div(
-      p.tableType match {
-        case StepsTableTypeSelection.StepsTableSelected
-            if p.canOperate && !p.isPreview =>
-          SequenceDefaultToolbar(SequenceDefaultToolbar.Props(p.id))
-        case StepsTableTypeSelection.StepConfigTableSelected(s) =>
-          StepConfigToolbar(
-            StepConfigToolbar
-              .Props(router, p.instrument, p.id, s, p.totalSteps, p.isPreview))
-        case _ =>
-          TagMod.empty
-      }
-    )
+    p.tableType match {
+      case StepsTableTypeSelection.StepsTableSelected
+          if p.canOperate && !p.isPreview =>
+        SequenceDefaultToolbar(SequenceDefaultToolbar.Props(p.id))
+      case StepsTableTypeSelection.StepConfigTableSelected(s) =>
+        StepConfigToolbar(
+          StepConfigToolbar
+            .Props(router, p.instrument, p.id, s, p.totalSteps, p.isPreview))
+      case _ =>
+        <.div()
+    }
+
+  def stepsTable(p: Props, s: Size): VdomElement =
+    p.p.tableType match {
+      case StepsTableTypeSelection.StepsTableSelected =>
+        p.stepsConnect(x =>
+          StepsTable(StepsTable.Props(p.router, p.p.canOperate, x(), s)))
+      case StepsTableTypeSelection.StepConfigTableSelected(i) =>
+        p.stepsConnect { x =>
+          val focus = x()
+
+          val steps =
+            focus.stepsTable.foldMap(_.steps).lift(i).getOrElse(Step.Zero)
+          val hs = focus.configTableState
+          StepConfigTable(StepConfigTable.Props(steps, s, hs))
+        }
+    }
 
   private val component = ScalaComponent
     .builder[Props]("SequenceTabContent")
     .stateless
     .render_P { p =>
-      val SequenceTabContentFocus(isLogged,
-                                  instrument,
-                                  _,
-                                  active,
-                                  _,
-                                  logDisplayed,
-                                  _,
-                                  _) = p.p
-      // val content = p.tableTypeConnect { st =>
-      //   st()
-      //     .map(s =>
-      //       StepsTableContainer(StepsTableContainer.Props(p.router, id, s)): VdomElement)
-      //     .getOrElse(defaultContent)
-      // }
+      val canOperate   = p.p.canOperate
+      val instrument   = p.p.instrument
+      val active       = p.p.active
+      val logDisplayed = p.p.logDisplayed
 
       <.div(
         ^.cls := "ui attached secondary segment tab",
@@ -75,19 +84,20 @@ object SequenceTabContent {
           "active" -> (active === TabSelected.Selected)
         ),
         dataTab := instrument.show,
-        SeqexecStyles.tabSegment.when(isLogged),
+        SeqexecStyles.tabSegment.when(canOperate),
         SeqexecStyles.tabSegmentLogShown
-          .when(isLogged && logDisplayed === SectionOpen),
+          .when(canOperate && logDisplayed === SectionOpen),
         SeqexecStyles.tabSegmentLogHidden
-          .when(isLogged && logDisplayed === SectionClosed),
-        SeqexecStyles.tabSegmentUnauth.when(!isLogged),
+          .when(canOperate && logDisplayed === SectionClosed),
+        SeqexecStyles.tabSegmentUnauth.when(!canOperate),
         SeqexecStyles.tabSegmentLogShownUnauth
-          .when(!isLogged && logDisplayed === SectionOpen),
+          .when(!canOperate && logDisplayed === SectionOpen),
         SeqexecStyles.tabSegmentLogHiddenUnauth
-          .when(!isLogged && logDisplayed === SectionClosed),
+          .when(!canOperate && logDisplayed === SectionClosed),
         <.div(
           ^.height := "100%",
-          toolbar(p.router, p.p)
+          toolbar(p.router, p.p),
+          AutoSizer(AutoSizer.props(s => stepsTable(p, s)))
         )
       )
     }
