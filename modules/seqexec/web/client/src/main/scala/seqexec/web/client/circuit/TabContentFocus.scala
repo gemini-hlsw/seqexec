@@ -33,12 +33,16 @@ object TabContentFocus {
       val (o, (log, SequencesOnDisplay(tabs))) = p
       NonEmptyList.fromListUnsafe(tabs.withFocus.toList.collect {
         case (tab: SequenceTab, active) =>
-          SequenceTabContentFocus(o,
-                                  tab.instrument,
-                                  tab.sequence.id,
-                                  // tab.isComplete,
-                                  TabSelected.fromBoolean(active),
-                                  log)
+          SequenceTabContentFocus(
+            o,
+            tab.instrument,
+            tab.sequence.id,
+            TabSelected.fromBoolean(active),
+            StepsTableTypeSelection.fromStepId(tab.stepConfigDisplayed),
+            log,
+            tab.isPreview,
+            tab.sequence.steps.length
+          )
         case (_: CalibrationQueueTab, active) =>
           CalQueueTabContentFocus(o, TabSelected.fromBoolean(active), log)
       })
@@ -50,12 +54,24 @@ final case class SequenceTabContentFocus(canOperate:   Boolean,
                                          instrument:   Instrument,
                                          id:           Observation.Id,
                                          active:       TabSelected,
-                                         logDisplayed: SectionVisibilityState)
+                                         tableType:    StepsTableTypeSelection,
+                                         logDisplayed: SectionVisibilityState,
+                                         isPreview:    Boolean,
+                                         totalSteps:   Int)
     extends TabContentFocus
 
 object SequenceTabContentFocus {
   implicit val eq: Eq[SequenceTabContentFocus] =
-    Eq.by(x => (x.canOperate, x.instrument, x.id, x.active, x.logDisplayed))
+    Eq.by(
+      x =>
+        (x.canOperate,
+         x.instrument,
+         x.id,
+         x.active,
+         x.tableType,
+         x.logDisplayed,
+         x.isPreview,
+         x.totalSteps))
 }
 
 final case class CalQueueTabContentFocus(canOperate:   Boolean,

@@ -4,7 +4,6 @@
 package seqexec.web.client.components.sequence.steps
 
 import cats.implicits._
-import diode.react.ReactConnectProxy
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.component.Scala.Unmounted
@@ -16,8 +15,10 @@ import seqexec.web.client.model.SectionClosed
 import seqexec.web.client.model.SectionOpen
 import seqexec.web.client.model.TabSelected
 import seqexec.web.client.semanticui._
-import seqexec.web.client.semanticui.elements.message.IconMessage
-import seqexec.web.client.semanticui.elements.icon.Icon.IconInbox
+import seqexec.web.client.components.sequence.toolbars.SequenceDefaultToolbar
+import seqexec.web.client.components.sequence.toolbars.StepConfigToolbar
+// import seqexec.web.client.semanticui.elements.message.IconMessage
+// import seqexec.web.client.semanticui.elements.icon.Icon.IconInbox
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.reusability._
 import web.client.style._
@@ -26,19 +27,28 @@ import web.client.style._
   * Content of a single tab with a sequence
   */
 object SequenceTabContent {
-  private val defaultContent = IconMessage(
-    IconMessage
-      .Props(IconInbox, Some("No sequence loaded"), IconMessage.Style.Warning))
-
   final case class Props(router: RouterCtl[SeqexecPages],
-                         p:      SequenceTabContentFocus) {
-    val tableTypeConnect: ReactConnectProxy[Option[StepsTableTypeSelection]] =
-      SeqexecCircuit.connect(SeqexecCircuit.stepsTableType(p.id))
-  }
+                         p:      SequenceTabContentFocus)
 
   implicit val stcfReuse: Reusability[SequenceTabContentFocus] =
     Reusability.derive[SequenceTabContentFocus]
   implicit val propsReuse: Reusability[Props] = Reusability.by(_.p)
+
+  def toolbar(router: RouterCtl[SeqexecPages],
+              p:      SequenceTabContentFocus): VdomElement =
+    <.div(
+      p.tableType match {
+        case StepsTableTypeSelection.StepsTableSelected
+            if p.canOperate && !p.isPreview =>
+          SequenceDefaultToolbar(SequenceDefaultToolbar.Props(p.id))
+        case StepsTableTypeSelection.StepConfigTableSelected(s) =>
+          StepConfigToolbar(
+            StepConfigToolbar
+              .Props(router, p.instrument, p.id, s, p.totalSteps, p.isPreview))
+        case _ =>
+          TagMod.empty
+      }
+    )
 
   private val component = ScalaComponent
     .builder[Props]("SequenceTabContent")
@@ -47,15 +57,17 @@ object SequenceTabContent {
       val SequenceTabContentFocus(isLogged,
                                   instrument,
                                   _,
-                                  // _,
                                   active,
-                                  logDisplayed) = p.p
-      val content = p.tableTypeConnect { st =>
-        st()
-          .map(s =>
-            StepsTableContainer(StepsTableContainer.Props(p.router, s)): VdomElement)
-          .getOrElse(defaultContent)
-      }
+                                  _,
+                                  logDisplayed,
+                                  _,
+                                  _) = p.p
+      // val content = p.tableTypeConnect { st =>
+      //   st()
+      //     .map(s =>
+      //       StepsTableContainer(StepsTableContainer.Props(p.router, id, s)): VdomElement)
+      //     .getOrElse(defaultContent)
+      // }
 
       <.div(
         ^.cls := "ui attached secondary segment tab",
@@ -73,7 +85,10 @@ object SequenceTabContent {
           .when(!isLogged && logDisplayed === SectionOpen),
         SeqexecStyles.tabSegmentLogHiddenUnauth
           .when(!isLogged && logDisplayed === SectionClosed),
-        content
+        <.div(
+          ^.height := "100%",
+          toolbar(p.router, p.p)
+        )
       )
     }
     .configure(Reusability.shouldComponentUpdate)

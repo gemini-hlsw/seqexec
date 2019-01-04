@@ -4,6 +4,7 @@
 package seqexec.web.client.components.sequence.steps
 
 // import diode.react.ReactConnectProxy
+import gem.Observation
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.component.Scala.Unmounted
@@ -17,6 +18,7 @@ import seqexec.web.client.reusability._
 
 object StepsTableContainer {
   final case class Props(router:         RouterCtl[SeqexecPages],
+                         obsId:          Observation.Id,
                          stepsTableType: StepsTableTypeSelection) {
     // val stepsConnect: ReactConnectProxy[StepsTableAndStatusFocus] =
     //   SeqexecCircuit.connect(
@@ -26,6 +28,14 @@ object StepsTableContainer {
   implicit val propsReuse: Reusability[Props] = Reusability.by(_.stepsTableType)
 
   // def toolbar(p: Props): VdomElement = {
+  //   <.div(
+  //     p.stepsTableType match {
+  //       case StepsTableTypeSelection.StepsTableSelected =>
+  //         TagMod.empty
+  //       case StepsTableTypeSelection.StepConfigTableSelected =>
+  //         TagMod.empty
+  //     }
+  //   )
   //   val canOperate          = p.statusAndStep.canOperate
   //   val stepConfigDisplayed = p.statusAndStep.stepConfigDisplayed.isDefined
   //   val isPreview           = p.statusAndStep.isPreview
@@ -51,20 +61,19 @@ object StepsTableContainer {
   private val component = ScalaComponent
     .builder[Props]("StepsTableContainer")
     .stateless
-    .render_P { _ =>
-      <.div(
-        ^.height := "100%",
-        // toolbar(p),
-        // AutoSizer(AutoSizer.props(s =>
-        // ))
-        // p.stepsConnect(
-        //   r =>
-        //     StepsTable(
-        //       StepsTable.Props(p.router,
-        //                        p.statusAndStep.canOperate,
-        //                        r())))
-      )
-    }
+    .render_P(
+      _ =>
+        <.div(
+          ^.height := "100%",
+          // AutoSizer(AutoSizer.props(s =>
+          // ))
+          // p.stepsConnect(
+          //   r =>
+          //     StepsTable(
+          //       StepsTable.Props(p.router,
+          //                        p.statusAndStep.canOperate,
+          //                        r())))
+      ))
     .configure(Reusability.shouldComponentUpdate)
     .build
 
