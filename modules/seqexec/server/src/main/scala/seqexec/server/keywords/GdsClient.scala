@@ -31,7 +31,7 @@ final case class GdsClient(base: Client[IO], gdsUri: Uri)(implicit timer: Timer[
   @SuppressWarnings(Array("org.wartremover.warts.Var"))
   private val client = {
     val max = 2
-    var attemptsCounter = 1
+    var attemptsCounter = 1 // scalastyle:ignore
     val policy = RetryPolicy[IO] { attempts: Int =>
       if (attempts >= max) None
       else {
