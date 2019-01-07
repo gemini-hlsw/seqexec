@@ -15,6 +15,7 @@ sealed trait TabContentFocus extends Product with Serializable {
   val canOperate: Boolean
   val logDisplayed: SectionVisibilityState
   val active: TabSelected
+  def isActive: Boolean = active === TabSelected.Selected
 }
 
 object TabContentFocus {
@@ -58,7 +59,9 @@ final case class SequenceTabContentFocus(canOperate:   Boolean,
                                          logDisplayed: SectionVisibilityState,
                                          isPreview:    Boolean,
                                          totalSteps:   Int)
-    extends TabContentFocus
+    extends TabContentFocus {
+      val hasControls: Boolean = canOperate && !isPreview
+    }
 
 object SequenceTabContentFocus {
   implicit val eq: Eq[SequenceTabContentFocus] =

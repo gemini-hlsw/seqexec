@@ -4,6 +4,7 @@
 package seqexec.web.client.circuit
 
 import cats.Eq
+import cats.implicits._
 import seqexec.model.StepId
 
 sealed trait StepsTableTypeSelection extends Product with Serializable
@@ -13,7 +14,11 @@ object StepsTableTypeSelection {
   final case class StepConfigTableSelected(step: StepId)
       extends StepsTableTypeSelection
 
-  implicit val eq: Eq[StepsTableTypeSelection] = Eq.fromUniversalEquals
+  implicit val eq: Eq[StepsTableTypeSelection] = Eq.instance {
+    case (StepsTableSelected, StepsTableSelected) => true
+    case (StepConfigTableSelected(a), StepConfigTableSelected(b)) => a === b
+    case _ => false
+  }
 
   def fromStepId(s: Option[StepId]): StepsTableTypeSelection = s match {
     case Some(i) => StepConfigTableSelected(i)

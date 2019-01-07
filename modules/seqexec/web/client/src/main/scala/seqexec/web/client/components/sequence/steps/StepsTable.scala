@@ -109,8 +109,7 @@ object StepsTable {
 
   final case class Props(router:     RouterCtl[SeqexecPages],
                          canOperate: Boolean,
-                         stepsTable: StepsTableAndStatusFocus,
-                         size:       Size) {
+                         stepsTable: StepsTableAndStatusFocus) {
     val status: ClientStatus                        = stepsTable.status
     val steps: Option[StepsTableFocus]              = stepsTable.stepsTable
     val obsId: Option[Observation.Id]               = steps.map(_.id)
@@ -126,6 +125,7 @@ object StepsTable {
     val showFilter: Boolean       = showProp(InstrumentProperties.Filter)
     val showFPU: Boolean          = showProp(InstrumentProperties.FPU)
     val isPreview: Boolean        = steps.map(_.isPreview).getOrElse(false)
+    val hasControls: Boolean      = canOperate && !isPreview
     val canSetBreakpoint: Boolean = canOperate && !isPreview
     val showObservingMode: Boolean =
       showProp(InstrumentProperties.ObservingMode)
@@ -718,19 +718,18 @@ object StepsTable {
   }
 
   // Wire it up from VDOM
-  def render(b: Backend): VdomElement = {
-    val p           = b.props
-    val hasControls = p.status.isLogged && !p.isPreview
-    val noControls  = p.isPreview || !p.status.isLogged
+  def render(b: Backend): VdomElement =
     <.div(
-      SeqexecStyles.stepsListPanePreview.when(noControls),
-      SeqexecStyles.stepsListPaneWithControls.when(hasControls),
-      ref
-        .component(stepsTableProps(b)(b.props.size))(
-          columns(b, b.props.size).map(_.vdomElement): _*)
-        .vdomElement
+      SeqexecStyles.stepsListPanePreview.unless(b.props.hasControls),
+      SeqexecStyles.stepsListPaneWithControls.when(b.props.hasControls),
+      AutoSizer(
+        AutoSizer.props(
+          s =>
+            ref
+              .component(stepsTableProps(b)(s))(
+                columns(b, s).map(_.vdomElement): _*)
+              .vdomElement))
     )
-  }
 
   private val component = ScalaComponent
     .builder[Props]("StepsTable")
