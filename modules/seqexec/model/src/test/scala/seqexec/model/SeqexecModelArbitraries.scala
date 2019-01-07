@@ -72,21 +72,21 @@ trait SeqexecModelArbitraries extends ArbObservation {
       Instrument.F2,
       Instrument.GmosS,
       Instrument.GmosN,
-      Instrument.GPI,
-      Instrument.GSAOI,
-      Instrument.GNIRS,
-      Instrument.NIRI,
-      Instrument.NIFS
+      Instrument.Gpi,
+      Instrument.Gsaoi,
+      Instrument.Gnirs,
+      Instrument.Niri,
+      Instrument.Nifs
     ))
   implicit val insArb = Arbitrary[Instrument](
     Gen.oneOf(Instrument.F2,
               Instrument.GmosS,
               Instrument.GmosN,
-              Instrument.GPI,
-              Instrument.GSAOI,
-              Instrument.GNIRS,
-              Instrument.NIRI,
-              Instrument.NIFS))
+              Instrument.Gpi,
+              Instrument.Gsaoi,
+              Instrument.Gnirs,
+              Instrument.Niri,
+              Instrument.Nifs))
 
   implicit val queueIdArb: Arbitrary[QueueId] = Arbitrary {
     arbitrary[UUID].map(QueueId)

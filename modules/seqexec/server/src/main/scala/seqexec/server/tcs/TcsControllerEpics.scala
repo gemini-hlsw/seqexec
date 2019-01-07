@@ -169,13 +169,13 @@ object TcsControllerEpics extends TcsController {
   private def getInstPort(inst: Instrument): Option[Int] = (inst match {
     case Instrument.GmosS |
          Instrument.GmosN  => TcsEpics.instance.gmosPort
-    case Instrument.GSAOI  => TcsEpics.instance.gsaoiPort
+    case Instrument.Gsaoi  => TcsEpics.instance.gsaoiPort
     case Instrument.F2     => TcsEpics.instance.f2Port
-    case Instrument.GPI    => TcsEpics.instance.gpiPort
-    case Instrument.NIRI   => TcsEpics.instance.niriPort
-    case Instrument.GNIRS  => TcsEpics.instance.gnirsPort
-    case Instrument.NIFS   => TcsEpics.instance.nifsPort
-    case Instrument.GHOST  => TcsEpics.instance.ghostPort
+    case Instrument.Gpi    => TcsEpics.instance.gpiPort
+    case Instrument.Niri   => TcsEpics.instance.niriPort
+    case Instrument.Gnirs  => TcsEpics.instance.gnirsPort
+    case Instrument.Nifs   => TcsEpics.instance.nifsPort
+    case Instrument.Ghost  => TcsEpics.instance.ghostPort
     case _                 => None
   }).flatMap(p => if (p === 0) None else Some(p))
 
@@ -199,10 +199,10 @@ object TcsControllerEpics extends TcsController {
     val instNameMap: Map[Instrument, SFInstName] = Map(
       Instrument.GmosS -> SFInstName("gmos"),
       Instrument.GmosN -> SFInstName("gmos"),
-      Instrument.GSAOI -> SFInstName("gsaoi"),
-      Instrument.GNIRS -> SFInstName("gnirs"),
+      Instrument.Gsaoi -> SFInstName("gsaoi"),
+      Instrument.Gnirs -> SFInstName("gnirs"),
       Instrument.F2    -> SFInstName("f2"),
-      Instrument.GPI   -> SFInstName("gpi")
+      Instrument.Gpi   -> SFInstName("gpi")
     )
 
     private def findInstrument(str: String): Option[Instrument] = instNameMap.find{ case (_, n) => str.startsWith(n.self)}.map(_._1)
@@ -423,7 +423,7 @@ object TcsControllerEpics extends TcsController {
     _ <- EitherT.right(IO.apply(Log.info("TCS guide command post")))
   } yield ()
 
-  override def notifyObserveStart: SeqAction[Unit] = TcsEpics.instance.observe.mark *> TcsEpics.instance.post.map(_ => ())
+  override def notifyObserveStart: SeqAction[Unit] = TcsEpics.instance.observe.mark *> TcsEpics.instance.post.void
 
-  override def notifyObserveEnd: SeqAction[Unit] = TcsEpics.instance.endObserve.mark *> TcsEpics.instance.post.map(_ => ())
+  override def notifyObserveEnd: SeqAction[Unit] = TcsEpics.instance.endObserve.mark *> TcsEpics.instance.post.void
 }

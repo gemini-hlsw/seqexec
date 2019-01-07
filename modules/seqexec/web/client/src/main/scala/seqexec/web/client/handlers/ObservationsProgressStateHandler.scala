@@ -38,12 +38,15 @@ class ObservationsProgressStateHandler[M](
           obs     <- sequenceViewT.find(_.id === obsId)(e)
           curSIdx <- obs.runningStep.map(_.last)
           curStep <- sequenceStepT.find(_.id === curSIdx)(obs)
-          if curStep.observeStatus === ActionStatus.Completed && !curStep.isObservePaused
         } yield
-          updatedL(
-            AllObservationsProgressState
-              .progressByIdL(e.obsId, curSIdx)
-              .set(none))
+          if (curStep.observeStatus === ActionStatus.Completed && !curStep.isObservePaused) {
+            updatedL(
+              AllObservationsProgressState
+                .progressByIdL(e.obsId, curSIdx)
+                .set(none))
+          } else {
+            noChange
+          }
 
       upd.getOrElse(noChange)
   }

@@ -10,7 +10,7 @@ import cats.implicits._
 import fs2.Stream
 import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
-import edu.gemini.spModel.gemini.ghost.Ghost
+import edu.gemini.spModel.gemini.ghost.{Ghost => SPGhost}
 import gem.math.{Coordinates, Declination, RightAscension}
 import gem.optics.Format
 
@@ -19,20 +19,20 @@ import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.{Instrument, Resource}
 import seqexec.server.ConfigUtilOps._
 import seqexec.server._
-import seqexec.server.keywords.{GDSClient, GDSInstrument, KeywordsClient}
-import seqexec.server.ghost.GHOSTController._
+import seqexec.server.keywords.{GdsClient, GdsInstrument, KeywordsClient}
+import seqexec.server.ghost.GhostController._
 import squants.time.{Seconds, Time}
 
 import scala.reflect.ClassTag
 
-final case class GHOST[F[_]: Sync](controller: GHOSTController[F])
+final case class Ghost[F[_]: Sync](controller: GhostController[F])
     extends InstrumentSystem[F]
-    with GDSInstrument {
-  override val gdsClient: GDSClient = controller.gdsClient
+    with GdsInstrument {
+  override val gdsClient: GdsClient = controller.gdsClient
 
   override val keywordsClient: KeywordsClient[IO] = this
 
-  override val resource: Resource = Instrument.GHOST
+  override val resource: Resource = Instrument.Ghost
 
   override val sfName: String = "GHOST"
 
@@ -46,14 +46,14 @@ final case class GHOST[F[_]: Sync](controller: GHOSTController[F])
     Reader { fileId =>
       controller
         .observe(fileId, calcObserveTime(config))
-        .map(_ => ObserveCommand.Success: ObserveCommand.Result)
+        .as(ObserveCommand.Success: ObserveCommand.Result)
     }
 
   override def configure(config: Config): SeqActionF[F, ConfigResult[F]] =
-    GHOST
+    Ghost
       .fromSequenceConfig[F](config)
       .flatMap(controller.applyConfig)
-      .map(_ => ConfigResult[F](this))
+      .as(ConfigResult[F](this))
 
   override def notifyObserveEnd: SeqActionF[F, Unit] = controller.endObserve
 
@@ -64,13 +64,13 @@ final case class GHOST[F[_]: Sync](controller: GHOSTController[F])
   override def observeProgress(total: Time, elapsed: InstrumentSystem.ElapsedTime): Stream[F, Progress] = Stream.empty
 }
 
-object GHOST {
+object Ghost {
   val INSTRUMENT_NAME_PROP: String = "GHOST"
   val name: String                 = INSTRUMENT_NAME_PROP
 
   val sfName: String = "GHOST"
 
-  def fromSequenceConfig[F[_]: Sync](config: Config): SeqActionF[F, GHOSTConfig] = {
+  def fromSequenceConfig[F[_]: Sync](config: Config): SeqActionF[F, GhostConfig] = {
     def extractor[A : ClassTag](propName: String): Option[A] =
       config.extractAs[A](INSTRUMENT_KEY / propName).toOption
 
@@ -90,34 +90,34 @@ object GHOST {
     EitherT {
       Sync[F].delay {
         (for {
-          baseRAHMS     <- raExtractor(Ghost.BaseRAHMS)
-          baseDecDMS    <- decExtractor(Ghost.BaseDecDMS)
+          baseRAHMS     <- raExtractor(SPGhost.BaseRAHMS)
+          baseDecDMS    <- decExtractor(SPGhost.BaseDecDMS)
 
-          srifu1Name    = extractor[String](Ghost.SRIFU1Name)
-          srifu1RAHMS   <- raExtractor(Ghost.SRIFU1RAHMS)
-          srifu1DecHDMS <- decExtractor(Ghost.SRIFU1DecDMS)
+          srifu1Name    = extractor[String](SPGhost.SRIFU1Name)
+          srifu1RAHMS   <- raExtractor(SPGhost.SRIFU1RAHMS)
+          srifu1DecHDMS <- decExtractor(SPGhost.SRIFU1DecDMS)
 
-          srifu2Name    = extractor[String](Ghost.SRIFU2Name)
-          srifu2RAHMS   <- raExtractor(Ghost.SRIFU2RAHMS)
-          srifu2DecHDMS <- decExtractor(Ghost.SRIFU2DecDMS)
+          srifu2Name    = extractor[String](SPGhost.SRIFU2Name)
+          srifu2RAHMS   <- raExtractor(SPGhost.SRIFU2RAHMS)
+          srifu2DecHDMS <- decExtractor(SPGhost.SRIFU2DecDMS)
 
-          hrifu1Name    = extractor[String](Ghost.HRIFU1Name)
-          hrifu1RAHMS   <- raExtractor(Ghost.HRIFU1RAHMS)
-          hrifu1DecHDMS <- decExtractor(Ghost.HRIFU1DecDMS)
+          hrifu1Name    = extractor[String](SPGhost.HRIFU1Name)
+          hrifu1RAHMS   <- raExtractor(SPGhost.HRIFU1RAHMS)
+          hrifu1DecHDMS <- decExtractor(SPGhost.HRIFU1DecDMS)
 
-          hrifu2RAHMS   <- raExtractor(Ghost.HRIFU2RAHMS)
-          hrifu2DecHDMS <- decExtractor(Ghost.HRIFU2DecDMS)
+          hrifu2RAHMS   <- raExtractor(SPGhost.HRIFU2RAHMS)
+          hrifu2DecHDMS <- decExtractor(SPGhost.HRIFU2DecDMS)
 
-        } yield {
-          val hrifu2Name = hrifu2RAHMS.as("Sky")
-          GHOSTConfig(
+          config <- GhostConfig(
             (baseRAHMS, baseDecDMS).mapN(Coordinates.apply),
             1.minute,
             srifu1Name, (srifu1RAHMS, srifu1DecHDMS).mapN(Coordinates.apply),
             srifu2Name, (srifu2RAHMS, srifu2DecHDMS).mapN(Coordinates.apply),
             hrifu1Name, (hrifu1RAHMS, hrifu1DecHDMS).mapN(Coordinates.apply),
-            hrifu2Name, (hrifu2RAHMS, hrifu2DecHDMS).mapN(Coordinates.apply))}
-          ).leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
+            hrifu2RAHMS.as("Sky"), (hrifu2RAHMS, hrifu2DecHDMS).mapN(Coordinates.apply))
+        } yield {
+          config
+        }).leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
       }
     }
   }

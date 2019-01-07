@@ -10,9 +10,9 @@ import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 
 /** Client for GHOST */
-final class GHOSTClient[F[_]](override val giapi: Giapi[F]) extends GiapiClient[F]
+final class GhostClient[F[_]](override val giapi: Giapi[F]) extends GiapiClient[F]
 
-object GHOSTExample extends IOApp {
+object GhostExample extends IOApp {
 
   val ghostStatus: Resource[IO, Giapi[IO]] =
     Resource.make(
@@ -28,11 +28,11 @@ object GHOSTExample extends IOApp {
         ExecutionContext.global
       ).connect)(_.close)
 
-  val ghostClient: Resource[IO, GHOSTClient[IO]] =
+  val ghostClient: Resource[IO, GhostClient[IO]] =
     for {
       _ <- ghostStatus
       c <- ghostSequence
-    } yield new GHOSTClient(c)
+    } yield new GhostClient(c)
 
   def run(args: List[String]): IO[ExitCode] =
     ghostClient.use { client =>

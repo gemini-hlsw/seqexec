@@ -13,4 +13,4 @@ $.fn.transition = require("semantic-ui-transition");
 $.fn.modal = require("semantic-ui-modal");
 $.fn.popup = require("semantic-ui-popup");
 
-App.seqexec.SeqexecApp.start();
+App.SeqexecApp.start();

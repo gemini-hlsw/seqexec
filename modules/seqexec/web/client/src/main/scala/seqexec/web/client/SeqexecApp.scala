@@ -21,7 +21,7 @@ import seqexec.web.client.circuit.SeqexecCircuit
 /**
   * Seqexec WebApp entry point
   */
-@JSExportTopLevel("seqexec.SeqexecApp")
+@JSExportTopLevel("SeqexecApp")
 object SeqexecApp {
   private val defaultFmt = "[%4$s] %1s - %5$s"
 

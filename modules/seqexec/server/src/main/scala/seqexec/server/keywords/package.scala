@@ -50,8 +50,8 @@ package keywords {
     }
   }
 
-  trait GDSInstrument extends KeywordsClient[IO] {
-    val gdsClient: GDSClient
+  trait GdsInstrument extends KeywordsClient[IO] {
+    val gdsClient: GdsClient
 
     def setKeywords(id: ImageFileId,
                     keywords: KeywordBag,

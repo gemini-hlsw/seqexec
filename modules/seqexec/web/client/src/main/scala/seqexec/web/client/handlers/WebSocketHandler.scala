@@ -106,7 +106,7 @@ class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection])
       // Capture the WS, or it maybe invalid during the Future
       val ws = value.ws
       val closeCurrent = Effect(
-        Future(ws.foreach(_.close())).map(_ => NoAction))
+        Future(ws.foreach(_.close())).as(NoAction))
       val reConnect = Effect(webSocket)
       updated(value.copy(ws = Pot.empty[WebSocket], nextAttempt = 0, autoReconnect = false), closeCurrent >> reConnect)
   }
@@ -120,7 +120,7 @@ class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection])
     case WSClose =>
       // Forcefully close the websocket as requested when reloading the code via HMR
       val ws = value.ws
-      val closeEffect = Effect(Future(ws.foreach(_.close())).map(_ => NoAction))
+      val closeEffect = Effect(Future(ws.foreach(_.close())).as(NoAction))
       updated(value.copy(ws = Pot.empty[WebSocket], nextAttempt = 0, autoReconnect = false), closeEffect)
   }
 

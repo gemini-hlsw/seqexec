@@ -6,9 +6,11 @@ package seqexec.server.gnirs
 import java.lang.{Double => JDouble}
 
 import edu.gemini.epics.acm._
+import edu.gemini.seqexec.server.gnirs.{DetectorState => JDetectorState}
 import seqexec.server.EpicsCommand.setParameter
 import seqexec.server.{EpicsCommand, EpicsSystem, ObserveCommand, SeqAction}
 import org.log4s.{Logger, getLogger}
+import cats.implicits._
 
 class GnirsEpics(epicsService: CaService, tops: Map[String, String]) {
 
@@ -146,7 +148,18 @@ class GnirsEpics(epicsService: CaService, tops: Map[String, String]) {
 
   def lowNoise: Option[Int] = Option(dcState.getIntegerAttribute("lowNoise").value).map(_.toInt)
 
-  def dhcConnected: Option[Int] = Option(dcState.getIntegerAttribute("dhcConnected").value).map(_.toInt)
+  private val observeCAttr: CaAttribute[CarStateGEM5] = dcState.addEnum("observeState",
+    GNIRS_TOP + "dc:observeC.VAL", classOf[CarStateGEM5])
+  def observeState: Option[CarStateGEM5] = Option(observeCAttr.value)
+
+  def dhsConnected: Option[Boolean] = Option(dcState.getIntegerAttribute("dhcConnected").value)
+    .map(_.toInt =!= 0)
+
+  val arrayActiveAttr: Option[CaAttribute[JDetectorState]] = Option(dcState.addEnum(
+    "arrayState", s"${GNIRS_TOP}dc:activate", classOf[JDetectorState]
+  ))
+  def arrayActive: Option[Boolean] = arrayActiveAttr.flatMap(at => Option(at.value))
+    .map(_.getActive)
 
   def minInt: Option[Double] = Option(dcState.getDoubleAttribute("minInt").value).map(_.toDouble)
 

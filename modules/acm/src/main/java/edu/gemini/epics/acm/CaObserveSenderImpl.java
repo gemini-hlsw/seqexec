@@ -42,7 +42,7 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
     private final short MRK_PRESET = 2;
     private final short MRK_IDLE = 0;
 
-    private final Boolean trace = true;
+    private final Boolean trace = false;
 
     private long timeout;
     private TimeUnit timeoutUnit;
@@ -129,27 +129,43 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
             }
         });
 
+        ReadOnlyClientEpicsChannel<Short> stopMark = null;
         if(stopCmd!=null && stopCmd.length()>0) {
-            stopMark = epicsReader.getShortChannel(stopCmd + CAD_MARK_SUFFIX);
-            stopMark.registerListener(stopMarkListener = (String arg0, List<Short> newVals) -> {
-                if (newVals != null && !newVals.isEmpty()) {
-                    CaObserveSenderImpl.this.onStopMarkChange(newVals.get(0));
-                }
-            });
+            try {
+                stopMark = epicsReader.getShortChannel(stopCmd + CAD_MARK_SUFFIX);
+            } catch(Throwable e) {
+                LOG.warn(e.getMessage());
+            }
+            if(stopMark!=null) {
+                stopMark.registerListener(stopMarkListener = (String arg0, List<Short> newVals) -> {
+                    if (newVals != null && !newVals.isEmpty()) {
+                        CaObserveSenderImpl.this.onStopMarkChange(newVals.get(0));
+                    }
+                });
+            }
         } else {
             stopMark = null;
         }
+        this.stopMark = stopMark;
 
+        ReadOnlyClientEpicsChannel<Short> abortMark = null;
         if(abortCmd!=null && abortCmd.length()>0) {
-            abortMark = epicsReader.getShortChannel(abortCmd + CAD_MARK_SUFFIX);
-            abortMark.registerListener(abortMarkListener = (String arg0, List<Short> newVals) -> {
-                if (newVals != null && !newVals.isEmpty()) {
-                    CaObserveSenderImpl.this.onAbortMarkChange(newVals.get(0));
-                }
-            });
+            try {
+                abortMark = epicsReader.getShortChannel(abortCmd + CAD_MARK_SUFFIX);
+            } catch(Throwable e) {
+                LOG.warn(e.getMessage());
+            }
+            if(abortMark!=null) {
+                abortMark.registerListener(abortMarkListener = (String arg0, List<Short> newVals) -> {
+                    if (newVals != null && !newVals.isEmpty()) {
+                        CaObserveSenderImpl.this.onAbortMarkChange(newVals.get(0));
+                    }
+                });
+            }
         } else {
             abortMark = null;
         }
+        this.abortMark = abortMark;
 
         executor = new ScheduledThreadPoolExecutor(2);
     }

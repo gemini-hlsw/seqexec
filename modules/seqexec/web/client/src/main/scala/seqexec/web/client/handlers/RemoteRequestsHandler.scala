@@ -29,7 +29,7 @@ class RemoteRequestsHandler[M](modelRW: ModelRW[M, Option[ClientId]])
             Effect(
               SeqexecWebClient
                 .run(s, clientId)
-                .map(r => RunStarted(s))
+                .as(RunStarted(s))
                 .recover {
                   case _ => RunStartFailed(s)
                 }))
@@ -61,7 +61,7 @@ class RemoteRequestsHandler[M](modelRW: ModelRW[M, Option[ClientId]])
         Effect(
           SeqexecWebClient
             .stop(id, step)
-            .map(r => RunStop(id))
+            .as(RunStop(id))
             .recover {
               case _ => RunStopFailed(id)
             }))
@@ -73,7 +73,7 @@ class RemoteRequestsHandler[M](modelRW: ModelRW[M, Option[ClientId]])
         Effect(
           SeqexecWebClient
             .abort(id, step)
-            .map(r => RunAbort(id))
+            .as(RunAbort(id))
             .recover {
               case _ => RunAbortFailed(id)
             }))
@@ -85,7 +85,7 @@ class RemoteRequestsHandler[M](modelRW: ModelRW[M, Option[ClientId]])
         Effect(
           SeqexecWebClient
             .pauseObs(id, step)
-            .map(r => RunObsPause(id))
+            .as(RunObsPause(id))
             .recover {
               case _ => RunObsPauseFailed(id)
             }))
@@ -97,7 +97,7 @@ class RemoteRequestsHandler[M](modelRW: ModelRW[M, Option[ClientId]])
         Effect(
           SeqexecWebClient
             .resumeObs(id, step)
-            .map(r => RunObsPause(id))
+            .as(RunObsPause(id))
             .recover {
               case _ => RunObsResumeFailed(id)
             }))

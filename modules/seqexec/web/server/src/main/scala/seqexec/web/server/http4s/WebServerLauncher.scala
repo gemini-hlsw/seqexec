@@ -107,7 +107,7 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
     }
 
   // Configuration of the authentication service
-  def authConf: IO[AuthenticationConfig] =
+  val authConf: IO[AuthenticationConfig] =
     (ldapConf, config).mapN { (ld, cfg) =>
 
       val devMode        = cfg.require[String]("mode")
@@ -254,8 +254,8 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
         cr     <- Resource.liftF(IO(new CollectorRegistry))
         engine <- Resource.liftF(engineIO(cli, cr))
         bec    <- blockingExecutionContext
-        web    <- webServerIO(inq, out, engine, cr, bec)
-        f      <- Resource.liftF(engine.eventStream(inq).to(out.publish).compile.drain.start)
+        _      <- webServerIO(inq, out, engine, cr, bec)
+        _      <- Resource.liftF(engine.eventStream(inq).to(out.publish).compile.drain.start)
       } yield ExitCode.Success
 
     r.use(_ => IO.never)

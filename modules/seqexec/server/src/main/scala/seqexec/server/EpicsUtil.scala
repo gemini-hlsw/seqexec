@@ -18,6 +18,8 @@ import cats._
 import cats.data.EitherT
 import cats.effect.IO
 import cats.implicits._
+import fs2.Stream
+import scala.math.abs
 
 trait EpicsCommand {
   import EpicsCommand._
@@ -27,7 +29,7 @@ trait EpicsCommand {
   def post: SeqAction[Result] =
     safe {
       EitherT {
-        IO.async[TrySeq[Result]] { (f: (Either[Throwable, TrySeq[Result]]) => Unit) =>
+        IO.async[TrySeq[Result]] { (f: Either[Throwable, TrySeq[Result]] => Unit) =>
           cs.map { ccs =>
             ccs.postCallback {
               new CaCommandListener {
@@ -114,7 +116,7 @@ trait ObserveCommand {
   def post: SeqAction[Result] =
     EpicsCommand.safe {
       EitherT {
-        IO.async[TrySeq[Result]] { (f: (Either[Throwable, TrySeq[Result]]) => Unit) =>
+        IO.async[TrySeq[Result]] { (f: Either[Throwable, TrySeq[Result]] => Unit) =>
           os.map { oos =>
             oos.postCallback {
               new CaCommandListener {
@@ -157,6 +159,7 @@ object EpicsCodex {
 
   object EncodeEpicsValue {
     def apply[A, T](f: A => T): EncodeEpicsValue[A, T] = (a: A) => f(a)
+    def applyO[A, T](f: PartialFunction[A, T]): EncodeEpicsValue[A, Option[T]] = (a: A) => f.lift(a)
   }
 
   def encode[A, T](a: A)(implicit e: EncodeEpicsValue[A, T]): T = e.encode(a)
@@ -236,13 +239,29 @@ object EpicsUtil {
       }
     })))
 
-  def waitForValue[T](attr: CaAttribute[T], v: T, timeout: Time, name: String): SeqAction[Unit] = waitForValues[T](attr, List(v), timeout, name).map(_ => ())
+  def waitForValue[T](attr: CaAttribute[T], v: T, timeout: Time, name: String): SeqAction[Unit] = waitForValues[T](attr, List(v), timeout, name).void
 
   def setTimeout(os: Option[CaApplySender], t: Time):SeqAction[Unit] = SeqAction.either{
     os.map(_.setTimeout(t.toMilliseconds.toLong, MILLISECONDS).asRight).getOrElse(SeqexecFailure.Unexpected("Unable to set timeout for EPICS command.").asLeft)
   }
 
-  def smartSetParam[A: Eq](v: A, get: => Option[A], set: SeqAction[Unit]): SeqAction[Unit] =
-    if(get =!= v.some) set else SeqAction.void
+  def smartSetParam[A: Eq](v: A, get: => Option[A], set: SeqAction[Unit]): List[SeqAction[Unit]] =
+    if(get =!= v.some) List(set) else Nil
+
+  def smartSetDoubleParam(relTolerance: Double)(v: Double, get: => Option[Double], set: SeqAction[Unit]): List[SeqAction[Unit]] =
+    if(get.forall(x => (v === 0.0 && x =!= 0.0) || abs((x - v)/v) > relTolerance))
+  List(set) else Nil
+
+  def countdown[F[_]: Apply: cats.effect.Timer](total: Time, remT: F[Option[Time]],
+                              obsState: F[Option[CarStateGeneric]]): Stream[F, Progress] =
+    ProgressUtil.fromFOption(_ => (remT, obsState).mapN { case (rem, st) =>
+      for{
+        c <- rem
+        s <- st
+        dummy = s // Hack to avoid scala/bug#11175
+        if s.isBusy
+      } yield Progress(if(total>c) total else c, RemainingTime(c))
+    }).dropWhile(_.remaining.self.value === 0.0) // drop leading zeros
+      .takeThrough(_.remaining.self.value > 0.0) // drop all tailing zeros but the first one
 
 }

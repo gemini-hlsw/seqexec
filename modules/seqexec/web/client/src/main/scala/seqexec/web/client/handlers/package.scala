@@ -4,6 +4,7 @@
 package seqexec.web.client
 
 import cats.Monoid
+import cats.implicits._
 import diode.Action
 import diode.ActionHandler
 import diode.ActionResult
@@ -37,7 +38,7 @@ package handlers {
                                                    r: A => C): Effect =
       Effect(
         f(a)
-          .map(_ => m(a))
+          .as(m(a))
           .recover {
             case _ => r(a)
           }
@@ -50,7 +51,7 @@ package handlers {
       r: A => D): Effect =
       Effect(
         f(a._1, a._2)
-          .map(_ => m(a._1))
+          .as(m(a._1))
           .recover {
             case _ => r(a._1)
           }

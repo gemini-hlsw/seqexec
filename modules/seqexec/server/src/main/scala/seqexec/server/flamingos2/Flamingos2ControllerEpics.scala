@@ -3,14 +3,16 @@
 
 package seqexec.server.flamingos2
 
-import cats.data.EitherT
+import cats.data.{EitherT, StateT}
 import cats.effect.{ IO, Timer }
+import cats.implicits._
 import seqexec.model.dhs.ImageFileId
-import seqexec.server.{EpicsCodex, ObserveCommand, Progress, ProgressUtil, SeqAction}
+import seqexec.server.{EpicsCodex, ObserveCommand, Progress, ProgressUtil, RemainingTime, SeqAction}
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.{Decker, Filter, ReadoutMode, WindowCover, _}
 import org.log4s.getLogger
 import scala.concurrent.ExecutionContext
 import squants.{Seconds, Time}
+import squants.time.TimeConversions._
 
 object Flamingos2ControllerEpics extends Flamingos2Controller {
   private val Log = getLogger
@@ -20,20 +22,16 @@ object Flamingos2ControllerEpics extends Flamingos2Controller {
 
   override def getConfig: SeqAction[Flamingos2Config] = ??? // scalastyle:ignore
 
-  implicit val encodeReadoutMode: EncodeEpicsValue[ReadoutMode, String] = EncodeEpicsValue((a: ReadoutMode)
-    => a match {
-      case ReadoutMode.SCIENCE     => "SCI"
-      case ReadoutMode.ENGINEERING => "ENG"
-    }
-  )
+  implicit val encodeReadoutMode: EncodeEpicsValue[ReadoutMode, String] = EncodeEpicsValue {
+    case ReadoutMode.SCIENCE     => "SCI"
+    case ReadoutMode.ENGINEERING => "ENG"
+  }
 
-  implicit val encodeBiasMode: EncodeEpicsValue[BiasMode, String] = EncodeEpicsValue((a: BiasMode)
-    => a match {
-      case BiasMode.Imaging  => "Imaging"
-      case BiasMode.LongSlit => "Long_Slit"
-      case BiasMode.MOS      => "Mos"
-    }
-  )
+  implicit val encodeBiasMode: EncodeEpicsValue[BiasMode, String] = EncodeEpicsValue {
+    case BiasMode.Imaging  => "Imaging"
+    case BiasMode.LongSlit => "Long_Slit"
+    case BiasMode.MOS      => "Mos"
+  }
 
   def setDCConfig(dc: DCConfig): SeqAction[Unit] = for {
     _ <- Flamingos2Epics.instance.dcConfigCmd.setExposureTime(dc.t.toSeconds.toDouble)
@@ -42,86 +40,75 @@ object Flamingos2ControllerEpics extends Flamingos2Controller {
     _ <- Flamingos2Epics.instance.dcConfigCmd.setBiasMode(encode(dc.b))
   } yield ()
 
-  implicit val encodeWindowCoverPosition: EncodeEpicsValue[WindowCover, String] = EncodeEpicsValue((a: WindowCover)
-    => a match {
-      case WindowCover.OPEN  => "Open"
-      case WindowCover.CLOSE => "Closed"
-    }
-  )
+  implicit val encodeWindowCoverPosition: EncodeEpicsValue[WindowCover, String] = EncodeEpicsValue {
+    case WindowCover.OPEN  => "Open"
+    case WindowCover.CLOSE => "Closed"
+  }
 
-  implicit val encodeDeckerPosition: EncodeEpicsValue[Decker, String] = EncodeEpicsValue((a: Decker)
-    => a match {
-      case Decker.IMAGING   => "Open"
-      case Decker.LONG_SLIT => "Long_Slit"
-      case Decker.MOS       => "Mos"
-    }
-  )
+  implicit val encodeDeckerPosition: EncodeEpicsValue[Decker, String] = EncodeEpicsValue {
+    case Decker.IMAGING   => "Open"
+    case Decker.LONG_SLIT => "Long_Slit"
+    case Decker.MOS       => "Mos"
+  }
 
-  implicit val encodeFPUPosition: EncodeEpicsValue[FocalPlaneUnit, (String, String)] = EncodeEpicsValue((a: FocalPlaneUnit)
-    => a match {
-      case FocalPlaneUnit.Open        => ("Open", "null")
-      case FocalPlaneUnit.GridSub1Pix => ("sub1-pix_grid", "null")
-      case FocalPlaneUnit.Grid2Pix    => ("2-pix_grid", "null")
-      case FocalPlaneUnit.Slit1Pix    => ("1pix-slit", "null")
-      case FocalPlaneUnit.Slit2Pix    => ("2pix-slit", "null")
-      case FocalPlaneUnit.Slit3Pix    => ("3pix-slit", "null")
-      case FocalPlaneUnit.Slit4Pix    => ("4pix-slit", "null")
-      case FocalPlaneUnit.Slit6Pix    => ("6pix-slit", "null")
-      case FocalPlaneUnit.Slit8Pix    => ("8pix-slit", "null")
-      case FocalPlaneUnit.Custom(s)   => ("null", s)
-    }
-  )
+  implicit val encodeFPUPosition: EncodeEpicsValue[FocalPlaneUnit, (String, String)] = EncodeEpicsValue {
+    case FocalPlaneUnit.Open        => ("Open", "null")
+    case FocalPlaneUnit.GridSub1Pix => ("sub1-pix_grid", "null")
+    case FocalPlaneUnit.Grid2Pix    => ("2-pix_grid", "null")
+    case FocalPlaneUnit.Slit1Pix    => ("1pix-slit", "null")
+    case FocalPlaneUnit.Slit2Pix    => ("2pix-slit", "null")
+    case FocalPlaneUnit.Slit3Pix    => ("3pix-slit", "null")
+    case FocalPlaneUnit.Slit4Pix    => ("4pix-slit", "null")
+    case FocalPlaneUnit.Slit6Pix    => ("6pix-slit", "null")
+    case FocalPlaneUnit.Slit8Pix    => ("8pix-slit", "null")
+    case FocalPlaneUnit.Custom(s)   => ("null", s)
+  }
 
-  implicit val encodeFilterPosition: EncodeEpicsValue[Filter, String] = EncodeEpicsValue((a: Filter)
-    => a match {
-      case Filter.OPEN    => "Open"
-      case Filter.Y       => "Y_G0811"
-      case Filter.F1056   => "F1056"
-      case Filter.F1063   => "F1063"
-      case Filter.J_LOW   => "J-lo_G0801"
-      case Filter.J       => "J_G0802"
-      case Filter.H       => "H_G0803"
-      case Filter.K_LONG  => "K-long_G0812"
-      case Filter.K_SHORT => "Ks_G0804"
-      case Filter.JH      => "JH_G0809"
-      case Filter.HK      => "HK_G0806"
-      case Filter.DARK    => "DK_G0807"
-      case Filter.K_BLUE  => "K-blue_G0814"
-      case Filter.K_RED   => "K-red_G0815"
-    }
-  )
+  // Removed obsolete filter positions Open and DK_G0807
+  implicit val encodeFilterPosition: EncodeEpicsValue[Filter, Option[String]] =
+    EncodeEpicsValue.applyO {
+    case Filter.Y       => "Y_G0811"
+    case Filter.F1056   => "F1056"
+    case Filter.F1063   => "F1063"
+    case Filter.J_LOW   => "J-lo_G0801"
+    case Filter.J       => "J_G0802"
+    case Filter.H       => "H_G0803"
+    case Filter.K_LONG  => "K-long_G0812"
+    case Filter.K_SHORT => "Ks_G0804"
+    case Filter.JH      => "JH_G0809"
+    case Filter.HK      => "HK_G0806"
+    case Filter.K_BLUE  => "K-blue_G0814"
+    case Filter.K_RED   => "K-red_G0815"
+  }
 
-  implicit val encodeLyotPosition: EncodeEpicsValue[Lyot, String] = EncodeEpicsValue((a: Lyot)
-    => a match {
-      case LyotWheel.OPEN       => "f/16_G5830"
-      case LyotWheel.HIGH       => "null"
-      case LyotWheel.LOW        => "null"
-      case LyotWheel.GEMS_OVER  => "GEMS_over_G5836"
-      case LyotWheel.GEMS_UNDER => "GEMS_under_G5835"
-      case LyotWheel.GEMS       => "Gems_G5835"
-      case LyotWheel.H1         => "Hart1_G5833"
-      case LyotWheel.H2         => "Hart2_G5834"
-    }
-  )
+  implicit val encodeLyotPosition: EncodeEpicsValue[Lyot, String] = EncodeEpicsValue {
+    case LyotWheel.OPEN       => "f/16_G5830"
+    case LyotWheel.HIGH       => "null"
+    case LyotWheel.LOW        => "null"
+    case LyotWheel.GEMS_OVER  => "GEMS_over_G5836"
+    case LyotWheel.GEMS_UNDER => "GEMS_under_G5835"
+    case LyotWheel.GEMS       => "Gems_G5835"
+    case LyotWheel.H1         => "Hart1_G5833"
+    case LyotWheel.H2         => "Hart2_G5834"
+  }
 
-  implicit val encodeGrismPosition: EncodeEpicsValue[Grism, String] = EncodeEpicsValue((a: Grism)
-    => a match {
-      case Grism.Open    => "Open"
-      case Grism.R1200HK => "HK_G5802"
-      case Grism.R1200JH => "JH_G5801"
-      case Grism.R3000   => "R3K_G5803"
-      case Grism.Dark    => "DK_G5804"
-    }
-  )
+  implicit val encodeGrismPosition: EncodeEpicsValue[Grism, String] = EncodeEpicsValue {
+    case Grism.Open    => "Open"
+    case Grism.R1200HK => "HK_G5802"
+    case Grism.R1200JH => "JH_G5801"
+    case Grism.R3000   => "R3K_G5803"
+    case Grism.Dark    => "DK_G5804"
+  }
 
   def setCCConfig(cc: CCConfig): SeqAction[Unit] = {
     val fpu = encode(cc.fpu)
+    val filter = encode(cc.f)
     for {
       _ <- Flamingos2Epics.instance.configCmd.setWindowCover(encode(cc.w))
       _ <- Flamingos2Epics.instance.configCmd.setDecker(encode(cc.d))
       _ <- Flamingos2Epics.instance.configCmd.setMOS(fpu._1)
       _ <- Flamingos2Epics.instance.configCmd.setMask(fpu._2)
-      _ <- Flamingos2Epics.instance.configCmd.setFilter(encode(cc.f))
+      _ <- filter.map(Flamingos2Epics.instance.configCmd.setFilter).getOrElse(SeqAction.void)
       _ <- Flamingos2Epics.instance.configCmd.setLyot(encode(cc.l))
       _ <- Flamingos2Epics.instance.configCmd.setGrism(encode(cc.g))
     } yield ()
@@ -151,7 +138,22 @@ object Flamingos2ControllerEpics extends Flamingos2Controller {
 
   override def observeProgress(total: Time): fs2.Stream[IO, Progress] = {
     implicit val ioTimer: Timer[IO] = IO.timer(ExecutionContext.global)
-    ProgressUtil.countdown[IO](total, Seconds(0))
+    // ProgressUtil.countdown[IO](total, Seconds(0))
+    val s = ProgressUtil.fromStateTOption[IO, Time](_ => StateT[IO, Time, Option[Progress]] { st =>
+      IO {
+        val m = if (total >= st) total else st
+        val p = for {
+          obst <- Flamingos2Epics.instance.observeState
+          dummy = obst // Hack to avoid scala/bug#11175
+          if obst.isBusy
+          rem <- Flamingos2Epics.instance.countdown.map(_.seconds)
+        } yield Progress(m, RemainingTime(rem))
+        (m, p)
+      }
+    })
+    s(total).dropWhile(_.remaining.self.value === 0.0) // drop leading zeros
+      .takeThrough(_.remaining.self.value > 0.0) // drop all tailing zeros but the first one
+
   }
 
   val ReadoutTimeout: Time = Seconds(300)

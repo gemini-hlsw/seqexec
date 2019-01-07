@@ -29,7 +29,7 @@ class OperatorHandler[M](modelRW: ModelRW[M, Option[Operator]])
   override def handle: PartialFunction[Any, ActionResult[M]] = {
     case UpdateOperator(name) =>
       val updateOperatorE = Effect(
-        SeqexecWebClient.setOperator(name).map(_ => NoAction))
+        SeqexecWebClient.setOperator(name).as(NoAction))
       updated(name.some, updateOperatorE)
   }
 }

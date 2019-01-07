@@ -29,6 +29,8 @@ final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements Ca
     private final CaApplyRecord apply;
     private final CaCarRecord<C> car;
 
+    private final Boolean trace = false;
+
     private long timeout;
     private TimeUnit timeoutUnit;
     private ScheduledExecutorService executor;
@@ -38,6 +40,9 @@ final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements Ca
     private ChannelListener<C> carValListener;
     private State currentState;
     private static final State IdleState = new State() {
+        @Override
+        public String signature() { return "IdleState"; }
+
         @Override
         public State onApplyValChange(Integer val) {
             return this;
@@ -178,6 +183,8 @@ final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements Ca
     }
 
     private interface State {
+        String signature();
+
         State onApplyValChange(Integer val);
 
         State onCarValChange(CarStateGeneric carState);
@@ -202,6 +209,11 @@ final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements Ca
             this.cm = cm;
             this.carVal = carVal;
             this.carClid = carClid;
+        }
+
+        @Override
+        public String signature() {
+            return "WaitPreset(carState = " + carVal + ", carClid = " + carClid + ")";
         }
 
         @Override
@@ -251,6 +263,11 @@ final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements Ca
             this.clid = clid;
             this.carState = carState;
             this.carClid = carClid;
+        }
+
+        @Override
+        public String signature() {
+            return "WaitStart(clid = " + clid + "carState = " + carState + ", carClid = " + carClid + ")";
         }
 
         @Override
@@ -307,6 +324,11 @@ final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements Ca
         }
 
         @Override
+        public String signature() {
+            return "WaitCompletion(clid = " + clid + ")";
+        }
+
+        @Override
         public State onApplyValChange(Integer val) {
             if (val == clid) {
                 return this;
@@ -359,37 +381,45 @@ final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements Ca
 
     private synchronized void onApplyValChange(Integer val) {
         if (val != null) {
+            State oldState = currentState;
             currentState = currentState.onApplyValChange(val);
             if (currentState.equals(IdleState) && timeoutFuture != null) {
                 timeoutFuture.cancel(true);
                 timeoutFuture = null;
             }
+            if(trace) LOG.debug("onApplyValChange(" + val + "): " + oldState.signature() + " -> " + currentState.signature());
         }
     }
 
     private synchronized void onCarClidChange(Integer val) {
         if (val != null) {
+            State oldState = currentState;
             currentState = currentState.onCarClidChange(val);
             if (currentState.equals(IdleState) && timeoutFuture != null) {
                 timeoutFuture.cancel(true);
                 timeoutFuture = null;
             }
+            if(trace) LOG.debug("onCarClidChange(" + val + "): " + oldState.signature() + " -> " + currentState.signature());
         }
     }
 
     private synchronized void onCarValChange(C carState) {
         if (carState != null) {
+            State oldState = currentState;
             currentState = currentState.onCarValChange(carState);
             if (currentState.equals(IdleState) && timeoutFuture != null) {
                 timeoutFuture.cancel(true);
                 timeoutFuture = null;
             }
+            if(trace) LOG.debug("onCarValChange(" + carState + "): " + oldState.signature() + " -> " + currentState.signature());
         }
     }
 
     private synchronized void onTimeout() {
         timeoutFuture = null;
+        State oldState = currentState;
         currentState = currentState.onTimeout();
+        if(trace) LOG.debug("onTimeout: " + oldState.signature() + " -> " + currentState.signature());
     }
 
     @Override

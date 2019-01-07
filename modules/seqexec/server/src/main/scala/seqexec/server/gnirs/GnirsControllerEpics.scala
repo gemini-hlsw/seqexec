@@ -3,7 +3,6 @@
 
 package seqexec.server.gnirs
 
-import cats.Eq
 import cats.data.EitherT
 import cats.implicits._
 import cats.effect.{ IO, Timer }
@@ -18,12 +17,12 @@ import squants.{Length, Seconds, Time}
 import squants.space.LengthConversions._
 import seqexec.model.dhs.ImageFileId
 import seqexec.server._
+import seqexec.server.EpicsUtil._
 import squants.electro.Millivolts
 import squants.space.LengthConversions._
 import squants.time.TimeConversions._
 import squants.{Length, Seconds, Time}
 
-import scala.math.abs
 import scala.util.Try
 
 object GnirsControllerEpics extends GnirsController {
@@ -221,7 +220,7 @@ object GnirsControllerEpics extends GnirsController {
       case c:Other => setOtherCCParams(c)
     }
     if (params.isEmpty) SeqAction(EpicsCommand.Completed)
-    else params.sequence.map(_ => ()) *>
+    else params.sequence. void*>
       ccCmd.setTimeout(ConfigTimeout) *>
       ccCmd.post
   }
@@ -229,7 +228,9 @@ object GnirsControllerEpics extends GnirsController {
   private def setDCParams(config: DCConfig): SeqAction[EpicsCommand.Result] = {
 
     val expTimeTolerance = 0.0001
-    val biasTolerance = 0.0001
+    // Old Seqexec has an absolute tolerance of 0.05V, which is 16.7% relative tolerance for
+    // 0.3V bias
+    val biasTolerance = 0.15
 
     val (lowNoise, digitalAvgs) = readModeEncoder.encode(config.readMode)
 
@@ -239,7 +240,8 @@ object GnirsControllerEpics extends GnirsController {
     val coaddsWriter = smartSetParam(config.coadds, epicsSys.numCoadds,
       dcCmd.setCoadds(config.coadds))
 
-    val biasWriter =smartSetDoubleParam(biasTolerance)(encode(config.wellDepth), epicsSys.detBias,
+    // Value read from the instrument is the negative of what was set
+    val biasWriter = smartSetDoubleParam(biasTolerance)(-encode(config.wellDepth), epicsSys.detBias,
       dcCmd.setDetBias(encode(config.wellDepth)))
 
     val lowNoiseWriter = smartSetParam(lowNoise, epicsSys.lowNoise, dcCmd.setLowNoise(lowNoise))
@@ -250,44 +252,53 @@ object GnirsControllerEpics extends GnirsController {
     val params =  expTimeWriter ++ coaddsWriter ++ biasWriter ++ lowNoiseWriter ++ digitalAvgsWriter
 
     if(params.isEmpty) SeqAction(EpicsCommand.Completed)
-    else params.sequence.map(_ => ()) *>
+    else params.sequence. void*>
       dcCmd.setTimeout(DefaultTimeout) *>
       dcCmd.post
   }
 
   override def applyConfig(config: GnirsConfig): SeqAction[Unit] =
     SeqAction(Log.debug("Starting GNIRS configuration")) *>
+      (if(GnirsEpics.instance.dhsConnected.exists(identity)) SeqAction.void
+       else EitherT.right(IO(Log.warn("GNIRS is not connected to DHS")))
+      ) *>
+      (if(GnirsEpics.instance.arrayActive.exists(identity)) SeqAction.void
+       else EitherT.right(IO(Log.warn("GNIRS detector array is not active")))
+      ) *>
       setDCParams(config.dc) *>
       setCCParams(config.cc) *>
       SeqAction(Log.debug("Completed GNIRS configuration"))
 
 
-  override def observe(fileId: ImageFileId, expTime: Time): SeqAction[ObserveCommand.Result] = for {
-    _   <- GnirsEpics.instance.observeCmd.setLabel(fileId)
-    _   <- GnirsEpics.instance.observeCmd.setTimeout(expTime + ReadoutTimeout)
-    ret <- GnirsEpics.instance.observeCmd.post
-  } yield ret
+  override def observe(fileId: ImageFileId, expTime: Time): SeqAction[ObserveCommand.Result] =
+    EitherT.right[SeqexecFailure](IO(Log.info("Start GNIRS observe"))) *>
+      (if(GnirsEpics.instance.dhsConnected.exists(identity)) SeqAction.void
+       else SeqAction.fail(SeqexecFailure.Execution("GNIRS is not connected to DHS"))
+      ) *>
+      (if(GnirsEpics.instance.arrayActive.exists(identity)) SeqAction.void
+       else SeqAction.fail(SeqexecFailure.Execution("GNIRS detector array is not active"))
+      ) *>
+      GnirsEpics.instance.observeCmd.setLabel(fileId) *>
+      GnirsEpics.instance.observeCmd.setTimeout(expTime + ReadoutTimeout) *>
+      GnirsEpics.instance.observeCmd.post
 
-  override def endObserve: SeqAction[Unit] = for {
-    _ <- EitherT.right(IO(Log.debug("Send endObserve to GNIRS")))
-    _ <- GnirsEpics.instance.endObserveCmd.setTimeout(DefaultTimeout)
-    _ <- GnirsEpics.instance.endObserveCmd.mark
-    _ <- GnirsEpics.instance.endObserveCmd.post
-  } yield ()
+  override def endObserve: SeqAction[Unit] =
+    EitherT.right[SeqexecFailure](IO(Log.debug("Send endObserve to GNIRS"))) *>
+      GnirsEpics.instance.endObserveCmd.setTimeout(DefaultTimeout) *>
+      GnirsEpics.instance.endObserveCmd.mark *>
+      GnirsEpics.instance.endObserveCmd.post.void
 
-  override def stopObserve: SeqAction[Unit] = for {
-    _ <- EitherT.right(IO(Log.info("Stop GNIRS exposure")))
-    _ <- GnirsEpics.instance.stopCmd.setTimeout(DefaultTimeout)
-    _ <- GnirsEpics.instance.stopCmd.mark
-    _ <- GnirsEpics.instance.stopCmd.post
-  } yield ()
+  override def stopObserve: SeqAction[Unit] =
+    EitherT.right[SeqexecFailure](IO(Log.info("Stop GNIRS exposure"))) *>
+      GnirsEpics.instance.stopCmd.setTimeout(DefaultTimeout) *>
+      GnirsEpics.instance.stopCmd.mark *>
+      GnirsEpics.instance.stopCmd.post.void
 
-  override def abortObserve: SeqAction[Unit] = for {
-    _ <- EitherT.right(IO(Log.info("Abort GNIRS exposure")))
-    _ <- GnirsEpics.instance.abortCmd.setTimeout(DefaultTimeout)
-    _ <- GnirsEpics.instance.abortCmd.mark
-    _ <- GnirsEpics.instance.abortCmd.post
-  } yield ()
+  override def abortObserve: SeqAction[Unit] =
+    EitherT.right[SeqexecFailure](IO(Log.info("Abort GNIRS exposure"))) *>
+      GnirsEpics.instance.abortCmd.setTimeout(DefaultTimeout) *>
+      GnirsEpics.instance.abortCmd.mark *>
+      GnirsEpics.instance.abortCmd.post.void
 
   private def removePartName(s: String) = {
     val pattern = "_G[0-9]{4}$"
@@ -295,18 +306,12 @@ object GnirsControllerEpics extends GnirsController {
     s.replaceAll(pattern, "")
   }
 
-  private def smartSetParam[A: Eq](v: A, get: => Option[A], set: SeqAction[Unit]): List[SeqAction[Unit]] =
-    if(get =!= v.some) List(set) else Nil
-
-  private def smartSetDoubleParam(relTolerance: Double)(v: Double, get: => Option[Double], set: SeqAction[Unit]): List[SeqAction[Unit]] =
-    if(get.forall(x => (v === 0.0 && x =!= 0.0) || abs((x - v)/v) > relTolerance)) List(set) else Nil
-
   override def observeProgress(total: Time): Stream[IO, Progress] = {
     implicit val ioTimer: Timer[IO] = IO.timer(ExecutionContext.global)
-    ProgressUtil.fromFOption(_ => IO(
-      GnirsEpics.instance.countDown.flatMap(x => Try(x.toDouble).toOption)
-        .map(c => Progress(total, RemainingTime(c.seconds)))
-    ))
+    EpicsUtil.countdown[IO](total,
+      IO(GnirsEpics.instance.countDown.flatMap(x => Try(x.toDouble).toOption).map(_.seconds)),
+      IO(GnirsEpics.instance.observeState)
+    )
   }
 
   private val DefaultTimeout: Time = Seconds(60)

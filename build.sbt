@@ -430,8 +430,8 @@ lazy val seqexec_web_client = project.in(file("modules/seqexec/web/client"))
     webpackBundlingMode in fullOptJS         := BundlingMode.Application,
     webpackResources                         := (baseDirectory.value / "src" / "webpack") * "*.js",
     webpackDevServerPort                     := 9090,
-    version in webpack                       := "4.20.2",
-    version in startWebpackDevServer         := "3.1.8",
+    version in webpack                       := "4.28.2",
+    version in startWebpackDevServer         := "3.1.14",
     // Use a different Webpack configuration file for production and create a single bundle without source maps
     webpackConfigFile in fullOptJS           := Some(baseDirectory.value / "src" / "webpack" / "prod.webpack.config.js"),
     webpackConfigFile in fastOptJS           := Some(baseDirectory.value / "src" / "webpack" / "dev.webpack.config.js"),

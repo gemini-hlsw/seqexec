@@ -41,7 +41,7 @@ class Http4sAuthentication(auth: AuthenticationService) {
 
   val optAuth: AuthMiddleware[IO, AuthResult] = AuthMiddleware(optAuthUser)
 
-  private val onFailure: AuthedService[AuthenticationFailure, IO] = Kleisli(req => OptionT.liftF(Forbidden()))
+  private val onFailure: AuthedService[AuthenticationFailure, IO] = Kleisli(_ => OptionT.liftF(Forbidden()))
   val reqAuth: AuthMiddleware[IO, UserDetails] = AuthMiddleware(authUser, onFailure)
 
 }

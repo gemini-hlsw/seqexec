@@ -3,6 +3,7 @@
 
 package seqexec.web.client.handlers
 
+import cats.implicits._
 import diode.ActionHandler
 import diode.ActionResult
 import diode.ModelRW
@@ -21,7 +22,7 @@ class OpenConnectionHandler[M](modelRW: ModelRW[M, CalibrationQueues])
   override def handle: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(ConnectionOpenEvent(u, _)) =>
       val ts = u
-        .map(_ => CalQueueTable.State.EditableTableState)
+        .as(CalQueueTable.State.EditableTableState)
         .getOrElse(CalQueueTable.State.ROTableState)
       updatedL(CalibrationQueues.tableStatesT.set(ts))
   }

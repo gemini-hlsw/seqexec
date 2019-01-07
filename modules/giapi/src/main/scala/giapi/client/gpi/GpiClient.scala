@@ -13,7 +13,7 @@ import mouse.boolean._
 /**
   * Client for GPI
   */
-final class GPIClient[F[_]](override val giapi: Giapi[F]) extends GiapiClient[F] {
+final class GpiClient[F[_]](override val giapi: Giapi[F]) extends GiapiClient[F] {
   import GiapiClient.DefaultCommandTimeout
 
   ///////////////
@@ -105,11 +105,11 @@ object GPIExample extends cats.effect.IOApp {
   import scala.concurrent.duration._
   import scala.concurrent.ExecutionContext
 
-  val connect: Resource[IO, GPIClient[IO]] =
+  val connect: Resource[IO, GpiClient[IO]] =
     Resource.make(
       Giapi.giapiConnection[IO]("failover:(tcp://127.0.0.1:61616)", ExecutionContext.global)
            .connect
-      )(_.close).map(new GPIClient[IO](_))
+      )(_.close).map(new GpiClient[IO](_))
 
   val gpiStatus: IO[(Vector[Int], Int, String, Float)] =
     connect.use { client =>

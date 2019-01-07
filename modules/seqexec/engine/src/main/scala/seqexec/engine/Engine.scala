@@ -80,14 +80,13 @@ class Engine[D, U](stateL: Engine.State[D]) {
           case r                 =>
             singleRunFailed(c, Result.Error(s"Unhandled result for single run action: $r"))
         }
-      ).map[EventResult.Outcome](_ => EventResult.Ok)
+      ).as[EventResult.Outcome](EventResult.Ok)
     ).getOrElse(pure[EventResult.Outcome](EventResult.Failure))
 
   }
 
-  private def completeSingleRun(c: ActionCoords): HandleType[Unit] = modifyS(c.sid)(
-    _.completeSingle(c.actCoords)
-  )
+  private def completeSingleRun[V <: RetVal](c: ActionCoords, r: V): HandleType[Unit] =
+    modifyS(c.sid)(_.completeSingle(c.actCoords, r))
 
   private def failSingleRun(c: ActionCoords, e: Result.Error): HandleType[Unit] = modifyS(c.sid)(
     _.failSingle(c.actCoords, e)
@@ -295,7 +294,7 @@ class Engine[D, U](stateL: Engine.State[D]) {
       switch(id)(SequenceState.Completed) *> pure(SystemUpdate(se, EventResult.Ok))
     case SingleRunCompleted(c, r)   =>
       Logger.debug(s"Engine: single action $c completed with result $r") *>
-        completeSingleRun(c) *> pure(SystemUpdate(se, EventResult.Ok))
+        completeSingleRun(c, r.response) *> pure(SystemUpdate(se, EventResult.Ok))
     case SingleRunFailed(c, e)      =>
       Logger.debug(s"Engine: single action $c failed with error $e") *>
         failSingleRun(c, e) *> pure(SystemUpdate(se, EventResult.Ok))
@@ -310,7 +309,7 @@ class Engine[D, U](stateL: Engine.State[D]) {
     ev match {
       case EventUser(ue)   => handleUserEvent(ue)
       case EventSystem(se) => handleSystemEvent(se).flatMap(x =>
-        userReact.applyOrElse(se, (_:SystemEvent) =>  unit).map(_ => x))
+        userReact.applyOrElse(se, (_:SystemEvent) =>  unit).as(x))
     }
   }
 

@@ -10,6 +10,7 @@ import cats.implicits._
 import cats.Applicative
 import cats.ApplicativeError
 import cats.Eq
+import cats.Endo
 import cats.Functor
 import edu.gemini.spModel.`type`.SequenceableSpType
 import edu.gemini.spModel.guide.StandardGuideOptions
@@ -34,22 +35,16 @@ import seqexec.model.enum._
 import seqexec.model.Notification
 import seqexec.model.UserDetails
 import seqexec.model.dhs.ImageFileId
+import seqexec.model.StepId
+import seqexec.engine.Event
+import seqexec.engine.Handle
+import seqexec.engine.Sequence
+import squants.Time
 
 package server {
-  import seqexec.engine.Sequence
-
-  import squants.Time
-
-  @Lenses
-  final case class SequenceData(observer: Option[Observer],
-                                seqGen: SequenceGen,
-                                seq: Sequence.State[IO])
-
-  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
-  object SequenceData
-
   @Lenses
   final case class EngineState(queues: ExecutionQueues, selected: Map[Instrument, Observation.Id], conditions: Conditions, operator: Option[Operator], sequences: Map[Observation.Id, SequenceData])
+
   @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object EngineState extends Engine.State[EngineState]{
     val default: EngineState = EngineState(Map(CalibrationQueueId -> ExecutionQueue.init(CalibrationQueueName)), Map.empty, Conditions.Default, None, Map.empty)
@@ -66,6 +61,10 @@ package server {
       sid: Observation.Id
     ): Optional[EngineState, Sequence.State[IO]] =
       atSequence(sid) ^|-> SequenceData.seq
+
+    implicit final class WithEventOps(val f: Endo[EngineState]) extends AnyVal {
+      def withEvent(ev: SeqEvent): EngineState => (EngineState, SeqEvent) = f >>> {(_, ev)}
+    }
   }
 
   sealed trait SeqEvent
@@ -87,6 +86,8 @@ package server {
   final case class UpdateQueueRemove(qid: QueueId, seqs: List[Observation.Id], pos: List[Int]) extends SeqEvent
   final case class UpdateQueueMoved(qid: QueueId, cid: ClientId, oid: Observation.Id, pos: Int) extends SeqEvent
   final case class UpdateQueueClear(qid: QueueId) extends SeqEvent
+  final case class StartSysConfig(sid: Observation.Id, stepIs: StepId, res: Resource)
+    extends SeqEvent
   case object NullSeqEvent extends SeqEvent
 
   sealed trait ControlStrategy
@@ -222,5 +223,14 @@ package object server {
       case _           => false
     }
   }
+
+  implicit final class ToHandle[A](f: EngineState => (EngineState, A)) {
+    import Handle.StateToHandle
+    def toHandle: Handle[EngineState, Event[executeEngine.ConcreteTypes], A] =
+      StateT[IO, EngineState, A]{ st => IO(f(st)) }.toHandle
+  }
+
+  def toStepList(seq: SequenceGen, d: HeaderExtraData): List[engine.Step[IO]] =
+    seq.steps.map(_.generate(d))
 
 }

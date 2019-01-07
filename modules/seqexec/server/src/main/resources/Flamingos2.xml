@@ -453,6 +453,11 @@
             <type>STRING</type>
             <description>Temperature reported by LS-332 Channel B</description>
         </attribute>
+        <attribute name="countdown">
+            <channel>sad:TIMELEFT</channel>
+            <type>INTEGER</type>
+            <description>Remaining time in current exposure</description>
+        </attribute>
         <attribute name="WCSDIM">
             <channel>sad:WCSDIM</channel>
             <type>STRING</type>

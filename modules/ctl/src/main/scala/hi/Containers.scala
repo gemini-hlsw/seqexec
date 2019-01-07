@@ -35,7 +35,7 @@ object Containers {
   def createGemContainer(version: String, iGem: Image, n: Network): CtlIO[Container] =
     gosub(s"Creating Gem container from image ${iGem.hash}") {
       for {
-        r  <- isRemote // irritating … see below
+        _  <- isRemote // irritating … see below
         c  <- docker("run",
                 "--detach",
                 "--tty",

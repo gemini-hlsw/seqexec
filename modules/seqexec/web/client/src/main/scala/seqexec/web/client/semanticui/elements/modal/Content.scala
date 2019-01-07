@@ -10,7 +10,7 @@ import japgolly.scalajs.react.vdom.html_<^._
 object Content {
   private val component = ScalaComponent.builder[Unit]("Content")
     .stateless
-    .renderPC((_, p, c) =>
+    .renderPC((_, _, c) =>
       <.div(
         ^.cls := "ui content",
         c

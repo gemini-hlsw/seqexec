@@ -54,7 +54,8 @@ final class Flamingos2Epics(epicsService: CaService, tops: Map[String, String]) 
   object configCmd extends EpicsCommand {
     override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("flamingos2::config"))
 
-    private val useElectronicOffsetting = cs.map(_.addInteger("useElectronicOffsetting", F2_TOP + "wfs:followA.K", "Enable electronic Offsets", false))
+    private val useElectronicOffsetting = cs.map(_.addInteger("useElectronicOffsetting",
+      s"${F2_TOP}wfs:followA.K", "Enable electronic Offsets", false))
     def setUseElectronicOffsetting(v: Integer): SeqAction[Unit] = setParameter(useElectronicOffsetting, v)
 
     private val filter = cs.map(_.getString("filter"))
@@ -80,7 +81,7 @@ final class Flamingos2Epics(epicsService: CaService, tops: Map[String, String]) 
 
   }
 
-  private val f2State = epicsService.getStatusAcceptor("flamingos2::dcstatus")
+  private val f2State = epicsService.getStatusAcceptor("flamingos2::status")
 
   def exposureTime: Option[String] = Option(f2State.getStringAttribute("exposureTime").value)
 
@@ -99,6 +100,13 @@ final class Flamingos2Epics(epicsService: CaService, tops: Map[String, String]) 
   def lyot: Option[String] = Option(f2State.getStringAttribute("lyot").value)
 
   def windowCover: Option[String] = Option(f2State.getStringAttribute("windowCover").value)
+
+  def countdown: Option[Int] = Option(f2State.getIntegerAttribute("countdown").value)
+    .map(_.toInt)
+
+  private val observeCAttr: CaAttribute[CarState] = f2State.addEnum("observeState",
+    s"{F2_TOP}observeC.VAL", classOf[CarState])
+  def observeState: Option[CarState] = Option(observeCAttr.value)
 
   // For FITS keywords
   def health: Option[String] = Option(f2State.getStringAttribute("INHEALTH").value)

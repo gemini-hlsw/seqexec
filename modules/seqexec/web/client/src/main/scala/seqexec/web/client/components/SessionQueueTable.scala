@@ -535,7 +535,7 @@ object SessionQueueTable {
   private def classIconRenderer(
     b: Backend
   ): CellRenderer[js.Object, js.Object, SessionQueueRow] =
-    (_, _, _, row: SessionQueueRow, index) => {
+    (_, _, _, row: SessionQueueRow, _) => {
       val icon: TagMod =
         row.obsClass match {
           case ObsClass.Daytime =>
@@ -565,7 +565,7 @@ object SessionQueueTable {
   private def addToQueueRenderer(
     b: Backend
   ): CellRenderer[js.Object, js.Object, SessionQueueRow] =
-    (_, _, _, row: SessionQueueRow, index) => {
+    (_, _, _, row: SessionQueueRow, _) => {
       linkTo(b.props, pageOf(row))(
         SeqexecStyles.queueIconColumn,
         ^.title := (if (row.inDayCalQueue) {
@@ -773,15 +773,13 @@ object SessionQueueTable {
                           r.obsId,
                           StepIdDisplayed(r.nextStepToRun.getOrElse(0))))
     } else { // Try to load it
-      (for {
-        u <- b.props.user
-        if b.props.canOperate && i >= 0 && !r.loaded
-      } yield {
-        val load = SeqexecCircuit.dispatchCB(
-          LoadSequence(Observer(u.displayName), r.instrument, r.obsId))
+      b.props.user.filter{_ =>
+        b.props.canOperate && i >= 0 && !r.loaded
+      }.map { u =>
+        val load = SeqexecCircuit.dispatchCB(LoadSequence(Observer(u.displayName), r.instrument, r.obsId))
         val spin = b.modState(_.copy(rowLoading = i.some))
         spin *> load
-      }).getOrEmpty
+      }.getOrEmpty
     }
   }
 
@@ -824,14 +822,14 @@ object SessionQueueTable {
     (className:        String,
      columns:          Array[VdomNode],
      index:            Int,
-     isScrolling:      Boolean,
+     _:                Boolean,
      key:              String,
      rowData:          SessionQueueRow,
      onRowClick:       Option[OnRowClick],
      onRowDoubleClick: Option[OnRowClick],
-     onRowMouseOut:    Option[OnRowClick],
-     onRowMouseOver:   Option[OnRowClick],
-     onRowRightClick:  Option[OnRowClick],
+     _:                Option[OnRowClick],
+     _:                Option[OnRowClick],
+     _:                Option[OnRowClick],
      style:            Style) => {
       <.div(
         ^.cls := className,

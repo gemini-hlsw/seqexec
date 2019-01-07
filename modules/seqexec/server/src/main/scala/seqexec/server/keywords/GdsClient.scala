@@ -25,7 +25,7 @@ import seqexec.server.SeqActionF
 /**
   * Gemini Data service client
   */
-final case class GDSClient(base: Client[IO], gdsUri: Uri)(implicit timer: Timer[IO])
+final case class GdsClient(base: Client[IO], gdsUri: Uri)(implicit timer: Timer[IO])
     extends Http4sClientDsl[IO] {
 
   @SuppressWarnings(Array("org.wartremover.warts.Var"))
@@ -57,10 +57,10 @@ final case class GDSClient(base: Client[IO], gdsUri: Uri)(implicit timer: Timer[
     </methodCall>
 
   private def handleConnectionError(e: Throwable): SeqexecFailure =
-    SeqexecFailure.GDSException(e, gdsUri)
+    SeqexecFailure.GdsException(e, gdsUri)
 
   private def handleXmlError(xml: Elem): SeqActionF[IO, Unit] =
-    EitherT.fromEither(GDSClient.checkError(xml, gdsUri))
+    EitherT.fromEither(GdsClient.checkError(xml, gdsUri))
 
   /**
     * Set the keywords for an image
@@ -156,7 +156,7 @@ final case class GDSClient(base: Client[IO], gdsUri: Uri)(implicit timer: Timer[
     </param>
 }
 
-object GDSClient {
+object GdsClient {
 
   def checkError(e: Elem, gdsUri: Uri): Either[SeqexecFailure, Unit] = {
     val v = for {
@@ -164,7 +164,7 @@ object GDSClient {
       if (m \ "name").text === "faultString"
     } yield (m \ "value").text.trim
     v.headOption.fold(().asRight[SeqexecFailure])(
-      SeqexecFailure.GDSXMLError(_, gdsUri).asLeft[Unit])
+      SeqexecFailure.GdsXmlError(_, gdsUri).asLeft[Unit])
   }
 
   /**

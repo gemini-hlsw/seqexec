@@ -19,7 +19,7 @@ import gem.Observation
 import gem.enum.Site
 import mouse.all._
 import org.log4s._
-import seqexec.engine.{Action, Event, Result, Sequence, Step, fromF}
+import seqexec.engine.{Action, Event, Result, Sequence, fromF}
 import seqexec.model.enum.{Instrument, Resource}
 import seqexec.model.{ActionType, StepState}
 import seqexec.model.dhs.ImageFileId
@@ -27,16 +27,18 @@ import seqexec.server.ConfigUtilOps._
 import seqexec.server.SeqTranslate.Systems
 import seqexec.server.SeqexecFailure.{Unexpected, UnrecognizedInstrument}
 import seqexec.server.InstrumentSystem._
+import seqexec.server.SequenceGen.StepActionsGen
 import seqexec.server.flamingos2.{Flamingos2, Flamingos2Controller, Flamingos2Header}
 import seqexec.server.keywords._
-import seqexec.server.gpi.{GPI, GPIController, GPIHeader}
-import seqexec.server.ghost.{GHOST, GHOSTController, GHOSTHeader}
+import seqexec.server.gpi.{Gpi, GpiController, GpiHeader}
+import seqexec.server.ghost.{Ghost, GhostController, GhostHeader}
 import seqexec.server.gcal._
 import seqexec.server.gmos.{GmosController, GmosHeader, GmosNorth, GmosSouth}
 import seqexec.server.gws.{DummyGwsKeywordsReader, GwsHeader, GwsKeywordsReaderImpl}
 import seqexec.server.tcs._
 import seqexec.server.tcs.TcsController.ScienceFoldPosition
 import seqexec.server.gnirs._
+import seqexec.server.niri.{Niri, NiriController, NiriHeader}
 import squants.Time
 import squants.time.TimeConversions._
 
@@ -77,14 +79,14 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
                      (ctx: HeaderExtraData)
                      (implicit ev: Concurrent[IO]): Stream[IO, Result]
   = {
-    val dataId: SeqAction[String] = EitherT(IO.apply(
+    val dataId: SeqAction[String] = SeqAction.either(
       config.extract(OBSERVE_KEY / DATA_LABEL_PROP).as[String].leftMap(e =>
-      SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))))
+      SeqexecFailure.Unexpected(ConfigUtilOps.explain(e))))
 
-    def notifyObserveStart: SeqAction[Unit] = otherSys.map(_.notifyObserveStart).sequence.map(_ => ())
+    def notifyObserveStart: SeqAction[Unit] = otherSys.map(_.notifyObserveStart).sequence.void
 
     // endObserve must be sent to the instrument too.
-    def notifyObserveEnd: SeqAction[Unit] = (inst +: otherSys).map(_.notifyObserveEnd).sequence.map(_ => ())
+    def notifyObserveEnd: SeqAction[Unit] = (inst +: otherSys).map(_.notifyObserveEnd).sequence.void
 
     def closeImage(id: ImageFileId): SeqAction[Unit] =
       inst.keywordsClient.closeImage(id)
@@ -140,14 +142,16 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
       val initialStepExecutions: List[List[Action[IO]]] =
         if (i === 0)
           List(List(systems.odb.sequenceStart(obsId, "")
-            .map(_ => Response.Ignored).toAction(ActionType.Undefined)))
+            .as(Response.Ignored).toAction(ActionType.Undefined)))
         else Nil
 
-      def regularStepExecutions(ctx:HeaderExtraData): List[List[Action[IO]]] = List(
-        sys.map { x =>
-          val kind = ActionType.Configure(resourceFromSystem(x))
-          x.configure(config).map(_ => Response.Configured(x.resource)).toAction(kind)
-        },
+      val configs: Map[Resource, Action[IO]] = sys.map { x =>
+        val res = resourceFromSystem(x)
+        val kind = ActionType.Configure(res)
+
+        res -> x.configure(config).as(Response.Configured(x.resource)).toAction(kind)
+      }.toMap
+      def rest(ctx:HeaderExtraData): List[List[Action[IO]]] = List(
         List(Action(ActionType.Observe, observe(config, obsId, inst, sys.filterNot(inst.equals),
           headers)(ctx), Action.State(Action.Idle, Nil)))
       )
@@ -157,10 +161,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
           i,
           config.toStepConfig,
           calcResources(sys),
-          ctx => Step.init[IO](
-            id = i,
-            executions = initialStepExecutions ++ regularStepExecutions(ctx)
-          )
+          StepActionsGen(initialStepExecutions, configs, rest)
         )
         case StepState.Pending                   => SequenceGen.SkippedStepGen(
           i,
@@ -387,10 +388,11 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
     case Instrument.F2    => TrySeq(Flamingos2(systems.flamingos2, systems.dhs))
     case Instrument.GmosS => TrySeq(GmosSouth(systems.gmosSouth, systems.dhs))
     case Instrument.GmosN => TrySeq(GmosNorth(systems.gmosNorth, systems.dhs))
-    case Instrument.GNIRS => TrySeq(Gnirs(systems.gnirs, systems.dhs))
-    case Instrument.GPI   => TrySeq(GPI(systems.gpi))
-    case Instrument.GHOST => TrySeq(GHOST(systems.ghost))
-    case _                      => TrySeq.fail(Unexpected(s"Instrument $inst not supported."))
+    case Instrument.Gnirs => TrySeq(Gnirs(systems.gnirs, systems.dhs))
+    case Instrument.Gpi   => TrySeq(Gpi(systems.gpi))
+    case Instrument.Ghost => TrySeq(Ghost(systems.ghost))
+    case Instrument.Niri  => TrySeq(Niri(systems.niri, systems.dhs))
+    case _                => TrySeq.fail(Unexpected(s"Instrument $inst not supported."))
   }
 
   private def calcResources(sys: List[System[IO]]): Set[Resource] =
@@ -402,10 +404,10 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
     case Instrument.F2    => true
     case Instrument.GmosS => true
     case Instrument.GmosN => true
-    case Instrument.NIFS  => true
-    case Instrument.NIRI  => true
-    case Instrument.GPI   => true
-    case Instrument.GHOST => false
+    case Instrument.Nifs  => true
+    case Instrument.Niri  => true
+    case Instrument.Gpi   => true
+    case Instrument.Ghost => false
     case _                => false
   }
 
@@ -435,10 +437,10 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
     case GmosNorth(_, _)  => Instrument.GmosN
     case GmosSouth(_, _)  => Instrument.GmosS
     case Flamingos2(_, _) => Instrument.F2
-    case Gnirs(_, _)      => Instrument.GNIRS
-    case GPI(_)           => Instrument.GPI
-    case GHOST(_)         => Instrument.GHOST
-
+    case Gnirs(_, _)      => Instrument.Gnirs
+    case Gpi(_)           => Instrument.Gpi
+    case Ghost(_)         => Instrument.Ghost
+    case Niri(_, _)       => Instrument.Niri
   }
 
   private def calcInstHeader(config: Config, inst: Instrument)(
@@ -452,13 +454,14 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
            Instrument.GmosN  =>
         val gmosInstReader = if (settings.gmosKeywords) GmosHeader.InstKeywordReaderImpl else GmosHeader.DummyInstKeywordReader
         toInstrumentSys(inst).map(GmosHeader.header(_, GmosHeader.ObsKeywordsReaderImpl(config), gmosInstReader, tcsKReader))
-      case Instrument.GNIRS  =>
+      case Instrument.Gnirs  =>
         val gnirsReader = if(settings.gnirsKeywords) GnirsKeywordReaderImpl else GnirsKeywordReaderDummy
         toInstrumentSys(inst).map(GnirsHeader.header(_, gnirsReader, tcsKReader))
-      case Instrument.GPI    =>
-        toInstrumentSys(inst).map(GPIHeader.header(_, systems.gpi.gdsClient, tcsKReader, ObsKeywordReaderImpl(config, site)))
-      case Instrument.GHOST  =>
-        GHOSTHeader.header().asRight
+      case Instrument.Gpi    =>
+        toInstrumentSys(inst).map(GpiHeader.header(_, systems.gpi.gdsClient, tcsKReader, ObsKeywordReaderImpl(config, site)))
+      case Instrument.Ghost  =>
+        GhostHeader.header().asRight
+      case Instrument.Niri   => NiriHeader.header.asRight
       case _                 =>
         TrySeq.fail(Unexpected(s"Instrument $inst not supported."))
     }
@@ -500,16 +503,17 @@ object SeqTranslate {
   def apply(site: Site, systems: Systems, settings: TranslateSettings): SeqTranslate = new SeqTranslate(site, systems, settings)
 
   final case class Systems(
-                      odb: ODBProxy,
-                      dhs: DhsClient,
-                      tcs: TcsController,
-                      gcal: GcalController,
-                      flamingos2: Flamingos2Controller,
-                      gmosSouth: GmosController.GmosSouthController,
-                      gmosNorth: GmosController.GmosNorthController,
-                      gnirs: GnirsController,
-                      gpi: GPIController[IO],
-                      ghost: GHOSTController[IO]
+                            odb: OdbProxy[IO],
+                            dhs: DhsClient,
+                            tcs: TcsController,
+                            gcal: GcalController,
+                            flamingos2: Flamingos2Controller,
+                            gmosSouth: GmosController.GmosSouthController,
+                            gmosNorth: GmosController.GmosNorthController,
+                            gnirs: GnirsController,
+                            gpi: GpiController[IO],
+                            ghost: GhostController[IO],
+                            niri: NiriController
                     )
 
   private sealed trait StepType {
@@ -521,9 +525,10 @@ object SeqTranslate {
       case Flamingos2.name => TrySeq(Instrument.F2)
       case GmosSouth.name  => TrySeq(Instrument.GmosS)
       case GmosNorth.name  => TrySeq(Instrument.GmosN)
-      case Gnirs.name      => TrySeq(Instrument.GNIRS)
-      case GPI.name        => TrySeq(Instrument.GPI)
-      case GHOST.name      => TrySeq(Instrument.GHOST)
+      case Gnirs.name      => TrySeq(Instrument.Gnirs)
+      case Gpi.name        => TrySeq(Instrument.Gpi)
+      case Ghost.name      => TrySeq(Instrument.Ghost)
+      case Niri.name       => TrySeq(Instrument.Niri)
       case ins             => TrySeq.fail(UnrecognizedInstrument(s"inst $ins"))
     }
   }
@@ -536,7 +541,7 @@ object SeqTranslate {
   private final case class FlatOrArc(override val instrument: Instrument) extends StepType
   private final case class DarkOrBias(override val instrument: Instrument) extends StepType
   private case object AlignAndCalib extends StepType {
-    override val instrument: Instrument = Instrument.GPI
+    override val instrument: Instrument = Instrument.Gpi
   }
 
   private def calcStepType(config: Config): TrySeq[StepType] = {

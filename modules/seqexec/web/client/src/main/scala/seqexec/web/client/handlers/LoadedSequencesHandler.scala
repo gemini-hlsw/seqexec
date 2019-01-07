@@ -66,7 +66,7 @@ class LoadedSequencesHandler[M](modelRW: ModelRW[M, SODLocationFocus])
             Effect(
               SeqexecWebClient
                 .loadSequence(i, id, observer, cid)
-                .map(_ => NoAction)))
+                .as(NoAction)))
         .getOrElse(VoidEffect)
       val update = SODLocationFocus.sod.modify(_.markAsLoading(id))
       updatedLE(update, loadSequence)
