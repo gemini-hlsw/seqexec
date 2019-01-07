@@ -262,7 +262,7 @@ class GmosEpics(epicsService: CaService, tops: Map[String, String]) {
   def dtaXOffset: Option[Double] = Option(state.getDoubleAttribute("dtaXOffset").value)
     .map(_.toDouble)
 
-  def dtaXCenter: Option[Double] = Option(state.getStringAttribute("dtaXOffset").value)
+  def dtaXCenter: Option[Double] = Option(state.getStringAttribute("dtaXCenter").value)
     .flatMap(_.parseDouble.toOption)
 
   def gratingWavel: Option[Double] = Option(state.getDoubleAttribute("adjgrwlen").value).map(_.toDouble)
