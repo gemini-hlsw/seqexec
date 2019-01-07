@@ -59,7 +59,7 @@ object SeqexecWebClient extends ModelBooPicklers {
         url          = s"$baseUrl/commands/${encodeURI(id.format)}/sync",
         responseType = "arraybuffer"
       )
-      .map(_ => ())
+      .void
 
   /**
     * Requests the backend to execute a sequence
@@ -70,7 +70,7 @@ object SeqexecWebClient extends ModelBooPicklers {
         url          = s"$baseUrl/commands/${encodeURI(id.format)}/start/${encodeURI(clientId.self.show)}",
         responseType = "arraybuffer"
       )
-      .map(_ => ())
+      .void
 
   /**
     * Requests the backend to set a breakpoint
@@ -81,7 +81,7 @@ object SeqexecWebClient extends ModelBooPicklers {
         url          = s"$baseUrl/commands/${encodeURI(sid.format)}/${step.id}/breakpoint/${step.breakpoint}",
         responseType = "arraybuffer"
       )
-      .map(_ => ())
+      .void
 
   /**
     * Requests the backend to set a breakpoint
@@ -92,7 +92,7 @@ object SeqexecWebClient extends ModelBooPicklers {
         url          = s"$baseUrl/commands/${encodeURI(sid.format)}/${step.id}/skip/${step.skip}",
         responseType = "arraybuffer"
       )
-      .map(_ => ())
+      .void
 
   /**
     * Requests the backend to stop immediately this sequence
@@ -103,7 +103,7 @@ object SeqexecWebClient extends ModelBooPicklers {
         url          = s"$baseUrl/commands/${encodeURI(sid.format)}/$step/stop",
         responseType = "arraybuffer"
       )
-      .map(_ => ())
+      .void
 
   /**
     * Requests the backend to abort this sequenece
@@ -114,7 +114,7 @@ object SeqexecWebClient extends ModelBooPicklers {
         url          = s"$baseUrl/commands/${encodeURI(sid.format)}/$step/abort",
         responseType = "arraybuffer"
       )
-      .map(_ => ())
+      .void
 
   /**
     * Requests the backend to hold the current exposure
@@ -125,7 +125,7 @@ object SeqexecWebClient extends ModelBooPicklers {
         url          = s"$baseUrl/commands/${encodeURI(sid.format)}/$step/pauseObs",
         responseType = "arraybuffer"
       )
-      .map(_ => ())
+      .void
 
   /**
     * Requests the backend to resume the current exposure
@@ -136,7 +136,7 @@ object SeqexecWebClient extends ModelBooPicklers {
         url          = s"$baseUrl/commands/${encodeURI(sid.format)}/$step/resumeObs",
         responseType = "arraybuffer"
       )
-      .map(_ => ())
+      .void
 
   /**
     * Requests the backend to set the operator name of a sequence
@@ -147,7 +147,7 @@ object SeqexecWebClient extends ModelBooPicklers {
         url          = s"$baseUrl/commands/operator/${encodeURI(name.show)}",
         responseType = "arraybuffer"
       )
-      .map(_ => ())
+      .void
 
   /**
     * Requests the backend to set the observer name of a sequence
@@ -159,7 +159,7 @@ object SeqexecWebClient extends ModelBooPicklers {
           s"$baseUrl/commands/${encodeURI(id.format)}/observer/${encodeURI(name)}",
         responseType = "arraybuffer"
       )
-      .map(_ => ())
+      .void
 
   /**
     * Requests the backend to set the Conditions globally
@@ -171,7 +171,7 @@ object SeqexecWebClient extends ModelBooPicklers {
         responseType = "arraybuffer",
         data         = Pickle.intoBytes(conditions)
       )
-      .map(_ => ())
+      .void
 
   /**
     * Requests the backend to set the ImageQuality
@@ -183,7 +183,7 @@ object SeqexecWebClient extends ModelBooPicklers {
         responseType = "arraybuffer",
         data         = Pickle.intoBytes[ImageQuality](iq)
       )
-      .map(_ => ())
+      .void
 
   /**
     * Requests the backend to set the CloudCover
@@ -195,7 +195,7 @@ object SeqexecWebClient extends ModelBooPicklers {
         responseType = "arraybuffer",
         data         = Pickle.intoBytes[CloudCover](cc)
       )
-      .map(_ => ())
+      .void
 
   /**
     * Requests the backend to set the WaterVapor
@@ -207,7 +207,7 @@ object SeqexecWebClient extends ModelBooPicklers {
         responseType = "arraybuffer",
         data         = Pickle.intoBytes[WaterVapor](wv)
       )
-      .map(_ => ())
+      .void
 
   /**
     * Requests the backend to set the SkyBackground
@@ -219,7 +219,7 @@ object SeqexecWebClient extends ModelBooPicklers {
         responseType = "arraybuffer",
         data         = Pickle.intoBytes[SkyBackground](sb)
       )
-      .map(_ => ())
+      .void
 
   /**
     * Requests the backend to send a copy of the current state
@@ -230,7 +230,7 @@ object SeqexecWebClient extends ModelBooPicklers {
         url          = s"$baseUrl/commands/refresh/${encodeURI(clientId.self.show)}",
         responseType = "arraybuffer"
       )
-      .map(_ => ())
+      .void
 
   /**
     * Requests the backend to pause a sequence
@@ -241,7 +241,7 @@ object SeqexecWebClient extends ModelBooPicklers {
         url          = s"$baseUrl/commands/${encodeURI(id.format)}/pause",
         responseType = "arraybuffer"
       )
-      .map(_ => ())
+      .void
 
   /**
     * Requests the backend to cancel a pausing request in process
@@ -252,7 +252,7 @@ object SeqexecWebClient extends ModelBooPicklers {
         url          = s"$baseUrl/commands/${encodeURI(id.format)}/cancelpause",
         responseType = "arraybuffer"
       )
-      .map(_ => ())
+      .void
 
   /**
     * Login request
@@ -288,7 +288,7 @@ object SeqexecWebClient extends ModelBooPicklers {
         url          = s"$baseUrl/commands/load/${encodeURI(instrument.show)}/${encodeURI(id.format)}/${encodeURI(name.value)}/${encodeURI(clientId.self.show)}",
         responseType = "arraybuffer"
       )
-      .map(_ => ())
+      .void
 
   /**
     * Log record
@@ -323,7 +323,7 @@ object SeqexecWebClient extends ModelBooPicklers {
           s"$baseUrl/commands/queue/${encodeURI(queueId.self.show)}/remove/${encodeURI(id.format)}",
         responseType = "arraybuffer"
       )
-      .map(_ => ())
+      .void
 
   /**
     * Clears a queue
@@ -334,7 +334,7 @@ object SeqexecWebClient extends ModelBooPicklers {
         url          = s"$baseUrl/commands/queue/${encodeURI(queueId.self.show)}/clear",
         responseType = "arraybuffer"
       )
-      .map(_ => ())
+      .void
 
   /**
     * Runs a queue
@@ -349,7 +349,7 @@ object SeqexecWebClient extends ModelBooPicklers {
             observer.value)}/${encodeURI(clientId.self.show)}",
         responseType = "arraybuffer"
       )
-      .map(_ => ())
+      .void
 
   /**
     * Stops a queue
@@ -361,7 +361,7 @@ object SeqexecWebClient extends ModelBooPicklers {
           s"$baseUrl/commands/queue/${encodeURI(queueId.self.show)}/stop/${encodeURI(clientId.self.show)}",
         responseType = "arraybuffer"
       )
-      .map(_ => ())
+      .void
 
   /**
     * Add a sequence from a queue
@@ -373,7 +373,7 @@ object SeqexecWebClient extends ModelBooPicklers {
         responseType = "arraybuffer",
         data         = Pickle.intoBytes(ids)
       )
-      .map(_ => ())
+      .void
 
   /**
     * Add a sequence from a queue
@@ -384,7 +384,7 @@ object SeqexecWebClient extends ModelBooPicklers {
         url          = s"$baseUrl/commands/queue/${encodeURI(qid.self.show)}/add/${encodeURI(id.format)}",
         responseType = "arraybuffer"
       )
-      .map(_ => ())
+      .void
 
   /**
     * Stops a queue
@@ -396,7 +396,7 @@ object SeqexecWebClient extends ModelBooPicklers {
           s"$baseUrl/commands/queue/${encodeURI(queueId.self.show)}/move/${encodeURI(obsId.self.format)}/$pos/${encodeURI(clientId.self.show)}",
         responseType = "arraybuffer"
       )
-      .map(_ => ())
+      .void
 
   /**
     * Runs a reusource
@@ -408,6 +408,6 @@ object SeqexecWebClient extends ModelBooPicklers {
           s"$baseUrl/commands/execute/${encodeURI(obsId.self.format)}/$pos/${encodeURI(resource.show)}",
         responseType = "arraybuffer"
       )
-      .map(_ => ())
+      .void
 
 }

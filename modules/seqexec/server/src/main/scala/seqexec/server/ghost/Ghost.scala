@@ -46,14 +46,14 @@ final case class Ghost[F[_]: Sync](controller: GhostController[F])
     Reader { fileId =>
       controller
         .observe(fileId, calcObserveTime(config))
-        .map(_ => ObserveCommand.Success: ObserveCommand.Result)
+        .as(ObserveCommand.Success: ObserveCommand.Result)
     }
 
   override def configure(config: Config): SeqActionF[F, ConfigResult[F]] =
     Ghost
       .fromSequenceConfig[F](config)
       .flatMap(controller.applyConfig)
-      .map(_ => ConfigResult[F](this))
+      .as(ConfigResult[F](this))
 
   override def notifyObserveEnd: SeqActionF[F, Unit] = controller.endObserve
 

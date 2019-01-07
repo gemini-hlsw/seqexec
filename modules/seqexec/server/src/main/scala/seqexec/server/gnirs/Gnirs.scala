@@ -45,7 +45,7 @@ final case class Gnirs(controller: GnirsController, dhsClient: DhsClient) extend
   override val resource: Resource = Instrument.Gnirs
 
   override def configure(config: Config): SeqAction[ConfigResult[IO]] =
-    SeqAction.either(fromSequenceConfig(config)).flatMap(controller.applyConfig).map(_ => ConfigResult(this))
+    SeqAction.either(fromSequenceConfig(config)).flatMap(controller.applyConfig).as(ConfigResult(this))
 
   override def notifyObserveEnd: SeqAction[Unit] = controller.endObserve
 

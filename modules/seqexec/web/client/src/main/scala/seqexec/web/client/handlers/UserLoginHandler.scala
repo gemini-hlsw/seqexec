@@ -3,8 +3,13 @@
 
 package seqexec.web.client.handlers
 
-import diode.{ActionHandler, ActionResult, Effect, ModelRW, NoAction}
-import seqexec.model.{ UserDetails }
+import cats.implicits._
+import diode.ActionHandler
+import diode.ActionResult
+import diode.Effect
+import diode.ModelRW
+import diode.NoAction
+import seqexec.model.UserDetails
 import seqexec.web.client.actions._
 import seqexec.web.client.services.SeqexecWebClient
 import scala.concurrent.Future
@@ -13,7 +18,9 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 /**
   * Handles actions related to opening/closing the login box
   */
-class UserLoginHandler[M](modelRW: ModelRW[M, Option[UserDetails]]) extends ActionHandler(modelRW) with Handlers[M, Option[UserDetails]] {
+class UserLoginHandler[M](modelRW: ModelRW[M, Option[UserDetails]])
+    extends ActionHandler(modelRW)
+    with Handlers[M, Option[UserDetails]] {
   override def handle: PartialFunction[Any, ActionResult[M]] = {
     case LoggedIn(u) =>
       // Close the login box
@@ -23,7 +30,7 @@ class UserLoginHandler[M](modelRW: ModelRW[M, Option[UserDetails]]) extends Acti
       updated(Some(u), reconnect + effect)
 
     case Logout =>
-      val effect = Effect(SeqexecWebClient.logout().map(_ => NoAction))
+      val effect    = Effect(SeqexecWebClient.logout().as(NoAction))
       val reConnect = Effect(Future(Reconnect))
       // Remove the user and call logout
       updated(None, effect + reConnect)

@@ -58,14 +58,14 @@ final case class Gpi[F[_]: Effect](controller: GpiController[F])
     Reader { fileId =>
       controller
         .observe(fileId, timeoutTolerance + calcObserveTime(config))
-        .map(_ => ObserveCommand.Success: ObserveCommand.Result)
+        .as(ObserveCommand.Success: ObserveCommand.Result)
     }
 
   override def configure(config: Config): SeqActionF[F, ConfigResult[F]] =
     Gpi
       .fromSequenceConfig[F](config)
       .flatMap(controller.applyConfig)
-      .map(_ => ConfigResult(this))
+      .as(ConfigResult(this))
 
   override def notifyObserveEnd: SeqActionF[F, Unit] = controller.endObserve
 

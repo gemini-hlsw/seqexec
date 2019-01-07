@@ -82,7 +82,7 @@ class Engine[D, U](stateL: Engine.State[D]) {
           case r                 =>
             singleRunFailed(c, Result.Error(s"Unhandled result for single run action: $r"))
         }
-      ).map[EventResult.Outcome](_ => EventResult.Ok)
+      ).as[EventResult.Outcome](EventResult.Ok)
     ).getOrElse(pure[EventResult.Outcome](EventResult.Failure))
 
   }
@@ -312,7 +312,7 @@ class Engine[D, U](stateL: Engine.State[D]) {
     ev match {
       case EventUser(ue)   => handleUserEvent(ue)
       case EventSystem(se) => handleSystemEvent(se)(ec).flatMap(x =>
-        userReact.applyOrElse(se, (_:SystemEvent) =>  unit).map(_ => x))
+        userReact.applyOrElse(se, (_:SystemEvent) =>  unit).as(x))
     }
   }
 

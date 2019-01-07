@@ -83,10 +83,10 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
       config.extract(OBSERVE_KEY / DATA_LABEL_PROP).as[String].leftMap(e =>
       SeqexecFailure.Unexpected(ConfigUtilOps.explain(e))))
 
-    def notifyObserveStart: SeqAction[Unit] = otherSys.map(_.notifyObserveStart).sequence.map(_ => ())
+    def notifyObserveStart: SeqAction[Unit] = otherSys.map(_.notifyObserveStart).sequence.void
 
     // endObserve must be sent to the instrument too.
-    def notifyObserveEnd: SeqAction[Unit] = (inst +: otherSys).map(_.notifyObserveEnd).sequence.map(_ => ())
+    def notifyObserveEnd: SeqAction[Unit] = (inst +: otherSys).map(_.notifyObserveEnd).sequence.void
 
     def closeImage(id: ImageFileId): SeqAction[Unit] =
       inst.keywordsClient.closeImage(id)
@@ -139,14 +139,14 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
       val initialStepExecutions: List[List[Action[IO]]] =
         if (i === 0)
           List(List(systems.odb.sequenceStart(obsId, "")
-            .map(_ => Response.Ignored).toAction(ActionType.Undefined)))
+            .as(Response.Ignored).toAction(ActionType.Undefined)))
         else Nil
 
       val configs: Map[Resource, Action[IO]] = sys.map { x =>
         val res = resourceFromSystem(x)
         val kind = ActionType.Configure(res)
 
-        res -> x.configure(config).map(_ => Response.Configured(x.resource)).toAction(kind)
+        res -> x.configure(config).as(Response.Configured(x.resource)).toAction(kind)
       }.toMap
       def rest(ctx:HeaderExtraData): List[List[Action[IO]]] = List(
         List(Action(ActionType.Observe, observe(config, obsId, inst, sys.filterNot(inst.equals),

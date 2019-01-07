@@ -215,7 +215,7 @@ object GnirsControllerEpics extends GnirsController {
       case c:Other => setOtherCCParams(c)
     }
     if (params.isEmpty) SeqAction(EpicsCommand.Completed)
-    else params.sequence.map(_ => ()) *>
+    else params.sequence. void*>
       ccCmd.setTimeout(ConfigTimeout) *>
       ccCmd.post
   }
@@ -247,7 +247,7 @@ object GnirsControllerEpics extends GnirsController {
     val params =  expTimeWriter ++ coaddsWriter ++ biasWriter ++ lowNoiseWriter ++ digitalAvgsWriter
 
     if(params.isEmpty) SeqAction(EpicsCommand.Completed)
-    else params.sequence.map(_ => ()) *>
+    else params.sequence. void*>
       dcCmd.setTimeout(DefaultTimeout) *>
       dcCmd.post
   }
@@ -281,19 +281,19 @@ object GnirsControllerEpics extends GnirsController {
     EitherT.right[SeqexecFailure](IO(Log.debug("Send endObserve to GNIRS"))) *>
       GnirsEpics.instance.endObserveCmd.setTimeout(DefaultTimeout) *>
       GnirsEpics.instance.endObserveCmd.mark *>
-      GnirsEpics.instance.endObserveCmd.post.map(_ => ())
+      GnirsEpics.instance.endObserveCmd.post.void
 
   override def stopObserve: SeqAction[Unit] =
     EitherT.right[SeqexecFailure](IO(Log.info("Stop GNIRS exposure"))) *>
       GnirsEpics.instance.stopCmd.setTimeout(DefaultTimeout) *>
       GnirsEpics.instance.stopCmd.mark *>
-      GnirsEpics.instance.stopCmd.post.map(_ => ())
+      GnirsEpics.instance.stopCmd.post.void
 
   override def abortObserve: SeqAction[Unit] =
     EitherT.right[SeqexecFailure](IO(Log.info("Abort GNIRS exposure"))) *>
       GnirsEpics.instance.abortCmd.setTimeout(DefaultTimeout) *>
       GnirsEpics.instance.abortCmd.mark *>
-      GnirsEpics.instance.abortCmd.post.map(_ => ())
+      GnirsEpics.instance.abortCmd.post.void
 
   private def removePartName(s: String) = {
     val pattern = "_G[0-9]{4}$"

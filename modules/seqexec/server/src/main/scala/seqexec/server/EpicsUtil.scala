@@ -239,7 +239,7 @@ object EpicsUtil {
       }
     })))
 
-  def waitForValue[T](attr: CaAttribute[T], v: T, timeout: Time, name: String): SeqAction[Unit] = waitForValues[T](attr, List(v), timeout, name).map(_ => ())
+  def waitForValue[T](attr: CaAttribute[T], v: T, timeout: Time, name: String): SeqAction[Unit] = waitForValues[T](attr, List(v), timeout, name).void
 
   def setTimeout(os: Option[CaApplySender], t: Time):SeqAction[Unit] = SeqAction.either{
     os.map(_.setTimeout(t.toMilliseconds.toLong, MILLISECONDS).asRight).getOrElse(SeqexecFailure.Unexpected("Unable to set timeout for EPICS command.").asLeft)

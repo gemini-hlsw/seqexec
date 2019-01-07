@@ -226,7 +226,7 @@ class SeqexecEngine(httpClient: Client[IO], settings: Settings[IO], sm: SeqexecM
               sequences
             )
           )
-          Stream.eval(updateMetrics[IO](ev, sequences).map(_ => event))
+          Stream.eval(updateMetrics[IO](ev, sequences).as(event))
     }
   }
 
@@ -277,7 +277,7 @@ class SeqexecEngine(httpClient: Client[IO], settings: Settings[IO], sm: SeqexecM
   def addSequencesToQueue(q: EventQueue, qid: QueueId, seqIds: List[Observation.Id])
   : IO[Either[SeqexecFailure, Unit]] = q.enqueue1(
     Event.modifyState[executeEngine.ConcreteTypes](addSeqs(qid, seqIds)
-      .map[executeEngine.ConcreteTypes#EventData](_ => UpdateQueueAdd(qid, seqIds)))
+      .as[executeEngine.ConcreteTypes#EventData](UpdateQueueAdd(qid, seqIds)))
   ).map(_.asRight)
 
   def addSequenceToQueue(q: EventQueue, qid: QueueId, seqId: Observation.Id): IO[Either[SeqexecFailure, Unit]] =
@@ -304,7 +304,7 @@ class SeqexecEngine(httpClient: Client[IO], settings: Settings[IO], sm: SeqexecM
   : IO[Either[SeqexecFailure, Unit]] = q.enqueue1(
     Event.modifyState[executeEngine.ConcreteTypes](
       executeEngine.get.flatMap(st => removeSeq(qid, seqId)
-        .map(_ => UpdateQueueRemove(qid, List(seqId), st.queues.get(qid)
+        .as(UpdateQueueRemove(qid, List(seqId), st.queues.get(qid)
           .map(_.queue.indexOf(seqId)).toList))))
   ).map(_.asRight)
 
@@ -368,7 +368,7 @@ class SeqexecEngine(httpClient: Client[IO], settings: Settings[IO], sm: SeqexecM
           case _                       => executeEngine.unit
         }
       }.getOrElse(executeEngine.unit)
-    }}.map(_ => StartQueue(qid, clientId)))
+    }}.as(StartQueue(qid, clientId)))
   ).map(_.asRight)
 
   private def stopSequencesInQueue(qid: QueueId): executeEngine.HandleType[Unit] =
@@ -388,7 +388,7 @@ class SeqexecEngine(httpClient: Client[IO], settings: Settings[IO], sm: SeqexecM
           case _                      => executeEngine.unit
         }
       }.getOrElse(executeEngine.unit)
-    }.map(_ => StopQueue(qid, clientId)))
+    }.as(StopQueue(qid, clientId)))
   ).map(_.asRight)
 
   // It assumes only one queue can run at a time
@@ -444,7 +444,7 @@ class SeqexecEngine(httpClient: Client[IO], settings: Settings[IO], sm: SeqexecM
         systems.odb.obsPause(id, "Sequence paused by user")
       case (SystemUpdate(Finished(id), _), _)     => systems.odb.sequenceEnd(id)
       case _                                  => SeqAction(())
-    }).value.map(_ => i)
+    }).value.as(i)
   }
 
   /**
