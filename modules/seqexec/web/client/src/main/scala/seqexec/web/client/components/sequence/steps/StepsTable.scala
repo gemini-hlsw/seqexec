@@ -35,6 +35,7 @@ import seqexec.web.client.circuit.StepsTableFocus
 import seqexec.web.client.actions.UpdateStepTableState
 import seqexec.web.client.actions.UpdateSelectedStep
 import seqexec.web.client.components.SeqexecStyles
+import seqexec.web.client.components.TableContainer
 import seqexec.web.client.components.sequence.steps.OffsetFns._
 import seqexec.web.client.semanticui.elements.icon.Icon._
 import seqexec.web.client.semanticui.{ Size => SSize }
@@ -719,17 +720,11 @@ object StepsTable {
 
   // Wire it up from VDOM
   def render(b: Backend): VdomElement =
-    <.div(
-      SeqexecStyles.stepsListPanePreview.unless(b.props.hasControls),
-      SeqexecStyles.stepsListPaneWithControls.when(b.props.hasControls),
-      AutoSizer(
-        AutoSizer.props(
-          s =>
-            ref
-              .component(stepsTableProps(b)(s))(
-                columns(b, s).map(_.vdomElement): _*)
-              .vdomElement))
-    )
+    TableContainer(TableContainer.Props(b.props.hasControls, size =>
+      ref
+        .component(stepsTableProps(b)(size))(
+          columns(b, size).map(_.vdomElement): _*)
+        .vdomElement))
 
   private val component = ScalaComponent
     .builder[Props]("StepsTable")

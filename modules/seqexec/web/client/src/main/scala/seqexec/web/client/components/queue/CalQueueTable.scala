@@ -28,6 +28,7 @@ import seqexec.web.client.model.QueueSeqOperations
 import seqexec.web.client.model.RemoveSeqQueue
 import seqexec.web.client.circuit._
 import seqexec.web.client.components.SeqexecStyles
+import seqexec.web.client.components.TableContainer
 import seqexec.web.client.reusability._
 import seqexec.web.client.actions.ClearLastQueueOp
 import seqexec.web.client.actions.RequestRemoveSeqCal
@@ -400,10 +401,7 @@ object CalQueueTable {
       }
 
     def render(p: Props, s: State): VdomElement =
-      <.div(
-        SeqexecStyles.stepsListPaneWithControls.when(p.canOperate),
-        SeqexecStyles.stepsListPanePreview.unless(p.canOperate),
-        AutoSizer(AutoSizer.props { size =>
+      TableContainer(TableContainer.Props(p.canOperate, size => {
           val sortableList = SortableContainer.wrapC(
             Table.component,
             s.tableState
@@ -419,8 +417,7 @@ object CalQueueTable {
             distance = 3
           )
           sortableList(cp)(table(p, s)(size))
-        })
-      )
+      }))
 
   }
 

@@ -11,6 +11,7 @@ import org.scalajs.dom.WebSocket
 import seqexec.web.client.components.sequence.steps.OffsetFns.OffsetsDisplay
 import seqexec.web.client.components.sequence.steps.StepConfigTable
 import seqexec.web.client.components.SessionQueueTable
+import seqexec.web.client.circuit.StepsTableTypeSelection
 import seqexec.web.client.model._
 import web.client.table.TableState
 
@@ -44,6 +45,7 @@ final class ModelSpec extends CatsSuite with ArbitrariesWebClient {
   checkAll("Eq[TableState[StepConfigTable.TableColumn]", EqTests[TableState[StepConfigTable.TableColumn]].eqv)
   checkAll("Eq[TableState[SessionQueueTable.TableColumn]", EqTests[TableState[SessionQueueTable.TableColumn]].eqv)
   checkAll("Eq[SoundSelection]", EqTests[SoundSelection].eqv)
+  checkAll("Eq[StepsTableTypeSelection]", EqTests[StepsTableTypeSelection].eqv)
   // checkAll("Eq[SeqexecUIModel]", EqTests[SeqexecUIModel].eqv)
   checkAll("Eq[RunOperation]", EqTests[RunOperation].eqv)
   checkAll("Eq[SyncOperation]", EqTests[SyncOperation].eqv)

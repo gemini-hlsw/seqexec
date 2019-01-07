@@ -17,6 +17,7 @@ import scala.scalajs.js
 import seqexec.model.Step
 import seqexec.model.enum.SystemName
 import seqexec.web.client.components.SeqexecStyles
+import seqexec.web.client.components.TableContainer
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.actions.UpdateStepsConfigTableState
 import web.client.table._
@@ -138,13 +139,13 @@ object StepConfigTable {
         SeqexecStyles.headerRowStyle
       case (_, SettingsRow(s, _, _)) if s === SystemName.Instrument =>
         SeqexecStyles.stepRow |+| SeqexecStyles.rowPositive
-      case (_, SettingsRow(s, _, _)) if s === SystemName.Telescope =>
+      case (_, SettingsRow(s, _, _)) if s === SystemName.Telescope  =>
         SeqexecStyles.stepRow |+| SeqexecStyles.rowWarning
-      case (_, SettingsRow(_, n, _)) if n.startsWith("observe:") =>
+      case (_, SettingsRow(_, n, _)) if n.startsWith("observe:")    =>
         SeqexecStyles.stepRow |+| SeqexecStyles.observeConfig
-      case (_, SettingsRow(_, n, _)) if n.startsWith("ocs:") =>
+      case (_, SettingsRow(_, n, _)) if n.startsWith("ocs:")        =>
         SeqexecStyles.stepRow |+| SeqexecStyles.observeConfig
-      case _ =>
+      case _                                                        =>
         SeqexecStyles.stepRow
     }).htmlClass
 
@@ -175,17 +176,11 @@ object StepConfigTable {
   private val component = ScalaComponent
     .builder[Props]("StepConfig")
     .initialStateFromProps(_.startState)
-    .render { b =>
-      val hasControls = true
-      <.div(
-        SeqexecStyles.stepsListPanePreview.unless(hasControls),
-        SeqexecStyles.stepsListPaneWithControls.when(hasControls),
-        AutoSizer(
-          AutoSizer.props(s =>
-            Table(settingsTableProps(b, s),
-                  b.state.columnBuilder(s, colBuilder(b, s)): _*)))
-      )
-    }
+    .render ( b =>
+      TableContainer(TableContainer.Props(true, size =>
+        Table(settingsTableProps(b, size),
+              b.state.columnBuilder(size, colBuilder(b, size)): _*)))
+    )
     .build
 
   def apply(p: Props): Unmounted[Props, TableState[TableColumn], Unit] =
