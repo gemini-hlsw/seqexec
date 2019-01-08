@@ -15,6 +15,7 @@ sealed trait TabContentFocus extends Product with Serializable {
   val canOperate: Boolean
   val logDisplayed: SectionVisibilityState
   val active: TabSelected
+  def isActive: Boolean = active === TabSelected.Selected
 }
 
 object TabContentFocus {
@@ -33,12 +34,16 @@ object TabContentFocus {
       val (o, (log, SequencesOnDisplay(tabs))) = p
       NonEmptyList.fromListUnsafe(tabs.withFocus.toList.collect {
         case (tab: SequenceTab, active) =>
-          SequenceTabContentFocus(o,
-                                  tab.instrument,
-                                  tab.sequence.map(_.id),
-                                  tab.isComplete,
-                                  TabSelected.fromBoolean(active),
-                                  log)
+          SequenceTabContentFocus(
+            o,
+            tab.instrument,
+            tab.sequence.id,
+            TabSelected.fromBoolean(active),
+            StepsTableTypeSelection.fromStepId(tab.stepConfigDisplayed),
+            log,
+            tab.isPreview,
+            tab.sequence.steps.length
+          )
         case (_: CalibrationQueueTab, active) =>
           CalQueueTabContentFocus(o, TabSelected.fromBoolean(active), log)
       })
@@ -47,17 +52,29 @@ object TabContentFocus {
 }
 
 final case class SequenceTabContentFocus(canOperate:   Boolean,
-                                         instrument:   Option[Instrument],
-                                         id:           Option[Observation.Id],
-                                         completed:    Boolean,
+                                         instrument:   Instrument,
+                                         id:           Observation.Id,
                                          active:       TabSelected,
-                                         logDisplayed: SectionVisibilityState)
-    extends TabContentFocus
+                                         tableType:    StepsTableTypeSelection,
+                                         logDisplayed: SectionVisibilityState,
+                                         isPreview:    Boolean,
+                                         totalSteps:   Int)
+    extends TabContentFocus {
+      val hasControls: Boolean = canOperate && !isPreview
+    }
 
 object SequenceTabContentFocus {
   implicit val eq: Eq[SequenceTabContentFocus] =
-    Eq.by(x =>
-      (x.canOperate, x.instrument, x.id, x.completed, x.active, x.logDisplayed))
+    Eq.by(
+      x =>
+        (x.canOperate,
+         x.instrument,
+         x.id,
+         x.active,
+         x.tableType,
+         x.logDisplayed,
+         x.isPreview,
+         x.totalSteps))
 }
 
 final case class CalQueueTabContentFocus(canOperate:   Boolean,

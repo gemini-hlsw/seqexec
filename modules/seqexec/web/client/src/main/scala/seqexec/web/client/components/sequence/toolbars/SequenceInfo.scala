@@ -27,16 +27,12 @@ object SequenceInfo {
       .builder[Props]("SequenceInfo")
       .stateless
       .render_P { p =>
-        val SequenceInfoFocus(isLogged, oName, status, tName) = p.p
-        val obsName                                           = oName.filter(_.nonEmpty).getOrElse("Unknown.")
+        val SequenceInfoFocus(isLogged, obsName, status, tName) = p.p
         val unknownTargetName: TagMod =
-          Label(
-            Label.Props(UnknownTargetName,
-                        basic       = true))
+          Label(Label.Props(UnknownTargetName, basic = true))
         val targetName = tName
           .filter(_.nonEmpty)
-          .fold(unknownTargetName)(t =>
-            Label(Label.Props(t, basic = true)))
+          .fold(unknownTargetName)(t => Label(Label.Props(t, basic = true)))
         <.div(
           ^.cls := "ui form",
           <.div(
@@ -49,7 +45,7 @@ object SequenceInfo {
                             color = "green".some,
                             icon  = IconCheckmark.some,
                             size  = Size.Big))
-            ).when(status.forall(_ === SequenceState.Completed)),
+            ).when(status === SequenceState.Completed),
             <.div(
               ^.cls := "field",
               Label(Label.Props(obsName, basic = true))

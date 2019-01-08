@@ -71,11 +71,11 @@ object SeqexecStyles {
   val tabSegmentLogShownUnauth: GStyle =
     GStyle.fromString("SeqexecStyles-tabSegmentLogShownUnauth")
 
-  val stepsListPanePreview: GStyle =
-    GStyle.fromString("SeqexecStyles-stepsListPanePreview")
+  val tableContainerNoControls: GStyle =
+    GStyle.fromString("SeqexecStyles-tableContainerNoControls")
 
-  val stepsListPaneWithControls: GStyle =
-    GStyle.fromString("SeqexecStyles-stepsListPaneWithControls")
+  val tableContainer: GStyle =
+    GStyle.fromString("SeqexecStyles-tableContainer")
 
   val controlButtons: GStyle = GStyle.fromString("SeqexecStyles-controlButtons")
 
