@@ -13,7 +13,7 @@ import giapi.client.gpi.GpiClient
 import gem.Observation
 import gem.enum.Site
 import scala.concurrent.ExecutionContext
-import seqexec.engine.{Action, Result, Sequence, Step}
+import seqexec.engine.{Action, Result, Sequence}
 import seqexec.model.enum.Instrument.GmosS
 import seqexec.model.{ActionType, SequenceState, StepConfig}
 import seqexec.server.SeqTranslate.ObserveContext

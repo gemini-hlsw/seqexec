@@ -715,7 +715,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
       Instrument.F2, Set(Instrument.F2, TCS)))(EngineState.default)
 
     (for {
-      q <- async.boundedQueue[IO, executeEngine.EventType](10)
+      q <- Queue.bounded[IO, executeEngine.EventType](10)
       sf <- advanceOne(q, s0, seqexecEngine.configSystem(q, seqObsId1, 1, TCS))
     } yield {
       inside(sf.flatMap((EngineState.sequences ^|-? index(seqObsId1)).getOption)) {
@@ -733,7 +733,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
         SequenceState.Running.init))(EngineState.default)
 
     (for {
-      q <- async.boundedQueue[IO, executeEngine.EventType](10)
+      q <- Queue.bounded[IO, executeEngine.EventType](10)
       sf <- advanceOne(q, s0, seqexecEngine.configSystem(q, seqObsId1, 1, TCS))
     } yield {
       inside(sf.flatMap((EngineState.sequences ^|-? index(seqObsId1)).getOption)) {
@@ -753,7 +753,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
         SequenceState.Running.init))(EngineState.default)
 
     (for {
-      q <- async.boundedQueue[IO, executeEngine.EventType](10)
+      q <- Queue.bounded[IO, executeEngine.EventType](10)
       sf <- advanceOne(q, s0, seqexecEngine.configSystem(q, seqObsId2, 1, Instrument.F2))
     } yield {
       inside(sf.flatMap((EngineState.sequences ^|-? index(seqObsId2)).getOption)) {
@@ -773,7 +773,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
         SequenceState.Running.init))(EngineState.default)
 
     (for {
-      q <- async.boundedQueue[IO, executeEngine.EventType](10)
+      q <- Queue.bounded[IO, executeEngine.EventType](10)
       sf <- advanceOne(q, s0, seqexecEngine.configSystem(q, seqObsId2, 1, Instrument.F2))
     } yield {
       inside(sf.flatMap((EngineState.sequences ^|-? index(seqObsId2)).getOption)) {
