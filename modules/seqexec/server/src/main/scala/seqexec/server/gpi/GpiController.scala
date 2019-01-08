@@ -16,6 +16,7 @@ import edu.gemini.spModel.gemini.gpi.Gpi.{Lyot => LegacyLyot}
 import edu.gemini.spModel.gemini.gpi.Gpi.{ObservingMode => LegacyObservingMode}
 import edu.gemini.spModel.gemini.gpi.Gpi.{PupilCamera => LegacyPupilCamera}
 import edu.gemini.spModel.gemini.gpi.Gpi.{Shutter => LegacyShutter}
+import giapi.client.GiapiConfig
 import giapi.client.commands.Configuration
 import giapi.client.gpi.GpiClient
 import mouse.boolean._
@@ -281,5 +282,6 @@ object GpiController {
          x.pc,
          x.aoFlags))
     implicit val show: Show[GpiConfig] = Show.fromToString
+    implicit val giapiConfigure: GiapiConfig[GpiConfig] = GiapiConfig.fromShow
   }
 }

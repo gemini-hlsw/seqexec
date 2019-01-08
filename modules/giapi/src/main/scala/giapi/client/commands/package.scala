@@ -3,6 +3,7 @@
 
 package giapi.client
 
+import GiapiConfig._
 import cats._
 import cats.implicits._
 import cats.effect._
@@ -18,18 +19,6 @@ import scala.collection.JavaConverters._
 import scala.concurrent.duration.{Duration, FiniteDuration}
 
 package commands {
-  // Typeclass for GIAPI configuration generator instead of requiring Show as we do below.
-  trait GiapiConfigure[A] extends GiapiConfigure.ContravariantConfigure[A]
-
-  object GiapiConfigure {
-    def apply[A](implicit instance: GiapiConfigure[A]): GiapiConfigure[A] = instance
-
-    trait ContravariantConfigure[-T] extends Serializable {
-      def configure(t: T): String
-    }
-  }
-
-
   final case class CommandResult(response: Response)
   final case class CommandResultException(response: Response, message: String)
       extends RuntimeException
@@ -50,8 +39,8 @@ package commands {
   object Configuration {
     val Zero: Configuration = Configuration(Map.empty)
 
-    def single[A: Show](key: String, value: A): Configuration =
-      Configuration(Map(ConfigPath.configPath(key) -> value.show))
+    def single[A: GiapiConfig](key: String, value: A): Configuration =
+      Configuration(Map(ConfigPath.configPath(key) -> value.configuration))
 
     implicit val eq: Eq[Configuration] = Eq.by(_.config)
 
