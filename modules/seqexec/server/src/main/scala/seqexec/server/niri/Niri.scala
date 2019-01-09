@@ -11,6 +11,7 @@ import edu.gemini.spModel.seqcomp.SeqConfigNames.{INSTRUMENT_KEY, OBSERVE_KEY}
 import edu.gemini.spModel.gemini.niri.InstNIRI._
 import edu.gemini.spModel.gemini.niri.Niri.{WellDepth, ReadMode => OCSReadMode}
 import edu.gemini.spModel.obscomp.InstConstants.{BIAS_OBSERVE_TYPE, DARK_OBSERVE_TYPE, OBSERVE_TYPE_PROP}
+import edu.gemini.seqexec.server.niri.ReadMode
 import seqexec.server.ConfigUtilOps._
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.{Instrument, Resource}
@@ -36,10 +37,12 @@ final case class Niri(controller: NiriController, dhsClient: DhsClient)
                     AbortObserveCmd(controller.abortObserve))
 
   override def observe(config: Config): SeqObserveF[IO, ImageFileId, ObserveCommand.Result] =
-    Reader { fileId => controller.observe(fileId, calcObserveTime(config)) }
+    Reader { fileId => SeqAction.either(getDCConfig(config))
+      .flatMap(controller.observe(fileId, _))
+    }
 
   override def calcObserveTime(config: Config): Time =
-    (extractExposureTime(config), extractCoadds(config)).mapN(_ * _.toDouble).getOrElse(10000.seconds)
+    getDCConfig(config).map(controller.calcTotalExposureTime).getOrElse(60.seconds)
 
   override def keywordsClient: KeywordsClient[IO] = this
 
@@ -76,9 +79,9 @@ object Niri {
     import WellDepth._
     (readMode, wellDepth) match {
       case (IMAG_SPEC_NB, SHALLOW)   => ReadMode.LowRN.asRight
-      case (IMAG_1TO25, SHALLOW)     => ReadMode.MediumRN.asRight
+      case (IMAG_1TO25, SHALLOW)     => ReadMode.MedRN.asRight
       case (IMAG_SPEC_3TO5, SHALLOW) => ReadMode.HighRN.asRight
-      case (IMAG_1TO25, DEEP)        => ReadMode.MediumRNDeep.asRight
+      case (IMAG_1TO25, DEEP)        => ReadMode.MedRNDeep.asRight
       case (IMAG_SPEC_3TO5, DEEP   ) => ReadMode.ThermalIR.asRight
       case _                         => ContentError(s"Combination not supported: readMode = " +
         s"${readMode.displayValue}, wellDepth = ${wellDepth.displayValue}").asLeft
@@ -88,20 +91,33 @@ object Niri {
   def getCCCommonConfig(config: Config): TrySeq[Common] = (for {
     cam <- config.extractAs[Camera](INSTRUMENT_KEY / CAMERA_PROP)
     bms <- config.extractAs[BeamSplitter](INSTRUMENT_KEY / BEAM_SPLITTER_PROP)
-    fil <- config.extractAs[Filter](INSTRUMENT_KEY / FILTER_PROP)
     foc <- config.extractAs[Focus](INSTRUMENT_KEY / FOCUS_PROP)
     dsp <- config.extractAs[Disperser](INSTRUMENT_KEY / DISPERSER_PROP)
     msk <- config.extractAs[Mask](INSTRUMENT_KEY / MASK_PROP)
-  } yield Common(cam, bms, fil, foc, dsp, msk))
+  } yield Common(cam, bms, foc, dsp, msk))
     .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
+
+  def getCCIlluminatedConfig(config: Config): TrySeq[Illuminated] = {
+    val filter = (for {
+      f  <- config.extractAs[Filter](INSTRUMENT_KEY / FILTER_PROP)
+      fl <- if(f.isObsolete) ContentError(s"Obsolete filter ${f.displayValue}").asLeft
+      else f.asRight
+    } yield fl)
+      .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
+
+    (filter, getCCCommonConfig(config)).mapN(Illuminated(_, _))
+  }
+
+
+  def getCCDarkConfig(config: Config): TrySeq[Dark] = getCCCommonConfig(config).map(Dark(_))
 
   def getCCConfig(config: Config): TrySeq[CCConfig] =
     config.extractAs[String](OBSERVE_KEY / OBSERVE_TYPE_PROP)
       .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
       .flatMap{
-        case DARK_OBSERVE_TYPE => Dark.asRight
-        case BIAS_OBSERVE_TYPE => SeqexecFailure.Unexpected("Bias not supported for GNIRS").asLeft
-        case _                 => getCCCommonConfig(config)
+        case DARK_OBSERVE_TYPE => getCCDarkConfig(config)
+        case BIAS_OBSERVE_TYPE => SeqexecFailure.Unexpected("Bias not supported for NIRI").asLeft
+        case _                 => getCCIlluminatedConfig(config)
       }
 
   def getDCConfig(config: Config): TrySeq[DCConfig] = (for {

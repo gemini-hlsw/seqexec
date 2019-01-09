@@ -10,7 +10,7 @@ public enum ReadMode {
     MedRN("med RN (50e)"),
     HighRN("high RN (200e)"),
     ThermalIR("thermal IR"),
-    medRNDeep("med RN (deep)");
+    MedRNDeep("med RN (deep)");
 
     String name;
 
