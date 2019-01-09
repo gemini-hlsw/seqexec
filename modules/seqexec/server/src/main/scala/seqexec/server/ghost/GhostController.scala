@@ -7,10 +7,10 @@ import cats.implicits._
 import cats.{Eq, Show}
 import cats.effect.Sync
 import gem.math.Coordinates
-import giapi.client.GiapiConfig
-import giapi.client.GiapiConfig._
 import giapi.client.commands.Configuration
 import giapi.client.ghost.GhostClient
+import giapi.client.GiapiConfig
+import giapi.client.syntax.giapiconfig._
 import seqexec.server.keywords.GdsClient
 
 import scala.concurrent.duration._
@@ -37,12 +37,12 @@ object GhostController {
                         coordinates: Coordinates,
                         bundleConfig: BundleConfig): Configuration = {
     def cfg[P: GiapiConfig](paramName: String, paramVal: P) =
-      Configuration.single(s"${ifuNum.configuration}.$paramName", paramVal)
-      cfg("target", ifuTargetType.configuration) |+|
+      Configuration.single(s"${ifuNum.configValue}.$paramName", paramVal)
+      cfg("target", ifuTargetType.configValue) |+|
       cfg("type", DemandType.DemandRADec.demandType) |+|
       cfg("ra", coordinates.ra.toAngle.toDoubleDegrees) |+|
       cfg("dec", coordinates.dec.toAngle.toDoubleDegrees) |+|
-      cfg("bundle", bundleConfig.configuration)
+      cfg("bundle", bundleConfig.configValue)
   }
 
   private def ifuPark(ifuNum: IFUNum): Configuration = {
@@ -301,6 +301,6 @@ object GhostController {
     }
 
     implicit val show: Show[GhostConfig] = Show.fromToString
-    implicit val configure: GiapiConfig[GhostConfig] = GiapiConfig.fromShow
+    implicit val configure: GiapiConfig[GhostConfig] = fromShow
   }
 }

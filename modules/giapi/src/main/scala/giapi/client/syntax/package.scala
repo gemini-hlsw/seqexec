@@ -3,7 +3,9 @@
 
 package giapi.client
 
-// Produce a configuration string for Giapi.
-trait GiapiConfig[T] {
-  def configValue(t: T): String
+/**
+  * Syntax classes for GIAPI clients, organized like Cats.
+  */
+package object syntax {
+  object all extends ToGiapiCofigOps
 }

@@ -5,7 +5,7 @@ package giapi.client.ghost
 
 import fs2.Stream
 import giapi.client.{Giapi, GiapiClient}
-import giapi.client.GiapiConfig._
+import giapi.client.syntax.giapiconfig._
 
 /**
   * Client for GHOST
