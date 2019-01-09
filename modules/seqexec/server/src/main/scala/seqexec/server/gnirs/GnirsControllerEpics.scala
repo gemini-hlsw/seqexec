@@ -295,12 +295,6 @@ object GnirsControllerEpics extends GnirsController {
       GnirsEpics.instance.abortCmd.mark *>
       GnirsEpics.instance.abortCmd.post.void
 
-  private def removePartName(s: String) = {
-    val pattern = "_G[0-9]{4}$"
-
-    s.replaceAll(pattern, "")
-  }
-
   override def observeProgress(total: Time): Stream[IO, Progress] =
     EpicsUtil.countdown[IO](total,
       IO(GnirsEpics.instance.countDown.flatMap(x => Try(x.toDouble).toOption).map(_.seconds)),

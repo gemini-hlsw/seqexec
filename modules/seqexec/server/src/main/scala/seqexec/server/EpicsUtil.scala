@@ -264,4 +264,14 @@ object EpicsUtil {
     }).dropWhile(_.remaining.self.value === 0.0) // drop leading zeros
       .takeThrough(_.remaining.self.value > 0.0) // drop all tailing zeros but the first one
 
+  // Component names read from instruments usually have a part name as suffix. For example, the
+  // instrument may have had two K filters in its lifetime, one identified as K_G0804 and the
+  // other as K_G0816. When it comes to find if the filter K is selected, we dont care about the
+  // part name. This function removes it.
+  def removePartName(s: String): String = {
+    val pattern = "_G[0-9]{4}$"
+
+    s.replaceAll(pattern, "")
+  }
+
 }

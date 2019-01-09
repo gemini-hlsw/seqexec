@@ -6,7 +6,7 @@ package seqexec.server.niri
 import cats.Show
 import cats.effect.IO
 import seqexec.model.dhs.ImageFileId
-import seqexec.server.niri.NiriController.NiriConfig
+import seqexec.server.niri.NiriController.{DCConfig, NiriConfig}
 import seqexec.server.{ObserveCommand, Progress, SeqAction}
 import squants.Time
 
@@ -14,7 +14,7 @@ trait NiriController {
 
   def applyConfig(config: NiriConfig): SeqAction[Unit]
 
-  def observe(fileId: ImageFileId, expTime: Time): SeqAction[ObserveCommand.Result]
+  def observe(fileId: ImageFileId, cfg: DCConfig): SeqAction[ObserveCommand.Result]
 
   def endObserve: SeqAction[Unit]
 
@@ -23,6 +23,8 @@ trait NiriController {
   def abortObserve: SeqAction[Unit]
 
   def observeProgress(total: Time): fs2.Stream[IO, Progress]
+
+  def calcTotalExposureTime(cfg: DCConfig): Time
 
 }
 
@@ -36,15 +38,7 @@ object NiriController {
   type Focus = edu.gemini.spModel.gemini.niri.Niri.Focus
   type Disperser = edu.gemini.spModel.gemini.niri.Niri.Disperser
   type Mask = edu.gemini.spModel.gemini.niri.Niri.Mask
-
-  sealed trait ReadMode
-  object ReadMode {
-    case object LowRN extends ReadMode
-    case object MediumRN extends ReadMode
-    case object MediumRNDeep extends ReadMode
-    case object HighRN extends ReadMode
-    case object ThermalIR extends ReadMode
-  }
+  type ReadMode = edu.gemini.seqexec.server.niri.ReadMode
 
   final case class DCConfig(exposureTime: ExposureTime,
                             coadds: Coadds,
@@ -52,15 +46,19 @@ object NiriController {
                             builtInROI: BuiltInROI
                            )
   sealed trait CCConfig
-  case object Dark extends CCConfig
 
   final case class Common(camera: Camera,
                           beamSplitter: BeamSplitter,
-                          filter: Filter,
                           focus: Focus,
                           disperser: Disperser,
                           mask: Mask
-                         ) extends CCConfig
+                         )
+
+  // All components are included because the instrument scientist requested that every component be
+  // configured for Darks
+  final case class Dark(common: Common) extends CCConfig
+
+  final case class Illuminated(filter: Filter, common: Common) extends CCConfig
 
   final case class NiriConfig(cc: CCConfig, dc: DCConfig)
 

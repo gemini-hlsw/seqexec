@@ -9,7 +9,7 @@ public enum BuiltInROI {
     FullFrame("1024"),
     Central768("768"),
     Central512("512"),
-    Centrla256("256"),
+    Central256("256"),
     Central128("128"),
     Spec1024x512("1024x512");
 
