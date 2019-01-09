@@ -9,7 +9,7 @@ info:
     
     Notes:
       * The servers don't actually exist.  They are meant to be suggestive.
-      * We're not trying for a complete Gemini API nor a complete specification for this example.  Just an attempt to play with API ideas and get a feel for it.
+      * We're not trying for a complete Gemini API nor a complete specification for this example.  Just an attempt to play with API ideas and get a feel for it.  It's missing position angle for example and AGS results.
       * Default generation of the model from the Scala code probably won't produce a very nice model for the API.  I think we'll want to use custom codecs.
       * We might want to explore generating OpenAPI specifications directly from the code using [Rho](https://github.com/http4s/rho) or something.  I don't think it is sustainable in the long run having the documentation be separate from the code.
       
@@ -60,8 +60,6 @@ paths:
       description: Combines availability and observing conditions for both Gemini North and Gemini South into a single result.
       tags:
         - Status
-      parameters:
-        - $ref: '#/components/parameters/siteParam'
       security: [] # no authentication required
       responses:
         '200':
@@ -807,6 +805,8 @@ components:
       properties:
         asterismType:
           type: string
+        overriddenBase:
+          $ref: '#/components/schemas/CoordinatesObject'
       discriminator:
         propertyName: asterismType
         mapping:
@@ -830,7 +830,7 @@ components:
     GhostAsterismDualTargetObject:
       type: object
       description: >
-        GHOST standard resolution dual target asterism.  It requires two GHOST targets where `ghostTarget1` is understood to be assigned to IFU1 and `ghostTarget2` is assigned to IFU2. `asterismType` is `srDualTarget`.
+        GHOST standard resolution dual target asterism.  It requires two GHOST targets where `ghostTarget1` is understood to be assigned to IFU1 and `ghostTarget2` is assigned to IFU2. `asterismType` is `srDualTarget`.  By default the base/slew position will fall exactly equidistant to the two targets but this may be overridden with `overridenBase`.
       allOf:
         - $ref: '#/components/schemas/GhostAsterismBaseObject'
         - type: object
@@ -839,8 +839,6 @@ components:
               $ref: '#/components/schemas/GhostTargetObject'
             ghostTarget2:
               $ref: '#/components/schemas/GhostTargetObject'
-            overriddenBase:
-              $ref: '#/components/schemas/CoordinatesObject'
           required:
             - ghostTarget1
             - ghostTarget2
@@ -858,16 +856,17 @@ components:
       type: object
       description: >
         GHOST single target asterism.  It requires a GHOST target and supports an optional explicit base position that may differ from the target itself.  `asterismType` is one of:
+        
           * `srTarget` - standard resolution (IFU1) single target
           * `hrTarget` - high resolution single target
+          
+        By default the base position is the same as the `ghostTarget` but this may be overridden in `overriddenBase`.  
       allOf:
         - $ref: '#/components/schemas/GhostAsterismBaseObject'
         - type: object
           properties:
             ghostTarget:
               $ref: '#/components/schemas/GhostTargetObject'
-            overriddenBase:
-              $ref: '#/components/schemas/CoordinatesObject'
           required:
             - ghostTarget
 
@@ -875,9 +874,12 @@ components:
       type: object
       description: >
         GHOST target+sky or sky+target (depending on the `asterismType`).  It requires a GHOST target and a sky position. `asterismType` is one of:
+        
           * `srTargetPlusSky` - standard resolution where IFU1 is assigned the target and IFU2 the sky position
           * `srSkyPlusTarget` - standard resolution where IFU1 is assigned the sky position and IFU2 the target.
           * `hrTargetPlusSky` - high resolution target and a sky position
+          
+        By default, the base position is the same as the `ghostTarget` but this may be overridden in `overriddenBase`.  
       allOf:
         - $ref: '#/components/schemas/GhostAsterismBaseObject'
         - type: object
@@ -886,8 +888,6 @@ components:
               $ref: '#/components/schemas/GhostTargetObject'
             sky:
               $ref: '#/components/schemas/CoordinatesObject'
-            overriddenBase:
-              $ref: '#/components/schemas/CoordinatesObject'
           required:
             - ghostTarget
             - sky
@@ -895,7 +895,7 @@ components:
     GhostGuideFiberStateEnum:
       type: string
       description: >
-        Whether to enable or disable GHOST guide fibers.
+        Whether to enable or disable GHOST guide fibers. This is usually automatically set based on target magnitude (?) but in a crowded field it may be necessary to explicitly disable.
       enum:
         - Enabled
         - Disabled
@@ -1452,7 +1452,7 @@ components:
     ObservationObject:
       type: object
       description: >
-        Instrument-specific observation description. (Additional instruments would be added here.)
+        Instrument-specific observation description. (Additional instruments would be added here.) The required `instrument` discriminator will indicate the observation type. For example, `ghost` or `gmosSouth`.
       oneOf:
         - $ref: '#/components/schemas/GhostObservationObject'
         - $ref: '#/components/schemas/GmosSouthObservationObject'
@@ -1791,7 +1791,7 @@ components:
       type: integer
       description: >
         An exact wavelength represented in unsigned integral angstroms in the range [0 .. 2147483647] which means that the largest representable wavelength is 214.7483647 mm.
-      format: int64
+      format: int32
       minimum: 0
       maximum: 2147483647
           
