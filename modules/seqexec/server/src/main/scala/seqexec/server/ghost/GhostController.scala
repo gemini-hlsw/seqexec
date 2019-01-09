@@ -290,16 +290,14 @@ object GhostController {
     }
 
     import GhostController.{StandardResolutionMode => SRM, HighResolutionMode => HRM}
-    implicit val eq: Eq[GhostConfig] = Eq.instance { (a, b) =>
-      (a: Any, b: Any) match {
-        case (a: SRM.SingleTarget,  b: SRM.SingleTarget)  => a === b
-        case (a: SRM.DualTarget,    b: SRM.DualTarget)    => a === b
-        case (a: SRM.TargetPlusSky, b: SRM.TargetPlusSky) => a === b
-        case (a: SRM.SkyPlusTarget, b: SRM.SkyPlusTarget) => a === b
-        case (a: HRM.SingleTarget,  b: HRM.SingleTarget)  => a === b
-        case (a: HRM.TargetPlusSky, b: HRM.TargetPlusSky) => a === b
-        case _ => false
-      }
+    implicit val eq: Eq[GhostConfig] = Eq.instance {
+      case (a: SRM.SingleTarget,  b: SRM.SingleTarget)  => a === b
+      case (a: SRM.DualTarget,    b: SRM.DualTarget)    => a === b
+      case (a: SRM.TargetPlusSky, b: SRM.TargetPlusSky) => a === b
+      case (a: SRM.SkyPlusTarget, b: SRM.SkyPlusTarget) => a === b
+      case (a: HRM.SingleTarget,  b: HRM.SingleTarget)  => a === b
+      case (a: HRM.TargetPlusSky, b: HRM.TargetPlusSky) => a === b
+      case _                                            => false
     }
 
     implicit val show: Show[GhostConfig] = Show.fromToString
