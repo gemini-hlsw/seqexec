@@ -5,6 +5,7 @@ package giapi.client
 
 import cats.implicits._
 import giapi.client.commands._
+import giapi.client.syntax.giapiconfig._
 import org.scalacheck.Arbitrary
 import org.scalacheck.Cogen
 import org.scalacheck.Arbitrary._
