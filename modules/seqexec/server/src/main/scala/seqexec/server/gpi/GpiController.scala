@@ -283,6 +283,6 @@ object GpiController {
          x.pc,
          x.aoFlags))
     implicit val show: Show[GpiConfig] = Show.fromToString
-    implicit val giapiConfigure: GiapiConfig[GpiConfig] = GiapiConfig.fromShow
+    implicit val giapiConfigure: GiapiConfig[GpiConfig] = fromShow
   }
 }

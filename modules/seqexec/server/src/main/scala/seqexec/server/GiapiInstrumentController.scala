@@ -7,7 +7,6 @@ import cats.data.EitherT
 import cats.effect.Sync
 import cats.implicits._
 import giapi.client.GiapiClient
-import giapi.client.GiapiConfig
 import giapi.client.syntax.giapiconfig._
 import giapi.client.commands.{CommandResult, CommandResultException, Configuration}
 import org.log4s.getLogger
