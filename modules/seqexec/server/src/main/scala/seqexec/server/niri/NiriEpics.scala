@@ -23,7 +23,7 @@ class NiriEpics(epicsService: CaService, tops: Map[String, String]) {
   val NIRI_TOP = tops.getOrElse("niri", "niri:")
   val NIS_TOP = tops.getOrElse("nis", "NIS:")
 
-  object configCCCmd extends EpicsCommand {
+  object configCmd extends EpicsCommand {
     override protected val cs: Option[CaCommandSender] =
       Option(epicsService.getCommandSender("nis::config"))
 
@@ -58,8 +58,7 @@ class NiriEpics(epicsService: CaService, tops: Map[String, String]) {
       Option(cmd.addEnum("builtinROI", s"${NIS_TOP}roi:menu", classOf[JBuiltInROI], false)))
     def setBuiltInROI(v: JBuiltInROI): SeqAction[Unit] = setParameter(builtInROI, v)
 
-    val filter: Option[CaParameter[String]] = cs.flatMap(cmd => Option(cmd.getString
-    ("filter")))
+    val filter: Option[CaParameter[String]] = cs.flatMap(cmd => Option(cmd.getString("filter")))
     def setFilter(v: String): SeqAction[Unit] = setParameter(filter, v)
 
     val focus: Option[CaParameter[String]] = cs.flatMap(cmd => Option(cmd.getString
@@ -80,7 +79,7 @@ class NiriEpics(epicsService: CaService, tops: Map[String, String]) {
     def setWindowCover(v: String): SeqAction[Unit] = setParameter(windowCover, v)
   }
 
-  object endObserve extends EpicsCommand {
+  object endObserveCmd extends EpicsCommand {
     override val cs: Option[CaCommandSender] = Option(
       epicsService.getCommandSender("niri::endObserve"))
   }
