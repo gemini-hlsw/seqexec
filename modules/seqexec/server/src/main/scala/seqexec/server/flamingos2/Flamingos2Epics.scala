@@ -105,7 +105,7 @@ final class Flamingos2Epics(epicsService: CaService, tops: Map[String, String]) 
     .map(_.toInt)
 
   private val observeCAttr: CaAttribute[CarState] = f2State.addEnum("observeState",
-    s"{F2_TOP}observeC.VAL", classOf[CarState])
+    s"${F2_TOP}observeC.VAL", classOf[CarState])
   def observeState: Option[CarState] = Option(observeCAttr.value)
 
   // For FITS keywords

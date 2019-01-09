@@ -35,7 +35,7 @@ class GmosEpics(epicsService: CaService, tops: Map[String, String]) {
     def setStageMode(v: String): SeqAction[Unit] = setParameter(stageMode, v)
 
     val useElectronicOffsetting: Option[CaParameter[Integer]] = cs.map(_.addInteger
-    ("useElectronicOffsetting", s"{GMOS_TOP}wfs:followA.K", "Enable electronic Offsets", false))
+    ("useElectronicOffsetting", s"${GMOS_TOP}wfs:followA.K", "Enable electronic Offsets", false))
     def setElectronicOffsetting(v: Integer): SeqAction[Unit] = setParameter(useElectronicOffsetting, v)
 
     val filter1: Option[CaParameter[String]] = cs.map(_.getString("filter1"))
