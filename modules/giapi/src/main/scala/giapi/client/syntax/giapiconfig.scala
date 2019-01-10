@@ -18,7 +18,7 @@ trait ToGiapiCofigOps {
 object giapiconfig extends ToGiapiCofigOps {
   implicit val stringConfig: GiapiConfig[String] = t => t
   implicit val intConfig: GiapiConfig[Int] = _.toString
-  implicit val doubleConfig: GiapiConfig[Double] = _.toString
+  implicit val doubleConfig: GiapiConfig[Double] = d => f"$d%1.6f"
   def fromShow[A: Show]: GiapiConfig[A] = Show[A].show(_)
   def apply[A](implicit instance: GiapiConfig[A]): GiapiConfig[A] = instance
 }
