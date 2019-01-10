@@ -3,9 +3,9 @@
 
 package giapi.client.ghost
 
-import cats.implicits._
 import fs2.Stream
 import giapi.client.{Giapi, GiapiClient}
+import giapi.client.syntax.giapiconfig._
 
 /**
   * Client for GHOST
