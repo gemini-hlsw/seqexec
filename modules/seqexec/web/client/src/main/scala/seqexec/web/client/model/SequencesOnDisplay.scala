@@ -128,13 +128,14 @@ final case class SequencesOnDisplay(tabs: Zipper[SeqexecTab]) {
         val curTableState = tab
           .map(_.tableState)
           .getOrElse(StepsTable.State.InitialTableState)
-        val s = tag[InstrumentSequenceTab.LoadedSV][SequenceView](x).asRight
-        val seq = tab.map{t => if (t.isComplete) tag[InstrumentSequenceTab.CompletedSV][SequenceView](x).asLeft else s}
+        val left = tag[InstrumentSequenceTab.CompletedSV][SequenceView](x)
+        val right = tag[InstrumentSequenceTab.LoadedSV][SequenceView](x)
+        val seq = tab.filter(_.isComplete).as(left).toLeft(right)
         val stepConfig   = tab.flatMap(_.stepConfig)
         val selectedStep = tab.flatMap(_.selectedStep)
         InstrumentSequenceTab(
           x.metadata.instrument,
-          seq.getOrElse(s),
+          seq,
           stepConfig,
           selectedStep,
           curTableState,
