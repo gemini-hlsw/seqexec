@@ -10,14 +10,14 @@ import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.extra.Reusability
 import japgolly.scalajs.react.extra.router.RouterCtl
+import seqexec.model.Step
 import seqexec.web.client.circuit._
 import seqexec.web.client.model.Pages.SeqexecPages
 import seqexec.web.client.model.SectionClosed
 import seqexec.web.client.model.SectionOpen
-import seqexec.web.client.model.TabSelected
-import seqexec.web.client.semanticui._
-import seqexec.web.client.semanticui.elements.message.IconMessage
-import seqexec.web.client.semanticui.elements.icon.Icon.IconInbox
+import seqexec.web.client.semanticui.{ Size => _, _ }
+import seqexec.web.client.components.sequence.toolbars.SequenceDefaultToolbar
+import seqexec.web.client.components.sequence.toolbars.StepConfigToolbar
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.reusability._
 import web.client.style._
@@ -26,70 +26,86 @@ import web.client.style._
   * Content of a single tab with a sequence
   */
 object SequenceTabContent {
-  private val defaultContent = IconMessage(
-    IconMessage
-      .Props(IconInbox, Some("No sequence loaded"), IconMessage.Style.Warning))
+  final case class Props(router:  RouterCtl[SeqexecPages],
+                         content: SequenceTabContentFocus) {
 
-  final case class Props(router: RouterCtl[SeqexecPages],
-                         p:      SequenceTabContentFocus) {
-    val sequenceSelected: Boolean = p.id.isDefined
-    val statusConnect: Option[ReactConnectProxy[Option[StatusAndStepFocus]]] =
-      p.id.map(i =>
-        SeqexecCircuit.connect(SeqexecCircuit.statusAndStepReader(i)))
+    val stepsConnect: ReactConnectProxy[StepsTableAndStatusFocus] =
+      SeqexecCircuit.connect(SeqexecCircuit.stepsTableReader(content.id))
   }
 
   implicit val stcfReuse: Reusability[SequenceTabContentFocus] =
     Reusability.derive[SequenceTabContentFocus]
-  implicit val propsReuse: Reusability[Props] = Reusability.by(_.p)
+  implicit val propsReuse: Reusability[Props] = Reusability.by(_.content)
+
+  private def toolbar(p: Props) =
+    p.content.tableType match {
+      case StepsTableTypeSelection.StepsTableSelected =>
+        SequenceDefaultToolbar(SequenceDefaultToolbar.Props(p.content.id))
+          .when(p.content.canOperate && !p.content.isPreview)
+      case StepsTableTypeSelection.StepConfigTableSelected(s) =>
+        StepConfigToolbar(
+          StepConfigToolbar
+            .Props(p.router,
+                   p.content.instrument,
+                   p.content.id,
+                   s,
+                   p.content.totalSteps,
+                   p.content.isPreview)): TagMod
+    }
+
+  def stepsTable(p: Props): VdomElement =
+    p.content.tableType match {
+      case StepsTableTypeSelection.StepsTableSelected =>
+        p.stepsConnect { x =>
+          <.div(
+            ^.height := "100%",
+            StepsTable(StepsTable.Props(p.router, p.content.canOperate, x()))
+          )
+        }
+
+      case StepsTableTypeSelection.StepConfigTableSelected(i) =>
+        p.stepsConnect { x =>
+          val focus = x()
+
+          val steps =
+            focus.stepsTable.foldMap(_.steps).lift(i).getOrElse(Step.Zero)
+          val hs = focus.configTableState
+          <.div(
+            ^.height := "100%",
+            StepConfigTable(StepConfigTable.Props(steps, hs))
+          )
+        }
+    }
 
   private val component = ScalaComponent
     .builder[Props]("SequenceTabContent")
     .stateless
     .render_P { p =>
-      val SequenceTabContentFocus(isLogged,
-                                  instrument,
-                                  _,
-                                  _,
-                                  active,
-                                  logDisplayed) = p.p
-      val content = p.statusConnect
-        .map { x =>
-          x { st =>
-            st()
-              .map(s =>
-                StepsTableContainer(StepsTableContainer.Props(p.router, s)): VdomElement)
-              .getOrElse(defaultContent)
-          }
-        }
-        .getOrElse {
-          defaultContent
-        }
+      val canOperate   = p.content.canOperate
+      val instrument   = p.content.instrument
+      val logDisplayed = p.content.logDisplayed
 
       <.div(
         ^.cls := "ui attached secondary segment tab",
         ^.classSet(
-          "active" -> (active === TabSelected.Selected)
+          "active" -> p.content.isActive
         ),
-        dataTab := instrument.foldMap(_.show),
-        SeqexecStyles.emptyInstrumentTab.unless(p.sequenceSelected),
-        SeqexecStyles.emptyInstrumentTabLogShown
-          .when(!p.sequenceSelected && logDisplayed === SectionOpen),
-        SeqexecStyles.emptyInstrumentTabLogHidden
-          .when(!p.sequenceSelected && logDisplayed === SectionClosed),
-        SeqexecStyles.tabSegment.when(p.sequenceSelected && isLogged),
+        dataTab := instrument.show,
+        SeqexecStyles.tabSegment.when(canOperate),
         SeqexecStyles.tabSegmentLogShown
-          .when(p.sequenceSelected && isLogged && logDisplayed === SectionOpen),
+          .when(canOperate && logDisplayed === SectionOpen),
         SeqexecStyles.tabSegmentLogHidden
-          .when(
-            p.sequenceSelected && isLogged && logDisplayed === SectionClosed),
-        SeqexecStyles.tabSegmentUnauth.when(p.sequenceSelected && !isLogged),
+          .when(canOperate && logDisplayed === SectionClosed),
+        SeqexecStyles.tabSegmentUnauth.when(!canOperate),
         SeqexecStyles.tabSegmentLogShownUnauth
-          .when(
-            p.sequenceSelected && !isLogged && logDisplayed === SectionOpen),
+          .when(!canOperate && logDisplayed === SectionOpen),
         SeqexecStyles.tabSegmentLogHiddenUnauth
-          .when(
-            p.sequenceSelected && !isLogged && logDisplayed === SectionClosed),
-        content
+          .when(!canOperate && logDisplayed === SectionClosed),
+        <.div(
+          ^.height := "100%",
+          toolbar(p),
+          stepsTable(p)
+        ).when(p.content.isActive)
       )
     }
     .configure(Reusability.shouldComponentUpdate)

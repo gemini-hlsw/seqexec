@@ -42,21 +42,15 @@ object SequenceControl {
 
   final case class Props(p: SequenceControlFocus) {
     val runRequested: RunOperation =
-      p.control
-        .map(_.tabOperations.runRequested)
-        .getOrElse(RunOperation.RunIdle)
+      p.control.tabOperations.runRequested
 
     val syncRequested: SyncOperation =
-      p.control
-        .map(_.tabOperations.syncRequested)
-        .getOrElse(SyncOperation.SyncIdle)
+      p.control.tabOperations.syncRequested
 
     val pauseRequested: PauseOperation =
-      p.control
-        .map(_.tabOperations.pauseRequested)
-        .getOrElse(PauseOperation.PauseIdle)
+      p.control.tabOperations.pauseRequested
 
-    val isRunning: Boolean = p.control.map(_.status).exists(_.isRunning)
+    val isRunning: Boolean = p.control.status.isRunning
   }
 
   final case class State(runRequested:         RunOperation,
@@ -202,33 +196,31 @@ object SequenceControl {
       .builder[Props]("SequencesDefaultToolbar")
       .initialStateFromProps(stateFromProps)
       .renderPS { (b, p, s) =>
-        val SequenceControlFocus(canOperate, control) = p.p
+        val SequenceControlFocus(canOperate, control)       = p.p
+        val ControlModel(id, partial, nextStep, status, to) = control
+        val syncInProgress                                  = to.syncRequested === SyncOperation.SyncInFlight
+        val canSync                                         = !syncInProgress && s.syncIdle
+        val nextStepToRun                                   = nextStep.getOrElse(0) + 1
+
         <.div(
           SeqexecStyles.controlButtons,
-          control.whenDefined { m =>
-            val ControlModel(id, partial, nextStep, status, to) = m
-
-            val syncInProgress = to.syncRequested === SyncOperation.SyncInFlight
-            val canSync        = !syncInProgress && s.syncIdle
-            val nextStepToRun  = nextStep.getOrElse(0) + 1
-            List(
-              // Sync button
-              syncButton(b, id, canOperate, canSync)
-                .when(status.isIdle || status.isError),
-              // Run button
-              runButton(b, id, partial, nextStepToRun, canOperate, s.canRun)
-                .when(status.isIdle || status.isError),
-              // Cancel pause button
-              cancelPauseButton(b, id, canOperate, s.canCancelPause)
-                .when(status.userStopRequested),
-              // Pause button
-              pauseButton(b, id, canOperate, s.canPause)
-                .when(status.isRunning && !status.userStopRequested),
-              // Resume
-              resumeButton(b, id, nextStepToRun, canOperate, s.canResume)
-                .when(status === SequenceState.Stopped)
-            ).toTagMod
-          }
+          List(
+            // Sync button
+            syncButton(b, id, canOperate, canSync)
+              .when(status.isIdle || status.isError),
+            // Run button
+            runButton(b, id, partial, nextStepToRun, canOperate, s.canRun)
+              .when(status.isIdle || status.isError),
+            // Cancel pause button
+            cancelPauseButton(b, id, canOperate, s.canCancelPause)
+              .when(status.userStopRequested),
+            // Pause button
+            pauseButton(b, id, canOperate, s.canPause)
+              .when(status.isRunning && !status.userStopRequested),
+            // Resume
+            resumeButton(b, id, nextStepToRun, canOperate, s.canResume)
+              .when(status === SequenceState.Stopped)
+          ).toTagMod
         )
       }
       .componentWillReceiveProps { f =>

@@ -3,7 +3,6 @@
 
 package giapi.client
 
-import cats.Show
 import edu.gemini.aspen.giapi.commands.{Activity, SequenceCommand}
 import giapi.client.commands.{Command, CommandResult, Configuration}
 
@@ -60,7 +59,7 @@ trait GiapiClient[F[_]] {
         Activity.PRESET_START,
         Configuration.Zero), DefaultCommandTimeout)
 
-  def observe[A: Show](dataLabel: A, timeout: FiniteDuration): F[CommandResult] =
+  def observe[A: GiapiConfig](dataLabel: A, timeout: FiniteDuration): F[CommandResult] =
     giapi.command(
       Command(
         SequenceCommand.OBSERVE,

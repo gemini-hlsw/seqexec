@@ -8,6 +8,7 @@ import edu.gemini.aspen.giapi.commands.{Activity, SequenceCommand}
 import fs2.Stream
 import giapi.client.commands.{Command, CommandResult, Configuration}
 import giapi.client.{Giapi, GiapiClient}
+import giapi.client.syntax.giapiconfig._
 import mouse.boolean._
 
 /**

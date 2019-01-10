@@ -9,6 +9,8 @@ import cats.effect.Sync
 import gem.math.Coordinates
 import giapi.client.commands.Configuration
 import giapi.client.ghost.GhostClient
+import giapi.client.GiapiConfig
+import giapi.client.syntax.giapiconfig._
 import seqexec.server.keywords.GdsClient
 
 import scala.concurrent.duration._
@@ -34,17 +36,17 @@ object GhostController {
                         ifuTargetType: IFUTargetType,
                         coordinates: Coordinates,
                         bundleConfig: BundleConfig): Configuration = {
-    def cfg[P: Show](paramName: String, paramVal: P) =
-      Configuration.single(s"${ifuNum.show}.$paramName", paramVal)
-      cfg("target", ifuTargetType) |+|
+    def cfg[P: GiapiConfig](paramName: String, paramVal: P) =
+      Configuration.single(s"${ifuNum.configValue}.$paramName", paramVal)
+      cfg("target", ifuTargetType.configValue) |+|
       cfg("type", DemandType.DemandRADec.demandType) |+|
       cfg("ra", coordinates.ra.toAngle.toDoubleDegrees) |+|
       cfg("dec", coordinates.dec.toAngle.toDoubleDegrees) |+|
-      cfg("bundle", bundleConfig.show)
+      cfg("bundle", bundleConfig.configValue)
   }
 
   private def ifuPark(ifuNum: IFUNum): Configuration = {
-    def cfg[P: Show](paramName: String, paramVal: P) =
+    def cfg[P: GiapiConfig](paramName: String, paramVal: P) =
       Configuration.single(s"${ifuNum.ifuStr}.$paramName", paramVal)
       cfg("target", IFUTargetType.NoTarget.targetType) |+|
       cfg("type", DemandType.DemandPark.demandType)
@@ -61,8 +63,7 @@ object GhostController {
     case object Standard extends BundleConfig(configName = "IFU_LORES")
     case object HighRes  extends BundleConfig(configName = "IFU_HIRES")
     case object Sky      extends BundleConfig(configName = "IFU_SKY")
-
-    implicit val showBundleConfig: Show[BundleConfig] = Show.show(_.configName)
+    implicit val bundleConfiguration: GiapiConfig[BundleConfig] = _.configName
   }
 
   sealed abstract class IFUNum(val ifuNum: Int) {
@@ -71,8 +72,7 @@ object GhostController {
   object IFUNum {
     case object IFU1 extends IFUNum(ifuNum = 1)
     case object IFU2 extends IFUNum(ifuNum = 2)
-
-    implicit val showIfuNum: Show[IFUNum] = Show.show(_.ifuStr)
+    implicit val ifuNumConfiguration: GiapiConfig[IFUNum] = _.ifuStr
   }
 
   sealed abstract class IFUTargetType(val targetType: String)
@@ -87,7 +87,7 @@ object GhostController {
       case Some(x)     => Target(x)
     }
 
-    implicit val IFUTargetTypeShow: Show[IFUTargetType] = Show.show(_.targetType)
+    implicit val ifuTargetTypeConfiguration: GiapiConfig[IFUTargetType] = _.targetType
   }
 
   sealed trait DemandType {
@@ -290,18 +290,17 @@ object GhostController {
     }
 
     import GhostController.{StandardResolutionMode => SRM, HighResolutionMode => HRM}
-    implicit val eq: Eq[GhostConfig] = Eq.instance { (a, b) =>
-      (a: Any, b: Any) match {
-        case (a: SRM.SingleTarget,  b: SRM.SingleTarget)  => a === b
-        case (a: SRM.DualTarget,    b: SRM.DualTarget)    => a === b
-        case (a: SRM.TargetPlusSky, b: SRM.TargetPlusSky) => a === b
-        case (a: SRM.SkyPlusTarget, b: SRM.SkyPlusTarget) => a === b
-        case (a: HRM.SingleTarget,  b: HRM.SingleTarget)  => a === b
-        case (a: HRM.TargetPlusSky, b: HRM.TargetPlusSky) => a === b
-        case _ => false
-      }
+    implicit val eq: Eq[GhostConfig] = Eq.instance {
+      case (a: SRM.SingleTarget,  b: SRM.SingleTarget)  => a === b
+      case (a: SRM.DualTarget,    b: SRM.DualTarget)    => a === b
+      case (a: SRM.TargetPlusSky, b: SRM.TargetPlusSky) => a === b
+      case (a: SRM.SkyPlusTarget, b: SRM.SkyPlusTarget) => a === b
+      case (a: HRM.SingleTarget,  b: HRM.SingleTarget)  => a === b
+      case (a: HRM.TargetPlusSky, b: HRM.TargetPlusSky) => a === b
+      case _                                            => false
     }
 
     implicit val show: Show[GhostConfig] = Show.fromToString
+    implicit val configure: GiapiConfig[GhostConfig] = fromShow
   }
 }

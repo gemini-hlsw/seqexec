@@ -6,6 +6,7 @@ package giapi.client
 import cats._
 import cats.implicits._
 import cats.effect._
+import giapi.client.syntax.giapiconfig._
 import edu.gemini.aspen.giapi.commands.{Command => GiapiCommand}
 import edu.gemini.aspen.giapi.commands.{Configuration => GiapiConfiguration}
 import edu.gemini.aspen.giapi.commands.DefaultConfiguration
@@ -18,6 +19,7 @@ import scala.collection.JavaConverters._
 import scala.concurrent.duration.{Duration, FiniteDuration}
 
 package commands {
+
   final case class CommandResult(response: Response)
   final case class CommandResultException(response: Response, message: String)
       extends RuntimeException
@@ -38,8 +40,8 @@ package commands {
   object Configuration {
     val Zero: Configuration = Configuration(Map.empty)
 
-    def single[A: Show](key: String, value: A): Configuration =
-      Configuration(Map(ConfigPath.configPath(key) -> value.show))
+    def single[A: GiapiConfig](key: String, value: A): Configuration =
+      Configuration(Map(ConfigPath.configPath(key) -> value.configValue))
 
     implicit val eq: Eq[Configuration] = Eq.by(_.config)
 

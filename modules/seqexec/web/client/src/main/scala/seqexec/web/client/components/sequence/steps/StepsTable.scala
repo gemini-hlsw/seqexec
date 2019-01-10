@@ -35,6 +35,7 @@ import seqexec.web.client.circuit.StepsTableFocus
 import seqexec.web.client.actions.UpdateStepTableState
 import seqexec.web.client.actions.UpdateSelectedStep
 import seqexec.web.client.components.SeqexecStyles
+import seqexec.web.client.components.TableContainer
 import seqexec.web.client.components.sequence.steps.OffsetFns._
 import seqexec.web.client.semanticui.elements.icon.Icon._
 import seqexec.web.client.semanticui.{ Size => SSize }
@@ -107,10 +108,9 @@ object StepsTable {
     val Zero: StepRow = apply(Step.Zero)
   }
 
-  final case class Props(router:      RouterCtl[SeqexecPages],
-                         canOperate:  Boolean,
-                         stepsTable:  StepsTableAndStatusFocus,
-                         onStepToRun: Int => Callback) {
+  final case class Props(router:     RouterCtl[SeqexecPages],
+                         canOperate: Boolean,
+                         stepsTable: StepsTableAndStatusFocus) {
     val status: ClientStatus                        = stepsTable.status
     val steps: Option[StepsTableFocus]              = stepsTable.stepsTable
     val obsId: Option[Observation.Id]               = steps.map(_.id)
@@ -126,6 +126,7 @@ object StepsTable {
     val showFilter: Boolean       = showProp(InstrumentProperties.Filter)
     val showFPU: Boolean          = showProp(InstrumentProperties.FPU)
     val isPreview: Boolean        = steps.map(_.isPreview).getOrElse(false)
+    val hasControls: Boolean      = canOperate && !isPreview
     val canSetBreakpoint: Boolean = canOperate && !isPreview
     val showObservingMode: Boolean =
       showProp(InstrumentProperties.ObservingMode)
@@ -430,13 +431,13 @@ object StepsTable {
   def disperserColumn(p:                Props,
                       disperserVisible: Boolean): Option[Table.ColumnArg] =
     p.steps
-      .map(s =>
-        Column(
-          Column.propsNoFlex(
+      .map(
+        s =>
+          Column(Column.propsNoFlex(
             ColWidths.DisperserWidth,
             "disperser",
-            label = "Disperser",
-            className = SeqexecStyles.centeredCell.htmlClass,
+            label        = "Disperser",
+            className    = SeqexecStyles.centeredCell.htmlClass,
             cellRenderer = stepDisperserRenderer(s.instrument)
           )))
       .filter(_ => p.showDisperser && disperserVisible)
@@ -444,45 +445,48 @@ object StepsTable {
   def exposureColumn(p:               Props,
                      exposureVisible: Boolean): Option[Table.ColumnArg] =
     p.steps
-      .map(i =>
-        Column(
-          Column.propsNoFlex(
-            ColWidths.ExposureWidth,
-            "exposure",
-            label = "Exposure",
-            className = SeqexecStyles.centeredCell.htmlClass,
-            cellRenderer = stepExposureRenderer(i.instrument)
-          )))
+      .map(
+        i =>
+          Column(
+            Column.propsNoFlex(
+              ColWidths.ExposureWidth,
+              "exposure",
+              label        = "Exposure",
+              className    = SeqexecStyles.centeredCell.htmlClass,
+              cellRenderer = stepExposureRenderer(i.instrument)
+            )))
       .filter(_ => p.showExposure && exposureVisible)
 
   def fpuColumn(p: Props, fpuVisible: Boolean): Option[Table.ColumnArg] =
     p.steps
-      .map( i =>
-        Column(
-          Column.propsNoFlex(
-            ColWidths.FPUWidth,
-            "fpu",
-            label = "FPU",
-            className = SeqexecStyles.centeredCell.htmlClass,
-            cellRenderer = stepFPURenderer(i.instrument))))
+      .map(
+        i =>
+          Column(
+            Column.propsNoFlex(ColWidths.FPUWidth,
+                               "fpu",
+                               label        = "FPU",
+                               className    = SeqexecStyles.centeredCell.htmlClass,
+                               cellRenderer = stepFPURenderer(i.instrument))))
       .filter(_ => p.showFPU && fpuVisible)
 
   def observingModeColumn(p: Props): Option[Table.ColumnArg] =
     p.steps
-      .map( _ =>
-        Column(
-          Column.propsNoFlex(
-            ColWidths.ObservingModeWidth,
-            "obsMode",
-            label = "Observing Mode",
-            className = SeqexecStyles.centeredCell.htmlClass,
-            cellRenderer = stepObsModeRenderer
-          )))
+      .map(
+        _ =>
+          Column(
+            Column.propsNoFlex(
+              ColWidths.ObservingModeWidth,
+              "obsMode",
+              label        = "Observing Mode",
+              className    = SeqexecStyles.centeredCell.htmlClass,
+              cellRenderer = stepObsModeRenderer
+            )))
       .filter(_ => p.showObservingMode)
 
   def filterColumn(p: Props, filterVisible: Boolean): Option[Table.ColumnArg] =
     p.steps
-      .map( i =>
+      .map(
+        i =>
           Column(
             Column.propsNoFlex(
               ColWidths.FilterWidth,
@@ -500,8 +504,8 @@ object StepsTable {
           Column.propsNoFlex(
             ColWidths.ObjectTypeWidth,
             "type",
-            label = "Type",
-            className = SeqexecStyles.centeredCell.htmlClass,
+            label        = "Type",
+            className    = SeqexecStyles.centeredCell.htmlClass,
             cellRenderer = stepObjectTypeRenderer(objectSize)
           )))
 
@@ -715,32 +719,12 @@ object StepsTable {
   }
 
   // Wire it up from VDOM
-  def render(b: Backend): VdomElement = {
-    val p                 = b.props
-    val settingsDisplayed = p.steps.forall(_.stepConfigDisplayed.isDefined)
-    val hasControls       = (p.status.isLogged && !p.isPreview) || settingsDisplayed
-    val noControls        = (p.isPreview || !p.status.isLogged) && !settingsDisplayed
-    <.div(
-      SeqexecStyles.stepsListPanePreview.when(noControls),
-      SeqexecStyles.stepsListPaneWithControls.when(hasControls),
-      p.steps.whenDefined { tab =>
-        tab.stepConfigDisplayed
-          .map { i =>
-            val steps = p.stepsList.lift(i).getOrElse(Step.Zero)
-            AutoSizer(AutoSizer.props(s =>
-              StepConfigTable(
-                StepConfigTable.Props(steps, s, p.configTableState))))
-          }
-          .getOrElse {
-            AutoSizer(
-              AutoSizer.props(s =>
-                ref.component(stepsTableProps(b)(s))(
-                  columns(b, s).map(_.vdomElement): _*)))
-          }
-          .vdomElement
-      }
-    )
-  }
+  def render(b: Backend): VdomElement =
+    TableContainer(TableContainer.Props(b.props.hasControls, size =>
+      ref
+        .component(stepsTableProps(b)(size))(
+          columns(b, size).map(_.vdomElement): _*)
+        .vdomElement))
 
   private val component = ScalaComponent
     .builder[Props]("StepsTable")

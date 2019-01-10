@@ -48,23 +48,23 @@ object StepsTableFocus {
   ): Getter[SeqexecAppRootModel, Option[StepsTableFocus]] =
     SeqexecAppRootModel.sequencesOnDisplayL.composeGetter(
       SequencesOnDisplay.tabG(id)) >>> {
-      _.flatMap {
+      _.map {
         case SeqexecTabActive(tab, _) =>
-          tab.sequence.map { sequence =>
-            StepsTableFocus(
-              sequence.id,
-              sequence.metadata.instrument,
-              sequence.status,
-              sequence.steps,
-              tab.stepConfigDisplayed,
-              sequence.nextStepToRun,
-              tab.selectedStep
-                .orElse(sequence.nextStepToRun), // start with the nextstep selected
-              tab.isPreview,
-              tab.tableState,
-              tab.tabOperations
-            )
-          }
+          val sequence = tab.sequence
+          StepsTableFocus(
+            sequence.id,
+            sequence.metadata.instrument,
+            sequence.status,
+            sequence.steps,
+            tab.stepConfigDisplayed,
+            sequence.nextStepToRun,
+            tab.selectedStep
+              .orElse(sequence.nextStepToRun), // start with the nextstep selected
+            tab.isPreview,
+            tab.tableState,
+            tab.tabOperations
+          )
+
       }
     }
 }

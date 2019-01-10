@@ -6,12 +6,17 @@
 package edu.gemini.seqexec.server.niri;
 
 public enum Disperser {
+    None("none"),
     J("J-grism"),
     H("H-grism"),
     K("K-grism"),
     L("L-grism"),
     M("M-grism"),
-    none("none");
+    F32_J("f32 J-grism"),
+    F32_H("f32 H-grism"),
+    F32_K("f32 K-grism"),
+    NotUsed(""),
+    Wollaston("Wollaston");
 
     final String name;
 
