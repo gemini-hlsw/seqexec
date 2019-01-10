@@ -14,7 +14,7 @@ import doobie.implicits._
 import cats.effect._
 import cats.implicits._
 import org.http4s.client._
-import org.http4s.client.blaze.BlazeClientBuilder
+import org.http4s.client.asynchttpclient.AsyncHttpClient
 import org.http4s.scalaxml.xml
 
 import java.net.URLEncoder
@@ -78,10 +78,7 @@ object OdbClient {
   ): M[Either[String, (A, List[Dataset])]] = {
 
     val client: Resource[M, Client[M]] =
-      for {
-        ec <- ExecutionContexts.cachedThreadPool[M]
-        c  <- BlazeClientBuilder[M](ec).resource
-      } yield c
+      AsyncHttpClient.resource[M]()
 
     client.use { c =>
       c.expect[Elem](uri(host, id))
