@@ -16,7 +16,7 @@ import java.nio.file.{ Path => FilePath }
 import java.util.concurrent.{ Executors, ExecutorService }
 import knobs.{ Resource => _, _ }
 import mouse.all._
-import org.http4s.client.blaze._
+import org.http4s.client.asynchttpclient.AsyncHttpClient
 import org.http4s.client.Client
 import org.http4s.HttpRoutes
 import org.http4s.metrics.prometheus.Prometheus
@@ -248,7 +248,7 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
 
     val r: Resource[IO, ExitCode] =
       for {
-        cli    <- BlazeClientBuilder[IO](ExecutionContext.global).resource
+        cli    <- AsyncHttpClient.resource[IO]()
         inq    <- Resource.liftF(Queue.bounded[IO, executeEngine.EventType](10))
         out    <- Resource.liftF(Topic[IO, SeqexecEvent](NullEvent))
         cr     <- Resource.liftF(IO(new CollectorRegistry))
