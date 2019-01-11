@@ -15,9 +15,10 @@ import web.client.style._
   */
 object TableContainer {
 
+  // Todo use Reusable[A ~=> B]
   final case class Props(hasControls: Boolean, table: Size => VdomElement)
 
-  implicit val reuse: Reusability[Props] = Reusability.by(_.hasControls)
+  implicit val reuse: Reusability[Props] = Reusability.never
 
   private val component = ScalaComponent
     .builder[Props]("TableContainer")
