@@ -67,7 +67,7 @@ object ProgramDao {
     private final case class Index(toInt: Int)
     private object Index {
       implicit val IndexMeta: Meta[Index] =
-        Distinct.integer("id_index").xmap(Index(_), _.toInt)
+        Distinct.integer("id_index").timap(Index(_))(_.toInt)
     }
 
     def selectFlat(pid: Program.Id): Query0[String] =

@@ -5,7 +5,7 @@ package seqexec.engine
 
 import cats._
 import cats.data.StateT
-import cats.effect.IO
+import cats.effect.{ Concurrent, IO }
 import cats.implicits._
 import seqexec.engine.Event._
 import seqexec.engine.Result.{PartialVal, PauseContext, RetVal}
@@ -15,8 +15,6 @@ import gem.Observation
 import monocle.Optional
 import mouse.boolean._
 import org.log4s.getLogger
-
-import scala.concurrent.ExecutionContext
 
 class Engine[D, U](stateL: Engine.State[D]) {
 
@@ -165,7 +163,7 @@ class Engine[D, U](stateL: Engine.State[D]) {
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
-  private def execute(id: Observation.Id)(implicit ec: ExecutionContext): HandleType[Unit] = {
+  private def execute(id: Observation.Id)(implicit ev: Concurrent[IO]): HandleType[Unit] = {
     get.flatMap(st => stateL.sequenceStateIndex(id).getOption(st).map {
       case seq@Sequence.State.Final(_, _)  =>
         // The sequence is marked as completed here
@@ -174,7 +172,7 @@ class Engine[D, U](stateL: Engine.State[D]) {
         val stepId = z.focus.toStep.id
         val u: List[Stream[IO, EventType]] = seq.current.actions.map(_.gen).zipWithIndex.map(x =>
           act(id, stepId, x))
-        val v: Stream[IO, EventType] = Stream.emits(u).join(u.length)
+        val v: Stream[IO, EventType] = Stream.emits(u).parJoin(u.length)
         val w: List[HandleType[Unit]] = seq.current.actions.indices.map(i => modifyS(id)(_.start(i))).toList
         w.sequence *> Handle.fromStream(v)
     }.getOrElse(unit) )
@@ -272,7 +270,7 @@ class Engine[D, U](stateL: Engine.State[D]) {
     case LogError(msg)                 => Logger.error(msg) *> pure(UserCommandResponse(ue, EventResult.Ok, None))
   }
 
-  private def handleSystemEvent(se: SystemEvent)(ec: ExecutionContext): HandleType[ResultType] = se match {
+  private def handleSystemEvent(se: SystemEvent)(implicit ci: Concurrent[IO]): HandleType[ResultType] = se match {
     case Completed(id, _, i, r)        => Logger.debug(
       s"Engine: From sequence ${id.format}: Action completed ($r)") *> complete(id, i, r) *>
       pure(SystemUpdate(se, EventResult.Ok))
@@ -291,7 +289,7 @@ class Engine[D, U](stateL: Engine.State[D]) {
     case Executed(id)               => Logger.debug("Engine: Execution completed") *>
       next(id) *> pure(SystemUpdate(se, EventResult.Ok))
     case Executing(id)              => Logger.debug("Engine: Executing") *>
-      execute(id)(ec) *> pure(SystemUpdate(se, EventResult.Ok))
+      execute(id) *> pure(SystemUpdate(se, EventResult.Ok))
     case Finished(id)               => Logger.debug("Engine: Finished") *>
       switch(id)(SequenceState.Completed) *> pure(SystemUpdate(se, EventResult.Ok))
     case SingleRunCompleted(c, r)   =>
@@ -307,11 +305,10 @@ class Engine[D, U](stateL: Engine.State[D]) {
     * Main logical thread to handle events and produce output.
     */
   @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
-  private def run(userReact: PartialFunction[SystemEvent, HandleType[Unit]])(ev: EventType)(implicit ec: ExecutionContext): HandleType[ResultType] = {
-
+  private def run(userReact: PartialFunction[SystemEvent, HandleType[Unit]])(ev: EventType)(implicit ci: Concurrent[IO]): HandleType[ResultType] = {
     ev match {
       case EventUser(ue)   => handleUserEvent(ue)
-      case EventSystem(se) => handleSystemEvent(se)(ec).flatMap(x =>
+      case EventSystem(se) => handleSystemEvent(se).flatMap(x =>
         userReact.applyOrElse(se, (_:SystemEvent) =>  unit).as(x))
     }
   }
@@ -323,10 +320,10 @@ class Engine[D, U](stateL: Engine.State[D]) {
   @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
   def mapEvalState[A, S, B](input: Stream[IO, A],
                             initialState: S, f: (A, S) => IO[(S, B, Option[Stream[IO, A]])])
-                           (implicit ec: ExecutionContext): Stream[IO, B] = {
-    Stream.eval(fs2.async.unboundedQueue[IO, Stream[IO, A]]).flatMap { q =>
+                           (implicit ev: Concurrent[IO]): Stream[IO, B] = {
+    Stream.eval(fs2.concurrent.Queue.unbounded[IO, Stream[IO, A]]).flatMap { q =>
       Stream.eval_(q.enqueue1(input)) ++
-        q.dequeue.joinUnbounded.evalMapAccumulate(initialState) { (s, a) =>
+        q.dequeue.parJoinUnbounded.evalMapAccumulate(initialState) { (s, a) =>
           f(a, s).flatMap {
             case (ns, b, None)     => IO.pure((ns, b))
             case (ns, b, Some(st)) => q.enqueue1(st) >> IO.pure((ns, b))
@@ -338,7 +335,7 @@ class Engine[D, U](stateL: Engine.State[D]) {
   @SuppressWarnings(Array("org.wartremover.warts.AnyVal", "org.wartremover.warts.ImplicitParameter"))
   private def runE(userReact: PartialFunction[SystemEvent, HandleType[Unit]])
                   (ev: EventType,s: D)
-                  (implicit ec: ExecutionContext)
+                  (implicit ci: Concurrent[IO])
   : IO[(D, (ResultType, D), Option[Stream[IO, EventType]])] =
     run(userReact)(ev).run.run(s).map {
       case (si, (r, p)) => (si, (r, si), p)
@@ -346,9 +343,9 @@ class Engine[D, U](stateL: Engine.State[D]) {
 
   @SuppressWarnings(Array("org.wartremover.warts.AnyVal", "org.wartremover.warts.ImplicitParameter"))
   def process(userReact: PartialFunction[SystemEvent, HandleType[Unit]])
-             (input: Stream[IO, EventType])(qs: D)(implicit ec: ExecutionContext)
+             (input: Stream[IO, EventType])(qs: D)(implicit ev: Concurrent[IO])
   : Stream[IO, (ResultType, D)] =
-    mapEvalState[EventType, D, (ResultType, D)](input, qs, runE(userReact))
+    mapEvalState[EventType, D, (ResultType, D)](input, qs, runE(userReact)(_, _))
 
   // Functions for type bureaucracy
 

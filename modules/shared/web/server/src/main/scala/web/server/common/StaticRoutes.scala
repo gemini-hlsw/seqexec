@@ -4,27 +4,28 @@
 package web.server.common
 
 import cats.data.{ NonEmptyList, OptionT }
-import cats.effect.{ IO, Sync }
+import cats.effect.{ IO, Sync, ContextShift }
 import cats.instances.string._
 import cats.syntax.eq._
 import org.http4s.CacheDirective._
 import org.http4s.headers.`Cache-Control`
 import org.http4s.server.middleware.GZip
-import org.http4s.{ HttpService, Request, Response, StaticFile }
+import org.http4s.{ HttpRoutes, Request, Response, StaticFile }
 import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext
 
-class StaticRoutes(devMode: Boolean, builtAtMillis: Long) {
+class StaticRoutes(devMode: Boolean, builtAtMillis: Long, blockingExecutionContext: ExecutionContext) {
   val oneYear: Int = 365 * 24 * 60 * 60
 
   private val cacheHeaders = if (devMode) List(`Cache-Control`(NonEmptyList.of(`no-cache`()))) else List(`Cache-Control`(NonEmptyList.of(`max-age`(oneYear.seconds))))
 
   // Get a resource from a local file, useful for development
-  def localResource[F[_]: Sync](path: String, req: Request[F]): OptionT[F, Response[F]] =
-    StaticFile.fromResource(path, Some(req)).map(_.putHeaders())
+  def localResource[F[_]: Sync: ContextShift](path: String, req: Request[F]): OptionT[F, Response[F]] =
+    StaticFile.fromResource(path, blockingExecutionContext, Some(req)).map(_.putHeaders())
 
   // Get a resource from a local file, used in production
-  def embeddedResource[F[_]: Sync](path: String, req: Request[F]): OptionT[F, Response[F]] = {
-    OptionT.fromOption(Option(getClass.getResource(path))).flatMap(StaticFile.fromURL(_, Some(req)))
+  def embeddedResource[F[_]: Sync: ContextShift](path: String, req: Request[F]): OptionT[F, Response[F]] = {
+    OptionT.fromOption(Option(getClass.getResource(path))).flatMap(StaticFile.fromURL(_, blockingExecutionContext, Some(req)))
   }
 
   implicit class ReqOps[F[_]](req: Request[F]) {
@@ -41,7 +42,10 @@ class StaticRoutes(devMode: Boolean, builtAtMillis: Long) {
 
     def endsWith(exts: String*): Boolean = exts.exists(req.pathInfo.endsWith)
 
-    def serve(path: String)(implicit F: Sync[F]): F[Response[F]] = {
+    def serve(path: String)(
+      implicit sf: Sync[F],
+               cs: ContextShift[F]
+    ): F[Response[F]] = {
       // To find scala.js generated files we need to go into the dir below, hopefully this can be improved
       localResource(removeTimestamp(path), req).orElse(embeddedResource(removeTimestamp(path), req))
         .map(_.putHeaders(cacheHeaders: _*))
@@ -51,10 +55,13 @@ class StaticRoutes(devMode: Boolean, builtAtMillis: Long) {
 
   private val supportedExtension = List(".html", ".js", ".map", ".css", ".png", ".eot", ".svg", ".woff", ".woff2", ".ttf", ".mp3", ".ico")
 
-  def service: HttpService[IO] = GZip { HttpService {
-    case req if req.pathInfo === "/"                  => req.serve("/index.html")
-    case req if req.endsWith(supportedExtension: _*)  => req.serve(req.pathInfo)
-    // This maybe not desired in all cases but it helps to keep client side routing cleaner
-    case req if !req.pathInfo.contains(".")           => req.serve("/index.html")
-  }}
+  def service: HttpRoutes[IO] = GZip {
+    implicit val ioContextShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global) // not ideal but ok
+    HttpRoutes.of {
+      case req if req.pathInfo === "/"                  => req.serve("/index.html")
+      case req if req.endsWith(supportedExtension: _*)  => req.serve(req.pathInfo)
+      // This maybe not desired in all cases but it helps to keep client side routing cleaner
+      case req if !req.pathInfo.contains(".")           => req.serve("/index.html")
+    }
+  }
 }

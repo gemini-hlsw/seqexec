@@ -5,10 +5,9 @@ package seqexec.server
 
 import cats._
 import cats.data.{EitherT, NonEmptyList, Reader}
-import cats.effect.IO
+import cats.effect.{ IO, Concurrent, Timer }
 import cats.implicits._
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import edu.gemini.seqexec.odb.{ExecutedDataset, SeqexecSequence}
 import edu.gemini.spModel.ao.AOConstants._
 import edu.gemini.spModel.config2.{Config, ItemKey}
@@ -77,7 +76,8 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
   //scalastyle:off
   private def observe(config: Config, obsId: Observation.Id, inst: InstrumentSystem[IO],
                       otherSys: List[System[IO]], headers: Reader[HeaderExtraData, List[Header]])
-                     (ctx: HeaderExtraData): Stream[IO, Result]
+                     (ctx: HeaderExtraData)
+                     (implicit ev: Concurrent[IO]): Stream[IO, Result]
   = {
     val dataId: SeqAction[String] = SeqAction.either(
       config.extract(OBSERVE_KEY / DATA_LABEL_PROP).as[String].leftMap(e =>
@@ -123,17 +123,20 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
       }
     }
 
-    Stream.eval(dhsFileId(inst).value).flatMap[Result]{
-      case Right(id) => Stream.emit[Result](Result.Partial(FileIdAllocated(id))).covary[IO] ++
+    Stream.eval(dhsFileId(inst).value).flatMap{
+      case Right(id) => Stream.emit(Result.Partial(FileIdAllocated(id))).covary[IO] ++
         inst.observeProgress(inst.calcObserveTime(config), ElapsedTime(0.0.seconds))
           .map(Result.Partial(_))
           .mergeHaltR(Stream.eval[IO, Result](doObserve(id).value.map(_.toResult)))
-      case Left(e)   => Stream.emit[Result](Result.Error(SeqexecFailure.explain(e))).covary[IO]
+      case Left(e)   => Stream.emit(Result.Error(SeqexecFailure.explain(e))).covary[IO]
     }
   }
 
   private def step(obsId: Observation.Id, i: Int, config: Config, nextToRun: Int,
-                   datasets: Map[Int, ExecutedDataset]): TrySeq[SequenceGen.StepGen] = {
+                   datasets: Map[Int, ExecutedDataset])(
+                     implicit cio: Concurrent[IO],
+                              tio: Timer[IO]
+                   ): TrySeq[SequenceGen.StepGen] = {
     def buildStep(inst: InstrumentSystem[IO], sys: List[System[IO]],
                   headers: Reader[HeaderExtraData, List[Header]]): SequenceGen.StepGen = {
       val initialStepExecutions: List[List[Action[IO]]] =
@@ -193,7 +196,10 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
       case kw         => StepState.Failed("Unexpected status keyword: " ++ kw)
     }
 
-  def sequence(obsId: Observation.Id, sequence: SeqexecSequence):
+  def sequence(obsId: Observation.Id, sequence: SeqexecSequence)(
+    implicit cio: Concurrent[IO],
+             tio: Timer[IO]
+  ):
       (List[SeqexecFailure], Option[SequenceGen]) = {
 
     val configs = sequence.config.getAllSteps.toList
@@ -225,7 +231,9 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
       })
   }
 
-  private def deliverObserveCmd(seqId: Observation.Id, f: ObserveControl => Option[SeqAction[Unit]])(st: EngineState):  Option[Stream[IO, executeEngine.EventType]] = {
+  private def deliverObserveCmd(seqId: Observation.Id, f: ObserveControl => Option[SeqAction[Unit]])(st: EngineState)(
+    implicit tio: Timer[IO]
+  ):  Option[Stream[IO, executeEngine.EventType]] = {
     def isObserving(v: Action[IO]): Boolean = v.kind === ActionType.Observe && (v.state.runState match {
       case Action.Started               => true
       case _                            => false
@@ -249,26 +257,34 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
     case _       => Event.nullEvent
   }
 
-  def stopObserve(seqId: Observation.Id): EngineState => Option[Stream[IO, executeEngine.EventType]] = st =>{
+  def stopObserve(seqId: Observation.Id)(
+    implicit cio: Concurrent[IO],
+             tio: Timer[IO]
+  ): EngineState => Option[Stream[IO, executeEngine.EventType]] = st =>{
     def f(oc: ObserveControl): Option[SeqAction[Unit]] = oc match {
       case OpticControl(StopObserveCmd(stop), _, _, _, _, _) => Some(stop)
       case InfraredControl(StopObserveCmd(stop), _)          => Some(stop)
       case _                                                 => none
     }
-    deliverObserveCmd(seqId, f)(st).orElse(stopPaused(seqId)(st))
+    deliverObserveCmd(seqId, f)(st).orElse(stopPaused(seqId).apply(st))
   }
 
-  def abortObserve(seqId: Observation.Id): EngineState => Option[Stream[IO, executeEngine.EventType]] = st => {
+  def abortObserve(seqId: Observation.Id)(
+    implicit cio: Concurrent[IO],
+             tio: Timer[IO]
+  ): EngineState => Option[Stream[IO, executeEngine.EventType]] = st => {
     def f(oc: ObserveControl): Option[SeqAction[Unit]] = oc match {
       case OpticControl(_, AbortObserveCmd(abort), _, _, _, _) => Some(abort)
       case InfraredControl(_, AbortObserveCmd(abort))          => Some(abort)
       case _                                                   => none
     }
 
-    deliverObserveCmd(seqId, f)(st).orElse(abortPaused(seqId)(st))
+    deliverObserveCmd(seqId, f)(st).orElse(abortPaused(seqId).apply(st))
   }
 
-  def pauseObserve(seqId: Observation.Id): EngineState => Option[Stream[IO, executeEngine.EventType]] = {
+  def pauseObserve(seqId: Observation.Id)(
+    implicit tio: Timer[IO]
+  ): EngineState => Option[Stream[IO, executeEngine.EventType]] = {
     def f(oc: ObserveControl): Option[SeqAction[Unit]] = oc match {
       case OpticControl(_, _, PauseObserveCmd(pause), _, _, _) => Some(pause)
       case _                                                   => none
@@ -278,8 +294,10 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
 
   private def pausedCommand(seqId: Observation.Id,
                             f: ObserveControl => Option[Time => SeqAction[ObserveCommand.Result]],
-                            useCountdown: Boolean)
-  : EngineState => Option[Stream[IO,executeEngine.EventType]] = st => {
+                            useCountdown: Boolean)(
+    implicit cio: Concurrent[IO],
+             tio: Timer[IO]
+  ): EngineState => Option[Stream[IO,executeEngine.EventType]] = st => {
 
     def resumeIO(c: ObserveContext, resumeCmd: SeqAction[ObserveCommand.Result]): IO[Result] = (for {
       r <- resumeCmd
@@ -327,7 +345,10 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
     } yield r
   }
 
-  def resumePaused(seqId: Observation.Id): EngineState => Option[Stream[IO, executeEngine.EventType]] = {
+  def resumePaused(seqId: Observation.Id)(
+    implicit cio: Concurrent[IO],
+             tio: Timer[IO]
+  ): EngineState => Option[Stream[IO, executeEngine.EventType]] = {
     def f(o: ObserveControl): Option[Time => SeqAction[ObserveCommand.Result]] = o match {
       case OpticControl(_, _, _, ContinuePausedCmd(a), _, _) => Some(a)
       case _                                                 => none
@@ -336,7 +357,10 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
     pausedCommand(seqId, f, useCountdown = true)
   }
 
-  private def stopPaused(seqId: Observation.Id): EngineState => Option[Stream[IO, executeEngine.EventType]] = {
+  private def stopPaused(seqId: Observation.Id)(
+    implicit cio: Concurrent[IO],
+             tio: Timer[IO]
+  ): EngineState => Option[Stream[IO, executeEngine.EventType]] = {
     def f(o: ObserveControl): Option[Time => SeqAction[ObserveCommand.Result]] = o match {
       case OpticControl(_, _, _, _, StopPausedCmd(a), _) => Some(_ => a)
       case _                                             => none
@@ -345,7 +369,10 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
     pausedCommand(seqId, f, useCountdown = false)
   }
 
-  private def abortPaused(seqId: Observation.Id): EngineState => Option[Stream[IO, executeEngine.EventType]] = {
+  private def abortPaused(seqId: Observation.Id)(
+    implicit cio: Concurrent[IO],
+             tio: Timer[IO]
+  ): EngineState => Option[Stream[IO, executeEngine.EventType]] = {
     def f(o: ObserveControl): Option[Time => SeqAction[ObserveCommand.Result]] = o match {
       case OpticControl(_, _, _, _, _, AbortPausedCmd(a)) => Some(_ => a)
       case _                                              => none
@@ -355,7 +382,9 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
   }
 
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
-  private def toInstrumentSys(inst: Instrument): TrySeq[InstrumentSystem[IO]] = inst match {
+  private def toInstrumentSys(inst: Instrument)(
+    implicit ev: Timer[IO]
+  ): TrySeq[InstrumentSystem[IO]] = inst match {
     case Instrument.F2    => TrySeq(Flamingos2(systems.flamingos2, systems.dhs))
     case Instrument.GmosS => TrySeq(GmosSouth(systems.gmosSouth, systems.dhs))
     case Instrument.GmosN => TrySeq(GmosNorth(systems.gmosNorth, systems.dhs))
@@ -385,7 +414,9 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
   private def flatOrArcTcsSubsystems(inst: Instrument): NonEmptyList[TcsController.Subsystem] =
     NonEmptyList.of(AGUnit, (if (hasOI(inst)) List(OIWFS) else List.empty): _*)
 
-  private def calcSystems(stepType: StepType): TrySeq[List[System[IO]]] = {
+  private def calcSystems(stepType: StepType)(
+    implicit tio: Timer[IO]
+  ): TrySeq[List[System[IO]]] = {
     stepType match {
       case CelestialObject(inst) => toInstrumentSys(inst).map(_ :: List(Tcs(systems.tcs,
         if(hasOI(inst)) all else allButOI, ScienceFoldPosition.Position(TcsController.LightSource.Sky, inst)),
@@ -412,7 +443,9 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
     case Niri(_, _)       => Instrument.Niri
   }
 
-  private def calcInstHeader(config: Config, inst: Instrument): TrySeq[Header] = {
+  private def calcInstHeader(config: Config, inst: Instrument)(
+    implicit tio: Timer[IO]
+  ): TrySeq[Header] = {
     val tcsKReader = if (settings.tcsKeywords) TcsKeywordsReaderImpl else DummyTcsKeywordsReader
     inst match {
       case Instrument.F2     =>
@@ -449,7 +482,9 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
   private def gcalHeader(i: InstrumentSystem[IO]): Header = GcalHeader.header(i,
     if (settings.gcalKeywords) GcalKeywordsReaderImpl else DummyGcalKeywordsReader )
 
-  private def calcHeaders(config: Config, stepType: StepType): TrySeq[Reader[HeaderExtraData, List[Header]]] = stepType match {
+  private def calcHeaders(config: Config, stepType: StepType)(
+    implicit tio: Timer[IO]
+  ): TrySeq[Reader[HeaderExtraData, List[Header]]] = stepType match {
     case CelestialObject(inst) => toInstrumentSys(inst) >>= { i =>
         calcInstHeader(config, inst).map(h => Reader(ctx => List(commonHeaders(config, all.toList, i)(ctx), gwsHeaders(i), h)))
       }

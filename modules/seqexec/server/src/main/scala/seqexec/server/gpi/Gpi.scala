@@ -4,9 +4,7 @@
 package seqexec.server.gpi
 
 import cats.data.EitherT
-import cats.effect.Effect
-import cats.effect.IO
-import cats.effect.Sync
+import cats.effect.{ IO, Sync, Timer}
 import cats.implicits._
 import cats.data.Reader
 import edu.gemini.spModel.config2.Config
@@ -30,7 +28,7 @@ import squants.time.Milliseconds
 import squants.time.Seconds
 import squants.time.Time
 
-final case class Gpi[F[_]: Effect](controller: GpiController[F])
+final case class Gpi[F[_]: Sync: Timer](controller: GpiController[F])
     extends InstrumentSystem[F]
     with GdsInstrument {
   // Taken from the gpi isd

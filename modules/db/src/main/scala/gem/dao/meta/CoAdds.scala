@@ -10,7 +10,7 @@ import gem.syntax.prism._
 trait CoAddsMeta {
 
   implicit val CoAddsMetaShort: Meta[CoAdds] =
-    Distinct.short("coadds").xmap(CoAdds.fromShort.unsafeGet(_), _.toShort)
+    Distinct.short("coadds").timap(CoAdds.fromShort.unsafeGet(_))(_.toShort)
 
 }
 

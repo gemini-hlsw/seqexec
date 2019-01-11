@@ -4,12 +4,13 @@
 package seqexec.server.flamingos2
 
 import cats.data.{EitherT, StateT}
-import cats.effect.IO
+import cats.effect.{ IO, Timer }
 import cats.implicits._
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.{EpicsCodex, ObserveCommand, Progress, ProgressUtil, RemainingTime, SeqAction}
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.{Decker, Filter, ReadoutMode, WindowCover, _}
 import org.log4s.getLogger
+import scala.concurrent.ExecutionContext
 import squants.{Seconds, Time}
 import squants.time.TimeConversions._
 
@@ -136,6 +137,8 @@ object Flamingos2ControllerEpics extends Flamingos2Controller {
   } yield ()
 
   override def observeProgress(total: Time): fs2.Stream[IO, Progress] = {
+    implicit val ioTimer: Timer[IO] = IO.timer(ExecutionContext.global)
+    // ProgressUtil.countdown[IO](total, Seconds(0))
     val s = ProgressUtil.fromStateTOption[IO, Time](_ => StateT[IO, Time, Option[Progress]] { st =>
       IO {
         val m = if (total >= st) total else st

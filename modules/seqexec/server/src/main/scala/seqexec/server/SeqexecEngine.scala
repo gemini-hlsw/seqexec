@@ -8,8 +8,8 @@ import java.time.LocalDate
 import java.util.concurrent.TimeUnit
 
 import cats._
-import cats.data.{Kleisli, StateT}
-import cats.effect.{IO, Sync}
+import cats.data.{ Kleisli, StateT }
+import cats.effect.{ ConcurrentEffect, ContextShift, IO, Sync, Timer }
 import cats.implicits._
 import monocle.Monocle._
 import monocle.Optional
@@ -39,8 +39,7 @@ import seqexec.server.gws.GwsEpics
 import seqexec.server.tcs.{TcsControllerEpics, TcsControllerSim, TcsEpics}
 import edu.gemini.seqexec.odb.SmartGcal
 import edu.gemini.spModel.core.Peer
-import fs2.Scheduler
-import fs2.Stream
+import fs2.{ Pure, Stream }
 import org.http4s.client.Client
 import org.http4s.Uri
 import knobs.Config
@@ -48,12 +47,13 @@ import mouse.all._
 import seqexec.model.dhs.ImageFileId
 
 import scala.collection.immutable.SortedMap
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import shapeless.tag.@@
 import shapeless.tag
 
-class SeqexecEngine(httpClient: Client[IO], settings: Settings[IO], sm: SeqexecMetrics) {
+class SeqexecEngine(httpClient: Client[IO], settings: Settings[IO], sm: SeqexecMetrics)(
+  implicit ceio: ConcurrentEffect[IO], tio: Timer[IO]
+) {
   import SeqexecEngine._
 
   val odbProxy: OdbProxy[IO] = new OdbProxy[IO](new Peer(settings.odbHost, 8443, null),
@@ -193,18 +193,27 @@ class SeqexecEngine(httpClient: Client[IO], settings: Settings[IO], sm: SeqexecM
 
   def requestRefresh(q: EventQueue, clientId: ClientId): IO[Unit] = q.enqueue1(Event.poll(clientId))
 
-  def seqQueueRefreshStream: Stream[IO, executeEngine.EventType] =
-    Scheduler[IO](corePoolSize = 1).flatMap { scheduler =>
-      val fd = Duration(settings.odbQueuePollingInterval.toSeconds, TimeUnit.SECONDS)
-      scheduler.fixedDelay[IO](fd).evalMap(_ =>
-        odbProxy.queuedSequences.value).map { x =>
-        Event.getState[executeEngine.ConcreteTypes](st =>
-          x.map(odbLoader.refreshSequenceList(_)(st)).valueOr(r =>
-            List(Event.logWarningMsg(SeqexecFailure.explain(r)))
-          ).some.filter(_.nonEmpty).map(Stream.emits(_).covary[IO])
-        )
-      }
+  def seqQueueRefreshStream: Stream[IO, executeEngine.EventType] = {
+    val fd = Duration(settings.odbQueuePollingInterval.toSeconds, TimeUnit.SECONDS)
+    Stream.fixedDelay[IO](fd).evalMap(_ => odbProxy.queuedSequences.value).map { x =>
+      Event.getState[executeEngine.ConcreteTypes](st =>
+        x.map(odbLoader.refreshSequenceList(_)(st)).valueOr(r =>
+          List(Event.logWarningMsg(SeqexecFailure.explain(r)))
+        ).some.filter(_.nonEmpty).map(Stream.emits(_).covary[IO])
+      )
+  // def seqQueueRefreshStream: Stream[IO, executeEngine.EventType] =
+  //   Scheduler[IO](corePoolSize = 1).flatMap { scheduler =>
+  //     val fd = Duration(settings.odbQueuePollingInterval.toSeconds, TimeUnit.SECONDS)
+  //     scheduler.fixedDelay[IO](fd).evalMap(_ =>
+  //       odbProxy.queuedSequences.value).map { x =>
+  //       Event.getState[executeEngine.ConcreteTypes](st =>
+  //         x.map(odbLoader.refreshSequenceList(_)(st)).valueOr(r =>
+  //           List(Event.logWarningMsg(SeqexecFailure.explain(r)))
+  //         ).some.filter(_.nonEmpty).map(Stream.emits(_).covary[IO])
+  //       )
+  //     }
     }
+  }
 
   private def executionQueueViews(st: EngineState): SortedMap[QueueId, ExecutionQueueView] = {
     SortedMap(st.queues.map {
@@ -341,7 +350,7 @@ class SeqexecEngine(httpClient: Client[IO], settings: Settings[IO], sm: SeqexecM
         (EngineState.sequences.modify(_ + (sid -> obsseq.copy(observer = observer.some))) >>>
           refreshSequence(sid) >>>
           EngineState.instrumentLoadedL(obsseq.seqGen.instrument).set(sid.some) >>>
-          {(_, ((), Stream[executeEngine.EventType](
+          {(_, ((), Stream[Pure, executeEngine.EventType](
             Event.modifyState[executeEngine.ConcreteTypes](
               { {s:EngineState => s} withEvent
                 AddLoadedSequence(obsseq.seqGen.instrument, sid, user, clientId)
@@ -503,7 +512,11 @@ class SeqexecEngine(httpClient: Client[IO], settings: Settings[IO], sm: SeqexecM
 }
 
 object SeqexecEngine extends SeqexecConfiguration {
-  def apply(httpClient: Client[IO], settings: Settings[IO], c: SeqexecMetrics): SeqexecEngine = new SeqexecEngine(httpClient, settings, c)
+
+  def apply(httpClient: Client[IO], settings: Settings[IO], c: SeqexecMetrics)(
+    implicit ceio: ConcurrentEffect[IO],
+              tio: Timer[IO]
+  ): SeqexecEngine = new SeqexecEngine(httpClient, settings, c)
 
   def splitWhere[A](l: List[A])(p: A => Boolean): (List[A], List[A]) =
     l.splitAt(l.indexWhere(p))
@@ -684,18 +697,22 @@ object SeqexecEngine extends SeqexecConfiguration {
 
   // TODO: Initialization is a bit of a mess, with a mix of effectful and effectless code, and values
   // that should go from one to the other. This should be improved.
-  def giapiConnection[T](controlName: String, urlName: String): Kleisli[IO, Config, Giapi[IO] @@ T] = Kleisli { cfg: Config =>
+  def giapiConnection[T](controlName: String, urlName: String)(
+    implicit ev: ConcurrentEffect[IO]
+  ): Kleisli[IO, Config, Giapi[IO] @@ T] = Kleisli { cfg: Config =>
     val control = cfg.require[ControlStrategy](controlName)
     val url  = cfg.require[String](urlName)
-    (if (control.command) {
+    if (control.command) {
       Giapi.giapiConnection[IO](url, scala.concurrent.ExecutionContext.Implicits.global).connect
     } else {
       Giapi.giapiConnectionIO(scala.concurrent.ExecutionContext.Implicits.global).connect
-    }).map(tag[T][Giapi[IO]](_)) // Tag the connection
-  }
+    }
+  } .map(tag[T][Giapi[IO]](_)) // Tag the connection
 
   // scalastyle:off
-  def seqexecConfiguration(gpiGiapi: Giapi[IO] @@ GpiSettings, ghostGiapi: Giapi[IO] @@ GhostSettings): Kleisli[IO, Config, Settings[IO]] = Kleisli { cfg: Config =>
+  def seqexecConfiguration(gpiGiapi: Giapi[IO] @@ GpiSettings, ghostGiapi: Giapi[IO] @@ GhostSettings)(
+    implicit cs: ContextShift[IO]
+  ): Kleisli[IO, Config, Settings[IO]] = Kleisli { cfg: Config =>
     val site                    = cfg.require[Site]("seqexec-engine.site")
     val odbHost                 = cfg.require[String]("seqexec-engine.odb")
     val dhsServer               = cfg.require[String]("seqexec-engine.dhsServer")
@@ -728,7 +745,7 @@ object SeqexecEngine extends SeqexecConfiguration {
 
     // TODO: Review initialization of EPICS systems
     @SuppressWarnings(Array("org.wartremover.warts.Throw"))
-    def initEpicsSystem[T](sys: EpicsSystem[T], tops: Map[String, String]): IO[Unit] =
+    def initEpicsSystem(sys: EpicsSystem[_], tops: Map[String, String]): IO[Unit] =
       IO.apply(
         Option(CaService.getInstance()) match {
           case None => throw new Exception("Unable to start EPICS service.")

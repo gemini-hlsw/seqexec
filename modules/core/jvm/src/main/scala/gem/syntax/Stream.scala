@@ -43,12 +43,12 @@ final class StreamOps[F[_], O](val self: Stream[F, O]) {
         case None           =>
           Pull.pure(None)
 
-        case Some((hd, tl)) =>
-          Pull.segment(hd.fold((Vector.empty[O], a)) { case ((matching, a), o) =>
+        case Some((hd: Chunk[O], tl: Stream[F, O])) =>
+          hd.foldLeft((Vector.empty[O], a)) { case ((matching, a), o) =>
             val aʹ = f(a, o)
             if (p(aʹ)) (matching :+ o, z) else (matching, aʹ)
-          }.mapResult(_._2)).flatMap { case (matching, aʹ) =>
-            Pull.outputChunk(Chunk.vector(matching)) >> go(aʹ, tl)
+          } match { case (matching, aʹ) =>
+            Pull.output(Chunk.vector(matching)) >> go(aʹ, tl)
           }
       }
 

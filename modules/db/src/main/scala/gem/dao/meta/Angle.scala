@@ -10,8 +10,8 @@ trait AngleMeta {
 
   private def signedBigDecimal(d: Int): Meta[Angle] =
     Meta[java.math.BigDecimal]
-      .xmap[Angle](
-        b => Angle.fromMicroarcseconds(b.movePointRight(d).longValue),
+      .timap[Angle](
+        b => Angle.fromMicroarcseconds(b.movePointRight(d).longValue))(
         a => new java.math.BigDecimal(Angle.signedMicroarcseconds.get(a)).movePointLeft(d)
       )
 
@@ -25,10 +25,10 @@ trait AngleMeta {
     signedBigDecimal(3)
 
   val AngleMetaAsMicroarcseconds: Meta[Angle] =
-    Meta[Long].xmap[Angle](Angle.fromMicroarcseconds, _.toMicroarcseconds)
+    Meta[Long].timap[Angle](Angle.fromMicroarcseconds)(_.toMicroarcseconds)
 
   val HourAngleMetaAsMicroseconds: Meta[HourAngle] =
-    Meta[Long].xmap[HourAngle](HourAngle.fromMicroseconds, _.toMicroseconds)
+    Meta[Long].timap[HourAngle](HourAngle.fromMicroseconds)(_.toMicroseconds)
 
 }
 object AngleMeta extends AngleMeta

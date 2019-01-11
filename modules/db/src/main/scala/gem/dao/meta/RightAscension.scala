@@ -10,7 +10,7 @@ trait RightAscensionMeta {
   import AngleMeta._
 
   implicit val RightAscensionMeta: Meta[RightAscension] =
-    HourAngleMetaAsMicroseconds.xmap(RightAscension(_), _.toHourAngle)
+    HourAngleMetaAsMicroseconds.timap(RightAscension(_))(_.toHourAngle)
 
 }
 object RightAscensionMeta extends RightAscensionMeta

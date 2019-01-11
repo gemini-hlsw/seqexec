@@ -16,7 +16,7 @@ import org.log4s._
 import squants.Time
 import cats._
 import cats.data.EitherT
-import cats.effect.{Effect, IO}
+import cats.effect.IO
 import cats.implicits._
 import fs2.Stream
 import scala.math.abs
@@ -252,7 +252,7 @@ object EpicsUtil {
     if(get.forall(x => (v === 0.0 && x =!= 0.0) || abs((x - v)/v) > relTolerance))
   List(set) else Nil
 
-  def countdown[F[_]: Effect](total: Time, remT: F[Option[Time]],
+  def countdown[F[_]: Apply: cats.effect.Timer](total: Time, remT: F[Option[Time]],
                               obsState: F[Option[CarStateGeneric]]): Stream[F, Progress] =
     ProgressUtil.fromFOption(_ => (remT, obsState).mapN { case (rem, st) =>
       for{

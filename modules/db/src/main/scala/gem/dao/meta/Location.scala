@@ -10,8 +10,11 @@ import gem.util.Location
 
 trait LocationMeta {
 
-  implicit val LocationMeta: Meta[Location.Middle] =
-    Meta[List[Int]].xmap(Location.unsafeMiddleFromFoldable(_), _.toList)
+  implicit val LocationGet: Get[Location.Middle] =
+    Get[List[Int]].map(Location.unsafeMiddleFromFoldable(_))
+
+  implicit val LocationPut: Put[Location.Middle] =
+    Put[List[Int]].contramap(_.toList)
 
 }
 object LocationMeta extends LocationMeta

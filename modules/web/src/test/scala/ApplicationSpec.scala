@@ -11,7 +11,7 @@ import gem.json.instances.all._
 import gem.math.Index
 import gem.syntax.prism._
 
-import cats.effect.IO
+import cats.effect.{ ContextShift, IO }
 import cats.implicits._
 
 import doobie._
@@ -29,6 +29,7 @@ import org.http4s.dsl.io._
 import org.scalatest._
 
 import scala.collection.immutable.{ SortedSet, TreeMap }
+import scala.concurrent.ExecutionContext
 
 /**
  * Test cases for gem.web.Application.
@@ -95,6 +96,9 @@ class ApplicationSpec extends FlatSpec with Matchers {
     setup: ConnectionIO[Unit]
   ): Response[IO] = {
 
+    implicit val ioContextShift: ContextShift[IO] =
+      IO.contextShift(ExecutionContext.global)
+
     val xa: Transactor[IO] =
       Transactor.before.set(
         Transactor.after.set(
@@ -108,7 +112,7 @@ class ApplicationSpec extends FlatSpec with Matchers {
       for {
         s <- Log.newLog[IO]("ApplicationSpec", xa).map(GemService(xa, _, Setup.user))
         q  = AuthedRequest(s, Request[IO](uri = Uri(path = path, query=org.http4s.Query.fromString(query))))
-        r <- Application.service(q).value
+        r <- Application.service[IO].apply(q).value
       } yield r
 
     test.unsafeRunSync().getOrElse(sys.error("you supplied a query that doesn't match"))

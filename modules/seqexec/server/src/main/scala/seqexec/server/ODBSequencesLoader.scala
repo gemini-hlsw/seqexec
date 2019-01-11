@@ -6,7 +6,7 @@ package seqexec.server
 import cats.Applicative
 import cats.Endo
 import cats.implicits._
-import cats.effect.IO
+import cats.effect.{ Concurrent, IO, Timer }
 import edu.gemini.spModel.obscomp.InstConstants
 import edu.gemini.spModel.seqcomp.SeqConfigNames.OCS_KEY
 import edu.gemini.spModel.core.SPProgramID
@@ -30,7 +30,10 @@ final class ODBSequencesLoader[F[_]: Applicative](odbProxy: OdbProxy[F], transla
     )
 
   def loadEvents(
-    seqId: Observation.Id): List[executeEngine.EventType] = {
+    seqId: Observation.Id)(
+      implicit cio: Concurrent[IO],
+               tio: Timer[IO]
+    ): List[executeEngine.EventType] = {
     val t: Either[SeqexecFailure, (List[SeqexecFailure], Option[SequenceGen])] =
       for {
         odbSeq       <- odbProxy.read(seqId)
@@ -64,7 +67,10 @@ final class ODBSequencesLoader[F[_]: Applicative](odbProxy: OdbProxy[F], transla
   }
 
   def refreshSequenceList(odbList: Seq[Observation.Id])(
-    st: EngineState): List[executeEngine.EventType] = {
+    st: EngineState)(
+      implicit cio: Concurrent[IO],
+               tio: Timer[IO]
+    ): List[executeEngine.EventType] = {
     val seqexecList = st.sequences.keys.toSeq
 
     val loads = odbList.diff(seqexecList).flatMap(loadEvents)

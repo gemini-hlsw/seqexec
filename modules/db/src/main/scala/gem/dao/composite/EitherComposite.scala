@@ -8,12 +8,16 @@ import doobie._
 trait EitherComposite {
 
   /** Two-column mapping for Either. */
-  implicit def eitherComposite[A: Meta, B: Meta]: Composite[Either[A, B]] =
-    Composite[(Option[A], Option[B])].imap {
+  implicit def eitherRead[A: Meta, B: Meta]: Read[Either[A, B]] =
+    Read[(Option[A], Option[B])].map {
       case (Some(a), None) => Left(a)
       case (None, Some(b)) => Right(b)
       case (a, b) => sys.error(s"Invariant violated: can't map ($a, $b) to Either!")
-    } {
+    }
+
+  /** Two-column mapping for Either. */
+  implicit def eitherWrite[A: Meta, B: Meta]: Write[Either[A, B]] =
+    Write[(Option[A], Option[B])].contramap {
       case Left(a) => (Some(a), None)
       case Right(b) => (None, Some(b))
     }

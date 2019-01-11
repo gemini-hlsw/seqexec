@@ -15,7 +15,7 @@ import doobie.enum.JdbcType.{ Distinct => JdbcDistinct, _ }
 object Distinct {
 
   def integer(name: String): Meta[Int] =
-    Meta.advanced(
+    Meta.Advanced.many(
       NonEmptyList.of(JdbcDistinct, Integer),
       NonEmptyList.of(name),
       _ getInt _,
@@ -24,7 +24,7 @@ object Distinct {
     )
 
   def long(name: String): Meta[Long] =
-    Meta.advanced(
+    Meta.Advanced.many(
       NonEmptyList.of(JdbcDistinct, BigInt),
       NonEmptyList.of(name),
       _ getLong _,
@@ -33,7 +33,7 @@ object Distinct {
     )
 
   def short(name: String): Meta[Short] =
-    Meta.advanced(
+    Meta.Advanced.many(
       NonEmptyList.of(JdbcDistinct, SmallInt),
       NonEmptyList.of(name),
       _ getShort _,
@@ -42,7 +42,7 @@ object Distinct {
     )
 
   def string(name: String): Meta[String] =
-    Meta.advanced(
+    Meta.Advanced.many(
       NonEmptyList.of(JdbcDistinct, VarChar),
       NonEmptyList.of(name),
       _ getString _,

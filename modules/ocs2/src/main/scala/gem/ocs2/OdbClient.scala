@@ -13,8 +13,8 @@ import doobie._
 import doobie.implicits._
 import cats.effect._
 import cats.implicits._
-import fs2.Stream
-import org.http4s.client.blaze.Http1Client
+import org.http4s.client._
+import org.http4s.client.asynchttpclient.AsyncHttpClient
 import org.http4s.scalaxml.xml
 
 import java.net.URLEncoder
@@ -27,21 +27,21 @@ import scala.xml.Elem
 object OdbClient {
 
   /** Fetches an observation from an ODB. */
-  def fetchObservation[M[_]: Effect](
+  def fetchObservation[M[_]: ConcurrentEffect](
     host: String,
     id:   Observation.Id
   ): M[Either[String, (Observation, List[Dataset])]] =
     fetch[Observation, M](host, id.format)
 
   /** Fetches a program from the ODB. */
-  def fetchProgram[M[_]: Effect](
+  def fetchProgram[M[_]: ConcurrentEffect](
     host: String,
     id:   Program.Id
   ): M[Either[String, (Program, List[Dataset])]] =
     fetch[Program, M](host, Program.Id.fromString.reverseGet(id))
 
   /** Fetches an observation from the ODB and stores it in the database. */
-  def importObservation[M[_]: Effect](
+  def importObservation[M[_]: ConcurrentEffect](
     host: String,
     id:   Observation.Id,
     xa:   Transactor[M]
@@ -51,7 +51,7 @@ object OdbClient {
     }}
 
   /** Fetches a program from the ODB and stores it in the database. */
-  def importProgram[M[_]: Effect](
+  def importProgram[M[_]: ConcurrentEffect](
     host: String,
     id:   Program.Id,
     xa:   Transactor[M]
@@ -72,23 +72,21 @@ object OdbClient {
       case ParseError(value, dataType) => s"could not parse '$value' as '$dataType'"
     }
 
-  private def fetch[A: PioDecoder, M[_]: Effect](
+  private def fetch[A: PioDecoder, M[_]: ConcurrentEffect](
     host: String,
     id:   String
   ): M[Either[String, (A, List[Dataset])]] = {
 
-    val s = Http1Client.stream().flatMap { c =>
-      Stream.eval {
-        c.expect[Elem](uri(host, id))
-         .map(PioDecoder[(A, List[Dataset])].decode(_).leftMap(errorMessage))
-         .attempt
-         .map(_.leftMap(ex => s"Problem fetching '$id': ${ex.getMessage}").flatten)
-      }
+    val client: Resource[M, Client[M]] =
+      AsyncHttpClient.resource[M]()
+
+    client.use { c =>
+      c.expect[Elem](uri(host, id))
+        .map(PioDecoder[(A, List[Dataset])].decode(_).leftMap(errorMessage))
+        .attempt
+        .map(_.leftMap(ex => s"Problem fetching '$id': ${ex.getMessage}").flatten)
     }
 
-    s.compile
-     .last
-     .map(_.getOrElse("Impossible empty stream".asLeft[(A, List[Dataset])]))
   }
 
 }

@@ -3,49 +3,44 @@
 
 package giapi.client.ghost
 
-import fs2.Stream
+import cats.effect._
+import cats.implicits._
 import giapi.client.{Giapi, GiapiClient}
 import giapi.client.syntax.giapiconfig._
+import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext
 
-/**
-  * Client for GHOST
-  */
+/** Client for GHOST */
 final class GhostClient[F[_]](override val giapi: Giapi[F]) extends GiapiClient[F]
 
-object GhostExample extends App {
+object GhostExample extends IOApp {
 
-  import cats.effect.IO
-  import scala.concurrent.duration._
+  val ghostStatus: Resource[IO, Giapi[IO]] =
+    Resource.make(
+      Giapi.giapiConnection[IO](
+        "failover:(tcp://127.0.0.1:61616)",
+        ExecutionContext.global
+      ).connect)(_.close)
 
-  private val ghostStatus =
-    Stream.bracket(
-      Giapi
-        .giapiConnection[IO]("failover:(tcp://127.0.0.1:61616)",
-        scala.concurrent.ExecutionContext.Implicits.global)
-        .connect)(
-      _ => {
-        val r: IO[Unit] = IO.unit
-        Stream.eval(r.map(println)) // scalastyle:ignore
-      },
-      _.close
-    )
+  val ghostSequence: Resource[IO, Giapi[IO]] =
+    Resource.make(
+      Giapi.giapiConnection[IO](
+        "failover:(tcp://127.0.0.1:61616)",
+        ExecutionContext.global
+      ).connect)(_.close)
 
-  private val ghostSequence =
-    Stream.bracket(
-      Giapi
-        .giapiConnection[IO]("failover:(tcp://127.0.0.1:61616)",
-                              scala.concurrent.ExecutionContext.Implicits.global)
-        .connect)(
-      giapi => {
-        val client =
-          new GhostClient[IO](giapi)
-        val r = for {
-          f <- client.observe("TEST_S20180509", 5.seconds)
-        } yield f
-        Stream.eval(r.map(println)) // scalastyle:ignore
-      },
-      _.close
-    )
+  val ghostClient: Resource[IO, GhostClient[IO]] =
+    for {
+      _ <- ghostStatus
+      c <- ghostSequence
+    } yield new GhostClient(c)
 
-  (ghostStatus ++ ghostSequence).compile.drain.unsafeRunSync()
+  def run(args: List[String]): IO[ExitCode] =
+    ghostClient.use { client =>
+      for {
+        r <- client.observe("TEST_S20180509", 5.seconds)
+        _ <- IO(println(r)) // scalastyle:off console.io
+      } yield ExitCode.Success
+    }
+
 }

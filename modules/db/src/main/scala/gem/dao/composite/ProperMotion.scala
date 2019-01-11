@@ -11,11 +11,18 @@ import gem.math._
 trait ProperMotionComposite {
 
   /** ProperMotion composite, laid out in natural order. */
-  implicit val ProperMotionComposite: Composite[ProperMotion] =
-    ProperMotionCompositeLemmas.ProperMotionComposite
+  implicit val ProperMotionRead: Read[ProperMotion] =
+    ProperMotionCompositeLemmas.ProperMotionRead
 
-  implicit val ProperMotionOptionComposite: Composite[Option[ProperMotion]] =
-    ProperMotionCompositeLemmas.ProperMotionOptionComposite
+  implicit val ProperMotionOptionRead: Read[Option[ProperMotion]] =
+    ProperMotionCompositeLemmas.ProperMotionOptionRead
+
+  /** ProperMotion composite, laid out in natural order. */
+  implicit val ProperMotionWrite: Write[ProperMotion] =
+    ProperMotionCompositeLemmas.ProperMotionWrite
+
+  implicit val ProperMotionOptionWrite: Write[Option[ProperMotion]] =
+    ProperMotionCompositeLemmas.ProperMotionOptionWrite
 
 }
 object ProperMotionComposite extends ProperMotionComposite
@@ -32,7 +39,10 @@ private object ProperMotionCompositeLemmas {
   implicit lazy val AngleMasMeta: Meta[Angle] =
     AngleMeta.AngleMetaAsSignedMilliarcseconds
 
-  val ProperMotionComposite: Composite[ProperMotion] = implicitly
-  val ProperMotionOptionComposite: Composite[Option[ProperMotion]] = implicitly
+  val ProperMotionRead: Read[ProperMotion] = implicitly
+  val ProperMotionOptionRead: Read[Option[ProperMotion]] = implicitly
+
+  val ProperMotionWrite: Write[ProperMotion] = implicitly
+  val ProperMotionOptionWrite: Write[Option[ProperMotion]] = implicitly
 
 }

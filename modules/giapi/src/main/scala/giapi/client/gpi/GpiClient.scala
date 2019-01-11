@@ -100,53 +100,47 @@ final class GpiClient[F[_]](override val giapi: Giapi[F]) extends GiapiClient[F]
     )
 }
 
-object GPIExample extends App {
+object GPIExample extends cats.effect.IOApp {
 
-  import cats.effect.IO
+  import cats.effect.{ IO, Resource, ExitCode }
   import scala.concurrent.duration._
+  import scala.concurrent.ExecutionContext
 
-  private val gpiStatus =
-    Stream.bracket(
-      Giapi
-        .giapiConnection[IO]("failover:(tcp://127.0.0.1:61616)",
-                             scala.concurrent.ExecutionContext.Implicits.global)
-        .connect)(
-      giapi => {
-        val client =
-          new GpiClient[IO](giapi)
-        val r =
-          for {
-            hs <- client.heartbeatS.flatMap(_.take(3).compile.toVector)
-            h  <- client.heartbeat
-            f  <- client.fpmMask
-            o  <- client.aoDarkLevel
-          } yield (hs, h, f, o)
-        Stream.eval(r.map(println)) // scalastyle:ignore
-      },
-      _.close
-    )
+  val connect: Resource[IO, GpiClient[IO]] =
+    Resource.make(
+      Giapi.giapiConnection[IO]("failover:(tcp://127.0.0.1:61616)", ExecutionContext.global)
+           .connect
+      )(_.close).map(new GpiClient[IO](_))
 
-  private val gpiSequence =
-    Stream.bracket(
-      Giapi
-        .giapiConnection[IO]("failover:(tcp://127.0.0.1:61616)",
-                             scala.concurrent.ExecutionContext.Implicits.global)
-        .connect)(
-      giapi => {
-        val client =
-          new GpiClient[IO](giapi)
-        val r =
-          for {
-            _ <- client.calExitShutter(true) // Open the shutter
-            _ <- client.observingMode("Y_coron") // Change observing mode
-            _ <- client.ifsConfigure(1.5, 1, 4) // Configure the IFS
-            f <- client.observe("TEST_S20180509", 30.seconds) // observe
-            _ <- client.park // Park at the end
-          } yield f
-        Stream.eval(r.map(println)) // scalastyle:ignore
-      },
-      _.close
-    )
+  val gpiStatus: IO[(Vector[Int], Int, String, Float)] =
+    connect.use { client =>
+      for {
+        hs <- client.heartbeatS.flatMap(_.take(3).compile.toVector)
+        h  <- client.heartbeat
+        f  <- client.fpmMask
+        o  <- client.aoDarkLevel
+      } yield (hs, h, f, o)
+    }
 
-  (gpiStatus ++ gpiSequence).compile.drain.unsafeRunSync()
+  val gpiSequence: IO[CommandResult] =
+    connect.use { client =>
+      for {
+        _ <- client.calExitShutter(true) // Open the shutter
+        _ <- client.observingMode("Y_coron") // Change observing mode
+        _ <- client.ifsConfigure(1.5, 1, 4) // Configure the IFS
+        f <- client.observe("TEST_S20180509", 5.seconds) // observe
+        _ <- client.park // Park at the end
+      } yield f
+    }
+
+  def putLn(a: Any): IO[Unit] =
+    IO.delay(println(a)) // scalastyle:off console.io
+
+  def run(args: List[String]): IO[ExitCode] =
+    for {
+      _ <- gpiStatus.flatMap(putLn)
+      _ <- gpiSequence.flatMap(putLn)
+    } yield ExitCode.Success
+
 }
+

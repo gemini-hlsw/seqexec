@@ -3,7 +3,7 @@
 
 package seqexec.server.niri
 import cats.data.EitherT
-import cats.effect.IO
+import cats.effect.{ IO, Timer }
 import cats.implicits._
 import edu.gemini.seqexec.server.niri.{Camera => JCamera}
 import edu.gemini.seqexec.server.niri.{BeamSplitter => JBeamSplitter}
@@ -13,6 +13,7 @@ import edu.gemini.seqexec.server.niri.{BuiltInROI => JBuiltInROI}
 import edu.gemini.spModel.gemini.niri.Niri._
 import edu.gemini.spModel.gemini.niri.Niri.BuiltinROI
 import org.log4s.getLogger
+import scala.concurrent.ExecutionContext
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.{EpicsCodex, EpicsCommand, ObserveCommand, Progress, ProgressUtil, SeqAction, SeqexecFailure}
 import seqexec.server.EpicsUtil._
@@ -22,6 +23,9 @@ import squants.time.TimeConversions._
 object NiriControllerEpics extends NiriController {
 
   private val Log = getLogger
+
+  implicit val ioTimer: Timer[IO] =
+    IO.timer(ExecutionContext.global)
 
   import EpicsCodex._
   import NiriController._

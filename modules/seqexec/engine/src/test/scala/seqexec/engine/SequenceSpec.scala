@@ -11,15 +11,18 @@ import scala.Function.const
 import org.scalatest.FlatSpec
 import org.scalatest.Inside.inside
 import org.scalatest.Matchers._
-import cats.effect.IO
+import cats.effect.{ ContextShift, IO }
 import fs2.Stream
 import gem.Observation
 import seqexec.engine.TestUtil.TestState
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.ExecutionContext
 
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 class SequenceSpec extends FlatSpec {
+
+  implicit val ioContextShift: ContextShift[IO] =
+    IO.contextShift(ExecutionContext.global)
 
   private val seqId = Observation.Id.unsafeFromString("GS-2018A-Q-0-1")
 

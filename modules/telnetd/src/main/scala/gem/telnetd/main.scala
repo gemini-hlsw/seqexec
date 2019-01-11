@@ -4,19 +4,20 @@
 package gem
 package telnetd
 
-import cats.effect.IO
+import cats.effect._
 import gem.dao.DatabaseConfiguration
-import fs2.{ Stream, StreamApp }
 
-object Main extends StreamApp[IO] {
-  import StreamApp.ExitCode
+object Main extends IOApp {
 
-  override def stream(args: List[String], requestShutdown: IO[Unit]): Stream[IO, ExitCode] =
-    for {
-      _ <- TelnetServer.stream(DatabaseConfiguration.forTesting, TelnetdConfiguration.forTesting)
-      _ <- Stream.eval(IO(Console.println("Press a key to exit."))) // scalastyle:off
-      _ <- Stream.eval(IO(scala.io.StdIn.readLine()))
-      _ <- Stream.eval(requestShutdown)
-    } yield ExitCode(0)
+  def server: Resource[IO, Unit] =
+    TelnetServer.server[IO](DatabaseConfiguration.forTesting, TelnetdConfiguration.forTesting)
+
+  override def run(args: List[String]): IO[ExitCode] =
+    server.use { _ =>
+      for {
+        _ <- IO(Console.println("Press a key to exit.")) // scalastyle:ignore
+        _ <- IO(scala.io.StdIn.readLine())
+      } yield ExitCode.Success
+    }
 
 }

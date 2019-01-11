@@ -4,12 +4,17 @@
 package seqexec.server.gnirs
 
 import cats.data.EitherT
-import cats.effect.IO
 import cats.implicits._
+import cats.effect.{ IO, Timer }
+import seqexec.model.dhs.ImageFileId
+import seqexec.server._
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams.{Camera, Decker, Disperser, ReadMode}
 import fs2.Stream
 import org.log4s.getLogger
+import scala.concurrent.ExecutionContext
+import squants.{Length, Seconds, Time}
+import squants.space.LengthConversions._
 import seqexec.model.dhs.ImageFileId
 import seqexec.server._
 import seqexec.server.EpicsUtil._
@@ -295,11 +300,13 @@ object GnirsControllerEpics extends GnirsController {
       GnirsEpics.instance.abortCmd.mark *>
       GnirsEpics.instance.abortCmd.post.void
 
-  override def observeProgress(total: Time): Stream[IO, Progress] =
+  override def observeProgress(total: Time): Stream[IO, Progress] = {
+    implicit val ioTimer: Timer[IO] = IO.timer(ExecutionContext.global)
     EpicsUtil.countdown[IO](total,
       IO(GnirsEpics.instance.countDown.flatMap(x => Try(x.toDouble).toOption).map(_.seconds)),
       IO(GnirsEpics.instance.observeState)
     )
+  }
 
   private val DefaultTimeout: Time = Seconds(60)
   private val ReadoutTimeout: Time = Seconds(300)

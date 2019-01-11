@@ -4,19 +4,17 @@
 package gem
 package web
 
-import cats.effect.IO
+import cats.effect._
 import gem.dao.DatabaseConfiguration
-import fs2.{ Stream, StreamApp }
 
-object Main extends StreamApp[IO] {
-  import StreamApp.ExitCode
+object Main extends IOApp {
 
-  override def stream(args: List[String], requestShutdown: IO[Unit]): Stream[IO, ExitCode] =
-    for {
-      _ <- WebServer.stream(WebConfiguration.forTesting, DatabaseConfiguration.forTesting)
-      _ <- Stream.eval(IO(Console.println("Press a key to exit."))) // scalastyle:off
-      _ <- Stream.eval(IO(scala.io.StdIn.readLine()))
-      _ <- Stream.eval(requestShutdown)
-    } yield ExitCode(0)
+  def run(args: List[String]): IO[ExitCode] =
+    WebServer.resource[IO](WebConfiguration.forTesting, DatabaseConfiguration.forTesting).use { _ =>
+      for {
+        _ <- IO(Console.println("Press a key to exit.")) // scalastyle:off console.io
+        _ <- IO(scala.io.StdIn.readLine())
+      } yield ExitCode.Success
+    }
 
 }

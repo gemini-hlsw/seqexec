@@ -58,8 +58,8 @@ object Settings {
       "-Ywarn-unused:patvars",             // Warn if a variable bound in a pattern is unused.
       "-Ywarn-unused:privates",            // Warn if a private member is unused.
       "-Ywarn-value-discard",              // Warn when non-Unit expression results are unused.
-      "-Yrangepos",
-      "-Ybackend-parallelism", JRuntime.getRuntime.availableProcessors.toString // Run some tasks in parallel
+      "-Ybackend-parallelism", JRuntime.getRuntime.availableProcessors.toString, // Run some tasks in parallel
+      "-Yrangepos"
     )
   }
 
@@ -82,16 +82,16 @@ object Settings {
     val scalaJSReactSortable    = "0.1.1"
 
     // Scala libraries
-    val catsEffectVersion       = "0.10.1"
+    val catsEffectVersion       = "1.0.0"
     val catsVersion             = "1.5.0"
     val mouseVersion            = "0.20"
-    val fs2Version              = "0.10.5"
+    val fs2Version              = "1.0.0"
     val shapelessVersion        = "2.3.3"
     val attoVersion             = "0.6.4"
     val scalaParsersVersion     = "1.1.1"
     val scalaXmlVerson          = "1.1.1"
 
-    val http4sVersion           = "0.18.21"
+    val http4sVersion           = "0.20.0-M3"
     val squants                 = "1.4.0"
     val argonaut                = "6.2.2"
     val commonsHttp             = "2.0.2"
@@ -100,15 +100,15 @@ object Settings {
     val slf4j                   = "1.7.25"
     val log4s                   = "1.6.1"
     val logback                 = "1.2.3"
-    val janino                  = "3.0.10"
+    val janino                  = "3.0.11"
     val logstash                = "5.2"
-    val knobs                   = "6.0.33"
+    val knobs                   = "7.0.24"
     val monocleVersion          = "1.5.1-cats"
     val circeVersion            = "0.10.1"
-    val doobieVersion           = "0.5.3"
-    val flywayVersion           = "5.1.4"
-    val tucoVersion             = "0.3.1"
-    val declineVersion          = "0.4.2"
+    val doobieVersion           = "0.6.0"
+    val flywayVersion           = "5.2.1"
+    val tucoVersion             = "0.4.1"
+    val declineVersion          = "0.5.1"
 
     // test libraries
     val scalaTest               = "3.0.5"
@@ -179,7 +179,7 @@ object Settings {
     val Log4s                  = "org.log4s"                          %%  "log4s"                    % LibraryVersions.log4s
     val PrometheusClient       = "io.prometheus"                      %   "simpleclient_common"      % LibraryVersions.prometheusClient
     val Logging                = Seq(JuliSlf4j, Log4s) ++ Logback
-    val Knobs                  = "io.verizon.knobs"                   %%  "core"                     % LibraryVersions.knobs
+    val Knobs                  = "io.getnelson.knobs"                 %%  "core"                     % LibraryVersions.knobs
     val OpenCSV                = "net.sf.opencsv"                     %   "opencsv"                  % LibraryVersions.opencsv
     val Squants                = Def.setting("org.typelevel"          %%% "squants"                  % LibraryVersions.squants)
     val ScalaXml               = Def.setting("org.scala-lang.modules" %%% "scala-xml"                % LibraryVersions.scalaXmlVerson)
@@ -189,11 +189,11 @@ object Settings {
       "org.http4s" %% "http4s-blaze-server" % LibraryVersions.http4sVersion)
     val Http4sClient           = Seq(
       "org.http4s" %% "http4s-dsl"          % LibraryVersions.http4sVersion,
-      "org.http4s" %% "http4s-blaze-client" % LibraryVersions.http4sVersion)
+      "org.http4s" %% "http4s-async-http-client" % LibraryVersions.http4sVersion)
     val Http4sBoopickle        = "org.http4s"                         %%  "http4s-boopickle"                 % LibraryVersions.http4sVersion
     val Http4sCirce            = "org.http4s"                         %%  "http4s-circe"                     % LibraryVersions.http4sVersion
     val Http4sXml              = "org.http4s"                         %%  "http4s-scala-xml"                 % LibraryVersions.http4sVersion
-    val Http4sPrometheus       = "org.http4s"                         %%  "http4s-prometheus-server-metrics" % LibraryVersions.http4sVersion
+    val Http4sPrometheus       = "org.http4s"                         %%  "http4s-prometheus-metrics" % LibraryVersions.http4sVersion
     val Flyway                 = "org.flywaydb"                       %   "flyway-core"                      % LibraryVersions.flywayVersion
     val Atto                   = Def.setting("org.tpolecat"           %%% "atto-core"                        % LibraryVersions.attoVersion)
     val Monocle                = Def.setting(Seq(

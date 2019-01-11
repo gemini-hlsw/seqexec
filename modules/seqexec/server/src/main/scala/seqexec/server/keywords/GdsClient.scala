@@ -4,6 +4,7 @@
 package seqexec.server.keywords
 
 import cats.effect.IO
+import cats.effect.Timer
 import cats.data.EitherT
 import cats.implicits._
 import gem.Observation
@@ -11,7 +12,11 @@ import org.http4s.client.Client
 import org.http4s._
 import org.http4s.dsl.io._
 import org.http4s.client.dsl.Http4sClientDsl
+import org.http4s.client.middleware.Retry
+import org.http4s.client.middleware.RetryPolicy
 import org.http4s.scalaxml._
+import org.http4s.implicits._
+import scala.concurrent.duration._
 import scala.xml.Elem
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.SeqexecFailure
@@ -20,8 +25,22 @@ import seqexec.server.SeqActionF
 /**
   * Gemini Data service client
   */
-final case class GdsClient(client: Client[IO], gdsUri: Uri)
+final case class GdsClient(base: Client[IO], gdsUri: Uri)(implicit timer: Timer[IO])
     extends Http4sClientDsl[IO] {
+
+  @SuppressWarnings(Array("org.wartremover.warts.Var"))
+  private val client = {
+    val max = 2
+    var attemptsCounter = 1 // scalastyle:ignore
+    val policy = RetryPolicy[IO] { attempts: Int =>
+      if (attempts >= max) None
+      else {
+        attemptsCounter = attemptsCounter + 1
+        Some(10.milliseconds)
+      }
+    }
+    Retry(policy)(base)
+  }
 
   // Build an xml rpc request to store keywords
   private def storeKeywords(id: ImageFileId, ks: KeywordBag): Elem =
@@ -49,7 +68,7 @@ final case class GdsClient(client: Client[IO], gdsUri: Uri)
   def setKeywords(id: ImageFileId, ks: KeywordBag): SeqActionF[IO, Unit] = {
     // Build the request
     val xmlRpc      = storeKeywords(id, ks)
-    val postRequest = POST(gdsUri, xmlRpc)
+    val postRequest = POST(xmlRpc, gdsUri)
 
     // Do the request
     client
@@ -85,7 +104,7 @@ final case class GdsClient(client: Client[IO], gdsUri: Uri)
                       ks: KeywordBag): SeqActionF[IO, Unit] = {
     // Build the request
     val xmlRpc      = openObservationRPC(obsId, id, ks)
-    val postRequest = POST(gdsUri, xmlRpc)
+    val postRequest = POST(xmlRpc, gdsUri)
 
     // Do the request
     client
@@ -111,7 +130,7 @@ final case class GdsClient(client: Client[IO], gdsUri: Uri)
   def closeObservation(id: ImageFileId): SeqActionF[IO, Unit] = {
     // Build the request
     val xmlRpc      = closeObservationRPC(id)
-    val postRequest = POST(gdsUri, xmlRpc)
+    val postRequest = POST(xmlRpc, gdsUri)
 
     // Do the request
     client
@@ -152,7 +171,7 @@ object GdsClient {
     * Client for testing always returns ok
     */
   val alwaysOkClient: Client[IO] = {
-    val service = HttpService[IO] {
+    val service = HttpRoutes.of[IO] {
       case _ =>
         val response =
           <methodResponse>
@@ -162,8 +181,8 @@ object GdsClient {
               </param>
             </params>
           </methodResponse>
-        Response(Status.Ok).withBody(response)
+        Response[IO](Status.Ok).withEntity(response).pure[IO]
     }
-    Client.fromHttpService(service)
+    Client.fromHttpApp(service.orNotFound)
   }
 }

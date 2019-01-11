@@ -16,7 +16,7 @@ class FormatOps[A, B](f: Format[A, B]) {
     implicit mb: Meta[A],
              ta: TypeTag[B]
   ): Meta[B] =
-    mb.xmap(f.getOption(_).getOrElse(sys.error("Validation failed.")), f.reverseGet)
+    mb.timap(f.getOption(_).getOrElse(sys.error("Validation failed.")))(f.reverseGet)
 }
 
 trait FormatMeta {

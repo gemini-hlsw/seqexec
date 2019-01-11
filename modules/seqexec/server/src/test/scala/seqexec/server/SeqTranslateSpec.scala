@@ -12,6 +12,7 @@ import giapi.client.Giapi
 import giapi.client.gpi.GpiClient
 import gem.Observation
 import gem.enum.Site
+import scala.concurrent.ExecutionContext
 import seqexec.engine.{Action, Result, Sequence}
 import seqexec.model.enum.Instrument.GmosS
 import seqexec.model.{ActionType, SequenceState, StepConfig}
@@ -35,6 +36,9 @@ import seqexec.server.niri.NiriControllerSim
 
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements", "org.wartremover.warts.Throw"))
 class SeqTranslateSpec extends FlatSpec {
+
+  implicit val ioTimer: Timer[IO] = IO.timer(ExecutionContext.global)
+  implicit val csTimer: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
 
   private val config: StepConfig = Map()
   private val fileId = "DummyFileId"
@@ -100,21 +104,21 @@ class SeqTranslateSpec extends FlatSpec {
   private val translator = SeqTranslate(Site.GS, systems, translatorSettings)
 
   "SeqTranslate" should "trigger stopObserve command only if exposure is in progress" in {
-    assert(translator.stopObserve(seqId)(s0).isDefined)
-    assert(translator.stopObserve(seqId)(s1).isEmpty)
-    assert(translator.stopObserve(seqId)(s2).isEmpty)
-    assert(translator.stopObserve(seqId)(s3).isDefined)
-    assert(translator.stopObserve(seqId)(s4).isDefined)
-    assert(translator.stopObserve(seqId)(s5).isEmpty)
+    assert(translator.stopObserve(seqId).apply(s0).isDefined)
+    assert(translator.stopObserve(seqId).apply(s1).isEmpty)
+    assert(translator.stopObserve(seqId).apply(s2).isEmpty)
+    assert(translator.stopObserve(seqId).apply(s3).isDefined)
+    assert(translator.stopObserve(seqId).apply(s4).isDefined)
+    assert(translator.stopObserve(seqId).apply(s5).isEmpty)
   }
 
   "SeqTranslate" should "trigger abortObserve command only if exposure is in progress" in {
-    assert(translator.abortObserve(seqId)(s0).isDefined)
-    assert(translator.abortObserve(seqId)(s1).isEmpty)
-    assert(translator.abortObserve(seqId)(s2).isEmpty)
-    assert(translator.abortObserve(seqId)(s3).isDefined)
-    assert(translator.abortObserve(seqId)(s4).isDefined)
-    assert(translator.abortObserve(seqId)(s5).isEmpty)
+    assert(translator.abortObserve(seqId).apply(s0).isDefined)
+    assert(translator.abortObserve(seqId).apply(s1).isEmpty)
+    assert(translator.abortObserve(seqId).apply(s2).isEmpty)
+    assert(translator.abortObserve(seqId).apply(s3).isDefined)
+    assert(translator.abortObserve(seqId).apply(s4).isDefined)
+    assert(translator.abortObserve(seqId).apply(s5).isEmpty)
   }
 
 }

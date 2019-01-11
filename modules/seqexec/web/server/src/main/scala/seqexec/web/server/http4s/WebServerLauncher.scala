@@ -4,29 +4,31 @@
 package seqexec.web.server.http4s
 
 import cats.data.Kleisli
-import cats.effect.IO
+import cats.effect._
 import cats.implicits._
 import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.Appender
-import fs2.async.mutable.Queue
-import fs2.StreamApp.ExitCode
-import fs2.async.mutable.Topic
-import fs2.{Scheduler, Stream, StreamApp, async}
+import fs2.concurrent.Queue
+import fs2.concurrent.Topic
 import gem.enum.Site
 import io.prometheus.client.CollectorRegistry
-import knobs._
+import java.nio.file.{ Path => FilePath }
+import java.util.concurrent.{ Executors, ExecutorService }
+import knobs.{ Resource => _, _ }
 import mouse.all._
-import org.http4s.server.SSLKeyStoreSupport.StoreInfo
-import org.http4s.server.blaze.BlazeBuilder
-import org.http4s.client.blaze._
+import org.http4s.client.asynchttpclient.AsyncHttpClient
 import org.http4s.client.Client
-import org.http4s.HttpService
+import org.http4s.HttpRoutes
+import org.http4s.metrics.prometheus.Prometheus
+import org.http4s.metrics.prometheus.PrometheusExportService
+import org.http4s.server.blaze.BlazeServerBuilder
+import org.http4s.server.middleware.Metrics
 import org.http4s.server.Router
-import org.http4s.server.prometheus.{PrometheusMetrics, PrometheusExportService}
-import org.http4s.server.prometheus.{PrometheusExportService}
-import org.http4s.server.middleware.Logger
+import org.http4s.server.Server
+import org.http4s.server.SSLKeyStoreSupport.StoreInfo
+import org.http4s.syntax.kleisli._
 import org.log4s._
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.ExecutionContext
 import seqexec.model.events._
 import seqexec.server
 import seqexec.server.{SeqexecMetrics, SeqexecConfiguration, SeqexecEngine, executeEngine}
@@ -38,36 +40,42 @@ import seqexec.web.server.security.{AuthenticationConfig, AuthenticationService,
 import squants.time.Hours
 import web.server.common.{LogInitialization, RedirectToHttpsRoutes, StaticRoutes}
 
-object WebServerLauncher extends StreamApp[IO] with LogInitialization with SeqexecConfiguration {
+object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfiguration {
   private val logger = getLogger
 
   final case class SSLConfig(keyStore: String, keyStorePwd: String, certPwd: String)
 
-  /**
-    * Configuration for the web server
-    */
-  final case class WebServerConfiguration(site: String, host: String, port: Int, insecurePort: Int, externalBaseUrl: String, devMode: Boolean, sslConfig: Option[SSLConfig])
+  /** Configuration for the web server */
+  final case class WebServerConfiguration(
+    site:            String,
+    host:            String,
+    port:            Int,
+    insecurePort:    Int,
+    externalBaseUrl: String,
+    devMode:         Boolean,
+    sslConfig:       Option[SSLConfig]
+  )
 
   // Attempt to get the configuration file relative to the base dir
-  val configurationFile: IO[java.nio.file.Path] = baseDir.map(_.resolve("conf").resolve("app.conf"))
+  val configurationFile: IO[FilePath] =
+    baseDir.map(_.resolve("conf").resolve("app.conf"))
 
   // Read the config, first attempt the file or default to the classpath file
   val defaultConfig: IO[Config] =
     knobs.loadImmutable[IO](ClassPathResource("app.conf").required :: Nil)
 
-  val fileConfig: IO[Config] = configurationFile >>= { f =>
-    knobs.loadImmutable[IO](FileResource(f.toFile).optional :: Nil)
-  }
+  val fileConfig: IO[Config] =
+    configurationFile.flatMap { f =>
+      knobs.loadImmutable[IO](FileResource(f.toFile).optional :: Nil)
+    }
 
   val config: IO[Config] =
-    for {
-      dc <- defaultConfig
-      fc <- fileConfig
-    } yield dc ++ fc
+    (defaultConfig, fileConfig).mapN(_ ++ _)
 
   // configuration specific to the web server
   val serverConf: IO[WebServerConfiguration] =
     config.map { cfg =>
+
       val site            = cfg.require[String]("seqexec-engine.site")
       val host            = cfg.require[String]("web-server.host")
       val port            = cfg.require[Int]("web-server.port")
@@ -78,7 +86,17 @@ object WebServerLauncher extends StreamApp[IO] with LogInitialization with Seqex
       val keystorePwd     = cfg.lookup[String]("web-server.tls.keyStorePwd")
       val certPwd         = cfg.lookup[String]("web-server.tls.certPwd")
       val sslConfig       = (keystore, keystorePwd, certPwd).mapN(SSLConfig.apply)
-      WebServerConfiguration(site, host, port, insecurePort, externalBaseUrl, devMode.equalsIgnoreCase("dev"), sslConfig)
+
+      WebServerConfiguration(
+        site,
+        host,
+        port,
+        insecurePort,
+        externalBaseUrl,
+        devMode.equalsIgnoreCase("dev"),
+        sslConfig
+      )
+
     }
 
   // Configuration of the ldap clients
@@ -89,58 +107,73 @@ object WebServerLauncher extends StreamApp[IO] with LogInitialization with Seqex
     }
 
   // Configuration of the authentication service
-  val authConf: Kleisli[IO, WebServerConfiguration, AuthenticationConfig] = Kleisli { _ =>
-    for {
-      ld <- ldapConf
-      cfg <- config
-    } yield {
-      val devMode = cfg.require[String]("mode")
+  val authConf: IO[AuthenticationConfig] =
+    (ldapConf, config).mapN { (ld, cfg) =>
+
+      val devMode        = cfg.require[String]("mode")
       val sessionTimeout = cfg.require[Int]("authentication.sessionLifeHrs")
-      val cookieName = cfg.require[String]("authentication.cookieName")
-      val secretKey = cfg.require[String]("authentication.secretKey")
-      val sslSettings = cfg.lookup[String]("web-server.tls.keyStore")
-      AuthenticationConfig(devMode.equalsIgnoreCase("dev"), Hours(sessionTimeout), cookieName, secretKey, sslSettings.isDefined, ld)
+      val cookieName     = cfg.require[String]("authentication.cookieName")
+      val secretKey      = cfg.require[String]("authentication.secretKey")
+      val sslSettings    = cfg.lookup[String]("web-server.tls.keyStore")
+
+      AuthenticationConfig(
+        devMode.equalsIgnoreCase("dev"),
+        Hours(sessionTimeout),
+        cookieName,
+        secretKey,
+        sslSettings.isDefined,
+        ld
+      )
+
     }
-  }
 
-  /**
-    * Configures the Authentication service
-    */
-  def authService: Kleisli[IO, AuthenticationConfig, AuthenticationService] = Kleisli { conf =>
+  /** Configures the Authentication service */
+  def authService(conf: AuthenticationConfig): IO[AuthenticationService] =
     IO.apply(AuthenticationService(conf))
-  }
 
-  /**
-    * Configures and builds the web server
-    */
-  def webServer(as: AuthenticationService, inputs: server.EventQueue, outputs: Topic[IO, SeqexecEvent], se: SeqexecEngine, pe: PrometheusExportService[IO]): Kleisli[Stream[IO, ?], WebServerConfiguration, StreamApp.ExitCode] = Kleisli { conf =>
-    val metricsMiddleware = PrometheusMetrics[IO](pe.collectorRegistry)
+  /** Resource that yields the running web server */
+  def webServer(
+    as: AuthenticationService,
+    inputs: server.EventQueue,
+    outputs: Topic[IO, SeqexecEvent],
+    se: SeqexecEngine,
+    cr: CollectorRegistry,
+    bec: ExecutionContext
+  )(conf: WebServerConfiguration): Resource[IO, Server[IO]] = {
 
-    def build(all: HttpService[IO]): Stream[IO, StreamApp.ExitCode] = {
-      val builder = BlazeBuilder[IO].bindHttp(conf.port, conf.host)
-        .withWebSockets(true)
-        .mountService(all)
+    def build(all: HttpRoutes[IO]): Resource[IO, Server[IO]] = {
+
+      val builder =
+        BlazeServerBuilder[IO]
+          .bindHttp(conf.port, conf.host)
+          .withWebSockets(true)
+          .withHttpApp(all.orNotFound)
+
       conf.sslConfig.fold(builder) { ssl =>
         val storeInfo = StoreInfo(ssl.keyStore, ssl.keyStorePwd)
         builder.withSSL(storeInfo, ssl.certPwd, "TLS")
-      }.serve
+      }.resource
+
     }
 
     val router = Router[IO](
-            "/" -> new StaticRoutes(conf.devMode, OcsBuildInfo.builtAtMillis).service,
-            "/api/seqexec/commands" -> new SeqexecCommandRoutes(as, inputs, se).service,
-            "/api" -> new SeqexecUIApiRoutes(conf.site, conf.devMode, as, outputs).service)
-    for {
-      static <- Stream.eval(metricsMiddleware(Logger(logHeaders = true, logBody = false)(router))) // bodies are binary encoded
-      blaze <- build(pe.service <+> static)
-    } yield blaze
+      "/"                     -> new StaticRoutes(conf.devMode, OcsBuildInfo.builtAtMillis, bec).service,
+      "/"                     -> PrometheusExportService[IO](cr).routes,
+      "/api/seqexec/commands" -> new SeqexecCommandRoutes(as, inputs, se).service,
+      "/api"                  -> new SeqexecUIApiRoutes(conf.site, conf.devMode, as, outputs).service
+    )
+
+    val metricsMiddleware = Metrics[IO](Prometheus(cr, "seqexec"))(router)
+
+    build(metricsMiddleware)
+
   }
 
-  def redirectWebServer: Kleisli[Stream[IO, ?], WebServerConfiguration, StreamApp.ExitCode] = Kleisli { conf =>
-    val builder = BlazeBuilder[IO].bindHttp(conf.insecurePort, conf.host)
-      .mountService(new RedirectToHttpsRoutes(443, conf.externalBaseUrl).service, "/")
-    builder.serve
-  }
+  def redirectWebServer(conf: WebServerConfiguration): Resource[IO, Server[IO]] =
+    BlazeServerBuilder[IO]
+      .bindHttp(conf.insecurePort, conf.host)
+      .withHttpApp(new RedirectToHttpsRoutes(443, conf.externalBaseUrl).service.orNotFound)
+      .resource
 
   def logStart: Kleisli[IO, WebServerConfiguration, Unit] = Kleisli { conf =>
     val msg = s"Start web server for site ${conf.site} on ${conf.devMode.fold("dev", "production")} mode"
@@ -173,10 +206,16 @@ object WebServerLauncher extends StreamApp[IO] with LogInitialization with Seqex
     asyncAppender
   }
 
-  /**
-    * Reads the configuration and launches the web server
-    */
-  def stream(args: List[String], requestShutdown: IO[Unit]): Stream[IO, ExitCode] = {
+  /** Reads the configuration and launches the web server */
+  // scalastyle:off
+  def run(args: List[String]): IO[ExitCode] = {
+
+    def blockingExecutionContext: Resource[IO, ExecutionContext] = {
+      val alloc = IO(Executors.newCachedThreadPool)
+      val free  = (es: ExecutorService) => IO(es.shutdown())
+      Resource.make(alloc)(free).map(ExecutionContext.fromExecutor)
+    }
+
     def engineIO(httpClient: Client[IO], collector: CollectorRegistry): IO[SeqexecEngine] =
       for {
         _          <- configLog // Initialize log before the engine is setup
@@ -190,33 +229,38 @@ object WebServerLauncher extends StreamApp[IO] with LogInitialization with Seqex
         met        <- SeqexecMetrics.build[IO](site, collector)
       } yield SeqexecEngine(httpClient, seqc, met)
 
-    def webServerIO(in: Queue[IO, executeEngine.EventType], out: Topic[IO, SeqexecEvent], et: SeqexecEngine, pe: PrometheusExportService[IO]): IO[Stream[IO, ExitCode]] =
-      // Launch web server
+    def webServerIO(
+      in:  Queue[IO, executeEngine.EventType],
+      out: Topic[IO, SeqexecEvent],
+      et:  SeqexecEngine,
+      cr:  CollectorRegistry,
+      bec: ExecutionContext
+    ): Resource[IO, Unit] =
       for {
-        wc <- serverConf
-        ac <- authConf.run(wc)
-        as <- authService.run(ac)
-        _  <- logStart.run(wc)
-        _  <- logToClients(out)
-      } yield Stream(redirectWebServer.run(wc), webServer(as, in, out, et, pe).run(wc)).join(2)
+        wc <- Resource.liftF(serverConf)
+        ac <- Resource.liftF(authConf)
+        as <- Resource.liftF(authService(ac))
+        _  <- Resource.liftF(logStart.run(wc))
+        _  <- Resource.liftF(logToClients(out))
+        _  <- redirectWebServer(wc)
+        _  <- webServer(as, in, out, et, cr, bec)(wc)
+      } yield ()
 
-    // I have taken this from the examples at:
-    // https://github.com/gvolpe/advanced-http4s/blob/master/src/main/scala/com/github/gvolpe/fs2/PubSub.scala
-    // It's not very clear why we need to run this inside a Scheduler
-    Scheduler[IO](corePoolSize = 4).flatMap { _ =>
+    val r: Resource[IO, ExitCode] =
       for {
-        cli    <- Http1Client.stream[IO]()
-        inq    <- Stream.eval(async.boundedQueue[IO, executeEngine.EventType](10))
-        out    <- Stream.eval(async.topic[IO, SeqexecEvent](NullEvent))
-        pe     <- Stream.eval(PrometheusExportService.build[IO])
-        engine <- Stream.eval(engineIO(cli, pe.collectorRegistry))
-        web    <- Stream.eval(webServerIO(inq, out, engine, pe))
-        exit   <- Stream(
-                    engine.eventStream(inq).to(out.publish),
-                    web
-                  ).join(2).drain ++ Stream.emit(ExitCode.Success)
-      } yield exit
-    }
+        cli    <- AsyncHttpClient.resource[IO]()
+        inq    <- Resource.liftF(Queue.bounded[IO, executeEngine.EventType](10))
+        out    <- Resource.liftF(Topic[IO, SeqexecEvent](NullEvent))
+        cr     <- Resource.liftF(IO(new CollectorRegistry))
+        engine <- Resource.liftF(engineIO(cli, cr))
+        bec    <- blockingExecutionContext
+        _      <- webServerIO(inq, out, engine, cr, bec)
+        _      <- Resource.liftF(engine.eventStream(inq).to(out.publish).compile.drain.start)
+      } yield ExitCode.Success
+
+    r.use(_ => IO.never)
+
   }
+  // scalastyle:on
 
 }

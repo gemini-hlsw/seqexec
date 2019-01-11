@@ -6,7 +6,7 @@ package seqexec.web.server.http4s
 import java.util.UUID
 
 import cats.data.NonEmptyList
-import cats.effect.IO
+import cats.effect.{ Concurrent, IO, Timer }
 import cats.implicits._
 import seqexec.model.ClientId
 import seqexec.model._
@@ -18,30 +18,31 @@ import seqexec.web.server.security.AuthenticationService
 import seqexec.web.server.security.Http4sAuthentication
 import seqexec.web.server.security.TokenRefresher
 import seqexec.web.common.LogMessage
-import fs2.async.mutable.Topic
-import fs2.Scheduler
+import fs2.concurrent.Topic
 import fs2.Sink
 import fs2.Stream
 import org.http4s._
 import org.http4s.dsl.io._
 import org.http4s.server.middleware.GZip
 import org.http4s.server.websocket.WebSocketBuilder
-import org.http4s.websocket.WebsocketBits._
+import org.http4s.websocket.WebSocketFrame
+import org.http4s.websocket.WebSocketFrame.{ Binary, Ping }
 import org.http4s.headers.`WWW-Authenticate`
 import org.log4s._
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.math._
+import scodec.bits.ByteVector
 
 /**
   * Rest Endpoints under the /api route
   */
-class SeqexecUIApiRoutes(site:         String,
-                         devMode:      Boolean,
-                         auth:         AuthenticationService,
-                         engineOutput: Topic[IO, SeqexecEvent])
-    extends BooEncoders
-    with ModelLenses {
+class SeqexecUIApiRoutes(site: String,
+                         devMode: Boolean,
+                         auth: AuthenticationService,
+                         engineOutput: Topic[IO, SeqexecEvent])(
+  implicit cio: Concurrent[IO],
+           tio: Timer[IO]
+) extends BooEncoders with ModelLenses {
 
   // Logger for client messages
   private val clientLog = getLogger
@@ -57,11 +58,9 @@ class SeqexecUIApiRoutes(site:         String,
     * Creates a process that sends a ping every second to keep the connection alive
     */
   private def pingStream: Stream[IO, Ping] =
-    Scheduler[IO](corePoolSize = 1).flatMap { scheduler =>
-      scheduler.fixedRate[IO](1.second).flatMap(_ => Stream.emit(Ping()))
-    }
+    Stream.fixedRate[IO](1.second).flatMap(_ => Stream.emit(Ping()))
 
-  val publicService: HttpService[IO] = GZip { HttpService {
+  val publicService: HttpRoutes[IO] = GZip { HttpRoutes.of {
 
     case req @ POST -> Root / "seqexec" / "login" =>
       req.decode[UserLoginRequest] { (u: UserLoginRequest) =>
@@ -80,7 +79,7 @@ class SeqexecUIApiRoutes(site:         String,
 
       case POST -> Root / "seqexec" / "logout"              =>
         // Clean the auth cookie
-        val cookie = Cookie(auth.config.cookieName, "", path = "/".some,
+        val cookie = ResponseCookie(auth.config.cookieName, "", path = "/".some,
           secure = auth.config.useSSL, maxAge = Some(-1), httpOnly = true)
         Ok("").map(_.removeCookie(cookie))
 
@@ -135,10 +134,10 @@ class SeqexecUIApiRoutes(site:         String,
         // Create a client specific process
 
         def initialEvent(clientId: ClientId): Stream[IO, WebSocketFrame] =
-          Stream.emit(Binary(trimmedArray(ConnectionOpenEvent(user.toOption, clientId): SeqexecEvent)))
+          Stream.emit(Binary(ByteVector(trimmedArray(ConnectionOpenEvent(user.toOption, clientId): SeqexecEvent))))
 
         def engineEvents(clientId: ClientId): Stream[IO, WebSocketFrame]  =
-          engineOutput.subscribe(1).map(anonymizeF).filter(filterOutNull).filter(filterOutOnClientId(clientId)).map(v => Binary(trimmedArray(v)))
+          engineOutput.subscribe(1).map(anonymizeF).filter(filterOutNull).filter(filterOutOnClientId(clientId)).map(v => Binary(ByteVector(trimmedArray(v))))
 
         // We don't care about messages sent over ws by clients
         val clientEventsSink: Sink[IO, WebSocketFrame] = Sink(_ => IO.unit)
@@ -153,5 +152,5 @@ class SeqexecUIApiRoutes(site:         String,
 
     }
 
-  def service: HttpService[IO] = publicService <+> TokenRefresher(GZip(httpAuthentication.optAuth(protectedServices)), httpAuthentication)
+  def service: HttpRoutes[IO] = publicService <+> TokenRefresher(GZip(httpAuthentication.optAuth(protectedServices)), httpAuthentication)
 }

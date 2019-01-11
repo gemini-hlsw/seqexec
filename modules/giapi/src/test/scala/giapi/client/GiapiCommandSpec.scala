@@ -3,7 +3,7 @@
 
 package giapi.client
 
-import cats.effect.IO
+import cats.effect.{ ContextShift, IO, Resource }
 import cats.tests.CatsSuite
 import giapi.client.commands._
 import edu.gemini.jms.activemq.provider.ActiveMQJmsProvider
@@ -12,8 +12,8 @@ import edu.gemini.aspen.giapi.commands.HandlerResponse.Response
 import edu.gemini.aspen.gmp.commands.jms.clientbridge.CommandMessagesBridgeImpl
 import edu.gemini.aspen.gmp.commands.jms.clientbridge.CommandMessagesConsumer
 import edu.gemini.aspen.giapi.commands.CommandSender
-import fs2.Stream
 import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext
 import org.scalatest.EitherValues
 
 final case class GmpCommands(amq: ActiveMQJmsProvider, cmc: CommandMessagesConsumer)
@@ -68,56 +68,38 @@ object GmpCommands {
   */
 final class GiapiCommandSpec extends CatsSuite with EitherValues {
 
+  implicit val ioContextShift: ContextShift[IO] =
+    IO.contextShift(ExecutionContext.global)
+
+  def client(amqUrl: String, handleCommands: Boolean): Resource[IO, Giapi[IO]] =
+    for {
+      _ <- Resource.make(GmpCommands.createGmpCommands(amqUrl, handleCommands))(GmpCommands.closeGmpCommands)
+      c <- Resource.make(Giapi.giapiConnection[IO](amqUrl, ExecutionContext.global).connect)(_.close)
+    } yield c
+
   ignore("Test sending a command with no handlers") { // This test passes but the backend doesn't clean up properly
-    val result = Stream.bracket(
-      GmpCommands.createGmpCommands(GmpCommands.amqUrl("test1"), false))(
-      _ =>
-        Stream.bracket(
-          Giapi
-            .giapiConnection[IO](GmpCommands.amqUrlConnect("test1"), scala.concurrent.ExecutionContext.Implicits.global)
-            .connect)(c => Stream.eval(c.command(Command(SequenceCommand.TEST, Activity.PRESET, Configuration.Zero), 1.second).attempt), _.close),
-      GmpCommands.closeGmpCommands
-    )
-    result.compile.last.unsafeRunSync.map(_.left.value) should contain(CommandResultException(Response.ERROR, "Message cannot be null"))
+    client(GmpCommands.amqUrl("test1"), false).use { c =>
+      c.command(Command(SequenceCommand.TEST, Activity.PRESET, Configuration.Zero), 1.second).attempt
+    } .unsafeRunSync.left.value shouldBe CommandResultException(Response.ERROR, "Message cannot be null")
   }
 
   test("Test sending a command with no answer") {
-    val result = Stream.bracket(
-      GmpCommands.createGmpCommands(GmpCommands.amqUrl("test2"), true))(
-      _ =>
-        Stream.bracket(
-          Giapi
-            .giapiConnection[IO](GmpCommands.amqUrlConnect("test2"), scala.concurrent.ExecutionContext.Implicits.global)
-            .connect)(c => Stream.eval(c.command(Command(SequenceCommand.TEST, Activity.PRESET, Configuration.Zero), 1.second).attempt), _.close),
-      GmpCommands.closeGmpCommands
-    )
-    result.compile.last.unsafeRunSync.map(_.left.value) should contain(CommandResultException(Response.NOANSWER, "No answer from the instrument"))
+    client(GmpCommands.amqUrl("test2"), true).use { c =>
+      c.command(Command(SequenceCommand.TEST, Activity.PRESET, Configuration.Zero), 1.second).attempt
+    } .unsafeRunSync.left.value shouldBe CommandResultException(Response.NOANSWER, "No answer from the instrument")
   }
 
   test("Test sending a command with immediate answer") {
-    val result = Stream.bracket(
-      GmpCommands.createGmpCommands(GmpCommands.amqUrl("test3"), true))(
-      _ =>
-        Stream.bracket(
-          Giapi
-            .giapiConnection[IO](GmpCommands.amqUrlConnect("test3"), scala.concurrent.ExecutionContext.Implicits.global)
-            .connect)(c => Stream.eval(c.command(Command(SequenceCommand.INIT, Activity.PRESET, Configuration.Zero), 1.second).attempt), _.close),
-      GmpCommands.closeGmpCommands
-    )
-    result.compile.last.unsafeRunSync.map(_.right.value) should contain(CommandResult(Response.COMPLETED))
+    client(GmpCommands.amqUrl("test3"), true).use { c =>
+      c.command(Command(SequenceCommand.INIT, Activity.PRESET, Configuration.Zero), 1.second).attempt
+    } .unsafeRunSync.right.value shouldBe CommandResult(Response.COMPLETED)
   }
 
   test("Test sending a command with accepted but never completed answer") {
     val timeout = 1.second
-    val result = Stream.bracket(
-      GmpCommands.createGmpCommands(GmpCommands.amqUrl("test4"), true))(
-      _ =>
-        Stream.bracket(
-          Giapi
-            .giapiConnection[IO](GmpCommands.amqUrlConnect("test4"), scala.concurrent.ExecutionContext.Implicits.global)
-            .connect)(c => Stream.eval(c.command(Command(SequenceCommand.PARK, Activity.PRESET, Configuration.Zero), timeout).attempt), _.close),
-      GmpCommands.closeGmpCommands
-    )
-    result.compile.last.unsafeRunSync.map(_.left.value) should contain(CommandResultException.timedOut(timeout))
+    client(GmpCommands.amqUrl("test4"), true).use { c =>
+      c.command(Command(SequenceCommand.PARK, Activity.PRESET, Configuration.Zero), timeout).attempt
+    } .unsafeRunSync.left.value shouldBe CommandResultException.timedOut(timeout)
   }
+
 }

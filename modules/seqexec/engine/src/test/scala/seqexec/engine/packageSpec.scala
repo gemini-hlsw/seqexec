@@ -10,8 +10,8 @@ import seqexec.engine.Sequence.State.Final
 import seqexec.model.{ActionType, ClientId, SequenceState, StepState, UserDetails}
 import seqexec.model.enum.Instrument.GmosS
 import seqexec.model.enum.Resource.TCS
-import fs2.async
-import fs2.async.mutable.Semaphore
+import seqexec.model.{ActionType, UserDetails}
+import cats.effect.concurrent.Semaphore
 import fs2.Stream
 import gem.Observation
 import cats.implicits._
@@ -20,13 +20,17 @@ import org.scalatest.Inside.inside
 import org.scalatest.{FlatSpec, NonImplicitAssertions}
 import seqexec.engine.TestUtil.TestState
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext
 
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 class packageSpec extends FlatSpec with NonImplicitAssertions {
 
+  implicit val ioContextShift: ContextShift[IO] =
+    IO.contextShift(ExecutionContext.global)
+
   object DummyResult extends Result.RetVal
+
   /**
     * Emulates TCS configuration in the real world.
     *
@@ -168,7 +172,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
 
   "engine" should "keep processing input messages regardless of how long Actions take" in {
     val result = (for {
-      q           <- Stream.eval(async.boundedQueue[IO, executionEngine.EventType](1))
+      q           <- Stream.eval(fs2.concurrent.Queue.bounded[IO, executionEngine.EventType](1))
       startedFlag <- Stream.eval(Semaphore.apply[IO](0))
       finishFlag  <- Stream.eval(Semaphore.apply[IO](0))
       r           <- {
@@ -180,7 +184,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
                 id = 1,
                 executions = List(
                   List(fromF[IO](ActionType.Configure(TCS),
-                    startedFlag.increment *> finishFlag.decrement *> IO.pure(Result.OK(DummyResult))
+                    startedFlag.release *> finishFlag.acquire *> IO.pure(Result.OK(DummyResult))
                   ))
                 )
               )
@@ -190,9 +194,9 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
         Stream.eval(List(
           List[IO[Unit]](
             q.enqueue1(Event.start[executionEngine.ConcreteTypes](seqId, user, clientId, always)),
-            startedFlag.decrement,
+            startedFlag.acquire,
             q.enqueue1(Event.nullEvent),
-            q.enqueue1(Event.getState[executionEngine.ConcreteTypes] { _ => Stream.eval(finishFlag.increment).as(Event.nullEvent).some })
+            q.enqueue1(Event.getState[executionEngine.ConcreteTypes] { _ => Stream.eval(finishFlag.release).as(Event.nullEvent).some })
           ).sequence,
           executionEngine.process(PartialFunction.empty)(q.dequeue)(qs).drop(1).takeThrough(a => !isFinished(a._2.sequences(seqId).status)).compile.drain
         ).parSequence)

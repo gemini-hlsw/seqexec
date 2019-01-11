@@ -10,10 +10,10 @@ import java.time.{ Instant, Duration }
 trait TimeMeta {
 
   implicit val TimestampMeta: Meta[Timestamp] =
-    Meta[Instant].xmap(Timestamp.unsafeFromInstant, _.toInstant)
+    Meta[Instant].timap(Timestamp.unsafeFromInstant)(_.toInstant)
 
   implicit val DurationMeta: Meta[Duration] =
-    Distinct.long("milliseconds").xmap(Duration.ofMillis, _.toMillis)
+    Distinct.long("milliseconds").timap(Duration.ofMillis)(_.toMillis)
 
 }
 object TimeMeta extends TimeMeta

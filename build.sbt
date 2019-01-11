@@ -29,11 +29,11 @@ parallelExecution in (ThisBuild, Test) := false
 
 cancelable in Global := true
 
-// check for library updates whenever the project is [re]load
-onLoad in Global := { s =>
-  if (sys.props.contains("ocs3.skipDependencyUpdates")) s
-  else "dependencyUpdates" :: s
-}
+// // check for library updates whenever the project is [re]load
+// onLoad in Global := { s =>
+//   if (sys.props.contains("ocs3.skipDependencyUpdates")) s
+//   else "dependencyUpdates" :: s
+// }
 
 // Uncomment for local gmp testing
 // resolvers in ThisBuild += "Local Maven Repository" at "file://"+Path.userHome.absolutePath+"/.m2/repository"
@@ -252,10 +252,9 @@ lazy val web = project
   .settings(
     addCompilerPlugin(Plugins.kindProjectorPlugin),
     libraryDependencies ++= Seq(
-      Slf4j,
       Http4sCirce,
       JwtCore
-    ) ++ Http4s
+    ) ++ Http4s ++ Logging
   )
 
 lazy val ui = project
@@ -337,7 +336,7 @@ lazy val giapi = project
     libraryDependencies ++= Seq(GmpStatusGateway % "test", GmpStatusDatabase % "test", GmpCmdJmsBridge % "test", NopSlf4j % "test"),
     excludeDependencies ++= Seq(
       // Remove to silence logging on tests
-      ExclusionRule("ch.qos.logback", "logback-classic")
+      ExclusionRule("ch.qos.logback", "logback-classic", "jar", Vector(Test), CrossVersion.binary)
     )
   )
 

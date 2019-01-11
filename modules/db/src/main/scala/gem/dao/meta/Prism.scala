@@ -17,7 +17,7 @@ class PrismOps[A, B](f: Prism[A, B]) {
     implicit mb: Meta[A],
              ta: TypeTag[B]
   ): Meta[B] =
-    mb.xmap(f.unsafeGet(_), f.reverseGet)
+    mb.timap(f.unsafeGet(_))(f.reverseGet)
 }
 
 trait PrismMeta {

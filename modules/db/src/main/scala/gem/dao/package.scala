@@ -65,7 +65,7 @@ package object dao {
   }
 
   /** Flattened `a` as a VALUES argument (...). */
-  def values[A](a: A)(implicit ev: Composite[A]): Fragment =
+  def values[A](a: A)(implicit ev: Write[A]): Fragment =
     Fragment(List.fill(ev.length)("?").mkString("(", ", ", ")"), a)
 
 }

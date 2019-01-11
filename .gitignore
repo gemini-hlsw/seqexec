@@ -17,6 +17,12 @@ package.json
 package-lock.json
 calibrations/
 .metals/
+.bloop/
+project/project/.bloop/
+
+# hydra
+.hydra/
+project/hydra.sbt
 
 # sbt specific
 .cache
@@ -67,4 +73,3 @@ package-lock.json
 
 # Project specific
 modules/edu.gemini.seqexec.web/edu.gemini.seqexec.web.server/log/
-.bloop/

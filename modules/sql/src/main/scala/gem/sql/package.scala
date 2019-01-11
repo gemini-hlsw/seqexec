@@ -8,8 +8,8 @@ import java.time.{ Duration, ZoneId }
 
 package object sql {
   implicit val DurationMeta: Meta[Duration] =
-    Meta[Long].xmap(Duration.ofMillis, _.toMillis)
+    Meta[Long].timap(Duration.ofMillis)(_.toMillis)
 
   implicit val ZoneIdMeta: Meta[ZoneId] =
-    Meta[String].xmap(ZoneId.of, _.toString)
+    Meta[String].timap(ZoneId.of)(_.toString)
 }

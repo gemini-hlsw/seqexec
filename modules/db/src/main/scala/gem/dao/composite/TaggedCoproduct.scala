@@ -7,7 +7,8 @@ import cats._
 import cats.implicits._
 import doobie._
 import shapeless._
-import shapeless.ops.coproduct.{ Inject, Unifier }
+import shapeless.ops.coproduct.Inject
+// import shapeless.ops.coproduct.Unifier
 
 object TaggedCoproduct {
 
@@ -59,22 +60,29 @@ object TaggedCoproduct {
       TaggedCoproductEncoder.cons(t.tag, this.widen[TT])
 
     /**
-     * Given Composite[(T, Out)] and Eq[T] we can get Composite[C]. Ultimately this is the purpose
+     * Given Read[(T, Out)] and Eq[T] we can get Read[C]. Ultimately this is the purpose
      * of this typeclass.
      */
-    def composite(implicit ev: Composite[(T, Out)], eq: Eq[T]): Composite[C] =
-      ev.imap((unsafeDecode _).tupled)(encode)
+    def read(implicit ev: Read[(T, Out)], eq: Eq[T]): Read[C] =
+      ev.map((unsafeDecode _).tupled)
 
     /**
-     * Convenience method, equivalent to `composite.imap[A](_.unify)(inj)`. Requires that A be a
-     * unifier of C; i.e., some supertype of its element types.
+     * Given Write[(T, Out)] and Eq[T] we can get Write[C]. Ultimately this is the purpose
+     * of this typeclass.
      */
-    def unifiedComposite[A](inj: A => C)(
-      implicit ev: Composite[(T, Out)],
-               eq: Eq[T],
-               un: Unifier.Aux[C, A]
-             ): Composite[A] =
-      composite.imap(_.unify)(inj)
+    def write(implicit ev: Write[(T, Out)]): Write[C] =
+      ev.contramap(encode)
+
+    // /**
+    //  * Convenience method, equivalent to `composite.imap[A](_.unify)(inj)`. Requires that A be a
+    //  * unifier of C; i.e., some supertype of its element types.
+    //  */
+    // def unifiedComposite[A](inj: A => C)(
+    //   implicit ev: Composite[(T, Out)],
+    //            eq: Eq[T],
+    //            un: Unifier.Aux[C, A]
+    //          ): Composite[A] =
+    //   composite.imap(_.unify)(inj)
 
     /**
      * Widen the tag type. This is a no-op but Scala needs some convincing. Observe that you can

@@ -4,12 +4,13 @@
 package seqexec.server.gmos
 
 import cats.data.EitherT
-import cats.effect.IO
+import cats.effect.{ IO, Timer }
 import cats.implicits._
 import edu.gemini.spModel.gemini.gmos.GmosCommonType._
 import edu.gemini.spModel.gemini.gmos.InstGmosCommon.UseElectronicOffsettingRuling
 import fs2.Stream
 import mouse.all._
+import scala.concurrent.ExecutionContext
 import org.log4s.getLogger
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.EpicsCodex.EncodeEpicsValue
@@ -333,9 +334,17 @@ class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosCo
     _   <- EitherT.right(IO(Log.info("Completed aborting Gmos observation")))
   } yield if(ret === ObserveCommand.Success) ObserveCommand.Aborted else ret
 
-  override def observeProgress(total: Time, elapsed: ElapsedTime): Stream[IO, Progress] =
+  // override def observeProgress(total: Time, elapsed: ElapsedTime): Stream[IO, Progress] = {
+  //   implicit val ioTimer: Timer[IO] = IO.timer(ExecutionContext.global)
+  //   ProgressUtil.fromFOption(_ => IO(
+  //     GmosEpics.instance.countdown.map(c => Progress(total, RemainingTime(c.seconds)))
+  //   ))
+  // }
+  override def observeProgress(total: Time, elapsed: ElapsedTime): Stream[IO, Progress] = {
+    implicit val ioTimer: Timer[IO] = IO.timer(ExecutionContext.global)
     EpicsUtil.countdown[IO](total, IO(GmosEpics.instance.countdown.map(_.seconds)),
       IO(GmosEpics.instance.observeState))
+  }
 }
 
 object GmosControllerEpics {

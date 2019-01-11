@@ -11,6 +11,7 @@ import atto.ParseResult
 import atto.ParseResult.Done
 import atto.syntax.parser._
 
+import cats.ApplicativeError
 import cats.implicits._
 
 import fs2.Pipe
@@ -134,7 +135,7 @@ object EphemerisParser {
     *
     * @return pipe for a `Stream[F, String]` into a `Stream[F, Ephemeris.Element]`
     */
-  def elements[F[_]]: Pipe[F, String, Ephemeris.Element] =
+  def elements[F[_]: ApplicativeError[?[_], Throwable]]: Pipe[F, String, Ephemeris.Element] =
     _.through(parsedElements)
      .map(_.either.left.map(new RuntimeException(_)))
      .rethrow

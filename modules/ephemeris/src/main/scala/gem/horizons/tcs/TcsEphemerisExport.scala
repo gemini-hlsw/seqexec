@@ -20,12 +20,14 @@ import fs2.io.file
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption.{ CREATE, TRUNCATE_EXISTING }
 
+import scala.concurrent.ExecutionContext
+
 /** Provides support for exporting ephemeris data to files that may be read by
   * the TCS.
   *
   * @param xa transactor to use for working with the database
   */
-final class TcsEphemerisExport[M[_]: Sync](xa: Transactor[M]) {
+final class TcsEphemerisExport[M[_]: Sync: ContextShift](xa: Transactor[M]) {
   import TcsEphemerisExport.RowLimit
 
   /** Produces the name of the corresponding .eph file. */
@@ -65,7 +67,7 @@ final class TcsEphemerisExport[M[_]: Sync](xa: Transactor[M]) {
       .intersperse("\n")
       .append(Stream.emit("\n"))
       .through(text.utf8Encode)
-      .to(file.writeAll(resolve(key, dir), List(CREATE, TRUNCATE_EXISTING)))
+      .to(file.writeAll(resolve(key, dir), ExecutionContext.global /** ok here? **/, List(CREATE, TRUNCATE_EXISTING)))
       .compile
       .drain
   }

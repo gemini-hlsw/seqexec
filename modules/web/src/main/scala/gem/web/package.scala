@@ -17,7 +17,7 @@ package object web {
   }
 
   implicit class RequestOps[F[_]](val req: Request[F]) extends AnyVal {
-    def findCookie(name: String): Option[Cookie] =
+    def findCookie(name: String): Option[RequestCookie] =
       headers.Cookie.from(req.headers).flatMap(cs => cs.values.toList.find(_.name === name))
   }
 

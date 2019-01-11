@@ -4,18 +4,19 @@
 package gem
 package web
 
-import cats.effect.IO
+import cats._
+import cats.implicits._
 import gem.{ Service => GemService }
 import gem.json.instances.all._
 import io.circe.syntax._
 import io.circe.generic.auto._
 import org.http4s._
+import org.http4s.dsl._
 import org.http4s.circe._
-import org.http4s.dsl.io._
 
 /**
  * The main application web service, which is "authenticated" in the sense that request carries
- * along a Service[IO] that provides access to the Gem back-end.
+ * along a Service[F] that provides access to the Gem back-end.
  */
 object Application {
 
@@ -29,11 +30,14 @@ object Application {
     s.replaceAll("\\*", "%")
      .replaceAll("\\.", "?")
 
-  def withObsId(s: String)(f: Observation.Id => IO[Response[IO]]): IO[Response[IO]] =
+  def withObsId[F[_]: Monad](s: String)(f: Observation.Id => F[Response[F]]): F[Response[F]] = {
+    val dsl = new Http4sDsl[F] {}; import dsl._
     Observation.Id.fromString(s).fold(BadRequest(s"Not an observation id: '$s'"))(f)
+  }
 
   /** Gem application endpoints. */
-  def service: AuthedService[GemService[IO], IO] =
+  def service[F[_]: Monad]: AuthedService[GemService[F], F] = {
+    val dsl = new Http4sDsl[F] {}; import dsl._
     AuthedService {
 
       // Select matching program ids and titles.
@@ -64,5 +68,6 @@ object Application {
           }
         }
     }
+  }
 
 }

@@ -10,7 +10,7 @@ trait ObservationIdMeta {
 
   // Observation.Id as string
   implicit val ObservationIdMeta: Meta[Observation.Id] =
-    Meta[String].xmap(Observation.Id.unsafeFromString, _.format)
+    Meta[String].timap(Observation.Id.unsafeFromString)(_.format)
 
 }
 object ObservationIdMeta extends ObservationIdMeta

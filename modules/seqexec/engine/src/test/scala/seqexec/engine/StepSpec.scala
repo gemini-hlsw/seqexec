@@ -5,12 +5,13 @@ package seqexec.engine
 
 import java.util.UUID
 
-import cats.effect.IO
+import cats.effect.{ ContextShift, IO }
 import seqexec.model.enum.Instrument.GmosS
 import seqexec.model.{ActionType, ClientId, SequenceState, StepState, UserDetails}
 import seqexec.model.enum.Resource
-import fs2.async.mutable.Queue
-import fs2.{Stream, async}
+import seqexec.model.{ActionType, UserDetails}
+import fs2.concurrent.Queue
+import fs2.Stream
 import gem.Observation
 import org.scalatest.Inside._
 import org.scalatest.Matchers._
@@ -18,10 +19,13 @@ import org.scalatest._
 import seqexec.engine.TestUtil.TestState
 
 import scala.Function.const
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.ExecutionContext
 
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 class StepSpec extends FlatSpec {
+
+  implicit val ioContextShift: ContextShift[IO] =
+    IO.contextShift(ExecutionContext.global)
 
   private val seqId = Observation.Id.unsafeFromString("GS-2017B-Q-1-1")
   private val user = UserDetails("telops", "Telops")
@@ -105,7 +109,7 @@ class StepSpec extends FlatSpec {
     }
   )
 
-  def triggerPause(q: async.mutable.Queue[IO, executionEngine.EventType]): Action[IO] = fromF[IO](ActionType.Undefined,
+  def triggerPause(q: Queue[IO, executionEngine.EventType]): Action[IO] = fromF[IO](ActionType.Undefined,
     for {
       _ <- q.enqueue1(Event.pause(seqId, user))
       // There is not a distinct result for Pause because the Pause action is a
@@ -113,7 +117,7 @@ class StepSpec extends FlatSpec {
       // input event is enough.
     } yield Result.OK(DummyResult))
 
-  def triggerStart(q: IO[async.mutable.Queue[IO, executionEngine.EventType]]): Action[IO] = fromF[IO](ActionType.Undefined,
+  def triggerStart(q: IO[Queue[IO, executionEngine.EventType]]): Action[IO] = fromF[IO](ActionType.Undefined,
     for {
       _ <- q.map(_.enqueue1(Event.start(seqId, user, clientId, always)))
       // Same case that the pause action
@@ -146,8 +150,8 @@ class StepSpec extends FlatSpec {
 
   // The difficult part is to set the pause command to interrupts the step execution in the middle.
   "pause" should "stop execution in response to a pause command" in {
-    val q: Stream[IO, Queue[IO, executionEngine.EventType]] = Stream.eval(async.boundedQueue[IO, executionEngine.EventType](10))
-    def qs0(q: async.mutable.Queue[IO, executionEngine.EventType]): TestState =
+    val q: Stream[IO, Queue[IO, executionEngine.EventType]] = Stream.eval(Queue.bounded[IO, executionEngine.EventType](10))
+    def qs0(q: Queue[IO, executionEngine.EventType]): TestState =
       TestState(
         sequences = Map(
           (seqId,
@@ -304,7 +308,7 @@ class StepSpec extends FlatSpec {
 
   // Be careful that start command doesn't run an already running sequence.
   "engine" should "ignore start command if step is already running." in {
-    val q = async.boundedQueue[IO, executionEngine.EventType](10)
+    val q = Queue.bounded[IO, executionEngine.EventType](10)
     val qs0: TestState =
       TestState(
         sequences = Map(

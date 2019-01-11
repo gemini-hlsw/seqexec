@@ -3,29 +3,30 @@
 
 package gem.main
 
-import cats.effect.IO
+import cats.effect._
+import cats.implicits._
 import gem.dao.DatabaseConfiguration
 import gem.web.WebServer
 import gem.telnetd.TelnetServer
-import fs2.Stream
 import org.flywaydb.core.Flyway
 
 object MainServer {
 
   // Run flyway migrations
-  private def migrate(db: DatabaseConfiguration): IO[Int] =
-    IO {
-      val flyway = new Flyway()
-      flyway.setDataSource(db.connectUrl, db.userName, db.password);
+  private def migrate[F[_]: Sync](db: DatabaseConfiguration): F[Int] =
+    Sync[F].delay {
+      val flyway = Flyway.configure.dataSource(db.connectUrl, db.userName, db.password).load
       flyway.migrate()
     }
 
   /** A single-element stream that starts the server up and shuts it down on exit. */
-  def stream(cfg: MainConfiguration): Stream[IO, Unit] =
+  def resource[F[_]: ConcurrentEffect: ContextShift: Timer](cfg: MainConfiguration)(
+    implicit ev: ContextShift[IO]
+  ): Resource[F, Unit] =
     for {
-      _   <- Stream.eval(migrate(cfg.database))
-      _   <- TelnetServer.stream(cfg.database, cfg.telnetd)
-      _   <- WebServer.stream(cfg.web, cfg.database)
+      _   <- Resource.liftF(migrate(cfg.database))
+      _   <- TelnetServer.server(cfg.database, cfg.telnetd)
+      _   <- WebServer.resource[F](cfg.web, cfg.database)
     } yield ()
 
 }
