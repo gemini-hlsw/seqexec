@@ -4,8 +4,11 @@
 package gem.sql
 package enum
 
-import doobie._, doobie.implicits._
+import doobie._
+import doobie.implicits._
 import java.time.ZoneId
+
+import gem.sql.EnumDef
 import shapeless.record._
 
 object MiscEnums {
@@ -76,8 +79,12 @@ object MiscEnums {
       EnumDef.fromQuery("KeywordName", "Fits Keyword names") {
         type R = Record.`'tag -> String, 'name -> String`.T
         sql"SELECT id, id tag, name FROM e_fits_keyword_names".query[(String, R)]
-      }
+      },
 
+      EnumDef.fromQuery("DhsKeywordName", "DHS Keyword names") {
+        type R = Record.`'tag -> String, 'keyword -> KeywordName, 'name -> String`.T
+        sql"SELECT keyword, keyword tag, keyword tag, name FROM e_dhs_keyword_names".query[(String, R)]
+      }
     )
 
 }

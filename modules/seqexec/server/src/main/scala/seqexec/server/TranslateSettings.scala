@@ -9,5 +9,6 @@ final case class TranslateSettings(
   gwsKeywords:   Boolean,
   gcalKeywords:  Boolean,
   gmosKeywords:  Boolean,
-  gnirsKeywords: Boolean
+  gnirsKeywords: Boolean,
+  niriKeywords:  Boolean
 )

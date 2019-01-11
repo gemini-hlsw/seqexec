@@ -12,7 +12,7 @@ import argonaut._
 import Argonaut._
 import cats.data.EitherT
 import cats.effect.IO
-import gem.enum.KeywordName
+import gem.enum.DhsKeywordName
 import seqexec.model.dhs.ImageFileId
 import seqexec.server._
 import seqexec.server.keywords.DhsClient.ImageParameters
@@ -28,12 +28,6 @@ import cats.implicits._
   */
 class DhsClientHttp(val baseURI: String) extends DhsClient {
   import DhsClientHttp._
-
-  private val KeywordsLUT: Map[KeywordName, String] = Map(
-    KeywordName.INSTRUMENT -> "instrument",
-    KeywordName.OBSID      -> "obsid",
-    KeywordName.TELESCOP   -> "telescope"
-  )
 
   // Connection timeout, im milliseconds
   private val timeout = 10000
@@ -77,7 +71,10 @@ class DhsClientHttp(val baseURI: String) extends DhsClient {
     ("lifetime" := p.lifetime.str) ->: ("contributors" := p.contributors) ->: Json.jEmptyObject )
 
   implicit def keywordEncode: EncodeJson[InternalKeyword] = EncodeJson[InternalKeyword]( k =>
-    ("name" := KeywordsLUT.getOrElse(k.name, k.name.name)) ->: ("type" := KeywordType.dhsKeywordType(k.keywordType)) ->: ("value" := k.value) ->: Json.jEmptyObject )
+    ("name" := DhsKeywordName.all.find(_.keyword === k.name).map(_.name).getOrElse(k.name.name)) ->:
+      ("type" := KeywordType.dhsKeywordType(k.keywordType)) ->:
+      ("value" := k.value) ->:
+      Json.jEmptyObject )
 
   @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
   private def sendRequest[T](method: EntityEnclosingMethod, body: Json, errMsg: String)(implicit decoder: argonaut.DecodeJson[TrySeq[T]]): SeqAction[T] = EitherT ( IO.apply {
