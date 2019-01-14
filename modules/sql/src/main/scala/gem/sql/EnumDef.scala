@@ -43,6 +43,7 @@ object EnumDef {
     implicit def caseMagnitudeValue[S] = at[(S, MagnitudeValue)] { _ => Some("gem.math.MagnitudeValue") }
     implicit def caseOptionMagnitudeValue[S] = at[(S, Option[MagnitudeValue])] { _ => Some("gem.math.MagnitudeValue") }
     implicit def caseGnirsPixelScale[S] = at[(S, GnirsPixelScale)] { _ => Option.empty[String] }
+    implicit def caseKeywordName[S] = at[(S, KeywordName)] { _ => Option.empty[String] }
     implicit def caseEnumRef[T <: Symbol, S] = at[(S, EnumRef[T])] { _ => Option.empty[String] }
     implicit def caseLazyEnumRef[T <: Symbol, S] = at[(S, LazyEnumRef[T])] { _ => Option("cats.Eval") }
     implicit def caseOptionEnumRef[T <: Symbol, S] = at[(S, Option[EnumRef[T]])] { _ => Option.empty[String] }
@@ -79,6 +80,7 @@ object EnumDef {
     implicit def caseMagnitudeValue      [S <: Symbol] = at[(S, MagnitudeValue)        ] { case (s, _) => s"  val ${s.name}: MagnitudeValue" }
     implicit def caseOptionMagnitudeValue[S <: Symbol] = at[(S, Option[MagnitudeValue])] { case (s, _) => s"  val ${s.name}: Option[MagnitudeValue]" }
     implicit def caseGnirsPixelScale[S <: Symbol] = at[(S, GnirsPixelScale)] { case (s, _) => s"  val ${s.name}: GnirsPixelScale" }
+    implicit def caseKeywordName[S <: Symbol] = at[(S, KeywordName)] { case (s, _) => s"  val ${s.name}: KeywordName" }
 
     implicit def caseEnumRef[T <: Symbol, S <: Symbol](implicit w: Witness.Aux[T])       = at[(S, EnumRef[T])        ] { case (s, _) => s"  val ${s.name}: ${w.value.name}" }
     implicit def caseLazyEnumRef[T <: Symbol, S <: Symbol](implicit w: Witness.Aux[T])   = at[(S, LazyEnumRef[T])    ] { case (s, _) => s"  val ${s.name}: Eval[${w.value.name}]" }
@@ -115,6 +117,7 @@ object EnumDef {
     implicit val caseOptionWavelengthNm = at[Option[Wavelength.Nm]](a => a.fold("Option.empty[Wavelength]")(aʹ => s"""Some(Wavelength.fromAngstroms.unsafeGet(${aʹ.toAngstrom}))"""))
     implicit val caseOptionWavelengthUm = at[Option[Wavelength.Um]](a => a.fold("Option.empty[Wavelength]")(aʹ => s"""Some(Wavelength.fromAngstroms.unsafeGet(${aʹ.toAngstrom}))"""))
     implicit val caseGnirsPixelScale = at[GnirsPixelScale](a => s"GnirsPixelScale.${a.id}")
+    implicit val caseKeywordName = at[KeywordName](a => s"KeywordName.${a.id}")
 
     // scalastyle:off method.type
     implicit def caseEnumRef[T <: Symbol](implicit w: Witness.Aux[T])       = at[EnumRef[T]        ](a => s"${w.value.name}.${a.tag}")
