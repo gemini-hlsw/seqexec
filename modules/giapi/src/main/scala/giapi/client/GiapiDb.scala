@@ -7,7 +7,6 @@ import cats.effect.Sync
 import cats.effect.concurrent.Ref
 import cats.implicits._
 import cats.Applicative
-import cats.implicits._
 import monocle.Lens
 import monocle.function.At.at
 import monocle.function.At.atMap
