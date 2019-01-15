@@ -76,7 +76,7 @@ class SeqexecEngine(httpClient: Client[IO], settings: Settings[IO], sm: SeqexecM
     settings.gmosControl.command.fold(GmosSouthControllerEpics, GmosControllerSim.south),
     settings.gmosControl.command.fold(GmosNorthControllerEpics, GmosControllerSim.north),
     settings.gnirsControl.command.fold(GnirsControllerEpics, GnirsControllerSim),
-    GpiController(new GpiClient(settings.gpiGiapi), gpiGDS),
+    GpiController(GpiClient.gpiClient(settings.gpiGiapi), gpiGDS),
     GhostController(new GhostClient(settings.ghostGiapi), ghostGDS),
     settings.niriControl.command.fold(NiriControllerEpics, NiriControllerSim)
   )

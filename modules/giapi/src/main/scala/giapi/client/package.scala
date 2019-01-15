@@ -5,7 +5,6 @@ package giapi
 
 import cats._
 import cats.effect._
-import cats.effect.concurrent._
 import cats.effect.implicits._
 import cats.implicits._
 import edu.gemini.aspen.giapi.commands.HandlerResponse.Response
@@ -118,9 +117,9 @@ package client {
     private implicit val ioContextShift: ContextShift[IO] =
       IO.contextShift(ExecutionContext.global)
 
-    private final case class StatusStreamer(aggregate: StatusHandlerAggregate, ss: StatusService)
+    final case class StatusStreamer(aggregate: StatusHandlerAggregate, ss: StatusService)
 
-    private def statusGetter[F[_]: Sync](c: ActiveMQJmsProvider): F[StatusGetter] = Sync[F].delay {
+    def statusGetter[F[_]: Sync](c: ActiveMQJmsProvider): F[StatusGetter] = Sync[F].delay {
       val sg = new StatusGetter("statusGetter")
       sg.startJms(c)
       sg
@@ -131,7 +130,7 @@ package client {
         new CommandSenderClient(c)
       }
 
-    private def statusStreamer[F[_]: Sync](c: ActiveMQJmsProvider): F[StatusStreamer] = Sync[F].delay {
+    def statusStreamer[F[_]: Sync](c: ActiveMQJmsProvider): F[StatusStreamer] = Sync[F].delay {
       val aggregate     = new StatusHandlerAggregate()
       val statusService = new StatusService(aggregate, "statusService", "*")
       statusService.startJms(c)
@@ -248,9 +247,8 @@ package client {
 
           }
 
-        private def build(ref: Ref[F, ActiveMQJmsProvider]): F[Giapi[F]] =
+        private def build(c: ActiveMQJmsProvider): F[Giapi[F]] =
           for {
-            c  <- ref.get
             sg <- statusGetter[F](c)
             cc <- commandSenderClient[F](c)
             ss <- statusStreamer[F](c)
@@ -259,9 +257,8 @@ package client {
         def connect: F[Giapi[F]] =
           for {
             c   <- Sync[F].delay(new ActiveMQJmsProvider(url)) // Build the connection
-            ref <- Ref.of(c)                              // store a reference
             _   <- Sync[F].delay(c.startConnection())          // Start the connection
-            c   <- build(ref)                                  // Build the interpreter
+            c   <- build(c)                                    // Build the interpreter
           } yield c
       }
     // scalastyle:on

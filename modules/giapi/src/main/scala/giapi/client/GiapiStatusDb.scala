@@ -4,7 +4,6 @@
 package giapi.client
 
 import cats.Applicative
-import cats.Functor
 import cats.implicits._
 import cats.effect.Sync
 import cats.effect.Resource
@@ -14,64 +13,93 @@ import cats.effect.implicits._
 import edu.gemini.aspen.giapi.status.StatusHandler
 import edu.gemini.aspen.giapi.status.StatusItem
 import edu.gemini.aspen.giapi.statusservice.StatusHandlerAggregate
+import edu.gemini.jms.activemq.provider.ActiveMQJmsProvider
+import fs2.concurrent.Queue
+import fs2.Stream
 
 /////////////////////////////////////////////////////////////////
 // Links status streaming with the giapi db
 /////////////////////////////////////////////////////////////////
 trait GiapiStatusDb[F[_]] {
   def value(i: String): F[Option[StatusValue]]
+  def close: F[Unit]
 }
 
 object GiapiStatusDb {
-  def newStatusDb[F[_]: ConcurrentEffect, G[_]: Functor](
-    agg:   StatusHandlerAggregate,
-    items: List[String]): F[GiapiStatusDb[F]] = {
+  private def dbUpdate[F[_]: Applicative, A](db: GiapiDb[F], name: String, a: A): F[Unit] =
+    a match {
+      case a: Int =>
+        db.update[Int](name, a)
+      case a: String =>
+        db.update[String](name, a)
+      case a: Float =>
+        db.update[Float](name, a)
+      case a: Double =>
+        db.update[Double](name, a)
+      case _ =>
+        Applicative[F].unit
+    }
 
-    def streamItems(
-      db: GiapiDb[F]
-    ): F[Resource[F, StatusHandler]] =
-      Sync[F].delay {
+  def streamItemsToDb[F[_]: ConcurrentEffect](agg: StatusHandlerAggregate, db: GiapiDb[F], items: List[String]): F[Unit] = {
+    def statusHandler(q: Queue[F, (String, _)]) = new StatusHandler {
 
-        def statusHandler = new StatusHandler {
-
-          override def update[B](item: StatusItem[B]): Unit =
-            // Check the item name and attempt convert it to A
-            if (items.contains(item.getName)) {
-              val r = Option(item.getValue) match {
-                case Some(a: Int) =>
-                  db.update[Int](item.getName, a)
-                case Some(a: String) =>
-                  db.update[String](item.getName, a)
-                case Some(a: Float) =>
-                  db.update[Float](item.getName, a)
-                case Some(a: Double) =>
-                  db.update[Double](item.getName, a)
-                case _ =>
-                  Applicative[F].unit
-              }
-              r.toIO.unsafeRunAsync(_ => ())
-            }
-
-          override def getName: String = "StatusHandler"
+      override def update[B](item: StatusItem[B]): Unit =
+        // Check the item name and enqueue it
+        if (items.contains(item.getName)) {
+          Option(item.getValue).foreach { a =>
+            q.enqueue1((item.getName, a)).toIO.unsafeRunAsync(_ => ())
+          }
         }
 
-        // A trivial resource that binds and unbinds a status handler.
-        Resource.make(
-          Effect[F].delay {
-            val sh = statusHandler
-            agg.bindStatusHandler(sh)
-            sh
-          }
-        )(sh => Effect[F].delay(agg.unbindStatusHandler(sh)))
-      }
+      override def getName: String = "Giapi staus db"
+    }
+
+    // A trivial resource that binds and unbinds a status handler.
+    def bind(q: Queue[F, (String, _)]): Resource[F, StatusHandler] =
+      Resource.make(
+        Effect[F].delay {
+          val sh = statusHandler(q)
+          agg.bindStatusHandler(sh)
+          sh
+        }
+      )(sh => Effect[F].delay(agg.unbindStatusHandler(sh)))
+
+    // Create a queue and put updates to forward them to the db
+    val s = for {
+      q <- Stream.eval(Queue.unbounded[F, (String, _)])
+      r <- Stream.resource(bind(q))
+      _ <- q.dequeue.map { case (n, v) => dbUpdate(db, n, v) }
+    } yield r
+    s.compile.drain
+  }
+
+  /**
+   * Creates a new status db that listens for status items as they are produced
+   *
+   * @param url Url of the giapi server
+   * @param items List of items to monitor
+   */
+  def newStatusDb[F[_]: ConcurrentEffect](
+    url:   String,
+    items: List[String]
+  ): F[GiapiStatusDb[F]] = {
 
     for {
+      c  <- Sync[F].delay(new ActiveMQJmsProvider(url))       // Build the connection
+      ss <- Giapi.statusStreamer[F](c)                        // giapi artifacts
       db <- GiapiDb.newDb
-      _  <- streamItems(db)
+      f  <- streamItemsToDb[F](ss.aggregate, db, items).start // run in the background
     } yield
       new GiapiStatusDb[F] {
         def value(i: String): F[Option[StatusValue]] =
           db.value(i)
+
+        def close: F[Unit] =
+          for {
+            _ <- Sync[F].delay(ss.ss.stopJms())    // Close the listener
+            _ <- Sync[F].delay(c.stopConnection()) // Disconnect from amq
+            _ <- Sync[F].delay(f.cancel)           // Stop the fiber
+          } yield ()
       }
   }
 
