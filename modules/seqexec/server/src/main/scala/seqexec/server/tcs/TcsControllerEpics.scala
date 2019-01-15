@@ -22,6 +22,8 @@ object TcsControllerEpics extends TcsController {
   import FollowOption._
   import MountGuideOption._
 
+  val BottomPort = 1
+
   // Code to retrieve the current configuration from TCS. Include a lot of decoders
   implicit private val decodeMountGuideOption: DecodeEpicsValue[Integer, MountGuideOption] = DecodeEpicsValue((d: Integer)
   => if (d.toInt === 0) MountGuideOff else MountGuideOn)
@@ -178,7 +180,6 @@ object TcsControllerEpics extends TcsController {
     private val PARK_POS = "park-pos"
 
     def portFromSinkName(n: LightSinkName): Option[Int] = {
-      val BottomPort = 1
       val InvalidPort = 0
       (n match {
         case LightSinkName.Gmos |
@@ -303,18 +304,21 @@ object TcsControllerEpics extends TcsController {
     _ <- s.setNodcchopc(encode(c.getNodChop.get(NodChop(Beam.C, Beam.C))))
   } yield ()
 
-  private def setGuiderWfs(on: TcsEpics.WfsObserveCmd, off: EpicsCommand, c: GuiderSensorOption): SeqAction[Unit] =
+  private def setGuiderWfs(on: TcsEpics.WfsObserveCmd, off: EpicsCommand, c: GuiderSensorOption)
+  : SeqAction[Unit] = {
+    val NonStopExposures = -1
     c match {
       case GuiderSensorOff => off.mark
-      case GuiderSensorOn => on.setNoexp(-1) // Set number of exposures to non-stop (-1)
+      case GuiderSensorOn => on.setNoexp(NonStopExposures) // Set number of exposures to non-stop (-1)
     }
+  }
 
   // Special case: if source is the sky and the instrument is at the bottom port (port 1), the science fold must be parked.
   def setScienceFoldConfig(sfPos: ScienceFoldPosition): SeqAction[Unit] = sfPos match {
     case ScienceFoldPosition.Parked => TcsEpics.instance.scienceFoldParkCmd.mark
     case p@ScienceFoldPosition.Position(LightSource.Sky, sink) =>
       portFromSinkName(sink).flatMap(port =>
-       if (port === 1) TcsEpics.instance.scienceFoldParkCmd.mark.some
+       if (port === BottomPort) TcsEpics.instance.scienceFoldParkCmd.mark.some
        else encode(p).map(TcsEpics.instance.scienceFoldPosCmd.setScfold)
       ).getOrElse(SeqAction.void)
     case p: ScienceFoldPosition.Position => encode(p).map(TcsEpics.instance.scienceFoldPosCmd
@@ -338,7 +342,7 @@ object TcsControllerEpics extends TcsController {
     val hr = c.hrwfs.flatMap{
       case HrwfsConfig.Manual(h) => setHRPickupConfig(h).some
       case HrwfsConfig.Auto      => c.sfPos.flatMap{
-        case ScienceFoldPosition.Position(_, sink) => portFromSinkName(sink).map(_ === 1)
+        case ScienceFoldPosition.Position(_, sink) => portFromSinkName(sink).map(_ === BottomPort)
         case _                                     => None
       }.flatMap(park => if(park) setHRPickupConfig(HrwfsPickupPosition.Parked).some else None)
     }
