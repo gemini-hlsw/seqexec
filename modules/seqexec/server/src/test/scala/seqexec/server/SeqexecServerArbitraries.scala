@@ -18,7 +18,7 @@ import seqexec.server.gpi.GpiController
 import seqexec.server.gpi.GpiController._
 import seqexec.server.gcal.GcalController
 import seqexec.server.gcal.GcalController._
-import seqexec.server.tcs.{CRFollow, TcsController, TcsControllerEpics}
+import seqexec.server.tcs.{CRFollow, TcsController}
 import seqexec.server.keywords._
 import seqexec.model.enum.{BatchCommandState, Instrument}
 import seqexec.model.{Conditions, Operator}
@@ -93,9 +93,6 @@ object SeqexecServerArbitraries extends ArbTime {
   implicit val offsetCArb: Arbitrary[TcsController.OffsetC] = Arbitrary(arbitrary[TcsController.FocalPlaneOffset].map(TcsController.OffsetC.apply))
   implicit val offsetCCogen: Cogen[TcsController.OffsetC] =
     Cogen[TcsController.FocalPlaneOffset].contramap(_.self)
-  implicit val sfInstNameArb: Arbitrary[TcsControllerEpics.CodexScienceFoldPosition.SFInstName] = Arbitrary(Gen.oneOf(TcsControllerEpics.CodexScienceFoldPosition.instNameMap.values.toSeq))
-  implicit val sfInstNameCogen: Cogen[TcsControllerEpics.CodexScienceFoldPosition.SFInstName] =
-    Cogen[String].contramap(_.self)
 
   implicit val f2FPUArb: Arbitrary[Flamingos2.FPUnit] = Arbitrary(Gen.oneOf(Flamingos2.FPUnit.values()))
   implicit val f2FPUCogen: Cogen[Flamingos2.FPUnit] =

@@ -6,9 +6,9 @@ package seqexec.server.tcs
 import cats._
 import cats.data.{NonEmptyList, OneAnd}
 import cats.implicits._
-import seqexec.model.enum.Instrument
 import seqexec.server.SeqAction
 import edu.gemini.spModel.core.Wavelength
+import gem.enum.LightSinkName
 import squants.{Angle, Length}
 
 /**
@@ -195,7 +195,7 @@ object TcsController {
   sealed trait ScienceFoldPosition
   object ScienceFoldPosition {
     case object Parked extends ScienceFoldPosition
-    final case class Position(source: LightSource, sink: Instrument) extends ScienceFoldPosition
+    final case class Position(source: LightSource, sink: LightSinkName) extends ScienceFoldPosition
     implicit val show: Show[ScienceFoldPosition] = Show.fromToString
   }
 

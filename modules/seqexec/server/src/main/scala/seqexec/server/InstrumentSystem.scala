@@ -8,11 +8,12 @@ import fs2.Stream
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.keywords.KeywordsClient
 import edu.gemini.spModel.config2.Config
+import gem.enum.LightSinkName
 import squants.Time
 
 trait InstrumentSystem[F[_]] extends System[F] {
   // The name used for this instrument in the science fold configuration
-  val sfName: String
+  def sfName(config: Config): LightSinkName
   val contributorName: String
   val observeControl: InstrumentSystem.ObserveControl
 

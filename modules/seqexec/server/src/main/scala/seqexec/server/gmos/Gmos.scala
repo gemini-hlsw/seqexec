@@ -14,6 +14,7 @@ import edu.gemini.spModel.seqcomp.SeqConfigNames.{INSTRUMENT_KEY, OBSERVE_KEY}
 import java.lang.{Double => JDouble, Integer => JInt}
 
 import edu.gemini.spModel.gemini.gmos.GmosCommonType
+import gem.enum.LightSinkName
 import mouse.all._
 import org.log4s.{Logger, getLogger}
 
@@ -33,7 +34,7 @@ abstract class Gmos[T<:GmosController.SiteDependentTypes](controller: GmosContro
   import Gmos._
   import InstrumentSystem._
 
-  override val sfName: String = "gmos"
+  override def sfName(config: Config): LightSinkName = LightSinkName.Gmos
 
   override val contributorName: String = "gmosdc"
 
