@@ -13,18 +13,20 @@ import edu.gemini.spModel.gemini.gnirs.InstGNIRS._
 import edu.gemini.spModel.obscomp.InstConstants.{BIAS_OBSERVE_TYPE, DARK_OBSERVE_TYPE, OBSERVE_TYPE_PROP}
 import edu.gemini.spModel.seqcomp.SeqConfigNames.{INSTRUMENT_KEY, OBSERVE_KEY}
 import java.lang.{Double => JDouble, Integer => JInt}
-import seqexec.model.enum.{ Instrument, Resource }
+
+import gem.enum.LightSinkName
+import seqexec.model.enum.{Instrument, Resource}
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.gnirs.GnirsController.{CCConfig, DCConfig, Other, ReadMode}
 import seqexec.server._
-import seqexec.server.keywords.{DhsInstrument, DhsClient, KeywordsClient}
+import seqexec.server.keywords.{DhsClient, DhsInstrument, KeywordsClient}
 import squants.Time
 import squants.space.LengthConversions._
 import squants.time.TimeConversions._
 
 final case class Gnirs(controller: GnirsController, dhsClient: DhsClient) extends InstrumentSystem[IO] with DhsInstrument {
-  override val sfName: String = "gnirs"
+  override def sfName(config: Config): LightSinkName = LightSinkName.Gnirs
   override val contributorName: String = "ngnirsdc1"
   override val dhsInstrumentName: String = "GNIRS"
 

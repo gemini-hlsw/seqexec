@@ -4,16 +4,18 @@
 package seqexec.server.gpi
 
 import cats.data.EitherT
-import cats.effect.{ IO, Sync, Timer}
+import cats.effect.{IO, Sync, Timer}
 import cats.implicits._
 import cats.data.Reader
 import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.gemini.gpi.Gpi._
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
-import java.lang.{ Boolean => JBoolean }
-import java.lang.{ Double => JDouble }
-import java.lang.{ Integer => JInt }
+import java.lang.{Boolean => JBoolean}
+import java.lang.{Double => JDouble}
+import java.lang.{Integer => JInt}
+
 import fs2.Stream
+import gem.enum.LightSinkName
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.Resource
@@ -23,6 +25,7 @@ import seqexec.server.gpi.GpiController._
 import seqexec.server.keywords.GdsClient
 import seqexec.server.keywords.GdsInstrument
 import seqexec.server.keywords.KeywordsClient
+
 import scala.concurrent.duration._
 import squants.time.Milliseconds
 import squants.time.Seconds
@@ -43,7 +46,7 @@ final case class Gpi[F[_]: Sync: Timer](controller: GpiController[F])
 
   override val resource: Resource = Instrument.Gpi
 
-  override val sfName: String = "GPI"
+  override def sfName(config: Config): LightSinkName = LightSinkName.Gpi
 
   override val contributorName: String = "gpi"
 

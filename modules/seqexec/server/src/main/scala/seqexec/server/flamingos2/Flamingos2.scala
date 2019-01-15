@@ -12,13 +12,16 @@ import edu.gemini.spModel.gemini.flamingos2.Flamingos2._
 import edu.gemini.spModel.obscomp.InstConstants.{DARK_OBSERVE_TYPE, OBSERVE_TYPE_PROP}
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import java.lang.{Double => JDouble}
+
+import gem.enum.LightSinkName
+
 import scala.concurrent.duration.{Duration, SECONDS}
-import seqexec.model.enum.{ Instrument, Resource }
+import seqexec.model.enum.{Instrument, Resource}
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.flamingos2.Flamingos2Controller._
 import seqexec.server._
-import seqexec.server.keywords.{DhsInstrument, DhsClient, KeywordsClient}
+import seqexec.server.keywords.{DhsClient, DhsInstrument, KeywordsClient}
 import squants.time.{Seconds, Time}
 
 final case class Flamingos2(f2Controller: Flamingos2Controller, dhsClient: DhsClient) extends InstrumentSystem[IO] with DhsInstrument {
@@ -27,7 +30,7 @@ final case class Flamingos2(f2Controller: Flamingos2Controller, dhsClient: DhsCl
 
   override val resource: Resource = Instrument.F2
 
-  override val sfName: String = Flamingos2.sfName
+  override def sfName(config: Config): LightSinkName = LightSinkName.F2
 
   override val contributorName: String = "flamingos2"
 
@@ -59,8 +62,6 @@ final case class Flamingos2(f2Controller: Flamingos2Controller, dhsClient: DhsCl
 
 object Flamingos2 {
   val name: String = INSTRUMENT_NAME_PROP
-
-  val sfName: String = "f2"
 
   def fpuFromFPUnit(fpu: FPUnit): FocalPlaneUnit = fpu match {
     case FPUnit.FPU_NONE       => FocalPlaneUnit.Open

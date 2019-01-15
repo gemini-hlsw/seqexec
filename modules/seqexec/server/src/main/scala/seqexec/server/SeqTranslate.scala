@@ -179,7 +179,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
     for {
       stepType  <- calcStepType(config)
       inst      <- toInstrumentSys(stepType.instrument)
-      systems   <- calcSystems(stepType)
+      systems   <- calcSystems(config, stepType)
       headers   <- calcHeaders(config, stepType)
     } yield buildStep(inst, systems, headers)
   }
@@ -414,15 +414,16 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
   private def flatOrArcTcsSubsystems(inst: Instrument): NonEmptyList[TcsController.Subsystem] =
     NonEmptyList.of(AGUnit, (if (hasOI(inst)) List(OIWFS) else List.empty): _*)
 
-  private def calcSystems(stepType: StepType)(
+  private def calcSystems(config: Config, stepType: StepType)(
     implicit tio: Timer[IO]
   ): TrySeq[List[System[IO]]] = {
     stepType match {
-      case CelestialObject(inst) => toInstrumentSys(inst).map(_ :: List(Tcs(systems.tcs,
-        if(hasOI(inst)) all else allButOI, ScienceFoldPosition.Position(TcsController.LightSource.Sky, inst)),
+      case CelestialObject(inst) => toInstrumentSys(inst).map(sys => sys :: List(Tcs(systems.tcs,
+        if(hasOI(inst)) all else allButOI, ScienceFoldPosition.Position(TcsController.LightSource
+          .Sky, sys.sfName(config))),
         Gcal(systems.gcal, site == Site.GS)))
-      case FlatOrArc(inst)       => toInstrumentSys(inst).map(_ :: List(Tcs(systems.tcs,
-        flatOrArcTcsSubsystems(inst), ScienceFoldPosition.Position(TcsController.LightSource.GCAL, inst)),
+      case FlatOrArc(inst)       => toInstrumentSys(inst).map(sys => sys :: List(Tcs(systems.tcs,
+        flatOrArcTcsSubsystems(inst), ScienceFoldPosition.Position(TcsController.LightSource.GCAL, sys.sfName(config))),
         Gcal(systems.gcal, site == Site.GS)))
       case DarkOrBias(inst)      => toInstrumentSys(inst).map(List(_))
       case _                     => TrySeq.fail(Unexpected(s"Unsupported step type $stepType"))

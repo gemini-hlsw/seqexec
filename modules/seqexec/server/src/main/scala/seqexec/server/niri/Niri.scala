@@ -9,7 +9,7 @@ import cats.implicits._
 import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.seqcomp.SeqConfigNames.{INSTRUMENT_KEY, OBSERVE_KEY}
 import edu.gemini.spModel.gemini.niri.InstNIRI._
-import edu.gemini.spModel.gemini.niri.Niri.{WellDepth, ReadMode => OCSReadMode}
+import edu.gemini.spModel.gemini.niri.Niri.{Camera, WellDepth, ReadMode => OCSReadMode}
 import edu.gemini.spModel.obscomp.InstConstants.{BIAS_OBSERVE_TYPE, DARK_OBSERVE_TYPE, OBSERVE_TYPE_PROP}
 import edu.gemini.seqexec.server.niri.ReadMode
 import seqexec.server.ConfigUtilOps._
@@ -20,6 +20,7 @@ import seqexec.server.{ConfigResult, ConfigUtilOps, InstrumentSystem, ObserveCom
 import seqexec.server.keywords.{DhsClient, DhsInstrument, KeywordsClient}
 import java.lang.{Double => JDouble, Integer => JInt}
 
+import gem.enum.LightSinkName
 import seqexec.server.InstrumentSystem.{AbortObserveCmd, InfraredControl, StopObserveCmd}
 import seqexec.server.niri.NiriController._
 import squants.Time
@@ -30,7 +31,13 @@ final case class Niri(controller: NiriController, dhsClient: DhsClient)
 
   import Niri._
 
-  override val sfName: String = "niri"
+  override def sfName(config: Config): LightSinkName = getCameraConfig(config).map{
+    case Camera.F6     => LightSinkName.Niri_f6
+    case Camera.F14    => LightSinkName.Niri_f14
+    case Camera.F32 |
+         Camera.F32_PV => LightSinkName.Niri_f32
+  }.getOrElse(LightSinkName.Niri_f6)
+
   override val contributorName: String = "mko-dc-data-niri"
   override val observeControl: InstrumentSystem.ObserveControl =
     InfraredControl(StopObserveCmd(controller.stopObserve),
@@ -88,8 +95,11 @@ object Niri {
     }
   }
 
+  def getCameraConfig(config: Config): Either[ExtractFailure, Camera] =
+    config.extractAs[Camera](INSTRUMENT_KEY / CAMERA_PROP)
+
   def getCCCommonConfig(config: Config): TrySeq[Common] = (for {
-    cam <- config.extractAs[Camera](INSTRUMENT_KEY / CAMERA_PROP)
+    cam <- getCameraConfig(config)
     bms <- config.extractAs[BeamSplitter](INSTRUMENT_KEY / BEAM_SPLITTER_PROP)
     foc <- config.extractAs[Focus](INSTRUMENT_KEY / FOCUS_PROP)
     dsp <- config.extractAs[Disperser](INSTRUMENT_KEY / DISPERSER_PROP)

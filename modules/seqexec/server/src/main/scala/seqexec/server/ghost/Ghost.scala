@@ -11,6 +11,7 @@ import fs2.Stream
 import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import edu.gemini.spModel.gemini.ghost.{Ghost => SPGhost}
+import gem.enum.LightSinkName
 import gem.math.{Coordinates, Declination, RightAscension}
 import gem.optics.Format
 
@@ -34,7 +35,7 @@ final case class Ghost[F[_]: Sync](controller: GhostController[F])
 
   override val resource: Resource = Instrument.Ghost
 
-  override val sfName: String = "GHOST"
+  override def sfName(config: Config): LightSinkName = LightSinkName.Ghost
 
   override val contributorName: String = "ghost"
 
