@@ -153,7 +153,7 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
   )
   .jsSettings(commonJSSettings)
   .jvmSettings(
-    libraryDependencies += Fs2
+    libraryDependencies ++= Seq(Fs2, Jts)
   )
 
 lazy val db = project

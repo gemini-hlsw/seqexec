@@ -110,6 +110,9 @@ object Settings {
     val tucoVersion             = "0.3.1"
     val declineVersion          = "0.4.2"
 
+    // Java Libraries
+    val jts                     = "1.16.0"
+
     // test libraries
     val scalaTest               = "3.0.5"
     val scalaCheck              = "1.13.5"
@@ -195,6 +198,7 @@ object Settings {
     val Http4sXml              = "org.http4s"                         %%  "http4s-scala-xml"                 % LibraryVersions.http4sVersion
     val Http4sPrometheus       = "org.http4s"                         %%  "http4s-prometheus-server-metrics" % LibraryVersions.http4sVersion
     val Flyway                 = "org.flywaydb"                       %   "flyway-core"                      % LibraryVersions.flywayVersion
+    val Jts                    = "org.locationtech.jts"               %   "jts-core"                         % LibraryVersions.jts
     val Atto                   = Def.setting("org.tpolecat"           %%% "atto-core"                        % LibraryVersions.attoVersion)
     val Monocle                = Def.setting(Seq(
       "com.github.julien-truffaut" %%% "monocle-core"   % LibraryVersions.monocleVersion,
