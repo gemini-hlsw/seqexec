@@ -9,7 +9,9 @@ import cats.implicits._
 import gem.dao.DatabaseConfiguration
 import org.http4s._
 import org.http4s.dsl.io._
-import org.http4s.server.blaze.BlazeBuilder
+import org.http4s.server.blaze.BlazeServerBuilder
+import org.http4s.server.Router
+import org.http4s.implicits._
 
 import java.util.logging.Logger
 
@@ -81,9 +83,11 @@ object ImportServer extends IOApp {
         importServer.importProgram(progId)
     }
 
-    BlazeBuilder[IO]
+    val httpApp = Router[IO]("/import" -> service).orNotFound
+
+    BlazeServerBuilder[IO]
       .bindHttp(8989, "localhost")
-      .mountService(service, "/import")
+      .withHttpApp(httpApp)
       .resource.use(_ => IO.never)
       .start
       .as(ExitCode.Success)

@@ -19,7 +19,7 @@ import gem.Observation
 import gem.enum.Site
 import mouse.all._
 import org.log4s._
-import seqexec.engine.{Action, Event, Result, Sequence, fromF}
+import seqexec.engine._
 import seqexec.model.enum.{Instrument, Resource}
 import seqexec.model.{ActionType, StepState}
 import seqexec.model.dhs.ImageFileId
@@ -38,7 +38,7 @@ import seqexec.server.gws.{DummyGwsKeywordsReader, GwsHeader, GwsKeywordsReaderI
 import seqexec.server.tcs._
 import seqexec.server.tcs.TcsController.ScienceFoldPosition
 import seqexec.server.gnirs._
-import seqexec.server.niri.{Niri, NiriController, NiriHeader}
+import seqexec.server.niri._
 import squants.Time
 import squants.time.TimeConversions._
 
@@ -461,7 +461,10 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
         toInstrumentSys(inst).map(GpiHeader.header(_, systems.gpi.gdsClient, tcsKReader, ObsKeywordReaderImpl(config, site)))
       case Instrument.Ghost  =>
         GhostHeader.header().asRight
-      case Instrument.Niri   => NiriHeader.header.asRight
+      case Instrument.Niri   =>
+        val niriReader = if(settings.niriKeywords) NiriKeywordReaderImpl
+                          else NiriKeywordReaderDummy
+        toInstrumentSys(inst).map(NiriHeader.header(_, niriReader, tcsKReader))
       case _                 =>
         TrySeq.fail(Unexpected(s"Instrument $inst not supported."))
     }

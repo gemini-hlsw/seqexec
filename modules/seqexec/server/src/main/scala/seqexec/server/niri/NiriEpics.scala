@@ -163,9 +163,9 @@ class NiriEpics(epicsService: CaService, tops: Map[String, String]) {
   def detectorTemp: Option[Double] = Option(dcStatus.getDoubleAttribute("TDETABS").value)
     .map(_.toDouble)
 
-  def microcodeName: Option[String] = Option(dcStatus.getStringAttribute("UCODENAM").value)
+  def µcodeName: Option[String] = Option(dcStatus.getStringAttribute("UCODENAM").value)
 
-  def microcodeType: Option[Int] = Option(dcStatus.getIntegerAttribute("UCODETYP").value)
+  def µcodeType: Option[Int] = Option(dcStatus.getIntegerAttribute("UCODETYP").value)
     .map(_.toInt)
 
   def framesPerCycle: Option[Int] = Option(dcStatus.getIntegerAttribute("FRMSPCYCL").value)
