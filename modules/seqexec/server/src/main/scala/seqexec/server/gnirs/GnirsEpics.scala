@@ -152,7 +152,7 @@ class GnirsEpics(epicsService: CaService, tops: Map[String, String]) {
     GNIRS_TOP + "dc:observeC.VAL", classOf[CarStateGEM5])
   def observeState: Option[CarStateGEM5] = Option(observeCAttr.value)
 
-  def dhsConnected: Option[Boolean] = Option(dcState.getIntegerAttribute("dhcConnected").value)
+  def dhsConnected: Option[Boolean] = Option(dcState.getIntegerAttribute("dhsConnected").value)
     .map(_.toInt =!= 0)
 
   val arrayActiveAttr: Option[CaAttribute[JDetectorState]] = Option(dcState.addEnum(
