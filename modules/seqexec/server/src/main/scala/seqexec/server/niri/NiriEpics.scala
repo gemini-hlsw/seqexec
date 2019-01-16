@@ -84,6 +84,11 @@ class NiriEpics(epicsService: CaService, tops: Map[String, String]) {
       epicsService.getCommandSender("niri::endObserve"))
   }
 
+  object configDCCmd extends EpicsCommand {
+    override protected val cs: Option[CaCommandSender] =
+      Option(epicsService.getCommandSender("niri::obsSetup"))
+  }
+
   private val stopCS: Option[CaCommandSender] = Option(epicsService.getCommandSender("niri::stop"))
   private val observeAS: Option[CaApplySender] = Option(epicsService.createObserveSender(
     "niri::observeCmd", s"${NIRI_TOP}dc:apply", s"${NIRI_TOP}dc:applyC", s"${NIRI_TOP}dc:observeC",

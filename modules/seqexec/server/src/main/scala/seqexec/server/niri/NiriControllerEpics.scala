@@ -241,12 +241,20 @@ object NiriControllerEpics extends NiriController {
   }
 
   override def applyConfig(config: NiriController.NiriConfig): SeqAction[Unit] = {
-    val params = configDC(config.dc) ++ configCC(config.cc)
+    val paramsDC = configDC(config.dc)
+    val params =  paramsDC ++ configCC(config.cc)
 
-    val cfgActions = if(params.isEmpty) SeqAction(EpicsCommand.Completed)
-                     else params.sequence.void *>
-                       epicsSys.configCmd.setTimeout(ConfigTimeout) *>
-                       epicsSys.configCmd.post
+    val cfgActions1 = if(params.isEmpty) SeqAction(EpicsCommand.Completed)
+                      else params.sequence.void *>
+                        epicsSys.configCmd.setTimeout(ConfigTimeout) *>
+                        epicsSys.configCmd.post
+    // Weird NIRI behavior. The main IS apply is nor connected to the DC apply, but triggering the
+    // IS apply writes the DC parameters. So to configure the DC, we need to set the DC parameters
+    // in the IS, trigger the IS apply, and then trigger the DC apply.
+    val cfgActions = if(paramsDC.isEmpty) cfgActions1
+                     else cfgActions1 *>
+                       epicsSys.configDCCmd.setTimeout(DefaultTimeout) *>
+                       epicsSys.configDCCmd.post
 
     SeqAction(Log.debug("Starting NIRI configuration")) *>
       (if(epicsSys.dhsConnected.exists(identity)) SeqAction.void

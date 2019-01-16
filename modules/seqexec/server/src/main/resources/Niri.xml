@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Records xmlns="http://www.gemini.edu/CaSchema">
     <!--
-    NIRI is a bit weird, in that it has records spread over two tops.
-    NIS is like the instrument sequencer top. Its main apply record links to all the others.
+    NIRI is a bit weird, in that it has records spread over two tops. NIS is like the instrument
+    sequencer top. It cascades to other apply records, but not to the DC apply.
     There are strange things, like almost all mechanisms are under NIS:, but the window cover is
     under niri:
     -->
@@ -38,6 +38,10 @@
         <command name="niri::stop">
             <record>dc:stop</record>
             <description>Stop observation</description>
+        </command>
+        <command name="niri::obsSetup">
+            <record>dc:obsSetup</record>
+            <description>DC configuration setup</description>
         </command>
     </Apply>
     <Apply name="niri::apply">
