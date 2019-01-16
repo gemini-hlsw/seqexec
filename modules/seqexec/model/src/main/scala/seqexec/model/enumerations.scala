@@ -130,7 +130,18 @@ object enumerations {
       "NBF_H2O" -> "H2O ice (3.050 um)",
       "NBF_HC" -> "hydrocarbon (3.295 um)",
       "NBF_BRACONT" -> "Br(alpha) cont (3.990 um)",
-      "NBF_BRA" -> "Br(alpha) (4.052 um)",
+      "NBF_BRA" -> "Br(alpha) (4.052 um)"
+    )
+
+  }
+
+  object camera {
+
+    val Niri: Map[String, String] = Map(
+      "F6" -> "f/6 (0.12 arcsec/pix)",
+      "F14" -> "f/14 (0.05 arcsec/pix)",
+      "F32" -> "f/32 (0.02 arcsec/pix)",
+      "F32_PV" -> "f/32 + pupil viewer"
     )
 
   }

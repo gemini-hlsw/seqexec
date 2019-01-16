@@ -58,6 +58,7 @@ final class ModelLensesSpec extends CatsSuite with ModelLenses {
   checkAll("instrument fpu custom mask Optional",
            OptionalTests(instrumentFPUCustomMaskO))
   checkAll("instrument filter Optional", OptionalTests(instrumentFilterO))
+  checkAll("instrument camera Optional", OptionalTests(instrumentCameraO))
   checkAll("instrument disperser Optional", OptionalTests(instrumentDisperserO))
   checkAll("instrument disperser lambda Optional",
            OptionalTests(instrumentDisperserLambdaO))

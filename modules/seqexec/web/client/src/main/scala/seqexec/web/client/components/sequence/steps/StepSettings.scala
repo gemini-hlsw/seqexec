@@ -340,3 +340,34 @@ object ObservingModeCell {
 
   def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
 }
+
+/**
+  * Component to display the camera
+  */
+object CameraCell {
+  final case class Props(s: Step, i: Instrument)
+
+  implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
+
+  private val component = ScalaComponent
+    .builder[Props]("CameraCell")
+    .stateless
+    .render_P { p =>
+      def cameraName(s: Step): Option[String] = p.i match {
+        case Instrument.Niri =>
+          instrumentCameraO
+            .getOption(s)
+            .flatMap(enumerations.camera.Niri.get)
+        case _ => None
+      }
+
+      <.div(
+        SeqexecStyles.componentLabel,
+        cameraName(p.s).getOrElse("Unknown"): String
+      )
+    }
+    .configure(Reusability.shouldComponentUpdate)
+    .build
+
+  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
+}
