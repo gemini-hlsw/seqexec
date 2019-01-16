@@ -100,11 +100,11 @@ object operations {
   }
 
   private val instrumentOperations: Map[Instrument, SupportedOperations] = Map(
-    F2 -> F2SupportedOperations,
+    F2    -> F2SupportedOperations,
     GmosS -> GmosSupportedOperations,
     GmosN -> GmosSupportedOperations,
     Gnirs -> GnirsSupportedOperations,
-    Niri -> NiriSupportedOperations
+    Niri  -> NiriSupportedOperations
   )
 
   final implicit class SupportedOperationsOps(val i: Instrument)

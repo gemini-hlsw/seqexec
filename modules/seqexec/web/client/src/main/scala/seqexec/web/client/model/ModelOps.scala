@@ -157,6 +157,12 @@ object ModelOps {
             InstrumentProperties.Filter,
             InstrumentProperties.ObservingMode,
             InstrumentProperties.Disperser)
+      case Instrument.Niri =>
+        Set(InstrumentProperties.Exposure,
+            InstrumentProperties.Offsets,
+            InstrumentProperties.Filter,
+            InstrumentProperties.FPU,
+            InstrumentProperties.Disperser)
       case Instrument.Ghost => Set.empty
       case _                =>
         Set(InstrumentProperties.Exposure,

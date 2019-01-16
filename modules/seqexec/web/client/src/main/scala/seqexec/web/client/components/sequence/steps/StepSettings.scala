@@ -110,6 +110,10 @@ object FilterCell {
           instrumentFilterO
             .getOption(s)
             .flatMap(enumerations.filter.F2Filter.get)
+        case Instrument.Niri =>
+          instrumentFilterO
+            .getOption(s)
+            .flatMap(enumerations.filter.Niri.get)
         case Instrument.Gpi => gpiFilter(s)
         case _              => None
       }
