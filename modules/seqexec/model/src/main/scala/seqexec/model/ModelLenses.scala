@@ -206,6 +206,10 @@ trait ModelLenses {
   val instrumentFilterO: Optional[Step, String] =
     stepObserveOptional(SystemName.Instrument, "filter", Iso.id[String].asPrism)
 
+  // Composite lens to find the instrument camera, e.g. Niri
+  val instrumentCameraO: Optional[Step, String] =
+    stepObserveOptional(SystemName.Instrument, "camera", Iso.id[String].asPrism)
+
   // Composite lens to find the instrument disperser for GMOS
   val instrumentDisperserO: Optional[Step, String] =
     stepObserveOptional(SystemName.Instrument,

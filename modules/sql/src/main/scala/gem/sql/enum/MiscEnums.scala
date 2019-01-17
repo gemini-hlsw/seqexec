@@ -84,6 +84,11 @@ object MiscEnums {
       EnumDef.fromQuery("DhsKeywordName", "DHS Keyword names") {
         type R = Record.`'tag -> String, 'keyword -> KeywordName, 'name -> String`.T
         sql"SELECT keyword, keyword tag, keyword tag, name FROM e_dhs_keyword_names".query[(String, R)]
+      },
+
+      EnumDef.fromQuery("LightSinkName", "SF Sink names") {
+        type R = Record.`'tag -> String, 'name -> String`.T
+        sql"SELECT id, id tag, name FROM e_light_sink_names".query[(String, R)]
       }
     )
 

@@ -93,6 +93,57 @@ object enumerations {
       "DARK" -> "Dark"
     )
 
+    val Niri: Map[String, String] = Map(
+      "BBF_Y" -> "Y (1.02 um)",
+      "BBF_J" -> "J (1.25 um)",
+      "BBF_H" -> "H (1.65 um)",
+      "BBF_KPRIME" -> "K(prime) (2.12 um)",
+      "BBF_KSHORT" -> "K(short) (2.15 um)",
+      "BBF_K" -> "K (2.20 um)",
+      "BBF_LPRIME" -> "L(prime) (3.78 um)",
+      "BBF_MPRIME" -> "M(prime) (4.68 um)",
+      "BBF_J_ORDER_SORT" -> "Order sorting J (1.30 um)",
+      "BBF_H_ORDER_SORT" -> "Order sorting H (1.69 um)",
+      "BBF_K_ORDER_SORT" -> "Order sorting K (2.20 um)",
+      "BBF_L_ORDER_SORT" -> "Order sorting L (3.50 um)",
+      "BBF_M_ORDER_SORT" -> "Order sorting M (5.00 um)",
+      "J_CONTINUUM_106" -> "J-continuum (1.065 um)",
+      "NBF_HEI" -> "HeI (1.083 um)",
+      "NBF_PAGAMMA" -> "Pa(gamma) (1.094 um)",
+      "J_CONTINUUM_122" -> "J-continuum (1.122 um)",
+      "NBF_H" -> "J-continuum (1.207 um)",
+      "NBF_PABETA" -> "Pa(beta) (1.282 um)",
+      "NBF_HCONT" -> "H-continuum (1.570 um)",
+      "NBF_CH4SHORT" -> "CH4(short) (1.56 um)",
+      "NBF_CH4LONG" -> "CH4(long) (1.70 um)",
+      "NBF_FEII" -> "[FeII] (1.644 um)",
+      "NBF_H2O_2045" -> "H2O ice (2.045 um)",
+      "NBF_HE12P2S" -> "HeI (2p2s) (2.059 um)",
+      "NBF_KCONT1" -> "K-continuum (2.09 um)",
+      "NBF_H210" -> "H2 1-0 S(1) (2.122 um)",
+      "NBF_BRGAMMA" -> "Br(gamma) (2.166 um)",
+      "NBF_H221" -> "H2 2-1 S(1) (2.248 um)",
+      "NBF_KCONT2" -> "K-continuum (2.27 um)",
+      "NBF_CH4ICE" -> "CH4 ice (2.275 um)",
+      "NBF_CO20" -> "CO 2-0 (bh) (2.294 um)",
+      "NBF_CO31" -> "CO 3-1 (bh) (2.323 um)",
+      "NBF_H2O" -> "H2O ice (3.050 um)",
+      "NBF_HC" -> "hydrocarbon (3.295 um)",
+      "NBF_BRACONT" -> "Br(alpha) cont (3.990 um)",
+      "NBF_BRA" -> "Br(alpha) (4.052 um)"
+    )
+
+  }
+
+  object camera {
+
+    val Niri: Map[String, String] = Map(
+      "F6" -> "f/6 (0.12 arcsec/pix)",
+      "F14" -> "f/14 (0.05 arcsec/pix)",
+      "F32" -> "f/32 (0.02 arcsec/pix)",
+      "F32_PV" -> "f/32 + pupil viewer"
+    )
+
   }
 
   object fpu {

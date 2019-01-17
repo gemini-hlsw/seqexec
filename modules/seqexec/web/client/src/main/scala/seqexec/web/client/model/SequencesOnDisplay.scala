@@ -141,10 +141,16 @@ final case class SequencesOnDisplay(tabs: Zipper[SeqexecTab]) {
           curTableState,
           TabOperations.Default).some
     }
+    val ids = s.collect {
+      case Some(s) => s.id
+    }
     // Store current focus
     val currentFocus = tabs.focus
     // Save the current preview
-    val onlyPreview  = SequencesOnDisplay.previewTab.headOption(this)
+    val onlyPreview  = SequencesOnDisplay
+      .previewTab
+      .headOption(this)
+      .filter(p => ids.contains(p.obsId))
     val sequenceTabs = (onlyPreview :: instTabs).collect { case Some(x) => x }
     // new zipper
     val newZipper =
