@@ -4,14 +4,18 @@
 package giapi.client.gpi
 
 import cats.implicits._
+import cats.effect.IO
 import cats.effect.Sync
 import cats.effect.Resource
 import cats.effect.ConcurrentEffect
 import edu.gemini.aspen.giapi.commands.Activity
 import edu.gemini.aspen.giapi.commands.SequenceCommand
 import fs2.Stream
-import giapi.client.commands.{Command, CommandResult, Configuration}
-import giapi.client.{Giapi, GiapiClient}
+import giapi.client.commands.Command
+import giapi.client.commands.CommandResult
+import giapi.client.commands.Configuration
+import giapi.client.Giapi
+import giapi.client.GiapiClient
 import giapi.client.GiapiStatusDb
 import giapi.client.syntax.giapiconfig._
 import mouse.boolean._
@@ -20,7 +24,9 @@ import scala.concurrent.ExecutionContext
 /**
   * Client for GPI
   */
-final class GpiClient[F[_]: Sync](override val giapi: Giapi[F], statusDb: GiapiStatusDb[F]) extends GiapiClient[F] {
+final class GpiClient[F[_]: Sync] private (override val giapi: Giapi[F],
+                                           statusDb:           GiapiStatusDb[F])
+    extends GiapiClient[F] {
   import GiapiClient.DefaultCommandTimeout
 
   ///////////////
@@ -107,54 +113,64 @@ final class GpiClient[F[_]: Sync](override val giapi: Giapi[F], statusDb: GiapiS
 
   override def genericApply(configuration: Configuration): F[CommandResult] = {
     // TODO Implement a smarter apply
-    def smartApply(): F[CommandResult] = {
+    def smartApply(): F[CommandResult] =
       giapi.command(Command(
                       SequenceCommand.APPLY,
                       Activity.PRESET_START,
                       configuration
                     ),
                     DefaultCommandTimeout)
-    }
 
     for {
-      _   <- statusDb.value("gpi:fpu") // placeholder
+      _ <- statusDb.value("gpi:fpu") // placeholder
       a <- smartApply()
     } yield a
   }
 }
 
 object GpiClient {
-  def gpiClient[F[_]: ConcurrentEffect](url: String, context: ExecutionContext): Resource[F, GpiClient[F]] = {
+  // Used for simulations
+  def simulatedGpiClient(ec: ExecutionContext): Resource[IO, GpiClient[IO]] =
+    Resource.liftF(
+      for {
+        c <- Giapi.giapiConnectionIO(ec).connect
+      } yield new GpiClient(c, GiapiStatusDb.simulatedDb[IO])
+    )
+
+  def gpiClient[F[_]: ConcurrentEffect](
+    url:     String,
+    context: ExecutionContext): Resource[F, GpiClient[F]] = {
     val giapi: Resource[F, Giapi[F]] =
       Resource.make(
-        Giapi.giapiConnection[F](url, context)
-             .connect
-        )(_.close)
+        Giapi.giapiConnection[F](url, context).connect
+      )(_.close)
 
     val db: Resource[F, GiapiStatusDb[F]] =
       Resource.make(
         GiapiStatusDb.newStatusDb[F](url, List("gpi:heartbeat"))
-        )(_.close)
+      )(_.close)
 
     for {
       c <- giapi
       d <- db
     } yield new GpiClient[F](c, d)
   }
+
 }
 
 object GPIExample extends cats.effect.IOApp {
 
-  import cats.effect.{ IO, ExitCode }
+  import cats.effect.IO
+  import cats.effect.ExitCode
   import scala.concurrent.duration._
 
   val url = "failover:(tcp://172.17.107.50:61616)"
 
-  val gpi: Resource[IO, GpiClient[IO]] = GpiClient.gpiClient[IO](url, ExecutionContext.global)
+  val gpi: Resource[IO, GpiClient[IO]] =
+    GpiClient.gpiClient[IO](url, ExecutionContext.global)
 
   val gpiStatus: IO[(Vector[Int], Int, String, Float)] =
     gpi.use { client =>
-      println(client)
       for {
         hs <- client.heartbeatS.flatMap(_.take(3).compile.toVector)
         h  <- client.heartbeat

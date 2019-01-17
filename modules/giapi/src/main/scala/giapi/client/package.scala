@@ -20,9 +20,11 @@ import giapi.client.commands._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 import shapeless.Typeable._
-import fs2.{Stream, concurrent}
+import fs2.Stream
+import fs2.concurrent
 import fs2.concurrent.Queue
-import giapi.client.commands.{Command, CommandResultException}
+import giapi.client.commands.Command
+import giapi.client.commands.CommandResultException
 
 package object client {
 
@@ -204,17 +206,18 @@ package client {
       */
     // scalastyle:off
     def giapiConnection[F[_]: ConcurrentEffect](
-        url: String,
-        ec: ExecutionContext): GiapiConnection[F] =
+      url: String,
+      ec:  ExecutionContext
+    ): GiapiConnection[F] =
       new GiapiConnection[F] {
-        private def giapi(c: ActiveMQJmsProvider,
+        private def giapi(c:  ActiveMQJmsProvider,
                           sg: StatusGetter,
                           cc: CommandSenderClient,
                           ss: StatusStreamer) =
           new Giapi[F] {
             private val commandsAckTimeout                  = 2000.milliseconds
             implicit val executionContext: ExecutionContext = ec
-            implicit val timer: Timer[IO] = IO.timer(ec)
+            implicit val timer: Timer[IO]                   = IO.timer(ec)
 
             override def get[A: ItemGetter](statusItem: String): F[A] =
               getO[A](statusItem).flatMap {
@@ -256,9 +259,9 @@ package client {
 
         def connect: F[Giapi[F]] =
           for {
-            c   <- Sync[F].delay(new ActiveMQJmsProvider(url)) // Build the connection
-            _   <- Sync[F].delay(c.startConnection())          // Start the connection
-            c   <- build(c)                                    // Build the interpreter
+            c <- Sync[F].delay(new ActiveMQJmsProvider(url)) // Build the connection
+            _ <- Sync[F].delay(c.startConnection()) // Start the connection
+            c <- build(c) // Build the interpreter
           } yield c
       }
     // scalastyle:on
@@ -295,6 +298,7 @@ package client {
         override def close: IO[Unit] = IO.unit
       })
     }
+
   }
 
 }

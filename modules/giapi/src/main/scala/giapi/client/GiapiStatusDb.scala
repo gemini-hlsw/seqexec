@@ -26,7 +26,9 @@ trait GiapiStatusDb[F[_]] {
 }
 
 object GiapiStatusDb {
-  private def dbUpdate[F[_]: Applicative, A](db: GiapiDb[F], name: String, a: A): F[Unit] =
+  private def dbUpdate[F[_]: Applicative, A](db:   GiapiDb[F],
+                                             name: String,
+                                             a:    A): F[Unit] =
     a match {
       case a: Int =>
         db.update[Int](name, a)
@@ -40,7 +42,9 @@ object GiapiStatusDb {
         Applicative[F].unit
     }
 
-  def streamItemsToDb[F[_]: ConcurrentEffect](agg: StatusHandlerAggregate, db: GiapiDb[F], items: List[String]): F[Unit] = {
+  def streamItemsToDb[F[_]: ConcurrentEffect](agg:   StatusHandlerAggregate,
+                                              db:    GiapiDb[F],
+                                              items: List[String]): F[Unit] = {
     def statusHandler(q: Queue[F, (String, _)]) = new StatusHandler {
 
       override def update[B](item: StatusItem[B]): Unit =
@@ -74,19 +78,29 @@ object GiapiStatusDb {
   }
 
   /**
-   * Creates a new status db that listens for status items as they are produced
-   *
-   * @param url Url of the giapi server
-   * @param items List of items to monitor
-   */
+    * Creates a new status db in simulation
+    */
+  def simulatedDb[F[_]: Applicative]: GiapiStatusDb[F] =
+    new GiapiStatusDb[F] {
+      def value(i: String): F[Option[StatusValue]] =
+        Applicative[F].pure(none)
+
+      def close: F[Unit] = Applicative[F].pure(())
+    }
+
+  /**
+    * Creates a new status db that listens for status items as they are produced
+    *
+    * @param url Url of the giapi server
+    * @param items List of items to monitor
+    */
   def newStatusDb[F[_]: ConcurrentEffect](
     url:   String,
     items: List[String]
-  ): F[GiapiStatusDb[F]] = {
-
+  ): F[GiapiStatusDb[F]] =
     for {
-      c  <- Sync[F].delay(new ActiveMQJmsProvider(url))       // Build the connection
-      ss <- Giapi.statusStreamer[F](c)                        // giapi artifacts
+      c  <- Sync[F].delay(new ActiveMQJmsProvider(url)) // Build the connection
+      ss <- Giapi.statusStreamer[F](c) // giapi artifacts
       db <- GiapiDb.newDb
       f  <- streamItemsToDb[F](ss.aggregate, db, items).start // run in the background
     } yield
@@ -96,11 +110,10 @@ object GiapiStatusDb {
 
         def close: F[Unit] =
           for {
-            _ <- Sync[F].delay(ss.ss.stopJms())    // Close the listener
+            _ <- Sync[F].delay(ss.ss.stopJms()) // Close the listener
             _ <- Sync[F].delay(c.stopConnection()) // Disconnect from amq
-            _ <- Sync[F].delay(f.cancel)           // Stop the fiber
+            _ <- Sync[F].delay(f.cancel) // Stop the fiber
           } yield ()
       }
-  }
 
 }
