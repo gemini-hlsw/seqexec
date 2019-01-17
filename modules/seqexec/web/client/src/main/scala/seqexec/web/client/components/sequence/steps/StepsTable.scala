@@ -54,8 +54,9 @@ object ColWidths {
   val ExposureWidth: Double      = 75
   val DisperserWidth: Double     = 100
   val ObservingModeWidth: Double = 180
-  val FilterWidth: Double        = 100
+  val FilterWidth: Double        = 180
   val FPUWidth: Double           = 100
+  val CameraWidth: Double        = 180
   val ObjectTypeWidth: Double    = 75
   val SettingsWidth: Double      = 34
 }
@@ -125,6 +126,7 @@ object StepsTable {
     val showExposure: Boolean     = showProp(InstrumentProperties.Exposure)
     val showFilter: Boolean       = showProp(InstrumentProperties.Filter)
     val showFPU: Boolean          = showProp(InstrumentProperties.FPU)
+    val showCamera: Boolean       = showProp(InstrumentProperties.Camera)
     val isPreview: Boolean        = steps.map(_.isPreview).getOrElse(false)
     val hasControls: Boolean      = canOperate && !isPreview
     val canSetBreakpoint: Boolean = canOperate && !isPreview
@@ -293,6 +295,11 @@ object StepsTable {
     (_, _, _, row: StepRow, _) =>
       ObjectTypeCell(ObjectTypeCell.Props(row.step, size))
 
+  def cameraRenderer(
+    i: Instrument
+  ): CellRenderer[js.Object, js.Object, StepRow] =
+    (_, _, _, row: StepRow, _) => CameraCell(CameraCell.Props(row.step, i))
+
   private def stepRowStyle(step: Step): GStyle = step match {
     case s if s.hasError                       => SeqexecStyles.rowError
     case s if s.status === StepState.Running   => SeqexecStyles.rowWarning
@@ -457,6 +464,20 @@ object StepsTable {
             )))
       .filter(_ => p.showExposure && exposureVisible)
 
+  def cameraColumn(p: Props, cameraVisible: Boolean): Option[Table.ColumnArg] =
+    p.steps
+      .map(
+        i =>
+          Column(
+            Column.propsNoFlex(
+              ColWidths.CameraWidth,
+              "camera",
+              label        = "Camera",
+              className    = SeqexecStyles.centeredCell.htmlClass,
+              cellRenderer = cameraRenderer(i.instrument)
+            )))
+      .filter(_ => p.showCamera && cameraVisible)
+
   def fpuColumn(p: Props, fpuVisible: Boolean): Option[Table.ColumnArg] =
     p.steps
       .map(
@@ -527,25 +548,32 @@ object StepsTable {
   // Columns for the table
   private def columns(b: Backend, s: Size): List[Table.ColumnArg] = {
     val p = b.props
-    val (offsetVisible, exposureVisible, disperserVisible, fpuVisible, filterVisible, objectSize) =
+    val (offsetVisible,
+         exposureVisible,
+         disperserVisible,
+         fpuVisible,
+         cameraVisible,
+         filterVisible,
+         objectSize) =
       s.width match {
         case w if w < PhoneCut =>
-          (false, false, false, false, false, SSize.Tiny)
+          (false, false, false, false, false, false, SSize.Tiny)
         case w if w < LargePhoneCut =>
-          (false, true, false, false, false, SSize.Small)
+          (false, true, false, false, false, false, SSize.Small)
         case _ =>
-          (b.props.showOffsets, true, true, true, true, SSize.Small)
+          (b.props.showOffsets, true, true, true, true, true, SSize.Small)
       }
 
-    val (offsetCol, offsetWidth)        = offsetColumn(p, offsetVisible)
-    val disperserCol                    = disperserColumn(p, disperserVisible)
-    val observingModeCol                = observingModeColumn(p)
-    val exposureCol                     = exposureColumn(p, exposureVisible)
-    val fpuCol: Option[Table.ColumnArg] = fpuColumn(p, fpuVisible)
-    val iconCol                         = iconColumn(b)
-    val filterCol                       = filterColumn(p, filterVisible)
-    val typeCol                         = typeColumn(p, objectSize)
-    val settingsCol                     = settingsColumn(p)
+    val (offsetCol, offsetWidth) = offsetColumn(p, offsetVisible)
+    val disperserCol             = disperserColumn(p, disperserVisible)
+    val observingModeCol         = observingModeColumn(p)
+    val exposureCol              = exposureColumn(p, exposureVisible)
+    val fpuCol                   = fpuColumn(p, fpuVisible)
+    val cameraCol                = cameraColumn(p, cameraVisible)
+    val iconCol                  = iconColumn(b)
+    val filterCol                = filterColumn(p, filterVisible)
+    val typeCol                  = typeColumn(p, objectSize)
+    val settingsCol              = settingsColumn(p)
 
     // Let's precisely calculate the width of the control column
     val colsWidth =
@@ -556,6 +584,7 @@ object StepsTable {
         disperserCol.fold(0.0)(_ => ColWidths.DisperserWidth) +
         filterCol.fold(0.0)(_ => ColWidths.FilterWidth) +
         fpuCol.fold(0.0)(_ => ColWidths.FPUWidth) +
+        cameraCol.fold(0.0)(_ => ColWidths.CameraWidth) +
         observingModeCol.fold(0.0)(_ => ColWidths.ObservingModeWidth) +
         ColWidths.ObjectTypeWidth +
         ColWidths.SettingsWidth
@@ -572,6 +601,7 @@ object StepsTable {
       disperserCol,
       filterCol,
       fpuCol,
+      cameraCol,
       typeCol,
       settingsCol
     ).collect { case Some(x) => x }
@@ -643,9 +673,8 @@ object StepsTable {
     )
 
   // We want clicks to be processed only if the click is not on the first row with the breakpoint/skip controls
-  private def allowedClick(
-    index: Int,
-    onRowClick: Option[OnRowClick])(e: ReactMouseEvent): Callback =
+  private def allowedClick(index: Int, onRowClick: Option[OnRowClick])(
+    e:                            ReactMouseEvent): Callback =
     onRowClick
       .filter(_ => e.clientX > ColWidths.ControlWidth)
       .map(h => h(index))
@@ -720,11 +749,13 @@ object StepsTable {
 
   // Wire it up from VDOM
   def render(b: Backend): VdomElement =
-    TableContainer(TableContainer.Props(b.props.hasControls, size =>
-      ref
-        .component(stepsTableProps(b)(size))(
-          columns(b, size).map(_.vdomElement): _*)
-        .vdomElement))
+    TableContainer(
+      TableContainer.Props(b.props.hasControls,
+                           size =>
+                             ref
+                               .component(stepsTableProps(b)(size))(
+                                 columns(b, size).map(_.vdomElement): _*)
+                               .vdomElement))
 
   private val component = ScalaComponent
     .builder[Props]("StepsTable")
