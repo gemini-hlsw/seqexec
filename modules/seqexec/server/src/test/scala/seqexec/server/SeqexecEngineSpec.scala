@@ -6,9 +6,10 @@ package seqexec.server
 import cats.effect.{ ContextShift, IO, Timer }
 import cats.implicits._
 import fs2.concurrent.Queue
+import giapi.client.gpi.GpiClient
+import giapi.client.ghost.GhostClient
 import gem.Observation
 import gem.enum.Site
-import giapi.client.Giapi
 import io.prometheus.client._
 import java.time.LocalDate
 import java.util.UUID
@@ -39,6 +40,9 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
   implicit val ioTimer: Timer[IO] =
     IO.timer(ExecutionContext.global)
 
+  val gpiSim = GpiClient.simulatedGpiClient(scala.concurrent.ExecutionContext.Implicits.global).use(IO(_)).unsafeRunSync
+  val ghostSim = GhostClient.simulatedGhostClient(scala.concurrent.ExecutionContext.Implicits.global).use(IO(_)).unsafeRunSync
+
   private val defaultSettings = Settings(Site.GS,
     odbHost = "localhost",
     date = LocalDate.of(2017, 1, 1),
@@ -61,8 +65,8 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
     instForceError = false,
     failAt = 0,
     10.seconds,
-    tag[GpiSettings][Giapi[IO]](Giapi.giapiConnectionIO(scala.concurrent.ExecutionContext.Implicits.global).connect.unsafeRunSync),
-    tag[GhostSettings][Giapi[IO]](Giapi.giapiConnectionIO(scala.concurrent.ExecutionContext.Implicits.global).connect.unsafeRunSync),
+    gpiSim,
+    ghostSim,
     tag[GpiSettings][Uri](uri("http://localhost:8888/xmlrpc")),
     tag[GhostSettings][Uri](uri("http://localhost:8888/xmlrpc"))
   )

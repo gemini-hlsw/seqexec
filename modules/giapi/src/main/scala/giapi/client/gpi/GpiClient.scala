@@ -164,7 +164,7 @@ object GPIExample extends cats.effect.IOApp {
   import cats.effect.ExitCode
   import scala.concurrent.duration._
 
-  val url = "failover:(tcp://172.17.107.50:61616)"
+  val url = "failover:(tcp://127.0.0.1:61616)"
 
   val gpi: Resource[IO, GpiClient[IO]] =
     GpiClient.gpiClient[IO](url, ExecutionContext.global)
