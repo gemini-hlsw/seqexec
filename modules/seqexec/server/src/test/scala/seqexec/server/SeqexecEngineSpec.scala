@@ -65,8 +65,6 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
     instForceError = false,
     failAt = 0,
     10.seconds,
-    gpiSim,
-    ghostSim,
     tag[GpiSettings][Uri](uri("http://localhost:8888/xmlrpc")),
     tag[GhostSettings][Uri](uri("http://localhost:8888/xmlrpc"))
   )
@@ -194,7 +192,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
     }
 
   private val sm = SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry()).unsafeRunSync
-  private val seqexecEngine = SeqexecEngine(GdsClient.alwaysOkClient, defaultSettings, sm)
+  private val seqexecEngine = SeqexecEngine(GdsClient.alwaysOkClient, gpiSim, ghostSim, defaultSettings, sm)
   private def advanceOne(q: EventQueue, s0: EngineState, put: IO[Either[SeqexecFailure, Unit]]): IO[Option[EngineState]] =
     (put *> seqexecEngine.stream(q.dequeue)(s0).take(1).compile.last).map(_.map(_._2))
 
