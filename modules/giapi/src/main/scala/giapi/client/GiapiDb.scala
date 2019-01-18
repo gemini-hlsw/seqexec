@@ -7,9 +7,6 @@ import cats.effect.Sync
 import cats.effect.concurrent.Ref
 import cats.implicits._
 import cats.Applicative
-import monocle.Lens
-import monocle.function.At.at
-import monocle.function.At.atMap
 
 sealed trait StatusValue extends Product with Serializable
 
@@ -31,11 +28,8 @@ trait GiapiDb[F[_]] {
 }
 
 object GiapiDb {
-  def newDb[F[_]: Sync](): F[GiapiDb[F]] =
+  def newDb[F[_]: Sync]: F[GiapiDb[F]] =
     Ref.of[F, Map[String, StatusValue]](Map.empty).map { ref =>
-      def dbat(i: String): Lens[Map[String, StatusValue], Option[StatusValue]] =
-        at(i)
-
       new GiapiDb[F] {
         def value(i: String): F[Option[StatusValue]] =
           ref.get.map(_.get(i))
@@ -43,13 +37,13 @@ object GiapiDb {
         def update[A: ItemGetter](i: String, s: A): F[Unit] =
           ItemGetter[A].value(s) match {
             case Some(a: Int) =>
-              ref.update(dbat(i).set(StatusValue.IntValue(a).some))
+              ref.update(_ + (i -> StatusValue.IntValue(a)))
             case Some(a: String) =>
-              ref.update(dbat(i).set(StatusValue.StringValue(a).some))
+              ref.update(_ + (i -> StatusValue.StringValue(a)))
             case Some(a: Float) =>
-              ref.update(dbat(i).set(StatusValue.FloatValue(a).some))
+              ref.update(_ + (i -> StatusValue.FloatValue(a)))
             case Some(a: Double) =>
-              ref.update(dbat(i).set(StatusValue.DoubleValue(a).some))
+              ref.update(_ + (i -> StatusValue.DoubleValue(a)))
             case _ =>
               Applicative[F].unit
           }

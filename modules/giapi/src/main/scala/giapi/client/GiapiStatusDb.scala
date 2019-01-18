@@ -22,30 +22,31 @@ import fs2.Stream
 /////////////////////////////////////////////////////////////////
 trait GiapiStatusDb[F[_]] {
   def value(i: String): F[Option[StatusValue]]
-  def close: F[Unit]
+  private[giapi] def close: F[Unit]
 }
 
 object GiapiStatusDb {
-  private def dbUpdate[F[_]: Applicative, A](db:   GiapiDb[F],
-                                             name: String,
-                                             a:    A): F[Unit] =
+  private def dbUpdate[F[_]: Applicative](db:   GiapiDb[F],
+                                          name: String,
+                                          a:    Any): F[Unit] =
     a match {
       case a: Int =>
-        db.update[Int](name, a)
+        db.update(name, a)
       case a: String =>
-        db.update[String](name, a)
+        db.update(name, a)
       case a: Float =>
-        db.update[Float](name, a)
+        db.update(name, a)
       case a: Double =>
-        db.update[Double](name, a)
+        db.update(name, a)
       case _ =>
         Applicative[F].unit
     }
 
-  def streamItemsToDb[F[_]: ConcurrentEffect](agg:   StatusHandlerAggregate,
-                                              db:    GiapiDb[F],
-                                              items: List[String]): F[Unit] = {
-    def statusHandler(q: Queue[F, (String, _)]) = new StatusHandler {
+  private def streamItemsToDb[F[_]: ConcurrentEffect](
+    agg:   StatusHandlerAggregate,
+    db:    GiapiDb[F],
+    items: List[String]): F[Unit] = {
+    def statusHandler(q: Queue[F, (String, Any)]) = new StatusHandler {
 
       override def update[B](item: StatusItem[B]): Unit =
         // Check the item name and enqueue it
@@ -59,7 +60,7 @@ object GiapiStatusDb {
     }
 
     // A trivial resource that binds and unbinds a status handler.
-    def bind(q: Queue[F, (String, _)]): Resource[F, StatusHandler] =
+    def bind(q: Queue[F, (String, Any)]): Resource[F, StatusHandler] =
       Resource.make(
         Effect[F].delay {
           val sh = statusHandler(q)
@@ -70,10 +71,10 @@ object GiapiStatusDb {
 
     // Create a queue and put updates to forward them to the db
     val s = for {
-      q <- Stream.eval(Queue.unbounded[F, (String, _)])
-      r <- Stream.resource(bind(q))
-      _ <- q.dequeue.map { case (n, v) => dbUpdate(db, n, v) }
-    } yield r
+      q <- Stream.eval(Queue.unbounded[F, (String, Any)])
+      _ <- Stream.resource(bind(q))
+      _ <- q.dequeue.evalMap { case (n, v) => dbUpdate(db, n, v) }
+    } yield ()
     s.compile.drain
   }
 

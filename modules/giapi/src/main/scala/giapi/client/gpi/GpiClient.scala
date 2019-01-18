@@ -95,8 +95,8 @@ final class GpiClient[F[_]: Sync] private (override val giapi: Giapi[F],
       DefaultCommandTimeout)
 
   def ifsConfigure(integrationTime: Double,
-                   coAdds: Int,
-                   readoutMode: Int): F[CommandResult] =
+                   coAdds:          Int,
+                   readoutMode:     Int): F[CommandResult] =
     giapi.command(
       Command(
         SequenceCommand.APPLY,
@@ -113,7 +113,7 @@ final class GpiClient[F[_]: Sync] private (override val giapi: Giapi[F],
 
   override def genericApply(configuration: Configuration): F[CommandResult] = {
     // TODO Implement a smarter apply
-    def smartApply(): F[CommandResult] =
+    def smartApply: F[CommandResult] =
       giapi.command(Command(
                       SequenceCommand.APPLY,
                       Activity.PRESET_START,
@@ -123,7 +123,7 @@ final class GpiClient[F[_]: Sync] private (override val giapi: Giapi[F],
 
     for {
       _ <- statusDb.value("gpi:fpu") // placeholder
-      a <- smartApply()
+      a <- smartApply
     } yield a
   }
 }
@@ -150,10 +150,7 @@ object GpiClient {
         GiapiStatusDb.newStatusDb[F](url, List("gpi:heartbeat"))
       )(_.close)
 
-    for {
-      c <- giapi
-      d <- db
-    } yield new GpiClient[F](c, d)
+    (giapi, db).mapN { new GpiClient[F](_, _) }
   }
 
 }
