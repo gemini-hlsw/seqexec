@@ -66,11 +66,13 @@ class SeqexecEngine(httpClient: Client[IO], settings: Settings[IO], sm: SeqexecM
 
   private val systems = SeqTranslate.Systems(
     odbProxy,
-    settings.dhsControl.command.fold(DhsClientHttp(settings.dhsURI), DhsClientSim(settings.date)),
+    settings.dhsControl.command.fold(DhsClientHttp(httpClient, settings.dhsURI),
+      DhsClientSim(settings.date)),
     settings.tcsControl.command.fold(TcsControllerEpics, TcsControllerSim),
     settings.gcalControl.command.fold(GcalControllerEpics, GcalControllerSim),
     settings.f2Control.command.fold(Flamingos2ControllerEpics,
-      settings.instForceError.fold(Flamingos2ControllerSimBad(settings.failAt), Flamingos2ControllerSim)),
+      settings.instForceError.fold(Flamingos2ControllerSimBad(settings.failAt),
+        Flamingos2ControllerSim)),
     settings.gmosControl.command.fold(GmosSouthControllerEpics, GmosControllerSim.south),
     settings.gmosControl.command.fold(GmosNorthControllerEpics, GmosControllerSim.north),
     settings.gnirsControl.command.fold(GnirsControllerEpics, GnirsControllerSim),
@@ -716,7 +718,7 @@ object SeqexecEngine extends SeqexecConfiguration {
   ): Kleisli[IO, Config, Settings[IO]] = Kleisli { cfg: Config =>
     val site                    = cfg.require[Site]("seqexec-engine.site")
     val odbHost                 = cfg.require[String]("seqexec-engine.odb")
-    val dhsServer               = cfg.require[String]("seqexec-engine.dhsServer")
+    val dhsServer               = cfg.require[Uri]("seqexec-engine.dhsServer")
     val dhsControl              = cfg.require[ControlStrategy]("seqexec-engine.systemControl.dhs")
     val f2Control               = cfg.require[ControlStrategy]("seqexec-engine.systemControl.f2")
     val gcalControl             = cfg.require[ControlStrategy]("seqexec-engine.systemControl.gcal")

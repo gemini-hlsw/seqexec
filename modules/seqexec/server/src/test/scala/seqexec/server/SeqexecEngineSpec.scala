@@ -42,7 +42,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
   private val defaultSettings = Settings(Site.GS,
     odbHost = "localhost",
     date = LocalDate.of(2017, 1, 1),
-    dhsURI = "http://localhost/",
+    dhsURI = uri("http://localhost/"),
     dhsControl = Simulated,
     f2Control = Simulated,
     gcalControl = Simulated,

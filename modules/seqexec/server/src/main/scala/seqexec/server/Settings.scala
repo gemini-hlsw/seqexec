@@ -16,7 +16,7 @@ trait GhostSettings
 final case class Settings[F[_]](site:                    Site,
                                 odbHost:                 String,
                                 date:                    LocalDate,
-                                dhsURI:                  String,
+                                dhsURI:                  Uri,
                                 dhsControl:              ControlStrategy,
                                 f2Control:               ControlStrategy,
                                 gcalControl:             ControlStrategy,

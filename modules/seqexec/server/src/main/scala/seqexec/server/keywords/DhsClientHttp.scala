@@ -8,113 +8,85 @@ import java.time.format.DateTimeFormatter
 import java.util.concurrent.atomic.AtomicInteger
 
 import org.log4s._
-import argonaut._
-import Argonaut._
-import cats.data.EitherT
 import cats.effect.IO
+import cats.effect.Timer
+import cats.data.EitherT
+import cats.implicits._
 import gem.enum.DhsKeywordName
 import seqexec.model.dhs.ImageFileId
-import seqexec.server._
+import seqexec.server.{SeqAction, SeqexecFailure, TrySeq}
 import seqexec.server.keywords.DhsClient.ImageParameters
 import seqexec.server.SeqexecFailure.SeqexecExceptionWhile
-import org.apache.commons.httpclient.HttpClient
-import org.apache.commons.httpclient.methods.{EntityEnclosingMethod, PostMethod, PutMethod}
-
-import scala.io.Source
+import io.circe.syntax._
 import cats.implicits._
+import io.circe.{Decoder, DecodingFailure, Encoder, Json}
+import org.http4s.client.Client
+import org.http4s._
+import org.http4s.dsl.io._
+import org.http4s.client.dsl.io._
+import org.http4s.circe._
+import org.http4s.client.middleware.{Retry, RetryPolicy}
+import scala.concurrent.duration._
 
 /**
   * Implementation of DhsClient that interfaces with the real DHS over the http interface
   */
-class DhsClientHttp(val baseURI: String) extends DhsClient {
+class DhsClientHttp(base: Client[IO], baseURI: Uri)(implicit timer: Timer[IO]) extends DhsClient {
   import DhsClientHttp._
 
-  // Connection timeout, im milliseconds
-  private val timeout = 10000
+  @SuppressWarnings(Array("org.wartremover.warts.Var"))
+  private val client = {
+    val max = 2
+    var attemptsCounter = 1 // scalastyle:ignore
+    val policy = RetryPolicy[IO] { attempts: Int =>
+      if (attempts >= max) None
+      else {
+        attemptsCounter = attemptsCounter + 1
+        Some(10.milliseconds)
+      }
+    }
+    Retry(policy)(base)
+  }
 
-  implicit def errorDecode: DecodeJson[Error] = DecodeJson[Error]( c => for {
-      t   <- (c --\ "type").as[ErrorType]
-      msg <- (c --\ "message").as[String]
-    } yield Error(t, msg)
-  )
+  override def createImage(p: ImageParameters): SeqAction[ImageFileId] = {
+    val req = POST(
+      Json.obj("createImage" := p.asJson),
+      baseURI
+    )
+    client.expect[TrySeq[ImageFileId]](req)(jsonOf[IO, TrySeq[ImageFileId]])
+      .attemptT
+      .leftMap(SeqexecExceptionWhile("creating image in DHS", _): SeqexecFailure)
+      .flatMap(EitherT.fromEither(_))
+  }
 
-  implicit def obsIdDecode: DecodeJson[TrySeq[ImageFileId]] = DecodeJson[TrySeq[ImageFileId]](c => {
-    val r = c --\ "response"
-    val s = (r --\ "status").as[String]
-    s.flatMap {
-      case "success" =>
-        (r --\ "result").as[String].map(TrySeq(_))
-      case "error"   =>
-        (r --\ "errors").as[List[Error]].map(l =>
-          TrySeq.fail[ImageFileId](SeqexecFailure.Unexpected(l.mkString(", ")))
+  def setParameters(id: ImageFileId, p: ImageParameters): SeqAction[Unit] = {
+    val req = PUT(
+      Json.obj("setParameters" := p.asJson),
+      baseURI / id
+    )
+    client.expect[TrySeq[Unit]](req)(jsonOf[IO, TrySeq[Unit]])
+      .attemptT
+      .leftMap(SeqexecExceptionWhile("setting image parameters in DHS", _))
+      .flatMap(EitherT.fromEither(_))
+  }
+
+  override def setKeywords(id: ImageFileId, keywords: KeywordBag, finalFlag: Boolean)
+  : SeqAction[Unit] = {
+    val req = PUT(
+      Json.obj("setKeywords" :=
+        Json.obj(
+          "final" := finalFlag,
+          "keywords" := keywords.keywords
         )
-      case r         =>
-        DecodeResult.fail(s"Unknown response: $r", s.history.getOrElse(CursorHistory.empty))
-    }
-  } )
+      ),
+      baseURI / id / "keywords"
+    )
+    client.expect[TrySeq[Unit]](req)(jsonOf[IO, TrySeq[Unit]])
+      .attemptT
+      .leftMap(SeqexecExceptionWhile("sending keywords to DHS", _))
+      .flatMap(EitherT.fromEither(_))
+  }
 
-  implicit def unitDecode: DecodeJson[TrySeq[Unit]] = DecodeJson[TrySeq[Unit]]( c => {
-    val r = c --\ "response"
-    val s = (r --\ "status").as[String]
-    s flatMap {
-      case "success" =>
-        DecodeResult.ok(TrySeq(()))
-      case "error"   =>
-        (r --\ "errors").as[List[Error]].map(
-          l => TrySeq.fail[Unit](SeqexecFailure.Unexpected(l.mkString(", "))))
-      case r         =>
-        DecodeResult.fail(s"Unknown response: $r", s.history.getOrElse(CursorHistory.empty))
-    }
-  } )
-
-  implicit def imageParametersEncode: EncodeJson[DhsClient.ImageParameters] = EncodeJson[DhsClient.ImageParameters]( p =>
-    ("lifetime" := p.lifetime.str) ->: ("contributors" := p.contributors) ->: Json.jEmptyObject )
-
-  implicit def keywordEncode: EncodeJson[InternalKeyword] = EncodeJson[InternalKeyword]( k =>
-    ("name" := DhsKeywordName.all.find(_.keyword === k.name).map(_.name).getOrElse(k.name.name)) ->:
-      ("type" := KeywordType.dhsKeywordType(k.keywordType)) ->:
-      ("value" := k.value) ->:
-      Json.jEmptyObject )
-
-  @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
-  private def sendRequest[T](method: EntityEnclosingMethod, body: Json, errMsg: String)(implicit decoder: argonaut.DecodeJson[TrySeq[T]]): SeqAction[T] = EitherT ( IO.apply {
-      val client = new HttpClient()
-
-      client.setConnectionTimeout(timeout)
-
-      method.addRequestHeader("Content-Type", "application/json")
-      method.setRequestBody(body.nospaces)
-
-      client.executeMethod(method)
-
-      val r = Source.fromInputStream(method.getResponseBodyAsStream).getLines().mkString.decodeOption[TrySeq[T]](decoder)
-
-      method.releaseConnection()
-
-      r.getOrElse(TrySeq.fail[T](SeqexecFailure.Execution(errMsg)))
-    }.attempt.map {
-      case Left(e)  => SeqexecExceptionWhile("connecting to DHS Server", e).asLeft
-      case Right(r) => r
-    }
-  )
-
-  @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
-  private def createImage(reqBody: Json): SeqAction[ImageFileId] =
-    sendRequest[ImageFileId](new PostMethod(baseURI), Json.jSingleObject("createImage", reqBody), "Unable to get label")
-
-  @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
-  def createImage: SeqAction[ImageFileId] = createImage(Json.jEmptyObject)
-
-  @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
-  override def createImage(p: ImageParameters): SeqAction[ImageFileId] = createImage(p.asJson)
-
-  def setParameters(id: ImageFileId, p: ImageParameters): SeqAction[Unit] =
-    sendRequest[Unit](new PutMethod(baseURI + "/" + id), Json.jSingleObject("setParameters", p.asJson), "Unable to set parameters for image " + id)
-
-  override def setKeywords(id: ImageFileId, keywords: KeywordBag, finalFlag: Boolean): SeqAction[Unit] =
-    sendRequest[Unit](new PutMethod(baseURI + "/" + id + "/keywords"),
-      Json.jSingleObject("setKeywords", ("final" := finalFlag) ->: ("keywords" := keywords.keywords) ->: Json.jEmptyObject ),
-      "Unable to write keywords for image " + id)
 }
 
 object DhsClientHttp {
@@ -124,7 +96,9 @@ object DhsClientHttp {
   object DhsError extends ErrorType("DHS_ERROR")
   object InternalServerError extends ErrorType("INTERNAL_SERVER_ERROR")
 
-  implicit def errorTypeDecode: DecodeJson[ErrorType] = DecodeJson[ErrorType]( c =>  c.as[String].map {
+  implicit def errorTypeDecode: Decoder[ErrorType] = Decoder.instance[ErrorType](c =>  c
+    .as[String]
+    .map {
       case BadRequest.str          => BadRequest
       case DhsError.str            => DhsError
       case InternalServerError.str => InternalServerError
@@ -132,11 +106,62 @@ object DhsClientHttp {
     }
   )
 
+  implicit def errorDecode: Decoder[Error] = Decoder.instance[Error]( c =>
+    for {
+      t   <- c.downField("type").as[ErrorType]
+      msg <- c.downField("message").as[String]
+    } yield Error(t, msg)
+  )
+
+  implicit def obsIdDecode: Decoder[TrySeq[ImageFileId]] = Decoder.instance[TrySeq[ImageFileId]](
+    c => {
+      val r = c.downField("response")
+      val s = r.downField("status").as[String]
+      s.flatMap {
+        case "success" =>
+          r.downField("result").as[String].map(TrySeq(_))
+        case "error"   =>
+          r.downField("errors").as[List[Error]].map(l =>
+            TrySeq.fail[ImageFileId](SeqexecFailure.Unexpected(l.mkString(", ")))
+          )
+        case r         =>
+          Left(DecodingFailure(s"Unknown response: $r", c.history))
+      }
+    } )
+
+  implicit def unitDecode: Decoder[TrySeq[Unit]] = Decoder.instance[TrySeq[Unit]]( c => {
+    val r = c.downField("response")
+    val s = r.downField("status").as[String]
+    s flatMap {
+      case "success" =>
+        Right(TrySeq(()))
+      case "error"   =>
+        r.downField("errors").as[List[Error]].map(
+          l => TrySeq.fail[Unit](SeqexecFailure.Unexpected(l.mkString(", "))))
+      case r         =>
+        Left(DecodingFailure(s"Unknown response: $r", c.history))
+    }
+  } )
+
+  implicit def imageParametersEncode: Encoder[DhsClient.ImageParameters] =
+    Encoder.instance[DhsClient.ImageParameters](p => Json.obj(
+      "lifetime" := p.lifetime.str,
+      "contributors" := p.contributors
+    ))
+
+  implicit def keywordEncode: Encoder[InternalKeyword] = Encoder.instance[InternalKeyword]( k =>
+    Json.obj(
+      "name" := DhsKeywordName.all.find(_.keyword === k.name).map(_.name).getOrElse(k.name.name),
+      "type" := KeywordType.dhsKeywordType(k.keywordType),
+      "value" := k.value
+    )
+  )
+
   final case class Error(t: ErrorType, msg: String) {
     override def toString = s"(${t.str}) $msg"
   }
 
-  def apply(uri: String): DhsClient = new DhsClientHttp(uri)
+  def apply(client: Client[IO], uri: Uri)(implicit timer: Timer[IO]): DhsClient = new DhsClientHttp(client, uri)
 }
 
 /**
