@@ -49,7 +49,7 @@ import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 import shapeless.tag
 
-class SeqexecEngine(httpClient: Client[IO], settings: Settings, sm: SeqexecMetrics)(
+class SeqexecEngine(httpClient: Client[IO], gpi: GpiClient[IO], ghost: GhostClient[IO], settings: Settings, sm: SeqexecMetrics)(
   implicit ceio: ConcurrentEffect[IO], tio: Timer[IO]
 ) {
   import SeqexecEngine._
@@ -74,8 +74,8 @@ class SeqexecEngine(httpClient: Client[IO], settings: Settings, sm: SeqexecMetri
     settings.gmosControl.command.fold(GmosSouthControllerEpics, GmosControllerSim.south),
     settings.gmosControl.command.fold(GmosNorthControllerEpics, GmosControllerSim.north),
     settings.gnirsControl.command.fold(GnirsControllerEpics, GnirsControllerSim),
-    GpiController(settings.gpi, gpiGDS),
-    GhostController(settings.ghost, ghostGDS),
+    GpiController(gpi, gpiGDS),
+    GhostController(ghost, ghostGDS),
     settings.niriControl.command.fold(NiriControllerEpics, NiriControllerSim)
   )
 
@@ -503,10 +503,10 @@ class SeqexecEngine(httpClient: Client[IO], settings: Settings, sm: SeqexecMetri
 
 object SeqexecEngine extends SeqexecConfiguration {
 
-  def apply(httpClient: Client[IO], settings: Settings, c: SeqexecMetrics)(
+  def apply(httpClient: Client[IO], gpi: GpiClient[IO], ghost: GhostClient[IO], settings: Settings, c: SeqexecMetrics)(
     implicit ceio: ConcurrentEffect[IO],
               tio: Timer[IO]
-  ): SeqexecEngine = new SeqexecEngine(httpClient, settings, c)
+  ): SeqexecEngine = new SeqexecEngine(httpClient, gpi, ghost, settings, c)
 
   def splitWhere[A](l: List[A])(p: A => Boolean): (List[A], List[A]) =
     l.splitAt(l.indexWhere(p))
@@ -674,6 +674,20 @@ object SeqexecEngine extends SeqexecConfiguration {
     }._2
   }
 
+  def gpiClient(control: ControlStrategy, gpiUrl: String, ec: ExecutionContext)(implicit cs: ContextShift[IO]): cats.effect.Resource[IO, GpiClient[IO]] =
+    if (control === FullControl) {
+      GpiClient.gpiClient[IO](gpiUrl, ec)
+    } else {
+      GpiClient.simulatedGpiClient(ec)
+    }
+
+  def ghostClient(control: ControlStrategy, ghostUrl: String, ec: ExecutionContext)(implicit cs: ContextShift[IO]): cats.effect.Resource[IO, GhostClient[IO]] =
+    if (control === FullControl) {
+      GhostClient.ghostClient[IO](ghostUrl, ec)
+    } else {
+      GhostClient.simulatedGhostClient(ec)
+    }
+
   private def decodeTops(s: String): Map[String, String] =
     s.split("=|,").grouped(2).collect {
       case Array(k, v) => k.trim -> v.trim
@@ -686,7 +700,7 @@ object SeqexecEngine extends SeqexecConfiguration {
   }
 
   // scalastyle:off
-  def seqexecConfiguration(ec: ExecutionContext)(
+  def seqexecConfiguration(
     implicit cs: ContextShift[IO]
   ): Kleisli[IO, Config, Settings] = Kleisli { cfg: Config =>
     val site                    = cfg.require[Site]("seqexec-engine.site")
@@ -695,13 +709,11 @@ object SeqexecEngine extends SeqexecConfiguration {
     val dhsControl              = cfg.require[ControlStrategy]("seqexec-engine.systemControl.dhs")
     val f2Control               = cfg.require[ControlStrategy]("seqexec-engine.systemControl.f2")
     val gcalControl             = cfg.require[ControlStrategy]("seqexec-engine.systemControl.gcal")
-    val ghostUrl                = cfg.require[String]("seqexec-engine.ghostUrl")
     val ghostControl            = cfg.require[ControlStrategy]("seqexec-engine.systemControl.ghost")
     val ghostGdsControl         = cfg.require[ControlStrategy]("seqexec-engine.systemControl.ghostGds")
     val gmosControl             = cfg.require[ControlStrategy]("seqexec-engine.systemControl.gmos")
     val gnirsControl            = cfg.require[ControlStrategy]("seqexec-engine.systemControl.gnirs")
     val gpiControl              = cfg.require[ControlStrategy]("seqexec-engine.systemControl.gpi")
-    val gpiUrl                  = cfg.require[String]("seqexec-engine.gpiUrl")
     val gpiGdsControl           = cfg.require[ControlStrategy]("seqexec-engine.systemControl.gpiGds")
     val gsaoiControl            = cfg.require[ControlStrategy]("seqexec-engine.systemControl.gsaoi")
     val gwsControl              = cfg.require[ControlStrategy]("seqexec-engine.systemControl.gws")
@@ -761,55 +773,33 @@ object SeqexecEngine extends SeqexecConfiguration {
 
     val smartGcal = smartGcalEnable.fold(initSmartGCal(smartGCalHost, smartGCalDir), IO.unit)
 
-    def gpiClient: cats.effect.Resource[IO, GpiClient[IO]] =
-      if (gpiControl === FullControl) {
-        GpiClient.gpiClient[IO](gpiUrl, ec)
-      } else {
-        GpiClient.simulatedGpiClient(ec)
-      }
-
-    def ghostClient: cats.effect.Resource[IO, GhostClient[IO]] =
-      if (gpiControl === FullControl) {
-        GhostClient.ghostClient[IO](ghostUrl, ec)
-      } else {
-        GhostClient.simulatedGhostClient(ec)
-      }
-
-    def settings: IO[Settings] = {
-      val giapiClients = for {
-        now   <- cats.effect.Resource.liftF(IO(LocalDate.now))
-        gpi   <- gpiClient
-        ghost <- ghostClient
-      } yield (now, gpi, ghost)
-      giapiClients.use { case (now, gpi, ghost) =>
-        IO.delay(Settings(site,
-                       odbHost,
-                       now,
-                       dhsServer,
-                       dhsControl,
-                       f2Control,
-                       gcalControl,
-                       ghostControl,
-                       gmosControl,
-                       gnirsControl,
-                       gpiControl,
-                       gpiGdsControl,
-                       ghostGdsControl,
-                       gsaoiControl,
-                       gwsControl,
-                       nifsControl,
-                       niriControl,
-                       tcsControl,
-                       odbNotifications,
-                       instForceError,
-                       failAt,
-                       odbQueuePollingInterval,
-                       gpi,
-                       ghost,
-                       gpiGDS,
-                       ghostGDS))
-                     }
-                   }
+    def settings: IO[Settings] =
+        IO(LocalDate.now).map { now =>
+          Settings(site,
+                   odbHost,
+                   now,
+                   dhsServer,
+                   dhsControl,
+                   f2Control,
+                   gcalControl,
+                   ghostControl,
+                   gmosControl,
+                   gnirsControl,
+                   gpiControl,
+                   gpiGdsControl,
+                   ghostGdsControl,
+                   gsaoiControl,
+                   gwsControl,
+                   nifsControl,
+                   niriControl,
+                   tcsControl,
+                   odbNotifications,
+                   instForceError,
+                   failAt,
+                   odbQueuePollingInterval,
+                   gpiGDS,
+                   ghostGDS)
+                 }
 
     smartGcal *>
       epicsInit *>

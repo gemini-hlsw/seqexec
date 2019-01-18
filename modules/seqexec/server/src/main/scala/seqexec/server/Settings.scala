@@ -8,8 +8,6 @@ import java.time.LocalDate
 import org.http4s.Uri
 import scala.concurrent.duration.Duration
 import shapeless.tag.@@
-import giapi.client.gpi.GpiClient
-import giapi.client.ghost.GhostClient
 
 trait GpiSettings
 trait GhostSettings
@@ -36,7 +34,5 @@ final case class Settings(site:                    Site,
                           instForceError:          Boolean,
                           failAt:                  Int,
                           odbQueuePollingInterval: Duration,
-                          gpi:                     GpiClient[cats.effect.IO],
-                          ghost:                   GhostClient[cats.effect.IO],
                           gpiGDS:                  Uri @@ GpiSettings,
                           ghostGDS:                Uri @@ GhostSettings)
