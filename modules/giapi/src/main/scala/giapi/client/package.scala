@@ -5,12 +5,13 @@ package giapi
 
 import cats._
 import cats.effect._
-import cats.effect.concurrent._
 import cats.effect.implicits._
 import cats.implicits._
 import edu.gemini.aspen.giapi.commands.HandlerResponse.Response
-import edu.gemini.aspen.giapi.status.{StatusHandler, StatusItem}
-import edu.gemini.aspen.giapi.statusservice.{StatusHandlerAggregate, StatusService}
+import edu.gemini.aspen.giapi.status.StatusHandler
+import edu.gemini.aspen.giapi.status.StatusItem
+import edu.gemini.aspen.giapi.statusservice.StatusHandlerAggregate
+import edu.gemini.aspen.giapi.statusservice.StatusService
 import edu.gemini.aspen.giapi.util.jms.status.StatusGetter
 import edu.gemini.aspen.gmp.commands.jms.client.CommandSenderClient
 import edu.gemini.aspen.giapi.commands.SequenceCommand
@@ -19,9 +20,11 @@ import giapi.client.commands._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 import shapeless.Typeable._
-import fs2.{Stream, concurrent}
+import fs2.Stream
+import fs2.concurrent
 import fs2.concurrent.Queue
-import giapi.client.commands.{Command, CommandResultException}
+import giapi.client.commands.Command
+import giapi.client.commands.CommandResultException
 
 package object client {
 
@@ -116,9 +119,9 @@ package client {
     private implicit val ioContextShift: ContextShift[IO] =
       IO.contextShift(ExecutionContext.global)
 
-    private final case class StatusStreamer(aggregate: StatusHandlerAggregate, ss: StatusService)
+    final case class StatusStreamer(aggregate: StatusHandlerAggregate, ss: StatusService)
 
-    private def statusGetter[F[_]: Sync](c: ActiveMQJmsProvider): F[StatusGetter] = Sync[F].delay {
+    def statusGetter[F[_]: Sync](c: ActiveMQJmsProvider): F[StatusGetter] = Sync[F].delay {
       val sg = new StatusGetter("statusGetter")
       sg.startJms(c)
       sg
@@ -129,7 +132,7 @@ package client {
         new CommandSenderClient(c)
       }
 
-    private def statusStreamer[F[_]: Sync](c: ActiveMQJmsProvider): F[StatusStreamer] = Sync[F].delay {
+    def statusStreamer[F[_]: Sync](c: ActiveMQJmsProvider): F[StatusStreamer] = Sync[F].delay {
       val aggregate     = new StatusHandlerAggregate()
       val statusService = new StatusService(aggregate, "statusService", "*")
       statusService.startJms(c)
@@ -203,17 +206,18 @@ package client {
       */
     // scalastyle:off
     def giapiConnection[F[_]: ConcurrentEffect](
-        url: String,
-        ec: ExecutionContext): GiapiConnection[F] =
+      url: String,
+      ec:  ExecutionContext
+    ): GiapiConnection[F] =
       new GiapiConnection[F] {
-        private def giapi(c: ActiveMQJmsProvider,
+        private def giapi(c:  ActiveMQJmsProvider,
                           sg: StatusGetter,
                           cc: CommandSenderClient,
                           ss: StatusStreamer) =
           new Giapi[F] {
             private val commandsAckTimeout                  = 2000.milliseconds
             implicit val executionContext: ExecutionContext = ec
-            implicit val timer: Timer[IO] = IO.timer(ec)
+            implicit val timer: Timer[IO]                   = IO.timer(ec)
 
             override def get[A: ItemGetter](statusItem: String): F[A] =
               getO[A](statusItem).flatMap {
@@ -246,9 +250,8 @@ package client {
 
           }
 
-        private def build(ref: Ref[F, ActiveMQJmsProvider]): F[Giapi[F]] =
+        private def build(c: ActiveMQJmsProvider): F[Giapi[F]] =
           for {
-            c  <- ref.get
             sg <- statusGetter[F](c)
             cc <- commandSenderClient[F](c)
             ss <- statusStreamer[F](c)
@@ -256,13 +259,12 @@ package client {
 
         def connect: F[Giapi[F]] =
           for {
-            c   <- Sync[F].delay(new ActiveMQJmsProvider(url)) // Build the connection
-            ref <- Ref.of(c)                              // store a reference
-            _   <- Sync[F].delay(c.startConnection())          // Start the connection
-            c   <- build(ref)                                  // Build the interpreter
+            c <- Sync[F].delay(new ActiveMQJmsProvider(url)) // Build the connection
+            _ <- Sync[F].delay(c.startConnection()) // Start the connection
+            c <- build(c) // Build the interpreter
           } yield c
       }
-      // scalastyle:on
+    // scalastyle:on
 
     /**
       * Interpreter on Id
@@ -296,6 +298,7 @@ package client {
         override def close: IO[Unit] = IO.unit
       })
     }
+
   }
 
 }

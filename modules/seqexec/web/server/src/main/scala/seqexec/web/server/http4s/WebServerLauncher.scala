@@ -31,9 +31,7 @@ import org.log4s._
 import scala.concurrent.ExecutionContext
 import seqexec.model.events._
 import seqexec.server
-import seqexec.server.{SeqexecMetrics, SeqexecConfiguration, SeqexecEngine, executeEngine}
-import seqexec.server.GpiSettings
-import seqexec.server.GhostSettings
+import seqexec.server.{ControlStrategy, SeqexecMetrics, SeqexecConfiguration, SeqexecEngine, executeEngine}
 import seqexec.web.server.OcsBuildInfo
 import seqexec.web.server.logging.AppenderForClients
 import seqexec.web.server.security.{AuthenticationConfig, AuthenticationService, LDAPConfig}
@@ -216,18 +214,20 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
       Resource.make(alloc)(free).map(ExecutionContext.fromExecutor)
     }
 
-    def engineIO(httpClient: Client[IO], collector: CollectorRegistry): IO[SeqexecEngine] =
+    def engineIO(httpClient: Client[IO], collector: CollectorRegistry, bec: ExecutionContext): Resource[IO, SeqexecEngine] =
       for {
-        _          <- configLog // Initialize log before the engine is setup
-        c          <- config
-        site       <- IO.pure(c.require[Site]("seqexec-engine.site"))
-        giapiGPI   <- SeqexecEngine.giapiConnection[GpiSettings]("seqexec-engine.systemControl.gpi",
-                                                    "seqexec-engine.gpiUrl").run(c)
-        giapiGHOST <- SeqexecEngine.giapiConnection[GhostSettings]("seqexec-engine.systemControl.ghost",
-                                                    "seqexec-engine.ghostUrl").run(c)
-        seqc       <- SeqexecEngine.seqexecConfiguration(giapiGPI, giapiGHOST).run(c)
-        met        <- SeqexecMetrics.build[IO](site, collector)
-      } yield SeqexecEngine(httpClient, seqc, met)
+        _            <- Resource.liftF(configLog) // Initialize log before the engine is setup
+        cfg          <- Resource.liftF(config)
+        site         <- Resource.liftF(IO(cfg.require[Site]("seqexec-engine.site")))
+        ghostUrl     <- Resource.liftF(IO(cfg.require[String]("seqexec-engine.ghostUrl")))
+        ghostControl <- Resource.liftF(IO(cfg.require[ControlStrategy]("seqexec-engine.systemControl.ghost")))
+        gpiUrl       <- Resource.liftF(IO(cfg.require[String]("seqexec-engine.gpiUrl")))
+        gpiControl   <- Resource.liftF(IO(cfg.require[ControlStrategy]("seqexec-engine.systemControl.gpi")))
+        gpi          <- SeqexecEngine.gpiClient(gpiControl, gpiUrl, bec)
+        ghost        <- SeqexecEngine.ghostClient(ghostControl, ghostUrl, bec)
+        seqc         <- Resource.liftF(SeqexecEngine.seqexecConfiguration.run(cfg))
+        met          <- Resource.liftF(SeqexecMetrics.build[IO](site, collector))
+      } yield SeqexecEngine(httpClient, gpi, ghost, seqc, met)
 
     def webServerIO(
       in:  Queue[IO, executeEngine.EventType],
@@ -252,8 +252,8 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
         inq    <- Resource.liftF(Queue.bounded[IO, executeEngine.EventType](10))
         out    <- Resource.liftF(Topic[IO, SeqexecEvent](NullEvent))
         cr     <- Resource.liftF(IO(new CollectorRegistry))
-        engine <- Resource.liftF(engineIO(cli, cr))
         bec    <- blockingExecutionContext
+        engine <- engineIO(cli, cr, bec)
         _      <- webServerIO(inq, out, engine, cr, bec)
         _      <- Resource.liftF(engine.eventStream(inq).to(out.publish).compile.drain.start)
       } yield ExitCode.Success

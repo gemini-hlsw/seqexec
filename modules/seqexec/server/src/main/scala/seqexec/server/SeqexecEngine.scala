@@ -16,7 +16,6 @@ import monocle.Optional
 import edu.gemini.epics.acm.CaService
 import gem.Observation
 import gem.enum.Site
-import giapi.client.Giapi
 import giapi.client.ghost.GhostClient
 import giapi.client.gpi.GpiClient
 import seqexec.engine
@@ -45,13 +44,12 @@ import org.http4s.Uri
 import knobs.Config
 import mouse.all._
 import seqexec.model.dhs.ImageFileId
-
 import scala.collection.immutable.SortedMap
 import scala.concurrent.duration._
-import shapeless.tag.@@
+import scala.concurrent.ExecutionContext
 import shapeless.tag
 
-class SeqexecEngine(httpClient: Client[IO], settings: Settings[IO], sm: SeqexecMetrics)(
+class SeqexecEngine(httpClient: Client[IO], gpi: GpiClient[IO], ghost: GhostClient[IO], settings: Settings, sm: SeqexecMetrics)(
   implicit ceio: ConcurrentEffect[IO], tio: Timer[IO]
 ) {
   import SeqexecEngine._
@@ -76,8 +74,8 @@ class SeqexecEngine(httpClient: Client[IO], settings: Settings[IO], sm: SeqexecM
     settings.gmosControl.command.fold(GmosSouthControllerEpics, GmosControllerSim.south),
     settings.gmosControl.command.fold(GmosNorthControllerEpics, GmosControllerSim.north),
     settings.gnirsControl.command.fold(GnirsControllerEpics, GnirsControllerSim),
-    GpiController(new GpiClient(settings.gpiGiapi), gpiGDS),
-    GhostController(new GhostClient(settings.ghostGiapi), ghostGDS),
+    GpiController(gpi, gpiGDS),
+    GhostController(ghost, ghostGDS),
     settings.niriControl.command.fold(NiriControllerEpics, NiriControllerSim)
   )
 
@@ -204,17 +202,6 @@ class SeqexecEngine(httpClient: Client[IO], settings: Settings[IO], sm: SeqexecM
           List(Event.logWarningMsg(SeqexecFailure.explain(r)))
         ).some.filter(_.nonEmpty).map(Stream.emits(_).covary[IO])
       )
-  // def seqQueueRefreshStream: Stream[IO, executeEngine.EventType] =
-  //   Scheduler[IO](corePoolSize = 1).flatMap { scheduler =>
-  //     val fd = Duration(settings.odbQueuePollingInterval.toSeconds, TimeUnit.SECONDS)
-  //     scheduler.fixedDelay[IO](fd).evalMap(_ =>
-  //       odbProxy.queuedSequences.value).map { x =>
-  //       Event.getState[executeEngine.ConcreteTypes](st =>
-  //         x.map(odbLoader.refreshSequenceList(_)(st)).valueOr(r =>
-  //           List(Event.logWarningMsg(SeqexecFailure.explain(r)))
-  //         ).some.filter(_.nonEmpty).map(Stream.emits(_).covary[IO])
-  //       )
-  //     }
     }
   }
 
@@ -516,10 +503,10 @@ class SeqexecEngine(httpClient: Client[IO], settings: Settings[IO], sm: SeqexecM
 
 object SeqexecEngine extends SeqexecConfiguration {
 
-  def apply(httpClient: Client[IO], settings: Settings[IO], c: SeqexecMetrics)(
+  def apply(httpClient: Client[IO], gpi: GpiClient[IO], ghost: GhostClient[IO], settings: Settings, c: SeqexecMetrics)(
     implicit ceio: ConcurrentEffect[IO],
               tio: Timer[IO]
-  ): SeqexecEngine = new SeqexecEngine(httpClient, settings, c)
+  ): SeqexecEngine = new SeqexecEngine(httpClient, gpi, ghost, settings, c)
 
   def splitWhere[A](l: List[A])(p: A => Boolean): (List[A], List[A]) =
     l.splitAt(l.indexWhere(p))
@@ -687,6 +674,20 @@ object SeqexecEngine extends SeqexecConfiguration {
     }._2
   }
 
+  def gpiClient(control: ControlStrategy, gpiUrl: String, ec: ExecutionContext)(implicit cs: ContextShift[IO]): cats.effect.Resource[IO, GpiClient[IO]] =
+    if (control === FullControl) {
+      GpiClient.gpiClient[IO](gpiUrl, ec)
+    } else {
+      GpiClient.simulatedGpiClient(ec)
+    }
+
+  def ghostClient(control: ControlStrategy, ghostUrl: String, ec: ExecutionContext)(implicit cs: ContextShift[IO]): cats.effect.Resource[IO, GhostClient[IO]] =
+    if (control === FullControl) {
+      GhostClient.ghostClient[IO](ghostUrl, ec)
+    } else {
+      GhostClient.simulatedGhostClient(ec)
+    }
+
   private def decodeTops(s: String): Map[String, String] =
     s.split("=|,").grouped(2).collect {
       case Array(k, v) => k.trim -> v.trim
@@ -698,24 +699,10 @@ object SeqexecEngine extends SeqexecConfiguration {
     IO.apply(Paths.get(smartGCalLocation)).map { p => SmartGcal.initialize(peer, p) }
   }
 
-  // TODO: Initialization is a bit of a mess, with a mix of effectful and effectless code, and values
-  // that should go from one to the other. This should be improved.
-  def giapiConnection[T](controlName: String, urlName: String)(
-    implicit ev: ConcurrentEffect[IO]
-  ): Kleisli[IO, Config, Giapi[IO] @@ T] = Kleisli { cfg: Config =>
-    val control = cfg.require[ControlStrategy](controlName)
-    val url  = cfg.require[String](urlName)
-    if (control.command) {
-      Giapi.giapiConnection[IO](url, scala.concurrent.ExecutionContext.Implicits.global).connect
-    } else {
-      Giapi.giapiConnectionIO(scala.concurrent.ExecutionContext.Implicits.global).connect
-    }
-  } .map(tag[T][Giapi[IO]](_)) // Tag the connection
-
   // scalastyle:off
-  def seqexecConfiguration(gpiGiapi: Giapi[IO] @@ GpiSettings, ghostGiapi: Giapi[IO] @@ GhostSettings)(
+  def seqexecConfiguration(
     implicit cs: ContextShift[IO]
-  ): Kleisli[IO, Config, Settings[IO]] = Kleisli { cfg: Config =>
+  ): Kleisli[IO, Config, Settings] = Kleisli { cfg: Config =>
     val site                    = cfg.require[Site]("seqexec-engine.site")
     val odbHost                 = cfg.require[String]("seqexec-engine.odb")
     val dhsServer               = cfg.require[Uri]("seqexec-engine.dhsServer")
@@ -786,38 +773,37 @@ object SeqexecEngine extends SeqexecConfiguration {
 
     val smartGcal = smartGcalEnable.fold(initSmartGCal(smartGCalHost, smartGCalDir), IO.unit)
 
+    def settings: IO[Settings] =
+        IO(LocalDate.now).map { now =>
+          Settings(site,
+                   odbHost,
+                   now,
+                   dhsServer,
+                   dhsControl,
+                   f2Control,
+                   gcalControl,
+                   ghostControl,
+                   gmosControl,
+                   gnirsControl,
+                   gpiControl,
+                   gpiGdsControl,
+                   ghostGdsControl,
+                   gsaoiControl,
+                   gwsControl,
+                   nifsControl,
+                   niriControl,
+                   tcsControl,
+                   odbNotifications,
+                   instForceError,
+                   failAt,
+                   odbQueuePollingInterval,
+                   gpiGDS,
+                   ghostGDS)
+                 }
+
     smartGcal *>
       epicsInit *>
-      (for {
-        now <- IO(LocalDate.now)
-      } yield Settings(site,
-                       odbHost,
-                       now,
-                       dhsServer,
-                       dhsControl,
-                       f2Control,
-                       gcalControl,
-                       ghostControl,
-                       gmosControl,
-                       gnirsControl,
-                       gpiControl,
-                       gpiGdsControl,
-                       ghostGdsControl,
-                       gsaoiControl,
-                       gwsControl,
-                       nifsControl,
-                       niriControl,
-                       tcsControl,
-                       odbNotifications,
-                       instForceError,
-                       failAt,
-                       odbQueuePollingInterval,
-                       gpiGiapi,
-                       ghostGiapi,
-                       gpiGDS,
-                       ghostGDS)
-      )
-
+      settings
 
   }
 

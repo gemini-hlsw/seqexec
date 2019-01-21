@@ -105,6 +105,8 @@ package server {
       case "simulated" => Some(Simulated)
       case _           => None
     }
+
+    implicit val eq: Eq[ControlStrategy] = Eq.fromUniversalEquals
   }
 
   final case class HeaderExtraData(conditions: Conditions, operator: Option[Operator], observer: Option[Observer])
