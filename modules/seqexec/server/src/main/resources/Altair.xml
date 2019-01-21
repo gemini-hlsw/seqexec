@@ -1,6 +1,22 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Records xmlns="http://www.gemini.edu/CaSchema">
     <Top name="ao">ao</Top>
+    <Top name="bto">bto</Top>
+    <Apply name="btoFsaApply">
+        <top>bto</top>
+        <apply>apply</apply>
+        <car>FSALoopCtrlC</car>
+        <description>FSA controller</description>
+        <command name="btoFsaLoopCtrl">
+            <record>apply</record>
+            <description>Bto Loop control</description>
+            <parameter name="loop">
+                <channel>FSALoopCtrl.A</channel>
+                <type>STRING</type>
+                <description>Loop control loop</description>
+            </parameter>
+        </command>
+    </Apply>
     <Apply name="aolgsApply">
         <top>ao</top>
         <apply>wfcs:strap</apply>
@@ -11,8 +27,9 @@
             <description>ALTAIR sfo</description>
             <parameter name="onoff">
                 <channel>wfcs:strapCorrCtl.A</channel>
-                <type>STRING</type>
+                <type>INTEGER</type>
                 <description>Strap onoff loop control</description>
+                <isCAD>false</isCAD>
             </parameter>
         </command>
         <command name="aoStrap">
@@ -20,29 +37,32 @@
             <description>ALTAIR strap</description>
             <parameter name="gate">
                 <channel>wfcs:strapGtCtl.A</channel>
-                <type>STRING</type>
+                <type>INTEGER</type>
                 <description>Gate control</description>
+                <isCAD>false</isCAD>
             </parameter>
         </command>
         <command name="aoSfoLoop">
             <description>ALTAIR sfo</description>
+            <!--
             <parameter name="onoff">
                 <channel>cc:lgszoomSfoLoop</channel>
                 <type>STRING</type>
                 <description>Sfo loop control</description>
             </parameter>
+            -->
         </command>
     </Apply>
-    <Status name="aolgs">
+    <Status name = "aostate">
         <top>ao</top>
         <attribute name="strapTPStat">
             <channel>strapDevStatus.VALL</channel>
-            <type>STRING</type>
+            <type>INTEGER</type>
             <description>STRAP Temp Ctl Status (1:OK, 0:not OK)</description>
         </attribute>
         <attribute name="strapgate">
             <channel>strapDevStatus.VALH</channel>
-            <type>STRING</type>
+            <type>INTEGER</type>
             <description>STRAP gate level</description>
         </attribute>
         <attribute name="straploop">
@@ -52,25 +72,22 @@
         </attribute>
         <attribute name="strapRTStat">
             <channel>strapDevStatus.VALO</channel>
-            <type>STRING</type>
+            <type>INTEGER</type>
             <description>STRAP RT Ctl Status (1:OK, 0:not OK)</description>
         </attribute>
         <attribute name="strapHVStat">
             <channel>strapDevStatus.VALI</channel>
-            <type>STRING</type>
+            <type>INTEGER</type>
             <description>STRAP HVolt Status (1:OK, 0:not OK)</description>
         </attribute>
-        <attribute name="sfoloop">
-            <channel>cc:lgszoomSfoLoop</channel>
-            <type>STRING</type>
-            <description>Sfo loop</description>
-        </attribute>
-    </Status>
-    <Status name = "aostate">
-        <top>ao</top>
+        <!--<attribute name="sfoloop">-->
+            <!--<channel>cc:lgszoomSfoLoop</channel>-->
+            <!--<type>STRING</type>-->
+            <!--<description>Sfo loop</description>-->
+        <!--</attribute>-->
         <attribute name="aowfsOn">
             <channel>wfcs:loopRunning</channel>
-            <type>DOUBLE</type>
+            <type>INTEGER</type>
             <description>AO loop on</description>
         </attribute>
         <attribute name="aoSettled">
@@ -79,20 +96,20 @@
             <description>AO loop settled</description>
         </attribute>
         <attribute name="conmatx">
-            <channel>conMatY</channel>
+            <channel>conMatX</channel>
             <type>DOUBLE</type>
             <description>Control matrix star X</description>
         </attribute>
         <attribute name="conmaty">
-            <channel>conMatX</channel>
+            <channel>conMatY</channel>
             <type>DOUBLE</type>
             <description>Control matrix star Y</description>
         </attribute>
-        <attribute name="cmprepBusy">
-            <channel>prepareCm.BUSY</channel>
-            <type>STRING</type>
-            <description>PrepareCm busy</description>
-        </attribute>
+        <!--<attribute name="cmprepBusy">-->
+            <!--<channel>prepareCm.BUSY</channel>-->
+            <!--<type>STRING</type>-->
+            <!--<description>PrepareCm busy</description>-->
+        <!--</attribute>-->
         <attribute name="lgsp1On">
             <channel>lgsttSource.VALA</channel>
             <type>INTEGER</type>

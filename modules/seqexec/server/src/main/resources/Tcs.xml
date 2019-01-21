@@ -6,24 +6,6 @@
     <Top name="pwfs1">pwfs1</Top>
     <Top name="pwfs2">pwfs2</Top>
     <Top name="oiwfs">oiwfs</Top>
-    <!--
-    <Top name="bto">bto</Top>
-    <Apply name="btoFsaApply">
-        <top>bto</top>
-        <apply>apply</apply>
-        <car>FSALoopCtrlC</car>
-        <description>FSA controller</description>
-        <command name="btoFsaLoopCtrl">
-            <record>apply</record>
-            <description>Bto Loop control</description>
-            <parameter name="loop">
-                <channel>FSALoopCtrl.A</channel>
-                <type>STRING</type>
-                <description>Loop control loop</description>
-            </parameter>
-        </command>
-    </Apply>
-    -->
     <Apply name="tcsApply">
         <top>tcs</top>
         <apply>apply</apply>
