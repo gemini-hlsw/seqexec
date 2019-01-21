@@ -83,7 +83,7 @@ object SubsystemControlCell {
         }.toTagMod
       )
     }
-    .configure(Reusability.shouldComponentUpdate)
+    //.configure(Reusability.shouldComponentUpdate)
     .build
 
   def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
