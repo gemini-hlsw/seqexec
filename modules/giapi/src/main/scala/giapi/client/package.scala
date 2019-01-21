@@ -108,7 +108,7 @@ package client {
     /**
       * Close the connection
       */
-    def close: F[Unit]
+    private[giapi] def close: F[Unit]
   }
 
   /**
@@ -119,25 +119,28 @@ package client {
     private implicit val ioContextShift: ContextShift[IO] =
       IO.contextShift(ExecutionContext.global)
 
-    final case class StatusStreamer(aggregate: StatusHandlerAggregate, ss: StatusService)
+    final case class StatusStreamer(aggregate: StatusHandlerAggregate,
+                                    ss:        StatusService)
 
-    def statusGetter[F[_]: Sync](c: ActiveMQJmsProvider): F[StatusGetter] = Sync[F].delay {
-      val sg = new StatusGetter("statusGetter")
-      sg.startJms(c)
-      sg
-    }
+    def statusGetter[F[_]: Sync](c: ActiveMQJmsProvider): F[StatusGetter] =
+      Sync[F].delay {
+        val sg = new StatusGetter("statusGetter")
+        sg.startJms(c)
+        sg
+      }
 
     private def commandSenderClient[F[_]: Applicative](c: ActiveMQJmsProvider): F[CommandSenderClient] =
       Applicative[F].pure {
         new CommandSenderClient(c)
       }
 
-    def statusStreamer[F[_]: Sync](c: ActiveMQJmsProvider): F[StatusStreamer] = Sync[F].delay {
-      val aggregate     = new StatusHandlerAggregate()
-      val statusService = new StatusService(aggregate, "statusService", "*")
-      statusService.startJms(c)
-      StatusStreamer(aggregate, statusService)
-    }
+    def statusStreamer[F[_]: Sync](c: ActiveMQJmsProvider): F[StatusStreamer] =
+      Sync[F].delay {
+        val aggregate     = new StatusHandlerAggregate()
+        val statusService = new StatusService(aggregate, "statusService", "*")
+        statusService.startJms(c)
+        StatusStreamer(aggregate, statusService)
+      }
 
     private def streamItem[F[_]: ConcurrentEffect, A: ItemGetter](
       agg:        StatusHandlerAggregate,
