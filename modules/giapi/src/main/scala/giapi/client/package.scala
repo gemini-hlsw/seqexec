@@ -209,9 +209,8 @@ package client {
       */
     // scalastyle:off
     def giapiConnection[F[_]: ConcurrentEffect](
-      url: String,
-      ec:  ExecutionContext
-    ): GiapiConnection[F] =
+      url: String
+    )(implicit timer: Timer[IO]): GiapiConnection[F] =
       new GiapiConnection[F] {
         private def giapi(c:  ActiveMQJmsProvider,
                           sg: StatusGetter,
@@ -219,8 +218,6 @@ package client {
                           ss: StatusStreamer) =
           new Giapi[F] {
             private val commandsAckTimeout                  = 2000.milliseconds
-            implicit val executionContext: ExecutionContext = ec
-            implicit val timer: Timer[IO]                   = IO.timer(ec)
 
             override def get[A: ItemGetter](statusItem: String): F[A] =
               getO[A](statusItem).flatMap {
@@ -285,8 +282,7 @@ package client {
     /**
       * Simulator interpreter on IO, Reading items will fail and all commands will succeed
       */
-    def giapiConnectionIO(ec: ExecutionContext): GiapiConnection[IO] = new GiapiConnection[IO] {
-      implicit val timer: Timer[IO] = IO.timer(ec)
+    def giapiConnectionIO(implicit timer: Timer[IO]): GiapiConnection[IO] = new GiapiConnection[IO] {
       override def connect: IO[Giapi[IO]] = IO.pure(new Giapi[IO] {
         override def get[A: ItemGetter](statusItem: String): IO[A] = IO.raiseError(new RuntimeException(s"Cannot read $statusItem"))
         override def getO[A: ItemGetter](statusItem: String): IO[Option[A]] = IO.pure(None)

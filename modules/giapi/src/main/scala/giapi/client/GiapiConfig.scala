@@ -7,3 +7,17 @@ package giapi.client
 trait GiapiConfig[T] {
   def configValue(t: T): String
 }
+
+object GiapiConfig {
+  implicit val stringConfig: GiapiConfig[String] = t => t
+  implicit val intConfig: GiapiConfig[Int]       = _.toString
+  implicit val doubleConfig: GiapiConfig[Double] = d => f"$d%1.6f"
+  implicit val floatConfig: GiapiConfig[Float]   = d => f"$d%1.6f"
+
+  @inline
+  def apply[A](implicit instance: GiapiConfig[A]): GiapiConfig[A] = instance
+
+  def instance[A](f: A => String): GiapiConfig[A] = new GiapiConfig[A] {
+    def configValue(t: A) = f(t)
+  }
+}

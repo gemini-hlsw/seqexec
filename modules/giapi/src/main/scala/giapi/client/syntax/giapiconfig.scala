@@ -3,7 +3,6 @@
 
 package giapi.client.syntax
 
-import cats.Show
 import giapi.client.GiapiConfig
 
 final class GiapiConfigOps[A](val a: A) extends AnyVal {
@@ -15,10 +14,4 @@ trait ToGiapiCofigOps {
   implicit def ToGiapiConfigOps[A](value: A): GiapiConfigOps[A] = new GiapiConfigOps(value)
 }
 
-object giapiconfig extends ToGiapiCofigOps {
-  implicit val stringConfig: GiapiConfig[String] = t => t
-  implicit val intConfig: GiapiConfig[Int] = _.toString
-  implicit val doubleConfig: GiapiConfig[Double] = d => f"$d%1.6f"
-  def fromShow[A: Show]: GiapiConfig[A] = Show[A].show(_)
-  def apply[A](implicit instance: GiapiConfig[A]): GiapiConfig[A] = instance
-}
+object giapiconfig extends ToGiapiCofigOps

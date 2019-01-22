@@ -4,12 +4,9 @@
 package giapi.client.ghost
 
 import cats.effect._
-import cats.implicits._
 import giapi.client.Giapi
 import giapi.client.GiapiClient
-import giapi.client.syntax.giapiconfig._
 import scala.concurrent.duration._
-import scala.concurrent.ExecutionContext
 
 /** Client for GHOST */
 final class GhostClient[F[_]](override val giapi: Giapi[F])
@@ -17,21 +14,18 @@ final class GhostClient[F[_]](override val giapi: Giapi[F])
 
 object GhostClient {
   // Used for simulations
-  def simulatedGhostClient(
-    ec: ExecutionContext): Resource[IO, GhostClient[IO]] =
+  def simulatedGhostClient(implicit timer: Timer[IO]): Resource[IO, GhostClient[IO]] =
     Resource.liftF(
-      Giapi.giapiConnectionIO(ec).connect.map(new GhostClient(_))
+      Giapi.giapiConnectionIO.connect.map(new GhostClient(_))
     )
 
   def ghostClient[F[_]: ConcurrentEffect](
-    url:     String,
-    context: ExecutionContext): Resource[F, GhostClient[F]] = {
+    url:     String)(implicit timer: Timer[IO]): Resource[F, GhostClient[F]] = {
     val ghostStatus: Resource[F, Giapi[F]] =
       Resource.make(
         Giapi
           .giapiConnection[F](
-            url,
-            context
+            url
           )
           .connect)(_.close)
 
@@ -39,8 +33,7 @@ object GhostClient {
       Resource.make(
         Giapi
           .giapiConnection[F](
-            url,
-            context
+            url
           )
           .connect)(_.close)
 
@@ -56,7 +49,7 @@ object GhostExample extends IOApp {
   val url = "failover:(tcp://127.0.0.1:61616)"
 
   val ghostClient: Resource[IO, GhostClient[IO]] =
-    GhostClient.ghostClient(url, ExecutionContext.global)
+    GhostClient.ghostClient(url)
 
   def run(args: List[String]): IO[ExitCode] =
     ghostClient.use { client =>

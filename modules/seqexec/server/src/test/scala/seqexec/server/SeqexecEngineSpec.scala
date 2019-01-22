@@ -40,8 +40,8 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
   implicit val ioTimer: Timer[IO] =
     IO.timer(ExecutionContext.global)
 
-  val gpiSim = GpiClient.simulatedGpiClient(scala.concurrent.ExecutionContext.Implicits.global).use(IO(_)).unsafeRunSync
-  val ghostSim = GhostClient.simulatedGhostClient(scala.concurrent.ExecutionContext.Implicits.global).use(IO(_)).unsafeRunSync
+  val gpiSim = GpiClient.simulatedGpiClient.use(IO(_)).unsafeRunSync
+  val ghostSim = GhostClient.simulatedGhostClient.use(IO(_)).unsafeRunSync
 
   private val defaultSettings = Settings(Site.GS,
     odbHost = "localhost",
