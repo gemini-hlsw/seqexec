@@ -12,10 +12,12 @@ import cats.effect.ConcurrentEffect
 import cats.effect.implicits._
 import edu.gemini.aspen.giapi.status.StatusHandler
 import edu.gemini.aspen.giapi.status.StatusItem
+import edu.gemini.aspen.giapi.util.jms.status.StatusGetter
 import edu.gemini.aspen.giapi.statusservice.StatusHandlerAggregate
 import edu.gemini.jms.activemq.provider.ActiveMQJmsProvider
 import fs2.concurrent.Queue
 import fs2.Stream
+import scala.collection.JavaConverters._
 
 /////////////////////////////////////////////////////////////////
 // Links status streaming with the giapi db
@@ -78,6 +80,26 @@ object GiapiStatusDb {
     s.compile.drain
   }
 
+  private def initSG[F[_]: Applicative](
+    db: GiapiDb[F],
+    sg: StatusGetter,
+    items: List[String]
+  ): F[List[Unit]] =
+    sg.getAllStatusItems.asScala.toList
+      .collect {
+        case s: StatusItem[_] if items.contains(s.getName) => s
+      }.traverse {
+        s => dbUpdate(db, s.getName, s.getValue)
+      }
+
+  private def initDb[F[_]: Sync](
+    c: ActiveMQJmsProvider,
+    db: GiapiDb[F],
+    items: List[String]
+  ): F[List[Unit]] =
+    Resource.make(Giapi.statusGetter[F](c))(g => Sync[F].delay(g.stopJms()))
+      .use(initSG(db, _, items))
+
   /**
     * Creates a new status db in simulation
     */
@@ -103,6 +125,7 @@ object GiapiStatusDb {
       c  <- Sync[F].delay(new ActiveMQJmsProvider(url)) // Build the connection
       ss <- Giapi.statusStreamer[F](c) // giapi artifacts
       db <- GiapiDb.newDb
+      _  <- initDb[F](c, db, items) // Get the initial values
       f  <- streamItemsToDb[F](ss.aggregate, db, items).start // run in the background
     } yield
       new GiapiStatusDb[F] {
