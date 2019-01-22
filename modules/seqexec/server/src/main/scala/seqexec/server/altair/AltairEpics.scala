@@ -11,7 +11,7 @@ import seqexec.server.EpicsCommand.setParameter
 import cats.implicits._
 
 class AltairEpics(service: CaService, tops: Map[String, String]) {
-  val Altair_Top: String = tops.getOrElse("ao", "ao:")
+  val AltairTop: String = tops.getOrElse("ao", "ao:")
 
   object strapGateControl extends EpicsCommand {
     override protected val cs: Option[CaCommandSender] = Option(service.getCommandSender("aoStrap"))
@@ -33,7 +33,7 @@ class AltairEpics(service: CaService, tops: Map[String, String]) {
       Option(service.getCommandSender("aoSfoLoop"))
 
     val active: Option[CaParameter[LgsSfoControl]] = cs.map(_.addEnum[LgsSfoControl]("active",
-      s"${Altair_Top}cc:lgszoomSfoLoop.VAL", classOf[LgsSfoControl], false))
+      s"${AltairTop}cc:lgszoomSfoLoop.VAL", classOf[LgsSfoControl], false))
     def setActive(v: LgsSfoControl): SeqAction[Unit] = setParameter(active, v)
   }
 
@@ -63,7 +63,7 @@ class AltairEpics(service: CaService, tops: Map[String, String]) {
     .map(_.toInt =!= 0)
 
   def sfoLoop: Option[LgsSfoControl] = Option(status.addEnum("sfoloop",
-    s"${Altair_Top}cc:lgszoomSfoLoop.VAL", classOf[LgsSfoControl]).value)
+    s"${AltairTop}cc:lgszoomSfoLoop.VAL", classOf[LgsSfoControl]).value)
 
   def aoLoop: Option[Boolean] = Option(status.getIntegerAttribute("aowfsOn").value)
     .map(_.toInt =!= 0)
@@ -76,7 +76,7 @@ class AltairEpics(service: CaService, tops: Map[String, String]) {
   def matrixStartY: Option[Double] = Option(status.getDoubleAttribute("conmaty").value).map(_.toDouble)
 
   def controlMatrixCalc: Option[CarStateGEM5] = Option(status.addEnum[CarStateGEM5]("cmPrepBusy",
-    s"${Altair_Top}prepareCm.BUSY", classOf[CarStateGEM5]).value)
+    s"${AltairTop}prepareCm.BUSY", classOf[CarStateGEM5]).value)
 
   def lgsP1: Option[Boolean] = Option(status.getIntegerAttribute("lgsp1On").value)
     .map(_.toInt =!= 0)
