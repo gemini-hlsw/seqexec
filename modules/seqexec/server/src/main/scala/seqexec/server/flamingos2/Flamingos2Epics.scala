@@ -11,7 +11,7 @@ final class Flamingos2Epics(epicsService: CaService, tops: Map[String, String]) 
 
   import EpicsCommand.setParameter
 
-  val F2_TOP: String = tops.getOrElse("f2", "f2:")
+  val F2Top: String = tops.getOrElse("f2", "f2:")
 
   def post: SeqAction[EpicsCommand.Result] = configCmd.post
 
@@ -55,7 +55,7 @@ final class Flamingos2Epics(epicsService: CaService, tops: Map[String, String]) 
     override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("flamingos2::config"))
 
     private val useElectronicOffsetting = cs.map(_.addInteger("useElectronicOffsetting",
-      s"${F2_TOP}wfs:followA.K", "Enable electronic Offsets", false))
+      s"${F2Top}wfs:followA.K", "Enable electronic Offsets", false))
     def setUseElectronicOffsetting(v: Integer): SeqAction[Unit] = setParameter(useElectronicOffsetting, v)
 
     private val filter = cs.map(_.getString("filter"))
@@ -105,7 +105,7 @@ final class Flamingos2Epics(epicsService: CaService, tops: Map[String, String]) 
     .map(_.toInt)
 
   private val observeCAttr: CaAttribute[CarState] = f2State.addEnum("observeState",
-    s"${F2_TOP}observeC.VAL", classOf[CarState])
+    s"${F2Top}observeC.VAL", classOf[CarState])
   def observeState: Option[CarState] = Option(observeCAttr.value)
 
   // For FITS keywords

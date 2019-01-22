@@ -20,34 +20,34 @@ import org.log4s.{Logger, getLogger}
 
 class NiriEpics(epicsService: CaService, tops: Map[String, String]) {
 
-  val NIRI_TOP = tops.getOrElse("niri", "niri:")
-  val NIS_TOP = tops.getOrElse("nis", "NIS:")
+  val NiriTop = tops.getOrElse("niri", "niri:")
+  val NisTop = tops.getOrElse("nis", "NIS:")
 
   object configCmd extends EpicsCommand {
     override protected val cs: Option[CaCommandSender] =
       Option(epicsService.getCommandSender("nis::config"))
 
     val disperser: Option[CaParameter[JDisperser]] = cs.flatMap(cmd =>
-      Option(cmd.addEnum("disperser", s"${NIS_TOP}grism:menu", classOf[JDisperser], false)))
+      Option(cmd.addEnum("disperser", s"${NisTop}grism:menu", classOf[JDisperser], false)))
     def setDisperser(v: JDisperser): SeqAction[Unit] = setParameter(disperser, v)
 
     val readMode: Option[CaParameter[JReadMode]] = cs.flatMap(cmd =>
-      Option(cmd.addEnum("readmode", s"${NIS_TOP}readmode:menu", classOf[JReadMode], false)))
+      Option(cmd.addEnum("readmode", s"${NisTop}readmode:menu", classOf[JReadMode], false)))
     def setReadMode(v: JReadMode): SeqAction[Unit] = setParameter(readMode, v)
 
     val coadds: Option[CaParameter[Integer]] = cs.flatMap(cmd => Option(cmd.getInteger("numCoAdds")))
     def setCoadds(v: Int): SeqAction[Unit] = setParameter(coadds, Integer.valueOf(v))
 
     val mask: Option[CaParameter[JMask]] = cs.flatMap(cmd =>
-      Option(cmd.addEnum("mask", s"${NIS_TOP}fpmask:menu", classOf[JMask], false)))
+      Option(cmd.addEnum("mask", s"${NisTop}fpmask:menu", classOf[JMask], false)))
     def setMask(v: JMask): SeqAction[Unit] = setParameter(mask, v)
 
     val camera: Option[CaParameter[JCamera]] = cs.flatMap(cmd =>
-      Option(cmd.addEnum("camera", s"${NIS_TOP}camera:menu", classOf[JCamera], false)))
+      Option(cmd.addEnum("camera", s"${NisTop}camera:menu", classOf[JCamera], false)))
     def setCamera(v: JCamera): SeqAction[Unit] = setParameter(camera, v)
 
     val beamSplitter: Option[CaParameter[JBeamSplitter]] = cs.flatMap(cmd => Option(
-      cmd.addEnum("beamSplitter", s"${NIS_TOP}beamsplit:menu", classOf[JBeamSplitter], false)))
+      cmd.addEnum("beamSplitter", s"${NisTop}beamsplit:menu", classOf[JBeamSplitter], false)))
     def setBeamSplitter(v: JBeamSplitter): SeqAction[Unit] = setParameter(beamSplitter, v)
 
     val exposureTime: Option[CaParameter[JDouble]] = cs.flatMap(cmd =>
@@ -55,7 +55,7 @@ class NiriEpics(epicsService: CaService, tops: Map[String, String]) {
     def setExposureTime(v: Double): SeqAction[Unit] = setParameter(exposureTime, JDouble.valueOf(v))
 
     val builtInROI: Option[CaParameter[JBuiltInROI]] = cs.flatMap(cmd =>
-      Option(cmd.addEnum("builtinROI", s"${NIS_TOP}roi:menu", classOf[JBuiltInROI], false)))
+      Option(cmd.addEnum("builtinROI", s"${NisTop}roi:menu", classOf[JBuiltInROI], false)))
     def setBuiltInROI(v: JBuiltInROI): SeqAction[Unit] = setParameter(builtInROI, v)
 
     val filter: Option[CaParameter[String]] = cs.flatMap(cmd => Option(cmd.getString("filter")))
@@ -91,8 +91,8 @@ class NiriEpics(epicsService: CaService, tops: Map[String, String]) {
 
   private val stopCS: Option[CaCommandSender] = Option(epicsService.getCommandSender("niri::stop"))
   private val observeAS: Option[CaApplySender] = Option(epicsService.createObserveSender(
-    "niri::observeCmd", s"${NIRI_TOP}dc:apply", s"${NIRI_TOP}dc:applyC", s"${NIRI_TOP}dc:observeC",
-    true, s"${NIRI_TOP}dc:stop", s"${NIRI_TOP}dc:abort", ""))
+    "niri::observeCmd", s"${NiriTop}dc:apply", s"${NiriTop}dc:applyC", s"${NiriTop}dc:observeC",
+    true, s"${NiriTop}dc:stop", s"${NiriTop}dc:abort", ""))
 
   object stopCmd extends EpicsCommand {
     override protected val cs: Option[CaCommandSender] = stopCS
@@ -152,7 +152,7 @@ class NiriEpics(epicsService: CaService, tops: Map[String, String]) {
     .map(_.toInt === 1)
 
   val arrayActiveAttr: Option[CaAttribute[JDetectorState]] = Option(dcStatus.addEnum(
-    "arrayState", s"${NIRI_TOP}dc:activate", classOf[JDetectorState]
+    "arrayState", s"${NiriTop}dc:activate", classOf[JDetectorState]
   ))
   def arrayActive: Option[Boolean] = arrayActiveAttr.flatMap(at => Option(at.value))
     .map(_.getActive)

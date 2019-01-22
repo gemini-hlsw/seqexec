@@ -44,6 +44,8 @@ import org.http4s.Uri
 import knobs.Config
 import mouse.all._
 import seqexec.model.dhs.ImageFileId
+import seqexec.server.altair.AltairEpics
+
 import scala.collection.immutable.SortedMap
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
@@ -707,6 +709,7 @@ object SeqexecEngine extends SeqexecConfiguration {
     val odbHost                 = cfg.require[String]("seqexec-engine.odb")
     val dhsServer               = cfg.require[Uri]("seqexec-engine.dhsServer")
     val dhsControl              = cfg.require[ControlStrategy]("seqexec-engine.systemControl.dhs")
+    val altairControl           = cfg.require[ControlStrategy]("seqexec-engine.systemControl.altair")
     val f2Control               = cfg.require[ControlStrategy]("seqexec-engine.systemControl.f2")
     val gcalControl             = cfg.require[ControlStrategy]("seqexec-engine.systemControl.gcal")
     val ghostControl            = cfg.require[ControlStrategy]("seqexec-engine.systemControl.ghost")
@@ -763,11 +766,15 @@ object SeqexecEngine extends SeqexecConfiguration {
         (niriControl, NiriEpics)
       )
     }
+    val epicsGaos = site match {
+      case Site.GS => List() // Put GeMS here.
+      case Site.GN => List(altairControl -> AltairEpics)
+    }
     val epicsSystems = epicsInstruments ++ List(
       (tcsControl, TcsEpics),
       (gwsControl, GwsEpics),
       (gcalControl, GcalEpics)
-    )
+    ) ++ epicsGaos
     val epicsInit: IO[List[Unit]] = caInit *> epicsSystems.filter(_._1.connect)
       .map(x => initEpicsSystem(x._2, tops)).parSequence
 
@@ -779,6 +786,7 @@ object SeqexecEngine extends SeqexecConfiguration {
                    odbHost,
                    now,
                    dhsServer,
+                   altairControl,
                    dhsControl,
                    f2Control,
                    gcalControl,
