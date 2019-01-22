@@ -19,6 +19,7 @@ import edu.gemini.spModel.gemini.gpi.Gpi.{Shutter => LegacyShutter}
 import giapi.client.commands.Configuration
 import giapi.client.gpi.GpiClient
 import mouse.boolean._
+import org.log4s._
 import seqexec.server.GiapiInstrumentController
 import scala.concurrent.duration._
 import seqexec.server.keywords.GdsClient
@@ -122,8 +123,9 @@ final case class GpiController[F[_]: Sync](override val client: GpiClient[F],
     )
 
   // scalastyle:off
-  override def configuration(config: GpiConfig): Configuration = {
-    Configuration.single("gpi:selectAdc.deploy",
+  override def configuration(config: GpiConfig): F[Configuration] = {
+    println(s"POLARIZER ${config.disperserAngle}")
+    val baseConfig = Configuration.single("gpi:selectAdc.deploy",
       (config.adc === LegacyAdc.IN)
         .fold(1, 0)) |+|
       Configuration.single("gpi:configAo.useAo",
@@ -167,7 +169,7 @@ final case class GpiController[F[_]: Sync](override val client: GpiClient[F],
         config.asu.attenuation) |+|
       Configuration.single("gpi:selectSource.sourceSCpower",
         (config.asu.sc === LegacyArtificialSource.ON)
-          .fold(100, 0)) |+|
+          .fold(100.0, 0.0)) |+|
       Configuration.single("gpi:selectSource.sourceVis",
         (config.asu.vis === LegacyArtificialSource.ON)
           .fold(1, 0)) |+|
@@ -179,11 +181,17 @@ final case class GpiController[F[_]: Sync](override val client: GpiClient[F],
           .fold(1, 0)) |+|
       Configuration.single("gpi:configPolarizer.angle", config.disperserAngle) |+|
         obsModeConfiguration(config)
+
+    for {
+      p <- GpiStatusApply.foldConfigM(client.statusDb, baseConfig)
+      _ <- Sync[F].delay(GpiController.logger.info(s"Applied GPI config ${p.config}"))
+    } yield p
   }
   // scalastyle:on
 }
 
 object GpiController {
+  val logger: Logger = getLogger
 
   implicit val apodizerEq: Eq[LegacyApodizer] = Eq.by(_.displayValue)
 

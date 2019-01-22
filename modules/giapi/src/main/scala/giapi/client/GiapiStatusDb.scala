@@ -81,23 +81,25 @@ object GiapiStatusDb {
   }
 
   private def initSG[F[_]: Applicative](
-    db: GiapiDb[F],
-    sg: StatusGetter,
+    db:    GiapiDb[F],
+    sg:    StatusGetter,
     items: List[String]
   ): F[List[Unit]] =
     sg.getAllStatusItems.asScala.toList
       .collect {
         case s: StatusItem[_] if items.contains(s.getName) => s
-      }.traverse {
-        s => dbUpdate(db, s.getName, s.getValue)
+      }
+      .traverse { s =>
+        dbUpdate(db, s.getName, s.getValue)
       }
 
   private def initDb[F[_]: Sync](
-    c: ActiveMQJmsProvider,
-    db: GiapiDb[F],
+    c:     ActiveMQJmsProvider,
+    db:    GiapiDb[F],
     items: List[String]
   ): F[List[Unit]] =
-    Resource.make(Giapi.statusGetter[F](c))(g => Sync[F].delay(g.stopJms()))
+    Resource
+      .make(Giapi.statusGetter[F](c))(g => Sync[F].delay(g.stopJms()))
       .use(initSG(db, _, items))
 
   /**

@@ -25,10 +25,10 @@ abstract class GiapiInstrumentController[F[_]: Sync, CFG, C <: GiapiClient[F]] {
   def client: C
   def gdsClient: GdsClient[F]
   def name: String
-  def configuration(config: CFG): Configuration
+  def configuration(config: CFG): F[Configuration]
 
   private def configure(config: CFG): SeqActionF[F, CommandResult] = {
-    EitherT(client.genericApply(configuration(config)).attempt)
+    EitherT(configuration(config).flatMap(client.genericApply).attempt)
       .leftMap {
         // The GMP sends these cryptic messages but we can do better
         case CommandResultException(_, "Message cannot be null") => Execution("Unhandled Apply command")

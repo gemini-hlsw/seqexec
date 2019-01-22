@@ -24,7 +24,7 @@ import mouse.boolean._
   * Client for GPI
   */
 final class GpiClient[F[_]: Sync] private (override val giapi: Giapi[F],
-                                           statusDb:           GiapiStatusDb[F])
+                                           val statusDb:       GiapiStatusDb[F])
     extends GiapiClient[F] {
   import GiapiClient.DefaultCommandTimeout
 
@@ -110,20 +110,18 @@ final class GpiClient[F[_]: Sync] private (override val giapi: Giapi[F],
       DefaultCommandTimeout
     )
 
-  override def genericApply(configuration: Configuration): F[CommandResult] = {
-    // TODO Implement a smarter apply
-    def smartApply: F[CommandResult] =
-      giapi.command(Command(
-                      SequenceCommand.APPLY,
-                      Activity.PRESET_START,
-                      configuration
-                    ),
-                    DefaultCommandTimeout)
+  // def adcInPlace: F[Boolean] =
+  //   statusDb
+  //     .value("gpi:adcDeploy")
+  //     .map(_.intCfg === configuration.value("gpi:selectAdc.deploy")) // placeholder
 
-    for {
-      _ <- statusDb.value("gpi:fpu") // placeholder
-      a <- smartApply
-    } yield a
+  override def genericApply(configuration: Configuration): F[CommandResult] = {
+    giapi.command(Command(
+                    SequenceCommand.APPLY,
+                    Activity.PRESET_START,
+                    configuration
+                  ),
+                  DefaultCommandTimeout)
   }
 }
 
@@ -137,7 +135,7 @@ object GpiClient {
     )
 
   def gpiClient[F[_]: ConcurrentEffect](
-    url:     String)(implicit timer: Timer[IO]): Resource[F, GpiClient[F]] = {
+    url: String, statusesToMonitor: List[String])(implicit timer: Timer[IO]): Resource[F, GpiClient[F]] = {
     val giapi: Resource[F, Giapi[F]] =
       Resource.make(
         Giapi.giapiConnection[F](url).connect
@@ -146,7 +144,7 @@ object GpiClient {
     val db: Resource[F, GiapiStatusDb[F]] =
       Resource.make(
         GiapiStatusDb
-          .newStatusDb[F](url, List("gpi:heartbeat", "gpi:polarizerAngle"))
+          .newStatusDb[F](url, statusesToMonitor)
       )(_.close)
 
     (giapi, db).mapN { new GpiClient[F](_, _) }
@@ -163,7 +161,7 @@ object GPIExample extends cats.effect.IOApp {
   val url = "failover:(tcp://127.0.0.1:61616)"
 
   val gpi: Resource[IO, GpiClient[IO]] =
-    GpiClient.gpiClient[IO](url)
+    GpiClient.gpiClient[IO](url, Nil)
 
   val gpiStatus: IO[(Vector[Int], Int, String, Float)] =
     gpi.use { client =>

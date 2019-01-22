@@ -7,20 +7,22 @@ import cats._
 import cats.implicits._
 import cats.effect._
 import giapi.client.syntax.giapiconfig._
-import edu.gemini.aspen.giapi.commands.{Command => GiapiCommand}
-import edu.gemini.aspen.giapi.commands.{Configuration => GiapiConfiguration}
+import edu.gemini.aspen.giapi.commands.{ Command => GiapiCommand }
+import edu.gemini.aspen.giapi.commands.{ Configuration => GiapiConfiguration }
 import edu.gemini.aspen.giapi.commands.DefaultConfiguration
 import edu.gemini.aspen.giapi.commands.ConfigPath
-import edu.gemini.aspen.giapi.commands.{Activity, SequenceCommand}
+import edu.gemini.aspen.giapi.commands.Activity
+import edu.gemini.aspen.giapi.commands.SequenceCommand
 import edu.gemini.aspen.giapi.commands.HandlerResponse.Response
 import edu.gemini.aspen.giapi.commands.HandlerResponse
 import edu.gemini.aspen.gmp.commands.jms.client.CommandSenderClient
 import scala.collection.JavaConverters._
-import scala.concurrent.duration.{Duration, FiniteDuration}
+import scala.concurrent.duration.Duration
+import scala.concurrent.duration.FiniteDuration
 
 package commands {
 
-  final case class CommandResult(response: Response)
+  final case class CommandResult(response:          Response)
   final case class CommandResultException(response: Response, message: String)
       extends RuntimeException
 
@@ -32,6 +34,12 @@ package commands {
   }
 
   final case class Configuration(config: Map[ConfigPath, String]) {
+
+    def value(path: String): Option[String] =
+      config.get(ConfigPath.configPath(path))
+
+    def remove(path: String): Configuration =
+      Configuration(config - ConfigPath.configPath(path))
 
     def toGiapi: GiapiConfiguration =
       new DefaultConfiguration(new java.util.TreeMap(config.asJava))
@@ -54,8 +62,8 @@ package commands {
   }
 
   final case class Command(sequenceCommand: SequenceCommand,
-                           activity: Activity,
-                           config: Configuration) {
+                           activity:        Activity,
+                           config:          Configuration) {
 
     def toGiapi: GiapiCommand =
       new GiapiCommand(sequenceCommand, activity, config.toGiapi)
@@ -81,8 +89,8 @@ package object commands {
     * @return the result of the operation
     */
   def sendCommand[F[_]: Async](commandsClient: CommandSenderClient,
-                               command: Command,
-                               timeout: Duration): F[CommandResult] =
+                               command:        Command,
+                               timeout:        Duration): F[CommandResult] =
     Async[F].async { cb =>
       val hr = commandsClient.sendCommand(
         command.toGiapi,

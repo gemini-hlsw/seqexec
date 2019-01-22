@@ -33,6 +33,7 @@ import seqexec.server.ghost.GhostController
 import seqexec.server.gmos.{GmosControllerSim, GmosEpics, GmosNorthControllerEpics, GmosSouthControllerEpics}
 import seqexec.server.gnirs.{GnirsControllerEpics, GnirsControllerSim, GnirsEpics}
 import seqexec.server.gpi.GpiController
+import seqexec.server.gpi.GpiStatusApply
 import seqexec.server.niri.{NiriControllerEpics, NiriControllerSim, NiriEpics}
 import seqexec.server.nifs.{NifsControllerEpics, NifsControllerSim, NifsEpics}
 import seqexec.server.gws.GwsEpics
@@ -635,7 +636,7 @@ object SeqexecEngine extends SeqexecConfiguration {
 
   def gpiClient(control: ControlStrategy, gpiUrl: String)(implicit cs: ContextShift[IO], t: Timer[IO]): cats.effect.Resource[IO, GpiClient[IO]] =
     if (control === FullControl) {
-      GpiClient.gpiClient[IO](gpiUrl)
+      GpiClient.gpiClient[IO](gpiUrl, GpiStatusApply.statusesToMonitor)
     } else {
       GpiClient.simulatedGpiClient
     }
