@@ -47,6 +47,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
     odbHost = "localhost",
     date = LocalDate.of(2017, 1, 1),
     dhsURI = uri("http://localhost/"),
+    altairControl = Simulated,
     dhsControl = Simulated,
     f2Control = Simulated,
     gcalControl = Simulated,
