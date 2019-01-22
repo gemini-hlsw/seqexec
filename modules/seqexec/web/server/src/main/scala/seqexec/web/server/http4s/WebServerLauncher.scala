@@ -214,7 +214,7 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
       Resource.make(alloc)(free).map(ExecutionContext.fromExecutor)
     }
 
-    def engineIO(httpClient: Client[IO], collector: CollectorRegistry, bec: ExecutionContext): Resource[IO, SeqexecEngine] =
+    def engineIO(httpClient: Client[IO], collector: CollectorRegistry): Resource[IO, SeqexecEngine] =
       for {
         _            <- Resource.liftF(configLog) // Initialize log before the engine is setup
         cfg          <- Resource.liftF(config)
@@ -223,8 +223,8 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
         ghostControl <- Resource.liftF(IO(cfg.require[ControlStrategy]("seqexec-engine.systemControl.ghost")))
         gpiUrl       <- Resource.liftF(IO(cfg.require[String]("seqexec-engine.gpiUrl")))
         gpiControl   <- Resource.liftF(IO(cfg.require[ControlStrategy]("seqexec-engine.systemControl.gpi")))
-        gpi          <- SeqexecEngine.gpiClient(gpiControl, gpiUrl, bec)
-        ghost        <- SeqexecEngine.ghostClient(ghostControl, ghostUrl, bec)
+        gpi          <- SeqexecEngine.gpiClient(gpiControl, gpiUrl)
+        ghost        <- SeqexecEngine.ghostClient(ghostControl, ghostUrl)
         seqc         <- Resource.liftF(SeqexecEngine.seqexecConfiguration.run(cfg))
         met          <- Resource.liftF(SeqexecMetrics.build[IO](site, collector))
       } yield SeqexecEngine(httpClient, gpi, ghost, seqc, met)
@@ -253,7 +253,7 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
         out    <- Resource.liftF(Topic[IO, SeqexecEvent](NullEvent))
         cr     <- Resource.liftF(IO(new CollectorRegistry))
         bec    <- blockingExecutionContext
-        engine <- engineIO(cli, cr, bec)
+        engine <- engineIO(cli, cr)
         _      <- webServerIO(inq, out, engine, cr, bec)
         _      <- Resource.liftF(engine.eventStream(inq).to(out.publish).compile.drain.start)
       } yield ExitCode.Success

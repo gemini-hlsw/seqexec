@@ -48,7 +48,6 @@ import seqexec.server.altair.AltairEpics
 
 import scala.collection.immutable.SortedMap
 import scala.concurrent.duration._
-import scala.concurrent.ExecutionContext
 import shapeless.tag
 
 class SeqexecEngine(httpClient: Client[IO], gpi: GpiClient[IO], ghost: GhostClient[IO], settings: Settings, sm: SeqexecMetrics)(
@@ -676,18 +675,18 @@ object SeqexecEngine extends SeqexecConfiguration {
     }._2
   }
 
-  def gpiClient(control: ControlStrategy, gpiUrl: String, ec: ExecutionContext)(implicit cs: ContextShift[IO]): cats.effect.Resource[IO, GpiClient[IO]] =
+  def gpiClient(control: ControlStrategy, gpiUrl: String)(implicit cs: ContextShift[IO], t: Timer[IO]): cats.effect.Resource[IO, GpiClient[IO]] =
     if (control === FullControl) {
-      GpiClient.gpiClient[IO](gpiUrl, ec)
+      GpiClient.gpiClient[IO](gpiUrl)
     } else {
-      GpiClient.simulatedGpiClient(ec)
+      GpiClient.simulatedGpiClient
     }
 
-  def ghostClient(control: ControlStrategy, ghostUrl: String, ec: ExecutionContext)(implicit cs: ContextShift[IO]): cats.effect.Resource[IO, GhostClient[IO]] =
+  def ghostClient(control: ControlStrategy, ghostUrl: String)(implicit cs: ContextShift[IO], t: Timer[IO]): cats.effect.Resource[IO, GhostClient[IO]] =
     if (control === FullControl) {
-      GhostClient.ghostClient[IO](ghostUrl, ec)
+      GhostClient.ghostClient[IO](ghostUrl)
     } else {
-      GhostClient.simulatedGhostClient(ec)
+      GhostClient.simulatedGhostClient
     }
 
   private def decodeTops(s: String): Map[String, String] =

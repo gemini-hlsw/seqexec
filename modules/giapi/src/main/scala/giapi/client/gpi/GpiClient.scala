@@ -7,6 +7,7 @@ import cats.implicits._
 import cats.effect.IO
 import cats.effect.Sync
 import cats.effect.Resource
+import cats.effect.Timer
 import cats.effect.ConcurrentEffect
 import edu.gemini.aspen.giapi.commands.Activity
 import edu.gemini.aspen.giapi.commands.SequenceCommand
@@ -19,7 +20,6 @@ import giapi.client.GiapiClient
 import giapi.client.GiapiStatusDb
 import giapi.client.syntax.giapiconfig._
 import mouse.boolean._
-import scala.concurrent.ExecutionContext
 
 /**
   * Client for GPI
@@ -130,19 +130,18 @@ final class GpiClient[F[_]: Sync] private (override val giapi: Giapi[F],
 
 object GpiClient {
   // Used for simulations
-  def simulatedGpiClient(ec: ExecutionContext): Resource[IO, GpiClient[IO]] =
+  def simulatedGpiClient(implicit timer: Timer[IO]): Resource[IO, GpiClient[IO]] =
     Resource.liftF(
       for {
-        c <- Giapi.giapiConnectionIO(ec).connect
+        c <- Giapi.giapiConnectionIO.connect
       } yield new GpiClient(c, GiapiStatusDb.simulatedDb[IO])
     )
 
   def gpiClient[F[_]: ConcurrentEffect](
-    url:     String,
-    context: ExecutionContext): Resource[F, GpiClient[F]] = {
+    url:     String)(implicit timer: Timer[IO]): Resource[F, GpiClient[F]] = {
     val giapi: Resource[F, Giapi[F]] =
       Resource.make(
-        Giapi.giapiConnection[F](url, context).connect
+        Giapi.giapiConnection[F](url).connect
       )(_.close)
 
     val db: Resource[F, GiapiStatusDb[F]] =
@@ -165,7 +164,7 @@ object GPIExample extends cats.effect.IOApp {
   val url = "failover:(tcp://127.0.0.1:61616)"
 
   val gpi: Resource[IO, GpiClient[IO]] =
-    GpiClient.gpiClient[IO](url, ExecutionContext.global)
+    GpiClient.gpiClient[IO](url)
 
   val gpiStatus: IO[(Vector[Int], Int, String, Float)] =
     gpi.use { client =>
