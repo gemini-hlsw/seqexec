@@ -5,7 +5,6 @@ package gem
 package web
 
 import cats.effect._
-import cats.implicits._
 import gem.dao.DatabaseConfiguration
 import org.http4s._
 import org.http4s.server.Server
