@@ -147,7 +147,8 @@ object GpiClient {
 
     val db: Resource[F, GiapiStatusDb[F]] =
       Resource.make(
-        GiapiStatusDb.newStatusDb[F](url, List("gpi:heartbeat"))
+        GiapiStatusDb
+          .newStatusDb[F](url, List("gpi:heartbeat", "gpi:polarizerAngle"))
       )(_.close)
 
     (giapi, db).mapN { new GpiClient[F](_, _) }
