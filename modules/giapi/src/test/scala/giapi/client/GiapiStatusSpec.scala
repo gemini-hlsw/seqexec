@@ -3,7 +3,7 @@
 
 package giapi.client
 
-import cats.effect.{ ContextShift, IO, Resource }
+import cats.effect.{ ContextShift, IO, Timer, Resource }
 import cats.tests.CatsSuite
 import edu.gemini.aspen.giapi.status.impl.BasicStatus
 import edu.gemini.aspen.giapi.util.jms.JmsKeys
@@ -11,12 +11,10 @@ import edu.gemini.aspen.gmp.statusdb.StatusDatabase
 import edu.gemini.aspen.gmp.statusgw.jms.JmsStatusDispatcher
 import edu.gemini.aspen.gmp.statusgw.jms.StatusItemRequestListener
 import edu.gemini.jms.activemq.provider.ActiveMQJmsProvider
-import edu.gemini.jms.api.{
-  BaseMessageConsumer,
-  DestinationData,
-  DestinationType,
-  JmsSimpleMessageSelector
-}
+import edu.gemini.jms.api.BaseMessageConsumer
+import edu.gemini.jms.api.DestinationData
+import edu.gemini.jms.api.DestinationType
+import edu.gemini.jms.api.JmsSimpleMessageSelector
 import scala.concurrent.ExecutionContext
 
 final case class GmpStatus(amq: ActiveMQJmsProvider,
@@ -78,10 +76,13 @@ final class GiapiStatusSpec extends CatsSuite {
   implicit val ioContextShift: ContextShift[IO] =
     IO.contextShift(ExecutionContext.global)
 
+  implicit val ioTimer: Timer[IO] =
+    IO.timer(ExecutionContext.global)
+
   def client(amqUrl: String, intItemName: String, strItemName: String): Resource[IO, (GmpStatus, Giapi[IO])] =
     for {
       g <- Resource.make(GmpStatus.createGmpStatus(amqUrl, intItemName, strItemName))(GmpStatus.closeGmpStatus)
-      c <- Resource.make(Giapi.giapiConnection[IO](amqUrl, ExecutionContext.global).connect)(_.close)
+      c <- Resource.make(Giapi.giapiConnection[IO](amqUrl).connect)(_.close)
     } yield (g, c)
 
   test("Test reading an existing status item") {

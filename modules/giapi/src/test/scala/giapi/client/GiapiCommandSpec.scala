@@ -3,7 +3,7 @@
 
 package giapi.client
 
-import cats.effect.{ ContextShift, IO, Resource }
+import cats.effect.{ Timer, ContextShift, IO, Resource }
 import cats.tests.CatsSuite
 import giapi.client.commands._
 import edu.gemini.jms.activemq.provider.ActiveMQJmsProvider
@@ -71,10 +71,13 @@ final class GiapiCommandSpec extends CatsSuite with EitherValues {
   implicit val ioContextShift: ContextShift[IO] =
     IO.contextShift(ExecutionContext.global)
 
+  implicit val ioTimer: Timer[IO] =
+    IO.timer(ExecutionContext.global)
+
   def client(amqUrl: String, handleCommands: Boolean): Resource[IO, Giapi[IO]] =
     for {
       _ <- Resource.make(GmpCommands.createGmpCommands(amqUrl, handleCommands))(GmpCommands.closeGmpCommands)
-      c <- Resource.make(Giapi.giapiConnection[IO](amqUrl, ExecutionContext.global).connect)(_.close)
+      c <- Resource.make(Giapi.giapiConnection[IO](amqUrl).connect)(_.close)
     } yield c
 
   ignore("Test sending a command with no handlers") { // This test passes but the backend doesn't clean up properly

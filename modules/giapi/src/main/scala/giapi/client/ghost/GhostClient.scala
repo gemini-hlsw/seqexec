@@ -7,7 +7,6 @@ import cats.effect._
 import cats.implicits._
 import giapi.client.Giapi
 import giapi.client.GiapiClient
-import giapi.client.syntax.giapiconfig._
 import scala.concurrent.duration._
 
 /** Client for GHOST */

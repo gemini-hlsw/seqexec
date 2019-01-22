@@ -301,6 +301,6 @@ object GhostController {
     }
 
     implicit val show: Show[GhostConfig] = Show.fromToString
-    implicit val configure: GiapiConfig[GhostConfig] = fromShow
+    implicit val configure: GiapiConfig[GhostConfig] = GiapiConfig.fromShow
   }
 }

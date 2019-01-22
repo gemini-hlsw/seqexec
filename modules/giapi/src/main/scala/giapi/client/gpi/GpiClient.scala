@@ -18,7 +18,6 @@ import giapi.client.commands.Configuration
 import giapi.client.Giapi
 import giapi.client.GiapiClient
 import giapi.client.GiapiStatusDb
-import giapi.client.syntax.giapiconfig._
 import mouse.boolean._
 
 /**
