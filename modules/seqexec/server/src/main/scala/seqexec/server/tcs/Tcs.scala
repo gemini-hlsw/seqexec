@@ -24,7 +24,7 @@ import squants.space.Millimeters
 final case class Tcs(tcsController: TcsController,
                      subsystems: NonEmptyList[Subsystem],
                      scienceFoldPosition: ScienceFoldPosition,
-                     gaos: Option[Gaos]) extends System[IO] {
+                     gaos: Option[Gaos[IO]]) extends System[IO] {
   import Tcs._
   import MountGuideOption._
 
@@ -54,39 +54,37 @@ final case class Tcs(tcsController: TcsController,
   private def guideOff(s0: TcsConfig, s1: Requested[TcsConfig]): SeqAction[Unit] =
     tcsController.guide {
       if (s0.tc.offsetA === s1.self.tc.offsetA) computeGuideOff(s0, s1)
-                else GuideConfig(MountGuideOff, M1GuideOff, M2GuideOff)
+      else GuideConfig(MountGuideOff, M1GuideOff, M2GuideOff)
     }
 
   private def pauseGaos(s0: TcsConfig, s1: Requested[TcsConfig]): SeqAction[Unit] = {
     val aoEvents: Set[Gaos.Reason] =
       (if (s0.ge.pwfs1.self === GuiderSensorOn && s1.self.ge.pwfs1.self === GuiderSensorOff)
         Set(Gaos.BecauseOfP1Change)
-      else Set()) ++
+      else Set.empty) ++
       (if(s0.ge.oiwfs.self === GuiderSensorOn && s1.self.ge.oiwfs.self === GuiderSensorOff)
         Set(Gaos.BecauseOfOiChange)
-      else Set()) ++
+      else Set.empty) ++
       (if(s0.tc.offsetA =!= s1.self.tc.offsetA)
         Set(Gaos.BecauseOfOffset(s1.self.tc.offsetA.self))
-      else Set())
+      else Set.empty)
 
-    if(aoEvents.isEmpty) SeqAction.void
-    else gaos.map(_.pause[IO](aoEvents)).getOrElse(SeqAction.void)
+    (gaos, aoEvents.nonEmpty.option(aoEvents)).mapN(_.pause(_)).getOrElse(SeqAction.void)
   }
 
   private def resumeGaos(s0: TcsConfig, s1: Requested[TcsConfig]): SeqAction[Unit] = {
     val aoEvents: Set[Gaos.Reason] =
       (if (s0.ge.pwfs1.self === GuiderSensorOff && s1.self.ge.pwfs1.self === GuiderSensorOn)
         Set(Gaos.BecauseOfP1Change)
-      else Set()) ++
+      else Set.empty) ++
       (if(s0.ge.oiwfs.self === GuiderSensorOff && s1.self.ge.oiwfs.self === GuiderSensorOn)
         Set(Gaos.BecauseOfOiChange)
-      else Set()) ++
+      else Set.empty) ++
       (if(s0.tc.offsetA =!= s1.self.tc.offsetA)
         Set(Gaos.BecauseOfOffset(s1.self.tc.offsetA.self))
-      else Set())
+      else Set.empty)
 
-    if(aoEvents.isEmpty) SeqAction.void
-    else gaos.map(_.resume[IO](aoEvents)).getOrElse(SeqAction.void)
+    (gaos, aoEvents.nonEmpty.option(aoEvents)).mapN(_.resume(_)).getOrElse(SeqAction.void)
   }
 
   // Helper function to output the part of the TCS configuration that is actually applied.

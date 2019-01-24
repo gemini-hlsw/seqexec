@@ -10,27 +10,27 @@ import squants.Time
 /*
  * Interface to control AO systems. Implemented by Altair and GeMS
  */
-trait Gaos {
+trait Gaos[F[_]] {
   import Gaos._
 
   /*
    * Pause GAOS guiding. The GAOS system decides what to pause, according to the reasons given
    */
-  def pause[F[_]](reasons: Set[Reason]): SeqActionF[F, Unit]
+  def pause(reasons: Set[Reason]): SeqActionF[F, Unit]
   /*
    * Resume GAOS guiding. The GAOS system decides what to resume, according to the reasons given
    *
    */
-  def resume[F[_]](reasons: Set[Reason]): SeqActionF[F, Unit]
+  def resume(reasons: Set[Reason]): SeqActionF[F, Unit]
 
   /*
    * Notify GAOS system of the start of the observation
    */
-  def observe[F[_]](expTime: Time): SeqActionF[F, Unit]
+  def observe(expTime: Time): SeqActionF[F, Unit]
   /*
    * Notify GAOS system of the end of the observation
    */
-  def endObserve[F[_]]: SeqActionF[F, Unit]
+  def endObserve: SeqActionF[F, Unit]
 
 }
 
