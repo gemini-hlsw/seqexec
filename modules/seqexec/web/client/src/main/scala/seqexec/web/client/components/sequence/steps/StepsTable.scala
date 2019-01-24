@@ -208,7 +208,6 @@ object StepsTable extends Columns {
   type Backend = RenderScope[Props, State, Unit]
   type ReceiveProps = ComponentWillReceiveProps[Props, State, Unit]
 
-
   val HeightWithOffsets: Int    = 40
   val BreakpointLineHeight: Int = 5
 
@@ -296,6 +295,58 @@ object StepsTable extends Columns {
     tableState:      TableState[TableColumn],
     breakpointHover: Option[Int],
     selected:        Option[StepId]) {
+
+    // Hide some columns depending on width
+    def hideOnWidth(s: Size): State =
+       {
+      // s.width match {
+      //   case w if w < PhoneCut =>
+      //     State.columns.modify(_.map {
+      //       case c @ ColumnMeta(ObsNameColumn, _, _, _, _) =>
+      //         c.copy(visible = false)
+      //       case c @ ColumnMeta(TargetNameColumn, _, _, _, _) =>
+      //         c.copy(visible = false)
+      //       case c =>
+      //         c
+      //     })(this)
+      //   case w if w < LargePhoneCut =>
+      //     State.columns.modify(_.map {
+      //       case c @ ColumnMeta(TargetNameColumn, _, _, _, _) =>
+      //         c.copy(visible = false)
+      //       case c =>
+      //         c
+      //     })(this)
+      //   case _ =>
+      //     this
+      println(s)
+      this
+      }
+
+    def shownForInstrument(p: Props): List[ColumnMeta[TableColumn]] = {
+      all.filter {
+        case DisperserMeta => p.showDisperser
+        case OffsetMeta => p.showOffsets
+        case ObservingModeMeta => p.showObservingMode
+        case ExposureMeta => p.showExposure
+        case FilterMeta => p.showFilter
+        case FPUMeta => p.showFPU
+        case CameraMeta => p.showCamera
+
+        case _ => true
+      }
+    }
+
+    def visibleColumnsSizes(p: Props, s: Size): List[(TableColumn, Double, Boolean)] = {
+      val visibleCols = shownForInstrument(p)
+      val fixedVisibleCols = 2
+      for {
+        (c, i) <- visibleCols.toList.zipWithIndex // TODO hide on width
+        if c.visible
+      } yield
+        (c.column,
+         tableState.widthOf(c.column, s),
+         i === tableState.columns.filter(_.visible).length - fixedVisibleCols)
+    }
     // calculate the relative widths of each column based on content only
     // this should be renormalized against the actual tabel width
       def withWidths(steps: List[Step]): State = {
@@ -574,30 +625,10 @@ object StepsTable extends Columns {
         baseHeight(b.props)
     }
 
-  private val PhoneCut      = 412
-  private val LargePhoneCut = 767
+  // private val PhoneCut      = 412
+  // private val LargePhoneCut = 767
 
-  val idxColumn: Table.ColumnArg =
-    Column(
-      Column.propsNoFlex(StepWidth,
-                         "idx",
-                         label        = "Step",
-                         className    = SeqexecStyles.paddedStepRow.htmlClass,
-                         cellRenderer = stepIdRenderer))
-
-  def stateColumn(b: Backend, controlWidth: Double): Option[Table.ColumnArg] =
-    b.props.steps.map(
-      i =>
-        Column(
-          Column
-            .propsNoFlex(controlWidth,
-                         "state",
-                         label        = "Execution Progress",
-                         className    = SeqexecStyles.paddedStepRow.htmlClass,
-                         cellRenderer = stepProgressRenderer(i, b))
-      ))
-
-  def iconColumn(b: Backend): Option[Table.ColumnArg] =
+  def controlColumn(b: Backend): Option[Table.ColumnArg] =
     b.props.steps.map(
       i =>
         Column(
@@ -616,30 +647,50 @@ object StepsTable extends Columns {
               (SeqexecStyles.centeredCell |+| SeqexecStyles.tableHeaderIcons).htmlClass
           )))
 
+  val stepColumn: Option[Table.ColumnArg] =
+    Column(
+      Column.propsNoFlex(StepWidth,
+                         "idx",
+                         label        = "Step",
+                         className    = SeqexecStyles.paddedStepRow.htmlClass,
+                         cellRenderer = stepIdRenderer)).some
+
+  def executionColumn(b: Backend, controlWidth: Double): Option[Table.ColumnArg] =
+    b.props.steps.map(
+      i =>
+        Column(
+          Column
+            .propsNoFlex(controlWidth,
+                         "state",
+                         label        = "Execution Progress",
+                         className    = SeqexecStyles.paddedStepRow.htmlClass,
+                         cellRenderer = stepProgressRenderer(i, b))
+      ))
+
   def offsetColumn(p:             Props,
-                   offsetVisible: Boolean): (Option[Table.ColumnArg], Double) =
+                   width1: Double): (Option[Table.ColumnArg], Double) =
     p.offsetsDisplay match {
       case OffsetsDisplay.DisplayOffsets(x) if p.showOffsets =>
         val width = OffsetWidthBase + x
+        println(width1)
         (Column(
            Column
              .propsNoFlex(
                width,
                "offset",
                label        = "Offset",
-               cellRenderer = stepStatusRenderer(p.offsetsDisplay))).some
-           .filter(_ => offsetVisible),
+               cellRenderer = stepStatusRenderer(p.offsetsDisplay))).some,
          width)
       case _ => (None, 0)
     }
 
-  def observingModeColumn(p: Props): Option[Table.ColumnArg] =
+  def observingModeColumn(p: Props, width: Double): Option[Table.ColumnArg] =
     p.steps
       .map(
         _ =>
           Column(
             Column.propsNoFlex(
-              ObservingModeWidth,
+              width,
               "obsMode",
               label        = "Observing Mode",
               className    = SeqexecStyles.centeredCell.htmlClass,
@@ -648,42 +699,39 @@ object StepsTable extends Columns {
       .filter(_ => p.showObservingMode)
 
   def exposureColumn(p:               Props,
-                     exposureVisible: Boolean): Option[Table.ColumnArg] =
+                     width: Double): Option[Table.ColumnArg] =
     p.steps
       .map(
         i =>
           Column(
             Column.propsNoFlex(
-              ExposureWidth,
+              width,
               "exposure",
               label        = "Exposure",
               className    = SeqexecStyles.centeredCell.htmlClass,
               cellRenderer = stepExposureRenderer(i.instrument)
             )))
-      .filter(_ => p.showExposure && exposureVisible)
-
 
   def disperserColumn(p:                Props,
-                      disperserVisible: Boolean): Option[Table.ColumnArg] =
+                      width: Double): Option[Table.ColumnArg] =
     p.steps
       .map(
         s =>
           Column(Column.propsNoFlex(
-            DisperserWidth,
+            width,
             "disperser",
             label        = "Disperser",
             className    = SeqexecStyles.centeredCell.htmlClass,
             cellRenderer = stepDisperserRenderer(s.instrument)
           )))
-      .filter(_ => p.showDisperser && disperserVisible)
 
-  def filterColumn(p: Props, filterVisible: Boolean): Option[Table.ColumnArg] =
+  def filterColumn(p: Props, width: Double): Option[Table.ColumnArg] =
     p.steps
       .map(
         i =>
           Column(
             Column.propsNoFlex(
-              FilterWidth,
+              width,
               "filter",
               label        = "Filter",
               className    = SeqexecStyles.centeredCell.htmlClass,
@@ -737,34 +785,31 @@ object StepsTable extends Columns {
       .map(
         i =>
           Column(
-            Column.propsNoFlex(FPUWidth,
+            Column.propsNoFlex(width,
                                "fpu",
                                label        = "FPU",
                                className    = SeqexecStyles.centeredCell.htmlClass,
                                cellRenderer = stepFPURenderer(i.instrument))))
-      .filter(_ => p.showFPU && fpuVisible)
 
-  def cameraColumn(p: Props, cameraVisible: Boolean): Option[Table.ColumnArg] =
+  def cameraColumn(p: Props, width: Double): Option[Table.ColumnArg] =
     p.steps
       .map(
         i =>
           Column(
             Column.propsNoFlex(
-              CameraWidth,
+              width,
               "camera",
               label        = "Camera",
               className    = SeqexecStyles.centeredCell.htmlClass,
               cellRenderer = cameraRenderer(i.instrument)
             )))
-      .filter(_ => p.showCamera && cameraVisible)
 
-
-  def typeColumn(p: Props, objectSize: SSize): Option[Table.ColumnArg] =
+  def objectTypeColumn(p: Props, width: Double, objectSize: SSize): Option[Table.ColumnArg] =
     p.steps.map(
       _ =>
         Column(
           Column.propsNoFlex(
-            ObjectTypeWidth,
+            width,
             "type",
             label        = "Type",
             className    = SeqexecStyles.centeredCell.htmlClass,
