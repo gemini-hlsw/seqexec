@@ -420,10 +420,11 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
     stepType match {
       case CelestialObject(inst) => toInstrumentSys(inst).map(sys => sys :: List(Tcs(systems.tcs,
         if(hasOI(inst)) all else allButOI, ScienceFoldPosition.Position(TcsController.LightSource
-          .Sky, sys.sfName(config))),
+          .Sky, sys.sfName(config)), None),
         Gcal(systems.gcal, site == Site.GS)))
       case FlatOrArc(inst)       => toInstrumentSys(inst).map(sys => sys :: List(Tcs(systems.tcs,
-        flatOrArcTcsSubsystems(inst), ScienceFoldPosition.Position(TcsController.LightSource.GCAL, sys.sfName(config))),
+        flatOrArcTcsSubsystems(inst), ScienceFoldPosition.Position(TcsController.LightSource
+          .GCAL, sys.sfName(config)), None),
         Gcal(systems.gcal, site == Site.GS)))
       case DarkOrBias(inst)      => toInstrumentSys(inst).map(List(_))
       case _                     => TrySeq.fail(Unexpected(s"Unsupported step type $stepType"))
@@ -433,7 +434,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
   // I cannot use a sealed trait as base, because I cannot have all systems in one source file (too big),
   // so either I use an unchecked notation, or add a default case that throws an exception.
   private def resourceFromSystem(s: System[IO]): Resource = (s: @unchecked) match {
-    case Tcs(_, _, _)     => Resource.TCS
+    case Tcs(_, _, _, _)  => Resource.TCS
     case Gcal(_, _)       => Resource.Gcal
     case GmosNorth(_, _)  => Instrument.GmosN
     case GmosSouth(_, _)  => Instrument.GmosS
