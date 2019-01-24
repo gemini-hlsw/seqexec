@@ -21,8 +21,10 @@ import seqexec.server.tcs.TcsController._
 import seqexec.server.{ConfigResult, SeqAction, System}
 import squants.space.Millimeters
 
-final case class Tcs(tcsController: TcsController, subsystems: NonEmptyList[Subsystem], scienceFoldPosition: ScienceFoldPosition) extends System[IO] {
-
+final case class Tcs(tcsController: TcsController,
+                     subsystems: NonEmptyList[Subsystem],
+                     scienceFoldPosition: ScienceFoldPosition,
+                     gaos: Option[Gaos]) extends System[IO] {
   import Tcs._
   import MountGuideOption._
 
@@ -52,8 +54,40 @@ final case class Tcs(tcsController: TcsController, subsystems: NonEmptyList[Subs
   private def guideOff(s0: TcsConfig, s1: Requested[TcsConfig]): SeqAction[Unit] =
     tcsController.guide {
       if (s0.tc.offsetA === s1.self.tc.offsetA) computeGuideOff(s0, s1)
-      else GuideConfig(MountGuideOff, M1GuideOff, M2GuideOff)
+                else GuideConfig(MountGuideOff, M1GuideOff, M2GuideOff)
     }
+
+  private def pauseGaos(s0: TcsConfig, s1: Requested[TcsConfig]): SeqAction[Unit] = {
+    val aoEvents: Set[Gaos.Reason] =
+      (if (s0.ge.pwfs1.self === GuiderSensorOn && s1.self.ge.pwfs1.self === GuiderSensorOff)
+        Set(Gaos.BecauseOfP1Change)
+      else Set()) ++
+      (if(s0.ge.oiwfs.self === GuiderSensorOn && s1.self.ge.oiwfs.self === GuiderSensorOff)
+        Set(Gaos.BecauseOfOiChange)
+      else Set()) ++
+      (if(s0.tc.offsetA =!= s1.self.tc.offsetA)
+        Set(Gaos.BecauseOfOffset(s1.self.tc.offsetA.self))
+      else Set())
+
+    if(aoEvents.isEmpty) SeqAction.void
+    else gaos.map(_.pause[IO](aoEvents)).getOrElse(SeqAction.void)
+  }
+
+  private def resumeGaos(s0: TcsConfig, s1: Requested[TcsConfig]): SeqAction[Unit] = {
+    val aoEvents: Set[Gaos.Reason] =
+      (if (s0.ge.pwfs1.self === GuiderSensorOff && s1.self.ge.pwfs1.self === GuiderSensorOn)
+        Set(Gaos.BecauseOfP1Change)
+      else Set()) ++
+      (if(s0.ge.oiwfs.self === GuiderSensorOff && s1.self.ge.oiwfs.self === GuiderSensorOn)
+        Set(Gaos.BecauseOfOiChange)
+      else Set()) ++
+      (if(s0.tc.offsetA =!= s1.self.tc.offsetA)
+        Set(Gaos.BecauseOfOffset(s1.self.tc.offsetA.self))
+      else Set())
+
+    if(aoEvents.isEmpty) SeqAction.void
+    else gaos.map(_.resume[IO](aoEvents)).getOrElse(SeqAction.void)
+  }
 
   // Helper function to output the part of the TCS configuration that is actually applied.
   private def subsystemConfig(tcs: TcsConfig, subsystem: Subsystem): List[AnyRef] = subsystem match {
@@ -77,7 +111,9 @@ final case class Tcs(tcsController: TcsController, subsystems: NonEmptyList[Subs
     if (subsystems.toList.contains(Subsystem.Mount))
       for {
         _ <- guideOff(tcsState, Requested(tcsConfig))
+        _ <- pauseGaos(tcsState, Requested(tcsConfig))
         _ <- tcsController.applyConfig(subsystems, tcsConfig)
+        _ <- resumeGaos(tcsState, Requested(tcsConfig))
         _ <- tcsController.guide(tcsConfig.gc)
       } yield ConfigResult(this)
     else
