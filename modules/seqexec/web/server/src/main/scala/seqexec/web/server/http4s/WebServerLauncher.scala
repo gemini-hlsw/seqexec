@@ -178,6 +178,19 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
     IO.apply { logger.info(msg) }
   }
 
+  def logEngineStart: IO[Unit] = IO {
+    val banner = """
+   _____
+  / ___/___  ____ ____  _  _____  _____
+  \__ \/ _ \/ __ `/ _ \| |/_/ _ \/ ___/
+ ___/ /  __/ /_/ /  __/>  </  __/ /__
+/____/\___/\__, /\___/_/|_|\___/\___/
+             /_/
+"""
+    val msg = s"Start Seqexec version ${OcsBuildInfo.version}"
+    logger.info(banner + msg)
+  }
+
   // We need to manually update the configuration of the logging subsystem
   // to support capturing log messages and forward them to the clients
   def logToClients(out: Topic[IO, SeqexecEvent]): IO[Appender[ILoggingEvent]] = IO.apply {
@@ -216,8 +229,8 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
 
     def engineIO(httpClient: Client[IO], collector: CollectorRegistry): Resource[IO, SeqexecEngine] =
       for {
-        _            <- Resource.liftF(configLog) // Initialize log before the engine is setup
         cfg          <- Resource.liftF(config)
+        _            <- Resource.liftF(logEngineStart)
         site         <- Resource.liftF(IO(cfg.require[Site]("seqexec-engine.site")))
         ghostUrl     <- Resource.liftF(IO(cfg.require[String]("seqexec-engine.ghostUrl")))
         ghostControl <- Resource.liftF(IO(cfg.require[ControlStrategy]("seqexec-engine.systemControl.ghost")))
@@ -248,6 +261,7 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
 
     val r: Resource[IO, ExitCode] =
       for {
+        _      <- Resource.liftF(configLog) // Initialize log before the engine is setup
         cli    <- AsyncHttpClient.resource[IO]()
         inq    <- Resource.liftF(Queue.bounded[IO, executeEngine.EventType](10))
         out    <- Resource.liftF(Topic[IO, SeqexecEvent](NullEvent))
