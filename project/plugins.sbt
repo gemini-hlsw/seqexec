@@ -36,7 +36,7 @@ addSbtPlugin("de.heikoseeberger"  % "sbt-header"               % "4.1.0")
 addSbtPlugin("com.typesafe.sbt"   % "sbt-git"                  % "0.9.3")
 addSbtPlugin("com.dwijnand"       % "sbt-dynver"               % "3.0.0")
 
-addSbtPlugin("org.wartremover"    % "sbt-wartremover"          % "2.3.7")
+addSbtPlugin("org.wartremover"    % "sbt-wartremover"          % "2.4.0")
 
 // Use NPM modules rather than webjars
 addSbtPlugin("ch.epfl.scala"      % "sbt-scalajs-bundler"      % "0.14.0")

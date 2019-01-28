@@ -12,7 +12,7 @@ import gem.util.Timestamp
 
 import cats.implicits._
 import doobie._, doobie.implicits._
-import fs2.{ Sink, Stream }
+import fs2.{ Pipe, Stream }
 
 object EphemerisDao {
   import CoordinatesComposite._
@@ -36,7 +36,7 @@ object EphemerisDao {
       e.toMap.toList.map { case (i, c) => toRow(k, s, i, c) }
     )
 
-  def streamInsert(k: EphemerisKey, s: Site): Sink[ConnectionIO, Ephemeris.Element] =
+  def streamInsert(k: EphemerisKey, s: Site): Pipe[ConnectionIO, Ephemeris.Element, Unit] =
     _.map { case (i, c) => toRow(k, s, i, c) } // Stream[M, EphemerisRow]
      .chunkN(4096)                             // Stream[M, Chunk[EphemerisRow]]
      .flatMap { rows =>
@@ -49,7 +49,7 @@ object EphemerisDao {
   def update(k: EphemerisKey, s: Site, e: Ephemeris): ConnectionIO[Unit] =
     (delete(k, s) *> insert(k, s, e)).void
 
-  def streamUpdate(k: EphemerisKey, s: Site): Sink[ConnectionIO, Ephemeris.Element] =
+  def streamUpdate(k: EphemerisKey, s: Site): Pipe[ConnectionIO, Ephemeris.Element, Unit] =
     elems => streamInsert(k, s).apply(Stream.eval_(delete(k, s)) ++ elems)
 
   /** Selects all ephemeris elements associated with the given key and site into

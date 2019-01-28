@@ -19,7 +19,7 @@ import seqexec.web.server.security.Http4sAuthentication
 import seqexec.web.server.security.TokenRefresher
 import seqexec.web.common.LogMessage
 import fs2.concurrent.Topic
-import fs2.Sink
+import fs2.Pipe
 import fs2.Stream
 import org.http4s._
 import org.http4s.dsl.io._
@@ -140,7 +140,7 @@ class SeqexecUIApiRoutes(site: String,
           engineOutput.subscribe(1).map(anonymizeF).filter(filterOutNull).filter(filterOutOnClientId(clientId)).map(v => Binary(ByteVector(trimmedArray(v))))
 
         // We don't care about messages sent over ws by clients
-        val clientEventsSink: Sink[IO, WebSocketFrame] = Sink(_ => IO.unit)
+        val clientEventsSink: Pipe[IO, WebSocketFrame, Unit] = _.evalMap(_ => IO.unit)
 
         // Create a client specific websocket
         for {

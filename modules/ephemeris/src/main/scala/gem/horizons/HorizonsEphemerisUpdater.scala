@@ -115,7 +115,7 @@ final case class HorizonsEphemerisUpdater[M[_]: Monad: LiftIO](xa: Transactor[M]
       _ <- ctx.meta.fold(insertMeta(ctx.key, ctx.site, mʹ)) { _ =>
              updateMeta(ctx.key, ctx.site, mʹ)
            }
-      _ <- streamEphemeris(ctx.key, ctx.site, sem).to(sink).compile.drain
+      _ <- streamEphemeris(ctx.key, ctx.site, sem).through(sink).compile.drain
     } yield ()
   }
 

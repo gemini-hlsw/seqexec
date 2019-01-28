@@ -269,7 +269,7 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
         bec    <- blockingExecutionContext
         engine <- engineIO(cli, cr)
         _      <- webServerIO(inq, out, engine, cr, bec)
-        _      <- Resource.liftF(engine.eventStream(inq).to(out.publish).compile.drain.start)
+        _      <- Resource.liftF(engine.eventStream(inq).through(out.publish).compile.drain.start)
       } yield ExitCode.Success
 
     r.use(_ => IO.never)
