@@ -95,8 +95,8 @@ class GnirsEpics(epicsService: CaService, tops: Map[String, String]) {
 
   private val stopCS: Option[CaCommandSender] = Option(epicsService.getCommandSender("nirs::stop"))
   private val observeAS: Option[CaApplySender] = Option(epicsService.createObserveSender(
-    "nirs::observeCmd", s"{GnirsTop}dc:apply", s"{GnirsTop}dc:applyC", s"{GnirsTop}dc:observeC",
-    true, s"{GnirsTop}dc:stop", s"{GnirsTop}dc:abort", ""))
+    "nirs::observeCmd", s"${GnirsTop}dc:apply", s"${GnirsTop}dc:applyC", s"${GnirsTop}dc:observeC",
+    true, s"${GnirsTop}dc:stop", s"${GnirsTop}dc:abort", ""))
 
   object stopCmd extends EpicsCommand {
     override protected val cs: Option[CaCommandSender] = stopCS
@@ -150,7 +150,7 @@ class GnirsEpics(epicsService: CaService, tops: Map[String, String]) {
   def lowNoise: Option[Int] = Option(dcState.getIntegerAttribute("lowNoise").value).map(_.toInt)
 
   private val observeCAttr: CaAttribute[CarStateGEM5] = dcState.addEnum("observeState",
-    s"{GnirsTop}dc:observeC.VAL", classOf[CarStateGEM5])
+    s"${GnirsTop}dc:observeC.VAL", classOf[CarStateGEM5])
   def observeState: Option[CarStateGEM5] = Option(observeCAttr.value)
 
   def dhsConnected: Option[Boolean] = Option(dcState.getIntegerAttribute("dhsConnected").value)
