@@ -67,7 +67,7 @@ final class TcsEphemerisExport[M[_]: Sync: ContextShift](xa: Transactor[M]) {
       .intersperse("\n")
       .append(Stream.emit("\n"))
       .through(text.utf8Encode)
-      .to(file.writeAll(resolve(key, dir), ExecutionContext.global /** ok here? **/, List(CREATE, TRUNCATE_EXISTING)))
+      .through(file.writeAll(resolve(key, dir), ExecutionContext.global /** ok here? **/, List(CREATE, TRUNCATE_EXISTING)))
       .compile
       .drain
   }

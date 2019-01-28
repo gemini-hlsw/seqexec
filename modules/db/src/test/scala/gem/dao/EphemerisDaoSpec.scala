@@ -182,7 +182,7 @@ class EphemerisDaoSpec extends PropSpec with PropertyChecks with DaoTest {
       val mʹ = m + (ks -> e)
       val p  = (mʹ.toList.traverse { case (ks, e) =>
         Stream.emits(e.toMap.toList).covary[ConnectionIO]
-          .to(EphemerisDao.streamInsert(ks.key, ks.site))
+          .through(EphemerisDao.streamInsert(ks.key, ks.site))
           .compile
           .drain
       }) *> EphemerisDao.selectAll(ks.key, ks.site)
@@ -199,14 +199,14 @@ class EphemerisDaoSpec extends PropSpec with PropertyChecks with DaoTest {
       // Setup a program that will insert all the ephemeris maps.
       val p  = mʹ.toList.traverse { case (ks, e) =>
         Stream.emits(e.toMap.toList).covary[ConnectionIO]
-          .to(EphemerisDao.streamInsert(ks.key, ks.site))
+          .through(EphemerisDao.streamInsert(ks.key, ks.site))
           .compile
           .drain
       }
 
       // Now stream update the ephemeris elements in e0 to those in e1
       val pʹ = p *> Stream.emits(e1.toMap.toList).covary[ConnectionIO]
-                      .to(EphemerisDao.streamUpdate(ks.key, ks.site))
+                      .through(EphemerisDao.streamUpdate(ks.key, ks.site))
                       .compile
                       .drain
 
