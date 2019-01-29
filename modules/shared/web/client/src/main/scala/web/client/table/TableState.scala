@@ -56,7 +56,6 @@ final case class TableState[A: Eq](userModified:   UserModified,
     val width   = s.width - fixedWidth
     val refCol  = cl.lift(indexOf)
     val nextCol = cl.lift(indexOf + 1)
-    cl.foreach(println)
 
     if (delta === 0.0) {
       this

@@ -52,11 +52,13 @@ import web.client.table._
 
 trait Columns {
   val ControlWidth: Double       = 40
-  val StepWidth: Double           = 50
+  val StepWidth: Double          = 50
   val StateWidth: Double         = 200
   val OffsetWidthBase: Double    = 75
   val ExposureWidth: Double      = 75
+  val ExposureMinWidth: Double   = 78.95 + SeqexecStyles.TableBorderWidth
   val DisperserWidth: Double     = 100
+  val DisperserMinWidth: Double  = 100 + SeqexecStyles.TableBorderWidth
   val ObservingModeWidth: Double = 180
   val FilterWidth: Double        = 180
   val FPUWidth: Double           = 100
@@ -121,63 +123,63 @@ trait Columns {
     name    = "state",
     label   = "Execution Progress",
     visible = true,
-    PercentageColumnWidth.unsafeFromDouble(0.1, StateWidth))
+    VariableColumnWidth.unsafeFromDouble(0.1, StateWidth))
 
   val OffsetMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     OffsetColumn,
     name    = "state",
     label   = "Execution Progress",
     visible = true,
-    PercentageColumnWidth.unsafeFromDouble(0.1, OffsetWidthBase))
+    VariableColumnWidth.unsafeFromDouble(0.1, OffsetWidthBase))
 
   val ObservingModeMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     ObservingModeColumn,
     name    = "obsMode",
     label   = "Observing Mode",
     visible = true,
-    PercentageColumnWidth.unsafeFromDouble(0.1, ObservingModeWidth))
+    VariableColumnWidth.unsafeFromDouble(0.1, ObservingModeWidth))
 
   val ExposureMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     ExposureColumn,
     name    = "exposure",
     label   = "Exposure",
     visible = true,
-    PercentageColumnWidth.unsafeFromDouble(0.1, ExposureWidth))
+    VariableColumnWidth.unsafeFromDouble(0.1, ExposureMinWidth))
 
   val DisperserMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     DisperserColumn,
     name    = "disperser",
     label   = "Disperser",
     visible = true,
-    PercentageColumnWidth.unsafeFromDouble(0.1, DisperserWidth))
+    VariableColumnWidth.unsafeFromDouble(0.1, DisperserMinWidth))
 
   val FilterMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     FilterColumn,
     name    = "filter",
     label   = "Filter",
     visible = true,
-    PercentageColumnWidth.unsafeFromDouble(0.1, FilterWidth))
+    VariableColumnWidth.unsafeFromDouble(0.1, FilterWidth))
 
   val FPUMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     FPUColumn,
     name    = "camera",
     label   = "FPU",
     visible = true,
-    PercentageColumnWidth.unsafeFromDouble(0.1, FPUWidth))
+    VariableColumnWidth.unsafeFromDouble(0.1, FPUWidth))
 
   val CameraMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     CameraColumn,
     name    = "camera",
     label   = "Camera",
     visible = true,
-    PercentageColumnWidth.unsafeFromDouble(0.1, CameraWidth))
+    VariableColumnWidth.unsafeFromDouble(0.1, CameraWidth))
 
   val ObjectTypeMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     ObjectTypeColumn,
     name    = "type",
     label   = "Type",
     visible = true,
-    PercentageColumnWidth.unsafeFromDouble(0.1, ObjectTypeWidth))
+    FixedColumnWidth.unsafeFromDouble(ObjectTypeWidth))
 
   val SettingsMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     SettingsColumn,
@@ -187,16 +189,19 @@ trait Columns {
     FixedColumnWidth.unsafeFromDouble(SettingsWidth))
 
   val all: NonEmptyList[ColumnMeta[TableColumn]] =
-    NonEmptyList.of(ControlColumnMeta, StepMeta, ExecutionMeta,
-    OffsetMeta,
-    ObservingModeMeta,
-    ExposureMeta,
-    DisperserMeta,
-    FilterMeta,
-    FPUMeta,
-    CameraMeta,
-    ObjectTypeMeta,
-    SettingsMeta
+    NonEmptyList.of(
+      ControlColumnMeta,
+      StepMeta,
+      ExecutionMeta,
+      OffsetMeta,
+      ObservingModeMeta,
+      ExposureMeta,
+      DisperserMeta,
+      FilterMeta,
+      FPUMeta,
+      CameraMeta,
+      ObjectTypeMeta,
+      SettingsMeta
     )
 
 }
@@ -285,20 +290,20 @@ object StepsTable extends Columns {
 
     val startState: State =
       tableState
-        .map(s =>
-          (State.tableState.set(s) >>> State.selected.set(selectedStep))(State.InitialState))
+        .map(
+          s =>
+            (State.tableState.set(s) >>> State.selected.set(selectedStep))(
+              State.InitialState))
         .getOrElse(State.InitialState)
         .visibleCols(this)
   }
 
-  final case class State(
-    tableState:      TableState[TableColumn],
-    breakpointHover: Option[Int],
-    selected:        Option[StepId]) {
+  final case class State(tableState:      TableState[TableColumn],
+                         breakpointHover: Option[Int],
+                         selected:        Option[StepId]) {
 
     // Hide some columns depending on width
-    def hideOnWidth(s: Size): State =
-       {
+    def hideOnWidth(s: Size): State = {
       // s.width match {
       //   case w if w < PhoneCut =>
       //     State.columns.modify(_.map {
@@ -318,40 +323,40 @@ object StepsTable extends Columns {
       //     })(this)
       //   case _ =>
       //     this
-      println(s)
+      // println(s)
       this
-      }
-
-    def shownForInstrument(p: Props): List[ColumnMeta[TableColumn]] = {
-      all.filter {
-        case DisperserMeta => p.showDisperser
-        case OffsetMeta => p.showOffsets
-        case ObservingModeMeta => p.showObservingMode
-        case ExposureMeta => p.showExposure
-        case FilterMeta => p.showFilter
-        case FPUMeta => p.showFPU
-        case CameraMeta => p.showCamera
-        case _ => true
-      }
     }
+
+    def shownForInstrument(p: Props): List[ColumnMeta[TableColumn]] =
+      all.filter {
+        case DisperserMeta     => p.showDisperser
+        case OffsetMeta        => p.showOffsets
+        case ObservingModeMeta => p.showObservingMode
+        case ExposureMeta      => p.showExposure
+        case FilterMeta        => p.showFilter
+        case FPUMeta           => p.showFPU
+        case CameraMeta        => p.showCamera
+        case _                 => true
+      }
 
     def visibleCols(p: Props): State =
-      State.columns.set(NonEmptyList.fromListUnsafe(shownForInstrument(p)))(this)
+      State.columns.set(NonEmptyList.fromListUnsafe(shownForInstrument(p)))(
+        this)
 
-    def visibleColumnsSizes(p: Props, s: Size): List[(TableColumn, Double, Boolean)] = {
-      val visibleCols = shownForInstrument(p)
-      val fixedVisibleCols = 2
-      for {
-        (c, i) <- visibleCols.toList.zipWithIndex // TODO hide on width
-        if c.visible
-      } yield
-        (c.column,
-         tableState.widthOf(c.column, s),
-         i === tableState.columns.filter(_.visible).length - fixedVisibleCols)
-    }
+    // def visibleColumnsSizes(p: Props, s: Size): List[(TableColumn, Double, Boolean)] = {
+    //   val visibleCols = shownForInstrument(p)
+    //   val fixedVisibleCols = 2
+    //   for {
+    //     (c, i) <- visibleCols.toList.zipWithIndex // TODO hide on width
+    //     if c.visible
+    //   } yield
+    //     (c.column,
+    //      tableState.widthOf(c.column, s),
+    //      i === tableState.columns.filter(_.visible).length - fixedVisibleCols)
+    // }
     // calculate the relative widths of each column based on content only
     // this should be renormalized against the actual tabel width
-      def withWidths(steps: List[Step]): State = {
+    def withWidths(steps: List[Step]): State = {
       // if (tableState.userModified === IsModified) {
       //   this
       // } else {
@@ -391,18 +396,18 @@ object StepsTable extends Columns {
       //     .sum + ClassColumnWidth + (if (loggedIn) AddQueueColumnWidth else 0)
       //   // Normalize based on visibility
       //   State.columns.modify(_.map {
-      //     case c @ ColumnMeta(t, _, _, true, PercentageColumnWidth(_, m)) =>
-      //       PercentageColumnWidth
+      //     case c @ ColumnMeta(t, _, _, true, VariableColumnWidth(_, m)) =>
+      //       VariableColumnWidth
       //         .fromDouble(optimalSizes.getOrElse(t, m).toDouble / width, m)
       //         .fold(c)(w => c.copy(width = w))
       //     case c =>
       //       c
       //   })(this)
       // }
-        println(steps.length)
-        this
-      }
+      // println(steps.length)
+      this
     }
+  }
 
   object State {
 
@@ -435,18 +440,6 @@ object StepsTable extends Columns {
   implicit val tcReuse: Reusability[TableColumn] = Reusability.byRef
   implicit val stateReuse: Reusability[State] =
     Reusability.by(x => (x.tableState, x.breakpointHover, x.selected))
-
-  val controlHeaderRenderer: HeaderRenderer[js.Object] = (_, _, _, _, _, _) =>
-    <.span(
-      ^.title := "Control",
-      IconSettings
-  )
-
-  val settingsHeaderRenderer: HeaderRenderer[js.Object] = (_, _, _, _, _, _) =>
-    <.span(
-      ^.title := "Settings",
-      IconBrowser
-  )
 
   private def firstRunnableIndex(l: List[Step]): Int =
     l.zipWithIndex.find(!_._1.isFinished).map(_._2).getOrElse(l.length)
@@ -635,171 +628,109 @@ object StepsTable extends Columns {
 
   def columnClassName(c: TableColumn): Option[GStyle] =
     c match {
-      case ControlColumn => SeqexecStyles.controlCellRow.some
+      case ControlColumn                => SeqexecStyles.controlCellRow.some
       case StepColumn | ExecutionColumn => SeqexecStyles.paddedStepRow.some
-      case ObservingModeColumn | ExposureColumn | DisperserColumn | FilterColumn | FPUColumn | CameraColumn | ObjectTypeColumn => SeqexecStyles.centeredCell.some
+      case ObservingModeColumn | ExposureColumn | DisperserColumn |
+          FilterColumn | FPUColumn | CameraColumn | ObjectTypeColumn =>
+        SeqexecStyles.centeredCell.some
       case SettingsColumn => SeqexecStyles.settingsCellRow.some
-      case _ => none
+      case _              => none
     }
 
   def headerClassName(c: TableColumn): Option[GStyle] =
     c match {
-      case ControlColumn => (SeqexecStyles.centeredCell |+| SeqexecStyles.tableHeaderIcons).some
-      case SettingsColumn => (SeqexecStyles.centeredCell |+| SeqexecStyles.tableHeaderIcons).some
+      case ControlColumn =>
+        (SeqexecStyles.centeredCell |+| SeqexecStyles.tableHeaderIcons).some
+      case SettingsColumn =>
+        (SeqexecStyles.centeredCell |+| SeqexecStyles.tableHeaderIcons).some
       case _ => none
     }
 
-  def columnCellRenderer(b: Backend, c: TableColumn): CellRenderer[js.Object, js.Object, StepRow] = {
+  val controlHeaderRenderer: HeaderRenderer[js.Object] = (_, _, _, _, _, _) =>
+    <.span(
+      ^.title := "Control",
+      IconSettings
+  )
+
+  val settingsHeaderRenderer: HeaderRenderer[js.Object] = (_, _, _, _, _, _) =>
+    <.span(
+      ^.title := "Settings",
+      IconBrowser
+  )
+
+  private def fixedHeaderRenderer(c: TableColumn): HeaderRenderer[js.Object] =
+    c match {
+      case ControlColumn  => controlHeaderRenderer
+      case SettingsColumn => settingsHeaderRenderer
+      case _              => defaultHeaderRendererS
+    }
+
+  private def columnCellRenderer(
+    b: Backend,
+    c: TableColumn): CellRenderer[js.Object, js.Object, StepRow] = {
     val optR = c match {
-      case ControlColumn => b.props.steps.map(stepControlRenderer(_, b,
-                                                        rowBreakpointHoverOnCB(b),
-                                               rowBreakpointHoverOffCB(b),
-                                               recomputeRowHeightsCB))
-      case StepColumn => stepIdRenderer.some
-      case ExecutionColumn => b.props.steps.map(stepProgressRenderer(_, b))
-      case OffsetColumn => stepStatusRenderer(b.props.offsetsDisplay).some
+      case ControlColumn =>
+        b.props.steps.map(
+          stepControlRenderer(_,
+                              b,
+                              rowBreakpointHoverOnCB(b),
+                              rowBreakpointHoverOffCB(b),
+                              recomputeRowHeightsCB))
+      case StepColumn          => stepIdRenderer.some
+      case ExecutionColumn     => b.props.steps.map(stepProgressRenderer(_, b))
+      case OffsetColumn        => stepStatusRenderer(b.props.offsetsDisplay).some
       case ObservingModeColumn => stepObsModeRenderer.some
-      case ExposureColumn => b.props.steps.map(p => stepExposureRenderer(p.instrument))
-      case DisperserColumn => b.props.steps.map(p => stepDisperserRenderer(p.instrument))
-      case FilterColumn => b.props.steps.map(p => stepFilterRenderer(p.instrument))
-      case FPUColumn => b.props.steps.map(p => stepFPURenderer(p.instrument))
-      case CameraColumn => b.props.steps.map(p => cameraRenderer(p.instrument))
+      case ExposureColumn =>
+        b.props.steps.map(p => stepExposureRenderer(p.instrument))
+      case DisperserColumn =>
+        b.props.steps.map(p => stepDisperserRenderer(p.instrument))
+      case FilterColumn =>
+        b.props.steps.map(p => stepFilterRenderer(p.instrument))
+      case FPUColumn        => b.props.steps.map(p => stepFPURenderer(p.instrument))
+      case CameraColumn     => b.props.steps.map(p => cameraRenderer(p.instrument))
       case ObjectTypeColumn => stepObjectTypeRenderer(SSize.Small).some
-      case SettingsColumn => b.props.steps.map(p => settingsControlRenderer(b.props, p))
+      case SettingsColumn =>
+        b.props.steps.map(p => settingsControlRenderer(b.props, p))
       case _ => none
     }
     optR.getOrElse(defaultCellRendererS)
   }
 
   // Columns for the table
-  private def colBuilder(b: Backend, size: Size): ColumnRenderArgs[TableColumn] => Table.ColumnArg = tb  => {
-  //   ???
-  // }
-  // private def columns(b: Backend, size: Size): List[Table.ColumnArg] = {
-  //   val p = b.props
-    // val (offsetVisible,
-    //      exposureVisible,
-    //      disperserVisible,
-    //      fpuVisible,
-    //      cameraVisible,
-    //      filterVisible,
-    //      objectSize) =
-    //   size.width match {
-    //     case w if w < PhoneCut =>
-    //       (false, false, false, false, false, false, SSize.Tiny)
-    //     case w if w < LargePhoneCut =>
-    //       (false, true, false, false, false, false, SSize.Small)
-    //     case _ =>
-    //       (b.props.showOffsets, true, true, true, true, true, SSize.Small)
-    //   }
-
-    // val (offsetCol, offsetWidth) = offsetColumn(p, offsetVisible)
-    // val disperserCol             = disperserColumn(p, disperserVisible)
-    // val observingModeCol         = observingModeColumn(p, 0)
-    // val exposureCol              = exposureColumn(p, exposureVisible)
-    // val fpuCol                   = fpuColumn(p, fpuVisible)
-    // val cameraCol                = cameraColumn(p, cameraVisible)
-    // val iconCol                  = controlColumn(b)
-    // val filterCol                = filterColumn(p, filterVisible)
-    // val typeCol                  = typeColumn(p, objectSize)
-    // val settingsCol              = settingsColumn(p)
-    //
-    // // Let's precisely calculate the width of the control column
-    // val colsWidth =
-    //   ControlWidth +
-    //     StepWidth +
-    //     // offsetCol.fold(0.0)(_ => offsetWidth) +
-    //     exposureCol.fold(0.0)(_ => ExposureWidth) +
-    //     disperserCol.fold(0.0)(_ => DisperserWidth) +
-    //     filterCol.fold(0.0)(_ => FilterWidth) +
-    //     fpuCol.fold(0.0)(_ => FPUWidth) +
-    //     cameraCol.fold(0.0)(_ => CameraWidth) +
-    //     observingModeCol.fold(0.0)(_ => ObservingModeWidth) +
-    //     ObjectTypeWidth +
-    //     SettingsWidth
-    // val controlWidth = size.width - colsWidth
-    // val stateCol     = executionColumn(b, controlWidth)
-
-  // val all: NonEmptyList[ColumnMeta[TableColumn]] =
-  //   NonEmptyList.of(ControlColumnMeta, StepMeta, ExecutionMeta,
-  //   OffsetMeta,
-  //   ObservingModeMeta,
-  //   ExposureMeta,
-  //   DisperserMeta,
-  //   FilterMeta,
-  //   FPUMeta,
-  //   CameraMeta,
-  //   ObjectTypeMeta,
-  //   SettingsMeta
-  //   )
-    // b.state.visibleColumnsSizes(p, size).collect {
+  private def colBuilder(
+    b:    Backend,
+    size: Size): ColumnRenderArgs[TableColumn] => Table.ColumnArg = tb => {
     def updateState(s: TableState[TableColumn]): Callback =
-      b.modState(State.tableState.set(s))// >> SeqexecCircuit.dispatchCB(UpdateStepsConfigTableState(s))
+      b.modState(State.tableState.set(s)) // >> SeqexecCircuit.dispatchCB(UpdateStepsConfigTableState(s))
 
     tb match {
       case ColumnRenderArgs(ColumnMeta(c, name, label, _, _), _, width, true) =>
         Column(
           Column.propsNoFlex(
-            width          = width,
-            dataKey        = name,
-            label          = label,
-            headerRenderer = resizableHeaderRenderer(b.state.tableState.resizeRow(c, size, updateState)),
+            width   = width,
+            dataKey = name,
+            label   = label,
+            headerRenderer = resizableHeaderRenderer(
+              b.state.tableState.resizeRowB(c, size, updateState)),
             headerClassName = headerClassName(c).foldMap(_.htmlClass),
-            cellRenderer = columnCellRenderer(b, c),
-            className      = columnClassName(c).foldMap(_.htmlClass)
+            cellRenderer    = columnCellRenderer(b, c),
+            className       = columnClassName(c).foldMap(_.htmlClass)
           ))
-      case ColumnRenderArgs(ColumnMeta(c, name, label, _, _), _, width, false) =>
+      case ColumnRenderArgs(ColumnMeta(c, name, label, _, _),
+                            _,
+                            width,
+                            false) =>
         Column(
           Column.propsNoFlex(
-            width     = width,
-            dataKey   = name,
-            label     = label,
+            width           = width,
+            dataKey         = name,
+            label           = label,
+            headerRenderer  = fixedHeaderRenderer(c),
             headerClassName = headerClassName(c).foldMap(_.htmlClass),
-            cellRenderer = columnCellRenderer(b, c),
-            className      = columnClassName(c).foldMap(_.htmlClass)
+            cellRenderer    = columnCellRenderer(b, c),
+            className       = columnClassName(c).foldMap(_.htmlClass)
           ))
-        }
-    // b.state.visibleColumnsSizes(p, size).collect {
-    //   case (ControlColumn, _, _) =>
-    //     controlColumn(b)
-    //   case (StepColumn, _, _) =>
-    //     stepColumn
-    //   case (ExecutionColumn, width, _) =>
-    //     executionColumn(b, width)
-    //   case (OffsetColumn, width, _) =>
-    //     offsetColumn(p, width)._1
-    //   case (ObservingModeColumn, width, _) =>
-    //     observingModeColumn(p, width)
-    //   case (ExposureColumn, width, _) =>
-    //     exposureColumn(p, width)
-    //   case (DisperserColumn, width, _) =>
-    //     disperserColumn(p, width)
-    //   case (FilterColumn, width, _) =>
-    //     filterColumn(p, width)
-    //   case (FPUColumn, width, _) =>
-    //     fpuColumn(p, width)
-    //   case (CameraColumn, width, _) =>
-    //     cameraColumn(p, width)
-    //   case (ObjectTypeColumn, width, _) =>
-    //     objectTypeColumn(p, width, SSize.Small)
-    //   case (SettingsColumn, _, _) =>
-    //     settingsColumn(p)
-    // }.collect { case Some(x) => x }
-
-    // List(
-    //   iconCol,
-    //   stepColumn,
-    //   stateCol,
-    //   // offsetCol,
-    //   observingModeCol,
-    //   exposureCol,
-    //   disperserCol,
-    //   filterCol,
-    //   fpuCol,
-    //   cameraCol,
-    //   typeCol,
-    //   settingsCol
-
+    }
   }
   // scalastyle:on
 
@@ -989,13 +920,16 @@ object StepsTable extends Columns {
   // Wire it up from VDOM
   def render(b: Backend): VdomElement =
     TableContainer(
-      TableContainer.Props(b.props.hasControls,
-                           size =>
-                             ref
-                               .component(stepsTableProps(b)(size))(
-                                 b.state.tableState.columnBuilder(size, colBuilder(b, size)).map(_.vdomElement): _*)
-                                 // columns(b, size).map(_.vdomElement): _*)
-                               .vdomElement))
+      TableContainer.Props(
+        b.props.hasControls,
+        size =>
+          ref
+            .component(stepsTableProps(b)(size))(
+              b.state.tableState
+                .columnBuilderB(size, colBuilder(b, size))
+                .map(_.vdomElement): _*)
+            .vdomElement
+      ))
 
   private val component = ScalaComponent
     .builder[Props]("StepsTable")
