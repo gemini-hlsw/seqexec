@@ -56,7 +56,7 @@ object SeqexecUIModel {
     GlobalLog(FixedLengthBuffer.unsafeFromInt(500), SectionClosed),
     SequencesOnDisplay.Empty,
     StepConfigTable.InitialTableState,
-    SessionQueueTable.InitialTableState.tableState,
+    SessionQueueTable.InitialState.tableState,
     Observer(""),
     UserNotificationState.Empty,
     CalibrationQueues.Default,
