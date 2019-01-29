@@ -7,14 +7,21 @@ import cats.Show
 import cats.implicits._
 import cats.data.NonEmptyList
 import gem.enum.Site
+import gem.enum.GpiDisperser
+import gem.enum.GpiObservingMode
+import gem.enum.GpiFilter
 import seqexec.model.enum.ActionStatus
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.Resource
+import seqexec.model.enum.FPUMode
 import seqexec.model.StepState
 import seqexec.model.SequenceState
 import seqexec.model.Step
 import seqexec.model.StandardStep
 import seqexec.model.SequenceView
+import seqexec.model.enumerations
+import seqexec.web.client.model.lenses._
+import seqexec.web.client.model.Formatting._
 
 /**
   * Contains useful operations for the seqexec model
@@ -69,7 +76,7 @@ object ModelOps {
       s.copy(steps = s.steps.collect {
         case st: StandardStep if st.id === step.id =>
           st.copy(breakpoint = !st.breakpoint)
-        case st                                    => st
+        case st => st
       })
 
     def nextStepToRun: Option[Int] =
@@ -102,10 +109,110 @@ object ModelOps {
       })
   }
 
+  private val gpiObsMode = GpiObservingMode.all.map(x => x.shortName -> x).toMap
+
+  private val gpiFiltersMap: Map[String, GpiFilter] =
+    GpiFilter.all.map(x => (x.shortName, x)).toMap
+
+  val gpiDispersers: Map[String, String] =
+    GpiDisperser.all.map(x => x.shortName -> x.longName).toMap
+
   implicit class StepOps(val s: Step) extends AnyVal {
+    def fpuNameMapper(i: Instrument): String => Option[String] = i match {
+      case Instrument.GmosS => enumerations.fpu.GmosSFPU.get
+      case Instrument.GmosN => enumerations.fpu.GmosNFPU.get
+      case Instrument.F2    => enumerations.fpu.Flamingos2.get
+      case _ =>
+        _ =>
+          none
+    }
+
+    def exposureTime: Option[Double] = observeExposureTimeO.getOption(s)
+    def exposureTimeS(i: Instrument): Option[String] =
+      exposureTime.map(formatExposureTime(i))
+    def coAdds: Option[Int] = observeCoaddsO.getOption(s)
+    def fpu(i: Instrument): Option[String] =
+      for {
+        mode <- instrumentFPUModeO
+          .getOption(s)
+          .orElse(FPUMode.BuiltIn.some) // If the instrument has no fpu mode default to built in
+        fpuL = if (mode === FPUMode.BuiltIn) instrumentFPUO
+        else instrumentFPUCustomMaskO
+        fpu <- fpuL.getOption(s)
+      } yield fpuNameMapper(i)(fpu).getOrElse(fpu)
+
+    def fpuOrMask(i: Instrument): Option[String] =
+      fpu(i)
+        .orElse(instrumentSlitWidthO.getOption(s))
+        .orElse(instrumentMaskO.getOption(s))
+
+    private def gpiFilter: Step => Option[String] = s => {
+      // Read the filter, if not found deduce it from the obs mode
+      val f: Option[GpiFilter] =
+        instrumentFilterO.getOption(s).flatMap(gpiFiltersMap.get).orElse {
+          for {
+            m <- instrumentObservingModeO.getOption(s)
+            o <- gpiObsMode.get(m)
+            f <- o.filter
+          } yield f
+        }
+      f.map(_.longName)
+    }
+
+    def filter(i: Instrument): Option[String] = i match {
+      case Instrument.GmosS =>
+        instrumentFilterO
+          .getOption(s)
+          .flatMap(enumerations.filter.GmosSFilter.get)
+      case Instrument.GmosN =>
+        instrumentFilterO
+          .getOption(s)
+          .flatMap(enumerations.filter.GmosNFilter.get)
+      case Instrument.F2 =>
+        instrumentFilterO
+          .getOption(s)
+          .flatMap(enumerations.filter.F2Filter.get)
+      case Instrument.Niri =>
+        instrumentFilterO
+          .getOption(s)
+          .flatMap(enumerations.filter.Niri.get)
+      case Instrument.Gnirs =>
+        instrumentFilterO
+          .getOption(s)
+          .map(_.sentenceCase)
+      case Instrument.Nifs =>
+        instrumentFilterO
+          .getOption(s)
+          .map(_.sentenceCase)
+      case Instrument.Gpi => gpiFilter(s)
+      case _              => None
+    }
+
+    private def disperserNameMapper(i: Instrument): Map[String, String] =
+      i match {
+        case Instrument.GmosS => enumerations.disperser.GmosSDisperser
+        case Instrument.GmosN => enumerations.disperser.GmosNDisperser
+        case Instrument.Gpi   => gpiDispersers
+        case _                => Map.empty
+      }
+
+    def disperser(i: Instrument): Option[String] = {
+      val disperser = for {
+        disperser <- instrumentDisperserO.getOption(s)
+      } yield disperserNameMapper(i).getOrElse(disperser, disperser)
+      val centralWavelength = instrumentDisperserLambdaO.getOption(s)
+
+      // Format
+      (disperser, centralWavelength) match {
+        case (Some(d), Some(w)) => f"$d @ $w%.0f nm".some
+        case (Some(d), None)    => d.some
+        case _                  => none
+      }
+
     def canRunFrom: Boolean = s.status match {
       case StepState.Pending | StepState.Failed(_) => true
       case _                                       => false
+    
     }
   }
 

@@ -11,7 +11,6 @@ import japgolly.scalajs.react.raw.JsNumber
 import japgolly.scalajs.react.Callback
 import react.virtualized._
 import scala.math.max
-import web.client.utils._
 import react.common.syntax._
 
 /**
@@ -111,6 +110,7 @@ final case class TableState[A: Eq](userModified:   UserModified,
 
       case (m @ ColumnMeta(_, _, _, true, VariableColumnWidth(p, mw)),
             Some(cw)) =>
+        println(s"Set $cw")
         ColumnMeta.width.set(VariableColumnWidth(p, max(mw, cw)))(m)
 
       case (m, _) =>
@@ -120,6 +120,25 @@ final case class TableState[A: Eq](userModified:   UserModified,
     TableState.columns[A].set(cols)(this)
   }
 
+  def distributePercentages(
+    calculatedWidth: A => Option[Double]): TableState[A] = {
+    val visibleCols = columns.toList.filter(_.visible)
+    val sumWidth = visibleCols.map {
+      case ColumnMeta(_, _, _, true, FixedColumnWidth(w)) => w
+      case ColumnMeta(c, _, _, true, VariableColumnWidth(_, mw)) =>
+        calculatedWidth(c).getOrElse(mw)
+    }.sum
+    val cols = visibleCols.map {
+      case m @ ColumnMeta(_, _, _, true, FixedColumnWidth(_)) => m
+      case m @ ColumnMeta(c, _, _, true, VariableColumnWidth(_, mw)) =>
+        val vc = VariableColumnWidth(
+          calculatedWidth(c).map(_ / sumWidth).getOrElse(mw / sumWidth),
+          mw)
+        ColumnMeta.width.set(vc)(m)
+    }
+    copy(columns = NonEmptyList.fromListUnsafe(cols))
+  }
+
   // Table can call this to build the columns
   def columnBuilder(
     s:               Size,
@@ -127,16 +146,24 @@ final case class TableState[A: Eq](userModified:   UserModified,
     calculatedWidth: A => Option[Double],
     cb:              ColumnRenderArgs[A] => Table.ColumnArg
   ): List[Table.ColumnArg] = {
-    val vc  = withVisibleCols(visibleCols, s)
+    val vc =
+      withVisibleCols(visibleCols, s).distributePercentages(calculatedWidth)
     val vcl = vc.columns.count(_.visible)
-    vc.normalizeColumnWidths(s).columns.toList.zipWithIndex
+
+    // vc.normalizeColumnWidths(s).columns.toList.foreach(println)
+    vc.normalizeColumnWidths(s)
+      .columns
+      .toList
+      .zipWithIndex
       .map {
         case (m @ ColumnMeta(_, _, _, true, FixedColumnWidth(w)), i) =>
+          println(s"Fixed ${m.column} $w")
           cb(ColumnRenderArgs(m, i, w, false)).some
 
         case (m @ ColumnMeta(_, _, _, true, VariableColumnWidth(p, mw)), i) =>
           val beforeLast = i < (vcl - 1)
           val w          = max((s.width - fixedWidth) * p, mw)
+          println(s"Variable ${m.column} $p width: $w, $mw")
           cb(ColumnRenderArgs(m, i, w, beforeLast)).some
 
         case _ =>
