@@ -3,7 +3,7 @@
 
 package seqexec.server.gws
 
-import cats.Monad
+import cats.effect.Sync
 import gem.Observation
 import gem.enum.KeywordName
 import seqexec.model.dhs.ImageFileId
@@ -11,7 +11,7 @@ import seqexec.server.keywords._
 import seqexec.server.{EpicsHealth, InstrumentSystem, SeqActionF}
 
 object GwsHeader {
-  def header[F[_]: Monad](inst: InstrumentSystem[F], gwsReader: GwsKeywordReader[F]): Header[F] = new Header[F] {
+  def header[F[_]: Sync](inst: InstrumentSystem[F], gwsReader: GwsKeywordReader[F]): Header[F] = new Header[F] {
     override def sendBefore(obsId: Observation.Id, id: ImageFileId): SeqActionF[F, Unit] = {
       gwsReader.getHealth.flatMap {
         case Some(EpicsHealth.Good) => sendKeywords[F](id, inst, List(
