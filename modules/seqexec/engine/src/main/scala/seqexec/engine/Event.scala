@@ -10,6 +10,7 @@ import gem.Observation
 import seqexec.model.ClientId
 import seqexec.model.UserDetails
 import seqexec.model.StepId
+import seqexec.model.enum.Resource
 
 /**
   * Anything that can go through the Event Queue.
@@ -49,9 +50,9 @@ object Event {
   def executing(id: Observation.Id): Event[Nothing] = EventSystem(Executing(id))
   def finished(id: Observation.Id): Event[Nothing] = EventSystem(Finished(id))
   def nullEvent: Event[Nothing] = EventSystem(Null)
-  def singleRunCompleted[R<:Result.RetVal](c: ActionCoords, r: Result.OK[R]): Event[Nothing] =
-    EventSystem(SingleRunCompleted(c, r))
-  def singleRunFailed(c:ActionCoords, e: Result.Error): Event[Nothing] =
-    EventSystem(SingleRunFailed(c, e))
+  def singleRunCompleted[R<:Result.RetVal](c: ActionCoords, sys: Resource, r: Result.OK[R]): Event[Nothing] =
+    EventSystem(SingleRunCompleted(c, sys, r))
+  def singleRunFailed(c:ActionCoords, sys: Resource, e: Result.Error): Event[Nothing] =
+    EventSystem(SingleRunFailed(c, sys, e))
 
 }

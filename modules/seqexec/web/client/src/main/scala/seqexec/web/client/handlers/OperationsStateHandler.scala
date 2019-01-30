@@ -3,14 +3,19 @@
 
 package seqexec.web.client.handlers
 
+import java.util.logging.Logger
+
 import cats.implicits._
 import diode.ActionHandler
 import diode.ActionResult
 import diode.Effect
 import diode.ModelRW
+
 import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import seqexec.model.RequestFailed
+import seqexec.model.enum.SingleActionOp
+import seqexec.model.events.SingleActionEvent
 import seqexec.web.client.model.PauseOperation
 import seqexec.web.client.model.SyncOperation
 import seqexec.web.client.model.RunOperation
@@ -25,6 +30,7 @@ import seqexec.web.client.actions._
 class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
     extends ActionHandler(modelRW)
     with Handlers[M, SequencesOnDisplay] {
+  private val logger = Logger.getLogger(this.getClass.getName)
   def handleRequestOperation: PartialFunction[Any, ActionResult[M]] = {
     case RequestRun(id) =>
       updated(
@@ -46,6 +52,7 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
 
     case RequestResourceRun(id, _, r) =>
       // TODO Remove this when the response comes over the WS channel
+      logger.info(s"*** OperationsStateHandler handleRequestOperation RequestResourceRun: r=$r")
       updated(
         value.markOperations(
           id,
@@ -53,8 +60,18 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
             .resourceRun(r)
             .set(ResourceRunOperation.ResourceRunInFlight.some)))
 
-    case RunResource(id, _, r) =>
-      updated(value.markOperations(id, TabOperations.resourceRun(r).set(none)))
+//    case RunResource(id, _, r) =>
+//      logger.info(s"*** OperationsStateHandler handleRequestOperation RunResource: r=$r, r set none = ${TabOperations.resourceRun(r).set(none)}")
+//      updated(value.markOperations(id, TabOperations.resourceRun(r).set(none)))
+  }
+
+  def singleRunCompletedMessage: PartialFunction[Any, ActionResult[M]] = {
+    case ServerMessage(SingleActionEvent(SingleActionOp.Completed(id, r))) =>
+//      val v = value.markOperations(id, TabOperations.resourceRun(r).set(none))
+//      val f = Future(v)
+//      val e = Effect(f)
+    updated(value.markOperations(id, TabOperations.resourceRun(r).set(none))
+    )
   }
 
   def handleOperationResult: PartialFunction[Any, ActionResult[M]] = {
@@ -99,5 +116,8 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
   }
 
   override def handle: PartialFunction[Any, ActionResult[M]] =
-    List(handleRequestOperation, handleOperationResult, handleSelectedStep).combineAll
+    List(handleRequestOperation,
+         handleOperationResult,
+         handleSelectedStep,
+         singleRunCompletedMessage).combineAll
 }

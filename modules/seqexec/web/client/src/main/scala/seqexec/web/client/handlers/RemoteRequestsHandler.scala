@@ -3,6 +3,8 @@
 
 package seqexec.web.client.handlers
 
+import java.util.logging.Logger
+
 import cats.implicits._
 import diode.ActionHandler
 import diode.ActionResult
@@ -12,6 +14,7 @@ import gem.Observation
 import seqexec.model.ClientId
 import seqexec.web.client.actions._
 import seqexec.web.client.services.SeqexecWebClient
+
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
 /**
@@ -20,7 +23,7 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 class RemoteRequestsHandler[M](modelRW: ModelRW[M, Option[ClientId]])
     extends ActionHandler(modelRW)
     with Handlers[M, Option[ClientId]] {
-
+  private val logger = Logger.getLogger(this.getClass.getName)
   def handleRun: PartialFunction[Any, ActionResult[M]] = {
     case RequestRun(s) =>
       val effect = value
@@ -114,6 +117,7 @@ class RemoteRequestsHandler[M](modelRW: ModelRW[M, Option[ClientId]])
 
   def handleResourceRun: PartialFunction[Any, ActionResult[M]] = {
     case RequestResourceRun(id, step, resource) =>
+      logger.info(s"*** RemoteRequestsHandler handleResourceRun RequestResourceRun: resource=$resource")
       effectOnly(
         requestEffect(
           id,

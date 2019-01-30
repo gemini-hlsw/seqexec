@@ -3,6 +3,8 @@
 
 package seqexec.web.client.components.sequence.steps
 
+import java.util.logging.Logger
+
 import cats.implicits._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
@@ -12,6 +14,7 @@ import japgolly.scalajs.react.ReactEvent
 import japgolly.scalajs.react.extra.Reusability
 import japgolly.scalajs.react.extra.Reusability._
 import gem.Observation
+
 import scala.collection.immutable.SortedMap
 import seqexec.model.enum._
 import seqexec.model.StepId
@@ -30,6 +33,8 @@ import web.client.style._
   * Contains the control buttons for each subsystem
   */
 object SubsystemControlCell {
+  private val logger = Logger.getLogger(this.getClass.getName)
+
   final case class Props(
     id:             Observation.Id,
     stepId:         Int,
@@ -42,9 +47,11 @@ object SubsystemControlCell {
     id:     Observation.Id,
     stepId: StepId,
     r:      Resource
-  )(e:      ReactEvent): Callback =
+  )(e:      ReactEvent): Callback = {
+    if (r === Instrument.Gpi) logger.info(s"*** SubsystemControlCell requestResourceCall: $r")
     e.preventDefaultCB *> e.stopPropagationCB *>
       SeqexecCircuit.dispatchCB(RequestResourceRun(id, stepId, r))
+  }
 
   private val RunningIcon = IconCircleNotched.copyIcon(
     fitted      = true,
@@ -57,11 +64,20 @@ object SubsystemControlCell {
       <.div(
         SeqexecStyles.notInMobile,
         p.resources.map { r =>
-          val inExecution =
+          val inExecution = {
+            if (r === Instrument.Gpi) logger.info(s"*** SubsystemControl r: $r //// p.resourcesCalls: ${p.resourcesCalls}")
             p.resourcesCalls
               .get(r)
-              .map(_ === ResourceRunOperation.ResourceRunInFlight)
-              .getOrElse(false)
+              .map(t => t === {
+                if (r === Instrument.Gpi) logger.info("*** SubsystemControl map in_executon = ResourceRunInFlight: " +
+                  s"${t === ResourceRunOperation.ResourceRunInFlight}")
+                ResourceRunOperation.ResourceRunInFlight
+              })
+              .getOrElse({
+                if (r === Instrument.Gpi) logger.info("*** SubsystemControl in_execution = getOrElse false")
+                false
+              })
+          }
           Popup(
             Popup.Props("button", s"Configure ${r.show}"),
             Button(
@@ -70,10 +86,21 @@ object SubsystemControlCell {
                 color    = Some("blue"),
                 disabled = inExecution,
                 labeled =
-                  if (inExecution) Button.LeftLabeled else Button.NotLabeled,
+                  if (inExecution) {
+                    if (r === Instrument.Gpi) logger.info("*** SubsystemControl in_execution: Button.LeftLabeled")
+                    Button.LeftLabeled
+                  } else {
+                    if (r === Instrument.Gpi) logger.info("*** SubsystemControl not_in_execution: Button.NotLabeled")
+                    Button.NotLabeled
+                  },
                 icon = p.resourcesCalls
                   .get(r)
-                  .filter(_ === ResourceRunOperation.ResourceRunInFlight)
+                  .filter(t => t === {
+                    if (r === Instrument.Gpi) logger.info("*** SubsystemControl filter = ResourceRunInFlight: " +
+                      s"${t === ResourceRunOperation.ResourceRunInFlight}"
+                    )
+                    ResourceRunOperation.ResourceRunInFlight
+                  })
                   .as(RunningIcon),
                 onClickE = requestResourceCall(p.id, p.stepId, r) _
               ),
@@ -83,7 +110,7 @@ object SubsystemControlCell {
         }.toTagMod
       )
     }
-    //.configure(Reusability.shouldComponentUpdate)
+    .configure(Reusability.shouldComponentUpdate)
     .build
 
   def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)

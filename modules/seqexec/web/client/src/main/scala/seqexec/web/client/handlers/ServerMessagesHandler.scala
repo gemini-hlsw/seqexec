@@ -9,7 +9,7 @@ import diode.ActionResult
 import diode.Effect
 import diode.ModelRW
 import diode.NoAction
-import seqexec.model.enum.ActionStatus
+import seqexec.model.enum.{ActionStatus, SingleActionOp}
 import seqexec.model.Observer
 import seqexec.model.SequencesQueue
 import seqexec.model.SequenceView
@@ -18,13 +18,14 @@ import seqexec.model.events._
 import seqexec.web.client.model.lenses.sequenceStepT
 import seqexec.web.client.model.lenses.sequenceViewT
 import seqexec.web.client.model.ModelOps._
-import seqexec.web.client.model.SoundSelection
+import seqexec.web.client.model.{SoundSelection, TabOperations}
 import seqexec.web.client.actions._
 import seqexec.web.client.circuit._
 import seqexec.web.client.services.Audio
 import seqexec.web.client.services.SeqexecWebClient
 import seqexec.web.client.services.WebpackResources._
 import seqexec.web.client.model.Pages.Root
+
 import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
