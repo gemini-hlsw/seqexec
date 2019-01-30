@@ -25,10 +25,10 @@ package keywords {
 
     def closeImage(id: ImageFileId): SeqActionF[F, Unit]
 
-    def keywordsBundler(implicit ev: Sync[F]): KeywordsBundler[F]
+    def keywordsBundler: KeywordsBundler[F]
   }
 
-  trait DhsInstrument[F[_]] extends KeywordsClient[F] {
+  abstract class DhsInstrument[F[_]: Sync] extends KeywordsClient[F] {
     val dhsClient: DhsClient[F]
 
     val dhsInstrumentName: String
@@ -44,7 +44,7 @@ package keywords {
         KeywordBag(StringKeyword(KeywordName.INSTRUMENT, dhsInstrumentName)),
         finalFlag = true)
 
-    def keywordsBundler(implicit ev: Sync[F]): KeywordsBundler[F] = DhsInstrument.kb[F](dhsInstrumentName)
+    def keywordsBundler: KeywordsBundler[F] = DhsInstrument.kb[F](dhsInstrumentName)
 
   }
 
@@ -74,7 +74,7 @@ package keywords {
     }
   }
 
-  trait GdsInstrument[F[_]] extends KeywordsClient[F] {
+  abstract class GdsInstrument[F[_]: Sync] extends KeywordsClient[F] {
     val gdsClient: GdsClient[F]
 
     def setKeywords(id: ImageFileId,
@@ -85,7 +85,7 @@ package keywords {
     def closeImage(id: ImageFileId): SeqActionF[F, Unit] =
       gdsClient.closeObservation(id)
 
-    def keywordsBundler(implicit ev: Sync[F]): KeywordsBundler[F] = GdsInstrument.kb[F]
+    def keywordsBundler: KeywordsBundler[F] = GdsInstrument.kb[F]
   }
 
   sealed trait KeywordType extends Product with Serializable
