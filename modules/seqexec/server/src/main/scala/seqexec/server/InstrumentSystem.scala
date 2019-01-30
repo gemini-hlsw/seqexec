@@ -3,7 +3,6 @@
 
 package seqexec.server
 
-import cats.effect.IO
 import fs2.Stream
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.keywords.KeywordsClient
@@ -21,7 +20,7 @@ trait InstrumentSystem[F[_]] extends System[F] {
       config: Config): SeqObserveF[F, ImageFileId, ObserveCommand.Result]
   //Expected total observe lapse, used to calculate timeout
   def calcObserveTime(config: Config): Time
-  def keywordsClient: KeywordsClient[IO]
+  def keywordsClient: KeywordsClient[F]
   def observeProgress(total: Time, elapsed: InstrumentSystem.ElapsedTime): Stream[F, Progress]
 }
 

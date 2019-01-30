@@ -3,44 +3,46 @@
 
 package seqexec.server.niri
 
+import cats.effect.IO
 import seqexec.server.SeqAction
+import seqexec.server.SeqActionF
 import seqexec.server.keywords._
 
-trait NiriKeywordReader {
-  def arrayId: SeqAction[String]
-  def arrayType: SeqAction[String]
-  def camera: SeqAction[String]
-  def coadds: SeqAction[Int]
-  def exposureTime: SeqAction[Double]
-  def filter1: SeqAction[String]
-  def filter2: SeqAction[String]
-  def filter3: SeqAction[String]
-  def focusName: SeqAction[String]
-  def focusPosition: SeqAction[Double]
-  def focalPlaneMask: SeqAction[String]
-  def beamSplitter: SeqAction[String]
-  def windowCover: SeqAction[String]
-  def framesPerCycle: SeqAction[Int]
-  def headerTiming: SeqAction[String]
-  def lnrs: SeqAction[Int]
-  def mode: SeqAction[String]
-  def numberDigitalAverage: SeqAction[Int]
-  def pupilViewer: SeqAction[String]
-  def detectorTemperature: SeqAction[Double]
-  def mountTemperature: SeqAction[Double]
-  def µcodeName: SeqAction[String]
-  def µcodeType: SeqAction[String]
-  def cl1VoltageDD: SeqAction[Double]
-  def cl2VoltageDD: SeqAction[Double]
-  def ucVoltage: SeqAction[Double]
-  def detectorVoltage: SeqAction[Double]
-  def cl1VoltageGG: SeqAction[Double]
-  def cl2VoltageGG: SeqAction[Double]
-  def setVoltage: SeqAction[Double]
-  def observationEpoch: SeqAction[Double]
+trait NiriKeywordReader[F[_]] {
+  def arrayId: SeqActionF[F, String]
+  def arrayType: SeqActionF[F, String]
+  def camera: SeqActionF[F, String]
+  def coadds: SeqActionF[F, Int]
+  def exposureTime: SeqActionF[F, Double]
+  def filter1: SeqActionF[F, String]
+  def filter2: SeqActionF[F, String]
+  def filter3: SeqActionF[F, String]
+  def focusName: SeqActionF[F, String]
+  def focusPosition: SeqActionF[F, Double]
+  def focalPlaneMask: SeqActionF[F, String]
+  def beamSplitter: SeqActionF[F, String]
+  def windowCover: SeqActionF[F, String]
+  def framesPerCycle: SeqActionF[F, Int]
+  def headerTiming: SeqActionF[F, String]
+  def lnrs: SeqActionF[F, Int]
+  def mode: SeqActionF[F, String]
+  def numberDigitalAverage: SeqActionF[F, Int]
+  def pupilViewer: SeqActionF[F, String]
+  def detectorTemperature: SeqActionF[F, Double]
+  def mountTemperature: SeqActionF[F, Double]
+  def µcodeName: SeqActionF[F, String]
+  def µcodeType: SeqActionF[F, String]
+  def cl1VoltageDD: SeqActionF[F, Double]
+  def cl2VoltageDD: SeqActionF[F, Double]
+  def ucVoltage: SeqActionF[F, Double]
+  def detectorVoltage: SeqActionF[F, Double]
+  def cl1VoltageGG: SeqActionF[F, Double]
+  def cl2VoltageGG: SeqActionF[F, Double]
+  def setVoltage: SeqActionF[F, Double]
+  def observationEpoch: SeqActionF[F, Double]
 }
 
-object NiriKeywordReaderDummy extends NiriKeywordReader {
+object NiriKeywordReaderDummy extends NiriKeywordReader[IO] {
   override def arrayId: SeqAction[String] = SeqAction(StrDefault)
   override def arrayType: SeqAction[String] = SeqAction(StrDefault)
   override def camera: SeqAction[String] = SeqAction(StrDefault)
@@ -74,7 +76,7 @@ object NiriKeywordReaderDummy extends NiriKeywordReader {
   override def observationEpoch: SeqAction[Double] = SeqAction(DoubleDefault)
 }
 
-object NiriKeywordReaderImpl extends NiriKeywordReader {
+object NiriKeywordReaderImpl extends NiriKeywordReader[IO] {
   val sys = NiriEpics.instance
   override def arrayId: SeqAction[String] = sys.arrayId.toSeqAction
   override def arrayType: SeqAction[String] = sys.arrayType.toSeqAction

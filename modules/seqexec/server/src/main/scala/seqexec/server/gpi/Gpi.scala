@@ -4,7 +4,7 @@
 package seqexec.server.gpi
 
 import cats.data.EitherT
-import cats.effect.{IO, Sync, Timer}
+import cats.effect.{Sync, Timer}
 import cats.implicits._
 import cats.data.Reader
 import edu.gemini.spModel.config2.Config
@@ -25,6 +25,7 @@ import seqexec.server.gpi.GpiController._
 import seqexec.server.keywords.GdsClient
 import seqexec.server.keywords.GdsInstrument
 import seqexec.server.keywords.KeywordsClient
+import seqexec.server.keywords.KeywordBag
 
 import scala.concurrent.duration._
 import squants.time.Milliseconds
@@ -33,16 +34,16 @@ import squants.time.Time
 
 final case class Gpi[F[_]: Sync: Timer](controller: GpiController[F])
     extends InstrumentSystem[F]
-    with GdsInstrument {
+    with GdsInstrument[F] {
   // Taken from the gpi isd
   val readoutOverhead: Time  = Seconds(4)
   val writeOverhead: Time    = Seconds(2)
   val perCoaddOverhead: Time = Seconds(2.7)
   val timeoutTolerance: Time  = Seconds(30)
 
-  override val gdsClient: GdsClient = controller.gdsClient
+  override val gdsClient: GdsClient[F] = controller.gdsClient
 
-  override val keywordsClient: KeywordsClient[IO] = this
+  override val keywordsClient: KeywordsClient[F] = this
 
   override val resource: Resource = Instrument.Gpi
 
@@ -52,6 +53,10 @@ final case class Gpi[F[_]: Sync: Timer](controller: GpiController[F])
 
   override val observeControl: InstrumentSystem.ObserveControl =
     InstrumentSystem.Uncontrollable
+
+  override def bundleKeywords(
+    ks: List[KeywordBag => SeqActionF[F, KeywordBag]]): SeqActionF[F, KeywordBag] =
+    GdsInstrument.bundleKeywords(ks)
 
   override def observe(
     config: Config

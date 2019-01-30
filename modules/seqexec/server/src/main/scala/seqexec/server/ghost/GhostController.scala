@@ -19,7 +19,7 @@ import seqexec.server.GiapiInstrumentController
 import seqexec.server.ghost.GhostController.GhostConfig
 
 final case class GhostController[F[_]: Sync](override val client: GhostClient[F],
-                                             override val gdsClient: GdsClient)
+                                             override val gdsClient: GdsClient[F])
   extends GiapiInstrumentController[F, GhostConfig, GhostClient[F]] {
 
   import GhostController._

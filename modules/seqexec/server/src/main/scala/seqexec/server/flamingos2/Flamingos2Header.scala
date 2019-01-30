@@ -5,6 +5,7 @@ package seqexec.server.flamingos2
 
 import cats.data.EitherT
 import cats.effect.IO
+import cats.effect.Sync
 import cats.implicits._
 import gem.Observation
 import gem.enum.KeywordName
@@ -19,7 +20,7 @@ import seqexec.server.InstrumentSystem
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.keywords._
 import seqexec.server.tcs.TcsKeywordsReader
-import seqexec.server.{ConfigUtilOps, SeqAction, SeqexecFailure}
+import seqexec.server.{ConfigUtilOps, SeqAction, SeqActionF, SeqexecFailure}
 import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.data.YesNoType
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.{MOS_PREIMAGING_PROP, READMODE_PROP, ReadMode}
@@ -27,12 +28,12 @@ import edu.gemini.spModel.seqcomp.SeqConfigNames.INSTRUMENT_KEY
 import cats.implicits._
 
 object Flamingos2Header {
-  def header(inst: InstrumentSystem[IO], f2ObsReader: Flamingos2Header.ObsKeywordsReader, tcsKeywordsReader: TcsKeywordsReader): Header =
-    new Header {
-      override def sendBefore(obsId: Observation.Id, id: ImageFileId): SeqAction[Unit] =  {
+  def header[F[_]: Sync](inst: InstrumentSystem[F], f2ObsReader: Flamingos2Header.ObsKeywordsReader[F], tcsKeywordsReader: TcsKeywordsReader[F]): Header[F] =
+    new Header[F] {
+      override def sendBefore(obsId: Observation.Id, id: ImageFileId): SeqActionF[F, Unit] =  {
         sendKeywords(id, inst, List(
           buildBoolean(f2ObsReader.getPreimage.map(_.toBoolean), KeywordName.PREIMAGE),
-          buildString(SeqAction(LocalDate.now.format(DateTimeFormatter.ISO_LOCAL_DATE)), KeywordName.DATE_OBS),
+          buildString(SeqActionF(LocalDate.now.format(DateTimeFormatter.ISO_LOCAL_DATE)), KeywordName.DATE_OBS),
           buildString(tcsKeywordsReader.getUT.orDefault, KeywordName.TIME_OBS),
           buildString(f2ObsReader.getReadMode.map{
             case ReadMode.BRIGHT_OBJECT_SPEC => "Bright"
@@ -47,37 +48,37 @@ object Flamingos2Header {
         )
       }
 
-      override def sendAfter(id: ImageFileId): SeqAction[Unit] = SeqAction(())
+      override def sendAfter(id: ImageFileId): SeqActionF[F, Unit] = SeqActionF.void
     }
 
-  trait ObsKeywordsReader {
-    def getPreimage: SeqAction[YesNoType]
-    def getReadMode: SeqAction[ReadMode]
+  trait ObsKeywordsReader[F[_]] {
+    def getPreimage: SeqActionF[F, YesNoType]
+    def getReadMode: SeqActionF[F, ReadMode]
   }
 
-  class ObsKeywordsReaderImpl(config: Config) extends ObsKeywordsReader {
-    override def getPreimage: SeqAction[YesNoType] = EitherT(IO.pure(config.extractAs[YesNoType](INSTRUMENT_KEY / MOS_PREIMAGING_PROP)
+  class ObsKeywordsReaderImpl[F[_]: Sync](config: Config) extends ObsKeywordsReader[F] {
+    override def getPreimage: SeqActionF[F, YesNoType] = EitherT(Sync[F].delay(config.extractAs[YesNoType](INSTRUMENT_KEY / MOS_PREIMAGING_PROP)
       leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))))
 
-    override def getReadMode: SeqAction[ReadMode] = EitherT(IO.pure(config.extractAs[ReadMode](INSTRUMENT_KEY / READMODE_PROP)
+    override def getReadMode: SeqActionF[F, ReadMode] = EitherT(Sync[F].delay(config.extractAs[ReadMode](INSTRUMENT_KEY / READMODE_PROP)
       leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))))
   }
 
-  trait InstKeywordsReader {
-    def getHealth: SeqAction[String]
-    def getState: SeqAction[String]
+  trait InstKeywordsReader[F[_]] {
+    def getHealth: SeqActionF[F, String]
+    def getState: SeqActionF[F, String]
   }
 
-  object DummyInstKeywordReader extends InstKeywordsReader {
-    override def getHealth: SeqAction[String] = SeqAction("GOOD")
+  object DummyInstKeywordReader extends InstKeywordsReader[IO] {
+    override def getHealth: SeqActionF[IO, String] = SeqAction("GOOD")
 
-    override def getState: SeqAction[String] = SeqAction("RUNNING")
+    override def getState: SeqActionF[IO, String] = SeqAction("RUNNING")
   }
 
-  object InstKeywordReaderImpl extends InstKeywordsReader {
-    override def getHealth: SeqAction[String] = Flamingos2Epics.instance.health.toSeqAction
+  object InstKeywordReaderImpl extends InstKeywordsReader[IO] {
+    override def getHealth: SeqActionF[IO, String] = Flamingos2Epics.instance.health.toSeqAction
 
-    override def getState: SeqAction[String] = Flamingos2Epics.instance.state.toSeqAction
+    override def getState: SeqActionF[IO, String] = Flamingos2Epics.instance.state.toSeqAction
   }
 
 }

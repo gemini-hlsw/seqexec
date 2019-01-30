@@ -92,7 +92,7 @@ object GpiLookupTables {
 }
 
 final case class GpiController[F[_]: Sync](override val client: GpiClient[F],
-                                           override val gdsClient: GdsClient)
+                                           override val gdsClient: GdsClient[F])
   extends GiapiInstrumentController[F, GpiConfig, GpiClient[F]] {
 
   import GpiController._

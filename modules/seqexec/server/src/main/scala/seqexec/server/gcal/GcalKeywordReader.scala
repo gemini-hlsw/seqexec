@@ -4,37 +4,38 @@
 package seqexec.server.gcal
 
 import cats.Eq
-import seqexec.server.SeqAction
+import cats.effect.IO
+import seqexec.server.SeqActionF
 import seqexec.server.keywords._
 import cats.implicits._
 import edu.gemini.seqexec.server.gcal.BinaryOnOff
 
-trait GcalKeywordReader {
-  def getDiffuser: SeqAction[Option[String]]
-  def getFilter: SeqAction[Option[String]]
-  def getLamp: SeqAction[Option[String]]
-  def getShutter: SeqAction[Option[String]]
+trait GcalKeywordReader[F[_]] {
+  def getDiffuser: SeqActionF[F, Option[String]]
+  def getFilter: SeqActionF[F, Option[String]]
+  def getLamp: SeqActionF[F, Option[String]]
+  def getShutter: SeqActionF[F, Option[String]]
 }
 
-object DummyGcalKeywordsReader extends GcalKeywordReader {
+object DummyGcalKeywordsReader extends GcalKeywordReader[IO] {
 
-  def getDiffuser: SeqAction[Option[String]] = None.toSeqActionO
+  def getDiffuser: SeqActionF[IO, Option[String]] = None.toSeqActionO
 
-  def getFilter: SeqAction[Option[String]] = None.toSeqActionO
+  def getFilter: SeqActionF[IO, Option[String]] = None.toSeqActionO
 
-  def getLamp: SeqAction[Option[String]] = None.toSeqActionO
+  def getLamp: SeqActionF[IO, Option[String]] = None.toSeqActionO
 
-  def getShutter: SeqAction[Option[String]] = None.toSeqActionO
+  def getShutter: SeqActionF[IO, Option[String]] = None.toSeqActionO
 }
 
-object GcalKeywordsReaderImpl extends GcalKeywordReader {
+object GcalKeywordsReaderImpl extends GcalKeywordReader[IO] {
   implicit val eq: Eq[BinaryOnOff] = Eq.by(_.ordinal())
 
-  def getDiffuser: SeqAction[Option[String]] = SeqAction(GcalEpics.instance.diffuser)
+  def getDiffuser: SeqActionF[IO, Option[String]] = SeqActionF(GcalEpics.instance.diffuser)
 
-  def getFilter: SeqAction[Option[String]] = SeqAction(GcalEpics.instance.filter)
+  def getFilter: SeqActionF[IO, Option[String]] = SeqActionF(GcalEpics.instance.filter)
 
-  def getLamp: SeqAction[Option[String]] = SeqAction{
+  def getLamp: SeqActionF[IO, Option[String]] = SeqActionF{
     val ar   = GcalEpics.instance.lampAr().filter(_ === BinaryOnOff.ON) *> "Ar".some
     val cuAr = GcalEpics.instance.lampCuAr().filter(_ === BinaryOnOff.ON) *> "CuAr".some
     val ir   = GcalEpics.instance.lampIr().map{
@@ -48,7 +49,7 @@ object GcalKeywordsReaderImpl extends GcalKeywordReader {
     ar.orElse(xe).orElse(cuAr).orElse(thAr).orElse(qh).orElse(ir)
   }
 
-  def getShutter: SeqAction[Option[String]] = SeqAction(GcalEpics.instance.shutter.map{
+  def getShutter: SeqActionF[IO, Option[String]] = SeqActionF(GcalEpics.instance.shutter.map{
     case "OPEN"  => "OPEN"
     case "CLOSE" => "CLOSED"
     case _       => "INDEF"
