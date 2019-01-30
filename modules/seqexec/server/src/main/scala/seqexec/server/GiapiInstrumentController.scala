@@ -23,7 +23,7 @@ abstract class GiapiInstrumentController[F[_]: Sync, CFG, C <: GiapiClient[F]] {
   private val Log = getLogger
 
   def client: C
-  def gdsClient: GdsClient
+  def gdsClient: GdsClient[F]
   def name: String
   def configuration(config: CFG): Configuration
 

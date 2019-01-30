@@ -5,7 +5,7 @@ package seqexec.server.ghost
 
 import cats.data.Reader
 import cats.data.EitherT
-import cats.effect.{IO, Sync}
+import cats.effect.Sync
 import cats.implicits._
 import fs2.Stream
 import edu.gemini.spModel.config2.Config
@@ -21,6 +21,7 @@ import seqexec.model.enum.{Instrument, Resource}
 import seqexec.server.ConfigUtilOps._
 import seqexec.server._
 import seqexec.server.keywords.{GdsClient, GdsInstrument, KeywordsClient}
+import seqexec.server.keywords.KeywordBag
 import seqexec.server.ghost.GhostController._
 import squants.time.{Seconds, Time}
 
@@ -28,10 +29,10 @@ import scala.reflect.ClassTag
 
 final case class Ghost[F[_]: Sync](controller: GhostController[F])
     extends InstrumentSystem[F]
-    with GdsInstrument {
-  override val gdsClient: GdsClient = controller.gdsClient
+    with GdsInstrument[F] {
+  override val gdsClient: GdsClient[F] = controller.gdsClient
 
-  override val keywordsClient: KeywordsClient[IO] = this
+  override val keywordsClient: KeywordsClient[F] = this
 
   override val resource: Resource = Instrument.Ghost
 
@@ -41,6 +42,10 @@ final case class Ghost[F[_]: Sync](controller: GhostController[F])
 
   override val observeControl: InstrumentSystem.ObserveControl =
     InstrumentSystem.Uncontrollable
+
+  override def bundleKeywords(
+    ks: List[KeywordBag => SeqActionF[F, KeywordBag]]): SeqActionF[F, KeywordBag] =
+    GdsInstrument.bundleKeywords(ks)
 
   override def observe(
       config: Config): SeqObserveF[F, ImageFileId, ObserveCommand.Result] =

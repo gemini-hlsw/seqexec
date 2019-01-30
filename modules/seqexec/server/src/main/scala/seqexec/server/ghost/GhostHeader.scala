@@ -3,21 +3,21 @@
 
 package seqexec.server.ghost
 
+import cats.Applicative
 import gem.Observation
 import seqexec.model.dhs.ImageFileId
-import seqexec.server.SeqAction
+import seqexec.server.SeqActionF
 import seqexec.server.keywords._
 
 object GhostHeader {
 
-  def header(): Header =
-    new Header {
+  def header[F[_]: Applicative]: Header[F] =
+    new Header[F] {
       override def sendBefore(obsId: Observation.Id,
-                              id: ImageFileId): SeqAction[Unit] =
-        SeqAction.void
+                              id: ImageFileId): SeqActionF[F, Unit] =
+        SeqActionF.void[F]
 
-
-      override def sendAfter(id: ImageFileId): SeqAction[Unit] =
-        SeqAction.void
+      override def sendAfter(id: ImageFileId): SeqActionF[F, Unit] =
+        SeqActionF.void[F]
     }
 }

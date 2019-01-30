@@ -512,6 +512,7 @@ lazy val seqexec_server = project
   .settings(commonSettings: _*)
   .settings(
     addCompilerPlugin(Plugins.paradisePlugin),
+    addCompilerPlugin(Plugins.kindProjectorPlugin),
     libraryDependencies ++=
       Seq(Http4sCirce,
           Squants.value,

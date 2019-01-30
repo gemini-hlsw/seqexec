@@ -4,6 +4,7 @@
 package seqexec.server.keywords
 
 import cats.implicits._
+import cats.effect.Sync
 import edu.gemini.spModel.gemini.obscomp.SPSiteQuality._
 import edu.gemini.spModel.guide.StandardGuideOptions
 import gem.Observation
@@ -11,30 +12,30 @@ import gem.enum.KeywordName
 import seqexec.model.Conditions
 import seqexec.model.{ Observer, Operator}
 import seqexec.model.dhs.ImageFileId
-import seqexec.server.{InstrumentSystem, SeqAction, OcsBuildInfo, sgoEq}
+import seqexec.server.{InstrumentSystem, SeqActionF, OcsBuildInfo, sgoEq}
 import seqexec.server.tcs.{TargetKeywordsReader, TcsController, TcsKeywordsReader}
 
 // TODO: Replace Unit by something that can read the state for real
-final case class StateKeywordsReader(conditions: Conditions, operator: Option[Operator], observer: Option[Observer]) {
+final case class StateKeywordsReader[F[_]: Sync](conditions: Conditions, operator: Option[Operator], observer: Option[Observer]) {
   def encodeCondition(c: Int): String = if(c === 100) "Any" else s"$c-percentile"
 
   // TODO: "observer" should be the default when not set in state
-  def getObserverName: SeqAction[String] = SeqAction(observer.map(_.value).filter(_.nonEmpty).getOrElse("observer"))
-  def getOperatorName: SeqAction[String] = SeqAction(operator.map(_.value).filter(_.nonEmpty).getOrElse("ssa"))
-  def getRawImageQuality: SeqAction[String] = SeqAction(encodeCondition(conditions.iq.toInt))
-  def getRawCloudCover: SeqAction[String] = SeqAction(encodeCondition(conditions.cc.toInt))
-  def getRawWaterVapor: SeqAction[String] = SeqAction(encodeCondition(conditions.wv.toInt))
-  def getRawBackgroundLight: SeqAction[String] = SeqAction(encodeCondition(conditions.sb.toInt))
+  def getObserverName: SeqActionF[F, String] = SeqActionF(observer.map(_.value).filter(_.nonEmpty).getOrElse("observer"))
+  def getOperatorName: SeqActionF[F, String] = SeqActionF(operator.map(_.value).filter(_.nonEmpty).getOrElse("ssa"))
+  def getRawImageQuality: SeqActionF[F, String] = SeqActionF(encodeCondition(conditions.iq.toInt))
+  def getRawCloudCover: SeqActionF[F, String] = SeqActionF(encodeCondition(conditions.cc.toInt))
+  def getRawWaterVapor: SeqActionF[F, String] = SeqActionF(encodeCondition(conditions.wv.toInt))
+  def getRawBackgroundLight: SeqActionF[F, String] = SeqActionF(encodeCondition(conditions.sb.toInt))
 }
 
-class StandardHeader[F[_]](
+class StandardHeader[F[_]: Sync](
   inst: InstrumentSystem[F],
-  obsReader: ObsKeywordsReader,
-  tcsReader: TcsKeywordsReader,
-  stateReader: StateKeywordsReader,
-  tcsSubsystems: List[TcsController.Subsystem]) extends Header {
+  obsReader: ObsKeywordsReader[F],
+  tcsReader: TcsKeywordsReader[F],
+  stateReader: StateKeywordsReader[F],
+  tcsSubsystems: List[TcsController.Subsystem]) extends Header[F] {
 
-  val p: SeqAction[Option[Double]] = for {
+  val p: SeqActionF[F, Option[Double]] = for {
     xoffOpt <- tcsReader.getXOffset
     yoffOpt <- tcsReader.getYOffset
     iaaOpt <- tcsReader.getInstrumentAA
@@ -44,7 +45,7 @@ class StandardHeader[F[_]](
     iaa <- iaaOpt
   } yield -xoff * Math.cos(Math.toRadians(iaa)) + yoff * Math.sin(Math.toRadians(iaa))
 
-  val q: SeqAction[Option[Double]] = for {
+  val q: SeqActionF[F, Option[Double]] = for {
     xoffOpt <- tcsReader.getXOffset
     yoffOpt <- tcsReader.getYOffset
     iaaOpt  <- tcsReader.getInstrumentAA
@@ -54,7 +55,7 @@ class StandardHeader[F[_]](
     iaa  <- iaaOpt
   } yield -xoff * Math.sin(Math.toRadians(iaa)) - yoff * Math.cos(Math.toRadians(iaa))
 
-  val raoff: SeqAction[Option[Double]] = for {
+  val raoff: SeqActionF[F, Option[Double]] = for {
     poffOpt <- p
     qoffOpt <- q
     ipaOpt  <- tcsReader.getInstrumentPA
@@ -64,7 +65,7 @@ class StandardHeader[F[_]](
     ipa  <- ipaOpt
   } yield poff * Math.cos(Math.toRadians(ipa)) + qoff * Math.sin(Math.toRadians(ipa))
 
-  val decoff: SeqAction[Option[Double]] = for {
+  val decoff: SeqActionF[F, Option[Double]] = for {
     poffOpt <- p
     qoffOpt <- q
     ipaOpt  <- tcsReader.getInstrumentPA
@@ -75,7 +76,7 @@ class StandardHeader[F[_]](
   } yield poff * Math.cos(Math.toRadians(ipa)) + qoff * Math.sin(Math.toRadians(ipa))
 
 
-  val obsObject: SeqAction[Option[String]] = for {
+  val obsObject: SeqActionF[F, Option[String]] = for {
     obsType   <- obsReader.getObsType
     obsObject <- obsReader.getObsObject
     tcsObject <- tcsReader.getSourceATarget.getObjectName
@@ -88,18 +89,18 @@ class StandardHeader[F[_]](
     case StandardGuideOptions.Value.freeze => "frozen"
   }
 
-  private def optTcsKeyword[B](s: TcsController.Subsystem)(v: SeqAction[B])(implicit d: DefaultHeaderValue[B]) : SeqAction[B] =
+  private def optTcsKeyword[B](s: TcsController.Subsystem)(v: SeqActionF[F, B])(implicit d: DefaultHeaderValue[B]) : SeqActionF[F, B] =
     if(tcsSubsystems.contains(s)) v
-    else SeqAction(d.default)
+    else SeqActionF(d.default)
 
-  private def mountTcsKeyword[B](v: SeqAction[B])(implicit d: DefaultHeaderValue[B]) = optTcsKeyword[B](TcsController.Subsystem.Mount)(v)(d)
+  private def mountTcsKeyword[B](v: SeqActionF[F, B])(implicit d: DefaultHeaderValue[B]) = optTcsKeyword[B](TcsController.Subsystem.Mount)(v)(d)
 
-  private def m2TcsKeyword[B](v: SeqAction[B])(implicit d: DefaultHeaderValue[B]) = optTcsKeyword[B](TcsController.Subsystem.M2)(v)(d)
+  private def m2TcsKeyword[B](v: SeqActionF[F, B])(implicit d: DefaultHeaderValue[B]) = optTcsKeyword[B](TcsController.Subsystem.M2)(v)(d)
 
-  private def sfTcsKeyword[B](v: SeqAction[B])(implicit d: DefaultHeaderValue[B]) = optTcsKeyword[B](TcsController.Subsystem.AGUnit)(v)(d)
+  private def sfTcsKeyword[B](v: SeqActionF[F, B])(implicit d: DefaultHeaderValue[B]) = optTcsKeyword[B](TcsController.Subsystem.AGUnit)(v)(d)
 
   private val baseKeywords = List(
-    buildString(SeqAction(OcsBuildInfo.version), KeywordName.SEQEXVER),
+    buildString(SeqActionF(OcsBuildInfo.version), KeywordName.SEQEXVER),
     buildString(obsObject.orDefault, KeywordName.OBJECT),
     buildString(obsReader.getObsType, KeywordName.OBSTYPE),
     buildString(obsReader.getObsClass, KeywordName.OBSCLASS),
@@ -166,7 +167,7 @@ class StandardHeader[F[_]](
     buildInt32(obsReader.getSciBand.orDefault, KeywordName.SCIBAND)
   )
 
-  def timinigWindows(id: ImageFileId): SeqAction[Unit] = {
+  def timinigWindows(id: ImageFileId): SeqActionF[F, Unit] = {
     val timingWindows = obsReader.getTimingWindows
     val windows = timingWindows.flatMap {
       case (i, tw) =>
@@ -177,11 +178,11 @@ class StandardHeader[F[_]](
           KeywordName.fromTag(f"REQTWP${i + 1}%02d").map(buildDouble(tw.period, _))
         ).collect { case Some(k) => k }
     }
-    val windowsCount = buildInt32(SeqAction(timingWindows.length), KeywordName.NUMREQTW)
+    val windowsCount = buildInt32(SeqActionF(timingWindows.length), KeywordName.NUMREQTW)
     sendKeywords(id, inst, windowsCount :: windows)
   }
 
-  def requestedConditions(id: ImageFileId): SeqAction[Unit] = {
+  def requestedConditions(id: ImageFileId): SeqActionF[F, Unit] = {
     import ObsKeywordsReader._
     val keys = List(
       KeywordName.REQIQ -> IQ,
@@ -194,7 +195,7 @@ class StandardHeader[F[_]](
     sendKeywords(id, inst, requested)
   }
 
-  def requestedAirMassAngle(id: ImageFileId): SeqAction[Unit] = {
+  def requestedAirMassAngle(id: ImageFileId): SeqActionF[F, Unit] = {
     import ObsKeywordsReader._
     val keys = List(
       KeywordName.REQMAXAM -> MAX_AIRMASS,
@@ -204,13 +205,13 @@ class StandardHeader[F[_]](
     val requested = keys.flatMap {
       case (keyword, value) => obsReader.getRequestedAirMassAngle.get(value).toList.map(buildDouble(_, keyword))
     }
-    if (!requested.isEmpty) sendKeywords(id, inst, requested)
-    else SeqAction.void
+    if (!requested.isEmpty) sendKeywords[F](id, inst, requested)
+    else SeqActionF.void[F]
   }
 
-  override def sendBefore(obsId: Observation.Id, id: ImageFileId): SeqAction[Unit] = {
-    def guiderKeywords(guideWith: SeqAction[StandardGuideOptions.Value], baseName: String, target: TargetKeywordsReader,
-                       extras: List[KeywordBag => SeqAction[KeywordBag]]): SeqAction[Unit] = guideWith.flatMap { g =>
+  override def sendBefore(obsId: Observation.Id, id: ImageFileId): SeqActionF[F, Unit] = {
+    def guiderKeywords(guideWith: SeqActionF[F, StandardGuideOptions.Value], baseName: String, target: TargetKeywordsReader[F],
+                       extras: List[KeywordBag => SeqActionF[F, KeywordBag]]): SeqActionF[F, Unit] = guideWith.flatMap { g =>
       val keywords = List(
         KeywordName.fromTag(baseName + "ARA").map(buildDouble(target.getRA.orDefault, _)),
         KeywordName.fromTag(baseName + "ADEC").map(buildDouble(target.getDec.orDefault, _)),
@@ -228,11 +229,11 @@ class StandardHeader[F[_]](
       ).collect { case Some(k) => k }
 
       if (g === StandardGuideOptions.Value.guide) sendKeywords(id, inst, keywords ++ extras)
-      else SeqAction.void
+      else SeqActionF.void
     }
 
-    def standardGuiderKeywords(guideWith: SeqAction[StandardGuideOptions.Value], baseName: String,
-                               target: TargetKeywordsReader, extras: List[KeywordBag => SeqAction[KeywordBag]]): SeqAction[Unit] = {
+    def standardGuiderKeywords(guideWith: SeqActionF[F, StandardGuideOptions.Value], baseName: String,
+                               target: TargetKeywordsReader[F], extras: List[KeywordBag => SeqActionF[F, KeywordBag]]): SeqActionF[F, Unit] = {
       val ext = KeywordName.fromTag(baseName + "FOCUS").map(buildDouble(tcsReader.getM2UserFocusOffset.orDefault, _)).toList ++ extras
       guiderKeywords(guideWith, baseName, target, ext)
     }
@@ -246,7 +247,7 @@ class StandardHeader[F[_]](
     val pwfs2Keywords = standardGuiderKeywords(obsReader.getPwfs2Guide, "P2", tcsReader.getPwfs2Target,
       List(buildDouble(tcsReader.getPwfs2Freq.orDefault, KeywordName.P2FREQ)))
 
-    val aowfsKeywords = standardGuiderKeywords(obsReader.getAowfsGuide, "AO", tcsReader.getAowfsTarget, List())
+    val aowfsKeywords = standardGuiderKeywords(obsReader.getAowfsGuide, "AO", tcsReader.getAowfsTarget, Nil)
 
     sendKeywords(id, inst, baseKeywords) *>
     requestedConditions(id) *>
@@ -258,7 +259,7 @@ class StandardHeader[F[_]](
     aowfsKeywords
   }
 
-  override def sendAfter(id: ImageFileId): SeqAction[Unit] = sendKeywords(id, inst,
+  override def sendAfter(id: ImageFileId): SeqActionF[F, Unit] = sendKeywords(id, inst,
     List(
       buildDouble(tcsReader.getAirMass.orDefault, KeywordName.AIRMASS),
       buildDouble(tcsReader.getStartAirMass.orDefault, KeywordName.AMSTART),

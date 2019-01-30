@@ -3,25 +3,25 @@
 
 package seqexec.server.gpi
 
+import cats.effect.Sync
 import gem.Observation
 import gem.enum.KeywordName
-import cats.effect.IO
 import seqexec.model.dhs.ImageFileId
-import seqexec.server.{InstrumentSystem, SeqAction}
+import seqexec.server.SeqActionF
 import seqexec.server.keywords._
 import seqexec.server.tcs.TcsKeywordsReader
 import seqexec.server.tcs.CRFollow
 
 object GpiHeader {
 
-  def header(inst: InstrumentSystem[IO],
-             gdsClient: GdsClient,
-             tcsKeywordsReader: TcsKeywordsReader,
-             obsKeywordsReader: ObsKeywordsReader): Header =
-    new Header {
+  def header[F[_]: Sync](
+             gdsClient: GdsClient[F],
+             tcsKeywordsReader: TcsKeywordsReader[F],
+             obsKeywordsReader: ObsKeywordsReader[F]): Header[F] =
+    new Header[F] {
       override def sendBefore(obsId: Observation.Id,
-                              id: ImageFileId): SeqAction[Unit] = {
-        val ks = inst.keywordsClient.bundleKeywords(
+                              id: ImageFileId): SeqActionF[F, Unit] = {
+        val ks = GdsInstrument.bundleKeywords(
           List(
             buildDouble(tcsKeywordsReader.getParallacticAngle
                           .map(_.map(_.toSignedDoubleDegrees))
@@ -39,7 +39,7 @@ object GpiHeader {
         ks.flatMap(gdsClient.openObservation(obsId, id, _))
       }
 
-      override def sendAfter(id: ImageFileId): SeqAction[Unit] =
-        SeqAction.void
+      override def sendAfter(id: ImageFileId): SeqActionF[F, Unit] =
+        SeqActionF.void[F]
     }
 }

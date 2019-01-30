@@ -3,31 +3,32 @@
 
 package seqexec.server.gws
 
-import seqexec.server.{EpicsHealth, SeqAction}
+import cats.effect.IO
+import seqexec.server.{EpicsHealth, SeqAction, SeqActionF}
 import seqexec.server.keywords._
 import squants.motion.{MetersPerSecond, Pressure, StandardAtmospheres}
 import squants.space.Degrees
 import squants.thermal.Celsius
 import squants.{Angle, Temperature, Velocity}
 
-trait GwsKeywordReader {
-  def getHealth: SeqAction[Option[EpicsHealth]]
+trait GwsKeywordReader[F[_]] {
+  def getHealth: SeqActionF[F, Option[EpicsHealth]]
 
-  def getTemperature: SeqAction[Option[Temperature]]
+  def getTemperature: SeqActionF[F, Option[Temperature]]
 
-  def getDewPoint: SeqAction[Option[Temperature]]
+  def getDewPoint: SeqActionF[F, Option[Temperature]]
 
-  def getAirPressure: SeqAction[Option[Pressure]]
+  def getAirPressure: SeqActionF[F, Option[Pressure]]
 
-  def getWindVelocity: SeqAction[Option[Velocity]]
+  def getWindVelocity: SeqActionF[F, Option[Velocity]]
 
-  def getWindDirection: SeqAction[Option[Angle]]
+  def getWindDirection: SeqActionF[F, Option[Angle]]
 
-  def getHumidity: SeqAction[Option[Double]]
+  def getHumidity: SeqActionF[F, Option[Double]]
 
 }
 
-object DummyGwsKeywordsReader extends GwsKeywordReader {
+object DummyGwsKeywordsReader extends GwsKeywordReader[IO] {
 
   override def getTemperature: SeqAction[Option[Temperature]] = Celsius(15.0).toSeqAction
 
@@ -44,7 +45,7 @@ object DummyGwsKeywordsReader extends GwsKeywordReader {
   override def getHealth: SeqAction[Option[EpicsHealth]] = (EpicsHealth.Good: EpicsHealth).toSeqAction
 }
 
-object GwsKeywordsReaderImpl extends GwsKeywordReader {
+object GwsKeywordsReaderImpl extends GwsKeywordReader[IO] {
 
   override def getTemperature: SeqAction[Option[Temperature]] = GwsEpics.instance.ambientT.toSeqActionO
 

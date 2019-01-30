@@ -5,6 +5,7 @@ package seqexec.server.keywords
 
 import cats.effect.IO
 import cats.effect.Timer
+import cats.effect.Effect
 import cats.data.EitherT
 import cats.implicits._
 import gem.Observation
@@ -25,14 +26,14 @@ import seqexec.server.SeqActionF
 /**
   * Gemini Data service client
   */
-final case class GdsClient(base: Client[IO], gdsUri: Uri)(implicit timer: Timer[IO])
-    extends Http4sClientDsl[IO] {
+final case class GdsClient[F[_]: Effect](base: Client[F], gdsUri: Uri)(implicit timer: Timer[F])
+    extends Http4sClientDsl[F] {
 
   @SuppressWarnings(Array("org.wartremover.warts.Var"))
   private val client = {
     val max = 2
     var attemptsCounter = 1 // scalastyle:ignore
-    val policy = RetryPolicy[IO] { attempts: Int =>
+    val policy = RetryPolicy[F] { attempts: Int =>
       if (attempts >= max) None
       else {
         attemptsCounter = attemptsCounter + 1
@@ -59,13 +60,13 @@ final case class GdsClient(base: Client[IO], gdsUri: Uri)(implicit timer: Timer[
   private def handleConnectionError(e: Throwable): SeqexecFailure =
     SeqexecFailure.GdsException(e, gdsUri)
 
-  private def handleXmlError(xml: Elem): SeqActionF[IO, Unit] =
+  private def handleXmlError(xml: Elem): SeqActionF[F, Unit] =
     EitherT.fromEither(GdsClient.checkError(xml, gdsUri))
 
   /**
     * Set the keywords for an image
     */
-  def setKeywords(id: ImageFileId, ks: KeywordBag): SeqActionF[IO, Unit] = {
+  def setKeywords(id: ImageFileId, ks: KeywordBag): SeqActionF[F, Unit] = {
     // Build the request
     val xmlRpc      = storeKeywords(id, ks)
     val postRequest = POST(xmlRpc, gdsUri)
@@ -101,7 +102,7 @@ final case class GdsClient(base: Client[IO], gdsUri: Uri)(implicit timer: Timer[
 
   def openObservation(obsId: Observation.Id,
                       id: ImageFileId,
-                      ks: KeywordBag): SeqActionF[IO, Unit] = {
+                      ks: KeywordBag): SeqActionF[F, Unit] = {
     // Build the request
     val xmlRpc      = openObservationRPC(obsId, id, ks)
     val postRequest = POST(xmlRpc, gdsUri)
@@ -127,7 +128,7 @@ final case class GdsClient(base: Client[IO], gdsUri: Uri)(implicit timer: Timer[
       </params>
     </methodCall>
 
-  def closeObservation(id: ImageFileId): SeqActionF[IO, Unit] = {
+  def closeObservation(id: ImageFileId): SeqActionF[F, Unit] = {
     // Build the request
     val xmlRpc      = closeObservationRPC(id)
     val postRequest = POST(xmlRpc, gdsUri)

@@ -59,9 +59,9 @@ class SeqexecEngine(httpClient: Client[IO], gpi: GpiClient[IO], ghost: GhostClie
     if (settings.odbNotifications) OdbProxy.OdbCommandsImpl[IO](new Peer(settings.odbHost, 8442, null))
     else new OdbProxy.DummyOdbCommands[IO])
 
-  val gpiGDS: GdsClient = GdsClient(settings.gpiGdsControl.command.fold(httpClient, GdsClient.alwaysOkClient), settings.gpiGDS)
+  val gpiGDS: GdsClient[IO] = GdsClient(settings.gpiGdsControl.command.fold(httpClient, GdsClient.alwaysOkClient), settings.gpiGDS)
 
-  val ghostGDS: GdsClient = GdsClient(settings.ghostControl.command.fold(httpClient, GdsClient.alwaysOkClient), settings.ghostGDS)
+  val ghostGDS: GdsClient[IO] = GdsClient(settings.ghostControl.command.fold(httpClient, GdsClient.alwaysOkClient), settings.ghostGDS)
 
   private val systems = SeqTranslate.Systems(
     odbProxy,
