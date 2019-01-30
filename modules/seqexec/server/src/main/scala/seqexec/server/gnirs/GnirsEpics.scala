@@ -14,7 +14,7 @@ import cats.implicits._
 
 class GnirsEpics(epicsService: CaService, tops: Map[String, String]) {
 
-  val GNIRS_TOP: String = tops.getOrElse("nirs", "nirs:")
+  val GnirsTop: String = tops.getOrElse("nirs", "nirs:")
 
   object configCCCmd extends EpicsCommand {
     override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("nirs::config"))
@@ -94,8 +94,9 @@ class GnirsEpics(epicsService: CaService, tops: Map[String, String]) {
   }
 
   private val stopCS: Option[CaCommandSender] = Option(epicsService.getCommandSender("nirs::stop"))
-  private val observeAS: Option[CaApplySender] = Option(epicsService.createObserveSender("nirs::observeCmd",
-      GNIRS_TOP + "dc:apply", GNIRS_TOP + "dc:applyC", GNIRS_TOP + "dc:observeC", true, GNIRS_TOP + "dc:stop", GNIRS_TOP + "dc:abort", ""))
+  private val observeAS: Option[CaApplySender] = Option(epicsService.createObserveSender(
+    "nirs::observeCmd", s"${GnirsTop}dc:apply", s"${GnirsTop}dc:applyC", s"${GnirsTop}dc:observeC",
+    true, s"${GnirsTop}dc:stop", s"${GnirsTop}dc:abort", ""))
 
   object stopCmd extends EpicsCommand {
     override protected val cs: Option[CaCommandSender] = stopCS
@@ -149,14 +150,14 @@ class GnirsEpics(epicsService: CaService, tops: Map[String, String]) {
   def lowNoise: Option[Int] = Option(dcState.getIntegerAttribute("lowNoise").value).map(_.toInt)
 
   private val observeCAttr: CaAttribute[CarStateGEM5] = dcState.addEnum("observeState",
-    GNIRS_TOP + "dc:observeC.VAL", classOf[CarStateGEM5])
+    s"${GnirsTop}dc:observeC.VAL", classOf[CarStateGEM5])
   def observeState: Option[CarStateGEM5] = Option(observeCAttr.value)
 
   def dhsConnected: Option[Boolean] = Option(dcState.getIntegerAttribute("dhsConnected").value)
     .map(_.toInt =!= 0)
 
   val arrayActiveAttr: Option[CaAttribute[JDetectorState]] = Option(dcState.addEnum(
-    "arrayState", s"${GNIRS_TOP}dc:activate", classOf[JDetectorState]
+    "arrayState", s"${GnirsTop}dc:activate", classOf[JDetectorState]
   ))
   def arrayActive: Option[Boolean] = arrayActiveAttr.flatMap(at => Option(at.value))
     .map(_.getActive)

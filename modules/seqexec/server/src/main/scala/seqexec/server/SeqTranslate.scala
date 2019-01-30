@@ -75,7 +75,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
 
   //scalastyle:off
   private def observe(config: Config, obsId: Observation.Id, inst: InstrumentSystem[IO],
-                      otherSys: List[System[IO]], headers: Reader[HeaderExtraData, List[Header]])
+                      otherSys: List[System[IO]], headers: Reader[HeaderExtraData, List[Header[IO]]])
                      (ctx: HeaderExtraData)
                      (implicit ev: Concurrent[IO]): Stream[IO, Result]
   = {
@@ -138,7 +138,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
                               tio: Timer[IO]
                    ): TrySeq[SequenceGen.StepGen] = {
     def buildStep(inst: InstrumentSystem[IO], sys: List[System[IO]],
-                  headers: Reader[HeaderExtraData, List[Header]]): SequenceGen.StepGen = {
+                  headers: Reader[HeaderExtraData, List[Header[IO]]]): SequenceGen.StepGen = {
       val initialStepExecutions: List[List[Action[IO]]] =
         if (i === 0)
           List(List(systems.odb.sequenceStart(obsId, "")
@@ -420,10 +420,11 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
     stepType match {
       case CelestialObject(inst) => toInstrumentSys(inst).map(sys => sys :: List(Tcs(systems.tcs,
         if(hasOI(inst)) all else allButOI, ScienceFoldPosition.Position(TcsController.LightSource
-          .Sky, sys.sfName(config))),
+          .Sky, sys.sfName(config)), None),
         Gcal(systems.gcal, site == Site.GS)))
       case FlatOrArc(inst)       => toInstrumentSys(inst).map(sys => sys :: List(Tcs(systems.tcs,
-        flatOrArcTcsSubsystems(inst), ScienceFoldPosition.Position(TcsController.LightSource.GCAL, sys.sfName(config))),
+        flatOrArcTcsSubsystems(inst), ScienceFoldPosition.Position(TcsController.LightSource
+          .GCAL, sys.sfName(config)), None),
         Gcal(systems.gcal, site == Site.GS)))
       case DarkOrBias(inst)      => toInstrumentSys(inst).map(List(_))
       case _                     => TrySeq.fail(Unexpected(s"Unsupported step type $stepType"))
@@ -433,7 +434,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
   // I cannot use a sealed trait as base, because I cannot have all systems in one source file (too big),
   // so either I use an unchecked notation, or add a default case that throws an exception.
   private def resourceFromSystem(s: System[IO]): Resource = (s: @unchecked) match {
-    case Tcs(_, _, _)     => Resource.TCS
+    case Tcs(_, _, _, _)  => Resource.TCS
     case Gcal(_, _)       => Resource.Gcal
     case GmosNorth(_, _)  => Instrument.GmosN
     case GmosSouth(_, _)  => Instrument.GmosS
@@ -446,7 +447,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
 
   private def calcInstHeader(config: Config, inst: Instrument)(
     implicit tio: Timer[IO]
-  ): TrySeq[Header] = {
+  ): TrySeq[Header[IO]] = {
     val tcsKReader = if (settings.tcsKeywords) TcsKeywordsReaderImpl else DummyTcsKeywordsReader
     inst match {
       case Instrument.F2     =>
@@ -459,9 +460,9 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
         val gnirsReader = if(settings.gnirsKeywords) GnirsKeywordReaderImpl else GnirsKeywordReaderDummy
         toInstrumentSys(inst).map(GnirsHeader.header(_, gnirsReader, tcsKReader))
       case Instrument.Gpi    =>
-        toInstrumentSys(inst).map(GpiHeader.header(_, systems.gpi.gdsClient, tcsKReader, ObsKeywordReaderImpl(config, site)))
+        TrySeq(GpiHeader.header(systems.gpi.gdsClient, tcsKReader, ObsKeywordReaderImpl[IO](config, site)))
       case Instrument.Ghost  =>
-        GhostHeader.header().asRight
+        GhostHeader.header[IO].asRight
       case Instrument.Niri   =>
         val niriReader = if(settings.niriKeywords) NiriKeywordReaderImpl
                           else NiriKeywordReaderDummy
@@ -471,24 +472,24 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
     }
   }
 
-  private def commonHeaders(config: Config, tcsSubsystems: List[TcsController.Subsystem], inst: InstrumentSystem[IO])(ctx: HeaderExtraData): Header =
+  private def commonHeaders(config: Config, tcsSubsystems: List[TcsController.Subsystem], inst: InstrumentSystem[IO])(ctx: HeaderExtraData): Header[IO] =
     new StandardHeader(
       inst,
       ObsKeywordReaderImpl(config, site),
       if (settings.tcsKeywords) TcsKeywordsReaderImpl else DummyTcsKeywordsReader,
-      StateKeywordsReader(ctx.conditions, ctx.operator, ctx.observer),
+      StateKeywordsReader[IO](ctx.conditions, ctx.operator, ctx.observer),
       tcsSubsystems
     )
 
-  private def gwsHeaders(i: InstrumentSystem[IO]): Header = GwsHeader.header(i,
+  private def gwsHeaders(i: InstrumentSystem[IO]): Header[IO] = GwsHeader.header(i,
     if (settings.gwsKeywords) GwsKeywordsReaderImpl else DummyGwsKeywordsReader)
 
-  private def gcalHeader(i: InstrumentSystem[IO]): Header = GcalHeader.header(i,
+  private def gcalHeader(i: InstrumentSystem[IO]): Header[IO] = GcalHeader.header(i,
     if (settings.gcalKeywords) GcalKeywordsReaderImpl else DummyGcalKeywordsReader )
 
   private def calcHeaders(config: Config, stepType: StepType)(
     implicit tio: Timer[IO]
-  ): TrySeq[Reader[HeaderExtraData, List[Header]]] = stepType match {
+  ): TrySeq[Reader[HeaderExtraData, List[Header[IO]]]] = stepType match {
     case CelestialObject(inst) => toInstrumentSys(inst) >>= { i =>
         calcInstHeader(config, inst).map(h => Reader(ctx => List(commonHeaders(config, all.toList, i)(ctx), gwsHeaders(i), h)))
       }

@@ -3,18 +3,18 @@
 
 package seqexec.server.gnirs
 
-import cats.effect.IO
+import cats.Monad
 import gem.Observation
 import gem.enum.KeywordName
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.keywords._
 import seqexec.server.InstrumentSystem
 import seqexec.server.tcs.TcsKeywordsReader
-import seqexec.server.SeqAction
+import seqexec.server.SeqActionF
 
 object GnirsHeader {
-  def header(inst: InstrumentSystem[IO], gnirsReader: GnirsKeywordReader, tcsReader: TcsKeywordsReader): Header = new Header {
-    override def sendBefore(obsId: Observation.Id, id: ImageFileId): SeqAction[Unit] =
+  def header[F[_]: Monad](inst: InstrumentSystem[F], gnirsReader: GnirsKeywordReader[F], tcsReader: TcsKeywordsReader[F]): Header[F] = new Header[F] {
+    override def sendBefore(obsId: Observation.Id, id: ImageFileId): SeqActionF[F, Unit] =
       sendKeywords(id, inst, List(
         buildInt32(tcsReader.getGnirsInstPort.orDefault, KeywordName.INPORT),
         buildString(gnirsReader.getArrayId, KeywordName.ARRAYID),
@@ -46,7 +46,7 @@ object GnirsHeader {
         buildDouble(gnirsReader.getDetectorBias, KeywordName.DETBIAS)
       ) )
 
-    override def sendAfter(id: ImageFileId): SeqAction[Unit] =
+    override def sendAfter(id: ImageFileId): SeqActionF[F, Unit] =
       sendKeywords(id, inst, List(
         buildString(tcsReader.getUT.orDefault, KeywordName.UTEND),
         buildDouble(gnirsReader.getObsEpoch, KeywordName.OBSEPOCH)

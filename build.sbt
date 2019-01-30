@@ -332,7 +332,7 @@ lazy val giapi = project
   .enablePlugins(GitBranchPrompt)
   .settings(commonSettings: _*)
   .settings(
-    libraryDependencies ++= Seq(Cats.value, Mouse.value, Shapeless.value, CatsEffect.value, Fs2, GiapiJmsUtil, GiapiJmsProvider, GiapiStatusService, Giapi, GiapiCommandsClient) ++ Logging,
+    libraryDependencies ++= Seq(Cats.value, Mouse.value, Shapeless.value, CatsEffect.value, Fs2, GiapiJmsUtil, GiapiJmsProvider, GiapiStatusService, Giapi, GiapiCommandsClient) ++ Logging ++ Monocle.value,
     libraryDependencies ++= Seq(GmpStatusGateway % "test", GmpStatusDatabase % "test", GmpCmdJmsBridge % "test", NopSlf4j % "test"),
     excludeDependencies ++= Seq(
       // Remove to silence logging on tests
@@ -512,6 +512,7 @@ lazy val seqexec_server = project
   .settings(commonSettings: _*)
   .settings(
     addCompilerPlugin(Plugins.paradisePlugin),
+    addCompilerPlugin(Plugins.kindProjectorPlugin),
     libraryDependencies ++=
       Seq(Http4sCirce,
           Squants.value,

@@ -16,7 +16,7 @@ class GcalEpics(epicsService: CaService, tops: Map[String, String]) {
   import EpicsCommand.setParameter
   import GcalEpics._
 
-  val GCAL_TOP: String = tops.get("gc").getOrElse("")
+  val GcalTop: String = tops.get("gc").getOrElse("")
 
   def post: SeqAction[EpicsCommand.Result] = lampsCmd.post
 
@@ -86,7 +86,8 @@ class GcalEpics(epicsService: CaService, tops: Map[String, String]) {
   private val state = epicsService.getStatusAcceptor("gcal::status")
 
   def createLampAttribute(name: String, longName: String): EnumAttribute[BinaryOnOff] =
-    new EnumAttribute[BinaryOnOff](state, name + "LampState", GCAL_TOP + name + "_LampState", longName + " lamp state")(classOf[BinaryOnOff])
+    new EnumAttribute[BinaryOnOff](state, name + "LampState", s"${GcalTop}${name}_LampState",
+      s"${longName} lamp state")(classOf[BinaryOnOff])
 
   val lampAr: EnumAttribute[BinaryOnOff] = createLampAttribute("Ar", "Argon")
 

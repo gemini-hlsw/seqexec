@@ -10,20 +10,21 @@ import seqexec.server.ConfigUtilOps._
 import seqexec.server.keywords._
 import seqexec.server.InstrumentSystem
 import seqexec.server.tcs.TcsKeywordsReader
-import seqexec.server.{ConfigUtilOps, SeqAction, SeqexecFailure}
+import seqexec.server.{ConfigUtilOps, SeqAction, SeqActionF, SeqexecFailure}
 import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.data.YesNoType
 import edu.gemini.spModel.gemini.gmos.InstGmosCommon.IS_MOS_PREIMAGING_PROP
 import edu.gemini.spModel.seqcomp.SeqConfigNames.INSTRUMENT_KEY
 import cats.data.EitherT
 import cats.effect.IO
+import cats.effect.Sync
 import cats.implicits._
 
 object GmosHeader {
   // scalastyle:off
-  def header(inst: InstrumentSystem[IO], gmosObsReader: GmosHeader.ObsKeywordsReader, gmosReader: GmosHeader.InstKeywordsReader, tcsKeywordsReader: TcsKeywordsReader): Header =
-    new Header {
-      override def sendBefore(obsId: Observation.Id, id: ImageFileId): SeqAction[Unit] = {
+  def header[F[_]: Sync](inst: InstrumentSystem[F], gmosObsReader: GmosHeader.ObsKeywordsReader[F], gmosReader: GmosHeader.InstKeywordsReader[F], tcsKeywordsReader: TcsKeywordsReader[F]): Header[F] =
+    new Header[F] {
+      override def sendBefore(obsId: Observation.Id, id: ImageFileId): SeqActionF[F, Unit] = {
         sendKeywords(id, inst, List(
           buildInt32(tcsKeywordsReader.getGmosInstPort.orDefault, KeywordName.INPORT),
           buildString(gmosReader.ccName, KeywordName.GMOSCC),
@@ -58,9 +59,9 @@ object GmosHeader {
       }.toList
 
       private val InBeam: Int = 0
-      private def readMaskName: SeqAction[String] = gmosReader.maskLoc.flatMap{v => if(v === InBeam) gmosReader.maskName else SeqAction("None")}
+      private def readMaskName: SeqActionF[F, String] = gmosReader.maskLoc.flatMap{v => if(v === InBeam) gmosReader.maskName else SeqActionF("None")}
 
-      override def sendAfter(id: ImageFileId): SeqAction[Unit] = {
+      override def sendAfter(id: ImageFileId): SeqActionF[F, Unit] = {
         sendKeywords(id, inst, List(
           buildInt32(gmosReader.maskId, KeywordName.MASKID),
           buildString(readMaskName, KeywordName.MASKNAME),
@@ -100,70 +101,70 @@ object GmosHeader {
     }
     // scalastyle:on
 
-    final case class RoiValues(xStart: SeqAction[Int], xSize: SeqAction[Int], yStart: SeqAction[Int], ySize: SeqAction[Int])
-    trait ObsKeywordsReader {
-      def preimage: SeqAction[YesNoType]
+    final case class RoiValues[F[_]](xStart: SeqActionF[F, Int], xSize: SeqActionF[F, Int], yStart: SeqActionF[F, Int], ySize: SeqActionF[F, Int])
+    trait ObsKeywordsReader[F[_]] {
+      def preimage: SeqActionF[F, YesNoType]
     }
 
-    final case class ObsKeywordsReaderImpl(config: Config) extends ObsKeywordsReader {
-      override def preimage: SeqAction[YesNoType] = EitherT(IO.pure(config.extractAs[YesNoType](INSTRUMENT_KEY / IS_MOS_PREIMAGING_PROP)
+    final case class ObsKeywordsReaderImpl[F[_]: Sync](config: Config) extends ObsKeywordsReader[F] {
+      override def preimage: SeqActionF[F, YesNoType] = EitherT(Sync[F].delay(config.extractAs[YesNoType](INSTRUMENT_KEY / IS_MOS_PREIMAGING_PROP)
         .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))))
     }
 
-    trait InstKeywordsReader {
-      def ccName: SeqAction[String]
+    trait InstKeywordsReader[F[_]] {
+      def ccName: SeqActionF[F, String]
       // TODO Add NOD*
-      /*def nodMode: SeqAction[String]
-      def nodPix: SeqAction[Int]
-      def nodCount: SeqAction[Int]
-      def nodAxOff: SeqAction[Int]
-      def nodAyOff: SeqAction[Int]
-      def nodBxOff: SeqAction[Int]
-      def nodByOff: SeqAction[Int]*/
-      def maskId: SeqAction[Int]
-      def maskName: SeqAction[String]
-      def maskType: SeqAction[Int]
-      def maskLoc: SeqAction[Int]
-      def filter1: SeqAction[String]
-      def filter2: SeqAction[String]
-      def filter1Id: SeqAction[Int]
-      def filter2Id: SeqAction[Int]
-      def grating: SeqAction[String]
-      def gratingId: SeqAction[Int]
-      def gratingWavelength: SeqAction[Double]
-      def gratingAdjustedWavelength: SeqAction[Double]
-      def gratingOrder: SeqAction[Int]
-      def gratingTilt: SeqAction[Double]
-      def gratingStep: SeqAction[Double]
-      def dtaX: SeqAction[Double]
-      def dtaY: SeqAction[Double]
-      def dtaZ: SeqAction[Double]
-      def dtaZst: SeqAction[Double]
-      def dtaZen: SeqAction[Double]
-      def dtaZme: SeqAction[Double]
-      def stageMode: SeqAction[String]
-      def adcMode: SeqAction[String]
-      def dcName: SeqAction[String]
-      def detectorType: SeqAction[String]
-      def detectorId: SeqAction[String]
-      def exposureTime: SeqAction[Double]
-      def adcUsed: SeqAction[Int]
-      def adcPrismEntSt: SeqAction[Double]
-      def adcPrismEntEnd: SeqAction[Double]
-      def adcPrismEntMe: SeqAction[Double]
-      def adcPrismExtSt: SeqAction[Double]
-      def adcPrismExtEnd: SeqAction[Double]
-      def adcPrismExtMe: SeqAction[Double]
-      def adcWavelength1: SeqAction[Double]
-      def adcWavelength2: SeqAction[Double]
-      def detNRoi: SeqAction[Int]
-      def roiValues: Map[Int, RoiValues]
-      def aExpCount: SeqAction[Int]
-      def bExpCount: SeqAction[Int]
+      /*def nodMode: SeqActionF[F, String]
+      def nodPix: SeqActionF[F, Int]
+      def nodCount: SeqActionF[F, Int]
+      def nodAxOff: SeqActionF[F, Int]
+      def nodAyOff: SeqActionF[F, Int]
+      def nodBxOff: SeqActionF[F, Int]
+      def nodByOff: SeqActionF[F, Int]*/
+      def maskId: SeqActionF[F, Int]
+      def maskName: SeqActionF[F, String]
+      def maskType: SeqActionF[F, Int]
+      def maskLoc: SeqActionF[F, Int]
+      def filter1: SeqActionF[F, String]
+      def filter2: SeqActionF[F, String]
+      def filter1Id: SeqActionF[F, Int]
+      def filter2Id: SeqActionF[F, Int]
+      def grating: SeqActionF[F, String]
+      def gratingId: SeqActionF[F, Int]
+      def gratingWavelength: SeqActionF[F, Double]
+      def gratingAdjustedWavelength: SeqActionF[F, Double]
+      def gratingOrder: SeqActionF[F, Int]
+      def gratingTilt: SeqActionF[F, Double]
+      def gratingStep: SeqActionF[F, Double]
+      def dtaX: SeqActionF[F, Double]
+      def dtaY: SeqActionF[F, Double]
+      def dtaZ: SeqActionF[F, Double]
+      def dtaZst: SeqActionF[F, Double]
+      def dtaZen: SeqActionF[F, Double]
+      def dtaZme: SeqActionF[F, Double]
+      def stageMode: SeqActionF[F, String]
+      def adcMode: SeqActionF[F, String]
+      def dcName: SeqActionF[F, String]
+      def detectorType: SeqActionF[F, String]
+      def detectorId: SeqActionF[F, String]
+      def exposureTime: SeqActionF[F, Double]
+      def adcUsed: SeqActionF[F, Int]
+      def adcPrismEntSt: SeqActionF[F, Double]
+      def adcPrismEntEnd: SeqActionF[F, Double]
+      def adcPrismEntMe: SeqActionF[F, Double]
+      def adcPrismExtSt: SeqActionF[F, Double]
+      def adcPrismExtEnd: SeqActionF[F, Double]
+      def adcPrismExtMe: SeqActionF[F, Double]
+      def adcWavelength1: SeqActionF[F, Double]
+      def adcWavelength2: SeqActionF[F, Double]
+      def detNRoi: SeqActionF[F, Int]
+      def roiValues: Map[Int, RoiValues[F]]
+      def aExpCount: SeqActionF[F, Int]
+      def bExpCount: SeqActionF[F, Int]
       def isADCInUse: Boolean
     }
 
-    object DummyInstKeywordReader extends InstKeywordsReader {
+    object DummyInstKeywordReader extends InstKeywordsReader[IO] {
       override def ccName: SeqAction[String] = SeqAction(StrDefault)
       override def maskId: SeqAction[Int] = SeqAction(IntDefault)
       override def maskName: SeqAction[String] = SeqAction(StrDefault)
@@ -202,13 +203,13 @@ object GmosHeader {
       override def adcWavelength1: SeqAction[Double] = SeqAction(DoubleDefault)
       override def adcWavelength2: SeqAction[Double] = SeqAction(DoubleDefault)
       override def detNRoi: SeqAction[Int] = SeqAction(IntDefault)
-      override def roiValues: Map[Int, RoiValues] = Map.empty
+      override def roiValues: Map[Int, RoiValues[IO]] = Map.empty
       override def aExpCount: SeqAction[Int] = SeqAction(IntDefault)
       override def bExpCount: SeqAction[Int] = SeqAction(IntDefault)
       override def isADCInUse: Boolean = false
     }
 
-    object InstKeywordReaderImpl extends InstKeywordsReader {
+    object InstKeywordReaderImpl extends InstKeywordsReader[IO] {
 
       override def ccName: SeqAction[String] = GmosEpics.instance.ccName.toSeqAction
       override def maskId: SeqAction[Int] = GmosEpics.instance.maskId.toSeqAction
@@ -252,7 +253,7 @@ object GmosHeader {
       override def adcWavelength2: SeqAction[Double] = GmosEpics.instance.adcExitUpperWavel.toSeqAction
       // The TCL code does some verifications to ensure the value is not negative
       override def detNRoi: SeqAction[Int] = SeqAction(GmosEpics.instance.roiNumUsed.filter(_ > 0).getOrElse(0))
-      override def roiValues: Map[Int, RoiValues] =
+      override def roiValues: Map[Int, RoiValues[IO]] =
         (for {
           i <- 1 to GmosEpics.instance.roiNumUsed.getOrElse(0)
           roi = GmosEpics.instance.rois.get(i)

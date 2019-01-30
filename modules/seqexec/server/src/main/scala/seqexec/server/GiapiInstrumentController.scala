@@ -7,7 +7,6 @@ import cats.data.EitherT
 import cats.effect.Sync
 import cats.implicits._
 import giapi.client.GiapiClient
-import giapi.client.syntax.giapiconfig._
 import giapi.client.commands.{CommandResult, CommandResultException, Configuration}
 import org.log4s.getLogger
 import seqexec.model.dhs.ImageFileId
@@ -24,7 +23,7 @@ abstract class GiapiInstrumentController[F[_]: Sync, CFG, C <: GiapiClient[F]] {
   private val Log = getLogger
 
   def client: C
-  def gdsClient: GdsClient
+  def gdsClient: GdsClient[F]
   def name: String
   def configuration(config: CFG): Configuration
 

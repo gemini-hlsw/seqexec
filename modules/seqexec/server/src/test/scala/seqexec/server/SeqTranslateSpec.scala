@@ -8,8 +8,8 @@ import java.time.LocalDate
 import cats.implicits._
 import cats.effect._
 import fs2.Stream
-import giapi.client.Giapi
 import giapi.client.gpi.GpiClient
+import giapi.client.ghost.GhostClient
 import gem.Observation
 import gem.enum.Site
 import scala.concurrent.ExecutionContext
@@ -26,7 +26,6 @@ import seqexec.server.gnirs.GnirsControllerSim
 import seqexec.server.tcs.TcsControllerSim
 import seqexec.server.gpi.GpiController
 import edu.gemini.spModel.core.Peer
-import giapi.client.ghost.GhostClient
 import org.scalatest.FlatSpec
 import org.http4s.Uri._
 import squants.time.Seconds
@@ -82,6 +81,13 @@ class SeqTranslateSpec extends FlatSpec {
   private val s5: EngineState = EngineState.sequenceStateIndex(seqId)
     .modify(_.mark(0)(Result.Error("error")))(baseState)
 
+  val gpiSim = GpiClient.simulatedGpiClient.use(x => IO(GpiController(x,
+    new GdsClient(GdsClient.alwaysOkClient, uri("http://localhost:8888/xmlrpc"))))
+  ).unsafeRunSync
+  val ghostSim = GhostClient.simulatedGhostClient.use(x => IO(GhostController(x,
+    new GdsClient(GdsClient.alwaysOkClient, uri("http://localhost:8888/xmlrpc"))))
+  ).unsafeRunSync
+
   private val systems = SeqTranslate.Systems(
     new OdbProxy(new Peer("localhost", 8443, null), new OdbProxy.DummyOdbCommands),
     DhsClientSim(LocalDate.of(2016, 4, 15)),
@@ -91,10 +97,8 @@ class SeqTranslateSpec extends FlatSpec {
     GmosControllerSim.south,
     GmosControllerSim.north,
     GnirsControllerSim,
-    GpiController(new GpiClient(Giapi.giapiConnectionIO(scala.concurrent.ExecutionContext.Implicits.global).connect.unsafeRunSync),
-    new GdsClient(GdsClient.alwaysOkClient, uri("http://localhost:8888/xmlrpc"))),
-    GhostController(new GhostClient[IO](Giapi.giapiConnectionIO(scala.concurrent.ExecutionContext.Implicits.global).connect.unsafeRunSync),
-    new GdsClient(GdsClient.alwaysOkClient, uri("hhttp://localhost:8888/xmlrpc"))),
+    gpiSim,
+    ghostSim,
     NiriControllerSim
   )
 

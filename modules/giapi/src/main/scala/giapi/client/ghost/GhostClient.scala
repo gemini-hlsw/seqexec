@@ -4,36 +4,52 @@
 package giapi.client.ghost
 
 import cats.effect._
-import cats.implicits._
-import giapi.client.{Giapi, GiapiClient}
-import giapi.client.syntax.giapiconfig._
+import giapi.client.Giapi
+import giapi.client.GiapiClient
 import scala.concurrent.duration._
-import scala.concurrent.ExecutionContext
 
 /** Client for GHOST */
-final class GhostClient[F[_]](override val giapi: Giapi[F]) extends GiapiClient[F]
+final class GhostClient[F[_]](override val giapi: Giapi[F])
+    extends GiapiClient[F]
 
-object GhostExample extends IOApp {
+object GhostClient {
+  // Used for simulations
+  def simulatedGhostClient(implicit timer: Timer[IO]): Resource[IO, GhostClient[IO]] =
+    Resource.liftF(
+      Giapi.giapiConnectionIO.connect.map(new GhostClient(_))
+    )
 
-  val ghostStatus: Resource[IO, Giapi[IO]] =
-    Resource.make(
-      Giapi.giapiConnection[IO](
-        "failover:(tcp://127.0.0.1:61616)",
-        ExecutionContext.global
-      ).connect)(_.close)
+  def ghostClient[F[_]: ConcurrentEffect](
+    url:     String)(implicit timer: Timer[IO]): Resource[F, GhostClient[F]] = {
+    val ghostStatus: Resource[F, Giapi[F]] =
+      Resource.make(
+        Giapi
+          .giapiConnection[F](
+            url
+          )
+          .connect)(_.close)
 
-  val ghostSequence: Resource[IO, Giapi[IO]] =
-    Resource.make(
-      Giapi.giapiConnection[IO](
-        "failover:(tcp://127.0.0.1:61616)",
-        ExecutionContext.global
-      ).connect)(_.close)
+    val ghostSequence: Resource[F, Giapi[F]] =
+      Resource.make(
+        Giapi
+          .giapiConnection[F](
+            url
+          )
+          .connect)(_.close)
 
-  val ghostClient: Resource[IO, GhostClient[IO]] =
     for {
       _ <- ghostStatus
       c <- ghostSequence
     } yield new GhostClient(c)
+  }
+}
+
+object GhostExample extends IOApp {
+
+  val url = "failover:(tcp://127.0.0.1:61616)"
+
+  val ghostClient: Resource[IO, GhostClient[IO]] =
+    GhostClient.ghostClient(url)
 
   def run(args: List[String]): IO[ExitCode] =
     ghostClient.use { client =>

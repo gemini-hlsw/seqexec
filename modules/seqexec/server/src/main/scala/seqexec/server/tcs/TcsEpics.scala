@@ -28,7 +28,7 @@ final class TcsEpics(epicsService: CaService, tops: Map[String, String]) {
   import EpicsCommand.setParameter
   import TcsEpics._
 
-  val TCS_TOP: String = tops.getOrElse("tcs", "")
+  val TcsTop: String = tops.getOrElse("tcs", "")
 
   // This is a bit ugly. Commands are triggered from the main apply record, so I just choose an arbitrary command here.
   // Triggering that command will trigger all the marked commands.
@@ -211,7 +211,7 @@ final class TcsEpics(epicsService: CaService, tops: Map[String, String]) {
   def m1GuideSource: Option[String] = Option(tcsState.getStringAttribute("m1GuideSource").value)
 
   private val m1GuideAttr: Option[CaAttribute[BinaryOnOff]] = Option(tcsState.addEnum("m1Guide",
-    TCS_TOP + "im:m1GuideOn", classOf[BinaryOnOff], "M1 guide"))
+    s"${TcsTop}im:m1GuideOn", classOf[BinaryOnOff], "M1 guide"))
 
   def m1Guide: Option[BinaryOnOff] = m1GuideAttr.flatMap(v => Option(v.value))
 
@@ -226,7 +226,7 @@ final class TcsEpics(epicsService: CaService, tops: Map[String, String]) {
   def comaCorrect: Option[String] = Option(tcsState.getStringAttribute("comaCorrect").value)
 
   private val m2GuideStateAttr: Option[CaAttribute[BinaryOnOff]] = Option(tcsState.addEnum("m2GuideState",
-    TCS_TOP + "om:m2GuideState", classOf[BinaryOnOff], "M2 guiding state"))
+    s"${TcsTop}om:m2GuideState", classOf[BinaryOnOff], "M2 guiding state"))
 
   def m2GuideState: Option[BinaryOnOff] = m2GuideStateAttr.flatMap(v => Option(v.value))
 
@@ -257,17 +257,17 @@ final class TcsEpics(epicsService: CaService, tops: Map[String, String]) {
   def oiFollowS: Option[String] = Option(tcsState.getStringAttribute("oiFollowS").value)
 
   private val pwfs1OnAttr: Option[CaAttribute[BinaryYesNo]] = Option(tcsState.addEnum("pwfs1On",
-    TCS_TOP + "drives:p1Integrating", classOf[BinaryYesNo], "P1 integrating"))
+    s"${TcsTop}drives:p1Integrating", classOf[BinaryYesNo], "P1 integrating"))
 
   def pwfs1On: Option[BinaryYesNo] = pwfs1OnAttr.flatMap(v => Option(v.value))
 
   private val pwfs2OnAttr: Option[CaAttribute[BinaryYesNo]] = Option(tcsState.addEnum("pwfs2On",
-    TCS_TOP + "drives:p2Integrating", classOf[BinaryYesNo], "P2 integrating"))
+    s"${TcsTop}drives:p2Integrating", classOf[BinaryYesNo], "P2 integrating"))
 
   def pwfs2On: Option[BinaryYesNo] = pwfs2OnAttr.flatMap(v => Option(v.value))
 
   private val oiwfsOnAttr: Option[CaAttribute[BinaryYesNo]] = Option(tcsState.addEnum("oiwfsOn",
-    TCS_TOP + "drives:oiIntegrating", classOf[BinaryYesNo], "P2 integrating"))
+    s"${TcsTop}drives:oiIntegrating", classOf[BinaryYesNo], "P2 integrating"))
 
   def oiwfsOn: Option[BinaryYesNo] = oiwfsOnAttr.flatMap(v => Option(v.value))
 

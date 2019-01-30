@@ -3,19 +3,19 @@
 
 package seqexec.server.niri
 
-import cats.effect.IO
+import cats.Monad
 import gem.Observation
 import gem.enum.KeywordName
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.keywords.{Header, buildDouble, buildString, _}
-import seqexec.server.{InstrumentSystem, SeqAction}
+import seqexec.server.{InstrumentSystem, SeqActionF}
 import seqexec.server.tcs.TcsKeywordsReader
 
 object NiriHeader {
   // scalastyle:off
-  def header(inst: InstrumentSystem[IO], instReader: NiriKeywordReader,
-             tcsKeywordsReader: TcsKeywordsReader): Header = new Header {
-    override def sendBefore(obsId: Observation.Id, id: ImageFileId): SeqAction[Unit] =
+  def header[F[_]: Monad](inst: InstrumentSystem[F], instReader: NiriKeywordReader[F],
+             tcsKeywordsReader: TcsKeywordsReader[F]): Header[F] = new Header[F] {
+    override def sendBefore(obsId: Observation.Id, id: ImageFileId): SeqActionF[F, Unit] =
       sendKeywords(id, inst, List(
         buildString(instReader.arrayId, KeywordName.ARRAYID),
         buildString(instReader.arrayType, KeywordName.ARRAYTYP),
@@ -24,8 +24,8 @@ object NiriHeader {
         buildString(tcsKeywordsReader.getDate.orDefault, KeywordName.DATE_OBS),
         buildDouble(instReader.exposureTime, KeywordName.EXPTIME),
         buildString(instReader.filter1, KeywordName.FILTER1),
-        buildString(instReader.filter1, KeywordName.FILTER2),
-        buildString(instReader.filter1, KeywordName.FILTER3),
+        buildString(instReader.filter2, KeywordName.FILTER2),
+        buildString(instReader.filter3, KeywordName.FILTER3),
         buildString(instReader.focusName, KeywordName.FOCUSNAM),
         buildDouble(instReader.focusPosition, KeywordName.FOCUSPOS),
         buildString(instReader.focalPlaneMask, KeywordName.FPMASK),
@@ -53,7 +53,7 @@ object NiriHeader {
         buildDouble(instReader.setVoltage, KeywordName.VSET)
       ))
 
-    override def sendAfter(id: ImageFileId): SeqAction[Unit] =
+    override def sendAfter(id: ImageFileId): SeqActionF[F, Unit] =
       sendKeywords(id, inst, List(
         buildDouble(instReader.detectorTemperature, KeywordName.A_TDETABS),
         buildDouble(instReader.mountTemperature, KeywordName.A_TMOUNT),

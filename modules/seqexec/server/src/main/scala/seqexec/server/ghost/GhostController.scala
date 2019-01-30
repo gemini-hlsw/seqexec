@@ -4,7 +4,7 @@
 package seqexec.server.ghost
 
 import cats.implicits._
-import cats.{Eq, Show}
+import cats.Eq
 import cats.effect.Sync
 import gem.math.Coordinates
 import giapi.client.commands.Configuration
@@ -12,7 +12,6 @@ import giapi.client.ghost.GhostClient
 import giapi.client.GiapiConfig
 import giapi.client.syntax.giapiconfig._
 import seqexec.server.keywords.GdsClient
-
 import scala.concurrent.duration._
 import org.log4s._
 import seqexec.server.ConfigUtilOps.{ContentError, ExtractFailure}
@@ -20,7 +19,7 @@ import seqexec.server.GiapiInstrumentController
 import seqexec.server.ghost.GhostController.GhostConfig
 
 final case class GhostController[F[_]: Sync](override val client: GhostClient[F],
-                                             override val gdsClient: GdsClient)
+                                             override val gdsClient: GdsClient[F])
   extends GiapiInstrumentController[F, GhostConfig, GhostClient[F]] {
 
   import GhostController._
@@ -300,7 +299,7 @@ object GhostController {
       case _                                            => false
     }
 
-    implicit val show: Show[GhostConfig] = Show.fromToString
-    implicit val configure: GiapiConfig[GhostConfig] = fromShow
+    implicit val configIFNum: GiapiConfig[IFUNum] =
+      GiapiConfig.instance(x => s"$x")
   }
 }

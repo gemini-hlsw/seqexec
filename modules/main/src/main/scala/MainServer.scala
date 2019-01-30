@@ -4,7 +4,6 @@
 package gem.main
 
 import cats.effect._
-import cats.implicits._
 import gem.dao.DatabaseConfiguration
 import gem.web.WebServer
 import gem.telnetd.TelnetServer

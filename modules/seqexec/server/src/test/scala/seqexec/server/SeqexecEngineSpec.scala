@@ -6,9 +6,10 @@ package seqexec.server
 import cats.effect.{ ContextShift, IO, Timer }
 import cats.implicits._
 import fs2.concurrent.Queue
+import giapi.client.gpi.GpiClient
+import giapi.client.ghost.GhostClient
 import gem.Observation
 import gem.enum.Site
-import giapi.client.Giapi
 import io.prometheus.client._
 import java.time.LocalDate
 import java.util.UUID
@@ -39,10 +40,14 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
   implicit val ioTimer: Timer[IO] =
     IO.timer(ExecutionContext.global)
 
+  val gpiSim = GpiClient.simulatedGpiClient.use(IO(_)).unsafeRunSync
+  val ghostSim = GhostClient.simulatedGhostClient.use(IO(_)).unsafeRunSync
+
   private val defaultSettings = Settings(Site.GS,
     odbHost = "localhost",
     date = LocalDate.of(2017, 1, 1),
     dhsURI = uri("http://localhost/"),
+    altairControl = Simulated,
     dhsControl = Simulated,
     f2Control = Simulated,
     gcalControl = Simulated,
@@ -61,8 +66,6 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
     instForceError = false,
     failAt = 0,
     10.seconds,
-    tag[GpiSettings][Giapi[IO]](Giapi.giapiConnectionIO(scala.concurrent.ExecutionContext.Implicits.global).connect.unsafeRunSync),
-    tag[GhostSettings][Giapi[IO]](Giapi.giapiConnectionIO(scala.concurrent.ExecutionContext.Implicits.global).connect.unsafeRunSync),
     tag[GpiSettings][Uri](uri("http://localhost:8888/xmlrpc")),
     tag[GhostSettings][Uri](uri("http://localhost:8888/xmlrpc"))
   )
@@ -190,7 +193,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
     }
 
   private val sm = SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry()).unsafeRunSync
-  private val seqexecEngine = SeqexecEngine(GdsClient.alwaysOkClient, defaultSettings, sm)
+  private val seqexecEngine = SeqexecEngine(GdsClient.alwaysOkClient, gpiSim, ghostSim, defaultSettings, sm)
   private def advanceOne(q: EventQueue, s0: EngineState, put: IO[Either[SeqexecFailure, Unit]]): IO[Option[EngineState]] =
     (put *> seqexecEngine.stream(q.dequeue)(s0).take(1).compile.last).map(_.map(_._2))
 

@@ -4,17 +4,28 @@
 package giapi.client.gpi
 
 import cats.implicits._
-import edu.gemini.aspen.giapi.commands.{Activity, SequenceCommand}
+import cats.effect.IO
+import cats.effect.Sync
+import cats.effect.Resource
+import cats.effect.Timer
+import cats.effect.ConcurrentEffect
+import edu.gemini.aspen.giapi.commands.Activity
+import edu.gemini.aspen.giapi.commands.SequenceCommand
 import fs2.Stream
-import giapi.client.commands.{Command, CommandResult, Configuration}
-import giapi.client.{Giapi, GiapiClient}
-import giapi.client.syntax.giapiconfig._
+import giapi.client.commands.Command
+import giapi.client.commands.CommandResult
+import giapi.client.commands.Configuration
+import giapi.client.Giapi
+import giapi.client.GiapiClient
+import giapi.client.GiapiStatusDb
 import mouse.boolean._
 
 /**
   * Client for GPI
   */
-final class GpiClient[F[_]](override val giapi: Giapi[F]) extends GiapiClient[F] {
+final class GpiClient[F[_]: Sync] private (override val giapi: Giapi[F],
+                                           statusDb:           GiapiStatusDb[F])
+    extends GiapiClient[F] {
   import GiapiClient.DefaultCommandTimeout
 
   ///////////////
@@ -83,8 +94,8 @@ final class GpiClient[F[_]](override val giapi: Giapi[F]) extends GiapiClient[F]
       DefaultCommandTimeout)
 
   def ifsConfigure(integrationTime: Double,
-                   coAdds: Int,
-                   readoutMode: Int): F[CommandResult] =
+                   coAdds:          Int,
+                   readoutMode:     Int): F[CommandResult] =
     giapi.command(
       Command(
         SequenceCommand.APPLY,
@@ -98,22 +109,64 @@ final class GpiClient[F[_]](override val giapi: Giapi[F]) extends GiapiClient[F]
       ),
       DefaultCommandTimeout
     )
+
+  override def genericApply(configuration: Configuration): F[CommandResult] = {
+    // TODO Implement a smarter apply
+    def smartApply: F[CommandResult] =
+      giapi.command(Command(
+                      SequenceCommand.APPLY,
+                      Activity.PRESET_START,
+                      configuration
+                    ),
+                    DefaultCommandTimeout)
+
+    for {
+      _ <- statusDb.value("gpi:fpu") // placeholder
+      a <- smartApply
+    } yield a
+  }
+}
+
+object GpiClient {
+  // Used for simulations
+  def simulatedGpiClient(implicit timer: Timer[IO]): Resource[IO, GpiClient[IO]] =
+    Resource.liftF(
+      for {
+        c <- Giapi.giapiConnectionIO.connect
+      } yield new GpiClient(c, GiapiStatusDb.simulatedDb[IO])
+    )
+
+  def gpiClient[F[_]: ConcurrentEffect](
+    url:     String)(implicit timer: Timer[IO]): Resource[F, GpiClient[F]] = {
+    val giapi: Resource[F, Giapi[F]] =
+      Resource.make(
+        Giapi.giapiConnection[F](url).connect
+      )(_.close)
+
+    val db: Resource[F, GiapiStatusDb[F]] =
+      Resource.make(
+        GiapiStatusDb
+          .newStatusDb[F](url, List("gpi:heartbeat", "gpi:polarizerAngle"))
+      )(_.close)
+
+    (giapi, db).mapN { new GpiClient[F](_, _) }
+  }
+
 }
 
 object GPIExample extends cats.effect.IOApp {
 
-  import cats.effect.{ IO, Resource, ExitCode }
+  import cats.effect.IO
+  import cats.effect.ExitCode
   import scala.concurrent.duration._
-  import scala.concurrent.ExecutionContext
 
-  val connect: Resource[IO, GpiClient[IO]] =
-    Resource.make(
-      Giapi.giapiConnection[IO]("failover:(tcp://127.0.0.1:61616)", ExecutionContext.global)
-           .connect
-      )(_.close).map(new GpiClient[IO](_))
+  val url = "failover:(tcp://127.0.0.1:61616)"
+
+  val gpi: Resource[IO, GpiClient[IO]] =
+    GpiClient.gpiClient[IO](url)
 
   val gpiStatus: IO[(Vector[Int], Int, String, Float)] =
-    connect.use { client =>
+    gpi.use { client =>
       for {
         hs <- client.heartbeatS.flatMap(_.take(3).compile.toVector)
         h  <- client.heartbeat
@@ -123,7 +176,7 @@ object GPIExample extends cats.effect.IOApp {
     }
 
   val gpiSequence: IO[CommandResult] =
-    connect.use { client =>
+    gpi.use { client =>
       for {
         _ <- client.calExitShutter(true) // Open the shutter
         _ <- client.observingMode("Y_coron") // Change observing mode
@@ -143,4 +196,3 @@ object GPIExample extends cats.effect.IOApp {
     } yield ExitCode.Success
 
 }
-

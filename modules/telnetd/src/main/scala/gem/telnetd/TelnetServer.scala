@@ -5,7 +5,6 @@ package gem.telnetd
 
 import gem.Log
 import cats.effect._
-import cats.implicits._
 import gem.dao.DatabaseConfiguration
 import tuco._, Tuco._
 

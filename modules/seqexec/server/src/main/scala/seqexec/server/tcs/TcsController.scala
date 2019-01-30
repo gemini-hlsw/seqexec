@@ -307,6 +307,9 @@ object TcsController {
   sealed trait GuiderSensorOption
   object GuiderSensorOff extends GuiderSensorOption
   object GuiderSensorOn extends GuiderSensorOption
+  object GuiderSensorOption {
+    implicit val guideSensorOptionEq: Eq[GuiderSensorOption] = Eq.fromUniversalEquals
+  }
 
   final case class GuiderSensorOptionP1(self: GuiderSensorOption) extends AnyVal
   object GuiderSensorOptionP1 {

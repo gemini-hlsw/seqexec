@@ -105,6 +105,8 @@ package server {
       case "simulated" => Some(Simulated)
       case _           => None
     }
+
+    implicit val eq: Eq[ControlStrategy] = Eq.fromUniversalEquals
   }
 
   final case class HeaderExtraData(conditions: Conditions, operator: Option[Operator], observer: Option[Observer])
@@ -168,6 +170,7 @@ package object server {
   object SeqActionF {
     def apply[F[_]: Sync, A](a: => A): SeqActionF[F, A]       = EitherT(Sync[F].delay(TrySeq(a)))
     def liftF[F[_]: Functor, A](a: => F[A]): SeqActionF[F, A] = EitherT.liftF(a)
+    def either[F[_]: Sync, A](a: => TrySeq[A]): SeqActionF[F, A] = EitherT(Sync[F].delay(a))
     def void[F[_]: Applicative]: SeqActionF[F, Unit]          = EitherT.liftF(Applicative[F].pure(()))
   }
 
