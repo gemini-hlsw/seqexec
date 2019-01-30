@@ -25,7 +25,7 @@ package keywords {
 
     def closeImage(id: ImageFileId): SeqActionF[F, Unit]
 
-    def keywordsBundler[G[_]: Sync]: KeywordsBundler[G]
+    def keywordsBundler(implicit ev: Sync[F]): KeywordsBundler[F]
   }
 
   trait DhsInstrument[F[_]] extends KeywordsClient[F] {
@@ -44,7 +44,7 @@ package keywords {
         KeywordBag(StringKeyword(KeywordName.INSTRUMENT, dhsInstrumentName)),
         finalFlag = true)
 
-    def keywordsBundler[G[_]: Sync]: KeywordsBundler[G] = DhsInstrument.kb[G](dhsInstrumentName)
+    def keywordsBundler(implicit ev: Sync[F]): KeywordsBundler[F] = DhsInstrument.kb[F](dhsInstrumentName)
 
   }
 
@@ -85,7 +85,7 @@ package keywords {
     def closeImage(id: ImageFileId): SeqActionF[F, Unit] =
       gdsClient.closeObservation(id)
 
-    def keywordsBundler[G[_]: Sync]: KeywordsBundler[G] = GdsInstrument.kb[G]
+    def keywordsBundler(implicit ev: Sync[F]): KeywordsBundler[F] = GdsInstrument.kb[F]
   }
 
   sealed trait KeywordType extends Product with Serializable
