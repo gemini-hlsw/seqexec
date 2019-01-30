@@ -32,8 +32,8 @@ import squants.time.Seconds
 import squants.time.Time
 
 final case class Gpi[F[_]: Sync: Timer](controller: GpiController[F])
-    extends InstrumentSystem[F]
-    with GdsInstrument[F] {
+    extends GdsInstrument[F]
+    with InstrumentSystem[F] {
   // Taken from the gpi isd
   val readoutOverhead: Time  = Seconds(4)
   val writeOverhead: Time    = Seconds(2)

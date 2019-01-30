@@ -27,8 +27,8 @@ import squants.time.{Seconds, Time}
 import scala.reflect.ClassTag
 
 final case class Ghost[F[_]: Sync](controller: GhostController[F])
-    extends InstrumentSystem[F]
-    with GdsInstrument[F] {
+    extends GdsInstrument[F]
+    with InstrumentSystem[F] {
   override val gdsClient: GdsClient[F] = controller.gdsClient
 
   override val keywordsClient: KeywordsClient[F] = this

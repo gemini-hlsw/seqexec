@@ -27,7 +27,7 @@ import squants.Time
 import squants.time.TimeConversions._
 
 final case class Niri(controller: NiriController, dhsClient: DhsClient[IO])
-  extends InstrumentSystem[IO] with DhsInstrument[IO] {
+  extends DhsInstrument[IO] with InstrumentSystem[IO] {
 
   import Niri._
 
