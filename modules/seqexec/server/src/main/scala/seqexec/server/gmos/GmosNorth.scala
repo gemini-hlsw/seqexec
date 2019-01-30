@@ -3,6 +3,7 @@
 
 package seqexec.server.gmos
 
+import cats.effect.IO
 import seqexec.model.enum.{ Instrument, Resource }
 import seqexec.server.ConfigUtilOps
 import seqexec.server.ConfigUtilOps._
@@ -16,7 +17,7 @@ import edu.gemini.spModel.gemini.gmos.InstGmosCommon.{FPU_PROP_NAME, STAGE_MODE_
 import edu.gemini.spModel.gemini.gmos.InstGmosNorth._
 import edu.gemini.spModel.seqcomp.SeqConfigNames.INSTRUMENT_KEY
 
-final case class GmosNorth(c: GmosNorthController, dhsClient: DhsClient) extends Gmos[NorthTypes](c,
+final case class GmosNorth(c: GmosNorthController, dhsClient: DhsClient[IO]) extends Gmos[NorthTypes](c,
   new SiteSpecifics[NorthTypes] {
     override val fpuDefault: GmosNorthType.FPUnitNorth = FPU_NONE
     override def extractFilter(config: Config): Either[ConfigUtilOps.ExtractFailure, NorthTypes#Filter] = config.extractAs[NorthTypes#Filter](INSTRUMENT_KEY / FILTER_PROP)
@@ -31,5 +32,5 @@ final case class GmosNorth(c: GmosNorthController, dhsClient: DhsClient) extends
 object GmosNorth {
   val name: String = INSTRUMENT_NAME_PROP
 
-  def apply(c: GmosController[NorthTypes], dhsClient: DhsClient): GmosNorth = new GmosNorth(c, dhsClient)
+  def apply(c: GmosController[NorthTypes], dhsClient: DhsClient[IO]): GmosNorth = new GmosNorth(c, dhsClient)
 }

@@ -30,7 +30,7 @@ import squants.space.Length
 import squants.{Seconds, Time}
 import squants.space.LengthConversions._
 
-abstract class Gmos[T<:GmosController.SiteDependentTypes](controller: GmosController[T], ss: SiteSpecifics[T])(configTypes: GmosController.Config[T]) extends InstrumentSystem[IO] with DhsInstrument {
+abstract class Gmos[T<:GmosController.SiteDependentTypes](controller: GmosController[T], ss: SiteSpecifics[T])(configTypes: GmosController.Config[T]) extends InstrumentSystem[IO] with DhsInstrument[IO] {
   import Gmos._
   import InstrumentSystem._
 

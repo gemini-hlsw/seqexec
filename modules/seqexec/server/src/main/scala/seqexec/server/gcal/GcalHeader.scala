@@ -3,7 +3,7 @@
 
 package seqexec.server.gcal
 
-import cats.Monad
+import cats.effect.Sync
 import gem.Observation
 import gem.enum.KeywordName
 import seqexec.model.dhs.ImageFileId
@@ -11,7 +11,7 @@ import seqexec.server.keywords._
 import seqexec.server.{InstrumentSystem, SeqActionF}
 
 object GcalHeader {
-  implicit def header[F[_]: Monad](inst: InstrumentSystem[F], gcalReader: GcalKeywordReader[F]): Header[F] =
+  implicit def header[F[_]: Sync](inst: InstrumentSystem[F], gcalReader: GcalKeywordReader[F]): Header[F] =
     new Header[F] {
       private val gcalKeywords = List(
         buildString[F](gcalReader.getLamp.orDefault, KeywordName.GCALLAMP),

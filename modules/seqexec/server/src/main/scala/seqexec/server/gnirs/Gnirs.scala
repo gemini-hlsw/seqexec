@@ -25,7 +25,7 @@ import squants.Time
 import squants.space.LengthConversions._
 import squants.time.TimeConversions._
 
-final case class Gnirs(controller: GnirsController, dhsClient: DhsClient) extends InstrumentSystem[IO] with DhsInstrument {
+final case class Gnirs(controller: GnirsController, dhsClient: DhsClient[IO]) extends InstrumentSystem[IO] with DhsInstrument[IO] {
   override def sfName(config: Config): LightSinkName = LightSinkName.Gnirs
   override val contributorName: String = "ngnirsdc1"
   override val dhsInstrumentName: String = "GNIRS"

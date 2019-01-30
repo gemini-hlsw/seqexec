@@ -3,14 +3,16 @@
 
 package seqexec.server
 
-import cats.{Eq, Monoid, Monad, Functor}
+import cats.{Eq, Monoid, Functor}
 import cats.implicits._
-import cats.effect.IO
 import cats.effect.Sync
 import gem.enum.KeywordName
 import seqexec.model.dhs.ImageFileId
 
 package keywords {
+  sealed trait KeywordsBundler[F[_]] {
+    def bundleKeywords(ks: List[KeywordBag => SeqActionF[F, KeywordBag]]): SeqActionF[F, KeywordBag]
+  }
 
   /**
     * Clients that can send keywords to a server that could e.g. write them to a file
@@ -23,38 +25,53 @@ package keywords {
 
     def closeImage(id: ImageFileId): SeqActionF[F, Unit]
 
-    def bundleKeywords(
-        ks: List[KeywordBag => SeqActionF[F, KeywordBag]]): SeqActionF[F, KeywordBag]
+    def keywordsBundler[G[_]: Sync]: KeywordsBundler[G]
   }
 
-  trait DhsInstrument extends KeywordsClient[IO] {
-    val dhsClient: DhsClient
+  trait DhsInstrument[F[_]] extends KeywordsClient[F] {
+    val dhsClient: DhsClient[F]
 
     val dhsInstrumentName: String
 
     def setKeywords(id: ImageFileId,
                     keywords: KeywordBag,
-                    finalFlag: Boolean): SeqAction[Unit] =
+                    finalFlag: Boolean): SeqActionF[F, Unit] =
       dhsClient.setKeywords(id, keywords, finalFlag)
 
-    def closeImage(id: ImageFileId): SeqAction[Unit] =
+    def closeImage(id: ImageFileId): SeqActionF[F, Unit] =
       dhsClient.setKeywords(
         id,
         KeywordBag(StringKeyword(KeywordName.INSTRUMENT, dhsInstrumentName)),
         finalFlag = true)
 
-    def bundleKeywords(ks: List[KeywordBag => SeqAction[KeywordBag]])
-      : SeqAction[KeywordBag] = {
-      val z = SeqAction(
-        KeywordBag(StringKeyword(KeywordName.INSTRUMENT, dhsInstrumentName)))
-      ks.foldLeft(z) { case (a, b) => a.flatMap(b) }
+    def keywordsBundler[G[_]: Sync]: KeywordsBundler[G] = DhsInstrument.kb[G](dhsInstrumentName)
+
+  }
+
+  object DhsInstrument {
+    def kb[F[_]: Sync](dhsInstrumentName: String): KeywordsBundler[F] = new KeywordsBundler[F] {
+      def bundleKeywords(
+        ks: List[KeywordBag => SeqActionF[F, KeywordBag]]
+      ): SeqActionF[F, KeywordBag] = {
+        val z = SeqActionF(
+          KeywordBag(StringKeyword(KeywordName.INSTRUMENT, dhsInstrumentName)))
+        ks.foldLeft(z) { case (a, b) => a.flatMap(b) }
+      }
     }
   }
 
   object GdsInstrument {
     def bundleKeywords[F[_]: Sync](
-        ks: List[KeywordBag => SeqActionF[F, KeywordBag]]): SeqActionF[F, KeywordBag] =
+      ks: List[KeywordBag => SeqActionF[F, KeywordBag]]
+    ): SeqActionF[F, KeywordBag] =
       ks.foldLeft(SeqActionF(KeywordBag.empty)) { case (a, b) => a.flatMap(b) }
+
+    def kb[F[_]: Sync]: KeywordsBundler[F] = new KeywordsBundler[F] {
+      def bundleKeywords(
+        ks: List[KeywordBag => SeqActionF[F, KeywordBag]]
+      ): SeqActionF[F, KeywordBag] =
+        GdsInstrument.bundleKeywords(ks)
+    }
   }
 
   trait GdsInstrument[F[_]] extends KeywordsClient[F] {
@@ -68,6 +85,7 @@ package keywords {
     def closeImage(id: ImageFileId): SeqActionF[F, Unit] =
       gdsClient.closeObservation(id)
 
+    def keywordsBundler[G[_]: Sync]: KeywordsBundler[G] = GdsInstrument.kb[G]
   }
 
   sealed trait KeywordType extends Product with Serializable
@@ -232,12 +250,12 @@ package object keywords {
   def buildBoolean[F[_]: Functor](get: SeqActionF[F, Boolean], name: KeywordName): KeywordBag => SeqActionF[F, KeywordBag] = buildKeyword(get, name, BooleanKeyword)
   def buildString[F[_]: Functor](get: SeqActionF[F, String], name: KeywordName): KeywordBag => SeqActionF[F, KeywordBag]   = buildKeyword(get, name, StringKeyword)
 
-  def sendKeywords[F[_]: Monad](
+  def sendKeywords[F[_]: Sync](
       id: ImageFileId,
       inst: InstrumentSystem[F],
       b: List[KeywordBag => SeqActionF[F, KeywordBag]]): SeqActionF[F, Unit] =
     for {
-      bag <- inst.keywordsClient.bundleKeywords(b)
+      bag <- inst.keywordsClient.keywordsBundler.bundleKeywords(b)
       _   <- inst.keywordsClient.setKeywords(id, bag, finalFlag = false)
     } yield ()
 }

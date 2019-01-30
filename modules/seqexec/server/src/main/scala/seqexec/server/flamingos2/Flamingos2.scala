@@ -22,7 +22,7 @@ import seqexec.server._
 import seqexec.server.keywords.{DhsClient, DhsInstrument, KeywordsClient}
 import squants.time.{Seconds, Time}
 
-final case class Flamingos2(f2Controller: Flamingos2Controller, dhsClient: DhsClient) extends InstrumentSystem[IO] with DhsInstrument {
+final case class Flamingos2(f2Controller: Flamingos2Controller, dhsClient: DhsClient[IO]) extends InstrumentSystem[IO] with DhsInstrument[IO] {
 
   import Flamingos2._
 
