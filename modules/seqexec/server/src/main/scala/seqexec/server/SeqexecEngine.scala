@@ -890,7 +890,7 @@ object SeqexecEngine extends SeqexecConfiguration {
       case engine.BreakpointReached(id)                                    => SequencePaused(id,
         svs)
       case engine.SingleRunCompleted(ActionCoords(sid, _), res, _)         =>
-        SingleActionEvent(SingleActionOp.Started(sid, res))
+        SingleActionEvent(SingleActionOp.Completed(sid, res))
       case engine.SingleRunFailed(ActionCoords(sid, _), res, _)            =>
         SingleActionEvent(SingleActionOp.Completed(sid, res))
     }
