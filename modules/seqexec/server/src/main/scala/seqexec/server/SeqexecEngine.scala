@@ -892,7 +892,7 @@ object SeqexecEngine extends SeqexecConfiguration {
       case engine.SingleRunCompleted(ActionCoords(sid, _), res, _)         =>
         SingleActionEvent(SingleActionOp.Completed(sid, res))
       case engine.SingleRunFailed(ActionCoords(sid, _), res, _)            =>
-        SingleActionEvent(SingleActionOp.Completed(sid, res))
+        SingleActionEvent(SingleActionOp.Error(sid, res))
     }
   }
 
