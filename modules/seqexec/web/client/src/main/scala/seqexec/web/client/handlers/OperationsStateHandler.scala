@@ -58,8 +58,11 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
             .resourceRun(r)
             .set(ResourceRunOperation.ResourceRunInFlight.some)))
 
-    case RunResource(id, _, r) =>
-      logger.info(s"*** OperationsStateHandler handleRequestOperation RunResource: r=$r, r set none")
+//    case RunResource(id, _, r) =>
+//      logger.info(s"*** OperationsStateHandler handleRequestOperation RunResource: r=$r, r set none")
+//      updated(value.markOperations(id, TabOperations.resourceRun(r).set(none)))
+    case RunResourceComplete(id, _, r) =>
+      logger.info(s"*** OperationsStateHandler handleRequestOperation RunResourceCompleted: r=$r, r set none")
       updated(value.markOperations(id, TabOperations.resourceRun(r).set(none)))
   }
 

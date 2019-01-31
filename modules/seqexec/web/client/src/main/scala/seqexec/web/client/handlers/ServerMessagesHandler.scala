@@ -178,9 +178,7 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
   val singleRunCompleteMessage: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(SingleActionEvent(SingleActionOp.Completed(sid, stepId, r))) =>
       logger.info(s"*** ServerMessagesHandler singleRunCompletedMessage: r=$r")
-      effectOnly(Effect(Future(RunResource(sid, stepId, r))))
-    //      val v = value.markOperations(id, TabOperations.resourceRun(r).set(none))
-    //      effectOnly(Effect(Future(v))(?: ActionType[SequencesOnDisplay], queue))
+      effectOnly(Effect(Future(RunResourceComplete(sid, stepId, r))))
   }
 
   val defaultMessage: PartialFunction[Any, ActionResult[M]] = {
