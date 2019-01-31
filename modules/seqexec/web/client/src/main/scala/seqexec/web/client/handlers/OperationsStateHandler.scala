@@ -14,8 +14,6 @@ import diode.ModelRW
 import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import seqexec.model.RequestFailed
-import seqexec.model.enum.SingleActionOp
-import seqexec.model.events.SingleActionEvent
 import seqexec.web.client.model.PauseOperation
 import seqexec.web.client.model.SyncOperation
 import seqexec.web.client.model.RunOperation
@@ -60,19 +58,9 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
             .resourceRun(r)
             .set(ResourceRunOperation.ResourceRunInFlight.some)))
 
-//    case RunResource(id, _, r) =>
-//      logger.info(s"*** OperationsStateHandler handleRequestOperation RunResource: r=$r, r set none = ${TabOperations.resourceRun(r).set(none)}")
-//      updated(value.markOperations(id, TabOperations.resourceRun(r).set(none)))
-  }
-
-  def singleRunCompletedMessage: PartialFunction[Any, ActionResult[M]] = {
-    case ServerMessage(SingleActionEvent(SingleActionOp.Completed(id, r))) =>
-      logger.info(s"*** OperationsStateHandler singleRunCompletedMessage: r=$r")
-//      val v = value.markOperations(id, TabOperations.resourceRun(r).set(none))
-//      val f = Future(v)
-//      val e = Effect(f)
-    updated(value.markOperations(id, TabOperations.resourceRun(r).set(none))
-    )
+    case RunResource(id, _, r) =>
+      logger.info(s"*** OperationsStateHandler handleRequestOperation RunResource: r=$r, r set none")
+      updated(value.markOperations(id, TabOperations.resourceRun(r).set(none)))
   }
 
   def handleOperationResult: PartialFunction[Any, ActionResult[M]] = {
@@ -119,6 +107,5 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
   override def handle: PartialFunction[Any, ActionResult[M]] =
     List(handleRequestOperation,
          handleOperationResult,
-         handleSelectedStep,
-         singleRunCompletedMessage).combineAll
+         handleSelectedStep).combineAll
 }

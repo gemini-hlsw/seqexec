@@ -3,13 +3,15 @@
 
 package seqexec.web.client.handlers
 
+import java.util.logging.Logger
+
 import cats.implicits._
 import diode.ActionHandler
 import diode.ActionResult
 import diode.Effect
 import diode.ModelRW
 import diode.NoAction
-import seqexec.model.enum.ActionStatus
+import seqexec.model.enum.{ActionStatus, SingleActionOp}
 import seqexec.model.Observer
 import seqexec.model.SequencesQueue
 import seqexec.model.SequenceView
@@ -35,6 +37,7 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
     extends ActionHandler(modelRW)
     with Handlers[M, WebSocketsFocus] {
+  private val logger = Logger.getLogger(this.getClass.getName)
   // Global references to audio files
   private val SequencePausedAudio = new Audio(SequencePausedResource.resource)
   private val ExposurePausedAudio = new Audio(ExposurePausedResource.resource)
@@ -172,6 +175,14 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
       updated(value.copy(sequences = filterSequences(s.view)))
   }
 
+  val singleRunCompleteMessage: PartialFunction[Any, ActionResult[M]] = {
+    case ServerMessage(SingleActionEvent(SingleActionOp.Completed(sid, stepId, r))) =>
+      logger.info(s"*** ServerMessagesHandler singleRunCompletedMessage: r=$r")
+      effectOnly(Effect(Future(RunResource(sid, stepId, r))))
+    //      val v = value.markOperations(id, TabOperations.resourceRun(r).set(none))
+    //      effectOnly(Effect(Future(v))(?: ActionType[SequencesOnDisplay], queue))
+  }
+
   val defaultMessage: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(_) =>
       // Ignore unknown events
@@ -193,6 +204,7 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
       sequenceLoadedMessage,
       sequenceUnloadedMessage,
       modelUpdateMessage,
+      singleRunCompleteMessage,
       defaultMessage
     ).combineAll
 }

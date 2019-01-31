@@ -848,9 +848,9 @@ object SeqexecEngine extends SeqexecConfiguration {
     case UpdateQueueClear(qid)              => QueueUpdated(QueueManipulationOp.Clear(qid), svs)
     case StartQueue(qid, _)                 => QueueUpdated(QueueManipulationOp.Started(qid), svs)
     case StopQueue(qid, _)                  => QueueUpdated(QueueManipulationOp.Stopped(qid), svs)
-    case StartSysConfig(sid, _, res)        =>
+    case StartSysConfig(sid, stepId, res)        =>
       logger.info(s"*** SeqexecEngine.modifyStateEvent StartSysConfig SingleActionEvent: $res")
-      SingleActionEvent(SingleActionOp.Started(sid, res))
+      SingleActionEvent(SingleActionOp.Started(sid, stepId, res))
   }
 
   def toSeqexecEvent(ev: executeEngine.ResultType)(svs: => SequencesQueue[SequenceView]): SeqexecEvent = ev match {
@@ -889,10 +889,12 @@ object SeqexecEngine extends SeqexecConfiguration {
         svs)
       case engine.BreakpointReached(id)                                    => SequencePaused(id,
         svs)
-      case engine.SingleRunCompleted(ActionCoords(sid, _), res, _)         =>
-        SingleActionEvent(SingleActionOp.Completed(sid, res))
-      case engine.SingleRunFailed(ActionCoords(sid, _), res, _)            =>
-        SingleActionEvent(SingleActionOp.Error(sid, res))
+      case engine.SingleRunCompleted(ActionCoords(sid, ActionCoordsInSeq(stepId, _, _)), res, _) =>
+        logger.info(s"*** engine.SingleRunCompleted")
+        SingleActionEvent(SingleActionOp.Completed(sid, stepId, res))
+      case engine.SingleRunFailed(ActionCoords(sid, ActionCoordsInSeq(stepId, _, _)), res, _)   =>
+        logger.info(s"*** engine.SingleRunFailed")
+        SingleActionEvent(SingleActionOp.Error(sid, stepId, res))
     }
   }
 
