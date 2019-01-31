@@ -188,6 +188,14 @@ trait ModelBooPicklers extends GemModelBooPicklers {
                                  (1 -> ServerLogLevel.WARN),
                                  (2 -> ServerLogLevel.ERROR))
 
+  implicit val singleActionOpStartedPickler   = generatePickler[SingleActionOp.Started]
+  implicit val singleActionOpCompletedPickler = generatePickler[SingleActionOp.Completed]
+  implicit val singleActionOpErrorPickler     = generatePickler[SingleActionOp.Error]
+  implicit val singleActionOpPickler = compositePickler[SingleActionOp]
+    .addConcreteType[SingleActionOp.Started]
+    .addConcreteType[SingleActionOp.Completed]
+    .addConcreteType[SingleActionOp.Error]
+
   implicit val serverLogLevelPickler = transformPickler(
     (t: Int) =>
       serverLogIdx
@@ -273,6 +281,7 @@ trait ModelBooPicklers extends GemModelBooPicklers {
     transformPickler((t: Double) => t.milliseconds)(_.toMilliseconds)
   implicit val observationProgressPickler = generatePickler[ObservationProgress]
   implicit val obsProgressPickler         = generatePickler[ObservationProgressEvent]
+  implicit val singleActionEventPickler   = generatePickler[SingleActionEvent]
   implicit val nullEventPickler           = generatePickler[NullEvent.type]
 
   // Composite pickler for the seqexec event hierarchy
@@ -303,6 +312,7 @@ trait ModelBooPicklers extends GemModelBooPicklers {
     .addConcreteType[UserNotification]
     .addConcreteType[QueueUpdated]
     .addConcreteType[ObservationProgressEvent]
+    .addConcreteType[SingleActionEvent]
     .addConcreteType[NullEvent.type]
 
   implicit val userLoginPickler = generatePickler[UserLoginRequest]

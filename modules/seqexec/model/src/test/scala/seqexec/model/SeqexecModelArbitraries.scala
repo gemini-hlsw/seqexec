@@ -5,6 +5,7 @@ package seqexec.model
 
 import cats.implicits._
 import java.util.UUID
+
 import gem.Observation
 import gem.arb.ArbObservation
 import gem.arb.ArbTime.arbSDuration
@@ -12,10 +13,12 @@ import org.scalacheck.Arbitrary
 import org.scalacheck.Cogen
 import org.scalacheck.Gen
 import org.scalacheck.Arbitrary._
+
 import scala.collection.immutable.SortedMap
 import scala.concurrent.duration.Duration
 import squants.time._
 import seqexec.model.enum._
+import seqexec.model.events.SingleActionEvent
 
 trait SeqexecModelArbitraries extends ArbObservation {
 
@@ -514,6 +517,45 @@ trait SeqexecModelArbitraries extends ArbObservation {
     Cogen[(Observation.Id, StepId, Time, Time)]
       .contramap(x => (x.obsId, x.stepId, x.total, x.remaining))
 
+  implicit val saoStartArb: Arbitrary[SingleActionOp.Started] =
+    Arbitrary {
+      for {
+        o <- arbitrary[Observation.Id]
+        r <- arbitrary[Resource]
+      } yield SingleActionOp.Started(o, r)
+    }
+
+  implicit val saoCompleteArb: Arbitrary[SingleActionOp.Completed] =
+    Arbitrary {
+      for {
+        o <- arbitrary[Observation.Id]
+        r <- arbitrary[Resource]
+      } yield SingleActionOp.Completed(o, r)
+    }
+
+  implicit val saoErrorArb: Arbitrary[SingleActionOp.Error] =
+    Arbitrary {
+      for {
+        o <- arbitrary[Observation.Id]
+        r <- arbitrary[Resource]
+      } yield SingleActionOp.Error(o, r)
+    }
+
+  implicit val saoArb = Arbitrary[SingleActionOp] {
+    for {
+      s <- arbitrary[SingleActionOp.Started]
+      c <- arbitrary[SingleActionOp.Completed]
+      e <- arbitrary[SingleActionOp.Error]
+      m <- Gen.oneOf(s, c, e)
+    } yield m
+  }
+
+  implicit val arbSingleActionEvent: Arbitrary[SingleActionEvent] =
+    Arbitrary {
+      for {
+        e <- arbitrary[SingleActionOp]
+      } yield SingleActionEvent(e)
+    }
 }
 
 object SeqexecModelArbitraries extends SeqexecModelArbitraries

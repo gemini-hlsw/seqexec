@@ -67,6 +67,7 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
 
   def singleRunCompletedMessage: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(SingleActionEvent(SingleActionOp.Completed(id, r))) =>
+      logger.info(s"*** OperationsStateHandler singleRunCompletedMessage: r=$r")
 //      val v = value.markOperations(id, TabOperations.resourceRun(r).set(none))
 //      val f = Future(v)
 //      val e = Effect(f)
