@@ -6,15 +6,17 @@ package seqexec.server.keywords
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.atomic.AtomicInteger
-
 import org.log4s._
-import cats.effect.IO
+import cats.Applicative
 import cats.effect.Timer
+import cats.effect.Effect
+import cats.effect.Sync
 import cats.data.EitherT
 import cats.implicits._
 import gem.enum.DhsKeywordName
 import seqexec.model.dhs.ImageFileId
-import seqexec.server.{SeqAction, SeqexecFailure, TrySeq}
+import seqexec.server.{SeqexecFailure, TrySeq}
+import seqexec.server.SeqActionF
 import seqexec.server.keywords.DhsClient.ImageParameters
 import seqexec.server.SeqexecFailure.SeqexecExceptionWhile
 import io.circe.syntax._
@@ -23,55 +25,58 @@ import io.circe.{Decoder, DecodingFailure, Encoder, Json}
 import org.http4s.client.Client
 import org.http4s._
 import org.http4s.dsl.io._
-import org.http4s.client.dsl.io._
 import org.http4s.circe._
 import org.http4s.client.middleware.{Retry, RetryPolicy}
+import org.http4s.client.dsl.Http4sClientDsl
 import scala.concurrent.duration._
 
 /**
   * Implementation of DhsClient that interfaces with the real DHS over the http interface
   */
-class DhsClientHttp(base: Client[IO], baseURI: Uri)(implicit timer: Timer[IO]) extends DhsClient {
+class DhsClientHttp[F[_]: Effect](base: Client[F], baseURI: Uri)(implicit timer: Timer[F]) extends DhsClient[F] with Http4sClientDsl[F] {
   import DhsClientHttp._
 
   @SuppressWarnings(Array("org.wartremover.warts.Var"))
   private val client = {
     val max = 2
     var attemptsCounter = 1 // scalastyle:ignore
-    val policy = RetryPolicy[IO] { attempts: Int =>
+    val policy = RetryPolicy[F] { attempts: Int =>
       if (attempts >= max) None
       else {
         attemptsCounter = attemptsCounter + 1
         Some(10.milliseconds)
       }
     }
-    Retry(policy)(base)
+    Retry[F](policy)(base)
   }
 
-  override def createImage(p: ImageParameters): SeqAction[ImageFileId] = {
+  override def createImage(p: ImageParameters): SeqActionF[F, ImageFileId] = {
     val req = POST(
       Json.obj("createImage" := p.asJson),
       baseURI
     )
-    client.expect[TrySeq[ImageFileId]](req)(jsonOf[IO, TrySeq[ImageFileId]])
+    client.expect[TrySeq[ImageFileId]](req)(jsonOf[F, TrySeq[ImageFileId]])
       .attemptT
       .leftMap(SeqexecExceptionWhile("creating image in DHS", _): SeqexecFailure)
       .flatMap(EitherT.fromEither(_))
   }
 
-  def setParameters(id: ImageFileId, p: ImageParameters): SeqAction[Unit] = {
+  def setParameters(id: ImageFileId, p: ImageParameters): SeqActionF[F, Unit] = {
     val req = PUT(
       Json.obj("setParameters" := p.asJson),
       baseURI / id
     )
-    client.expect[TrySeq[Unit]](req)(jsonOf[IO, TrySeq[Unit]])
+    client.expect[TrySeq[Unit]](req)(jsonOf[F, TrySeq[Unit]])
       .attemptT
       .leftMap(SeqexecExceptionWhile("setting image parameters in DHS", _))
       .flatMap(EitherT.fromEither(_))
   }
 
-  override def setKeywords(id: ImageFileId, keywords: KeywordBag, finalFlag: Boolean)
-  : SeqAction[Unit] = {
+  override def setKeywords(
+    id: ImageFileId,
+    keywords: KeywordBag,
+    finalFlag: Boolean
+  ): SeqActionF[F, Unit] = {
     val req = PUT(
       Json.obj("setKeywords" :=
         Json.obj(
@@ -81,7 +86,7 @@ class DhsClientHttp(base: Client[IO], baseURI: Uri)(implicit timer: Timer[IO]) e
       ),
       baseURI / id / "keywords"
     )
-    client.expect[TrySeq[Unit]](req)(jsonOf[IO, TrySeq[Unit]])
+    client.expect[TrySeq[Unit]](req)(jsonOf[F, TrySeq[Unit]])
       .attemptT
       .leftMap(SeqexecExceptionWhile("sending keywords to DHS", _))
       .flatMap(EitherT.fromEither(_))
@@ -161,28 +166,28 @@ object DhsClientHttp {
     override def toString = s"(${t.str}) $msg"
   }
 
-  def apply(client: Client[IO], uri: Uri)(implicit timer: Timer[IO]): DhsClient = new DhsClientHttp(client, uri)
+  def apply[F[_]: Effect](client: Client[F], uri: Uri)(implicit timer: Timer[F]): DhsClient[F] = new DhsClientHttp[F](client, uri)
 }
 
 /**
   * Implementation of the Dhs client that simulates a dhs without external dependencies
   */
-class DhsClientSim(date: LocalDate) extends DhsClient {
+class DhsClientSim[F[_]: Sync](date: LocalDate) extends DhsClient[F] {
   import DhsClientSim.Log
   private val counter = new AtomicInteger(0)
 
   val format: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd")
 
-  override def createImage(p: ImageParameters): SeqAction[ImageFileId] =
-    EitherT(IO.apply{
+  override def createImage(p: ImageParameters): SeqActionF[F, ImageFileId] =
+    EitherT(Applicative[F].pure(
       TrySeq(f"S${date.format(format)}S${counter.incrementAndGet()}%04d")
-    })
+    ))
 
-  override def setKeywords(id: ImageFileId, keywords: KeywordBag, finalFlag: Boolean): SeqAction[Unit] = EitherT.right(IO(Log.info(keywords.keywords.map(k => s"${k.name} = ${k.value}").mkString(", "))))
+  override def setKeywords(id: ImageFileId, keywords: KeywordBag, finalFlag: Boolean): SeqActionF[F, Unit] = EitherT.right(Sync[F].delay(Log.info(keywords.keywords.map(k => s"${k.name} = ${k.value}").mkString(", "))))
 
 }
 
 object DhsClientSim {
   private val Log = getLogger
-  def apply(date: LocalDate): DhsClient = new DhsClientSim(date)
+  def apply[F[_]: Sync](date: LocalDate): DhsClient[F] = new DhsClientSim[F](date)
 }

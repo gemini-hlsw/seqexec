@@ -509,7 +509,7 @@ object SeqTranslate {
 
   final case class Systems(
                             odb: OdbProxy[IO],
-                            dhs: DhsClient,
+                            dhs: DhsClient[IO],
                             tcs: TcsController,
                             gcal: GcalController,
                             flamingos2: Flamingos2Controller,

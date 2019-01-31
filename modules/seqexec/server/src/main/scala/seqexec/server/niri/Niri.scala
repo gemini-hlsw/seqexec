@@ -26,8 +26,8 @@ import seqexec.server.niri.NiriController._
 import squants.Time
 import squants.time.TimeConversions._
 
-final case class Niri(controller: NiriController, dhsClient: DhsClient)
-  extends InstrumentSystem[IO] with DhsInstrument {
+final case class Niri(controller: NiriController, dhsClient: DhsClient[IO])
+  extends DhsInstrument[IO] with InstrumentSystem[IO] {
 
   import Niri._
 
@@ -51,12 +51,13 @@ final case class Niri(controller: NiriController, dhsClient: DhsClient)
   override def calcObserveTime(config: Config): Time =
     getDCConfig(config).map(controller.calcTotalExposureTime).getOrElse(60.seconds)
 
-  override def keywordsClient: KeywordsClient[IO] = this
-
   override def observeProgress(total: Time, elapsed: InstrumentSystem.ElapsedTime)
   : fs2.Stream[IO, Progress] = controller.observeProgress(total)
 
   override val dhsInstrumentName: String = "NIRI"
+
+  override val keywordsClient: KeywordsClient[IO] = this
+
   override val resource: Resource = Instrument.Niri
 
   /**
