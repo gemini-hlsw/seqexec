@@ -6,23 +6,28 @@ package seqexec
 import cats.data._
 import cats.effect.IO
 import cats.effect.Sync
+import cats.effect.LiftIO
 import cats.implicits._
 import cats.Applicative
 import cats.ApplicativeError
 import cats.Eq
 import cats.Endo
 import cats.Functor
+import cats.~>
 import edu.gemini.spModel.`type`.SequenceableSpType
 import edu.gemini.spModel.guide.StandardGuideOptions
 import fs2.concurrent.Queue
+import fs2.Stream
 import gem.Observation
 import monocle.macros.Lenses
-import monocle.{Lens, Optional}
+import monocle.Lens
+import monocle.Optional
 import monocle.macros.GenLens
 import monocle.function.Index._
 import monocle.function.At._
 import seqexec.engine.Engine
-import seqexec.engine.Result.{PartialVal, RetVal}
+import seqexec.engine.Result.PartialVal
+import seqexec.engine.Result.RetVal
 import seqexec.model.ClientId
 import seqexec.model.CalibrationQueueId
 import seqexec.model.CalibrationQueueName
@@ -140,18 +145,18 @@ package object server {
   implicit val sgoEq: Eq[StandardGuideOptions.Value] =
     Eq[Int].contramap(_.ordinal())
 
-  type TrySeq[A] = Either[SeqexecFailure, A]
+  type TrySeq[A]                 = Either[SeqexecFailure, A]
   type ApplicativeErrorSeq[F[_]] = ApplicativeError[F, SeqexecFailure]
 
   object TrySeq {
-    def apply[A](a: A): TrySeq[A]             = Either.right(a)
-    def fail[A](p: SeqexecFailure): TrySeq[A] = Either.left(p)
+    def apply[A](a: A): TrySeq[A]              = Either.right(a)
+    def fail[A](p:  SeqexecFailure): TrySeq[A] = Either.left(p)
   }
 
-  type SeqAction[A] = EitherT[IO, SeqexecFailure, A]
+  type SeqAction[A]        = EitherT[IO, SeqexecFailure, A]
   type SeqActionF[F[_], A] = EitherT[F, SeqexecFailure, A]
 
-  type SeqObserve[A, B] = Reader[A, SeqAction[B]]
+  type SeqObserve[A, B]        = Reader[A, SeqAction[B]]
   type SeqObserveF[F[_], A, B] = Reader[A, SeqActionF[F, B]]
 
   type ExecutionQueues = Map[QueueId, ExecutionQueue]
@@ -161,20 +166,39 @@ package object server {
   type EventQueue = Queue[IO, executeEngine.EventType]
 
   object SeqAction {
-    def apply[A](a: => A): SeqAction[A]          = EitherT(IO.apply(TrySeq(a)))
+    def apply[A](a:  => A): SeqAction[A] = EitherT(IO.apply(TrySeq(a)))
     def either[A](a: => TrySeq[A]): SeqAction[A] = EitherT(IO.apply(a))
-    def fail[A](p: SeqexecFailure): SeqAction[A] = EitherT(IO.apply(TrySeq.fail[A](p)))
-    def void: SeqAction[Unit]                    = SeqAction.apply(())
+    def fail[A](p:   SeqexecFailure): SeqAction[A] =
+      EitherT(IO.apply(TrySeq.fail[A](p)))
+    def void: SeqAction[Unit] = SeqAction.apply(())
+
   }
 
   object SeqActionF {
-    def apply[F[_]: Sync, A](a: => A): SeqActionF[F, A]       = EitherT(Sync[F].delay(TrySeq(a)))
-    def liftF[F[_]: Functor, A](a: => F[A]): SeqActionF[F, A] = EitherT.liftF(a)
-    def either[F[_]: Sync, A](a: => TrySeq[A]): SeqActionF[F, A] = EitherT(Sync[F].delay(a))
-    def void[F[_]: Applicative]: SeqActionF[F, Unit]          = EitherT.liftF(Applicative[F].pure(()))
+    def apply[F[_]: Sync, A](a: => A): SeqActionF[F, A] =
+      EitherT(Sync[F].delay(TrySeq(a)))
+    def liftF[F[_]: Functor, A](a:          => F[A]): SeqActionF[F, A] = EitherT.liftF(a)
+    def liftIO[F[_]: LiftIO: Functor, A](a: => IO[A]): SeqActionF[F, A] =
+      EitherT.liftF(LiftIO[F].liftIO(a))
+    def either[F[_]: Sync, A](a: => TrySeq[A]): SeqActionF[F, A] =
+      EitherT(Sync[F].delay(a))
+    def void[F[_]: Applicative]: SeqActionF[F, Unit] =
+      EitherT.liftF(Applicative[F].pure(()))
+
+    implicit def SeqActionFLiftIO[F[_]: LiftIO: Functor]
+      : LiftIO[SeqActionF[F, ?]] =
+      new LiftIO[SeqActionF[F, ?]] {
+        override def liftIO[A](ioa: IO[A]): SeqActionF[F, A] =
+          SeqActionF.liftIO(ioa)
+      }
   }
 
-  implicit class MoreDisjunctionOps[A,B](ab: Either[A, B]) {
+  implicit class StreamIOOps[A](s: Stream[IO, A]) {
+    def streamLiftIO[F[_]: LiftIO]: fs2.Stream[F, A] =
+      s.translate(λ[IO ~> F](_.to))
+  }
+
+  implicit class MoreDisjunctionOps[A, B](ab: Either[A, B]) {
     def validationNel: ValidatedNel[A, B] =
       ab.fold(a => Validated.Invalid(NonEmptyList.of(a)), b => Validated.Valid(b))
   }

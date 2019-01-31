@@ -3,20 +3,21 @@
 
 package seqexec.server
 
-import edu.gemini.spModel.config2.{Config, ConfigSequence, ItemKey}
+import cats.implicits._
+import edu.gemini.spModel.config2.Config
+import edu.gemini.spModel.config2.ConfigSequence
+import edu.gemini.spModel.config2.ItemKey
+import edu.gemini.spModel.seqcomp.SeqConfigNames.INSTRUMENT_KEY
+import edu.gemini.spModel.seqcomp.SeqConfigNames.OBSERVE_KEY
+import java.beans.PropertyDescriptor
+import scala.reflect.ClassTag
+import scala.collection.breakOut
 import seqexec.model.enum.SystemName
 import seqexec.model.StepConfig
 
-import java.beans.PropertyDescriptor
-
-import scala.reflect.ClassTag
-import scala.collection.breakOut
-
-import cats.implicits._
-
 /**
- * Utility operations to work with Configs from the ODB
- */
+  * Utility operations to work with Configs from the ODB
+  */
 object ConfigUtilOps {
 
   /**
@@ -28,8 +29,9 @@ object ConfigUtilOps {
     *   A typical example would be when the value of one item implies the presence of another, which is missing.
     */
   sealed trait ExtractFailure
-  final case class KeyNotFound(key: ItemKey) extends ExtractFailure
-  final case class ConversionError(key: ItemKey, msg: String) extends ExtractFailure
+  final case class KeyNotFound(key:     ItemKey) extends ExtractFailure
+  final case class ConversionError(key: ItemKey, msg: String)
+      extends ExtractFailure
   final case class ContentError(msg: String) extends ExtractFailure
 
   def explain(e: ExtractFailure): String = e match {
@@ -41,14 +43,20 @@ object ConfigUtilOps {
   def explainExtractError(e: ExtractFailure): SeqexecFailure =
     SeqexecFailure.Unexpected(ConfigUtilOps.explain(e))
 
-  implicit class TrySeqed[A] private [server] (r: Either[ExtractFailure, A]) {
+  implicit class TrySeqed[A] private[server] (r: Either[ExtractFailure, A]) {
     def asTrySeq: TrySeq[A] = r.leftMap(explainExtractError)
+  }
+
+  implicit class EitherOptionOps[A] private[server] (r: Either[ExtractFailure, Option[A]]) {
+    def recoverOption: Either[ExtractFailure, Option[A]] = r.recover {
+      case KeyNotFound(_) => none[A]
+    }
   }
 
   // key syntax: parent / child
   @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
   implicit class ItemKeyOps(val k: ItemKey) extends AnyVal {
-    def /(s: String): ItemKey = new ItemKey(k, s)
+    def /(s: String): ItemKey             = new ItemKey(k, s)
     def /(p: PropertyDescriptor): ItemKey = /(p.getName)
   }
 
@@ -56,16 +64,20 @@ object ConfigUtilOps {
     def itemValue(a: A, key: ItemKey): Option[AnyRef]
   }
 
-  implicit val ConfigExtractItem: ExtractItem[Config] = (c: Config, key: ItemKey) => Option(c.getItemValue(key))
+  implicit val ConfigExtractItem: ExtractItem[Config] =
+    (c: Config, key: ItemKey) => Option(c.getItemValue(key))
 
-  implicit val ConfigSequenceExtractItem: ExtractItem[ConfigSequence] = (c: ConfigSequence, key: ItemKey) => Option(c.getItemValue(0, key))
+  implicit val ConfigSequenceExtractItem: ExtractItem[ConfigSequence] =
+    (c: ConfigSequence, key: ItemKey) => Option(c.getItemValue(0, key))
 
   @SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf"))
   final class Extracted[C] private [server] (c: C, key: ItemKey)(implicit ei: ExtractItem[C]) {
     def as[A](implicit clazz: ClassTag[A]): Either[ExtractFailure, A] =
       for {
         v <- Either.fromOption(ei.itemValue(c, key), KeyNotFound(key))
-        b <- Either.catchNonFatal(clazz.runtimeClass.cast(v).asInstanceOf[A]).leftMap(e => ConversionError(key,e.getMessage))
+        b <- Either
+          .catchNonFatal(clazz.runtimeClass.cast(v).asInstanceOf[A])
+          .leftMap(e => ConversionError(key, e.getMessage))
       } yield b
   }
 
@@ -74,19 +86,29 @@ object ConfigUtilOps {
     def extract(key: ItemKey): Extracted[Config] = new Extracted(c, key)
 
     // config syntax: cfg.extractAs[Type](key)
-    def extractAs[A](key: ItemKey)(implicit clazz: ClassTag[A]): Either[ExtractFailure, A] =
+    def extractAs[A](key: ItemKey)(
+      implicit clazz:     ClassTag[A]): Either[ExtractFailure, A] =
       new Extracted(c, key).as[A]
 
+    // config syntax: cfg.extractInstAs[Type](key)
+    def extractInstAs[A](key: PropertyDescriptor)(
+      implicit clazz:         ClassTag[A]): Either[ExtractFailure, A] =
+      new Extracted(c, INSTRUMENT_KEY / key).as[A]
+
+    // config syntax: cfg.extractInstAs[Type](key)
+    def extractObsAs[A](key: PropertyDescriptor)(
+      implicit clazz:        ClassTag[A]): Either[ExtractFailure, A] =
+      new Extracted(c, OBSERVE_KEY / key).as[A]
+
     // config syntax: cfg.toStepConfig
-    def toStepConfig: StepConfig = {
+    def toStepConfig: StepConfig =
       c.itemEntries().groupBy(_.getKey.getRoot).map {
         case (subsystem, entries) =>
           SystemName.unsafeFromString(subsystem.getName) ->
-            (entries.toList.map {
-              e => (e.getKey.getPath, s"${e.getItemValue}")
+            (entries.toList.map { e =>
+              (e.getKey.getPath, s"${e.getItemValue}")
             }(breakOut): Map[String, String])
       }
-    }
 
   }
 
@@ -95,7 +117,8 @@ object ConfigUtilOps {
     def extract(key: ItemKey): Extracted[ConfigSequence] = new Extracted(c, key)
 
     // config syntax: cfgSequence.extractAs[Type](key)
-    def extractAs[A](key: ItemKey)(implicit clazz: ClassTag[A]): Either[ExtractFailure, A] =
+    def extractAs[A](key: ItemKey)(
+      implicit clazz:     ClassTag[A]): Either[ExtractFailure, A] =
       new Extracted(c, key).as[A]
   }
 }
