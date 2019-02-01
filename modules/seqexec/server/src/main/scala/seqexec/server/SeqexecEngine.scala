@@ -210,7 +210,6 @@ class SeqexecEngine(httpClient: Client[IO], gpi: GpiClient[IO], ghost: GhostClie
     stream(q.dequeue.mergeHaltBoth(seqQueueRefreshStream))(EngineState.default).flatMap(x =>
       Stream.eval(notifyODB(x))).flatMap {
         case (ev, qState) =>
-          val sequences = qState.sequences.values.map(viewSequence).toList
           val event = toSeqexecEvent(ev, qState)
           Stream.eval(updateMetrics[IO](ev, sequences).as(event))
     }
