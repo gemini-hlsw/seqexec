@@ -12,9 +12,10 @@ import fs2.concurrent.Queue
 import fs2.concurrent.Topic
 import gem.enum.Site
 import io.prometheus.client.CollectorRegistry
-import java.nio.file.{ Path => FilePath }
-import java.util.concurrent.{ Executors, ExecutorService }
-import knobs.{ Resource => _, _ }
+import java.nio.file.{Path => FilePath}
+import java.util.concurrent.{ExecutorService, Executors}
+
+import knobs.{Resource => _, _}
 import mouse.all._
 import org.http4s.client.asynchttpclient.AsyncHttpClient
 import org.http4s.client.Client
@@ -28,10 +29,12 @@ import org.http4s.server.Server
 import org.http4s.server.SSLKeyStoreSupport.StoreInfo
 import org.http4s.syntax.kleisli._
 import org.log4s._
+
 import scala.concurrent.ExecutionContext
 import seqexec.model.events._
 import seqexec.server
-import seqexec.server.{ControlStrategy, SeqexecMetrics, SeqexecConfiguration, SeqexecEngine, executeEngine}
+import seqexec.server.tcs.GuideConfigDb
+import seqexec.server.{ControlStrategy, SeqexecConfiguration, SeqexecEngine, SeqexecMetrics, executeEngine}
 import seqexec.web.server.OcsBuildInfo
 import seqexec.web.server.logging.AppenderForClients
 import seqexec.web.server.security.{AuthenticationConfig, AuthenticationService, LDAPConfig}
@@ -135,6 +138,7 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
     inputs: server.EventQueue,
     outputs: Topic[IO, SeqexecEvent],
     se: SeqexecEngine,
+    gcdb: GuideConfigDb[IO],
     cr: CollectorRegistry,
     bec: ExecutionContext
   )(conf: WebServerConfiguration): Resource[IO, Server[IO]] = {
@@ -158,7 +162,8 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
       "/"                     -> new StaticRoutes(conf.devMode, OcsBuildInfo.builtAtMillis, bec).service,
       "/"                     -> PrometheusExportService[IO](cr).routes,
       "/api/seqexec/commands" -> new SeqexecCommandRoutes(as, inputs, se).service,
-      "/api"                  -> new SeqexecUIApiRoutes(conf.site, conf.devMode, as, outputs).service
+      "/api"                  -> new SeqexecUIApiRoutes(conf.site, conf.devMode, as, outputs).service,
+      "/api/seqexec/guide"    -> new GuideConfigDbRoutes(gcdb).service
     )
 
     val metricsMiddleware = Metrics[IO](Prometheus(cr, "seqexec"))(router)
@@ -246,6 +251,7 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
       in:  Queue[IO, executeEngine.EventType],
       out: Topic[IO, SeqexecEvent],
       et:  SeqexecEngine,
+      gcdb: GuideConfigDb[IO],
       cr:  CollectorRegistry,
       bec: ExecutionContext
     ): Resource[IO, Unit] =
@@ -256,7 +262,7 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
         _  <- Resource.liftF(logStart.run(wc))
         _  <- Resource.liftF(logToClients(out))
         _  <- redirectWebServer(wc)
-        _  <- webServer(as, in, out, et, cr, bec)(wc)
+        _  <- webServer(as, in, out, et, gcdb, cr, bec)(wc)
       } yield ()
 
     val r: Resource[IO, ExitCode] =
@@ -268,7 +274,8 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
         cr     <- Resource.liftF(IO(new CollectorRegistry))
         bec    <- blockingExecutionContext
         engine <- engineIO(cli, cr)
-        _      <- webServerIO(inq, out, engine, cr, bec)
+        gcdb   <- Resource.liftF(GuideConfigDb.newDb[IO])
+        _      <- webServerIO(inq, out, engine, gcdb, cr, bec)
         _      <- Resource.liftF(engine.eventStream(inq).through(out.publish).compile.drain.start)
       } yield ExitCode.Success
 

@@ -3,7 +3,6 @@
 
 package seqexec.server.tcs
 
-import seqexec.server.SeqActionF
 import seqexec.server.tcs.TcsController.FocalPlaneOffset
 import squants.Time
 
@@ -16,21 +15,21 @@ trait Gaos[F[_]] {
   /*
    * Pause GAOS guiding. The GAOS system decides what to pause, according to the reasons given
    */
-  def pause(reasons: Set[Reason]): SeqActionF[F, Unit]
+  def pause(reasons: Set[Reason]): F[Unit]
   /*
    * Resume GAOS guiding. The GAOS system decides what to resume, according to the reasons given
    *
    */
-  def resume(reasons: Set[Reason]): SeqActionF[F, Unit]
+  def resume(reasons: Set[Reason]): F[Unit]
 
   /*
    * Notify GAOS system of the start of the observation
    */
-  def observe(expTime: Time): SeqActionF[F, Unit]
+  def observe(expTime: Time): F[Unit]
   /*
    * Notify GAOS system of the end of the observation
    */
-  def endObserve: SeqActionF[F, Unit]
+  def endObserve: F[Unit]
 
 }
 
