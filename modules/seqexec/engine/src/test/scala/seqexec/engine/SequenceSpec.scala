@@ -11,10 +11,11 @@ import scala.Function.const
 import org.scalatest.FlatSpec
 import org.scalatest.Inside.inside
 import org.scalatest.Matchers._
-import cats.effect.{ ContextShift, IO }
+import cats.effect.{ContextShift, IO}
 import fs2.Stream
 import gem.Observation
 import seqexec.engine.TestUtil.TestState
+import seqexec.model.enum.Instrument.GmosS
 
 import scala.concurrent.ExecutionContext
 
@@ -198,7 +199,7 @@ class SequenceSpec extends FlatSpec {
         )
       )
 
-    val c = ActionCoordsInSeq(1, ExecutionIndex(0), ActionIndex(1))
+    val c = ActionCoordsInSeq(1, GmosS, ExecutionIndex(0), ActionIndex(1))
 
     assert(seq.startSingle(c).getSingleState(c) === Action.Started)
 
@@ -241,7 +242,7 @@ class SequenceSpec extends FlatSpec {
       ),
       SequenceState.Completed
     )
-    val c1 = ActionCoordsInSeq(1, ExecutionIndex(0), ActionIndex(0))
+    val c1 = ActionCoordsInSeq(1, GmosS, ExecutionIndex(0), ActionIndex(0))
 
     assert(seq1.startSingle(c1).getSingleState(c1).isIdle)
     assert(seq2.startSingle(c1).getSingleState(c1).isIdle)
@@ -249,7 +250,7 @@ class SequenceSpec extends FlatSpec {
   }
 
   "failSingle" should "mark a single running Action as failed" in {
-    val c = ActionCoordsInSeq(1, ExecutionIndex(0), ActionIndex(0))
+    val c = ActionCoordsInSeq(1, GmosS, ExecutionIndex(0), ActionIndex(0))
     val seq = Sequence.State.init(
       Sequence(
         id = seqId,
@@ -264,14 +265,14 @@ class SequenceSpec extends FlatSpec {
         )
       )
     ).startSingle(c)
-    val c2 = ActionCoordsInSeq(1, ExecutionIndex(1), ActionIndex(0))
+    val c2 = ActionCoordsInSeq(1, GmosS, ExecutionIndex(1), ActionIndex(0))
 
     assert(seq.failSingle(c, Result.Error("")).getSingleState(c).errored)
     assert(seq.failSingle(c2, Result.Error("")).getSingleState(c2).isIdle)
   }
 
   "completeSingle" should "mark a single running Action as completed" in {
-    val c = ActionCoordsInSeq(1, ExecutionIndex(0), ActionIndex(0))
+    val c = ActionCoordsInSeq(1, GmosS, ExecutionIndex(0), ActionIndex(0))
     val seq = Sequence.State.init(
       Sequence(
         id = seqId,
