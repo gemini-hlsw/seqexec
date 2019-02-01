@@ -88,7 +88,7 @@ class SeqTranslateSpec extends FlatSpec {
     new GdsClient(GdsClient.alwaysOkClient, uri("http://localhost:8888/xmlrpc"))))
   ).unsafeRunSync
 
-  private val systems = SeqTranslate.Systems(
+  private val systems = Systems[IO](
     new OdbProxy(new Peer("localhost", 8443, null), new OdbProxy.DummyOdbCommands),
     DhsClientSim(LocalDate.of(2016, 4, 15)),
     TcsControllerSim,
@@ -99,7 +99,8 @@ class SeqTranslateSpec extends FlatSpec {
     GnirsControllerSim,
     gpiSim,
     ghostSim,
-    NiriControllerSim
+    NiriControllerSim,
+    NifsControllerSim
   )
 
   private val translatorSettings = TranslateSettings(tcsKeywords = false, f2Keywords = false, gwsKeywords = false,
