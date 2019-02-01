@@ -34,6 +34,7 @@ import seqexec.server.gmos.{GmosControllerSim, GmosEpics, GmosNorthControllerEpi
 import seqexec.server.gnirs.{GnirsControllerEpics, GnirsControllerSim, GnirsEpics}
 import seqexec.server.gpi.GpiController
 import seqexec.server.niri.{NiriControllerEpics, NiriControllerSim, NiriEpics}
+import seqexec.server.nifs.NifsControllerSim
 import seqexec.server.gws.GwsEpics
 import seqexec.server.tcs.{TcsControllerEpics, TcsControllerSim, TcsEpics}
 import edu.gemini.seqexec.odb.SmartGcal
@@ -63,7 +64,7 @@ class SeqexecEngine(httpClient: Client[IO], gpi: GpiClient[IO], ghost: GhostClie
 
   val ghostGDS: GdsClient[IO] = GdsClient(settings.ghostControl.command.fold(httpClient, GdsClient.alwaysOkClient), settings.ghostGDS)
 
-  private val systems = SeqTranslate.Systems(
+  private val systems = Systems[IO](
     odbProxy,
     settings.dhsControl.command.fold(DhsClientHttp(httpClient, settings.dhsURI),
       DhsClientSim(settings.date)),
@@ -77,7 +78,8 @@ class SeqexecEngine(httpClient: Client[IO], gpi: GpiClient[IO], ghost: GhostClie
     settings.gnirsControl.command.fold(GnirsControllerEpics, GnirsControllerSim),
     GpiController(gpi, gpiGDS),
     GhostController(ghost, ghostGDS),
-    settings.niriControl.command.fold(NiriControllerEpics, NiriControllerSim)
+    settings.niriControl.command.fold(NiriControllerEpics, NiriControllerSim),
+    NifsControllerSim
   )
 
   private val translatorSettings = TranslateSettings(

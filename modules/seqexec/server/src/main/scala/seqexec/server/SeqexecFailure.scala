@@ -3,6 +3,8 @@
 
 package seqexec.server
 
+import cats.ApplicativeError
+import cats.effect.IO
 import edu.gemini.seqexec.odb.SeqFailure
 import org.http4s.Uri
 
@@ -44,6 +46,9 @@ object SeqexecFailure {
   /** XMLRPC error while communicating with the GDS */
   final case class GdsXmlError(msg: String, url: Uri) extends SeqexecFailure
 
+  /** Failed simulation */
+  case object FailedSimulation extends SeqexecFailure
+
   def explain(f: SeqexecFailure): String = f match {
     case UnrecognizedInstrument(name) => s"Unrecognized instrument: $name"
     case Execution(errMsg)            => s"Sequence execution failed with error: $errMsg"
@@ -59,6 +64,20 @@ object SeqexecFailure {
     case GdsException(ex, url)        =>
       s"Failure connecting with GDS at $url: ${ex.getMessage}"
     case GdsXmlError(msg, url)        => s"XML RPC error with GDS at $url: $msg"
+    case FailedSimulation             => s"Failed to simulate"
+  }
+
+  implicit def ev(implicit ae: ApplicativeError[IO, Throwable]): ApplicativeError[IO, SeqexecFailure] = new ApplicativeError[IO, SeqexecFailure] {
+
+    override def pure[A](x: A): IO[A] = ae.pure(x)
+
+    def ap[A, B](ff: IO[A => B])(fa: IO[A]): IO[B] = ae.ap(ff)(fa)
+
+    def raiseError[A](e: SeqexecFailure): IO[A] =
+      ae.raiseError(new RuntimeException(SeqexecFailure.explain(e)))
+
+    def handleErrorWith[A](fa: IO[A])(f: SeqexecFailure => IO[A]): IO[A] =
+      ae.handleErrorWith(fa)(x => f(SeqexecFailure.SeqexecException(x)))
   }
 
 }
