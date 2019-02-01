@@ -34,7 +34,7 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
     extends ActionHandler(modelRW)
     with Handlers[M, WebSocketsFocus] {
-  
+
   // Global references to audio files
   private val SequencePausedAudio = new Audio(SequencePausedResource.resource)
   private val ExposurePausedAudio = new Audio(ExposurePausedResource.resource)
