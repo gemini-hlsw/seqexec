@@ -3,8 +3,6 @@
 
 package seqexec.web.client.handlers
 
-import java.util.logging.Logger
-
 import cats.implicits._
 import diode.ActionHandler
 import diode.ActionResult
@@ -28,7 +26,6 @@ import seqexec.web.client.actions._
 class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
     extends ActionHandler(modelRW)
     with Handlers[M, SequencesOnDisplay] {
-  private val logger = Logger.getLogger(this.getClass.getName)
   def handleRequestOperation: PartialFunction[Any, ActionResult[M]] = {
     case RequestRun(id) =>
       updated(
@@ -50,7 +47,6 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
 
     case RequestResourceRun(id, _, r) =>
       // TODO Remove this when the response comes over the WS channel
-      logger.info(s"*** OperationsStateHandler handleRequestOperation RequestResourceRun: r=$r")
       updated(
         value.markOperations(
           id,
@@ -58,11 +54,7 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
             .resourceRun(r)
             .set(ResourceRunOperation.ResourceRunInFlight.some)))
 
-//    case RunResource(id, _, r) =>
-//      logger.info(s"*** OperationsStateHandler handleRequestOperation RunResource: r=$r, r set none")
-//      updated(value.markOperations(id, TabOperations.resourceRun(r).set(none)))
     case RunResourceComplete(id, _, r) =>
-      logger.info(s"*** OperationsStateHandler handleRequestOperation RunResourceCompleted: r=$r, r set none")
       updated(value.markOperations(id, TabOperations.resourceRun(r).set(none)))
   }
 

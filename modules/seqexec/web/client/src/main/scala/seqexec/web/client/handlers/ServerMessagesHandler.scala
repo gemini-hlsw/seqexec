@@ -3,8 +3,6 @@
 
 package seqexec.web.client.handlers
 
-import java.util.logging.Logger
-
 import cats.implicits._
 import diode.ActionHandler
 import diode.ActionResult
@@ -27,7 +25,6 @@ import seqexec.web.client.services.Audio
 import seqexec.web.client.services.SeqexecWebClient
 import seqexec.web.client.services.WebpackResources._
 import seqexec.web.client.model.Pages.Root
-
 import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
@@ -37,7 +34,7 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
     extends ActionHandler(modelRW)
     with Handlers[M, WebSocketsFocus] {
-  private val logger = Logger.getLogger(this.getClass.getName)
+
   // Global references to audio files
   private val SequencePausedAudio = new Audio(SequencePausedResource.resource)
   private val ExposurePausedAudio = new Audio(ExposurePausedResource.resource)
@@ -177,7 +174,6 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
 
   val singleRunCompleteMessage: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(SingleActionEvent(SingleActionOp.Completed(sid, stepId, r))) =>
-      logger.info(s"*** ServerMessagesHandler singleRunCompletedMessage: r=$r")
       effectOnly(Effect(Future(RunResourceComplete(sid, stepId, r))))
   }
 

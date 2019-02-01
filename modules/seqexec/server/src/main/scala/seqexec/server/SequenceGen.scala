@@ -29,7 +29,7 @@ final case class SequenceGen(id: Observation.Id, title: String,
   def configActionCoord(stepId: StepId, r: Resource): Option[ActionCoordsInSeq] =
     steps.find(_.id === stepId).collect{ case p@SequenceGen.PendingStepGen(_, _, _, _) => p}
       .flatMap{ _.generator.configActionCoord(r) }
-      .map{case (ex, ac) => ActionCoordsInSeq(stepId, ex, ac)}
+      .map{case (ex, ac) => ActionCoordsInSeq(stepId, r, ex, ac)}
 
   def resourceAtCoords(c: ActionCoordsInSeq): Option[Resource] = steps.find(_.id === c.stepId)
     .collect{ case p@SequenceGen.PendingStepGen(_, _, _, _) => p}

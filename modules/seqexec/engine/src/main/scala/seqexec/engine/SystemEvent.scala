@@ -6,7 +6,6 @@ package seqexec.engine
 import seqexec.engine.Result._
 import seqexec.model.{ClientId, StepId}
 import gem.Observation
-import seqexec.model.enum.Resource
 
 /**
   * Events generated internally by the Engine.
@@ -27,7 +26,7 @@ final case class Finished(id: Observation.Id) extends SystemEvent
 object Null extends SystemEvent
 
 // Single action commands
-final case class SingleRunCompleted[R<:RetVal](actionCoords: ActionCoords, res: Resource, r: OK[R])
+final case class SingleRunCompleted[R<:RetVal](actionCoords: ActionCoords, r: OK[R])
   extends SystemEvent
-final case class SingleRunFailed(actionCoords: ActionCoords, res: Resource, e: Result.Error)
+final case class SingleRunFailed(actionCoords: ActionCoords, e: Result.Error)
   extends SystemEvent

@@ -15,7 +15,6 @@ import gem.Observation
 import monocle.Optional
 import mouse.boolean._
 import org.log4s.getLogger
-import seqexec.model.enum.Resource
 
 class Engine[D, U](stateL: Engine.State[D]) {
 
@@ -65,7 +64,7 @@ class Engine[D, U](stateL: Engine.State[D]) {
   def reload(seq: Sequence.State[IO], steps: List[Step[IO]]): Sequence.State[IO] =
     Sequence.State.reload(steps, seq)
 
-  def startSingle(c: ActionCoords, sys: Resource): HandleType[EventResult.Outcome] = get.flatMap { st =>
+  def startSingle(c: ActionCoords): HandleType[EventResult.Outcome] = get.flatMap { st =>
     val x = for {
       seq <- stateL.sequenceStateIndex(c.sid).getOption(st)
       if (seq.status.isIdle || seq.status.isError) && !seq.getSingleState(c.actCoords).active
@@ -76,10 +75,10 @@ class Engine[D, U](stateL: Engine.State[D]) {
       modifyS(c.sid)(_.startSingle(c.actCoords)) *>
       Handle.fromStream[D, EventType](
         p.map{
-          case r@Result.OK(_)    => singleRunCompleted(c, sys, r)
-          case e@Result.Error(_) => singleRunFailed(c, sys, e)
+          case r@Result.OK(_)    => singleRunCompleted(c, r)
+          case e@Result.Error(_) => singleRunFailed(c, e)
           case r                 =>
-            singleRunFailed(c, sys, Result.Error(s"Unhandled result for single run action: $r"))
+            singleRunFailed(c, Result.Error(s"Unhandled result for single run action: $r"))
         }
       ).as[EventResult.Outcome](EventResult.Ok)
     ).getOrElse(pure[EventResult.Outcome](EventResult.Failure))
@@ -293,10 +292,10 @@ class Engine[D, U](stateL: Engine.State[D]) {
       execute(id) *> pure(SystemUpdate(se, EventResult.Ok))
     case Finished(id)               => Logger.debug("Engine: Finished") *>
       switch(id)(SequenceState.Completed) *> pure(SystemUpdate(se, EventResult.Ok))
-    case SingleRunCompleted(c, _, r)   =>
+    case SingleRunCompleted(c, r)   =>
       Logger.debug(s"Engine: single action $c completed with result $r") *>
         completeSingleRun(c, r.response) *> pure(SystemUpdate(se, EventResult.Ok))
-    case SingleRunFailed(c, _, e)      =>
+    case SingleRunFailed(c, e)      =>
       Logger.debug(s"Engine: single action $c failed with error $e") *>
         failSingleRun(c, e) *> pure(SystemUpdate(se, EventResult.Ok))
     case Null                       => pure(SystemUpdate(se, EventResult.Ok))

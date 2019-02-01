@@ -6,7 +6,6 @@ package seqexec.server
 import java.nio.file.Paths
 import java.time.LocalDate
 import java.util.concurrent.TimeUnit
-import java.util.logging.Logger
 
 import cats._
 import cats.data.{Kleisli, StateT}
@@ -418,8 +417,8 @@ class SeqexecEngine(httpClient: Client[IO], gpi: GpiClient[IO], ghost: GhostClie
     executeEngine.get.flatMap{ st =>
       if(configSystemCheck(sid, sys)(st))
         st.sequences.get(sid).flatMap(_.seqGen.configActionCoord(stepId, sys))
-          .map(c => executeEngine.startSingle(ActionCoords(sid, c), sys).map[SeqEvent]{
-            case EventResult.Ok => StartSysConfig(sid, stepId, sys)
+          .map(c => executeEngine.startSingle(ActionCoords(sid, c)).map[SeqEvent]{
+            case EventResult.Ok => StartSysConfig(sid, stepId, c.sys)
             case _              => NullSeqEvent
           }).getOrElse(executeEngine.pure(NullSeqEvent))
       else executeEngine.pure(NullSeqEvent)
@@ -827,7 +826,7 @@ object SeqexecEngine extends SeqexecConfiguration {
   private val refreshSequences: Endo[EngineState] = (st:EngineState) => {
     st.sequences.map{ case (id, obsseq) => updateSequenceEndo(id, obsseq) }.foldLeft(st){case (s, f) => f(s)}
   }
-  private val logger = Logger.getLogger(this.getClass.getName)
+
   private def modifyStateEvent(v: SeqEvent, svs: => SequencesQueue[SequenceView]): SeqexecEvent = v match {
     case NullSeqEvent                       => NullEvent
     case SetOperator(_, _)                  => OperatorUpdated(svs)
@@ -848,9 +847,7 @@ object SeqexecEngine extends SeqexecConfiguration {
     case UpdateQueueClear(qid)              => QueueUpdated(QueueManipulationOp.Clear(qid), svs)
     case StartQueue(qid, _)                 => QueueUpdated(QueueManipulationOp.Started(qid), svs)
     case StopQueue(qid, _)                  => QueueUpdated(QueueManipulationOp.Stopped(qid), svs)
-    case StartSysConfig(sid, stepId, res)        =>
-      logger.info(s"*** SeqexecEngine.modifyStateEvent StartSysConfig SingleActionEvent: $res")
-      SingleActionEvent(SingleActionOp.Started(sid, stepId, res))
+    case StartSysConfig(sid, stepId, res)   => SingleActionEvent(SingleActionOp.Started(sid, stepId, res))
   }
 
   def toSeqexecEvent(ev: executeEngine.ResultType)(svs: => SequencesQueue[SequenceView]): SeqexecEvent = ev match {
@@ -889,11 +886,9 @@ object SeqexecEngine extends SeqexecConfiguration {
         svs)
       case engine.BreakpointReached(id)                                    => SequencePaused(id,
         svs)
-      case engine.SingleRunCompleted(ActionCoords(sid, ActionCoordsInSeq(stepId, _, _)), res, _) =>
-        logger.info(s"*** engine.SingleRunCompleted")
+      case engine.SingleRunCompleted(ActionCoords(sid, ActionCoordsInSeq(stepId, res, _, _)), _) =>
         SingleActionEvent(SingleActionOp.Completed(sid, stepId, res))
-      case engine.SingleRunFailed(ActionCoords(sid, ActionCoordsInSeq(stepId, _, _)), res, _)   =>
-        logger.info(s"*** engine.SingleRunFailed")
+      case engine.SingleRunFailed(ActionCoords(sid, ActionCoordsInSeq(stepId, res, _, _)), _)   =>
         SingleActionEvent(SingleActionOp.Error(sid, stepId, res))
     }
   }
