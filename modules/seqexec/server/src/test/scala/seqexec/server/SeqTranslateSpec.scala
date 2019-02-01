@@ -25,13 +25,14 @@ import seqexec.server.gmos.GmosControllerSim
 import seqexec.server.gnirs.GnirsControllerSim
 import seqexec.server.tcs.TcsControllerSim
 import seqexec.server.gpi.GpiController
+import seqexec.server.Response.Observed
+import seqexec.server.ghost.GhostController
+import seqexec.server.niri.NiriControllerSim
+import seqexec.server.nifs.NifsControllerSim
 import edu.gemini.spModel.core.Peer
 import org.scalatest.FlatSpec
 import org.http4s.Uri._
 import squants.time.Seconds
-import seqexec.server.Response.Observed
-import seqexec.server.ghost.GhostController
-import seqexec.server.niri.NiriControllerSim
 
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements", "org.wartremover.warts.Throw"))
 class SeqTranslateSpec extends FlatSpec {
