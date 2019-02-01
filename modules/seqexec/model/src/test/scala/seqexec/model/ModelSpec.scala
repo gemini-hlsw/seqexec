@@ -7,6 +7,7 @@ import cats.tests.CatsSuite
 import cats.kernel.laws.discipline._
 import seqexec.model.enum._
 import seqexec.model.SeqexecModelArbitraries._
+import seqexec.model.events.SingleActionEvent
 import squants.time.Time
 import squants.time.TimeUnit
 
@@ -56,4 +57,6 @@ final class ModelSpec extends CatsSuite {
   checkAll("Eq[ObservationProgress]", EqTests[ObservationProgress].eqv)
   checkAll("Eq[TimeUnit]", EqTests[TimeUnit].eqv)
   checkAll("Eq[Time]", EqTests[Time].eqv)
+  checkAll("Eq[SingleActionOp]", EqTests[SingleActionOp].eqv)
+  checkAll("Eq[SingleActionEvent]", EqTests[SingleActionEvent].eqv)
 }

@@ -85,4 +85,5 @@ final class BoopicklingSpec extends CatsSuite with ModelBooPicklers {
   checkAll("Pickler[Time]", PicklerTests[Time].pickler)
   checkAll("Pickler[ObservationProgress]",
            PicklerTests[ObservationProgress].pickler)
+  checkAll("Pickler[SingleActionEvent]", PicklerTests[SingleActionEvent].pickler)
 }

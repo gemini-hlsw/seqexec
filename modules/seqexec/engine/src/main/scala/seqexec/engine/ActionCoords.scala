@@ -18,7 +18,8 @@ object ExecutionIndex {
   implicit val actionIndexEq: Eq[ExecutionIndex] = Eq.by(_.self)
 }
 
-final case class ActionCoordsInSeq(stepId: StepId, execIdx: ExecutionIndex,
+final case class ActionCoordsInSeq(stepId: StepId,
+                                   execIdx: ExecutionIndex,
                                    actIdx: ActionIndex)
 object ActionCoordsInSeq {
   implicit val actionCoordsInSeqEq: Eq[ActionCoordsInSeq] = Eq.by(x =>

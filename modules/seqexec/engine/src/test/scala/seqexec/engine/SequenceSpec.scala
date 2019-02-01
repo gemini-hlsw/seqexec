@@ -11,7 +11,7 @@ import scala.Function.const
 import org.scalatest.FlatSpec
 import org.scalatest.Inside.inside
 import org.scalatest.Matchers._
-import cats.effect.{ ContextShift, IO }
+import cats.effect.{ContextShift, IO}
 import fs2.Stream
 import gem.Observation
 import seqexec.engine.TestUtil.TestState
