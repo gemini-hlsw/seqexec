@@ -5,7 +5,6 @@ package seqexec.model
 
 import cats.implicits._
 import java.util.UUID
-
 import gem.Observation
 import gem.arb.ArbObservation
 import gem.arb.ArbTime.arbSDuration
@@ -13,7 +12,6 @@ import org.scalacheck.Arbitrary
 import org.scalacheck.Cogen
 import org.scalacheck.Gen
 import org.scalacheck.Arbitrary._
-
 import scala.collection.immutable.SortedMap
 import scala.concurrent.duration.Duration
 import squants.time._

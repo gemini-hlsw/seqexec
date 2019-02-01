@@ -20,6 +20,7 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 class RemoteRequestsHandler[M](modelRW: ModelRW[M, Option[ClientId]])
     extends ActionHandler(modelRW)
     with Handlers[M, Option[ClientId]] {
+
   def handleRun: PartialFunction[Any, ActionResult[M]] = {
     case RequestRun(s) =>
       val effect = value
