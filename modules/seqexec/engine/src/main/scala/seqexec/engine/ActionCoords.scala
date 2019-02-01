@@ -7,7 +7,6 @@ import cats.Eq
 import cats.implicits._
 import gem.Observation
 import seqexec.model.StepId
-import seqexec.model.enum.Resource
 
 final case class ActionIndex(self: Long) extends AnyVal
 object ActionIndex {
@@ -20,12 +19,11 @@ object ExecutionIndex {
 }
 
 final case class ActionCoordsInSeq(stepId: StepId,
-                                   sys: Resource,
                                    execIdx: ExecutionIndex,
                                    actIdx: ActionIndex)
 object ActionCoordsInSeq {
   implicit val actionCoordsInSeqEq: Eq[ActionCoordsInSeq] = Eq.by(x =>
-    (x.stepId, x.sys, x.execIdx, x.actIdx)
+    (x.stepId, x.execIdx, x.actIdx)
   )
 }
 

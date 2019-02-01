@@ -217,7 +217,7 @@ class SeqexecEngine(httpClient: Client[IO], gpi: GpiClient[IO], ghost: GhostClie
       Stream.eval(notifyODB(x))).flatMap {
         case (ev, qState) =>
           val sequences = qState.sequences.values.map(viewSequence).toList
-          val event = toSeqexecEvent(ev)(
+          val event = toSeqexecEvent(ev, qState)(
             SequencesQueue(
               EngineState.selected.get(qState),
               EngineState.conditions.get(qState),
@@ -418,7 +418,7 @@ class SeqexecEngine(httpClient: Client[IO], gpi: GpiClient[IO], ghost: GhostClie
       if(configSystemCheck(sid, sys)(st))
         st.sequences.get(sid).flatMap(_.seqGen.configActionCoord(stepId, sys))
           .map(c => executeEngine.startSingle(ActionCoords(sid, c)).map[SeqEvent]{
-            case EventResult.Ok => StartSysConfig(sid, stepId, c.sys)
+            case EventResult.Ok => StartSysConfig(sid, stepId, sys)
             case _              => NullSeqEvent
           }).getOrElse(executeEngine.pure(NullSeqEvent))
       else executeEngine.pure(NullSeqEvent)
@@ -850,7 +850,8 @@ object SeqexecEngine extends SeqexecConfiguration {
     case StartSysConfig(sid, stepId, res)   => SingleActionEvent(SingleActionOp.Started(sid, stepId, res))
   }
 
-  def toSeqexecEvent(ev: executeEngine.ResultType)(svs: => SequencesQueue[SequenceView]): SeqexecEvent = ev match {
+  def toSeqexecEvent(ev: executeEngine.ResultType, qState: EngineState)
+                    (svs: => SequencesQueue[SequenceView]): SeqexecEvent = ev match {
     case engine.UserCommandResponse(ue, _, uev) => ue match {
       case engine.Start(_, _, _, _)      => SequenceStart(svs)
       case engine.Pause(_, _)            => SequencePauseRequested(svs)
@@ -886,12 +887,25 @@ object SeqexecEngine extends SeqexecConfiguration {
         svs)
       case engine.BreakpointReached(id)                                    => SequencePaused(id,
         svs)
-      case engine.SingleRunCompleted(ActionCoords(sid, ActionCoordsInSeq(stepId, res, _, _)), _) =>
-        SingleActionEvent(SingleActionOp.Completed(sid, stepId, res))
-      case engine.SingleRunFailed(ActionCoords(sid, ActionCoordsInSeq(stepId, res, _, _)), _)   =>
-        SingleActionEvent(SingleActionOp.Error(sid, stepId, res))
+      case engine.SingleRunCompleted(c, _) =>
+//        val resource = qState.sequences.get(c.sid).flatMap(_.seqGen.resourceAtCoords(c.actCoords))
+//        resource.map(res => SingleActionEvent(SingleActionOp.Completed(c.sid, c.actCoords.stepId, res)))
+//          .getOrElse(NullEvent)
+        singleActionEvent[SingleActionOp.Completed](c, qState, SingleActionOp.Completed)
+      case engine.SingleRunFailed(c, _)   =>
+//        val resource = qState.sequences.get(c.sid).flatMap(_.seqGen.resourceAtCoords(c.actCoords))
+//        resource.map(res => SingleActionEvent(SingleActionOp.Error(c.sid, c.actCoords.stepId, res)))
+//          .getOrElse(NullEvent)
+        singleActionEvent[SingleActionOp.Error](c, qState, SingleActionOp.Error)
     }
   }
+
+  private def singleActionEvent[S <: SingleActionOp](c: ActionCoords,
+                                                     qState: EngineState,
+                                                     f: (Observation.Id, StepId, Resource) => S): SeqexecEvent =
+    qState.sequences.get(c.sid).flatMap(_.seqGen.resourceAtCoords(c.actCoords))
+      .map(res => SingleActionEvent(f(c.sid, c.actCoords.stepId, res)))
+      .getOrElse(NullEvent)
 
   // scalastyle:on
 
