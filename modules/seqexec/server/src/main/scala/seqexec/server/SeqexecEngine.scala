@@ -206,26 +206,12 @@ class SeqexecEngine(httpClient: Client[IO], gpi: GpiClient[IO], ghost: GhostClie
     }
   }
 
-  private def executionQueueViews(st: EngineState): SortedMap[QueueId, ExecutionQueueView] = {
-    SortedMap(st.queues.map {
-      case (qid, q) => qid -> ExecutionQueueView(qid, q.name, q.cmdState, q.status(st), q.queue)
-    }.toList: _*)
-  }
-
   def eventStream(q: EventQueue): Stream[IO, SeqexecEvent] = {
     stream(q.dequeue.mergeHaltBoth(seqQueueRefreshStream))(EngineState.default).flatMap(x =>
       Stream.eval(notifyODB(x))).flatMap {
         case (ev, qState) =>
           val sequences = qState.sequences.values.map(viewSequence).toList
-          val event = toSeqexecEvent(ev, qState)(
-            SequencesQueue(
-              EngineState.selected.get(qState),
-              EngineState.conditions.get(qState),
-              EngineState.operator.get(qState),
-              executionQueueViews(qState),
-              sequences
-            )
-          )
+          val event = toSeqexecEvent(ev, qState)
           Stream.eval(updateMetrics[IO](ev, sequences).as(event))
     }
   }
@@ -465,41 +451,6 @@ class SeqexecEngine(httpClient: Client[IO], gpi: GpiClient[IO], ghost: GhostClie
       case _                      => Sync[F].unit
     }).flatMap(_ => Sync[F].unit)
   }
-
-  def viewSequence(obsSeq: SequenceData): SequenceView = {
-    val st = obsSeq.seq
-    val seq = st.toSequence
-
-    def resources(s: SequenceGen.StepGen): List[Resource] = s match {
-      case SequenceGen.PendingStepGen(_, _, resources, _) => resources.toList
-      case _                                              => List.empty
-    }
-    def engineSteps(seq: Sequence[IO]): List[Step] = {
-
-      obsSeq.seqGen.steps.zip(seq.steps).map{
-        case (a, b) => viewStep(a, b, resources(a).mapFilter(x =>
-          obsSeq.seqGen.configActionCoord(a.id, x)
-            .map(i => (x, actionStateToStatus(obsSeq.seq.getSingleState(i))))
-        ))
-      }
-      match {
-        // The sequence could be empty
-        case Nil => Nil
-        // Find first Pending Step when no Step is Running and mark it as Running
-        case steps if Sequence.State.isRunning(st) && steps.forall(_.status =!= StepState.Running) =>
-          val (xs, y :: ys) = splitWhere(steps)(_.status === StepState.Pending)
-          xs ++ (y.copy(status = StepState.Running) :: ys)
-        case steps if st.status === SequenceState.Idle && steps.exists(_.status === StepState.Running) =>
-          val (xs, y :: ys) = splitWhere(steps)(_.status === StepState.Running)
-          xs ++ (y.copy(status = StepState.Paused) :: ys)
-        case x => x
-      }
-    }
-
-    // TODO: Implement willStopIn
-    SequenceView(seq.id, SequenceMetadata(obsSeq.seqGen.instrument, obsSeq.observer, obsSeq.seqGen.title), st.status, engineSteps(seq), None)
-  }
-
 }
 
 object SeqexecEngine extends SeqexecConfiguration {
@@ -850,17 +801,56 @@ object SeqexecEngine extends SeqexecConfiguration {
     case StartSysConfig(sid, stepId, res)   => SingleActionEvent(SingleActionOp.Started(sid, stepId, res))
   }
 
-  def toSeqexecEvent(ev: executeEngine.ResultType, qState: EngineState)
-                    (svs: => SequencesQueue[SequenceView]): SeqexecEvent = {
+  private def executionQueueViews(st: EngineState): SortedMap[QueueId, ExecutionQueueView] = {
+    SortedMap(st.queues.map {
+      case (qid, q) => qid -> ExecutionQueueView(qid, q.name, q.cmdState, q.status(st), q.queue)
+    }.toList: _*)
+  }
 
+  private def viewSequence(obsSeq: SequenceData): SequenceView = {
+    val st = obsSeq.seq
+    val seq = st.toSequence
+
+    def resources(s: SequenceGen.StepGen): List[Resource] = s match {
+      case SequenceGen.PendingStepGen(_, _, resources, _) => resources.toList
+      case _                                              => List.empty
+    }
+    def engineSteps(seq: Sequence[IO]): List[Step] = {
+
+      obsSeq.seqGen.steps.zip(seq.steps).map{
+        case (a, b) => viewStep(a, b, resources(a).mapFilter(x =>
+          obsSeq.seqGen.configActionCoord(a.id, x)
+            .map(i => (x, actionStateToStatus(obsSeq.seq.getSingleState(i))))
+        ))
+      }
+      match {
+        // The sequence could be empty
+        case Nil => Nil
+        // Find first Pending Step when no Step is Running and mark it as Running
+        case steps if Sequence.State.isRunning(st) && steps.forall(_.status =!= StepState.Running) =>
+          val (xs, y :: ys) = splitWhere(steps)(_.status === StepState.Pending)
+          xs ++ (y.copy(status = StepState.Running) :: ys)
+        case steps if st.status === SequenceState.Idle && steps.exists(_.status === StepState.Running) =>
+          val (xs, y :: ys) = splitWhere(steps)(_.status === StepState.Running)
+          xs ++ (y.copy(status = StepState.Paused) :: ys)
+        case x => x
+      }
+    }
+
+    // TODO: Implement willStopIn
+    SequenceView(seq.id, SequenceMetadata(obsSeq.seqGen.instrument, obsSeq.observer, obsSeq.seqGen.title), st.status, engineSteps(seq), None)
+  }
+
+  def toSeqexecEvent(ev: executeEngine.ResultType, qState: EngineState): SeqexecEvent = {
     val sequences = qState.sequences.values.map(viewSequence).toList
-    val svs2 = SequencesQueue(
+    val svs = SequencesQueue(
       EngineState.selected.get(qState),
       EngineState.conditions.get(qState),
       EngineState.operator.get(qState),
       executionQueueViews(qState),
       sequences
     )
+
     ev match {
       case engine.UserCommandResponse(ue, _, uev) => ue match {
         case engine.Start(_, _, _, _)      => SequenceStart(svs)
@@ -898,14 +888,8 @@ object SeqexecEngine extends SeqexecConfiguration {
         case engine.BreakpointReached(id)                                    => SequencePaused(id,
           svs)
         case engine.SingleRunCompleted(c, _) =>
-          //        val resource = qState.sequences.get(c.sid).flatMap(_.seqGen.resourceAtCoords(c.actCoords))
-          //        resource.map(res => SingleActionEvent(SingleActionOp.Completed(c.sid, c.actCoords.stepId, res)))
-          //          .getOrElse(NullEvent)
           singleActionEvent[SingleActionOp.Completed](c, qState, SingleActionOp.Completed)
         case engine.SingleRunFailed(c, _)   =>
-          //        val resource = qState.sequences.get(c.sid).flatMap(_.seqGen.resourceAtCoords(c.actCoords))
-          //        resource.map(res => SingleActionEvent(SingleActionOp.Error(c.sid, c.actCoords.stepId, res)))
-          //          .getOrElse(NullEvent)
           singleActionEvent[SingleActionOp.Error](c, qState, SingleActionOp.Error)
       }
     }
