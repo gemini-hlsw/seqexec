@@ -198,7 +198,7 @@ class SequenceSpec extends FlatSpec {
         )
       )
 
-    val c = ActionCoordsInSeq(1, GmosS, ExecutionIndex(0), ActionIndex(1))
+    val c = ActionCoordsInSeq(1, ExecutionIndex(0), ActionIndex(1))
 
     assert(seq.startSingle(c).getSingleState(c) === Action.Started)
 
@@ -241,7 +241,7 @@ class SequenceSpec extends FlatSpec {
       ),
       SequenceState.Completed
     )
-    val c1 = ActionCoordsInSeq(1, GmosS, ExecutionIndex(0), ActionIndex(0))
+    val c1 = ActionCoordsInSeq(1, ExecutionIndex(0), ActionIndex(0))
 
     assert(seq1.startSingle(c1).getSingleState(c1).isIdle)
     assert(seq2.startSingle(c1).getSingleState(c1).isIdle)

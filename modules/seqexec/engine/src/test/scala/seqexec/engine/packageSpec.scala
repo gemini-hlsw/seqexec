@@ -408,7 +408,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
       ) ) ) )
     )
 
-    val c = ActionCoordsInSeq(stepId, GmosS, ExecutionIndex(0), ActionIndex(0))
+    val c = ActionCoordsInSeq(stepId, ExecutionIndex(0), ActionIndex(0))
     val event = Event.modifyState[executionEngine.ConcreteTypes](
       executionEngine.startSingle(ActionCoords(seqId, c)).void
     )

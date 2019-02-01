@@ -851,52 +851,63 @@ object SeqexecEngine extends SeqexecConfiguration {
   }
 
   def toSeqexecEvent(ev: executeEngine.ResultType, qState: EngineState)
-                    (svs: => SequencesQueue[SequenceView]): SeqexecEvent = ev match {
-    case engine.UserCommandResponse(ue, _, uev) => ue match {
-      case engine.Start(_, _, _, _)      => SequenceStart(svs)
-      case engine.Pause(_, _)            => SequencePauseRequested(svs)
-      case engine.CancelPause(_, _)      => SequencePauseCanceled(svs)
-      case engine.Breakpoint(_, _, _, _) => StepBreakpointChanged(svs)
-      case engine.SkipMark(_, _, _, _)   => StepSkipMarkChanged(svs)
-      case engine.Poll(cid)              => SequenceRefreshed(svs, cid)
-      case engine.GetState(_)            => NullEvent
-      case engine.ModifyState(_)         => modifyStateEvent(uev.getOrElse(NullSeqEvent), svs)
-      case engine.ActionStop(_, _)       => ActionStopRequested(svs)
-      case engine.LogDebug(_)            => NullEvent
-      case engine.LogInfo(_)             => NullEvent
-      case engine.LogWarning(_)          => NullEvent
-      case engine.LogError(_)            => NullEvent
-      case engine.ActionResume(_, _, _)  => SequenceUpdated(svs)
-    }
-    case engine.SystemUpdate(se, _)             => se match {
-      // TODO: Sequence completed event not emitted by engine.
-      case engine.Completed(_, _, _, _)                                    => SequenceUpdated(svs)
-      case engine.PartialResult(i, s, _, Partial(Progress(t, r)))          =>
-        ObservationProgressEvent(ObservationProgress(i, s, t, r.self))
-      case engine.PartialResult(_, _, _, Partial(FileIdAllocated(fileId))) =>
-        FileIdStepExecuted(fileId, svs)
-      case engine.PartialResult(_, _, _, _)                                => SequenceUpdated(svs)
-      case engine.Failed(id, _, _)                                         => SequenceError(id, svs)
-      case engine.Busy(id, clientId)                                       =>
-        UserNotification(ResourceConflict(id), clientId)
-      case engine.Executed(s)                                              => StepExecuted(s, svs)
-      case engine.Executing(_)                                             => SequenceUpdated(svs)
-      case engine.Finished(_)                                              => SequenceCompleted(svs)
-      case engine.Null                                                     => NullEvent
-      case engine.Paused(id, _, _)                                         => ExposurePaused(id,
-        svs)
-      case engine.BreakpointReached(id)                                    => SequencePaused(id,
-        svs)
-      case engine.SingleRunCompleted(c, _) =>
-//        val resource = qState.sequences.get(c.sid).flatMap(_.seqGen.resourceAtCoords(c.actCoords))
-//        resource.map(res => SingleActionEvent(SingleActionOp.Completed(c.sid, c.actCoords.stepId, res)))
-//          .getOrElse(NullEvent)
-        singleActionEvent[SingleActionOp.Completed](c, qState, SingleActionOp.Completed)
-      case engine.SingleRunFailed(c, _)   =>
-//        val resource = qState.sequences.get(c.sid).flatMap(_.seqGen.resourceAtCoords(c.actCoords))
-//        resource.map(res => SingleActionEvent(SingleActionOp.Error(c.sid, c.actCoords.stepId, res)))
-//          .getOrElse(NullEvent)
-        singleActionEvent[SingleActionOp.Error](c, qState, SingleActionOp.Error)
+                    (svs: => SequencesQueue[SequenceView]): SeqexecEvent = {
+
+    val sequences = qState.sequences.values.map(viewSequence).toList
+    val svs2 = SequencesQueue(
+      EngineState.selected.get(qState),
+      EngineState.conditions.get(qState),
+      EngineState.operator.get(qState),
+      executionQueueViews(qState),
+      sequences
+    )
+    ev match {
+      case engine.UserCommandResponse(ue, _, uev) => ue match {
+        case engine.Start(_, _, _, _)      => SequenceStart(svs)
+        case engine.Pause(_, _)            => SequencePauseRequested(svs)
+        case engine.CancelPause(_, _)      => SequencePauseCanceled(svs)
+        case engine.Breakpoint(_, _, _, _) => StepBreakpointChanged(svs)
+        case engine.SkipMark(_, _, _, _)   => StepSkipMarkChanged(svs)
+        case engine.Poll(cid)              => SequenceRefreshed(svs, cid)
+        case engine.GetState(_)            => NullEvent
+        case engine.ModifyState(_)         => modifyStateEvent(uev.getOrElse(NullSeqEvent), svs)
+        case engine.ActionStop(_, _)       => ActionStopRequested(svs)
+        case engine.LogDebug(_)            => NullEvent
+        case engine.LogInfo(_)             => NullEvent
+        case engine.LogWarning(_)          => NullEvent
+        case engine.LogError(_)            => NullEvent
+        case engine.ActionResume(_, _, _)  => SequenceUpdated(svs)
+      }
+      case engine.SystemUpdate(se, _)             => se match {
+        // TODO: Sequence completed event not emitted by engine.
+        case engine.Completed(_, _, _, _)                                    => SequenceUpdated(svs)
+        case engine.PartialResult(i, s, _, Partial(Progress(t, r)))          =>
+          ObservationProgressEvent(ObservationProgress(i, s, t, r.self))
+        case engine.PartialResult(_, _, _, Partial(FileIdAllocated(fileId))) =>
+          FileIdStepExecuted(fileId, svs)
+        case engine.PartialResult(_, _, _, _)                                => SequenceUpdated(svs)
+        case engine.Failed(id, _, _)                                         => SequenceError(id, svs)
+        case engine.Busy(id, clientId)                                       =>
+          UserNotification(ResourceConflict(id), clientId)
+        case engine.Executed(s)                                              => StepExecuted(s, svs)
+        case engine.Executing(_)                                             => SequenceUpdated(svs)
+        case engine.Finished(_)                                              => SequenceCompleted(svs)
+        case engine.Null                                                     => NullEvent
+        case engine.Paused(id, _, _)                                         => ExposurePaused(id,
+          svs)
+        case engine.BreakpointReached(id)                                    => SequencePaused(id,
+          svs)
+        case engine.SingleRunCompleted(c, _) =>
+          //        val resource = qState.sequences.get(c.sid).flatMap(_.seqGen.resourceAtCoords(c.actCoords))
+          //        resource.map(res => SingleActionEvent(SingleActionOp.Completed(c.sid, c.actCoords.stepId, res)))
+          //          .getOrElse(NullEvent)
+          singleActionEvent[SingleActionOp.Completed](c, qState, SingleActionOp.Completed)
+        case engine.SingleRunFailed(c, _)   =>
+          //        val resource = qState.sequences.get(c.sid).flatMap(_.seqGen.resourceAtCoords(c.actCoords))
+          //        resource.map(res => SingleActionEvent(SingleActionOp.Error(c.sid, c.actCoords.stepId, res)))
+          //          .getOrElse(NullEvent)
+          singleActionEvent[SingleActionOp.Error](c, qState, SingleActionOp.Error)
+      }
     }
   }
 
