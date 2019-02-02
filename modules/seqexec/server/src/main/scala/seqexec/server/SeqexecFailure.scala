@@ -67,17 +67,17 @@ object SeqexecFailure {
     case FailedSimulation             => s"Failed to simulate"
   }
 
-  implicit def ev(implicit ae: ApplicativeError[IO, Throwable]): ApplicativeError[IO, SeqexecFailure] = new ApplicativeError[IO, SeqexecFailure] {
+  implicit def applicativeErrorIOSeqexecFailure(implicit ae: ApplicativeError[IO, Throwable]): ApplicativeError[IO, SeqexecFailure] =
+    new ApplicativeError[IO, SeqexecFailure] {
+      override def pure[A](x: A): IO[A] = ae.pure(x)
 
-    override def pure[A](x: A): IO[A] = ae.pure(x)
+      def ap[A, B](ff: IO[A => B])(fa: IO[A]): IO[B] = ae.ap(ff)(fa)
 
-    def ap[A, B](ff: IO[A => B])(fa: IO[A]): IO[B] = ae.ap(ff)(fa)
+      def raiseError[A](e: SeqexecFailure): IO[A] =
+        ae.raiseError(new RuntimeException(SeqexecFailure.explain(e)))
 
-    def raiseError[A](e: SeqexecFailure): IO[A] =
-      ae.raiseError(new RuntimeException(SeqexecFailure.explain(e)))
-
-    def handleErrorWith[A](fa: IO[A])(f: SeqexecFailure => IO[A]): IO[A] =
-      ae.handleErrorWith(fa)(x => f(SeqexecFailure.SeqexecException(x)))
-  }
+      def handleErrorWith[A](fa: IO[A])(f: SeqexecFailure => IO[A]): IO[A] =
+        ae.handleErrorWith(fa)(x => f(SeqexecFailure.SeqexecException(x)))
+    }
 
 }

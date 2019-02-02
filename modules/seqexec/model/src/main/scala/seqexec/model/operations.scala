@@ -5,7 +5,6 @@ package seqexec.model
 
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.Instrument._
-import mouse.boolean._
 
 object operations {
   // Operations possible at the sequence level
@@ -55,14 +54,15 @@ object operations {
   private val GmosSupportedOperations = new SupportedOperations {
     def observationOperations(
       isObservePaused: Boolean): List[ObservationOperations] =
-      isObservePaused.fold(
+      if (isObservePaused) {
         List(ObservationOperations.ResumeObservation,
              ObservationOperations.StopObservation,
-             ObservationOperations.AbortObservation),
+             ObservationOperations.AbortObservation)
+      } else {
         List(ObservationOperations.PauseObservation,
              ObservationOperations.StopObservation,
              ObservationOperations.AbortObservation)
-      )
+      }
 
     def sequenceOperations: List[SequenceOperations] = Nil
   }
@@ -70,12 +70,13 @@ object operations {
   private val GnirsSupportedOperations = new SupportedOperations {
     def observationOperations(
       isObservePaused: Boolean): List[ObservationOperations] =
-      isObservePaused.fold(
-        List(ObservationOperations.StopObservation,
-             ObservationOperations.AbortObservation),
+      if (isObservePaused) {
         List(ObservationOperations.StopObservation,
              ObservationOperations.AbortObservation)
-      )
+      } else {
+        List(ObservationOperations.StopObservation,
+             ObservationOperations.AbortObservation)
+      }
 
     def sequenceOperations: List[SequenceOperations] = Nil
   }
@@ -83,12 +84,13 @@ object operations {
   private val NiriSupportedOperations = new SupportedOperations {
     def observationOperations(
       isObservePaused: Boolean): List[ObservationOperations] =
-      isObservePaused.fold(
-        List(ObservationOperations.StopObservation,
-             ObservationOperations.AbortObservation),
+      if (isObservePaused) {
         List(ObservationOperations.StopObservation,
              ObservationOperations.AbortObservation)
-      )
+      } else {
+        List(ObservationOperations.StopObservation,
+             ObservationOperations.AbortObservation)
+      }
 
     def sequenceOperations: List[SequenceOperations] = Nil
   }
@@ -97,12 +99,13 @@ object operations {
     def observationOperations(
       isObservePaused: Boolean
     ): List[ObservationOperations] =
-      isObservePaused.fold(
-        List(ObservationOperations.StopObservation,
-             ObservationOperations.AbortObservation),
+      if (isObservePaused) {
         List(ObservationOperations.StopObservation,
              ObservationOperations.AbortObservation)
-      )
+      } else {
+        List(ObservationOperations.StopObservation,
+             ObservationOperations.AbortObservation)
+      }
 
     def sequenceOperations: List[SequenceOperations] = Nil
   }

@@ -124,7 +124,7 @@ object InstrumentControllerSim {
 
   implicit class SimulationExceptionOps[F[_]: Monad, A](s: EitherT[F, SeqexecFailure, A]) {
     def orSimulationError(implicit ev: ApplicativeError[F, SeqexecFailure]): F[A] =
-      s.getOrElseF(ev.raiseError(SeqexecFailure.FailedSimulation))
+      s.value.flatMap(_.liftTo[F])
   }
 
 }
