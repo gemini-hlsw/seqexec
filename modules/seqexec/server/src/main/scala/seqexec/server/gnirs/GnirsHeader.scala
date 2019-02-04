@@ -3,7 +3,7 @@
 
 package seqexec.server.gnirs
 
-import cats.Monad
+import cats.effect.Sync
 import gem.Observation
 import gem.enum.KeywordName
 import seqexec.model.dhs.ImageFileId
@@ -13,7 +13,7 @@ import seqexec.server.tcs.TcsKeywordsReader
 import seqexec.server.SeqActionF
 
 object GnirsHeader {
-  def header[F[_]: Monad](inst: InstrumentSystem[F], gnirsReader: GnirsKeywordReader[F], tcsReader: TcsKeywordsReader[F]): Header[F] = new Header[F] {
+  def header[F[_]: Sync](inst: InstrumentSystem[F], gnirsReader: GnirsKeywordReader[F], tcsReader: TcsKeywordsReader[F]): Header[F] = new Header[F] {
     override def sendBefore(obsId: Observation.Id, id: ImageFileId): SeqActionF[F, Unit] =
       sendKeywords(id, inst, List(
         buildInt32(tcsReader.getGnirsInstPort.orDefault, KeywordName.INPORT),

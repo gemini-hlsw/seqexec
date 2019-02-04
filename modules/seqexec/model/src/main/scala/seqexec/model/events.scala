@@ -174,6 +174,13 @@ object events {
       Eq.by(x => (x.op, x.view))
   }
 
+  final case class SingleActionEvent(op: SingleActionOp) extends SeqexecEvent
+
+  object SingleActionEvent {
+    implicit lazy val equal: Eq[SingleActionEvent] =
+      Eq.by(_.op)
+  }
+
   final case class LoadSequenceUpdated(i:        Instrument,
                                        sid:      Observation.Id,
                                        view:     SequencesQueue[SequenceView],
@@ -303,6 +310,7 @@ object events {
       case (a: ServerLogMessage,         b: ServerLogMessage)         => a === b
       case (a: UserNotification,         b: UserNotification)         => a === b
       case (a: ObservationProgressEvent, b: ObservationProgressEvent) => a === b
+      case (a: SingleActionEvent,        b: SingleActionEvent)        => a === b
       case (_: NullEvent.type,           _: NullEvent.type)           => true
       case _                                                          => false
     }

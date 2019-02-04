@@ -16,6 +16,7 @@ import scala.collection.immutable.SortedMap
 import scala.concurrent.duration.Duration
 import squants.time._
 import seqexec.model.enum._
+import seqexec.model.events.SingleActionEvent
 
 trait SeqexecModelArbitraries extends ArbObservation {
 
@@ -514,6 +515,72 @@ trait SeqexecModelArbitraries extends ArbObservation {
     Cogen[(Observation.Id, StepId, Time, Time)]
       .contramap(x => (x.obsId, x.stepId, x.total, x.remaining))
 
+  implicit val saoStartArb: Arbitrary[SingleActionOp.Started] =
+    Arbitrary {
+      for {
+        o <- arbitrary[Observation.Id]
+        s <- arbitrary[StepId]
+        r <- arbitrary[Resource]
+      } yield SingleActionOp.Started(o, s, r)
+    }
+
+  implicit val saoStartCogen: Cogen[SingleActionOp.Started] =
+    Cogen[(Observation.Id, StepId, Resource)]
+      .contramap(x => (x.sid, x.stepId, x.resource))
+
+  implicit val saoCompleteArb: Arbitrary[SingleActionOp.Completed] =
+    Arbitrary {
+      for {
+        o <- arbitrary[Observation.Id]
+        s <- arbitrary[StepId]
+        r <- arbitrary[Resource]
+      } yield SingleActionOp.Completed(o, s, r)
+    }
+
+  implicit val saoCompleteCogen: Cogen[SingleActionOp.Completed] =
+    Cogen[(Observation.Id, StepId, Resource)]
+      .contramap(x => (x.sid, x.stepId, x.resource))
+
+  implicit val saoErrorArb: Arbitrary[SingleActionOp.Error] =
+    Arbitrary {
+      for {
+        o <- arbitrary[Observation.Id]
+        s <- arbitrary[StepId]
+        r <- arbitrary[Resource]
+      } yield SingleActionOp.Error(o, s, r)
+    }
+
+  implicit val saoErrorCogen: Cogen[SingleActionOp.Error] =
+    Cogen[(Observation.Id, StepId, Resource)]
+      .contramap(x => (x.sid, x.stepId, x.resource))
+
+  implicit val saoArb = Arbitrary[SingleActionOp] {
+    for {
+      s <- arbitrary[SingleActionOp.Started]
+      c <- arbitrary[SingleActionOp.Completed]
+      e <- arbitrary[SingleActionOp.Error]
+      m <- Gen.oneOf(s, c, e)
+    } yield m
+  }
+
+  implicit val saoCogen: Cogen[SingleActionOp] =
+    Cogen[Either[SingleActionOp.Started, Either[SingleActionOp.Completed, SingleActionOp.Error]]]
+      .contramap {
+        case s: SingleActionOp.Started   => Left(s)
+        case c: SingleActionOp.Completed => Right(Left(c))
+        case e: SingleActionOp.Error     => Right(Right(e))
+      }
+
+  implicit val arbSingleActionEvent: Arbitrary[SingleActionEvent] =
+    Arbitrary {
+      for {
+        e <- arbitrary[SingleActionOp]
+      } yield SingleActionEvent(e)
+    }
+
+  implicit val singleActionEventCogen: Cogen[SingleActionEvent] =
+    Cogen[SingleActionOp]
+      .contramap(_.op)
 }
 
 object SeqexecModelArbitraries extends SeqexecModelArbitraries

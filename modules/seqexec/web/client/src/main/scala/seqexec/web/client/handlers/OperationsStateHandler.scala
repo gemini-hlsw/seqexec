@@ -53,7 +53,7 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
             .resourceRun(r)
             .set(ResourceRunOperation.ResourceRunInFlight.some)))
 
-    case RunResource(id, _, r) =>
+    case RunResourceComplete(id, _, r) =>
       updated(value.markOperations(id, TabOperations.resourceRun(r).set(none)))
   }
 
@@ -99,5 +99,7 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
   }
 
   override def handle: PartialFunction[Any, ActionResult[M]] =
-    List(handleRequestOperation, handleOperationResult, handleSelectedStep).combineAll
+    List(handleRequestOperation,
+         handleOperationResult,
+         handleSelectedStep).combineAll
 }

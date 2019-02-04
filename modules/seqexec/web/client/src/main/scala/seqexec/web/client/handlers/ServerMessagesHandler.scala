@@ -9,7 +9,7 @@ import diode.ActionResult
 import diode.Effect
 import diode.ModelRW
 import diode.NoAction
-import seqexec.model.enum.ActionStatus
+import seqexec.model.enum.{ActionStatus, SingleActionOp}
 import seqexec.model.Observer
 import seqexec.model.SequencesQueue
 import seqexec.model.SequenceView
@@ -34,6 +34,7 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
     extends ActionHandler(modelRW)
     with Handlers[M, WebSocketsFocus] {
+
   // Global references to audio files
   private val SequencePausedAudio = new Audio(SequencePausedResource.resource)
   private val ExposurePausedAudio = new Audio(ExposurePausedResource.resource)
@@ -171,6 +172,11 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
       updated(value.copy(sequences = filterSequences(s.view)))
   }
 
+  val singleRunCompleteMessage: PartialFunction[Any, ActionResult[M]] = {
+    case ServerMessage(SingleActionEvent(SingleActionOp.Completed(sid, stepId, r))) =>
+      effectOnly(Effect(Future(RunResourceComplete(sid, stepId, r))))
+  }
+
   val defaultMessage: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(_) =>
       // Ignore unknown events
@@ -192,6 +198,7 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
       sequenceLoadedMessage,
       sequenceUnloadedMessage,
       modelUpdateMessage,
+      singleRunCompleteMessage,
       defaultMessage
     ).combineAll
 }

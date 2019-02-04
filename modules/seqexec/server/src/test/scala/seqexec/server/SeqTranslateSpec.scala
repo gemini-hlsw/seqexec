@@ -25,13 +25,14 @@ import seqexec.server.gmos.GmosControllerSim
 import seqexec.server.gnirs.GnirsControllerSim
 import seqexec.server.tcs.TcsControllerSim
 import seqexec.server.gpi.GpiController
+import seqexec.server.Response.Observed
+import seqexec.server.ghost.GhostController
+import seqexec.server.niri.NiriControllerSim
+import seqexec.server.nifs.NifsControllerSim
 import edu.gemini.spModel.core.Peer
 import org.scalatest.FlatSpec
 import org.http4s.Uri._
 import squants.time.Seconds
-import seqexec.server.Response.Observed
-import seqexec.server.ghost.GhostController
-import seqexec.server.niri.NiriControllerSim
 
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements", "org.wartremover.warts.Throw"))
 class SeqTranslateSpec extends FlatSpec {
@@ -88,7 +89,7 @@ class SeqTranslateSpec extends FlatSpec {
     new GdsClient(GdsClient.alwaysOkClient, uri("http://localhost:8888/xmlrpc"))))
   ).unsafeRunSync
 
-  private val systems = SeqTranslate.Systems(
+  private val systems = Systems[IO](
     new OdbProxy(new Peer("localhost", 8443, null), new OdbProxy.DummyOdbCommands),
     DhsClientSim(LocalDate.of(2016, 4, 15)),
     TcsControllerSim,
@@ -99,7 +100,8 @@ class SeqTranslateSpec extends FlatSpec {
     GnirsControllerSim,
     gpiSim,
     ghostSim,
-    NiriControllerSim
+    NiriControllerSim,
+    NifsControllerSim
   )
 
   private val translatorSettings = TranslateSettings(tcsKeywords = false, f2Keywords = false, gwsKeywords = false,

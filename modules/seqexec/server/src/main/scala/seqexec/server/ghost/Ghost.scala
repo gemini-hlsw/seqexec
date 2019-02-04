@@ -21,15 +21,14 @@ import seqexec.model.enum.{Instrument, Resource}
 import seqexec.server.ConfigUtilOps._
 import seqexec.server._
 import seqexec.server.keywords.{GdsClient, GdsInstrument, KeywordsClient}
-import seqexec.server.keywords.KeywordBag
 import seqexec.server.ghost.GhostController._
 import squants.time.{Seconds, Time}
 
 import scala.reflect.ClassTag
 
 final case class Ghost[F[_]: Sync](controller: GhostController[F])
-    extends InstrumentSystem[F]
-    with GdsInstrument[F] {
+    extends GdsInstrument[F]
+    with InstrumentSystem[F] {
   override val gdsClient: GdsClient[F] = controller.gdsClient
 
   override val keywordsClient: KeywordsClient[F] = this
@@ -42,10 +41,6 @@ final case class Ghost[F[_]: Sync](controller: GhostController[F])
 
   override val observeControl: InstrumentSystem.ObserveControl =
     InstrumentSystem.Uncontrollable
-
-  override def bundleKeywords(
-    ks: List[KeywordBag => SeqActionF[F, KeywordBag]]): SeqActionF[F, KeywordBag] =
-    GdsInstrument.bundleKeywords(ks)
 
   override def observe(
       config: Config): SeqObserveF[F, ImageFileId, ObserveCommand.Result] =

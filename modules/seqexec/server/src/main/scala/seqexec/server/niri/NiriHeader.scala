@@ -3,7 +3,7 @@
 
 package seqexec.server.niri
 
-import cats.Monad
+import cats.effect.Sync
 import gem.Observation
 import gem.enum.KeywordName
 import seqexec.model.dhs.ImageFileId
@@ -13,7 +13,7 @@ import seqexec.server.tcs.TcsKeywordsReader
 
 object NiriHeader {
   // scalastyle:off
-  def header[F[_]: Monad](inst: InstrumentSystem[F], instReader: NiriKeywordReader[F],
+  def header[F[_]: Sync](inst: InstrumentSystem[F], instReader: NiriKeywordReader[F],
              tcsKeywordsReader: TcsKeywordsReader[F]): Header[F] = new Header[F] {
     override def sendBefore(obsId: Observation.Id, id: ImageFileId): SeqActionF[F, Unit] =
       sendKeywords(id, inst, List(

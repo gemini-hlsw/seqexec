@@ -4,18 +4,19 @@
 package seqexec.server.keywords
 
 import gem.enum.KeywordName
+import cats.effect.IO
 import java.time.LocalDate
 import org.scalatest.{FlatSpec, Matchers}
 import seqexec.server.keywords.DhsClient.Permanent
 
 class DhsClientSimSpec extends FlatSpec with Matchers {
   "DhsClientSim" should "produce data labels for today" in {
-      DhsClientSim(LocalDate.of(2016, 4, 15)).createImage(DhsClient.ImageParameters(Permanent, Nil)).value.unsafeRunSync() should matchPattern {
+      DhsClientSim[IO](LocalDate.of(2016, 4, 15)).createImage(DhsClient.ImageParameters(Permanent, Nil)).value.unsafeRunSync() should matchPattern {
         case Right("S20160415S0001") =>
       }
     }
   it should "accept keywords" in {
-    val client = DhsClientSim(LocalDate.of(2016, 4, 15))
+    val client = DhsClientSim[IO](LocalDate.of(2016, 4, 15))
     client.createImage(DhsClient.ImageParameters(Permanent, Nil)).value.unsafeRunSync().fold(
       _ => fail(),
       id => client.setKeywords(id, KeywordBag(Int32Keyword(KeywordName.TELESCOP, 10)), finalFlag = true).value.unsafeRunSync() should matchPattern {

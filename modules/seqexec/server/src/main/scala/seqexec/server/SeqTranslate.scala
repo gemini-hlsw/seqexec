@@ -24,25 +24,25 @@ import seqexec.model.enum.{Instrument, Resource}
 import seqexec.model.{ActionType, StepState}
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.ConfigUtilOps._
-import seqexec.server.SeqTranslate.Systems
 import seqexec.server.SeqexecFailure.{Unexpected, UnrecognizedInstrument}
 import seqexec.server.InstrumentSystem._
 import seqexec.server.SequenceGen.StepActionsGen
-import seqexec.server.flamingos2.{Flamingos2, Flamingos2Controller, Flamingos2Header}
+import seqexec.server.flamingos2.{Flamingos2, Flamingos2Header}
 import seqexec.server.keywords._
-import seqexec.server.gpi.{Gpi, GpiController, GpiHeader}
-import seqexec.server.ghost.{Ghost, GhostController, GhostHeader}
+import seqexec.server.gpi.{Gpi, GpiHeader}
+import seqexec.server.ghost.{Ghost, GhostHeader}
 import seqexec.server.gcal._
-import seqexec.server.gmos.{GmosController, GmosHeader, GmosNorth, GmosSouth}
+import seqexec.server.gmos.{GmosHeader, GmosNorth, GmosSouth}
 import seqexec.server.gws.{DummyGwsKeywordsReader, GwsHeader, GwsKeywordsReaderImpl}
 import seqexec.server.tcs._
 import seqexec.server.tcs.TcsController.ScienceFoldPosition
 import seqexec.server.gnirs._
 import seqexec.server.niri._
+import seqexec.server.nifs._
 import squants.Time
 import squants.time.TimeConversions._
 
-class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
+class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings) {
   private val Log = getLogger
 
   implicit val show: Show[InstrumentSystem[IO]] = Show.show(_.resource.show)
@@ -392,6 +392,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
     case Instrument.Gpi   => TrySeq(Gpi(systems.gpi))
     case Instrument.Ghost => TrySeq(Ghost(systems.ghost))
     case Instrument.Niri  => TrySeq(Niri(systems.niri, systems.dhs))
+    case Instrument.Nifs  => TrySeq(Nifs(systems.nifs, systems.dhs))
     case _                => TrySeq.fail(Unexpected(s"Instrument $inst not supported."))
   }
 
@@ -443,6 +444,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
     case Gpi(_)           => Instrument.Gpi
     case Ghost(_)         => Instrument.Ghost
     case Niri(_, _)       => Instrument.Niri
+    case Nifs(_, _)       => Instrument.Nifs
   }
 
   private def calcInstHeader(config: Config, inst: Instrument)(
@@ -467,6 +469,8 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
         val niriReader = if(settings.niriKeywords) NiriKeywordReaderImpl
                           else NiriKeywordReaderDummy
         toInstrumentSys(inst).map(NiriHeader.header(_, niriReader, tcsKReader))
+      case Instrument.Nifs   =>
+        NifsHeader.header[IO].asRight
       case _                 =>
         TrySeq.fail(Unexpected(s"Instrument $inst not supported."))
     }
@@ -505,21 +509,7 @@ class SeqTranslate(site: Site, systems: Systems, settings: TranslateSettings) {
 }
 
 object SeqTranslate {
-  def apply(site: Site, systems: Systems, settings: TranslateSettings): SeqTranslate = new SeqTranslate(site, systems, settings)
-
-  final case class Systems(
-                            odb: OdbProxy[IO],
-                            dhs: DhsClient,
-                            tcs: TcsController,
-                            gcal: GcalController,
-                            flamingos2: Flamingos2Controller,
-                            gmosSouth: GmosController.GmosSouthController,
-                            gmosNorth: GmosController.GmosNorthController,
-                            gnirs: GnirsController,
-                            gpi: GpiController[IO],
-                            ghost: GhostController[IO],
-                            niri: NiriController
-                    )
+  def apply(site: Site, systems: Systems[IO], settings: TranslateSettings): SeqTranslate = new SeqTranslate(site, systems, settings)
 
   private sealed trait StepType {
     val instrument: Instrument
@@ -534,6 +524,7 @@ object SeqTranslate {
       case Gpi.name        => TrySeq(Instrument.Gpi)
       case Ghost.name      => TrySeq(Instrument.Ghost)
       case Niri.name       => TrySeq(Instrument.Niri)
+      case Nifs.name       => TrySeq(Instrument.Nifs)
       case ins             => TrySeq.fail(UnrecognizedInstrument(s"inst $ins"))
     }
   }

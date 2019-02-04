@@ -292,6 +292,7 @@ package client {
             IO.sleep(timeout) *>
             IO.pure(CommandResult(Response.COMPLETED))
           } else {
+            IO.sleep(5.seconds) *>
             IO.pure(CommandResult(Response.COMPLETED))
           }
         override def close: IO[Unit] = IO.unit

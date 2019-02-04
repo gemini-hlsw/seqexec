@@ -5,7 +5,7 @@ package seqexec.engine
 
 import cats._
 import cats.data.StateT
-import cats.effect.{ Concurrent, IO }
+import cats.effect.{Concurrent, IO}
 import cats.implicits._
 import seqexec.engine.Event._
 import seqexec.engine.Result.{PartialVal, PauseContext, RetVal}

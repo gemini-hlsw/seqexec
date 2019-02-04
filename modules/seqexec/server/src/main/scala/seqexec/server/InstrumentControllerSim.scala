@@ -6,6 +6,8 @@ package seqexec.server
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
 
 import cats.Show
+import cats.Monad
+import cats.ApplicativeError
 import cats.data.EitherT
 import cats.effect.{ IO, Timer }
 import cats.implicits._
@@ -119,4 +121,10 @@ class InstrumentControllerSim(name: String, useTimeout: Boolean) {
 object InstrumentControllerSim {
   def apply(name: String): InstrumentControllerSim = new InstrumentControllerSim(name, false)
   def withTimeout(name: String): InstrumentControllerSim = new InstrumentControllerSim(name, true)
+
+  implicit class SimulationExceptionOps[F[_]: Monad, A](s: EitherT[F, SeqexecFailure, A]) {
+    def orSimulationError(implicit ev: ApplicativeError[F, SeqexecFailure]): F[A] =
+      s.getOrElseF(ev.raiseError(SeqexecFailure.FailedSimulation))
+  }
+
 }

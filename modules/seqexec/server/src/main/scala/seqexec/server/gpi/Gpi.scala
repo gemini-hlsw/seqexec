@@ -25,7 +25,6 @@ import seqexec.server.gpi.GpiController._
 import seqexec.server.keywords.GdsClient
 import seqexec.server.keywords.GdsInstrument
 import seqexec.server.keywords.KeywordsClient
-import seqexec.server.keywords.KeywordBag
 
 import scala.concurrent.duration._
 import squants.time.Milliseconds
@@ -33,8 +32,8 @@ import squants.time.Seconds
 import squants.time.Time
 
 final case class Gpi[F[_]: Sync: Timer](controller: GpiController[F])
-    extends InstrumentSystem[F]
-    with GdsInstrument[F] {
+    extends GdsInstrument[F]
+    with InstrumentSystem[F] {
   // Taken from the gpi isd
   val readoutOverhead: Time  = Seconds(4)
   val writeOverhead: Time    = Seconds(2)
@@ -53,10 +52,6 @@ final case class Gpi[F[_]: Sync: Timer](controller: GpiController[F])
 
   override val observeControl: InstrumentSystem.ObserveControl =
     InstrumentSystem.Uncontrollable
-
-  override def bundleKeywords(
-    ks: List[KeywordBag => SeqActionF[F, KeywordBag]]): SeqActionF[F, KeywordBag] =
-    GdsInstrument.bundleKeywords(ks)
 
   override def observe(
     config: Config
