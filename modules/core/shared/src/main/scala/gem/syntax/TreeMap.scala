@@ -30,6 +30,17 @@ final class TreeMapCompanionOps(val self: TreeMap.type) extends AnyVal {
    */
   def join[A: Ordering, B](ms: List[TreeMap[A, B]]): TreeMap[A, B] =
     ms.foldLeft(TreeMap.empty[A, B]) { case (m0, m1) => m0 ++ m1 }
+
+  /**
+   * Groups a `List[A]` by the given key.  Like traversable `groupBy` but
+   * producing a `TreeMap`
+   */
+  def grouping[K: Ordering, A](as: List[A])(f: A => K): TreeMap[K, List[A]] =
+    as.foldRight(TreeMap.empty[K, List[A]]) { case (a, m) =>
+      val k = f(a)
+      m.updated(k, a :: m.getOrElse(k, List.empty[A]))
+    }
+
 }
 
 trait ToTreeMapCompanionOps {
@@ -54,7 +65,7 @@ final class TreeMapOps[A, B](val self: TreeMap[A, B]) extends AnyVal {
     }
 
   /**
-   *  Merges two maps together according to the supplied function. The function
+   * Merges two maps together according to the supplied function. The function
    * takes an `Ior` with the value from this map and/or the value from that map
    * for each key present in either map.
    *
@@ -67,6 +78,13 @@ final class TreeMapOps[A, B](val self: TreeMap[A, B]) extends AnyVal {
         m.updated(a, f(ior))
       }
     }
+
+  /**
+   * Like `mapValues` but produces a copy in a new `TreeMap` instead of a
+   * `SortedMap` view.
+   */
+  def treeMapValues[C](f: B => C)(implicit ev: Ordering[A]): TreeMap[A, C] =
+    self.foldLeft(TreeMap.empty[A, C]) { case (m, (a, b)) => m.updated(a, f(b)) }
 }
 
 trait ToTreeMapOps {
