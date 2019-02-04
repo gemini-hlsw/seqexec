@@ -19,13 +19,13 @@ object SingleActionOp {
     extends SingleActionOp
   final case class Completed(sid: Observation.Id, stepId: StepId, resource: Resource)
     extends SingleActionOp
-  final case class Error(sid: Observation.Id, stepId: StepId, resource: Resource)
+  final case class Error(sid: Observation.Id, stepId: StepId, resource: Resource, msg: String)
     extends SingleActionOp
 
   implicit val equal: Eq[SingleActionOp] = Eq.instance {
     case (Started(a, c, e), Started(b, d, f))     => a === b && c === d && e === f
     case (Completed(a, c, e), Completed(b, d, f)) => a === b && c === d && e === f
-    case (Error(a, c, e), Error(b, d, f))         => a === b && c === d && e === f
-    case _                                  => false
+    case (Error(a, c, e, g), Error(b, d, f, h))   => a === b && c === d && e === f && g === h
+    case _                                        => false
   }
 }

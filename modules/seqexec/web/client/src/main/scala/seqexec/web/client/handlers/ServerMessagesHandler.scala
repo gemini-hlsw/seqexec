@@ -9,7 +9,8 @@ import diode.ActionResult
 import diode.Effect
 import diode.ModelRW
 import diode.NoAction
-import seqexec.model.enum.{ActionStatus, SingleActionOp}
+import seqexec.model.enum.ActionStatus
+import seqexec.model.enum.SingleActionOp
 import seqexec.model.Observer
 import seqexec.model.SequencesQueue
 import seqexec.model.SequenceView
@@ -172,9 +173,23 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
       updated(value.copy(sequences = filterSequences(s.view)))
   }
 
+  val MsgRegex = "Application exception: (.*)".r
+  val InstRegex = "Sequence execution failed with error: (.*)".r
+
   val singleRunCompleteMessage: PartialFunction[Any, ActionResult[M]] = {
-    case ServerMessage(SingleActionEvent(SingleActionOp.Completed(sid, stepId, r))) =>
+    case ServerMessage(
+        SingleActionEvent(SingleActionOp.Completed(sid, stepId, r))) =>
       effectOnly(Effect(Future(RunResourceComplete(sid, stepId, r))))
+
+    case ServerMessage(
+        SingleActionEvent(SingleActionOp.Error(sid, stepId, r, msg))) =>
+      // Unbundle the underlying exception message
+      val actualMsg = msg match {
+        case MsgRegex(m) => m
+        case InstRegex(m) => m
+        case m           => m
+      }
+      effectOnly(Effect(Future(RunResourceFailed(sid, stepId, r, actualMsg))))
   }
 
   val defaultMessage: PartialFunction[Any, ActionResult[M]] = {
