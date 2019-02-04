@@ -34,7 +34,7 @@ import seqexec.server.gmos.{GmosControllerSim, GmosEpics, GmosNorthControllerEpi
 import seqexec.server.gnirs.{GnirsControllerEpics, GnirsControllerSim, GnirsEpics}
 import seqexec.server.gpi.GpiController
 import seqexec.server.niri.{NiriControllerEpics, NiriControllerSim, NiriEpics}
-import seqexec.server.nifs.NifsControllerSim
+import seqexec.server.nifs.{NifsControllerSim, NifsEpics}
 import seqexec.server.gws.GwsEpics
 import seqexec.server.tcs.{TcsControllerEpics, TcsControllerSim, TcsEpics}
 import edu.gemini.seqexec.odb.SmartGcal
@@ -715,7 +715,7 @@ object SeqexecEngine extends SeqexecConfiguration {
     val epicsInstruments = site match {
       case Site.GS => List((f2Control, Flamingos2Epics), (gmosControl, GmosEpics))
       case Site.GN => List((gmosControl, GmosEpics), (gnirsControl, GnirsEpics),
-        (niriControl, NiriEpics)
+        (niriControl, NiriEpics), (nifsControl, NifsEpics)
       )
     }
     val epicsGaos = site match {
