@@ -24,7 +24,7 @@ import squants.space.Millimeters
 final case class Tcs(tcsController: TcsController,
                      subsystems: NonEmptyList[Subsystem],
                      scienceFoldPosition: ScienceFoldPosition,
-                     gaos: Option[Gaos[IO]]) extends System[IO] {
+                     gaos: Option[Gaos[SeqAction]]) extends System[IO] {
   import Tcs._
   import MountGuideOption._
 
