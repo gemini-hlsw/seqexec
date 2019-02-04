@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Records xmlns="http://www.gemini.edu/CaSchema">
+    <Top name="nifs">nifs</Top>
+    <Apply name="nifs::dcapply">
+        <top>nifs</top>
+        <apply>dc:nifsApply</apply>
+        <car>dc:applyC</car>
+        <description>DC Primary Apply Record</description>
+        <command name="nifs::dcconfig">
+            <description>Setup a DC Configuration</description>
+            <parameter name="coadds">
+                <channel>dc:obs_ncoadds</channel>
+                <type>INTEGER</type>
+                <description>Number of coadds</description>
+            </parameter>
+            <parameter name="exposureTime">
+                <channel>dc:obs_exposed</channel>
+                <type>DOUBLE</type>
+                <description>Exposure time  (Requested)</description>
+            </parameter>
+            <parameter name="numberOfFowSamples">
+                <channel>dc:obs_nfowler</channel>
+                <type>INTEGER</type>
+                <description>Number of fowler samples  </description>
+            </parameter>
+            <parameter name="period">
+                <channel>dc:obs_period</channel>
+                <type>DOUBLE</type>
+                <description>Period</description>
+            </parameter>
+            <parameter name="readMode">
+                <channel>dc:obs_readMode</channel>
+                <type>INTEGER</type>
+                <description>Read mode (0=dcs, 1=fowler, 2=linear, 3=linear)</description>
+            </parameter>
+            <parameter name="numberOfResets">
+                <channel>dc:obs_nresets</channel>
+                <type>INTEGER</type>
+                <description>Number of resets</description>
+            </parameter>
+            <parameter name="numberOfPeriods">
+                <channel>dc:obs_nperiods</channel>
+                <type>INTEGER</type>
+                <description>Number of periods</description>
+            </parameter>
+            <parameter name="timeMode">
+                <channel>dc:obs_timeMode</channel>
+                <type>INTEGER</type>
+                <description>Which variable (0=exposure time, 1=period, 2=nr of periods) to calculate</description>
+            </parameter>
+        </command>
+        <command name="nifs::abort">
+            <record>dc:abort</record>
+            <description>Abort observation</description>
+        </command>
+        <command name="nifs::stop">
+            <record>dc:stop</record>
+            <description>Stop observation</description>
+        </command>
+        <command name="nifs::pause">
+            <record>dc:pause</record>
+            <description>Pause observation</description>
+        </command>
+        <command name="nifs::continue">
+            <record>dc:continue</record>
+            <description>Continue observation</description>
+        </command>
+        <command name="nifs::observe">
+            <description>Observe</description>
+            <parameter name="label">
+                <channel>dc:observe.A</channel>
+                <type>STRING</type>
+                <description>DHS data label</description>
+            </parameter>
+        </command>
+        <command name="nifs::endObserve">
+            <record>dc:endObserve</record>
+            <description>End Observe</description>
+        </command>
+    </Apply>
+    <Apply name="nifs::apply">
+        <top>nifs</top>
+        <apply>apply</apply>
+        <car>applyC</car>
+        <description>IS Primary Apply Record </description>
+        <command name="nifs::config">
+            <description>Setup a Configuration</description>
+            <parameter name="disperser">
+                <channel>cc:gratSel.A</channel>
+                <type>STRING</type>
+                <description>Disperser/Grating</description>
+            </parameter>
+            <parameter name="filter">
+                <channel>cc:filtSel.A</channel>
+                <type>STRING</type>
+                <description>Filter</description>
+            </parameter>
+            <parameter name="windowCover">
+                <channel>cc:covSel.A</channel>
+                <type>STRING</type>
+                <description>Window Cover</description>
+            </parameter>
+            <parameter name="maskOffset">
+                <channel>cc:foplMoveOff.A</channel>
+                <type>DOUBLE</type>
+                <description>mask offset</description>
+            </parameter>
+            <parameter name="imagingMirror">
+                <channel>cc:flipSel.A</channel>
+                <type>STRING</type>
+                <description>Imaging (flip) mirror</description>
+            </parameter>
+            <parameter name="mask">
+                <channel>cc:foplSel.A</channel>
+                <type>STRING</type>
+                <description>Focal plane mask</description>
+            </parameter>
+            <parameter name="centralWavelength">
+                <channel>cc:gratMoveOff.A</channel>
+                <type>DOUBLE</type>
+                <description>Disperser/Grating central wavelength</description>
+            </parameter>
+        </command>
+    </Apply>
+    <Status name="nifs::dcstatus">
+        <top>nifs</top>
+        <description>nifs status</description>
+        <attribute name="exposureTime">
+            <channel>sad:dc:obs_exposedRQ</channel>
+            <type>DOUBLE</type>
+            <description>Exposure time  (Requested)</description>
+        </attribute>
+        <attribute name="exposedTime">
+            <channel>sad:dc:obs_exposed</channel>
+            <type>DOUBLE</type>
+            <description>Time exposed</description>
+        </attribute>
+        <attribute name="numberOfResets">
+            <channel>sad:dc:obs_nresets</channel>
+            <type>INTEGER</type>
+            <description>Number of resets</description>
+        </attribute>
+        <attribute name="readMode">
+            <channel>sad:dc:obs_readMode</channel>
+            <type>STRING</type>
+            <description>Read mode (0=dcs, 1=fowler, 2=linear, 3=linear)</description>
+        </attribute>
+        <attribute name="numberOfFowSamples">
+            <channel>sad:dc:obs_nfowler</channel>
+            <type>INTEGER</type>
+            <description>Number of fowler samples  </description>
+        </attribute>
+        <attribute name="coadds">
+            <channel>sad:dc:obs_ncoadds</channel>
+            <type>INTEGER</type>
+            <description>Number of coadds</description>
+        </attribute>
+        <attribute name="period">
+            <channel>sad:dc:obs_period.VAL</channel>
+            <type>DOUBLE</type>
+            <description>Period</description>
+        </attribute>
+        <attribute name="countdown">
+            <channel>sad:dc:timeLeft</channel>
+            <type>DOUBLE</type>
+            <description>countdown</description>
+        </attribute>
+        <attribute name="numberOfPeriods">
+            <channel>sad:dc:obs_nperiods</channel>
+            <type>INTEGER</type>
+            <description>Number of periods</description>
+        </attribute>
+        <attribute name="timeMode">
+            <channel>sad:dc:obs_timeMode</channel>
+            <type>STRING</type>
+            <description>Which variable (0=exposure time, 1=period, 2=nr of periods) to calculate</description>
+        </attribute>
+        <!--<attribute name="dhsConnected">-->
+            <!--<channel>sad:dc:dhsConnO</channel>-->
+            <!--<type>STRING</type>-->
+            <!--<description>dhs connection</description>-->
+        <!--</attribute>-->
+    </Status>
+    <Status name="nifs::status">
+        <top>nifs</top>
+        <description>nifs status</description>
+        <attribute name="centralWavelength">
+            <channel>sad:cc:gratCurOffset</channel>
+            <type>DOUBLE</type>
+            <description>Disperser/Grating central wavelength</description>
+        </attribute>
+        <attribute name="disperser">
+            <channel>sad:cc:gratName</channel>
+            <type>STRING</type>
+            <description>Disperser/Grating</description>
+        </attribute>
+        <attribute name="imagingMirror">
+            <channel>sad:cc:flipName</channel>
+            <type>STRING</type>
+            <description>Imaging (flip) mirror</description>
+        </attribute>
+        <attribute name="mask">
+            <channel>sad:cc:foplName</channel>
+            <type>STRING</type>
+            <description>Focal plane mask  	</description>
+        </attribute>
+        <attribute name="lastSelDisp">
+            <channel>cc:gratSelLut</channel>
+            <type>STRING</type>
+            <description>Last selected position of the disperser</description>
+        </attribute>
+        <attribute name="lastSelMask">
+            <channel>cc:foplSelLut</channel>
+            <type>STRING</type>
+            <description>Last selected position of the mask</description>
+        </attribute>
+        <attribute name="maskOffset">
+            <channel>sad:cc:foplCurOffset</channel>
+            <type>DOUBLE</type>
+            <description>Mask offset   </description>
+        </attribute>
+        <attribute name="filter">
+            <channel>sad:cc:filtName</channel>
+            <type>STRING</type>
+            <description>Filter  </description>
+        </attribute>
+    </Status>
+</Records>
