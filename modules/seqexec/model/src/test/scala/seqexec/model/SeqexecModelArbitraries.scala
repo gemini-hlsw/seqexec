@@ -381,11 +381,11 @@ trait SeqexecModelArbitraries extends ArbObservation {
     Cogen[Observation.Id].contramap(_.sid)
 
   implicit val rfArb = Arbitrary[RequestFailed] {
-    Gen.alphaStr.map(RequestFailed.apply)
+    arbitrary[List[String]].map(RequestFailed.apply)
   }
 
   implicit val rfCogen: Cogen[RequestFailed] =
-    Cogen[String].contramap(_.msg)
+    Cogen[List[String]].contramap(_.msgs)
 
   implicit val inArb = Arbitrary[InstrumentInUse] {
     for {
@@ -547,12 +547,13 @@ trait SeqexecModelArbitraries extends ArbObservation {
         o <- arbitrary[Observation.Id]
         s <- arbitrary[StepId]
         r <- arbitrary[Resource]
-      } yield SingleActionOp.Error(o, s, r)
+        m <- arbitrary[String]
+      } yield SingleActionOp.Error(o, s, r, m)
     }
 
   implicit val saoErrorCogen: Cogen[SingleActionOp.Error] =
-    Cogen[(Observation.Id, StepId, Resource)]
-      .contramap(x => (x.sid, x.stepId, x.resource))
+    Cogen[(Observation.Id, StepId, Resource, String)]
+      .contramap(x => (x.sid, x.stepId, x.resource, x.msg))
 
   implicit val saoArb = Arbitrary[SingleActionOp] {
     for {

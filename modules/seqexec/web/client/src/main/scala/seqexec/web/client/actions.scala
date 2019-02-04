@@ -80,7 +80,8 @@ object actions {
       extends Action
   final case class RunResourceFailed(id:       Observation.Id,
                                      step:     StepId,
-                                     resource: Resource)
+                                     resource: Resource,
+                                     msg:      String)
       extends Action
 
   final case class RunStarted(s:           Observation.Id) extends Action

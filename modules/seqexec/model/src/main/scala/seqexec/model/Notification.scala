@@ -36,11 +36,8 @@ object Notification {
         s"Cannot select sequence '${sid.format}' for instrument '${ins.label}",
         "Possibly another sequence is being executed on the same instrument"
       )
-    case RequestFailed(msg) =>
-      List(
-        s"Request to the seqexec server failed:",
-        msg
-      )
+    case RequestFailed(msgs) =>
+      s"Request to the seqexec server failed:" :: msgs
   }
 }
 
@@ -61,9 +58,9 @@ object InstrumentInUse {
 }
 
 // Notification that a request to the backend failed
-final case class RequestFailed(msg: String) extends Notification
+final case class RequestFailed(msgs: List[String]) extends Notification
 
 object RequestFailed {
   implicit lazy val eq: Eq[RequestFailed] =
-    Eq.by(_.msg)
+    Eq.by(_.msgs)
 }

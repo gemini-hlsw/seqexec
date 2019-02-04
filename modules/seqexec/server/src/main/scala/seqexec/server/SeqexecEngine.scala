@@ -891,8 +891,8 @@ object SeqexecEngine extends SeqexecConfiguration {
           svs)
         case engine.SingleRunCompleted(c, _) =>
           singleActionEvent[SingleActionOp.Completed](c, qState, SingleActionOp.Completed)
-        case engine.SingleRunFailed(c, _)   =>
-          singleActionEvent[SingleActionOp.Error](c, qState, SingleActionOp.Error)
+        case engine.SingleRunFailed(c, r)   =>
+          singleActionEvent[SingleActionOp.Error](c, qState, SingleActionOp.Error.apply(_, _, _, r.msg))
       }
     }
   }
