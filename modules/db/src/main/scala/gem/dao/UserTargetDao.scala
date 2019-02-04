@@ -12,17 +12,23 @@ import gem.syntax.treesetcompanion._
 import cats.implicits._
 import doobie._, doobie.implicits._
 
-import scala.collection.immutable.TreeSet
+import scala.collection.immutable.{ TreeMap, TreeSet }
 
-object UserTargetDao {
+// A target ID and the corresponding user target type.  We use the id to get the
+// actual target.
+final case class ProtoUserTarget(
+  id:         UserTarget.Id,
+  targetId:   Target.Id,
+  targetType: UserTargetType,
+  obsIndex:   Index
+) extends ProtoTargetWrapper[UserTarget.Id, UserTarget] {
 
-  // A target ID and the corresponding user target type.  We use the id to
-  // get the actual target.
-  final case class ProtoUserTarget(targetId: Target.Id, targetType: UserTargetType, oi: Index) {
+  override def wrap(t: Target): UserTarget =
+    UserTarget(t, targetType)
 
-    val toUserTarget: ConnectionIO[Option[UserTarget]] =
-      TargetDao.select(targetId).map { _.map(UserTarget(_, targetType)) }
-  }
+}
+
+object UserTargetDao extends TargetWrapperDao[UserTarget.Id, UserTarget, ProtoUserTarget] {
 
   import EnumeratedMeta._
   import ObservationIdMeta._
@@ -37,47 +43,35 @@ object UserTargetDao {
 
   /** Selects the single `UserTarget` associated with the given id, if any. */
   def select(id: UserTarget.Id): ConnectionIO[Option[UserTarget]] =
-    for {
-      oput <- Statements.select(id).option
-      out  <- oput.fold(Option.empty[UserTarget].pure[ConnectionIO]) { _.toUserTarget }
-    } yield out
+    selectOne(Statements.select(id))
 
-  private def selectAll(
-    targetsQuery: Query0[(UserTarget.Id, ProtoUserTarget)]
-  ): ConnectionIO[List[(Index, (UserTarget.Id, UserTarget))]] =
-    for {
-      puts <- targetsQuery.to[List]                              // List[(UserTarget.Id, ProtoUserTarget)]
-      ots  <- puts.map(_._2.targetId).traverse(TargetDao.select) // List[Option[Target]]
-    } yield puts.zip(ots).flatMap { case ((id, put), ot) =>
-      ot.map(t => (put.oi, (id, UserTarget(t, put.targetType)))).toList
-    }
-
-  private def toUserTargetSet(lst: List[(UserTarget.Id, UserTarget)]): TreeSet[UserTarget] =
-    TreeSet.fromList(lst.unzip._2)
-
-  /** Selects all `UserTarget`s for an observation.
-    */
+  /**
+   * Selects all `UserTarget`s for an observation.
+   */
   def selectObs(oid: Observation.Id): ConnectionIO[TreeSet[UserTarget]] =
-    selectObsWithId(oid).map(toUserTargetSet)
+    selectAll(Statements.selectObs(oid)).map(lst => TreeSet.fromList(wrapAll(lst)))
 
-  /** Selects all `UserTarget`s for an observation paired with the `UserTarget`
-    * id itself.
-    */
-  def selectObsWithId(oid: Observation.Id): ConnectionIO[List[(UserTarget.Id, UserTarget)]] =
-    selectAll(Statements.selectObs(oid)).map(_.unzip._2)
+  /**
+   * Selects all `UserTarget`s for an observation paired with the `UserTarget`
+   * id itself.
+   */
+  def selectObsWithId(oid: Observation.Id): ConnectionIO[TreeMap[UserTarget.Id, UserTarget]] =
+    selectAll(Statements.selectObs(oid)).map(groupById)
 
-  /** Selects all `UserTarget`s for a program.
-    */
+  /**
+   * Selects all `UserTarget`s for a program.
+   */
   def selectProg(pid: Program.Id): ConnectionIO[Map[Index, TreeSet[UserTarget]]] =
-    selectProgWithId(pid).map(_.mapValues(toUserTargetSet))
+    selectAll(Statements.selectProg(pid))
+      .map(groupAndMap(_.obsIndex, lst => TreeSet.fromList(wrapAll(lst))))
 
-  /** Selects all `UserTarget`s for a program paired with the `UserTarget` id
-    * itself.
-    */
-  def selectProgWithId(pid: Program.Id): ConnectionIO[Map[Index, List[(UserTarget.Id, UserTarget)]]] =
-    selectAll(Statements.selectProg(pid)).map {
-      _.groupBy(_._1).mapValues(_.unzip._2)
-    }
+  /**
+   * Selects all `UserTarget`s for a program paired with the `UserTarget` id
+   * itself.
+   */
+  def selectProgWithId(pid: Program.Id): ConnectionIO[TreeMap[Index, TreeMap[UserTarget.Id, UserTarget]]] =
+    selectAll(Statements.selectProg(pid))
+      .map(groupAndMap(_.obsIndex, groupById))
 
 
   object Statements {
@@ -104,14 +98,15 @@ object UserTargetDao {
 
     def select(id: UserTarget.Id): Query0[ProtoUserTarget] =
       sql"""
-        SELECT target_id,
+        SELECT id,
+               target_id,
                user_target_type,
                observation_index
           FROM user_target
          WHERE id = $id
       """.query[ProtoUserTarget]
 
-    def selectObs(oid: Observation.Id): Query0[(UserTarget.Id, ProtoUserTarget)] =
+    def selectObs(oid: Observation.Id): Query0[ProtoUserTarget] =
       sql"""
         SELECT id,
                target_id,
@@ -119,9 +114,9 @@ object UserTargetDao {
                observation_index
           FROM user_target
          WHERE program_id = ${oid.pid} AND observation_index = ${oid.index}
-      """.query[(UserTarget.Id, ProtoUserTarget)]
+      """.query[ProtoUserTarget]
 
-    def selectProg(pid: Program.Id): Query0[(UserTarget.Id, ProtoUserTarget)] =
+    def selectProg(pid: Program.Id): Query0[ProtoUserTarget] =
       sql"""
         SELECT id,
                target_id,
@@ -129,7 +124,7 @@ object UserTargetDao {
                observation_index
           FROM user_target
          WHERE program_id = $pid
-      """.query[(UserTarget.Id, ProtoUserTarget)]
+      """.query[ProtoUserTarget]
 
   }
 }
