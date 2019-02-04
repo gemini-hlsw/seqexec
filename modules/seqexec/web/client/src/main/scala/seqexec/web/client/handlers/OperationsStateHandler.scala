@@ -70,7 +70,7 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
     case RunSyncFailed(id) =>
       val msg = s"Failed to sync sequence ${id.format}"
       val notification = Effect(
-        Future(RequestFailedNotification(RequestFailed(msg))))
+        Future(RequestFailedNotification(RequestFailed(List(msg)))))
       updated(value.markOperations(
                 id,
                 TabOperations.syncRequested.set(SyncOperation.SyncIdle)),
@@ -79,16 +79,16 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
     case RunPauseFailed(id) =>
       val msg = s"Failed to pause sequence ${id.format}"
       val notification = Effect(
-        Future(RequestFailedNotification(RequestFailed(msg))))
+        Future(RequestFailedNotification(RequestFailed(List(msg)))))
       updated(value.markOperations(
                 id,
                 TabOperations.pauseRequested.set(PauseOperation.PauseIdle)),
               notification)
 
-    case RunResourceFailed(id, _, r) =>
-      val msg = s"Failed to run ${r.show} for sequence ${id.format}"
+    case RunResourceFailed(id, _, r, m) =>
+      val msg = s"Failed to configure ${r.show} for sequence ${id.format}"
       val notification = Effect(
-        Future(RequestFailedNotification(RequestFailed(msg))))
+        Future(RequestFailedNotification(RequestFailed(List(msg, m)))))
       updated(value.markOperations(id, TabOperations.resourceRun(r).set(none)),
               notification)
   }
@@ -99,7 +99,5 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
   }
 
   override def handle: PartialFunction[Any, ActionResult[M]] =
-    List(handleRequestOperation,
-         handleOperationResult,
-         handleSelectedStep).combineAll
+    List(handleRequestOperation, handleOperationResult, handleSelectedStep).combineAll
 }

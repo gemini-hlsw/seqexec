@@ -119,7 +119,11 @@ class RemoteRequestsHandler[M](modelRW: ModelRW[M, Option[ClientId]])
           id,
           SeqexecWebClient.runResource(step, resource),
           (id: Observation.Id) => RunResource(id, step, resource),
-          (id: Observation.Id) => RunResourceFailed(id, step, resource)
+          (id: Observation.Id) =>
+            RunResourceFailed(id,
+                              step,
+                              resource,
+                              s"Http call to configure ${resource.show} failed")
         ))
   }
 

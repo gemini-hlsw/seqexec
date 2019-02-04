@@ -106,7 +106,7 @@ class QueueOperationsHandler[M](modelRW: ModelRW[M, CalibrationQueues])
     case AllDayCalFailed(qid) =>
       val msg = s"Failed to add all day cal sequences"
       val notification = Effect(
-        Future(RequestFailedNotification(RequestFailed(msg))))
+        Future(RequestFailedNotification(RequestFailed(List(msg)))))
       updatedLE(
         CalibrationQueues.addDayCalL(qid).set(AddDayCalOperation.AddDayCalIdle),
         notification)
@@ -114,7 +114,7 @@ class QueueOperationsHandler[M](modelRW: ModelRW[M, CalibrationQueues])
     case ClearAllCalFailed(qid) =>
       val msg = s"Failed to clear the cal sequences"
       val notification = Effect(
-        Future(RequestFailedNotification(RequestFailed(msg))))
+        Future(RequestFailedNotification(RequestFailed(List(msg)))))
       updatedLE(CalibrationQueues
                   .clearAllCalL(qid)
                   .set(ClearAllCalOperation.ClearAllCalIdle),
@@ -123,14 +123,14 @@ class QueueOperationsHandler[M](modelRW: ModelRW[M, CalibrationQueues])
     case RunCalFailed(qid) =>
       val msg = s"Failed to execute the cal queue"
       val notification = Effect(
-        Future(RequestFailedNotification(RequestFailed(msg))))
+        Future(RequestFailedNotification(RequestFailed(List(msg)))))
       updatedLE(CalibrationQueues.runCalL(qid).set(RunCalOperation.RunCalIdle),
                 notification)
 
     case StopCalFailed(qid) =>
       val msg = s"Failed to stop queue execution"
       val notification = Effect(
-        Future(RequestFailedNotification(RequestFailed(msg))))
+        Future(RequestFailedNotification(RequestFailed(List(msg)))))
       updatedLE(
         CalibrationQueues.stopCalL(qid).set(StopCalOperation.StopCalIdle),
         notification)
@@ -140,7 +140,7 @@ class QueueOperationsHandler[M](modelRW: ModelRW[M, CalibrationQueues])
     case RemoveSeqCalFailed(qid, id) =>
       val msg = s"Failed to remove sequence ${id.format} from the queue"
       val notification = Effect(
-        Future(RequestFailedNotification(RequestFailed(msg))))
+        Future(RequestFailedNotification(RequestFailed(List(msg)))))
       updatedLE(CalibrationQueues.modifyOrAddSeqOps(
                   qid,
                   id,
@@ -150,7 +150,7 @@ class QueueOperationsHandler[M](modelRW: ModelRW[M, CalibrationQueues])
     case MoveCalFailed(qid, id) =>
       val msg = s"Failed to move sequence ${id.format} on the queue"
       val notification = Effect(
-        Future(RequestFailedNotification(RequestFailed(msg))))
+        Future(RequestFailedNotification(RequestFailed(List(msg)))))
       updatedLE(CalibrationQueues.modifyOrAddSeqOps(
                   qid,
                   id,
