@@ -180,6 +180,26 @@
             <!--<type>STRING</type>-->
             <!--<description>dhs connection</description>-->
         <!--</attribute>-->
+        <attribute name="name">
+            <channel>sad:dc:name</channel>
+            <type>STRING</type>
+            <description>DC Name</description>
+        </attribute>
+        <attribute name="expMode">
+            <channel>sad:dc:obs_expMode</channel>
+            <type>STRING</type>
+            <description>Exposure mode</description>
+        </attribute>
+        <attribute name="readTime">
+            <channel>sad:dc:obs_readTime</channel>
+            <type>DOUBLE</type>
+            <description>Read time</description>
+        </attribute>
+        <attribute name="biasPwr">
+            <channel>sad:dc:VBIASPWR</channel>
+            <type>DOUBLE</type>
+            <description>Source voltage of bias P-FET</description>
+        </attribute>
     </Status>
     <Status name="nifs::status">
         <top>nifs</top>

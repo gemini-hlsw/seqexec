@@ -142,6 +142,15 @@ class NifsEpics(epicsService: CaService, tops: Map[String, String]) {
   val dhsConnectedAttr: CaAttribute[DhsConnected] = dcStatus.addEnum[DhsConnected]("dhsConnected",
     s"${NifsTop}sad:dc:dhsConnO", classOf[DhsConnected])
 
+  def dcName: Option[String] = Option(dcStatus.getStringAttribute("name").value)
+
+  def exposureMode: Option[String] = Option(dcStatus.getStringAttribute("expMode").value)
+
+  def readTime: Option[Double] = Option(dcStatus.getDoubleAttribute("readTime").value)
+    .map(_.toDouble)
+
+  def biasPwr: Option[Double] = Option(dcStatus.getDoubleAttribute("biasPwr").value)
+    .map(_.toDouble)
 
   val ccStatus: CaStatusAcceptor = epicsService.getStatusAcceptor("nifs::status")
 
