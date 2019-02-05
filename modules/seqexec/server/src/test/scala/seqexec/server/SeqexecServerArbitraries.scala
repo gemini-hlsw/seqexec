@@ -442,6 +442,4 @@ object SeqexecServerArbitraries extends ArbTime {
   implicit val executionQueueCogen: Cogen[ExecutionQueue] =
     Cogen[(String, BatchCommandState, List[Observation.Id])]
       .contramap(x => (x.name, x.cmdState, x.queue))
-
-
 }
