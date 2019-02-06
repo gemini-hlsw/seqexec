@@ -63,6 +63,9 @@
         <logger name="io.netty" level="INFO">
             <appender-ref ref="ASYNC500" />
         </logger>
+        <logger name="org.asynchttpclient.netty" level="INFO">
+            <appender-ref ref="ASYNC500" />
+        </logger>
 
     </then>
     <else>
@@ -77,6 +80,9 @@
             <appender-ref ref="STDOUT" />
         </logger>
         <logger name="io.netty" level="INFO">
+            <appender-ref ref="STDOUT" />
+        </logger>
+        <logger name="org.asynchttpclient.netty" level="INFO">
             <appender-ref ref="STDOUT" />
         </logger>
 
