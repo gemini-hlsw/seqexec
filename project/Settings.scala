@@ -83,7 +83,7 @@ object Settings {
 
     // Scala libraries
     val catsEffectVersion       = "1.2.0"
-    val catsVersion             = "1.5.0"
+    val catsVersion             = "1.6.0"
     val mouseVersion            = "0.20"
     val fs2Version              = "1.0.3"
     val shapelessVersion        = "2.3.3"
@@ -98,7 +98,7 @@ object Settings {
     val unboundId               = "3.2.1"
     val jwt                     = "1.1.0"
     val slf4j                   = "1.7.25"
-    val log4s                   = "1.6.1"
+    val log4s                   = "1.7.0"
     val logback                 = "1.2.3"
     val janino                  = "3.0.12"
     val logstash                = "5.3"
