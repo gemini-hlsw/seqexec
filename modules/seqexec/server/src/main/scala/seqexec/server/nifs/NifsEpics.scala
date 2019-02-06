@@ -11,6 +11,7 @@ import java.lang.{Double => JDouble}
 import org.log4s.{Logger, getLogger}
 import seqexec.server.EpicsCommand.setParameter
 import seqexec.server.{EpicsCommand, EpicsSystem, ObserveCommand, SeqAction}
+import seqexec.server.EpicsCommandF
 import seqexec.server.EpicsUtil.safeAttribute
 import seqexec.server.EpicsUtil.safeAttributeSDouble
 import seqexec.server.EpicsUtil.safeAttributeSInt
@@ -81,7 +82,7 @@ class NifsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, String]) 
     "nifs::observeCmd", s"${NifsTop}dc:nifsApply", s"${NifsTop}dc:applyC", s"${NifsTop}dc:observeC",
     true, s"${NifsTop}dc:stop", s"${NifsTop}dc:abort", ""))
 
-  object stopCmd extends EpicsCommand {
+  object stopCmd extends EpicsCommandF {
     override protected val cs: Option[CaCommandSender] = stopCS
   }
 
@@ -92,7 +93,7 @@ class NifsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, String]) 
 
   private val abortCS: Option[CaCommandSender] = Option(epicsService.getCommandSender("nifs::abort"))
 
-  object abortCmd extends EpicsCommand {
+  object abortCmd extends EpicsCommandF {
     override protected val cs: Option[CaCommandSender] = abortCS
   }
 
@@ -110,7 +111,7 @@ class NifsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, String]) 
     def setLabel(v: String): SeqAction[Unit] = setParameter(label, v)
   }
 
-  object endObserveCmd extends EpicsCommand {
+  object endObserveCmd extends EpicsCommandF {
     override val cs: Option[CaCommandSender] = Option(
       epicsService.getCommandSender("nifs::endObserve"))
   }
