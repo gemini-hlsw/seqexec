@@ -9,7 +9,6 @@ import seqexec.server.InstrumentSystem.ElapsedTime
 import seqexec.server.nifs.NifsController.DCConfig
 import seqexec.server.nifs.NifsController.NifsConfig
 import seqexec.server.InstrumentControllerSim
-import seqexec.server.InstrumentControllerSim._
 import seqexec.server.ObserveCommand
 import seqexec.server.Progress
 import squants.Time
@@ -26,13 +25,13 @@ object NifsControllerSim extends NifsController[IO] {
       .getOrElse(ObserveCommand.Aborted)
 
   override def applyConfig(config: NifsConfig): IO[Unit] =
-    sim.applyConfig(config).orSimulationError
+    sim.applyConfig(config).liftF
 
-  override def stopObserve: IO[Unit] = sim.stopObserve.orSimulationError
+  override def stopObserve: IO[Unit] = sim.stopObserve.liftF
 
-  override def abortObserve: IO[Unit] = sim.abortObserve.orSimulationError
+  override def abortObserve: IO[Unit] = sim.abortObserve.liftF
 
-  override def endObserve: IO[Unit] = sim.endObserve.orSimulationError
+  override def endObserve: IO[Unit] = sim.endObserve.liftF
 
   override def observeProgress(total: Time): fs2.Stream[IO, Progress] =
     sim.observeCountdown(total, ElapsedTime(0.seconds)).streamLiftIO[IO]

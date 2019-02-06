@@ -64,7 +64,7 @@ final case class Nifs[F[_]: LiftIO: Sync](controller: NifsController[IO], // TOD
     Reader { fileId =>
       SeqActionF
         .either(getDCConfig(config).asTrySeq)
-        .flatMap(x => SeqActionF.liftIO(controller.observe(fileId, x)))
+        .flatMap(x => SeqActionF.embed(controller.observe(fileId, x)))
     }
 
   override def calcObserveTime(config: Config): Time =
@@ -90,13 +90,13 @@ final case class Nifs[F[_]: LiftIO: Sync](controller: NifsController[IO], // TOD
   override def configure(config: Config): SeqActionF[F, ConfigResult[F]] =
     SeqActionF
       .either(fromSequenceConfig(config))
-      .flatMap(x => SeqActionF.liftIO(controller.applyConfig(x)))
+      .flatMap(x => SeqActionF.embed(controller.applyConfig(x)))
       .as(ConfigResult(this))
 
   override def notifyObserveStart: SeqActionF[F, Unit] = SeqActionF.void
 
   override def notifyObserveEnd: SeqActionF[F, Unit] =
-    SeqActionF.liftIO(controller.endObserve)
+    SeqActionF.embed(controller.endObserve)
 }
 
 object Nifs {

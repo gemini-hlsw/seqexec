@@ -13,6 +13,7 @@ import cats.ApplicativeError
 import cats.Eq
 import cats.Endo
 import cats.Functor
+import cats.MonadError
 import cats.~>
 import edu.gemini.spModel.`type`.SequenceableSpType
 import edu.gemini.spModel.guide.StandardGuideOptions
@@ -178,19 +179,22 @@ package object server {
     def apply[F[_]: Sync, A](a: => A): SeqActionF[F, A] =
       EitherT(Sync[F].delay(TrySeq(a)))
     def liftF[F[_]: Functor, A](a:          => F[A]): SeqActionF[F, A] = EitherT.liftF(a)
-    def liftIO[F[_]: LiftIO: Functor, A](a: => IO[A]): SeqActionF[F, A] =
-      EitherT.liftF(LiftIO[F].liftIO(a))
+
+    // embed ill take an IO and convert it to SeqActionF
+    // The semantics of error handling are:
+    // * if the IO has failed with a known exception type put it on the left of the EitherT
+    // * For non fatal exceptions, they are wrapped in a SeqexecException
+    // * Fatal exceptions are propagated
+    def embed[F[_]: LiftIO, A](a: => IO[A]): SeqActionF[F, A] =
+      EitherT(LiftIO[F].liftIO(a.attempt.map(_.leftMap {
+        case e: SeqexecFailure => e
+        case r                 => SeqexecFailure.SeqexecException(r)
+      })))
+
     def either[F[_]: Sync, A](a: => TrySeq[A]): SeqActionF[F, A] =
       EitherT(Sync[F].delay(a))
     def void[F[_]: Applicative]: SeqActionF[F, Unit] =
       EitherT.liftF(Applicative[F].pure(()))
-
-    implicit def SeqActionFLiftIO[F[_]: LiftIO: Functor]
-      : LiftIO[SeqActionF[F, ?]] =
-      new LiftIO[SeqActionF[F, ?]] {
-        override def liftIO[A](ioa: IO[A]): SeqActionF[F, A] =
-          SeqActionF.liftIO(ioa)
-      }
   }
 
   implicit class StreamIOOps[A](s: Stream[IO, A]) {
@@ -201,6 +205,10 @@ package object server {
   implicit class MoreDisjunctionOps[A, B](ab: Either[A, B]) {
     def validationNel: ValidatedNel[A, B] =
       ab.fold(a => Validated.Invalid(NonEmptyList.of(a)), b => Validated.Valid(b))
+  }
+
+  implicit class EitherTFailureOps[F[_]: MonadError[?[_], Throwable], A](s: EitherT[F, SeqexecFailure, A]) {
+    def liftF: F[A] = s.value.flatMap(_.liftTo[F])
   }
 
   // This assumes that there is only one instance of e in l
