@@ -3,12 +3,13 @@
 
 package seqexec.server.gcal
 
+import cats.Applicative
 import cats.effect.Sync
 import gem.Observation
 import gem.enum.KeywordName
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.keywords._
-import seqexec.server.{InstrumentSystem, SeqActionF}
+import seqexec.server.InstrumentSystem
 
 object GcalHeader {
   implicit def header[F[_]: Sync](inst: InstrumentSystem[F], gcalReader: GcalKeywordReader[F]): Header[F] =
@@ -21,9 +22,9 @@ object GcalHeader {
       )
 
       override def sendBefore(obsId: Observation.Id,
-                              id: ImageFileId): SeqActionF[F, Unit] =
+                              id: ImageFileId): F[Unit] =
         sendKeywords(id, inst, gcalKeywords)
 
-      override def sendAfter(id: ImageFileId): SeqActionF[F, Unit] = SeqActionF.void[F]
+      override def sendAfter(id: ImageFileId): F[Unit] = Applicative[F].unit
     }
 }

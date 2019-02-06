@@ -3,17 +3,19 @@
 
 package seqexec.server.gws
 
+import cats.Applicative
+import cats.implicits._
 import cats.effect.Sync
 import gem.Observation
 import gem.enum.KeywordName
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.keywords._
-import seqexec.server.{EpicsHealth, InstrumentSystem, SeqActionF}
+import seqexec.server.{EpicsHealth, InstrumentSystem}
 
 object GwsHeader {
-  def header[F[_]: Sync](inst: InstrumentSystem[F], gwsReader: GwsKeywordReader[F]): Header[F] = new Header[F] {
-    override def sendBefore(obsId: Observation.Id, id: ImageFileId): SeqActionF[F, Unit] = {
-      gwsReader.getHealth.flatMap {
+  def header[F[_]: Sync: cats.Monad](inst: InstrumentSystem[F], gwsReader: GwsKeywordReader[F]): Header[F] = new Header[F] {
+    override def sendBefore(obsId: Observation.Id, id: ImageFileId): F[Unit] = {
+      gwsReader.getHealth.liftF.flatMap {
         case Some(EpicsHealth.Good) => sendKeywords[F](id, inst, List(
           buildDouble(gwsReader.getHumidity.orDefault, KeywordName.HUMIDITY),
           {
@@ -53,10 +55,10 @@ object GwsHeader {
             buildDouble(x.orDefault, KeywordName.WINDDIRE)
           }
         ))
-        case _       => SeqActionF.void[F]
+        case _       => Applicative[F].unit
       }
     }
 
-    override def sendAfter(id: ImageFileId): SeqActionF[F, Unit] = SeqActionF.void[F]
+    override def sendAfter(id: ImageFileId): F[Unit] = Applicative[F].unit
   }
 }

@@ -6,7 +6,6 @@ package seqexec.server.nifs
 import cats.Applicative
 import gem.Observation
 import seqexec.model.dhs.ImageFileId
-import seqexec.server.SeqActionF
 import seqexec.server.keywords._
 
 object NifsHeader {
@@ -14,10 +13,10 @@ object NifsHeader {
   def header[F[_]: Applicative]: Header[F] =
     new Header[F] {
       override def sendBefore(obsId: Observation.Id,
-                              id: ImageFileId): SeqActionF[F, Unit] =
-        SeqActionF.void[F]
+                              id: ImageFileId): F[Unit] =
+        Applicative[F].unit
 
-      override def sendAfter(id: ImageFileId): SeqActionF[F, Unit] =
-        SeqActionF.void[F]
+      override def sendAfter(id: ImageFileId): F[Unit] =
+        Applicative[F].unit
     }
 }

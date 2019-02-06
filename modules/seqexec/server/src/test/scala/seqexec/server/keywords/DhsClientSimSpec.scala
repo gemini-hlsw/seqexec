@@ -11,17 +11,14 @@ import seqexec.server.keywords.DhsClient.Permanent
 
 class DhsClientSimSpec extends FlatSpec with Matchers {
   "DhsClientSim" should "produce data labels for today" in {
-      DhsClientSim[IO](LocalDate.of(2016, 4, 15)).createImage(DhsClient.ImageParameters(Permanent, Nil)).value.unsafeRunSync() should matchPattern {
-        case Right("S20160415S0001") =>
+      DhsClientSim[IO](LocalDate.of(2016, 4, 15)).createImage(DhsClient.ImageParameters(Permanent, Nil)).unsafeRunSync() should matchPattern {
+        case "S20160415S0001" =>
       }
     }
   it should "accept keywords" in {
     val client = DhsClientSim[IO](LocalDate.of(2016, 4, 15))
-    client.createImage(DhsClient.ImageParameters(Permanent, Nil)).value.unsafeRunSync().fold(
-      _ => fail(),
-      id => client.setKeywords(id, KeywordBag(Int32Keyword(KeywordName.TELESCOP, 10)), finalFlag = true).value.unsafeRunSync() should matchPattern {
-        case Right(()) =>
-      }
-    )
+    client.createImage(DhsClient.ImageParameters(Permanent, Nil)).flatMap { id =>
+      client.setKeywords(id, KeywordBag(Int32Keyword(KeywordName.TELESCOP, 10)), finalFlag = true)
+    }.unsafeRunSync() shouldEqual (())
   }
 }

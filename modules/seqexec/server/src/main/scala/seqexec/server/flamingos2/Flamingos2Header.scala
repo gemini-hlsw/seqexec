@@ -3,6 +3,7 @@
 
 package seqexec.server.flamingos2
 
+import cats.Applicative
 import cats.data.EitherT
 import cats.effect.IO
 import cats.effect.Sync
@@ -30,7 +31,7 @@ import cats.implicits._
 object Flamingos2Header {
   def header[F[_]: Sync](inst: InstrumentSystem[F], f2ObsReader: Flamingos2Header.ObsKeywordsReader[F], tcsKeywordsReader: TcsKeywordsReader[F]): Header[F] =
     new Header[F] {
-      override def sendBefore(obsId: Observation.Id, id: ImageFileId): SeqActionF[F, Unit] =  {
+      override def sendBefore(obsId: Observation.Id, id: ImageFileId): F[Unit] =  {
         sendKeywords(id, inst, List(
           buildBoolean(f2ObsReader.getPreimage.map(_.toBoolean), KeywordName.PREIMAGE),
           buildString(SeqActionF(LocalDate.now.format(DateTimeFormatter.ISO_LOCAL_DATE)), KeywordName.DATE_OBS),
@@ -48,7 +49,7 @@ object Flamingos2Header {
         )
       }
 
-      override def sendAfter(id: ImageFileId): SeqActionF[F, Unit] = SeqActionF.void
+      override def sendAfter(id: ImageFileId): F[Unit] = Applicative[F].unit
     }
 
   trait ObsKeywordsReader[F[_]] {

@@ -6,8 +6,8 @@ package seqexec.server
 import cats._
 import cats.data.{EitherT, NonEmptyList, Reader}
 import cats.effect.{ IO, Concurrent, Timer }
+import cats.effect.LiftIO
 import cats.implicits._
-
 import edu.gemini.seqexec.odb.{ExecutedDataset, SeqexecSequence}
 import edu.gemini.spModel.ao.AOConstants._
 import edu.gemini.spModel.config2.{Config, ItemKey}
@@ -39,6 +39,8 @@ import seqexec.server.tcs.TcsController.ScienceFoldPosition
 import seqexec.server.gnirs._
 import seqexec.server.niri._
 import seqexec.server.nifs._
+import seqexec.server.SeqexecFailure._
+import seqexec.server._
 import squants.Time
 import squants.time.TimeConversions._
 
@@ -50,8 +52,8 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
   import SeqTranslate._
 
   // All instruments ask the DHS for an ImageFileId
-  private def dhsFileId(inst: InstrumentSystem[IO]): SeqAction[ImageFileId] =
-    systems.dhs.createImage(DhsClient.ImageParameters(DhsClient.Permanent, List(inst.contributorName, "dhs-http")))
+  private def dhsFileId[F[_]: LiftIO](inst: InstrumentSystem[F]): SeqActionF[F, ImageFileId] =
+    systems.dhs.createImage(DhsClient.ImageParameters(DhsClient.Permanent, List(inst.contributorName, "dhs-http"))).embed
 
   private def sendDataStart(obsId: Observation.Id, imageFileId: ImageFileId, dataId: String): SeqAction[Unit] =
     systems.odb.datasetStart(obsId, dataId, imageFileId).flatMap{
@@ -88,15 +90,15 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
     // endObserve must be sent to the instrument too.
     def notifyObserveEnd: SeqAction[Unit] = (inst +: otherSys).map(_.notifyObserveEnd).sequence.void
 
-    def closeImage(id: ImageFileId): SeqAction[Unit] =
-      inst.keywordsClient.closeImage(id)
+    def closeImage[F[_]: LiftIO](id: ImageFileId): SeqActionF[F, Unit] =
+      SeqActionF.embed(inst.keywordsClient.closeImage(id))
 
     def doObserve(fileId: ImageFileId): SeqAction[Result] =
       for {
         d   <- dataId
         _   <- sendDataStart(obsId, fileId, d)
         _   <- notifyObserveStart
-        _   <- headers(ctx).map(_.sendBefore(obsId, fileId)).sequence
+        _   <- headers(ctx).map(_.sendBefore(obsId, fileId)).sequence.embed
         _   <- info(s"Start ${inst.resource.show} observation ${obsId.format} with label $fileId")
         r   <- inst.observe(config)(fileId)
         _   <- info(s"Completed ${inst.resource.show} observation ${obsId.format} with label $fileId")
@@ -106,7 +108,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
     def observeTail(id: ImageFileId, dataId: String)(r: ObserveCommand.Result): SeqAction[Result] = {
       val successTail: SeqAction[Result] = for {
         _ <- notifyObserveEnd
-        _ <- headers(ctx).reverseMap(_.sendAfter(id)).sequence
+        _ <- headers(ctx).reverseMap(_.sendAfter(id)).sequence.embed
         _ <- closeImage(id)
         _ <- sendDataEnd(obsId, id, dataId)
       } yield Result.OK(Response.Observed(id))

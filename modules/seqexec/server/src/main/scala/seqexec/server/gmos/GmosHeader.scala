@@ -24,7 +24,7 @@ object GmosHeader {
   // scalastyle:off
   def header[F[_]: Sync](inst: InstrumentSystem[F], gmosObsReader: GmosHeader.ObsKeywordsReader[F], gmosReader: GmosHeader.InstKeywordsReader[F], tcsKeywordsReader: TcsKeywordsReader[F]): Header[F] =
     new Header[F] {
-      override def sendBefore(obsId: Observation.Id, id: ImageFileId): SeqActionF[F, Unit] = {
+      override def sendBefore(obsId: Observation.Id, id: ImageFileId): F[Unit] = {
         sendKeywords(id, inst, List(
           buildInt32(tcsKeywordsReader.getGmosInstPort.orDefault, KeywordName.INPORT),
           buildString(gmosReader.ccName, KeywordName.GMOSCC),
@@ -61,7 +61,7 @@ object GmosHeader {
       private val InBeam: Int = 0
       private def readMaskName: SeqActionF[F, String] = gmosReader.maskLoc.flatMap{v => if(v === InBeam) gmosReader.maskName else SeqActionF("None")}
 
-      override def sendAfter(id: ImageFileId): SeqActionF[F, Unit] = {
+      override def sendAfter(id: ImageFileId): F[Unit] = {
         sendKeywords(id, inst, List(
           buildInt32(gmosReader.maskId, KeywordName.MASKID),
           buildString(readMaskName, KeywordName.MASKNAME),

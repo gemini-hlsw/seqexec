@@ -5,12 +5,11 @@ package seqexec.server.keywords
 
 import gem.Observation
 import seqexec.model.dhs.ImageFileId
-import seqexec.server.SeqActionF
 
 /**
   * Header implementations know what headers sent before and after an observation
   */
 trait Header[F[_]] {
-  def sendBefore(obsId: Observation.Id, id: ImageFileId): SeqActionF[F, Unit]
-  def sendAfter(id: ImageFileId): SeqActionF[F, Unit]
+  def sendBefore(obsId: Observation.Id, id: ImageFileId): F[Unit]
+  def sendAfter(id: ImageFileId): F[Unit]
 }

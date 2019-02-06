@@ -3,11 +3,12 @@
 
 package seqexec.server.gpi
 
+import cats.Applicative
 import cats.effect.Sync
+import cats.implicits._
 import gem.Observation
 import gem.enum.KeywordName
 import seqexec.model.dhs.ImageFileId
-import seqexec.server.SeqActionF
 import seqexec.server.keywords._
 import seqexec.server.tcs.TcsKeywordsReader
 import seqexec.server.tcs.CRFollow
@@ -20,7 +21,7 @@ object GpiHeader {
              obsKeywordsReader: ObsKeywordsReader[F]): Header[F] =
     new Header[F] {
       override def sendBefore(obsId: Observation.Id,
-                              id: ImageFileId): SeqActionF[F, Unit] = {
+                              id: ImageFileId): F[Unit] = {
         val ks = GdsInstrument.bundleKeywords(
           List(
             buildDouble(tcsKeywordsReader.getParallacticAngle
@@ -39,7 +40,7 @@ object GpiHeader {
         ks.flatMap(gdsClient.openObservation(obsId, id, _))
       }
 
-      override def sendAfter(id: ImageFileId): SeqActionF[F, Unit] =
-        SeqActionF.void[F]
+      override def sendAfter(id: ImageFileId): F[Unit] =
+        Applicative[F].unit
     }
 }
