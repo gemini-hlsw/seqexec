@@ -7,7 +7,6 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.atomic.AtomicInteger
 import org.log4s._
-import cats.Applicative
 import cats.effect.Timer
 import cats.effect.Effect
 import cats.effect.Sync
@@ -179,9 +178,9 @@ class DhsClientSim[F[_]: Sync](date: LocalDate) extends DhsClient[F] {
   val format: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd")
 
   override def createImage(p: ImageParameters): SeqActionF[F, ImageFileId] =
-    EitherT(Applicative[F].pure(
+    EitherT(Sync[F].delay {
       TrySeq(f"S${date.format(format)}S${counter.incrementAndGet()}%04d")
-    ))
+    })
 
   override def setKeywords(id: ImageFileId, keywords: KeywordBag, finalFlag: Boolean): SeqActionF[F, Unit] = EitherT.right(Sync[F].delay(Log.info(keywords.keywords.map(k => s"${k.name} = ${k.value}").mkString(", "))))
 
