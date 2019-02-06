@@ -179,22 +179,22 @@ package object server {
     def apply[F[_]: Sync, A](a: => A): SeqActionF[F, A] =
       EitherT(Sync[F].delay(TrySeq(a)))
     def liftF[F[_]: Functor, A](a:          => F[A]): SeqActionF[F, A] = EitherT.liftF(a)
-    def liftIO[F[_]: LiftIO, A](a: => IO[A]): SeqActionF[F, A] =
+
+    // embed ill take an IO and convert it to SeqActionF
+    // The semantics of error handling are:
+    // * if the IO has failed with a known exception type put it on the left of the EitherT
+    // * For non fatal exceptions, they are wrapped in a SeqexecException
+    // * Fatal exceptions are propagated
+    def embed[F[_]: LiftIO, A](a: => IO[A]): SeqActionF[F, A] =
       EitherT(LiftIO[F].liftIO(a.attempt.map(_.leftMap {
         case e: SeqexecFailure => e
         case r                 => SeqexecFailure.SeqexecException(r)
       })))
+
     def either[F[_]: Sync, A](a: => TrySeq[A]): SeqActionF[F, A] =
       EitherT(Sync[F].delay(a))
     def void[F[_]: Applicative]: SeqActionF[F, Unit] =
       EitherT.liftF(Applicative[F].pure(()))
-
-    implicit def SeqActionFLiftIO[F[_]: LiftIO: Functor]
-      : LiftIO[SeqActionF[F, ?]] =
-      new LiftIO[SeqActionF[F, ?]] {
-        override def liftIO[A](ioa: IO[A]): SeqActionF[F, A] =
-          SeqActionF.liftIO(ioa)
-      }
   }
 
   implicit class StreamIOOps[A](s: Stream[IO, A]) {
