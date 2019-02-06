@@ -10,5 +10,6 @@ final case class TranslateSettings(
   gcalKeywords:  Boolean,
   gmosKeywords:  Boolean,
   gnirsKeywords: Boolean,
-  niriKeywords:  Boolean
+  niriKeywords:  Boolean,
+  nifsKeywords:  Boolean
 )
