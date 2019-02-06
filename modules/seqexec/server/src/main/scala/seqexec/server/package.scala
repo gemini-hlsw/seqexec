@@ -13,7 +13,7 @@ import cats.ApplicativeError
 import cats.Eq
 import cats.Endo
 import cats.Functor
-import cats.FlatMap
+import cats.MonadError
 import cats.~>
 import edu.gemini.spModel.`type`.SequenceableSpType
 import edu.gemini.spModel.guide.StandardGuideOptions
@@ -179,7 +179,7 @@ package object server {
     def apply[F[_]: Sync, A](a: => A): SeqActionF[F, A] =
       EitherT(Sync[F].delay(TrySeq(a)))
     def liftF[F[_]: Functor, A](a:          => F[A]): SeqActionF[F, A] = EitherT.liftF(a)
-    def liftIO[F[_]: LiftIO: Functor, A](a: => IO[A]): SeqActionF[F, A] =
+    def liftIO[F[_]: LiftIO, A](a: => IO[A]): SeqActionF[F, A] =
       EitherT(LiftIO[F].liftIO(a.attempt.map(_.leftMap {
         case e: SeqexecFailure => e
         case r                 => SeqexecFailure.SeqexecException(r)
@@ -207,9 +207,8 @@ package object server {
       ab.fold(a => Validated.Invalid(NonEmptyList.of(a)), b => Validated.Valid(b))
   }
 
-  implicit class EitherTFailureOps[F[_]: FlatMap, A](s: EitherT[F, SeqexecFailure, A]) {
-    def liftF(implicit ev: ApplicativeError[F, Throwable]): F[A] =
-      s.value.flatMap(_.liftTo[F])
+  implicit class EitherTFailureOps[F[_]: MonadError[?[_], Throwable], A](s: EitherT[F, SeqexecFailure, A]) {
+    def liftF: F[A] = s.value.flatMap(_.liftTo[F])
   }
 
   // This assumes that there is only one instance of e in l
