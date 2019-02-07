@@ -227,7 +227,8 @@ package object keywords {
   }
 
   implicit class A2SeqAction[A: DefaultHeaderValue](val v: Option[A]) {
-    def toSeqAction: SeqAction[A] = SeqAction(v.orDefault)
+    // Convert to a SeqAction or use the default
+    def toSeqActionDefault: SeqAction[A] = SeqAction(v.orDefault)
   }
 
   implicit class SeqActionOption2SeqAction[A: DefaultHeaderValue](

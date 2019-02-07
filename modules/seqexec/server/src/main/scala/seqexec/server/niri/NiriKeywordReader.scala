@@ -78,28 +78,28 @@ object NiriKeywordReaderDummy extends NiriKeywordReader[IO] {
 
 object NiriKeywordReaderImpl extends NiriKeywordReader[IO] {
   val sys = NiriEpics.instance
-  override def arrayId: SeqAction[String] = sys.arrayId.toSeqAction
-  override def arrayType: SeqAction[String] = sys.arrayType.toSeqAction
-  override def camera: SeqAction[String] = sys.camera.toSeqAction
-  override def coadds: SeqAction[Int] = sys.coadds.toSeqAction
-  override def exposureTime: SeqAction[Double] = sys.integrationTime.toSeqAction
-  override def filter1: SeqAction[String] = sys.filter1.toSeqAction
-  override def filter2: SeqAction[String] = sys.filter2.toSeqAction
-  override def filter3: SeqAction[String] = sys.filter3.toSeqAction
-  override def focusName: SeqAction[String] = sys.focus.toSeqAction
-  override def focusPosition: SeqAction[Double] = sys.focusPosition.toSeqAction
-  override def focalPlaneMask: SeqAction[String] = sys.mask.toSeqAction
-  override def beamSplitter: SeqAction[String] = sys.beamSplitter.toSeqAction
-  override def windowCover: SeqAction[String] = sys.windowCover.toSeqAction
-  override def framesPerCycle: SeqAction[Int] = sys.framesPerCycle.toSeqAction
-  override def headerTiming: SeqAction[String] = sys.hdrTiming.toSeqAction.map{
+  override def arrayId: SeqAction[String] = sys.arrayId.toSeqActionDefault
+  override def arrayType: SeqAction[String] = sys.arrayType.toSeqActionDefault
+  override def camera: SeqAction[String] = sys.camera.toSeqActionDefault
+  override def coadds: SeqAction[Int] = sys.coadds.toSeqActionDefault
+  override def exposureTime: SeqAction[Double] = sys.integrationTime.toSeqActionDefault
+  override def filter1: SeqAction[String] = sys.filter1.toSeqActionDefault
+  override def filter2: SeqAction[String] = sys.filter2.toSeqActionDefault
+  override def filter3: SeqAction[String] = sys.filter3.toSeqActionDefault
+  override def focusName: SeqAction[String] = sys.focus.toSeqActionDefault
+  override def focusPosition: SeqAction[Double] = sys.focusPosition.toSeqActionDefault
+  override def focalPlaneMask: SeqAction[String] = sys.mask.toSeqActionDefault
+  override def beamSplitter: SeqAction[String] = sys.beamSplitter.toSeqActionDefault
+  override def windowCover: SeqAction[String] = sys.windowCover.toSeqActionDefault
+  override def framesPerCycle: SeqAction[Int] = sys.framesPerCycle.toSeqActionDefault
+  override def headerTiming: SeqAction[String] = sys.hdrTiming.toSeqActionDefault.map{
     case 1 => "BEFORE"
     case 2 => "AFTER"
     case 3 => "BOTH"
     case _ => "INDEF"
   }
-  override def lnrs: SeqAction[Int] = sys.lnrs.toSeqAction
-  override def mode: SeqAction[String] = sys.mode.toSeqAction.map{
+  override def lnrs: SeqAction[Int] = sys.lnrs.toSeqActionDefault
+  override def mode: SeqAction[String] = sys.mode.toSeqActionDefault.map{
     case 0 => "STARE"
     case 1 => "SEP"
     case 2 => "CHOP"
@@ -107,24 +107,24 @@ object NiriKeywordReaderImpl extends NiriKeywordReader[IO] {
     case 4 => "TEST"
     case _ => "INDEF"
   }
-  override def numberDigitalAverage: SeqAction[Int] = sys.digitalAverageCount.toSeqAction
-  override def pupilViewer: SeqAction[String] = sys.pupilViewer.toSeqAction
-  override def detectorTemperature: SeqAction[Double] = sys.detectorTemp.toSeqAction
-  override def mountTemperature: SeqAction[Double] = sys.mountTemp.toSeqAction
-  override def µcodeName: SeqAction[String] = sys.µcodeName.toSeqAction
-  override def µcodeType: SeqAction[String] = sys.µcodeType.toSeqAction.map{
+  override def numberDigitalAverage: SeqAction[Int] = sys.digitalAverageCount.toSeqActionDefault
+  override def pupilViewer: SeqAction[String] = sys.pupilViewer.toSeqActionDefault
+  override def detectorTemperature: SeqAction[Double] = sys.detectorTemp.toSeqActionDefault
+  override def mountTemperature: SeqAction[Double] = sys.mountTemp.toSeqActionDefault
+  override def µcodeName: SeqAction[String] = sys.µcodeName.toSeqActionDefault
+  override def µcodeType: SeqAction[String] = sys.µcodeType.toSeqActionDefault.map{
     case 1 => "RRD"
     case 2 => "RDD"
     case 3 => "RD"
     case 4 => "SRB"
     case _ => "INDEF"
   }
-  override def cl1VoltageDD: SeqAction[Double] = sys.vddCl1.toSeqAction
-  override def cl2VoltageDD: SeqAction[Double] = sys.vddCl2.toSeqAction
-  override def ucVoltage: SeqAction[Double] = sys.vddUc.toSeqAction
-  override def detectorVoltage: SeqAction[Double] = sys.detectorVDetBias.toSeqAction
-  override def cl1VoltageGG: SeqAction[Double] = sys.vggCl1.toSeqAction
-  override def cl2VoltageGG: SeqAction[Double] = sys.vggCl2.toSeqAction
-  override def setVoltage: SeqAction[Double] = sys.detectorVSetBias.toSeqAction
-  override def observationEpoch: SeqAction[Double] = sys.obsEpoch.toSeqAction
+  override def cl1VoltageDD: SeqAction[Double] = sys.vddCl1.toSeqActionDefault
+  override def cl2VoltageDD: SeqAction[Double] = sys.vddCl2.toSeqActionDefault
+  override def ucVoltage: SeqAction[Double] = sys.vddUc.toSeqActionDefault
+  override def detectorVoltage: SeqAction[Double] = sys.detectorVDetBias.toSeqActionDefault
+  override def cl1VoltageGG: SeqAction[Double] = sys.vggCl1.toSeqActionDefault
+  override def cl2VoltageGG: SeqAction[Double] = sys.vggCl2.toSeqActionDefault
+  override def setVoltage: SeqAction[Double] = sys.detectorVSetBias.toSeqActionDefault
+  override def observationEpoch: SeqAction[Double] = sys.obsEpoch.toSeqActionDefault
 }

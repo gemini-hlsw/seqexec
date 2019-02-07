@@ -65,29 +65,29 @@ object GnirsKeywordReaderDummy extends GnirsKeywordReader[IO] {
 }
 
 object GnirsKeywordReaderImpl extends GnirsKeywordReader[IO] {
-  override def getArrayId: SeqActionF[IO, String] = GnirsEpics.instance.arrayId.toSeqAction
-  override def getArrayType: SeqActionF[IO, String] = GnirsEpics.instance.arrayType.toSeqAction
-  override def getDetectorBias: SeqActionF[IO, Double] = GnirsEpics.instance.detBias.toSeqAction
-  override def getFilter1: SeqActionF[IO, String] = GnirsEpics.instance.filter1.toSeqAction
-  override def getFilterWheel1Pos: SeqActionF[IO, Int] = GnirsEpics.instance.filter1Eng.toSeqAction
-  override def getFilter2: SeqActionF[IO, String] = GnirsEpics.instance.filter2.toSeqAction
-  override def getFilterWheel2Pos: SeqActionF[IO, Int] = GnirsEpics.instance.filter2Eng.toSeqAction
-  override def getCamera: SeqActionF[IO, String] = GnirsEpics.instance.camera.toSeqAction
-  override def getCameraPos: SeqActionF[IO, Int] = GnirsEpics.instance.cameraEng.toSeqAction
-  override def getDecker: SeqActionF[IO, String] = GnirsEpics.instance.decker.toSeqAction
-  override def getDeckerPos: SeqActionF[IO, Int] = GnirsEpics.instance.deckerEng.toSeqAction
-  override def getSlit: SeqActionF[IO, String] = GnirsEpics.instance.slitWidth.toSeqAction
-  override def getSlitPos: SeqActionF[IO, Int] = GnirsEpics.instance.slitEng.toSeqAction
-  override def getPrism: SeqActionF[IO, String] = GnirsEpics.instance.prism.toSeqAction
-  override def getPrismPos: SeqActionF[IO, Int] = GnirsEpics.instance.prismEng.toSeqAction
-  override def getGrating: SeqActionF[IO, String] = GnirsEpics.instance.grating.toSeqAction
-  override def getGratingPos: SeqActionF[IO, Int] = GnirsEpics.instance.gratingEng.toSeqAction
-  override def getGratingWavelength: SeqActionF[IO, Double] = GnirsEpics.instance.centralWavelength.toSeqAction
-  override def getGratingOrder: SeqActionF[IO, Int] = GnirsEpics.instance.gratingOrder.toSeqAction
-  override def getGratingTilt: SeqActionF[IO, Double] = GnirsEpics.instance.gratingTilt.toSeqAction
-  override def getFocus: SeqActionF[IO, String] = GnirsEpics.instance.focus.toSeqAction
-  override def getFocusPos: SeqActionF[IO, Int] = GnirsEpics.instance.focusEng.toSeqAction
-  override def getAcquisitionMirror: SeqActionF[IO, String] = GnirsEpics.instance.acqMirror.toSeqAction
-  override def getWindowCover: SeqActionF[IO, String] = GnirsEpics.instance.cover.toSeqAction
-  override def getObsEpoch: SeqActionF[IO, Double] = GnirsEpics.instance.obsEpoch.toSeqAction
+  override def getArrayId: SeqActionF[IO, String] = GnirsEpics.instance.arrayId.toSeqActionDefault
+  override def getArrayType: SeqActionF[IO, String] = GnirsEpics.instance.arrayType.toSeqActionDefault
+  override def getDetectorBias: SeqActionF[IO, Double] = GnirsEpics.instance.detBias.toSeqActionDefault
+  override def getFilter1: SeqActionF[IO, String] = GnirsEpics.instance.filter1.toSeqActionDefault
+  override def getFilterWheel1Pos: SeqActionF[IO, Int] = GnirsEpics.instance.filter1Eng.toSeqActionDefault
+  override def getFilter2: SeqActionF[IO, String] = GnirsEpics.instance.filter2.toSeqActionDefault
+  override def getFilterWheel2Pos: SeqActionF[IO, Int] = GnirsEpics.instance.filter2Eng.toSeqActionDefault
+  override def getCamera: SeqActionF[IO, String] = GnirsEpics.instance.camera.toSeqActionDefault
+  override def getCameraPos: SeqActionF[IO, Int] = GnirsEpics.instance.cameraEng.toSeqActionDefault
+  override def getDecker: SeqActionF[IO, String] = GnirsEpics.instance.decker.toSeqActionDefault
+  override def getDeckerPos: SeqActionF[IO, Int] = GnirsEpics.instance.deckerEng.toSeqActionDefault
+  override def getSlit: SeqActionF[IO, String] = GnirsEpics.instance.slitWidth.toSeqActionDefault
+  override def getSlitPos: SeqActionF[IO, Int] = GnirsEpics.instance.slitEng.toSeqActionDefault
+  override def getPrism: SeqActionF[IO, String] = GnirsEpics.instance.prism.toSeqActionDefault
+  override def getPrismPos: SeqActionF[IO, Int] = GnirsEpics.instance.prismEng.toSeqActionDefault
+  override def getGrating: SeqActionF[IO, String] = GnirsEpics.instance.grating.toSeqActionDefault
+  override def getGratingPos: SeqActionF[IO, Int] = GnirsEpics.instance.gratingEng.toSeqActionDefault
+  override def getGratingWavelength: SeqActionF[IO, Double] = GnirsEpics.instance.centralWavelength.toSeqActionDefault
+  override def getGratingOrder: SeqActionF[IO, Int] = GnirsEpics.instance.gratingOrder.toSeqActionDefault
+  override def getGratingTilt: SeqActionF[IO, Double] = GnirsEpics.instance.gratingTilt.toSeqActionDefault
+  override def getFocus: SeqActionF[IO, String] = GnirsEpics.instance.focus.toSeqActionDefault
+  override def getFocusPos: SeqActionF[IO, Int] = GnirsEpics.instance.focusEng.toSeqActionDefault
+  override def getAcquisitionMirror: SeqActionF[IO, String] = GnirsEpics.instance.acqMirror.toSeqActionDefault
+  override def getWindowCover: SeqActionF[IO, String] = GnirsEpics.instance.cover.toSeqActionDefault
+  override def getObsEpoch: SeqActionF[IO, Double] = GnirsEpics.instance.obsEpoch.toSeqActionDefault
 }
