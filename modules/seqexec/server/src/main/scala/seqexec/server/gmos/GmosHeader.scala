@@ -211,46 +211,46 @@ object GmosHeader {
 
     object InstKeywordReaderImpl extends InstKeywordsReader[IO] {
 
-      override def ccName: SeqAction[String] = GmosEpics.instance.ccName.toSeqAction
-      override def maskId: SeqAction[Int] = GmosEpics.instance.maskId.toSeqAction
-      override def maskName: SeqAction[String] = GmosEpics.instance.fpu.toSeqAction
-      override def maskType: SeqAction[Int] = GmosEpics.instance.maskType.toSeqAction
-      override def maskLoc: SeqAction[Int] = GmosEpics.instance.inBeam.toSeqAction
-      override def filter1: SeqAction[String] = GmosEpics.instance.filter1.toSeqAction
-      override def filter2: SeqAction[String] = GmosEpics.instance.filter2.toSeqAction
-      override def filter1Id: SeqAction[Int] = GmosEpics.instance.filter1Id.toSeqAction
-      override def filter2Id: SeqAction[Int] = GmosEpics.instance.filter2Id.toSeqAction
-      override def grating: SeqAction[String] = GmosEpics.instance.disperser.toSeqAction
-      override def gratingId: SeqAction[Int] = GmosEpics.instance.disperserId.toSeqAction
-      override def gratingWavelength: SeqAction[Double] = GmosEpics.instance.gratingWavel.toSeqAction
-      override def gratingAdjustedWavelength: SeqAction[Double] = GmosEpics.instance.disperserWavel.toSeqAction
-      override def gratingOrder: SeqAction[Int] = GmosEpics.instance.disperserOrder.toSeqAction
-      override def gratingTilt: SeqAction[Double] = GmosEpics.instance.gratingTilt.toSeqAction
+      override def ccName: SeqAction[String] = GmosEpics.instance.ccName.toSeqActionDefault
+      override def maskId: SeqAction[Int] = GmosEpics.instance.maskId.toSeqActionDefault
+      override def maskName: SeqAction[String] = GmosEpics.instance.fpu.toSeqActionDefault
+      override def maskType: SeqAction[Int] = GmosEpics.instance.maskType.toSeqActionDefault
+      override def maskLoc: SeqAction[Int] = GmosEpics.instance.inBeam.toSeqActionDefault
+      override def filter1: SeqAction[String] = GmosEpics.instance.filter1.toSeqActionDefault
+      override def filter2: SeqAction[String] = GmosEpics.instance.filter2.toSeqActionDefault
+      override def filter1Id: SeqAction[Int] = GmosEpics.instance.filter1Id.toSeqActionDefault
+      override def filter2Id: SeqAction[Int] = GmosEpics.instance.filter2Id.toSeqActionDefault
+      override def grating: SeqAction[String] = GmosEpics.instance.disperser.toSeqActionDefault
+      override def gratingId: SeqAction[Int] = GmosEpics.instance.disperserId.toSeqActionDefault
+      override def gratingWavelength: SeqAction[Double] = GmosEpics.instance.gratingWavel.toSeqActionDefault
+      override def gratingAdjustedWavelength: SeqAction[Double] = GmosEpics.instance.disperserWavel.toSeqActionDefault
+      override def gratingOrder: SeqAction[Int] = GmosEpics.instance.disperserOrder.toSeqActionDefault
+      override def gratingTilt: SeqAction[Double] = GmosEpics.instance.gratingTilt.toSeqActionDefault
       override def gratingStep: SeqAction[Double] =
         // Set the value to the epics channel if inBeam is    1
-        GmosEpics.instance.reqGratingMotorSteps.filter(_ => GmosEpics.instance.disperserInBeam === Some(1)).toSeqAction
-      override def dtaX: SeqAction[Double] = GmosEpics.instance.dtaX.toSeqAction
-      override def dtaY: SeqAction[Double] = GmosEpics.instance.dtaY.toSeqAction
-      override def dtaZ: SeqAction[Double] = GmosEpics.instance.dtaZ.toSeqAction
-      override def dtaZst: SeqAction[Double] = GmosEpics.instance.dtaZStart.toSeqAction
-      override def dtaZen: SeqAction[Double] = GmosEpics.instance.dtaZEnd.toSeqAction
-      override def dtaZme: SeqAction[Double] = GmosEpics.instance.dtaZMean.toSeqAction
-      override def stageMode: SeqAction[String] = GmosEpics.instance.stageMode.toSeqAction
-      override def adcMode: SeqAction[String] = GmosEpics.instance.adcMode.toSeqAction
-      override def dcName: SeqAction[String] = GmosEpics.instance.dcName.toSeqAction
-      override def detectorType: SeqAction[String] = GmosEpics.instance.detectorType.toSeqAction
-      override def detectorId: SeqAction[String] = GmosEpics.instance.detectorId.toSeqAction
+        GmosEpics.instance.reqGratingMotorSteps.filter(_ => GmosEpics.instance.disperserInBeam === Some(1)).toSeqActionDefault
+      override def dtaX: SeqAction[Double] = GmosEpics.instance.dtaX.toSeqActionDefault
+      override def dtaY: SeqAction[Double] = GmosEpics.instance.dtaY.toSeqActionDefault
+      override def dtaZ: SeqAction[Double] = GmosEpics.instance.dtaZ.toSeqActionDefault
+      override def dtaZst: SeqAction[Double] = GmosEpics.instance.dtaZStart.toSeqActionDefault
+      override def dtaZen: SeqAction[Double] = GmosEpics.instance.dtaZEnd.toSeqActionDefault
+      override def dtaZme: SeqAction[Double] = GmosEpics.instance.dtaZMean.toSeqActionDefault
+      override def stageMode: SeqAction[String] = GmosEpics.instance.stageMode.toSeqActionDefault
+      override def adcMode: SeqAction[String] = GmosEpics.instance.adcMode.toSeqActionDefault
+      override def dcName: SeqAction[String] = GmosEpics.instance.dcName.toSeqActionDefault
+      override def detectorType: SeqAction[String] = GmosEpics.instance.detectorType.toSeqActionDefault
+      override def detectorId: SeqAction[String] = GmosEpics.instance.detectorId.toSeqActionDefault
       // TODO Exposure changes with N&S
-      override def exposureTime: SeqAction[Double] = GmosEpics.instance.reqExposureTime.map(_.toDouble).toSeqAction
-      override def adcUsed: SeqAction[Int] = GmosEpics.instance.adcUsed.toSeqAction
-      override def adcPrismEntSt: SeqAction[Double] = GmosEpics.instance.adcPrismEntryAngleStart.toSeqAction
-      override def adcPrismEntEnd: SeqAction[Double] = GmosEpics.instance.adcPrismEntryAngleEnd.toSeqAction
-      override def adcPrismEntMe: SeqAction[Double] = GmosEpics.instance.adcPrismEntryAngleMean.toSeqAction
-      override def adcPrismExtSt: SeqAction[Double] = GmosEpics.instance.adcPrismExitAngleStart.toSeqAction
-      override def adcPrismExtEnd: SeqAction[Double] = GmosEpics.instance.adcPrismEntryAngleEnd.toSeqAction
-      override def adcPrismExtMe: SeqAction[Double] = GmosEpics.instance.adcPrismExitAngleEnd.toSeqAction
-      override def adcWavelength1: SeqAction[Double] = GmosEpics.instance.adcExitLowerWavel.toSeqAction
-      override def adcWavelength2: SeqAction[Double] = GmosEpics.instance.adcExitUpperWavel.toSeqAction
+      override def exposureTime: SeqAction[Double] = GmosEpics.instance.reqExposureTime.map(_.toDouble).toSeqActionDefault
+      override def adcUsed: SeqAction[Int] = GmosEpics.instance.adcUsed.toSeqActionDefault
+      override def adcPrismEntSt: SeqAction[Double] = GmosEpics.instance.adcPrismEntryAngleStart.toSeqActionDefault
+      override def adcPrismEntEnd: SeqAction[Double] = GmosEpics.instance.adcPrismEntryAngleEnd.toSeqActionDefault
+      override def adcPrismEntMe: SeqAction[Double] = GmosEpics.instance.adcPrismEntryAngleMean.toSeqActionDefault
+      override def adcPrismExtSt: SeqAction[Double] = GmosEpics.instance.adcPrismExitAngleStart.toSeqActionDefault
+      override def adcPrismExtEnd: SeqAction[Double] = GmosEpics.instance.adcPrismEntryAngleEnd.toSeqActionDefault
+      override def adcPrismExtMe: SeqAction[Double] = GmosEpics.instance.adcPrismExitAngleEnd.toSeqActionDefault
+      override def adcWavelength1: SeqAction[Double] = GmosEpics.instance.adcExitLowerWavel.toSeqActionDefault
+      override def adcWavelength2: SeqAction[Double] = GmosEpics.instance.adcExitUpperWavel.toSeqActionDefault
       // The TCL code does some verifications to ensure the value is not negative
       override def detNRoi: SeqAction[Int] = SeqAction(GmosEpics.instance.roiNumUsed.filter(_ > 0).getOrElse(0))
       override def roiValues: Map[Int, RoiValues[IO]] =
@@ -259,10 +259,10 @@ object GmosHeader {
           roi = GmosEpics.instance.rois.get(i)
         } yield roi.map { r =>
             i ->
-              RoiValues(r.ccdXstart.toSeqAction, r.ccdXsize.toSeqAction, r.ccdYstart.toSeqAction, r.ccdYsize.toSeqAction)
+              RoiValues(r.ccdXstart.toSeqActionDefault, r.ccdXsize.toSeqActionDefault, r.ccdYstart.toSeqActionDefault, r.ccdYsize.toSeqActionDefault)
           }).toList.collect { case Some(x) => x }.toMap
-      override def aExpCount: SeqAction[Int] = GmosEpics.instance.aExpCount.toSeqAction
-      override def bExpCount: SeqAction[Int] = GmosEpics.instance.aExpCount.toSeqAction
+      override def aExpCount: SeqAction[Int] = GmosEpics.instance.aExpCount.toSeqActionDefault
+      override def bExpCount: SeqAction[Int] = GmosEpics.instance.aExpCount.toSeqActionDefault
       override def isADCInUse: Boolean =
         GmosEpics.instance.adcUsed.forall(_ === 1)
     }
