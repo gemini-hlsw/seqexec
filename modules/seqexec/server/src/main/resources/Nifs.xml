@@ -245,14 +245,9 @@
             <description>Filter  </description>
         </attribute>
         <attribute name="windowCover">
-            <channel>nifs:sad:cc:covName>
+            <channel>sad:cc:covName>
             <type>STRING</type>
             <description>Window cover Name</description>
-        </attribute>
-        <attribute name="flipName">
-            <channel>nifs:sad:cc:flipName</channel>
-            <type>STRING</type>
-            <description>Imaging (flip) mirror</description>
         </attribute>
     </Status>
 </Records>

@@ -175,8 +175,6 @@ class NifsEpics(epicsService: CaService, tops: Map[String, String]) {
 
   def windowCover: Option[String] = Option(ccStatus.getStringAttribute("windowCover").value)
 
-  def flipName: Option[String] = Option(ccStatus.getStringAttribute("flipName").value)
-
 }
 
 object NifsEpics extends EpicsSystem[NifsEpics] {
