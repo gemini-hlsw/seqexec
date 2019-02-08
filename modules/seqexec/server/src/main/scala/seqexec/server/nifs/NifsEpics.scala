@@ -157,21 +157,23 @@ class NifsEpics(epicsService: CaService, tops: Map[String, String]) {
   def centralWavelength: Option[Double] =
     Option(ccStatus.getDoubleAttribute("centralWavelength").value).map(_.toDouble)
 
-  def disperser: Option[String] = Option(dcStatus.getStringAttribute("disperser").value)
+  def disperser: Option[String] = Option(ccStatus.getStringAttribute("disperser").value)
 
-  def imagingMirror: Option[String] = Option(dcStatus.getStringAttribute("imagingMirror").value)
+  def imagingMirror: Option[String] = Option(ccStatus.getStringAttribute("imagingMirror").value)
 
-  def mask: Option[String] = Option(dcStatus.getStringAttribute("mask").value)
+  def mask: Option[String] = Option(ccStatus.getStringAttribute("mask").value)
 
-  def lastSelectedDisperser: Option[String] = Option(dcStatus.getStringAttribute("lastSelDisp")
+  def lastSelectedDisperser: Option[String] = Option(ccStatus.getStringAttribute("lastSelDisp")
     .value)
 
-  def lastSelectedMask: Option[String] = Option(dcStatus.getStringAttribute("lastSelMask").value)
+  def lastSelectedMask: Option[String] = Option(ccStatus.getStringAttribute("lastSelMask").value)
 
   def maskOffset: Option[Double] = Option(ccStatus.getDoubleAttribute("maskOffset").value)
     .map(_.toDouble)
 
-  def filter: Option[String] = Option(dcStatus.getStringAttribute("filter").value)
+  def filter: Option[String] = Option(ccStatus.getStringAttribute("filter").value)
+
+  def windowCover: Option[String] = Option(ccStatus.getStringAttribute("windowCover").value)
 
 }
 

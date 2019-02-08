@@ -244,5 +244,10 @@
             <type>STRING</type>
             <description>Filter  </description>
         </attribute>
+        <attribute name="windowCover">
+            <channel>sad:cc:covName>
+            <type>STRING</type>
+            <description>Window cover Name</description>
+        </attribute>
     </Status>
 </Records>
