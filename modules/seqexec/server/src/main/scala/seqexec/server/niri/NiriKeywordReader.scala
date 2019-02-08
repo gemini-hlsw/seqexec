@@ -42,6 +42,7 @@ trait NiriKeywordReader[F[_]] {
   def observationEpoch: SeqActionF[F, Double]
 }
 
+// This could be NiriKeywordReader[Id] but it requires changes upstream
 object NiriKeywordReaderDummy extends NiriKeywordReader[IO] {
   override def arrayId: SeqAction[String] = SeqAction(StrDefault)
   override def arrayType: SeqAction[String] = SeqAction(StrDefault)

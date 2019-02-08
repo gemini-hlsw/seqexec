@@ -6,7 +6,7 @@ package seqexec.server.keywords
 import cats.effect.IO
 import cats.effect.Timer
 import cats.effect.Effect
-import cats.data.EitherT
+import cats.Functor
 import cats.implicits._
 import gem.Observation
 import org.http4s.client.Client
@@ -21,12 +21,11 @@ import scala.concurrent.duration._
 import scala.xml.Elem
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.SeqexecFailure
-import seqexec.server.SeqActionF
 
 /**
   * Gemini Data service client
   */
-final case class GdsClient[F[_]: Effect](base: Client[F], gdsUri: Uri)(implicit timer: Timer[F])
+final case class GdsClient[F[_]: Effect: Functor](base: Client[F], gdsUri: Uri)(implicit timer: Timer[F])
     extends Http4sClientDsl[F] {
 
   @SuppressWarnings(Array("org.wartremover.warts.Var"))
@@ -57,16 +56,10 @@ final case class GdsClient[F[_]: Effect](base: Client[F], gdsUri: Uri)(implicit 
       </params>
     </methodCall>
 
-  private def handleConnectionError(e: Throwable): SeqexecFailure =
-    SeqexecFailure.GdsException(e, gdsUri)
-
-  private def handleXmlError(xml: Elem): SeqActionF[F, Unit] =
-    EitherT.fromEither(GdsClient.checkError(xml, gdsUri))
-
   /**
     * Set the keywords for an image
     */
-  def setKeywords(id: ImageFileId, ks: KeywordBag): SeqActionF[F, Unit] = {
+  def setKeywords(id: ImageFileId, ks: KeywordBag): F[Unit] = {
     // Build the request
     val xmlRpc      = storeKeywords(id, ks)
     val postRequest = POST(xmlRpc, gdsUri)
@@ -74,9 +67,9 @@ final case class GdsClient[F[_]: Effect](base: Client[F], gdsUri: Uri)(implicit 
     // Do the request
     client
       .expect[Elem](postRequest)(scalaxml.xml)
-      .attemptT
-      .leftMap(handleConnectionError)
-      .flatMap(handleXmlError)
+      .map(GdsClient.parseError)
+      .ensureOr(toSeqexecFailure)(_.isRight)
+      .void
   }
 
   // Build an xml rpc request to open an observation
@@ -102,7 +95,7 @@ final case class GdsClient[F[_]: Effect](base: Client[F], gdsUri: Uri)(implicit 
 
   def openObservation(obsId: Observation.Id,
                       id: ImageFileId,
-                      ks: KeywordBag): SeqActionF[F, Unit] = {
+                      ks: KeywordBag): F[Unit] = {
     // Build the request
     val xmlRpc      = openObservationRPC(obsId, id, ks)
     val postRequest = POST(xmlRpc, gdsUri)
@@ -110,9 +103,9 @@ final case class GdsClient[F[_]: Effect](base: Client[F], gdsUri: Uri)(implicit 
     // Do the request
     client
       .expect[Elem](postRequest)(scalaxml.xml)
-      .attemptT
-      .leftMap(handleConnectionError)
-      .flatMap(handleXmlError)
+      .map(GdsClient.parseError)
+      .ensureOr(toSeqexecFailure)(_.isRight)
+      .void
   }
 
   // Build an xml rpc request to close an observation
@@ -128,7 +121,7 @@ final case class GdsClient[F[_]: Effect](base: Client[F], gdsUri: Uri)(implicit 
       </params>
     </methodCall>
 
-  def closeObservation(id: ImageFileId): SeqActionF[F, Unit] = {
+  def closeObservation(id: ImageFileId): F[Unit] = {
     // Build the request
     val xmlRpc      = closeObservationRPC(id)
     val postRequest = POST(xmlRpc, gdsUri)
@@ -136,9 +129,9 @@ final case class GdsClient[F[_]: Effect](base: Client[F], gdsUri: Uri)(implicit 
     // Do the request
     client
       .expect[Elem](postRequest)(scalaxml.xml)
-      .attemptT
-      .leftMap(handleConnectionError)
-      .flatMap(handleXmlError)
+      .map(GdsClient.parseError)
+      .ensureOr(toSeqexecFailure)(_.isRight)
+      .void
   }
 
   private def keywordsParam(ks: KeywordBag): Elem =
@@ -155,17 +148,20 @@ final case class GdsClient[F[_]: Effect](base: Client[F], gdsUri: Uri)(implicit 
         </array>
       </value>
     </param>
+
+  def toSeqexecFailure(v: Either[String, Elem]): SeqexecFailure =
+    SeqexecFailure.GdsXmlError(v.left.getOrElse(""), gdsUri)
+
 }
 
 object GdsClient {
 
-  def checkError(e: Elem, gdsUri: Uri): Either[SeqexecFailure, Unit] = {
+  def parseError(e: Elem): Either[String, Elem] = {
     val v = for {
       m <- e \\ "methodResponse" \ "fault" \ "value" \ "struct" \\ "member"
       if (m \ "name").text === "faultString"
     } yield (m \ "value").text.trim
-    v.headOption.fold(().asRight[SeqexecFailure])(
-      SeqexecFailure.GdsXmlError(_, gdsUri).asLeft[Unit])
+    v.headOption.toLeft(e)
   }
 
   /**

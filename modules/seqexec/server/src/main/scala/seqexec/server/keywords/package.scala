@@ -3,7 +3,8 @@
 
 package seqexec.server
 
-import cats.{Eq, Monoid, Functor}
+import cats.{Applicative, Eq, Monad, Monoid, Functor}
+import cats.MonadError
 import cats.implicits._
 import cats.effect.Sync
 import gem.enum.KeywordName
@@ -11,7 +12,7 @@ import seqexec.model.dhs.ImageFileId
 
 package keywords {
   sealed trait KeywordsBundler[F[_]] {
-    def bundleKeywords(ks: List[KeywordBag => SeqActionF[F, KeywordBag]]): SeqActionF[F, KeywordBag]
+    def bundleKeywords(ks: List[KeywordBag => F[KeywordBag]]): F[KeywordBag]
   }
 
   /**
@@ -21,9 +22,9 @@ package keywords {
 
     def setKeywords(id: ImageFileId,
                     keywords: KeywordBag,
-                    finalFlag: Boolean): SeqActionF[F, Unit]
+                    finalFlag: Boolean): F[Unit]
 
-    def closeImage(id: ImageFileId): SeqActionF[F, Unit]
+    def closeImage(id: ImageFileId): F[Unit]
 
     def keywordsBundler: KeywordsBundler[F]
   }
@@ -35,10 +36,10 @@ package keywords {
 
     def setKeywords(id: ImageFileId,
                     keywords: KeywordBag,
-                    finalFlag: Boolean): SeqActionF[F, Unit] =
+                    finalFlag: Boolean): F[Unit] =
       dhsClient.setKeywords(id, keywords, finalFlag)
 
-    def closeImage(id: ImageFileId): SeqActionF[F, Unit] =
+    def closeImage(id: ImageFileId): F[Unit] =
       dhsClient.setKeywords(
         id,
         KeywordBag(StringKeyword(KeywordName.INSTRUMENT, dhsInstrumentName)),
@@ -49,11 +50,11 @@ package keywords {
   }
 
   object DhsInstrument {
-    def kb[F[_]: Sync](dhsInstrumentName: String): KeywordsBundler[F] = new KeywordsBundler[F] {
+    def kb[F[_]: Monad](dhsInstrumentName: String): KeywordsBundler[F] = new KeywordsBundler[F] {
       def bundleKeywords(
-        ks: List[KeywordBag => SeqActionF[F, KeywordBag]]
-      ): SeqActionF[F, KeywordBag] = {
-        val z = SeqActionF(
+        ks: List[KeywordBag => F[KeywordBag]]
+      ): F[KeywordBag] = {
+        val z = Applicative[F].pure(
           KeywordBag(StringKeyword(KeywordName.INSTRUMENT, dhsInstrumentName)))
         ks.foldLeft(z) { case (a, b) => a.flatMap(b) }
       }
@@ -61,15 +62,15 @@ package keywords {
   }
 
   object GdsInstrument {
-    def bundleKeywords[F[_]: Sync](
-      ks: List[KeywordBag => SeqActionF[F, KeywordBag]]
-    ): SeqActionF[F, KeywordBag] =
-      ks.foldLeft(SeqActionF(KeywordBag.empty)) { case (a, b) => a.flatMap(b) }
+    def bundleKeywords[F[_]: Monad](
+      ks: List[KeywordBag => F[KeywordBag]]
+    ): F[KeywordBag] =
+      ks.foldLeft(Applicative[F].pure(KeywordBag.empty)) { case (a, b) => a.flatMap(b) }
 
     def kb[F[_]: Sync]: KeywordsBundler[F] = new KeywordsBundler[F] {
       def bundleKeywords(
-        ks: List[KeywordBag => SeqActionF[F, KeywordBag]]
-      ): SeqActionF[F, KeywordBag] =
+        ks: List[KeywordBag => F[KeywordBag]]
+      ): F[KeywordBag] =
         GdsInstrument.bundleKeywords(ks)
     }
   }
@@ -79,10 +80,10 @@ package keywords {
 
     def setKeywords(id: ImageFileId,
                     keywords: KeywordBag,
-                    finalFlag: Boolean): SeqActionF[F, Unit] =
+                    finalFlag: Boolean): F[Unit] =
       gdsClient.setKeywords(id, keywords)
 
-    def closeImage(id: ImageFileId): SeqActionF[F, Unit] =
+    def closeImage(id: ImageFileId): F[Unit] =
       gdsClient.closeObservation(id)
 
     def keywordsBundler: KeywordsBundler[F] = GdsInstrument.kb[F]
@@ -237,26 +238,36 @@ package object keywords {
   }
 
   implicit class SeqActionOption2SeqActionF[F[_]: Functor, A: DefaultHeaderValue](
-      val v: SeqActionF[F, Option[A]]) {
-    def orDefault: SeqActionF[F, A] = v.map(_.orDefault)
+      val v: F[Option[A]]) {
+    def orDefault: F[A] = v.map(_.orDefault)
   }
 
-  def buildKeyword[F[_]: Functor, A](get: SeqActionF[F, A], name: KeywordName, f: (KeywordName, A) => Keyword[A]): KeywordBag => SeqActionF[F, KeywordBag] =
+  def buildKeywordF[F[_]: Functor, A](get: F[A], name: KeywordName, f: (KeywordName, A) => Keyword[A]): KeywordBag => F[KeywordBag] =
     k => get.map(x => k.add(f(name, x)))
-  def buildInt8[F[_]: Functor](get: SeqActionF[F, Byte], name: KeywordName): KeywordBag => SeqActionF[F, KeywordBag]       = buildKeyword(get, name, Int8Keyword)
-  def buildInt16[F[_]: Functor](get: SeqActionF[F, Short], name: KeywordName): KeywordBag => SeqActionF[F, KeywordBag]     = buildKeyword(get, name, Int16Keyword)
-  def buildInt32[F[_]: Functor](get: SeqActionF[F, Int], name: KeywordName): KeywordBag => SeqActionF[F, KeywordBag]       = buildKeyword(get, name, Int32Keyword)
-  def buildFloat[F[_]: Functor](get: SeqActionF[F, Float], name: KeywordName): KeywordBag => SeqActionF[F, KeywordBag]     = buildKeyword(get, name, FloatKeyword)
-  def buildDouble[F[_]: Functor](get: SeqActionF[F, Double], name: KeywordName): KeywordBag => SeqActionF[F, KeywordBag]   = buildKeyword(get, name, DoubleKeyword)
-  def buildBoolean[F[_]: Functor](get: SeqActionF[F, Boolean], name: KeywordName): KeywordBag => SeqActionF[F, KeywordBag] = buildKeyword(get, name, BooleanKeyword)
-  def buildString[F[_]: Functor](get: SeqActionF[F, String], name: KeywordName): KeywordBag => SeqActionF[F, KeywordBag]   = buildKeyword(get, name, StringKeyword)
+  def buildKeyword[F[_]: MonadError[?[_], Throwable], A](get: SeqActionF[F, A], name: KeywordName, f: (KeywordName, A) => Keyword[A]): KeywordBag => F[KeywordBag] =
+    k => get.map(x => k.add(f(name, x))).liftF
+  def buildInt8S[F[_]: Functor](get: F[Byte], name: KeywordName): KeywordBag => F[KeywordBag]       = buildKeywordF(get, name, Int8Keyword)
+  def buildInt8[F[_]: MonadError[?[_], Throwable]](get: SeqActionF[F, Byte], name: KeywordName): KeywordBag => F[KeywordBag]       = buildKeyword(get, name, Int8Keyword)
+  def buildInt16S[F[_]: Functor](get: F[Short], name: KeywordName): KeywordBag => F[KeywordBag]     = buildKeywordF(get, name, Int16Keyword)
+  def buildInt16[F[_]: MonadError[?[_], Throwable]](get: SeqActionF[F, Short], name: KeywordName): KeywordBag => F[KeywordBag]     = buildKeyword(get, name, Int16Keyword)
+  def buildInt32S[F[_]: Functor](get: F[Int], name: KeywordName): KeywordBag => F[KeywordBag]       = buildKeywordF(get, name, Int32Keyword)
+  def buildInt32[F[_]: MonadError[?[_], Throwable]](get: SeqActionF[F, Int], name: KeywordName): KeywordBag => F[KeywordBag]       = buildKeyword(get, name, Int32Keyword)
+  def buildFloatS[F[_]: Functor](get: F[Float], name: KeywordName): KeywordBag => F[KeywordBag]     = buildKeywordF(get, name, FloatKeyword)
+  def buildFloat[F[_]: MonadError[?[_], Throwable]](get: SeqActionF[F, Float], name: KeywordName): KeywordBag => F[KeywordBag]     = buildKeyword(get, name, FloatKeyword)
+  def buildDoubleS[F[_]: Functor](get: F[Double], name: KeywordName): KeywordBag => F[KeywordBag]   = buildKeywordF(get, name, DoubleKeyword)
+  def buildDouble[F[_]: MonadError[?[_], Throwable]](get: SeqActionF[F, Double], name: KeywordName): KeywordBag => F[KeywordBag]   = buildKeyword(get, name, DoubleKeyword)
+  def buildBooleanS[F[_]: Functor](get: F[Boolean], name: KeywordName): KeywordBag => F[KeywordBag] = buildKeywordF(get, name, BooleanKeyword)
+  def buildBoolean[F[_]: MonadError[?[_], Throwable]](get: SeqActionF[F, Boolean], name: KeywordName): KeywordBag => F[KeywordBag] = buildKeyword(get, name, BooleanKeyword)
+  def buildStringS[F[_]: Functor](get: F[String], name: KeywordName): KeywordBag => F[KeywordBag]   = buildKeywordF(get, name, StringKeyword)
+  def buildString[F[_]: MonadError[?[_], Throwable]](get: SeqActionF[F, String], name: KeywordName): KeywordBag => F[KeywordBag]   = buildKeyword(get, name, StringKeyword)
 
-  def sendKeywords[F[_]: Sync](
+  def sendKeywords[F[_]: MonadError[?[_], Throwable]](
       id: ImageFileId,
       inst: InstrumentSystem[F],
-      b: List[KeywordBag => SeqActionF[F, KeywordBag]]): SeqActionF[F, Unit] =
+      b: List[KeywordBag => F[KeywordBag]]): F[Unit] =
     for {
       bag <- inst.keywordsClient.keywordsBundler.bundleKeywords(b)
       _   <- inst.keywordsClient.setKeywords(id, bag, finalFlag = false)
     } yield ()
+
 }

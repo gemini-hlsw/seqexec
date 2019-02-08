@@ -49,7 +49,7 @@ class DhsClientHttp[F[_]: Effect](base: Client[F], baseURI: Uri)(implicit timer:
     Retry[F](policy)(base)
   }
 
-  override def createImage(p: ImageParameters): SeqActionF[F, ImageFileId] = {
+  override def createImage(p: ImageParameters): F[ImageFileId] = {
     val req = POST(
       Json.obj("createImage" := p.asJson),
       baseURI
@@ -57,7 +57,7 @@ class DhsClientHttp[F[_]: Effect](base: Client[F], baseURI: Uri)(implicit timer:
     client.expect[TrySeq[ImageFileId]](req)(jsonOf[F, TrySeq[ImageFileId]])
       .attemptT
       .leftMap(SeqexecExceptionWhile("creating image in DHS", _): SeqexecFailure)
-      .flatMap(EitherT.fromEither(_))
+      .flatMap(EitherT.fromEither(_)).liftF
   }
 
   def setParameters(id: ImageFileId, p: ImageParameters): SeqActionF[F, Unit] = {
@@ -75,7 +75,7 @@ class DhsClientHttp[F[_]: Effect](base: Client[F], baseURI: Uri)(implicit timer:
     id: ImageFileId,
     keywords: KeywordBag,
     finalFlag: Boolean
-  ): SeqActionF[F, Unit] = {
+  ): F[Unit] = {
     val req = PUT(
       Json.obj("setKeywords" :=
         Json.obj(
@@ -88,7 +88,7 @@ class DhsClientHttp[F[_]: Effect](base: Client[F], baseURI: Uri)(implicit timer:
     client.expect[TrySeq[Unit]](req)(jsonOf[F, TrySeq[Unit]])
       .attemptT
       .leftMap(SeqexecExceptionWhile("sending keywords to DHS", _))
-      .flatMap(EitherT.fromEither(_))
+      .flatMap(EitherT.fromEither(_)).liftF
   }
 
 }
@@ -177,12 +177,15 @@ class DhsClientSim[F[_]: Sync](date: LocalDate) extends DhsClient[F] {
 
   val format: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd")
 
-  override def createImage(p: ImageParameters): SeqActionF[F, ImageFileId] =
-    EitherT(Sync[F].delay {
-      TrySeq(f"S${date.format(format)}S${counter.incrementAndGet()}%04d")
-    })
+  override def createImage(p: ImageParameters): F[ImageFileId] =
+    Sync[F].delay (
+      f"S${date.format(format)}S${counter.incrementAndGet()}%04d"
+    )
 
-  override def setKeywords(id: ImageFileId, keywords: KeywordBag, finalFlag: Boolean): SeqActionF[F, Unit] = EitherT.right(Sync[F].delay(Log.info(keywords.keywords.map(k => s"${k.name} = ${k.value}").mkString(", "))))
+  override def setKeywords(id: ImageFileId, keywords: KeywordBag, finalFlag: Boolean): F[Unit] =
+    Sync[F].delay(
+      Log.info(keywords.keywords.map(k => s"${k.name} = ${k.value}").mkString(", "))
+    )
 
 }
 

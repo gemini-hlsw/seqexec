@@ -8,14 +8,14 @@ import gem.Observation
 import gem.enum.KeywordName
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.keywords.{Header, buildDouble, buildString, _}
-import seqexec.server.{InstrumentSystem, SeqActionF}
+import seqexec.server.InstrumentSystem
 import seqexec.server.tcs.TcsKeywordsReader
 
 object NiriHeader {
   // scalastyle:off
   def header[F[_]: Sync](inst: InstrumentSystem[F], instReader: NiriKeywordReader[F],
              tcsKeywordsReader: TcsKeywordsReader[F]): Header[F] = new Header[F] {
-    override def sendBefore(obsId: Observation.Id, id: ImageFileId): SeqActionF[F, Unit] =
+    override def sendBefore(obsId: Observation.Id, id: ImageFileId): F[Unit] =
       sendKeywords(id, inst, List(
         buildString(instReader.arrayId, KeywordName.ARRAYID),
         buildString(instReader.arrayType, KeywordName.ARRAYTYP),
@@ -53,7 +53,7 @@ object NiriHeader {
         buildDouble(instReader.setVoltage, KeywordName.VSET)
       ))
 
-    override def sendAfter(id: ImageFileId): SeqActionF[F, Unit] =
+    override def sendAfter(id: ImageFileId): F[Unit] =
       sendKeywords(id, inst, List(
         buildDouble(instReader.detectorTemperature, KeywordName.A_TDETABS),
         buildDouble(instReader.mountTemperature, KeywordName.A_TMOUNT),

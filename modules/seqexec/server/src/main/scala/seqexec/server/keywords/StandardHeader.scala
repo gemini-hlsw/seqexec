@@ -3,6 +3,7 @@
 
 package seqexec.server.keywords
 
+import cats.Applicative
 import cats.implicits._
 import cats.effect.Sync
 import edu.gemini.spModel.gemini.obscomp.SPSiteQuality._
@@ -167,7 +168,7 @@ class StandardHeader[F[_]: Sync](
     buildInt32(obsReader.getSciBand.orDefault, KeywordName.SCIBAND)
   )
 
-  def timinigWindows(id: ImageFileId): SeqActionF[F, Unit] = {
+  def timinigWindows(id: ImageFileId): F[Unit] = {
     val timingWindows = obsReader.getTimingWindows
     val windows = timingWindows.flatMap {
       case (i, tw) =>
@@ -182,7 +183,7 @@ class StandardHeader[F[_]: Sync](
     sendKeywords(id, inst, windowsCount :: windows)
   }
 
-  def requestedConditions(id: ImageFileId): SeqActionF[F, Unit] = {
+  def requestedConditions(id: ImageFileId): F[Unit] = {
     import ObsKeywordsReader._
     val keys = List(
       KeywordName.REQIQ -> IQ,
@@ -195,7 +196,7 @@ class StandardHeader[F[_]: Sync](
     sendKeywords(id, inst, requested)
   }
 
-  def requestedAirMassAngle(id: ImageFileId): SeqActionF[F, Unit] = {
+  def requestedAirMassAngle(id: ImageFileId): F[Unit] = {
     import ObsKeywordsReader._
     val keys = List(
       KeywordName.REQMAXAM -> MAX_AIRMASS,
@@ -206,13 +207,13 @@ class StandardHeader[F[_]: Sync](
       case (keyword, value) => obsReader.getRequestedAirMassAngle.get(value).toList.map(buildDouble(_, keyword))
     }
     if (!requested.isEmpty) sendKeywords[F](id, inst, requested)
-    else SeqActionF.void[F]
+    else Applicative[F].unit
   }
 
-  override def sendBefore(obsId: Observation.Id, id: ImageFileId): SeqActionF[F, Unit] = {
-    def guiderKeywords(guideWith: SeqActionF[F, StandardGuideOptions.Value], baseName: String, target: TargetKeywordsReader[F],
-                       extras: List[KeywordBag => SeqActionF[F, KeywordBag]]): SeqActionF[F, Unit] = guideWith.flatMap { g =>
-      val keywords = List(
+  override def sendBefore(obsId: Observation.Id, id: ImageFileId): F[Unit] = {
+    def guiderKeywords(guideWith: F[StandardGuideOptions.Value], baseName: String, target: TargetKeywordsReader[F],
+                       extras: List[KeywordBag => F[KeywordBag]]): F[Unit] = guideWith.flatMap { g =>
+      val keywords: List[KeywordBag => F[KeywordBag]] = List(
         KeywordName.fromTag(baseName + "ARA").map(buildDouble(target.getRA.orDefault, _)),
         KeywordName.fromTag(baseName + "ADEC").map(buildDouble(target.getDec.orDefault, _)),
         KeywordName.fromTag(baseName + "ARV").map(buildDouble(target.getRadialVelocity.orDefault, _)), {
@@ -228,26 +229,26 @@ class StandardHeader[F[_]: Sync](
         KeywordName.fromTag(baseName + "APARAL").map(buildDouble(target.getParallax.orDefault, _))
       ).collect { case Some(k) => k }
 
-      if (g === StandardGuideOptions.Value.guide) sendKeywords(id, inst, keywords ++ extras)
-      else SeqActionF.void
+      if (g === StandardGuideOptions.Value.guide) sendKeywords[F](id, inst, keywords ++ extras)
+      else Applicative[F].unit
     }
 
-    def standardGuiderKeywords(guideWith: SeqActionF[F, StandardGuideOptions.Value], baseName: String,
-                               target: TargetKeywordsReader[F], extras: List[KeywordBag => SeqActionF[F, KeywordBag]]): SeqActionF[F, Unit] = {
+    def standardGuiderKeywords(guideWith: F[StandardGuideOptions.Value], baseName: String,
+                               target: TargetKeywordsReader[F], extras: List[KeywordBag => F[KeywordBag]]): F[Unit] = {
       val ext = KeywordName.fromTag(baseName + "FOCUS").map(buildDouble(tcsReader.getM2UserFocusOffset.orDefault, _)).toList ++ extras
       guiderKeywords(guideWith, baseName, target, ext)
     }
 
-    val oiwfsKeywords = guiderKeywords(obsReader.getOiwfsGuide, "OI", tcsReader.getOiwfsTarget,
+    val oiwfsKeywords = guiderKeywords(obsReader.getOiwfsGuide.liftF, "OI", tcsReader.getOiwfsTarget,
       List(buildDouble(tcsReader.getOiwfsFreq.orDefault, KeywordName.OIFREQ)))
 
-    val pwfs1Keywords = standardGuiderKeywords(obsReader.getPwfs1Guide, "P1", tcsReader.getPwfs1Target,
+    val pwfs1Keywords = standardGuiderKeywords(obsReader.getPwfs1Guide.liftF, "P1", tcsReader.getPwfs1Target,
       List(buildDouble(tcsReader.getPwfs1Freq.orDefault, KeywordName.P1FREQ)))
 
-    val pwfs2Keywords = standardGuiderKeywords(obsReader.getPwfs2Guide, "P2", tcsReader.getPwfs2Target,
+    val pwfs2Keywords = standardGuiderKeywords(obsReader.getPwfs2Guide.liftF, "P2", tcsReader.getPwfs2Target,
       List(buildDouble(tcsReader.getPwfs2Freq.orDefault, KeywordName.P2FREQ)))
 
-    val aowfsKeywords = standardGuiderKeywords(obsReader.getAowfsGuide, "AO", tcsReader.getAowfsTarget, Nil)
+    val aowfsKeywords = standardGuiderKeywords(obsReader.getAowfsGuide.liftF, "AO", tcsReader.getAowfsTarget, Nil)
 
     sendKeywords(id, inst, baseKeywords) *>
     requestedConditions(id) *>
@@ -259,7 +260,7 @@ class StandardHeader[F[_]: Sync](
     aowfsKeywords
   }
 
-  override def sendAfter(id: ImageFileId): SeqActionF[F, Unit] = sendKeywords(id, inst,
+  override def sendAfter(id: ImageFileId): F[Unit] = sendKeywords[F](id, inst,
     List(
       buildDouble(tcsReader.getAirMass.orDefault, KeywordName.AIRMASS),
       buildDouble(tcsReader.getStartAirMass.orDefault, KeywordName.AMSTART),

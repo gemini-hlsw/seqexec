@@ -10,11 +10,10 @@ import seqexec.model.dhs.ImageFileId
 import seqexec.server.keywords._
 import seqexec.server.InstrumentSystem
 import seqexec.server.tcs.TcsKeywordsReader
-import seqexec.server.SeqActionF
 
 object GnirsHeader {
   def header[F[_]: Sync](inst: InstrumentSystem[F], gnirsReader: GnirsKeywordReader[F], tcsReader: TcsKeywordsReader[F]): Header[F] = new Header[F] {
-    override def sendBefore(obsId: Observation.Id, id: ImageFileId): SeqActionF[F, Unit] =
+    override def sendBefore(obsId: Observation.Id, id: ImageFileId): F[Unit] =
       sendKeywords(id, inst, List(
         buildInt32(tcsReader.getGnirsInstPort.orDefault, KeywordName.INPORT),
         buildString(gnirsReader.getArrayId, KeywordName.ARRAYID),
@@ -46,7 +45,7 @@ object GnirsHeader {
         buildDouble(gnirsReader.getDetectorBias, KeywordName.DETBIAS)
       ) )
 
-    override def sendAfter(id: ImageFileId): SeqActionF[F, Unit] =
+    override def sendAfter(id: ImageFileId): F[Unit] =
       sendKeywords(id, inst, List(
         buildString(tcsReader.getUT.orDefault, KeywordName.UTEND),
         buildDouble(gnirsReader.getObsEpoch, KeywordName.OBSEPOCH)
