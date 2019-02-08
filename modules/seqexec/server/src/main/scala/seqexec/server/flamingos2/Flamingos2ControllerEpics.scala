@@ -4,6 +4,7 @@
 package seqexec.server.flamingos2
 
 import cats.data.StateT
+import cats.data.OptionT
 import cats.effect.{ IO, Timer }
 import cats.implicits._
 import seqexec.model.dhs.ImageFileId
@@ -135,16 +136,14 @@ final case class Flamingos2ControllerEpics()(implicit val tio: Timer[IO]) extend
 
   override def observeProgress(total: Time): fs2.Stream[IO, Progress] = {
     val s = ProgressUtil.fromStateTOption[IO, Time](_ => StateT[IO, Time, Option[Progress]] { st =>
-      IO {
-        val m = if (total >= st) total else st
-        val p = for {
-          obst <- Flamingos2Epics.instance.observeState
-          dummy = obst // Hack to avoid scala/bug#11175
-          if obst.isBusy
-          rem <- Flamingos2Epics.instance.countdown.map(_.seconds)
-        } yield Progress(m, RemainingTime(rem))
-        (m, p)
-      }
+      val m = if (total >= st) total else st
+      val p = for {
+        obst <- OptionT(Flamingos2Epics.instance.observeState)
+        dummy = obst // Hack to avoid scala/bug#11175
+        if obst.isBusy
+        rem <- OptionT(Flamingos2Epics.instance.countdown)
+      } yield Progress(m, RemainingTime(rem.seconds))
+      p.value.map(p => (m, p))
     })
     s(total).dropWhile(_.remaining.self.value === 0.0) // drop leading zeros
       .takeThrough(_.remaining.self.value > 0.0) // drop all tailing zeros but the first one

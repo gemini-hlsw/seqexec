@@ -196,10 +196,12 @@ package keywords {
       new DefaultHeaderValue[Int] {
         val default: Int = IntDefault
       }
+
     implicit val DoubleDefaultValue: DefaultHeaderValue[Double] =
       new DefaultHeaderValue[Double] {
         val default: Double = DoubleDefault
       }
+
     implicit val StrDefaultValue: DefaultHeaderValue[String] =
       new DefaultHeaderValue[String] {
         val default: String = StrDefault

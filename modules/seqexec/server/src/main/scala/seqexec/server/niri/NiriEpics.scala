@@ -3,8 +3,10 @@
 
 package seqexec.server.niri
 
+import cats.effect.IO
+import cats.effect.Sync
+import cats.implicits._
 import java.lang.{Double => JDouble}
-
 import edu.gemini.epics.acm._
 import edu.gemini.seqexec.server.niri.{Disperser => JDisperser}
 import edu.gemini.seqexec.server.niri.{ReadMode => JReadMode}
@@ -13,57 +15,57 @@ import edu.gemini.seqexec.server.niri.{Camera => JCamera}
 import edu.gemini.seqexec.server.niri.{BeamSplitter => JBeamSplitter}
 import edu.gemini.seqexec.server.niri.{BuiltInROI => JBuiltInROI}
 import edu.gemini.seqexec.server.niri.{DetectorState => JDetectorState}
-import seqexec.server.EpicsCommand.setParameter
-import seqexec.server.{EpicsCommand, EpicsSystem, ObserveCommand, SeqAction}
-import cats.implicits._
+import seqexec.server.EpicsCommand.setParameterF
+import seqexec.server.{EpicsCommandF, EpicsSystem, ObserveCommand, ObserveCommandF}
 import org.log4s.{Logger, getLogger}
 
-class NiriEpics(epicsService: CaService, tops: Map[String, String]) {
+class NiriEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, String]) {
+  private val F: Sync[F] = Sync[F]
 
   val NiriTop = tops.getOrElse("niri", "niri:")
   val NisTop = tops.getOrElse("nis", "NIS:")
 
-  object configCmd extends EpicsCommand {
+  object configCmd extends EpicsCommandF {
     override protected val cs: Option[CaCommandSender] =
       Option(epicsService.getCommandSender("nis::config"))
 
-    val disperser: Option[CaParameter[JDisperser]] = cs.flatMap(cmd =>
+    private val disperser: Option[CaParameter[JDisperser]] = cs.flatMap(cmd =>
       Option(cmd.addEnum("disperser", s"${NisTop}grism:menu", classOf[JDisperser], false)))
-    def setDisperser(v: JDisperser): SeqAction[Unit] = setParameter(disperser, v)
+    def setDisperser(v: JDisperser): F[Unit] = setParameterF(disperser, v)
 
-    val readMode: Option[CaParameter[JReadMode]] = cs.flatMap(cmd =>
+    private val readMode: Option[CaParameter[JReadMode]] = cs.flatMap(cmd =>
       Option(cmd.addEnum("readmode", s"${NisTop}readmode:menu", classOf[JReadMode], false)))
-    def setReadMode(v: JReadMode): SeqAction[Unit] = setParameter(readMode, v)
+    def setReadMode(v: JReadMode): F[Unit] = setParameterF(readMode, v)
 
-    val coadds: Option[CaParameter[Integer]] = cs.flatMap(cmd => Option(cmd.getInteger("numCoAdds")))
-    def setCoadds(v: Int): SeqAction[Unit] = setParameter(coadds, Integer.valueOf(v))
+    private val coadds: Option[CaParameter[Integer]] = cs.flatMap(cmd => Option(cmd.getInteger("numCoAdds")))
+    def setCoadds(v: Int): F[Unit] = setParameterF(coadds, Integer.valueOf(v))
 
-    val mask: Option[CaParameter[JMask]] = cs.flatMap(cmd =>
+    private val mask: Option[CaParameter[JMask]] = cs.flatMap(cmd =>
       Option(cmd.addEnum("mask", s"${NisTop}fpmask:menu", classOf[JMask], false)))
-    def setMask(v: JMask): SeqAction[Unit] = setParameter(mask, v)
+    def setMask(v: JMask): F[Unit] = setParameterF(mask, v)
 
-    val camera: Option[CaParameter[JCamera]] = cs.flatMap(cmd =>
+    private val camera: Option[CaParameter[JCamera]] = cs.flatMap(cmd =>
       Option(cmd.addEnum("camera", s"${NisTop}camera:menu", classOf[JCamera], false)))
-    def setCamera(v: JCamera): SeqAction[Unit] = setParameter(camera, v)
+    def setCamera(v: JCamera): F[Unit] = setParameterF(camera, v)
 
-    val beamSplitter: Option[CaParameter[JBeamSplitter]] = cs.flatMap(cmd => Option(
+    private val beamSplitter: Option[CaParameter[JBeamSplitter]] = cs.flatMap(cmd => Option(
       cmd.addEnum("beamSplitter", s"${NisTop}beamsplit:menu", classOf[JBeamSplitter], false)))
-    def setBeamSplitter(v: JBeamSplitter): SeqAction[Unit] = setParameter(beamSplitter, v)
+    def setBeamSplitter(v: JBeamSplitter): F[Unit] = setParameterF(beamSplitter, v)
 
-    val exposureTime: Option[CaParameter[JDouble]] = cs.flatMap(cmd =>
+    private val exposureTime: Option[CaParameter[JDouble]] = cs.flatMap(cmd =>
       Option(cmd.getDouble("exposureTime")))
-    def setExposureTime(v: Double): SeqAction[Unit] = setParameter(exposureTime, JDouble.valueOf(v))
+    def setExposureTime(v: Double): F[Unit] = setParameterF(exposureTime, JDouble.valueOf(v))
 
-    val builtInROI: Option[CaParameter[JBuiltInROI]] = cs.flatMap(cmd =>
+    private val builtInROI: Option[CaParameter[JBuiltInROI]] = cs.flatMap(cmd =>
       Option(cmd.addEnum("builtinROI", s"${NisTop}roi:menu", classOf[JBuiltInROI], false)))
-    def setBuiltInROI(v: JBuiltInROI): SeqAction[Unit] = setParameter(builtInROI, v)
+    def setBuiltInROI(v: JBuiltInROI): F[Unit] = setParameterF(builtInROI, v)
 
-    val filter: Option[CaParameter[String]] = cs.flatMap(cmd => Option(cmd.getString("filter")))
-    def setFilter(v: String): SeqAction[Unit] = setParameter(filter, v)
+    private val filter: Option[CaParameter[String]] = cs.flatMap(cmd => Option(cmd.getString("filter")))
+    def setFilter(v: String): F[Unit] = setParameterF(filter, v)
 
-    val focus: Option[CaParameter[String]] = cs.flatMap(cmd => Option(cmd.getString
+    private val focus: Option[CaParameter[String]] = cs.flatMap(cmd => Option(cmd.getString
     ("focus")))
-    def setFocus(v: String): SeqAction[Unit] = setParameter(focus, v)
+    def setFocus(v: String): F[Unit] = setParameterF(focus, v)
 
   }
 
@@ -71,20 +73,20 @@ class NiriEpics(epicsService: CaService, tops: Map[String, String]) {
    * For some reason the window cover is not include in the IS configuration parameters. It is
    * applied by the IS apply command, nevertheless. This command exists only to set the parameter.
    */
-  object windowCoverConfig extends EpicsCommand {
+  object windowCoverConfig extends EpicsCommandF {
     override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("niri:config"))
 
-    val windowCover: Option[CaParameter[String]] = cs.flatMap(cmd =>
+    private val windowCover: Option[CaParameter[String]] = cs.flatMap(cmd =>
       Option(cmd.getString("windowCover")))
-    def setWindowCover(v: String): SeqAction[Unit] = setParameter(windowCover, v)
+    def setWindowCover(v: String): F[Unit] = setParameterF(windowCover, v)
   }
 
-  object endObserveCmd extends EpicsCommand {
+  object endObserveCmd extends EpicsCommandF {
     override val cs: Option[CaCommandSender] = Option(
       epicsService.getCommandSender("niri::endObserve"))
   }
 
-  object configDCCmd extends EpicsCommand {
+  object configDCCmd extends EpicsCommandF {
     override protected val cs: Option[CaCommandSender] =
       Option(epicsService.getCommandSender("niri::obsSetup"))
   }
@@ -94,7 +96,7 @@ class NiriEpics(epicsService: CaService, tops: Map[String, String]) {
     "niri::observeCmd", s"${NiriTop}dc:apply", s"${NiriTop}dc:applyC", s"${NiriTop}dc:observeC",
     true, s"${NiriTop}dc:stop", s"${NiriTop}dc:abort", ""))
 
-  object stopCmd extends EpicsCommand {
+  object stopCmd extends EpicsCommandF {
     override protected val cs: Option[CaCommandSender] = stopCS
   }
 
@@ -105,7 +107,7 @@ class NiriEpics(epicsService: CaService, tops: Map[String, String]) {
 
   private val abortCS: Option[CaCommandSender] = Option(epicsService.getCommandSender("niri::abort"))
 
-  object abortCmd extends EpicsCommand {
+  object abortCmd extends EpicsCommandF {
     override protected val cs: Option[CaCommandSender] = abortCS
   }
 
@@ -114,111 +116,234 @@ class NiriEpics(epicsService: CaService, tops: Map[String, String]) {
     override protected val os: Option[CaApplySender] = observeAS
   }
 
-  object observeCmd extends ObserveCommand {
+  object observeCmd extends ObserveCommandF {
     override protected val cs: Option[CaCommandSender] = Option(
       epicsService.getCommandSender("niri::observe"))
     override protected val os: Option[CaApplySender] = observeAS
 
-    val label: Option[CaParameter[String]] = cs.map(_.getString("label"))
-    def setLabel(v: String): SeqAction[Unit] = setParameter(label, v)
+    private val label: Option[CaParameter[String]] = cs.map(_.getString("label"))
+    def setLabel(v: String): F[Unit] = setParameterF(label, v)
   }
 
-  val status: CaStatusAcceptor = epicsService.getStatusAcceptor("niri::status")
+  private val status: CaStatusAcceptor = epicsService.getStatusAcceptor("niri::status")
 
-  def beamSplitter: Option[String] = Option(status.getStringAttribute("BEAMSPLT").value)
+  def beamSplitter: F[Option[String]] =
+    F.delay(
+      Option(status.getStringAttribute("BEAMSPLT"))
+        .flatMap(x => Option(x.value))
+    )
 
-  def focus: Option[String] = Option(status.getStringAttribute("FOCUSNAM").value)
+  def focus: F[Option[String]] =
+    F.delay(
+      Option(status.getStringAttribute("FOCUSNAM"))
+        .flatMap(x => Option(x.value))
+    )
 
-  def focusPosition: Option[Double] = Option(status.getDoubleAttribute("FOCUSPOS").value)
-    .map(_.toDouble)
+  def focusPosition: F[Option[Double]] =
+    F.delay(
+      Option(status.getDoubleAttribute("FOCUSPOS"))
+        .flatMap(x => Option(x.value).map(_.toDouble))
+    )
 
-  def mask: Option[String] = Option(status.getStringAttribute("FPMASK").value)
+  def mask: F[Option[String]] =
+    F.delay(
+      Option(status.getStringAttribute("FPMASK"))
+        .flatMap(x => Option(x.value))
+    )
 
-  def pupilViewer: Option[String] = Option(status.getStringAttribute("PVIEW").value)
+  def pupilViewer: F[Option[String]] =
+    F.delay(
+      Option(status.getStringAttribute("PVIEW"))
+        .flatMap(x => Option(x.value))
+    )
 
-  def camera: Option[String] = Option(status.getStringAttribute("CAMERA").value)
+  def camera: F[Option[String]] =
+    F.delay(
+      Option(status.getStringAttribute("CAMERA"))
+        .flatMap(x => Option(x.value))
+    )
 
-  def windowCover: Option[String] = Option(status.getStringAttribute("WINDCOVR").value)
+  def windowCover: F[Option[String]] =
+    F.delay(
+      Option(status.getStringAttribute("WINDCOVR"))
+        .flatMap(x => Option(x.value))
+    )
 
-  def filter1: Option[String] = Option(status.getStringAttribute("FILTER1").value)
+  def filter1: F[Option[String]] =
+    F.delay(
+      Option(status.getStringAttribute("FILTER1"))
+        .flatMap(x => Option(x.value))
+    )
 
-  def filter2: Option[String] = Option(status.getStringAttribute("FILTER2").value)
+  def filter2: F[Option[String]] =
+    F.delay(
+      Option(status.getStringAttribute("FILTER2"))
+        .flatMap(x => Option(x.value))
+    )
 
-  def filter3: Option[String] = Option(status.getStringAttribute("FILTER3").value)
+  def filter3: F[Option[String]] =
+    F.delay(
+      Option(status.getStringAttribute("FILTER3"))
+        .flatMap(x => Option(x.value))
+    )
 
-  val dcStatus: CaStatusAcceptor = epicsService.getStatusAcceptor("niri::dcstatus")
+  private val dcStatus: CaStatusAcceptor = epicsService.getStatusAcceptor("niri::dcstatus")
 
-  def dhsConnected: Option[Boolean] = Option(dcStatus.getIntegerAttribute("dhcConnected").value)
-    .map(_.toInt === 1)
+  def dhsConnected: F[Option[Boolean]] =
+    F.delay(
+      Option(dcStatus.getIntegerAttribute("dhcConnected"))
+        .flatMap(x => Option(x.value).map(_.toInt === 1))
+    )
 
-  val arrayActiveAttr: Option[CaAttribute[JDetectorState]] = Option(dcStatus.addEnum(
-    "arrayState", s"${NiriTop}dc:activate", classOf[JDetectorState]
-  ))
-  def arrayActive: Option[Boolean] = arrayActiveAttr.flatMap(at => Option(at.value))
-    .map(_.getActive)
+  private val arrayActiveAttr: Option[CaAttribute[JDetectorState]] =
+    Option(dcStatus.addEnum("arrayState", s"${NiriTop}dc:activate", classOf[JDetectorState]))
 
-  def minIntegration: Option[Double] = Option(dcStatus.getDoubleAttribute("minInt").value)
-    .map(_.toDouble)
+  def arrayActive: F[Option[Boolean]] =
+    F.delay(
+      arrayActiveAttr.flatMap(at => Option(at.value).map(_.getActive))
+    )
 
-  def integrationTime: Option[Double] = Option(dcStatus.getDoubleAttribute("intTime").value)
-    .map(_.toDouble)
+  def minIntegration: F[Option[Double]] =
+    F.delay(
+      Option(dcStatus.getDoubleAttribute("minInt"))
+        .flatMap(x => Option(x.value).map(_.toDouble))
+    )
 
-  def coadds: Option[Int] = Option(dcStatus.getIntegerAttribute("numCoAdds").value).map(_.toInt)
+  def integrationTime: F[Option[Double]] =
+    F.delay(
+      Option(dcStatus.getDoubleAttribute("intTime"))
+        .flatMap(x => Option(x.value).map(_.toDouble))
+    )
 
-  def detectorTemp: Option[Double] = Option(dcStatus.getDoubleAttribute("TDETABS").value)
-    .map(_.toDouble)
+  def coadds: F[Option[Int]] =
+    F.delay(
+      Option(dcStatus.getIntegerAttribute("numCoAdds"))
+        .flatMap(x => Option(x.value).map(_.toInt))
+    )
 
-  def µcodeName: Option[String] = Option(dcStatus.getStringAttribute("UCODENAM").value)
+  def detectorTemp: F[Option[Double]] =
+    F.delay(
+      Option(dcStatus.getDoubleAttribute("TDETABS"))
+        .flatMap(x => Option(x.value).map(_.toDouble))
+    )
 
-  def µcodeType: Option[Int] = Option(dcStatus.getIntegerAttribute("UCODETYP").value)
-    .map(_.toInt)
+  def µcodeName: F[Option[String]] =
+    F.delay(
+      Option(dcStatus.getStringAttribute("UCODENAM"))
+        .flatMap(x => Option(x.value))
+    )
 
-  def framesPerCycle: Option[Int] = Option(dcStatus.getIntegerAttribute("FRMSPCYCL").value)
-    .map(_.toInt)
+  def µcodeType: F[Option[Int]] =
+    F.delay(
+      Option(dcStatus.getIntegerAttribute("UCODETYP"))
+        .flatMap(x => Option(x.value).map(_.toInt))
+    )
 
-  def detectorVDetBias: Option[Double] = Option(dcStatus.getDoubleAttribute("VDET").value)
-    .map(_.toDouble)
+  def framesPerCycle: F[Option[Int]] =
+    F.delay(
+      Option(dcStatus.getIntegerAttribute("FRMSPCYCL"))
+        .flatMap(x => Option(x.value).map(_.toInt))
+    )
 
-  def detectorVSetBias: Option[Double] = Option(dcStatus.getDoubleAttribute("VSET").value)
-    .map(_.toDouble)
+  def detectorVDetBias: F[Option[Double]] =
+    F.delay(
+      Option(dcStatus.getDoubleAttribute("VDET"))
+        .flatMap(x => Option(x.value).map(_.toDouble))
+    )
 
-  def obsEpoch: Option[Double] = Option(dcStatus.getDoubleAttribute("OBSEPOCH").value)
-    .map(_.toDouble)
+  def detectorVSetBias: F[Option[Double]] =
+    F.delay(
+      Option(dcStatus.getDoubleAttribute("VSET"))
+        .flatMap(x => Option(x.value).map(_.toDouble))
+    )
 
-  def mountTemp: Option[Double] = Option(dcStatus.getDoubleAttribute("TMOUNT").value)
-    .map(_.toDouble)
+  def obsEpoch: F[Option[Double]] =
+    F.delay(
+      Option(dcStatus.getDoubleAttribute("OBSEPOCH"))
+        .flatMap(x => Option(x.value).map(_.toDouble))
+    )
 
-  def digitalAverageCount: Option[Int] = Option(dcStatus.getIntegerAttribute("NDAVGS").value)
-    .map(_.toInt)
+  def mountTemp: F[Option[Double]] =
+    F.delay(
+      Option(dcStatus.getDoubleAttribute("TMOUNT"))
+        .flatMap(x => Option(x.value).map(_.toDouble))
+    )
 
-  def vggCl1: Option[Double] = Option(dcStatus.getDoubleAttribute("VGGCL1").value).map(_.toDouble)
+  def digitalAverageCount: F[Option[Int]] =
+    F.delay(
+      Option(dcStatus.getIntegerAttribute("NDAVGS"))
+        .flatMap(x => Option(x.value).map(_.toInt))
+    )
 
-  def vddCl1: Option[Double] = Option(dcStatus.getDoubleAttribute("VDDCL1").value).map(_.toDouble)
+  def vggCl1: F[Option[Double]] =
+    F.delay(
+      Option(dcStatus.getDoubleAttribute("VGGCL1"))
+        .flatMap(x => Option(x.value).map(_.toDouble))
+    )
 
-  def vggCl2: Option[Double] = Option(dcStatus.getDoubleAttribute("VGGCL2").value).map(_.toDouble)
+  def vddCl1: F[Option[Double]] =
+    F.delay(
+      Option(dcStatus.getDoubleAttribute("VDDCL1"))
+        .flatMap(x => Option(x.value).map(_.toDouble))
+    )
 
-  def vddCl2: Option[Double] = Option(dcStatus.getDoubleAttribute("VDDCL2").value).map(_.toDouble)
+  def vggCl2: F[Option[Double]] =
+    F.delay(
+      Option(dcStatus.getDoubleAttribute("VGGCL2"))
+        .flatMap(x => Option(x.value).map(_.toDouble))
+    )
 
-  def vddUc: Option[Double] = Option(dcStatus.getDoubleAttribute("VDDUC").value).map(_.toDouble)
+  def vddCl2: F[Option[Double]] =
+    F.delay(
+      Option(dcStatus.getDoubleAttribute("VDDCL2"))
+        .flatMap(x => Option(x.value).map(_.toDouble))
+    )
 
-  def lnrs: Option[Int] = Option(dcStatus.getIntegerAttribute("LNRS").value).map(_.toInt)
+  def vddUc: F[Option[Double]] =
+    F.delay(
+      Option(dcStatus.getDoubleAttribute("VDDUC"))
+        .flatMap(x => Option(x.value).map(_.toDouble))
+    )
 
-  def hdrTiming: Option[Int] = Option(dcStatus.getIntegerAttribute("hdrtiming").value).map(_.toInt)
+  def lnrs: F[Option[Int]] =
+    F.delay(
+      Option(dcStatus.getIntegerAttribute("LNRS"))
+        .flatMap(x => Option(x.value).map(_.toInt))
+    )
 
-  def arrayType: Option[String] = Option(dcStatus.getStringAttribute("ARRAYTYP").value)
+  def hdrTiming: F[Option[Int]] =
+    F.delay(
+      Option(dcStatus.getIntegerAttribute("hdrtiming"))
+        .flatMap(x => Option(x.value).map(_.toInt))
+    )
 
-  def arrayId: Option[String] = Option(dcStatus.getStringAttribute("ARRAYID").value)
+  def arrayType: F[Option[String]] =
+    F.delay(
+      Option(dcStatus.getStringAttribute("ARRAYTYP"))
+        .flatMap(x => Option(x.value))
+    )
 
-  def mode: Option[Int] = Option(dcStatus.getIntegerAttribute("MODE").value).map(_.toInt)
+  def arrayId: F[Option[String]] =
+    F.delay(
+      Option(dcStatus.getStringAttribute("ARRAYID"))
+        .flatMap(x => Option(x.value))
+    )
+
+  def mode: F[Option[Int]] =
+    F.delay(
+      Option(dcStatus.getIntegerAttribute("MODE"))
+        .flatMap(x => Option(x.value).map(_.toInt))
+    )
 
 }
 
-object NiriEpics extends EpicsSystem[NiriEpics] {
+object NiriEpics extends EpicsSystem[NiriEpics[IO]] {
 
   override val className: String = getClass.getName
   override val Log: Logger = getLogger
   override val CA_CONFIG_FILE: String = "/Niri.xml"
 
-  override def build(service: CaService, tops: Map[String, String]) = new NiriEpics(service, tops)
+  override def build(service: CaService, tops: Map[String, String]) =
+    new NiriEpics[IO](service, tops)
 
 }

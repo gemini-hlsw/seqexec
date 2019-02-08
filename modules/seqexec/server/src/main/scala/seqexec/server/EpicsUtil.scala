@@ -398,15 +398,37 @@ object EpicsUtil {
   def smartSetParam[A: Eq](v: A, get: => Option[A], set: SeqAction[Unit]): List[SeqAction[Unit]] =
     if(get =!= v.some) List(set) else Nil
 
+  // This method takes a list of actions returning possible actions
+  // If at least one is defined it will execute them and then executes `after`
+  def executeIfNeeded[F[_]: Monad, A](i:     List[F[Option[F[Unit]]]],
+                                              after: F[A]): F[Unit] =
+    i.sequence.flatMap { l =>
+      val act: List[F[Unit]] = l.collect {
+        case Some(x) => x
+      }
+      (act.sequence *> after).whenA(act.nonEmpty)
+    }
+
+  class FOps[F[_]: Applicative, A](a: F[A]) {
+    def wrapped: F[Option[F[A]]] =
+      a.some.pure[F]
+  }
+
+  implicit def ToFOps[F[_]: Applicative, A](a: F[A]): FOps[F, A] =
+    new FOps(a)
+
   // The return signature indicates this programs calculates if we maybe need an action
   // e.g. it checks that a value in epics compares to a reference and if so returns an optional
   // action
-  def smartSetParamF[F[_]: Monad, A: Eq](v: A, get: => F[Option[A]], set: F[Unit]): F[Option[F[Unit]]] =
+  def smartSetParamF[F[_]: Monad, A: Eq](v: A, get: F[Option[A]], set: F[Unit]): F[Option[F[Unit]]] =
     get.map(_ =!= v.some).map(_.option(set))
 
   def smartSetDoubleParam(relTolerance: Double)(v: Double, get: => Option[Double], set: SeqAction[Unit]): List[SeqAction[Unit]] =
     if(get.forall(x => (v === 0.0 && x =!= 0.0) || abs((x - v)/v) > relTolerance))
   List(set) else Nil
+
+  def smartSetDoubleParamF[F[_]: Functor](relTolerance: Double)(v: Double, get: F[Option[Double]], set: F[Unit]): F[Option[F[Unit]]] =
+    get.map(g => (g.forall(x => (v === 0.0 && x =!= 0.0) || abs((x - v)/v) > relTolerance)).option(set))
 
   def countdown[F[_]: Apply: cats.effect.Timer](total: Time, remT: F[Option[Time]],
                               obsState: F[Option[CarStateGeneric]]): Stream[F, Progress] =
