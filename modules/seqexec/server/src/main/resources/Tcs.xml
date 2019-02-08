@@ -304,17 +304,17 @@
             </parameter>
             <parameter name="bandwidth">
                 <channel>filter1.A</channel>
-                <type>STRING</type>
+                <type>DOUBLE</type>
                 <description>Bandwidth</description>
             </parameter>
             <parameter name="maxv">
                 <channel>filter1.B</channel>
-                <type>STRING</type>
+                <type>DOUBLE</type>
                 <description>Maximum velocity</description>
             </parameter>
             <parameter name="grab">
                 <channel>filter1.C</channel>
-                <type>STRING</type>
+                <type>DOUBLE</type>
                 <description>Grab radius</description>
             </parameter>
         </command>
@@ -350,12 +350,12 @@
             <description>ALTAIR Image correction</description>
             <parameter name="matrix">
                 <channel>aoCorrect.B</channel>
-                <type>STRING</type>
+                <type>INTEGER</type>
                 <description>Matrix ID</description>
             </parameter>
             <parameter name="gains">
                 <channel>aoCorrect.C</channel>
-                <type>STRING</type>
+                <type>INTEGER</type>
                 <description>Re-use gains</description>
             </parameter>
             <parameter name="correct">

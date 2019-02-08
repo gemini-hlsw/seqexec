@@ -250,7 +250,6 @@ object EpicsCodex {
 
 }
 
-
 object EpicsUtil {
 
   //`locked` gets a piece of code and runs it protected by `lock`

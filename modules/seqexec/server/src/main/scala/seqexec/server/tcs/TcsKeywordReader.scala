@@ -10,9 +10,9 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 import cats.data.OptionT
-import gem.math.Angle
 import monocle.Prism
 import seqexec.server.keywords._
+import squants.space._
 
 sealed trait CRFollow extends Product with Serializable
 
@@ -259,7 +259,7 @@ object DummyTcsKeywordsReader extends TcsKeywordsReader[IO] {
 
   override def getEndAirMass: IO[Double] = IO(1.0)
 
-  override def getParallacticAngle: IO[Option[Angle]] = IO(Some(Angle.fromDoubleDegrees(0)))
+  override def getParallacticAngle: IO[Option[Angle]] = IO(Some(Arcseconds(0.0)))
 
   override def getTrackingRAOffset: IO[Double] = IO(0.0)
 
@@ -362,36 +362,49 @@ object TcsKeywordsReaderImpl extends TcsKeywordsReader[IO] {
 
   private val xoffIndex = 6
   private val yoffIndex = 7
-  private val focalPlaneScale = 1.611443804
 
-  def getXOffsetOption: IO[Option[Double]] =
-    TcsEpics.instance.targetA.map(_.flatMap(v => v.lift(xoffIndex).map(_*focalPlaneScale)))
+  def getXOffsetOption: IO[Option[Angle]] =
+    TcsEpics.instance.targetA.map(_.flatMap(v => v.lift(xoffIndex).map(x => Millimeters(x)*FOCAL_PLANE_SCALE)))
 
-  override def getXOffset: IO[Double] = getXOffsetOption.safeValOrDefault
+  override def getXOffset: IO[Double] =
+    getXOffsetOption.safeVal.map(_.map(_.toArcseconds).getOrElse(DefaultHeaderValue[Double].default))
 
-  def getYOffsetOption: IO[Option[Double]] =
-    TcsEpics.instance.targetA.map(_.flatMap(v => v.lift(yoffIndex).map(_*focalPlaneScale)))
+  def getYOffsetOption: IO[Option[Angle]] =
+    TcsEpics.instance.targetA.map(_.flatMap(v => v.lift(yoffIndex).map(x => Millimeters(x)*FOCAL_PLANE_SCALE)))
 
-  override def getYOffset: IO[Double] = getYOffsetOption.safeValOrDefault
+  override def getYOffset: IO[Double] =
+    getYOffsetOption.safeVal.map(_.map(_.toArcseconds).getOrElse(DefaultHeaderValue[Double].default))
 
   private val raoffIndex = 2
   private val decoffIndex = 3
-  private val degreeToArcsec = 3600.0
+
+  def normalizePositiveAngle(v: Angle): Angle = {
+    val r = v.value % 360.0
+    Degrees(
+      if (r < 0.0) r + 360.0
+      else r
+    )
+  }
+  def normalizeSignedAngle(v: Angle): Angle = {
+    val r = v.value % 360.0
+    Degrees(
+      if (r < -180.0) r + 360.0
+      else if (r >= 180.0) r - 360.0
+      else r
+    )
+  }
 
   override def getTrackingRAOffset: IO[Double] = {
-    def angleRange(v: Double) = {
-      val r = v % 360.0
-      if (r<180.0) r + 360.0
-      else if (r>=180.0) r - 360.0
-      else r
-    }
-    def raOffset(off: Double, dec: Double): Double = angleRange(Math.toDegrees(off)) * Math.cos(dec)*degreeToArcsec
+    def raOffset(off: Angle, dec: Angle): Angle = normalizeSignedAngle(off) * dec.cos
 
-    TcsEpics.instance.targetA.map(_.flatMap(v => Apply[Option].ap2(Option(raOffset _))(v.lift(raoffIndex),v.lift(decoffIndex)))).safeValOrDefault
+    TcsEpics.instance.targetA.map(_.flatMap(v =>
+      Apply[Option].ap2(Option(raOffset _))(v.lift(raoffIndex).map(Radians(_)),v.lift(decoffIndex).map(Radians(_)))))
+      .safeVal.map(_.map(_.toArcseconds).getOrElse(DefaultHeaderValue[Double].default))
   }
 
   override def getTrackingDecOffset: IO[Double] =
-    TcsEpics.instance.targetA.map(_.flatMap(v => v.lift(decoffIndex).map(Math.toDegrees(_) * degreeToArcsec))).safeValOrDefault
+    TcsEpics.instance.targetA.map(_.flatMap(v => v.lift(decoffIndex).map(Radians(_)))).safeVal
+      .map(_.map(_.toArcseconds).getOrElse(DefaultHeaderValue[Double].default))
 
   override def getInstrumentAA: IO[Double] = TcsEpics.instance.instrAA.safeValOrDefault
 
@@ -430,7 +443,8 @@ object TcsKeywordsReaderImpl extends TcsKeywordsReader[IO] {
 
   override def getEndAirMass: IO[Double] = TcsEpics.instance.airmassEnd.safeValOrDefault
 
-  override def getParallacticAngle: IO[Option[Angle]] = TcsEpics.instance.parallacticAngle.safeVal
+  override def getParallacticAngle: IO[Option[Angle]] =
+    TcsEpics.instance.parallacticAngle.map(_.map(normalizeSignedAngle)).safeVal
 
   override def getPwfs1Target: TargetKeywordsReader[IO] = target(TcsEpics.instance.pwfs1Target)
 
@@ -474,40 +488,40 @@ object TcsKeywordsReaderImpl extends TcsKeywordsReader[IO] {
 
   override def getCRFollow: IO[Option[CRFollow]] = TcsEpics.instance.crFollow.safeVal.map(_.flatMap(CRFollow.fromInt.getOption))
 
-  def getPOffsetOption: IO[Option[Double]] = (
+  def getPOffsetOption: IO[Option[Angle]] = (
     for {
       xoff <- OptionT(getXOffsetOption)
       yoff <- OptionT(getYOffsetOption)
-      iaa  <- OptionT(TcsEpics.instance.instrAA)
-    } yield  -xoff * Math.cos(Math.toRadians(iaa)) + yoff * Math.sin(Math.toRadians(iaa))
+      iaa  <- OptionT(TcsEpics.instance.instrAA).map(Degrees(_))
+    } yield  -xoff * iaa.cos + yoff * iaa.sin
   ).value
 
-  override def getPOffset: IO[Double] = getPOffsetOption.safeValOrDefault
+  override def getPOffset: IO[Double] = getPOffsetOption.map(_.map(_.toArcseconds)).safeValOrDefault
 
-  def getQOffsetOption: IO[Option[Double]] = (
+  def getQOffsetOption: IO[Option[Angle]] = (
     for {
       xoff <- OptionT(getXOffsetOption)
       yoff <- OptionT(getYOffsetOption)
-      iaa  <- OptionT(TcsEpics.instance.instrAA)
-    } yield  -xoff * Math.sin(Math.toRadians(iaa)) - yoff * Math.cos(Math.toRadians(iaa))
+      iaa  <- OptionT(TcsEpics.instance.instrAA).map(Degrees(_))
+    } yield  -xoff * iaa.sin - yoff * iaa.cos
   ).value
 
-  override def getQOffset: IO[Double] = getQOffsetOption.safeValOrDefault
+  override def getQOffset: IO[Double] = getQOffsetOption.map(_.map(_.toArcseconds)).safeValOrDefault
 
   override def getRaOffset: IO[Double] = (
     for {
       p <- OptionT(getPOffsetOption)
       q <- OptionT(getQOffsetOption)
-      ipa <- OptionT(TcsEpics.instance.instrPA)
-    } yield p * Math.cos(Math.toRadians(ipa)) + q * Math.sin(Math.toRadians(ipa))
-  ).value.safeValOrDefault
+      ipa <- OptionT(TcsEpics.instance.instrPA).map(Degrees(_))
+    } yield p * ipa.cos + q * ipa.sin
+  ).map(_.toArcseconds).value.safeValOrDefault
 
   override def getDecOffset: IO[Double] = (
     for {
       p <- OptionT(getPOffsetOption)
       q <- OptionT(getQOffsetOption)
-      ipa <- OptionT(TcsEpics.instance.instrPA)
-    } yield -p * Math.sin(Math.toRadians(ipa)) + q * Math.cos(Math.toRadians(ipa))
-  ).value.safeValOrDefault
+      ipa <- OptionT(TcsEpics.instance.instrPA).map(Degrees(_))
+    } yield -p * ipa.sin + q * ipa.cos
+  ).map(_.toArcseconds).value.safeValOrDefault
 
 }

@@ -3,288 +3,39 @@
 
 package seqexec.server.tcs
 
+import cats.Endo
 import seqexec.server.tcs.TcsController.{HrwfsConfig, _}
-import seqexec.server.{EpicsCodex, EpicsCommand, SeqAction, SeqexecFailure, TrySeq}
+import seqexec.server.{EpicsCodex, EpicsCommand, SeqAction}
 import edu.gemini.spModel.core.Wavelength
 import org.log4s.getLogger
-import squants.space.{Angstroms, Degrees, Millimeters}
 import squants.time.Seconds
 import cats.data._
 import cats.effect.IO
 import cats.implicits._
-import edu.gemini.seqexec.server.tcs.{BinaryOnOff, BinaryYesNo}
-import gem.enum.LightSinkName
+import seqexec.server.altair.Altair
+import seqexec.server.gems.Gems
+import shapeless.tag
+import squants.{Angle, Length}
+import monocle.Iso
+import shapeless.tag.@@
 
 object TcsControllerEpics extends TcsController {
   private val Log = getLogger
 
   import EpicsCodex._
-  import FollowOption._
   import MountGuideOption._
+  import ScienceFoldPositionCodex._
 
-  val BottomPort = 1
-
-  // Code to retrieve the current configuration from TCS. Include a lot of decoders
-  implicit private val decodeMountGuideOption: DecodeEpicsValue[Int, MountGuideOption] = DecodeEpicsValue((d: Int)
-  => if (d === 0) MountGuideOff else MountGuideOn)
-
-  implicit private val decodeM1GuideSource: DecodeEpicsValue[String, M1Source] = DecodeEpicsValue((s: String)
-  => s.trim match {
-      case "PWFS1" => M1Source.PWFS1
-      case "PWFS2" => M1Source.PWFS2
-      case "OIWFS" => M1Source.OIWFS
-      case "GAOS"  => M1Source.GAOS
-      case _       => M1Source.PWFS1
-    })
-
-  private def decodeM1Guide(r: BinaryOnOff, s: M1Source): M1GuideConfig =
-    if (r === BinaryOnOff.Off) M1GuideOff
-    else M1GuideOn(s)
-
-  private def decodeGuideSourceOption(s: String): Boolean = s.trim =!= "OFF"
-
-  implicit private val decodeComaOption: DecodeEpicsValue[String, ComaOption] = DecodeEpicsValue((s: String)
-  => if (s.trim === "Off") ComaOption.ComaOff else ComaOption.ComaOn)
-
-  private def decodeM2Guide(s: BinaryOnOff, u: ComaOption, v: Set[TipTiltSource]): M2GuideConfig =
-    if (s === BinaryOnOff.Off) M2GuideOff
-    else M2GuideOn(u, v)
-
-  private def getGuideConfig: IO[TrySeq[GuideConfig]] = {
-    for {
-      mountGuide <-  OptionT(TcsEpics.instance.absorbTipTilt).map(decode[Int, MountGuideOption])
-      m1Source   <-  OptionT(TcsEpics.instance.m1GuideSource).map(decode[String, M1Source])
-      m1Guide    <-  OptionT(TcsEpics.instance.m1Guide).map(decodeM1Guide(_, m1Source))
-      m2p1Guide  <-  OptionT(TcsEpics.instance.m2p1Guide).map(decodeGuideSourceOption)
-      m2p2Guide  <-  OptionT(TcsEpics.instance.m2p2Guide).map(decodeGuideSourceOption)
-      m2oiGuide  <-  OptionT(TcsEpics.instance.m2oiGuide).map(decodeGuideSourceOption)
-      m2aoGuide  <-  OptionT(TcsEpics.instance.m2aoGuide).map(decodeGuideSourceOption)
-      m2Coma     <-  OptionT(TcsEpics.instance.comaCorrect).map(decode[String, ComaOption])
-      m2Guide    <- OptionT(Nested(TcsEpics.instance.m2GuideState).map(decodeM2Guide(_, m2Coma, List((m2p1Guide, TipTiltSource.PWFS1),
-        (m2p2Guide, TipTiltSource.PWFS2), (m2oiGuide, TipTiltSource.OIWFS),
-        (m2aoGuide, TipTiltSource.GAOS)).foldLeft(Set.empty[TipTiltSource])((s: Set[TipTiltSource], v: (Boolean, TipTiltSource)) => if (v._1) s + v._2 else s))).value)
-    } yield TrySeq(GuideConfig(mountGuide, m1Guide, m2Guide))
-  }.value.map(_.getOrElse(TrySeq.fail(SeqexecFailure.Unexpected("Unable to read guide configuration from TCS."))))
-
-  implicit private val decodeBeam: DecodeEpicsValue[String, Beam] = DecodeEpicsValue{
-    case "A" => Beam.A
-    case "B" => Beam.B
-    case "C" => Beam.C
-    case _   => Beam.A
-  }
-
-  private def getTelescopeConfig: IO[TrySeq[TelescopeConfig]] = {
-    for {
-      xOffsetA    <- OptionT(TcsEpics.instance.xoffsetPoA1)
-      yOffsetA    <- OptionT(TcsEpics.instance.yoffsetPoA1)
-      xOffsetB    <- OptionT(TcsEpics.instance.xoffsetPoB1)
-      yOffsetB    <- OptionT(TcsEpics.instance.yoffsetPoB1)
-      xOffsetC    <- OptionT(TcsEpics.instance.xoffsetPoC1)
-      yOffsetC    <- OptionT(TcsEpics.instance.yoffsetPoC1)
-      wavelengthA <- OptionT(TcsEpics.instance.sourceAWavelength)
-      wavelengthB <- OptionT(TcsEpics.instance.sourceBWavelength)
-      wavelengthC <- OptionT(TcsEpics.instance.sourceCWavelength)
-      m2Beam      <-  OptionT(TcsEpics.instance.chopBeam).map(decode[String, Beam])
-    } yield TrySeq(TelescopeConfig(
-      OffsetA(FocalPlaneOffset(OffsetX(Millimeters[Double](xOffsetA)), OffsetY(Millimeters[Double](yOffsetA)))),
-      OffsetB(FocalPlaneOffset(OffsetX(Millimeters[Double](xOffsetB)), OffsetY(Millimeters[Double](yOffsetB)))),
-      OffsetC(FocalPlaneOffset(OffsetX(Millimeters[Double](xOffsetC)), OffsetY(Millimeters[Double](yOffsetC)))),
-      WavelengthA(Wavelength(Angstroms[Double](wavelengthA))),
-      WavelengthB(Wavelength(Angstroms[Double](wavelengthB))),
-      WavelengthC(Wavelength(Angstroms[Double](wavelengthC))),
-      m2Beam
-    ))
-  }.value.map(_.getOrElse(TrySeq.fail(SeqexecFailure.Unexpected("Unable to read telescope configuration from TCS."))))
-
-  private def decodeNodChopOption(s: String): Boolean = s.trim === "On"
-
-  private def getNodChopTrackingConfig(g: TcsEpics.ProbeGuideConfig[IO]): IO[Option[NodChopTrackingConfig]] = (
-    for {
-      aa <-  OptionT(g.nodachopa).map(decodeNodChopOption)
-      ab <-  OptionT(g.nodachopb).map(decodeNodChopOption)
-      ac <-  OptionT(g.nodachopc).map(decodeNodChopOption)
-      ba <-  OptionT(g.nodbchopa).map(decodeNodChopOption)
-      bb <-  OptionT(g.nodbchopb).map(decodeNodChopOption)
-      bc <-  OptionT(g.nodbchopc).map(decodeNodChopOption)
-      ca <-  OptionT(g.nodcchopa).map(decodeNodChopOption)
-      cb <-  OptionT(g.nodcchopb).map(decodeNodChopOption)
-      cc <-  OptionT(g.nodcchopc).map(decodeNodChopOption)
-
-      // This last product is slightly tricky.
-      o  <- OptionT(IO{
-        if (List(aa, ab, ac, ba, bb, bc, ca, cb, cc).contains(true)) {
-              if (List(aa, bb, cc).forall(_ === true) && List(ab, ac, ba, bc, ca, cb).forall(_ === false)) {
-                Some(NodChopTrackingConfig.Normal)
-              } else {
-                List(
-                  (aa, NodChop(Beam.A, Beam.A)), (ab, NodChop(Beam.A, Beam.B)), (ac, NodChop(Beam.A, Beam.C)),
-                  (ba, NodChop(Beam.B, Beam.A)), (bb, NodChop(Beam.B, Beam.B)), (bc, NodChop(Beam.B, Beam.C)),
-                  (ca, NodChop(Beam.C, Beam.A)), (cb, NodChop(Beam.C, Beam.B)), (cc, NodChop(Beam.C, Beam.C))
-                ) collect {
-                  case (true, a) => a
-                } match {
-                  case h :: t => Some(NodChopTrackingConfig.Special(OneAnd(h, t)))
-                  case Nil    => None // the list is empty
-                }
-              }
-            } else Some(NodChopTrackingConfig.None)
-      })
-    } yield o
-  ).value
-
-  private def calcProbeTrackingConfig(f: FollowOption, t: NodChopTrackingConfig): ProbeTrackingConfig = (f, t) match {
-    case (_, NodChopTrackingConfig.None)              => ProbeTrackingConfig.Off
-    case (FollowOn, NodChopTrackingConfig.Normal)     => ProbeTrackingConfig.On(NodChopTrackingConfig.Normal)
-    case (FollowOn, v: NodChopTrackingConfig.Special) => ProbeTrackingConfig.On(v)
-    case _                                            => ProbeTrackingConfig.Off
-  }
-
-  implicit private val decodeFollowOption: DecodeEpicsValue[String, FollowOption] = DecodeEpicsValue((s: String)
-  => if (s.trim === "Off") FollowOff else FollowOn)
-
-  private def getGuidersTrackingConfig: IO[TrySeq[GuidersTrackingConfig]] = {
-    for {
-      p1       <- OptionT(getNodChopTrackingConfig(TcsEpics.instance.pwfs1ProbeGuideConfig))
-      p2       <- OptionT(getNodChopTrackingConfig(TcsEpics.instance.pwfs2ProbeGuideConfig))
-      oi       <- OptionT(getNodChopTrackingConfig(TcsEpics.instance.oiwfsProbeGuideConfig))
-      p1Follow <-  OptionT(TcsEpics.instance.p1FollowS).map(decode[String, FollowOption])
-      p2Follow <-  OptionT(TcsEpics.instance.p2FollowS).map(decode[String, FollowOption])
-      oiFollow <-  OptionT(TcsEpics.instance.oiFollowS).map(decode[String, FollowOption])
-    } yield TrySeq(GuidersTrackingConfig(ProbeTrackingConfigP1(calcProbeTrackingConfig(p1Follow, p1)),
-      ProbeTrackingConfigP2(calcProbeTrackingConfig(p2Follow, p2)),
-      ProbeTrackingConfigOI(calcProbeTrackingConfig(oiFollow, oi)),
-      ProbeTrackingConfigAO(ProbeTrackingConfig.Off)))
-  }.value.map(_.getOrElse(TrySeq.fail(SeqexecFailure.Unexpected("Unable to read probes guide from TCS."))))
-
-  implicit private val decodeGuideSensorOption: DecodeEpicsValue[BinaryYesNo, GuiderSensorOption] =
-    DecodeEpicsValue((s: BinaryYesNo) => if (s === BinaryYesNo.No) GuiderSensorOff else GuiderSensorOn)
-
-  private def getGuidersEnabled: IO[TrySeq[GuidersEnabled]] = {
-    for {
-      p1On <-  OptionT(TcsEpics.instance.pwfs1On).map(decode[BinaryYesNo, GuiderSensorOption])
-      p2On <-  OptionT(TcsEpics.instance.pwfs2On).map(decode[BinaryYesNo, GuiderSensorOption])
-      oiOn <-  OptionT(TcsEpics.instance.oiwfsOn).map(decode[BinaryYesNo, GuiderSensorOption])
-    } yield TrySeq(GuidersEnabled(GuiderSensorOptionP1(p1On), GuiderSensorOptionP2(p2On),
-        GuiderSensorOptionOI(oiOn)))
-  }.value.map(_.getOrElse(TrySeq.fail(
-    SeqexecFailure.Unexpected("Unable to read guider detectors state from TCS.")
-  )))
-
-  // Decoding and encoding the science fold position require some common definitions, therefore I
-  // put them inside an object
-  private[server] object CodexScienceFoldPosition {
-
-    import LightSource._
-    import ScienceFoldPosition._
-
-    private val AO_PREFIX = "ao2"
-    private val GCAL_PREFIX = "gcal2"
-    private val PARK_POS = "park-pos"
-
-    def portFromSinkName(n: LightSinkName): IO[Option[Int]] = {
-      val InvalidPort = 0
-      (n match {
-        case LightSinkName.Gmos |
-             LightSinkName.Gmos_Ifu => TcsEpics.instance.gmosPort
-        case LightSinkName.Niri_f6 |
-             LightSinkName.Niri_f14 |
-             LightSinkName.Niri_f32 => TcsEpics.instance.niriPort
-        case LightSinkName.Nifs     => TcsEpics.instance.nifsPort
-        case LightSinkName.Gnirs    => TcsEpics.instance.gnirsPort
-        case LightSinkName.F2       => TcsEpics.instance.f2Port
-        case LightSinkName.Gpi      => TcsEpics.instance.gpiPort
-        case LightSinkName.Ghost    => TcsEpics.instance.ghostPort
-        case LightSinkName.Gsaoi    => TcsEpics.instance.gsaoiPort
-        case LightSinkName.Ac |
-             LightSinkName.Hr       => IO(BottomPort.some)
-        case _                      => IO(None)
-      }).map(_.filterNot(_ === InvalidPort))
+  private def setTelescopeConfig(c: TelescopeConfig, iaa: Angle): SeqAction[Unit] = {
+    val off = c.offsetA.map{ v =>
+      ((- v.p * iaa.cos - v.q * iaa.sin) / FOCAL_PLANE_SCALE, (v.p * iaa.sin - v.q * iaa.cos) / FOCAL_PLANE_SCALE)
     }
 
-    private def findSinkInSFName(str: String): Option[LightSinkName] =
-      LightSinkName.all.find(i => str.startsWith(i.name))
-
-    implicit val decodeScienceFoldPosition: DecodeEpicsValue[String, Option[ScienceFoldPosition]] = DecodeEpicsValue(
-      (t: String) => if (t.startsWith(PARK_POS)) Parked.some
-      else if (t.startsWith(AO_PREFIX))
-        findSinkInSFName(t.substring(AO_PREFIX.length)).map(Position(AO, _))
-      else if (t.startsWith(GCAL_PREFIX))
-        findSinkInSFName(t.substring(GCAL_PREFIX.length)).map(Position(GCAL, _))
-      else findSinkInSFName(t).map(Position(Sky, _))
-    )
-
-    def encodeScienceFoldPosition(port: Int): EncodeEpicsValue[Position, String] = EncodeEpicsValue((a: Position) => {
-      val instAGName = a.sink.name + port.toString
-
-      a.source match {
-        case Sky => instAGName
-        case AO => AO_PREFIX + instAGName
-        case GCAL => GCAL_PREFIX + instAGName
-      }
-    })
+    off.map { case (x, y) => TcsEpics.instance.offsetACmd.setX(x.toMillimeters) *>
+      TcsEpics.instance.offsetACmd.setY(y.toMillimeters)
+    }.getOrElse(SeqAction.void) *>
+      c.wavelA.map(w => TcsEpics.instance.wavelSourceA.setWavel(w.toMicrons)).getOrElse(SeqAction.void)
   }
-
-  import CodexScienceFoldPosition._
-
-  private def getScienceFoldPosition: IO[Option[ScienceFoldPosition]] = (
-    for {
-      sfPosOpt <- OptionT(TcsEpics.instance.sfName).map(decode[String, Option[ScienceFoldPosition]])
-      sfPos    <- OptionT(IO(sfPosOpt))
-      sfParked <- OptionT(TcsEpics.instance.sfParked).map(_ =!= 0)
-    } yield if (sfParked) ScienceFoldPosition.Parked
-            else sfPos
-  ).value
-
-  implicit val decodeHwrsPickupPosition: DecodeEpicsValue[String, HrwfsPickupPosition] = DecodeEpicsValue((t: String)
-  => if (t.trim === "IN") HrwfsPickupPosition.IN
-    else HrwfsPickupPosition.OUT)
-
-  private def getHrwfsPickupPosition: IO[Option[HrwfsPickupPosition]] = (
-    for {
-      hwPos <- OptionT(TcsEpics.instance.agHwName).map(decode[String, HrwfsPickupPosition])
-      hwParked <- OptionT(TcsEpics.instance.agHwParked).map(_ =!= 0)
-    } yield if (hwParked) HrwfsPickupPosition.Parked
-      else hwPos
-  ).value
-
-  private def getAGConfig: IO[TrySeq[AGConfig]] =
-    (getScienceFoldPosition, getHrwfsPickupPosition.map(_.map(HrwfsConfig.Manual))).mapN(AGConfig).map(TrySeq(_))
-
-  private def getIAA: IO[TrySeq[InstrumentAlignAngle]] = TcsEpics.instance.instrAA.map(
-    _.map(iaa => TrySeq(InstrumentAlignAngle(Degrees[Double](iaa))))
-      .getOrElse(TrySeq.fail(SeqexecFailure.Unexpected("Unable to read IAA from TCS.")))
-  )
-
-  override def getConfig: SeqAction[TcsConfig] =
-    for {
-      gc <- EitherT(getGuideConfig)
-      tc <- EitherT(getTelescopeConfig)
-      gtc <- EitherT(getGuidersTrackingConfig)
-      ge <- EitherT(getGuidersEnabled)
-      agc <- EitherT(getAGConfig)
-      iaa <- EitherT(getIAA)
-    } yield TcsConfig(gc, tc, gtc, ge, agc, iaa)
-
-
-  // Here starts the code that set the TCS configuration. There are a lot of encoders.
-  implicit private val encodeBeam: EncodeEpicsValue[Beam, String] = EncodeEpicsValue{
-    case Beam.A => "A"
-    case Beam.B => "B"
-    case Beam.C => "C"
-  }
-
-  private def setTelescopeConfig(c: TelescopeConfig): SeqAction[Unit] = for {
-    _ <- TcsEpics.instance.offsetACmd.setX(c.offsetA.self.x.self.toMillimeters)
-    _ <- TcsEpics.instance.offsetACmd.setY(c.offsetA.self.y.self.toMillimeters)
-    _ <- TcsEpics.instance.offsetBCmd.setX(c.offsetB.self.x.self.toMillimeters)
-    _ <- TcsEpics.instance.offsetBCmd.setY(c.offsetB.self.y.self.toMillimeters)
-    _ <- TcsEpics.instance.offsetCCmd.setX(c.offsetC.self.x.self.toMillimeters)
-    _ <- TcsEpics.instance.offsetCCmd.setY(c.offsetC.self.y.self.toMillimeters)
-    _ <- TcsEpics.instance.wavelSourceA.setWavel(c.wavelA.self.toMicrons)
-    _ <- TcsEpics.instance.wavelSourceA.setWavel(c.wavelB.self.toMicrons)
-    _ <- TcsEpics.instance.wavelSourceA.setWavel(c.wavelB.self.toMicrons)
-    _ <- TcsEpics.instance.m2Beam.setBeam(encode(c.m2beam))
-  } yield ()
 
   implicit private val encodeNodChopOption: EncodeEpicsValue[NodChopTrackingOption, String] =
     EncodeEpicsValue {
@@ -340,17 +91,17 @@ object TcsControllerEpics extends TcsController {
   }
 
   private def setAGUnit(c: AGConfig): SeqAction[Unit] = {
-    val sf = c.sfPos.map(setScienceFoldConfig).getOrElse(SeqAction.void)
-    val hr = SeqAction(c.hrwfs).flatMap(_.map {
+    val sf = setScienceFoldConfig(c.sfPos)
+    val hr = c.hrwfs.map {
       case HrwfsConfig.Manual(h) => setHRPickupConfig(h)
-      case HrwfsConfig.Auto      => c.sfPos.map{
+      case HrwfsConfig.Auto      => c.sfPos match {
         case ScienceFoldPosition.Position(_, sink) => EitherT.liftF(portFromSinkName(sink))
           .flatMap(_.map(p => if(p === BottomPort) setHRPickupConfig(HrwfsPickupPosition.Parked)
                               else SeqAction.void
           ).getOrElse(SeqAction.void))
         case _                                     => SeqAction.void
-      }.getOrElse(SeqAction.void)
-    }.getOrElse(SeqAction.void))
+      }
+    }.getOrElse(SeqAction.void)
 
     sf *> hr
   }
@@ -383,24 +134,26 @@ object TcsControllerEpics extends TcsController {
   private val tcsTimeout = Seconds(60)
   private val agTimeout = Seconds(60)
 
-  override def applyConfig(subsystems: NonEmptyList[Subsystem], tcs: TcsConfig): SeqAction[Unit] = {
-    def configSubsystem(subsystem: Subsystem, tcs: TcsConfig): SeqAction[Unit] = subsystem match {
-      case Subsystem.M1     => setM1Guide(tcs.gc.m1Guide)
-      case Subsystem.M2     => setM2Guide(tcs.gc.m2Guide)
+  private def willMove(current: EpicsTcsConfig, demand: TcsConfig): Boolean =
+    demand.tc.offsetA.exists(o => o.p.value =!= current.offsetP.value || o.q.value =!= current.offsetQ.value )
+
+  override def applyConfig(subsystems: NonEmptyList[Subsystem],
+                           gaos: Option[Either[Altair[IO], Gems[IO]]],
+                           tcs: TcsConfig): SeqAction[Unit] = {
+    def configSubsystem(subsystem: Subsystem, tcs: TcsConfig, iaa: Angle): SeqAction[Unit] = subsystem match {
       case Subsystem.OIWFS  =>
-        setProbeTrackingConfig(TcsEpics.instance.oiwfsProbeGuideCmd, tcs.gtc.oiwfs.self) *>
-          setGuiderWfs(TcsEpics.instance.oiwfsObserveCmd, TcsEpics.instance.oiwfsStopObserveCmd, tcs.ge.oiwfs.self)
+        setProbeTrackingConfig(TcsEpics.instance.oiwfsProbeGuideCmd, tcs.gds.oiwfs.tracking)
       case Subsystem.P1WFS  =>
-        setProbeTrackingConfig(TcsEpics.instance.pwfs1ProbeGuideCmd, tcs.gtc.pwfs1.self) *>
-          setGuiderWfs(TcsEpics.instance.pwfs1ObserveCmd, TcsEpics.instance.pwfs1StopObserveCmd, tcs.ge.pwfs1.self)
+        setProbeTrackingConfig(TcsEpics.instance.pwfs1ProbeGuideCmd, tcs.gds.pwfs1.tracking)
       case Subsystem.P2WFS  =>
-        setProbeTrackingConfig(TcsEpics.instance.pwfs2ProbeGuideCmd, tcs.gtc.pwfs2.self) *>
-          setGuiderWfs(TcsEpics.instance.pwfs2ObserveCmd, TcsEpics.instance.pwfs2StopObserveCmd, tcs.ge.pwfs2.self)
-      case Subsystem.Mount  => setTelescopeConfig(tcs.tc)
+        setProbeTrackingConfig(TcsEpics.instance.pwfs2ProbeGuideCmd, tcs.gds.pwfs2.tracking)
+      case Subsystem.Mount  => setTelescopeConfig(tcs.tc, iaa)
       case Subsystem.AGUnit => setAGUnit(tcs.agc)
+      case _                => SeqAction.void
     }
 
-    subsystems.tail.foldLeft(configSubsystem(subsystems.head, tcs))((b, a) => b *> configSubsystem(a, tcs)) *>
+    def sysConfig(iaa: Angle): SeqAction[Unit] = subsystems.tail.foldLeft(configSubsystem(subsystems.head, tcs, iaa))(
+      (b, a) => b *> configSubsystem(a, tcs, iaa)) *>
       TcsEpics.instance.post *>
       EitherT.right(IO.apply(Log.debug("TCS configuration command post"))) *>
       (if(subsystems.toList.contains(Subsystem.Mount))
@@ -408,17 +161,111 @@ object TcsControllerEpics extends TcsController {
       else if(subsystems.toList.intersect(List(Subsystem.P1WFS, Subsystem.P2WFS, Subsystem.AGUnit)).nonEmpty)
         TcsEpics.instance.waitAGInPosition(agTimeout) *> EitherT.right(IO.apply(Log.debug("AG inposition")))
       else SeqAction.void)
+
+    for {
+      curr <- TcsConfigRetriever.retrieveConfiguration
+      _    <- guideOff(curr, tcs)
+      _    <- sysConfig(curr.iaa)
+      _    <- guide(tcs)
+    } yield ()
   }
 
-  override def guide(gc: GuideConfig): SeqAction[Unit] = for {
-    _ <- setMountGuide(gc.mountGuide)
-    _ <- setM1Guide(gc.m1Guide)
-    _ <- setM2Guide(gc.m2Guide)
+  def guide(c: TcsConfig): SeqAction[Unit] = for {
+    _ <- setMountGuide(c.gc.mountGuide)
+    _ <- setM1Guide(c.gc.m1Guide)
+    _ <- setM2Guide(c.gc.m2Guide)
+    _ <- setGuiderWfs(TcsEpics.instance.pwfs1ObserveCmd, TcsEpics.instance.pwfs1StopObserveCmd, c.gds.pwfs1.detector)
+    _ <- setGuiderWfs(TcsEpics.instance.pwfs2ObserveCmd, TcsEpics.instance.pwfs2StopObserveCmd, c.gds.pwfs2.detector)
+    _ <- setGuiderWfs(TcsEpics.instance.oiwfsObserveCmd, TcsEpics.instance.oiwfsStopObserveCmd, c.gds.oiwfs.detector)
     _ <- TcsEpics.instance.post
     _ <- EitherT.right(IO.apply(Log.info("TCS guide command post")))
   } yield ()
 
-  override def notifyObserveStart: SeqAction[Unit] = TcsEpics.instance.observe.mark *> TcsEpics.instance.post.void
+  def calcGuideOff(current: EpicsTcsConfig, demand: TcsConfig): TcsConfig = {
+    if(willMove(current, demand)) (TcsConfig.gds.modify(
+      (GuidersConfig.pwfs1 ^<-> Iso.apply[GuiderConfig@@P1Config, GuiderConfig](x => x)(tag[P1Config](_)) ^|-> GuiderConfig.detector).set(GuiderSensorOff) >>>
+        (GuidersConfig.pwfs2 ^<-> Iso.apply[GuiderConfig@@P2Config, GuiderConfig](x => x)(tag[P2Config](_)) ^|-> GuiderConfig.detector).set(GuiderSensorOff) >>>
+        (GuidersConfig.oiwfs ^<-> Iso.apply[GuiderConfig@@OIConfig, GuiderConfig](x => x)(tag[OIConfig](_))^|-> GuiderConfig.detector).set(GuiderSensorOff)
+    ) >>> normalizeM1Guiding >>> normalizeM2Guiding >>> normalizeMountGuiding)(demand)
+    else demand
+  }
+
+  def guideOff(current: EpicsTcsConfig, demand: TcsConfig): SeqAction[Unit] = guide(calcGuideOff(current, demand))
+
+  override def notifyObserveStart: SeqAction[Unit] =
+    TcsEpics.instance.observe.mark *> TcsEpics.instance.post.void
 
   override def notifyObserveEnd: SeqAction[Unit] = TcsEpics.instance.endObserve.mark *> TcsEpics.instance.post.void
+
+  /* AO fold position */
+  sealed trait AoFold {
+    val active: Boolean
+  }
+  object AoFold {
+    object In extends AoFold {
+      override val active: Boolean = true
+    }
+    object Out extends AoFold {
+      override val active: Boolean = false
+    }
+  }
+
+  final case class EpicsTcsConfig(
+    iaa: Angle,
+    offsetX: Length,
+    offsetY: Length,
+    wavelA: Wavelength,
+    pwfs1: GuiderConfig,
+    pwfs2: GuiderConfig,
+    oiwfs: GuiderConfig,
+    telescopeGuideConfig: TelescopeGuideConfig,
+    aoFold: AoFold,
+    scienceFoldPosition: ScienceFoldPosition,
+    hrwfsPickupPosition: HrwfsPickupPosition
+  ) {
+    val offsetP: Angle = (-offsetX * iaa.cos + offsetY * iaa.sin) * FOCAL_PLANE_SCALE
+    val offsetQ: Angle = (-offsetX * iaa.sin - offsetY * iaa.cos) * FOCAL_PLANE_SCALE
+  }
+
+  def guiderActive(c: GuiderConfig): Boolean = c.tracking match {
+    case ProbeTrackingConfig.On(_) => c.detector === GuiderSensorOn
+    case _                         => false
+  }
+
+  // Disable M1 guiding if source is off
+  val normalizeM1Guiding: Endo[TcsConfig] = cfg =>
+    (TcsConfig.gc ^|-> TelescopeGuideConfig.m1Guide).modify{
+      case g@M1GuideOn(src) => src match {
+        case M1Source.PWFS1 => if(guiderActive(cfg.gds.pwfs1)) g else M1GuideOff
+        case M1Source.PWFS2 => if(guiderActive(cfg.gds.pwfs2)) g else M1GuideOff
+        case M1Source.OIWFS => if(guiderActive(cfg.gds.oiwfs)) g else M1GuideOff
+        case _              => g
+      }
+      case x                => x
+    }(cfg)
+
+  // Disable M2 sources if they are off, disable M2 guiding if all are off
+  val normalizeM2Guiding: Endo[TcsConfig] = cfg =>
+    (TcsConfig.gc ^|-> TelescopeGuideConfig.m2Guide).modify{
+      case M2GuideOn(coma, srcs) => {
+        val ss = srcs.filter{
+          case TipTiltSource.PWFS1 => guiderActive(cfg.gds.pwfs1)
+          case TipTiltSource.PWFS2 => guiderActive(cfg.gds.pwfs2)
+          case TipTiltSource.OIWFS => guiderActive(cfg.gds.oiwfs)
+          case _                   => true
+        }
+        if(ss.isEmpty) M2GuideOff
+        else M2GuideOn(coma, ss)
+      }
+      case x                     => x
+    }(cfg)
+
+  // Disable Mount guiding if M2 guiding is disabled
+  val normalizeMountGuiding: Endo[TcsConfig] = cfg =>
+    (TcsConfig.gc ^|-> TelescopeGuideConfig.mountGuide).modify{ m => (m, cfg.gc.m2Guide) match {
+      case (MountGuideOn, M2GuideOn(_, _)) => MountGuideOn
+      case _                               => MountGuideOff
+    } }(cfg)
+
+
 }

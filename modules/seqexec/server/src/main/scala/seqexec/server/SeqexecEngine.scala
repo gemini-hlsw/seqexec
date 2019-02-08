@@ -36,7 +36,7 @@ import seqexec.server.gpi.GpiController
 import seqexec.server.niri.{NiriControllerEpics, NiriControllerSim, NiriEpics}
 import seqexec.server.nifs.{NifsControllerEpics, NifsControllerSim, NifsEpics}
 import seqexec.server.gws.GwsEpics
-import seqexec.server.tcs.{TcsControllerEpics, TcsControllerSim, TcsEpics}
+import seqexec.server.tcs.{GuideConfigDb, TcsControllerEpics, TcsControllerSim, TcsEpics}
 import edu.gemini.seqexec.odb.SmartGcal
 import edu.gemini.spModel.core.Peer
 import fs2.{Pure, Stream}
@@ -51,7 +51,8 @@ import scala.collection.immutable.SortedMap
 import scala.concurrent.duration._
 import shapeless.tag
 
-class SeqexecEngine(httpClient: Client[IO], gpi: GpiClient[IO], ghost: GhostClient[IO], settings: Settings, sm: SeqexecMetrics)(
+class SeqexecEngine(httpClient: Client[IO], gpi: GpiClient[IO], ghost: GhostClient[IO], guideConfigDb: GuideConfigDb[IO],
+                    settings: Settings, sm: SeqexecMetrics)(
   implicit ceio: ConcurrentEffect[IO], tio: Timer[IO]
 ) {
   import SeqexecEngine._
@@ -79,7 +80,8 @@ class SeqexecEngine(httpClient: Client[IO], gpi: GpiClient[IO], ghost: GhostClie
     GpiController(gpi, gpiGDS),
     GhostController(ghost, ghostGDS),
     settings.niriControl.command.fold(NiriControllerEpics, NiriControllerSim),
-    settings.nifsControl.command.fold(NifsControllerEpics, NifsControllerSim)
+    settings.nifsControl.command.fold(NifsControllerEpics, NifsControllerSim),
+    guideConfigDb
   )
 
   private val translatorSettings = TranslateSettings(
@@ -458,10 +460,11 @@ class SeqexecEngine(httpClient: Client[IO], gpi: GpiClient[IO], ghost: GhostClie
 
 object SeqexecEngine extends SeqexecConfiguration {
 
-  def apply(httpClient: Client[IO], gpi: GpiClient[IO], ghost: GhostClient[IO], settings: Settings, c: SeqexecMetrics)(
-    implicit ceio: ConcurrentEffect[IO],
-              tio: Timer[IO]
-  ): SeqexecEngine = new SeqexecEngine(httpClient, gpi, ghost, settings, c)
+  def apply(httpClient: Client[IO], gpi: GpiClient[IO], ghost: GhostClient[IO], guideDb: GuideConfigDb[IO],
+            settings: Settings, c: SeqexecMetrics)(
+           implicit ceio: ConcurrentEffect[IO],
+           tio: Timer[IO]
+  ): SeqexecEngine = new SeqexecEngine(httpClient, gpi, ghost, guideDb, settings, c)
 
   def splitWhere[A](l: List[A])(p: A => Boolean): (List[A], List[A]) =
     l.splitAt(l.indexWhere(p))

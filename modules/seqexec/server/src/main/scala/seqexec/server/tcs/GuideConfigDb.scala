@@ -9,7 +9,7 @@ import cats.implicits._
 import mouse.boolean._
 import seqexec.server.altair.AltairController._
 import seqexec.server.gems.GemsController.{GemsConfig, GemsOff}
-import TcsController.{ComaOption, M1GuideConfig, M1GuideOff, M1GuideOn, M1Source, M2GuideConfig, M2GuideOff, M2GuideOn, MountGuideOption, TipTiltSource, GuideConfig => TcsGuideConfig}
+import TcsController.{ComaOption, M1GuideConfig, M1GuideOff, M1GuideOn, M1Source, M2GuideConfig, M2GuideOff, M2GuideOn, MountGuideOption, TipTiltSource, TelescopeGuideConfig}
 import io.circe.{Decoder, DecodingFailure}
 import seqexec.server.tcs.TcsController.ComaOption.ComaOn
 import seqexec.server.tcs.TcsController.MountGuideOption.{MountGuideOff, MountGuideOn}
@@ -25,10 +25,10 @@ trait GuideConfigDb[F[_]] {
 
 object GuideConfigDb {
 
-  final case class GuideConfig(tcsGuide: TcsGuideConfig,
+  final case class GuideConfig(tcsGuide: TelescopeGuideConfig,
                               gaosGuide: Option[Either[AltairConfig, GemsConfig]])
 
-  val defaultGuideConfig = GuideConfig(TcsGuideConfig(MountGuideOff, M1GuideOff, M2GuideOff), None)
+  val defaultGuideConfig = GuideConfig(TelescopeGuideConfig(MountGuideOff, M1GuideOff, M2GuideOff), None)
 
   def newDb[F[_]: Sync]: F[GuideConfigDb[F]] = Ref.of[F, GuideConfig](defaultGuideConfig).map{ref =>
     new GuideConfigDb[F] {
@@ -43,12 +43,12 @@ object GuideConfigDb {
       c.downField("aoOn").as[Boolean].flatMap{
         if(_) {
           c.downField("mode").as[String].flatMap{
-            case "NGS" => Right(Ngs)
+            case "NGS" => c.downField("oiBlend").as[Boolean].map(Ngs)
             case "LGS" => c.downField("useP1").as[Boolean].flatMap{
               if(_) Right(LgsWithP1)
               else {
                 c.downField("useOI").as[Boolean].flatMap{
-                  if(_) c.downField("oiBlend").as[Boolean].map(LgsWithOi)
+                  if(_) Right(LgsWithOi)
                   else for {
                     strapLoop <- c.downField("strapOn").as[Boolean]
                     sfoLoop   <- c.downField("sfoOn").as[Boolean]
@@ -110,8 +110,9 @@ object GuideConfigDb {
     }
   }
 
-  implicit val tcsGuideConfigDecoder: Decoder[TcsGuideConfig] =
-    Decoder.forProduct3("mountGuideOn", "m1Guide", "m2Guide")(TcsGuideConfig)
+  implicit val tcsGuideConfigDecoder: Decoder[TelescopeGuideConfig] =
+    Decoder.forProduct3[TelescopeGuideConfig, MountGuideOption, M1GuideConfig, M2GuideConfig]("mountGuideOn",
+      "m1Guide", "m2Guide")(TelescopeGuideConfig(_, _, _))
 
   implicit val guideConfigDecoder: Decoder[GuideConfig] =
     Decoder.forProduct2("tcsGuide", "gaosGuide")(GuideConfig)

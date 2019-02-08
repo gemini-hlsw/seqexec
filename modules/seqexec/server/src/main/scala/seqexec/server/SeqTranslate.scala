@@ -5,12 +5,13 @@ package seqexec.server
 
 import cats._
 import cats.data.{EitherT, NonEmptyList, Reader}
-import cats.effect.{ IO, Concurrent, Timer }
+import cats.effect.{Concurrent, IO, Timer}
 import cats.effect.LiftIO
 import cats.implicits._
 import edu.gemini.seqexec.odb.{ExecutedDataset, SeqexecSequence}
 import edu.gemini.spModel.ao.AOConstants._
 import edu.gemini.spModel.config2.{Config, ItemKey}
+import edu.gemini.spModel.core.Wavelength
 import edu.gemini.spModel.gemini.altair.AltairConstants
 import edu.gemini.spModel.obscomp.InstConstants._
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
@@ -427,18 +428,27 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
   private def flatOrArcTcsSubsystems(inst: Instrument): NonEmptyList[TcsController.Subsystem] =
     NonEmptyList.of(AGUnit, (if (hasOI(inst)) List(OIWFS) else List.empty): _*)
 
+  private def extractWavelength(config: Config): Option[Wavelength] =
+    config.extract(OBSERVING_WAVELENGTH_KEY).as[Wavelength].toOption
+
   private def calcSystems(config: Config, stepType: StepType)(
     implicit tio: Timer[IO]
   ): TrySeq[List[System[IO]]] = {
     stepType match {
-      case CelestialObject(inst) => toInstrumentSys(inst).map(sys => sys :: List(Tcs(systems.tcs,
-        if(hasOI(inst)) all else allButOI, ScienceFoldPosition.Position(TcsController.LightSource
-          .Sky, sys.sfName(config)), None),
-        Gcal(systems.gcal, site == Site.GS)))
-      case FlatOrArc(inst)       => toInstrumentSys(inst).map(sys => sys :: List(Tcs(systems.tcs,
-        flatOrArcTcsSubsystems(inst), ScienceFoldPosition.Position(TcsController.LightSource
-          .GCAL, sys.sfName(config)), None),
-        Gcal(systems.gcal, site == Site.GS)))
+      case CelestialObject(inst) => toInstrumentSys(inst).map{sys => sys :: List(
+          Tcs.fromConfig(systems.tcs, if(hasOI(inst)) all else allButOI, None, systems.guideDb)(
+            config,
+            ScienceFoldPosition.Position(TcsController.LightSource.Sky, sys.sfName(config)),
+            extractWavelength(config)),
+          Gcal(systems.gcal, site == Site.GS)
+      ) }
+      case FlatOrArc(inst)       => toInstrumentSys(inst).map{sys => sys :: List(
+          Tcs.fromConfig(systems.tcs, flatOrArcTcsSubsystems(inst), None, systems.guideDb)(
+            config,
+            ScienceFoldPosition.Position(TcsController.LightSource.GCAL, sys.sfName(config)),
+            extractWavelength(config)),
+          Gcal(systems.gcal, site == Site.GS)
+      ) }
       case DarkOrBias(inst)      => toInstrumentSys(inst).map(List(_))
       case _                     => TrySeq.fail(Unexpected(s"Unsupported step type $stepType"))
     }
