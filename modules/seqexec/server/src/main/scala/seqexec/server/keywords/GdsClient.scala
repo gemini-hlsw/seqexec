@@ -6,6 +6,7 @@ package seqexec.server.keywords
 import cats.effect.IO
 import cats.effect.Timer
 import cats.effect.Effect
+import cats.Functor
 import cats.implicits._
 import gem.Observation
 import org.http4s.client.Client
@@ -24,7 +25,7 @@ import seqexec.server.SeqexecFailure
 /**
   * Gemini Data service client
   */
-final case class GdsClient[F[_]: Effect: cats.Functor](base: Client[F], gdsUri: Uri)(implicit timer: Timer[F])//, ae: ApplicativeError[F, SeqexecFailure])
+final case class GdsClient[F[_]: Effect: Functor](base: Client[F], gdsUri: Uri)(implicit timer: Timer[F])
     extends Http4sClientDsl[F] {
 
   @SuppressWarnings(Array("org.wartremover.warts.Var"))
