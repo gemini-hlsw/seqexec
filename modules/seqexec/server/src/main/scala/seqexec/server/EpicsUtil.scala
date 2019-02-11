@@ -5,10 +5,13 @@ package seqexec.server
 
 import cats._
 import cats.data.EitherT
+import cats.data.Nested
 import cats.effect.IO
 import cats.effect.Sync
 import cats.implicits._
 import fs2.Stream
+import java.lang.{Double => JDouble}
+import java.lang.{Integer => JInt}
 import java.util
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.{Timer, TimerTask}
@@ -247,6 +250,12 @@ object EpicsUtil {
 
   def safeAttribute[F[_]: Sync, A](get: => CaAttribute[A]): F[Option[A]] =
     Sync[F].delay(Option(get.value))
+
+  def safeAttributeSDouble[F[_]: Sync, A](get: => CaAttribute[JDouble]): F[Option[Double]] =
+    Nested(safeAttribute(get)).map(_.toDouble).value
+
+  def safeAttributeSInt[F[_]: Sync, A](get: => CaAttribute[JInt]): F[Option[Int]] =
+    Nested(safeAttribute(get)).map(_.toInt).value
 
   def smartSetParam[A: Eq](v: A, get: => Option[A], set: SeqAction[Unit]): List[SeqAction[Unit]] =
     if(get =!= v.some) List(set) else Nil

@@ -3,10 +3,8 @@
 
 package seqexec.server.nifs
 
-import cats.data.Nested
 import cats.effect.IO
 import cats.effect.Sync
-import cats.implicits._
 import edu.gemini.epics.acm._
 import edu.gemini.seqexec.server.nifs.DhsConnected
 import java.lang.{Double => JDouble}
@@ -14,9 +12,11 @@ import org.log4s.{Logger, getLogger}
 import seqexec.server.EpicsCommand.setParameter
 import seqexec.server.{EpicsCommand, EpicsSystem, ObserveCommand, SeqAction}
 import seqexec.server.EpicsUtil.safeAttribute
+import seqexec.server.EpicsUtil.safeAttributeSDouble
+import seqexec.server.EpicsUtil.safeAttributeSInt
 
 class NifsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, String]) {
-  val NifsTop = tops.getOrElse("niri", "niri:")
+  val NifsTop = tops.getOrElse("nifs", "nifs:")
 
   object ccConfigCmd extends EpicsCommand {
     override protected val cs: Option[CaCommandSender] =
@@ -118,39 +118,31 @@ class NifsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, String]) 
   private val dcStatus: CaStatusAcceptor = epicsService.getStatusAcceptor("nifs::dcstatus")
 
   def exposureTime: F[Option[Double]] =
-    Nested(safeAttribute(dcStatus.getDoubleAttribute("exposureTime")))
-      .map(_.toDouble).value
+    safeAttributeSDouble(dcStatus.getDoubleAttribute("exposureTime"))
 
   def exposedTime: F[Option[Double]] =
-    Nested(safeAttribute(dcStatus.getDoubleAttribute("exposedTime")))
-      .map(_.toDouble).value
+    safeAttributeSDouble(dcStatus.getDoubleAttribute("exposedTime"))
 
   def numberOfResets: F[Option[Int]] =
-    Nested(safeAttribute(dcStatus.getIntegerAttribute("numberOfResets")))
-      .map(_.toInt).value
+    safeAttributeSInt(dcStatus.getIntegerAttribute("numberOfResets"))
 
   def readMode: F[Option[String]] =
     safeAttribute(dcStatus.getStringAttribute("readMode"))
 
   def numberOfFowSamples: F[Option[Int]] =
-    Nested(safeAttribute(dcStatus.getIntegerAttribute("numberOfFowSamples")))
-      .map(_.toInt).value
+    safeAttributeSInt(dcStatus.getIntegerAttribute("numberOfFowSamples"))
 
   def coadds: F[Option[Int]] =
-    Nested(safeAttribute(dcStatus.getIntegerAttribute("coadds")))
-      .map(_.toInt).value
+    safeAttributeSInt(dcStatus.getIntegerAttribute("coadds"))
 
   def period: F[Option[Double]] =
-    Nested(safeAttribute(dcStatus.getDoubleAttribute("period")))
-      .map(_.toDouble).value
+    safeAttributeSDouble(dcStatus.getDoubleAttribute("period"))
 
   def countDown: F[Option[Double]] =
-    Nested(safeAttribute(dcStatus.getDoubleAttribute("countdown")))
-      .map(_.toDouble).value
+    safeAttributeSDouble(dcStatus.getDoubleAttribute("countdown"))
 
   def numberOfPeriods: F[Option[Int]] =
-    Nested(safeAttribute(dcStatus.getIntegerAttribute("numberOfPeriods")))
-      .map(_.toInt).value
+    safeAttributeSInt(dcStatus.getIntegerAttribute("numberOfPeriods"))
 
   def timeMode: F[Option[String]] =
     safeAttribute(dcStatus.getStringAttribute("timeMode"))
@@ -165,18 +157,15 @@ class NifsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, String]) 
     safeAttribute(dcStatus.getStringAttribute("expMode"))
 
   def readTime: F[Option[Double]] =
-    Nested(safeAttribute(dcStatus.getDoubleAttribute("readTime")))
-      .map(_.toDouble).value
+    safeAttributeSDouble(dcStatus.getDoubleAttribute("readTime"))
 
   def biasPwr: F[Option[Double]] =
-    Nested(safeAttribute(dcStatus.getDoubleAttribute("biasPwr")))
-      .map(_.toDouble).value
+    safeAttributeSDouble(dcStatus.getDoubleAttribute("biasPwr"))
 
   private val ccStatus: CaStatusAcceptor = epicsService.getStatusAcceptor("nifs::status")
 
   def centralWavelength: F[Option[Double]] =
-    Nested(safeAttribute(ccStatus.getDoubleAttribute("centralWavelength")))
-      .map(_.toDouble).value
+    safeAttributeSDouble(ccStatus.getDoubleAttribute("centralWavelength"))
 
   def disperser: F[Option[String]] =
     safeAttribute(ccStatus.getStringAttribute("disperser"))
@@ -194,8 +183,7 @@ class NifsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, String]) 
     safeAttribute(ccStatus.getStringAttribute("lastSelMask"))
 
   def maskOffset: F[Option[Double]] =
-    Nested(safeAttribute(ccStatus.getDoubleAttribute("maskOffset")))
-      .map(_.toDouble).value
+    safeAttributeSDouble(ccStatus.getDoubleAttribute("maskOffset"))
 
   def filter: F[Option[String]] =
     safeAttribute(ccStatus.getStringAttribute("filter"))
