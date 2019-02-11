@@ -15,10 +15,9 @@ import diode.NoAction
 import diode.data.Pending
 import diode.data.Pot
 import diode.data.Ready
-import java.util.logging.Level
-import java.util.logging.Logger
 import java.time.Instant
 import mouse.all._
+import org.log4s._
 import org.scalajs.dom._
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -30,7 +29,6 @@ import seqexec.model.events._
 import seqexec.web.client.model._
 import seqexec.web.client.actions._
 import seqexec.web.client.circuit._
-import seqexec.web.client.services.log.ConsoleHandler
 import seqexec.web.model.boopickle.ModelBooPicklers
 
 /**
@@ -43,10 +41,7 @@ class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection])
     with ModelBooPicklers {
 
   private implicit val runner = new RunAfterJS
-  private val logger          = Logger.getLogger(this.getClass.getSimpleName)
-  // Reconfigure to avoid sending ajax events in this logger
-  logger.setUseParentHandlers(false)
-  logger.addHandler(new ConsoleHandler(Level.FINE))
+  private val logger          = getLogger(this.getClass.getSimpleName)
 
   // Makes a websocket connection and setups event listeners
   def webSocket: Future[Action] = Future[Action] {
@@ -73,14 +68,14 @@ class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection])
               logger.info(s"Decoding event: ${event.getClass}")
               SeqexecCircuit.dispatch(ServerMessage(event))
             case Left(t)                       =>
-              logger.warning(s"Error decoding event ${t.getMessage}")
+              logger.warn(s"Error decoding event ${t.getMessage}")
           }
         case _                   =>
           ()
       }
     }
 
-    def onError(): Unit = logger.severe("Error on websocket")
+    def onError(): Unit = logger.error("Error on websocket")
 
     def onClose(): Unit =
       // Increase the delay to get exponential backoff with a minimum of 200ms and a max of 1m
@@ -136,7 +131,7 @@ class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection])
 
   def connectionClosedHandler: PartialFunction[Any, ActionResult[M]] = {
     case ConnectionRetry(next) =>
-      logger.fine(s"Retry connecting in $next")
+      logger.debug(s"Retry connecting in $next")
       val effect = Effect(Future(WSConnect(next)))
       updated(value.copy(ws = Pending(), nextAttempt = next), effect)
   }

@@ -74,7 +74,6 @@ object Settings {
     val diode                   = "1.1.4"
     val diodeReact              = "1.1.4.131"
     val javaTimeJS              = "2.0.0-RC1"
-    val javaLogJS               = "0.1.5"
     val scalaJQuery             = "1.2"
     val scalaJSReactVirtualized = "0.4.3"
     val scalaJSReactClipboard   = "0.5.2"
@@ -83,7 +82,7 @@ object Settings {
 
     // Scala libraries
     val catsEffectVersion       = "1.2.0"
-    val catsVersion             = "1.5.0"
+    val catsVersion             = "1.6.0"
     val mouseVersion            = "0.20"
     val fs2Version              = "1.0.3"
     val shapelessVersion        = "2.3.3"
@@ -98,7 +97,7 @@ object Settings {
     val unboundId               = "3.2.1"
     val jwt                     = "1.1.0"
     val slf4j                   = "1.7.25"
-    val log4s                   = "1.6.1"
+    val log4s                   = "1.7.0"
     val logback                 = "1.2.3"
     val janino                  = "3.0.12"
     val logstash                = "5.3"
@@ -176,9 +175,9 @@ object Settings {
       "org.codehaus.janino"  % "janino"                   % LibraryVersions.janino,
       "net.logstash.logback" % "logstash-logback-encoder" % LibraryVersions.logstash
     )
-    val Log4s                  = "org.log4s"                          %%  "log4s"                    % LibraryVersions.log4s
+    val Log4s                  = Def.setting("org.log4s"              %%% "log4s"                    % LibraryVersions.log4s)
     val PrometheusClient       = "io.prometheus"                      %   "simpleclient_common"      % LibraryVersions.prometheusClient
-    val Logging                = Seq(JuliSlf4j, Log4s) ++ Logback
+    val Logging                = Def.setting(Seq(JuliSlf4j, Log4s.value) ++ Logback)
     val Knobs                  = "io.getnelson.knobs"                 %%  "core"                     % LibraryVersions.knobs
     val OpenCSV                = "net.sf.opencsv"                     %   "opencsv"                  % LibraryVersions.opencsv
     val Squants                = Def.setting("org.typelevel"          %%% "squants"                  % LibraryVersions.squants)
@@ -234,7 +233,6 @@ object Settings {
     val JQuery                  = Def.setting("org.querki"        %%% "jquery-facade"              % LibraryVersions.scalaJQuery)
     val BooPickle               = Def.setting("io.suzaku"         %%% "boopickle"                  % LibraryVersions.booPickle)
     val JavaTimeJS              = Def.setting("io.github.cquiroz" %%% "scala-java-time"            % LibraryVersions.javaTimeJS)
-    val JavaLogJS               = Def.setting("org.scala-js"      %%% "scalajs-java-logging"       % LibraryVersions.javaLogJS)
     val GeminiLocales           = Def.setting("edu.gemini"        %%% "gemini-locales"             % LibraryVersions.geminiLocales)
 
     // OCS Libraries, these should become modules in the future
