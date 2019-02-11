@@ -24,7 +24,7 @@ trait NiriController {
 
   def observeProgress(total: Time): fs2.Stream[IO, Progress]
 
-  def calcTotalExposureTime(cfg: DCConfig): Time
+  def calcTotalExposureTime(cfg: DCConfig): IO[Time]
 
 }
 

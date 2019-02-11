@@ -67,10 +67,10 @@ final case class Nifs[F[_]: LiftIO: Sync](controller: NifsController[IO], // TOD
         .flatMap(x => SeqActionF.embed(controller.observe(fileId, x)))
     }
 
-  override def calcObserveTime(config: Config): Time =
+  override def calcObserveTime(config: Config): F[Time] =
     getDCConfig(config)
-      .map(controller.calcTotalExposureTime)
-      .getOrElse(60.seconds)
+      .map(c => LiftIO[F].liftIO(controller.calcTotalExposureTime(c)))
+      .getOrElse(Sync[F].delay(60.seconds))
 
   override def keywordsClient: KeywordsClient[F] = this
 

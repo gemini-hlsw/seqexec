@@ -43,11 +43,14 @@ final case class Ghost[F[_]: Sync](controller: GhostController[F])
     InstrumentSystem.Uncontrollable
 
   override def observe(
-      config: Config): SeqObserveF[F, ImageFileId, ObserveCommand.Result] =
+      config: Config
+  ): SeqObserveF[F, ImageFileId, ObserveCommand.Result] =
     Reader { fileId =>
-      controller
-        .observe(fileId, calcObserveTime(config))
-        .as(ObserveCommand.Success: ObserveCommand.Result)
+      SeqActionF.liftF(calcObserveTime(config)).flatMap {
+        controller
+          .observe(fileId, _)
+          .as(ObserveCommand.Success: ObserveCommand.Result)
+      }
     }
 
   override def configure(config: Config): SeqActionF[F, ConfigResult[F]] =
@@ -60,7 +63,7 @@ final case class Ghost[F[_]: Sync](controller: GhostController[F])
 
   override def notifyObserveStart: SeqActionF[F, Unit] = SeqActionF.void
 
-  override def calcObserveTime(config: Config): Time = Seconds(360)
+  override def calcObserveTime(config: Config): F[Time] = Seconds(360).pure[F]
 
   override def observeProgress(total: Time, elapsed: InstrumentSystem.ElapsedTime): Stream[F, Progress] = Stream.empty
 }

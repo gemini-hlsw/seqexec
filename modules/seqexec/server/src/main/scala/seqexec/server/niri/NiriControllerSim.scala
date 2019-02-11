@@ -8,6 +8,7 @@ import seqexec.model.dhs.ImageFileId
 import seqexec.server.InstrumentSystem.ElapsedTime
 import seqexec.server.niri.NiriController.{DCConfig, NiriConfig}
 import seqexec.server.{InstrumentControllerSim, ObserveCommand, Progress, SeqAction}
+import seqexec.server.SeqActionF
 import squants.Time
 import squants.time.TimeConversions._
 
@@ -16,7 +17,7 @@ object NiriControllerSim extends NiriController {
   private val sim: InstrumentControllerSim = InstrumentControllerSim(s"NIRI")
 
   override def observe(fileId: ImageFileId, cfg: DCConfig): SeqAction[ObserveCommand.Result] =
-    sim.observe(fileId, calcTotalExposureTime(cfg))
+    SeqActionF.liftF(calcTotalExposureTime(cfg)).flatMap(sim.observe(fileId, _))
 
   override def applyConfig(config: NiriConfig): SeqAction[Unit] = sim.applyConfig(config)
 
@@ -29,7 +30,7 @@ object NiriControllerSim extends NiriController {
   override def observeProgress(total: Time): fs2.Stream[IO, Progress] =
     sim.observeCountdown(total, ElapsedTime(0.seconds))
 
-  override def calcTotalExposureTime(cfg: DCConfig): Time = {
+  override def calcTotalExposureTime(cfg: DCConfig): IO[Time] = IO.pure {
     val MinIntTime = 0.5.seconds
 
     (cfg.exposureTime + MinIntTime) * cfg.coadds.toDouble

@@ -57,9 +57,11 @@ final case class Gpi[F[_]: Sync: Timer](controller: GpiController[F])
     config: Config
   ): SeqObserveF[F, ImageFileId, ObserveCommand.Result] =
     Reader { fileId =>
-      controller
-        .observe(fileId, timeoutTolerance + calcObserveTime(config))
-        .as(ObserveCommand.Success: ObserveCommand.Result)
+      SeqActionF.liftF(calcObserveTime(config)).flatMap { ot =>
+        controller
+          .observe(fileId, timeoutTolerance + ot)
+          .as(ObserveCommand.Success: ObserveCommand.Result)
+      }
     }
 
   override def configure(config: Config): SeqActionF[F, ConfigResult[F]] =
@@ -72,7 +74,7 @@ final case class Gpi[F[_]: Sync: Timer](controller: GpiController[F])
 
   override def notifyObserveStart: SeqActionF[F, Unit] = SeqActionF.void
 
-  override def calcObserveTime(config: Config): Time = {
+  override def calcObserveTime(config: Config): F[Time] = Sync[F].delay {
     val obsTime =
       for {
         exp      <- config.extractAs[JDouble](OBSERVE_KEY / EXPOSURE_TIME_PROP)

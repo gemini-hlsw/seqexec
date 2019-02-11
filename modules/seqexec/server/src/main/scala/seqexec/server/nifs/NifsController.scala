@@ -26,7 +26,7 @@ trait NifsController[F[_]] {
 
   def observeProgress(total: Time): fs2.Stream[F, Progress]
 
-  def calcTotalExposureTime(cfg: DCConfig): Time
+  def calcTotalExposureTime(cfg: DCConfig): F[Time]
 
 }
 
