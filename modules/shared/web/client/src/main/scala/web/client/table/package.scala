@@ -17,6 +17,8 @@ import scala.scalajs.js
 import js.JSConverters._
 import react.virtualized._
 import react.virtualized.raw
+import react.common._
+import react.common.syntax._
 import react.sortable._
 import react.draggable._
 import web.client.utils._
@@ -103,7 +105,7 @@ package object table {
      onRowRightClick:  Option[OnRowClick],
      style:            Style) => {
       val sortableItem = SortableElement.wrap(SortableRow.component)
-      val mergedStyle  = Style.toJsObject(style |+| extraStyle(index, style))
+      val mergedStyle  = (style |+| extraStyle(index, style)).toJsObject
       sortableItem(
         SortableElement.Props(index = index, key = key, style = mergedStyle))(
         SortableRow.Props(raw.RawRowRendererParameter(

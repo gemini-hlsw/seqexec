@@ -10,7 +10,7 @@ import monocle.Lens
 import japgolly.scalajs.react.raw.JsNumber
 import japgolly.scalajs.react.Callback
 import react.virtualized._
-import web.client.utils._
+import react.common.syntax._
 
 /**
   * State of a table

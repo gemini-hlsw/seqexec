@@ -369,6 +369,8 @@ lazy val web_client_common = project
       Mouse.value,
       ScalaJSDom.value,
       JQuery.value,
+      ScalaJSReactCommon.value,
+      ScalaJSReactCats.value,
       ScalaJSReactVirtualized.value,
       ScalaJSReactSortable.value,
       ScalaJSReactDraggable.value) ++ ReactScalaJS.value ++ Monocle.value

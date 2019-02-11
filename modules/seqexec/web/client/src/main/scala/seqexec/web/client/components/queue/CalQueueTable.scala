@@ -21,6 +21,7 @@ import react.virtualized._
 import react.sortable._
 import scala.scalajs.js
 import scala.concurrent.duration._
+import react.common._
 import seqexec.model.QueueId
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.QueueManipulationOp

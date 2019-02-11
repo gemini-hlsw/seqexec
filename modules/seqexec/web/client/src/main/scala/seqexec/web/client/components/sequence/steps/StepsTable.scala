@@ -18,6 +18,8 @@ import monocle.Lens
 import monocle.macros.GenLens
 import scala.scalajs.js
 import scala.math.min
+import react.common._
+import react.common.syntax._
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.StepType
 import seqexec.model.StepState
@@ -43,7 +45,6 @@ import seqexec.web.client.reusability._
 import react.virtualized._
 import web.client.style._
 import web.client.table._
-import web.client.utils._
 
 object ColWidths {
   val ControlWidth: Double       = 40
