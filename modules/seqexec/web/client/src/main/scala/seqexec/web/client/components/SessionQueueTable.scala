@@ -21,6 +21,8 @@ import monocle.macros.GenLens
 import react.virtualized._
 import scala.math.max
 import scala.scalajs.js
+import react.common._
+import react.common.syntax._
 import seqexec.model.enum.Instrument
 import seqexec.model.UserDetails
 import seqexec.model.UnknownTargetName
