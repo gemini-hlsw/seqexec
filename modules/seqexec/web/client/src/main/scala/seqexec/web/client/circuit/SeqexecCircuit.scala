@@ -8,8 +8,8 @@ import cats.data.NonEmptyList
 import diode._
 import diode.react.ReactConnector
 import gem.Observation
-import java.util.logging.Logger
 import japgolly.scalajs.react.Callback
+import org.log4s._
 import seqexec.model._
 import seqexec.model.events._
 import seqexec.web.client.actions._
@@ -27,7 +27,7 @@ import seqexec.web.client.actions.show
   * Diode processor to log some of the action to aid in debugging
   */
 final class LoggingProcessor[M <: AnyRef] extends ActionProcessor[M] {
-  private val logger = Logger.getLogger(this.getClass.getName)
+  private val logger = getLogger(this.getClass.getName)
   override def process(dispatch:     Dispatcher,
                        action:       Any,
                        next:         Any => ActionResult[M],
@@ -56,7 +56,7 @@ final class LoggingProcessor[M <: AnyRef] extends ActionProcessor[M] {
 object SeqexecCircuit
     extends Circuit[SeqexecAppRootModel]
     with ReactConnector[SeqexecAppRootModel] {
-  private val logger = Logger.getLogger(SeqexecCircuit.getClass.getSimpleName)
+  private val logger = getLogger(SeqexecCircuit.getClass.getSimpleName)
   addProcessor(new LoggingProcessor[SeqexecAppRootModel]())
 
   // Model read-writers
@@ -229,7 +229,7 @@ object SeqexecCircuit
     * Handles a fatal error most likely during action processing
     */
   override def handleFatal(action: Any, e: Throwable): Unit = {
-    logger.severe(s"Action not handled $action")
+    logger.error(s"Action not handled $action")
     super.handleFatal(action, e)
   }
 
@@ -237,6 +237,6 @@ object SeqexecCircuit
     * Handle a non-fatal error, such as dispatching an action with no action handler.
     */
   override def handleError(msg: String): Unit =
-    logger.severe(s"Action error $msg")
+    logger.error(s"Action error $msg")
 
 }

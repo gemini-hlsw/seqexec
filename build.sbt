@@ -254,7 +254,7 @@ lazy val web = project
     libraryDependencies ++= Seq(
       Http4sCirce,
       JwtCore
-    ) ++ Http4s ++ Logging
+    ) ++ Http4s ++ Logging.value
   )
 
 lazy val ui = project
@@ -332,7 +332,7 @@ lazy val giapi = project
   .enablePlugins(GitBranchPrompt)
   .settings(commonSettings: _*)
   .settings(
-    libraryDependencies ++= Seq(Cats.value, Mouse.value, Shapeless.value, CatsEffect.value, Fs2, GiapiJmsUtil, GiapiJmsProvider, GiapiStatusService, Giapi, GiapiCommandsClient) ++ Logging ++ Monocle.value,
+    libraryDependencies ++= Seq(Cats.value, Mouse.value, Shapeless.value, CatsEffect.value, Fs2, GiapiJmsUtil, GiapiJmsProvider, GiapiStatusService, Giapi, GiapiCommandsClient) ++ Logging.value ++ Monocle.value,
     libraryDependencies ++= Seq(GmpStatusGateway % "test", GmpStatusDatabase % "test", GmpCmdJmsBridge % "test", NopSlf4j % "test"),
     excludeDependencies ++= Seq(
       // Remove to silence logging on tests
@@ -347,7 +347,7 @@ lazy val web_server_common = project
   .enablePlugins(GitBranchPrompt)
   .settings(commonSettings: _*)
   .settings(
-    libraryDependencies ++= CatsEffect.value +: (Http4s ++ Logging)
+    libraryDependencies ++= CatsEffect.value +: (Http4s ++ Logging.value)
   )
 
 // Common utilities for web client projects
@@ -387,7 +387,7 @@ lazy val seqexec_web_shared = crossProject(JVMPlatform, JSPlatform)
   .jvmSettings(commonSettings)
   .jsSettings(commonJSSettings)
   .jsSettings(
-    libraryDependencies += JavaLogJS.value,
+    libraryDependencies += Log4s.value,
   )
   .dependsOn(seqexec_model % "compile->compile;test->test")
 
@@ -400,7 +400,7 @@ lazy val seqexec_web_server = project.in(file("modules/seqexec/web/server"))
   .settings(
     addCompilerPlugin(Plugins.kindProjectorPlugin),
     libraryDependencies ++= Seq(UnboundId, JwtCore, Knobs, Http4sPrometheus, Argonaut, CommonsHttp) ++
-      Http4sClient ++ Http4s ++ Logging,
+      Http4sClient ++ Http4s ++ Logging.value,
     // Supports launching the server in the background
     javaOptions in reStart += s"-javaagent:${(baseDirectory in ThisBuild).value}/app/seqexec-server/src/universal/bin/jmx_prometheus_javaagent-0.3.1.jar=6060:${(baseDirectory in ThisBuild).value}/app/seqexec-server/src/universal/bin/prometheus.yaml",
     mainClass in reStart := Some("seqexec.web.server.http4s.WebServerLauncher"),
@@ -489,7 +489,7 @@ lazy val seqexec_web_client = project.in(file("modules/seqexec/web/client"))
       CatsEffect.value,
       ScalaJSDom.value,
       JavaTimeJS.value,
-      JavaLogJS.value,
+      Log4s.value,
       ScalaJSReactVirtualized.value,
       ScalaJSReactClipboard.value,
       GeminiLocales.value
@@ -521,7 +521,7 @@ lazy val seqexec_server = project
           POT,
           Knobs,
           OpenCSV,
-          Log4s,
+          Log4s.value,
           Http4sXml,
           Http4sBoopickle,
           PrometheusClient
@@ -565,7 +565,7 @@ lazy val seqexec_engine = project
   .settings(
     addCompilerPlugin(Plugins.kindProjectorPlugin),
     addCompilerPlugin(Plugins.paradisePlugin),
-    libraryDependencies ++= Seq(Fs2, CatsEffect.value, Log4s) ++ Monocle.value
+    libraryDependencies ++= Seq(Fs2, CatsEffect.value, Log4s.value) ++ Monocle.value
   )
 
 lazy val acm = project

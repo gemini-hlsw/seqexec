@@ -5,36 +5,27 @@ package seqexec.web.client
 
 import cats.effect.IO
 import gem.enum.Site
-import java.util.logging.Level
-import java.util.logging.Logger
 import org.scalajs.dom.document
 import org.scalajs.dom.raw.Element
 import scala.scalajs.js.annotation.JSExport
 import scala.scalajs.js.annotation.JSExportTopLevel
 import seqexec.web.client.components.SeqexecUI
-import seqexec.web.client.services.log.ConsoleHandler
 import seqexec.web.client.services.SeqexecWebClient
 import seqexec.web.client.actions.Initialize
 import seqexec.web.client.actions.WSClose
 import seqexec.web.client.circuit.SeqexecCircuit
+import org.log4s._
 
 /**
   * Seqexec WebApp entry point
   */
 @JSExportTopLevel("SeqexecApp")
 object SeqexecApp {
-  private val defaultFmt = "[%4$s] %1s - %5$s"
 
-  def setupLogFormat: IO[String] = IO {
-    // Set the global formatting for log messages
-    System.setProperty("java.util.logging.SimpleFormatter.format", defaultFmt)
-  }
-
-  @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
   def setupLogger: IO[Unit] = IO {
-    // Using the root logger setup the handlers
-    val rootLogger = Logger.getLogger("seqexec")
-    rootLogger.addHandler(new ConsoleHandler(Level.INFO))
+    import Log4sConfig._
+    setLoggerThreshold("seqexec", Info)
+    setLoggerThreshold("", AllThreshold)
   }
 
   def serverSite: IO[Site] = IO.fromFuture {
@@ -71,7 +62,6 @@ object SeqexecApp {
   def start(): Unit =
     // Render the UI using React
     (for {
-      _           <- setupLogFormat
       _           <- setupLogger
       seqexecSite <- serverSite
       _           <- initializeDataModel(seqexecSite)
