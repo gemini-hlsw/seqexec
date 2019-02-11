@@ -121,15 +121,25 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
         case ObserveCommand.Success => successTail
         case ObserveCommand.Stopped => stopTail
         case ObserveCommand.Aborted => abortTail
-        case ObserveCommand.Paused  => SeqAction(Result.Paused(ObserveContext(observeTail(id, dataId), inst.calcObserveTime(config))))
+        case ObserveCommand.Paused  =>
+          SeqActionF.liftF(inst.calcObserveTime(config))
+            .map(e => Result.Paused(ObserveContext(observeTail(id, dataId), e)))
       }
     }
 
-    Stream.eval(dhsFileId(inst).value).flatMap{
-      case Right(id) => Stream.emit(Result.Partial(FileIdAllocated(id))).covary[IO] ++
-        inst.observeProgress(inst.calcObserveTime(config), ElapsedTime(0.0.seconds))
-          .map(Result.Partial(_))
-          .mergeHaltR(Stream.eval[IO, Result](doObserve(id).value.map(_.toResult)))
+    Stream.eval(dhsFileId(inst).value).flatMap {
+      case Right(id) =>
+        val observationProgressStream =
+          for {
+            ot <- Stream.eval(inst.calcObserveTime(config))
+            pr <- inst.observeProgress(ot, ElapsedTime(0.0.seconds))
+          } yield Result.Partial(pr)
+
+        val observationCommand =
+          Stream.eval[IO, Result](doObserve(id).value.map(_.toResult))
+
+        Stream.emit(Result.Partial(FileIdAllocated(id))).covary[IO] ++
+          observationProgressStream.mergeHaltR(observationCommand)
       case Left(e)   => Stream.emit(Result.Error(SeqexecFailure.explain(e))).covary[IO]
     }
   }

@@ -37,12 +37,16 @@ final case class Gnirs(controller: GnirsController, dhsClient: DhsClient[IO]) ex
   override val observeControl: ObserveControl = InfraredControl(StopObserveCmd(controller.stopObserve),
                                                                 AbortObserveCmd(controller.abortObserve))
 
-  override def observe(config: Config): SeqObserve[ImageFileId, ObserveCommand.Result] = Reader {
-    fileId => controller.observe(fileId, calcObserveTime(config))
-  }
+  override def observe(config: Config): SeqObserve[ImageFileId, ObserveCommand.Result] =
+    Reader { fileId =>
+      SeqActionF.liftF(calcObserveTime(config)).flatMap {
+        controller.observe(fileId, _)
+      }
+    }
 
-  override def calcObserveTime(config: Config): Time =
-    (extractExposureTime(config), extractCoadds(config)).mapN(_ * _.toDouble).getOrElse(10000.seconds)
+  override def calcObserveTime(config: Config): IO[Time] =
+    IO((extractExposureTime(config), extractCoadds(config))
+      .mapN(_ * _.toDouble).getOrElse(10000.seconds))
 
   override val resource: Resource = Instrument.Gnirs
 

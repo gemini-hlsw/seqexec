@@ -95,9 +95,12 @@ abstract class Gmos[T<:GmosController.SiteDependentTypes](controller: GmosContro
     } yield new GmosController.GmosConfig[T](configTypes)(cc, dc)
   ) )
 
-  override def observe(config: Config): SeqObserve[ImageFileId, ObserveCommand.Result] = Reader {
-    fileId => controller.observe(fileId, calcObserveTime(config))
-  }
+  override def observe(config: Config): SeqObserve[ImageFileId, ObserveCommand.Result] =
+    Reader { fileId =>
+      SeqActionF.liftF(calcObserveTime(config)).flatMap {
+        controller.observe(fileId, _)
+      }
+    }
 
   override def notifyObserveEnd: SeqAction[Unit] = controller.endObserve
 
@@ -106,9 +109,9 @@ abstract class Gmos[T<:GmosController.SiteDependentTypes](controller: GmosContro
   override def configure(config: Config): SeqAction[ConfigResult[IO]] =
     fromSequenceConfig(config).flatMap(controller.applyConfig).as(ConfigResult(this))
 
-  override def calcObserveTime(config: Config): Time =
-    config.extractAs[JDouble](OBSERVE_KEY / EXPOSURE_TIME_PROP)
-      .map(v => Seconds(v.toDouble)).getOrElse(Seconds(10000))
+  override def calcObserveTime(config: Config): IO[Time] =
+    IO(config.extractAs[JDouble](OBSERVE_KEY / EXPOSURE_TIME_PROP)
+      .map(v => Seconds(v.toDouble)).getOrElse(Seconds(10000)))
 
   override def observeProgress(total: Time, elapsed: ElapsedTime): fs2.Stream[IO, Progress] = controller
     .observeProgress(total, elapsed)

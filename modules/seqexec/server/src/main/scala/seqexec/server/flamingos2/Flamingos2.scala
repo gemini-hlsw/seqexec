@@ -39,8 +39,11 @@ final case class Flamingos2(f2Controller: Flamingos2Controller, dhsClient: DhsCl
   override val observeControl: InstrumentSystem.ObserveControl = InstrumentSystem.Uncontrollable
 
   // FLAMINGOS-2 does not support abort or stop.
-  override def observe(config: Config): SeqObserve[ImageFileId, ObserveCommand.Result] = Reader {
-    fileId => f2Controller.observe(fileId, calcObserveTime(config)).as(ObserveCommand.Success)
+  override def observe(config: Config): SeqObserve[ImageFileId, ObserveCommand.Result] =
+    Reader { fileId =>
+      SeqActionF.liftF(calcObserveTime(config))
+        .map(f2Controller.observe(fileId, _))
+        .as(ObserveCommand.Success)
   }
 
   override def configure(config: Config): SeqAction[ConfigResult[IO]] =
@@ -50,9 +53,10 @@ final case class Flamingos2(f2Controller: Flamingos2Controller, dhsClient: DhsCl
 
   override def notifyObserveStart: SeqAction[Unit] = SeqAction.void
 
-  override def calcObserveTime(config: Config): Time =
-    config.extractAs[JDouble](OBSERVE_KEY / EXPOSURE_TIME_PROP)
-      .map(x => Seconds(x.toDouble)).getOrElse(Seconds(360))
+  override def calcObserveTime(config: Config): IO[Time] =
+    IO(
+      config.extractAs[JDouble](OBSERVE_KEY / EXPOSURE_TIME_PROP)
+        .map(x => Seconds(x.toDouble)).getOrElse(Seconds(360)))
 
   override def observeProgress(total: Time, elapsed: InstrumentSystem.ElapsedTime): Stream[IO, Progress] = f2Controller
     .observeProgress(total)

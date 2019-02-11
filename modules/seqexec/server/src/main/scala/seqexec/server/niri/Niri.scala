@@ -48,8 +48,10 @@ final case class Niri(controller: NiriController, dhsClient: DhsClient[IO])
       .flatMap(controller.observe(fileId, _))
     }
 
-  override def calcObserveTime(config: Config): Time =
-    getDCConfig(config).map(controller.calcTotalExposureTime).getOrElse(60.seconds)
+  override def calcObserveTime(config: Config): IO[Time] =
+    getDCConfig(config)
+      .map(controller.calcTotalExposureTime)
+      .getOrElse(IO.pure(60.seconds))
 
   override def observeProgress(total: Time, elapsed: InstrumentSystem.ElapsedTime)
   : fs2.Stream[IO, Progress] = controller.observeProgress(total)

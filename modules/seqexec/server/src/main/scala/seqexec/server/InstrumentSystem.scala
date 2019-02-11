@@ -19,7 +19,7 @@ trait InstrumentSystem[F[_]] extends System[F] {
   def observe(
       config: Config): SeqObserveF[F, ImageFileId, ObserveCommand.Result]
   //Expected total observe lapse, used to calculate timeout
-  def calcObserveTime(config: Config): Time
+  def calcObserveTime(config: Config): F[Time]
   def keywordsClient: KeywordsClient[F]
   def observeProgress(total: Time, elapsed: InstrumentSystem.ElapsedTime): Stream[F, Progress]
 }

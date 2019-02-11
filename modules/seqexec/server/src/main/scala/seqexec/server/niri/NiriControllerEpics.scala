@@ -300,7 +300,8 @@ object NiriControllerEpics extends NiriController {
   override def observeProgress(total: Time): fs2.Stream[IO, Progress] =
     ProgressUtil.countdown[IO](total, 0.seconds)
 
-  override def calcTotalExposureTime(cfg: DCConfig): Time = {
+  override def calcTotalExposureTime(cfg: DCConfig): IO[Time] = IO {
+    // TODO epicSys.minIntegration should return IO
     val MinIntTime = epicsSys.minIntegration.map(Seconds(_)).getOrElse(0.seconds)
 
     (cfg.exposureTime + MinIntTime) * cfg.coadds.toDouble
