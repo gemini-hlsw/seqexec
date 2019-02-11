@@ -246,7 +246,7 @@ object EpicsUtil {
   }
 
   def safeAttribute[F[_]: Sync, A](get: => CaAttribute[A]): F[Option[A]] =
-    Sync[F].delay(Option(get).flatMap(x => Option(x.value)))
+    Sync[F].delay(Option(get.value))
 
   def smartSetParam[A: Eq](v: A, get: => Option[A], set: SeqAction[Unit]): List[SeqAction[Unit]] =
     if(get =!= v.some) List(set) else Nil
