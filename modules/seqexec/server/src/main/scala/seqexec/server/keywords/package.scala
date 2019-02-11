@@ -5,6 +5,7 @@ package seqexec.server
 
 import cats.{Applicative, Eq, Monad, Monoid, Functor}
 import cats.MonadError
+import cats.ApplicativeError
 import cats.implicits._
 import cats.effect.Sync
 import gem.enum.KeywordName
@@ -187,6 +188,9 @@ package keywords {
   }
 
   object DefaultHeaderValue {
+    @inline
+    def apply[A](implicit instance: DefaultHeaderValue[A]): DefaultHeaderValue[A] = instance
+
     implicit val IntDefaultValue: DefaultHeaderValue[Int] =
       new DefaultHeaderValue[Int] {
         val default: Int = IntDefault
@@ -230,6 +234,16 @@ package object keywords {
   implicit class A2SeqAction[A: DefaultHeaderValue](val v: Option[A]) {
     // Convert to a SeqAction or use the default
     def toSeqActionDefault: SeqAction[A] = SeqAction(v.orDefault)
+  }
+
+  // Keywords are read and they can fail or be missing
+  // This Operation will preserve the value if defined or use the default
+  // In case it either fails or is empty
+  implicit class FunctorSafeDefaultOps[F[_]: ApplicativeError[?[_], Throwable], A: DefaultHeaderValue](v: F[Option[A]]) {
+    def safeDefault: F[A] = v.attempt.map {
+      case Right(Some(a))     => a
+      case Left(_) | Right(_) => DefaultHeaderValue[A].default
+    }
   }
 
   implicit class SeqActionOption2SeqAction[A: DefaultHeaderValue](

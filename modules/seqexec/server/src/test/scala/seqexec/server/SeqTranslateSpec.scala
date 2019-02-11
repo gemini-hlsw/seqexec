@@ -105,7 +105,7 @@ class SeqTranslateSpec extends FlatSpec {
   )
 
   private val translatorSettings = TranslateSettings(tcsKeywords = false, f2Keywords = false, gwsKeywords = false,
-    gcalKeywords = false, gmosKeywords = false, gnirsKeywords = false, niriKeywords = false)
+    gcalKeywords = false, gmosKeywords = false, gnirsKeywords = false, niriKeywords = false, nifsKeywords = false)
 
   private val translator = SeqTranslate(Site.GS, systems, translatorSettings)
 

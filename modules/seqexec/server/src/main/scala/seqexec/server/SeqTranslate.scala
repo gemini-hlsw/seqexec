@@ -482,7 +482,8 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
                           else NiriKeywordReaderDummy
         toInstrumentSys(inst).map(NiriHeader.header(_, niriReader, tcsKReader))
       case Instrument.Nifs   =>
-        NifsHeader.header[IO].asRight
+        val nifsReader = if(settings.nifsKeywords) NifsKeywordReaderImpl else NifsKeywordReaderDummy
+        toInstrumentSys(inst).map(NifsHeader.header(_, nifsReader, tcsKReader))
       case _                 =>
         TrySeq.fail(Unexpected(s"Instrument $inst not supported."))
     }
