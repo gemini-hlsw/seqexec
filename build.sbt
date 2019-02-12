@@ -107,6 +107,8 @@ lazy val ocs3 = preventPublication(project.in(file(".")))
     db,
     json.jvm,
     json.js,
+    ocs2_api.jvm,
+    ocs2_api.js,
     ocs2,
     ephemeris,
     service,
@@ -202,10 +204,19 @@ lazy val sql = project
     ) ++ Doobie
   )
 
+lazy val ocs2_api = crossProject(JVMPlatform, JSPlatform)
+  .crossType(CrossType.Pure)
+  .in(file("modules/ocs2_api"))
+  .dependsOn(core)
+  .settings(commonSettings)
+  .jsSettings(commonJSSettings)
+
+lazy val ocs2_api_JVM = ocs2_api.jvm.enablePlugins(AutomateHeaderPlugin)
+
 lazy val ocs2 = project
   .in(file("modules/ocs2"))
   .enablePlugins(AutomateHeaderPlugin)
-  .dependsOn(core.jvm, db, sql)
+  .dependsOn(core.jvm, db, sql, ocs2_api_JVM)
   .settings(commonSettings)
   .settings(
     addCompilerPlugin(Plugins.kindProjectorPlugin),
