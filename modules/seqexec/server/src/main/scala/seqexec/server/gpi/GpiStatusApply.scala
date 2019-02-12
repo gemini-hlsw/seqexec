@@ -5,9 +5,11 @@ package seqexec.server.gpi
 
 import cats.implicits._
 import cats.effect.Sync
+import gem.ocs2.Parsers
 import giapi.client.commands.Configuration
 import giapi.client.GiapiStatusDb
 import giapi.client.syntax.status._
+import seqexec.server.gpi.GpiController.GpiConfig
 
 final case class GpiStatusApply(tp:          String,
                                 status:      String,
@@ -24,36 +26,28 @@ final case class GpiStatusApply(tp:          String,
                                 config:   Configuration): F[Configuration] =
     (statusDb
       .value(status)
-      .map(x =>
-        x.doubleCfg === config.value(configParam)
-      ))
+      .map(x => x.doubleCfg === config.value(configParam)))
       .ifM(Sync[F].delay(config.remove(configParam)), Sync[F].pure(config))
 
   def floatCompare[F[_]: Sync](statusDb: GiapiStatusDb[F],
                                config:   Configuration): F[Configuration] =
     (statusDb
       .value(status)
-      .map(x =>
-        x.floatCfg === config.value(configParam)
-      ))
+      .map(x => x.floatCfg === config.value(configParam)))
       .ifM(Sync[F].delay(config.remove(configParam)), Sync[F].pure(config))
 
   def dfloatCompare[F[_]: Sync](statusDb: GiapiStatusDb[F],
-                               config:   Configuration): F[Configuration] =
+                                config:   Configuration): F[Configuration] =
     (statusDb
       .value(status)
-      .map(x =>
-        x.floatCfg === config.value(configParam)
-      ))
+      .map(x => x.floatCfg === config.value(configParam)))
       .ifM(Sync[F].delay(config.remove(configParam)), Sync[F].pure(config))
 
   def stringCompare[F[_]: Sync](statusDb: GiapiStatusDb[F],
-                               config:   Configuration): F[Configuration] =
+                                config:   Configuration): F[Configuration] =
     (statusDb
       .value(status)
-      .map(x =>
-        x.stringCfg === config.value(configParam)
-      ))
+      .map(x => x.stringCfg === config.value(configParam)))
       .ifM(Sync[F].delay(config.remove(configParam)), Sync[F].pure(config))
 
   def compare[F[_]: Sync](statusDb: GiapiStatusDb[F],
@@ -61,8 +55,8 @@ final case class GpiStatusApply(tp:          String,
     case "INT"    => intCompare(statusDb, config)
     case "DOUBLE" => doubleCompare(statusDb, config)
     case "FLOAT"  => floatCompare(statusDb, config)
-    case "DFLOAT"  => dfloatCompare(statusDb, config)
-    case "STRING"  => stringCompare(statusDb, config)
+    case "DFLOAT" => dfloatCompare(statusDb, config)
+    case "STRING" => stringCompare(statusDb, config)
     case _        => sys.error("Unknown")
   }
 }
@@ -157,10 +151,49 @@ object GpiStatusApply {
     lyot
   )
 
-  def foldConfigM[F[_]: Sync](db:     GiapiStatusDb[F],
+  def foldConfigM[F[_]: Sync](items:  List[GpiStatusApply],
+                              db:     GiapiStatusDb[F],
                               config: Configuration): F[Configuration] =
-    all.foldLeftM(config) { (c, i) =>
+    items.foldLeftM(config) { (c, i) =>
       i.compare(db, c)
+    }
+
+  def foldConfig[F[_]: Sync](db:     GiapiStatusDb[F],
+                                config: Configuration): F[Configuration] =
+    foldConfigM(all, db, config)
+
+  /**
+   * ObsMode needs a special treatment. It is a meta model thus it sets
+   * the filter, fpm, apodizer and lyot
+   * We need to check that each subsystem matches or we will
+   * falsely not set the obs mode
+   */
+  def overrideObsMode[F[_]: Sync](db:        GiapiStatusDb[F],
+                                  gpiConfig: GpiConfig,
+                                  config:    Configuration): F[Configuration] =
+    gpiConfig.mode match {
+      case Right(_) => config.pure[F]
+      case Left(o) =>
+        Parsers.Gpi
+          .observingMode(o.displayValue())
+          .map { ob =>
+            // Compare the subsystem values and the ones for the obs mode
+            val filterCmp = db.value("gpi:ifsFilter").map(x => x.stringCfg =!= ob.filter.map(_.shortName))
+            val ppmCmp = db.value("gpi:ppmMask").map(x => x.stringCfg =!= ob.apodizer.map(_.tag).flatMap(GpiLookupTables.apodizerLUTNames.get))
+            val fpmCmp = db.value("gpi:fpmMask").map(x => x.stringCfg =!= ob.fpm.map(_.shortName))
+            val lyotCmp = db.value("gpi:lyotMask").map(x => x.stringCfg =!= ob.lyot.map(_.shortName))
+            // If any doesn't match
+            val subSystemsNotMatching = (filterCmp, ppmCmp, fpmCmp, lyotCmp).mapN(_ || _ || _ || _)
+            subSystemsNotMatching.map {
+              case true =>
+                // force the obs mode if a subsystem doesn't match
+                (config.remove("gpi:observationMode.mode") |+| Configuration.single("gpi:observationMode.mode",
+                             GpiLookupTables.obsModeLUT.getOrElse(o, GpiLookupTables.UNKNOWN_SETTING)))
+              case false =>
+                config
+            }
+          }
+          .getOrElse(config.pure[F])
     }
 
   val statusesToMonitor = all.map(_.status)

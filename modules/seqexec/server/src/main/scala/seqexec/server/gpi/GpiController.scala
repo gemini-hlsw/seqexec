@@ -26,6 +26,7 @@ import seqexec.server.keywords.GdsClient
 import seqexec.server.gpi.GpiController.GpiConfig
 
 object GpiLookupTables {
+  val UNKNOWN_SETTING = "UNKNOWN"
 
   val apodizerLUT: Map[LegacyApodizer, String] = Map(
     LegacyApodizer.CLEAR     -> "CLEAR",
@@ -40,6 +41,9 @@ object GpiLookupTables {
     LegacyApodizer.APOD_STAR -> "ND3",
     LegacyApodizer.ND3       -> "ND3"
   )
+
+  val apodizerLUTNames: Map[String, String] =
+    apodizerLUT.map { case (k, v) => (k.name, v)}
 
   val fpmLUT: Map[LegacyFPM, String] = Map(
     LegacyFPM.OPEN     -> "Open",
@@ -99,7 +103,6 @@ final case class GpiController[F[_]: Sync](override val client: GpiClient[F],
   import GpiController._
   import GpiLookupTables._
 
-  private val UNKNOWN_SETTING = "UNKNOWN"
   override val name = "GPI"
 
   private def obsModeConfiguration(config: GpiConfig): Configuration =
@@ -183,7 +186,8 @@ final case class GpiController[F[_]: Sync](override val client: GpiClient[F],
         obsModeConfiguration(config)
 
     for {
-      p <- GpiStatusApply.foldConfigM(client.statusDb, baseConfig)
+      q <- GpiStatusApply.foldConfig(client.statusDb, baseConfig)
+      p <- GpiStatusApply.overrideObsMode(client.statusDb, config, q)
       _ <- Sync[F].delay(GpiController.logger.info(s"Applied GPI config ${p.config}"))
     } yield p
   }

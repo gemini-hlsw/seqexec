@@ -38,6 +38,9 @@ package commands {
     def value(path: String): Option[String] =
       config.get(ConfigPath.configPath(path))
 
+    def contains(path: String): Boolean =
+      config.contains(ConfigPath.configPath(path))
+
     def remove(path: String): Configuration =
       Configuration(config - ConfigPath.configPath(path))
 
