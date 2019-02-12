@@ -34,7 +34,7 @@ import seqexec.server.gmos.{GmosControllerSim, GmosEpics, GmosNorthControllerEpi
 import seqexec.server.gnirs.{GnirsControllerEpics, GnirsControllerSim, GnirsEpics}
 import seqexec.server.gpi.GpiController
 import seqexec.server.niri.{NiriControllerEpics, NiriControllerSim, NiriEpics}
-import seqexec.server.nifs.{NifsControllerSim, NifsEpics}
+import seqexec.server.nifs.{NifsControllerEpics, NifsControllerSim, NifsEpics}
 import seqexec.server.gws.GwsEpics
 import seqexec.server.tcs.{TcsControllerEpics, TcsControllerSim, TcsEpics}
 import edu.gemini.seqexec.odb.SmartGcal
@@ -79,7 +79,7 @@ class SeqexecEngine(httpClient: Client[IO], gpi: GpiClient[IO], ghost: GhostClie
     GpiController(gpi, gpiGDS),
     GhostController(ghost, ghostGDS),
     settings.niriControl.command.fold(NiriControllerEpics, NiriControllerSim),
-    NifsControllerSim
+    settings.nifsControl.command.fold(NifsControllerEpics, NifsControllerSim)
   )
 
   private val translatorSettings = TranslateSettings(

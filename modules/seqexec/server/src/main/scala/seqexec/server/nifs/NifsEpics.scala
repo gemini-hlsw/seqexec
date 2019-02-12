@@ -12,9 +12,11 @@ import org.log4s.{Logger, getLogger}
 import seqexec.server.EpicsCommand.setParameter
 import seqexec.server.{EpicsCommand, EpicsSystem, ObserveCommand, SeqAction}
 import seqexec.server.EpicsCommandF
+import seqexec.server.ObserveCommandF
 import seqexec.server.EpicsUtil.safeAttribute
 import seqexec.server.EpicsUtil.safeAttributeSDouble
 import seqexec.server.EpicsUtil.safeAttributeSInt
+import seqexec.server.EpicsCommand.setParameterF
 
 class NifsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, String]) {
   val NifsTop = tops.getOrElse("nifs", "nifs:")
@@ -102,13 +104,13 @@ class NifsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, String]) 
     override protected val os: Option[CaApplySender] = observeAS
   }
 
-  object observeCmd extends ObserveCommand {
+  object observeCmd extends ObserveCommandF {
     override protected val cs: Option[CaCommandSender] = Option(
       epicsService.getCommandSender("nifs::observe"))
     override protected val os: Option[CaApplySender] = observeAS
 
     val label: Option[CaParameter[String]] = cs.map(_.getString("label"))
-    def setLabel(v: String): SeqAction[Unit] = setParameter(label, v)
+    def setLabel(v: String): F[Unit] = setParameterF(label, v)
   }
 
   object endObserveCmd extends EpicsCommandF {
@@ -148,8 +150,9 @@ class NifsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, String]) 
   def timeMode: F[Option[String]] =
     safeAttribute(dcStatus.getStringAttribute("timeMode"))
 
-  val dhsConnectedAttr: CaAttribute[DhsConnected] = dcStatus.addEnum[DhsConnected]("dhsConnected",
-    s"${NifsTop}sad:dc:dhsConnO", classOf[DhsConnected])
+  val dhsConnectedAttr: F[CaAttribute[DhsConnected]] = Sync[F].delay {
+    dcStatus.addEnum[DhsConnected]("dhsConnected", s"${NifsTop}sad:dc:dhsConnO", classOf[DhsConnected])
+  }
 
   def dcName: F[Option[String]] =
     safeAttribute(dcStatus.getStringAttribute("name"))

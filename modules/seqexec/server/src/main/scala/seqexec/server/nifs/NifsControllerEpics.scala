@@ -16,6 +16,7 @@ import cats.implicits._
 // import fs2.Stream
 import org.log4s.getLogger
 import scala.concurrent.ExecutionContext
+import edu.gemini.seqexec.server.nifs.DhsConnected
 import seqexec.model.dhs.ImageFileId
 // import seqexec.server.{EpicsCodex, EpicsCommand, ObserveCommand, Progress, ProgressUtil, SeqAction, SeqexecFailure}
 // import seqexec.server.EpicsUtil._
@@ -24,6 +25,7 @@ import seqexec.server.ObserveCommand
 import seqexec.server.Progress
 import seqexec.server.ProgressUtil
 import seqexec.server.SeqexecFailure
+import seqexec.server.failUnlessM
 import squants.{Seconds, Time}
 import squants.time.TimeConversions._
 
@@ -257,7 +259,7 @@ object NifsControllerEpics extends NifsController[IO] {
     //                   else params.sequence.void *>
     //                     epicsSys.configCmd.setTimeout(ConfigTimeout) *>
     //                     epicsSys.configCmd.post
-    // // Weird NIRI behavior. The main IS apply is nor connected to the DC apply, but triggering the
+    // // Weird NIFS behavior. The main IS apply is nor connected to the DC apply, but triggering the
     // // IS apply writes the DC parameters. So to configure the DC, we need to set the DC parameters
     // // in the IS, trigger the IS apply, and then trigger the DC apply.
     // val cfgActions = if(paramsDC.isEmpty) cfgActions1
@@ -265,45 +267,43 @@ object NifsControllerEpics extends NifsController[IO] {
     //                    epicsSys.configDCCmd.setTimeout(DefaultTimeout) *>
     //                    epicsSys.configDCCmd.post
     //
-    // SeqAction(Log.debug("Starting NIRI configuration")) *>
+    // SeqAction(Log.debug("Starting NIFS configuration")) *>
     //   (if(epicsSys.dhsConnected.exists(identity)) SeqAction.void
-    //    else EitherT.right(IO(Log.warn("NIRI is not connected to DHS")))
+    //    else EitherT.right(IO(Log.warn("NIFS is not connected to DHS")))
     //   ) *>
     //   (if(epicsSys.arrayActive.exists(identity)) SeqAction.void
-    //    else EitherT.right(IO(Log.warn("NIRI detector array is not active")))
+    //    else EitherT.right(IO(Log.warn("NIFS detector array is not active")))
     //   ) *>
     //   cfgActions *>
-    //   SeqAction(Log.debug("Completed NIRI configuration"))
+    //   SeqAction(Log.debug("Completed NIFS configuration"))
   }
 
-  override def observe(fileId: ImageFileId, cfg: DCConfig): IO[ObserveCommand.Result] =
-    IO.raiseError(SeqexecFailure.FailedSimulation)
-    // SeqAction.void
-  //   EitherT.right[SeqexecFailure](IO(Log.info("Start NIRI observe"))) *>
-  //     (if(epicsSys.dhsConnected.exists(identity)) SeqAction.void
-  //      else SeqAction.fail(SeqexecFailure.Execution("NIRI is not connected to DHS"))
-  //     ) *>
-  //     (if(epicsSys.arrayActive.exists(identity)) SeqAction.void
-  //      else SeqAction.fail(SeqexecFailure.Execution("NIRI detector array is not active"))
-  //     ) *>
-  //     epicsSys.observeCmd.setLabel(fileId) *>
-  //     epicsSys.observeCmd.setTimeout(calcObserveTimeout(cfg)) *>
-  //     epicsSys.observeCmd.post
-  //
+  override def observe(fileId: ImageFileId, cfg: DCConfig): IO[ObserveCommand.Result] = {
+    val checkDhs =
+      failUnlessM(epicsSys.dhsConnectedAttr.map(_.value() === DhsConnected.Yes),
+        SeqexecFailure.Execution("NIFS is not connected to DHS"))
+
+    IO(Log.info("Start NIFS observe")) *>
+      checkDhs *>
+      epicsSys.observeCmd.setLabel(fileId) *>
+      epicsSys.observeCmd.setTimeout[IO](calcObserveTimeout(cfg)) *>
+      epicsSys.observeCmd.post[IO]
+  }
+
   override def endObserve: IO[Unit] =
-    IO(Log.debug("Send endObserve to NIRI")) *>
+    IO(Log.debug("Send endObserve to NIFS")) *>
       epicsSys.endObserveCmd.setTimeout[IO](DefaultTimeout) *>
       epicsSys.endObserveCmd.mark[IO] *>
       epicsSys.endObserveCmd.post[IO].void
 
   override def stopObserve: IO[Unit] =
-    IO(Log.info("Stop NIRI exposure")) *>
+    IO(Log.info("Stop NIFS exposure")) *>
       epicsSys.stopCmd.setTimeout[IO](DefaultTimeout) *>
       epicsSys.stopCmd.mark[IO] *>
       epicsSys.stopCmd.post[IO].void
 
   override def abortObserve: IO[Unit] =
-    IO(Log.info("Abort NIRI exposure")) *>
+    IO(Log.info("Abort NIFS exposure")) *>
       epicsSys.abortCmd.setTimeout[IO](DefaultTimeout) *>
       epicsSys.abortCmd.mark[IO] *>
       epicsSys.abortCmd.post[IO].void
@@ -317,13 +317,13 @@ object NifsControllerEpics extends NifsController[IO] {
     (cfg.exposureTime + MinIntTime) * cfg.coadds.toDouble
   }
 
-  // def calcObserveTimeout(cfg: DCConfig): Time = {
-  //   val CoaddOverhead = 2.2
-  //   val TotalOverhead = 30.seconds
-  //
-  //   (cfg.exposureTime + MinIntTime) * cfg.coadds.toDouble * CoaddOverhead + TotalOverhead
-  // }
-  //
+  def calcObserveTimeout(cfg: DCConfig): Time = {
+    val CoaddOverhead = 2.2
+    val TotalOverhead = 300.seconds
+
+    cfg.exposureTime * cfg.coadds.toDouble * CoaddOverhead + TotalOverhead
+  }
+
   // private val ConfigTimeout: Time = Seconds(180)
   private val DefaultTimeout: Time = Seconds(60)
 
