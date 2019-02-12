@@ -48,35 +48,36 @@ class NifsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, String]) 
 
   }
 
-  object dcConfigCmd extends EpicsCommand {
+  object dcConfigCmd extends EpicsCommandF {
     override protected val cs: Option[CaCommandSender] =
       Option(epicsService.getCommandSender("nifs::dcconfig"))
 
-    val coadds: Option[CaParameter[Integer]] = cs.map(_.getInteger("coadds"))
-    def setCoadds(v: Int): SeqAction[Unit] = setParameter(coadds, Integer.valueOf(v))
+    private val coadds: Option[CaParameter[Integer]] = cs.map(_.getInteger("coadds"))
+    def setCoadds(v: Int): F[Unit] = setParameterF(coadds, Integer.valueOf(v))
 
-    val exposureTime: Option[CaParameter[JDouble]] = cs.map(_.getDouble("exposureTime"))
-    def setExposureTime(v: Double): SeqAction[Unit] = setParameter(exposureTime, JDouble.valueOf(v))
+    private val exposureTime: Option[CaParameter[JDouble]] = cs.map(_.getDouble("exposureTime"))
+    def setExposureTime(v: Double): F[Unit] = setParameterF(exposureTime, JDouble.valueOf(v))
 
-    val fowlerSamples: Option[CaParameter[Integer]] = cs.map(_.getInteger("numberOfFowSamples"))
-    def setFowlerSamples(v: Int): SeqAction[Unit] = setParameter(fowlerSamples, Integer.valueOf(v))
+    private val fowlerSamples: Option[CaParameter[Integer]] = cs.map(_.getInteger("numberOfFowSamples"))
+    def setFowlerSamples(v: Int): F[Unit] = setParameterF(fowlerSamples, Integer.valueOf(v))
 
-    val period: Option[CaParameter[JDouble]] = cs.map(_.getDouble("period"))
-    def setPeriod(v: Double): SeqAction[Unit] = setParameter(period, JDouble.valueOf(v))
+    private val period: Option[CaParameter[JDouble]] = cs.map(_.getDouble("period"))
+    def setPeriod(v: Double): F[Unit] = setParameterF(period, JDouble.valueOf(v))
 
-    val readMode: Option[CaParameter[Integer]] = cs.map(_.getInteger("readMode"))
-    def setReadMode(v: Int): SeqAction[Unit] = setParameter(readMode, Integer.valueOf(v))
+    private val readMode: Option[CaParameter[Integer]] = cs.map(_.getInteger("readMode"))
+    def setReadMode(v: Int): F[Unit] = setParameterF(readMode, Integer.valueOf(v))
 
-    val numberOfResets: Option[CaParameter[Integer]] = cs.map(_.getInteger("numberOfResets"))
-    def setnumberOfResets(v: Int): SeqAction[Unit] =
-      setParameter(numberOfResets, Integer.valueOf(v))
+    private val numberOfResets: Option[CaParameter[Integer]] = cs.map(_.getInteger("numberOfResets"))
+    def setnumberOfResets(v: Int): F[Unit] =
+      setParameterF(numberOfResets, Integer.valueOf(v))
 
-    val numberOfPeriods: Option[CaParameter[Integer]] = cs.map(_.getInteger("numberOfPeriods"))
-    def setnumberOfPeriods(v: Int): SeqAction[Unit] =
-      setParameter(numberOfPeriods, Integer.valueOf(v))
+    private val numberOfPeriods: Option[CaParameter[Integer]] = cs.map(_.getInteger("numberOfPeriods"))
+    def setnumberOfPeriods(v: Int): F[Unit] =
+      setParameterF(numberOfPeriods, Integer.valueOf(v))
 
-    val timeMode: Option[CaParameter[Integer]] = cs.map(_.getInteger("timeMode"))
-    def setTimeMode(v: Int): SeqAction[Unit] = setParameter(timeMode, Integer.valueOf(v))
+    private val timeMode: Option[CaParameter[Integer]] = cs.map(_.getInteger("timeMode"))
+    def setTimeMode(v: Int): F[Unit] =
+      setParameterF(timeMode, Integer.valueOf(v))
   }
 
   private val stopCS: Option[CaCommandSender] = Option(epicsService.getCommandSender("nifs::stop"))
