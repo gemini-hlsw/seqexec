@@ -51,7 +51,7 @@ class StandardHeader[F[_]: Sync](
 
   private def optTcsKeyword[B](s: TcsController.Subsystem)(v: F[B])(implicit d: DefaultHeaderValue[B]) : F[B] =
     if(tcsSubsystems.contains(s)) v
-    else Applicative[F].pure(d.default)
+    else d.default.pure[F]
 
   private def mountTcsKeyword[B](v: F[B])(implicit d: DefaultHeaderValue[B]) = optTcsKeyword[B](TcsController.Subsystem.Mount)(v)(d)
 
@@ -162,8 +162,8 @@ class StandardHeader[F[_]: Sync](
     val requested = keys.flatMap {
       case (keyword, value) => obsReader.getRequestedAirMassAngle.get(value).toList.map(buildDouble(_, keyword))
     }
-    if (requested.nonEmpty) sendKeywords[F](id, inst, requested)
-    else Applicative[F].unit
+
+    sendKeywords[F](id, inst, requested).whenA(requested.nonEmpty)
   }
 
   override def sendBefore(obsId: Observation.Id, id: ImageFileId): F[Unit] = {

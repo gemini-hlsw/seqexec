@@ -189,15 +189,15 @@ object TcsControllerEpics extends TcsController {
         case LightSinkName.Niri_f6 |
              LightSinkName.Niri_f14 |
              LightSinkName.Niri_f32 => TcsEpics.instance.niriPort
-        case LightSinkName.Nifs => TcsEpics.instance.nifsPort
-        case LightSinkName.Gnirs => TcsEpics.instance.gnirsPort
-        case LightSinkName.F2 => TcsEpics.instance.f2Port
-        case LightSinkName.Gpi => TcsEpics.instance.gpiPort
-        case LightSinkName.Ghost => TcsEpics.instance.ghostPort
-        case LightSinkName.Gsaoi => TcsEpics.instance.gsaoiPort
+        case LightSinkName.Nifs     => TcsEpics.instance.nifsPort
+        case LightSinkName.Gnirs    => TcsEpics.instance.gnirsPort
+        case LightSinkName.F2       => TcsEpics.instance.f2Port
+        case LightSinkName.Gpi      => TcsEpics.instance.gpiPort
+        case LightSinkName.Ghost    => TcsEpics.instance.ghostPort
+        case LightSinkName.Gsaoi    => TcsEpics.instance.gsaoiPort
         case LightSinkName.Ac |
-             LightSinkName.Hr => IO(BottomPort.some)
-        case _ => IO(None)
+             LightSinkName.Hr       => IO(BottomPort.some)
+        case _                      => IO(None)
       }).map(_.filterNot(_ === InvalidPort))
     }
 

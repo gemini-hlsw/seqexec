@@ -241,8 +241,8 @@ package object keywords {
   // In case it either fails or is empty
   implicit class FunctorSafeOps[F[_]: ApplicativeError[?[_], Throwable], A](v: F[Option[A]]) {
     def safeVal: F[Option[A]] = v.attempt.map {
-      case Right(Some(a))     => Some(a)
-      case _                  => None
+      case Right(a@Some(_)) => a
+      case _                => None
     }
   }
 

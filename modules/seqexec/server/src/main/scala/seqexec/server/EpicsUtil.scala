@@ -327,14 +327,14 @@ object EpicsUtil {
   def safeAttributeSInt[F[_]: Sync, A](get: => CaAttribute[JInt]): F[Option[Int]] =
     Nested(safeAttribute(get)).map(_.toInt).value
 
-  def safeAttributeList[F[_]: Sync, A](get: => CaAttribute[A]): F[Option[util.List[A]]] =
-    Sync[F].delay(Option(get.values))
+  def safeAttributeList[F[_]: Sync, A](get: => CaAttribute[A]): F[Option[List[A]]] =
+    Sync[F].delay(Option(get.values.asScala.toList))
 
   def safeAttributeSListSInt[F[_]: Sync, A](get: => CaAttribute[JInt]): F[Option[List[Int]]] =
-    Nested(safeAttributeList(get)).map(_.asScala.toList.map(_.toInt)).value
+    Nested(safeAttributeList(get)).map(_.map(_.toInt)).value
 
   def safeAttributeSListSDouble[F[_]: Sync, A](get: => CaAttribute[JDouble]): F[Option[List[Double]]] =
-    Nested(safeAttributeList(get)).map(_.asScala.toList.map(_.toDouble)).value
+    Nested(safeAttributeList(get)).map(_.map(_.toDouble)).value
 
   def smartSetParam[A: Eq](v: A, get: => Option[A], set: SeqAction[Unit]): List[SeqAction[Unit]] =
     if(get =!= v.some) List(set) else Nil
