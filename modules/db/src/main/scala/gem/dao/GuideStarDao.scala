@@ -15,21 +15,27 @@ import doobie.implicits._
 
 import scala.collection.immutable.TreeMap
 
+final case class ResolvedGuideStar(
+  target:     Target,
+  guider:     Guider,
+  instrument: Instrument
+)
 
 final case class ProtoGuideStar(
-  id:       GuideStar.Id,
-  groupId:  GuideGroup.Id,
-  targetId: Target.Id,
-  guider:   Guider,
-  obsIndex: Index
-) extends ProtoTargetWrapper[GuideStar.Id, (Target, Guider)] {
+  id:         GuideStar.Id,
+  groupId:    GuideGroup.Id,
+  targetId:   Target.Id,
+  guider:     Guider,
+  obsIndex:   Index,
+  instrument: Instrument
+) extends ProtoTargetWrapper[GuideStar.Id, ResolvedGuideStar] {
 
-  override def wrap(t: Target): (Target, Guider) =
-    (t, guider)
+  override def wrap(t: Target): ResolvedGuideStar =
+    ResolvedGuideStar(t, guider, instrument)
 
 }
 
-object GuideStarDao extends TargetWrapperDao[GuideStar.Id, (Target, Guider), ProtoGuideStar] {
+object GuideStarDao extends TargetWrapperDao[GuideStar.Id, ResolvedGuideStar, ProtoGuideStar] {
 
   def insert(
     gid:        GuideGroup.Id,
@@ -48,51 +54,50 @@ object GuideStarDao extends TargetWrapperDao[GuideStar.Id, (Target, Guider), Pro
 
   def select(
     id: GuideStar.Id
-  ): ConnectionIO[Option[(Target, Guider)]] =
+  ): ConnectionIO[Option[ResolvedGuideStar]] =
     selectOne(Statements.select(id))
 
   def selectGroup(
     gid: GuideGroup.Id
-  ): ConnectionIO[List[(Target, Guider)]] =
+  ): ConnectionIO[List[ResolvedGuideStar]] =
     selectAll(Statements.selectGroup(gid))
       .map(wrapAll)
 
   def selectGroupWithId(
     gid: GuideGroup.Id
-  ): ConnectionIO[TreeMap[GuideStar.Id, (Target, Guider)]] =
+  ): ConnectionIO[TreeMap[GuideStar.Id, ResolvedGuideStar]] =
     selectAll(Statements.selectGroup(gid))
       .map(groupById)
 
   def selectObs(
     oid: Observation.Id
-  ): ConnectionIO[TreeMap[GuideGroup.Id, List[(Target, Guider)]]] =
+  ): ConnectionIO[TreeMap[GuideGroup.Id, List[ResolvedGuideStar]]] =
     selectAll(Statements.selectObs(oid))
       .map(groupAndMap(_.groupId, wrapAll))
 
   def selectObsWithId(
     oid: Observation.Id
-  ): ConnectionIO[TreeMap[GuideGroup.Id, TreeMap[GuideStar.Id, (Target, Guider)]]] =
+  ): ConnectionIO[TreeMap[GuideGroup.Id, TreeMap[GuideStar.Id, ResolvedGuideStar]]] =
     selectAll(Statements.selectObs(oid))
       .map(groupAndMap(_.groupId, groupById))
 
   def selectProg(
     pid: Program.Id
-  ): ConnectionIO[TreeMap[Index, TreeMap[GuideGroup.Id, List[(Target, Guider)]]]] =
+  ): ConnectionIO[TreeMap[Index, TreeMap[GuideGroup.Id, List[ResolvedGuideStar]]]] =
     selectAll(Statements.selectProg(pid))
       .map(groupAndMap(_.obsIndex, groupAndMap(_.groupId, wrapAll)))
 
   def selectProgWithId(
     pid: Program.Id
-  ): ConnectionIO[TreeMap[Index, TreeMap[GuideGroup.Id, TreeMap[GuideStar.Id, (Target, Guider)]]]] =
+  ): ConnectionIO[TreeMap[Index, TreeMap[GuideGroup.Id, TreeMap[GuideStar.Id, ResolvedGuideStar]]]] =
     selectAll(Statements.selectProg(pid))
       .map(groupAndMap(_.obsIndex, groupAndMap(_.groupId, groupById)))
 
   object Statements {
 
     import EnumeratedMeta._
-
-    import gem.dao.meta.ProgramIdMeta._
-    import gem.dao.meta.IndexMeta._
+    import IndexMeta._
+    import ProgramIdMeta._
 
     def insert(
       gid:        GuideGroup.Id,
@@ -128,7 +133,8 @@ object GuideStarDao extends TargetWrapperDao[GuideStar.Id, (Target, Guider), Pro
                   group_id,
                   target_id,
                   guider,
-                  observation_index
+                  observation_index,
+                  instrument
              FROM guide_star
         """
       )

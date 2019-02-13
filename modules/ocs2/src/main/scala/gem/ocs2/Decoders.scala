@@ -192,6 +192,7 @@ object Decoders {
         }
       })
 
+    // TODO: GuideEnvironment
     PioDecoder { n =>
       for {
         a <- validTargets(n \* "&asterism" \! "&target")(_.toRequired).decode[Target]
@@ -199,13 +200,14 @@ object Decoders {
         u <- validTargets(n \? "&userTargets" \* "&userTarget")(_ \! "&spTarget" \! "&target").decode[UserTarget]
       } yield {
         a.headOption.map(Asterism.unsafeFromSingleTarget(_, i)) match {
-          case None    => TargetEnvironment.fromInstrument(i, TreeSet.fromList(u))
-          case Some(a) => TargetEnvironment.fromAsterism(a, TreeSet.fromList(u))
+          case None    => TargetEnvironment.fromInstrument(i, None, TreeSet.fromList(u))
+          case Some(a) => TargetEnvironment.fromAsterism(a, None, TreeSet.fromList(u))
         }
       }
     }
   }
 
+  // TODO: GuideEnvironment
   implicit val ObservationDecoder: PioDecoder[Observation] =
     PioDecoder { n =>
       for {
@@ -213,7 +215,7 @@ object Decoders {
         s <- (n \! "sequence"                           ).decode[StaticConfig](StaticDecoder)
         d <- (n \! "sequence"                           ).decode[List[Step]](SequenceDecoder)
         i  = Instrument.forStaticConfig(s) // stable identifier needed below
-        e <- (n \? "telescope" \! "data" \! "&targetEnv").decodeOrElse(TargetEnvironment.fromInstrument(i, TreeSet.empty))(targetEnvironmentDecoder(i))
+        e <- (n \? "telescope" \! "data" \! "&targetEnv").decodeOrElse(TargetEnvironment.fromInstrument(i, None, TreeSet.empty))(targetEnvironmentDecoder(i))
       } yield Observation.unsafeAssemble(t, e, s, d)
     }
 

@@ -5,15 +5,15 @@ package gem
 
 import cats._
 import cats.implicits._
-
+import cats.data.NonEmptyList
 import gem.enum.Guider
 
 /**
  * Associates one or more guide probes or guide windows with guide stars.
  */
-sealed trait GuideGroup {
+sealed trait GuideGroup extends Product with Serializable {
 
-  def toMap: Map[Guider, Target]
+  def guideStars: NonEmptyList[(Guider, Target)]
 
 }
 
@@ -29,68 +29,95 @@ object GuideGroup {
   }
 
   /**
-   * Guide "group" for the majority of cases where there is a single guide star.
-   *
-   * @param guider guide probe or guide window
-   * @param target guide star tracked by the guider
+   * Guide "group" supertype for the majority of cases where there is a single
+   * guide star.
    */
-  sealed abstract class SingleGuiderGroup(val guider: Guider, target: Target) extends GuideGroup with Product with Serializable {
+  sealed trait SingleGuider extends GuideGroup {
 
-    override val toMap: Map[Guider, Target] =
-      Map(guider -> target)
+    def guider: Guider
+    def target: Target
+
+    override val guideStars: NonEmptyList[(Guider, Target)] =
+      NonEmptyList.one(guider -> target)
 
   }
+
+  sealed trait Flamingos2 extends SingleGuider
 
   object Flamingos2 {
-    final case class OI(target: Target) extends SingleGuiderGroup(Guider.F2OI, target)
-    final case class P1(target: Target) extends SingleGuiderGroup(Guider.P1GS, target)
-    final case class P2(target: Target) extends SingleGuiderGroup(Guider.P2GS, target)
+
+    final case class OI(target: Target) extends Flamingos2 {
+      override val guider: Guider = Guider.F2OI
+    }
+
+    final case class P1(target: Target) extends Flamingos2 {
+      override val guider: Guider = Guider.P1GS
+    }
+
+    final case class P2(target: Target) extends Flamingos2 {
+      override val guider: Guider = Guider.P2GS
+    }
+
+    implicit val EqFlamingos2: Eq[Flamingos2] =
+      Eq.instance {
+        case (OI(a), OI(b)) => a === b
+        case (P1(a), P1(b)) => a === b
+        case (P2(a), P2(b)) => a === b
+        case _              => false
+      }
   }
+
+  sealed trait GmosNorth extends SingleGuider
 
   object GmosNorth {
-    final case class OI(target: Target) extends SingleGuiderGroup(Guider.GmosNOI, target)
-    final case class P1(target: Target) extends SingleGuiderGroup(Guider.P1GN,    target)
-    final case class P2(target: Target) extends SingleGuiderGroup(Guider.P2GN,    target)
+
+    final case class OI(target: Target) extends GmosNorth {
+      override val guider: Guider = Guider.GmosNOI
+    }
+
+    final case class P1(target: Target) extends GmosNorth {
+      override val guider: Guider = Guider.P1GS
+    }
+
+    final case class P2(target: Target) extends GmosNorth {
+      override val guider: Guider = Guider.P2GS
+    }
+
+    implicit val EqGmosNorth: Eq[GmosNorth] =
+      Eq.instance {
+        case (OI(a), OI(b)) => a === b
+        case (P1(a), P1(b)) => a === b
+        case (P2(a), P2(b)) => a === b
+        case _              => false
+      }
+
   }
 
+  sealed trait GmosSouth extends SingleGuider
+
   object GmosSouth {
-    final case class OI(target: Target) extends SingleGuiderGroup(Guider.GmosSOI, target)
-    final case class P1(target: Target) extends SingleGuiderGroup(Guider.P1GS,    target)
-    final case class P2(target: Target) extends SingleGuiderGroup(Guider.P2GS,    target)
+
+    final case class OI(target: Target) extends GmosSouth {
+      override val guider: Guider = Guider.GmosSOI
+    }
+
+    final case class P1(target: Target) extends GmosSouth {
+      override val guider: Guider = Guider.P1GS
+    }
+
+    final case class P2(target: Target) extends GmosSouth {
+      override val guider: Guider = Guider.P2GS
+    }
+
+    implicit val EqGmosSouth: Eq[GmosSouth] =
+      Eq.instance {
+        case (OI(a), OI(b)) => a === b
+        case (P1(a), P1(b)) => a === b
+        case (P2(a), P2(b)) => a === b
+        case _              => false
+      }
+
+
   }
 
 }
-
-//sealed trait GmosSouthGuideGroup
-//
-//object GmosSouthGuideGroup {
-//  final case class Oi(star: Target) extends GmosSouthGuideGroup
-//  final case class P1(star: Target) extends GmosSouthGuideGroup
-//  final case class P2(star: Target) extends GmosSouthGuideGroup
-//}
-//
-//sealed trait OiGuideGroupType
-//
-//object OiGuideGroupType {
-//  case object Oi extends OiGuideGroupType
-//  case object P1 extends OiGuideGroupType
-//  case object P2 extends OiGuideGroupType
-//}
-//
-//final case class OiGuideGroup(s: Target, t: OiGuideGroupType)
-//
-//sealed trait GsaoiGuideGroup
-//
-//object GsaoiGuideGroup {
-//  final case class Gems(cwfs1: Option[Target], cwfs2: Option[Target], cwfs3: Target) extends GsaoiGuideGroup
-//  final case class P1(star: Target)                                                  extends GsaoiGuideGroup
-//}
-//
-//sealed abstract class GuideEnvironment[G](auto: Option[G], manual: Either[List[G], Zipper[G]]) {
-//
-//  def selected: Option[G] =
-//    manual.fold(_ => auto, Some(_.focus))
-//
-//}
-//
-//final case class GmosSouthGuideEnvironment(e: GuideEnvironment[OiGuideGroup])

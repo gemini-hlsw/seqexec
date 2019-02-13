@@ -6,6 +6,9 @@ package gem
 import cats._
 import cats.implicits._
 
+/**
+ * Provides a namespace in order to define the guide star id type.
+ */
 object GuideStar {
 
   final case class Id(toInt: Int) extends AnyVal

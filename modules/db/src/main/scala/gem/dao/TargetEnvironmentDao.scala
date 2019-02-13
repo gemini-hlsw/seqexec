@@ -21,18 +21,19 @@ object TargetEnvironmentDao {
     e.userTargets.toList.traverse(UserTargetDao.insert(oid, _)).void
 
   def selectObs(oid: Observation.Id): ConnectionIO[TargetEnvironment] =
-    (AsterismDao.select(oid), UserTargetDao.selectObs(oid)).mapN {
-      case (Left(a), uts)  => TargetEnvironment.fromAsterism(a, uts)
-      case (Right(i), uts) => TargetEnvironment.fromInstrument(i, uts)
+      (AsterismDao.select(oid), GuideEnvironmentDao.selectObs(oid), UserTargetDao.selectObs(oid)).mapN {
+        case (Left(a), genv, uts)  => TargetEnvironment.fromAsterism(a, genv, uts)
+        case (Right(i), genv, uts) => TargetEnvironment.fromInstrument(i, genv, uts)
     }
 
   def selectProg(pid: Program.Id): ConnectionIO[Map[Index, TargetEnvironment]] =
-    (AsterismDao.selectAll(pid), UserTargetDao.selectProg(pid)).mapN { (am, um) =>
+    (AsterismDao.selectAll(pid), GuideEnvironmentDao.selectProg(pid), UserTargetDao.selectProg(pid)).mapN { (am, gm, um) =>
       am.map { case (idx, e) =>
-        val uts = um.get(idx).orEmpty
+        val g = gm.get(idx).flatten
+        val u = um.get(idx).orEmpty
         e match {
-          case Left(a)  => idx -> TargetEnvironment.fromAsterism(a, uts)
-          case Right(i) => idx -> TargetEnvironment.fromInstrument(i, uts)
+          case Left(a)  => idx -> TargetEnvironment.fromAsterism(a, g, u)
+          case Right(i) => idx -> TargetEnvironment.fromInstrument(i, g, u)
         }
       }
     }

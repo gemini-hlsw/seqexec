@@ -44,7 +44,7 @@ object TestProgram {
   val f2: Observation.Flamingos2 =
     Observation.Flamingos2(
       "F2 Observation",
-      TargetEnvironment.Flamingos2(None, TreeSet(UserTarget(vega, UserTargetType.BlindOffset))),
+      TargetEnvironment.Flamingos2(None, GuideEnvironment.Flamingos2.empty, TreeSet(UserTarget(vega, UserTargetType.BlindOffset))),
       StaticConfig.Flamingos2.Default,
       List(DynamicConfig.Flamingos2.Default.toStep(Step.Base.Gcal(gcal)))
     )
@@ -52,7 +52,7 @@ object TestProgram {
   val gmosS: Observation.GmosS =
     Observation.GmosS(
       "GMOS-S Observation",
-      TargetEnvironment.GmosS(None, TreeSet(UserTarget(vega, UserTargetType.BlindOffset))),
+      TargetEnvironment.GmosS(None, GuideEnvironment.GmosSouth.empty, TreeSet(UserTarget(vega, UserTargetType.BlindOffset))),
       StaticConfig.GmosS.Default,
       List(DynamicConfig.GmosS.Default.toStep(Step.Base.SmartGcal(SmartGcalType.Arc)))
     )
@@ -60,7 +60,7 @@ object TestProgram {
   val gmosN: Observation.GmosN =
     Observation.GmosN(
       "GMOS-N Observation",
-      TargetEnvironment.GmosN(None, TreeSet(UserTarget(vega, UserTargetType.BlindOffset))),
+      TargetEnvironment.GmosN(None, GuideEnvironment.GmosNorth.empty, TreeSet(UserTarget(vega, UserTargetType.BlindOffset))),
       StaticConfig.GmosN.Default,
       List(DynamicConfig.GmosN.Default.toStep(Step.Base.Bias))
     )

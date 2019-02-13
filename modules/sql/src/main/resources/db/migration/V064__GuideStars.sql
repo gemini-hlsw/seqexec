@@ -27,7 +27,7 @@ P2GS	\N	P2 GS	PWFS2 South
 
 --
 -- Guide groups are either automatically assigned and managed or else manual.
--- 
+--
 
 CREATE TYPE guide_group_type AS ENUM (
   'Automatic',
@@ -41,6 +41,8 @@ ALTER TYPE guide_group_type OWNER TO postgres;
 -- Guide groups are a collection of guide stars, each assigned to a distinct
 -- guider.
 --
+
+-- TODO: GuideEnvironment: these are ordered so we'll need an group index :-(
 
 CREATE TABLE guide_group (
   id                SERIAL           PRIMARY KEY,
