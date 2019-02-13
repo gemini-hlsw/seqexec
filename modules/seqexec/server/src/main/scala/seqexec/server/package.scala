@@ -274,4 +274,11 @@ package object server {
   def toStepList(seq: SequenceGen, d: HeaderExtraData): List[engine.Step[IO]] =
     seq.steps.map(_.generate(d))
 
+  // If f is true continue, otherwise fail
+  def failUnlessM[F[_]: MonadError[?[_], Throwable]](f: F[Boolean], err: Exception): F[Unit] =
+    f.flatMap {
+      case true => Applicative[F].unit
+      case false => MonadError[F, Throwable].raiseError(err)
+    }
+
 }

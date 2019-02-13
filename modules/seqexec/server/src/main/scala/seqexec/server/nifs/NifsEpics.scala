@@ -11,9 +11,12 @@ import java.lang.{Double => JDouble}
 import org.log4s.{Logger, getLogger}
 import seqexec.server.EpicsCommand.setParameter
 import seqexec.server.{EpicsCommand, EpicsSystem, ObserveCommand, SeqAction}
+import seqexec.server.EpicsCommandF
+import seqexec.server.ObserveCommandF
 import seqexec.server.EpicsUtil.safeAttribute
 import seqexec.server.EpicsUtil.safeAttributeSDouble
 import seqexec.server.EpicsUtil.safeAttributeSInt
+import seqexec.server.EpicsCommand.setParameterF
 
 class NifsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, String]) {
   val NifsTop = tops.getOrElse("nifs", "nifs:")
@@ -45,35 +48,36 @@ class NifsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, String]) 
 
   }
 
-  object dcConfigCmd extends EpicsCommand {
+  object dcConfigCmd extends EpicsCommandF {
     override protected val cs: Option[CaCommandSender] =
       Option(epicsService.getCommandSender("nifs::dcconfig"))
 
-    val coadds: Option[CaParameter[Integer]] = cs.map(_.getInteger("coadds"))
-    def setCoadds(v: Int): SeqAction[Unit] = setParameter(coadds, Integer.valueOf(v))
+    private val coadds: Option[CaParameter[Integer]] = cs.map(_.getInteger("coadds"))
+    def setCoadds(v: Int): F[Unit] = setParameterF(coadds, Integer.valueOf(v))
 
-    val exposureTime: Option[CaParameter[JDouble]] = cs.map(_.getDouble("exposureTime"))
-    def setExposureTime(v: Double): SeqAction[Unit] = setParameter(exposureTime, JDouble.valueOf(v))
+    private val exposureTime: Option[CaParameter[JDouble]] = cs.map(_.getDouble("exposureTime"))
+    def setExposureTime(v: Double): F[Unit] = setParameterF(exposureTime, JDouble.valueOf(v))
 
-    val fowlerSamples: Option[CaParameter[Integer]] = cs.map(_.getInteger("numberOfFowSamples"))
-    def setFowlerSamples(v: Int): SeqAction[Unit] = setParameter(fowlerSamples, Integer.valueOf(v))
+    private val fowlerSamples: Option[CaParameter[Integer]] = cs.map(_.getInteger("numberOfFowSamples"))
+    def setFowlerSamples(v: Int): F[Unit] = setParameterF(fowlerSamples, Integer.valueOf(v))
 
-    val period: Option[CaParameter[JDouble]] = cs.map(_.getDouble("period"))
-    def setPeriod(v: Double): SeqAction[Unit] = setParameter(period, JDouble.valueOf(v))
+    private val period: Option[CaParameter[JDouble]] = cs.map(_.getDouble("period"))
+    def setPeriod(v: Double): F[Unit] = setParameterF(period, JDouble.valueOf(v))
 
-    val readMode: Option[CaParameter[Integer]] = cs.map(_.getInteger("readMode"))
-    def setReadMode(v: Int): SeqAction[Unit] = setParameter(readMode, Integer.valueOf(v))
+    private val readMode: Option[CaParameter[Integer]] = cs.map(_.getInteger("readMode"))
+    def setReadMode(v: Int): F[Unit] = setParameterF(readMode, Integer.valueOf(v))
 
-    val numberOfResets: Option[CaParameter[Integer]] = cs.map(_.getInteger("numberOfResets"))
-    def setnumberOfResets(v: Int): SeqAction[Unit] =
-      setParameter(numberOfResets, Integer.valueOf(v))
+    private val numberOfResets: Option[CaParameter[Integer]] = cs.map(_.getInteger("numberOfResets"))
+    def setnumberOfResets(v: Int): F[Unit] =
+      setParameterF(numberOfResets, Integer.valueOf(v))
 
-    val numberOfPeriods: Option[CaParameter[Integer]] = cs.map(_.getInteger("numberOfPeriods"))
-    def setnumberOfPeriods(v: Int): SeqAction[Unit] =
-      setParameter(numberOfPeriods, Integer.valueOf(v))
+    private val numberOfPeriods: Option[CaParameter[Integer]] = cs.map(_.getInteger("numberOfPeriods"))
+    def setnumberOfPeriods(v: Int): F[Unit] =
+      setParameterF(numberOfPeriods, Integer.valueOf(v))
 
-    val timeMode: Option[CaParameter[Integer]] = cs.map(_.getInteger("timeMode"))
-    def setTimeMode(v: Int): SeqAction[Unit] = setParameter(timeMode, Integer.valueOf(v))
+    private val timeMode: Option[CaParameter[Integer]] = cs.map(_.getInteger("timeMode"))
+    def setTimeMode(v: Int): F[Unit] =
+      setParameterF(timeMode, Integer.valueOf(v))
   }
 
   private val stopCS: Option[CaCommandSender] = Option(epicsService.getCommandSender("nifs::stop"))
@@ -81,7 +85,7 @@ class NifsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, String]) 
     "nifs::observeCmd", s"${NifsTop}dc:nifsApply", s"${NifsTop}dc:applyC", s"${NifsTop}dc:observeC",
     true, s"${NifsTop}dc:stop", s"${NifsTop}dc:abort", ""))
 
-  object stopCmd extends EpicsCommand {
+  object stopCmd extends EpicsCommandF {
     override protected val cs: Option[CaCommandSender] = stopCS
   }
 
@@ -92,7 +96,7 @@ class NifsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, String]) 
 
   private val abortCS: Option[CaCommandSender] = Option(epicsService.getCommandSender("nifs::abort"))
 
-  object abortCmd extends EpicsCommand {
+  object abortCmd extends EpicsCommandF {
     override protected val cs: Option[CaCommandSender] = abortCS
   }
 
@@ -101,16 +105,16 @@ class NifsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, String]) 
     override protected val os: Option[CaApplySender] = observeAS
   }
 
-  object observeCmd extends ObserveCommand {
+  object observeCmd extends ObserveCommandF {
     override protected val cs: Option[CaCommandSender] = Option(
       epicsService.getCommandSender("nifs::observe"))
     override protected val os: Option[CaApplySender] = observeAS
 
     val label: Option[CaParameter[String]] = cs.map(_.getString("label"))
-    def setLabel(v: String): SeqAction[Unit] = setParameter(label, v)
+    def setLabel(v: String): F[Unit] = setParameterF(label, v)
   }
 
-  object endObserveCmd extends EpicsCommand {
+  object endObserveCmd extends EpicsCommandF {
     override val cs: Option[CaCommandSender] = Option(
       epicsService.getCommandSender("nifs::endObserve"))
   }
@@ -147,8 +151,9 @@ class NifsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, String]) 
   def timeMode: F[Option[String]] =
     safeAttribute(dcStatus.getStringAttribute("timeMode"))
 
-  val dhsConnectedAttr: CaAttribute[DhsConnected] = dcStatus.addEnum[DhsConnected]("dhsConnected",
-    s"${NifsTop}sad:dc:dhsConnO", classOf[DhsConnected])
+  val dhsConnectedAttr: F[CaAttribute[DhsConnected]] = Sync[F].delay {
+    dcStatus.addEnum[DhsConnected]("dhsConnected", s"${NifsTop}sad:dc:dhsConnO", classOf[DhsConnected])
+  }
 
   def dcName: F[Option[String]] =
     safeAttribute(dcStatus.getStringAttribute("name"))

@@ -8,6 +8,7 @@ import cats.data.EitherT
 import cats.data.Nested
 import cats.effect.IO
 import cats.effect.Sync
+import cats.effect.Async
 import cats.implicits._
 import fs2.Stream
 import java.lang.{Double => JDouble}
@@ -55,6 +56,36 @@ trait EpicsCommand {
   def setTimeout(t: Time): SeqAction[Unit] = EpicsUtil.setTimeout(cs.map(_.getApplySender), t)
 }
 
+trait EpicsCommandF {
+  import EpicsCommand._
+
+  protected val cs: Option[CaCommandSender]
+
+  def post[F[_]: Async]: F[Result] =
+    Async[F].async[Result] { (f: Either[Throwable, Result] => Unit) =>
+      cs.map { ccs =>
+        ccs.postCallback {
+          new CaCommandListener {
+            override def onSuccess(): Unit = f(Completed.asRight)
+            override def onPause(): Unit = f(Paused.asRight)
+            override def onFailure(cause: Exception): Unit = f(cause.asLeft)
+          }
+        }
+      // It should call f on all execution paths, thanks @tpolecat
+      }.void.getOrElse(f(SeqexecFailure.Unexpected("Unable to trigger command.").asLeft))
+    }
+
+  def mark[F[_]: Sync]: F[Unit] = Sync[F].delay {
+      cs.map(_.mark())
+    }.void
+
+  def setTimeout[F[_]: Sync](t: Time): F[Unit] =
+    Sync[F].delay {
+      cs.map(_.getApplySender).map(_.setTimeout(t.toMilliseconds.toLong, MILLISECONDS))
+    }.void
+
+}
+
 trait EpicsSystem[T] {
 
   val className: String
@@ -98,7 +129,7 @@ object EpicsCommand {
     case Right(r) => r
   })
 
-  def setParameter[A,T](p: Option[CaParameter[T]], v: A, f: A => T): SeqAction[Unit] =
+  def setParameter[A, T](p: Option[CaParameter[T]], v: A, f: A => T): SeqAction[Unit] =
     safe(SeqAction.either {
       p.map(_.set(f(v)).asRight).getOrElse(SeqexecFailure.Unexpected("Unable to set parameter.").asLeft)
     } )
@@ -107,6 +138,11 @@ object EpicsCommand {
     safe(SeqAction.either {
       p.map(_.set(v).asRight).getOrElse(SeqexecFailure.Unexpected("Unable to set parameter.").asLeft)
     } )
+
+  def setParameterF[F[_]: Sync, T](p: Option[CaParameter[T]], v: T): F[Unit] =
+    Sync[F].delay {
+      p.map(_.set(v))
+    }.void
 
 }
 
@@ -142,6 +178,39 @@ trait ObserveCommand {
   }))
 
   def setTimeout(t: Time): SeqAction[Unit] = EpicsUtil.setTimeout(cs.map(_.getApplySender), t)
+}
+
+trait ObserveCommandF {
+  import ObserveCommand._
+
+  protected val cs: Option[CaCommandSender]
+  protected val os: Option[CaApplySender]
+
+  def post[F[_]: Async]: F[Result] =
+    Async[F].async[Result] { (f: Either[Throwable, Result] => Unit) =>
+      os.map { oos =>
+        oos.postCallback {
+          new CaCommandListener {
+            override def onSuccess(): Unit = f(Success.asRight)
+            override def onPause(): Unit = f(Paused.asRight)
+            override def onFailure(cause: Exception): Unit = cause match {
+              case _: CaObserveStopped => f(Stopped.asRight)
+              case _: CaObserveAborted => f(Aborted.asRight)
+              case _                   => f(cause.asLeft)
+            }
+          }
+        }
+      }.void.getOrElse(f(SeqexecFailure.Unexpected("Unable to trigger command.").asLeft))
+    }
+
+  def mark[F[_]: Sync]: F[Unit] = Sync[F].delay {
+    cs.map(_.mark())
+  }.void
+
+  def setTimeout[F[_]: Sync](t: Time): F[Unit] =
+    Sync[F].delay {
+      cs.map(_.getApplySender).map(_.setTimeout(t.toMilliseconds.toLong, MILLISECONDS))
+    }.void
 }
 
 object ObserveCommand {
@@ -244,7 +313,7 @@ object EpicsUtil {
 
   def waitForValue[T](attr: CaAttribute[T], v: T, timeout: Time, name: String): SeqAction[Unit] = waitForValues[T](attr, List(v), timeout, name).void
 
-  def setTimeout(os: Option[CaApplySender], t: Time):SeqAction[Unit] = SeqAction.either{
+  def setTimeout(os: Option[CaApplySender], t: Time): SeqAction[Unit] = SeqAction.either{
     os.map(_.setTimeout(t.toMilliseconds.toLong, MILLISECONDS).asRight).getOrElse(SeqexecFailure.Unexpected("Unable to set timeout for EPICS command.").asLeft)
   }
 
