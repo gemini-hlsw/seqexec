@@ -62,12 +62,14 @@ final case class GpiStatusApply(tp:          String,
 }
 
 object GpiStatusApply {
-  val adc = GpiStatusApply("INT", "gpi:adcDeploy", "gpi:selectAdc.deploy")
+  val adc   = GpiStatusApply("INT", "gpi:adcDeploy", "gpi:selectAdc.deploy")
   val useAo = GpiStatusApply("INT", "gpi:ao:useAo", "gpi:configAo.useAo")
   val aoOptimize =
     GpiStatusApply("INT", "gpi:ao:optimization", "gpi:configAo.optimize")
   val useCal = GpiStatusApply("INT", "gpi:cal:useCal", "gpi:configCal.useCal")
-  val fpmPinholeBias = GpiStatusApply("INT", "gpi:cal:fpmPinholeBias", "gpi:configCal.fpmPinholeBias")
+  val fpmPinholeBias = GpiStatusApply("INT",
+                                      "gpi:cal:fpmPinholeBias",
+                                      "gpi:configCal.fpmPinholeBias")
   val integrationTime = GpiStatusApply("FLOAT",
                                        "gpi:currentIntegrationTime",
                                        "gpi:configIfs.integrationTime")
@@ -75,7 +77,7 @@ object GpiStatusApply {
     GpiStatusApply("INT", "gpi:currentNumCoadds", "gpi:configIfs.numCoadds")
   val magI =
     GpiStatusApply("FLOAT", "gpi:starIntensity", "gpi:configAo.magnitudeI")
-  val magH = GpiStatusApply("FLOAT", "gpi:cal:magH", "gpi:configAo.magnitudeH")
+  val magH = GpiStatusApply("FLOAT", "gpi:cal:magH", "gpi:configCal.magnitudeH")
   val calEntranceShutter = GpiStatusApply(
     "INT",
     "gpi:calEntranceShutter",
@@ -107,7 +109,9 @@ object GpiStatusApply {
                               "gpi:selectSource.sourceVis")
   val srcIR =
     GpiStatusApply("INT", "gpi:artificialSourceIR", "gpi:selectSource.sourceIr")
-  val polarizerDeploy = GpiStatusApply("INT", "gpi:polarModulatorDeploy", "gpi:configPolarizer.deploy")
+  val polarizerDeploy = GpiStatusApply("INT",
+                                       "gpi:polarModulatorDeploy",
+                                       "gpi:configPolarizer.deploy")
   val polarizerAngle =
     GpiStatusApply("DFLOAT", "gpi:polarizerAngle", "gpi:configPolarizer.angle")
 
@@ -163,15 +167,15 @@ object GpiStatusApply {
     }
 
   def foldConfig[F[_]: Sync](db:     GiapiStatusDb[F],
-                                config: Configuration): F[Configuration] =
+                             config: Configuration): F[Configuration] =
     foldConfigM(all, db, config)
 
   /**
-   * ObsMode needs a special treatment. It is a meta model thus it sets
-   * the filter, fpm, apodizer and lyot
-   * We need to check that each subsystem matches or we will
-   * falsely not set the obs mode
-   */
+    * ObsMode needs a special treatment. It is a meta model thus it sets
+    * the filter, fpm, apodizer and lyot
+    * We need to check that each subsystem matches or we will
+    * falsely not set the obs mode
+    */
   def overrideObsMode[F[_]: Sync](db:        GiapiStatusDb[F],
                                   gpiConfig: GpiConfig,
                                   config:    Configuration): F[Configuration] =
@@ -182,17 +186,32 @@ object GpiStatusApply {
           .observingMode(o.displayValue())
           .map { ob =>
             // Compare the subsystem values and the ones for the obs mode
-            val filterCmp = db.value("gpi:ifsFilter").map(x => x.stringCfg =!= ob.filter.map(_.shortName))
-            val ppmCmp = db.value("gpi:ppmMask").map(x => x.stringCfg =!= ob.apodizer.map(_.tag).flatMap(GpiLookupTables.apodizerLUTNames.get))
-            val fpmCmp = db.value("gpi:fpmMask").map(x => x.stringCfg =!= ob.fpm.map(_.shortName))
-            val lyotCmp = db.value("gpi:lyotMask").map(x => x.stringCfg =!= ob.lyot.map(_.shortName))
+            val filterCmp = db
+              .value("gpi:ifsFilter")
+              .map(x => x.stringCfg =!= ob.filter.map(_.shortName))
+            val ppmCmp = db
+              .value("gpi:ppmMask")
+              .map(
+                x =>
+                  x.stringCfg =!= ob.apodizer
+                    .map(_.tag)
+                    .flatMap(GpiLookupTables.apodizerLUTNames.get))
+            val fpmCmp = db
+              .value("gpi:fpmMask")
+              .map(x => x.stringCfg =!= ob.fpm.map(_.shortName))
+            val lyotCmp = db
+              .value("gpi:lyotMask")
+              .map(x => x.stringCfg =!= ob.lyot.map(_.shortName))
             // If any doesn't match
-            val subSystemsNotMatching = (filterCmp, ppmCmp, fpmCmp, lyotCmp).mapN(_ || _ || _ || _)
+            val subSystemsNotMatching =
+              (filterCmp, ppmCmp, fpmCmp, lyotCmp).mapN(_ || _ || _ || _)
             subSystemsNotMatching.map {
               case true =>
                 // force the obs mode if a subsystem doesn't match
-                (config.remove("gpi:observationMode.mode") |+| Configuration.single("gpi:observationMode.mode",
-                             GpiLookupTables.obsModeLUT.getOrElse(o, GpiLookupTables.UNKNOWN_SETTING)))
+                (config.remove("gpi:observationMode.mode") |+| Configuration
+                  .single("gpi:observationMode.mode",
+                          GpiLookupTables.obsModeLUT
+                            .getOrElse(o, GpiLookupTables.UNKNOWN_SETTING)))
               case false =>
                 config
             }

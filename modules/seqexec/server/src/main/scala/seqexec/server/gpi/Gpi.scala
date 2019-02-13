@@ -150,8 +150,7 @@ object Gpi {
                       .map(_.toInt)
         mode     <- gpiMode(config)
         pol      <- config.extractAs[Disperser](INSTRUMENT_KEY / DISPERSER_PROP)
-        polA     <-
-          config.extractAs[JDouble](INSTRUMENT_KEY / HALF_WAVE_PLATE_ANGLE_VALUE_PROP)
+        polA     <- config.extractAs[JDouble](INSTRUMENT_KEY / HALF_WAVE_PLATE_ANGLE_VALUE_PROP)
                       .map(_.toDouble)
         shutters <- gpiShutters(config)
         asu      <- gpiASU(config)

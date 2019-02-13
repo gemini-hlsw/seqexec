@@ -110,24 +110,13 @@ final class GpiClient[F[_]: Sync] private (override val giapi: Giapi[F],
       DefaultCommandTimeout
     )
 
-  // def adcInPlace: F[Boolean] =
-  //   statusDb
-  //     .value("gpi:adcDeploy")
-  //     .map(_.intCfg === configuration.value("gpi:selectAdc.deploy")) // placeholder
-
-  override def genericApply(configuration: Configuration): F[CommandResult] = {
-    giapi.command(Command(
-                    SequenceCommand.APPLY,
-                    Activity.PRESET_START,
-                    configuration
-                  ),
-                  DefaultCommandTimeout)
-  }
 }
 
 object GpiClient {
   // Used for simulations
-  def simulatedGpiClient(implicit timer: Timer[IO]): Resource[IO, GpiClient[IO]] =
+  def simulatedGpiClient(
+    implicit timer: Timer[IO]
+  ): Resource[IO, GpiClient[IO]] =
     Resource.liftF(
       for {
         c <- Giapi.giapiConnectionIO.connect
@@ -135,7 +124,10 @@ object GpiClient {
     )
 
   def gpiClient[F[_]: ConcurrentEffect](
-    url: String, statusesToMonitor: List[String])(implicit timer: Timer[IO]): Resource[F, GpiClient[F]] = {
+    url:               String,
+    statusesToMonitor: List[String])(
+    implicit timer:    Timer[IO]
+  ): Resource[F, GpiClient[F]] = {
     val giapi: Resource[F, Giapi[F]] =
       Resource.make(
         Giapi.giapiConnection[F](url).connect
