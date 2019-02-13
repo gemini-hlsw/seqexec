@@ -3,6 +3,7 @@
 
 package seqexec.server.tcs
 
+import cats.effect.{IO, Sync}
 import cats.implicits._
 import gem.math.Angle
 import edu.gemini.epics.acm._
@@ -11,7 +12,7 @@ import org.log4s.{Logger, getLogger}
 import seqexec.server.EpicsCommand._
 import seqexec.server.EpicsUtil._
 import seqexec.server.{EpicsCommand, EpicsSystem, SeqAction}
-import scala.collection.JavaConverters._
+
 import squants.Time
 import squants.time.TimeConversions._
 
@@ -23,7 +24,7 @@ import squants.time.TimeConversions._
  */
 
 // scalastyle:off
-final class TcsEpics(epicsService: CaService, tops: Map[String, String]) {
+final class TcsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, String]) {
 
   import EpicsCommand.setParameter
   import TcsEpics._
@@ -206,87 +207,84 @@ final class TcsEpics(epicsService: CaService, tops: Map[String, String]) {
 
   private val tcsState = epicsService.getStatusAcceptor("tcsstate")
 
-  def absorbTipTilt: Option[Integer] = Option(tcsState.getIntegerAttribute("absorbTipTilt").value)
+  def absorbTipTilt: F[Option[Int]] = safeAttributeSInt(tcsState.getIntegerAttribute("absorbTipTilt"))
 
-  def m1GuideSource: Option[String] = Option(tcsState.getStringAttribute("m1GuideSource").value)
+  def m1GuideSource: F[Option[String]] = safeAttribute(tcsState.getStringAttribute("m1GuideSource"))
 
-  private val m1GuideAttr: Option[CaAttribute[BinaryOnOff]] = Option(tcsState.addEnum("m1Guide",
-    s"${TcsTop}im:m1GuideOn", classOf[BinaryOnOff], "M1 guide"))
+  private val m1GuideAttr: CaAttribute[BinaryOnOff] = tcsState.addEnum("m1Guide",
+    s"${TcsTop}im:m1GuideOn", classOf[BinaryOnOff], "M1 guide")
+  def m1Guide: F[Option[BinaryOnOff]] = safeAttribute(m1GuideAttr)
 
-  def m1Guide: Option[BinaryOnOff] = m1GuideAttr.flatMap(v => Option(v.value))
+  def m2p1Guide: F[Option[String]] = safeAttribute(tcsState.getStringAttribute("m2p1Guide"))
 
-  def m2p1Guide: Option[String] = Option(tcsState.getStringAttribute("m2p1Guide").value)
+  def m2p2Guide: F[Option[String]] = safeAttribute(tcsState.getStringAttribute("m2p2Guide"))
 
-  def m2p2Guide: Option[String] = Option(tcsState.getStringAttribute("m2p2Guide").value)
+  def m2oiGuide: F[Option[String]] = safeAttribute(tcsState.getStringAttribute("m2oiGuide"))
 
-  def m2oiGuide: Option[String] = Option(tcsState.getStringAttribute("m2oiGuide").value)
+  def m2aoGuide: F[Option[String]] = safeAttribute(tcsState.getStringAttribute("m2aoGuide"))
 
-  def m2aoGuide: Option[String] = Option(tcsState.getStringAttribute("m2aoGuide").value)
+  def comaCorrect: F[Option[String]] = safeAttribute(tcsState.getStringAttribute("comaCorrect"))
 
-  def comaCorrect: Option[String] = Option(tcsState.getStringAttribute("comaCorrect").value)
+  private val m2GuideStateAttr: CaAttribute[BinaryOnOff] = tcsState.addEnum("m2GuideState",
+    s"${TcsTop}om:m2GuideState", classOf[BinaryOnOff], "M2 guiding state")
+  def m2GuideState: F[Option[BinaryOnOff]] = safeAttribute(m2GuideStateAttr)
 
-  private val m2GuideStateAttr: Option[CaAttribute[BinaryOnOff]] = Option(tcsState.addEnum("m2GuideState",
-    s"${TcsTop}om:m2GuideState", classOf[BinaryOnOff], "M2 guiding state"))
+  def xoffsetPoA1: F[Option[Double]] = safeAttributeSDouble(tcsState.getDoubleAttribute("xoffsetPoA1"))
 
-  def m2GuideState: Option[BinaryOnOff] = m2GuideStateAttr.flatMap(v => Option(v.value))
+  def yoffsetPoA1: F[Option[Double]] = safeAttributeSDouble(tcsState.getDoubleAttribute("yoffsetPoA1"))
 
-  def xoffsetPoA1: Option[Double] = Option(tcsState.getDoubleAttribute("xoffsetPoA1").value).map(_.doubleValue)
+  def xoffsetPoB1: F[Option[Double]] = safeAttributeSDouble(tcsState.getDoubleAttribute("xoffsetPoB1"))
 
-  def yoffsetPoA1: Option[Double] = Option(tcsState.getDoubleAttribute("yoffsetPoA1").value).map(_.doubleValue)
+  def yoffsetPoB1: F[Option[Double]] = safeAttributeSDouble(tcsState.getDoubleAttribute("yoffsetPoB1"))
 
-  def xoffsetPoB1: Option[Double] = Option(tcsState.getDoubleAttribute("xoffsetPoB1").value).map(_.doubleValue)
+  def xoffsetPoC1: F[Option[Double]] = safeAttributeSDouble(tcsState.getDoubleAttribute("xoffsetPoC1"))
 
-  def yoffsetPoB1: Option[Double] = Option(tcsState.getDoubleAttribute("yoffsetPoB1").value).map(_.doubleValue)
+  def yoffsetPoC1: F[Option[Double]] = safeAttributeSDouble(tcsState.getDoubleAttribute("yoffsetPoC1"))
 
-  def xoffsetPoC1: Option[Double] = Option(tcsState.getDoubleAttribute("xoffsetPoC1").value).map(_.doubleValue)
+  def sourceAWavelength: F[Option[Double]] = safeAttributeSDouble(tcsState.getDoubleAttribute("sourceAWavelength"))
 
-  def yoffsetPoC1: Option[Double] = Option(tcsState.getDoubleAttribute("yoffsetPoC1").value).map(_.doubleValue)
+  def sourceBWavelength: F[Option[Double]] = safeAttributeSDouble(tcsState.getDoubleAttribute("sourceBWavelength"))
 
-  def sourceAWavelength: Option[Double] = Option(tcsState.getDoubleAttribute("sourceAWavelength").value).map(_.doubleValue)
+  def sourceCWavelength: F[Option[Double]] = safeAttributeSDouble(tcsState.getDoubleAttribute("sourceCWavelength"))
 
-  def sourceBWavelength: Option[Double] = Option(tcsState.getDoubleAttribute("sourceBWavelength").value).map(_.doubleValue)
+  def chopBeam: F[Option[String]] = safeAttribute(tcsState.getStringAttribute("chopBeam"))
 
-  def sourceCWavelength: Option[Double] = Option(tcsState.getDoubleAttribute("sourceCWavelength").value).map(_.doubleValue)
+  def p1FollowS: F[Option[String]] = safeAttribute(tcsState.getStringAttribute("p1FollowS"))
 
-  def chopBeam: Option[String] = Option(tcsState.getStringAttribute("chopBeam").value)
+  def p2FollowS: F[Option[String]] = safeAttribute(tcsState.getStringAttribute("p2FollowS"))
 
-  def p1FollowS: Option[String] = Option(tcsState.getStringAttribute("p1FollowS").value)
+  def oiFollowS: F[Option[String]] = safeAttribute(tcsState.getStringAttribute("oiFollowS"))
 
-  def p2FollowS: Option[String] = Option(tcsState.getStringAttribute("p2FollowS").value)
+  private val pwfs1OnAttr: CaAttribute[BinaryYesNo] = tcsState.addEnum("pwfs1On",
+    s"${TcsTop}drives:p1Integrating", classOf[BinaryYesNo], "P1 integrating")
+  def pwfs1On: F[Option[BinaryYesNo]] = safeAttribute(pwfs1OnAttr)
 
-  def oiFollowS: Option[String] = Option(tcsState.getStringAttribute("oiFollowS").value)
+  private val pwfs2OnAttr: CaAttribute[BinaryYesNo] = tcsState.addEnum("pwfs2On",
+    s"${TcsTop}drives:p2Integrating", classOf[BinaryYesNo], "P2 integrating")
 
-  private val pwfs1OnAttr: Option[CaAttribute[BinaryYesNo]] = Option(tcsState.addEnum("pwfs1On",
-    s"${TcsTop}drives:p1Integrating", classOf[BinaryYesNo], "P1 integrating"))
+  def pwfs2On:F[Option[BinaryYesNo]] = safeAttribute(pwfs2OnAttr)
 
-  def pwfs1On: Option[BinaryYesNo] = pwfs1OnAttr.flatMap(v => Option(v.value))
+  private val oiwfsOnAttr: CaAttribute[BinaryYesNo] = tcsState.addEnum("oiwfsOn",
+    s"${TcsTop}drives:oiIntegrating", classOf[BinaryYesNo], "P2 integrating")
 
-  private val pwfs2OnAttr: Option[CaAttribute[BinaryYesNo]] = Option(tcsState.addEnum("pwfs2On",
-    s"${TcsTop}drives:p2Integrating", classOf[BinaryYesNo], "P2 integrating"))
+  def oiwfsOn: F[Option[BinaryYesNo]] = safeAttribute(oiwfsOnAttr)
 
-  def pwfs2On: Option[BinaryYesNo] = pwfs2OnAttr.flatMap(v => Option(v.value))
+  def sfName: F[Option[String]] = safeAttribute(tcsState.getStringAttribute("sfName"))
 
-  private val oiwfsOnAttr: Option[CaAttribute[BinaryYesNo]] = Option(tcsState.addEnum("oiwfsOn",
-    s"${TcsTop}drives:oiIntegrating", classOf[BinaryYesNo], "P2 integrating"))
+  def sfParked: F[Option[Int]] = safeAttributeSInt(tcsState.getIntegerAttribute("sfParked"))
 
-  def oiwfsOn: Option[BinaryYesNo] = oiwfsOnAttr.flatMap(v => Option(v.value))
+  def agHwName: F[Option[String]] = safeAttribute(tcsState.getStringAttribute("agHwName"))
 
-  def sfName: Option[String] = Option(tcsState.getStringAttribute("sfName").value)
+  def agHwParked: F[Option[Int]] = safeAttributeSInt(tcsState.getIntegerAttribute("agHwParked"))
 
-  def sfParked: Option[Integer] = Option(tcsState.getIntegerAttribute("sfParked").value)
-
-  def agHwName: Option[String] = Option(tcsState.getStringAttribute("agHwName").value)
-
-  def agHwParked: Option[Integer] = Option(tcsState.getIntegerAttribute("agHwParked").value)
-
-  def instrAA: Option[Double] = Option(tcsState.getDoubleAttribute("instrAA").value).map(_.doubleValue)
+  def instrAA: F[Option[Double]] = safeAttributeSDouble(tcsState.getDoubleAttribute("instrAA"))
 
   private val inPositionAttr: CaAttribute[String] = tcsState.getStringAttribute("inPosition")
 
-  def inPosition: Option[String] = Option(inPositionAttr.value)
+  def inPosition:F[Option[String]] = safeAttribute(inPositionAttr)
 
   private val agInPositionAttr: CaAttribute[java.lang.Double] = tcsState.getDoubleAttribute("agInPosition")
-  def agInPosition: Option[Double] = Option(agInPositionAttr.value).map(_.doubleValue)
+  def agInPosition:F[Option[Double]] = safeAttributeSDouble(agInPositionAttr)
 
   object pwfs1ProbeGuideConfig extends ProbeGuideConfig("p1", tcsState)
 
@@ -297,7 +295,7 @@ final class TcsEpics(epicsService: CaService, tops: Map[String, String]) {
   private val tcsStabilizeTime = 1.seconds
 
   private val filteredInPositionAttr: CaAttribute[String] = new CaWindowStabilizer[String](inPositionAttr, java.time.Duration.ofMillis(tcsStabilizeTime.toMillis))
-  def filteredInPosition: Option[String] = Option(filteredInPositionAttr.value())
+  def filteredInPosition:F[Option[String]] = safeAttribute(filteredInPositionAttr)
 
   // This functions returns a Task that, when run, will wait up to `timeout`
   // seconds for the TCS in-position flag to set to TRUE
@@ -307,7 +305,7 @@ final class TcsEpics(epicsService: CaService, tops: Map[String, String]) {
   private val agStabilizeTime = 1.seconds
 
   private val filteredAGInPositionAttr: CaAttribute[java.lang.Double] = new CaWindowStabilizer[java.lang.Double](agInPositionAttr, java.time.Duration.ofMillis(agStabilizeTime.toMillis))
-  def filteredAGInPosition: Option[Double] = Option(filteredAGInPositionAttr.value()).map(_.doubleValue)
+  def filteredAGInPosition: F[Option[Double]] = safeAttributeSDouble(filteredAGInPositionAttr)
 
   // `waitAGInPosition` works like `waitInPosition`, but for the AG in-position flag.
   /* TODO: AG inposition can take up to 1[s] to react to a TCS command. If the value is read before that, it may induce
@@ -317,144 +315,152 @@ final class TcsEpics(epicsService: CaService, tops: Map[String, String]) {
   def waitAGInPosition(timeout: Time): SeqAction[Unit] = SeqAction(Thread.sleep(AGSettleTime.toMilliseconds.toLong)) *>
     waitForValue[java.lang.Double](filteredAGInPositionAttr, 1.0, timeout, "AG inposition flag")
 
-  def hourAngle: Option[String] = Option(tcsState.getStringAttribute("ha").value)
+  def hourAngle: F[Option[String]] = safeAttribute(tcsState.getStringAttribute("ha"))
 
-  def localTime: Option[String] = Option(tcsState.getStringAttribute("lt").value)
+  def localTime: F[Option[String]] = safeAttribute(tcsState.getStringAttribute("lt"))
 
-  def trackingFrame: Option[String] = Option(tcsState.getStringAttribute("trkframe").value)
+  def trackingFrame: F[Option[String]] = safeAttribute(tcsState.getStringAttribute("trkframe"))
 
-  def trackingEpoch: Option[Double] = Option(tcsState.getDoubleAttribute("trkepoch").value).map(_.doubleValue)
+  def trackingEpoch: F[Option[Double]] = safeAttributeSDouble(tcsState.getDoubleAttribute("trkepoch"))
 
-  def equinox: Option[Double] = Option(tcsState.getDoubleAttribute("sourceAEquinox").value).map(_.doubleValue)
+  def equinox: F[Option[Double]] = safeAttributeSDouble(tcsState.getDoubleAttribute("sourceAEquinox"))
 
-  def trackingEquinox: Option[String] = Option(tcsState.getStringAttribute("sourceATrackEq").value)
+  def trackingEquinox: F[Option[String]] = safeAttribute(tcsState.getStringAttribute("sourceATrackEq"))
 
-  def trackingDec: Option[Double] = Option(tcsState.getDoubleAttribute("dectrack").value).map(_.doubleValue)
+  def trackingDec: F[Option[Double]] = safeAttributeSDouble(tcsState.getDoubleAttribute("dectrack"))
 
-  def trackingRA: Option[Double] = Option(tcsState.getDoubleAttribute("ratrack").value).map(_.doubleValue)
+  def trackingRA: F[Option[Double]] = safeAttributeSDouble(tcsState.getDoubleAttribute("ratrack"))
 
-  def elevation: Option[Double] = Option(tcsState.getDoubleAttribute("elevatio").value).map(_.doubleValue)
+  def elevation: F[Option[Double]] = safeAttributeSDouble(tcsState.getDoubleAttribute("elevatio"))
 
-  def azimuth: Option[Double] = Option(tcsState.getDoubleAttribute("azimuth").value).map(_.doubleValue)
+  def azimuth: F[Option[Double]] = safeAttributeSDouble(tcsState.getDoubleAttribute("azimuth"))
 
-  def crPositionAngle: Option[Double] = Option(tcsState.getDoubleAttribute("crpa").value).map(_.doubleValue)
+  def crPositionAngle: F[Option[Double]] = safeAttributeSDouble(tcsState.getDoubleAttribute("crpa"))
 
-  def ut: Option[String] = Option(tcsState.getStringAttribute("ut").value)
+  def ut: F[Option[String]] = safeAttribute(tcsState.getStringAttribute("ut"))
 
-  def date: Option[String] = Option(tcsState.getStringAttribute("date").value)
+  def date: F[Option[String]] = safeAttribute(tcsState.getStringAttribute("date"))
 
-  def m2Baffle: Option[String] = Option(tcsState.getStringAttribute("m2baffle").value)
+  def m2Baffle: F[Option[String]] = safeAttribute(tcsState.getStringAttribute("m2baffle"))
 
-  def m2CentralBaffle: Option[String] = Option(tcsState.getStringAttribute("m2cenbaff").value)
+  def m2CentralBaffle: F[Option[String]] = safeAttribute(tcsState.getStringAttribute("m2cenbaff"))
 
-  def st: Option[String] = Option(tcsState.getStringAttribute("st").value)
+  def st: F[Option[String]] = safeAttribute(tcsState.getStringAttribute("st"))
 
-  def sfRotation: Option[Double] = Option(tcsState.getDoubleAttribute("sfrt2").value).map(_.doubleValue)
+  def sfRotation: F[Option[Double]] = safeAttributeSDouble(tcsState.getDoubleAttribute("sfrt2"))
 
-  def sfTilt: Option[Double] = Option(tcsState.getDoubleAttribute("sftilt").value).map(_.doubleValue)
+  def sfTilt: F[Option[Double]] = safeAttributeSDouble(tcsState.getDoubleAttribute("sftilt"))
 
-  def sfLinear: Option[Double] = Option(tcsState.getDoubleAttribute("sflinear").value).map(_.doubleValue)
+  def sfLinear: F[Option[Double]] = safeAttributeSDouble(tcsState.getDoubleAttribute("sflinear"))
 
-  def instrPA: Option[Double] = Option(tcsState.getDoubleAttribute("instrPA").value).map(_.doubleValue)
+  def instrPA: F[Option[Double]] = safeAttributeSDouble(tcsState.getDoubleAttribute("instrPA"))
 
-  def targetA: Option[List[Double]] = Option(tcsState.getDoubleAttribute("targetA").values).map(_.asScala.toList.map(_.doubleValue))
+  def targetA: F[Option[List[Double]]] = safeAttributeSListSDouble(tcsState.getDoubleAttribute("targetA"))
 
-  def aoFoldPosition: Option[String] = Option(tcsState.getStringAttribute("aoName").value)
+  def aoFoldPosition: F[Option[String]] = safeAttribute(tcsState.getStringAttribute("aoName"))
 
-  def airmass: Option[Double] = Option(tcsState.getDoubleAttribute("airmass").value).map(_.doubleValue)
+  def airmass: F[Option[Double]] = safeAttributeSDouble(tcsState.getDoubleAttribute("airmass"))
 
-  def airmassStart: Option[Double] = Option(tcsState.getDoubleAttribute("amstart").value).map(_.doubleValue)
+  def airmassStart: F[Option[Double]] = safeAttributeSDouble(tcsState.getDoubleAttribute("amstart"))
 
-  def airmassEnd: Option[Double] = Option(tcsState.getDoubleAttribute("amend").value).map(_.doubleValue)
+  def airmassEnd: F[Option[Double]] = safeAttributeSDouble(tcsState.getDoubleAttribute("amend"))
 
-  def carouselMode: Option[String] = Option(tcsState.getStringAttribute("cguidmod").value)
+  def carouselMode: F[Option[String]] = safeAttribute(tcsState.getStringAttribute("cguidmod"))
 
-  def crFollow: Option[Int]  = Option(tcsState.getIntegerAttribute("crfollow").value).map(_.intValue)
+  def crFollow: F[Option[Int]]  = safeAttributeSInt(tcsState.getIntegerAttribute("crfollow"))
 
-  def sourceATarget: Target = new Target {
-    override def epoch = Option(tcsState.getStringAttribute("sourceAEpoch").value)
+  def sourceATarget: Target[F] = new Target[F] {
+    override def epoch: F[Option[String]] = safeAttribute(tcsState.getStringAttribute("sourceAEpoch"))
 
-    override def equinox = Option(tcsState.getStringAttribute("sourceAEquinox").value)
+    override def equinox: F[Option[String]] = safeAttribute(tcsState.getStringAttribute("sourceAEquinox"))
 
-    override def radialVelocity: Option[Double] = Option(tcsState.getDoubleAttribute("radvel").value).map(_.doubleValue)
+    override def radialVelocity:F[Option[Double]] = safeAttributeSDouble(tcsState.getDoubleAttribute("radvel"))
 
-    override def frame = Option(tcsState.getStringAttribute("frame").value)
+    override def frame: F[Option[String]] = safeAttribute(tcsState.getStringAttribute("frame"))
 
-    override def centralWavelenght: Option[Double] = sourceAWavelength
+    override def centralWavelenght: F[Option[Double]] = sourceAWavelength
 
-    override def ra: Option[Double] = Option(tcsState.getDoubleAttribute("ra").value).map(_.doubleValue)
+    override def ra: F[Option[Double]] = safeAttributeSDouble(tcsState.getDoubleAttribute("ra"))
 
-    override def objectName = Option(tcsState.getStringAttribute("sourceAObjectName").value)
+    override def objectName: F[Option[String]] = safeAttribute(tcsState.getStringAttribute("sourceAObjectName"))
 
-    override def dec: Option[Double] = Option(tcsState.getDoubleAttribute("dec").value).map(_.doubleValue)
+    override def dec: F[Option[Double]] = safeAttributeSDouble(tcsState.getDoubleAttribute("dec"))
 
-    override def parallax: Option[Double] = Option(tcsState.getDoubleAttribute("parallax").value).map(_.doubleValue)
+    override def parallax: F[Option[Double]] = safeAttributeSDouble(tcsState.getDoubleAttribute("parallax"))
 
-    override def properMotionRA: Option[Double] = Option(tcsState.getDoubleAttribute("pmra").value).map(_.doubleValue)
+    override def properMotionRA: F[Option[Double]] = safeAttributeSDouble(tcsState.getDoubleAttribute("pmra"))
 
-    override def properMotionDec: Option[Double] = Option(tcsState.getDoubleAttribute("pmdec").value).map(_.doubleValue)
+    override def properMotionDec: F[Option[Double]] = safeAttributeSDouble(tcsState.getDoubleAttribute("pmdec"))
   }
 
-  private def target(base: String): Target = new Target {
-      override def epoch = Option(tcsState.getStringAttribute(base + "aepoch").value)
-      override def equinox = Option(tcsState.getStringAttribute(base + "aequin").value)
-      override def radialVelocity: Option[Double] = Option(tcsState.getDoubleAttribute(base + "arv").value).map(_.doubleValue)
-      override def frame  = Option(tcsState.getStringAttribute(base + "aframe").value)
-      override def centralWavelenght: Option[Double] = Option(tcsState.getDoubleAttribute(base + "awavel").value).map(_.doubleValue)
-      override def ra: Option[Double] = Option(tcsState.getDoubleAttribute(base + "ara").value).map(_.doubleValue)
-      override def objectName = Option(tcsState.getStringAttribute(base + "aobjec").value)
-      override def dec: Option[Double] = Option(tcsState.getDoubleAttribute(base + "adec").value).map(_.doubleValue)
-      override def parallax: Option[Double] = Option(tcsState.getDoubleAttribute(base + "aparal").value).map(_.doubleValue)
-      override def properMotionRA: Option[Double] = Option(tcsState.getDoubleAttribute(base + "apmra").value).map(_.doubleValue)
-      override def properMotionDec: Option[Double] = Option(tcsState.getDoubleAttribute(base + "apmdec").value).map(_.doubleValue)
+  private def target(base: String): Target[F] = new Target[F] {
+      override def epoch: F[Option[String]] = safeAttribute(tcsState.getStringAttribute(base + "aepoch"))
+      override def equinox: F[Option[String]] = safeAttribute(tcsState.getStringAttribute(base + "aequin"))
+      override def radialVelocity:F[Option[Double]] = safeAttributeSDouble(tcsState.getDoubleAttribute(base + "arv"))
+      override def frame: F[Option[String]]  = safeAttribute(tcsState.getStringAttribute(base + "aframe"))
+      override def centralWavelenght:F[Option[Double]] =
+        safeAttributeSDouble(tcsState.getDoubleAttribute(base + "awavel"))
+      override def ra:F[Option[Double]] = safeAttributeSDouble(tcsState.getDoubleAttribute(base + "ara"))
+      override def objectName: F[Option[String]] = safeAttribute(tcsState.getStringAttribute(base + "aobjec"))
+      override def dec:F[Option[Double]] = safeAttributeSDouble(tcsState.getDoubleAttribute(base + "adec"))
+      override def parallax:F[Option[Double]] = safeAttributeSDouble(tcsState.getDoubleAttribute(base + "aparal"))
+      override def properMotionRA:F[Option[Double]] = safeAttributeSDouble(tcsState.getDoubleAttribute(base + "apmra"))
+      override def properMotionDec:F[Option[Double]] =
+        safeAttributeSDouble(tcsState.getDoubleAttribute(base + "apmdec"))
     }
 
-  def pwfs1Target: Target = target("p1")
+  def pwfs1Target: Target[F] = target("p1")
 
-  def pwfs2Target: Target = target("p2")
+  def pwfs2Target: Target[F] = target("p2")
 
-  def oiwfsTarget: Target = target("oi")
+  def oiwfsTarget: Target[F] = target("oi")
 
-  def gwfs1Target: Target = target("g1")
+  def gwfs1Target: Target[F] = target("g1")
 
-  def gwfs2Target: Target = target("g2")
+  def gwfs2Target: Target[F] = target("g2")
 
-  def gwfs3Target: Target = target("g3")
+  def gwfs3Target: Target[F] = target("g3")
 
-  def gwfs4Target: Target = target("g4")
+  def gwfs4Target: Target[F] = target("g4")
 
-  def parallacticAngle: Option[Angle] =
-    Option(tcsState.getDoubleAttribute("parangle").value).map(_.doubleValue).map(Angle.fromDoubleDegrees)
+  def parallacticAngle: F[Option[Angle]] =
+    safeAttributeSDouble(tcsState.getDoubleAttribute("parangle")).map(_.map(Angle.fromDoubleDegrees))
 
-  def m2UserFocusOffset: Option[Double] = Option(tcsState.getDoubleAttribute("m2ZUserOffset").value).map(_.doubleValue)
+  def m2UserFocusOffset: F[Option[Double]] = safeAttributeSDouble(tcsState.getDoubleAttribute("m2ZUserOffset"))
 
   private val pwfs1Status = epicsService.getStatusAcceptor("pwfs1state")
 
-  def pwfs1IntegrationTime: Option[Double] = Option(pwfs1Status.getDoubleAttribute("intTime").value).map(_.doubleValue)
+  def pwfs1IntegrationTime: F[Option[Double]] = safeAttributeSDouble(pwfs1Status.getDoubleAttribute("intTime"))
 
   private val pwfs2Status = epicsService.getStatusAcceptor("pwfs2state")
 
-  def pwfs2IntegrationTime: Option[Double] = Option(pwfs2Status.getDoubleAttribute("intTime").value).map(_.doubleValue)
+  def pwfs2IntegrationTime: F[Option[Double]] = safeAttributeSDouble(pwfs2Status.getDoubleAttribute("intTime"))
 
   private val oiwfsStatus = epicsService.getStatusAcceptor("oiwfsstate")
 
   // Attribute must be changed back to Double after EPICS channel is fixed.
-  def oiwfsIntegrationTime: Option[Double]  = Option(oiwfsStatus.getDoubleAttribute("intTime").value).map(_.doubleValue)
+  def oiwfsIntegrationTime:F[Option[Double]]  = safeAttributeSDouble(oiwfsStatus.getDoubleAttribute("intTime"))
 
 
-  private def instPort(name: String): Option[Int] = Option(tcsState.getIntegerAttribute(s"${name}Port").value).map(_.intValue)
+  private def instPort(name: String): F[Option[Int]] =
+    safeAttributeSInt(tcsState.getIntegerAttribute(s"${name}Port"))
 
-  def gsaoiPort: Option[Int] = instPort("gsaoi")
-  def gpiPort: Option[Int]= instPort("gpi")
-  def f2Port: Option[Int] = instPort("f2")
-  def niriPort: Option[Int] = instPort("niri")
-  def gnirsPort: Option[Int] = instPort("nirs")
-  def nifsPort: Option[Int] = instPort("nifs")
-  def gmosPort: Option[Int] = instPort("gmos")
-  def ghostPort: Option[Int] = instPort("ghost")
+  def gsaoiPort: F[Option[Int]] = instPort("gsaoi")
+  def gpiPort: F[Option[Int]]= instPort("gpi")
+  def f2Port: F[Option[Int]] = instPort("f2")
+  def niriPort: F[Option[Int]] = instPort("niri")
+  def gnirsPort: F[Option[Int]] = instPort("nirs")
+  def nifsPort: F[Option[Int]] = instPort("nifs")
+  def gmosPort: F[Option[Int]] = instPort("gmos")
+  def ghostPort: F[Option[Int]] = instPort("ghost")
+
+  def aoGuideStarX: F[Option[Double]] = safeAttributeSDouble(tcsState.getDoubleAttribute("aogsx"))
+
+  def aoGuideStarY: F[Option[Double]] = safeAttributeSDouble(tcsState.getDoubleAttribute("aogsy"))
+
 }
 
-object TcsEpics extends EpicsSystem[TcsEpics] {
+object TcsEpics extends EpicsSystem[TcsEpics[IO]] {
 
   override val className: String = getClass.getName
   override val Log: Logger = getLogger
@@ -518,30 +524,30 @@ object TcsEpics extends EpicsSystem[TcsEpics] {
     def setName(v: String): SeqAction[Unit] = setParameter(name, v)
   }
 
-  class ProbeGuideConfig(protected val prefix: String, protected val tcsState: CaStatusAcceptor) {
-    def nodachopa: Option[String] = Option(tcsState.getStringAttribute(prefix+"nodachopa").value)
-    def nodachopb: Option[String] = Option(tcsState.getStringAttribute(prefix+"nodachopb").value)
-    def nodachopc: Option[String] = Option(tcsState.getStringAttribute(prefix+"nodachopc").value)
-    def nodbchopa: Option[String] = Option(tcsState.getStringAttribute(prefix+"nodbchopa").value)
-    def nodbchopb: Option[String] = Option(tcsState.getStringAttribute(prefix+"nodbchopb").value)
-    def nodbchopc: Option[String] = Option(tcsState.getStringAttribute(prefix+"nodbchopc").value)
-    def nodcchopa: Option[String] = Option(tcsState.getStringAttribute(prefix+"nodcchopa").value)
-    def nodcchopb: Option[String] = Option(tcsState.getStringAttribute(prefix+"nodcchopb").value)
-    def nodcchopc: Option[String] = Option(tcsState.getStringAttribute(prefix+"nodcchopc").value)
+  class ProbeGuideConfig[F[_]: Sync](protected val prefix: String, protected val tcsState: CaStatusAcceptor) {
+    def nodachopa: F[Option[String]] = safeAttribute(tcsState.getStringAttribute(prefix+"nodachopa"))
+    def nodachopb: F[Option[String]] = safeAttribute(tcsState.getStringAttribute(prefix+"nodachopb"))
+    def nodachopc: F[Option[String]] = safeAttribute(tcsState.getStringAttribute(prefix+"nodachopc"))
+    def nodbchopa: F[Option[String]] = safeAttribute(tcsState.getStringAttribute(prefix+"nodbchopa"))
+    def nodbchopb: F[Option[String]] = safeAttribute(tcsState.getStringAttribute(prefix+"nodbchopb"))
+    def nodbchopc: F[Option[String]] = safeAttribute(tcsState.getStringAttribute(prefix+"nodbchopc"))
+    def nodcchopa: F[Option[String]] = safeAttribute(tcsState.getStringAttribute(prefix+"nodcchopa"))
+    def nodcchopb: F[Option[String]] = safeAttribute(tcsState.getStringAttribute(prefix+"nodcchopb"))
+    def nodcchopc: F[Option[String]] = safeAttribute(tcsState.getStringAttribute(prefix+"nodcchopc"))
   }
 
-  sealed trait Target {
-    def objectName: Option[String]
-    def ra: Option[Double]
-    def dec: Option[Double]
-    def frame: Option[String]
-    def equinox: Option[String]
-    def epoch: Option[String]
-    def properMotionRA: Option[Double]
-    def properMotionDec: Option[Double]
-    def centralWavelenght: Option[Double]
-    def parallax: Option[Double]
-    def radialVelocity: Option[Double]
+  sealed trait Target[F[_]] {
+    def objectName: F[Option[String]]
+    def ra: F[Option[Double]]
+    def dec: F[Option[Double]]
+    def frame: F[Option[String]]
+    def equinox: F[Option[String]]
+    def epoch: F[Option[String]]
+    def properMotionRA: F[Option[Double]]
+    def properMotionDec: F[Option[Double]]
+    def centralWavelenght: F[Option[Double]]
+    def parallax: F[Option[Double]]
+    def radialVelocity: F[Option[Double]]
   }
 
 }

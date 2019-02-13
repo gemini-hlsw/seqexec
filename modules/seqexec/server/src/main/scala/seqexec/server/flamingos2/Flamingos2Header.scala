@@ -35,7 +35,7 @@ object Flamingos2Header {
         sendKeywords(id, inst, List(
           buildBoolean(f2ObsReader.getPreimage.map(_.toBoolean), KeywordName.PREIMAGE),
           buildString(SeqActionF(LocalDate.now.format(DateTimeFormatter.ISO_LOCAL_DATE)), KeywordName.DATE_OBS),
-          buildString(tcsKeywordsReader.getUT.orDefault, KeywordName.TIME_OBS),
+          buildStringS(tcsKeywordsReader.getUT, KeywordName.TIME_OBS),
           buildString(f2ObsReader.getReadMode.map{
             case ReadMode.BRIGHT_OBJECT_SPEC => "Bright"
             case ReadMode.MEDIUM_OBJECT_SPEC => "Medium"
