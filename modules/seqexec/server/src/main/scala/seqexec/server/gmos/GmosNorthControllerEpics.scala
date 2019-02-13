@@ -45,6 +45,7 @@ object GmosNorthEncoders extends GmosControllerEpics.Encoders[NorthTypes] {
     case Filter.i_G0302_CaT_G0309       => ("CaT_G0309", "i_G0302")
     case Filter.z_G0304_CaT_G0309       => ("CaT_G0309", "z_G0304")
     case Filter.u_G0308                 => ("open1-6", "open2-8")
+    case Filter.ri_G0349                => ("open1-6", "ri_G0349")
   }
 
   override val fpu: EpicsCodex.EncodeEpicsValue[NorthTypes#FPU, (Option[String], Option[String])] = EncodeEpicsValue{
