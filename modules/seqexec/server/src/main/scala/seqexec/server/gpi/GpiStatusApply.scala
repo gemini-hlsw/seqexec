@@ -63,11 +63,11 @@ final case class GpiStatusApply(tp:          String,
 
 object GpiStatusApply {
   val adc = GpiStatusApply("INT", "gpi:adcDeploy", "gpi:selectAdc.deploy")
-  // val useAo = GpiStatusApply("INT", "gpi:ao:optimization", "gpi:configAo.useAo")
+  val useAo = GpiStatusApply("INT", "gpi:ao:useAo", "gpi:configAo.useAo")
   val aoOptimize =
     GpiStatusApply("INT", "gpi:ao:optimization", "gpi:configAo.optimize")
-  // val useCal = GpiStatusApply("INT", "gpi:ao:optimization", "gpi:configAo.useCal")
-  // val fpmPinholeBias = GpiStatusApply("INT", "gpi:ao:optimization", "gpi:configCal.fpmPinholeBias")
+  val useCal = GpiStatusApply("INT", "gpi:cal:useCal", "gpi:configCal.useCal")
+  val fpmPinholeBias = GpiStatusApply("INT", "gpi:cal:fpmPinholeBias", "gpi:configCal.fpmPinholeBias")
   val integrationTime = GpiStatusApply("FLOAT",
                                        "gpi:currentIntegrationTime",
                                        "gpi:configIfs.integrationTime")
@@ -107,7 +107,7 @@ object GpiStatusApply {
                               "gpi:selectSource.sourceVis")
   val srcIR =
     GpiStatusApply("INT", "gpi:artificialSourceIR", "gpi:selectSource.sourceIr")
-  // val polarizerDeploy = GpiStatusApply("INT", "gpi:artificialSourceIR", "gpi:configPolarizer.deploy")
+  val polarizerDeploy = GpiStatusApply("INT", "gpi:polarModulatorDeploy", "gpi:configPolarizer.deploy")
   val polarizerAngle =
     GpiStatusApply("DFLOAT", "gpi:polarizerAngle", "gpi:configPolarizer.angle")
 
@@ -129,6 +129,9 @@ object GpiStatusApply {
   val all = List(
     adc,
     aoOptimize,
+    useAo,
+    useCal,
+    fpmPinholeBias,
     integrationTime,
     numCoadds,
     magI,
@@ -144,6 +147,7 @@ object GpiStatusApply {
     srcVis,
     srcIR,
     polarizerAngle,
+    polarizerDeploy,
     observationMode,
     ifsFilter,
     ppm,

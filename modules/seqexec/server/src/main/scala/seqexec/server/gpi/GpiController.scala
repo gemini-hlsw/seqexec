@@ -134,7 +134,7 @@ final case class GpiController[F[_]: Sync](override val client: GpiClient[F],
       Configuration.single("gpi:configAo.useAo",
         config.aoFlags.useAo
           .fold(1, 0)) |+|
-      Configuration.single("gpi:configAo.useCal",
+      Configuration.single("gpi:configCal.useCal",
         config.aoFlags.useCal
           .fold(1, 0)) |+|
       Configuration.single("gpi:configCal.fpmPinholeBias",
