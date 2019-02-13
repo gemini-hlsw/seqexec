@@ -239,11 +239,15 @@ package object keywords {
   // Keywords are read and they can fail or be missing
   // This Operation will preserve the value if defined or use the default
   // In case it either fails or is empty
-  implicit class FunctorSafeDefaultOps[F[_]: ApplicativeError[?[_], Throwable], A: DefaultHeaderValue](v: F[Option[A]]) {
-    def safeDefault: F[A] = v.attempt.map {
-      case Right(Some(a))     => a
-      case Left(_) | Right(_) => DefaultHeaderValue[A].default
+  implicit class FunctorSafeOps[F[_]: ApplicativeError[?[_], Throwable], A](v: F[Option[A]]) {
+    def safeVal: F[Option[A]] = v.attempt.map {
+      case Right(a@Some(_)) => a
+      case _                => None
     }
+  }
+
+  implicit class FunctorSafeDefaultOps[F[_]: ApplicativeError[?[_], Throwable], A: DefaultHeaderValue](v: F[Option[A]]) {
+    def safeValOrDefault: F[A] = v.safeVal.map(_.getOrElse(DefaultHeaderValue[A].default))
   }
 
   implicit class SeqActionOption2SeqAction[A: DefaultHeaderValue](

@@ -40,17 +40,17 @@ object NifsKeywordReaderDummy extends NifsKeywordReader[IO] {
 
 object NifsKeywordReaderImpl extends NifsKeywordReader[IO] {
   val sys = NifsEpics.instance
-  override def biasPwr: IO[Double] = sys.biasPwr.safeDefault
-  override def centralWavelength: IO[Double] = sys.centralWavelength.safeDefault
-  override def coadds: IO[Int] = sys.coadds.safeDefault
-  override def dcName: IO[String] = sys.dcName.safeDefault
-  override def exposureTime: IO[Double] = sys.exposureTime.safeDefault
-  override def exposureMode: IO[String] = sys.exposureMode.safeDefault
-  override def imagingMirror: IO[String] = sys.imagingMirror.safeDefault
-  override def maskOffset: IO[Double] = sys.maskOffset.safeDefault
-  override def numberOfFowSamples: IO[Int] = sys.numberOfFowSamples.safeDefault
-  override def numberOfPeriods: IO[Int] = sys.numberOfPeriods.safeDefault
-  override def period: IO[Double] = sys.period.safeDefault
-  override def readTime: IO[Double] = sys.readTime.safeDefault
-  override def windowCover: IO[String] = sys.windowCover.safeDefault
+  override def biasPwr: IO[Double] = sys.biasPwr.safeValOrDefault
+  override def centralWavelength: IO[Double] = sys.centralWavelength.safeValOrDefault
+  override def coadds: IO[Int] = sys.coadds.safeValOrDefault
+  override def dcName: IO[String] = sys.dcName.safeValOrDefault
+  override def exposureTime: IO[Double] = sys.exposureTime.safeValOrDefault
+  override def exposureMode: IO[String] = sys.exposureMode.safeValOrDefault
+  override def imagingMirror: IO[String] = sys.imagingMirror.safeValOrDefault
+  override def maskOffset: IO[Double] = sys.maskOffset.safeValOrDefault
+  override def numberOfFowSamples: IO[Int] = sys.numberOfFowSamples.safeValOrDefault
+  override def numberOfPeriods: IO[Int] = sys.numberOfPeriods.safeValOrDefault
+  override def period: IO[Double] = sys.period.safeValOrDefault
+  override def readTime: IO[Double] = sys.readTime.safeValOrDefault
+  override def windowCover: IO[String] = sys.windowCover.safeValOrDefault
 }

@@ -38,7 +38,7 @@ object NifsHeader {
           buildDoubleS(instReader.biasPwr, KeywordName.BIASPWR),
           buildInt32S(instReader.numberOfFowSamples, KeywordName.LNRS),
           buildStringS("IFU".pure[F], KeywordName.OBSMODE),
-          buildString(tcsKeywordsReader.getDate.orDefault, KeywordName.DATE_OBS)
+          buildStringS(tcsKeywordsReader.getDate, KeywordName.DATE_OBS)
         )
       )
 

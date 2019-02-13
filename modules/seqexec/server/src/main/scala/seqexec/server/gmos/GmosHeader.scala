@@ -26,9 +26,9 @@ object GmosHeader {
     new Header[F] {
       override def sendBefore(obsId: Observation.Id, id: ImageFileId): F[Unit] = {
         sendKeywords(id, inst, List(
-          buildInt32(tcsKeywordsReader.getGmosInstPort.orDefault, KeywordName.INPORT),
+          buildInt32S(tcsKeywordsReader.getGmosInstPort, KeywordName.INPORT),
           buildString(gmosReader.ccName, KeywordName.GMOSCC),
-          buildString(tcsKeywordsReader.getUT.orDefault, KeywordName.TIME_OBS),
+          buildStringS(tcsKeywordsReader.getUT, KeywordName.TIME_OBS),
           buildBoolean(gmosObsReader.preimage.map(_.toBoolean), KeywordName.PREIMAGE))
           // TODO NOD*
         )

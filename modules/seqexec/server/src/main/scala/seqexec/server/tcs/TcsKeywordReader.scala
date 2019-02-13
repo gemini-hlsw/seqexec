@@ -6,15 +6,13 @@ package seqexec.server.tcs
 import cats.{Apply, Eq}
 import cats.effect.IO
 import cats.implicits._
-import gem.math.Angle
-import edu.gemini.spModel.core.Wavelength
-import edu.gemini.spModel.core.Wavelength
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+
+import cats.data.OptionT
+import gem.math.Angle
 import monocle.Prism
-import seqexec.server.SeqActionF
 import seqexec.server.keywords._
-import squants.space.{Angstroms, Meters}
 
 sealed trait CRFollow extends Product with Serializable
 
@@ -42,80 +40,88 @@ object CRFollow {
 }
 
 trait TargetKeywordsReader[F[_]] {
-  def getRA: SeqActionF[F, Option[Double]]
+  def getRA: F[Double]
 
-  def getDec: SeqActionF[F, Option[Double]]
+  def getDec: F[Double]
 
-  def getRadialVelocity: SeqActionF[F, Option[Double]]
+  def getRadialVelocity: F[Double]
 
-  def getParallax: SeqActionF[F, Option[Double]]
+  def getParallax: F[Double]
 
-  def getWavelength: SeqActionF[F, Option[Wavelength]]
+  def getWavelength: F[Double]
 
-  def getEpoch: SeqActionF[F, Option[Double]]
+  def getEpoch: F[Double]
 
-  def getEquinox: SeqActionF[F, Option[Double]]
+  def getEquinox: F[Double]
 
-  def getFrame: SeqActionF[F, Option[String]]
+  def getFrame: F[String]
 
-  def getObjectName: SeqActionF[F, Option[String]]
+  def getObjectName: F[String]
 
-  def getProperMotionDec: SeqActionF[F, Option[Double]]
+  def getProperMotionDec: F[Double]
 
-  def getProperMotionRA: SeqActionF[F, Option[Double]]
+  def getProperMotionRA: F[Double]
 
 }
 
 trait TcsKeywordsReader[F[_]] {
-  def getHourAngle: SeqActionF[F, Option[String]]
+  def getHourAngle: F[String]
 
-  def getLocalTime: SeqActionF[F, Option[String]]
+  def getLocalTime: F[String]
 
-  def getTrackingFrame: SeqActionF[F, Option[String]]
+  def getTrackingFrame: F[String]
 
-  def getTrackingEpoch: SeqActionF[F, Option[Double]]
+  def getTrackingEpoch: F[Double]
 
-  def getTrackingEquinox: SeqActionF[F, Option[Double]]
+  def getTrackingEquinox: F[Double]
 
-  def getTrackingDec: SeqActionF[F, Option[Double]]
+  def getTrackingDec: F[Double]
 
-  def getTrackingRA: SeqActionF[F, Option[Double]]
+  def getTrackingRA: F[Double]
 
-  def getElevation: SeqActionF[F, Option[Double]]
+  def getElevation: F[Double]
 
-  def getAzimuth: SeqActionF[F, Option[Double]]
+  def getAzimuth: F[Double]
 
-  def getCRPositionAngle: SeqActionF[F, Option[Double]]
+  def getCRPositionAngle: F[Double]
 
-  def getUT: SeqActionF[F, Option[String]]
+  def getUT: F[String]
 
-  def getDate: SeqActionF[F, Option[String]]
+  def getDate: F[String]
 
-  def getM2Baffle: SeqActionF[F, Option[String]]
+  def getM2Baffle: F[String]
 
-  def getM2CentralBaffle: SeqActionF[F, Option[String]]
+  def getM2CentralBaffle: F[String]
 
-  def getST: SeqActionF[F, Option[String]]
+  def getST: F[String]
 
-  def getSFRotation: SeqActionF[F, Option[Double]]
+  def getSFRotation: F[Double]
 
-  def getSFTilt: SeqActionF[F, Option[Double]]
+  def getSFTilt: F[Double]
 
-  def getSFLinear: SeqActionF[F, Option[Double]]
+  def getSFLinear: F[Double]
 
-  def getInstrumentPA: SeqActionF[F, Option[Double]]
+  def getInstrumentPA: F[Double]
 
-  def getXOffset: SeqActionF[F, Option[Double]]
+  def getXOffset: F[Double]
 
-  def getYOffset: SeqActionF[F, Option[Double]]
+  def getYOffset: F[Double]
 
-  def getTrackingRAOffset: SeqActionF[F, Option[Double]]
+  def getPOffset: F[Double]
 
-  def getTrackingDecOffset: SeqActionF[F, Option[Double]]
+  def getQOffset: F[Double]
 
-  def getInstrumentAA: SeqActionF[F, Option[Double]]
+  def getRaOffset: F[Double]
 
-  def getAOFoldName: SeqActionF[F, Option[String]]
+  def getDecOffset: F[Double]
+
+  def getTrackingRAOffset: F[Double]
+
+  def getTrackingDecOffset: F[Double]
+
+  def getInstrumentAA: F[Double]
+
+  def getAOFoldName: F[String]
 
   def getSourceATarget: TargetKeywordsReader[F]
 
@@ -135,129 +141,129 @@ trait TcsKeywordsReader[F[_]] {
 
   def getGwfs4Target: TargetKeywordsReader[F]
 
-  def getAirMass: SeqActionF[F, Option[Double]]
+  def getAirMass: F[Double]
 
-  def getStartAirMass: SeqActionF[F, Option[Double]]
+  def getStartAirMass: F[Double]
 
-  def getEndAirMass: SeqActionF[F, Option[Double]]
+  def getEndAirMass: F[Double]
 
-  def getCarouselMode: SeqActionF[F, Option[String]]
+  def getCarouselMode: F[String]
 
-  def getM2UserFocusOffset: SeqActionF[F, Option[Double]]
+  def getM2UserFocusOffset: F[Double]
 
-  def getParallacticAngle: SeqActionF[F, Option[Angle]]
+  def getParallacticAngle: F[Option[Angle]]
 
-  def getPwfs1Freq: SeqActionF[F, Option[Double]]
+  def getPwfs1Freq: F[Double]
 
-  def getPwfs2Freq: SeqActionF[F, Option[Double]]
+  def getPwfs2Freq: F[Double]
 
-  def getOiwfsFreq: SeqActionF[F, Option[Double]]
+  def getOiwfsFreq: F[Double]
 
-  def getGmosInstPort: SeqActionF[F, Option[Int]]
+  def getGmosInstPort: F[Int]
 
-  def getGnirsInstPort: SeqActionF[F, Option[Int]]
+  def getGnirsInstPort: F[Int]
 
-  def getGpiInstPort: SeqActionF[F, Option[Int]]
+  def getGpiInstPort: F[Int]
 
-  def getNiriInstPort: SeqActionF[F, Option[Int]]
+  def getNiriInstPort: F[Int]
 
-  def getNifsInstPort: SeqActionF[F, Option[Int]]
+  def getNifsInstPort: F[Int]
 
-  def getGsaoiInstPort: SeqActionF[F, Option[Int]]
+  def getGsaoiInstPort: F[Int]
 
-  def getF2InstPort: SeqActionF[F, Option[Int]]
+  def getF2InstPort: F[Int]
 
-  def getCRFollow: SeqActionF[F, Option[CRFollow]]
+  def getCRFollow: F[Option[CRFollow]]
 
 }
 
 object DummyTargetKeywordsReader extends TargetKeywordsReader[IO] {
 
-  override def getRA: SeqActionF[IO, Option[Double]] = 0.0.toSeqAction
+  override def getRA: IO[Double] = IO(0.0)
 
-  override def getDec: SeqActionF[IO, Option[Double]] = 0.0.toSeqAction
+  override def getDec: IO[Double] = IO(0.0)
 
-  override def getRadialVelocity: SeqActionF[IO, Option[Double]] = 0.0.toSeqAction
+  override def getRadialVelocity: IO[Double] = IO(0.0)
 
-  override def getParallax: SeqActionF[IO, Option[Double]] = 0.0.toSeqAction
+  override def getParallax: IO[Double] = IO(0.0)
 
-  override def getWavelength: SeqActionF[IO, Option[Wavelength]] = Wavelength(Meters(0.0)).toSeqAction
+  override def getWavelength: IO[Double] = IO(0.0)
 
-  override def getEpoch: SeqActionF[IO, Option[Double]] = 2000.0.toSeqAction
+  override def getEpoch: IO[Double] = IO(2000.0)
 
-  override def getEquinox: SeqActionF[IO, Option[Double]] = 2000.0.toSeqAction
+  override def getEquinox: IO[Double] = IO(2000.0)
 
-  override def getFrame: SeqActionF[IO, Option[String]] = "FK5".toSeqAction
+  override def getFrame: IO[String] = IO("FK5")
 
-  override def getObjectName: SeqActionF[IO, Option[String]] = "Dummy".toSeqAction
+  override def getObjectName: IO[String] = IO("Dummy")
 
-  override def getProperMotionDec: SeqActionF[IO, Option[Double]] = 0.0.toSeqAction
+  override def getProperMotionDec: IO[Double] = IO(0.0)
 
-  override def getProperMotionRA: SeqActionF[IO, Option[Double]] = 0.0.toSeqAction
+  override def getProperMotionRA: IO[Double] = IO(0.0)
 
 }
 
 object DummyTcsKeywordsReader extends TcsKeywordsReader[IO] {
 
-  override def getHourAngle: SeqActionF[IO, Option[String]] = "00:00:00".toSeqAction
+  override def getHourAngle: IO[String] = IO("00:00:00")
 
-  override def getLocalTime: SeqActionF[IO, Option[String]] = "00:00:00".toSeqAction
+  override def getLocalTime: IO[String] = IO("00:00:00")
 
-  override def getTrackingFrame: SeqActionF[IO, Option[String]] = "FK5".toSeqAction
+  override def getTrackingFrame: IO[String] = IO("FK5")
 
-  override def getTrackingEpoch: SeqActionF[IO, Option[Double]] = 0.0.toSeqAction
+  override def getTrackingEpoch: IO[Double] = IO(0.0)
 
-  override def getTrackingEquinox: SeqActionF[IO, Option[Double]] = 2000.0.toSeqAction
+  override def getTrackingEquinox: IO[Double] = IO(2000.0)
 
-  override def getTrackingDec: SeqActionF[IO, Option[Double]] = 0.0.toSeqAction
+  override def getTrackingDec: IO[Double] = IO(0.0)
 
-  override def getTrackingRA: SeqActionF[IO, Option[Double]] = 0.0.toSeqAction
+  override def getTrackingRA: IO[Double] = IO(0.0)
 
-  override def getElevation: SeqActionF[IO, Option[Double]] = 0.0.toSeqAction
+  override def getElevation: IO[Double] = IO(0.0)
 
-  override def getAzimuth: SeqActionF[IO, Option[Double]] = 0.0.toSeqAction
+  override def getAzimuth: IO[Double] = IO(0.0)
 
-  override def getCRPositionAngle: SeqActionF[IO, Option[Double]] = 0.0.toSeqAction
+  override def getCRPositionAngle: IO[Double] = IO(0.0)
 
-  override def getUT: SeqActionF[IO, Option[String]] = "00:00:00".toSeqAction
+  override def getUT: IO[String] = IO("00:00:00")
 
-  override def getDate: SeqActionF[IO, Option[String]] = LocalDate.now.format(DateTimeFormatter.ISO_LOCAL_DATE).toSeqAction
+  override def getDate: IO[String] = IO(LocalDate.now.format(DateTimeFormatter.ISO_LOCAL_DATE))
 
-  override def getM2Baffle: SeqActionF[IO, Option[String]] = "OUT".toSeqAction
+  override def getM2Baffle: IO[String] = IO("OUT")
 
-  override def getM2CentralBaffle: SeqActionF[IO, Option[String]] = "OUT".toSeqAction
+  override def getM2CentralBaffle: IO[String] = IO("OUT")
 
-  override def getST: SeqActionF[IO, Option[String]] = "00:00:00".toSeqAction
+  override def getST: IO[String] = IO("00:00:00")
 
-  override def getSFRotation: SeqActionF[IO, Option[Double]] = 0.0.toSeqAction
+  override def getSFRotation: IO[Double] = IO(0.0)
 
-  override def getSFTilt: SeqActionF[IO, Option[Double]] = 0.0.toSeqAction
+  override def getSFTilt: IO[Double] = IO(0.0)
 
-  override def getSFLinear: SeqActionF[IO, Option[Double]] = 0.0.toSeqAction
+  override def getSFLinear: IO[Double] = IO(0.0)
 
-  override def getInstrumentPA: SeqActionF[IO, Option[Double]] = 0.0.toSeqAction
+  override def getInstrumentPA: IO[Double] = IO(0.0)
 
-  override def getXOffset: SeqActionF[IO, Option[Double]] = 0.0.toSeqAction
+  override def getXOffset: IO[Double] = IO(0.0)
 
-  override def getYOffset: SeqActionF[IO, Option[Double]] = 0.0.toSeqAction
+  override def getYOffset: IO[Double] = IO(0.0)
 
-  override def getInstrumentAA: SeqActionF[IO, Option[Double]] = 0.0.toSeqAction
+  override def getInstrumentAA: IO[Double] = IO(0.0)
 
-  override def getAOFoldName: SeqActionF[IO, Option[String]] = "OUT".toSeqAction
+  override def getAOFoldName: IO[String] = IO("OUT")
 
   override def getSourceATarget: TargetKeywordsReader[IO] = DummyTargetKeywordsReader
 
-  override def getAirMass: SeqActionF[IO, Option[Double]] = 1.0.toSeqAction
+  override def getAirMass: IO[Double] = IO(1.0)
 
-  override def getStartAirMass: SeqActionF[IO, Option[Double]] = 1.0.toSeqAction
+  override def getStartAirMass: IO[Double] = IO(1.0)
 
-  override def getEndAirMass: SeqActionF[IO, Option[Double]] = 1.0.toSeqAction
+  override def getEndAirMass: IO[Double] = IO(1.0)
 
-  override def getParallacticAngle: SeqActionF[IO, Option[Angle]] = Some(Angle.fromDoubleDegrees(0)).toSeqActionO
+  override def getParallacticAngle: IO[Option[Angle]] = IO(Some(Angle.fromDoubleDegrees(0)))
 
-  override def getTrackingRAOffset: SeqActionF[IO, Option[Double]] = 0.0.toSeqAction
+  override def getTrackingRAOffset: IO[Double] = IO(0.0)
 
-  override def getTrackingDecOffset: SeqActionF[IO, Option[Double]] = 0.0.toSeqAction
+  override def getTrackingDecOffset: IO[Double] = IO(0.0)
 
   override def getPwfs1Target: TargetKeywordsReader[IO] = DummyTargetKeywordsReader
 
@@ -275,92 +281,104 @@ object DummyTcsKeywordsReader extends TcsKeywordsReader[IO] {
 
   override def getGwfs4Target: TargetKeywordsReader[IO] = DummyTargetKeywordsReader
 
-  override def getM2UserFocusOffset: SeqActionF[IO, Option[Double]] = 0.0.toSeqAction
+  override def getM2UserFocusOffset: IO[Double] = IO(0.0)
 
-  override def getPwfs1Freq: SeqActionF[IO, Option[Double]] = -9999.0.toSeqAction
+  override def getPwfs1Freq: IO[Double] = IO(-9999.0)
 
-  override def getPwfs2Freq: SeqActionF[IO, Option[Double]] = -9999.0.toSeqAction
+  override def getPwfs2Freq: IO[Double] = IO(-9999.0)
 
-  override def getOiwfsFreq: SeqActionF[IO, Option[Double]] = -9999.0.toSeqAction
+  override def getOiwfsFreq: IO[Double] = IO(-9999.0)
 
-  override def getCarouselMode: SeqActionF[IO, Option[String]] = "Basic".toSeqAction
+  override def getCarouselMode: IO[String] = IO("Basic")
 
-  override def getGmosInstPort: SeqActionF[IO, Option[Int]] = 0.toSeqAction
+  override def getGmosInstPort: IO[Int] = IO(0)
 
-  override def getGnirsInstPort: SeqActionF[IO, Option[Int]] = 0.toSeqAction
+  override def getGnirsInstPort: IO[Int] = IO(0)
 
-  override def getGpiInstPort: SeqActionF[IO, Option[Int]] = 0.toSeqAction
+  override def getGpiInstPort: IO[Int] = IO(0)
 
-  override def getNiriInstPort: SeqActionF[IO, Option[Int]] = 0.toSeqAction
+  override def getNiriInstPort: IO[Int] = IO(0)
 
-  override def getNifsInstPort: SeqActionF[IO, Option[Int]] = 0.toSeqAction
+  override def getNifsInstPort: IO[Int] = IO(0)
 
-  override def getGsaoiInstPort: SeqActionF[IO, Option[Int]] = 0.toSeqAction
+  override def getGsaoiInstPort: IO[Int] = IO(0)
 
-  override def getF2InstPort: SeqActionF[IO, Option[Int]] = 0.toSeqAction
+  override def getF2InstPort: IO[Int] = IO(0)
 
-  override def getCRFollow: SeqActionF[IO, Option[CRFollow]] = (CRFollow.Off: CRFollow).toSeqAction
+  override def getCRFollow: IO[Option[CRFollow]] = IO(CRFollow.Off.some)
+
+  override def getPOffset: IO[Double] = IO(0.0)
+
+  override def getQOffset: IO[Double] = IO(0.0)
+
+  override def getRaOffset: IO[Double] = IO(0.0)
+
+  override def getDecOffset: IO[Double] = IO(0.0)
 }
 
 object TcsKeywordsReaderImpl extends TcsKeywordsReader[IO] {
 
-  override def getHourAngle: SeqActionF[IO, Option[String]] = TcsEpics.instance.hourAngle.toSeqActionO
+  override def getHourAngle: IO[String] = TcsEpics.instance.hourAngle.safeValOrDefault
 
-  override def getLocalTime: SeqActionF[IO, Option[String]] = TcsEpics.instance.localTime.toSeqActionO
+  override def getLocalTime: IO[String] = TcsEpics.instance.localTime.safeValOrDefault
 
-  override def getTrackingFrame: SeqActionF[IO, Option[String]] = TcsEpics.instance.trackingFrame.toSeqActionO
+  override def getTrackingFrame: IO[String] = TcsEpics.instance.trackingFrame.safeValOrDefault
 
-  override def getTrackingEpoch: SeqActionF[IO, Option[Double]] = TcsEpics.instance.trackingEpoch.toSeqActionO
+  override def getTrackingEpoch: IO[Double] = TcsEpics.instance.trackingEpoch.safeValOrDefault
 
   private def translateEpoch(v: Option[String]): Option[Double] = v.flatMap(x => Either.catchNonFatal { x.drop(1).toDouble }.toOption)
 
-  override def getTrackingEquinox: SeqActionF[IO, Option[Double]] = translateEpoch(TcsEpics.instance.trackingEquinox).toSeqActionO
+  override def getTrackingEquinox: IO[Double] = TcsEpics.instance.trackingEquinox.map(translateEpoch).safeValOrDefault
 
-  override def getTrackingDec: SeqActionF[IO, Option[Double]] = TcsEpics.instance.trackingDec.toSeqActionO
+  override def getTrackingDec: IO[Double] = TcsEpics.instance.trackingDec.safeValOrDefault
 
-  override def getTrackingRA: SeqActionF[IO, Option[Double]] = TcsEpics.instance.trackingRA.toSeqActionO
+  override def getTrackingRA: IO[Double] = TcsEpics.instance.trackingRA.safeValOrDefault
 
-  override def getElevation: SeqActionF[IO, Option[Double]] = TcsEpics.instance.elevation.toSeqActionO
+  override def getElevation: IO[Double] = TcsEpics.instance.elevation.safeValOrDefault
 
-  override def getAzimuth: SeqActionF[IO, Option[Double]] = TcsEpics.instance.azimuth.toSeqActionO
+  override def getAzimuth: IO[Double] = TcsEpics.instance.azimuth.safeValOrDefault
 
-  override def getCRPositionAngle: SeqActionF[IO, Option[Double]] = TcsEpics.instance.crPositionAngle.toSeqActionO
+  override def getCRPositionAngle: IO[Double] = TcsEpics.instance.crPositionAngle.safeValOrDefault
 
-  override def getUT: SeqActionF[IO, Option[String]] = TcsEpics.instance.ut.toSeqActionO
+  override def getUT: IO[String] = TcsEpics.instance.ut.safeValOrDefault
 
-  override def getDate: SeqActionF[IO, Option[String]] = TcsEpics.instance.date.toSeqActionO
+  override def getDate: IO[String] = TcsEpics.instance.date.safeValOrDefault
 
-  override def getM2Baffle: SeqActionF[IO, Option[String]] = TcsEpics.instance.m2Baffle.toSeqActionO
+  override def getM2Baffle: IO[String] = TcsEpics.instance.m2Baffle.safeValOrDefault
 
-  override def getM2CentralBaffle: SeqActionF[IO, Option[String]] = TcsEpics.instance.m2CentralBaffle.toSeqActionO
+  override def getM2CentralBaffle: IO[String] = TcsEpics.instance.m2CentralBaffle.safeValOrDefault
 
-  override def getST: SeqActionF[IO, Option[String]] = TcsEpics.instance.st.toSeqActionO
+  override def getST: IO[String] = TcsEpics.instance.st.safeValOrDefault
 
-  override def getSFRotation: SeqActionF[IO, Option[Double]] = TcsEpics.instance.sfRotation.toSeqActionO
+  override def getSFRotation: IO[Double] = TcsEpics.instance.sfRotation.safeValOrDefault
 
-  override def getSFTilt: SeqActionF[IO, Option[Double]] = TcsEpics.instance.sfTilt.toSeqActionO
+  override def getSFTilt: IO[Double] = TcsEpics.instance.sfTilt.safeValOrDefault
 
-  override def getSFLinear: SeqActionF[IO, Option[Double]] = TcsEpics.instance.sfLinear.toSeqActionO
+  override def getSFLinear: IO[Double] = TcsEpics.instance.sfLinear.safeValOrDefault
 
-  override def getInstrumentPA: SeqActionF[IO, Option[Double]] = TcsEpics.instance.instrPA.toSeqActionO
+  override def getInstrumentPA: IO[Double] = TcsEpics.instance.instrPA.safeValOrDefault
 
-  override def getGmosInstPort: SeqActionF[IO, Option[Int]] = TcsEpics.instance.gmosPort.toSeqActionO
+  override def getGmosInstPort: IO[Int] = TcsEpics.instance.gmosPort.safeValOrDefault
 
   private val xoffIndex = 6
   private val yoffIndex = 7
   private val focalPlaneScale = 1.611443804
 
-  override def getXOffset: SeqActionF[IO, Option[Double]] =
-    TcsEpics.instance.targetA.flatMap(v => v.lift(xoffIndex).map(_*focalPlaneScale)).toSeqActionO
+  def getXOffsetOption: IO[Option[Double]] =
+    TcsEpics.instance.targetA.map(_.flatMap(v => v.lift(xoffIndex).map(_*focalPlaneScale)))
 
-  override def getYOffset: SeqActionF[IO, Option[Double]] =
-    TcsEpics.instance.targetA.flatMap(v => v.lift(yoffIndex).map(_*focalPlaneScale)).toSeqActionO
+  override def getXOffset: IO[Double] = getXOffsetOption.safeValOrDefault
+
+  def getYOffsetOption: IO[Option[Double]] =
+    TcsEpics.instance.targetA.map(_.flatMap(v => v.lift(yoffIndex).map(_*focalPlaneScale)))
+
+  override def getYOffset: IO[Double] = getYOffsetOption.safeValOrDefault
 
   private val raoffIndex = 2
   private val decoffIndex = 3
   private val degreeToArcsec = 3600.0
 
-  override def getTrackingRAOffset: SeqActionF[IO, Option[Double]] = {
+  override def getTrackingRAOffset: IO[Double] = {
     def angleRange(v: Double) = {
       val r = v % 360.0
       if (r<180.0) r + 360.0
@@ -369,50 +387,50 @@ object TcsKeywordsReaderImpl extends TcsKeywordsReader[IO] {
     }
     def raOffset(off: Double, dec: Double): Double = angleRange(Math.toDegrees(off)) * Math.cos(dec)*degreeToArcsec
 
-    TcsEpics.instance.targetA.flatMap(v => Apply[Option].ap2(Option(raOffset _))(v.lift(raoffIndex),v.lift(decoffIndex))).toSeqActionO
+    TcsEpics.instance.targetA.map(_.flatMap(v => Apply[Option].ap2(Option(raOffset _))(v.lift(raoffIndex),v.lift(decoffIndex)))).safeValOrDefault
   }
 
-  override def getTrackingDecOffset: SeqActionF[IO, Option[Double]] =
-    TcsEpics.instance.targetA.flatMap(v => v.lift(decoffIndex).map(Math.toDegrees(_) * degreeToArcsec)).toSeqActionO
+  override def getTrackingDecOffset: IO[Double] =
+    TcsEpics.instance.targetA.map(_.flatMap(v => v.lift(decoffIndex).map(Math.toDegrees(_) * degreeToArcsec))).safeValOrDefault
 
-  override def getInstrumentAA: SeqActionF[IO, Option[Double]] = TcsEpics.instance.instrAA.toSeqActionO
+  override def getInstrumentAA: IO[Double] = TcsEpics.instance.instrAA.safeValOrDefault
 
-  override def getAOFoldName: SeqActionF[IO, Option[String]] = TcsEpics.instance.aoFoldPosition.toSeqActionO
+  override def getAOFoldName: IO[String] = TcsEpics.instance.aoFoldPosition.safeValOrDefault
 
-  private def target(t: TcsEpics.Target) = new TargetKeywordsReader[IO] {
+  private def target(t: TcsEpics.Target[IO]) = new TargetKeywordsReader[IO] {
 
-    override def getRA: SeqActionF[IO, Option[Double]] = t.ra.toSeqActionO
+    override def getRA: IO[Double] = t.ra.safeValOrDefault
 
-    override def getDec: SeqActionF[IO, Option[Double]] = t.dec.toSeqActionO
+    override def getDec: IO[Double] = t.dec.safeValOrDefault
 
-    override def getRadialVelocity: SeqActionF[IO, Option[Double]] = t.radialVelocity.toSeqActionO
+    override def getRadialVelocity: IO[Double] = t.radialVelocity.safeValOrDefault
 
-    override def getParallax: SeqActionF[IO, Option[Double]] = t.parallax.toSeqActionO
+    override def getParallax: IO[Double] = t.parallax.safeValOrDefault
 
-    override def getWavelength: SeqActionF[IO, Option[Wavelength]] = t.centralWavelenght.map(v => Wavelength(Angstroms[Double](v))).toSeqActionO
+    override def getWavelength: IO[Double] = t.centralWavelenght.safeValOrDefault
 
-    override def getEpoch: SeqActionF[IO, Option[Double]] = translateEpoch(t.epoch).toSeqActionO
+    override def getEpoch: IO[Double] = t.epoch.map(translateEpoch).safeValOrDefault
 
-    override def getEquinox: SeqActionF[IO, Option[Double]] = translateEpoch(t.equinox).toSeqActionO
+    override def getEquinox: IO[Double] = t.equinox.map(translateEpoch).safeValOrDefault
 
-    override def getFrame: SeqActionF[IO, Option[String]] = t.frame.toSeqActionO
+    override def getFrame: IO[String] = t.frame.safeValOrDefault
 
-    override def getObjectName: SeqActionF[IO, Option[String]] = t.objectName.toSeqActionO
+    override def getObjectName: IO[String] = t.objectName.safeValOrDefault
 
-    override def getProperMotionDec: SeqActionF[IO, Option[Double]] = t.properMotionDec.toSeqActionO
+    override def getProperMotionDec: IO[Double] = t.properMotionDec.safeValOrDefault
 
-    override def getProperMotionRA: SeqActionF[IO, Option[Double]] = t.properMotionRA.toSeqActionO
+    override def getProperMotionRA: IO[Double] = t.properMotionRA.safeValOrDefault
   }
 
   override def getSourceATarget: TargetKeywordsReader[IO] = target(TcsEpics.instance.sourceATarget)
 
-  override def getAirMass: SeqActionF[IO, Option[Double]] =  TcsEpics.instance.airmass.toSeqActionO
+  override def getAirMass: IO[Double] =  TcsEpics.instance.airmass.safeValOrDefault
 
-  override def getStartAirMass: SeqActionF[IO, Option[Double]] = TcsEpics.instance.airmassStart.toSeqActionO
+  override def getStartAirMass: IO[Double] = TcsEpics.instance.airmassStart.safeValOrDefault
 
-  override def getEndAirMass: SeqActionF[IO, Option[Double]] = TcsEpics.instance.airmassEnd.toSeqActionO
+  override def getEndAirMass: IO[Double] = TcsEpics.instance.airmassEnd.safeValOrDefault
 
-  override def getParallacticAngle: SeqActionF[IO, Option[Angle]] = TcsEpics.instance.parallacticAngle.toSeqActionO
+  override def getParallacticAngle: IO[Option[Angle]] = TcsEpics.instance.parallacticAngle.safeVal
 
   override def getPwfs1Target: TargetKeywordsReader[IO] = target(TcsEpics.instance.pwfs1Target)
 
@@ -430,30 +448,66 @@ object TcsKeywordsReaderImpl extends TcsKeywordsReader[IO] {
 
   override def getGwfs4Target: TargetKeywordsReader[IO] = target(TcsEpics.instance.gwfs4Target)
 
-  override def getM2UserFocusOffset: SeqActionF[IO, Option[Double]] = TcsEpics.instance.m2UserFocusOffset.toSeqActionO
+  override def getM2UserFocusOffset: IO[Double] = TcsEpics.instance.m2UserFocusOffset.safeValOrDefault
 
-  private def calcFrequency(t: Double): Double = if (t > 0.0) 1.0 / t else -9999.0
+  private def calcFrequency(t: Double): Double = if (t > 0.0) 1.0 / t else DefaultHeaderValue[Double].default
 
-  override def getPwfs1Freq: SeqActionF[IO, Option[Double]] = TcsEpics.instance.pwfs1IntegrationTime.map(calcFrequency).toSeqActionO
+  override def getPwfs1Freq: IO[Double] = TcsEpics.instance.pwfs1IntegrationTime.map(_.map(calcFrequency)).safeValOrDefault
 
-  override def getPwfs2Freq: SeqActionF[IO, Option[Double]] = TcsEpics.instance.pwfs2IntegrationTime.map(calcFrequency).toSeqActionO
+  override def getPwfs2Freq: IO[Double] = TcsEpics.instance.pwfs2IntegrationTime.map(_.map(calcFrequency)).safeValOrDefault
 
-  override def getOiwfsFreq: SeqActionF[IO, Option[Double]] = TcsEpics.instance.oiwfsIntegrationTime.map(calcFrequency).toSeqActionO
+  override def getOiwfsFreq: IO[Double] = TcsEpics.instance.oiwfsIntegrationTime.map(_.map(calcFrequency)).safeValOrDefault
 
-  override def getCarouselMode: SeqActionF[IO, Option[String]] = TcsEpics.instance.carouselMode.toSeqActionO
+  override def getCarouselMode: IO[String] = TcsEpics.instance.carouselMode.safeValOrDefault
 
-  override def getGnirsInstPort: SeqActionF[IO, Option[Int]] = TcsEpics.instance.gnirsPort.toSeqActionO
+  override def getGnirsInstPort: IO[Int] = TcsEpics.instance.gnirsPort.safeValOrDefault
 
-  override def getGpiInstPort: SeqActionF[IO, Option[Int]] = TcsEpics.instance.gpiPort.toSeqActionO
+  override def getGpiInstPort: IO[Int] = TcsEpics.instance.gpiPort.safeValOrDefault
 
-  override def getNiriInstPort: SeqActionF[IO, Option[Int]] = TcsEpics.instance.niriPort.toSeqActionO
+  override def getNiriInstPort: IO[Int] = TcsEpics.instance.niriPort.safeValOrDefault
 
-  override def getNifsInstPort: SeqActionF[IO, Option[Int]] = TcsEpics.instance.nifsPort.toSeqActionO
+  override def getNifsInstPort: IO[Int] = TcsEpics.instance.nifsPort.safeValOrDefault
 
-  override def getGsaoiInstPort: SeqActionF[IO, Option[Int]] = TcsEpics.instance.gsaoiPort.toSeqActionO
+  override def getGsaoiInstPort: IO[Int] = TcsEpics.instance.gsaoiPort.safeValOrDefault
 
-  override def getF2InstPort: SeqActionF[IO, Option[Int]] = TcsEpics.instance.f2Port.toSeqActionO
+  override def getF2InstPort: IO[Int] = TcsEpics.instance.f2Port.safeValOrDefault
 
-  override def getCRFollow: SeqActionF[IO, Option[CRFollow]] =
-    TcsEpics.instance.crFollow.flatMap(CRFollow.fromInt.getOption).toSeqActionO
+  override def getCRFollow: IO[Option[CRFollow]] = TcsEpics.instance.crFollow.safeVal.map(_.flatMap(CRFollow.fromInt.getOption))
+
+  def getPOffsetOption: IO[Option[Double]] = (
+    for {
+      xoff <- OptionT(getXOffsetOption)
+      yoff <- OptionT(getYOffsetOption)
+      iaa  <- OptionT(TcsEpics.instance.instrAA)
+    } yield  -xoff * Math.cos(Math.toRadians(iaa)) + yoff * Math.sin(Math.toRadians(iaa))
+  ).value
+
+  override def getPOffset: IO[Double] = getPOffsetOption.safeValOrDefault
+
+  def getQOffsetOption: IO[Option[Double]] = (
+    for {
+      xoff <- OptionT(getXOffsetOption)
+      yoff <- OptionT(getYOffsetOption)
+      iaa  <- OptionT(TcsEpics.instance.instrAA)
+    } yield  -xoff * Math.sin(Math.toRadians(iaa)) - yoff * Math.cos(Math.toRadians(iaa))
+  ).value
+
+  override def getQOffset: IO[Double] = getQOffsetOption.safeValOrDefault
+
+  override def getRaOffset: IO[Double] = (
+    for {
+      p <- OptionT(getPOffsetOption)
+      q <- OptionT(getQOffsetOption)
+      ipa <- OptionT(TcsEpics.instance.instrPA)
+    } yield p * Math.cos(Math.toRadians(ipa)) + q * Math.sin(Math.toRadians(ipa))
+  ).value.safeValOrDefault
+
+  override def getDecOffset: IO[Double] = (
+    for {
+      p <- OptionT(getPOffsetOption)
+      q <- OptionT(getQOffsetOption)
+      ipa <- OptionT(TcsEpics.instance.instrPA)
+    } yield -p * Math.sin(Math.toRadians(ipa)) + q * Math.cos(Math.toRadians(ipa))
+  ).value.safeValOrDefault
+
 }
