@@ -11,6 +11,9 @@ import cats.implicits._
 import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.gemini.nifs.InstNIFS._
 import edu.gemini.spModel.gemini.nifs.InstEngNifs._
+import edu.gemini.spModel.obscomp.InstConstants.DARK_OBSERVE_TYPE
+import edu.gemini.spModel.obscomp.InstConstants.OBSERVE_TYPE_PROP
+import edu.gemini.spModel.seqcomp.SeqConfigNames.OBSERVE_KEY
 import gem.enum.LightSinkName
 import java.lang.{ Double => JDouble }
 import java.lang.{ Integer => JInt }
@@ -39,8 +42,9 @@ import seqexec.server.nifs.NifsController._
 import squants.Time
 import squants.time.TimeConversions._
 
-final case class Nifs[F[_]: LiftIO: Sync](controller: NifsController[IO], // TODO Convert to NifsController[F]
-                                          dhsClient:  DhsClient[F])
+final case class Nifs[F[_]: LiftIO: Sync](
+  controller: NifsController[IO], // TODO Convert to NifsController[F]
+  dhsClient:  DhsClient[F])
     extends DhsInstrument[F]
     with InstrumentSystem[F] {
 
@@ -82,7 +86,7 @@ final case class Nifs[F[_]: LiftIO: Sync](controller: NifsController[IO], // TOD
 
   override val dhsInstrumentName: String = "NIFS"
 
-  override val resource: Resource        = Instrument.Nifs
+  override val resource: Resource = Instrument.Nifs
 
   /**
     * Called to configure a system
@@ -117,6 +121,12 @@ object Nifs {
       .map(_.doubleValue)
       .map(tag[MaskOffsetD][Double])
 
+  private def windowCoverFromObserveType(observeType: String): WindowCover =
+    observeType match {
+      case DARK_OBSERVE_TYPE => WindowCover.Closed
+      case _                 => WindowCover.Opened
+    }
+
   private def getCCConfig(config: Config): Either[ExtractFailure, CCConfig] =
     for {
       filter    <- config.extractInstAs[Filter](FILTER_PROP)
@@ -125,7 +135,8 @@ object Nifs {
       imMirror  <- config.extractInstAs[ImagingMirror](IMAGING_MIRROR_PROP)
       cw        <- centralWavelength(config)
       mo        <- maskOffset(config)
-    } yield CCConfig(filter, mask, disperser, imMirror, cw, mo)
+      wc        <- extractObsType(config).map(windowCoverFromObserveType)
+    } yield CCConfig(filter, mask, disperser, imMirror, cw, mo, wc)
 
   private def extractExposureTime(
     config: Config
@@ -192,6 +203,11 @@ object Nifs {
     config: Config
   ): Either[ExtractFailure, Option[NumberOfSamples]] =
     extractInstInt[NumberOfSamplesI](config, NUMBER_OF_SAMPLES_PROP)
+
+  private def extractObsType(
+    config: Config
+  ): Either[ExtractFailure, String] =
+    config.extractAs[String](OBSERVE_KEY / OBSERVE_TYPE_PROP)
 
   private def getDCConfig(config: Config): Either[ExtractFailure, DCConfig] =
     for {

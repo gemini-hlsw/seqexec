@@ -39,6 +39,13 @@ trait NumberOfSamplesI
 trait NumberOfResetsI
 trait NumberOfPeriodsI
 
+sealed trait WindowCover extends Product with Serializable
+
+object WindowCover {
+  case object Closed extends WindowCover
+  case object Opened extends WindowCover
+}
+
 object NifsController {
   // DC
   type Coadds          = Int @@ CoaddsI
@@ -73,7 +80,8 @@ object NifsController {
                             disperser:     Disperser,
                             imagingMirror: ImagingMirror,
                             wavelength:    CentralWavelength,
-                            maskOffset:    MaskOffset)
+                            maskOffset:    MaskOffset,
+                            windowCover:   WindowCover)
 
   final case class NifsConfig(cc: CCConfig, dc: DCConfig)
 

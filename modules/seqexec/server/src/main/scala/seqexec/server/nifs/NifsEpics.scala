@@ -9,8 +9,8 @@ import edu.gemini.epics.acm._
 import edu.gemini.seqexec.server.nifs.DhsConnected
 import java.lang.{Double => JDouble}
 import org.log4s.{Logger, getLogger}
-import seqexec.server.EpicsCommand.setParameter
-import seqexec.server.{EpicsCommand, EpicsSystem, ObserveCommand, SeqAction}
+import seqexec.server.ObserveCommand
+import seqexec.server.EpicsSystem
 import seqexec.server.EpicsCommandF
 import seqexec.server.ObserveCommandF
 import seqexec.server.EpicsUtil.safeAttribute
@@ -21,30 +21,30 @@ import seqexec.server.EpicsCommand.setParameterF
 class NifsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, String]) {
   val NifsTop = tops.getOrElse("nifs", "nifs:")
 
-  object ccConfigCmd extends EpicsCommand {
+  object ccConfigCmd extends EpicsCommandF {
     override protected val cs: Option[CaCommandSender] =
       Option(epicsService.getCommandSender("nifs::config"))
 
     val disperser: Option[CaParameter[String]] = cs.map(_.getString("disperser"))
-    def setDisperser(v: String): SeqAction[Unit] = setParameter(disperser, v)
+    def setDisperser(v: String): F[Unit] = setParameterF(disperser, v)
 
     val filter: Option[CaParameter[String]] = cs.map(_.getString("filter"))
-    def setFilter(v: String): SeqAction[Unit] = setParameter(filter, v)
+    def setFilter(v: String): F[Unit] = setParameterF(filter, v)
 
     val windowCover: Option[CaParameter[String]] = cs.map(_.getString("windowCover"))
-    def setWindowCover(v: String): SeqAction[Unit] = setParameter(windowCover, v)
+    def setWindowCover(v: String): F[Unit] = setParameterF(windowCover, v)
 
     val maskOffset: Option[CaParameter[String]] = cs.map(_.getString("maskOffset"))
-    def setMaskOffset(v: String): SeqAction[Unit] = setParameter(maskOffset, v)
+    def setMaskOffset(v: String): F[Unit] = setParameterF(maskOffset, v)
 
     val imagingMirror: Option[CaParameter[String]] = cs.map(_.getString("imagingMirror"))
-    def setImagingMirror(v: String): SeqAction[Unit] = setParameter(imagingMirror, v)
+    def setImagingMirror(v: String): F[Unit] = setParameterF(imagingMirror, v)
 
     val mask: Option[CaParameter[String]] = cs.map(_.getString("mask"))
-    def setMask(v: String): SeqAction[Unit] = setParameter(mask, v)
+    def setMask(v: String): F[Unit] = setParameterF(mask, v)
 
     val centralWavelength: Option[CaParameter[String]] = cs.map(_.getString("centralWavelength"))
-    def setCentralWavelength(v: String): SeqAction[Unit] = setParameter(centralWavelength, v)
+    def setCentralWavelength(v: String): F[Unit] = setParameterF(centralWavelength, v)
 
   }
 
