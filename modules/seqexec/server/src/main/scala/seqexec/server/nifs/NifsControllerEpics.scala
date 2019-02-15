@@ -98,7 +98,7 @@ trait NifsEncoders {
 object NifsControllerEpics extends NifsController[IO] with NifsEncoders {
   private val Log = getLogger
 
-  private val ConfigTimeout: Time  = Seconds(180)
+  private val ConfigTimeout: Time  = Seconds(400)
   private val DefaultTimeout: Time = Seconds(60)
 
   implicit val ioTimer: Timer[IO] =
