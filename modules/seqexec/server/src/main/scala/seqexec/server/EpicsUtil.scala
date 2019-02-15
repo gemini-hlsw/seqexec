@@ -339,8 +339,14 @@ object EpicsUtil {
   def smartSetParam[A: Eq](v: A, get: => Option[A], set: SeqAction[Unit]): List[SeqAction[Unit]] =
     if(get =!= v.some) List(set) else Nil
 
-  def smartSetParamF[F[_]: Monad, A: Eq](v: A, get: => F[Option[A]], set: F[Unit]): F[Unit] =
-    get.map(_ =!= v.some).ifM(set, Applicative[F].unit)
+  // The return signature indicates this programs calculates if we maybe need an action
+  // e.g. it checks that a value in epics compares to a reference and if so returns an optional
+  // action
+  def smartSetParamF[F[_]: Monad, A: Eq](v: A, get: => F[Option[A]], set: F[Unit]): F[Option[F[Unit]]] =
+    get.map(_ =!= v.some).map {
+      case true => set.some
+      case false => none
+    }
 
   def smartSetDoubleParam(relTolerance: Double)(v: Double, get: => Option[Double], set: SeqAction[Unit]): List[SeqAction[Unit]] =
     if(get.forall(x => (v === 0.0 && x =!= 0.0) || abs((x - v)/v) > relTolerance))
