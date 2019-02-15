@@ -19,9 +19,10 @@ import java.util.{Timer, TimerTask}
 import java.util.concurrent.locks.ReentrantLock
 import java.util.concurrent.TimeUnit.MILLISECONDS
 import edu.gemini.epics.acm._
+import mouse.boolean._
+import org.log4s._
 import seqexec.server.EpicsCommand.safe
 import seqexec.server.SeqexecFailure.SeqexecException
-import org.log4s._
 import squants.Time
 import scala.math.abs
 import scala.collection.JavaConverters._
@@ -338,6 +339,12 @@ object EpicsUtil {
 
   def smartSetParam[A: Eq](v: A, get: => Option[A], set: SeqAction[Unit]): List[SeqAction[Unit]] =
     if(get =!= v.some) List(set) else Nil
+
+  // The return signature indicates this programs calculates if we maybe need an action
+  // e.g. it checks that a value in epics compares to a reference and if so returns an optional
+  // action
+  def smartSetParamF[F[_]: Monad, A: Eq](v: A, get: => F[Option[A]], set: F[Unit]): F[Option[F[Unit]]] =
+    get.map(_ =!= v.some).map(_.option(set))
 
   def smartSetDoubleParam(relTolerance: Double)(v: Double, get: => Option[Double], set: SeqAction[Unit]): List[SeqAction[Unit]] =
     if(get.forall(x => (v === 0.0 && x =!= 0.0) || abs((x - v)/v) > relTolerance))
