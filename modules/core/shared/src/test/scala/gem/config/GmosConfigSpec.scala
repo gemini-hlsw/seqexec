@@ -7,6 +7,7 @@ import gem.arb._
 import gem.enum.GmosNorthDisperser
 import gem.instances.time._
 
+import cats.kernel.laws.discipline._
 import cats.tests.CatsSuite
 import monocle.law.discipline._
 
@@ -20,6 +21,13 @@ final class GmosConfigSpec extends CatsSuite with Arbitraries {
   import ArbWavelength._
 
   // Laws
+
+  checkAll("GmosCcdReadout",          EqTests[GmosCcdReadout].eqv)
+  checkAll("GmosCommonDynamicConfig", EqTests[GmosCommonDynamicConfig].eqv)
+  checkAll("GmosCommonStaticConfig",  EqTests[GmosCommonStaticConfig].eqv)
+  checkAll("GmosCustomMask",          EqTests[GmosCustomMask].eqv)
+  checkAll("GmosCustomRoiEntry",      OrderTests[GmosCustomRoiEntry].order)
+  checkAll("GmosGrating",             EqTests[GmosGrating[GmosNorthDisperser]].eqv)
 
   checkAll("GmosNodAndShuffle.posA",    LensTests(GmosNodAndShuffle.posA))
   checkAll("GmosNodAndShuffle.posB",    LensTests(GmosNodAndShuffle.posB))

@@ -5,6 +5,7 @@ package gem.config
 
 import gem.arb._
 
+import cats.kernel.laws.discipline._
 import cats.tests.CatsSuite
 import monocle.law.discipline._
 import org.scalacheck.Arbitrary._
@@ -16,6 +17,8 @@ final class DynamicConfigSpec extends CatsSuite with Arbitraries {
   import ArbEnumerated._
   import ArbWavelength._
 
+  checkAll("GmosN", EqTests[GmosN].eqv)
+
   checkAll("GmosN.common",  LensTests(GmosN.common ))
   checkAll("GmosN.grating", LensTests(GmosN.grating))
   checkAll("GmosN.filter",  LensTests(GmosN.filter))
@@ -25,6 +28,8 @@ final class DynamicConfigSpec extends CatsSuite with Arbitraries {
   checkAll("GmosN.wavelength", OptionalTests(GmosN.wavelength))
   checkAll("GmosN.builtinFpu", OptionalTests(GmosN.builtinFpu))
   checkAll("GmosN.customMask", OptionalTests(GmosN.customMask))
+
+  checkAll("GmosS", EqTests[GmosS].eqv)
 
   checkAll("GmosS.common",  LensTests(GmosS.common ))
   checkAll("GmosS.grating", LensTests(GmosS.grating))

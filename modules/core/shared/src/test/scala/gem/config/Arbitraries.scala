@@ -164,8 +164,16 @@ trait Arbitraries {
   implicit val arbGmosNStaticConfig: Arbitrary[StaticConfig.GmosN] =
     Arbitrary(genGmosNorthStatic)
 
+  implicit val cogGmosNStaticConfig: Cogen[StaticConfig.GmosN] =
+    Cogen[(GmosCommonStaticConfig, GmosNorthStageMode)]
+      .contramap(g => (g.common, g.stageMode))
+
   implicit val arbGmosSStaticConfig: Arbitrary[StaticConfig.GmosS] =
     Arbitrary(genGmosSouthStatic)
+
+  implicit val cogGmosSStaticConfig: Cogen[StaticConfig.GmosS] =
+    Cogen[(GmosCommonStaticConfig, GmosSouthStageMode)]
+      .contramap(g => (g.common, g.stageMode))
 
   implicit val arbStaticConfig: Arbitrary[StaticConfig] =
     Arbitrary(arbitrary[Instrument].flatMap(genStaticConfigOf))
@@ -321,8 +329,16 @@ trait Arbitraries {
   implicit val arbGmosNDynamicConfig: Arbitrary[DynamicConfig.GmosN] =
     Arbitrary(genGmosNorthDynamic)
 
+  implicit val cogGmosNDynamicConfig: Cogen[DynamicConfig.GmosN] =
+    Cogen[(GmosConfig.GmosCommonDynamicConfig, Option[GmosConfig.GmosGrating[GmosNorthDisperser]], Option[GmosNorthFilter], Option[Either[GmosConfig.GmosCustomMask, GmosNorthFpu]])]
+      .contramap(g => (g.common, g.grating, g.filter, g.fpu))
+
   implicit val arbGmosSDynamicConfig: Arbitrary[DynamicConfig.GmosS] =
     Arbitrary(genGmosSouthDynamic)
+
+  implicit val cogGmosSDynamicConfig: Cogen[DynamicConfig.GmosS] =
+    Cogen[(GmosConfig.GmosCommonDynamicConfig, Option[GmosConfig.GmosGrating[GmosSouthDisperser]], Option[GmosSouthFilter], Option[Either[GmosConfig.GmosCustomMask, GmosSouthFpu]])]
+      .contramap(g => (g.common, g.grating, g.filter, g.fpu))
 
   implicit val arbDynamicConfig: Arbitrary[DynamicConfig] =
     Arbitrary(arbitrary[Instrument].flatMap(genDynamicConfigOf))

@@ -310,7 +310,7 @@ object GmosConfig {
       )
 
     implicit val EqualGmosCcdReadout: Eq[GmosCcdReadout] =
-      Eq.by(c => (c.xBinning, c.yBinning, c.ampCount, c.ampReadMode))
+      Eq.by(c => (c.xBinning, c.yBinning, c.ampCount, c.ampGain, c.ampReadMode))
 
   }
 
