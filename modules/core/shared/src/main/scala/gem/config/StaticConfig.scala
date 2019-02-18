@@ -5,7 +5,8 @@ package gem
 package config
 
 import cats.Eq
-import gem.enum.{GmosNorthStageMode, GmosSouthStageMode, GnirsWellDepth, MosPreImaging}
+import cats.implicits._
+import gem.enum._
 import monocle.Lens
 import monocle.macros.Lenses
 
@@ -41,7 +42,7 @@ object StaticConfig {
 
   import GmosConfig._
 
-  @Lenses final case class GmosN(
+  final case class GmosN(
     common:    GmosCommonStaticConfig,
     stageMode: GmosNorthStageMode
   ) extends StaticConfig
@@ -55,39 +56,64 @@ object StaticConfig {
         GmosNorthStageMode.FollowXy
       )
 
+    implicit val EqualGmosN: Eq[GmosN] =
+      Eq.by(g => (g.common, g.stageMode))
+
   }
 
   trait GmosNorthLenses { this: GmosN.type =>
 
-    lazy val customRois: Lens[GmosN, Set[GmosCustomRoiEntry]] =
-      common ^|-> GmosCommonStaticConfig.customRois
+    /** @group Optics */
+    val common: Lens[GmosN, GmosCommonStaticConfig] =
+      Lens[GmosN, GmosCommonStaticConfig](_.common)(a => _.copy(common = a))
 
-    lazy val nodAndShuffle: Lens[GmosN, Option[GmosNodAndShuffle]] =
-      common ^|-> GmosCommonStaticConfig.nodAndShuffle
+    /** @group Optics */
+    val stageMode: Lens[GmosN, GmosNorthStageMode] =
+      Lens[GmosN, GmosNorthStageMode](_.stageMode)(a => _.copy(stageMode = a))
+
+    /** @group Optics */
+    val customRois: Lens[GmosN, Set[GmosCustomRoiEntry]] =
+      common composeLens GmosCommonStaticConfig.customRois
+
+    /** @group Optics */
+    val nodAndShuffle: Lens[GmosN, Option[GmosNodAndShuffle]] =
+      common composeLens GmosCommonStaticConfig.nodAndShuffle
 
   }
 
-  @Lenses final case class GmosS(
+  final case class GmosS(
     common:    GmosCommonStaticConfig,
     stageMode: GmosSouthStageMode
   ) extends StaticConfig
 
   @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object GmosS extends GmosSouthLenses {
+
     val Default: GmosS =
       GmosS(
         GmosCommonStaticConfig.Default,
         GmosSouthStageMode.FollowXyz
       )
+
+    implicit val EqualGmosS: Eq[GmosS] =
+      Eq.by(g => (g.common, g.stageMode))
   }
 
   trait GmosSouthLenses { this: GmosS.type =>
 
+    /** @group Optics */
+    val common: Lens[GmosS, GmosCommonStaticConfig] =
+      Lens[GmosS, GmosCommonStaticConfig](_.common)(a => _.copy(common = a))
+
+    /** @group Optics */
+    val stageMode: Lens[GmosS, GmosSouthStageMode] =
+      Lens[GmosS, GmosSouthStageMode](_.stageMode)(a => _.copy(stageMode = a))
+
     lazy val customRois: Lens[GmosS, Set[GmosCustomRoiEntry]] =
-      common ^|-> GmosCommonStaticConfig.customRois
+      common composeLens GmosCommonStaticConfig.customRois
 
     lazy val nodAndShuffle: Lens[GmosS, Option[GmosNodAndShuffle]] =
-      common ^|-> GmosCommonStaticConfig.nodAndShuffle
+      common composeLens GmosCommonStaticConfig.nodAndShuffle
   }
 
   @Lenses final case class Gnirs(

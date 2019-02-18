@@ -4,11 +4,17 @@
 package gem
 package config
 
-import cats.Eq
 import gem.CoAdds
 import gem.enum._
 import gem.math.Wavelength
+
+import cats.Eq
+import cats.implicits._
 import java.time.Duration
+
+import monocle._
+import monocle.std.either.{ stdLeft, stdRight }
+import monocle.std.option.some
 
 /**
  * Instrument configuration that is specified for each [[gem.Step Step]].
@@ -202,9 +208,57 @@ object DynamicConfig {
       )
 
   }
-  object GmosN {
+
+  object GmosN extends GmosNOptics {
+
     val Default: GmosN =
       GmosN(GmosConfig.GmosCommonDynamicConfig.Default, None, None, None)
+
+    implicit val EqualGmosN: Eq[GmosN] =
+      Eq.by(g => (g.common, g.grating, g.filter, g.fpu))
+
+  }
+
+  trait GmosNOptics {
+
+    /** @group Optics */
+    val common: Lens[GmosN, GmosConfig.GmosCommonDynamicConfig] =
+      Lens[GmosN, GmosConfig.GmosCommonDynamicConfig](_.common)(a => _.copy(common = a))
+
+    /** @group Optics */
+    val grating: Lens[GmosN, Option[GmosConfig.GmosGrating[GmosNorthDisperser]]] =
+      Lens[GmosN, Option[GmosConfig.GmosGrating[GmosNorthDisperser]]](_.grating)(a => _.copy(grating = a))
+
+    /** @group Optics */
+    val filter: Lens[GmosN, Option[GmosNorthFilter]] =
+      Lens[GmosN, Option[GmosNorthFilter]](_.filter)(a => _.copy(filter = a))
+
+    /** @group Optics */
+    val fpu: Lens[GmosN, Option[Either[GmosConfig.GmosCustomMask, GmosNorthFpu]]] =
+      Lens[GmosN, Option[Either[GmosConfig.GmosCustomMask, GmosNorthFpu]]](_.fpu)(a => _.copy(fpu = a))
+
+    private val someGrating: Optional[GmosN, GmosConfig.GmosGrating[GmosNorthDisperser]] =
+      grating composePrism some
+
+    /** @group Optics */
+    val disperser: Optional[GmosN, GmosNorthDisperser] =
+      someGrating composeLens GmosConfig.GmosGrating.disperser[GmosNorthDisperser]
+
+    /** @group Optics */
+    val wavelength: Optional[GmosN, Wavelength] =
+      someGrating composeLens GmosConfig.GmosGrating.wavelength
+
+    private val someFpu: Optional[GmosN, Either[GmosConfig.GmosCustomMask, GmosNorthFpu]] =
+      fpu composePrism some
+
+    /** @group Optics */
+    val builtinFpu: Optional[GmosN, GmosNorthFpu] =
+      someFpu composePrism stdRight
+
+    /** @group Optics */
+    val customMask: Optional[GmosN, GmosConfig.GmosCustomMask] =
+      someFpu composePrism stdLeft
+
   }
 
   /**
@@ -235,10 +289,59 @@ object DynamicConfig {
         grating.map(_.wavelength)
       )
   }
-  object GmosS {
+
+  object GmosS extends GmosSOptics {
+
     val Default: GmosS =
       GmosS(GmosConfig.GmosCommonDynamicConfig.Default, None, None, None)
+
+    implicit val EqualGmosS: Eq[GmosS] =
+      Eq.by(g => (g.common, g.grating, g.filter, g.fpu))
+
   }
+
+  trait GmosSOptics {
+
+    /** @group Optics */
+    val common: Lens[GmosS, GmosConfig.GmosCommonDynamicConfig] =
+      Lens[GmosS, GmosConfig.GmosCommonDynamicConfig](_.common)(a => _.copy(common = a))
+
+    /** @group Optics */
+    val grating: Lens[GmosS, Option[GmosConfig.GmosGrating[GmosSouthDisperser]]] =
+      Lens[GmosS, Option[GmosConfig.GmosGrating[GmosSouthDisperser]]](_.grating)(a => _.copy(grating = a))
+
+    /** @group Optics */
+    val filter: Lens[GmosS, Option[GmosSouthFilter]] =
+      Lens[GmosS, Option[GmosSouthFilter]](_.filter)(a => _.copy(filter = a))
+
+    /** @group Optics */
+    val fpu: Lens[GmosS, Option[Either[GmosConfig.GmosCustomMask, GmosSouthFpu]]] =
+      Lens[GmosS, Option[Either[GmosConfig.GmosCustomMask, GmosSouthFpu]]](_.fpu)(a => _.copy(fpu = a))
+
+    private val someGrating: Optional[GmosS, GmosConfig.GmosGrating[GmosSouthDisperser]] =
+      grating composePrism some
+
+    /** @group Optics */
+    val disperser: Optional[GmosS, GmosSouthDisperser] =
+      someGrating composeLens GmosConfig.GmosGrating.disperser[GmosSouthDisperser]
+
+    /** @group Optics */
+    val wavelength: Optional[GmosS, Wavelength] =
+      someGrating composeLens GmosConfig.GmosGrating.wavelength
+
+    private val someFpu: Optional[GmosS, Either[GmosConfig.GmosCustomMask, GmosSouthFpu]] =
+      fpu composePrism some
+
+    /** @group Optics */
+    val builtinFpu: Optional[GmosS, GmosSouthFpu] =
+      someFpu composePrism stdRight
+
+    /** @group Optics */
+    val customMask: Optional[GmosS, GmosConfig.GmosCustomMask] =
+      someFpu composePrism stdLeft
+
+  }
+
 
   /**
    * Dynamic configuration for GNIRS.
