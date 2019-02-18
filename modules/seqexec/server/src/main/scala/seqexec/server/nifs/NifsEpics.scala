@@ -7,6 +7,8 @@ import cats.effect.IO
 import cats.effect.Sync
 import edu.gemini.epics.acm._
 import edu.gemini.seqexec.server.nifs.DhsConnected
+import edu.gemini.seqexec.server.nifs.ReadMode
+import edu.gemini.seqexec.server.nifs.TimeMode
 import java.lang.{Double => JDouble}
 import org.log4s.{Logger, getLogger}
 import seqexec.server.ObserveCommand
@@ -64,8 +66,10 @@ class NifsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, String]) 
     private val period: Option[CaParameter[JDouble]] = cs.map(_.getDouble("period"))
     def setPeriod(v: Double): F[Unit] = setParameterF(period, JDouble.valueOf(v))
 
-    private val readMode: Option[CaParameter[Integer]] = cs.map(_.getInteger("readMode"))
-    def setReadMode(v: Int): F[Unit] = setParameterF(readMode, Integer.valueOf(v))
+    private val readMode: Option[CaParameter[ReadMode]] = cs.map(c =>
+      c.addEnum[ReadMode]("readMode", s"${NifsTop}dc:obs_readMode", classOf[ReadMode], false)
+    )
+    def setReadMode(v: ReadMode): F[Unit] = setParameterF(readMode, v)
 
     private val numberOfResets: Option[CaParameter[Integer]] = cs.map(_.getInteger("numberOfResets"))
     def setnumberOfResets(v: Int): F[Unit] =
@@ -75,15 +79,17 @@ class NifsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, String]) 
     def setnumberOfPeriods(v: Int): F[Unit] =
       setParameterF(numberOfPeriods, Integer.valueOf(v))
 
-    private val timeMode: Option[CaParameter[Integer]] = cs.map(_.getInteger("timeMode"))
-    def setTimeMode(v: Int): F[Unit] =
-      setParameterF(timeMode, Integer.valueOf(v))
+    private val timeMode: Option[CaParameter[TimeMode]] = cs.map(c =>
+      c.addEnum[TimeMode]("timeMode", s"${NifsTop}dc:obs_timeMode", classOf[TimeMode], false)
+    )
+    def setTimeMode(v: TimeMode): F[Unit] =
+      setParameterF(timeMode, v)
   }
 
   private val stopCS: Option[CaCommandSender] = Option(epicsService.getCommandSender("nifs::stop"))
   private val observeAS: Option[CaApplySender] = Option(epicsService.createObserveSender(
     "nifs::observeCmd", s"${NifsTop}dc:nifsApply", s"${NifsTop}dc:applyC", s"${NifsTop}dc:observeC",
-    true, s"${NifsTop}dc:stop", s"${NifsTop}dc:abort", ""))
+    false, s"${NifsTop}dc:stop", s"${NifsTop}dc:abort", ""))
 
   object stopCmd extends EpicsCommandF {
     override protected val cs: Option[CaCommandSender] = stopCS

@@ -15,6 +15,8 @@ import edu.gemini.spModel.gemini.nifs.NIFSParams.{ Filter => LegacyFilter }
 import edu.gemini.spModel.gemini.nifs.NIFSParams.{ Disperser => LegacyDisperser }
 import edu.gemini.spModel.gemini.nifs.NIFSParams.{ Mask => LegacyMask }
 import edu.gemini.seqexec.server.nifs.DhsConnected
+import edu.gemini.seqexec.server.nifs.{ ReadMode => EReadMode }
+import edu.gemini.seqexec.server.nifs.{ TimeMode => ETimeMode }
 import mouse.boolean._
 import org.log4s.getLogger
 import scala.concurrent.ExecutionContext
@@ -35,15 +37,15 @@ import squants.time.TimeConversions._
 
 object NifsLookupTables {
 
-  val readModeLUT: Map[LegacyReadMode, Int] = Map(
-    LegacyReadMode.BRIGHT_OBJECT_SPEC -> 1,
-    LegacyReadMode.MEDIUM_OBJECT_SPEC -> 1,
-    LegacyReadMode.FAINT_OBJECT_SPEC -> 1
+  val readModeLUT: Map[LegacyReadMode, EReadMode] = Map(
+    LegacyReadMode.BRIGHT_OBJECT_SPEC -> EReadMode.FOWLER,
+    LegacyReadMode.MEDIUM_OBJECT_SPEC -> EReadMode.FOWLER,
+    LegacyReadMode.FAINT_OBJECT_SPEC  -> EReadMode.FOWLER
   )
 
-  val engineeringReadModeLUT: Map[LegacyEngReadMode, Int] = Map(
-    LegacyEngReadMode.FOWLER_SAMPLING_READOUT -> 1,
-    LegacyEngReadMode.LINEAR_READ -> 2
+  val engineeringReadModeLUT: Map[LegacyEngReadMode, EReadMode] = Map(
+    LegacyEngReadMode.FOWLER_SAMPLING_READOUT -> EReadMode.FOWLER,
+    LegacyEngReadMode.LINEAR_READ             -> EReadMode.LINEAR
   )
 }
 
@@ -82,8 +84,8 @@ trait NifsEncoders {
   implicit val disperserEncoder: EncodeEpicsValue[LegacyDisperser, String] =
     EncodeEpicsValue {
       case LegacyDisperser.Z       => "Z"
-      case LegacyDisperser.J       => "H"
-      case LegacyDisperser.H       => "J"
+      case LegacyDisperser.J       => "J"
+      case LegacyDisperser.H       => "H"
       case LegacyDisperser.K       => "K"
       case LegacyDisperser.K_SHORT => "K_Short"
       case LegacyDisperser.K_LONG  => "K_Long"
@@ -169,13 +171,13 @@ object NifsControllerEpics extends NifsController[IO] with NifsEncoders {
     (for {
       p <- OptionT(period.pure[IO])
       _ <- OptionT.liftF(epicsSys.dcConfigCmd.setPeriod(p.toDouble))
-      _ <- OptionT.liftF(epicsSys.dcConfigCmd.setTimeMode(0))
+      _ <- OptionT.liftF(epicsSys.dcConfigCmd.setTimeMode(ETimeMode.ExposureTime))
     } yield ()).value.void
 
   private def setExposureTime(expTime: ExposureTime): IO[Unit] =
     epicsSys.dcConfigCmd.setExposureTime(expTime.toSeconds) *>
       epicsSys.dcConfigCmd.setPeriod(1) *>
-      epicsSys.dcConfigCmd.setTimeMode(1)
+      epicsSys.dcConfigCmd.setTimeMode(ETimeMode.ReadPeriod)
 
   private def configDC(cfg: DCConfig): IO[Unit] =
     setReadMode(cfg.readMode) *>
