@@ -12,6 +12,8 @@ import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.gemini.nifs.InstNIFS._
 import edu.gemini.spModel.gemini.nifs.InstEngNifs._
 import edu.gemini.spModel.obscomp.InstConstants.DARK_OBSERVE_TYPE
+import edu.gemini.spModel.obscomp.InstConstants.ARC_OBSERVE_TYPE
+import edu.gemini.spModel.obscomp.InstConstants.FLAT_OBSERVE_TYPE
 import edu.gemini.spModel.obscomp.InstConstants.OBSERVE_TYPE_PROP
 import edu.gemini.spModel.seqcomp.SeqConfigNames.OBSERVE_KEY
 import gem.enum.LightSinkName
@@ -224,8 +226,14 @@ object Nifs {
       nrPeriods <- extractNrPeriods(config)
       readMode  <- extractReadMode(config)
       samples   <- extractNrSamples(config)
+      obsType   <- extractObsType(config)
     } yield
-      DCConfig(coadds, period, expTime, nrResets, nrPeriods, samples, readMode)
+      obsType match {
+        case ARC_OBSERVE_TYPE | FLAT_OBSERVE_TYPE =>
+          ArcFlatDCConfig(coadds, period, expTime, nrResets, nrPeriods, samples)
+        case _ =>
+          StdDCConfig(coadds, period, expTime, nrResets, nrPeriods, samples, readMode)
+      }
 
   def fromSequenceConfig(config: Config): TrySeq[NifsConfig] =
     for {
