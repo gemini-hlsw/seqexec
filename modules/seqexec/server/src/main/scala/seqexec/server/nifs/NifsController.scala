@@ -75,13 +75,17 @@ object NifsController {
                             numberOfSamples: Option[NumberOfSamples],
                             readMode:        Either[EngReadMode, ReadMode])
 
-  final case class CCConfig(filter:        Filter,
-                            mask:          Mask,
-                            disperser:     Disperser,
-                            imagingMirror: ImagingMirror,
-                            wavelength:    CentralWavelength,
-                            maskOffset:    MaskOffset,
-                            windowCover:   WindowCover)
+  sealed trait CCConfig extends Product with Serializable
+
+  case object DarkCCConfig extends CCConfig
+  final case class StdCCConfig(filter:        Filter,
+                               mask:          Mask,
+                               disperser:     Disperser,
+                               imagingMirror: ImagingMirror,
+                               wavelength:    CentralWavelength,
+                               maskOffset:    MaskOffset,
+                               windowCover:   WindowCover)
+      extends CCConfig
 
   final case class NifsConfig(cc: CCConfig, dc: DCConfig)
 

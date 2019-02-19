@@ -87,6 +87,7 @@ class NifsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, String]) 
   }
 
   private val stopCS: Option[CaCommandSender] = Option(epicsService.getCommandSender("nifs::stop"))
+
   private val observeAS: Option[CaApplySender] = Option(epicsService.createObserveSender(
     "nifs::observeCmd", s"${NifsTop}dc:nifsApply", s"${NifsTop}dc:applyC", s"${NifsTop}dc:observeC",
     false, s"${NifsTop}dc:stop", s"${NifsTop}dc:abort", ""))

@@ -127,7 +127,7 @@ object Nifs {
       case _                 => WindowCover.Opened
     }
 
-  private def getCCConfig(config: Config): Either[ExtractFailure, CCConfig] =
+  private def otherCCConfig(config: Config): Either[ExtractFailure, CCConfig] =
     for {
       filter    <- config.extractInstAs[Filter](FILTER_PROP)
       mask      <- config.extractInstAs[Mask](MASK_PROP)
@@ -136,7 +136,13 @@ object Nifs {
       cw        <- centralWavelength(config)
       mo        <- maskOffset(config)
       wc        <- extractObsType(config).map(windowCoverFromObserveType)
-    } yield CCConfig(filter, mask, disperser, imMirror, cw, mo, wc)
+    } yield StdCCConfig(filter, mask, disperser, imMirror, cw, mo, wc)
+
+  private def getCCConfig(config: Config): Either[ExtractFailure, CCConfig] =
+    extractObsType(config).flatMap {
+      case DARK_OBSERVE_TYPE => DarkCCConfig.asRight
+      case _                 => otherCCConfig(config)
+    }
 
   private def extractExposureTime(
     config: Config
