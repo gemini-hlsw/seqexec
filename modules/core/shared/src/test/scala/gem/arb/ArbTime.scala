@@ -13,7 +13,6 @@ import org.scalacheck.Arbitrary._
 import scala.collection.JavaConverters._
 import scala.concurrent.duration.{Duration => SDuration}
 import java.time._
-import java.time.temporal.ChronoUnit
 
 // Arbitrary but resonable dates and times.
 trait ArbTime {
@@ -78,12 +77,7 @@ trait ArbTime {
     }
 
   implicit val arbDuration: Arbitrary[Duration] =
-    Arbitrary {
-      for {
-        a <- Gen.choose(-10000L, 10000L)
-        u <- Gen.oneOf(ChronoUnit.values.filterNot(_.isDurationEstimated))
-      } yield Duration.of(a, u)
-    }
+    Arbitrary(Gen.posNum[Long].map(Duration.ofMillis))
 
   implicit val arbSDuration: Arbitrary[SDuration] = Arbitrary {
     for {
@@ -99,6 +93,9 @@ trait ArbTime {
 
   implicit val cogLocalDate: Cogen[LocalDate] =
     Cogen[(Int, Int)].contramap(d => (d.getYear, d.getDayOfYear))
+
+  implicit val cogDuration: Cogen[Duration] =
+    Cogen[(Long,Int)].contramap(d => (d.getSeconds, d.getNano))
 
   implicit val cogTimestamp: Cogen[Timestamp] =
     Cogen[Instant].contramap(_.toInstant)
