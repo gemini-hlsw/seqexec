@@ -9,9 +9,7 @@ import gem.config.{ GcalConfig, TelescopeConfig }
 import gem.enum.{Instrument, SmartGcalType}
 import gem.math.{ Index, Offset }
 import gem.syntax.all._
-import gem.util.Location
 import org.scalacheck._
-import org.scalacheck.Gen._
 import org.scalacheck.Arbitrary._
 
 import scala.collection.immutable.TreeMap
@@ -20,26 +18,6 @@ trait Arbitraries extends gem.config.Arbitraries {
   import ArbGcalConfig._
   import ArbEnumerated._
   import ArbTargetEnvironment._
-
-  implicit val arbLocationMiddle: Arbitrary[Location.Middle] =
-    Arbitrary {
-      for {
-        i  <- choose(Int.MinValue + 1, Int.MaxValue)
-        is <- arbitrary[List[Int]]
-      } yield Location.unsafeMiddleFromFoldable(i +: is)
-    }
-
-  implicit val arbLocation: Arbitrary[Location] =
-    Arbitrary {
-      Gen.frequency[Location](
-        (1, Location.Beginning),
-        (8, arbitrary[Location.Middle]),
-        (1, Location.End)
-      )
-    }
-
-  implicit val cogLocation: Cogen[Location] =
-    Cogen[String].contramap(_.toString)
 
   // Generator of valid observation/program titles.  The schema doesn't support
   // titles longer than 255 characters and postgres doesn't want to see char 0.
