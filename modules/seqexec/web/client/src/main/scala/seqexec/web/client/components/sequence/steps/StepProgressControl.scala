@@ -194,6 +194,9 @@ object StepProgressCell {
       case (_, StandardStep(i, _, StepState.Pending, _, _, _, _, _))
           if props.stepSelected(i) =>
         stepSubsystemControl(props)
+      case (_, StandardStep(i, _, StepState.Paused, _, _, _, _, _))
+          if props.stepSelected(i) =>
+        stepSubsystemControl(props)
       case _ =>
         <.p(SeqexecStyles.componentLabel, props.step.show)
     }
