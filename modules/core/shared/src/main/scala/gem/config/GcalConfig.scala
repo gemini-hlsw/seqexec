@@ -4,20 +4,26 @@
 package gem
 package config
 
+import gem.CoAdds
+import gem.enum.{GcalArc, GcalContinuum, GcalDiffuser, GcalFilter, GcalShutter}
+import gem.instances.time._
+
+import GcalConfig.{ GcalArcs, GcalLamp }
+
 import cats.Eq
 import cats.data.NonEmptySet
 import cats.implicits._
-import gem.CoAdds
-import gem.enum.{GcalArc, GcalContinuum, GcalDiffuser, GcalFilter, GcalShutter}
 import java.time.Duration
+import monocle._
+import monocle.std.either.{ stdLeft, stdRight }
 import scala.collection.immutable.SortedSet
-import GcalConfig.GcalLamp
 
 /**
  * Additional configuration information for [[gem.Step.Gcal Gcal]] steps.
  * @group Configurations
  */
 final case class GcalConfig(lamp: GcalLamp, filter: GcalFilter, diffuser: GcalDiffuser, shutter: GcalShutter, exposureTime: Duration, coadds: CoAdds) {
+
   def continuum: Option[GcalContinuum] =
     lamp.swap.toOption
 
@@ -25,7 +31,7 @@ final case class GcalConfig(lamp: GcalLamp, filter: GcalFilter, diffuser: GcalDi
     lamp.fold(_ => Set.empty[GcalArc], _.toSet)
 }
 
-object GcalConfig {
+object GcalConfig extends GcalConfigOptics {
 
   final case class GcalArcs(arcs: NonEmptySet[GcalArc]) {
     def toList: List[GcalArc] =
@@ -35,9 +41,21 @@ object GcalConfig {
       arcs.toSortedSet
   }
 
-  object GcalArcs {
+  object GcalArcs extends GcalArcsOptics {
+
     def of(arc0: GcalArc, arcs: GcalArc*): GcalArcs =
       GcalArcs(NonEmptySet.of(arc0, arcs: _*))
+
+    implicit val EqGcalArcs: Eq[GcalArcs] =
+      Eq.by(_.arcs)
+  }
+
+  trait GcalArcsOptics {
+
+    /** @group Optics */
+    val arcs: Lens[GcalArcs, NonEmptySet[GcalArc]] =
+      Lens[GcalArcs, NonEmptySet[GcalArc]](_.arcs)(a => _.copy(arcs = a))
+
   }
 
   type GcalLamp = Either[GcalContinuum, GcalArcs]
@@ -72,6 +90,42 @@ object GcalConfig {
   }
 
   implicit val GcalConfigEq: Eq[GcalConfig] =
-    Eq.fromUniversalEquals // TODO: double-check
+    Eq.by(g => (g.lamp, g.filter, g.diffuser, g.shutter, g.exposureTime, g.coadds))
+
+}
+
+trait GcalConfigOptics {
+
+  /** @group Optics */
+  val lamp: Lens[GcalConfig, GcalLamp] =
+    Lens[GcalConfig, GcalLamp](_.lamp)(a => _.copy(lamp = a))
+
+  /** @group Optics */
+  val filter: Lens[GcalConfig, GcalFilter] =
+    Lens[GcalConfig, GcalFilter](_.filter)(a => _.copy(filter = a))
+
+  /** @group Optics */
+  val diffuser: Lens[GcalConfig, GcalDiffuser] =
+    Lens[GcalConfig, GcalDiffuser](_.diffuser)(a => _.copy(diffuser = a))
+
+  /** @group Optics */
+  val shutter: Lens[GcalConfig, GcalShutter] =
+    Lens[GcalConfig, GcalShutter](_.shutter)(a => _.copy(shutter = a))
+
+  /** @group Optics */
+  val exposureTime: Lens[GcalConfig, Duration] =
+    Lens[GcalConfig, Duration](_.exposureTime)(a => _.copy(exposureTime = a))
+
+  /** @group Optics */
+  val coadds: Lens[GcalConfig, CoAdds] =
+    Lens[GcalConfig, CoAdds](_.coadds)(a => _.copy(coadds = a))
+
+  /** @group Optics */
+  val continuum: Optional[GcalConfig, GcalContinuum] =
+    lamp composePrism stdLeft
+
+  /** @group Optics */
+  val arcs: Optional[GcalConfig, NonEmptySet[GcalArc]] =
+    lamp composePrism stdRight composeLens GcalArcs.arcs
 
 }

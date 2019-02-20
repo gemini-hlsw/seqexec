@@ -8,7 +8,6 @@ import cats._
 import gem.CoAdds
 import gem.arb._
 import gem.config.F2Config.F2FpuChoice
-import gem.config.GcalConfig.{GcalArcs, GcalLamp}
 import gem.config.GmosConfig._
 import gem.enum._
 import gem.enum.Instrument._
@@ -22,6 +21,7 @@ import java.time.Duration
 
 trait Arbitraries {
 
+  import ArbCoAdds._
   import ArbEnumerated._
   import ArbOffset._
   import ArbTime._
@@ -44,9 +44,6 @@ trait Arbitraries {
     def pure[A](a: A): Gen[A] =
       Gen.const(a)
   }
-
-  implicit val arbCoAdds: Arbitrary[CoAdds] =
-    Arbitrary(Gen.posNum[Short].map(CoAdds.fromShort.unsafeGet))
 
   implicit val arbMosPreImaging: Arbitrary[MosPreImaging] =
     Arbitrary(
@@ -343,31 +340,4 @@ trait Arbitraries {
   implicit val arbDynamicConfig: Arbitrary[DynamicConfig] =
     Arbitrary(arbitrary[Instrument].flatMap(genDynamicConfigOf))
 
-  // GcalConfig
-
-  implicit val arbGcalArcs: Arbitrary[GcalArcs] =
-    Arbitrary {
-      for {
-        a  <- arbitrary[GcalArc]
-        as <- Gen.someOf(GcalArc.all)
-      } yield GcalArcs.of(a, as.toList: _*)
-    }
-
-  implicit val arbGcalLamp: Arbitrary[GcalLamp] =
-    Arbitrary(Gen.oneOf(
-      arbitrary[GcalContinuum].map(Left(_)),
-      arbitrary[GcalArcs     ].map(Right(_))
-    ))
-
-  implicit val arbGcalConfig: Arbitrary[GcalConfig] =
-    Arbitrary {
-      for {
-        l <- arbitrary[GcalLamp    ]
-        f <- arbitrary[GcalFilter  ]
-        d <- arbitrary[GcalDiffuser]
-        s <- arbitrary[GcalShutter ]
-        e <- arbitrary[Duration    ]
-        c <- arbitrary[CoAdds      ]
-      } yield GcalConfig(l, f, d, s, e, c)
-    }
 }
