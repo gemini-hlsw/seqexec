@@ -117,7 +117,7 @@ class NifsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, String]) 
       epicsService.getCommandSender("nifs::observe"))
     override protected val os: Option[CaApplySender] = observeAS
 
-    val label: Option[CaParameter[String]] = cs.map(_.getString("label"))
+    private val label: Option[CaParameter[String]] = cs.map(_.getString("label"))
     def setLabel(v: String): F[Unit] = setParameterF(label, v)
   }
 
@@ -158,9 +158,11 @@ class NifsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, String]) 
   def timeMode: F[Option[String]] =
     safeAttribute(dcStatus.getStringAttribute("timeMode"))
 
-  val dhsConnectedAttr: F[CaAttribute[DhsConnected]] = Sync[F].delay {
+  private val dhsConnectedAttr: CaAttribute[DhsConnected] =
     dcStatus.addEnum[DhsConnected]("dhsConnected", s"${NifsTop}sad:dc:dhsConnO", classOf[DhsConnected])
-  }
+
+  def dhsConnected: F[Option[DhsConnected]] =
+    safeAttribute(dhsConnectedAttr)
 
   def dcName: F[Option[String]] =
     safeAttribute(dcStatus.getStringAttribute("name"))

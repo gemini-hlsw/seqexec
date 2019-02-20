@@ -186,7 +186,9 @@ object NifsControllerEpics extends NifsController[IO] with NifsEncoders {
       setExposureTime(cfg.exposureTime).whenA(cfg.period.isEmpty) *>
       setCoadds(cfg.coadds) *>
       setNumberOfResets(cfg.numberOfResets) *>
-      setNumberOfPeriods(cfg.numberOfPeriods)
+      setNumberOfPeriods(cfg.numberOfPeriods) *>
+      epicsSys.dcConfigCmd.setTimeout[IO](ConfigTimeout) *>
+        epicsSys.dcConfigCmd.post[IO].void
 
   private def setFilter(cfg: CCConfig): IO[Option[IO[Unit]]] = {
     val actualFilter: IO[LegacyFilter] = cfg match {
@@ -229,15 +231,18 @@ object NifsControllerEpics extends NifsController[IO] with NifsEncoders {
                        epicsSys.ccConfigCmd.setImagingMirror(im))
     }
 
-  private def setWindowCover(cfg: CCConfig): IO[Option[IO[Unit]]] =
-    cfg match {
-      case DarkCCConfig     => none.pure[IO]
+  private def setWindowCover(cfg: CCConfig): IO[Option[IO[Unit]]] = {
+    val wcPosition = cfg match {
+      case DarkCCConfig     =>
+        WindowCover.Closed
       case cfg: StdCCConfig =>
-        val wc = encode(cfg.windowCover)
-        smartSetParamF(wc,
-                       epicsSys.windowCover,
-                       epicsSys.ccConfigCmd.setWindowCover(wc))
+        cfg.windowCover
     }
+    val wc = encode(wcPosition)
+    smartSetParamF(wc,
+                   epicsSys.windowCover,
+                   epicsSys.ccConfigCmd.setWindowCover(wc))
+  }
 
   private def setDisperser(cfg: CCConfig): IO[Option[IO[Unit]]] =
     cfg match {
@@ -364,7 +369,8 @@ object NifsControllerEpics extends NifsController[IO] with NifsEncoders {
   override def observe(fileId: ImageFileId,
                        cfg:    DCConfig): IO[ObserveCommand.Result] = {
     val checkDhs =
-      failUnlessM(epicsSys.dhsConnectedAttr.map(_.value() === DhsConnected.Yes),
+      failUnlessM(
+        epicsSys.dhsConnected.map(_.exists(_ === DhsConnected.Yes)),
                   SeqexecFailure.Execution("NIFS is not connected to DHS"))
 
     IO(Log.info("Start NIFS observe")) *>
