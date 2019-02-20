@@ -230,7 +230,8 @@ final class CaStatusAcceptorImpl implements CaStatusAcceptor {
                 || floatAttributes.containsKey(name)
                 || integerAttributes.containsKey(name)
                 || shortAttributes.containsKey(name)
-                || stringAttributes.containsKey(name);
+                || stringAttributes.containsKey(name)
+                || enumAttributes.containsKey(name);
     }
 
     @Override

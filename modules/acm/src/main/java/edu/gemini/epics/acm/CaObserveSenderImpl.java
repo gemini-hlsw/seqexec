@@ -55,6 +55,7 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
     private ChannelListener<Short> abortMarkListener;
     private ChannelListener<Short> stopMarkListener;
     private CaObserveSenderImpl.State currentState;
+
     private static final CaObserveSenderImpl.State IdleState = new CaObserveSenderImpl.State() {
         @Override
         public String signature() { return "IdleState"; }
@@ -90,7 +91,6 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
             return this;
         }
 
-
     };
 
     public CaObserveSenderImpl(String name, String applyRecord, String carRecord, String observeCarRecord,
@@ -104,6 +104,7 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
         epicsReader = new EpicsReaderImpl(epicsService);
 
         apply = new CaApplyRecord(applyRecord, epicsService);
+        // apply.VAL int > 0
         apply.registerValListener(valListener = (String arg0, List<Integer> newVals) -> {
             if (newVals != null && !newVals.isEmpty()) {
                 CaObserveSenderImpl.this.onApplyValChange(newVals.get(0));
@@ -111,11 +112,13 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
         });
 
         car = new CaCarRecord<C>(carRecord, carClass, epicsService);
+        // applyC.CLID int > 0
         car.registerClidListener(carClidListener = (String arg0, List<Integer> newVals) -> {
             if (newVals != null && !newVals.isEmpty()) {
                 CaObserveSenderImpl.this.onCarClidChange(newVals.get(0));
             }
         });
+        // applyC.VAL BUSY/IDLE
         car.registerValListener(carValListener = (String arg0, List<C> newVals) -> {
             if (newVals != null && !newVals.isEmpty()) {
                 CaObserveSenderImpl.this.onCarValChange(newVals.get(0));
@@ -123,6 +126,7 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
         });
 
         observeCar = new CaCarRecord<C>(observeCarRecord, carClass, epicsService);
+        // observeC.VAL BUSY/IDLE/PAUSED
         observeCar.registerValListener(observeCarValListener = (String arg0, List<C> newVals) -> {
             if (newVals != null && !newVals.isEmpty()) {
                 CaObserveSenderImpl.this.onObserveCarValChange(newVals.get(0));
@@ -318,8 +322,9 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
                     } else if (carState.isBusy()) {
                         return new CaObserveSenderImpl.WaitCompletion(cm, val, observeCarState);
                     }
+                } else {
+                    return new CaObserveSenderImpl.WaitStart(cm, val, carState, carClid, observeCarState);
                 }
-                return new CaObserveSenderImpl.WaitStart(cm, val, carState, carClid, observeCarState);
             } else {
                 failCommandWithApplyError(cm);
                 return IdleState;
@@ -433,8 +438,9 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
                 if (carState.isBusy()) {
                     return new CaObserveSenderImpl.WaitCompletion(cm, clid, observeCarState);
                 }
+            } else {
+                return new CaObserveSenderImpl.WaitStart(cm, clid, carState, carClid, observeCarState);
             }
-            return new CaObserveSenderImpl.WaitStart(cm, clid, carState, carClid, observeCarState);
         }
 
     }
@@ -469,18 +475,18 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
 
         @Override
         public State onCarValChange(CarStateGeneric val) {
-            if(val.isIdle()) {
-                if(observeCarState == null || observeCarState.isIdle()) {
+            if (val.isIdle()) {
+                if (observeCarState == null || observeCarState.isIdle()) {
                     return new WaitObserveStart(cm);
                 }
-                else if(observeCarState.isBusy()) {
+                else if (observeCarState.isBusy()) {
                     return new WaitObserveCompletion(cm);
                 }
-                else if(observeCarState.isError()) {
+                else if (observeCarState.isError()) {
                     failCommandWithObserveCarError(cm);
                     return IdleState;
                 }
-                else if(observeCarState.isPaused()){
+                else if (observeCarState.isPaused()){
                     pauseCommand(cm);
                     return IdleState;
                 }
@@ -489,7 +495,7 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
                     return this;
                 }
             }
-            else if(val.isError()) {
+            else if (val.isError()) {
                 failCommandWithCarError(cm);
                 return IdleState;
             }
@@ -600,7 +606,7 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
 
         @Override
         public String signature() {
-            return "WaitObserveCompletion( stopMark = " + stopMark + ", abortMark" + abortMark + ")";
+            return "WaitObserveCompletion( stopMark = " + stopMark + ", abortMark = " + abortMark + ")";
         }
 
         @Override
@@ -669,7 +675,7 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
 
         @Override
         public String signature() {
-            return "WaitStopCompletion( stopMark = " + stopMark + ", abortMark" + abortMark + ")";
+            return "WaitStopCompletion( stopMark = " + stopMark + ", abortMark = " + abortMark + ")";
         }
 
         @Override
@@ -729,7 +735,7 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
 
         @Override
         public String signature() {
-            return "WaitAbortCompletion( stopMark = " + stopMark + ", abortMark" + abortMark + ")";
+            return "WaitAbortCompletion( stopMark = " + stopMark + ", abortMark = " + abortMark + ")";
         }
 
         @Override

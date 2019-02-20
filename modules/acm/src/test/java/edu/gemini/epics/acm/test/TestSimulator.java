@@ -57,11 +57,10 @@ final class TestSimulator {
                     final CompletionListener listener) {
                 switch (command.getActivity()) {
                 case PRESET:
-                case CANCEL: {
+                case CANCEL:
                     return HandlerResponse.ACCEPTED;
-                }
                 case PRESET_START:
-                case START: {
+                case START:
                     if (command.getSequenceCommand().getName().equals("test")) {
                         executor.schedule(new Runnable() {
 
@@ -83,11 +82,9 @@ final class TestSimulator {
                         }, 1, TimeUnit.SECONDS);
                     }
                     return HandlerResponse.STARTED;
-                }
-                default: {
+                default:
                     return HandlerResponse
                             .createError("Invalid command activity");
-                }
                 }
             }
 
