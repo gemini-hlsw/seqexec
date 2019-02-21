@@ -5,24 +5,20 @@ package gem.config
 
 import cats._
 
-import gem.CoAdds
 import gem.arb._
 import gem.enum._
 import gem.enum.Instrument._
-import gem.math.Wavelength
 
 import org.scalacheck._
 import org.scalacheck.Arbitrary._
 
-import java.time.Duration
 
 trait Arbitraries {
 
-  import ArbCoAdds._
   import ArbEnumerated._
   import ArbFlamingos2._
   import ArbGmos._
-  import ArbTime._
+  import ArbGnirs._
 
 
   // Surely this is already defined somewhere?
@@ -42,12 +38,6 @@ trait Arbitraries {
       Gen.const(a)
   }
 
-  implicit val arbMosPreImaging: Arbitrary[MosPreImaging] =
-    Arbitrary(
-      Gen.oneOf(MosPreImaging.IsMosPreImaging,
-                MosPreImaging.IsNotMosPreImaging)
-    )
-
   val genAcqCamStatic:   Gen[StaticConfig.AcqCam]    = Gen.const(StaticConfig.AcqCam()  )
   val genBhrosStatic:    Gen[StaticConfig.Bhros]     = Gen.const(StaticConfig.Bhros()   )
   val genGhostStatic:    Gen[StaticConfig.Ghost]     = Gen.const(StaticConfig.Ghost()   )
@@ -61,9 +51,6 @@ trait Arbitraries {
   val genTrecsStatic:    Gen[StaticConfig.Trecs]     = Gen.const(StaticConfig.Trecs()   )
   val genVisitorStatic:  Gen[StaticConfig.Visitor]   = Gen.const(StaticConfig.Visitor() )
 
-  val genGnirsStatic: Gen[StaticConfig.Gnirs] =
-    arbitrary[GnirsWellDepth].map(StaticConfig.Gnirs(_))
-
   def genStaticConfigOf(i: Instrument): Gen[StaticConfig] = {
     i match {
       case AcqCam     => genAcqCamStatic
@@ -72,7 +59,7 @@ trait Arbitraries {
       case Ghost      => genGhostStatic
       case GmosN      => arbitrary[StaticConfig.GmosN]
       case GmosS      => arbitrary[StaticConfig.GmosS]
-      case Gnirs      => genGnirsStatic
+      case Gnirs      => arbitrary[StaticConfig.Gnirs]
       case Gpi        => genGpiStatic
       case Gsaoi      => genGsaoiStatic
       case Michelle   => genMichelleStatic
@@ -101,23 +88,7 @@ trait Arbitraries {
   val genTrecsDynamic   : Gen[DynamicConfig.Trecs]    = Gen.const(DynamicConfig.Trecs()   )
   val genVisitorDynamic : Gen[DynamicConfig.Visitor]  = Gen.const(DynamicConfig.Visitor() )
 
-
-  val genGnirsDynamic: Gen[DynamicConfig.Gnirs] =
-      for {
-        a <- arbitrary[GnirsAcquisitionMirror             ]
-        b <- arbitrary[GnirsCamera                        ]
-        c <- arbitrary[CoAdds                             ]
-        d <- arbitrary[GnirsDecker                        ]
-        e <- arbitrary[GnirsDisperser                     ]
-        f <- arbitrary[Duration                           ]
-        g <- arbitrary[GnirsFilter                        ]
-        h <- arbitrary[Either[GnirsFpuOther, GnirsFpuSlit]]
-        i <- arbitrary[GnirsPrism                         ]
-        j <- arbitrary[GnirsReadMode                      ]
-        k <- Gen.choose(1000, 120000).map(Wavelength.fromAngstroms.unsafeGet)
-      } yield DynamicConfig.Gnirs(a, b, c, d, e, f, g, h, i, j, k)
-
-  def genDynamicConfigOf(i: Instrument): Gen[DynamicConfig] = {
+ def genDynamicConfigOf(i: Instrument): Gen[DynamicConfig] = {
     i match {
       case AcqCam     => genAcqCamDynamic
       case Bhros      => genBhrosDynamic
@@ -125,7 +96,7 @@ trait Arbitraries {
       case Ghost      => genGhostDynamic
       case GmosN      => arbitrary[DynamicConfig.GmosN]
       case GmosS      => arbitrary[DynamicConfig.GmosS]
-      case Gnirs      => genGnirsDynamic
+      case Gnirs      => arbitrary[DynamicConfig.Gnirs]
       case Gpi        => genGpiDynamic
       case Gsaoi      => genGsaoiDynamic
       case Michelle   => genMichelleDynamic
