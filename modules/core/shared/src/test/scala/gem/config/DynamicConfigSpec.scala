@@ -15,6 +15,7 @@ import DynamicConfig.{ GmosN, GmosS }
 final class DynamicConfigSpec extends CatsSuite with Arbitraries {
 
   import ArbEnumerated._
+  import ArbGmos._
   import ArbWavelength._
 
   checkAll("GmosN", EqTests[GmosN].eqv)

@@ -8,14 +8,12 @@ import cats._
 import gem.CoAdds
 import gem.arb._
 import gem.config.F2Config.F2FpuChoice
-import gem.config.GmosConfig._
 import gem.enum._
 import gem.enum.Instrument._
 import gem.math.Wavelength
 
 import org.scalacheck._
 import org.scalacheck.Arbitrary._
-import org.scalacheck.Cogen._
 
 import java.time.Duration
 
@@ -25,7 +23,6 @@ trait Arbitraries {
   import ArbEnumerated._
   import ArbGmos._
   import ArbTime._
-  import ArbWavelength._
 
 
   // Surely this is already defined somewhere?
@@ -124,87 +121,6 @@ trait Arbitraries {
       w <- arbitrary[F2WindowCover      ]
     } yield DynamicConfig.Flamingos2(d, e, f, u, l, r, w)
 
-  implicit val arbGmosCcdReadout =
-    Arbitrary {
-      for {
-        x <- arbitrary[GmosXBinning]
-        y <- arbitrary[GmosYBinning]
-        c <- arbitrary[GmosAmpCount]
-        g <- arbitrary[GmosAmpGain]
-        r <- arbitrary[GmosAmpReadMode]
-      } yield GmosConfig.GmosCcdReadout(x, y, c, g, r)
-    }
-
-  implicit val cogGmosCcdReadout: Cogen[GmosConfig.GmosCcdReadout] =
-    Cogen[(GmosXBinning, GmosYBinning, GmosAmpCount, GmosAmpGain, GmosAmpReadMode)]
-      .contramap(c => (c.xBinning, c.yBinning, c.ampCount, c.ampGain, c.ampReadMode))
-
-  implicit val arbGmosCommonDynamic =
-    Arbitrary {
-      for {
-        c <- arbitrary[GmosConfig.GmosCcdReadout]
-        d <- arbitrary[GmosDtax]
-        e <- arbitrary[Duration]
-        r <- arbitrary[GmosRoi]
-      } yield GmosConfig.GmosCommonDynamicConfig(c, d, e, r)
-    }
-
-  implicit val cogGmosCommonDynamic: Cogen[GmosConfig.GmosCommonDynamicConfig] =
-    Cogen[(GmosCcdReadout, GmosDtax, Duration, GmosRoi)]
-      .contramap(c => (c.ccdReadout, c.dtaxOffset, c.exposureTime, c.roi))
-
-  implicit val arbGmosCustomMask =
-    Arbitrary {
-      for {
-        m <- Gen.alphaStr.map(_.take(32))
-        w <- arbitrary[GmosCustomSlitWidth]
-      } yield GmosConfig.GmosCustomMask(m, w)
-    }
-
-  implicit val cogGmosCustomMask: Cogen[GmosConfig.GmosCustomMask] =
-    Cogen[(String, GmosCustomSlitWidth)].contramap(g => (g.maskDefinitionFilename, g.slitWidth))
-
-  implicit val arbGmosNorthGrating =
-    Arbitrary {
-      for {
-        d <- arbitrary[GmosNorthDisperser]
-        o <- arbitrary[GmosDisperserOrder]
-        w <- Gen.choose(3000, 12000).map(Wavelength.fromAngstroms.unsafeGet)
-      } yield GmosConfig.GmosGrating(d, o, w)
-    }
-
-  implicit val cogGmosNorthGrating: Cogen[GmosConfig.GmosGrating[GmosNorthDisperser]] =
-    Cogen[(GmosNorthDisperser, GmosDisperserOrder, Wavelength)]
-      .contramap(g => (g.disperser, g.order, g.wavelength))
-
-  implicit val arbGmosSouthGrating =
-    Arbitrary {
-      for {
-        d <- arbitrary[GmosSouthDisperser]
-        o <- arbitrary[GmosDisperserOrder]
-        w <- Gen.choose(3000, 12000).map(Wavelength.fromAngstroms.unsafeGet)
-      } yield GmosConfig.GmosGrating(d, o, w)
-    }
-
-  implicit val cogGmosSouthGrating: Cogen[GmosConfig.GmosGrating[GmosSouthDisperser]] =
-    Cogen[(GmosSouthDisperser, GmosDisperserOrder, Wavelength)]
-      .contramap(g => (g.disperser, g.order, g.wavelength))
-
-  val genGmosNorthDynamic: Gen[DynamicConfig.GmosN] =
-    for {
-      c <- arbitrary[GmosConfig.GmosCommonDynamicConfig]
-      g <- arbitrary[Option[GmosConfig.GmosGrating[GmosNorthDisperser]]]
-      f <- arbitrary[Option[GmosNorthFilter]]
-      u <- arbitrary[Option[Either[GmosCustomMask, GmosNorthFpu]]]
-    } yield DynamicConfig.GmosN(c, g, f, u)
-
-  val genGmosSouthDynamic: Gen[DynamicConfig.GmosS] =
-    for {
-      c <- arbitrary[GmosConfig.GmosCommonDynamicConfig]
-      g <- arbitrary[Option[GmosConfig.GmosGrating[GmosSouthDisperser]]]
-      f <- arbitrary[Option[GmosSouthFilter]]
-      u <- arbitrary[Option[Either[GmosCustomMask, GmosSouthFpu]]]
-    } yield DynamicConfig.GmosS(c, g, f, u)
 
   val genGnirsDynamic: Gen[DynamicConfig.Gnirs] =
       for {
@@ -227,8 +143,8 @@ trait Arbitraries {
       case Bhros      => genBhrosDynamic
       case Flamingos2 => genF2Dynamic
       case Ghost      => genGhostDynamic
-      case GmosN      => genGmosNorthDynamic
-      case GmosS      => genGmosSouthDynamic
+      case GmosN      => arbitrary[DynamicConfig.GmosN]
+      case GmosS      => arbitrary[DynamicConfig.GmosS]
       case Gnirs      => genGnirsDynamic
       case Gpi        => genGpiDynamic
       case Gsaoi      => genGsaoiDynamic
@@ -241,20 +157,6 @@ trait Arbitraries {
       case Visitor    => genVisitorDynamic
     }
   }
-
-  implicit val arbGmosNDynamicConfig: Arbitrary[DynamicConfig.GmosN] =
-    Arbitrary(genGmosNorthDynamic)
-
-  implicit val cogGmosNDynamicConfig: Cogen[DynamicConfig.GmosN] =
-    Cogen[(GmosConfig.GmosCommonDynamicConfig, Option[GmosConfig.GmosGrating[GmosNorthDisperser]], Option[GmosNorthFilter], Option[Either[GmosConfig.GmosCustomMask, GmosNorthFpu]])]
-      .contramap(g => (g.common, g.grating, g.filter, g.fpu))
-
-  implicit val arbGmosSDynamicConfig: Arbitrary[DynamicConfig.GmosS] =
-    Arbitrary(genGmosSouthDynamic)
-
-  implicit val cogGmosSDynamicConfig: Cogen[DynamicConfig.GmosS] =
-    Cogen[(GmosConfig.GmosCommonDynamicConfig, Option[GmosConfig.GmosGrating[GmosSouthDisperser]], Option[GmosSouthFilter], Option[Either[GmosConfig.GmosCustomMask, GmosSouthFpu]])]
-      .contramap(g => (g.common, g.grating, g.filter, g.fpu))
 
   implicit val arbDynamicConfig: Arbitrary[DynamicConfig] =
     Arbitrary(arbitrary[Instrument].flatMap(genDynamicConfigOf))
