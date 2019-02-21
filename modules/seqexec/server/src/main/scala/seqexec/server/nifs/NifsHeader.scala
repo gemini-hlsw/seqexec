@@ -29,6 +29,10 @@ object NifsHeader {
         id,
         inst,
         List(
+          buildStringS(instReader.grating, KeywordName.GRATING),
+          buildStringS(instReader.aperture, KeywordName.APERTURE),
+          buildInt32S(tcsKeywordsReader.getNifsInstPort, KeywordName.INPORT),
+          buildStringS(instReader.filter, KeywordName.FILTER),
           buildStringS(instReader.windowCover, KeywordName.WINDCOVR),
           buildDoubleS(instReader.maskOffset, KeywordName.APOFFSET),
           buildDoubleS(instReader.centralWavelength, KeywordName.GRATWAVE),
