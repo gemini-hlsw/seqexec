@@ -5,12 +5,14 @@ package gem.json.instances
 
 import cats.tests.CatsSuite
 import gem.CoAdds
-import gem.config.Arbitraries
+import gem.arb.ArbCoAdds
 import io.circe.testing.CodecTests
 import io.circe.testing.instances._
 
-final class CoAddsJsonSpec extends CatsSuite with Arbitraries {
+final class CoAddsJsonSpec extends CatsSuite {
   import coadds._
+
+  import ArbCoAdds._
 
   checkAll("CoAdds", CodecTests[CoAdds].unserializableCodec)
 

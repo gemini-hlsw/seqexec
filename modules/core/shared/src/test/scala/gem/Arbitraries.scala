@@ -17,6 +17,7 @@ import org.scalacheck.Arbitrary._
 import scala.collection.immutable.TreeMap
 
 trait Arbitraries extends gem.config.Arbitraries {
+  import ArbGcalConfig._
   import ArbEnumerated._
   import ArbTargetEnvironment._
 

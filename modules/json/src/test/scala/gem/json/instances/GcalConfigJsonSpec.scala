@@ -3,13 +3,17 @@
 
 package gem.json.instances
 
+import gem.arb.ArbGcalConfig
+
 import cats.tests.CatsSuite
 import gem.config._
 import io.circe.testing.CodecTests
 import io.circe.testing.instances._
 
-final class GcalConfigJsonSpec extends CatsSuite with Arbitraries {
+final class GcalConfigJsonSpec extends CatsSuite {
   import gcalconfig._
+
+  import ArbGcalConfig._
 
   checkAll("GcalConfig", CodecTests[GcalConfig].unserializableCodec)
 
