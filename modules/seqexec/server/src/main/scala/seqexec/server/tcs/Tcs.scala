@@ -160,13 +160,13 @@ object Tcs {
     config: Config, scienceFoldPosition: ScienceFoldPosition, centralWavelength: Option[Wavelength]
   ): Tcs = {
 
-    val gwp1 = config.extract(TELESCOPE_KEY / GUIDE_WITH_PWFS1_PROP).as[StandardGuideOptions.Value].toOption
-    val gwp2 = config.extract(TELESCOPE_KEY / GUIDE_WITH_PWFS2_PROP).as[StandardGuideOptions.Value].toOption
-    val gwoi = config.extract(TELESCOPE_KEY / GUIDE_WITH_OIWFS_PROP).as[StandardGuideOptions.Value].toOption
-    val gwao = config.extract(TELESCOPE_KEY / GUIDE_WITH_AOWFS_PROP).as[StandardGuideOptions.Value].toOption
-    val offsetp = config.extract(TELESCOPE_KEY / P_OFFSET_PROP).as[Double].toOption
+    val gwp1 = config.extractAs[StandardGuideOptions.Value](TELESCOPE_KEY / GUIDE_WITH_PWFS1_PROP).toOption
+    val gwp2 = config.extractAs[StandardGuideOptions.Value](TELESCOPE_KEY / GUIDE_WITH_PWFS2_PROP).toOption
+    val gwoi = config.extractAs[StandardGuideOptions.Value](TELESCOPE_KEY / GUIDE_WITH_OIWFS_PROP).toOption
+    val gwao = config.extractAs[StandardGuideOptions.Value](TELESCOPE_KEY / GUIDE_WITH_AOWFS_PROP).toOption
+    val offsetp = config.extractAs[Double](TELESCOPE_KEY / P_OFFSET_PROP).toOption
       .map(Arcseconds(_):Angle).map(tag[OffsetP](_))
-    val offsetq = config.extract(TELESCOPE_KEY / Q_OFFSET_PROP).as[Double].toOption
+    val offsetq = config.extractAs[Double](TELESCOPE_KEY / Q_OFFSET_PROP).toOption
       .map(Arcseconds(_):Angle).map(tag[OffsetQ](_))
 
     val tcsSeqCfg = TcsSeqConfig(

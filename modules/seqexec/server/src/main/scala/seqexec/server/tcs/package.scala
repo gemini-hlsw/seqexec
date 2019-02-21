@@ -41,7 +41,7 @@ package tcs {
 
 package object tcs {
 
-  // Is there a way to express this value with squants quantities ?
+  // Focal plane scale, expressed with squants quantities.
   val FOCAL_PLANE_SCALE = new FocalPlaneScale(Arcseconds(1.61144), Millimeters(1))
 
   implicit val ooEq: Eq[BinaryOnOff] =

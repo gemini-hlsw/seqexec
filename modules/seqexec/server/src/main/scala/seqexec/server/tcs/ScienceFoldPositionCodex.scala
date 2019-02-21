@@ -38,7 +38,8 @@ private[server] object ScienceFoldPositionCodex {
       case LightSinkName.Gsaoi    => TcsEpics.instance.gsaoiPort
       case LightSinkName.Ac |
            LightSinkName.Hr       => IO(BottomPort.some)
-      case _                      => IO(None)
+      case LightSinkName.Phoenix |
+           LightSinkName.Visitor  => IO(None)
     }).map(_.filterNot(_ === InvalidPort))
   }
 

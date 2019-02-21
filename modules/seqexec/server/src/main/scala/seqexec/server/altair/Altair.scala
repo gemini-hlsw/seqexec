@@ -11,8 +11,7 @@ import seqexec.server.altair.AltairController._
 import seqexec.server.tcs.{Gaos, GuideConfigDb}
 import squants.Time
 
-
-class Altair[F[_]: Sync : Monad] (controller: AltairController[F],
+class Altair[F[_]: Sync] (controller: AltairController[F],
                                   cfgDb: GuideConfigDb[F],
                                   fieldLens: FieldLens
                                  ) extends Gaos[F] {
@@ -33,7 +32,7 @@ class Altair[F[_]: Sync : Monad] (controller: AltairController[F],
   private def withSavedConfig(f: AltairConfig => F[Unit]): F[Unit] =
     Monad[F].flatMap(cfgDb.value){ cfg =>
       cfg.gaosGuide.flatMap(_.swap.toOption.map(f))
-        .getOrElse(Monad[F].pure(()))
+        .getOrElse(Sync[F].unit)
     }
 
   val usesP1: F[Boolean] = cfgDb.value.map{ _.gaosGuide match {

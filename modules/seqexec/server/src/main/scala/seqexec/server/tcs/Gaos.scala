@@ -64,7 +64,7 @@ object Gaos {
     (x.previousOffset, x.newOffset)
   )
 
-  implicit val pauseReasonEq: Eq[PauseReason] = Eq.instance[PauseReason]{
+  implicit val pauseReasonEq: Eq[PauseReason] = Eq.instance{
     case (a: BecauseOffsetMove, b: BecauseOffsetMove) => a === b
     case (BecauseOiOff, BecauseOiOff)                 => true
     case (BecauseP1Off, BecauseP1Off)                 => true
@@ -76,7 +76,7 @@ object Gaos {
     (x.newOffset)
   )
 
-  implicit val resumeReasonEq: Eq[ResumeReason] = Eq.instance[ResumeReason]{
+  implicit val resumeReasonEq: Eq[ResumeReason] = Eq.instance{
     case (a: BecauseOffsetReached, b: BecauseOffsetReached) => a === b
     case (BecauseOiOn, BecauseOiOn)                         => true
     case (BecauseP1On, BecauseP1On)                         => true
