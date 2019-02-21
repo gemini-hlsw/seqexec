@@ -3,8 +3,6 @@
 
 package gem.config
 
-import cats._
-
 import gem.arb._
 import gem.enum._
 import gem.enum.Instrument._
@@ -19,24 +17,6 @@ trait Arbitraries {
   import ArbFlamingos2._
   import ArbGmos._
   import ArbGnirs._
-
-
-  // Surely this is already defined somewhere?
-  implicit val functorGen = new Functor[Gen] {
-    def map[A, B](fa: Gen[A])(f: A => B): Gen[B] =
-      fa.map(f)
-  }
-
-  implicit val applicativeGen = new Applicative[Gen] {
-    def ap[A, B](gf: Gen[A => B])(ga: Gen[A]): Gen[B] =
-      for {
-        f <- gf
-        a <- ga
-      } yield f(a)
-
-    def pure[A](a: A): Gen[A] =
-      Gen.const(a)
-  }
 
   val genAcqCamStatic:   Gen[StaticConfig.AcqCam]    = Gen.const(StaticConfig.AcqCam()  )
   val genBhrosStatic:    Gen[StaticConfig.Bhros]     = Gen.const(StaticConfig.Bhros()   )
