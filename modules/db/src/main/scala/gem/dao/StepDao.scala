@@ -550,8 +550,8 @@ object StepDao {
                  i.disperser,
                  i.exposure_time,
                  i.filter,
-                 i.fpu_slit,
                  i.fpu_other,
+                 i.fpu_slit,
                  i.prism,
                  i.read_mode,
                  i.wavelength
@@ -571,8 +571,8 @@ object StepDao {
                  i.disperser,
                  i.exposure_time,
                  i.filter,
-                 i.fpu_slit,
                  i.fpu_other,
+                 i.fpu_slit,
                  i.prism,
                  i.read_mode,
                  i.wavelength
@@ -595,8 +595,8 @@ object StepDao {
             disperser,
             exposure_time,
             filter,
-            fpu_slit,
             fpu_other,
+            fpu_slit,
             prism,
             read_mode,
             wavelength
@@ -610,8 +610,8 @@ object StepDao {
             ${gnirs.disperser},
             ${gnirs.exposureTime},
             ${gnirs.filter},
-            ${gnirs.fpu.toOption},
             ${gnirs.fpu.swap.toOption},
+            ${gnirs.fpu.toOption},
             ${gnirs.prism},
             ${gnirs.readMode},
             ${gnirs.wavelength})

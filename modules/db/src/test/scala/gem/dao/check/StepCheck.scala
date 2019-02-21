@@ -29,6 +29,7 @@ class StepCheck extends Check {
   it should "Gmos.selectOneNorth"   in check(Gmos.selectOneNorth(Dummy.observationId, Dummy.locationMiddle))
   it should "Gmos.selectAllSouth"   in check(Gmos.selectAllSouth(Dummy.observationId))
   it should "Gmos.selectOneSouth"   in check(Gmos.selectOneSouth(Dummy.observationId, Dummy.locationMiddle))
+
   it should "Gnirs.insert"          in check(Gnirs.insert(0, Dummy.gnirsConfig))
   it should "Gnirs.selectAll"       in check(Gnirs.selectAll(Dummy.observationId))
   it should "Gnirs.selectOne"       in check(Gnirs.selectOne(Dummy.observationId, Dummy.locationMiddle))

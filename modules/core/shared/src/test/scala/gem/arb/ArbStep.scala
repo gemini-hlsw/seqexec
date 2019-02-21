@@ -9,7 +9,7 @@ import gem.config.{GcalConfig, TelescopeConfig}
 import org.scalacheck._
 import org.scalacheck.Arbitrary._
 
-trait ArbStep extends Arbitraries {
+trait ArbStep {
 
   import ArbEnumerated._
   import ArbGcalConfig._
