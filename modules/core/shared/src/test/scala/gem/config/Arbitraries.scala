@@ -7,7 +7,6 @@ import cats._
 
 import gem.CoAdds
 import gem.arb._
-import gem.config.F2Config.F2FpuChoice
 import gem.enum._
 import gem.enum.Instrument._
 import gem.math.Wavelength
@@ -21,6 +20,7 @@ trait Arbitraries {
 
   import ArbCoAdds._
   import ArbEnumerated._
+  import ArbFlamingos2._
   import ArbGmos._
   import ArbTime._
 
@@ -61,9 +61,6 @@ trait Arbitraries {
   val genTrecsStatic:    Gen[StaticConfig.Trecs]     = Gen.const(StaticConfig.Trecs()   )
   val genVisitorStatic:  Gen[StaticConfig.Visitor]   = Gen.const(StaticConfig.Visitor() )
 
-  val genF2Static: Gen[StaticConfig.Flamingos2] =
-    arbitrary[MosPreImaging].map(StaticConfig.Flamingos2(_))
-
   val genGnirsStatic: Gen[StaticConfig.Gnirs] =
     arbitrary[GnirsWellDepth].map(StaticConfig.Gnirs(_))
 
@@ -71,7 +68,7 @@ trait Arbitraries {
     i match {
       case AcqCam     => genAcqCamStatic
       case Bhros      => genBhrosStatic
-      case Flamingos2 => genF2Static
+      case Flamingos2 => arbitrary[StaticConfig.Flamingos2]
       case Ghost      => genGhostStatic
       case GmosN      => arbitrary[StaticConfig.GmosN]
       case GmosS      => arbitrary[StaticConfig.GmosS]
@@ -104,23 +101,6 @@ trait Arbitraries {
   val genTrecsDynamic   : Gen[DynamicConfig.Trecs]    = Gen.const(DynamicConfig.Trecs()   )
   val genVisitorDynamic : Gen[DynamicConfig.Visitor]  = Gen.const(DynamicConfig.Visitor() )
 
-  implicit val arbF2FpuChoice      =
-    Arbitrary {
-      Gen.oneOf(Gen.const(F2FpuChoice.Custom),
-                arbitrary[F2Fpu].map(F2FpuChoice.Builtin(_)))
-    }
-
-  val genF2Dynamic: Gen[DynamicConfig.Flamingos2] =
-    for {
-      d <- arbitrary[Option[F2Disperser]]
-      e <- arbitrary[Duration           ]
-      f <- arbitrary[F2Filter           ]
-      u <- arbitrary[Option[F2FpuChoice]]
-      l <- arbitrary[F2LyotWheel        ]
-      r <- arbitrary[F2ReadMode         ]
-      w <- arbitrary[F2WindowCover      ]
-    } yield DynamicConfig.Flamingos2(d, e, f, u, l, r, w)
-
 
   val genGnirsDynamic: Gen[DynamicConfig.Gnirs] =
       for {
@@ -141,7 +121,7 @@ trait Arbitraries {
     i match {
       case AcqCam     => genAcqCamDynamic
       case Bhros      => genBhrosDynamic
-      case Flamingos2 => genF2Dynamic
+      case Flamingos2 => arbitrary[DynamicConfig.Flamingos2]
       case Ghost      => genGhostDynamic
       case GmosN      => arbitrary[DynamicConfig.GmosN]
       case GmosS      => arbitrary[DynamicConfig.GmosS]
