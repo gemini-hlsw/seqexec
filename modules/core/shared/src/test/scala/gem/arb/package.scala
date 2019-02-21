@@ -3,6 +3,7 @@
 
 package gem
 
+import cats.Applicative
 import org.scalacheck._
 
 package object arb {
@@ -23,5 +24,19 @@ package object arb {
   // This isn't in scalacheck for whatever reason
   implicit def mapCogen[A: Cogen, B: Cogen]: Cogen[Map[A, B]] =
     Cogen[List[(A, B)]].contramap(_.toList)
+
+  // This doesn't seem to exist anywhere?  https://github.com/non/cats-check
+  // would be useful.  All we need is `Applicative` for now though I suppose.
+  implicit val applicativeGen = new Applicative[Gen] {
+    def ap[A, B](gf: Gen[A => B])(ga: Gen[A]): Gen[B] =
+      for {
+        f <- gf
+        a <- ga
+      } yield f(a)
+
+    def pure[A](a: A): Gen[A] =
+      Gen.const(a)
+  }
+
 
 }

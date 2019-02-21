@@ -6,21 +6,59 @@ package gem.config
 import gem.arb._
 import gem.enum.GmosNorthDisperser
 import gem.instances.time._
-
+import gem.config.GmosConfig._
 import cats.kernel.laws.discipline._
 import cats.tests.CatsSuite
 import monocle.law.discipline._
 
-import GmosConfig._
-
-final class GmosConfigSpec extends CatsSuite with Arbitraries {
+final class GmosConfigSpec extends CatsSuite {
 
   import ArbEnumerated._
+  import ArbGmos._
   import ArbOffset._
   import ArbTime._
   import ArbWavelength._
 
   // Laws
+
+  checkAll("StaticConfig.GmosN", EqTests[StaticConfig.GmosN].eqv)
+
+  checkAll("StaticConfig.GmosN.common",        LensTests(StaticConfig.GmosN.common))
+  checkAll("StaticConfig.GmosN.stageMode",     LensTests(StaticConfig.GmosN.stageMode))
+  checkAll("StaticConfig.GmosN.customRois",    LensTests(StaticConfig.GmosN.customRois))
+  checkAll("StaticConfig.GmosN.nodAndShuffle", LensTests(StaticConfig.GmosN.nodAndShuffle))
+
+  checkAll("StaticConfig.GmosS", EqTests[StaticConfig.GmosS].eqv)
+
+  checkAll("StaticConfig.GmosS.common",        LensTests(StaticConfig.GmosS.common))
+  checkAll("StaticConfig.GmosS.stageMode",     LensTests(StaticConfig.GmosS.stageMode))
+  checkAll("StaticConfig.GmosS.customRois",    LensTests(StaticConfig.GmosS.customRois))
+  checkAll("StaticConfig.GmosS.nodAndShuffle", LensTests(StaticConfig.GmosS.nodAndShuffle))
+
+
+  checkAll("DynamicConfig.GmosN", EqTests[DynamicConfig.GmosN].eqv)
+
+  checkAll("DynamicConfig.GmosN.common",  LensTests(DynamicConfig.GmosN.common ))
+  checkAll("DynamicConfig.GmosN.grating", LensTests(DynamicConfig.GmosN.grating))
+  checkAll("DynamicConfig.GmosN.filter",  LensTests(DynamicConfig.GmosN.filter))
+  checkAll("DynamicConfig.GmosN.fpu",     LensTests(DynamicConfig.GmosN.fpu))
+
+  checkAll("DynamicConfig.GmosN.disperser",  OptionalTests(DynamicConfig.GmosN.disperser))
+  checkAll("DynamicConfig.GmosN.wavelength", OptionalTests(DynamicConfig.GmosN.wavelength))
+  checkAll("DynamicConfig.GmosN.builtinFpu", OptionalTests(DynamicConfig.GmosN.builtinFpu))
+  checkAll("DynamicConfig.GmosN.customMask", OptionalTests(DynamicConfig.GmosN.customMask))
+
+  checkAll("DynamicConfig.GmosS", EqTests[DynamicConfig.GmosS].eqv)
+
+  checkAll("DynamicConfig.GmosS.common",  LensTests(DynamicConfig.GmosS.common ))
+  checkAll("DynamicConfig.GmosS.grating", LensTests(DynamicConfig.GmosS.grating))
+  checkAll("DynamicConfig.GmosS.filter",  LensTests(DynamicConfig.GmosS.filter))
+  checkAll("DynamicConfig.GmosS.fpu",     LensTests(DynamicConfig.GmosS.fpu))
+
+  checkAll("DynamicConfig.GmosS.disperser",  OptionalTests(DynamicConfig.GmosS.disperser))
+  checkAll("DynamicConfig.GmosS.wavelength", OptionalTests(DynamicConfig.GmosS.wavelength))
+  checkAll("DynamicConfig.GmosS.builtinFpu", OptionalTests(DynamicConfig.GmosS.builtinFpu))
+  checkAll("DynamicConfig.GmosS.customMask", OptionalTests(DynamicConfig.GmosS.customMask))
 
   checkAll("GmosCcdReadout",          EqTests[GmosCcdReadout].eqv)
   checkAll("GmosCommonDynamicConfig", EqTests[GmosCommonDynamicConfig].eqv)

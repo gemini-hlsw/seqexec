@@ -4,13 +4,17 @@
 package gem
 package util
 
+import gem.arb.ArbLocation
+
 import cats.{ Eq, Order }
 import cats.kernel.laws.discipline._
 import cats.kernel.Comparison.{ GreaterThan => GT, LessThan => LT, EqualTo => EQ }
 import cats.tests.CatsSuite
 
 @SuppressWarnings(Array("org.wartremover.warts.Equals", "org.wartremover.warts.NonUnitStatements", "org.wartremover.warts.TraversableOps"))
-final class LocationSpec extends CatsSuite with Arbitraries {
+final class LocationSpec extends CatsSuite {
+
+  import ArbLocation._
 
   // Laws
   checkAll("Location", OrderTests[Location].order)

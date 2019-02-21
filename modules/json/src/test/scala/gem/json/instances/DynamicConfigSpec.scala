@@ -5,12 +5,13 @@ package gem.json.instances
 
 import cats.tests.CatsSuite
 import gem.config.DynamicConfig
-import gem.config.Arbitraries
 import io.circe.testing.CodecTests
 import io.circe.testing.instances._
 
-final class DynamicConfigJsonSpec extends CatsSuite with Arbitraries {
+final class DynamicConfigJsonSpec extends CatsSuite {
   import dynamicconfig._
+
+  import gem.arb.ArbDynamicConfig._
 
   checkAll("DynamicConfig", CodecTests[DynamicConfig].unserializableCodec)
 
