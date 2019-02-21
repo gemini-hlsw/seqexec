@@ -35,13 +35,15 @@ object GnirsWellDepth {
   /** Select the member of GnirsWellDepth with the given tag, throwing if absent. */
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GnirsWellDepth =
-    fromTag(s).getOrElse(throw new NoSuchElementException(s))
+    fromTag(s).getOrElse(throw new NoSuchElementException("GnirsWellDepth: Invalid tag: '" + s + "'"))
 
   /** @group Typeclass Instances */
   implicit val GnirsWellDepthEnumerated: Enumerated[GnirsWellDepth] =
     new Enumerated[GnirsWellDepth] {
       def all = GnirsWellDepth.all
       def tag(a: GnirsWellDepth) = a.tag
+      override def unsafeFromTag(s: String): GnirsWellDepth =
+        GnirsWellDepth.unsafeFromTag(s)
     }
 
 }

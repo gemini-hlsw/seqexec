@@ -43,13 +43,15 @@ object F2Fpu {
   /** Select the member of F2Fpu with the given tag, throwing if absent. */
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): F2Fpu =
-    fromTag(s).getOrElse(throw new NoSuchElementException(s))
+    fromTag(s).getOrElse(throw new NoSuchElementException("F2Fpu: Invalid tag: '" + s + "'"))
 
   /** @group Typeclass Instances */
   implicit val F2FpuEnumerated: Enumerated[F2Fpu] =
     new Enumerated[F2Fpu] {
       def all = F2Fpu.all
       def tag(a: F2Fpu) = a.tag
+      override def unsafeFromTag(s: String): F2Fpu =
+        F2Fpu.unsafeFromTag(s)
     }
 
 }

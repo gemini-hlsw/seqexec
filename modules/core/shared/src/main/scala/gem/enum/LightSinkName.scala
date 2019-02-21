@@ -46,13 +46,15 @@ object LightSinkName {
   /** Select the member of LightSinkName with the given tag, throwing if absent. */
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): LightSinkName =
-    fromTag(s).getOrElse(throw new NoSuchElementException(s))
+    fromTag(s).getOrElse(throw new NoSuchElementException("LightSinkName: Invalid tag: '" + s + "'"))
 
   /** @group Typeclass Instances */
   implicit val LightSinkNameEnumerated: Enumerated[LightSinkName] =
     new Enumerated[LightSinkName] {
       def all = LightSinkName.all
       def tag(a: LightSinkName) = a.tag
+      override def unsafeFromTag(s: String): LightSinkName =
+        LightSinkName.unsafeFromTag(s)
     }
 
 }

@@ -37,13 +37,15 @@ object GmosNorthStageMode {
   /** Select the member of GmosNorthStageMode with the given tag, throwing if absent. */
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GmosNorthStageMode =
-    fromTag(s).getOrElse(throw new NoSuchElementException(s))
+    fromTag(s).getOrElse(throw new NoSuchElementException("GmosNorthStageMode: Invalid tag: '" + s + "'"))
 
   /** @group Typeclass Instances */
   implicit val GmosNorthStageModeEnumerated: Enumerated[GmosNorthStageMode] =
     new Enumerated[GmosNorthStageMode] {
       def all = GmosNorthStageMode.all
       def tag(a: GmosNorthStageMode) = a.tag
+      override def unsafeFromTag(s: String): GmosNorthStageMode =
+        GmosNorthStageMode.unsafeFromTag(s)
     }
 
 }

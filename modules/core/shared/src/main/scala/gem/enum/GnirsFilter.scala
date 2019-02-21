@@ -48,13 +48,15 @@ object GnirsFilter {
   /** Select the member of GnirsFilter with the given tag, throwing if absent. */
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GnirsFilter =
-    fromTag(s).getOrElse(throw new NoSuchElementException(s))
+    fromTag(s).getOrElse(throw new NoSuchElementException("GnirsFilter: Invalid tag: '" + s + "'"))
 
   /** @group Typeclass Instances */
   implicit val GnirsFilterEnumerated: Enumerated[GnirsFilter] =
     new Enumerated[GnirsFilter] {
       def all = GnirsFilter.all
       def tag(a: GnirsFilter) = a.tag
+      override def unsafeFromTag(s: String): GnirsFilter =
+        GnirsFilter.unsafeFromTag(s)
     }
 
 }

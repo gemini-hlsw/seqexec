@@ -37,13 +37,15 @@ object GnirsCamera {
   /** Select the member of GnirsCamera with the given tag, throwing if absent. */
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GnirsCamera =
-    fromTag(s).getOrElse(throw new NoSuchElementException(s))
+    fromTag(s).getOrElse(throw new NoSuchElementException("GnirsCamera: Invalid tag: '" + s + "'"))
 
   /** @group Typeclass Instances */
   implicit val GnirsCameraEnumerated: Enumerated[GnirsCamera] =
     new Enumerated[GnirsCamera] {
       def all = GnirsCamera.all
       def tag(a: GnirsCamera) = a.tag
+      override def unsafeFromTag(s: String): GnirsCamera =
+        GnirsCamera.unsafeFromTag(s)
     }
 
 }

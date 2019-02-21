@@ -35,13 +35,15 @@ object GpiCalEntranceShutter {
   /** Select the member of GpiCalEntranceShutter with the given tag, throwing if absent. */
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GpiCalEntranceShutter =
-    fromTag(s).getOrElse(throw new NoSuchElementException(s))
+    fromTag(s).getOrElse(throw new NoSuchElementException("GpiCalEntranceShutter: Invalid tag: '" + s + "'"))
 
   /** @group Typeclass Instances */
   implicit val GpiCalEntranceShutterEnumerated: Enumerated[GpiCalEntranceShutter] =
     new Enumerated[GpiCalEntranceShutter] {
       def all = GpiCalEntranceShutter.all
       def tag(a: GpiCalEntranceShutter) = a.tag
+      override def unsafeFromTag(s: String): GpiCalEntranceShutter =
+        GpiCalEntranceShutter.unsafeFromTag(s)
     }
 
 }

@@ -36,13 +36,15 @@ object GmosYBinning {
   /** Select the member of GmosYBinning with the given tag, throwing if absent. */
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GmosYBinning =
-    fromTag(s).getOrElse(throw new NoSuchElementException(s))
+    fromTag(s).getOrElse(throw new NoSuchElementException("GmosYBinning: Invalid tag: '" + s + "'"))
 
   /** @group Typeclass Instances */
   implicit val GmosYBinningEnumerated: Enumerated[GmosYBinning] =
     new Enumerated[GmosYBinning] {
       def all = GmosYBinning.all
       def tag(a: GmosYBinning) = a.tag
+      override def unsafeFromTag(s: String): GmosYBinning =
+        GmosYBinning.unsafeFromTag(s)
     }
 
 }

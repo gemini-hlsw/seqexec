@@ -34,13 +34,15 @@ object GmosAdc {
   /** Select the member of GmosAdc with the given tag, throwing if absent. */
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GmosAdc =
-    fromTag(s).getOrElse(throw new NoSuchElementException(s))
+    fromTag(s).getOrElse(throw new NoSuchElementException("GmosAdc: Invalid tag: '" + s + "'"))
 
   /** @group Typeclass Instances */
   implicit val GmosAdcEnumerated: Enumerated[GmosAdc] =
     new Enumerated[GmosAdc] {
       def all = GmosAdc.all
       def tag(a: GmosAdc) = a.tag
+      override def unsafeFromTag(s: String): GmosAdc =
+        GmosAdc.unsafeFromTag(s)
     }
 
 }

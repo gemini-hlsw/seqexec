@@ -193,6 +193,8 @@ object EnumDef {
       |    new Enumerated[$name] {
       |      def all = $name.all
       |      def tag(a: $name) = a.tag
+      |      override def unsafeFromTag(s: String): $name =
+      |        $name.unsafeFromTag(s)
       |    }
       |
       |}

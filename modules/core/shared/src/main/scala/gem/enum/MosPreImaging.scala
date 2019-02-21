@@ -34,13 +34,15 @@ object MosPreImaging {
   /** Select the member of MosPreImaging with the given tag, throwing if absent. */
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): MosPreImaging =
-    fromTag(s).getOrElse(throw new NoSuchElementException(s))
+    fromTag(s).getOrElse(throw new NoSuchElementException("MosPreImaging: Invalid tag: '" + s + "'"))
 
   /** @group Typeclass Instances */
   implicit val MosPreImagingEnumerated: Enumerated[MosPreImaging] =
     new Enumerated[MosPreImaging] {
       def all = MosPreImaging.all
       def tag(a: MosPreImaging) = a.tag
+      override def unsafeFromTag(s: String): MosPreImaging =
+        MosPreImaging.unsafeFromTag(s)
     }
 
 }

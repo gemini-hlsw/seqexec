@@ -739,13 +739,15 @@ object KeywordName {
   /** Select the member of KeywordName with the given tag, throwing if absent. */
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): KeywordName =
-    fromTag(s).getOrElse(throw new NoSuchElementException(s))
+    fromTag(s).getOrElse(throw new NoSuchElementException("KeywordName: Invalid tag: '" + s + "'"))
 
   /** @group Typeclass Instances */
   implicit val KeywordNameEnumerated: Enumerated[KeywordName] =
     new Enumerated[KeywordName] {
       def all = KeywordName.all
       def tag(a: KeywordName) = a.tag
+      override def unsafeFromTag(s: String): KeywordName =
+        KeywordName.unsafeFromTag(s)
     }
 
 }

@@ -35,13 +35,15 @@ object StepType {
   /** Select the member of StepType with the given tag, throwing if absent. */
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): StepType =
-    fromTag(s).getOrElse(throw new NoSuchElementException(s))
+    fromTag(s).getOrElse(throw new NoSuchElementException("StepType: Invalid tag: '" + s + "'"))
 
   /** @group Typeclass Instances */
   implicit val StepTypeEnumerated: Enumerated[StepType] =
     new Enumerated[StepType] {
       def all = StepType.all
       def tag(a: StepType) = a.tag
+      override def unsafeFromTag(s: String): StepType =
+        StepType.unsafeFromTag(s)
     }
 
 }

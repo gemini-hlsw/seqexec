@@ -32,13 +32,15 @@ object GcalLampType {
   /** Select the member of GcalLampType with the given tag, throwing if absent. */
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GcalLampType =
-    fromTag(s).getOrElse(throw new NoSuchElementException(s))
+    fromTag(s).getOrElse(throw new NoSuchElementException("GcalLampType: Invalid tag: '" + s + "'"))
 
   /** @group Typeclass Instances */
   implicit val GcalLampTypeEnumerated: Enumerated[GcalLampType] =
     new Enumerated[GcalLampType] {
       def all = GcalLampType.all
       def tag(a: GcalLampType) = a.tag
+      override def unsafeFromTag(s: String): GcalLampType =
+        GcalLampType.unsafeFromTag(s)
     }
 
 }

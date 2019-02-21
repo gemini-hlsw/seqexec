@@ -43,13 +43,15 @@ object F2LyotWheel {
   /** Select the member of F2LyotWheel with the given tag, throwing if absent. */
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): F2LyotWheel =
-    fromTag(s).getOrElse(throw new NoSuchElementException(s))
+    fromTag(s).getOrElse(throw new NoSuchElementException("F2LyotWheel: Invalid tag: '" + s + "'"))
 
   /** @group Typeclass Instances */
   implicit val F2LyotWheelEnumerated: Enumerated[F2LyotWheel] =
     new Enumerated[F2LyotWheel] {
       def all = F2LyotWheel.all
       def tag(a: F2LyotWheel) = a.tag
+      override def unsafeFromTag(s: String): F2LyotWheel =
+        F2LyotWheel.unsafeFromTag(s)
     }
 
 }
