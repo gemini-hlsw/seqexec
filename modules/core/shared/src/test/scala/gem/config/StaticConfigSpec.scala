@@ -15,6 +15,7 @@ import StaticConfig.{ GmosN, GmosS }
 final class StaticConfigSpec extends CatsSuite with Arbitraries {
 
   import ArbEnumerated._
+  import ArbGmos._
 
   checkAll("GmosN", EqTests[GmosN].eqv)
 

@@ -16,6 +16,7 @@ import GmosConfig._
 final class GmosConfigSpec extends CatsSuite with Arbitraries {
 
   import ArbEnumerated._
+  import ArbGmos._
   import ArbOffset._
   import ArbTime._
   import ArbWavelength._

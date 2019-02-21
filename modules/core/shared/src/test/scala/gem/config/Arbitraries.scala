@@ -11,7 +11,7 @@ import gem.config.F2Config.F2FpuChoice
 import gem.config.GmosConfig._
 import gem.enum._
 import gem.enum.Instrument._
-import gem.math.{ Offset, Wavelength }
+import gem.math.Wavelength
 
 import org.scalacheck._
 import org.scalacheck.Arbitrary._
@@ -23,7 +23,7 @@ trait Arbitraries {
 
   import ArbCoAdds._
   import ArbEnumerated._
-  import ArbOffset._
+  import ArbGmos._
   import ArbTime._
   import ArbWavelength._
 
@@ -67,73 +67,6 @@ trait Arbitraries {
   val genF2Static: Gen[StaticConfig.Flamingos2] =
     arbitrary[MosPreImaging].map(StaticConfig.Flamingos2(_))
 
-  implicit val arbGmosShuffleOffset =
-    Arbitrary(Gen.posNum[Int].map(GmosConfig.GmosShuffleOffset.unsafeFromRowCount))
-
-  implicit val cogGmosShuffleOffset: Cogen[GmosConfig.GmosShuffleOffset] =
-    Cogen[Int].contramap(_.detectorRows)
-
-  implicit val arbGmosShuffleCycles =
-    Arbitrary(Gen.posNum[Int].map(GmosConfig.GmosShuffleCycles.unsafeFromCycleCount))
-
-  implicit val cogGmosShuffleCycles: Cogen[GmosConfig.GmosShuffleCycles] =
-    Cogen[Int].contramap(_.toInt)
-
-  implicit val arbGmosNodAndShuffle =
-    Arbitrary(
-      for {
-        a <- arbitrary[Offset]
-        b <- arbitrary[Offset]
-        e <- arbitrary[GmosEOffsetting]
-        o <- arbitrary[GmosConfig.GmosShuffleOffset]
-        c <- arbitrary[GmosConfig.GmosShuffleCycles]
-      } yield GmosConfig.GmosNodAndShuffle(a, b, e, o, c)
-    )
-
-  implicit val cogGmosNodAndShuffle: Cogen[GmosConfig.GmosNodAndShuffle] =
-    Cogen[(Offset, Offset, GmosEOffsetting, GmosShuffleOffset, GmosShuffleCycles)]
-      .contramap(n => (n.posA, n.posB, n.eOffset, n.shuffle, n.cycles))
-
-  implicit val arbGmosCustomRoiEntry =
-    Arbitrary(
-      for {
-        xMin <- Gen.posNum[Short]
-        yMin <- Gen.posNum[Short]
-        xRng <- Gen.posNum[Short]
-        yRng <- Gen.posNum[Short]
-      } yield GmosConfig.GmosCustomRoiEntry.unsafeFromDescription(xMin, yMin, xRng, yRng)
-    )
-
-  implicit val cogGmosCustomRoiEntry: Cogen[GmosConfig.GmosCustomRoiEntry] =
-    Cogen[(Short, Short, Short, Short)].contramap(c => (c.xMin, c.yMin, c.xRange, c.yRange))
-
-  implicit val arbGmosCommonStaticConfig =
-    Arbitrary(
-      for {
-        d <- arbitrary[GmosDetector]
-        p <- arbitrary[MosPreImaging]
-        n <- arbitrary[Option[GmosConfig.GmosNodAndShuffle]]
-        c <- Gen.choose(1, 5)
-        r <- Gen.listOfN(c, arbitrary[GmosConfig.GmosCustomRoiEntry])
-      } yield GmosConfig.GmosCommonStaticConfig(d, p, n, r.toSet)
-    )
-
-  implicit val cogGmosCommonStaticConfig: Cogen[GmosConfig.GmosCommonStaticConfig] =
-    Cogen[(GmosDetector, MosPreImaging, Option[GmosConfig.GmosNodAndShuffle], List[GmosConfig.GmosCustomRoiEntry])]
-      .contramap(c => (c.detector, c.mosPreImaging, c.nodAndShuffle, c.customRois.toList))
-
-  val genGmosNorthStatic: Gen[StaticConfig.GmosN] =
-    for {
-      c <- arbitrary[GmosConfig.GmosCommonStaticConfig]
-      s <- arbitrary[GmosNorthStageMode]
-    } yield StaticConfig.GmosN(c, s)
-
-  val genGmosSouthStatic: Gen[StaticConfig.GmosS] =
-    for {
-      c <- arbitrary[GmosConfig.GmosCommonStaticConfig]
-      s <- arbitrary[GmosSouthStageMode]
-    } yield StaticConfig.GmosS(c, s)
-
   val genGnirsStatic: Gen[StaticConfig.Gnirs] =
     arbitrary[GnirsWellDepth].map(StaticConfig.Gnirs(_))
 
@@ -143,8 +76,8 @@ trait Arbitraries {
       case Bhros      => genBhrosStatic
       case Flamingos2 => genF2Static
       case Ghost      => genGhostStatic
-      case GmosN      => genGmosNorthStatic
-      case GmosS      => genGmosSouthStatic
+      case GmosN      => arbitrary[StaticConfig.GmosN]
+      case GmosS      => arbitrary[StaticConfig.GmosS]
       case Gnirs      => genGnirsStatic
       case Gpi        => genGpiStatic
       case Gsaoi      => genGsaoiStatic
@@ -157,20 +90,6 @@ trait Arbitraries {
       case Visitor    => genVisitorStatic
     }
   }
-
-  implicit val arbGmosNStaticConfig: Arbitrary[StaticConfig.GmosN] =
-    Arbitrary(genGmosNorthStatic)
-
-  implicit val cogGmosNStaticConfig: Cogen[StaticConfig.GmosN] =
-    Cogen[(GmosCommonStaticConfig, GmosNorthStageMode)]
-      .contramap(g => (g.common, g.stageMode))
-
-  implicit val arbGmosSStaticConfig: Arbitrary[StaticConfig.GmosS] =
-    Arbitrary(genGmosSouthStatic)
-
-  implicit val cogGmosSStaticConfig: Cogen[StaticConfig.GmosS] =
-    Cogen[(GmosCommonStaticConfig, GmosSouthStageMode)]
-      .contramap(g => (g.common, g.stageMode))
 
   implicit val arbStaticConfig: Arbitrary[StaticConfig] =
     Arbitrary(arbitrary[Instrument].flatMap(genStaticConfigOf))
