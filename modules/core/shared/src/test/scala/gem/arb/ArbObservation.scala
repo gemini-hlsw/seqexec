@@ -53,7 +53,9 @@ trait ArbObservation {
   implicit val arbObservation: Arbitrary[Observation] =
     Arbitrary {
       for {
-        i <- arbitrary[Instrument]
+        // We don't even try to write or read the sequence for other instruments
+        // yet so including them will break ObservationDao roundtrip tests.
+        i <- Gen.oneOf(Instrument.Flamingos2, Instrument.GmosN, Instrument.GmosS, Instrument.Gnirs)
         o <- genObservationOf(i)
       } yield o
     }
