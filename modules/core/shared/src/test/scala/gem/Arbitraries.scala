@@ -14,9 +14,12 @@ import org.scalacheck.Arbitrary._
 
 import scala.collection.immutable.TreeMap
 
-trait Arbitraries extends gem.config.Arbitraries {
+trait Arbitraries {
+
   import ArbGcalConfig._
   import ArbEnumerated._
+  import ArbDynamicConfig._
+  import ArbStaticConfig._
   import ArbTargetEnvironment._
 
   // Generator of valid observation/program titles.  The schema doesn't support

@@ -12,7 +12,7 @@ import org.scalacheck.Arbitrary._
 
 import StaticConfig.{ GmosN, GmosS }
 
-final class StaticConfigSpec extends CatsSuite with Arbitraries {
+final class StaticConfigSpec extends CatsSuite {
 
   import ArbEnumerated._
   import ArbGmos._

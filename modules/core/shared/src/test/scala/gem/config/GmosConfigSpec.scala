@@ -13,7 +13,7 @@ import monocle.law.discipline._
 
 import GmosConfig._
 
-final class GmosConfigSpec extends CatsSuite with Arbitraries {
+final class GmosConfigSpec extends CatsSuite {
 
   import ArbEnumerated._
   import ArbGmos._

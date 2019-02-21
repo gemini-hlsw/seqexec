@@ -12,10 +12,13 @@ import org.scalacheck.Gen._
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Cogen._
 
-trait ArbObservation extends gem.config.Arbitraries {
+trait ArbObservation {
+
   import ArbEnumerated._
   import ArbIndex._
   import ArbProgramId._
+  import ArbDynamicConfig._
+  import ArbStaticConfig._
   import ArbTargetEnvironment._
 
   implicit val arbObservationId: Arbitrary[Observation.Id] =

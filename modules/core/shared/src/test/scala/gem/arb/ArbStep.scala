@@ -11,8 +11,10 @@ import org.scalacheck._
 import org.scalacheck.Arbitrary._
 
 trait ArbStep extends Arbitraries {
+
   import ArbEnumerated._
   import ArbGcalConfig._
+  import ArbDynamicConfig._
   import ArbTelescopeConfig._
 
   val genBase: Gen[Step.Base] =
