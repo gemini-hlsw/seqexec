@@ -37,7 +37,6 @@ import edu.gemini.spModel.gemini.gpi.Gpi.{Shutter => LegacyShutter}
 import gem.math.Coordinates
 import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, Cogen, Gen}
-import squants.space.LengthConversions._
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.duration._
@@ -45,6 +44,10 @@ import seqexec.model.SeqexecModelArbitraries._
 import seqexec.server.flamingos2.Flamingos2Controller.ExposureTime
 import seqexec.server.ghost.GhostController
 import seqexec.server.ghost.GhostController.GhostConfig
+import shapeless.tag
+import shapeless.tag.@@
+import squants.Angle
+import squants.space.Degrees
 
 object SeqexecServerArbitraries extends ArbTime {
 
@@ -69,30 +72,21 @@ object SeqexecServerArbitraries extends ArbTime {
   implicit val tcsNodChopCogen: Cogen[TcsController.NodChop] =
     Cogen[(TcsController.Beam, TcsController.Beam)].contramap(x => (x.nod, x.chop))
 
-  private val lengthMMGen = Gen.posNum[Double].map(_.millimeters)
-  implicit val offsetXArb: Arbitrary[TcsController.OffsetX] = Arbitrary(lengthMMGen.map(TcsController.OffsetX.apply))
-  implicit val offsetXCogen: Cogen[TcsController.OffsetX] =
-    Cogen[Double].contramap(_.self.value)
-  implicit val offsetYArb: Arbitrary[TcsController.OffsetY] = Arbitrary(lengthMMGen.map(TcsController.OffsetY.apply))
-  implicit val offsetYCogen: Cogen[TcsController.OffsetY] =
-    Cogen[Double].contramap(_.self.value)
-  implicit val fpoArb: Arbitrary[TcsController.FocalPlaneOffset] = Arbitrary {
+  private val angleMMGen = Gen.posNum[Double].map(Degrees(_))
+  implicit val offsetPArb: Arbitrary[Angle@@TcsController.OffsetP] = Arbitrary(angleMMGen.map(tag[TcsController.OffsetP].apply))
+  implicit val offsetPCogen: Cogen[Angle@@TcsController.OffsetP] =
+    Cogen[Double].contramap(_.value)
+  implicit val offsetYArb: Arbitrary[Angle@@TcsController.OffsetQ] = Arbitrary(angleMMGen.map(tag[TcsController.OffsetQ].apply))
+  implicit val offsetYCogen: Cogen[Angle@@TcsController.OffsetQ] =
+    Cogen[Double].contramap(_.value)
+  implicit val fpoArb: Arbitrary[TcsController.InstrumentOffset] = Arbitrary {
     for {
-      x <- arbitrary[TcsController.OffsetX]
-      y <- arbitrary[TcsController.OffsetY]
-    } yield TcsController.FocalPlaneOffset(x, y)
+      p <- arbitrary[Angle@@TcsController.OffsetP]
+      q <- arbitrary[Angle@@TcsController.OffsetQ]
+    } yield TcsController.InstrumentOffset(p, q)
   }
-  implicit val fpoCogen: Cogen[TcsController.FocalPlaneOffset] =
-    Cogen[(TcsController.OffsetX, TcsController.OffsetY)].contramap(x => (x.x, x.y))
-  implicit val offsetAArb: Arbitrary[TcsController.OffsetA] = Arbitrary(arbitrary[TcsController.FocalPlaneOffset].map(TcsController.OffsetA.apply))
-  implicit val offsetACogen: Cogen[TcsController.OffsetA] =
-    Cogen[TcsController.FocalPlaneOffset].contramap(_.self)
-  implicit val offsetBArb: Arbitrary[TcsController.OffsetB] = Arbitrary(arbitrary[TcsController.FocalPlaneOffset].map(TcsController.OffsetB.apply))
-  implicit val offsetBCogen: Cogen[TcsController.OffsetB] =
-    Cogen[TcsController.FocalPlaneOffset].contramap(_.self)
-  implicit val offsetCArb: Arbitrary[TcsController.OffsetC] = Arbitrary(arbitrary[TcsController.FocalPlaneOffset].map(TcsController.OffsetC.apply))
-  implicit val offsetCCogen: Cogen[TcsController.OffsetC] =
-    Cogen[TcsController.FocalPlaneOffset].contramap(_.self)
+  implicit val fpoCogen: Cogen[TcsController.InstrumentOffset] =
+    Cogen[(Angle@@TcsController.OffsetP, Angle@@TcsController.OffsetQ)].contramap(x => (x.p, x.q))
 
   implicit val f2FPUArb: Arbitrary[Flamingos2.FPUnit] = Arbitrary(Gen.oneOf(Flamingos2.FPUnit.values()))
   implicit val f2FPUCogen: Cogen[Flamingos2.FPUnit] =

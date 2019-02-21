@@ -11,14 +11,10 @@ import seqexec.server.tcs.TcsController._
   * Tests TcsController typeclasses
   */
 final class TcsControllerSpec extends CatsSuite {
+
   import seqexec.server.SeqexecServerArbitraries._
 
   checkAll("Eq[Beam]", EqTests[Beam].eqv)
   checkAll("Eq[NodAndChop]", EqTests[NodChop].eqv)
-  checkAll("Eq[OffsetX]", EqTests[OffsetX].eqv)
-  checkAll("Eq[OffsetY]", EqTests[OffsetY].eqv)
-  checkAll("Eq[FocalPlaneOffset]", EqTests[FocalPlaneOffset].eqv)
-  checkAll("Eq[OffsetA]", EqTests[OffsetA].eqv)
-  checkAll("Eq[OffsetB]", EqTests[OffsetB].eqv)
-  checkAll("Eq[OffsetC]", EqTests[OffsetC].eqv)
+  checkAll("Eq[InstrumentOffset]", EqTests[InstrumentOffset].eqv)
 }

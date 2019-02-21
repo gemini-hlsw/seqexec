@@ -5,16 +5,18 @@ package seqexec.server.tcs
 
 import cats.effect.{IO, Sync}
 import cats.implicits._
-import gem.math.Angle
+import squants.Angle
 import edu.gemini.epics.acm._
 import edu.gemini.seqexec.server.tcs.{BinaryOnOff, BinaryYesNo}
 import org.log4s.{Logger, getLogger}
 import seqexec.server.EpicsCommand._
 import seqexec.server.EpicsUtil._
 import seqexec.server.{EpicsCommand, EpicsSystem, SeqAction}
-
 import squants.Time
+import squants.space.Degrees
 import squants.time.TimeConversions._
+
+import scala.util.Try
 
 /**
  * TcsEpics wraps the non-functional parts of the EPICS ACM library to interact with TCS. It has all the objects used
@@ -203,6 +205,35 @@ final class TcsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, Stri
 
   object endObserve extends EpicsCommand {
     override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("tcs::endObserve"))
+  }
+
+  object aoCorrect extends EpicsCommand {
+    override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("aoCorrect"))
+
+    private val correct = cs.map(_.getString("correct"))
+    def setCorrections(v: String): SeqAction[Unit] = setParameter(correct, v)
+
+    private val gains = cs.map(_.getInteger("gains"))
+    def setGains(v: Int): SeqAction[Unit] = setParameter[java.lang.Integer](gains, v)
+
+    private val matrix = cs.map(_.getInteger("matrix"))
+    def setMatrix(v: Int): SeqAction[Unit] = setParameter[java.lang.Integer](matrix, v)
+  }
+
+  object targetFilter extends EpicsCommand {
+    override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("filter1"))
+
+    private val bandwidth = cs.map(_.getDouble("bandwidth"))
+    def setBandwidth(v: Double): SeqAction[Unit] = setParameter[java.lang.Double](bandwidth, v)
+
+    private val maxVelocity = cs.map(_.getDouble("maxv"))
+    def setMaxVelocity(v: Double): SeqAction[Unit] = setParameter[java.lang.Double](maxVelocity, v)
+
+    private val grabRadius = cs.map(_.getDouble("grab"))
+    def setGrabRadius(v: Double): SeqAction[Unit] = setParameter[java.lang.Double](grabRadius, v)
+
+    private val shortCircuit = cs.map(_.getString("shortCircuit"))
+    def setShortCircuit(v: String): SeqAction[Unit] = setParameter(shortCircuit, v)
   }
 
   private val tcsState = epicsService.getStatusAcceptor("tcsstate")
@@ -424,7 +455,7 @@ final class TcsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, Stri
   def gwfs4Target: Target[F] = target("g4")
 
   def parallacticAngle: F[Option[Angle]] =
-    safeAttributeSDouble(tcsState.getDoubleAttribute("parangle")).map(_.map(Angle.fromDoubleDegrees))
+    safeAttributeSDouble(tcsState.getDoubleAttribute("parangle")).map(_.map(Degrees(_)))
 
   def m2UserFocusOffset: F[Option[Double]] = safeAttributeSDouble(tcsState.getDoubleAttribute("m2ZUserOffset"))
 
@@ -458,6 +489,11 @@ final class TcsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, Stri
 
   def aoGuideStarY: F[Option[Double]] = safeAttributeSDouble(tcsState.getDoubleAttribute("aogsy"))
 
+  def aoPreparedCMX: F[Option[Double]] = safeAttribute(tcsState.getStringAttribute("cmprepx"))
+    .map(_.flatMap(v => Try(v.toDouble).toOption))
+
+  def aoPreparedCMY: F[Option[Double]] = safeAttribute(tcsState.getStringAttribute("cmprepy"))
+    .map(_.flatMap(v => Try(v.toDouble).toOption))
 }
 
 object TcsEpics extends EpicsSystem[TcsEpics[IO]] {

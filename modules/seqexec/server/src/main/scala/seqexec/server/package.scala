@@ -172,6 +172,7 @@ package object server {
     def fail[A](p:   SeqexecFailure): SeqAction[A] =
       EitherT(IO.apply(TrySeq.fail[A](p)))
     def void: SeqAction[Unit] = SeqAction.apply(())
+    def lift[A](a: => IO[A]): SeqAction[A] = EitherT.liftF(a)
 
   }
 

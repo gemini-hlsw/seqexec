@@ -12,6 +12,7 @@ import giapi.client.gpi.GpiClient
 import giapi.client.ghost.GhostClient
 import gem.Observation
 import gem.enum.Site
+
 import scala.concurrent.ExecutionContext
 import seqexec.engine.{Action, Result, Sequence}
 import seqexec.model.enum.Instrument.GmosS
@@ -23,7 +24,7 @@ import seqexec.server.flamingos2.Flamingos2ControllerSim
 import seqexec.server.gcal.GcalControllerSim
 import seqexec.server.gmos.GmosControllerSim
 import seqexec.server.gnirs.GnirsControllerSim
-import seqexec.server.tcs.TcsControllerSim
+import seqexec.server.tcs.{GuideConfigDb, TcsControllerSim}
 import seqexec.server.gpi.GpiController
 import seqexec.server.Response.Observed
 import seqexec.server.ghost.GhostController
@@ -89,6 +90,12 @@ class SeqTranslateSpec extends FlatSpec {
     new GdsClient(GdsClient.alwaysOkClient, uri("http://localhost:8888/xmlrpc"))))
   ).unsafeRunSync
 
+  val guideDb = new GuideConfigDb[IO] {
+    override def value: IO[GuideConfigDb.GuideConfig] = GuideConfigDb.defaultGuideConfig.pure[IO]
+
+    override def set(v: GuideConfigDb.GuideConfig): IO[Unit] = IO.unit
+  }
+
   private val systems = Systems[IO](
     new OdbProxy(new Peer("localhost", 8443, null), new OdbProxy.DummyOdbCommands),
     DhsClientSim(LocalDate.of(2016, 4, 15)),
@@ -101,7 +108,8 @@ class SeqTranslateSpec extends FlatSpec {
     gpiSim,
     ghostSim,
     NiriControllerSim,
-    NifsControllerSim
+    NifsControllerSim,
+    guideDb
   )
 
   private val translatorSettings = TranslateSettings(tcsKeywords = false, f2Keywords = false, gwsKeywords = false,

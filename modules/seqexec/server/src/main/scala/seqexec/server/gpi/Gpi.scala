@@ -25,6 +25,7 @@ import seqexec.server.gpi.GpiController._
 import seqexec.server.keywords.GdsClient
 import seqexec.server.keywords.GdsInstrument
 import seqexec.server.keywords.KeywordsClient
+import squants.Time
 
 import scala.concurrent.duration._
 import squants.time.Milliseconds
