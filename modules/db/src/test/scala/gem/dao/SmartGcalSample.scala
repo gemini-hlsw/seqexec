@@ -5,14 +5,18 @@ package gem.dao
 
 import cats.implicits._
 import doobie._, doobie.implicits._
-import gem.arb.ArbEnumerated._
+import gem.arb._
 import gem.config._
 import gem.enum.{ Instrument, SmartGcalType }
 import org.scalacheck.Gen
 import org.scalacheck.Arbitrary.arbitrary
 
 // Sample code that exercises SmartGcalDao.select.
-object SmartGcalSample extends TimedSample with gem.config.Arbitraries {
+object SmartGcalSample extends TimedSample {
+
+  import ArbEnumerated._
+  import ArbDynamicConfig._
+  import ArbStaticConfig._
 
   type Result = List[(SmartGcalSearchKey, SmartGcalType, List[GcalConfig])]
 

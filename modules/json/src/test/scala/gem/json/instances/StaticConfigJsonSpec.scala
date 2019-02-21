@@ -4,12 +4,14 @@
 package gem.json.instances
 
 import cats.tests.CatsSuite
-import gem.config._
+import gem.config.StaticConfig
 import io.circe.testing.CodecTests
 import io.circe.testing.instances._
 
-final class StaticConfigJsonSpec extends CatsSuite with Arbitraries {
+final class StaticConfigJsonSpec extends CatsSuite {
   import staticconfig._
+
+  import gem.arb.ArbStaticConfig._
 
   checkAll("StaticConfig", CodecTests[StaticConfig].unserializableCodec)
 
