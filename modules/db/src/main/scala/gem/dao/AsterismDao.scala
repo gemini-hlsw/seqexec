@@ -160,7 +160,7 @@ object AsterismDao {
       """.query[(Instrument, Option[AsterismType], Option[Target.Id], Option[Target.Id], Option[Target.Id])].map {
         case (i, None, None, None, None)                                    => (i, None)
         case (i, Some(AsterismType.SingleTarget), Some(t), None, None)      => (i, Some(t.asLeft))
-        case (i, Some(AsterismType.SingleTarget), None, Some(t1), Some(t2)) => (i, Some((t1, t2).asRight))
+        case (i, Some(AsterismType.GhostDualTarget), None, Some(t1), Some(t2)) => (i, Some((t1, t2).asRight))
         case x => sys.error(s"Inconsistent asterism result: $x")
       }
 
@@ -182,7 +182,7 @@ object AsterismDao {
       """.query[(Index, (Instrument, Option[AsterismType], Option[Target.Id], Option[Target.Id], Option[Target.Id]))].map {
         case (n, (i, None, None, None, None) )                                   => (n, (i, None))
         case (n, (i, Some(AsterismType.SingleTarget), Some(t), None, None))      => (n, (i, Some(t.asLeft)))
-        case (n, (i, Some(AsterismType.SingleTarget), None, Some(t1), Some(t2))) => (n, (i, Some((t1, t2).asRight)))
+        case (n, (i, Some(AsterismType.GhostDualTarget), None, Some(t1), Some(t2))) => (n, (i, Some((t1, t2).asRight)))
         case x => sys.error(s"Inconsistent asterism result: $x")
       }
 

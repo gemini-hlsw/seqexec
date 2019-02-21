@@ -13,6 +13,8 @@ import org.scalatest.Matchers._
 
 
 class UserTargetDaoSpec extends PropSpec with PropertyChecks with DaoTest {
+
+  import gem.arb.ArbObservation._
   import gem.arb.ArbUserTarget._
 
   property("UserTargetDao should roundtrip") {

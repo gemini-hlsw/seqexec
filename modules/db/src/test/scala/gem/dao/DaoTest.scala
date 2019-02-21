@@ -12,7 +12,7 @@ import scala.collection.immutable.TreeMap
 
 /** Base trait for DAO test cases.
   */
-trait DaoTest extends gem.Arbitraries {
+trait DaoTest {
   val pid = Program.Id.fromString.unsafeGet("GS-1234A-Q-1")
 
   private implicit val contextShift: ContextShift[IO] =
