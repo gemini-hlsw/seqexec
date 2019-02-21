@@ -3,127 +3,118 @@
 
 package seqexec.server.tcs
 
-import cats.data.NonEmptyList
+import cats.data.{EitherT, NonEmptyList}
 import cats.effect.IO
-import cats._
 import cats.implicits._
-import edu.gemini.spModel.config2.{Config, ItemKey}
+import edu.gemini.spModel.config2.Config
+import edu.gemini.spModel.core.Wavelength
 import edu.gemini.spModel.guide.StandardGuideOptions
 import edu.gemini.spModel.seqcomp.SeqConfigNames.TELESCOPE_KEY
 import edu.gemini.spModel.target.obsComp.TargetObsCompConstants._
+import monocle.macros.Lenses
 import org.log4s.getLogger
 import mouse.all._
-import scala.language.implicitConversions
-import scala.reflect.ClassTag
 import seqexec.model.enum.Resource
 import seqexec.server.ConfigUtilOps._
+import seqexec.server.altair.Altair
+import seqexec.server.altair.AltairController._
+import seqexec.server.gems.Gems
 import seqexec.server.tcs.TcsController._
-import seqexec.server.{ConfigResult, SeqAction, System}
-import squants.space.Millimeters
+import seqexec.server.{ConfigResult, SeqAction, SeqexecFailure, System}
+import shapeless.tag
+import squants.Angle
+import squants.space.Arcseconds
 
-final case class Tcs(tcsController: TcsController,
-                     subsystems: NonEmptyList[Subsystem],
-                     scienceFoldPosition: ScienceFoldPosition,
-                     gaos: Option[Gaos[SeqAction]]) extends System[IO] {
+
+final case class Tcs private (tcsController: TcsController,
+                              subsystems: NonEmptyList[Subsystem],
+                              gaos: Option[Either[Altair[IO], Gems[IO]]],
+                              guideDb: GuideConfigDb[IO]
+                             )(config: Tcs.TcsSeqConfig) extends System[IO] {
   import Tcs._
-  import MountGuideOption._
 
   override val resource: Resource = Resource.TCS
 
-  private def computeGuideOff(s0: TcsConfig, s1: Requested[TcsConfig]): GuideConfig = {
-
-    val g0 = s1.self.gc.mountGuide match {
-      case MountGuideOff => s0.gc.setMountGuide(MountGuideOff)
-      case _             => s0.gc
-    }
-
-    val g1 = s1.self.gc.m1Guide match {
-      case M1GuideOff => g0.setM1Guide(M1GuideOff)
-      case _          => g0
-    }
-
-    val g2 = s1.self.gc.m2Guide match {
-      case M2GuideOff => g1.setM2Guide(M2GuideOff)
-      case _          => g1
-    }
-
-    g2 // final result
-
-  }
-
-  private def guideOff(s0: TcsConfig, s1: Requested[TcsConfig]): SeqAction[Unit] =
-    tcsController.guide {
-      if (s0.tc.offsetA === s1.self.tc.offsetA) computeGuideOff(s0, s1)
-      else GuideConfig(MountGuideOff, M1GuideOff, M2GuideOff)
-    }
-
-  private def pauseGaos(s0: TcsConfig, s1: Requested[TcsConfig]): SeqAction[Unit] = {
-    val aoEvents: Set[Gaos.Reason] =
-      (if (s0.ge.pwfs1.self === GuiderSensorOn && s1.self.ge.pwfs1.self === GuiderSensorOff)
-        Set(Gaos.BecauseOfP1Change)
-      else Set.empty) ++
-      (if(s0.ge.oiwfs.self === GuiderSensorOn && s1.self.ge.oiwfs.self === GuiderSensorOff)
-        Set(Gaos.BecauseOfOiChange)
-      else Set.empty) ++
-      (if(s0.tc.offsetA =!= s1.self.tc.offsetA)
-        Set(Gaos.BecauseOfOffset(s1.self.tc.offsetA.self))
-      else Set.empty)
-
-    (gaos, aoEvents.nonEmpty.option(aoEvents)).mapN(_.pause(_)).getOrElse(SeqAction.void)
-  }
-
-  private def resumeGaos(s0: TcsConfig, s1: Requested[TcsConfig]): SeqAction[Unit] = {
-    val aoEvents: Set[Gaos.Reason] =
-      (if (s0.ge.pwfs1.self === GuiderSensorOff && s1.self.ge.pwfs1.self === GuiderSensorOn)
-        Set(Gaos.BecauseOfP1Change)
-      else Set.empty) ++
-      (if(s0.ge.oiwfs.self === GuiderSensorOff && s1.self.ge.oiwfs.self === GuiderSensorOn)
-        Set(Gaos.BecauseOfOiChange)
-      else Set.empty) ++
-      (if(s0.tc.offsetA =!= s1.self.tc.offsetA)
-        Set(Gaos.BecauseOfOffset(s1.self.tc.offsetA.self))
-      else Set.empty)
-
-    (gaos, aoEvents.nonEmpty.option(aoEvents)).mapN(_.resume(_)).getOrElse(SeqAction.void)
-  }
-
   // Helper function to output the part of the TCS configuration that is actually applied.
-  private def subsystemConfig(tcs: TcsConfig, subsystem: Subsystem): List[AnyRef] = subsystem match {
+  private def subsystemConfig(tcs: TcsConfig, subsystem: Subsystem): List[String] = subsystem match {
     case Subsystem.M1     => List(tcs.gc.m1Guide.show)
     case Subsystem.M2     => List(tcs.gc.m2Guide.show)
-    case Subsystem.OIWFS  => List(tcs.gtc.oiwfs.show, tcs.ge.oiwfs.show)
-    case Subsystem.P1WFS  => List(tcs.gtc.pwfs1.show, tcs.ge.pwfs1.show)
-    case Subsystem.P2WFS  => List(tcs.gtc.pwfs2.show, tcs.ge.pwfs2.show)
+    case Subsystem.OIWFS  => List((tcs.gds.oiwfs:GuiderConfig).show)
+    case Subsystem.P1WFS  => List((tcs.gds.pwfs1:GuiderConfig).show)
+    case Subsystem.P2WFS  => List((tcs.gds.pwfs2:GuiderConfig).show)
     case Subsystem.Mount  => List(tcs.tc.show)
     case Subsystem.AGUnit => List(tcs.agc.sfPos.show, tcs.agc.hrwfs.show)
+    case Subsystem.Gaos   => List("") //TODO: show Gaos configuration
   }
 
-  @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
-  private def configure(config: Config, tcsState: TcsConfig): SeqAction[ConfigResult[IO]] = {
-    val configFromSequence = fromSequenceConfig(config, subsystems)(tcsState)
-    //The desired science fold position is passed as a class parameter
-    val tcsConfig = configFromSequence.copy(agc = AGConfig(scienceFoldPosition.some, HrwfsConfig.Auto.some))
+  override def configure(config: Config): SeqAction[ConfigResult[IO]] =
+    EitherT.liftF[IO, SeqexecFailure, TcsConfig](buildTcsConfig)
+      .flatMap{ cfg =>
+        SeqAction(Log.debug(s"Applying TCS configuration: ${subsystems.toList.flatMap(subsystemConfig(cfg, _))}")) *>
+        tcsController.applyConfig(subsystems, gaos, cfg).as(ConfigResult(this))
+      }
 
-    Log.debug(s"Applying TCS configuration: ${subsystems.toList.flatMap(subsystemConfig(tcsConfig, _))}")
-
-    if (subsystems.toList.contains(Subsystem.Mount))
-      for {
-        _ <- guideOff(tcsState, Requested(tcsConfig))
-        _ <- pauseGaos(tcsState, Requested(tcsConfig))
-        _ <- tcsController.applyConfig(subsystems, tcsConfig)
-        _ <- resumeGaos(tcsState, Requested(tcsConfig))
-        _ <- tcsController.guide(tcsConfig.gc)
-      } yield ConfigResult(this)
-    else
-      tcsController.applyConfig(subsystems, tcsConfig).as(ConfigResult(this))
-  }
-
-  @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
-  override def configure(config: Config): SeqAction[ConfigResult[IO]] = tcsController.getConfig.flatMap(configure(config, _))
-
-  override def notifyObserveStart: SeqAction[Unit] = tcsController.notifyObserveStart
+  override def notifyObserveStart: SeqAction[Unit] =
+    tcsController.notifyObserveStart
 
   override def notifyObserveEnd: SeqAction[Unit] = tcsController.notifyObserveEnd
+
+  def calcGuiderInUse(telGuide: TelescopeGuideConfig, tipTiltSource: TipTiltSource, m1Source: M1Source): Boolean = {
+    val usedByM1: Boolean = telGuide.m1Guide match {
+      case M1GuideOn(src) => src === m1Source
+      case _              => false
+    }
+    val usedByM2 = telGuide.m2Guide match {
+      case M2GuideOn(_, srcs) => srcs.contains(tipTiltSource)
+      case _                  => false
+    }
+
+    usedByM1 | usedByM2
+  }
+
+  val defaultGuiderConf = GuiderConfig(ProbeTrackingConfig.Parked, GuiderSensorOff)
+  def calcGuiderConfig(inUse: Boolean, guideWith: Option[StandardGuideOptions.Value]): GuiderConfig =
+    guideWith.flatMap(v => inUse.option(GuiderConfig(v.toProbeTracking, v.toGuideSensorOption))).getOrElse(defaultGuiderConf)
+
+  /*
+   * Build TCS configuration for the step, merging the guide configuration from the sequence with the guide
+   * configuration set from TCC. The TCC configuration has precedence: if a guider is not used in the TCC configuration,
+   * it will not be used for the step, regardless of the sequence values.
+   */
+  def buildTcsConfig: IO[TcsConfig] =
+    guideDb.value.flatMap{ c => {
+      val useAo: Boolean = c.gaosGuide match {
+        case Some(Left(AltairOff)) => false
+        case Some(Left(_))         => true
+        case _                     => false
+      }
+
+      for {
+        aoUsesP1 <- gaos.flatMap(_.swap.map(_.usesP1).toOption).getOrElse(IO(false))
+        aoUsesOI <- gaos.flatMap(_.swap.map(_.usesOI).toOption).getOrElse(IO(false))
+      } yield TcsConfig(
+        c.tcsGuide,
+        TelescopeConfig(config.offsetA, config.wavelA),
+        GuidersConfig(
+          tag[P1Config](calcGuiderConfig(
+            calcGuiderInUse(c.tcsGuide, TipTiltSource.PWFS1, M1Source.PWFS1) | aoUsesP1,
+            config.guideWithP1)
+          ),
+          tag[P2Config](calcGuiderConfig(
+            calcGuiderInUse(c.tcsGuide, TipTiltSource.PWFS2, M1Source.PWFS2),
+            config.guideWithP1)
+          ),
+          tag[OIConfig](calcGuiderConfig(
+            calcGuiderInUse(c.tcsGuide, TipTiltSource.OIWFS, M1Source.OIWFS) | aoUsesOI,
+            config.guideWithP1)
+          ),
+          tag[AOGuide](useAo & calcGuiderInUse(c.tcsGuide, TipTiltSource.GAOS, M1Source.GAOS) &
+            config.guideWithAO.exists(_.isActive))
+        ),
+        AGConfig(config.scienceFoldPosition, HrwfsConfig.Auto.some)
+      )
+    }
+  }
 }
 
 object Tcs {
@@ -137,64 +128,59 @@ object Tcs {
   val Q_OFFSET_PROP: String = "q"
 
   // Conversions from ODB model values to TCS configuration values
-  implicit def probeTrackingConfigFromGuideWith(guideWith: StandardGuideOptions.Value): ProbeTrackingConfig = guideWith match {
-    case StandardGuideOptions.Value.park => ProbeTrackingConfig.Parked
-    case StandardGuideOptions.Value.freeze => ProbeTrackingConfig.Off
-    case StandardGuideOptions.Value.guide => ProbeTrackingConfig.On(NodChopTrackingConfig.Normal)
-  }
+  implicit class GuideWithOps(guideWith: StandardGuideOptions.Value) {
+    val toProbeTracking: ProbeTrackingConfig = guideWith match {
+      case StandardGuideOptions.Value.park => ProbeTrackingConfig.Parked
+      case StandardGuideOptions.Value.freeze => ProbeTrackingConfig.Off
+      case StandardGuideOptions.Value.guide => ProbeTrackingConfig.On(NodChopTrackingConfig.Normal)
+    }
 
-  implicit def guideSensorOptionFromGuideWith(guideWith: StandardGuideOptions.Value): GuiderSensorOption = {
-    if (guideWith.isActive) GuiderSensorOn
-    else GuiderSensorOff
-  }
-
-  @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
-  def build[T, P: ClassTag](f: P => Endo[T], k: ItemKey, config: Config): Endo[T] =
-    config.extractAs[P](k).map(f).foldK
-
-  @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
-  def build[T, P: ClassTag, Q: ClassTag](f: (P, Q) => Endo[T], k1: ItemKey, k2: ItemKey, config: Config): Endo[T] =
-    (config.extractAs[P](k1), config.extractAs[Q](k2)).mapN(f).foldK
-
-  // Parameter specific build functions
-  def buildPwfs1Config(guideWithPWFS1: StandardGuideOptions.Value): Endo[TcsConfig] = { s0 =>
-    s0.setGuidersTrackingConfig(s0.gtc.setPwfs1TrackingConfig(guideWithPWFS1)).
-      setGuidersEnabled(s0.ge.setPwfs1GuiderSensorOption(guideWithPWFS1))
-  }
-
-  def buildPwfs2Config(guideWithPWFS2: StandardGuideOptions.Value): Endo[TcsConfig] = { s0 =>
-    s0.setGuidersTrackingConfig(s0.gtc.setPwfs2TrackingConfig(guideWithPWFS2)).
-      setGuidersEnabled(s0.ge.setPwfs1GuiderSensorOption(guideWithPWFS2))
-  }
-
-  def buildOiwfsConfig(guideWithOIWFS: StandardGuideOptions.Value): Endo[TcsConfig] = { s0 =>
-    s0.setGuidersTrackingConfig(s0.gtc.setOiwfsTrackingConfig(guideWithOIWFS)).
-      setGuidersEnabled(s0.ge.setOiwfsGuiderSensorOption(guideWithOIWFS))
-  }
-
-  def buildOffsetConfig(pstr: String, qstr: String): Endo[TcsConfig] = { s0 =>
-    // Is there a way to express this value with squants quantities ?
-    val FOCAL_PLANE_SCALE = 1.61144; //[arcsec/mm]
-
-    try {
-      val p = pstr.toDouble
-      val q = qstr.toDouble
-      val x = (-p * s0.iaa.self.cos - q * s0.iaa.self.sin) / FOCAL_PLANE_SCALE
-      val y = (p * s0.iaa.self.sin - q * s0.iaa.self.cos) / FOCAL_PLANE_SCALE
-      s0.setTelescopeConfig(s0.tc.setOffsetA(FocalPlaneOffset(OffsetX(Millimeters(x)), OffsetY(Millimeters(y)))))
-    } catch {
-      case _: Throwable => s0
+    val toGuideSensorOption: GuiderSensorOption = {
+      if (guideWith.isActive) GuiderSensorOn
+      else GuiderSensorOff
     }
   }
 
-  def fromSequenceConfig(config: Config, subsystems: NonEmptyList[Subsystem])(s0: TcsConfig): TcsConfig = {
-    val subs = subsystems.toList
-    List(
-      subs.contains(Subsystem.P1WFS).option(build(buildPwfs1Config, TELESCOPE_KEY / GUIDE_WITH_PWFS1_PROP, config)),
-      subs.contains(Subsystem.P2WFS).option(build(buildPwfs2Config, TELESCOPE_KEY / GUIDE_WITH_PWFS2_PROP, config)),
-      subs.contains(Subsystem.OIWFS).option(build(buildOiwfsConfig, TELESCOPE_KEY / GUIDE_WITH_OIWFS_PROP, config)),
-      subs.contains(Subsystem.Mount).option(build(buildOffsetConfig, TELESCOPE_KEY / P_OFFSET_PROP, TELESCOPE_KEY / Q_OFFSET_PROP, config))
-    ).collect{case Some(x) => x }.foldK.apply(s0)
+  @Lenses
+  final case class TcsSeqConfig(
+    guideWithP1: Option[StandardGuideOptions.Value],
+    guideWithP2: Option[StandardGuideOptions.Value],
+    guideWithOI: Option[StandardGuideOptions.Value],
+    guideWithAO: Option[StandardGuideOptions.Value],
+    offsetA: Option[InstrumentOffset],
+    wavelA: Option[Wavelength],
+    scienceFoldPosition: ScienceFoldPosition
+  )
+
+  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
+  object TcsSeqConfig
+
+  def fromConfig(controller: TcsController, subsystems: NonEmptyList[Subsystem], gaos: Option[Either[Altair[IO],
+    Gems[IO]]], guideConfigDb: GuideConfigDb[IO])(
+    config: Config, scienceFoldPosition: ScienceFoldPosition, centralWavelength: Option[Wavelength]
+  ): Tcs = {
+
+    val gwp1 = config.extractAs[StandardGuideOptions.Value](TELESCOPE_KEY / GUIDE_WITH_PWFS1_PROP).toOption
+    val gwp2 = config.extractAs[StandardGuideOptions.Value](TELESCOPE_KEY / GUIDE_WITH_PWFS2_PROP).toOption
+    val gwoi = config.extractAs[StandardGuideOptions.Value](TELESCOPE_KEY / GUIDE_WITH_OIWFS_PROP).toOption
+    val gwao = config.extractAs[StandardGuideOptions.Value](TELESCOPE_KEY / GUIDE_WITH_AOWFS_PROP).toOption
+    val offsetp = config.extractAs[Double](TELESCOPE_KEY / P_OFFSET_PROP).toOption
+      .map(Arcseconds(_):Angle).map(tag[OffsetP](_))
+    val offsetq = config.extractAs[Double](TELESCOPE_KEY / Q_OFFSET_PROP).toOption
+      .map(Arcseconds(_):Angle).map(tag[OffsetQ](_))
+
+    val tcsSeqCfg = TcsSeqConfig(
+      gwp1,
+      gwp2,
+      gwoi,
+      gwao,
+      (offsetp, offsetq).mapN(InstrumentOffset(_, _)),
+      centralWavelength,
+      scienceFoldPosition
+    )
+
+    Tcs(controller, subsystems, gaos, guideConfigDb)(tcsSeqCfg)
+
   }
 
 }

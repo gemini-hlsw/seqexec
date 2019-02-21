@@ -9,7 +9,7 @@ import seqexec.server.gpi.GpiController
 import seqexec.server.gmos.GmosController
 import seqexec.server.ghost.GhostController
 import seqexec.server.gcal.GcalController
-import seqexec.server.tcs.TcsController
+import seqexec.server.tcs.{GuideConfigDb, TcsController}
 import seqexec.server.gnirs.GnirsController
 import seqexec.server.niri.NiriController
 import seqexec.server.nifs.NifsController
@@ -26,5 +26,6 @@ final case class Systems[F[_]](
   gpi:        GpiController[F],
   ghost:      GhostController[F],
   niri:       NiriController,
-  nifs:       NifsController[F]
+  nifs:       NifsController[F],
+  guideDb:    GuideConfigDb[F]
 )

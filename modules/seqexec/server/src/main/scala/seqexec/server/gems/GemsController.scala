@@ -3,14 +3,14 @@
 
 package seqexec.server.gems
 
-import seqexec.server.tcs.Gaos.Reason
+import seqexec.server.tcs.Gaos.{PauseReason, ResumeReason}
 import squants.Time
 
 trait GemsController[F[_]] {
   import GemsController._
 
-  def pause(reasons: Set[Reason]): F[Unit]
-  def resume(reasons: Set[Reason], config: GemsConfig): F[Unit]
+  def pause(reasons: Set[PauseReason]): F[Unit]
+  def resume(reasons: Set[ResumeReason], config: GemsConfig): F[Unit]
   def observe(expTime: Time): F[Unit]
   def endObserve: F[Unit]
 

@@ -25,7 +25,7 @@ object GpiHeader {
         val ks = GdsInstrument.bundleKeywords(
           List(
             buildDoubleS(tcsKeywordsReader.getParallacticAngle
-                          .map(_.map(_.toSignedDoubleDegrees))
+                          .map(_.map(_.toDegrees))
                           .orDefault,
                         KeywordName.PAR_ANG),
             buildInt32S(tcsKeywordsReader.getGpiInstPort,

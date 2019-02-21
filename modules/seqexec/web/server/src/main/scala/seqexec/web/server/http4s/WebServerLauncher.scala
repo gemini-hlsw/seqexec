@@ -232,7 +232,7 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
       Resource.make(alloc)(free).map(ExecutionContext.fromExecutor)
     }
 
-    def engineIO(httpClient: Client[IO], collector: CollectorRegistry): Resource[IO, SeqexecEngine] =
+    def engineIO(httpClient: Client[IO], guideConfigDb: GuideConfigDb[IO], collector: CollectorRegistry): Resource[IO, SeqexecEngine] =
       for {
         cfg          <- Resource.liftF(config)
         _            <- Resource.liftF(logEngineStart)
@@ -245,7 +245,7 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
         ghost        <- SeqexecEngine.ghostClient(ghostControl, ghostUrl)
         seqc         <- Resource.liftF(SeqexecEngine.seqexecConfiguration.run(cfg))
         met          <- Resource.liftF(SeqexecMetrics.build[IO](site, collector))
-      } yield SeqexecEngine(httpClient, gpi, ghost, seqc, met)
+      } yield SeqexecEngine(httpClient, gpi, ghost, guideConfigDb, seqc, met)
 
     def webServerIO(
       in:  Queue[IO, executeEngine.EventType],
@@ -273,8 +273,8 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
         out    <- Resource.liftF(Topic[IO, SeqexecEvent](NullEvent))
         cr     <- Resource.liftF(IO(new CollectorRegistry))
         bec    <- blockingExecutionContext
-        engine <- engineIO(cli, cr)
         gcdb   <- Resource.liftF(GuideConfigDb.newDb[IO])
+        engine <- engineIO(cli, gcdb, cr)
         _      <- webServerIO(inq, out, engine, gcdb, cr, bec)
         _      <- Resource.liftF(engine.eventStream(inq).through(out.publish).compile.drain.start)
       } yield ExitCode.Success

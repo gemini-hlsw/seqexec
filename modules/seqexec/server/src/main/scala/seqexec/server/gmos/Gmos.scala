@@ -29,6 +29,7 @@ import seqexec.server._
 import squants.space.Length
 import squants.{Seconds, Time}
 import squants.space.LengthConversions._
+import squants.time.Time
 
 abstract class Gmos[T<:GmosController.SiteDependentTypes](controller: GmosController[T], ss: SiteSpecifics[T])(configTypes: GmosController.Config[T]) extends DhsInstrument[IO] with InstrumentSystem[IO] {
   import Gmos._

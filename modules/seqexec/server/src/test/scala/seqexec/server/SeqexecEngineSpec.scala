@@ -3,7 +3,7 @@
 
 package seqexec.server
 
-import cats.effect.{ ContextShift, IO, Timer }
+import cats.effect.{ContextShift, IO, Timer}
 import cats.implicits._
 import fs2.concurrent.Queue
 import giapi.client.gpi.GpiClient
@@ -29,6 +29,7 @@ import seqexec.model.{ActionType, CalibrationQueueId, ClientId, Conditions, Obse
 import seqexec.model.enum._
 import seqexec.model.enum.Resource.TCS
 import monocle.Monocle._
+import seqexec.server.tcs.GuideConfigDb
 import shapeless.tag
 
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements", "org.wartremover.warts.Throw"))
@@ -193,7 +194,12 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
     }
 
   private val sm = SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry()).unsafeRunSync
-  private val seqexecEngine = SeqexecEngine(GdsClient.alwaysOkClient, gpiSim, ghostSim, defaultSettings, sm)
+  private val guideDb = new GuideConfigDb[IO] {
+    override def value: IO[GuideConfigDb.GuideConfig] = GuideConfigDb.defaultGuideConfig.pure[IO]
+
+    override def set(v: GuideConfigDb.GuideConfig): IO[Unit] = IO.unit
+  }
+  private val seqexecEngine = SeqexecEngine(GdsClient.alwaysOkClient, gpiSim, ghostSim, guideDb, defaultSettings, sm)
   private def advanceOne(q: EventQueue, s0: EngineState, put: IO[Either[SeqexecFailure, Unit]]): IO[Option[EngineState]] =
     (put *> seqexecEngine.stream(q.dequeue)(s0).take(1).compile.last).map(_.map(_._2))
 

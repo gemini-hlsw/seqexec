@@ -5,12 +5,13 @@ package seqexec.server
 
 import cats._
 import cats.data.{EitherT, NonEmptyList, Reader}
-import cats.effect.{ IO, Concurrent, Timer }
+import cats.effect.{Concurrent, IO, Timer}
 import cats.effect.LiftIO
 import cats.implicits._
 import edu.gemini.seqexec.odb.{ExecutedDataset, SeqexecSequence}
 import edu.gemini.spModel.ao.AOConstants._
 import edu.gemini.spModel.config2.{Config, ItemKey}
+import edu.gemini.spModel.core.Wavelength
 import edu.gemini.spModel.gemini.altair.AltairConstants
 import edu.gemini.spModel.obscomp.InstConstants._
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
@@ -82,7 +83,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
                      (implicit ev: Concurrent[IO]): Stream[IO, Result]
   = {
     val dataId: SeqAction[String] = SeqAction.either(
-      config.extract(OBSERVE_KEY / DATA_LABEL_PROP).as[String].leftMap(e =>
+      config.extractAs[String](OBSERVE_KEY / DATA_LABEL_PROP).leftMap(e =>
       SeqexecFailure.Unexpected(ConfigUtilOps.explain(e))))
 
     def notifyObserveStart: SeqAction[Unit] = otherSys.map(_.notifyObserveStart).sequence.void
@@ -427,18 +428,27 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
   private def flatOrArcTcsSubsystems(inst: Instrument): NonEmptyList[TcsController.Subsystem] =
     NonEmptyList.of(AGUnit, (if (hasOI(inst)) List(OIWFS) else List.empty): _*)
 
+  private def extractWavelength(config: Config): Option[Wavelength] =
+    config.extractAs[Wavelength](OBSERVING_WAVELENGTH_KEY).toOption
+
   private def calcSystems(config: Config, stepType: StepType)(
     implicit tio: Timer[IO]
   ): TrySeq[List[System[IO]]] = {
     stepType match {
-      case CelestialObject(inst) => toInstrumentSys(inst).map(sys => sys :: List(Tcs(systems.tcs,
-        if(hasOI(inst)) all else allButOI, ScienceFoldPosition.Position(TcsController.LightSource
-          .Sky, sys.sfName(config)), None),
-        Gcal(systems.gcal, site == Site.GS)))
-      case FlatOrArc(inst)       => toInstrumentSys(inst).map(sys => sys :: List(Tcs(systems.tcs,
-        flatOrArcTcsSubsystems(inst), ScienceFoldPosition.Position(TcsController.LightSource
-          .GCAL, sys.sfName(config)), None),
-        Gcal(systems.gcal, site == Site.GS)))
+      case CelestialObject(inst) => toInstrumentSys(inst).map{sys => sys :: List(
+          Tcs.fromConfig(systems.tcs, if(hasOI(inst)) all else allButOI, None, systems.guideDb)(
+            config,
+            ScienceFoldPosition.Position(TcsController.LightSource.Sky, sys.sfName(config)),
+            extractWavelength(config)),
+          Gcal(systems.gcal, site == Site.GS)
+      ) }
+      case FlatOrArc(inst)       => toInstrumentSys(inst).map{sys => sys :: List(
+          Tcs.fromConfig(systems.tcs, flatOrArcTcsSubsystems(inst), None, systems.guideDb)(
+            config,
+            ScienceFoldPosition.Position(TcsController.LightSource.GCAL, sys.sfName(config)),
+            extractWavelength(config)),
+          Gcal(systems.gcal, site == Site.GS)
+      ) }
       case DarkOrBias(inst)      => toInstrumentSys(inst).map(List(_))
       case _                     => TrySeq.fail(Unexpected(s"Unsupported step type $stepType"))
     }
@@ -554,7 +564,7 @@ object SeqTranslate {
   }
 
   private def calcStepType(config: Config): TrySeq[StepType] = {
-    def extractGaos(inst: Instrument): TrySeq[StepType] = config.extract(new ItemKey(AO_CONFIG_NAME) / AO_SYSTEM_PROP).as[String] match {
+    def extractGaos(inst: Instrument): TrySeq[StepType] = config.extractAs[String](new ItemKey(AO_CONFIG_NAME) / AO_SYSTEM_PROP) match {
       case Left(ConfigUtilOps.ConversionError(_, _))              => TrySeq.fail(Unexpected("Unable to get AO system from sequence"))
       case Left(ConfigUtilOps.ContentError(_))                    => TrySeq.fail(Unexpected("Logical error"))
       case Left(ConfigUtilOps.KeyNotFound(_))                     => TrySeq(CelestialObject(inst))
@@ -563,7 +573,7 @@ object SeqTranslate {
       case _                                                      => TrySeq.fail(Unexpected("Logical error reading AO system name"))
     }
 
-    (config.extract(OBSERVE_KEY / OBSERVE_TYPE_PROP).as[String].leftMap(explainExtractError), extractInstrument(config)).mapN { (obsType, inst) =>
+    (config.extractAs[String](OBSERVE_KEY / OBSERVE_TYPE_PROP).leftMap(explainExtractError), extractInstrument(config)).mapN { (obsType, inst) =>
       obsType match {
         case SCIENCE_OBSERVE_TYPE                     => extractGaos(inst)
         case BIAS_OBSERVE_TYPE | DARK_OBSERVE_TYPE    => TrySeq(DarkOrBias(inst))
