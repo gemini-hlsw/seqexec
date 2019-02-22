@@ -34,13 +34,15 @@ object SmartGcalType {
   /** Select the member of SmartGcalType with the given tag, throwing if absent. */
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): SmartGcalType =
-    fromTag(s).getOrElse(throw new NoSuchElementException(s))
+    fromTag(s).getOrElse(throw new NoSuchElementException(s"SmartGcalType: Invalid tag: '$s'"))
 
   /** @group Typeclass Instances */
   implicit val SmartGcalTypeEnumerated: Enumerated[SmartGcalType] =
     new Enumerated[SmartGcalType] {
       def all = SmartGcalType.all
       def tag(a: SmartGcalType) = a.tag
+      override def unsafeFromTag(s: String): SmartGcalType =
+        SmartGcalType.unsafeFromTag(s)
     }
 
 }

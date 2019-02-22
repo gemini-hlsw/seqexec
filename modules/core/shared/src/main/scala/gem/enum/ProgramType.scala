@@ -42,13 +42,15 @@ object ProgramType {
   /** Select the member of ProgramType with the given tag, throwing if absent. */
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): ProgramType =
-    fromTag(s).getOrElse(throw new NoSuchElementException(s))
+    fromTag(s).getOrElse(throw new NoSuchElementException(s"ProgramType: Invalid tag: '$s'"))
 
   /** @group Typeclass Instances */
   implicit val ProgramTypeEnumerated: Enumerated[ProgramType] =
     new Enumerated[ProgramType] {
       def all = ProgramType.all
       def tag(a: ProgramType) = a.tag
+      override def unsafeFromTag(s: String): ProgramType =
+        ProgramType.unsafeFromTag(s)
     }
 
 }

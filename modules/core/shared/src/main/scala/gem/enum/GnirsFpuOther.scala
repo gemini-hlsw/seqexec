@@ -38,13 +38,15 @@ object GnirsFpuOther {
   /** Select the member of GnirsFpuOther with the given tag, throwing if absent. */
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GnirsFpuOther =
-    fromTag(s).getOrElse(throw new NoSuchElementException(s))
+    fromTag(s).getOrElse(throw new NoSuchElementException(s"GnirsFpuOther: Invalid tag: '$s'"))
 
   /** @group Typeclass Instances */
   implicit val GnirsFpuOtherEnumerated: Enumerated[GnirsFpuOther] =
     new Enumerated[GnirsFpuOther] {
       def all = GnirsFpuOther.all
       def tag(a: GnirsFpuOther) = a.tag
+      override def unsafeFromTag(s: String): GnirsFpuOther =
+        GnirsFpuOther.unsafeFromTag(s)
     }
 
 }

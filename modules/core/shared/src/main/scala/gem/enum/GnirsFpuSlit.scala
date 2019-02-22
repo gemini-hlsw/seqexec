@@ -43,13 +43,15 @@ object GnirsFpuSlit {
   /** Select the member of GnirsFpuSlit with the given tag, throwing if absent. */
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GnirsFpuSlit =
-    fromTag(s).getOrElse(throw new NoSuchElementException(s))
+    fromTag(s).getOrElse(throw new NoSuchElementException(s"GnirsFpuSlit: Invalid tag: '$s'"))
 
   /** @group Typeclass Instances */
   implicit val GnirsFpuSlitEnumerated: Enumerated[GnirsFpuSlit] =
     new Enumerated[GnirsFpuSlit] {
       def all = GnirsFpuSlit.all
       def tag(a: GnirsFpuSlit) = a.tag
+      override def unsafeFromTag(s: String): GnirsFpuSlit =
+        GnirsFpuSlit.unsafeFromTag(s)
     }
 
 }

@@ -49,13 +49,15 @@ object F2Filter {
   /** Select the member of F2Filter with the given tag, throwing if absent. */
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): F2Filter =
-    fromTag(s).getOrElse(throw new NoSuchElementException(s))
+    fromTag(s).getOrElse(throw new NoSuchElementException(s"F2Filter: Invalid tag: '$s'"))
 
   /** @group Typeclass Instances */
   implicit val F2FilterEnumerated: Enumerated[F2Filter] =
     new Enumerated[F2Filter] {
       def all = F2Filter.all
       def tag(a: F2Filter) = a.tag
+      override def unsafeFromTag(s: String): F2Filter =
+        F2Filter.unsafeFromTag(s)
     }
 
 }

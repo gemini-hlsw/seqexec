@@ -186,13 +186,15 @@ object EnumDef {
       |  /** Select the member of $name with the given tag, throwing if absent. */
       |  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
       |  def unsafeFromTag(s: String): $name =
-      |    fromTag(s).getOrElse(throw new NoSuchElementException(s))
+      |    fromTag(s).getOrElse(throw new NoSuchElementException(s"$name: Invalid tag: '$$s'"))
       |
       |  /** @group Typeclass Instances */
       |  implicit val ${name}Enumerated: Enumerated[$name] =
       |    new Enumerated[$name] {
       |      def all = $name.all
       |      def tag(a: $name) = a.tag
+      |      override def unsafeFromTag(s: String): $name =
+      |        $name.unsafeFromTag(s)
       |    }
       |
       |}

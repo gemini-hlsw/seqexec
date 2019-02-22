@@ -37,13 +37,15 @@ object GpiSamplingMode {
   /** Select the member of GpiSamplingMode with the given tag, throwing if absent. */
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GpiSamplingMode =
-    fromTag(s).getOrElse(throw new NoSuchElementException(s))
+    fromTag(s).getOrElse(throw new NoSuchElementException(s"GpiSamplingMode: Invalid tag: '$s'"))
 
   /** @group Typeclass Instances */
   implicit val GpiSamplingModeEnumerated: Enumerated[GpiSamplingMode] =
     new Enumerated[GpiSamplingMode] {
       def all = GpiSamplingMode.all
       def tag(a: GpiSamplingMode) = a.tag
+      override def unsafeFromTag(s: String): GpiSamplingMode =
+        GpiSamplingMode.unsafeFromTag(s)
     }
 
 }

@@ -37,13 +37,15 @@ object GcalArc {
   /** Select the member of GcalArc with the given tag, throwing if absent. */
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GcalArc =
-    fromTag(s).getOrElse(throw new NoSuchElementException(s))
+    fromTag(s).getOrElse(throw new NoSuchElementException(s"GcalArc: Invalid tag: '$s'"))
 
   /** @group Typeclass Instances */
   implicit val GcalArcEnumerated: Enumerated[GcalArc] =
     new Enumerated[GcalArc] {
       def all = GcalArc.all
       def tag(a: GcalArc) = a.tag
+      override def unsafeFromTag(s: String): GcalArc =
+        GcalArc.unsafeFromTag(s)
     }
 
 }

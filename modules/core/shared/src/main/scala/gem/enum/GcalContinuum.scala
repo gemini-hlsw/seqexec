@@ -36,13 +36,15 @@ object GcalContinuum {
   /** Select the member of GcalContinuum with the given tag, throwing if absent. */
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GcalContinuum =
-    fromTag(s).getOrElse(throw new NoSuchElementException(s))
+    fromTag(s).getOrElse(throw new NoSuchElementException(s"GcalContinuum: Invalid tag: '$s'"))
 
   /** @group Typeclass Instances */
   implicit val GcalContinuumEnumerated: Enumerated[GcalContinuum] =
     new Enumerated[GcalContinuum] {
       def all = GcalContinuum.all
       def tag(a: GcalContinuum) = a.tag
+      override def unsafeFromTag(s: String): GcalContinuum =
+        GcalContinuum.unsafeFromTag(s)
     }
 
 }

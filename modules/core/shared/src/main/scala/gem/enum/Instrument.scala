@@ -49,13 +49,15 @@ object Instrument {
   /** Select the member of Instrument with the given tag, throwing if absent. */
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): Instrument =
-    fromTag(s).getOrElse(throw new NoSuchElementException(s))
+    fromTag(s).getOrElse(throw new NoSuchElementException(s"Instrument: Invalid tag: '$s'"))
 
   /** @group Typeclass Instances */
   implicit val InstrumentEnumerated: Enumerated[Instrument] =
     new Enumerated[Instrument] {
       def all = Instrument.all
       def tag(a: Instrument) = a.tag
+      override def unsafeFromTag(s: String): Instrument =
+        Instrument.unsafeFromTag(s)
     }
 
 }

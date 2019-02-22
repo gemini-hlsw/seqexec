@@ -35,13 +35,15 @@ object GpiReferenceArmShutter {
   /** Select the member of GpiReferenceArmShutter with the given tag, throwing if absent. */
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GpiReferenceArmShutter =
-    fromTag(s).getOrElse(throw new NoSuchElementException(s))
+    fromTag(s).getOrElse(throw new NoSuchElementException(s"GpiReferenceArmShutter: Invalid tag: '$s'"))
 
   /** @group Typeclass Instances */
   implicit val GpiReferenceArmShutterEnumerated: Enumerated[GpiReferenceArmShutter] =
     new Enumerated[GpiReferenceArmShutter] {
       def all = GpiReferenceArmShutter.all
       def tag(a: GpiReferenceArmShutter) = a.tag
+      override def unsafeFromTag(s: String): GpiReferenceArmShutter =
+        GpiReferenceArmShutter.unsafeFromTag(s)
     }
 
 }

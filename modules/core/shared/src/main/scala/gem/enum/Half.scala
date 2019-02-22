@@ -33,13 +33,15 @@ object Half {
   /** Select the member of Half with the given tag, throwing if absent. */
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): Half =
-    fromTag(s).getOrElse(throw new NoSuchElementException(s))
+    fromTag(s).getOrElse(throw new NoSuchElementException(s"Half: Invalid tag: '$s'"))
 
   /** @group Typeclass Instances */
   implicit val HalfEnumerated: Enumerated[Half] =
     new Enumerated[Half] {
       def all = Half.all
       def tag(a: Half) = a.tag
+      override def unsafeFromTag(s: String): Half =
+        Half.unsafeFromTag(s)
     }
 
 }

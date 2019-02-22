@@ -53,13 +53,15 @@ object GmosSouthFpu {
   /** Select the member of GmosSouthFpu with the given tag, throwing if absent. */
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GmosSouthFpu =
-    fromTag(s).getOrElse(throw new NoSuchElementException(s))
+    fromTag(s).getOrElse(throw new NoSuchElementException(s"GmosSouthFpu: Invalid tag: '$s'"))
 
   /** @group Typeclass Instances */
   implicit val GmosSouthFpuEnumerated: Enumerated[GmosSouthFpu] =
     new Enumerated[GmosSouthFpu] {
       def all = GmosSouthFpu.all
       def tag(a: GmosSouthFpu) = a.tag
+      override def unsafeFromTag(s: String): GmosSouthFpu =
+        GmosSouthFpu.unsafeFromTag(s)
     }
 
 }

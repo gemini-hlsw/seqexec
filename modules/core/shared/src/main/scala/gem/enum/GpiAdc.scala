@@ -35,13 +35,15 @@ object GpiAdc {
   /** Select the member of GpiAdc with the given tag, throwing if absent. */
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GpiAdc =
-    fromTag(s).getOrElse(throw new NoSuchElementException(s))
+    fromTag(s).getOrElse(throw new NoSuchElementException(s"GpiAdc: Invalid tag: '$s'"))
 
   /** @group Typeclass Instances */
   implicit val GpiAdcEnumerated: Enumerated[GpiAdc] =
     new Enumerated[GpiAdc] {
       def all = GpiAdc.all
       def tag(a: GpiAdc) = a.tag
+      override def unsafeFromTag(s: String): GpiAdc =
+        GpiAdc.unsafeFromTag(s)
     }
 
 }

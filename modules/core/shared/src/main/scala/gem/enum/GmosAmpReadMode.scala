@@ -34,13 +34,15 @@ object GmosAmpReadMode {
   /** Select the member of GmosAmpReadMode with the given tag, throwing if absent. */
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GmosAmpReadMode =
-    fromTag(s).getOrElse(throw new NoSuchElementException(s))
+    fromTag(s).getOrElse(throw new NoSuchElementException(s"GmosAmpReadMode: Invalid tag: '$s'"))
 
   /** @group Typeclass Instances */
   implicit val GmosAmpReadModeEnumerated: Enumerated[GmosAmpReadMode] =
     new Enumerated[GmosAmpReadMode] {
       def all = GmosAmpReadMode.all
       def tag(a: GmosAmpReadMode) = a.tag
+      override def unsafeFromTag(s: String): GmosAmpReadMode =
+        GmosAmpReadMode.unsafeFromTag(s)
     }
 
 }

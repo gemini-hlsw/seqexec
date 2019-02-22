@@ -15,6 +15,8 @@ import org.scalatest.Matchers._
 
 class ObservationDaoSpec extends PropSpec with PropertyChecks with DaoTest {
 
+  import gem.arb.ArbObservation._
+
   val Obs1: Observation.Id = Observation.Id(pid, Index.One)
 
   property("ObservationDao should select all observation ids for a program") {

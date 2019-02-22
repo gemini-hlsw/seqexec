@@ -67,13 +67,15 @@ object GpiObservingMode {
   /** Select the member of GpiObservingMode with the given tag, throwing if absent. */
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GpiObservingMode =
-    fromTag(s).getOrElse(throw new NoSuchElementException(s))
+    fromTag(s).getOrElse(throw new NoSuchElementException(s"GpiObservingMode: Invalid tag: '$s'"))
 
   /** @group Typeclass Instances */
   implicit val GpiObservingModeEnumerated: Enumerated[GpiObservingMode] =
     new Enumerated[GpiObservingMode] {
       def all = GpiObservingMode.all
       def tag(a: GpiObservingMode) = a.tag
+      override def unsafeFromTag(s: String): GpiObservingMode =
+        GpiObservingMode.unsafeFromTag(s)
     }
 
 }

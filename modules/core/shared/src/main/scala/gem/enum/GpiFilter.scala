@@ -39,13 +39,15 @@ object GpiFilter {
   /** Select the member of GpiFilter with the given tag, throwing if absent. */
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GpiFilter =
-    fromTag(s).getOrElse(throw new NoSuchElementException(s))
+    fromTag(s).getOrElse(throw new NoSuchElementException(s"GpiFilter: Invalid tag: '$s'"))
 
   /** @group Typeclass Instances */
   implicit val GpiFilterEnumerated: Enumerated[GpiFilter] =
     new Enumerated[GpiFilter] {
       def all = GpiFilter.all
       def tag(a: GpiFilter) = a.tag
+      override def unsafeFromTag(s: String): GpiFilter =
+        GpiFilter.unsafeFromTag(s)
     }
 
 }
