@@ -6,6 +6,7 @@ package config
 
 import gem.CoAdds
 import gem.enum._
+import gem.instances.time._
 import gem.math.Wavelength
 
 import cats.Eq
@@ -51,6 +52,11 @@ object DynamicConfig {
       Step.AcqCam(this, b)
   }
 
+  object AcqCam {
+    implicit val EqAcqCam: Eq[AcqCam] =
+      Eq.allEqual
+  }
+
   /**
    * Dynamic configuration for bHROS (retired).
    * @group Constructors
@@ -58,6 +64,11 @@ object DynamicConfig {
   final case class Bhros() extends DynamicConfig {
     def toStep(b: Step.Base): Step.Bhros =
       Step.Bhros(this, b)
+  }
+
+  object Bhros {
+    implicit val EqBhros: Eq[Bhros] =
+      Eq.allEqual
   }
 
   /**
@@ -69,6 +80,11 @@ object DynamicConfig {
       Step.Ghost(this, b)
   }
 
+  object Ghost {
+    implicit val EqGhost: Eq[Ghost] =
+      Eq.allEqual
+  }
+
   /**
    * Dynamic configuration for GPI.
    * @group Constructors
@@ -76,6 +92,11 @@ object DynamicConfig {
   final case class Gpi() extends DynamicConfig {
     def toStep(b: Step.Base): Step.Gpi =
       Step.Gpi(this, b)
+  }
+
+  object Gpi {
+    implicit val EqGpi: Eq[Gpi] =
+      Eq.allEqual
   }
 
   /**
@@ -87,6 +108,11 @@ object DynamicConfig {
       Step.Gsaoi(this, b)
   }
 
+  object Gsaoi {
+    implicit val EqGsaoi: Eq[Gsaoi] =
+      Eq.allEqual
+  }
+
   /**
    * Dynamic configuration for Michelle (retired).
    * @group Constructors
@@ -94,6 +120,11 @@ object DynamicConfig {
   final case class Michelle() extends DynamicConfig {
     def toStep(b: Step.Base): Step.Michelle =
       Step.Michelle(this, b)
+  }
+
+  object Michelle {
+    implicit val EqMichelle: Eq[Michelle] =
+      Eq.allEqual
   }
 
   /**
@@ -105,6 +136,11 @@ object DynamicConfig {
       Step.Nici(this, b)
   }
 
+  object Nici {
+    implicit val EqNici: Eq[Nici] =
+      Eq.allEqual
+  }
+
   /**
    * Dynamic configuration for NIFS.
    * @group Constructors
@@ -112,6 +148,11 @@ object DynamicConfig {
   final case class Nifs() extends DynamicConfig {
     def toStep(b: Step.Base): Step.Nifs =
       Step.Nifs(this, b)
+  }
+
+  object Nifs {
+    implicit val EqNifs: Eq[Nifs] =
+      Eq.allEqual
   }
 
   /**
@@ -123,6 +164,11 @@ object DynamicConfig {
       Step.Niri(this, b)
   }
 
+  object Niri {
+    implicit val EqNiri: Eq[Niri] =
+      Eq.allEqual
+  }
+
   /**
    * Dynamic configuration for Phoenix.
    * @group Constructors
@@ -130,6 +176,11 @@ object DynamicConfig {
   final case class Phoenix() extends DynamicConfig {
     def toStep(b: Step.Base): Step.Phoenix =
       Step.Phoenix(this, b)
+  }
+
+  object Phoenix {
+    implicit val EqPhoenix: Eq[Phoenix] =
+      Eq.allEqual
   }
 
   /**
@@ -141,6 +192,11 @@ object DynamicConfig {
       Step.Trecs(this, b)
   }
 
+  object Trecs {
+    implicit val EqTrecs: Eq[Trecs] =
+      Eq.allEqual
+  }
+
   /**
    * Dynamic configuration for visitor instruments.
    * @group Constructors
@@ -150,6 +206,10 @@ object DynamicConfig {
       Step.Visitor(this, b)
   }
 
+  object Visitor {
+    implicit val EqVisitor: Eq[Visitor] =
+      Eq.allEqual
+  }
 
   /**
    * Dynamic configuration for FLAMINGOS-2.
@@ -177,6 +237,17 @@ object DynamicConfig {
     val Default: Flamingos2 =
       Flamingos2(None, java.time.Duration.ZERO, F2Filter.Open,
          None, F2LyotWheel.F16, F2ReadMode.Bright, F2WindowCover.Close)
+
+    implicit val EqFlamingos2: Eq[Flamingos2] =
+      Eq.by(f => (
+        f.disperser,
+        f.exposureTime,
+        f.filter,
+        f.fpu,
+        f.lyotWheel,
+        f.readMode,
+        f.windowCover
+      ))
   }
 
   /**
@@ -214,7 +285,7 @@ object DynamicConfig {
     val Default: GmosN =
       GmosN(GmosConfig.GmosCommonDynamicConfig.Default, None, None, None)
 
-    implicit val EqualGmosN: Eq[GmosN] =
+    implicit val EqGmosN: Eq[GmosN] =
       Eq.by(g => (g.common, g.grating, g.filter, g.fpu))
 
   }
@@ -295,7 +366,7 @@ object DynamicConfig {
     val Default: GmosS =
       GmosS(GmosConfig.GmosCommonDynamicConfig.Default, None, None, None)
 
-    implicit val EqualGmosS: Eq[GmosS] =
+    implicit val EqGmosS: Eq[GmosS] =
       Eq.by(g => (g.common, g.grating, g.filter, g.fpu))
 
   }
@@ -393,9 +464,42 @@ object DynamicConfig {
       GnirsReadMode.Bright,
       Wavelength.fromAngstroms.unsafeGet(22000)
     )
+
+    implicit val EqGnirs: Eq[Gnirs] =
+      Eq.by(g => (
+        g.acquisitionMirror,
+        g.camera,
+        g.coadds,
+        g.decker,
+        g.disperser,
+        g.exposureTime,
+        g.filter,
+        g.fpu,
+        g.prism,
+        g.readMode,
+        g.wavelength
+      ))
   }
 
   implicit val EqDynamicConfig: Eq[DynamicConfig] =
-    Eq.fromUniversalEquals // TODO: ensure this is ok
+    Eq.instance {
+      case (a: AcqCam,     b: AcqCam    ) => a === b
+      case (a: Bhros,      b: Bhros     ) => a === b
+      case (a: Flamingos2, b: Flamingos2) => a === b
+      case (a: Ghost,      b: Ghost     ) => a === b
+      case (a: Gpi,        b: Gpi       ) => a === b
+      case (a: GmosN,      b: GmosN     ) => a === b
+      case (a: GmosS,      b: GmosS     ) => a === b
+      case (a: Gnirs,      b: Gnirs     ) => a === b
+      case (a: Gsaoi,      b: Gsaoi     ) => a === b
+      case (a: Michelle,   b: Michelle  ) => a === b
+      case (a: Nici,       b: Nici      ) => a === b
+      case (a: Nifs,       b: Nifs      ) => a === b
+      case (a: Niri,       b: Niri      ) => a === b
+      case (a: Phoenix,    b: Phoenix   ) => a === b
+      case (a: Trecs,      b: Trecs     ) => a === b
+      case (a: Visitor,    b: Visitor   ) => a === b
+      case _                              => false
+    }
 
 }

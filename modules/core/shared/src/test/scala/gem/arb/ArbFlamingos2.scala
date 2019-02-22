@@ -7,7 +7,7 @@ import gem.config.F2Config.F2FpuChoice
 import gem.config.{DynamicConfig, StaticConfig}
 import gem.enum._
 import org.scalacheck.Arbitrary.arbitrary
-import org.scalacheck.{Arbitrary, Gen}
+import org.scalacheck.{Arbitrary, Cogen, Gen}
 
 import java.time.Duration
 
@@ -29,6 +29,9 @@ trait ArbFlamingos2 {
                 arbitrary[F2Fpu].map(F2FpuChoice.Builtin(_)))
     }
 
+  implicit val cogF2FpuChoice: Cogen[F2FpuChoice] =
+    Cogen[Option[F2Fpu]].contramap(_.toBuiltin)
+
   implicit val arbFlamingos2Dynamic: Arbitrary[DynamicConfig.Flamingos2] =
     Arbitrary {
       for {
@@ -41,6 +44,18 @@ trait ArbFlamingos2 {
         w <- arbitrary[F2WindowCover]
       } yield DynamicConfig.Flamingos2(d, e, f, u, l, r, w)
     }
+
+  implicit val cogFlamingos2Dynamic: Cogen[DynamicConfig.Flamingos2] =
+    Cogen[(Option[F2Disperser], Duration, F2Filter, Option[F2FpuChoice], F2LyotWheel, F2ReadMode, F2WindowCover)]
+      .contramap(f => (
+        f.disperser,
+        f.exposureTime,
+        f.filter,
+        f.fpu,
+        f.lyotWheel,
+        f.readMode,
+        f.windowCover
+      ))
 
 }
 
