@@ -4,7 +4,7 @@
 package seqexec.server
 
 import cats._
-import cats.data.{EitherT, NonEmptyList, Reader}
+import cats.data.{EitherT, NonEmptySet, Reader}
 import cats.effect.{Concurrent, IO, Timer}
 import cats.effect.LiftIO
 import cats.implicits._
@@ -425,8 +425,8 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
     case _                => false
   }
 
-  private def flatOrArcTcsSubsystems(inst: Instrument): NonEmptyList[TcsController.Subsystem] =
-    NonEmptyList.of(AGUnit, (if (hasOI(inst)) List(OIWFS) else List.empty): _*)
+  private def flatOrArcTcsSubsystems(inst: Instrument): NonEmptySet[TcsController.Subsystem] =
+    NonEmptySet.of(AGUnit, (if (hasOI(inst)) List(OIWFS) else List.empty): _*)
 
   private def extractWavelength(config: Config): Option[Wavelength] =
     config.extractAs[Wavelength](OBSERVING_WAVELENGTH_KEY).toOption
@@ -499,7 +499,8 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
     }
   }
 
-  private def commonHeaders(config: Config, tcsSubsystems: List[TcsController.Subsystem], inst: InstrumentSystem[IO])(ctx: HeaderExtraData): Header[IO] =
+  private def commonHeaders(config: Config, tcsSubsystems: List[TcsController.Subsystem],
+                            inst: InstrumentSystem[IO])(ctx: HeaderExtraData): Header[IO] =
     new StandardHeader(
       inst,
       ObsKeywordReaderImpl(config, site),
@@ -518,10 +519,12 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
     implicit tio: Timer[IO]
   ): TrySeq[Reader[HeaderExtraData, List[Header[IO]]]] = stepType match {
     case CelestialObject(inst) => toInstrumentSys(inst) >>= { i =>
-        calcInstHeader(config, inst).map(h => Reader(ctx => List(commonHeaders(config, all.toList, i)(ctx), gwsHeaders(i), h)))
+        calcInstHeader(config, inst).map(h => Reader(ctx =>
+          List(commonHeaders(config, all.toList, i)(ctx), gwsHeaders(i), h)))
       }
     case FlatOrArc(inst)       => toInstrumentSys(inst) >>= { i =>
-        calcInstHeader(config, inst).map(h => Reader(ctx => List(commonHeaders(config, flatOrArcTcsSubsystems(inst).toList, i)(ctx), gcalHeader(i), gwsHeaders(i), h)))
+        calcInstHeader(config, inst).map(h => Reader(ctx =>
+          List(commonHeaders(config, flatOrArcTcsSubsystems(inst).toList, i)(ctx), gcalHeader(i), gwsHeaders(i), h)))
       }
     case DarkOrBias(inst)      => toInstrumentSys(inst) >>= { i =>
         calcInstHeader(config, inst).map(h => Reader(ctx => List(commonHeaders(config, Nil, i)(ctx), gwsHeaders(i), h)))
@@ -532,7 +535,8 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
 }
 
 object SeqTranslate {
-  def apply(site: Site, systems: Systems[IO], settings: TranslateSettings): SeqTranslate = new SeqTranslate(site, systems, settings)
+  def apply(site: Site, systems: Systems[IO], settings: TranslateSettings): SeqTranslate =
+    new SeqTranslate(site, systems, settings)
 
   private sealed trait StepType {
     val instrument: Instrument

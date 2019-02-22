@@ -13,7 +13,8 @@ import seqexec.server.tcs.TcsController.FollowOption.{FollowOff, FollowOn}
 import seqexec.server.tcs.TcsController.MountGuideOption.{MountGuideOff, MountGuideOn}
 import seqexec.server.{SeqAction, SeqexecFailure, TrySeq}
 import seqexec.server.tcs.TcsController._
-import seqexec.server.tcs.TcsControllerEpics.{AoFold, EpicsTcsConfig}
+import seqexec.server.tcs.TcsControllerEpics.{AoFold, EpicsTcsConfig, InstrumentPorts}
+import shapeless.tag
 import squants.{Angle, Length}
 import squants.space.{Angstroms, Degrees, Millimeters}
 
@@ -171,6 +172,27 @@ object TcsConfigRetriever {
   private def getWavelength: SeqAction[Wavelength] =
     getStatusVal(TcsEpics.instance.sourceAWavelength.map(_.map(v => Wavelength(Angstroms(v)))), "central wavelength")
 
+  private def getInstrumentPorts: SeqAction[InstrumentPorts] = SeqAction.lift( for {
+    f2    <- TcsEpics.instance.f2Port.map(_.getOrElse(InvalidPort))
+    ghost <- TcsEpics.instance.ghostPort.map(_.getOrElse(InvalidPort))
+    gmos  <- TcsEpics.instance.gmosPort.map(_.getOrElse(InvalidPort))
+    gnirs <- TcsEpics.instance.gnirsPort.map(_.getOrElse(InvalidPort))
+    gpi   <- TcsEpics.instance.gpiPort.map(_.getOrElse(InvalidPort))
+    gsaoi <- TcsEpics.instance.gsaoiPort.map(_.getOrElse(InvalidPort))
+    nifs  <- TcsEpics.instance.nifsPort.map(_.getOrElse(InvalidPort))
+    niri  <- TcsEpics.instance.niriPort.map(_.getOrElse(InvalidPort))
+  } yield InstrumentPorts(
+      f2,
+      ghost,
+      gmos,
+      gnirs,
+      gpi,
+      gsaoi,
+      nifs,
+      niri
+    )
+  )
+
   def retrieveConfiguration: SeqAction[EpicsTcsConfig] =
     for {
       iaa  <- getIAA
@@ -184,6 +206,19 @@ object TcsConfigRetriever {
       aof  <- getAoFold
       sf   <- getScienceFoldPosition
       hr   <- getHrwfsPickupPosition
-    } yield EpicsTcsConfig(iaa, offX, offY, wl, p1, p2, oi, tgc, aof, sf, hr)
+      ports <- getInstrumentPorts
+    } yield EpicsTcsConfig(
+      iaa,
+      FocalPlaneOffset(tag[OffsetX](offX), tag[OffsetY](offY)),
+      wl,
+      p1,
+      p2,
+      oi,
+      tgc,
+      aof,
+      sf,
+      hr,
+      ports
+    )
 
 }

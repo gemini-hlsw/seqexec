@@ -3,11 +3,12 @@
 
 package seqexec.server.tcs
 
-import cats.effect.IO
 import cats.implicits._
+import mouse.boolean._
 import gem.enum.LightSinkName
 import seqexec.server.EpicsCodex.{DecodeEpicsValue, EncodeEpicsValue}
 import seqexec.server.tcs.TcsController.{LightSource, ScienceFoldPosition}
+import seqexec.server.tcs.TcsControllerEpics.InstrumentPorts
 
 // Decoding and encoding the science fold position require some common definitions, therefore I
 // put them inside an object
@@ -20,27 +21,28 @@ private[server] object ScienceFoldPositionCodex {
   private val GCAL_PREFIX = "gcal2"
   private val PARK_POS = "park-pos"
 
-  val BottomPort:Int = 1
+  val BottomPort: Int = 1
+  val InvalidPort: Int = 0
 
-  def portFromSinkName(n: LightSinkName): IO[Option[Int]] = {
-    val InvalidPort = 0
-    (n match {
+  def portFromSinkName(ports: InstrumentPorts)(n: LightSinkName): Option[Int] = {
+    val port = n match {
       case LightSinkName.Gmos |
-           LightSinkName.Gmos_Ifu => TcsEpics.instance.gmosPort
+           LightSinkName.Gmos_Ifu => ports.gmosPort
       case LightSinkName.Niri_f6 |
            LightSinkName.Niri_f14 |
-           LightSinkName.Niri_f32 => TcsEpics.instance.niriPort
-      case LightSinkName.Nifs     => TcsEpics.instance.nifsPort
-      case LightSinkName.Gnirs    => TcsEpics.instance.gnirsPort
-      case LightSinkName.F2       => TcsEpics.instance.f2Port
-      case LightSinkName.Gpi      => TcsEpics.instance.gpiPort
-      case LightSinkName.Ghost    => TcsEpics.instance.ghostPort
-      case LightSinkName.Gsaoi    => TcsEpics.instance.gsaoiPort
+           LightSinkName.Niri_f32 => ports.niriPort
+      case LightSinkName.Nifs     => ports.nifsPort
+      case LightSinkName.Gnirs    => ports.gnirsPort
+      case LightSinkName.F2       => ports.flamingos2Port
+      case LightSinkName.Gpi      => ports.gpiPort
+      case LightSinkName.Ghost    => ports.ghostPort
+      case LightSinkName.Gsaoi    => ports.gsaoiPort
       case LightSinkName.Ac |
-           LightSinkName.Hr       => IO(BottomPort.some)
+           LightSinkName.Hr       => BottomPort
       case LightSinkName.Phoenix |
-           LightSinkName.Visitor  => IO(None)
-    }).map(_.filterNot(_ === InvalidPort))
+           LightSinkName.Visitor  => InvalidPort
+    }
+    (port =!= InvalidPort).option(port)
   }
 
   private def findSinkInSFName(str: String): Option[LightSinkName] =

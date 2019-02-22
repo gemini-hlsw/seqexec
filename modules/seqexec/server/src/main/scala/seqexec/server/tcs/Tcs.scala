@@ -3,7 +3,7 @@
 
 package seqexec.server.tcs
 
-import cats.data.{EitherT, NonEmptyList}
+import cats.data.{EitherT, NonEmptySet}
 import cats.effect.IO
 import cats.implicits._
 import edu.gemini.spModel.config2.Config
@@ -27,7 +27,7 @@ import squants.space.Arcseconds
 
 
 final case class Tcs private (tcsController: TcsController,
-                              subsystems: NonEmptyList[Subsystem],
+                              subsystems: NonEmptySet[Subsystem],
                               gaos: Option[Either[Altair[IO], Gems[IO]]],
                               guideDb: GuideConfigDb[IO]
                              )(config: Tcs.TcsSeqConfig) extends System[IO] {
@@ -40,8 +40,8 @@ final case class Tcs private (tcsController: TcsController,
     case Subsystem.M1     => List(tcs.gc.m1Guide.show)
     case Subsystem.M2     => List(tcs.gc.m2Guide.show)
     case Subsystem.OIWFS  => List((tcs.gds.oiwfs:GuiderConfig).show)
-    case Subsystem.P1WFS  => List((tcs.gds.pwfs1:GuiderConfig).show)
-    case Subsystem.P2WFS  => List((tcs.gds.pwfs2:GuiderConfig).show)
+    case Subsystem.PWFS1  => List((tcs.gds.pwfs1:GuiderConfig).show)
+    case Subsystem.PWFS2  => List((tcs.gds.pwfs2:GuiderConfig).show)
     case Subsystem.Mount  => List(tcs.tc.show)
     case Subsystem.AGUnit => List(tcs.agc.sfPos.show, tcs.agc.hrwfs.show)
     case Subsystem.Gaos   => List("") //TODO: show Gaos configuration
@@ -155,9 +155,9 @@ object Tcs {
   @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object TcsSeqConfig
 
-  def fromConfig(controller: TcsController, subsystems: NonEmptyList[Subsystem], gaos: Option[Either[Altair[IO],
+  def fromConfig(controller: TcsController, subsystems: NonEmptySet[Subsystem], gaos: Option[Either[Altair[IO],
     Gems[IO]]], guideConfigDb: GuideConfigDb[IO])(
-    config: Config, scienceFoldPosition: ScienceFoldPosition, centralWavelength: Option[Wavelength]
+    config: Config, scienceFoldPosition: ScienceFoldPosition, observingWavelength: Option[Wavelength]
   ): Tcs = {
 
     val gwp1 = config.extractAs[StandardGuideOptions.Value](TELESCOPE_KEY / GUIDE_WITH_PWFS1_PROP).toOption
@@ -175,7 +175,7 @@ object Tcs {
       gwoi,
       gwao,
       (offsetp, offsetq).mapN(InstrumentOffset(_, _)),
-      centralWavelength,
+      observingWavelength,
       scienceFoldPosition
     )
 
