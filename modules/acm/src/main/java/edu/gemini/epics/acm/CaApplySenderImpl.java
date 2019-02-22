@@ -147,9 +147,10 @@ final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements Ca
         if (!currentState.equals(IdleState)) {
             failCommand(cm, new CaCommandInProgress());
         } else {
-            currentState = new WaitPreset(cm);
-
             try {
+                CarStateGeneric carVal = car.getValValue();
+                currentState = new WaitPreset(cm, carVal);
+
                 apply.setDir(CadDirective.START);
                 if (timeout > 0) {
                     timeoutFuture = executor.schedule(new Runnable() {
@@ -199,9 +200,9 @@ final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements Ca
         final CarStateGeneric carVal;
         final Integer carClid;
 
-        WaitPreset(CaCommandMonitorImpl cm) {
+        WaitPreset(CaCommandMonitorImpl cm, final CarStateGeneric carVal) {
             this.cm = cm;
-            this.carVal = null;
+            this.carVal = carVal;
             this.carClid = null;
         }
 
@@ -267,13 +268,13 @@ final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements Ca
 
         @Override
         public String signature() {
-            return "WaitStart(clid = " + clid + "carState = " + carState + ", carClid = " + carClid + ")";
+            return "WaitStart(clid = " + clid + ", carState = " + carState + ", carClid = " + carClid + ")";
         }
 
         @Override
         public State onApplyValChange(Integer val) {
-            if (val == clid) {
-                return this;
+            if (val >= clid) {
+                return new WaitStart(cm, val, carState, carClid);
             } else {
                 failCommand(cm, new CaCommandPostError(
                         "Another command was triggered in apply record "
@@ -300,7 +301,7 @@ final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements Ca
 
         private State checkOutConditions(CarStateGeneric carState,
                 Integer carClid) {
-            if (carState != null && carClid != null && carClid == clid) {
+            if (carState != null && carClid != null && carClid >= clid) {
                 if (carState.isError()) {
                     failCommandWithCarError(cm);
                     return IdleState;

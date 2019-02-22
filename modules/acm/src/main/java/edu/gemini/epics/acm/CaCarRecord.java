@@ -102,28 +102,28 @@ final class CaCarRecord<C extends Enum<C> & CarStateGeneric> {
     }
 
     void registerClidListener(ChannelListener<Integer> listener) throws CAException {
-        if(clid!=null) {
+        if (clid!=null) {
             clid.registerListener(listener);
         }
         clidListener = listener;
     }
 
     void unregisterClidListener(ChannelListener<Integer> listener) throws CAException {
-        if(clid!=null) {
+        if (clid!=null) {
             clid.unRegisterListener(listener);
         }
         clidListener = null;
     }
 
     void registerValListener(ChannelListener<C> listener) throws CAException {
-        if(val!=null) {
+        if (val!=null) {
             val.registerListener(listener);
         }
         valListener = listener;
     }
 
     void unregisterValListener(ChannelListener<C> listener) throws CAException {
-        if(val!=null) {
+        if (val!=null) {
             val.unRegisterListener(listener);
         }
         valListener = null;
