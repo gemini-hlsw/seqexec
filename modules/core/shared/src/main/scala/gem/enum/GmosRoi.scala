@@ -40,7 +40,7 @@ object GmosRoi {
   /** Select the member of GmosRoi with the given tag, throwing if absent. */
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GmosRoi =
-    fromTag(s).getOrElse(throw new NoSuchElementException("GmosRoi: Invalid tag: '" + s + "'"))
+    fromTag(s).getOrElse(throw new NoSuchElementException(s"GmosRoi: Invalid tag: '$s'"))
 
   /** @group Typeclass Instances */
   implicit val GmosRoiEnumerated: Enumerated[GmosRoi] =

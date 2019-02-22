@@ -35,7 +35,7 @@ object GpiCassegrain {
   /** Select the member of GpiCassegrain with the given tag, throwing if absent. */
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GpiCassegrain =
-    fromTag(s).getOrElse(throw new NoSuchElementException("GpiCassegrain: Invalid tag: '" + s + "'"))
+    fromTag(s).getOrElse(throw new NoSuchElementException(s"GpiCassegrain: Invalid tag: '$s'"))
 
   /** @group Typeclass Instances */
   implicit val GpiCassegrainEnumerated: Enumerated[GpiCassegrain] =

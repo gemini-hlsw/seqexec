@@ -34,7 +34,7 @@ object F2WindowCover {
   /** Select the member of F2WindowCover with the given tag, throwing if absent. */
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): F2WindowCover =
-    fromTag(s).getOrElse(throw new NoSuchElementException("F2WindowCover: Invalid tag: '" + s + "'"))
+    fromTag(s).getOrElse(throw new NoSuchElementException(s"F2WindowCover: Invalid tag: '$s'"))
 
   /** @group Typeclass Instances */
   implicit val F2WindowCoverEnumerated: Enumerated[F2WindowCover] =

@@ -46,7 +46,7 @@ object GmosDtax {
   /** Select the member of GmosDtax with the given tag, throwing if absent. */
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GmosDtax =
-    fromTag(s).getOrElse(throw new NoSuchElementException("GmosDtax: Invalid tag: '" + s + "'"))
+    fromTag(s).getOrElse(throw new NoSuchElementException(s"GmosDtax: Invalid tag: '$s'"))
 
   /** @group Typeclass Instances */
   implicit val GmosDtaxEnumerated: Enumerated[GmosDtax] =

@@ -35,7 +35,7 @@ object ProgramRole {
   /** Select the member of ProgramRole with the given tag, throwing if absent. */
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): ProgramRole =
-    fromTag(s).getOrElse(throw new NoSuchElementException("ProgramRole: Invalid tag: '" + s + "'"))
+    fromTag(s).getOrElse(throw new NoSuchElementException(s"ProgramRole: Invalid tag: '$s'"))
 
   /** @group Typeclass Instances */
   implicit val ProgramRoleEnumerated: Enumerated[ProgramRole] =

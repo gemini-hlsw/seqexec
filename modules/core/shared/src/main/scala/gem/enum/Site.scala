@@ -41,7 +41,7 @@ object Site {
   /** Select the member of Site with the given tag, throwing if absent. */
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): Site =
-    fromTag(s).getOrElse(throw new NoSuchElementException("Site: Invalid tag: '" + s + "'"))
+    fromTag(s).getOrElse(throw new NoSuchElementException(s"Site: Invalid tag: '$s'"))
 
   /** @group Typeclass Instances */
   implicit val SiteEnumerated: Enumerated[Site] =

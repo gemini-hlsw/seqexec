@@ -56,7 +56,7 @@ object MagnitudeBand {
   /** Select the member of MagnitudeBand with the given tag, throwing if absent. */
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): MagnitudeBand =
-    fromTag(s).getOrElse(throw new NoSuchElementException("MagnitudeBand: Invalid tag: '" + s + "'"))
+    fromTag(s).getOrElse(throw new NoSuchElementException(s"MagnitudeBand: Invalid tag: '$s'"))
 
   /** @group Typeclass Instances */
   implicit val MagnitudeBandEnumerated: Enumerated[MagnitudeBand] =

@@ -41,7 +41,7 @@ object GmosCustomSlitWidth {
   /** Select the member of GmosCustomSlitWidth with the given tag, throwing if absent. */
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GmosCustomSlitWidth =
-    fromTag(s).getOrElse(throw new NoSuchElementException("GmosCustomSlitWidth: Invalid tag: '" + s + "'"))
+    fromTag(s).getOrElse(throw new NoSuchElementException(s"GmosCustomSlitWidth: Invalid tag: '$s'"))
 
   /** @group Typeclass Instances */
   implicit val GmosCustomSlitWidthEnumerated: Enumerated[GmosCustomSlitWidth] =

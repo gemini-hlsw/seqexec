@@ -63,7 +63,7 @@ object GmosSouthFilter {
   /** Select the member of GmosSouthFilter with the given tag, throwing if absent. */
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GmosSouthFilter =
-    fromTag(s).getOrElse(throw new NoSuchElementException("GmosSouthFilter: Invalid tag: '" + s + "'"))
+    fromTag(s).getOrElse(throw new NoSuchElementException(s"GmosSouthFilter: Invalid tag: '$s'"))
 
   /** @group Typeclass Instances */
   implicit val GmosSouthFilterEnumerated: Enumerated[GmosSouthFilter] =

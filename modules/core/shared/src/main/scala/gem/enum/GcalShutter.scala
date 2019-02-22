@@ -35,7 +35,7 @@ object GcalShutter {
   /** Select the member of GcalShutter with the given tag, throwing if absent. */
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GcalShutter =
-    fromTag(s).getOrElse(throw new NoSuchElementException("GcalShutter: Invalid tag: '" + s + "'"))
+    fromTag(s).getOrElse(throw new NoSuchElementException(s"GcalShutter: Invalid tag: '$s'"))
 
   /** @group Typeclass Instances */
   implicit val GcalShutterEnumerated: Enumerated[GcalShutter] =

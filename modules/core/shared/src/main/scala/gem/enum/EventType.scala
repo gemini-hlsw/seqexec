@@ -42,7 +42,7 @@ object EventType {
   /** Select the member of EventType with the given tag, throwing if absent. */
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): EventType =
-    fromTag(s).getOrElse(throw new NoSuchElementException("EventType: Invalid tag: '" + s + "'"))
+    fromTag(s).getOrElse(throw new NoSuchElementException(s"EventType: Invalid tag: '$s'"))
 
   /** @group Typeclass Instances */
   implicit val EventTypeEnumerated: Enumerated[EventType] =

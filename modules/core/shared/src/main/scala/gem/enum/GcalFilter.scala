@@ -44,7 +44,7 @@ object GcalFilter {
   /** Select the member of GcalFilter with the given tag, throwing if absent. */
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GcalFilter =
-    fromTag(s).getOrElse(throw new NoSuchElementException("GcalFilter: Invalid tag: '" + s + "'"))
+    fromTag(s).getOrElse(throw new NoSuchElementException(s"GcalFilter: Invalid tag: '$s'"))
 
   /** @group Typeclass Instances */
   implicit val GcalFilterEnumerated: Enumerated[GcalFilter] =

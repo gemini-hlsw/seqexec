@@ -186,7 +186,7 @@ object EnumDef {
       |  /** Select the member of $name with the given tag, throwing if absent. */
       |  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
       |  def unsafeFromTag(s: String): $name =
-      |    fromTag(s).getOrElse(throw new NoSuchElementException("$name: Invalid tag: '" + s + "'"))
+      |    fromTag(s).getOrElse(throw new NoSuchElementException(s"$name: Invalid tag: '$$s'"))
       |
       |  /** @group Typeclass Instances */
       |  implicit val ${name}Enumerated: Enumerated[$name] =

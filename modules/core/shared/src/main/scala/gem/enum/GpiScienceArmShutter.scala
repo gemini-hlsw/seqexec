@@ -35,7 +35,7 @@ object GpiScienceArmShutter {
   /** Select the member of GpiScienceArmShutter with the given tag, throwing if absent. */
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GpiScienceArmShutter =
-    fromTag(s).getOrElse(throw new NoSuchElementException("GpiScienceArmShutter: Invalid tag: '" + s + "'"))
+    fromTag(s).getOrElse(throw new NoSuchElementException(s"GpiScienceArmShutter: Invalid tag: '$s'"))
 
   /** @group Typeclass Instances */
   implicit val GpiScienceArmShutterEnumerated: Enumerated[GpiScienceArmShutter] =

@@ -44,7 +44,7 @@ object GpiApodizer {
   /** Select the member of GpiApodizer with the given tag, throwing if absent. */
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GpiApodizer =
-    fromTag(s).getOrElse(throw new NoSuchElementException("GpiApodizer: Invalid tag: '" + s + "'"))
+    fromTag(s).getOrElse(throw new NoSuchElementException(s"GpiApodizer: Invalid tag: '$s'"))
 
   /** @group Typeclass Instances */
   implicit val GpiApodizerEnumerated: Enumerated[GpiApodizer] =

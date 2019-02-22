@@ -34,7 +34,7 @@ object GnirsAcquisitionMirror {
   /** Select the member of GnirsAcquisitionMirror with the given tag, throwing if absent. */
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GnirsAcquisitionMirror =
-    fromTag(s).getOrElse(throw new NoSuchElementException("GnirsAcquisitionMirror: Invalid tag: '" + s + "'"))
+    fromTag(s).getOrElse(throw new NoSuchElementException(s"GnirsAcquisitionMirror: Invalid tag: '$s'"))
 
   /** @group Typeclass Instances */
   implicit val GnirsAcquisitionMirrorEnumerated: Enumerated[GnirsAcquisitionMirror] =

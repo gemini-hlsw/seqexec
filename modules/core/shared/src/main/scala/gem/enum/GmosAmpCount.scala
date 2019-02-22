@@ -35,7 +35,7 @@ object GmosAmpCount {
   /** Select the member of GmosAmpCount with the given tag, throwing if absent. */
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GmosAmpCount =
-    fromTag(s).getOrElse(throw new NoSuchElementException("GmosAmpCount: Invalid tag: '" + s + "'"))
+    fromTag(s).getOrElse(throw new NoSuchElementException(s"GmosAmpCount: Invalid tag: '$s'"))
 
   /** @group Typeclass Instances */
   implicit val GmosAmpCountEnumerated: Enumerated[GmosAmpCount] =

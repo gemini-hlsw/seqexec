@@ -37,7 +37,7 @@ object EphemerisKeyType {
   /** Select the member of EphemerisKeyType with the given tag, throwing if absent. */
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): EphemerisKeyType =
-    fromTag(s).getOrElse(throw new NoSuchElementException("EphemerisKeyType: Invalid tag: '" + s + "'"))
+    fromTag(s).getOrElse(throw new NoSuchElementException(s"EphemerisKeyType: Invalid tag: '$s'"))
 
   /** @group Typeclass Instances */
   implicit val EphemerisKeyTypeEnumerated: Enumerated[EphemerisKeyType] =

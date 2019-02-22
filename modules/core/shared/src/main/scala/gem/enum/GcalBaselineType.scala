@@ -32,7 +32,7 @@ object GcalBaselineType {
   /** Select the member of GcalBaselineType with the given tag, throwing if absent. */
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GcalBaselineType =
-    fromTag(s).getOrElse(throw new NoSuchElementException("GcalBaselineType: Invalid tag: '" + s + "'"))
+    fromTag(s).getOrElse(throw new NoSuchElementException(s"GcalBaselineType: Invalid tag: '$s'"))
 
   /** @group Typeclass Instances */
   implicit val GcalBaselineTypeEnumerated: Enumerated[GcalBaselineType] =

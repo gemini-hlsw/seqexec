@@ -37,7 +37,7 @@ object UserTargetType {
   /** Select the member of UserTargetType with the given tag, throwing if absent. */
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): UserTargetType =
-    fromTag(s).getOrElse(throw new NoSuchElementException("UserTargetType: Invalid tag: '" + s + "'"))
+    fromTag(s).getOrElse(throw new NoSuchElementException(s"UserTargetType: Invalid tag: '$s'"))
 
   /** @group Typeclass Instances */
   implicit val UserTargetTypeEnumerated: Enumerated[UserTargetType] =

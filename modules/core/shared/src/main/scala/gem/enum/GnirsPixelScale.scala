@@ -35,7 +35,7 @@ object GnirsPixelScale {
   /** Select the member of GnirsPixelScale with the given tag, throwing if absent. */
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GnirsPixelScale =
-    fromTag(s).getOrElse(throw new NoSuchElementException("GnirsPixelScale: Invalid tag: '" + s + "'"))
+    fromTag(s).getOrElse(throw new NoSuchElementException(s"GnirsPixelScale: Invalid tag: '$s'"))
 
   /** @group Typeclass Instances */
   implicit val GnirsPixelScaleEnumerated: Enumerated[GnirsPixelScale] =

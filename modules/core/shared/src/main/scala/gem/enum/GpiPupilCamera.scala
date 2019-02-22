@@ -35,7 +35,7 @@ object GpiPupilCamera {
   /** Select the member of GpiPupilCamera with the given tag, throwing if absent. */
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GpiPupilCamera =
-    fromTag(s).getOrElse(throw new NoSuchElementException("GpiPupilCamera: Invalid tag: '" + s + "'"))
+    fromTag(s).getOrElse(throw new NoSuchElementException(s"GpiPupilCamera: Invalid tag: '$s'"))
 
   /** @group Typeclass Instances */
   implicit val GpiPupilCameraEnumerated: Enumerated[GpiPupilCamera] =

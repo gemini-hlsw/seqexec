@@ -33,7 +33,7 @@ object MagnitudeSystem {
   /** Select the member of MagnitudeSystem with the given tag, throwing if absent. */
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): MagnitudeSystem =
-    fromTag(s).getOrElse(throw new NoSuchElementException("MagnitudeSystem: Invalid tag: '" + s + "'"))
+    fromTag(s).getOrElse(throw new NoSuchElementException(s"MagnitudeSystem: Invalid tag: '$s'"))
 
   /** @group Typeclass Instances */
   implicit val MagnitudeSystemEnumerated: Enumerated[MagnitudeSystem] =

@@ -34,7 +34,7 @@ object GmosEOffsetting {
   /** Select the member of GmosEOffsetting with the given tag, throwing if absent. */
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GmosEOffsetting =
-    fromTag(s).getOrElse(throw new NoSuchElementException("GmosEOffsetting: Invalid tag: '" + s + "'"))
+    fromTag(s).getOrElse(throw new NoSuchElementException(s"GmosEOffsetting: Invalid tag: '$s'"))
 
   /** @group Typeclass Instances */
   implicit val GmosEOffsettingEnumerated: Enumerated[GmosEOffsetting] =

@@ -35,7 +35,7 @@ object GpiASU {
   /** Select the member of GpiASU with the given tag, throwing if absent. */
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GpiASU =
-    fromTag(s).getOrElse(throw new NoSuchElementException("GpiASU: Invalid tag: '" + s + "'"))
+    fromTag(s).getOrElse(throw new NoSuchElementException(s"GpiASU: Invalid tag: '$s'"))
 
   /** @group Typeclass Instances */
   implicit val GpiASUEnumerated: Enumerated[GpiASU] =

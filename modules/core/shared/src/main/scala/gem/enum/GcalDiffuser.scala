@@ -35,7 +35,7 @@ object GcalDiffuser {
   /** Select the member of GcalDiffuser with the given tag, throwing if absent. */
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GcalDiffuser =
-    fromTag(s).getOrElse(throw new NoSuchElementException("GcalDiffuser: Invalid tag: '" + s + "'"))
+    fromTag(s).getOrElse(throw new NoSuchElementException(s"GcalDiffuser: Invalid tag: '$s'"))
 
   /** @group Typeclass Instances */
   implicit val GcalDiffuserEnumerated: Enumerated[GcalDiffuser] =

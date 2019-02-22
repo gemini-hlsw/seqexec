@@ -35,7 +35,7 @@ object GpiEntranceShutter {
   /** Select the member of GpiEntranceShutter with the given tag, throwing if absent. */
   @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GpiEntranceShutter =
-    fromTag(s).getOrElse(throw new NoSuchElementException("GpiEntranceShutter: Invalid tag: '" + s + "'"))
+    fromTag(s).getOrElse(throw new NoSuchElementException(s"GpiEntranceShutter: Invalid tag: '$s'"))
 
   /** @group Typeclass Instances */
   implicit val GpiEntranceShutterEnumerated: Enumerated[GpiEntranceShutter] =
