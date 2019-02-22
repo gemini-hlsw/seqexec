@@ -323,7 +323,7 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
               return new ObserveWaitIdle(carState, cm);
           } else if (carState.isError()) {
               // Signal an error
-              failCommandWithCarError(cm);
+              failCommandWithObserveCarError(cm);
               return idleObserveState;
           } else {
               // No change, preserve the car
@@ -518,23 +518,9 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
         }
 
         @Override
-        public ApplyState onObserveCarValChange(CarStateGeneric val)  {
-            return new CaObserveSenderImpl.WaitApplyPreset(cm, carState, carClid, observeState.onObserveCarValChange(val));
-        }
-
-        @Override
         public CaObserveSenderImpl.ApplyState onTimeout() {
             failCommand(cm, new TimeoutException());
             return idleState;
-        }
-        @Override
-        public ApplyState onStopMarkChange(Short val) {
-            return this;
-        }
-
-        @Override
-        public ApplyState onAbortMarkChange(Short val) {
-            return this;
         }
 
         @Override
@@ -767,17 +753,6 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
         }
 
         @Override
-        public ApplyState onObserveCarValChange(CarStateGeneric val) {
-            return new WaitApplyBusy(cm, clid, carState, observeState.onObserveCarValChange(val));
-        }
-
-        @Override
-        public ApplyState onStopMarkChange(Short val) { return this; }
-
-        @Override
-        public ApplyState onAbortMarkChange(Short val) { return this; }
-
-        @Override
         public ApplyState onTimeout() {
             failCommand(cm, new TimeoutException());
             return idleState;
@@ -852,17 +827,6 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
         }
 
         @Override
-        public ApplyState onObserveCarValChange(CarStateGeneric val) {
-            return new WaitApplyIdle(cm, clid, carState, observeState.onObserveCarValChange(val));
-        }
-
-        @Override
-        public ApplyState onStopMarkChange(Short val) { return this; }
-
-        @Override
-        public ApplyState onAbortMarkChange(Short val) { return this; }
-
-        @Override
         public ApplyState onTimeout() {
             failCommand(cm, new TimeoutException());
             return idleState;
@@ -877,7 +841,7 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
                 }
                 if (observeState.isDone()) {
                     succedCommand(cm);
-                    return new WaitApplyIdle(cm, clid, carState, observeState);
+                    return idleState;
                 }
             }
             return new WaitApplyIdle(cm, clid, carState, observeState);
@@ -885,7 +849,7 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
 
         @Override
         public CaObserveSenderImpl.ApplyState copyWithObserveState(ObserveState observeState) {
-            return new WaitApplyBusy(cm, clid, carState, observeState);
+            return new WaitApplyIdle(cm, clid, carState, observeState);
         }
 
         @Override
