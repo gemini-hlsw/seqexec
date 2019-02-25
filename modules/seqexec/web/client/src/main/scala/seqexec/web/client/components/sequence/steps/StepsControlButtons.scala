@@ -5,6 +5,7 @@ package seqexec.web.client.components.sequence.steps
 
 import japgolly.scalajs.react.CatsReact._
 import japgolly.scalajs.react.component.Scala.Unmounted
+import japgolly.scalajs.react.extra.Reusability
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.Callback
 import japgolly.scalajs.react.CallbackTo
@@ -27,6 +28,7 @@ import seqexec.web.client.semanticui.elements.icon.Icon.IconPause
 import seqexec.web.client.semanticui.elements.icon.Icon.IconPlay
 import seqexec.web.client.semanticui.elements.icon.Icon.IconStop
 import seqexec.web.client.semanticui.elements.icon.Icon.IconTrash
+import seqexec.web.client.reusability._
 import web.client.style._
 
 /**
@@ -72,6 +74,9 @@ object StepsControlButtons {
                                    resumeRequested = false)
 
   private val ST = ReactS.Fix[State]
+
+  implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
+  implicit val stateReuse: Reusability[State] = Reusability.derive[State]
 
   def requestStop(id: Observation.Id, stepId: Int): Callback =
     SeqexecCircuit.dispatchCB(RequestStop(id, stepId))
@@ -179,6 +184,7 @@ object StepsControlButtons {
           .toTagMod
       )
     }
+    .configure(Reusability.shouldComponentUpdate)
     .componentWillReceiveProps { f =>
       f.runState(if (f.nextProps.isObservePaused) {
         ST.set(NoneRequested)
