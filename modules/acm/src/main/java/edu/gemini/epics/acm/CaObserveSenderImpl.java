@@ -951,7 +951,7 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
         @Override
         public ApplyState onCarValChange(CarStateGeneric val) {
             if (val.isIdle()) {
-                return checkOutCompletion(val, clid);
+                return checkOutCompletion(val, clid, observeState);
             }
             else if (val.isError()) {
                 failCommandWithCarError(cm);
@@ -982,16 +982,16 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
         }
 
         @Override
-        CaObserveSenderImpl.ApplyState onObserveCarValChange(CarStateGeneric carState) {
+        public CaObserveSenderImpl.ApplyState onObserveCarValChange(CarStateGeneric carState) {
           ObserveState state = currentObserveState().onObserveCarValChange(carState);
           if (state.isDone() || state.isAborted() || state.isStopped()) {
-              return checkOutCompletion(carState);
+              return checkOutCompletion(carState, clid, state);
           } else {
               return copyWithObserveState(state);
           }
         }
 
-        private CaObserveSenderImpl.ApplyState checkOutCompletion(CarStateGeneric carState, Integer carClid) {
+        private CaObserveSenderImpl.ApplyState checkOutCompletion(CarStateGeneric carState, Integer carClid, ObserveState observeState) {
             if (carState != null && carClid != null && carClid == clid) {
                 if (carState.isError()) {
                     failCommandWithCarError(cm);
