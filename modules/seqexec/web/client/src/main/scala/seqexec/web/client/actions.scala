@@ -93,6 +93,7 @@ object actions {
   final case class RunCancelPauseFailed(s: Observation.Id) extends Action
   final case class RunSyncFailed(s:        Observation.Id) extends Action
   final case class RunStop(s:              Observation.Id) extends Action
+  final case class RunStopCompleted(s:     Observation.Id) extends Action
   final case class RunStopFailed(s:        Observation.Id) extends Action
   final case class RunAbort(s:             Observation.Id) extends Action
   final case class RunAbortFailed(s:       Observation.Id) extends Action
@@ -185,6 +186,7 @@ object actions {
         s =>
           (s"id: ${s.id.format}",
            s"steps: ${s.steps.length}",
+           s"state: ${s.status}",
            s.steps
              .filter(_.status === StepState.Running)
              .slice(0, scala.math.min(s.steps.length, 20))

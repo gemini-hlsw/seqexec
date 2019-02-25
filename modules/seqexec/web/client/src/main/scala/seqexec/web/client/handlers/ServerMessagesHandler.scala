@@ -156,6 +156,13 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
       updated(value.copy(sequences = filterSequences(sv)), audioEffect)
   }
 
+  val stopCompletedMessage: PartialFunction[Any, ActionResult[M]] = {
+    case ServerMessage(SequenceStopped(id, sv)) =>
+      // A step completed with a stop
+      val stopProgress = Effect(Future(RunStopCompleted(id)))
+      updated(value.copy(sequences = filterSequences(sv)), stopProgress)
+  }
+
   val exposurePausedMessage: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(ExposurePaused(_, sv)) =>
       // Play audio when the sequence gets paused
@@ -225,6 +232,7 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
       actionStoppedRequestMessage,
       sequenceLoadedMessage,
       sequenceUnloadedMessage,
+      stopCompletedMessage,
       modelUpdateMessage,
       singleRunCompleteMessage,
       defaultMessage

@@ -30,6 +30,7 @@ import seqexec.web.client.model.PauseOperation
 import seqexec.web.client.model.QueueOperations
 import seqexec.web.client.model.RunOperation
 import seqexec.web.client.model.SyncOperation
+import seqexec.web.client.model.TabOperations
 import seqexec.web.client.model.ResourceRunOperation
 import seqexec.web.client.model.TabSelected
 import seqexec.web.client.model.SoundSelection
@@ -47,18 +48,7 @@ package object reusability {
   implicit val seqStateReuse: Reusability[SequenceState]    = Reusability.byEq
   implicit val clientStatusReuse: Reusability[ClientStatus] = Reusability.byEq
   implicit val stepTTReuse: Reusability[StepsTableTypeSelection] = Reusability.byEq
-  implicit val stTbFocusReuse: Reusability[StepsTableFocus] =
-    Reusability.by { x =>
-      (x.id,
-       x.instrument,
-       x.state,
-       x.steps,
-       x.stepConfigDisplayed,
-       x.nextStepToRun,
-       x.selectedStep,
-       x.isPreview,
-       x.tableState) // Don't include tabOperations on the check
-    }
+  implicit val stTbFocusReuse: Reusability[StepsTableFocus] = Reusability.byEq
   implicit val stASFocusReuse: Reusability[StatusAndStepFocus] =
     Reusability.byEq
   implicit val sCFocusReuse: Reusability[SequenceControlFocus] =
@@ -93,4 +83,6 @@ package object reusability {
     Reusability.map
   implicit val resSMap: Reusability[SortedMap[Resource, ResourceRunOperation]] =
     Reusability.by(_.toMap)
+  implicit val tabOpsMap: Reusability[TabOperations] =
+    Reusability.byEq
 }

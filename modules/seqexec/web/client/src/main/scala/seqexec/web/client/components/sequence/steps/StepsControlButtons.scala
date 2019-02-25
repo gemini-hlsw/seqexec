@@ -3,14 +3,11 @@
 
 package seqexec.web.client.components.sequence.steps
 
-import japgolly.scalajs.react.CatsReact._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.extra.Reusability
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.Callback
-import japgolly.scalajs.react.CallbackTo
 import japgolly.scalajs.react.ScalaComponent
-import japgolly.scalajs.react.CatsReact
 import gem.Observation
 import seqexec.model._
 import seqexec.model.enum._
@@ -20,6 +17,7 @@ import seqexec.web.client.actions.RequestAbort
 import seqexec.web.client.actions.RequestObsPause
 import seqexec.web.client.actions.RequestObsResume
 import seqexec.web.client.actions.RequestStop
+import seqexec.web.client.model.TabOperations
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.semanticui.elements.button.Button
@@ -39,44 +37,12 @@ object StepsControlButtons {
                          instrument:      Instrument,
                          sequenceState:   SequenceState,
                          stepId:          Int,
-                         isObservePaused: Boolean)
-
-  final case class State(stopRequested:   Boolean,
-                         abortRequested:  Boolean,
-                         pauseRequested:  Boolean,
-                         resumeRequested: Boolean) {
-
-    val canPause: Boolean  = !stopRequested && !abortRequested
-    val canAbort: Boolean  = !stopRequested && !pauseRequested
-    val canStop: Boolean   = !abortRequested && !pauseRequested
-    val canResume: Boolean = canPause
+                         isObservePaused: Boolean,
+                         tabOperations:   TabOperations) {
+    val requestInFlight = tabOperations.stepRequestInFlight
   }
 
-  val StopRequested: State = State(stopRequested = true,
-                                   abortRequested  = false,
-                                   pauseRequested  = false,
-                                   resumeRequested = false)
-  val AbortRequested: State = State(stopRequested = false,
-                                    abortRequested  = true,
-                                    pauseRequested  = false,
-                                    resumeRequested = false)
-  val PauseRequested: State = State(stopRequested = false,
-                                    abortRequested  = false,
-                                    pauseRequested  = true,
-                                    resumeRequested = false)
-  val ResumeRequested: State = State(stopRequested = false,
-                                     abortRequested  = false,
-                                     pauseRequested  = false,
-                                     resumeRequested = true)
-  val NoneRequested: State = State(stopRequested = false,
-                                   abortRequested  = false,
-                                   pauseRequested  = false,
-                                   resumeRequested = false)
-
-  private val ST = ReactS.Fix[State]
-
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
-  implicit val stateReuse: Reusability[State] = Reusability.derive[State]
 
   def requestStop(id: Observation.Id, stepId: Int): Callback =
     SeqexecCircuit.dispatchCB(RequestStop(id, stepId))
@@ -90,26 +56,9 @@ object StepsControlButtons {
   def requestObsResume(id: Observation.Id, stepId: Int): Callback =
     SeqexecCircuit.dispatchCB(RequestObsResume(id, stepId))
 
-  def handleStop(id:     Observation.Id,
-                 stepId: Int): CatsReact.ReactST[CallbackTo, State, Unit] =
-    ST.retM(requestStop(id, stepId)) >> ST.set(StopRequested).liftCB
-
-  def handleAbort(id:     Observation.Id,
-                  stepId: Int): CatsReact.ReactST[CallbackTo, State, Unit] =
-    ST.retM(requestAbort(id, stepId)) >> ST.set(AbortRequested).liftCB
-
-  def handleObsPause(id:     Observation.Id,
-                     stepId: Int): CatsReact.ReactST[CallbackTo, State, Unit] =
-    ST.retM(requestObsPause(id, stepId)) >> ST.set(PauseRequested).liftCB
-
-  def handleObsResume(id:     Observation.Id,
-                      stepId: Int): CatsReact.ReactST[CallbackTo, State, Unit] =
-    ST.retM(requestObsResume(id, stepId)) >> ST.set(ResumeRequested).liftCB
-
   private val component = ScalaComponent
     .builder[Props]("StepsControlButtons")
-    .initialState(NoneRequested)
-    .renderPS { ($, p, s) =>
+    .render_P { p =>
       <.div(
         ^.cls := "ui icon buttons",
         SeqexecStyles.notInMobile,
@@ -123,8 +72,8 @@ object StepsControlButtons {
                   Button.Props(icon  = Some(IconPause),
                                color = Some("teal"),
                                onClick =
-                                 $.runState(handleObsPause(p.id, p.stepId)),
-                               disabled = !s.canPause || p.isObservePaused))
+                                 requestObsPause(p.id, p.stepId),
+                               disabled = p.requestInFlight || p.isObservePaused))
               )
             case StopObservation =>
               Popup(
@@ -132,8 +81,8 @@ object StepsControlButtons {
                 Button(
                   Button.Props(icon     = Some(IconStop),
                                color    = Some("orange"),
-                               onClick  = $.runState(handleStop(p.id, p.stepId)),
-                               disabled = !s.canStop))
+                               onClick  = requestStop(p.id, p.stepId),
+                               disabled = p.requestInFlight))
               )
             case AbortObservation =>
               Popup(
@@ -142,8 +91,8 @@ object StepsControlButtons {
                   Button.Props(
                     icon     = Some(IconTrash),
                     color    = Some("red"),
-                    onClick  = $.runState(handleAbort(p.id, p.stepId)),
-                    disabled = !s.canAbort))
+                    onClick  = requestAbort(p.id, p.stepId),
+                    disabled = p.requestInFlight))
               )
             case ResumeObservation =>
               Popup(
@@ -152,8 +101,8 @@ object StepsControlButtons {
                   Button.Props(icon  = Some(IconPlay),
                                color = Some("blue"),
                                onClick =
-                                 $.runState(handleObsResume(p.id, p.stepId)),
-                               disabled = !s.canResume || !p.isObservePaused))
+                                 requestObsResume(p.id, p.stepId),
+                               disabled = p.requestInFlight || !p.isObservePaused))
               )
             // Hamamatsu operations
             case PauseImmediatelyObservation =>
@@ -184,15 +133,16 @@ object StepsControlButtons {
           .toTagMod
       )
     }
-    .configure(Reusability.shouldComponentUpdate)
-    .componentWillReceiveProps { f =>
-      f.runState(if (f.nextProps.isObservePaused) {
-        ST.set(NoneRequested)
-      } else {
-        ST.nop
-      })
-    }
+    // .configure(Reusability.shouldComponentUpdate)
+    // .componentWillReceiveProps { f =>
+    //   val startedRunning = f.currentProps.sequenceState.isRunning && !f.currentProps.sequenceState.isRunning
+    //   f.runState(if (f.nextProps.isObservePaused || startedRunning) {
+    //     ST.set(NoneRequested)
+    //   } else {
+    //     ST.nop
+    //   })
+    // }
     .build
 
-  def apply(p: Props): Unmounted[Props, State, Unit] = component(p)
+  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
 }

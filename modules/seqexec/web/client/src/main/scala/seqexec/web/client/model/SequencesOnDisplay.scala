@@ -140,12 +140,13 @@ final case class SequencesOnDisplay(tabs: Zipper[SeqexecTab]) {
         val seq          = tab.filter(_.isComplete).as(left).toLeft(right)
         val stepConfig   = tab.flatMap(_.stepConfig)
         val selectedStep = tab.flatMap(_.selectedStep)
+        val tabOperations = tab.map(_.tabOperations).getOrElse(TabOperations.Default)
         InstrumentSequenceTab(x.metadata.instrument,
                               seq,
                               stepConfig,
                               selectedStep,
                               curTableState,
-                              TabOperations.Default).some
+                              tabOperations).some
     }
 
     // Store current focus

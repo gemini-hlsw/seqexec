@@ -108,14 +108,17 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
       } yield ret
 
     def observeTail(id: ImageFileId, dataId: String)(r: ObserveCommand.Result): SeqAction[Result] = {
-      val successTail: SeqAction[Result] = for {
+      def okTail(stopped: Boolean): SeqAction[Result] = for {
         _ <- notifyObserveEnd
         _ <- headers(ctx).reverseMap(_.sendAfter(id)).sequence.embed
         _ <- closeImage(id)
         _ <- sendDataEnd(obsId, id, dataId)
-      } yield Result.OK(Response.Observed(id))
+      } yield if (stopped) Result.OKStopped(Response.Observed(id)) else Result.OK(Response.Observed(id))
 
-      val stopTail: SeqAction[Result] = successTail
+      val successTail: SeqAction[Result] = okTail(stopped = false)
+
+      val stopTail: SeqAction[Result] = okTail(stopped = true)
+
       val abortTail: SeqAction[Result] = sendObservationAborted(obsId, id) *>
         SeqAction.fail(SeqexecFailure.Execution(s"Observation ${obsId.format} aborted by user."))
 
