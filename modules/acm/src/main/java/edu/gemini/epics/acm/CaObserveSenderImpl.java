@@ -378,9 +378,9 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
                 failCommandWithObserveCarError(cm);
                 return idleObserveState;
             }
-            else if (observeCarState.isPaused()){
+            else if (carState.isPaused()) {
                 pauseCommand(cm);
-                return new ObserveWaitIdle(carState, cm);
+                return new ObservePaused(carState, cm);
             }
             else {
                 // Should never get here
@@ -431,6 +431,49 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
         public boolean isDone() { return true; }
 
     };
+
+    // At this state we are paused and waiting for a resume
+    private final class ObservePaused implements ObserveState {
+        final CaCommandMonitorImpl cm;
+        final CarStateGeneric observeCarState;
+
+        ObservePaused(final CarStateGeneric observeCarState, final CaCommandMonitorImpl cm) {
+            this.observeCarState = observeCarState;
+            this.cm = cm;
+        }
+
+        public String signature() { return "ObservePaused"; }
+
+        public ObserveState onObserveCarValChange(final CarStateGeneric carState) {
+          if (carState.isBusy()) {
+              // Now we are busy, let's go to wait for idle
+              return new ObserveWaitIdle(carState, cm);
+          } else if (carState.isError()) {
+              // Signal an error
+              failCommandWithObserveCarError(cm);
+              return idleObserveState;
+          } else if (carState.isPaused()) {
+              return this;
+          } else {
+              // No change, preserve the car
+              return new ObservePaused(carState, cm);
+          }
+        }
+
+        public CaObserveSenderImpl.ObserveState onStopMarkChange(final Short val) {
+            return new ObserveWaitStop(cm, val);
+        }
+
+        public CaObserveSenderImpl.ObserveState onAbortMarkChange(final Short val) {
+            return new ObserveWaitAbort(cm, val);
+        }
+
+        @Override
+        public boolean isPaused() {
+            return true;
+        }
+
+    }
 
     // Wait for stop to go idle
     private final class ObserveWaitStop implements ObserveState {
@@ -684,165 +727,6 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
         }
 
     }
-    // private final class WaitPreset implements CaObserveSenderImpl.State {
-    //     final CaCommandMonitorImpl cm;
-    //     final CarStateGeneric carState;
-    //     final CarStateGeneric observeCarState;
-    //     final Integer carClid;
-    //     final ObserveState observeState;
-    //
-    //     WaitPreset(CaCommandMonitorImpl cm) {
-    //         this.cm = cm;
-    //         this.carState = null;
-    //         this.carClid = null;
-    //         this.observeCarState = null;
-    //         this.observeState = observeStart;
-    //     }
-    //
-    //     private WaitPreset(CaCommandMonitorImpl cm, CarStateGeneric carState, Integer carClid, CarStateGeneric observeCarState, ObserveState observeState) {
-    //         this.cm = cm;
-    //         this.carState = carState;
-    //         this.carClid = carClid;
-    //         this.observeCarState = observeCarState;
-    //         this.observeState = observeState;
-    //     }
-    //
-    //     @Override
-    //     public String signature() {
-    //         return "WaitPreset(carState = " + carState + ", carClid = " + carClid +
-    //                 ", observeCarState = " + observeCarState + ", observeState = " + observeState.signature() + ")";
-    //     }
-    //
-    //     @Override
-    //     public CaObserveSenderImpl.State onApplyValChange(Integer val) {
-    //         if (val > 0) {
-    //             if (val.equals(carClid) && carState != null) {
-    //                 if (carState.isError()) {
-    //                     failCommandWithCarError(cm);
-    //                     return idleState;
-    //                 } else if (carState.isBusy()) {
-    //                     return new CaObserveSenderImpl.WaitCompletion(cm, val,  observeState);
-    //                 }
-    //             }
-    //             return new CaObserveSenderImpl.WaitCompletion(cm, val, carState, carClid, observeCarState, observeState);
-    //         } else {
-    //             failCommandWithApplyError(cm);
-    //             return idleState;
-    //         }
-    //     }
-    //
-    //     @Override
-    //     public CaObserveSenderImpl.State onCarValChange(CarStateGeneric val) {
-    //         return new CaObserveSenderImpl.WaitPreset(cm, val, carClid, observeCarState, observeState);
-    //     }
-    //
-    //     @Override
-    //     public CaObserveSenderImpl.State onCarClidChange(Integer val) {
-    //         return new CaObserveSenderImpl.WaitPreset(cm, carState, val, observeCarState, observeState);
-    //     }
-    //
-    //     @Override
-    //     public State onObserveCarValChange(CarStateGeneric val)  {
-    //         return new CaObserveSenderImpl.WaitPreset(cm, carState, carClid, val, observeState.onObserveCarValChange(val));
-    //     }
-    //
-    //     @Override
-    //     public CaObserveSenderImpl.ApplyState onTimeout() {
-    //         failCommand(cm, new TimeoutException());
-    //         return idleState;
-    //     }
-    //     @Override
-    //     public State onStopMarkChange(Short val) {
-    //         return this;
-    //     }
-    //
-    //     @Override
-    //     public State onAbortMarkChange(Short val) {
-    //         return this;
-    //     }
-    //
-    // }
-
-    // private final class WaitStart implements CaObserveSenderImpl.State {
-    //     final CaCommandMonitorImpl cm;
-    //     final int clid;
-    //     final Integer carClid;
-    //     final CarStateGeneric carState;
-    //     final CarStateGeneric observeCarState;
-    //
-    //     WaitStart(CaCommandMonitorImpl cm, int clid, CarStateGeneric carState,
-    //             Integer carClid, CarStateGeneric observeCarState) {
-    //         this.cm = cm;
-    //         this.clid = clid;
-    //         this.carState = carState;
-    //         this.carClid = carClid;
-    //         this.observeCarState = observeCarState;
-    //     }
-    //
-    //     @Override
-    //     public String signature() {
-    //         return "WaitStart(clid = " + clid + "carState = " + carState + ", carClid = " + carClid +
-    //                 ", observeCarState = " + observeCarState + ")";
-    //     }
-    //
-    //     @Override
-    //     public CaObserveSenderImpl.State onApplyValChange(Integer val) {
-    //         if (val == clid) {
-    //             return this;
-    //         } else {
-    //             failCommand(cm, new CaCommandPostError(
-    //                     "Another command was triggered in apply record "
-    //                             + apply.getEpicsName()));
-    //             return idleState;
-    //         }
-    //     }
-    //
-    //     @Override
-    //     public CaObserveSenderImpl.State onCarValChange(CarStateGeneric val) {
-    //         return checkOutConditions(val, carClid);
-    //     }
-    //
-    //     @Override
-    //     public CaObserveSenderImpl.State onCarClidChange(Integer val) {
-    //         return checkOutConditions(carState, val);
-    //     }
-    //
-    //     @Override
-    //     public CaObserveSenderImpl.ApplyState onTimeout() {
-    //         failCommand(cm, new TimeoutException());
-    //         return idleState;
-    //     }
-    //
-    //     @Override
-    //     public State onObserveCarValChange(CarStateGeneric val) {
-    //         return new CaObserveSenderImpl.WaitStart(cm, clid, carState, carClid, val);
-    //     }
-    //
-    //     @Override
-    //     public State onStopMarkChange(Short val) {
-    //         return this;
-    //     }
-    //
-    //     @Override
-    //     public State onAbortMarkChange(Short val) {
-    //         return this;
-    //     }
-    //
-    //     private CaObserveSenderImpl.State checkOutConditions(CarStateGeneric carState,
-    //                                                        Integer carClid) {
-    //         if (carState != null && carClid != null && carClid == clid) {
-    //             if (carState.isError()) {
-    //                 failCommandWithCarError(cm);
-    //                 return idleState;
-    //             }
-    //             if (carState.isBusy()) {
-    //                 return new CaObserveSenderImpl.WaitCompletion(cm, clid, observeCarState, observeState);
-    //             }
-    //         }
-    //         return new CaObserveSenderImpl.WaitStart(cm, clid, carState, carClid, observeCarState);
-    //     }
-    //
-    // }
 
     // In this stat we wait for applyC to turn to busy
     private final class WaitApplyBusy implements ApplyState {
@@ -986,6 +870,8 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
           ObserveState state = currentObserveState().onObserveCarValChange(carState);
           if (state.isDone() || state.isAborted() || state.isStopped()) {
               return checkOutCompletion(carState, clid, state);
+          } else if (state.isPaused()) {
+              return idleState;
           } else {
               return copyWithObserveState(state);
           }
@@ -1009,10 +895,6 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
                     failCommand(cm, new CaObserveAborted());
                     return idleState;
                 }
-                if (observeState.isPaused()) {
-                    pauseCommand(cm);
-                    return idleState;
-                }
             }
             return new WaitApplyIdle(cm, clid, carState, observeState);
         }
@@ -1027,351 +909,6 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
           return observeState;
         }
     }
-    // private final class WaitCompletion implements State {
-    //     final CaCommandMonitorImpl cm;
-    //     final int clid;
-    //     // final CarStateGeneric observeCarState;
-    //     final ObserveState observeState;
-    //
-    //     WaitCompletion(CaCommandMonitorImpl cm, int clid, /*CarStateGeneric observeCarState,*/ ObserveState observeState) {
-    //         this.cm = cm;
-    //         this.clid = clid;
-    //         // this.observeCarState = observeCarState;
-    //         this.observeState = observeState;
-    //     }
-    //
-    //     @Override
-    //     public String signature() {
-    //         return "WaitCompletion(clid = " + clid + ", observeState = " + observeState.signature() + ")";
-    //     }
-    //
-    //     @Override
-    //     public State onApplyValChange(Integer val) {
-    //         if (val == clid) {
-    //             return this;
-    //         } else {
-    //             failCommand(cm, new CaCommandPostError(
-    //                     "Another command was triggered in apply record "
-    //                             + apply.getEpicsName()));
-    //             return idleState;
-    //         }
-    //     }
-    //
-    //     @Override
-    //     public State onCarValChange(CarStateGeneric val) {
-    //         if (val.isIdle()) {
-    //             if (observeCarState == null || observeCarState.isIdle()) {
-    //                 return new WaitObserveStart(cm);
-    //             }
-    //             else if (observeCarState.isBusy()) {
-    //                 return new WaitObserveCompletion(cm);
-    //             }
-    //             else if (observeCarState.isError()) {
-    //                 failCommandWithObserveCarError(cm);
-    //                 return idleState;
-    //             }
-    //             else if (observeCarState.isPaused()){
-    //                 pauseCommand(cm);
-    //                 return idleState;
-    //             }
-    //             else {
-    //                 // Should never get here
-    //                 return this;
-    //             }
-    //         }
-    //         else if (val.isError()) {
-    //             failCommandWithCarError(cm);
-    //             return idleState;
-    //         }
-    //         else {
-    //             return this;
-    //         }
-    //     }
-    //
-    //
-    //     @Override
-    //     public State onCarClidChange(Integer val) {
-    //         if (val == clid) {
-    //             return this;
-    //         } else {
-    //             failCommand(cm, new CaCommandPostError(
-    //                     "Another command was triggered in apply record "
-    //                             + apply.getEpicsName()));
-    //             return idleState;
-    //         }
-    //     }
-    //
-    //     @Override
-    //     public State onObserveCarValChange(CarStateGeneric val) {
-    //         return new WaitCompletion(cm, clid, val, observeState);
-    //     }
-    //
-    //     @Override
-    //     public State onStopMarkChange(Short val) { return this; }
-    //
-    //     @Override
-    //     public State onAbortMarkChange(Short val) { return this; }
-    //
-    //     @Override
-    //     public State onTimeout() {
-    //         failCommand(cm, new TimeoutException());
-    //         return idleState;
-    //     }
-    //
-    // }
-
-    // private final class WaitObserveStart implements CaObserveSenderImpl.State {
-    //     final CaCommandMonitorImpl cm;
-    //
-    //     WaitObserveStart(CaCommandMonitorImpl cm) {
-    //         this.cm = cm;
-    //     }
-    //
-    //     @Override
-    //     public String signature() {
-    //         return "WaitObserveStart";
-    //     }
-    //
-    //     @Override
-    //     public State onApplyValChange(Integer val) { return this; }
-    //
-    //     @Override
-    //     public State onCarValChange(CarStateGeneric carState) { return this; }
-    //
-    //     @Override
-    //     public State onCarClidChange(Integer val) { return this; }
-    //
-    //     @Override
-    //     public State onObserveCarValChange(CarStateGeneric val) {
-    //         if (val.isBusy()){
-    //             return new WaitObserveCompletion(cm);
-    //         }
-    //         else if (val.isError()){
-    //             failCommandWithObserveCarError(cm);
-    //             return idleState;
-    //         } else if (val.isPaused()){
-    //             pauseCommand(cm);
-    //             return idleState;
-    //         }
-    //         else {
-    //             return this;
-    //         }
-    //     }
-    //
-    //     @Override
-    //     public State onStopMarkChange(Short val) { return this; }
-    //
-    //     @Override
-    //     public State onAbortMarkChange(Short val) { return this; }
-    //
-    //     @Override
-    //     public State onTimeout() {
-    //         failCommand(cm, new TimeoutException());
-    //         return idleState;
-    //     }
-    // }
-
-    // private final class WaitObserveCompletion implements State {
-    //     final CaCommandMonitorImpl cm;
-    //     final short stopMark;
-    //     final short abortMark;
-    //
-    //     WaitObserveCompletion(CaCommandMonitorImpl cm) {
-    //         this.cm = cm;
-    //         this.stopMark = MRK_IDLE;
-    //         this.abortMark = MRK_IDLE;
-    //     }
-    //
-    //     private WaitObserveCompletion(CaCommandMonitorImpl cm, short stopMark, short abortMark) {
-    //         this.cm = cm;
-    //         this.stopMark = stopMark;
-    //         this.abortMark = abortMark;
-    //     }
-    //
-    //     @Override
-    //     public String signature() {
-    //         return "WaitObserveCompletion( stopMark = " + stopMark + ", abortMark = " + abortMark + ")";
-    //     }
-    //
-    //     @Override
-    //     public CaObserveSenderImpl.State onApplyValChange(Integer val) {
-    //         return this;
-    //     }
-    //
-    //     @Override
-    //     public CaObserveSenderImpl.State onCarValChange(CarStateGeneric val) { return this; }
-    //
-    //     @Override
-    //     public CaObserveSenderImpl.State onCarClidChange(Integer val) { return this; }
-    //
-    //     @Override
-    //     public State onObserveCarValChange(CarStateGeneric val) {
-    //
-    //         if (val.isIdle()) {
-    //             succedCommand(cm);
-    //             return idleState;
-    //         }
-    //         else if (val.isError()) {
-    //             failCommandWithObserveCarError(cm);
-    //             return idleState;
-    //         }
-    //         else if (val.isPaused()) {
-    //             pauseCommand(cm);
-    //             return idleState;
-    //         }
-    //         else {
-    //             return this;
-    //         }
-    //     }
-    //
-    //     @Override
-    //     public CaObserveSenderImpl.State onTimeout() {
-    //         failCommand(cm, new TimeoutException());
-    //         return idleState;
-    //     }
-    //
-    //     @Override
-    //     public State onStopMarkChange(Short val) {
-    //         if (stopMark == MRK_PRESET && val == MRK_IDLE) {
-    //             return new WaitStopCompletion(cm);
-    //         } else {
-    //             return new WaitObserveCompletion(cm, val, abortMark);
-    //         }
-    //     }
-    //
-    //     @Override
-    //     public State onAbortMarkChange(Short val) {
-    //         if (abortMark == MRK_PRESET && val == MRK_IDLE) {
-    //             return new WaitAbortCompletion(cm);
-    //         } else {
-    //             return new WaitObserveCompletion(cm, stopMark, val);
-    //         }
-    //     }
-    //
-    // }
-
-    // private final class WaitStopCompletion implements CaObserveSenderImpl.State {
-    //     final CaCommandMonitorImpl cm;
-    //
-    //     WaitStopCompletion(CaCommandMonitorImpl cm) {
-    //         this.cm = cm;
-    //     }
-    //
-    //     @Override
-    //     public String signature() {
-    //         return "WaitStopCompletion( stopMark = " + stopMark + ", abortMark = " + abortMark + ")";
-    //     }
-    //
-    //     @Override
-    //     public CaObserveSenderImpl.State onApplyValChange(Integer val) {
-    //         return this;
-    //     }
-    //
-    //     @Override
-    //     public CaObserveSenderImpl.State onCarValChange(CarStateGeneric val) { return this; }
-    //
-    //     @Override
-    //     public CaObserveSenderImpl.State onCarClidChange(Integer val) { return this; }
-    //
-    //     @Override
-    //     public State onObserveCarValChange(CarStateGeneric val) {
-    //         if (val.isIdle()) {
-    //             failCommand(cm, new CaObserveStopped());
-    //             return idleState;
-    //         }
-    //         else if (val.isError()) {
-    //             failCommandWithCarError(cm);
-    //             return idleState;
-    //         }
-    //         else if (val.isPaused()) {
-    //             pauseCommand(cm);
-    //             return idleState;
-    //         }
-    //         else {
-    //             return this;
-    //         }
-    //     }
-    //
-    //     @Override
-    //     public CaObserveSenderImpl.State onTimeout() {
-    //         failCommand(cm, new TimeoutException());
-    //         return idleState;
-    //     }
-    //
-    //     @Override
-    //     public State onStopMarkChange(Short val) {
-    //         return this;
-    //     }
-    //
-    //     @Override
-    //     public State onAbortMarkChange(Short val) {
-    //         return this;
-    //     }
-    //
-    // }
-
-    // private final class WaitAbortCompletion implements CaObserveSenderImpl.State {
-    //     final CaCommandMonitorImpl cm;
-    //
-    //     WaitAbortCompletion(CaCommandMonitorImpl cm) {
-    //         this.cm = cm;
-    //     }
-    //
-    //     @Override
-    //     public String signature() {
-    //         return "WaitAbortCompletion( stopMark = " + stopMark + ", abortMark = " + abortMark + ")";
-    //     }
-    //
-    //     @Override
-    //     public CaObserveSenderImpl.State onApplyValChange(Integer val) {
-    //         return this;
-    //     }
-    //
-    //     @Override
-    //     public CaObserveSenderImpl.State onCarValChange(CarStateGeneric val)  {
-    //                 return this;
-    //             }
-    //
-    //     @Override
-    //     public CaObserveSenderImpl.State onCarClidChange(Integer val) { return this; }
-    //
-    //     @Override
-    //     public State onObserveCarValChange(CarStateGeneric val) {
-    //         if (val.isIdle()) {
-    //             failCommand(cm, new CaObserveAborted());
-    //             return idleState;
-    //         }
-    //         else if (val.isError()) {
-    //             failCommandWithObserveCarError(cm);
-    //             return idleState;
-    //         }
-    //         else if (val.isPaused()) {
-    //             pauseCommand(cm);
-    //             return idleState;
-    //         }
-    //         else {
-    //             return this;
-    //         }
-    //     }
-    //
-    //     @Override
-    //     public CaObserveSenderImpl.State onTimeout() {
-    //         failCommand(cm, new TimeoutException());
-    //         return idleState;
-    //     }
-    //
-    //     @Override
-    //     public State onStopMarkChange(Short val) {
-    //         return this;
-    //     }
-    //
-    //     @Override
-    //     public State onAbortMarkChange(Short val) {
-    //         return this;
-    //     }
-    //
-    // }
-
     private synchronized void onApplyValChange(Integer val) {
         if (val != null) {
             ApplyState oldState = currentState;
