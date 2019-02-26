@@ -10,7 +10,7 @@ import gem.math.Wavelength
 
 import java.time.Duration
 
-import org.scalacheck.{ Arbitrary, Gen }
+import org.scalacheck.{ Arbitrary, Cogen }
 import org.scalacheck.Arbitrary.arbitrary
 
 
@@ -20,6 +20,7 @@ trait ArbGnirs {
   import ArbCoAdds._
   import ArbEnumerated._
   import ArbTime._
+  import ArbWavelength._
 
   // Static Config
 
@@ -42,9 +43,25 @@ trait ArbGnirs {
         h <- arbitrary[Either[GnirsFpuOther, GnirsFpuSlit]]
         i <- arbitrary[GnirsPrism]
         j <- arbitrary[GnirsReadMode]
-        k <- Gen.choose(1000, 120000).map(Wavelength.fromAngstroms.unsafeGet)
+        k <- arbitrary[Wavelength]
       } yield DynamicConfig.Gnirs(a, b, c, d, e, f, g, h, i, j, k)
     }
+
+  implicit val cogGnirsDynamic: Cogen[DynamicConfig.Gnirs] =
+    Cogen[(GnirsAcquisitionMirror, GnirsCamera, CoAdds, GnirsDecker, GnirsDisperser, Duration, GnirsFilter, Either[GnirsFpuOther, GnirsFpuSlit], GnirsPrism, GnirsReadMode, Wavelength)]
+      .contramap(g => (
+        g.acquisitionMirror,
+        g.camera,
+        g.coadds,
+        g.decker,
+        g.disperser,
+        g.exposureTime,
+        g.filter,
+        g.fpu,
+        g.prism,
+        g.readMode,
+        g.wavelength
+      ))
 
 }
 
