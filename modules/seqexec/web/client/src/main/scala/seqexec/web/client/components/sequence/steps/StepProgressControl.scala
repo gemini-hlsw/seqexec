@@ -145,7 +145,7 @@ object StepProgressCell {
       SeqexecStyles.configuringRow,
       <.div(
         SeqexecStyles.specialStateLabel,
-        props.state.show
+        props.step.show
       ),
       props.step match {
         case step: StandardStep =>
