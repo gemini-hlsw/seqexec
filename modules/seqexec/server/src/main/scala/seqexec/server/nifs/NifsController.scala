@@ -4,6 +4,7 @@
 package seqexec.server.nifs
 
 import cats.Show
+import cats.implicits._
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.nifs.NifsController.DCConfig
 import seqexec.server.nifs.NifsController.NifsConfig
@@ -67,21 +68,46 @@ object NifsController {
   type CentralWavelength = Double @@ CentralWavelengthD
   type MaskOffset        = Double @@ MaskOffsetD
 
-  final case class DCConfig(coadds:          Coadds,
-                            period:          Option[Period],
-                            exposureTime:    ExposureTime,
-                            numberOfResets:  Option[NumberOfResets],
-                            numberOfPeriods: Option[NumberOfPeriods],
-                            numberOfSamples: Option[NumberOfSamples],
-                            readMode:        Either[EngReadMode, ReadMode])
+  sealed trait DCConfig extends Product with Serializable {
+    val coadds: Coadds
+    val period: Option[Period]
+    val exposureTime: ExposureTime
+    val numberOfResets: Option[NumberOfResets]
+    val numberOfPeriods: Option[NumberOfPeriods]
+    val numberOfSamples: Option[NumberOfSamples]
+    val readMode: Either[EngReadMode, ReadMode]
+  }
+  final case class ArcFlatDCConfig(coadds:          Coadds,
+                                   period:          Option[Period],
+                                   exposureTime:    ExposureTime,
+                                   numberOfResets:  Option[NumberOfResets],
+                                   numberOfPeriods: Option[NumberOfPeriods],
+                                   numberOfSamples: Option[NumberOfSamples])
+      extends DCConfig {
 
-  final case class CCConfig(filter:        Filter,
-                            mask:          Mask,
-                            disperser:     Disperser,
-                            imagingMirror: ImagingMirror,
-                            wavelength:    CentralWavelength,
-                            maskOffset:    MaskOffset,
-                            windowCover:   WindowCover)
+    val readMode: Either[EngReadMode, ReadMode] =
+      edu.gemini.spModel.gemini.nifs.NIFSParams.ReadMode.BRIGHT_OBJECT_SPEC.asRight
+  }
+  final case class StdDCConfig(coadds:          Coadds,
+                               period:          Option[Period],
+                               exposureTime:    ExposureTime,
+                               numberOfResets:  Option[NumberOfResets],
+                               numberOfPeriods: Option[NumberOfPeriods],
+                               numberOfSamples: Option[NumberOfSamples],
+                               readMode:        Either[EngReadMode, ReadMode])
+      extends DCConfig
+
+  sealed trait CCConfig extends Product with Serializable
+
+  case object DarkCCConfig extends CCConfig
+  final case class StdCCConfig(filter:        Filter,
+                               mask:          Mask,
+                               disperser:     Disperser,
+                               imagingMirror: ImagingMirror,
+                               wavelength:    CentralWavelength,
+                               maskOffset:    MaskOffset,
+                               windowCover:   WindowCover)
+      extends CCConfig
 
   final case class NifsConfig(cc: CCConfig, dc: DCConfig)
 

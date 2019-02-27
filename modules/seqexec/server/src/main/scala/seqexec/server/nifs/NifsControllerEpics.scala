@@ -15,6 +15,8 @@ import edu.gemini.spModel.gemini.nifs.NIFSParams.{ Filter => LegacyFilter }
 import edu.gemini.spModel.gemini.nifs.NIFSParams.{ Disperser => LegacyDisperser }
 import edu.gemini.spModel.gemini.nifs.NIFSParams.{ Mask => LegacyMask }
 import edu.gemini.seqexec.server.nifs.DhsConnected
+import edu.gemini.seqexec.server.nifs.{ ReadMode => EReadMode }
+import edu.gemini.seqexec.server.nifs.{ TimeMode => ETimeMode }
 import mouse.boolean._
 import org.log4s.getLogger
 import scala.concurrent.ExecutionContext
@@ -35,15 +37,15 @@ import squants.time.TimeConversions._
 
 object NifsLookupTables {
 
-  val readModeLUT: Map[LegacyReadMode, Int] = Map(
-    LegacyReadMode.BRIGHT_OBJECT_SPEC -> 1,
-    LegacyReadMode.MEDIUM_OBJECT_SPEC -> 1,
-    LegacyReadMode.FAINT_OBJECT_SPEC -> 1
+  val readModeLUT: Map[LegacyReadMode, EReadMode] = Map(
+    LegacyReadMode.BRIGHT_OBJECT_SPEC -> EReadMode.FOWLER,
+    LegacyReadMode.MEDIUM_OBJECT_SPEC -> EReadMode.FOWLER,
+    LegacyReadMode.FAINT_OBJECT_SPEC  -> EReadMode.FOWLER
   )
 
-  val engineeringReadModeLUT: Map[LegacyEngReadMode, Int] = Map(
-    LegacyEngReadMode.FOWLER_SAMPLING_READOUT -> 1,
-    LegacyEngReadMode.LINEAR_READ -> 2
+  val engineeringReadModeLUT: Map[LegacyEngReadMode, EReadMode] = Map(
+    LegacyEngReadMode.FOWLER_SAMPLING_READOUT -> EReadMode.FOWLER,
+    LegacyEngReadMode.LINEAR_READ             -> EReadMode.LINEAR
   )
 }
 
@@ -82,8 +84,8 @@ trait NifsEncoders {
   implicit val disperserEncoder: EncodeEpicsValue[LegacyDisperser, String] =
     EncodeEpicsValue {
       case LegacyDisperser.Z       => "Z"
-      case LegacyDisperser.J       => "H"
-      case LegacyDisperser.H       => "J"
+      case LegacyDisperser.J       => "J"
+      case LegacyDisperser.H       => "H"
       case LegacyDisperser.K       => "K"
       case LegacyDisperser.K_SHORT => "K_Short"
       case LegacyDisperser.K_LONG  => "K_Long"
@@ -169,13 +171,13 @@ object NifsControllerEpics extends NifsController[IO] with NifsEncoders {
     (for {
       p <- OptionT(period.pure[IO])
       _ <- OptionT.liftF(epicsSys.dcConfigCmd.setPeriod(p.toDouble))
-      _ <- OptionT.liftF(epicsSys.dcConfigCmd.setTimeMode(0))
+      _ <- OptionT.liftF(epicsSys.dcConfigCmd.setTimeMode(ETimeMode.ExposureTime))
     } yield ()).value.void
 
   private def setExposureTime(expTime: ExposureTime): IO[Unit] =
     epicsSys.dcConfigCmd.setExposureTime(expTime.toSeconds) *>
       epicsSys.dcConfigCmd.setPeriod(1) *>
-      epicsSys.dcConfigCmd.setTimeMode(1)
+      epicsSys.dcConfigCmd.setTimeMode(ETimeMode.ReadPeriod)
 
   private def configDC(cfg: DCConfig): IO[Unit] =
     setReadMode(cfg.readMode) *>
@@ -184,28 +186,34 @@ object NifsControllerEpics extends NifsController[IO] with NifsEncoders {
       setExposureTime(cfg.exposureTime).whenA(cfg.period.isEmpty) *>
       setCoadds(cfg.coadds) *>
       setNumberOfResets(cfg.numberOfResets) *>
-      setNumberOfPeriods(cfg.numberOfPeriods)
+      setNumberOfPeriods(cfg.numberOfPeriods) *>
+      epicsSys.dcConfigCmd.setTimeout[IO](ConfigTimeout) *>
+        epicsSys.dcConfigCmd.post[IO].void
 
   private def setFilter(cfg: CCConfig): IO[Option[IO[Unit]]] = {
-    val actualFilter: IO[LegacyFilter] =
-      if (cfg.filter === LegacyFilter.SAME_AS_DISPERSER) {
-        cfg.disperser match {
-          case LegacyDisperser.Z | LegacyDisperser.J           =>
-            LegacyFilter.ZJ_FILTER.pure[IO]
+    val actualFilter: IO[LegacyFilter] = cfg match {
+      case DarkCCConfig     =>
+        LegacyFilter.BLOCKED.pure[IO]
+      case cfg: StdCCConfig =>
+        if (cfg.filter === LegacyFilter.SAME_AS_DISPERSER) {
+          cfg.disperser match {
+            case LegacyDisperser.Z | LegacyDisperser.J           =>
+              LegacyFilter.ZJ_FILTER.pure[IO]
 
-          case LegacyDisperser.H                               =>
-            LegacyFilter.JH_FILTER.pure[IO]
+            case LegacyDisperser.H                               =>
+              LegacyFilter.JH_FILTER.pure[IO]
 
-          case LegacyDisperser.MIRROR | LegacyDisperser.K |
-              LegacyDisperser.K_SHORT | LegacyDisperser.K_LONG =>
-            LegacyFilter.HK_FILTER.pure[IO]
+            case LegacyDisperser.MIRROR | LegacyDisperser.K |
+                LegacyDisperser.K_SHORT | LegacyDisperser.K_LONG =>
+              LegacyFilter.HK_FILTER.pure[IO]
 
-          case _                                               =>
-            IO.raiseError(
-              SeqexecFailure.InvalidOp(
-                "cannot set filter based on the disperser ($disperser)"))
-        }
-      } else cfg.filter.pure[IO]
+            case _                                               =>
+              IO.raiseError(
+                SeqexecFailure.InvalidOp(
+                  "cannot set filter based on the disperser ($disperser)"))
+          }
+        } else cfg.filter.pure[IO]
+    }
 
     actualFilter.flatMap { f =>
       val ef = encode(f)
@@ -213,65 +221,89 @@ object NifsControllerEpics extends NifsController[IO] with NifsEncoders {
     }
   }
 
-  private def setImagingMirror(cfg: CCConfig): IO[Option[IO[Unit]]] = {
-    val im = cfg.imagingMirror.displayValue
-    smartSetParamF(im,
-                   epicsSys.imagingMirror,
-                   epicsSys.ccConfigCmd.setImagingMirror(im))
-  }
+  private def setImagingMirror(cfg: CCConfig): IO[Option[IO[Unit]]] =
+    cfg match {
+      case DarkCCConfig     => none.pure[IO]
+      case cfg: StdCCConfig =>
+        val im = cfg.imagingMirror.displayValue
+        smartSetParamF(im,
+                       epicsSys.imagingMirror,
+                       epicsSys.ccConfigCmd.setImagingMirror(im))
+    }
 
   private def setWindowCover(cfg: CCConfig): IO[Option[IO[Unit]]] = {
-    val wc = encode(cfg.windowCover)
+    val wcPosition = cfg match {
+      case DarkCCConfig     =>
+        WindowCover.Closed
+      case cfg: StdCCConfig =>
+        cfg.windowCover
+    }
+    val wc = encode(wcPosition)
     smartSetParamF(wc,
                    epicsSys.windowCover,
                    epicsSys.ccConfigCmd.setWindowCover(wc))
   }
 
-  private def setDisperser(cfg: CCConfig): IO[Option[IO[Unit]]] = {
-    val disperser = encode(cfg.disperser)
+  private def setDisperser(cfg: CCConfig): IO[Option[IO[Unit]]] =
+    cfg match {
+      case DarkCCConfig     => none.pure[IO]
+      case cfg: StdCCConfig =>
+        val disperser = encode(cfg.disperser)
 
-    val set = epicsSys.ccConfigCmd.setDisperser(disperser)
+        val setDisperserIO = epicsSys.ccConfigCmd.setDisperser(disperser)
 
-    // Here we can assume that we are actually in the right position but have been offset if:
-    // * The current position is INVALID
-    // * The last selected position (which was validated) is the same as where we are demanded to go
-    // * The the current central wavelenght is not the same (to within tolerance) to what the default is
-    // for this positoin (if it is, we should not be in a INVALID position). (NOT CHECKING FOR THIS YET).
-    // So if any of those conditions is not true; need to move the disperser to the new position.
-    def checkInvalid(current: Option[String]): IO[Option[IO[Unit]]] =
-      epicsSys.lastSelectedDisperser.map { lsd =>
-        (current.exists(_ === "INVALID") && lsd.exists(_ === disperser))
-          .option(set)
-      }
+        // Here we can assume that we are actually in the right position but have been offset if:
+        // * The current position is INVALID
+        // * The last selected position (which was validated) is the same as where we are demanded to go
+        // * The the current central wavelenght is not the same (to within tolerance) to what the default is
+        // for this positoin (if it is, we should not be in a INVALID position). (NOT CHECKING FOR THIS YET).
+        // So if any of those conditions is not true; need to move the disperser to the new position.
+        def checkInvalid(current: Option[String]): IO[Option[IO[Unit]]] =
+          epicsSys.lastSelectedDisperser.map { lsd =>
+            (current.exists(_ === "INVALID") && lsd.exists(_ === disperser))
+              .option(setDisperserIO)
+          }
 
-    // We need an even smarter set param
-    for {
-      instDisp     <- epicsSys.disperser
-      setIfInvalid <- checkInvalid(instDisp)
-    } yield if (instDisp.exists(_ =!= disperser)) set.some else setIfInvalid
-  }
+        // We need an even smarter set param
+        for {
+          instDisp     <- epicsSys.disperser
+          setIfInvalid <- checkInvalid(instDisp)
+        } yield
+          if (instDisp.exists(_ =!= disperser)) {
+            setDisperserIO.some
+          } else {
+            setIfInvalid
+          }
+    }
 
   private def setMask(cfg: CCConfig): IO[Option[IO[Unit]]] = {
-    val mask = encode(cfg.mask)
+    def setMaskEpics(lm: LegacyMask): IO[Option[IO[Unit]]] = {
+      val mask      = encode(lm)
+      val setMaskIO = epicsSys.ccConfigCmd.setMask(mask)
+      // Here we can assume that we are actually in the right position but have been offset if:
+      // * The current position is INVALID
+      // * The last selected position (which was validated) is the same as where we are demanded to go
+      // * The the current offset is not  0 (if it was then, the current position should not be INVALID.
+      // So if any of those conditions is not true; need to move the mask to the new position.
+      def checkInvalid(current: Option[String]): IO[Option[IO[Unit]]] =
+        (epicsSys.maskOffset, epicsSys.lastSelectedMask).mapN { (mo, lsm) =>
+          (current.exists(_ === "INVALID") && lsm.exists(_ === mask) && mo
+            .exists(_ =!= 0.0)).option(setMaskIO)
+        }
 
-    val set = epicsSys.ccConfigCmd.setMask(mask)
+      // We need an even smarter set param
+      for {
+        instMask     <- epicsSys.mask
+        setIfInvalid <- checkInvalid(instMask)
+      } yield if (instMask.exists(_ =!= mask)) setMaskIO.some else setIfInvalid
+    }
 
-    // Here we can assume that we are actually in the right position but have been offset if:
-    // * The current position is INVALID
-    // * The last selected position (which was validated) is the same as where we are demanded to go
-    // * The the current offset is not  0 (if it was then, the current position should not be INVALID.
-    // So if any of those conditions is not true; need to move the mask to the new position.
-    def checkInvalid(current: Option[String]): IO[Option[IO[Unit]]] =
-      (epicsSys.maskOffset, epicsSys.lastSelectedMask).mapN { (mo, lsm) =>
-        (current.exists(_ === "INVALID") && lsm.exists(_ === mask) && mo.exists(
-          _ =!= 0.0)).option(set)
-      }
-
-    // We need an even smarter set param
-    for {
-      instMask     <- epicsSys.mask
-      setIfInvalid <- checkInvalid(instMask)
-    } yield if (instMask.exists(_ =!= mask)) set.some else setIfInvalid
+    cfg match {
+      case DarkCCConfig     =>
+        setMaskEpics(LegacyMask.BLOCKED)
+      case cfg: StdCCConfig =>
+        setMaskEpics(cfg.mask)
+    }
   }
 
   private def firstCCPass(cfg: CCConfig): IO[Unit] =
@@ -291,23 +323,31 @@ object NifsControllerEpics extends NifsController[IO] with NifsEncoders {
   private val MaskOffsetTolerance        = 0.002
 
   private def setCentralWavelength(cfg: CCConfig): IO[Option[IO[Unit]]] =
-    epicsSys.centralWavelength.map { curCw =>
-      ((cfg.disperser =!= LegacyDisperser.MIRROR) && curCw.exists(cw =>
-        abs(cw - cfg.wavelength) > CentralWavelengthTolerance)).option {
-        epicsSys.ccConfigCmd
-          .setCentralWavelength(f"${cfg.wavelength}1.6f")
-      }
+    cfg match {
+      case DarkCCConfig     => none.pure[IO]
+      case cfg: StdCCConfig =>
+        epicsSys.centralWavelength.map { curCw =>
+          ((cfg.disperser =!= LegacyDisperser.MIRROR) && curCw.exists(cw =>
+            abs(cw - cfg.wavelength) > CentralWavelengthTolerance)).option {
+            epicsSys.ccConfigCmd
+              .setCentralWavelength(f"${cfg.wavelength}1.6f")
+          }
+        }
     }
 
   private def setMaskOffset(cfg: CCConfig): IO[Option[IO[Unit]]] =
-    for {
-      curMo <- epicsSys.maskOffset
-    } yield
-      (curMo
-        .exists(mo => abs(mo - cfg.maskOffset) > MaskOffsetTolerance))
-        .option {
-          epicsSys.ccConfigCmd.setMaskOffset(f"${cfg.maskOffset}1.6f")
-        }
+    cfg match {
+      case DarkCCConfig     => none.pure[IO]
+      case cfg: StdCCConfig =>
+        for {
+          curMo <- epicsSys.maskOffset
+        } yield
+          (curMo
+            .exists(mo => abs(mo - cfg.maskOffset) > MaskOffsetTolerance))
+            .option {
+              epicsSys.ccConfigCmd.setMaskOffset(f"${cfg.maskOffset}1.6f")
+            }
+    }
 
   private val postCcConfig =
     epicsSys.ccConfigCmd.setTimeout[IO](ConfigTimeout) *>
@@ -329,7 +369,8 @@ object NifsControllerEpics extends NifsController[IO] with NifsEncoders {
   override def observe(fileId: ImageFileId,
                        cfg:    DCConfig): IO[ObserveCommand.Result] = {
     val checkDhs =
-      failUnlessM(epicsSys.dhsConnectedAttr.map(_.value() === DhsConnected.Yes),
+      failUnlessM(
+        epicsSys.dhsConnected.map(_.exists(_ === DhsConnected.Yes)),
                   SeqexecFailure.Execution("NIFS is not connected to DHS"))
 
     IO(Log.info("Start NIFS observe")) *>

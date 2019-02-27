@@ -28,11 +28,11 @@
                 <type>DOUBLE</type>
                 <description>Period</description>
             </parameter>
-            <parameter name="readMode">
+            <!-- <parameter name="readMode">
                 <channel>dc:obs_readMode</channel>
                 <type>INTEGER</type>
                 <description>Read mode (0=dcs, 1=fowler, 2=linear, 3=linear)</description>
-            </parameter>
+            </parameter> -->
             <parameter name="numberOfResets">
                 <channel>dc:obs_nresets</channel>
                 <type>INTEGER</type>
@@ -43,11 +43,11 @@
                 <type>INTEGER</type>
                 <description>Number of periods</description>
             </parameter>
-            <parameter name="timeMode">
+            <!-- <parameter name="timeMode">
                 <channel>dc:obs_timeMode</channel>
                 <type>INTEGER</type>
                 <description>Which variable (0=exposure time, 1=period, 2=nr of periods) to calculate</description>
-            </parameter>
+            </parameter> -->
         </command>
         <command name="nifs::abort">
             <record>dc:abort</record>
@@ -245,7 +245,7 @@
             <description>Filter  </description>
         </attribute>
         <attribute name="windowCover">
-            <channel>sad:cc:covName>
+            <channel>sad:cc:covName</channel>
             <type>STRING</type>
             <description>Window cover Name</description>
         </attribute>
