@@ -194,8 +194,7 @@ object TcsControllerEpics extends TcsController {
   }
 
   def guideParams(subsystems: NonEmptySet[Subsystem], current: EpicsTcsConfig, demand: TcsConfig)
-  : List[EpicsTcsConfig => SeqAction[EpicsTcsConfig]] =
-    List(
+  : List[EpicsTcsConfig => SeqAction[EpicsTcsConfig]] = List(
       applyParam(subsystems.contains(Subsystem.Mount), current.telescopeGuideConfig.mountGuide, demand.gc.mountGuide,
         setMountGuide, EpicsTcsConfig.telescopeGuideConfig ^|-> TelescopeGuideConfig.mountGuide),
       applyParam(subsystems.contains(Subsystem.M1), current.telescopeGuideConfig.m1Guide, demand.gc.m1Guide,
@@ -207,7 +206,7 @@ object TcsControllerEpics extends TcsController {
       applyParam(subsystems.contains(Subsystem.PWFS2), current.pwfs2.detector, demand.gds.pwfs2.detector,
         setPwfs2, EpicsTcsConfig.pwfs2 ^|-> GuiderConfig.detector),
       applyParam(subsystems.contains(Subsystem.OIWFS), current.oiwfs.detector, demand.gds.oiwfs.detector,
-        setOiwfs, EpicsTcsConfig.oiwfs ^|-> GuiderConfig.detector),
+        setOiwfs, EpicsTcsConfig.oiwfs ^|-> GuiderConfig.detector)
     ).collect{ case Some(x) => x }
 
   def calcGuideOff(current: EpicsTcsConfig, demand: TcsConfig): TcsConfig = {
