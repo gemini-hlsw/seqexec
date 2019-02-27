@@ -30,7 +30,7 @@ final class TestSimulator {
     static final String STRING_STATUS = "strVal";
     static final String DOUBLE_STATUS = "dblVal";
     static final String FLOAT_STATUS = "fltVal";
-    
+
     static final String ERROR_MSG = "Test Error";
 
     private static final String CONFIG_FILE = "/TestSim.xml";
@@ -57,11 +57,10 @@ final class TestSimulator {
                     final CompletionListener listener) {
                 switch (command.getActivity()) {
                 case PRESET:
-                case CANCEL: {
+                case CANCEL:
                     return HandlerResponse.ACCEPTED;
-                }
                 case PRESET_START:
-                case START: {
+                case START:
                     if (command.getSequenceCommand().getName().equals("test")) {
                         executor.schedule(new Runnable() {
 
@@ -83,11 +82,9 @@ final class TestSimulator {
                         }, 1, TimeUnit.SECONDS);
                     }
                     return HandlerResponse.STARTED;
-                }
-                default: {
+                default:
                     return HandlerResponse
                             .createError("Invalid command activity");
-                }
                 }
             }
 
@@ -152,7 +149,7 @@ final class TestSimulator {
         }
         executor.shutdown();
         executor = null;
-        
+
         server.destroyChannel(intChannel);
         server.destroyChannel(strChannel);
         server.destroyChannel(dblChannel);

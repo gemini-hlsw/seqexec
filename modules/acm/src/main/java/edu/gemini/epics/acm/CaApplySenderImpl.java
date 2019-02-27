@@ -64,8 +64,13 @@ final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements Ca
         }
     };
 
-    public CaApplySenderImpl(String name, String applyRecord, String carRecord,
-            String description, Class<C> carClass, EpicsService epicsService) throws CAException {
+    public CaApplySenderImpl(
+        final String name,
+        final String applyRecord,
+        final String carRecord,
+        final String description,
+        final Class<C> carClass,
+        final EpicsService epicsService) throws CAException {
         super();
         this.name = name;
         this.description = description;
@@ -147,9 +152,10 @@ final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements Ca
         if (!currentState.equals(IdleState)) {
             failCommand(cm, new CaCommandInProgress());
         } else {
-            currentState = new WaitPreset(cm);
-
             try {
+                CarStateGeneric carVal = car.getValValue();
+                currentState = new WaitPreset(cm, carVal);
+
                 apply.setDir(CadDirective.START);
                 if (timeout > 0) {
                     timeoutFuture = executor.schedule(new Runnable() {
@@ -176,7 +182,7 @@ final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements Ca
     }
 
     @Override
-    public CaCommandMonitor postCallback(CaCommandListener callback) {
+    public CaCommandMonitor postCallback(final CaCommandListener callback) {
         CaCommandMonitor cm = post();
         cm.setCallback(callback);
         return cm;
@@ -199,13 +205,13 @@ final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements Ca
         final CarStateGeneric carVal;
         final Integer carClid;
 
-        WaitPreset(CaCommandMonitorImpl cm) {
+        WaitPreset(final CaCommandMonitorImpl cm, final CarStateGeneric carVal) {
             this.cm = cm;
-            this.carVal = null;
+            this.carVal = carVal;
             this.carClid = null;
         }
 
-        private WaitPreset(CaCommandMonitorImpl cm, CarStateGeneric carVal, Integer carClid) {
+        private WaitPreset(final CaCommandMonitorImpl cm, final CarStateGeneric carVal, final Integer carClid) {
             this.cm = cm;
             this.carVal = carVal;
             this.carClid = carClid;
@@ -217,7 +223,7 @@ final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements Ca
         }
 
         @Override
-        public State onApplyValChange(Integer val) {
+        public State onApplyValChange(final Integer val) {
             if (val > 0) {
                 if (carVal != null && val.equals(carClid)) {
                     if (carVal.isError()) {
@@ -235,12 +241,12 @@ final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements Ca
         }
 
         @Override
-        public State onCarValChange(CarStateGeneric val) {
+        public State onCarValChange(final CarStateGeneric val) {
             return new WaitPreset(cm, val, carClid);
         }
 
         @Override
-        public State onCarClidChange(Integer val) {
+        public State onCarClidChange(final Integer val) {
             return new WaitPreset(cm, carVal, val);
         }
 
@@ -257,8 +263,11 @@ final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements Ca
         final Integer carClid;
         final CarStateGeneric carState;
 
-        WaitStart(CaCommandMonitorImpl cm, int clid, CarStateGeneric carState,
-                Integer carClid) {
+        WaitStart(
+            final CaCommandMonitorImpl cm,
+            final int clid,
+            final CarStateGeneric carState,
+            final Integer carClid) {
             this.cm = cm;
             this.clid = clid;
             this.carState = carState;
@@ -267,13 +276,13 @@ final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements Ca
 
         @Override
         public String signature() {
-            return "WaitStart(clid = " + clid + "carState = " + carState + ", carClid = " + carClid + ")";
+            return "WaitStart(clid = " + clid + ", carState = " + carState + ", carClid = " + carClid + ")";
         }
 
         @Override
-        public State onApplyValChange(Integer val) {
-            if (val == clid) {
-                return this;
+        public State onApplyValChange(final Integer val) {
+            if (val >= clid) {
+                return new WaitStart(cm, val, carState, carClid);
             } else {
                 failCommand(cm, new CaCommandPostError(
                         "Another command was triggered in apply record "
@@ -283,12 +292,12 @@ final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements Ca
         }
 
         @Override
-        public State onCarValChange(CarStateGeneric val) {
+        public State onCarValChange(final CarStateGeneric val) {
             return checkOutConditions(val, carClid);
         }
 
         @Override
-        public State onCarClidChange(Integer val) {
+        public State onCarClidChange(final Integer val) {
             return checkOutConditions(carState, val);
         }
 
@@ -298,9 +307,9 @@ final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements Ca
             return IdleState;
         }
 
-        private State checkOutConditions(CarStateGeneric carState,
-                Integer carClid) {
-            if (carState != null && carClid != null && carClid == clid) {
+        private State checkOutConditions(final CarStateGeneric carState,
+                final Integer carClid) {
+            if (carState != null && carClid != null && carClid >= clid) {
                 if (carState.isError()) {
                     failCommandWithCarError(cm);
                     return IdleState;
@@ -318,7 +327,7 @@ final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements Ca
         final CaCommandMonitorImpl cm;
         final int clid;
 
-        WaitCompletion(CaCommandMonitorImpl cm, int clid) {
+        WaitCompletion(final CaCommandMonitorImpl cm, final int clid) {
             this.cm = cm;
             this.clid = clid;
         }
@@ -329,7 +338,7 @@ final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements Ca
         }
 
         @Override
-        public State onApplyValChange(Integer val) {
+        public State onApplyValChange(final Integer val) {
             if (val == clid) {
                 return this;
             } else {
@@ -341,7 +350,7 @@ final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements Ca
         }
 
         @Override
-        public State onCarValChange(CarStateGeneric val) {
+        public State onCarValChange(final CarStateGeneric val) {
             if(val.isIdle()) {
                 succedCommand(cm);
                 return IdleState;
@@ -360,7 +369,7 @@ final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements Ca
         }
 
         @Override
-        public State onCarClidChange(Integer val) {
+        public State onCarClidChange(final Integer val) {
             if (val == clid) {
                 return this;
             } else {
@@ -379,7 +388,7 @@ final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements Ca
 
     }
 
-    private synchronized void onApplyValChange(Integer val) {
+    private synchronized void onApplyValChange(final Integer val) {
         if (val != null) {
             State oldState = currentState;
             currentState = currentState.onApplyValChange(val);
@@ -391,7 +400,7 @@ final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements Ca
         }
     }
 
-    private synchronized void onCarClidChange(Integer val) {
+    private synchronized void onCarClidChange(final Integer val) {
         if (val != null) {
             State oldState = currentState;
             currentState = currentState.onCarClidChange(val);
@@ -403,7 +412,7 @@ final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements Ca
         }
     }
 
-    private synchronized void onCarValChange(C carState) {
+    private synchronized void onCarValChange(final C carState) {
         if (carState != null) {
             State oldState = currentState;
             currentState = currentState.onCarValChange(carState);
@@ -428,7 +437,7 @@ final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements Ca
     }
 
     @Override
-    public synchronized void setTimeout(long timeout, TimeUnit timeUnit) {
+    public synchronized void setTimeout(final long timeout, final TimeUnit timeUnit) {
         this.timeout = timeout;
         this.timeoutUnit = timeUnit;
     }
