@@ -45,7 +45,7 @@ import org.http4s.Uri
 import knobs.Config
 import mouse.all._
 import seqexec.model.dhs.ImageFileId
-import seqexec.server.altair.AltairEpics
+import seqexec.server.altair.{AltairControllerEpics, AltairControllerSim, AltairEpics}
 
 import scala.collection.immutable.SortedMap
 import scala.concurrent.duration._
@@ -81,6 +81,7 @@ class SeqexecEngine(httpClient: Client[IO], gpi: GpiClient[IO], ghost: GhostClie
     GhostController(ghost, ghostGDS),
     settings.niriControl.command.fold(NiriControllerEpics, NiriControllerSim),
     settings.nifsControl.command.fold(NifsControllerEpics, NifsControllerSim),
+    (settings.altairControl.command && settings.tcsControl.command).fold(AltairControllerEpics, AltairControllerSim),
     guideConfigDb
   )
 

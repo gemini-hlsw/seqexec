@@ -84,7 +84,7 @@ object GuideConfigDb {
   implicit val m1GuideDecoder: Decoder[M1GuideConfig] = Decoder.instance[M1GuideConfig]{ c =>
     c.downField("on").as[Boolean].flatMap {
       if (_) {
-        c.downField("source").as[M1Source].map(M1GuideOn)
+        c.downField("source").as[M1Source].map(M1GuideOn(_))
       }
       else Right(M1GuideOff)
     }

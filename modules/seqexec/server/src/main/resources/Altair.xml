@@ -17,31 +17,38 @@
             </parameter>
         </command>
     </Apply>
-    <Apply name="aolgsApply">
+    <!--<Apply name="aolgsApply">-->
+        <!--<top>ao</top>-->
+        <!--<apply>wfcs:strap</apply>-->
+        <!--<car>wfcs:strapGtCtl.BUSY</car>-->
+        <!--<description>Strap controller</description>-->
+        <!--<command name="strapCorrCtl">-->
+            <!--<record>wfcs:strapCorrCtl</record>-->
+            <!--<description>ALTAIR sfo</description>-->
+            <!--<parameter name="onoff">-->
+                <!--<channel>wfcs:strapCorrCtl.A</channel>-->
+                <!--<type>INTEGER</type>-->
+                <!--<description>Strap onoff loop control</description>-->
+                <!--<isCAD>false</isCAD>-->
+            <!--</parameter>-->
+        <!--</command>-->
+        <!--<command name="aoStrap">-->
+            <!--<record>wfcs:strapGtCtl</record>-->
+            <!--<description>ALTAIR strap</description>-->
+            <!--<parameter name="gate">-->
+                <!--<channel>wfcs:strapGtCtl.A</channel>-->
+                <!--<type>INTEGER</type>-->
+                <!--<description>Gate control</description>-->
+                <!--<isCAD>false</isCAD>-->
+            <!--</parameter>-->
+        <!--</command>-->
+    <!--</Apply>-->
+    <Apply name="aoCcApply">
         <top>ao</top>
-        <apply>wfcs:strap</apply>
-        <car>wfcs:strapGtCtl.BUSY</car>
-        <description>Strap controller</description>
-        <command name="strapCorrCtl">
-            <record>wfcs:strapCorrCtl</record>
-            <description>ALTAIR sfo</description>
-            <parameter name="onoff">
-                <channel>wfcs:strapCorrCtl.A</channel>
-                <type>INTEGER</type>
-                <description>Strap onoff loop control</description>
-                <isCAD>false</isCAD>
-            </parameter>
-        </command>
-        <command name="aoStrap">
-            <record>wfcs:strapGtCtl</record>
-            <description>ALTAIR strap</description>
-            <parameter name="gate">
-                <channel>wfcs:strapGtCtl.A</channel>
-                <type>INTEGER</type>
-                <description>Gate control</description>
-                <isCAD>false</isCAD>
-            </parameter>
-        </command>
+        <apply>cc:apply</apply>
+        <car>cc:applyC</car>
+        <gem5>true</gem5>
+        <description>Altair CC apply</description>
         <command name="aoSfoLoop">
             <description>ALTAIR sfo</description>
             <!--

@@ -3,17 +3,20 @@
 
 package seqexec.server.altair
 
-import seqexec.server.tcs.Gaos.{PauseReason, ResumeReason}
+import cats.Eq
+import cats.implicits._
+import seqexec.server.tcs.Gaos.{PauseCondition, ResumeCondition}
 import squants.Time
 
 trait AltairController[F[_]] {
   import AltairController._
 
-  def pause(reasons: Set[PauseReason], fieldLens: FieldLens)(cfg: AltairConfig): F[Unit]
-  def resume(reasons: Set[ResumeReason])(cfg: AltairConfig): F[Unit]
+  def pause(reasons: Set[PauseCondition], fieldLens: FieldLens)(cfg: AltairConfig)
+  : F[Set[ResumeCondition] => F[Unit]]
+
   def observe(expTime: Time)(cfg: AltairConfig): F[Unit]
+
   def endObserve(cfg: AltairConfig): F[Unit]
-  def config(cfg: AltairConfig): F[Unit]
 }
 
 object AltairController {
@@ -27,5 +30,17 @@ object AltairController {
   case object LgsWithOi extends AltairConfig
 
   type FieldLens = edu.gemini.spModel.gemini.altair.AltairParams.FieldLens
+
+  implicit val ngsEq: Eq[Ngs] = Eq.by(_.blend)
+  implicit val lgsEq: Eq[Lgs] = Eq.by(x => (x.strap, x.sfo))
+
+  implicit val eq: Eq[AltairConfig] = Eq.instance{
+    case (AltairOff, AltairOff) => true
+    case (a: Lgs, b: Lgs)       => a === b
+    case (a: Ngs, b: Ngs)       => a === b
+    case (LgsWithOi, LgsWithOi) => true
+    case (LgsWithP1, LgsWithP1) => true
+    case _                      => false
+  }
 
 }

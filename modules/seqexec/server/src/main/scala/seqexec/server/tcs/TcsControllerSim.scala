@@ -3,7 +3,7 @@
 
 package seqexec.server.tcs
 
-import cats.data.{EitherT, NonEmptyList}
+import cats.data.{EitherT, NonEmptySet}
 import cats.effect.IO
 import org.log4s.getLogger
 import seqexec.server.tcs.TcsController._
@@ -16,16 +16,15 @@ object TcsControllerSim extends TcsController {
 
   private val Log = getLogger
 
-  override def applyConfig(subsystems: NonEmptyList[Subsystem],
+  override def applyConfig(subsystems: NonEmptySet[Subsystem],
                            gaos: Option[Either[Altair[IO], Gems[IO]]],
                            tc: TcsConfig): SeqAction[Unit] = {
     def configSubsystem(subsystem: Subsystem): IO[Unit] = IO.apply(Log.info(s"Applying ${subsystem.show} configuration."))
 
-    SeqAction.lift(subsystems.map(configSubsystem).sequence.as(()))
+    SeqAction.lift(subsystems.toList.map(configSubsystem).sequence.as(()))
   }
 
   override def notifyObserveStart: SeqAction[Unit] = EitherT.right(IO(Log.info("Simulate TCS observe")))
 
   override def notifyObserveEnd: SeqAction[Unit] = EitherT.right(IO(Log.info("Simulate TCS endObserve")))
-
 }

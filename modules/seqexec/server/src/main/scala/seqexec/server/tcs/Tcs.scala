@@ -3,7 +3,7 @@
 
 package seqexec.server.tcs
 
-import cats.data.{EitherT, NonEmptyList}
+import cats.data.{EitherT, NonEmptySet}
 import cats.effect.IO
 import cats.implicits._
 import edu.gemini.spModel.config2.Config
@@ -27,7 +27,7 @@ import squants.space.Arcseconds
 
 
 final case class Tcs private (tcsController: TcsController,
-                              subsystems: NonEmptyList[Subsystem],
+                              subsystems: NonEmptySet[Subsystem],
                               gaos: Option[Either[Altair[IO], Gems[IO]]],
                               guideDb: GuideConfigDb[IO]
                              )(config: Tcs.TcsSeqConfig) extends System[IO] {
@@ -40,8 +40,8 @@ final case class Tcs private (tcsController: TcsController,
     case Subsystem.M1     => List(tcs.gc.m1Guide.show)
     case Subsystem.M2     => List(tcs.gc.m2Guide.show)
     case Subsystem.OIWFS  => List((tcs.gds.oiwfs:GuiderConfig).show)
-    case Subsystem.P1WFS  => List((tcs.gds.pwfs1:GuiderConfig).show)
-    case Subsystem.P2WFS  => List((tcs.gds.pwfs2:GuiderConfig).show)
+    case Subsystem.PWFS1  => List((tcs.gds.pwfs1:GuiderConfig).show)
+    case Subsystem.PWFS2  => List((tcs.gds.pwfs2:GuiderConfig).show)
     case Subsystem.Mount  => List(tcs.tc.show)
     case Subsystem.AGUnit => List(tcs.agc.sfPos.show, tcs.agc.hrwfs.show)
     case Subsystem.Gaos   => List("") //TODO: show Gaos configuration
@@ -74,7 +74,8 @@ final case class Tcs private (tcsController: TcsController,
 
   val defaultGuiderConf = GuiderConfig(ProbeTrackingConfig.Parked, GuiderSensorOff)
   def calcGuiderConfig(inUse: Boolean, guideWith: Option[StandardGuideOptions.Value]): GuiderConfig =
-    guideWith.flatMap(v => inUse.option(GuiderConfig(v.toProbeTracking, v.toGuideSensorOption))).getOrElse(defaultGuiderConf)
+    guideWith.flatMap(v => inUse.option(GuiderConfig(v.toProbeTracking, v.toGuideSensorOption)))
+      .getOrElse(defaultGuiderConf)
 
   /*
    * Build TCS configuration for the step, merging the guide configuration from the sequence with the guide
@@ -82,17 +83,18 @@ final case class Tcs private (tcsController: TcsController,
    * it will not be used for the step, regardless of the sequence values.
    */
   def buildTcsConfig: IO[TcsConfig] =
-    guideDb.value.flatMap{ c => {
+    guideDb.value.map{ c => {
       val useAo: Boolean = c.gaosGuide match {
         case Some(Left(AltairOff)) => false
         case Some(Left(_))         => true
         case _                     => false
       }
+      val aoUsesP1 = (gaos.flatMap(_.swap.toOption), c.gaosGuide.flatMap(_.swap.toOption)).mapN(_.usesP1(_))
+        .getOrElse(false)
+      val aoUsesOI = (gaos.flatMap(_.swap.toOption), c.gaosGuide.flatMap(_.swap.toOption)).mapN(_.usesOI(_))
+        .getOrElse(false)
 
-      for {
-        aoUsesP1 <- gaos.flatMap(_.swap.map(_.usesP1).toOption).getOrElse(IO(false))
-        aoUsesOI <- gaos.flatMap(_.swap.map(_.usesOI).toOption).getOrElse(IO(false))
-      } yield TcsConfig(
+      TcsConfig(
         c.tcsGuide,
         TelescopeConfig(config.offsetA, config.wavelA),
         GuidersConfig(
@@ -111,7 +113,8 @@ final case class Tcs private (tcsController: TcsController,
           tag[AOGuide](useAo & calcGuiderInUse(c.tcsGuide, TipTiltSource.GAOS, M1Source.GAOS) &
             config.guideWithAO.exists(_.isActive))
         ),
-        AGConfig(config.scienceFoldPosition, HrwfsConfig.Auto.some)
+        AGConfig(config.scienceFoldPosition, HrwfsConfig.Auto.some),
+        c.gaosGuide
       )
     }
   }
@@ -155,9 +158,9 @@ object Tcs {
   @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object TcsSeqConfig
 
-  def fromConfig(controller: TcsController, subsystems: NonEmptyList[Subsystem], gaos: Option[Either[Altair[IO],
+  def fromConfig(controller: TcsController, subsystems: NonEmptySet[Subsystem], gaos: Option[Either[Altair[IO],
     Gems[IO]]], guideConfigDb: GuideConfigDb[IO])(
-    config: Config, scienceFoldPosition: ScienceFoldPosition, centralWavelength: Option[Wavelength]
+    config: Config, scienceFoldPosition: ScienceFoldPosition, observingWavelength: Option[Wavelength]
   ): Tcs = {
 
     val gwp1 = config.extractAs[StandardGuideOptions.Value](TELESCOPE_KEY / GUIDE_WITH_PWFS1_PROP).toOption
@@ -175,7 +178,7 @@ object Tcs {
       gwoi,
       gwao,
       (offsetp, offsetq).mapN(InstrumentOffset(_, _)),
-      centralWavelength,
+      observingWavelength,
       scienceFoldPosition
     )
 
