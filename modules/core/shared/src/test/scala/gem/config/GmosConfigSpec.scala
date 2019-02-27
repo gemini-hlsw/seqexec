@@ -43,6 +43,11 @@ final class GmosConfigSpec extends CatsSuite {
   checkAll("DynamicConfig.GmosN.filter",  LensTests(DynamicConfig.GmosN.filter))
   checkAll("DynamicConfig.GmosN.fpu",     LensTests(DynamicConfig.GmosN.fpu))
 
+  checkAll("DynamicConfig.GmosN.xBinning",     LensTests(DynamicConfig.GmosN.xBinning))
+  checkAll("DynamicConfig.GmosN.yBinning",     LensTests(DynamicConfig.GmosN.yBinning))
+  checkAll("DynamicConfig.GmosN.exposureTime", LensTests(DynamicConfig.GmosN.exposureTime))
+  checkAll("DynamicConfig.GmosN.roi",          LensTests(DynamicConfig.GmosN.roi))
+
   checkAll("DynamicConfig.GmosN.disperser",  OptionalTests(DynamicConfig.GmosN.disperser))
   checkAll("DynamicConfig.GmosN.wavelength", OptionalTests(DynamicConfig.GmosN.wavelength))
   checkAll("DynamicConfig.GmosN.builtinFpu", OptionalTests(DynamicConfig.GmosN.builtinFpu))
@@ -54,6 +59,11 @@ final class GmosConfigSpec extends CatsSuite {
   checkAll("DynamicConfig.GmosS.grating", LensTests(DynamicConfig.GmosS.grating))
   checkAll("DynamicConfig.GmosS.filter",  LensTests(DynamicConfig.GmosS.filter))
   checkAll("DynamicConfig.GmosS.fpu",     LensTests(DynamicConfig.GmosS.fpu))
+
+  checkAll("DynamicConfig.GmosS.xBinning",     LensTests(DynamicConfig.GmosS.xBinning))
+  checkAll("DynamicConfig.GmosS.yBinning",     LensTests(DynamicConfig.GmosS.yBinning))
+  checkAll("DynamicConfig.GmosS.exposureTime", LensTests(DynamicConfig.GmosS.exposureTime))
+  checkAll("DynamicConfig.GmosS.roi",          LensTests(DynamicConfig.GmosS.roi))
 
   checkAll("DynamicConfig.GmosS.disperser",  OptionalTests(DynamicConfig.GmosS.disperser))
   checkAll("DynamicConfig.GmosS.wavelength", OptionalTests(DynamicConfig.GmosS.wavelength))
