@@ -17,7 +17,6 @@ import java.util.concurrent.{ExecutorService, Executors}
 import knobs.{Resource => _, _}
 import mouse.all._
 import org.asynchttpclient.DefaultAsyncHttpClientConfig
-import org.http4s.util.threads.threadFactory
 import org.http4s.client.asynchttpclient.AsyncHttpClient
 import org.http4s.client.Client
 import org.http4s.HttpRoutes
@@ -241,13 +240,8 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
     }
 
   // Override the default client config
-  val clientConfig = new DefaultAsyncHttpClientConfig.Builder()
-    .setMaxConnectionsPerHost(200)
-    .setMaxConnections(400)
+  val clientConfig = new DefaultAsyncHttpClientConfig.Builder(AsyncHttpClient.defaultConfig)
     .setRequestTimeout(5000) // Change the timeout to 5 seconds
-    .setThreadFactory(threadFactory(name = { i =>
-      s"http4s-async-http-client-worker-${i}"
-    }))
     .build()
 
   def engineIO(httpClient: Client[IO], guideConfigDb: GuideConfigDb[IO], collector: CollectorRegistry): Resource[IO, SeqexecEngine] =
