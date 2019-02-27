@@ -39,6 +39,11 @@ object AltairControllerEpics extends AltairController[IO] {
     currCfg.guideStarCoords.bimap(_ + dX, _ + dY)
   }
 
+  val CorrectionsOn: String = "ON"
+  val CorrectionsOff: String = "OFF"
+  val TargetFilterOpen: String = "Open"
+  val TargetFilterClosed: String = "Closed"
+
   // The OT checks this, why do it again in Seqexec?
   private def newPosInRange(newPos: (Length, Length)): Boolean = {
     val minX = Millimeters(-37.2)
@@ -87,8 +92,8 @@ object AltairControllerEpics extends AltairController[IO] {
         .getOrElse(v))) (currCfg)
 
     if (needsToStop) {
-      convertTcsAction(epicsTcs.aoCorrect.setCorrections("OFF") *>
-        epicsTcs.targetFilter.setShortCircuit("Closed")) *>
+      convertTcsAction(epicsTcs.aoCorrect.setCorrections(CorrectionsOff) *>
+        epicsTcs.targetFilter.setShortCircuit(TargetFilterClosed)) *>
         newPos.filter(_ => newPosOk && !matrixOk && !prepMatrixOk).fold(IO.unit)(prepareMatrix) *>
         convertTcsAction(epicsTcs.targetFilter.post) *>
         IO(resumeNgsMode(newCfg))
@@ -102,15 +107,14 @@ object AltairControllerEpics extends AltairController[IO] {
     val newPosOk = newPosInRange(currCfg.guideStarCoords)
     val guideOk = reasons.contains(GaosStarOn)
 
-    if (newPosOk && guideOk) {
-      epicsAltair.waitMatrixCalc(CarStateGEM5.IDLE, 10.seconds) *>
-        convertTcsAction(epicsTcs.aoCorrect.setCorrections("ON") *>
-          epicsTcs.aoFlatten.mark *>
-          epicsTcs.targetFilter.setShortCircuit("Open") *>
-          epicsTcs.targetFilter.post.void
-        )
-    }
-    else IO.unit
+    (epicsAltair.waitMatrixCalc(CarStateGEM5.IDLE, 10.seconds) *>
+      convertTcsAction(
+        epicsTcs.aoCorrect.setCorrections(CorrectionsOn) *>
+        epicsTcs.aoFlatten.mark *>
+        epicsTcs.targetFilter.setShortCircuit(TargetFilterOpen) *>
+        epicsTcs.targetFilter.post.void
+      )
+    ).whenA(newPosOk && guideOk)
   }
 
   private def checkStrapLoopState(currCfg: EpicsAltairConfig): TrySeq[Unit] =
@@ -203,8 +207,8 @@ object AltairControllerEpics extends AltairController[IO] {
     if (needsToStop) {
       for {
         c <- ttgsOff(currCfg)
-        _ <- convertTcsAction(epicsTcs.aoCorrect.setCorrections("OFF"))
-        _ <- convertTcsAction(epicsTcs.targetFilter.setShortCircuit("Closed"))
+        _ <- convertTcsAction(epicsTcs.aoCorrect.setCorrections(CorrectionsOff))
+        _ <- convertTcsAction(epicsTcs.targetFilter.setShortCircuit(TargetFilterClosed))
         _ <- newPos.filter(_ => newPosOk && !matrixOk && !prepMatrixOk).fold(IO.unit)(prepareMatrix)
         _ <- convertTcsAction(epicsTcs.targetFilter.post)
       } yield resumeLgsMode(strap, sfo, newCfg(c))(_)
@@ -217,18 +221,16 @@ object AltairControllerEpics extends AltairController[IO] {
     val newPosOk = newPosInRange(currCfg.guideStarCoords)
     val guideOk = reasons.contains(GaosStarOn)
 
-    if (newPosOk && guideOk) {
-      epicsAltair.waitMatrixCalc(CarStateGEM5.IDLE, 10.seconds) *>
-        convertTcsAction(epicsTcs.aoCorrect.setCorrections("ON") *>
-          epicsTcs.aoFlatten.mark *>
-          epicsTcs.targetFilter.setShortCircuit("Open") *>
-          epicsTcs.targetFilter.post
-        ) *>
-        epicsAltair.btoLoopControl.setActive("ON") *>
-        epicsAltair.btoLoopControl.post[IO] *>
-        ttgsOn(strap, sfo, currCfg).void
-    }
-    else IO.unit
+    (epicsAltair.waitMatrixCalc(CarStateGEM5.IDLE, 10.seconds) *>
+      convertTcsAction(epicsTcs.aoCorrect.setCorrections(CorrectionsOn) *>
+        epicsTcs.aoFlatten.mark *>
+        epicsTcs.targetFilter.setShortCircuit(TargetFilterOpen) *>
+        epicsTcs.targetFilter.post
+      ) *>
+      epicsAltair.btoLoopControl.setActive(CorrectionsOn) *>
+      epicsAltair.btoLoopControl.post[IO] *>
+      ttgsOn(strap, sfo, currCfg).void
+    ).whenA(newPosOk && guideOk)
 
   }
 
@@ -241,7 +243,7 @@ object AltairControllerEpics extends AltairController[IO] {
   : IO[Set[ResumeCondition] => IO[Unit]] = IO(dumbResume)
 
   private def turnOff: IO[Set[ResumeCondition] => IO[Unit]] =
-    convertTcsAction(epicsTcs.aoCorrect.setCorrections("OFF") *>
+    convertTcsAction(epicsTcs.aoCorrect.setCorrections(CorrectionsOff) *>
       epicsTcs.targetFilter.post
     ) *> IO(dumbResume)
 

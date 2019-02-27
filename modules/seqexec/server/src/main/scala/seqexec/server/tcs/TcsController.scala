@@ -148,7 +148,7 @@ object TcsController {
 
   object NodChopTrackingConfig {
 
-    object None extends NodChopTrackingConfig {
+    object AllOff extends NodChopTrackingConfig {
       def get(nodchop: NodChop): NodChopTrackingOption =
         NodChopTrackingOff
     }
@@ -172,7 +172,7 @@ object TcsController {
     }
 
     implicit val eq: Eq[NodChopTrackingConfig] = Eq.instance{
-      case (None, None)                                         => true
+      case (AllOff, AllOff)                                     => true
       case (a: ActiveNodChopTracking, b: ActiveNodChopTracking) => a === b
       case _                                                    => false
     }
@@ -199,8 +199,8 @@ object TcsController {
     val getNodChop: NodChopTrackingConfig
   )
   object ProbeTrackingConfig {
-    case object Parked extends ProbeTrackingConfig(FollowOff, NodChopTrackingConfig.None)
-    case object Off extends ProbeTrackingConfig(FollowOff, NodChopTrackingConfig.None)
+    case object Parked extends ProbeTrackingConfig(FollowOff, NodChopTrackingConfig.AllOff)
+    case object Off extends ProbeTrackingConfig(FollowOff, NodChopTrackingConfig.AllOff)
     final case class On(ndconfig: ActiveNodChopTracking) extends ProbeTrackingConfig(FollowOn, ndconfig)
 
     implicit val onEq: Eq[On] = Eq.by(_.ndconfig)

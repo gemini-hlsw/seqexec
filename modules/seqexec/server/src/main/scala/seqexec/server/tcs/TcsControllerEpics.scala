@@ -95,7 +95,7 @@ object TcsControllerEpics extends TcsController {
   }
 
   private def calcHrPickupPosition(c: AGConfig, ports: InstrumentPorts): Option[HrwfsPickupPosition] = c.hrwfs.flatMap {
-        case HrwfsConfig.Manual(h) => h.some
+    case HrwfsConfig.Manual(h) => h.some
     case HrwfsConfig.Auto      => c.sfPos match {
       case ScienceFoldPosition.Parked            => HrwfsPickupPosition.Parked.some
       case ScienceFoldPosition.Position(_, sink) => portFromSinkName(ports)(sink).flatMap(port =>

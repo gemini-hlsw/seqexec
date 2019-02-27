@@ -101,13 +101,13 @@ object TcsConfigRetriever {
                   case Nil    => None // the list is empty
                 }
               }
-            } else Some(NodChopTrackingConfig.None)
+            } else Some(NodChopTrackingConfig.AllOff)
       })
     } yield o
   ).value
 
   private def calcProbeTrackingConfig(f: FollowOption, t: NodChopTrackingConfig): ProbeTrackingConfig = (f, t) match {
-    case (_, NodChopTrackingConfig.None)              => ProbeTrackingConfig.Off
+    case (_, NodChopTrackingConfig.AllOff)              => ProbeTrackingConfig.Off
     case (FollowOn, NodChopTrackingConfig.Normal)     => ProbeTrackingConfig.On(NodChopTrackingConfig.Normal)
     case (FollowOn, v: NodChopTrackingConfig.Special) => ProbeTrackingConfig.On(v)
     case _                                            => ProbeTrackingConfig.Off
