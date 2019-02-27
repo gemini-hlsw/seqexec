@@ -4,18 +4,24 @@
 package seqexec.server.gems
 
 import cats.Applicative
+import cats.implicits._
+import seqexec.server.altair.AltairController.AltairConfig
 import seqexec.server.gems.GemsController.{GemsConfig, GemsOff}
 import seqexec.server.tcs.Gaos
+import seqexec.server.tcs.Gaos.ResumeCondition
 import squants.Time
 
 class Gems[F[_]: Applicative] private (controller: GemsController[F], config: GemsConfig) extends Gaos[F] {
-  override def pause(reasons: Set[Gaos.PauseReason]): F[Unit] = controller.pause(reasons)
 
-  override def resume(reasons: Set[Gaos.ResumeReason]): F[Unit] = controller.resume(reasons, config)
+  val cfg = config
 
-  override def observe(expTime: Time): F[Unit] = controller.observe(expTime)
+  override def pause(config: Either[AltairConfig, GemsConfig], reasons: Set[Gaos.PauseCondition]): F[Set[ResumeCondition] => F[Unit]] =
+    {_:Set[ResumeCondition] => ().pure[F]}.pure[F]
 
-  override def endObserve: F[Unit] = controller.endObserve
+  override def observe(config: Either[AltairConfig, GemsConfig], expTime: Time): F[Unit] = controller.observe(expTime)
+
+  override def endObserve(config: Either[AltairConfig, GemsConfig]): F[Unit] = controller.endObserve
+
 }
 
 object Gems {

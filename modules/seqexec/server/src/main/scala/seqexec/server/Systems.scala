@@ -3,6 +3,7 @@
 
 package seqexec.server
 
+import seqexec.server.altair.AltairController
 import seqexec.server.flamingos2.Flamingos2Controller
 import seqexec.server.keywords._
 import seqexec.server.gpi.GpiController
@@ -27,5 +28,6 @@ final case class Systems[F[_]](
   ghost:      GhostController[F],
   niri:       NiriController,
   nifs:       NifsController[F],
+  altair:     AltairController[F],
   guideDb:    GuideConfigDb[F]
 )

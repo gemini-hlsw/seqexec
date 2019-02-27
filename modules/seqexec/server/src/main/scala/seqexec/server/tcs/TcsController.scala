@@ -13,7 +13,9 @@ import gem.enum.LightSinkName
 import squants.{Angle, Length}
 import monocle.macros.Lenses
 import seqexec.server.altair.Altair
+import seqexec.server.altair.AltairController.AltairConfig
 import seqexec.server.gems.Gems
+import seqexec.server.gems.GemsController.GemsConfig
 import shapeless.tag
 import shapeless.tag.@@
 
@@ -371,7 +373,8 @@ object TcsController {
     gc:  TelescopeGuideConfig,
     tc:  TelescopeConfig,
     gds: GuidersConfig,
-    agc: AGConfig
+    agc: AGConfig,
+    gaos: Option[Either[AltairConfig, GemsConfig]]
   )
 
   @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
@@ -386,7 +389,8 @@ object TcsController {
       tag[OIConfig](GuiderConfig(ProbeTrackingConfig.Parked, GuiderSensorOff)),
       tag[AOGuide](false)
     ),
-    AGConfig(ScienceFoldPosition.Parked, HrwfsConfig.Auto.some)
+    AGConfig(ScienceFoldPosition.Parked, HrwfsConfig.Auto.some),
+    None
   )
 
   sealed trait Subsystem extends Product with Serializable

@@ -33,6 +33,7 @@ import seqexec.server.nifs.NifsControllerSim
 import edu.gemini.spModel.core.Peer
 import org.scalatest.FlatSpec
 import org.http4s.Uri._
+import seqexec.server.altair.AltairControllerSim
 import squants.time.Seconds
 
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements", "org.wartremover.warts.Throw"))
@@ -109,6 +110,7 @@ class SeqTranslateSpec extends FlatSpec {
     ghostSim,
     NiriControllerSim,
     NifsControllerSim,
+    AltairControllerSim,
     guideDb
   )
 

@@ -5,8 +5,9 @@ package seqexec.server.tcs
 
 import cats.Eq
 import cats.implicits._
-import seqexec.server.tcs.TcsController.InstrumentOffset
-import seqexec.server.tcs.TcsController.InstrumentOffset._
+import seqexec.server.altair.AltairController.AltairConfig
+import seqexec.server.gems.GemsController.GemsConfig
+import seqexec.server.tcs.TcsController.FocalPlaneOffset
 import squants.Time
 
 /*
@@ -17,70 +18,63 @@ trait Gaos[F[_]] {
 
   /*
    * Pause GAOS guiding. The GAOS system decides what to pause, according to the reasons given
+   * Return a function to be used to resume GAOS guiding
    */
-  def pause(reasons: Set[PauseReason]): F[Unit]
-  /*
-   * Resume GAOS guiding. The GAOS system decides what to resume, according to the reasons given
-   *
-   */
-  def resume(reasons: Set[ResumeReason]): F[Unit]
+  def pause(config: Either[AltairConfig, GemsConfig], reasons: Set[PauseCondition]): F[Set[ResumeCondition] => F[Unit]]
 
   /*
    * Notify GAOS system of the start of the observation
    */
-  def observe(expTime: Time): F[Unit]
+  def observe(config: Either[AltairConfig, GemsConfig], expTime: Time): F[Unit]
+
   /*
    * Notify GAOS system of the end of the observation
    */
-  def endObserve: F[Unit]
+  def endObserve(config: Either[AltairConfig, GemsConfig]): F[Unit]
 
 }
 
 object Gaos {
-  sealed trait PauseReason
+  sealed trait PauseCondition
 
   // Telescope offset will be changed
-  final case class BecauseOffsetMove(previousOffset: InstrumentOffset,
-                                       newOffset: InstrumentOffset)
-    extends PauseReason
+  final case class OffsetMove(previousOffset: FocalPlaneOffset, newOffset: FocalPlaneOffset) extends PauseCondition
   // OI will be turn off
-  case object BecauseOiOff extends PauseReason
+  case object OiOff extends PauseCondition
   // PI will be turn off
-  case object BecauseP1Off extends PauseReason
+  case object P1Off extends PauseCondition
   // GAOS star guide will be turn off
-  case object BecauseGaosStarOff extends PauseReason
+  case object GaosStarOff extends PauseCondition
 
-  sealed trait ResumeReason
+  sealed trait ResumeCondition
   // Telescope offset will be changed
-  final case class BecauseOffsetReached(newOffset: InstrumentOffset) extends ResumeReason
+  final case class OffsetReached(newOffset: FocalPlaneOffset) extends ResumeCondition
   // OI will be turn off
-  case object BecauseOiOn extends ResumeReason
+  case object OiOn extends ResumeCondition
   // PI will be turn off
-  case object BecauseP1On extends ResumeReason
+  case object P1On extends ResumeCondition
   // GAOS star guide will be turn off
-  case object BecauseGaosStarOn extends ResumeReason
+  case object GaosStarOn extends ResumeCondition
 
-  implicit val becauseOffsetMoveEq: Eq[BecauseOffsetMove] = Eq.by(x =>
-    (x.previousOffset, x.newOffset)
-  )
+  implicit val becauseOffsetMoveEq: Eq[OffsetMove] = Eq.by(x => (x.previousOffset, x.newOffset))
 
-  implicit val pauseReasonEq: Eq[PauseReason] = Eq.instance{
-    case (a: BecauseOffsetMove, b: BecauseOffsetMove) => a === b
-    case (BecauseOiOff, BecauseOiOff)                 => true
-    case (BecauseP1Off, BecauseP1Off)                 => true
-    case (BecauseGaosStarOff, BecauseGaosStarOff)     => true
+  implicit val pauseReasonEq: Eq[PauseCondition] = Eq.instance{
+    case (a: OffsetMove, b: OffsetMove) => a === b
+    case (OiOff, OiOff)                 => true
+    case (P1Off, P1Off)                 => true
+    case (GaosStarOff, GaosStarOff)     => true
     case _                                            => false
   }
 
-  implicit val becauseOffsetReachedEq: Eq[BecauseOffsetReached] = Eq.by(x =>
+  implicit val becauseOffsetReachedEq: Eq[OffsetReached] = Eq.by(x =>
     (x.newOffset)
   )
 
-  implicit val resumeReasonEq: Eq[ResumeReason] = Eq.instance{
-    case (a: BecauseOffsetReached, b: BecauseOffsetReached) => a === b
-    case (BecauseOiOn, BecauseOiOn)                         => true
-    case (BecauseP1On, BecauseP1On)                         => true
-    case (BecauseGaosStarOn, BecauseGaosStarOn)             => true
+  implicit val resumeReasonEq: Eq[ResumeCondition] = Eq.instance{
+    case (a: OffsetReached, b: OffsetReached) => a === b
+    case (OiOn, OiOn)                         => true
+    case (P1On, P1On)                         => true
+    case (GaosStarOn, GaosStarOn)             => true
     case _                                                  => false
   }
 

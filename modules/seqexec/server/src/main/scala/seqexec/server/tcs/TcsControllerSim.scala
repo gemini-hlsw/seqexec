@@ -27,5 +27,4 @@ object TcsControllerSim extends TcsController {
   override def notifyObserveStart: SeqAction[Unit] = EitherT.right(IO(Log.info("Simulate TCS observe")))
 
   override def notifyObserveEnd: SeqAction[Unit] = EitherT.right(IO(Log.info("Simulate TCS endObserve")))
-
 }

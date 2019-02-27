@@ -74,7 +74,8 @@ final case class Tcs private (tcsController: TcsController,
 
   val defaultGuiderConf = GuiderConfig(ProbeTrackingConfig.Parked, GuiderSensorOff)
   def calcGuiderConfig(inUse: Boolean, guideWith: Option[StandardGuideOptions.Value]): GuiderConfig =
-    guideWith.flatMap(v => inUse.option(GuiderConfig(v.toProbeTracking, v.toGuideSensorOption))).getOrElse(defaultGuiderConf)
+    guideWith.flatMap(v => inUse.option(GuiderConfig(v.toProbeTracking, v.toGuideSensorOption)))
+      .getOrElse(defaultGuiderConf)
 
   /*
    * Build TCS configuration for the step, merging the guide configuration from the sequence with the guide
@@ -82,17 +83,18 @@ final case class Tcs private (tcsController: TcsController,
    * it will not be used for the step, regardless of the sequence values.
    */
   def buildTcsConfig: IO[TcsConfig] =
-    guideDb.value.flatMap{ c => {
+    guideDb.value.map{ c => {
       val useAo: Boolean = c.gaosGuide match {
         case Some(Left(AltairOff)) => false
         case Some(Left(_))         => true
         case _                     => false
       }
+      val aoUsesP1 = (gaos.flatMap(_.swap.toOption), c.gaosGuide.flatMap(_.swap.toOption)).mapN(_.usesP1(_))
+        .getOrElse(false)
+      val aoUsesOI = (gaos.flatMap(_.swap.toOption), c.gaosGuide.flatMap(_.swap.toOption)).mapN(_.usesOI(_))
+        .getOrElse(false)
 
-      for {
-        aoUsesP1 <- gaos.flatMap(_.swap.map(_.usesP1).toOption).getOrElse(IO(false))
-        aoUsesOI <- gaos.flatMap(_.swap.map(_.usesOI).toOption).getOrElse(IO(false))
-      } yield TcsConfig(
+      TcsConfig(
         c.tcsGuide,
         TelescopeConfig(config.offsetA, config.wavelA),
         GuidersConfig(
@@ -111,7 +113,8 @@ final case class Tcs private (tcsController: TcsController,
           tag[AOGuide](useAo & calcGuiderInUse(c.tcsGuide, TipTiltSource.GAOS, M1Source.GAOS) &
             config.guideWithAO.exists(_.isActive))
         ),
-        AGConfig(config.scienceFoldPosition, HrwfsConfig.Auto.some)
+        AGConfig(config.scienceFoldPosition, HrwfsConfig.Auto.some),
+        c.gaosGuide
       )
     }
   }

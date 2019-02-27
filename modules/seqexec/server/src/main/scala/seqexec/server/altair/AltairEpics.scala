@@ -3,93 +3,106 @@
 
 package seqexec.server.altair
 
+import cats.effect.{IO, Async}
+import mouse.boolean._
 import edu.gemini.epics.acm._
 import edu.gemini.seqexec.server.altair.LgsSfoControl
 import org.log4s.{Logger, getLogger}
-import seqexec.server.{EpicsCommand, EpicsSystem, SeqAction}
-import seqexec.server.EpicsCommand.setParameter
+import seqexec.server.{EpicsCommandF, EpicsSystem, EpicsUtil}
+import seqexec.server.EpicsCommand.setParameterF
 import cats.implicits._
+import seqexec.server.EpicsUtil._
+import squants.Time
 
-class AltairEpics(service: CaService, tops: Map[String, String]) {
+class AltairEpics[F[_]: Async](service: CaService, tops: Map[String, String]) {
   val AltairTop: String = tops.getOrElse("ao", "ao:")
 
-  object strapGateControl extends EpicsCommand {
-    override protected val cs: Option[CaCommandSender] = Option(service.getCommandSender("aoStrap"))
+//  object strapGateControl extends EpicsCommandF {
+//    override protected val cs: Option[CaCommandSender] = Option(service.getCommandSender("aoStrap"))
+//
+//    val gate: Option[CaParameter[Integer]] = cs.map(_.getInteger("gate"))
+//    def setGate(v: Int): F[Unit] = setParameterF(gate, Integer.valueOf(v))
+//  }
+//
+//  object strapControl extends EpicsCommandF {
+//    override protected val cs: Option[CaCommandSender] =
+//      Option(service.getCommandSender("strapCorrCtl"))
+//
+//    val active: Option[CaParameter[Integer]] = cs.map(_.getInteger("onoff"))
+//    def setActive(v: Int): F[Unit] = setParameterF(active, Integer.valueOf(v))
+//  }
 
-    val gate: Option[CaParameter[Integer]] = cs.map(_.getInteger("gate"))
-    def setGate(v: Int): SeqAction[Unit] = setParameter(gate, Integer.valueOf(v))
-  }
-
-  object strapControl extends EpicsCommand {
-    override protected val cs: Option[CaCommandSender] =
-      Option(service.getCommandSender("strapCorrCtl"))
-
-    val active: Option[CaParameter[Integer]] = cs.map(_.getInteger("onoff"))
-    def setActive(v: Int): SeqAction[Unit] = setParameter(active, Integer.valueOf(v))
-  }
-
-  object sfoControl extends EpicsCommand {
+  object sfoControl extends EpicsCommandF {
     override protected val cs: Option[CaCommandSender] =
       Option(service.getCommandSender("aoSfoLoop"))
 
     val active: Option[CaParameter[LgsSfoControl]] = cs.map(_.addEnum[LgsSfoControl]("active",
       s"${AltairTop}cc:lgszoomSfoLoop.VAL", classOf[LgsSfoControl], false))
-    def setActive(v: LgsSfoControl): SeqAction[Unit] = setParameter(active, v)
+    def setActive(v: LgsSfoControl): F[Unit] = setParameterF(active, v)
   }
 
-  object btoLoopControl extends EpicsCommand {
+  object btoLoopControl extends EpicsCommandF {
     override protected val cs: Option[CaCommandSender] =
       Option(service.getCommandSender("btoFsaLoopCtrl"))
 
     val active: Option[CaParameter[String]] = cs.map(_.getString("loop"))
-    def setActive(v: String): SeqAction[Unit] = setParameter(active, v)
+    def setActive(v: String): F[Unit] = setParameterF(active, v)
   }
 
   val status: CaStatusAcceptor = service.getStatusAcceptor("aostate")
 
-  def strapTempStatus: Option[Boolean] = Option(status.getIntegerAttribute("strapTPStat").value)
-    .map(_.toInt =!= 0)
+  def strapTempStatus: F[Option[Boolean]] = safeAttributeSInt(status.getIntegerAttribute("strapTPStat"))
+    .map(_.map(_ =!= 0))
 
-  def strapGateLevel: Option[Int] = Option(status.getIntegerAttribute("strapgate").value)
-    .map(_.toInt)
+  private val strapGateAttr = status.getIntegerAttribute("strapgate")
+  def strapGate: F[Option[Int]] = safeAttributeSInt(strapGateAttr)
 
-  def strapLoop: Option[Boolean] = Option(status.getIntegerAttribute("straploop").value)
-    .map(_.toInt =!= 0)
+  def waitForStrapGate(v: Int, timeout: Time): F[Unit] =
+    EpicsUtil.waitForValueF(strapGateAttr, v:Integer, timeout, "Altair strap gate")
 
-  def strapRTStatus: Option[Boolean] = Option(status.getIntegerAttribute("strapRTStat").value)
-    .map(_.toInt =!= 0)
+  private val strapLoopAttr = status.getIntegerAttribute("straploop")
+  def strapLoop: F[Option[Boolean]] = safeAttributeSInt(strapLoopAttr).map(_.map(_ =!= 0))
 
-  def strapHVStatus: Option[Boolean] = Option(status.getIntegerAttribute("strapHVStat").value)
-    .map(_.toInt =!= 0)
+  def waitForStrapLoop(v: Boolean, timeout: Time): F[Unit] =
+    EpicsUtil.waitForValueF(strapLoopAttr, v.fold(1, 0):Integer, timeout, "Altair strap loop")
 
-  def sfoLoop: Option[LgsSfoControl] = Option(status.addEnum("sfoloop",
-    s"${AltairTop}cc:lgszoomSfoLoop.VAL", classOf[LgsSfoControl]).value)
+  def strapRTStatus: F[Option[Boolean]] = safeAttributeSInt(status.getIntegerAttribute("strapRTStat"))
+    .map(_.map(_ =!= 0))
 
-  def aoLoop: Option[Boolean] = Option(status.getIntegerAttribute("aowfsOn").value)
-    .map(_.toInt =!= 0)
+  def strapHVStatus: F[Option[Boolean]] = safeAttributeSInt(status.getIntegerAttribute("strapHVStat"))
+    .map(_.map(_ =!= 0))
 
-  def aoSettled: Option[Boolean] = Option(status.getDoubleAttribute("straploop").value)
-    .map(_.toDouble =!= 0.0)
+  def sfoLoop: F[Option[LgsSfoControl]] = safeAttribute(status.addEnum("sfoloop",
+    s"${AltairTop}cc:lgszoomSfoLoop.VAL", classOf[LgsSfoControl]))
 
-  def matrixStartX: Option[Double] = Option(status.getDoubleAttribute("conmatx").value).map(_.toDouble)
+  def aoLoop: F[Option[Boolean]] = safeAttributeSInt(status.getIntegerAttribute("aowfsOn"))
+    .map(_.map(_ =!= 0))
 
-  def matrixStartY: Option[Double] = Option(status.getDoubleAttribute("conmaty").value).map(_.toDouble)
+  def aoSettled: F[Option[Boolean]] = safeAttributeSDouble(status.getDoubleAttribute("straploop"))
+    .map(_.map(_ =!= 0.0))
 
-  def controlMatrixCalc: Option[CarStateGEM5] = Option(status.addEnum[CarStateGEM5]("cmPrepBusy",
-    s"${AltairTop}prepareCm.BUSY", classOf[CarStateGEM5]).value)
+  def matrixStartX: F[Option[Double]] = safeAttributeSDouble(status.getDoubleAttribute("conmatx"))
 
-  def lgsP1: Option[Boolean] = Option(status.getIntegerAttribute("lgsp1On").value)
-    .map(_.toInt =!= 0)
+  def matrixStartY: F[Option[Double]] = safeAttributeSDouble(status.getDoubleAttribute("conmaty"))
 
-  def lgsOi: Option[Boolean] = Option(status.getIntegerAttribute("lgsoiOn").value)
-    .map(_.toInt =!= 0)
+  private val controlMatrixCalcAttr = status.addEnum[CarStateGEM5]("cmPrepBusy", s"${AltairTop}prepareCm.BUSY", classOf[CarStateGEM5])
+  def controlMatrixCalc: F[Option[CarStateGEM5]] = safeAttribute(controlMatrixCalcAttr)
 
-  def aoFollow: Option[Boolean] = Option(status.getStringAttribute("aoFollowS").value)
-    .map(_ === "ON")
+  def waitMatrixCalc(v: CarStateGEM5, timeout: Time): F[Unit] =
+    EpicsUtil.waitForValueF(controlMatrixCalcAttr, v, timeout, "Atair control matrix calculation")
+
+  def lgsP1: F[Option[Boolean]] = safeAttributeSInt(status.getIntegerAttribute("lgsp1On"))
+    .map(_.map(_ =!= 0))
+
+  def lgsOi: F[Option[Boolean]] = safeAttributeSInt(status.getIntegerAttribute("lgsoiOn"))
+    .map(_.map(_ =!= 0))
+
+  def aoFollow: F[Option[Boolean]] = safeAttribute(status.getStringAttribute("aoFollowS"))
+    .map(_.map(_ === "ON"))
 
 }
 
-object AltairEpics extends EpicsSystem[AltairEpics] {
+object AltairEpics extends EpicsSystem[AltairEpics[IO]] {
 
   override val className: String = getClass.getName
   override val Log: Logger = getLogger

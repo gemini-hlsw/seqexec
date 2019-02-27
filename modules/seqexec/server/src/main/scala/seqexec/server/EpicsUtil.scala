@@ -18,12 +18,14 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.{Timer, TimerTask}
 import java.util.concurrent.locks.ReentrantLock
 import java.util.concurrent.TimeUnit.MILLISECONDS
+
 import edu.gemini.epics.acm._
 import mouse.boolean._
 import org.log4s._
 import seqexec.server.EpicsCommand.safe
 import seqexec.server.SeqexecFailure.SeqexecException
 import squants.Time
+
 import scala.math.abs
 import scala.collection.JavaConverters._
 
@@ -282,7 +284,7 @@ object EpicsUtil {
         val timer = new Timer
         val statusListener = new CaAttributeListener[T] {
           override def onValueChange(newVals: util.List[T]): Unit = {
-            if (!newVals.isEmpty && vv.contains(newVals.get(0)) && resultGuard.getAndDecrement() == 1) {
+            if (!newVals.isEmpty && vv.contains(newVals.get(0)) && resultGuard.getAndDecrement() === 1) {
               locked(lock) {
                 attr.removeListener(this)
                 timer.cancel()
@@ -299,7 +301,7 @@ object EpicsUtil {
         locked(lock) {
           if (timeout.toMilliseconds.toLong > 0) {
             timer.schedule(new TimerTask {
-              override def run(): Unit = if (resultGuard.getAndDecrement() == 1) {
+              override def run(): Unit = if (resultGuard.getAndDecrement() === 1) {
                 locked(lock) {
                   attr.removeListener(statusListener)
                 }
@@ -313,6 +315,58 @@ object EpicsUtil {
     })))
 
   def waitForValue[T](attr: CaAttribute[T], v: T, timeout: Time, name: String): SeqAction[Unit] = waitForValues[T](attr, List(v), timeout, name).void
+
+  def waitForValuesF[T, F[_]: Async](attr: CaAttribute[T], vv: Seq[T], timeout: Time, name: String): F[T] =
+    Async[F].async[T] { (f: Either[Throwable, T] => Unit) =>
+      //The task is created with async. So we do whatever we need to do,
+      // and then call `f` to signal the completion of the task.
+
+      //`resultGuard` and `lock` are used for synchronization.
+      val resultGuard = new AtomicInteger(1)
+      val lock = new ReentrantLock()
+
+      // First we verify that the attribute doesn't already have the required value.
+      if (!attr.values().isEmpty && vv.contains(attr.value)) {
+        f(attr.value.asRight)
+      } else {
+        // If not, we set a timer for the timeout, and a listener for the EPICS
+        // channel. The timer and the listener can both complete the IO. The
+        // first one to do it cancels the other.The use of `resultGuard`
+        // guarantees that only one of them will complete the IO.
+        val timer = new Timer
+        val statusListener = new CaAttributeListener[T] {
+          override def onValueChange(newVals: util.List[T]): Unit = {
+            if (!newVals.isEmpty && vv.contains(newVals.get(0)) && resultGuard.getAndDecrement() === 1) {
+              locked(lock) {
+                attr.removeListener(this)
+                timer.cancel()
+              }
+              // This `right` looks a bit confusing because is not related to
+              // the `TrySeq`, but to the result of `IO`.
+              f(newVals.get(0).asRight)
+            }
+          }
+
+          override def onValidityChange(newValidity: Boolean): Unit = {}
+        }
+
+        locked(lock) {
+          if (timeout.toMilliseconds.toLong > 0) {
+            timer.schedule(new TimerTask {
+              override def run(): Unit = if (resultGuard.getAndDecrement() === 1) {
+                locked(lock) {
+                  attr.removeListener(statusListener)
+                }
+                f(SeqexecFailure.Timeout(s"waiting for $name.").asLeft)
+              }
+            }, timeout.toMilliseconds.toLong)
+          }
+          attr.addListener(statusListener)
+        }
+      }
+    }
+
+  def waitForValueF[T, F[_]: Async](attr: CaAttribute[T], v: T, timeout: Time, name: String): F[Unit] = waitForValuesF[T, F](attr, List(v), timeout, name).void
 
   def setTimeout(os: Option[CaApplySender], t: Time): SeqAction[Unit] = SeqAction.either{
     os.map(_.setTimeout(t.toMilliseconds.toLong, MILLISECONDS).asRight).getOrElse(SeqexecFailure.Unexpected("Unable to set timeout for EPICS command.").asLeft)

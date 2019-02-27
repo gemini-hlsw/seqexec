@@ -220,6 +220,45 @@ final class TcsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, Stri
     def setMatrix(v: Int): SeqAction[Unit] = setParameter[java.lang.Integer](matrix, v)
   }
 
+  object aoPrepareControlMatrix extends EpicsCommand {
+    override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("aoPrepareCm"))
+
+    private val x = cs.map(_.getDouble("x"))
+    def setX(v: Double): SeqAction[Unit] = setParameter[java.lang.Double](x, v)
+
+    private val y = cs.map(_.getDouble("y"))
+    def setY(v: Double): SeqAction[Unit] = setParameter[java.lang.Double](y, v)
+
+    private val seeing = cs.map(_.getDouble("seeing"))
+    def setSeeing(v: Double): SeqAction[Unit] = setParameter[java.lang.Double](seeing, v)
+
+    private val starMagnitude = cs.map(_.getDouble("gsmag"))
+    def setStarMagnitude(v: Double): SeqAction[Unit] = setParameter[java.lang.Double](starMagnitude, v)
+
+    private val windSpeed = cs.map(_.getDouble("windspeed"))
+    def setWindSpeed(v: Double): SeqAction[Unit] = setParameter[java.lang.Double](windSpeed, v)
+  }
+
+  object aoFlatten extends EpicsCommand {
+    override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("aoFlatten"))
+  }
+
+  object aoStatistics extends EpicsCommand {
+    override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("aoStats"))
+
+    private val fileName = cs.map(_.getString("filename"))
+    def setFileName(v: String): SeqAction[Unit] = setParameter(fileName, v)
+
+    private val samples = cs.map(_.getInteger("samples"))
+    def setSamples(v: Int): SeqAction[Unit] = setParameter[java.lang.Integer](samples, v)
+
+    private val interval = cs.map(_.getDouble("interval"))
+    def setInterval(v: Double): SeqAction[Unit] = setParameter[java.lang.Double](interval, v)
+
+    private val triggerTime = cs.map(_.getDouble("trigtime"))
+    def setTriggerTimeInterval(v: Double): SeqAction[Unit] = setParameter[java.lang.Double](triggerTime, v)
+  }
+
   object targetFilter extends EpicsCommand {
     override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("filter1"))
 

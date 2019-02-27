@@ -179,27 +179,27 @@
             <description>Prepare ALTAIR control matrix</description>
             <parameter name="x">
                 <channel>aoPrepareCm.A</channel>
-                <type>STRING</type>
+                <type>DOUBLE</type>
                 <description>Guide star x position</description>
             </parameter>
             <parameter name="seeing">
                 <channel>aoPrepareCm.C</channel>
-                <type>STRING</type>
+                <type>DOUBLE</type>
                 <description>Seeing estimate</description>
             </parameter>
             <parameter name="windspeed">
                 <channel>aoPrepareCm.E</channel>
-                <type>STRING</type>
+                <type>DOUBLE</type>
                 <description>Windspeed</description>
             </parameter>
             <parameter name="gsmag">
                 <channel>aoPrepareCm.D</channel>
-                <type>STRING</type>
+                <type>DOUBLE</type>
                 <description>Guide star magnitude</description>
             </parameter>
             <parameter name="y">
                 <channel>aoPrepareCm.B</channel>
-                <type>STRING</type>
+                <type>DOUBLE</type>
                 <description>Guide star y position</description>
             </parameter>
         </command>
@@ -749,12 +749,12 @@
             <description>ALTAIR statistics</description>
             <parameter name="trigtime">
                 <channel>aoStats.D</channel>
-                <type>STRING</type>
+                <type>DOUBLE</type>
                 <description>Trigger time</description>
             </parameter>
             <parameter name="samples">
                 <channel>aoStats.B</channel>
-                <type>STRING</type>
+                <type>INTEGER</type>
                 <description>Samples</description>
             </parameter>
             <parameter name="filename">
@@ -764,7 +764,7 @@
             </parameter>
             <parameter name="interval">
                 <channel>aoStats.C</channel>
-                <type>STRING</type>
+                <type>DOUBLE</type>
                 <description>Interval</description>
             </parameter>
         </command>

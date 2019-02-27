@@ -40,6 +40,7 @@ import seqexec.server.tcs.TcsController.ScienceFoldPosition
 import seqexec.server.gnirs._
 import seqexec.server.niri._
 import seqexec.server.nifs._
+import seqexec.server.altair.Altair
 import seqexec.server.SeqexecFailure._
 import seqexec.server._
 import squants.Time
@@ -450,6 +451,18 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
           Gcal(systems.gcal, site == Site.GS)
       ) }
       case DarkOrBias(inst)      => toInstrumentSys(inst).map(List(_))
+      case AltairObs(inst)          => for{
+        sys    <- toInstrumentSys(inst)
+        altair <- Altair.fromConfig(config, systems.altair)
+      } yield sys :: List(
+          Tcs.fromConfig(systems.tcs, hasOI(inst).fold(all, allButOI).add(Gaos),
+            altair.asLeft.some, systems.guideDb)(config,
+            ScienceFoldPosition.Position(TcsController.LightSource.Sky, sys.sfName(config)),
+            extractWavelength(config)),
+          Gcal(systems.gcal, site == Site.GS)
+
+
+      )
       case _                     => TrySeq.fail(Unexpected(s"Unsupported step type $stepType"))
     }
   }
@@ -522,6 +535,10 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
         calcInstHeader(config, inst).map(h => Reader(ctx =>
           List(commonHeaders(config, all.toList, i)(ctx), gwsHeaders(i), h)))
       }
+    case AltairObs(inst) => toInstrumentSys(inst) >>= { i =>
+        calcInstHeader(config, inst).map(h => Reader(ctx =>
+          List(commonHeaders(config, all.toList, i)(ctx), gwsHeaders(i), h)))
+      }
     case FlatOrArc(inst)       => toInstrumentSys(inst) >>= { i =>
         calcInstHeader(config, inst).map(h => Reader(ctx =>
           List(commonHeaders(config, flatOrArcTcsSubsystems(inst).toList, i)(ctx), gcalHeader(i), gwsHeaders(i), h)))
@@ -560,7 +577,7 @@ object SeqTranslate {
   private final case class Dark(override val instrument: Instrument) extends StepType
   private final case class NodAndShuffle(override val instrument: Instrument) extends StepType
   private final case class Gems(override val instrument: Instrument) extends StepType
-  private final case class Altair(override val instrument: Instrument) extends StepType
+  private final case class AltairObs(override val instrument: Instrument) extends StepType
   private final case class FlatOrArc(override val instrument: Instrument) extends StepType
   private final case class DarkOrBias(override val instrument: Instrument) extends StepType
   private case object AlignAndCalib extends StepType {
@@ -568,11 +585,11 @@ object SeqTranslate {
   }
 
   private def calcStepType(config: Config): TrySeq[StepType] = {
-    def extractGaos(inst: Instrument): TrySeq[StepType] = config.extractAs[String](new ItemKey(AO_CONFIG_NAME) / AO_SYSTEM_PROP) match {
+    def extractGaos(inst: Instrument): TrySeq[StepType] = config.extractAs[String](AO_SYSTEM_KEY) match {
       case Left(ConfigUtilOps.ConversionError(_, _))              => TrySeq.fail(Unexpected("Unable to get AO system from sequence"))
       case Left(ConfigUtilOps.ContentError(_))                    => TrySeq.fail(Unexpected("Logical error"))
       case Left(ConfigUtilOps.KeyNotFound(_))                     => TrySeq(CelestialObject(inst))
-      case Right(AltairConstants.SYSTEM_NAME_PROP)                => TrySeq(Altair(inst))
+      case Right(AltairConstants.SYSTEM_NAME_PROP)                => TrySeq(AltairObs(inst))
       case Right(edu.gemini.spModel.gemini.gems.Gems.SYSTEM_NAME) => TrySeq(Gems(inst))
       case _                                                      => TrySeq.fail(Unexpected("Logical error reading AO system name"))
     }
