@@ -172,11 +172,19 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
 
   }
 
-  def redirectWebServer(conf: WebServerConfiguration): Resource[IO, Server[IO]] =
+  def redirectWebServer(
+    gcdb: GuideConfigDb[IO]
+  )(conf: WebServerConfiguration): Resource[IO, Server[IO]] = {
+    val router = Router[IO](
+      "/api/seqexec/guide" -> new GuideConfigDbRoutes(gcdb).service,
+      "/" -> new RedirectToHttpsRoutes(443, conf.externalBaseUrl).service
+    )
+
     BlazeServerBuilder[IO]
       .bindHttp(conf.insecurePort, conf.host)
-      .withHttpApp(new RedirectToHttpsRoutes(443, conf.externalBaseUrl).service.orNotFound)
+      .withHttpApp(router.orNotFound)
       .resource
+  }
 
   def logStart: Kleisli[IO, WebServerConfiguration, Unit] = Kleisli { conf =>
     val msg = s"Start web server for site ${conf.site} on ${conf.devMode.fold("dev", "production")} mode"
@@ -261,7 +269,7 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
         as <- Resource.liftF(authService(ac))
         _  <- Resource.liftF(logStart.run(wc))
         _  <- Resource.liftF(logToClients(out))
-        _  <- redirectWebServer(wc)
+        _  <- redirectWebServer(gcdb)(wc)
         _  <- webServer(as, in, out, et, gcdb, cr, bec)(wc)
       } yield ()
 
