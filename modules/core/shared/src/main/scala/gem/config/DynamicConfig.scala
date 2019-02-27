@@ -292,13 +292,15 @@ object DynamicConfig {
 
   trait GmosNOptics {
 
+    import GmosConfig.{ GmosCcdReadout, GmosCommonDynamicConfig, GmosCustomMask, GmosGrating }
+
     /** @group Optics */
     val common: Lens[GmosN, GmosConfig.GmosCommonDynamicConfig] =
-      Lens[GmosN, GmosConfig.GmosCommonDynamicConfig](_.common)(a => _.copy(common = a))
+      Lens[GmosN, GmosCommonDynamicConfig](_.common)(a => _.copy(common = a))
 
     /** @group Optics */
     val grating: Lens[GmosN, Option[GmosConfig.GmosGrating[GmosNorthDisperser]]] =
-      Lens[GmosN, Option[GmosConfig.GmosGrating[GmosNorthDisperser]]](_.grating)(a => _.copy(grating = a))
+      Lens[GmosN, Option[GmosGrating[GmosNorthDisperser]]](_.grating)(a => _.copy(grating = a))
 
     /** @group Optics */
     val filter: Lens[GmosN, Option[GmosNorthFilter]] =
@@ -306,7 +308,23 @@ object DynamicConfig {
 
     /** @group Optics */
     val fpu: Lens[GmosN, Option[Either[GmosConfig.GmosCustomMask, GmosNorthFpu]]] =
-      Lens[GmosN, Option[Either[GmosConfig.GmosCustomMask, GmosNorthFpu]]](_.fpu)(a => _.copy(fpu = a))
+      Lens[GmosN, Option[Either[GmosCustomMask, GmosNorthFpu]]](_.fpu)(a => _.copy(fpu = a))
+
+    /** @group Optics */
+    def xBinning: Lens[GmosN, GmosXBinning] =
+      common composeLens GmosCommonDynamicConfig.ccdReadout composeLens GmosCcdReadout.xBinning
+
+    /** @group Optics */
+    def yBinning: Lens[GmosN, GmosYBinning] =
+      common composeLens GmosCommonDynamicConfig.ccdReadout composeLens GmosCcdReadout.yBinning
+
+    /** @group Optics */
+    def exposureTime: Lens[GmosN, Duration] =
+      common composeLens GmosCommonDynamicConfig.exposureTime
+
+    /** @group Optics */
+    def roi: Lens[GmosN, GmosRoi] =
+      common composeLens GmosCommonDynamicConfig.roi
 
     private val someGrating: Optional[GmosN, GmosConfig.GmosGrating[GmosNorthDisperser]] =
       grating composePrism some
@@ -373,13 +391,15 @@ object DynamicConfig {
 
   trait GmosSOptics {
 
+    import GmosConfig.{ GmosCcdReadout, GmosCommonDynamicConfig, GmosCustomMask, GmosGrating }
+
     /** @group Optics */
     val common: Lens[GmosS, GmosConfig.GmosCommonDynamicConfig] =
-      Lens[GmosS, GmosConfig.GmosCommonDynamicConfig](_.common)(a => _.copy(common = a))
+      Lens[GmosS, GmosCommonDynamicConfig](_.common)(a => _.copy(common = a))
 
     /** @group Optics */
     val grating: Lens[GmosS, Option[GmosConfig.GmosGrating[GmosSouthDisperser]]] =
-      Lens[GmosS, Option[GmosConfig.GmosGrating[GmosSouthDisperser]]](_.grating)(a => _.copy(grating = a))
+      Lens[GmosS, Option[GmosGrating[GmosSouthDisperser]]](_.grating)(a => _.copy(grating = a))
 
     /** @group Optics */
     val filter: Lens[GmosS, Option[GmosSouthFilter]] =
@@ -387,20 +407,36 @@ object DynamicConfig {
 
     /** @group Optics */
     val fpu: Lens[GmosS, Option[Either[GmosConfig.GmosCustomMask, GmosSouthFpu]]] =
-      Lens[GmosS, Option[Either[GmosConfig.GmosCustomMask, GmosSouthFpu]]](_.fpu)(a => _.copy(fpu = a))
+      Lens[GmosS, Option[Either[GmosCustomMask, GmosSouthFpu]]](_.fpu)(a => _.copy(fpu = a))
 
-    private val someGrating: Optional[GmosS, GmosConfig.GmosGrating[GmosSouthDisperser]] =
+    /** @group Optics */
+    def xBinning: Lens[GmosS, GmosXBinning] =
+      common composeLens GmosCommonDynamicConfig.ccdReadout composeLens GmosCcdReadout.xBinning
+
+    /** @group Optics */
+    def yBinning: Lens[GmosS, GmosYBinning] =
+      common composeLens GmosCommonDynamicConfig.ccdReadout composeLens GmosCcdReadout.yBinning
+
+    /** @group Optics */
+    def exposureTime: Lens[GmosS, Duration] =
+      common composeLens GmosCommonDynamicConfig.exposureTime
+
+    /** @group Optics */
+    def roi: Lens[GmosS, GmosRoi] =
+      common composeLens GmosCommonDynamicConfig.roi
+
+    private val someGrating: Optional[GmosS, GmosGrating[GmosSouthDisperser]] =
       grating composePrism some
 
     /** @group Optics */
     val disperser: Optional[GmosS, GmosSouthDisperser] =
-      someGrating composeLens GmosConfig.GmosGrating.disperser[GmosSouthDisperser]
+      someGrating composeLens GmosGrating.disperser[GmosSouthDisperser]
 
     /** @group Optics */
     val wavelength: Optional[GmosS, Wavelength] =
-      someGrating composeLens GmosConfig.GmosGrating.wavelength
+      someGrating composeLens GmosGrating.wavelength
 
-    private val someFpu: Optional[GmosS, Either[GmosConfig.GmosCustomMask, GmosSouthFpu]] =
+    private val someFpu: Optional[GmosS, Either[GmosCustomMask, GmosSouthFpu]] =
       fpu composePrism some
 
     /** @group Optics */
@@ -408,7 +444,7 @@ object DynamicConfig {
       someFpu composePrism stdRight
 
     /** @group Optics */
-    val customMask: Optional[GmosS, GmosConfig.GmosCustomMask] =
+    val customMask: Optional[GmosS, GmosCustomMask] =
       someFpu composePrism stdLeft
 
   }
