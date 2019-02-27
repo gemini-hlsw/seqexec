@@ -56,9 +56,16 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
     private ChannelListener<Short> stopMarkListener;
     private CaObserveSenderImpl.ApplyState currentState;
 
-    public CaObserveSenderImpl(String name, String applyRecord, String carRecord, String observeCarRecord,
-                               String stopCmd, String abortCmd, String description, Class<C> carClass, EpicsService epicsService)
-            throws CAException {
+    public CaObserveSenderImpl(
+        final String name,
+        final String applyRecord,
+        final String carRecord,
+        final String observeCarRecord,
+        final String stopCmd,
+        final String abortCmd,
+        final String description,
+        final Class<C> carClass,
+        final EpicsService epicsService) throws CAException {
         super();
         this.name = name;
         this.description = description;
@@ -97,13 +104,13 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
         });
 
         ReadOnlyClientEpicsChannel<Short> stopMark = null;
-        if (stopCmd!=null && stopCmd.length()>0) {
+        if (stopCmd != null && stopCmd.length() > 0) {
             try {
                 stopMark = epicsReader.getShortChannel(stopCmd + CAD_MARK_SUFFIX);
             } catch(Throwable e) {
                 LOG.warn(e.getMessage());
             }
-            if (stopMark!=null) {
+            if (stopMark != null) {
                 stopMark.registerListener(stopMarkListener = (String arg0, List<Short> newVals) -> {
                     if (newVals != null && !newVals.isEmpty()) {
                         CaObserveSenderImpl.this.onStopMarkChange(newVals.get(0));
@@ -116,13 +123,13 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
         this.stopMark = stopMark;
 
         ReadOnlyClientEpicsChannel<Short> abortMark = null;
-        if (abortCmd!=null && abortCmd.length()>0) {
+        if (abortCmd != null && abortCmd.length() > 0) {
             try {
                 abortMark = epicsReader.getShortChannel(abortCmd + CAD_MARK_SUFFIX);
             } catch(Throwable e) {
                 LOG.warn(e.getMessage());
             }
-            if (abortMark!=null) {
+            if (abortMark != null) {
                 abortMark.registerListener(abortMarkListener = (String arg0, List<Short> newVals) -> {
                     if (newVals != null && !newVals.isEmpty()) {
                         CaObserveSenderImpl.this.onAbortMarkChange(newVals.get(0));
@@ -176,14 +183,14 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
         } catch (CAException e) {
             LOG.warn(e.getMessage());
         }
-        if (stopMark!=null) {
+        if (stopMark != null) {
             try {
                 stopMark.unRegisterListener(stopMarkListener);
             } catch (CAException e) {
                 LOG.warn(e.getMessage());
             }
         }
-        if (abortMark!=null) {
+        if (abortMark != null) {
             try {
                 abortMark.unRegisterListener(abortMarkListener);
             } catch (CAException e) {
@@ -225,7 +232,7 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
     }
 
     @Override
-    public CaCommandMonitor postCallback(CaCommandListener callback) {
+    public CaCommandMonitor postCallback(final CaCommandListener callback) {
         CaCommandMonitor cm = post();
         cm.setCallback(callback);
         return cm;
@@ -235,26 +242,26 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
     private interface ApplyState {
         String signature();
 
-        CaObserveSenderImpl.ApplyState onApplyValChange(Integer val);
+        CaObserveSenderImpl.ApplyState onApplyValChange(final Integer val);
 
-        CaObserveSenderImpl.ApplyState onCarValChange(CarStateGeneric carState);
+        CaObserveSenderImpl.ApplyState onCarValChange(final CarStateGeneric carState);
 
-        CaObserveSenderImpl.ApplyState onCarClidChange(Integer val);
+        CaObserveSenderImpl.ApplyState onCarClidChange(final Integer val);
 
         ObserveState currentObserveState();
 
-        CaObserveSenderImpl.ApplyState copyWithObserveState(ObserveState observeState);
+        CaObserveSenderImpl.ApplyState copyWithObserveState(final ObserveState observeState);
 
-        default CaObserveSenderImpl.ApplyState onStopMarkChange(Short val) {
-          return copyWithObserveState(currentObserveState().onStopMarkChange(val));
+        default CaObserveSenderImpl.ApplyState onStopMarkChange(final Short val) {
+            return copyWithObserveState(currentObserveState().onStopMarkChange(val));
         }
 
-        default CaObserveSenderImpl.ApplyState onAbortMarkChange(Short val) {
-          return copyWithObserveState(currentObserveState().onAbortMarkChange(val));
+        default CaObserveSenderImpl.ApplyState onAbortMarkChange(final Short val) {
+            return copyWithObserveState(currentObserveState().onAbortMarkChange(val));
         }
 
-        default CaObserveSenderImpl.ApplyState onObserveCarValChange(CarStateGeneric carState) {
-          return copyWithObserveState(currentObserveState().onObserveCarValChange(carState));
+        default CaObserveSenderImpl.ApplyState onObserveCarValChange(final CarStateGeneric carState) {
+            return copyWithObserveState(currentObserveState().onObserveCarValChange(carState));
         }
 
         CaObserveSenderImpl.ApplyState onTimeout();
@@ -264,11 +271,11 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
     private interface ObserveState {
         String signature();
 
-        ObserveState onObserveCarValChange(CarStateGeneric carState);
+        ObserveState onObserveCarValChange(final CarStateGeneric carState);
 
-        CaObserveSenderImpl.ObserveState onStopMarkChange(Short val);
+        CaObserveSenderImpl.ObserveState onStopMarkChange(final Short val);
 
-        CaObserveSenderImpl.ObserveState onAbortMarkChange(Short val);
+        CaObserveSenderImpl.ObserveState onAbortMarkChange(final Short val);
 
         default boolean isDone() {
             return false;
@@ -294,15 +301,15 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
 
         public String signature() {return "ObserveIdle";}
 
-        public ObserveState onObserveCarValChange(CarStateGeneric carState) {
+        public ObserveState onObserveCarValChange(final CarStateGeneric carState) {
             return this;
         }
 
-        public CaObserveSenderImpl.ObserveState onStopMarkChange(Short val) {
+        public CaObserveSenderImpl.ObserveState onStopMarkChange(final Short val) {
             return this;
         }
 
-        public CaObserveSenderImpl.ObserveState onAbortMarkChange(Short val) {
+        public CaObserveSenderImpl.ObserveState onAbortMarkChange(final Short val) {
             return this;
         }
 
@@ -325,7 +332,7 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
             this.cm = cm;
         }
 
-        public String signature() { return "ObserveWaitBusy"; }
+        public String signature() { return "ObserveWaitBusy(observeCarState = " + observeCarState + ")"; }
 
         public ObserveState onObserveCarValChange(final CarStateGeneric carState) {
           if (carState.isBusy()) {
@@ -364,10 +371,10 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
         }
 
         @Override
-        public String signature() { return "ObserveWaitIdle"; }
+        public String signature() { return "ObserveWaitIdle(observeCarState = " + observeCarState + ")"; }
 
         @Override
-        public ObserveState onObserveCarValChange(CarStateGeneric carState) {
+        public ObserveState onObserveCarValChange(final CarStateGeneric carState) {
             if (observeCarState.isBusy() && carState.isIdle()) {
                 return new ObserveDone(carState, cm);
             }
@@ -389,12 +396,12 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
         }
 
         @Override
-        public CaObserveSenderImpl.ObserveState onStopMarkChange(Short val) {
-          return new ObserveWaitStop(cm, val);
+        public CaObserveSenderImpl.ObserveState onStopMarkChange(final Short val) {
+            return new ObserveWaitStop(cm, val);
         }
 
         @Override
-        public CaObserveSenderImpl.ObserveState onAbortMarkChange(Short val) {
+        public CaObserveSenderImpl.ObserveState onAbortMarkChange(final Short val) {
             return new ObserveWaitAbort(cm, val);
         }
 
@@ -411,20 +418,21 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
         }
 
         @Override
-        public String signature() { return "ObserveDone"; }
+        public String signature() { return "ObserveDone(observeCarState = " + observeCarState + ")"; }
 
         @Override
-        public ObserveState onObserveCarValChange(CarStateGeneric carState) {
-          return this;}
-
-        @Override
-        public CaObserveSenderImpl.ObserveState onStopMarkChange(Short val) {
-          return this;
+        public ObserveState onObserveCarValChange(final CarStateGeneric carState) {
+            return this;
         }
 
         @Override
-        public CaObserveSenderImpl.ObserveState onAbortMarkChange(Short val) {
-          return this;
+        public CaObserveSenderImpl.ObserveState onStopMarkChange(final Short val) {
+            return this;
+        }
+
+        @Override
+        public CaObserveSenderImpl.ObserveState onAbortMarkChange(final Short val) {
+            return this;
         }
 
         @Override
@@ -442,22 +450,22 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
             this.cm = cm;
         }
 
-        public String signature() { return "ObservePaused"; }
+        public String signature() { return "ObservePaused(observeCarState = " + observeCarState + ")"; }
 
         public ObserveState onObserveCarValChange(final CarStateGeneric carState) {
-          if (carState.isBusy()) {
-              // Now we are busy, let's go to wait for idle
-              return new ObserveWaitIdle(carState, cm);
-          } else if (carState.isError()) {
-              // Signal an error
-              failCommandWithObserveCarError(cm);
-              return idleObserveState;
-          } else if (carState.isPaused()) {
-              return this;
-          } else {
-              // No change, preserve the car
-              return new ObservePaused(carState, cm);
-          }
+            if (carState.isBusy()) {
+                // Now we are busy, let's go to wait for idle
+                return new ObserveWaitIdle(carState, cm);
+            } else if (carState.isError()) {
+                // Signal an error
+                failCommandWithObserveCarError(cm);
+                return idleObserveState;
+            } else if (carState.isPaused()) {
+                return this;
+            } else {
+                // No change, preserve the car
+                return new ObservePaused(carState, cm);
+            }
         }
 
         public CaObserveSenderImpl.ObserveState onStopMarkChange(final Short val) {
@@ -489,12 +497,12 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
         public String signature() { return "ObserveWaitStop(stopMark = " + stopMark + ")" ; }
 
         @Override
-        public ObserveState onObserveCarValChange(CarStateGeneric carState) {
-          return this;
+        public ObserveState onObserveCarValChange(final CarStateGeneric carState) {
+            return this;
         }
 
         @Override
-        public CaObserveSenderImpl.ObserveState onStopMarkChange(Short val) {
+        public CaObserveSenderImpl.ObserveState onStopMarkChange(final Short val) {
             if (stopMark == MRK_PRESET && val == MRK_IDLE) {
                 return new ObserveStop(cm);
             } else {
@@ -503,7 +511,7 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
         }
 
         @Override
-        public CaObserveSenderImpl.ObserveState onAbortMarkChange(Short val) {
+        public CaObserveSenderImpl.ObserveState onAbortMarkChange(final Short val) {
             return new ObserveWaitAbort(cm, val);
         }
 
@@ -519,26 +527,26 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
         }
 
         @Override
-        public String signature() { return "ObserveStop"; }
+        public String signature() { return "ObserveStop(isStopped = " + isStopped + ")"; }
 
         @Override
-        public ObserveState onObserveCarValChange(CarStateGeneric carState) {
-          if (carState.isIdle()) {
-            isStopped = true;
-            return this;
-          } else {
-            return this;
-          }
+        public ObserveState onObserveCarValChange(final CarStateGeneric carState) {
+            if (carState.isIdle()) {
+                isStopped = true;
+                return this;
+            } else {
+                return this;
+            }
         }
 
         @Override
-        public CaObserveSenderImpl.ObserveState onStopMarkChange(Short val) {
-          return this;
+        public CaObserveSenderImpl.ObserveState onStopMarkChange(final Short val) {
+            return this;
         }
 
         @Override
-        public CaObserveSenderImpl.ObserveState onAbortMarkChange(Short val) {
-          return this;
+        public CaObserveSenderImpl.ObserveState onAbortMarkChange(final Short val) {
+            return this;
         }
 
         @Override
@@ -559,17 +567,17 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
         public String signature() { return "ObserveWaitAbort(abortMark = " + abortMark + ")" ; }
 
         @Override
-        public ObserveState onObserveCarValChange(CarStateGeneric carState) {
-          return this;
+        public ObserveState onObserveCarValChange(final CarStateGeneric carState) {
+            return this;
         }
 
         @Override
-        public CaObserveSenderImpl.ObserveState onStopMarkChange(Short val) {
-          return this;
+        public CaObserveSenderImpl.ObserveState onStopMarkChange(final Short val) {
+            return this;
         }
 
         @Override
-        public CaObserveSenderImpl.ObserveState onAbortMarkChange(Short val) {
+        public CaObserveSenderImpl.ObserveState onAbortMarkChange(final Short val) {
           if (abortMark == MRK_PRESET && val == MRK_IDLE) {
               return new ObserveAbort(cm);
           } else {
@@ -592,22 +600,22 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
         public String signature() { return "ObserveAbort"; }
 
         @Override
-        public ObserveState onObserveCarValChange(CarStateGeneric carState) {
-          if (carState.isIdle()) {
-            isAborted = true;
-            return this;
-          } else {
-            return this;
-          }
+        public ObserveState onObserveCarValChange(final CarStateGeneric carState) {
+            if (carState.isIdle()) {
+                isAborted = true;
+                return this;
+            } else {
+                return this;
+            }
         }
 
         @Override
-        public CaObserveSenderImpl.ObserveState onStopMarkChange(Short val) {
+        public CaObserveSenderImpl.ObserveState onStopMarkChange(final Short val) {
           return this;
         }
 
         @Override
-        public CaObserveSenderImpl.ObserveState onAbortMarkChange(Short val) {
+        public CaObserveSenderImpl.ObserveState onAbortMarkChange(final Short val) {
           return this;
         }
 
@@ -617,24 +625,23 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
 
     // Initial state before any channel has changed
     private final class IdleState implements ApplyState {
-        IdleState() {
-        }
+        IdleState() { }
 
         @Override
         public String signature() { return "idleState"; }
 
         @Override
-        public CaObserveSenderImpl.ApplyState onApplyValChange(Integer val) {
+        public CaObserveSenderImpl.ApplyState onApplyValChange(final Integer val) {
             return this;
         }
 
         @Override
-        public CaObserveSenderImpl.ApplyState onCarValChange(CarStateGeneric carState) {
+        public CaObserveSenderImpl.ApplyState onCarValChange(final CarStateGeneric carState) {
             return this;
         }
 
         @Override
-        public CaObserveSenderImpl.ApplyState onCarClidChange(Integer val) { return this; }
+        public CaObserveSenderImpl.ApplyState onCarClidChange(final Integer val) { return this; }
 
         @Override
         public CaObserveSenderImpl.ApplyState onTimeout() {
@@ -642,13 +649,13 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
         }
 
         @Override
-        public CaObserveSenderImpl.ApplyState copyWithObserveState(ObserveState observeState) {
-          return this;
+        public CaObserveSenderImpl.ApplyState copyWithObserveState(final ObserveState observeState) {
+            return this;
         }
 
         @Override
         public ObserveState currentObserveState() {
-          return idleObserveState;
+            return idleObserveState;
         }
 
     };
@@ -669,7 +676,11 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
             this.observeState = new ObserveWaitBusy(cm);
         }
 
-        private WaitApplyPreset(CaCommandMonitorImpl cm, CarStateGeneric carState, Integer carClid, ObserveState observeState) {
+        private WaitApplyPreset(
+            final CaCommandMonitorImpl cm,
+            final CarStateGeneric carState,
+            final Integer carClid,
+            final ObserveState observeState) {
             this.cm = cm;
             this.carState = carState;
             this.carClid = carClid;
@@ -683,7 +694,7 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
         }
 
         @Override
-        public CaObserveSenderImpl.ApplyState onApplyValChange(Integer val) {
+        public CaObserveSenderImpl.ApplyState onApplyValChange(final Integer val) {
             if (val > 0) {
                 if (val.equals(carClid) && carState != null) {
                     if (carState.isError()) {
@@ -701,12 +712,12 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
         }
 
         @Override
-        public CaObserveSenderImpl.ApplyState onCarValChange(CarStateGeneric val) {
+        public CaObserveSenderImpl.ApplyState onCarValChange(final CarStateGeneric val) {
             return new CaObserveSenderImpl.WaitApplyPreset(cm, val, carClid, observeState);
         }
 
         @Override
-        public CaObserveSenderImpl.ApplyState onCarClidChange(Integer val) {
+        public CaObserveSenderImpl.ApplyState onCarClidChange(final Integer val) {
             return new CaObserveSenderImpl.WaitApplyPreset(cm, carState, val, observeState);
         }
 
@@ -717,13 +728,13 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
         }
 
         @Override
-        public CaObserveSenderImpl.ApplyState copyWithObserveState(ObserveState observeState) {
+        public CaObserveSenderImpl.ApplyState copyWithObserveState(final ObserveState observeState) {
             return new CaObserveSenderImpl.WaitApplyPreset(cm, carState, carClid, observeState);
         }
 
         @Override
         public ObserveState currentObserveState() {
-          return observeState;
+            return observeState;
         }
 
     }
@@ -735,7 +746,11 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
         final CarStateGeneric carState;
         final ObserveState observeState;
 
-        WaitApplyBusy(CaCommandMonitorImpl cm, int clid, CarStateGeneric carState, ObserveState observeState) {
+        WaitApplyBusy(
+            final CaCommandMonitorImpl cm,
+            final int clid,
+            final CarStateGeneric carState,
+            final ObserveState observeState) {
             this.cm = cm;
             this.clid = clid;
             this.carState = carState;
@@ -748,7 +763,7 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
         }
 
         @Override
-        public ApplyState onApplyValChange(Integer val) {
+        public ApplyState onApplyValChange(final Integer val) {
             if (val == clid) {
                 return this;
             } else {
@@ -760,7 +775,7 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
         }
 
         @Override
-        public ApplyState onCarValChange(CarStateGeneric val) {
+        public ApplyState onCarValChange(final CarStateGeneric val) {
             if (val.isBusy()) {
                 return new WaitApplyIdle(cm, clid, carState, observeState);
             }
@@ -774,7 +789,7 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
         }
 
         @Override
-        public ApplyState onCarClidChange(Integer val) {
+        public ApplyState onCarClidChange(final Integer val) {
             if (val == clid) {
                 return this;
             } else {
@@ -792,13 +807,13 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
         }
 
         @Override
-        public CaObserveSenderImpl.ApplyState copyWithObserveState(ObserveState observeState) {
+        public CaObserveSenderImpl.ApplyState copyWithObserveState(final ObserveState observeState) {
             return new WaitApplyBusy(cm, clid, carState, observeState);
         }
 
         @Override
         public ObserveState currentObserveState() {
-          return observeState;
+            return observeState;
         }
     }
 
@@ -808,7 +823,11 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
         final CarStateGeneric carState;
         final ObserveState observeState;
 
-        WaitApplyIdle(CaCommandMonitorImpl cm, int clid, CarStateGeneric carState, ObserveState observeState) {
+        WaitApplyIdle(
+            final CaCommandMonitorImpl cm,
+            final int clid,
+            final CarStateGeneric carState,
+            final ObserveState observeState) {
             this.cm = cm;
             this.clid = clid;
             this.carState = carState;
@@ -821,7 +840,7 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
         }
 
         @Override
-        public ApplyState onApplyValChange(Integer val) {
+        public ApplyState onApplyValChange(final Integer val) {
             if (val >= clid) {
                 return new WaitApplyIdle(cm, val, carState, observeState);
             } else {
@@ -833,7 +852,7 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
         }
 
         @Override
-        public ApplyState onCarValChange(CarStateGeneric val) {
+        public ApplyState onCarValChange(final CarStateGeneric val) {
             if (val.isIdle()) {
                 return checkOutCompletion(val, clid, observeState);
             }
@@ -848,10 +867,11 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
 
 
         @Override
-        public ApplyState onCarClidChange(Integer val) {
+        public ApplyState onCarClidChange(final Integer val) {
             if (val >= clid) {
                 return new WaitApplyIdle(cm, val, carState, observeState);
-            } else {
+            }
+            else {
                 failCommand(cm, new CaCommandPostError(
                         "Another command was triggered in apply record "
                                 + apply.getEpicsName()));
@@ -866,18 +886,21 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
         }
 
         @Override
-        public CaObserveSenderImpl.ApplyState onObserveCarValChange(CarStateGeneric carState) {
-          ObserveState state = currentObserveState().onObserveCarValChange(carState);
-          if (state.isDone() || state.isAborted() || state.isStopped()) {
-              return checkOutCompletion(carState, clid, state);
-          } else if (state.isPaused()) {
-              return idleState;
-          } else {
-              return copyWithObserveState(state);
-          }
+        public CaObserveSenderImpl.ApplyState onObserveCarValChange(final CarStateGeneric carState) {
+            ObserveState state = currentObserveState().onObserveCarValChange(carState);
+            if (state.isDone() || state.isAborted() || state.isStopped()) {
+                return checkOutCompletion(carState, clid, state);
+            } else if (state.isPaused()) {
+                return idleState;
+            } else {
+                return copyWithObserveState(state);
+            }
         }
 
-        private CaObserveSenderImpl.ApplyState checkOutCompletion(CarStateGeneric carState, Integer carClid, ObserveState observeState) {
+        private CaObserveSenderImpl.ApplyState checkOutCompletion(
+            final CarStateGeneric carState,
+            final Integer carClid,
+            final ObserveState observeState) {
             if (carState != null && carClid != null && carClid == clid) {
                 if (carState.isError()) {
                     failCommandWithCarError(cm);
@@ -900,16 +923,17 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
         }
 
         @Override
-        public CaObserveSenderImpl.ApplyState copyWithObserveState(ObserveState observeState) {
+        public CaObserveSenderImpl.ApplyState copyWithObserveState(final ObserveState observeState) {
             return new WaitApplyIdle(cm, clid, carState, observeState);
         }
 
         @Override
         public ObserveState currentObserveState() {
-          return observeState;
+            return observeState;
         }
     }
-    private synchronized void onApplyValChange(Integer val) {
+
+    private synchronized void onApplyValChange(final Integer val) {
         if (val != null) {
             ApplyState oldState = currentState;
             currentState = currentState.onApplyValChange(val);
@@ -921,7 +945,7 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
         }
     }
 
-    private synchronized void onCarClidChange(Integer val) {
+    private synchronized void onCarClidChange(final Integer val) {
         if (val != null) {
             ApplyState oldState = currentState;
             currentState = currentState.onCarClidChange(val);
@@ -933,7 +957,7 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
         }
     }
 
-    private synchronized void onCarValChange(C carState) {
+    private synchronized void onCarValChange(final C carState) {
         if (carState != null) {
             ApplyState oldState = currentState;
             currentState = currentState.onCarValChange(carState);
@@ -945,7 +969,7 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
         }
     }
 
-    private synchronized void onObserveCarValChange(C carState) {
+    private synchronized void onObserveCarValChange(final C carState) {
         if (carState != null) {
             ApplyState oldState = currentState;
             currentState = currentState.onObserveCarValChange(carState);
@@ -957,7 +981,7 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
         }
     }
 
-    private synchronized void onStopMarkChange(Short val) {
+    private synchronized void onStopMarkChange(final Short val) {
         if (val != null) {
             ApplyState oldState = currentState;
             currentState = currentState.onStopMarkChange(val);
@@ -969,7 +993,7 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
         }
     }
 
-    private synchronized void onAbortMarkChange(Short val) {
+    private synchronized void onAbortMarkChange(final Short val) {
         if (val != null) {
             ApplyState oldState = currentState;
             currentState = currentState.onAbortMarkChange(val);

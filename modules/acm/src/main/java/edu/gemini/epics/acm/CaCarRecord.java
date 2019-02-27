@@ -45,7 +45,7 @@ final class CaCarRecord<C extends Enum<C> & CarStateGeneric> {
     synchronized void updateChannels() {
         try {
             clid = epicsReader.getIntegerChannel(epicsName + CAR_CLID_SUFFIX);
-            if(clidListener!=null) {
+            if (clidListener != null) {
                 clid.registerListener(clidListener);
             }
         } catch(Throwable e) {
@@ -53,7 +53,7 @@ final class CaCarRecord<C extends Enum<C> & CarStateGeneric> {
         }
         try {
             val = epicsReader.getEnumChannel(epicsName + CAR_VAL_SUFFIX, carClass);
-            if(valListener!=null) {
+            if (valListener != null) {
                 val.registerListener(valListener);
             }
         } catch(Throwable e) {
@@ -68,7 +68,7 @@ final class CaCarRecord<C extends Enum<C> & CarStateGeneric> {
 
     synchronized void unbind() {
         try {
-            if(clid!=null) {
+            if (clid != null) {
                 epicsReader.destroyChannel(clid);
             }
         } catch (CAException e) {
@@ -77,7 +77,7 @@ final class CaCarRecord<C extends Enum<C> & CarStateGeneric> {
         clid = null;
 
         try {
-            if(val!=null){
+            if (val != null){
                 epicsReader.destroyChannel(val);
             }
         } catch (CAException e) {
@@ -86,7 +86,7 @@ final class CaCarRecord<C extends Enum<C> & CarStateGeneric> {
         val = null;
 
         try {
-            if(omss!=null) {
+            if (omss != null) {
                 epicsReader.destroyChannel(omss);
             }
         } catch (CAException e) {
@@ -102,28 +102,28 @@ final class CaCarRecord<C extends Enum<C> & CarStateGeneric> {
     }
 
     void registerClidListener(ChannelListener<Integer> listener) throws CAException {
-        if (clid!=null) {
+        if (clid != null) {
             clid.registerListener(listener);
         }
         clidListener = listener;
     }
 
     void unregisterClidListener(ChannelListener<Integer> listener) throws CAException {
-        if (clid!=null) {
+        if (clid != null) {
             clid.unRegisterListener(listener);
         }
         clidListener = null;
     }
 
     void registerValListener(ChannelListener<C> listener) throws CAException {
-        if (val!=null) {
+        if (val != null) {
             val.registerListener(listener);
         }
         valListener = listener;
     }
 
     void unregisterValListener(ChannelListener<C> listener) throws CAException {
-        if (val!=null) {
+        if (val != null) {
             val.unRegisterListener(listener);
         }
         valListener = null;
