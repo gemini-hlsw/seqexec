@@ -11,7 +11,7 @@ import seqexec.server.altair.AltairController._
 import seqexec.server.gems.GemsController.{GemsConfig, GemsOff}
 import TcsController.{ComaOption, M1GuideConfig, M1GuideOff, M1GuideOn, M1Source, M2GuideConfig, M2GuideOff, M2GuideOn, MountGuideOption, TipTiltSource, TelescopeGuideConfig}
 import io.circe.{Decoder, DecodingFailure}
-import seqexec.server.tcs.TcsController.ComaOption.ComaOn
+import seqexec.server.tcs.TcsController.ComaOption._
 import seqexec.server.tcs.TcsController.MountGuideOption.{MountGuideOff, MountGuideOn}
 
 trait GuideConfigDb[F[_]] {
@@ -98,7 +98,7 @@ object GuideConfigDb {
     case _       => Decoder.failedWithMessage("TipTiltSource")
   }
 
-  implicit val comaDecoder: Decoder[ComaOption] = Decoder.decodeBoolean.map(_.fold(ComaOn, ComaOn))
+  implicit val comaDecoder: Decoder[ComaOption] = Decoder.decodeBoolean.map(_.fold(ComaOn, ComaOff))
 
   implicit val m2GuideDecoder: Decoder[M2GuideConfig] = Decoder.instance[M2GuideConfig]{ c =>
     c.downField("on").as[Boolean].flatMap{
