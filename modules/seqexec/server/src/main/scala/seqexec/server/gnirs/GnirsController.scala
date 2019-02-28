@@ -4,11 +4,16 @@
 package seqexec.server.gnirs
 
 import cats.effect.IO
-import cats.{Eq, Show}
+import cats.Applicative
+import cats.Eq
+import cats.Show
+import cats.implicits._
+import edu.gemini.spModel.gemini.gnirs.GNIRSParams.{ ReadMode => LegacyReadMode }
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.gnirs.GnirsController.GnirsConfig
 import seqexec.server.{ObserveCommand, Progress, SeqAction}
 import squants.{Length, Time}
+import squants.time.TimeConversions._
 
 trait GnirsController {
 
@@ -25,6 +30,16 @@ trait GnirsController {
 
   def observeProgress(total: Time): fs2.Stream[IO, Progress]
 
+  def calcTotalExposureTime[F[_]: Applicative](cfg: GnirsController.DCConfig): F[Time] = {
+    val readOutTime = cfg.readMode match {
+      case LegacyReadMode.VERY_BRIGHT => 0.19
+      case LegacyReadMode.BRIGHT => 0.69
+      case LegacyReadMode.FAINT => 11.14
+      case LegacyReadMode.VERY_FAINT => 22.31
+    }
+
+    (cfg.coadds * (cfg.exposureTime + readOutTime.seconds)).pure[F]
+  }
 }
 
 object GnirsController {

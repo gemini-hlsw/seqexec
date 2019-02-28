@@ -45,8 +45,9 @@ final case class Gnirs(controller: GnirsController, dhsClient: DhsClient[IO]) ex
     }
 
   override def calcObserveTime(config: Config): IO[Time] =
-    IO((extractExposureTime(config), extractCoadds(config))
-      .mapN(_ * _.toDouble).getOrElse(10000.seconds))
+    getDCConfig(config)
+      .map(controller.calcTotalExposureTime[IO])
+      .getOrElse(IO.pure(60.seconds))
 
   override val resource: Resource = Instrument.Gnirs
 
