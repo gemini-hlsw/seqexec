@@ -185,7 +185,7 @@ exports.extraAssets = {
   module: {
     rules: [
       {
-        test: /\.jpe?g$|\.gif$|\.png$|\.ttf$|\.eot$|\.svg$|.mp3$/,
+        test: /\.jpe?g$|\.gif$|\.png$|\.ttf$|\.eot$|\.svg$|\.mp3$|\.webm$/,
         loader: "file-loader",
         options: {
           name: "[name].[hash].[ext]"
