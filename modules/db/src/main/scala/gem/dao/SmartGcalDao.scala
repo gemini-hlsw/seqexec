@@ -286,8 +286,8 @@ object SmartGcalDao {
                 AND x_binning       = ${k.xBinning}
                 AND y_binning       = ${k.yBinning}
                 AND amp_gain        = ${k.ampGain}
-                AND min_wavelength <= ${w.map(_.toAngstroms).getOrElse(MaxWavelength)}
-                AND max_wavelength >  ${w.map(_.toAngstroms).getOrElse(MinWavelength)}
+                AND min_wavelength <= ${w.map(_.toPicometers).getOrElse(MaxWavelength)}
+                AND max_wavelength >  ${w.map(_.toPicometers).getOrElse(MinWavelength)}
          """
 
     def lampFragment(l: GcalLampType): Fragment =

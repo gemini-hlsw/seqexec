@@ -100,8 +100,9 @@ object EnumDef {
     implicit val caseDegrees      = at[Degrees    ](a => s"Angle.fromDoubleDegrees(${a.toDegrees})")
     implicit val caseZoneId       = at[ZoneId     ](a => s"""ZoneId.of("${a.toString}")""")
 
-    implicit val caseWavelengthNm    = at[Wavelength.Nm  ](a => s"""Wavelength.fromAngstroms.unsafeGet(${a.toAngstrom})""")
-    implicit val caseWavelengthUm    = at[Wavelength.Um  ](a => s"""Wavelength.fromAngstroms.unsafeGet(${a.toAngstrom})""")
+    implicit val caseWavelengthPm    = at[Wavelength.Pm  ](a => s"""Wavelength.fromPicometers.unsafeGet(${a.toPicometers})""")
+    implicit val caseWavelengthNm    = at[Wavelength.Nm  ](a => s"""Wavelength.fromPicometers.unsafeGet(${a.toPicometers})""")
+    implicit val caseWavelengthUm    = at[Wavelength.Um  ](a => s"""Wavelength.fromPicometers.unsafeGet(${a.toPicometers})""")
     implicit val caseMagnitudeSystem = at[MagnitudeSystem](a => s"MagnitudeSystem.${a.id}")
 
     implicit val caseOptionArcseconds = at[Option[Arcseconds]](a => a.fold("Option.empty[Angle]")(aʹ => s"Some(Angle.fromDoubleArcseconds(${aʹ.toArcsecs}))"))
@@ -114,8 +115,9 @@ object EnumDef {
     implicit val caseMagnitudeValue       = at[MagnitudeValue        ](a => s"MagnitudeValue(${a.toScaledInt})")
     implicit val caseOptionMagnitudeValue = at[Option[MagnitudeValue]](a => a.fold("Option.empty[MagnitudeValue]")(aʹ => s"Some(MagnitudeValue(${aʹ.toScaledInt}))"))
 
-    implicit val caseOptionWavelengthNm = at[Option[Wavelength.Nm]](a => a.fold("Option.empty[Wavelength]")(aʹ => s"""Some(Wavelength.fromAngstroms.unsafeGet(${aʹ.toAngstrom}))"""))
-    implicit val caseOptionWavelengthUm = at[Option[Wavelength.Um]](a => a.fold("Option.empty[Wavelength]")(aʹ => s"""Some(Wavelength.fromAngstroms.unsafeGet(${aʹ.toAngstrom}))"""))
+    implicit val caseOptionWavelengthPm = at[Option[Wavelength.Pm]](a => a.fold("Option.empty[Wavelength]")(aʹ => s"""Some(Wavelength.fromPicometers.unsafeGet(${aʹ.toPicometers}))"""))
+    implicit val caseOptionWavelengthNm = at[Option[Wavelength.Nm]](a => a.fold("Option.empty[Wavelength]")(aʹ => s"""Some(Wavelength.fromPicometers.unsafeGet(${aʹ.toPicometers}))"""))
+    implicit val caseOptionWavelengthUm = at[Option[Wavelength.Um]](a => a.fold("Option.empty[Wavelength]")(aʹ => s"""Some(Wavelength.fromPicometers.unsafeGet(${aʹ.toPicometers}))"""))
     implicit val caseGnirsPixelScale = at[GnirsPixelScale](a => s"GnirsPixelScale.${a.id}")
     implicit val caseKeywordName = at[KeywordName](a => s"KeywordName.${a.id}")
 

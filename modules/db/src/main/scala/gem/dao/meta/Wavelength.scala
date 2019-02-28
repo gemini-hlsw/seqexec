@@ -9,9 +9,9 @@ import gem.math.Wavelength
 trait WavelengthMeta {
   import PrismMeta._
 
-  // Wavelength maps to an integer in angstroms
+  // Wavelength maps to an integer in pm
   implicit val WavelengthMeta: Meta[Wavelength] =
-    Wavelength.fromAngstroms.asMeta
+    Wavelength.fromPicometers.asMeta
 
 }
 object WavelengthMeta extends WavelengthMeta

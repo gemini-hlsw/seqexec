@@ -11,18 +11,24 @@ import java.math.RoundingMode.HALF_UP
 sealed trait Wavelength extends Product with Serializable {
   def toBigDecimal: BigDecimal
 
-  def toAngstrom: Int = {
+  def toPicometers: Int = {
     val n = this match {
-      case Wavelength.Nm(_) => 1
-      case Wavelength.Um(_) => 4
+      case Wavelength.Pm(_) => 0
+      case Wavelength.Nm(_) => 3
+      case Wavelength.Um(_) => 6
     }
     toBigDecimal.underlying.scaleByPowerOfTen(n).setScale(0, HALF_UP).intValue
   }
+
 }
 
 object Wavelength {
+  final case class Pm(toBigDecimal: BigDecimal) extends Wavelength
   final case class Nm(toBigDecimal: BigDecimal) extends Wavelength
   final case class Um(toBigDecimal: BigDecimal) extends Wavelength
+
+  def fromPm(bd: BigDecimal): Wavelength.Pm =
+    Pm(bd)
 
   def fromNm(bd: BigDecimal): Wavelength.Nm =
     Nm(bd)

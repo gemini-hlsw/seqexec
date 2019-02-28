@@ -9,8 +9,8 @@ import io.circe.{ Decoder, Encoder }
 
 trait WavelengthJson {
 
-  implicit val WavelengthEncoder: Encoder[Wavelength] = Wavelength.fromAngstroms.toEncoder
-  implicit val WavelengthDecoder: Decoder[Wavelength] = Wavelength.fromAngstroms.toDecoder
+  implicit val WavelengthEncoder: Encoder[Wavelength] = Wavelength.fromPicometers.toEncoder
+  implicit val WavelengthDecoder: Decoder[Wavelength] = Wavelength.fromPicometers.toDecoder
 
 }
 object wavelength extends WavelengthJson
