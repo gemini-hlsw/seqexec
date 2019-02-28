@@ -22,9 +22,9 @@ sealed abstract class F2Disperser(
 
 object F2Disperser {
 
-  /** @group Constructors */ case object R1200JH extends F2Disperser("R1200JH", "R1200JH", "R=1200 (J + H) grism", Wavelength.fromAngstroms.unsafeGet(13900))
-  /** @group Constructors */ case object R1200HK extends F2Disperser("R1200HK", "R1200HK", "R=1200 (H + K) grism", Wavelength.fromAngstroms.unsafeGet(18710))
-  /** @group Constructors */ case object R3000 extends F2Disperser("R3000", "R3000", "R=3000 (J or H or K) grism", Wavelength.fromAngstroms.unsafeGet(16500))
+  /** @group Constructors */ case object R1200JH extends F2Disperser("R1200JH", "R1200JH", "R=1200 (J + H) grism", Wavelength.fromPicometers.unsafeGet(1390000))
+  /** @group Constructors */ case object R1200HK extends F2Disperser("R1200HK", "R1200HK", "R=1200 (H + K) grism", Wavelength.fromPicometers.unsafeGet(1871000))
+  /** @group Constructors */ case object R3000 extends F2Disperser("R3000", "R3000", "R=3000 (J or H or K) grism", Wavelength.fromPicometers.unsafeGet(1650000))
 
   /** All members of F2Disperser, in canonical order. */
   val all: List[F2Disperser] =
