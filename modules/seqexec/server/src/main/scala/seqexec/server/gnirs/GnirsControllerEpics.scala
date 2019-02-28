@@ -23,10 +23,11 @@ import squants.space.LengthConversions._
 import squants.time.TimeConversions._
 import squants.{Length, Seconds, Time}
 
-import scala.util.Try
-
 object GnirsControllerEpics extends GnirsController {
   private val Log = getLogger
+
+  implicit val ioTimer: Timer[IO] =
+    IO.timer(ExecutionContext.global)
 
   import EpicsCodex._
   import GnirsController._
@@ -300,13 +301,8 @@ object GnirsControllerEpics extends GnirsController {
       GnirsEpics.instance.abortCmd.mark *>
       GnirsEpics.instance.abortCmd.post.void
 
-  override def observeProgress(total: Time): Stream[IO, Progress] = {
-    implicit val ioTimer: Timer[IO] = IO.timer(ExecutionContext.global)
-    EpicsUtil.countdown[IO](total,
-      IO(GnirsEpics.instance.countDown.flatMap(x => Try(x.toDouble).toOption).map(_.seconds)),
-      IO(GnirsEpics.instance.observeState)
-    )
-  }
+  override def observeProgress(total: Time): Stream[IO, Progress] =
+    ProgressUtil.countdown[IO](total, 0.seconds)
 
   private val DefaultTimeout: Time = Seconds(60)
   private val ReadoutTimeout: Time = Seconds(300)
