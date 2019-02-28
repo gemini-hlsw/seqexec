@@ -22,12 +22,12 @@ import seqexec.web.client.model.ModelOps._
 import seqexec.web.client.model.SoundSelection
 import seqexec.web.client.actions._
 import seqexec.web.client.circuit._
-import seqexec.web.client.services.Audio
 import seqexec.web.client.services.SeqexecWebClient
 import seqexec.web.client.services.WebpackResources._
 import seqexec.web.client.model.Pages.Root
 import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
+import web.client.Audio
 
 /**
   * Handles messages received over the WS channel
@@ -37,12 +37,25 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
     with Handlers[M, WebSocketsFocus] {
 
   // Global references to audio files
-  private val SequencePausedAudio = new Audio(SequencePausedResource.resource)
-  private val ExposurePausedAudio = new Audio(ExposurePausedResource.resource)
-  private val SequenceErrorAudio  = new Audio(SequenceErrorResource.resource)
-  private val SequenceCompleteAudio = new Audio(
-    SequenceCompleteResource.resource)
-  private val StepBeepAudio = new Audio(BeepResource.resource)
+  private val SequencePausedAudio = Audio.selectPlayable(
+    new Audio(SequencePausedResourceMP3.resource),
+    new Audio(SequencePausedResourceWebM.resource))
+
+  private val ExposurePausedAudio = Audio.selectPlayable(
+    new Audio(ExposurePausedResourceMP3.resource),
+    new Audio(ExposurePausedResourceWebM.resource))
+
+  private val SequenceErrorAudio = Audio.selectPlayable(
+    new Audio(SequenceErrorResourceMP3.resource),
+    new Audio(SequenceErrorResourceWebM.resource))
+
+  private val SequenceCompleteAudio = Audio.selectPlayable(
+    new Audio(SequenceCompleteResourceMP3.resource),
+    new Audio(SequenceCompleteResourceWebM.resource))
+
+  private val StepBeepAudio = Audio.selectPlayable(
+    new Audio(BeepResourceMP3.resource),
+    new Audio(BeepResourceWebM.resource))
 
   def loggedIn: Boolean           = value.sound === SoundSelection.SoundOn
   def ifLoggedIn[A]: A => Boolean = (_: A) => loggedIn
@@ -173,7 +186,7 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
       updated(value.copy(sequences = filterSequences(s.view)))
   }
 
-  val MsgRegex = "Application exception: (.*)".r
+  val MsgRegex  = "Application exception: (.*)".r
   val InstRegex = "Sequence execution failed with error: (.*)".r
 
   val singleRunCompleteMessage: PartialFunction[Any, ActionResult[M]] = {
@@ -185,9 +198,9 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
         SingleActionEvent(SingleActionOp.Error(sid, stepId, r, msg))) =>
       // Unbundle the underlying exception message
       val actualMsg = msg match {
-        case MsgRegex(m) => m
+        case MsgRegex(m)  => m
         case InstRegex(m) => m
-        case m           => m
+        case m            => m
       }
       effectOnly(Effect(Future(RunResourceFailed(sid, stepId, r, actualMsg))))
   }

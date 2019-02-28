@@ -23,22 +23,42 @@ object WebpackResources {
 
   @JSImport("sounds/sequencepaused.mp3", JSImport.Default)
   @js.native
-  object SequencePausedResource extends WebpackResource
+  object SequencePausedResourceMP3 extends WebpackResource
+
+  @JSImport("sounds/sequencepaused.webm", JSImport.Default)
+  @js.native
+  object SequencePausedResourceWebM extends WebpackResource
 
   @JSImport("sounds/exposurepaused.mp3", JSImport.Default)
   @js.native
-  object ExposurePausedResource extends WebpackResource
+  object ExposurePausedResourceMP3 extends WebpackResource
+
+  @JSImport("sounds/exposurepaused.webm", JSImport.Default)
+  @js.native
+  object ExposurePausedResourceWebM extends WebpackResource
 
   @JSImport("sounds/sequenceerror.mp3", JSImport.Default)
   @js.native
-  object SequenceErrorResource extends WebpackResource
+  object SequenceErrorResourceMP3 extends WebpackResource
+
+  @JSImport("sounds/sequenceerror.webm", JSImport.Default)
+  @js.native
+  object SequenceErrorResourceWebM extends WebpackResource
 
   @JSImport("sounds/sequencecomplete.mp3", JSImport.Default)
   @js.native
-  object SequenceCompleteResource extends WebpackResource
+  object SequenceCompleteResourceMP3 extends WebpackResource
+
+  @JSImport("sounds/sequencecomplete.webm", JSImport.Default)
+  @js.native
+  object SequenceCompleteResourceWebM extends WebpackResource
 
   @JSImport("sounds/beep-22.mp3", JSImport.Default)
   @js.native
-  object BeepResource extends WebpackResource
+  object BeepResourceMP3 extends WebpackResource
+
+  @JSImport("sounds/beep-22.webm", JSImport.Default)
+  @js.native
+  object BeepResourceWebM extends WebpackResource
 
 }
