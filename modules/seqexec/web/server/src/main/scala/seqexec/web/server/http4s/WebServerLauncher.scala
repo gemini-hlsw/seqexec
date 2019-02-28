@@ -14,9 +14,9 @@ import gem.enum.Site
 import io.prometheus.client.CollectorRegistry
 import java.nio.file.{Path => FilePath}
 import java.util.concurrent.{ExecutorService, Executors}
-
 import knobs.{Resource => _, _}
 import mouse.all._
+import org.asynchttpclient.DefaultAsyncHttpClientConfig
 import org.http4s.client.asynchttpclient.AsyncHttpClient
 import org.http4s.client.Client
 import org.http4s.HttpRoutes
@@ -29,7 +29,6 @@ import org.http4s.server.Server
 import org.http4s.server.SSLKeyStoreSupport.StoreInfo
 import org.http4s.syntax.kleisli._
 import org.log4s._
-
 import scala.concurrent.ExecutionContext
 import seqexec.model.events._
 import seqexec.server
@@ -240,7 +239,12 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
       Resource.make(alloc)(free).map(ExecutionContext.fromExecutor)
     }
 
-    def engineIO(httpClient: Client[IO], guideConfigDb: GuideConfigDb[IO], collector: CollectorRegistry): Resource[IO, SeqexecEngine] =
+  // Override the default client config
+  val clientConfig = new DefaultAsyncHttpClientConfig.Builder(AsyncHttpClient.defaultConfig)
+    .setRequestTimeout(5000) // Change the timeout to 5 seconds
+    .build()
+
+  def engineIO(httpClient: Client[IO], guideConfigDb: GuideConfigDb[IO], collector: CollectorRegistry): Resource[IO, SeqexecEngine] =
       for {
         cfg          <- Resource.liftF(config)
         _            <- Resource.liftF(logEngineStart)
@@ -276,7 +280,7 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
     val r: Resource[IO, ExitCode] =
       for {
         _      <- Resource.liftF(configLog) // Initialize log before the engine is setup
-        cli    <- AsyncHttpClient.resource[IO]()
+        cli    <- AsyncHttpClient.resource[IO](clientConfig)
         inq    <- Resource.liftF(Queue.bounded[IO, executeEngine.EventType](10))
         out    <- Resource.liftF(Topic[IO, SeqexecEvent](NullEvent))
         cr     <- Resource.liftF(IO(new CollectorRegistry))
