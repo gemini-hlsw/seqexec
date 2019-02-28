@@ -401,13 +401,6 @@ object NifsControllerEpics extends NifsController[IO] with NifsEncoders {
   override def observeProgress(total: Time): fs2.Stream[IO, Progress] =
     ProgressUtil.countdown[IO](total, 0.seconds)
 
-  override def calcTotalExposureTime(cfg: DCConfig): IO[Time] =
-    epicsSys.exposureTime.map { exp =>
-      val MinIntTime = exp.map(Seconds(_)).getOrElse(Seconds(0))
-
-      (cfg.exposureTime + MinIntTime) * cfg.coadds.toDouble
-    }
-
   def calcObserveTimeout(cfg: DCConfig): Time = {
     val CoaddOverhead = 2.2
     val TotalOverhead = 300.seconds

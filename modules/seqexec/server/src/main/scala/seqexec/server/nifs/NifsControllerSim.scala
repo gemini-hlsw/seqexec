@@ -38,9 +38,4 @@ object NifsControllerSim extends NifsController[IO] {
   override def observeProgress(total: Time): fs2.Stream[IO, Progress] =
     sim.observeCountdown(total, ElapsedTime(0.seconds)).streamLiftIO[IO]
 
-  override def calcTotalExposureTime(cfg: DCConfig): IO[Time] = IO.pure {
-    val MinIntTime = 0.5.seconds
-
-    (cfg.exposureTime + MinIntTime) * cfg.coadds.toDouble
-  }
 }
