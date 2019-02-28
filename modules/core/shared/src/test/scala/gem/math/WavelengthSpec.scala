@@ -7,7 +7,6 @@ import cats.tests.CatsSuite
 import cats.{ Eq, Show, Order }
 import cats.kernel.laws.discipline._
 import gem.arb._
-import gem.optics.Format
 import monocle.law.discipline._
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Gen
@@ -52,40 +51,57 @@ final class WavelengthSpec extends CatsSuite {
   }
 
   private def pow10(exp: Int): Int =
-    math.pow(10, exp.toDouble).toInt
+    BigInt(10).pow(exp).toInt
 
-  private def conversionTo(f: Format[Int, Wavelength], exp: Int): org.scalatest.Assertion =
+  private def conversionTo(u: Wavelength.UnitConverter): org.scalatest.Assertion =
     forAll { (a: Wavelength) =>
-      f.reverseGet(a) shouldEqual a.toPicometers / pow10(exp)
+      u.reverseGet(a) shouldEqual a.toPicometers / pow10(u.exp)
     }
 
-  private def conversionFrom(f: Format[Int, Wavelength], exp: Int): org.scalatest.Assertion =
-    forAll(Gen.posNum[Int]) { (n: Int) =>
-      f.unsafeGet(n).toPicometers shouldEqual n * pow10(exp)
+  private def conversionFrom(u: Wavelength.UnitConverter): org.scalatest.Assertion =
+    forAll(Gen.chooseNum(0, u.maxValue)) { (n: Int) =>
+      u.unsafeGet(n).toPicometers shouldEqual n * pow10(u.exp)
+    }
+
+  private def range(u: Wavelength.UnitConverter): org.scalatest.Assertion =
+    forAll { (n: Int) =>
+      u.getOption(n).isDefined shouldEqual ((n >= 0) && (n <= u.maxValue))
     }
 
   test("Conversion λ => Int (Å)") {
-    conversionTo(Wavelength.fromAngstroms, 2)
+    conversionTo(Wavelength.fromAngstroms)
   }
 
   test("Conversion Int (Å) => λ") {
-    conversionFrom(Wavelength.fromAngstroms, 2)
+    conversionFrom(Wavelength.fromAngstroms)
+  }
+
+  test("Range Å") {
+    range(Wavelength.fromAngstroms)
   }
 
   test("Conversion λ => Int (nm)") {
-    conversionTo(Wavelength.fromNanometers, 3)
+    conversionTo(Wavelength.fromNanometers)
   }
 
   test("Conversion Int (nm) => λ") {
-    conversionFrom(Wavelength.fromNanometers, 3)
+    conversionFrom(Wavelength.fromNanometers)
+  }
+
+  test("Range nm") {
+    range(Wavelength.fromNanometers)
   }
 
   test("Conversion λ => Int (μm)") {
-    conversionTo(Wavelength.fromMicrometers, 6)
+    conversionTo(Wavelength.fromMicrometers)
   }
 
   test("Conversion Int (μm) => λ") {
-    conversionFrom(Wavelength.fromMicrometers, 6)
+    conversionFrom(Wavelength.fromMicrometers)
+  }
+
+  test("Range μm") {
+    range(Wavelength.fromMicrometers)
   }
 
 }
