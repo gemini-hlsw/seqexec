@@ -327,10 +327,10 @@ object NifsControllerEpics extends NifsController[IO] with NifsEncoders {
       case DarkCCConfig     => none.pure[IO]
       case cfg: StdCCConfig =>
         epicsSys.centralWavelength.map { curCw =>
-          ((cfg.disperser =!= LegacyDisperser.MIRROR) && curCw.exists(cw =>
-            abs(cw - cfg.wavelength) > CentralWavelengthTolerance)).option {
+          ((cfg.disperser =!= LegacyDisperser.MIRROR) && curCw.exists{cw =>
+            abs(cw - cfg.wavelength) > CentralWavelengthTolerance}).option {
             epicsSys.ccConfigCmd
-              .setCentralWavelength(f"${cfg.wavelength}1.6f")
+              .setCentralWavelength(cfg.wavelength)
           }
         }
     }
