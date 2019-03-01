@@ -3,14 +3,17 @@
 
 package seqexec.server.nifs
 
+import cats.Applicative
 import cats.Show
 import cats.implicits._
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.nifs.NifsController.DCConfig
 import seqexec.server.nifs.NifsController.NifsConfig
+import edu.gemini.spModel.gemini.nifs.NIFSParams.{ ReadMode => LegacyReadMode }
 import seqexec.server.ObserveCommand
 import seqexec.server.Progress
 import squants.Time
+import squants.time.TimeConversions._
 import shapeless.tag.@@
 
 trait NifsController[F[_]] {
@@ -27,7 +30,16 @@ trait NifsController[F[_]] {
 
   def observeProgress(total: Time): fs2.Stream[F, Progress]
 
-  def calcTotalExposureTime(cfg: DCConfig): F[Time]
+  def calcTotalExposureTime(cfg: DCConfig)(implicit ev: Applicative[F]): F[Time] = {
+    val readOutTime = cfg.readMode match {
+      case Right(LegacyReadMode.BRIGHT_OBJECT_SPEC) => 11.4
+      case Right(LegacyReadMode.MEDIUM_OBJECT_SPEC) => 27.4
+      case Right(LegacyReadMode.FAINT_OBJECT_SPEC)  => 90.6
+      case Left(_)                                  => 1 // TBD What should this be?
+    }
+
+    (cfg.coadds * (cfg.exposureTime + readOutTime.seconds)).pure[F]
+  }
 
 }
 
