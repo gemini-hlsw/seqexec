@@ -220,6 +220,12 @@ trait ModelLenses {
                         "disperser",
                         Iso.id[String].asPrism)
 
+  // Composite lens to find the instrument decker on GNIRS
+  val instrumentDeckerO: Optional[Step, String] =
+    stepObserveOptional(SystemName.Instrument,
+                        "decker",
+                        Iso.id[String].asPrism)
+
   // Composite lens to find the instrument observing mode on GPI
   val instrumentObservingModeO: Optional[Step, String] =
     stepObserveOptional(SystemName.Instrument,

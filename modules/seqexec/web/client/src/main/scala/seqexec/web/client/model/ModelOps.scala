@@ -125,6 +125,7 @@ object ModelOps {
     case object FPU           extends InstrumentProperties
     case object ObservingMode extends InstrumentProperties
     case object Camera        extends InstrumentProperties
+    case object Decker        extends InstrumentProperties
   }
 
   implicit class InstrumentOps(val i: Instrument) extends AnyVal {
@@ -152,6 +153,7 @@ object ModelOps {
             InstrumentProperties.Filter,
             InstrumentProperties.Offsets,
             InstrumentProperties.Disperser,
+            InstrumentProperties.Decker,
             InstrumentProperties.FPU)
       case Instrument.Gpi =>
         Set(InstrumentProperties.Exposure,

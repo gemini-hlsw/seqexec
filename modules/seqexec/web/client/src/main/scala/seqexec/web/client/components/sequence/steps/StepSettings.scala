@@ -374,3 +374,30 @@ object CameraCell {
 
   def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
 }
+
+/**
+  * Component to display the decker
+  */
+object DeckerCell {
+  final case class Props(s: Step, i: Instrument)
+
+  implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
+
+  private val component = ScalaComponent
+    .builder[Props]("DeckerCell")
+    .stateless
+    .render_P { p =>
+      def deckerName(s: Step): Option[String] =
+        instrumentDeckerO
+          .getOption(s)
+
+      <.div(
+        SeqexecStyles.componentLabel,
+        deckerName(p.s).getOrElse("Unknown"): String
+      )
+    }
+    .configure(Reusability.shouldComponentUpdate)
+    .build
+
+  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
+}
