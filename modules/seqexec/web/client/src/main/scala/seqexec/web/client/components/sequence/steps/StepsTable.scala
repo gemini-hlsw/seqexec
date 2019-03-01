@@ -610,12 +610,9 @@ object StepsTable {
         fpuCol.fold(0.0)(_ => ColWidths.FPUWidth) +
         cameraCol.fold(0.0)(_ => ColWidths.CameraWidth) +
         deckerCol.fold(0.0)(_ => ColWidths.DeckerWidth) +
-        observingModeCol.fold(0.0)(_ => ColWidths.ObservingModeWidth) +
-        ColWidths.ObjectTypeWidth +
-        ColWidths.SettingsWidth
+        observingModeCol.fold(0.0)(_ => ColWidths.ObservingModeWidth) + ColWidths.ObjectTypeWidth + ColWidths.SettingsWidth
     val controlWidth = s.width - colsWidth
     val stateCol     = stateColumn(b, controlWidth)
-
     List(
       iconCol,
       idxColumn.some,
