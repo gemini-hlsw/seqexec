@@ -15,16 +15,17 @@ sealed abstract class SystemName(val system: String) {
 
 object SystemName {
 
-  case object Ocs         extends SystemName("ocs")
-  case object Observe     extends SystemName("observe")
-  case object Instrument  extends SystemName("instrument")
-  case object Telescope   extends SystemName("telescope")
-  case object Gcal        extends SystemName("gcal")
-  case object Calibration extends SystemName("calibration")
-  case object Meta        extends SystemName("meta")
+  case object Ocs            extends SystemName("ocs")
+  case object Observe        extends SystemName("observe")
+  case object Instrument     extends SystemName("instrument")
+  case object Telescope      extends SystemName("telescope")
+  case object Gcal           extends SystemName("gcal")
+  case object Calibration    extends SystemName("calibration")
+  case object Meta           extends SystemName("meta")
+  case object AdaptiveOptics extends SystemName("adaptive optics")
 
   val all: List[SystemName] =
-    List(Ocs, Observe, Instrument, Telescope, Gcal, Calibration, Meta)
+    List(Ocs, Observe, Instrument, Telescope, Gcal, Calibration, Meta, AdaptiveOptics)
 
   def fromString(system: String): Option[SystemName] =
     all.find(_.system === system)

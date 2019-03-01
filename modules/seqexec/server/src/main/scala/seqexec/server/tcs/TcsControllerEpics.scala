@@ -5,7 +5,7 @@ package seqexec.server.tcs
 
 import cats.{Endo, Eq}
 import seqexec.server.tcs.TcsController.{HrwfsConfig, _}
-import seqexec.server.{EpicsCodex, EpicsCommand, SeqAction, SeqexecFailure}
+import seqexec.server.{EpicsCodex, EpicsCommand, SeqAction, SeqActionF, SeqexecFailure}
 import edu.gemini.spModel.core.Wavelength
 import org.log4s.getLogger
 import squants.time.Seconds
@@ -238,14 +238,15 @@ object TcsControllerEpics extends TcsController {
 
   def pauseGaos(gaos: Option[Either[Altair[IO], Gems[IO]]], current: EpicsTcsConfig, demand: TcsConfig)
   : SeqAction[(EpicsTcsConfig, TcsController.TcsConfig) => SeqAction[Unit]] = (gaos, demand.gaos).mapN {
-    case (Left(g), c)  => SeqAction.lift(g.pause(c, calcAoPauseConditions(current, demand)).map(resumeGaos))
+    case (Left(g), c)  => SeqActionF.embed[IO, (EpicsTcsConfig, TcsController.TcsConfig) => SeqAction[Unit]](
+      g.pause(c, calcAoPauseConditions(current, demand)).map(resumeGaos))
     case (Right(_), _) => SeqAction.fail[(EpicsTcsConfig, TcsController.TcsConfig) => SeqAction[Unit]](
       SeqexecFailure.Unexpected("GeMS not supported"))
     case _             => SeqAction((_: EpicsTcsConfig, _: TcsController.TcsConfig) => SeqAction.void)
   }.getOrElse(SeqAction((_, _) => SeqAction.void))
 
   def resumeGaos(resume: Set[ResumeCondition] => IO[Unit])(current: EpicsTcsConfig, demand: TcsConfig)
-  : SeqAction[Unit] = SeqAction.lift(resume(calcAoResumeConditions(current, demand)))
+  : SeqAction[Unit] = SeqActionF.embed(resume(calcAoResumeConditions(current, demand)))
 
 
   def updateEpicsGuideConfig(epicsCfg: EpicsTcsConfig, demand: TcsConfig): EpicsTcsConfig = (
