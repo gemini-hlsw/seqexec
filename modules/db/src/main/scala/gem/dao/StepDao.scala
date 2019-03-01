@@ -398,6 +398,8 @@ object StepDao {
 
     object Gmos {
 
+      implicit val WavelengthMeta = WavelengthMetaAsNanometers
+
       import gem.config.GmosConfig.{ GmosCommonDynamicConfig, GmosCustomMask, GmosGrating }
       import DynamicConfig.{ GmosN, GmosS }
 
@@ -511,7 +513,7 @@ object StepDao {
             $id,
             ${g.grating.map(_.disperser)},
             ${g.grating.map(_.order)},
-            ${g.grating.map(_.wavelength.toPicometers)},
+            ${g.grating.map(_.wavelength)},
             ${g.filter},
             ${g.fpu.flatMap(_.swap.toOption.map(_.maskDefinitionFilename))},
             ${g.fpu.flatMap(_.swap.toOption.map(_.slitWidth))},
@@ -528,7 +530,7 @@ object StepDao {
             $id,
             ${g.grating.map(_.disperser)},
             ${g.grating.map(_.order)},
-            ${g.grating.map(_.wavelength.toPicometers)},
+            ${g.grating.map(_.wavelength)},
             ${g.filter},
             ${g.fpu.flatMap(_.swap.toOption.map(_.maskDefinitionFilename))},
             ${g.fpu.flatMap(_.swap.toOption.map(_.slitWidth))},
@@ -537,6 +539,8 @@ object StepDao {
     }
 
     object Gnirs {
+
+      implicit val WavelengthMeta = WavelengthMetaAsMicrometers
 
       import EitherComposite._
 
