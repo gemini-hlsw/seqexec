@@ -45,8 +45,8 @@ class NifsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, String]) 
     val mask: Option[CaParameter[String]] = cs.map(_.getString("mask"))
     def setMask(v: String): F[Unit] = setParameterF(mask, v)
 
-    val centralWavelength: Option[CaParameter[String]] = cs.map(_.getString("centralWavelength"))
-    def setCentralWavelength(v: String): F[Unit] = setParameterF(centralWavelength, v)
+    val centralWavelength: Option[CaParameter[JDouble]] = cs.map(_.getDouble("centralWavelength"))
+    def setCentralWavelength(v: Double): F[Unit] = setParameterF(centralWavelength, JDouble.valueOf(v))
 
   }
 
