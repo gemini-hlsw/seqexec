@@ -196,6 +196,10 @@ trait ModelLenses {
   val instrumentFPUO: Optional[Step, String] =
     stepObserveOptional(SystemName.Instrument, "fpu", Iso.id[String].asPrism)
 
+  // Composite lens to find the instrument slit width
+  val instrumentSlitWidthO: Optional[Step, String] =
+    stepObserveOptional(SystemName.Instrument, "slitWidth", Iso.id[String].asPrism)
+
   // Composite lens to find the instrument fpu custom mask
   val instrumentFPUCustomMaskO: Optional[Step, String] =
     stepObserveOptional(SystemName.Instrument,
@@ -214,6 +218,12 @@ trait ModelLenses {
   val instrumentDisperserO: Optional[Step, String] =
     stepObserveOptional(SystemName.Instrument,
                         "disperser",
+                        Iso.id[String].asPrism)
+
+  // Composite lens to find the instrument decker on GNIRS
+  val instrumentDeckerO: Optional[Step, String] =
+    stepObserveOptional(SystemName.Instrument,
+                        "decker",
                         Iso.id[String].asPrism)
 
   // Composite lens to find the instrument observing mode on GPI
