@@ -196,6 +196,10 @@ trait ModelLenses {
   val instrumentFPUO: Optional[Step, String] =
     stepObserveOptional(SystemName.Instrument, "fpu", Iso.id[String].asPrism)
 
+  // Composite lens to find the instrument slit width
+  val instrumentSlitWidthO: Optional[Step, String] =
+    stepObserveOptional(SystemName.Instrument, "slitWidth", Iso.id[String].asPrism)
+
   // Composite lens to find the instrument fpu custom mask
   val instrumentFPUCustomMaskO: Optional[Step, String] =
     stepObserveOptional(SystemName.Instrument,

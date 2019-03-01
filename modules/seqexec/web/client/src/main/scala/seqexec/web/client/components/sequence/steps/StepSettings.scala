@@ -40,11 +40,11 @@ object FPUCell {
     .builder[Props]("FPUCell")
     .stateless
     .render_P { p =>
-      val nameMapper: Map[String, String] = p.i match {
-        case Instrument.GmosS => enumerations.fpu.GmosSFPU
-        case Instrument.GmosN => enumerations.fpu.GmosNFPU
-        case Instrument.F2    => enumerations.fpu.Flamingos2
-        case _                => Map.empty
+      val nameMapper: String => Option[String] = p.i match {
+        case Instrument.GmosS => enumerations.fpu.GmosSFPU.get
+        case Instrument.GmosN => enumerations.fpu.GmosNFPU.get
+        case Instrument.F2    => enumerations.fpu.Flamingos2.get
+        case _                => _ => none
       }
 
       val fpuValue = for {
@@ -54,11 +54,11 @@ object FPUCell {
         fpuL = if (mode === FPUMode.BuiltIn) instrumentFPUO
         else instrumentFPUCustomMaskO
         fpu <- fpuL.getOption(p.s)
-      } yield nameMapper.getOrElse(fpu, fpu)
+      } yield nameMapper(fpu).getOrElse(fpu)
 
       <.div(
         SeqexecStyles.componentLabel,
-        fpuValue.getOrElse("Unknown"): String
+        fpuValue.orElse(instrumentSlitWidthO.getOption(p.s)).getOrElse("Unknown"): String
       )
     }
     .configure(Reusability.shouldComponentUpdate)
@@ -114,6 +114,9 @@ object FilterCell {
           instrumentFilterO
             .getOption(s)
             .flatMap(enumerations.filter.Niri.get)
+        case Instrument.Gnirs =>
+          instrumentFilterO
+            .getOption(s)
         case Instrument.Gpi => gpiFilter(s)
         case _              => None
       }
