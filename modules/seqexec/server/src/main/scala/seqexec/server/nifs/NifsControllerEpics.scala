@@ -260,7 +260,7 @@ object NifsControllerEpics extends NifsController[IO] with NifsEncoders {
         // So if any of those conditions is not true; need to move the disperser to the new position.
         def checkInvalid(current: Option[String]): IO[Option[IO[Unit]]] =
           epicsSys.lastSelectedDisperser.map { lsd =>
-            (current.exists(_ === "INVALID") && lsd.exists(_ === disperser))
+            (!(current.exists(_ === "INVALID") && lsd.exists(_ === disperser)))
               .option(setDisperserIO)
           }
 
@@ -269,8 +269,8 @@ object NifsControllerEpics extends NifsController[IO] with NifsEncoders {
           instDisp     <- epicsSys.disperser
           setIfInvalid <- checkInvalid(instDisp)
         } yield
-          if (instDisp.exists(_ =!= disperser)) {
-            setDisperserIO.some
+          if (instDisp.exists(_ === disperser)) {
+            none
           } else {
             setIfInvalid
           }
@@ -287,8 +287,8 @@ object NifsControllerEpics extends NifsController[IO] with NifsEncoders {
       // So if any of those conditions is not true; need to move the mask to the new position.
       def checkInvalid(current: Option[String]): IO[Option[IO[Unit]]] =
         (epicsSys.maskOffset, epicsSys.lastSelectedMask).mapN { (mo, lsm) =>
-          (current.exists(_ === "INVALID") && lsm.exists(_ === mask) && mo
-            .exists(_ =!= 0.0)).option(setMaskIO)
+          (!(current.exists(_ === "INVALID") && lsm.exists(_ === mask) && mo
+            .exists(_ =!= 0.0))).option(setMaskIO)
         }
 
       // We need an even smarter set param
