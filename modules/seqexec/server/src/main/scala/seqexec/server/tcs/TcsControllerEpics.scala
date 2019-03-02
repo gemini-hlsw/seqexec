@@ -4,7 +4,7 @@
 package seqexec.server.tcs
 
 import cats.{Endo, Eq}
-import seqexec.server.tcs.TcsController.{HrwfsConfig, _}
+import seqexec.server.tcs.TcsController.{HrwfsConfig, TelescopeGuideConfig, _}
 import seqexec.server.{EpicsCodex, EpicsCommand, SeqAction, SeqActionF, SeqexecFailure}
 import edu.gemini.spModel.core.Wavelength
 import org.log4s.getLogger
@@ -15,11 +15,11 @@ import cats.implicits._
 import mouse.boolean._
 import seqexec.server.altair.Altair
 import seqexec.server.gems.Gems
-import shapeless.tag
 import squants.Angle
 import monocle.{Iso, Lens}
 import monocle.macros.Lenses
 import seqexec.server.tcs.Gaos.{GaosStarOff, GaosStarOn, OffsetMove, OffsetReached, OiOff, OiOn, P1Off, P1On, PauseCondition, ResumeCondition}
+import shapeless.tag
 import shapeless.tag.@@
 
 object TcsControllerEpics extends TcsController {
@@ -149,10 +149,10 @@ object TcsControllerEpics extends TcsController {
                            gaos: Option[Either[Altair[IO], Gems[IO]]],
                            tcs: TcsConfig): SeqAction[Unit] = {
     def configParams(current: EpicsTcsConfig): List[EpicsTcsConfig => SeqAction[EpicsTcsConfig]] = List(
-      applyParam(subsystems.contains(Subsystem.PWFS1), current.pwfs1.tracking, tcs.gds.oiwfs.tracking,
-        setProbeTrackingConfig(TcsEpics.instance.oiwfsProbeGuideCmd), EpicsTcsConfig.pwfs1 ^|-> GuiderConfig.tracking),
-      applyParam(subsystems.contains(Subsystem.PWFS2), current.pwfs2.tracking, tcs.gds.oiwfs.tracking,
-        setProbeTrackingConfig(TcsEpics.instance.oiwfsProbeGuideCmd), EpicsTcsConfig.pwfs2 ^|-> GuiderConfig.tracking),
+      applyParam(subsystems.contains(Subsystem.PWFS1), current.pwfs1.tracking, tcs.gds.pwfs1.tracking,
+        setProbeTrackingConfig(TcsEpics.instance.pwfs1ProbeGuideCmd), EpicsTcsConfig.pwfs1 ^|-> GuiderConfig.tracking),
+      applyParam(subsystems.contains(Subsystem.PWFS2), current.pwfs2.tracking, tcs.gds.pwfs2.tracking,
+        setProbeTrackingConfig(TcsEpics.instance.pwfs2ProbeGuideCmd), EpicsTcsConfig.pwfs2 ^|-> GuiderConfig.tracking),
       applyParam(subsystems.contains(Subsystem.OIWFS), current.oiwfs.tracking, tcs.gds.oiwfs.tracking,
         setProbeTrackingConfig(TcsEpics.instance.oiwfsProbeGuideCmd), EpicsTcsConfig.oiwfs ^|-> GuiderConfig.tracking),
       tcs.tc.offsetA.flatMap(o => applyParam(subsystems.contains(Subsystem.Mount), current.offset,
@@ -189,7 +189,7 @@ object TcsControllerEpics extends TcsController {
       s1 <- guideOff(subsystems, s0, tcs)
       s2 <- sysConfig(s1)
       s3 <- guideOn(subsystems, s2, tcs)
-      _  <- r(s3, tcs)
+      _  <- r(s3, tcs) //resume Gaos
     } yield ()
   }
 
@@ -209,16 +209,32 @@ object TcsControllerEpics extends TcsController {
         setOiwfs, EpicsTcsConfig.oiwfs ^|-> GuiderConfig.detector)
     ).collect{ case Some(x) => x }
 
+
+  def tagIso[B, T]: Iso[B@@T, B] = Iso.apply[B@@T, B](x => x)(tag[T](_))
+
   def calcGuideOff(current: EpicsTcsConfig, demand: TcsConfig): TcsConfig = {
-    if(willMove(current, demand)) (TcsConfig.gds.modify(
-      (GuidersConfig.pwfs1 ^<-> Iso.apply[GuiderConfig@@P1Config, GuiderConfig](x => x)(tag[P1Config](_)) ^|->
-        GuiderConfig.detector).set(GuiderSensorOff) >>>
-        (GuidersConfig.pwfs2 ^<-> Iso.apply[GuiderConfig@@P2Config, GuiderConfig](x => x)(tag[P2Config](_)) ^|->
-          GuiderConfig.detector).set(GuiderSensorOff) >>>
-        (GuidersConfig.oiwfs ^<-> Iso.apply[GuiderConfig@@OIConfig, GuiderConfig](x => x)(tag[OIConfig](_))^|->
-          GuiderConfig.detector).set(GuiderSensorOff)
+    val mustOff = willMove(current, demand)
+    // Only turn things off here. Things that must be turned on will be turned on in GuideOn.
+    def calc(c: GuiderSensorOption, d: GuiderSensorOption) = (mustOff || d === GuiderSensorOff).fold(GuiderSensorOff, c)
+
+    (TcsConfig.gds.modify(
+      (GuidersConfig.pwfs1 ^<-> tagIso ^|-> GuiderConfig.detector)
+        .set(calc(current.pwfs1.detector, demand.gds.pwfs1.detector)) >>>
+        (GuidersConfig.pwfs2 ^<-> tagIso ^|-> GuiderConfig.detector)
+          .set(calc(current.pwfs2.detector, demand.gds.pwfs2.detector)) >>>
+        (GuidersConfig.oiwfs ^<-> tagIso ^|-> GuiderConfig.detector)
+          .set(calc(current.oiwfs.detector, demand.gds.oiwfs.detector))
+    ) >>> TcsConfig.gc.modify(
+      TelescopeGuideConfig.mountGuide.set(
+        (mustOff || demand.gc.mountGuide === MountGuideOff).fold(MountGuideOff, current.telescopeGuideConfig.mountGuide)
+      ) >>>
+        TelescopeGuideConfig.m1Guide.set(
+          (mustOff || demand.gc.m1Guide === M1GuideOff).fold(M1GuideOff, current.telescopeGuideConfig.m1Guide)
+        ) >>>
+        TelescopeGuideConfig.m2Guide.set(
+          (mustOff || demand.gc.m2Guide === M2GuideOff).fold(M2GuideOff, current.telescopeGuideConfig.m2Guide)
+        )
     ) >>> normalizeM1Guiding >>> normalizeM2Guiding >>> normalizeMountGuiding)(demand)
-    else demand
   }
 
   def calcAoPauseConditions(current: EpicsTcsConfig, demand: TcsConfig): Set[PauseCondition] = Set(

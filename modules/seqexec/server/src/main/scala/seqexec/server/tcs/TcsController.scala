@@ -412,9 +412,10 @@ object TcsController {
     // Gemini Adaptive Optics System (GeMS or Altair)
     case object Gaos   extends Subsystem
 
-    implicit val order: Order[Subsystem] = Order.allEqual
-    val all: NonEmptySet[Subsystem] = NonEmptySet.of(OIWFS, PWFS1, PWFS2, AGUnit, Mount, M1, M2, Gaos)
-    val allButOI: NonEmptySet[Subsystem] = NonEmptySet.of(PWFS1, PWFS2, AGUnit, Mount, M1, M2, Gaos)
+    val allList: List[Subsystem] = List(PWFS1, PWFS2, OIWFS, AGUnit, Mount, M1, M2, Gaos)
+    implicit val order: Order[Subsystem] = Order.from{ case (a, b) => allList.indexOf(a) - allList.indexOf(b) }
+    val allButGaos: NonEmptySet[Subsystem] = NonEmptySet.of(OIWFS, PWFS1, PWFS2, AGUnit, Mount, M1, M2)
+    val allButGaosNorOi: NonEmptySet[Subsystem] = NonEmptySet.of(PWFS1, PWFS2, AGUnit, Mount, M1, M2)
 
     implicit val show: Show[Subsystem] = Show.show { _.productPrefix }
     implicit val equal: Eq[Subsystem] = Eq.fromUniversalEquals
