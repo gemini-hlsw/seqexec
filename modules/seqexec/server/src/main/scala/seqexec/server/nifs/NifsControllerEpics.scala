@@ -339,14 +339,13 @@ object NifsControllerEpics extends NifsController[IO] with NifsEncoders {
     cfg match {
       case DarkCCConfig     => none.pure[IO]
       case cfg: StdCCConfig =>
-        for {
-          curMo <- epicsSys.maskOffset
-        } yield
+        epicsSys.maskOffset.map { curMo =>
           (curMo
             .exists(mo => abs(mo - cfg.maskOffset) > MaskOffsetTolerance))
             .option {
-              epicsSys.ccConfigCmd.setMaskOffset(f"${cfg.maskOffset}1.6f")
+              epicsSys.ccConfigCmd.setMaskOffset(cfg.maskOffset)
             }
+          }
     }
 
   private val postCcConfig =
