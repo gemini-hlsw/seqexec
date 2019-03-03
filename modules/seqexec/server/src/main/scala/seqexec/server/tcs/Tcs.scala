@@ -104,11 +104,11 @@ final case class Tcs private (tcsController: TcsController,
           ),
           tag[P2Config](calcGuiderConfig(
             calcGuiderInUse(c.tcsGuide, TipTiltSource.PWFS2, M1Source.PWFS2),
-            config.guideWithP1)
+            config.guideWithP2)
           ),
           tag[OIConfig](calcGuiderConfig(
             calcGuiderInUse(c.tcsGuide, TipTiltSource.OIWFS, M1Source.OIWFS) | aoUsesOI,
-            config.guideWithP1)
+            config.guideWithOI)
           ),
           tag[AOGuide](useAo & calcGuiderInUse(c.tcsGuide, TipTiltSource.GAOS, M1Source.GAOS) &
             config.guideWithAO.exists(_.isActive))
@@ -167,9 +167,9 @@ object Tcs {
     val gwp2 = config.extractAs[StandardGuideOptions.Value](TELESCOPE_KEY / GUIDE_WITH_PWFS2_PROP).toOption
     val gwoi = config.extractAs[StandardGuideOptions.Value](TELESCOPE_KEY / GUIDE_WITH_OIWFS_PROP).toOption
     val gwao = config.extractAs[StandardGuideOptions.Value](TELESCOPE_KEY / GUIDE_WITH_AOWFS_PROP).toOption
-    val offsetp = config.extractAs[Double](TELESCOPE_KEY / P_OFFSET_PROP).toOption
+    val offsetp = config.extractAs[String](TELESCOPE_KEY / P_OFFSET_PROP).toOption.flatMap(_.parseDoubleOption)
       .map(Arcseconds(_):Angle).map(tag[OffsetP](_))
-    val offsetq = config.extractAs[Double](TELESCOPE_KEY / Q_OFFSET_PROP).toOption
+    val offsetq = config.extractAs[String](TELESCOPE_KEY / Q_OFFSET_PROP).toOption.flatMap(_.parseDoubleOption)
       .map(Arcseconds(_):Angle).map(tag[OffsetQ](_))
 
     val tcsSeqCfg = TcsSeqConfig(

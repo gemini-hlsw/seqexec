@@ -437,7 +437,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
   ): TrySeq[List[System[IO]]] = {
     stepType match {
       case CelestialObject(inst) => toInstrumentSys(inst).map{sys => sys :: List(
-          Tcs.fromConfig(systems.tcs, if(hasOI(inst)) all else allButOI, None, systems.guideDb)(
+          Tcs.fromConfig(systems.tcs, (hasOI(inst)).fold(allButGaos, allButGaosNorOi), None, systems.guideDb)(
             config,
             ScienceFoldPosition.Position(TcsController.LightSource.Sky, sys.sfName(config)),
             extractWavelength(config)),
@@ -455,7 +455,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
         sys    <- toInstrumentSys(inst)
         altair <- Altair.fromConfig(config, systems.altair)
       } yield sys :: List(
-          Tcs.fromConfig(systems.tcs, hasOI(inst).fold(all, allButOI).add(Gaos),
+          Tcs.fromConfig(systems.tcs, hasOI(inst).fold(allButGaos, allButGaosNorOi).add(Gaos),
             altair.asLeft.some, systems.guideDb)(config,
             ScienceFoldPosition.Position(TcsController.LightSource.Sky, sys.sfName(config)),
             extractWavelength(config)),
@@ -533,11 +533,11 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
   ): TrySeq[Reader[HeaderExtraData, List[Header[IO]]]] = stepType match {
     case CelestialObject(inst) => toInstrumentSys(inst) >>= { i =>
         calcInstHeader(config, inst).map(h => Reader(ctx =>
-          List(commonHeaders(config, all.toList, i)(ctx), gwsHeaders(i), h)))
+          List(commonHeaders(config, allButGaos.toList, i)(ctx), gwsHeaders(i), h)))
       }
     case AltairObs(inst) => toInstrumentSys(inst) >>= { i =>
         calcInstHeader(config, inst).map(h => Reader(ctx =>
-          List(commonHeaders(config, all.toList, i)(ctx), gwsHeaders(i), h)))
+          List(commonHeaders(config, allButGaos.toList, i)(ctx), gwsHeaders(i), h)))
       }
     case FlatOrArc(inst)       => toInstrumentSys(inst) >>= { i =>
         calcInstHeader(config, inst).map(h => Reader(ctx =>
