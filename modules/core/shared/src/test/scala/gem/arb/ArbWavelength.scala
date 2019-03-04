@@ -13,10 +13,10 @@ import org.scalacheck.Cogen._
 trait ArbWavelength {
 
   implicit val arbWavelength: Arbitrary[Wavelength] =
-    Arbitrary(choose(0, Int.MaxValue).map(Wavelength.fromAngstroms.unsafeGet(_)))
+    Arbitrary(choose(0, Int.MaxValue).map(Wavelength.fromPicometers.unsafeGet(_)))
 
   implicit val cogWavelength: Cogen[Wavelength] =
-    Cogen[Int].contramap(_.toAngstroms)
+    Cogen[Int].contramap(_.toPicometers)
 
 }
 

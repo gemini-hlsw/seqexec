@@ -33,52 +33,52 @@ object SmartGcalDao {
     } yield gcs
 
   def selectF2(k: SmartGcalKey.Flamingos2, t: SmartGcalType): ConnectionIO[List[Int]] =
-    t.fold(Statements.selectF2ByLamp(k), Statements.selectF2ByBaseline(k)).to[List]
+    t.fold(Statements.Flamingos2.selectByLamp(k), Statements.Flamingos2.selectByBaseline(k)).to[List]
 
   def selectGmosNorth(k: SmartGcalKey.GmosNorthSearch, t: SmartGcalType): ConnectionIO[List[Int]] =
-    t.fold(Statements.selectGmosNorthByLamp(k), Statements.selectGmosNorthByBaseline(k)).to[List]
+    t.fold(Statements.GmosNorth.selectByLamp(k), Statements.GmosNorth.selectByBaseline(k)).to[List]
 
   def selectGmosSouth(k: SmartGcalKey.GmosSouthSearch, t: SmartGcalType): ConnectionIO[List[Int]] =
-    t.fold(Statements.selectGmosSouthByLamp(k), Statements.selectGmosSouthByBaseline(k)).to[List]
+    t.fold(Statements.GmosSouth.selectByLamp(k), Statements.GmosSouth.selectByBaseline(k)).to[List]
 
   def selectGnirs(k: SmartGcalKey.GnirsSearch, t: SmartGcalType): ConnectionIO[List[Int]] =
-    t.fold(Statements.selectGnirsByLamp(k), Statements.selectGnirsByBaseline(k)).to[List]
+    t.fold(Statements.Gnirs.selectByLamp(k), Statements.Gnirs.selectByBaseline(k)).to[List]
 
   val createIndexF2: ConnectionIO[Int] =
-    Statements.createIndexF2.run
+    Statements.Flamingos2.createIndex.run
 
   val dropIndexF2: ConnectionIO[Int] =
-    Statements.dropIndexF2.run
+    Statements.Flamingos2.dropIndex.run
 
   val createIndexGmosNorth: ConnectionIO[Int] =
-    Statements.createIndexGmosNorth.run
+    Statements.GmosNorth.createIndex.run
 
   val dropIndexGmosNorth: ConnectionIO[Int] =
-    Statements.dropIndexGmosNorth.run
+    Statements.GmosNorth.dropIndex.run
 
   val createIndexGmosSouth: ConnectionIO[Int] =
-    Statements.createIndexGmosSouth.run
+    Statements.GmosSouth.createIndex.run
 
   val dropIndexGmosSouth: ConnectionIO[Int] =
-    Statements.dropIndexGmosSouth.run
+    Statements.GmosSouth.dropIndex.run
 
   val createIndexGnirs: ConnectionIO[Int] =
-    Statements.createIndexGnirs.run
+    Statements.Gnirs.createIndex.run
 
   val dropIndexGnirs: ConnectionIO[Int] =
-    Statements.dropIndexGnirs.run
+    Statements.Gnirs.dropIndex.run
 
   def bulkInsertF2(entries: Vector[(GcalLampType, GcalBaselineType, SmartGcalKey.Flamingos2, GcalConfig)]): Stream[ConnectionIO, Int] =
-    bulkInsert(Statements.bulkInsertF2, entries)
+    bulkInsert(Statements.Flamingos2.bulkInsert, entries)
 
   def bulkInsertGmosNorth(entries: Vector[(GcalLampType, GcalBaselineType, SmartGcalKey.GmosNorthDefinition, GcalConfig)]): Stream[ConnectionIO, Int] =
-    bulkInsert[SmartGcalKey.GmosNorthDefinition](Statements.bulkInsertGmosNorth, entries)
+    bulkInsert[SmartGcalKey.GmosNorthDefinition](Statements.GmosNorth.bulkInsert, entries)
 
   def bulkInsertGmosSouth(entries: Vector[(GcalLampType, GcalBaselineType, SmartGcalKey.GmosSouthDefinition, GcalConfig)]): Stream[ConnectionIO, Int] =
-    bulkInsert[SmartGcalKey.GmosSouthDefinition](Statements.bulkInsertGmosSouth, entries)
+    bulkInsert[SmartGcalKey.GmosSouthDefinition](Statements.GmosSouth.bulkInsert, entries)
 
   def bulkInsertGnirs(entries: Vector[(GcalLampType, GcalBaselineType, SmartGcalKey.GnirsDefinition, GcalConfig)]): Stream[ConnectionIO, Int] =
-    bulkInsert[SmartGcalKey.GnirsDefinition](Statements.bulkInsertGnirs, entries)
+    bulkInsert[SmartGcalKey.GnirsDefinition](Statements.Gnirs.bulkInsert, entries)
 
   private def bulkInsert[K](
                 update:  Update[((GcalLampType, GcalBaselineType, K), Int)],
@@ -196,26 +196,22 @@ object SmartGcalDao {
 
   object Statements {
 
-    private val MinWavelength = 0
-    private val MaxWavelength = Int.MaxValue
 
-    // -----------------------------------------------------------------------
-    // Flamingos2
-    // -----------------------------------------------------------------------
+    object Flamingos2 {
 
-    val createIndexF2: Update0 =
-      sql"""
+      val createIndex: Update0 =
+        sql"""
         CREATE INDEX IF NOT EXISTS smart_f2_index ON smart_f2
           (disperser, filter, fpu)
       """.update
 
-    val dropIndexF2: Update0 =
-      sql"""
+      val dropIndex: Update0 =
+        sql"""
         DROP INDEX IF EXISTS smart_f2_index
       """.update
 
-    def selectF2ByLamp(k: SmartGcalKey.Flamingos2)(l: GcalLampType): Query0[Int] =
-      sql"""
+      def selectByLamp(k: SmartGcalKey.Flamingos2)(l: GcalLampType): Query0[Int] =
+        sql"""
           SELECT gcal_id
             FROM smart_f2
            WHERE lamp      = $l :: gcal_lamp_type
@@ -224,8 +220,8 @@ object SmartGcalDao {
              AND fpu       = ${k.fpu}
         """.query[Int]
 
-    def selectF2ByBaseline(k: SmartGcalKey.Flamingos2)(b: GcalBaselineType): Query0[Int] =
-      sql"""
+      def selectByBaseline(k: SmartGcalKey.Flamingos2)(b: GcalBaselineType): Query0[Int] =
+        sql"""
           SELECT gcal_id
             FROM smart_f2
            WHERE baseline  = $b :: gcal_baseline_type
@@ -234,11 +230,11 @@ object SmartGcalDao {
              AND fpu       = ${k.fpu}
         """.query[Int]
 
-    type F2Row = ((GcalLampType, GcalBaselineType, SmartGcalKey.Flamingos2), Int)
+      type Row = ((GcalLampType, GcalBaselineType, SmartGcalKey.Flamingos2), Int)
 
-    val bulkInsertF2: Update[F2Row] = {
-      val sql =
-        """
+      val bulkInsert: Update[Row] = {
+        val sql =
+          """
           INSERT INTO smart_f2 (lamp,
                                 baseline,
                                 disperser,
@@ -247,84 +243,35 @@ object SmartGcalDao {
                                 gcal_id)
                VALUES (? :: gcal_lamp_type, ? :: gcal_baseline_type, ?, ?, ?, ?)
         """
-      Update[F2Row](sql)
+        Update[Row](sql)
+      }
+
     }
 
+    sealed trait Gmos {
+      implicit val WavelengthMeta = WavelengthMetaAsNanometers
 
-    // -----------------------------------------------------------------------
-    // GmosNorth
-    // -----------------------------------------------------------------------
-
-    val createIndexGmosNorth: Update0 =
-      sql"""
-        CREATE INDEX IF NOT EXISTS smart_gmos_north_index ON smart_gmos_north
-          (disperser, filter, fpu)
-      """.update
-
-    val dropIndexGmosNorth: Update0 =
-      sql"""
-        DROP INDEX IF EXISTS smart_gmos_north_index
-      """.update
-
-    val createIndexGmosSouth: Update0 =
-      sql"""
-        CREATE INDEX IF NOT EXISTS smart_gmos_south_index ON smart_gmos_south
-          (disperser, filter, fpu)
-      """.update
-
-    val dropIndexGmosSouth: Update0 =
-      sql"""
-        DROP INDEX IF EXISTS smart_gmos_south_index
-      """.update
-
-    private def selectGmos[D, F, U](table: String, searchType: Fragment, dfu: Fragment, k: SmartGcalKey.GmosCommon[D,F,U], w: Option[Wavelength]): Fragment =
-      Fragment.const(
-        s"""SELECT gcal_id
+      def select[D, F, U](table: String, searchType: Fragment, dfu: Fragment, k: SmartGcalKey.GmosCommon[D, F, U], w: Option[Wavelength]): Fragment =
+        Fragment.const(
+          s"""SELECT gcal_id
                FROM $table
               WHERE """) ++ searchType ++ dfu ++
-        fr"""
+          fr"""
                 AND x_binning       = ${k.xBinning}
                 AND y_binning       = ${k.yBinning}
                 AND amp_gain        = ${k.ampGain}
-                AND min_wavelength <= ${w.map(_.toAngstroms).getOrElse(MaxWavelength)}
-                AND max_wavelength >  ${w.map(_.toAngstroms).getOrElse(MinWavelength)}
+                AND min_wavelength <= ${w.getOrElse(Wavelength.Max)}
+                AND max_wavelength >  ${w.getOrElse(Wavelength.Min)}
          """
 
-    def lampFragment(l: GcalLampType): Fragment =
-      fr"""lamp = $l :: gcal_lamp_type"""
+      def lampFragment(l: GcalLampType): Fragment =
+        fr"""lamp = $l :: gcal_lamp_type"""
 
-    def baselineFragment(b: GcalBaselineType): Fragment =
-      fr"""baseline = $b :: gcal_baseline_type"""
+      def baselineFragment(b: GcalBaselineType): Fragment =
+        fr"""baseline = $b :: gcal_baseline_type"""
 
-    def gmosNorthFragment(k: SmartGcalKey.GmosNorthCommon): Fragment =
-      fr"""
-              AND disperser       = ${k.disperser}
-              AND filter          = ${k.filter}
-              AND fpu             = ${k.fpu}
-        """
-
-    def gmosSouthFragment(k: SmartGcalKey.GmosSouthCommon): Fragment =
-      fr"""
-              AND disperser       = ${k.disperser}
-              AND filter          = ${k.filter}
-              AND fpu             = ${k.fpu}
-        """
-
-
-    def selectGmosNorthByLamp(k: SmartGcalKey.GmosNorthSearch)(l: GcalLampType): Query0[Int] =
-      selectGmos("smart_gmos_north", lampFragment(l), gmosNorthFragment(k.gmos), k.gmos, k.wavelength).query[Int]
-
-    def selectGmosSouthByLamp(k: SmartGcalKey.GmosSouthSearch)(l: GcalLampType): Query0[Int] =
-      selectGmos("smart_gmos_south", lampFragment(l), gmosSouthFragment(k.gmos), k.gmos, k.wavelength).query[Int]
-
-    def selectGmosNorthByBaseline(k: SmartGcalKey.GmosNorthSearch)(b: GcalBaselineType): Query0[Int] =
-      selectGmos("smart_gmos_north", baselineFragment(b), gmosNorthFragment(k.gmos), k.gmos, k.wavelength).query[Int]
-
-    def selectGmosSouthByBaseline(k: SmartGcalKey.GmosSouthSearch)(b: GcalBaselineType): Query0[Int] =
-      selectGmos("smart_gmos_south", baselineFragment(b), gmosSouthFragment(k.gmos), k.gmos, k.wavelength).query[Int]
-
-    def bulkInsertGmosSql(table: String): String =
-      s"""
+      def bulkInsertSql(table: String): String =
+        s"""
         INSERT INTO $table (lamp,
                             baseline,
                             disperser,
@@ -339,31 +286,89 @@ object SmartGcalDao {
              VALUES (? :: gcal_lamp_type, ? :: gcal_baseline_type, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       """
 
-    type GmosNorthRow = ((GcalLampType, GcalBaselineType, SmartGcalKey.GmosNorthDefinition), Int)
-    type GmosSouthRow = ((GcalLampType, GcalBaselineType, SmartGcalKey.GmosSouthDefinition), Int)
+    }
 
-    val bulkInsertGmosNorth: Update[GmosNorthRow] =
-      Update[GmosNorthRow](bulkInsertGmosSql("smart_gmos_north"))
+    object GmosNorth extends Gmos {
 
-    val bulkInsertGmosSouth: Update[GmosSouthRow] =
-      Update[GmosSouthRow](bulkInsertGmosSql("smart_gmos_south"))
+      val createIndex: Update0 =
+        sql"""
+        CREATE INDEX IF NOT EXISTS smart_gmos_north_index ON smart_gmos_north
+          (disperser, filter, fpu)
+      """.update
 
-    // -----------------------------------------------------------------------
-    // GNIRS
-    // -----------------------------------------------------------------------
+      val dropIndex: Update0 =
+        sql"""
+        DROP INDEX IF EXISTS smart_gmos_north_index
+      """.update
 
-    val createIndexGnirs: Update0 =
-      sql"""
+      def fragment(k: SmartGcalKey.GmosNorthCommon): Fragment =
+        fr"""
+              AND disperser       = ${k.disperser}
+              AND filter          = ${k.filter}
+              AND fpu             = ${k.fpu}
+        """
+
+      def selectByLamp(k: SmartGcalKey.GmosNorthSearch)(l: GcalLampType): Query0[Int] =
+        select("smart_gmos_north", lampFragment(l), fragment(k.gmos), k.gmos, k.wavelength).query[Int]
+
+      def selectByBaseline(k: SmartGcalKey.GmosNorthSearch)(b: GcalBaselineType): Query0[Int] =
+        select("smart_gmos_north", baselineFragment(b), fragment(k.gmos), k.gmos, k.wavelength).query[Int]
+
+      type Row = ((GcalLampType, GcalBaselineType, SmartGcalKey.GmosNorthDefinition), Int)
+
+      val bulkInsert: Update[Row] =
+        Update[Row](bulkInsertSql("smart_gmos_north"))
+
+    }
+
+    object GmosSouth extends Gmos {
+
+      val createIndex: Update0 =
+        sql"""
+        CREATE INDEX IF NOT EXISTS smart_gmos_south_index ON smart_gmos_south
+          (disperser, filter, fpu)
+      """.update
+
+      val dropIndex: Update0 =
+        sql"""
+        DROP INDEX IF EXISTS smart_gmos_south_index
+      """.update
+
+      def fragment(k: SmartGcalKey.GmosSouthCommon): Fragment =
+        fr"""
+              AND disperser       = ${k.disperser}
+              AND filter          = ${k.filter}
+              AND fpu             = ${k.fpu}
+        """
+
+      def selectByLamp(k: SmartGcalKey.GmosSouthSearch)(l: GcalLampType): Query0[Int] =
+        select("smart_gmos_south", lampFragment(l), fragment(k.gmos), k.gmos, k.wavelength).query[Int]
+
+      def selectByBaseline(k: SmartGcalKey.GmosSouthSearch)(b: GcalBaselineType): Query0[Int] =
+        select("smart_gmos_south", baselineFragment(b), fragment(k.gmos), k.gmos, k.wavelength).query[Int]
+
+      type Row = ((GcalLampType, GcalBaselineType, SmartGcalKey.GmosSouthDefinition), Int)
+
+      val bulkInsert: Update[Row] =
+        Update[Row](bulkInsertSql("smart_gmos_south"))
+    }
+
+    object Gnirs {
+
+      implicit val WavelengthMeta = WavelengthMetaAsMicrometers
+
+      val createIndex: Update0 =
+        sql"""
         CREATE INDEX IF NOT EXISTS smart_gnirs_index ON smart_gnirs (disperser, prism)
       """.update
 
-    val dropIndexGnirs: Update0 =
-      sql"""
+      val dropIndex: Update0 =
+        sql"""
         DROP INDEX IF EXISTS smart_gnirs_index
       """.update
 
-    def selectGnirsByLamp(k: SmartGcalKey.GnirsSearch)(l: GcalLampType): Query0[Int] =
-      sql"""
+      def selectByLamp(k: SmartGcalKey.GnirsSearch)(l: GcalLampType): Query0[Int] =
+        sql"""
           SELECT gcal_id
             FROM smart_gnirs
            WHERE lamp       = $l :: gcal_lamp_type
@@ -378,8 +383,8 @@ object SmartGcalDao {
              AND max_wavelength     > ${k.wavelength}
         """.query[Int]
 
-    def selectGnirsByBaseline(k: SmartGcalKey.GnirsSearch)(b: GcalBaselineType): Query0[Int] =
-      sql"""
+      def selectByBaseline(k: SmartGcalKey.GnirsSearch)(b: GcalBaselineType): Query0[Int] =
+        sql"""
           SELECT gcal_id
             FROM smart_gnirs
            WHERE baseline   = $b :: gcal_baseline_type
@@ -394,11 +399,11 @@ object SmartGcalDao {
              AND max_wavelength     > ${k.wavelength}
         """.query[Int]
 
-    type GnirsRow = ((GcalLampType, GcalBaselineType, SmartGcalKey.GnirsDefinition), Int)
+      type Row = ((GcalLampType, GcalBaselineType, SmartGcalKey.GnirsDefinition), Int)
 
-    val bulkInsertGnirs: Update[GnirsRow] = {
-      val sql =
-        """
+      val bulkInsert: Update[Row] = {
+        val sql =
+          """
           INSERT INTO smart_gnirs (lamp,
                                    baseline,
                                    acquisition_mirror,
@@ -413,7 +418,8 @@ object SmartGcalDao {
                                    gcal_id)
                VALUES (? :: gcal_lamp_type, ? :: gcal_baseline_type, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
-      Update[GnirsRow](sql)
+        Update[Row](sql)
+      }
     }
 
   }
