@@ -36,8 +36,8 @@ class NifsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, String]) 
     val windowCover: Option[CaParameter[String]] = cs.map(_.getString("windowCover"))
     def setWindowCover(v: String): F[Unit] = setParameterF(windowCover, v)
 
-    val maskOffset: Option[CaParameter[String]] = cs.map(_.getString("maskOffset"))
-    def setMaskOffset(v: String): F[Unit] = setParameterF(maskOffset, v)
+    val maskOffset: Option[CaParameter[JDouble]] = cs.map(_.getDouble("maskOffset"))
+    def setMaskOffset(v: Double): F[Unit] = setParameterF(maskOffset, JDouble.valueOf(v))
 
     val imagingMirror: Option[CaParameter[String]] = cs.map(_.getString("imagingMirror"))
     def setImagingMirror(v: String): F[Unit] = setParameterF(imagingMirror, v)
@@ -45,8 +45,8 @@ class NifsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, String]) 
     val mask: Option[CaParameter[String]] = cs.map(_.getString("mask"))
     def setMask(v: String): F[Unit] = setParameterF(mask, v)
 
-    val centralWavelength: Option[CaParameter[String]] = cs.map(_.getString("centralWavelength"))
-    def setCentralWavelength(v: String): F[Unit] = setParameterF(centralWavelength, v)
+    val centralWavelength: Option[CaParameter[JDouble]] = cs.map(_.getDouble("centralWavelength"))
+    def setCentralWavelength(v: Double): F[Unit] = setParameterF(centralWavelength, JDouble.valueOf(v))
 
   }
 

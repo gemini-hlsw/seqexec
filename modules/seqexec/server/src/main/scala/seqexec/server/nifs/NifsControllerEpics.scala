@@ -260,7 +260,7 @@ object NifsControllerEpics extends NifsController[IO] with NifsEncoders {
         // So if any of those conditions is not true; need to move the disperser to the new position.
         def checkInvalid(current: Option[String]): IO[Option[IO[Unit]]] =
           epicsSys.lastSelectedDisperser.map { lsd =>
-            (current.exists(_ === "INVALID") && lsd.exists(_ === disperser))
+            (!(current.exists(_ === "INVALID") && lsd.exists(_ === disperser)))
               .option(setDisperserIO)
           }
 
@@ -269,8 +269,8 @@ object NifsControllerEpics extends NifsController[IO] with NifsEncoders {
           instDisp     <- epicsSys.disperser
           setIfInvalid <- checkInvalid(instDisp)
         } yield
-          if (instDisp.exists(_ =!= disperser)) {
-            setDisperserIO.some
+          if (instDisp.exists(_ === disperser)) {
+            none
           } else {
             setIfInvalid
           }
@@ -287,8 +287,8 @@ object NifsControllerEpics extends NifsController[IO] with NifsEncoders {
       // So if any of those conditions is not true; need to move the mask to the new position.
       def checkInvalid(current: Option[String]): IO[Option[IO[Unit]]] =
         (epicsSys.maskOffset, epicsSys.lastSelectedMask).mapN { (mo, lsm) =>
-          (current.exists(_ === "INVALID") && lsm.exists(_ === mask) && mo
-            .exists(_ =!= 0.0)).option(setMaskIO)
+          (!(current.exists(_ === "INVALID") && lsm.exists(_ === mask) && mo
+            .exists(_ =!= 0.0))).option(setMaskIO)
         }
 
       // We need an even smarter set param
@@ -327,10 +327,10 @@ object NifsControllerEpics extends NifsController[IO] with NifsEncoders {
       case DarkCCConfig     => none.pure[IO]
       case cfg: StdCCConfig =>
         epicsSys.centralWavelength.map { curCw =>
-          ((cfg.disperser =!= LegacyDisperser.MIRROR) && curCw.exists(cw =>
-            abs(cw - cfg.wavelength) > CentralWavelengthTolerance)).option {
+          ((cfg.disperser =!= LegacyDisperser.MIRROR) && curCw.exists{cw =>
+            abs(cw - cfg.wavelength) > CentralWavelengthTolerance}).option {
             epicsSys.ccConfigCmd
-              .setCentralWavelength(f"${cfg.wavelength}1.6f")
+              .setCentralWavelength(cfg.wavelength)
           }
         }
     }
@@ -339,14 +339,13 @@ object NifsControllerEpics extends NifsController[IO] with NifsEncoders {
     cfg match {
       case DarkCCConfig     => none.pure[IO]
       case cfg: StdCCConfig =>
-        for {
-          curMo <- epicsSys.maskOffset
-        } yield
+        epicsSys.maskOffset.map { curMo =>
           (curMo
             .exists(mo => abs(mo - cfg.maskOffset) > MaskOffsetTolerance))
             .option {
-              epicsSys.ccConfigCmd.setMaskOffset(f"${cfg.maskOffset}1.6f")
+              epicsSys.ccConfigCmd.setMaskOffset(cfg.maskOffset)
             }
+          }
     }
 
   private val postCcConfig =
@@ -400,13 +399,6 @@ object NifsControllerEpics extends NifsController[IO] with NifsEncoders {
 
   override def observeProgress(total: Time): fs2.Stream[IO, Progress] =
     ProgressUtil.countdown[IO](total, 0.seconds)
-
-  override def calcTotalExposureTime(cfg: DCConfig): IO[Time] =
-    epicsSys.exposureTime.map { exp =>
-      val MinIntTime = exp.map(Seconds(_)).getOrElse(Seconds(0))
-
-      (cfg.exposureTime + MinIntTime) * cfg.coadds.toDouble
-    }
 
   def calcObserveTimeout(cfg: DCConfig): Time = {
     val CoaddOverhead = 2.2

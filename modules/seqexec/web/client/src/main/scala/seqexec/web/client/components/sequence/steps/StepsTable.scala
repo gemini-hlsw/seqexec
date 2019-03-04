@@ -57,6 +57,7 @@ object ColWidths {
   val ObservingModeWidth: Double = 180
   val FilterWidth: Double        = 180
   val FPUWidth: Double           = 100
+  val DeckerWidth: Double        = 100
   val CameraWidth: Double        = 180
   val ObjectTypeWidth: Double    = 75
   val SettingsWidth: Double      = 34
@@ -128,6 +129,7 @@ object StepsTable {
     val showFilter: Boolean       = showProp(InstrumentProperties.Filter)
     val showFPU: Boolean          = showProp(InstrumentProperties.FPU)
     val showCamera: Boolean       = showProp(InstrumentProperties.Camera)
+    val showDecker: Boolean       = showProp(InstrumentProperties.Decker)
     val isPreview: Boolean        = steps.map(_.isPreview).getOrElse(false)
     val hasControls: Boolean      = canOperate && !isPreview
     val canSetBreakpoint: Boolean = canOperate && !isPreview
@@ -300,6 +302,11 @@ object StepsTable {
     i: Instrument
   ): CellRenderer[js.Object, js.Object, StepRow] =
     (_, _, _, row: StepRow, _) => CameraCell(CameraCell.Props(row.step, i))
+
+  def deckerRenderer(
+    i: Instrument
+  ): CellRenderer[js.Object, js.Object, StepRow] =
+    (_, _, _, row: StepRow, _) => DeckerCell(DeckerCell.Props(row.step, i))
 
   private def stepRowStyle(step: Step): GStyle = step match {
     case s if s.hasError                       => SeqexecStyles.rowError
@@ -479,6 +486,20 @@ object StepsTable {
             )))
       .filter(_ => p.showCamera && cameraVisible)
 
+  def deckerColumn(p: Props, cameraVisible: Boolean): Option[Table.ColumnArg] =
+    p.steps
+      .map(
+        i =>
+          Column(
+            Column.propsNoFlex(
+              ColWidths.DeckerWidth,
+              "decker",
+              label        = "Decker",
+              className    = SeqexecStyles.centeredCell.htmlClass,
+              cellRenderer = deckerRenderer(i.instrument)
+            )))
+      .filter(_ => p.showDecker && cameraVisible)
+
   def fpuColumn(p: Props, fpuVisible: Boolean): Option[Table.ColumnArg] =
     p.steps
       .map(
@@ -554,15 +575,16 @@ object StepsTable {
          disperserVisible,
          fpuVisible,
          cameraVisible,
+         deckerVisible,
          filterVisible,
          objectSize) =
       s.width match {
         case w if w < PhoneCut =>
-          (false, false, false, false, false, false, SSize.Tiny)
+          (false, false, false, false, false, false, false, SSize.Tiny)
         case w if w < LargePhoneCut =>
-          (false, true, false, false, false, false, SSize.Small)
+          (false, true, false, false, false, false, false, SSize.Small)
         case _ =>
-          (b.props.showOffsets, true, true, true, true, true, SSize.Small)
+          (b.props.showOffsets, true, true, true, true, true, true, SSize.Small)
       }
 
     val (offsetCol, offsetWidth) = offsetColumn(p, offsetVisible)
@@ -571,6 +593,7 @@ object StepsTable {
     val exposureCol              = exposureColumn(p, exposureVisible)
     val fpuCol                   = fpuColumn(p, fpuVisible)
     val cameraCol                = cameraColumn(p, cameraVisible)
+    val deckerCol                = deckerColumn(p, deckerVisible)
     val iconCol                  = iconColumn(b)
     val filterCol                = filterColumn(p, filterVisible)
     val typeCol                  = typeColumn(p, objectSize)
@@ -586,12 +609,10 @@ object StepsTable {
         filterCol.fold(0.0)(_ => ColWidths.FilterWidth) +
         fpuCol.fold(0.0)(_ => ColWidths.FPUWidth) +
         cameraCol.fold(0.0)(_ => ColWidths.CameraWidth) +
-        observingModeCol.fold(0.0)(_ => ColWidths.ObservingModeWidth) +
-        ColWidths.ObjectTypeWidth +
-        ColWidths.SettingsWidth
+        deckerCol.fold(0.0)(_ => ColWidths.DeckerWidth) +
+        observingModeCol.fold(0.0)(_ => ColWidths.ObservingModeWidth) + ColWidths.ObjectTypeWidth + ColWidths.SettingsWidth
     val controlWidth = s.width - colsWidth
     val stateCol     = stateColumn(b, controlWidth)
-
     List(
       iconCol,
       idxColumn.some,
@@ -603,6 +624,7 @@ object StepsTable {
       filterCol,
       fpuCol,
       cameraCol,
+      deckerCol,
       typeCol,
       settingsCol
     ).collect { case Some(x) => x }
