@@ -29,11 +29,20 @@ object TcsControllerEpics extends TcsController {
   import MountGuideOption._
   import ScienceFoldPositionCodex._
 
+  // Same offset is applied to all the beams
   private def setTelescopeOffset(c: FocalPlaneOffset): SeqAction[Unit] =
     TcsEpics.instance.offsetACmd.setX(c.x.toMillimeters) *>
-      TcsEpics.instance.offsetACmd.setY(c.y.toMillimeters)
+      TcsEpics.instance.offsetACmd.setY(c.y.toMillimeters) *>
+      TcsEpics.instance.offsetBCmd.setX(c.x.toMillimeters) *>
+      TcsEpics.instance.offsetBCmd.setY(c.y.toMillimeters) *>
+      TcsEpics.instance.offsetCCmd.setX(c.x.toMillimeters) *>
+      TcsEpics.instance.offsetCCmd.setY(c.y.toMillimeters)
 
-  private def setWavelength(w: Wavelength): SeqAction[Unit] = TcsEpics.instance.wavelSourceA.setWavel(w.toMicrons)
+  // Same wavelength is applied to all the beams
+  private def setWavelength(w: Wavelength): SeqAction[Unit] =
+    TcsEpics.instance.wavelSourceA.setWavel(w.toMicrons) *>
+      TcsEpics.instance.wavelSourceB.setWavel(w.toMicrons) *>
+      TcsEpics.instance.wavelSourceC.setWavel(w.toMicrons)
 
   implicit private val encodeNodChopOption: EncodeEpicsValue[NodChopTrackingOption, String] =
     EncodeEpicsValue {
