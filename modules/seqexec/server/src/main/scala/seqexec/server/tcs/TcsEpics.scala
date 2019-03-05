@@ -367,10 +367,10 @@ final class TcsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, Stri
   private val filteredInPositionAttr: CaWindowStabilizer[String] = new CaWindowStabilizer[String](inPositionAttr, java.time.Duration.ofMillis(tcsStabilizeTime.toMillis))
   def filteredInPosition:F[Option[String]] = safeAttribute(filteredInPositionAttr)
 
-  // This functions returns a Task that, when run, will wait up to `timeout`
+  // This functions returns a SeqAction that, when run, will wait up to `timeout`
   // seconds for the TCS in-position flag to set to TRUE
-  def waitInPosition(timeout: Time): SeqAction[Unit] = waitForValue(filteredInPositionAttr.reset, "TRUE", timeout,
-    "TCS inposition flag")
+  def waitInPosition(timeout: Time): SeqAction[Unit] = SeqAction(filteredInPositionAttr.reset)
+    .flatMap(waitForValue(_, "TRUE", timeout,"TCS inposition flag"))
 
   private val agStabilizeTime = 1.seconds
 
@@ -383,7 +383,8 @@ final class TcsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, Stri
    */
   private val AGSettleTime = 1100.milliseconds
   def waitAGInPosition(timeout: Time): SeqAction[Unit] = SeqAction(Thread.sleep(AGSettleTime.toMilliseconds.toLong)) *>
-    waitForValue[java.lang.Double](filteredAGInPositionAttr.reset, 1.0, timeout, "AG inposition flag")
+    SeqAction(filteredAGInPositionAttr.reset).flatMap(
+      waitForValue[java.lang.Double](_, 1.0, timeout, "AG inposition flag"))
 
   def hourAngle: F[Option[String]] = safeAttribute(tcsState.getStringAttribute("ha"))
 
