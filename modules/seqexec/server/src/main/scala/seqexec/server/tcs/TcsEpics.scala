@@ -364,17 +364,17 @@ final class TcsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, Stri
 
   private val tcsStabilizeTime = 1.seconds
 
-  private val filteredInPositionAttr: CaAttribute[String] = new CaWindowStabilizer[String](inPositionAttr, java.time.Duration.ofMillis(tcsStabilizeTime.toMillis))
+  private val filteredInPositionAttr: CaWindowStabilizer[String] = new CaWindowStabilizer[String](inPositionAttr, java.time.Duration.ofMillis(tcsStabilizeTime.toMillis))
   def filteredInPosition:F[Option[String]] = safeAttribute(filteredInPositionAttr)
 
-  // This functions returns a Task that, when run, will wait up to `timeout`
+  // This functions returns a SeqAction that, when run, will wait up to `timeout`
   // seconds for the TCS in-position flag to set to TRUE
-  def waitInPosition(timeout: Time): SeqAction[Unit] = waitForValue(filteredInPositionAttr, "TRUE", timeout,
-    "TCS inposition flag")
+  def waitInPosition(timeout: Time): SeqAction[Unit] = SeqAction(filteredInPositionAttr.reset)
+    .flatMap(waitForValue(_, "TRUE", timeout,"TCS inposition flag"))
 
   private val agStabilizeTime = 1.seconds
 
-  private val filteredAGInPositionAttr: CaAttribute[java.lang.Double] = new CaWindowStabilizer[java.lang.Double](agInPositionAttr, java.time.Duration.ofMillis(agStabilizeTime.toMillis))
+  private val filteredAGInPositionAttr: CaWindowStabilizer[java.lang.Double] = new CaWindowStabilizer[java.lang.Double](agInPositionAttr, java.time.Duration.ofMillis(agStabilizeTime.toMillis))
   def filteredAGInPosition: F[Option[Double]] = safeAttributeSDouble(filteredAGInPositionAttr)
 
   // `waitAGInPosition` works like `waitInPosition`, but for the AG in-position flag.
@@ -383,7 +383,8 @@ final class TcsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, Stri
    */
   private val AGSettleTime = 1100.milliseconds
   def waitAGInPosition(timeout: Time): SeqAction[Unit] = SeqAction(Thread.sleep(AGSettleTime.toMilliseconds.toLong)) *>
-    waitForValue[java.lang.Double](filteredAGInPositionAttr, 1.0, timeout, "AG inposition flag")
+    SeqAction(filteredAGInPositionAttr.reset).flatMap(
+      waitForValue[java.lang.Double](_, 1.0, timeout, "AG inposition flag"))
 
   def hourAngle: F[Option[String]] = safeAttribute(tcsState.getStringAttribute("ha"))
 
