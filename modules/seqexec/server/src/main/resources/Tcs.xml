@@ -1821,6 +1821,11 @@
             <description>AO fold position</description>
             <top>ag</top>
         </attribute>
+        <!--<attribute name="useAo">-->
+            <!--<channel>im:AOConfigFlag.VAL</channel>-->
+            <!--<type>STRING</type>-->
+            <!--<description>Using AO flag</description>-->
+        <!--</attribute>-->
         <attribute name="airmass">
             <channel>sad:airMass</channel>
             <type>DOUBLE</type>

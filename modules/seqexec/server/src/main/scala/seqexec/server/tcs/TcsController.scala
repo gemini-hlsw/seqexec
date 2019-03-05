@@ -211,6 +211,7 @@ object TcsController {
       case (a@On(_), b@On(_)) => a === b
       case _                  => false
     }
+    implicit val show: Show[ProbeTrackingConfig] = Show.fromToString
   }
 
   /** Enumerated type for HRWFS pickup position. */
@@ -334,7 +335,7 @@ object TcsController {
   trait P1Config
   trait P2Config
   trait OIConfig
-  trait AOGuide
+  trait AoGuide
 
   sealed trait GuiderSensorOption
   object GuiderSensorOff extends GuiderSensorOption
@@ -356,9 +357,8 @@ object TcsController {
   @Lenses
   final case class GuidersConfig(
     pwfs1: GuiderConfig@@P1Config,
-    pwfs2: GuiderConfig@@P2Config,
-    oiwfs: GuiderConfig@@OIConfig,
-    aowfs: Boolean@@AOGuide
+    pwfs2OrAowfs: Either[GuiderConfig@@P2Config, ProbeTrackingConfig@@AoGuide],
+    oiwfs: GuiderConfig@@OIConfig
   )
 
   @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
@@ -385,9 +385,8 @@ object TcsController {
     TelescopeConfig(None, None),
     GuidersConfig(
       tag[P1Config](GuiderConfig(ProbeTrackingConfig.Parked, GuiderSensorOff)),
-      tag[P2Config](GuiderConfig(ProbeTrackingConfig.Parked, GuiderSensorOff)),
-      tag[OIConfig](GuiderConfig(ProbeTrackingConfig.Parked, GuiderSensorOff)),
-      tag[AOGuide](false)
+      Left(tag[P2Config](GuiderConfig(ProbeTrackingConfig.Parked, GuiderSensorOff))),
+      tag[OIConfig](GuiderConfig(ProbeTrackingConfig.Parked, GuiderSensorOff))
     ),
     AGConfig(ScienceFoldPosition.Parked, HrwfsConfig.Auto.some),
     None
