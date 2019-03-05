@@ -46,8 +46,8 @@ object TcsControllerEpics extends TcsController {
 
   implicit private val encodeNodChopOption: EncodeEpicsValue[NodChopTrackingOption, String] =
     EncodeEpicsValue {
-      case NodChopTrackingOption.NodChopTrackingOn  => "on"
-      case NodChopTrackingOption.NodChopTrackingOff => "off"
+      case NodChopTrackingOption.NodChopTrackingOn  => "On"
+      case NodChopTrackingOption.NodChopTrackingOff => "Off"
     }
 
   private def setProbeTrackingConfig(s: TcsEpics.ProbeGuideCmd)(c: ProbeTrackingConfig): SeqAction[Unit] = for {

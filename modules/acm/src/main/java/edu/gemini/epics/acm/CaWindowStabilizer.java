@@ -47,6 +47,7 @@ public class CaWindowStabilizer<T> implements CaAttribute<T> {
     }
 
     private synchronized void onValChange(T val) {
+
         if (val != null && val != lastVal) {
             if (timeoutFuture != null) {
                 timeoutFuture.cancel(true);
@@ -65,7 +66,7 @@ public class CaWindowStabilizer<T> implements CaAttribute<T> {
     private synchronized void onTimeout() {
         timeoutFuture = null;
         filteredVal = lastVal;
-        notifier.notifyValueChange(Arrays.asList(filteredVal));
+        notifier.notifyValueChange(values());
     }
 
     void unbind() {
@@ -97,7 +98,10 @@ public class CaWindowStabilizer<T> implements CaAttribute<T> {
 
     @Override
     public List<T> values() {
-        return Arrays.asList(filteredVal);
+        if(filteredVal != null)
+            return Arrays.asList(filteredVal);
+        else
+            return Arrays.asList();
     }
 
     @Override
@@ -141,6 +145,11 @@ public class CaWindowStabilizer<T> implements CaAttribute<T> {
     @Override
     public void removeListener(CaAttributeListener<T> listener) {
         notifier.removeListener(listener);
+    }
+
+    public CaWindowStabilizer<T> reset() {
+        filteredVal = lastVal = null;
+        return this;
     }
 
 }
