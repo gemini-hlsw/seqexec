@@ -128,39 +128,35 @@ object AltairControllerEpics extends AltairController[IO] {
         SeqexecFailure.Unexpected("Cannot start Altair STRAP loop, HVolt status is bad."), ()
       )
 
-  private def startStrapGate(currCfg: EpicsAltairConfig): IO[Unit] = ( IO.unit
-//    epicsAltair.strapGateControl.setGate(1) *>
-//      epicsAltair.strapGateControl.post[IO] *>
-//      epicsAltair.waitForStrapGate(100, 5.seconds)
+  private def startStrapGate(currCfg: EpicsAltairConfig): IO[Unit] = (
+    epicsAltair.strapGateControl.setGate(1) *>
+      epicsAltair.strapGateControl.post[IO] *>
+      epicsAltair.waitForStrapGate(100, 5.seconds)
     ).unlessA(currCfg.strapGate =!= 0)
 
-  private def stopStrapGate(currCfg: EpicsAltairConfig): IO[Unit] = ( IO.unit
-//    epicsAltair.strapGateControl.setGate(0) *>
-//      epicsAltair.strapGateControl.post[IO].void
-    ).unlessA(currCfg.strapGate === 0)
+  private def stopStrapGate(currCfg: EpicsAltairConfig): IO[Unit] = (
+    epicsAltair.strapGateControl.setGate(0) *>
+      epicsAltair.strapGateControl.post[IO].void
+    ).whenA(currCfg.strapGate =!= 0)
 
-  private def startStrapLoop(currCfg: EpicsAltairConfig): IO[Unit] = ( IO.unit
-//    epicsAltair.strapControl.setActive(1) *>
-//      epicsAltair.strapControl.post[IO] *>
-//      epicsAltair.waitForStrapLoop(v = true, 10.seconds)
+  private def startStrapLoop(currCfg: EpicsAltairConfig): IO[Unit] = (
+    epicsAltair.strapControl.setActive(1) *>
+      epicsAltair.strapControl.post[IO] *>
+      epicsAltair.waitForStrapLoop(v = true, 10.seconds)
     ).unlessA(currCfg.strapLoop)
 
-  private def stopStrapLoop(currCfg: EpicsAltairConfig): IO[Unit] = ( IO.unit
-//    epicsAltair.strapControl.setActive(0) *>
-//      epicsAltair.strapControl.post[IO].void
+  private def stopStrapLoop(currCfg: EpicsAltairConfig): IO[Unit] = (
+    epicsAltair.strapControl.setActive(0) *>
+      epicsAltair.strapControl.post[IO].void
     ).whenA(currCfg.strapLoop)
 
   implicit val sfoControlEq: Eq[LgsSfoControl] = Eq.by(_.ordinal)
 
-  private def startSfoLoop(currCfg: EpicsAltairConfig): IO[Unit] = (
-    epicsAltair.sfoControl.setActive(LgsSfoControl.Enable) *>
-      epicsAltair.sfoControl.post[IO].void
-    ).unlessA(currCfg.sfoLoop === LgsSfoControl.Enable)
+  private def startSfoLoop(currCfg: EpicsAltairConfig): IO[Unit] =
+    epicsAltair.sfoControl.setActive(LgsSfoControl.Enable).unlessA(currCfg.sfoLoop === LgsSfoControl.Enable)
 
-  private def stopSfoLoop(currCfg: EpicsAltairConfig): IO[Unit] = (
-    epicsAltair.sfoControl.setActive(LgsSfoControl.Pause) *>
-      epicsAltair.sfoControl.post[IO].void
-    ).unlessA(currCfg.sfoLoop === LgsSfoControl.Enable)
+  private def pauseSfoLoop(currCfg: EpicsAltairConfig): IO[Unit] =
+    epicsAltair.sfoControl.setActive(LgsSfoControl.Pause).whenA(currCfg.sfoLoop === LgsSfoControl.Enable)
 
   private def ttgsOn(strap: Boolean, sfo: Boolean, currCfg: EpicsAltairConfig): IO[EpicsAltairConfig] =
     for {
@@ -180,7 +176,7 @@ object AltairControllerEpics extends AltairController[IO] {
   private def ttgsOff(currCfg: EpicsAltairConfig): IO[EpicsAltairConfig] =
     stopStrapGate(currCfg) *>
       stopStrapLoop(currCfg) *>
-      stopSfoLoop(currCfg) *>
+      pauseSfoLoop(currCfg) *>
       IO(
         (EpicsAltairConfig.strapGate.set(0) >>>
           EpicsAltairConfig.strapLoop.set(false) >>>
