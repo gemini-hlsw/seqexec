@@ -13,7 +13,7 @@ import java.util.Set;
  * @author jluhrs
  *
  */
-public interface CaCommandSender {
+public interface CaCommandSender extends CaCommandTrigger {
     /**
      * Retrieves the name of this command sender.
      *
@@ -54,40 +54,6 @@ public interface CaCommandSender {
     void clear() throws TimeoutException;
 
     /**
-     * Trigger the EPICS apply record. The command return immediately.
-     *
-     * @return an object that implements <code>CaCommandMonitor</code>, which
-     *         can be used to monitor the command execution and retrieve its
-     *         result.
-     */
-    CaCommandMonitor post();
-
-    /**
-     * Trigger the EPICS apply record and waits until the command processing
-     * completes.
-     *
-     * @return an object that implements <code>CaCommandMonitor</code>, which
-     *         can be used to monitor the command execution and retrieve its
-     *         result.
-     */
-    CaCommandMonitor postWait() throws InterruptedException;
-
-    /**
-     * Trigger the EPICS apply record. The command return immediately.
-     *
-     * @param callback
-     *            an object that implements <code>CaCommandListener</code>,
-     *            which will be notified when the command execution state
-     *            changes. The object will be used only for this execution of
-     *            the command
-     *
-     * @return an object that implements <code>CaCommandMonitor</code>, which
-     *         can be used to monitor the command execution and retrieve its
-     *         result.
-     */
-    CaCommandMonitor postCallback(CaCommandListener callback);
-
-    /**
      * Adds a parameter of type <code>Integer</code> to this command sender. If
      * the parameter already exist, the existing object is used. CaException is
      * thrown if the existing parameter is of a different type or uses a
@@ -103,16 +69,21 @@ public interface CaCommandSender {
      * @throws CaException
      */
     CaParameter<Integer> addInteger(String name, String channel,
-                                    String description) throws CaException;
-
-    CaParameter<Integer> addInteger(String name, String channel)
-            throws CaException;
-
-    CaParameter<Integer> addInteger(String name, String channel,
                                     String description, boolean isCADParameter) throws CaException;
 
-    CaParameter<Integer> addInteger(String name, String channel, boolean isCADParameter)
-            throws CaException;
+    default CaParameter<Integer> addInteger(String name, String channel)
+            throws CaException {
+        return addInteger(name, channel, null, true);
+    }
+
+    default CaParameter<Integer> addInteger(String name, String channel, boolean isCADParameter) throws CaException {
+        return addInteger(name, channel, null, isCADParameter);
+    }
+
+    default CaParameter<Integer> addInteger(String name, String channel,
+            String description) throws CaException {
+        return addInteger(name, channel, description, true);
+    }
 
     /**
      * Adds a parameter of type <code>Double</code> to this command sender. If
@@ -130,16 +101,22 @@ public interface CaCommandSender {
      * @throws CaException
      */
     CaParameter<Double> addDouble(String name, String channel,
-                                  String description) throws CaException;
-
-    CaParameter<Double> addDouble(String name, String channel)
-            throws CaException;
-
-    CaParameter<Double> addDouble(String name, String channel,
                                   String description, boolean isCADParameter) throws CaException;
 
-    CaParameter<Double> addDouble(String name, String channel, boolean isCADParameter)
-            throws CaException;
+    default CaParameter<Double> addDouble(String name, String channel)
+            throws CaException {
+        return addDouble(name, channel, null, true);
+    }
+
+    default CaParameter<Double> addDouble(String name, String channel, boolean isCADParameter) throws CaException {
+        return addDouble(name, channel, null, isCADParameter);
+    }
+
+    default CaParameter<Double> addDouble(String name, String channel,
+            String description) throws CaException {
+        return addDouble(name, channel, description, true);
+    }
+
 
     /**
      * Adds a parameter of type <code>Float</code> to this command sender. If
@@ -157,16 +134,21 @@ public interface CaCommandSender {
      * @throws CaException
      */
     CaParameter<Float> addFloat(String name, String channel,
-                                String description) throws CaException;
-
-    CaParameter<Float> addFloat(String name, String channel)
-            throws CaException;
-
-    CaParameter<Float> addFloat(String name, String channel,
                                 String description, boolean isCADParameter) throws CaException;
 
-    CaParameter<Float> addFloat(String name, String channel, boolean isCADParameter)
-            throws CaException;
+    default CaParameter<Float> addFloat(String name, String channel)
+            throws CaException {
+        return addFloat(name, channel, null, true);
+    }
+
+    default CaParameter<Float> addFloat(String name, String channel, boolean isCADParameter) throws CaException {
+        return addFloat(name, channel, null, isCADParameter);
+    }
+
+    default CaParameter<Float> addFloat(String name, String channel,
+            String description) throws CaException {
+        return addFloat(name, channel, description, true);
+    }
 
     /**
      * Adds a parameter of type <code>Enum</code> to this command sender. If
@@ -184,16 +166,22 @@ public interface CaCommandSender {
      * @throws CaException
      */
     <T extends Enum<T>> CaParameter<T> addEnum(String name, String channel, Class<T> enumType,
-                                String description) throws CaException;
-
-    <T extends Enum<T>> CaParameter<T> addEnum(String name, String channel, Class<T> enumType)
-            throws CaException;
-
-    <T extends Enum<T>> CaParameter<T> addEnum(String name, String channel, Class<T> enumType,
                                 String description, boolean isCADParameter) throws CaException;
 
-    <T extends Enum<T>> CaParameter<T> addEnum(String name, String channel, Class<T> enumType, boolean isCADParameter)
-            throws CaException;
+    default <T extends Enum<T>> CaParameter<T> addEnum(String name, String channel, Class<T> enumType,
+                                                       String description) throws CaException {
+        return addEnum(name, channel, enumType, description, true);
+    }
+
+    default <T extends Enum<T>> CaParameter<T> addEnum(String name, String channel, Class<T> enumType)
+            throws CaException {
+        return addEnum(name, channel, enumType, null, true);
+    }
+
+    default <T extends Enum<T>> CaParameter<T> addEnum(String name, String channel, Class<T> enumType,
+                                                       boolean isCADParameter) throws CaException {
+        return addEnum(name, channel, enumType, null, isCADParameter);
+    }
 
     /**
      * Adds a parameter of type <code>String</code> to this command sender. If
@@ -211,16 +199,21 @@ public interface CaCommandSender {
      * @throws CaException
      */
     CaParameter<String> addString(String name, String channel,
-                                  String description) throws CaException;
-
-    CaParameter<String> addString(String name, String channel)
-            throws CaException;
-
-    CaParameter<String> addString(String name, String channel,
                                   String description, boolean isCADParameter) throws CaException;
 
-    CaParameter<String> addString(String name, String channel, boolean isCADParameter)
-            throws CaException;
+    default CaParameter<String> addString(String name, String channel)
+            throws CaException {
+        return addString(name, channel, null, true);
+    }
+
+    default CaParameter<String> addString(String name, String channel, boolean isCADParameter) throws CaException {
+        return addString(name, channel, null, isCADParameter);
+    }
+
+    default CaParameter<String> addString(String name, String channel,
+            String description) throws CaException {
+        return addString(name, channel, description, true);
+    }
 
     /**
      * Removes a parameter from this command sender (optional operation).
