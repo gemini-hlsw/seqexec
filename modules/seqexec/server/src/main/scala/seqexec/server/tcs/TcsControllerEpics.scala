@@ -19,6 +19,7 @@ import squants.Angle
 import monocle.{Iso, Lens}
 import monocle.macros.Lenses
 import seqexec.server.tcs.Gaos.{GaosStarOff, GaosStarOn, OffsetMove, OffsetReached, OiOff, OiOn, P1Off, P1On, PauseCondition, ResumeCondition}
+import seqexec.server.tcs.TcsEpics.{ProbeFollowCmd, ProbeGuideCmd}
 import shapeless.tag
 import shapeless.tag.@@
 
@@ -68,45 +69,44 @@ object TcsControllerEpics extends TcsController {
     _ <- s.setNodcchopc(encode(c.get(NodChop(Beam.C, Beam.C))))
   } yield ()
 
-  private def setPwfs1Probe(subsystems: NonEmptySet[Subsystem], c: ProbeTrackingConfig, d: ProbeTrackingConfig)
+  private def setGuideProbe(guideControl: GuideControl, trkSet: ProbeTrackingConfig => EpicsTcsConfig => EpicsTcsConfig)
+                           (subsystems: NonEmptySet[Subsystem], c: ProbeTrackingConfig, d: ProbeTrackingConfig)
   : Option[EpicsTcsConfig => SeqAction[EpicsTcsConfig]] =
-    if(subsystems.contains(Subsystem.PWFS1)) {
+    if(subsystems.contains(guideControl.subs)) {
       val actions = List(
         (c.getNodChop =!= d.getNodChop)
-          .option(setNodChopProbeTrackingConfig(TcsEpics.instance.pwfs1ProbeGuideCmd)(d.getNodChop)),
+          .option(setNodChopProbeTrackingConfig(guideControl.nodChopGuideCmd)(d.getNodChop)),
         d match {
-          case ProbeTrackingConfig.Parked => (c =!= ProbeTrackingConfig.Parked).option(TcsEpics.instance.pwfs1Park.mark)
-          case _                          => (c.follow =!= d.follow)
-            .option(TcsEpics.instance.pwfs1ProbeFollowCmd.setFollowState(encode(d.follow)))
+          case ProbeTrackingConfig.Parked => (c =!= ProbeTrackingConfig.Parked).option(guideControl.parkCmd.mark)
+          case ProbeTrackingConfig.On(_) |
+               ProbeTrackingConfig.Off    => (c.follow =!= d.follow)
+            .option(guideControl.followCmd.setFollowState(encode(d.follow)))
         }
       ).collect{ case Some(x) => x }
 
       actions.nonEmpty.option{ x => actions.sequence *>
-        SeqAction((EpicsTcsConfig.pwfs1 ^|-> GuiderConfig.tracking).set(d)(x))
+        SeqAction(trkSet(d)(x))
       }
-
     }
     else none
 
-  private def setPwfs2Probe(subsystems: NonEmptySet[Subsystem], c: ProbeTrackingConfig, d: ProbeTrackingConfig)
-  : Option[EpicsTcsConfig => SeqAction[EpicsTcsConfig]] =
-    if(subsystems.contains(Subsystem.PWFS2)) {
-      val actions = List(
-        (c.getNodChop =!= d.getNodChop)
-          .option(setNodChopProbeTrackingConfig(TcsEpics.instance.pwfs2ProbeGuideCmd)(d.getNodChop)),
-        d match {
-          case ProbeTrackingConfig.Parked => (c =!= ProbeTrackingConfig.Parked).option(TcsEpics.instance.pwfs2Park.mark)
-          case _                          => (c.follow =!= d.follow)
-            .option(TcsEpics.instance.pwfs2ProbeFollowCmd.setFollowState(encode(d.follow)))
-        }
-      ).collect{ case Some(x) => x }
+  private val pwfs1GuiderControl: GuideControl = GuideControl(Subsystem.PWFS1, TcsEpics.instance.pwfs1Park,
+    TcsEpics.instance.pwfs1ProbeGuideCmd, TcsEpics.instance.pwfs1ProbeFollowCmd)
 
-      actions.nonEmpty.option{ x => actions.sequence *>
-        SeqAction(EpicsTcsConfig.pwfs2OrAowfs.modify(_.leftMap(GuiderConfig.tracking.set(d)))(x))
-      }
+  private val setPwfs1Probe = setGuideProbe(pwfs1GuiderControl, (EpicsTcsConfig.pwfs1 ^|-> GuiderConfig.tracking).set)(
+    _, _, _)
 
-    }
-    else none
+  private val pwfs2GuiderControl: GuideControl = GuideControl(Subsystem.PWFS2, TcsEpics.instance.pwfs2Park,
+    TcsEpics.instance.pwfs2ProbeGuideCmd, TcsEpics.instance.pwfs2ProbeFollowCmd)
+
+  private val setPwfs2Probe = setGuideProbe(pwfs2GuiderControl,
+    v => EpicsTcsConfig.pwfs2OrAowfs.modify(_.leftMap(GuiderConfig.tracking.set(v))))(_, _, _)
+
+  private val oiwfsGuiderControl: GuideControl = GuideControl(Subsystem.OIWFS, TcsEpics.instance.oiwfsPark,
+    TcsEpics.instance.oiwfsProbeGuideCmd, TcsEpics.instance.oiwfsProbeFollowCmd)
+
+  private val setOiwfsProbe = setGuideProbe(oiwfsGuiderControl, (EpicsTcsConfig.oiwfs ^|-> GuiderConfig.tracking).set)(
+    _, _, _)
 
   private def setAltairProbe(subsystems: NonEmptySet[Subsystem], c: ProbeTrackingConfig, d: ProbeTrackingConfig)
   : Option[EpicsTcsConfig => SeqAction[EpicsTcsConfig]] =
@@ -118,7 +118,7 @@ object TcsControllerEpics extends TcsController {
       ).collect{ case Some(x) => x }
 
       actions.nonEmpty.option{ x => actions.sequence *>
-        SeqAction((EpicsTcsConfig.pwfs2OrAowfs).set(Right(d))(x))
+        SeqAction(EpicsTcsConfig.pwfs2OrAowfs.set(Right(d))(x))
       }
     }
     else none
@@ -134,26 +134,6 @@ object TcsControllerEpics extends TcsController {
     case (Left(_), Right(_))  => { _:EpicsTcsConfig => SeqAction.fail[EpicsTcsConfig](SeqexecFailure.Execution(
       "Incompatible configuration: useAO is false but sequence uses Altair")) }.some
   }
-
-  private def setOiwfsProbe(subsystems: NonEmptySet[Subsystem], c: ProbeTrackingConfig, d: ProbeTrackingConfig)
-  : Option[EpicsTcsConfig => SeqAction[EpicsTcsConfig]] =
-    if(subsystems.contains(Subsystem.OIWFS)) {
-      val actions = List(
-        (c.getNodChop =!= d.getNodChop)
-          .option(setNodChopProbeTrackingConfig(TcsEpics.instance.oiwfsProbeGuideCmd)(d.getNodChop)),
-        d match {
-          case ProbeTrackingConfig.Parked => (c =!= ProbeTrackingConfig.Parked).option(TcsEpics.instance.oiwfsPark.mark)
-          case _                          => (c.follow =!= d.follow)
-            .option(TcsEpics.instance.oiwfsProbeFollowCmd.setFollowState(encode(d.follow)))
-        }
-      ).collect{ case Some(x) => x }
-
-      actions.nonEmpty.option{ x => actions.sequence *>
-        SeqAction((EpicsTcsConfig.oiwfs ^|-> GuiderConfig.tracking).set(d)(x))
-      }
-
-    }
-    else none
 
   private def setGuiderWfs(on: TcsEpics.WfsObserveCmd, off: EpicsCommand)(c: GuiderSensorOption)
   : SeqAction[Unit] = {
@@ -509,5 +489,10 @@ object TcsControllerEpics extends TcsController {
       case _                               => MountGuideOff
     } }(cfg)
 
+  final case class GuideControl(subs: Subsystem,
+                          parkCmd: EpicsCommand,
+                          nodChopGuideCmd: ProbeGuideCmd,
+                          followCmd: ProbeFollowCmd
+                         )
 
 }

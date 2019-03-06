@@ -35,7 +35,7 @@ final case class Tcs private (tcsController: TcsController,
 
   override val resource: Resource = Resource.TCS
 
-  private val usesAltair = gaos.flatMap(_.swap.toOption).isDefined
+  private val usesAltair = gaos.exists(_.isLeft)
 
   // Helper function to output the part of the TCS configuration that is actually applied.
   private def subsystemConfig(tcs: TcsConfig, subsystem: Subsystem): List[String] = subsystem match {

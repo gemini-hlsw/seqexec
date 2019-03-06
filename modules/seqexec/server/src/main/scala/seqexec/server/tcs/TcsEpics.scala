@@ -139,39 +139,19 @@ final class TcsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, Stri
     def setBeam(v: String): SeqAction[Unit] = setParameter(beam, v)
   }
 
-  object pwfs1ProbeGuideCmd extends ProbeGuideCmd("pwfs1Guide", epicsService)
+  val pwfs1ProbeGuideCmd: ProbeGuideCmd = new ProbeGuideCmd("pwfs1Guide", epicsService)
 
-  object pwfs2ProbeGuideCmd extends ProbeGuideCmd("pwfs2Guide", epicsService)
+  val pwfs2ProbeGuideCmd: ProbeGuideCmd = new ProbeGuideCmd("pwfs2Guide", epicsService)
 
-  object oiwfsProbeGuideCmd extends ProbeGuideCmd("oiwfsGuide", epicsService)
+  val oiwfsProbeGuideCmd: ProbeGuideCmd = new ProbeGuideCmd("oiwfsGuide", epicsService)
 
-  object pwfs1ProbeFollowCmd extends EpicsCommand {
-    override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("p1Follow"))
+  val pwfs1ProbeFollowCmd: ProbeFollowCmd = new ProbeFollowCmd("p1Follow", epicsService)
 
-    private val follow = cs.map(_.getString("followState"))
-    def setFollowState(v: String): SeqAction[Unit] = setParameter(follow, v)
-  }
+  val pwfs2ProbeFollowCmd: ProbeFollowCmd = new ProbeFollowCmd("p2Follow", epicsService)
 
-  object pwfs2ProbeFollowCmd extends EpicsCommand {
-    override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("p2Follow"))
+  val oiwfsProbeFollowCmd: ProbeFollowCmd = new ProbeFollowCmd("oiFollow", epicsService)
 
-    private val follow = cs.map(_.getString("followState"))
-    def setFollowState(v: String): SeqAction[Unit] = setParameter(follow, v)
-  }
-
-  object oiwfsProbeFollowCmd extends EpicsCommand {
-    override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("oiFollow"))
-
-    private val follow = cs.map(_.getString("followState"))
-    def setFollowState(v: String): SeqAction[Unit] = setParameter(follow, v)
-  }
-
-  object aoProbeFollowCmd extends EpicsCommand {
-    override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("aoFollow"))
-
-    private val follow = cs.map(_.getString("followState"))
-    def setFollowState(v: String): SeqAction[Unit] = setParameter(follow, v)
-  }
+  val aoProbeFollowCmd  = new ProbeFollowCmd("aoFollow", epicsService)
 
   object pwfs1Park extends EpicsCommand {
     override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("pwfs1Park"))
@@ -197,11 +177,11 @@ final class TcsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, Stri
     override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("oiwfsStopObserve"))
   }
 
-  object pwfs1ObserveCmd extends WfsObserveCmd("pwfs1Observe", epicsService)
+  val pwfs1ObserveCmd: WfsObserveCmd = new WfsObserveCmd("pwfs1Observe", epicsService)
 
-  object pwfs2ObserveCmd extends WfsObserveCmd("pwfs2Observe", epicsService)
+  val pwfs2ObserveCmd: WfsObserveCmd = new WfsObserveCmd("pwfs2Observe", epicsService)
 
-  object oiwfsObserveCmd extends WfsObserveCmd("oiwfsObserve", epicsService)
+  val oiwfsObserveCmd: WfsObserveCmd = new WfsObserveCmd("oiwfsObserve", epicsService)
 
   object hrwfsParkCmd extends EpicsCommand {
     override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("hrwfsPark"))
@@ -395,11 +375,11 @@ final class TcsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, Stri
   private val agInPositionAttr: CaAttribute[java.lang.Double] = tcsState.getDoubleAttribute("agInPosition")
   def agInPosition:F[Option[Double]] = safeAttributeSDouble(agInPositionAttr)
 
-  object pwfs1ProbeGuideConfig extends ProbeGuideConfig("p1", tcsState)
+  val pwfs1ProbeGuideConfig: ProbeGuideConfig[F] = new ProbeGuideConfig("p1", tcsState)
 
-  object pwfs2ProbeGuideConfig extends ProbeGuideConfig("p2", tcsState)
+  val pwfs2ProbeGuideConfig: ProbeGuideConfig[F] = new ProbeGuideConfig("p2", tcsState)
 
-  object oiwfsProbeGuideConfig extends ProbeGuideConfig("oi", tcsState)
+  val oiwfsProbeGuideConfig: ProbeGuideConfig[F] = new ProbeGuideConfig("oi", tcsState)
 
   private val tcsStabilizeTime = 1.seconds
 
@@ -641,6 +621,13 @@ object TcsEpics extends EpicsSystem[TcsEpics[IO]] {
 
     private val name = cs.map(_.getString("name"))
     def setName(v: String): SeqAction[Unit] = setParameter(name, v)
+  }
+
+  final class ProbeFollowCmd(csName: String, epicsService: CaService) extends EpicsCommand {
+    override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender(csName))
+
+    private val follow = cs.map(_.getString("followState"))
+    def setFollowState(v: String): SeqAction[Unit] = setParameter(follow, v)
   }
 
   class ProbeGuideConfig[F[_]: Sync](protected val prefix: String, protected val tcsState: CaStatusAcceptor) {
