@@ -15,7 +15,7 @@ import java.util.List;
  * The value hold by an attribute may not be valid, for example if the
  * connection to the IOC is lost, or if there is a type mismatch between the
  * attribute and the EPICS channel. This is indicated with a flag.
- * 
+ *
  * @author jluhrs
  *
  * @param <T>
@@ -25,21 +25,21 @@ import java.util.List;
 public interface CaAttribute<T> {
     /**
      * Retrieves the name of this attribute.
-     * 
+     *
      * @return the name of this attribute.
      */
     String name();
 
     /**
      * Retrieves the name of the channel to which this attribute is connected.
-     * 
+     *
      * @return the name of the EPICS channel.
      */
     String channel();
 
     /**
-     * Retrieves the description of this attribute
-     * 
+     * Retrieves the description of this attribute, or <code>null</code> if none was set.
+     *
      * @return the description of this attribute
      */
     String description();
@@ -49,7 +49,7 @@ public interface CaAttribute<T> {
      * <code>null</code> if no value has been read yet or the attribute is
      * invalid. If the EPICS channel contains an array, the fist element is
      * returned.
-     * 
+     *
      * @return the EPICS channel value.
      */
     T value();
@@ -58,21 +58,21 @@ public interface CaAttribute<T> {
      * Retrieves the most recent value read from the EPICS channel, as a list,
      * or <code>null</code> if no value has been read yet or the attribute is
      * invalid. Useful if the EPICS channel contains an array.
-     * 
+     *
      * @return the EPICS channel value.
      */
     List<T> values();
 
     /**
      * Shows if this attribute's value is valid.
-     * 
+     *
      * @return the validity flag.
      */
     boolean valid();
 
     /**
      * Register a listener to monitor this attribute.
-     * 
+     *
      * @param listener
      *            the listener that will receive the update notifications.
      */
@@ -80,7 +80,7 @@ public interface CaAttribute<T> {
 
     /**
      * Unregister a listener (optional operation)
-     * 
+     *
      * @param listener
      *            the listener that will be unregistered.
      */

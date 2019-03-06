@@ -113,21 +113,17 @@ public final class CaService {
      */
     public void unbind() {
         assert (epicsService != null);
-        for (CaStatusAcceptorImpl sa : statusAcceptors.values()) {
-            sa.unbind();
-        }
-        for (CaApplySenderImpl apply : applySenders.values()) {
-            apply.unbind();
-        }
-        for (CaObserveSenderImpl observe : observeSenders.values()) {
-            observe.unbind();
-        }
-        for (CaCommandSenderImpl cs : commandSenders.values()) {
-            cs.unbind();
-        }
-        for (CaTaskControlImpl tcs : taskControlSenders.values()) {
-            tcs.unbind();
-        }
+
+        statusAcceptors.values().forEach(CaStatusAcceptorImpl::unbind);
+
+        applySenders.values().forEach(CaApplySenderImpl::unbind);
+
+        observeSenders.values().forEach(CaObserveSenderImpl::unbind);
+
+        commandSenders.values().forEach(CaCommandSenderImpl::unbind);
+
+        taskControlSenders.values().forEach(CaTaskControlImpl::unbind);
+
         epicsService.stopService();
         epicsService = null;
         theInstance = null;

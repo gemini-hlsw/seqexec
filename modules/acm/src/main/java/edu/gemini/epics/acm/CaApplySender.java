@@ -42,7 +42,7 @@ public interface CaApplySender extends CaCommandTrigger {
     String getCAR();
 
     /**
-     * Retrieves the description for this Apply Sender
+     * Retrieves the description for this Apply Sender, or <code>null</code> if none was set.
      *
      * @return the description of this Apply Sender
      */

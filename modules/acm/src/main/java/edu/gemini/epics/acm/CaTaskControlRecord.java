@@ -14,6 +14,8 @@ import gov.aps.jca.TimeoutException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Objects;
+
 final class CaTaskControlRecord {
     private static final Logger LOG = LoggerFactory.getLogger(CaApplyRecord.class.getName());
 
@@ -82,8 +84,8 @@ final class CaTaskControlRecord {
     }
 
     synchronized void unbind() {
-        assert(epicsReader!=null);
-        assert(epicsWriter!=null);
+        Objects.requireNonNull(epicsReader);
+        Objects.requireNonNull(epicsWriter);
 
         if(dir!=null) {
             try {

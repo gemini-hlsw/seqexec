@@ -22,7 +22,7 @@ public interface CaCommandSender extends CaCommandTrigger {
     String getName();
 
     /**
-     * Retrieves the description for this Command Sender
+     * Retrieves the description for this Command Sender, or <code>null</code> if none was set.
      *
      * @return the description of this Command Sender
      */

@@ -219,12 +219,7 @@ public class CaTaskControlImpl implements CaTaskControl {
 
                 record.setDir(CadDirective.START);
                 if (timeout > 0) {
-                    timeoutFuture = executor.schedule(new Runnable() {
-                        @Override
-                        public void run() {
-                            CaTaskControlImpl.this.onTimeout();
-                        }
-                    }, timeout, timeoutUnit);
+                    timeoutFuture = executor.schedule(() -> CaTaskControlImpl.this.onTimeout(), timeout, timeoutUnit);
                 }
             } catch (CAException | TimeoutException e) {
                 failCommand(cm, e);
@@ -395,7 +390,7 @@ public class CaTaskControlImpl implements CaTaskControl {
                 failCommandWithErrorMessage(cm);
                 return IdleState;
             } else if(st == TaskControlState.IDLE) {
-                succedCommand(cm);
+                succeedCommand(cm);
                 return IdleState;
             } else {
                 return this;
@@ -440,37 +435,24 @@ public class CaTaskControlImpl implements CaTaskControl {
         if(trace) LOG.debug("onTimeout: " + oldState.signature() + " -> " + currentState.signature());
     }
 
-    private void succedCommand(final CaCommandMonitorImpl cm) {
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                cm.completeSuccess();
-            }
-        });
+    private void succeedCommand(final CaCommandMonitorImpl cm) {
+        executor.execute(() -> cm.completeSuccess());
     }
 
     private void failCommand(final CaCommandMonitorImpl cm, final Exception ex) {
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                cm.completeFailure(ex);
-            }
-        });
+        executor.execute(() -> cm.completeFailure(ex));
     }
 
     private void failCommandWithErrorMessage(final CaCommandMonitorImpl cm) {
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                String msg = null;
-                try {
-                    msg = record.getMessValue();
-                } catch (CAException | TimeoutException e) {
-                    LOG.warn(e.getMessage());
-                }
-                cm.completeFailure(new CaCommandError(msg));
-            }
-        });
+        executor.execute(() -> {
+                    String msg = null;
+                    try {
+                        msg = record.getMessValue();
+                    } catch (CAException | TimeoutException e) {
+                        LOG.warn(e.getMessage());
+                    }
+                    cm.completeFailure(new CaCommandError(msg));
+                });
     }
 
 
