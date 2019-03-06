@@ -44,6 +44,7 @@ public final class CaService {
     private final Map<String, CaApplySenderImpl> applySenders;
     private final Map<String, CaObserveSenderImpl> observeSenders;
     private final Map<String, CaCommandSenderImpl> commandSenders;
+    private final Map<String, CaTaskControlImpl> taskControlSenders;
     static private String addrList = "";
     static private Duration ioTimeout = Duration.ofSeconds(1);
     static private CaService theInstance;
@@ -54,6 +55,7 @@ public final class CaService {
         applySenders = new HashMap<>();
         observeSenders = new HashMap<>();
         commandSenders = new HashMap<>();
+        taskControlSenders = new HashMap<>();
         epicsService = new EpicsService(addrList, Double.valueOf(timeout.getSeconds()));
 
         epicsService.startService();
@@ -111,18 +113,17 @@ public final class CaService {
      */
     public void unbind() {
         assert (epicsService != null);
-        for (CaStatusAcceptorImpl sa : statusAcceptors.values()) {
-            sa.unbind();
-        }
-        for (CaApplySenderImpl apply : applySenders.values()) {
-            apply.unbind();
-        }
-        for (CaObserveSenderImpl observe : observeSenders.values()) {
-            observe.unbind();
-        }
-        for (CaCommandSenderImpl cs : commandSenders.values()) {
-            cs.unbind();
-        }
+
+        statusAcceptors.values().forEach(CaStatusAcceptorImpl::unbind);
+
+        applySenders.values().forEach(CaApplySenderImpl::unbind);
+
+        observeSenders.values().forEach(CaObserveSenderImpl::unbind);
+
+        commandSenders.values().forEach(CaCommandSenderImpl::unbind);
+
+        taskControlSenders.values().forEach(CaTaskControlImpl::unbind);
+
         epicsService.stopService();
         epicsService = null;
         theInstance = null;
@@ -353,6 +354,44 @@ public final class CaService {
         CaStatusAcceptorImpl sa = statusAcceptors.remove(name);
         if (sa != null) {
             sa.unbind();
+        }
+    }
+
+    /**
+     * Creates a handler for a taskControl record.
+     * @param name the name of the TaskControlSender
+     * @param recordName the name of the EPICS record
+     * @param description the description of the record.
+     * @return the TaskControlSender
+     * @throws CAException
+     */
+    public CaTaskControl createTaskControlSender(String name, String recordName, String description)
+            throws CAException {
+        CaTaskControlImpl t = taskControlSenders.get(name);
+        if(t == null) {
+            t = new CaTaskControlImpl(name, recordName, description, epicsService);
+            taskControlSenders.put(name, t);
+        }
+        return t;
+    }
+
+    /**
+     * Retrieves an existing <code>TaskControlSender</code>, or <code>null</code> if none exists.
+     * @param name the name of the <code>TaskControlSender</code>
+     * @return the <code>TaskControlSender</code>
+     */
+    public CaTaskControl getTaskControlSender(String name) {
+        return taskControlSenders.get(name);
+    }
+
+    /**
+     * Destroys an existing <code>TaskControlSender</code>
+     * @param name the name of the <code>TaskControlSender</code>
+     */
+    public void destroyTaskControlSender(String name) {
+        CaTaskControlImpl t = taskControlSenders.remove(name);
+        if(t != null) {
+            t.unbind();
         }
     }
 

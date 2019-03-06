@@ -17,21 +17,25 @@ import squants.Time
 class AltairEpics[F[_]: Async](service: CaService, tops: Map[String, String]) {
   val AltairTop: String = tops.getOrElse("ao", "ao:")
 
-//  object strapGateControl extends EpicsCommandF {
-//    override protected val cs: Option[CaCommandSender] = Option(service.getCommandSender("aoStrap"))
-//
-//    val gate: Option[CaParameter[Integer]] = cs.map(_.getInteger("gate"))
-//    def setGate(v: Int): F[Unit] = setParameterF(gate, Integer.valueOf(v))
-//  }
-//
-//  object strapControl extends EpicsCommandF {
-//    override protected val cs: Option[CaCommandSender] =
-//      Option(service.getCommandSender("strapCorrCtl"))
-//
-//    val active: Option[CaParameter[Integer]] = cs.map(_.getInteger("onoff"))
-//    def setActive(v: Int): F[Unit] = setParameterF(active, Integer.valueOf(v))
-//  }
+  object strapGateControl extends EpicsCommandF {
+    override protected val cs: Option[CaCommandSender] = Option(service.createTaskControlSender("aoStrap",
+      s"${AltairTop}wfcs:strapGtCtl", "ALTAIR STRAP"))
 
+    val gate: Option[CaParameter[Integer]] = cs.map(_.addInteger("gate", s"${AltairTop}wfcs:strapGtCtl.A",
+      "Gate control", false))
+    def setGate(v: Int): F[Unit] = setParameterF(gate, Integer.valueOf(v))
+  }
+
+  object strapControl extends EpicsCommandF {
+    override protected val cs: Option[CaCommandSender] = Option(service.createTaskControlSender("strapCorrCtl",
+      s"${AltairTop}wfcs:strapCorrCtl", "ALTAIR SFO"))
+
+    val active: Option[CaParameter[Integer]] = cs.map(_.addInteger("onoff", s"${AltairTop}wfcs:strapCorrCtl.A",
+      "Strap onoff loop control", false))
+    def setActive(v: Int): F[Unit] = setParameterF(active, Integer.valueOf(v))
+  }
+
+  // sfoControl is a bit weird, in that changing the 'active' parameter takes effect immediately.
   object sfoControl extends EpicsCommandF {
     override protected val cs: Option[CaCommandSender] =
       Option(service.getCommandSender("aoSfoLoop"))
