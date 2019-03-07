@@ -153,9 +153,11 @@ object TcsController {
         NodChopTrackingOff
     }
 
+    // Beam C is never used on normal configuration, and setting it to On would cause problems because no other tool
+    // (TCC, Tcs engineering screens) can change it.
     object Normal extends ActiveNodChopTracking {
       def get(nodchop: NodChop): NodChopTrackingOption =
-        NodChopTrackingOption.fromBoolean(nodchop.nod === nodchop.chop)
+        NodChopTrackingOption.fromBoolean(nodchop.nod =!= Beam.C && nodchop.nod === nodchop.chop)
     }
 
     final case class Special(s: OneAnd[List, NodChop]) extends ActiveNodChopTracking {
