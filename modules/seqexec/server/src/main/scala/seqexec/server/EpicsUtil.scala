@@ -305,7 +305,7 @@ object EpicsUtil {
                 locked(lock) {
                   attr.removeListener(statusListener)
                 }
-                f(TrySeq.fail(SeqexecFailure.Timeout(s"waiting for $name.")).asRight)
+                f(TrySeq.fail(SeqexecFailure.Timeout(name)).asRight)
               }
             }, timeout.toMilliseconds.toLong)
           }
@@ -357,7 +357,7 @@ object EpicsUtil {
                 locked(lock) {
                   attr.removeListener(statusListener)
                 }
-                f(SeqexecFailure.Timeout(s"waiting for $name.").asLeft)
+                f(SeqexecFailure.Timeout(name).asLeft)
               }
             }, timeout.toMilliseconds.toLong)
           }
