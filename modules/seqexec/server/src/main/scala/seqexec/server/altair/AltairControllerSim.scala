@@ -3,6 +3,7 @@
 
 package seqexec.server.altair
 import cats.effect.IO
+import cats.implicits._
 import org.log4s.getLogger
 import seqexec.server.altair.AltairController.FieldLens
 import seqexec.server.tcs.Gaos
@@ -26,4 +27,6 @@ object AltairControllerSim extends AltairController[IO] {
   override def endObserve(cfg: AltairController.AltairConfig): IO[Unit] = IO{
     Log.info("Simulate endObserve notification for Altair")
   }
+
+  override def isFollowing: IO[Option[Boolean]] = IO(false.some)
 }

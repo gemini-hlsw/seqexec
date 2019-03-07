@@ -17,6 +17,8 @@ trait AltairController[F[_]] {
   def observe(expTime: Time)(cfg: AltairConfig): F[Unit]
 
   def endObserve(cfg: AltairConfig): F[Unit]
+
+  def isFollowing: F[Option[Boolean]]
 }
 
 object AltairController {

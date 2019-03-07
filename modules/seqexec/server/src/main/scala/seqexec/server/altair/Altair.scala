@@ -41,6 +41,8 @@ class Altair[F[_]: Sync] private (controller: AltairController[F],
          Ngs(true) => true
     case _         => false
   }
+
+  def isFollowing: F[Option[Boolean]] = controller.isFollowing
 }
 
 object Altair {

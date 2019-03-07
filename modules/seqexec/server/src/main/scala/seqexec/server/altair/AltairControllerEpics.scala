@@ -316,4 +316,6 @@ object AltairControllerEpics extends AltairController[IO] {
    */
   def convertTcsAction[T](a: SeqAction[T]): IO[T] = a.value.flatMap(_.fold(IO.raiseError(_), IO(_)))
 
+  // This is a bit convoluted. AO follow state is read from Altair, but set as part of TCS configuration
+  override def isFollowing: IO[Option[Boolean]] = AltairEpics.instance.aoFollow
 }

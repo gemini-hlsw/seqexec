@@ -139,11 +139,19 @@ final class TcsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, Stri
     def setBeam(v: String): SeqAction[Unit] = setParameter(beam, v)
   }
 
-  object pwfs1ProbeGuideCmd extends ProbeGuideCmd("pwfs1Guide", epicsService)
+  val pwfs1ProbeGuideCmd: ProbeGuideCmd = new ProbeGuideCmd("pwfs1Guide", epicsService)
 
-  object pwfs2ProbeGuideCmd extends ProbeGuideCmd("pwfs2Guide", epicsService)
+  val pwfs2ProbeGuideCmd: ProbeGuideCmd = new ProbeGuideCmd("pwfs2Guide", epicsService)
 
-  object oiwfsProbeGuideCmd extends ProbeGuideCmd("oiwfsGuide", epicsService)
+  val oiwfsProbeGuideCmd: ProbeGuideCmd = new ProbeGuideCmd("oiwfsGuide", epicsService)
+
+  val pwfs1ProbeFollowCmd: ProbeFollowCmd = new ProbeFollowCmd("p1Follow", epicsService)
+
+  val pwfs2ProbeFollowCmd: ProbeFollowCmd = new ProbeFollowCmd("p2Follow", epicsService)
+
+  val oiwfsProbeFollowCmd: ProbeFollowCmd = new ProbeFollowCmd("oiFollow", epicsService)
+
+  val aoProbeFollowCmd  = new ProbeFollowCmd("aoFollow", epicsService)
 
   object pwfs1Park extends EpicsCommand {
     override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("pwfs1Park"))
@@ -169,11 +177,11 @@ final class TcsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, Stri
     override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("oiwfsStopObserve"))
   }
 
-  object pwfs1ObserveCmd extends WfsObserveCmd("pwfs1Observe", epicsService)
+  val pwfs1ObserveCmd: WfsObserveCmd = new WfsObserveCmd("pwfs1Observe", epicsService)
 
-  object pwfs2ObserveCmd extends WfsObserveCmd("pwfs2Observe", epicsService)
+  val pwfs2ObserveCmd: WfsObserveCmd = new WfsObserveCmd("pwfs2Observe", epicsService)
 
-  object oiwfsObserveCmd extends WfsObserveCmd("oiwfsObserve", epicsService)
+  val oiwfsObserveCmd: WfsObserveCmd = new WfsObserveCmd("oiwfsObserve", epicsService)
 
   object hrwfsParkCmd extends EpicsCommand {
     override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("hrwfsPark"))
@@ -325,6 +333,17 @@ final class TcsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, Stri
 
   def oiFollowS: F[Option[String]] = safeAttribute(tcsState.getStringAttribute("oiFollowS"))
 
+  def aoFollowS: F[Option[String]] = safeAttribute(tcsState.getStringAttribute("aoFollowS"))
+
+  def p1Parked: F[Option[Boolean]] = safeAttributeSInt(tcsState.getIntegerAttribute("p1Parked"))
+    .map(_.map(_ =!= 0))
+
+  def p2Parked: F[Option[Boolean]] = safeAttributeSInt(tcsState.getIntegerAttribute("p2Parked"))
+    .map(_.map(_ =!= 0))
+
+  def oiParked: F[Option[Boolean]] = safeAttributeSInt(tcsState.getIntegerAttribute("oiParked"))
+    .map(_.map(_ =!= 0))
+
   private val pwfs1OnAttr: CaAttribute[BinaryYesNo] = tcsState.addEnum("pwfs1On",
     s"${TcsTop}drives:p1Integrating", classOf[BinaryYesNo], "P1 integrating")
   def pwfs1On: F[Option[BinaryYesNo]] = safeAttribute(pwfs1OnAttr)
@@ -356,11 +375,11 @@ final class TcsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, Stri
   private val agInPositionAttr: CaAttribute[java.lang.Double] = tcsState.getDoubleAttribute("agInPosition")
   def agInPosition:F[Option[Double]] = safeAttributeSDouble(agInPositionAttr)
 
-  object pwfs1ProbeGuideConfig extends ProbeGuideConfig("p1", tcsState)
+  val pwfs1ProbeGuideConfig: ProbeGuideConfig[F] = new ProbeGuideConfig("p1", tcsState)
 
-  object pwfs2ProbeGuideConfig extends ProbeGuideConfig("p2", tcsState)
+  val pwfs2ProbeGuideConfig: ProbeGuideConfig[F] = new ProbeGuideConfig("p2", tcsState)
 
-  object oiwfsProbeGuideConfig extends ProbeGuideConfig("oi", tcsState)
+  val oiwfsProbeGuideConfig: ProbeGuideConfig[F] = new ProbeGuideConfig("oi", tcsState)
 
   private val tcsStabilizeTime = 1.seconds
 
@@ -429,6 +448,10 @@ final class TcsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, Stri
   def targetA: F[Option[List[Double]]] = safeAttributeSListSDouble(tcsState.getDoubleAttribute("targetA"))
 
   def aoFoldPosition: F[Option[String]] = safeAttribute(tcsState.getStringAttribute("aoName"))
+
+  private val useAoAttr: CaAttribute[BinaryYesNo] = tcsState.addEnum("useAo",
+    s"${TcsTop}im:AOConfigFlag.VAL", classOf[BinaryYesNo], "Using AO flag")
+  def useAo: F[Option[BinaryYesNo]] = safeAttribute(useAoAttr)
 
   def airmass: F[Option[Double]] = safeAttributeSDouble(tcsState.getDoubleAttribute("airmass"))
 
@@ -598,6 +621,13 @@ object TcsEpics extends EpicsSystem[TcsEpics[IO]] {
 
     private val name = cs.map(_.getString("name"))
     def setName(v: String): SeqAction[Unit] = setParameter(name, v)
+  }
+
+  final class ProbeFollowCmd(csName: String, epicsService: CaService) extends EpicsCommand {
+    override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender(csName))
+
+    private val follow = cs.map(_.getString("followState"))
+    def setFollowState(v: String): SeqAction[Unit] = setParameter(follow, v)
   }
 
   class ProbeGuideConfig[F[_]: Sync](protected val prefix: String, protected val tcsState: CaStatusAcceptor) {

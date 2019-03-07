@@ -35,16 +35,19 @@ final case class Tcs private (tcsController: TcsController,
 
   override val resource: Resource = Resource.TCS
 
+  private val usesAltair = gaos.exists(_.isLeft)
+
   // Helper function to output the part of the TCS configuration that is actually applied.
   private def subsystemConfig(tcs: TcsConfig, subsystem: Subsystem): List[String] = subsystem match {
     case Subsystem.M1     => List(tcs.gc.m1Guide.show)
     case Subsystem.M2     => List(tcs.gc.m2Guide.show)
     case Subsystem.OIWFS  => List((tcs.gds.oiwfs:GuiderConfig).show)
     case Subsystem.PWFS1  => List((tcs.gds.pwfs1:GuiderConfig).show)
-    case Subsystem.PWFS2  => List((tcs.gds.pwfs2:GuiderConfig).show)
+    case Subsystem.PWFS2  => List(tcs.gds.pwfs2OrAowfs.swap.getOrElse(
+      GuiderConfig(ProbeTrackingConfig.Parked, GuiderSensorOff)).show)
     case Subsystem.Mount  => List(tcs.tc.show)
     case Subsystem.AGUnit => List(tcs.agc.sfPos.show, tcs.agc.hrwfs.show)
-    case Subsystem.Gaos   => List("") //TODO: show Gaos configuration
+    case Subsystem.Gaos   => List(tcs.gds.pwfs2OrAowfs.toOption).collect{ case Some(x) => (x:ProbeTrackingConfig).show }
   }
 
   override def configure(config: Config): SeqAction[ConfigResult[IO]] =
@@ -89,9 +92,9 @@ final case class Tcs private (tcsController: TcsController,
         case Some(Left(_))         => true
         case _                     => false
       }
-      val aoUsesP1 = (gaos.flatMap(_.swap.toOption), c.gaosGuide.flatMap(_.swap.toOption)).mapN(_.usesP1(_))
+      val aoUsesP1 = useAo && (gaos.flatMap(_.swap.toOption), c.gaosGuide.flatMap(_.swap.toOption)).mapN(_.usesP1(_))
         .getOrElse(false)
-      val aoUsesOI = (gaos.flatMap(_.swap.toOption), c.gaosGuide.flatMap(_.swap.toOption)).mapN(_.usesOI(_))
+      val aoUsesOI = useAo && (gaos.flatMap(_.swap.toOption), c.gaosGuide.flatMap(_.swap.toOption)).mapN(_.usesOI(_))
         .getOrElse(false)
 
       TcsConfig(
@@ -102,16 +105,16 @@ final case class Tcs private (tcsController: TcsController,
             calcGuiderInUse(c.tcsGuide, TipTiltSource.PWFS1, M1Source.PWFS1) | aoUsesP1,
             config.guideWithP1)
           ),
-          tag[P2Config](calcGuiderConfig(
-            calcGuiderInUse(c.tcsGuide, TipTiltSource.PWFS2, M1Source.PWFS2),
-            config.guideWithP2)
+          usesAltair.either(
+            tag[P2Config](calcGuiderConfig(calcGuiderInUse(c.tcsGuide, TipTiltSource.PWFS2, M1Source.PWFS2),
+              config.guideWithP2)),
+            tag[AoGuide](calcGuiderConfig(calcGuiderInUse(c.tcsGuide, TipTiltSource.GAOS, M1Source.GAOS),
+              config.guideWithAO).tracking)
           ),
           tag[OIConfig](calcGuiderConfig(
             calcGuiderInUse(c.tcsGuide, TipTiltSource.OIWFS, M1Source.OIWFS) | aoUsesOI,
             config.guideWithOI)
-          ),
-          tag[AOGuide](useAo & calcGuiderInUse(c.tcsGuide, TipTiltSource.GAOS, M1Source.GAOS) &
-            config.guideWithAO.exists(_.isActive))
+          )
         ),
         AGConfig(config.scienceFoldPosition, HrwfsConfig.Auto.some),
         c.gaosGuide

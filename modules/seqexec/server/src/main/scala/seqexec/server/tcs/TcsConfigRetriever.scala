@@ -6,6 +6,7 @@ package seqexec.server.tcs
 import cats.data.{EitherT, Nested, OneAnd, OptionT}
 import cats.effect.IO
 import cats.implicits._
+import mouse.boolean._
 import edu.gemini.seqexec.server.tcs.{BinaryOnOff, BinaryYesNo}
 import edu.gemini.spModel.core.Wavelength
 import seqexec.server.EpicsCodex.{DecodeEpicsValue, decode}
@@ -107,7 +108,7 @@ object TcsConfigRetriever {
   ).value
 
   private def calcProbeTrackingConfig(f: FollowOption, t: NodChopTrackingConfig): ProbeTrackingConfig = (f, t) match {
-    case (_, NodChopTrackingConfig.AllOff)              => ProbeTrackingConfig.Off
+    case (_, NodChopTrackingConfig.AllOff)            => ProbeTrackingConfig.Off
     case (FollowOn, NodChopTrackingConfig.Normal)     => ProbeTrackingConfig.On(NodChopTrackingConfig.Normal)
     case (FollowOn, v: NodChopTrackingConfig.Special) => ProbeTrackingConfig.On(v)
     case _                                            => ProbeTrackingConfig.Off
@@ -120,22 +121,31 @@ object TcsConfigRetriever {
     DecodeEpicsValue((s: BinaryYesNo) => if (s === BinaryYesNo.No) GuiderSensorOff else GuiderSensorOn)
 
   private def getPwfs1: SeqAction[GuiderConfig] = for {
+    prk <- getStatusVal(TcsEpics.instance.p1Parked, "PWFS1 parked state")
     trk <- getStatusVal(getNodChopTrackingConfig(TcsEpics.instance.pwfs1ProbeGuideConfig), "PWFS1 tracking configuration")
-    fol <- getStatusVal(TcsEpics.instance.p1FollowS.map(_.map(decode[String, FollowOption])), "PWFS1 follow")
+    fol <- getStatusVal(TcsEpics.instance.p1FollowS.map(_.map(decode[String, FollowOption])), "PWFS1 follow state")
     wfs <- getStatusVal(TcsEpics.instance.pwfs1On.map(_.map(decode[BinaryYesNo, GuiderSensorOption])), "PWFS1 detector")
-  } yield GuiderConfig(calcProbeTrackingConfig(fol, trk), wfs)
+  } yield GuiderConfig(prk.fold(ProbeTrackingConfig.Parked, calcProbeTrackingConfig(fol, trk)), wfs)
 
-  private def getPwfs2: SeqAction[GuiderConfig] = for {
-    trk <- getStatusVal(getNodChopTrackingConfig(TcsEpics.instance.pwfs2ProbeGuideConfig), "PWFS2 tracking configuration")
-    fol <- getStatusVal(TcsEpics.instance.p2FollowS.map(_.map(decode[String, FollowOption])), "PWFS2 follow")
-    wfs <- getStatusVal(TcsEpics.instance.pwfs2On.map(_.map(decode[BinaryYesNo, GuiderSensorOption])), "PWFS2 detector")
-  } yield GuiderConfig(calcProbeTrackingConfig(fol, trk), wfs)
+  // P2 probe guide configuration is partially shared with Altair guide configuration. useAo tells which one is.
+  // TODO: Make sure it works for GS.
+  private def getPwfs2OrAowfs(getAoFollow: IO[Option[Boolean]]): SeqAction[Either[GuiderConfig, ProbeTrackingConfig]] =
+    for {
+      useAo <- getStatusVal(TcsEpics.instance.useAo, "use AO flag")
+      aoFol <- getStatusVal(getAoFollow, "AO follow state").map(_.fold(FollowOn, FollowOff))
+      prk   <- getStatusVal(TcsEpics.instance.oiParked, "OIWFS parked state")
+      trk   <- getStatusVal(getNodChopTrackingConfig(TcsEpics.instance.pwfs2ProbeGuideConfig), "PWFS2 tracking configuration")
+      fol   <- getStatusVal(TcsEpics.instance.p2FollowS.map(_.map(decode[String, FollowOption])), "PWFS2 follow state")
+      wfs   <- getStatusVal(TcsEpics.instance.pwfs2On.map(_.map(decode[BinaryYesNo, GuiderSensorOption])), "PWFS2 detector")
+    } yield if(useAo === BinaryYesNo.Yes) Right(calcProbeTrackingConfig(aoFol, trk))
+            else Left(GuiderConfig(prk.fold(ProbeTrackingConfig.Parked, calcProbeTrackingConfig(fol, trk)), wfs))
 
   private def getOiwfs: SeqAction[GuiderConfig] = for {
+    prk <- getStatusVal(TcsEpics.instance.p1Parked, "OIWFS parked state")
     trk <- getStatusVal(getNodChopTrackingConfig(TcsEpics.instance.oiwfsProbeGuideConfig), "OIWFS tracking configuration")
-    fol <- getStatusVal(TcsEpics.instance.oiFollowS.map(_.map(decode[String, FollowOption])), "OIWFS follow")
+    fol <- getStatusVal(TcsEpics.instance.oiFollowS.map(_.map(decode[String, FollowOption])), "OIWFS follow state")
     wfs <- getStatusVal(TcsEpics.instance.oiwfsOn.map(_.map(decode[BinaryYesNo, GuiderSensorOption])), "OIWFS detector")
-  } yield GuiderConfig(calcProbeTrackingConfig(fol, trk), wfs)
+  } yield GuiderConfig(prk.fold(ProbeTrackingConfig.Parked, calcProbeTrackingConfig(fol, trk)), wfs)
 
   import ScienceFoldPositionCodex._
 
@@ -193,26 +203,26 @@ object TcsConfigRetriever {
     )
   )
 
-  def retrieveConfiguration: SeqAction[EpicsTcsConfig] =
+  def retrieveConfiguration(getAoFollow: IO[Option[Boolean]]): SeqAction[EpicsTcsConfig] =
     for {
-      iaa  <- getIAA
-      offX <- getOffsetX
-      offY <- getOffsetY
-      wl   <- getWavelength
-      p1   <- getPwfs1
-      p2   <- getPwfs2
-      oi   <- getOiwfs
-      tgc  <- getGuideConfig
-      aof  <- getAoFold
-      sf   <- getScienceFoldPosition
-      hr   <- getHrwfsPickupPosition
-      ports <- getInstrumentPorts
+      iaa    <- getIAA
+      offX   <- getOffsetX
+      offY   <- getOffsetY
+      wl     <- getWavelength
+      p1     <- getPwfs1
+      p2OrAo <- getPwfs2OrAowfs(getAoFollow)
+      oi     <- getOiwfs
+      tgc    <- getGuideConfig
+      aof    <- getAoFold
+      sf     <- getScienceFoldPosition
+      hr     <- getHrwfsPickupPosition
+      ports  <- getInstrumentPorts
     } yield EpicsTcsConfig(
       iaa,
       FocalPlaneOffset(tag[OffsetX](offX), tag[OffsetY](offY)),
       wl,
       p1,
-      p2,
+      p2OrAo,
       oi,
       tgc,
       aof,
