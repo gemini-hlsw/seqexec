@@ -4,7 +4,7 @@
 package seqexec.server.tcs
 
 import cats.implicits._
-import mouse.string._
+import atto._, Atto._
 import gem.enum.LightSinkName
 import seqexec.server.EpicsCodex.{DecodeEpicsValue, EncodeEpicsValue}
 import seqexec.server.tcs.TcsController.LightSource
@@ -21,35 +21,32 @@ private[server] object ScienceFoldPositionCodex {
   private val GCAL_PREFIX = "gcal2"
   private val PARK_POS = "park-pos"
 
-  private def findSinkInSFName(str: String): Option[LightSinkName] =
-    LightSinkName.all.find(i => str.startsWith(i.name))
+  val lightSink: Parser[LightSinkName] =
+    many(letter).map { cs =>
+      val sinkName = cs.mkString
+      LightSinkName.all.find(_.name === sinkName)
+    }.collect { case Some(lsn) => lsn }
 
-  private def findPortInSFName(str: String): Option[Int] = str.parseIntOption
+  def prefixed(p: String, s: LightSource): Parser[ScienceFold] =
+    (string(p) ~> lightSink ~ int).map { case (ls, port) => Position(s, ls, port) }
+
+  val park: Parser[ScienceFold] =
+    (string(PARK_POS) <~ many(anyChar)).as(Parked)
 
   implicit val decodeScienceFold: DecodeEpicsValue[String, Option[ScienceFold]] = DecodeEpicsValue(
-    (t: String) => if (t.startsWith(PARK_POS)) Parked.some
-    else if (t.startsWith(AO_PREFIX)) for {
-      sink <- findSinkInSFName(t.substring(AO_PREFIX.length))
-      port <- findPortInSFName(t.substring(AO_PREFIX.length + sink.name.length))
-    } yield Position(AO, sink, port)
-    else if (t.startsWith(GCAL_PREFIX)) for {
-      sink <- findSinkInSFName(t.substring(GCAL_PREFIX.length))
-      port <- findPortInSFName(t.substring(GCAL_PREFIX.length + sink.name.length))
-    } yield Position(GCAL, sink, port)
-    else for {
-      sink <- findSinkInSFName(t)
-      port <- findPortInSFName(t.substring(sink.name.length))
-    } yield Position(Sky, sink, port)
-  )
+    (t: String) =>
+      (park | prefixed(AO_PREFIX, AO) | prefixed(GCAL_PREFIX, GCAL) | prefixed("", Sky)).parseOnly(t).option  )
 
   implicit val encodeScienceFold: EncodeEpicsValue[Position, String] = EncodeEpicsValue((a: Position) => {
     val instAGName = a.sink.name + a.port.toString
 
     a.source match {
-      case Sky => instAGName
-      case AO => AO_PREFIX + instAGName
+      case Sky  => instAGName
+      case AO   => AO_PREFIX + instAGName
       case GCAL => GCAL_PREFIX + instAGName
     }
   })
+
+
 
 }
