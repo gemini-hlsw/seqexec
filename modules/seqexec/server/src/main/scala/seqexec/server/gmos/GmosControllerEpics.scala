@@ -263,24 +263,28 @@ class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosCo
       setElectronicOffset(cc.useElectronicOffset)
   }
 
+  val dhsConnected: String = "CONNECTED"
+
   override def applyConfig(config: GmosController.GmosConfig[T]): SeqAction[Unit] = {
     val params = setDCConfig(config.dc) ++ setCCConfig(config.cc)
 
     EitherT.right[SeqexecFailure](IO(Log.info("Start Gmos configuration"))) *>
     EitherT.right(IO(Log.debug(s"Gmos configuration: ${config.show}"))) *>
-    (if(params.isEmpty) SeqAction.void
-    else params.sequence *>
+    SeqAction(Log.warn("GMOS is not connected to the DHS"))
+      .unlessA(GmosEpics.instance.dhsConnected.exists(_.trim === dhsConnected)) *>
+    ( params.sequence *>
       GmosEpics.instance.configCmd.setTimeout(ConfigTimeout) *>
       GmosEpics.instance.post
-    ) *>
+    ).unlessA(params.isEmpty) *>
     EitherT.right(IO(Log.info("Completed Gmos configuration")))
   }
 
-  override def observe(fileId: ImageFileId, expTime: Time): SeqAction[ObserveCommand.Result] = for {
-    _   <- GmosEpics.instance.observeCmd.setLabel(fileId)
-    _   <- GmosEpics.instance.observeCmd.setTimeout(expTime + ReadoutTimeout)
-    ret <- GmosEpics.instance.observeCmd.post
-  } yield ret
+  override def observe(fileId: ImageFileId, expTime: Time): SeqAction[ObserveCommand.Result] =
+    SeqAction.fail(SeqexecFailure.Execution("GMOS is not connected to DHS"))
+      .unlessA(GmosEpics.instance.dhsConnected.exists(_.trim === dhsConnected)) *>
+    GmosEpics.instance.observeCmd.setLabel(fileId) *>
+    GmosEpics.instance.observeCmd.setTimeout(expTime + ReadoutTimeout) *>
+    GmosEpics.instance.observeCmd.post
 
   override def stopObserve: SeqAction[Unit] = for {
     _ <- EitherT.right(IO(Log.info("Stop Gmos exposure")))
