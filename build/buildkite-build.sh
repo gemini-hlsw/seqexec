@@ -111,19 +111,19 @@ fi
 
 # If this is a merge into `develop` then this is a shippable version and we will build a docker
 # image for it. We can later deploy it to test or production.
-if [ "$BUILDKITE_PULL_REQUEST" = "false" ] && [ "$BUILDKITE_BRANCH" = "develop" ]; then
-
-  echo "--- :docker: Creating a Docker image"
-  /usr/local/bin/sbt                      \
-    -jvm-opts build/buildkite-jvmopts     \
-    -Docs3.skipDependencyUpdates          \
-    main/docker:publish                   \
-    main/docker:clean
-
-  echo "--- :docker: Deploying to the test environment "
-  /usr/local/bin/sbt                      \
-    -jvm-opts build/buildkite-jvmopts     \
-    -Docs3.skipDependencyUpdates          \
-    ctl/deployTest
-
-fi
+# if [ "$BUILDKITE_PULL_REQUEST" = "false" ] && [ "$BUILDKITE_BRANCH" = "develop" ]; then
+#
+#   echo "--- :docker: Creating a Docker image"
+#   /usr/local/bin/sbt                      \
+#     -jvm-opts build/buildkite-jvmopts     \
+#     -Docs3.skipDependencyUpdates          \
+#     main/docker:publish                   \
+#     main/docker:clean
+#
+#   echo "--- :docker: Deploying to the test environment "
+#   /usr/local/bin/sbt                      \
+#     -jvm-opts build/buildkite-jvmopts     \
+#     -Docs3.skipDependencyUpdates          \
+#     ctl/deployTest
+#
+# fi
