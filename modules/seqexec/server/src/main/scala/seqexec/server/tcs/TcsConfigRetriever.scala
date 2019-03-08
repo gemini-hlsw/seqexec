@@ -14,7 +14,7 @@ import seqexec.server.tcs.TcsController.FollowOption.{FollowOff, FollowOn}
 import seqexec.server.tcs.TcsController.MountGuideOption.{MountGuideOff, MountGuideOn}
 import seqexec.server.{SeqAction, SeqexecFailure, TrySeq}
 import seqexec.server.tcs.TcsController._
-import seqexec.server.tcs.TcsControllerEpics.{AoFold, EpicsTcsConfig, InstrumentPorts}
+import seqexec.server.tcs.TcsControllerEpics.{AoFold, EpicsTcsConfig, InstrumentPorts, ScienceFold, InvalidPort}
 import shapeless.tag
 import squants.{Angle, Length}
 import squants.space.{Angstroms, Degrees, Millimeters}
@@ -149,12 +149,12 @@ object TcsConfigRetriever {
 
   import ScienceFoldPositionCodex._
 
-  private def getScienceFoldPosition: SeqAction[ScienceFoldPosition] =
+  private def getScienceFoldPosition: SeqAction[Option[ScienceFold]] =
     for {
-      sfPos <- getStatusVal(TcsEpics.instance.sfName.map(_.flatMap(decode[String, Option[ScienceFoldPosition]])),"SF position")
+      sfPos <- getStatusVal(TcsEpics.instance.sfName,"SF position")
       sfParked <- getStatusVal(TcsEpics.instance.sfParked.map(_.map(_ =!= 0)), "SF park")
-    } yield if (sfParked) ScienceFoldPosition.Parked
-            else sfPos
+    } yield if (sfParked) ScienceFold.Parked.some
+            else decode[String, Option[ScienceFold]](sfPos)
 
   implicit val decodeHwrsPickupPosition: DecodeEpicsValue[String, HrwfsPickupPosition] = DecodeEpicsValue((t: String)
   => if (t.trim === "IN") HrwfsPickupPosition.IN

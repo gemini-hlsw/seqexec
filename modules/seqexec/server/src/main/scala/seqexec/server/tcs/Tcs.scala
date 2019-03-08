@@ -116,7 +116,7 @@ final case class Tcs private (tcsController: TcsController,
             config.guideWithOI)
           )
         ),
-        AGConfig(config.scienceFoldPosition, HrwfsConfig.Auto.some),
+        AGConfig(config.lightPath, HrwfsConfig.Auto.some),
         c.gaosGuide
       )
     }
@@ -155,7 +155,7 @@ object Tcs {
     guideWithAO: Option[StandardGuideOptions.Value],
     offsetA: Option[InstrumentOffset],
     wavelA: Option[Wavelength],
-    scienceFoldPosition: ScienceFoldPosition
+    lightPath: LightPath
   )
 
   @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
@@ -163,7 +163,7 @@ object Tcs {
 
   def fromConfig(controller: TcsController, subsystems: NonEmptySet[Subsystem], gaos: Option[Either[Altair[IO],
     Gems[IO]]], guideConfigDb: GuideConfigDb[IO])(
-    config: Config, scienceFoldPosition: ScienceFoldPosition, observingWavelength: Option[Wavelength]
+                  config: Config, lightPath: LightPath, observingWavelength: Option[Wavelength]
   ): Tcs = {
 
     val gwp1 = config.extractAs[StandardGuideOptions.Value](TELESCOPE_KEY / GUIDE_WITH_PWFS1_PROP).toOption
@@ -182,7 +182,7 @@ object Tcs {
       gwao,
       (offsetp, offsetq).mapN(InstrumentOffset(_, _)),
       observingWavelength,
-      scienceFoldPosition
+      lightPath
     )
 
     Tcs(controller, subsystems, gaos, guideConfigDb)(tcsSeqCfg)

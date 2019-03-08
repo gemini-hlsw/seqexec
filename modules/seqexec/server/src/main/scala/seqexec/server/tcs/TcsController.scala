@@ -254,21 +254,13 @@ object TcsController {
     implicit val eq: Eq[LightSource] =  Eq.fromUniversalEquals
   }
 
-  /** Data type for science fold position. */
-  sealed trait ScienceFoldPosition
-  object ScienceFoldPosition {
-    case object Parked extends ScienceFoldPosition
-    final case class Position(source: LightSource, sink: LightSinkName) extends ScienceFoldPosition
+  /* Data type for science fold position. */
+  final case class LightPath(source: LightSource, sink: LightSinkName)
+  object LightPath {
 
-    implicit val show: Show[ScienceFoldPosition] = Show.fromToString
+    implicit val show: Show[LightPath] = Show.fromToString
 
-    implicit val positionEq: Eq[Position] = Eq.by(x => (x.source, x.sink))
-
-    implicit val eq: Eq[ScienceFoldPosition] = Eq.instance{
-      case (Parked, Parked)                     => true
-      case (a@Position(_, _), b@Position(_, _)) => a === b
-      case _                                    => false
-    }
+    implicit val positionEq: Eq[LightPath] = Eq.by(x => (x.source, x.sink))
   }
 
   /** Enumerated type for offloading of tip/tilt corrections from M2 to mount. */
@@ -368,7 +360,7 @@ object TcsController {
     implicit val pwfs1Eq: Eq[GuiderConfig@@P1Config] = Eq[GuiderConfig].contramap(identity)
   }
 
-  final case class AGConfig(sfPos: ScienceFoldPosition, hrwfs: Option[HrwfsConfig])
+  final case class AGConfig(sfPos: LightPath, hrwfs: Option[HrwfsConfig])
 
   @Lenses
   final case class TcsConfig(
@@ -390,7 +382,7 @@ object TcsController {
       Left(tag[P2Config](GuiderConfig(ProbeTrackingConfig.Parked, GuiderSensorOff))),
       tag[OIConfig](GuiderConfig(ProbeTrackingConfig.Parked, GuiderSensorOff))
     ),
-    AGConfig(ScienceFoldPosition.Parked, HrwfsConfig.Auto.some),
+    AGConfig(LightPath(LightSource.Sky, LightSinkName.Ac), HrwfsConfig.Auto.some),
     None
   )
 
