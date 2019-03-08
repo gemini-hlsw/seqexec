@@ -4,6 +4,7 @@
 package seqexec.server.niri
 
 import cats.effect.IO
+import cats.implicits._
 import seqexec.server.SeqAction
 import seqexec.server.SeqActionF
 import seqexec.server.keywords._
@@ -83,7 +84,8 @@ object NiriKeywordReaderImpl extends NiriKeywordReader[IO] {
   override def arrayType: SeqAction[String] = sys.arrayType.toSeqActionDefault
   override def camera: SeqAction[String] = sys.camera.toSeqActionDefault
   override def coadds: SeqAction[Int] = sys.coadds.toSeqActionDefault
-  override def exposureTime: SeqAction[Double] = sys.integrationTime.toSeqActionDefault
+  override def exposureTime: SeqAction[Double] = (sys.integrationTime, sys.minIntegration).mapN(_ + _)
+    .toSeqActionDefault
   override def filter1: SeqAction[String] = sys.filter1.toSeqActionDefault
   override def filter2: SeqAction[String] = sys.filter2.toSeqActionDefault
   override def filter3: SeqAction[String] = sys.filter3.toSeqActionDefault
