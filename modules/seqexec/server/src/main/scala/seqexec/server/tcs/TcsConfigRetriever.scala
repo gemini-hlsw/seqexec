@@ -133,7 +133,7 @@ object TcsConfigRetriever {
     for {
       useAo <- getStatusVal(TcsEpics.instance.useAo, "use AO flag")
       aoFol <- getStatusVal(getAoFollow, "AO follow state").map(_.fold(FollowOn, FollowOff))
-      prk   <- getStatusVal(TcsEpics.instance.oiParked, "OIWFS parked state")
+      prk   <- getStatusVal(TcsEpics.instance.p2Parked, "PWFS2 parked state")
       trk   <- getStatusVal(getNodChopTrackingConfig(TcsEpics.instance.pwfs2ProbeGuideConfig), "PWFS2 tracking configuration")
       fol   <- getStatusVal(TcsEpics.instance.p2FollowS.map(_.map(decode[String, FollowOption])), "PWFS2 follow state")
       wfs   <- getStatusVal(TcsEpics.instance.pwfs2On.map(_.map(decode[BinaryYesNo, GuiderSensorOption])), "PWFS2 detector")
@@ -141,7 +141,7 @@ object TcsConfigRetriever {
             else Left(GuiderConfig(prk.fold(ProbeTrackingConfig.Parked, calcProbeTrackingConfig(fol, trk)), wfs))
 
   private def getOiwfs: SeqAction[GuiderConfig] = for {
-    prk <- getStatusVal(TcsEpics.instance.p1Parked, "OIWFS parked state")
+    prk <- getStatusVal(TcsEpics.instance.oiParked, "OIWFS parked state")
     trk <- getStatusVal(getNodChopTrackingConfig(TcsEpics.instance.oiwfsProbeGuideConfig), "OIWFS tracking configuration")
     fol <- getStatusVal(TcsEpics.instance.oiFollowS.map(_.map(decode[String, FollowOption])), "OIWFS follow state")
     wfs <- getStatusVal(TcsEpics.instance.oiwfsOn.map(_.map(decode[BinaryYesNo, GuiderSensorOption])), "OIWFS detector")
