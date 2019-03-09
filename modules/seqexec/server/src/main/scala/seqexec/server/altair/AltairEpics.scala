@@ -76,14 +76,19 @@ class AltairEpics[F[_]: Async](service: CaService, tops: Map[String, String]) {
   def strapHVStatus: F[Option[Boolean]] = safeAttributeSInt(status.getIntegerAttribute("strapHVStat"))
     .map(_.map(_ =!= 0))
 
-  def sfoLoop: F[Option[LgsSfoControl]] = safeAttribute(status.addEnum("sfoloop",
-    s"${AltairTop}cc:lgszoomSfoLoop.VAL", classOf[LgsSfoControl]))
+  private val sfoLoopAttr: CaAttribute[LgsSfoControl] = status.addEnum("sfoloop",
+    s"${AltairTop}cc:lgszoomSfoLoop.VAL", classOf[LgsSfoControl])
+  def sfoLoop: F[Option[LgsSfoControl]] = safeAttribute(sfoLoopAttr)
 
   def aoLoop: F[Option[Boolean]] = safeAttributeSInt(status.getIntegerAttribute("aowfsOn"))
     .map(_.map(_ =!= 0))
 
-  def aoSettled: F[Option[Boolean]] = safeAttributeSDouble(status.getDoubleAttribute("straploop"))
+  private val aoSettledAttr = status.getDoubleAttribute("straploop")
+  def aoSettled: F[Option[Boolean]] = safeAttributeSDouble(aoSettledAttr)
     .map(_.map(_ =!= 0.0))
+
+  def waitAoSettled(timeout: Time): F[Unit] =
+    EpicsUtil.waitForValueF[java.lang.Double, F](aoSettledAttr, 1.0, timeout, "AO settled flag")
 
   def matrixStartX: F[Option[Double]] = safeAttributeSDouble(status.getDoubleAttribute("conmatx"))
 

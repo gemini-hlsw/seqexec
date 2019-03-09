@@ -13,6 +13,7 @@ import seqexec.server.altair.AltairController.Lgs
 import seqexec.server.tcs.TcsController.ComaOption.{ComaOff, ComaOn}
 import seqexec.server.tcs.TcsController.MountGuideOption.{MountGuideOff, MountGuideOn}
 import seqexec.server.tcs.TcsController.{M1GuideOn, M1Source, M2GuideOn, TelescopeGuideConfig, TipTiltSource}
+import squants.space.Millimeters
 
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 final class GuideConfigDbSpec extends FlatSpec {
@@ -65,7 +66,9 @@ final class GuideConfigDbSpec extends FlatSpec {
         "sfoOn": true,
         "useOI": false,
         "useP1": false,
-        "oiBlend": false
+        "oiBlend": false,
+        "aogsx": -5.0,
+        "aogsy": 3.0
       }
     }
   }
@@ -76,7 +79,7 @@ final class GuideConfigDbSpec extends FlatSpec {
       M1GuideOn(M1Source.PWFS1),
       M2GuideOn(ComaOn, Set(TipTiltSource.PWFS1))
     ),
-    Some(Left(Lgs(strap = true, sfo = true)))
+    Some(Left(Lgs(strap = true, sfo = true, starPos = (Millimeters(-5.0), Millimeters(3.0)))))
   )
 
   "GuideConfigDb" should "provide decoders" in {

@@ -31,13 +31,8 @@ object AltairControllerEpics extends AltairController[IO] {
   private def inRangeLinear[T <: Ordered[T]](vMin: T, vMax: T)(v: T): Boolean =
     v > vMin && v < vMax
 
-  private def newPosition(currCfg: EpicsAltairConfig)(prev: FocalPlaneOffset, next: FocalPlaneOffset)
-  : (Length, Length) = {
-    val dX = next.x - prev.x
-    val dY = next.y - prev.y
-
-    currCfg.guideStarCoords.bimap(_ + dX, _ + dY)
-  }
+  private def newPosition(starPos: (Length, Length))(next: FocalPlaneOffset): (Length, Length) =
+    starPos.bimap(_ + next.x, _ + next.y)
 
   val CorrectionsOn: String = "ON"
   val CorrectionsOff: String = "OFF"
@@ -56,10 +51,10 @@ object AltairControllerEpics extends AltairController[IO] {
     }
   }
 
-  private def validControlMatrix(currMtxPos: (Length, Length))(newPos: (Length, Length)): Boolean = {
+  private def validControlMatrix(mtxPos: (Length, Length))(newPos: (Length, Length)): Boolean = {
     val limit = Arcseconds(5.0) / FOCAL_PLANE_SCALE
 
-    val diff = newPos.bimap(_ + currMtxPos._1, _ + currMtxPos._2)
+    val diff = newPos.bimap(_ - mtxPos._1, _ - mtxPos._2)
 
     diff._1 * diff._1 + diff._2 * diff._2 < limit * limit
   }
@@ -77,45 +72,69 @@ object AltairControllerEpics extends AltairController[IO] {
 
   implicit val fieldLensEq: Eq[FieldLens] = Eq.by(_.ordinal)
 
-  private def pauseNgsMode(fieldLens: FieldLens, currCfg: EpicsAltairConfig)(reasons: Set[Gaos.PauseCondition])
-  : IO[Set[ResumeCondition] => IO[Unit]] = {
+  private def pauseNgsOrLgsMode(starPos: (Length, Length), fieldLens: FieldLens, isLgs: Boolean,
+                                currCfg: EpicsAltairConfig)(reasons: Set[Gaos.PauseCondition])
+  : IO[EpicsAltairConfig] = {
     val offsets = reasons.collectFirst { case OffsetMove(p, n) => (p, n) }
-    val newPos = offsets.map(Function.tupled(newPosition(currCfg)))
+    val newPos = offsets.map(u => newPosition(starPos)(u._2))
     val newPosOk = newPos.forall(newPosInRange)
     val matrixOk = newPos.forall(validateCurrentControlMatrix(currCfg, _)) && fieldLens =!= FieldLens.IN
     val prepMatrixOk = newPos.forall(validatePreparedControlMatrix(currCfg, _)) && fieldLens =!= FieldLens.IN
     val guideOk = !reasons.contains(GaosStarOff) //It can follow the guide star on this step
 
     val needsToStop = !(newPosOk || matrixOk || guideOk)
-    val newCfg = (EpicsAltairConfig.guideStarCoords.modify(v => newPos.filter(_ => newPosOk).getOrElse(v)) >>>
-      EpicsAltairConfig.preparedMatrixCoords.modify(v => newPos.filter(_ => newPosOk && !matrixOk && !prepMatrixOk)
-        .getOrElse(v))) (currCfg)
 
-    if (needsToStop) {
-      convertTcsAction(epicsTcs.aoCorrect.setCorrections(CorrectionsOff) *>
-        epicsTcs.targetFilter.setShortCircuit(TargetFilterClosed)) *>
-        newPos.filter(_ => newPosOk && !matrixOk && !prepMatrixOk).fold(IO.unit)(prepareMatrix) *>
-        convertTcsAction(epicsTcs.targetFilter.post) *>
-        IO(resumeNgsMode(newCfg))
-    }
-    else IO(dumbResume)
+    // How the current configuration changes if loops are stopped
+    val newCfg = (EpicsAltairConfig.preparedMatrixCoords.modify(v =>
+      newPos.filter(_ => newPosOk && !matrixOk && !prepMatrixOk).getOrElse(v)) >>>
+      EpicsAltairConfig.aoLoop.set(!needsToStop)
+      ) (currCfg)
+
+    // Actions to stop loops
+    val actions = List(
+      currCfg.aoLoop.option(convertTcsAction(epicsTcs.aoCorrect.setCorrections(CorrectionsOff) *>
+        epicsTcs.targetFilter.setShortCircuit(TargetFilterClosed))),
+      newPos.filter(_ => newPosOk && !matrixOk && !prepMatrixOk).map(prepareMatrix)
+    ).collect { case Some(x) => x }
+
+    val pause = for {
+      c <- isLgs.fold(ttgsOff(newCfg), IO(newCfg))
+      _ <- (actions.sequence *> convertTcsAction(epicsTcs.targetFilter.post).void).whenA(actions.nonEmpty)
+    } yield c
+
+    needsToStop.fold(pause, IO(currCfg))
+  }
+
+  private def pauseNgsMode(starPos: (Length, Length), fieldLens: FieldLens, currCfg: EpicsAltairConfig)(reasons: Set[Gaos.PauseCondition])
+  : IO[Set[ResumeCondition] => IO[Unit]] = {
+    pauseNgsOrLgsMode(starPos, fieldLens, isLgs = false, currCfg)(reasons).map(resumeNgsMode(starPos, _))
   }
 
   private val dumbResume = (_: Set[ResumeCondition]) => IO.unit
+  val aoSettledTimeout: Time = 30.0.seconds
+  val matrixPrepTimeout: Time = 10.seconds
 
-  private def resumeNgsMode(currCfg: EpicsAltairConfig)(reasons: Set[Gaos.ResumeCondition]): IO[Unit] = {
-    val newPosOk = newPosInRange(currCfg.guideStarCoords)
+  private def resumeNgsOrLgsMode(starPos: (Length, Length), currCfg: EpicsAltairConfig)(
+    reasons: Set[Gaos.ResumeCondition]): IO[Boolean] = {
+    val offsets = reasons.collectFirst { case OffsetReached(o) => o }
+    val newPosOk = offsets.forall(v => newPosInRange(newPosition(starPos)(v)))
     val guideOk = reasons.contains(GaosStarOn)
 
-    (epicsAltair.waitMatrixCalc(CarStateGEM5.IDLE, 10.seconds) *>
+    (epicsAltair.waitMatrixCalc(CarStateGEM5.IDLE, matrixPrepTimeout) *>
       convertTcsAction(
         epicsTcs.aoCorrect.setCorrections(CorrectionsOn) *>
         epicsTcs.aoFlatten.mark *>
         epicsTcs.targetFilter.setShortCircuit(TargetFilterOpen) *>
         epicsTcs.targetFilter.post.void
-      )
-    ).whenA(newPosOk && guideOk)
+      ) *>
+      epicsAltair.waitAoSettled(aoSettledTimeout)
+    ).whenA(newPosOk && guideOk && !currCfg.aoLoop) *>
+    IO(newPosOk && guideOk)
   }
+
+  private def resumeNgsMode(starPos: (Length, Length), currCfg: EpicsAltairConfig)(reasons: Set[Gaos.ResumeCondition])
+  : IO[Unit] =
+    resumeNgsOrLgsMode(starPos, currCfg)(reasons).void
 
   private def checkStrapLoopState(currCfg: EpicsAltairConfig): TrySeq[Unit] =
     currCfg.strapRTStatus.either(
@@ -185,73 +204,38 @@ object AltairControllerEpics extends AltairController[IO] {
           }) (currCfg)
       )
 
-  private def pauseLgsMode(strap: Boolean, sfo: Boolean, fieldLens: FieldLens, currCfg: EpicsAltairConfig)(
-    reasons: Set[Gaos.PauseCondition]): IO[Set[ResumeCondition] => IO[Unit]] = {
+  private def pauseLgsMode(strap: Boolean, sfo: Boolean, starPos: (Length, Length), fieldLens: FieldLens,
+                           currCfg: EpicsAltairConfig)(reasons: Set[Gaos.PauseCondition])
+  : IO[Set[ResumeCondition] => IO[Unit]] =
+    (strap || sfo).fold(pauseNgsOrLgsMode(starPos, fieldLens, isLgs = true, currCfg)(reasons), IO(currCfg))
+      .map(resumeLgsMode(strap, sfo, starPos))
 
-    val offsets = reasons.collectFirst { case OffsetMove(p, n) => (p, n) }
-    val newPos = offsets.map(Function.tupled(newPosition(currCfg)))
-    val newPosOk = newPos.forall(newPosInRange)
-    val matrixOk = newPos.forall(validateCurrentControlMatrix(currCfg, _)) && fieldLens =!= FieldLens.IN
-    val prepMatrixOk = newPos.forall(validatePreparedControlMatrix(currCfg, _)) && fieldLens =!= FieldLens.IN
-    val guideOk = !reasons.contains(GaosStarOff) //It can follow the guide star on this step
+  private def resumeLgsMode(strap: Boolean, sfo: Boolean, starPos: (Length, Length))(currCfg: EpicsAltairConfig)(
+    reasons: Set[Gaos.ResumeCondition]): IO[Unit] =
+    resumeNgsOrLgsMode(starPos, currCfg)(reasons).flatMap(ttgsOn(strap, sfo, currCfg).void.whenA(_)).whenA(strap || sfo)
 
-    val needsToStop = !(newPosOk || matrixOk || guideOk)
-    val newCfg = EpicsAltairConfig.guideStarCoords.modify(v => newPos.filter(_ => newPosOk).getOrElse(v)) >>>
-      EpicsAltairConfig.preparedMatrixCoords.modify(v => newPos.filter(_ => newPosOk && !matrixOk && !prepMatrixOk)
-        .getOrElse(v))
-
-    if (needsToStop) {
-      for {
-        c <- ttgsOff(currCfg)
-        _ <- convertTcsAction(epicsTcs.aoCorrect.setCorrections(CorrectionsOff))
-        _ <- convertTcsAction(epicsTcs.targetFilter.setShortCircuit(TargetFilterClosed))
-        _ <- newPos.filter(_ => newPosOk && !matrixOk && !prepMatrixOk).fold(IO.unit)(prepareMatrix)
-        _ <- convertTcsAction(epicsTcs.targetFilter.post)
-      } yield resumeLgsMode(strap, sfo, newCfg(c))(_)
-    }
-    else IO(dumbResume)
-  }
-
-  private def resumeLgsMode(strap: Boolean, sfo: Boolean, currCfg: EpicsAltairConfig)(
-    reasons: Set[Gaos.ResumeCondition]): IO[Unit] = {
-    val newPosOk = newPosInRange(currCfg.guideStarCoords)
-    val guideOk = reasons.contains(GaosStarOn)
-
-    (epicsAltair.waitMatrixCalc(CarStateGEM5.IDLE, 10.seconds) *>
-      convertTcsAction(epicsTcs.aoCorrect.setCorrections(CorrectionsOn) *>
-        epicsTcs.aoFlatten.mark *>
-        epicsTcs.targetFilter.setShortCircuit(TargetFilterOpen) *>
-        epicsTcs.targetFilter.post
-      ) *>
-      epicsAltair.btoLoopControl.setActive(CorrectionsOn) *>
-      epicsAltair.btoLoopControl.post[IO] *>
-      ttgsOn(strap, sfo, currCfg).void
-    ).whenA(newPosOk && guideOk)
-
-  }
-
-  // TODO Should do someting if P1 is turned off ?
+  // TODO Should do something if P1 is turned off ?
   private def pauseLgsWithP1Mode
   : IO[Set[ResumeCondition] => IO[Unit]] = IO(dumbResume)
 
-  // TODO Should do someting if OI is turned off ?
+  // TODO Should do something if OI is turned off ?
   private def pauseLgsWithOiMode
   : IO[Set[ResumeCondition] => IO[Unit]] = IO(dumbResume)
 
-  private def turnOff: IO[Set[ResumeCondition] => IO[Unit]] =
+  private def turnOff(c: EpicsAltairConfig): IO[Set[ResumeCondition] => IO[Unit]] =
     convertTcsAction(epicsTcs.aoCorrect.setCorrections(CorrectionsOff) *>
       epicsTcs.targetFilter.post
-    ) *> IO(dumbResume)
+    ).whenA(c.aoLoop) *> IO(dumbResume)
 
   override def pause(reasons: Set[PauseCondition], fieldLens: FieldLens)(cfg: AltairConfig)
   : IO[Set[ResumeCondition] => IO[Unit]] =
     retrieveConfig.flatMap { currCfg =>
       cfg match {
-        case Ngs(_) => pauseNgsMode(fieldLens, currCfg)(reasons)
-        case Lgs(strap: Boolean, sfo: Boolean) => pauseLgsMode(strap, sfo, fieldLens, currCfg)(reasons)
-        case LgsWithP1 => pauseLgsWithP1Mode
-        case LgsWithOi => pauseLgsWithOiMode
-        case AltairOff => turnOff
+        case Ngs(_, starPos)                      => pauseNgsMode(starPos, fieldLens, currCfg)(reasons)
+        case Lgs(str: Boolean, sfo: Boolean, pos) => pauseLgsMode(str, sfo, pos, fieldLens, currCfg)(reasons)
+        case LgsWithP1                            => pauseLgsWithP1Mode
+        case LgsWithOi                            => pauseLgsWithOiMode
+        case AltairOff                            => turnOff(currCfg)
       }
     }
 
@@ -271,8 +255,6 @@ object AltairControllerEpics extends AltairController[IO] {
   )
 
   def retrieveConfig: IO[EpicsAltairConfig] = for {
-    aogsx <- getStatusVal(epicsTcs.aoGuideStarX.map(_.map(Millimeters(_))), "Altair guide star X", "TCS")
-    aogsy <- getStatusVal(epicsTcs.aoGuideStarY.map(_.map(Millimeters(_))), "Altair guide star Y", "TCS")
     cmtxx <- getStatusVal(epicsAltair.matrixStartX.map(_.map(Millimeters(_))), "current control matrix X", "Altair")
     cmtxy <- getStatusVal(epicsAltair.matrixStartY.map(_.map(Millimeters(_))), "current control matrix Y", "Altair")
     pmtxx <- getStatusVal(epicsTcs.aoPreparedCMX.map(_.map(Millimeters(_))), "Altair next control matrix X", "TCS")
@@ -283,8 +265,8 @@ object AltairControllerEpics extends AltairController[IO] {
     strap <- getStatusVal(epicsAltair.strapLoop, "strap loop state", "Altair")
     sfo   <- getStatusVal(epicsAltair.sfoLoop, "SFO loop state", "Altair")
     stGat <- getStatusVal(epicsAltair.strapGate, "strap gate state", "Altair")
+    aolp  <- getStatusVal(epicsAltair.aoLoop, "AO active", "Altair")
   } yield EpicsAltairConfig(
-    (aogsx, aogsy),
     (cmtxx, cmtxy),
     (pmtxx, pmtxy),
     strRT,
@@ -292,12 +274,12 @@ object AltairControllerEpics extends AltairController[IO] {
     strHV,
     strap,
     sfo,
-    stGat
+    stGat,
+    aolp
   )
 
   @Lenses
   final case class EpicsAltairConfig(
-    guideStarCoords: (Length, Length),
     currentMatrixCoords: (Length, Length),
     preparedMatrixCoords: (Length, Length),
     strapRTStatus: Boolean,
@@ -305,7 +287,8 @@ object AltairControllerEpics extends AltairController[IO] {
     stapHVoltStatus: Boolean,
     strapLoop: Boolean,
     sfoLoop: LgsSfoControl,
-    strapGate: Int
+    strapGate: Int,
+    aoLoop: Boolean
   )
 
   @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
