@@ -36,7 +36,7 @@ import seqexec.server.gcal._
 import seqexec.server.gmos.{GmosHeader, GmosNorth, GmosSouth}
 import seqexec.server.gws.{DummyGwsKeywordsReader, GwsHeader, GwsKeywordsReaderImpl}
 import seqexec.server.tcs._
-import seqexec.server.tcs.TcsController.ScienceFoldPosition
+import seqexec.server.tcs.TcsController.LightPath
 import seqexec.server.gnirs._
 import seqexec.server.niri._
 import seqexec.server.nifs._
@@ -437,16 +437,16 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
   ): TrySeq[List[System[IO]]] = {
     stepType match {
       case CelestialObject(inst) => toInstrumentSys(inst).map{sys => sys :: List(
-          Tcs.fromConfig(systems.tcs, (hasOI(inst)).fold(allButGaos, allButGaosNorOi), None, systems.guideDb)(
+          Tcs.fromConfig(systems.tcs, hasOI(inst).fold(allButGaos, allButGaosNorOi), None, systems.guideDb)(
             config,
-            ScienceFoldPosition.Position(TcsController.LightSource.Sky, sys.sfName(config)),
+            LightPath(TcsController.LightSource.Sky, sys.sfName(config)),
             extractWavelength(config)),
           Gcal(systems.gcal, site == Site.GS)
       ) }
       case FlatOrArc(inst)       => toInstrumentSys(inst).map{sys => sys :: List(
           Tcs.fromConfig(systems.tcs, flatOrArcTcsSubsystems(inst), None, systems.guideDb)(
             config,
-            ScienceFoldPosition.Position(TcsController.LightSource.GCAL, sys.sfName(config)),
+            LightPath(TcsController.LightSource.GCAL, sys.sfName(config)),
             extractWavelength(config)),
           Gcal(systems.gcal, site == Site.GS)
       ) }
@@ -457,7 +457,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
       } yield sys :: List(
           Tcs.fromConfig(systems.tcs, hasOI(inst).fold(allButGaos, allButGaosNorOi).add(Gaos),
             altair.asLeft.some, systems.guideDb)(config,
-            ScienceFoldPosition.Position(TcsController.LightSource.Sky, sys.sfName(config)),
+            LightPath(TcsController.LightSource.Sky, sys.sfName(config)),
             extractWavelength(config)),
           Gcal(systems.gcal, site == Site.GS)
 

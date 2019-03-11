@@ -12,6 +12,7 @@ import squants.time.Seconds
 import cats.data._
 import cats.effect.IO
 import cats.implicits._
+import gem.enum.LightSinkName
 import mouse.boolean._
 import seqexec.server.altair.Altair
 import seqexec.server.gems.Gems
@@ -150,18 +151,40 @@ object TcsControllerEpics extends TcsController {
 
   private val setOiwfs = setGuiderWfs(TcsEpics.instance.oiwfsObserveCmd, TcsEpics.instance.oiwfsStopObserveCmd)(_)
 
-  // Special case: if source is the sky and the instrument is at the bottom port (port 1), the science fold must be parked.
-  def setScienceFoldConfig(ports: InstrumentPorts)(sfPos: ScienceFoldPosition): SeqAction[Unit] = sfPos match {
-    case ScienceFoldPosition.Parked => TcsEpics.instance.scienceFoldParkCmd.mark
-    case p@ScienceFoldPosition.Position(LightSource.Sky, sink) =>
-      portFromSinkName(ports)(sink).map(port =>
-       if (port === BottomPort) TcsEpics.instance.scienceFoldParkCmd.mark
-       else TcsEpics.instance.scienceFoldPosCmd.setScfold(encodeScienceFoldPosition(port).encode(p))
-      ).getOrElse(SeqAction.void)
-    case p: ScienceFoldPosition.Position =>
-      portFromSinkName(ports)(p.sink).map(port =>
-        TcsEpics.instance.scienceFoldPosCmd.setScfold(encodeScienceFoldPosition(port).encode(p))
-      ).getOrElse(SeqAction.void)
+  val BottomPort: Int = 1
+  val InvalidPort: Int = 0
+
+  def portFromSinkName(ports: InstrumentPorts)(n: LightSinkName): Option[Int] = {
+    import LightSinkName._
+    val port = n match {
+      case Gmos |
+           Gmos_Ifu => ports.gmosPort
+      case Niri_f6 |
+           Niri_f14 |
+           Niri_f32 => ports.niriPort
+      case Nifs     => ports.nifsPort
+      case Gnirs    => ports.gnirsPort
+      case F2       => ports.flamingos2Port
+      case Gpi      => ports.gpiPort
+      case Ghost    => ports.ghostPort
+      case Gsaoi    => ports.gsaoiPort
+      case Ac |
+           Hr       => BottomPort
+      case Phoenix |
+           Visitor  => InvalidPort
+    }
+    (port =!= InvalidPort).option(port)
+  }
+
+  def scienceFoldFromRequested(ports: InstrumentPorts)(r: LightPath): Option[ScienceFold] =
+    portFromSinkName(ports)(r.sink).map{ p =>
+      if(p === BottomPort && r.source === LightSource.Sky) ScienceFold.Parked
+      else ScienceFold.Position(r.source, r.sink, p)
+    }
+
+  def setScienceFoldConfig(sfPos: ScienceFold): SeqAction[Unit] = sfPos match {
+    case ScienceFold.Parked      => TcsEpics.instance.scienceFoldParkCmd.mark
+    case p: ScienceFold.Position => TcsEpics.instance.scienceFoldPosCmd.setScfold(encode(p))
   }
 
   implicit private val encodeHrwfsPickupPosition: EncodeEpicsValue[HrwfsPickupPosition, String] =
@@ -178,13 +201,10 @@ object TcsControllerEpics extends TcsController {
 
   private def calcHrPickupPosition(c: AGConfig, ports: InstrumentPorts): Option[HrwfsPickupPosition] = c.hrwfs.flatMap {
     case HrwfsConfig.Manual(h) => h.some
-    case HrwfsConfig.Auto      => c.sfPos match {
-      case ScienceFoldPosition.Parked            => HrwfsPickupPosition.Parked.some
-      case ScienceFoldPosition.Position(_, sink) => portFromSinkName(ports)(sink).flatMap(port =>
-                                                      if(port === BottomPort) HrwfsPickupPosition.Parked.some
-                                                      else None
-                                                    )
-      case _                                     => None
+    case HrwfsConfig.Auto      => scienceFoldFromRequested(ports)(c.sfPos).flatMap {
+      case ScienceFold.Parked |
+           ScienceFold.Position(_, _, BottomPort) => HrwfsPickupPosition.Parked.some
+      case ScienceFold.Position(_, _, _)          => none
     }
   }
 
@@ -213,6 +233,13 @@ object TcsControllerEpics extends TcsController {
 
   private def setM2Guide(c: M2GuideConfig): SeqAction[Unit] = TcsEpics.instance.m2GuideCmd.setState(encode(c))
 
+  private def setScienceFold(subsystems: NonEmptySet[Subsystem], c: EpicsTcsConfig, d: LightPath)
+  : Option[EpicsTcsConfig => SeqAction[EpicsTcsConfig]] = scienceFoldFromRequested(c.instPorts)(d).flatMap{ sf =>
+    (subsystems.contains(Subsystem.AGUnit) && c.scienceFoldPosition.forall(_ =!= sf)).option{ x =>
+      setScienceFoldConfig(sf) *> SeqAction(EpicsTcsConfig.scienceFoldPosition.set(sf.some)(x))
+    }
+  }
+
   private val tcsTimeout = Seconds(60)
   private val agTimeout = Seconds(60)
 
@@ -235,13 +262,15 @@ object TcsControllerEpics extends TcsController {
       setPwfs2OrAltair(subsystems, current.pwfs2OrAowfs, tcs.gds.pwfs2OrAowfs),
       setOiwfsProbe(subsystems, current.oiwfs.tracking, tcs.gds.oiwfs.tracking),
       tcs.tc.offsetA.flatMap(o => applyParam(subsystems.contains(Subsystem.Mount), current.offset,
-        o.toFocalPlaneOffset(current.iaa), setTelescopeOffset, EpicsTcsConfig.offset)),
+        o.toFocalPlaneOffset(current.iaa), setTelescopeOffset, EpicsTcsConfig.offset
+      )),
       tcs.tc.wavelA.flatMap(applyParam(subsystems.contains(Subsystem.Mount), current.wavelA, _, setWavelength,
-        EpicsTcsConfig.wavelA)),
-      applyParam(subsystems.contains(Subsystem.AGUnit), current.scienceFoldPosition, tcs.agc.sfPos,
-        setScienceFoldConfig(current.instPorts), EpicsTcsConfig.scienceFoldPosition),
+        EpicsTcsConfig.wavelA
+      )),
+      setScienceFold(subsystems, current, tcs.agc.sfPos),
       calcHrPickupPosition(tcs.agc, current.instPorts).flatMap(applyParam(subsystems.contains(Subsystem.AGUnit),
-        current.hrwfsPickupPosition, _, setHRPickupConfig, EpicsTcsConfig.hrwfsPickupPosition))
+        current.hrwfsPickupPosition, _, setHRPickupConfig, EpicsTcsConfig.hrwfsPickupPosition)
+      )
     ).collect{ case Some(x) => x }
 
     def sysConfig(current: EpicsTcsConfig): SeqAction[EpicsTcsConfig] = {
@@ -430,6 +459,22 @@ object TcsControllerEpics extends TcsController {
     nifsPort: Int,
     niriPort: Int
   )
+
+  sealed trait ScienceFold
+
+  object ScienceFold {
+    case object Parked extends ScienceFold
+    final case class Position(source: LightSource, sink: LightSinkName, port: Int) extends ScienceFold
+
+    implicit val positionEq: Eq[Position] = Eq.by(x => (x.source, x.sink, x.port))
+
+    implicit val eq: Eq[ScienceFold] = Eq.instance{
+      case (Parked, Parked)           => true
+      case (a: Position, b: Position) => a === b
+      case _                          => false
+    }
+  }
+
   @Lenses
   final case class EpicsTcsConfig(
     iaa: Angle,
@@ -440,7 +485,7 @@ object TcsControllerEpics extends TcsController {
     oiwfs: GuiderConfig,
     telescopeGuideConfig: TelescopeGuideConfig,
     aoFold: AoFold,
-    scienceFoldPosition: ScienceFoldPosition,
+    scienceFoldPosition: Option[ScienceFold],
     hrwfsPickupPosition: HrwfsPickupPosition,
     instPorts: InstrumentPorts
   ) {
