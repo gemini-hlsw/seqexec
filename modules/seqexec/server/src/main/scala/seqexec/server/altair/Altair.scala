@@ -38,8 +38,8 @@ class Altair[F[_]: Sync] private (controller: AltairController[F],
 
   def usesOI(guide: AltairConfig): Boolean = guide match {
     case LgsWithOi |
-         Ngs(true) => true
-    case _         => false
+         Ngs(true, _) => true
+    case _            => false
   }
 
   def isFollowing: F[Option[Boolean]] = controller.isFollowing

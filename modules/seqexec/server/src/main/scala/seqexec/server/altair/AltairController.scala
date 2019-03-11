@@ -7,6 +7,7 @@ import cats.Eq
 import cats.implicits._
 import seqexec.server.tcs.Gaos.{PauseCondition, ResumeCondition}
 import squants.Time
+import squants.space.Length
 
 trait AltairController[F[_]] {
   import AltairController._
@@ -26,8 +27,8 @@ object AltairController {
   sealed trait AltairConfig
 
   case object AltairOff extends AltairConfig
-  final case class Ngs(blend: Boolean) extends AltairConfig
-  final case class Lgs(strap: Boolean, sfo: Boolean) extends AltairConfig
+  final case class Ngs(blend: Boolean, starPos: (Length, Length)) extends AltairConfig
+  final case class Lgs(strap: Boolean, sfo: Boolean, starPos: (Length, Length)) extends AltairConfig
   case object LgsWithP1 extends AltairConfig
   case object LgsWithOi extends AltairConfig
 

@@ -9,10 +9,11 @@ import cats.implicits._
 import mouse.boolean._
 import seqexec.server.altair.AltairController._
 import seqexec.server.gems.GemsController.{GemsConfig, GemsOff}
-import TcsController.{ComaOption, M1GuideConfig, M1GuideOff, M1GuideOn, M1Source, M2GuideConfig, M2GuideOff, M2GuideOn, MountGuideOption, TipTiltSource, TelescopeGuideConfig}
+import TcsController.{ComaOption, M1GuideConfig, M1GuideOff, M1GuideOn, M1Source, M2GuideConfig, M2GuideOff, M2GuideOn, MountGuideOption, TelescopeGuideConfig, TipTiltSource}
 import io.circe.{Decoder, DecodingFailure}
 import seqexec.server.tcs.TcsController.ComaOption._
 import seqexec.server.tcs.TcsController.MountGuideOption.{MountGuideOff, MountGuideOn}
+import squants.space.Millimeters
 
 trait GuideConfigDb[F[_]] {
   import GuideConfigDb._
@@ -43,7 +44,11 @@ object GuideConfigDb {
       c.downField("aoOn").as[Boolean].flatMap{
         if(_) {
           c.downField("mode").as[String].flatMap{
-            case "NGS" => c.downField("oiBlend").as[Boolean].map(Ngs)
+            case "NGS" => for{
+              blnd <- c.downField("oiBlend").as[Boolean]
+              gsx  <- c.downField("aogsx").as[Double]
+              gsy  <- c.downField("aogsy").as[Double]
+            } yield Ngs(blnd, (Millimeters(gsx), Millimeters(gsy)))
             case "LGS" => c.downField("useP1").as[Boolean].flatMap{
               if(_) Right(LgsWithP1)
               else {
@@ -52,7 +57,9 @@ object GuideConfigDb {
                   else for {
                     strapLoop <- c.downField("strapOn").as[Boolean]
                     sfoLoop   <- c.downField("sfoOn").as[Boolean]
-                  } yield Lgs(strapLoop, sfoLoop)
+                    gsx  <- c.downField("aogsx").as[Double]
+                    gsy  <- c.downField("aogsy").as[Double]
+                  } yield Lgs(strapLoop, sfoLoop, (Millimeters(gsx), Millimeters(gsy)))
                 }
               }
             }

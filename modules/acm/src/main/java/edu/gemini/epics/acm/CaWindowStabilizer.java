@@ -148,7 +148,14 @@ public class CaWindowStabilizer<T> implements CaAttribute<T> {
     }
 
     public CaWindowStabilizer<T> reset() {
-        filteredVal = lastVal = null;
+        filteredVal = null;
+        //Restart the timer
+        if (timeoutFuture != null) {
+            timeoutFuture.cancel(true);
+        }
+        timeoutFuture = executor.schedule(() -> CaWindowStabilizer.this.onTimeout(),
+            settleTime.toMillis(), TimeUnit.MILLISECONDS);
+
         return this;
     }
 
