@@ -457,7 +457,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
       } yield sys :: List(
           Tcs.fromConfig(systems.tcs, hasOI(inst).fold(allButGaos, allButGaosNorOi).add(Gaos),
             altair.asLeft.some, systems.guideDb)(config,
-            LightPath(TcsController.LightSource.Sky, sys.sfName(config)),
+            LightPath(TcsController.LightSource.AO, sys.sfName(config)),
             extractWavelength(config)),
           Gcal(systems.gcal, site == Site.GS)
 
