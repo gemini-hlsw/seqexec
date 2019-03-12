@@ -108,10 +108,9 @@ object TcsConfigRetriever {
   ).value
 
   private def calcProbeTrackingConfig(f: FollowOption, t: NodChopTrackingConfig): ProbeTrackingConfig = (f, t) match {
-    case (_, NodChopTrackingConfig.AllOff)            => ProbeTrackingConfig.Off
-    case (FollowOn, NodChopTrackingConfig.Normal)     => ProbeTrackingConfig.On(NodChopTrackingConfig.Normal)
-    case (FollowOn, v: NodChopTrackingConfig.Special) => ProbeTrackingConfig.On(v)
-    case _                                            => ProbeTrackingConfig.Off
+    case (FollowOff, _)                            => ProbeTrackingConfig.Off
+    case (FollowOn, NodChopTrackingConfig.AllOff)  => ProbeTrackingConfig.Frozen
+    case (FollowOn, v:ActiveNodChopTracking)       => ProbeTrackingConfig.On(v)
   }
 
   implicit private val decodeFollowOption: DecodeEpicsValue[String, FollowOption] = DecodeEpicsValue((s: String)

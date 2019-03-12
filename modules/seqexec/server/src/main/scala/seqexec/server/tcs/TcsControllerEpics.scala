@@ -80,7 +80,8 @@ object TcsControllerEpics extends TcsController {
         d match {
           case ProbeTrackingConfig.Parked => (c =!= ProbeTrackingConfig.Parked).option(guideControl.parkCmd.mark)
           case ProbeTrackingConfig.On(_) |
-               ProbeTrackingConfig.Off    => (c.follow =!= d.follow)
+               ProbeTrackingConfig.Off   |
+               ProbeTrackingConfig.Frozen => (c.follow =!= d.follow)
             .option(guideControl.followCmd.setFollowState(encode(d.follow)))
         }
       ).collect{ case Some(x) => x }

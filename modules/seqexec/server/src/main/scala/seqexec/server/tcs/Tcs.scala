@@ -137,7 +137,7 @@ object Tcs {
   implicit class GuideWithOps(guideWith: StandardGuideOptions.Value) {
     val toProbeTracking: ProbeTrackingConfig = guideWith match {
       case StandardGuideOptions.Value.park => ProbeTrackingConfig.Parked
-      case StandardGuideOptions.Value.freeze => ProbeTrackingConfig.Off
+      case StandardGuideOptions.Value.freeze => ProbeTrackingConfig.Frozen
       case StandardGuideOptions.Value.guide => ProbeTrackingConfig.On(NodChopTrackingConfig.Normal)
     }
 
