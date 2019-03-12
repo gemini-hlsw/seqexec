@@ -188,7 +188,7 @@ object NifsControllerEpics extends NifsController[IO] with NifsEncoders {
       setNumberOfResets(cfg.numberOfResets) *>
       setNumberOfPeriods(cfg.numberOfPeriods) *>
       epicsSys.dcConfigCmd.setTimeout[IO](ConfigTimeout) *>
-        epicsSys.dcConfigCmd.post[IO].void
+      epicsSys.dcConfigCmd.post[IO].void
 
   private def setFilter(cfg: CCConfig): IO[Option[IO[Unit]]] = {
     val actualFilter: IO[LegacyFilter] = cfg match {
@@ -299,8 +299,10 @@ object NifsControllerEpics extends NifsController[IO] with NifsEncoders {
     }
 
     cfg match {
-      case DarkCCConfig     =>
-        setMaskEpics(LegacyMask.BLOCKED)
+      case DarkCCConfig =>
+        epicsSys.mask
+          .map(_.exists(_ =!= encode(LegacyMask.BLOCKED)))
+          .ifM(setMaskEpics(LegacyMask.BLOCKED), none.pure[IO])
       case cfg: StdCCConfig =>
         setMaskEpics(cfg.mask)
     }
@@ -345,7 +347,7 @@ object NifsControllerEpics extends NifsController[IO] with NifsEncoders {
             .option {
               epicsSys.ccConfigCmd.setMaskOffset(cfg.maskOffset)
             }
-          }
+        }
     }
 
   private val postCcConfig =
