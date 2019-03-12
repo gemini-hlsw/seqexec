@@ -6,6 +6,7 @@ package seqexec.server.altair
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
+import cats.Endo
 import cats.effect.IO
 import cats.implicits._
 import cats.kernel.Eq
@@ -72,9 +73,9 @@ object AltairControllerEpics extends AltairController[IO] {
 
   implicit val fieldLensEq: Eq[FieldLens] = Eq.by(_.ordinal)
 
-  private def pauseNgsOrLgsMode(starPos: (Length, Length), fieldLens: FieldLens, isLgs: Boolean,
-                                currCfg: EpicsAltairConfig)(reasons: Set[Gaos.PauseCondition])
-  : IO[EpicsAltairConfig] = {
+  private def pauseNgsOrLgsMode(starPos: (Length, Length), fieldLens: FieldLens, currCfg: EpicsAltairConfig)(
+    reasons: Set[Gaos.PauseCondition])
+  : Option[(EpicsAltairConfig, IO[Unit])] = {
     val offsets = reasons.collectFirst { case OffsetMove(p, n) => (p, n) }
     val newPos = offsets.map(u => newPosition(starPos)(u._2))
     val newPosOk = newPos.forall(newPosInRange)
@@ -88,7 +89,7 @@ object AltairControllerEpics extends AltairController[IO] {
     val newCfg = (EpicsAltairConfig.preparedMatrixCoords.modify(v =>
       newPos.filter(_ => newPosOk && !matrixOk && !prepMatrixOk).getOrElse(v)) >>>
       EpicsAltairConfig.aoLoop.set(!needsToStop)
-      ) (currCfg)
+    ) (currCfg)
 
     // Actions to stop loops
     val actions = List(
@@ -97,44 +98,41 @@ object AltairControllerEpics extends AltairController[IO] {
       newPos.filter(_ => newPosOk && !matrixOk && !prepMatrixOk).map(prepareMatrix)
     ).collect { case Some(x) => x }
 
-    val pause = for {
-      c <- isLgs.fold(ttgsOff(newCfg), IO(newCfg))
-      _ <- (actions.sequence *> convertTcsAction(epicsTcs.targetFilter.post).void).whenA(actions.nonEmpty)
-    } yield c
+    val pause = (actions.sequence *> convertTcsAction(epicsTcs.targetFilter.post).void).whenA(actions.nonEmpty)
 
-    needsToStop.fold(pause, IO(currCfg))
+    needsToStop.option((newCfg, pause))
   }
 
-  private def pauseNgsMode(starPos: (Length, Length), fieldLens: FieldLens, currCfg: EpicsAltairConfig)(reasons: Set[Gaos.PauseCondition])
-  : IO[Set[ResumeCondition] => IO[Unit]] = {
-    pauseNgsOrLgsMode(starPos, fieldLens, isLgs = false, currCfg)(reasons).map(resumeNgsMode(starPos, _))
+  private def pauseResumeNgsMode(starPos: (Length, Length), fieldLens: FieldLens, currCfg: EpicsAltairConfig)(
+    pauseReasons: Set[Gaos.PauseCondition], resumeReasons: Set[Gaos.ResumeCondition])
+  : PauseResume[IO] = {
+    val pause = pauseNgsOrLgsMode(starPos, fieldLens, currCfg)(pauseReasons)
+    val resume = resumeNgsOrLgsMode(starPos, pause.map(_._1).getOrElse(currCfg))(resumeReasons)
+
+    PauseResume(pause.map(_._2), resume)
   }
 
-  private val dumbResume = (_: Set[ResumeCondition]) => IO.unit
   val aoSettledTimeout: Time = 30.0.seconds
   val matrixPrepTimeout: Time = 10.seconds
 
   private def resumeNgsOrLgsMode(starPos: (Length, Length), currCfg: EpicsAltairConfig)(
-    reasons: Set[Gaos.ResumeCondition]): IO[Boolean] = {
+    reasons: Set[Gaos.ResumeCondition]): Option[IO[Unit]] = {
     val offsets = reasons.collectFirst { case OffsetReached(o) => o }
     val newPosOk = offsets.forall(v => newPosInRange(newPosition(starPos)(v)))
     val guideOk = reasons.contains(GaosStarOn)
 
-    (epicsAltair.waitMatrixCalc(CarStateGEM5.IDLE, matrixPrepTimeout) *>
-      convertTcsAction(
-        epicsTcs.aoCorrect.setCorrections(CorrectionsOn) *>
-        epicsTcs.aoFlatten.mark *>
-        epicsTcs.targetFilter.setShortCircuit(TargetFilterOpen) *>
-        epicsTcs.targetFilter.post.void
-      ) *>
-      epicsAltair.waitAoSettled(aoSettledTimeout)
-    ).whenA(newPosOk && guideOk && !currCfg.aoLoop) *>
-    IO(newPosOk && guideOk)
+    (newPosOk && guideOk).option(
+      (epicsAltair.waitMatrixCalc(CarStateGEM5.IDLE, matrixPrepTimeout) *>
+        convertTcsAction(
+          epicsTcs.aoCorrect.setCorrections(CorrectionsOn) *>
+          epicsTcs.aoFlatten.mark *>
+          epicsTcs.targetFilter.setShortCircuit(TargetFilterOpen) *>
+          epicsTcs.targetFilter.post.void
+        ) *>
+        epicsAltair.waitAoSettled(aoSettledTimeout)
+      ).whenA(!currCfg.aoLoop)
+    )
   }
-
-  private def resumeNgsMode(starPos: (Length, Length), currCfg: EpicsAltairConfig)(reasons: Set[Gaos.ResumeCondition])
-  : IO[Unit] =
-    resumeNgsOrLgsMode(starPos, currCfg)(reasons).void
 
   private def checkStrapLoopState(currCfg: EpicsAltairConfig): TrySeq[Unit] =
     currCfg.strapRTStatus.either(
@@ -177,64 +175,66 @@ object AltairControllerEpics extends AltairController[IO] {
   private def pauseSfoLoop(currCfg: EpicsAltairConfig): IO[Unit] =
     epicsAltair.sfoControl.setActive(LgsSfoControl.Pause).whenA(currCfg.sfoLoop === LgsSfoControl.Enable)
 
-  private def ttgsOn(strap: Boolean, sfo: Boolean, currCfg: EpicsAltairConfig): IO[EpicsAltairConfig] =
-    for {
-      l1 <- strap.fold(
-        checkStrapLoopState(currCfg).fold(IO.raiseError, IO(_)) *>
-          startStrapGate(currCfg) *>
-          startStrapLoop(currCfg) *>
-          IO(EpicsAltairConfig.strapGate.set(100) >>> EpicsAltairConfig.strapLoop.set(true)),
-        IO(identity[EpicsAltairConfig](_))
-      )
-      l2 <- sfo.fold(
-        startSfoLoop(currCfg) *> IO(EpicsAltairConfig.sfoLoop.set(LgsSfoControl.Enable)),
-        IO(identity[EpicsAltairConfig](_))
-      )
-    } yield (l1 >>> l2) (currCfg)
+  private def ttgsOn(strap: Boolean, sfo: Boolean, currCfg: EpicsAltairConfig): IO[Unit] =
+    checkStrapLoopState(currCfg).fold(IO.raiseError, IO(_)) *>
+      (startStrapGate(currCfg) *> startStrapLoop(currCfg)).whenA(strap) *>
+      startSfoLoop(currCfg).whenA(sfo)
 
-  private def ttgsOff(currCfg: EpicsAltairConfig): IO[EpicsAltairConfig] =
+  private val ttgsOffEndo: Endo[EpicsAltairConfig] = EpicsAltairConfig.strapGate.set(0) >>>
+    EpicsAltairConfig.strapLoop.set(false) >>>
+    EpicsAltairConfig.sfoLoop.modify { v =>
+      (v === LgsSfoControl.Disable).fold(LgsSfoControl.Disable, LgsSfoControl.Pause)
+    }
+
+  private def ttgsOff(currCfg: EpicsAltairConfig): IO[Unit] =
     stopStrapGate(currCfg) *>
       stopStrapLoop(currCfg) *>
-      pauseSfoLoop(currCfg) *>
-      IO(
-        (EpicsAltairConfig.strapGate.set(0) >>>
-          EpicsAltairConfig.strapLoop.set(false) >>>
-          EpicsAltairConfig.sfoLoop.modify { v =>
-            (v === LgsSfoControl.Disable).fold(LgsSfoControl.Disable, LgsSfoControl.Pause)
-          }) (currCfg)
-      )
+      pauseSfoLoop(currCfg)
+
+  private def pauseResumeLgsMode(strap: Boolean, sfo: Boolean, starPos: (Length, Length), fieldLens: FieldLens,
+                           currCfg: EpicsAltairConfig)(
+    pauseReasons: Set[Gaos.PauseCondition], resumeReasons: Set[Gaos.ResumeCondition]): PauseResume[IO] = {
+    val pause = pauseLgsMode(strap, sfo, starPos, fieldLens, currCfg)(pauseReasons)
+    val resume = resumeLgsMode(strap, sfo, starPos)(pause.map(_._1).getOrElse(currCfg))(resumeReasons)
+
+    PauseResume(pause.map(_._2), resume)
+  }
 
   private def pauseLgsMode(strap: Boolean, sfo: Boolean, starPos: (Length, Length), fieldLens: FieldLens,
-                           currCfg: EpicsAltairConfig)(reasons: Set[Gaos.PauseCondition])
-  : IO[Set[ResumeCondition] => IO[Unit]] =
-    (strap || sfo).fold(pauseNgsOrLgsMode(starPos, fieldLens, isLgs = true, currCfg)(reasons), IO(currCfg))
-      .map(resumeLgsMode(strap, sfo, starPos))
+                             currCfg: EpicsAltairConfig)(reasons: Set[Gaos.PauseCondition])
+  : Option[(EpicsAltairConfig, IO[Unit])] =
+    pauseNgsOrLgsMode(starPos, fieldLens, currCfg)(reasons).filter(_ => strap || sfo)
+      .map(_.bimap(ttgsOffEndo, ttgsOff(currCfg) *> _))
 
   private def resumeLgsMode(strap: Boolean, sfo: Boolean, starPos: (Length, Length))(currCfg: EpicsAltairConfig)(
-    reasons: Set[Gaos.ResumeCondition]): IO[Unit] =
-    resumeNgsOrLgsMode(starPos, currCfg)(reasons).flatMap(ttgsOn(strap, sfo, currCfg).void.whenA(_)).whenA(strap || sfo)
+    reasons: Set[Gaos.ResumeCondition]): Option[IO[Unit]] =
+    resumeNgsOrLgsMode(starPos, currCfg)(reasons).filter(_ => strap || sfo).map(_ *> ttgsOn(strap, sfo, currCfg))
 
   // TODO Should do something if P1 is turned off ?
-  private def pauseLgsWithP1Mode
-  : IO[Set[ResumeCondition] => IO[Unit]] = IO(dumbResume)
+  private def pauseResumeLgsWithP1Mode
+  : PauseResume[IO] = PauseResume(None, None)
 
   // TODO Should do something if OI is turned off ?
-  private def pauseLgsWithOiMode
-  : IO[Set[ResumeCondition] => IO[Unit]] = IO(dumbResume)
+  private def pauseResumeLgsWithOiMode
+  : PauseResume[IO] = PauseResume(None, None)
 
-  private def turnOff(c: EpicsAltairConfig): IO[Set[ResumeCondition] => IO[Unit]] =
+  private def turnOff(c: EpicsAltairConfig): PauseResume[IO] = PauseResume(
     convertTcsAction(epicsTcs.aoCorrect.setCorrections(CorrectionsOff) *>
       epicsTcs.targetFilter.post
-    ).whenA(c.aoLoop) *> IO(dumbResume)
+    ).whenA(c.aoLoop).some,
+    None
+  )
 
-  override def pause(reasons: Set[PauseCondition], fieldLens: FieldLens)(cfg: AltairConfig)
-  : IO[Set[ResumeCondition] => IO[Unit]] =
-    retrieveConfig.flatMap { currCfg =>
+  override def pauseResume(pauseReasons: Set[PauseCondition], resumeReasons: Set[ResumeCondition],
+                           fieldLens: FieldLens)(cfg: AltairConfig): IO[PauseResume[IO]] =
+    retrieveConfig.map{ currCfg =>
       cfg match {
-        case Ngs(_, starPos)                      => pauseNgsMode(starPos, fieldLens, currCfg)(reasons)
-        case Lgs(str: Boolean, sfo: Boolean, pos) => pauseLgsMode(str, sfo, pos, fieldLens, currCfg)(reasons)
-        case LgsWithP1                            => pauseLgsWithP1Mode
-        case LgsWithOi                            => pauseLgsWithOiMode
+        case Ngs(_, starPos)                      => pauseResumeNgsMode(starPos, fieldLens, currCfg)(pauseReasons,
+          resumeReasons)
+        case Lgs(str: Boolean, sfo: Boolean, pos) => pauseResumeLgsMode(str, sfo, pos, fieldLens, currCfg)(pauseReasons,
+          resumeReasons)
+        case LgsWithP1                            => pauseResumeLgsWithP1Mode
+        case LgsWithOi                            => pauseResumeLgsWithOiMode
         case AltairOff                            => turnOff(currCfg)
       }
     }

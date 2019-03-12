@@ -14,13 +14,6 @@ import squants.Time
  * Interface to control AO systems. Implemented by Altair and GeMS
  */
 trait Gaos[F[_]] {
-  import Gaos._
-
-  /*
-   * Pause GAOS guiding. The GAOS system decides what to pause, according to the reasons given
-   * Return a function to be used to resume GAOS guiding
-   */
-  def pause(config: Either[AltairConfig, GemsConfig], reasons: Set[PauseCondition]): F[Set[ResumeCondition] => F[Unit]]
 
   /*
    * Notify GAOS system of the start of the observation
@@ -77,5 +70,10 @@ object Gaos {
     case (GaosStarOn, GaosStarOn)             => true
     case _                                                  => false
   }
+
+  sealed case class PauseResume[F[_]](
+    pause: Option[F[Unit]], // None means Gaos will not be paused
+    resume: Option[F[Unit]] // None means Gaos will not be resumed
+  )
 
 }

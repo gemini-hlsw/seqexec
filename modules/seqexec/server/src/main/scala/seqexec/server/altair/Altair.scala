@@ -13,15 +13,18 @@ import seqexec.model.enum.Resource
 import seqexec.server.TrySeq
 import seqexec.server.altair.AltairController._
 import seqexec.server.gems.GemsController.GemsConfig
-import seqexec.server.tcs.Gaos.ResumeCondition
+import seqexec.server.tcs.Gaos.{PauseResume, ResumeCondition}
 import seqexec.server.tcs.Gaos
 import squants.Time
 
 class Altair[F[_]: Sync] private (controller: AltairController[F],
                           fieldLens: FieldLens
                          ) extends Gaos[F] {
-  override def pause(config: Either[AltairConfig, GemsConfig], reasons: Set[Gaos.PauseCondition]): F[Set[ResumeCondition] => F[Unit]] =
-    config.swap.map(controller.pause(reasons, fieldLens)(_)).getOrElse({_:Set[ResumeCondition] => Sync[F].unit}.pure[F])
+
+  def pauseResume(config: Either[AltairConfig, GemsConfig], pauseReasons: Set[Gaos.PauseCondition],
+                           resumeReasons: Set[ResumeCondition]): F[PauseResume[F]] =
+    config.swap.map(controller.pauseResume(pauseReasons, resumeReasons, fieldLens)(_))
+      .getOrElse(PauseResume[F](None, None).pure[F])
 
   override def observe(config: Either[AltairConfig, GemsConfig], expTime: Time): F[Unit] =
     config.swap.map(controller.observe(expTime)(_)).getOrElse(Sync[F].unit)
@@ -48,4 +51,5 @@ class Altair[F[_]: Sync] private (controller: AltairController[F],
 object Altair {
   def fromConfig[F[_]: Sync](config: Config, controller: AltairController[F]): TrySeq[Altair[F]] =
     config.extractAs[FieldLens](new ItemKey(AO_CONFIG_NAME) / FIELD_LENSE_PROP).asTrySeq.map(new Altair(controller, _))
+
 }

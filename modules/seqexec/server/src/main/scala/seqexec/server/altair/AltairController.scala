@@ -5,15 +5,15 @@ package seqexec.server.altair
 
 import cats.Eq
 import cats.implicits._
-import seqexec.server.tcs.Gaos.{PauseCondition, ResumeCondition}
+import seqexec.server.tcs.Gaos.{PauseCondition, PauseResume, ResumeCondition}
 import squants.Time
 import squants.space.Length
 
 trait AltairController[F[_]] {
   import AltairController._
 
-  def pause(reasons: Set[PauseCondition], fieldLens: FieldLens)(cfg: AltairConfig)
-  : F[Set[ResumeCondition] => F[Unit]]
+  def pauseResume(pauseReasons: Set[PauseCondition], resumeReasons: Set[ResumeCondition], fieldLens: FieldLens)(
+    cfg: AltairConfig): F[PauseResume[F]]
 
   def observe(expTime: Time)(cfg: AltairConfig): F[Unit]
 
