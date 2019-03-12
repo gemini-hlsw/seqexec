@@ -83,7 +83,7 @@ class AltairEpics[F[_]: Async](service: CaService, tops: Map[String, String]) {
   def aoLoop: F[Option[Boolean]] = safeAttributeSInt(status.getIntegerAttribute("aowfsOn"))
     .map(_.map(_ =!= 0))
 
-  private val aoSettledAttr = status.getDoubleAttribute("straploop")
+  private val aoSettledAttr = status.getDoubleAttribute("aoSettled")
   def aoSettled: F[Option[Boolean]] = safeAttributeSDouble(aoSettledAttr)
     .map(_.map(_ =!= 0.0))
 
@@ -107,7 +107,7 @@ class AltairEpics[F[_]: Async](service: CaService, tops: Map[String, String]) {
     .map(_.map(_ =!= 0))
 
   def aoFollow: F[Option[Boolean]] = safeAttribute(status.getStringAttribute("aoFollowS"))
-    .map(_.map(_ === "ON"))
+    .map(_.map(_ === "On"))
 
 }
 

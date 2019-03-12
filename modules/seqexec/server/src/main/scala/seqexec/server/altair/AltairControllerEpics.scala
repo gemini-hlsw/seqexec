@@ -79,11 +79,11 @@ object AltairControllerEpics extends AltairController[IO] {
     val offsets = reasons.collectFirst { case OffsetMove(p, n) => (p, n) }
     val newPos = offsets.map(u => newPosition(starPos)(u._2))
     val newPosOk = newPos.forall(newPosInRange)
-    val matrixOk = newPos.forall(validateCurrentControlMatrix(currCfg, _)) || fieldLens =!= FieldLens.IN
-    val prepMatrixOk = newPos.forall(validatePreparedControlMatrix(currCfg, _)) || fieldLens =!= FieldLens.IN
+    val matrixOk = newPos.forall(validateCurrentControlMatrix(currCfg, _)) || fieldLens === FieldLens.IN
+    val prepMatrixOk = newPos.forall(validatePreparedControlMatrix(currCfg, _)) || fieldLens === FieldLens.IN
     val guideOk = !reasons.contains(GaosStarOff) //It can follow the guide star on this step
 
-    val needsToStop = !(newPosOk || matrixOk || guideOk)
+    val needsToStop = !(newPosOk && matrixOk && guideOk)
 
     // How the current configuration changes if loops are stopped
     val newCfg = (EpicsAltairConfig.preparedMatrixCoords.modify(v =>
