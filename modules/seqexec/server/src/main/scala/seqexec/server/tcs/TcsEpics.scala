@@ -51,6 +51,26 @@ final class TcsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, Stri
     def setState(v: String): SeqAction[Unit] = setParameter[String](state, v)
   }
 
+  object m2GuideModeCmd extends EpicsCommand {
+    override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("m2GuideMode"))
+
+    private val coma = cs.map(_.getString("coma"))
+    def setComa(v: String): SeqAction[Unit] = setParameter[String](coma, v)
+  }
+
+  object m2GuideConfigCmd extends EpicsCommand {
+    override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("m2GuideConfig"))
+
+    private val source = cs.map(_.getString("source"))
+    def setSource(v: String): SeqAction[Unit] = setParameter[String](source, v)
+
+    private val beam = cs.map(_.getString("beam"))
+    def setBeam(v: String): SeqAction[Unit] = setParameter[String](beam, v)
+
+    private val reset = cs.map(_.getString("reset"))
+    def setReset(v: String): SeqAction[Unit] = setParameter[String](reset, v)
+  }
+
   object mountGuideCmd extends EpicsCommand {
     override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("mountGuide"))
 
