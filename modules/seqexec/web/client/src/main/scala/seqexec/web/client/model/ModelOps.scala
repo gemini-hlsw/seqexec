@@ -120,8 +120,8 @@ object ModelOps {
     }
   }
 
-  implicit class CamelCaseOps(val s: String) extends AnyVal {
-    def toCamelCase: String =
+  implicit class ExtraStringOps(val s: String) extends AnyVal {
+    def sentenceCase: String =
       (s.toList match {
         case Nil       => Nil
         case x :: rest => x.toUpper :: rest.map(_.toLower)

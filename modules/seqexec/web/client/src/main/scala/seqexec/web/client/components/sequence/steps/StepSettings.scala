@@ -63,8 +63,8 @@ object FPUCell {
           .orElse(
             instrumentSlitWidthO
               .getOption(p.s)
-              .map(_.toCamelCase)
-              .orElse(instrumentMaskO.getOption(p.s).map(_.toCamelCase)))
+              .map(_.sentenceCase)
+              .orElse(instrumentMaskO.getOption(p.s).map(_.sentenceCase)))
           .getOrElse("Unknown"): String
       )
     }
@@ -124,11 +124,11 @@ object FilterCell {
         case Instrument.Gnirs =>
           instrumentFilterO
             .getOption(s)
-            .map(_.toCamelCase)
+            .map(_.sentenceCase)
         case Instrument.Nifs =>
           instrumentFilterO
             .getOption(s)
-            .map(_.toCamelCase)
+            .map(_.sentenceCase)
         case Instrument.Gpi => gpiFilter(s)
         case _              => None
       }
@@ -378,7 +378,7 @@ object CameraCell {
 
       <.div(
         SeqexecStyles.componentLabel,
-        cameraName(p.s).map(_.toCamelCase).getOrElse("Unknown"): String
+        cameraName(p.s).map(_.sentenceCase).getOrElse("Unknown"): String
       )
     }
     .configure(Reusability.shouldComponentUpdate)
@@ -404,7 +404,7 @@ object DeckerCell {
 
       <.div(
         SeqexecStyles.componentLabel,
-        deckerName(p.s).map(_.toCamelCase).getOrElse("Unknown"): String
+        deckerName(p.s).map(_.sentenceCase).getOrElse("Unknown"): String
       )
     }
     .configure(Reusability.shouldComponentUpdate)
@@ -430,7 +430,7 @@ object ImagingMirrorCell {
 
       <.div(
         SeqexecStyles.componentLabel,
-        imagingMirrorName(p.s).map(_.toCamelCase).getOrElse("Unknown"): String
+        imagingMirrorName(p.s).map(_.sentenceCase).getOrElse("Unknown"): String
       )
     }
     .configure(Reusability.shouldComponentUpdate)
