@@ -201,7 +201,7 @@ object AltairControllerEpics extends AltairController[IO] {
   }
 
   private def pauseLgsMode(strap: Boolean, sfo: Boolean, starPos: (Length, Length), fieldLens: FieldLens,
-                             currCfg: EpicsAltairConfig)(reasons: Set[Gaos.PauseCondition])
+                           currCfg: EpicsAltairConfig)(reasons: Set[Gaos.PauseCondition])
   : Option[(EpicsAltairConfig, IO[Unit])] =
     pauseNgsOrLgsMode(starPos, fieldLens, currCfg)(reasons).filter(_ => strap || sfo)
       .map(_.bimap(ttgsOffEndo, ttgsOff(currCfg) *> _))
@@ -212,11 +212,11 @@ object AltairControllerEpics extends AltairController[IO] {
 
   // TODO Should do something if P1 is turned off ?
   private def pauseResumeLgsWithP1Mode
-  : PauseResume[IO] = PauseResume(None, None)
+  : PauseResume[IO] = PauseResume(None, IO.unit.some)
 
   // TODO Should do something if OI is turned off ?
   private def pauseResumeLgsWithOiMode
-  : PauseResume[IO] = PauseResume(None, None)
+  : PauseResume[IO] = PauseResume(None, IO.unit.some)
 
   private def turnOff(c: EpicsAltairConfig): PauseResume[IO] = PauseResume(
     convertTcsAction(epicsTcs.aoCorrect.setCorrections(CorrectionsOff) *>
