@@ -7,8 +7,13 @@ import cats.Show
 import cats.implicits._
 import cats.data.NonEmptyList
 import gem.enum.Site
-import seqexec.model.enum.{ ActionStatus, Instrument, Resource }
-import seqexec.model.{ StepState, SequenceState, Step, StandardStep }
+import seqexec.model.enum.ActionStatus
+import seqexec.model.enum.Instrument
+import seqexec.model.enum.Resource
+import seqexec.model.StepState
+import seqexec.model.SequenceState
+import seqexec.model.Step
+import seqexec.model.StandardStep
 import seqexec.model.SequenceView
 
 /**
@@ -115,6 +120,14 @@ object ModelOps {
     }
   }
 
+  implicit class CamelCaseOps(val s: String) extends AnyVal {
+    def toCamelCase: String =
+      (s.toList match {
+        case Nil       => Nil
+        case x :: rest => x.toUpper :: rest.map(_.toLower)
+      }).mkString
+  }
+
   sealed trait InstrumentProperties
 
   object InstrumentProperties {
@@ -126,6 +139,7 @@ object ModelOps {
     case object ObservingMode extends InstrumentProperties
     case object Camera        extends InstrumentProperties
     case object Decker        extends InstrumentProperties
+    case object ImagingMirror extends InstrumentProperties
   }
 
   implicit class InstrumentOps(val i: Instrument) extends AnyVal {
@@ -136,6 +150,15 @@ object ModelOps {
             InstrumentProperties.Filter,
             InstrumentProperties.Offsets,
             InstrumentProperties.FPU)
+      case Instrument.Nifs =>
+        Set(
+          InstrumentProperties.Exposure,
+          InstrumentProperties.Filter,
+          InstrumentProperties.Offsets,
+          InstrumentProperties.Disperser,
+          InstrumentProperties.FPU,
+          InstrumentProperties.ImagingMirror
+        )
       case Instrument.GmosS =>
         Set(InstrumentProperties.Exposure,
             InstrumentProperties.Filter,
@@ -149,12 +172,14 @@ object ModelOps {
             InstrumentProperties.Disperser,
             InstrumentProperties.FPU)
       case Instrument.Gnirs =>
-        Set(InstrumentProperties.Exposure,
-            InstrumentProperties.Filter,
-            InstrumentProperties.Offsets,
-            InstrumentProperties.Disperser,
-            InstrumentProperties.Decker,
-            InstrumentProperties.FPU)
+        Set(
+          InstrumentProperties.Exposure,
+          InstrumentProperties.Filter,
+          InstrumentProperties.Offsets,
+          InstrumentProperties.Disperser,
+          InstrumentProperties.Decker,
+          InstrumentProperties.FPU
+        )
       case Instrument.Gpi =>
         Set(InstrumentProperties.Exposure,
             InstrumentProperties.Filter,

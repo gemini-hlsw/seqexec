@@ -57,7 +57,8 @@ object ColWidths {
   val ObservingModeWidth: Double = 180
   val FilterWidth: Double        = 180
   val FPUWidth: Double           = 100
-  val DeckerWidth: Double        = 100
+  val DeckerWidth: Double        = 110
+  val ImagingMirrorWidth: Double = 180
   val CameraWidth: Double        = 180
   val ObjectTypeWidth: Double    = 75
   val SettingsWidth: Double      = 34
@@ -124,17 +125,17 @@ object StepsTable {
     val nextStepToRun: Int                          = steps.foldMap(_.nextStepToRun).getOrElse(0)
     val tabOperations: TabOperations =
       steps.map(_.tabOperations).getOrElse(TabOperations.Default)
-    val showDisperser: Boolean    = showProp(InstrumentProperties.Disperser)
-    val showExposure: Boolean     = showProp(InstrumentProperties.Exposure)
-    val showFilter: Boolean       = showProp(InstrumentProperties.Filter)
-    val showFPU: Boolean          = showProp(InstrumentProperties.FPU)
-    val showCamera: Boolean       = showProp(InstrumentProperties.Camera)
-    val showDecker: Boolean       = showProp(InstrumentProperties.Decker)
-    val isPreview: Boolean        = steps.map(_.isPreview).getOrElse(false)
-    val hasControls: Boolean      = canOperate && !isPreview
-    val canSetBreakpoint: Boolean = canOperate && !isPreview
-    val showObservingMode: Boolean =
-      showProp(InstrumentProperties.ObservingMode)
+    val showDisperser: Boolean     = showProp(InstrumentProperties.Disperser)
+    val showExposure: Boolean      = showProp(InstrumentProperties.Exposure)
+    val showFilter: Boolean        = showProp(InstrumentProperties.Filter)
+    val showFPU: Boolean           = showProp(InstrumentProperties.FPU)
+    val showCamera: Boolean        = showProp(InstrumentProperties.Camera)
+    val showDecker: Boolean        = showProp(InstrumentProperties.Decker)
+    val showImagingMirror: Boolean = showProp(InstrumentProperties.ImagingMirror)
+    val isPreview: Boolean         = steps.map(_.isPreview).getOrElse(false)
+    val hasControls: Boolean       = canOperate && !isPreview
+    val canSetBreakpoint: Boolean  = canOperate && !isPreview
+    val showObservingMode: Boolean = showProp(InstrumentProperties.ObservingMode)
 
     def rowGetter(idx: Int): StepRow =
       steps.flatMap(_.steps.lift(idx)).fold(StepRow.Zero)(StepRow.apply)
@@ -303,10 +304,12 @@ object StepsTable {
   ): CellRenderer[js.Object, js.Object, StepRow] =
     (_, _, _, row: StepRow, _) => CameraCell(CameraCell.Props(row.step, i))
 
-  def deckerRenderer(
-    i: Instrument
-  ): CellRenderer[js.Object, js.Object, StepRow] =
-    (_, _, _, row: StepRow, _) => DeckerCell(DeckerCell.Props(row.step, i))
+  def deckerRenderer: CellRenderer[js.Object, js.Object, StepRow] =
+    (_, _, _, row: StepRow, _) => DeckerCell(DeckerCell.Props(row.step))
+
+  def imagingMirrorRenderer: CellRenderer[js.Object, js.Object, StepRow] =
+    (_, _, _, row: StepRow, _) =>
+      ImagingMirrorCell(ImagingMirrorCell.Props(row.step))
 
   private def stepRowStyle(step: Step): GStyle = step match {
     case s if s.hasError                       => SeqexecStyles.rowError
@@ -488,17 +491,31 @@ object StepsTable {
 
   def deckerColumn(p: Props, cameraVisible: Boolean): Option[Table.ColumnArg] =
     p.steps
-      .map(
-        i =>
-          Column(
-            Column.propsNoFlex(
-              ColWidths.DeckerWidth,
-              "decker",
-              label        = "Decker",
-              className    = SeqexecStyles.centeredCell.htmlClass,
-              cellRenderer = deckerRenderer(i.instrument)
-            )))
       .filter(_ => p.showDecker && cameraVisible)
+      .as(
+        Column(
+          Column.propsNoFlex(
+            ColWidths.DeckerWidth,
+            "decker",
+            label        = "Decker",
+            className    = SeqexecStyles.centeredCell.htmlClass,
+            cellRenderer = deckerRenderer
+          )))
+
+  def imagingMirrorColumn(
+    p:                    Props,
+    imagingMirrorVisible: Boolean): Option[Table.ColumnArg] =
+    p.steps
+      .filter(_ => p.showImagingMirror && imagingMirrorVisible)
+      .as(
+        Column(
+          Column.propsNoFlex(
+            ColWidths.ImagingMirrorWidth,
+            "imaging mirror",
+            label        = "Img. Mirror",
+            className    = SeqexecStyles.centeredCell.htmlClass,
+            cellRenderer = imagingMirrorRenderer
+          )))
 
   def fpuColumn(p: Props, fpuVisible: Boolean): Option[Table.ColumnArg] =
     p.steps
@@ -568,6 +585,7 @@ object StepsTable {
           )))
 
   // Columns for the table
+  // scalastyle:off
   private def columns(b: Backend, s: Size): List[Table.ColumnArg] = {
     val p = b.props
     val (offsetVisible,
@@ -576,15 +594,16 @@ object StepsTable {
          fpuVisible,
          cameraVisible,
          deckerVisible,
+         imagingMirrorVisible,
          filterVisible,
          objectSize) =
       s.width match {
         case w if w < PhoneCut =>
-          (false, false, false, false, false, false, false, SSize.Tiny)
+          (false, false, false, false, false, false, false, false, SSize.Tiny)
         case w if w < LargePhoneCut =>
-          (false, true, false, false, false, false, false, SSize.Small)
+          (false, true, false, false, false, false, false, false, SSize.Small)
         case _ =>
-          (b.props.showOffsets, true, true, true, true, true, true, SSize.Small)
+          (b.props.showOffsets, true, true, true, true, true, true, true, SSize.Small)
       }
 
     val (offsetCol, offsetWidth) = offsetColumn(p, offsetVisible)
@@ -594,6 +613,7 @@ object StepsTable {
     val fpuCol                   = fpuColumn(p, fpuVisible)
     val cameraCol                = cameraColumn(p, cameraVisible)
     val deckerCol                = deckerColumn(p, deckerVisible)
+    val imagingMirrorCol         = imagingMirrorColumn(p, imagingMirrorVisible)
     val iconCol                  = iconColumn(b)
     val filterCol                = filterColumn(p, filterVisible)
     val typeCol                  = typeColumn(p, objectSize)
@@ -610,6 +630,7 @@ object StepsTable {
         fpuCol.fold(0.0)(_ => ColWidths.FPUWidth) +
         cameraCol.fold(0.0)(_ => ColWidths.CameraWidth) +
         deckerCol.fold(0.0)(_ => ColWidths.DeckerWidth) +
+        imagingMirrorCol.fold(0.0)(_ => ColWidths.ImagingMirrorWidth) +
         observingModeCol.fold(0.0)(_ => ColWidths.ObservingModeWidth) + ColWidths.ObjectTypeWidth + ColWidths.SettingsWidth
     val controlWidth = s.width - colsWidth
     val stateCol     = stateColumn(b, controlWidth)
@@ -625,10 +646,12 @@ object StepsTable {
       fpuCol,
       cameraCol,
       deckerCol,
+      imagingMirrorCol,
       typeCol,
       settingsCol
     ).collect { case Some(x) => x }
   }
+  // scalastyle:on
 
   def updateScrollPosition(b: Backend, pos: JsNumber): Callback = {
     val s = (State.userModified.set(IsModified) >>>

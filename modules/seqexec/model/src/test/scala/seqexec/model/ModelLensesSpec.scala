@@ -64,4 +64,12 @@ final class ModelLensesSpec extends CatsSuite with ModelLenses {
            OptionalTests(instrumentDisperserLambdaO))
   checkAll("instrument observing mode Optional",
            OptionalTests(instrumentObservingModeO))
+  checkAll("instrument disperser mode lambda Optional",
+           OptionalTests(instrumentDisperserLambdaO))
+  checkAll("instrument decker Optional",
+           OptionalTests(instrumentDeckerO))
+  checkAll("instrument imaging mirror Optional",
+           OptionalTests(instrumentImagingMirrorO))
+  checkAll("instrument mask Optional",
+           OptionalTests(instrumentMaskO))
 }

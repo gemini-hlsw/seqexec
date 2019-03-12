@@ -22,6 +22,7 @@ import seqexec.model.enumerations
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.model.Pages
 import seqexec.web.client.model.lenses._
+import seqexec.web.client.model.ModelOps._
 import seqexec.web.client.semanticui.elements.label.Label
 import seqexec.web.client.semanticui.elements.icon.Icon._
 import seqexec.web.client.semanticui.Size
@@ -58,7 +59,13 @@ object FPUCell {
 
       <.div(
         SeqexecStyles.componentLabel,
-        fpuValue.orElse(instrumentSlitWidthO.getOption(p.s)).getOrElse("Unknown"): String
+        fpuValue
+          .orElse(
+            instrumentSlitWidthO
+              .getOption(p.s)
+              .map(_.toCamelCase)
+              .orElse(instrumentMaskO.getOption(p.s).map(_.toCamelCase)))
+          .getOrElse("Unknown"): String
       )
     }
     .configure(Reusability.shouldComponentUpdate)
@@ -117,6 +124,11 @@ object FilterCell {
         case Instrument.Gnirs =>
           instrumentFilterO
             .getOption(s)
+            .map(_.toCamelCase)
+        case Instrument.Nifs =>
+          instrumentFilterO
+            .getOption(s)
+            .map(_.toCamelCase)
         case Instrument.Gpi => gpiFilter(s)
         case _              => None
       }
@@ -366,7 +378,7 @@ object CameraCell {
 
       <.div(
         SeqexecStyles.componentLabel,
-        cameraName(p.s).getOrElse("Unknown"): String
+        cameraName(p.s).map(_.toCamelCase).getOrElse("Unknown"): String
       )
     }
     .configure(Reusability.shouldComponentUpdate)
@@ -379,7 +391,7 @@ object CameraCell {
   * Component to display the decker
   */
 object DeckerCell {
-  final case class Props(s: Step, i: Instrument)
+  final case class Props(s: Step)
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
@@ -388,12 +400,37 @@ object DeckerCell {
     .stateless
     .render_P { p =>
       def deckerName(s: Step): Option[String] =
-        instrumentDeckerO
-          .getOption(s)
+        instrumentDeckerO.getOption(s)
 
       <.div(
         SeqexecStyles.componentLabel,
-        deckerName(p.s).getOrElse("Unknown"): String
+        deckerName(p.s).map(_.toCamelCase).getOrElse("Unknown"): String
+      )
+    }
+    .configure(Reusability.shouldComponentUpdate)
+    .build
+
+  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
+}
+
+/**
+  * Component to imaging mirror the decker
+  */
+object ImagingMirrorCell {
+  final case class Props(s: Step)
+
+  implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
+
+  private val component = ScalaComponent
+    .builder[Props]("ImagingMirrorCell")
+    .stateless
+    .render_P { p =>
+      def imagingMirrorName(s: Step): Option[String] =
+        instrumentImagingMirrorO.getOption(s)
+
+      <.div(
+        SeqexecStyles.componentLabel,
+        imagingMirrorName(p.s).map(_.toCamelCase).getOrElse("Unknown"): String
       )
     }
     .configure(Reusability.shouldComponentUpdate)
