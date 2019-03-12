@@ -103,12 +103,14 @@
             <description>AO loop settled</description>
         </attribute>
         <attribute name="conmatx">
-            <channel>conMatX</channel>
+            <!-- X/Y coordinates in Altair are swapped with respect to X/Y in the telescope focal plane -->
+            <channel>conMatY</channel>
             <type>DOUBLE</type>
             <description>Control matrix star X</description>
         </attribute>
         <attribute name="conmaty">
-            <channel>conMatY</channel>
+            <!-- X/Y coordinates in Altair are swapped with respect to X/Y in the telescope focal plane -->
+            <channel>conMatX</channel>
             <type>DOUBLE</type>
             <description>Control matrix star Y</description>
         </attribute>
