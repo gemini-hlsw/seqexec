@@ -204,12 +204,14 @@ object TcsController {
     case object Parked extends ProbeTrackingConfig(FollowOff, NodChopTrackingConfig.AllOff)
     case object Off extends ProbeTrackingConfig(FollowOff, NodChopTrackingConfig.AllOff)
     final case class On(ndconfig: ActiveNodChopTracking) extends ProbeTrackingConfig(FollowOn, ndconfig)
+    case object Frozen extends ProbeTrackingConfig(FollowOn, NodChopTrackingConfig.AllOff)
 
     implicit val onEq: Eq[On] = Eq.by(_.ndconfig)
 
     implicit val eq: Eq[ProbeTrackingConfig] = Eq.instance{
       case (Parked, Parked)   => true
       case (Off, Off)         => true
+      case (Frozen, Frozen)   => true
       case (a@On(_), b@On(_)) => a === b
       case _                  => false
     }
