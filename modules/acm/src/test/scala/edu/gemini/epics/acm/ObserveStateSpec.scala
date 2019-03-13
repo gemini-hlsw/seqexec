@@ -5,6 +5,7 @@ package edu.gemini.epics.acm
 
 import com.cosylab.epics.caj.CAJContext
 import edu.gemini.epics.EpicsService
+import java.util.concurrent.atomic.AtomicInteger
 import org.scalamock.scalatest.MockFactory
 import org.scalatest._
 
@@ -46,8 +47,25 @@ final class ObserveStateSpec extends FunSuite with MockFactory {
     // Start idle
     assert(observe.applyState().isIdle())
 
+    val observeErrorCount = new AtomicInteger()
+    val observePauseCount = new AtomicInteger()
+    val observeSuccessCount = new AtomicInteger()
     // Post an observe
-    observe.post()
+    val l = observe.post()
+    l.setCallback(new CaCommandListener() {
+      def onFailure(ex: Exception): Unit = {
+        observeErrorCount.incrementAndGet()
+        ()
+      }
+      def onPause(): Unit = {
+        observePauseCount.incrementAndGet()
+        ()
+      }
+      def onSuccess(): Unit = {
+        observeSuccessCount.incrementAndGet()
+        ()
+      }
+    })
 
     // OBSERVE
     // OBSERVE goes BUSY
@@ -75,6 +93,11 @@ final class ObserveStateSpec extends FunSuite with MockFactory {
     // CAR VAL change
     observe.onCarValChange(CarState.IDLE)
     assert(observe.applyState().isIdle())
+
+    // TODO fix these when the channels are correctly mocked
+    // assert(observeErrorCount.get() === 1)
+    // assert(observePauseCount.get() === 0)
+    // assert(observeSuccessCount.get() === 1)
   }
 
   test("GMOS normal observation") {
@@ -102,8 +125,26 @@ final class ObserveStateSpec extends FunSuite with MockFactory {
       epicsService)
     // Start idle
     assert(observe.applyState().isIdle())
+
+    val observeErrorCount = new AtomicInteger()
+    val observePauseCount = new AtomicInteger()
+    val observeSuccessCount = new AtomicInteger()
     // Post an observe
-    observe.post()
+    val l = observe.post()
+    l.setCallback(new CaCommandListener() {
+      def onFailure(ex: Exception): Unit = {
+        observeErrorCount.incrementAndGet()
+        ()
+      }
+      def onPause(): Unit = {
+        observePauseCount.incrementAndGet()
+        ()
+      }
+      def onSuccess(): Unit = {
+        observeSuccessCount.incrementAndGet()
+        ()
+      }
+    })
 
     // OBSERVE
     // OBSERVE goes BUSY
@@ -134,6 +175,7 @@ final class ObserveStateSpec extends FunSuite with MockFactory {
     observe.onObserveCarValChange(CarState.IDLE)
     // And we are done and IDLE
     assert(observe.applyState().isIdle())
+    assert(l.isDone)
 
     // ENDOBSERVE
     // CAR CLID change
@@ -154,6 +196,11 @@ final class ObserveStateSpec extends FunSuite with MockFactory {
     // CAR VAL change
     observe.onCarValChange(CarState.IDLE)
     assert(observe.applyState().isIdle())
+
+    // TODO fix these when the channels are correctly mocked
+    // assert(observeErrorCount.get() === 0)
+    // assert(observePauseCount.get() === 0)
+    // assert(observeSuccessCount.get() === 1)
   }
 
   test("GMOS paused observation") {
@@ -183,6 +230,7 @@ final class ObserveStateSpec extends FunSuite with MockFactory {
     assert(observe.applyState().isIdle())
 
     // Post an observe
+    // TODO mock the epics channel to test the listener
     observe.post()
 
     // OBSERVE
