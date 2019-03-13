@@ -393,14 +393,18 @@ object TcsControllerEpics extends TcsController {
       .option(OffsetMove(current.offset, v.toFocalPlaneOffset(current.iaa)))),
     (current.oiwfs.detector === GuiderSensorOn && demand.gds.oiwfs.detector === GuiderSensorOff).option(OiOff),
     (current.pwfs1.detector === GuiderSensorOn && demand.gds.pwfs1.detector === GuiderSensorOff).option(P1Off),
-    demand.gds.pwfs2OrAowfs.toOption.filter(_.follow === FollowOption.FollowOff).as(GaosStarOff)
+    demand.gds.pwfs2OrAowfs.toOption
+      .filter(v => v.follow === FollowOption.FollowOff || v.getNodChop === NodChopTrackingConfig.AllOff)
+      .as(GaosStarOff)
   ).collect{ case Some(x) => x }
 
   def calcAoResumeConditions(current: EpicsTcsConfig, demand: TcsConfig): Set[ResumeCondition] = Set(
     demand.tc.offsetA.map(v => OffsetReached(v.toFocalPlaneOffset(current.iaa))),
     (demand.gds.oiwfs.detector === GuiderSensorOn).option(OiOn),
     (demand.gds.pwfs1.detector === GuiderSensorOn).option(P1On),
-    demand.gds.pwfs2OrAowfs.toOption.filter(_.follow === FollowOption.FollowOn).as(GaosStarOn)
+    demand.gds.pwfs2OrAowfs.toOption
+      .filter(v => v.follow === FollowOption.FollowOn && v.getNodChop =!= NodChopTrackingConfig.AllOff)
+      .as(GaosStarOn)
   ).collect{ case Some(x) => x }
 
   def pauseResumeGaos(gaos: Option[Either[Altair[IO], Gems[IO]]], current: EpicsTcsConfig, demand: TcsConfig)

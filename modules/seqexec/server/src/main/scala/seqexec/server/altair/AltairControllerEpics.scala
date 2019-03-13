@@ -79,11 +79,11 @@ object AltairControllerEpics extends AltairController[IO] {
     val offsets = reasons.collectFirst { case OffsetMove(p, n) => (p, n) }
     val newPos = offsets.map(u => newPosition(starPos)(u._2))
     val newPosOk = newPos.forall(newPosInRange)
-    val matrixOk = newPos.forall(validateCurrentControlMatrix(currCfg, _)) || fieldLens =!= FieldLens.IN
-    val prepMatrixOk = newPos.forall(validatePreparedControlMatrix(currCfg, _)) || fieldLens =!= FieldLens.IN
+    val matrixOk = newPos.forall(validateCurrentControlMatrix(currCfg, _)) || fieldLens === FieldLens.IN
+    val prepMatrixOk = newPos.forall(validatePreparedControlMatrix(currCfg, _)) || fieldLens === FieldLens.IN
     val guideOk = !reasons.contains(GaosStarOff) //It can follow the guide star on this step
 
-    val needsToStop = !(newPosOk || matrixOk || guideOk)
+    val needsToStop = !(newPosOk && matrixOk && guideOk)
 
     // How the current configuration changes if loops are stopped
     val newCfg = (EpicsAltairConfig.preparedMatrixCoords.modify(v =>
@@ -201,7 +201,7 @@ object AltairControllerEpics extends AltairController[IO] {
   }
 
   private def pauseLgsMode(strap: Boolean, sfo: Boolean, starPos: (Length, Length), fieldLens: FieldLens,
-                             currCfg: EpicsAltairConfig)(reasons: Set[Gaos.PauseCondition])
+                           currCfg: EpicsAltairConfig)(reasons: Set[Gaos.PauseCondition])
   : Option[(EpicsAltairConfig, IO[Unit])] =
     pauseNgsOrLgsMode(starPos, fieldLens, currCfg)(reasons).filter(_ => strap || sfo)
       .map(_.bimap(ttgsOffEndo, ttgsOff(currCfg) *> _))
@@ -212,11 +212,11 @@ object AltairControllerEpics extends AltairController[IO] {
 
   // TODO Should do something if P1 is turned off ?
   private def pauseResumeLgsWithP1Mode
-  : PauseResume[IO] = PauseResume(None, None)
+  : PauseResume[IO] = PauseResume(None, IO.unit.some)
 
   // TODO Should do something if OI is turned off ?
   private def pauseResumeLgsWithOiMode
-  : PauseResume[IO] = PauseResume(None, None)
+  : PauseResume[IO] = PauseResume(None, IO.unit.some)
 
   private def turnOff(c: EpicsAltairConfig): PauseResume[IO] = PauseResume(
     convertTcsAction(epicsTcs.aoCorrect.setCorrections(CorrectionsOff) *>

@@ -171,7 +171,7 @@ final class TcsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, Stri
 
   val oiwfsProbeFollowCmd: ProbeFollowCmd = new ProbeFollowCmd("oiFollow", epicsService)
 
-  val aoProbeFollowCmd  = new ProbeFollowCmd("aoFollow", epicsService)
+  val aoProbeFollowCmd: ProbeFollowCmd = new ProbeFollowCmd("aoFollow", epicsService)
 
   object pwfs1Park extends EpicsCommand {
     override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("pwfs1Park"))
