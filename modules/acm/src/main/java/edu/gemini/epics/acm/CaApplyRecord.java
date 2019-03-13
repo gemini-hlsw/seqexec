@@ -108,21 +108,21 @@ final class CaApplyRecord {
         epicsWriter = null;
         epicsReader = null;
     }
-    
+
     synchronized void registerValListener(ChannelListener<Integer> listener) throws CAException {
         if(val!=null) {
             val.registerListener(listener);
         }
         valListener = listener;
     }
-    
+
     synchronized void unregisterValListener(ChannelListener<Integer> listener) throws CAException {
         if(val!=null) {
             val.unRegisterListener(listener);
         }
         valListener = null;
     }
-    
+
     synchronized int getValValue() throws CAException, TimeoutException {
         if(val!=null) {
             return val.getFirst();
@@ -138,7 +138,7 @@ final class CaApplyRecord {
             throw new CAException("Tried to read from unbound channel  " + epicsName + MSG_SUFFIX);
         }
     }
-    
+
     synchronized void setDir(CadDirective directive) throws CAException, TimeoutException {
         if(dir!=null) {
             dir.setValue(directive);
@@ -146,7 +146,7 @@ final class CaApplyRecord {
             throw new CAException("Tried to write to unbound channel  " + epicsName + DIR_SUFFIX);
         }
     }
-    
+
     public String getEpicsName() {
         return epicsName;
     }

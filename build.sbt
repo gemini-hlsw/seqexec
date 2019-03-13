@@ -592,8 +592,10 @@ lazy val acm = project
       Guava,
       Slf4j,
       XmlUnit,
-      JUnitInterface
+      JUnitInterface,
+      ScalaMock
     ),
+    testOptions in Test := Seq(),
     sourceGenerators in Compile += Def.task {
       import scala.sys.process._
       val pkg = "edu.gemini.epics.acm.generated"
