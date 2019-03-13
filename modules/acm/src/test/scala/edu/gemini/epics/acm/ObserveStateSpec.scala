@@ -48,6 +48,7 @@ final class ObserveStateSpec extends FunSuite with MockFactory {
     // Post an observe
     observe.post()
 
+    // CONFIGURATION
     // APPLY Goes to busy
     // VAL change
     observe.onApplyValChange(358)
@@ -76,6 +77,7 @@ final class ObserveStateSpec extends FunSuite with MockFactory {
     assert(!observe.applyState().isIdle())
     assert(!observe.observeState().isDone())
 
+    // OBSERVE
     // OBSERVE goes BUSY
     // VAL change
     observe.onApplyValChange(359)
@@ -105,6 +107,127 @@ final class ObserveStateSpec extends FunSuite with MockFactory {
     // CAR VAL change
     observe.onCarValChange(CarState.IDLE)
     assert(observe.applyState().isIdle())
+  }
+
+  test("GMOS normal observation") {
+    val context: CAJContext = mock[CAJContext]
+    (context.addContextExceptionListener _).expects(*).returns(()).repeat(5)
+    (context.addContextMessageListener _).expects(*).returns(()).repeat(5)
+    (context.pendIO _).expects(*).returns(()).repeat(1 to 6)
+    // We just return null as we don't need the channels and don't want to mock them
+    (context.createChannel(_: String)).expects("gm:apply.DIR").returns(null)
+    (context.createChannel(_: String)).expects("gm:apply.VAL").returns(null)
+    (context.createChannel(_: String)).expects("gm:apply.MESS").returns(null)
+    (context.createChannel(_: String)).expects("gm:applyC.CLID").returns(null)
+    (context.createChannel(_: String)).expects("gm:applyC.VAL").returns(null)
+    (context.createChannel(_: String)).expects("gm:applyC.OMSS").returns(null)
+    val epicsService = new EpicsService(context)
+    val observe = new CaObserveSenderImpl(
+      "gmos::observeCmd",
+      "gm:apply",
+      "gm:applyC",
+      "gm:dc:observeC",
+      "gm:stop",
+      "gm:abort",
+      "GMOS Observe",
+      classOf[CarState],
+      epicsService)
+    // Start idle
+    assert(observe.applyState().isIdle())
+    // Post an observe
+    observe.post()
+
+    // CONFIGURATION
+    // APPLY Goes to busy
+    // VAL change
+    observe.onApplyValChange(4166)
+    assert(!observe.applyState().isIdle())
+    assert(!observe.observeState().isDone())
+    // CAR CLID change
+    observe.onCarClidChange(4166)
+    assert(!observe.applyState().isIdle())
+    assert(!observe.observeState().isDone())
+    // CAR VAL change
+    observe.onCarValChange(CarState.BUSY)
+    assert(!observe.applyState().isIdle())
+    assert(!observe.observeState().isDone())
+
+    // APPLY Goes to IDLE
+    // Another VAL change
+    observe.onApplyValChange(4166)
+    assert(!observe.applyState().isIdle())
+    assert(!observe.observeState().isDone())
+    // CAR CLID change
+    observe.onCarClidChange(4166)
+    assert(!observe.applyState().isIdle())
+    assert(!observe.observeState().isDone())
+    // CAR VAL change
+    observe.onCarValChange(CarState.IDLE)
+    assert(!observe.applyState().isIdle())
+    assert(!observe.observeState().isDone())
+
+    // OBSERVE
+    // OBSERVE goes BUSY
+    // VAL change
+    observe.onApplyValChange(4167)
+    assert(!observe.applyState().isIdle())
+    assert(!observe.observeState().isDone())
+    // CAR CLID change
+    observe.onCarClidChange(4167)
+    assert(!observe.applyState().isIdle())
+    assert(!observe.observeState().isDone())
+    // CAR VAL change
+    observe.onCarValChange(CarState.BUSY)
+    assert(!observe.applyState().isIdle())
+    assert(!observe.observeState().isDone())
+    // Another VAL change
+    observe.onApplyValChange(4167)
+    assert(!observe.applyState().isIdle())
+    assert(!observe.observeState().isDone())
+    // Observe CAR VAL change
+    observe.onObserveCarValChange(CarState.BUSY)
+    assert(!observe.applyState().isIdle())
+    assert(!observe.observeState().isDone())
+    // CAR CLID change
+    observe.onCarClidChange(4167)
+    assert(!observe.applyState().isIdle())
+    assert(!observe.observeState().isDone())
+    // Apply goes IDLE
+    observe.onCarValChange(CarState.IDLE)
+    assert(!observe.applyState().isIdle())
+    assert(!observe.observeState().isDone())
+
+    // OBSERVE goes IDLE
+    // Observe CAR VAL change
+    observe.onObserveCarValChange(CarState.IDLE)
+    // And we are done and IDLE
+    assert(observe.applyState().isIdle())
+
+    // ENDOBSERVE
+    // CAR CLID change
+    observe.onApplyValChange(4168)
+    assert(observe.applyState().isIdle())
+    assert(!observe.observeState().isDone())
+    // CAR CLID change
+    observe.onCarClidChange(4168)
+    assert(observe.applyState().isIdle())
+    assert(!observe.observeState().isDone())
+    // CAR VAL change
+    observe.onCarValChange(CarState.BUSY)
+    assert(observe.applyState().isIdle())
+    assert(!observe.observeState().isDone())
+
+    observe.onApplyValChange(4168)
+    assert(observe.applyState().isIdle())
+    assert(!observe.observeState().isDone())
+    // CAR CLID change
+    observe.onCarClidChange(4168)
+    assert(observe.applyState().isIdle())
+    assert(!observe.observeState().isDone())
+    // CAR VAL change
+    observe.onCarValChange(CarState.IDLE)
+    assert(observe.applyState().isIdle())
+    assert(!observe.observeState().isDone())
   }
 
 }
