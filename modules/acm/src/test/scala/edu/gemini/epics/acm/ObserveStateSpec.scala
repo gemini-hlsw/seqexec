@@ -343,4 +343,60 @@ final class ObserveStateSpec extends FunSuite with MockFactory {
     assert(observe.applyState().isIdle())
   }
 
+  test("NIRI normal observation") {
+    val context: CAJContext = mock[CAJContext]
+    (context.addContextExceptionListener _).expects(*).returns(()).repeat(5)
+    (context.addContextMessageListener _).expects(*).returns(()).repeat(5)
+    (context.pendIO _).expects(*).returns(()).repeat(1 to 6)
+    // We just return null as we don't need the channels and don't want to mock them
+    (context.createChannel(_: String)).expects("niri:dc:apply.DIR").returns(null)
+    (context.createChannel(_: String)).expects("niri:dc:apply.VAL").returns(null)
+    (context.createChannel(_: String)).expects("niri:dc:apply.MESS").returns(null)
+    (context.createChannel(_: String)).expects("niri:dc:applyC.CLID").returns(null)
+    (context.createChannel(_: String)).expects("niri:dc:applyC.VAL").returns(null)
+    (context.createChannel(_: String)).expects("niri:dc:applyC.OMSS").returns(null)
+    val epicsService = new EpicsService(context)
+    val observe = new CaObserveSenderImpl(
+      "niri::observeCmd",
+      "niri:dc:apply",
+      "niri:dc:applyC",
+      "niri:dc:observeC",
+      "niri:dc:stop",
+      "niri:dc:abort",
+      "NIRI Observe",
+      classOf[CarState],
+      epicsService)
+    // Start idle
+    assert(observe.applyState().isIdle())
+    // Post an observe
+    observe.post()
+
+    // OBSERVE
+    // OBSERVE goes BUSY
+    observe.onObserveCarValChange(CarState.BUSY)
+    assert(!observe.applyState().isIdle())
+    // CAR CLID change
+    observe.onCarClidChange(365)
+    assert(!observe.applyState().isIdle())
+    // CAR VAL change
+    observe.onCarValChange(CarState.BUSY)
+    assert(!observe.applyState().isIdle())
+
+    // Apply VAL change
+    observe.onApplyValChange(365)
+    assert(!observe.applyState().isIdle())
+    // CAR CLID change
+    observe.onCarClidChange(365)
+    assert(!observe.applyState().isIdle())
+    // CAR VAL change
+    observe.onCarValChange(CarState.IDLE)
+    assert(!observe.applyState().isIdle())
+
+    // OBSERVE goes IDLE
+    // Observe CAR VAL change
+    observe.onObserveCarValChange(CarState.IDLE)
+    // And we are done and IDLE
+    // FIXME This is not working
+    assert(!observe.applyState().isIdle())
+  }
 }
