@@ -1022,10 +1022,6 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
         if (trace) LOG.debug("onTimeout: " + oldState.signature() + " -> " + currentState.signature());
     }
 
-    protected ObserveState observeState() {
-      return currentState.currentObserveState();
-    }
-
     protected ApplyState applyState() {
       return currentState;
     }
