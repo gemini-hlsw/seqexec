@@ -88,21 +88,21 @@ object TcsConfigRetriever {
       // This last product is slightly tricky.
       o  <- OptionT(IO{
         if (List(aa, ab, ac, ba, bb, bc, ca, cb, cc).contains(true)) {
-              if (List(aa, bb, cc).forall(_ === true) && List(ab, ac, ba, bc, ca, cb).forall(_ === false)) {
-                Some(NodChopTrackingConfig.Normal)
-              } else {
-                List(
-                  (aa, NodChop(Beam.A, Beam.A)), (ab, NodChop(Beam.A, Beam.B)), (ac, NodChop(Beam.A, Beam.C)),
-                  (ba, NodChop(Beam.B, Beam.A)), (bb, NodChop(Beam.B, Beam.B)), (bc, NodChop(Beam.B, Beam.C)),
-                  (ca, NodChop(Beam.C, Beam.A)), (cb, NodChop(Beam.C, Beam.B)), (cc, NodChop(Beam.C, Beam.C))
-                ) collect {
-                  case (true, a) => a
-                } match {
-                  case h :: t => Some(NodChopTrackingConfig.Special(OneAnd(h, t)))
-                  case Nil    => None // the list is empty
-                }
-              }
-            } else Some(NodChopTrackingConfig.AllOff)
+          if (List(aa, bb).forall(_ === true) && List(ab, ac, ba, bc, ca, cb, cc).forall(_ === false)) {
+            Some(NodChopTrackingConfig.Normal)
+          } else {
+            List(
+              (aa, NodChop(Beam.A, Beam.A)), (ab, NodChop(Beam.A, Beam.B)), (ac, NodChop(Beam.A, Beam.C)),
+              (ba, NodChop(Beam.B, Beam.A)), (bb, NodChop(Beam.B, Beam.B)), (bc, NodChop(Beam.B, Beam.C)),
+              (ca, NodChop(Beam.C, Beam.A)), (cb, NodChop(Beam.C, Beam.B)), (cc, NodChop(Beam.C, Beam.C))
+            ) collect {
+              case (true, a) => a
+            } match {
+              case h :: t => Some(NodChopTrackingConfig.Special(OneAnd(h, t)))
+              case Nil    => None // the list is empty
+            }
+          }
+        } else Some(NodChopTrackingConfig.AllOff)
       })
     } yield o
   ).value
