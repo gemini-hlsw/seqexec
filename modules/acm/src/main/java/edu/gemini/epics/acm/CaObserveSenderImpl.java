@@ -723,7 +723,11 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
 
         @Override
         public CaObserveSenderImpl.ApplyState onCarValChange(final CarStateGeneric val) {
-            return new CaObserveSenderImpl.WaitApplyPreset(cm, val, carClid, observeState);
+            if ((carState == null || carState.isIdle()) && val.isBusy() && carClid > 0) {
+                return new CaObserveSenderImpl.WaitApplyIdle(cm, carClid, val, observeState);
+            } else {
+                return new CaObserveSenderImpl.WaitApplyPreset(cm, val, carClid, observeState);
+            }
         }
 
         @Override

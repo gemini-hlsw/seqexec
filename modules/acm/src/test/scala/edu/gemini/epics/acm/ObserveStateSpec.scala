@@ -331,7 +331,7 @@ final class ObserveStateSpec extends FunSuite with MockFactory {
     assert(observe.applyState().isIdle())
   }
 
-  ignore("NIRI normal observation") {
+  test("NIRI normal observation") {
     val context: CAJContext = mock[CAJContext]
     (context.addContextExceptionListener _).expects(*).returns(()).repeat(5)
     (context.addContextMessageListener _).expects(*).returns(()).repeat(5)
