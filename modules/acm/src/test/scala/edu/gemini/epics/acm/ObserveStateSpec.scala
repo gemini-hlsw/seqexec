@@ -308,6 +308,7 @@ final class ObserveStateSpec extends FunSuite with MockFactory {
 
     // Observe CAR VAL change
     observe.onObserveCarValChange(CarState.IDLE)
+    assert(observe.applyState().isIdle())
 
     // ENDOBSERVE
     // CAR CLID change
