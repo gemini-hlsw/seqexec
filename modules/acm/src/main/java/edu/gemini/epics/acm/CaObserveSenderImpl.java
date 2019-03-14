@@ -239,7 +239,7 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
     }
 
     // Used on a FSM tracking the state of apply
-    private interface ApplyState {
+    protected interface ApplyState {
         String signature();
 
         CaObserveSenderImpl.ApplyState onApplyValChange(final Integer val);
@@ -264,11 +264,15 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
             return copyWithObserveState(currentObserveState().onObserveCarValChange(carState));
         }
 
+        default boolean isIdle() {
+            return false;
+        }
+
         CaObserveSenderImpl.ApplyState onTimeout();
     }
 
     // Used on a FSM tracking the state of observe
-    private interface ObserveState {
+    protected interface ObserveState {
         String signature();
 
         ObserveState onObserveCarValChange(final CarStateGeneric carState);
@@ -624,7 +628,7 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
     }
 
     // Initial state before any channel has changed
-    private final class IdleState implements ApplyState {
+    protected final class IdleState implements ApplyState {
         IdleState() { }
 
         @Override
@@ -658,9 +662,15 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
             return idleObserveState;
         }
 
+        @Override
+        public boolean isIdle() {
+            return true;
+        }
+
+
     };
 
-    private IdleState idleState = new IdleState();
+    protected IdleState idleState = new IdleState();
 
     // In this state we wait for clid to change
     private final class WaitApplyPreset implements CaObserveSenderImpl.ApplyState {
@@ -933,7 +943,7 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
         }
     }
 
-    private synchronized void onApplyValChange(final Integer val) {
+    protected synchronized void onApplyValChange(final Integer val) {
         if (val != null) {
             ApplyState oldState = currentState;
             currentState = currentState.onApplyValChange(val);
@@ -945,7 +955,7 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
         }
     }
 
-    private synchronized void onCarClidChange(final Integer val) {
+    protected synchronized void onCarClidChange(final Integer val) {
         if (val != null) {
             ApplyState oldState = currentState;
             currentState = currentState.onCarClidChange(val);
@@ -957,7 +967,7 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
         }
     }
 
-    private synchronized void onCarValChange(final C carState) {
+    protected synchronized void onCarValChange(final C carState) {
         if (carState != null) {
             ApplyState oldState = currentState;
             currentState = currentState.onCarValChange(carState);
@@ -969,7 +979,7 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
         }
     }
 
-    private synchronized void onObserveCarValChange(final C carState) {
+    protected synchronized void onObserveCarValChange(final C carState) {
         if (carState != null) {
             ApplyState oldState = currentState;
             currentState = currentState.onObserveCarValChange(carState);
@@ -981,7 +991,7 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
         }
     }
 
-    private synchronized void onStopMarkChange(final Short val) {
+    protected synchronized void onStopMarkChange(final Short val) {
         if (val != null) {
             ApplyState oldState = currentState;
             currentState = currentState.onStopMarkChange(val);
@@ -993,7 +1003,7 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
         }
     }
 
-    private synchronized void onAbortMarkChange(final Short val) {
+    protected synchronized void onAbortMarkChange(final Short val) {
         if (val != null) {
             ApplyState oldState = currentState;
             currentState = currentState.onAbortMarkChange(val);
@@ -1010,6 +1020,10 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
         ApplyState oldState = currentState;
         currentState = currentState.onTimeout();
         if (trace) LOG.debug("onTimeout: " + oldState.signature() + " -> " + currentState.signature());
+    }
+
+    protected ApplyState applyState() {
+      return currentState;
     }
 
     @Override

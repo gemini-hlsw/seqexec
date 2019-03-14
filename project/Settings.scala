@@ -116,6 +116,7 @@ object Settings {
     val discipline              = "0.9.0"
     val xmlUnit                 = "1.6"
     val jUnitInterface          = "0.11"
+    val scalaMock               = "4.1.0"
 
     // Pure JS libraries
     val reactJS                 = "16.5.1"
@@ -153,7 +154,7 @@ object Settings {
     ))
     val XmlUnit                = "xmlunit" % "xmlunit" % LibraryVersions.xmlUnit % "test"
     val JUnitInterface         = "com.novocode" % "junit-interface" % LibraryVersions.jUnitInterface % "test"
-
+    val ScalaMock              = "org.scalamock" %% "scalamock" % LibraryVersions.scalaMock % "test"
     // Server side libraries
     val Cats                   = Def.setting("org.typelevel" %%% "cats-core"                         % LibraryVersions.catsVersion)
     val CatsEffect             = Def.setting("org.typelevel" %%% "cats-effect"                       % LibraryVersions.catsEffectVersion)
