@@ -8,9 +8,11 @@ import seqexec.model.dhs.ImageFileId
 import seqexec.server.keywords.KeywordsClient
 import edu.gemini.spModel.config2.Config
 import gem.enum.LightSinkName
-import squants.Time
+import seqexec.model.enum.Instrument
+import squants.{Length, Time}
 
 trait InstrumentSystem[F[_]] extends System[F] {
+  override val resource: Instrument
   // The name used for this instrument in the science fold configuration
   def sfName(config: Config): LightSinkName
   val contributorName: String
@@ -22,6 +24,7 @@ trait InstrumentSystem[F[_]] extends System[F] {
   def calcObserveTime(config: Config): F[Time]
   def keywordsClient: KeywordsClient[F]
   def observeProgress(total: Time, elapsed: InstrumentSystem.ElapsedTime): Stream[F, Progress]
+  val oiOffsetGuideThreshold: Option[Length] = None
 }
 
 object InstrumentSystem {

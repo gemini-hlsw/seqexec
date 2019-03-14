@@ -18,7 +18,6 @@ import fs2.Stream
 import gem.enum.LightSinkName
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Instrument
-import seqexec.model.enum.Resource
 import seqexec.server.ConfigUtilOps._
 import seqexec.server._
 import seqexec.server.gpi.GpiController._
@@ -45,7 +44,7 @@ final case class Gpi[F[_]: Sync: Timer](controller: GpiController[F])
 
   override val keywordsClient: KeywordsClient[F] = this
 
-  override val resource: Resource = Instrument.Gpi
+  override val resource: Instrument = Instrument.Gpi
 
   override def sfName(config: Config): LightSinkName = LightSinkName.Gpi
 

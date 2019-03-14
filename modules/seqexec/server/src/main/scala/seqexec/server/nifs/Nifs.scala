@@ -17,15 +17,15 @@ import edu.gemini.spModel.obscomp.InstConstants.FLAT_OBSERVE_TYPE
 import edu.gemini.spModel.obscomp.InstConstants.OBSERVE_TYPE_PROP
 import edu.gemini.spModel.seqcomp.SeqConfigNames.OBSERVE_KEY
 import gem.enum.LightSinkName
-import java.lang.{ Double => JDouble }
-import java.lang.{ Integer => JInt }
+import java.lang.{Double => JDouble}
+import java.lang.{Integer => JInt}
 import java.beans.PropertyDescriptor
+
 import shapeless.tag
 import shapeless.tag.@@
 import seqexec.server.ConfigUtilOps._
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Instrument
-import seqexec.model.enum.Resource
 import seqexec.server.ConfigUtilOps.ExtractFailure
 import seqexec.server.ConfigResult
 import seqexec.server.InstrumentSystem
@@ -41,7 +41,9 @@ import seqexec.server.InstrumentSystem.AbortObserveCmd
 import seqexec.server.InstrumentSystem.InfraredControl
 import seqexec.server.InstrumentSystem.StopObserveCmd
 import seqexec.server.nifs.NifsController._
-import squants.Time
+import seqexec.server.tcs.FOCAL_PLANE_SCALE
+import squants.space.Arcseconds
+import squants.{Length, Time}
 import squants.time.TimeConversions._
 
 final case class Nifs[F[_]: LiftIO: Sync](
@@ -86,9 +88,11 @@ final case class Nifs[F[_]: LiftIO: Sync](
   ): fs2.Stream[F, Progress] =
     controller.observeProgress(total).streamLiftIO
 
+  override val oiOffsetGuideThreshold: Option[Length] = (Arcseconds(0.01)/FOCAL_PLANE_SCALE).some
+
   override val dhsInstrumentName: String = "NIFS"
 
-  override val resource: Resource = Instrument.Nifs
+  override val resource: Instrument = Instrument.Nifs
 
   /**
     * Called to configure a system

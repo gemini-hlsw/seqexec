@@ -17,7 +17,7 @@ import gem.optics.Format
 
 import scala.concurrent.duration._
 import seqexec.model.dhs.ImageFileId
-import seqexec.model.enum.{Instrument, Resource}
+import seqexec.model.enum.Instrument
 import seqexec.server.ConfigUtilOps._
 import seqexec.server._
 import seqexec.server.keywords.{GdsClient, GdsInstrument, KeywordsClient}
@@ -33,7 +33,7 @@ final case class Ghost[F[_]: Sync](controller: GhostController[F])
 
   override val keywordsClient: KeywordsClient[F] = this
 
-  override val resource: Resource = Instrument.Ghost
+  override val resource: Instrument = Instrument.Ghost
 
   override def sfName(config: Config): LightSinkName = LightSinkName.Ghost
 
