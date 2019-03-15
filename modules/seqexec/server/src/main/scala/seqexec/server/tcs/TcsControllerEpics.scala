@@ -322,11 +322,11 @@ object TcsControllerEpics extends TcsController {
       s0 <- TcsConfigRetriever.retrieveConfiguration(gaos.flatMap(_.swap.toOption.map(_.isFollowing))
               .getOrElse(IO(false.some)))
       pr <- pauseResumeGaos(gaos, s0, tcs)
-      _  <- SeqAction.lift(pr.pause.getOrElse(IO.unit))
+      _  <- SeqActionF.embed[IO, Unit](pr.pause.getOrElse(IO.unit))
       s1 <- guideOff(subsystems, s0, tcs, pr.pause.isEmpty)
       s2 <- sysConfig(s1)
       _  <- guideOn(subsystems, s2, tcs, pr.resume.isDefined)
-      _  <- SeqAction.lift(pr.resume.getOrElse(IO.unit)) //resume Gaos
+      _  <- SeqActionF.embed[IO, Unit](pr.resume.getOrElse(IO.unit)) //resume Gaos
     } yield ()
   }
 

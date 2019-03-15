@@ -145,25 +145,31 @@ object AltairControllerEpics extends AltairController[IO] {
         SeqexecFailure.Unexpected("Cannot start Altair STRAP loop, HVolt status is bad."), ()
       )
 
+  private val DefaultTimeout = 10.seconds
+
   private def startStrapGate(currCfg: EpicsAltairConfig): IO[Unit] = (
     epicsAltair.strapGateControl.setGate(1) *>
+      epicsAltair.strapGateControl.setTimeout[IO](DefaultTimeout) *>
       epicsAltair.strapGateControl.post[IO] *>
       epicsAltair.waitForStrapGate(100, 5.seconds)
     ).unlessA(currCfg.strapGate =!= 0)
 
   private def stopStrapGate(currCfg: EpicsAltairConfig): IO[Unit] = (
     epicsAltair.strapGateControl.setGate(0) *>
+      epicsAltair.strapGateControl.setTimeout[IO](DefaultTimeout) *>
       epicsAltair.strapGateControl.post[IO].void
     ).whenA(currCfg.strapGate =!= 0)
 
   private def startStrapLoop(currCfg: EpicsAltairConfig): IO[Unit] = (
     epicsAltair.strapControl.setActive(1) *>
+      epicsAltair.strapControl.setTimeout[IO](DefaultTimeout) *>
       epicsAltair.strapControl.post[IO] *>
       epicsAltair.waitForStrapLoop(v = true, 10.seconds)
     ).unlessA(currCfg.strapLoop)
 
   private def stopStrapLoop(currCfg: EpicsAltairConfig): IO[Unit] = (
     epicsAltair.strapControl.setActive(0) *>
+      epicsAltair.strapControl.setTimeout[IO](DefaultTimeout) *>
       epicsAltair.strapControl.post[IO].void
     ).whenA(currCfg.strapLoop)
 

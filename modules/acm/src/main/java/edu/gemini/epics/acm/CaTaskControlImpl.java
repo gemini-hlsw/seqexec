@@ -22,8 +22,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 public class CaTaskControlImpl implements CaTaskControl {
-    private static final Logger LOG = LoggerFactory.getLogger(CaApplySenderImpl.class
-            .getName());
+    private static final Logger LOG = LoggerFactory.getLogger(CaTaskControlImpl.class.getName());
 
     private final String name;
     private final String description;
