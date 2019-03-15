@@ -210,6 +210,10 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
     logger.info(banner + msg)
   }
 
+  def logDone: IO[Unit] = IO {
+    logger.info("Seqexec completed")
+  }
+
   // We need to manually update the configuration of the logging subsystem
   // to support capturing log messages and forward them to the clients
   def logToClients(out: Topic[IO, SeqexecEvent]): IO[Appender[ILoggingEvent]] = IO.apply {
@@ -234,6 +238,10 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
       appender.start()
     }
     asyncAppender
+  }
+
+  def logError: PartialFunction[Throwable, IO[Unit]] = {
+    case e: Exception => IO.apply { logger.error(e)("Seqexec global error handler") }
   }
 
   /** Reads the configuration and launches the web server */
@@ -296,6 +304,8 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
         engine <- engineIO(cli, gcdb, cr)
         _      <- webServerIO(inq, out, engine, gcdb, cr, bec)
         _      <- Resource.liftF(engine.eventStream(inq).through(out.publish).compile.drain.start)
+        _      <- Resource.liftF(logDone)
+        // _      <- Resource.liftF(f.join.onError(logError)) // We need to join to catch uncaught errors
       } yield ExitCode.Success
 
     r.use(_ => IO.never)
