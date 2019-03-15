@@ -6,5 +6,5 @@
 package edu.gemini.epics.acm;
 
 public enum TaskControlState {
-    IDLE, BUSY, ERR;
+    IDLE, PAUSED, BUSY, ERR;
 }
