@@ -24,6 +24,7 @@ import org.http4s.metrics.prometheus.Prometheus
 import org.http4s.metrics.prometheus.PrometheusExportService
 import org.http4s.server.blaze.BlazeServerBuilder
 import org.http4s.server.middleware.Metrics
+import org.http4s.server.middleware.Logger
 import org.http4s.server.Router
 import org.http4s.server.Server
 import org.http4s.server.SSLKeyStoreSupport.StoreInfo
@@ -142,13 +143,18 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
     bec: ExecutionContext
   )(conf: WebServerConfiguration): Resource[IO, Server[IO]] = {
 
-    def build(all: HttpRoutes[IO]): Resource[IO, Server[IO]] = {
+    // The prometheus route does not get logged
+    val prRouter = Router[IO](
+      "/"                     -> PrometheusExportService[IO](cr).routes
+    )
+
+    def build(all: IO[HttpRoutes[IO]]): Resource[IO, Server[IO]] = Resource.liftF(all).flatMap { all =>
 
       val builder =
         BlazeServerBuilder[IO]
           .bindHttp(conf.port, conf.host)
           .withWebSockets(true)
-          .withHttpApp(all.orNotFound)
+          .withHttpApp((prRouter <+> all).orNotFound)
 
       conf.sslConfig.fold(builder) { ssl =>
         val storeInfo = StoreInfo(ssl.keyStore, ssl.keyStorePwd)
@@ -159,13 +165,14 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
 
     val router = Router[IO](
       "/"                     -> new StaticRoutes(conf.devMode, OcsBuildInfo.builtAtMillis, bec).service,
-      "/"                     -> PrometheusExportService[IO](cr).routes,
       "/api/seqexec/commands" -> new SeqexecCommandRoutes(as, inputs, se).service,
       "/api"                  -> new SeqexecUIApiRoutes(conf.site, conf.devMode, as, outputs).service,
       "/api/seqexec/guide"    -> new GuideConfigDbRoutes(gcdb).service
     )
 
-    val metricsMiddleware = Metrics[IO](Prometheus(cr, "seqexec"))(router)
+    val loggedRoutes = Logger.httpRoutes(logHeaders = true, logBody = false)(router)
+    val metricsMiddleware = Prometheus[IO](cr, "seqexec").map(
+      Metrics[IO](_)(loggedRoutes))
 
     build(metricsMiddleware)
 

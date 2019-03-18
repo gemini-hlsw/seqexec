@@ -124,7 +124,7 @@ class ApplicationSpec extends FlatSpec with Matchers {
       Setup.addUser
     }
 
-    res shouldEqual Ok(List.empty[(Program.Id, String)].asJson).unsafeRunSync
+    res.as[String].unsafeRunSync shouldEqual Ok(List.empty[(Program.Id, String)].asJson).unsafeRunSync.as[String].unsafeRunSync
   }
 
   it should "list available programs" in {
@@ -132,7 +132,7 @@ class ApplicationSpec extends FlatSpec with Matchers {
       Setup.addProgramAndUser
     }
 
-    res shouldEqual Ok(List((Setup.pid, "Test Prog")).asJson).unsafeRunSync
+    res.as[String].unsafeRunSync shouldEqual Ok(List((Setup.pid, "Test Prog")).asJson).unsafeRunSync.as[String].unsafeRunSync
   }
 
   it should "fetch an existing observation" in {
@@ -140,7 +140,7 @@ class ApplicationSpec extends FlatSpec with Matchers {
       Setup.addProgramUserAndObs
     }
 
-    res shouldEqual Ok(Setup.obs.asJson).unsafeRunSync
+    res.as[String].unsafeRunSync shouldEqual Ok(Setup.obs.asJson).unsafeRunSync.as[String].unsafeRunSync
   }
 
   it should "fail to fetch a missing observation" in {
@@ -156,7 +156,7 @@ class ApplicationSpec extends FlatSpec with Matchers {
       Setup.addProgramUserAndObs
     }
 
-    res shouldEqual Ok(Setup.obs.asJson).unsafeRunSync
+    res.as[String].unsafeRunSync shouldEqual Ok(Setup.obs.asJson).unsafeRunSync.as[String].unsafeRunSync
   }
 
   it should "query a missing observation" in {
@@ -164,6 +164,6 @@ class ApplicationSpec extends FlatSpec with Matchers {
       Setup.addProgramAndUser
     }
 
-    res shouldEqual NotFound().unsafeRunSync
+    res.as[String].unsafeRunSync shouldEqual NotFound().unsafeRunSync.as[String].unsafeRunSync
   }
 }
