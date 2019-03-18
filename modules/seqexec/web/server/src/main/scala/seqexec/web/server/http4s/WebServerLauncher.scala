@@ -142,7 +142,7 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
     bec: ExecutionContext
   )(conf: WebServerConfiguration): Resource[IO, Server[IO]] = {
 
-    def build(all: HttpRoutes[IO]): Resource[IO, Server[IO]] = {
+    def build(all: IO[HttpRoutes[IO]]): Resource[IO, Server[IO]] = Resource.liftF(all).flatMap { all =>
 
       val builder =
         BlazeServerBuilder[IO]
@@ -165,7 +165,7 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
       "/api/seqexec/guide"    -> new GuideConfigDbRoutes(gcdb).service
     )
 
-    val metricsMiddleware = Metrics[IO](Prometheus(cr, "seqexec"))(router)
+    val metricsMiddleware = Prometheus[IO](cr, "seqexec").map(Metrics[IO](_)(router))
 
     build(metricsMiddleware)
 
