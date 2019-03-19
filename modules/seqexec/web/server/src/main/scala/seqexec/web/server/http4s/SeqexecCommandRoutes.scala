@@ -59,7 +59,7 @@ class SeqexecCommandRoutes(auth:       AuthenticationService,
 
     case POST -> Root / ObsIdVar(obsId) / "sync" as _ =>
       for {
-        u <- se.load(inputQueue, obsId)
+        u <- se.sync(inputQueue, obsId)
         resp <- u.fold(_ => NotFound(s"Not found sequence $obsId"),
                        _ => Ok(s"Sync requested for ${obsId.format}"))
       } yield resp

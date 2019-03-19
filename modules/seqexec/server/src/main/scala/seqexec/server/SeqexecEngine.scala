@@ -101,7 +101,7 @@ class SeqexecEngine(httpClient: Client[IO], gpi: GpiClient[IO], ghost: GhostClie
 
   private val odbLoader = new ODBSequencesLoader(odbProxy, translator)
 
-  def load(q: EventQueue, seqId: Observation.Id): IO[Either[SeqexecFailure, Unit]] =
+  def sync(q: EventQueue, seqId: Observation.Id): IO[Either[SeqexecFailure, Unit]] =
     q.enqueue(Stream.emits(odbLoader.loadEvents(seqId))).map(_.asRight).compile.last.attempt.map(_.bimap(SeqexecFailure.SeqexecException.apply, _ => ()))
 
   // TODO: this is too much guessing. We should have proper tracking of systems' state.
@@ -166,7 +166,8 @@ class SeqexecEngine(httpClient: Client[IO], gpi: GpiClient[IO], ghost: GhostClie
   }
 
   def selectSequence(q: EventQueue, i: Instrument, sid: Observation.Id, observer: Observer, user: UserDetails, clientId: ClientId): IO[Either[SeqexecFailure, Unit]] =
-    q.enqueue1(Event.logInfoMsg(s"User '${user.displayName}' loads sequence ${sid.format} on ${i.show}")) *>
+    q.enqueue1(Event.logInfoMsg(s"User '${user.displayName}' sync and load sequence ${sid.format} on ${i.show}")) *>
+    sync(q, sid) *>
     q.enqueue1(selectSequenceEvent(i, sid, observer, user, clientId)).map(_.asRight)
 
   def clearLoadedSequences(q: EventQueue, user: UserDetails): IO[Either[SeqexecFailure, Unit]] =
