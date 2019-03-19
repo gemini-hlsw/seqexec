@@ -34,4 +34,5 @@ final class SeqexecEventSpec extends CatsSuite with SequenceEventsArbitraries {
   checkAll("Eq[NewLogMessage]", EqTests[NewLogMessage].eqv)
   checkAll("Eq[UserNotification]", EqTests[UserNotification].eqv)
   checkAll("Eq[ObservationProgressEvent]", EqTests[ObservationProgressEvent].eqv)
+  checkAll("Eq[SequenceStopped]", EqTests[SequenceStopped].eqv)
 }

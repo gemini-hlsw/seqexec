@@ -22,12 +22,22 @@ object RunOperation {
 
 }
 
-sealed trait SyncOperation extends Product with Serializable
-object SyncOperation {
-  case object SyncInFlight extends SyncOperation
-  case object SyncIdle extends SyncOperation
+sealed trait StopOperation extends Product with Serializable
+object StopOperation {
+  case object StopInFlight extends StopOperation
+  case object StopIdle extends StopOperation
 
-  implicit val eq: Eq[SyncOperation] =
+  implicit val eq: Eq[StopOperation] =
+    Eq.fromUniversalEquals
+
+}
+
+sealed trait AbortOperation extends Product with Serializable
+object AbortOperation {
+  case object AbortInFlight extends AbortOperation
+  case object AbortIdle extends AbortOperation
+
+  implicit val eq: Eq[AbortOperation] =
     Eq.fromUniversalEquals
 
 }
@@ -38,6 +48,26 @@ object PauseOperation {
   case object PauseIdle extends PauseOperation
 
   implicit val eq: Eq[PauseOperation] =
+    Eq.fromUniversalEquals
+
+}
+
+sealed trait ResumeOperation extends Product with Serializable
+object ResumeOperation {
+  case object ResumeInFlight extends ResumeOperation
+  case object ResumeIdle extends ResumeOperation
+
+  implicit val eq: Eq[ResumeOperation] =
+    Eq.fromUniversalEquals
+
+}
+
+sealed trait SyncOperation extends Product with Serializable
+object SyncOperation {
+  case object SyncInFlight extends SyncOperation
+  case object SyncIdle extends SyncOperation
+
+  implicit val eq: Eq[SyncOperation] =
     Eq.fromUniversalEquals
 
 }
@@ -60,11 +90,20 @@ final case class TabOperations(
   runRequested:         RunOperation,
   syncRequested:        SyncOperation,
   pauseRequested:       PauseOperation,
+  resumeRequested:      ResumeOperation,
+  stopRequested:        StopOperation,
+  abortRequested:       AbortOperation,
   resourceRunRequested: SortedMap[Resource, ResourceRunOperation]) {
   // Indicate if any resource is being executed
   def resourceInFlight: Boolean =
     resourceRunRequested.exists(
       _._2 === ResourceRunOperation.ResourceRunInFlight)
+
+  val stepRequestInFlight: Boolean =
+    pauseRequested === PauseOperation.PauseInFlight ||
+    resumeRequested === ResumeOperation.ResumeInFlight ||
+    stopRequested === StopOperation.StopInFlight ||
+    abortRequested === AbortOperation.AbortInFlight
 }
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
@@ -75,6 +114,9 @@ object TabOperations {
         (x.runRequested,
          x.syncRequested,
          x.pauseRequested,
+         x.resumeRequested,
+         x.stopRequested,
+         x.abortRequested,
          x.resourceRunRequested))
 
   def resourceRun(
@@ -85,5 +127,8 @@ object TabOperations {
     TabOperations(RunOperation.RunIdle,
                   SyncOperation.SyncIdle,
                   PauseOperation.PauseIdle,
+                  ResumeOperation.ResumeIdle,
+                  StopOperation.StopIdle,
+                  AbortOperation.AbortIdle,
                   SortedMap.empty)
 }

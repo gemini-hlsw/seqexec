@@ -13,6 +13,8 @@ import gem.Observation
 sealed trait SystemEvent
 final case class Completed[R<:RetVal](id: Observation.Id, stepId: StepId, i: Int, r: OK[R])
   extends SystemEvent
+final case class StopCompleted[R<:RetVal](id: Observation.Id, stepId: StepId, i: Int, r: OKStopped[R])
+  extends SystemEvent
 final case class PartialResult[R<:PartialVal](sid: Observation.Id, stepId: StepId, i: Int,
                                               r: Partial[R]) extends SystemEvent
 final case class Paused[C <: PauseContext](id: Observation.Id, i: Int, r: Result.Paused[C])

@@ -9,7 +9,6 @@ import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.extra.Reusability
-import scala.collection.immutable.SortedMap
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.ActionStatus
 import seqexec.model.enum.Resource
@@ -20,7 +19,7 @@ import seqexec.model.Step
 import seqexec.model.StepId
 import seqexec.model.SequenceState
 import seqexec.web.client.model.ClientStatus
-import seqexec.web.client.model.ResourceRunOperation
+import seqexec.web.client.model.TabOperations
 import seqexec.web.client.model.ModelOps._
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.semanticui.elements.icon.Icon
@@ -41,7 +40,9 @@ object StepProgressCell {
     step:                 Step,
     selectedStep:         Option[StepId],
     isPreview:            Boolean,
-    resourceRunRequested: SortedMap[Resource, ResourceRunOperation]) {
+    tabOperations:        TabOperations) {
+
+    val resourceRunRequested = tabOperations.resourceRunRequested
 
     def stepSelected(i: StepId): Boolean =
       selectedStep.exists(_ === i) && !isPreview && clientStatus.isLogged
@@ -103,7 +104,8 @@ object StepProgressCell {
                                   props.instrument,
                                   props.state,
                                   props.step.id,
-                                  props.step.isObservePaused))
+                                  props.step.isObservePaused,
+                                  props.tabOperations))
         .when(controlButtonsActive(props))
     )
 
@@ -120,7 +122,8 @@ object StepProgressCell {
                                   props.instrument,
                                   props.state,
                                   props.step.id,
-                                  props.step.isObservePaused))
+                                  props.step.isObservePaused,
+                                  props.tabOperations))
         .when(controlButtonsActive(props))
     )
 
@@ -136,7 +139,8 @@ object StepProgressCell {
                                   props.instrument,
                                   props.state,
                                   props.step.id,
-                                  props.step.isObservePaused))
+                                  props.step.isObservePaused,
+                                  props.tabOperations))
         .when(controlButtonsActive(props))
     )
 

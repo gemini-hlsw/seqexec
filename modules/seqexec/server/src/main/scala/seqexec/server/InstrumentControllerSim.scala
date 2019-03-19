@@ -3,11 +3,13 @@
 
 package seqexec.server
 
-import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 
 import cats.Show
 import cats.data.EitherT
-import cats.effect.{ IO, Timer }
+import cats.effect.IO
+import cats.effect.Timer
 import cats.implicits._
 import fs2.Stream
 import seqexec.model.dhs.ImageFileId
@@ -69,6 +71,7 @@ class InstrumentControllerSim(name: String, useTimeout: Boolean) {
 
   def stopObserve: SeqAction[Unit] = EitherT( IO {
     Log.info(s"Simulate stopping $name exposure")
+    Thread.sleep(1500)
     stopFlag.set(true)
     TrySeq(())
   } )

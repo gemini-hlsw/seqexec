@@ -39,6 +39,8 @@ object Event {
   def failed(id: Observation.Id, i: Int, e: Result.Error): Event[Nothing] = EventSystem(Failed(id, i, e))
   def completed[R<:Result.RetVal](id: Observation.Id, stepId: StepId, i: Int, r: Result.OK[R])
   : Event[Nothing] = EventSystem(Completed(id, stepId, i, r))
+  def stopCompleted[R<:Result.RetVal](id: Observation.Id, stepId: StepId, i: Int, r: Result.OKStopped[R])
+  : Event[Nothing] = EventSystem(StopCompleted(id, stepId, i, r))
   def partial[R<:Result.PartialVal](id: Observation.Id, stepId: StepId, i: Int,
                                     r: Result.Partial[R]): Event[Nothing] =
     EventSystem(PartialResult(id, stepId, i, r))

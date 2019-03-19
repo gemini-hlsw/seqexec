@@ -78,13 +78,33 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
   implicit val poCogen: Cogen[PauseOperation] =
     Cogen[String].contramap(_.productPrefix)
 
+  implicit val arbStopOperation: Arbitrary[StopOperation] =
+    Arbitrary(Gen.oneOf(StopOperation.StopIdle, StopOperation.StopInFlight))
+
+  implicit val stoCogen: Cogen[StopOperation] =
+    Cogen[String].contramap(_.productPrefix)
+
+  implicit val arbAbortOperation: Arbitrary[AbortOperation] =
+    Arbitrary(Gen.oneOf(AbortOperation.AbortIdle, AbortOperation.AbortInFlight))
+
+  implicit val abtCogen: Cogen[AbortOperation] =
+    Cogen[String].contramap(_.productPrefix)
+
+  implicit val arbResumeOperation: Arbitrary[ResumeOperation] =
+    Arbitrary(Gen.oneOf(ResumeOperation.ResumeIdle, ResumeOperation.ResumeInFlight))
+
+  implicit val resCogen: Cogen[ResumeOperation] =
+    Cogen[String].contramap(_.productPrefix)
+
   implicit val arbResourceRunOperation: Arbitrary[ResourceRunOperation] =
     Arbitrary(
       Gen.oneOf(ResourceRunOperation.ResourceRunIdle,
                 ResourceRunOperation.ResourceRunInFlight))
 
+
   implicit val rruCogen: Cogen[ResourceRunOperation] =
     Cogen[String].contramap(_.productPrefix)
+
 
   implicit val arbTabOperations: Arbitrary[TabOperations] =
     Arbitrary {
@@ -92,20 +112,31 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
         r <- arbitrary[RunOperation]
         s <- arbitrary[SyncOperation]
         p <- arbitrary[PauseOperation]
+        m <- arbitrary[ResumeOperation]
+        t <- arbitrary[StopOperation]
+        a <- arbitrary[AbortOperation]
         u <- arbitrary[SortedMap[Resource, ResourceRunOperation]]
-      } yield TabOperations(r, s, p, u)
+      } yield TabOperations(r, s, p, m, t, a, u)
     }
 
-  implicit val toCogen: Cogen[TabOperations] =
+  implicit val toCogen: Cogen[TabOperations] = {
+    implicit val rrc = seqexec.model.SeqexecModelArbitraries.resCogen
     Cogen[(RunOperation,
            SyncOperation,
            PauseOperation,
+           ResumeOperation,
+           StopOperation,
+           AbortOperation,
            List[(Resource, ResourceRunOperation)])].contramap(
       x =>
         (x.runRequested,
          x.syncRequested,
          x.pauseRequested,
+         x.resumeRequested,
+         x.stopRequested,
+         x.abortRequested,
          x.resourceRunRequested.toList))
+  }
 
   implicit val arbAddDayCalOperation: Arbitrary[AddDayCalOperation] =
     Arbitrary(

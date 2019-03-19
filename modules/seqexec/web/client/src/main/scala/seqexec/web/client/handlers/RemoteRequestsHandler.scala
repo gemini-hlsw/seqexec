@@ -97,7 +97,7 @@ class RemoteRequestsHandler[M](modelRW: ModelRW[M, Option[ClientId]])
         Effect(
           SeqexecWebClient
             .resumeObs(id, step)
-            .as(RunObsPause(id))
+            .as(RunObsResume(id))
             .recover {
               case _ => RunObsResumeFailed(id)
             }))

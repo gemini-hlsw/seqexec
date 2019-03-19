@@ -155,10 +155,11 @@ class Engine[D, U](stateL: Engine.State[D]) {
   : Stream[IO, EventType] = t match {
     case (gen, i) =>
       gen.map {
-        case r@Result.OK(_)      => completed(id, stepId, i, r)
-        case r@Result.Partial(_) => partial(id, stepId, i, r)
-        case e@Result.Error(_)   => failed(id, i, e)
-        case r@Result.Paused(_)  => paused(id, i, r)
+        case r@Result.OK(_)        => completed(id, stepId, i, r)
+        case r@Result.OKStopped(_) => stopCompleted(id, stepId, i, r)
+        case r@Result.Partial(_)   => partial(id, stepId, i, r)
+        case e@Result.Error(_)     => failed(id, i, e)
+        case r@Result.Paused(_)    => paused(id, i, r)
       }
   }
 
@@ -191,6 +192,11 @@ class Engine[D, U](stateL: Engine.State[D]) {
     * When the index doesn't exist it does nothing.
     */
   private def complete[R <: RetVal](id: Observation.Id, i: Int, r: Result.OK[R]): HandleType[Unit] = modifyS(id)(_.mark(i)(r)) *>
+    getS(id).flatMap(_.flatMap(
+      _.current.execution.forall(Action.completed).option(Handle.fromStream[D, EventType](Stream(executed(id))))
+    ).getOrElse(unit))
+
+  private def stopComplete[R <: RetVal](id: Observation.Id, i: Int, r: Result.OKStopped[R]): HandleType[Unit] = modifyS(id)(_.mark(i)(r)) *>
     getS(id).flatMap(_.flatMap(
       _.current.execution.forall(Action.completed).option(Handle.fromStream[D, EventType](Stream(executed(id))))
     ).getOrElse(unit))
@@ -273,6 +279,9 @@ class Engine[D, U](stateL: Engine.State[D]) {
   private def handleSystemEvent(se: SystemEvent)(implicit ci: Concurrent[IO]): HandleType[ResultType] = se match {
     case Completed(id, _, i, r)        => Logger.debug(
       s"Engine: From sequence ${id.format}: Action completed ($r)") *> complete(id, i, r) *>
+      pure(SystemUpdate(se, EventResult.Ok))
+    case StopCompleted(id, _, i, r)    => Logger.debug(
+      s"Engine: From sequence ${id.format}: Action completed with stop ($r)") *> stopComplete(id, i, r) *>
       pure(SystemUpdate(se, EventResult.Ok))
     case PartialResult(id, _, i, r) => Logger.debug(
       s"Engine: From sequence ${id.format}: Partial result ($r)")  *> partialResult(id, i, r) *>

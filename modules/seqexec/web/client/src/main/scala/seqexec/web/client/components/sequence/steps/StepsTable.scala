@@ -259,7 +259,7 @@ object StepsTable {
                                row.step,
                                b.state.selected,
                                b.props.isPreview,
-                               b.props.tabOperations.resourceRunRequested))
+                               b.props.tabOperations))
 
   def stepStatusRenderer(
     offsetsDisplay: OffsetsDisplay
