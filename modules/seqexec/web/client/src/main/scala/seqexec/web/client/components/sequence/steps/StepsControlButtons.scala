@@ -133,15 +133,7 @@ object StepsControlButtons {
           .toTagMod
       )
     }
-    // .configure(Reusability.shouldComponentUpdate)
-    // .componentWillReceiveProps { f =>
-    //   val startedRunning = f.currentProps.sequenceState.isRunning && !f.currentProps.sequenceState.isRunning
-    //   f.runState(if (f.nextProps.isObservePaused || startedRunning) {
-    //     ST.set(NoneRequested)
-    //   } else {
-    //     ST.nop
-    //   })
-    // }
+    .configure(Reusability.shouldComponentUpdate)
     .build
 
   def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
