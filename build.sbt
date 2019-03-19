@@ -547,7 +547,7 @@ lazy val seqexec_server = project
     buildInfoObject := "OcsBuildInfo",
     buildInfoPackage := "seqexec.server"
   )
-  .dependsOn(seqexec_engine, giapi, seqexec_model.jvm % "compile->compile;test->test", acm, core.jvm % "test->test")
+  .dependsOn(seqexec_engine, ocs2_api.jvm, giapi, seqexec_model.jvm % "compile->compile;test->test", acm, core.jvm % "test->test")
 
 // Unfortunately crossProject doesn't seem to work properly at the module/build.sbt level
 // We have to define the project properties at this level

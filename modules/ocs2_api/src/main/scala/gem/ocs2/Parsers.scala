@@ -4,7 +4,10 @@
 package gem.ocs2
 
 import cats.implicits._
-import gem.{ CoAdds, Dataset, Observation, Program }
+import gem.CoAdds
+import gem.Dataset
+import gem.Observation
+import gem.Program
 import gem.enum._
 import gem.config.GcalConfig.GcalLamp
 import gem.math._
@@ -709,6 +712,14 @@ object Parsers {
       }
 
     }
+
+  }
+
+  object Gpi {
+
+    val observingMode: PioParse[GpiObservingMode] = enum(
+      GpiObservingMode.all.fproduct(_.longName).map(_.swap): _*
+    )
 
   }
 }

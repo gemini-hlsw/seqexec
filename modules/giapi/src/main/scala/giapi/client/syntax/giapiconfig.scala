@@ -10,8 +10,9 @@ final class GiapiConfigOps[A](val a: A) extends AnyVal {
     c.configValue(a)
 }
 
-trait ToGiapiCofigOps {
-  implicit def ToGiapiConfigOps[A](value: A): GiapiConfigOps[A] = new GiapiConfigOps(value)
+trait ToGiapiConfigOps {
+  implicit def ToGiapiConfigOps[A](value: A): GiapiConfigOps[A] =
+    new GiapiConfigOps(value)
 }
 
-object giapiconfig extends ToGiapiCofigOps
+object giapiconfig extends ToGiapiConfigOps

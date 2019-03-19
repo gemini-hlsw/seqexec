@@ -10,9 +10,12 @@ import java.time.ZoneId
 
 import gem.sql.EnumDef
 import shapeless.record._
+import shapeless.Witness
 
+@SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 object MiscEnums {
   import Angle._
+  import EnumRefs._
 
   val enums: List[ConnectionIO[EnumDef]] =
     List(
@@ -89,6 +92,24 @@ object MiscEnums {
       EnumDef.fromQuery("LightSinkName", "SF Sink names") {
         type R = Record.`'tag -> String, 'name -> String`.T
         sql"SELECT id, id tag, name FROM e_light_sink_names".query[(String, R)]
+      },
+
+      EnumDef.fromQuery("GiapiType", "giapi status types") {
+        type R = Record.`'tag -> String`.T
+        sql"""
+          SELECT enumlabel x, enumlabel y
+          FROM pg_enum JOIN pg_type ON pg_enum.enumtypid = pg_type.oid
+          WHERE pg_type.typname = 'giapi_type'
+         """.query[(String, R)]
+      },
+
+      EnumDef.fromQuery("GiapiStatusApply", "Giapi Status Apply") {
+        val (a, b) = (Witness('Instrument), Witness('GiapiType))
+        type A = a.T
+        type B = b.T
+        type R = Record.`'tag -> String, 'instrument -> EnumRef[A], 'statusType -> EnumRef[B], 'statusItem -> String, 'applyItem -> String`.T
+        val ret = sql"SELECT concat(instrument_id, id), concat(instrument_id, id) tag, instrument_id, type, status_item, apply_item FROM e_giapi_status_apply".query[(String, R)]
+        (ret, a.value: A, b.value: B)._1 // suppress unused warnigs
       }
     )
 

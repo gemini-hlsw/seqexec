@@ -27,7 +27,7 @@ final case class GhostController[F[_]: Sync](override val client: GhostClient[F]
 
   override val name = "GHOST"
 
-  override def configuration(config: GhostConfig): Configuration = config.configuration
+  override def configuration(config: GhostConfig): F[Configuration] = config.configuration.pure[F]
 }
 
 object GhostController {

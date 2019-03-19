@@ -3,8 +3,11 @@
 
 package giapi.client
 
-import edu.gemini.aspen.giapi.commands.{Activity, SequenceCommand}
-import giapi.client.commands.{Command, CommandResult, Configuration}
+import edu.gemini.aspen.giapi.commands.Activity
+import edu.gemini.aspen.giapi.commands.SequenceCommand
+import giapi.client.commands.Command
+import giapi.client.commands.CommandResult
+import giapi.client.commands.Configuration
 
 import scala.concurrent.duration._
 
