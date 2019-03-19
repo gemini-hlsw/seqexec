@@ -411,6 +411,9 @@ final case class SequencesOnDisplay(tabs: Zipper[SeqexecTab]) {
     (SequencesOnDisplay.instrumentTabById(id) ^|-> InstrumentSequenceTab.tabOperations)
       .modify(updater)(this)
 
+  def resetOperations(id: Observation.Id): SequencesOnDisplay =
+    markOperations(id, _ => TabOperations.Default)
+
   def selectStep(
     id:   Observation.Id,
     step: StepId

@@ -137,13 +137,14 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
   }
 
   val sequenceOnErrorMessage: PartialFunction[Any, ActionResult[M]] = {
-    case ServerMessage(SequenceError(_, sv)) =>
+    case ServerMessage(SequenceError(id, sv)) =>
       // Play audio when the sequence gets into an error state
       val audioEffect =
         if (loggedIn)
           Effect(Future(SequenceErrorAudio.play()).as(NoAction))
         else VoidEffect
-      updated(value.copy(sequences = filterSequences(sv)), audioEffect)
+      val clearAction = Effect(Future(ClearRunOnError(id)))
+      updated(value.copy(sequences = filterSequences(sv)), audioEffect + clearAction)
   }
 
   val sequencePausedMessage: PartialFunction[Any, ActionResult[M]] = {
