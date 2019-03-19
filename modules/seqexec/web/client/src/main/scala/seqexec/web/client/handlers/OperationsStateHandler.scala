@@ -65,11 +65,14 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
   }
 
   def handleOperationResult: PartialFunction[Any, ActionResult[M]] = {
-    case RunStarted(_) =>
+    case RunStarted(_) | RunStop(_) | RunAbort(_) =>
       noChange
 
-    case RunStop(_) =>
-      noChange
+    case RunSync(id) =>
+      updated(
+        value.markOperations(
+          id,
+          TabOperations.syncRequested.set(SyncOperation.SyncIdle)))
 
     case RunStartFailed(id) =>
       updated(
