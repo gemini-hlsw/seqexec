@@ -387,4 +387,113 @@ final class ObserveStateSpec extends FunSuite with MockFactory {
     // FIXME This is not working
     assert(observe.applyState().isIdle())
   }
+
+  test("GMOS observation with an error case 1") {
+    val context: CAJContext = mock[CAJContext]
+    (context.addContextExceptionListener _).expects(*).returns(()).repeat(5)
+    (context.addContextMessageListener _).expects(*).returns(()).repeat(5)
+    (context.pendIO _).expects(*).returns(()).repeat(1 to 6)
+    // We just return null as we don't need the channels and don't want to mock them
+    (context.createChannel(_: String)).expects("gm:apply.DIR").returns(null)
+    (context.createChannel(_: String)).expects("gm:apply.VAL").returns(null)
+    (context.createChannel(_: String)).expects("gm:apply.MESS").returns(null)
+    (context.createChannel(_: String)).expects("gm:applyC.CLID").returns(null)
+    (context.createChannel(_: String)).expects("gm:applyC.VAL").returns(null)
+    (context.createChannel(_: String)).expects("gm:applyC.OMSS").returns(null)
+    val epicsService = new EpicsService(context)
+    val observe = new CaObserveSenderImpl(
+      "gmos::observeCmd",
+      "gm:apply",
+      "gm:applyC",
+      "gm:dc:observeC",
+      "gm:stop",
+      "gm:abort",
+      "GMOS Observe",
+      classOf[CarState],
+      epicsService)
+    // Start idle
+    assert(observe.applyState().isIdle())
+
+    // Post an observe
+    observe.post()
+
+    // OBSERVE
+    // OBSERVE goes BUSY
+    // VAL change
+    observe.onApplyValChange(4167)
+    assert(!observe.applyState().isIdle())
+    // CAR CLID change
+    observe.onCarClidChange(4167)
+    assert(!observe.applyState().isIdle())
+    // CAR VAL change
+    observe.onCarValChange(CarState.BUSY)
+    assert(!observe.applyState().isIdle())
+    // Another VAL change
+    observe.onApplyValChange(4167)
+    assert(!observe.applyState().isIdle())
+    // Observe CAR VAL change
+    observe.onObserveCarValChange(CarState.BUSY)
+    assert(!observe.applyState().isIdle())
+    // CAR CLID change
+    observe.onCarClidChange(4167)
+    assert(!observe.applyState().isIdle())
+    // Apply goes IDLE
+    observe.onCarValChange(CarState.IDLE)
+    assert(!observe.applyState().isIdle())
+
+    // OBSERVE goes ERROR
+    // Observe CAR VAL change
+    observe.onObserveCarValChange(CarState.ERROR)
+    // We should capture the error and go IDLE
+    assert(observe.applyState().isIdle())
+  }
+
+  test("GMOS observation with an error case 2") {
+    val context: CAJContext = mock[CAJContext]
+    (context.addContextExceptionListener _).expects(*).returns(()).repeat(5)
+    (context.addContextMessageListener _).expects(*).returns(()).repeat(5)
+    (context.pendIO _).expects(*).returns(()).repeat(1 to 6)
+    // We just return null as we don't need the channels and don't want to mock them
+    (context.createChannel(_: String)).expects("gm:apply.DIR").returns(null)
+    (context.createChannel(_: String)).expects("gm:apply.VAL").returns(null)
+    (context.createChannel(_: String)).expects("gm:apply.MESS").returns(null)
+    (context.createChannel(_: String)).expects("gm:applyC.CLID").returns(null)
+    (context.createChannel(_: String)).expects("gm:applyC.VAL").returns(null)
+    (context.createChannel(_: String)).expects("gm:applyC.OMSS").returns(null)
+    val epicsService = new EpicsService(context)
+    val observe = new CaObserveSenderImpl(
+      "gmos::observeCmd",
+      "gm:apply",
+      "gm:applyC",
+      "gm:dc:observeC",
+      "gm:stop",
+      "gm:abort",
+      "GMOS Observe",
+      classOf[CarState],
+      epicsService)
+    // Start idle
+    assert(observe.applyState().isIdle())
+
+    // Post an observe
+    observe.post()
+
+    // OBSERVE
+    // OBSERVE goes BUSY
+    // VAL change
+    observe.onApplyValChange(4167)
+    assert(!observe.applyState().isIdle())
+    // CAR CLID change
+    observe.onCarClidChange(4167)
+    assert(!observe.applyState().isIdle())
+    // CAR VAL change
+    observe.onCarValChange(CarState.BUSY)
+    assert(!observe.applyState().isIdle())
+    // Another VAL change
+    observe.onApplyValChange(4167)
+    assert(!observe.applyState().isIdle())
+    // Observe CAR goes directly to error
+    observe.onObserveCarValChange(CarState.ERROR)
+    // We should capture the error and go IDLE
+    assert(observe.applyState().isIdle())
+  }
 }
