@@ -241,7 +241,7 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
   }
 
   def logError: PartialFunction[Throwable, IO[Unit]] = {
-    case e: Exception => IO.apply { logger.error(e)("Seqexec global error handler") }
+    case e: Exception => IO(logger.error(e)("Seqexec global error handler")) *> IO(sys.exit(-1))
   }
 
   /** Reads the configuration and launches the web server */
@@ -305,7 +305,7 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
         _      <- webServerIO(inq, out, engine, gcdb, cr, bec)
         _      <- Resource.liftF(engine.eventStream(inq).through(out.publish).compile.drain.start)
         _      <- Resource.liftF(logDone)
-        // _      <- Resource.liftF(f.join.onError(logError)) // We need to join to catch uncaught errors
+        _      <- Resource.liftF(f.join.onError(logError)) // We need to join to catch uncaught errors
       } yield ExitCode.Success
 
     r.use(_ => IO.never)

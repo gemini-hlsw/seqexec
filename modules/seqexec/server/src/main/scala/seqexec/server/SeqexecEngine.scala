@@ -214,10 +214,14 @@ class SeqexecEngine(httpClient: Client[IO], gpi: GpiClient[IO], ghost: GhostClie
         Stream.eval(odbLoader.refreshSequenceList(x)(st)).flatMap(Stream.emits).some
       }.asRight)
     }.handleErrorWith {
-      case e: SeqFailure =>
-        Stream.emit(SeqexecFailure.OdbSeqError(e).asLeft)
-      case e: Exception =>
-        Stream.emit(SeqexecFailure.SeqexecException(e).asLeft)
+      case _: SeqFailure =>
+        Stream.eval(IO(sys.exit(-1)))
+        // The line below vill do graceful exit when https://github.com/typelevel/cats-effect/issues/487 ges fixed
+        // Stream.emit(SeqexecFailure.OdbSeqError(e).asLeft)
+      case _: Exception =>
+        Stream.eval(IO(sys.exit(-1)))
+        // The line below vill do graceful exit when https://github.com/typelevel/cats-effect/issues/487 ges fixed
+        // Stream.emit(SeqexecFailure.SeqexecException(e).asLeft)
     }
   }
 
