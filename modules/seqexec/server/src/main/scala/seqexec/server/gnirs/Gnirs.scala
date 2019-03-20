@@ -15,7 +15,7 @@ import edu.gemini.spModel.seqcomp.SeqConfigNames.{INSTRUMENT_KEY, OBSERVE_KEY}
 import java.lang.{Double => JDouble, Integer => JInt}
 
 import gem.enum.LightSinkName
-import seqexec.model.enum.{Instrument, Resource}
+import seqexec.model.enum.Instrument
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.gnirs.GnirsController.{CCConfig, DCConfig, Other, ReadMode}
@@ -49,7 +49,7 @@ final case class Gnirs(controller: GnirsController, dhsClient: DhsClient[IO]) ex
       .map(controller.calcTotalExposureTime[IO])
       .getOrElse(IO.pure(60.seconds))
 
-  override val resource: Resource = Instrument.Gnirs
+  override val resource: Instrument = Instrument.Gnirs
 
   override def configure(config: Config): SeqAction[ConfigResult[IO]] =
     SeqAction.either(fromSequenceConfig(config)).flatMap(controller.applyConfig).as(ConfigResult(this))

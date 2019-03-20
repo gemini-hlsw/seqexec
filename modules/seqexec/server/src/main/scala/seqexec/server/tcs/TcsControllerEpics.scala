@@ -16,14 +16,16 @@ import gem.enum.LightSinkName
 import mouse.boolean._
 import seqexec.server.altair.Altair
 import seqexec.server.gems.Gems
-import squants.Angle
+import squants.{Angle, Length}
 import monocle.{Iso, Lens}
 import monocle.macros.Lenses
+import seqexec.model.enum.Instrument
 import seqexec.server.tcs.Gaos.{GaosStarOff, GaosStarOn, OffsetMove, OffsetReached, OiOff, OiOn, P1Off, P1On, PauseCondition, PauseResume, ResumeCondition}
 import seqexec.server.tcs.TcsController.FollowOption.FollowOn
 import seqexec.server.tcs.TcsEpics.{ProbeFollowCmd, ProbeGuideCmd}
 import shapeless.tag
 import shapeless.tag.@@
+import squants.space.Arcseconds
 
 object TcsControllerEpics extends TcsController {
   private val Log = getLogger
@@ -93,19 +95,19 @@ object TcsControllerEpics extends TcsController {
     }
     else none
 
-  private val pwfs1GuiderControl: GuideControl = GuideControl(Subsystem.PWFS1, TcsEpics.instance.pwfs1Park,
+  private def pwfs1GuiderControl: GuideControl = GuideControl(Subsystem.PWFS1, TcsEpics.instance.pwfs1Park,
     TcsEpics.instance.pwfs1ProbeGuideCmd, TcsEpics.instance.pwfs1ProbeFollowCmd)
 
   private val setPwfs1Probe = setGuideProbe(pwfs1GuiderControl, (EpicsTcsConfig.pwfs1 ^|-> GuiderConfig.tracking).set)(
     _, _, _)
 
-  private val pwfs2GuiderControl: GuideControl = GuideControl(Subsystem.PWFS2, TcsEpics.instance.pwfs2Park,
+  private def pwfs2GuiderControl: GuideControl = GuideControl(Subsystem.PWFS2, TcsEpics.instance.pwfs2Park,
     TcsEpics.instance.pwfs2ProbeGuideCmd, TcsEpics.instance.pwfs2ProbeFollowCmd)
 
   private val setPwfs2Probe = setGuideProbe(pwfs2GuiderControl,
     v => EpicsTcsConfig.pwfs2OrAowfs.modify(_.leftMap(GuiderConfig.tracking.set(v))))(_, _, _)
 
-  private val oiwfsGuiderControl: GuideControl = GuideControl(Subsystem.OIWFS, TcsEpics.instance.oiwfsPark,
+  private def oiwfsGuiderControl: GuideControl = GuideControl(Subsystem.OIWFS, TcsEpics.instance.oiwfsPark,
     TcsEpics.instance.oiwfsProbeGuideCmd, TcsEpics.instance.oiwfsProbeFollowCmd)
 
   private val setOiwfsProbe = setGuideProbe(oiwfsGuiderControl, (EpicsTcsConfig.oiwfs ^|-> GuiderConfig.tracking).set)(
@@ -147,11 +149,11 @@ object TcsControllerEpics extends TcsController {
     }
   }
 
-  private val setPwfs1 = setGuiderWfs(TcsEpics.instance.pwfs1ObserveCmd, TcsEpics.instance.pwfs1StopObserveCmd)(_)
+  private lazy val setPwfs1 = setGuiderWfs(TcsEpics.instance.pwfs1ObserveCmd, TcsEpics.instance.pwfs1StopObserveCmd)(_)
 
-  private val setPwfs2 = setGuiderWfs(TcsEpics.instance.pwfs2ObserveCmd, TcsEpics.instance.pwfs2StopObserveCmd)(_)
+  private lazy val setPwfs2 = setGuiderWfs(TcsEpics.instance.pwfs2ObserveCmd, TcsEpics.instance.pwfs2StopObserveCmd)(_)
 
-  private val setOiwfs = setGuiderWfs(TcsEpics.instance.oiwfsObserveCmd, TcsEpics.instance.oiwfsStopObserveCmd)(_)
+  private lazy val setOiwfs = setGuiderWfs(TcsEpics.instance.oiwfsObserveCmd, TcsEpics.instance.oiwfsStopObserveCmd)(_)
 
   val BottomPort: Int = 1
   val InvalidPort: Int = 0
@@ -270,8 +272,36 @@ object TcsControllerEpics extends TcsController {
   private val tcsTimeout = Seconds(60)
   private val agTimeout = Seconds(60)
 
-  private def willMove(current: EpicsTcsConfig, demand: TcsConfig): Boolean =
-    demand.tc.offsetA.exists(_ =!= current.instrumentOffset)
+  val pwfs1OffsetThreshold: Length = Arcseconds(0.01)/FOCAL_PLANE_SCALE
+  val pwfs2OffsetThreshold: Length = Arcseconds(0.01)/FOCAL_PLANE_SCALE
+  private def aoOffsetThreshold(instrument: Instrument): Option[Length] = instrument match {
+    case Instrument.Nifs  => (Arcseconds(0.01)/FOCAL_PLANE_SCALE).some
+    case Instrument.Niri  => (Arcseconds(3.0)/FOCAL_PLANE_SCALE).some
+    case Instrument.Gnirs => (Arcseconds(3.0)/FOCAL_PLANE_SCALE).some
+    case _                => none
+  }
+
+  private def mustPauseWhileOffsetting(current: EpicsTcsConfig, demand: TcsConfig): Boolean = {
+    val distanceSquared = demand.tc.offsetA.map(_.toFocalPlaneOffset(current.iaa))
+      .map { o => (o.x - current.offset.x, o.y - current.offset.y) }
+      .map(d => d._1 * d._1 + d._2 * d._2)
+
+    val thresholds = List(
+      (Tcs.calcGuiderInUse(demand.gc, TipTiltSource.PWFS1, M1Source.PWFS1) && demand.gds.pwfs1.isActive)
+        .option(pwfs1OffsetThreshold),
+      (Tcs.calcGuiderInUse(demand.gc, TipTiltSource.PWFS2, M1Source.PWFS2) &&
+        demand.gds.pwfs2OrAowfs.swap.exists(_.isActive))
+        .option(pwfs2OffsetThreshold),
+      demand.inst.oiOffsetGuideThreshold
+        .filter(_ => Tcs.calcGuiderInUse(demand.gc, TipTiltSource.OIWFS, M1Source.OIWFS) && demand.gds.oiwfs.isActive),
+      aoOffsetThreshold(demand.inst.instrument)
+        .filter(_ => Tcs.calcGuiderInUse(demand.gc, TipTiltSource.GAOS, M1Source.GAOS) &&
+          demand.gds.pwfs2OrAowfs.exists(_.isActive)
+        )
+    )
+    // Does the offset movement surpass any of the existing thresholds ?
+    distanceSquared.exists(dd => thresholds.exists(_.exists(t => t*t < dd)))
+  }
 
   private def applyParam[T: Eq](used: Boolean,
                                 current: T,
@@ -358,7 +388,7 @@ object TcsControllerEpics extends TcsController {
   def tagIso[B, T]: Iso[B@@T, B] = Iso.apply[B@@T, B](x => x)(tag[T](_))
 
   def calcGuideOff(current: EpicsTcsConfig, demand: TcsConfig, gaosEnabled: Boolean): TcsConfig = {
-    val mustOff = willMove(current, demand)
+    val mustOff = mustPauseWhileOffsetting(current, demand)
     // Only turn things off here. Things that must be turned on will be turned on in GuideOn.
     def calc(c: GuiderSensorOption, d: GuiderSensorOption) = (mustOff || d === GuiderSensorOff).fold(GuiderSensorOff, c)
 

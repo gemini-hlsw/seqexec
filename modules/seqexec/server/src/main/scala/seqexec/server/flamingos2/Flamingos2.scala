@@ -7,26 +7,31 @@ import cats.data.{EitherT, Reader}
 import cats.effect.IO
 import cats.implicits._
 import fs2.Stream
+import seqexec.server.tcs.FOCAL_PLANE_SCALE
 import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2._
 import edu.gemini.spModel.obscomp.InstConstants.{DARK_OBSERVE_TYPE, OBSERVE_TYPE_PROP}
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import java.lang.{Double => JDouble}
+
 import gem.enum.LightSinkName
+
 import scala.concurrent.duration.{Duration, SECONDS}
-import seqexec.model.enum.{Instrument, Resource}
+import seqexec.model.enum.Instrument
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.flamingos2.Flamingos2Controller._
 import seqexec.server._
 import seqexec.server.keywords.{DhsClient, DhsInstrument, KeywordsClient}
+import squants.Length
+import squants.space.Arcseconds
 import squants.time.{Seconds, Time}
 
 final case class Flamingos2(f2Controller: Flamingos2Controller, dhsClient: DhsClient[IO]) extends DhsInstrument[IO] with InstrumentSystem[IO] {
 
   import Flamingos2._
 
-  override val resource: Resource = Instrument.F2
+  override val resource: Instrument = Instrument.F2
 
   override def sfName(config: Config): LightSinkName = LightSinkName.F2
 
@@ -60,6 +65,9 @@ final case class Flamingos2(f2Controller: Flamingos2Controller, dhsClient: DhsCl
 
   override def observeProgress(total: Time, elapsed: InstrumentSystem.ElapsedTime): Stream[IO, Progress] = f2Controller
     .observeProgress(total)
+
+  // TODO Use different value if using electronic offsets
+  override val oiOffsetGuideThreshold: Option[Length] = (Arcseconds(0.01)/FOCAL_PLANE_SCALE).some
 }
 
 object Flamingos2 {

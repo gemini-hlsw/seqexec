@@ -440,14 +440,14 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
   ): TrySeq[List[System[IO]]] = {
     stepType match {
       case CelestialObject(inst) => toInstrumentSys(inst).map{sys => sys :: List(
-          Tcs.fromConfig(systems.tcs, hasOI(inst).fold(allButGaos, allButGaosNorOi), None, systems.guideDb)(
+          Tcs.fromConfig(systems.tcs, hasOI(inst).fold(allButGaos, allButGaosNorOi), None, sys, systems.guideDb)(
             config,
             LightPath(TcsController.LightSource.Sky, sys.sfName(config)),
             extractWavelength(config)),
           Gcal(systems.gcal, site == Site.GS)
       ) }
       case FlatOrArc(inst)       => toInstrumentSys(inst).map{sys => sys :: List(
-          Tcs.fromConfig(systems.tcs, flatOrArcTcsSubsystems(inst), None, systems.guideDb)(
+          Tcs.fromConfig(systems.tcs, flatOrArcTcsSubsystems(inst), None, sys, systems.guideDb)(
             config,
             LightPath(TcsController.LightSource.GCAL, sys.sfName(config)),
             extractWavelength(config)),
@@ -459,7 +459,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
         altair <- Altair.fromConfig(config, systems.altair)
       } yield sys :: List(
           Tcs.fromConfig(systems.tcs, hasOI(inst).fold(allButGaos, allButGaosNorOi).add(Gaos),
-            altair.asLeft.some, systems.guideDb)(config,
+            altair.asLeft.some, sys, systems.guideDb)(config,
             LightPath(TcsController.LightSource.AO, sys.sfName(config)),
             extractWavelength(config)),
           Gcal(systems.gcal, site == Site.GS)

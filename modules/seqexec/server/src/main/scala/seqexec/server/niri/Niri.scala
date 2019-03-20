@@ -14,16 +14,18 @@ import edu.gemini.spModel.obscomp.InstConstants.{BIAS_OBSERVE_TYPE, DARK_OBSERVE
 import edu.gemini.seqexec.server.niri.ReadMode
 import seqexec.server.ConfigUtilOps._
 import seqexec.model.dhs.ImageFileId
-import seqexec.model.enum.{Instrument, Resource}
+import seqexec.model.enum.Instrument
 import seqexec.server.ConfigUtilOps.ExtractFailure
 import seqexec.server.{ConfigResult, ConfigUtilOps, InstrumentSystem, ObserveCommand, Progress, SeqAction, SeqActionF, SeqObserveF, SeqexecFailure, TrySeq}
 import seqexec.server.keywords.{DhsClient, DhsInstrument, KeywordsClient}
+import seqexec.server.tcs.FOCAL_PLANE_SCALE
 import java.lang.{Double => JDouble, Integer => JInt}
 
 import gem.enum.LightSinkName
 import seqexec.server.InstrumentSystem.{AbortObserveCmd, InfraredControl, StopObserveCmd}
 import seqexec.server.niri.NiriController._
-import squants.Time
+import squants.space.Arcseconds
+import squants.{Length, Time}
 import squants.time.TimeConversions._
 
 final case class Niri(controller: NiriController, dhsClient: DhsClient[IO])
@@ -56,11 +58,13 @@ final case class Niri(controller: NiriController, dhsClient: DhsClient[IO])
   override def observeProgress(total: Time, elapsed: InstrumentSystem.ElapsedTime)
   : fs2.Stream[IO, Progress] = controller.observeProgress(total)
 
+  override val oiOffsetGuideThreshold: Option[Length] = (Arcseconds(0.01)/FOCAL_PLANE_SCALE).some
+
   override val dhsInstrumentName: String = "NIRI"
 
   override val keywordsClient: KeywordsClient[IO] = this
 
-  override val resource: Resource = Instrument.Niri
+  override val resource: Instrument = Instrument.Niri
 
   /**
     * Called to configure a system

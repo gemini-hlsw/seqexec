@@ -20,7 +20,7 @@ import seqexec.server.altair.Altair
 import seqexec.server.altair.AltairController._
 import seqexec.server.gems.Gems
 import seqexec.server.tcs.TcsController._
-import seqexec.server.{ConfigResult, SeqAction, SeqexecFailure, System}
+import seqexec.server.{ConfigResult, InstrumentSystem, SeqAction, SeqexecFailure, System}
 import shapeless.tag
 import squants.Angle
 import squants.space.Arcseconds
@@ -61,19 +61,6 @@ final case class Tcs private (tcsController: TcsController,
     tcsController.notifyObserveStart
 
   override def notifyObserveEnd: SeqAction[Unit] = tcsController.notifyObserveEnd
-
-  def calcGuiderInUse(telGuide: TelescopeGuideConfig, tipTiltSource: TipTiltSource, m1Source: M1Source): Boolean = {
-    val usedByM1: Boolean = telGuide.m1Guide match {
-      case M1GuideOn(src) => src === m1Source
-      case _              => false
-    }
-    val usedByM2 = telGuide.m2Guide match {
-      case M2GuideOn(_, srcs) => srcs.contains(tipTiltSource)
-      case _                  => false
-    }
-
-    usedByM1 | usedByM2
-  }
 
   val defaultGuiderConf = GuiderConfig(ProbeTrackingConfig.Parked, GuiderSensorOff)
   def calcGuiderConfig(inUse: Boolean, guideWith: Option[StandardGuideOptions.Value]): GuiderConfig =
@@ -117,7 +104,8 @@ final case class Tcs private (tcsController: TcsController,
           )
         ),
         AGConfig(config.lightPath, HrwfsConfig.Auto.some),
-        c.gaosGuide
+        c.gaosGuide,
+        config.instrument
       )
     }
   }
@@ -155,14 +143,15 @@ object Tcs {
     guideWithAO: Option[StandardGuideOptions.Value],
     offsetA: Option[InstrumentOffset],
     wavelA: Option[Wavelength],
-    lightPath: LightPath
+    lightPath: LightPath,
+    instrument: InstrumentSystem[IO]
   )
 
   @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object TcsSeqConfig
 
   def fromConfig(controller: TcsController, subsystems: NonEmptySet[Subsystem], gaos: Option[Either[Altair[IO],
-    Gems[IO]]], guideConfigDb: GuideConfigDb[IO])(
+    Gems[IO]]], instrument: InstrumentSystem[IO], guideConfigDb: GuideConfigDb[IO])(
                   config: Config, lightPath: LightPath, observingWavelength: Option[Wavelength]
   ): Tcs = {
 
@@ -182,11 +171,25 @@ object Tcs {
       gwao,
       (offsetp, offsetq).mapN(InstrumentOffset(_, _)),
       observingWavelength,
-      lightPath
+      lightPath,
+      instrument
     )
 
     Tcs(controller, subsystems, gaos, guideConfigDb)(tcsSeqCfg)
 
+  }
+
+  def calcGuiderInUse(telGuide: TelescopeGuideConfig, tipTiltSource: TipTiltSource, m1Source: M1Source): Boolean = {
+    val usedByM1: Boolean = telGuide.m1Guide match {
+      case M1GuideOn(src) => src === m1Source
+      case _              => false
+    }
+    val usedByM2 = telGuide.m2Guide match {
+      case M2GuideOn(_, srcs) => srcs.contains(tipTiltSource)
+      case _                  => false
+    }
+
+    usedByM1 | usedByM2
   }
 
 }

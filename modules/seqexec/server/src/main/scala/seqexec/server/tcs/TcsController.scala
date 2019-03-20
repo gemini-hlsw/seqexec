@@ -7,7 +7,7 @@ import cats._
 import cats.data.{NonEmptySet, OneAnd}
 import cats.effect.IO
 import cats.implicits._
-import seqexec.server.SeqAction
+import seqexec.server.{InstrumentGuide, SeqAction}
 import edu.gemini.spModel.core.Wavelength
 import gem.enum.LightSinkName
 import squants.{Angle, Length}
@@ -199,7 +199,9 @@ object TcsController {
   sealed abstract class ProbeTrackingConfig(
     val follow: FollowOption,
     val getNodChop: NodChopTrackingConfig
-  )
+  ) {
+    def isActive: Boolean = follow === FollowOn && getNodChop =!= NodChopTrackingConfig.AllOff
+  }
   object ProbeTrackingConfig {
     case object Parked extends ProbeTrackingConfig(FollowOff, NodChopTrackingConfig.AllOff)
     case object Off extends ProbeTrackingConfig(FollowOff, NodChopTrackingConfig.AllOff)
@@ -341,7 +343,9 @@ object TcsController {
   }
 
   @Lenses
-  final case class GuiderConfig(tracking: ProbeTrackingConfig, detector: GuiderSensorOption)
+  final case class GuiderConfig(tracking: ProbeTrackingConfig, detector: GuiderSensorOption) {
+    val isActive: Boolean = tracking.isActive && detector === GuiderSensorOn
+  }
 
   @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object GuiderConfig {
@@ -370,23 +374,12 @@ object TcsController {
     tc:  TelescopeConfig,
     gds: GuidersConfig,
     agc: AGConfig,
-    gaos: Option[Either[AltairConfig, GemsConfig]]
+    gaos: Option[Either[AltairConfig, GemsConfig]],
+    inst: InstrumentGuide
   )
 
   @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object TcsConfig
-
-  val defaultConfig = TcsConfig(
-    TelescopeGuideConfig(MountGuideOption.MountGuideOff, M1GuideOff, M2GuideOff),
-    TelescopeConfig(None, None),
-    GuidersConfig(
-      tag[P1Config](GuiderConfig(ProbeTrackingConfig.Parked, GuiderSensorOff)),
-      Left(tag[P2Config](GuiderConfig(ProbeTrackingConfig.Parked, GuiderSensorOff))),
-      tag[OIConfig](GuiderConfig(ProbeTrackingConfig.Parked, GuiderSensorOff))
-    ),
-    AGConfig(LightPath(LightSource.Sky, LightSinkName.Ac), HrwfsConfig.Auto.some),
-    None
-  )
 
   sealed trait Subsystem extends Product with Serializable
   object Subsystem {
