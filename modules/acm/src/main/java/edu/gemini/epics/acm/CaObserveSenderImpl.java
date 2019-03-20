@@ -261,7 +261,12 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
         }
 
         default CaObserveSenderImpl.ApplyState onObserveCarValChange(final CarStateGeneric carState) {
-            return copyWithObserveState(currentObserveState().onObserveCarValChange(carState));
+            // In case of error we go to idle
+            if (carState.isError()) {
+                return idleState;
+            } else {
+                return copyWithObserveState(currentObserveState().onObserveCarValChange(carState));
+            }
         }
 
         default boolean isIdle() {
@@ -319,7 +324,7 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
 
     }
 
-    private ObserveState idleObserveState = new ObserveIdleState();
+    private static ObserveState idleObserveState = new ObserveIdleState();
 
     // At this state we are waiting for busy on the observeC
     private final class ObserveWaitBusy implements ObserveState {
@@ -628,7 +633,7 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
     }
 
     // Initial state before any channel has changed
-    protected final class IdleState implements ApplyState {
+    protected static final class IdleState implements ApplyState {
         IdleState() { }
 
         @Override
@@ -670,7 +675,7 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
 
     };
 
-    protected IdleState idleState = new IdleState();
+    protected static IdleState idleState = new IdleState();
 
     // In this state we wait for clid to change
     private final class WaitApplyPreset implements CaObserveSenderImpl.ApplyState {
@@ -904,6 +909,8 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
             ObserveState state = currentObserveState().onObserveCarValChange(carState);
             if (state.isDone() || state.isAborted() || state.isStopped()) {
                 return checkOutCompletion(carState, clid, state);
+            } else if (carState.isError()) {
+                return idleState;
             } else if (state.isPaused()) {
                 return idleState;
             } else {
