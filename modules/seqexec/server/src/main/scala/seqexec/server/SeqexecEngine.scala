@@ -206,26 +206,21 @@ class SeqexecEngine(httpClient: Client[IO], gpi: GpiClient[IO], ghost: GhostClie
 
   def requestRefresh(q: EventQueue, clientId: ClientId): IO[Unit] = q.enqueue1(Event.poll(clientId))
 
-  @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements", "org.wartremover.warts.Throw"))
   def seqQueueRefreshStream: Stream[IO, Either[SeqexecFailure, executeEngine.EventType]] = {
     val fd = Duration(settings.odbQueuePollingInterval.toSeconds, TimeUnit.SECONDS)
     Stream.fixedDelay[IO](fd).evalMap(_ => odbProxy.queuedSequences).flatMap { x =>
-      Stream.emit(Event.getState[executeEngine.ConcreteTypes]{st =>
-        Stream.eval(odbLoader.refreshSequenceList(x)(st)).flatMap(Stream.emits).some
+      Stream.emit(Event.getState[executeEngine.ConcreteTypes] { st =>
+        Stream.eval(odbLoader.refreshSequenceList(x, st)).flatMap(Stream.emits).some
       }.asRight)
     }.handleErrorWith {
-      case _: SeqFailure =>
-        Stream.eval(IO(sys.exit(-1)))
-        // The line below vill do graceful exit when https://github.com/typelevel/cats-effect/issues/487 ges fixed
-        // Stream.emit(SeqexecFailure.OdbSeqError(e).asLeft)
-      case _: Exception =>
-        Stream.eval(IO(sys.exit(-1)))
-        // The line below vill do graceful exit when https://github.com/typelevel/cats-effect/issues/487 ges fixed
-        // Stream.emit(SeqexecFailure.SeqexecException(e).asLeft)
+      case e: SeqFailure =>
+        Stream.emit(SeqexecFailure.OdbSeqError(e).asLeft)
+      case e: Exception =>
+        Stream.emit(SeqexecFailure.SeqexecException(e).asLeft)
     }
   }
 
-  def eventStream(q: EventQueue): Stream[IO, SeqexecEvent] = {
+  def eventStream(q: EventQueue): Stream[IO, SeqexecEvent] =
     stream(q.dequeue.mergeHaltBoth(seqQueueRefreshStream.rethrow))(EngineState.default).flatMap(x =>
       Stream.eval(notifyODB(x))).flatMap {
         case (ev, qState) =>
@@ -233,7 +228,6 @@ class SeqexecEngine(httpClient: Client[IO], gpi: GpiClient[IO], ghost: GhostClie
           val event = toSeqexecEvent(ev, qState)
           Stream.eval(updateMetrics[IO](ev, sequences).as(event))
     }
-  }
 
   private[server] def stream(p: Stream[IO, executeEngine.EventType])(s0: EngineState)
   : Stream[IO, (executeEngine.ResultType, EngineState)] =

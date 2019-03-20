@@ -6,6 +6,7 @@ package seqexec.server
 import cats.Applicative
 import cats.Monad
 import cats.Endo
+import cats.data.Nested
 import cats.implicits._
 import cats.effect.{ Concurrent, IO, Timer }
 import edu.gemini.spModel.obscomp.InstConstants
@@ -58,21 +59,17 @@ final class ODBSequencesLoader[F[_]: Monad](odbProxy: OdbProxy[F], translator: S
           )(st)
       }.withEvent(LoadSequence(seqId)).toHandle)
 
-    t.map {
-      _.map {
-        case (err :: _, None) =>
-          List(Event.logDebugMsg(SeqexecFailure.explain(err)))
-        case (errs, Some(seq)) =>
-          loadSequenceEvent(seq) :: errs.map(e =>
-            Event.logDebugMsg(SeqexecFailure.explain(e)))
-        case _ => Nil
-      }
-      .valueOr(e => List(Event.logDebugMsg(SeqexecFailure.explain(e))))
-    }
+    Nested(t).map {
+      case (err :: _, None) =>
+        List(Event.logDebugMsg(SeqexecFailure.explain(err)))
+      case (errs, Some(seq)) =>
+        loadSequenceEvent(seq) :: errs.map(e =>
+          Event.logDebugMsg(SeqexecFailure.explain(e)))
+      case _ => Nil
+    }.value.map(_.valueOr(e => List(Event.logDebugMsg(SeqexecFailure.explain(e)))))
   }
 
-  def refreshSequenceList(odbList: List[Observation.Id])(
-    st: EngineState)(
+  def refreshSequenceList(odbList: List[Observation.Id], st: EngineState)(
       implicit cio: Concurrent[IO],
                tio: Timer[IO]
     ): F[List[executeEngine.EventType]] = {
