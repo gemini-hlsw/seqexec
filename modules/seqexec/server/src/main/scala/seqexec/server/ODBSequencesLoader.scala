@@ -4,7 +4,9 @@
 package seqexec.server
 
 import cats.Applicative
+import cats.Monad
 import cats.Endo
+import cats.data.Nested
 import cats.implicits._
 import cats.effect.{ Concurrent, IO, Timer }
 import edu.gemini.spModel.obscomp.InstConstants
@@ -15,7 +17,7 @@ import seqexec.engine.Event
 import seqexec.engine.Sequence
 import seqexec.server.ConfigUtilOps._
 
-final class ODBSequencesLoader[F[_]: Applicative](odbProxy: OdbProxy[F], translator: SeqTranslate) {
+final class ODBSequencesLoader[F[_]: Monad](odbProxy: OdbProxy[F], translator: SeqTranslate) {
   private def unloadEvent(seqId: Observation.Id): executeEngine.EventType =
     Event.modifyState[executeEngine.ConcreteTypes](
       { st: EngineState =>
@@ -31,20 +33,22 @@ final class ODBSequencesLoader[F[_]: Applicative](odbProxy: OdbProxy[F], transla
 
   def loadEvents(
     seqId: Observation.Id)(
-      implicit cio: Concurrent[IO],
-               tio: Timer[IO]
-    ): List[executeEngine.EventType] = {
-    val t: Either[SeqexecFailure, (List[SeqexecFailure], Option[SequenceGen])] =
-      for {
-        odbSeq       <- odbProxy.read(seqId)
-        progIdString <- odbSeq
-                          .config
-                          .extractAs[String](OCS_KEY / InstConstants.PROGRAMID_PROP)
-                          .leftMap(ConfigUtilOps.explainExtractError)
-        _            <- Either.catchNonFatal(
-                          Applicative[F].pure(SPProgramID.toProgramID(progIdString)))
-                        .leftMap(e => SeqexecFailure.SeqexecException(e): SeqexecFailure)
-      } yield translator.sequence(seqId, odbSeq)
+    implicit cio: Concurrent[IO],
+             tio: Timer[IO]
+  ): F[List[executeEngine.EventType]] = {
+    val t: F[Either[SeqexecFailure, (List[SeqexecFailure], Option[SequenceGen])]] =
+      odbProxy.read(seqId).map {o =>
+        for {
+          odbSeq <- o
+          progIdString <- odbSeq
+                            .config
+                            .extractAs[String](OCS_KEY / InstConstants.PROGRAMID_PROP)
+                            .leftMap(ConfigUtilOps.explainExtractError)
+          _            <- Either.catchNonFatal(
+                            Applicative[F].pure(SPProgramID.toProgramID(progIdString)))
+                          .leftMap(e => SeqexecFailure.SeqexecException(e): SeqexecFailure)
+        } yield translator.sequence(seqId, odbSeq)
+      }
 
     def loadSequenceEvent(seqg: SequenceGen): executeEngine.EventType =
       Event.modifyState[executeEngine.ConcreteTypes]({ st: EngineState =>
@@ -55,29 +59,27 @@ final class ODBSequencesLoader[F[_]: Applicative](odbProxy: OdbProxy[F], transla
           )(st)
       }.withEvent(LoadSequence(seqId)).toHandle)
 
-    t.map {
-        case (err :: _, None) =>
-          List(Event.logDebugMsg(SeqexecFailure.explain(err)))
-        case (errs, Some(seq)) =>
-          loadSequenceEvent(seq) :: errs.map(e =>
-            Event.logDebugMsg(SeqexecFailure.explain(e)))
-        case _ => Nil
-      }
-      .valueOr(e => List(Event.logDebugMsg(SeqexecFailure.explain(e))))
+    Nested(t).map {
+      case (err :: _, None) =>
+        List(Event.logDebugMsg(SeqexecFailure.explain(err)))
+      case (errs, Some(seq)) =>
+        loadSequenceEvent(seq) :: errs.map(e =>
+          Event.logDebugMsg(SeqexecFailure.explain(e)))
+      case _ => Nil
+    }.value.map(_.valueOr(e => List(Event.logDebugMsg(SeqexecFailure.explain(e)))))
   }
 
-  def refreshSequenceList(odbList: Seq[Observation.Id])(
-    st: EngineState)(
+  def refreshSequenceList(odbList: List[Observation.Id], st: EngineState)(
       implicit cio: Concurrent[IO],
                tio: Timer[IO]
-    ): List[executeEngine.EventType] = {
-    val seqexecList = st.sequences.keys.toSeq
+    ): F[List[executeEngine.EventType]] = {
+    val seqexecList = st.sequences.keys.toList
 
-    val loads = odbList.diff(seqexecList).flatMap(loadEvents)
+    val loads = odbList.diff(seqexecList).map(loadEvents).sequence.map(_.flatten)
 
     val unloads = seqexecList.diff(odbList).map(unloadEvent)
 
-    (loads ++ unloads).toList
+    loads.map(_ ++ unloads)
   }
 
 }

@@ -13,13 +13,15 @@ import edu.gemini.wdba.session.client.WDBA_XmlRpc_SessionClient
 import gem.Observation
 import seqexec.model.dhs.ImageFileId
 
-class OdbProxy[F[_]](val loc: Peer, cmds: OdbProxy.OdbCommands[F]) {
+class OdbProxy[F[_]: Sync](val loc: Peer, cmds: OdbProxy.OdbCommands[F]) {
 
   def host(): Peer = loc
-  def read(oid: Observation.Id): Either[SeqexecFailure, SeqexecSequence] =
-    SeqExecService.client(loc).sequence(new SPObservationID(oid.format)).leftMap(SeqexecFailure.OdbSeqError)
+  def read(oid: Observation.Id): F[Either[SeqexecFailure, SeqexecSequence]] =
+    Sync[F].delay {
+      SeqExecService.client(loc).sequence(new SPObservationID(oid.format)).leftMap(SeqexecFailure.OdbSeqError)
+    }
 
-  val queuedSequences: SeqActionF[F, List[Observation.Id]] = cmds.queuedSequences()
+  val queuedSequences: F[List[Observation.Id]] = cmds.queuedSequences()
   val datasetStart: (Observation.Id, String, ImageFileId) => SeqActionF[F, Boolean] = cmds.datasetStart
   val datasetComplete: (Observation.Id, String, ImageFileId) => SeqActionF[F, Boolean] = cmds.datasetComplete
   val obsAbort: (Observation.Id, String) => SeqActionF[F, Boolean] = cmds.obsAbort
@@ -33,7 +35,7 @@ class OdbProxy[F[_]](val loc: Peer, cmds: OdbProxy.OdbCommands[F]) {
 
 object OdbProxy {
   trait OdbCommands[F[_]] {
-    def queuedSequences(): SeqActionF[F, List[Observation.Id]]
+    def queuedSequences(): F[List[Observation.Id]]
     def datasetStart(obsId: Observation.Id, dataId: String, fileId: ImageFileId): SeqActionF[F, Boolean]
     def datasetComplete(obsId: Observation.Id, dataId: String, fileId: ImageFileId): SeqActionF[F, Boolean]
     def obsAbort(obsId: Observation.Id, reason: String): SeqActionF[F, Boolean]
@@ -53,7 +55,7 @@ object OdbProxy {
     override def obsContinue(obsId: Observation.Id): SeqActionF[F, Boolean] = SeqActionF(false)
     override def obsPause(obsId: Observation.Id, reason: String): SeqActionF[F, Boolean] = SeqActionF(false)
     override def obsStop(obsId: Observation.Id, reason: String): SeqActionF[F, Boolean] = SeqActionF(false)
-    override def queuedSequences(): SeqActionF[F, List[Observation.Id]] = SeqActionF(List.empty)
+    override def queuedSequences(): F[List[Observation.Id]] = List.empty.pure[F]
   }
 
   implicit class SeqexecSequenceOps(val s: SeqexecSequence) extends AnyVal {
@@ -118,11 +120,10 @@ object OdbProxy {
       ).recover
     )
 
-    override def queuedSequences(): SeqActionF[F, List[Observation.Id]] = EitherT(
+    override def queuedSequences(): F[List[Observation.Id]] =
       Sync[F].delay(
         xmlrpcClient.getObservations(sessionName).toList.flatMap(id => Observation.Id.fromString(id).toList)
-      ).recover
-    )
+      )
   }
 
 }

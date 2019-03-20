@@ -13,6 +13,7 @@ import cats.effect.{ConcurrentEffect, ContextShift, IO, Sync, Timer}
 import cats.implicits._
 import monocle.Monocle._
 import monocle.Optional
+import edu.gemini.seqexec.odb.SeqFailure
 import edu.gemini.epics.acm.CaService
 import gem.Observation
 import gem.enum.Site
@@ -102,7 +103,9 @@ class SeqexecEngine(httpClient: Client[IO], gpi: GpiClient[IO], ghost: GhostClie
   private val odbLoader = new ODBSequencesLoader(odbProxy, translator)
 
   def sync(q: EventQueue, seqId: Observation.Id): IO[Either[SeqexecFailure, Unit]] =
-    q.enqueue(Stream.emits(odbLoader.loadEvents(seqId))).map(_.asRight).compile.last.attempt.map(_.bimap(SeqexecFailure.SeqexecException.apply, _ => ()))
+    odbLoader.loadEvents(seqId).flatMap{ e =>
+      q.enqueue(Stream.emits(e)).map(_.asRight).compile.last.attempt.map(_.bimap(SeqexecFailure.SeqexecException.apply, _ => ()))
+    }
 
   // TODO: this is too much guessing. We should have proper tracking of systems' state.
   def failedInstruments(st: EngineState): Set[Resource] = st.sequences.values.toList.mapFilter(s =>
@@ -203,26 +206,28 @@ class SeqexecEngine(httpClient: Client[IO], gpi: GpiClient[IO], ghost: GhostClie
 
   def requestRefresh(q: EventQueue, clientId: ClientId): IO[Unit] = q.enqueue1(Event.poll(clientId))
 
-  def seqQueueRefreshStream: Stream[IO, executeEngine.EventType] = {
+  def seqQueueRefreshStream: Stream[IO, Either[SeqexecFailure, executeEngine.EventType]] = {
     val fd = Duration(settings.odbQueuePollingInterval.toSeconds, TimeUnit.SECONDS)
-    Stream.fixedDelay[IO](fd).evalMap(_ => odbProxy.queuedSequences.value).map { x =>
-      Event.getState[executeEngine.ConcreteTypes](st =>
-        x.map(odbLoader.refreshSequenceList(_)(st)).valueOr(r =>
-          List(Event.logWarningMsg(SeqexecFailure.explain(r)))
-        ).some.filter(_.nonEmpty).map(Stream.emits(_).covary[IO])
-      )
+    Stream.fixedDelay[IO](fd).evalMap(_ => odbProxy.queuedSequences).flatMap { x =>
+      Stream.emit(Event.getState[executeEngine.ConcreteTypes] { st =>
+        Stream.eval(odbLoader.refreshSequenceList(x, st)).flatMap(Stream.emits).some
+      }.asRight)
+    }.handleErrorWith {
+      case e: SeqFailure =>
+        Stream.emit(SeqexecFailure.OdbSeqError(e).asLeft)
+      case e: Exception =>
+        Stream.emit(SeqexecFailure.SeqexecException(e).asLeft)
     }
   }
 
-  def eventStream(q: EventQueue): Stream[IO, SeqexecEvent] = {
-    stream(q.dequeue.mergeHaltBoth(seqQueueRefreshStream))(EngineState.default).flatMap(x =>
+  def eventStream(q: EventQueue): Stream[IO, SeqexecEvent] =
+    stream(q.dequeue.mergeHaltBoth(seqQueueRefreshStream.rethrow))(EngineState.default).flatMap(x =>
       Stream.eval(notifyODB(x))).flatMap {
         case (ev, qState) =>
           val sequences = qState.sequences.values.map(viewSequence).toList
           val event = toSeqexecEvent(ev, qState)
           Stream.eval(updateMetrics[IO](ev, sequences).as(event))
     }
-  }
 
   private[server] def stream(p: Stream[IO, executeEngine.EventType])(s0: EngineState)
   : Stream[IO, (executeEngine.ResultType, EngineState)] =

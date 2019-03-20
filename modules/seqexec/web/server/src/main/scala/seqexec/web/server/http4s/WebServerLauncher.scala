@@ -35,6 +35,7 @@ import seqexec.model.events._
 import seqexec.server
 import seqexec.server.tcs.GuideConfigDb
 import seqexec.server.{ControlStrategy, SeqexecConfiguration, SeqexecEngine, SeqexecMetrics, executeEngine}
+import seqexec.server.SeqexecFailure
 import seqexec.web.server.OcsBuildInfo
 import seqexec.web.server.logging.AppenderForClients
 import seqexec.web.server.security.{AuthenticationConfig, AuthenticationService, LDAPConfig}
@@ -236,6 +237,14 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
     asyncAppender
   }
 
+  // Logger of error of last resort.
+  // Once https://github.com/typelevel/cats-effect/issues/487 is fixed we
+  // could remove the sys.exit calls
+  def logError: PartialFunction[Throwable, IO[Unit]] = {
+    case e: SeqexecFailure => IO(logger.error(e)(s"Seqexec global error handler ${SeqexecFailure.explain(e)}")) *> IO(sys.exit(-1))
+    case e: Exception => IO(logger.error(e)("Seqexec global error handler")) *> IO(sys.exit(-1))
+  }
+
   /** Reads the configuration and launches the web server */
   // scalastyle:off
   def run(args: List[String]): IO[ExitCode] = {
@@ -295,7 +304,9 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
         gcdb   <- Resource.liftF(GuideConfigDb.newDb[IO])
         engine <- engineIO(cli, gcdb, cr)
         _      <- webServerIO(inq, out, engine, gcdb, cr, bec)
-        _      <- Resource.liftF(engine.eventStream(inq).through(out.publish).compile.drain.start)
+        _      <- Resource.liftF(engine.eventStream(inq).through(out.publish).compile.drain.onError(logError).start)
+        // The line below vill do graceful exit when https://github.com/typelevel/cats-effect/issues/487 ges fixed
+        // _      <- Resource.liftF(f.join) // We need to join to catch uncaught errors
       } yield ExitCode.Success
 
     r.use(_ => IO.never)
