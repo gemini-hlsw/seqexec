@@ -11,7 +11,7 @@ import gem.enum.LightSinkName
 import seqexec.model.enum.Instrument
 import squants.{Length, Time}
 
-trait InstrumentSystem[F[_]] extends System[F] {
+trait InstrumentSystem[F[_]] extends System[F] with InstrumentGuide {
   override val resource: Instrument
   // The name used for this instrument in the science fold configuration
   def sfName(config: Config): LightSinkName
@@ -24,7 +24,8 @@ trait InstrumentSystem[F[_]] extends System[F] {
   def calcObserveTime(config: Config): F[Time]
   def keywordsClient: KeywordsClient[F]
   def observeProgress(total: Time, elapsed: InstrumentSystem.ElapsedTime): Stream[F, Progress]
-  val oiOffsetGuideThreshold: Option[Length] = None
+  override val oiOffsetGuideThreshold: Option[Length] = None
+  override def instrument: Instrument = resource
 }
 
 object InstrumentSystem {

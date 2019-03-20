@@ -7,7 +7,7 @@ import cats._
 import cats.data.{NonEmptySet, OneAnd}
 import cats.effect.IO
 import cats.implicits._
-import seqexec.server.{InstrumentSystem, SeqAction}
+import seqexec.server.{InstrumentGuide, SeqAction}
 import edu.gemini.spModel.core.Wavelength
 import gem.enum.LightSinkName
 import squants.{Angle, Length}
@@ -375,7 +375,7 @@ object TcsController {
     gds: GuidersConfig,
     agc: AGConfig,
     gaos: Option[Either[AltairConfig, GemsConfig]],
-    inst: InstrumentSystem[IO]
+    inst: InstrumentGuide
   )
 
   @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))

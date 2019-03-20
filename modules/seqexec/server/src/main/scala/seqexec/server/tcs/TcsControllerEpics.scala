@@ -95,19 +95,19 @@ object TcsControllerEpics extends TcsController {
     }
     else none
 
-  private val pwfs1GuiderControl: GuideControl = GuideControl(Subsystem.PWFS1, TcsEpics.instance.pwfs1Park,
+  private def pwfs1GuiderControl: GuideControl = GuideControl(Subsystem.PWFS1, TcsEpics.instance.pwfs1Park,
     TcsEpics.instance.pwfs1ProbeGuideCmd, TcsEpics.instance.pwfs1ProbeFollowCmd)
 
   private val setPwfs1Probe = setGuideProbe(pwfs1GuiderControl, (EpicsTcsConfig.pwfs1 ^|-> GuiderConfig.tracking).set)(
     _, _, _)
 
-  private val pwfs2GuiderControl: GuideControl = GuideControl(Subsystem.PWFS2, TcsEpics.instance.pwfs2Park,
+  private def pwfs2GuiderControl: GuideControl = GuideControl(Subsystem.PWFS2, TcsEpics.instance.pwfs2Park,
     TcsEpics.instance.pwfs2ProbeGuideCmd, TcsEpics.instance.pwfs2ProbeFollowCmd)
 
   private val setPwfs2Probe = setGuideProbe(pwfs2GuiderControl,
     v => EpicsTcsConfig.pwfs2OrAowfs.modify(_.leftMap(GuiderConfig.tracking.set(v))))(_, _, _)
 
-  private val oiwfsGuiderControl: GuideControl = GuideControl(Subsystem.OIWFS, TcsEpics.instance.oiwfsPark,
+  private def oiwfsGuiderControl: GuideControl = GuideControl(Subsystem.OIWFS, TcsEpics.instance.oiwfsPark,
     TcsEpics.instance.oiwfsProbeGuideCmd, TcsEpics.instance.oiwfsProbeFollowCmd)
 
   private val setOiwfsProbe = setGuideProbe(oiwfsGuiderControl, (EpicsTcsConfig.oiwfs ^|-> GuiderConfig.tracking).set)(
@@ -149,11 +149,11 @@ object TcsControllerEpics extends TcsController {
     }
   }
 
-  private val setPwfs1 = setGuiderWfs(TcsEpics.instance.pwfs1ObserveCmd, TcsEpics.instance.pwfs1StopObserveCmd)(_)
+  private lazy val setPwfs1 = setGuiderWfs(TcsEpics.instance.pwfs1ObserveCmd, TcsEpics.instance.pwfs1StopObserveCmd)(_)
 
-  private val setPwfs2 = setGuiderWfs(TcsEpics.instance.pwfs2ObserveCmd, TcsEpics.instance.pwfs2StopObserveCmd)(_)
+  private lazy val setPwfs2 = setGuiderWfs(TcsEpics.instance.pwfs2ObserveCmd, TcsEpics.instance.pwfs2StopObserveCmd)(_)
 
-  private val setOiwfs = setGuiderWfs(TcsEpics.instance.oiwfsObserveCmd, TcsEpics.instance.oiwfsStopObserveCmd)(_)
+  private lazy val setOiwfs = setGuiderWfs(TcsEpics.instance.oiwfsObserveCmd, TcsEpics.instance.oiwfsStopObserveCmd)(_)
 
   val BottomPort: Int = 1
   val InvalidPort: Int = 0
@@ -272,8 +272,8 @@ object TcsControllerEpics extends TcsController {
   private val tcsTimeout = Seconds(60)
   private val agTimeout = Seconds(60)
 
-  private val pwfs1OffsetThreshold = Arcseconds(0.01)/FOCAL_PLANE_SCALE
-  private val pwfs2OffsetThreshold = Arcseconds(0.01)/FOCAL_PLANE_SCALE
+  val pwfs1OffsetThreshold: Length = Arcseconds(0.01)/FOCAL_PLANE_SCALE
+  val pwfs2OffsetThreshold: Length = Arcseconds(0.01)/FOCAL_PLANE_SCALE
   private def aoOffsetThreshold(instrument: Instrument): Option[Length] = instrument match {
     case Instrument.Nifs  => (Arcseconds(0.01)/FOCAL_PLANE_SCALE).some
     case Instrument.Niri  => (Arcseconds(3.0)/FOCAL_PLANE_SCALE).some
@@ -294,7 +294,7 @@ object TcsControllerEpics extends TcsController {
         .option(pwfs2OffsetThreshold),
       demand.inst.oiOffsetGuideThreshold
         .filter(_ => Tcs.calcGuiderInUse(demand.gc, TipTiltSource.OIWFS, M1Source.OIWFS) && demand.gds.oiwfs.isActive),
-      aoOffsetThreshold(demand.inst.resource)
+      aoOffsetThreshold(demand.inst.instrument)
         .filter(_ => Tcs.calcGuiderInUse(demand.gc, TipTiltSource.GAOS, M1Source.GAOS) &&
           demand.gds.pwfs2OrAowfs.exists(_.isActive)
         )
