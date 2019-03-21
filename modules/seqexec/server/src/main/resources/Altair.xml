@@ -92,6 +92,71 @@
             <!--<type>STRING</type>-->
             <!--<description>Sfo loop</description>-->
         <!--</attribute>-->
+        <attribute name="aoexpt">
+            <channel>wfcs:getStatus.VALK</channel>
+            <type>DOUBLE</type>
+            <description>Altair one over sampling frequency during exposure (Hz)</description>
+        </attribute>
+        <attribute name="aocounts">
+            <channel>wfcs:getStatus4.VALA</channel>
+            <type>DOUBLE</type>
+            <description>Altair GS counts at end of exposure (ADU/subaperture)</description>
+        </attribute>
+        <attribute name="aoseeing">
+            <channel>wfcs:getStatus.VALD</channel>
+            <type>DOUBLE</type>
+            <description>Altair measured seeing at end of exposure (arcsec at 500nm)</description>
+        </attribute>
+        <attribute name="aowfsx">
+            <channel>wfsposPosition.VALA</channel>
+            <type>DOUBLE</type>
+            <description>Altair WFS X position [mm] (0.621mm/arcsec)</description>
+        </attribute>
+        <attribute name="aowfsy">
+            <channel>wfsposPosition.VALB</channel>
+            <type>DOUBLE</type>
+            <description>Altair WFS Y position [mm] (0.621mm/arcsec)</description>
+        </attribute>
+        <attribute name="aowfsz">
+            <channel>wfsposPosition.VALC</channel>
+            <type>DOUBLE</type>
+            <description>Altair WFS Y position [mm]</description>
+        </attribute>
+        <attribute name="aogain">
+            <channel>wfcs:getStatus4.VALQ</channel>
+            <type>DOUBLE</type>
+            <description>Altair centroid gain estimate</description>
+        </attribute>
+        <attribute name="aoncpa">
+            <channel>ncpa.VALA</channel>
+            <type>STRING</type>
+            <description>Altair NCPA file</description>
+        </attribute>
+        <attribute name="ngndfilt">
+            <channel>cc:ngsNDfiltAssembly.VALA</channel>
+            <type>STRING</type>
+            <description>NGS tip tilt sensor neutral density filter</description>
+        </attribute>
+        <attribute name="astar">
+            <channel>cc:astarPosition.VALD</channel>
+            <type>STRING</type>
+            <description>Altair Calibration Unit named position</description>
+        </attribute>
+        <attribute name="aoflex">
+            <channel>ncpa.VALB</channel>
+            <type>STRING</type>
+            <description>Altair flexure file</description>
+        </attribute>
+        <attribute name="lgustage">
+            <channel>cc:lgsustAssembly.VALA</channel>
+            <type>STRING</type>
+            <description>LGS U stage position</description>
+        </attribute>
+        <attribute name="aobs">
+            <channel>ao:bs.VAL</channel>
+            <type>STRING</type>
+            <description>Altair Beampsplitter</description>
+        </attribute>
         <attribute name="aowfsOn">
             <channel>wfcs:loopRunning</channel>
             <type>INTEGER</type>

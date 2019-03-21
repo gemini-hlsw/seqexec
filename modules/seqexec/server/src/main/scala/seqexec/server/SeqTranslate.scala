@@ -6,6 +6,7 @@ package seqexec.server
 import cats._
 import cats.data.{EitherT, NonEmptySet, Reader}
 import cats.effect.{Concurrent, IO, Timer}
+import cats.effect.Sync
 import cats.effect.LiftIO
 import cats.implicits._
 import edu.gemini.seqexec.odb.{ExecutedDataset, SeqexecSequence}
@@ -41,6 +42,9 @@ import seqexec.server.gnirs._
 import seqexec.server.niri._
 import seqexec.server.nifs._
 import seqexec.server.altair.Altair
+import seqexec.server.altair.AltairHeader
+import seqexec.server.altair.AltairKeywordReaderImpl
+import seqexec.server.altair.AltairKeywordReaderDummy
 import seqexec.server.SeqexecFailure._
 import seqexec.server._
 import squants.Time
@@ -531,6 +535,9 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
   private def gcalHeader(i: InstrumentSystem[IO]): Header[IO] = GcalHeader.header(i,
     if (settings.gcalKeywords) GcalKeywordsReaderImpl else DummyGcalKeywordsReader )
 
+  private def altairHeader[F[_]: Sync: LiftIO](i: InstrumentSystem[F]): Header[F] =
+    AltairHeader.header[F](i, if (settings.altairKeywords) new AltairKeywordReaderImpl[F]() else new AltairKeywordReaderDummy[F]())
+
   private def calcHeaders(config: Config, stepType: StepType)(
     implicit tio: Timer[IO]
   ): TrySeq[Reader[HeaderExtraData, List[Header[IO]]]] = stepType match {
@@ -540,7 +547,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
       }
     case AltairObs(inst) => toInstrumentSys(inst) >>= { i =>
         calcInstHeader(config, inst).map(h => Reader(ctx =>
-          List(commonHeaders(config, allButGaos.toList, i)(ctx), gwsHeaders(i), h)))
+          List(commonHeaders(config, allButGaos.toList, i)(ctx), altairHeader(i), gwsHeaders(i), h)))
       }
     case FlatOrArc(inst)       => toInstrumentSys(inst) >>= { i =>
         calcInstHeader(config, inst).map(h => Reader(ctx =>

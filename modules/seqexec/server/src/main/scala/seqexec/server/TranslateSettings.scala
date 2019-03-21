@@ -4,12 +4,13 @@
 package seqexec.server
 
 final case class TranslateSettings(
-  tcsKeywords:   Boolean,
-  f2Keywords:    Boolean,
-  gwsKeywords:   Boolean,
-  gcalKeywords:  Boolean,
-  gmosKeywords:  Boolean,
-  gnirsKeywords: Boolean,
-  niriKeywords:  Boolean,
-  nifsKeywords:  Boolean
+  tcsKeywords:    Boolean,
+  f2Keywords:     Boolean,
+  gwsKeywords:    Boolean,
+  gcalKeywords:   Boolean,
+  gmosKeywords:   Boolean,
+  gnirsKeywords:  Boolean,
+  niriKeywords:   Boolean,
+  nifsKeywords:   Boolean,
+  altairKeywords: Boolean
 )

@@ -215,6 +215,11 @@ package object keywords {
   val StrDefault: String      = "No Value"
   val BooleanDefault: Boolean = false
 
+  def intDefault[F[_]: Applicative]: F[Int]       = IntDefault.pure[F]
+  def doubleDefault[F[_]: Applicative]: F[Double] = DoubleDefault.pure[F]
+  def strDefault[F[_]: Applicative]: F[String]    = StrDefault.pure[F]
+  def boolDefault[F[_]: Applicative]: F[Boolean]  = BooleanDefault.pure[F]
+
   def internalKeywordConvert[_](k: Keyword[_]): InternalKeyword =
     InternalKeyword(k.n, k.t, s"${k.v}")
 
