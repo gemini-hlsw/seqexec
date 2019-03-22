@@ -171,7 +171,7 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
       "/api/seqexec/guide"    -> new GuideConfigDbRoutes(gcdb).service
     )
 
-    val loggedRoutes = Logger.httpRoutes(logHeaders = true, logBody = false)(router)
+    val loggedRoutes = Logger.httpRoutes(logHeaders = false, logBody = false)(router)
     val metricsMiddleware = Prometheus[IO](cr, "seqexec").map(
       Metrics[IO](_)(loggedRoutes))
 
