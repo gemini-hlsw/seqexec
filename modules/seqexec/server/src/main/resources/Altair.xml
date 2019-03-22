@@ -94,7 +94,7 @@
         <!--</attribute>-->
         <attribute name="aoexpt">
             <channel>wfcs:getStatus.VALK</channel>
-            <type>DOUBLE</type>
+            <type>FLOAT</type>
             <description>Altair one over sampling frequency during exposure (Hz)</description>
         </attribute>
         <attribute name="aocounts">
@@ -104,7 +104,7 @@
         </attribute>
         <attribute name="aoseeing">
             <channel>wfcs:getStatus.VALD</channel>
-            <type>DOUBLE</type>
+            <type>FLOAT</type>
             <description>Altair measured seeing at end of exposure (arcsec at 500nm)</description>
         </attribute>
         <attribute name="aowfsx">
@@ -153,7 +153,7 @@
             <description>LGS U stage position</description>
         </attribute>
         <attribute name="aobs">
-            <channel>ao:bs.VAL</channel>
+            <channel>bs.VAL</channel>
             <type>STRING</type>
             <description>Altair Beampsplitter</description>
         </attribute>
