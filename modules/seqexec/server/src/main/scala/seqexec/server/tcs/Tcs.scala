@@ -84,6 +84,14 @@ final case class Tcs private (tcsController: TcsController,
       val aoUsesOI = useAo && (gaos.flatMap(_.swap.toOption), c.gaosGuide.flatMap(_.swap.toOption)).mapN(_.usesOI(_))
         .getOrElse(false)
 
+      val aoHasTarget = useAo && (gaos.flatMap(_.swap.toOption), c.gaosGuide.flatMap(_.swap.toOption)).mapN(_
+        .hasTarget(_)).getOrElse(false)
+
+      val aoGuiderConfig = aoHasTarget.fold(
+        calcGuiderConfig(calcGuiderInUse(c.tcsGuide, TipTiltSource.GAOS, M1Source.GAOS), config.guideWithAO).tracking,
+        ProbeTrackingConfig.Off
+      )
+
       TcsConfig(
         c.tcsGuide,
         TelescopeConfig(config.offsetA, config.wavelA),
@@ -95,8 +103,7 @@ final case class Tcs private (tcsController: TcsController,
           usesAltair.either(
             tag[P2Config](calcGuiderConfig(calcGuiderInUse(c.tcsGuide, TipTiltSource.PWFS2, M1Source.PWFS2),
               config.guideWithP2)),
-            tag[AoGuide](calcGuiderConfig(calcGuiderInUse(c.tcsGuide, TipTiltSource.GAOS, M1Source.GAOS),
-              config.guideWithAO).tracking)
+            tag[AoGuide](aoGuiderConfig)
           ),
           tag[OIConfig](calcGuiderConfig(
             calcGuiderInUse(c.tcsGuide, TipTiltSource.OIWFS, M1Source.OIWFS) | aoUsesOI,
