@@ -46,6 +46,14 @@ class Altair[F[_]: Sync] private (controller: AltairController[F],
   }
 
   def isFollowing: F[Option[Boolean]] = controller.isFollowing
+
+  def hasTarget(guide: AltairConfig): Boolean = guide match {
+    case Lgs(st, sf, _) => st || sf
+    case LgsWithOi      => false
+    case LgsWithP1      => false
+    case Ngs(_, _)      => true
+    case AltairOff      => false
+  }
 }
 
 object Altair {
