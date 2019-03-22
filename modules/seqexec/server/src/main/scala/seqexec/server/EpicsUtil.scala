@@ -11,11 +11,13 @@ import cats.effect.Sync
 import cats.effect.Async
 import cats.implicits._
 import fs2.Stream
-import java.lang.{Double => JDouble}
-import java.lang.{Integer => JInt}
+import java.lang.{ Double => JDouble }
+import java.lang.{ Integer => JInt }
+import java.lang.{ Float => JFloat }
 import java.util
 import java.util.concurrent.atomic.AtomicInteger
-import java.util.{Timer, TimerTask}
+import java.util.Timer
+import java.util.TimerTask
 import java.util.concurrent.locks.ReentrantLock
 import java.util.concurrent.TimeUnit.MILLISECONDS
 
@@ -377,6 +379,9 @@ object EpicsUtil {
 
   def safeAttributeSDouble[F[_]: Sync, A](get: => CaAttribute[JDouble]): F[Option[Double]] =
     Nested(safeAttribute(get)).map(_.toDouble).value
+
+  def safeAttributeSFloat[F[_]: Sync, A](get: => CaAttribute[JFloat]): F[Option[Float]] =
+    Nested(safeAttribute(get)).map(_.toFloat).value
 
   def safeAttributeSInt[F[_]: Sync, A](get: => CaAttribute[JInt]): F[Option[Int]] =
     Nested(safeAttribute(get)).map(_.toInt).value
