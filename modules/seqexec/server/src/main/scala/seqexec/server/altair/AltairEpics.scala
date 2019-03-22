@@ -80,11 +80,11 @@ class AltairEpics[F[_]: Async](service: CaService, tops: Map[String, String]) {
     s"${AltairTop}cc:lgszoomSfoLoop.VAL", classOf[LgsSfoControl])
   def sfoLoop: F[Option[LgsSfoControl]] = safeAttribute(sfoLoopAttr)
 
-  def aoexpt: F[Option[Double]] = safeAttributeSDouble(status.getDoubleAttribute("aoexpt"))
+  def aoexpt: F[Option[Float]] = safeAttributeSFloat(status.getFloatAttribute("aoexpt"))
 
   def aocounts: F[Option[Double]] = safeAttributeSDouble(status.getDoubleAttribute("aocounts"))
 
-  def aoseeing: F[Option[Double]] = safeAttributeSDouble(status.getDoubleAttribute("aoseeing"))
+  def aoseeing: F[Option[Float]] = safeAttributeSFloat(status.getFloatAttribute("aoseeing"))
 
   def aowfsx: F[Option[Double]] = safeAttributeSDouble(status.getDoubleAttribute("aowfsx"))
 

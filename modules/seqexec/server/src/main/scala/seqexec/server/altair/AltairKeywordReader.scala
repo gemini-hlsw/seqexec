@@ -15,7 +15,7 @@ import seqexec.server.keywords._
 import seqexec.server.ConfigUtilOps._
 
 trait AltairKeywordReader[F[_]] {
-  def aoexpt: F[Double]
+  def aofreq: F[Double]
   def aocounts: F[Double]
   def aoseeing: F[Double]
   def aowfsx: F[Double]
@@ -33,7 +33,7 @@ trait AltairKeywordReader[F[_]] {
 
 class AltairKeywordReaderDummy[F[_]: Applicative]
     extends AltairKeywordReader[F] {
-  override def aoexpt: F[Double]     = doubleDefault[F]
+  override def aofreq: F[Double]     = doubleDefault[F]
   override def aocounts: F[Double]   = doubleDefault[F]
   override def aoseeing: F[Double]   = doubleDefault[F]
   override def aowfsx: F[Double]     = doubleDefault[F]
@@ -67,10 +67,16 @@ class AltairKeywordReaderImpl[F[_]: Sync: LiftIO](config: Config)
     with AltairKeywordReaderLUT {
   val sys = AltairEpics.instance
 
-  override def aoexpt: F[Double] =
-    Nested(sys.aoexpt).filter(_ =!= 0.0).map(1 / _).value.safeValOrDefault.to[F]
+  override def aofreq: F[Double] =
+    Nested(sys.aoexpt)
+      .filter(_ =!= 0.0f)
+      .map(1 / _.toDouble)
+      .value
+      .safeValOrDefault
+      .to[F]
   override def aocounts: F[Double] = sys.aocounts.safeValOrDefault.to[F]
-  override def aoseeing: F[Double] = sys.aoseeing.safeValOrDefault.to[F]
+  override def aoseeing: F[Double] =
+    Nested(sys.aoseeing).map(_.toDouble).value.safeValOrDefault.to[F]
   override def aowfsx: F[Double]   = sys.aowfsx.safeValOrDefault.to[F]
   override def aowfsy: F[Double]   = sys.aowfsy.safeValOrDefault.to[F]
   override def aowfsz: F[Double]   = sys.aowfsz.safeValOrDefault.to[F]

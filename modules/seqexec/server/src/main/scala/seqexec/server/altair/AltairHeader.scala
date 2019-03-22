@@ -20,7 +20,7 @@ object AltairHeader {
           id,
           inst,
           List(
-            buildDoubleS(altairReader.aoexpt, KeywordName.AOFREQ),
+            buildDoubleS(altairReader.aofreq, KeywordName.AOFREQ),
             buildDoubleS(altairReader.aocounts, KeywordName.AOCOUNTS),
             buildDoubleS(altairReader.aoseeing, KeywordName.AOSEEING),
             buildDoubleS(altairReader.aowfsx, KeywordName.AOWFSX),
