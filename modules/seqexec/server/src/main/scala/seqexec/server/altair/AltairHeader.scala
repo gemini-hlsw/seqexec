@@ -12,9 +12,10 @@ import seqexec.server.InstrumentSystem
 import seqexec.server.keywords._
 
 object AltairHeader {
-  def header[F[_]: Sync](inst: InstrumentSystem[F], altairReader: AltairKeywordReader[F]/*tcsKeywordsReader: TcsKeywordsReader[F]*/): Header[F] =
+  def header[F[_]: Sync](inst:         InstrumentSystem[F],
+                         altairReader: AltairKeywordReader[F]): Header[F] =
     new Header[F] {
-      override def sendBefore(obsId: Observation.Id, id: ImageFileId): F[Unit] =  {
+      override def sendBefore(obsId: Observation.Id, id: ImageFileId): F[Unit] =
         sendKeywords(
           id,
           inst,
@@ -27,13 +28,14 @@ object AltairHeader {
             buildDoubleS(altairReader.aowfsz, KeywordName.AOWFSZ),
             buildDoubleS(altairReader.aogain, KeywordName.AOGAIN),
             buildStringS(altairReader.aoncpa, KeywordName.AONCPAF),
+            buildStringS(altairReader.aocrfollow, KeywordName.CRFOLLOW),
             buildStringS(altairReader.ngndfilt, KeywordName.AONDFILT),
             buildStringS(altairReader.astar, KeywordName.AOFLENS),
             buildStringS(altairReader.aoflex, KeywordName.AOFLEXF),
             buildStringS(altairReader.lgustage, KeywordName.LGUSTAGE),
             buildStringS(altairReader.aobs, KeywordName.AOBS)
-          ))
-      }
+          )
+        )
 
       override def sendAfter(id: ImageFileId): F[Unit] = Applicative[F].unit
     }

@@ -213,6 +213,7 @@ package object keywords {
   val IntDefault: Int         = -9999
   val DoubleDefault: Double   = -9999.0
   val StrDefault: String      = "No Value"
+  val Indef: String           = "INDEF"
   val BooleanDefault: Boolean = false
 
   def intDefault[F[_]: Applicative]: F[Int]       = IntDefault.pure[F]

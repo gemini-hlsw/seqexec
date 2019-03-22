@@ -535,8 +535,9 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
   private def gcalHeader(i: InstrumentSystem[IO]): Header[IO] = GcalHeader.header(i,
     if (settings.gcalKeywords) GcalKeywordsReaderImpl else DummyGcalKeywordsReader )
 
-  private def altairHeader[F[_]: Sync: LiftIO](i: InstrumentSystem[F]): Header[F] =
-    AltairHeader.header[F](i, if (settings.altairKeywords) new AltairKeywordReaderImpl[F]() else new AltairKeywordReaderDummy[F]())
+  private def altairHeader[F[_]: Sync: LiftIO](config: Config, i: InstrumentSystem[F]): Header[F] =
+    AltairHeader.header[F](i,
+      if (settings.altairKeywords) new AltairKeywordReaderImpl[F](config) else new AltairKeywordReaderDummy[F]())
 
   private def calcHeaders(config: Config, stepType: StepType)(
     implicit tio: Timer[IO]
@@ -547,7 +548,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
       }
     case AltairObs(inst) => toInstrumentSys(inst) >>= { i =>
         calcInstHeader(config, inst).map(h => Reader(ctx =>
-          List(commonHeaders(config, allButGaos.toList, i)(ctx), altairHeader(i), gwsHeaders(i), h)))
+          List(commonHeaders(config, allButGaos.toList, i)(ctx), altairHeader(config, i), gwsHeaders(i), h)))
       }
     case FlatOrArc(inst)       => toInstrumentSys(inst) >>= { i =>
         calcInstHeader(config, inst).map(h => Reader(ctx =>
