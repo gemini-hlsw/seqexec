@@ -15,7 +15,7 @@ organization in Global := "edu.gemini.ocs"
 
 // sbt-header requires these settings even though we're using a custom license header
 organizationName in ThisBuild := "Association of Universities for Research in Astronomy, Inc. (AURA)"
-startYear        in ThisBuild := Some(2018)
+startYear        in ThisBuild := Some(2019)
 licenses         in ThisBuild += ("BSD-3-Clause", new URL("https://opensource.org/licenses/BSD-3-Clause"))
 
 // Gemini repository
