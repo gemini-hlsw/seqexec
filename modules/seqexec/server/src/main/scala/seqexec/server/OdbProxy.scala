@@ -10,8 +10,10 @@ import edu.gemini.pot.sp.SPObservationID
 import edu.gemini.spModel.core.Peer
 import edu.gemini.seqexec.odb.{SeqExecService, SeqexecSequence}
 import edu.gemini.wdba.session.client.WDBA_XmlRpc_SessionClient
+import edu.gemini.wdba.xmlrpc.ServiceException
 import gem.Observation
 import seqexec.model.dhs.ImageFileId
+import org.log4s.getLogger
 
 class OdbProxy[F[_]: Sync](val loc: Peer, cmds: OdbProxy.OdbCommands[F]) {
 
@@ -34,6 +36,8 @@ class OdbProxy[F[_]: Sync](val loc: Peer, cmds: OdbProxy.OdbCommands[F]) {
 }
 
 object OdbProxy {
+  private val Log = getLogger
+
   trait OdbCommands[F[_]] {
     def queuedSequences(): F[List[Observation.Id]]
     def datasetStart(obsId: Observation.Id, dataId: String, fileId: ImageFileId): SeqActionF[F, Boolean]
@@ -123,7 +127,11 @@ object OdbProxy {
     override def queuedSequences(): F[List[Observation.Id]] =
       Sync[F].delay(
         xmlrpcClient.getObservations(sessionName).toList.flatMap(id => Observation.Id.fromString(id).toList)
-      )
+      ).recoverWith {
+        case e: ServiceException =>
+          // We'll survive exceptions at the level of connecting to the wdba
+          Sync[F].delay(Log.warn(e.getMessage)) *> List.empty.pure[F]
+      }
   }
 
 }
