@@ -14,7 +14,6 @@ import seqexec.model.enum.Instrument
 import seqexec.model.enum.StepType
 import seqexec.model.Step
 import seqexec.model.StepState
-import seqexec.model.enumerations
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.model.Pages
 import seqexec.web.client.model.lenses._
@@ -268,17 +267,9 @@ object CameraCell {
     .builder[Props]("CameraCell")
     .stateless
     .render_P { p =>
-      def cameraName(s: Step): Option[String] = p.i match {
-        case Instrument.Niri =>
-          instrumentCameraO
-            .getOption(s)
-            .flatMap(enumerations.camera.Niri.get)
-        case _ => None
-      }
-
       <.div(
         SeqexecStyles.componentLabel,
-        cameraName(p.s).map(_.sentenceCase).getOrElse("Unknown"): String
+        p.s.cameraName(p.i).map(_.sentenceCase).getOrElse("Unknown"): String
       )
     }
     .configure(Reusability.shouldComponentUpdate)
@@ -299,12 +290,9 @@ object DeckerCell {
     .builder[Props]("DeckerCell")
     .stateless
     .render_P { p =>
-      def deckerName(s: Step): Option[String] =
-        instrumentDeckerO.getOption(s)
-
       <.div(
         SeqexecStyles.componentLabel,
-        deckerName(p.s).map(_.sentenceCase).getOrElse("Unknown"): String
+        p.s.deckerName.map(_.sentenceCase).getOrElse("Unknown"): String
       )
     }
     .configure(Reusability.shouldComponentUpdate)
@@ -351,12 +339,9 @@ object ImagingMirrorCell {
     .builder[Props]("ImagingMirrorCell")
     .stateless
     .render_P { p =>
-      def imagingMirrorName(s: Step): Option[String] =
-        instrumentImagingMirrorO.getOption(s)
-
       <.div(
         SeqexecStyles.componentLabel,
-        imagingMirrorName(p.s).map(_.sentenceCase).getOrElse("Unknown"): String
+        p.s.imagingMirrorName.map(_.sentenceCase).getOrElse("Unknown"): String
       )
     }
     .configure(Reusability.shouldComponentUpdate)

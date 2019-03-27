@@ -46,6 +46,14 @@ object StepItems {
     def exposureTime: Option[Double] = observeExposureTimeO.getOption(s)
     def exposureTimeS(i: Instrument): Option[String] =
       exposureTime.map(formatExposureTime(i))
+    def exposureAndCoaddsS(i: Instrument): Option[String] =
+      (coAdds, exposureTime) match {
+        case (c, Some(e)) if c.exists(_ > 1) =>
+          s"${c.foldMap(_.show)}x${formatExposureTime(i)(e)} [s]".some
+        case (_, Some(e)) =>
+          s"${formatExposureTime(i)(e)} [s]".some
+        case _ => none
+      }
     def coAdds: Option[Int] = observeCoaddsO.getOption(s)
     def fpu(i: Instrument): Option[String] =
       for {
@@ -148,6 +156,19 @@ object StepItems {
         .getOption(s)
         .flatMap(obsNames.get)
 
+    def cameraName(i: Instrument): Option[String] = i match {
+      case Instrument.Niri =>
+        instrumentCameraO
+          .getOption(s)
+          .flatMap(enumerations.camera.Niri.get)
+      case _ => None
+    }
+
+    def deckerName: Option[String] =
+      instrumentDeckerO.getOption(s)
+
+    def imagingMirrorName: Option[String] =
+      instrumentImagingMirrorO.getOption(s)
   }
 
   implicit class OffsetFnsOps(val steps: List[Step]) extends AnyVal {

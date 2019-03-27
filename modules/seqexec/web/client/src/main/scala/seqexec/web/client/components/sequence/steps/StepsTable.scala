@@ -54,27 +54,31 @@ import web.client.table._
 import web.client.utils.tableTextWidth
 
 trait Columns {
-  val ControlWidth: Double       = 40
-  val StepWidth: Double          = 50
-  val StateWidth: Double         = 200
-  val OffsetWidthBase: Double    = 75
-  val OffsetIconWidth: Double    = 23.02
-  val OffsetPadding: Double      = 12
-  val ExposureWidth: Double      = 75
-  val ExposureMinWidth: Double   = 78.95 + SeqexecStyles.TableBorderWidth
-  val DisperserWidth: Double     = 100
-  val DisperserMinWidth: Double  = 100 + SeqexecStyles.TableBorderWidth
-  val ObservingModeWidth: Double = 180
-  val FilterWidth: Double        = 180
-  val FilterMinWidth: Double     = 100
-  val FPUWidth: Double           = 100
-  val FPUMinWidth: Double        = 100
-  val DeckerWidth: Double        = 110
-  val ImagingMirrorWidth: Double = 180
-  val CameraWidth: Double        = 180
+  val ControlWidth: Double          = 40
+  val StepWidth: Double             = 50
+  val StateWidth: Double            = 200
+  val OffsetWidthBase: Double       = 75
+  val OffsetIconWidth: Double       = 23.02
+  val OffsetPadding: Double         = 12
+  val ExposureWidth: Double         = 75
+  val ExposureMinWidth: Double      = 78.95 + SeqexecStyles.TableBorderWidth
+  val DisperserWidth: Double        = 100
+  val DisperserMinWidth: Double     = 100 + SeqexecStyles.TableBorderWidth
+  val ObservingModeWidth: Double    = 180
+  val FilterWidth: Double           = 180
+  val FilterMinWidth: Double        = 100
+  val FPUWidth: Double              = 100
+  val FPUMinWidth: Double           = 10
+  val CameraWidth: Double           = 180
+  val CameraMinWidth: Double        = 10
+  val DeckerWidth: Double           = 110
+  val DeckerMinWidth: Double        = 10
+  val ImagingMirrorWidth: Double    = 180
+
+  val ImagingMirrorMinWidth: Double = 10
+  val ObjectTypeWidth: Double       = 75
+  val SettingsWidth: Double         = 34
   val ReadModeWidth: Double      = 230
-  val ObjectTypeWidth: Double    = 75
-  val SettingsWidth: Double      = 34
 
   private val MIDDLE_BUTTON = 1 // As defined by React.js
 
@@ -89,6 +93,8 @@ trait Columns {
   case object FilterColumn extends TableColumn
   case object FPUColumn extends TableColumn
   case object CameraColumn extends TableColumn
+  case object DeckerColumn extends TableColumn
+  case object ImagingMirrorColumn extends TableColumn
   case object ObjectTypeColumn extends TableColumn
   case object SettingsColumn extends TableColumn
 
@@ -103,6 +109,8 @@ trait Columns {
     FilterColumn -> FilterWidth,
     FPUColumn -> FPUWidth,
     CameraColumn -> CameraWidth,
+    DeckerColumn -> DeckerWidth,
+    ImagingMirrorColumn -> ImagingMirrorWidth,
     ObjectTypeColumn -> ObjectTypeWidth,
     SettingsColumn -> SettingsWidth,
   )
@@ -181,6 +189,20 @@ trait Columns {
     visible = true,
     VariableColumnWidth.unsafeFromDouble(0.1, CameraWidth))
 
+  val DeckerMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
+    DeckerColumn,
+    name    = "camera",
+    label   = "Decker",
+    visible = true,
+    VariableColumnWidth.unsafeFromDouble(0.1, DeckerWidth))
+
+  val ImagingMirrorMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
+    ImagingMirrorColumn,
+    name    = "camera",
+    label   = "ImagingMirror",
+    visible = true,
+    VariableColumnWidth.unsafeFromDouble(0.1, ImagingMirrorWidth))
+
   val ObjectTypeMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     ObjectTypeColumn,
     name    = "type",
@@ -207,6 +229,8 @@ trait Columns {
       FilterMeta,
       FPUMeta,
       CameraMeta,
+      DeckerMeta,
+      ImagingMirrorMeta,
       ObjectTypeMeta,
       SettingsMeta
     )
@@ -297,20 +321,10 @@ object StepsTable extends Columns {
         case _                     => false
       }
 
-    def allDistinctValues[A](f: Step => Option[A]): List[A] =
-      stepsList.map(f).distinct.collect {
-        case Some(x) => x
-      }
-
-    val exposureMaxWidth: Option[Double] = {
-      steps.flatMap { s =>
-        val allValues: List[Double] = allDistinctValues(_.exposureTime)
-        val longest: Option[String] = allValues
-          .map(formatExposure(s.instrument))
-          .sortBy(_.length)
-          .headOption
-        longest.map(tableTextWidth)
-      }
+    val offsetWidth: Option[Double] = {
+      val (p, q)     = stepsList.sequenceOffsetWidths
+      val labelWidth = max(pLabelWidth, qLabelWidth)
+      (max(p, q) + labelWidth + OffsetIconWidth + OffsetPadding * 4).some
     }
 
     def longestValueWidthI(
@@ -321,26 +335,42 @@ object StepsTable extends Columns {
         longest.map(tableTextWidth)
       }
 
-    def longestValueWidth(
-      f: Step => Option[String]): Option[Double] = {
-        val allValues: List[String] = allDistinctValues(f)
-        val longest: Option[String] = allValues.sortBy(_.length).headOption
-        longest.map(tableTextWidth)
+    def longestValueWidth(f: Step => Option[String]): Option[Double] = {
+      val allValues: List[String] = allDistinctValues(f)
+      val longest: Option[String] = allValues.sortBy(_.length).headOption
+      longest.map(tableTextWidth)
+    }
+
+    val observingModeMaxWidth: Option[Double] = longestValueWidth(
+      _.observingMode)
+
+    def allDistinctValues[A](f: Step => Option[A]): List[A] =
+      stepsList.map(f).distinct.collect {
+        case Some(x) => x
       }
 
-    val fpuMaxWidth: Option[Double] = longestValueWidthI(_.fpuOrMask)
-
-    val filterMaxWidth: Option[Double] = longestValueWidthI(_.filter)
+    val exposureMaxWidth: Option[Double] = {
+      steps.flatMap { s =>
+        val allValues: List[String] =
+          allDistinctValues(_.exposureAndCoaddsS(s.instrument))
+        val longest: Option[String] = allValues
+          .sortBy(_.length)
+          .headOption
+        longest.map(tableTextWidth)
+      }
+    }
 
     val disperserMaxWidth: Option[Double] = longestValueWidthI(_.disperser)
 
-    val observingModeMaxWidth: Option[Double] = longestValueWidth(_.observingMode)
+    val filterMaxWidth: Option[Double] = longestValueWidthI(_.filter)
 
-    val offsetWidth: Option[Double] = {
-      val (p, q)     = stepsList.sequenceOffsetWidths
-      val labelWidth = max(pLabelWidth, qLabelWidth)
-      (max(p, q) + labelWidth + OffsetIconWidth + OffsetPadding * 4).some
-    }
+    val fpuMaxWidth: Option[Double] = longestValueWidthI(_.fpuOrMask)
+
+    val cameraMaxWidth: Option[Double] = longestValueWidthI(_.cameraName)
+
+    val deckerMaxWidth: Option[Double] = longestValueWidth(_.deckerName)
+
+    val imagingMirrorMaxWidth: Option[Double] = longestValueWidth(_.deckerName)
 
     val shownForInstrument: List[ColumnMeta[TableColumn]] =
       all.filter {
@@ -354,6 +384,8 @@ object StepsTable extends Columns {
         case FilterMeta        => showFilter
         case FPUMeta           => showFPU
         case CameraMeta        => showCamera
+        case DeckerMeta        => showDecker
+        case ImagingMirrorMeta => showImagingMirror
         case _                 => true
       }
 
@@ -407,12 +439,16 @@ object StepsTable extends Columns {
 
     def columnWidths(size: Size, p: Props): TableColumn => Option[Double] =
       if (tableState.isModified) {
-        tableState.columns.map {
-          case ColumnMeta(c, _, _, _, FixedColumnWidth(w)) =>
-            c -> w
-          case ColumnMeta(c, _, _, _, VariableColumnWidth(p, mw)) =>
-            c -> max(p * size.width, mw)
-        }.toList.toMap.get
+        tableState.columns
+          .map {
+            case ColumnMeta(c, _, _, _, FixedColumnWidth(w)) =>
+              c -> w
+            case ColumnMeta(c, _, _, _, VariableColumnWidth(p, mw)) =>
+              c -> max(p * size.width, mw)
+          }
+          .toList
+          .toMap
+          .get
       } else if (size.width > 0) { col =>
         col match {
           case ExposureColumn =>
@@ -423,6 +459,12 @@ object StepsTable extends Columns {
             p.disperserMaxWidth.map(max(_, DisperserMinWidth))
           case OffsetColumn =>
             p.offsetWidth
+          case CameraColumn =>
+            p.cameraMaxWidth.map(max(_, CameraMinWidth))
+          case DeckerColumn =>
+            p.deckerMaxWidth.map(max(_, DeckerMinWidth))
+          case ImagingMirrorColumn =>
+            p.imagingMirrorMaxWidth.map(max(_, ImagingMirrorMinWidth))
           case _ => none
         }
       } else { _ =>
@@ -787,8 +829,11 @@ object StepsTable extends Columns {
     b:    Backend,
     size: Size): ColumnRenderArgs[TableColumn] => Table.ColumnArg = tb => {
     def updateState(s: TableState[TableColumn]): Callback =
-      Callback.log(s"UPD ${s.userModified} ${s.columns.length}: ${s.columns.toList.map(_.width).mkString(", ")}") *>
-        b.modState(State.tableState.set(s)) *> b.props.obsId.map(i => SeqexecCircuit.dispatchCB(UpdateStepTableState(i, s))).getOrEmpty
+      Callback.log(
+        s"UPD ${s.userModified} ${s.columns.length}: ${s.columns.toList.map(_.width).mkString(", ")}") *>
+        b.modState(State.tableState.set(s)) *> b.props.obsId
+        .map(i => SeqexecCircuit.dispatchCB(UpdateStepTableState(i, s)))
+        .getOrEmpty
 
     tb match {
       case ColumnRenderArgs(ColumnMeta(c, name, label, _, _), _, width, true) =>
@@ -799,8 +844,8 @@ object StepsTable extends Columns {
             width   = width,
             dataKey = name,
             label   = label,
-            headerRenderer = resizableHeaderRenderer(
-              b.state.tableState.resizeRow(c, size, b.props.visibleColumns, updateState)),
+            headerRenderer = resizableHeaderRenderer(b.state.tableState
+              .resizeRow(c, size, b.props.visibleColumns, updateState)),
             headerClassName = headerClassName(c).foldMap(_.htmlClass),
             cellRenderer    = columnCellRenderer(b, c),
             className       = columnClassName(c).foldMap(_.htmlClass)
@@ -1014,7 +1059,8 @@ object StepsTable extends Columns {
               .columnBuilder(size,
                              b.props.visibleColumns,
                              b.state.columnWidths(size, b.props),
-                             colBuilder(b, size)).map(_.vdomElement)
+                             colBuilder(b, size))
+              .map(_.vdomElement)
 
           ref
             .component(stepsTableProps(b)(size))(ts: _*)

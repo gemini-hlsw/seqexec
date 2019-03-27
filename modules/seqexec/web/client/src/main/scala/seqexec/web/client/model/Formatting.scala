@@ -13,21 +13,9 @@ import seqexec.web.client.model.StepItems._
 import web.client.utils._
 
 /**
-  * Utility methods to display offsets and calculate their widths
+  * Utility methods to format step items
   */
-trait OffsetFns {
-  def offsetAxis(axis: OffsetAxis): String =
-    f"${axis.show}:"
-
-  def offsetValueFormat(off: Offset): String =
-    f" ${off.value}%03.2f″"
-
-  val pLabelWidth: Double = tableTextWidth(offsetAxis(OffsetAxis.AxisP))
-  val qLabelWidth: Double = tableTextWidth(offsetAxis(OffsetAxis.AxisQ))
-
-}
-
-object Formatting extends OffsetFns {
+object Formatting {
   // Used to decide if the offsets are displayed
   sealed trait OffsetsDisplay
 
@@ -40,6 +28,15 @@ object Formatting extends OffsetFns {
         case DisplayOffsets(v) => Some(v)
       }
   }
+
+  def offsetAxis(axis: OffsetAxis): String =
+    f"${axis.show}:"
+
+  def offsetValueFormat(off: Offset): String =
+    f" ${off.value}%03.2f″"
+
+  val pLabelWidth: Double = tableTextWidth(offsetAxis(OffsetAxis.AxisP))
+  val qLabelWidth: Double = tableTextWidth(offsetAxis(OffsetAxis.AxisQ))
 
   implicit class OffsetWidthsFnsOps(val steps: List[Step]) extends AnyVal {
     // Calculate the widest offset step
