@@ -75,7 +75,7 @@ final case class TableState[A: Eq](userModified:   UserModified,
           }
 
           if (nextCanChange && newWidth <= s.width) {
-            println(s"Next change $curPct $actualPct")
+            // println(s"Next change $curPct $actualPct")
             ColumnMeta.width.set(VariableColumnWidth(actualPct, min))(c)
           } else {
             c
@@ -93,7 +93,7 @@ final case class TableState[A: Eq](userModified:   UserModified,
           }
 
           if (prevCanChange && newWidth <= width) {
-            println("Prev change")
+            // println("Prev change")
             ColumnMeta.width.set(VariableColumnWidth(actualPct, min))(c)
           } else {
             c
@@ -129,6 +129,9 @@ final case class TableState[A: Eq](userModified:   UserModified,
           "org.wartremover.warts.Throw"))
   def distributePercentages(
     calculatedWidth: A => Option[Double]): TableState[A] = {
+      if (isModified) {
+        this
+      } else {
     val visibleCols = columns.toList.filter(_.visible)
     val sumWidth = visibleCols.map {
       case ColumnMeta(c, _, _, true, FixedColumnWidth(w)) =>
@@ -136,12 +139,12 @@ final case class TableState[A: Eq](userModified:   UserModified,
       case ColumnMeta(c, _, _, true, VariableColumnWidth(_, mw)) =>
         calculatedWidth(c).getOrElse(mw)
     }.sum
-    println(sumWidth)
+    // println(sumWidth)
     val cols = visibleCols.map {
       case m @ ColumnMeta(c, _, _, true, FixedColumnWidth(w)) =>
         val u = ColumnMeta.width.set(
           FixedColumnWidth.unsafeFromDouble(calculatedWidth(c).getOrElse(w)))(m)
-        println(s"Dist $c ${calculatedWidth(c)} $u")
+        // println(s"Dist $c ${calculatedWidth(c)} $u")
 
         u
       case m @ ColumnMeta(c, _, _, true, VariableColumnWidth(_, mw)) =>
@@ -151,6 +154,7 @@ final case class TableState[A: Eq](userModified:   UserModified,
         ColumnMeta.width.set(vc)(m)
     }
     copy(columns = NonEmptyList.fromListUnsafe(cols))
+  }
   }
 
   // Table can call this to build the columns
@@ -170,13 +174,13 @@ final case class TableState[A: Eq](userModified:   UserModified,
     ts.columns.toList.zipWithIndex
       .map {
         case (m @ ColumnMeta(_, _, _, true, FixedColumnWidth(w)), i) =>
-          println(s"Fixed ${m.column} $w")
+          // println(s"Fixed ${m.column} $w")
           cb(ColumnRenderArgs(m, i, w, false)).some
 
         case (m @ ColumnMeta(_, _, _, true, VariableColumnWidth(p, mw)), i) =>
           val beforeLast = i < (vcl - 1)
           val w          = max((s.width - fixedWidth) * p, mw)
-          println(s"Variable ${m.column} $p width: $w, $mw")
+          // println(s"Variable ${m.column} $p width: $w, $mw")
           cb(ColumnRenderArgs(m, i, w, beforeLast)).some
 
         case _ =>

@@ -9,9 +9,6 @@ import monocle.macros.Lenses
 import seqexec.model.Observer
 import seqexec.model.UserDetails
 import seqexec.web.common.FixedLengthBuffer
-import seqexec.web.client.components.sequence.steps.StepConfigTable
-import seqexec.web.client.components.SessionQueueTable
-import web.client.table._
 
 sealed trait SoundSelection extends Product with Serializable
 
@@ -37,8 +34,7 @@ final case class SeqexecUIModel(
   loginBox:           SectionVisibilityState,
   globalLog:          GlobalLog,
   sequencesOnDisplay: SequencesOnDisplay,
-  configTableState:   TableState[StepConfigTable.TableColumn],
-  queueTableState:    TableState[SessionQueueTable.TableColumn],
+  appTableStates:     AppTableStates,
   defaultObserver:    Observer,
   notification:       UserNotificationState,
   queues:             CalibrationQueues,
@@ -55,8 +51,7 @@ object SeqexecUIModel {
     SectionClosed,
     GlobalLog(FixedLengthBuffer.unsafeFromInt(500), SectionClosed),
     SequencesOnDisplay.Empty,
-    StepConfigTable.InitialTableState,
-    SessionQueueTable.InitialState.tableState,
+    AppTableStates.Initial,
     Observer(""),
     UserNotificationState.Empty,
     CalibrationQueues.Default,
@@ -74,8 +69,7 @@ object SeqexecUIModel {
          x.loginBox,
          x.globalLog,
          x.sequencesOnDisplay,
-         x.configTableState,
-         x.queueTableState,
+         x.appTableStates,
          x.defaultObserver,
          x.notification,
          x.queues,

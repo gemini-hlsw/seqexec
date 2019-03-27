@@ -192,7 +192,7 @@ object CalQueueTable {
   implicit val icReuse: Reusability[IndexChange] =
     Reusability.derive[IndexChange]
   implicit val stateReuse: Reusability[State] =
-    Reusability.by(x => (x.tableState, x.moved))
+    Reusability.by(x => x.moved)//(x.tableState, x.moved))
 
   // ScalaJS defined trait
   // scalastyle:off

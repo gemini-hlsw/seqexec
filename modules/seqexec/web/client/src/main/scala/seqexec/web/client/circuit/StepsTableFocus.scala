@@ -49,10 +49,10 @@ object StepsTableFocus {
     id: Observation.Id
   ): Getter[SeqexecAppRootModel, Option[StepsTableFocus]] =
     SeqexecAppRootModel.sequencesOnDisplayL.composeGetter(
-      SequencesOnDisplay.tabG(id)) >>> {
-      _.map {
-        case SeqexecTabActive(tab, _) =>
+      SequencesOnDisplay.tabG(id)).zip(SeqexecAppRootModel.stepsTableStateL(id).asGetter) >>> {
+        case (Some(SeqexecTabActive(tab, _)), ts) =>
           val sequence = tab.sequence
+          // println(s"Step table focus ${tab.tableState.isModified}")
           StepsTableFocus(
             sequence.id,
             sequence.metadata.instrument,
@@ -64,10 +64,9 @@ object StepsTableFocus {
               .orElse(sequence.nextStepToRun), // start with the nextstep selected
             sequence.runningStep,
             tab.isPreview,
-            tab.tableState,
+            ts.getOrElse(StepsTable.State.InitialTableState),
             tab.tabOperations
-          )
-
-      }
+          ).some
+        case _ => none
     }
 }

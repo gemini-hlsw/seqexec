@@ -30,8 +30,8 @@ trait TableArbitraries {
 
   val genVariableColumnWidth: Gen[VariableColumnWidth] =
     for {
-      w <- Gen.choose[Double](0, 100)
-      m <- Gen.choose[Double](0, 100)
+      w <- Gen.choose[Double](0, 1)
+      m <- Gen.choose[Double](0, 1)
     } yield VariableColumnWidth.unsafeFromDouble(w, m)
 
   implicit val VariableColumnWidthArb: Arbitrary[VariableColumnWidth] =

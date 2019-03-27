@@ -68,7 +68,7 @@ object SeqexecCircuit
       SeqexecAppRootModel.uiModel ^|-> InitialSyncFocus.initialSyncFocusL)
 
   val tableStateRW: ModelRW[SeqexecAppRootModel, AppTableStates] =
-    this.zoomRWL(SeqexecAppRootModel.uiModel ^|-> AppTableStates.tableStateL)
+    this.zoomRWL(SeqexecAppRootModel.uiModel ^|-> SeqexecUIModel.appTableStates)
 
   // Reader to indicate the allowed interactions
   val statusReader: ModelR[SeqexecAppRootModel, ClientStatus] =

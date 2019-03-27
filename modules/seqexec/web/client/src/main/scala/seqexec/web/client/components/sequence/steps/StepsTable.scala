@@ -47,7 +47,7 @@ import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.components.TableContainer
 import seqexec.web.client.semanticui.elements.icon.Icon._
 import seqexec.web.client.semanticui.{Size => SSize}
-import seqexec.web.client.reusability._
+//import seqexec.web.client.reusability._
 import react.virtualized._
 import web.client.style._
 import web.client.table._
@@ -117,6 +117,8 @@ trait Columns {
 
   object TableColumn {
     implicit val equal: Eq[TableColumn] = Eq.fromUniversalEquals
+
+    implicit val reuse: Reusability[TableColumn] = Reusability.byRef
   }
 
   val ControlColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
@@ -277,7 +279,7 @@ object StepsTable extends Columns {
     val sequenceState: Option[SequenceState]        = steps.map(_.state)
     val runningStep: Option[RunningStep]            = steps.flatMap(_.runningStep)
     val obsId: Option[Observation.Id]               = steps.map(_.id)
-    val tableState: Option[TableState[TableColumn]] = steps.map(_.tableState)
+    val tableState: TableState[TableColumn] = steps.map(_.tableState).getOrElse(State.InitialTableState)
     val stepsList: List[Step]                       = steps.foldMap(_.steps)
     val selectedStep: Option[StepId]                = steps.flatMap(_.selectedStep)
     val rowCount: Int                               = stepsList.length
@@ -375,10 +377,7 @@ object StepsTable extends Columns {
     val shownForInstrument: List[ColumnMeta[TableColumn]] =
       all.filter {
         case DisperserMeta => showDisperser
-        case OffsetMeta =>
-          println(s"Shomw off $showOffsets")
-
-          showOffsets
+        case OffsetMeta => showOffsets
         case ObservingModeMeta => showObservingMode
         case ExposureMeta      => showExposure
         case FilterMeta        => showFilter
@@ -394,14 +393,10 @@ object StepsTable extends Columns {
     val visibleColumns: (Size, TableColumn) => Boolean = (_, col) =>
       visibleColumnsForInstrument.contains(col)
 
-    val startState: State =
-      tableState
-        .map(
-          s =>
-            (State.tableState.set(s) >>> State.selected.set(selectedStep))(
-              State.InitialState))
-        .getOrElse(State.InitialState)
-        .visibleCols(this)
+    val startState: State = {
+      // println(s"INIT st ${tableState.isModified}")
+      State.InitialState.copy(tableState = tableState)
+      }
 
   }
 
@@ -437,18 +432,20 @@ object StepsTable extends Columns {
     def visibleCols(p: Props): State =
       State.columns.set(NonEmptyList.fromListUnsafe(p.shownForInstrument))(this)
 
-    def columnWidths(size: Size, p: Props): TableColumn => Option[Double] =
+    def columnWidths(size: Size, p: Props): TableColumn => Option[Double] = {
+      // println(s"Mod ${tableState.isModified}")
       if (tableState.isModified) {
-        tableState.columns
-          .map {
-            case ColumnMeta(c, _, _, _, FixedColumnWidth(w)) =>
-              c -> w
-            case ColumnMeta(c, _, _, _, VariableColumnWidth(p, mw)) =>
-              c -> max(p * size.width, mw)
-          }
-          .toList
-          .toMap
-          .get
+        // tableState.columns
+        //   .map {
+        //     case ColumnMeta(c, _, _, _, FixedColumnWidth(w)) =>
+        //       c -> w
+        //     case ColumnMeta(c, _, _, _, VariableColumnWidth(p, mw)) =>
+        //       c -> max(p * size.width, mw)
+        //   }
+        //   .toList
+        //   .toMap
+        //   .get
+          _ => none
       } else if (size.width > 0) { col =>
         col match {
           case ExposureColumn =>
@@ -470,6 +467,7 @@ object StepsTable extends Columns {
       } else { _ =>
         none
       }
+    }
 
     // def visibleColumnsSizes(p: Props, s: Size): List[(TableColumn, Double, Boolean)] = {
     //   val visibleCols = shownForInstrument(p)
@@ -564,7 +562,7 @@ object StepsTable extends Columns {
   }
 
   implicit val propsReuse: Reusability[Props] =
-    Reusability.by(x => (x.canOperate, x.selectedStep, x.stepsTable))
+    Reusability.by(x => (x.canOperate, x.selectedStep))
   implicit val tcReuse: Reusability[TableColumn] = Reusability.byRef
   implicit val stateReuse: Reusability[State] =
     Reusability.by(x => (x.tableState, x.breakpointHover, x.selected))
@@ -829,16 +827,16 @@ object StepsTable extends Columns {
     b:    Backend,
     size: Size): ColumnRenderArgs[TableColumn] => Table.ColumnArg = tb => {
     def updateState(s: TableState[TableColumn]): Callback =
-      Callback.log(
+      (Callback.log(
         s"UPD ${s.userModified} ${s.columns.length}: ${s.columns.toList.map(_.width).mkString(", ")}") *>
         b.modState(State.tableState.set(s)) *> b.props.obsId
         .map(i => SeqexecCircuit.dispatchCB(UpdateStepTableState(i, s)))
-        .getOrEmpty
+        .getOrEmpty).when(size.width > 0) *> Callback.empty
 
     tb match {
       case ColumnRenderArgs(ColumnMeta(c, name, label, _, _), _, width, true) =>
-        println(c)
-        println(width)
+        // println(c)
+        // println(width)
         Column(
           Column.propsNoFlex(
             width   = width,
@@ -1053,7 +1051,7 @@ object StepsTable extends Columns {
       TableContainer.Props(
         b.props.hasControls,
         size => {
-          println("Rerender ")
+          // println("Rerender ")
           val ts =
             b.state.tableState
               .columnBuilder(size,

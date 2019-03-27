@@ -77,7 +77,7 @@ final class SequencesOnDisplaySpec extends CatsSuite with ArbitrariesWebClient {
     val sod3 = sod.unsetPreviewOn(obsId)
     sod3.tabs.length should be(1)
     sod3.tabs.focus should matchPattern {
-      case CalibrationQueueTab(_, _, _) =>
+      case CalibrationQueueTab(_, _) =>
     }
   }
   test("Update loaded") {
@@ -90,7 +90,7 @@ final class SequencesOnDisplaySpec extends CatsSuite with ArbitrariesWebClient {
       SequencesQueue(loaded, Conditions.Default, None, SortedMap.empty, queue))
     sod.tabs.length should be(2)
     sod.tabs.toList.lift(1) should matchPattern {
-      case Some(InstrumentSequenceTab(_, Right(s), _, _, _, _))
+      case Some(InstrumentSequenceTab(_, Right(s), _, _, _))
           if s.id === obsId =>
     }
   }
@@ -109,11 +109,11 @@ final class SequencesOnDisplaySpec extends CatsSuite with ArbitrariesWebClient {
 
     sod2.tabs.length should be(3)
     sod2.tabs.toList.lift(2) should matchPattern {
-      case Some(InstrumentSequenceTab(_, Right(s), _, _, _, _))
+      case Some(InstrumentSequenceTab(_, Right(s), _, _, _))
           if s.id === obsId =>
     }
     sod2.tabs.focus should matchPattern {
-      case PreviewSequenceTab(s, _, _, _, _) if s.id === obs2 =>
+      case PreviewSequenceTab(s, _, _, _) if s.id === obs2 =>
     }
   }
 }

@@ -90,7 +90,7 @@ object StatusAndLoadedSequencesFocus {
   val statusAndLoadedSequencesG
     : Getter[SeqexecAppRootModel, StatusAndLoadedSequencesFocus] =
     ClientStatus.clientStatusFocusL.asGetter.zip(
-      sessionQueueG.zip(sodG.zip(SeqexecAppRootModel.queueTableStateL.asGetter
+      sessionQueueG.zip(sodG.zip(SeqexecAppRootModel.sessionQueueTableStateL.asGetter
         .zip(sessionQueueFilterG.zip(SeqexecAppRootModel.dayCalG))))) >>> {
       case (s, (queue, (sod, (queueTable, (filter, dayCal))))) =>
         StatusAndLoadedSequencesFocus(
