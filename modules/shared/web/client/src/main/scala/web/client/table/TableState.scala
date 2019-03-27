@@ -120,16 +120,26 @@ final case class TableState[A: Eq](userModified:   UserModified,
     TableState.columns[A].set(cols)(this)
   }
 
+  @SuppressWarnings(
+    Array("org.wartremover.warts.NonUnitStatements",
+          "org.wartremover.warts.Throw"))
   def distributePercentages(
     calculatedWidth: A => Option[Double]): TableState[A] = {
     val visibleCols = columns.toList.filter(_.visible)
     val sumWidth = visibleCols.map {
-      case ColumnMeta(_, _, _, true, FixedColumnWidth(w)) => w
+      case ColumnMeta(c, _, _, true, FixedColumnWidth(w)) =>
+        calculatedWidth(c).getOrElse(w)
       case ColumnMeta(c, _, _, true, VariableColumnWidth(_, mw)) =>
         calculatedWidth(c).getOrElse(mw)
     }.sum
+    println(sumWidth)
     val cols = visibleCols.map {
-      case m @ ColumnMeta(_, _, _, true, FixedColumnWidth(_)) => m
+      case m @ ColumnMeta(c, _, _, true, FixedColumnWidth(w)) =>
+        val u = ColumnMeta.width.set(
+          FixedColumnWidth.unsafeFromDouble(calculatedWidth(c).getOrElse(w)))(m)
+        println(s"Dist $c ${calculatedWidth(c)} $u")
+
+        u
       case m @ ColumnMeta(c, _, _, true, VariableColumnWidth(_, mw)) =>
         val vc = VariableColumnWidth(
           calculatedWidth(c).map(_ / sumWidth).getOrElse(mw / sumWidth),
@@ -151,10 +161,10 @@ final case class TableState[A: Eq](userModified:   UserModified,
     val vcl = vc.columns.count(_.visible)
 
     // vc.normalizeColumnWidths(s).columns.toList.foreach(println)
-    vc.normalizeColumnWidths(s)
-      .columns
-      .toList
-      .zipWithIndex
+    val ts = vc.normalizeColumnWidths(s)
+    // recalculate as the widths way have varied
+    val fixedWidth = ts.fixedWidth
+    ts.columns.toList.zipWithIndex
       .map {
         case (m @ ColumnMeta(_, _, _, true, FixedColumnWidth(w)), i) =>
           println(s"Fixed ${m.column} $w")
@@ -179,7 +189,7 @@ final case class TableState[A: Eq](userModified:   UserModified,
   ): List[Table.ColumnArg] =
     columnBuilder(s, TableState.AllColsVisible, TableState.NoInitialWidth, cb)
 
-  // normalize the width
+  // normalize the percentage widths
   private def normalizeColumnWidths(s: Size): TableState[A] =
     if (s.width > 0) {
       // sum of all percentages to redistribute

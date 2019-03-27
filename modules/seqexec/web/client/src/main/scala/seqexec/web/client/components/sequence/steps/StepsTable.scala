@@ -36,6 +36,7 @@ import seqexec.web.client.model.ClientStatus
 import seqexec.web.client.model.TabOperations
 import seqexec.web.client.model.Pages.SeqexecPages
 import seqexec.web.client.model.ModelOps._
+import seqexec.web.client.model.StepItems._
 import seqexec.web.client.model.Formatting._
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.circuit.StepsTableAndStatusFocus
@@ -44,7 +45,6 @@ import seqexec.web.client.actions.{ClearAllResouceOptions, UpdateSelectedStep, U
 import seqexec.web.client.actions.FlipBreakpointStep
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.components.TableContainer
-import seqexec.web.client.components.sequence.steps.OffsetFns._
 import seqexec.web.client.semanticui.elements.icon.Icon._
 import seqexec.web.client.semanticui.{Size => SSize}
 import seqexec.web.client.reusability._
@@ -58,6 +58,8 @@ trait Columns {
   val StepWidth: Double          = 50
   val StateWidth: Double         = 200
   val OffsetWidthBase: Double    = 75
+  val OffsetIconWidth: Double    = 23.02
+  val OffsetPadding: Double      = 12
   val ExposureWidth: Double      = 75
   val ExposureMinWidth: Double   = 78.95 + SeqexecStyles.TableBorderWidth
   val DisperserWidth: Double     = 100
@@ -132,10 +134,10 @@ trait Columns {
 
   val OffsetMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     OffsetColumn,
-    name    = "state",
+    name    = "offsets",
     label   = "Offsets",
     visible = true,
-    VariableColumnWidth.unsafeFromDouble(0.1, OffsetWidthBase))
+    FixedColumnWidth.unsafeFromDouble(OffsetWidthBase))
 
   val ObservingModeMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     ObservingModeColumn,
@@ -325,10 +327,19 @@ object StepsTable extends Columns {
 
     val disperserMaxWidth: Option[Double] = longestValueWidth(_.disperser)
 
+    val offsetWidth: Option[Double] = {
+      val (p, q)     = stepsList.sequenceOffsetWidths
+      val labelWidth = max(pLabelWidth, qLabelWidth)
+      (max(p, q) + labelWidth + OffsetIconWidth + OffsetPadding * 4).some
+    }
+
     val shownForInstrument: List[ColumnMeta[TableColumn]] =
       all.filter {
-        case DisperserMeta     => showDisperser
-        case OffsetMeta        => showOffsets
+        case DisperserMeta => showDisperser
+        case OffsetMeta =>
+          println(s"Shomw off $showOffsets")
+
+          showOffsets
         case ObservingModeMeta => showObservingMode
         case ExposureMeta      => showExposure
         case FilterMeta        => showFilter
@@ -398,7 +409,9 @@ object StepsTable extends Columns {
           case FilterColumn => p.filterMaxWidth.map(max(_, FilterMinWidth))
           case DisperserColumn =>
             p.disperserMaxWidth.map(max(_, DisperserMinWidth))
-          case _ => 200.0.some
+          case OffsetColumn =>
+            p.offsetWidth
+          case _ => none
         }
       } else { _ =>
         none
