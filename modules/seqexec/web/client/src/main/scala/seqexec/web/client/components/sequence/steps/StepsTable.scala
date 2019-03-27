@@ -313,7 +313,7 @@ object StepsTable extends Columns {
       }
     }
 
-    def longestValueWidth(
+    def longestValueWidthI(
       f: Step => Instrument => Option[String]): Option[Double] =
       steps.flatMap { s =>
         val allValues: List[String] = allDistinctValues(f(_)(s.instrument))
@@ -321,11 +321,20 @@ object StepsTable extends Columns {
         longest.map(tableTextWidth)
       }
 
-    val fpuMaxWidth: Option[Double] = longestValueWidth(_.fpuOrMask)
+    def longestValueWidth(
+      f: Step => Option[String]): Option[Double] = {
+        val allValues: List[String] = allDistinctValues(f)
+        val longest: Option[String] = allValues.sortBy(_.length).headOption
+        longest.map(tableTextWidth)
+      }
 
-    val filterMaxWidth: Option[Double] = longestValueWidth(_.filter)
+    val fpuMaxWidth: Option[Double] = longestValueWidthI(_.fpuOrMask)
 
-    val disperserMaxWidth: Option[Double] = longestValueWidth(_.disperser)
+    val filterMaxWidth: Option[Double] = longestValueWidthI(_.filter)
+
+    val disperserMaxWidth: Option[Double] = longestValueWidthI(_.disperser)
+
+    val observingModeMaxWidth: Option[Double] = longestValueWidth(_.observingMode)
 
     val offsetWidth: Option[Double] = {
       val (p, q)     = stepsList.sequenceOffsetWidths
@@ -353,19 +362,15 @@ object StepsTable extends Columns {
     val visibleColumns: (Size, TableColumn) => Boolean = (_, col) =>
       visibleColumnsForInstrument.contains(col)
 
-    // def columnPercentages
-
-    val startState: State = {
-      val ts = tableState
+    val startState: State =
+      tableState
         .map(
           s =>
             (State.tableState.set(s) >>> State.selected.set(selectedStep))(
               State.InitialState))
         .getOrElse(State.InitialState)
         .visibleCols(this)
-      // println(ts)
-      ts
-    }
+
   }
 
   final case class State(tableState:      TableState[TableColumn],
@@ -401,7 +406,14 @@ object StepsTable extends Columns {
       State.columns.set(NonEmptyList.fromListUnsafe(p.shownForInstrument))(this)
 
     def columnWidths(size: Size, p: Props): TableColumn => Option[Double] =
-      if (size.width > 0) { col =>
+      if (tableState.isModified) {
+        tableState.columns.map {
+          case ColumnMeta(c, _, _, _, FixedColumnWidth(w)) =>
+            c -> w
+          case ColumnMeta(c, _, _, _, VariableColumnWidth(p, mw)) =>
+            c -> max(p * size.width, mw)
+        }.toList.toMap.get
+      } else if (size.width > 0) { col =>
         col match {
           case ExposureColumn =>
             p.exposureMaxWidth.map(max(_, ExposureMinWidth))
@@ -775,7 +787,8 @@ object StepsTable extends Columns {
     b:    Backend,
     size: Size): ColumnRenderArgs[TableColumn] => Table.ColumnArg = tb => {
     def updateState(s: TableState[TableColumn]): Callback =
-      b.modState(State.tableState.set(s)) // >> SeqexecCircuit.dispatchCB(UpdateStepsConfigTableState(s))
+      Callback.log(s"UPD ${s.userModified} ${s.columns.length}: ${s.columns.toList.map(_.width).mkString(", ")}") *>
+        b.modState(State.tableState.set(s)) *> b.props.obsId.map(i => SeqexecCircuit.dispatchCB(UpdateStepTableState(i, s))).getOrEmpty
 
     tb match {
       case ColumnRenderArgs(ColumnMeta(c, name, label, _, _), _, width, true) =>
@@ -787,7 +800,7 @@ object StepsTable extends Columns {
             dataKey = name,
             label   = label,
             headerRenderer = resizableHeaderRenderer(
-              b.state.tableState.resizeRowB(c, size, updateState)),
+              b.state.tableState.resizeRow(c, size, b.props.visibleColumns, updateState)),
             headerClassName = headerClassName(c).foldMap(_.htmlClass),
             cellRenderer    = columnCellRenderer(b, c),
             className       = columnClassName(c).foldMap(_.htmlClass)
@@ -995,17 +1008,14 @@ object StepsTable extends Columns {
       TableContainer.Props(
         b.props.hasControls,
         size => {
-          val ts = {
-            println(s"Render ${size.width}")
-            val ts = b.state.tableState
-            // .withInitialWidths(b.state.columnWidths(size))
+          println("Rerender ")
+          val ts =
+            b.state.tableState
               .columnBuilder(size,
                              b.props.visibleColumns,
                              b.state.columnWidths(size, b.props),
-                             colBuilder(b, size))
-            // println(ts)
-            (ts.map(_.vdomElement))
-          }
+                             colBuilder(b, size)).map(_.vdomElement)
+
           ref
             .component(stepsTableProps(b)(size))(ts: _*)
             .vdomElement

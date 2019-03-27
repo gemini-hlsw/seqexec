@@ -20,6 +20,8 @@ final case class TableState[A: Eq](userModified:   UserModified,
                                    scrollPosition: JsNumber,
                                    columns:        NonEmptyList[ColumnMeta[A]]) {
 
+  val isModified: Boolean = userModified === IsModified
+
   // Reset visibility given the filters
   private def withVisibleCols(visibleFilter: (Size, A) => Boolean,
                               s:             Size): TableState[A] =
@@ -73,6 +75,7 @@ final case class TableState[A: Eq](userModified:   UserModified,
           }
 
           if (nextCanChange && newWidth <= s.width) {
+            println(s"Next change $curPct $actualPct")
             ColumnMeta.width.set(VariableColumnWidth(actualPct, min))(c)
           } else {
             c
@@ -90,6 +93,7 @@ final case class TableState[A: Eq](userModified:   UserModified,
           }
 
           if (prevCanChange && newWidth <= width) {
+            println("Prev change")
             ColumnMeta.width.set(VariableColumnWidth(actualPct, min))(c)
           } else {
             c
@@ -160,7 +164,6 @@ final case class TableState[A: Eq](userModified:   UserModified,
       withVisibleCols(visibleCols, s).distributePercentages(calculatedWidth)
     val vcl = vc.columns.count(_.visible)
 
-    // vc.normalizeColumnWidths(s).columns.toList.foreach(println)
     val ts = vc.normalizeColumnWidths(s)
     // recalculate as the widths way have varied
     val fixedWidth = ts.fixedWidth

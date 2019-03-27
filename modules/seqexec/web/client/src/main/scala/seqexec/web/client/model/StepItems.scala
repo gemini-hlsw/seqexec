@@ -30,6 +30,9 @@ object StepItems {
   val gpiDispersers: Map[String, String] =
     GpiDisperser.all.map(x => x.shortName -> x.longName).toMap
 
+  private val obsNames =
+    GpiObservingMode.all.map(x => x.shortName -> x.longName).toMap
+
   implicit class StepOps(val s: Step) extends AnyVal {
     def fpuNameMapper(i: Instrument): String => Option[String] = i match {
       case Instrument.GmosS => enumerations.fpu.GmosSFPU.get
@@ -139,6 +142,11 @@ object StepItems {
 
     def offsetPText: String = offsetText(OffsetAxis.AxisP)
     def offsetQText: String = offsetText(OffsetAxis.AxisQ)
+
+    def observingMode: Option[String] =
+      instrumentObservingModeO
+        .getOption(s)
+        .flatMap(obsNames.get)
 
   }
 

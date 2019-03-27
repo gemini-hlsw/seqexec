@@ -10,7 +10,6 @@ import japgolly.scalajs.react.extra.Reusability
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.extra.router.RouterCtl
 import gem.Observation
-import gem.enum.GpiObservingMode
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.StepType
 import seqexec.model.Step
@@ -241,9 +240,6 @@ object ObservingModeCell {
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
-  private val obsNames =
-    GpiObservingMode.all.map(x => x.shortName -> x.longName).toMap
-
   private val component = ScalaComponent
     .builder[Props]("ObsModeCell")
     .stateless
@@ -251,9 +247,7 @@ object ObservingModeCell {
       p =>
         <.div(
           SeqexecStyles.componentLabel,
-          instrumentObservingModeO
-            .getOption(p.s)
-            .flatMap(obsNames.get)
+          p.s.observingMode
             .getOrElse("Unknown"): String
       ))
     .configure(Reusability.shouldComponentUpdate)
