@@ -17,7 +17,7 @@ final case class ExecutionQueue(name:      String,
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object ExecutionQueue {
   def init(name: String): ExecutionQueue =
-    ExecutionQueue(name, BatchCommandState.Idle, List())
+    ExecutionQueue(name, BatchCommandState.Idle, List.empty)
 
   implicit val eq: Eq[ExecutionQueue] =
     Eq.by(x => (x.name, x.cmdState, x.queue))

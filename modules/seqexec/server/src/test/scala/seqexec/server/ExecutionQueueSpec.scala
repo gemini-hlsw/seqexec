@@ -9,8 +9,8 @@ import SeqexecServerArbitraries._
 import seqexec.model.SeqexecModelArbitraries._
 
 final class ExecutionQueueSpec extends CatsSuite {
-  checkAll("ExecutedQueue name lens", LensTests(ExecutionQueue.name))
-  checkAll("ExecutedQueue command state lens",
+  checkAll("ExecutionQueue name lens", LensTests(ExecutionQueue.name))
+  checkAll("ExecutionQueue command state lens",
            LensTests(ExecutionQueue.cmdState))
-  checkAll("ExecutedQueue queue lens", LensTests(ExecutionQueue.queue))
+  checkAll("ExecutionQueue queue lens", LensTests(ExecutionQueue.queue))
 }
