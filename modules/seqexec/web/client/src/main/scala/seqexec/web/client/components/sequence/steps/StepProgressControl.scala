@@ -81,7 +81,10 @@ object StepProgressCell {
       ),
       <.div(
         SeqexecStyles.subsystems,
-        step.configStatus.map(Function.tupled(statusLabel)).toTagMod
+        step.configStatus
+          .sortBy(_._1)
+          .map(Function.tupled(statusLabel))
+          .toTagMod
       )
     )
 

@@ -31,18 +31,18 @@ import web.client.style._
   */
 object SubsystemControlCell {
   final case class Props(
-                          id:             Observation.Id,
-                          stepId:         Int,
-                          resources:      List[Resource],
-                          resourcesCalls: SortedMap[Resource, ResourceRunOperation])
+    id:             Observation.Id,
+    stepId:         Int,
+    resources:      List[Resource],
+    resourcesCalls: SortedMap[Resource, ResourceRunOperation])
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
   def requestResourceCall(
-                           id:     Observation.Id,
-                           stepId: StepId,
-                           r:      Resource
-                         )(e:      ReactEvent): Callback =
+    id:     Observation.Id,
+    stepId: StepId,
+    r:      Resource
+  )(e:      ReactEvent): Callback =
     e.preventDefaultCB *> e.stopPropagationCB *>
       SeqexecCircuit.dispatchCB(RequestResourceRun(id, stepId, r))
 
@@ -56,7 +56,7 @@ object SubsystemControlCell {
     .render_P { p =>
       <.div(
         SeqexecStyles.notInMobile,
-        p.resources.map { r =>
+        p.resources.sorted.map { r =>
           val inExecution =
             p.resourcesCalls
               .get(r)
