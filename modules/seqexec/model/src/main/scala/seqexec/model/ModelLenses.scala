@@ -88,7 +88,7 @@ trait ModelLenses {
       case e @ ConditionsUpdated(_)            => e.copy(view = q)
       case e @ StepSkipMarkChanged(_)          => e.copy(view = q)
       case e @ SequencePauseRequested(_)       => e.copy(view = q)
-      case e @ SequencePauseCanceled(_)        => e.copy(view = q)
+      case e @ SequencePauseCanceled(_, _)     => e.copy(view = q)
       case e @ SequenceRefreshed(_, _)         => e.copy(view = q)
       case e @ ActionStopRequested(_)          => e.copy(view = q)
       case e @ SequenceError(_, _)             => e.copy(view = q)

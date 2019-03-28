@@ -944,7 +944,7 @@ object SeqexecEngine extends SeqexecConfiguration {
       case engine.UserCommandResponse(ue, _, uev) => ue match {
         case engine.Start(_, _, _, _)      => SequenceStart(svs)
         case engine.Pause(_, _)            => SequencePauseRequested(svs)
-        case engine.CancelPause(_, _)      => SequencePauseCanceled(svs)
+        case engine.CancelPause(id, _)     => SequencePauseCanceled(id, svs)
         case engine.Breakpoint(_, _, _, _) => StepBreakpointChanged(svs)
         case engine.SkipMark(_, _, _, _)   => StepSkipMarkChanged(svs)
         case engine.Poll(cid)              => SequenceRefreshed(svs, cid)

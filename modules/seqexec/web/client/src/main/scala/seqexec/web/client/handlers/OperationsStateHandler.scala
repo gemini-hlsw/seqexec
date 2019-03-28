@@ -73,7 +73,7 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
 
   def handleOperationResult: PartialFunction[Any, ActionResult[M]] = {
     case RunStarted(_) | RunStop(_) | RunAbort(_) | RunObsPause(_) |
-        RunObsResume(_) =>
+        RunObsResume(_) | RunPaused(_) | RunCancelPaused(_) =>
       noChange
 
     case RunSync(id) =>
@@ -140,6 +140,12 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
 
     case ClearRunOnError(id) =>
       updated(value.resetOperations(id))
+
+    case ClearOperations(id) =>
+      updated(value.resetOperations(id))
+
+    case ClearAllOperations =>
+      updated(value.resetAllOperations)
   }
 
   override def handle: PartialFunction[Any, ActionResult[M]] =
