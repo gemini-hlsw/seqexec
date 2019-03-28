@@ -81,7 +81,7 @@ object AltairControllerEpics extends AltairController[IO] {
     val newPosOk = newPos.forall(newPosInRange)
     val matrixOk = newPos.forall(validateCurrentControlMatrix(currCfg, _)) || fieldLens === FieldLens.IN
     val prepMatrixOk = newPos.forall(validatePreparedControlMatrix(currCfg, _)) || fieldLens === FieldLens.IN
-    val guideOk = !reasons.contains(GaosStarOff) //It can follow the guide star on this step
+    val guideOk = !reasons.contains(GaosGuideOff) //It can follow the guide star on this step
 
     val needsToStop = !(newPosOk && matrixOk && guideOk)
 
@@ -119,7 +119,7 @@ object AltairControllerEpics extends AltairController[IO] {
     reasons: Set[Gaos.ResumeCondition]): Option[IO[Unit]] = {
     val offsets = reasons.collectFirst { case OffsetReached(o) => o }
     val newPosOk = offsets.forall(v => newPosInRange(newPosition(starPos)(v)))
-    val guideOk = reasons.contains(GaosStarOn)
+    val guideOk = reasons.contains(GaosGuideOn)
 
     (newPosOk && guideOk).option(
       (epicsAltair.waitMatrixCalc(CarStateGEM5.IDLE, matrixPrepTimeout) *>
@@ -127,7 +127,7 @@ object AltairControllerEpics extends AltairController[IO] {
           epicsTcs.aoCorrect.setCorrections(CorrectionsOn) *>
           epicsTcs.aoFlatten.mark *>
           epicsTcs.targetFilter.setShortCircuit(TargetFilterOpen) *>
-          epicsTcs.targetFilter.post.void
+          epicsTcs.targetFilter.post
         ) *>
         epicsAltair.waitAoSettled(aoSettledTimeout)
       ).whenA(!currCfg.aoLoop)
@@ -216,13 +216,35 @@ object AltairControllerEpics extends AltairController[IO] {
     reasons: Set[Gaos.ResumeCondition]): Option[IO[Unit]] =
     resumeNgsOrLgsMode(starPos, currCfg)(reasons).filter(_ => strap || sfo).map(_ *> ttgsOn(strap, sfo, currCfg))
 
-  // TODO Should do something if P1 is turned off ?
-  private def pauseResumeLgsWithP1Mode
-  : PauseResume[IO] = PauseResume(None, IO.unit.some)
+  /*
+   * Modes LgsWithP1 and LgsWithOi don't use an Altair target. The only action required is to start or stop corrections
+   */
+  private def pauseResumeLgsWithXX(currCfg: EpicsAltairConfig)(
+      pauseReasons: Set[Gaos.PauseCondition], resumeReasons: Set[Gaos.ResumeCondition])
+  : PauseResume[IO] = {
+    val pause = (pauseReasons.contains(Gaos.GaosGuideOff) && currCfg.aoLoop).option{
+      convertTcsAction(epicsTcs.aoCorrect.setCorrections(CorrectionsOff) *>
+        epicsTcs.targetFilter.setShortCircuit(TargetFilterClosed) *>
+        epicsTcs.targetFilter.post.void
+      )
+    }
+    val resume = (resumeReasons.contains(Gaos.GaosGuideOn) &&
+      (pauseReasons.contains(Gaos.GaosGuideOff) || !currCfg.aoLoop)
+    ).option{
+      convertTcsAction(
+        epicsTcs.aoCorrect.setCorrections(CorrectionsOn) *>
+          epicsTcs.aoFlatten.mark *>
+          epicsTcs.targetFilter.setShortCircuit(TargetFilterOpen) *>
+          epicsTcs.targetFilter.post
+      ) *>
+      epicsAltair.waitAoSettled(aoSettledTimeout)
+    }
 
-  // TODO Should do something if OI is turned off ?
-  private def pauseResumeLgsWithOiMode
-  : PauseResume[IO] = PauseResume(None, IO.unit.some)
+    PauseResume(
+      pause,
+      resume
+    )
+  }
 
   private def turnOff(c: EpicsAltairConfig): PauseResume[IO] = PauseResume(
     convertTcsAction(epicsTcs.aoCorrect.setCorrections(CorrectionsOff) *>
@@ -239,8 +261,8 @@ object AltairControllerEpics extends AltairController[IO] {
           resumeReasons)
         case Lgs(str: Boolean, sfo: Boolean, pos) => pauseResumeLgsMode(str, sfo, pos, fieldLens, currCfg)(pauseReasons,
           resumeReasons)
-        case LgsWithP1                            => pauseResumeLgsWithP1Mode
-        case LgsWithOi                            => pauseResumeLgsWithOiMode
+        case LgsWithP1                            => pauseResumeLgsWithXX(currCfg)(pauseReasons, resumeReasons)
+        case LgsWithOi                            => pauseResumeLgsWithXX(currCfg)(pauseReasons, resumeReasons)
         case AltairOff                            => turnOff(currCfg)
       }
     }
