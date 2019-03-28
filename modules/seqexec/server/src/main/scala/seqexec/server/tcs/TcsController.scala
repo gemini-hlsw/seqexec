@@ -357,7 +357,7 @@ object TcsController {
   @Lenses
   final case class GuidersConfig(
     pwfs1: GuiderConfig@@P1Config,
-    pwfs2OrAowfs: Either[GuiderConfig@@P2Config, ProbeTrackingConfig@@AoGuide],
+    pwfs2OrAowfs: Either[GuiderConfig@@P2Config, GuiderConfig@@AoGuide],
     oiwfs: GuiderConfig@@OIConfig
   )
 

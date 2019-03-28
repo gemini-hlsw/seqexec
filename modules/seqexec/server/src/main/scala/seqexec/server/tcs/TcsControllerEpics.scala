@@ -20,8 +20,7 @@ import squants.{Angle, Length}
 import monocle.{Iso, Lens}
 import monocle.macros.Lenses
 import seqexec.model.enum.Instrument
-import seqexec.server.tcs.Gaos.{GaosStarOff, GaosStarOn, OffsetMove, OffsetReached, OiOff, OiOn, P1Off, P1On, PauseCondition, PauseResume, ResumeCondition}
-import seqexec.server.tcs.TcsController.FollowOption.FollowOn
+import seqexec.server.tcs.Gaos.{GaosGuideOff, GaosGuideOn, OffsetMove, OffsetReached, OiOff, OiOn, P1Off, P1On, PauseCondition, PauseResume, ResumeCondition}
 import seqexec.server.tcs.TcsEpics.{ProbeFollowCmd, ProbeGuideCmd}
 import shapeless.tag
 import shapeless.tag.@@
@@ -130,10 +129,10 @@ object TcsControllerEpics extends TcsController {
 
   // Left side is PWFS2, right side is AOWFS
   private def setPwfs2OrAltair(subsystems: NonEmptySet[Subsystem], c: Either[GuiderConfig, ProbeTrackingConfig],
-                               d: Either[GuiderConfig@@P2Config, ProbeTrackingConfig@@AoGuide])
+                               d: Either[GuiderConfig@@P2Config, GuiderConfig@@AoGuide])
   : Option[EpicsTcsConfig => SeqAction[EpicsTcsConfig]] = (c, d) match {
     case (Left(x), Left(y))   => setPwfs2Probe(subsystems, x.tracking, y.tracking)
-    case (Right(x), Right(y)) => setAltairProbe(subsystems, x, y)
+    case (Right(x), Right(y)) => setAltairProbe(subsystems, x, y.tracking)
     case (Right(_), Left(_))  => { _:EpicsTcsConfig => SeqAction.fail[EpicsTcsConfig](SeqexecFailure.Execution(
       "Incompatible configuration: useAO is true but sequence uses PWFS2")) }.some
     case (Left(_), Right(_))  => { _:EpicsTcsConfig => SeqAction.fail[EpicsTcsConfig](SeqexecFailure.Execution(
@@ -361,7 +360,7 @@ object TcsControllerEpics extends TcsController {
   }
 
   def configurePwfs2Detector(subsystems: NonEmptySet[Subsystem], c: Either[GuiderConfig, ProbeTrackingConfig],
-                             d: Either[GuiderConfig@@P2Config, ProbeTrackingConfig@@AoGuide])
+                             d: Either[GuiderConfig@@P2Config, GuiderConfig@@AoGuide])
   : Option[EpicsTcsConfig => SeqAction[EpicsTcsConfig]] = for {
     cur <- c.swap.toOption
     dem <- d.swap.toOption
@@ -393,8 +392,8 @@ object TcsControllerEpics extends TcsController {
     def calc(c: GuiderSensorOption, d: GuiderSensorOption) = (mustOff || d === GuiderSensorOff).fold(GuiderSensorOff, c)
 
     def calcPwfs2(c: Either[GuiderConfig, ProbeTrackingConfig])(
-      d: Either[GuiderConfig@@P2Config, ProbeTrackingConfig@@AoGuide])
-    : Either[GuiderConfig@@P2Config, ProbeTrackingConfig@@AoGuide] = (c, d) match {
+      d: Either[GuiderConfig@@P2Config, GuiderConfig@@AoGuide])
+    : Either[GuiderConfig@@P2Config, GuiderConfig@@AoGuide] = (c, d) match {
       case (Left(x), Left(y)) => Left((tagIso ^|-> GuiderConfig.detector).set(calc(x.detector, y.detector))(y))
       case _                  => d
     }
@@ -423,18 +422,14 @@ object TcsControllerEpics extends TcsController {
       .option(OffsetMove(current.offset, v.toFocalPlaneOffset(current.iaa)))),
     (current.oiwfs.detector === GuiderSensorOn && demand.gds.oiwfs.detector === GuiderSensorOff).option(OiOff),
     (current.pwfs1.detector === GuiderSensorOn && demand.gds.pwfs1.detector === GuiderSensorOff).option(P1Off),
-    demand.gds.pwfs2OrAowfs.toOption
-      .filter(v => v.follow === FollowOption.FollowOff || v.getNodChop === NodChopTrackingConfig.AllOff)
-      .as(GaosStarOff)
+    demand.gds.pwfs2OrAowfs.toOption.filter(_.detector === GuiderSensorOff).as(GaosGuideOff)
   ).collect{ case Some(x) => x }
 
   def calcAoResumeConditions(current: EpicsTcsConfig, demand: TcsConfig): Set[ResumeCondition] = Set(
     demand.tc.offsetA.map(v => OffsetReached(v.toFocalPlaneOffset(current.iaa))),
     (demand.gds.oiwfs.detector === GuiderSensorOn).option(OiOn),
     (demand.gds.pwfs1.detector === GuiderSensorOn).option(P1On),
-    demand.gds.pwfs2OrAowfs.toOption
-      .filter(v => v.follow === FollowOption.FollowOn && v.getNodChop =!= NodChopTrackingConfig.AllOff)
-      .as(GaosStarOn)
+    demand.gds.pwfs2OrAowfs.toOption.filter(_.detector === GuiderSensorOn).as(GaosGuideOn)
   ).collect{ case Some(x) => x }
 
   def pauseResumeGaos(gaos: Option[Either[Altair[IO], Gems[IO]]], current: EpicsTcsConfig, demand: TcsConfig)
@@ -565,7 +560,8 @@ object TcsControllerEpics extends TcsController {
         case M1Source.PWFS1 => if(guiderActive(cfg.gds.pwfs1)) g else M1GuideOff
         case M1Source.PWFS2 => if(cfg.gds.pwfs2OrAowfs.swap.exists(guiderActive)) g else M1GuideOff
         case M1Source.OIWFS => if(guiderActive(cfg.gds.oiwfs)) g else M1GuideOff
-        case M1Source.GAOS  => if(cfg.gds.pwfs2OrAowfs.exists(_.follow === FollowOn) && gaosEnabled) g else M1GuideOff
+        case M1Source.GAOS  => if(cfg.gds.pwfs2OrAowfs.exists(_.detector === GuiderSensorOn) && gaosEnabled) g
+                               else M1GuideOff
         case _              => g
       }
       case x                => x
@@ -579,7 +575,7 @@ object TcsControllerEpics extends TcsController {
           case TipTiltSource.PWFS1 => guiderActive(cfg.gds.pwfs1)
           case TipTiltSource.PWFS2 => cfg.gds.pwfs2OrAowfs.swap.map(guiderActive).getOrElse(false)
           case TipTiltSource.OIWFS => guiderActive(cfg.gds.oiwfs)
-          case TipTiltSource.GAOS  => cfg.gds.pwfs2OrAowfs.exists(_.follow === FollowOn) && gaosEnabled
+          case TipTiltSource.GAOS  => cfg.gds.pwfs2OrAowfs.exists(_.detector === GuiderSensorOn) && gaosEnabled
           case _                   => true
         }
         if(ss.isEmpty) M2GuideOff

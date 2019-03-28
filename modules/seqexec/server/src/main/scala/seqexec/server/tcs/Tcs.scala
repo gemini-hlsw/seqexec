@@ -47,7 +47,7 @@ final case class Tcs private (tcsController: TcsController,
       GuiderConfig(ProbeTrackingConfig.Parked, GuiderSensorOff)).show)
     case Subsystem.Mount  => List(tcs.tc.show)
     case Subsystem.AGUnit => List(tcs.agc.sfPos.show, tcs.agc.hrwfs.show)
-    case Subsystem.Gaos   => List(tcs.gds.pwfs2OrAowfs.toOption).collect{ case Some(x) => (x:ProbeTrackingConfig).show }
+    case Subsystem.Gaos   => List(tcs.gds.pwfs2OrAowfs.toOption).collect{ case Some(x) => (x:GuiderConfig).show }
   }
 
   override def configure(config: Config): SeqAction[ConfigResult[IO]] =
@@ -88,8 +88,8 @@ final case class Tcs private (tcsController: TcsController,
         .hasTarget(_)).getOrElse(false)
 
       val aoGuiderConfig = aoHasTarget.fold(
-        calcGuiderConfig(calcGuiderInUse(c.tcsGuide, TipTiltSource.GAOS, M1Source.GAOS), config.guideWithAO).tracking,
-        ProbeTrackingConfig.Off
+        calcGuiderConfig(calcGuiderInUse(c.tcsGuide, TipTiltSource.GAOS, M1Source.GAOS), config.guideWithAO),
+        GuiderConfig(ProbeTrackingConfig.Off, config.guideWithAO.map(_.toGuideSensorOption).getOrElse(GuiderSensorOff))
       )
 
       TcsConfig(

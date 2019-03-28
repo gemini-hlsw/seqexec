@@ -36,8 +36,8 @@ object Gaos {
   case object OiOff extends PauseCondition
   // PI will be turn off
   case object P1Off extends PauseCondition
-  // GAOS star guide will be turn off
-  case object GaosStarOff extends PauseCondition
+  // Unguided step
+  case object GaosGuideOff extends PauseCondition
 
   sealed trait ResumeCondition
   // Telescope offset will be changed
@@ -46,8 +46,8 @@ object Gaos {
   case object OiOn extends ResumeCondition
   // PI will be turn off
   case object P1On extends ResumeCondition
-  // GAOS star guide will be turn off
-  case object GaosStarOn extends ResumeCondition
+  // Guided step
+  case object GaosGuideOn extends ResumeCondition
 
   implicit val becauseOffsetMoveEq: Eq[OffsetMove] = Eq.by(x => (x.previousOffset, x.newOffset))
 
@@ -55,20 +55,18 @@ object Gaos {
     case (a: OffsetMove, b: OffsetMove) => a === b
     case (OiOff, OiOff)                 => true
     case (P1Off, P1Off)                 => true
-    case (GaosStarOff, GaosStarOff)     => true
-    case _                                            => false
+    case (GaosGuideOff, GaosGuideOff)   => true
+    case _                              => false
   }
 
-  implicit val becauseOffsetReachedEq: Eq[OffsetReached] = Eq.by(x =>
-    (x.newOffset)
-  )
+  implicit val becauseOffsetReachedEq: Eq[OffsetReached] = Eq.by(_.newOffset)
 
   implicit val resumeReasonEq: Eq[ResumeCondition] = Eq.instance{
     case (a: OffsetReached, b: OffsetReached) => a === b
     case (OiOn, OiOn)                         => true
     case (P1On, P1On)                         => true
-    case (GaosStarOn, GaosStarOn)             => true
-    case _                                                  => false
+    case (GaosGuideOn, GaosGuideOn)           => true
+    case _                                    => false
   }
 
   sealed case class PauseResume[F[_]](

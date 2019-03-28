@@ -296,7 +296,7 @@ class TcsControllerEpicsSpec extends FlatSpec with PrivateMethodTester {
           ) >>>
           (TcsConfig.gds ^|-> GuidersConfig.pwfs2OrAowfs).set(Right(
             tag[AoGuide](
-              ProbeTrackingConfig.On(NodChopTrackingConfig.Normal)
+              GuiderConfig(ProbeTrackingConfig.On(NodChopTrackingConfig.Normal), GuiderSensorOn)
             ))
           ) >>>
           TcsConfig.inst.set(DummyInstrument(none))
@@ -317,7 +317,7 @@ class TcsControllerEpicsSpec extends FlatSpec with PrivateMethodTester {
           ) >>>
           (TcsConfig.gds ^|-> GuidersConfig.pwfs2OrAowfs).set(Right(
             tag[AoGuide](
-              ProbeTrackingConfig.On(NodChopTrackingConfig.Normal)
+              GuiderConfig(ProbeTrackingConfig.On(NodChopTrackingConfig.Normal), GuiderSensorOn)
             ))
           ) >>>
           TcsConfig.inst.set(DummyInstrument(none))
@@ -339,7 +339,7 @@ class TcsControllerEpicsSpec extends FlatSpec with PrivateMethodTester {
           ) >>>
           (TcsConfig.gds ^|-> GuidersConfig.pwfs2OrAowfs).set(Right(
             tag[AoGuide](
-              ProbeTrackingConfig.On(NodChopTrackingConfig.Normal)
+              GuiderConfig(ProbeTrackingConfig.On(NodChopTrackingConfig.Normal), GuiderSensorOn)
             ))
           ) >>>
           TcsConfig.inst.set(DummyInstrument(none))
