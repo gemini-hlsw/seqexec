@@ -63,9 +63,11 @@ class SeqexecEngine(httpClient: Client[IO], gpi: GpiClient[IO], ghost: GhostClie
     if (settings.odbNotifications) OdbProxy.OdbCommandsImpl[IO](new Peer(settings.odbHost, 8442, null))
     else new OdbProxy.DummyOdbCommands[IO])
 
-  val gpiGDS: GdsClient[IO] = GdsClient(settings.gpiGdsControl.command.fold(httpClient, GdsClient.alwaysOkClient), settings.gpiGDS)
+  val gpiGDS: GdsClient[IO] = GdsClient(settings.gpiGdsControl.command.fold(httpClient, GdsClient.alwaysOkClient),
+    settings.gpiGDS)
 
-  val ghostGDS: GdsClient[IO] = GdsClient(settings.ghostControl.command.fold(httpClient, GdsClient.alwaysOkClient), settings.ghostGDS)
+  val ghostGDS: GdsClient[IO] = GdsClient(settings.ghostControl.command.fold(httpClient, GdsClient.alwaysOkClient),
+    settings.ghostGDS)
 
   private val systems = Systems[IO](
     odbProxy,
@@ -105,22 +107,24 @@ class SeqexecEngine(httpClient: Client[IO], gpi: GpiClient[IO], ghost: GhostClie
 
   def sync(q: EventQueue, seqId: Observation.Id): IO[Either[SeqexecFailure, Unit]] =
     odbLoader.loadEvents(seqId).flatMap{ e =>
-      q.enqueue(Stream.emits(e)).map(_.asRight).compile.last.attempt.map(_.bimap(SeqexecFailure.SeqexecException.apply, _ => ()))
+      q.enqueue(
+        Stream.emits(e)).map(_.asRight).compile.last.attempt.map(_.bimap(SeqexecFailure.SeqexecException.apply, _ => ())
+      )
     }
-
-  // TODO: this is too much guessing. We should have proper tracking of systems' state.
-  def failedInstruments(st: EngineState): Set[Resource] = st.sequences.values.toList.mapFilter(s =>
-    s.seq.status.isError.option(s.seqGen.instrument)).toSet
 
   private def checkResources(seqId: Observation.Id)(st: EngineState): Boolean = {
     // Resources used by running sequences
     val used = resourcesInUse(st)
 
     // Resources that will be used by sequences in running queues
-    val reservedByQueues = resourcesReserved(failedInstruments(st), st)
+    val reservedByQueues = resourcesReserved(st)
 
-    st.sequences.get(seqId).exists(_.seqGen.resources.intersect(used ++ reservedByQueues).isEmpty)
-
+    st.sequences.get(seqId).exists(x =>
+      x.seqGen.resources.intersect(used).isEmpty && (
+        st.queues.values.filter(_.status(st).running).exists(_.queue.contains(seqId)) ||
+        x.seqGen.resources.intersect(reservedByQueues).isEmpty
+      )
+    )
   }
 
   def start(q: EventQueue, id: Observation.Id, user: UserDetails, clientId: ClientId): IO[Either[SeqexecFailure, Unit]] =
@@ -269,7 +273,8 @@ class SeqexecEngine(httpClient: Client[IO], gpi: GpiClient[IO], ghost: GhostClie
         ((q.cmdState, q.status(st)) match {
           case (_, BatchExecState.Completed)       => ((EngineState.queues ^|-? index(qid) ^|-> ExecutionQueue.cmdState)
             .set(BatchCommandState.Idle) >>> {(_, ())}).toHandle
-          case (BatchCommandState.Run(o, u, c), _) => runQueue(qid, o, u, c)
+          case (BatchCommandState.Run(o, u, c), _) => executeEngine.get.flatMap(st2 => runSequences(shouldSchedule(qid,
+            seqs.toSet)(st2), o, u, c))
           case _                                   => executeEngine.unit
         })
     ).getOrElse(executeEngine.unit)}
@@ -293,10 +298,14 @@ class SeqexecEngine(httpClient: Client[IO], gpi: GpiClient[IO], ghost: GhostClie
           sstOp.forall(sst => !sst.isRunning && !sst.isCompleted)
       } yield executeEngine.modify(queueO(qid).modify(_.removeSeq(seqId))) *>
         ((q.cmdState, q.status(st)) match {
-          case (_, BatchExecState.Completed)         => executeEngine.unit
-          case (BatchCommandState.Run(o, u, c), _)
-            if sstOp.exists(_.isError) => runQueue(qid, o, u, c)
-          case _                                     => executeEngine.unit
+          case (_, BatchExecState.Completed)       => executeEngine.unit
+          // If removed sequence was halting the queue, then removing it frees resources to run the next sequences
+          case (BatchCommandState.Run(o, u, c), _) => shouldSchedule(qid, Set(seqId))(st).isEmpty.fold(
+            executeEngine.unit,
+            st.sequences.get(seqId).map(x => runNextsInQueue(qid, o, u, c, x.seqGen.resources))
+              .getOrElse(executeEngine.unit)
+          )
+          case _                                   => executeEngine.unit
         })
     ).getOrElse(executeEngine.unit)}
 
@@ -331,33 +340,62 @@ class SeqexecEngine(httpClient: Client[IO], gpi: GpiClient[IO], ghost: GhostClie
   ).map(_.asRight)
 
 
-  /* Most of the magic for the ExecutionQueue is done here and in nextRunnableObservations.
-   * runQueue finds the next eligible sequences in queue qid, and starts them. If called in a queue
-   * that already have all possible sequences running, it does nothing.
-   */
-  private def runQueue(qid: QueueId, observer: Observer, user: UserDetails, clientId: ClientId): executeEngine.HandleType[Unit] = {
-    def setObserverAndSelect(sid: Observation.Id): executeEngine.HandleType[Unit] = Handle(StateT[IO, EngineState, (Unit, Option[Stream[IO, executeEngine.EventType]])]{ st:EngineState => IO(
-      (EngineState.sequences ^|-? index(sid)).getOption(st).map{ obsseq =>
-        (EngineState.sequences.modify(_ + (sid -> obsseq.copy(observer = observer.some))) >>>
-          refreshSequence(sid) >>>
-          EngineState.instrumentLoadedL(obsseq.seqGen.instrument).set(sid.some) >>>
-          {(_, ((), Stream[Pure, executeEngine.EventType](
-            Event.modifyState[executeEngine.ConcreteTypes](
-              { {s:EngineState => s} withEvent
-                AddLoadedSequence(obsseq.seqGen.instrument, sid, user, clientId)
-              }.toHandle
-            )
-          ).covary[IO].some))}
-        )(st)
-      }.getOrElse((st, ((), None)))
-    )})
+  private def setObserverAndSelect(sid: Observation.Id, observer: Observer, user: UserDetails, clientId: ClientId)
+  : executeEngine.HandleType[Unit] = Handle(
+    StateT[IO, EngineState,(Unit, Option[Stream[IO, executeEngine.EventType]])] {
+      st:EngineState => IO(
+        (EngineState.sequences ^|-? index(sid)).getOption(st).map{ obsseq =>
+          (EngineState.sequences.modify(_ + (sid -> obsseq.copy(observer = observer.some))) >>>
+            refreshSequence(sid) >>>
+            EngineState.instrumentLoadedL(obsseq.seqGen.instrument).set(sid.some) >>>
+            {(_, ((), Stream[Pure, executeEngine.EventType](
+              Event.modifyState[executeEngine.ConcreteTypes](
+                { {s:EngineState => s} withEvent
+                  AddLoadedSequence(obsseq.seqGen.instrument, sid, user, clientId)
+                }.toHandle
+              )
+            ).covary[IO].some))}
+          )(st)
+        }.getOrElse((st, ((), None)))
+      )
+    }
+  )
 
-    executeEngine.get.map(nextRunnableObservations(qid)).flatMap(_.map(sid =>
-      setObserverAndSelect(sid) *> executeEngine.start(sid, clientId, { _ => true }))
-      .fold(executeEngine.unit)(_ *> _))
+  private def runSequences(ss: Set[Observation.Id], observer: Observer, user: UserDetails, clientId: ClientId)
+  :executeEngine.HandleType[Unit] =
+    ss.map(sid => setObserverAndSelect(sid, observer, user, clientId) *> executeEngine.start(sid, clientId,
+      { _ =>true }
+    )).fold(executeEngine.unit)(_ *> _)
+
+  /*
+   * Most of the magic for the ExecutionQueue is done in the following functions.
+   */
+
+  /*
+   * runQueue starts the queue. It founds the top eligible sequences in the queue, and runs them.
+   */
+  private def runQueue(qid: QueueId, observer: Observer, user: UserDetails, clientId: ClientId)
+  : executeEngine.HandleType[Unit] = {
+
+    executeEngine.get.map(findRunnableObservations(qid)).flatMap(runSequences(_, observer, user, clientId))
   }
 
-  def startQueue(q: EventQueue, qid: QueueId, observer: Observer, user: UserDetails, clientId: ClientId): IO[Either[SeqexecFailure, Unit]] = q.enqueue1(
+  /*
+   * runNextsInQueue continues running the queue after a sequence completes. It founds the next eligible sequences in
+   * the queue, and runs them.
+   * At any given time a queue can be running, but one of the top eligible sequences are not. That is the case if the
+   * sequence ended with an error or is stopped by the user. In both cases, the sequence should not be restarted
+   * without user intervention, nor other sequence that uses the same resources should be started. Because of that,
+   * runNextsInQueue only runs sequences that are now eligible because of the resources that the just completed
+   * sequence has freed.
+   */
+  private def runNextsInQueue(qid: QueueId, observer: Observer, user: UserDetails, clientId: ClientId,
+                              freed: Set[Resource]): executeEngine.HandleType[Unit] = {
+    executeEngine.get.map(nextRunnableObservations(qid, freed)).flatMap(runSequences(_, observer, user, clientId))
+  }
+
+  def startQueue(q: EventQueue, qid: QueueId, observer: Observer, user: UserDetails, clientId: ClientId)
+  : IO[Either[SeqexecFailure, Unit]] = q.enqueue1(
     Event.modifyState[executeEngine.ConcreteTypes](executeEngine.get.flatMap{ st => {
       queueO(qid).getOption(st).filterNot(_.queue.isEmpty).map {
         _.status(st) match {
@@ -391,13 +429,19 @@ class SeqexecEngine(httpClient: Client[IO], gpi: GpiClient[IO], ghost: GhostClie
     }.as(StopQueue(qid, clientId)))
   ).map(_.asRight)
 
-  // It assumes only one queue can run at a time
   private val iterateQueues: PartialFunction[SystemEvent, executeEngine.HandleType[Unit]] = {
-    case Finished(_) => executeEngine.get.map(st => st.queues.collectFirst {
-      case (qid, q@ExecutionQueue(_, BatchCommandState.Run(observer, user, clid), _))
-        if q.status(st) =!= BatchExecState.Completed =>
-          (qid, observer, user, clid)
-    }).flatMap(_.map(Function.tupled(runQueue)).getOrElse(executeEngine.unit))
+    // Events that could trigger the scheduling of the next sequence in the queue:
+    // - The completion of a sequence (and subsequent release of resources)
+    case Finished(sid)               => executeEngine.get.flatMap(st =>
+      st.sequences.get(sid).flatMap { seq =>
+        val freed = seq.seqGen.resources
+        st.queues.collectFirst {
+          case (qid, q@ExecutionQueue(_, BatchCommandState.Run(observer, user, clid), _))
+            if q.status(st) =!= BatchExecState.Completed =>
+            runNextsInQueue(qid, observer, user, clid, freed)
+        }
+      }.getOrElse(executeEngine.unit)
+    )
   }
 
   private def configSystemCheck(sid: Observation.Id, sys: Resource)(st: EngineState): Boolean = {
@@ -405,8 +449,7 @@ class SeqexecEngine(httpClient: Client[IO], gpi: GpiClient[IO], ghost: GhostClie
     val used = resourcesInUse(st)
 
     // Resources reserved by running queues, excluding `sid` to prevent self blocking
-    val reservedByQueues = resourcesReserved(failedInstruments(st),
-      EngineState.sequences.modify(_ - sid)(st))
+    val reservedByQueues = resourcesReserved(EngineState.sequences.modify(_ - sid)(st))
 
     !(used ++ reservedByQueues).contains(sys)
   }
@@ -589,21 +632,19 @@ object SeqexecEngine extends SeqexecConfiguration {
       ).toSet
 
   /*
-   * Resource in use = Resources used by running sequences, plus the systems that are being
-   * configured because a user commanded a manual configuration apply.
+   * Resource in use = Resources used by running sequences, plus the systems that are being configured because a user
+   * commanded a manual configuration apply.
    */
   private def resourcesInUse(st: EngineState): Set[Resource] =
-    st.sequences.values.toList.mapFilter(s => s.seq.status.isRunning.option(s.seqGen.resources))
-      .foldK ++
+    st.sequences.values.toList.mapFilter(s => s.seq.status.isRunning.option(s.seqGen.resources)).foldK ++
       systemsBeingConfigured(st)
 
   /*
    * Resources reserved by running queues.
    */
-  private def resourcesReserved(failedSystems: Set[Resource], st: EngineState): Set[Resource] = {
+  private def resourcesReserved(st: EngineState): Set[Resource] = {
     def reserved(q: ExecutionQueue): Set[Resource] = q.queue.fproduct(st.sequences.get).collect{
-      case (_, Some(s)) if s.seq.status.isIdle &&
-        failedSystems.intersect(s.seqGen.resources).isEmpty => s.seqGen.resources
+      case (_, Some(s)) if s.seq.status.isIdle => s.seqGen.resources
     }.foldK
 
     val runningQs = st.queues.values.filter(_.status(st).running)
@@ -613,17 +654,42 @@ object SeqexecEngine extends SeqexecConfiguration {
   }
 
   /**
-    * Find the observations in an execution queue that would be run next, taking into account the
-    * resources required by each observation and the resources currently in use.
+    * Find the observations in an execution queue that would be run next, taking into account the resources required by
+    * each observation and the resources currently in use.
     * The order in the queue defines the priority of the observations.
-    * Failed sequences in the queue keep their instruments taken, preventing that the queue starts
-    * other sequences for those instruments.
+    * Failed or stopped sequences in the queue keep their instruments taken, preventing that the queue starts other
+    * sequences for those instruments.
     * @param qid The execution queue id
     * @param st The current engine state
     * @return The set of all observations in the execution queue `qid` that can be started to run
     *         in parallel.
     */
-  def nextRunnableObservations(qid: QueueId)(st: EngineState): Set[Observation.Id] = {
+  def findRunnableObservations(qid: QueueId)(st: EngineState)
+  : Set[Observation.Id] = {
+    // Set of all resources in use
+    val used = resourcesInUse(st)
+    // For each observation in the queue that is not yet run, retrieve the required resources
+    val obs = st.queues.get(qid).map(_.queue.fproduct(st.sequences.get).collect {
+      case (id, Some(s)) if !s.seq.status.isRunning && !s.seq.status.isCompleted =>
+        id -> s.seqGen.resources
+    }).orEmpty
+
+    obs.foldLeft((used, Set.empty[Observation.Id])){
+      case ((u, a),(oid, res)) => if(u.intersect(res).isEmpty)
+        (u ++ res, a + oid) else (u, a)
+    }._2
+  }
+
+  /**
+    * Find next runable observations given that a set of resources has just being released
+    * @param qid The execution queue id
+    * @param st The current engine state
+    * @param freed Resources that were freed
+    * @return The set of all observations in the execution queue `qid` that can be started to run
+    *         in parallel.
+    */
+  def nextRunnableObservations(qid: QueueId, freed: Set[Resource])(st: EngineState)
+  : Set[Observation.Id] = {
     // Set of all resources in use
     val used = resourcesInUse(st)
     // For each observation in the queue that is not yet run, retrieve the required resources
@@ -636,10 +702,18 @@ object SeqexecEngine extends SeqexecConfiguration {
     val resFailed: Set[Resource] = st.queues.get(qid).map(_.queue.mapFilter(st.sequences.get(_)
       .flatMap(s => s.seq.status.isError.option(s.seqGen.instrument)))).orEmpty.toSet
 
-    obs.foldLeft((used ++ resFailed, Set[Observation.Id]())){ (b, o) =>
-      (o, b) match { case ((oid, res), (u, a)) => if(u.intersect(res).isEmpty) (u ++ res, a + oid) else (u, a) }
+    obs.foldLeft((used ++ resFailed, Set[Observation.Id]())){
+      case ((u, a),(oid, res)) => if(u.intersect(res).isEmpty && freed.intersect(res).nonEmpty) (u ++ res, a + oid)
+                                  else (u, a)
     }._2
   }
+
+  /*
+   * shouldSchedule checks if a set of sequences are candidates for been run in a queue.
+   * It is used to check if sequences added to a queue should be started.
+   */
+  def shouldSchedule(qid: QueueId, sids: Set[Observation.Id])(st: EngineState): Set[Observation.Id] =
+    findRunnableObservations(qid)(st).intersect(sids)
 
   def gpiClient(control: ControlStrategy, gpiUrl: String)(implicit cs: ContextShift[IO], t: Timer[IO]): cats.effect.Resource[IO, GpiClient[IO]] =
     if (control === FullControl) {
