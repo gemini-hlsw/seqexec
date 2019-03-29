@@ -12,6 +12,7 @@ import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.component.builder.Lifecycle.RenderScope
+import japgolly.scalajs.react.component.builder.Lifecycle.ComponentWillReceiveProps
 import japgolly.scalajs.react.extra.Reusability
 import japgolly.scalajs.react.raw.JsNumber
 import monocle.Lens
@@ -29,6 +30,7 @@ import seqexec.model.StandardStep
 import seqexec.web.client.model.lenses._
 import seqexec.web.client.model.ClientStatus
 import seqexec.web.client.model.TabOperations
+import seqexec.web.client.model.RunningStep
 import seqexec.web.client.model.Pages.SeqexecPages
 import seqexec.web.client.model.ModelOps._
 import seqexec.web.client.circuit.SeqexecCircuit
@@ -68,7 +70,8 @@ object ColWidths {
   * Container for a table with the steps
   */
 object StepsTable {
-  type Backend = RenderScope[Props, State, Unit]
+  type Backend      = RenderScope[Props, State, Unit]
+  type ReceiveProps = ComponentWillReceiveProps[Props, State, Unit]
 
   sealed trait TableColumn extends Product with Serializable
   case object IconColumn extends TableColumn
@@ -117,6 +120,7 @@ object StepsTable {
                          stepsTable: StepsTableAndStatusFocus) {
     val status: ClientStatus                        = stepsTable.status
     val steps: Option[StepsTableFocus]              = stepsTable.stepsTable
+    val runningStep: Option[RunningStep]            = steps.flatMap(_.runningStep)
     val obsId: Option[Observation.Id]               = steps.map(_.id)
     val tableState: Option[TableState[TableColumn]] = steps.map(_.tableState)
     val stepsList: List[Step]                       = steps.foldMap(_.steps)
@@ -314,7 +318,7 @@ object StepsTable {
   private def stepRowStyle(step: Step): GStyle = step match {
     case s if s.hasError                       => SeqexecStyles.rowError
     case s if s.status === StepState.Running   => SeqexecStyles.rowWarning
-    case s if s.status === StepState.Paused    => SeqexecStyles.rowNegative
+    case s if s.status === StepState.Paused    => SeqexecStyles.rowWarning
     case s if s.status === StepState.Completed => SeqexecStyles.rowDone
     case s if s.status === StepState.Skipped   => SeqexecStyles.rowActive
     case s if s.isFinished                     => SeqexecStyles.rowDone
@@ -765,7 +769,17 @@ object StepsTable {
   def rowBreakpointHoverOffCB(b: Backend)(index: Int): Callback =
     b.modState(State.breakpointHover.set(None)) *> recomputeRowHeightsCB(index)
 
-  def receive(cur: Props, next: Props, s: State): Callback = {
+  private def updateStep(b:     ReceiveProps,
+                         p:     Props,
+                         obsId: Observation.Id,
+                         i:     Int): Callback =
+    (SeqexecCircuit.dispatchCB(UpdateSelectedStep(obsId, i)) *>
+      b.modState(State.selected.set(i.some)))
+      .when(p.canControlSubsystems(i)) *> Callback.empty
+
+  // We need to update the state if the props change
+  def receiveNewProps(b: ReceiveProps): Callback = {
+    val (cur: Props, next: Props) = (b.currentProps, b.nextProps)
     // Recalculate the heights if needed
     val stepsPairs = next.stepsList.zip(cur.stepsList)
     val differentStepsStates: List[StepId] = stepsPairs.collect {
@@ -776,19 +790,34 @@ object StepsTable {
       case (cur, prev) if cur.breakpoint =!= prev.breakpoint =>
         cur.id
     }
+
+    // Update the selected step as the run proceeds
+    val selectStep = (next.obsId, cur.runningStep, next.runningStep) match {
+      case (Some(obsId), Some(RunningStep(i, _)), None) =>
+        updateStep(b, next, obsId, i)
+      case (Some(obsId), Some(RunningStep(i, _)), Some(RunningStep(j, _)))
+          if i =!= j =>
+        updateStep(b, next, obsId, j)
+      case _ =>
+        Callback.empty
+    }
+
+    // If the selected step changes recompute height
     val selected: Option[StepId] =
-      (cur.selectedStep, next.selectedStep)
-        .mapN { (c, n) =>
+      (cur.selectedStep, next.selectedStep).mapN { (c, n) =>
           min(c, n)
         }
-        .filter(_ => s.selected =!= next.selectedStep)
+        .filter(_ => b.state.selected =!= next.selectedStep)
+
+    // If the step is running recalculate height
     val running: Option[StepId] =
       if (cur.tabOperations.resourceRunRequested =!= next.tabOperations.resourceRunRequested) {
         next.selectedStep
       } else {
         none
       }
-    (running.toList ::: selected.toList ::: differentStepsStates).minimumOption.map {
+
+    selectStep *> (running.toList ::: selected.toList ::: differentStepsStates).minimumOption.map {
       recomputeRowHeightsCB
     }.getOrEmpty
   }
@@ -808,8 +837,7 @@ object StepsTable {
     .initialStateFromProps(_.startState)
     .render(render)
     .configure(Reusability.shouldComponentUpdate)
-    .componentWillReceiveProps(x =>
-      receive(x.currentProps, x.nextProps, x.state))
+    .componentWillReceiveProps(receiveNewProps)
     .build
 
   def apply(p: Props): Unmounted[Props, State, Unit] = component(p)
