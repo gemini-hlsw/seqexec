@@ -234,12 +234,13 @@ object events {
       Eq.by(_.view)
   }
 
-  final case class SequencePauseCanceled(view: SequencesQueue[SequenceView])
+  final case class SequencePauseCanceled(obsId: Observation.Id,
+                                         view:  SequencesQueue[SequenceView])
       extends SeqexecModelUpdate
 
   object SequencePauseCanceled {
     implicit lazy val equal: Eq[SequencePauseCanceled] =
-      Eq.by(_.view)
+      Eq.by(x => (x.obsId, x.view))
   }
 
   final case class SequenceRefreshed(view:     SequencesQueue[SequenceView],

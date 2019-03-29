@@ -63,7 +63,10 @@ trait SequenceEventsArbitraries extends ArbTime {
     arbitrary[SequencesQueue[SequenceView]].map(SequencePauseRequested.apply)
   }
   implicit val spcArb = Arbitrary[SequencePauseCanceled] {
-    arbitrary[SequencesQueue[SequenceView]].map(SequencePauseCanceled.apply)
+    for {
+      i <- arbitrary[Observation.Id]
+      s <- arbitrary[SequencesQueue[SequenceView]]
+    } yield SequencePauseCanceled(i, s)
   }
   implicit val srfArb = Arbitrary[SequenceRefreshed] {
     for {

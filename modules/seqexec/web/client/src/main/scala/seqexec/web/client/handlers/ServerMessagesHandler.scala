@@ -112,11 +112,17 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
           if curStep.configStatus.map(_._2).forall(_ === ActionStatus.Pending)
         } yield curStep
 
+      val doneStep =
+        sequenceViewT.find(_.id === obsId)(e).forall(_.runningStep.isEmpty)
+
       val audioEffect = curStep
         .filter(ifLoggedIn)
         .fold(VoidEffect)(_ =>
           Effect(Future(StepBeepAudio.play()).as(NoAction)))
-      updated(value.copy(sequences = filterSequences(sv)), audioEffect)
+      val clearAction =
+        if (doneStep) Effect(Future(ClearOperations(obsId))) else VoidEffect
+      updated(value.copy(sequences = filterSequences(sv)),
+              audioEffect + clearAction)
   }
 
   val sequenceCompletedMessage: PartialFunction[Any, ActionResult[M]] = {
@@ -144,17 +150,27 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
           Effect(Future(SequenceErrorAudio.play()).as(NoAction))
         else VoidEffect
       val clearAction = Effect(Future(ClearRunOnError(id)))
-      updated(value.copy(sequences = filterSequences(sv)), audioEffect + clearAction)
+      updated(value.copy(sequences = filterSequences(sv)),
+              audioEffect + clearAction)
   }
 
   val sequencePausedMessage: PartialFunction[Any, ActionResult[M]] = {
-    case ServerMessage(SequencePaused(_, sv)) =>
+    case ServerMessage(SequencePaused(id, sv)) =>
       // Play audio when the sequence gets paused
       val audioEffect =
         if (loggedIn)
           Effect(Future(SequencePausedAudio.play()).as(NoAction))
         else VoidEffect
-      updated(value.copy(sequences = filterSequences(sv)), audioEffect)
+      val clearAction = Effect(Future(ClearOperations(id)))
+      updated(value.copy(sequences = filterSequences(sv)),
+              audioEffect + clearAction)
+  }
+
+  val sequencePauseCancelMessage: PartialFunction[Any, ActionResult[M]] = {
+    case ServerMessage(SequencePauseCanceled(id, sv)) =>
+      // Clear operations state
+      val clearAction = Effect(Future(ClearOperations(id)))
+      updated(value.copy(sequences = filterSequences(sv)), clearAction)
   }
 
   val stopCompletedMessage: PartialFunction[Any, ActionResult[M]] = {
@@ -192,6 +208,12 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
   val modelUpdateMessage: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(s: SeqexecModelUpdate) =>
       updated(value.copy(sequences = filterSequences(s.view)))
+  }
+
+  val sequenceRefreshedMessage: PartialFunction[Any, ActionResult[M]] = {
+    case ServerMessage(s: SequenceRefreshed) =>
+      val clearAction = Effect(Future(ClearAllOperations))
+      updated(value.copy(sequences = filterSequences(s.view)), clearAction)
   }
 
   val MsgRegex  = "Application exception: (.*)".r
@@ -234,6 +256,8 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
       sequenceLoadedMessage,
       sequenceUnloadedMessage,
       stopCompletedMessage,
+      sequenceRefreshedMessage,
+      sequencePauseCancelMessage,
       modelUpdateMessage,
       singleRunCompleteMessage,
       defaultMessage
