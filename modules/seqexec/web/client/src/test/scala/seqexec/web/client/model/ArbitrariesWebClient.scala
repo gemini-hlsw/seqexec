@@ -552,10 +552,11 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
         n  <- arbitrary[Option[Int]]
         e  <- arbitrary[Option[Int]]
         se <- arbitrary[Option[StepId]]
+        rs <- arbitrary[Option[RunningStep]]
         p  <- arbitrary[Boolean]
         ts <- arbitrary[TableState[StepsTable.TableColumn]]
         to <- arbitrary[TabOperations]
-      } yield StepsTableFocus(id, i, ss, s, n, e, se, p, ts, to)
+      } yield StepsTableFocus(id, i, ss, s, n, e, se, rs, p, ts, to)
     }
 
   implicit val sstCogen: Cogen[StepsTableFocus] =
