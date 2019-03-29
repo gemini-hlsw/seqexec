@@ -23,6 +23,7 @@ final case class StepsTableFocus(id:                  Observation.Id,
                                  stepConfigDisplayed: Option[Int],
                                  nextStepToRun:       Option[StepId],
                                  selectedStep:        Option[StepId],
+                                 runningStep:         Option[RunningStep],
                                  isPreview:           Boolean,
                                  tableState:          TableState[StepsTable.TableColumn],
                                  tabOperations:       TabOperations)
@@ -39,6 +40,7 @@ object StepsTableFocus {
          x.stepConfigDisplayed,
          x.nextStepToRun,
          x.selectedStep,
+         x.runningStep,
          x.isPreview,
          x.tableState,
          x.tabOperations))
@@ -60,6 +62,7 @@ object StepsTableFocus {
             sequence.nextStepToRun,
             tab.selectedStep
               .orElse(sequence.nextStepToRun), // start with the nextstep selected
+            sequence.runningStep,
             tab.isPreview,
             tab.tableState,
             tab.tabOperations
