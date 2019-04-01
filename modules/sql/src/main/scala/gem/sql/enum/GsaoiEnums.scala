@@ -5,9 +5,9 @@ package gem.sql
 package enum
 
 import doobie._, doobie.implicits._
-import java.time.Duration
 import shapeless.record._
 import shapeless.Witness
+import gem.sql.FiniteDuration
 
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 object GsaoiEnums {
@@ -17,7 +17,7 @@ object GsaoiEnums {
     List(
 
       EnumDef.fromQuery("GsaoiReadMode", "GSAOI Read Mode") {
-        type E = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'ndr -> Int, 'readNoise -> Int, 'minimumExposureTime -> Duration, 'overhead -> Int`.T
+        type E = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'ndr -> Int, 'readNoise -> Int, 'minimumExposureTime -> FiniteDuration.Seconds, 'overhead -> FiniteDuration.Seconds`.T
         sql"""SELECT id, id tag, short_name, long_name, ndr, read_noise, minimum_exposure_time, overhead FROM e_gsaoi_read_mode""".query[(String, E)]
       },
 
@@ -26,7 +26,7 @@ object GsaoiEnums {
         val  r = Witness('GsaoiReadMode)
         type M = m.T
         type R = r.T
-        type E = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'wavelength -> Double, 'readMode -> EnumRef[R], 'expsoureTime5050 -> Double, 'exposureTimeHalfWell -> Double, 'band -> Option[EnumRef[M]]`.T
+        type E = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'wavelength -> Wavelength.Um, 'readMode -> EnumRef[R], 'exposureTime5050 -> FiniteDuration.Seconds, 'exposureTimeHalfWell -> FiniteDuration.Seconds, 'band -> Option[EnumRef[M]]`.T
         val ret = sql"""SELECT id, id tag, short_name, long_name, wavelength, read_mode_id, exposure_time_50_50, exposure_time_half_well, band_id FROM e_gsaoi_filter""".query[(String, E)]
         (ret, m.value: M, r.value: R)._1 // convince scalac that we really do use M and R
       },
