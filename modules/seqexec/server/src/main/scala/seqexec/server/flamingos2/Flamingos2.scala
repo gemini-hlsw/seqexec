@@ -9,7 +9,7 @@ import cats.implicits._
 import fs2.Stream
 import seqexec.server.tcs.FOCAL_PLANE_SCALE
 import edu.gemini.spModel.config2.Config
-import edu.gemini.spModel.gemini.flamingos2.Flamingos2._
+import edu.gemini.spModel.gemini.flamingos2.Flamingos2.{Reads, _}
 import edu.gemini.spModel.obscomp.InstConstants.{DARK_OBSERVE_TYPE, OBSERVE_TYPE_PROP}
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import java.lang.{Double => JDouble}
@@ -26,6 +26,8 @@ import seqexec.server.keywords.{DhsClient, DhsInstrument, KeywordsClient}
 import squants.Length
 import squants.space.Arcseconds
 import squants.time.{Seconds, Time}
+
+import scala.reflect.ClassTag
 
 final case class Flamingos2(f2Controller: Flamingos2Controller, dhsClient: DhsClient[IO]) extends DhsInstrument[IO] with InstrumentSystem[IO] {
 
@@ -125,17 +127,23 @@ object Flamingos2 {
     case _                    => d
   }
 
+  // This method deals with engineering parameters that can come as a T or an Option[T]
+  private def extractEngineeringParam[T](item: Extracted[Config], default: T)(
+    implicit clazz: ClassTag[T]): Either[ExtractFailure, T] = item.as[T].recoverWith {
+      case _:ConfigUtilOps.KeyNotFound     => Right(default)
+      case _:ConfigUtilOps.ConversionError => item.as[edu.gemini.shared.util.immutable.Option[T]]
+                                                .map(_.getOrElse(default))
+    }
+
   def ccConfigFromSequenceConfig(config: Config): TrySeq[CCConfig] =
     (for {
       obsType <- config.extractAs[String](OBSERVE_KEY / OBSERVE_TYPE_PROP)
       // WINDOW_COVER_PROP is optional. It can be a WindowCover, an Option[WindowCover], or not be present. If no
       // value is given, then window cover position is inferred from observe type.
       pItem = config.extract(INSTRUMENT_KEY / WINDOW_COVER_PROP)
-      p <- pItem.as[WindowCover].recoverWith {
-        case _:ConfigUtilOps.KeyNotFound     => Right(windowCoverFromObserveType(obsType))
-        case _:ConfigUtilOps.ConversionError => pItem.as[edu.gemini.shared.util.immutable.Option[WindowCover]]
-                                                  .map(_.getOrElse(windowCoverFromObserveType(obsType)))
-      }
+      p <- extractEngineeringParam(config.extract(INSTRUMENT_KEY / WINDOW_COVER_PROP),
+             windowCoverFromObserveType(obsType)
+           )
       q <- config.extractAs[Decker](INSTRUMENT_KEY / DECKER_PROP)
       r <- fpuConfig(config)
       f <- config.extractAs[Filter](INSTRUMENT_KEY / FILTER_PROP)
@@ -150,13 +158,10 @@ object Flamingos2 {
     (for {
       p <- config.extractAs[JDouble](OBSERVE_KEY / EXPOSURE_TIME_PROP).map(x => Duration(x, SECONDS))
       // Reads is usually inferred from the read mode, but it can be explicit.
-      q <- config.extractAs[Reads](OBSERVE_KEY / READS_PROP) match {
-            case a @ Right(_) => a
-            case _            => config.extractAs[ReadMode](INSTRUMENT_KEY / READMODE_PROP)
-                                  .map(readsFromReadMode)
-          }
+      a <- config.extractAs[ReadMode](INSTRUMENT_KEY / READMODE_PROP).map(readsFromReadMode)
+      q <- extractEngineeringParam(config.extract(OBSERVE_KEY / READS_PROP), a)
       // Readout mode defaults to SCIENCE if not present.
-      r <- config.extractAs[ReadoutMode](INSTRUMENT_KEY / READOUT_MODE_PROP).getOrElse(ReadoutMode.SCIENCE).asRight
+      r <- extractEngineeringParam(config.extract(INSTRUMENT_KEY / READOUT_MODE_PROP), ReadoutMode.SCIENCE)
       s <- config.extractAs[Decker](INSTRUMENT_KEY / DECKER_PROP)
     } yield DCConfig(p, q, r, s)).leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
 
