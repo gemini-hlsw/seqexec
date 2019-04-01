@@ -243,7 +243,7 @@ trait Columns {
   * Container for a table with the steps
   */
 object StepsTable extends Columns {
-  type Backend = RenderScope[Props, State, Unit]
+  type Backend      = RenderScope[Props, State, Unit]
   type ReceiveProps = ComponentWillReceiveProps[Props, State, Unit]
 
   val HeightWithOffsets: Int    = 40
@@ -274,16 +274,16 @@ object StepsTable extends Columns {
   final case class Props(router:     RouterCtl[SeqexecPages],
                          canOperate: Boolean,
                          stepsTable: StepsTableAndStatusFocus) {
-    val status: ClientStatus                        = stepsTable.status
-    val steps: Option[StepsTableFocus]              = stepsTable.stepsTable
-    val sequenceState: Option[SequenceState]        = steps.map(_.state)
-    val runningStep: Option[RunningStep]            = steps.flatMap(_.runningStep)
-    val obsId: Option[Observation.Id]               = steps.map(_.id)
-    val tableState: TableState[TableColumn] = steps.map(_.tableState).getOrElse(State.InitialTableState)
-    val stepsList: List[Step]                       = steps.foldMap(_.steps)
-    val selectedStep: Option[StepId]                = steps.flatMap(_.selectedStep)
-    val rowCount: Int                               = stepsList.length
-    val nextStepToRun: Int                          = steps.foldMap(_.nextStepToRun).getOrElse(0)
+    val status: ClientStatus             = stepsTable.status
+    val steps: Option[StepsTableFocus]   = stepsTable.stepsTable
+    val runningStep: Option[RunningStep] = steps.flatMap(_.runningStep)
+    val obsId: Option[Observation.Id]    = steps.map(_.id)
+    val tableState: TableState[TableColumn] =
+      steps.map(_.tableState).getOrElse(State.InitialTableState)
+    val stepsList: List[Step]        = steps.foldMap(_.steps)
+    val selectedStep: Option[StepId] = steps.flatMap(_.selectedStep)
+    val rowCount: Int                = stepsList.length
+    val nextStepToRun: Int           = steps.foldMap(_.nextStepToRun).getOrElse(0)
     val tabOperations: TabOperations =
       steps.map(_.tabOperations).getOrElse(TabOperations.Default)
     val showDisperser: Boolean = showProp(InstrumentProperties.Disperser)
@@ -300,6 +300,8 @@ object StepsTable extends Columns {
     val showObservingMode: Boolean = showProp(
       InstrumentProperties.ObservingMode)
     val showReadMode: Boolean      = showProp(InstrumentProperties.ReadMode)
+
+    val sequenceState: Option[SequenceState]        = steps.map(_.state)
 
     def stepSelectionAllowed(sid: StepId): Boolean =
       canControlSubsystems(sid) && !tabOperations.resourceInFlight && !sequenceState.exists(_.isRunning)
@@ -376,8 +378,8 @@ object StepsTable extends Columns {
 
     val shownForInstrument: List[ColumnMeta[TableColumn]] =
       all.filter {
-        case DisperserMeta => showDisperser
-        case OffsetMeta => showOffsets
+        case DisperserMeta     => showDisperser
+        case OffsetMeta        => showOffsets
         case ObservingModeMeta => showObservingMode
         case ExposureMeta      => showExposure
         case FilterMeta        => showFilter
@@ -396,7 +398,7 @@ object StepsTable extends Columns {
     val startState: State = {
       // println(s"INIT st ${tableState.isModified}")
       State.InitialState.copy(tableState = tableState)
-      }
+    }
 
   }
 
@@ -404,48 +406,14 @@ object StepsTable extends Columns {
                          breakpointHover: Option[Int],
                          selected:        Option[StepId]) {
 
-    // Hide some columns depending on width
-    // def hideOnWidth(s: Size): State = {
-    // s.width match {
-    //   case w if w < PhoneCut =>
-    //     State.columns.modify(_.map {
-    //       case c @ ColumnMeta(ObsNameColumn, _, _, _, _) =>
-    //         c.copy(visible = false)
-    //       case c @ ColumnMeta(TargetNameColumn, _, _, _, _) =>
-    //         c.copy(visible = false)
-    //       case c =>
-    //         c
-    //     })(this)
-    //   case w if w < LargePhoneCut =>
-    //     State.columns.modify(_.map {
-    //       case c @ ColumnMeta(TargetNameColumn, _, _, _, _) =>
-    //         c.copy(visible = false)
-    //       case c =>
-    //         c
-    //     })(this)
-    //   case _ =>
-    //     this
-    // println(s)
-    //   this
-    // }
-
     def visibleCols(p: Props): State =
       State.columns.set(NonEmptyList.fromListUnsafe(p.shownForInstrument))(this)
 
-    def columnWidths(size: Size, p: Props): TableColumn => Option[Double] = {
+    def columnWidths(size: Size, p: Props): TableColumn => Option[Double] =
       // println(s"Mod ${tableState.isModified}")
       if (tableState.isModified) {
-        // tableState.columns
-        //   .map {
-        //     case ColumnMeta(c, _, _, _, FixedColumnWidth(w)) =>
-        //       c -> w
-        //     case ColumnMeta(c, _, _, _, VariableColumnWidth(p, mw)) =>
-        //       c -> max(p * size.width, mw)
-        //   }
-        //   .toList
-        //   .toMap
-        //   .get
-          _ => none
+        _ =>
+          none
       } else if (size.width > 0) { col =>
         col match {
           case ExposureColumn =>
@@ -467,72 +435,7 @@ object StepsTable extends Columns {
       } else { _ =>
         none
       }
-    }
 
-    // def visibleColumnsSizes(p: Props, s: Size): List[(TableColumn, Double, Boolean)] = {
-    //   val visibleCols = shownForInstrument(p)
-    //   val fixedVisibleCols = 2
-    //   for {
-    //     (c, i) <- visibleCols.toList.zipWithIndex // TODO hide on width
-    //     if c.visible
-    //   } yield
-    //     (c.column,
-    //      tableState.widthOf(c.column, s),
-    //      i === tableState.columns.filter(_.visible).length - fixedVisibleCols)
-    // }
-    // calculate the relative widths of each column based on content only
-    // this should be renormalized against the actual tabel width
-    // def withWidths(steps: List[Step]): State = {
-    // if (tableState.userModified === IsModified) {
-    //   this
-    // } else {
-    //   val optimalSizes = steps.foldLeft(columnsDefaultWidth) {
-    //     case (currWidths,
-    //           SequenceInSessionQueue(id, st, i, _, _, n, _, t, r, _, _)) =>
-    //       val idWidth = max(
-    //         currWidths.getOrElse(ObsIdColumn, ObsIdMinWidth),
-    //         tableTextWidth(id.format)) + SeqexecStyles.TableRightPadding
-    //       val statusWidth =
-    //         max(currWidths.getOrElse(StateColumn, StateMinWidth),
-    //             tableTextWidth(statusText(st, r)))
-    //       val instrumentWidth =
-    //         max(currWidths.getOrElse(InstrumentColumn, InstrumentMinWidth),
-    //             tableTextWidth(i.show))
-    //       val targetNameWidth =
-    //         max(currWidths.getOrElse(TargetNameColumn, TargetMinWidth),
-    //             tableTextWidth(t.getOrElse("")))
-    //       val obsNameWidth =
-    //         max(currWidths.getOrElse(ObsNameColumn, ObsNameMinWidth),
-    //             tableTextWidth(n))
-    //
-    //       currWidths +
-    //         (ObsIdColumn -> idWidth) +
-    //         (StateColumn -> statusWidth) +
-    //         (InstrumentColumn -> instrumentWidth) +
-    //         (ObsNameColumn -> obsNameWidth) +
-    //         (TargetNameColumn -> targetNameWidth)
-    //   }
-    //   // Width as it would be adding all the visible columns
-    //   val width = optimalSizes
-    //     .filter {
-    //       case (c, _) =>
-    //         tableState.columns.find(_.column === c).forall(_.visible)
-    //     }
-    //     .values
-    //     .sum + ClassColumnWidth + (if (loggedIn) AddQueueColumnWidth else 0)
-    //   // Normalize based on visibility
-    //   State.columns.modify(_.map {
-    //     case c @ ColumnMeta(t, _, _, true, VariableColumnWidth(_, m)) =>
-    //       VariableColumnWidth
-    //         .fromDouble(optimalSizes.getOrElse(t, m).toDouble / width, m)
-    //         .fold(c)(w => c.copy(width = w))
-    //     case c =>
-    //       c
-    //   })(this)
-    // }
-    // println(steps.length)
-    //   this
-    // }
   }
 
   object State {
@@ -629,7 +532,7 @@ object StepsTable extends Columns {
     i: Instrument
   ): CellRenderer[js.Object, js.Object, StepRow] =
     (_, _, _, row: StepRow, _) =>
-      DisperserCell(DisperserCell.Props(row.step, i))
+      StepItemCell(StepItemCell.Props(row.step.disperser(i)))
 
   def stepExposureRenderer(
     i: Instrument
@@ -640,16 +543,22 @@ object StepsTable extends Columns {
   def stepFilterRenderer(
     i: Instrument
   ): CellRenderer[js.Object, js.Object, StepRow] =
-    (_, _, _, row: StepRow, _) => FilterCell(FilterCell.Props(row.step, i))
+    (_, _, _, row: StepRow, _) =>
+      StepItemCell(StepItemCell.Props(row.step.filter(i)))
 
   def stepFPURenderer(
     i: Instrument
   ): CellRenderer[js.Object, js.Object, StepRow] =
-    (_, _, _, row: StepRow, _) => FPUCell(FPUCell.Props(row.step, i))
+    (_, _, _, row: StepRow, _) => {
+      val fpu = row.step
+        .fpu(i)
+        .orElse(row.step.fpuOrMask(i).map(_.sentenceCase))
+      StepItemCell(StepItemCell.Props(fpu))
+    }
 
   val stepObsModeRenderer: CellRenderer[js.Object, js.Object, StepRow] =
     (_, _, _, row: StepRow, _) =>
-      ObservingModeCell(ObservingModeCell.Props(row.step))
+      StepItemCell(StepItemCell.Props(row.step.observingMode))
 
   def stepObjectTypeRenderer(
     size: SSize
@@ -660,14 +569,18 @@ object StepsTable extends Columns {
   def cameraRenderer(
     i: Instrument
   ): CellRenderer[js.Object, js.Object, StepRow] =
-    (_, _, _, row: StepRow, _) => CameraCell(CameraCell.Props(row.step, i))
+    (_, _, _, row: StepRow, _) =>
+      StepItemCell(
+        StepItemCell.Props(row.step.cameraName(i).map(_.sentenceCase)))
 
   def deckerRenderer: CellRenderer[js.Object, js.Object, StepRow] =
-    (_, _, _, row: StepRow, _) => DeckerCell(DeckerCell.Props(row.step))
+    (_, _, _, row: StepRow, _) =>
+      StepItemCell(StepItemCell.Props(row.step.deckerName.map(_.sentenceCase)))
 
   def imagingMirrorRenderer: CellRenderer[js.Object, js.Object, StepRow] =
     (_, _, _, row: StepRow, _) =>
-      ImagingMirrorCell(ImagingMirrorCell.Props(row.step))
+      StepItemCell(
+        StepItemCell.Props(row.step.imagingMirrorName.map(_.sentenceCase)))
 
   def readModeRenderer: CellRenderer[js.Object, js.Object, StepRow] =
     (_, _, _, row: StepRow, _) =>
@@ -1021,7 +934,8 @@ object StepsTable extends Columns {
 
     // If the selected step changes recompute height
     val selected: Option[StepId] =
-      (cur.selectedStep, next.selectedStep).mapN { (c, n) =>
+      (cur.selectedStep, next.selectedStep)
+        .mapN { (c, n) =>
           min(c, n)
         }
         .filter(_ => b.state.selected =!= next.selectedStep)
