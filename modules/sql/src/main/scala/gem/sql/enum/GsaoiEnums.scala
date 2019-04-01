@@ -38,7 +38,12 @@ object GsaoiEnums {
 
       EnumDef.fromQuery("GsaoiRoi", "Gsaoi Region of Interest") {
         type E = Record.`'tag -> String, 'shortName -> String, 'longName -> String`.T
-        sql"""SELECT id, id tag, short_name, long_name FROM e_gsaoi_utility_wheel""".query[(String, E)]
+        sql"""SELECT id, id tag, short_name, long_name FROM e_gsaoi_roi""".query[(String, E)]
+      },
+
+      EnumDef.fromQuery("GsaoiOdgwSize", "Gsaoi ODGW Size") {
+        type E = Record.`'tag -> String, 'size -> Int`.T
+        sql"""SELECT id, id tag, size FROM e_gsaoi_odgw_size""".query[(String, E)]
       }
     )
 

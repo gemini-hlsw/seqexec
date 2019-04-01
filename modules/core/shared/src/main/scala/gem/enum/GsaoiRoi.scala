@@ -20,14 +20,22 @@ sealed abstract class GsaoiRoi(
 
 object GsaoiRoi {
 
-  /** @group Constructors */ case object ExtrafocalLens1 extends GsaoiRoi("ExtrafocalLens1", "xf 1", "Extra-focal lens 1")
-  /** @group Constructors */ case object ExtrafocalLens2 extends GsaoiRoi("ExtrafocalLens2", "xf 2", "Extra-focal lens 2")
-  /** @group Constructors */ case object PupilImager extends GsaoiRoi("PupilImager", "pupil", "Pupil Imager")
-  /** @group Constructors */ case object Clear extends GsaoiRoi("Clear", "clear", "Clear")
+  /** @group Constructors */ case object FullArray extends GsaoiRoi("FullArray", "Full Array", "Det2kx2k")
+  /** @group Constructors */ case object Array64 extends GsaoiRoi("Array64", "Array 64", "Det2kx2k")
+  /** @group Constructors */ case object Array128 extends GsaoiRoi("Array128", "Array 128", "Det2kx2k")
+  /** @group Constructors */ case object Array256 extends GsaoiRoi("Array256", "Array 256", "Det2kx2k")
+  /** @group Constructors */ case object Array512 extends GsaoiRoi("Array512", "Array 512", "Det2kx2k")
+  /** @group Constructors */ case object Array1k extends GsaoiRoi("Array1k", "Array 1K", "Det2kx2k")
+  /** @group Constructors */ case object Central64 extends GsaoiRoi("Central64", "Central 64", "Det2kx2k")
+  /** @group Constructors */ case object Central128 extends GsaoiRoi("Central128", "Central 128", "Det2kx2k")
+  /** @group Constructors */ case object Central256 extends GsaoiRoi("Central256", "Central 256", "Det2kx2k")
+  /** @group Constructors */ case object Central512 extends GsaoiRoi("Central512", "Central 512", "Det2kx2k")
+  /** @group Constructors */ case object Central1k extends GsaoiRoi("Central1k", "Central 1K", "Det2kx2k")
+  /** @group Constructors */ case object Central2k extends GsaoiRoi("Central2k", "Central 2K", "Det2kx2k")
 
   /** All members of GsaoiRoi, in canonical order. */
   val all: List[GsaoiRoi] =
-    List(ExtrafocalLens1, ExtrafocalLens2, PupilImager, Clear)
+    List(FullArray, Array64, Array128, Array256, Array512, Array1k, Central64, Central128, Central256, Central512, Central1k, Central2k)
 
   /** Select the member of GsaoiRoi with the given tag, if any. */
   def fromTag(s: String): Option[GsaoiRoi] =

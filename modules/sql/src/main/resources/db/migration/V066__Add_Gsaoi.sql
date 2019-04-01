@@ -8,7 +8,7 @@ CREATE TABLE e_gsaoi_read_mode (
     long_name                 character varying(40) NOT NULL,
     ndr                       smallint              NOT NULL CHECK (ndr >= 0),
     read_noise                smallint              NOT NULL CHECK (read_noise >= 0),
-    minimum_exposure_time     double precision      NOT NULL CHECK (minimum_exposure_time >= 0),
+    minimum_exposure_time     numeric(3,1)          NOT NULL CHECK (minimum_exposure_time >= 0),
     overhead                  smallint              NOT NULL CHECK (overhead >= 0)
 );
 
@@ -125,4 +125,27 @@ Central256	Det2kx2k	Central 256
 Central512	Det2kx2k	Central 512
 Central1k	Det2kx2k	Central 1K
 Central2k	Det2kx2k	Central 2K
+\.
+
+-- Name: e_gsaoi_odgw_size; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE e_gsaoi_odgw_size (
+    id                        identifier            PRIMARY KEY,
+    size                      smallint NOT NULL CHECK(size > 0)
+);
+
+ALTER TABLE e_gsaoi_odgw_size OWNER TO postgres;
+
+--
+-- Data for Name: e_gsaoi_odgw_size; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY e_gsaoi_odgw_size(id, size) FROM stdin;
+Size4	4
+Size6	6
+Size8	8
+Size16	16
+Size32	32
+Size64	64
 \.
