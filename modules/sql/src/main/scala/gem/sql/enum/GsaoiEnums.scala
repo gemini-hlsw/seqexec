@@ -42,8 +42,8 @@ object GsaoiEnums {
       },
 
       EnumDef.fromQuery("GsaoiOdgwSize", "Gsaoi ODGW Size") {
-        type E = Record.`'tag -> String, 'size -> Int`.T
-        sql"""SELECT id, id tag, size FROM e_gsaoi_odgw_size""".query[(String, E)]
+        type E = Record.`'tag -> String, 'pixels -> Int`.T
+        sql"""SELECT id, id tag, pixels FROM e_gsaoi_odgw_pixels""".query[(String, E)]
       }
     )
 

@@ -127,21 +127,21 @@ Central1k	Det2kx2k	Central 1K
 Central2k	Det2kx2k	Central 2K
 \.
 
--- Name: e_gsaoi_odgw_size; Type: TABLE; Schema: public; Owner: postgres
+-- Name: e_gsaoi_odgw_pixels; Type: TABLE; Schema: public; Owner: postgres
 --
 
-CREATE TABLE e_gsaoi_odgw_size (
+CREATE TABLE e_gsaoi_odgw_pixels (
     id                        identifier            PRIMARY KEY,
-    size                      smallint NOT NULL CHECK(size > 0)
+    pixels                    smallint NOT NULL CHECK(pixels > 0)
 );
 
-ALTER TABLE e_gsaoi_odgw_size OWNER TO postgres;
+ALTER TABLE e_gsaoi_odgw_pixels OWNER TO postgres;
 
 --
--- Data for Name: e_gsaoi_odgw_size; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: e_gsaoi_odgw_pixels; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY e_gsaoi_odgw_size(id, size) FROM stdin;
+COPY e_gsaoi_odgw_pixels(id, pixels) FROM stdin;
 Size4	4
 Size6	6
 Size8	8

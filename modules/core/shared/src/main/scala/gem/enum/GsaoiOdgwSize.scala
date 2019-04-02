@@ -14,7 +14,7 @@ import gem.util.Enumerated
  */
 sealed abstract class GsaoiOdgwSize(
   val tag: String,
-  val size: Int
+  val pixels: Int
 ) extends Product with Serializable
 
 object GsaoiOdgwSize {
