@@ -1,0 +1,54 @@
+// Copyright (c) 2016-2019 Association of Universities for Research in Astronomy, Inc. (AURA)
+// For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
+
+package gem
+package enum
+
+import cats.instances.string._
+import cats.syntax.eq._
+import gem.util.Enumerated
+import scala.concurrent.duration.FiniteDuration
+
+/**
+ * Enumerated type for GSAOI Read Mode.
+ * @group Enumerations (Generated)
+ */
+sealed abstract class GsaoiReadMode(
+  val tag: String,
+  val shortName: String,
+  val longName: String,
+  val ndr: Int,
+  val readNoise: Int,
+  val minimumExposureTime: FiniteDuration,
+  val overhead: FiniteDuration
+) extends Product with Serializable
+
+object GsaoiReadMode {
+
+  /** @group Constructors */ case object Bright extends GsaoiReadMode("Bright", "Bright", "Bright Objects", 2, 28, new FiniteDuration(5300, java.util.concurrent.TimeUnit.MILLISECONDS), new FiniteDuration(10000, java.util.concurrent.TimeUnit.MILLISECONDS))
+  /** @group Constructors */ case object Faint extends GsaoiReadMode("Faint", "Faint", "Faint Objects / Broad-band Imaging", 8, 13, new FiniteDuration(21500, java.util.concurrent.TimeUnit.MILLISECONDS), new FiniteDuration(26000, java.util.concurrent.TimeUnit.MILLISECONDS))
+  /** @group Constructors */ case object VeryFaint extends GsaoiReadMode("VeryFaint", "V. Faint", "Very Faint Objects / Narrow-band Imaging", 16, 10, new FiniteDuration(42500, java.util.concurrent.TimeUnit.MILLISECONDS), new FiniteDuration(48000, java.util.concurrent.TimeUnit.MILLISECONDS))
+
+  /** All members of GsaoiReadMode, in canonical order. */
+  val all: List[GsaoiReadMode] =
+    List(Bright, Faint, VeryFaint)
+
+  /** Select the member of GsaoiReadMode with the given tag, if any. */
+  def fromTag(s: String): Option[GsaoiReadMode] =
+    all.find(_.tag === s)
+
+  /** Select the member of GsaoiReadMode with the given tag, throwing if absent. */
+  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
+  def unsafeFromTag(s: String): GsaoiReadMode =
+    fromTag(s).getOrElse(throw new NoSuchElementException(s"GsaoiReadMode: Invalid tag: '$s'"))
+
+  /** @group Typeclass Instances */
+  implicit val GsaoiReadModeEnumerated: Enumerated[GsaoiReadMode] =
+    new Enumerated[GsaoiReadMode] {
+      def all = GsaoiReadMode.all
+      def tag(a: GsaoiReadMode) = a.tag
+      override def unsafeFromTag(s: String): GsaoiReadMode =
+        GsaoiReadMode.unsafeFromTag(s)
+    }
+
+}
