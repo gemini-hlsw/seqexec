@@ -3,21 +3,31 @@
 
 package gem.sql
 
+import java.math.RoundingMode.HALF_UP
+
 /** Minimal time classes to support reading from the enum
   * tables.
   */
 sealed trait FiniteDuration extends Product with Serializable {
-  def toMillis: Long
+    def toBigDecimal: BigDecimal
+
+  def toMillis: Long = {
+    val n = this match {
+      case FiniteDuration.Milliseconds(_) => 0
+      case FiniteDuration.Seconds(_)      => 3
+    }
+    toBigDecimal.underlying.scaleByPowerOfTen(n).setScale(0, HALF_UP).longValue
+  }
 
 }
 
 object FiniteDuration {
-  final case class Seconds(toMillis: Long) extends FiniteDuration
-  final case class Milliseconds(toMillis: Long) extends FiniteDuration
+  final case class Seconds(toBigDecimal: BigDecimal) extends FiniteDuration
+  final case class Milliseconds(toBigDecimal: BigDecimal) extends FiniteDuration
 
-  def fromSeconds(bd: Long): FiniteDuration.Seconds =
+  def fromSeconds(bd: BigDecimal): FiniteDuration.Seconds =
     Seconds(bd)
 
-  def fromMilliseconds(bd: Long): FiniteDuration.Milliseconds =
+  def fromMilliseconds(bd: BigDecimal): FiniteDuration.Milliseconds =
     Milliseconds(bd)
 }

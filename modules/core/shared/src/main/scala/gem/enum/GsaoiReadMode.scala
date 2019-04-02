@@ -25,9 +25,9 @@ sealed abstract class GsaoiReadMode(
 
 object GsaoiReadMode {
 
-  /** @group Constructors */ case object Bright extends GsaoiReadMode("Bright", "Bright", "Bright Objects", 2, 28, new FiniteDuration(5, java.util.concurrent.TimeUnit.SECONDS), new FiniteDuration(10, java.util.concurrent.TimeUnit.SECONDS))
-  /** @group Constructors */ case object Faint extends GsaoiReadMode("Faint", "Faint", "Faint Objects / Broad-band Imaging", 8, 13, new FiniteDuration(21, java.util.concurrent.TimeUnit.SECONDS), new FiniteDuration(26, java.util.concurrent.TimeUnit.SECONDS))
-  /** @group Constructors */ case object VeryFaint extends GsaoiReadMode("VeryFaint", "V. Faint", "Very Faint Objects / Narrow-band Imaging", 16, 10, new FiniteDuration(42, java.util.concurrent.TimeUnit.SECONDS), new FiniteDuration(48, java.util.concurrent.TimeUnit.SECONDS))
+  /** @group Constructors */ case object Bright extends GsaoiReadMode("Bright", "Bright", "Bright Objects", 2, 28, new FiniteDuration(5300, java.util.concurrent.TimeUnit.MILLISECONDS), new FiniteDuration(10000, java.util.concurrent.TimeUnit.MILLISECONDS))
+  /** @group Constructors */ case object Faint extends GsaoiReadMode("Faint", "Faint", "Faint Objects / Broad-band Imaging", 8, 13, new FiniteDuration(21500, java.util.concurrent.TimeUnit.MILLISECONDS), new FiniteDuration(26000, java.util.concurrent.TimeUnit.MILLISECONDS))
+  /** @group Constructors */ case object VeryFaint extends GsaoiReadMode("VeryFaint", "V. Faint", "Very Faint Objects / Narrow-band Imaging", 16, 10, new FiniteDuration(42500, java.util.concurrent.TimeUnit.MILLISECONDS), new FiniteDuration(48000, java.util.concurrent.TimeUnit.MILLISECONDS))
 
   /** All members of GsaoiReadMode, in canonical order. */
   val all: List[GsaoiReadMode] =

@@ -110,7 +110,7 @@ object EnumDef {
     implicit val caseWavelengthUm    = at[Wavelength.Um  ](a => s"""Wavelength.fromPicometers.unsafeGet(${a.toPicometers})""")
     implicit val caseMagnitudeSystem = at[MagnitudeSystem](a => s"MagnitudeSystem.${a.id}")
 
-    implicit val caseFiniteDurationSeconds      = at[FiniteDuration.Seconds     ](a => s"""new FiniteDuration(${a.toMillis}, java.util.concurrent.TimeUnit.SECONDS)""")
+    implicit val caseFiniteDurationSeconds      = at[FiniteDuration.Seconds     ](a => s"""new FiniteDuration(${a.toMillis}, java.util.concurrent.TimeUnit.MILLISECONDS)""")
     implicit val caseFiniteDurationMilliseconds = at[FiniteDuration.Milliseconds](a => s"""new FiniteDuration(${a.toMillis}, java.util.concurrent.TimeUnit.MILLISECONDS)""")
 
     implicit val caseOptionArcseconds = at[Option[Arcseconds]](a => a.fold("Option.empty[Angle]")(aʹ => s"Some(Angle.fromDoubleArcseconds(${aʹ.toArcsecs}))"))
