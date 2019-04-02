@@ -7,7 +7,7 @@ package enum
 import cats.instances.string._
 import cats.syntax.eq._
 import gem.util.Enumerated
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration._
 
 /**
  * Enumerated type for Flamingos2 read modes.
@@ -27,9 +27,9 @@ sealed abstract class F2ReadMode(
 
 object F2ReadMode {
 
-  /** @group Constructors */ case object Bright extends F2ReadMode("Bright", "bright", "Bright Object", "Strong Source", new FiniteDuration(1500, java.util.concurrent.TimeUnit.MILLISECONDS), new FiniteDuration(5000, java.util.concurrent.TimeUnit.MILLISECONDS), new FiniteDuration(8000, java.util.concurrent.TimeUnit.MILLISECONDS), 1, 11.7)
-  /** @group Constructors */ case object Medium extends F2ReadMode("Medium", "medium", "Medium Object", "Medium Source", new FiniteDuration(6000, java.util.concurrent.TimeUnit.MILLISECONDS), new FiniteDuration(21000, java.util.concurrent.TimeUnit.MILLISECONDS), new FiniteDuration(14000, java.util.concurrent.TimeUnit.MILLISECONDS), 4, 6.0)
-  /** @group Constructors */ case object Faint extends F2ReadMode("Faint", "faint", "Faint Object", "Weak Source", new FiniteDuration(12000, java.util.concurrent.TimeUnit.MILLISECONDS), new FiniteDuration(85000, java.util.concurrent.TimeUnit.MILLISECONDS), new FiniteDuration(20000, java.util.concurrent.TimeUnit.MILLISECONDS), 8, 5.0)
+  /** @group Constructors */ case object Bright extends F2ReadMode("Bright", "bright", "Bright Object", "Strong Source", 1500.millis, 5000.millis, 8000.millis, 1, 11.7)
+  /** @group Constructors */ case object Medium extends F2ReadMode("Medium", "medium", "Medium Object", "Medium Source", 6000.millis, 21000.millis, 14000.millis, 4, 6.0)
+  /** @group Constructors */ case object Faint extends F2ReadMode("Faint", "faint", "Faint Object", "Weak Source", 12000.millis, 85000.millis, 20000.millis, 8, 5.0)
 
   /** All members of F2ReadMode, in canonical order. */
   val all: List[F2ReadMode] =
