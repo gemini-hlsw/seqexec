@@ -4,12 +4,9 @@
 package gem
 
 import doobie._
-import java.time.{ Duration, ZoneId }
+import java.time.ZoneId
 
 package object sql {
-  implicit val DurationMeta: Meta[Duration] =
-    Meta[Long].timap(Duration.ofMillis)(_.toMillis)
-
   implicit val ZoneIdMeta: Meta[ZoneId] =
     Meta[String].timap(ZoneId.of)(_.toString)
 }

@@ -7,7 +7,7 @@ package enum
 import cats.instances.string._
 import cats.syntax.eq._
 import gem.util.Enumerated
-import java.time.Duration
+import scala.concurrent.duration.FiniteDuration
 
 /**
  * Enumerated type for Flamingos2 read modes.
@@ -18,18 +18,18 @@ sealed abstract class F2ReadMode(
   val shortName: String,
   val longName: String,
   val description: String,
-  val minimumExposureTime: Duration,
-  val recommendedExposureTime: Duration,
-  val readoutTime: Duration,
+  val minimumExposureTime: FiniteDuration,
+  val recommendedExposureTime: FiniteDuration,
+  val readoutTime: FiniteDuration,
   val readCount: Int,
   val readNoise: Double
 ) extends Product with Serializable
 
 object F2ReadMode {
 
-  /** @group Constructors */ case object Bright extends F2ReadMode("Bright", "bright", "Bright Object", "Strong Source", Duration.ofMillis(1500), Duration.ofMillis(5000), Duration.ofMillis(8000), 1, 11.7)
-  /** @group Constructors */ case object Medium extends F2ReadMode("Medium", "medium", "Medium Object", "Medium Source", Duration.ofMillis(6000), Duration.ofMillis(21000), Duration.ofMillis(14000), 4, 6.0)
-  /** @group Constructors */ case object Faint extends F2ReadMode("Faint", "faint", "Faint Object", "Weak Source", Duration.ofMillis(12000), Duration.ofMillis(85000), Duration.ofMillis(20000), 8, 5.0)
+  /** @group Constructors */ case object Bright extends F2ReadMode("Bright", "bright", "Bright Object", "Strong Source", new FiniteDuration(1500, java.util.concurrent.TimeUnit.MILLISECONDS), new FiniteDuration(5000, java.util.concurrent.TimeUnit.MILLISECONDS), new FiniteDuration(8000, java.util.concurrent.TimeUnit.MILLISECONDS), 1, 11.7)
+  /** @group Constructors */ case object Medium extends F2ReadMode("Medium", "medium", "Medium Object", "Medium Source", new FiniteDuration(6000, java.util.concurrent.TimeUnit.MILLISECONDS), new FiniteDuration(21000, java.util.concurrent.TimeUnit.MILLISECONDS), new FiniteDuration(14000, java.util.concurrent.TimeUnit.MILLISECONDS), 4, 6.0)
+  /** @group Constructors */ case object Faint extends F2ReadMode("Faint", "faint", "Faint Object", "Weak Source", new FiniteDuration(12000, java.util.concurrent.TimeUnit.MILLISECONDS), new FiniteDuration(85000, java.util.concurrent.TimeUnit.MILLISECONDS), new FiniteDuration(20000, java.util.concurrent.TimeUnit.MILLISECONDS), 8, 5.0)
 
   /** All members of F2ReadMode, in canonical order. */
   val all: List[F2ReadMode] =

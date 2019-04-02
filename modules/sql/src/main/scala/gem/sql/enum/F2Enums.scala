@@ -5,7 +5,7 @@ package gem.sql
 package enum
 
 import doobie._, doobie.implicits._
-import java.time.Duration
+import gem.sql.FiniteDuration
 import shapeless.record._
 
 object F2Enums {
@@ -34,7 +34,7 @@ object F2Enums {
       },
 
       EnumDef.fromQuery("F2ReadMode", "Flamingos2 read modes") {
-        type R = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'description -> String, 'minimumExposureTime -> Duration, 'recommendedExposureTime -> Duration, 'readoutTime -> Duration, 'readCount -> Int, 'readNoise -> Double`.T
+        type R = Record.`'tag -> String, 'shortName -> String, 'longName -> String, 'description -> String, 'minimumExposureTime -> FiniteDuration.Milliseconds, 'recommendedExposureTime -> FiniteDuration.Milliseconds, 'readoutTime -> FiniteDuration.Milliseconds, 'readCount -> Int, 'readNoise -> Double`.T
         sql"SELECT id, id tag, short_name, long_name, description, minimum_exposure_time, recommended_exposure_time, readout_time, read_count, read_noise FROM e_f2_read_mode".query[(String, R)]
       },
 
