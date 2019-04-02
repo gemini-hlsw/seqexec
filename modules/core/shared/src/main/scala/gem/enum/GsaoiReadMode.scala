@@ -7,7 +7,7 @@ package enum
 import cats.instances.string._
 import cats.syntax.eq._
 import gem.util.Enumerated
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration._
 
 /**
  * Enumerated type for GSAOI Read Mode.
@@ -25,9 +25,9 @@ sealed abstract class GsaoiReadMode(
 
 object GsaoiReadMode {
 
-  /** @group Constructors */ case object Bright extends GsaoiReadMode("Bright", "Bright", "Bright Objects", 2, 28, new FiniteDuration(5300, java.util.concurrent.TimeUnit.MILLISECONDS), new FiniteDuration(10000, java.util.concurrent.TimeUnit.MILLISECONDS))
-  /** @group Constructors */ case object Faint extends GsaoiReadMode("Faint", "Faint", "Faint Objects / Broad-band Imaging", 8, 13, new FiniteDuration(21500, java.util.concurrent.TimeUnit.MILLISECONDS), new FiniteDuration(26000, java.util.concurrent.TimeUnit.MILLISECONDS))
-  /** @group Constructors */ case object VeryFaint extends GsaoiReadMode("VeryFaint", "V. Faint", "Very Faint Objects / Narrow-band Imaging", 16, 10, new FiniteDuration(42500, java.util.concurrent.TimeUnit.MILLISECONDS), new FiniteDuration(48000, java.util.concurrent.TimeUnit.MILLISECONDS))
+  /** @group Constructors */ case object Bright extends GsaoiReadMode("Bright", "Bright", "Bright Objects", 2, 28, 5300.millis, 10000.millis)
+  /** @group Constructors */ case object Faint extends GsaoiReadMode("Faint", "Faint", "Faint Objects / Broad-band Imaging", 8, 13, 21500.millis, 26000.millis)
+  /** @group Constructors */ case object VeryFaint extends GsaoiReadMode("VeryFaint", "V. Faint", "Very Faint Objects / Narrow-band Imaging", 16, 10, 42500.millis, 48000.millis)
 
   /** All members of GsaoiReadMode, in canonical order. */
   val all: List[GsaoiReadMode] =

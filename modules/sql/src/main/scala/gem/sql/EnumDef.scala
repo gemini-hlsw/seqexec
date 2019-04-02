@@ -4,7 +4,7 @@
 package gem.sql
 
 import doobie._
-import java.time.{ Duration, ZoneId }
+import java.time.ZoneId
 import cats.data.NonEmptyList, cats.implicits._
 import shapeless._
 import shapeless.ops.hlist._
@@ -26,14 +26,13 @@ object EnumDef {
     implicit def caseBoolean[S] = at[(S, Boolean)] { _ => Option.empty[String] }
     implicit def caseDouble[S] = at[(S, Double)] { _ => Option.empty[String] }
     implicit def caseBigDecimal[S] = at[(S, BigDecimal)] { _ => Option.empty[String] }
-    implicit def caseDuration[S] = at[(S, Duration)] { _ =>  Some("java.time.Duration") }
     implicit def caseArcseconds[S] = at[(S, Arcseconds)] { _ =>  Some("gem.math.Angle") }
     implicit def caseDegrees[S] = at[(S, Degrees)] { _ =>  Some("gem.math.Angle") }
     implicit def caseZoneId[S] = at[(S, ZoneId)] { _ =>  Some("java.time.ZoneId") }
     implicit def caseWavelengthNm[S] = at[(S, Wavelength.Nm )] { _ =>  Some("gem.math.Wavelength") }
     implicit def caseWavelengthUm[S] = at[(S, Wavelength.Um )] { _ =>  Some("gem.math.Wavelength") }
-    implicit def caseFiniteDurationSeconds[S] = at[(S, FiniteDuration.Seconds )] { _ =>  Some("scala.concurrent.duration.FiniteDuration") }
-    implicit def caseFiniteDurationMilliseconds[S] = at[(S, FiniteDuration.Milliseconds )] { _ =>  Some("scala.concurrent.duration.FiniteDuration") }
+    implicit def caseFiniteDurationSeconds[S] = at[(S, FiniteDuration.Seconds )] { _ =>  Some("scala.concurrent.duration._") }
+    implicit def caseFiniteDurationMilliseconds[S] = at[(S, FiniteDuration.Milliseconds )] { _ =>  Some("scala.concurrent.duration._") }
     implicit def caseOptionArcseconds[S] = at[(S, Option[Arcseconds])] { _ =>  Some("gem.math.Angle") }
     implicit def caseOptionDegrees[S] = at[(S, Option[Degrees])] { _ =>  Some("gem.math.Angle") }
     implicit def caseOptionDouble[S] = at[(S, Option[Double])] { _ =>  Option.empty[String] }
@@ -60,7 +59,6 @@ object EnumDef {
     implicit def caseBoolean [S <: Symbol] = at[(S, Boolean) ] { case (s, _) => "  val " + s.name + ": Boolean" }
     implicit def caseDouble  [S <: Symbol] = at[(S, Double)  ] { case (s, _) => "  val " + s.name + ": Double" }
     implicit def caseBigDecimal  [S <: Symbol] = at[(S, BigDecimal)  ] { case (s, _) => "  val " + s.name + ": BigDecimal" }
-    implicit def caseDuration[S <: Symbol] = at[(S, Duration)] { case (s, _) => "  val " + s.name + ": Duration" }
     implicit def caseArcseconds [S <: Symbol] = at[(S, Arcseconds) ] { case (s, _) => "  val " + s.name + ": Angle"}
     implicit def caseDegrees [S <: Symbol] = at[(S, Degrees) ] { case (s, _) => "  val " + s.name + ": Angle"}
     implicit def caseZoneId  [S <: Symbol] = at[(S, ZoneId)  ] { case (s, _) => "  val " + s.name + ": ZoneId"}
@@ -100,7 +98,6 @@ object EnumDef {
     implicit val caseBoolean      = at[Boolean    ](a => a.toString)
     implicit val caseDouble       = at[Double     ](a => a.toString)
     implicit val caseBigDecimal   = at[BigDecimal ](a => a.toString)
-    implicit val caseDuration     = at[Duration   ](a => s"Duration.ofMillis(${a.toMillis})")
     implicit val caseArcseconds   = at[Arcseconds ](a => s"Angle.fromDoubleArcseconds(${a.toArcsecs})")
     implicit val caseDegrees      = at[Degrees    ](a => s"Angle.fromDoubleDegrees(${a.toDegrees})")
     implicit val caseZoneId       = at[ZoneId     ](a => s"""ZoneId.of("${a.toString}")""")
@@ -110,8 +107,8 @@ object EnumDef {
     implicit val caseWavelengthUm    = at[Wavelength.Um  ](a => s"""Wavelength.fromPicometers.unsafeGet(${a.toPicometers})""")
     implicit val caseMagnitudeSystem = at[MagnitudeSystem](a => s"MagnitudeSystem.${a.id}")
 
-    implicit val caseFiniteDurationSeconds      = at[FiniteDuration.Seconds     ](a => s"""new FiniteDuration(${a.toMillis}, java.util.concurrent.TimeUnit.MILLISECONDS)""")
-    implicit val caseFiniteDurationMilliseconds = at[FiniteDuration.Milliseconds](a => s"""new FiniteDuration(${a.toMillis}, java.util.concurrent.TimeUnit.MILLISECONDS)""")
+    implicit val caseFiniteDurationSeconds      = at[FiniteDuration.Seconds     ](a => s"""${a.toMillis}.millis""")
+    implicit val caseFiniteDurationMilliseconds = at[FiniteDuration.Milliseconds](a => s"""${a.toMillis}.millis""")
 
     implicit val caseOptionArcseconds = at[Option[Arcseconds]](a => a.fold("Option.empty[Angle]")(aʹ => s"Some(Angle.fromDoubleArcseconds(${aʹ.toArcsecs}))"))
     implicit val caseOptionDegrees    = at[Option[Degrees]   ](a => a.fold("Option.empty[Angle]")(aʹ => s"Some(Angle.fromDoubleDegrees(${aʹ.toDegrees}))"))

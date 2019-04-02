@@ -1,4 +1,4 @@
-
+		
 CREATE TYPE evt_type AS ENUM (
     'StartSequence',
     'EndSequence',
