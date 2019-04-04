@@ -115,21 +115,21 @@ object StepConfigTable {
       b.setState(s) >> SeqexecCircuit.dispatchCB(UpdateStepsConfigTableState(s))
 
     tb match {
-      case ColumnRenderArgs(ColumnMeta(c, name, label, _, _), _, width, true) =>
+      case ColumnRenderArgs(meta, _, width, true) =>
         Column(
           Column.propsNoFlex(
             width          = width,
-            dataKey        = name,
-            label          = label,
-            headerRenderer = resizableHeaderRenderer(b.state.resizeRowB(c, size, updateState)),
+            dataKey        = meta.name,
+            label          = meta.label,
+            headerRenderer = resizableHeaderRenderer(b.state.resizeRowB(meta.column, size, updateState)),
             className      = SeqexecStyles.paddedStepRow.htmlClass
           ))
-      case ColumnRenderArgs(ColumnMeta(_, name, label, _, _), _, width, false) =>
+      case ColumnRenderArgs(meta, _, width, false) =>
         Column(
           Column.propsNoFlex(
             width     = width,
-            dataKey   = name,
-            label     = label,
+            dataKey   = meta.name,
+            label     = meta.label,
             className = SeqexecStyles.paddedStepRow.htmlClass))
     }
   }

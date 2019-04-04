@@ -208,11 +208,11 @@ object SessionQueueTable {
       State.loggedIn
         .set(false)
         .andThen(State.columns.modify(_.map {
-          case c @ ColumnMeta(ObsNameColumn, _, _, _, _) =>
+          case c @ ColumnMeta(ObsNameColumn, _, _, _, _, _, _) =>
             c.copy(visible = false)
-          case c @ ColumnMeta(AddQueueColumn, _, _, _, _) =>
+          case c @ ColumnMeta(AddQueueColumn, _, _, _, _, _, _) =>
             c.copy(visible = false)
-          case c @ ColumnMeta(TargetNameColumn, _, _, _, _) =>
+          case c @ ColumnMeta(TargetNameColumn, _, _, _, _, _, _) =>
             c.copy(visible = false)
           case c =>
             c
@@ -664,29 +664,29 @@ object SessionQueueTable {
     }
 
     tb match {
-      case ColumnRenderArgs(ColumnMeta(c, name, label, _, _), _, width, true) =>
+      case ColumnRenderArgs(meta, _, width, true) =>
         Column(
           Column.propsNoFlex(
             width        = width,
-            dataKey      = name,
-            label        = label,
-            cellRenderer = renderer(c, b),
+            dataKey      = meta.name,
+            label        = meta.label,
+            cellRenderer = renderer(meta.column, b),
             headerRenderer = resizableHeaderRenderer(
-              b.state.tableState.resizeRow(c,
+              b.state.tableState.resizeRow(meta.column,
                                            size,
                                            b.state.visibleColsFor(_, _),
                                            updateScrollPosition)),
-            className = columnStyle(c).foldMap(_.htmlClass)
+            className = columnStyle(meta.column).foldMap(_.htmlClass)
           ))
 
-      case ColumnRenderArgs(ColumnMeta(c, name, label, _, _), _, width, false) =>
+      case ColumnRenderArgs(meta, _, width, false) =>
         Column(
           Column.propsNoFlex(width          = width,
-                             dataKey        = name,
-                             label          = label,
-                             headerRenderer = fixedHeaderRenderer(c),
-                             cellRenderer   = renderer(c, b),
-                             className      = columnStyle(c).foldMap(_.htmlClass)))
+                             dataKey        = meta.name,
+                             label          = meta.label,
+                             headerRenderer = fixedHeaderRenderer(meta.column),
+                             cellRenderer   = renderer(meta.column, b),
+                             className      = columnStyle(meta.column).foldMap(_.htmlClass)))
     }
   }
 

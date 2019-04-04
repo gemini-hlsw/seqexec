@@ -58,8 +58,6 @@ package object reusability {
     Reusability.byEq
   implicit val sCFocusReuse: Reusability[SequenceControlFocus] =
     Reusability.byEq
-  implicit val stfReuse: Reusability[StepsTableAndStatusFocus] =
-    Reusability.derive[StepsTableAndStatusFocus]
   implicit val tabSelReuse: Reusability[TabSelected] = Reusability.byRef
   implicit val sysnReuse: Reusability[SystemName]    = Reusability.byRef
   implicit val sectReuse: Reusability[SectionVisibilityState] =

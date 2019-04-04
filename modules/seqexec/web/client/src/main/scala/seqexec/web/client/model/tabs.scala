@@ -219,7 +219,6 @@ object InstrumentSequenceTab {
          x.sequence,
          x.stepConfig,
          x.selected,
-         x.tableState,
          x.tabOperations))
 
   implicit val completedSequence

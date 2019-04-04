@@ -278,31 +278,25 @@ object CalQueueTable {
       }
 
       tb match {
-        case ColumnRenderArgs(ColumnMeta(c, name, label, _, _),
-                              _,
-                              width,
-                              true) =>
+        case ColumnRenderArgs(meta, _, width, true) =>
           Column(
             Column.propsNoFlex(
               width        = width,
-              dataKey      = name,
-              label        = label,
-              cellRenderer = renderer(c),
+              dataKey      = meta.name,
+              label        = meta.label,
+              cellRenderer = renderer(meta.column),
               headerRenderer = resizableHeaderRenderer(
-                state.tableState.resizeRowB(c, size, updateState)),
+                state.tableState.resizeRowB(meta.column, size, updateState)),
               className = SeqexecStyles.queueTextColumn.htmlClass
             ))
-        case ColumnRenderArgs(ColumnMeta(c, name, label, _, _),
-                              _,
-                              width,
-                              false) =>
+        case ColumnRenderArgs(meta, _, width, false) =>
           Column(
             Column.propsNoFlex(width        = width,
-                               dataKey      = name,
-                               label        = label,
-                               cellRenderer = renderer(c),
+                               dataKey      = meta.name,
+                               label        = meta.label,
+                               cellRenderer = renderer(meta.column),
                                className =
-                                 if (c === InstrumentColumn)
+                                 if (meta.column === InstrumentColumn)
                                    SeqexecStyles.queueTextColumn.htmlClass
                                  else "")
           )

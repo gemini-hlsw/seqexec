@@ -11,6 +11,7 @@ import seqexec.model.enum.Instrument
 import seqexec.model.enum.FPUMode
 import seqexec.model.enum.Guiding
 import seqexec.model.Step
+import seqexec.model.StepState
 import seqexec.model.enumerations
 import seqexec.model.OffsetAxis
 import seqexec.model.TelescopeOffset
@@ -34,6 +35,11 @@ object StepItems {
     GpiObservingMode.all.map(x => x.shortName -> x.longName).toMap
 
   implicit class StepOps(val s: Step) extends AnyVal {
+    def canRunFrom: Boolean = s.status match {
+      case StepState.Pending | StepState.Failed(_) => true
+      case _                                       => false
+    }
+
     def fpuNameMapper(i: Instrument): String => Option[String] = i match {
       case Instrument.GmosS => enumerations.fpu.GmosSFPU.get
       case Instrument.GmosN => enumerations.fpu.GmosNFPU.get
@@ -139,6 +145,7 @@ object StepItems {
     def offsetQ =
       telescopeOffsetQO.getOption(s).getOrElse(TelescopeOffset.Q.Zero)
     def guiding = telescopeGuidingWithT.exist(_ === Guiding.Guide)(s)
+    def readMode = instrumentReadModeO.getOption(s)
 
     def offsetText(axis: OffsetAxis): String =
       offsetValueFormat(axis match {

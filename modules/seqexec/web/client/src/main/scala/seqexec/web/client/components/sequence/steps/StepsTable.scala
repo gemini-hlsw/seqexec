@@ -41,12 +41,14 @@ import seqexec.web.client.model.Formatting._
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.circuit.StepsTableAndStatusFocus
 import seqexec.web.client.circuit.StepsTableFocus
-import seqexec.web.client.actions.{ClearAllResouceOptions, UpdateSelectedStep, UpdateStepTableState}
+import seqexec.web.client.actions.ClearAllResouceOptions
+import seqexec.web.client.actions.UpdateSelectedStep
+import seqexec.web.client.actions.UpdateStepTableState
 import seqexec.web.client.actions.FlipBreakpointStep
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.components.TableContainer
 import seqexec.web.client.semanticui.elements.icon.Icon._
-import seqexec.web.client.semanticui.{Size => SSize}
+import seqexec.web.client.semanticui.{ Size => SSize }
 //import seqexec.web.client.reusability._
 import react.virtualized._
 import web.client.style._
@@ -65,6 +67,7 @@ trait Columns {
   val DisperserWidth: Double        = 100
   val DisperserMinWidth: Double     = 100 + SeqexecStyles.TableBorderWidth
   val ObservingModeWidth: Double    = 180
+  val ObservingModeMinWidth: Double = 100
   val FilterWidth: Double           = 180
   val FilterMinWidth: Double        = 100
   val FPUWidth: Double              = 100
@@ -74,13 +77,11 @@ trait Columns {
   val DeckerWidth: Double           = 110
   val DeckerMinWidth: Double        = 10
   val ImagingMirrorWidth: Double    = 180
-
   val ImagingMirrorMinWidth: Double = 10
   val ObjectTypeWidth: Double       = 75
   val SettingsWidth: Double         = 34
-  val ReadModeWidth: Double      = 230
-
-  private val MIDDLE_BUTTON = 1 // As defined by React.js
+  val ReadModeMinWidth: Double      = 180
+  val ReadModeWidth: Double         = 230
 
   sealed trait TableColumn extends Product with Serializable
   case object ControlColumn extends TableColumn
@@ -94,6 +95,7 @@ trait Columns {
   case object FPUColumn extends TableColumn
   case object CameraColumn extends TableColumn
   case object DeckerColumn extends TableColumn
+  case object ReadModeColumn extends TableColumn
   case object ImagingMirrorColumn extends TableColumn
   case object ObjectTypeColumn extends TableColumn
   case object SettingsColumn extends TableColumn
@@ -110,6 +112,7 @@ trait Columns {
     FPUColumn -> FPUWidth,
     CameraColumn -> CameraWidth,
     DeckerColumn -> DeckerWidth,
+    ReadModeColumn -> ReadModeWidth,
     ImagingMirrorColumn -> ImagingMirrorWidth,
     ObjectTypeColumn -> ObjectTypeWidth,
     SettingsColumn -> SettingsWidth,
@@ -140,7 +143,8 @@ trait Columns {
     name    = "state",
     label   = "Execution Progress",
     visible = true,
-    VariableColumnWidth.unsafeFromDouble(0.1, StateWidth))
+    VariableColumnWidth.unsafeFromDouble(0.1, StateWidth),
+    grow = 20)
 
   val OffsetMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     OffsetColumn,
@@ -198,6 +202,13 @@ trait Columns {
     visible = true,
     VariableColumnWidth.unsafeFromDouble(0.1, DeckerWidth))
 
+  val ReadModeMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
+    ReadModeColumn,
+    name    = "camera",
+    label   = "ReadMode",
+    visible = true,
+    VariableColumnWidth.unsafeFromDouble(0.1, ReadModeWidth))
+
   val ImagingMirrorMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     ImagingMirrorColumn,
     name    = "camera",
@@ -232,6 +243,7 @@ trait Columns {
       FPUMeta,
       CameraMeta,
       DeckerMeta,
+      ReadModeMeta,
       ImagingMirrorMeta,
       ObjectTypeMeta,
       SettingsMeta
@@ -245,6 +257,8 @@ trait Columns {
 object StepsTable extends Columns {
   type Backend      = RenderScope[Props, State, Unit]
   type ReceiveProps = ComponentWillReceiveProps[Props, State, Unit]
+
+  private val MIDDLE_BUTTON = 1 // As defined by React.js
 
   val HeightWithOffsets: Int    = 40
   val BreakpointLineHeight: Int = 5
@@ -299,12 +313,13 @@ object StepsTable extends Columns {
     val canSetBreakpoint: Boolean = canOperate && !isPreview
     val showObservingMode: Boolean = showProp(
       InstrumentProperties.ObservingMode)
-    val showReadMode: Boolean      = showProp(InstrumentProperties.ReadMode)
+    val showReadMode: Boolean = showProp(InstrumentProperties.ReadMode)
 
-    val sequenceState: Option[SequenceState]        = steps.map(_.state)
+    val sequenceState: Option[SequenceState] = steps.map(_.state)
 
     def stepSelectionAllowed(sid: StepId): Boolean =
-      canControlSubsystems(sid) && !tabOperations.resourceInFlight && !sequenceState.exists(_.isRunning)
+      canControlSubsystems(sid) && !tabOperations.resourceInFlight && !sequenceState
+        .exists(_.isRunning)
 
     def rowGetter(idx: Int): StepRow =
       steps.flatMap(_.steps.lift(idx)).fold(StepRow.Zero)(StepRow.apply)
@@ -376,6 +391,10 @@ object StepsTable extends Columns {
 
     val imagingMirrorMaxWidth: Option[Double] = longestValueWidth(_.deckerName)
 
+    val obsModeMaxWidth: Option[Double] = longestValueWidth(_.observingMode)
+
+    val readModeMaxWidth: Option[Double] = longestValueWidth(_.readMode)
+
     val shownForInstrument: List[ColumnMeta[TableColumn]] =
       all.filter {
         case DisperserMeta     => showDisperser
@@ -387,6 +406,7 @@ object StepsTable extends Columns {
         case CameraMeta        => showCamera
         case DeckerMeta        => showDecker
         case ImagingMirrorMeta => showImagingMirror
+        case ReadModeMeta      => showReadMode
         case _                 => true
       }
 
@@ -411,11 +431,12 @@ object StepsTable extends Columns {
 
     def columnWidths(size: Size, p: Props): TableColumn => Option[Double] =
       // println(s"Mod ${tableState.isModified}")
-      if (tableState.isModified) {
-        _ =>
-          none
+      if (tableState.isModified) { _ =>
+        none
       } else if (size.width > 0) { col =>
         col match {
+          case ExecutionColumn =>
+            200.0.some
           case ExposureColumn =>
             p.exposureMaxWidth.map(max(_, ExposureMinWidth))
           case FPUColumn    => p.fpuMaxWidth.map(max(_, FPUMinWidth))
@@ -430,6 +451,10 @@ object StepsTable extends Columns {
             p.deckerMaxWidth.map(max(_, DeckerMinWidth))
           case ImagingMirrorColumn =>
             p.imagingMirrorMaxWidth.map(max(_, ImagingMirrorMinWidth))
+          case ObservingModeColumn =>
+            p.obsModeMaxWidth.map(max(_, ObservingModeMinWidth))
+          case ReadModeColumn =>
+            p.obsModeMaxWidth.map(max(_, ReadModeMinWidth))
           case _ => none
         }
       } else { _ =>
@@ -584,7 +609,7 @@ object StepsTable extends Columns {
 
   def readModeRenderer: CellRenderer[js.Object, js.Object, StepRow] =
     (_, _, _, row: StepRow, _) =>
-      ReadModeCell(ReadModeCell.Props(row.step))
+      StepItemCell(StepItemCell.Props(row.step.readMode.map(_.sentenceCase)))
 
   private def stepRowStyle(step: Step): GStyle = step match {
     case s if s.hasError                       => SeqexecStyles.rowError
@@ -670,7 +695,8 @@ object StepsTable extends Columns {
       case ControlColumn                => SeqexecStyles.controlCellRow.some
       case StepColumn | ExecutionColumn => SeqexecStyles.paddedStepRow.some
       case ObservingModeColumn | ExposureColumn | DisperserColumn |
-          FilterColumn | FPUColumn | CameraColumn | ObjectTypeColumn =>
+          FilterColumn | FPUColumn | CameraColumn | ObjectTypeColumn |
+          DeckerColumn | ReadModeColumn | ImagingMirrorColumn =>
         SeqexecStyles.centeredCell.some
       case SettingsColumn => SeqexecStyles.settingsCellRow.some
       case _              => none
@@ -730,6 +756,12 @@ object StepsTable extends Columns {
       case ObjectTypeColumn => stepObjectTypeRenderer(SSize.Small).some
       case SettingsColumn =>
         b.props.steps.map(p => settingsControlRenderer(b.props, p))
+      case ReadModeColumn =>
+        readModeRenderer.some
+      case DeckerColumn =>
+        deckerRenderer.some
+      case ImagingMirrorColumn =>
+        imagingMirrorRenderer.some
       case _ => none
     }
     optR.getOrElse(defaultCellRendererS)
@@ -747,38 +779,43 @@ object StepsTable extends Columns {
         .getOrEmpty).when(size.width > 0) *> Callback.empty
 
     tb match {
-      case ColumnRenderArgs(ColumnMeta(c, name, label, _, _), _, width, true) =>
+      case ColumnRenderArgs(meta, _, width, true) =>
         // println(c)
         // println(width)
         Column(
           Column.propsNoFlex(
             width   = width,
-            dataKey = name,
-            label   = label,
-            headerRenderer = resizableHeaderRenderer(b.state.tableState
-              .resizeRow(c, size, b.props.visibleColumns, updateState)),
-            headerClassName = headerClassName(c).foldMap(_.htmlClass),
-            cellRenderer    = columnCellRenderer(b, c),
-            className       = columnClassName(c).foldMap(_.htmlClass)
+            dataKey = meta.name,
+            label   = meta.label,
+            headerRenderer = resizableHeaderRenderer(
+              b.state.tableState
+                .resizeRow(meta.column,
+                           size,
+                           b.props.visibleColumns,
+                           updateState)),
+            headerClassName = headerClassName(meta.column).foldMap(_.htmlClass),
+            cellRenderer    = columnCellRenderer(b, meta.column),
+            className       = columnClassName(meta.column).foldMap(_.htmlClass)
           ))
-      case ColumnRenderArgs(ColumnMeta(c, name, lab, _, _), _, width, false) =>
+      case ColumnRenderArgs(meta, _, width, false) =>
         Column(
           Column.propsNoFlex(
             width           = width,
-            dataKey         = name,
-            label           = lab,
-            headerRenderer  = fixedHeaderRenderer(c),
-            headerClassName = headerClassName(c).foldMap(_.htmlClass),
-            cellRenderer    = columnCellRenderer(b, c),
-            className       = columnClassName(c).foldMap(_.htmlClass)
+            dataKey         = meta.name,
+            label           = meta.label,
+            headerRenderer  = fixedHeaderRenderer(meta.column),
+            headerClassName = headerClassName(meta.column).foldMap(_.htmlClass),
+            cellRenderer    = columnCellRenderer(b, meta.column),
+            className       = columnClassName(meta.column).foldMap(_.htmlClass)
           ))
     }
   }
 
   def updateScrollPosition(b: Backend, pos: JsNumber): Callback = {
-    val s = (State.userModified.set(IsModified) >>>
-      State.scrollPosition.set(pos))
-    b.modState(s) *>
+    val s = State.userModified.set(IsModified) *>
+      State.scrollPosition.set(pos)
+    Callback.log(s"Scroll position $pos") *>
+      b.modState(s) *>
       b.props.obsId
         .map(id =>
           SeqexecCircuit.dispatchCB(
@@ -806,8 +843,8 @@ object StepsTable extends Columns {
     b.props.obsId.map { id =>
       (SeqexecCircuit
         .dispatchCB(UpdateSelectedStep(id, i)) *>
-       SeqexecCircuit
-        .dispatchCB(ClearAllResouceOptions(id)) *>
+        SeqexecCircuit
+          .dispatchCB(ClearAllResouceOptions(id)) *>
         b.modState(State.selected.set(Some(i))) *>
         recomputeRowHeightsCB(min(b.state.selected.getOrElse(i), i)))
         .when(b.props.stepSelectionAllowed(i)) *>
@@ -842,20 +879,24 @@ object StepsTable extends Columns {
     )
 
   // We want clicks to be processed only if the click is not on the first row with the breakpoint/skip controls
-  private def allowedClick(p: Props, index: Int, onRowClick: Option[OnRowClick])(
-    e:                            ReactMouseEvent): Callback =
-      // If alt is pressed or middle button flip the breakpoint
-      if (e.altKey || e.button === MIDDLE_BUTTON) {
-        Callback.when(p.canSetBreakpoint)(
-          (p.obsId, p.stepsList.find(_.id === index + 1)).mapN((oid, step) =>
-            SeqexecCircuit.dispatchCB(FlipBreakpointStep(oid, step))).getOrEmpty
-        )
-      } else {
-        onRowClick
-          .filter(_ => e.clientX > ControlWidth)
-          .map(h => h(index))
+  private def allowedClick(
+    p:          Props,
+    index:      Int,
+    onRowClick: Option[OnRowClick])(e: ReactMouseEvent): Callback =
+    // If alt is pressed or middle button flip the breakpoint
+    if (e.altKey || e.button === MIDDLE_BUTTON) {
+      Callback.when(p.canSetBreakpoint)(
+        (p.obsId, p.stepsList.find(_.id === index + 1))
+          .mapN((oid, step) =>
+            SeqexecCircuit.dispatchCB(FlipBreakpointStep(oid, step)))
           .getOrEmpty
-        }
+      )
+    } else {
+      onRowClick
+        .filter(_ => e.clientX > ControlWidth)
+        .map(h => h(index))
+        .getOrEmpty
+    }
 
   private def stopsRowRenderer(p: Props) =
     (className:        String,
@@ -925,7 +966,9 @@ object StepsTable extends Columns {
       case (Some(obsId), Some(RunningStep(i, _)), Some(RunningStep(j, _)))
           if i =!= j =>
         updateStep(b, next, obsId, j)
-      case (Some(obsId), _, Some(RunningStep(j, _))) if cur.sequenceState =!= next.sequenceState && next.sequenceState.exists(_.isRunning) =>
+      case (Some(obsId), _, Some(RunningStep(j, _)))
+          if cur.sequenceState =!= next.sequenceState && next.sequenceState
+            .exists(_.isRunning) =>
         // When we start running select the running step
         updateStep(b, next, obsId, j)
       case _ =>
@@ -943,8 +986,8 @@ object StepsTable extends Columns {
     // The selected step may have changed externally
     val selectedStepChange: Callback =
       (cur.selectedStep, next.selectedStep).mapN { (c, n) =>
-          b.modState(State.selected.set(n.some)).when(c =!= n) *> Callback.empty
-        }.getOrEmpty
+        b.modState(State.selected.set(n.some)).when(c =!= n) *> Callback.empty
+      }.getOrEmpty
 
     // If the step is running recalculate height
     val running: Option[StepId] =

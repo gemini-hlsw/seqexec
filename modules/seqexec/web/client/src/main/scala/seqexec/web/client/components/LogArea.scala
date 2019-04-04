@@ -211,30 +211,30 @@ object LogArea {
 
   def colBuilder(b: Backend, size: Size)(r: ColumnRenderArgs[TableColumn]): Table.ColumnArg =
     r match {
-      case ColumnRenderArgs(ColumnMeta(ClipboardColumn, name, _, _, _), _, _, _) =>
+      case ColumnRenderArgs(meta, _, _, _) if meta.column === ClipboardColumn =>
         Column(
           Column.propsNoFlex(
             width           = ClipboardWidth,
-            dataKey         = name,
+            dataKey         = meta.name,
             headerRenderer  = clipboardHeaderRenderer,
             cellRenderer    = clipboardCellRenderer(b.props.site),
             className       = SeqexecStyles.clipboardIconDiv.htmlClass,
             headerClassName = SeqexecStyles.clipboardIconHeader.htmlClass
           ))
-      case ColumnRenderArgs(ColumnMeta(MsgColumn, name, label, _, _), _, width, _) =>
+      case ColumnRenderArgs(meta, _, width, _) if meta.column === MsgColumn =>
         Column(
           Column.propsNoFlex(width     = width,
-                             dataKey   = name,
-                             label     = label,
+                             dataKey   = meta.name,
+                             label     = meta.label,
                              className = LogColumnStyle))
-      case ColumnRenderArgs(ColumnMeta(c, name, label, _, _), _, width, _) =>
+      case ColumnRenderArgs(meta, _, width, _) =>
         Column(
           Column.propsNoFlex(
             width   = width,
-            dataKey = name,
-            label   = label,
+            dataKey = meta.name,
+            label   = meta.label,
             headerRenderer = resizableHeaderRenderer(b.state.tableState
-              .resizeRowB(c, size, x => b.runState(updateTableState(x)))),
+              .resizeRowB(meta.column, size, x => b.runState(updateTableState(x)))),
             className = LogColumnStyle
           ))
     }

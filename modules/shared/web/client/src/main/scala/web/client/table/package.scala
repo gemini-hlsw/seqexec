@@ -3,7 +3,6 @@
 
 package web.client
 
-import cats.Eq
 import cats.Monoid
 import cats.data.NonEmptyList
 import cats.implicits._
@@ -13,7 +12,6 @@ import japgolly.scalajs.react.Callback
 import japgolly.scalajs.react.React
 import japgolly.scalajs.react.extra.Reusability
 import japgolly.scalajs.react.extra._
-import monocle.macros.Lenses
 import org.scalajs.dom.MouseEvent
 import scala.scalajs.js
 import js.JSConverters._
@@ -24,34 +22,6 @@ import react.common.syntax._
 import react.sortable._
 import react.draggable._
 import web.client.utils._
-
-package table {
-
-  final case class ColumnRenderArgs[A](meta:      ColumnMeta[A],
-                                       index:     Int,
-                                       width:     JsNumber,
-                                       resizable: Boolean)
-
-  /**
-    * Metadata for a column
-    */
-  @Lenses
-  final case class ColumnMeta[A](column:  A,
-                                 name:    String,
-                                 label:   String,
-                                 visible: Boolean,
-                                 width:   ColumnWidth)
-
-  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
-  object ColumnMeta {
-    implicit def eqCm[A: Eq]: Eq[ColumnMeta[A]] =
-      Eq.by(x => (x.column, x.name, x.label, x.visible, x.width))
-
-    implicit def reuse[A: Reusability]: Reusability[ColumnMeta[A]] =
-      Reusability.derive[ColumnMeta[A]]
-  }
-
-}
 
 package object table {
   val DragHandleWidth: Int = 12

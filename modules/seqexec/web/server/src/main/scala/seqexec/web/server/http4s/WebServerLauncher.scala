@@ -191,7 +191,8 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
   )(conf: WebServerConfiguration): Resource[IO, Server[IO]] = {
     val router = Router[IO](
       "/api/seqexec/guide" -> new GuideConfigDbRoutes(gcdb).service,
-      "/" -> new RedirectToHttpsRoutes(443, conf.externalBaseUrl).service
+      "/smartgcal"         -> new SmartGcalRoutes(conf.smartGCalHost, conf.smartGCalLocation).service,
+      "/"                  -> new RedirectToHttpsRoutes(443, conf.externalBaseUrl).service
     )
 
     BlazeServerBuilder[IO]
