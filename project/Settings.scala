@@ -141,7 +141,7 @@ object Settings {
     val gmpCmdClientBridge      = "0.6.2"
     val guava                   = "25.0-jre"
     val prometheusClient        = "0.6.0"
-    val geminiLocales           = "0.1.0-2018f"
+    val geminiLocales           = "0.1.0-2019a"
   }
 
   /**
