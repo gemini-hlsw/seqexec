@@ -3,7 +3,6 @@
 
 package seqexec.server
 
-import java.nio.file.Paths
 import java.time.LocalDate
 import java.util.concurrent.TimeUnit
 
@@ -15,6 +14,7 @@ import monocle.Monocle._
 import monocle.Optional
 import edu.gemini.seqexec.odb.SeqFailure
 import edu.gemini.epics.acm.CaService
+import edu.gemini.spModel.core.Peer
 import gem.Observation
 import gem.enum.Site
 import giapi.client.ghost.GhostClient
@@ -39,8 +39,6 @@ import seqexec.server.niri.{NiriControllerEpics, NiriControllerSim, NiriEpics}
 import seqexec.server.nifs.{NifsControllerEpics, NifsControllerSim, NifsEpics}
 import seqexec.server.gws.GwsEpics
 import seqexec.server.tcs.{GuideConfigDb, TcsControllerEpics, TcsControllerSim, TcsEpics}
-import edu.gemini.seqexec.odb.SmartGcal
-import edu.gemini.spModel.core.Peer
 import fs2.{Pure, Stream}
 import org.http4s.client.Client
 import org.http4s.Uri
@@ -734,12 +732,6 @@ object SeqexecEngine extends SeqexecConfiguration {
       case Array(k, v) => k.trim -> v.trim
     }.toMap
 
-  private def initSmartGCal(smartGCalHost: String, smartGCalLocation: String): IO[edu.gemini.seqexec.odb.TrySeq[Unit]] = {
-    // SmartGCal always talks to GS
-    val peer = new Peer(smartGCalHost, 8443, edu.gemini.spModel.core.Site.GS)
-    IO.apply(Paths.get(smartGCalLocation)).map { p => SmartGcal.initialize(peer, p) }
-  }
-
   // scalastyle:off
   def seqexecConfiguration(
     implicit cs: ContextShift[IO]
@@ -771,9 +763,6 @@ object SeqexecEngine extends SeqexecConfiguration {
     val tops                    = decodeTops(cfg.require[String]("seqexec-engine.tops"))
     val caAddrList              = cfg.lookup[String]("seqexec-engine.epics_ca_addr_list")
     val ioTimeout               = cfg.require[Duration]("seqexec-engine.ioTimeout")
-    val smartGCalHost           = cfg.require[String]("seqexec-engine.smartGCalHost")
-    val smartGCalDir            = cfg.require[String]("seqexec-engine.smartGCalDir")
-    val smartGcalEnable         = cfg.lookup[Boolean]("seqexec-engine.smartGCalEnable").getOrElse(true)
 
     // TODO: Review initialization of EPICS systems
     @SuppressWarnings(Array("org.wartremover.warts.Throw"))
@@ -817,8 +806,6 @@ object SeqexecEngine extends SeqexecConfiguration {
     val epicsInit: IO[List[Unit]] = caInit *> epicsSystems.filter(_._1.connect)
       .map(x => initEpicsSystem(x._2, tops)).parSequence
 
-    val smartGcal = smartGcalEnable.fold(initSmartGCal(smartGCalHost, smartGCalDir), IO.unit)
-
     def settings: IO[Settings] =
         IO(LocalDate.now).map { now =>
           Settings(site,
@@ -848,9 +835,7 @@ object SeqexecEngine extends SeqexecConfiguration {
                    ghostGDS)
                  }
 
-    smartGcal *>
-      epicsInit *>
-      settings
+    epicsInit *> settings
 
   }
 
