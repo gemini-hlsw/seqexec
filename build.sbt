@@ -705,6 +705,10 @@ lazy val app_seqexec_server = preventPublication(project.in(file("app/seqexec-se
     mappings in Universal += {
       val jar = (packageBin in Compile).value
       jar -> ("lib/" + jar.getName)
+    },
+    mappings in Universal += {
+      val f = (resourceDirectory in Compile).value / "update_smartgcal"
+      f -> ("bin/" + f.getName)
     }
   )
 

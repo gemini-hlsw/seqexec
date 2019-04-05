@@ -49,13 +49,15 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
 
   /** Configuration for the web server */
   final case class WebServerConfiguration(
-    site:            String,
-    host:            String,
-    port:            Int,
-    insecurePort:    Int,
-    externalBaseUrl: String,
-    devMode:         Boolean,
-    sslConfig:       Option[SSLConfig]
+    site:              String,
+    host:              String,
+    port:              Int,
+    insecurePort:      Int,
+    externalBaseUrl:   String,
+    devMode:           Boolean,
+    sslConfig:         Option[SSLConfig],
+    smartGCalHost:     String,
+    smartGCalLocation: String
   )
 
   // Attempt to get the configuration file relative to the base dir
@@ -88,6 +90,8 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
       val keystorePwd     = cfg.lookup[String]("web-server.tls.keyStorePwd")
       val certPwd         = cfg.lookup[String]("web-server.tls.certPwd")
       val sslConfig       = (keystore, keystorePwd, certPwd).mapN(SSLConfig.apply)
+      val smartGCalHost   = cfg.require[String]("seqexec-engine.smartGCalHost")
+      val smartGCalDir    = cfg.require[String]("seqexec-engine.smartGCalDir")
 
       WebServerConfiguration(
         site,
@@ -96,7 +100,9 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
         insecurePort,
         externalBaseUrl,
         devMode.equalsIgnoreCase("dev"),
-        sslConfig
+        sslConfig,
+        smartGCalHost,
+        smartGCalDir
       )
 
     }
@@ -168,7 +174,8 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
       "/"                     -> new StaticRoutes(conf.devMode, OcsBuildInfo.builtAtMillis, bec).service,
       "/api/seqexec/commands" -> new SeqexecCommandRoutes(as, inputs, se).service,
       "/api"                  -> new SeqexecUIApiRoutes(conf.site, conf.devMode, as, outputs).service,
-      "/api/seqexec/guide"    -> new GuideConfigDbRoutes(gcdb).service
+      "/api/seqexec/guide"    -> new GuideConfigDbRoutes(gcdb).service,
+      "/smartgcal"            -> new SmartGcalRoutes(conf.smartGCalHost, conf.smartGCalLocation).service
     )
 
     val loggedRoutes = Logger.httpRoutes(logHeaders = false, logBody = false)(router)
