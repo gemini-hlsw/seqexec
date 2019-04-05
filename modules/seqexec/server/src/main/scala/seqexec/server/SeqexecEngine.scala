@@ -25,7 +25,7 @@ import seqexec.engine.{Step => _, _}
 import seqexec.engine.Handle
 import seqexec.model._
 import seqexec.model.enum._
-import seqexec.model.events._
+import seqexec.model.events.{SequenceStart => ClientSequenceStart, _}
 import seqexec.model.{ActionType, StepId, UserDetails}
 import seqexec.server.keywords._
 import seqexec.server.flamingos2.{Flamingos2ControllerEpics, Flamingos2ControllerSim, Flamingos2ControllerSimBad, Flamingos2Epics}
@@ -127,6 +127,14 @@ class SeqexecEngine(httpClient: Client[IO], gpi: GpiClient[IO], ghost: GhostClie
 
   def start(q: EventQueue, id: Observation.Id, user: UserDetails, clientId: ClientId): IO[Either[SeqexecFailure, Unit]] =
     q.enqueue1(Event.start[executeEngine.ConcreteTypes](id, user, clientId, checkResources(id))).map(_.asRight)
+
+  def startFrom(q: EventQueue, id: Observation.Id, stp: StepId, clientId: ClientId): IO[Either[SeqexecFailure, Unit]] =
+    q.enqueue1(Event.modifyState[executeEngine.ConcreteTypes](
+      executeEngine.get.flatMap(st => checkResources(id)(st).fold(
+        executeEngine.startFrom(id, stp).as(SequenceStart),
+        executeEngine.unit.as(Busy(id, clientId))
+      ) )
+    ) ).map(_.asRight)
 
   def requestPause(q: EventQueue, id: Observation.Id, user: UserDetails): IO[Either[SeqexecFailure, Unit]] =
     q.enqueue1(Event.pause(id, user)).map(_.asRight)
@@ -873,6 +881,9 @@ object SeqexecEngine extends SeqexecConfiguration {
     case StartQueue(qid, _)                 => QueueUpdated(QueueManipulationOp.Started(qid), svs)
     case StopQueue(qid, _)                  => QueueUpdated(QueueManipulationOp.Stopped(qid), svs)
     case StartSysConfig(sid, stepId, res)   => SingleActionEvent(SingleActionOp.Started(sid, stepId, res))
+    case SequenceStart                      => ClientSequenceStart(svs)
+    case Busy(id, cid)                      => UserNotification(ResourceConflict(id), cid)
+
   }
 
   private def executionQueueViews(st: EngineState): SortedMap[QueueId, ExecutionQueueView] = {
@@ -927,7 +938,7 @@ object SeqexecEngine extends SeqexecConfiguration {
 
     ev match {
       case engine.UserCommandResponse(ue, _, uev) => ue match {
-        case engine.Start(_, _, _, _)      => SequenceStart(svs)
+        case engine.Start(_, _, _, _)      => ClientSequenceStart(svs)
         case engine.Pause(_, _)            => SequencePauseRequested(svs)
         case engine.CancelPause(id, _)     => SequencePauseCanceled(id, svs)
         case engine.Breakpoint(_, _, _, _) => StepBreakpointChanged(svs)

@@ -49,6 +49,22 @@ class Engine[D, U](stateL: Engine.State[D]) {
       case None      => unit
     }
 
+  /*
+   * startFrom starts a sequence from an arbitrary step. It does it by marking all previous steps to be skipped and then
+   * modifying the state sequence as if it was run.
+   * If the requested step is already run or marked to be skipped, the sequence will start from the next runnable step
+   */
+  def startFrom(id: Observation.Id, step: StepId): HandleType[Unit] =
+    getS(id).flatMap {
+      case Some(seq) if (seq.status.isIdle || seq.status.isError) && seq.toSequence.steps.exists(_.id === step) =>
+        val steps = seq.toSequence.steps.takeWhile(_.id =!= step).mapFilter(p => Step.status(p).canRunFrom.option(p.id))
+        val withSkips = steps.foldLeft[Sequence.State[IO]](seq){ case (s, i) => s.setSkipMark(i, true) }
+        putS(id)(
+          Sequence.State.status.set(SequenceState.Running.init)(withSkips.skips.getOrElse(withSkips).rollback)
+        ) *> send(Event.executing(id))
+      case _ => unit
+    }
+
   def pause(id: Observation.Id): HandleType[Unit] = modifyS(id)(Sequence.State.userStopSet(true))
 
   private def cancelPause(id: Observation.Id): HandleType[Unit] = modifyS(id)(Sequence.State.userStopSet(false))

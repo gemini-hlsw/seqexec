@@ -6,12 +6,11 @@ package seqexec.server
 import cats.effect.IO
 import cats.implicits._
 import fs2.concurrent.Queue
-
 import org.scalatest.Inside.inside
 import org.scalatest.{FlatSpec, Matchers, NonImplicitAssertions}
 import seqexec.server.TestCommon._
 import seqexec.engine._
-import seqexec.model.{Conditions, Observer, Operator, SequenceState, UserDetails}
+import seqexec.model.{Conditions, Observer, Operator, SequenceState, StepState, UserDetails}
 import seqexec.model.enum._
 import seqexec.model.enum.Resource.TCS
 import monocle.Monocle._
@@ -311,6 +310,48 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
         case Some(s) => assertResult(Some(Action.Started))(
           s.seqGen.configActionCoord(1, Instrument.F2).map(s.seq.getSingleState)
         )
+      }
+    }).unsafeRunSync
+  }
+
+  "SeqexecEngine startFrom" should "start a sequence from an arbitrary step" in {
+    val s0 = ODBSequencesLoader.loadSequenceEndo(seqObsId1, sequenceNSteps(seqObsId1, 5))(EngineState.default)
+    val runStepId = 3
+
+    (for {
+      q  <- Queue.bounded[IO, executeEngine.EventType](10)
+      _  <- seqexecEngine.startFrom(q, seqObsId1, runStepId, clientId)
+      sf <- seqexecEngine.stream(q.dequeue)(s0).map(_._2)
+        .takeThrough(_.sequences.values.exists(_.seq.status.isRunning))
+        .compile.last
+    } yield {
+      inside(sf.flatMap(EngineState.sequenceStateIndex(seqObsId1).getOption).map(_.toSequence.steps)) {
+        case Some(steps) => assertResult(Some(StepState.Skipped))( steps.get(0).map(Step.status))
+                            assertResult(Some(StepState.Skipped))( steps.get(1).map(Step.status))
+                            assertResult(Some(StepState.Completed))( steps.get(2).map(Step.status))
+      }
+    }).unsafeRunSync
+  }
+
+  "SeqexecEngine startFrom" should "not start the sequence if there is a resource conflict" in {
+    val s0 = (ODBSequencesLoader.loadSequenceEndo(seqObsId1, sequenceWithResources(seqObsId1,
+      Instrument.F2, Set(Instrument.F2, TCS))) >>>
+      ODBSequencesLoader.loadSequenceEndo(seqObsId2, sequenceWithResources(seqObsId2,
+        Instrument.F2, Set(Instrument.F2))) >>>
+      (EngineState.sequenceStateIndex(seqObsId1) ^|-> Sequence.State.status).set(
+        SequenceState.Running.init))(EngineState.default)
+
+    val runStepId = 2
+
+    (for {
+      q  <- Queue.bounded[IO, executeEngine.EventType](10)
+      _  <- seqexecEngine.startFrom(q, seqObsId2, runStepId, clientId)
+      sf <- seqexecEngine.stream(q.dequeue)(s0).map(_._2)
+        .takeThrough(_.sequences.get(seqObsId2).exists(_.seq.status.isRunning))
+        .compile.last
+    } yield {
+      inside(sf.flatMap(EngineState.sequenceStateIndex(seqObsId2).getOption).map(_.status)) {
+        case Some(status) => assert(status.isIdle)
       }
     }).unsafeRunSync
   }
