@@ -41,7 +41,7 @@ final case class Niri(controller: NiriController, dhsClient: DhsClient[IO])
   }.getOrElse(LightSinkName.Niri_f6)
 
   override val contributorName: String = "mko-dc-data-niri"
-  override val observeControl: InstrumentSystem.ObserveControl =
+  override val observeControl: InstrumentSystem.ObserveControl[IO] =
     InfraredControl(StopObserveCmd(controller.stopObserve),
                     AbortObserveCmd(controller.abortObserve))
 

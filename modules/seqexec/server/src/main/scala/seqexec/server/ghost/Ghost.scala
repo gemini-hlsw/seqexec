@@ -39,8 +39,8 @@ final case class Ghost[F[_]: Sync](controller: GhostController[F])
 
   override val contributorName: String = "ghost"
 
-  override val observeControl: InstrumentSystem.ObserveControl =
-    InstrumentSystem.Uncontrollable
+  override val observeControl: InstrumentSystem.ObserveControl[F] =
+    InstrumentSystem.Uncontrollable()
 
   override def observe(
       config: Config

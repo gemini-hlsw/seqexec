@@ -19,10 +19,7 @@ import edu.gemini.spModel.seqcomp.SeqConfigNames.OBSERVE_KEY
 import gem.enum.LightSinkName
 import java.lang.{Double => JDouble}
 import java.lang.{Integer => JInt}
-import java.beans.PropertyDescriptor
-
 import shapeless.tag
-import shapeless.tag.@@
 import seqexec.server.ConfigUtilOps._
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Instrument
@@ -58,13 +55,9 @@ final case class Nifs[F[_]: LiftIO: Sync](
 
   override val contributorName: String = "NIFS"
 
-  override val observeControl: InstrumentSystem.ObserveControl = {
-    // Ideally controller.stopObserver should produce F[Unit] rather than IO[Unit]
-    // but that opens a can of worms
-    InfraredControl(StopObserveCmd(SeqActionF.liftF(controller.stopObserve)),
-                    AbortObserveCmd(SeqActionF.liftF(controller.abortObserve)))
-
-  }
+  override val observeControl: InstrumentSystem.ObserveControl[F] =
+    InfraredControl(StopObserveCmd(SeqActionF.embed(controller.stopObserve)),
+                    AbortObserveCmd(SeqActionF.embed(controller.abortObserve)))
 
   override def observe(
     config: Config
@@ -163,30 +156,20 @@ object Nifs {
       .map(_.toInt)
       .map(tag[CoaddsI][Int])
 
-  private def extractInstInt[A](
-    config:   Config,
-    property: PropertyDescriptor
-  ): Either[ExtractFailure, Option[Int @@ A]] =
-    config
-      .extractInstAs[JInt](property)
-      .map(_.toInt.some)
-      .map(_.map(tag[A][Int]))
-      .recoverOption
-
   private def extractPeriod(
     config: Config
   ): Either[ExtractFailure, Option[Period]] =
-    extractInstInt[PeriodI](config, PERIOD_PROP)
+    config.extractInstInt[PeriodI](PERIOD_PROP)
 
   private def extractNrResets(
     config: Config
   ): Either[ExtractFailure, Option[NumberOfResets]] =
-    extractInstInt[NumberOfResetsI](config, NUMBER_OF_RESETS_PROP)
+    config.extractInstInt[NumberOfResetsI](NUMBER_OF_RESETS_PROP)
 
   private def extractNrPeriods(
     config: Config
   ): Either[ExtractFailure, Option[NumberOfPeriods]] =
-    extractInstInt[NumberOfPeriodsI](config, NUMBER_OF_PERIODS_PROP)
+    config.extractInstInt[NumberOfPeriodsI](NUMBER_OF_PERIODS_PROP)
 
   private def extractObsReadMode(
     config: Config
@@ -214,7 +197,7 @@ object Nifs {
   private def extractNrSamples(
     config: Config
   ): Either[ExtractFailure, Option[NumberOfSamples]] =
-    extractInstInt[NumberOfSamplesI](config, NUMBER_OF_SAMPLES_PROP)
+    config.extractInstInt[NumberOfSamplesI](NUMBER_OF_SAMPLES_PROP)
 
   private def extractObsType(
     config: Config

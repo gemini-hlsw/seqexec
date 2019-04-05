@@ -16,7 +16,7 @@ trait InstrumentSystem[F[_]] extends System[F] with InstrumentGuide {
   // The name used for this instrument in the science fold configuration
   def sfName(config: Config): LightSinkName
   val contributorName: String
-  val observeControl: InstrumentSystem.ObserveControl
+  val observeControl: InstrumentSystem.ObserveControl[F]
 
   def observe(
       config: Config): SeqObserveF[F, ImageFileId, ObserveCommand.Result]
@@ -30,26 +30,26 @@ trait InstrumentSystem[F[_]] extends System[F] with InstrumentGuide {
 
 object InstrumentSystem {
 
-  final case class StopObserveCmd(self: SeqAction[Unit])
-  final case class AbortObserveCmd(self: SeqAction[Unit])
-  final case class PauseObserveCmd(self: SeqAction[Unit])
-  final case class ContinuePausedCmd(
-      self: Time => SeqAction[ObserveCommand.Result])
-  final case class StopPausedCmd(self: SeqAction[ObserveCommand.Result])
-  final case class AbortPausedCmd(self: SeqAction[ObserveCommand.Result])
+  final case class StopObserveCmd[F[_]](self: SeqActionF[F, Unit])
+  final case class AbortObserveCmd[F[_]](self: SeqActionF[F, Unit])
+  final case class PauseObserveCmd[F[_]](self: SeqActionF[F, Unit])
+  final case class ContinuePausedCmd[F[_]](
+      self: Time => SeqActionF[F, ObserveCommand.Result])
+  final case class StopPausedCmd[F[_]](self: SeqActionF[F, ObserveCommand.Result])
+  final case class AbortPausedCmd[F[_]](self: SeqActionF[F, ObserveCommand.Result])
 
-  sealed trait ObserveControl
-  case object Uncontrollable extends ObserveControl
-  final case class OpticControl(stop: StopObserveCmd,
-                                abort: AbortObserveCmd,
-                                pause: PauseObserveCmd,
-                                continue: ContinuePausedCmd,
-                                stopPaused: StopPausedCmd,
-                                abortPaused: AbortPausedCmd)
-      extends ObserveControl
+  sealed trait ObserveControl[F[_]] extends Product with Serializable
+  final case class Uncontrollable[F[_]]() extends ObserveControl[F]
+  final case class OpticControl[F[_]](stop: StopObserveCmd[F],
+                                abort: AbortObserveCmd[F],
+                                pause: PauseObserveCmd[F],
+                                continue: ContinuePausedCmd[F],
+                                stopPaused: StopPausedCmd[F],
+                                abortPaused: AbortPausedCmd[F])
+      extends ObserveControl[F]
   // Special class for infrared instrument, because they cannot pause/resume
-  final case class InfraredControl(stop: StopObserveCmd, abort: AbortObserveCmd)
-      extends ObserveControl
+  final case class InfraredControl[F[_]](stop: StopObserveCmd[F], abort: AbortObserveCmd[F])
+      extends ObserveControl[F]
 
   final case class ElapsedTime(self: Time) extends AnyVal
 }

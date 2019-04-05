@@ -34,7 +34,7 @@ final case class Gnirs(controller: GnirsController, dhsClient: DhsClient[IO]) ex
 
   import Gnirs._
   import InstrumentSystem._
-  override val observeControl: ObserveControl = InfraredControl(StopObserveCmd(controller.stopObserve),
+  override val observeControl: ObserveControl[IO] = InfraredControl(StopObserveCmd(controller.stopObserve),
                                                                 AbortObserveCmd(controller.abortObserve))
 
   override def observe(config: Config): SeqObserve[ImageFileId, ObserveCommand.Result] =
