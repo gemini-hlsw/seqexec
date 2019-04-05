@@ -8,6 +8,8 @@ import cats.implicits._
 import edu.gemini.spModel.ao.AOConstants.AO_CONFIG_NAME
 import edu.gemini.spModel.config2.{Config, ItemKey}
 import edu.gemini.spModel.gemini.altair.AltairConstants.FIELD_LENSE_PROP
+import edu.gemini.spModel.gemini.altair.AltairConstants.GUIDESTAR_TYPE_PROP
+import edu.gemini.spModel.gemini.altair.AltairParams.GuideStarType
 import seqexec.server.ConfigUtilOps._
 import seqexec.model.enum.Resource
 import seqexec.server.TrySeq
@@ -54,10 +56,17 @@ class Altair[F[_]: Sync] private (controller: AltairController[F],
     case Ngs(_, _)      => true
     case AltairOff      => false
   }
+
 }
 
 object Altair {
+
   def fromConfig[F[_]: Sync](config: Config, controller: AltairController[F]): TrySeq[Altair[F]] =
-    config.extractAs[FieldLens](new ItemKey(AO_CONFIG_NAME) / FIELD_LENSE_PROP).asTrySeq.map(new Altair(controller, _))
+    (for {
+      fieldLens <- config.extractAs[FieldLens](new ItemKey(AO_CONFIG_NAME) / FIELD_LENSE_PROP)
+    } yield new Altair(controller, fieldLens)).asTrySeq
+
+  def guideStarType(config: Config): TrySeq[GuideStarType] =
+    config.extractAs[GuideStarType](new ItemKey(AO_CONFIG_NAME) / GUIDESTAR_TYPE_PROP).asTrySeq
 
 }

@@ -14,6 +14,7 @@ import edu.gemini.spModel.ao.AOConstants._
 import edu.gemini.spModel.config2.{Config, ItemKey}
 import edu.gemini.spModel.core.Wavelength
 import edu.gemini.spModel.gemini.altair.AltairConstants
+import edu.gemini.spModel.gemini.altair.AltairParams.GuideStarType
 import edu.gemini.spModel.obscomp.InstConstants._
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import fs2.Stream
@@ -43,6 +44,7 @@ import seqexec.server.niri._
 import seqexec.server.nifs._
 import seqexec.server.altair.Altair
 import seqexec.server.altair.AltairHeader
+import seqexec.server.altair.AltairLgsHeader
 import seqexec.server.altair.AltairKeywordReaderImpl
 import seqexec.server.altair.AltairKeywordReaderDummy
 import seqexec.server.SeqexecFailure._
@@ -539,6 +541,14 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
     AltairHeader.header[F](i,
       if (settings.altairKeywords) new AltairKeywordReaderImpl[F](config) else new AltairKeywordReaderDummy[F]())
 
+  private def altairLgsHeader[F[_]: Sync: LiftIO](config: Config, guideStar: GuideStarType, i: InstrumentSystem[F]): Header[F] =
+    if (guideStar === GuideStarType.LGS) {
+      AltairLgsHeader.header(i,
+        if (settings.altairKeywords) new AltairKeywordReaderImpl[F](config) else new AltairKeywordReaderDummy[F]())
+    } else {
+      dummyHeader[F]
+    }
+
   private def calcHeaders(config: Config, stepType: StepType)(
     implicit tio: Timer[IO]
   ): TrySeq[Reader[HeaderExtraData, List[Header[IO]]]] = stepType match {
@@ -546,10 +556,18 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
         calcInstHeader(config, inst).map(h => Reader(ctx =>
           List(commonHeaders(config, allButGaos.toList, i)(ctx), gwsHeaders(i), h)))
       }
-    case AltairObs(inst) => toInstrumentSys(inst) >>= { i =>
-        calcInstHeader(config, inst).map(h => Reader(ctx =>
-          List(commonHeaders(config, allButGaos.toList, i)(ctx), altairHeader(config, i), gwsHeaders(i), h)))
-      }
+    case AltairObs(inst) =>
+      for {
+        gst  <- Altair.guideStarType(config)
+        is   <- toInstrumentSys(inst)
+        read <- calcInstHeader(config, inst).map(h => Reader((ctx: HeaderExtraData) =>
+                  // Order is important
+                  List(
+                    commonHeaders(config, allButGaos.toList, is)(ctx),
+                    altairHeader(config, is),
+                    altairLgsHeader(config, gst, is),
+                    gwsHeaders(is), h)))
+      } yield read
     case FlatOrArc(inst)       => toInstrumentSys(inst) >>= { i =>
         calcInstHeader(config, inst).map(h => Reader(ctx =>
           List(commonHeaders(config, flatOrArcTcsSubsystems(inst).toList, i)(ctx), gcalHeader(i), gwsHeaders(i), h)))

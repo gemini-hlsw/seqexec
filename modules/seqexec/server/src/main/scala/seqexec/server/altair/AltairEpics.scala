@@ -4,6 +4,7 @@
 package seqexec.server.altair
 
 import cats.effect.{IO, Async}
+import cats.data.Nested
 import mouse.boolean._
 import edu.gemini.epics.acm._
 import edu.gemini.seqexec.server.altair.LgsSfoControl
@@ -55,8 +56,8 @@ class AltairEpics[F[_]: Async](service: CaService, tops: Map[String, String]) {
 
   val status: CaStatusAcceptor = service.getStatusAcceptor("aostate")
 
-  def strapTempStatus: F[Option[Boolean]] = safeAttributeSInt(status.getIntegerAttribute("strapTPStat"))
-    .map(_.map(_ =!= 0))
+  def strapTempStatus: F[Option[Boolean]] =
+    Nested(safeAttributeSInt(status.getIntegerAttribute("strapTPStat"))).map(_ =!= 0).value
 
   private val strapGateAttr = status.getIntegerAttribute("strapgate")
   def strapGate: F[Option[Int]] = safeAttributeSInt(strapGateAttr)
@@ -65,16 +66,17 @@ class AltairEpics[F[_]: Async](service: CaService, tops: Map[String, String]) {
     EpicsUtil.waitForValueF(strapGateAttr, v:Integer, timeout, "Altair strap gate")
 
   private val strapLoopAttr = status.getIntegerAttribute("straploop")
-  def strapLoop: F[Option[Boolean]] = safeAttributeSInt(strapLoopAttr).map(_.map(_ =!= 0))
+  def strapLoop: F[Option[Boolean]] =
+    Nested(safeAttributeSInt(strapLoopAttr)).map(_ =!= 0).value
 
   def waitForStrapLoop(v: Boolean, timeout: Time): F[Unit] =
     EpicsUtil.waitForValueF(strapLoopAttr, v.fold(1, 0):Integer, timeout, "Altair strap loop")
 
-  def strapRTStatus: F[Option[Boolean]] = safeAttributeSInt(status.getIntegerAttribute("strapRTStat"))
-    .map(_.map(_ =!= 0))
+  def strapRTStatus: F[Option[Boolean]] =
+    Nested(safeAttributeSInt(status.getIntegerAttribute("strapRTStat"))).map(_ =!= 0).value
 
-  def strapHVStatus: F[Option[Boolean]] = safeAttributeSInt(status.getIntegerAttribute("strapHVStat"))
-    .map(_.map(_ =!= 0))
+  def strapHVStatus: F[Option[Boolean]] =
+    Nested(safeAttributeSInt(status.getIntegerAttribute("strapHVStat"))).map(_ =!= 0).value
 
   private val sfoLoopAttr: CaAttribute[LgsSfoControl] = status.addEnum("sfoloop",
     s"${AltairTop}cc:lgszoomSfoLoop.VAL", classOf[LgsSfoControl])
@@ -134,6 +136,41 @@ class AltairEpics[F[_]: Async](service: CaService, tops: Map[String, String]) {
 
   def aoFollow: F[Option[Boolean]] = safeAttribute(status.getStringAttribute("aoFollowS"))
     .map(_.map(_ === "On"))
+
+  // Lgs channels
+  def lgdfocus: F[Option[Double]] = safeAttributeSDouble(status.getDoubleAttribute("lgdfocus"))
+
+  def apd1: F[Option[Float]] = safeAttributeSFloat(status.getFloatAttribute("apd1"))
+
+  def apd2: F[Option[Float]] = safeAttributeSFloat(status.getFloatAttribute("apd2"))
+
+  def apd3: F[Option[Float]] = safeAttributeSFloat(status.getFloatAttribute("apd3"))
+
+  def apd4: F[Option[Float]] = safeAttributeSFloat(status.getFloatAttribute("apd4"))
+
+  def lgttexp: F[Option[Int]] = safeAttributeSInt(status.getIntegerAttribute("lgttexp"))
+
+  def fsmtip: F[Option[Double]] = safeAttributeSDouble(status.getDoubleAttribute("fsmtip"))
+
+  def fsmtilt: F[Option[Double]] = safeAttributeSDouble(status.getDoubleAttribute("fsmtilt"))
+
+  def lgzmpos: F[Option[Double]] = safeAttributeSDouble(status.getDoubleAttribute("lgzmpos"))
+
+  def aozoom: F[Option[Double]] = safeAttributeSDouble(status.getDoubleAttribute("aozoom"))
+
+  def aoza: F[Option[Double]] = safeAttributeSDouble(status.getDoubleAttribute("aoza"))
+
+  def nathick: F[Option[Double]] = safeAttributeSDouble(status.getDoubleAttribute("nathick"))
+
+  def lgndfilt: F[Option[String]] = safeAttribute(status.getStringAttribute("lgndfilt"))
+
+  def lgttiris: F[Option[String]] = safeAttribute(status.getStringAttribute("lgttiris"))
+
+  val sfoStatus: CaStatusAcceptor = service.getStatusAcceptor("sfostate")
+
+  def lgsfcnts: F[Option[Double]] = safeAttributeSDouble(status.getDoubleAttribute("lgsfcnts"))
+
+  def lgsfexp: F[Option[Double]] = safeAttributeSDouble(status.getDoubleAttribute("lgsfexp"))
 
 }
 

@@ -8,6 +8,7 @@ import cats.MonadError
 import cats.ApplicativeError
 import cats.implicits._
 import cats.effect.Sync
+import gem.Observation
 import gem.enum.KeywordName
 import seqexec.model.dhs.ImageFileId
 
@@ -294,4 +295,8 @@ package object keywords {
       _   <- inst.keywordsClient.setKeywords(id, bag, finalFlag = false)
     } yield ()
 
+  def dummyHeader[F[_]: Applicative]: Header[F] = new Header[F] {
+    override def sendBefore(obsId: Observation.Id, id: ImageFileId): F[Unit] = Applicative[F].unit
+    override def sendAfter(id: ImageFileId): F[Unit] = Applicative[F].unit
+  }
 }
