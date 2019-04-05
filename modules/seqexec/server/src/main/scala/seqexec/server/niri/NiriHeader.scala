@@ -64,7 +64,7 @@ object NiriHeader {
         buildDouble(instReader.cl1VoltageGG, KeywordName.A_VGGCL1),
         buildDouble(instReader.cl2VoltageGG, KeywordName.A_VGGCL2),
         buildDouble(instReader.setVoltage, KeywordName.A_VSET),
-        buildStringS(tcsKeywordsReader.getUT, KeywordName.UT),
+        buildStringS(tcsKeywordsReader.getUT, KeywordName.UTEND),
         buildDouble(instReader.observationEpoch, KeywordName.OBSEPOCH)
       ))
   }
