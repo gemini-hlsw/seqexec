@@ -8,11 +8,7 @@ import cats.effect.Sync
 import cats.Applicative
 import cats.data.Nested
 import cats.implicits._
-import edu.gemini.spModel.config2.Config
-import edu.gemini.spModel.gemini.altair.AltairParams.CassRotator
-import edu.gemini.spModel.gemini.altair.InstAltair.CASS_ROTATOR_PROP
 import seqexec.server.keywords._
-import seqexec.server.ConfigUtilOps._
 
 trait AltairKeywordReader[F[_]] {
   def aofreq: F[Double]
@@ -28,7 +24,6 @@ trait AltairKeywordReader[F[_]] {
   def aoflex: F[String]
   def lgustage: F[String]
   def aobs: F[String]
-  def aocrfollow: F[String]
 
   // LGS
   def lgdfocus: F[Double]
@@ -47,32 +42,31 @@ trait AltairKeywordReader[F[_]] {
 
 class AltairKeywordReaderDummy[F[_]: Applicative]
     extends AltairKeywordReader[F] {
-  override def aofreq: F[Double]     = doubleDefault[F]
-  override def aocounts: F[Double]   = doubleDefault[F]
-  override def aoseeing: F[Double]   = doubleDefault[F]
-  override def aowfsx: F[Double]     = doubleDefault[F]
-  override def aowfsy: F[Double]     = doubleDefault[F]
-  override def aowfsz: F[Double]     = doubleDefault[F]
-  override def aogain: F[Double]     = doubleDefault[F]
-  override def aoncpa: F[String]     = strDefault[F]
-  override def ngndfilt: F[String]   = strDefault[F]
-  override def astar: F[String]      = strDefault[F]
-  override def aoflex: F[String]     = strDefault[F]
-  override def lgustage: F[String]   = strDefault[F]
-  override def aobs: F[String]       = strDefault[F]
-  override def aocrfollow: F[String] = strDefault[F]
-  override def lgdfocus: F[Double]   = doubleDefault[F]
-  override def lgttcnts: F[Double]   = doubleDefault[F]
-  override def lgttexp: F[Int]       = intDefault[F]
-  override def lgsfcnts: F[Double]   = doubleDefault[F]
-  override def lgsfexp: F[Double]    = doubleDefault[F]
-  override def fsmtip: F[Double]     = doubleDefault[F]
-  override def fsmtilt: F[Double]    = doubleDefault[F]
-  override def lgzmpos: F[Double]    = doubleDefault[F]
-  override def naalt: F[Double]      = doubleDefault[F]
-  override def nathick: F[Double]    = doubleDefault[F]
-  override def lgndfilt: F[String]   = strDefault[F]
-  override def lgttiris: F[String]   = strDefault[F]
+  override def aofreq: F[Double]   = doubleDefault[F]
+  override def aocounts: F[Double] = doubleDefault[F]
+  override def aoseeing: F[Double] = doubleDefault[F]
+  override def aowfsx: F[Double]   = doubleDefault[F]
+  override def aowfsy: F[Double]   = doubleDefault[F]
+  override def aowfsz: F[Double]   = doubleDefault[F]
+  override def aogain: F[Double]   = doubleDefault[F]
+  override def aoncpa: F[String]   = strDefault[F]
+  override def ngndfilt: F[String] = strDefault[F]
+  override def astar: F[String]    = strDefault[F]
+  override def aoflex: F[String]   = strDefault[F]
+  override def lgustage: F[String] = strDefault[F]
+  override def aobs: F[String]     = strDefault[F]
+  override def lgdfocus: F[Double] = doubleDefault[F]
+  override def lgttcnts: F[Double] = doubleDefault[F]
+  override def lgttexp: F[Int]     = intDefault[F]
+  override def lgsfcnts: F[Double] = doubleDefault[F]
+  override def lgsfexp: F[Double]  = doubleDefault[F]
+  override def fsmtip: F[Double]   = doubleDefault[F]
+  override def fsmtilt: F[Double]  = doubleDefault[F]
+  override def lgzmpos: F[Double]  = doubleDefault[F]
+  override def naalt: F[Double]    = doubleDefault[F]
+  override def nathick: F[Double]  = doubleDefault[F]
+  override def lgndfilt: F[String] = strDefault[F]
+  override def lgttiris: F[String] = strDefault[F]
 }
 
 trait AltairKeywordReaderLUT {
@@ -82,13 +76,9 @@ trait AltairKeywordReaderLUT {
       "0"     -> "INDEF"
     )
 
-  def crFollowValue(cr: AOCRFollow): String = cr match {
-    case AOCRFollow.Following => "yes"
-    case AOCRFollow.Fixed     => "no"
-  }
 }
 
-class AltairKeywordReaderImpl[F[_]: Sync: LiftIO](config: Config)
+class AltairKeywordReaderImpl[F[_]: Sync: LiftIO]
     extends AltairKeywordReader[F]
     with AltairKeywordReaderLUT {
   val sys = AltairEpics.instance
@@ -114,16 +104,6 @@ class AltairKeywordReaderImpl[F[_]: Sync: LiftIO](config: Config)
   override def aoflex: F[String]   = sys.aoflex.safeValOrDefault.to[F]
   override def lgustage: F[String] = sys.lgustage.safeValOrDefault.to[F]
   override def aobs: F[String]     = sys.aobs.safeValOrDefault.to[F]
-  override def aocrfollow: F[String] = Sync[F].delay {
-    config
-      .extractAOAs[CassRotator](CASS_ROTATOR_PROP)
-      .map {
-        case CassRotator.FIXED     => AOCRFollow.Fixed
-        case CassRotator.FOLLOWING => AOCRFollow.Following
-      }
-      .map(crFollowValue)
-      .getOrElse(Indef)
-  }
 
   // LGS
   override def lgdfocus: F[Double] = sys.lgdfocus.safeValOrDefault.to[F]

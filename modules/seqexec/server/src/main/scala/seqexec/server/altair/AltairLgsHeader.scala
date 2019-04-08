@@ -21,18 +21,18 @@ object AltairLgsHeader {
           id,
           inst,
           List(
-            buildDoubleS(altairReader.aofreq, KeywordName.LGDFOCUS),
-            buildDoubleS(altairReader.aofreq, KeywordName.LGTTCNTS),
-            buildDoubleS(altairReader.aofreq, KeywordName.LGTTEXP),
-            buildDoubleS(altairReader.aofreq, KeywordName.LGSFCNTS),
-            buildDoubleS(altairReader.aofreq, KeywordName.LGSFEXP),
-            buildDoubleS(altairReader.aofreq, KeywordName.FSMTIP),
-            buildDoubleS(altairReader.aofreq, KeywordName.FSMTILT),
-            buildDoubleS(altairReader.aofreq, KeywordName.LGZMPOS),
-            buildDoubleS(altairReader.aofreq, KeywordName.NAALT),
-            buildDoubleS(altairReader.aofreq, KeywordName.NATHICK),
-            buildDoubleS(altairReader.aofreq, KeywordName.LGNDFILT),
-            buildDoubleS(altairReader.aofreq, KeywordName.LGTTIRIS)
+            buildDoubleS(altairReader.lgdfocus, KeywordName.LGDFOCUS),
+            buildDoubleS(altairReader.lgttcnts, KeywordName.LGTTCNTS),
+            buildInt32S(altairReader.lgttexp, KeywordName.LGTTEXP),
+            buildDoubleS(altairReader.lgsfcnts, KeywordName.LGSFCNTS),
+            buildDoubleS(altairReader.lgsfexp, KeywordName.LGSFEXP),
+            buildDoubleS(altairReader.fsmtip, KeywordName.FSMTIP),
+            buildDoubleS(altairReader.fsmtilt, KeywordName.FSMTILT),
+            buildDoubleS(altairReader.lgzmpos, KeywordName.LGZMPOS),
+            buildDoubleS(altairReader.naalt, KeywordName.NAALT),
+            buildDoubleS(altairReader.nathick, KeywordName.NATHICK),
+            buildStringS(altairReader.lgndfilt, KeywordName.LGNDFILT),
+            buildStringS(altairReader.lgttiris, KeywordName.LGTTIRIS)
           )
         )
 

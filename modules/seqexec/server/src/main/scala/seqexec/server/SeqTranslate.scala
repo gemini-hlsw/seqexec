@@ -537,14 +537,16 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
   private def gcalHeader(i: InstrumentSystem[IO]): Header[IO] = GcalHeader.header(i,
     if (settings.gcalKeywords) GcalKeywordsReaderImpl else DummyGcalKeywordsReader )
 
-  private def altairHeader[F[_]: Sync: LiftIO](config: Config, i: InstrumentSystem[F]): Header[F] =
-    AltairHeader.header[F](i,
-      if (settings.altairKeywords) new AltairKeywordReaderImpl[F](config) else new AltairKeywordReaderDummy[F]())
+  private def altairHeader[F[_]: Sync: LiftIO](instrument: InstrumentSystem[F], tcsKReader: TcsKeywordsReader[F]): Header[F] =
+    AltairHeader.header[F](
+      instrument,
+      if (settings.altairKeywords) new AltairKeywordReaderImpl[F]() else new AltairKeywordReaderDummy[F](),
+      tcsKReader)
 
-  private def altairLgsHeader[F[_]: Sync: LiftIO](config: Config, guideStar: GuideStarType, i: InstrumentSystem[F]): Header[F] =
+  private def altairLgsHeader[F[_]: Sync: LiftIO](guideStar: GuideStarType, instrument: InstrumentSystem[F]): Header[F] =
     if (guideStar === GuideStarType.LGS) {
-      AltairLgsHeader.header(i,
-        if (settings.altairKeywords) new AltairKeywordReaderImpl[F](config) else new AltairKeywordReaderDummy[F]())
+      AltairLgsHeader.header(instrument,
+        if (settings.altairKeywords) new AltairKeywordReaderImpl[F]() else new AltairKeywordReaderDummy[F]())
     } else {
       dummyHeader[F]
     }
@@ -557,6 +559,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
           List(commonHeaders(config, allButGaos.toList, i)(ctx), gwsHeaders(i), h)))
       }
     case AltairObs(inst) =>
+      val tcsKReader = if (settings.tcsKeywords) TcsKeywordsReaderImpl else DummyTcsKeywordsReader
       for {
         gst  <- Altair.guideStarType(config)
         is   <- toInstrumentSys(inst)
@@ -564,8 +567,8 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
                   // Order is important
                   List(
                     commonHeaders(config, allButGaos.toList, is)(ctx),
-                    altairHeader(config, is),
-                    altairLgsHeader(config, gst, is),
+                    altairHeader(is, tcsKReader),
+                    altairLgsHeader(gst, is),
                     gwsHeaders(is), h)))
       } yield read
     case FlatOrArc(inst)       => toInstrumentSys(inst) >>= { i =>

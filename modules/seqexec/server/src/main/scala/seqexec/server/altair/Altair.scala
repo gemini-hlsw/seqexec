@@ -62,9 +62,9 @@ class Altair[F[_]: Sync] private (controller: AltairController[F],
 object Altair {
 
   def fromConfig[F[_]: Sync](config: Config, controller: AltairController[F]): TrySeq[Altair[F]] =
-    (for {
-      fieldLens <- config.extractAs[FieldLens](new ItemKey(AO_CONFIG_NAME) / FIELD_LENSE_PROP)
-    } yield new Altair(controller, fieldLens)).asTrySeq
+    config.extractAs[FieldLens](new ItemKey(AO_CONFIG_NAME) / FIELD_LENSE_PROP).map { fieldLens =>
+      new Altair(controller, fieldLens)
+    }.asTrySeq
 
   def guideStarType(config: Config): TrySeq[GuideStarType] =
     config.extractAs[GuideStarType](new ItemKey(AO_CONFIG_NAME) / GUIDESTAR_TYPE_PROP).asTrySeq
