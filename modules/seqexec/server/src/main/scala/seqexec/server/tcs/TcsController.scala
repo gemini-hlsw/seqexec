@@ -229,7 +229,14 @@ object TcsController {
 
     implicit val show: Show[HrwfsPickupPosition] = Show.fromToString
 
-    implicit val eq: Eq[HrwfsPickupPosition] = Eq.fromUniversalEquals
+    implicit val eq: Eq[HrwfsPickupPosition] = Eq.instance{
+      case (IN, IN)         => true
+      case (OUT, OUT)       => true
+      case (Parked, Parked) => true
+      case _                => false
+    }
+
+    def isInTheWay(h: HrwfsPickupPosition): Boolean = h === IN
   }
 
   sealed trait HrwfsConfig

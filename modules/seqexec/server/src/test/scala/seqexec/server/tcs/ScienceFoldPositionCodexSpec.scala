@@ -7,7 +7,7 @@ import org.scalatest.FlatSpec
 import org.scalatest.Matchers._
 import ScienceFoldPositionCodex._
 import seqexec.server.EpicsCodex._
-import gem.enum.LightSinkName.{Gmos, Nifs, Gsaoi}
+import gem.enum.LightSinkName.{Gmos, Gsaoi, Nifs, Niri_f32, F2}
 import seqexec.server.tcs.TcsController.LightSource.{AO, GCAL, Sky}
 import seqexec.server.tcs.TcsControllerEpics.ScienceFold
 
@@ -19,7 +19,9 @@ class ScienceFoldPositionCodexSpec extends FlatSpec {
   private val ao2gmos3 = ("ao2gmos3", ScienceFold.Position(AO, Gmos, 3))
   private val gcal2nifs1 = ("gcal2nifs1", ScienceFold.Position(GCAL, Nifs, 1))
   private val gsaoi5 = ("gsaoi5", ScienceFold.Position(Sky, Gsaoi, 5))
-  private val testVals = List(ao2gmos3, gcal2nifs1, gsaoi5)
+  private val ao2niri32 = ("ao2nirif32p5", ScienceFold.Position(AO, Niri_f32, 5))
+  private val f21 = ("f21", ScienceFold.Position(Sky, F2, 1))
+  private val testVals = List(ao2gmos3, gcal2nifs1, gsaoi5, ao2niri32, f21)
 
   "ScienceFoldPositionCodex" should "properly decode EPICS strings into ScienceFold values" in {
 

@@ -268,6 +268,22 @@ object TcsControllerEpics extends TcsController {
     }
   }
 
+  /*
+   * Positions Parked and OUT are equivalent for practical purposes. Therefore, if the current position is Parked and
+   * requested position is OUT (or the other way around), then is not necessary to move the HR pickup mirror.
+   */
+  private def setHrPickup(subsystems: NonEmptySet[Subsystem], c: AGConfig, current: EpicsTcsConfig)
+  : Option[EpicsTcsConfig => SeqAction[EpicsTcsConfig]] =
+    subsystems.contains(Subsystem.AGUnit).fold(
+      calcHrPickupPosition(c, current.instPorts).flatMap{ a =>
+        val b = current.hrwfsPickupPosition
+        (a =!= b && (HrwfsPickupPosition.isInTheWay(a) || HrwfsPickupPosition.isInTheWay(b))).option { x =>
+          setHRPickupConfig(a) *> SeqAction(EpicsTcsConfig.hrwfsPickupPosition.set(a)(x))
+        }
+      },
+      none
+    )
+
   private val tcsTimeout = Seconds(60)
   private val agTimeout = Seconds(60)
 
@@ -324,9 +340,7 @@ object TcsControllerEpics extends TcsController {
         EpicsTcsConfig.wavelA
       )),
       setScienceFold(subsystems, current, tcs.agc.sfPos),
-      calcHrPickupPosition(tcs.agc, current.instPorts).flatMap(applyParam(subsystems.contains(Subsystem.AGUnit),
-        current.hrwfsPickupPosition, _, setHRPickupConfig, EpicsTcsConfig.hrwfsPickupPosition)
-      )
+      setHrPickup(subsystems, tcs.agc, current)
     ).collect{ case Some(x) => x }
 
     def sysConfig(current: EpicsTcsConfig): SeqAction[EpicsTcsConfig] = {
