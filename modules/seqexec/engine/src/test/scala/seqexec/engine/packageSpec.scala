@@ -430,4 +430,59 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
     }
   }
 
+  val qs2: TestState =
+    TestState(
+      sequences = Map(
+        (seqId,
+          Sequence.State.init(
+            Sequence(
+              id = Observation.Id.unsafeFromString("GS-2018B-Q-0-2"),
+              steps = List(
+                Step.init(
+                  id = 1,
+                  executions = List(
+                    List(
+                      Action[IO](ActionType.Undefined, Stream(Result.OK(DummyResult)).covary[IO],
+                        Action.State(Action.Completed(DummyResult), List.empty)
+                      )
+                    )
+                  )
+                ),
+                Step.init(
+                  id = 2,
+                  executions = executions
+                ),
+                Step.init(
+                  id = 3,
+                  executions = executions
+                ),
+                Step.init(
+                  id = 4,
+                  executions = executions
+                )
+              )
+            )
+          )
+        )
+      )
+    )
+
+  it should "be able to start sequence from arbitrary step" in {
+    val event = Event.modifyState[executionEngine.ConcreteTypes](
+      executionEngine.startFrom(seqId, 3).void
+    )
+
+    val sf = executionEngine.process(PartialFunction.empty)(Stream.eval(IO.pure(event)))(qs2).drop(1).takeThrough(
+      a => !isFinished(a._2.sequences(seqId).status)
+    ).compile.last.unsafeRunSync.map(_._2)
+
+    inside (sf.flatMap(_.sequences.get(seqId).map(_.toSequence))) {
+      case Some(seq) => assertResult(Some(StepState.Completed))(seq.steps.get(0).map(Step.status))
+        assertResult(Some(StepState.Skipped))(seq.steps.get(1).map(Step.status))
+        assertResult(Some(StepState.Completed))(seq.steps.get(2).map(Step.status))
+        assertResult(Some(StepState.Completed))(seq.steps.get(3).map(Step.status))
+    }
+
+  }
+
 }

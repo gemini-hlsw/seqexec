@@ -115,6 +115,15 @@ object TestCommon {
     )))
   )
 
+  def sequenceNSteps(id: Observation.Id, n: Int): SequenceGen = SequenceGen(
+    id,
+    "",
+    Instrument.F2,
+    List.range(1, n).map(SequenceGen.PendingStepGen(_, Map(), Set.empty, SequenceGen.StepActionsGen(List(),
+      Map(), _ => List(List(pendingAction(Instrument.F2)))
+    )))
+  )
+
   def sequenceWithResources(id: Observation.Id, ins: Instrument, resources: Set[Resource]): SequenceGen = SequenceGen(
     id,
     "",
@@ -126,7 +135,7 @@ object TestCommon {
         )
       ),
       SequenceGen.PendingStepGen(
-        1, Map(), resources, SequenceGen.StepActionsGen(List(), resources.map(r => r ->pendingAction(r)).toMap,
+        2, Map(), resources, SequenceGen.StepActionsGen(List(), resources.map(r => r ->pendingAction(r)).toMap,
           _ =>List()
         )
       )

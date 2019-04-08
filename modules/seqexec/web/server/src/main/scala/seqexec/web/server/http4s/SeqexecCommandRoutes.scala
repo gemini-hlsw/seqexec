@@ -39,6 +39,12 @@ class SeqexecCommandRoutes(auth:       AuthenticationService,
         resp <- Ok(s"Started sequence $obsId")
       } yield resp
 
+    case POST -> Root / ObsIdVar(obsId) / PosIntVar(stepId) / "startFrom" / ClientIDVar(clientId) as _ =>
+      for {
+        _    <- se.startFrom(inputQueue, obsId, stepId, clientId)
+        resp <- Ok(s"Started sequence $obsId from step $stepId")
+      } yield resp
+
     case POST -> Root / ObsIdVar(obsId) / "pause" as user =>
       for {
         _    <- se.requestPause(inputQueue, obsId, user)
