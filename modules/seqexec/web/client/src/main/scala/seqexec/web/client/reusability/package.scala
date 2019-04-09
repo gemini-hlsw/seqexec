@@ -32,6 +32,7 @@ import seqexec.web.client.model.RunOperation
 import seqexec.web.client.model.SyncOperation
 import seqexec.web.client.model.TabOperations
 import seqexec.web.client.model.ResourceRunOperation
+import seqexec.web.client.model.StartFromOperation
 import seqexec.web.client.model.TabSelected
 import seqexec.web.client.model.SoundSelection
 import seqexec.web.client.circuit._
@@ -47,7 +48,8 @@ package object reusability {
   implicit val stepReuse: Reusability[Step]                 = Reusability.byEq
   implicit val seqStateReuse: Reusability[SequenceState]    = Reusability.byEq
   implicit val clientStatusReuse: Reusability[ClientStatus] = Reusability.byEq
-  implicit val stepTTReuse: Reusability[StepsTableTypeSelection] = Reusability.byEq
+  implicit val stepTTReuse: Reusability[StepsTableTypeSelection] =
+    Reusability.byEq
   implicit val stTbFocusReuse: Reusability[StepsTableFocus] = Reusability.byEq
   implicit val stASFocusReuse: Reusability[StatusAndStepFocus] =
     Reusability.byEq
@@ -66,6 +68,8 @@ package object reusability {
     Reusability.byRef
   implicit val psOperationReuse: Reusability[PauseOperation] = Reusability.byRef
   implicit val rrOperationReuse: Reusability[ResourceRunOperation] =
+    Reusability.byRef
+  implicit val rfOperationReuse: Reusability[StartFromOperation] =
     Reusability.byRef
   implicit val availableTabsReuse: Reusability[AvailableTab] = Reusability.byEq
   implicit val userDetailsReuse: Reusability[UserDetails]    = Reusability.byEq

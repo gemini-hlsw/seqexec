@@ -27,7 +27,7 @@ class QueueRequestsHandler[M](modelRW: ModelRW[M, QueueRequestsFocus])
       val ids = value.seqFilter.filterS(value.sequences.sessionQueue).map(_.id)
       effectOnly(
         requestEffect(qid,
-                      SeqexecWebClient.addSequencesToQueue(ids),
+                      SeqexecWebClient.addSequencesToQueue(ids, _),
                       AllDayCalCompleted.apply,
                       AllDayCalFailed.apply))
   }
@@ -36,7 +36,7 @@ class QueueRequestsHandler[M](modelRW: ModelRW[M, QueueRequestsFocus])
     case RequestAddSeqCal(qid, oid) =>
       effectOnly(
         requestEffect(qid,
-                      SeqexecWebClient.addSequenceToQueue(oid),
+                      SeqexecWebClient.addSequenceToQueue(oid, _),
                       AllDayCalCompleted.apply,
                       AllDayCalFailed.apply))
   }

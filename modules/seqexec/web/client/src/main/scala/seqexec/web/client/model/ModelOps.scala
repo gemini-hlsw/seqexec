@@ -112,6 +112,13 @@ object ModelOps {
       })
   }
 
+  implicit class StepOps(val s: Step) extends AnyVal {
+    def canRunFrom: Boolean = s.status match {
+      case StepState.Pending | StepState.Failed(_) => true
+      case _                                       => false
+    }
+  }
+
   implicit class SiteOps(val s: Site) extends AnyVal {
 
     def instruments: NonEmptyList[Instrument] = s match {
