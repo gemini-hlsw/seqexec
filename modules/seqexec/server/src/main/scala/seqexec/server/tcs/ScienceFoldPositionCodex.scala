@@ -21,11 +21,7 @@ private[server] object ScienceFoldPositionCodex {
   private val GCAL_PREFIX = "gcal2"
   private val PARK_POS = "park-pos"
 
-  val lightSink: Parser[LightSinkName] =
-    many(letter).map { cs =>
-      val sinkName = cs.mkString
-      LightSinkName.all.find(_.name === sinkName)
-    }.collect { case Some(lsn) => lsn }
+  val lightSink: Parser[LightSinkName] = LightSinkName.all.foldMap(x => string(x.name).as(x))
 
   def prefixed(p: String, s: LightSource): Parser[ScienceFold] =
     (string(p) ~> lightSink ~ int).map { case (ls, port) => Position(s, ls, port) }
