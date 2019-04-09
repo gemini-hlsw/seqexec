@@ -5,15 +5,19 @@ package seqexec.server.altair
 
 import cats.Applicative
 import cats.effect.Sync
+import cats.implicits._
 import gem.Observation
 import gem.enum.KeywordName
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.InstrumentSystem
 import seqexec.server.keywords._
+import seqexec.server.tcs.TcsKeywordsReader
+import seqexec.server.tcs.CRFollow
 
 object AltairHeader {
-  def header[F[_]: Sync](inst:         InstrumentSystem[F],
-                         altairReader: AltairKeywordReader[F]): Header[F] =
+  def header[F[_]: Sync](inst:              InstrumentSystem[F],
+                         altairReader:      AltairKeywordReader[F],
+                         tcsKeywordsReader: TcsKeywordsReader[F]): Header[F] =
     new Header[F] {
       override def sendBefore(obsId: Observation.Id, id: ImageFileId): F[Unit] =
         sendKeywords(
@@ -28,7 +32,9 @@ object AltairHeader {
             buildDoubleS(altairReader.aowfsz, KeywordName.AOWFSZ),
             buildDoubleS(altairReader.aogain, KeywordName.AOGAIN),
             buildStringS(altairReader.aoncpa, KeywordName.AONCPAF),
-            buildStringS(altairReader.aocrfollow, KeywordName.CRFOLLOW),
+            buildStringS(tcsKeywordsReader.getCRFollow.map(
+                           _.map(CRFollow.keywordValue).getOrElse("INDEF")),
+                         KeywordName.CRFOLLOW),
             buildStringS(altairReader.ngndfilt, KeywordName.AONDFILT),
             buildStringS(altairReader.astar, KeywordName.AOFLENS),
             buildStringS(altairReader.aoflex, KeywordName.AOFLEXF),

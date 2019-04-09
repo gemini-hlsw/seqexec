@@ -199,5 +199,89 @@
             <type>STRING</type>
             <description>AO follow mode</description>
         </attribute>
+        <!-- LGS related channels -->
+        <attribute name="lgdfocus">
+            <channel>cc:SfoDefocus</channel>
+            <type>DOUBLE</type>
+            <description>LGS defocus offset set point</description>
+        </attribute>
+        <attribute name="apd1">
+            <channel>getStatus5.VALA</channel>
+            <type>FLOAT</type>
+            <description>strap counts 1</description>
+        </attribute>
+        <attribute name="apd2">
+            <channel>getStatus5.VALB</channel>
+            <type>FLOAT</type>
+            <description>strap counts 2</description>
+        </attribute>
+        <attribute name="apd3">
+            <channel>getStatus5.VALC</channel>
+            <type>FLOAT</type>
+            <description>strap counts 3</description>
+        </attribute>
+        <attribute name="apd4">
+            <channel>getStatus5.VALD</channel>
+            <type>FLOAT</type>
+            <description>strap counts 4</description>
+        </attribute>
+        <attribute name="lgttexp">
+            <channel>wfcs:strapSEX.VALA</channel>
+            <type>INTEGER</type>
+            <description>Tip tilt sensor exposure time (ms)</description>
+        </attribute>
+        <attribute name="fsmtip">
+            <channel>cc:lgsfsmTipDevice</channel>
+            <type>DOUBLE</type>
+            <description>Field steering mirror tip (mm)</description>
+        </attribute>
+        <attribute name="fsmtilt">
+            <channel>cc:lgsfsmTiltDevice</channel>
+            <type>DOUBLE</type>
+            <description>Field steering mirror tilt (mm)</description>
+        </attribute>
+        <attribute name="lgzmpos">
+            <channel>cc:lgszoomRoofDevice</channel>
+            <type>DOUBLE</type>
+            <description>LGS zoom roof position (mm)</description>
+        </attribute>
+        <attribute name="aozoom">
+            <channel>cc:lgszoomSfoFocus</channel>
+            <type>DOUBLE</type>
+            <description>ao zoom pos</description>
+        </attribute>
+        <attribute name="aoza">
+            <channel>cc:lgszoomAssembly.D</channel>
+            <type>DOUBLE</type>
+            <description>ao zenith angle</description>
+        </attribute>
+        <attribute name="nathick">
+            <channel>getStatus5.VALI</channel>
+            <type>DOUBLE</type>
+            <description>Sodium layer thickness (km)</description>
+        </attribute>
+        <attribute name="lgndfilt">
+            <channel>cc:lgsNDfiltAssembly.VALA</channel>
+            <type>STRING</type>
+            <description>LGS tip tilt sensor neutral density filter</description>
+        </attribute>
+        <attribute name="lgttiris">
+            <channel>cc:lgsirisAssembly.VALA</channel>
+            <type>STRING</type>
+            <description>LGS tip tilt sensor iris</description>
+        </attribute>
+    </Status>
+    <Status name = "sfostate">
+        <top>sfo</top>
+        <attribute name="lgsfcnts">
+            <channel>dspGlobalIntensity</channel>
+            <type>DOUBLE</type>
+            <description>Slow focus sensor counts (ADU)</description>
+        </attribute>
+        <attribute name="lgsfexp">
+            <channel>expTime</channel>
+            <type>DOUBLE</type>
+            <description>Slow focus sensor exposure time (s)</description>
+        </attribute>
     </Status>
 </Records>
