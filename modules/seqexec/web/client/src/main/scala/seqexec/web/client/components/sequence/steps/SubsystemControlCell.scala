@@ -60,14 +60,17 @@ object SubsystemControlCell {
           val inExecution =
             p.resourcesCalls
               .get(r)
-              .map(_ === ResourceRunOperation.ResourceRunInFlight)
-              .getOrElse(false)
+              .exists(_ === ResourceRunOperation.ResourceRunInFlight)
+          val completed =
+            p.resourcesCalls
+                .get(r)
+                .exists(_ === ResourceRunOperation.ResourceRunCompleted)
           Popup(
             Popup.Props("button", s"Configure ${r.show}"),
             Button(
               Button.Props(
                 size     = Size.Small,
-                color    = Some("blue"),
+                color    = if (inExecution) Some("yellow") else if (completed) Some("green") else Some("blue"),
                 disabled = inExecution,
                 labeled =
                   if (inExecution) Button.LeftLabeled else Button.NotLabeled,

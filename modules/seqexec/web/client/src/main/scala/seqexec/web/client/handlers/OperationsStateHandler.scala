@@ -75,7 +75,12 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
                                .set(StartFromOperation.StartFromInFlight)))
 
     case RunResourceComplete(id, _, r) =>
-      updated(value.markOperations(id, TabOperations.resourceRun(r).set(none)))
+      updated(
+        value.markOperations(
+          id,
+          TabOperations
+            .resourceRun(r).
+            set(ResourceRunOperation.ResourceRunCompleted.some)))
   }
 
   def handleOperationResult: PartialFunction[Any, ActionResult[M]] = {

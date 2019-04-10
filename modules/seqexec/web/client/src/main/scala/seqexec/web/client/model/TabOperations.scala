@@ -75,6 +75,7 @@ object SyncOperation {
 sealed trait ResourceRunOperation extends Product with Serializable
 object ResourceRunOperation {
   case object ResourceRunInFlight extends ResourceRunOperation
+  case object ResourceRunCompleted extends ResourceRunOperation
   case object ResourceRunIdle extends ResourceRunOperation
 
   implicit val eq: Eq[ResourceRunOperation] =
