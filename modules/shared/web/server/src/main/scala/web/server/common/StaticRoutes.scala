@@ -53,7 +53,7 @@ class StaticRoutes(devMode: Boolean, builtAtMillis: Long, blockingExecutionConte
     }
   }
 
-  private val supportedExtension = List(".html", ".js", ".map", ".css", ".png", ".eot", ".svg", ".woff", ".woff2", ".ttf", ".mp3", ".ico")
+  private val supportedExtension = List(".html", ".js", ".map", ".css", ".png", ".eot", ".svg", ".woff", ".woff2", ".ttf", ".mp3", ".ico", "webm")
 
   def service: HttpRoutes[IO] = GZip {
     implicit val ioContextShift: ContextShift[IO] = IO.contextShift(ExecutionContext.global) // not ideal but ok
