@@ -61,4 +61,12 @@ object WebpackResources {
   @js.native
   object BeepResourceWebM extends WebpackResource
 
+  @JSImport("sounds/soundon.mp3", JSImport.Default)
+  @js.native
+  object SoundOnMP3 extends WebpackResource
+
+  @JSImport("sounds/soundon.webm", JSImport.Default)
+  @js.native
+  object SoundOnWebM extends WebpackResource
+
 }
