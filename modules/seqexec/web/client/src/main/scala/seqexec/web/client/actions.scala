@@ -83,6 +83,12 @@ object actions {
                                      resource: Resource,
                                      msg:      String)
       extends Action
+  final case class RequestRunFrom(qid: Observation.Id, step: StepId)
+      extends Action
+  final case class RunFromComplete(id: Observation.Id, step: StepId)
+      extends Action
+  final case class RunFromFailed(id: Observation.Id, step: StepId)
+      extends Action
 
   final case class RunStarted(s:           Observation.Id) extends Action
   final case class RunPaused(s:            Observation.Id) extends Action

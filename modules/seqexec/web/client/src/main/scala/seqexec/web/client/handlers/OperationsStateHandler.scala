@@ -19,6 +19,7 @@ import seqexec.web.client.model.SequencesOnDisplay
 import seqexec.web.client.model.TabOperations
 import seqexec.web.client.model.AbortOperation
 import seqexec.web.client.model.ResourceRunOperation
+import seqexec.web.client.model.StartFromOperation
 import seqexec.web.client.actions._
 
 /**
@@ -67,6 +68,12 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
             .resourceRun(r)
             .set(ResourceRunOperation.ResourceRunInFlight.some)))
 
+    case RunFromComplete(id, _) =>
+      updated(
+        value.markOperations(id,
+                             TabOperations.startFromRequested
+                               .set(StartFromOperation.StartFromInFlight)))
+
     case RunResourceComplete(id, _, r) =>
       updated(value.markOperations(id, TabOperations.resourceRun(r).set(none)))
   }
@@ -81,7 +88,9 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
         value.markOperations(
           id,
           TabOperations.syncRequested.set(SyncOperation.SyncIdle)))
+  }
 
+  def handleOperationFailed: PartialFunction[Any, ActionResult[M]] = {
     case RunStartFailed(id) =>
       updated(
         value.markOperations(
@@ -121,6 +130,15 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
                 TabOperations.pauseRequested.set(PauseOperation.PauseIdle)),
               notification)
 
+    case RunFromFailed(id, sid) =>
+      val msg = s"Failed to start sequence ${id.format} from step ${sid + 1}"
+      val notification = Effect(
+        Future(RequestFailedNotification(RequestFailed(List(msg)))))
+      updated(value.markOperations(id,
+                                   TabOperations.startFromRequested.set(
+                                     StartFromOperation.StartFromIdle)),
+              notification)
+
     case RunResourceFailed(id, _, r, m) =>
       val msg = s"Failed to configure ${r.show} for sequence ${id.format}"
       val notification = Effect(
@@ -151,6 +169,7 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
   override def handle: PartialFunction[Any, ActionResult[M]] =
     List(handleRequestOperation,
          handleOperationResult,
+         handleOperationFailed,
          handleSelectedStep,
          handleOperationComplete).combineAll
 }

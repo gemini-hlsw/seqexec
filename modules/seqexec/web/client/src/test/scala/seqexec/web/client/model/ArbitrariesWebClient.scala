@@ -101,10 +101,16 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
       Gen.oneOf(ResourceRunOperation.ResourceRunIdle,
                 ResourceRunOperation.ResourceRunInFlight))
 
-
   implicit val rruCogen: Cogen[ResourceRunOperation] =
     Cogen[String].contramap(_.productPrefix)
 
+  implicit val arbStartFromOperation: Arbitrary[StartFromOperation] =
+    Arbitrary(
+      Gen.oneOf(StartFromOperation.StartFromIdle,
+                StartFromOperation.StartFromInFlight))
+
+  implicit val sfeCogen: Cogen[StartFromOperation] =
+    Cogen[String].contramap(_.productPrefix)
 
   implicit val arbTabOperations: Arbitrary[TabOperations] =
     Arbitrary {
@@ -115,8 +121,9 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
         m <- arbitrary[ResumeOperation]
         t <- arbitrary[StopOperation]
         a <- arbitrary[AbortOperation]
+        f <- arbitrary[StartFromOperation]
         u <- arbitrary[SortedMap[Resource, ResourceRunOperation]]
-      } yield TabOperations(r, s, p, m, t, a, u)
+      } yield TabOperations(r, s, p, m, t, a, f, u)
     }
 
   implicit val toCogen: Cogen[TabOperations] = {

@@ -46,6 +46,19 @@ class RemoteRequestsHandler[M](modelRW: ModelRW[M, Option[ClientId]])
                       RunPauseFailed.apply))
   }
 
+  def handleRunFrom: PartialFunction[Any, ActionResult[M]] = {
+    case RequestRunFrom(id, stepId) =>
+      val effect = value
+        .map(
+          clientId =>
+            requestEffect(id,
+                          SeqexecWebClient.runFrom(_, stepId, clientId),
+                          RunFromComplete(_, stepId),
+                          RunFromFailed(_, stepId)))
+        .getOrElse(VoidEffect)
+      effectOnly(effect)
+  }
+
   def handleCancelPause: PartialFunction[Any, ActionResult[M]] = {
     case RequestCancelPause(id) =>
       effectOnly(
@@ -117,7 +130,7 @@ class RemoteRequestsHandler[M](modelRW: ModelRW[M, Option[ClientId]])
       effectOnly(
         requestEffect(
           id,
-          SeqexecWebClient.runResource(step, resource),
+          SeqexecWebClient.runResource(step, resource, _),
           (id: Observation.Id) => RunResource(id, step, resource),
           (id: Observation.Id) =>
             RunResourceFailed(id,
@@ -136,6 +149,7 @@ class RemoteRequestsHandler[M](modelRW: ModelRW[M, Option[ClientId]])
          handleObsPause,
          handleObsResume,
          handleSync,
+         handleRunFrom,
          handleResourceRun).combineAll
 
 }

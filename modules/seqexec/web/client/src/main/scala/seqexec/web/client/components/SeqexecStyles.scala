@@ -291,4 +291,7 @@ object SeqexecStyles {
 
   val dropOnTab: GStyle =
     GStyle.fromString("SeqexecStyles-dropOnTab")
+
+  val runFrom: GStyle =
+    GStyle.fromString("SeqexecStyles-runFrom")
 }

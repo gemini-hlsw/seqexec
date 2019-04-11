@@ -32,15 +32,14 @@ import web.client.style._
   * Component to display the step state and control
   */
 object StepProgressCell {
-  final case class Props(
-    clientStatus:         ClientStatus,
-    instrument:           Instrument,
-    obsId:                Observation.Id,
-    state:                SequenceState,
-    step:                 Step,
-    selectedStep:         Option[StepId],
-    isPreview:            Boolean,
-    tabOperations:        TabOperations) {
+  final case class Props(clientStatus:  ClientStatus,
+                         instrument:    Instrument,
+                         obsId:         Observation.Id,
+                         state:         SequenceState,
+                         step:          Step,
+                         selectedStep:  Option[StepId],
+                         isPreview:     Boolean,
+                         tabOperations: TabOperations) {
 
     val resourceRunRequested = tabOperations.resourceRunRequested
 
@@ -150,6 +149,11 @@ object StepProgressCell {
   def stepSubsystemControl(props: Props): VdomElement =
     <.div(
       SeqexecStyles.configuringRow,
+      RunFromStep(
+        RunFromStep.Props(props.obsId,
+                          props.step.id,
+                          props.tabOperations.startFromRequested))
+        .when(props.step.canRunFrom),
       <.div(
         SeqexecStyles.specialStateLabel,
         props.step.show

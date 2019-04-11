@@ -82,6 +82,16 @@ object ResourceRunOperation {
 
 }
 
+sealed trait StartFromOperation extends Product with Serializable
+object StartFromOperation {
+  case object StartFromInFlight extends StartFromOperation
+  case object StartFromIdle extends StartFromOperation
+
+  implicit val eq: Eq[StartFromOperation] =
+    Eq.fromUniversalEquals
+
+}
+
 /**
   * Hold transient states while excuting an operation
   */
@@ -93,6 +103,7 @@ final case class TabOperations(
   resumeRequested:      ResumeOperation,
   stopRequested:        StopOperation,
   abortRequested:       AbortOperation,
+  startFromRequested:   StartFromOperation,
   resourceRunRequested: SortedMap[Resource, ResourceRunOperation]) {
   // Indicate if any resource is being executed
   def resourceInFlight: Boolean =
@@ -101,9 +112,10 @@ final case class TabOperations(
 
   val stepRequestInFlight: Boolean =
     pauseRequested === PauseOperation.PauseInFlight ||
-    resumeRequested === ResumeOperation.ResumeInFlight ||
-    stopRequested === StopOperation.StopInFlight ||
-    abortRequested === AbortOperation.AbortInFlight
+      resumeRequested === ResumeOperation.ResumeInFlight ||
+      stopRequested === StopOperation.StopInFlight ||
+      abortRequested === AbortOperation.AbortInFlight ||
+      startFromRequested === StartFromOperation.StartFromInFlight
 }
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
@@ -117,6 +129,7 @@ object TabOperations {
          x.resumeRequested,
          x.stopRequested,
          x.abortRequested,
+         x.startFromRequested,
          x.resourceRunRequested))
 
   def resourceRun(
@@ -124,11 +137,14 @@ object TabOperations {
     TabOperations.resourceRunRequested ^|-> at(r)
 
   val Default: TabOperations =
-    TabOperations(RunOperation.RunIdle,
-                  SyncOperation.SyncIdle,
-                  PauseOperation.PauseIdle,
-                  ResumeOperation.ResumeIdle,
-                  StopOperation.StopIdle,
-                  AbortOperation.AbortIdle,
-                  SortedMap.empty)
+    TabOperations(
+      RunOperation.RunIdle,
+      SyncOperation.SyncIdle,
+      PauseOperation.PauseIdle,
+      ResumeOperation.ResumeIdle,
+      StopOperation.StopIdle,
+      AbortOperation.AbortIdle,
+      StartFromOperation.StartFromIdle,
+      SortedMap.empty
+    )
 }
