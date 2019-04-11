@@ -3,7 +3,7 @@
 
 package seqexec.server.gmos
 
-import cats.effect.IO
+import cats.effect.Sync
 import cats.implicits._
 import seqexec.model.enum.Instrument
 import seqexec.server.ConfigUtilOps
@@ -21,7 +21,7 @@ import edu.gemini.spModel.seqcomp.SeqConfigNames.INSTRUMENT_KEY
 import squants.Length
 import squants.space.Arcseconds
 
-final case class GmosSouth(c: GmosSouthController, dhsClient: DhsClient[IO]) extends Gmos[SouthTypes](c,
+final case class GmosSouth[F[_]: Sync](c: GmosSouthController[F], dhsClient: DhsClient[F]) extends Gmos[F, SouthTypes](c,
   new SiteSpecifics[SouthTypes] {
     override val fpuDefault: GmosSouthType.FPUnitSouth = FPU_NONE
     override def extractFilter(config: Config): Either[ConfigUtilOps.ExtractFailure, SouthTypes#Filter] =
@@ -43,5 +43,5 @@ final case class GmosSouth(c: GmosSouthController, dhsClient: DhsClient[IO]) ext
 object GmosSouth {
   val name: String = INSTRUMENT_NAME_PROP
 
-  def apply(c: GmosController[SouthTypes], dhsClient: DhsClient[IO]): GmosSouth = new GmosSouth(c, dhsClient)
+  def apply[F[_]: Sync](c: GmosController[F, SouthTypes], dhsClient: DhsClient[F]): GmosSouth[F] = new GmosSouth[F](c, dhsClient)
 }

@@ -3,8 +3,9 @@
 
 package seqexec.server.flamingos2
 
-import cats.data.{EitherT, Reader}
-import cats.effect.IO
+import cats.data.Reader
+import cats.effect.Sync
+import cats.effect.Timer
 import cats.implicits._
 import fs2.Stream
 import seqexec.server.tcs.FOCAL_PLANE_SCALE
@@ -13,9 +14,7 @@ import edu.gemini.spModel.gemini.flamingos2.Flamingos2.{Reads, _}
 import edu.gemini.spModel.obscomp.InstConstants.{DARK_OBSERVE_TYPE, OBSERVE_TYPE_PROP}
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import java.lang.{Double => JDouble}
-
 import gem.enum.LightSinkName
-
 import scala.concurrent.duration.{Duration, SECONDS}
 import seqexec.model.enum.Instrument
 import seqexec.model.dhs.ImageFileId
@@ -29,7 +28,7 @@ import squants.time.{Seconds, Time}
 
 import scala.reflect.ClassTag
 
-final case class Flamingos2(f2Controller: Flamingos2Controller, dhsClient: DhsClient[IO]) extends DhsInstrument[IO] with InstrumentSystem[IO] {
+final case class Flamingos2[F[_]: Sync: Timer](f2Controller: Flamingos2Controller[F], dhsClient: DhsClient[F]) extends DhsInstrument[F] with InstrumentSystem[F] {
 
   import Flamingos2._
 
@@ -41,31 +40,31 @@ final case class Flamingos2(f2Controller: Flamingos2Controller, dhsClient: DhsCl
 
   override val dhsInstrumentName: String = "F2"
 
-  override val keywordsClient: KeywordsClient[IO] = this
+  override val keywordsClient: KeywordsClient[F] = this
 
-  override val observeControl: InstrumentSystem.ObserveControl[IO] = InstrumentSystem.Uncontrollable()
+  override val observeControl: InstrumentSystem.ObserveControl[F] = InstrumentSystem.Uncontrollable()
 
   // FLAMINGOS-2 does not support abort or stop.
-  override def observe(config: Config): SeqObserve[ImageFileId, ObserveCommand.Result] =
+  override def observe(config: Config): SeqObserveF[F, ImageFileId, ObserveCommand.Result] =
     Reader { fileId =>
-      SeqActionF.liftF(calcObserveTime(config)).flatMap {
-        f2Controller.observe(fileId, _)
+      SeqActionF.liftF(calcObserveTime(config)).flatMap { x =>
+        SeqActionF.embedF(f2Controller.observe(fileId, x))
       }
   }
 
-  override def configure(config: Config): SeqAction[ConfigResult[IO]] =
-    fromSequenceConfig(config).flatMap(f2Controller.applyConfig).as(ConfigResult(this))
+  override def configure(config: Config): SeqActionF[F, ConfigResult[F]] =
+    fromSequenceConfig(config).flatMap(x => SeqActionF.embedF(f2Controller.applyConfig(x))).as(ConfigResult(this))
 
-  override def notifyObserveEnd: SeqAction[Unit] = f2Controller.endObserve
+  override def notifyObserveEnd: SeqActionF[F, Unit] = SeqActionF.embedF(f2Controller.endObserve)
 
-  override def notifyObserveStart: SeqAction[Unit] = SeqAction.void
+  override def notifyObserveStart: SeqActionF[F, Unit] = SeqActionF.void
 
-  override def calcObserveTime(config: Config): IO[Time] =
-    IO(
+  override def calcObserveTime(config: Config): F[Time] =
+    Sync[F].delay(
       config.extractAs[JDouble](OBSERVE_KEY / EXPOSURE_TIME_PROP)
         .map(x => Seconds(x.toDouble)).getOrElse(Seconds(360)))
 
-  override def observeProgress(total: Time, elapsed: InstrumentSystem.ElapsedTime): Stream[IO, Progress] = f2Controller
+  override def observeProgress(total: Time, elapsed: InstrumentSystem.ElapsedTime): Stream[F, Progress] = f2Controller
     .observeProgress(total)
 
   // TODO Use different value if using electronic offsets
@@ -165,10 +164,10 @@ object Flamingos2 {
       s <- config.extractAs[Decker](INSTRUMENT_KEY / DECKER_PROP)
     } yield DCConfig(p, q, r, s)).leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
 
-  def fromSequenceConfig(config: Config): SeqAction[Flamingos2Config] = EitherT( IO ( for {
+  def fromSequenceConfig[F[_]: Sync](config: Config): SeqActionF[F, Flamingos2Config] = SeqActionF.either( for {
       p <- ccConfigFromSequenceConfig(config)
       q <- dcConfigFromSequenceConfig(config)
     } yield Flamingos2Config(p, q)
-  ) )
+   )
 
 }

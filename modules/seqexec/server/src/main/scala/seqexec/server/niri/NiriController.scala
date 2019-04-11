@@ -4,27 +4,26 @@
 package seqexec.server.niri
 
 import cats.Show
-import cats.effect.IO
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.niri.NiriController.{DCConfig, NiriConfig}
-import seqexec.server.{ObserveCommand, Progress, SeqAction}
+import seqexec.server.{ObserveCommand, Progress}
 import squants.Time
 
-trait NiriController {
+trait NiriController[F[_]] {
 
-  def applyConfig(config: NiriConfig): SeqAction[Unit]
+  def applyConfig(config: NiriConfig): F[Unit]
 
-  def observe(fileId: ImageFileId, cfg: DCConfig): SeqAction[ObserveCommand.Result]
+  def observe(fileId: ImageFileId, cfg: DCConfig): F[ObserveCommand.Result]
 
-  def endObserve: SeqAction[Unit]
+  def endObserve: F[Unit]
 
-  def stopObserve: SeqAction[Unit]
+  def stopObserve: F[Unit]
 
-  def abortObserve: SeqAction[Unit]
+  def abortObserve: F[Unit]
 
-  def observeProgress(total: Time): fs2.Stream[IO, Progress]
+  def observeProgress(total: Time): fs2.Stream[F, Progress]
 
-  def calcTotalExposureTime(cfg: DCConfig): IO[Time]
+  def calcTotalExposureTime(cfg: DCConfig): F[Time]
 
 }
 

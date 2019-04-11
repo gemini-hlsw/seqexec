@@ -3,27 +3,24 @@
 
 package seqexec.server
 
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicInteger
-
 import cats.Show
-import cats.data.EitherT
-import cats.effect.IO
 import cats.effect.Timer
+import cats.effect.Sync
 import cats.implicits._
 import fs2.Stream
-import seqexec.model.dhs.ImageFileId
-import seqexec.server.SeqexecFailure.SeqexecException
 import gov.aps.jca.TimeoutException
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 import mouse.all._
 import org.log4s.getLogger
-import scala.concurrent.ExecutionContext
+import seqexec.model.dhs.ImageFileId
+import seqexec.server.SeqexecFailure.SeqexecException
 import seqexec.server.InstrumentSystem.ElapsedTime
 import squants.time.{Seconds, Time}
 
 import scala.annotation.tailrec
 
-class InstrumentControllerSim(name: String, useTimeout: Boolean) {
+class InstrumentControllerSim[F[_]: Sync](name: String, useTimeout: Boolean) {
   private val Log = getLogger
 
   private val stopFlag = new AtomicBoolean(false)
@@ -37,90 +34,82 @@ class InstrumentControllerSim(name: String, useTimeout: Boolean) {
   private val ConfigurationDelay = Seconds(5)
 
   @tailrec
-  private def observeTic(stop: Boolean, abort: Boolean, pause: Boolean, remain: Int, timeout: Option[Int]): TrySeq[ObserveCommand.Result] =
+  private def observeTic(stop: Boolean, abort: Boolean, pause: Boolean, remain: Int, timeout: Option[Int]): F[ObserveCommand.Result] =
     if(remain < tic) {
       Log.info(s"Simulate $name observation completed")
-      TrySeq(ObserveCommand.Success)
-    } else if(stop) TrySeq(ObserveCommand.Stopped)
-      else if(abort) TrySeq(ObserveCommand.Aborted)
+      (ObserveCommand.Success: ObserveCommand.Result).pure[F]
+    } else if(stop) (ObserveCommand.Stopped: ObserveCommand.Result).pure[F]
+      else if(abort) (ObserveCommand.Aborted: ObserveCommand.Result).pure[F]
       else if(pause) {
         remainingTime.set(remain)
-        TrySeq(ObserveCommand.Paused)
+        (ObserveCommand.Paused: ObserveCommand.Result).pure[F]
       }
-      else if(timeout.exists(_<= 0)) TrySeq.fail(SeqexecException(new TimeoutException()))
+      else if(timeout.exists(_<= 0)) Sync[F].raiseError(SeqexecException(new TimeoutException()))
       else {
         Thread.sleep(tic.toLong)
         observeTic(stopFlag.get, abortFlag.get, pauseFlag.get, remain - tic, timeout.map(_ - tic))
       }
 
-  def observe(fileId: ImageFileId, expTime: Time): SeqAction[ObserveCommand.Result] = EitherT( IO {
+  def observe(fileId: ImageFileId, expTime: Time): F[ObserveCommand.Result] = Sync[F].delay {
     Log.info(s"Simulate taking $name observation with label $fileId")
     pauseFlag.set(false)
     stopFlag.set(false)
     abortFlag.set(false)
     val totalTime = (expTime + ReadoutDelay).toMilliseconds.toInt
     remainingTime.set(totalTime)
+    totalTime
+  }.flatMap {totalTime =>
     observeTic(stop = false, abort = false, pause = false, totalTime, useTimeout.option(totalTime + 2 * tic))
-  } )
+  }
 
-  def applyConfig[C: Show](config: C): SeqAction[Unit] = EitherT( IO {
+  def applyConfig[C: Show](config: C): F[Unit] = Sync[F].delay {
     Log.info(s"Simulate applying $name configuration ${config.show}")
     Thread.sleep(ConfigurationDelay.toMilliseconds.toLong)
-    TrySeq(())
-  } )
+  }
 
-  def stopObserve: SeqAction[Unit] = EitherT( IO {
+  def stopObserve: F[Unit] = Sync[F].delay {
     Log.info(s"Simulate stopping $name exposure")
     Thread.sleep(1500)
     stopFlag.set(true)
-    TrySeq(())
-  } )
+  }
 
-  def abortObserve: SeqAction[Unit] = EitherT( IO {
+  def abortObserve: F[Unit] = Sync[F].delay {
     Log.info(s"Simulate aborting $name exposure")
     abortFlag.set(true)
-    TrySeq(())
-  } )
+  }
 
-  def endObserve: SeqAction[Unit] = EitherT( IO {
+  def endObserve: F[Unit] = Sync[F].delay {
     Log.info(s"Simulate sending endObserve to $name")
-    TrySeq(())
-  } )
+  }
 
-  def pauseObserve: SeqAction[Unit] = EitherT( IO {
+  def pauseObserve: F[Unit] = Sync[F].delay {
     Log.info(s"Simulate pausing $name exposure")
     pauseFlag.set(true)
-    TrySeq(())
-  } )
+  }
 
-  def resumePaused: SeqAction[ObserveCommand.Result] = EitherT( IO {
+  def resumePaused: F[ObserveCommand.Result] = Sync[F].delay {
     Log.info(s"Simulate resuming $name observation")
-    pauseFlag.set(false)
+    pauseFlag.set(false) } *>
     observeTic(stop = false, abort = false, pause = false, remainingTime.get,
       useTimeout.option(remainingTime.get + 2 * tic))
-  } )
 
-  def stopPaused: SeqAction[ObserveCommand.Result] = EitherT( IO {
+  def stopPaused: F[ObserveCommand.Result] = Sync[F].delay {
     Log.info(s"Simulate stopping $name paused observation")
-    pauseFlag.set(false)
+    pauseFlag.set(false) } *>
     observeTic(stop = true, abort = false, pause = false, 1000, None)
-  } )
 
-  def abortPaused: SeqAction[ObserveCommand.Result] = EitherT( IO {
+  def abortPaused: F[ObserveCommand.Result] = Sync[F].delay {
     Log.info(s"Simulate aborting $name paused observation")
-    pauseFlag.set(false)
+    pauseFlag.set(false) } *>
     observeTic(stop = false, abort = true, pause = false, 1000, None)
-  } )
 
-  def observeCountdown(total: Time, elapsed: ElapsedTime): Stream[IO, Progress] = {
-    implicit val ioTimer: Timer[IO] = IO.timer(ExecutionContext.global)
-    ProgressUtil.countdown[IO](total, elapsed.self)
-  }
+  def observeCountdown(total: Time, elapsed: ElapsedTime)(implicit t: Timer[F]): Stream[F, Progress] =
+    ProgressUtil.countdown[F](total, elapsed.self)
 
 }
 
 object InstrumentControllerSim {
-  def apply(name: String): InstrumentControllerSim = new InstrumentControllerSim(name, false)
-  def withTimeout(name: String): InstrumentControllerSim = new InstrumentControllerSim(name, true)
+  def apply[F[_]: Sync](name: String): InstrumentControllerSim[F] = new InstrumentControllerSim[F](name, false)
+  def withTimeout[F[_]: Sync](name: String): InstrumentControllerSim[F] = new InstrumentControllerSim[F](name, true)
 
 }

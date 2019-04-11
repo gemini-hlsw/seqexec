@@ -2,7 +2,6 @@
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
 package seqexec.server.niri
-import cats.data.EitherT
 import cats.effect.{ IO, Timer }
 import cats.implicits._
 import edu.gemini.seqexec.server.niri.{Camera => JCamera}
@@ -20,7 +19,7 @@ import seqexec.server.EpicsUtil._
 import squants.{Seconds, Time}
 import squants.time.TimeConversions._
 
-object NiriControllerEpics extends NiriController {
+object NiriControllerEpics extends NiriController[IO] {
 
   private val Log = getLogger
 
@@ -240,62 +239,62 @@ object NiriControllerEpics extends NiriController {
     case i@Illuminated(_, _) => configIlluminatedCC(i)
   }
 
-  override def applyConfig(config: NiriController.NiriConfig): SeqAction[Unit] = {
+  override def applyConfig(config: NiriController.NiriConfig): IO[Unit] = {
     val paramsDC = configDC(config.dc)
     val params =  paramsDC ++ configCC(config.cc)
 
-    val cfgActions1 = if(params.isEmpty) SeqAction(EpicsCommand.Completed)
-                      else params.sequence.void *>
-                        epicsSys.configCmd.setTimeout(ConfigTimeout) *>
-                        epicsSys.configCmd.post
+    val cfgActions1 = if(params.isEmpty) IO.pure(EpicsCommand.Completed)
+                      else params.sequence.void.actionF *>
+                        epicsSys.configCmd.setTimeout(ConfigTimeout).actionF *>
+                        epicsSys.configCmd.post.actionF
     // Weird NIRI behavior. The main IS apply is nor connected to the DC apply, but triggering the
     // IS apply writes the DC parameters. So to configure the DC, we need to set the DC parameters
     // in the IS, trigger the IS apply, and then trigger the DC apply.
     val cfgActions = if(paramsDC.isEmpty) cfgActions1
                      else cfgActions1 *>
-                       epicsSys.configDCCmd.setTimeout(DefaultTimeout) *>
-                       epicsSys.configDCCmd.post
+                       epicsSys.configDCCmd.setTimeout(DefaultTimeout).actionF *>
+                       epicsSys.configDCCmd.post.actionF
 
-    SeqAction(Log.debug("Starting NIRI configuration")) *>
-      (if(epicsSys.dhsConnected.exists(identity)) SeqAction.void
-       else EitherT.right(IO(Log.warn("NIRI is not connected to DHS")))
+    IO(Log.debug("Starting NIRI configuration")) *>
+      (if(epicsSys.dhsConnected.exists(identity)) IO.unit
+       else IO(Log.warn("NIRI is not connected to DHS"))
       ) *>
-      (if(epicsSys.arrayActive.exists(identity)) SeqAction.void
-       else EitherT.right(IO(Log.warn("NIRI detector array is not active")))
+      (if(epicsSys.arrayActive.exists(identity)) IO.unit
+       else IO(Log.warn("NIRI detector array is not active"))
       ) *>
       cfgActions *>
-      SeqAction(Log.debug("Completed NIRI configuration"))
+      IO(Log.debug("Completed NIRI configuration"))
   }
 
-  override def observe(fileId: ImageFileId, cfg: DCConfig): SeqAction[ObserveCommand.Result] =
-    EitherT.right[SeqexecFailure](IO(Log.info("Start NIRI observe"))) *>
-      (if(epicsSys.dhsConnected.exists(identity)) SeqAction.void
-       else SeqAction.fail(SeqexecFailure.Execution("NIRI is not connected to DHS"))
+  override def observe(fileId: ImageFileId, cfg: DCConfig): IO[ObserveCommand.Result] =
+    IO(Log.info("Start NIRI observe")) *>
+      (if(epicsSys.dhsConnected.exists(identity)) IO.unit
+       else IO.raiseError(SeqexecFailure.Execution("NIRI is not connected to DHS"))
       ) *>
-      (if(epicsSys.arrayActive.exists(identity)) SeqAction.void
-       else SeqAction.fail(SeqexecFailure.Execution("NIRI detector array is not active"))
+      (if(epicsSys.arrayActive.exists(identity)) IO.unit
+       else IO.raiseError(SeqexecFailure.Execution("NIRI detector array is not active"))
       ) *>
-      epicsSys.observeCmd.setLabel(fileId) *>
-      epicsSys.observeCmd.setTimeout(calcObserveTimeout(cfg)) *>
-      epicsSys.observeCmd.post
+      epicsSys.observeCmd.setLabel(fileId).actionF *>
+      epicsSys.observeCmd.setTimeout(calcObserveTimeout(cfg)).actionF *>
+      epicsSys.observeCmd.post.actionF
 
-  override def endObserve: SeqAction[Unit] =
-    EitherT.right[SeqexecFailure](IO(Log.debug("Send endObserve to NIRI"))) *>
-      epicsSys.endObserveCmd.setTimeout(DefaultTimeout) *>
-      epicsSys.endObserveCmd.mark *>
-      epicsSys.endObserveCmd.post.void
+  override def endObserve: IO[Unit] =
+    IO(Log.debug("Send endObserve to NIRI")) *>
+      epicsSys.endObserveCmd.setTimeout(DefaultTimeout).actionF *>
+      epicsSys.endObserveCmd.mark.actionF *>
+      epicsSys.endObserveCmd.post.void.actionF
 
-  override def stopObserve: SeqAction[Unit] =
-    EitherT.right[SeqexecFailure](IO(Log.info("Stop NIRI exposure"))) *>
-      epicsSys.stopCmd.setTimeout(DefaultTimeout) *>
-      epicsSys.stopCmd.mark *>
-      epicsSys.stopCmd.post.void
+  override def stopObserve: IO[Unit] =
+    IO(Log.info("Stop NIRI exposure")) *>
+      epicsSys.stopCmd.setTimeout(DefaultTimeout).actionF *>
+      epicsSys.stopCmd.mark.actionF *>
+      epicsSys.stopCmd.post.void.actionF
 
-  override def abortObserve: SeqAction[Unit] =
-    EitherT.right[SeqexecFailure](IO(Log.info("Abort NIRI exposure"))) *>
-      epicsSys.abortCmd.setTimeout(DefaultTimeout) *>
-      epicsSys.abortCmd.mark *>
-      epicsSys.abortCmd.post.void
+  override def abortObserve: IO[Unit] =
+    IO(Log.info("Abort NIRI exposure")) *>
+      epicsSys.abortCmd.setTimeout(DefaultTimeout).actionF *>
+      epicsSys.abortCmd.mark.actionF *>
+      epicsSys.abortCmd.post.void.actionF
 
   override def observeProgress(total: Time): fs2.Stream[IO, Progress] =
     ProgressUtil.countdown[IO](total, 0.seconds)

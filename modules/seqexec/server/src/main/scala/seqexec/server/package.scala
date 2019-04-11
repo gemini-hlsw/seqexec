@@ -180,7 +180,7 @@ package object server {
   object SeqActionF {
     def apply[F[_]: Sync, A](a: => A): SeqActionF[F, A] =
       EitherT(Sync[F].delay(TrySeq(a)))
-    def pure[F[_]: Sync, A](a: => A): SeqActionF[F, A] =
+    def delay[F[_]: Sync, A](a: => A): SeqActionF[F, A] =
       apply(a)
     def liftF[F[_]: Functor, A](a:          => F[A]): SeqActionF[F, A] = EitherT.liftF(a)
 
@@ -194,6 +194,17 @@ package object server {
         case e: SeqexecFailure => e
         case r                 => SeqexecFailure.SeqexecException(r)
       })))
+
+    // embedF will take an F attempt it and convert it to SeqActionF
+    // The semantics of error handling are:
+    // * if the F has failed with a known exception type put it on the left of the EitherT
+    // * For non fatal exceptions, they are wrapped in a SeqexecException
+    // * Fatal exceptions are propagated
+    def embedF[F[_]: ApplicativeError[?[_], Throwable], A](a: => F[A]): SeqActionF[F, A] =
+      EitherT(a.attempt.map(_.leftMap {
+        case e: SeqexecFailure => e
+        case r                 => SeqexecFailure.SeqexecException(r)
+      }))
 
     def either[F[_]: Sync, A](a: => TrySeq[A]): SeqActionF[F, A] =
       EitherT(Sync[F].delay(a))
@@ -221,6 +232,11 @@ package object server {
   implicit class IOOps[F[_]: LiftIO, A](ioa: IO[A]) {
     def embed: SeqActionF[F, A] =
       SeqActionF.embed(ioa)
+  }
+
+  implicit class SeqActionOps[F[_]: MonadError[?[_], Throwable], A](a: SeqActionF[F, A]) {
+    def actionF: F[A] =
+      a.leftWiden[Throwable].rethrowT
   }
 
   // This assumes that there is only one instance of e in l

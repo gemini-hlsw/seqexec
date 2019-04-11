@@ -3,7 +3,6 @@
 
 package seqexec.server.gnirs
 
-import cats.effect.IO
 import cats.Applicative
 import cats.Eq
 import cats.Show
@@ -11,26 +10,26 @@ import cats.implicits._
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams.{ ReadMode => LegacyReadMode }
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.gnirs.GnirsController.GnirsConfig
-import seqexec.server.{ObserveCommand, Progress, SeqAction}
+import seqexec.server.{ObserveCommand, Progress}
 import squants.{Length, Time}
 import squants.time.TimeConversions._
 
-trait GnirsController {
+trait GnirsController[F[_]] {
 
-  def applyConfig(config: GnirsConfig): SeqAction[Unit]
+  def applyConfig(config: GnirsConfig): F[Unit]
 
-  def observe(fileId: ImageFileId, expTime: Time): SeqAction[ObserveCommand.Result]
+  def observe(fileId: ImageFileId, expTime: Time): F[ObserveCommand.Result]
 
   // endObserve is to notify the completion of the observation, not to cause its end.
-  def endObserve: SeqAction[Unit]
+  def endObserve: F[Unit]
 
-  def stopObserve: SeqAction[Unit]
+  def stopObserve: F[Unit]
 
-  def abortObserve: SeqAction[Unit]
+  def abortObserve: F[Unit]
 
-  def observeProgress(total: Time): fs2.Stream[IO, Progress]
+  def observeProgress(total: Time): fs2.Stream[F, Progress]
 
-  def calcTotalExposureTime[F[_]: Applicative](cfg: GnirsController.DCConfig): F[Time] = {
+  def calcTotalExposureTime(cfg: GnirsController.DCConfig)(implicit ev: Applicative[F]): F[Time] = {
     val readOutTime = cfg.readMode match {
       case LegacyReadMode.VERY_BRIGHT => 0.19
       case LegacyReadMode.BRIGHT => 0.69

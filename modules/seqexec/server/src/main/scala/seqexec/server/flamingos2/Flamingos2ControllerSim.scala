@@ -5,12 +5,14 @@ package seqexec.server.flamingos2
 
 import java.util.concurrent.atomic.AtomicInteger
 
-import cats.data.EitherT
-import cats.effect.IO
+import cats.effect.Sync
+import cats.effect.Timer
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.SeqexecFailure.Execution
 import seqexec.server.flamingos2.Flamingos2Controller.Flamingos2Config
-import seqexec.server.{InstrumentControllerSim, ObserveCommand, Progress, SeqAction, TrySeq}
+import seqexec.server.InstrumentControllerSim
+import seqexec.server.ObserveCommand
+import seqexec.server.Progress
 import org.log4s.getLogger
 import squants.Time
 import squants.time.TimeConversions._
@@ -18,52 +20,53 @@ import cats.implicits._
 import fs2.Stream
 import seqexec.server.InstrumentSystem.ElapsedTime
 
-object Flamingos2ControllerSim extends Flamingos2Controller {
-  private val sim = InstrumentControllerSim("FLAMINGOS-2")
+final case class Flamingos2ControllerSim[F[_]: Sync]()
+    extends Flamingos2Controller[F] {
+  private val sim = InstrumentControllerSim[F]("FLAMINGOS-2")
 
-  override def getConfig: SeqAction[Flamingos2Config] = ??? // scalastyle:ignore
-
-  override def observe(fileId: ImageFileId, expTime: Time): SeqAction[ObserveCommand.Result] =
+  override def observe(fileId:  ImageFileId,
+                       expTime: Time): F[ObserveCommand.Result] =
     sim.observe(fileId, expTime)
 
-  override def applyConfig(config: Flamingos2Config): SeqAction[Unit] =
+  override def applyConfig(config: Flamingos2Config): F[Unit] =
     sim.applyConfig(config)
 
-  override def endObserve: SeqAction[Unit] = sim.endObserve
+  override def endObserve: F[Unit] = sim.endObserve
 
-  override def observeProgress(total: Time): Stream[IO, Progress] = sim.observeCountdown(total,
-    ElapsedTime(0.seconds))
+  override def observeProgress(total: Time)(
+    implicit t:                       Timer[F]): Stream[F, Progress] =
+    sim.observeCountdown(total, ElapsedTime(0.seconds))
 }
 
 /**
- * This controller will run correctly but fail at step `failAt`
- */
-final case class Flamingos2ControllerSimBad(failAt: Int) extends Flamingos2Controller {
+  * This controller will run correctly but fail at step `failAt`
+  */
+final case class Flamingos2ControllerSimBad[F[_]: Sync](failAt: Int)
+    extends Flamingos2Controller[F] {
   private val Log = getLogger
 
   private val sim = InstrumentControllerSim("FLAMINGOS-2 (bad)")
 
-
-  override def getConfig: SeqAction[Flamingos2Config] = ??? // scalastyle:ignore
-
   private val counter: AtomicInteger = new AtomicInteger(0)
 
-  override def observe(fileId: ImageFileId, expTime: Time): SeqAction[ObserveCommand.Result] =
+  override def observe(fileId:  ImageFileId,
+                       expTime: Time): F[ObserveCommand.Result] =
     sim.observe(fileId, expTime)
 
-  override def applyConfig(config: Flamingos2Config): SeqAction[Unit] = EitherT( IO {
-    Log.info(s"Applying Flamingos-2 configuration $config")
-    if (counter.addAndGet(1) === failAt) {
-      counter.set(0)
-      Log.error(s"Error applying Flamingos-2 configuration")
-      TrySeq.fail(Execution("simulated error"))
-    } else {
-      TrySeq(())
-    }
-  } )
+  override def applyConfig(config: Flamingos2Config): F[Unit] =
+    Sync[F].delay {
+      Log.info(s"Applying Flamingos-2 configuration $config")
+    } *> Sync[F]
+      .delay { counter.addAndGet(1) === failAt }
+      .ifM({
+        counter.set(0)
+        Log.error(s"Error applying Flamingos-2 configuration")
+        Sync[F].raiseError(Execution("simulated error"))
+      }, Sync[F].unit)
 
-  override def endObserve: SeqAction[Unit] = sim.endObserve
+  override def endObserve: F[Unit] = sim.endObserve
 
-  override def observeProgress(total: Time): Stream[IO, Progress] = sim.observeCountdown(total,
-    ElapsedTime(0.seconds))
+  override def observeProgress(total: Time)(
+    implicit t:                       Timer[F]): Stream[F, Progress] =
+    sim.observeCountdown(total, ElapsedTime(0.seconds))
 }

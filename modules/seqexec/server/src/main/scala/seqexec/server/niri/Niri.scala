@@ -4,7 +4,8 @@
 package seqexec.server.niri
 
 import cats.data.Reader
-import cats.effect.IO
+import cats.effect.Sync
+import cats.effect.Timer
 import cats.implicits._
 import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.seqcomp.SeqConfigNames.{INSTRUMENT_KEY, OBSERVE_KEY}
@@ -17,7 +18,7 @@ import seqexec.server.ConfigUtilOps._
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Instrument
 import seqexec.server.ConfigUtilOps.ExtractFailure
-import seqexec.server.{ConfigResult, ConfigUtilOps, InstrumentSystem, ObserveCommand, Progress, SeqAction, SeqActionF, SeqObserveF, SeqexecFailure, TrySeq}
+import seqexec.server.{ConfigResult, ConfigUtilOps, InstrumentSystem, ObserveCommand, Progress, SeqActionF, SeqObserveF, SeqexecFailure, TrySeq}
 import seqexec.server.keywords.{DhsClient, DhsInstrument, KeywordsClient}
 import seqexec.server.tcs.FOCAL_PLANE_SCALE
 import java.lang.{Double => JDouble, Integer => JInt}
@@ -29,8 +30,8 @@ import squants.space.Arcseconds
 import squants.{Length, Time}
 import squants.time.TimeConversions._
 
-final case class Niri(controller: NiriController, dhsClient: DhsClient[IO])
-  extends DhsInstrument[IO] with InstrumentSystem[IO] {
+final case class Niri[F[_]: Sync: Timer](controller: NiriController[F], dhsClient: DhsClient[F])
+  extends DhsInstrument[F] with InstrumentSystem[F] {
 
   import Niri._
 
@@ -42,41 +43,42 @@ final case class Niri(controller: NiriController, dhsClient: DhsClient[IO])
   }.getOrElse(LightSinkName.Niri_f6)
 
   override val contributorName: String = "mko-dc-data-niri"
-  override val observeControl: InstrumentSystem.ObserveControl[IO] =
-    UnpausableControl(StopObserveCmd(controller.stopObserve),
-                    AbortObserveCmd(controller.abortObserve))
+  override val observeControl: InstrumentSystem.ObserveControl[F] =
+    UnpausableControl(StopObserveCmd(SeqActionF.embedF(controller.stopObserve)),
+                    AbortObserveCmd(SeqActionF.embedF(controller.abortObserve)))
 
-  override def observe(config: Config): SeqObserveF[IO, ImageFileId, ObserveCommand.Result] =
-    Reader { fileId => SeqAction.either(getDCConfig(config))
-      .flatMap(controller.observe(fileId, _))
+  override def observe(config: Config): SeqObserveF[F, ImageFileId, ObserveCommand.Result] =
+    Reader { fileId => SeqActionF.either(getDCConfig(config))
+      .flatMap(x => SeqActionF.embedF(controller.observe(fileId, x)))
     }
 
-  override def calcObserveTime(config: Config): IO[Time] =
+  override def calcObserveTime(config: Config): F[Time] =
     getDCConfig(config)
       .map(controller.calcTotalExposureTime)
-      .getOrElse(IO.pure(60.seconds))
+      .getOrElse(60.seconds.pure[F])
 
   override def observeProgress(total: Time, elapsed: InstrumentSystem.ElapsedTime)
-  : fs2.Stream[IO, Progress] = controller.observeProgress(total)
+  : fs2.Stream[F, Progress] = controller.observeProgress(total)
 
   override val oiOffsetGuideThreshold: Option[Length] = (Arcseconds(0.01)/FOCAL_PLANE_SCALE).some
 
   override val dhsInstrumentName: String = "NIRI"
 
-  override val keywordsClient: KeywordsClient[IO] = this
+  override val keywordsClient: KeywordsClient[F] = this
 
   override val resource: Instrument = Instrument.Niri
 
   /**
     * Called to configure a system
     */
-  override def configure(config: Config): SeqActionF[IO, ConfigResult[IO]] =
-    SeqAction.either(fromSequenceConfig(config))
-      .flatMap(controller.applyConfig).as(ConfigResult(this))
+  override def configure(config: Config): SeqActionF[F, ConfigResult[F]] =
+    SeqActionF.either(fromSequenceConfig(config))
+      .flatMap(x => SeqActionF.embedF(controller.applyConfig(x))).as(ConfigResult(this))
 
-  override def notifyObserveStart: SeqActionF[IO, Unit] = SeqAction.void
+  override def notifyObserveStart: SeqActionF[F, Unit] = SeqActionF.void
 
-  override def notifyObserveEnd: SeqActionF[IO, Unit] = controller.endObserve
+  override def notifyObserveEnd: SeqActionF[F, Unit] =
+    SeqActionF.embedF(controller.endObserve)
 }
 
 object Niri {
