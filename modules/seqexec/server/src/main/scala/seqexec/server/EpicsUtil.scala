@@ -225,7 +225,6 @@ object ObserveCommand {
   case object Paused extends Result
   case object Stopped extends Result
   case object Aborted extends Result
-  case object Unsupported extends Result
 
   implicit val equal: Eq[Result] = Eq.fromUniversalEquals
 }

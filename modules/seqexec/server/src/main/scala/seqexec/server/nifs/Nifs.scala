@@ -34,8 +34,8 @@ import seqexec.server.TrySeq
 import seqexec.server.keywords.DhsClient
 import seqexec.server.keywords.DhsInstrument
 import seqexec.server.keywords.KeywordsClient
+import seqexec.server.InstrumentSystem.UnpausableControl
 import seqexec.server.InstrumentSystem.AbortObserveCmd
-import seqexec.server.InstrumentSystem.InfraredControl
 import seqexec.server.InstrumentSystem.StopObserveCmd
 import seqexec.server.nifs.NifsController._
 import seqexec.server.tcs.FOCAL_PLANE_SCALE
@@ -56,7 +56,7 @@ final case class Nifs[F[_]: LiftIO: Sync](
   override val contributorName: String = "NIFS"
 
   override val observeControl: InstrumentSystem.ObserveControl[F] =
-    InfraredControl(StopObserveCmd(SeqActionF.embed(controller.stopObserve)),
+    UnpausableControl(StopObserveCmd(SeqActionF.embed(controller.stopObserve)),
                     AbortObserveCmd(SeqActionF.embed(controller.abortObserve)))
 
   override def observe(

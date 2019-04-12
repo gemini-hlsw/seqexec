@@ -12,6 +12,7 @@ import edu.gemini.spModel.gemini.niri.InstNIRI._
 import edu.gemini.spModel.gemini.niri.Niri.{Camera, WellDepth, ReadMode => OCSReadMode}
 import edu.gemini.spModel.obscomp.InstConstants.{BIAS_OBSERVE_TYPE, DARK_OBSERVE_TYPE, OBSERVE_TYPE_PROP}
 import edu.gemini.seqexec.server.niri.ReadMode
+import gem.enum.LightSinkName
 import seqexec.server.ConfigUtilOps._
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Instrument
@@ -20,9 +21,9 @@ import seqexec.server.{ConfigResult, ConfigUtilOps, InstrumentSystem, ObserveCom
 import seqexec.server.keywords.{DhsClient, DhsInstrument, KeywordsClient}
 import seqexec.server.tcs.FOCAL_PLANE_SCALE
 import java.lang.{Double => JDouble, Integer => JInt}
-
-import gem.enum.LightSinkName
-import seqexec.server.InstrumentSystem.{AbortObserveCmd, InfraredControl, StopObserveCmd}
+import seqexec.server.InstrumentSystem.UnpausableControl
+import seqexec.server.InstrumentSystem.AbortObserveCmd
+import seqexec.server.InstrumentSystem.StopObserveCmd
 import seqexec.server.niri.NiriController._
 import squants.space.Arcseconds
 import squants.{Length, Time}
@@ -42,7 +43,7 @@ final case class Niri(controller: NiriController, dhsClient: DhsClient[IO])
 
   override val contributorName: String = "mko-dc-data-niri"
   override val observeControl: InstrumentSystem.ObserveControl[IO] =
-    InfraredControl(StopObserveCmd(controller.stopObserve),
+    UnpausableControl(StopObserveCmd(controller.stopObserve),
                     AbortObserveCmd(controller.abortObserve))
 
   override def observe(config: Config): SeqObserveF[IO, ImageFileId, ObserveCommand.Result] =

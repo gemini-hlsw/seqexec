@@ -50,12 +50,8 @@ final case class Gsaoi[F[_]: LiftIO: Sync](
   override val contributorName: String = "GSAOI"
 
   override val observeControl: InstrumentSystem.ObserveControl[F] =
-    OpticControl[F](StopObserveCmd[F](SeqActionF.liftF(controller.stopObserve)),
-                 AbortObserveCmd[F](SeqActionF.liftF(controller.abortObserve)),
-                 PauseObserveCmd[F](SeqActionF.void),
-                 ContinuePausedCmd[F](_ => SeqActionF(ObserveCommand.Unsupported)),
-                 StopPausedCmd[F](SeqActionF(ObserveCommand.Unsupported)),
-                 AbortPausedCmd[F](SeqActionF(ObserveCommand.Unsupported)))
+    UnpausableControl[F](StopObserveCmd[F](SeqActionF.liftF(controller.stopObserve)),
+                 AbortObserveCmd[F](SeqActionF.liftF(controller.abortObserve)))
 
   override def observe(
     config: Config

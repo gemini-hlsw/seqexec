@@ -40,15 +40,15 @@ object InstrumentSystem {
 
   sealed trait ObserveControl[F[_]] extends Product with Serializable
   final case class Uncontrollable[F[_]]() extends ObserveControl[F]
-  final case class OpticControl[F[_]](stop: StopObserveCmd[F],
+  final case class CompleteControl[F[_]](stop: StopObserveCmd[F],
                                 abort: AbortObserveCmd[F],
                                 pause: PauseObserveCmd[F],
                                 continue: ContinuePausedCmd[F],
                                 stopPaused: StopPausedCmd[F],
                                 abortPaused: AbortPausedCmd[F])
       extends ObserveControl[F]
-  // Special class for infrared instrument, because they cannot pause/resume
-  final case class InfraredControl[F[_]](stop: StopObserveCmd[F], abort: AbortObserveCmd[F])
+  // Special class for instrument, that cannot pause/resume like IR instruments and GSAOI
+  final case class UnpausableControl[F[_]](stop: StopObserveCmd[F], abort: AbortObserveCmd[F])
       extends ObserveControl[F]
 
   final case class ElapsedTime(self: Time) extends AnyVal
