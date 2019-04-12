@@ -40,7 +40,7 @@ abstract class Gmos[T<:GmosController.SiteDependentTypes](controller: GmosContro
 
   override val keywordsClient: KeywordsClient[IO] = this
 
-  override val observeControl: InstrumentSystem.ObserveControl = OpticControl(
+  override val observeControl: InstrumentSystem.ObserveControl[IO] = CompleteControl(
     StopObserveCmd(controller.stopObserve),
     AbortObserveCmd(controller.abortObserve),
     PauseObserveCmd(controller.pauseObserve),

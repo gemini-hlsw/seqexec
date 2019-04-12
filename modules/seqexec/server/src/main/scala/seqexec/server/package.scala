@@ -180,6 +180,8 @@ package object server {
   object SeqActionF {
     def apply[F[_]: Sync, A](a: => A): SeqActionF[F, A] =
       EitherT(Sync[F].delay(TrySeq(a)))
+    def pure[F[_]: Sync, A](a: => A): SeqActionF[F, A] =
+      apply(a)
     def liftF[F[_]: Functor, A](a:          => F[A]): SeqActionF[F, A] = EitherT.liftF(a)
 
     // embed ill take an IO and convert it to SeqActionF
@@ -197,6 +199,8 @@ package object server {
       EitherT(Sync[F].delay(a))
     def void[F[_]: Applicative]: SeqActionF[F, Unit] =
       EitherT.liftF(Applicative[F].unit)
+    def raiseException[F[_]: Applicative, A](f: SeqexecFailure): SeqActionF[F, A] =
+      EitherT.left(Applicative[F].pure(f))
   }
 
   implicit class StreamIOOps[A](s: Stream[IO, A]) {

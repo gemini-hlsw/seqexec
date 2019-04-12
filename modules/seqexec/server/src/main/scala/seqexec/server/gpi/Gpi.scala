@@ -50,8 +50,8 @@ final case class Gpi[F[_]: Sync: Timer](controller: GpiController[F])
 
   override val contributorName: String = "gpi"
 
-  override val observeControl: InstrumentSystem.ObserveControl =
-    InstrumentSystem.Uncontrollable
+  override val observeControl: InstrumentSystem.ObserveControl[F] =
+    InstrumentSystem.Uncontrollable()
 
   override def observe(
     config: Config

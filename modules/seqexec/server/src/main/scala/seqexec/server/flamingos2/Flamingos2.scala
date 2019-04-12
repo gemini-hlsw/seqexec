@@ -43,7 +43,7 @@ final case class Flamingos2(f2Controller: Flamingos2Controller, dhsClient: DhsCl
 
   override val keywordsClient: KeywordsClient[IO] = this
 
-  override val observeControl: InstrumentSystem.ObserveControl = InstrumentSystem.Uncontrollable
+  override val observeControl: InstrumentSystem.ObserveControl[IO] = InstrumentSystem.Uncontrollable()
 
   // FLAMINGOS-2 does not support abort or stop.
   override def observe(config: Config): SeqObserve[ImageFileId, ObserveCommand.Result] =

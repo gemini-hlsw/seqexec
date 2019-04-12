@@ -254,7 +254,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
       })
   }
 
-  private def deliverObserveCmd(seqId: Observation.Id, f: ObserveControl => Option[SeqAction[Unit]])(st: EngineState)(
+  private def deliverObserveCmd(seqId: Observation.Id, f: ObserveControl[IO] => Option[SeqAction[Unit]])(st: EngineState)(
     implicit tio: Timer[IO]
   ):  Option[Stream[IO, executeEngine.EventType]] = {
     def isObserving(v: Action[IO]): Boolean = v.kind === ActionType.Observe && (v.state.runState match {
@@ -284,10 +284,10 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
     implicit cio: Concurrent[IO],
              tio: Timer[IO]
   ): EngineState => Option[Stream[IO, executeEngine.EventType]] = st =>{
-    def f(oc: ObserveControl): Option[SeqAction[Unit]] = oc match {
-      case OpticControl(StopObserveCmd(stop), _, _, _, _, _) => Some(stop)
-      case InfraredControl(StopObserveCmd(stop), _)          => Some(stop)
-      case _                                                 => none
+    def f(oc: ObserveControl[IO]): Option[SeqAction[Unit]] = oc match {
+      case CompleteControl(StopObserveCmd(stop), _, _, _, _, _) => stop.some
+      case UnpausableControl(StopObserveCmd(stop), _)           => stop.some
+      case _                                                    => none
     }
     deliverObserveCmd(seqId, f)(st).orElse(stopPaused(seqId).apply(st))
   }
@@ -296,10 +296,10 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
     implicit cio: Concurrent[IO],
              tio: Timer[IO]
   ): EngineState => Option[Stream[IO, executeEngine.EventType]] = st => {
-    def f(oc: ObserveControl): Option[SeqAction[Unit]] = oc match {
-      case OpticControl(_, AbortObserveCmd(abort), _, _, _, _) => Some(abort)
-      case InfraredControl(_, AbortObserveCmd(abort))          => Some(abort)
-      case _                                                   => none
+    def f(oc: ObserveControl[IO]): Option[SeqAction[Unit]] = oc match {
+      case CompleteControl(_, AbortObserveCmd(abort), _, _, _, _) => abort.some
+      case UnpausableControl(_, AbortObserveCmd(abort))           => abort.some
+      case _                                                      => none
     }
 
     deliverObserveCmd(seqId, f)(st).orElse(abortPaused(seqId).apply(st))
@@ -308,15 +308,15 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
   def pauseObserve(seqId: Observation.Id)(
     implicit tio: Timer[IO]
   ): EngineState => Option[Stream[IO, executeEngine.EventType]] = {
-    def f(oc: ObserveControl): Option[SeqAction[Unit]] = oc match {
-      case OpticControl(_, _, PauseObserveCmd(pause), _, _, _) => Some(pause)
-      case _                                                   => none
+    def f(oc: ObserveControl[IO]): Option[SeqAction[Unit]] = oc match {
+      case CompleteControl(_, _, PauseObserveCmd(pause), _, _, _) => pause.some
+      case _                                                      => none
     }
     deliverObserveCmd(seqId, f)
   }
 
   private def pausedCommand(seqId: Observation.Id,
-                            f: ObserveControl => Option[Time => SeqAction[ObserveCommand.Result]],
+                            f: ObserveControl[IO] => Option[Time => SeqAction[ObserveCommand.Result]],
                             useCountdown: Boolean)(
     implicit cio: Concurrent[IO],
              tio: Timer[IO]
@@ -372,9 +372,9 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
     implicit cio: Concurrent[IO],
              tio: Timer[IO]
   ): EngineState => Option[Stream[IO, executeEngine.EventType]] = {
-    def f(o: ObserveControl): Option[Time => SeqAction[ObserveCommand.Result]] = o match {
-      case OpticControl(_, _, _, ContinuePausedCmd(a), _, _) => Some(a)
-      case _                                                 => none
+    def f(o: ObserveControl[IO]): Option[Time => SeqAction[ObserveCommand.Result]] = o match {
+      case CompleteControl(_, _, _, ContinuePausedCmd(a), _, _) => a.some
+      case _                                                    => none
     }
 
     pausedCommand(seqId, f, useCountdown = true)
@@ -384,9 +384,9 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
     implicit cio: Concurrent[IO],
              tio: Timer[IO]
   ): EngineState => Option[Stream[IO, executeEngine.EventType]] = {
-    def f(o: ObserveControl): Option[Time => SeqAction[ObserveCommand.Result]] = o match {
-      case OpticControl(_, _, _, _, StopPausedCmd(a), _) => Some(_ => a)
-      case _                                             => none
+    def f(o: ObserveControl[IO]): Option[Time => SeqAction[ObserveCommand.Result]] = o match {
+      case CompleteControl(_, _, _, _, StopPausedCmd(a), _) => Some(_ => a)
+      case _                                                => none
     }
 
     pausedCommand(seqId, f, useCountdown = false)
@@ -396,9 +396,9 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
     implicit cio: Concurrent[IO],
              tio: Timer[IO]
   ): EngineState => Option[Stream[IO, executeEngine.EventType]] = {
-    def f(o: ObserveControl): Option[Time => SeqAction[ObserveCommand.Result]] = o match {
-      case OpticControl(_, _, _, _, _, AbortPausedCmd(a)) => Some(_ => a)
-      case _                                              => none
+    def f(o: ObserveControl[IO]): Option[Time => SeqAction[ObserveCommand.Result]] = o match {
+      case CompleteControl(_, _, _, _, _, AbortPausedCmd(a)) => Some(_ => a)
+      case _                                                 => none
     }
 
     pausedCommand(seqId, f, useCountdown = false)

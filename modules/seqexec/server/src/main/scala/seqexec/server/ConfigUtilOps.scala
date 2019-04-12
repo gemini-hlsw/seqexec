@@ -11,10 +11,13 @@ import edu.gemini.spModel.seqcomp.SeqConfigNames.INSTRUMENT_KEY
 import edu.gemini.spModel.seqcomp.SeqConfigNames.OBSERVE_KEY
 import edu.gemini.spModel.ao.AOConstants.AO_SYSTEM_KEY
 import java.beans.PropertyDescriptor
+import java.lang.{Integer => JInt}
 import scala.reflect.ClassTag
 import scala.collection.breakOut
 import seqexec.model.enum.SystemName
 import seqexec.model.StepConfig
+import shapeless.tag
+import shapeless.tag.@@
 
 /**
   * Utility operations to work with Configs from the ODB
@@ -115,6 +118,15 @@ object ConfigUtilOps {
               (e.getKey.getPath, s"${e.getItemValue}")
             }(breakOut): Map[String, String])
       }
+
+    def extractInstInt[A](
+      property: PropertyDescriptor
+    ): Either[ExtractFailure, Option[Int @@ A]] =
+      c
+        .extractInstAs[JInt](property)
+        .map(_.toInt.some)
+        .map(_.map(tag[A][Int]))
+        .recoverOption
 
   }
 
