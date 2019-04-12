@@ -243,7 +243,8 @@ object SeqexecWebClient extends ModelBooPicklers {
     Ajax
       .post(
         url  = s"$baseUrl/login",
-        data = Pickle.intoBytes(UserLoginRequest(u, p))
+        data = Pickle.intoBytes(UserLoginRequest(u, p)),
+        responseType = "arraybuffer"
       )
       .map(unpickle[UserDetails])
 
