@@ -13,6 +13,7 @@ import scala.collection.immutable.SortedMap
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.BatchExecState
 import seqexec.model.enum.Resource
+import seqexec.model.enum.SystemName
 import seqexec.model.Observer
 import seqexec.model.QueueId
 import seqexec.model.Step
@@ -58,6 +59,7 @@ package object reusability {
   implicit val stfReuse: Reusability[StepsTableAndStatusFocus] =
     Reusability.byEq
   implicit val tabSelReuse: Reusability[TabSelected] = Reusability.byRef
+  implicit val sysnReuse: Reusability[SystemName]    = Reusability.byRef
   implicit val sectReuse: Reusability[SectionVisibilityState] =
     Reusability.byRef
   implicit val potStateReuse: Reusability[PotState] = Reusability.byRef
