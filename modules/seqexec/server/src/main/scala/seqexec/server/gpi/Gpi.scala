@@ -23,8 +23,9 @@ import seqexec.server._
 import seqexec.server.keywords.GdsClient
 import seqexec.server.keywords.GdsInstrument
 import seqexec.server.keywords.KeywordsClient
-import scala.concurrent.duration._
 import squants.Time
+
+import scala.concurrent.duration._
 import squants.time.Milliseconds
 import squants.time.Seconds
 import squants.time.Time
