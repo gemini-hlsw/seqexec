@@ -29,4 +29,7 @@ final case class GnirsControllerSim[F[_]: Sync: Timer]() extends GnirsController
 
   override def observeProgress(total: Time): fs2.Stream[F, Progress] =
     sim.observeCountdown(total, ElapsedTime(0.seconds))
+
+  override def calcTotalExposureTime(cfg: GnirsController.DCConfig): F[Time] =
+    GnirsController.calcTotalExposureTime(cfg)
 }

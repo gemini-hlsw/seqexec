@@ -244,16 +244,16 @@ object NiriControllerEpics extends NiriController[IO] {
     val params =  paramsDC ++ configCC(config.cc)
 
     val cfgActions1 = if(params.isEmpty) IO.pure(EpicsCommand.Completed)
-                      else params.sequence.void.actionF *>
-                        epicsSys.configCmd.setTimeout(ConfigTimeout).actionF *>
-                        epicsSys.configCmd.post.actionF
+                      else params.sequence.void.widenRethrowT *>
+                        epicsSys.configCmd.setTimeout(ConfigTimeout).widenRethrowT *>
+                        epicsSys.configCmd.post.widenRethrowT
     // Weird NIRI behavior. The main IS apply is nor connected to the DC apply, but triggering the
     // IS apply writes the DC parameters. So to configure the DC, we need to set the DC parameters
     // in the IS, trigger the IS apply, and then trigger the DC apply.
     val cfgActions = if(paramsDC.isEmpty) cfgActions1
                      else cfgActions1 *>
-                       epicsSys.configDCCmd.setTimeout(DefaultTimeout).actionF *>
-                       epicsSys.configDCCmd.post.actionF
+                       epicsSys.configDCCmd.setTimeout(DefaultTimeout).widenRethrowT *>
+                       epicsSys.configDCCmd.post.widenRethrowT
 
     IO(Log.debug("Starting NIRI configuration")) *>
       (if(epicsSys.dhsConnected.exists(identity)) IO.unit
@@ -274,27 +274,27 @@ object NiriControllerEpics extends NiriController[IO] {
       (if(epicsSys.arrayActive.exists(identity)) IO.unit
        else IO.raiseError(SeqexecFailure.Execution("NIRI detector array is not active"))
       ) *>
-      epicsSys.observeCmd.setLabel(fileId).actionF *>
-      epicsSys.observeCmd.setTimeout(calcObserveTimeout(cfg)).actionF *>
-      epicsSys.observeCmd.post.actionF
+      epicsSys.observeCmd.setLabel(fileId).widenRethrowT *>
+      epicsSys.observeCmd.setTimeout(calcObserveTimeout(cfg)).widenRethrowT *>
+      epicsSys.observeCmd.post.widenRethrowT
 
   override def endObserve: IO[Unit] =
     IO(Log.debug("Send endObserve to NIRI")) *>
-      epicsSys.endObserveCmd.setTimeout(DefaultTimeout).actionF *>
-      epicsSys.endObserveCmd.mark.actionF *>
-      epicsSys.endObserveCmd.post.void.actionF
+      epicsSys.endObserveCmd.setTimeout(DefaultTimeout).widenRethrowT *>
+      epicsSys.endObserveCmd.mark.widenRethrowT *>
+      epicsSys.endObserveCmd.post.void.widenRethrowT
 
   override def stopObserve: IO[Unit] =
     IO(Log.info("Stop NIRI exposure")) *>
-      epicsSys.stopCmd.setTimeout(DefaultTimeout).actionF *>
-      epicsSys.stopCmd.mark.actionF *>
-      epicsSys.stopCmd.post.void.actionF
+      epicsSys.stopCmd.setTimeout(DefaultTimeout).widenRethrowT *>
+      epicsSys.stopCmd.mark.widenRethrowT *>
+      epicsSys.stopCmd.post.void.widenRethrowT
 
   override def abortObserve: IO[Unit] =
     IO(Log.info("Abort NIRI exposure")) *>
-      epicsSys.abortCmd.setTimeout(DefaultTimeout).actionF *>
-      epicsSys.abortCmd.mark.actionF *>
-      epicsSys.abortCmd.post.void.actionF
+      epicsSys.abortCmd.setTimeout(DefaultTimeout).widenRethrowT *>
+      epicsSys.abortCmd.mark.widenRethrowT *>
+      epicsSys.abortCmd.post.void.widenRethrowT
 
   override def observeProgress(total: Time): fs2.Stream[IO, Progress] =
     ProgressUtil.countdown[IO](total, 0.seconds)

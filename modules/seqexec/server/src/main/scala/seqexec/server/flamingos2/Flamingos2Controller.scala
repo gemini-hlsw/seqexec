@@ -5,7 +5,6 @@ package seqexec.server.flamingos2
 
 import cats.Show
 import cats.kernel.Eq
-import cats.effect.Timer
 import fs2.Stream
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.{ObserveCommand, Progress}
@@ -21,7 +20,7 @@ trait Flamingos2Controller[F[_]] {
 
   def endObserve: F[Unit]
 
-  def observeProgress(total: Time)(implicit ev: Timer[F]): Stream[F, Progress]
+  def observeProgress(total: Time): Stream[F, Progress]
 }
 
 object Flamingos2Controller {

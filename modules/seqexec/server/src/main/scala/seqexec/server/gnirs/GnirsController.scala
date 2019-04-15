@@ -29,16 +29,7 @@ trait GnirsController[F[_]] {
 
   def observeProgress(total: Time): fs2.Stream[F, Progress]
 
-  def calcTotalExposureTime(cfg: GnirsController.DCConfig)(implicit ev: Applicative[F]): F[Time] = {
-    val readOutTime = cfg.readMode match {
-      case LegacyReadMode.VERY_BRIGHT => 0.19
-      case LegacyReadMode.BRIGHT => 0.69
-      case LegacyReadMode.FAINT => 11.14
-      case LegacyReadMode.VERY_FAINT => 22.31
-    }
-
-    (cfg.coadds * (cfg.exposureTime + readOutTime.seconds)).pure[F]
-  }
+  def calcTotalExposureTime(cfg: GnirsController.DCConfig): F[Time]
 }
 
 object GnirsController {
@@ -143,4 +134,14 @@ object GnirsController {
 
   implicit val cfgShow: Show[GnirsConfig] = Show.fromToString
 
+  def calcTotalExposureTime[F[_]: Applicative](cfg: GnirsController.DCConfig): F[Time] = {
+    val readOutTime = cfg.readMode match {
+      case LegacyReadMode.VERY_BRIGHT => 0.19
+      case LegacyReadMode.BRIGHT => 0.69
+      case LegacyReadMode.FAINT => 11.14
+      case LegacyReadMode.VERY_FAINT => 22.31
+    }
+
+    (cfg.coadds * (cfg.exposureTime + readOutTime.seconds)).pure[F]
+  }
 }

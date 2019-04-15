@@ -264,8 +264,8 @@ object GnirsControllerEpics extends GnirsController[IO] {
       (if(GnirsEpics.instance.arrayActive.exists(identity)) IO.unit
        else IO(Log.warn("GNIRS detector array is not active"))
       ) *>
-      setDCParams(config.dc).actionF *>
-      setCCParams(config.cc).actionF *>
+      setDCParams(config.dc).widenRethrowT *>
+      setCCParams(config.cc).widenRethrowT *>
       IO(Log.debug("Completed GNIRS configuration"))
 
   override def observe(fileId: ImageFileId, expTime: Time): IO[ObserveCommand.Result] =
@@ -276,30 +276,33 @@ object GnirsControllerEpics extends GnirsController[IO] {
       (if(GnirsEpics.instance.arrayActive.exists(identity)) IO.unit
        else IO.raiseError(SeqexecFailure.Execution("GNIRS detector array is not active"))
       ) *>
-      GnirsEpics.instance.observeCmd.setLabel(fileId).actionF *>
-      GnirsEpics.instance.observeCmd.setTimeout(expTime + ReadoutTimeout).actionF *>
-      GnirsEpics.instance.observeCmd.post.actionF
+      GnirsEpics.instance.observeCmd.setLabel(fileId).widenRethrowT *>
+      GnirsEpics.instance.observeCmd.setTimeout(expTime + ReadoutTimeout).widenRethrowT *>
+      GnirsEpics.instance.observeCmd.post.widenRethrowT
 
   override def endObserve: IO[Unit] =
     IO(Log.debug("Send endObserve to GNIRS")) *>
-      GnirsEpics.instance.endObserveCmd.setTimeout(DefaultTimeout).actionF *>
-      GnirsEpics.instance.endObserveCmd.mark.actionF *>
-      GnirsEpics.instance.endObserveCmd.post.void.actionF
+      GnirsEpics.instance.endObserveCmd.setTimeout(DefaultTimeout).widenRethrowT *>
+      GnirsEpics.instance.endObserveCmd.mark.widenRethrowT *>
+      GnirsEpics.instance.endObserveCmd.post.void.widenRethrowT
 
   override def stopObserve: IO[Unit] =
     IO(Log.info("Stop GNIRS exposure")) *>
-      GnirsEpics.instance.stopCmd.setTimeout(DefaultTimeout).actionF *>
-      GnirsEpics.instance.stopCmd.mark.actionF *>
-      GnirsEpics.instance.stopCmd.post.void.actionF
+      GnirsEpics.instance.stopCmd.setTimeout(DefaultTimeout).widenRethrowT *>
+      GnirsEpics.instance.stopCmd.mark.widenRethrowT *>
+      GnirsEpics.instance.stopCmd.post.void.widenRethrowT
 
   override def abortObserve: IO[Unit] =
     IO(Log.info("Abort GNIRS exposure")) *>
-      GnirsEpics.instance.abortCmd.setTimeout(DefaultTimeout).actionF *>
-      GnirsEpics.instance.abortCmd.mark.actionF *>
-      GnirsEpics.instance.abortCmd.post.void.actionF
+      GnirsEpics.instance.abortCmd.setTimeout(DefaultTimeout).widenRethrowT *>
+      GnirsEpics.instance.abortCmd.mark.widenRethrowT *>
+      GnirsEpics.instance.abortCmd.post.void.widenRethrowT
 
   override def observeProgress(total: Time): Stream[IO, Progress] =
     ProgressUtil.countdown[IO](total, 0.seconds)
+
+  override def calcTotalExposureTime(cfg: GnirsController.DCConfig): IO[Time] =
+    GnirsController.calcTotalExposureTime[IO](cfg)
 
   private val DefaultTimeout: Time = Seconds(60)
   private val ReadoutTimeout: Time = Seconds(300)

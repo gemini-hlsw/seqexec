@@ -13,7 +13,7 @@ import org.log4s.getLogger
 import squants.{Seconds, Time}
 import squants.time.TimeConversions._
 
-object Flamingos2ControllerEpics extends Flamingos2Controller[IO] {
+final case class Flamingos2ControllerEpics()(implicit val tio: Timer[IO]) extends Flamingos2Controller[IO] {
   private val Log = getLogger
 
   import EpicsCodex._
@@ -113,28 +113,27 @@ object Flamingos2ControllerEpics extends Flamingos2Controller[IO] {
 
   override def applyConfig(config: Flamingos2Config): IO[Unit] = for {
     _ <- IO.apply(Log.debug("Start Flamingos2 configuration"))
-    _ <- setDCConfig(config.dc).actionF
-    _ <- setCCConfig(config.cc).actionF
-    _ <- Flamingos2Epics.instance.configCmd.setTimeout(ConfigTimeout).actionF
-    _ <- Flamingos2Epics.instance.post.actionF
+    _ <- setDCConfig(config.dc).widenRethrowT
+    _ <- setCCConfig(config.cc).widenRethrowT
+    _ <- Flamingos2Epics.instance.configCmd.setTimeout(ConfigTimeout).widenRethrowT
+    _ <- Flamingos2Epics.instance.post.widenRethrowT
     _ <- IO(Log.debug("Completed Flamingos2 configuration"))
   } yield ()
 
   override def observe(fileId: ImageFileId, expTime: Time): IO[ObserveCommand.Result] = for {
-    _ <- Flamingos2Epics.instance.observeCmd.setLabel(fileId).actionF
-    _ <- Flamingos2Epics.instance.observeCmd.setTimeout(expTime + ReadoutTimeout).actionF
-    _ <- Flamingos2Epics.instance.observeCmd.post.actionF
+    _ <- Flamingos2Epics.instance.observeCmd.setLabel(fileId).widenRethrowT
+    _ <- Flamingos2Epics.instance.observeCmd.setTimeout(expTime + ReadoutTimeout).widenRethrowT
+    _ <- Flamingos2Epics.instance.observeCmd.post.widenRethrowT
   } yield ObserveCommand.Success
 
   override def endObserve: IO[Unit] = for {
     _ <- IO(Log.debug("Send endObserve to Flamingos2"))
-    _ <- Flamingos2Epics.instance.endObserveCmd.setTimeout(DefaultTimeout).actionF
-    _ <- Flamingos2Epics.instance.endObserveCmd.mark.actionF
-    _ <- Flamingos2Epics.instance.endObserveCmd.post.actionF
+    _ <- Flamingos2Epics.instance.endObserveCmd.setTimeout(DefaultTimeout).widenRethrowT
+    _ <- Flamingos2Epics.instance.endObserveCmd.mark.widenRethrowT
+    _ <- Flamingos2Epics.instance.endObserveCmd.post.widenRethrowT
   } yield ()
 
-  override def observeProgress(total: Time)(implicit t: Timer[IO]): fs2.Stream[IO, Progress] = {
-    // ProgressUtil.countdown[IO](total, Seconds(0))
+  override def observeProgress(total: Time): fs2.Stream[IO, Progress] = {
     val s = ProgressUtil.fromStateTOption[IO, Time](_ => StateT[IO, Time, Option[Progress]] { st =>
       IO {
         val m = if (total >= st) total else st

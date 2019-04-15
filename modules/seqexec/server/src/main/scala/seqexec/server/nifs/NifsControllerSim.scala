@@ -39,4 +39,7 @@ final case class NifsControllerSim[F[_]: Sync: Timer]() extends NifsController[F
   override def observeProgress(total: Time): fs2.Stream[F, Progress] =
     sim.observeCountdown(total, ElapsedTime(0.seconds))
 
+  override def calcTotalExposureTime(cfg: DCConfig): F[Time] =
+    NifsController.calcTotalExposureTime[F](cfg)
+
 }

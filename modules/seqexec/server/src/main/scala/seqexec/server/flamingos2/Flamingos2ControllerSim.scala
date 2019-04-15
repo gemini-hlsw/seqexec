@@ -20,7 +20,7 @@ import cats.implicits._
 import fs2.Stream
 import seqexec.server.InstrumentSystem.ElapsedTime
 
-final case class Flamingos2ControllerSim[F[_]: Sync]()
+final case class Flamingos2ControllerSim[F[_]: Sync: Timer]()
     extends Flamingos2Controller[F] {
   private val sim = InstrumentControllerSim[F]("FLAMINGOS-2")
 
@@ -33,15 +33,14 @@ final case class Flamingos2ControllerSim[F[_]: Sync]()
 
   override def endObserve: F[Unit] = sim.endObserve
 
-  override def observeProgress(total: Time)(
-    implicit t:                       Timer[F]): Stream[F, Progress] =
+  override def observeProgress(total: Time): Stream[F, Progress] =
     sim.observeCountdown(total, ElapsedTime(0.seconds))
 }
 
 /**
   * This controller will run correctly but fail at step `failAt`
   */
-final case class Flamingos2ControllerSimBad[F[_]: Sync](failAt: Int)
+final case class Flamingos2ControllerSimBad[F[_]: Sync: Timer](failAt: Int)
     extends Flamingos2Controller[F] {
   private val Log = getLogger
 
@@ -66,7 +65,6 @@ final case class Flamingos2ControllerSimBad[F[_]: Sync](failAt: Int)
 
   override def endObserve: F[Unit] = sim.endObserve
 
-  override def observeProgress(total: Time)(
-    implicit t:                       Timer[F]): Stream[F, Progress] =
+  override def observeProgress(total: Time): Stream[F, Progress] =
     sim.observeCountdown(total, ElapsedTime(0.seconds))
 }

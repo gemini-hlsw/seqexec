@@ -409,4 +409,6 @@ object NifsControllerEpics extends NifsController[IO] with NifsEncoders {
     cfg.exposureTime * cfg.coadds.toDouble * CoaddOverhead + TotalOverhead
   }
 
+  override def calcTotalExposureTime(cfg: DCConfig): IO[Time] =
+    NifsController.calcTotalExposureTime[IO](cfg)
 }

@@ -200,7 +200,7 @@ package object server {
     // * if the F has failed with a known exception type put it on the left of the EitherT
     // * For non fatal exceptions, they are wrapped in a SeqexecException
     // * Fatal exceptions are propagated
-    def embedF[F[_]: ApplicativeError[?[_], Throwable], A](a: => F[A]): SeqActionF[F, A] =
+    def embedF[F[_]: ApplicativeError[?[_], Throwable], A](a: F[A]): SeqActionF[F, A] =
       EitherT(a.attempt.map(_.leftMap {
         case e: SeqexecFailure => e
         case r                 => SeqexecFailure.SeqexecException(r)
@@ -234,9 +234,12 @@ package object server {
       SeqActionF.embed(ioa)
   }
 
-  implicit class SeqActionOps[F[_]: MonadError[?[_], Throwable], A](a: SeqActionF[F, A]) {
-    def actionF: F[A] =
-      a.leftWiden[Throwable].rethrowT
+  implicit class EitherTOps[F[_],  A, B](fa: EitherT[F, A, B]) {
+    def widenRethrowT[T](
+      implicit me: MonadError[F, T],
+               at: A <:< T
+    ): F[B] =
+      fa.leftMap(at).rethrowT
   }
 
   // This assumes that there is only one instance of e in l
