@@ -3,7 +3,6 @@
 
 package seqexec.server.gmos
 
-import cats.data.EitherT
 import cats.effect.{ IO, Timer }
 import cats.implicits._
 import edu.gemini.spModel.gemini.gmos.GmosCommonType._
@@ -21,7 +20,7 @@ import seqexec.server.gmos.GmosController.Config.{Beam, InBeam, OutOfBeam, ROI}
 import squants.time.TimeConversions._
 import squants.{Length, Seconds, Time}
 
-class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosControllerEpics.Encoders[T])(cfg: GmosController.Config[T]) extends GmosController[T] {
+class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosControllerEpics.Encoders[T])(cfg: GmosController.Config[T]) extends GmosController[IO, T] {
   private val Log = getLogger
 
   import EpicsCodex._
@@ -30,8 +29,6 @@ class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosCo
 
   private val CC = GmosEpics.instance.configCmd
   private val DC = GmosEpics.instance.configDCCmd
-
-  override def getConfig: SeqAction[GmosController.GmosConfig[T]] = ??? // scalastyle:ignore
 
   implicit val ampReadModeEncoder: EncodeEpicsValue[AmpReadMode, String] = EncodeEpicsValue {
     case AmpReadMode.SLOW => "SLOW"
@@ -250,7 +247,7 @@ class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosCo
     // It seems that the reported dtaXOffset is absolute, but the applied offset is relative to
     // XCenter value
     smartSetDoubleParam(Tolerance)(offsetInMicrons,
-      (GmosEpics.instance.dtaXOffset, GmosEpics.instance.dtaXCenter)mapN(_-_),
+      (GmosEpics.instance.dtaXOffset, GmosEpics.instance.dtaXCenter).mapN(_ - _),
       CC.setDtaXOffset(offsetInMicrons))
   }
 
@@ -265,77 +262,78 @@ class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosCo
 
   val dhsConnected: String = "CONNECTED"
 
-  override def applyConfig(config: GmosController.GmosConfig[T]): SeqAction[Unit] = {
+  override def applyConfig(config: GmosController.GmosConfig[T]): IO[Unit] = {
     val params = setDCConfig(config.dc) ++ setCCConfig(config.cc)
 
-    EitherT.right[SeqexecFailure](IO(Log.info("Start Gmos configuration"))) *>
-    EitherT.right(IO(Log.debug(s"Gmos configuration: ${config.show}"))) *>
-    SeqAction(Log.warn("GMOS is not connected to the DHS"))
+    IO(Log.info("Start Gmos configuration")) *>
+    IO(Log.debug(s"Gmos configuration: ${config.show}")) *>
+    IO(Log.warn("GMOS is not connected to the DHS"))
       .unlessA(GmosEpics.instance.dhsConnected.exists(_.trim === dhsConnected)) *>
-    ( params.sequence *>
+    ( (params.sequence *>
       GmosEpics.instance.configCmd.setTimeout(ConfigTimeout) *>
-      GmosEpics.instance.post
+      GmosEpics.instance.post).widenRethrowT
     ).unlessA(params.isEmpty) *>
-    EitherT.right(IO(Log.info("Completed Gmos configuration")))
+    IO(Log.info("Completed Gmos configuration"))
   }
 
-  override def observe(fileId: ImageFileId, expTime: Time): SeqAction[ObserveCommand.Result] =
-    SeqAction.fail(SeqexecFailure.Execution("GMOS is not connected to DHS"))
+  override def observe(fileId: ImageFileId, expTime: Time): IO[ObserveCommand.Result] =
+    IO.raiseError(SeqexecFailure.Execution("GMOS is not connected to DHS"))
       .unlessA(GmosEpics.instance.dhsConnected.exists(_.trim === dhsConnected)) *>
-    GmosEpics.instance.observeCmd.setLabel(fileId) *>
+    (GmosEpics.instance.observeCmd.setLabel(fileId) *>
     GmosEpics.instance.observeCmd.setTimeout(expTime + ReadoutTimeout) *>
-    GmosEpics.instance.observeCmd.post
+    GmosEpics.instance.observeCmd.post).widenRethrowT
 
-  override def stopObserve: SeqAction[Unit] = for {
-    _ <- EitherT.right(IO(Log.info("Stop Gmos exposure")))
-    _ <- GmosEpics.instance.stopCmd.setTimeout(DefaultTimeout)
-    _ <- GmosEpics.instance.stopCmd.mark
-    _ <- GmosEpics.instance.stopCmd.post
+  override def stopObserve: IO[Unit] =
+    for {
+      _ <- IO(Log.info("Stop Gmos exposure"))
+      _ <- GmosEpics.instance.stopCmd.setTimeout(DefaultTimeout).widenRethrowT
+      _ <- GmosEpics.instance.stopCmd.mark.widenRethrowT
+      _ <- GmosEpics.instance.stopCmd.post.widenRethrowT
+    } yield ()
+
+  override def abortObserve: IO[Unit] = for {
+    _ <- IO(Log.info("Abort Gmos exposure"))
+    _ <- GmosEpics.instance.abortCmd.setTimeout(DefaultTimeout).widenRethrowT
+    _ <- GmosEpics.instance.abortCmd.mark.widenRethrowT
+    _ <- GmosEpics.instance.abortCmd.post.widenRethrowT
   } yield ()
 
-  override def abortObserve: SeqAction[Unit] = for {
-    _ <- EitherT.right(IO(Log.info("Abort Gmos exposure")))
-    _ <- GmosEpics.instance.abortCmd.setTimeout(DefaultTimeout)
-    _ <- GmosEpics.instance.abortCmd.mark
-    _ <- GmosEpics.instance.abortCmd.post
+  override def endObserve: IO[Unit] = for {
+    _ <- IO(Log.debug("Send endObserve to Gmos"))
+    _ <- GmosEpics.instance.endObserveCmd.setTimeout(DefaultTimeout).widenRethrowT
+    _ <- GmosEpics.instance.endObserveCmd.mark.widenRethrowT
+    _ <- GmosEpics.instance.endObserveCmd.post.widenRethrowT
   } yield ()
 
-  override def endObserve: SeqAction[Unit] = for {
-    _ <- EitherT.right(IO(Log.debug("Send endObserve to Gmos")))
-    _ <- GmosEpics.instance.endObserveCmd.setTimeout(DefaultTimeout)
-    _ <- GmosEpics.instance.endObserveCmd.mark
-    _ <- GmosEpics.instance.endObserveCmd.post
+  override def pauseObserve: IO[Unit] = for {
+    _ <- IO(Log.info("Send pause to Gmos"))
+    _ <- GmosEpics.instance.pauseCmd.setTimeout(DefaultTimeout).widenRethrowT
+    _ <- GmosEpics.instance.pauseCmd.mark.widenRethrowT
+    _ <- GmosEpics.instance.pauseCmd.post.widenRethrowT
   } yield ()
 
-  override def pauseObserve: SeqAction[Unit] = for {
-    _ <- EitherT.right(IO(Log.info("Send pause to Gmos")))
-    _ <- GmosEpics.instance.pauseCmd.setTimeout(DefaultTimeout)
-    _ <- GmosEpics.instance.pauseCmd.mark
-    _ <- GmosEpics.instance.pauseCmd.post
-  } yield ()
-
-  override def resumePaused(expTime: Time): SeqAction[ObserveCommand.Result] = for {
-    _   <- EitherT.right(IO(Log.debug("Resume Gmos observation")))
-    _   <- GmosEpics.instance.continueCmd.setTimeout(expTime+ReadoutTimeout)
-    _   <- GmosEpics.instance.continueCmd.mark
-    ret <- GmosEpics.instance.continueCmd.post
-    _   <- EitherT.right(IO(Log.debug("Completed Gmos observation")))
+  override def resumePaused(expTime: Time): IO[ObserveCommand.Result] = for {
+    _   <- IO(Log.debug("Resume Gmos observation"))
+    _   <- GmosEpics.instance.continueCmd.setTimeout(expTime+ReadoutTimeout).widenRethrowT
+    _   <- GmosEpics.instance.continueCmd.mark.widenRethrowT
+    ret <- GmosEpics.instance.continueCmd.post.widenRethrowT
+    _   <- IO(Log.debug("Completed Gmos observation"))
   } yield ret
 
-  override def stopPaused: SeqAction[ObserveCommand.Result] = for {
-    _   <- EitherT.right(IO(Log.info("Stop Gmos paused observation")))
-    _   <- GmosEpics.instance.stopAndWaitCmd.setTimeout(DefaultTimeout)
-    _   <- GmosEpics.instance.stopAndWaitCmd.mark
-    ret <- GmosEpics.instance.stopAndWaitCmd.post
-    _   <- EitherT.right(IO(Log.info("Completed stopping Gmos observation")))
+  override def stopPaused: IO[ObserveCommand.Result] = for {
+    _   <- IO(Log.info("Stop Gmos paused observation"))
+    _   <- GmosEpics.instance.stopAndWaitCmd.setTimeout(DefaultTimeout).widenRethrowT
+    _   <- GmosEpics.instance.stopAndWaitCmd.mark.widenRethrowT
+    ret <- GmosEpics.instance.stopAndWaitCmd.post.widenRethrowT
+    _   <- IO(Log.info("Completed stopping Gmos observation"))
   } yield if(ret === ObserveCommand.Success) ObserveCommand.Stopped else ret
 
-  override def abortPaused: SeqAction[ObserveCommand.Result] = for {
-    _   <- EitherT.right(IO(Log.info("Abort Gmos paused observation")))
-    _   <- GmosEpics.instance.abortAndWait.setTimeout(DefaultTimeout)
-    _   <- GmosEpics.instance.abortAndWait.mark
-    ret <- GmosEpics.instance.abortAndWait.post
-    _   <- EitherT.right(IO(Log.info("Completed aborting Gmos observation")))
+  override def abortPaused: IO[ObserveCommand.Result] = for {
+    _   <- IO(Log.info("Abort Gmos paused observation"))
+    _   <- GmosEpics.instance.abortAndWait.setTimeout(DefaultTimeout).widenRethrowT
+    _   <- GmosEpics.instance.abortAndWait.mark.widenRethrowT
+    ret <- GmosEpics.instance.abortAndWait.post.widenRethrowT
+    _   <- IO(Log.info("Completed aborting Gmos observation"))
   } yield if(ret === ObserveCommand.Success) ObserveCommand.Aborted else ret
 
   // override def observeProgress(total: Time, elapsed: ElapsedTime): Stream[IO, Progress] = {

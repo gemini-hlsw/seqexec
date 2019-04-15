@@ -3,7 +3,6 @@
 
 package seqexec.server.gnirs
 
-import cats.data.EitherT
 import cats.implicits._
 import cats.effect.{ IO, Timer }
 import seqexec.model.dhs.ImageFileId
@@ -23,7 +22,7 @@ import squants.space.LengthConversions._
 import squants.time.TimeConversions._
 import squants.{Length, Seconds, Time}
 
-object GnirsControllerEpics extends GnirsController {
+object GnirsControllerEpics extends GnirsController[IO] {
   private val Log = getLogger
 
   implicit val ioTimer: Timer[IO] =
@@ -191,7 +190,6 @@ object GnirsControllerEpics extends GnirsController {
       case Auto      => autoFilter(w)
     }
     smartSetParam(encode(pos), epicsSys.filter2.map(removePartName), ccCmd.setFilter2(encode(pos)))
-
   }
 
   private def setOtherCCParams(config: Other): List[SeqAction[Unit]] = {
@@ -258,51 +256,53 @@ object GnirsControllerEpics extends GnirsController {
       dcCmd.post
   }
 
-  override def applyConfig(config: GnirsConfig): SeqAction[Unit] =
-    SeqAction(Log.debug("Starting GNIRS configuration")) *>
-      (if(GnirsEpics.instance.dhsConnected.exists(identity)) SeqAction.void
-       else EitherT.right(IO(Log.warn("GNIRS is not connected to DHS")))
+  override def applyConfig(config: GnirsConfig): IO[Unit] =
+    IO(Log.debug("Starting GNIRS configuration")) *>
+      (if(GnirsEpics.instance.dhsConnected.exists(identity)) IO.unit
+       else IO(Log.warn("GNIRS is not connected to DHS"))
       ) *>
-      (if(GnirsEpics.instance.arrayActive.exists(identity)) SeqAction.void
-       else EitherT.right(IO(Log.warn("GNIRS detector array is not active")))
+      (if(GnirsEpics.instance.arrayActive.exists(identity)) IO.unit
+       else IO(Log.warn("GNIRS detector array is not active"))
       ) *>
-      setDCParams(config.dc) *>
-      setCCParams(config.cc) *>
-      SeqAction(Log.debug("Completed GNIRS configuration"))
+      setDCParams(config.dc).widenRethrowT *>
+      setCCParams(config.cc).widenRethrowT *>
+      IO(Log.debug("Completed GNIRS configuration"))
 
-
-  override def observe(fileId: ImageFileId, expTime: Time): SeqAction[ObserveCommand.Result] =
-    EitherT.right[SeqexecFailure](IO(Log.info("Start GNIRS observe"))) *>
-      (if(GnirsEpics.instance.dhsConnected.exists(identity)) SeqAction.void
-       else SeqAction.fail(SeqexecFailure.Execution("GNIRS is not connected to DHS"))
+  override def observe(fileId: ImageFileId, expTime: Time): IO[ObserveCommand.Result] =
+    IO(Log.info("Start GNIRS observe")) *>
+      (if(GnirsEpics.instance.dhsConnected.exists(identity)) IO.unit
+       else IO.raiseError(SeqexecFailure.Execution("GNIRS is not connected to DHS"))
       ) *>
-      (if(GnirsEpics.instance.arrayActive.exists(identity)) SeqAction.void
-       else SeqAction.fail(SeqexecFailure.Execution("GNIRS detector array is not active"))
+      (if(GnirsEpics.instance.arrayActive.exists(identity)) IO.unit
+       else IO.raiseError(SeqexecFailure.Execution("GNIRS detector array is not active"))
       ) *>
-      GnirsEpics.instance.observeCmd.setLabel(fileId) *>
-      GnirsEpics.instance.observeCmd.setTimeout(expTime + ReadoutTimeout) *>
-      GnirsEpics.instance.observeCmd.post
+      GnirsEpics.instance.observeCmd.setLabel(fileId).widenRethrowT *>
+      GnirsEpics.instance.observeCmd.setTimeout(expTime + ReadoutTimeout).widenRethrowT *>
+      GnirsEpics.instance.observeCmd.post.widenRethrowT
 
-  override def endObserve: SeqAction[Unit] =
-    EitherT.right[SeqexecFailure](IO(Log.debug("Send endObserve to GNIRS"))) *>
-      GnirsEpics.instance.endObserveCmd.setTimeout(DefaultTimeout) *>
-      GnirsEpics.instance.endObserveCmd.mark *>
-      GnirsEpics.instance.endObserveCmd.post.void
+  override def endObserve: IO[Unit] =
+    IO(Log.debug("Send endObserve to GNIRS")) *>
+      GnirsEpics.instance.endObserveCmd.setTimeout(DefaultTimeout).widenRethrowT *>
+      GnirsEpics.instance.endObserveCmd.mark.widenRethrowT *>
+      GnirsEpics.instance.endObserveCmd.post.void.widenRethrowT
 
-  override def stopObserve: SeqAction[Unit] =
-    EitherT.right[SeqexecFailure](IO(Log.info("Stop GNIRS exposure"))) *>
-      GnirsEpics.instance.stopCmd.setTimeout(DefaultTimeout) *>
-      GnirsEpics.instance.stopCmd.mark *>
-      GnirsEpics.instance.stopCmd.post.void
+  override def stopObserve: IO[Unit] =
+    IO(Log.info("Stop GNIRS exposure")) *>
+      GnirsEpics.instance.stopCmd.setTimeout(DefaultTimeout).widenRethrowT *>
+      GnirsEpics.instance.stopCmd.mark.widenRethrowT *>
+      GnirsEpics.instance.stopCmd.post.void.widenRethrowT
 
-  override def abortObserve: SeqAction[Unit] =
-    EitherT.right[SeqexecFailure](IO(Log.info("Abort GNIRS exposure"))) *>
-      GnirsEpics.instance.abortCmd.setTimeout(DefaultTimeout) *>
-      GnirsEpics.instance.abortCmd.mark *>
-      GnirsEpics.instance.abortCmd.post.void
+  override def abortObserve: IO[Unit] =
+    IO(Log.info("Abort GNIRS exposure")) *>
+      GnirsEpics.instance.abortCmd.setTimeout(DefaultTimeout).widenRethrowT *>
+      GnirsEpics.instance.abortCmd.mark.widenRethrowT *>
+      GnirsEpics.instance.abortCmd.post.void.widenRethrowT
 
   override def observeProgress(total: Time): Stream[IO, Progress] =
     ProgressUtil.countdown[IO](total, 0.seconds)
+
+  override def calcTotalExposureTime(cfg: GnirsController.DCConfig): IO[Time] =
+    GnirsController.calcTotalExposureTime[IO](cfg)
 
   private val DefaultTimeout: Time = Seconds(60)
   private val ReadoutTimeout: Time = Seconds(300)

@@ -4,7 +4,6 @@
 package seqexec.server.gmos
 
 import cats.Show
-import cats.effect.IO
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.gmos.GmosController.Config.DCConfig
 import seqexec.server.SeqexecFailure.Unexpected
@@ -18,35 +17,29 @@ import cats.kernel.Eq
 import edu.gemini.spModel.gemini.gmos.{GmosNorthType, GmosSouthType}
 import seqexec.server.InstrumentSystem.ElapsedTime
 
-trait GmosController[T<:GmosController.SiteDependentTypes] {
+trait GmosController[F[_], T <: GmosController.SiteDependentTypes] {
   import GmosController._
 
-  // I'm not sure if getConfig will be used. It made sense for TCS, because parts of the TCS configuration cannot be
-  // inferred from the sequence, and because Seqexec needs to temporarily change parts of the TCS configuration only to
-  // later revert those changes to the previous values. But for most (if not all) instruments, the sequence completely
-  // defines the instrument configuration.
-  def getConfig: SeqAction[GmosConfig[T]]
+  def applyConfig(config: GmosConfig[T]): F[Unit]
 
-  def applyConfig(config: GmosConfig[T]): SeqAction[Unit]
-
-  def observe(fileId: ImageFileId, expTime: Time): SeqAction[ObserveCommand.Result]
+  def observe(fileId: ImageFileId, expTime: Time): F[ObserveCommand.Result]
 
   // endObserve is to notify the completion of the observation, not to cause its end.
-  def endObserve: SeqAction[Unit]
+  def endObserve: F[Unit]
 
-  def stopObserve: SeqAction[Unit]
+  def stopObserve: F[Unit]
 
-  def abortObserve: SeqAction[Unit]
+  def abortObserve: F[Unit]
 
-  def pauseObserve: SeqAction[Unit]
+  def pauseObserve: F[Unit]
 
-  def resumePaused(expTime: Time): SeqAction[ObserveCommand.Result]
+  def resumePaused(expTime: Time): F[ObserveCommand.Result]
 
-  def stopPaused: SeqAction[ObserveCommand.Result]
+  def stopPaused: F[ObserveCommand.Result]
 
-  def abortPaused: SeqAction[ObserveCommand.Result]
+  def abortPaused: F[ObserveCommand.Result]
 
-  def observeProgress(total: Time, elapsed: ElapsedTime): fs2.Stream[IO, Progress]
+  def observeProgress(total: Time, elapsed: ElapsedTime): fs2.Stream[F, Progress]
 
 }
 
@@ -202,9 +195,9 @@ object GmosController {
     def this(c: Config[T])(cc: c.CCConfig, dc: DCConfig) = this(cc, dc, c)
   }
 
-  type GmosSouthController = GmosController[SouthTypes]
+  type GmosSouthController[F[_]] = GmosController[F, SouthTypes]
 
-  type GmosNorthController = GmosController[NorthTypes]
+  type GmosNorthController[F[_]] = GmosController[F, NorthTypes]
 
   implicit def configShow[T<:SiteDependentTypes]: Show[GmosConfig[T]] =
     Show.show { config => s"(${config.cc.filter}, ${config.cc.disperser}, ${config.cc.fpu}, ${config.cc.stage}, ${config.cc.stage}, ${config.cc.dtaX}, ${config.cc.adc}, ${config.cc.useElectronicOffset}, ${config.dc.t}, ${config.dc.b}, ${config.dc.s}, ${config.dc.bi}, ${config.dc.roi.rois})" }

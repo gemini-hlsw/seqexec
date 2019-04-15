@@ -13,24 +13,24 @@ import giapi.client.GiapiConfig
 import giapi.client.syntax.giapiconfig._
 import seqexec.server.keywords.GdsClient
 import scala.concurrent.duration._
-import org.log4s._
 import seqexec.server.ConfigUtilOps.{ContentError, ExtractFailure}
 import seqexec.server.GiapiInstrumentController
 import seqexec.server.ghost.GhostController.GhostConfig
 
-final case class GhostController[F[_]: Sync](override val client: GhostClient[F],
-                                             override val gdsClient: GdsClient[F])
-  extends GiapiInstrumentController[F, GhostConfig, GhostClient[F]] {
-
-  import GhostController._
-  val Log: Logger = getLogger
-
-  override val name = "GHOST"
-
-  override def configuration(config: GhostConfig): F[Configuration] = config.configuration.pure[F]
-}
+trait GhostController[F[_]] extends GiapiInstrumentController[F, GhostConfig, GhostClient[F]]
 
 object GhostController {
+  def apply[F[_]: Sync](clien: GhostClient[F], gdsClien: GdsClient[F]): GhostController[F] =
+    new GhostController[F] {
+      override val client = clien
+
+      override val gdsClient = gdsClien
+
+      override val name = "GHOST"
+
+      override def configuration(config: GhostConfig): F[Configuration] = config.configuration.pure[F]
+    }
+
   private def ifuConfig(ifuNum: IFUNum,
                         ifuTargetType: IFUTargetType,
                         coordinates: Coordinates,

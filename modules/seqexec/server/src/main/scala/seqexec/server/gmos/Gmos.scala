@@ -3,9 +3,9 @@
 
 package seqexec.server.gmos
 
-import cats.data.{EitherT, Reader}
+import cats.data.Reader
 import cats.implicits._
-import cats.effect.IO
+import cats.effect.Sync
 import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.gemini.gmos.GmosCommonType._
 import edu.gemini.spModel.gemini.gmos.InstGmosCommon._
@@ -30,7 +30,7 @@ import squants.space.Length
 import squants.{Seconds, Time}
 import squants.space.LengthConversions._
 
-abstract class Gmos[T<:GmosController.SiteDependentTypes](controller: GmosController[T], ss: SiteSpecifics[T])(configTypes: GmosController.Config[T]) extends DhsInstrument[IO] with InstrumentSystem[IO] {
+abstract class Gmos[F[_]: Sync, T<:GmosController.SiteDependentTypes](controller: GmosController[F, T], ss: SiteSpecifics[T])(configTypes: GmosController.Config[T]) extends DhsInstrument[F] with InstrumentSystem[F] {
   import Gmos._
   import InstrumentSystem._
 
@@ -38,15 +38,15 @@ abstract class Gmos[T<:GmosController.SiteDependentTypes](controller: GmosContro
 
   override val contributorName: String = "gmosdc"
 
-  override val keywordsClient: KeywordsClient[IO] = this
+  override val keywordsClient: KeywordsClient[F] = this
 
-  override val observeControl: InstrumentSystem.ObserveControl[IO] = CompleteControl(
-    StopObserveCmd(controller.stopObserve),
-    AbortObserveCmd(controller.abortObserve),
-    PauseObserveCmd(controller.pauseObserve),
-    ContinuePausedCmd{t: Time => controller.resumePaused(t)},
-    StopPausedCmd(controller.stopPaused),
-    AbortPausedCmd(controller.abortPaused)
+  override val observeControl: InstrumentSystem.ObserveControl[F] = CompleteControl(
+    StopObserveCmd(SeqActionF.embedF(controller.stopObserve)),
+    AbortObserveCmd(SeqActionF.embedF(controller.abortObserve)),
+    PauseObserveCmd(SeqActionF.embedF(controller.pauseObserve)),
+    ContinuePausedCmd{t: Time => SeqActionF.embedF(controller.resumePaused(t))},
+    StopPausedCmd(SeqActionF.embedF(controller.stopPaused)),
+    AbortPausedCmd(SeqActionF.embedF(controller.abortPaused))
   )
 
   val Log: Logger = getLogger
@@ -89,31 +89,31 @@ abstract class Gmos[T<:GmosController.SiteDependentTypes](controller: GmosContro
       disperser        <- calcDisperser(disp, disperserOrder.toOption, disperserLambda.toOption)
     } yield configTypes.CCConfig(filter, disperser, fpu, stageMode, dtax, adc, electronicOffset.toOption)).leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
 
-  private def fromSequenceConfig(config: Config): SeqAction[GmosController.GmosConfig[T]] = EitherT( IO ( for {
+  private def fromSequenceConfig(config: Config): SeqActionF[F, GmosController.GmosConfig[T]] = SeqActionF.either( for {
       cc <- ccConfigFromSequenceConfig(config)
       dc <- dcConfigFromSequenceConfig(config)
     } yield new GmosController.GmosConfig[T](configTypes)(cc, dc)
-  ) )
+  )
 
-  override def observe(config: Config): SeqObserve[ImageFileId, ObserveCommand.Result] =
+  override def observe(config: Config): SeqObserveF[F, ImageFileId, ObserveCommand.Result] =
     Reader { fileId =>
-      SeqActionF.liftF(calcObserveTime(config)).flatMap {
-        controller.observe(fileId, _)
+      SeqActionF.liftF(calcObserveTime(config)).flatMap { x =>
+        SeqActionF.embedF(controller.observe(fileId, x))
       }
     }
 
-  override def notifyObserveEnd: SeqAction[Unit] = controller.endObserve
+  override def notifyObserveEnd: SeqActionF[F, Unit] = SeqActionF.embedF(controller.endObserve)
 
-  override def notifyObserveStart: SeqAction[Unit] = SeqAction.void
+  override def notifyObserveStart: SeqActionF[F, Unit] = SeqActionF.void
 
-  override def configure(config: Config): SeqAction[ConfigResult[IO]] =
-    fromSequenceConfig(config).flatMap(controller.applyConfig).as(ConfigResult(this))
+  override def configure(config: Config): SeqActionF[F, ConfigResult[F]] =
+    fromSequenceConfig(config).flatMap(x => SeqActionF.embedF(controller.applyConfig(x))).as(ConfigResult(this))
 
-  override def calcObserveTime(config: Config): IO[Time] =
-    IO(config.extractAs[JDouble](OBSERVE_KEY / EXPOSURE_TIME_PROP)
+  override def calcObserveTime(config: Config): F[Time] =
+    Sync[F].delay(config.extractAs[JDouble](OBSERVE_KEY / EXPOSURE_TIME_PROP)
       .map(v => Seconds(v.toDouble)).getOrElse(Seconds(10000)))
 
-  override def observeProgress(total: Time, elapsed: ElapsedTime): fs2.Stream[IO, Progress] = controller
+  override def observeProgress(total: Time, elapsed: ElapsedTime): fs2.Stream[F, Progress] = controller
     .observeProgress(total, elapsed)
 }
 

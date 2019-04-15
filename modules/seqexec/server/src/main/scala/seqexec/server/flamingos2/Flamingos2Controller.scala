@@ -4,32 +4,23 @@
 package seqexec.server.flamingos2
 
 import cats.Show
-import cats.effect.IO
 import cats.kernel.Eq
 import fs2.Stream
 import seqexec.model.dhs.ImageFileId
-import seqexec.server.{ObserveCommand, Progress, SeqAction}
-
+import seqexec.server.{ObserveCommand, Progress}
 import scala.concurrent.duration.Duration
 import squants.Time
 
-trait Flamingos2Controller {
+trait Flamingos2Controller[F[_]] {
   import Flamingos2Controller._
 
-  // I'm not sure if getConfig will be used. It made sense for TCS, because parts of the TCS configuration cannot be
-  // inferred from the sequence, and because Seqexec needs to temporarily change parts of the TCS configuration only to
-  // later revert those changes to the previous values. But for most (if not all) instruments, the sequence completely
-  // defines the instrument configuration.
-  def getConfig: SeqAction[Flamingos2Config]
+  def applyConfig(config: Flamingos2Config): F[Unit]
 
-  def applyConfig(config: Flamingos2Config): SeqAction[Unit]
+  def observe(fileId: ImageFileId, expTime: Time): F[ObserveCommand.Result]
 
-  def observe(fileId: ImageFileId, expTime: Time): SeqAction[ObserveCommand.Result]
+  def endObserve: F[Unit]
 
-  def endObserve: SeqAction[Unit]
-
-  def observeProgress(total: Time): Stream[IO, Progress]
-
+  def observeProgress(total: Time): Stream[F, Progress]
 }
 
 object Flamingos2Controller {

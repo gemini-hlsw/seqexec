@@ -5,8 +5,6 @@ package seqexec.server.nifs
 
 import cats.data.Reader
 import cats.effect.Sync
-import cats.effect.IO
-import cats.effect.LiftIO
 import cats.implicits._
 import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.gemini.nifs.InstNIFS._
@@ -43,8 +41,8 @@ import squants.space.Arcseconds
 import squants.{Length, Time}
 import squants.time.TimeConversions._
 
-final case class Nifs[F[_]: LiftIO: Sync](
-  controller: NifsController[IO], // TODO Convert to NifsController[F]
+final case class Nifs[F[_]: Sync](
+  controller: NifsController[F],
   dhsClient:  DhsClient[F])
     extends DhsInstrument[F]
     with InstrumentSystem[F] {
@@ -56,8 +54,8 @@ final case class Nifs[F[_]: LiftIO: Sync](
   override val contributorName: String = "NIFS"
 
   override val observeControl: InstrumentSystem.ObserveControl[F] =
-    UnpausableControl(StopObserveCmd(SeqActionF.embed(controller.stopObserve)),
-                    AbortObserveCmd(SeqActionF.embed(controller.abortObserve)))
+    UnpausableControl(StopObserveCmd(SeqActionF.embedF(controller.stopObserve)),
+                    AbortObserveCmd(SeqActionF.embedF(controller.abortObserve)))
 
   override def observe(
     config: Config
@@ -65,12 +63,12 @@ final case class Nifs[F[_]: LiftIO: Sync](
     Reader { fileId =>
       SeqActionF
         .either(getDCConfig(config).asTrySeq)
-        .flatMap(x => SeqActionF.embed(controller.observe(fileId, x)))
+        .flatMap(x => SeqActionF.embedF(controller.observe(fileId, x)))
     }
 
   override def calcObserveTime(config: Config): F[Time] =
     getDCConfig(config)
-      .map(c => LiftIO[F].liftIO(controller.calcTotalExposureTime(c)))
+      .map(controller.calcTotalExposureTime)
       .getOrElse(Sync[F].delay(60.seconds))
 
   override def keywordsClient: KeywordsClient[F] = this
@@ -79,7 +77,7 @@ final case class Nifs[F[_]: LiftIO: Sync](
     total:   Time,
     elapsed: InstrumentSystem.ElapsedTime
   ): fs2.Stream[F, Progress] =
-    controller.observeProgress(total).streamLiftIO
+    controller.observeProgress(total)
 
   override val oiOffsetGuideThreshold: Option[Length] = (Arcseconds(0.01)/FOCAL_PLANE_SCALE).some
 
@@ -93,13 +91,13 @@ final case class Nifs[F[_]: LiftIO: Sync](
   override def configure(config: Config): SeqActionF[F, ConfigResult[F]] =
     SeqActionF
       .either(fromSequenceConfig(config))
-      .flatMap(x => SeqActionF.embed(controller.applyConfig(x)))
+      .flatMap(x => SeqActionF.embedF(controller.applyConfig(x)))
       .as(ConfigResult(this))
 
   override def notifyObserveStart: SeqActionF[F, Unit] = SeqActionF.void
 
   override def notifyObserveEnd: SeqActionF[F, Unit] =
-    SeqActionF.embed(controller.endObserve)
+    SeqActionF.embedF(controller.endObserve)
 }
 
 object Nifs {

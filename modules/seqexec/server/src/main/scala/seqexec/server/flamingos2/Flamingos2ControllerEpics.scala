@@ -3,24 +3,21 @@
 
 package seqexec.server.flamingos2
 
-import cats.data.{EitherT, StateT}
+import cats.data.StateT
 import cats.effect.{ IO, Timer }
 import cats.implicits._
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.{EpicsCodex, ObserveCommand, Progress, ProgressUtil, RemainingTime, SeqAction}
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.{Decker, Filter, ReadoutMode, WindowCover, _}
 import org.log4s.getLogger
-import scala.concurrent.ExecutionContext
 import squants.{Seconds, Time}
 import squants.time.TimeConversions._
 
-object Flamingos2ControllerEpics extends Flamingos2Controller {
+final case class Flamingos2ControllerEpics()(implicit val tio: Timer[IO]) extends Flamingos2Controller[IO] {
   private val Log = getLogger
 
   import EpicsCodex._
   import Flamingos2Controller._
-
-  override def getConfig: SeqAction[Flamingos2Config] = ??? // scalastyle:ignore
 
   implicit val encodeReadoutMode: EncodeEpicsValue[ReadoutMode, String] = EncodeEpicsValue {
     case ReadoutMode.SCIENCE     => "SCI"
@@ -114,31 +111,29 @@ object Flamingos2ControllerEpics extends Flamingos2Controller {
     } yield ()
   }
 
-  override def applyConfig(config: Flamingos2Config): SeqAction[Unit] = for {
-    _ <- EitherT.right(IO.apply(Log.debug("Start Flamingos2 configuration")))
-    _ <- setDCConfig(config.dc)
-    _ <- setCCConfig(config.cc)
-    _ <- Flamingos2Epics.instance.configCmd.setTimeout(ConfigTimeout)
-    _ <- Flamingos2Epics.instance.post
-    _ <- EitherT.right(IO(Log.debug("Completed Flamingos2 configuration")))
+  override def applyConfig(config: Flamingos2Config): IO[Unit] = for {
+    _ <- IO.apply(Log.debug("Start Flamingos2 configuration"))
+    _ <- setDCConfig(config.dc).widenRethrowT
+    _ <- setCCConfig(config.cc).widenRethrowT
+    _ <- Flamingos2Epics.instance.configCmd.setTimeout(ConfigTimeout).widenRethrowT
+    _ <- Flamingos2Epics.instance.post.widenRethrowT
+    _ <- IO(Log.debug("Completed Flamingos2 configuration"))
   } yield ()
 
-  override def observe(fileId: ImageFileId, expTime: Time): SeqAction[ObserveCommand.Result] = for {
-    _ <- Flamingos2Epics.instance.observeCmd.setLabel(fileId)
-    _ <- Flamingos2Epics.instance.observeCmd.setTimeout(expTime + ReadoutTimeout)
-    _ <- Flamingos2Epics.instance.observeCmd.post
+  override def observe(fileId: ImageFileId, expTime: Time): IO[ObserveCommand.Result] = for {
+    _ <- Flamingos2Epics.instance.observeCmd.setLabel(fileId).widenRethrowT
+    _ <- Flamingos2Epics.instance.observeCmd.setTimeout(expTime + ReadoutTimeout).widenRethrowT
+    _ <- Flamingos2Epics.instance.observeCmd.post.widenRethrowT
   } yield ObserveCommand.Success
 
-  override def endObserve: SeqAction[Unit] =  for {
-    _ <- EitherT.right(IO(Log.debug("Send endObserve to Flamingos2")))
-    _ <- Flamingos2Epics.instance.endObserveCmd.setTimeout(DefaultTimeout)
-    _ <- Flamingos2Epics.instance.endObserveCmd.mark
-    _ <- Flamingos2Epics.instance.endObserveCmd.post
+  override def endObserve: IO[Unit] = for {
+    _ <- IO(Log.debug("Send endObserve to Flamingos2"))
+    _ <- Flamingos2Epics.instance.endObserveCmd.setTimeout(DefaultTimeout).widenRethrowT
+    _ <- Flamingos2Epics.instance.endObserveCmd.mark.widenRethrowT
+    _ <- Flamingos2Epics.instance.endObserveCmd.post.widenRethrowT
   } yield ()
 
   override def observeProgress(total: Time): fs2.Stream[IO, Progress] = {
-    implicit val ioTimer: Timer[IO] = IO.timer(ExecutionContext.global)
-    // ProgressUtil.countdown[IO](total, Seconds(0))
     val s = ProgressUtil.fromStateTOption[IO, Time](_ => StateT[IO, Time, Option[Progress]] { st =>
       IO {
         val m = if (total >= st) total else st
@@ -153,7 +148,6 @@ object Flamingos2ControllerEpics extends Flamingos2Controller {
     })
     s(total).dropWhile(_.remaining.self.value === 0.0) // drop leading zeros
       .takeThrough(_.remaining.self.value > 0.0) // drop all tailing zeros but the first one
-
   }
 
   val ReadoutTimeout: Time = Seconds(300)

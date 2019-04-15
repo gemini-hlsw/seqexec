@@ -5,7 +5,7 @@ package seqexec.server.gnirs
 
 import cats.data.Reader
 import cats.implicits._
-import cats.effect.IO
+import cats.effect.Sync
 import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.gemini.gnirs.GNIRSConstants.{INSTRUMENT_NAME_PROP, WOLLASTON_PRISM_PROP}
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams._
@@ -13,7 +13,6 @@ import edu.gemini.spModel.gemini.gnirs.InstGNIRS._
 import edu.gemini.spModel.obscomp.InstConstants.{BIAS_OBSERVE_TYPE, DARK_OBSERVE_TYPE, OBSERVE_TYPE_PROP}
 import edu.gemini.spModel.seqcomp.SeqConfigNames.{INSTRUMENT_KEY, OBSERVE_KEY}
 import java.lang.{Double => JDouble, Integer => JInt}
-
 import gem.enum.LightSinkName
 import seqexec.model.enum.Instrument
 import seqexec.model.dhs.ImageFileId
@@ -25,41 +24,40 @@ import squants.Time
 import squants.space.LengthConversions._
 import squants.time.TimeConversions._
 
-final case class Gnirs(controller: GnirsController, dhsClient: DhsClient[IO]) extends DhsInstrument[IO] with InstrumentSystem[IO] {
+final case class Gnirs[F[_]: Sync](controller: GnirsController[F], dhsClient: DhsClient[F]) extends DhsInstrument[F] with InstrumentSystem[F] {
   override def sfName(config: Config): LightSinkName = LightSinkName.Gnirs
   override val contributorName: String = "ngnirsdc1"
   override val dhsInstrumentName: String = "GNIRS"
 
-  override val keywordsClient: KeywordsClient[IO] = this
+  override val keywordsClient: KeywordsClient[F] = this
 
   import Gnirs._
   import InstrumentSystem._
-  override val observeControl: ObserveControl[IO] =
-    UnpausableControl(StopObserveCmd(controller.stopObserve),
-                      AbortObserveCmd(controller.abortObserve))
+  override val observeControl: ObserveControl[F] = UnpausableControl(StopObserveCmd(SeqActionF.embedF(controller.stopObserve)),
+                                                                AbortObserveCmd(SeqActionF.embedF(controller.abortObserve)))
 
-  override def observe(config: Config): SeqObserve[ImageFileId, ObserveCommand.Result] =
+  override def observe(config: Config): SeqObserveF[F, ImageFileId, ObserveCommand.Result] =
     Reader { fileId =>
-      SeqActionF.liftF(calcObserveTime(config)).flatMap {
-        controller.observe(fileId, _)
+      SeqActionF.liftF(calcObserveTime(config)).flatMap { x =>
+        SeqActionF.embedF(controller.observe(fileId, x))
       }
     }
 
-  override def calcObserveTime(config: Config): IO[Time] =
+  override def calcObserveTime(config: Config): F[Time] =
     getDCConfig(config)
-      .map(controller.calcTotalExposureTime[IO])
-      .getOrElse(IO.pure(60.seconds))
+      .map(controller.calcTotalExposureTime)
+      .getOrElse(60.seconds.pure[F])
 
   override val resource: Instrument = Instrument.Gnirs
 
-  override def configure(config: Config): SeqAction[ConfigResult[IO]] =
-    SeqAction.either(fromSequenceConfig(config)).flatMap(controller.applyConfig).as(ConfigResult(this))
+  override def configure(config: Config): SeqActionF[F, ConfigResult[F]] =
+    SeqActionF.either(fromSequenceConfig(config)).flatMap(x => SeqActionF.embedF(controller.applyConfig(x))).as(ConfigResult(this))
 
-  override def notifyObserveEnd: SeqAction[Unit] = controller.endObserve
+  override def notifyObserveEnd: SeqActionF[F, Unit] = SeqActionF.embedF(controller.endObserve)
 
-  override def notifyObserveStart: SeqAction[Unit] = SeqAction.void
+  override def notifyObserveStart: SeqActionF[F, Unit] = SeqActionF.void
 
-  override def observeProgress(total: Time, elapsed: ElapsedTime): fs2.Stream[IO, Progress] =
+  override def observeProgress(total: Time, elapsed: ElapsedTime): fs2.Stream[F, Progress] =
     controller.observeProgress(total)
 }
 

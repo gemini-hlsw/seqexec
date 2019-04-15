@@ -3,36 +3,36 @@
 
 package seqexec.server.niri
 
-import cats.effect.IO
+import cats.effect.Sync
+import cats.effect.Timer
+import cats.implicits._
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.InstrumentSystem.ElapsedTime
 import seqexec.server.niri.NiriController.{DCConfig, NiriConfig}
-import seqexec.server.{InstrumentControllerSim, ObserveCommand, Progress, SeqAction}
-import seqexec.server.SeqActionF
+import seqexec.server.{InstrumentControllerSim, ObserveCommand, Progress}
 import squants.Time
 import squants.time.TimeConversions._
 
-object NiriControllerSim extends NiriController {
+final case class NiriControllerSim[F[_]: Sync: Timer]() extends NiriController[F] {
+  private val sim: InstrumentControllerSim[F] = InstrumentControllerSim[F](s"NIRI")
 
-  private val sim: InstrumentControllerSim = InstrumentControllerSim(s"NIRI")
+  override def observe(fileId: ImageFileId, cfg: DCConfig): F[ObserveCommand.Result] =
+    calcTotalExposureTime(cfg).flatMap(sim.observe(fileId, _))
 
-  override def observe(fileId: ImageFileId, cfg: DCConfig): SeqAction[ObserveCommand.Result] =
-    SeqActionF.liftF(calcTotalExposureTime(cfg)).flatMap(sim.observe(fileId, _))
+  override def applyConfig(config: NiriConfig): F[Unit] = sim.applyConfig(config)
 
-  override def applyConfig(config: NiriConfig): SeqAction[Unit] = sim.applyConfig(config)
+  override def stopObserve: F[Unit] = sim.stopObserve
 
-  override def stopObserve: SeqAction[Unit] = sim.stopObserve
+  override def abortObserve: F[Unit] = sim.abortObserve
 
-  override def abortObserve: SeqAction[Unit] = sim.abortObserve
+  override def endObserve: F[Unit] = sim.endObserve
 
-  override def endObserve: SeqAction[Unit] = sim.endObserve
-
-  override def observeProgress(total: Time): fs2.Stream[IO, Progress] =
+  override def observeProgress(total: Time): fs2.Stream[F, Progress] =
     sim.observeCountdown(total, ElapsedTime(0.seconds))
 
-  override def calcTotalExposureTime(cfg: DCConfig): IO[Time] = IO.pure {
+  override def calcTotalExposureTime(cfg: DCConfig): F[Time] = {
     val MinIntTime = 0.5.seconds
 
     (cfg.exposureTime + MinIntTime) * cfg.coadds.toDouble
-  }
+  }.pure[F]
 }
