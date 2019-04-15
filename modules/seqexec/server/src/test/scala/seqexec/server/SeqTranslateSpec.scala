@@ -24,6 +24,7 @@ import seqexec.server.flamingos2.Flamingos2ControllerSim
 import seqexec.server.gcal.GcalControllerSim
 import seqexec.server.gmos.GmosControllerSim
 import seqexec.server.gnirs.GnirsControllerSim
+import seqexec.server.gsaoi.GsaoiControllerSim
 import seqexec.server.tcs.{GuideConfigDb, TcsControllerSim}
 import seqexec.server.gpi.GpiController
 import seqexec.server.Response.Observed
@@ -106,6 +107,7 @@ class SeqTranslateSpec extends FlatSpec {
     GmosControllerSim.south[IO],
     GmosControllerSim.north[IO],
     GnirsControllerSim[IO],
+    GsaoiControllerSim[IO],
     gpiSim,
     ghostSim,
     NiriControllerSim[IO],
