@@ -109,13 +109,19 @@ object ConfigUtilOps {
       implicit clazz:        ClassTag[A]): Either[ExtractFailure, A] =
       new Extracted(c, AO_SYSTEM_KEY / key).as[A]
 
+    private def sanitizeValue(s: Any): String = s match {
+      case x: edu.gemini.shared.util.immutable.Some[_] => s"${x.getValue}"
+      case _: edu.gemini.shared.util.immutable.None[_] => "None"
+      case _ => s"$s"
+    }
+
     // config syntax: cfg.toStepConfig
     def toStepConfig: StepConfig =
       c.itemEntries().groupBy(_.getKey.getRoot).map {
         case (subsystem, entries) =>
           SystemName.unsafeFromString(subsystem.getName) ->
             (entries.toList.map { e =>
-              (e.getKey.getPath, s"${e.getItemValue}")
+              (e.getKey.getPath, sanitizeValue(e.getItemValue))
             }(breakOut): Map[String, String])
       }
 

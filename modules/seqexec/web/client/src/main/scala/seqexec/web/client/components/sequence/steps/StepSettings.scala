@@ -116,7 +116,6 @@ object FilterCell {
         case Instrument.F2 =>
           instrumentFilterO
             .getOption(s)
-            .flatMap(enumerations.filter.F2Filter.get)
         case Instrument.Niri =>
           instrumentFilterO
             .getOption(s)

@@ -11,6 +11,7 @@ import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.raw.JsNumber
 import japgolly.scalajs.react.component.builder.Lifecycle.RenderScope
+import japgolly.scalajs.react.extra.Reusability
 import cats.implicits._
 import react.virtualized._
 import scala.scalajs.js
@@ -21,6 +22,7 @@ import seqexec.web.client.components.TableContainer
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.actions.UpdateStepsConfigTableState
 import web.client.table._
+import seqexec.web.client.reusability._
 
 object StepConfigTable {
   sealed trait TableColumn extends Product with Serializable
@@ -28,7 +30,8 @@ object StepConfigTable {
   case object ValueColumn extends TableColumn
 
   object TableColumn {
-    implicit val eq: Eq[TableColumn] = Eq.fromUniversalEquals
+    implicit val eq: Eq[TableColumn]             = Eq.fromUniversalEquals
+    implicit val reuse: Reusability[TableColumn] = Reusability.byRef
   }
 
   type Backend = RenderScope[Props, TableState[TableColumn], Unit]
@@ -50,6 +53,9 @@ object StepConfigTable {
         .lift(idx)
         .fold(SettingsRow.zero)(Function.tupled(SettingsRow.apply))
   }
+
+  implicit val propsReuse: Reusability[Props] =
+    Reusability.by(p => (p.settingsList, p.startState))
 
   // ScalaJS defined trait
   // scalastyle:off
@@ -181,6 +187,7 @@ object StepConfigTable {
         Table(settingsTableProps(b, size),
               b.state.columnBuilder(size, colBuilder(b, size)): _*)))
     )
+    .configure(Reusability.shouldComponentUpdate)
     .build
 
   def apply(p: Props): Unmounted[Props, TableState[TableColumn], Unit] =
