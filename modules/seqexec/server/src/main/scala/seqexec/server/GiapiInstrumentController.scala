@@ -15,19 +15,21 @@ import org.log4s.getLogger
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.SeqexecFailure.Execution
 import seqexec.server.SeqexecFailure.SeqexecException
-import seqexec.server.keywords.GdsClient
 import squants.time.Time
-
 import scala.concurrent.duration._
+
+trait GiapiInstrumentController[F[_], CFG] {
+  def applyConfig(config: CFG): SeqActionF[F, Unit]
+  def observe(fileId: ImageFileId, expTime: Time): SeqActionF[F, ImageFileId]
+  def endObserve: SeqActionF[F, Unit]
+}
 
 /**
   * Superclass for all GIAPI instrument controllers.
   */
-abstract class GiapiInstrumentController[F[_]: Sync, CFG, C <: GiapiClient[F]] {
+abstract class AbstractGiapiInstrumentController[F[_]: Sync, CFG, C <: GiapiClient[F]](client: C) extends GiapiInstrumentController[F, CFG] {
   private val Log = getLogger
 
-  def client: C
-  def gdsClient: GdsClient[F]
   def name: String
   def configuration(config: CFG): F[Configuration]
 
@@ -47,7 +49,7 @@ abstract class GiapiInstrumentController[F[_]: Sync, CFG, C <: GiapiClient[F]] {
       case f                            => SeqexecException(f)
     }
 
-  def applyConfig(config: CFG): SeqActionF[F, Unit] =
+  override def applyConfig(config: CFG): SeqActionF[F, Unit] =
     for {
       _ <- SeqActionF.apply(Log.debug(s"Start $name configuration"))
       _ <- SeqActionF.apply(Log.debug(s"$name configuration $config"))
@@ -55,7 +57,7 @@ abstract class GiapiInstrumentController[F[_]: Sync, CFG, C <: GiapiClient[F]] {
       _ <- SeqActionF.apply(Log.debug(s"Completed $name configuration"))
     } yield ()
 
-  def observe(fileId: ImageFileId, expTime: Time): SeqActionF[F, ImageFileId] =
+  override def observe(fileId: ImageFileId, expTime: Time): SeqActionF[F, ImageFileId] =
     EitherT(
       client
         .observe(fileId, expTime.toMilliseconds.milliseconds)
@@ -68,6 +70,6 @@ abstract class GiapiInstrumentController[F[_]: Sync, CFG, C <: GiapiClient[F]] {
         case f                            => SeqexecException(f)
       }
 
-  def endObserve: SeqActionF[F, Unit] =
+  override def endObserve: SeqActionF[F, Unit] =
     SeqActionF.void
 }

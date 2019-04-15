@@ -1,7 +1,7 @@
 // Copyright (c) 2016-2019 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
-package seqexec.server.ghost
+package seqexec.server
 
 import cats.implicits._
 import cats.Eq
@@ -11,53 +11,12 @@ import giapi.client.commands.Configuration
 import giapi.client.ghost.GhostClient
 import giapi.client.GiapiConfig
 import giapi.client.syntax.giapiconfig._
-import seqexec.server.keywords.GdsClient
 import scala.concurrent.duration._
-import seqexec.server.ConfigUtilOps.{ContentError, ExtractFailure}
-import seqexec.server.GiapiInstrumentController
-import seqexec.server.ghost.GhostController.GhostConfig
+import seqexec.server.ConfigUtilOps.ContentError
+import seqexec.server.ConfigUtilOps.ExtractFailure
+import seqexec.server.keywords.GdsClient
 
-trait GhostController[F[_]] extends GiapiInstrumentController[F, GhostConfig, GhostClient[F]]
-
-object GhostController {
-  def apply[F[_]: Sync](clien: GhostClient[F], gdsClien: GdsClient[F]): GhostController[F] =
-    new GhostController[F] {
-      override val client = clien
-
-      override val gdsClient = gdsClien
-
-      override val name = "GHOST"
-
-      override def configuration(config: GhostConfig): F[Configuration] = config.configuration.pure[F]
-    }
-
-  private def ifuConfig(ifuNum: IFUNum,
-                        ifuTargetType: IFUTargetType,
-                        coordinates: Coordinates,
-                        bundleConfig: BundleConfig): Configuration = {
-    def cfg[P: GiapiConfig](paramName: String, paramVal: P) =
-      Configuration.single(s"${ifuNum.configValue}.$paramName", paramVal)
-      cfg("target", ifuTargetType.configValue) |+|
-      cfg("type", DemandType.DemandRADec.demandType) |+|
-      cfg("ra", coordinates.ra.toAngle.toDoubleDegrees) |+|
-      cfg("dec", coordinates.dec.toAngle.toDoubleDegrees) |+|
-      cfg("bundle", bundleConfig.configValue)
-  }
-
-  private def ifuPark(ifuNum: IFUNum): Configuration = {
-    def cfg[P: GiapiConfig](paramName: String, paramVal: P) =
-      Configuration.single(s"${ifuNum.ifuStr}.$paramName", paramVal)
-      cfg("target", IFUTargetType.NoTarget.targetType) |+|
-      cfg("type", DemandType.DemandPark.demandType)
-  }
-
-  sealed abstract class BundleConfig(val configName: String) {
-    def determineType(t: IFUTargetType): BundleConfig = t match {
-      case IFUTargetType.SkyPosition => BundleConfig.Sky
-      case _                         => this
-    }
-  }
-
+package ghost {
   object BundleConfig {
     case object Standard extends BundleConfig(configName = "IFU_LORES")
     case object HighRes  extends BundleConfig(configName = "IFU_HIRES")
@@ -288,18 +247,60 @@ object GhostController {
       }
     }
 
-    import GhostController.{StandardResolutionMode => SRM, HighResolutionMode => HRM}
     implicit val eq: Eq[GhostConfig] = Eq.instance {
-      case (a: SRM.SingleTarget,  b: SRM.SingleTarget)  => a === b
-      case (a: SRM.DualTarget,    b: SRM.DualTarget)    => a === b
-      case (a: SRM.TargetPlusSky, b: SRM.TargetPlusSky) => a === b
-      case (a: SRM.SkyPlusTarget, b: SRM.SkyPlusTarget) => a === b
-      case (a: HRM.SingleTarget,  b: HRM.SingleTarget)  => a === b
-      case (a: HRM.TargetPlusSky, b: HRM.TargetPlusSky) => a === b
-      case _                                            => false
+      case (a: StandardResolutionMode.SingleTarget,  b: StandardResolutionMode.SingleTarget)  => a === b
+      case (a: StandardResolutionMode.DualTarget,    b: StandardResolutionMode.DualTarget)    => a === b
+      case (a: StandardResolutionMode.TargetPlusSky, b: StandardResolutionMode.TargetPlusSky) => a === b
+      case (a: StandardResolutionMode.SkyPlusTarget, b: StandardResolutionMode.SkyPlusTarget) => a === b
+      case (a: HighResolutionMode.SingleTarget,      b: HighResolutionMode.SingleTarget)      => a === b
+      case (a: HighResolutionMode.TargetPlusSky,     b: HighResolutionMode.TargetPlusSky)     => a === b
+      case _                                                                                  => false
     }
-
-    implicit val configIFNum: GiapiConfig[IFUNum] =
-      GiapiConfig.instance(x => s"$x")
   }
+
+  sealed abstract class BundleConfig(val configName: String) {
+    def determineType(t: IFUTargetType): BundleConfig = t match {
+      case IFUTargetType.SkyPosition => BundleConfig.Sky
+      case _                         => this
+    }
+  }
+
+  trait GhostController[F[_]] extends GiapiInstrumentController[F, GhostConfig] {
+    def gdsClient: GdsClient[F]
+  }
+
+}
+
+package object ghost {
+  private[ghost] def ifuConfig(ifuNum: IFUNum,
+                        ifuTargetType: IFUTargetType,
+                        coordinates: Coordinates,
+                        bundleConfig: BundleConfig): Configuration = {
+    def cfg[P: GiapiConfig](paramName: String, paramVal: P) =
+      Configuration.single(s"${ifuNum.configValue}.$paramName", paramVal)
+      cfg("target", ifuTargetType.configValue) |+|
+      cfg("type", DemandType.DemandRADec.demandType) |+|
+      cfg("ra", coordinates.ra.toAngle.toDoubleDegrees) |+|
+      cfg("dec", coordinates.dec.toAngle.toDoubleDegrees) |+|
+      cfg("bundle", bundleConfig.configValue)
+  }
+
+  private[ghost] def ifuPark(ifuNum: IFUNum): Configuration = {
+    def cfg[P: GiapiConfig](paramName: String, paramVal: P) =
+      Configuration.single(s"${ifuNum.ifuStr}.$paramName", paramVal)
+      cfg("target", IFUTargetType.NoTarget.targetType) |+|
+      cfg("type", DemandType.DemandPark.demandType)
+  }
+
+  object GhostController {
+    def apply[F[_]: Sync](client: GhostClient[F], gds: GdsClient[F]): GhostController[F] =
+      new AbstractGiapiInstrumentController[F, GhostConfig, GhostClient[F]](client) with GhostController[F] {
+        override val gdsClient: GdsClient[F] = gds
+
+        override val name = "GHOST"
+
+        override def configuration(config: GhostConfig): F[Configuration] = config.configuration.pure[F]
+      }
+  }
+
 }

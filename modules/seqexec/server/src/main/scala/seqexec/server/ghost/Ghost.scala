@@ -14,21 +14,21 @@ import edu.gemini.spModel.gemini.ghost.{Ghost => SPGhost}
 import gem.enum.LightSinkName
 import gem.math.{Coordinates, Declination, RightAscension}
 import gem.optics.Format
-
 import scala.concurrent.duration._
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Instrument
 import seqexec.server.ConfigUtilOps._
 import seqexec.server._
-import seqexec.server.keywords.{GdsClient, GdsInstrument, KeywordsClient}
-import seqexec.server.ghost.GhostController._
+import seqexec.server.keywords.GdsInstrument
+import seqexec.server.keywords.GdsClient
+import seqexec.server.keywords.KeywordsClient
 import squants.time.{Seconds, Time}
-
 import scala.reflect.ClassTag
 
 final case class Ghost[F[_]: Sync](controller: GhostController[F])
     extends GdsInstrument[F]
     with InstrumentSystem[F] {
+
   override val gdsClient: GdsClient[F] = controller.gdsClient
 
   override val keywordsClient: KeywordsClient[F] = this

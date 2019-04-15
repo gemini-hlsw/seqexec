@@ -20,12 +20,11 @@ import seqexec.server.gmos.GmosController.Config.{Beam, InBeam, OutOfBeam, ROI}
 import squants.time.TimeConversions._
 import squants.{Length, Seconds, Time}
 
-class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosControllerEpics.Encoders[T])(cfg: GmosController.Config[T]) extends GmosController[IO, T] {
+object GmosControllerEpics {
   private val Log = getLogger
 
   import EpicsCodex._
   import GmosController.Config._
-  import GmosControllerEpics._
 
   private val CC = GmosEpics.instance.configCmd
   private val DC = GmosEpics.instance.configDCCmd
@@ -77,9 +76,9 @@ class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosCo
     case Left(_)     => 1
   }
 
-  private def setROI(binning: CCDBinning, s: RegionsOfInterest): List[SeqAction[Unit]] =
+  private def setROI[T <: GmosController.SiteDependentTypes: Encoders](binning: CCDBinning, s: RegionsOfInterest): List[SeqAction[Unit]] =
     s.rois match {
-      case Left(b)     => roiParameters(binning, 1, encoders.builtInROI.encode(b))
+      case Left(b)     => roiParameters(binning, 1, Encoders[T].builtInROI.encode(b))
       case Right(rois) => rois.zipWithIndex.flatMap { case (roi, i) =>
         roiParameters(binning, i + 1, ROIValues.fromOCS(roi))
       }
@@ -101,8 +100,8 @@ class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosCo
     smartSetParam(encodedVal, GmosEpics.instance.ampReadMode, DC.setAmpReadMode(encodedVal))
   }
 
-  private def setGainSetting(rm: AmpReadMode, g: AmpGain): List[SeqAction[Unit]] = {
-    val encodedVal = encoders.autoGain.encode((rm, g))
+  private def setGainSetting[T<: GmosController.SiteDependentTypes: Encoders](rm: AmpReadMode, g: AmpGain): List[SeqAction[Unit]] = {
+    val encodedVal = Encoders[T].autoGain.encode((rm, g))
     smartSetParam(encodedVal, GmosEpics.instance.gainSetting, DC.setGainSetting(encodedVal))
   }
 
@@ -124,7 +123,7 @@ class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosCo
     smartSetParam(encodedVal, GmosEpics.instance.ccdYBinning, DC.setCcdYBinning(encodedVal))
   }
 
-  def setDCConfig(dc: DCConfig): List[SeqAction[Unit]] =
+  def setDCConfig[T <: GmosController.SiteDependentTypes: Encoders](dc: DCConfig): List[SeqAction[Unit]] =
     // TODO nsRow, nsPairs
     setExposureTime(dc.t) ++
     setShutterState(dc.s) ++
@@ -136,15 +135,15 @@ class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosCo
     setCcdXBinning(dc.bi.x) ++
     setCcdYBinning(dc.bi.y)
 
-  def setFilters(f: T#Filter): List[SeqAction[Unit]] = {
-    val (filter1, filter2) = encoders.filter.encode(f)
+  def setFilters[T <: GmosController.SiteDependentTypes: Encoders](f: T#Filter): List[SeqAction[Unit]] = {
+    val (filter1, filter2) = Encoders[T].filter.encode(f)
 
     smartSetParam(filter1, GmosEpics.instance.filter1, CC.setFilter1(filter1)) ++
       smartSetParam(filter2, GmosEpics.instance.filter2, CC.setFilter2(filter2))
   }
 
-  def setDisperser(d: T#Disperser): List[SeqAction[Unit]] = {
-    val encodedVal = encoders.disperser.encode(d)
+  def setDisperser[T <: GmosController.SiteDependentTypes: Encoders](d: T#Disperser): List[SeqAction[Unit]] = {
+    val encodedVal = Encoders[T].disperser.encode(d)
     val s = smartSetParam(encodedVal.toUpperCase,
       GmosEpics.instance.disperser.map(_.toUpperCase),
       CC.setDisperser(encodedVal)
@@ -160,7 +159,7 @@ class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosCo
     CC.setDisperserOrder(disperserOrderEncoder.encode(o))
   )
 
-  def setDisperserParams(d: GmosController.Config[T]#GmosDisperser): List[SeqAction[Unit]] = {
+  def setDisperserParams[T <: GmosController.SiteDependentTypes: Encoders](cfg: GmosController.Config[T], d: GmosController.Config[T]#GmosDisperser): List[SeqAction[Unit]] = {
     // TODO: define Enum type for disperserMode
     val disperserMode0 = "WLEN"
     val disperserMode1 = "SEL"
@@ -198,10 +197,10 @@ class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosCo
     else set
   }
 
-  def setFPU(cc: GmosFPU): List[SeqAction[Unit]] = {
+  def setFPU[T <: GmosController.SiteDependentTypes: Encoders](cfg: GmosController.Config[T], cc: GmosFPU): List[SeqAction[Unit]] = {
     def inBeamDecode(v: Int): String = if (v===0) InBeamVal else OutOfBeamVal
 
-    def builtInFPU(fpu: T#FPU): (Option[String], Option[String]) = encoders.fpu.encode(fpu)
+    def builtInFPU(fpu: T#FPU): (Option[String], Option[String]) = Encoders[T].fpu.encode(fpu)
 
     def customFPU(name: String): (Option[String], Option[String]) = name match {
       case "None" => (none, none)
@@ -232,8 +231,8 @@ class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosCo
       CC.setElectronicOffsetting(encode(useEOffset)))
   }
 
-  def setStage(v: T#GmosStageMode): List[SeqAction[Unit]] = {
-    val stage = encoders.stageMode.encode(v)
+  def setStage[T <: GmosController.SiteDependentTypes: Encoders](v: T#GmosStageMode): List[SeqAction[Unit]] = {
+    val stage = Encoders[T].stageMode.encode(v)
 
     smartSetParam(stage, GmosEpics.instance.stageMode, CC.setStageMode(stage))
   }
@@ -251,10 +250,10 @@ class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosCo
       CC.setDtaXOffset(offsetInMicrons))
   }
 
-  def setCCConfig(cc: GmosController.Config[T]#CCConfig): List[SeqAction[Unit]] = {
+  def setCCConfig[T <: GmosController.SiteDependentTypes: Encoders](cfg: GmosController.Config[T], cc: GmosController.Config[T]#CCConfig): List[SeqAction[Unit]] = {
     setFilters(cc.filter) ++
-      setDisperserParams(cc.disperser) ++
-      setFPU(cc.fpu) ++
+      setDisperserParams(cfg, cc.disperser) ++
+      setFPU(cfg, cc.fpu) ++
       setStage(cc.stage) ++
       setDtaXOffset(cc.dtaX) ++
       setElectronicOffset(cc.useElectronicOffset)
@@ -262,94 +261,95 @@ class GmosControllerEpics[T<:GmosController.SiteDependentTypes](encoders: GmosCo
 
   val dhsConnected: String = "CONNECTED"
 
-  override def applyConfig(config: GmosController.GmosConfig[T]): IO[Unit] = {
-    val params = setDCConfig(config.dc) ++ setCCConfig(config.cc)
+  def apply[T <: GmosController.SiteDependentTypes](cfg: GmosController.Config[T])(implicit e: Encoders[T]): GmosController[IO, T] =
+    new GmosController[IO, T] {
+      override def applyConfig(config: GmosController.GmosConfig[T]): IO[Unit] = {
+        val params = setDCConfig(config.dc) ++ setCCConfig[T](cfg, config.cc)
 
-    IO(Log.info("Start Gmos configuration")) *>
-    IO(Log.debug(s"Gmos configuration: ${config.show}")) *>
-    IO(Log.warn("GMOS is not connected to the DHS"))
-      .unlessA(GmosEpics.instance.dhsConnected.exists(_.trim === dhsConnected)) *>
-    ( (params.sequence *>
-      GmosEpics.instance.configCmd.setTimeout(ConfigTimeout) *>
-      GmosEpics.instance.post).widenRethrowT
-    ).unlessA(params.isEmpty) *>
-    IO(Log.info("Completed Gmos configuration"))
-  }
+        IO(Log.info("Start Gmos configuration")) *>
+        IO(Log.debug(s"Gmos configuration: ${config.show}")) *>
+        IO(Log.warn("GMOS is not connected to the DHS"))
+          .unlessA(GmosEpics.instance.dhsConnected.exists(_.trim === dhsConnected)) *>
+        ( (params.sequence *>
+          GmosEpics.instance.configCmd.setTimeout(ConfigTimeout) *>
+          GmosEpics.instance.post).widenRethrowT
+        ).unlessA(params.isEmpty) *>
+        IO(Log.info("Completed Gmos configuration"))
+      }
 
-  override def observe(fileId: ImageFileId, expTime: Time): IO[ObserveCommand.Result] =
-    IO.raiseError(SeqexecFailure.Execution("GMOS is not connected to DHS"))
-      .unlessA(GmosEpics.instance.dhsConnected.exists(_.trim === dhsConnected)) *>
-    (GmosEpics.instance.observeCmd.setLabel(fileId) *>
-    GmosEpics.instance.observeCmd.setTimeout(expTime + ReadoutTimeout) *>
-    GmosEpics.instance.observeCmd.post).widenRethrowT
+      override def observe(fileId: ImageFileId, expTime: Time): IO[ObserveCommand.Result] =
+        IO.raiseError(SeqexecFailure.Execution("GMOS is not connected to DHS"))
+          .unlessA(GmosEpics.instance.dhsConnected.exists(_.trim === dhsConnected)) *>
+        (GmosEpics.instance.observeCmd.setLabel(fileId) *>
+        GmosEpics.instance.observeCmd.setTimeout(expTime + ReadoutTimeout) *>
+        GmosEpics.instance.observeCmd.post).widenRethrowT
 
-  override def stopObserve: IO[Unit] =
-    for {
-      _ <- IO(Log.info("Stop Gmos exposure"))
-      _ <- GmosEpics.instance.stopCmd.setTimeout(DefaultTimeout).widenRethrowT
-      _ <- GmosEpics.instance.stopCmd.mark.widenRethrowT
-      _ <- GmosEpics.instance.stopCmd.post.widenRethrowT
-    } yield ()
+      override def stopObserve: IO[Unit] =
+        for {
+          _ <- IO(Log.info("Stop Gmos exposure"))
+          _ <- GmosEpics.instance.stopCmd.setTimeout(DefaultTimeout).widenRethrowT
+          _ <- GmosEpics.instance.stopCmd.mark.widenRethrowT
+          _ <- GmosEpics.instance.stopCmd.post.widenRethrowT
+        } yield ()
 
-  override def abortObserve: IO[Unit] = for {
-    _ <- IO(Log.info("Abort Gmos exposure"))
-    _ <- GmosEpics.instance.abortCmd.setTimeout(DefaultTimeout).widenRethrowT
-    _ <- GmosEpics.instance.abortCmd.mark.widenRethrowT
-    _ <- GmosEpics.instance.abortCmd.post.widenRethrowT
-  } yield ()
+      override def abortObserve: IO[Unit] = for {
+        _ <- IO(Log.info("Abort Gmos exposure"))
+        _ <- GmosEpics.instance.abortCmd.setTimeout(DefaultTimeout).widenRethrowT
+        _ <- GmosEpics.instance.abortCmd.mark.widenRethrowT
+        _ <- GmosEpics.instance.abortCmd.post.widenRethrowT
+      } yield ()
 
-  override def endObserve: IO[Unit] = for {
-    _ <- IO(Log.debug("Send endObserve to Gmos"))
-    _ <- GmosEpics.instance.endObserveCmd.setTimeout(DefaultTimeout).widenRethrowT
-    _ <- GmosEpics.instance.endObserveCmd.mark.widenRethrowT
-    _ <- GmosEpics.instance.endObserveCmd.post.widenRethrowT
-  } yield ()
+      override def endObserve: IO[Unit] = for {
+        _ <- IO(Log.debug("Send endObserve to Gmos"))
+        _ <- GmosEpics.instance.endObserveCmd.setTimeout(DefaultTimeout).widenRethrowT
+        _ <- GmosEpics.instance.endObserveCmd.mark.widenRethrowT
+        _ <- GmosEpics.instance.endObserveCmd.post.widenRethrowT
+      } yield ()
 
-  override def pauseObserve: IO[Unit] = for {
-    _ <- IO(Log.info("Send pause to Gmos"))
-    _ <- GmosEpics.instance.pauseCmd.setTimeout(DefaultTimeout).widenRethrowT
-    _ <- GmosEpics.instance.pauseCmd.mark.widenRethrowT
-    _ <- GmosEpics.instance.pauseCmd.post.widenRethrowT
-  } yield ()
+      override def pauseObserve: IO[Unit] = for {
+        _ <- IO(Log.info("Send pause to Gmos"))
+        _ <- GmosEpics.instance.pauseCmd.setTimeout(DefaultTimeout).widenRethrowT
+        _ <- GmosEpics.instance.pauseCmd.mark.widenRethrowT
+        _ <- GmosEpics.instance.pauseCmd.post.widenRethrowT
+      } yield ()
 
-  override def resumePaused(expTime: Time): IO[ObserveCommand.Result] = for {
-    _   <- IO(Log.debug("Resume Gmos observation"))
-    _   <- GmosEpics.instance.continueCmd.setTimeout(expTime+ReadoutTimeout).widenRethrowT
-    _   <- GmosEpics.instance.continueCmd.mark.widenRethrowT
-    ret <- GmosEpics.instance.continueCmd.post.widenRethrowT
-    _   <- IO(Log.debug("Completed Gmos observation"))
-  } yield ret
+      override def resumePaused(expTime: Time): IO[ObserveCommand.Result] = for {
+        _   <- IO(Log.debug("Resume Gmos observation"))
+        _   <- GmosEpics.instance.continueCmd.setTimeout(expTime+ReadoutTimeout).widenRethrowT
+        _   <- GmosEpics.instance.continueCmd.mark.widenRethrowT
+        ret <- GmosEpics.instance.continueCmd.post.widenRethrowT
+        _   <- IO(Log.debug("Completed Gmos observation"))
+      } yield ret
 
-  override def stopPaused: IO[ObserveCommand.Result] = for {
-    _   <- IO(Log.info("Stop Gmos paused observation"))
-    _   <- GmosEpics.instance.stopAndWaitCmd.setTimeout(DefaultTimeout).widenRethrowT
-    _   <- GmosEpics.instance.stopAndWaitCmd.mark.widenRethrowT
-    ret <- GmosEpics.instance.stopAndWaitCmd.post.widenRethrowT
-    _   <- IO(Log.info("Completed stopping Gmos observation"))
-  } yield if(ret === ObserveCommand.Success) ObserveCommand.Stopped else ret
+      override def stopPaused: IO[ObserveCommand.Result] = for {
+        _   <- IO(Log.info("Stop Gmos paused observation"))
+        _   <- GmosEpics.instance.stopAndWaitCmd.setTimeout(DefaultTimeout).widenRethrowT
+        _   <- GmosEpics.instance.stopAndWaitCmd.mark.widenRethrowT
+        ret <- GmosEpics.instance.stopAndWaitCmd.post.widenRethrowT
+        _   <- IO(Log.info("Completed stopping Gmos observation"))
+      } yield if(ret === ObserveCommand.Success) ObserveCommand.Stopped else ret
 
-  override def abortPaused: IO[ObserveCommand.Result] = for {
-    _   <- IO(Log.info("Abort Gmos paused observation"))
-    _   <- GmosEpics.instance.abortAndWait.setTimeout(DefaultTimeout).widenRethrowT
-    _   <- GmosEpics.instance.abortAndWait.mark.widenRethrowT
-    ret <- GmosEpics.instance.abortAndWait.post.widenRethrowT
-    _   <- IO(Log.info("Completed aborting Gmos observation"))
-  } yield if(ret === ObserveCommand.Success) ObserveCommand.Aborted else ret
+      override def abortPaused: IO[ObserveCommand.Result] = for {
+        _   <- IO(Log.info("Abort Gmos paused observation"))
+        _   <- GmosEpics.instance.abortAndWait.setTimeout(DefaultTimeout).widenRethrowT
+        _   <- GmosEpics.instance.abortAndWait.mark.widenRethrowT
+        ret <- GmosEpics.instance.abortAndWait.post.widenRethrowT
+        _   <- IO(Log.info("Completed aborting Gmos observation"))
+      } yield if(ret === ObserveCommand.Success) ObserveCommand.Aborted else ret
 
-  // override def observeProgress(total: Time, elapsed: ElapsedTime): Stream[IO, Progress] = {
-  //   implicit val ioTimer: Timer[IO] = IO.timer(ExecutionContext.global)
-  //   ProgressUtil.fromFOption(_ => IO(
-  //     GmosEpics.instance.countdown.map(c => Progress(total, RemainingTime(c.seconds)))
-  //   ))
-  // }
-  override def observeProgress(total: Time, elapsed: ElapsedTime): Stream[IO, Progress] = {
-    implicit val ioTimer: Timer[IO] = IO.timer(ExecutionContext.global)
-    EpicsUtil.countdown[IO](total, IO(GmosEpics.instance.countdown.map(_.seconds)),
-      IO(GmosEpics.instance.observeState))
-  }
-}
+      // override def observeProgress(total: Time, elapsed: ElapsedTime): Stream[IO, Progress] = {
+      //   implicit val ioTimer: Timer[IO] = IO.timer(ExecutionContext.global)
+      //   ProgressUtil.fromFOption(_ => IO(
+      //     GmosEpics.instance.countdown.map(c => Progress(total, RemainingTime(c.seconds)))
+      //   ))
+      // }
+      override def observeProgress(total: Time, elapsed: ElapsedTime): Stream[IO, Progress] = {
+        implicit val ioTimer: Timer[IO] = IO.timer(ExecutionContext.global)
+        EpicsUtil.countdown[IO](total, IO(GmosEpics.instance.countdown.map(_.seconds)),
+          IO(GmosEpics.instance.observeState))
+      }
+    }
 
-object GmosControllerEpics {
   // Parameters to define a ROI
   sealed abstract case class XStart(value: Int)
   // Make the values impossible to build with invalid values
@@ -387,13 +387,18 @@ object GmosControllerEpics {
 
   }
 
-  trait Encoders[T<:GmosController.SiteDependentTypes] {
+  trait Encoders[T <: GmosController.SiteDependentTypes] {
     val filter: EncodeEpicsValue[T#Filter, (String, String)]
     val fpu: EncodeEpicsValue[T#FPU, (Option[String], Option[String])]
     val stageMode: EncodeEpicsValue[T#GmosStageMode, String]
     val disperser: EncodeEpicsValue[T#Disperser, String]
     val builtInROI: EncodeEpicsValue[BuiltinROI, Option[ROIValues]]
     val autoGain: EncodeEpicsValue[(AmpReadMode, AmpGain), Int]
+  }
+
+  object Encoders {
+    @inline
+    def apply[A <: GmosController.SiteDependentTypes](implicit ev: Encoders[A]): Encoders[A] = ev
   }
 
   val InBeamVal: String = "IN-BEAM"

@@ -10,23 +10,20 @@ import cats.data.Reader
 import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.gemini.gpi.Gpi._
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
+import fs2.Stream
 import java.lang.{Boolean => JBoolean}
 import java.lang.{Double => JDouble}
 import java.lang.{Integer => JInt}
-
-import fs2.Stream
 import gem.enum.LightSinkName
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Instrument
 import seqexec.server.ConfigUtilOps._
 import seqexec.server._
-import seqexec.server.gpi.GpiController._
 import seqexec.server.keywords.GdsClient
 import seqexec.server.keywords.GdsInstrument
 import seqexec.server.keywords.KeywordsClient
-import squants.Time
-
 import scala.concurrent.duration._
+import squants.Time
 import squants.time.Milliseconds
 import squants.time.Seconds
 import squants.time.Time
@@ -34,13 +31,14 @@ import squants.time.Time
 final case class Gpi[F[_]: Sync: Timer](controller: GpiController[F])
     extends GdsInstrument[F]
     with InstrumentSystem[F] {
+
+  override val gdsClient: GdsClient[F] = controller.gdsClient
+
   // Taken from the gpi isd
   val readoutOverhead: Time  = Seconds(4)
   val writeOverhead: Time    = Seconds(2)
   val perCoaddOverhead: Time = Seconds(2.7)
   val timeoutTolerance: Time  = Seconds(30)
-
-  override val gdsClient: GdsClient[F] = controller.gdsClient
 
   override val keywordsClient: KeywordsClient[F] = this
 
