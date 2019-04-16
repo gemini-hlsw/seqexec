@@ -433,7 +433,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
     case Instrument.GmosN => true
     case Instrument.Nifs  => true
     case Instrument.Niri  => true
-    case Instrument.Gsaoi => true
+    case Instrument.Gsaoi => false
     case Instrument.Gpi   => true
     case Instrument.Ghost => false
     case _                => false
