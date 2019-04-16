@@ -258,6 +258,7 @@ object NiriControllerEpics extends NiriEncoders {
   private val ConfigTimeout: Time = Seconds(180)
   private val DefaultTimeout: Time = Seconds(60)
 
+  // scalastyle:off
   def apply(): NiriController[IO] = new NiriController[IO] {
 
     override def applyConfig(config: NiriController.NiriConfig): IO[Unit] = {
@@ -328,4 +329,5 @@ object NiriControllerEpics extends NiriEncoders {
     }
 
   }
+  // scalastyle:on
 }

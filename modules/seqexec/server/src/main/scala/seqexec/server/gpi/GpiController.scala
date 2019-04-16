@@ -132,7 +132,6 @@ package object gpi extends GpiLookupTables {
 
   implicit val pcEq: Eq[LegacyPupilCamera] = Eq.by(_.displayValue)
 
-
   private def obsModeConfiguration(config: GpiConfig): Configuration =
     config.mode.fold(
       m =>
@@ -154,82 +153,91 @@ package object gpi extends GpiLookupTables {
     )
 
   object GpiController {
-    def apply[F[_]: Sync](client: GpiClient[F], gds: GdsClient[F]): GpiController[F] =
-      new AbstractGiapiInstrumentController[F, GpiConfig, GpiClient[F]](client) with GpiController[F] {
+    private def gpiConfiguration(config: GpiConfig): Configuration =
+      Configuration.single(GpiAdc.applyItem,
+        (config.adc === LegacyAdc.IN)
+          .fold(1, 0)) |+|
+        Configuration.single(GpiUseAo.applyItem,
+          config.aoFlags.useAo
+            .fold(1, 0)) |+|
+        Configuration.single(GpiUseCal.applyItem,
+          config.aoFlags.useCal
+            .fold(1, 0)) |+|
+        Configuration.single(GpiFpmPinholeBias.applyItem,
+          config.aoFlags.alignFpm
+            .fold(1, 0)) |+|
+        Configuration.single(GpiAoOptimize.applyItem,
+          config.aoFlags.aoOptimize
+            .fold(1, 0)) |+|
+        Configuration.single(GpiIntegrationTime.applyItem,
+          config.expTime.toMillis / 1000.0) |+|
+        Configuration.single(GpiNumCoadds.applyItem, config.coAdds) |+|
+        Configuration.single(GpiMagI.applyItem, config.aoFlags.magI) |+|
+        Configuration.single(GpiMagH.applyItem, config.aoFlags.magH) |+|
+        Configuration.single(
+          GpiCalEntranceShutter.applyItem,
+          (config.shutters.calEntranceShutter === LegacyShutter.OPEN)
+            .fold(1, 0)) |+|
+        Configuration.single(
+          GpiCalReferenceShutter.applyItem,
+          (config.shutters.calReferenceShutter === LegacyShutter.OPEN)
+            .fold(1, 0)) |+|
+        Configuration.single(
+          GpiCalScienceShutter.applyItem,
+          (config.shutters.calScienceShutter === LegacyShutter.OPEN)
+            .fold(1, 0)) |+|
+        Configuration.single(
+          GpiEntranceShutter.applyItem,
+          (config.shutters.entranceShutter === LegacyShutter.OPEN)
+            .fold(1, 0)) |+|
+        Configuration.single(GpiPupilCamera.applyItem,
+                             (config.pc === LegacyPupilCamera.IN)
+                               .fold(1, 0)) |+|
+        Configuration.single(GpiSCAttenuation.applyItem, config.asu.attenuation) |+|
+        Configuration.single(GpiSCPower.applyItem,
+                             (config.asu.sc === LegacyArtificialSource.ON)
+                               .fold(100.0, 0.0)) |+|
+        Configuration.single(GpiSrcVis.applyItem,
+                             (config.asu.vis === LegacyArtificialSource.ON)
+                               .fold(1, 0)) |+|
+        Configuration.single(GpiSrcIR.applyItem,
+                             (config.asu.ir === LegacyArtificialSource.ON)
+                               .fold(1, 0)) |+|
+        Configuration.single(GpiPolarizerDeplay.applyItem,
+                             (config.disperser === LegacyDisperser.WOLLASTON)
+                               .fold(1, 0)) |+|
+        (if (config.disperser === LegacyDisperser.WOLLASTON)
+           Configuration.single(GpiPolarizerAngle.applyItem,
+                                config.disperserAngle)
+         else Configuration.Zero) |+|
+        obsModeConfiguration(config)
+
+    private def computeConfig[F[_]: Sync](
+      client: GpiClient[F],
+      config: GpiConfig
+    ): F[Configuration] =
+      for {
+        b <- Sync[F].delay(gpiConfiguration(config))
+        q <- GpiStatusApply.foldConfig(client.statusDb, b)
+        p <- GpiStatusApply.overrideObsMode(client.statusDb, config, q)
+        _ <- Sync[F]
+          .delay(logger.info(s"Applied GPI config ${p.config}"))
+          .unlessA(p.config.isEmpty)
+      } yield p
+
+    def apply[F[_]: Sync](
+      client: GpiClient[F],
+      gds:    GdsClient[F]
+    ): GpiController[F] =
+      new AbstractGiapiInstrumentController[F, GpiConfig, GpiClient[F]](client)
+      with GpiController[F] {
         override val gdsClient: GdsClient[F] = gds
 
         override val name = "GPI"
 
         // scalastyle:off
-        override def configuration(config: GpiConfig): F[Configuration] = {
-          val baseConfig = Configuration.single(GpiAdc.applyItem,
-            (config.adc === LegacyAdc.IN)
-              .fold(1, 0)) |+|
-            Configuration.single(GpiUseAo.applyItem,
-              config.aoFlags.useAo
-                .fold(1, 0)) |+|
-            Configuration.single(GpiUseCal.applyItem,
-              config.aoFlags.useCal
-                .fold(1, 0)) |+|
-            Configuration.single(GpiFpmPinholeBias.applyItem,
-              config.aoFlags.alignFpm
-                .fold(1, 0)) |+|
-            Configuration.single(GpiAoOptimize.applyItem,
-              config.aoFlags.aoOptimize
-                .fold(1, 0)) |+|
-            Configuration.single(GpiIntegrationTime.applyItem,
-              config.expTime.toMillis / 1000.0) |+|
-            Configuration.single(GpiNumCoadds.applyItem, config.coAdds) |+|
-            Configuration.single(GpiMagI.applyItem, config.aoFlags.magI) |+|
-            Configuration.single(GpiMagH.applyItem, config.aoFlags.magH) |+|
-            Configuration.single(
-              GpiCalEntranceShutter.applyItem,
-              (config.shutters.calEntranceShutter === LegacyShutter.OPEN)
-                .fold(1, 0)) |+|
-            Configuration.single(
-              GpiCalReferenceShutter.applyItem,
-              (config.shutters.calReferenceShutter === LegacyShutter.OPEN)
-                .fold(1, 0)) |+|
-            Configuration.single(
-              GpiCalScienceShutter.applyItem,
-              (config.shutters.calScienceShutter === LegacyShutter.OPEN)
-                .fold(1, 0)) |+|
-            Configuration.single(
-              GpiEntranceShutter.applyItem,
-              (config.shutters.entranceShutter === LegacyShutter.OPEN)
-                .fold(1, 0)) |+|
-            Configuration.single(GpiPupilCamera.applyItem,
-              (config.pc === LegacyPupilCamera.IN)
-                .fold(1, 0)) |+|
-            Configuration.single(GpiSCAttenuation.applyItem,
-              config.asu.attenuation) |+|
-            Configuration.single(GpiSCPower.applyItem,
-              (config.asu.sc === LegacyArtificialSource.ON)
-                .fold(100.0, 0.0)) |+|
-            Configuration.single(GpiSrcVis.applyItem,
-              (config.asu.vis === LegacyArtificialSource.ON)
-                .fold(1, 0)) |+|
-            Configuration.single(GpiSrcIR.applyItem,
-              (config.asu.ir === LegacyArtificialSource.ON)
-                .fold(1, 0)) |+|
-            Configuration.single(GpiPolarizerDeplay.applyItem,
-             (config.disperser === LegacyDisperser.WOLLASTON)
-               .fold(1, 0)) |+|
-            (if (config.disperser === LegacyDisperser.WOLLASTON)
-               Configuration.single(GpiPolarizerAngle.applyItem,
-                                    config.disperserAngle)
-             else Configuration.Zero) |+|
-            obsModeConfiguration(config)
-
-          for {
-            q <- GpiStatusApply.foldConfig(client.statusDb, baseConfig)
-            p <- GpiStatusApply.overrideObsMode(client.statusDb, config, q)
-            _ <- Sync[F]
-              .delay(logger.info(s"Applied GPI config ${p.config}"))
-              .unlessA(p.config.isEmpty)
-          } yield p
-        }
-        // scalastyle:on
+        override def configuration(config: GpiConfig): F[Configuration] =
+          computeConfig(client, config)
       }
   }
 }

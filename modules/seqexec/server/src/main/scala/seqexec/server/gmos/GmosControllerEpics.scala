@@ -261,6 +261,7 @@ object GmosControllerEpics {
 
   val dhsConnected: String = "CONNECTED"
 
+  // scalastyle:off
   def apply[T <: GmosController.SiteDependentTypes](cfg: GmosController.Config[T])(implicit e: Encoders[T]): GmosController[IO, T] =
     new GmosController[IO, T] {
       override def applyConfig(config: GmosController.GmosConfig[T]): IO[Unit] = {
@@ -348,7 +349,8 @@ object GmosControllerEpics {
         EpicsUtil.countdown[IO](total, IO(GmosEpics.instance.countdown.map(_.seconds)),
           IO(GmosEpics.instance.observeState))
       }
-    }
+  }
+  // scalastyle:on
 
   // Parameters to define a ROI
   sealed abstract case class XStart(value: Int)

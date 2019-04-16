@@ -10,9 +10,11 @@ import cats.implicits._
 import fs2.Stream
 import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
-import edu.gemini.spModel.gemini.ghost.{Ghost => SPGhost}
+import edu.gemini.spModel.gemini.ghost.{ Ghost => SPGhost }
 import gem.enum.LightSinkName
-import gem.math.{Coordinates, Declination, RightAscension}
+import gem.math.Coordinates
+import gem.math.Declination
+import gem.math.RightAscension
 import gem.optics.Format
 import scala.concurrent.duration._
 import seqexec.model.dhs.ImageFileId
@@ -22,7 +24,8 @@ import seqexec.server._
 import seqexec.server.keywords.GdsInstrument
 import seqexec.server.keywords.GdsClient
 import seqexec.server.keywords.KeywordsClient
-import squants.time.{Seconds, Time}
+import squants.time.Seconds
+import squants.time.Time
 import scala.reflect.ClassTag
 
 final case class Ghost[F[_]: Sync](controller: GhostController[F])
@@ -43,29 +46,32 @@ final case class Ghost[F[_]: Sync](controller: GhostController[F])
     InstrumentSystem.Uncontrollable()
 
   override def observe(
-      config: Config
+    config: Config
   ): SeqObserveF[F, ImageFileId, ObserveCommand.Result] =
     Reader { fileId =>
-      SeqActionF.liftF(calcObserveTime(config)).flatMap {
+      SeqActionF.embedF(calcObserveTime(config).flatMap { x =>
         controller
-          .observe(fileId, _)
+          .observe(fileId, x)
           .as(ObserveCommand.Success: ObserveCommand.Result)
-      }
+      })
     }
 
   override def configure(config: Config): SeqActionF[F, ConfigResult[F]] =
     Ghost
       .fromSequenceConfig[F](config)
-      .flatMap(controller.applyConfig)
+      .flatMap(x => SeqActionF.embedF(controller.applyConfig(x)))
       .as(ConfigResult[F](this))
 
-  override def notifyObserveEnd: SeqActionF[F, Unit] = controller.endObserve
+  override def notifyObserveEnd: SeqActionF[F, Unit] =
+    SeqActionF.embedF(controller.endObserve)
 
   override def notifyObserveStart: SeqActionF[F, Unit] = SeqActionF.void
 
   override def calcObserveTime(config: Config): F[Time] = Seconds(360).pure[F]
 
-  override def observeProgress(total: Time, elapsed: InstrumentSystem.ElapsedTime): Stream[F, Progress] = Stream.empty
+  override def observeProgress(
+    total:   Time,
+    elapsed: InstrumentSystem.ElapsedTime): Stream[F, Progress] = Stream.empty
 }
 
 object Ghost {

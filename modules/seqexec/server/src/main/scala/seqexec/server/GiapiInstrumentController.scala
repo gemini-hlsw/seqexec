@@ -3,7 +3,7 @@
 
 package seqexec.server
 
-import cats.data.EitherT
+import cats.Applicative
 import cats.effect.Sync
 import cats.implicits._
 import edu.gemini.aspen.giapi.commands.HandlerResponse
@@ -19,9 +19,9 @@ import squants.time.Time
 import scala.concurrent.duration._
 
 trait GiapiInstrumentController[F[_], CFG] {
-  def applyConfig(config: CFG): SeqActionF[F, Unit]
-  def observe(fileId: ImageFileId, expTime: Time): SeqActionF[F, ImageFileId]
-  def endObserve: SeqActionF[F, Unit]
+  def applyConfig(config: CFG): F[Unit]
+  def observe(fileId: ImageFileId, expTime: Time): F[ImageFileId]
+  def endObserve: F[Unit]
 }
 
 /**
@@ -33,43 +33,36 @@ abstract class AbstractGiapiInstrumentController[F[_]: Sync, CFG, C <: GiapiClie
   def name: String
   def configuration(config: CFG): F[Configuration]
 
-  private def configure(config: CFG): SeqActionF[F, CommandResult] =
-    EitherT {
-      val cfg: F[Configuration] = configuration(config)
-      val isEmpty               = cfg.map(_.config.isEmpty)
-      isEmpty.ifM((CommandResult(HandlerResponse.Response.ACCEPTED)
-                    .asRight[Throwable]
-                    .pure[F]),
-                  cfg.flatMap(client.genericApply).attempt)
-    }.leftMap {
-      // The GMP sends these cryptic messages but we can do better
-      case CommandResultException(_, "Message cannot be null") =>
-        Execution("Unhandled Apply command")
-      case CommandResultException(_, m) => Execution(m)
-      case f                            => SeqexecException(f)
-    }
+  private def adaptGiapiError: PartialFunction[Throwable, SeqexecFailure] = {
+    // The GMP sends these cryptic messages but we can do better
+    case CommandResultException(_, "Message cannot be null") =>
+      Execution("Unhandled Apply command")
+    case CommandResultException(_, m) => Execution(m)
+    case f                            => SeqexecException(f)
+  }
 
-  override def applyConfig(config: CFG): SeqActionF[F, Unit] =
+  private def configure(config: CFG): F[CommandResult] = {
+    val cfg: F[Configuration] = configuration(config)
+    val isEmpty               = cfg.map(_.config.isEmpty)
+    isEmpty.ifM((CommandResult(HandlerResponse.Response.ACCEPTED)
+                  .pure[F]),
+                cfg.flatMap(client.genericApply))
+  }.adaptError(adaptGiapiError)
+
+  override def applyConfig(config: CFG): F[Unit] =
     for {
-      _ <- SeqActionF.apply(Log.debug(s"Start $name configuration"))
-      _ <- SeqActionF.apply(Log.debug(s"$name configuration $config"))
+      _ <- Sync[F].delay(Log.debug(s"Start $name configuration"))
+      _ <- Sync[F].delay(Log.debug(s"$name configuration $config"))
       _ <- configure(config)
-      _ <- SeqActionF.apply(Log.debug(s"Completed $name configuration"))
+      _ <- Sync[F].delay(Log.debug(s"Completed $name configuration"))
     } yield ()
 
-  override def observe(fileId: ImageFileId, expTime: Time): SeqActionF[F, ImageFileId] =
-    EitherT(
-      client
-        .observe(fileId, expTime.toMilliseconds.milliseconds)
-        .as(fileId)
-        .attempt)
-      .leftMap {
-        case CommandResultException(_, "Message cannot be null") =>
-          Execution("Unhandled observe command")
-        case CommandResultException(_, m) => Execution(m)
-        case f                            => SeqexecException(f)
-      }
+  override def observe(fileId: ImageFileId, expTime: Time): F[ImageFileId] =
+    client
+      .observe(fileId, expTime.toMilliseconds.milliseconds)
+      .as(fileId)
+      .adaptError(adaptGiapiError)
 
-  override def endObserve: SeqActionF[F, Unit] =
-    SeqActionF.void
+  override def endObserve: F[Unit] =
+    Applicative[F].unit
 }
