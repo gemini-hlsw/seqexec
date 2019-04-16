@@ -27,7 +27,7 @@ trait GiapiInstrumentController[F[_], CFG] {
 /**
   * Superclass for all GIAPI instrument controllers.
   */
-abstract class AbstractGiapiInstrumentController[F[_]: Sync, CFG, C <: GiapiClient[F]](client: C) extends GiapiInstrumentController[F, CFG] {
+private[server] abstract class AbstractGiapiInstrumentController[F[_]: Sync, CFG, C <: GiapiClient[F]](client: C) extends GiapiInstrumentController[F, CFG] {
   private val Log = getLogger
 
   def name: String
