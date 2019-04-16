@@ -417,6 +417,9 @@ final case class SequencesOnDisplay(tabs: Zipper[SeqexecTab]) {
   def resetAllOperations: SequencesOnDisplay =
     loadedIds.foldLeft(this)((sod, id) => sod.resetOperations(id))
 
+  def resetAllResourceOperations(id: Observation.Id): SequencesOnDisplay =
+    markOperations(id, TabOperations.clearResourceOperations)
+
   def selectStep(
     id:   Observation.Id,
     step: StepId

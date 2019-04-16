@@ -17,6 +17,7 @@ import japgolly.scalajs.react.extra.Reusability
 import japgolly.scalajs.react.raw.JsNumber
 import monocle.Lens
 import monocle.macros.GenLens
+
 import scala.scalajs.js
 import scala.math.min
 import react.common._
@@ -36,13 +37,12 @@ import seqexec.web.client.model.ModelOps._
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.circuit.StepsTableAndStatusFocus
 import seqexec.web.client.circuit.StepsTableFocus
-import seqexec.web.client.actions.UpdateStepTableState
-import seqexec.web.client.actions.UpdateSelectedStep
+import seqexec.web.client.actions.{ClearAllResouceOptions, UpdateSelectedStep, UpdateStepTableState}
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.components.TableContainer
 import seqexec.web.client.components.sequence.steps.OffsetFns._
 import seqexec.web.client.semanticui.elements.icon.Icon._
-import seqexec.web.client.semanticui.{ Size => SSize }
+import seqexec.web.client.semanticui.{Size => SSize}
 import seqexec.web.client.reusability._
 import react.virtualized._
 import web.client.style._
@@ -688,6 +688,8 @@ object StepsTable {
     b.props.obsId.map { id =>
       (SeqexecCircuit
         .dispatchCB(UpdateSelectedStep(id, i)) *>
+       SeqexecCircuit
+        .dispatchCB(ClearAllResouceOptions(id)) *>
         b.modState(State.selected.set(Some(i))) *>
         recomputeRowHeightsCB(min(b.state.selected.getOrElse(i), i)))
         .when(b.props

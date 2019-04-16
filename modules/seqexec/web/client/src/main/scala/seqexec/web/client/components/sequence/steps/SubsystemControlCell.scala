@@ -51,6 +51,13 @@ object SubsystemControlCell {
     loading     = true,
     extraStyles = List(SeqexecStyles.runningIcon))
 
+  // We want blue if the resource operation is idle or does not exist: these are equivalent cases.
+  private def buttonColor(op: Option[ResourceRunOperation]): Option[String] = op.map {
+    case ResourceRunOperation.ResourceRunIdle      => "blue"
+    case ResourceRunOperation.ResourceRunInFlight  => "yellow"
+    case ResourceRunOperation.ResourceRunCompleted => "green"
+  }.orElse(Some("blue"))
+
   private val component = ScalaComponent
     .builder[Props]("SubsystemControl")
     .render_P { p =>
@@ -61,16 +68,13 @@ object SubsystemControlCell {
             p.resourcesCalls
               .get(r)
               .exists(_ === ResourceRunOperation.ResourceRunInFlight)
-          val completed =
-            p.resourcesCalls
-                .get(r)
-                .exists(_ === ResourceRunOperation.ResourceRunCompleted)
+
           Popup(
             Popup.Props("button", s"Configure ${r.show}"),
             Button(
               Button.Props(
                 size     = Size.Small,
-                color    = if (inExecution) Some("yellow") else if (completed) Some("green") else Some("blue"),
+                color    = buttonColor(p.resourcesCalls.get(r)),
                 disabled = inExecution,
                 labeled =
                   if (inExecution) Button.LeftLabeled else Button.NotLabeled,

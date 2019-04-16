@@ -169,6 +169,9 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
 
     case ClearAllOperations =>
       updated(value.resetAllOperations)
+
+    case ClearAllResouceOptions(id) =>
+      updated(value.resetAllResourceOperations(id))
   }
 
   override def handle: PartialFunction[Any, ActionResult[M]] =
