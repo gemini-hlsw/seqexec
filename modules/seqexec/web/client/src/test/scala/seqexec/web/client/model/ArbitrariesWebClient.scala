@@ -99,7 +99,8 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
   implicit val arbResourceRunOperation: Arbitrary[ResourceRunOperation] =
     Arbitrary(
       Gen.oneOf(ResourceRunOperation.ResourceRunIdle,
-                ResourceRunOperation.ResourceRunInFlight))
+                ResourceRunOperation.ResourceRunInFlight,
+                ResourceRunOperation.ResourceRunCompleted))
 
   implicit val rruCogen: Cogen[ResourceRunOperation] =
     Cogen[String].contramap(_.productPrefix)

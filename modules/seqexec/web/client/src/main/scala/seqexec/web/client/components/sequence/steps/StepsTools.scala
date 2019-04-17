@@ -95,6 +95,7 @@ object StepIconCell {
     p.status match {
       case StepState.Running   => SeqexecStyles.runningIconCell
       case StepState.Skipped   => SeqexecStyles.skippedIconCell
+      case StepState.Completed => SeqexecStyles.completedIconCell
       case StepState.Failed(_) => SeqexecStyles.errorCell
       case _ if p.skip         => SeqexecStyles.skippedIconCell
       case _                   => SeqexecStyles.iconCell

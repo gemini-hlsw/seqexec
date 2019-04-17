@@ -12,6 +12,7 @@ import japgolly.scalajs.react.ReactEvent
 import japgolly.scalajs.react.extra.Reusability
 import japgolly.scalajs.react.extra.Reusability._
 import gem.Observation
+
 import scala.collection.immutable.SortedMap
 import seqexec.model.enum._
 import seqexec.model.StepId
@@ -22,8 +23,10 @@ import seqexec.web.client.model.ResourceRunOperation
 import seqexec.web.client.semanticui.elements.button.Button
 import seqexec.web.client.semanticui.elements.popup.Popup
 import seqexec.web.client.semanticui.elements.icon.Icon.IconCircleNotched
+import seqexec.web.client.semanticui.elements.icon.Icon.IconCheckmark
 import seqexec.web.client.semanticui.Size
 import seqexec.web.client.reusability._
+import seqexec.web.client.semanticui.elements.icon.Icon
 import web.client.style._
 
 /**
@@ -46,10 +49,30 @@ object SubsystemControlCell {
     e.preventDefaultCB *> e.stopPropagationCB *>
       SeqexecCircuit.dispatchCB(RequestResourceRun(id, stepId, r))
 
+  private val CompletedIcon = IconCheckmark.copyIcon(
+    fitted      = true,
+    extraStyles = List(SeqexecStyles.completedIcon))
+
   private val RunningIcon = IconCircleNotched.copyIcon(
     fitted      = true,
     loading     = true,
     extraStyles = List(SeqexecStyles.runningIcon))
+
+  // We want blue if the resource operation is idle or does not exist: these are equivalent cases.
+  private def buttonColor(op: Option[ResourceRunOperation]): Option[String] = op.map {
+    case ResourceRunOperation.ResourceRunIdle      => "blue"
+    case ResourceRunOperation.ResourceRunInFlight  => "yellow"
+    case ResourceRunOperation.ResourceRunCompleted => "green"
+  }.orElse(Some("blue"))
+
+  // If we are running, we want a circular spinning icon.
+  // If we are completed, we want a checkmark.
+  // Otherwise, no icon.
+  private def determineIcon(op: Option[ResourceRunOperation]): Option[Icon] = op match {
+    case Some(ResourceRunOperation.ResourceRunInFlight)  => Some(RunningIcon)
+    case Some(ResourceRunOperation.ResourceRunCompleted) => Some(CompletedIcon)
+    case _                                               => None
+  }
 
   private val component = ScalaComponent
     .builder[Props]("SubsystemControl")
@@ -57,24 +80,16 @@ object SubsystemControlCell {
       <.div(
         SeqexecStyles.notInMobile,
         p.resources.sorted.map { r =>
-          val inExecution =
-            p.resourcesCalls
-              .get(r)
-              .map(_ === ResourceRunOperation.ResourceRunInFlight)
-              .getOrElse(false)
+          val buttonIcon = determineIcon(p.resourcesCalls.get(r))
           Popup(
             Popup.Props("button", s"Configure ${r.show}"),
             Button(
               Button.Props(
                 size     = Size.Small,
-                color    = Some("blue"),
-                disabled = inExecution,
-                labeled =
-                  if (inExecution) Button.LeftLabeled else Button.NotLabeled,
-                icon = p.resourcesCalls
-                  .get(r)
-                  .filter(_ === ResourceRunOperation.ResourceRunInFlight)
-                  .as(RunningIcon),
+                color    = buttonColor(p.resourcesCalls.get(r)),
+                disabled = p.resourcesCalls.get(r).exists(_ === ResourceRunOperation.ResourceRunInFlight),
+                labeled = buttonIcon.as(Button.LeftLabeled).getOrElse(Button.NotLabeled),
+                icon = buttonIcon,
                 onClickE = requestResourceCall(p.id, p.stepId, r) _
               ),
               r.show

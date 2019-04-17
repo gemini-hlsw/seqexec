@@ -75,6 +75,7 @@ object SyncOperation {
 sealed trait ResourceRunOperation extends Product with Serializable
 object ResourceRunOperation {
   case object ResourceRunInFlight extends ResourceRunOperation
+  case object ResourceRunCompleted extends ResourceRunOperation
   case object ResourceRunIdle extends ResourceRunOperation
 
   implicit val eq: Eq[ResourceRunOperation] =
@@ -135,6 +136,10 @@ object TabOperations {
   def resourceRun(
     r: Resource): Lens[TabOperations, Option[ResourceRunOperation]] =
     TabOperations.resourceRunRequested ^|-> at(r)
+
+  // Set the resource operations in the map to idle.
+  def clearResourceOperations: TabOperations => TabOperations =
+    TabOperations.resourceRunRequested.modify(_.map { case (r, _) => r -> ResourceRunOperation.ResourceRunIdle})
 
   val Default: TabOperations =
     TabOperations(
