@@ -14,9 +14,8 @@ import giapi.client.commands.Configuration
 import giapi.client.GiapiStatusDb
 import giapi.client.StatusValue
 import giapi.client.syntax.status._
-import seqexec.server.gpi.GpiController.GpiConfig
 
-object GpiStatusApply {
+object GpiStatusApply extends GpiLookupTables {
   val allGpi: List[GiapiStatusApply] = GiapiStatusApply.all.filter {
     _.instrument === Instrument.Gpi
   }
@@ -60,7 +59,7 @@ object GpiStatusApply {
                 x =>
                   x.stringCfg =!= ob.apodizer
                     .map(_.tag)
-                    .flatMap(GpiLookupTables.apodizerLUTNames.get))
+                    .flatMap(apodizerLUTNames.get))
 
             val fpmCmp = db
               .value(GpiFPM.statusItem)
@@ -79,8 +78,7 @@ object GpiStatusApply {
                 // force the obs mode if a subsystem doesn't match
                 (config.remove(GpiObservationMode.applyItem) |+| Configuration
                   .single(GpiObservationMode.applyItem,
-                          GpiLookupTables.obsModeLUT
-                            .getOrElse(o, GpiLookupTables.UNKNOWN_SETTING)))
+                          obsModeLUT.getOrElse(o, UNKNOWN_SETTING)))
               case false =>
                 config
             }

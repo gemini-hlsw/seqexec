@@ -5,7 +5,6 @@ package seqexec.server.ghost
 
 import cats.kernel.laws.discipline._
 import cats.tests.CatsSuite
-import seqexec.server.ghost.GhostController._
 
 /**
   * Tests GHOST Config typeclasses

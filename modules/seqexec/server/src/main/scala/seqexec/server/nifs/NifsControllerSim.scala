@@ -16,30 +16,33 @@ import seqexec.server.Progress
 import squants.Time
 import squants.time.TimeConversions._
 
-final case class NifsControllerSim[F[_]: Sync: Timer]() extends NifsController[F] {
+object NifsControllerSim {
+  def apply[F[_]: Sync: Timer]: NifsController[F] =
+    new NifsController[F] {
 
-  private val sim: InstrumentControllerSim[F] = InstrumentControllerSim[F](s"NIRI")
+      private val sim: InstrumentControllerSim[F] = InstrumentControllerSim[F](s"NIRI")
 
-  override def observe(fileId: ImageFileId,
-                       cfg:    DCConfig): F[ObserveCommand.Result] =
-    calcTotalExposureTime(cfg).flatMap {ot =>
-      sim
-        .observe(fileId, ot)
+      override def observe(fileId: ImageFileId,
+                           cfg:    DCConfig): F[ObserveCommand.Result] =
+        calcTotalExposureTime(cfg).flatMap {ot =>
+          sim
+            .observe(fileId, ot)
+        }
+
+      override def applyConfig(config: NifsConfig): F[Unit] =
+        sim.applyConfig(config)
+
+      override def stopObserve: F[Unit] = sim.stopObserve
+
+      override def abortObserve: F[Unit] = sim.abortObserve
+
+      override def endObserve: F[Unit] = sim.endObserve
+
+      override def observeProgress(total: Time): fs2.Stream[F, Progress] =
+        sim.observeCountdown(total, ElapsedTime(0.seconds))
+
+      override def calcTotalExposureTime(cfg: DCConfig): F[Time] =
+        NifsController.calcTotalExposureTime[F](cfg)
+
     }
-
-  override def applyConfig(config: NifsConfig): F[Unit] =
-    sim.applyConfig(config)
-
-  override def stopObserve: F[Unit] = sim.stopObserve
-
-  override def abortObserve: F[Unit] = sim.abortObserve
-
-  override def endObserve: F[Unit] = sim.endObserve
-
-  override def observeProgress(total: Time): fs2.Stream[F, Progress] =
-    sim.observeCountdown(total, ElapsedTime(0.seconds))
-
-  override def calcTotalExposureTime(cfg: DCConfig): F[Time] =
-    NifsController.calcTotalExposureTime[F](cfg)
-
 }

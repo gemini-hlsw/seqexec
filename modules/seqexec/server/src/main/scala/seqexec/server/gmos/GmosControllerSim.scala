@@ -11,35 +11,35 @@ import seqexec.server.gmos.GmosController.{GmosConfig, NorthTypes, SiteDependent
 import seqexec.server.{InstrumentControllerSim, ObserveCommand, Progress}
 import squants.Time
 
-private class GmosControllerSim[F[_]: Sync: Timer, T <: SiteDependentTypes](name: String) extends GmosController[F, T] {
-
-  private val sim: InstrumentControllerSim[F] = InstrumentControllerSim[F](s"GMOS $name")
-
-  override def observe(fileId: ImageFileId, expTime: Time): F[ObserveCommand.Result] =
-    sim.observe(fileId, expTime)
-
-  override def applyConfig(config: GmosConfig[T]): F[Unit] = sim.applyConfig(config)
-
-  override def stopObserve: F[Unit] = sim.stopObserve
-
-  override def abortObserve: F[Unit] = sim.abortObserve
-
-  override def endObserve: F[Unit] = sim.endObserve
-
-  override def pauseObserve: F[Unit] = sim.pauseObserve
-
-  override def resumePaused(expTime: Time): F[ObserveCommand.Result] = sim.resumePaused
-
-  override def stopPaused: F[ObserveCommand.Result] = sim.stopPaused
-
-  override def abortPaused: F[ObserveCommand.Result] = sim.abortPaused
-
-  override def observeProgress(total: Time, elapsed: ElapsedTime): fs2.Stream[F, Progress] =
-    sim.observeCountdown(total, elapsed)
-
-}
-
 object GmosControllerSim {
-  def south[F[_]: Sync: Timer]: GmosController[F, SouthTypes] = new GmosControllerSim[F, SouthTypes]("South")
-  def north[F[_]: Sync: Timer]: GmosController[F, NorthTypes] = new GmosControllerSim[F, NorthTypes]("North")
+  def apply[F[_]: Sync: Timer, T <: SiteDependentTypes](name: String): GmosController[F, T] =
+    new GmosController[F, T] {
+      private val sim: InstrumentControllerSim[F] = InstrumentControllerSim[F](s"GMOS $name")
+
+      override def observe(fileId: ImageFileId, expTime: Time): F[ObserveCommand.Result] =
+        sim.observe(fileId, expTime)
+
+      override def applyConfig(config: GmosConfig[T]): F[Unit] = sim.applyConfig(config)
+
+      override def stopObserve: F[Unit] = sim.stopObserve
+
+      override def abortObserve: F[Unit] = sim.abortObserve
+
+      override def endObserve: F[Unit] = sim.endObserve
+
+      override def pauseObserve: F[Unit] = sim.pauseObserve
+
+      override def resumePaused(expTime: Time): F[ObserveCommand.Result] = sim.resumePaused
+
+      override def stopPaused: F[ObserveCommand.Result] = sim.stopPaused
+
+      override def abortPaused: F[ObserveCommand.Result] = sim.abortPaused
+
+      override def observeProgress(total: Time, elapsed: ElapsedTime): fs2.Stream[F, Progress] =
+        sim.observeCountdown(total, elapsed)
+
+    }
+
+  def south[F[_]: Sync: Timer]: GmosController[F, SouthTypes] = GmosControllerSim[F, SouthTypes]("South")
+  def north[F[_]: Sync: Timer]: GmosController[F, NorthTypes] = GmosControllerSim[F, NorthTypes]("North")
 }

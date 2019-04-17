@@ -4,29 +4,27 @@
 package seqexec.server.gpi
 
 import cats.data.EitherT
-import cats.effect.{Sync, Timer}
+import cats.effect.Sync
+import cats.effect.Timer
 import cats.implicits._
 import cats.data.Reader
 import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.gemini.gpi.Gpi._
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
-import java.lang.{Boolean => JBoolean}
-import java.lang.{Double => JDouble}
-import java.lang.{Integer => JInt}
-
 import fs2.Stream
+import java.lang.{ Boolean => JBoolean }
+import java.lang.{ Double => JDouble }
+import java.lang.{ Integer => JInt }
 import gem.enum.LightSinkName
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Instrument
 import seqexec.server.ConfigUtilOps._
 import seqexec.server._
-import seqexec.server.gpi.GpiController._
 import seqexec.server.keywords.GdsClient
 import seqexec.server.keywords.GdsInstrument
 import seqexec.server.keywords.KeywordsClient
-import squants.Time
-
 import scala.concurrent.duration._
+import squants.Time
 import squants.time.Milliseconds
 import squants.time.Seconds
 import squants.time.Time
@@ -34,13 +32,14 @@ import squants.time.Time
 final case class Gpi[F[_]: Sync: Timer](controller: GpiController[F])
     extends GdsInstrument[F]
     with InstrumentSystem[F] {
+
+  override val gdsClient: GdsClient[F] = controller.gdsClient
+
   // Taken from the gpi isd
   val readoutOverhead: Time  = Seconds(4)
   val writeOverhead: Time    = Seconds(2)
   val perCoaddOverhead: Time = Seconds(2.7)
-  val timeoutTolerance: Time  = Seconds(30)
-
-  override val gdsClient: GdsClient[F] = controller.gdsClient
+  val timeoutTolerance: Time = Seconds(30)
 
   override val keywordsClient: KeywordsClient[F] = this
 
@@ -57,28 +56,29 @@ final case class Gpi[F[_]: Sync: Timer](controller: GpiController[F])
     config: Config
   ): SeqObserveF[F, ImageFileId, ObserveCommand.Result] =
     Reader { fileId =>
-      SeqActionF.liftF(calcObserveTime(config)).flatMap { ot =>
+      SeqActionF.embedF(calcObserveTime(config).flatMap { ot =>
         controller
           .observe(fileId, timeoutTolerance + ot)
           .as(ObserveCommand.Success: ObserveCommand.Result)
-      }
+      })
     }
 
   override def configure(config: Config): SeqActionF[F, ConfigResult[F]] =
     Gpi
       .fromSequenceConfig[F](config)
-      .flatMap(controller.applyConfig)
+      .flatMap(x => SeqActionF.embedF(controller.applyConfig(x)))
       .as(ConfigResult(this))
 
-  override def notifyObserveEnd: SeqActionF[F, Unit] = controller.endObserve
+  override def notifyObserveEnd: SeqActionF[F, Unit] =
+    SeqActionF.embedF(controller.endObserve)
 
   override def notifyObserveStart: SeqActionF[F, Unit] = SeqActionF.void
 
   override def calcObserveTime(config: Config): F[Time] = Sync[F].delay {
     val obsTime =
       for {
-        exp      <- config.extractAs[JDouble](OBSERVE_KEY / EXPOSURE_TIME_PROP)
-        coa      <- config.extractAs[JInt](OBSERVE_KEY / COADDS_PROP).map(_.toInt)
+        exp <- config.extractAs[JDouble](OBSERVE_KEY / EXPOSURE_TIME_PROP)
+        coa <- config.extractAs[JInt](OBSERVE_KEY / COADDS_PROP).map(_.toInt)
       } yield
         (Seconds(exp.toDouble) + perCoaddOverhead) * coa.toDouble + readoutOverhead + writeOverhead
     obsTime.getOrElse(Milliseconds(100))

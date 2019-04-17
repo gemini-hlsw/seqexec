@@ -19,8 +19,6 @@ import edu.gemini.seqexec.server.nifs.{ ReadMode => EReadMode }
 import edu.gemini.seqexec.server.nifs.{ TimeMode => ETimeMode }
 import mouse.boolean._
 import org.log4s.getLogger
-import scala.concurrent.ExecutionContext
-import scala.concurrent.duration._
 import scala.math.abs
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.ObserveCommand
@@ -92,19 +90,16 @@ trait NifsEncoders {
       case LegacyDisperser.MIRROR  => "Mirror"
     }
 
-  implicit val filterEq: Eq[LegacyFilter]       = Eq.by(_.displayValue)
-  implicit val disperserEq: Eq[LegacyDisperser] = Eq.by(_.displayValue)
-
 }
 
-object NifsControllerEpics extends NifsController[IO] with NifsEncoders {
+object NifsControllerEpics extends NifsEncoders {
   private val Log = getLogger
+
+  private implicit val filterEq: Eq[LegacyFilter]       = Eq.by(_.displayValue)
+  private implicit val disperserEq: Eq[LegacyDisperser] = Eq.by(_.displayValue)
 
   private val ConfigTimeout: Time  = Seconds(400)
   private val DefaultTimeout: Time = Seconds(60)
-
-  implicit val ioTimer: Timer[IO] =
-    IO.timer(ExecutionContext.global)
 
   // This method takes a list of actions returning possible actions
   // If at least one is defined it will execute them and then execut after
@@ -364,51 +359,54 @@ object NifsControllerEpics extends NifsController[IO] with NifsEncoders {
       //IO.sleep(1500.millisecond) *> // the TCL seqexec does this but we'll skip for now
       secondCCPass(cfg)
 
-  override def applyConfig(config: NifsController.NifsConfig): IO[Unit] =
-    configCC(config.cc) *> configDC(config.dc)
+  def apply()(implicit ioTimer: Timer[IO]): NifsController[IO] = new NifsController[IO] {
 
-  override def observe(fileId: ImageFileId,
-                       cfg:    DCConfig): IO[ObserveCommand.Result] = {
-    val checkDhs =
-      failUnlessM(
-        epicsSys.dhsConnected.map(_.exists(_ === DhsConnected.Yes)),
-                  SeqexecFailure.Execution("NIFS is not connected to DHS"))
+    override def applyConfig(config: NifsController.NifsConfig): IO[Unit] =
+      configCC(config.cc) *> configDC(config.dc)
 
-    IO(Log.info("Start NIFS observe")) *>
-      checkDhs *>
-      epicsSys.observeCmd.setLabel(fileId) *>
-      epicsSys.observeCmd.setTimeout[IO](calcObserveTimeout(cfg)) *>
-      epicsSys.observeCmd.post[IO]
+    override def observe(fileId: ImageFileId,
+                         cfg:    DCConfig): IO[ObserveCommand.Result] = {
+      val checkDhs =
+        failUnlessM(
+          epicsSys.dhsConnected.map(_.exists(_ === DhsConnected.Yes)),
+                    SeqexecFailure.Execution("NIFS is not connected to DHS"))
+
+      IO(Log.info("Start NIFS observe")) *>
+        checkDhs *>
+        epicsSys.observeCmd.setLabel(fileId) *>
+        epicsSys.observeCmd.setTimeout[IO](calcObserveTimeout(cfg)) *>
+        epicsSys.observeCmd.post[IO]
+    }
+
+    override def endObserve: IO[Unit] =
+      IO(Log.info("Send endObserve to NIFS")) *>
+        epicsSys.endObserveCmd.setTimeout[IO](DefaultTimeout) *>
+        epicsSys.endObserveCmd.mark[IO] *>
+        epicsSys.endObserveCmd.post[IO].void
+
+    override def stopObserve: IO[Unit] =
+      IO(Log.info("Stop NIFS exposure")) *>
+        epicsSys.stopCmd.setTimeout[IO](DefaultTimeout) *>
+        epicsSys.stopCmd.mark[IO] *>
+        epicsSys.stopCmd.post[IO].void
+
+    override def abortObserve: IO[Unit] =
+      IO(Log.info("Abort NIFS exposure")) *>
+        epicsSys.abortCmd.setTimeout[IO](DefaultTimeout) *>
+        epicsSys.abortCmd.mark[IO] *>
+        epicsSys.abortCmd.post[IO].void
+
+    override def observeProgress(total: Time): fs2.Stream[IO, Progress] =
+      ProgressUtil.countdown[IO](total, 0.seconds)
+
+    def calcObserveTimeout(cfg: DCConfig): Time = {
+      val CoaddOverhead = 2.2
+      val TotalOverhead = 300.seconds
+
+      cfg.exposureTime * cfg.coadds.toDouble * CoaddOverhead + TotalOverhead
+    }
+
+    override def calcTotalExposureTime(cfg: DCConfig): IO[Time] =
+      NifsController.calcTotalExposureTime[IO](cfg)
   }
-
-  override def endObserve: IO[Unit] =
-    IO(Log.info("Send endObserve to NIFS")) *>
-      epicsSys.endObserveCmd.setTimeout[IO](DefaultTimeout) *>
-      epicsSys.endObserveCmd.mark[IO] *>
-      epicsSys.endObserveCmd.post[IO].void
-
-  override def stopObserve: IO[Unit] =
-    IO(Log.info("Stop NIFS exposure")) *>
-      epicsSys.stopCmd.setTimeout[IO](DefaultTimeout) *>
-      epicsSys.stopCmd.mark[IO] *>
-      epicsSys.stopCmd.post[IO].void
-
-  override def abortObserve: IO[Unit] =
-    IO(Log.info("Abort NIFS exposure")) *>
-      epicsSys.abortCmd.setTimeout[IO](DefaultTimeout) *>
-      epicsSys.abortCmd.mark[IO] *>
-      epicsSys.abortCmd.post[IO].void
-
-  override def observeProgress(total: Time): fs2.Stream[IO, Progress] =
-    ProgressUtil.countdown[IO](total, 0.seconds)
-
-  def calcObserveTimeout(cfg: DCConfig): Time = {
-    val CoaddOverhead = 2.2
-    val TotalOverhead = 300.seconds
-
-    cfg.exposureTime * cfg.coadds.toDouble * CoaddOverhead + TotalOverhead
-  }
-
-  override def calcTotalExposureTime(cfg: DCConfig): IO[Time] =
-    NifsController.calcTotalExposureTime[IO](cfg)
 }

@@ -3,6 +3,8 @@
 
 package seqexec.server.gmos
 
+import cats.effect.IO
+import cats.implicits._
 import seqexec.server.EpicsCodex.EncodeEpicsValue
 import seqexec.server.gmos.GmosController.Config.{InBeam, OutOfBeam}
 import seqexec.server.gmos.GmosController.{SouthTypes, southConfigTypes}
@@ -10,8 +12,6 @@ import seqexec.server.gmos.GmosControllerEpics.ROIValues
 import edu.gemini.spModel.gemini.gmos.GmosCommonType
 import edu.gemini.spModel.gemini.gmos.GmosCommonType.{AmpGain, AmpReadMode, BuiltinROI}
 import edu.gemini.spModel.gemini.gmos.GmosSouthType.{DisperserSouth => Disperser, FPUnitSouth => FPU, FilterSouth => Filter, StageModeSouth => StageMode}
-
-import cats.implicits._
 
 object GmosSouthEncoders extends GmosControllerEpics.Encoders[SouthTypes] {
   override val disperser: EncodeEpicsValue[SouthTypes#Disperser, String] = EncodeEpicsValue{
@@ -109,4 +109,6 @@ object GmosSouthEncoders extends GmosControllerEpics.Encoders[SouthTypes] {
   }
 }
 
-object GmosSouthControllerEpics extends GmosControllerEpics[SouthTypes](GmosSouthEncoders)(southConfigTypes)
+object GmosSouthControllerEpics {
+  def apply(): GmosController[IO, SouthTypes] = GmosControllerEpics[SouthTypes](southConfigTypes)(GmosSouthEncoders)
+}

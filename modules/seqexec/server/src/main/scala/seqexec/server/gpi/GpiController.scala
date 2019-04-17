@@ -22,90 +22,115 @@ import giapi.client.commands.Configuration
 import giapi.client.gpi.GpiClient
 import mouse.boolean._
 import org.log4s._
-import seqexec.server.GiapiInstrumentController
 import scala.concurrent.duration._
 import seqexec.server.keywords.GdsClient
-import seqexec.server.gpi.GpiController.GpiConfig
+import seqexec.server.GiapiInstrumentController
+import seqexec.server.AbstractGiapiInstrumentController
 
-object GpiLookupTables {
-  val UNKNOWN_SETTING = "UNKNOWN"
+final case class AOFlags(useAo:      Boolean,
+                         useCal:     Boolean,
+                         aoOptimize: Boolean,
+                         alignFpm:   Boolean,
+                         magH:       Double,
+                         magI:       Double)
 
-  val apodizerLUT: Map[LegacyApodizer, String] = Map(
-    LegacyApodizer.CLEAR     -> "CLEAR",
-    LegacyApodizer.CLEARGP   -> "CLEARGP",
-    LegacyApodizer.APOD_Y    -> "APOD_Y",
-    LegacyApodizer.APOD_J    -> "APOD_J",
-    LegacyApodizer.APOD_H    -> "APOD_H",
-    LegacyApodizer.APOD_K1   -> "APOD_K1",
-    LegacyApodizer.APOD_K2   -> "APOD_K2",
-    LegacyApodizer.NRM       -> "NRM",
-    LegacyApodizer.APOD_HL   -> "APOD_HL",
-    LegacyApodizer.APOD_STAR -> "ND3",
-    LegacyApodizer.ND3       -> "ND3"
-  )
-
-  val apodizerLUTNames: Map[String, String] =
-    apodizerLUT.map { case (k, v) => (k.name, v) }
-
-  val fpmLUT: Map[LegacyFPM, String] = Map(
-    LegacyFPM.OPEN     -> "Open",
-    LegacyFPM.F50umPIN -> "50umPIN",
-    LegacyFPM.WITH_DOT -> "WITH_DOT",
-    LegacyFPM.FPM_Y    -> "FPM_Y",
-    LegacyFPM.FPM_J    -> "FPM_J",
-    LegacyFPM.FPM_H    -> "FPM_H",
-    LegacyFPM.FPM_K1   -> "FPM_K1",
-    LegacyFPM.SCIENCE  -> "SCIENCE"
-  )
-
-  val lyotLUT: Map[LegacyLyot, String] = Map(
-    LegacyLyot.OPEN              -> "Open",
-    LegacyLyot.BLANK             -> "Blank",
-    LegacyLyot.LYOT_080m12_03    -> "080m12_03",
-    LegacyLyot.LYOT_080m12_04    -> "080m12_04",
-    LegacyLyot.LYOT_080_04       -> "080_04",
-    LegacyLyot.LYOT_080m12_06    -> "080m12_06",
-    LegacyLyot.LYOT_080m12_04_c  -> "080m12_04_c",
-    LegacyLyot.LYOT_080m12_06_03 -> "080m12_06_03",
-    LegacyLyot.LYOT_080m12_07    -> "080m12_07",
-    LegacyLyot.LYOT_080m12_10    -> "080m12_10"
-  )
-
-  val obsModeLUT: Map[LegacyObservingMode, String] = Map(
-    LegacyObservingMode.CORON_Y_BAND   -> "Y_coron",
-    LegacyObservingMode.CORON_J_BAND   -> "J_coron",
-    LegacyObservingMode.CORON_H_BAND   -> "H_coron",
-    LegacyObservingMode.CORON_K1_BAND  -> "K1_coron",
-    LegacyObservingMode.CORON_K2_BAND  -> "K2_coron",
-    LegacyObservingMode.H_STAR         -> "H_starcor",
-    LegacyObservingMode.H_LIWA         -> "H_LIWAcor",
-    LegacyObservingMode.DIRECT_Y_BAND  -> "Y_direct",
-    LegacyObservingMode.DIRECT_J_BAND  -> "J_direct",
-    LegacyObservingMode.DIRECT_H_BAND  -> "H_direct",
-    LegacyObservingMode.DIRECT_K1_BAND -> "K1_direct",
-    LegacyObservingMode.DIRECT_K2_BAND -> "K2_direct",
-    LegacyObservingMode.NRM_Y          -> "NRM_Y",
-    LegacyObservingMode.NRM_J          -> "NRM_J",
-    LegacyObservingMode.NRM_H          -> "NRM_H",
-    LegacyObservingMode.NRM_K1         -> "NRM_K1",
-    LegacyObservingMode.NRM_K2         -> "NRM_K2",
-    LegacyObservingMode.DARK           -> "DARK",
-    LegacyObservingMode.UNBLOCKED_Y    -> "Y_unblocked",
-    LegacyObservingMode.UNBLOCKED_J    -> "J_unblocked",
-    LegacyObservingMode.UNBLOCKED_H    -> "H_unblocked",
-    LegacyObservingMode.UNBLOCKED_K1   -> "K1_unblocked",
-    LegacyObservingMode.UNBLOCKED_K2   -> "K2_unblocked"
-  )
+object AOFlags {
+  implicit val eq: Eq[AOFlags]     = Eq.fromUniversalEquals
+  implicit val show: Show[AOFlags] = Show.fromToString
 }
 
-final case class GpiController[F[_]: Sync](override val client:    GpiClient[F],
-                                           override val gdsClient: GdsClient[F])
-    extends GiapiInstrumentController[F, GpiConfig, GpiClient[F]] {
+final case class ArtificialSources(ir:          LegacyArtificialSource,
+                                   vis:         LegacyArtificialSource,
+                                   sc:          LegacyArtificialSource,
+                                   attenuation: Double)
 
-  import GpiController._
-  import GpiLookupTables._
+object ArtificialSources extends GpiConfigEq {
+  implicit val eq: Eq[ArtificialSources] =
+    Eq.by(x => (x.ir, x.vis, x.sc, x.attenuation))
+  implicit val show: Show[ArtificialSources] = Show.fromToString
+}
 
-  override val name = "GPI"
+final case class Shutters(entranceShutter:     LegacyShutter,
+                          calEntranceShutter:  LegacyShutter,
+                          calScienceShutter:   LegacyShutter,
+                          calReferenceShutter: LegacyShutter)
+
+object Shutters extends GpiConfigEq {
+  implicit val eq: Eq[Shutters] = Eq.by(
+    x =>
+      (x.entranceShutter,
+       x.calEntranceShutter,
+       x.calScienceShutter,
+       x.calReferenceShutter))
+  implicit val show: Show[Shutters] = Show.fromToString
+}
+
+final case class NonStandardModeParams(apodizer: LegacyApodizer,
+                                       fpm:      LegacyFPM,
+                                       lyot:     LegacyLyot,
+                                       filter:   LegacyFilter)
+
+object NonStandardModeParams extends GpiConfigEq {
+  implicit val eq: Eq[NonStandardModeParams] =
+    Eq.by(x => (x.apodizer, x.fpm, x.lyot, x.filter))
+  implicit val show: Show[NonStandardModeParams] = Show.fromToString
+}
+
+final case class GpiConfig(
+  adc:            LegacyAdc,
+  expTime:        Duration,
+  coAdds:         Int,
+  mode:           Either[LegacyObservingMode, NonStandardModeParams],
+  disperser:      LegacyDisperser,
+  disperserAngle: Double,
+  shutters:       Shutters,
+  asu:            ArtificialSources,
+  pc:             LegacyPupilCamera,
+  aoFlags:        AOFlags)
+
+object GpiConfig extends GpiConfigEq {
+  implicit val eq: Eq[GpiConfig] = Eq.by(
+    x =>
+      (x.adc,
+       x.expTime,
+       x.coAdds,
+       x.mode,
+       x.disperser,
+       x.disperserAngle,
+       x.shutters,
+       x.asu,
+       x.pc,
+       x.aoFlags))
+}
+
+trait GpiController[F[_]] extends GiapiInstrumentController[F, GpiConfig] {
+  def gdsClient: GdsClient[F]
+}
+
+trait GpiConfigEq {
+  implicit val apodizerEq: Eq[LegacyApodizer] = Eq.by(_.displayValue)
+
+  implicit val adcEq: Eq[LegacyAdc] = Eq.by(_.displayValue)
+
+  implicit val omEq: Eq[LegacyObservingMode] = Eq.by(_.displayValue)
+
+  implicit val dispEq: Eq[LegacyDisperser] = Eq.by(_.displayValue)
+
+  implicit val fpmEq: Eq[LegacyFPM] = Eq.by(_.displayValue)
+
+  implicit val filterEq: Eq[LegacyFilter] = Eq.by(_.displayValue)
+
+  implicit val lyotEq: Eq[LegacyLyot] = Eq.by(_.displayValue)
+
+  implicit val shEq: Eq[LegacyShutter] = Eq.by(_.displayValue)
+
+  implicit val asEq: Eq[LegacyArtificialSource] = Eq.by(_.displayValue)
+
+  implicit val pcEq: Eq[LegacyPupilCamera] = Eq.by(_.displayValue)
+}
+
+object GpiController extends GpiLookupTables with GpiConfigEq {
+  val logger: Logger = getLogger
 
   private def obsModeConfiguration(config: GpiConfig): Configuration =
     config.mode.fold(
@@ -127,9 +152,8 @@ final case class GpiController[F[_]: Sync](override val client:    GpiClient[F],
       }
     )
 
-  // scalastyle:off
-  override def configuration(config: GpiConfig): F[Configuration] = {
-    val baseConfig = Configuration.single(GpiAdc.applyItem,
+  private def gpiConfiguration(config: GpiConfig): Configuration =
+    Configuration.single(GpiAdc.applyItem,
       (config.adc === LegacyAdc.IN)
         .fold(1, 0)) |+|
       Configuration.single(GpiUseAo.applyItem,
@@ -166,135 +190,53 @@ final case class GpiController[F[_]: Sync](override val client:    GpiClient[F],
         (config.shutters.entranceShutter === LegacyShutter.OPEN)
           .fold(1, 0)) |+|
       Configuration.single(GpiPupilCamera.applyItem,
-        (config.pc === LegacyPupilCamera.IN)
-          .fold(1, 0)) |+|
-      Configuration.single(GpiSCAttenuation.applyItem,
-        config.asu.attenuation) |+|
+                           (config.pc === LegacyPupilCamera.IN)
+                             .fold(1, 0)) |+|
+      Configuration.single(GpiSCAttenuation.applyItem, config.asu.attenuation) |+|
       Configuration.single(GpiSCPower.applyItem,
-        (config.asu.sc === LegacyArtificialSource.ON)
-          .fold(100.0, 0.0)) |+|
+                           (config.asu.sc === LegacyArtificialSource.ON)
+                             .fold(100.0, 0.0)) |+|
       Configuration.single(GpiSrcVis.applyItem,
-        (config.asu.vis === LegacyArtificialSource.ON)
-          .fold(1, 0)) |+|
+                           (config.asu.vis === LegacyArtificialSource.ON)
+                             .fold(1, 0)) |+|
       Configuration.single(GpiSrcIR.applyItem,
-        (config.asu.ir === LegacyArtificialSource.ON)
-          .fold(1, 0)) |+|
+                           (config.asu.ir === LegacyArtificialSource.ON)
+                             .fold(1, 0)) |+|
       Configuration.single(GpiPolarizerDeplay.applyItem,
-       (config.disperser === LegacyDisperser.WOLLASTON)
-         .fold(1, 0)) |+|
+                           (config.disperser === LegacyDisperser.WOLLASTON)
+                             .fold(1, 0)) |+|
       (if (config.disperser === LegacyDisperser.WOLLASTON)
          Configuration.single(GpiPolarizerAngle.applyItem,
                               config.disperserAngle)
        else Configuration.Zero) |+|
       obsModeConfiguration(config)
 
+  private def computeConfig[F[_]: Sync](
+    client: GpiClient[F],
+    config: GpiConfig
+  ): F[Configuration] =
     for {
-      q <- GpiStatusApply.foldConfig(client.statusDb, baseConfig)
+      b <- Sync[F].delay(gpiConfiguration(config))
+      q <- GpiStatusApply.foldConfig(client.statusDb, b)
       p <- GpiStatusApply.overrideObsMode(client.statusDb, config, q)
       _ <- Sync[F]
-        .delay(GpiController.logger.info(s"Applied GPI config ${p.config}"))
+        .delay(logger.info(s"Applied GPI config ${p.config}"))
         .unlessA(p.config.isEmpty)
     } yield p
-  }
-  // scalastyle:on
-}
 
-object GpiController {
-  val logger: Logger = getLogger
+  def apply[F[_]: Sync](
+    client: GpiClient[F],
+    gds:    GdsClient[F]
+  ): GpiController[F] =
+    new AbstractGiapiInstrumentController[F, GpiConfig, GpiClient[F]](client)
+    with GpiController[F] {
+      override val gdsClient: GdsClient[F] = gds
 
-  implicit val apodizerEq: Eq[LegacyApodizer] = Eq.by(_.displayValue)
+      override val name = "GPI"
 
-  implicit val adcEq: Eq[LegacyAdc] = Eq.by(_.displayValue)
+      // scalastyle:off
+      override def configuration(config: GpiConfig): F[Configuration] =
+        computeConfig(client, config)
+    }
 
-  implicit val omEq: Eq[LegacyObservingMode] = Eq.by(_.displayValue)
-
-  implicit val dispEq: Eq[LegacyDisperser] = Eq.by(_.displayValue)
-
-  implicit val fpmEq: Eq[LegacyFPM] = Eq.by(_.displayValue)
-
-  implicit val filterEq: Eq[LegacyFilter] = Eq.by(_.displayValue)
-
-  implicit val lyotEq: Eq[LegacyLyot] = Eq.by(_.displayValue)
-
-  implicit val shEq: Eq[LegacyShutter] = Eq.by(_.displayValue)
-
-  implicit val asEq: Eq[LegacyArtificialSource] = Eq.by(_.displayValue)
-
-  implicit val pcEq: Eq[LegacyPupilCamera] = Eq.by(_.displayValue)
-
-  final case class AOFlags(useAo:      Boolean,
-                           useCal:     Boolean,
-                           aoOptimize: Boolean,
-                           alignFpm:   Boolean,
-                           magH:       Double,
-                           magI:       Double)
-
-  object AOFlags {
-    implicit val eq: Eq[AOFlags]     = Eq.fromUniversalEquals
-    implicit val show: Show[AOFlags] = Show.fromToString
-  }
-
-  final case class ArtificialSources(ir:          LegacyArtificialSource,
-                                     vis:         LegacyArtificialSource,
-                                     sc:          LegacyArtificialSource,
-                                     attenuation: Double)
-
-  object ArtificialSources {
-    implicit val eq: Eq[ArtificialSources] =
-      Eq.by(x => (x.ir, x.vis, x.sc, x.attenuation))
-    implicit val show: Show[ArtificialSources] = Show.fromToString
-  }
-
-  final case class Shutters(entranceShutter:     LegacyShutter,
-                            calEntranceShutter:  LegacyShutter,
-                            calScienceShutter:   LegacyShutter,
-                            calReferenceShutter: LegacyShutter)
-
-  object Shutters {
-    implicit val eq: Eq[Shutters] = Eq.by(
-      x =>
-        (x.entranceShutter,
-         x.calEntranceShutter,
-         x.calScienceShutter,
-         x.calReferenceShutter))
-    implicit val show: Show[Shutters] = Show.fromToString
-  }
-
-  final case class NonStandardModeParams(apodizer: LegacyApodizer,
-                                         fpm:      LegacyFPM,
-                                         lyot:     LegacyLyot,
-                                         filter:   LegacyFilter)
-
-  object NonStandardModeParams {
-    implicit val eq: Eq[NonStandardModeParams] =
-      Eq.by(x => (x.apodizer, x.fpm, x.lyot, x.filter))
-    implicit val show: Show[NonStandardModeParams] = Show.fromToString
-  }
-
-  final case class GpiConfig(
-    adc:            LegacyAdc,
-    expTime:        Duration,
-    coAdds:         Int,
-    mode:           Either[LegacyObservingMode, NonStandardModeParams],
-    disperser:      LegacyDisperser,
-    disperserAngle: Double,
-    shutters:       Shutters,
-    asu:            ArtificialSources,
-    pc:             LegacyPupilCamera,
-    aoFlags:        AOFlags)
-
-  object GpiConfig {
-    implicit val eq: Eq[GpiConfig] = Eq.by(
-      x =>
-        (x.adc,
-         x.expTime,
-         x.coAdds,
-         x.mode,
-         x.disperser,
-         x.disperserAngle,
-         x.shutters,
-         x.asu,
-         x.pc,
-         x.aoFlags))
-  }
 }

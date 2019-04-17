@@ -9,27 +9,23 @@ import edu.gemini.seqexec.server.niri.{BeamSplitter => JBeamSplitter}
 import edu.gemini.seqexec.server.niri.{Mask => JMask}
 import edu.gemini.seqexec.server.niri.{Disperser => JDisperser}
 import edu.gemini.seqexec.server.niri.{BuiltInROI => JBuiltInROI}
-import edu.gemini.spModel.gemini.niri.Niri._
+import edu.gemini.spModel.gemini.niri.Niri.Disperser
+import edu.gemini.spModel.gemini.niri.Niri.Mask
+import edu.gemini.spModel.gemini.niri.Niri.Filter
+import edu.gemini.spModel.gemini.niri.Niri.Camera
+import edu.gemini.spModel.gemini.niri.Niri.BeamSplitter
 import edu.gemini.spModel.gemini.niri.Niri.BuiltinROI
 import org.log4s.getLogger
 import scala.concurrent.ExecutionContext
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.{EpicsCodex, EpicsCommand, ObserveCommand, Progress, ProgressUtil, SeqAction, SeqexecFailure}
 import seqexec.server.EpicsUtil._
+import seqexec.server.EpicsCodex._
+import seqexec.server.niri.NiriController._
 import squants.{Seconds, Time}
 import squants.time.TimeConversions._
 
-object NiriControllerEpics extends NiriController[IO] {
-
-  private val Log = getLogger
-
-  implicit val ioTimer: Timer[IO] =
-    IO.timer(ExecutionContext.global)
-
-  import EpicsCodex._
-  import NiriController._
-
-  private val epicsSys = NiriEpics.instance
+trait NiriEncoders {
 
   implicit val focusEncoder: EncodeEpicsValue[Focus, String] = EncodeEpicsValue { _.getStringValue }
 
@@ -124,6 +120,18 @@ object NiriControllerEpics extends NiriController[IO] {
     case BuiltinROI.CENTRAL_256   => JBuiltInROI.Central256
     case BuiltinROI.SPEC_1024_512 => JBuiltInROI.Spec1024x512
   }
+
+}
+
+object NiriControllerEpics extends NiriEncoders {
+  private val Log = getLogger
+
+  implicit val ioTimer: Timer[IO] =
+    IO.timer(ExecutionContext.global)
+
+  import EpicsCodex._
+
+  private val epicsSys = NiriEpics.instance
 
   /*
    * The instrument has three filter wheels with a status channel for each one. But it does not have
@@ -239,73 +247,6 @@ object NiriControllerEpics extends NiriController[IO] {
     case i@Illuminated(_, _) => configIlluminatedCC(i)
   }
 
-  override def applyConfig(config: NiriController.NiriConfig): IO[Unit] = {
-    val paramsDC = configDC(config.dc)
-    val params =  paramsDC ++ configCC(config.cc)
-
-    val cfgActions1 = if(params.isEmpty) IO.pure(EpicsCommand.Completed)
-                      else params.sequence.void.widenRethrowT *>
-                        epicsSys.configCmd.setTimeout(ConfigTimeout).widenRethrowT *>
-                        epicsSys.configCmd.post.widenRethrowT
-    // Weird NIRI behavior. The main IS apply is nor connected to the DC apply, but triggering the
-    // IS apply writes the DC parameters. So to configure the DC, we need to set the DC parameters
-    // in the IS, trigger the IS apply, and then trigger the DC apply.
-    val cfgActions = if(paramsDC.isEmpty) cfgActions1
-                     else cfgActions1 *>
-                       epicsSys.configDCCmd.setTimeout(DefaultTimeout).widenRethrowT *>
-                       epicsSys.configDCCmd.post.widenRethrowT
-
-    IO(Log.debug("Starting NIRI configuration")) *>
-      (if(epicsSys.dhsConnected.exists(identity)) IO.unit
-       else IO(Log.warn("NIRI is not connected to DHS"))
-      ) *>
-      (if(epicsSys.arrayActive.exists(identity)) IO.unit
-       else IO(Log.warn("NIRI detector array is not active"))
-      ) *>
-      cfgActions *>
-      IO(Log.debug("Completed NIRI configuration"))
-  }
-
-  override def observe(fileId: ImageFileId, cfg: DCConfig): IO[ObserveCommand.Result] =
-    IO(Log.info("Start NIRI observe")) *>
-      (if(epicsSys.dhsConnected.exists(identity)) IO.unit
-       else IO.raiseError(SeqexecFailure.Execution("NIRI is not connected to DHS"))
-      ) *>
-      (if(epicsSys.arrayActive.exists(identity)) IO.unit
-       else IO.raiseError(SeqexecFailure.Execution("NIRI detector array is not active"))
-      ) *>
-      epicsSys.observeCmd.setLabel(fileId).widenRethrowT *>
-      epicsSys.observeCmd.setTimeout(calcObserveTimeout(cfg)).widenRethrowT *>
-      epicsSys.observeCmd.post.widenRethrowT
-
-  override def endObserve: IO[Unit] =
-    IO(Log.debug("Send endObserve to NIRI")) *>
-      epicsSys.endObserveCmd.setTimeout(DefaultTimeout).widenRethrowT *>
-      epicsSys.endObserveCmd.mark.widenRethrowT *>
-      epicsSys.endObserveCmd.post.void.widenRethrowT
-
-  override def stopObserve: IO[Unit] =
-    IO(Log.info("Stop NIRI exposure")) *>
-      epicsSys.stopCmd.setTimeout(DefaultTimeout).widenRethrowT *>
-      epicsSys.stopCmd.mark.widenRethrowT *>
-      epicsSys.stopCmd.post.void.widenRethrowT
-
-  override def abortObserve: IO[Unit] =
-    IO(Log.info("Abort NIRI exposure")) *>
-      epicsSys.abortCmd.setTimeout(DefaultTimeout).widenRethrowT *>
-      epicsSys.abortCmd.mark.widenRethrowT *>
-      epicsSys.abortCmd.post.void.widenRethrowT
-
-  override def observeProgress(total: Time): fs2.Stream[IO, Progress] =
-    ProgressUtil.countdown[IO](total, 0.seconds)
-
-  override def calcTotalExposureTime(cfg: DCConfig): IO[Time] = IO {
-    // TODO epicSys.minIntegration should return IO
-    val MinIntTime = epicsSys.minIntegration.map(Seconds(_)).getOrElse(0.seconds)
-
-    (cfg.exposureTime + MinIntTime) * cfg.coadds.toDouble
-  }
-
   def calcObserveTimeout(cfg: DCConfig): Time = {
     val MinIntTime = epicsSys.minIntegration.map(Seconds(_)).getOrElse(0.seconds)
     val CoaddOverhead = 2.5
@@ -317,4 +258,76 @@ object NiriControllerEpics extends NiriController[IO] {
   private val ConfigTimeout: Time = Seconds(180)
   private val DefaultTimeout: Time = Seconds(60)
 
+  // scalastyle:off
+  def apply(): NiriController[IO] = new NiriController[IO] {
+
+    override def applyConfig(config: NiriController.NiriConfig): IO[Unit] = {
+      val paramsDC = configDC(config.dc)
+      val params =  paramsDC ++ configCC(config.cc)
+
+      val cfgActions1 = if(params.isEmpty) IO.pure(EpicsCommand.Completed)
+                        else params.sequence.void.widenRethrowT *>
+                          epicsSys.configCmd.setTimeout(ConfigTimeout).widenRethrowT *>
+                          epicsSys.configCmd.post.widenRethrowT
+      // Weird NIRI behavior. The main IS apply is nor connected to the DC apply, but triggering the
+      // IS apply writes the DC parameters. So to configure the DC, we need to set the DC parameters
+      // in the IS, trigger the IS apply, and then trigger the DC apply.
+      val cfgActions = if(paramsDC.isEmpty) cfgActions1
+                       else cfgActions1 *>
+                         epicsSys.configDCCmd.setTimeout(DefaultTimeout).widenRethrowT *>
+                         epicsSys.configDCCmd.post.widenRethrowT
+
+      IO(Log.debug("Starting NIRI configuration")) *>
+        (if(epicsSys.dhsConnected.exists(identity)) IO.unit
+         else IO(Log.warn("NIRI is not connected to DHS"))
+        ) *>
+        (if(epicsSys.arrayActive.exists(identity)) IO.unit
+         else IO(Log.warn("NIRI detector array is not active"))
+        ) *>
+        cfgActions *>
+        IO(Log.debug("Completed NIRI configuration"))
+    }
+
+    override def observe(fileId: ImageFileId, cfg: DCConfig): IO[ObserveCommand.Result] =
+      IO(Log.info("Start NIRI observe")) *>
+        (if(epicsSys.dhsConnected.exists(identity)) IO.unit
+         else IO.raiseError(SeqexecFailure.Execution("NIRI is not connected to DHS"))
+        ) *>
+        (if(epicsSys.arrayActive.exists(identity)) IO.unit
+         else IO.raiseError(SeqexecFailure.Execution("NIRI detector array is not active"))
+        ) *>
+        epicsSys.observeCmd.setLabel(fileId).widenRethrowT *>
+        epicsSys.observeCmd.setTimeout(calcObserveTimeout(cfg)).widenRethrowT *>
+        epicsSys.observeCmd.post.widenRethrowT
+
+    override def endObserve: IO[Unit] =
+      IO(Log.debug("Send endObserve to NIRI")) *>
+        epicsSys.endObserveCmd.setTimeout(DefaultTimeout).widenRethrowT *>
+        epicsSys.endObserveCmd.mark.widenRethrowT *>
+        epicsSys.endObserveCmd.post.void.widenRethrowT
+
+    override def stopObserve: IO[Unit] =
+      IO(Log.info("Stop NIRI exposure")) *>
+        epicsSys.stopCmd.setTimeout(DefaultTimeout).widenRethrowT *>
+        epicsSys.stopCmd.mark.widenRethrowT *>
+        epicsSys.stopCmd.post.void.widenRethrowT
+
+    override def abortObserve: IO[Unit] =
+      IO(Log.info("Abort NIRI exposure")) *>
+        epicsSys.abortCmd.setTimeout(DefaultTimeout).widenRethrowT *>
+        epicsSys.abortCmd.mark.widenRethrowT *>
+        epicsSys.abortCmd.post.void.widenRethrowT
+
+    override def observeProgress(total: Time): fs2.Stream[IO, Progress] =
+      ProgressUtil.countdown[IO](total, 0.seconds)
+
+    override def calcTotalExposureTime(cfg: DCConfig): IO[Time] = IO {
+      // TODO epicSys.minIntegration should return IO
+      val MinIntTime = epicsSys.minIntegration.map(Seconds(_)).getOrElse(0.seconds)
+
+      (cfg.exposureTime + MinIntTime) * cfg.coadds.toDouble
+    }
+
+  }
+  // scalastyle:on
 }

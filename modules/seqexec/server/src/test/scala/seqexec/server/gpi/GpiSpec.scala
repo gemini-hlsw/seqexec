@@ -5,7 +5,6 @@ package seqexec.server.gpi
 
 import cats.kernel.laws.discipline._
 import cats.tests.CatsSuite
-import seqexec.server.gpi.GpiController._
 
 /**
   * Tests GPI Config typeclasses
