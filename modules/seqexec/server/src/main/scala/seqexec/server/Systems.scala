@@ -7,7 +7,8 @@ import seqexec.server.altair.AltairController
 import seqexec.server.flamingos2.Flamingos2Controller
 import seqexec.server.keywords._
 import seqexec.server.gpi.GpiController
-import seqexec.server.gmos.GmosController
+import seqexec.server.gmos.GmosController._
+import seqexec.server.gsaoi.GsaoiController
 import seqexec.server.ghost.GhostController
 import seqexec.server.gcal.GcalController
 import seqexec.server.tcs.{GuideConfigDb, TcsController}
@@ -21,9 +22,10 @@ final case class Systems[F[_]](
   tcs:        TcsController,
   gcal:       GcalController,
   flamingos2: Flamingos2Controller[F],
-  gmosSouth:  GmosController.GmosSouthController[F],
-  gmosNorth:  GmosController.GmosNorthController[F],
+  gmosSouth:  GmosSouthController[F],
+  gmosNorth:  GmosNorthController[F],
   gnirs:      GnirsController[F],
+  gsaoi:      GsaoiController[F],
   gpi:        GpiController[F],
   ghost:      GhostController[F],
   niri:       NiriController[F],

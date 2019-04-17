@@ -34,6 +34,8 @@ import seqexec.server.flamingos2.{Flamingos2, Flamingos2Header}
 import seqexec.server.keywords._
 import seqexec.server.gpi.{Gpi, GpiHeader}
 import seqexec.server.ghost.{Ghost, GhostHeader}
+import seqexec.server.gsaoi.Gsaoi
+import seqexec.server.gsaoi.GsaoiHeader
 import seqexec.server.gcal._
 import seqexec.server.gmos.{GmosHeader, GmosNorth, GmosSouth}
 import seqexec.server.gws.{DummyGwsKeywordsReader, GwsHeader, GwsKeywordsReaderImpl}
@@ -416,6 +418,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
     case Instrument.Ghost => TrySeq(Ghost(systems.ghost))
     case Instrument.Niri  => TrySeq(Niri(systems.niri, systems.dhs))
     case Instrument.Nifs  => TrySeq(Nifs(systems.nifs, systems.dhs))
+    case Instrument.Gsaoi => TrySeq(Gsaoi(systems.gsaoi, systems.dhs))
     case _                => TrySeq.fail(Unexpected(s"Instrument $inst not supported."))
   }
 
@@ -430,6 +433,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
     case Instrument.GmosN => true
     case Instrument.Nifs  => true
     case Instrument.Niri  => true
+    case Instrument.Gsaoi => false
     case Instrument.Gpi   => true
     case Instrument.Ghost => false
     case _                => false
@@ -486,6 +490,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
     case Flamingos2(_, _) => Instrument.F2
     case Gnirs(_, _)      => Instrument.Gnirs
     case Gpi(_)           => Instrument.Gpi
+    case Gsaoi(_, _)      => Instrument.Gsaoi
     case Ghost(_)         => Instrument.Ghost
     case Niri(_, _)       => Instrument.Niri
     case Nifs(_, _)       => Instrument.Nifs
@@ -516,6 +521,8 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
       case Instrument.Nifs   =>
         val nifsReader = if(settings.nifsKeywords) NifsKeywordReaderImpl else NifsKeywordReaderDummy
         toInstrumentSys(inst).map(NifsHeader.header(_, nifsReader, tcsKReader))
+      case Instrument.Gsaoi   =>
+        GsaoiHeader.header[IO].asRight
       case _                 =>
         TrySeq.fail(Unexpected(s"Instrument $inst not supported."))
     }
@@ -601,6 +608,7 @@ object SeqTranslate {
       case Ghost.name      => TrySeq(Instrument.Ghost)
       case Niri.name       => TrySeq(Instrument.Niri)
       case Nifs.name       => TrySeq(Instrument.Nifs)
+      case Gsaoi.name      => TrySeq(Instrument.Gsaoi)
       case ins             => TrySeq.fail(UnrecognizedInstrument(s"inst $ins"))
     }
   }
