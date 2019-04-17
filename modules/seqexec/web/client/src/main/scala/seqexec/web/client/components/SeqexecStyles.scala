@@ -228,6 +228,9 @@ object SeqexecStyles {
   val runningIconCell: GStyle =
     GStyle.fromString("SeqexecStyles-runningIconCell")
 
+  val completedIconCell: GStyle =
+    GStyle.fromString("SeqexecStyles-completedIconCell")
+
   val errorCell: GStyle = GStyle.fromString("SeqexecStyles-errorCell")
 
   val skippedIconCell: GStyle =
@@ -244,6 +247,8 @@ object SeqexecStyles {
   val selectedIcon: GStyle = GStyle.fromString("SeqexecStyles-selectedIcon")
 
   val runningIcon: GStyle = GStyle.fromString("SeqexecStyles-runningIcon")
+
+  val completedIcon: GStyle = GStyle.fromString("SeqexecStyles-completedIcon")
 
   val breakPointOnIcon: GStyle =
     GStyle.fromString("SeqexecStyles-breakPointOnIcon")
