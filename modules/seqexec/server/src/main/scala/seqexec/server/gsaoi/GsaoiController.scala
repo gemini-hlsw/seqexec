@@ -4,6 +4,7 @@
 package seqexec.server.gsaoi
 
 import cats.Applicative
+import cats.Eq
 import cats.Show
 import cats.implicits._
 import seqexec.model.dhs.ImageFileId
@@ -47,6 +48,8 @@ sealed trait WindowCover extends Product with Serializable
 object WindowCover {
   case object Closed extends WindowCover
   case object Opened extends WindowCover
+
+  implicit val eqWc: Eq[WindowCover] = Eq.fromUniversalEquals
 }
 
 object GsaoiController {
@@ -68,10 +71,20 @@ object GsaoiController {
                             exposureTime:       ExposureTime,
                             numberOfFowSamples: NumberOfFowSamples)
 
+  object DCConfig {
+    // Universal equals is fine as it is integers and java classes
+    implicit val eqDcConig: Eq[DCConfig] = Eq.fromUniversalEquals
+  }
+
   final case class CCConfig(filter:       Filter,
                             odgwSize:     OdgwSize,
                             utilityWheel: UtilityWheel,
                             windowCover:  WindowCover)
+
+  object CCConfig {
+    // Universal equals is fine as it is integers and java classes
+    implicit val eqDcConig: Eq[CCConfig] = Eq.fromUniversalEquals
+  }
 
   final case class GsaoiConfig(cc: CCConfig, dc: DCConfig)
 

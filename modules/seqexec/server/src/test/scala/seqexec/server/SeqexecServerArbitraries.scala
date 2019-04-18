@@ -26,8 +26,6 @@ import gem.enum.KeywordName
 import gem.math.Coordinates
 import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, Cogen, Gen}
-import org.scalacheck.Arbitrary._
-import org.scalacheck.{Arbitrary, Cogen, Gen}
 import scala.concurrent.duration.Duration
 import scala.concurrent.duration._
 import seqexec.model.enum.{BatchCommandState, Instrument}
