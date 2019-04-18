@@ -19,7 +19,9 @@ import edu.gemini.epics.impl.EpicsWriterImpl;
 import gov.aps.jca.CAException;
 import gov.aps.jca.TimeoutException;
 
-final class CaCommandSenderImpl implements CaCommandSender {
+interface CommandSenderWithResource extends CaCommandSender, CaResource {}
+
+final class CaCommandSenderImpl implements CommandSenderWithResource {
 
     private static final Logger LOG = LoggerFactory.getLogger(CaCommandSenderImpl.class.getName());
 
@@ -67,6 +69,7 @@ final class CaCommandSenderImpl implements CaCommandSender {
     @Override
     public CaApplySender getApplySender() { return apply; }
 
+    @Override
     public void unbind() {
         assert (epicsWriter != null);
 

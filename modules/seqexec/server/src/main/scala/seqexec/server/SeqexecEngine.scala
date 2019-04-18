@@ -35,6 +35,7 @@ import seqexec.server.gmos.{GmosControllerSim, GmosEpics, GmosNorthControllerEpi
 import seqexec.server.gnirs.{GnirsControllerEpics, GnirsControllerSim, GnirsEpics}
 import seqexec.server.gpi.GpiController
 import seqexec.server.gpi.GpiStatusApply
+import seqexec.server.gsaoi.GsaoiEpics
 import seqexec.server.gsaoi.GsaoiControllerSim
 import seqexec.server.niri.{NiriControllerEpics, NiriControllerSim, NiriEpics}
 import seqexec.server.nifs.{NifsControllerEpics, NifsControllerSim, NifsEpics}
@@ -799,7 +800,7 @@ object SeqexecEngine extends SeqexecConfiguration {
 
     // More instruments to be added to the list here
     val epicsInstruments = site match {
-      case Site.GS => List((f2Control, Flamingos2Epics), (gmosControl, GmosEpics))
+      case Site.GS => List((f2Control, Flamingos2Epics), (gmosControl, GmosEpics), (gsaoiControl, GsaoiEpics))
       case Site.GN => List((gmosControl, GmosEpics), (gnirsControl, GnirsEpics),
         (niriControl, NiriEpics), (nifsControl, NifsEpics)
       )

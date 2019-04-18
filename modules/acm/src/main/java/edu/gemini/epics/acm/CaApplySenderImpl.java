@@ -18,7 +18,7 @@ import edu.gemini.epics.api.ChannelListener;
 import gov.aps.jca.CAException;
 import gov.aps.jca.TimeoutException;
 
-final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements CaApplySender {
+final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements ApplySenderWithResource {
 
     private static final Logger LOG = LoggerFactory.getLogger(CaApplySenderImpl.class
             .getName());
@@ -122,7 +122,8 @@ final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements Ca
         return car.getEpicsName();
     }
 
-    void unbind() {
+    @Override
+    public void unbind() {
 
         executor.shutdown();
 

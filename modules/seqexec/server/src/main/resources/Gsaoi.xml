@@ -1,0 +1,315 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Records xmlns="http://www.gemini.edu/CaSchema">
+    <Top name="gsaoi">gsaoi</Top>
+    <Apply name="gsaoi::dcapply">
+        <top>gsaoi</top>
+        <apply>dc:seqObsApply</apply>
+        <car>dc:seqObsC</car>
+        <description>DC Primary Apply Record</description>
+        <command name="gsaoi::dcconfig">
+            <description>Setup a DC Configuration</description>
+            <parameter name="numberOfFowSamples">
+                <channel>dc:seqObs.D</channel>
+                <type>INTEGER</type>
+                <description>Number of fowler samples</description>
+            </parameter>
+            <parameter name="readMode">
+                <channel>dc:seqObs.A</channel>
+                <type>STRING</type>
+                <description>Read mode (DCS|FOWLER|SINGLE)</description>
+            </parameter>
+            <parameter name="exposureTime">
+                <channel>dc:seqObs.F</channel>
+                <type>DOUBLE</type>
+                <description>Period between sample sets</description>
+            </parameter>
+            <parameter name="roi">
+                <channel>dc:seqObs.H</channel>
+                <type>STRING</type>
+                <description>Region of interest</description>
+            </parameter>
+            <parameter name="resetDelay">
+                <channel>dc:seqObs.C</channel>
+                <type>DOUBLE</type>
+                <description>Reset delay</description>
+            </parameter>
+            <parameter name="numberOfResets">
+                <channel>dc:seqObs.B</channel>
+                <type>INTEGER</type>
+                <description>Number of resets</description>
+            </parameter>
+            <parameter name="coadds">
+                <channel>dc:seqObs.E</channel>
+                <type>INTEGER</type>
+                <description>Number of coadds</description>
+            </parameter>
+            <parameter name="numberOfRefSamples">
+                <channel>dc:seqObs.G</channel>
+                <type>INTEGER</type>
+                <description>Number of reference samples</description>
+            </parameter>
+        </command>
+    </Apply>
+    <Apply name="gsaoi::ccapply">
+        <top>gsaoi</top>
+        <apply>cc:apply</apply>
+        <car>cc:applyC</car>
+        <description>IS Primary Apply Record</description>
+        <command name="gsaoi::config">
+            <description>Setup a Configuration</description>
+            <parameter name="filter">
+                <channel>cc:vfiltSel.A</channel>
+                <type>STRING</type>
+                <description>Filter</description>
+            </parameter>
+            <parameter name="utilWheel">
+                <channel>cc:utilSel.A</channel>
+                <type>STRING</type>
+                <description>Utility Wheel		</description>
+            </parameter>
+            <parameter name="windowCover">
+                <channel>cc:covSel.A</channel>
+                <type>STRING</type>
+                <description>Window Cover</description>
+            </parameter>
+        </command>
+    </Apply>
+    <Apply name="gsaoi::obsapply">
+        <top>gsaoi</top>
+        <apply>dc:stateApply</apply>
+        <car>dc:observeC</car>
+        <description>DC Observe Apply Record</description>
+        <command name="gsaoi::continue">
+            <record>dc:continue</record>
+            <description>Continue observation</description>
+        </command>
+        <command name="gsaoi::stop">
+            <record>dc:stop</record>
+            <description>Stop observation</description>
+        </command>
+        <command name="gsaoi::endObserve">
+            <record>dc:endObserve</record>
+            <description>End Observe</description>
+        </command>
+        <command name="gsaoi::abort">
+            <record>dc:abort</record>
+            <description>Abort observation</description>
+        </command>
+        <command name="gsaoi::pause">
+            <record>dc:pause</record>
+            <description>Pause observation</description>
+        </command>
+        <command name="gsaoi::observe">
+            <description>Observe</description>
+            <parameter name="label">
+                <channel>dc:observe.A</channel>
+                <type>STRING</type>
+                <description>DHS data label</description>
+            </parameter>
+            <parameter name="comment">
+                <channel>dc:observe.C</channel>
+                <type>STRING</type>
+                <description>Comment</description>
+            </parameter>
+            <parameter name="type">
+                <channel>dc:observe.B</channel>
+                <type>STRING</type>
+                <description>Image type (IMAGE|DARK|FLAT|ARC|BIAS)</description>
+            </parameter>
+        </command>
+    </Apply>
+    <Status name="gsaoi::status">
+        <top>gsaoi</top>
+        <description>gsaoi status</description>
+        <attribute name="lowerFilter">
+            <channel>sad:cc:lfwName</channel>
+            <type>STRING</type>
+            <description>Lower filter wheel current position (by name)</description>
+        </attribute>
+        <attribute name="windowCover">
+            <channel>sad:cc:covName</channel>
+            <type>STRING</type>
+            <description>Window cover current position (by name)</description>
+        </attribute>
+        <attribute name="filter">
+            <channel>sad:cc:vfiltName</channel>
+            <type>STRING</type>
+            <description>Virtual filter wheel current position (by name)</description>
+        </attribute>
+        <attribute name="upperFilter">
+            <channel>sad:cc:ufwName</channel>
+            <type>STRING</type>
+            <description>Upper filter wheel current position (by name)</description>
+        </attribute>
+        <attribute name="utilWheel">
+            <channel>sad:cc:utilName</channel>
+            <type>STRING</type>
+            <description>Utility wheel current position (by name)</description>
+        </attribute>
+        <attribute name="DSPTIMBV">
+            <channel>sad:dc:DSPVer</channel>
+            <type>STRING</type>
+            <description>Version of DSP code for SDSU timing board</description>
+        </attribute>
+        <attribute name="CWSTEMP">
+            <channel>eng:tmpC1Tmp</channel>
+            <type>DOUBLE</type>
+            <description>Cold work surface temperature</description>
+        </attribute>
+        <attribute name="BUNITS">
+            <channel>sad:dc:bunit</channel>
+            <type>STRING</type>
+            <description>Units of quantity read from detector array (e.g. “ADU” or “Volts/S”)</description>
+        </attribute>
+        <attribute name="CVERPOS">
+            <channel>sad:cc:covEngPos</channel>
+            <type>INTEGER</type>
+            <description>The utility wheel position in real-world units (position number)</description>
+        </attribute>
+        <attribute name="DCHLTH">
+            <channel>sad:dc:health</channel>
+            <type>STRING</type>
+            <description>Detector Controller health [GOOD | WARNING | BAD]</description>
+        </attribute>
+        <attribute name="FILT2CAR">
+            <channel>sad:cc:lfwHealth</channel>
+            <type>STRING</type>
+            <description>Combined lower filter wheel CAR state [GOOD|BAD]</description>
+        </attribute>
+        <attribute name="DCSIM">
+            <channel>sad:dc:simMode</channel>
+            <type>STRING</type>
+            <description>Simulation mode [NONE | FULL | FAST | VSM]</description>
+        </attribute>
+        <attribute name="DSPTIMBN">
+            <channel>sad:dc:timingDSP</channel>
+            <type>STRING</type>
+            <description>Name of DSP code for SDSU timing board</description>
+        </attribute>
+        <attribute name="READDLAY">
+            <channel>sad:dc:obs_readIntvl</channel>
+            <type>DOUBLE</type>
+            <description>Read interval</description>
+        </attribute>
+        <attribute name="DETTEMP">
+            <channel>eng:tmpC3Tmp</channel>
+            <type>DOUBLE</type>
+            <description>Detector temperature</description>
+        </attribute>
+        <attribute name="FILT1CAR">
+            <channel>sad:cc:ufwHealth</channel>
+            <type>STRING</type>
+            <description>Combined upper filter wheel CAR state [GOOD|BAD]</description>
+        </attribute>
+        <attribute name="DEWPRES">
+            <channel>eng:pressure</channel>
+            <type>DOUBLE</type>
+            <description>Dewar pressure</description>
+        </attribute>
+        <attribute name="ELAPSED">
+            <channel>sad:dc:elapsed</channel>
+            <type>DOUBLE</type>
+            <description>Total elapsed time in current data set observation</description>
+        </attribute>
+        <attribute name="FILT2POS">
+            <channel>sad:cc:lfwEngPos</channel>
+            <type>INTEGER</type>
+            <description>The position of the lower filter wheel in real-world units (position number)</description>
+        </attribute>
+        <attribute name="RSTDLAY">
+            <channel>sad:dc:obs_resetDelay</channel>
+            <type>DOUBLE</type>
+            <description>Time delay to allow detector to reset</description>
+        </attribute>
+        <attribute name="DETHTEMP">
+            <channel>eng:tmpC4Tmp</channel>
+            <type>DOUBLE</type>
+            <description>Detector-housing temperature</description>
+        </attribute>
+        <attribute name="UTLWPOS">
+            <channel>sad:cc:utilEngPos</channel>
+            <type>INTEGER</type>
+            <description>The utility wheel position in real-world units (position number)</description>
+        </attribute>
+        <attribute name="UTLWCAR">
+            <channel>sad:cc:utilHealth</channel>
+            <type>STRING</type>
+            <description>Combined utility wheel CAR state [GOOD|BAD]</description>
+        </attribute>
+        <attribute name="CVERCAR">
+            <channel>sad:cc:covHealth</channel>
+            <type>STRING</type>
+            <description>Combined utility wheel CAR state [GOOD|BAD]</description>
+        </attribute>
+        <attribute name="FILT1POS">
+            <channel>sad:cc:ufwEngPos</channel>
+            <type>INTEGER</type>
+            <description>The position of the upper filter wheel in real-world units (position number)</description>
+        </attribute>
+        <attribute name="EXPMODE">
+            <channel>sad:dc:obs_expMode</channel>
+            <type>STRING</type>
+            <description>Read mode [DESTRUCTIVE|NONDESTRUCTIVE]</description>
+        </attribute>
+        <attribute name="DCNAME">
+            <channel>sad:dc:name</channel>
+            <type>STRING</type>
+            <description>Detector Controller name</description>
+        </attribute>
+        <attribute name="DSPPCIN">
+            <channel>sad:dc:intfDSP</channel>
+            <type>STRING</type>
+            <description>Name of DSP code for SDSU PCI board</description>
+        </attribute>
+        <attribute name="READTIME">
+            <channel>sad:dc:obs_readTime</channel>
+            <type>DOUBLE</type>
+            <description>Read time</description>
+        </attribute>
+        <attribute name="exposureTime">
+            <channel>sad:dc:obs_exposedRQ</channel>
+            <type>DOUBLE</type>
+            <description>Exposure time requested</description>
+        </attribute>
+        <attribute name="numberOfResets">
+            <channel>sad:dc:obs_nresets</channel>
+            <type>INTEGER</type>
+            <description>Number of resets</description>
+        </attribute>
+        <attribute name="readMode">
+            <channel>sad:dc:obs_readMode</channel>
+            <type>STRING</type>
+            <description>Read mode (0=dcs, 1=fowler, 2=linear, 3=linear) </description>
+        </attribute>
+        <attribute name="numberOfFowSamples">
+            <channel>sad:dc:obs_nfowler</channel>
+            <type>INTEGER</type>
+            <description>Number of fowler samples  </description>
+        </attribute>
+        <attribute name="coadds">
+            <channel>sad:dc:obs_ncoadds</channel>
+            <type>INTEGER</type>
+            <description>Number of coadds</description>
+        </attribute>
+        <attribute name="exposedTime">
+            <channel>sad:dc:obs_exposed</channel>
+            <type>DOUBLE</type>
+            <description>Time exposed</description>
+        </attribute>
+<!--        <attribute name="dhsConnected">-->
+<!--            <channel>sad:dc:dhsConnO</channel>-->
+<!--            <type>STRING</type>-->
+<!--            <description>dhs connection</description>-->
+<!--        </attribute>-->
+        <attribute name="timeMode">
+            <channel>sad:dc:obs_timeMode</channel>
+            <type>STRING</type>
+            <description>Which variable (0=exposure time, 1=period, 2=nr of periods) to calculate</description>
+        </attribute>
+        <attribute name="countdown">
+            <channel>sad:dc:s_obs_timeLeft</channel>
+            <type>DOUBLE</type>
+            <description>countdown</description>
+        </attribute>
+    </Status>
+</Records>
