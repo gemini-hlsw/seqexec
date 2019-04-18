@@ -62,6 +62,7 @@ object ColWidths {
   val DeckerWidth: Double        = 110
   val ImagingMirrorWidth: Double = 180
   val CameraWidth: Double        = 180
+  val ReadModeWidth: Double      = 230
   val ObjectTypeWidth: Double    = 75
   val SettingsWidth: Double      = 34
 }
@@ -136,6 +137,7 @@ object StepsTable {
     val showCamera: Boolean        = showProp(InstrumentProperties.Camera)
     val showDecker: Boolean        = showProp(InstrumentProperties.Decker)
     val showImagingMirror: Boolean = showProp(InstrumentProperties.ImagingMirror)
+    val showReadMode: Boolean      = showProp(InstrumentProperties.ReadMode)
     val isPreview: Boolean         = steps.map(_.isPreview).getOrElse(false)
     val hasControls: Boolean       = canOperate && !isPreview
     val canSetBreakpoint: Boolean  = canOperate && !isPreview
@@ -314,6 +316,10 @@ object StepsTable {
   def imagingMirrorRenderer: CellRenderer[js.Object, js.Object, StepRow] =
     (_, _, _, row: StepRow, _) =>
       ImagingMirrorCell(ImagingMirrorCell.Props(row.step))
+
+  def readModeRenderer: CellRenderer[js.Object, js.Object, StepRow] =
+    (_, _, _, row: StepRow, _) =>
+      ReadModeCell(ReadModeCell.Props(row.step))
 
   private def stepRowStyle(step: Step): GStyle = step match {
     case s if s.hasError                       => SeqexecStyles.rowError
@@ -506,6 +512,19 @@ object StepsTable {
             cellRenderer = deckerRenderer
           )))
 
+  def readModeColumn(p: Props, readModeVisible: Boolean): Option[Table.ColumnArg] =
+    p.steps
+      .filter(_ => p.showReadMode && readModeVisible)
+      .as(
+        Column(
+          Column.propsNoFlex(
+            ColWidths.ReadModeWidth,
+            "readMode",
+            label        = "ReadMode",
+            className    = SeqexecStyles.centeredCell.htmlClass,
+            cellRenderer = readModeRenderer
+          )))
+
   def imagingMirrorColumn(
     p:                    Props,
     imagingMirrorVisible: Boolean): Option[Table.ColumnArg] =
@@ -597,17 +616,18 @@ object StepsTable {
          disperserVisible,
          fpuVisible,
          cameraVisible,
+         readModeVisible,
          deckerVisible,
          imagingMirrorVisible,
          filterVisible,
          objectSize) =
       s.width match {
         case w if w < PhoneCut =>
-          (false, false, false, false, false, false, false, false, SSize.Tiny)
+          (false, false, false, false, false, false, false, false, false, SSize.Tiny)
         case w if w < LargePhoneCut =>
-          (false, true, false, false, false, false, false, false, SSize.Small)
+          (false, true, false, false, false, false, false, false, false, SSize.Small)
         case _ =>
-          (b.props.showOffsets, true, true, true, true, true, true, true, SSize.Small)
+          (b.props.showOffsets, true, true, true, true, true, true, true, true, SSize.Small)
       }
 
     val (offsetCol, offsetWidth) = offsetColumn(p, offsetVisible)
@@ -617,6 +637,7 @@ object StepsTable {
     val fpuCol                   = fpuColumn(p, fpuVisible)
     val cameraCol                = cameraColumn(p, cameraVisible)
     val deckerCol                = deckerColumn(p, deckerVisible)
+    val readModeCol              = readModeColumn(p, readModeVisible)
     val imagingMirrorCol         = imagingMirrorColumn(p, imagingMirrorVisible)
     val iconCol                  = iconColumn(b)
     val filterCol                = filterColumn(p, filterVisible)
@@ -634,6 +655,7 @@ object StepsTable {
         fpuCol.fold(0.0)(_ => ColWidths.FPUWidth) +
         cameraCol.fold(0.0)(_ => ColWidths.CameraWidth) +
         deckerCol.fold(0.0)(_ => ColWidths.DeckerWidth) +
+        readModeCol.fold(0.0)(_ => ColWidths.ReadModeWidth) +
         imagingMirrorCol.fold(0.0)(_ => ColWidths.ImagingMirrorWidth) +
         observingModeCol.fold(0.0)(_ => ColWidths.ObservingModeWidth) + ColWidths.ObjectTypeWidth + ColWidths.SettingsWidth
     val controlWidth = s.width - colsWidth
@@ -650,6 +672,7 @@ object StepsTable {
       fpuCol,
       cameraCol,
       deckerCol,
+      readModeCol,
       imagingMirrorCol,
       typeCol,
       settingsCol

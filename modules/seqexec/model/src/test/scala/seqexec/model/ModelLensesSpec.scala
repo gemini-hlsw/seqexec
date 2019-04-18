@@ -72,4 +72,6 @@ final class ModelLensesSpec extends CatsSuite with ModelLenses {
            OptionalTests(instrumentImagingMirrorO))
   checkAll("instrument mask Optional",
            OptionalTests(instrumentMaskO))
+  checkAll("instrument read mode Optional",
+           OptionalTests(instrumentReadModeO))
 }

@@ -238,6 +238,12 @@ trait ModelLenses {
                         "mask",
                         Iso.id[String].asPrism)
 
+  // Instrument's readMode
+  val instrumentReadModeO: Optional[Step, String] =
+    stepObserveOptional(SystemName.Instrument,
+                        "readMode",
+                        Iso.id[String].asPrism)
+
   // Composite lens to find the instrument observing mode on GPI
   val instrumentObservingModeO: Optional[Step, String] =
     stepObserveOptional(SystemName.Instrument,

@@ -413,6 +413,32 @@ object DeckerCell {
 }
 
 /**
+  * Component to display the read mode
+  */
+object ReadModeCell {
+  final case class Props(s: Step)
+
+  implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
+
+  private val component = ScalaComponent
+    .builder[Props]("ReadModeCell")
+    .stateless
+    .render_P { p =>
+      def readModeName(s: Step): Option[String] =
+        instrumentReadModeO.getOption(s)
+
+      <.div(
+        SeqexecStyles.componentLabel,
+        readModeName(p.s).map(_.sentenceCase).getOrElse("Unknown"): String
+      )
+    }
+    .configure(Reusability.shouldComponentUpdate)
+    .build
+
+  def apply(p: Props): Unmounted[Props, Unit, Unit] = component(p)
+}
+
+/**
   * Component to imaging mirror the decker
   */
 object ImagingMirrorCell {
