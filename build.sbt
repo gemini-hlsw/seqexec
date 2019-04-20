@@ -29,6 +29,9 @@ parallelExecution in (ThisBuild, Test) := false
 
 cancelable in Global := true
 
+// Should make CI builds more robust
+concurrentRestrictions in Global += Tags.limit(ScalaJSTags.Link, 2)
+
 // // check for library updates whenever the project is [re]load
 // onLoad in Global := { s =>
 //   if (sys.props.contains("ocs3.skipDependencyUpdates")) s
