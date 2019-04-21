@@ -9,9 +9,6 @@ import cats.tests.CatsSuite
 /**
   * Tests SeqexecServer typeclasses
   */
-final class SeqexecServerSpec extends CatsSuite {
-  import SeqexecServerArbitraries.observeCommandArb
-  import SeqexecServerArbitraries.observeCommandCogen
-
+final class SeqexecServerSpec extends CatsSuite with SeqexecServerArbitraries {
   checkAll("Eq[ObserveCommand.Result]", EqTests[ObserveCommand.Result].eqv)
 }

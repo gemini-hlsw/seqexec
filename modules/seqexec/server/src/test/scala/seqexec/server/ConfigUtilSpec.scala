@@ -12,7 +12,7 @@ import org.scalatest.prop.PropertyChecks
 import org.scalatest.{EitherValues, FlatSpec, Matchers}
 import cats.implicits._
 
-object ConfigArbitraries {
+trait ConfigArbitraries {
 
   implicit val arbItemKey: Arbitrary[ItemKey] =
     Arbitrary {
@@ -40,9 +40,8 @@ object ConfigArbitraries {
 }
 
 @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
-class ConfigUtilSpec extends FlatSpec with Matchers with EitherValues with PropertyChecks {
+class ConfigUtilSpec extends FlatSpec with Matchers with EitherValues with PropertyChecks with ConfigArbitraries {
   import ConfigUtilOps._
-  import ConfigArbitraries._
 
   "ConfigUtil" should
     "extract keys with the correct type" in {

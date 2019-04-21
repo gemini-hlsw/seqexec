@@ -10,9 +10,7 @@ import seqexec.server.gcal.GcalController._
 /**
   * Tests Gcal typeclasses
   */
-final class GcalSpec extends CatsSuite {
-  import seqexec.server.SeqexecServerArbitraries._
-
+final class GcalSpec extends CatsSuite with GcalArbitraries {
   checkAll("Eq[LampState]", EqTests[LampState].eqv)
   checkAll("Eq[ArLampState]", EqTests[ArLampState].eqv)
   checkAll("Eq[CuArLampState]", EqTests[CuArLampState].eqv)
