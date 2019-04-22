@@ -34,8 +34,7 @@ import seqexec.server.flamingos2.{Flamingos2, Flamingos2Header}
 import seqexec.server.keywords._
 import seqexec.server.gpi.{Gpi, GpiHeader}
 import seqexec.server.ghost.{Ghost, GhostHeader}
-import seqexec.server.gsaoi.Gsaoi
-import seqexec.server.gsaoi.GsaoiHeader
+import seqexec.server.gsaoi._
 import seqexec.server.gcal._
 import seqexec.server.gmos.{GmosHeader, GmosNorth, GmosSouth}
 import seqexec.server.gws.{DummyGwsKeywordsReader, GwsHeader, GwsKeywordsReaderImpl}
@@ -522,7 +521,8 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
         val nifsReader = if(settings.nifsKeywords) NifsKeywordReaderImpl else NifsKeywordReaderDummy
         toInstrumentSys(inst).map(NifsHeader.header(_, nifsReader, tcsKReader))
       case Instrument.Gsaoi   =>
-        GsaoiHeader.header[IO].asRight
+        val gsaoiReader = if (settings.gsaoiKeywords) GsaoiKeywordReaderEpics[IO](GsaoiEpics.instance) else GsaoiKeywordReaderDummy[IO]
+        toInstrumentSys(inst).map(GsaoiHeader.header[IO](_, tcsKReader, gsaoiReader))
       case _                 =>
         TrySeq.fail(Unexpected(s"Instrument $inst not supported."))
     }

@@ -311,5 +311,10 @@
             <type>DOUBLE</type>
             <description>countdown</description>
         </attribute>
+        <attribute name="mjdobs">
+            <channel>sad:dc:mjdobs</channel>
+            <type>DOUBLE</type>
+            <description>MJD of start of observation</description>
+        </attribute>
     </Status>
 </Records>

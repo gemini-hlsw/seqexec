@@ -163,10 +163,12 @@ class GsaoiEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, String])
 
   def countdown: F[Option[Double]] =  safeAttributeSDouble(status.getDoubleAttribute("countdown"))
 
+  def mjdobs: F[Option[Double]] =  safeAttributeSDouble(status.getDoubleAttribute("mjdobs"))
+
   private val dhsConnectedAttr: CaAttribute[DhsConnected] =
     status.addEnum[DhsConnected]("dhsConnected", s"${GsaoiTop}sad:dc:dhsConnO", classOf[DhsConnected])
-  def dhsConnected: F[Option[DhsConnected]] = safeAttribute(dhsConnectedAttr)
 
+  def dhsConnected: F[Option[DhsConnected]] = safeAttribute(dhsConnectedAttr)
 
 }
 

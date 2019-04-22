@@ -12,5 +12,6 @@ final case class TranslateSettings(
   gnirsKeywords:  Boolean,
   niriKeywords:   Boolean,
   nifsKeywords:   Boolean,
-  altairKeywords: Boolean
+  altairKeywords: Boolean,
+  gsaoiKeywords:  Boolean
 )
