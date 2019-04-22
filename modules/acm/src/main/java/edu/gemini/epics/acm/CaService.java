@@ -44,7 +44,7 @@ public final class CaService {
     private final Map<String, ApplySenderWithResource> applySenders;
     private final Map<String, ApplySenderWithResource> observeSenders;
     private final Map<String, CommandSenderWithResource> commandSenders;
-    private final Map<String, TaskControlWithResoource> taskControlSenders;
+    private final Map<String, TaskControlWithResource> taskControlSenders;
     static private String addrList = "";
     static private Duration ioTimeout = Duration.ofSeconds(1);
     static private CaService theInstance;
@@ -430,7 +430,7 @@ public final class CaService {
             throws CAException {
         CaTaskControl a = taskControlSenders.get(name);
         if(a == null) {
-            TaskControlWithResoource b = new CaTaskControlImpl(name, recordName, description, epicsService);
+            TaskControlWithResource b = new CaTaskControlImpl(name, recordName, description, epicsService);
             taskControlSenders.put(name, b);
             return b;
         } else {

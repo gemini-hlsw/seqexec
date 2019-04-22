@@ -21,9 +21,9 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-interface TaskControlWithResoource extends CaTaskControl, CaResource {}
+interface TaskControlWithResource extends CaTaskControl, CaResource {}
 
-public class CaTaskControlImpl implements TaskControlWithResoource {
+public class CaTaskControlImpl implements TaskControlWithResource {
     private static final Logger LOG = LoggerFactory.getLogger(CaTaskControlImpl.class.getName());
 
     private final String name;
