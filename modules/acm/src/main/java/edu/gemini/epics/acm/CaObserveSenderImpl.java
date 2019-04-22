@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Created by jluhrs on 10/17/17.
  */
-public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements CaApplySender {
+public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements ApplySenderWithResource {
 
     private static final Logger LOG = LoggerFactory.getLogger(CaObserveSenderImpl.class.getName());
     private static final String CAD_MARK_SUFFIX = ".MARK";
@@ -159,7 +159,8 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
         return car.getEpicsName();
     }
 
-    void unbind() {
+    @Override
+    public void unbind() {
 
         executor.shutdown();
 

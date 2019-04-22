@@ -3,9 +3,12 @@
 
 package edu.gemini.epics.acm
 
+import java.util.concurrent.TimeUnit
+
 import com.cosylab.epics.caj.CAJContext
 import edu.gemini.epics.EpicsService
 import java.util.concurrent.atomic.AtomicInteger
+
 import org.scalamock.scalatest.MockFactory
 import org.scalatest._
 
@@ -18,7 +21,7 @@ import org.scalatest._
   * care about the state of the channels. Instead we want to only observe
   * the state transitions
   */
-@SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements", "org.wartremover.warts.PublicInference"))
+@SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements", "org.wartremover.warts.PublicInference", "org.wartremover.warts.IsInstanceOf"))
 final class ObserveStateSpec extends FunSuite with MockFactory {
 
   test("NIFS normal observation") {
@@ -45,7 +48,7 @@ final class ObserveStateSpec extends FunSuite with MockFactory {
       classOf[CarState],
       epicsService)
     // Start idle
-    assert(observe.applyState().isIdle())
+    assert(observe.applyState().isIdle)
 
     val observeErrorCount = new AtomicInteger()
     val observePauseCount = new AtomicInteger()
@@ -71,28 +74,28 @@ final class ObserveStateSpec extends FunSuite with MockFactory {
     // OBSERVE goes BUSY
     // VAL change
     observe.onApplyValChange(359)
-    assert(!observe.applyState().isIdle())
+    assert(!observe.applyState().isIdle)
     // Observe CAR VAL change
     observe.onObserveCarValChange(CarState.BUSY)
-    assert(!observe.applyState().isIdle())
+    assert(!observe.applyState().isIdle)
     // CAR CLID change
     observe.onCarClidChange(359)
-    assert(!observe.applyState().isIdle())
+    assert(!observe.applyState().isIdle)
     // CAR VAL change
     observe.onCarValChange(CarState.BUSY)
-    assert(!observe.applyState().isIdle())
+    assert(!observe.applyState().isIdle)
 
     // OBSERVE goes IDLE
     // Observe CAR VAL change
     observe.onObserveCarValChange(CarState.IDLE)
     // And we are done and IDLE
-    assert(observe.applyState().isIdle())
+    assert(observe.applyState().isIdle)
     // CAR CLID change
     observe.onCarClidChange(359)
-    assert(observe.applyState().isIdle())
+    assert(observe.applyState().isIdle)
     // CAR VAL change
     observe.onCarValChange(CarState.IDLE)
-    assert(observe.applyState().isIdle())
+    assert(observe.applyState().isIdle)
 
     // TODO fix these when the channels are correctly mocked
     // assert(observeErrorCount.get() === 1)
@@ -124,7 +127,7 @@ final class ObserveStateSpec extends FunSuite with MockFactory {
       classOf[CarState],
       epicsService)
     // Start idle
-    assert(observe.applyState().isIdle())
+    assert(observe.applyState().isIdle)
 
     val observeErrorCount = new AtomicInteger()
     val observePauseCount = new AtomicInteger()
@@ -150,52 +153,53 @@ final class ObserveStateSpec extends FunSuite with MockFactory {
     // OBSERVE goes BUSY
     // VAL change
     observe.onApplyValChange(4167)
-    assert(!observe.applyState().isIdle())
+    assert(!observe.applyState().isIdle)
     // CAR CLID change
     observe.onCarClidChange(4167)
-    assert(!observe.applyState().isIdle())
+    assert(!observe.applyState().isIdle)
     // CAR VAL change
     observe.onCarValChange(CarState.BUSY)
-    assert(!observe.applyState().isIdle())
+    assert(!observe.applyState().isIdle)
     // Another VAL change
     observe.onApplyValChange(4167)
-    assert(!observe.applyState().isIdle())
+    assert(!observe.applyState().isIdle)
     // Observe CAR VAL change
     observe.onObserveCarValChange(CarState.BUSY)
-    assert(!observe.applyState().isIdle())
+    assert(!observe.applyState().isIdle)
     // CAR CLID change
     observe.onCarClidChange(4167)
-    assert(!observe.applyState().isIdle())
+    assert(!observe.applyState().isIdle)
     // Apply goes IDLE
     observe.onCarValChange(CarState.IDLE)
-    assert(!observe.applyState().isIdle())
+    assert(!observe.applyState().isIdle)
 
     // OBSERVE goes IDLE
     // Observe CAR VAL change
     observe.onObserveCarValChange(CarState.IDLE)
     // And we are done and IDLE
-    assert(observe.applyState().isIdle())
+    assert(observe.applyState().isIdle)
+    l.waitDone(1, TimeUnit.SECONDS)
     assert(l.isDone)
 
     // ENDOBSERVE
     // CAR CLID change
     observe.onApplyValChange(4168)
-    assert(observe.applyState().isIdle())
+    assert(observe.applyState().isIdle)
     // CAR CLID change
     observe.onCarClidChange(4168)
-    assert(observe.applyState().isIdle())
+    assert(observe.applyState().isIdle)
     // CAR VAL change
     observe.onCarValChange(CarState.BUSY)
-    assert(observe.applyState().isIdle())
+    assert(observe.applyState().isIdle)
 
     observe.onApplyValChange(4168)
-    assert(observe.applyState().isIdle())
+    assert(observe.applyState().isIdle)
     // CAR CLID change
     observe.onCarClidChange(4168)
-    assert(observe.applyState().isIdle())
+    assert(observe.applyState().isIdle)
     // CAR VAL change
     observe.onCarValChange(CarState.IDLE)
-    assert(observe.applyState().isIdle())
+    assert(observe.applyState().isIdle)
 
     // TODO fix these when the channels are correctly mocked
     // assert(observeErrorCount.get() === 0)
@@ -227,7 +231,7 @@ final class ObserveStateSpec extends FunSuite with MockFactory {
       classOf[CarState],
       epicsService)
     // Start idle
-    assert(observe.applyState().isIdle())
+    assert(observe.applyState().isIdle)
 
     // Post an observe
     // TODO mock the epics channel to test the listener
@@ -237,48 +241,48 @@ final class ObserveStateSpec extends FunSuite with MockFactory {
     // OBSERVE goes BUSY
     // VAL change
     observe.onApplyValChange(4170)
-    assert(!observe.applyState().isIdle())
+    assert(!observe.applyState().isIdle)
     // CAR CLID change
     observe.onCarClidChange(4170)
-    assert(!observe.applyState().isIdle())
+    assert(!observe.applyState().isIdle)
     // CAR VAL change
     observe.onCarValChange(CarState.BUSY)
-    assert(!observe.applyState().isIdle())
+    assert(!observe.applyState().isIdle)
     // Another VAL change
     observe.onApplyValChange(4170)
-    assert(!observe.applyState().isIdle())
+    assert(!observe.applyState().isIdle)
     // Observe CAR VAL change
     observe.onObserveCarValChange(CarState.BUSY)
-    assert(!observe.applyState().isIdle())
+    assert(!observe.applyState().isIdle)
     // CAR CLID change
     observe.onCarClidChange(4170)
-    assert(!observe.applyState().isIdle())
+    assert(!observe.applyState().isIdle)
     // Apply goes IDLE
     observe.onCarValChange(CarState.IDLE)
-    assert(!observe.applyState().isIdle())
+    assert(!observe.applyState().isIdle)
 
     // PAUSE observations
     observe.onApplyValChange(4171)
-    assert(!observe.applyState().isIdle())
+    assert(!observe.applyState().isIdle)
     // CAR CLID change
     observe.onCarClidChange(4171)
-    assert(!observe.applyState().isIdle())
+    assert(!observe.applyState().isIdle)
     // CAR VAL change
     observe.onCarValChange(CarState.BUSY)
-    assert(!observe.applyState().isIdle())
+    assert(!observe.applyState().isIdle)
     // Another VAL change
     observe.onApplyValChange(4171)
-    assert(!observe.applyState().isIdle())
+    assert(!observe.applyState().isIdle)
     // Observe CAR VAL change
     observe.onObserveCarValChange(CarState.PAUSED)
     // We are now idle
-    assert(observe.applyState().isIdle())
+    assert(observe.applyState().isIdle)
     // CAR CLID change
     observe.onCarClidChange(4171)
-    assert(observe.applyState().isIdle())
+    assert(observe.applyState().isIdle)
     // CAR VAL change
     observe.onCarValChange(CarState.IDLE)
-    assert(observe.applyState().isIdle())
+    assert(observe.applyState().isIdle)
 
     // Resume the observation
     observe.post()
@@ -286,49 +290,49 @@ final class ObserveStateSpec extends FunSuite with MockFactory {
     // RESUME OBSERVE
     observe.onApplyValChange(4172)
     // TODO Fix why this is idle here, it should be busy
-    assert(!observe.applyState().isIdle())
+    assert(!observe.applyState().isIdle)
     // Observe CAR VAL change
     observe.onObserveCarValChange(CarState.BUSY)
-    assert(!observe.applyState().isIdle())
+    assert(!observe.applyState().isIdle)
     // CAR CLID change
     observe.onCarClidChange(4172)
-    assert(!observe.applyState().isIdle())
+    assert(!observe.applyState().isIdle)
     // CAR VAL change
     observe.onCarValChange(CarState.BUSY)
-    assert(!observe.applyState().isIdle())
+    assert(!observe.applyState().isIdle)
     // Another VAL change
     observe.onApplyValChange(4172)
-    assert(!observe.applyState().isIdle())
+    assert(!observe.applyState().isIdle)
     // CAR CLID change
     observe.onCarClidChange(4172)
-    assert(!observe.applyState().isIdle())
+    assert(!observe.applyState().isIdle)
     // Apply goes IDLE
     observe.onCarValChange(CarState.IDLE)
-    assert(!observe.applyState().isIdle())
+    assert(!observe.applyState().isIdle)
 
     // Observe CAR VAL change
     observe.onObserveCarValChange(CarState.IDLE)
-    assert(observe.applyState().isIdle())
+    assert(observe.applyState().isIdle)
 
     // ENDOBSERVE
     // CAR CLID change
     observe.onApplyValChange(4173)
-    assert(observe.applyState().isIdle())
+    assert(observe.applyState().isIdle)
     // CAR CLID change
     observe.onCarClidChange(4173)
-    assert(observe.applyState().isIdle())
+    assert(observe.applyState().isIdle)
     // CAR VAL change
     observe.onCarValChange(CarState.BUSY)
-    assert(observe.applyState().isIdle())
+    assert(observe.applyState().isIdle)
 
     observe.onApplyValChange(4173)
-    assert(observe.applyState().isIdle())
+    assert(observe.applyState().isIdle)
     // CAR CLID change
     observe.onCarClidChange(4173)
-    assert(observe.applyState().isIdle())
+    assert(observe.applyState().isIdle)
     // CAR VAL change
     observe.onCarValChange(CarState.IDLE)
-    assert(observe.applyState().isIdle())
+    assert(observe.applyState().isIdle)
   }
 
   test("NIRI normal observation") {
@@ -355,37 +359,37 @@ final class ObserveStateSpec extends FunSuite with MockFactory {
       classOf[CarState],
       epicsService)
     // Start idle
-    assert(observe.applyState().isIdle())
+    assert(observe.applyState().isIdle)
     // Post an observe
     observe.post()
 
     // OBSERVE
     // OBSERVE goes BUSY
     observe.onObserveCarValChange(CarState.BUSY)
-    assert(!observe.applyState().isIdle())
+    assert(!observe.applyState().isIdle)
     // CAR CLID change
     observe.onCarClidChange(365)
-    assert(!observe.applyState().isIdle())
+    assert(!observe.applyState().isIdle)
     // CAR VAL change
     observe.onCarValChange(CarState.BUSY)
-    assert(!observe.applyState().isIdle())
+    assert(!observe.applyState().isIdle)
 
     // Apply VAL change
     observe.onApplyValChange(365)
-    assert(!observe.applyState().isIdle())
+    assert(!observe.applyState().isIdle)
     // CAR CLID change
     observe.onCarClidChange(365)
-    assert(!observe.applyState().isIdle())
+    assert(!observe.applyState().isIdle)
     // CAR VAL change
     observe.onCarValChange(CarState.IDLE)
-    assert(!observe.applyState().isIdle())
+    assert(!observe.applyState().isIdle)
 
     // OBSERVE goes IDLE
     // Observe CAR VAL change
     observe.onObserveCarValChange(CarState.IDLE)
     // And we are done and IDLE
     // FIXME This is not working
-    assert(observe.applyState().isIdle())
+    assert(observe.applyState().isIdle)
   }
 
   test("GMOS observation with an error case 1") {
@@ -412,7 +416,7 @@ final class ObserveStateSpec extends FunSuite with MockFactory {
       classOf[CarState],
       epicsService)
     // Start idle
-    assert(observe.applyState().isIdle())
+    assert(observe.applyState().isIdle)
 
     // Post an observe
     observe.post()
@@ -421,31 +425,31 @@ final class ObserveStateSpec extends FunSuite with MockFactory {
     // OBSERVE goes BUSY
     // VAL change
     observe.onApplyValChange(4167)
-    assert(!observe.applyState().isIdle())
+    assert(!observe.applyState().isIdle)
     // CAR CLID change
     observe.onCarClidChange(4167)
-    assert(!observe.applyState().isIdle())
+    assert(!observe.applyState().isIdle)
     // CAR VAL change
     observe.onCarValChange(CarState.BUSY)
-    assert(!observe.applyState().isIdle())
+    assert(!observe.applyState().isIdle)
     // Another VAL change
     observe.onApplyValChange(4167)
-    assert(!observe.applyState().isIdle())
+    assert(!observe.applyState().isIdle)
     // Observe CAR VAL change
     observe.onObserveCarValChange(CarState.BUSY)
-    assert(!observe.applyState().isIdle())
+    assert(!observe.applyState().isIdle)
     // CAR CLID change
     observe.onCarClidChange(4167)
-    assert(!observe.applyState().isIdle())
+    assert(!observe.applyState().isIdle)
     // Apply goes IDLE
     observe.onCarValChange(CarState.IDLE)
-    assert(!observe.applyState().isIdle())
+    assert(!observe.applyState().isIdle)
 
     // OBSERVE goes ERROR
     // Observe CAR VAL change
     observe.onObserveCarValChange(CarState.ERROR)
     // We should capture the error and go IDLE
-    assert(observe.applyState().isIdle())
+    assert(observe.applyState().isIdle)
   }
 
   test("GMOS observation with an error case 2") {
@@ -472,7 +476,7 @@ final class ObserveStateSpec extends FunSuite with MockFactory {
       classOf[CarState],
       epicsService)
     // Start idle
-    assert(observe.applyState().isIdle())
+    assert(observe.applyState().isIdle)
 
     // Post an observe
     observe.post()
@@ -481,19 +485,187 @@ final class ObserveStateSpec extends FunSuite with MockFactory {
     // OBSERVE goes BUSY
     // VAL change
     observe.onApplyValChange(4167)
-    assert(!observe.applyState().isIdle())
+    assert(!observe.applyState().isIdle)
     // CAR CLID change
     observe.onCarClidChange(4167)
-    assert(!observe.applyState().isIdle())
+    assert(!observe.applyState().isIdle)
     // CAR VAL change
     observe.onCarValChange(CarState.BUSY)
-    assert(!observe.applyState().isIdle())
+    assert(!observe.applyState().isIdle)
     // Another VAL change
     observe.onApplyValChange(4167)
-    assert(!observe.applyState().isIdle())
+    assert(!observe.applyState().isIdle)
     // Observe CAR goes directly to error
     observe.onObserveCarValChange(CarState.ERROR)
     // We should capture the error and go IDLE
-    assert(observe.applyState().isIdle())
+    assert(observe.applyState().isIdle)
   }
+
+  test("GSAOI normal observation") {
+    val context: CAJContext = mock[CAJContext]
+    (context.addContextExceptionListener _).expects(*).returns(()).repeat(4)
+    (context.addContextMessageListener _).expects(*).returns(()).repeat(4)
+    (context.pendIO _).expects(*).returns(()).repeat(1 to 6)
+    // We just return null as we don't need the channels and don't want to mock them
+    (context.createChannel(_: String)).expects("gsaoi:dc:obsapply.DIR").returns(null)
+    (context.createChannel(_: String)).expects("gsaoi:dc:obsapply.VAL").returns(null)
+    (context.createChannel(_: String)).expects("gsaoi:dc:obsapply.MESS").returns(null)
+    (context.createChannel(_: String)).expects("gsaoi:dc:observeC.CLID").returns(null)
+    (context.createChannel(_: String)).expects("gsaoi:dc:observeC.VAL").returns(null)
+    (context.createChannel(_: String)).expects("gsaoi:dc:observeC.OMSS").returns(null)
+    val epicsService = new EpicsService(context)
+    val observe = new CaSimpleObserveSenderImpl(
+      "gsaoi::observeCmd",
+      "gsaoi:dc:obsapply",
+      "gsaoi:dc:observeC",
+      "gsaoi:dc:stop",
+      "gsaoi:dc:abort",
+      "GSAOI Observe",
+      classOf[CarState],
+      epicsService)
+    // Start idle
+    assert(observe.applyState().isIdle)
+
+    // Post an observe
+    val l = observe.post()
+
+    // VAL change
+    observe.onApplyValChange(4167)
+    assert(!observe.applyState().isIdle)
+    // CAR CLID change
+    observe.onCarClidChange(4167)
+    assert(!observe.applyState().isIdle)
+    // CAR VAL change
+    observe.onCarValChange(CarState.BUSY)
+    assert(!observe.applyState().isIdle)
+    // Another VAL change
+    observe.onApplyValChange(4167)
+    assert(!observe.applyState().isIdle)
+    // CAR CLID change
+    observe.onCarClidChange(4167)
+    assert(!observe.applyState().isIdle)
+    // Apply goes IDLE
+    observe.onCarValChange(CarState.IDLE)
+    // And we are done and IDLE
+    assert(observe.applyState().isIdle)
+    l.waitDone(1, TimeUnit.SECONDS)
+    assert(l.isDone)
+
+  }
+
+  // TODO Enable the following tests after SEQNG-978 is done
+  ignore("GSAOI stopped observation") {
+    val context: CAJContext = mock[CAJContext]
+    (context.addContextExceptionListener _).expects(*).returns(()).repeat(4)
+    (context.addContextMessageListener _).expects(*).returns(()).repeat(4)
+    (context.pendIO _).expects(*).returns(()).repeat(1 to 6)
+    // We just return null as we don't need the channels and don't want to mock them
+    (context.createChannel(_: String)).expects("gsaoi:dc:obsapply.DIR").returns(null)
+    (context.createChannel(_: String)).expects("gsaoi:dc:obsapply.VAL").returns(null)
+    (context.createChannel(_: String)).expects("gsaoi:dc:obsapply.MESS").returns(null)
+    (context.createChannel(_: String)).expects("gsaoi:dc:observeC.CLID").returns(null)
+    (context.createChannel(_: String)).expects("gsaoi:dc:observeC.VAL").returns(null)
+    (context.createChannel(_: String)).expects("gsaoi:dc:observeC.OMSS").returns(null)
+    val epicsService = new EpicsService(context)
+    val observe = new CaSimpleObserveSenderImpl(
+      "gsaoi::observeCmd",
+      "gsaoi:dc:obsapply",
+      "gsaoi:dc:observeC",
+      "gsaoi:dc:stop",
+      "gsaoi:dc:abort",
+      "GSAOI Observe",
+      classOf[CarState],
+      epicsService)
+    // Start idle
+    assert(observe.applyState().isIdle)
+
+    // Post an observe
+    val l = observe.post()
+
+    // VAL change
+    observe.onApplyValChange(4167)
+    assert(!observe.applyState().isIdle)
+    // CAR CLID change
+    observe.onCarClidChange(4167)
+    assert(!observe.applyState().isIdle)
+    // CAR VAL change
+    observe.onCarValChange(CarState.BUSY)
+    assert(!observe.applyState().isIdle)
+    // Another VAL change
+    observe.onApplyValChange(4167)
+    assert(!observe.applyState().isIdle)
+    // CAR CLID change
+    observe.onCarClidChange(4167)
+    assert(!observe.applyState().isIdle)
+    observe.onStopMarkChange(1.toShort)
+    assert(!observe.applyState().isIdle)
+    observe.onStopMarkChange(2.toShort)
+    assert(!observe.applyState().isIdle)
+    observe.onStopMarkChange(0.toShort)
+    assert(!observe.applyState().isIdle)
+    // Apply goes IDLE
+    observe.onCarValChange(CarState.IDLE)
+    // And we are done and IDLE
+    assert(observe.applyState().isIdle)
+    l.waitDone(1, TimeUnit.SECONDS)
+    assert(l.error.isInstanceOf[CaObserveStopped])
+  }
+
+  ignore("GSAOI aborted observation") {
+    val context: CAJContext = mock[CAJContext]
+    (context.addContextExceptionListener _).expects(*).returns(()).repeat(4)
+    (context.addContextMessageListener _).expects(*).returns(()).repeat(4)
+    (context.pendIO _).expects(*).returns(()).repeat(1 to 6)
+    // We just return null as we don't need the channels and don't want to mock them
+    (context.createChannel(_: String)).expects("gsaoi:dc:obsapply.DIR").returns(null)
+    (context.createChannel(_: String)).expects("gsaoi:dc:obsapply.VAL").returns(null)
+    (context.createChannel(_: String)).expects("gsaoi:dc:obsapply.MESS").returns(null)
+    (context.createChannel(_: String)).expects("gsaoi:dc:observeC.CLID").returns(null)
+    (context.createChannel(_: String)).expects("gsaoi:dc:observeC.VAL").returns(null)
+    (context.createChannel(_: String)).expects("gsaoi:dc:observeC.OMSS").returns(null)
+    val epicsService = new EpicsService(context)
+    val observe = new CaSimpleObserveSenderImpl(
+      "gsaoi::observeCmd",
+      "gsaoi:dc:obsapply",
+      "gsaoi:dc:observeC",
+      "gsaoi:dc:stop",
+      "gsaoi:dc:abort",
+      "GSAOI Observe",
+      classOf[CarState],
+      epicsService)
+    // Start idle
+    assert(observe.applyState().isIdle)
+
+    // Post an observe
+    val l = observe.post()
+
+    // VAL change
+    observe.onApplyValChange(4167)
+    assert(!observe.applyState().isIdle)
+    // CAR CLID change
+    observe.onCarClidChange(4167)
+    assert(!observe.applyState().isIdle)
+    // CAR VAL change
+    observe.onCarValChange(CarState.BUSY)
+    assert(!observe.applyState().isIdle)
+    // Another VAL change
+    observe.onApplyValChange(4167)
+    assert(!observe.applyState().isIdle)
+    // CAR CLID change
+    observe.onCarClidChange(4167)
+    assert(!observe.applyState().isIdle)
+    observe.onAbortMarkChange(1.toShort)
+    assert(!observe.applyState().isIdle)
+    observe.onAbortMarkChange(2.toShort)
+    assert(!observe.applyState().isIdle)
+    observe.onAbortMarkChange(0.toShort)
+    assert(!observe.applyState().isIdle)
+    // Apply goes IDLE
+    observe.onCarValChange(CarState.IDLE)
+    // And we are done and IDLE
+    assert(observe.applyState().isIdle)
+    l.waitDone(1, TimeUnit.SECONDS)
+    assert(l.error.isInstanceOf[CaObserveAborted])
+  }
+
 }

@@ -40,11 +40,11 @@ public final class CaService {
 
     private static final String EPICS_CA_ADDR_LIST = "EPICS_CA_ADDR_LIST";
     private EpicsService epicsService;
-    private final Map<String, CaStatusAcceptorImpl> statusAcceptors;
-    private final Map<String, CaApplySenderImpl> applySenders;
-    private final Map<String, CaObserveSenderImpl> observeSenders;
-    private final Map<String, CaCommandSenderImpl> commandSenders;
-    private final Map<String, CaTaskControlImpl> taskControlSenders;
+    private final Map<String, StatusAcceptorWithResource> statusAcceptors;
+    private final Map<String, ApplySenderWithResource> applySenders;
+    private final Map<String, ApplySenderWithResource> observeSenders;
+    private final Map<String, CommandSenderWithResource> commandSenders;
+    private final Map<String, TaskControlWithResource> taskControlSenders;
     static private String addrList = "";
     static private Duration ioTimeout = Duration.ofSeconds(1);
     static private CaService theInstance;
@@ -114,15 +114,15 @@ public final class CaService {
     public void unbind() {
         assert (epicsService != null);
 
-        statusAcceptors.values().forEach(CaStatusAcceptorImpl::unbind);
+        statusAcceptors.values().forEach(CaResource::unbind);
 
-        applySenders.values().forEach(CaApplySenderImpl::unbind);
+        applySenders.values().forEach(CaResource::unbind);
 
-        observeSenders.values().forEach(CaObserveSenderImpl::unbind);
+        observeSenders.values().forEach(CaResource::unbind);
 
-        commandSenders.values().forEach(CaCommandSenderImpl::unbind);
+        commandSenders.values().forEach(CaResource::unbind);
 
-        taskControlSenders.values().forEach(CaTaskControlImpl::unbind);
+        taskControlSenders.values().forEach(CaResource::unbind);
 
         epicsService.stopService();
         epicsService = null;
@@ -140,13 +140,14 @@ public final class CaService {
      * @return the status acceptor.
      */
     public CaStatusAcceptor createStatusAcceptor(String name, String description) {
-        CaStatusAcceptorImpl sa = statusAcceptors.get(name);
-        if (sa == null) {
-            sa = new CaStatusAcceptorImpl(name, description, epicsService);
-            statusAcceptors.put(name, sa);
+        CaStatusAcceptor a = statusAcceptors.get(name);
+        if (a == null) {
+            StatusAcceptorWithResource b = new CaStatusAcceptorImpl(name, description, epicsService);
+            statusAcceptors.put(name, b);
+            return b;
+        } else {
+            return a;
         }
-
-        return sa;
     }
 
     public CaStatusAcceptor createStatusAcceptor(String name) {
@@ -178,22 +179,26 @@ public final class CaService {
      *            optional description for the apply sender.
      * @return the apply sender.
      * @throws CAException
+     *            Error in the Channel Access library.
      */
     public CaApplySender createApplySender(String name, String applyRecord,
             String carRecord, Boolean gem5, String description) throws CAException {
-        CaApplySenderImpl apply = applySenders.get(name);
-        if (apply == null) {
+        CaApplySender a = applySenders.get(name);
+        if (a == null) {
+            ApplySenderWithResource b;
             if(gem5) {
-                apply = new CaApplySenderImpl<>(name, applyRecord, carRecord,
+                b = new CaApplySenderImpl<>(name, applyRecord, carRecord,
                         description, CarStateGEM5.class, epicsService);
             }
             else {
-                apply = new CaApplySenderImpl<>(name, applyRecord, carRecord,
+                b = new CaApplySenderImpl<>(name, applyRecord, carRecord,
                         description, CarState.class, epicsService);
             }
-            applySenders.put(name, apply);
+            applySenders.put(name, b);
+            return b;
+        } else {
+            return a;
         }
-        return apply;
     }
 
     public CaApplySender createApplySender(String name, String applyRecord,
@@ -211,31 +216,85 @@ public final class CaService {
      *            the name of the EPICS apply record.
      * @param carRecord
      *            the name of the EPICS CAR record associated with the apply.
+     * @param observeCarRecord
+     *            the name of the EPICS CAR record for the observe state.
+     * @param gem5
+     *            CAR record uses GEM5 definition.
+     * @param stopCmdRecord
+     *            the name of the EPICS CAD for the stop command.
+     * @param abortCmdRecord
+     *            the name of the EPICS CAD for the abort command.
      * @param description
      *            optional description for the apply sender.
      * @return the apply sender.
      * @throws CAException
+     *            Error in the Channel Access library.
      */
     public CaApplySender createObserveSender(String name, String applyRecord,
             String carRecord, String observeCarRecord, Boolean gem5, String stopCmdRecord, String abortCmdRecord, String description) throws CAException {
-        CaObserveSenderImpl observe = observeSenders.get(name);
-        if (observe == null) {
+        CaApplySender a = observeSenders.get(name);
+        if (a == null) {
+            ApplySenderWithResource b;
             if(gem5) {
-                observe = new CaObserveSenderImpl(name, applyRecord, carRecord, observeCarRecord, stopCmdRecord, abortCmdRecord,
+                b = new CaObserveSenderImpl<CarStateGEM5>(name, applyRecord, carRecord, observeCarRecord, stopCmdRecord, abortCmdRecord,
                         description, CarStateGEM5.class, epicsService);
             }
             else  {
-                observe = new CaObserveSenderImpl(name, applyRecord, carRecord, observeCarRecord, stopCmdRecord, abortCmdRecord,
+                b = new CaObserveSenderImpl<CarState>(name, applyRecord, carRecord, observeCarRecord, stopCmdRecord, abortCmdRecord,
                         description, CarState.class, epicsService);
             }
-            observeSenders.put(name, observe);
+            observeSenders.put(name, b);
+            return b;
+        } else {
+            return a;
         }
-        return observe;
     }
 
     public CaApplySender createObserveSender(String name, String applyRecord,
             String carRecord, String observeCarRecord, Boolean gem5) throws CAException {
         return createObserveSender(name, applyRecord, carRecord, observeCarRecord, gem5, null, null, null);
+    }
+
+    /**
+     * Creates an apply sender specialized for Observe commands. If the apply sender already exists, it returns the
+     * existing object.
+     *
+     * @param name
+     *            the name of the new apply sender.
+     * @param applyRecord
+     *            the name of the EPICS apply record.
+     * @param carRecord
+     *            the name of the EPICS observe CAR record.
+     * @param gem5
+     *            CAR record uses GEM5 definition.
+     * @param stopCmdRecord
+     *            the name of the EPICS CAD for the stop command.
+     * @param abortCmdRecord
+     *            the name of the EPICS CAD for the abort command.
+     * @param description
+     *            optional description for the apply sender.
+     * @return the apply sender.
+     * @throws CAException
+     *            Error in the Channel Access library.
+     */
+    public CaApplySender createObserveSender(String name, String applyRecord,
+                                             String carRecord, Boolean gem5, String stopCmdRecord, String abortCmdRecord, String description) throws CAException {
+        CaApplySender a = observeSenders.get(name);
+        if (a == null) {
+            ApplySenderWithResource b;
+            if(gem5) {
+                b = new CaSimpleObserveSenderImpl<CarStateGEM5>(name, applyRecord, carRecord, stopCmdRecord, abortCmdRecord,
+                        description, CarStateGEM5.class, epicsService);
+            }
+            else  {
+                b = new CaSimpleObserveSenderImpl<CarState>(name, applyRecord, carRecord, stopCmdRecord, abortCmdRecord,
+                        description, CarState.class, epicsService);
+            }
+            observeSenders.put(name, b);
+            return b;
+        } else {
+            return a;
+        }
     }
 
     /**
@@ -266,13 +325,15 @@ public final class CaService {
      */
     public CaCommandSender createCommandSender(String name,
             CaApplySender apply, String cadName, String description) {
-        CaCommandSenderImpl cs = commandSenders.get(name);
-        if (cs == null) {
-            cs = new CaCommandSenderImpl(name, apply, description,
+        CaCommandSender a = commandSenders.get(name);
+        if (a == null) {
+            CommandSenderWithResource b = new CaCommandSenderImpl(name, apply, description,
                     epicsService, cadName);
-            commandSenders.put(name, cs);
+            commandSenders.put(name, b);
+            return b;
+        } else {
+            return a;
         }
-        return cs;
     }
 
     public CaCommandSender createCommandSender(String name,
@@ -325,7 +386,7 @@ public final class CaService {
      * @param name the name of the command sender to destroy.
      */
     public void destroyCommandSender(String name) {
-        CaCommandSenderImpl cs = commandSenders.remove(name);
+        CaResource cs = commandSenders.remove(name);
         if (cs != null) {
             cs.unbind();
         }
@@ -338,7 +399,7 @@ public final class CaService {
      * @param name the name of the apply sender to destroy.
      */
     public void destroyApplySender(String name) {
-        CaApplySenderImpl apply = applySenders.remove(name);
+        CaResource apply = applySenders.remove(name);
         if (apply != null) {
             apply.unbind();
         }
@@ -351,7 +412,7 @@ public final class CaService {
      * @param name the name of the status acceptor to destroy.
      */
     public void destroyStatusAcceptor(String name) {
-        CaStatusAcceptorImpl sa = statusAcceptors.remove(name);
+        CaResource sa = statusAcceptors.remove(name);
         if (sa != null) {
             sa.unbind();
         }
@@ -363,16 +424,18 @@ public final class CaService {
      * @param recordName the name of the EPICS record
      * @param description the description of the record.
      * @return the TaskControlSender
-     * @throws CAException
+     * @throws CAException Error in the Channel Access library.
      */
     public CaTaskControl createTaskControlSender(String name, String recordName, String description)
             throws CAException {
-        CaTaskControlImpl t = taskControlSenders.get(name);
-        if(t == null) {
-            t = new CaTaskControlImpl(name, recordName, description, epicsService);
-            taskControlSenders.put(name, t);
+        CaTaskControl a = taskControlSenders.get(name);
+        if(a == null) {
+            TaskControlWithResource b = new CaTaskControlImpl(name, recordName, description, epicsService);
+            taskControlSenders.put(name, b);
+            return b;
+        } else {
+            return a;
         }
-        return t;
     }
 
     /**
@@ -389,7 +452,7 @@ public final class CaService {
      * @param name the name of the <code>TaskControlSender</code>
      */
     public void destroyTaskControlSender(String name) {
-        CaTaskControlImpl t = taskControlSenders.remove(name);
+        CaResource t = taskControlSenders.remove(name);
         if(t != null) {
             t.unbind();
         }
