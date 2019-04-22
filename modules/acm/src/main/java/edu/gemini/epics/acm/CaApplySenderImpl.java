@@ -13,7 +13,8 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import edu.gemini.epics.EpicsService;
+import edu.gemini.epics.EpicsReader;
+import edu.gemini.epics.EpicsWriter;
 import edu.gemini.epics.api.ChannelListener;
 import gov.aps.jca.CAException;
 import gov.aps.jca.TimeoutException;
@@ -29,7 +30,7 @@ final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements Ap
     private final CaApplyRecord apply;
     private final CaCarRecord<C> car;
 
-    private final Boolean trace = false;
+    private final Boolean trace = true;
 
     private long timeout;
     private TimeUnit timeoutUnit;
@@ -70,13 +71,14 @@ final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements Ap
         final String carRecord,
         final String description,
         final Class<C> carClass,
-        final EpicsService epicsService) throws CAException {
+        final EpicsReader epicsReader,
+        final EpicsWriter epicsWriter) throws CAException {
         super();
         this.name = name;
         this.description = description;
         this.currentState = IdleState;
 
-        apply = new CaApplyRecord(applyRecord, epicsService);
+        apply = new CaApplyRecord(applyRecord, epicsReader, epicsWriter);
         apply.registerValListener(valListener = new ChannelListener<Integer>() {
             @Override
             public void valueChanged(String arg0, List<Integer> newVals) {
@@ -86,7 +88,7 @@ final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements Ap
             }
         });
 
-        car = new CaCarRecord<C>(carRecord, carClass, epicsService);
+        car = new CaCarRecord<C>(carRecord, carClass, epicsReader);
         car.registerClidListener(carClidListener = new ChannelListener<Integer>() {
             @Override
             public void valueChanged(String arg0, List<Integer> newVals) {

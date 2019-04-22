@@ -6,7 +6,7 @@
 package edu.gemini.epics.acm;
 
 import edu.gemini.epics.EpicsReader;
-import edu.gemini.epics.EpicsService;
+import edu.gemini.epics.EpicsWriter;
 import edu.gemini.epics.ReadOnlyClientEpicsChannel;
 import edu.gemini.epics.api.ChannelListener;
 import edu.gemini.epics.impl.EpicsReaderImpl;
@@ -61,15 +61,14 @@ public class CaSimpleObserveSenderImpl<C extends Enum<C> & CarStateGeneric> impl
             final String abortCmd,
             final String description,
             final Class<C> carClass,
-            final EpicsService epicsService) throws CAException {
+            final EpicsReader epicsReader,
+            final EpicsWriter epicsWriter) throws CAException {
         super();
         this.name = name;
         this.description = description;
         this.currentState = idleState;
 
-        EpicsReader epicsReader = new EpicsReaderImpl(epicsService);
-
-        apply = new CaApplyRecord(applyRecord, epicsService);
+        apply = new CaApplyRecord(applyRecord, epicsReader, epicsWriter);
         // apply.VAL int > 0
         apply.registerValListener(valListener = (String arg0, List<Integer> newVals) -> {
             if (newVals != null && !newVals.isEmpty()) {
@@ -77,7 +76,7 @@ public class CaSimpleObserveSenderImpl<C extends Enum<C> & CarStateGeneric> impl
             }
         });
 
-        car = new CaCarRecord<C>(carRecord, carClass, epicsService);
+        car = new CaCarRecord<C>(carRecord, carClass, epicsReader);
         // applyC.CLID int > 0
         car.registerClidListener(carClidListener = (String arg0, List<Integer> newVals) -> {
             if (newVals != null && !newVals.isEmpty()) {

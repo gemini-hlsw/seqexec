@@ -6,10 +6,9 @@
 package edu.gemini.epics.acm;
 
 import edu.gemini.epics.EpicsReader;
-import edu.gemini.epics.EpicsService;
+import edu.gemini.epics.EpicsWriter;
 import edu.gemini.epics.ReadOnlyClientEpicsChannel;
 import edu.gemini.epics.api.ChannelListener;
-import edu.gemini.epics.impl.EpicsReaderImpl;
 import gov.aps.jca.CAException;
 import gov.aps.jca.TimeoutException;
 
@@ -32,7 +31,7 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
     private final String name;
     private final String description;
 
-    private EpicsReader epicsReader;
+    private final EpicsReader epicsReader;
     private final CaApplyRecord apply;
     private final CaCarRecord<C> car;
     private final CaCarRecord<C> observeCar;
@@ -42,7 +41,7 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
     private final short MRK_PRESET = 2;
     private final short MRK_IDLE = 0;
 
-    private final Boolean trace = Boolean.getBoolean("epics.observe.trace");
+    private final Boolean trace = true;//Boolean.getBoolean("epics.observe.trace");
 
     private long timeout;
     private TimeUnit timeoutUnit;
@@ -65,15 +64,16 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
         final String abortCmd,
         final String description,
         final Class<C> carClass,
-        final EpicsService epicsService) throws CAException {
+        final EpicsReader epicsReader,
+        final EpicsWriter epicsWriter) throws CAException {
         super();
         this.name = name;
         this.description = description;
         this.currentState = idleState;
 
-        epicsReader = new EpicsReaderImpl(epicsService);
+        this.epicsReader = epicsReader;
 
-        apply = new CaApplyRecord(applyRecord, epicsService);
+        apply = new CaApplyRecord(applyRecord, epicsReader, epicsWriter);
         // apply.VAL int > 0
         apply.registerValListener(valListener = (String arg0, List<Integer> newVals) -> {
             if (newVals != null && !newVals.isEmpty()) {
@@ -81,7 +81,7 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
             }
         });
 
-        car = new CaCarRecord<C>(carRecord, carClass, epicsService);
+        car = new CaCarRecord<C>(carRecord, carClass, epicsReader);
         // applyC.CLID int > 0
         car.registerClidListener(carClidListener = (String arg0, List<Integer> newVals) -> {
             if (newVals != null && !newVals.isEmpty()) {
@@ -95,7 +95,7 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
             }
         });
 
-        observeCar = new CaCarRecord<C>(observeCarRecord, carClass, epicsService);
+        observeCar = new CaCarRecord<C>(observeCarRecord, carClass, epicsReader);
         // observeC.VAL BUSY/IDLE/PAUSED
         observeCar.registerValListener(observeCarValListener = (String arg0, List<C> newVals) -> {
             if (newVals != null && !newVals.isEmpty()) {
@@ -642,6 +642,7 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
 
         @Override
         public CaObserveSenderImpl.ApplyState onApplyValChange(final Integer val) {
+          System.out.println("dle");
             return this;
         }
 

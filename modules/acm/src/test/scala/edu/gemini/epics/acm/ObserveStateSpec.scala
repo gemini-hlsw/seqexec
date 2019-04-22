@@ -5,11 +5,22 @@ package edu.gemini.epics.acm
 
 import java.util.concurrent.TimeUnit
 
-import com.cosylab.epics.caj.CAJContext
-import edu.gemini.epics.EpicsService
+// import com.cosylab.epics.caj.CAJContext
+// import edu.gemini.epics.EpicsService
+// import com.cosylab.epics.caj.CAJContext
+// import com.cosylab.epics.caj.CAJChannel
+// import edu.gemini.epics.EpicsService
+import edu.gemini.epics.EpicsReader
+import edu.gemini.epics.EpicsWriter
+import edu.gemini.epics.api.ChannelListener
+import edu.gemini.epics.ReadWriteClientEpicsChannel
+// import edu.gemini.epics.impl.ReadWriteEpicsEnumChannel
 import java.util.concurrent.atomic.AtomicInteger
 
 import org.scalamock.scalatest.MockFactory
+// import org.scalamock.function.MockFunction1
+import java.lang.{Integer => JInteger}
+import java.lang.{Short => JShort}
 import org.scalatest._
 
 /**
@@ -21,22 +32,24 @@ import org.scalatest._
   * care about the state of the channels. Instead we want to only observe
   * the state transitions
   */
-@SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements", "org.wartremover.warts.PublicInference", "org.wartremover.warts.IsInstanceOf"))
+@SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements", "org.wartremover.warts.PublicInference", "org.wartremover.warts.IsInstanceOf", "org.wartremover.warts.AsInstanceOf"))
 final class ObserveStateSpec extends FunSuite with MockFactory {
 
   test("NIFS normal observation") {
-    val context: CAJContext = mock[CAJContext]
-    (context.addContextExceptionListener _).expects(*).returns(()).repeat(5)
-    (context.addContextMessageListener _).expects(*).returns(()).repeat(5)
-    (context.pendIO _).expects(*).returns(()).repeat(1 to 6)
-    // We just return null as we don't need the channels and don't want to mock them
-    (context.createChannel(_: String)).expects("nifs:dc:nifsApply.DIR").returns(null)
-    (context.createChannel(_: String)).expects("nifs:dc:nifsApply.VAL").returns(null)
-    (context.createChannel(_: String)).expects("nifs:dc:nifsApply.MESS").returns(null)
-    (context.createChannel(_: String)).expects("nifs:dc:applyC.CLID").returns(null)
-    (context.createChannel(_: String)).expects("nifs:dc:applyC.VAL").returns(null)
-    (context.createChannel(_: String)).expects("nifs:dc:applyC.OMSS").returns(null)
-    val epicsService = new EpicsService(context)
+    val epicsReader = mock[EpicsReader]
+    val epicsWriter = mock[EpicsWriter]
+
+    (epicsWriter.getEnumChannel _).expects("nifs:dc:nifsApply.DIR", *).returns(dirChannel)
+    (epicsReader.getIntegerChannel _).expects("nifs:dc:nifsApply.VAL").returns(intChannelS)
+    (epicsReader.getStringChannel _).expects("nifs:dc:nifsApply.MESS").returns(strChannel)
+    (epicsReader.getIntegerChannel _).expects("nifs:dc:applyC.CLID").returns(intChannelS)
+    (epicsReader.getEnumChannel _).expects("nifs:dc:applyC.VAL", *).returns(carChannel)
+    (epicsReader.getStringChannel _).expects("nifs:dc:applyC.OMSS").returns(strChannel)
+    (epicsReader.getIntegerChannel _).expects("nifs:dc:observeC.CLID").returns(intChannel)
+    (epicsReader.getEnumChannel _).expects("nifs:dc:observeC.VAL", *).returns(carChannel)
+    (epicsReader.getStringChannel _).expects("nifs:dc:observeC.OMSS").returns(strChannel)
+    (epicsReader.getShortChannel _).expects("nifs:dc:stop.MARK").returns(shortChannel)
+    (epicsReader.getShortChannel _).expects("nifs:dc:abort.MARK").returns(shortChannel)
     val observe = new CaObserveSenderImpl(
       "nifs::observeCmd",
       "nifs:dc:nifsApply",
@@ -46,7 +59,8 @@ final class ObserveStateSpec extends FunSuite with MockFactory {
       "nifs:dc:abort",
       "NIFS Observe",
       classOf[CarState],
-      epicsService)
+      epicsReader,
+      epicsWriter)
     // Start idle
     assert(observe.applyState().isIdle)
 
@@ -96,26 +110,30 @@ final class ObserveStateSpec extends FunSuite with MockFactory {
     // CAR VAL change
     observe.onCarValChange(CarState.IDLE)
     assert(observe.applyState().isIdle)
+    l.waitDone()
+    assert(l.isDone)
 
-    // TODO fix these when the channels are correctly mocked
-    // assert(observeErrorCount.get() === 1)
-    // assert(observePauseCount.get() === 0)
-    // assert(observeSuccessCount.get() === 1)
+    // Check that listener was called
+    assert(observeErrorCount.get() === 0)
+    assert(observePauseCount.get() === 0)
+    assert(observeSuccessCount.get() === 1)
   }
 
   test("GMOS normal observation") {
-    val context: CAJContext = mock[CAJContext]
-    (context.addContextExceptionListener _).expects(*).returns(()).repeat(5)
-    (context.addContextMessageListener _).expects(*).returns(()).repeat(5)
-    (context.pendIO _).expects(*).returns(()).repeat(1 to 6)
-    // We just return null as we don't need the channels and don't want to mock them
-    (context.createChannel(_: String)).expects("gm:apply.DIR").returns(null)
-    (context.createChannel(_: String)).expects("gm:apply.VAL").returns(null)
-    (context.createChannel(_: String)).expects("gm:apply.MESS").returns(null)
-    (context.createChannel(_: String)).expects("gm:applyC.CLID").returns(null)
-    (context.createChannel(_: String)).expects("gm:applyC.VAL").returns(null)
-    (context.createChannel(_: String)).expects("gm:applyC.OMSS").returns(null)
-    val epicsService = new EpicsService(context)
+    val epicsReader = mock[EpicsReader]
+    val epicsWriter = mock[EpicsWriter]
+
+    (epicsWriter.getEnumChannel _).expects("gm:apply.DIR", *).returns(dirChannel)
+    (epicsReader.getIntegerChannel _).expects("gm:apply.VAL").returns(intChannelS)
+    (epicsReader.getStringChannel _).expects("gm:apply.MESS").returns(strChannel)
+    (epicsReader.getIntegerChannel _).expects("gm:applyC.CLID").returns(intChannelS)
+    (epicsReader.getEnumChannel _).expects("gm:applyC.VAL", *).returns(carChannel)
+    (epicsReader.getStringChannel _).expects("gm:applyC.OMSS").returns(strChannel)
+    (epicsReader.getIntegerChannel _).expects("gm:dc:observeC.CLID").returns(intChannel)
+    (epicsReader.getEnumChannel _).expects("gm:dc:observeC.VAL", *).returns(carChannel)
+    (epicsReader.getStringChannel _).expects("gm:dc:observeC.OMSS").returns(strChannel)
+    (epicsReader.getShortChannel _).expects("gm:stop.MARK").returns(shortChannel)
+    (epicsReader.getShortChannel _).expects("gm:abort.MARK").returns(shortChannel)
     val observe = new CaObserveSenderImpl(
       "gmos::observeCmd",
       "gm:apply",
@@ -125,7 +143,8 @@ final class ObserveStateSpec extends FunSuite with MockFactory {
       "gm:abort",
       "GMOS Observe",
       classOf[CarState],
-      epicsService)
+      epicsReader,
+      epicsWriter)
     // Start idle
     assert(observe.applyState().isIdle)
 
@@ -201,25 +220,28 @@ final class ObserveStateSpec extends FunSuite with MockFactory {
     observe.onCarValChange(CarState.IDLE)
     assert(observe.applyState().isIdle)
 
-    // TODO fix these when the channels are correctly mocked
-    // assert(observeErrorCount.get() === 0)
-    // assert(observePauseCount.get() === 0)
-    // assert(observeSuccessCount.get() === 1)
+    // Check that listener was called
+    assert(observeErrorCount.get() === 0)
+    assert(observePauseCount.get() === 0)
+    assert(observeSuccessCount.get() === 1)
   }
 
   test("GMOS paused observation") {
-    val context: CAJContext = mock[CAJContext]
-    (context.addContextExceptionListener _).expects(*).returns(()).repeat(5)
-    (context.addContextMessageListener _).expects(*).returns(()).repeat(5)
-    (context.pendIO _).expects(*).returns(()).repeat(1 to 6)
-    // We just return null as we don't need the channels and don't want to mock them
-    (context.createChannel(_: String)).expects("gm:apply.DIR").returns(null)
-    (context.createChannel(_: String)).expects("gm:apply.VAL").returns(null)
-    (context.createChannel(_: String)).expects("gm:apply.MESS").returns(null)
-    (context.createChannel(_: String)).expects("gm:applyC.CLID").returns(null)
-    (context.createChannel(_: String)).expects("gm:applyC.VAL").returns(null)
-    (context.createChannel(_: String)).expects("gm:applyC.OMSS").returns(null)
-    val epicsService = new EpicsService(context)
+    val epicsReader = mock[EpicsReader]
+    val epicsWriter = mock[EpicsWriter]
+
+    (epicsWriter.getEnumChannel _).expects("gm:apply.DIR", *).returns(dirChannelPause)
+    (epicsReader.getIntegerChannel _).expects("gm:apply.VAL").returns(intChannelS)
+    (epicsReader.getStringChannel _).expects("gm:apply.MESS").returns(strChannel)
+    (epicsReader.getIntegerChannel _).expects("gm:applyC.CLID").returns(intChannelS)
+    (epicsReader.getEnumChannel _).expects("gm:applyC.VAL", *).returns(carChannel)
+    (epicsReader.getStringChannel _).expects("gm:applyC.OMSS").returns(strChannel)
+    (epicsReader.getIntegerChannel _).expects("gm:dc:observeC.CLID").returns(intChannel)
+    (epicsReader.getEnumChannel _).expects("gm:dc:observeC.VAL", *).returns(carChannel)
+    (epicsReader.getStringChannel _).expects("gm:dc:observeC.OMSS").returns(strChannel)
+    (epicsReader.getShortChannel _).expects("gm:stop.MARK").returns(shortChannel)
+    (epicsReader.getShortChannel _).expects("gm:abort.MARK").returns(shortChannel)
+
     val observe = new CaObserveSenderImpl(
       "gmos::observeCmd",
       "gm:apply",
@@ -229,13 +251,30 @@ final class ObserveStateSpec extends FunSuite with MockFactory {
       "gm:abort",
       "GMOS Observe",
       classOf[CarState],
-      epicsService)
+      epicsReader,
+      epicsWriter)
     // Start idle
     assert(observe.applyState().isIdle)
+    val observeErrorCount = new AtomicInteger()
+    val observePauseCount = new AtomicInteger()
+    val observeSuccessCount = new AtomicInteger()
 
     // Post an observe
-    // TODO mock the epics channel to test the listener
-    observe.post()
+    val l = observe.post()
+    l.setCallback(new CaCommandListener() {
+      def onFailure(ex: Exception): Unit = {
+        observeErrorCount.incrementAndGet()
+        ()
+      }
+      def onPause(): Unit = {
+        observePauseCount.incrementAndGet()
+        ()
+      }
+      def onSuccess(): Unit = {
+        observeSuccessCount.incrementAndGet()
+        ()
+      }
+    })
 
     // OBSERVE
     // OBSERVE goes BUSY
@@ -283,9 +322,32 @@ final class ObserveStateSpec extends FunSuite with MockFactory {
     // CAR VAL change
     observe.onCarValChange(CarState.IDLE)
     assert(observe.applyState().isIdle)
+    // l.waitDone()
+    assert(!l.isDone)
+    // Check that listener was called
+    assert(observeErrorCount.get() === 0)
+    assert(observePauseCount.get() === 1)
+    assert(observeSuccessCount.get() === 0)
 
     // Resume the observation
-    observe.post()
+    val k = observe.post()
+    k.setCallback(new CaCommandListener() {
+      def onFailure(ex: Exception): Unit = {
+        observeErrorCount.incrementAndGet()
+        ()
+      }
+      def onPause(): Unit = {
+        observePauseCount.incrementAndGet()
+        ()
+      }
+      def onSuccess(): Unit = {
+        observeSuccessCount.incrementAndGet()
+        ()
+      }
+    })
+
+    // Reset pause value
+    observePauseCount.set(0)
 
     // RESUME OBSERVE
     observe.onApplyValChange(4172)
@@ -313,6 +375,8 @@ final class ObserveStateSpec extends FunSuite with MockFactory {
     // Observe CAR VAL change
     observe.onObserveCarValChange(CarState.IDLE)
     assert(observe.applyState().isIdle)
+    // k.waitDone()
+    assert(k.isDone)
 
     // ENDOBSERVE
     // CAR CLID change
@@ -333,21 +397,29 @@ final class ObserveStateSpec extends FunSuite with MockFactory {
     // CAR VAL change
     observe.onCarValChange(CarState.IDLE)
     assert(observe.applyState().isIdle)
+
+    // Check that listener was called
+    assert(observeErrorCount.get() === 0)
+    assert(observePauseCount.get() === 0)
+    assert(observeSuccessCount.get() === 1)
   }
 
   test("NIRI normal observation") {
-    val context: CAJContext = mock[CAJContext]
-    (context.addContextExceptionListener _).expects(*).returns(()).repeat(5)
-    (context.addContextMessageListener _).expects(*).returns(()).repeat(5)
-    (context.pendIO _).expects(*).returns(()).repeat(1 to 6)
-    // We just return null as we don't need the channels and don't want to mock them
-    (context.createChannel(_: String)).expects("niri:dc:apply.DIR").returns(null)
-    (context.createChannel(_: String)).expects("niri:dc:apply.VAL").returns(null)
-    (context.createChannel(_: String)).expects("niri:dc:apply.MESS").returns(null)
-    (context.createChannel(_: String)).expects("niri:dc:applyC.CLID").returns(null)
-    (context.createChannel(_: String)).expects("niri:dc:applyC.VAL").returns(null)
-    (context.createChannel(_: String)).expects("niri:dc:applyC.OMSS").returns(null)
-    val epicsService = new EpicsService(context)
+    val epicsReader = mock[EpicsReader]
+    val epicsWriter = mock[EpicsWriter]
+
+    (epicsWriter.getEnumChannel _).expects("niri:dc:apply.DIR", *).returns(dirChannel)
+    (epicsReader.getIntegerChannel _).expects("niri:dc:apply.VAL").returns(intChannelS)
+    (epicsReader.getStringChannel _).expects("niri:dc:apply.MESS").returns(strChannel)
+    (epicsReader.getIntegerChannel _).expects("niri:dc:applyC.CLID").returns(intChannelS)
+    (epicsReader.getEnumChannel _).expects("niri:dc:applyC.VAL", *).returns(carChannel)
+    (epicsReader.getStringChannel _).expects("niri:dc:applyC.OMSS").returns(strChannel)
+    (epicsReader.getIntegerChannel _).expects("niri:dc:observeC.CLID").returns(intChannel)
+    (epicsReader.getEnumChannel _).expects("niri:dc:observeC.VAL", *).returns(carChannel)
+    (epicsReader.getStringChannel _).expects("niri:dc:observeC.OMSS").returns(strChannel)
+    (epicsReader.getShortChannel _).expects("niri:dc:stop.MARK").returns(shortChannel)
+    (epicsReader.getShortChannel _).expects("niri:dc:abort.MARK").returns(shortChannel)
+
     val observe = new CaObserveSenderImpl(
       "niri::observeCmd",
       "niri:dc:apply",
@@ -357,11 +429,30 @@ final class ObserveStateSpec extends FunSuite with MockFactory {
       "niri:dc:abort",
       "NIRI Observe",
       classOf[CarState],
-      epicsService)
+      epicsReader,
+      epicsWriter)
+
     // Start idle
     assert(observe.applyState().isIdle)
+    val observeErrorCount = new AtomicInteger()
+    val observePauseCount = new AtomicInteger()
+    val observeSuccessCount = new AtomicInteger()
     // Post an observe
-    observe.post()
+    val l = observe.post()
+    l.setCallback(new CaCommandListener() {
+      def onFailure(ex: Exception): Unit = {
+        observeErrorCount.incrementAndGet()
+        ()
+      }
+      def onPause(): Unit = {
+        observePauseCount.incrementAndGet()
+        ()
+      }
+      def onSuccess(): Unit = {
+        observeSuccessCount.incrementAndGet()
+        ()
+      }
+    })
 
     // OBSERVE
     // OBSERVE goes BUSY
@@ -388,23 +479,31 @@ final class ObserveStateSpec extends FunSuite with MockFactory {
     // Observe CAR VAL change
     observe.onObserveCarValChange(CarState.IDLE)
     // And we are done and IDLE
-    // FIXME This is not working
     assert(observe.applyState().isIdle)
+    l.waitDone()
+    assert(l.isDone)
+
+    // Check that listener was called
+    assert(observeErrorCount.get() === 0)
+    assert(observePauseCount.get() === 0)
+    assert(observeSuccessCount.get() === 1)
   }
 
   test("GMOS observation with an error case 1") {
-    val context: CAJContext = mock[CAJContext]
-    (context.addContextExceptionListener _).expects(*).returns(()).repeat(5)
-    (context.addContextMessageListener _).expects(*).returns(()).repeat(5)
-    (context.pendIO _).expects(*).returns(()).repeat(1 to 6)
-    // We just return null as we don't need the channels and don't want to mock them
-    (context.createChannel(_: String)).expects("gm:apply.DIR").returns(null)
-    (context.createChannel(_: String)).expects("gm:apply.VAL").returns(null)
-    (context.createChannel(_: String)).expects("gm:apply.MESS").returns(null)
-    (context.createChannel(_: String)).expects("gm:applyC.CLID").returns(null)
-    (context.createChannel(_: String)).expects("gm:applyC.VAL").returns(null)
-    (context.createChannel(_: String)).expects("gm:applyC.OMSS").returns(null)
-    val epicsService = new EpicsService(context)
+    val epicsReader = mock[EpicsReader]
+    val epicsWriter = mock[EpicsWriter]
+
+    (epicsWriter.getEnumChannel _).expects("gm:apply.DIR", *).returns(dirChannel)
+    (epicsReader.getIntegerChannel _).expects("gm:apply.VAL").returns(intChannelS)
+    (epicsReader.getStringChannel _).expects("gm:apply.MESS").returns(strChannel)
+    (epicsReader.getIntegerChannel _).expects("gm:applyC.CLID").returns(intChannelS)
+    (epicsReader.getEnumChannel _).expects("gm:applyC.VAL", *).returns(carChannel)
+    (epicsReader.getStringChannel _).expects("gm:applyC.OMSS").returns(strChannel)
+    (epicsReader.getIntegerChannel _).expects("gm:dc:observeC.CLID").returns(intChannel)
+    (epicsReader.getEnumChannel _).expects("gm:dc:observeC.VAL", *).returns(carChannel)
+    (epicsReader.getStringChannel _).expects("gm:dc:observeC.OMSS").returns(strChannelErr)
+    (epicsReader.getShortChannel _).expects("gm:stop.MARK").returns(shortChannel)
+    (epicsReader.getShortChannel _).expects("gm:abort.MARK").returns(shortChannel)
     val observe = new CaObserveSenderImpl(
       "gmos::observeCmd",
       "gm:apply",
@@ -414,12 +513,30 @@ final class ObserveStateSpec extends FunSuite with MockFactory {
       "gm:abort",
       "GMOS Observe",
       classOf[CarState],
-      epicsService)
+      epicsReader,
+      epicsWriter)
     // Start idle
     assert(observe.applyState().isIdle)
 
+    val observeErrorCount = new AtomicInteger()
+    val observePauseCount = new AtomicInteger()
+    val observeSuccessCount = new AtomicInteger()
     // Post an observe
-    observe.post()
+    val l = observe.post()
+    l.setCallback(new CaCommandListener() {
+      def onFailure(ex: Exception): Unit = {
+        observeErrorCount.incrementAndGet()
+        ()
+      }
+      def onPause(): Unit = {
+        observePauseCount.incrementAndGet()
+        ()
+      }
+      def onSuccess(): Unit = {
+        observeSuccessCount.incrementAndGet()
+        ()
+      }
+    })
 
     // OBSERVE
     // OBSERVE goes BUSY
@@ -450,21 +567,30 @@ final class ObserveStateSpec extends FunSuite with MockFactory {
     observe.onObserveCarValChange(CarState.ERROR)
     // We should capture the error and go IDLE
     assert(observe.applyState().isIdle)
+    l.waitDone()
+    assert(l.isDone)
+
+    // Check that listener was called
+    assert(observeErrorCount.get() === 1)
+    assert(observePauseCount.get() === 0)
+    assert(observeSuccessCount.get() === 0)
   }
 
   test("GMOS observation with an error case 2") {
-    val context: CAJContext = mock[CAJContext]
-    (context.addContextExceptionListener _).expects(*).returns(()).repeat(5)
-    (context.addContextMessageListener _).expects(*).returns(()).repeat(5)
-    (context.pendIO _).expects(*).returns(()).repeat(1 to 6)
-    // We just return null as we don't need the channels and don't want to mock them
-    (context.createChannel(_: String)).expects("gm:apply.DIR").returns(null)
-    (context.createChannel(_: String)).expects("gm:apply.VAL").returns(null)
-    (context.createChannel(_: String)).expects("gm:apply.MESS").returns(null)
-    (context.createChannel(_: String)).expects("gm:applyC.CLID").returns(null)
-    (context.createChannel(_: String)).expects("gm:applyC.VAL").returns(null)
-    (context.createChannel(_: String)).expects("gm:applyC.OMSS").returns(null)
-    val epicsService = new EpicsService(context)
+    val epicsReader = mock[EpicsReader]
+    val epicsWriter = mock[EpicsWriter]
+
+    (epicsWriter.getEnumChannel _).expects("gm:apply.DIR", *).returns(dirChannel)
+    (epicsReader.getIntegerChannel _).expects("gm:apply.VAL").returns(intChannelS)
+    (epicsReader.getStringChannel _).expects("gm:apply.MESS").returns(strChannel)
+    (epicsReader.getIntegerChannel _).expects("gm:applyC.CLID").returns(intChannelS)
+    (epicsReader.getEnumChannel _).expects("gm:applyC.VAL", *).returns(carChannel)
+    (epicsReader.getStringChannel _).expects("gm:applyC.OMSS").returns(strChannel)
+    (epicsReader.getIntegerChannel _).expects("gm:dc:observeC.CLID").returns(intChannel)
+    (epicsReader.getEnumChannel _).expects("gm:dc:observeC.VAL", *).returns(carChannel)
+    (epicsReader.getStringChannel _).expects("gm:dc:observeC.OMSS").returns(strChannelErr)
+    (epicsReader.getShortChannel _).expects("gm:stop.MARK").returns(shortChannel)
+    (epicsReader.getShortChannel _).expects("gm:abort.MARK").returns(shortChannel)
     val observe = new CaObserveSenderImpl(
       "gmos::observeCmd",
       "gm:apply",
@@ -474,12 +600,31 @@ final class ObserveStateSpec extends FunSuite with MockFactory {
       "gm:abort",
       "GMOS Observe",
       classOf[CarState],
-      epicsService)
+      epicsReader,
+      epicsWriter)
     // Start idle
     assert(observe.applyState().isIdle)
 
+    val observeErrorCount = new AtomicInteger()
+    val observePauseCount = new AtomicInteger()
+    val observeSuccessCount = new AtomicInteger()
     // Post an observe
-    observe.post()
+    val l = observe.post()
+    l.setCallback(new CaCommandListener() {
+      def onFailure(ex: Exception): Unit = {
+        observeErrorCount.incrementAndGet()
+        ()
+      }
+      def onPause(): Unit = {
+        observePauseCount.incrementAndGet()
+        ()
+      }
+      def onSuccess(): Unit = {
+        observeSuccessCount.incrementAndGet()
+        ()
+      }
+    })
+
 
     // OBSERVE
     // OBSERVE goes BUSY
@@ -499,21 +644,27 @@ final class ObserveStateSpec extends FunSuite with MockFactory {
     observe.onObserveCarValChange(CarState.ERROR)
     // We should capture the error and go IDLE
     assert(observe.applyState().isIdle)
+    l.waitDone()
+    assert(l.isDone)
+
+    // Check that listener was called
+    assert(observeErrorCount.get() === 1)
+    assert(observePauseCount.get() === 0)
+    assert(observeSuccessCount.get() === 0)
   }
 
   test("GSAOI normal observation") {
-    val context: CAJContext = mock[CAJContext]
-    (context.addContextExceptionListener _).expects(*).returns(()).repeat(4)
-    (context.addContextMessageListener _).expects(*).returns(()).repeat(4)
-    (context.pendIO _).expects(*).returns(()).repeat(1 to 6)
-    // We just return null as we don't need the channels and don't want to mock them
-    (context.createChannel(_: String)).expects("gsaoi:dc:obsapply.DIR").returns(null)
-    (context.createChannel(_: String)).expects("gsaoi:dc:obsapply.VAL").returns(null)
-    (context.createChannel(_: String)).expects("gsaoi:dc:obsapply.MESS").returns(null)
-    (context.createChannel(_: String)).expects("gsaoi:dc:observeC.CLID").returns(null)
-    (context.createChannel(_: String)).expects("gsaoi:dc:observeC.VAL").returns(null)
-    (context.createChannel(_: String)).expects("gsaoi:dc:observeC.OMSS").returns(null)
-    val epicsService = new EpicsService(context)
+    val epicsReader = mock[EpicsReader]
+    val epicsWriter = mock[EpicsWriter]
+
+    (epicsWriter.getEnumChannel _).expects("gsaoi:dc:obsapply.DIR", *).returns(dirChannel)
+    (epicsReader.getIntegerChannel _).expects("gsaoi:dc:obsapply.VAL").returns(intChannelS)
+    (epicsReader.getStringChannel _).expects("gsaoi:dc:obsapply.MESS").returns(strChannel)
+    (epicsReader.getIntegerChannel _).expects("gsaoi:dc:observeC.CLID").returns(intChannelS)
+    (epicsReader.getEnumChannel _).expects("gsaoi:dc:observeC.VAL", *).returns(carChannel)
+    (epicsReader.getStringChannel _).expects("gsaoi:dc:observeC.OMSS").returns(strChannel)
+    (epicsReader.getShortChannel _).expects("gsaoi:dc:stop.MARK").returns(shortChannel)
+    (epicsReader.getShortChannel _).expects("gsaoi:dc:abort.MARK").returns(shortChannel)
     val observe = new CaSimpleObserveSenderImpl(
       "gsaoi::observeCmd",
       "gsaoi:dc:obsapply",
@@ -522,12 +673,30 @@ final class ObserveStateSpec extends FunSuite with MockFactory {
       "gsaoi:dc:abort",
       "GSAOI Observe",
       classOf[CarState],
-      epicsService)
+      epicsReader,
+      epicsWriter)
     // Start idle
     assert(observe.applyState().isIdle)
 
+    val observeErrorCount = new AtomicInteger()
+    val observePauseCount = new AtomicInteger()
+    val observeSuccessCount = new AtomicInteger()
     // Post an observe
     val l = observe.post()
+    l.setCallback(new CaCommandListener() {
+      def onFailure(ex: Exception): Unit = {
+        observeErrorCount.incrementAndGet()
+        ()
+      }
+      def onPause(): Unit = {
+        observePauseCount.incrementAndGet()
+        ()
+      }
+      def onSuccess(): Unit = {
+        observeSuccessCount.incrementAndGet()
+        ()
+      }
+    })
 
     // VAL change
     observe.onApplyValChange(4167)
@@ -551,121 +720,291 @@ final class ObserveStateSpec extends FunSuite with MockFactory {
     l.waitDone(1, TimeUnit.SECONDS)
     assert(l.isDone)
 
+    // Check that listener was called
+    assert(observeErrorCount.get() === 0)
+    assert(observePauseCount.get() === 0)
+    assert(observeSuccessCount.get() === 1)
   }
 
-  // TODO Enable the following tests after SEQNG-978 is done
-  ignore("GSAOI stopped observation") {
-    val context: CAJContext = mock[CAJContext]
-    (context.addContextExceptionListener _).expects(*).returns(()).repeat(4)
-    (context.addContextMessageListener _).expects(*).returns(()).repeat(4)
-    (context.pendIO _).expects(*).returns(()).repeat(1 to 6)
-    // We just return null as we don't need the channels and don't want to mock them
-    (context.createChannel(_: String)).expects("gsaoi:dc:obsapply.DIR").returns(null)
-    (context.createChannel(_: String)).expects("gsaoi:dc:obsapply.VAL").returns(null)
-    (context.createChannel(_: String)).expects("gsaoi:dc:obsapply.MESS").returns(null)
-    (context.createChannel(_: String)).expects("gsaoi:dc:observeC.CLID").returns(null)
-    (context.createChannel(_: String)).expects("gsaoi:dc:observeC.VAL").returns(null)
-    (context.createChannel(_: String)).expects("gsaoi:dc:observeC.OMSS").returns(null)
-    val epicsService = new EpicsService(context)
-    val observe = new CaSimpleObserveSenderImpl(
-      "gsaoi::observeCmd",
-      "gsaoi:dc:obsapply",
-      "gsaoi:dc:observeC",
-      "gsaoi:dc:stop",
-      "gsaoi:dc:abort",
-      "GSAOI Observe",
-      classOf[CarState],
-      epicsService)
-    // Start idle
-    assert(observe.applyState().isIdle)
+  // // TODO Enable the following tests after SEQNG-978 is done
+  // test("GSAOI stopped observation") {
+  //   val context: CAJContext = mock[CAJContext]
+  //   (context.addContextExceptionListener _).expects(*).returns(()).repeat(4)
+  //   (context.addContextMessageListener _).expects(*).returns(()).repeat(4)
+  //   (context.pendIO _).expects(*).returns(()).repeat(1 to 6)
+  //   // We just return null as we don't need the channels and don't want to mock them
+  //   (context.createChannel(_: String)).expects("gsaoi:dc:obsapply.DIR").returns(null)
+  //   (context.createChannel(_: String)).expects("gsaoi:dc:obsapply.VAL").returns(null)
+  //   (context.createChannel(_: String)).expects("gsaoi:dc:obsapply.MESS").returns(null)
+  //   (context.createChannel(_: String)).expects("gsaoi:dc:observeC.CLID").returns(null)
+  //   (context.createChannel(_: String)).expects("gsaoi:dc:observeC.VAL").returns(null)
+  //   (context.createChannel(_: String)).expects("gsaoi:dc:observeC.OMSS").returns(null)
+  //   val epicsService = new EpicsService(context)
+  //   val observe = new CaSimpleObserveSenderImpl(
+  //     "gsaoi::observeCmd",
+  //     "gsaoi:dc:obsapply",
+  //     "gsaoi:dc:observeC",
+  //     "gsaoi:dc:stop",
+  //     "gsaoi:dc:abort",
+  //     "GSAOI Observe",
+  //     classOf[CarState],
+  //     epicsService)
+  //   // Start idle
+  //   assert(observe.applyState().isIdle)
+  //
+  //   // Post an observe
+  //   val l = observe.post()
+  //
+  //   // VAL change
+  //   observe.onApplyValChange(4167)
+  //   assert(!observe.applyState().isIdle)
+  //   // CAR CLID change
+  //   observe.onCarClidChange(4167)
+  //   assert(!observe.applyState().isIdle)
+  //   // CAR VAL change
+  //   observe.onCarValChange(CarState.BUSY)
+  //   assert(!observe.applyState().isIdle)
+  //   // Another VAL change
+  //   observe.onApplyValChange(4167)
+  //   assert(!observe.applyState().isIdle)
+  //   // CAR CLID change
+  //   observe.onCarClidChange(4167)
+  //   assert(!observe.applyState().isIdle)
+  //   observe.onStopMarkChange(1.toShort)
+  //   assert(!observe.applyState().isIdle)
+  //   observe.onStopMarkChange(2.toShort)
+  //   assert(!observe.applyState().isIdle)
+  //   observe.onStopMarkChange(0.toShort)
+  //   assert(!observe.applyState().isIdle)
+  //   // Apply goes IDLE
+  //   observe.onCarValChange(CarState.IDLE)
+  //   // And we are done and IDLE
+  //   assert(observe.applyState().isIdle)
+  //   l.waitDone(1, TimeUnit.SECONDS)
+  //   assert(l.error.isInstanceOf[CaObserveStopped])
+  // }
+  //
+  // test("GSAOI aborted observation") {
+  //   val context: CAJContext = mock[CAJContext]
+  //   (context.addContextExceptionListener _).expects(*).returns(()).repeat(4)
+  //   (context.addContextMessageListener _).expects(*).returns(()).repeat(4)
+  //   (context.pendIO _).expects(*).returns(()).repeat(1 to 6)
+  //   // We just return null as we don't need the channels and don't want to mock them
+  //   (context.createChannel(_: String)).expects("gsaoi:dc:obsapply.DIR").returns(null)
+  //   (context.createChannel(_: String)).expects("gsaoi:dc:obsapply.VAL").returns(null)
+  //   (context.createChannel(_: String)).expects("gsaoi:dc:obsapply.MESS").returns(null)
+  //   (context.createChannel(_: String)).expects("gsaoi:dc:observeC.CLID").returns(null)
+  //   (context.createChannel(_: String)).expects("gsaoi:dc:observeC.VAL").returns(null)
+  //   (context.createChannel(_: String)).expects("gsaoi:dc:observeC.OMSS").returns(null)
+  //   val epicsService = new EpicsService(context)
+  //   val observe = new CaSimpleObserveSenderImpl(
+  //     "gsaoi::observeCmd",
+  //     "gsaoi:dc:obsapply",
+  //     "gsaoi:dc:observeC",
+  //     "gsaoi:dc:stop",
+  //     "gsaoi:dc:abort",
+  //     "GSAOI Observe",
+  //     classOf[CarState],
+  //     epicsService)
+  //   // Start idle
+  //   assert(observe.applyState().isIdle)
+  //
+  //   // Post an observe
+  //   val l = observe.post()
+  //
+  //   // VAL change
+  //   observe.onApplyValChange(4167)
+  //   assert(!observe.applyState().isIdle)
+  //   // CAR CLID change
+  //   observe.onCarClidChange(4167)
+  //   assert(!observe.applyState().isIdle)
+  //   // CAR VAL change
+  //   observe.onCarValChange(CarState.BUSY)
+  //   assert(!observe.applyState().isIdle)
+  //   // Another VAL change
+  //   observe.onApplyValChange(4167)
+  //   assert(!observe.applyState().isIdle)
+  //   // CAR CLID change
+  //   observe.onCarClidChange(4167)
+  //   assert(!observe.applyState().isIdle)
+  //   observe.onAbortMarkChange(1.toShort)
+  //   assert(!observe.applyState().isIdle)
+  //   observe.onAbortMarkChange(2.toShort)
+  //   assert(!observe.applyState().isIdle)
+  //   observe.onAbortMarkChange(0.toShort)
+  //   assert(!observe.applyState().isIdle)
+  //   // Apply goes IDLE
+  //   observe.onCarValChange(CarState.IDLE)
+  //   // And we are done and IDLE
+  //   assert(observe.applyState().isIdle)
+  //   l.waitDone(1, TimeUnit.SECONDS)
+  //   assert(l.error.isInstanceOf[CaObserveAborted])
+  // }
 
-    // Post an observe
-    val l = observe.post()
-
-    // VAL change
-    observe.onApplyValChange(4167)
-    assert(!observe.applyState().isIdle)
-    // CAR CLID change
-    observe.onCarClidChange(4167)
-    assert(!observe.applyState().isIdle)
-    // CAR VAL change
-    observe.onCarValChange(CarState.BUSY)
-    assert(!observe.applyState().isIdle)
-    // Another VAL change
-    observe.onApplyValChange(4167)
-    assert(!observe.applyState().isIdle)
-    // CAR CLID change
-    observe.onCarClidChange(4167)
-    assert(!observe.applyState().isIdle)
-    observe.onStopMarkChange(1.toShort)
-    assert(!observe.applyState().isIdle)
-    observe.onStopMarkChange(2.toShort)
-    assert(!observe.applyState().isIdle)
-    observe.onStopMarkChange(0.toShort)
-    assert(!observe.applyState().isIdle)
-    // Apply goes IDLE
-    observe.onCarValChange(CarState.IDLE)
-    // And we are done and IDLE
-    assert(observe.applyState().isIdle)
-    l.waitDone(1, TimeUnit.SECONDS)
-    assert(l.error.isInstanceOf[CaObserveStopped])
+  def dirChannel = {
+    val m  = mock[CadDirectiveChannelMock]//(dirCAJChannel, null, 0.1)
+    // val t: MockFunction1[edu.gemini.epics.api.ChannelListener[A], Unit] = m.registerListener: edu.gemini.epics.api.ChannelListener[A] => Unit
+    // (t).expects(*)
+    (m.setValue(_: CadDirective)).expects(*)
+    // (m.registerListener(_: edu.gemini.epics.api.ChannelListener[CadDirective])).expects(*)
+    // (m.registerListener _).expects(*)
+    m
   }
-
-  ignore("GSAOI aborted observation") {
-    val context: CAJContext = mock[CAJContext]
-    (context.addContextExceptionListener _).expects(*).returns(()).repeat(4)
-    (context.addContextMessageListener _).expects(*).returns(()).repeat(4)
-    (context.pendIO _).expects(*).returns(()).repeat(1 to 6)
-    // We just return null as we don't need the channels and don't want to mock them
-    (context.createChannel(_: String)).expects("gsaoi:dc:obsapply.DIR").returns(null)
-    (context.createChannel(_: String)).expects("gsaoi:dc:obsapply.VAL").returns(null)
-    (context.createChannel(_: String)).expects("gsaoi:dc:obsapply.MESS").returns(null)
-    (context.createChannel(_: String)).expects("gsaoi:dc:observeC.CLID").returns(null)
-    (context.createChannel(_: String)).expects("gsaoi:dc:observeC.VAL").returns(null)
-    (context.createChannel(_: String)).expects("gsaoi:dc:observeC.OMSS").returns(null)
-    val epicsService = new EpicsService(context)
-    val observe = new CaSimpleObserveSenderImpl(
-      "gsaoi::observeCmd",
-      "gsaoi:dc:obsapply",
-      "gsaoi:dc:observeC",
-      "gsaoi:dc:stop",
-      "gsaoi:dc:abort",
-      "GSAOI Observe",
-      classOf[CarState],
-      epicsService)
-    // Start idle
-    assert(observe.applyState().isIdle)
-
-    // Post an observe
-    val l = observe.post()
-
-    // VAL change
-    observe.onApplyValChange(4167)
-    assert(!observe.applyState().isIdle)
-    // CAR CLID change
-    observe.onCarClidChange(4167)
-    assert(!observe.applyState().isIdle)
-    // CAR VAL change
-    observe.onCarValChange(CarState.BUSY)
-    assert(!observe.applyState().isIdle)
-    // Another VAL change
-    observe.onApplyValChange(4167)
-    assert(!observe.applyState().isIdle)
-    // CAR CLID change
-    observe.onCarClidChange(4167)
-    assert(!observe.applyState().isIdle)
-    observe.onAbortMarkChange(1.toShort)
-    assert(!observe.applyState().isIdle)
-    observe.onAbortMarkChange(2.toShort)
-    assert(!observe.applyState().isIdle)
-    observe.onAbortMarkChange(0.toShort)
-    assert(!observe.applyState().isIdle)
-    // Apply goes IDLE
-    observe.onCarValChange(CarState.IDLE)
-    // And we are done and IDLE
-    assert(observe.applyState().isIdle)
-    l.waitDone(1, TimeUnit.SECONDS)
-    assert(l.error.isInstanceOf[CaObserveAborted])
+  def dirChannelPause = {
+    val m  = mock[CadDirectiveChannelMock]//(dirCAJChannel, null, 0.1)
+    // val t: MockFunction1[edu.gemini.epics.api.ChannelListener[A], Unit] = m.registerListener: edu.gemini.epics.api.ChannelListener[A] => Unit
+    // (t).expects(*)
+    (m.setValue(_: CadDirective)).expects(*).twice()
+    // (m.registerListener(_: edu.gemini.epics.api.ChannelListener[CadDirective])).expects(*)
+    // (m.registerListener _).expects(*)
+    m
   }
+  def dirChannelNoSet = {
+    val m  = mock[CadDirectiveChannelMock]//(dirCAJChannel, null, 0.1)
+    // val t: MockFunction1[edu.gemini.epics.api.ChannelListener[A], Unit] = m.registerListener: edu.gemini.epics.api.ChannelListener[A] => Unit
+    // (t).expects(*)
+    // (m.setValue(_: CadDirective)).expects(*)
+    // (m.registerListener(_: edu.gemini.epics.api.ChannelListener[CadDirective])).expects(*)
+    // (m.registerListener _).expects(*)
+    m
+  }
+  def carChannel = {
+    val m  = mock[CarStateChannelMock]//(dirCAJChannel, null, 0.1)
+    // val t: MockFunction1[edu.gemini.epics.api.ChannelListener[A], Unit] = m.registerListener: edu.gemini.epics.api.ChannelListener[A] => Unit
+    // (t).expects(*)
+    // (m.setValue(_: CarState)).expects(*)
+    (m.registerListener(_: edu.gemini.epics.api.ChannelListener[CarState])).expects(*)
+    // (m.registerListener _).expects(*)
+    m
+  }
+  def intChannelS = {
+    val m  = mock[IntChannelMock]//(dirCAJChannel, null, 0.1)
+    // val t: MockFunction1[edu.gemini.epics.api.ChannelListener[A], Unit] = m.registerListener: edu.gemini.epics.api.ChannelListener[A] => Unit
+    // (t).expects(*)
+    // (m.setValue(_: JInteger)).expects(*)
+    (m.registerListener(_: ChannelListener[JInteger])).expects(*)
+    // (m.registerListener _).expects(*)
+    m
+  }
+  def intChannel = {
+    val m  = mock[IntChannelMock]//(dirCAJChannel, null, 0.1)
+    // val t: MockFunction1[edu.gemini.epics.api.ChannelListener[A], Unit] = m.registerListener: edu.gemini.epics.api.ChannelListener[A] => Unit
+    // (t).expects(*)
+    // (m.setValue(_: JInteger)).expects(*)
+    // (m.registerListener(_: ChannelListener[JInteger])).expects(*)
+    // (m.registerListener _).expects(*)
+    m
+  }
+  def strChannel = {
+    val m  = mock[StringChannelMock]//(dirCAJChannel, null, 0.1)
+    // val t: MockFunction1[edu.gemini.epics.api.ChannelListener[A], Unit] = m.registerListener: edu.gemini.epics.api.ChannelListener[A] => Unit
+    // (t).expects(*)
+    // (m.setValue(_: JInteger)).expects(*)
+    // (m.registerListener(_: ChannelListener[String])).expects(*)
+    // (m.registerListener _).expects(*)
+    m
+  }
+  def strChannelErr = {
+    val m  = mock[StringChannelMock]//(dirCAJChannel, null, 0.1)
+    // val t: MockFunction1[edu.gemini.epics.api.ChannelListener[A], Unit] = m.registerListener: edu.gemini.epics.api.ChannelListener[A] => Unit
+    // (t).expects(*)
+    (m.getFirst _).expects().once().returns("Error msg")
+    // (m.registerListener(_: ChannelListener[String])).expects(*)
+    // (m.registerListener _).expects(*)
+    m
+  }
+  def shortChannel = {
+    val m  = mock[ShortChannelMock]//(dirCAJChannel, null, 0.1)
+    // val t: MockFunction1[edu.gemini.epics.api.ChannelListener[A], Unit] = m.registerListener: edu.gemini.epics.api.ChannelListener[A] => Unit
+    // (t).expects(*)
+    // (m.setValue(_: JInteger)).expects(*)
+    (m.registerListener(_: ChannelListener[JShort])).expects(*)
+    // (m.registerListener _).expects(*)
+    m
+  }
+}
 
+// ScalaMock has a restriction that doesn't allow it to mock overloaded methods
+// if the include a type param of an interface.
+// This is exactly the case for `ReadWriteClientEpicsChannel[T]` and the [register|unRegister]Listener methods
+// The workaround is to create classes such as below with concrete type and mock those
+// https://github.com/paulbutcher/ScalaMock/issues/193
+class CadDirectiveChannelMock extends ReadWriteClientEpicsChannel[CadDirective] {
+  override def setValue(a: java.util.List[CadDirective]): Unit = {}
+  override def setValue(a : CadDirective): Unit = {}
+  override def getAll(): java.util.List[CadDirective] = null
+  override def getDBR(): gov.aps.jca.dbr.DBR = null
+  override def getFirst(): CadDirective = null.asInstanceOf[CadDirective]
+  override def getName(): String = null
+  override def getType(): gov.aps.jca.dbr.DBRType = null
+  override def isValid(): Boolean = true
+  override def registerListener(x$1: edu.gemini.epics.api.ChannelAlarmListener[CadDirective]): Unit = {}
+  override def registerListener(x$1: edu.gemini.epics.api.ChannelListener[CadDirective]): Unit = {}
+  override def unRegisterListener(x$1: edu.gemini.epics.api.ChannelAlarmListener[CadDirective]): Unit = {}
+  override def unRegisterListener(x$1: edu.gemini.epics.api.ChannelListener[CadDirective]): Unit = {}
+  override def destroy(): Unit = {}
+}
+
+class CarStateChannelMock extends ReadWriteClientEpicsChannel[CarState] {
+  override def setValue(a: java.util.List[CarState]): Unit = {}
+  override def setValue(a : CarState): Unit = {}
+  override def getAll(): java.util.List[CarState] = null
+  override def getDBR(): gov.aps.jca.dbr.DBR = null
+  override def getFirst(): CarState = null.asInstanceOf[CarState]
+  override def getName(): String = null
+  override def getType(): gov.aps.jca.dbr.DBRType = null
+  override def isValid(): Boolean = true
+  override def registerListener(x$1: edu.gemini.epics.api.ChannelAlarmListener[CarState]): Unit = {}
+  override def registerListener(x$1: edu.gemini.epics.api.ChannelListener[CarState]): Unit = {}
+  override def unRegisterListener(x$1: edu.gemini.epics.api.ChannelAlarmListener[CarState]): Unit = {}
+  override def unRegisterListener(x$1: edu.gemini.epics.api.ChannelListener[CarState]): Unit = {}
+  override def destroy(): Unit = {}
+}
+
+class IntChannelMock extends ReadWriteClientEpicsChannel[JInteger] {
+  override def setValue(a: java.util.List[JInteger]): Unit = {}
+  override def setValue(a : JInteger): Unit = {}
+  override def getAll(): java.util.List[JInteger] = null
+  override def getDBR(): gov.aps.jca.dbr.DBR = null
+  override def getFirst(): JInteger= null.asInstanceOf[JInteger]
+  override def getName(): String = null
+  override def getType(): gov.aps.jca.dbr.DBRType = null
+  override def isValid(): Boolean = true
+  override def registerListener(x$1: edu.gemini.epics.api.ChannelAlarmListener[JInteger]): Unit = {}
+  override def registerListener(x$1: edu.gemini.epics.api.ChannelListener[JInteger]): Unit = {}
+  override def unRegisterListener(x$1: edu.gemini.epics.api.ChannelAlarmListener[JInteger]): Unit = {}
+  override def unRegisterListener(x$1: edu.gemini.epics.api.ChannelListener[JInteger]): Unit = {}
+  override def destroy(): Unit = {}
+}
+
+class ShortChannelMock extends ReadWriteClientEpicsChannel[JShort] {
+  override def setValue(a: java.util.List[JShort]): Unit = {}
+  override def setValue(a : JShort): Unit = {}
+  override def getAll(): java.util.List[JShort] = null
+  override def getDBR(): gov.aps.jca.dbr.DBR = null
+  override def getFirst(): JShort= null.asInstanceOf[JShort]
+  override def getName(): String = null
+  override def getType(): gov.aps.jca.dbr.DBRType = null
+  override def isValid(): Boolean = true
+  override def registerListener(x$1: edu.gemini.epics.api.ChannelAlarmListener[JShort]): Unit = {}
+  override def registerListener(x$1: edu.gemini.epics.api.ChannelListener[JShort]): Unit = {}
+  override def unRegisterListener(x$1: edu.gemini.epics.api.ChannelAlarmListener[JShort]): Unit = {}
+  override def unRegisterListener(x$1: edu.gemini.epics.api.ChannelListener[JShort]): Unit = {}
+  override def destroy(): Unit = {}
+}
+
+class StringChannelMock extends ReadWriteClientEpicsChannel[String] {
+  override def setValue(a: java.util.List[String]): Unit = {}
+  override def setValue(a : String): Unit = {}
+  override def getAll(): java.util.List[String] = null
+  override def getDBR(): gov.aps.jca.dbr.DBR = null
+  override def getFirst(): String = null.asInstanceOf[String]
+  override def getName(): String = null
+  override def getType(): gov.aps.jca.dbr.DBRType = null
+  override def isValid(): Boolean = true
+  override def registerListener(x$1: edu.gemini.epics.api.ChannelAlarmListener[String]): Unit = {}
+  override def registerListener(x$1: edu.gemini.epics.api.ChannelListener[String]): Unit = {}
+  override def unRegisterListener(x$1: edu.gemini.epics.api.ChannelAlarmListener[String]): Unit = {}
+  override def unRegisterListener(x$1: edu.gemini.epics.api.ChannelListener[String]): Unit = {}
+  override def destroy(): Unit = {}
 }

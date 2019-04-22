@@ -5,6 +5,6 @@
 
 package edu.gemini.epics.acm;
 
-enum CadDirective {
+public enum CadDirective {
     MARK, CLEAR, PRESET, START, STOP
 }

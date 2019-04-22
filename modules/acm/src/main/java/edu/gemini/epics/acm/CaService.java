@@ -14,6 +14,10 @@ import java.util.concurrent.locks.ReentrantLock;
 import com.google.common.collect.ImmutableSet;
 
 import edu.gemini.epics.EpicsService;
+import edu.gemini.epics.EpicsReader;
+import edu.gemini.epics.impl.EpicsReaderImpl;
+import edu.gemini.epics.EpicsWriter;
+import edu.gemini.epics.impl.EpicsWriterImpl;
 import gov.aps.jca.CAException;
 
 /**
@@ -179,20 +183,21 @@ public final class CaService {
      *            optional description for the apply sender.
      * @return the apply sender.
      * @throws CAException
-     *            Error in the Channel Access library.
      */
     public CaApplySender createApplySender(String name, String applyRecord,
             String carRecord, Boolean gem5, String description) throws CAException {
         CaApplySender a = applySenders.get(name);
         if (a == null) {
             ApplySenderWithResource b;
+            EpicsReader epicsReader = new EpicsReaderImpl(epicsService);
+            EpicsWriter epicsWriter = new EpicsWriterImpl(epicsService);
             if(gem5) {
                 b = new CaApplySenderImpl<>(name, applyRecord, carRecord,
-                        description, CarStateGEM5.class, epicsService);
+                        description, CarStateGEM5.class, epicsReader, epicsWriter);
             }
             else {
                 b = new CaApplySenderImpl<>(name, applyRecord, carRecord,
-                        description, CarState.class, epicsService);
+                        description, CarState.class, epicsReader, epicsWriter);
             }
             applySenders.put(name, b);
             return b;
@@ -216,32 +221,25 @@ public final class CaService {
      *            the name of the EPICS apply record.
      * @param carRecord
      *            the name of the EPICS CAR record associated with the apply.
-     * @param observeCarRecord
-     *            the name of the EPICS CAR record for the observe state.
-     * @param gem5
-     *            CAR record uses GEM5 definition.
-     * @param stopCmdRecord
-     *            the name of the EPICS CAD for the stop command.
-     * @param abortCmdRecord
-     *            the name of the EPICS CAD for the abort command.
      * @param description
      *            optional description for the apply sender.
      * @return the apply sender.
      * @throws CAException
-     *            Error in the Channel Access library.
      */
     public CaApplySender createObserveSender(String name, String applyRecord,
             String carRecord, String observeCarRecord, Boolean gem5, String stopCmdRecord, String abortCmdRecord, String description) throws CAException {
         CaApplySender a = observeSenders.get(name);
         if (a == null) {
             ApplySenderWithResource b;
+            EpicsReader epicsReader = new EpicsReaderImpl(epicsService);
+            EpicsWriter epicsWriter = new EpicsWriterImpl(epicsService);
             if(gem5) {
                 b = new CaObserveSenderImpl<CarStateGEM5>(name, applyRecord, carRecord, observeCarRecord, stopCmdRecord, abortCmdRecord,
-                        description, CarStateGEM5.class, epicsService);
+                        description, CarStateGEM5.class, epicsReader, epicsWriter);
             }
             else  {
                 b = new CaObserveSenderImpl<CarState>(name, applyRecord, carRecord, observeCarRecord, stopCmdRecord, abortCmdRecord,
-                        description, CarState.class, epicsService);
+                        description, CarState.class, epicsReader, epicsWriter);
             }
             observeSenders.put(name, b);
             return b;
@@ -282,13 +280,15 @@ public final class CaService {
         CaApplySender a = observeSenders.get(name);
         if (a == null) {
             ApplySenderWithResource b;
+            EpicsReader epicsReader = new EpicsReaderImpl(epicsService);
+            EpicsWriter epicsWriter = new EpicsWriterImpl(epicsService);
             if(gem5) {
                 b = new CaSimpleObserveSenderImpl<CarStateGEM5>(name, applyRecord, carRecord, stopCmdRecord, abortCmdRecord,
-                        description, CarStateGEM5.class, epicsService);
+                        description, CarStateGEM5.class, epicsReader, epicsWriter);
             }
             else  {
                 b = new CaSimpleObserveSenderImpl<CarState>(name, applyRecord, carRecord, stopCmdRecord, abortCmdRecord,
-                        description, CarState.class, epicsService);
+                        description, CarState.class, epicsReader, epicsWriter);
             }
             observeSenders.put(name, b);
             return b;
@@ -424,7 +424,7 @@ public final class CaService {
      * @param recordName the name of the EPICS record
      * @param description the description of the record.
      * @return the TaskControlSender
-     * @throws CAException Error in the Channel Access library.
+     * @throws CAException
      */
     public CaTaskControl createTaskControlSender(String name, String recordName, String description)
             throws CAException {
