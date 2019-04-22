@@ -8,7 +8,6 @@ import cats.tests.CatsSuite
 import seqexec.model.enum.Instrument
 import seqexec.engine
 import SequenceGen._
-import seqexec.server.SeqexecServerArbitraries._
 import gem.arb.ArbObservation
 import gem.Observation
 import monocle.law.discipline.LensTests
@@ -17,7 +16,7 @@ import seqexec.engine.{Action, Actions}
 /**
   * Tests SeqexecServer Lenses
   */
-final class SeqexecServerLensesSpec extends CatsSuite with ArbObservation {
+final class SeqexecServerLensesSpec extends CatsSuite with SeqexecServerArbitraries with ArbObservation {
 
   // I tried to go down the rabbit hole with the Eqs, but it is not worth it for what they are used.
   implicit val actStateEq: Eq[Action.State] = Eq.fromUniversalEquals

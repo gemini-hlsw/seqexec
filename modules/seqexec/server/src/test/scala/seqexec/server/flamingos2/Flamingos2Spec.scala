@@ -12,9 +12,7 @@ import edu.gemini.spModel.gemini.flamingos2.Flamingos2.FPUnit
 /**
   * Tests F2 typeclasses
   */
-final class Flamingos2Spec extends CatsSuite {
-  import seqexec.server.SeqexecServerArbitraries._
-
+final class Flamingos2Spec extends CatsSuite with Flamingos2Arbitraries {
   checkAll("Eq[FPUnit]", EqTests[FPUnit].eqv)
   checkAll("Eq[FocalPlaneUnit]", EqTests[FocalPlaneUnit].eqv)
 }

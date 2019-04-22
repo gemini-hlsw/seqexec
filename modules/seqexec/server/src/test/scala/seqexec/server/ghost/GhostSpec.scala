@@ -9,8 +9,6 @@ import cats.tests.CatsSuite
 /**
   * Tests GHOST Config typeclasses
   */
-final class GhostSpec extends CatsSuite {
-  import seqexec.server.SeqexecServerArbitraries._
-
+final class GhostSpec extends CatsSuite with GhostArbitraries {
   checkAll("Eq[GHOSTConfig]", EqTests[GhostConfig].eqv)
 }

@@ -217,8 +217,7 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
     }
 
   implicit val cqtCogen: Cogen[CalibrationQueueTab] =
-    Cogen[
-      (TableState[StepsTable.TableColumn], BatchExecState, Option[Observer])]
+    Cogen[(TableState[StepsTable.TableColumn], BatchExecState, Option[Observer])]
       .contramap { x =>
         (x.tableState, x.state, x.observer)
       }
@@ -376,9 +375,7 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
       ))
 
   implicit def potCogen[A: Cogen]: Cogen[Pot[A]] =
-    Cogen[Option[Option[
-      Either[Long,
-             Either[A, Either[(A, Long), Either[Throwable, (A, Throwable)]]]]]]]
+    Cogen[Option[Option[Either[Long, Either[A, Either[(A, Long), Either[Throwable, (A, Throwable)]]]]]]]
       .contramap {
         case Empty              => None
         case Unavailable        => Some(None)
@@ -455,8 +452,7 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
     }
 
   implicit val stcfCogen: Cogen[SequenceTabContentFocus] =
-    Cogen[
-      (Boolean,
+    Cogen[(Boolean,
        Instrument,
        Observation.Id,
        TabSelected,
@@ -568,8 +564,7 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
     }
 
   implicit val sstCogen: Cogen[StepsTableFocus] =
-    Cogen[
-      (Observation.Id,
+    Cogen[(Observation.Id,
        Instrument,
        SequenceState,
        List[Step],
@@ -683,8 +678,7 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
     }
 
   implicit val seqexecPageCogen: Cogen[SeqexecPages] =
-    Cogen[Option[Option[
-      Option[Either[(Instrument, Observation.Id, StepIdDisplayed),
+    Cogen[Option[Option[Option[Either[(Instrument, Observation.Id, StepIdDisplayed),
                     Either[(Instrument, Observation.Id, StepIdDisplayed),
                            Either[(Instrument, Observation.Id, Int),
                                   (Instrument, Observation.Id, Int)]]]]]]]
@@ -848,8 +842,7 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
     }
 
   implicit val seqUIModelCogen: Cogen[SeqexecUIModel] =
-    Cogen[
-      (Pages.SeqexecPages,
+    Cogen[(Pages.SeqexecPages,
        Option[UserDetails],
        SectionVisibilityState,
        GlobalLog,

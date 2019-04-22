@@ -9,9 +9,7 @@ import cats.tests.CatsSuite
 /**
   * Tests GPI Config typeclasses
   */
-final class GpiSpec extends CatsSuite {
-  import seqexec.server.SeqexecServerArbitraries._
-
+final class GpiSpec extends CatsSuite with GpiArbitraries {
   checkAll("Eq[AOFlags]", EqTests[AOFlags].eqv)
   checkAll("Eq[ArtificialSources]", EqTests[ArtificialSources].eqv)
   checkAll("Eq[Shutters]", EqTests[Shutters].eqv)

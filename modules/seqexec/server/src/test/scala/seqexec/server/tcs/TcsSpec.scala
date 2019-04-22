@@ -11,9 +11,7 @@ import monocle.law.discipline.PrismTests
 /**
   * Tests Tcs typeclasses
   */
-final class TcsSpec extends CatsSuite {
-  import seqexec.server.SeqexecServerArbitraries._
-
+final class TcsSpec extends CatsSuite with TcsArbitraries {
   checkAll("Eq[BinaryYesNo]", EqTests[BinaryYesNo].eqv)
   checkAll("Eq[BinaryOnOff]", EqTests[BinaryOnOff].eqv)
   checkAll("Eq[CRFollow]", EqTests[CRFollow].eqv)
