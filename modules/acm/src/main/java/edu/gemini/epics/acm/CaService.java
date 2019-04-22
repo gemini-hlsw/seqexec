@@ -183,6 +183,7 @@ public final class CaService {
      *            optional description for the apply sender.
      * @return the apply sender.
      * @throws CAException
+     *            Error in the Channel Access library.
      */
     public CaApplySender createApplySender(String name, String applyRecord,
             String carRecord, Boolean gem5, String description) throws CAException {
@@ -221,10 +222,19 @@ public final class CaService {
      *            the name of the EPICS apply record.
      * @param carRecord
      *            the name of the EPICS CAR record associated with the apply.
+     * @param observeCarRecord
+     *            the name of the EPICS CAR record for the observe state.
+     * @param gem5
+     *            CAR record uses GEM5 definition.
+     * @param stopCmdRecord
+     *            the name of the EPICS CAD for the stop command.
+     * @param abortCmdRecord
+     *            the name of the EPICS CAD for the abort command.
      * @param description
      *            optional description for the apply sender.
      * @return the apply sender.
      * @throws CAException
+     *            Error in the Channel Access library.
      */
     public CaApplySender createObserveSender(String name, String applyRecord,
             String carRecord, String observeCarRecord, Boolean gem5, String stopCmdRecord, String abortCmdRecord, String description) throws CAException {
@@ -425,6 +435,7 @@ public final class CaService {
      * @param description the description of the record.
      * @return the TaskControlSender
      * @throws CAException
+     *            Error in the Channel Access library.
      */
     public CaTaskControl createTaskControlSender(String name, String recordName, String description)
             throws CAException {

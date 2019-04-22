@@ -17,6 +17,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ThreadFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,7 +42,7 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
     private final short MRK_PRESET = 2;
     private final short MRK_IDLE = 0;
 
-    private final Boolean trace = true;//Boolean.getBoolean("epics.observe.trace");
+    private final Boolean trace = Boolean.getBoolean("epics.observe.trace");
 
     private long timeout;
     private TimeUnit timeoutUnit;
@@ -54,6 +55,25 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
     private ChannelListener<Short> abortMarkListener;
     private ChannelListener<Short> stopMarkListener;
     private CaObserveSenderImpl.ApplyState currentState;
+
+    private ThreadFactory threadFactory = new ThreadFactory(){
+
+        @Override
+        public Thread newThread(Runnable r) {
+            final Thread thread = new Thread(r);
+
+            thread.setUncaughtExceptionHandler( new Thread.UncaughtExceptionHandler() {
+
+                @Override
+                public void uncaughtException(Thread t, Throwable e) {
+                    LOG.error("Uncaught exception on CaSimpleObserverSender", e);
+                }
+            });
+
+            return thread;
+        }
+
+    };
 
     public CaObserveSenderImpl(
         final String name,
@@ -141,7 +161,7 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
         }
         this.abortMark = abortMark;
 
-        executor = new ScheduledThreadPoolExecutor(2);
+        executor = new ScheduledThreadPoolExecutor(2, threadFactory);
     }
 
     @Override
@@ -209,16 +229,14 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
         if (!currentState.equals(idleState)) {
             failCommand(cm, new CaCommandInProgress());
         } else {
-            currentState = new CaObserveSenderImpl.WaitApplyPreset(cm);
-
             try {
                 apply.setDir(CadDirective.START);
+                currentState = new CaObserveSenderImpl.WaitApplyPreset(cm);
+                if (timeout > 0) {
+                    timeoutFuture = executor.schedule(() ->  CaObserveSenderImpl.this.onTimeout(), timeout, timeoutUnit);
+                }
             } catch (CAException | TimeoutException e) {
                 failCommand(cm, e);
-            }
-
-            if (timeout > 0) {
-                timeoutFuture = executor.schedule(() ->  CaObserveSenderImpl.this.onTimeout(), timeout, timeoutUnit);
             }
         }
 
@@ -642,7 +660,6 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
 
         @Override
         public CaObserveSenderImpl.ApplyState onApplyValChange(final Integer val) {
-          System.out.println("dle");
             return this;
         }
 

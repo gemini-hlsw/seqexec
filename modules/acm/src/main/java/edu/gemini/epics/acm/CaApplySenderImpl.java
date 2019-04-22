@@ -10,6 +10,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ThreadFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,6 +66,25 @@ final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements Ap
         }
     };
 
+    private ThreadFactory threadFactory = new ThreadFactory(){
+
+        @Override
+        public Thread newThread(Runnable r) {
+            final Thread thread = new Thread(r);
+
+            thread.setUncaughtExceptionHandler( new Thread.UncaughtExceptionHandler() {
+
+                @Override
+                public void uncaughtException(Thread t, Throwable e) {
+                    LOG.error("Uncaught exception on CaSimpleObserverSender", e);
+                }
+            });
+
+            return thread;
+        }
+
+    };
+
     public CaApplySenderImpl(
         final String name,
         final String applyRecord,
@@ -106,7 +126,7 @@ final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements Ap
             }
         });
 
-        executor = new ScheduledThreadPoolExecutor(2);
+        executor = new ScheduledThreadPoolExecutor(2, threadFactory);
     }
 
     @Override
