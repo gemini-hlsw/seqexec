@@ -10,7 +10,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.ThreadFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,7 +30,7 @@ final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements Ap
     private final CaApplyRecord apply;
     private final CaCarRecord<C> car;
 
-    private final Boolean trace = true;
+    private final Boolean trace = Boolean.getBoolean("epics.apply.trace");
 
     private long timeout;
     private TimeUnit timeoutUnit;
@@ -64,25 +63,6 @@ final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements Ap
         public State onTimeout() {
             return this;
         }
-    };
-
-    private ThreadFactory threadFactory = new ThreadFactory(){
-
-        @Override
-        public Thread newThread(Runnable r) {
-            final Thread thread = new Thread(r);
-
-            thread.setUncaughtExceptionHandler( new Thread.UncaughtExceptionHandler() {
-
-                @Override
-                public void uncaughtException(Thread t, Throwable e) {
-                    LOG.error("Uncaught exception on CaSimpleObserverSender", e);
-                }
-            });
-
-            return thread;
-        }
-
     };
 
     public CaApplySenderImpl(
