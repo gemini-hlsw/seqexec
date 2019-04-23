@@ -629,8 +629,21 @@ public class CaSimpleObserveSenderImpl<C extends Enum<C> & CarStateGeneric> impl
 
         @Override
         public ApplyState onCarValChange(CarStateGeneric val)  {
-            failCommand(cm, new CaObserveAborted());
-            return idleState;
+            if(val.isIdle()) {
+                failCommand(cm, new CaObserveAborted());
+                return idleState;
+            }
+            else if(val.isError()) {
+                failCommandWithCarError(cm);
+                return idleState;
+            }
+            else if(val.isPaused()) {
+                pauseCommand(cm);
+                return idleState;
+            }
+            else {
+                return this;
+            }
         }
 
         @Override
