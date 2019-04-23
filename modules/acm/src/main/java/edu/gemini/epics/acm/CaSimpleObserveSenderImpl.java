@@ -6,7 +6,7 @@
 package edu.gemini.epics.acm;
 
 import edu.gemini.epics.EpicsReader;
-import edu.gemini.epics.EpicsService;
+import edu.gemini.epics.EpicsWriter;
 import edu.gemini.epics.ReadOnlyClientEpicsChannel;
 import edu.gemini.epics.api.ChannelListener;
 import edu.gemini.epics.impl.EpicsReaderImpl;
@@ -20,6 +20,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ThreadFactory;
 
 /*
  * Class to handle observe commands in instruments were there is no CAR for the apply. In those cases, The observe CAR
@@ -40,7 +41,7 @@ public class CaSimpleObserveSenderImpl<C extends Enum<C> & CarStateGeneric> impl
     private final short MRK_PRESET = 2;
     private final short MRK_IDLE = 0;
 
-    private final Boolean trace = false;
+    private final Boolean trace = Boolean.getBoolean("epics.observe.trace");
 
     private long timeout;
     private TimeUnit timeoutUnit;
@@ -53,6 +54,25 @@ public class CaSimpleObserveSenderImpl<C extends Enum<C> & CarStateGeneric> impl
     private ChannelListener<Short> stopMarkListener;
     private CaSimpleObserveSenderImpl.ApplyState currentState;
 
+    private ThreadFactory threadFactory = new ThreadFactory(){
+
+        @Override
+        public Thread newThread(Runnable r) {
+            final Thread thread = new Thread(r);
+
+            thread.setUncaughtExceptionHandler( new Thread.UncaughtExceptionHandler() {
+
+                @Override
+                public void uncaughtException(Thread t, Throwable e) {
+                    LOG.error("Uncaught exception on CaSimpleObserverSender", e);
+                }
+            });
+
+            return thread;
+        }
+
+    };
+
     CaSimpleObserveSenderImpl(
             final String name,
             final String applyRecord,
@@ -61,15 +81,14 @@ public class CaSimpleObserveSenderImpl<C extends Enum<C> & CarStateGeneric> impl
             final String abortCmd,
             final String description,
             final Class<C> carClass,
-            final EpicsService epicsService) throws CAException {
+            final EpicsReader epicsReader,
+            final EpicsWriter epicsWriter) throws CAException {
         super();
         this.name = name;
         this.description = description;
         this.currentState = idleState;
 
-        EpicsReader epicsReader = new EpicsReaderImpl(epicsService);
-
-        apply = new CaApplyRecord(applyRecord, epicsService);
+        apply = new CaApplyRecord(applyRecord, epicsReader, epicsWriter);
         // apply.VAL int > 0
         apply.registerValListener(valListener = (String arg0, List<Integer> newVals) -> {
             if (newVals != null && !newVals.isEmpty()) {
@@ -77,7 +96,7 @@ public class CaSimpleObserveSenderImpl<C extends Enum<C> & CarStateGeneric> impl
             }
         });
 
-        car = new CaCarRecord<C>(carRecord, carClass, epicsService);
+        car = new CaCarRecord<C>(carRecord, carClass, epicsReader);
         // applyC.CLID int > 0
         car.registerClidListener(carClidListener = (String arg0, List<Integer> newVals) -> {
             if (newVals != null && !newVals.isEmpty()) {
@@ -129,7 +148,7 @@ public class CaSimpleObserveSenderImpl<C extends Enum<C> & CarStateGeneric> impl
         }
         this.abortMark = abortMark;
 
-        executor = new ScheduledThreadPoolExecutor(2);
+        executor = new ScheduledThreadPoolExecutor(2, threadFactory);
     }
 
     @Override
@@ -192,17 +211,17 @@ public class CaSimpleObserveSenderImpl<C extends Enum<C> & CarStateGeneric> impl
         if (!currentState.equals(idleState)) {
             failCommand(cm, new CaCommandInProgress());
         } else {
-            currentState = new CaSimpleObserveSenderImpl.WaitApplyPreset(cm);
 
             try {
                 apply.setDir(CadDirective.START);
+                currentState = new CaSimpleObserveSenderImpl.WaitApplyPreset(cm);
+                if (timeout > 0) {
+                    timeoutFuture = executor.schedule(() ->  CaSimpleObserveSenderImpl.this.onTimeout(), timeout, timeoutUnit);
+                }
             } catch (CAException | TimeoutException e) {
                 failCommand(cm, e);
             }
 
-            if (timeout > 0) {
-                timeoutFuture = executor.schedule(() ->  CaSimpleObserveSenderImpl.this.onTimeout(), timeout, timeoutUnit);
-            }
         }
 
         return cm;
@@ -600,7 +619,7 @@ public class CaSimpleObserveSenderImpl<C extends Enum<C> & CarStateGeneric> impl
 
         @Override
         public String signature() {
-            return "WaitAbortCompletion( stopMark = " + stopMark + ", abortMark" + abortMark + ")";
+            return "WaitAbortCompletion( stopMark = " + stopMark + ", abortMark = " + abortMark + ")";
         }
 
         @Override
@@ -610,7 +629,21 @@ public class CaSimpleObserveSenderImpl<C extends Enum<C> & CarStateGeneric> impl
 
         @Override
         public ApplyState onCarValChange(CarStateGeneric val)  {
-            return this;
+            if(val.isIdle()) {
+                failCommand(cm, new CaObserveAborted());
+                return idleState;
+            }
+            else if(val.isError()) {
+                failCommandWithCarError(cm);
+                return idleState;
+            }
+            else if(val.isPaused()) {
+                pauseCommand(cm);
+                return idleState;
+            }
+            else {
+                return this;
+            }
         }
 
         @Override

@@ -6,7 +6,6 @@
 package edu.gemini.epics.acm;
 
 import edu.gemini.epics.EpicsReader;
-import edu.gemini.epics.EpicsService;
 import edu.gemini.epics.ReadOnlyClientEpicsChannel;
 import edu.gemini.epics.api.ChannelListener;
 import edu.gemini.epics.impl.EpicsReaderImpl;
@@ -25,8 +24,8 @@ final class CaCarRecord<C extends Enum<C> & CarStateGeneric> {
     private static final String CAR_OMSS_SUFFIX = ".OMSS";
 
     private final String epicsName;
-    private EpicsReader epicsReader;
-    private Class<C> carClass;
+    private final EpicsReader epicsReader;
+    private final Class<C> carClass;
     private ReadOnlyClientEpicsChannel<Integer> clid;
     private ReadOnlyClientEpicsChannel<C> val;
     private ReadOnlyClientEpicsChannel<String> omss;
@@ -34,10 +33,10 @@ final class CaCarRecord<C extends Enum<C> & CarStateGeneric> {
     private ChannelListener<Integer> clidListener;
     private ChannelListener<C> valListener;
 
-    CaCarRecord(String epicsName, Class<C> carClass, EpicsService epicsService) {
+    CaCarRecord(String epicsName, Class<C> carClass, EpicsReader epicsReader) {
         this.epicsName = epicsName;
         this.carClass = carClass;
-        epicsReader = new EpicsReaderImpl(epicsService);
+        this.epicsReader = epicsReader;
 
         updateChannels();
     }
@@ -93,8 +92,6 @@ final class CaCarRecord<C extends Enum<C> & CarStateGeneric> {
             LOG.warn(e.getMessage());
         }
         omss = null;
-
-        epicsReader = null;
     }
 
     String getEpicsName() {

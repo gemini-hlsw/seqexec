@@ -598,7 +598,8 @@ lazy val acm = project
       XmlUnit,
       JUnitInterface,
       ScalaMock
-    ),
+    ) ++ Logback,
+    libraryDependencies in Test ++= Logback,
     testOptions in Test := Seq(),
     sourceGenerators in Compile += Def.task {
       import scala.sys.process._

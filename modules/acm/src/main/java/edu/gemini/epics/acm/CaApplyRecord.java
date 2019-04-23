@@ -30,19 +30,21 @@ final class CaApplyRecord {
 
     private final String epicsName;
 
-    private EpicsReader epicsReader;
-    private EpicsWriter epicsWriter;
+    private final EpicsReader epicsReader;
+    private final EpicsWriter epicsWriter;
     private ReadWriteClientEpicsChannel<CadDirective> dir;
     private ReadOnlyClientEpicsChannel<Integer> val;
     private ReadOnlyClientEpicsChannel<String> mess;
 
     private ChannelListener<Integer> valListener;
 
-    CaApplyRecord(String epicsName, EpicsService epicsService) {
+    CaApplyRecord(String epicsName, EpicsReader epicsReader, EpicsWriter epicsWriter) {
         this.epicsName = epicsName;
+        assert(epicsReader != null);
+        assert(epicsWriter != null);
 
-        epicsReader = new EpicsReaderImpl(epicsService);
-        epicsWriter = new EpicsWriterImpl(epicsService);
+        this.epicsReader = epicsReader;
+        this.epicsWriter = epicsWriter;
 
         updateChannels();
     }
@@ -75,9 +77,6 @@ final class CaApplyRecord {
     }
 
     synchronized void unbind() {
-        assert(epicsReader!=null);
-        assert(epicsWriter!=null);
-
         if(dir!=null) {
             try {
                 epicsWriter.destroyChannel(dir);
@@ -104,9 +103,6 @@ final class CaApplyRecord {
             }
             mess = null;
         }
-
-        epicsWriter = null;
-        epicsReader = null;
     }
 
     synchronized void registerValListener(ChannelListener<Integer> listener) throws CAException {
