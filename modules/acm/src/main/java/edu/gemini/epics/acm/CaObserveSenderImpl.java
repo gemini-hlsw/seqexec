@@ -56,25 +56,6 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
     private ChannelListener<Short> stopMarkListener;
     private CaObserveSenderImpl.ApplyState currentState;
 
-    private ThreadFactory threadFactory = new ThreadFactory(){
-
-        @Override
-        public Thread newThread(Runnable r) {
-            final Thread thread = new Thread(r);
-
-            thread.setUncaughtExceptionHandler( new Thread.UncaughtExceptionHandler() {
-
-                @Override
-                public void uncaughtException(Thread t, Throwable e) {
-                    LOG.error("Uncaught exception on CaSimpleObserverSender", e);
-                }
-            });
-
-            return thread;
-        }
-
-    };
-
     public CaObserveSenderImpl(
         final String name,
         final String applyRecord,
@@ -161,7 +142,7 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
         }
         this.abortMark = abortMark;
 
-        executor = new ScheduledThreadPoolExecutor(2, threadFactory);
+        executor = SafeExecutor.safeExecutor(2, LOG);
     }
 
     @Override

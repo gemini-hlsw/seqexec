@@ -126,7 +126,7 @@ final class CaApplySenderImpl<C extends Enum<C> & CarStateGeneric> implements Ap
             }
         });
 
-        executor = new ScheduledThreadPoolExecutor(2, threadFactory);
+        executor = SafeExecutor.safeExecutor(2, LOG);
     }
 
     @Override
