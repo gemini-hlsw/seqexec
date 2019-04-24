@@ -20,6 +20,7 @@ import seqexec.model.StepId
 import seqexec.model.SequenceState
 import seqexec.web.client.model.ClientStatus
 import seqexec.web.client.model.TabOperations
+import seqexec.web.client.model.StopOperation
 import seqexec.web.client.model.ModelOps._
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.semanticui.elements.icon.Icon
@@ -45,6 +46,9 @@ object StepProgressCell {
 
     def stepSelected(i: StepId): Boolean =
       selectedStep.exists(_ === i) && !isPreview && clientStatus.isLogged
+
+    def isStopping: Boolean =
+      tabOperations.stopRequested === StopOperation.StopInFlight
   }
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
@@ -100,7 +104,11 @@ object StepProgressCell {
       SeqexecStyles.configuringRow,
       ObservationProgressBar(
         ObservationProgressBar
-          .Props(props.obsId, stepId, fileId, paused = false)),
+          .Props(props.obsId,
+                 stepId,
+                 fileId,
+                 stopping = props.isStopping,
+                 paused   = false)),
       StepsControlButtons(
         StepsControlButtons.Props(props.obsId,
                                   props.instrument,
@@ -118,7 +126,7 @@ object StepProgressCell {
       SeqexecStyles.configuringRow,
       ObservationProgressBar(
         ObservationProgressBar
-          .Props(props.obsId, stepId, fileId, paused = true)),
+          .Props(props.obsId, stepId, fileId, stopping = false, paused = true)),
       StepsControlButtons(
         StepsControlButtons.Props(props.obsId,
                                   props.instrument,
