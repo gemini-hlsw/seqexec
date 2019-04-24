@@ -91,9 +91,9 @@ object Settings {
     val scalaParsersVersion     = "1.1.1"
     val scalaXmlVerson          = "1.1.1"
 
-    val http4sVersion           = "0.20.0-M7"
+    val http4sVersion           = "0.20.0"
     val squants                 = "1.4.0"
-    val argonaut                = "6.2.2"
+    val argonaut                = "6.2.3"
     val commonsHttp             = "2.0.2"
     val unboundId               = "3.2.1"
     val jwt                     = "2.1.0"
@@ -106,9 +106,9 @@ object Settings {
     val monocleVersion          = "1.5.1-cats"
     val circeVersion            = "0.11.1"
     val doobieVersion           = "0.6.0"
-    val flywayVersion           = "5.2.1"
+    val flywayVersion           = "5.2.4"
     val tucoVersion             = "0.4.1"
-    val declineVersion          = "0.6.0"
+    val declineVersion          = "0.6.2"
 
     // test libraries
     val scalaTest               = "3.0.5"
@@ -275,7 +275,7 @@ object Settings {
   object PluginVersions {
     // Compiler plugins
     val paradiseVersion    = "2.1.1"
-    val kpVersion          = "0.9.9"
+    val kpVersion          = "0.9.10"
   }
 
   object Plugins {
