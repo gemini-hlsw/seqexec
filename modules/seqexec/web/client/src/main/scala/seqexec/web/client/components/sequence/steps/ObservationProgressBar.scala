@@ -28,10 +28,11 @@ object SmoothProgressBar {
   // This depends on the server side frequency of updates
   val remoteUpdatePeriod: Int = 1000
 
-  final case class Props(fileId: String,
-                         total:  Long,
-                         value:  Long,
-                         paused: Boolean)
+  final case class Props(fileId:   String,
+                         total:    Long,
+                         value:    Long,
+                         stopping: Boolean,
+                         paused:   Boolean)
 
   @Lenses
   final case class State(total: Long, value: Long, skipStep: Boolean)
@@ -48,14 +49,22 @@ object SmoothProgressBar {
     def setupTimer: Callback =
       setInterval(tickTotal, periodUpdate.millisecond)
 
-    def newStateFromProps(p: Props): Callback =
-      b.modState(s => State(p.total, p.value, s.value > p.value))
+    def newStateFromProps(prev: Props, next: Props): Callback =
+      b.modState { s =>
+        if (prev.paused =!= next.paused || prev.stopping =!= next.stopping) {
+          s
+        } else if (next.stopping) {
+          s
+        } else {
+          State(next.total, next.value, s.value > next.value)
+        }
+      }
 
     def tickTotal: Callback = b.props.zip(b.state) >>= {
       case (p, s) =>
         val next = min(s.value + periodUpdate, p.value + remoteUpdatePeriod)
         b.modState(State.value.set(min(p.total, next)))
-          .when(!s.skipStep && !p.paused) *>
+          .when(!s.skipStep && !p.paused && !p.stopping) *>
           b.modState(State.skipStep.set(false)) *>
           Callback.empty
     }
@@ -70,6 +79,7 @@ object SmoothProgressBar {
       val durationStr = if (remaining > 1) s"$remaining seconds" else "1 second"
       val label =
         if (p.paused) s"${p.fileId} - Paused - $durationStr left"
+        else if (p.stopping) s"${p.fileId} - Stopping - $durationStr left"
         else if (remaining > 0) s"${p.fileId} - $durationStr left"
         else s"${p.fileId} - Reading out..."
 
@@ -84,7 +94,8 @@ object SmoothProgressBar {
       ))
     }
     .componentDidMount(_.backend.setupTimer)
-    .componentWillReceiveProps(x => x.backend.newStateFromProps(x.nextProps))
+    .componentWillReceiveProps(x =>
+      x.backend.newStateFromProps(x.currentProps, x.nextProps))
     .configure(TimerSupport.install)
     .configure(Reusability.shouldComponentUpdate)
     .build
@@ -96,10 +107,11 @@ object SmoothProgressBar {
   * Component to wrap the progress bar
   */
 object ObservationProgressBar {
-  final case class Props(obsId:  Observation.Id,
-                         stepId: StepId,
-                         fileId: ImageFileId,
-                         paused: Boolean) {
+  final case class Props(obsId:    Observation.Id,
+                         stepId:   StepId,
+                         fileId:   ImageFileId,
+                         stopping: Boolean,
+                         paused:   Boolean) {
     protected[steps] val connect =
       SeqexecCircuit.connect(SeqexecCircuit.obsProgressReader(obsId, stepId))
   }
@@ -119,6 +131,7 @@ object ObservationProgressBar {
                 SmoothProgressBar.Props(p.fileId,
                                         r.millis,
                                         r.millis - max(0, t.millis),
+                                        p.stopping,
                                         p.paused))
             case _ =>
               Progress(Progress.Props(
