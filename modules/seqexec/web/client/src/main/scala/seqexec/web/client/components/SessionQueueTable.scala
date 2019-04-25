@@ -29,11 +29,11 @@ import seqexec.model.UnknownTargetName
 import seqexec.model.Observer
 import seqexec.model.SequenceState
 import seqexec.model.CalibrationQueueId
+import seqexec.model.RunningStep
 import seqexec.web.client.circuit._
 import seqexec.web.client.actions._
 import seqexec.web.client.model.Pages._
 import seqexec.web.client.model.ObsClass
-import seqexec.web.client.model.RunningStep
 import seqexec.web.client.model.SessionQueueFilter
 import seqexec.web.client.model.ModelOps._
 import seqexec.web.client.semanticui.elements.icon.Icon.IconAttention

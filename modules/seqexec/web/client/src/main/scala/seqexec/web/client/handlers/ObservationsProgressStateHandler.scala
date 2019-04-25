@@ -14,7 +14,6 @@ import seqexec.web.client.model._
 import seqexec.web.client.actions._
 import seqexec.web.client.model.lenses.sequenceStepT
 import seqexec.web.client.model.lenses.sequenceViewT
-import seqexec.web.client.model.ModelOps._
 
 /**
   * Handles updates to obs progress

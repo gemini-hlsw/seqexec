@@ -23,9 +23,15 @@ trait SequenceEventsArbitraries extends ArbTime {
       id <- arbitrary[ClientId]
     } yield ConnectionOpenEvent(u, id)
   }
+
   implicit val sseArb = Arbitrary[SequenceStart] {
-    arbitrary[SequencesQueue[SequenceView]].map(SequenceStart.apply)
+    for {
+      id <- arbitrary[Observation.Id]
+      si <- arbitrary[StepId]
+      sv <- arbitrary[SequencesQueue[SequenceView]]
+    } yield SequenceStart(id, si, sv)
   }
+
   implicit val seeArb = Arbitrary[StepExecuted] {
     for {
       i <- arbitrary[Observation.Id]
@@ -293,6 +299,7 @@ trait SequenceEventsArbitraries extends ArbTime {
 
   implicit val oprCogen: Cogen[ObservationProgressEvent] =
     Cogen[ObservationProgress].contramap(_.progress)
+
 }
 
 object SequenceEventsArbitraries extends SequenceEventsArbitraries

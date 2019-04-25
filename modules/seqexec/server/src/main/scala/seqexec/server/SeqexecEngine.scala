@@ -135,7 +135,7 @@ class SeqexecEngine(httpClient: Client[IO], gpi: GpiClient[IO], ghost: GhostClie
   def startFrom(q: EventQueue, id: Observation.Id, stp: StepId, clientId: ClientId): IO[Either[SeqexecFailure, Unit]] =
     q.enqueue1(Event.modifyState[executeEngine.ConcreteTypes](
       executeEngine.get.flatMap(st => checkResources(id)(st).fold(
-        executeEngine.startFrom(id, stp).as(SequenceStart),
+        executeEngine.startFrom(id, stp).as(SequenceStart(id, stp)),
         executeEngine.unit.as(Busy(id, clientId))
       ) )
     ) ).map(_.asRight)
@@ -885,7 +885,7 @@ object SeqexecEngine extends SeqexecConfiguration {
     case StartQueue(qid, _)                 => QueueUpdated(QueueManipulationOp.Started(qid), svs)
     case StopQueue(qid, _)                  => QueueUpdated(QueueManipulationOp.Stopped(qid), svs)
     case StartSysConfig(sid, stepId, res)   => SingleActionEvent(SingleActionOp.Started(sid, stepId, res))
-    case SequenceStart                      => ClientSequenceStart(svs)
+    case SequenceStart(sid, stepId)         => ClientSequenceStart(sid, stepId, svs)
     case Busy(id, cid)                      => UserNotification(ResourceConflict(id), cid)
 
   }
@@ -942,7 +942,9 @@ object SeqexecEngine extends SeqexecConfiguration {
 
     ev match {
       case engine.UserCommandResponse(ue, _, uev) => ue match {
-        case engine.Start(_, _, _, _)      => ClientSequenceStart(svs)
+        case engine.Start(id, _, _, _)     =>
+          val rs = sequences.find(_.id === id).flatMap(_.runningStep)
+          ClientSequenceStart(id, rs.foldMap(_.last), svs)
         case engine.Pause(_, _)            => SequencePauseRequested(svs)
         case engine.CancelPause(id, _)     => SequencePauseCanceled(id, svs)
         case engine.Breakpoint(_, _, _, _) => StepBreakpointChanged(svs)

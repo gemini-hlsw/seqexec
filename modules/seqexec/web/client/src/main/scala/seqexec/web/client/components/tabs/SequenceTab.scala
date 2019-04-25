@@ -14,10 +14,10 @@ import japgolly.scalajs.react._
 import seqexec.model.Observer
 import seqexec.model.SequenceState
 import seqexec.model.enum.Instrument
+import seqexec.model.RunningStep
 import seqexec.web.client.actions.LoadSequence
 import seqexec.web.client.model.Pages._
 import seqexec.web.client.model.AvailableTab
-import seqexec.web.client.model.RunningStep
 import seqexec.web.client.model.TabSelected
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.semanticui._

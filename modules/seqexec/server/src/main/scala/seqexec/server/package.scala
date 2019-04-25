@@ -92,9 +92,9 @@ package server {
   final case class UpdateQueueRemove(qid: QueueId, seqs: List[Observation.Id], pos: List[Int]) extends SeqEvent
   final case class UpdateQueueMoved(qid: QueueId, cid: ClientId, oid: Observation.Id, pos: Int) extends SeqEvent
   final case class UpdateQueueClear(qid: QueueId) extends SeqEvent
-  final case class StartSysConfig(sid: Observation.Id, stepIs: StepId, res: Resource) extends SeqEvent
+  final case class StartSysConfig(sid: Observation.Id, stepId: StepId, res: Resource) extends SeqEvent
   final case class Busy(sid: Observation.Id, cid: ClientId) extends SeqEvent
-  case object SequenceStart extends SeqEvent
+  final case class SequenceStart(sid: Observation.Id, stepId: StepId) extends SeqEvent
   case object NullSeqEvent extends SeqEvent
 
   sealed trait ControlStrategy

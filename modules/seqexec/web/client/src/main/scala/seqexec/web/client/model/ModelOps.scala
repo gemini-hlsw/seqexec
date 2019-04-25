@@ -57,16 +57,6 @@ object ModelOps {
 
   implicit class SequenceViewOps(val s: SequenceView) extends AnyVal {
 
-    def progress: RunningStep =
-      RunningStep(s.steps.count(_.isFinished), s.steps.length)
-
-    // Returns where on the sequence the execution is at
-    def runningStep: Option[RunningStep] = s.status match {
-      case SequenceState.Running(_, _) => Some(progress)
-      case SequenceState.Failed(_)     => Some(progress)
-      case _                           => None
-    }
-
     def allStepsDone: Boolean = s.steps.forall(_.status === StepState.Completed)
 
     def flipSkipMarkAtStep(step: Step): SequenceView =

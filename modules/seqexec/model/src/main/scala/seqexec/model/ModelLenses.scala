@@ -76,7 +76,7 @@ trait ModelLenses {
   // Focus on the sequence view
   val sequenceQueueViewL: Lens[SeqexecModelUpdate, SequencesQueue[SequenceView]] =
     Lens[SeqexecModelUpdate, SequencesQueue[SequenceView]](_.view)(q => {
-      case e @ SequenceStart(_)                => e.copy(view = q)
+      case e @ SequenceStart(_, _, _)          => e.copy(view = q)
       case e @ StepExecuted(_, _)              => e.copy(view = q)
       case e @ FileIdStepExecuted(_, _)        => e.copy(view = q)
       case e @ SequenceCompleted(_)            => e.copy(view = q)

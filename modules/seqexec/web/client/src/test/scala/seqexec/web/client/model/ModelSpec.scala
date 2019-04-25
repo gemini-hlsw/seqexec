@@ -25,7 +25,6 @@ final class ModelSpec extends CatsSuite with ArbitrariesWebClient {
   checkAll("Eq[Pot[A]]", EqTests[Pot[Int]].eqv)
   checkAll("Eq[WebSocketConnection]", EqTests[WebSocketConnection].eqv)
   checkAll("Eq[ClientStatus]", EqTests[ClientStatus].eqv)
-  checkAll("Eq[RunningStep]", EqTests[RunningStep].eqv)
   checkAll("Eq[AvailableTab]", EqTests[AvailableTab].eqv)
   checkAll("Eq[TabSelected]", EqTests[TabSelected].eqv)
   checkAll("Eq[SeqexecTabActive]", EqTests[SeqexecTabActive].eqv)
