@@ -206,7 +206,7 @@ object StepsTable {
   }
 
   implicit val propsReuse: Reusability[Props] =
-    Reusability.by(x => (x.canOperate, x.stepsTable))
+    Reusability.by(x => (x.canOperate, x.selectedStep, x.stepsTable))
   implicit val tcReuse: Reusability[TableColumn] = Reusability.byRef
   implicit val stateReuse: Reusability[State] =
     Reusability.by(x => (x.tableState, x.breakpointHover, x.selected))
@@ -812,7 +812,7 @@ object StepsTable {
   private def updateStep(b:     ReceiveProps,
                          p:     Props,
                          obsId: Observation.Id,
-                         i:     Int): Callback =
+                         i:     StepId): Callback =
     (SeqexecCircuit.dispatchCB(UpdateSelectedStep(obsId, i)) *>
       b.modState(State.selected.set(i.some)))
       .when(p.canControlSubsystems(i)) *> Callback.empty
@@ -852,6 +852,12 @@ object StepsTable {
         }
         .filter(_ => b.state.selected =!= next.selectedStep)
 
+    // The selected step may have changed externally
+    val selectedStepChange: Callback =
+      (cur.selectedStep, next.selectedStep).mapN { (c, n) =>
+          b.modState(State.selected.set(n.some)).when(c =!= n) *> Callback.empty
+        }.getOrEmpty
+
     // If the step is running recalculate height
     val running: Option[StepId] =
       if (cur.tabOperations.resourceRunRequested =!= next.tabOperations.resourceRunRequested) {
@@ -860,7 +866,7 @@ object StepsTable {
         none
       }
 
-    selectStep *> (running.toList ::: selected.toList ::: differentStepsStates).minimumOption.map {
+    selectStep *> selectedStepChange *> (running.toList ::: selected.toList ::: differentStepsStates).minimumOption.map {
       recomputeRowHeightsCB
     }.getOrEmpty
   }

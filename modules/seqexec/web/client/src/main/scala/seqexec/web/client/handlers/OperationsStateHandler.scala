@@ -60,7 +60,6 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
           TabOperations.pauseRequested.set(PauseOperation.PauseInFlight)))
 
     case RequestResourceRun(id, _, r) =>
-      // TODO Remove this when the response comes over the WS channel
       updated(
         value.markOperations(
           id,
@@ -85,7 +84,7 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
 
   def handleOperationResult: PartialFunction[Any, ActionResult[M]] = {
     case RunStarted(_) | RunStop(_) | RunAbort(_) | RunObsPause(_) |
-        RunObsResume(_) | RunPaused(_) | RunCancelPaused(_) =>
+        RunObsResume(_) | RunPaused(_) | RunCancelPaused(_) | RunResource(_, _, _)=>
       noChange
 
     case RunSync(id) =>
@@ -93,6 +92,15 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
         value.markOperations(
           id,
           TabOperations.syncRequested.set(SyncOperation.SyncIdle)))
+
+    case RunResourceRemote(id, s, r) =>
+      updated(
+        value.markOperations(
+          id,
+          TabOperations
+            .resourceRun(r)
+            .set(ResourceRunOperation.ResourceRunInFlight.some)),
+            Effect(Future(UpdateSelectedStepForce(id, s))))
   }
 
   def handleOperationFailed: PartialFunction[Any, ActionResult[M]] = {
@@ -154,6 +162,9 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
 
   def handleSelectedStep: PartialFunction[Any, ActionResult[M]] = {
     case UpdateSelectedStep(id, step) =>
+      updatedSilent(value.selectStep(id, step))
+
+    case UpdateSelectedStepForce(id, step) =>
       updated(value.selectStep(id, step))
   }
 

@@ -229,7 +229,7 @@ object InstrumentSequenceTab {
         (x.instrument,
          x.sequence,
          x.stepConfig,
-         x.selectedStep,
+         x.selected,
          x.tableState,
          x.tabOperations))
 
