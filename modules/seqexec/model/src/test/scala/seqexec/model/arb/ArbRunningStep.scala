@@ -5,7 +5,7 @@ package seqexec.model.arb
 
 import org.scalacheck.Arbitrary
 import org.scalacheck.Cogen
-import org.scalacheck.Arbitrary._
+import org.scalacheck.Gen
 import seqexec.model.RunningStep
 import seqexec.model.StepId
 
@@ -14,9 +14,9 @@ trait ArbRunningStep {
   implicit val arbRunningStep: Arbitrary[RunningStep] =
     Arbitrary {
       for {
-        l <- arbitrary[StepId]
-        i <- arbitrary[StepId]
-      } yield RunningStep(l, i)
+        l <- Gen.posNum[Int]
+        i <- Gen.choose(l, Int.MaxValue)
+      } yield RunningStep.fromInt(l, i).getOrElse(RunningStep.Zero)
     }
 
   implicit val runningStepCogen: Cogen[RunningStep] =

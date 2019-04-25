@@ -18,14 +18,14 @@ final case class SequenceView (
   willStopIn: Option[Int]
 ) {
 
-  def progress: RunningStep =
-    RunningStep(steps.count(_.isFinished), steps.length)
+  def progress: Option[RunningStep] =
+    RunningStep.fromInt(steps.count(_.isFinished), steps.length)
 
   // Returns where on the sequence the execution is at
   def runningStep: Option[RunningStep] = status match {
-    case SequenceState.Running(_, _) => Some(progress)
-    case SequenceState.Failed(_)     => Some(progress)
-    case _                           => None
+    case SequenceState.Running(_, _) => progress
+    case SequenceState.Failed(_)     => progress
+    case _                           => none
   }
 }
 

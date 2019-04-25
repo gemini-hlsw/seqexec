@@ -97,7 +97,7 @@ object StepConfigToolbar {
                                       onClick = p.router.setUrlAndDispatchCB(
                                         prevStepPage)), "Prev"))),
               Label(
-                Label.Props(RunningStep(p.step, p.total).show,
+                Label.Props(RunningStep.fromInt(p.step, p.total).getOrElse(RunningStep.Zero).show,
                             size        = Size.Large,
                             extraStyles = List(SeqexecStyles.labelAsButton))),
               // Next step button
