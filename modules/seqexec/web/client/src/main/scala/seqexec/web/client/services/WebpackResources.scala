@@ -69,4 +69,12 @@ object WebpackResources {
   @js.native
   object SoundOnWebM extends WebpackResource
 
+  @JSImport("sounds/observationstopped.mp3", JSImport.Default)
+  @js.native
+  object ObservationStoppedMP3 extends WebpackResource
+
+  @JSImport("sounds/observationstopped.webm", JSImport.Default)
+  @js.native
+  object ObservationStoppedWebM extends WebpackResource
+
 }

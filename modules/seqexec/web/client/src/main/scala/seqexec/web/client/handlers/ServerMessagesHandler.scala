@@ -57,6 +57,10 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
     new Audio(BeepResourceMP3.resource),
     new Audio(BeepResourceWebM.resource))
 
+  private val ObservationStoppedAudio = Audio.selectPlayable(
+    new Audio(ObservationStoppedMP3.resource),
+    new Audio(ObservationStoppedWebM.resource))
+
   def loggedIn: Boolean           = value.sound === SoundSelection.SoundOn
   def ifLoggedIn[A]: A => Boolean = (_: A) => loggedIn
 
@@ -177,7 +181,8 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
     case ServerMessage(SequenceStopped(id, sv)) =>
       // A step completed with a stop
       val stopProgress = Effect(Future(RunStopCompleted(id)))
-      updated(value.copy(sequences = filterSequences(sv)), stopProgress)
+      val stopAudio = Effect(Future(ObservationStoppedAudio.play()).as(NoAction))
+      updated(value.copy(sequences = filterSequences(sv)), stopProgress + stopAudio)
   }
 
   val exposurePausedMessage: PartialFunction[Any, ActionResult[M]] = {
