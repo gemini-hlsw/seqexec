@@ -99,7 +99,8 @@ class SeqexecEngine(httpClient: Client[IO], gpi: GpiClient[IO], ghost: GhostClie
     gnirsKeywords = settings.gnirsControl.realKeywords,
     niriKeywords = settings.niriControl.realKeywords,
     nifsKeywords = settings.nifsControl.realKeywords,
-    altairKeywords = settings.altairControl.realKeywords
+    altairKeywords = settings.altairControl.realKeywords,
+    gsaoiKeywords = settings.gsaoiControl.realKeywords
   )
 
   private val translator = SeqTranslate(settings.site, systems, translatorSettings)
