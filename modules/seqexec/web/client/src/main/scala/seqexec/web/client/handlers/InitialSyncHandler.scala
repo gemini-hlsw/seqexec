@@ -14,7 +14,6 @@ import seqexec.model.events.SeqexecModelUpdate
 import seqexec.web.client.actions._
 import seqexec.web.client.circuit._
 import seqexec.web.client.model.Pages._
-import seqexec.web.client.model.ModelOps._
 import scala.concurrent.Future
 import cats.implicits._
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue

@@ -28,10 +28,11 @@ import seqexec.model.StepState
 import seqexec.model.Step
 import seqexec.model.StepId
 import seqexec.model.StandardStep
+import seqexec.model.SequenceState
+import seqexec.model.RunningStep
 import seqexec.web.client.model.lenses._
 import seqexec.web.client.model.ClientStatus
 import seqexec.web.client.model.TabOperations
-import seqexec.web.client.model.RunningStep
 import seqexec.web.client.model.Pages.SeqexecPages
 import seqexec.web.client.model.ModelOps._
 import seqexec.web.client.circuit.SeqexecCircuit
@@ -121,6 +122,7 @@ object StepsTable {
                          stepsTable: StepsTableAndStatusFocus) {
     val status: ClientStatus                        = stepsTable.status
     val steps: Option[StepsTableFocus]              = stepsTable.stepsTable
+    val sequenceState: Option[SequenceState]        = steps.map(_.state)
     val runningStep: Option[RunningStep]            = steps.flatMap(_.runningStep)
     val obsId: Option[Observation.Id]               = steps.map(_.id)
     val tableState: Option[TableState[TableColumn]] = steps.map(_.tableState)
@@ -142,6 +144,9 @@ object StepsTable {
     val hasControls: Boolean       = canOperate && !isPreview
     val canSetBreakpoint: Boolean  = canOperate && !isPreview
     val showObservingMode: Boolean = showProp(InstrumentProperties.ObservingMode)
+
+    def stepSelectionAllowed(sid: StepId): Boolean =
+      canControlSubsystems(sid) && !tabOperations.resourceInFlight && !sequenceState.exists(_.isRunning)
 
     def rowGetter(idx: Int): StepRow =
       steps.flatMap(_.steps.lift(idx)).fold(StepRow.Zero)(StepRow.apply)
@@ -715,8 +720,7 @@ object StepsTable {
         .dispatchCB(ClearAllResouceOptions(id)) *>
         b.modState(State.selected.set(Some(i))) *>
         recomputeRowHeightsCB(min(b.state.selected.getOrElse(i), i)))
-        .when(b.props
-          .canControlSubsystems(i) && !b.props.tabOperations.resourceInFlight) *>
+        .when(b.props.stepSelectionAllowed(i)) *>
         Callback.empty
     }.getOrEmpty
 
@@ -822,6 +826,9 @@ object StepsTable {
         updateStep(b, next, obsId, i)
       case (Some(obsId), Some(RunningStep(i, _)), Some(RunningStep(j, _)))
           if i =!= j =>
+        updateStep(b, next, obsId, j)
+      case (Some(obsId), _, Some(RunningStep(j, _))) if cur.sequenceState =!= next.sequenceState && next.sequenceState.exists(_.isRunning) =>
+        // When we start running select the running step
         updateStep(b, next, obsId, j)
       case _ =>
         Callback.empty

@@ -20,7 +20,8 @@ final case class EventSystem(se: SystemEvent) extends Event[Nothing]
 
 object Event {
 
-  def start[D<:Engine.Types](id: Observation.Id, user: UserDetails, clientId: ClientId, userCheck: D#StateType => Boolean): Event[D] = EventUser[D](Start[D](id, user.some, clientId, userCheck))
+  def start[D<:Engine.Types](id: Observation.Id, user: UserDetails, clientId: ClientId, userCheck: D#StateType => Boolean): Event[D] =
+    EventUser[D](Start[D](id, user.some, clientId, userCheck))
   def pause[D<:Engine.Types](id: Observation.Id, user: UserDetails): Event[D] = EventUser[D](Pause(id, user.some))
   def cancelPause[D<:Engine.Types](id: Observation.Id, user: UserDetails): Event[D] = EventUser[D](CancelPause(id, user.some))
   def breakpoint[D<:Engine.Types](id: Observation.Id, user: UserDetails, step: StepId, v: Boolean): Event[D] = EventUser[D](Breakpoint(id, user.some, step, v))

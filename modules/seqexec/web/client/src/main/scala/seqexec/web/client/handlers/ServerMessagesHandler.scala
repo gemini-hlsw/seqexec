@@ -177,6 +177,12 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
       updated(value.copy(sequences = filterSequences(sv)), clearAction)
   }
 
+  val sequenceStartMessage: PartialFunction[Any, ActionResult[M]] = {
+    case ServerMessage(SequenceStart(id, s, sv)) =>
+      val updateSelectedStep = Effect(Future(UpdateSelectedStep(id, s)))
+      updated(value.copy(sequences = filterSequences(sv)), updateSelectedStep)
+  }
+
   val stopCompletedMessage: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(SequenceStopped(id, sv)) =>
       // A step completed with a stop
@@ -261,6 +267,7 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
       sequenceLoadedMessage,
       sequenceUnloadedMessage,
       stopCompletedMessage,
+      sequenceStartMessage,
       sequenceRefreshedMessage,
       sequencePauseCancelMessage,
       modelUpdateMessage,

@@ -98,12 +98,12 @@ object events {
       Some(u.view)
   }
 
-  final case class SequenceStart(view: SequencesQueue[SequenceView])
+  final case class SequenceStart(obsId: Observation.Id, stepId: StepId, view: SequencesQueue[SequenceView])
       extends SeqexecModelUpdate
 
   object SequenceStart {
     implicit lazy val equal: Eq[SequenceStart] =
-      Eq.by(_.view)
+      Eq.by(x => (x.obsId, x.stepId, x.view))
   }
 
   final case class StepExecuted(obsId: Observation.Id,

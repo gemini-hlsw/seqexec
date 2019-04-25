@@ -16,7 +16,18 @@ final case class SequenceView (
   status:     SequenceState,
   steps:      List[Step],
   willStopIn: Option[Int]
-)
+) {
+
+  def progress: RunningStep =
+    RunningStep(steps.count(_.isFinished), steps.length)
+
+  // Returns where on the sequence the execution is at
+  def runningStep: Option[RunningStep] = status match {
+    case SequenceState.Running(_, _) => Some(progress)
+    case SequenceState.Failed(_)     => Some(progress)
+    case _                           => None
+  }
+}
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object SequenceView {

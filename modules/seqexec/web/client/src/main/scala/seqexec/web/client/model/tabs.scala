@@ -16,6 +16,7 @@ import seqexec.model.Observer
 import seqexec.model.StepId
 import seqexec.model.SequenceState
 import seqexec.model.SequenceView
+import seqexec.model.RunningStep
 import seqexec.model.enum._
 import seqexec.web.client.model.ModelOps._
 import seqexec.web.client.components.sequence.steps.StepsTable

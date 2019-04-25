@@ -27,7 +27,10 @@ import seqexec.model.Step
 import seqexec.model.StepId
 import seqexec.model.UserDetails
 import seqexec.model.ObservationProgress
+import seqexec.model.RunningStep
+import seqexec.model.ObservationProgress
 import seqexec.model.events.ServerLogMessage
+import seqexec.model.arb.ArbRunningStep._
 import seqexec.model.SeqexecModelArbitraries._
 import seqexec.model.SequenceEventsArbitraries.slmArb
 import seqexec.model.SequenceEventsArbitraries.slmCogen
@@ -409,17 +412,6 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
 
   implicit val cssCogen: Cogen[ClientStatus] =
     Cogen[(Option[UserDetails], WebSocketConnection)].contramap(x => (x.u, x.w))
-
-  implicit val arbRunningStep: Arbitrary[RunningStep] =
-    Arbitrary {
-      for {
-        l <- arbitrary[Int]
-        i <- arbitrary[Int]
-      } yield RunningStep(l, i)
-    }
-
-  implicit val runningStepCogen: Cogen[RunningStep] =
-    Cogen[(Int, Int)].contramap(x => (x.last, x.total))
 
   implicit val arbSection: Arbitrary[SectionVisibilityState] =
     Arbitrary(Gen.oneOf(SectionOpen, SectionClosed))

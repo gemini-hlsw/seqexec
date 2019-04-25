@@ -8,13 +8,14 @@ import cats.kernel.laws.discipline._
 import seqexec.model.enum._
 import seqexec.model.SeqexecModelArbitraries._
 import seqexec.model.events.SingleActionEvent
+import seqexec.model.arb.ArbRunningStep
 import squants.time.Time
 import squants.time.TimeUnit
 
 /**
   * Tests Model typeclasses
   */
-final class ModelSpec extends CatsSuite {
+final class ModelSpec extends CatsSuite with ArbRunningStep {
 
   checkAll("Eq[UserDetails]", EqTests[UserDetails].eqv)
   checkAll("Eq[SystemName]", EqTests[SystemName].eqv)
@@ -59,4 +60,5 @@ final class ModelSpec extends CatsSuite {
   checkAll("Eq[Time]", EqTests[Time].eqv)
   checkAll("Eq[SingleActionOp]", EqTests[SingleActionOp].eqv)
   checkAll("Eq[SingleActionEvent]", EqTests[SingleActionEvent].eqv)
+  checkAll("Eq[RunningStep]", EqTests[RunningStep].eqv)
 }
