@@ -39,6 +39,7 @@ import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.circuit.StepsTableAndStatusFocus
 import seqexec.web.client.circuit.StepsTableFocus
 import seqexec.web.client.actions.{ClearAllResouceOptions, UpdateSelectedStep, UpdateStepTableState}
+import seqexec.web.client.actions.FlipBreakpointStep
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.components.TableContainer
 import seqexec.web.client.components.sequence.steps.OffsetFns._
@@ -74,6 +75,8 @@ object ColWidths {
 object StepsTable {
   type Backend      = RenderScope[Props, State, Unit]
   type ReceiveProps = ComponentWillReceiveProps[Props, State, Unit]
+
+  private val MIDDLE_BUTTON = 1 // As defined by React.js
 
   sealed trait TableColumn extends Product with Serializable
   case object IconColumn extends TableColumn
@@ -748,18 +751,26 @@ object StepsTable {
       scrollToAlignment = ScrollToAlignment.Center,
       headerClassName   = SeqexecStyles.tableHeader.htmlClass,
       headerHeight      = SeqexecStyles.headerHeight,
-      rowRenderer       = stopsRowRenderer
+      rowRenderer       = stopsRowRenderer(b.props)
     )
 
   // We want clicks to be processed only if the click is not on the first row with the breakpoint/skip controls
-  private def allowedClick(index: Int, onRowClick: Option[OnRowClick])(
+  private def allowedClick(p: Props, index: Int, onRowClick: Option[OnRowClick])(
     e:                            ReactMouseEvent): Callback =
-    onRowClick
-      .filter(_ => e.clientX > ColWidths.ControlWidth)
-      .map(h => h(index))
-      .getOrEmpty
+      // If alt is pressed or middle button flip the breakpoint
+      if (e.altKey || e.button === MIDDLE_BUTTON) {
+        Callback.when(p.canSetBreakpoint)(
+          (p.obsId, p.stepsList.find(_.id === index + 1)).mapN((oid, step) =>
+            SeqexecCircuit.dispatchCB(FlipBreakpointStep(oid, step))).getOrEmpty
+        )
+      } else {
+        onRowClick
+          .filter(_ => e.clientX > ColWidths.ControlWidth)
+          .map(h => h(index))
+          .getOrEmpty
+        }
 
-  private def stopsRowRenderer =
+  private def stopsRowRenderer(p: Props) =
     (className:        String,
      columns:          Array[VdomNode],
      index:            Int,
@@ -777,7 +788,7 @@ object StepsTable {
         ^.key := key,
         ^.role := "row",
         ^.style := Style.toJsObject(style),
-        ^.onClick ==> allowedClick(index, onRowClick),
+        ^.onClick ==> allowedClick(p, index, onRowClick),
         ^.onDoubleClick -->? onRowDoubleClick.map(h => h(index)),
         columns.toTagMod
       ): VdomElement
