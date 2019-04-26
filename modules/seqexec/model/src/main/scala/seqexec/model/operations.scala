@@ -110,6 +110,16 @@ object operations {
     def sequenceOperations: List[SequenceOperations] = Nil
   }
 
+  private val GsaoiSupportedOperations = new SupportedOperations {
+    def observationOperations(
+      isObservePaused: Boolean
+    ): List[ObservationOperations] =
+      List(ObservationOperations.StopObservation,
+           ObservationOperations.AbortObservation)
+
+    def sequenceOperations: List[SequenceOperations] = Nil
+  }
+
   private val NilSupportedOperations = new SupportedOperations {
     def observationOperations(
       isObservePaused: Boolean): List[ObservationOperations] = Nil
@@ -122,7 +132,8 @@ object operations {
     GmosN -> GmosSupportedOperations,
     Gnirs -> GnirsSupportedOperations,
     Niri  -> NiriSupportedOperations,
-    Nifs  -> NifsSupportedOperations
+    Nifs  -> NifsSupportedOperations,
+    Gsaoi -> GsaoiSupportedOperations
   )
 
   final implicit class SupportedOperationsOps(val i: Instrument)
