@@ -180,6 +180,8 @@ object LogArea {
     name    = "level",
     label   = "Level",
     visible = true,
+    grow = 1,
+    removeable = 2,
     width   = VariableColumnWidth.unsafeFromDouble(0.1, LevelMinWidth)
   )
 
@@ -188,6 +190,7 @@ object LogArea {
     name    = "msg",
     label   = "Message",
     visible = true,
+    grow = 10,
     width   = VariableColumnWidth.unsafeFromDouble(0.7, MessageMinWidth)
   )
 
@@ -213,32 +216,24 @@ object LogArea {
     r match {
       case ColumnRenderArgs(meta, _, _, _) if meta.column === ClipboardColumn =>
         Column(
-          Column.props(
+          Column.propsNoFlex(
             width           = ClipboardWidth,
             dataKey         = meta.name,
             headerRenderer  = clipboardHeaderRenderer,
             cellRenderer    = clipboardCellRenderer(b.props.site),
             className       = SeqexecStyles.clipboardIconDiv.htmlClass,
-            headerClassName = SeqexecStyles.clipboardIconHeader.htmlClass,
-            flexGrow = 0,
-            flexShrink = 0,
-            minWidth = ClipboardWidth,
-            maxWidth = ClipboardWidth
+            headerClassName = SeqexecStyles.clipboardIconHeader.htmlClass
           ))
       case ColumnRenderArgs(meta, _, width, _) if meta.column === MsgColumn =>
         Column(
-          Column.props(width     = width,
+          Column.propsNoFlex(width     = width,
                              dataKey   = meta.name,
                              label     = meta.label,
-                             className = LogColumnStyle,
-            flexGrow = 5,
-            flexShrink = 2,
-            minWidth = ClipboardWidth,
-            maxWidth = ClipboardWidth
+                             className = LogColumnStyle
                            ))
       case ColumnRenderArgs(meta, _, width, _) =>
         Column(
-          Column.props(
+          Column.propsNoFlex(
             width   = width,
             dataKey = meta.name,
             label   = meta.label,

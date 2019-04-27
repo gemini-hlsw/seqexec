@@ -54,8 +54,6 @@ import web.client.table._
 object SessionQueueTable {
   type Backend = RenderScope[Props, State, Unit]
 
-  private val PhoneCut              = 400.0
-  private val LargePhoneCut         = 570.0
   private val IconColumnWidth       = 25.0
   private val AddQueueColumnWidth   = 30.0
   private val ClassColumnWidth      = 26.0
@@ -89,56 +87,59 @@ object SessionQueueTable {
     name    = "status",
     label   = "",
     visible = true,
-    FixedColumnWidth.unsafeFromDouble(IconColumnWidth))
+    width = FixedColumnWidth.unsafeFromDouble(IconColumnWidth))
 
   val ClassColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     ClassColumn,
     name    = "class",
     label   = "",
     visible = true,
-    FixedColumnWidth.unsafeFromDouble(ClassColumnWidth))
+    width = FixedColumnWidth.unsafeFromDouble(ClassColumnWidth))
 
   val AddQueueColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     AddQueueColumn,
     name    = "",
     label   = "",
     visible = true,
-    FixedColumnWidth.unsafeFromDouble(AddQueueColumnWidth))
+    width = FixedColumnWidth.unsafeFromDouble(AddQueueColumnWidth))
 
   val ObsIdColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     ObsIdColumn,
     name    = "obsid",
     label   = "Obs. ID",
     visible = true,
-    VariableColumnWidth.unsafeFromDouble(0.2, ObsIdMinWidth))
+    width = VariableColumnWidth.unsafeFromDouble(0.2, ObsIdMinWidth))
 
   val StateColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     StateColumn,
     name    = "state",
     label   = "State",
     visible = true,
-    VariableColumnWidth.unsafeFromDouble(0.1, StateMinWidth))
+    width = VariableColumnWidth.unsafeFromDouble(0.1, StateMinWidth))
 
   val InstrumentColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     InstrumentColumn,
     name    = "instrument",
     label   = "Instrument",
     visible = true,
-    VariableColumnWidth.unsafeFromDouble(0.2, InstrumentMinWidth))
+    removeable = 1,
+    width = VariableColumnWidth.unsafeFromDouble(0.2, InstrumentMinWidth))
 
   val TargetNameColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     TargetNameColumn,
     name    = "target",
     label   = "Target",
     visible = true,
-    VariableColumnWidth.unsafeFromDouble(0.25, TargetMinWidth))
+    removeable = 2,
+    width = VariableColumnWidth.unsafeFromDouble(0.25, TargetMinWidth))
 
   val ObsNameColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     ObsNameColumn,
     name    = "obsName",
     label   = "Obs. Name",
     visible = true,
-    VariableColumnWidth.unsafeFromDouble(0.25, ObsNameMinWidth))
+    removeable = 3,
+    width = VariableColumnWidth.unsafeFromDouble(0.25, ObsNameMinWidth))
 
   val all: NonEmptyList[ColumnMeta[TableColumn]] = NonEmptyList.of(
     IconColumnMeta,
@@ -240,33 +241,11 @@ object SessionQueueTable {
       }
 
     // Hide some columns depending on width
-    def visibleColsFor(s: Size, t: TableColumn): Boolean =
-      s.width match {
-        case w if w < PhoneCut =>
-          t match {
-            case ObsNameColumn | TargetNameColumn =>
-              false
-            case AddQueueColumn =>
-              loggedIn
-            case _ =>
-              true
-          }
-        case w if w < LargePhoneCut =>
-          t match {
-            case TargetNameColumn =>
-              false
-            case ObsNameColumn | AddQueueColumn =>
-              loggedIn
-            case _ =>
-              true
-          }
-        case _ =>
-          t match {
-            case TargetNameColumn | ObsNameColumn | AddQueueColumn =>
-              loggedIn
-            case _ =>
-              true
-          }
+    def visibleColsFor(t: TableColumn): Boolean =
+      t match {
+        case ObsNameColumn | AddQueueColumn | TargetNameColumn =>
+          loggedIn
+        case _ => true
       }
   }
 
@@ -674,7 +653,7 @@ object SessionQueueTable {
             headerRenderer = resizableHeaderRenderer(
               b.state.tableState.resizeRow(meta.column,
                                            size,
-                                           b.state.visibleColsFor(_, _),
+                                           b.state.visibleColsFor,
                                            updateScrollPosition)),
             className = columnStyle(meta.column).foldMap(_.htmlClass)
           ))
@@ -749,7 +728,7 @@ object SessionQueueTable {
         rowRenderer      = draggableRowRenderer(b)
       ),
       b.state.tableState.columnBuilder(size,
-                                       b.state.visibleColsFor(_, _),
+                                       b.state.visibleColsFor,
                                        colWidths(b.props.sequencesList),
                                        colBuilder(b, size)): _*
     ).vdomElement

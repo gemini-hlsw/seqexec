@@ -413,10 +413,8 @@ object StepsTable extends Columns {
         case _                 => true
       }
 
-    private val visibleColumnsForInstrument = shownForInstrument.map(_.column)
-
-    val visibleColumns: (Size, TableColumn) => Boolean = (_, col) =>
-      visibleColumnsForInstrument.contains(col)
+    val visibleColumns: TableColumn => Boolean =
+      shownForInstrument.map(_.column).contains _
 
     val startState: State = {
       State.InitialState.copy(tableState = tableState)

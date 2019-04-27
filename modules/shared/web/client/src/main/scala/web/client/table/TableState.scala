@@ -25,14 +25,13 @@ final case class TableState[A: Eq](userModified:   UserModified,
   val isModified: Boolean = userModified === IsModified
 
   // Reset visibility given the filters
-  private def withVisibleCols(visibleFilter: (Size, A) => Boolean,
-                              s:             Size): TableState[A] =
+  private def withVisibleCols(visibleFilter: A => Boolean): TableState[A] =
     TableState
       .columns[A]
       .modify { x =>
         val visibleCols: List[ColumnMeta[A]] = x.toList
           .map {
-            case c @ ColumnMeta(i, _, _, _, _, _, _) if !visibleFilter(s, i) =>
+            case c @ ColumnMeta(i, _, _, _, _, _, _) if !visibleFilter( i) =>
               ColumnMeta.visible.set(false)(c)
             case c => c
           }
@@ -202,12 +201,12 @@ final case class TableState[A: Eq](userModified:   UserModified,
   // Table can call this to build the columns
   def columnBuilder(
     s:               Size,
-    visibleCols:     (Size, A) => Boolean,
+    visibleCols:     A => Boolean,
     calculatedWidth: A => Option[Double],
     cb:              ColumnRenderArgs[A] => Table.ColumnArg
   ): List[Table.ColumnArg] = {
     val vc =
-      withVisibleCols(visibleCols, s)
+      withVisibleCols(visibleCols)
         .distributePercentages(s, calculatedWidth)
     val vcl = vc.columns.count(_.visible)
 
@@ -263,12 +262,12 @@ final case class TableState[A: Eq](userModified:   UserModified,
   def resizeRow(
     column:      A,
     s:           Size,
-    visibleCols: (Size, A) => Boolean,
+    visibleCols: A => Boolean,
     cb:          TableState[A] => Callback
   ): (String, JsNumber) => Callback =
     (_, dx) => {
       val delta = dx.toDouble / (s.width - fixedWidth)
-      val st = withVisibleCols(visibleCols, s)
+      val st = withVisibleCols(visibleCols)
         .normalizeColumnWidths(s)
         .applyOffset(column, delta, s)
       cb(st)
@@ -283,7 +282,7 @@ final case class TableState[A: Eq](userModified:   UserModified,
 }
 
 object TableState {
-  def AllColsVisible[A](s: Size, a: A): Boolean = true
+  def AllColsVisible[A](a: A): Boolean = true
 
   def NoInitialWidth[A]: A => Option[Double] = _ => None
 
