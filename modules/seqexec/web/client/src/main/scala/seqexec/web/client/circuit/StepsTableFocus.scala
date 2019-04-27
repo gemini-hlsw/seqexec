@@ -52,7 +52,6 @@ object StepsTableFocus {
       SequencesOnDisplay.tabG(id)).zip(SeqexecAppRootModel.stepsTableStateL(id).asGetter) >>> {
         case (Some(SeqexecTabActive(tab, _)), ts) =>
           val sequence = tab.sequence
-          // println(s"Step table focus ${tab.tableState.isModified}")
           StepsTableFocus(
             sequence.id,
             sequence.metadata.instrument,

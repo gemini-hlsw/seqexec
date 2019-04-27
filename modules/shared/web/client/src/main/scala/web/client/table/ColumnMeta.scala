@@ -19,7 +19,7 @@ final case class ColumnMeta[A](column:     A,
                                visible:    Boolean,
                                width:      ColumnWidth,
                                grow:       Int = 1,
-                               removeable: Int = 1)
+                               removeable: Int = 0)
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object ColumnMeta {

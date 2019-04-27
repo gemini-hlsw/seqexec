@@ -49,7 +49,7 @@ object SeqexecUIModel {
     Pages.Root,
     None,
     SectionClosed,
-    GlobalLog(FixedLengthBuffer.unsafeFromInt(500), SectionClosed),
+    GlobalLog(FixedLengthBuffer.unsafeFromInt(500), SectionOpen),
     SequencesOnDisplay.Empty,
     AppTableStates.Initial,
     Observer(""),

@@ -213,23 +213,32 @@ object LogArea {
     r match {
       case ColumnRenderArgs(meta, _, _, _) if meta.column === ClipboardColumn =>
         Column(
-          Column.propsNoFlex(
+          Column.props(
             width           = ClipboardWidth,
             dataKey         = meta.name,
             headerRenderer  = clipboardHeaderRenderer,
             cellRenderer    = clipboardCellRenderer(b.props.site),
             className       = SeqexecStyles.clipboardIconDiv.htmlClass,
-            headerClassName = SeqexecStyles.clipboardIconHeader.htmlClass
+            headerClassName = SeqexecStyles.clipboardIconHeader.htmlClass,
+            flexGrow = 0,
+            flexShrink = 0,
+            minWidth = ClipboardWidth,
+            maxWidth = ClipboardWidth
           ))
       case ColumnRenderArgs(meta, _, width, _) if meta.column === MsgColumn =>
         Column(
-          Column.propsNoFlex(width     = width,
+          Column.props(width     = width,
                              dataKey   = meta.name,
                              label     = meta.label,
-                             className = LogColumnStyle))
+                             className = LogColumnStyle,
+            flexGrow = 5,
+            flexShrink = 2,
+            minWidth = ClipboardWidth,
+            maxWidth = ClipboardWidth
+                           ))
       case ColumnRenderArgs(meta, _, width, _) =>
         Column(
-          Column.propsNoFlex(
+          Column.props(
             width   = width,
             dataKey = meta.name,
             label   = meta.label,

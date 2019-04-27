@@ -115,7 +115,7 @@ trait Columns {
     ReadModeColumn -> ReadModeWidth,
     ImagingMirrorColumn -> ImagingMirrorWidth,
     ObjectTypeColumn -> ObjectTypeWidth,
-    SettingsColumn -> SettingsWidth,
+    SettingsColumn -> SettingsWidth
   )
 
   object TableColumn {
@@ -129,21 +129,21 @@ trait Columns {
     name    = "control",
     label   = "",
     visible = true,
-    FixedColumnWidth.unsafeFromDouble(ControlWidth))
+    width = FixedColumnWidth.unsafeFromDouble(ControlWidth))
 
   val StepMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     StepColumn,
     name    = "idx",
     label   = "Step",
     visible = true,
-    FixedColumnWidth.unsafeFromDouble(StepWidth))
+    width = FixedColumnWidth.unsafeFromDouble(StepWidth))
 
   val ExecutionMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     ExecutionColumn,
     name    = "state",
     label   = "Execution Progress",
     visible = true,
-    VariableColumnWidth.unsafeFromDouble(0.1, StateWidth),
+    width = VariableColumnWidth.unsafeFromDouble(0.1, StateWidth),
     grow = 20)
 
   val OffsetMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
@@ -151,84 +151,87 @@ trait Columns {
     name    = "offsets",
     label   = "Offsets",
     visible = true,
-    FixedColumnWidth.unsafeFromDouble(OffsetWidthBase))
+    width = FixedColumnWidth.unsafeFromDouble(OffsetWidthBase))
 
   val ObservingModeMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     ObservingModeColumn,
     name    = "obsMode",
     label   = "Observing Mode",
     visible = true,
-    VariableColumnWidth.unsafeFromDouble(0.1, ObservingModeWidth))
+    width = VariableColumnWidth.unsafeFromDouble(0.1, ObservingModeWidth))
 
   val ExposureMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     ExposureColumn,
     name    = "exposure",
     label   = "Exposure",
     visible = true,
-    VariableColumnWidth.unsafeFromDouble(0.1, ExposureMinWidth))
+    width = VariableColumnWidth.unsafeFromDouble(0.1, ExposureMinWidth))
 
   val DisperserMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     DisperserColumn,
     name    = "disperser",
     label   = "Disperser",
     visible = true,
-    VariableColumnWidth.unsafeFromDouble(0.1, DisperserMinWidth))
+    width = VariableColumnWidth.unsafeFromDouble(0.1, DisperserMinWidth))
 
   val FilterMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     FilterColumn,
     name    = "filter",
     label   = "Filter",
     visible = true,
-    VariableColumnWidth.unsafeFromDouble(0.1, FilterWidth))
+    removeable = 2,
+    width = VariableColumnWidth.unsafeFromDouble(0.1, FilterWidth))
 
   val FPUMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     FPUColumn,
     name    = "camera",
     label   = "FPU",
     visible = true,
-    VariableColumnWidth.unsafeFromDouble(0.1, FPUWidth))
+    width = VariableColumnWidth.unsafeFromDouble(0.1, FPUWidth))
 
   val CameraMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     CameraColumn,
     name    = "camera",
     label   = "Camera",
     visible = true,
-    VariableColumnWidth.unsafeFromDouble(0.1, CameraWidth))
+    width = VariableColumnWidth.unsafeFromDouble(0.1, CameraWidth))
 
   val DeckerMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     DeckerColumn,
     name    = "camera",
     label   = "Decker",
     visible = true,
-    VariableColumnWidth.unsafeFromDouble(0.1, DeckerWidth))
+    width = VariableColumnWidth.unsafeFromDouble(0.1, DeckerWidth))
 
   val ReadModeMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     ReadModeColumn,
     name    = "camera",
     label   = "ReadMode",
     visible = true,
-    VariableColumnWidth.unsafeFromDouble(0.1, ReadModeWidth))
+    removeable = 3,
+    width = VariableColumnWidth.unsafeFromDouble(0.1, ReadModeWidth))
 
   val ImagingMirrorMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     ImagingMirrorColumn,
     name    = "camera",
     label   = "ImagingMirror",
     visible = true,
-    VariableColumnWidth.unsafeFromDouble(0.1, ImagingMirrorWidth))
+    width = VariableColumnWidth.unsafeFromDouble(0.1, ImagingMirrorWidth))
 
   val ObjectTypeMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     ObjectTypeColumn,
     name    = "type",
     label   = "Type",
     visible = true,
-    FixedColumnWidth.unsafeFromDouble(ObjectTypeWidth))
+    removeable = 1,
+    width = FixedColumnWidth.unsafeFromDouble(ObjectTypeWidth))
 
   val SettingsMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     SettingsColumn,
     name    = "set",
     label   = "",
     visible = true,
-    FixedColumnWidth.unsafeFromDouble(SettingsWidth))
+    width = FixedColumnWidth.unsafeFromDouble(SettingsWidth))
 
   val all: NonEmptyList[ColumnMeta[TableColumn]] =
     NonEmptyList.of(
@@ -416,7 +419,6 @@ object StepsTable extends Columns {
       visibleColumnsForInstrument.contains(col)
 
     val startState: State = {
-      // println(s"INIT st ${tableState.isModified}")
       State.InitialState.copy(tableState = tableState)
     }
 
@@ -430,7 +432,6 @@ object StepsTable extends Columns {
       State.columns.set(NonEmptyList.fromListUnsafe(p.shownForInstrument))(this)
 
     def columnWidths(size: Size, p: Props): TableColumn => Option[Double] =
-      // println(s"Mod ${tableState.isModified}")
       if (tableState.isModified) { _ =>
         none
       } else if (size.width > 0) { col =>
@@ -635,16 +636,10 @@ object StepsTable extends Columns {
       case (_, StepRow(s @ StandardStep(_, _, _, true, _, _, _, _)), true, _) =>
         // row with control elements and breakpoint
         SeqexecStyles.stepRowWithBreakpointAndControl |+| stepRowStyle(s)
-      case (_,
-            StepRow(s @ StandardStep(_, _, _, true, _, _, _, _)),
-            false,
-            _) =>
+      case (_, StepRow(s @ StandardStep(_, _, _, true, _, _, _, _)), false, _) =>
         // row with breakpoint
         SeqexecStyles.stepRowWithBreakpoint |+| stepRowStyle(s)
-      case (j,
-            StepRow(s @ StandardStep(_, _, _, false, _, _, _, _)),
-            _,
-            Some(k)) if j === k =>
+      case (j, StepRow(s @ StandardStep(_, _, _, false, _, _, _, _)), _, Some(k)) if j === k =>
         // row with breakpoint and hover
         SeqexecStyles.stepRowWithBreakpointHover |+| stepRowStyle(s)
       case (_, StepRow(s), _, _) =>
@@ -672,8 +667,7 @@ object StepsTable extends Columns {
         // Row running with a breakpoint set
         SeqexecStyles.runningRowHeight + BreakpointLineHeight
       case StepRow(StandardStep(i, _, _, _, _, _, _, _))
-          if b.state.selected.exists(_ === i) && b.props.canControlSubsystems(
-            i) =>
+          if b.state.selected.exists(_ === i) && b.props.canControlSubsystems(i) =>
         // Selected
         SeqexecStyles.runningRowHeight
       case StepRow(s: Step) if s.status === StepState.Running =>
@@ -686,9 +680,6 @@ object StepsTable extends Columns {
         // default row
         baseHeight(b.props)
     }
-
-  // private val PhoneCut      = 412
-  // private val LargePhoneCut = 767
 
   def columnClassName(c: TableColumn): Option[GStyle] =
     c match {
@@ -780,8 +771,6 @@ object StepsTable extends Columns {
 
     tb match {
       case ColumnRenderArgs(meta, _, width, true) =>
-        // println(c)
-        // println(width)
         Column(
           Column.propsNoFlex(
             width   = width,
@@ -1008,7 +997,6 @@ object StepsTable extends Columns {
       TableContainer.Props(
         b.props.hasControls,
         size => {
-          // println("Rerender ")
           val ts =
             b.state.tableState
               .columnBuilder(size,

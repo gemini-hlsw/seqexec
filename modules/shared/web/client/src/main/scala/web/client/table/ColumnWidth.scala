@@ -18,13 +18,7 @@ sealed abstract class FixedColumnWidth(val width: Double) extends ColumnWidth {
 sealed abstract class VariableColumnWidth(val percentage: Double,
                                           val minWidth:   Double)
     extends ColumnWidth {
-  if (!(percentage > 0 && percentage <= 1)) {
-    println(s"Bogus percentage $percentage")
-  }
   assert(percentage > 0 && percentage <= 1)
-  if (!(minWidth>=0)) {
-    println(s"Bogus minwidth $minWidth")
-  }
   assert(minWidth >= 0)
   override def toString: String =
     s"Variable(${percentage}%, ${minWidth}px)"
