@@ -501,7 +501,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
     val tcsKReader = if (settings.tcsKeywords) TcsKeywordsReaderImpl else DummyTcsKeywordsReader
     inst match {
       case Instrument.F2     =>
-        toInstrumentSys(inst).map(Flamingos2Header.header(_, new Flamingos2Header.ObsKeywordsReaderImpl(config), tcsKReader))
+        toInstrumentSys(inst).map(Flamingos2Header.header(_, Flamingos2Header.ObsKeywordsReaderODB(config), tcsKReader))
       case Instrument.GmosS |
            Instrument.GmosN  =>
         val gmosInstReader = if (settings.gmosKeywords) GmosHeader.InstKeywordReaderImpl else GmosHeader.DummyInstKeywordReader
@@ -514,8 +514,8 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
       case Instrument.Ghost  =>
         GhostHeader.header[IO].asRight
       case Instrument.Niri   =>
-        val niriReader = if(settings.niriKeywords) NiriKeywordReaderImpl
-                          else NiriKeywordReaderDummy
+        val niriReader = if(settings.niriKeywords) NiriKeywordReaderEpics[IO]
+                          else NiriKeywordReaderDummy[IO]
         toInstrumentSys(inst).map(NiriHeader.header(_, niriReader, tcsKReader))
       case Instrument.Nifs   =>
         val nifsReader = if(settings.nifsKeywords) NifsKeywordReaderImpl else NifsKeywordReaderDummy

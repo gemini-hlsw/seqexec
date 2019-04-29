@@ -3,135 +3,139 @@
 
 package seqexec.server.niri
 
-import cats.effect.IO
+import cats.Applicative
+import cats.data.Nested
+import cats.effect.Sync
+import cats.effect.LiftIO
 import cats.implicits._
-import seqexec.server.SeqAction
-import seqexec.server.SeqActionF
 import seqexec.server.keywords._
 
 trait NiriKeywordReader[F[_]] {
-  def arrayId: SeqActionF[F, String]
-  def arrayType: SeqActionF[F, String]
-  def camera: SeqActionF[F, String]
-  def coadds: SeqActionF[F, Int]
-  def exposureTime: SeqActionF[F, Double]
-  def filter1: SeqActionF[F, String]
-  def filter2: SeqActionF[F, String]
-  def filter3: SeqActionF[F, String]
-  def focusName: SeqActionF[F, String]
-  def focusPosition: SeqActionF[F, Double]
-  def focalPlaneMask: SeqActionF[F, String]
-  def beamSplitter: SeqActionF[F, String]
-  def windowCover: SeqActionF[F, String]
-  def framesPerCycle: SeqActionF[F, Int]
-  def headerTiming: SeqActionF[F, String]
-  def lnrs: SeqActionF[F, Int]
-  def mode: SeqActionF[F, String]
-  def numberDigitalAverage: SeqActionF[F, Int]
-  def pupilViewer: SeqActionF[F, String]
-  def detectorTemperature: SeqActionF[F, Double]
-  def mountTemperature: SeqActionF[F, Double]
-  def µcodeName: SeqActionF[F, String]
-  def µcodeType: SeqActionF[F, String]
-  def cl1VoltageDD: SeqActionF[F, Double]
-  def cl2VoltageDD: SeqActionF[F, Double]
-  def ucVoltage: SeqActionF[F, Double]
-  def detectorVoltage: SeqActionF[F, Double]
-  def cl1VoltageGG: SeqActionF[F, Double]
-  def cl2VoltageGG: SeqActionF[F, Double]
-  def setVoltage: SeqActionF[F, Double]
-  def observationEpoch: SeqActionF[F, Double]
+  def arrayId: F[String]
+  def arrayType: F[String]
+  def camera: F[String]
+  def coadds: F[Int]
+  def exposureTime: F[Double]
+  def filter1: F[String]
+  def filter2: F[String]
+  def filter3: F[String]
+  def focusName: F[String]
+  def focusPosition: F[Double]
+  def focalPlaneMask: F[String]
+  def beamSplitter: F[String]
+  def windowCover: F[String]
+  def framesPerCycle: F[Int]
+  def headerTiming: F[String]
+  def lnrs: F[Int]
+  def mode: F[String]
+  def numberDigitalAverage: F[Int]
+  def pupilViewer: F[String]
+  def detectorTemperature: F[Double]
+  def mountTemperature: F[Double]
+  def µcodeName: F[String]
+  def µcodeType: F[String]
+  def cl1VoltageDD: F[Double]
+  def cl2VoltageDD: F[Double]
+  def ucVoltage: F[Double]
+  def detectorVoltage: F[Double]
+  def cl1VoltageGG: F[Double]
+  def cl2VoltageGG: F[Double]
+  def setVoltage: F[Double]
+  def observationEpoch: F[Double]
 }
 
 // This could be NiriKeywordReader[Id] but it requires changes upstream
-object NiriKeywordReaderDummy extends NiriKeywordReader[IO] {
-  override def arrayId: SeqAction[String] = SeqAction(StrDefault)
-  override def arrayType: SeqAction[String] = SeqAction(StrDefault)
-  override def camera: SeqAction[String] = SeqAction(StrDefault)
-  override def coadds: SeqAction[Int] = SeqAction(IntDefault)
-  override def exposureTime: SeqAction[Double] = SeqAction(DoubleDefault)
-  override def filter1: SeqAction[String] = SeqAction(StrDefault)
-  override def filter2: SeqAction[String] = SeqAction(StrDefault)
-  override def filter3: SeqAction[String] = SeqAction(StrDefault)
-  override def focusName: SeqAction[String] = SeqAction(StrDefault)
-  override def focusPosition: SeqAction[Double] = SeqAction(DoubleDefault)
-  override def focalPlaneMask: SeqAction[String] = SeqAction(StrDefault)
-  override def beamSplitter: SeqAction[String] = SeqAction(StrDefault)
-  override def windowCover: SeqAction[String] = SeqAction(StrDefault)
-  override def framesPerCycle: SeqAction[Int] = SeqAction(IntDefault)
-  override def headerTiming: SeqAction[String] = SeqAction(StrDefault)
-  override def lnrs: SeqAction[Int] = SeqAction(IntDefault)
-  override def mode: SeqAction[String] = SeqAction(StrDefault)
-  override def numberDigitalAverage: SeqAction[Int] = SeqAction(IntDefault)
-  override def pupilViewer: SeqAction[String] = SeqAction(StrDefault)
-  override def detectorTemperature: SeqAction[Double] = SeqAction(DoubleDefault)
-  override def mountTemperature: SeqAction[Double] = SeqAction(DoubleDefault)
-  override def µcodeName: SeqAction[String] = SeqAction(StrDefault)
-  override def µcodeType: SeqAction[String] = SeqAction(StrDefault)
-  override def cl1VoltageDD: SeqAction[Double] = SeqAction(DoubleDefault)
-  override def cl2VoltageDD: SeqAction[Double] = SeqAction(DoubleDefault)
-  override def ucVoltage: SeqAction[Double] = SeqAction(DoubleDefault)
-  override def detectorVoltage: SeqAction[Double] = SeqAction(DoubleDefault)
-  override def cl1VoltageGG: SeqAction[Double] = SeqAction(DoubleDefault)
-  override def cl2VoltageGG: SeqAction[Double] = SeqAction(DoubleDefault)
-  override def setVoltage: SeqAction[Double] = SeqAction(DoubleDefault)
-  override def observationEpoch: SeqAction[Double] = SeqAction(DoubleDefault)
+object NiriKeywordReaderDummy {
+  def apply[F[_]: Applicative]: NiriKeywordReader[F] = new NiriKeywordReader[F] {
+    override def arrayId: F[String] = strDefault[F]
+    override def arrayType: F[String] = strDefault[F]
+    override def camera: F[String] = strDefault[F]
+    override def coadds: F[Int] = intDefault[F]
+    override def exposureTime: F[Double] = doubleDefault[F]
+    override def filter1: F[String] = strDefault[F]
+    override def filter2: F[String] = strDefault[F]
+    override def filter3: F[String] = strDefault[F]
+    override def focusName: F[String] = strDefault[F]
+    override def focusPosition: F[Double] = doubleDefault[F]
+    override def focalPlaneMask: F[String] = strDefault[F]
+    override def beamSplitter: F[String] = strDefault[F]
+    override def windowCover: F[String] = strDefault[F]
+    override def framesPerCycle: F[Int] = intDefault[F]
+    override def headerTiming: F[String] = strDefault[F]
+    override def lnrs: F[Int] = intDefault[F]
+    override def mode: F[String] = strDefault[F]
+    override def numberDigitalAverage: F[Int] = intDefault[F]
+    override def pupilViewer: F[String] = strDefault[F]
+    override def detectorTemperature: F[Double] = doubleDefault[F]
+    override def mountTemperature: F[Double] = doubleDefault[F]
+    override def µcodeName: F[String] = strDefault[F]
+    override def µcodeType: F[String] = strDefault[F]
+    override def cl1VoltageDD: F[Double] = doubleDefault[F]
+    override def cl2VoltageDD: F[Double] = doubleDefault[F]
+    override def ucVoltage: F[Double] = doubleDefault[F]
+    override def detectorVoltage: F[Double] = doubleDefault[F]
+    override def cl1VoltageGG: F[Double] = doubleDefault[F]
+    override def cl2VoltageGG: F[Double] = doubleDefault[F]
+    override def setVoltage: F[Double] = doubleDefault[F]
+    override def observationEpoch: F[Double] = doubleDefault[F]
+  }
 }
 
-object NiriKeywordReaderImpl extends NiriKeywordReader[IO] {
-  val sys = NiriEpics.instance
-  override def arrayId: SeqAction[String] = SeqActionF.embed(sys.arrayId.safeValOrDefault)
-  override def arrayType: SeqAction[String] = SeqActionF.embed(sys.arrayType.safeValOrDefault)
-  override def camera: SeqAction[String] = SeqActionF.embed(sys.camera.safeValOrDefault)
-  override def coadds: SeqAction[Int] = SeqActionF.embed(sys.coadds.safeValOrDefault)
-  override def exposureTime: SeqAction[Double] = SeqActionF.embed {
-    (for {
-      it <- sys.integrationTime
-      mi <- sys.minIntegration
-    } yield (it, mi).mapN(_ + _)).safeValOrDefault
+object NiriKeywordReaderEpics {
+  def apply[F[_]: Sync: LiftIO]: NiriKeywordReader[F] = new NiriKeywordReader[F] {
+    val sys = NiriEpics.instance
+    override def arrayId: F[String] = sys.arrayId.safeValOrDefault.to[F]
+    override def arrayType: F[String] = sys.arrayType.safeValOrDefault.to[F]
+    override def camera: F[String] = sys.camera.safeValOrDefault.to[F]
+    override def coadds: F[Int] = sys.coadds.safeValOrDefault.to[F]
+    override def exposureTime: F[Double] =
+      (for {
+        it <- sys.integrationTime
+        mi <- sys.minIntegration
+      } yield (it, mi).mapN(_ + _)).safeValOrDefault.to[F]
+    override def filter1: F[String] = sys.filter1.safeValOrDefault.to[F]
+    override def filter2: F[String] = sys.filter2.safeValOrDefault.to[F]
+    override def filter3: F[String] = sys.filter3.safeValOrDefault.to[F]
+    override def focusName: F[String] = sys.focus.safeValOrDefault.to[F]
+    override def focusPosition: F[Double] = sys.focusPosition.safeValOrDefault.to[F]
+    override def focalPlaneMask: F[String] = sys.mask.safeValOrDefault.to[F]
+    override def beamSplitter: F[String] = sys.beamSplitter.safeValOrDefault.to[F]
+    override def windowCover: F[String] = sys.windowCover.safeValOrDefault.to[F]
+    override def framesPerCycle: F[Int] = sys.framesPerCycle.safeValOrDefault.to[F]
+    override def headerTiming: F[String] = Nested(sys.hdrTiming).map {
+      case 1 => "BEFORE"
+      case 2 => "AFTER"
+      case 3 => "BOTH"
+      case _ => "INDEF"
+    }.value.safeValOrDefault.to[F]
+    override def lnrs: F[Int] = sys.lnrs.safeValOrDefault.to[F]
+    override def mode: F[String] = Nested(sys.mode).map {
+      case 0 => "STARE"
+      case 1 => "SEP"
+      case 2 => "CHOP"
+      case 3 => "CHOP2"
+      case 4 => "TEST"
+      case _ => "INDEF"
+    }.value.safeValOrDefault.to[F]
+    override def numberDigitalAverage: F[Int] = sys.digitalAverageCount.safeValOrDefault.to[F]
+    override def pupilViewer: F[String] = sys.pupilViewer.safeValOrDefault.to[F]
+    override def detectorTemperature: F[Double] = sys.detectorTemp.safeValOrDefault.to[F]
+    override def mountTemperature: F[Double] = sys.mountTemp.safeValOrDefault.to[F]
+    override def µcodeName: F[String] = sys.µcodeName.safeValOrDefault.to[F]
+    override def µcodeType: F[String] = Nested(sys.µcodeType).map {
+      case 1 => "RRD"
+      case 2 => "RDD"
+      case 3 => "RD"
+      case 4 => "SRB"
+      case _ => "INDEF"
+    }.value.safeValOrDefault.to[F]
+    override def cl1VoltageDD: F[Double] = sys.vddCl1.safeValOrDefault.to[F]
+    override def cl2VoltageDD: F[Double] = sys.vddCl2.safeValOrDefault.to[F]
+    override def ucVoltage: F[Double] = sys.vddUc.safeValOrDefault.to[F]
+    override def detectorVoltage: F[Double] = sys.detectorVDetBias.safeValOrDefault.to[F]
+    override def cl1VoltageGG: F[Double] = sys.vggCl1.safeValOrDefault.to[F]
+    override def cl2VoltageGG: F[Double] = sys.vggCl2.safeValOrDefault.to[F]
+    override def setVoltage: F[Double] = sys.detectorVSetBias.safeValOrDefault.to[F]
+    override def observationEpoch: F[Double] = sys.obsEpoch.safeValOrDefault.to[F]
   }
-  override def filter1: SeqAction[String] = SeqActionF.embed(sys.filter1.safeValOrDefault)
-  override def filter2: SeqAction[String] = SeqActionF.embed(sys.filter2.safeValOrDefault)
-  override def filter3: SeqAction[String] = SeqActionF.embed(sys.filter3.safeValOrDefault)
-  override def focusName: SeqAction[String] = SeqActionF.embed(sys.focus.safeValOrDefault)
-  override def focusPosition: SeqAction[Double] = SeqActionF.embed(sys.focusPosition.safeValOrDefault)
-  override def focalPlaneMask: SeqAction[String] = SeqActionF.embed(sys.mask.safeValOrDefault)
-  override def beamSplitter: SeqAction[String] = SeqActionF.embed(sys.beamSplitter.safeValOrDefault)
-  override def windowCover: SeqAction[String] = SeqActionF.embed(sys.windowCover.safeValOrDefault)
-  override def framesPerCycle: SeqAction[Int] = SeqActionF.embed(sys.framesPerCycle.safeValOrDefault)
-  override def headerTiming: SeqAction[String] = SeqActionF.embed(sys.hdrTiming.safeValOrDefault.map{
-    case 1 => "BEFORE"
-    case 2 => "AFTER"
-    case 3 => "BOTH"
-    case _ => "INDEF"
-  })
-  override def lnrs: SeqAction[Int] = SeqActionF.embed(sys.lnrs.safeValOrDefault)
-  override def mode: SeqAction[String] = SeqActionF.embed(sys.mode.safeValOrDefault.map{
-    case 0 => "STARE"
-    case 1 => "SEP"
-    case 2 => "CHOP"
-    case 3 => "CHOP2"
-    case 4 => "TEST"
-    case _ => "INDEF"
-  })
-  override def numberDigitalAverage: SeqAction[Int] = SeqActionF.embed(sys.digitalAverageCount.safeValOrDefault)
-  override def pupilViewer: SeqAction[String] = SeqActionF.embed(sys.pupilViewer.safeValOrDefault)
-  override def detectorTemperature: SeqAction[Double] = SeqActionF.embed(sys.detectorTemp.safeValOrDefault)
-  override def mountTemperature: SeqAction[Double] = SeqActionF.embed(sys.mountTemp.safeValOrDefault)
-  override def µcodeName: SeqAction[String] = SeqActionF.embed(sys.µcodeName.safeValOrDefault)
-  override def µcodeType: SeqAction[String] = SeqActionF.embed(sys.µcodeType.safeValOrDefault.map{
-    case 1 => "RRD"
-    case 2 => "RDD"
-    case 3 => "RD"
-    case 4 => "SRB"
-    case _ => "INDEF"
-  })
-  override def cl1VoltageDD: SeqAction[Double] = SeqActionF.embed(sys.vddCl1.safeValOrDefault)
-  override def cl2VoltageDD: SeqAction[Double] = SeqActionF.embed(sys.vddCl2.safeValOrDefault)
-  override def ucVoltage: SeqAction[Double] = SeqActionF.embed(sys.vddUc.safeValOrDefault)
-  override def detectorVoltage: SeqAction[Double] = SeqActionF.embed(sys.detectorVDetBias.safeValOrDefault)
-  override def cl1VoltageGG: SeqAction[Double] = SeqActionF.embed(sys.vggCl1.safeValOrDefault)
-  override def cl2VoltageGG: SeqAction[Double] = SeqActionF.embed(sys.vggCl2.safeValOrDefault)
-  override def setVoltage: SeqAction[Double] = SeqActionF.embed(sys.detectorVSetBias.safeValOrDefault)
-  override def observationEpoch: SeqAction[Double] = SeqActionF.embed(sys.obsEpoch.safeValOrDefault)
 }
