@@ -403,9 +403,7 @@ object EpicsUtil {
   def executeIfNeeded[F[_]: Monad, A](i:     List[F[Option[F[Unit]]]],
                                               after: F[A]): F[Unit] =
     i.sequence.flatMap { l =>
-      val act: List[F[Unit]] = l.collect {
-        case Some(x) => x
-      }
+      val act: List[F[Unit]] = l.mapFilter(identity)
       (act.sequence *> after).whenA(act.nonEmpty)
     }
 
