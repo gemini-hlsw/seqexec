@@ -77,9 +77,9 @@ object Flamingos2Header {
   }
 
   object InstKeywordReaderImpl extends InstKeywordsReader[IO] {
-    override def getHealth: SeqActionF[IO, String] = Flamingos2Epics.instance.health.toSeqActionDefault
+    override def getHealth: SeqActionF[IO, String] = SeqActionF.embed(Flamingos2Epics.instance.health.safeValOrDefault)
 
-    override def getState: SeqActionF[IO, String] = Flamingos2Epics.instance.state.toSeqActionDefault
+    override def getState: SeqActionF[IO, String] = SeqActionF.embed(Flamingos2Epics.instance.state.safeValOrDefault)
   }
 
 }

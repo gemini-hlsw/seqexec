@@ -3,11 +3,14 @@
 
 package seqexec.server.flamingos2
 
+import cats.effect.IO
+import cats.effect.Sync
 import edu.gemini.epics.acm._
 import seqexec.server.{EpicsCommand, EpicsSystem, SeqAction}
 import org.log4s.{Logger, getLogger}
 
-final class Flamingos2Epics(epicsService: CaService, tops: Map[String, String]) {
+final class Flamingos2Epics[F[_]: Sync](epicsService: CaService, tops: Map[String, String]) {
+  private val F: Sync[F] = Sync[F]
 
   import EpicsCommand.setParameter
 
@@ -27,7 +30,7 @@ final class Flamingos2Epics(epicsService: CaService, tops: Map[String, String]) 
     private val readoutMode = cs.map(_.getString("readoutMode"))
     def setReadoutMode(v: String): SeqAction[Unit] = setParameter(readoutMode, v)
 
-    val exposureTime: Option[CaParameter[java.lang.Double]] = cs.map(_.getDouble("exposureTime"))
+    private val exposureTime: Option[CaParameter[java.lang.Double]] = cs.map(_.getDouble("exposureTime"))
     def setExposureTime(v: Double): SeqAction[Unit] = setParameter[java.lang.Double](exposureTime, v)
 
   }
@@ -83,43 +86,90 @@ final class Flamingos2Epics(epicsService: CaService, tops: Map[String, String]) 
 
   private val f2State = epicsService.getStatusAcceptor("flamingos2::status")
 
-  def exposureTime: Option[String] = Option(f2State.getStringAttribute("exposureTime").value)
+  def exposureTime: F[Option[String]] =
+    F.delay(
+      Option(f2State.getStringAttribute("exposureTime"))
+        .flatMap(x => Option(x.value))
+    )
 
-  //def useElectronicOffsetting: Option[Integer] = Option(f2State.getIntegerAttribute("useElectronicOffsetting").value)
+  def filter: F[Option[String]] =
+    F.delay(
+      Option(f2State.getStringAttribute("filter"))
+        .flatMap(x => Option(x.value))
+    )
 
-  def filter: Option[String] = Option(f2State.getStringAttribute("filter").value)
+  def mos: F[Option[String]] =
+    F.delay(
+      Option(f2State.getStringAttribute("mos"))
+        .flatMap(x => Option(x.value))
+    )
 
-  def mos: Option[String] = Option(f2State.getStringAttribute("mos").value)
+  def grism: F[Option[String]] =
+    F.delay(
+      Option(f2State.getStringAttribute("grism"))
+        .flatMap(x => Option(x.value))
+    )
 
-  def grism: Option[String] = Option(f2State.getStringAttribute("grism").value)
+  def mask: F[Option[String]] =
+    F.delay(
+      Option(f2State.getStringAttribute("mask"))
+        .flatMap(x => Option(x.value))
+    )
 
-  def mask: Option[String] = Option(f2State.getStringAttribute("mask").value)
+  def decker: F[Option[String]] =
+    F.delay(
+      Option(f2State.getStringAttribute("decker"))
+        .flatMap(x => Option(x.value))
+    )
 
-  def decker: Option[String] = Option(f2State.getStringAttribute("decker").value)
+  def lyot: F[Option[String]] =
+    F.delay(
+      Option(f2State.getStringAttribute("lyot"))
+        .flatMap(x => Option(x.value))
+    )
 
-  def lyot: Option[String] = Option(f2State.getStringAttribute("lyot").value)
+  def windowCover: F[Option[String]] =
+    F.delay(
+      Option(f2State.getStringAttribute("windowCover"))
+        .flatMap(x => Option(x.value))
+    )
 
-  def windowCover: Option[String] = Option(f2State.getStringAttribute("windowCover").value)
+  def countdown: F[Option[Int]] =
+    F.delay(
+      Option(f2State.getIntegerAttribute("countdown"))
+        .flatMap(x => Option(x.value).map(_.toInt))
+    )
 
-  def countdown: Option[Int] = Option(f2State.getIntegerAttribute("countdown").value)
-    .map(_.toInt)
+  private val observeCAttr: CaAttribute[CarState] =
+    f2State.addEnum("observeState", s"${F2Top}observeC.VAL", classOf[CarState])
 
-  private val observeCAttr: CaAttribute[CarState] = f2State.addEnum("observeState",
-    s"${F2Top}observeC.VAL", classOf[CarState])
-  def observeState: Option[CarState] = Option(observeCAttr.value)
+  def observeState: F[Option[CarState]] =
+    F.delay(
+      Option(observeCAttr).
+        flatMap(x => Option(x.value))
+    )
 
   // For FITS keywords
-  def health: Option[String] = Option(f2State.getStringAttribute("INHEALTH").value)
+  def health: F[Option[String]] =
+    F.delay(
+      Option(f2State.getStringAttribute("INHEALTH"))
+        .flatMap(x => Option(x.value))
+    )
 
-  def state: Option[String] = Option(f2State.getStringAttribute("INSTATE").value)
+  def state: F[Option[String]] =
+    F.delay(
+      Option(f2State.getStringAttribute("INSTATE"))
+        .flatMap(x => Option(x.value))
+    )
 
 }
 
-object Flamingos2Epics extends EpicsSystem[Flamingos2Epics] {
+object Flamingos2Epics extends EpicsSystem[Flamingos2Epics[IO]] {
 
   override val className: String = getClass.getName
   override val Log: Logger = getLogger
   override val CA_CONFIG_FILE: String = "/Flamingos2.xml"
 
-  override def build(service: CaService, tops: Map[String, String]) = new Flamingos2Epics(service, tops)
+  override def build(service: CaService, tops: Map[String, String]) =
+    new Flamingos2Epics[IO](service, tops)
 }

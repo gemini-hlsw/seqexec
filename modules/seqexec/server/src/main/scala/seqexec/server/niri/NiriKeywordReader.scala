@@ -80,54 +80,58 @@ object NiriKeywordReaderDummy extends NiriKeywordReader[IO] {
 
 object NiriKeywordReaderImpl extends NiriKeywordReader[IO] {
   val sys = NiriEpics.instance
-  override def arrayId: SeqAction[String] = sys.arrayId.toSeqActionDefault
-  override def arrayType: SeqAction[String] = sys.arrayType.toSeqActionDefault
-  override def camera: SeqAction[String] = sys.camera.toSeqActionDefault
-  override def coadds: SeqAction[Int] = sys.coadds.toSeqActionDefault
-  override def exposureTime: SeqAction[Double] = (sys.integrationTime, sys.minIntegration).mapN(_ + _)
-    .toSeqActionDefault
-  override def filter1: SeqAction[String] = sys.filter1.toSeqActionDefault
-  override def filter2: SeqAction[String] = sys.filter2.toSeqActionDefault
-  override def filter3: SeqAction[String] = sys.filter3.toSeqActionDefault
-  override def focusName: SeqAction[String] = sys.focus.toSeqActionDefault
-  override def focusPosition: SeqAction[Double] = sys.focusPosition.toSeqActionDefault
-  override def focalPlaneMask: SeqAction[String] = sys.mask.toSeqActionDefault
-  override def beamSplitter: SeqAction[String] = sys.beamSplitter.toSeqActionDefault
-  override def windowCover: SeqAction[String] = sys.windowCover.toSeqActionDefault
-  override def framesPerCycle: SeqAction[Int] = sys.framesPerCycle.toSeqActionDefault
-  override def headerTiming: SeqAction[String] = sys.hdrTiming.toSeqActionDefault.map{
+  override def arrayId: SeqAction[String] = SeqActionF.embed(sys.arrayId.safeValOrDefault)
+  override def arrayType: SeqAction[String] = SeqActionF.embed(sys.arrayType.safeValOrDefault)
+  override def camera: SeqAction[String] = SeqActionF.embed(sys.camera.safeValOrDefault)
+  override def coadds: SeqAction[Int] = SeqActionF.embed(sys.coadds.safeValOrDefault)
+  override def exposureTime: SeqAction[Double] = SeqActionF.embed {
+    (for {
+      it <- sys.integrationTime
+      mi <- sys.minIntegration
+    } yield (it, mi).mapN(_ + _)).safeValOrDefault
+  }
+  override def filter1: SeqAction[String] = SeqActionF.embed(sys.filter1.safeValOrDefault)
+  override def filter2: SeqAction[String] = SeqActionF.embed(sys.filter2.safeValOrDefault)
+  override def filter3: SeqAction[String] = SeqActionF.embed(sys.filter3.safeValOrDefault)
+  override def focusName: SeqAction[String] = SeqActionF.embed(sys.focus.safeValOrDefault)
+  override def focusPosition: SeqAction[Double] = SeqActionF.embed(sys.focusPosition.safeValOrDefault)
+  override def focalPlaneMask: SeqAction[String] = SeqActionF.embed(sys.mask.safeValOrDefault)
+  override def beamSplitter: SeqAction[String] = SeqActionF.embed(sys.beamSplitter.safeValOrDefault)
+  override def windowCover: SeqAction[String] = SeqActionF.embed(sys.windowCover.safeValOrDefault)
+  override def framesPerCycle: SeqAction[Int] = SeqActionF.embed(sys.framesPerCycle.safeValOrDefault)
+  override def headerTiming: SeqAction[String] = SeqActionF.embed(sys.hdrTiming.safeValOrDefault.map{
     case 1 => "BEFORE"
     case 2 => "AFTER"
     case 3 => "BOTH"
     case _ => "INDEF"
-  }
-  override def lnrs: SeqAction[Int] = sys.lnrs.toSeqActionDefault
-  override def mode: SeqAction[String] = sys.mode.toSeqActionDefault.map{
+  })
+  override def lnrs: SeqAction[Int] = SeqActionF.embed(sys.lnrs.safeValOrDefault)
+  override def mode: SeqAction[String] = SeqActionF.embed(sys.mode.safeValOrDefault.map{
     case 0 => "STARE"
     case 1 => "SEP"
     case 2 => "CHOP"
     case 3 => "CHOP2"
     case 4 => "TEST"
     case _ => "INDEF"
-  }
-  override def numberDigitalAverage: SeqAction[Int] = sys.digitalAverageCount.toSeqActionDefault
-  override def pupilViewer: SeqAction[String] = sys.pupilViewer.toSeqActionDefault
-  override def detectorTemperature: SeqAction[Double] = sys.detectorTemp.toSeqActionDefault
-  override def mountTemperature: SeqAction[Double] = sys.mountTemp.toSeqActionDefault
-  override def µcodeName: SeqAction[String] = sys.µcodeName.toSeqActionDefault
-  override def µcodeType: SeqAction[String] = sys.µcodeType.toSeqActionDefault.map{
+  })
+  override def numberDigitalAverage: SeqAction[Int] = SeqActionF.embed(sys.digitalAverageCount.safeValOrDefault)
+  override def pupilViewer: SeqAction[String] = SeqActionF.embed(sys.pupilViewer.safeValOrDefault)
+  override def detectorTemperature: SeqAction[Double] = SeqActionF.embed(sys.detectorTemp.safeValOrDefault)
+  override def mountTemperature: SeqAction[Double] = SeqActionF.embed(sys.mountTemp.safeValOrDefault)
+  override def µcodeName: SeqAction[String] = SeqActionF.embed(sys.µcodeName.safeValOrDefault)
+  override def µcodeType: SeqAction[String] = SeqActionF.embed(sys.µcodeType.safeValOrDefault.map{
     case 1 => "RRD"
     case 2 => "RDD"
     case 3 => "RD"
     case 4 => "SRB"
     case _ => "INDEF"
-  }
-  override def cl1VoltageDD: SeqAction[Double] = sys.vddCl1.toSeqActionDefault
-  override def cl2VoltageDD: SeqAction[Double] = sys.vddCl2.toSeqActionDefault
-  override def ucVoltage: SeqAction[Double] = sys.vddUc.toSeqActionDefault
-  override def detectorVoltage: SeqAction[Double] = sys.detectorVDetBias.toSeqActionDefault
-  override def cl1VoltageGG: SeqAction[Double] = sys.vggCl1.toSeqActionDefault
-  override def cl2VoltageGG: SeqAction[Double] = sys.vggCl2.toSeqActionDefault
-  override def setVoltage: SeqAction[Double] = sys.detectorVSetBias.toSeqActionDefault
-  override def observationEpoch: SeqAction[Double] = sys.obsEpoch.toSeqActionDefault
+  })
+  override def cl1VoltageDD: SeqAction[Double] = SeqActionF.embed(sys.vddCl1.safeValOrDefault)
+  override def cl2VoltageDD: SeqAction[Double] = SeqActionF.embed(sys.vddCl2.safeValOrDefault)
+  override def ucVoltage: SeqAction[Double] = SeqActionF.embed(sys.vddUc.safeValOrDefault)
+  override def detectorVoltage: SeqAction[Double] = SeqActionF.embed(sys.detectorVDetBias.safeValOrDefault)
+  override def cl1VoltageGG: SeqAction[Double] = SeqActionF.embed(sys.vggCl1.safeValOrDefault)
+  override def cl2VoltageGG: SeqAction[Double] = SeqActionF.embed(sys.vggCl2.safeValOrDefault)
+  override def setVoltage: SeqAction[Double] = SeqActionF.embed(sys.detectorVSetBias.safeValOrDefault)
+  override def observationEpoch: SeqAction[Double] = SeqActionF.embed(sys.obsEpoch.safeValOrDefault)
 }

@@ -3,7 +3,6 @@
 
 package seqexec.server.nifs
 
-import cats.Monad
 import cats.Eq
 import cats.data.OptionT
 import cats.effect.IO
@@ -100,17 +99,6 @@ object NifsControllerEpics extends NifsEncoders {
 
   private val ConfigTimeout: Time  = Seconds(400)
   private val DefaultTimeout: Time = Seconds(60)
-
-  // This method takes a list of actions returning possible actions
-  // If at least one is defined it will execute them and then execut after
-  private def executeIfNeeded[F[_]: Monad, A](i:     List[F[Option[F[Unit]]]],
-                                              after: F[A]): F[Unit] =
-    i.sequence.flatMap { l =>
-      val act: List[F[Unit]] = l.collect {
-        case Some(x) => x
-      }
-      (act.sequence *> after).whenA(act.nonEmpty)
-    }
 
   import NifsController._
   import NifsLookupTables._
