@@ -8,7 +8,6 @@ import diode.ActionHandler
 import diode.ActionResult
 import diode.Effect
 import diode.ModelRW
-import gem.Observation
 import seqexec.model.ClientId
 import seqexec.web.client.actions._
 import seqexec.web.client.services.SeqexecWebClient
@@ -131,9 +130,8 @@ class RemoteRequestsHandler[M](modelRW: ModelRW[M, Option[ClientId]])
         requestEffect(
           id,
           SeqexecWebClient.runResource(step, resource, _),
-          (id: Observation.Id) => RunResource(id, step, resource),
-          (id: Observation.Id) =>
-            RunResourceFailed(id,
+          RunResource(_, step, resource),
+          RunResourceFailed(_,
                               step,
                               resource,
                               s"Http call to configure ${resource.show} failed")

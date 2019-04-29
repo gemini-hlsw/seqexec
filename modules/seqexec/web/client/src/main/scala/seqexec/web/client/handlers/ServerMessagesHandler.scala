@@ -236,6 +236,10 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
       effectOnly(Effect(Future(RunResourceComplete(sid, stepId, r))))
 
     case ServerMessage(
+        SingleActionEvent(SingleActionOp.Started(sid, stepId, r))) =>
+      effectOnly(Effect(Future(RunResourceRemote(sid, stepId, r))))
+
+    case ServerMessage(
         SingleActionEvent(SingleActionOp.Error(sid, stepId, r, msg))) =>
       // Unbundle the underlying exception message
       val actualMsg = msg match {

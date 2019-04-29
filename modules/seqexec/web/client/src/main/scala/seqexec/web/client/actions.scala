@@ -74,6 +74,10 @@ object actions {
                                step:     StepId,
                                resource: Resource)
       extends Action
+  final case class RunResourceRemote(id:       Observation.Id,
+                                     step:     StepId,
+                                     resource: Resource)
+      extends Action
   final case class RunResourceComplete(id:       Observation.Id,
                                        step:     StepId,
                                        resource: Resource)
@@ -169,6 +173,8 @@ object actions {
                                         s:  TableState[StepsTable.TableColumn])
       extends Action
   final case class UpdateSelectedStep(id: Observation.Id, step: StepId)
+      extends Action
+  final case class UpdateSelectedStepForce(id: Observation.Id, step: StepId)
       extends Action
   final case class UpdateCalTableState(id: QueueId,
                                        s:  TableState[CalQueueTable.TableColumn])
