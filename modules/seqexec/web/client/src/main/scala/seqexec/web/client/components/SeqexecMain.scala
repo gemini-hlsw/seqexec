@@ -75,7 +75,7 @@ object SeqexecMain {
             <.div(
               ^.cls := "sixteen wide mobile ten wide tablet ten wide computer column",
               SeqexecStyles.queueArea,
-              SessionQueueTableSection(p.ctl)
+              SessionQueueTableSection(p.ctl).when(false)
             ),
             <.div(
               ^.cls := "six wide column tablet computer only",
@@ -86,7 +86,7 @@ object SeqexecMain {
           <.div(
             ^.cls := "ui row",
             SeqexecStyles.shorterRow,
-            TabsArea(TabsArea.Props(p.ctl, p.site))
+            TabsArea(TabsArea.Props(p.ctl, p.site)).when(false)
           ),
           <.div(
             ^.cls := "ui row",

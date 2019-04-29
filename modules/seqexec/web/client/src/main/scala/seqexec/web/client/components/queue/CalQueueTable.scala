@@ -400,7 +400,7 @@ object CalQueueTable {
           val sortableList = SortableContainer.wrapC(
             Table.component,
             s.tableState
-              .columnBuilderB(size, colBuilder(p, s, size))
+              .columnBuilderC(size, colBuilder(p, s, size))
               .map(_.vdomElement))
 
           // If distance is 0 we can miss some events
@@ -412,7 +412,7 @@ object CalQueueTable {
             distance = 3
           )
           sortableList(cp)(table(p, s)(size))
-      }))
+      }, onResize = _ => Callback.empty))
 
   }
 

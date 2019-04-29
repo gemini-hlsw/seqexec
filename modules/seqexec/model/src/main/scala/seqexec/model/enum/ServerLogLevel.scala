@@ -3,7 +3,8 @@
 
 package seqexec.model.enum
 
-import cats.{ Eq, Show }
+import cats._
+import cats.implicits._
 
 sealed abstract class ServerLogLevel(val label: String)
   extends Product with Serializable
@@ -22,5 +23,8 @@ object ServerLogLevel {
 
   implicit val show: Show[ServerLogLevel] =
     Show.show(_.label)
+
+  implicit val order: Order[ServerLogLevel] =
+    Order.by(_.label)
 
 }

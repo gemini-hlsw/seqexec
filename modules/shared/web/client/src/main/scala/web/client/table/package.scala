@@ -36,7 +36,7 @@ package object table {
     Reusability.by(_.toList)
 
   implicit def tsR[A: Reusability]: Reusability[TableState[A]] =
-    Reusability.derive[TableState[A]]
+    Reusability.by(x => (x.userModified, x.scrollPosition, x.columns))
 
   // Renderer for a resizable column
   def resizableHeaderRenderer(

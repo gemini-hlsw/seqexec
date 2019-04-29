@@ -5,6 +5,7 @@ package seqexec.web.client.components
 
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.ScalaComponent
+import japgolly.scalajs.react.Callback
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.extra.Reusability
 import react.virtualized._
@@ -16,7 +17,7 @@ import web.client.style._
 object TableContainer {
 
   // Todo use Reusable[A ~=> B]
-  final case class Props(hasControls: Boolean, table: Size => VdomElement)
+  final case class Props(hasControls: Boolean, table: Size => VdomElement, onResize: Size => Callback)
 
   implicit val reuse: Reusability[Props] = Reusability.never
 
@@ -27,7 +28,7 @@ object TableContainer {
       <.div(
         SeqexecStyles.tableContainer.when(p.hasControls),
         SeqexecStyles.tableContainerNoControls.unless(p.hasControls),
-        AutoSizer(AutoSizer.props(p.table))
+        AutoSizer(AutoSizer.props(p.table, onResize = p.onResize))
     ))
     .configure(Reusability.shouldComponentUpdate)
     .build

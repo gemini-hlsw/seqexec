@@ -416,9 +416,33 @@ object StepsTable extends Columns {
     val visibleColumns: TableColumn => Boolean =
       shownForInstrument.map(_.column).contains _
 
-    val startState: State = {
+    val startState: State =
       State.InitialState.copy(tableState = tableState)
-    }
+
+    def columnWidths: TableColumn => Option[Double] =
+      _ match {
+        case ExecutionColumn =>
+          200.0.some
+        case ExposureColumn =>
+          exposureMaxWidth.map(max(_, ExposureMinWidth))
+        case FPUColumn    => fpuMaxWidth.map(max(_, FPUMinWidth))
+        case FilterColumn => filterMaxWidth.map(max(_, FilterMinWidth))
+        case DisperserColumn =>
+          disperserMaxWidth.map(max(_, DisperserMinWidth))
+        case OffsetColumn =>
+          offsetWidth
+        case CameraColumn =>
+          cameraMaxWidth.map(max(_, CameraMinWidth))
+        case DeckerColumn =>
+          deckerMaxWidth.map(max(_, DeckerMinWidth))
+        case ImagingMirrorColumn =>
+          imagingMirrorMaxWidth.map(max(_, ImagingMirrorMinWidth))
+        case ObservingModeColumn =>
+          obsModeMaxWidth.map(max(_, ObservingModeMinWidth))
+        case ReadModeColumn =>
+          readModeMaxWidth.map(max(_, ReadModeMinWidth))
+        case _ => none
+      }
 
   }
 
@@ -429,36 +453,8 @@ object StepsTable extends Columns {
     def visibleCols(p: Props): State =
       State.columns.set(NonEmptyList.fromListUnsafe(p.shownForInstrument))(this)
 
-    def columnWidths(size: Size, p: Props): TableColumn => Option[Double] =
-      if (tableState.isModified) { _ =>
-        none
-      } else if (size.width > 0) { col =>
-        col match {
-          case ExecutionColumn =>
-            200.0.some
-          case ExposureColumn =>
-            p.exposureMaxWidth.map(max(_, ExposureMinWidth))
-          case FPUColumn    => p.fpuMaxWidth.map(max(_, FPUMinWidth))
-          case FilterColumn => p.filterMaxWidth.map(max(_, FilterMinWidth))
-          case DisperserColumn =>
-            p.disperserMaxWidth.map(max(_, DisperserMinWidth))
-          case OffsetColumn =>
-            p.offsetWidth
-          case CameraColumn =>
-            p.cameraMaxWidth.map(max(_, CameraMinWidth))
-          case DeckerColumn =>
-            p.deckerMaxWidth.map(max(_, DeckerMinWidth))
-          case ImagingMirrorColumn =>
-            p.imagingMirrorMaxWidth.map(max(_, ImagingMirrorMinWidth))
-          case ObservingModeColumn =>
-            p.obsModeMaxWidth.map(max(_, ObservingModeMinWidth))
-          case ReadModeColumn =>
-            p.obsModeMaxWidth.map(max(_, ReadModeMinWidth))
-          case _ => none
-        }
-      } else { _ =>
-        none
-      }
+    def recalculateWidths(p: Props, size: Size): State =
+      State.tableState.modify(_.recalculateWidths(size, p.visibleColumns, p.columnWidths))(this)
 
   }
 
@@ -779,6 +775,7 @@ object StepsTable extends Columns {
                 .resizeRow(meta.column,
                            size,
                            b.props.visibleColumns,
+                           b.props.columnWidths,
                            updateState)),
             headerClassName = headerClassName(meta.column).foldMap(_.htmlClass),
             cellRenderer    = columnCellRenderer(b, meta.column),
@@ -999,14 +996,15 @@ object StepsTable extends Columns {
             b.state.tableState
               .columnBuilder(size,
                              b.props.visibleColumns,
-                             b.state.columnWidths(size, b.props),
+                             b.props.columnWidths,
                              colBuilder(b, size))
               .map(_.vdomElement)
 
           ref
             .component(stepsTableProps(b)(size))(ts: _*)
             .vdomElement
-        }
+        },
+        onResize = s => Callback.log(s"resized ${s.width}") *> b.modState(_.recalculateWidths(b.props, s))
       ))
 
   private val component = ScalaComponent

@@ -76,7 +76,7 @@ object StepIconCell {
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
-  private def stepIcon(p: Props): VdomNode =
+  def stepIcon(p: Props): VdomNode =
     p.status match {
       case StepState.Completed => IconCheckmark
       case StepState.Running   => IconCircleNotched.copyIcon(loading = true)
@@ -107,7 +107,7 @@ object StepIconCell {
     .render_P { p =>
       <.div(
         stepStyle(p),
-        stepIcon(p)
+        // stepIcon(p)
       )
     }
     .configure(Reusability.shouldComponentUpdate)

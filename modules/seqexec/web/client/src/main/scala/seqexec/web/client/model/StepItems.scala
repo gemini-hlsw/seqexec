@@ -114,6 +114,10 @@ object StepItems {
         instrumentFilterO
           .getOption(s)
           .map(_.sentenceCase)
+      case Instrument.Gsaoi =>
+        instrumentFilterO
+          .getOption(s)
+          .map(_.sentenceCase)
       case Instrument.Gpi => gpiFilter(s)
       case _              => None
     }

@@ -185,7 +185,8 @@ object StepConfigTable {
     .render ( b =>
       TableContainer(TableContainer.Props(true, size =>
         Table(settingsTableProps(b, size),
-              b.state.columnBuilderB(size, colBuilder(b, size)): _*)))
+              b.state.columnBuilderC(size, colBuilder(b, size)): _*),
+              onResize = _ => Callback.empty))
     )
     .configure(Reusability.shouldComponentUpdate)
     .build
