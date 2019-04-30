@@ -3,19 +3,22 @@
 
 package seqexec.server.gsaoi
 
-import cats.effect.{IO, Sync}
-import edu.gemini.epics.acm.{CaApplySender, CaAttribute, CaCommandSender, CaParameter, CaService}
+import cats.effect.{Async, IO}
+import cats.implicits._
+import edu.gemini.epics.acm.{CaApplySender, CaAttribute, CaCommandSender, CaParameter, CaService, CaStatusAcceptor, CaWindowStabilizer, CarState}
 import edu.gemini.seqexec.server.gsaoi.DhsConnected
-import seqexec.server.{EpicsCommandF, EpicsSystem, ObserveCommandF}
+import seqexec.server.{EpicsCommandF, EpicsSystem, EpicsUtil, ObserveCommandF}
 import seqexec.server.EpicsCommand.setParameterF
 import seqexec.server.EpicsUtil.{safeAttribute, safeAttributeSDouble, safeAttributeSInt}
 import java.lang.{Double => JDouble}
 
+import squants.time.TimeConversions._
+import cats.data.Nested
 import org.log4s.{Logger, getLogger}
 
-class GsaoiEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, String]) {
+class GsaoiEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]) {
 
-  val GsaoiTop = tops.getOrElse("gsaoi", "gsaoi:")
+  private val GsaoiTop = tops.getOrElse("gsaoi", "gsaoi:")
 
   object dcConfigCmd extends EpicsCommandF {
     override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gsaoi::dcconfig"))
@@ -86,7 +89,18 @@ class GsaoiEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, String])
       epicsService.getCommandSender("gsaoi::endObserve"))
   }
 
-  val status = epicsService.getStatusAcceptor("gsaoi::status")
+  val guideApply: CaApplySender = epicsService.createContinuousCommandSender("gsaoi::guideApply",
+    s"${GsaoiTop}dc:stateApply",s"${GsaoiTop}dc:guideC", false, "guide start apply")
+  object guideCmd extends EpicsCommandF {
+    override val cs: Option[CaCommandSender] =
+      Option(epicsService.createCommandSender("gsaoi:guide", guideApply, s"${GsaoiTop}dc:guide"))
+  }
+
+  val endGuideCmd: EpicsCommandF = new EpicsCommandF {
+    override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gsaoi::endGuide"))
+  }
+
+  val status: CaStatusAcceptor = epicsService.getStatusAcceptor("gsaoi::status")
 
   def windowCover: F[Option[String]] = safeAttribute(status.getStringAttribute("windowCover"))
 
@@ -161,14 +175,36 @@ class GsaoiEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, String])
 
   def timeMode: F[Option[String]] = safeAttribute(status.getStringAttribute("timeMode"))
 
+  def roi: F[Option[String]] = safeAttribute(status.getStringAttribute("roi"))
+
   def countdown: F[Option[Double]] =  safeAttributeSDouble(status.getDoubleAttribute("countdown"))
+
+  def coaddsDone: F[Option[Int]] =  safeAttributeSInt(status.getIntegerAttribute("coaddsDone"))
 
   def mjdobs: F[Option[Double]] =  safeAttributeSDouble(status.getDoubleAttribute("mjdobs"))
 
   private val dhsConnectedAttr: CaAttribute[DhsConnected] =
     status.addEnum[DhsConnected]("dhsConnected", s"${GsaoiTop}sad:dc:dhsConnO", classOf[DhsConnected])
-
   def dhsConnected: F[Option[DhsConnected]] = safeAttribute(dhsConnectedAttr)
+
+  private val observeCAttr: CaAttribute[CarState] = status.addEnum("observeC",
+    s"${GsaoiTop}dc:observeC.VAL", classOf[CarState])
+  def observeState: F[Option[CarState]] = safeAttribute(observeCAttr)
+
+  private val notGuidingAttr = status.getIntegerAttribute("notGuiding")
+  def guiding: F[Option[Boolean]] = Nested(safeAttributeSInt(notGuidingAttr)).map(_ === 0).value
+
+  private val guideStabilizeTime = 1.seconds
+  private val filteredNotGuidingAttr: CaWindowStabilizer[Integer] =
+    new CaWindowStabilizer[Integer](notGuidingAttr, java.time.Duration.ofMillis(guideStabilizeTime.toMillis))
+
+  private val guideTimeout = 5.seconds
+  def waitForGuideOn: F[Unit] =
+    Async[F].delay(filteredNotGuidingAttr.reset)
+      .flatMap(EpicsUtil.waitForValueF[Integer, F](_, 0, guideTimeout, "ODGW guide flag"))
+  def waitForGuideOff: F[Unit] =
+    Async[F].delay(filteredNotGuidingAttr.reset)
+      .flatMap(EpicsUtil.waitForValueF[Integer, F](_, 1, guideTimeout, "ODGW guide flag"))
 
 }
 

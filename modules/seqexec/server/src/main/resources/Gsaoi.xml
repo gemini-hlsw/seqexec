@@ -118,6 +118,16 @@
             </parameter>
         </command>
     </Apply>
+    <Apply name="gsaoi::endGuideApply">
+        <top>gsaoi</top>
+        <apply>dc:stateApply</apply>
+        <car>dc:endGuideC</car>
+        <description>End guide Apply</description>
+        <command name="gsaoi::endGuide">
+            <record>dc:endGuide</record>
+            <description>End guide command</description>
+        </command>
+    </Apply>
     <Status name="gsaoi::status">
         <top>gsaoi</top>
         <description>gsaoi status</description>
@@ -296,6 +306,11 @@
             <type>DOUBLE</type>
             <description>Time exposed</description>
         </attribute>
+        <attribute name="roi">
+            <channel>sad:dc:obs_ROI</channel>
+            <type>STRING</type>
+            <description>Region of interest</description>
+        </attribute>
 <!--        <attribute name="dhsConnected">-->
 <!--            <channel>sad:dc:dhsConnO</channel>-->
 <!--            <type>STRING</type>-->
@@ -311,10 +326,20 @@
             <type>DOUBLE</type>
             <description>countdown</description>
         </attribute>
+        <attribute name="coaddsDone">
+            <channel>sad:dc:s_obs_coadsDon</channel>
+            <type>INTEGER</type>
+            <description>number of executed coadds</description>
+        </attribute>
         <attribute name="mjdobs">
             <channel>sad:dc:mjdobs</channel>
             <type>DOUBLE</type>
             <description>MJD of start of observation</description>
+        </attribute>
+        <attribute name="notGuiding">
+            <channel>sad:dc:guiding.VAL</channel>
+            <type>INTEGER</type>
+            <description></description>
         </attribute>
     </Status>
 </Records>

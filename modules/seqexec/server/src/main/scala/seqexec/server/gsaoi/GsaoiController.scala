@@ -32,8 +32,8 @@ trait GsaoiController[F[_]] {
 
   def calcTotalExposureTime(cfg: DCConfig)(
     implicit ev:                 Applicative[F]): F[Time] = {
-    val readFactor  = 2.2
-    val readOutTime = 300
+    val readFactor  = 1.2
+    val readOutTime = 15
 
     (cfg.coadds * cfg.exposureTime * readFactor + readOutTime.seconds).pure[F]
   }

@@ -47,6 +47,7 @@ public final class CaService {
     private final Map<String, StatusAcceptorWithResource> statusAcceptors;
     private final Map<String, ApplySenderWithResource> applySenders;
     private final Map<String, ApplySenderWithResource> observeSenders;
+    private final Map<String, ApplySenderWithResource> continuousCmdSenders;
     private final Map<String, CommandSenderWithResource> commandSenders;
     private final Map<String, TaskControlWithResource> taskControlSenders;
     static private String addrList = "";
@@ -58,6 +59,7 @@ public final class CaService {
         statusAcceptors = new HashMap<>();
         applySenders = new HashMap<>();
         observeSenders = new HashMap<>();
+        continuousCmdSenders = new HashMap<>();
         commandSenders = new HashMap<>();
         taskControlSenders = new HashMap<>();
         epicsService = new EpicsService(addrList, Double.valueOf(timeout.getSeconds()));
@@ -123,6 +125,8 @@ public final class CaService {
         applySenders.values().forEach(CaResource::unbind);
 
         observeSenders.values().forEach(CaResource::unbind);
+
+        continuousCmdSenders.values().forEach(CaResource::unbind);
 
         commandSenders.values().forEach(CaResource::unbind);
 
@@ -319,6 +323,57 @@ public final class CaService {
     }
 
     /**
+     * Creates an apply sender for continuous commands (commands that are started and stay busy until another command
+     * stops them). If the apply sender already exists, it returns the existing object.
+     *
+     * @param name
+     *            the name of the new apply sender.
+     * @param applyRecord
+     *            the name of the EPICS apply record.
+     * @param carRecord
+     *            the name of the EPICS observe CAR record.
+     * @param gem5
+     *            CAR record uses GEM5 definition.
+     * @param description
+     *            optional description for the apply sender.
+     * @return the apply sender.
+     * @throws CAException
+     *            Error in the Channel Access library.
+     */
+    public CaApplySender createContinuousCommandSender(String name, String applyRecord,
+                                             String carRecord, Boolean gem5, String description) throws CAException {
+        CaApplySender a = continuousCmdSenders.get(name);
+        if (a == null) {
+            ApplySenderWithResource b;
+            EpicsReader epicsReader = new EpicsReaderImpl(epicsService);
+            EpicsWriter epicsWriter = new EpicsWriterImpl(epicsService);
+            if(gem5) {
+                b = new CaContinuousApplySenderImpl<CarStateGEM5>(name, applyRecord, carRecord, description,
+                        CarStateGEM5.class, epicsReader, epicsWriter);
+            }
+            else  {
+                b = new CaContinuousApplySenderImpl<CarState>(name, applyRecord, carRecord, description,
+                        CarState.class, epicsReader, epicsWriter);
+            }
+            continuousCmdSenders.put(name, b);
+            return b;
+        } else {
+            return a;
+        }
+    }
+
+    /**
+     * Retrieves an existing apply sender.
+     *
+     * @param name
+     *            the name of the apply sender.
+     * @return the apply sender, or <code>null</code> if it does not exist.
+     */
+    public CaApplySender getContinuousCommandSender(String name) {
+        return applySenders.get(name);
+    }
+
+    /**
      * Creates an command sender. If the command sender already exists, it
      * returns the existing object.
      *
@@ -334,7 +389,7 @@ public final class CaService {
      * @return the command sender.
      */
     public CaCommandSender createCommandSender(String name,
-            CaApplySender apply, String cadName, String description) {
+                                               CaApplySender apply, String cadName, String description) {
         CaCommandSender a = commandSenders.get(name);
         if (a == null) {
             CommandSenderWithResource b = new CaCommandSenderImpl(name, apply, description,

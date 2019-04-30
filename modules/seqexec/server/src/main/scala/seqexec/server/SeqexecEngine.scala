@@ -35,8 +35,7 @@ import seqexec.server.gmos.{GmosControllerSim, GmosEpics, GmosNorthControllerEpi
 import seqexec.server.gnirs.{GnirsControllerEpics, GnirsControllerSim, GnirsEpics}
 import seqexec.server.gpi.GpiController
 import seqexec.server.gpi.GpiStatusApply
-import seqexec.server.gsaoi.GsaoiEpics
-import seqexec.server.gsaoi.GsaoiControllerSim
+import seqexec.server.gsaoi.{GsaoiControllerEpics, GsaoiControllerSim, GsaoiEpics}
 import seqexec.server.niri.{NiriControllerEpics, NiriControllerSim, NiriEpics}
 import seqexec.server.nifs.{NifsControllerEpics, NifsControllerSim, NifsEpics}
 import seqexec.server.gws.GwsEpics
@@ -81,7 +80,7 @@ class SeqexecEngine(httpClient: Client[IO], gpi: GpiClient[IO], ghost: GhostClie
     settings.gmosControl.command.fold(GmosSouthControllerEpics(), GmosControllerSim.south),
     settings.gmosControl.command.fold(GmosNorthControllerEpics(), GmosControllerSim.north),
     settings.gnirsControl.command.fold(GnirsControllerEpics(), GnirsControllerSim[IO]),
-    GsaoiControllerSim[IO],
+    settings.gsaoiControl.command.fold(GsaoiControllerEpics(), GsaoiControllerSim[IO]),
     GpiController(gpi, gpiGDS),
     GhostController(ghost, ghostGDS),
     settings.niriControl.command.fold(NiriControllerEpics(), NiriControllerSim[IO]),
