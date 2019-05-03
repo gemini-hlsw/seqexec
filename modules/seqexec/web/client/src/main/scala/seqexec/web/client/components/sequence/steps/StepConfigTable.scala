@@ -155,8 +155,7 @@ object StepConfigTable {
         SeqexecStyles.stepRow
     }).htmlClass
 
-  def settingsTableProps(b: Backend, size: Size): Table.Props = {
-    val p = b.props
+  def settingsTableProps(b: Backend, size: Size): Table.Props =
     Table.props(
       disableHeader = false,
       noRowsRenderer = () =>
@@ -167,17 +166,16 @@ object StepConfigTable {
       ),
       overscanRowCount = SeqexecStyles.overscanRowCount,
       height           = size.height.toInt,
-      rowCount         = p.rowCount,
+      rowCount         = b.props.rowCount,
       rowHeight        = SeqexecStyles.rowHeight,
-      rowClassName     = rowClassName(p) _,
+      rowClassName     = rowClassName(b.props) _,
       width            = size.width.toInt,
-      rowGetter        = p.rowGetter _,
+      rowGetter        = b.props.rowGetter _,
       scrollTop        = b.state.scrollPosition,
       headerClassName  = SeqexecStyles.tableHeader.htmlClass,
       onScroll         = (_, _, pos) => updateScrollPosition(b, pos),
       headerHeight     = SeqexecStyles.headerHeight
     )
-  }
 
   private val component = ScalaComponent
     .builder[Props]("StepConfig")

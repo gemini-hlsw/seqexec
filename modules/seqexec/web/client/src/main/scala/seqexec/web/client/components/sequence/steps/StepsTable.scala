@@ -14,6 +14,7 @@ import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.component.builder.Lifecycle.RenderScope
 import japgolly.scalajs.react.component.builder.Lifecycle.ComponentWillReceiveProps
 import japgolly.scalajs.react.extra.Reusability
+import japgolly.scalajs.react.MonocleReact._
 import japgolly.scalajs.react.raw.JsNumber
 import monocle.Lens
 import monocle.macros.GenLens
@@ -57,7 +58,7 @@ import web.client.utils.tableTextWidth
 
 trait Columns {
   val ControlWidth: Double          = 40
-  val StepWidth: Double             = 50
+  val StepWidth: Double             = 60
   val StateWidth: Double            = 200
   val OffsetWidthBase: Double       = 75
   val OffsetIconWidth: Double       = 23.02
@@ -252,6 +253,19 @@ trait Columns {
       SettingsMeta
     )
 
+  val allTC = all.map(_.column)
+
+  val columnsMinWidth: Map[TableColumn, Double] = Map(
+    ExposureColumn -> ExposureMinWidth,
+    DisperserColumn -> DisperserMinWidth,
+    ObservingModeColumn -> ObservingModeMinWidth,
+    FilterColumn -> FilterMinWidth,
+    FPUColumn -> FPUMinWidth,
+    CameraColumn -> CameraMinWidth,
+    DeckerColumn -> DeckerMinWidth,
+    ImagingMirrorColumn -> ImagingMirrorMinWidth,
+    ReadModeColumn -> ReadModeMinWidth
+  )
 }
 
 /**
@@ -293,6 +307,7 @@ object StepsTable extends Columns {
                          stepsTable: StepsTableAndStatusFocus) {
     val status: ClientStatus             = stepsTable.status
     val steps: Option[StepsTableFocus]   = stepsTable.stepsTable
+    val instrument: Option[Instrument]   = steps.map(_.instrument)
     val runningStep: Option[RunningStep] = steps.flatMap(_.runningStep)
     val obsId: Option[Observation.Id]    = steps.map(_.id)
     val tableState: TableState[TableColumn] =
@@ -382,21 +397,13 @@ object StepsTable extends Columns {
       }
     }
 
-    val disperserMaxWidth: Option[Double] = longestValueWidthI(_.disperser)
+    val disperser: Step => Option[String] = s => instrument.flatMap(s.disperser)
 
-    val filterMaxWidth: Option[Double] = longestValueWidthI(_.filter)
+    val filter: Step => Option[String] = s => instrument.flatMap(s.filter)
 
-    val fpuMaxWidth: Option[Double] = longestValueWidthI(_.fpuOrMask)
+    val fpuOrMask: Step => Option[String] = s => instrument.flatMap(s.fpuOrMask)
 
-    val cameraMaxWidth: Option[Double] = longestValueWidthI(_.cameraName)
-
-    val deckerMaxWidth: Option[Double] = longestValueWidth(_.deckerName)
-
-    val imagingMirrorMaxWidth: Option[Double] = longestValueWidth(_.deckerName)
-
-    val obsModeMaxWidth: Option[Double] = longestValueWidth(_.observingMode)
-
-    val readModeMaxWidth: Option[Double] = longestValueWidth(_.readMode)
+    val camera: Step => Option[String] = s => instrument.flatMap(s.cameraName)
 
     val shownForInstrument: List[ColumnMeta[TableColumn]] =
       all.filter {
@@ -416,33 +423,39 @@ object StepsTable extends Columns {
     val visibleColumns: TableColumn => Boolean =
       shownForInstrument.map(_.column).contains _
 
-    val startState: State =
-      State.InitialState.copy(tableState = tableState)
+    // val startState: State =
+    //   State.InitialState.copy(tableState = tableState)
+    // def stateState(p: Props): State =
+    //   State.tableState.set(p.tableState)(State.InitialState)
 
-    def columnWidths: TableColumn => Option[Double] =
-      _ match {
-        case ExecutionColumn =>
-          200.0.some
-        case ExposureColumn =>
-          exposureMaxWidth.map(max(_, ExposureMinWidth))
-        case FPUColumn    => fpuMaxWidth.map(max(_, FPUMinWidth))
-        case FilterColumn => filterMaxWidth.map(max(_, FilterMinWidth))
-        case DisperserColumn =>
-          disperserMaxWidth.map(max(_, DisperserMinWidth))
-        case OffsetColumn =>
-          offsetWidth
-        case CameraColumn =>
-          cameraMaxWidth.map(max(_, CameraMinWidth))
-        case DeckerColumn =>
-          deckerMaxWidth.map(max(_, DeckerMinWidth))
-        case ImagingMirrorColumn =>
-          imagingMirrorMaxWidth.map(max(_, ImagingMirrorMinWidth))
-        case ObservingModeColumn =>
-          obsModeMaxWidth.map(max(_, ObservingModeMinWidth))
-        case ReadModeColumn =>
-          readModeMaxWidth.map(max(_, ReadModeMinWidth))
-        case _ => none
-      }
+    val extractors = List[(TableColumn, Step => Option[String])](
+        // (ExposureColumn, _.id.format),
+        (FPUColumn, fpuOrMask),
+        (FilterColumn, filter),
+        (DisperserColumn, disperser),
+        // (OffsetColumn, _ => offsetWidth))
+        (CameraColumn, camera),
+        (DeckerColumn, _.deckerName),
+        (ImagingMirrorColumn, _.imagingMirrorName),
+        (ObservingModeColumn, _.observingMode),
+        (ReadModeColumn, _.readMode)).toMap
+        //     (InstrumentColumn, _.instrument.show),
+    //     (TargetNameColumn, _.targetName.orEmpty),
+    //     (ObsNameColumn, _.name)).toMap
+    //
+    // val columnWidths: TableColumn => Option[Double] =
+    //   colWidths(sequencesList, allTC, extractors, Map[TableColumn, Double](ObsIdColumn -> SeqexecStyles.TableRightPadding.toDouble))
+    //
+    private val valueCalculatedCols: TableColumn => Option[Double] = {
+      case ExecutionColumn => 200.0.some
+      case OffsetColumn => offsetWidth
+      case _ => none
+    }
+    private val measuredColumnWidths: TableColumn => Option[Double] =
+      colWidthsO(stepsList, allTC, extractors, columnsMinWidth, Map.empty[TableColumn, Double])
+
+    val columnWidths: TableColumn => Option[Double] =
+      c => measuredColumnWidths(c).orElse(valueCalculatedCols(c))
 
   }
 
@@ -453,8 +466,8 @@ object StepsTable extends Columns {
     def visibleCols(p: Props): State =
       State.columns.set(NonEmptyList.fromListUnsafe(p.shownForInstrument))(this)
 
-    def recalculateWidths(p: Props, size: Size): State =
-      State.tableState.modify(_.recalculateWidths(size, p.visibleColumns, p.columnWidths))(this)
+    def recalculateWidths(p: Props, size: Size): TableState[TableColumn] =
+      tableState.recalculateWidths(size, p.visibleColumns, p.columnWidths)
 
   }
 
@@ -994,8 +1007,7 @@ object StepsTable extends Columns {
         size => {
           val ts =
             b.state.tableState
-              .columnBuilder(size,
-                             b.props.visibleColumns,
+              .columnBuilder2(size,
                              b.props.columnWidths,
                              colBuilder(b, size))
               .map(_.vdomElement)
@@ -1004,12 +1016,15 @@ object StepsTable extends Columns {
             .component(stepsTableProps(b)(size))(ts: _*)
             .vdomElement
         },
-        onResize = s => Callback.log(s"resized ${s.width}") *> b.modState(_.recalculateWidths(b.props, s))
+        onResize = s => b.modStateL(State.tableState)(_.recalculateWidths(s, b.props.visibleColumns, b.props.columnWidths))
       ))
+
+  def initialState(p: Props): State =
+    State.tableState.set(p.tableState)(State.InitialState)
 
   private val component = ScalaComponent
     .builder[Props]("StepsTable")
-    .initialStateFromProps(_.startState)
+    .initialStateFromProps(initialState)
     .render(render)
     .configure(Reusability.shouldComponentUpdate)
     .componentWillReceiveProps(receiveNewProps)

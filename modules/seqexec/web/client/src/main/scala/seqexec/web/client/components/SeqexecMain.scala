@@ -51,7 +51,7 @@ object SeqexecMain {
   implicit val propsReuse: Reusability[Props] = Reusability.by(_.site)
 
   private val lbConnect  = SeqexecCircuit.connect(_.uiModel.loginBox)
-  private val logConnect = SeqexecCircuit.connect(_.uiModel.globalLog)
+  // private val logConnect = SeqexecCircuit.connect(_.uiModel.globalLog)
   private val userNotificationConnect = SeqexecCircuit.connect(_.uiModel.notification)
   private val headerSideBarConnect = SeqexecCircuit.connect(SeqexecCircuit.headerSideBarReader)
   private val wsConnect = SeqexecCircuit.connect(_.ws)
@@ -75,7 +75,7 @@ object SeqexecMain {
             <.div(
               ^.cls := "sixteen wide mobile ten wide tablet ten wide computer column",
               SeqexecStyles.queueArea,
-              SessionQueueTableSection(p.ctl).when(false)
+              SessionQueueTableSection(p.ctl).when(true)
             ),
             <.div(
               ^.cls := "six wide column tablet computer only",
@@ -92,7 +92,7 @@ object SeqexecMain {
             ^.cls := "ui row",
             // Add margin to avoid covering the footer
             SeqexecStyles.logArea,
-            logConnect(l => LogArea(p.site, l()))
+            // logConnect(l => LogArea(p.site, l()))
           )
         ),
         lbConnect(p => LoginBox(p())),

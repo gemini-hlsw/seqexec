@@ -58,7 +58,7 @@ final case class TableState[A: Eq](userModified:   UserModified,
       val result = cl.zipWithIndex.map {
         case (c @ ColumnMeta(_, _, _, true, VariableColumnWidth(curPct, min), _, _),
               idx) if idx === indexOf =>
-              println(curPct)
+              // println(curPct)
           val newPct    = curPct + delta
           val newWidth  = max(min, width * newPct)
           val actualPct = newWidth / width
@@ -100,6 +100,7 @@ final case class TableState[A: Eq](userModified:   UserModified,
   private def minVarWidth(calculatedWidth: A => Option[Double], cols: List[ColumnMeta[A]]): Double =
     cols.collect {
       case ColumnMeta(c, _, _, true, VariableColumnWidth(_, mw), _, _) =>
+      println(s"$c -> ${calculatedWidth(c)}")
         calculatedWidth(c).map(max(mw, _)).getOrElse(mw)
     }.sum
 
@@ -144,14 +145,15 @@ final case class TableState[A: Eq](userModified:   UserModified,
         case ColumnMeta(c, _, _, true, VariableColumnWidth(_, mw), _, _) =>
           calculatedWidth(c).map(max(mw, _)).getOrElse(mw)
       }.sum
-      println("requestedWidth")
-      println(requestedWidth)
+      // println("requestedWidth")
+      // println(requestedWidth)
       val minWidth = minVarWidth(calculatedWidth, visibleCols)
       val totalVariableWidth = s.width - fixedWidth(calculatedWidth)
       // val cs = visibleCols.toList.map(_.column).mkString(",")
       // println(cs)
       val cols  =
         if (totalVariableWidth > requestedWidth) {
+            println("GT")
           // There is extra space on the table, lets distribute it among the cols
           val unallocatedWidth = totalVariableWidth - minWidth
           val weights = visibleCols.collect {
@@ -175,15 +177,20 @@ final case class TableState[A: Eq](userModified:   UserModified,
           }
         } else {
           // There is less space on the table, we need to shrink
-          // println("Drop")
           // Lets drop columns if needed
+            println("LT")
+            println(totalVariableWidth)
+            println(fixedWidth(calculatedWidth))
+            println(minWidth)
+            println(s.width)
           val reducedVisibleCols = if (totalVariableWidth < minWidth && s.width > 0) {
+            println("Drop")
             discardUntilUnder(calculatedWidth, visibleCols, totalVariableWidth)
           } else {
             visibleCols
           }
           // println(reducedVisibleCols.length)
-          // println(reducedVisibleCols.map(x => s"${x.column} -> ${x.width}").mkString(","))
+          println(reducedVisibleCols.map(x => s"${x.column} -> ${x.width}").mkString(","))
           // Update the columns with the correct percentage.
           reducedVisibleCols.map {
             case m @ ColumnMeta(c, _, _, true, FixedColumnWidth(w), _, _) =>
@@ -220,7 +227,7 @@ final case class TableState[A: Eq](userModified:   UserModified,
     val ts = vc.normalizeColumnWidths(s)
     // recalculate as the widths way have varied
     val fixedWidth = ts.fixedWidth(calculatedWidth)
-    println(s"Builder")
+    // println(s"Builder")
     ts.columns.toList.zipWithIndex
       .map {
         case (m @ ColumnMeta(_, _, _, true, FixedColumnWidth(w), _, _), i) =>
@@ -246,14 +253,16 @@ final case class TableState[A: Eq](userModified:   UserModified,
   ): List[Table.ColumnArg] = {
     val fw = fixedWidth(calculatedWidth)
     val vcl = columns.count(_.visible)
-    columns.toList.zipWithIndex
-      .map {
-        case (m @ ColumnMeta(_, _, _, true, FixedColumnWidth(w), _, _), i) =>
+    // println(vcl)
+    columns.toList.filter(_.visible).zipWithIndex
+    .map {
+        case (m @ ColumnMeta(_, _, _, _, FixedColumnWidth(w), _, _), i) =>
           cb(ColumnRenderArgs(m, i, w, false)).some
 
-        case (m @ ColumnMeta(_, _, _, true, VariableColumnWidth(p, mw), _, _),
+        case (m @ ColumnMeta(_, _, _, _, VariableColumnWidth(p, mw), _, _),
               i) =>
           val beforeLast = i < (vcl - 1)
+          // println(s"${m.column} $i ${vcl} $beforeLast")
           val w          = max((s.width - fw) * p, mw)
           cb(ColumnRenderArgs(m, i, w, beforeLast)).some
 
@@ -333,12 +342,12 @@ final case class TableState[A: Eq](userModified:   UserModified,
   ): (String, JsNumber) => Callback =
     (_, dx) => {
       val delta = dx.toDouble / (s.width - fixedWidth(calculatedWidth))
-      // println(pr.mkString(","))
+      // println(printCols)
       val st = withVisibleCols(visibleCols)
         .normalizeColumnWidths(s)
         .applyOffset(calculatedWidth, column, delta, s)
-      println("after")
-      // println(pr3.mkString(","))
+      // println("after")
+      // println(st.printCols)
       cb(st)
     }
 

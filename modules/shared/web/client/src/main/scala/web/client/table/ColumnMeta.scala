@@ -19,7 +19,12 @@ final case class ColumnMeta[A](column:     A,
                                visible:    Boolean,
                                width:      ColumnWidth,
                                grow:       Int = 1,
-                               removeable: Int = 0)
+                               removeable: Int = 0) {
+  def isVariable: Boolean = width match {
+    case _: FixedColumnWidth => false
+    case _ => true
+  }
+}
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object ColumnMeta {
