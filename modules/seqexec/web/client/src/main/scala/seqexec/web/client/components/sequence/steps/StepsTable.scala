@@ -18,7 +18,6 @@ import japgolly.scalajs.react.MonocleReact._
 import japgolly.scalajs.react.raw.JsNumber
 import monocle.Lens
 import monocle.macros.GenLens
-
 import scala.scalajs.js
 import scala.math.min
 import scala.math.max
@@ -54,7 +53,6 @@ import seqexec.web.client.semanticui.{ Size => SSize }
 import react.virtualized._
 import web.client.style._
 import web.client.table._
-import web.client.utils.tableTextWidth
 
 trait Columns {
   val ControlWidth: Double          = 40
@@ -364,38 +362,7 @@ object StepsTable extends Columns {
       (max(p, q) + labelWidth + OffsetIconWidth + OffsetPadding * 4).some
     }
 
-    def longestValueWidthI(
-      f: Step => Instrument => Option[String]): Option[Double] =
-      steps.flatMap { s =>
-        val allValues: List[String] = allDistinctValues(f(_)(s.instrument))
-        val longest: Option[String] = allValues.sortBy(_.length).headOption
-        longest.map(tableTextWidth)
-      }
-
-    def longestValueWidth(f: Step => Option[String]): Option[Double] = {
-      val allValues: List[String] = allDistinctValues(f)
-      val longest: Option[String] = allValues.sortBy(_.length).headOption
-      longest.map(tableTextWidth)
-    }
-
-    val observingModeMaxWidth: Option[Double] = longestValueWidth(
-      _.observingMode)
-
-    def allDistinctValues[A](f: Step => Option[A]): List[A] =
-      stepsList.map(f).distinct.collect {
-        case Some(x) => x
-      }
-
-    val exposureMaxWidth: Option[Double] = {
-      steps.flatMap { s =>
-        val allValues: List[String] =
-          allDistinctValues(_.exposureAndCoaddsS(s.instrument))
-        val longest: Option[String] = allValues
-          .sortBy(_.length)
-          .headOption
-        longest.map(tableTextWidth)
-      }
-    }
+    val exposure: Step => Option[String] = s => instrument.flatMap(s.exposureAndCoaddsS)
 
     val disperser: Step => Option[String] = s => instrument.flatMap(s.disperser)
 
@@ -423,29 +390,17 @@ object StepsTable extends Columns {
     val visibleColumns: TableColumn => Boolean =
       shownForInstrument.map(_.column).contains _
 
-    // val startState: State =
-    //   State.InitialState.copy(tableState = tableState)
-    // def stateState(p: Props): State =
-    //   State.tableState.set(p.tableState)(State.InitialState)
-
     val extractors = List[(TableColumn, Step => Option[String])](
-        // (ExposureColumn, _.id.format),
+        (ExposureColumn, exposure),
         (FPUColumn, fpuOrMask),
         (FilterColumn, filter),
         (DisperserColumn, disperser),
-        // (OffsetColumn, _ => offsetWidth))
         (CameraColumn, camera),
         (DeckerColumn, _.deckerName),
         (ImagingMirrorColumn, _.imagingMirrorName),
         (ObservingModeColumn, _.observingMode),
         (ReadModeColumn, _.readMode)).toMap
-        //     (InstrumentColumn, _.instrument.show),
-    //     (TargetNameColumn, _.targetName.orEmpty),
-    //     (ObsNameColumn, _.name)).toMap
-    //
-    // val columnWidths: TableColumn => Option[Double] =
-    //   colWidths(sequencesList, allTC, extractors, Map[TableColumn, Double](ObsIdColumn -> SeqexecStyles.TableRightPadding.toDouble))
-    //
+
     private val valueCalculatedCols: TableColumn => Option[Double] = {
       case ExecutionColumn => 200.0.some
       case OffsetColumn => offsetWidth
@@ -561,23 +516,19 @@ object StepsTable extends Columns {
     (_, _, _, row: StepRow, _) =>
       OffsetsDisplayCell(OffsetsDisplayCell.Props(offsetsDisplay, row.step))
 
-  def stepDisperserRenderer(
-    i: Instrument
+  def stepItemRenderer(
+    f: Step => Option[String]
   ): CellRenderer[js.Object, js.Object, StepRow] =
-    (_, _, _, row: StepRow, _) =>
-      StepItemCell(StepItemCell.Props(row.step.disperser(i)))
+    (_, _, _, row: StepRow, _) => StepItemCell(StepItemCell.Props(f(row.step)))
+
+  private def stepItemRendererS(f: Step => Option[String]) =
+    stepItemRenderer(f(_).map(_.sentenceCase))
 
   def stepExposureRenderer(
     i: Instrument
   ): CellRenderer[js.Object, js.Object, StepRow] =
     (_, _, _, row: StepRow, _) =>
       ExposureTimeCell(ExposureTimeCell.Props(row.step, i))
-
-  def stepFilterRenderer(
-    i: Instrument
-  ): CellRenderer[js.Object, js.Object, StepRow] =
-    (_, _, _, row: StepRow, _) =>
-      StepItemCell(StepItemCell.Props(row.step.filter(i)))
 
   def stepFPURenderer(
     i: Instrument
@@ -589,35 +540,11 @@ object StepsTable extends Columns {
       StepItemCell(StepItemCell.Props(fpu))
     }
 
-  val stepObsModeRenderer: CellRenderer[js.Object, js.Object, StepRow] =
-    (_, _, _, row: StepRow, _) =>
-      StepItemCell(StepItemCell.Props(row.step.observingMode))
-
   def stepObjectTypeRenderer(
     size: SSize
   ): CellRenderer[js.Object, js.Object, StepRow] =
     (_, _, _, row: StepRow, _) =>
       ObjectTypeCell(ObjectTypeCell.Props(row.step, size))
-
-  def cameraRenderer(
-    i: Instrument
-  ): CellRenderer[js.Object, js.Object, StepRow] =
-    (_, _, _, row: StepRow, _) =>
-      StepItemCell(
-        StepItemCell.Props(row.step.cameraName(i).map(_.sentenceCase)))
-
-  def deckerRenderer: CellRenderer[js.Object, js.Object, StepRow] =
-    (_, _, _, row: StepRow, _) =>
-      StepItemCell(StepItemCell.Props(row.step.deckerName.map(_.sentenceCase)))
-
-  def imagingMirrorRenderer: CellRenderer[js.Object, js.Object, StepRow] =
-    (_, _, _, row: StepRow, _) =>
-      StepItemCell(
-        StepItemCell.Props(row.step.imagingMirrorName.map(_.sentenceCase)))
-
-  def readModeRenderer: CellRenderer[js.Object, js.Object, StepRow] =
-    (_, _, _, row: StepRow, _) =>
-      StepItemCell(StepItemCell.Props(row.step.readMode.map(_.sentenceCase)))
 
   private def stepRowStyle(step: Step): GStyle = step match {
     case s if s.hasError                       => SeqexecStyles.rowError
@@ -742,24 +669,20 @@ object StepsTable extends Columns {
       case StepColumn          => stepIdRenderer.some
       case ExecutionColumn     => b.props.steps.map(stepProgressRenderer(_, b))
       case OffsetColumn        => stepStatusRenderer(b.props.offsetsDisplay).some
-      case ObservingModeColumn => stepObsModeRenderer.some
+      case ObservingModeColumn => stepItemRenderer(_.observingMode).some
       case ExposureColumn =>
-        b.props.steps.map(p => stepExposureRenderer(p.instrument))
+        b.props.instrument.map(stepExposureRenderer)
       case DisperserColumn =>
-        b.props.steps.map(p => stepDisperserRenderer(p.instrument))
-      case FilterColumn =>
-        b.props.steps.map(p => stepFilterRenderer(p.instrument))
-      case FPUColumn        => b.props.steps.map(p => stepFPURenderer(p.instrument))
-      case CameraColumn     => b.props.steps.map(p => cameraRenderer(p.instrument))
+        b.props.instrument.map(i => stepItemRenderer(_.disperser(i)))
+      case FilterColumn => b.props.instrument.map(i => stepItemRenderer(_.filter(i)))
+      case FPUColumn        => b.props.instrument.map(i => stepFPURenderer(i))
+      case CameraColumn     => b.props.instrument.map(i => stepItemRenderer(_.cameraName(i)))
       case ObjectTypeColumn => stepObjectTypeRenderer(SSize.Small).some
       case SettingsColumn =>
         b.props.steps.map(p => settingsControlRenderer(b.props, p))
-      case ReadModeColumn =>
-        readModeRenderer.some
-      case DeckerColumn =>
-        deckerRenderer.some
-      case ImagingMirrorColumn =>
-        imagingMirrorRenderer.some
+      case ReadModeColumn => stepItemRendererS(_.readMode).some
+      case DeckerColumn => stepItemRendererS(_.deckerName).some
+      case ImagingMirrorColumn => stepItemRendererS(_.imagingMirrorName).some
       case _ => none
     }
     optR.getOrElse(defaultCellRendererS)
@@ -809,10 +732,9 @@ object StepsTable extends Columns {
   }
 
   def updateScrollPosition(b: Backend, pos: JsNumber): Callback = {
-    val s = State.userModified.set(IsModified) *>
+    val s = State.userModified.set(IsModified) >>>
       State.scrollPosition.set(pos)
-    Callback.log(s"Scroll position $pos") *>
-      b.modState(s) *>
+    b.modState(s) *>
       b.props.obsId
         .map(id =>
           SeqexecCircuit.dispatchCB(
@@ -822,14 +744,14 @@ object StepsTable extends Columns {
   }
 
   def startScrollTop(state: State): js.UndefOr[JsNumber] =
-    if (state.tableState.userModified === IsModified) {
+    if (state.tableState.isModified) {
       state.tableState.scrollPosition
     } else {
       js.undefined
     }
 
   def startScrollToIndex(b: Backend): Int =
-    if (b.state.tableState.userModified === IsModified) {
+    if (b.state.tableState.isModified) {
       -1
     } else {
       b.props.nextStepToRun
@@ -867,8 +789,7 @@ object StepsTable extends Columns {
       scrollToIndex    = startScrollToIndex(b),
       scrollTop        = startScrollTop(b.state),
       onRowClick       = singleClick(b),
-      onScroll = (a, _, pos) =>
-        updateScrollPosition(b, pos).when(a.toDouble > 0) *> Callback.empty,
+      onScroll = (a, _, pos) => updateScrollPosition(b, pos).when(a.toDouble > 0) *> Callback.empty,
       scrollToAlignment = ScrollToAlignment.Center,
       headerClassName   = SeqexecStyles.tableHeader.htmlClass,
       headerHeight      = SeqexecStyles.headerHeight,

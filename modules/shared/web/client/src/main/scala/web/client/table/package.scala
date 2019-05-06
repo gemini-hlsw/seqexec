@@ -110,38 +110,31 @@ package object table {
     def colWidths[A, B, G[_]: Foldable](items: G[A], cols: NonEmptyList[B], get: Map[B, A => String], minW: Map[B, Double], adj: Map[B, Double]): B => Option[Double] =
       colWidthsO[A, B, G](items, cols, get.mapValues(f => (a: A) => f(a).some), minW, adj)
 
+    /**
+     * This methods traverses a whole set of data to find the widest value per
+     * column, trying to traverse it in one pass
+     */
     def colWidthsO[A, B, G[_]: Foldable](items: G[A], cols: NonEmptyList[B], get: Map[B, A => Option[String]], minW: Map[B, Double], adj: Map[B, Double]): B => Option[Double] =
       // Find the longest string per column
       items.foldLeft(Map.empty[B, Option[(Int, String)]]) { (cw, a) =>
         val m: NonEmptyList[(B, Option[(Int, String)])] = cols.map { b =>
-          // println(s"Col $b ${get.get(b)}")
-          b -> (get.get(b).flatMap { fb =>
+          b -> get.get(b).flatMap { fb =>
             fb(a).flatMap {v =>
-                println(s"M $b $v")
-              // val k: Option[(Int, String)] = (cw.getOrElse(b, (0, "").some))
-              // println(k)
-              val u = cw.get(b).map {
+              cw.get(b).map {
                 case b @ Some((l, _)) =>
-                // println(v)
-                // println(b)
-                // println("--")
                   val vl = v.length
                   if (vl > l) (vl, v).some else b
                 case _ => none
               }.getOrElse((v.length, v).some)
-              println(u)
-              u
             }
-          })
+          }
         }
         m.toList.toMap
       }.collect {
         case (b, Some((_, t))) => b -> {
-          println(s"$t ${tableTextWidth(t)}")
+          // We calculate the actual pixel width at the end
           val v = (tableTextWidth(t) + adj.get(b).orEmpty)
-          val r = minW.get(b).map(max(_, v)).getOrElse(v)
-          // println(s"$r")
-          r
+          minW.get(b).map(max(_, v)).getOrElse(v)
         }
       }.get
 

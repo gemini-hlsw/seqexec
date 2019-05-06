@@ -39,24 +39,6 @@ object AppTableStates {
   implicit val eq: Eq[AppTableStates] =
     Eq.by(x => (x.sessionQueueTable, x.stepConfigTable, x.stepsTables, x.queueTables))
 
-  // val tableStateL: Lens[SeqexecUIModel, AppTableStates] =
-  //   Lens[SeqexecUIModel, AppTableStates](
-  //     m =>
-  //       AppTableStates(m.queueTableState,
-  //                      m.configTableState,
-  //                      m.sequencesOnDisplay.stepsTables,
-  //                      m.queues.queueTables))(
-  //     v =>
-  //       m =>
-  //         m.copy(
-  //           queueTableState  = v.sessionQueueTable,
-  //           configTableState = v.stepConfigTable,
-  //           sequencesOnDisplay = m.sequencesOnDisplay
-  //             .updateTableStates(v.stepsTables),
-  //           queues = m.queues
-  //             .updateTableStates(v.queueTables)
-  //     ))
-  //
   def stepsTableAtL(
     id: Observation.Id
   ): Lens[AppTableStates, Option[TableState[StepsTable.TableColumn]]] =

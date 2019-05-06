@@ -86,7 +86,7 @@ object SeqexecMain {
           <.div(
             ^.cls := "ui row",
             SeqexecStyles.shorterRow,
-            TabsArea(TabsArea.Props(p.ctl, p.site)).when(false)
+            TabsArea(TabsArea.Props(p.ctl, p.site)).when(true)
           ),
           <.div(
             ^.cls := "ui row",
