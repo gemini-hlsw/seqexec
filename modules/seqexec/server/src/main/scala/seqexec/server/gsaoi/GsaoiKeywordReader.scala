@@ -29,7 +29,7 @@ trait GsaoiKeywordReader[F[_]] {
   def coldworkSurfaceTemperature: F[Double]
   def detectorTemperature: F[Double]
   def detectorHousingTemperature: F[Double]
-  def dewarPressure: F[String]
+  def dewarPressure: F[Double]
   def dateObs: F[String]
   def mjdobs: F[Double]
   def readMode: F[String]
@@ -66,7 +66,7 @@ object GsaoiKeywordReaderDummy {
       override def coldworkSurfaceTemperature: F[Double] = doubleDefault[F]
       override def detectorTemperature: F[Double]        = doubleDefault[F]
       override def detectorHousingTemperature: F[Double] = doubleDefault[F]
-      override def dewarPressure: F[String]              = strDefault[F]
+      override def dewarPressure: F[Double]              = doubleDefault[F]
       override def dateObs: F[String]                    = strDefault[F]
       override def mjdobs: F[Double]                     = doubleDefault[F]
       override def readMode: F[String]                   = strDefault[F]
@@ -156,7 +156,8 @@ object GsaoiKeywordReaderEpics extends GsaoiLUT {
       override def coldworkSurfaceTemperature: F[Double] = sys.coldworkSurfaceTemperature.safeValOrDefault
       override def detectorTemperature: F[Double] = sys.detectorTemperature.safeValOrDefault
       override def detectorHousingTemperature: F[Double] = sys.detectorHousingTemperature.safeValOrDefault
-      override def dewarPressure: F[String] = Nested(sys.dewarPressure).map(p => f"$p%.2E").value.safeValOrDefault
+      override def dewarPressure: F[Double] = Nested(sys.dewarPressure).map(p => Math.rint(p*100.0)/100.0).value
+        .safeValOrDefault
       override def dateObs: F[String] = F.delay(LocalDate.now.format(DateTimeFormatter.ISO_LOCAL_DATE))
       override def mjdobs: F[Double] = sys.mjdobs.safeValOrDefault
       override def readMode: F[String] = sys.readMode.safeValOrDefault

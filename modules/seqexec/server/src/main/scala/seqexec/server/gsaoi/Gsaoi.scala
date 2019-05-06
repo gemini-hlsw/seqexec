@@ -50,8 +50,8 @@ final case class Gsaoi[F[_]: LiftIO: Sync](
   override val contributorName: String = "GSAOI"
 
   override val observeControl: InstrumentSystem.ObserveControl[F] =
-    UnpausableControl[F](StopObserveCmd[F](SeqActionF.liftF(controller.stopObserve)),
-                 AbortObserveCmd[F](SeqActionF.liftF(controller.abortObserve)))
+    UnpausableControl[F](StopObserveCmd[F](SeqActionF.embedF(controller.stopObserve)),
+                 AbortObserveCmd[F](SeqActionF.embedF(controller.abortObserve)))
 
   override def observe(
     config: Config
@@ -59,7 +59,7 @@ final case class Gsaoi[F[_]: LiftIO: Sync](
     Reader { fileId =>
       SeqActionF
         .either(readDCConfig(config).asTrySeq)
-        .flatMap(x => SeqActionF.liftF(controller.observe(fileId, x)))
+        .flatMap(x => SeqActionF.embedF(controller.observe(fileId, x)))
     }
 
   override def calcObserveTime(config: Config): F[Time] =
@@ -87,13 +87,13 @@ final case class Gsaoi[F[_]: LiftIO: Sync](
   override def configure(config: Config): SeqActionF[F, ConfigResult[F]] =
     SeqActionF
       .either(fromSequenceConfig(config))
-      .flatMap(x => SeqActionF.liftF(controller.applyConfig(x)))
+      .flatMap(x => SeqActionF.embedF(controller.applyConfig(x)))
       .as(ConfigResult(this))
 
   override def notifyObserveStart: SeqActionF[F, Unit] = SeqActionF.void
 
   override def notifyObserveEnd: SeqActionF[F, Unit] =
-    SeqActionF.liftF(controller.endObserve)
+    SeqActionF.embedF(controller.endObserve)
 }
 
 object Gsaoi {
@@ -126,7 +126,7 @@ object Gsaoi {
 
   private def extractCoadds(config: Config): Either[ExtractFailure, Coadds] =
     config
-      .extractObsAs[JInt](COADDS_PROP)
+      .extractInstAs[JInt](COADDS_PROP)
       .map(_.toInt)
       .map(tag[CoaddsI][Int])
 

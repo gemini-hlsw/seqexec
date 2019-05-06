@@ -9,7 +9,6 @@ import edu.gemini.epics.EpicsReader;
 import edu.gemini.epics.EpicsWriter;
 import edu.gemini.epics.ReadOnlyClientEpicsChannel;
 import edu.gemini.epics.api.ChannelListener;
-import edu.gemini.epics.impl.EpicsReaderImpl;
 import gov.aps.jca.CAException;
 import gov.aps.jca.TimeoutException;
 import org.slf4j.Logger;
