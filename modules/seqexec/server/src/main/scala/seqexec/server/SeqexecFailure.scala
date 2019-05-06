@@ -44,6 +44,9 @@ object SeqexecFailure {
   /** XMLRPC error while communicating with the GDS */
   final case class GdsXmlError(msg: String, url: Uri) extends SeqexecFailure
 
+  /** Null epics read */
+  final case class NullEpicsError(name: String) extends SeqexecFailure
+
   /** Failed simulation */
   case object FailedSimulation extends SeqexecFailure
 
@@ -63,6 +66,7 @@ object SeqexecFailure {
       s"Failure connecting with GDS at $url: ${ex.getMessage}"
     case GdsXmlError(msg, url)        => s"XML RPC error with GDS at $url: $msg"
     case FailedSimulation             => s"Failed to simulate"
+    case NullEpicsError(channel)      => s"Failed to read epics channel: $channel"
   }
 
 }

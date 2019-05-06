@@ -184,7 +184,7 @@ package keywords {
   }
 
   // A simple typeclass to encapsulate default values
-  sealed trait DefaultHeaderValue[A] {
+  trait DefaultHeaderValue[A] {
     def default: A
   }
 
@@ -206,6 +206,18 @@ package keywords {
       new DefaultHeaderValue[String] {
         val default: String = StrDefault
       }
+
+    /**
+     * @typeclass Functor
+     */
+    implicit val dhvFunctor: Functor[DefaultHeaderValue] =
+      new Functor[DefaultHeaderValue] {
+        def map[A, B](fa: DefaultHeaderValue[A])(f: A => B): DefaultHeaderValue[B] =
+          new DefaultHeaderValue[B] {
+            val default: B = f(fa.default)
+          }
+      }
+
   }
 
 }
@@ -257,6 +269,13 @@ package object keywords {
 
   implicit class FunctorSafeDefaultOps[F[_]: ApplicativeError[?[_], Throwable], A: DefaultHeaderValue](v: F[Option[A]]) {
     def safeValOrDefault: F[A] = v.safeVal.map(_.getOrElse(DefaultHeaderValue[A].default))
+  }
+
+  implicit class SafeDefaultOps[F[_]: ApplicativeError[?[_], Throwable], A: DefaultHeaderValue](v: F[A]) {
+    // Check if there is an error reading a value and if there is a failure
+    //  use the default
+    def safeValOrDefault: F[A] =
+      v.attempt.map(_.getOrElse(DefaultHeaderValue[A].default))
   }
 
   implicit class SeqActionOption2SeqAction[A: DefaultHeaderValue](

@@ -3,16 +3,15 @@
 
 package seqexec.server
 
-import scalaz.syntax.equal._
-import scalaz.std.AllInstances._
+import cats.Eq
+import cats.implicits._
 
-/**
-  * Created by jluhrs on 7/18/17.
-  */
-sealed trait EpicsHealth
+sealed trait EpicsHealth extends Product with Serializable
 
 object EpicsHealth {
-  object Good extends EpicsHealth
-  object Bad extends EpicsHealth
+  case object Good extends EpicsHealth
+  case object Bad extends EpicsHealth
   implicit def fromInt(v: Int): EpicsHealth = if (v === 0) Good else Bad
+
+  implicit val healthEq: Eq[EpicsHealth] = Eq.fromUniversalEquals
 }

@@ -37,7 +37,7 @@ import seqexec.server.ghost.{Ghost, GhostHeader}
 import seqexec.server.gsaoi._
 import seqexec.server.gcal._
 import seqexec.server.gmos.{GmosHeader, GmosNorth, GmosSouth}
-import seqexec.server.gws.{DummyGwsKeywordsReader, GwsHeader, GwsKeywordsReaderImpl}
+import seqexec.server.gws.{DummyGwsKeywordsReader, GwsHeader, GwsKeywordsReaderEpics}
 import seqexec.server.tcs._
 import seqexec.server.tcs.TcsController.LightPath
 import seqexec.server.gnirs._
@@ -538,8 +538,8 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
       tcsSubsystems
     )
 
-  private def gwsHeaders(i: InstrumentSystem[IO]): Header[IO] = GwsHeader.header(i,
-    if (settings.gwsKeywords) GwsKeywordsReaderImpl else DummyGwsKeywordsReader)
+  private def gwsHeaders[F[_]: Sync: LiftIO](i: InstrumentSystem[F]): Header[F] = GwsHeader.header(i,
+    if (settings.gwsKeywords) GwsKeywordsReaderEpics[F] else DummyGwsKeywordsReader[F])
 
   private def gcalHeader[F[_]: Sync: LiftIO](i: InstrumentSystem[F]): Header[F] = GcalHeader.header(i,
     if (settings.gcalKeywords) GcalKeywordsReaderEpics[F] else DummyGcalKeywordsReader[F] )
