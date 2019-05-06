@@ -20,7 +20,7 @@ final case class Systems[F[_]](
   odb:        OdbProxy[F],
   dhs:        DhsClient[F],
   tcs:        TcsController,
-  gcal:       GcalController,
+  gcal:       GcalController[F],
   flamingos2: Flamingos2Controller[F],
   gmosSouth:  GmosSouthController[F],
   gmosNorth:  GmosNorthController[F],

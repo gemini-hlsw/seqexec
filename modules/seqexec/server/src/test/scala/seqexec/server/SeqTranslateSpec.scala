@@ -102,7 +102,7 @@ class SeqTranslateSpec extends FlatSpec {
     new OdbProxy(new Peer("localhost", 8443, null), new OdbProxy.DummyOdbCommands),
     DhsClientSim(LocalDate.of(2016, 4, 15)),
     TcsControllerSim,
-    GcalControllerSim,
+    GcalControllerSim[IO],
     Flamingos2ControllerSim[IO],
     GmosControllerSim.south[IO],
     GmosControllerSim.north[IO],

@@ -148,6 +148,15 @@ object EpicsCommand {
   def setParameterF[F[_]: Sync, T](p: Option[CaParameter[T]], v: T): F[Unit] =
     Sync[F].delay {
       p.map(_.set(v))
+    }.adaptError {
+      case _ => SeqexecFailure.Unexpected("Unable to set parameter.")
+    }.void
+
+  def setParameterF[F[_]: Sync, T, A](p: Option[CaParameter[T]], v: A, f: A => T): F[Unit] =
+    Sync[F].delay {
+      p.map(_.set(f(v)))
+    }.adaptError {
+      case _ => SeqexecFailure.Unexpected("Unable to set parameter.")
     }.void
 
 }

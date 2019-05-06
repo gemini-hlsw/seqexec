@@ -3,17 +3,19 @@
 
 package seqexec.server.gcal
 
+import cats.effect.Sync
+import cats.implicits._
 import seqexec.server.gcal.GcalController.GcalConfig
-import seqexec.server.{SeqAction, TrySeq}
 import org.log4s.getLogger
 
-object GcalControllerSim extends GcalController {
-  private val Log = getLogger
+object GcalControllerSim {
+  def apply[F[_]: Sync]: GcalController[F] = new GcalController[F] {
+    private val Log = getLogger
 
-  override def getConfig: SeqAction[GcalConfig] = SeqAction(GcalController.GcalConfig.allOff)
+    override def getConfig: F[GcalConfig] =
+      GcalController.GcalConfig.allOff.pure[F]
 
-  override def applyConfig(config: GcalConfig): SeqAction[Unit] = SeqAction.either {
-    Log.debug("Simulating GCAL configuration")
-    TrySeq(())
+    override def applyConfig(config: GcalConfig): F[Unit] =
+      Sync[F].delay(Log.debug("Simulating GCAL configuration")).void
   }
 }
