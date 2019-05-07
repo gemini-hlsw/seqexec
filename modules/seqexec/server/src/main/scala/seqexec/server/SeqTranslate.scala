@@ -541,8 +541,8 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
   private def gwsHeaders(i: InstrumentSystem[IO]): Header[IO] = GwsHeader.header(i,
     if (settings.gwsKeywords) GwsKeywordsReaderImpl else DummyGwsKeywordsReader)
 
-  private def gcalHeader(i: InstrumentSystem[IO]): Header[IO] = GcalHeader.header(i,
-    if (settings.gcalKeywords) GcalKeywordsReaderImpl else DummyGcalKeywordsReader )
+  private def gcalHeader[F[_]: Sync: LiftIO](i: InstrumentSystem[F]): Header[F] = GcalHeader.header(i,
+    if (settings.gcalKeywords) GcalKeywordsReaderEpics[F] else DummyGcalKeywordsReader[F] )
 
   private def altairHeader[F[_]: Sync: LiftIO](instrument: InstrumentSystem[F], tcsKReader: TcsKeywordsReader[F]): Header[F] =
     AltairHeader.header[F](

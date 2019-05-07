@@ -5,16 +5,15 @@ package seqexec.server.gcal
 
 import cats.{Eq, Show}
 import cats.implicits._
-import seqexec.server.SeqAction
 import edu.gemini.spModel.gemini.calunit.CalUnitParams.Shutter
 
-trait GcalController {
+trait GcalController[F[_]] {
 
   import GcalController._
 
-  def getConfig: SeqAction[GcalConfig]
+  def getConfig: F[GcalConfig]
 
-  def applyConfig(config: GcalConfig): SeqAction[Unit]
+  def applyConfig(config: GcalConfig): F[Unit]
 
 }
 
