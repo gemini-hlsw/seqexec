@@ -21,6 +21,7 @@ import monocle.macros.GenLens
 import react.virtualized._
 import scala.scalajs.js
 import react.common._
+import react.common.implicits._
 import seqexec.model.enum.Instrument
 import seqexec.model.UserDetails
 import seqexec.model.UnknownTargetName
@@ -205,8 +206,7 @@ object SessionQueueTable extends Columns {
         }
         .getOrElse(SessionQueueRow.Empty)
 
-    val rowCount: Int =
-      sequencesList.size
+    val rowCount: Int = sequencesList.size
 
     val canOperate: Boolean = sequences.status.canOperate
 
@@ -223,7 +223,7 @@ object SessionQueueTable extends Columns {
     ).toMap
 
     private val columnAdjustmens = Map[TableColumn, Double](
-        ObsIdColumn -> SeqexecStyles.TableRightPadding.toDouble)
+      ObsIdColumn -> SeqexecStyles.TableRightPadding.toDouble)
 
     val columnWidths: TableColumn => Option[Double] =
       colWidths(sequencesList,
@@ -575,10 +575,11 @@ object SessionQueueTable extends Columns {
     }
 
   def updateScrollPosition(b: Backend, pos: JsNumber): Callback = {
-    val s = State.userModified.set(IsModified) >>>
+    val mods = State.userModified.set(IsModified) >>>
       State.scrollPosition.set(pos)
-    b.modState(s) *> SeqexecCircuit.dispatchCB(
-      UpdateSessionQueueTableState(s(b.state).tableState))
+    (b.modState(mods) *> SeqexecCircuit.dispatchCB(
+      UpdateSessionQueueTableState(mods(b.state).tableState)))
+      .unless(pos === 0 && !b.state.tableState.isModified).void
   }
 
   // scalastyle:off
@@ -593,14 +594,13 @@ object SessionQueueTable extends Columns {
             label        = meta.label,
             cellRenderer = renderer(meta.column, b),
             headerRenderer = resizableHeaderRenderer(
-              b.state.tableState.resizeRow(
+              b.state.tableState.resizeColumn(
                 meta.column,
                 size,
+                x => b.setStateL(State.tableState)(x) *>
+                  SeqexecCircuit.dispatchCB(UpdateSessionQueueTableState(x)),
                 b.props.visibleColumns,
-                b.props.columnWidths,
-                x =>
-                  b.setStateL(State.tableState)(x) >> SeqexecCircuit.dispatchCB(
-                    UpdateSessionQueueTableState(x))
+                b.props.columnWidths
               )),
             className = columnStyle(meta.column).foldMap(_.htmlClass)
           ))
@@ -675,9 +675,9 @@ object SessionQueueTable extends Columns {
         headerHeight     = SeqexecStyles.headerHeight,
         rowRenderer      = draggableRowRenderer(b)
       ),
-      b.state.tableState.columnBuilder2(size,
-                                        b.props.columnWidths,
-                                        colBuilder(b, size)): _*
+      b.state.tableState.columnBuilder(size,
+                                       colBuilder(b, size),
+                                       b.props.columnWidths): _*
     ).vdomElement
 
   def dragStart(b: Backend, obsId: Observation.Id)(
@@ -716,7 +716,7 @@ object SessionQueueTable extends Columns {
     State.tableState.set(p.sequences.tableState)(InitialState)
 
   private def onResize(b: Backend): Size => Callback = s =>
-    b.setStateL(State.lastSize)(s.some) *>
+    Callback.log(s"onResize ${b.state.tableState.userModified}") *> b.setStateL(State.lastSize)(s.some) *>
       b.modStateL(State.tableState)(_.recalculateWidths(s, b.props.visibleColumns, b.props.columnWidths))
 
   private val component = ScalaComponent
@@ -729,17 +729,21 @@ object SessionQueueTable extends Columns {
     .componentWillReceiveProps { b =>
       // Reset loading
       b.modState { _.resetLoading(b.nextProps) } *>
-        // if login stat change recalculate widths
+        // if login state changes recalculate widths
         b.modStateOption { s =>
-            s.lastSize.map(ls =>
-              s.copy(
-                tableState =
-                  s.tableState.recalculateWidths(ls,
-                                                 b.nextProps.visibleColumns,
-                                                 b.nextProps.columnWidths)))
-          }
-          .when(b.currentProps.obsIds =!= b.nextProps.obsIds || b.currentProps.loggedIn =!= b.nextProps.loggedIn)
-          .void
+          s.lastSize.map(ls =>
+            (State.userModified.modify { s =>
+              // If login state changes discard user modifications
+              if (b.currentProps.loggedIn =!= b.nextProps.loggedIn) {
+                NotModified
+              } else s } >>>
+             State.tableState.modify(
+                _.recalculateWidths(ls,
+                                    b.nextProps.visibleColumns,
+                                    b.nextProps.columnWidths)))(s))
+        }
+        .when(b.currentProps.obsIds =!= b.nextProps.obsIds || b.currentProps.loggedIn =!= b.nextProps.loggedIn)
+        .void
     }
     .build
 

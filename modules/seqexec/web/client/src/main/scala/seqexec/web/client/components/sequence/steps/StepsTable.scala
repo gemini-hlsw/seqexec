@@ -49,7 +49,6 @@ import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.components.TableContainer
 import seqexec.web.client.semanticui.elements.icon.Icon._
 import seqexec.web.client.semanticui.{ Size => SSize }
-//import seqexec.web.client.reusability._
 import react.virtualized._
 import web.client.style._
 import web.client.table._
@@ -57,16 +56,17 @@ import web.client.table._
 trait Columns {
   val ControlWidth: Double          = 40
   val StepWidth: Double             = 60
-  val StateWidth: Double            = 200
+  val ExecutionWidth: Double        = 260
+  val ExecutionMinWidth: Double     = 200
   val OffsetWidthBase: Double       = 75
   val OffsetIconWidth: Double       = 23.02
   val OffsetPadding: Double         = 12
   val ExposureWidth: Double         = 75
-  val ExposureMinWidth: Double      = 78.95 + SeqexecStyles.TableBorderWidth
+  val ExposureMinWidth: Double      = 83.667 + SeqexecStyles.TableBorderWidth
   val DisperserWidth: Double        = 100
   val DisperserMinWidth: Double     = 100 + SeqexecStyles.TableBorderWidth
   val ObservingModeWidth: Double    = 180
-  val ObservingModeMinWidth: Double = 100
+  val ObservingModeMinWidth: Double = 130.8 + SeqexecStyles.TableBorderWidth
   val FilterWidth: Double           = 180
   val FilterMinWidth: Double        = 100
   val FPUWidth: Double              = 100
@@ -102,7 +102,7 @@ trait Columns {
   val columnsDefaultWidth: Map[TableColumn, Double] = Map(
     ControlColumn -> ControlWidth,
     StepColumn -> StepWidth,
-    ExecutionColumn -> StateWidth,
+    ExecutionColumn -> ExposureMinWidth,
     OffsetColumn -> OffsetWidthBase,
     ObservingModeColumn -> ObservingModeWidth,
     ExposureColumn -> ExposureWidth,
@@ -142,7 +142,7 @@ trait Columns {
     name    = "state",
     label   = "Execution Progress",
     visible = true,
-    width = VariableColumnWidth.unsafeFromDouble(0.1, StateWidth),
+    width = VariableColumnWidth.unsafeFromDouble(0.1, ExecutionMinWidth),
     grow = 20)
 
   val OffsetMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
@@ -157,7 +157,7 @@ trait Columns {
     name    = "obsMode",
     label   = "Observing Mode",
     visible = true,
-    width = VariableColumnWidth.unsafeFromDouble(0.1, ObservingModeWidth))
+    width = VariableColumnWidth.unsafeFromDouble(0.1, ObservingModeMinWidth))
 
   val ExposureMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     ExposureColumn,
@@ -179,28 +179,28 @@ trait Columns {
     label   = "Filter",
     visible = true,
     removeable = 2,
-    width = VariableColumnWidth.unsafeFromDouble(0.1, FilterWidth))
+    width = VariableColumnWidth.unsafeFromDouble(0.1, FilterMinWidth))
 
   val FPUMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     FPUColumn,
     name    = "camera",
     label   = "FPU",
     visible = true,
-    width = VariableColumnWidth.unsafeFromDouble(0.1, FPUWidth))
+    width = VariableColumnWidth.unsafeFromDouble(0.1, FPUMinWidth))
 
   val CameraMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     CameraColumn,
     name    = "camera",
     label   = "Camera",
     visible = true,
-    width = VariableColumnWidth.unsafeFromDouble(0.1, CameraWidth))
+    width = VariableColumnWidth.unsafeFromDouble(0.1, CameraMinWidth))
 
   val DeckerMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     DeckerColumn,
     name    = "camera",
     label   = "Decker",
     visible = true,
-    width = VariableColumnWidth.unsafeFromDouble(0.1, DeckerWidth))
+    width = VariableColumnWidth.unsafeFromDouble(0.1, DeckerMinWidth))
 
   val ReadModeMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     ReadModeColumn,
@@ -208,14 +208,14 @@ trait Columns {
     label   = "ReadMode",
     visible = true,
     removeable = 3,
-    width = VariableColumnWidth.unsafeFromDouble(0.1, ReadModeWidth))
+    width = VariableColumnWidth.unsafeFromDouble(0.1, ReadModeMinWidth))
 
   val ImagingMirrorMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     ImagingMirrorColumn,
     name    = "camera",
     label   = "ImagingMirror",
     visible = true,
-    width = VariableColumnWidth.unsafeFromDouble(0.1, ImagingMirrorWidth))
+    width = VariableColumnWidth.unsafeFromDouble(0.1, ImagingMirrorMinWidth))
 
   val ObjectTypeMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     ObjectTypeColumn,
@@ -708,11 +708,11 @@ object StepsTable extends Columns {
             label   = meta.label,
             headerRenderer = resizableHeaderRenderer(
               b.state.tableState
-                .resizeRow(meta.column,
+                .resizeColumn(meta.column,
                            size,
+                           updateState,
                            b.props.visibleColumns,
-                           b.props.columnWidths,
-                           updateState)),
+                           b.props.columnWidths)),
             headerClassName = headerClassName(meta.column).foldMap(_.htmlClass),
             cellRenderer    = columnCellRenderer(b, meta.column),
             className       = columnClassName(meta.column).foldMap(_.htmlClass)
@@ -928,9 +928,9 @@ object StepsTable extends Columns {
         size => {
           val ts =
             b.state.tableState
-              .columnBuilder2(size,
-                             b.props.columnWidths,
-                             colBuilder(b, size))
+              .columnBuilder(size,
+                             colBuilder(b, size),
+                             b.props.columnWidths)
               .map(_.vdomElement)
 
           ref

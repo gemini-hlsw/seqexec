@@ -253,9 +253,9 @@ object LogArea {
             label          = meta.label,
             headerRenderer = resizableHeaderRenderer(
               b.state.tableState
-                .resizeRowB(meta.column,
-                            size,
-                            x => b.setStateL(State.tableState)(x))),
+                .resizeColumn(meta.column,
+                              size,
+                              b.setStateL(State.tableState)(_))),
             className = LogColumnStyle
           ))
     }
@@ -309,7 +309,7 @@ object LogArea {
         headerClassName  = SeqexecStyles.tableHeader.htmlClass,
         headerHeight     = SeqexecStyles.headerHeight
       ),
-      b.state.tableState.columnBuilder2(size, _ => none, colBuilder(b, size)): _*
+      b.state.tableState.columnBuilder(size, colBuilder(b, size)): _*
     ).vdomElement
 
   private def onResize(b: Backend): Size => Callback = s =>

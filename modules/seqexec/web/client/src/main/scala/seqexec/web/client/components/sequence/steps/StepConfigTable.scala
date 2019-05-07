@@ -121,7 +121,7 @@ object StepConfigTable {
             width          = width,
             dataKey        = meta.name,
             label          = meta.label,
-            headerRenderer = resizableHeaderRenderer(b.state.resizeRowB(meta.column, size, updateState)),
+            headerRenderer = resizableHeaderRenderer(b.state.resizeColumn(meta.column, size, updateState)),
             className      = SeqexecStyles.paddedStepRow.htmlClass
           ))
       case ColumnRenderArgs(meta, _, width, false) =>
@@ -183,7 +183,7 @@ object StepConfigTable {
     .render ( b =>
       TableContainer(TableContainer.Props(true, size =>
         Table(settingsTableProps(b, size),
-              b.state.columnBuilderC(size, colBuilder(b, size)): _*),
+              b.state.columnBuilder(size, colBuilder(b, size)): _*),
               onResize = _ => Callback.empty))
     )
     .configure(Reusability.shouldComponentUpdate)

@@ -286,7 +286,7 @@ object CalQueueTable {
               label        = meta.label,
               cellRenderer = renderer(meta.column),
               headerRenderer = resizableHeaderRenderer(
-                state.tableState.resizeRowB(meta.column, size, updateState)),
+                state.tableState.resizeColumn(meta.column, size, updateState)),
               className = SeqexecStyles.queueTextColumn.htmlClass
             ))
         case ColumnRenderArgs(meta, _, width, false) =>
@@ -400,7 +400,7 @@ object CalQueueTable {
           val sortableList = SortableContainer.wrapC(
             Table.component,
             s.tableState
-              .columnBuilderC(size, colBuilder(p, s, size))
+              .columnBuilder(size, colBuilder(p, s, size))
               .map(_.vdomElement))
 
           // If distance is 0 we can miss some events
