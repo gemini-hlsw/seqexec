@@ -206,6 +206,25 @@ class GsaoiEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]
     Async[F].delay(filteredNotGuidingAttr.reset)
       .flatMap(EpicsUtil.waitForValueF[Integer, F](_, 1, guideTimeout, "ODGW guide flag"))
 
+  def odgwBaseExpTime: F[Option[Double]] = safeAttributeSDouble(status.getDoubleAttribute("baseExpTime"))
+
+  def odgw1Counts: F[Option[Double]] = safeAttributeSDouble(status.getDoubleAttribute("counts1"))
+
+  def odgw2Counts: F[Option[Double]] = safeAttributeSDouble(status.getDoubleAttribute("counts2"))
+
+  def odgw3Counts: F[Option[Double]] = safeAttributeSDouble(status.getDoubleAttribute("counts3"))
+
+  def odgw4Counts: F[Option[Double]] = safeAttributeSDouble(status.getDoubleAttribute("counts4"))
+
+  def odgw1Multiplier: F[Option[Int]] = safeAttributeSInt(status.getIntegerAttribute("expMult1"))
+
+  def odgw2Multiplier: F[Option[Int]] = safeAttributeSInt(status.getIntegerAttribute("expMult2"))
+
+  def odgw3Multiplier: F[Option[Int]] = safeAttributeSInt(status.getIntegerAttribute("expMult3"))
+
+  def odgw4Multiplier: F[Option[Int]] = safeAttributeSInt(status.getIntegerAttribute("expMult4"))
+
+  def odgwSize: F[Option[Int]] = safeAttributeSInt(status.getIntegerAttribute("odgwSize"))
 }
 
 object GsaoiEpics extends EpicsSystem[GsaoiEpics[IO]] {

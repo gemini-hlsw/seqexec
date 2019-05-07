@@ -39,6 +39,7 @@ import seqexec.server.gsaoi.{GsaoiControllerEpics, GsaoiControllerSim, GsaoiEpic
 import seqexec.server.niri.{NiriControllerEpics, NiriControllerSim, NiriEpics}
 import seqexec.server.nifs.{NifsControllerEpics, NifsControllerSim, NifsEpics}
 import seqexec.server.gws.GwsEpics
+import seqexec.server.gems.GemsEpics
 import seqexec.server.tcs.{GuideConfigDb, TcsControllerEpics, TcsControllerSim, TcsEpics}
 import fs2.{Pure, Stream}
 import org.http4s.client.Client
@@ -752,6 +753,7 @@ object SeqexecEngine extends SeqexecConfiguration {
     val dhsServer               = cfg.require[Uri]("seqexec-engine.dhsServer")
     val dhsControl              = cfg.require[ControlStrategy]("seqexec-engine.systemControl.dhs")
     val altairControl           = cfg.require[ControlStrategy]("seqexec-engine.systemControl.altair")
+    val gemsControl             = cfg.require[ControlStrategy]("seqexec-engine.systemControl.gems")
     val f2Control               = cfg.require[ControlStrategy]("seqexec-engine.systemControl.f2")
     val gcalControl             = cfg.require[ControlStrategy]("seqexec-engine.systemControl.gcal")
     val ghostControl            = cfg.require[ControlStrategy]("seqexec-engine.systemControl.ghost")
@@ -806,7 +808,7 @@ object SeqexecEngine extends SeqexecConfiguration {
       )
     }
     val epicsGaos = site match {
-      case Site.GS => List() // Put GeMS here.
+      case Site.GS => List(gemsControl -> GemsEpics)
       case Site.GN => List(altairControl -> AltairEpics)
     }
     val epicsSystems = epicsInstruments ++ List(
@@ -824,6 +826,7 @@ object SeqexecEngine extends SeqexecConfiguration {
                    now,
                    dhsServer,
                    altairControl,
+                   gemsControl,
                    dhsControl,
                    f2Control,
                    gcalControl,

@@ -40,6 +40,7 @@ object TestCommon {
     date = LocalDate.of(2017, 1, 1),
     dhsURI = uri("http://localhost/"),
     altairControl = Simulated,
+    gemsControl = Simulated,
     dhsControl = Simulated,
     f2Control = Simulated,
     gcalControl = Simulated,
