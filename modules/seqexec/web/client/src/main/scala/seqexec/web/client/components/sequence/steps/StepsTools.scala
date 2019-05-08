@@ -76,7 +76,7 @@ object StepIconCell {
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
-  def stepIcon(p: Props): VdomNode =
+  private def stepIcon(p: Props): VdomNode =
     p.status match {
       case StepState.Completed => IconCheckmark
       case StepState.Running   => IconCircleNotched.copyIcon(loading = true)
@@ -104,12 +104,12 @@ object StepIconCell {
   private val component = ScalaComponent
     .builder[Props]("StepIconCell")
     .stateless
-    .render_P { p =>
+    .render_P( p =>
       <.div(
         stepStyle(p),
-        // stepIcon(p)
+        stepIcon(p)
       )
-    }
+    )
     .configure(Reusability.shouldComponentUpdate)
     .build
 

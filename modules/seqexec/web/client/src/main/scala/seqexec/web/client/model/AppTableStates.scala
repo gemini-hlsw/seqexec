@@ -30,7 +30,7 @@ final case class AppTableStates(
 object AppTableStates {
 
   val Initial: AppTableStates = AppTableStates(
-    SessionQueueTable.InitialState.tableState,
+    SessionQueueTable.State.InitialState.tableState,
     StepConfigTable.InitialTableState,
     Map.empty,
     Map.empty

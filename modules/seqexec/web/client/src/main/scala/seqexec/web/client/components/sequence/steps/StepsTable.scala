@@ -17,10 +17,9 @@ import japgolly.scalajs.react.extra.Reusability
 import japgolly.scalajs.react.MonocleReact._
 import japgolly.scalajs.react.raw.JsNumber
 import monocle.Lens
-import monocle.macros.GenLens
+import monocle.macros.Lenses
 import scala.scalajs.js
-import scala.math.min
-import scala.math.max
+import scala.math._
 import react.common._
 import react.common.syntax._
 import seqexec.model.enum.Instrument
@@ -183,8 +182,9 @@ trait Columns {
 
   val FPUMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     FPUColumn,
-    name    = "camera",
+    name    = "fpu",
     label   = "FPU",
+    removeable = 3,
     visible = true,
     width = VariableColumnWidth.unsafeFromDouble(0.1, FPUMinWidth))
 
@@ -193,12 +193,14 @@ trait Columns {
     name    = "camera",
     label   = "Camera",
     visible = true,
+    removeable = 4,
     width = VariableColumnWidth.unsafeFromDouble(0.1, CameraMinWidth))
 
   val DeckerMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     DeckerColumn,
     name    = "camera",
     label   = "Decker",
+    removeable = 5,
     visible = true,
     width = VariableColumnWidth.unsafeFromDouble(0.1, DeckerMinWidth))
 
@@ -207,7 +209,7 @@ trait Columns {
     name    = "camera",
     label   = "ReadMode",
     visible = true,
-    removeable = 3,
+    removeable = 6,
     width = VariableColumnWidth.unsafeFromDouble(0.1, ReadModeMinWidth))
 
   val ImagingMirrorMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
@@ -215,6 +217,7 @@ trait Columns {
     name    = "camera",
     label   = "ImagingMirror",
     visible = true,
+    removeable = 7,
     width = VariableColumnWidth.unsafeFromDouble(0.1, ImagingMirrorMinWidth))
 
   val ObjectTypeMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
@@ -414,9 +417,11 @@ object StepsTable extends Columns {
 
   }
 
+  @Lenses
   final case class State(tableState:      TableState[TableColumn],
                          breakpointHover: Option[Int],
-                         selected:        Option[StepId]) {
+                         selected:        Option[StepId],
+                         scrollCount:     Int) {
 
     def visibleCols(p: Props): State =
       State.columns.set(NonEmptyList.fromListUnsafe(p.shownForInstrument))(this)
@@ -426,17 +431,9 @@ object StepsTable extends Columns {
 
   }
 
+  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object State {
-
-    val tableState: Lens[State, TableState[TableColumn]] =
-      GenLens[State](_.tableState)
-
-    val breakpointHover: Lens[State, Option[Int]] =
-      GenLens[State](_.breakpointHover)
-
-    val selected: Lens[State, Option[StepId]] =
-      GenLens[State](_.selected)
-
+    // Lenses
     val columns: Lens[State, NonEmptyList[ColumnMeta[TableColumn]]] =
       tableState ^|-> TableState.columns[TableColumn]
 
@@ -449,7 +446,7 @@ object StepsTable extends Columns {
     val InitialTableState: TableState[TableColumn] =
       TableState(NotModified, 0, all)
 
-    val InitialState: State = State(InitialTableState, None, None)
+    val InitialState: State = State(InitialTableState, None, None, 0)
   }
 
   implicit val propsReuse: Reusability[Props] =
@@ -693,11 +690,9 @@ object StepsTable extends Columns {
     b:    Backend,
     size: Size): ColumnRenderArgs[TableColumn] => Table.ColumnArg = tb => {
     def updateState(s: TableState[TableColumn]): Callback =
-      (Callback.log(
-        s"UPD ${s.userModified} ${s.columns.length}: ${s.columns.toList.map(_.width).mkString(", ")}") *>
-        b.modState(State.tableState.set(s)) *> b.props.obsId
+      (b.modState(State.tableState.set(s)) *> b.props.obsId
         .map(i => SeqexecCircuit.dispatchCB(UpdateStepTableState(i, s)))
-        .getOrEmpty).when(size.width > 0) *> Callback.empty
+        .getOrEmpty).when(size.width > 0).void
 
     tb match {
       case ColumnRenderArgs(meta, _, width, true) =>
@@ -731,16 +726,31 @@ object StepsTable extends Columns {
     }
   }
 
+  // Called when the scroll position changes
+  // This is fairly convoluted as the table always calls this at start when
+  // the table is rendered with position 0
+  // Aditionally if we programatically scroll to a position we get another call
+  // Only after that we assume scroll is user bade
   def updateScrollPosition(b: Backend, pos: JsNumber): Callback = {
-    val s = State.userModified.set(IsModified) >>>
-      State.scrollPosition.set(pos)
-    b.modState(s) *>
+    val modMod = b.setStateL(State.userModified)(IsModified)
+    val posMod = b.setStateL(State.scrollPosition)(pos)
+    val hasScrolledBefore = b.state.scrollCount > 1
+    val scrollCountMods = b.modStateL(State.scrollCount)(_ + 1)
+    // Separately calculate the state to send upstream
+    val newTs = if (hasScrolledBefore) {
+      (State.userModified.set(IsModified) >>> State.scrollPosition.set(pos))(b.state)
+    } else {
+      State.scrollPosition.set(pos)(b.state)
+    }
+    // Always update the position and counts, but the modification flag only if
+    // we are sure the user did scroll manually
+    posMod *> scrollCountMods *> modMod.when(hasScrolledBefore) *>
+      // And silently update the model
       b.props.obsId
         .map(id =>
           SeqexecCircuit.dispatchCB(
-            UpdateStepTableState(id, s(b.state).tableState)))
-        .getOrEmpty *>
-      Callback.empty
+            UpdateStepTableState(id, newTs.tableState)))
+        .getOrEmpty
   }
 
   def startScrollTop(state: State): js.UndefOr[JsNumber] =
@@ -765,9 +775,8 @@ object StepsTable extends Columns {
         SeqexecCircuit
           .dispatchCB(ClearAllResouceOptions(id)) *>
         b.modState(State.selected.set(Some(i))) *>
-        recomputeRowHeightsCB(min(b.state.selected.getOrElse(i), i)))
-        .when(b.props.stepSelectionAllowed(i)) *>
-        Callback.empty
+        recomputeRowHeightsCB(min(b.state.selected.getOrElse(i), i))
+      ).when(b.props.stepSelectionAllowed(i)).void
     }.getOrEmpty
 
   def stepsTableProps(b: Backend)(size: Size): Table.Props =
@@ -861,7 +870,7 @@ object StepsTable extends Columns {
                          i:     StepId): Callback =
     (SeqexecCircuit.dispatchCB(UpdateSelectedStep(obsId, i)) *>
       b.modState(State.selected.set(i.some)))
-      .when(p.canControlSubsystems(i)) *> Callback.empty
+      .when(p.canControlSubsystems(i)).void
 
   // We need to update the state if the props change
   def receiveNewProps(b: ReceiveProps): Callback = {

@@ -17,7 +17,7 @@ import japgolly.scalajs.react.CatsReact._
 import japgolly.scalajs.react.MonocleReact._
 import japgolly.scalajs.react.raw.JsNumber
 import monocle.Lens
-import monocle.macros.GenLens
+import monocle.macros.Lenses
 import react.virtualized._
 import scala.scalajs.js
 import react.common._
@@ -241,6 +241,7 @@ object SessionQueueTable extends Columns {
 
   }
 
+  @Lenses
   final case class State(tableState: TableState[TableColumn],
                          rowLoading: Option[Int],
                          lastSize:   Option[Size]) {
@@ -254,20 +255,9 @@ object SessionQueueTable extends Columns {
 
   }
 
-  val InitialTableState: TableState[TableColumn] =
-    TableState(NotModified, 0, all)
-
-  val InitialState: State =
-    State(InitialTableState, None, None)
-
+  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object State {
     // Lenses
-    val tableState: Lens[State, TableState[TableColumn]] =
-      GenLens[State](_.tableState)
-
-    val lastSize: Lens[State, Option[Size]] =
-      GenLens[State](_.lastSize)
-
     val columns: Lens[State, NonEmptyList[ColumnMeta[TableColumn]]] =
       tableState ^|-> TableState.columns[TableColumn]
 
@@ -276,6 +266,13 @@ object SessionQueueTable extends Columns {
 
     val scrollPosition: Lens[State, JsNumber] =
       tableState ^|-> TableState.scrollPosition[TableColumn]
+
+    val InitialTableState: TableState[TableColumn] =
+      TableState(NotModified, 0, all)
+
+    val InitialState: State =
+      State(InitialTableState, None, None)
+
   }
 
   // Reusability
@@ -713,10 +710,10 @@ object SessionQueueTable extends Columns {
     }
 
   private def initialState(p: Props): State =
-    State.tableState.set(p.sequences.tableState)(InitialState)
+    State.tableState.set(p.sequences.tableState)(State.InitialState)
 
   private def onResize(b: Backend): Size => Callback = s =>
-    Callback.log(s"onResize ${b.state.tableState.userModified}") *> b.setStateL(State.lastSize)(s.some) *>
+    b.setStateL(State.lastSize)(s.some) *>
       b.modStateL(State.tableState)(_.recalculateWidths(s, b.props.visibleColumns, b.props.columnWidths))
 
   private val component = ScalaComponent
