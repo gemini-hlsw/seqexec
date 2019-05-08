@@ -6,6 +6,7 @@ package seqexec.web.client.model
 import cats._
 import cats.implicits._
 import gem.enum.Site
+import gem.Observation
 import monocle.Lens
 import monocle.Getter
 import monocle.Traversal
@@ -23,6 +24,7 @@ import seqexec.model.SequenceView
 import seqexec.model.SequencesQueue
 import seqexec.model.CalibrationQueueId
 import seqexec.web.client.components.sequence.steps.StepConfigTable
+import seqexec.web.client.components.sequence.steps.StepsTable
 import seqexec.web.client.components.SessionQueueTable
 import web.client.table._
 
@@ -67,16 +69,20 @@ object SeqexecAppRootModel {
   val sessionQueueL: Lens[SeqexecAppRootModel, List[SequenceView]] =
     SeqexecAppRootModel.sequences ^|-> SequencesQueue.sessionQueue
 
-  val queueTableStateL
+  val sessionQueueTableStateL
     : Lens[SeqexecAppRootModel, TableState[SessionQueueTable.TableColumn]] =
-    SeqexecAppRootModel.uiModel ^|-> SeqexecUIModel.queueTableState
+    SeqexecAppRootModel.uiModel ^|-> SeqexecUIModel.appTableStates ^|-> AppTableStates.sessionQueueTable
+
+  def stepsTableStateL(id: Observation.Id)
+    : Lens[SeqexecAppRootModel, Option[TableState[StepsTable.TableColumn]]] =
+    SeqexecAppRootModel.uiModel ^|-> SeqexecUIModel.appTableStates ^|-> AppTableStates.stepsTableAtL(id)
 
   val soundSettingL: Lens[SeqexecAppRootModel, SoundSelection] =
     SeqexecAppRootModel.uiModel ^|-> SeqexecUIModel.sound
 
   val configTableStateL
     : Lens[SeqexecAppRootModel, TableState[StepConfigTable.TableColumn]] =
-    SeqexecAppRootModel.uiModel ^|-> SeqexecUIModel.configTableState
+    SeqexecAppRootModel.uiModel ^|-> SeqexecUIModel.appTableStates ^|-> AppTableStates.stepConfigTable
 
   def executionQueuesT(
     id: QueueId

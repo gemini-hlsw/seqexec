@@ -68,7 +68,7 @@ object Settings {
     val scalaVersion = "2.12.8"
 
     // ScalaJS libraries
-    val scalaDom                = "0.9.6"
+    val scalaDom                = "0.9.7"
     val scalajsReact            = "1.3.1"
     val booPickle               = "1.3.0"
     val diode                   = "1.1.4"
@@ -78,7 +78,7 @@ object Settings {
     val scalaJSReactCommon      = "0.1.0"
     val scalaJSReactVirtualized = "0.5.0"
     val scalaJSReactClipboard   = "0.6.1"
-    val scalaJSReactDraggable   = "0.3.2"
+    val scalaJSReactDraggable   = "0.3.3"
     val scalaJSReactSortable    = "0.1.2"
 
     // Scala libraries
@@ -88,8 +88,8 @@ object Settings {
     val fs2Version              = "1.0.4"
     val shapelessVersion        = "2.3.3"
     val attoVersion             = "0.6.5"
-    val scalaParsersVersion     = "1.1.1"
-    val scalaXmlVerson          = "1.1.1"
+    val scalaParsersVersion     = "1.1.2"
+    val scalaXmlVerson          = "1.2.0"
 
     val http4sVersion           = "0.20.0"
     val squants                 = "1.4.0"

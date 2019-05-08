@@ -42,7 +42,7 @@ import seqexec.web.client.model._
 import seqexec.web.client.model.RunOperation
 import seqexec.web.client.circuit._
 import seqexec.web.client.model.Pages._
-import seqexec.web.client.components.sequence.steps.OffsetFns.OffsetsDisplay
+import seqexec.web.client.model.Formatting.OffsetsDisplay
 import seqexec.web.client.components.sequence.steps.StepConfigTable
 import seqexec.web.client.components.sequence.steps.StepsTable
 import seqexec.web.client.components.queue.CalQueueTable
@@ -213,16 +213,15 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
   implicit val arbCalibrationQueueTab: Arbitrary[CalibrationQueueTab] =
     Arbitrary {
       for {
-        ts <- arbitrary[TableState[StepsTable.TableColumn]]
         st <- arbitrary[BatchExecState]
         o  <- arbitrary[Option[Observer]]
-      } yield CalibrationQueueTab(ts, st, o)
+      } yield CalibrationQueueTab(st, o)
     }
 
   implicit val cqtCogen: Cogen[CalibrationQueueTab] =
-    Cogen[(TableState[StepsTable.TableColumn], BatchExecState, Option[Observer])]
+    Cogen[(BatchExecState, Option[Observer])]
       .contramap { x =>
-        (x.tableState, x.state, x.observer)
+        (x.state, x.observer)
       }
 
   implicit val arbQueueSeqOperations: Arbitrary[QueueSeqOperations] =
@@ -243,7 +242,6 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
         i   <- arbitrary[Instrument]
         idx <- arbitrary[Option[Int]]
         sv  <- arbitrary[Either[SequenceView, SequenceView]]
-        ts  <- arbitrary[TableState[StepsTable.TableColumn]]
         to  <- arbitrary[TabOperations]
         se  <- arbitrary[Option[StepId]]
       } yield
@@ -253,7 +251,6 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
                    tag[InstrumentSequenceTab.LoadedSV][SequenceView]),
           idx,
           se,
-          ts,
           to)
     }
 
@@ -262,13 +259,11 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
            SequenceView,
            Option[StepId],
            Option[StepId],
-           TableState[StepsTable.TableColumn],
            TabOperations)].contramap { x =>
       (x.inst,
        x.sequence,
        x.stepConfig,
        x.selectedStep,
-       x.tableState,
        x.tabOperations)
     }
 
@@ -278,17 +273,15 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
         idx <- arbitrary[Option[Int]]
         sv  <- arbitrary[SequenceView]
         lo  <- arbitrary[Boolean]
-        ts  <- arbitrary[TableState[StepsTable.TableColumn]]
         to  <- arbitrary[TabOperations]
-      } yield PreviewSequenceTab(sv, idx, lo, ts, to)
+      } yield PreviewSequenceTab(sv, idx, lo, to)
     }
 
   implicit val pstCogen: Cogen[PreviewSequenceTab] =
     Cogen[(SequenceView,
            Option[Int],
-           TableState[StepsTable.TableColumn],
            TabOperations)].contramap { x =>
-      (x.currentSequence, x.stepConfig, x.tableState, x.tabOperations)
+      (x.currentSequence, x.stepConfig, x.tabOperations)
     }
 
   implicit val arbSeqexecTab: Arbitrary[SeqexecTab] = Arbitrary {
@@ -725,7 +718,7 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
     Cogen[String].contramap(_.productPrefix)
 
   implicit val arbStepsTableTableColumn: Arbitrary[StepsTable.TableColumn] =
-    Arbitrary(Gen.const(StepsTable.IconColumn))
+    Arbitrary(Gen.oneOf(StepsTable.all.map(_.column).toList))
 
   implicit val stepsTableColumnCogen: Cogen[StepsTable.TableColumn] =
     Cogen[String].contramap(_.productPrefix)
@@ -805,8 +798,7 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
         loginBox           <- arbitrary[SectionVisibilityState]
         globalLog          <- arbitrary[GlobalLog]
         sequencesOnDisplay <- arbitrary[SequencesOnDisplay]
-        configTableState   <- arbitrary[TableState[StepConfigTable.TableColumn]]
-        queueTableState    <- arbitrary[TableState[SessionQueueTable.TableColumn]]
+        appTableStates     <- arbitrary[AppTableStates]
         defaultObserver    <- arbitrary[Observer]
         notification       <- arbitrary[UserNotificationState]
         queues             <- arbitrary[CalibrationQueues]
@@ -821,8 +813,7 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
           loginBox,
           globalLog,
           sequencesOnDisplay,
-          configTableState,
-          queueTableState,
+          appTableStates,
           defaultObserver,
           notification,
           queues,
@@ -839,8 +830,7 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
        SectionVisibilityState,
        GlobalLog,
        SequencesOnDisplay,
-       TableState[StepConfigTable.TableColumn],
-       TableState[SessionQueueTable.TableColumn],
+       AppTableStates,
        Observer,
        UserNotificationState,
        CalibrationQueues,
@@ -855,8 +845,7 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
            x.loginBox,
            x.globalLog,
            x.sequencesOnDisplay,
-           x.configTableState,
-           x.queueTableState,
+           x.appTableStates,
            x.defaultObserver,
            x.notification,
            x.queues,
@@ -953,9 +942,10 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries {
   implicit val appTableStatesCogen: Cogen[AppTableStates] =
     Cogen[(TableState[SessionQueueTable.TableColumn],
            TableState[StepConfigTable.TableColumn],
-           List[(Observation.Id, TableState[StepsTable.TableColumn])])]
+           List[(Observation.Id, TableState[StepsTable.TableColumn])],
+           List[(QueueId, TableState[CalQueueTable.TableColumn])])]
       .contramap { x =>
-        (x.queueTable, x.stepConfigTable, x.stepsTables.toList)
+        (x.sessionQueueTable, x.stepConfigTable, x.stepsTables.toList, x.queueTables.toList)
       }
 
 }

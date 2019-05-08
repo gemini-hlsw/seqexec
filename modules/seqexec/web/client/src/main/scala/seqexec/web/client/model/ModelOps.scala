@@ -69,7 +69,7 @@ object ModelOps {
       s.copy(steps = s.steps.collect {
         case st: StandardStep if st.id === step.id =>
           st.copy(breakpoint = !st.breakpoint)
-        case st                                    => st
+        case st => st
       })
 
     def nextStepToRun: Option[Int] =
@@ -102,27 +102,12 @@ object ModelOps {
       })
   }
 
-  implicit class StepOps(val s: Step) extends AnyVal {
-    def canRunFrom: Boolean = s.status match {
-      case StepState.Pending | StepState.Failed(_) => true
-      case _                                       => false
-    }
-  }
-
   implicit class SiteOps(val s: Site) extends AnyVal {
 
     def instruments: NonEmptyList[Instrument] = s match {
       case Site.GN => Instrument.gnInstruments
       case Site.GS => Instrument.gsInstruments
     }
-  }
-
-  implicit class ExtraStringOps(val s: String) extends AnyVal {
-    def sentenceCase: String =
-      (s.toList match {
-        case Nil       => Nil
-        case x :: rest => x.toUpper :: rest.map(_.toLower)
-      }).mkString
   }
 
   sealed trait InstrumentProperties

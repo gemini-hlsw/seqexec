@@ -9,16 +9,18 @@ import gem.Observation
 import monocle.Getter
 import seqexec.web.client.model._
 import seqexec.web.client.components.sequence.steps.StepConfigTable
+import seqexec.web.client.components.sequence.steps.StepsTable
 import web.client.table._
 
 final case class StepsTableAndStatusFocus(
   status:           ClientStatus,
   stepsTable:       Option[StepsTableFocus],
+  tableState:       TableState[StepsTable.TableColumn],
   configTableState: TableState[StepConfigTable.TableColumn])
 
 object StepsTableAndStatusFocus {
   implicit val eq: Eq[StepsTableAndStatusFocus] =
-    Eq.by(x => (x.status, x.stepsTable, x.configTableState))
+    Eq.by(x => (x.status, x.stepsTable, x.tableState, x.configTableState))
 
   def stepsTableAndStatusFocusG(
     id: Observation.Id): Getter[SeqexecAppRootModel, StepsTableAndStatusFocus] =
@@ -26,8 +28,8 @@ object StepsTableAndStatusFocus {
       .zip(
         StepsTableFocus
           .stepsTableG(id)
-          .zip(SeqexecAppRootModel.configTableStateL.asGetter)) >>> {
-      case (s, (f, t)) => StepsTableAndStatusFocus(s, f, t)
+          .zip(SeqexecAppRootModel.stepsTableStateL(id).asGetter.zip(SeqexecAppRootModel.configTableStateL.asGetter))) >>> {
+      case (s, (f, (a, t))) => StepsTableAndStatusFocus(s, f, a.getOrElse(StepsTable.State.InitialTableState), t)
     }
 
 }

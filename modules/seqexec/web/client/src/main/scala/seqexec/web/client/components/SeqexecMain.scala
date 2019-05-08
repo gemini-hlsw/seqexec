@@ -75,7 +75,7 @@ object SeqexecMain {
             <.div(
               ^.cls := "sixteen wide mobile ten wide tablet ten wide computer column",
               SeqexecStyles.queueArea,
-              SessionQueueTableSection(p.ctl)
+              SessionQueueTableSection(p.ctl).when(true)
             ),
             <.div(
               ^.cls := "six wide column tablet computer only",
@@ -86,13 +86,13 @@ object SeqexecMain {
           <.div(
             ^.cls := "ui row",
             SeqexecStyles.shorterRow,
-            TabsArea(TabsArea.Props(p.ctl, p.site))
+            TabsArea(TabsArea.Props(p.ctl, p.site)).when(true)
           ),
           <.div(
             ^.cls := "ui row",
             // Add margin to avoid covering the footer
             SeqexecStyles.logArea,
-            logConnect(l => LogArea(p.site, l))
+            logConnect(l => LogArea(p.site, l()))
           )
         ),
         lbConnect(p => LoginBox(p())),

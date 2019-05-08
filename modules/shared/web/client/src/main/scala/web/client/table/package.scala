@@ -3,8 +3,8 @@
 
 package web.client
 
-import cats.Eq
 import cats.Monoid
+import cats.Foldable
 import cats.data.NonEmptyList
 import cats.implicits._
 import japgolly.scalajs.react.vdom.html_<^._
@@ -12,8 +12,10 @@ import japgolly.scalajs.react.raw.JsNumber
 import japgolly.scalajs.react.Callback
 import japgolly.scalajs.react.React
 import japgolly.scalajs.react.extra.Reusability
+import japgolly.scalajs.react.extra._
 import org.scalajs.dom.MouseEvent
 import scala.scalajs.js
+import scala.math.max
 import js.JSConverters._
 import react.virtualized._
 import react.virtualized.raw
@@ -23,44 +25,24 @@ import react.sortable._
 import react.draggable._
 import web.client.utils._
 
-package table {
-
-  final case class ColumnRenderArgs[A](meta:      ColumnMeta[A],
-                                       index:     Int,
-                                       width:     JsNumber,
-                                       resizable: Boolean)
-
-  /**
-    * Metadata for a column
-    */
-  final case class ColumnMeta[A](column:  A,
-                                 name:    String,
-                                 label:   String,
-                                 visible: Boolean,
-                                 width:   ColumnWidth)
-
-  object ColumnMeta {
-    implicit def eqCm[A: Eq]: Eq[ColumnMeta[A]] =
-      Eq.by(x => (x.column, x.name, x.label, x.visible, x.width))
-
-    implicit def reuse[A: Reusability]: Reusability[ColumnMeta[A]] =
-      Reusability.derive[ColumnMeta[A]]
-  }
-
-}
-
 package object table {
   val DragHandleWidth: Int = 12
+
+  private implicit val doubleReuse: Reusability[Double] =
+    Reusability.double(0.01)
+
+  implicit val sizeReuse: Reusability[Size] =
+    Reusability.by(x => (x.width, x.height))
 
   implicit def nelR[A: Reusability]: Reusability[NonEmptyList[A]] =
     Reusability.by(_.toList)
 
   implicit def tsR[A: Reusability]: Reusability[TableState[A]] =
-    Reusability.derive[TableState[A]]
+    Reusability.by(x => (x.userModified, x.scrollPosition, x.columns))
 
   // Renderer for a resizable column
   def resizableHeaderRenderer(
-    rs: (String, JsNumber) => Callback): HeaderRenderer[js.Object] =
+    rs: => (String, JsNumber) => Callback): HeaderRenderer[js.Object] =
     (_, dataKey: String, _, label: VdomNode, _, _) =>
       React.Fragment.withKey(dataKey)(
         <.div(
@@ -124,4 +106,36 @@ package object table {
         )))
 
     }
+
+    def colWidths[A, B, G[_]: Foldable](items: G[A], cols: NonEmptyList[B], get: Map[B, A => String], minW: Map[B, Double], adj: Map[B, Double]): B => Option[Double] =
+      colWidthsO[A, B, G](items, cols, get.mapValues(f => (a: A) => f(a).some), minW, adj)
+
+    /**
+     * This methods traverses a whole set of data to find the widest value per
+     * column, trying to traverse it in one pass
+     */
+    def colWidthsO[A, B, G[_]: Foldable](items: G[A], cols: NonEmptyList[B], get: Map[B, A => Option[String]], minW: Map[B, Double], adj: Map[B, Double]): B => Option[Double] =
+      // Find the longest string per column
+      items.foldLeft(Map.empty[B, Option[(Int, String)]]) { (cw, a) =>
+        val m: NonEmptyList[(B, Option[(Int, String)])] = cols.map { b =>
+          b -> get.get(b).flatMap { fb =>
+            fb(a).flatMap {v =>
+              cw.get(b).map {
+                case b @ Some((l, _)) =>
+                  val vl = v.length
+                  if (vl > l) (vl, v).some else b
+                case _ => none
+              }.getOrElse((v.length, v).some)
+            }
+          }
+        }
+        m.toList.toMap
+      }.collect {
+        case (b, Some((_, t))) => b -> {
+          // We calculate the actual pixel width at the end
+          val v = (tableTextWidth(t) + adj.get(b).orEmpty)
+          minW.get(b).map(max(_, v)).getOrElse(v)
+        }
+      }.get
+
 }

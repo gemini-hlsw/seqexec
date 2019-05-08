@@ -51,7 +51,7 @@ object CalQueueFocus {
     id: QueueId
   ): Lens[SeqexecAppRootModel, Option[TableState[CalQueueTable.TableColumn]]] =
     SeqexecAppRootModel.uiModel        ^|->
-      AppTableStates.tableStateL       ^|->
+      SeqexecUIModel.appTableStates    ^|->
       AppTableStates.queueTableAtL(id)
 
   private def seqOpsL(id: QueueId) =

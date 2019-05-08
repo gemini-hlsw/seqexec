@@ -21,6 +21,7 @@ import seqexec.model.SequenceState
 import seqexec.web.client.model.ClientStatus
 import seqexec.web.client.model.TabOperations
 import seqexec.web.client.model.StopOperation
+import seqexec.web.client.model.StepItems._
 import seqexec.web.client.model.ModelOps._
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.semanticui.elements.icon.Icon

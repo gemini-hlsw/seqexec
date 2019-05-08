@@ -21,6 +21,7 @@ import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.components.TableContainer
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.actions.UpdateStepsConfigTableState
+import seqexec.web.client.reusability._
 import web.client.table._
 import seqexec.web.client.reusability._
 
@@ -88,7 +89,7 @@ object StepConfigTable {
     name    = "name",
     label   = "Name",
     visible = true,
-    width = PercentageColumnWidth.unsafeFromDouble(
+    width = VariableColumnWidth.unsafeFromDouble(
       percentage = 0.5,
       minWidth   = 57.3833 + SeqexecStyles.TableBorderWidth)
   )
@@ -99,7 +100,7 @@ object StepConfigTable {
     label   = "Value",
     visible = true,
     width =
-      PercentageColumnWidth.unsafeFromDouble(percentage = 0.5, minWidth = 60.0))
+      VariableColumnWidth.unsafeFromDouble(percentage = 0.5, minWidth = 60.0))
 
   val InitialTableState: TableState[TableColumn] = TableState[TableColumn](
     userModified   = NotModified,
@@ -110,26 +111,25 @@ object StepConfigTable {
     b:    Backend,
     size: Size
   ): ColumnRenderArgs[TableColumn] => Table.ColumnArg = tb => {
-    val state = b.state
     def updateState(s: TableState[TableColumn]): Callback =
       b.setState(s) >> SeqexecCircuit.dispatchCB(UpdateStepsConfigTableState(s))
 
     tb match {
-      case ColumnRenderArgs(ColumnMeta(c, name, label, _, _), _, width, true) =>
+      case ColumnRenderArgs(meta, _, width, true) =>
         Column(
           Column.propsNoFlex(
             width          = width,
-            dataKey        = name,
-            label          = label,
-            headerRenderer = resizableHeaderRenderer(state.resizeRow(c, size, updateState)),
+            dataKey        = meta.name,
+            label          = meta.label,
+            headerRenderer = resizableHeaderRenderer(b.state.resizeColumn(meta.column, size, updateState)),
             className      = SeqexecStyles.paddedStepRow.htmlClass
           ))
-      case ColumnRenderArgs(ColumnMeta(_, name, label, _, _), _, width, false) =>
+      case ColumnRenderArgs(meta, _, width, false) =>
         Column(
           Column.propsNoFlex(
             width     = width,
-            dataKey   = name,
-            label     = label,
+            dataKey   = meta.name,
+            label     = meta.label,
             className = SeqexecStyles.paddedStepRow.htmlClass))
     }
   }
@@ -155,8 +155,7 @@ object StepConfigTable {
         SeqexecStyles.stepRow
     }).htmlClass
 
-  def settingsTableProps(b: Backend, size: Size): Table.Props = {
-    val p = b.props
+  def settingsTableProps(b: Backend, size: Size): Table.Props =
     Table.props(
       disableHeader = false,
       noRowsRenderer = () =>
@@ -167,17 +166,16 @@ object StepConfigTable {
       ),
       overscanRowCount = SeqexecStyles.overscanRowCount,
       height           = size.height.toInt,
-      rowCount         = p.rowCount,
+      rowCount         = b.props.rowCount,
       rowHeight        = SeqexecStyles.rowHeight,
-      rowClassName     = rowClassName(p) _,
+      rowClassName     = rowClassName(b.props) _,
       width            = size.width.toInt,
-      rowGetter        = p.rowGetter _,
+      rowGetter        = b.props.rowGetter _,
       scrollTop        = b.state.scrollPosition,
       headerClassName  = SeqexecStyles.tableHeader.htmlClass,
       onScroll         = (_, _, pos) => updateScrollPosition(b, pos),
       headerHeight     = SeqexecStyles.headerHeight
     )
-  }
 
   private val component = ScalaComponent
     .builder[Props]("StepConfig")
@@ -185,7 +183,8 @@ object StepConfigTable {
     .render ( b =>
       TableContainer(TableContainer.Props(true, size =>
         Table(settingsTableProps(b, size),
-              b.state.columnBuilder(size, colBuilder(b, size)): _*)))
+              b.state.columnBuilder(size, colBuilder(b, size)): _*),
+              onResize = _ => Callback.empty))
     )
     .configure(Reusability.shouldComponentUpdate)
     .build

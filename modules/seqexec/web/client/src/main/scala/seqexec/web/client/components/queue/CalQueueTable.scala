@@ -72,14 +72,14 @@ object CalQueueTable {
     name    = "obsid",
     label   = "Obs. ID",
     visible = true,
-    PercentageColumnWidth.unsafeFromDouble(0.5, ObsIdMinWidth))
+    VariableColumnWidth.unsafeFromDouble(0.5, ObsIdMinWidth))
 
   val InstrumentColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     InstrumentColumn,
     name    = "instrument",
     label   = "Instrument",
     visible = true,
-    PercentageColumnWidth.unsafeFromDouble(0.5, InstrumentMinWidth))
+    VariableColumnWidth.unsafeFromDouble(0.5, InstrumentMinWidth))
 
   val all: NonEmptyList[ColumnMeta[TableColumn]] =
     NonEmptyList.of(RemoveSeqMeta, ObsIdColumnMeta, InstrumentColumnMeta)
@@ -278,33 +278,29 @@ object CalQueueTable {
       }
 
       tb match {
-        case ColumnRenderArgs(ColumnMeta(c, name, label, _, _),
-                              _,
-                              width,
-                              true) =>
+        case ColumnRenderArgs(meta, _, width, true) =>
           Column(
             Column.propsNoFlex(
               width        = width,
-              dataKey      = name,
-              label        = label,
-              cellRenderer = renderer(c),
+              dataKey      = meta.name,
+              label        = meta.label,
+              cellRenderer = renderer(meta.column),
               headerRenderer = resizableHeaderRenderer(
-                state.tableState.resizeRow(c, size, updateState)),
+                state.tableState.resizeColumn(meta.column, size, updateState)),
               className = SeqexecStyles.queueTextColumn.htmlClass
             ))
-        case ColumnRenderArgs(ColumnMeta(c, name, label, _, _),
-                              _,
-                              width,
-                              false) =>
+        case ColumnRenderArgs(meta, _, width, false) =>
           Column(
-            Column.propsNoFlex(width        = width,
-                               dataKey      = name,
-                               label        = label,
-                               cellRenderer = renderer(c),
-                               className =
-                                 if (c === InstrumentColumn)
-                                   SeqexecStyles.queueTextColumn.htmlClass
-                                 else "")
+            Column.propsNoFlex(
+              width        = width,
+              dataKey      = meta.name,
+              label        = meta.label,
+              cellRenderer = renderer(meta.column),
+              className =
+                if (meta.column === InstrumentColumn)
+                  SeqexecStyles.queueTextColumn.htmlClass
+                else ""
+            )
           )
       }
     }
@@ -402,23 +398,28 @@ object CalQueueTable {
       }
 
     def render(p: Props, s: State): VdomElement =
-      TableContainer(TableContainer.Props(p.canOperate, size => {
-          val sortableList = SortableContainer.wrapC(
-            Table.component,
-            s.tableState
-              .columnBuilder(size, colBuilder(p, s, size))
-              .map(_.vdomElement))
+      TableContainer(
+        TableContainer.Props(
+          p.canOperate,
+          size => {
+            val sortableList = SortableContainer.wrapC(
+              Table.component,
+              s.tableState
+                .columnBuilder(size, colBuilder(p, s, size))
+                .map(_.vdomElement))
 
-          // If distance is 0 we can miss some events
-          val cp = SortableContainer.Props(
-            onSortEnd         = requestMove,
-            shouldCancelStart = _ => CallbackTo(!p.data.canOperate),
-            helperClass =
-              (SeqexecStyles.noselect |+| SeqexecStyles.draggedRowHelper).htmlClass,
-            distance = 3
-          )
-          sortableList(cp)(table(p, s)(size))
-      }))
+            // If distance is 0 we can miss some events
+            val cp = SortableContainer.Props(
+              onSortEnd         = requestMove,
+              shouldCancelStart = _ => CallbackTo(!p.data.canOperate),
+              helperClass =
+                (SeqexecStyles.noselect |+| SeqexecStyles.draggedRowHelper).htmlClass,
+              distance = 3
+            )
+            sortableList(cp)(table(p, s)(size))
+          },
+          onResize = _ => Callback.empty
+        ))
 
   }
 

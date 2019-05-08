@@ -10,7 +10,7 @@ import monocle.law.discipline.LensTests
 final class TableSpec extends CatsSuite with TableArbitraries {
   checkAll("Eq[UserModified]", EqTests[UserModified].eqv)
   checkAll("Eq[FixedColumnWidth]", EqTests[FixedColumnWidth].eqv)
-  checkAll("Eq[PercentageColumnWidth]", EqTests[PercentageColumnWidth].eqv)
+  checkAll("Eq[VariableColumnWidth]", EqTests[VariableColumnWidth].eqv)
   checkAll("Eq[ColumnWidth]", EqTests[ColumnWidth].eqv)
   checkAll("Eq[ColumnMeta[Int]]", EqTests[ColumnMeta[Int]].eqv)
   checkAll("Eq[TableState[Int]]", EqTests[TableState[Int]].eqv)

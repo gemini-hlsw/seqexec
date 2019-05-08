@@ -19,8 +19,6 @@ import seqexec.model.SequenceView
 import seqexec.model.RunningStep
 import seqexec.model.enum._
 import seqexec.web.client.model.ModelOps._
-import seqexec.web.client.components.sequence.steps.StepsTable
-import web.client.table._
 import shapeless.tag.@@
 
 final case class AvailableTab(id:            Observation.Id,
@@ -75,9 +73,6 @@ object SeqexecTabActive {
 }
 
 sealed trait SeqexecTab {
-  type TC
-  val tableState: TableState[TC]
-
   def isPreview: Boolean
 }
 
@@ -100,33 +95,29 @@ object SeqexecTab {
       case p: PreviewSequenceTab    => p
       case i: InstrumentSequenceTab => i
     }(identity)
+
 }
 
 @Lenses
 final case class CalibrationQueueTab(
-  tableState: TableState[StepsTable.TableColumn],
   state:      BatchExecState,
   observer:   Option[Observer])
     extends SeqexecTab {
-  type TC = StepsTable.TableColumn
   val isPreview: Boolean = false
 }
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object CalibrationQueueTab {
   val Empty: CalibrationQueueTab =
-    CalibrationQueueTab(StepsTable.State.InitialTableState,
-                        BatchExecState.Idle,
+    CalibrationQueueTab(BatchExecState.Idle,
                         None)
 
   implicit val eq: Eq[CalibrationQueueTab] =
-    Eq.by(x => (x.tableState, x.state, x.observer))
+    Eq.by(x => (x.state, x.observer))
 }
 
 sealed trait SequenceTab extends SeqexecTab {
-  type TC = StepsTable.TableColumn
   val tabOperations: TabOperations
-
   def instrument: Instrument = this match {
     case i: InstrumentSequenceTab => i.inst
     case i: PreviewSequenceTab    => i.currentSequence.metadata.instrument
@@ -151,7 +142,7 @@ sealed trait SequenceTab extends SeqexecTab {
   }
 
   def isComplete: Boolean = this match {
-    case InstrumentSequenceTab(_, Left(_: InstrumentSequenceTab.CompletedSequenceView), _, _, _, _) => true
+    case InstrumentSequenceTab(_, Left(_: InstrumentSequenceTab.CompletedSequenceView), _, _, _) => true
     case _                                              => false
   }
 
@@ -181,7 +172,6 @@ object SequenceTab {
       case _                                                    => false
     }
 
-  // Some lenses
   val stepConfigL: Lens[SequenceTab, Option[StepId]] =
     Lens[SequenceTab, Option[StepId]] {
       case t: InstrumentSequenceTab => t.stepConfig
@@ -202,7 +192,6 @@ final case class InstrumentSequenceTab(
                       InstrumentSequenceTab.LoadedSequenceView],
   stepConfig:    Option[StepId],
   selected:      Option[StepId],
-  tableState:    TableState[StepsTable.TableColumn],
   tabOperations: TabOperations)
     extends SequenceTab {
   val seq: SequenceView = curSequence match {
@@ -230,7 +219,6 @@ object InstrumentSequenceTab {
          x.sequence,
          x.stepConfig,
          x.selected,
-         x.tableState,
          x.tabOperations))
 
   implicit val completedSequence
@@ -247,7 +235,6 @@ final case class PreviewSequenceTab(
   currentSequence: SequenceView,
   stepConfig:      Option[Int],
   isLoading:       Boolean,
-  tableState:      TableState[StepsTable.TableColumn],
   tabOperations:   TabOperations)
     extends SequenceTab
 
@@ -259,6 +246,5 @@ object PreviewSequenceTab {
         (x.currentSequence,
          x.stepConfig,
          x.isLoading,
-         x.tableState,
          x.tabOperations))
 }
