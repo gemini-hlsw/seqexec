@@ -20,14 +20,13 @@ import java.util.Timer
 import java.util.TimerTask
 import java.util.concurrent.locks.ReentrantLock
 import java.util.concurrent.TimeUnit.MILLISECONDS
-
 import edu.gemini.epics.acm._
 import mouse.boolean._
 import org.log4s._
 import seqexec.server.EpicsCommand.safe
 import seqexec.server.SeqexecFailure.SeqexecException
+import seqexec.server.SeqexecFailure.NullEpicsError
 import squants.Time
-
 import scala.math.abs
 import scala.collection.JavaConverters._
 
@@ -386,14 +385,31 @@ object EpicsUtil {
   def safeAttribute[F[_]: Sync, A](get: => CaAttribute[A]): F[Option[A]] =
     Sync[F].delay(Option(get.value))
 
+  /** Tries to read a value of type A from a channel
+   *  Null results are raised as error and other errors are captured
+   */
+  def safeAttributeF[F[_]: Sync, A >: Null: Eq](name: String, get: => CaAttribute[A]): F[A] =
+    Sync[F].delay(get.value).ensure(NullEpicsError(name))(_ =!= null)
+      .adaptError{ case e => SeqexecException(e)}
+
   def safeAttributeSDouble[F[_]: Sync, A](get: => CaAttribute[JDouble]): F[Option[Double]] =
     Nested(safeAttribute(get)).map(_.toDouble).value
+
+  // Internally used Eq for java basic classes
+  private implicit val eqJDouble: Eq[JDouble] = Eq.by(_.toDouble)
+  private implicit val eqJInt: Eq[JInt] = Eq.by(_.toInt)
+
+  def safeAttributeSDoubleF[F[_]: Sync](name: String, get: => CaAttribute[JDouble]): F[Double] =
+    safeAttributeF(name, get).map(_.toDouble)
 
   def safeAttributeSFloat[F[_]: Sync, A](get: => CaAttribute[JFloat]): F[Option[Float]] =
     Nested(safeAttribute(get)).map(_.toFloat).value
 
   def safeAttributeSInt[F[_]: Sync, A](get: => CaAttribute[JInt]): F[Option[Int]] =
     Nested(safeAttribute(get)).map(_.toInt).value
+
+  def safeAttributeSIntF[F[_]: Sync](name: String, get: => CaAttribute[JInt]): F[Int] =
+    safeAttributeF(name, get).map(_.toInt)
 
   def safeAttributeList[F[_]: Sync, A](get: => CaAttribute[A]): F[Option[List[A]]] =
     Sync[F].delay(Option(get.values.asScala.toList))

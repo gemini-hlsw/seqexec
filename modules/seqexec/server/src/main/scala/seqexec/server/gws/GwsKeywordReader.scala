@@ -3,61 +3,105 @@
 
 package seqexec.server.gws
 
-import cats.effect.IO
-import seqexec.server.{EpicsHealth, SeqAction, SeqActionF}
+import cats.Applicative
+import cats.implicits._
+import cats.effect.LiftIO
+import cats.effect.Sync
+import seqexec.server.EpicsHealth
 import seqexec.server.keywords._
-import squants.motion.{MetersPerSecond, Pressure, StandardAtmospheres}
+import shapeless.tag
+import shapeless.tag.@@
+import squants.motion.MetersPerSecond
+import squants.motion.Pressure
+import squants.motion.StandardAtmospheres
 import squants.space.Degrees
 import squants.thermal.Celsius
-import squants.{Angle, Temperature, Velocity}
+import squants.Angle
+import squants.Temperature
+import squants.Velocity
+
+trait DewPoint
 
 trait GwsKeywordReader[F[_]] {
-  def getHealth: SeqActionF[F, Option[EpicsHealth]]
+  def health: F[EpicsHealth]
 
-  def getTemperature: SeqActionF[F, Option[Temperature]]
+  def temperature: F[Temperature]
 
-  def getDewPoint: SeqActionF[F, Option[Temperature]]
+  def dewPoint: F[Temperature @@ DewPoint]
 
-  def getAirPressure: SeqActionF[F, Option[Pressure]]
+  def airPressure: F[Pressure]
 
-  def getWindVelocity: SeqActionF[F, Option[Velocity]]
+  def windVelocity: F[Velocity]
 
-  def getWindDirection: SeqActionF[F, Option[Angle]]
+  def windDirection: F[Angle]
 
-  def getHumidity: SeqActionF[F, Option[Double]]
+  def humidity: F[Double]
+}
+
+trait GwsDefaults {
+  def toDewPoint(t: Temperature): Temperature @@ DewPoint =
+    tag[DewPoint][Temperature](t)
+
+  // Default value for quantities
+  implicit val TemperatureDefaultValue: DefaultHeaderValue[Temperature] =
+    DefaultHeaderValue[Double].map(Celsius(_))
+
+  implicit val DewPointDefaultValue: DefaultHeaderValue[Temperature @@ DewPoint] =
+    DefaultHeaderValue[Temperature].map(toDewPoint)
+
+  implicit val PressureDefaultValue: DefaultHeaderValue[Pressure] =
+    DefaultHeaderValue[Double].map(StandardAtmospheres(_))
+
+  implicit val VelocityDefaultValue: DefaultHeaderValue[Velocity] =
+    DefaultHeaderValue[Double].map(MetersPerSecond(_))
+
+  implicit val WindDirectionDefaultValue: DefaultHeaderValue[Angle] =
+    DefaultHeaderValue[Double].map(Degrees(_))
 
 }
 
-object DummyGwsKeywordsReader extends GwsKeywordReader[IO] {
+object DummyGwsKeywordsReader extends GwsDefaults {
+  def apply[F[_]: Applicative]: GwsKeywordReader[F] = new GwsKeywordReader[F] {
+    override def temperature: F[Temperature] = Celsius(15.0).pure[F]
 
-  override def getTemperature: SeqAction[Option[Temperature]] = Celsius(15.0).toSeqAction
+    override def dewPoint: F[Temperature @@ DewPoint] =
+      toDewPoint(Celsius(1.0)).pure[F]
 
-  override def getDewPoint: SeqAction[Option[Temperature]] = Celsius(1.0).toSeqAction
+    override def airPressure: F[Pressure] = StandardAtmospheres(1.0).pure[F]
 
-  override def getAirPressure: SeqAction[Option[Pressure]] = StandardAtmospheres(1.0).toSeqAction
+    override def windVelocity: F[Velocity] = MetersPerSecond(5).pure[F]
 
-  override def getWindVelocity: SeqAction[Option[Velocity]] = MetersPerSecond(5).toSeqAction
+    override def windDirection: F[Angle] = Degrees(60.0).pure[F]
 
-  override def getWindDirection: SeqAction[Option[Angle]] = Degrees(60.0).toSeqAction
+    override def humidity: F[Double] = 20.0.pure[F]
 
-  override def getHumidity: SeqAction[Option[Double]] = 20.0.toSeqAction
-
-  override def getHealth: SeqAction[Option[EpicsHealth]] = (EpicsHealth.Good: EpicsHealth).toSeqAction
+    override def health: F[EpicsHealth] = EpicsHealth.Good.pure[F].widen
+  }
 }
 
-object GwsKeywordsReaderImpl extends GwsKeywordReader[IO] {
+object GwsKeywordsReaderEpics extends GwsDefaults {
+  def apply[F[_]: Sync: LiftIO]: GwsKeywordReader[F] = new GwsKeywordReader[F] {
+    private val sys = GwsEpics.instance
 
-  override def getTemperature: SeqAction[Option[Temperature]] = GwsEpics.instance.ambientT.toSeqActionO
+    override def temperature: F[Temperature] =
+      sys.ambientT.safeValOrDefault.to[F]
 
-  override def getDewPoint: SeqAction[Option[Temperature]] = GwsEpics.instance.dewPoint.toSeqActionO
+    override def dewPoint: F[Temperature @@ DewPoint] =
+      sys.dewPoint.map(tag[DewPoint][Temperature](_)).safeValOrDefault.to[F]
 
-  override def getAirPressure: SeqAction[Option[Pressure]] = GwsEpics.instance.airPressure.toSeqActionO
+    override def airPressure: F[Pressure] =
+      sys.airPressure.safeValOrDefault.to[F]
 
-  override def getWindVelocity: SeqAction[Option[Velocity]] = GwsEpics.instance.windVelocity.toSeqActionO
+    override def windVelocity: F[Velocity] =
+      sys.windVelocity.safeValOrDefault.to[F]
 
-  override def getWindDirection: SeqAction[Option[Angle]] = GwsEpics.instance.windDirection.toSeqActionO
+    override def windDirection: F[Angle] =
+      sys.windDirection.safeValOrDefault.to[F]
 
-  override def getHumidity: SeqAction[Option[Double]] = GwsEpics.instance.humidity.toSeqActionO
+    override def humidity: F[Double] =
+      sys.humidity.safeValOrDefault.to[F]
 
-  override def getHealth: SeqAction[Option[EpicsHealth]] = GwsEpics.instance.health.toSeqActionO
+    override def health: F[EpicsHealth] =
+      sys.health.to[F]
+  }
 }

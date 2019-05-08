@@ -38,4 +38,10 @@ trait SeqexecServerArbitraries {
   implicit val executionQueueCogen: Cogen[ExecutionQueue] =
     Cogen[(String, BatchCommandState, List[Observation.Id])]
       .contramap(x => (x.name, x.cmdState, x.queue))
+
+  implicit val epicsHealthArb: Arbitrary[EpicsHealth] =
+    Arbitrary(Gen.oneOf(EpicsHealth.Good, EpicsHealth.Bad))
+
+  implicit val epicsHealthCogen: Cogen[EpicsHealth] =
+    Cogen[String].contramap(_.productPrefix)
 }

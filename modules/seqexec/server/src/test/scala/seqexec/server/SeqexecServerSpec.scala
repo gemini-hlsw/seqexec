@@ -11,4 +11,5 @@ import cats.tests.CatsSuite
   */
 final class SeqexecServerSpec extends CatsSuite with SeqexecServerArbitraries {
   checkAll("Eq[ObserveCommand.Result]", EqTests[ObserveCommand.Result].eqv)
+  checkAll("Eq[EpicsHealth]", EqTests[EpicsHealth].eqv)
 }
