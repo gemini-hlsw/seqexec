@@ -916,7 +916,7 @@ object StepsTable extends Columns {
     // The selected step may have changed externally
     val selectedStepChange: Callback =
       (cur.selectedStep, next.selectedStep).mapN { (c, n) =>
-        b.modState(State.selected.set(n.some)).when(c =!= n) *> Callback.empty
+        b.modState(State.selected.set(n.some)).when(c =!= n).void
       }.getOrEmpty
 
     // If the step is running recalculate height
@@ -955,7 +955,7 @@ object StepsTable extends Columns {
       ))
 
   def initialState(p: Props): State =
-    State.tableState.set(p.tableState)(State.InitialState)
+    (State.tableState.set(p.tableState) >>> State.selected.set(p.selectedStep))(State.InitialState)
 
   private val component = ScalaComponent
     .builder[Props]("StepsTable")
