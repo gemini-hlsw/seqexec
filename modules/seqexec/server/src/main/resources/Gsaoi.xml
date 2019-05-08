@@ -341,5 +341,55 @@
             <type>INTEGER</type>
             <description></description>
         </attribute>
+        <attribute name="baseExpTime">
+            <channel>sad:dc:gdr_exposedRQ.VAL</channel>
+            <type>DOUBLE</type>
+            <description>ODGW base exposure time</description>
+        </attribute>
+        <attribute name="counts1">
+            <channel>sad:dc:d_gdr_flux1.VAL</channel>
+            <type>DOUBLE</type>
+            <description>Counts for ODGW1</description>
+        </attribute>
+        <attribute name="counts2">
+            <channel>sad:dc:d_gdr_flux2.VAL</channel>
+            <type>DOUBLE</type>
+            <description>Counts for ODGW2</description>
+        </attribute>
+        <attribute name="counts3">
+            <channel>sad:dc:d_gdr_flux3.VAL</channel>
+            <type>DOUBLE</type>
+            <description>Counts for ODGW3</description>
+        </attribute>
+        <attribute name="counts4">
+            <channel>sad:dc:d_gdr_flux4.VAL</channel>
+            <type>DOUBLE</type>
+            <description>Counts for ODGW4</description>
+        </attribute>
+        <attribute name="expMult1">
+            <channel>sad:dc:gdr_expMult1.VAL</channel>
+            <type>INTEGER</type>
+            <description>Exposure multiplier for ODGW1</description>
+        </attribute>
+        <attribute name="expMult2">
+            <channel>sad:dc:gdr_expMult2.VAL</channel>
+            <type>INTEGER</type>
+            <description>Exposure multiplier for ODGW2</description>
+        </attribute>
+        <attribute name="expMult3">
+            <channel>sad:dc:gdr_expMult3.VAL</channel>
+            <type>INTEGER</type>
+            <description>Exposure multiplier for ODGW3</description>
+        </attribute>
+        <attribute name="expMult4">
+            <channel>sad:dc:gdr_expMult4.VAL</channel>
+            <type>INTEGER</type>
+            <description>Exposure multiplier for ODGW4</description>
+        </attribute>
+        <attribute name="odgwSize">
+            <channel>sad:dc:d_gdr_winSizeS.VAL</channel>
+            <type>INTEGER</type>
+            <description>ODGW size</description>
+        </attribute>
     </Status>
 </Records>

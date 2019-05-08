@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Records xmlns="http://www.gemini.edu/CaSchema">
+    <Top name="rtc">rtc</Top>
+    <Top name="myst">myst</Top>
+    <Top name="aom">aom</Top>
+    <Apply name="gems::apply">
+        <top>myst</top>
+        <apply>apply</apply>
+        <car>applyC</car>
+        <description>IS Primary Apply Record</description>
+        <command name="gems::ttApdCtrl">
+            <description>Canopus APDs control</description>
+            <parameter name="apd1Cmd">
+                <channel>ttApdCtrl.A</channel>
+                <type>STRING</type>
+                <description>APD1 command (START|STOP)</description>
+            </parameter>
+            <parameter name="apd2Cmd">
+                <channel>ttApdCtrl.B</channel>
+                <type>STRING</type>
+                <description>APD2 command (START|STOP)</description>
+            </parameter>
+            <parameter name="apd3Cmd">
+                <channel>ttApdCtrl.C</channel>
+                <type>STRING</type>
+                <description>APD3 command (START|STOP)</description>
+            </parameter>
+        </command>
+        <command name="gems::seqLoopCtrl">
+            <description>Loop control for Seqexec</description>
+            <parameter name="cmd">
+                <channel>seqLoopCtrl.A</channel>
+                <type>STRING</type>
+                <description>Command (START|PAUSE|RESUME|STOP)</description>
+            </parameter>
+            <parameter name="reasons">
+                <channel>seqLoopCtrl.B</channel>
+                <type>STRING</type>
+                <description>Dither/Filter/Sky condition</description>
+            </parameter>
+        </command>
+    </Apply>
+    <Status name="gems::rtcsad">
+        <top>rtc</top>
+        <attribute name="lgsExp">
+            <channel>lgs:expTime.VALA</channel>
+            <type>DOUBLE</type>
+            <description>LGSWFS exposure time</description>
+        </attribute>
+        <attribute name="ngsExpMult">
+            <channel>ngs:expTime.VALA</channel>
+            <type>DOUBLE</type>
+            <description>NGS exposure time multiplier</description>
+        </attribute>
+        <attribute name="sourceMask">
+            <channel>ngs:geometryState.VALA</channel>
+            <type>INTEGER</type>
+            <description>Current NGS mask</description>
+        </attribute>
+<!--        <attribute name="tt1Active">-->
+<!--            <channel>ngs:apd1</channel>-->
+<!--            <type>STRING</type>-->
+<!--            <description>Canopus 1 APD active (ENABLED/DISABLED)</description>-->
+<!--        </attribute>-->
+<!--        <attribute name="tt2Active">-->
+<!--            <channel>ngs:apd2</channel>-->
+<!--            <type>STRING</type>-->
+<!--            <description>Canopus 2 APD active (ENABLED/DISABLED)</description>-->
+<!--        </attribute>-->
+<!--        <attribute name="tt3Active">-->
+<!--            <channel>ngs:apd3</channel>-->
+<!--            <type>STRING</type>-->
+<!--            <description>Canopus 3 APD active (ENABLED/DISABLED)</description>-->
+<!--        </attribute>-->
+    </Status>
+    <Status name="gems::status">
+        <top>myst</top>
+<!--        <attribute name="aniLoop">-->
+<!--            <channel>aniLoopStatus.VAL</channel>-->
+<!--            <type>STRING</type>-->
+<!--            <description>ANI loop status (OPEN|CLOSED|PAUSED)</description>-->
+<!--        </attribute>-->
+        <attribute name="astromState">
+            <channel>slewReset.VALA</channel>
+            <type>STRING</type>
+            <description>Astrometry calculation status (Not Ready|Ready)</description>
+        </attribute>
+<!--        <attribute name="flexLoop">-->
+<!--            <channel>flexLoopStatus.VAL</channel>-->
+<!--            <type>STRING</type>-->
+<!--            <description>Flexure loop status (OPEN|CLOSED|PAUSED)</description>-->
+<!--        </attribute>-->
+<!--        <attribute name="focLoop">-->
+<!--            <channel>focLoopStatus.VAL</channel>-->
+<!--            <type>STRING</type>-->
+<!--            <description>Focus loop status (OPEN|CLOSED|PAUSED)</description>-->
+<!--        </attribute>-->
+        <attribute name="lgsFlux">
+            <channel>lgsFlux.VAL</channel>
+            <type>FLOAT</type>
+            <description>Average flux/LGS frame </description>
+        </attribute>
+<!--        <attribute name="lgsLoop">-->
+<!--            <channel>lgsLoopStatus.VAL</channel>-->
+<!--            <type>STRING</type>-->
+<!--            <description>LGS loop status (OPEN|CLOSED|PAUSED)</description>-->
+<!--        </attribute>-->
+<!--        <attribute name="lgsMatrix">-->
+<!--            <channel>lgsMatrixReady.VAL</channel>-->
+<!--            <type>STRING</type>-->
+<!--            <description>LGS matrix calculation status (Not Ready|Ready)</description>-->
+<!--        </attribute>-->
+        <attribute name="ngs1">
+            <channel>ngsConfig.VALA</channel>
+            <type>STRING</type>
+            <description>NGS1 active (Used/NotUsed) </description>
+        </attribute>
+        <attribute name="ngs1Mag">
+            <channel>ngsConfig.VALI</channel>
+            <type>STRING</type>
+            <description>NGS1 Magnitude</description>
+        </attribute>
+        <attribute name="ngs2">
+            <channel>ngsConfig.VALB</channel>
+            <type>STRING</type>
+            <description>NGS2 active (Used/NotUsed)</description>
+        </attribute>
+        <attribute name="ngs2Mag">
+            <channel>ngsConfig.VALJ</channel>
+            <type>STRING</type>
+            <description>NGS2 Magnitude</description>
+        </attribute>
+        <attribute name="ngs3">
+            <channel>ngsConfig.VALC</channel>
+            <type>STRING</type>
+            <description>NGS3 active (Used/NotUsed)</description>
+        </attribute>
+        <attribute name="ngs3Mag">
+            <channel>ngsConfig.VALK</channel>
+            <type>STRING</type>
+            <description>NGS3 Magnitude</description>
+        </attribute>
+        <attribute name="ngsFlux">
+            <channel>ngsFlux.VAL</channel>
+            <type>INTEGER</type>
+            <description>Average flux/NGS frame</description>
+        </attribute>
+        <attribute name="odgs1">
+            <channel>ngsConfig.VALE</channel>
+            <type>STRING</type>
+            <description>ODGS1 active (Used/NotUsed)</description>
+        </attribute>
+        <attribute name="odgs1Mag">
+            <channel>ngsConfig.VALM</channel>
+            <type>STRING</type>
+            <description>ODGS1 Magnitude</description>
+        </attribute>
+        <attribute name="odgs2">
+            <channel>ngsConfig.VALF</channel>
+            <type>STRING</type>
+            <description>ODGS2 active (Used/NotUsed)</description>
+        </attribute>
+        <attribute name="odgs2Mag">
+            <channel>ngsConfig.VALN</channel>
+            <type>STRING</type>
+            <description>ODGS2 Magnitude</description>
+        </attribute>
+        <attribute name="odgs3">
+            <channel>ngsConfig.VALG</channel>
+            <type>STRING</type>
+            <description>ODGS3 active (Used/NotUsed)</description>
+        </attribute>
+        <attribute name="odgs3Mag">
+            <channel>ngsConfig.VALO</channel>
+            <type>STRING</type>
+            <description>ODGS3 Magnitude</description>
+        </attribute>
+        <attribute name="odgs4">
+            <channel>ngsConfig.VALH</channel>
+            <type>STRING</type>
+            <description>ODGS4 active (Used/NotUsed)</description>
+        </attribute>
+        <attribute name="odgs4Mag">
+            <channel>ngsConfig.VALP</channel>
+            <type>STRING</type>
+            <description>ODGS4 Magnitude</description>
+        </attribute>
+        <attribute name="oigs">
+            <channel>ngsConfig.VALD</channel>
+            <type>STRING</type>
+            <description>OIGS active (Used/NotUsed)</description>
+        </attribute>
+        <attribute name="oigsMag">
+            <channel>ngsConfig.VALL</channel>
+            <type>STRING</type>
+            <description>OIGS Magnitude</description>
+        </attribute>
+<!--        <attribute name="sciReady">-->
+<!--            <channel>sciReady.VAL</channel>-->
+<!--            <type>STRING</type>-->
+<!--            <description>Ready for science (Not Ready|Ready)</description>-->
+<!--        </attribute>-->
+<!--        <attribute name="ttLoop">-->
+<!--            <channel>ttLoopStatus.VAL</channel>-->
+<!--            <type>STRING</type>-->
+<!--            <description>TT loop status (OPEN|CLOSED|PAUSED)</description>-->
+<!--        </attribute>-->
+    </Status>
+    <Status name="gems::aomsad">
+        <top>aom</top>
+        <attribute name="adcScLoop">
+            <channel>adcScLoop.VAL</channel>
+            <type>STRING</type>
+            <description>Science ADC loop status (OPEN|CLOSED)</description>
+        </attribute>
+        <attribute name="adcScState">
+            <channel>adcScState.VAL</channel>
+            <type>STRING</type>
+            <description>Science ADC state (In|Out|Moving|Invalid)</description>
+        </attribute>
+        <attribute name="beamSplitterState">
+            <channel>bsState.VAL</channel>
+            <type>STRING</type>
+            <description>Beam splitter state (In|Out|Moving|Invalid)</description>
+        </attribute>
+<!--        <attribute name="ngs1Follow">-->
+<!--            <channel>ngsPr1followS.VAL</channel>-->
+<!--            <type>STRING</type>-->
+<!--            <description>Canopus 1 in follow mode</description>-->
+<!--        </attribute>-->
+<!--        <attribute name="ngs2Follow">-->
+<!--            <channel>ngsPr2followS.VAL</channel>-->
+<!--            <type>STRING</type>-->
+<!--            <description>Canopus 2 in follow mode</description>-->
+<!--        </attribute>-->
+<!--        <attribute name="ngs3Follow">-->
+<!--            <channel>ngsPr3followS.VAL</channel>-->
+<!--            <type>STRING</type>-->
+<!--            <description>Canopus 3 in follow mode</description>-->
+<!--        </attribute>-->
+    </Status>
+</Records>
