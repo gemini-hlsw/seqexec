@@ -556,62 +556,63 @@ object SessionQueueTable extends Columns {
     case ObsNameColumn    => linkedTextRenderer(b.props)(_.name)
   }
 
-  private def fixedHeaderRenderer(c: TableColumn) = c match {
+  private val fixedHeaderRenderer: TableColumn => HeaderRenderer[js.Object] = {
     case IconColumn     => statusHeaderRenderer
     case AddQueueColumn => addHeaderRenderer
     case ClassColumn    => timeHeaderRenderer
     case _              => defaultHeaderRendererS
   }
 
-  private def columnStyle(c: TableColumn): Option[GStyle] =
-    c match {
-      case ObsIdColumn | StateColumn | InstrumentColumn | ObsNameColumn |
-          TargetNameColumn =>
-        SeqexecStyles.queueTextColumn.some
-      case _ => SeqexecStyles.queueIconColumn.some
-    }
+  private val columnStyle: TableColumn => Option[GStyle] = {
+    case ObsIdColumn | StateColumn | InstrumentColumn | ObsNameColumn |
+        TargetNameColumn =>
+      SeqexecStyles.queueTextColumn.some
+    case _ => SeqexecStyles.queueIconColumn.some
+  }
 
   def updateScrollPosition(b: Backend, pos: JsNumber): Callback = {
     val mods = State.userModified.set(IsModified) >>>
       State.scrollPosition.set(pos)
     (b.modState(mods) *> SeqexecCircuit.dispatchCB(
       UpdateSessionQueueTableState(mods(b.state).tableState)))
-      .unless(pos === 0 && !b.state.tableState.isModified).void
+      .unless(pos === 0 && !b.state.tableState.isModified)
+      .void
   }
 
   // scalastyle:off
   private def colBuilder(
     b:    Backend,
     size: Size): ColumnRenderArgs[TableColumn] => Table.ColumnArg = {
-      case ColumnRenderArgs(meta, _, width, true) =>
-        Column(
-          Column.propsNoFlex(
-            width        = width,
-            dataKey      = meta.name,
-            label        = meta.label,
-            cellRenderer = renderer(meta.column, b),
-            headerRenderer = resizableHeaderRenderer(
-              b.state.tableState.resizeColumn(
-                meta.column,
-                size,
-                x => b.setStateL(State.tableState)(x) *>
+    case ColumnRenderArgs(meta, _, width, true) =>
+      Column(
+        Column.propsNoFlex(
+          width        = width,
+          dataKey      = meta.name,
+          label        = meta.label,
+          cellRenderer = renderer(meta.column, b),
+          headerRenderer = resizableHeaderRenderer(
+            b.state.tableState.resizeColumn(
+              meta.column,
+              size,
+              x =>
+                b.setStateL(State.tableState)(x) *>
                   SeqexecCircuit.dispatchCB(UpdateSessionQueueTableState(x)),
-                b.props.visibleColumns,
-                b.props.columnWidths
-              )),
-            className = columnStyle(meta.column).foldMap(_.htmlClass)
-          ))
+              b.props.visibleColumns,
+              b.props.columnWidths
+            )),
+          className = columnStyle(meta.column).foldMap(_.htmlClass)
+        ))
 
-      case ColumnRenderArgs(meta, _, width, false) =>
-        Column(
-          Column.propsNoFlex(
-            width          = width,
-            dataKey        = meta.name,
-            label          = meta.label,
-            headerRenderer = fixedHeaderRenderer(meta.column),
-            cellRenderer   = renderer(meta.column, b),
-            className      = columnStyle(meta.column).foldMap(_.htmlClass)
-          ))
+    case ColumnRenderArgs(meta, _, width, false) =>
+      Column(
+        Column.propsNoFlex(
+          width          = width,
+          dataKey        = meta.name,
+          label          = meta.label,
+          headerRenderer = fixedHeaderRenderer(meta.column),
+          cellRenderer   = renderer(meta.column, b),
+          className      = columnStyle(meta.column).foldMap(_.htmlClass)
+        ))
   }
 
   // Single click puts in preview or go to tab
@@ -728,19 +729,22 @@ object SessionQueueTable extends Columns {
       b.modState { _.resetLoading(b.nextProps) } *>
         // if login state changes recalculate widths
         b.modStateOption { s =>
-          s.lastSize.map(ls =>
-            (State.userModified.modify { s =>
-              // If login state changes discard user modifications
-              if (b.currentProps.loggedIn =!= b.nextProps.loggedIn) {
-                NotModified
-              } else s } >>>
-             State.tableState.modify(
-                _.recalculateWidths(ls,
-                                    b.nextProps.visibleColumns,
-                                    b.nextProps.columnWidths)))(s))
-        }
-        .when(b.currentProps.obsIds =!= b.nextProps.obsIds || b.currentProps.loggedIn =!= b.nextProps.loggedIn)
-        .void
+            s.lastSize.map(
+              ls =>
+                (State.userModified.modify { s =>
+                  // If login state changes discard user modifications
+                  if (b.currentProps.loggedIn =!= b.nextProps.loggedIn) {
+                    NotModified
+                  } else s
+                } >>>
+                  State.tableState.modify(
+                    _.recalculateWidths(ls,
+                                        b.nextProps.visibleColumns,
+                                        b.nextProps.columnWidths)))(s))
+          }
+          .when(
+            b.currentProps.obsIds =!= b.nextProps.obsIds || b.currentProps.loggedIn =!= b.nextProps.loggedIn)
+          .void
     }
     .build
 

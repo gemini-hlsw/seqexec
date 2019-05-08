@@ -148,7 +148,7 @@ object StepItems {
       telescopeOffsetPO.getOption(s).getOrElse(TelescopeOffset.P.Zero)
     def offsetQ: TelescopeOffset.Q =
       telescopeOffsetQO.getOption(s).getOrElse(TelescopeOffset.Q.Zero)
-    def guiding: Boolean = telescopeGuidingWithT.exist(_ === Guiding.Guide)(s)
+    def guiding: Boolean         = telescopeGuidingWithT.exist(_ === Guiding.Guide)(s)
     def readMode: Option[String] = instrumentReadModeO.getOption(s)
 
     def offsetText(axis: OffsetAxis): String =

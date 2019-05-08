@@ -374,34 +374,6 @@ final case class SequencesOnDisplay(tabs: Zipper[SeqexecTab]) {
   def markAsLoading(id: Observation.Id): SequencesOnDisplay =
     SequencesOnDisplay.loadingL(id).set(true)(this)
 
-  // def stepsTableStates: Map[Observation.Id, TableState[StepsTable.TableColumn]] =
-  //   SequencesOnDisplay.sequenceTabs
-  //     .getAll(this)
-  //     .collect {
-  //       case i: InstrumentSequenceTab =>
-  //         (i.sequence.id, i.tableState)
-  //       case PreviewSequenceTab(curr, _, _, tableState, _) =>
-  //         (curr.id, tableState)
-  //     }
-  //     .toMap
-  //
-  // def updateTableState(
-  //   stepsTables: Map[Observation.Id, TableState[StepsTable.TableColumn]]
-  // ): SequencesOnDisplay =
-  //   copy(tabs = tabs.map {
-  //     case i: InstrumentSequenceTab =>
-  //       stepsTables
-  //         .get(i.obsId)
-  //         .map(s => i.copy(tableState = s))
-  //         .getOrElse(i)
-  //     case i @ PreviewSequenceTab(curr, _, _, _, _) =>
-  //       stepsTables
-  //         .get(curr.id)
-  //         .map(s => i.copy(tableState = s))
-  //         .getOrElse(i)
-  //     case i => i
-  //   })
-
   def markOperations(
     id:      Observation.Id,
     updater: TabOperations => TabOperations
@@ -561,13 +533,4 @@ object SequencesOnDisplay {
       }.headOption
     }
 
-  // def stepsTableStateAtL(
-  //   id: Observation.Id
-  // ): Traversal[SequencesOnDisplay, TableState[StepsTable.TableColumn]] =
-  //   sequenceTabById(id) ^|-> SequenceTab.tableState
-  //
-  // def queueTableAtL(
-  //   id: QueueId
-  // ): Lens[AppTableStates, Option[TableState[CalQueueTable.TableColumn]]] =
-  //   AppTableStates.queueTables ^|-> at(id)
 }

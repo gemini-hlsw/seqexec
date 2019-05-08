@@ -15,7 +15,7 @@ import web.client.table._
 final case class StepsTableAndStatusFocus(
   status:           ClientStatus,
   stepsTable:       Option[StepsTableFocus],
-  tableState: TableState[StepsTable.TableColumn],
+  tableState:       TableState[StepsTable.TableColumn],
   configTableState: TableState[StepConfigTable.TableColumn])
 
 object StepsTableAndStatusFocus {

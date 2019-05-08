@@ -192,7 +192,7 @@ object CalQueueTable {
   implicit val icReuse: Reusability[IndexChange] =
     Reusability.derive[IndexChange]
   implicit val stateReuse: Reusability[State] =
-    Reusability.by(x => x.moved)//(x.tableState, x.moved))
+    Reusability.by(x => (x.tableState, x.moved))
 
   // ScalaJS defined trait
   // scalastyle:off
@@ -291,14 +291,16 @@ object CalQueueTable {
             ))
         case ColumnRenderArgs(meta, _, width, false) =>
           Column(
-            Column.propsNoFlex(width        = width,
-                               dataKey      = meta.name,
-                               label        = meta.label,
-                               cellRenderer = renderer(meta.column),
-                               className =
-                                 if (meta.column === InstrumentColumn)
-                                   SeqexecStyles.queueTextColumn.htmlClass
-                                 else "")
+            Column.propsNoFlex(
+              width        = width,
+              dataKey      = meta.name,
+              label        = meta.label,
+              cellRenderer = renderer(meta.column),
+              className =
+                if (meta.column === InstrumentColumn)
+                  SeqexecStyles.queueTextColumn.htmlClass
+                else ""
+            )
           )
       }
     }
@@ -396,23 +398,28 @@ object CalQueueTable {
       }
 
     def render(p: Props, s: State): VdomElement =
-      TableContainer(TableContainer.Props(p.canOperate, size => {
-          val sortableList = SortableContainer.wrapC(
-            Table.component,
-            s.tableState
-              .columnBuilder(size, colBuilder(p, s, size))
-              .map(_.vdomElement))
+      TableContainer(
+        TableContainer.Props(
+          p.canOperate,
+          size => {
+            val sortableList = SortableContainer.wrapC(
+              Table.component,
+              s.tableState
+                .columnBuilder(size, colBuilder(p, s, size))
+                .map(_.vdomElement))
 
-          // If distance is 0 we can miss some events
-          val cp = SortableContainer.Props(
-            onSortEnd         = requestMove,
-            shouldCancelStart = _ => CallbackTo(!p.data.canOperate),
-            helperClass =
-              (SeqexecStyles.noselect |+| SeqexecStyles.draggedRowHelper).htmlClass,
-            distance = 3
-          )
-          sortableList(cp)(table(p, s)(size))
-      }, onResize = _ => Callback.empty))
+            // If distance is 0 we can miss some events
+            val cp = SortableContainer.Props(
+              onSortEnd         = requestMove,
+              shouldCancelStart = _ => CallbackTo(!p.data.canOperate),
+              helperClass =
+                (SeqexecStyles.noselect |+| SeqexecStyles.draggedRowHelper).htmlClass,
+              distance = 3
+            )
+            sortableList(cp)(table(p, s)(size))
+          },
+          onResize = _ => Callback.empty
+        ))
 
   }
 

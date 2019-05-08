@@ -29,8 +29,7 @@ final case class TableState[A: Eq](userModified:   UserModified,
 
   // Reset visibility given the filters
   private def withVisibleCols(visibleFilter: A => Boolean): TableState[A] =
-    (TableState
-      .columns[A] ^|->> each).modify { c =>
+    (TableState.columns[A] ^|->> each).modify { c =>
       ColumnMeta.visible.set(visibleFilter(c.column))(c)
     }(this)
 
@@ -120,8 +119,7 @@ final case class TableState[A: Eq](userModified:   UserModified,
     } else {
       // Take the one with higher chance to be removed and hide it
       val hideOne = cols
-        .filter(_.removeable > 0)
-        .filter(_.visible)
+        .filter(c => c.visible && c.removeable > 0)
         .sortBy(_.removeable)
         .lastOption
       hideOne match {
@@ -142,7 +140,8 @@ final case class TableState[A: Eq](userModified:   UserModified,
           "org.wartremover.warts.Throw"))
   private def distributePercentages(
     s:               Size,
-    calculatedWidth: A => Option[Double]): TableState[A] =
+    calculatedWidth: A => Option[Double]
+  ): TableState[A] =
     if (s.width === 0) {
       // If we have been modified don't redistribute
       this
@@ -248,27 +247,6 @@ final case class TableState[A: Eq](userModified:   UserModified,
       .mapFilter(identity)
   }
 
-  def printCols: String =
-    columns.toList
-      .map {
-        case ColumnMeta(c, _, _, v, FixedColumnWidth(w), _, _) =>
-          s"$c -> Fix: $w $v"
-        case ColumnMeta(c, _, _, v, VariableColumnWidth(w, mw), _, _) =>
-          s"$c -> Var: $w $mw $v"
-      }
-      .mkString(",")
-
-  def printVisibleCols: String =
-    columns.toList
-      .filter(_.visible)
-      .map {
-        case ColumnMeta(c, _, _, _, FixedColumnWidth(w), _, _) =>
-          s"$c -> Fix: $w"
-        case ColumnMeta(c, _, _, _, VariableColumnWidth(w, mw), _, _) =>
-          s"$c -> Var: $w $mw"
-      }
-      .mkString(",")
-
   // Reset all the columns to be visible
   private def resetVisibleColumns: TableState[A] =
     (TableState.columns[A] ^|->> each ^|-> ColumnMeta.visible).set(true)(this)
@@ -292,8 +270,7 @@ final case class TableState[A: Eq](userModified:   UserModified,
       val percentagesSum = columns.collect {
         case ColumnMeta(_, _, _, true, VariableColumnWidth(p, _), _, _) => p
       }.sum
-      (TableState.columns[A] ^|->> each)
-        .modify {
+      (TableState.columns[A] ^|->> each).modify {
           case c @ ColumnMeta(_, _, _, true, VariableColumnWidth(p, min), _, _) =>
             c.copy(width = VariableColumnWidth(p / percentagesSum, min))
           case c =>

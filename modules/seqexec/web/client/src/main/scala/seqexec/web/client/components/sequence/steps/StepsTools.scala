@@ -104,12 +104,12 @@ object StepIconCell {
   private val component = ScalaComponent
     .builder[Props]("StepIconCell")
     .stateless
-    .render_P( p =>
-      <.div(
-        stepStyle(p),
-        stepIcon(p)
-      )
-    )
+    .render_P(
+      p =>
+        <.div(
+          stepStyle(p),
+          stepIcon(p)
+      ))
     .configure(Reusability.shouldComponentUpdate)
     .build
 
