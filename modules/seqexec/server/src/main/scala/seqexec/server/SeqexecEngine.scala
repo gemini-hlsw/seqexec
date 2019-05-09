@@ -377,11 +377,11 @@ class SeqexecEngine(httpClient: Client[IO], gpi: GpiClient[IO], ghost: GhostClie
       { _ =>true }
     )).fold(executeEngine.unit)(_ *> _)
 
-  /*
+  /**
    * Most of the magic for the ExecutionQueue is done in the following functions.
    */
 
-  /*
+  /**
    * runQueue starts the queue. It founds the top eligible sequences in the queue, and runs them.
    */
   private def runQueue(qid: QueueId, observer: Observer, user: UserDetails, clientId: ClientId)
@@ -390,7 +390,7 @@ class SeqexecEngine(httpClient: Client[IO], gpi: GpiClient[IO], ghost: GhostClie
     executeEngine.get.map(findRunnableObservations(qid)).flatMap(runSequences(_, observer, user, clientId))
   }
 
-  /*
+  /**
    * runNextsInQueue continues running the queue after a sequence completes. It founds the next eligible sequences in
    * the queue, and runs them.
    * At any given time a queue can be running, but one of the top eligible sequences are not. That is the case if the
@@ -464,27 +464,29 @@ class SeqexecEngine(httpClient: Client[IO], gpi: GpiClient[IO], ghost: GhostClie
     !(used ++ reservedByQueues).contains(sys)
   }
 
-  private def configSystemHandle(sid: Observation.Id, stepId: StepId, sys: Resource)
+  private def configSystemHandle(sid: Observation.Id, stepId: StepId, sys: Resource, clientID: ClientId)
   : executeEngine.HandleType[SeqEvent] = {
 
     executeEngine.get.flatMap{ st =>
-      if(configSystemCheck(sid, sys)(st))
+      if (configSystemCheck(sid, sys)(st)) {
         st.sequences.get(sid).flatMap(_.seqGen.configActionCoord(stepId, sys))
           .map(c => executeEngine.startSingle(ActionCoords(sid, c)).map[SeqEvent]{
             case EventResult.Ok => StartSysConfig(sid, stepId, sys)
             case _              => NullSeqEvent
           }).getOrElse(executeEngine.pure(NullSeqEvent))
-      else executeEngine.pure(NullSeqEvent)
+      } else {
+        executeEngine.pure(ResourceBusy(sid, stepId, sys, clientID))
+      }
     }
   }
 
-  /*
+  /**
    *  Triggers the application of a specific step configuration to a system
    */
-  def configSystem(q: EventQueue, sid: Observation.Id, stepId: StepId, sys: Resource)
+  def configSystem(q: EventQueue, sid: Observation.Id, stepId: StepId, sys: Resource, clientID: ClientId)
   : IO[Either[SeqexecFailure, Unit]] =
     q.enqueue1(
-      Event.modifyState[executeEngine.ConcreteTypes](configSystemHandle(sid, stepId, sys))
+      Event.modifyState[executeEngine.ConcreteTypes](configSystemHandle(sid, stepId, sys, clientID))
     ).map(_.asRight)
 
 
@@ -889,6 +891,7 @@ object SeqexecEngine extends SeqexecConfiguration {
     case StartSysConfig(sid, stepId, res)   => SingleActionEvent(SingleActionOp.Started(sid, stepId, res))
     case SequenceStart(sid, stepId)         => ClientSequenceStart(sid, stepId, svs)
     case Busy(id, cid)                      => UserNotification(ResourceConflict(id), cid)
+    case ResourceBusy(id, sid, res, cid)    => UserNotification(SubsystemBusy(id, sid, res), cid)
 
   }
 

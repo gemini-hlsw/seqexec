@@ -246,7 +246,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
 
     (for {
       q <- Queue.bounded[IO, executeEngine.EventType](10)
-      sf <- advanceOne(q, s0, seqexecEngine.configSystem(q, seqObsId1, 1, TCS))
+      sf <- advanceOne(q, s0, seqexecEngine.configSystem(q, seqObsId1, 1, TCS, clientId))
     } yield {
       inside(sf.flatMap((EngineState.sequences ^|-? index(seqObsId1)).getOption)) {
         case Some(s) => assertResult(Some(Action.Started))(
@@ -264,7 +264,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
 
     (for {
       q <- Queue.bounded[IO, executeEngine.EventType](10)
-      sf <- advanceOne(q, s0, seqexecEngine.configSystem(q, seqObsId1, 1, TCS))
+      sf <- advanceOne(q, s0, seqexecEngine.configSystem(q, seqObsId1, 1, TCS, clientId))
     } yield {
       inside(sf.flatMap((EngineState.sequences ^|-? index(seqObsId1)).getOption)) {
         case Some(s) => assertResult(Some(Action.Idle))(
@@ -284,7 +284,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
 
     (for {
       q <- Queue.bounded[IO, executeEngine.EventType](10)
-      sf <- advanceOne(q, s0, seqexecEngine.configSystem(q, seqObsId2, 1, Instrument.F2))
+      sf <- advanceOne(q, s0, seqexecEngine.configSystem(q, seqObsId2, 1, Instrument.F2, clientId))
     } yield {
       inside(sf.flatMap((EngineState.sequences ^|-? index(seqObsId2)).getOption)) {
         case Some(s) => assertResult(Some(Action.Idle))(
@@ -304,7 +304,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
 
     (for {
       q <- Queue.bounded[IO, executeEngine.EventType](10)
-      sf <- advanceOne(q, s0, seqexecEngine.configSystem(q, seqObsId2, 1, Instrument.F2))
+      sf <- advanceOne(q, s0, seqexecEngine.configSystem(q, seqObsId2, 1, Instrument.F2, clientId))
     } yield {
       inside(sf.flatMap((EngineState.sequences ^|-? index(seqObsId2)).getOption)) {
         case Some(s) => assertResult(Some(Action.Started))(

@@ -176,9 +176,9 @@ class SeqexecCommandRoutes(auth:       AuthenticationService,
       se.stopQueue(inputQueue, qid, clientId) *>
         Ok(s"Stopped from queue $qid")
 
-    case POST -> Root / "execute" / ObsIdVar(oid) / PosIntVar(step) / ResourceVar(resource) as _ =>
-      se.configSystem(inputQueue, oid, step, resource) *>
-        Ok(s"Run ${resource.show} from config at ${oid.format}/$step")
+    case POST -> Root / "execute" / ObsIdVar(oid) / PosIntVar(step) / ResourceVar(resource) / ClientIDVar(clientId) as u =>
+      se.configSystem(inputQueue, oid, step, resource, clientId) *>
+        Ok(s"Run ${resource.show} from config at ${oid.format}/$step by ${u.username}")
 
   }
 

@@ -374,21 +374,8 @@ final case class SequencesOnDisplay(tabs: Zipper[SeqexecTab]) {
   def markAsLoading(id: Observation.Id): SequencesOnDisplay =
     SequencesOnDisplay.loadingL(id).set(true)(this)
 
-  def markOperations(
-    id:      Observation.Id,
-    updater: TabOperations => TabOperations
-  ): SequencesOnDisplay =
-    (SequencesOnDisplay.instrumentTabById(id) ^|-> InstrumentSequenceTab.tabOperations)
-      .modify(updater)(this)
-
-  def resetOperations(id: Observation.Id): SequencesOnDisplay =
-    markOperations(id, _ => TabOperations.Default)
-
   def resetAllOperations: SequencesOnDisplay =
-    loadedIds.foldLeft(this)((sod, id) => sod.resetOperations(id))
-
-  def resetAllResourceOperations(id: Observation.Id): SequencesOnDisplay =
-    markOperations(id, TabOperations.clearResourceOperations)
+    loadedIds.foldLeft(this)((sod, id) => SequencesOnDisplay.resetOperations(id)(sod))
 
   def selectStep(
     id:   Observation.Id,
@@ -532,5 +519,21 @@ object SequencesOnDisplay {
           SeqexecTabActive(i, selected)
       }.headOption
     }
+
+  def markOperations(
+    id:      Observation.Id,
+    updater: TabOperations => TabOperations
+  ): SequencesOnDisplay => SequencesOnDisplay =
+    (SequencesOnDisplay.instrumentTabById(id) ^|-> InstrumentSequenceTab.tabOperations)
+      .modify(updater)
+
+  def resetOperations(id: Observation.Id): SequencesOnDisplay => SequencesOnDisplay =
+    markOperations(id, _ => TabOperations.Default)
+
+  def resetAllResourceOperations(id: Observation.Id): SequencesOnDisplay => SequencesOnDisplay =
+    markOperations(id, TabOperations.clearAllResourceOperations)
+
+  def resetResourceOperations(id: Observation.Id, r: Resource): SequencesOnDisplay => SequencesOnDisplay =
+    markOperations(id, TabOperations.clearResourceOperations(r))
 
 }

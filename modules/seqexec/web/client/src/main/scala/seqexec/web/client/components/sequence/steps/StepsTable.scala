@@ -40,7 +40,7 @@ import seqexec.web.client.model.Formatting._
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.circuit.StepsTableAndStatusFocus
 import seqexec.web.client.circuit.StepsTableFocus
-import seqexec.web.client.actions.ClearAllResouceOptions
+import seqexec.web.client.actions.ClearAllResourceOperations
 import seqexec.web.client.actions.UpdateSelectedStep
 import seqexec.web.client.actions.UpdateStepTableState
 import seqexec.web.client.actions.FlipBreakpointStep
@@ -773,7 +773,7 @@ object StepsTable extends Columns {
       (SeqexecCircuit
         .dispatchCB(UpdateSelectedStep(id, i)) *>
         SeqexecCircuit
-          .dispatchCB(ClearAllResouceOptions(id)) *>
+          .dispatchCB(ClearAllResourceOperations(id)) *>
         b.modState(State.selected.set(Some(i))) *>
         recomputeRowHeightsCB(min(b.state.selected.getOrElse(i), i)))
         .when(b.props.stepSelectionAllowed(i))

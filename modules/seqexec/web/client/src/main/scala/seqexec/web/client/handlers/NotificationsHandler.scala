@@ -11,6 +11,7 @@ import diode.ModelRW
 import seqexec.model.InstrumentInUse
 import seqexec.model.ResourceConflict
 import seqexec.model.RequestFailed
+import seqexec.model.SubsystemBusy
 import seqexec.model.events.UserNotification
 import seqexec.web.client.model._
 import seqexec.web.client.actions._
@@ -28,9 +29,10 @@ class NotificationsHandler[M](modelRW: ModelRW[M, UserNotificationState])
       val openBoxE = Effect(Future(OpenUserNotificationBox))
       // Update the model as load failed
       val modelUpdateE = not match {
-        case InstrumentInUse(id, _) => Effect(Future(SequenceLoadFailed(id)))
-        case ResourceConflict(id)   => Effect(Future(RunStartFailed(id)))
-        case RequestFailed(_)       => VoidEffect
+        case InstrumentInUse(id, _)  => Effect(Future(SequenceLoadFailed(id)))
+        case ResourceConflict(id)    => Effect(Future(RunStartFailed(id)))
+        case SubsystemBusy(id, _, r) => Effect(Future(ClearResourceOperations(id, r)))
+        case RequestFailed(_)        => VoidEffect
       }
       updatedLE(lens, openBoxE >> modelUpdateE)
   }

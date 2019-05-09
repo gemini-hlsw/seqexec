@@ -379,11 +379,12 @@ object SeqexecWebClient extends ModelBooPicklers {
     */
   def runResource(pos:      Int,
                   resource: Resource,
-                  obsId:    Observation.Id): Future[Unit] =
+                  obsId:    Observation.Id,
+                  clientId: ClientId): Future[Unit] =
     Ajax
       .post(
         url =
-          s"$baseUrl/commands/execute/${encodeURI(obsId.self.format)}/$pos/${encodeURI(resource.show)}"
+          s"$baseUrl/commands/execute/${encodeURI(obsId.self.format)}/$pos/${encodeURI(resource.show)}/${encodeURI(clientId.self.show)}"
       )
       .void
 

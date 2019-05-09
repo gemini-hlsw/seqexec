@@ -126,16 +126,22 @@ class RemoteRequestsHandler[M](modelRW: ModelRW[M, Option[ClientId]])
 
   def handleResourceRun: PartialFunction[Any, ActionResult[M]] = {
     case RequestResourceRun(id, step, resource) =>
-      effectOnly(
-        requestEffect(
-          id,
-          SeqexecWebClient.runResource(step, resource, _),
-          RunResource(_, step, resource),
-          RunResourceFailed(_,
-                              step,
-                              resource,
-                              s"Http call to configure ${resource.show} failed")
-        ))
+      val effect = value
+        .map(
+          clientId =>
+            requestEffect(
+              id,
+              SeqexecWebClient.runResource(step, resource, _, clientId),
+              RunResource(_, step, resource),
+              RunResourceFailed(
+                _,
+                step,
+                resource,
+                s"Http call to configure ${resource.show} failed")
+          )
+        )
+        .getOrElse(VoidEffect)
+      effectOnly(effect)
   }
 
   override def handle: PartialFunction[Any, ActionResult[M]] =
