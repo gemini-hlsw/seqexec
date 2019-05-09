@@ -371,49 +371,6 @@ trait SeqexecModelArbitraries extends ArbObservation {
   implicit val levCogen: Cogen[ServerLogLevel] =
     Cogen[String].contramap(_.productPrefix)
 
-  implicit val rcArb = Arbitrary[ResourceConflict] {
-    for {
-      id <- arbitrary[Observation.Id]
-    } yield ResourceConflict(id)
-  }
-
-  implicit val rcCogen: Cogen[ResourceConflict] =
-    Cogen[Observation.Id].contramap(_.sid)
-
-  implicit val rfArb = Arbitrary[RequestFailed] {
-    arbitrary[List[String]].map(RequestFailed.apply)
-  }
-
-  implicit val rfCogen: Cogen[RequestFailed] =
-    Cogen[List[String]].contramap(_.msgs)
-
-  implicit val inArb = Arbitrary[InstrumentInUse] {
-    for {
-      id <- arbitrary[Observation.Id]
-      i  <- arbitrary[Instrument]
-    } yield InstrumentInUse(id, i)
-  }
-
-  implicit val inCogen: Cogen[InstrumentInUse] =
-    Cogen[(Observation.Id, Instrument)].contramap(x => (x.sid, x.ins))
-
-  implicit val notArb = Arbitrary[Notification] {
-    for {
-      r <- arbitrary[ResourceConflict]
-      a <- arbitrary[InstrumentInUse]
-      f <- arbitrary[RequestFailed]
-      s <- Gen.oneOf(r, a, f)
-    } yield s
-  }
-
-  implicit val notCogen: Cogen[Notification] =
-    Cogen[Either[ResourceConflict, Either[InstrumentInUse, RequestFailed]]]
-      .contramap {
-        case r: ResourceConflict => Left(r)
-        case i: InstrumentInUse  => Right(Left(i))
-        case f: RequestFailed    => Right(Right(f))
-      }
-
   implicit val seqBatchCmdRunArb: Arbitrary[BatchCommandState.Run] = Arbitrary {
     for {
       observer <- arbitrary[Observer]
@@ -565,7 +522,8 @@ trait SeqexecModelArbitraries extends ArbObservation {
   }
 
   implicit val saoCogen: Cogen[SingleActionOp] =
-    Cogen[Either[SingleActionOp.Started, Either[SingleActionOp.Completed, SingleActionOp.Error]]]
+    Cogen[Either[SingleActionOp.Started,
+                 Either[SingleActionOp.Completed, SingleActionOp.Error]]]
       .contramap {
         case s: SingleActionOp.Started   => Left(s)
         case c: SingleActionOp.Completed => Right(Left(c))

@@ -9,13 +9,17 @@ import seqexec.model.enum._
 import seqexec.model.SeqexecModelArbitraries._
 import seqexec.model.events.SingleActionEvent
 import seqexec.model.arb.ArbRunningStep
+import seqexec.model.arb.ArbNotification
 import squants.time.Time
 import squants.time.TimeUnit
 
 /**
   * Tests Model typeclasses
   */
-final class ModelSpec extends CatsSuite with ArbRunningStep {
+final class ModelSpec
+    extends CatsSuite
+    with ArbRunningStep
+    with ArbNotification {
 
   checkAll("Eq[UserDetails]", EqTests[UserDetails].eqv)
   checkAll("Eq[SystemName]", EqTests[SystemName].eqv)
@@ -51,9 +55,11 @@ final class ModelSpec extends CatsSuite with ArbRunningStep {
   checkAll("Eq[QueueId]", EqTests[QueueId].eqv)
   checkAll("Order[QueueId]", OrderTests[QueueId].eqv)
   checkAll("Eq[ServerLogLevel]", EqTests[ServerLogLevel].eqv)
+  checkAll("Eq[Notification]", EqTests[Notification].eqv)
   checkAll("Eq[ResourceConflict]", EqTests[ResourceConflict].eqv)
   checkAll("Eq[InstrumentInUse]", EqTests[InstrumentInUse].eqv)
-  checkAll("Eq[Notification]", EqTests[Notification].eqv)
+  checkAll("Eq[RequestFailed]", EqTests[RequestFailed].eqv)
+  checkAll("Eq[SubsystemBusy]", EqTests[SubsystemBusy].eqv)
   checkAll("Eq[ExecutionQueueView]", EqTests[ExecutionQueueView].eqv)
   checkAll("Eq[ObservationProgress]", EqTests[ObservationProgress].eqv)
   checkAll("Eq[TimeUnit]", EqTests[TimeUnit].eqv)

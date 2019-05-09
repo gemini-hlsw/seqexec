@@ -14,8 +14,9 @@ import java.time.Instant
 import seqexec.model.enum._
 import seqexec.model.enum.QueueManipulationOp._
 import seqexec.model.SeqexecModelArbitraries._
+import seqexec.model.arb.ArbNotification
 
-trait SequenceEventsArbitraries extends ArbTime {
+trait SequenceEventsArbitraries extends ArbTime with ArbNotification {
 
   implicit val coeArb = Arbitrary[ConnectionOpenEvent] {
     for {

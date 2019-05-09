@@ -138,8 +138,17 @@ object TabOperations {
     TabOperations.resourceRunRequested ^|-> at(r)
 
   // Set the resource operations in the map to idle.
-  def clearResourceOperations: TabOperations => TabOperations =
-    TabOperations.resourceRunRequested.modify(_.map { case (r, _) => r -> ResourceRunOperation.ResourceRunIdle})
+  def clearAllResourceOperations: TabOperations => TabOperations =
+    TabOperations.resourceRunRequested.modify(_.map {
+      case (r, _) => r -> ResourceRunOperation.ResourceRunIdle
+    })
+
+  // Set the resource operations in the map to idle.
+  def clearResourceOperations(re: Resource): TabOperations => TabOperations =
+    TabOperations.resourceRunRequested.modify(_.map {
+      case (r, _) if re === r => r -> ResourceRunOperation.ResourceRunIdle
+      case r                  => r
+    })
 
   val Default: TabOperations =
     TabOperations(

@@ -242,11 +242,13 @@ trait ModelBooPicklers extends GemModelBooPicklers {
   implicit val resourceConflictPickler = generatePickler[ResourceConflict]
   implicit val instrumentInUsePickler  = generatePickler[InstrumentInUse]
   implicit val requestFailedPickler    = generatePickler[RequestFailed]
+  implicit val subsystemlBusyPickler   = generatePickler[SubsystemBusy]
   implicit val notificatonPickler: Pickler[Notification] =
     compositePickler[Notification]
       .addConcreteType[ResourceConflict]
       .addConcreteType[InstrumentInUse]
       .addConcreteType[RequestFailed]
+      .addConcreteType[SubsystemBusy]
 
   implicit val connectionOpenEventPickler = generatePickler[ConnectionOpenEvent]
   implicit val sequenceStartPickler       = generatePickler[SequenceStart]

@@ -95,6 +95,7 @@ package server {
   final case class StartSysConfig(sid: Observation.Id, stepId: StepId, res: Resource) extends SeqEvent
   final case class Busy(sid: Observation.Id, cid: ClientId) extends SeqEvent
   final case class SequenceStart(sid: Observation.Id, stepId: StepId) extends SeqEvent
+  final case class ResourceBusy(sid: Observation.Id, stepId: StepId, res: Resource, clientID: ClientId) extends SeqEvent
   case object NullSeqEvent extends SeqEvent
 
   sealed trait ControlStrategy

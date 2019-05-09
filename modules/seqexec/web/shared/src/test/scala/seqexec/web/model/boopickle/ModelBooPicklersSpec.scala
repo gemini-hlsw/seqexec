@@ -6,6 +6,7 @@ package seqexec.web.model.boopickle
 import _root_.boopickle.DefaultBasic._
 import cats.tests.CatsSuite
 import gem.Observation
+import gem.arb.ArbObservation
 import org.scalacheck.Arbitrary._
 import seqexec.model.enum._
 import seqexec.model._
@@ -25,7 +26,7 @@ import squants.time.Time
     "org.wartremover.warts.NonUnitStatements",
     "org.wartremover.warts.Equals"
   ))
-final class BoopicklingSpec extends CatsSuite with ModelBooPicklers {
+final class BoopicklingSpec extends CatsSuite with ModelBooPicklers with ArbObservation {
 
   checkAll("Pickler[UserDetails]", PicklerTests[UserDetails].pickler)
   checkAll("Pickler[SequenceView]", PicklerTests[SequenceView].pickler)
@@ -64,14 +65,17 @@ final class BoopicklingSpec extends CatsSuite with ModelBooPicklers {
            PicklerTests[BatchCommandState].pickler)
   checkAll("Pickler[ExecutionQueueView]",
            PicklerTests[ExecutionQueueView].pickler)
-  checkAll("Pickler[SequencesQueue[Observation.Id]]",
-           PicklerTests[SequencesQueue[Observation.Id]].pickler)
+  checkAll("Pickler[SequencesQueue[Observation.Id]]", PicklerTests[SequencesQueue[Observation.Id]].pickler)
   checkAll("Pickler[ImageQuality]", PicklerTests[ImageQuality].pickler)
   checkAll("Pickler[WaterVapor]", PicklerTests[WaterVapor].pickler)
   checkAll("Pickler[SkyBackground]", PicklerTests[SkyBackground].pickler)
   checkAll("Pickler[CloudCover]", PicklerTests[CloudCover].pickler)
   checkAll("Pickler[Conditions]", PicklerTests[Conditions].pickler)
   checkAll("Pickler[Notification]", PicklerTests[Notification].pickler)
+  checkAll("Pickler[ResourceConflict]", PicklerTests[ResourceConflict].pickler)
+  checkAll("Pickler[InstrumentInUse]", PicklerTests[InstrumentInUse].pickler)
+  checkAll("Pickler[RequestFailed]", PicklerTests[RequestFailed].pickler)
+  checkAll("Pickler[SubsystemBusy]", PicklerTests[SubsystemBusy].pickler)
   checkAll("Pickler[UserNotification]", PicklerTests[UserNotification].pickler)
   checkAll("Pickler[UserLoginRequest]", PicklerTests[UserLoginRequest].pickler)
   checkAll("Pickler[Instrument]", PicklerTests[Instrument].pickler)

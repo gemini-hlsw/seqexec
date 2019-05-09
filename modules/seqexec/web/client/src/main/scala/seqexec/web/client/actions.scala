@@ -105,16 +105,19 @@ object actions {
   final case class  RunStop(s:                Observation.Id) extends Action
   final case class  RunStopCompleted(s:       Observation.Id) extends Action
   final case class  RunStopFailed(s:          Observation.Id) extends Action
-  final case class  ClearRunOnError(s:        Observation.Id) extends Action
-  final case class  ClearOperations(s:        Observation.Id) extends Action
-  final case object ClearAllOperations                     extends Action
-  final case class  ClearAllResouceOptions(s: Observation.Id) extends Action
   final case class  RunAbort(s:               Observation.Id) extends Action
   final case class  RunAbortFailed(s:         Observation.Id) extends Action
   final case class  RunObsPause(s:            Observation.Id) extends Action
   final case class  RunObsResume(s:           Observation.Id) extends Action
   final case class  RunObsPauseFailed(s:      Observation.Id) extends Action
   final case class  RunObsResumeFailed(s:     Observation.Id) extends Action
+
+  final case class  ClearRunOnError(s:        Observation.Id)     extends Action
+  final case class  ClearOperations(s:        Observation.Id)     extends Action
+  final case object ClearAllOperations                            extends Action
+  final case class  ClearAllResourceOperations(s: Observation.Id) extends Action
+  final case class  ClearResourceOperations(s: Observation.Id, r: Resource)
+      extends Action
 
   // Queue actions
   final case class RequestAllSelectedSequences(qid: QueueId)                               extends Action

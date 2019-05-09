@@ -31,6 +31,7 @@ import seqexec.model.RunningStep
 import seqexec.model.ObservationProgress
 import seqexec.model.events.ServerLogMessage
 import seqexec.model.arb.ArbRunningStep._
+import seqexec.model.arb.ArbNotification._
 import seqexec.model.SeqexecModelArbitraries._
 import seqexec.model.SequenceEventsArbitraries.slmArb
 import seqexec.model.SequenceEventsArbitraries.slmCogen
