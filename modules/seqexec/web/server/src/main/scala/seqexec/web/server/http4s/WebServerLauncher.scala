@@ -246,11 +246,9 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
   }
 
   // Logger of error of last resort.
-  // Once https://github.com/typelevel/cats-effect/issues/487 is fixed we
-  // could remove the sys.exit calls
   def logError: PartialFunction[Throwable, IO[Unit]] = {
-    case e: SeqexecFailure => IO(logger.error(e)(s"Seqexec global error handler ${SeqexecFailure.explain(e)}")) *> IO(sys.exit(-1))
-    case e: Exception => IO(logger.error(e)("Seqexec global error handler")) *> IO(sys.exit(-1))
+    case e: SeqexecFailure => IO(logger.error(e)(s"Seqexec global error handler ${SeqexecFailure.explain(e)}"))
+    case e: Exception      => IO(logger.error(e)("Seqexec global error handler"))
   }
 
   /** Reads the configuration and launches the web server */
@@ -312,9 +310,8 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
         gcdb   <- Resource.liftF(GuideConfigDb.newDb[IO])
         engine <- engineIO(cli, gcdb, cr)
         _      <- webServerIO(inq, out, engine, gcdb, cr, bec)
-        _      <- Resource.liftF(engine.eventStream(inq).through(out.publish).compile.drain.onError(logError).start)
-        // The line below vill do graceful exit when https://github.com/typelevel/cats-effect/issues/487 ges fixed
-        // _      <- Resource.liftF(f.join) // We need to join to catch uncaught errors
+        f      <- Resource.liftF(engine.eventStream(inq).through(out.publish).compile.drain.onError(logError).start)
+        _      <- Resource.liftF(f.join) // We need to join to catch uncaught errors
       } yield ExitCode.Success
 
     r.use(_ => IO.never)
