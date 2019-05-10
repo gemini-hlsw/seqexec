@@ -11,18 +11,21 @@ import giapi.client.GiapiClient
 import scala.concurrent.duration._
 
 /** Client for GHOST */
-final class GhostClient[F[_]](override val giapi: Giapi[F])
-    extends GiapiClient[F]
+sealed trait GhostClient[F[_]] extends GiapiClient[F]
 
 object GhostClient {
+  private final class GhostClientImpl[F[_]](override val giapi: Giapi[F])
+    extends GhostClient[F]
+
   // Used for simulations
-  def simulatedGhostClient[F[_]: Functor: Timer: ApplicativeError[?[_], Throwable]]: Resource[F, GhostClient[F]] =
+  def simulatedGhostClient[F[_]: Timer: ApplicativeError[?[_], Throwable]]: Resource[F, GhostClient[F]] =
     Resource.liftF(
-      Giapi.simulatedGiapiConnection[F].connect.map(new GhostClient(_))
+      Giapi.simulatedGiapiConnection[F].connect.map(new GhostClientImpl(_))
     )
 
-  def ghostClient[F[_]: ConcurrentEffect](
-    url:     String)(implicit timer: Timer[F]): Resource[F, GhostClient[F]] = {
+  def ghostClient[F[_]: Timer: ConcurrentEffect](
+    url:     String
+  ): Resource[F, GhostClient[F]] = {
     val ghostStatus: Resource[F, Giapi[F]] =
       Resource.make(
         Giapi.giapiConnection[F](url).connect)(_.close)
@@ -34,7 +37,7 @@ object GhostClient {
     for {
       _ <- ghostStatus
       c <- ghostSequence
-    } yield new GhostClient(c)
+    } yield new GhostClientImpl(c)
   }
 }
 

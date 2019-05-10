@@ -4,7 +4,6 @@
 package giapi.client.gpi
 
 import cats.ApplicativeError
-import cats.Applicative
 import cats.implicits._
 import cats.effect.Resource
 import cats.effect.Timer
@@ -38,6 +37,8 @@ sealed trait GpiClient[F[_]] extends GiapiClient[F] {
                    coAdds:          Int,
                    readoutMode:     Int): F[CommandResult]
 
+  def alignAndCalib: F[CommandResult]
+
   def statusDb: GiapiStatusDb[F]
 }
 
@@ -46,10 +47,12 @@ object GpiClient {
   /**
     * Client for GPI
     */
-  final private class GpiClientImpl[F[_]: Applicative](override val giapi: Giapi[F],
-                                             val statusDb:       GiapiStatusDb[F])
+  final private class GpiClientImpl[F[_]](override val giapi: Giapi[F],
+                                          val statusDb:       GiapiStatusDb[F])
       extends GpiClient[F] {
     import GiapiClient.DefaultCommandTimeout
+
+    private val ALIGN_AND_CALIB_DEFAULT_MODE: Int = 4
 
     ///////////////
     // Status items
@@ -99,8 +102,13 @@ object GpiClient {
     def calScienceShutter(position: Boolean): F[CommandResult] =
       shutter("calScienceShutter", position)
 
-    def alignAndCalib: F[Unit] =
-      Applicative[F].unit
+    def alignAndCalib: F[CommandResult] =
+      giapi.command(
+        Command(
+          SequenceCommand.APPLY,
+          Activity.PRESET_START,
+          Configuration.single("gpi:alignAndCalib.part1", ALIGN_AND_CALIB_DEFAULT_MODE)
+        ), DefaultCommandTimeout)
 
     // TODO Use OCS constants
     def observingMode(mode: String): F[CommandResult] =
@@ -140,16 +148,12 @@ object GpiClient {
   // Used for simulations
   def simulatedGpiClient[F[_]: Timer: ApplicativeError[?[_], Throwable]]: Resource[F, GpiClient[F]] =
     Resource.liftF(
-      for {
-        c <- Giapi.simulatedGiapiConnection[F].connect
-      } yield new GpiClientImpl[F](c, GiapiStatusDb.simulatedDb[F])
+      Giapi.simulatedGiapiConnection[F].connect.map(new GpiClientImpl[F](_, GiapiStatusDb.simulatedDb[F]))
     )
 
-  def gpiClient[F[_]: ConcurrentEffect](
+  def gpiClient[F[_]: Timer: ConcurrentEffect](
     url:               String,
-    statusesToMonitor: List[String])(
-    implicit timer:    Timer[F]
-  ): Resource[F, GpiClient[F]] = {
+    statusesToMonitor: List[String]): Resource[F, GpiClient[F]] = {
     val giapi: Resource[F, Giapi[F]] =
       Resource.make(
         Giapi.giapiConnection[F](url).connect

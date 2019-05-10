@@ -200,9 +200,9 @@ package client {
       * @tparam F Effect type
       */
     // scalastyle:off
-    def giapiConnection[F[_]: ConcurrentEffect](
+    def giapiConnection[F[_]: Timer: ConcurrentEffect](
       url: String
-    )(implicit timer: Timer[F]): GiapiConnection[F] =
+    ): GiapiConnection[F] =
       new GiapiConnection[F] {
         private def giapi(c:  ActiveMQJmsProvider,
                           sg: StatusGetter,
