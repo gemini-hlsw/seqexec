@@ -315,6 +315,7 @@ object StepsTable extends Columns {
     val tableState: TableState[TableColumn] =
       steps.map(_.tableState).getOrElse(State.InitialTableState)
     val stepsList: List[Step]        = steps.foldMap(_.steps)
+    val breakSkips: List[(Boolean, Boolean)] = stepsList.map(c => (c.breakpoint, c.skip))
     val selectedStep: Option[StepId] = steps.flatMap(_.selectedStep)
     val rowCount: Int                = stepsList.length
     val nextStepToRun: Int           = steps.foldMap(_.nextStepToRun).getOrElse(0)
@@ -457,7 +458,7 @@ object StepsTable extends Columns {
   }
 
   implicit val propsReuse: Reusability[Props] =
-    Reusability.by(x => (x.canOperate, x.selectedStep))
+    Reusability.by(x => (x.canOperate, x.selectedStep, x.breakSkips))
   implicit val tcReuse: Reusability[TableColumn] = Reusability.byRef
   implicit val stateReuse: Reusability[State] =
     Reusability.by(x => (x.tableState, x.breakpointHover, x.selected))
@@ -817,8 +818,9 @@ object StepsTable extends Columns {
       Callback.when(p.canSetBreakpoint)(
         (p.obsId, p.stepsList.find(_.id === index + 1))
           .mapN((oid, step) =>
-            SeqexecCircuit.dispatchCB(FlipBreakpointStep(oid, step)))
-          .getOrEmpty
+            SeqexecCircuit.dispatchCB(FlipBreakpointStep(oid, step))
+              .when(step.canSetBreakpoint(index + 1, p.nextStepToRun)).void)
+        .getOrEmpty
       )
     } else {
       onRowClick

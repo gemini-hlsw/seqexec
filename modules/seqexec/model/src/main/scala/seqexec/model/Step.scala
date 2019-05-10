@@ -47,8 +47,9 @@ object Step {
     def file: Option[String] = None
 
     def canSetBreakpoint(i: Int, firstRunnable: Int): Boolean = s.status match {
-      case StepState.Pending | StepState.Skipped | StepState.Paused => i > firstRunnable
-      case _                                                        => false
+      case StepState.Pending | StepState.Skipped
+        | StepState.Paused | StepState.Running => i > firstRunnable
+      case _                                   => false
     }
 
     def canSetSkipmark: Boolean = s.status match {

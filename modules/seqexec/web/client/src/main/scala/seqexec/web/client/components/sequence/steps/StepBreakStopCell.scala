@@ -42,8 +42,8 @@ object StepBreakStopCell {
     e.preventDefaultCB *>
     e.stopPropagationCB *>
     Callback.when(p.clientStatus.canOperate)(
-      SeqexecCircuit.dispatchCB(FlipBreakpointStep(p.obsId, p.step)) >> p
-        .heightChangeCB(p.step.id))
+      SeqexecCircuit.dispatchCB(FlipBreakpointStep(p.obsId, p.step)) *>
+        p.heightChangeCB(p.step.id))
 
   // Request a to flip the skip
   def flipSkipped(p: Props)(e: ReactEvent): Callback =
