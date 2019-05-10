@@ -3,7 +3,9 @@
 
 package giapi.client.ghost
 
+import cats._
 import cats.effect._
+import cats.implicits._
 import giapi.client.Giapi
 import giapi.client.GiapiClient
 import scala.concurrent.duration._
@@ -14,28 +16,20 @@ final class GhostClient[F[_]](override val giapi: Giapi[F])
 
 object GhostClient {
   // Used for simulations
-  def simulatedGhostClient(implicit timer: Timer[IO]): Resource[IO, GhostClient[IO]] =
+  def simulatedGhostClient[F[_]: Functor: Timer: ApplicativeError[?[_], Throwable]]: Resource[F, GhostClient[F]] =
     Resource.liftF(
-      Giapi.giapiConnectionIO.connect.map(new GhostClient(_))
+      Giapi.simulatedGiapiConnection[F].connect.map(new GhostClient(_))
     )
 
   def ghostClient[F[_]: ConcurrentEffect](
-    url:     String)(implicit timer: Timer[IO]): Resource[F, GhostClient[F]] = {
+    url:     String)(implicit timer: Timer[F]): Resource[F, GhostClient[F]] = {
     val ghostStatus: Resource[F, Giapi[F]] =
       Resource.make(
-        Giapi
-          .giapiConnection[F](
-            url
-          )
-          .connect)(_.close)
+        Giapi.giapiConnection[F](url).connect)(_.close)
 
     val ghostSequence: Resource[F, Giapi[F]] =
       Resource.make(
-        Giapi
-          .giapiConnection[F](
-            url
-          )
-          .connect)(_.close)
+        Giapi.giapiConnection[F](url).connect)(_.close)
 
     for {
       _ <- ghostStatus

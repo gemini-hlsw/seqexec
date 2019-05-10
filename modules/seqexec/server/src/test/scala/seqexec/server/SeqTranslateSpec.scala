@@ -85,10 +85,10 @@ class SeqTranslateSpec extends FlatSpec {
   private val s5: EngineState = EngineState.sequenceStateIndex(seqId)
     .modify(_.mark(0)(Result.Error("error")))(baseState)
 
-  val gpiSim = GpiClient.simulatedGpiClient.use(x => IO(GpiController(x,
+  val gpiSim = GpiClient.simulatedGpiClient[IO].use(x => IO(GpiController(x,
     new GdsClient(GdsClient.alwaysOkClient, uri("http://localhost:8888/xmlrpc"))))
   ).unsafeRunSync
-  val ghostSim = GhostClient.simulatedGhostClient.use(x => IO(GhostController(x,
+  val ghostSim = GhostClient.simulatedGhostClient[IO].use(x => IO(GhostController(x,
     new GdsClient(GdsClient.alwaysOkClient, uri("http://localhost:8888/xmlrpc"))))
   ).unsafeRunSync
 
