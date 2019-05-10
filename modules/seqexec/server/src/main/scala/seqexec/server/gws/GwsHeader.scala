@@ -14,8 +14,9 @@ import seqexec.server.{EpicsHealth, InstrumentSystem}
 object GwsHeader {
   def header[F[_]: MonadError[?[_], Throwable]](inst: InstrumentSystem[F], gwsReader: GwsKeywordReader[F]): Header[F] = new Header[F] {
     override def sendBefore(obsId: Observation.Id, id: ImageFileId): F[Unit] =
-      gwsReader.health.map(_ === EpicsHealth.Good).ifM(
-        sendKeywords[F](id, inst, List(
+      gwsReader.health.map(_ === EpicsHealth.Good)
+        .handleError(_ => false) // error check the health read
+        .ifM(sendKeywords[F](id, inst, List(
           buildDoubleS(gwsReader.humidity, KeywordName.HUMIDITY),
           buildDoubleS(gwsReader.temperature.map(_.toCelsiusScale), KeywordName.TAMBIENT),
           buildDoubleS(gwsReader.temperature.map(_.toFahrenheitScale), KeywordName.TAMBIEN2),

@@ -388,17 +388,14 @@ object EpicsUtil {
   /** Tries to read a value of type A from a channel
    *  Null results are raised as error and other errors are captured
    */
-  def safeAttributeF[F[_]: Sync, A >: Null: Eq](name: String, get: => CaAttribute[A]): F[A] =
-    Sync[F].delay(get.value)
-      .adaptError{ case e => SeqexecException(e)}
-      .ensure(NullEpicsError(name))(_ =!= null)
+  def safeAttributeF[F[_]: Sync, A >: Null](name: String, get: => CaAttribute[A]): F[A] =
+    Sync[F].delay(Option(get.value)) // Wrap the read on Option to do null check
+      .adaptError{ case e => SeqexecException(e)} // if we have e.g CAException wrap it
+      .ensure(NullEpicsError(name))(_.isDefined) // equivalent to a null check
+      .map{_.orNull} // orNull lets us typecheck but it will never be used due to the `ensure` call above
 
   def safeAttributeSDouble[F[_]: Sync, A](get: => CaAttribute[JDouble]): F[Option[Double]] =
     Nested(safeAttribute(get)).map(_.toDouble).value
-
-  // Internally used Eq for java basic classes
-  private implicit val eqJDouble: Eq[JDouble] = Eq.by(_.toDouble)
-  private implicit val eqJInt: Eq[JInt] = Eq.by(_.toInt)
 
   def safeAttributeSDoubleF[F[_]: Sync](name: String, get: => CaAttribute[JDouble]): F[Double] =
     safeAttributeF(name, get).map(_.toDouble)
