@@ -262,8 +262,8 @@ package object keywords {
   // In case it either fails or is empty
   implicit class FunctorSafeOps[F[_]: ApplicativeError[?[_], Throwable], A](v: F[Option[A]]) {
     def safeVal: F[Option[A]] = v.attempt.map {
-      case Right(a@Some(_)) => a
-      case _                => None
+      case Right(a @ Some(_)) => a
+      case _                  => None
     }
   }
 
@@ -273,9 +273,9 @@ package object keywords {
 
   implicit class SafeDefaultOps[F[_]: ApplicativeError[?[_], Throwable], A: DefaultHeaderValue](v: F[A]) {
     // Check if there is an error reading a value and if there is a failure
-    //  use the default
+    // use the default
     def safeValOrDefault: F[A] =
-      v.attempt.map(_.getOrElse(DefaultHeaderValue[A].default))
+      v.handleError(_ => DefaultHeaderValue[A].default)
   }
 
   implicit class SeqActionOption2SeqAction[A: DefaultHeaderValue](
