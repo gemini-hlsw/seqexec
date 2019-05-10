@@ -275,7 +275,7 @@ package object keywords {
     // Check if there is an error reading a value and if there is a failure
     //  use the default
     def safeValOrDefault: F[A] =
-      v.attempt.map(_.getOrElse(DefaultHeaderValue[A].default))
+      v.handleError(_ => DefaultHeaderValue[A].default)
   }
 
   implicit class SeqActionOption2SeqAction[A: DefaultHeaderValue](

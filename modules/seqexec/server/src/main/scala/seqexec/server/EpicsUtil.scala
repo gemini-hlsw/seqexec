@@ -389,8 +389,9 @@ object EpicsUtil {
    *  Null results are raised as error and other errors are captured
    */
   def safeAttributeF[F[_]: Sync, A >: Null: Eq](name: String, get: => CaAttribute[A]): F[A] =
-    Sync[F].delay(get.value).ensure(NullEpicsError(name))(_ =!= null)
+    Sync[F].delay(get.value)
       .adaptError{ case e => SeqexecException(e)}
+      .ensure(NullEpicsError(name))(_ =!= null)
 
   def safeAttributeSDouble[F[_]: Sync, A](get: => CaAttribute[JDouble]): F[Option[Double]] =
     Nested(safeAttribute(get)).map(_.toDouble).value
