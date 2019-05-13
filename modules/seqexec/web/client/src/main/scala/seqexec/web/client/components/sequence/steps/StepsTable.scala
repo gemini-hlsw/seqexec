@@ -48,6 +48,7 @@ import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.components.TableContainer
 import seqexec.web.client.semanticui.elements.icon.Icon._
 import seqexec.web.client.semanticui.{ Size => SSize }
+import seqexec.web.client.reusability._
 import react.virtualized._
 import web.client.style._
 import web.client.table._
@@ -315,7 +316,6 @@ object StepsTable extends Columns {
     val tableState: TableState[TableColumn] =
       steps.map(_.tableState).getOrElse(State.InitialTableState)
     val stepsList: List[Step]        = steps.foldMap(_.steps)
-    val breakSkips: List[(Boolean, Boolean)] = stepsList.map(c => (c.breakpoint, c.skip))
     val selectedStep: Option[StepId] = steps.flatMap(_.selectedStep)
     val rowCount: Int                = stepsList.length
     val nextStepToRun: Int           = steps.foldMap(_.nextStepToRun).getOrElse(0)
@@ -457,8 +457,15 @@ object StepsTable extends Columns {
     val InitialState: State = State(InitialTableState, None, None, 0)
   }
 
+  val stdStepReuse: Reusability[StandardStep] =
+    Reusability.caseClassExcept('config)
+  implicit val stepReuse: Reusability[Step] =
+    Reusability {
+      case (a: StandardStep, b: StandardStep) => stdStepReuse.testNot(a, b)
+      case _ => false
+    }
   implicit val propsReuse: Reusability[Props] =
-    Reusability.by(x => (x.canOperate, x.selectedStep, x.breakSkips))
+    Reusability.by(x => (x.canOperate, x.selectedStep, x.stepsList))
   implicit val tcReuse: Reusability[TableColumn] = Reusability.byRef
   implicit val stateReuse: Reusability[State] =
     Reusability.by(x => (x.tableState, x.breakpointHover, x.selected))

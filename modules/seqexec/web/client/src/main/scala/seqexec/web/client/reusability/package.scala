@@ -10,6 +10,7 @@ import gem.enum.Site
 import japgolly.scalajs.react.CatsReact._
 import japgolly.scalajs.react.extra.Reusability
 import scala.collection.immutable.SortedMap
+import seqexec.model.enum.ActionStatus
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.BatchExecState
 import seqexec.model.enum.Resource
@@ -41,6 +42,7 @@ import seqexec.web.client.model.GlobalLog
 import seqexec.web.client.circuit._
 
 package object reusability {
+  implicit val actionStatuReuse: Reusability[ActionStatus]  = Reusability.byEq
   implicit val stepStateReuse: Reusability[StepState]       = Reusability.byEq
   implicit val instrumentReuse: Reusability[Instrument]     = Reusability.byEq
   implicit val resourceReuse: Reusability[Resource]         = Reusability.byEq
