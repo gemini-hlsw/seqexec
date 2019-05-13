@@ -88,9 +88,9 @@ object TestCommon {
     override def set(v: GuideConfigDb.GuideConfig): IO[Unit] = IO.unit
   }
 
-  val gpiSim: GpiClient[IO] = GpiClient.simulatedGpiClient.use(IO(_)).unsafeRunSync
+  val gpiSim: GpiClient[IO] = GpiClient.simulatedGpiClient[IO].use(IO(_)).unsafeRunSync
 
-  val ghostSim: GhostClient[IO] = GhostClient.simulatedGhostClient.use(IO(_)).unsafeRunSync
+  val ghostSim: GhostClient[IO] = GhostClient.simulatedGhostClient[IO].use(IO(_)).unsafeRunSync
 
   val seqexecEngine: SeqexecEngine = SeqexecEngine(GdsClient.alwaysOkClient, gpiSim, ghostSim, guideDb, defaultSettings, sm)
   def advanceOne(q: EventQueue, s0: EngineState, put: IO[Either[SeqexecFailure, Unit]]): IO[Option[EngineState]] =
