@@ -36,7 +36,7 @@ final class ODBSequencesLoader[F[_]: Monad](odbProxy: OdbProxy[F], translator: S
     implicit cio: Concurrent[IO],
              tio: Timer[IO]
   ): F[List[executeEngine.EventType]] = {
-    val t: F[Either[SeqexecFailure, (List[SeqexecFailure], Option[SequenceGen])]] =
+    val t: F[Either[SeqexecFailure, (List[SeqexecFailure], Option[SequenceGen[IO]])]] =
       odbProxy.read(seqId).map {o =>
         for {
           odbSeq <- o
@@ -50,7 +50,7 @@ final class ODBSequencesLoader[F[_]: Monad](odbProxy: OdbProxy[F], translator: S
         } yield translator.sequence(seqId, odbSeq)
       }
 
-    def loadSequenceEvent(seqg: SequenceGen): executeEngine.EventType =
+    def loadSequenceEvent(seqg: SequenceGen[IO]): executeEngine.EventType =
       Event.modifyState[executeEngine.ConcreteTypes]({ st: EngineState =>
         st.sequences
           .get(seqId)
@@ -87,20 +87,20 @@ final class ODBSequencesLoader[F[_]: Monad](odbProxy: OdbProxy[F], translator: S
 object ODBSequencesLoader {
 
   // TODO Parametrize the IO
-  private def toEngineSequence(
+  private def toEngineSequence[F[_]](
     id:  Observation.Id,
-    seq: SequenceGen,
+    seq: SequenceGen[F],
     d:   HeaderExtraData
-  ): Sequence[IO] = Sequence(id, toStepList(seq, d))
+  ): Sequence[F] = Sequence(id, toStepList(seq, d))
 
   private[server] def loadSequenceEndo(
     seqId: Observation.Id,
-    seqg:  SequenceGen
+    seqg:  SequenceGen[IO]
   ): Endo[EngineState] =
     st =>
       EngineState.sequences.modify(
         ss =>
-          ss + (seqId -> SequenceData(
+          ss + (seqId -> SequenceData[IO](
             None,
             seqg,
             executeEngine.load(
@@ -111,7 +111,7 @@ object ODBSequencesLoader {
 
   private[server] def reloadSequenceEndo(
     seqId: Observation.Id,
-    seqg:  SequenceGen
+    seqg:  SequenceGen[IO]
   ): Endo[EngineState] =
     st =>
       EngineState

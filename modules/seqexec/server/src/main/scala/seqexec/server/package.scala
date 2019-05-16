@@ -49,18 +49,24 @@ import squants.Time
 
 package server {
   @Lenses
-  final case class EngineState(queues: ExecutionQueues, selected: Map[Instrument, Observation.Id], conditions: Conditions, operator: Option[Operator], sequences: Map[Observation.Id, SequenceData])
+  final case class EngineState(queues: ExecutionQueues, selected: Map[Instrument, Observation.Id], conditions: Conditions, operator: Option[Operator], sequences: Map[Observation.Id, SequenceData[IO]])
 
+  // TODO EngineState extending Engine.State is problematic when trying to remove the strong IO dependency
   @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object EngineState extends Engine.State[EngineState]{
-    val default: EngineState = EngineState(Map(CalibrationQueueId -> ExecutionQueue.init(CalibrationQueueName)), Map.empty, Conditions.Default, None, Map.empty)
+    val default: EngineState =
+      EngineState(
+        Map(CalibrationQueueId -> ExecutionQueue.init(CalibrationQueueName)),
+        Map.empty,
+        Conditions.Default,
+        None, Map.empty)
 
     def instrumentLoadedL(
       instrument: Instrument
     ): Lens[EngineState, Option[Observation.Id]] =
       GenLens[EngineState](_.selected) ^|-> at(instrument)
 
-    def atSequence(sid:Observation.Id): Optional[EngineState, SequenceData] =
+    def atSequence(sid:Observation.Id): Optional[EngineState, SequenceData[IO]] =
       EngineState.sequences ^|-? index(sid)
 
     override def sequenceStateIndex(
@@ -164,9 +170,10 @@ package object server {
 
   type ExecutionQueues = Map[QueueId, ExecutionQueue]
 
+  // TODO move this out of being a global. This act as an anchor to the rest of the code
   val executeEngine: Engine[EngineState, SeqEvent] = new Engine[EngineState, SeqEvent](EngineState)
 
-  type EventQueue = Queue[IO, executeEngine.EventType]
+  type EventQueue[F[_]] = Queue[F, executeEngine.EventType]
 
   object SeqAction {
     def apply[A](a:  => A): SeqAction[A] = EitherT(IO.apply(TrySeq(a)))
@@ -243,6 +250,11 @@ package object server {
       fa.leftMap(at).rethrowT
   }
 
+  implicit class SeqActionOps[A, B](sa: EitherT[IO, A, B]) {
+    def toF[F[_]: LiftIO]: EitherT[F, A, B] =
+      sa.mapK(λ[IO ~> F](_.to))
+  }
+
   // This assumes that there is only one instance of e in l
   private def moveElement[T](l: List[T], e: T, delta: Int)(implicit eq: Eq[T]): List[T] = {
     val idx = l.indexOf(e)
@@ -297,7 +309,7 @@ package object server {
       StateT[IO, EngineState, A]{ st => IO(f(st)) }.toHandle
   }
 
-  def toStepList(seq: SequenceGen, d: HeaderExtraData): List[engine.Step[IO]] =
+  def toStepList[F[_]](seq: SequenceGen[F], d: HeaderExtraData): List[engine.Step[F]] =
     seq.steps.map(_.generate(d))
 
   // If f is true continue, otherwise fail

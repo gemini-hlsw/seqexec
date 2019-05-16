@@ -22,19 +22,19 @@ final class SeqexecServerLensesSpec extends CatsSuite with SeqexecServerArbitrar
   implicit val actStateEq: Eq[Action.State] = Eq.fromUniversalEquals
   implicit def actionEq[F[_]]: Eq[Action[F]] = Eq.by(x => (x.kind, x.state))
   implicit def steppEq[F[_]]: Eq[HeaderExtraData => List[Actions[F]]] = Eq.fromUniversalEquals
-  implicit val stepActionsGenEq: Eq[StepActionsGen] = Eq.by(x => (x.pre, x.configs, x.post))
-  implicit val pndstepgEq: Eq[PendingStepGen] = Eq.by(x => (x.id, x.config, x.resources, x
+  implicit def stepActionsGenEq[F[_]]: Eq[StepActionsGen[F]] = Eq.by(x => (x.pre, x.configs, x.post))
+  implicit def pndstepgEq[F[_]]: Eq[PendingStepGen[F]] = Eq.by(x => (x.id, x.config, x.resources, x
     .generator))
-  implicit val skipstepgEq: Eq[SkippedStepGen] = Eq.by(x => (x.id, x.config))
-  implicit val cmpstepgEq: Eq[CompletedStepGen] = Eq.by(x => (x.id, x.config, x.fileId))
-  implicit val stepqEq: Eq[StepGen] = Eq.instance{
-    case (a:PendingStepGen, b:PendingStepGen)     => a === b
-    case (a:SkippedStepGen, b:SkippedStepGen)     => a === b
-    case (a:CompletedStepGen, b:CompletedStepGen) => a === b
-    case _                                        => false
+  implicit def skipstepgEq[F[_]]: Eq[SkippedStepGen[F]] = Eq.by(x => (x.id, x.config))
+  implicit def cmpstepgEq[F[_]]: Eq[CompletedStepGen[F]] = Eq.by(x => (x.id, x.config, x.fileId))
+  implicit def stepqEq[F[_]]: Eq[StepGen[F]] = Eq.instance {
+    case (a: PendingStepGen[F],   b: PendingStepGen[F])     => a === b
+    case (a: SkippedStepGen[F],   b: SkippedStepGen[F])     => a === b
+    case (a: CompletedStepGen[F], b: CompletedStepGen[F])   => a === b
+    case _                                                  => false
   }
-  implicit val seqgEq: Eq[SequenceGen] = Eq.by(x => (x.id, x.title, x.instrument, x.steps))
-  implicit val obsseqEq: Eq[SequenceData] = Eq.by(x => (x.observer, x.seqGen))
+  implicit def seqgEq[F[_]]: Eq[SequenceGen[F]] = Eq.by(x => (x.id, x.title, x.instrument, x.steps))
+  implicit def obsseqEq[F[_]]: Eq[SequenceData[F]] = Eq.by(x => (x.observer, x.seqGen))
   implicit def seqstateEq[F[_]]: Eq[engine.Sequence.State[F]] = Eq.fromUniversalEquals
   implicit val stateEq: Eq[EngineState] = Eq.by(x =>
     (x.queues, x.selected, x.conditions, x.operator, x.sequences))

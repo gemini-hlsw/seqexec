@@ -25,7 +25,7 @@ import seqexec.web.server.security.TokenRefresher
   * Rest Endpoints under the /api route
   */
 class SeqexecCommandRoutes(auth:       AuthenticationService,
-                           inputQueue: server.EventQueue,
+                           inputQueue: server.EventQueue[IO],
                            se:         SeqexecEngine)
     extends BooEncoders {
 
