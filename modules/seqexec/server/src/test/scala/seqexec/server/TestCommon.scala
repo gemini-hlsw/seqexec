@@ -93,10 +93,10 @@ object TestCommon {
   val ghostSim: GhostClient[IO] = GhostClient.simulatedGhostClient[IO].use(IO(_)).unsafeRunSync
 
   val seqexecEngine: SeqexecEngine = SeqexecEngine(GdsClient.alwaysOkClient, gpiSim, ghostSim, guideDb, defaultSettings, sm)
-  def advanceOne(q: EventQueue, s0: EngineState, put: IO[Either[SeqexecFailure, Unit]]): IO[Option[EngineState]] =
+  def advanceOne(q: EventQueue[IO], s0: EngineState, put: IO[Either[SeqexecFailure, Unit]]): IO[Option[EngineState]] =
     (put *> seqexecEngine.stream(q.dequeue)(s0).take(1).compile.last).map(_.map(_._2))
 
-  def advanceN(q: EventQueue, s0: EngineState, put: IO[Either[SeqexecFailure, Unit]], n: Long): IO[Option[EngineState]] =
+  def advanceN(q: EventQueue[IO], s0: EngineState, put: IO[Either[SeqexecFailure, Unit]], n: Long): IO[Option[EngineState]] =
     (put *> seqexecEngine.stream(q.dequeue)(s0).take(n).compile.last).map(_.map(_._2))
 
   val seqId1: String = "GS-2018B-Q-0-1"
@@ -107,7 +107,7 @@ object TestCommon {
   val seqObsId3: Observation.Id = Observation.Id.unsafeFromString(seqId3)
   val clientId = ClientId(UUID.randomUUID)
 
-  def sequence(id: Observation.Id): SequenceGen = SequenceGen(
+  def sequence(id: Observation.Id): SequenceGen[IO] = SequenceGen[IO](
     id,
     "",
     Instrument.F2,
@@ -116,7 +116,7 @@ object TestCommon {
     )))
   )
 
-  def sequenceNSteps(id: Observation.Id, n: Int): SequenceGen = SequenceGen(
+  def sequenceNSteps(id: Observation.Id, n: Int): SequenceGen[IO] = SequenceGen[IO](
     id,
     "",
     Instrument.F2,
@@ -125,7 +125,7 @@ object TestCommon {
     )))
   )
 
-  def sequenceWithResources(id: Observation.Id, ins: Instrument, resources: Set[Resource]): SequenceGen = SequenceGen(
+  def sequenceWithResources(id: Observation.Id, ins: Instrument, resources: Set[Resource]): SequenceGen[IO] = SequenceGen[IO](
     id,
     "",
     ins,

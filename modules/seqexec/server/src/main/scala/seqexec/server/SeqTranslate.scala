@@ -64,11 +64,11 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
   private def dhsFileId[F[_]: LiftIO](inst: InstrumentSystem[F]): SeqActionF[F, ImageFileId] =
     systems.dhs.createImage(DhsClient.ImageParameters(DhsClient.Permanent, List(inst.contributorName, "dhs-http"))).embed
 
-  private def sendDataStart(obsId: Observation.Id, imageFileId: ImageFileId, dataId: String): SeqAction[Unit] =
-    systems.odb.datasetStart(obsId, dataId, imageFileId).flatMap{
-      if(_) SeqAction.void
-      else SeqAction.fail(SeqexecFailure.Unexpected("Unable to send DataStart message to ODB."))
-    }
+  private def sendDataStart[F[_]: LiftIO: Monad](obsId: Observation.Id, imageFileId: ImageFileId, dataId: String): SeqActionF[F, Unit] =
+    systems.odb.datasetStart(obsId, dataId, imageFileId).toF[F].ifM(
+      SeqActionF.void[F],
+      SeqActionF.raiseException[F, Unit](SeqexecFailure.Unexpected("Unable to send DataStart message to ODB."))
+    )
 
   private def sendDataEnd(obsId: Observation.Id, imageFileId: ImageFileId, dataId: String): SeqAction[Unit] =
     systems.odb.datasetComplete(obsId, dataId, imageFileId).flatMap{
@@ -160,9 +160,9 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
                    datasets: Map[Int, ExecutedDataset])(
                      implicit cio: Concurrent[IO],
                               tio: Timer[IO]
-                   ): TrySeq[SequenceGen.StepGen] = {
+                   ): TrySeq[SequenceGen.StepGen[IO]] = {
     def buildStep(inst: InstrumentSystem[IO], sys: List[System[IO]],
-                  headers: Reader[HeaderExtraData, List[Header[IO]]]): SequenceGen.StepGen = {
+                  headers: Reader[HeaderExtraData, List[Header[IO]]]): SequenceGen.StepGen[IO] = {
       val initialStepExecutions: List[List[Action[IO]]] =
         if (i === 0)
           List(List(systems.odb.sequenceStart(obsId, "")
@@ -224,7 +224,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
     implicit cio: Concurrent[IO],
              tio: Timer[IO]
   ):
-      (List[SeqexecFailure], Option[SequenceGen]) = {
+      (List[SeqexecFailure], Option[SequenceGen[IO]]) = {
 
     val configs = sequence.config.getAllSteps.toList
 
@@ -234,7 +234,10 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
       case (c, i) => step(obsId, i, c, nextToRun, sequence.datasets)
     }.separate
 
-    val instName = configs.headOption.map(extractInstrument).getOrElse(Either.left(SeqexecFailure.UnrecognizedInstrument("UNKNOWN")))
+    val instName = configs
+      .headOption
+      .map(extractInstrument)
+      .getOrElse(Either.left(SeqexecFailure.UnrecognizedInstrument("UNKNOWN")))
 
     instName.fold(e => (List(e), none), i =>
       steps match {
@@ -421,8 +424,8 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
     case _                => TrySeq.fail(Unexpected(s"Instrument $inst not supported."))
   }
 
-  private def calcResources(sys: List[System[IO]]): Set[Resource] =
-    sys.map(resourceFromSystem).toSet
+  private def calcResources[F[_]](sys: List[System[F]]): Set[Resource] =
+    sys.map(resourceFromSystem[F]).toSet
 
   import TcsController.Subsystem._
 
@@ -481,7 +484,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
 
   // I cannot use a sealed trait as base, because I cannot have all systems in one source file (too big),
   // so either I use an unchecked notation, or add a default case that throws an exception.
-  private def resourceFromSystem(s: System[IO]): Resource = (s: @unchecked) match {
+  private def resourceFromSystem[F[_]](s: System[F]): Resource = (s: @unchecked) match {
     case Tcs(_, _, _, _)  => Resource.TCS
     case Gcal(_, _)       => Resource.Gcal
     case GmosNorth(_, _)  => Instrument.GmosN

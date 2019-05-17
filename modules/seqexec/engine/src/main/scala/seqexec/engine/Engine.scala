@@ -72,12 +72,12 @@ class Engine[D, U](stateL: Engine.State[D]) {
   /**
     * Builds the initial state of a sequence
     */
-  def load(seq: Sequence[IO]): Sequence.State[IO] = Sequence.State.init(seq)
+  def load[F[_]](seq: Sequence[F]): Sequence.State[F] = Sequence.State.init(seq)
 
   /**
     * Redefines an existing sequence. Changes the step actions, removes steps, adds new steps.
     */
-  def reload(seq: Sequence.State[IO], steps: List[Step[IO]]): Sequence.State[IO] =
+  def reload[F[_]](seq: Sequence.State[F], steps: List[Step[F]]): Sequence.State[F] =
     Sequence.State.reload(steps, seq)
 
   def startSingle(c: ActionCoords): HandleType[EventResult.Outcome] = get.flatMap { st =>
@@ -343,15 +343,15 @@ class Engine[D, U](stateL: Engine.State[D]) {
   // initalState: state
   // f takes an event and the current state, it produces a new state, a new value B and more actions
   @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
-  def mapEvalState[A, S, B](input: Stream[IO, A],
-                            initialState: S, f: (A, S) => IO[(S, B, Option[Stream[IO, A]])])
-                           (implicit ev: Concurrent[IO]): Stream[IO, B] = {
-    Stream.eval(fs2.concurrent.Queue.unbounded[IO, Stream[IO, A]]).flatMap { q =>
+  def mapEvalState[F[_]: Applicative, A, S, B](input: Stream[F, A],
+                            initialState: S, f: (A, S) => F[(S, B, Option[Stream[F, A]])])
+                           (implicit ev: Concurrent[F]): Stream[F, B] = {
+    Stream.eval(fs2.concurrent.Queue.unbounded[F, Stream[F, A]]).flatMap { q =>
       Stream.eval_(q.enqueue1(input)) ++
         q.dequeue.parJoinUnbounded.evalMapAccumulate(initialState) { (s, a) =>
           f(a, s).flatMap {
-            case (ns, b, None)     => IO.pure((ns, b))
-            case (ns, b, Some(st)) => q.enqueue1(st) >> IO.pure((ns, b))
+            case (ns, b, None)     => (ns, b).pure[F]
+            case (ns, b, Some(st)) => q.enqueue1(st) >> (ns, b).pure[F]
           }
         }.map(_._2)
     }
@@ -370,7 +370,7 @@ class Engine[D, U](stateL: Engine.State[D]) {
   def process(userReact: PartialFunction[SystemEvent, HandleType[Unit]])
              (input: Stream[IO, EventType])(qs: D)(implicit ev: Concurrent[IO])
   : Stream[IO, (ResultType, D)] =
-    mapEvalState[EventType, D, (ResultType, D)](input, qs, runE(userReact)(_, _))
+    mapEvalState[IO, EventType, D, (ResultType, D)](input, qs, runE(userReact)(_, _))
 
   // Functions for type bureaucracy
 

@@ -142,7 +142,7 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
   /** Resource that yields the running web server */
   def webServer(
     as: AuthenticationService,
-    inputs: server.EventQueue,
+    inputs: server.EventQueue[IO],
     outputs: Topic[IO, SeqexecEvent],
     se: SeqexecEngine,
     gcdb: GuideConfigDb[IO],
