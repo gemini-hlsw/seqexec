@@ -36,9 +36,6 @@ sealed trait SequenceState extends Product with Serializable {
   def isIdle: Boolean =
     this === SequenceState.Idle
 
-  def isStopped: Boolean =
-    this === SequenceState.Stopped
-
   def userStopRequested: Boolean =
     this match {
       case SequenceState.Running(b, _) => b
@@ -51,7 +48,6 @@ object SequenceState {
 
         case object Completed                                         extends SequenceState
         case object Idle                                              extends SequenceState
-        case object Stopped                                           extends SequenceState
   final case class  Running(userStop: Boolean, internalStop: Boolean) extends SequenceState
   final case class  Failed(msg: String)                               extends SequenceState
 

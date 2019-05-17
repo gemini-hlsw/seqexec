@@ -27,7 +27,6 @@ object ModelOps {
       case SequenceState.Running(true, _) => "Pausing..."
       case SequenceState.Running(_, _)    => "Running"
       case SequenceState.Idle             => "Idle"
-      case SequenceState.Stopped          => "Stopped"
       case SequenceState.Failed(_)        => s"Error at step "
     }
 

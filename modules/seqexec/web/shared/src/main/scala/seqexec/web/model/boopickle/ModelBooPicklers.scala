@@ -110,8 +110,6 @@ trait ModelBooPicklers extends GemModelBooPicklers {
     generatePickler[SequenceState.Completed.type]
   implicit val sequenceStateIdlePickler =
     generatePickler[SequenceState.Idle.type]
-  implicit val sequenceStateStoppedPickler =
-    generatePickler[SequenceState.Stopped.type]
   implicit val sequenceStateRunningPickler =
     generatePickler[SequenceState.Running]
   implicit val sequenceStateFailedPickler =
@@ -121,7 +119,6 @@ trait ModelBooPicklers extends GemModelBooPicklers {
     .addConcreteType[SequenceState.Completed.type]
     .addConcreteType[SequenceState.Running]
     .addConcreteType[SequenceState.Failed]
-    .addConcreteType[SequenceState.Stopped.type]
     .addConcreteType[SequenceState.Idle.type]
 
   private val actionStatusIdx = Map((0 -> ActionStatus.Pending),

@@ -16,7 +16,6 @@ import japgolly.scalajs.react.extra.Reusability
 import japgolly.scalajs.react.component.builder.Lifecycle.RenderScope
 import gem.Observation
 import mouse.all._
-import seqexec.model.SequenceState
 import seqexec.web.client.circuit._
 import seqexec.web.client.actions.RequestCancelPause
 import seqexec.web.client.actions.RequestPause
@@ -177,20 +176,6 @@ object SequenceControl {
       text     = "Pause"
     )
 
-  private def resumeButton(b:             Backend,
-                           id:            Observation.Id,
-                           nextStepToRun: Int,
-                           canOperate:    Boolean,
-                           canResume:     Boolean) =
-    controlButton(
-      icon     = IconPlay,
-      color    = "teal",
-      onClick  = b.runState(requestPause(id)),
-      disabled = !canOperate || !canResume,
-      tooltip  = "Resume the sequence",
-      text     = s"Continue from step $nextStepToRun"
-    )
-
   private def component =
     ScalaComponent
       .builder[Props]("SequencesDefaultToolbar")
@@ -216,10 +201,7 @@ object SequenceControl {
               .when(status.userStopRequested),
             // Pause button
             pauseButton(b, id, canOperate, s.canPause)
-              .when(status.isRunning && !status.userStopRequested),
-            // Resume
-            resumeButton(b, id, nextStepToRun, canOperate, s.canResume)
-              .when(status === SequenceState.Stopped)
+              .when(status.isRunning && !status.userStopRequested)
           ).toTagMod
         )
       }
