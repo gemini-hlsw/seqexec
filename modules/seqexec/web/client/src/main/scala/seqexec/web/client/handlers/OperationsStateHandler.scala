@@ -12,6 +12,7 @@ import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import seqexec.model.RequestFailed
 import seqexec.web.client.model.PauseOperation
+import seqexec.web.client.model.CancelPauseOperation
 import seqexec.web.client.model.SyncOperation
 import seqexec.web.client.model.RunOperation
 import seqexec.web.client.model.StopOperation
@@ -58,6 +59,12 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
         SequencesOnDisplay.markOperations(
           id,
           TabOperations.pauseRequested.set(PauseOperation.PauseInFlight)))
+
+    case RequestCancelPause(id) =>
+      updatedL(
+        SequencesOnDisplay.markOperations(
+          id,
+          TabOperations.cancelPauseRequested.set(CancelPauseOperation.CancelPauseInFlight)))
 
     case RequestResourceRun(id, _, r) =>
       updatedL(
