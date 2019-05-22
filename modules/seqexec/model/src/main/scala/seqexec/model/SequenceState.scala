@@ -24,7 +24,7 @@ sealed trait SequenceState extends Product with Serializable {
   def isInProcess: Boolean =
     this =!= SequenceState.Idle
 
-    def isRunning: Boolean =
+  def isRunning: Boolean =
     this match {
       case Running(_, _) => true
       case _             => false

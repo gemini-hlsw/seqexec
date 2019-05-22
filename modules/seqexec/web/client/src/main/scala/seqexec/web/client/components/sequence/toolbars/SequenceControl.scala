@@ -46,6 +46,9 @@ object SequenceControl {
     private val cancelPauseRequested: CancelPauseOperation =
       p.control.tabOperations.cancelPauseRequested
 
+    private val resourceInFlight: Boolean =
+      p.control.tabOperations.resourceInFlight
+
     private val syncIdle: Boolean =
       syncRequested === SyncOperation.SyncIdle
     private val runIdle: Boolean =
@@ -55,11 +58,12 @@ object SequenceControl {
     private val cancelPauseIdle: Boolean =
       cancelPauseRequested === CancelPauseOperation.CancelPauseIdle
 
-    val canSync: Boolean = p.canOperate && syncIdle && runIdle
-    val canRun: Boolean = p.canOperate && runIdle && syncIdle
+    val canSync: Boolean =
+      p.canOperate && syncIdle && runIdle && !resourceInFlight
+    val canRun: Boolean =
+      p.canOperate && runIdle && syncIdle && !resourceInFlight
     val canPause: Boolean = p.canOperate && pauseIdle
     val canCancelPause: Boolean = p.canOperate && cancelPauseIdle
-
   }
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
@@ -76,8 +80,7 @@ object SequenceControl {
   def requestCancelPause(s: Observation.Id): Callback =
     SeqexecCircuit.dispatchCB(RequestCancelPause(s))
 
-  private def syncButton(id:         Observation.Id,
-                         canSync:    Boolean) =
+  private def syncButton(id: Observation.Id, canSync: Boolean) =
     controlButton(icon     = IconRefresh,
                   color    = "purple",
                   onClick  = requestSync(id),
@@ -101,8 +104,7 @@ object SequenceControl {
                   text     = runContinueButton)
   }
 
-  private def cancelPauseButton(id:             Observation.Id,
-                                canCancelPause: Boolean) =
+  private def cancelPauseButton(id: Observation.Id, canCancelPause: Boolean) =
     controlButton(
       icon     = IconBan,
       color    = "brown",
@@ -112,8 +114,7 @@ object SequenceControl {
       text     = "Cancel Pause"
     )
 
-  private def pauseButton(id:         Observation.Id,
-                          canPause:   Boolean) =
+  private def pauseButton(id: Observation.Id, canPause: Boolean) =
     controlButton(
       icon     = IconPause,
       color    = "teal",
@@ -131,7 +132,6 @@ object SequenceControl {
         val SequenceControlFocus(_, control)               = p.p
         val ControlModel(id, partial, nextStep, status, _) = control
         val nextStepToRun                                  = nextStep.foldMap(_ + 1)
-        println(status)
 
         <.div(
           SeqexecStyles.controlButtons,
@@ -147,7 +147,7 @@ object SequenceControl {
               .when(status.userStopRequested),
             // Pause button
             pauseButton(id, p.canPause)
-              .when(status.isRunning && !status.userStopRequested),
+              .when(status.isRunning && !status.userStopRequested)
           ).toTagMod
         )
       }
