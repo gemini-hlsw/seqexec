@@ -8,7 +8,7 @@ import diode.react.ReactConnectProxy
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.component.Scala.Unmounted
-import japgolly.scalajs.react.extra.Reusability
+import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.extra.router.RouterCtl
 import seqexec.model.Step
 import seqexec.web.client.circuit._

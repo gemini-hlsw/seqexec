@@ -11,8 +11,7 @@ import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.raw.JsNumber
 import japgolly.scalajs.react.Callback
 import japgolly.scalajs.react.React
-import japgolly.scalajs.react.extra.Reusability
-import japgolly.scalajs.react.extra._
+import japgolly.scalajs.react.Reusability
 import org.scalajs.dom.MouseEvent
 import scala.scalajs.js
 import scala.math.max

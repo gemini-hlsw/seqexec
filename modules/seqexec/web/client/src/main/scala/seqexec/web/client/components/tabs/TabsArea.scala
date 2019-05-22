@@ -8,7 +8,7 @@ import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.React
 import japgolly.scalajs.react.component.Scala.Unmounted
-import japgolly.scalajs.react.extra.Reusability
+import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.extra.router.RouterCtl
 import seqexec.web.client.circuit._
 import seqexec.web.client.model.Pages.SeqexecPages

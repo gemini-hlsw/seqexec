@@ -8,7 +8,7 @@ import cats.implicits._
 import gem.Observation
 import gem.enum.Site
 import japgolly.scalajs.react.CatsReact._
-import japgolly.scalajs.react.extra.Reusability
+import japgolly.scalajs.react.Reusability
 import scala.collection.immutable.SortedMap
 import seqexec.model.enum.ActionStatus
 import seqexec.model.enum.Instrument

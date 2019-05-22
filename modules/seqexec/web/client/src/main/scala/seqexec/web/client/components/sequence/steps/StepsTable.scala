@@ -13,7 +13,7 @@ import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.component.builder.Lifecycle.RenderScope
 import japgolly.scalajs.react.component.builder.Lifecycle.ComponentWillReceiveProps
-import japgolly.scalajs.react.extra.Reusability
+import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.MonocleReact._
 import japgolly.scalajs.react.raw.JsNumber
 import monocle.Lens

@@ -8,7 +8,7 @@ import seqexec.web.client.circuit._
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.component.Scala.Unmounted
-import japgolly.scalajs.react.extra.Reusability
+import japgolly.scalajs.react.Reusability
 import seqexec.web.client.model.SessionQueueFilter
 import seqexec.web.client.model.ObsClass
 import seqexec.web.client.actions.UpdateSessionFilter

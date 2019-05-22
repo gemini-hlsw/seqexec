@@ -13,7 +13,7 @@ import japgolly.scalajs.react.CallbackTo
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.component.Scala.Unmounted
-import japgolly.scalajs.react.extra.Reusability
+import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.raw.JsNumber
 import japgolly.scalajs.react.extra.TimerSupport
 import monocle.macros.Lenses

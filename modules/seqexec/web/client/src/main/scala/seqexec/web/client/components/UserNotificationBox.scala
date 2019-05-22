@@ -5,7 +5,7 @@ package seqexec.web.client.components
 
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
-import japgolly.scalajs.react.extra.Reusability
+import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.component.Scala.Unmounted
 import seqexec.model.Notification
 import seqexec.web.client.semanticui.elements.icon.Icon.IconCheckmark

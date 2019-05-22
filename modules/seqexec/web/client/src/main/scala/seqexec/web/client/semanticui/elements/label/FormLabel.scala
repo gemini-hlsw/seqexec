@@ -4,7 +4,7 @@
 package seqexec.web.client.semanticui.elements.label
 
 import japgolly.scalajs.react.ScalaComponent
-import japgolly.scalajs.react.extra.Reusability
+import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 
