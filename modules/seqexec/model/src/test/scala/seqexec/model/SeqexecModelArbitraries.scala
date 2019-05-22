@@ -149,8 +149,7 @@ trait SeqexecModelArbitraries extends ArbObservation {
   implicit val sqsArb = Arbitrary[SequenceState] {
     for {
       f <- Gen.oneOf(SequenceState.Completed,
-                     SequenceState.Idle,
-                     SequenceState.Stopped)
+                     SequenceState.Idle)
       r <- arbitrary[SequenceState.Running]
       a <- arbitrary[String].map(SequenceState.Failed.apply)
       s <- Gen.oneOf(f, r, a)
