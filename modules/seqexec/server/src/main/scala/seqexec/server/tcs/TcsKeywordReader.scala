@@ -210,7 +210,6 @@ object DummyTargetKeywordsReader {
 
     override def properMotionRA: F[Double] = 0.0.pure[F]
   }
-
 }
 
 object DummyTcsKeywordsReader {

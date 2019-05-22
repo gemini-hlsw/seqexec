@@ -479,8 +479,10 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
               LightPath(TcsController.LightSource.AO, sys.sfName(config)),
               extractWavelength(config)),
             Gcal(systems.gcal, site == Site.GS)
-        )}
+        )
 
+      case AlignAndCalib         => List(sys).asRight
+      
       case _                     => TrySeq.fail(Unexpected(s"Unsupported step type $stepType"))
     }
   }
@@ -603,10 +605,6 @@ object SeqTranslate {
   def apply(site: Site, systems: Systems[IO], settings: TranslateSettings): SeqTranslate =
     new SeqTranslate(site, systems, settings)
 
-  private sealed trait StepType {
-    val instrument: Instrument
-  }
-
   private def extractInstrument(config: Config): TrySeq[Instrument] = {
     config.extractAs[String](INSTRUMENT_KEY / INSTRUMENT_NAME_PROP).asTrySeq.flatMap {
       case Flamingos2.name => TrySeq(Instrument.F2)
@@ -622,15 +620,11 @@ object SeqTranslate {
     }
   }
 
-  private final case class CelestialObject(override val instrument: Instrument) extends StepType
-  private final case class Dark(override val instrument: Instrument) extends StepType
-  private final case class NodAndShuffle(override val instrument: Instrument) extends StepType
-  private final case class Gems(override val instrument: Instrument) extends StepType
-  private final case class AltairObs(override val instrument: Instrument) extends StepType
-  private final case class FlatOrArc(override val instrument: Instrument) extends StepType
-  private final case class DarkOrBias(override val instrument: Instrument) extends StepType
-  private case object AlignAndCalib extends StepType {
-    override val instrument: Instrument = Instrument.Gpi
+  def isAlignAndCalib(config: Config): Option[StepType] = {
+    (config.extractAs[String](INSTRUMENT_KEY / INSTRUMENT_NAME_PROP), config.extractAs[String](OBSERVE_KEY / OBS_CLASS_PROP)).mapN {
+      case (Gpi.name, _) => {println("Abc");AlignAndCalib.some}
+      case _ => none
+    }.toOption.flatten
   }
 
   private def calcStepType(config: Config): TrySeq[StepType] = {
@@ -643,15 +637,17 @@ object SeqTranslate {
       case _                                                      => TrySeq.fail(Unexpected("Logical error reading AO system name"))
     }
 
-    (config.extractAs[String](OBSERVE_KEY / OBSERVE_TYPE_PROP).leftMap(explainExtractError), extractInstrument(config)).mapN { (obsType, inst) =>
-      obsType match {
-        case SCIENCE_OBSERVE_TYPE                     => extractGaos(inst)
-        case BIAS_OBSERVE_TYPE | DARK_OBSERVE_TYPE    => TrySeq(DarkOrBias(inst))
-        case FLAT_OBSERVE_TYPE | ARC_OBSERVE_TYPE | CAL_OBSERVE_TYPE
-                                                      => TrySeq(FlatOrArc(inst))
-        case _                                        => TrySeq.fail(Unexpected("Unknown step type " + obsType))
-      }
-    }.flatten
+    isAlignAndCalib(config).map(_.asRight[SeqexecFailure]).getOrElse {
+      (config.extractAs[String](OBSERVE_KEY / OBSERVE_TYPE_PROP).leftMap(explainExtractError), extractInstrument(config)).mapN { (obsType, inst) =>
+        obsType match {
+          case SCIENCE_OBSERVE_TYPE                     => extractGaos(inst)
+          case BIAS_OBSERVE_TYPE | DARK_OBSERVE_TYPE    => TrySeq(DarkOrBias(inst))
+          case FLAT_OBSERVE_TYPE | ARC_OBSERVE_TYPE | CAL_OBSERVE_TYPE
+                                                        => TrySeq(FlatOrArc(inst))
+          case _                                        => TrySeq.fail(Unexpected("Unknown step type " + obsType))
+        }
+      }.flatten
+    }
   }
 
   implicit class ResponseToResult(val r: Either[SeqexecFailure, Response]) extends AnyVal {
