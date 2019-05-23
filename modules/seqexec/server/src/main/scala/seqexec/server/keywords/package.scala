@@ -239,14 +239,6 @@ package object keywords {
   def internalKeywordConvert[_](k: Keyword[_]): InternalKeyword =
     InternalKeyword(k.n, k.t, s"${k.v}")
 
-  implicit class AnyValueToSeqAction[A](val v: A) extends AnyVal {
-    def toSeqAction: SeqAction[Option[A]] = SeqAction(Some(v))
-  }
-
-  implicit class OptionToSeqAction[A](val v: Option[A]) extends AnyVal {
-    def toSeqActionO: SeqAction[Option[A]] = SeqAction(v)
-  }
-
   implicit class DefaultValueOps[A](a: Option[A])(
       implicit d: DefaultHeaderValue[A]) {
     def orDefault: A = a.getOrElse(d.default)
@@ -260,15 +252,13 @@ package object keywords {
   // Keywords are read and they can fail or be missing
   // This Operation will preserve the value if defined or use the default
   // In case it either fails or is empty
-  implicit class FunctorSafeOps[F[_]: ApplicativeError[?[_], Throwable], A](v: F[Option[A]]) {
-    def safeVal: F[Option[A]] = v.attempt.map {
+  implicit class KeywordValueSafeOps[F[_]: ApplicativeError[?[_], Throwable], A: DefaultHeaderValue](v: F[Option[A]]) {
+    private def safeVal: F[Option[A]] = v.attempt.map {
       case Right(a @ Some(_)) => a
       case _                  => None
     }
-  }
 
-  implicit class FunctorSafeDefaultOps[F[_]: ApplicativeError[?[_], Throwable], A: DefaultHeaderValue](v: F[Option[A]]) {
-    def safeValOrDefault: F[A] = v.safeVal.map(_.getOrElse(DefaultHeaderValue[A].default))
+    def safeValOrDefault: F[A] = safeVal.orDefault
   }
 
   implicit class SafeDefaultOps[F[_]: ApplicativeError[?[_], Throwable], A: DefaultHeaderValue](v: F[A]) {
@@ -276,11 +266,6 @@ package object keywords {
     // use the default
     def safeValOrDefault: F[A] =
       v.handleError(_ => DefaultHeaderValue[A].default)
-  }
-
-  implicit class SeqActionOption2SeqAction[A: DefaultHeaderValue](
-      val v: SeqAction[Option[A]]) {
-    def orDefault: SeqAction[A] = v.map(_.orDefault)
   }
 
   implicit class SeqActionOption2SeqActionF[F[_]: Functor, A: DefaultHeaderValue](

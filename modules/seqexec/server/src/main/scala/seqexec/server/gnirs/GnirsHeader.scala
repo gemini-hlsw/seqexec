@@ -15,12 +15,12 @@ object GnirsHeader {
   def header[F[_]: Sync](inst: InstrumentSystem[F], gnirsReader: GnirsKeywordReader[F], tcsReader: TcsKeywordsReader[F]): Header[F] = new Header[F] {
     override def sendBefore(obsId: Observation.Id, id: ImageFileId): F[Unit] =
       sendKeywords(id, inst, List(
-        buildInt32S(tcsReader.getGnirsInstPort, KeywordName.INPORT),
+        buildInt32S(tcsReader.gnirsInstPort, KeywordName.INPORT),
         buildString(gnirsReader.getArrayId, KeywordName.ARRAYID),
         buildString(gnirsReader.getArrayType, KeywordName.ARRAYTYP),
-        buildStringS(tcsReader.getDate, KeywordName.DATE_OBS),
-        buildStringS(tcsReader.getUT, KeywordName.TIME_OBS),
-        buildStringS(tcsReader.getUT, KeywordName.UTSTART),
+        buildStringS(tcsReader.date, KeywordName.DATE_OBS),
+        buildStringS(tcsReader.ut, KeywordName.TIME_OBS),
+        buildStringS(tcsReader.ut, KeywordName.UTSTART),
         buildString(gnirsReader.getFilter1, KeywordName.FILTER1),
         buildInt32(gnirsReader.getFilterWheel1Pos, KeywordName.FW1_ENG),
         buildString(gnirsReader.getFilter2, KeywordName.FILTER2),
@@ -47,7 +47,7 @@ object GnirsHeader {
 
     override def sendAfter(id: ImageFileId): F[Unit] =
       sendKeywords(id, inst, List(
-        buildStringS(tcsReader.getUT, KeywordName.UTEND),
+        buildStringS(tcsReader.ut, KeywordName.UTEND),
         buildDouble(gnirsReader.getObsEpoch, KeywordName.OBSEPOCH)
       ) )
   }

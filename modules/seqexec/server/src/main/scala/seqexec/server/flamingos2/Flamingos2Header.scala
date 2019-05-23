@@ -48,7 +48,7 @@ object Flamingos2Header {
               Sync[F].delay(
                 LocalDate.now.format(DateTimeFormatter.ISO_LOCAL_DATE)),
               KeywordName.DATE_OBS),
-            buildStringS(tcsKeywordsReader.getUT, KeywordName.TIME_OBS),
+            buildStringS(tcsKeywordsReader.ut, KeywordName.TIME_OBS),
             buildStringS(f2ObsReader.readMode, KeywordName.READMODE),
             buildInt32S(f2ObsReader.nReads, KeywordName.NREADS)
           )
