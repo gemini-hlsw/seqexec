@@ -85,6 +85,8 @@ object GnirsControllerEpics {
     case Filter1.Y_MK        => "Y_MK"
     case Filter1.ND100X      => "ND100X"
     case Filter1.PupilViewer => "PupilViewer"
+    case Filter1.RightMask   => "RightMask"
+    case Filter1.LeftMask    => "LeftMask"
   }
 
   implicit val filter2Encoder: EncodeEpicsValue[Filter2Pos, String] = EncodeEpicsValue {

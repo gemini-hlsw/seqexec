@@ -68,6 +68,8 @@ object GnirsController {
     case object J_MK extends Filter1
     case object K_MK extends Filter1
     case object PupilViewer extends Filter1
+    case object RightMask extends Filter1
+    case object LeftMask extends Filter1
   }
 
   sealed trait Filter2Pos
