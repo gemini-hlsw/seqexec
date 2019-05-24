@@ -12,6 +12,7 @@ import gem.Observation
 import gem.enum.Site
 import scala.collection.immutable.SortedMap
 import seqexec.model.enum.Instrument
+import seqexec.model.enum.Resource
 import seqexec.model.enum.BatchExecState
 import seqexec.model.enum.QueueManipulationOp
 import seqexec.model.ClientId
@@ -406,7 +407,8 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries with Arb
         p <- arbitrary[Boolean]
         a <- arbitrary[TabSelected]
         l <- arbitrary[Boolean]
-      } yield AvailableTab(d, s, i, r, n, p, a, l)
+        o <- arbitrary[SortedMap[Resource, ResourceRunOperation]]
+      } yield AvailableTab(d, s, i, r, n, p, a, l, o)
     }
 
   implicit val availableTabCogen: Cogen[AvailableTab] =

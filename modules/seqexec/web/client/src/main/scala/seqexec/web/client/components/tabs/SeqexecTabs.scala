@@ -31,7 +31,7 @@ object SeqexecTabs {
         val tabsL = x().tabs.toList
         val runningInstruments = tabsL.collect {
           case Right(
-              AvailableTab(_, SequenceState.Running(_, _), i, _, _, false, _, _)) =>
+              AvailableTab(_, SequenceState.Running(_, _), i, _, _, false, _, _, _)) =>
             i
         }
         val tabs = tabsL

@@ -12,6 +12,7 @@ import monocle.Prism
 import monocle.macros.GenPrism
 import monocle.macros.Lenses
 import monocle.std.either._
+import scala.collection.immutable.SortedMap
 import seqexec.model.Observer
 import seqexec.model.StepId
 import seqexec.model.SequenceState
@@ -28,7 +29,8 @@ final case class AvailableTab(id:            Observation.Id,
                               nextStepToRun: Option[Int],
                               isPreview:     Boolean,
                               active:        TabSelected,
-                              loading:       Boolean)
+                              loading:       Boolean,
+                              resourceOperations: SortedMap[Resource, ResourceRunOperation])
 
 object AvailableTab {
   implicit val eq: Eq[AvailableTab] =
@@ -41,7 +43,8 @@ object AvailableTab {
          x.nextStepToRun,
          x.isPreview,
          x.active,
-         x.loading))
+         x.loading,
+         x.resourceOperations))
 }
 
 final case class CalibrationQueueTabActive(calibrationTab: CalibrationQueueTab,

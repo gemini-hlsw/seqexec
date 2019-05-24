@@ -209,4 +209,5 @@ object Icon {
 
   @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
   def apply(s: String, children: VdomNode*): Icon = Icon(Props(s), children)
+
 }

@@ -13,7 +13,8 @@ import seqexec.web.client.model._
 final case class TabFocus(
   canOperate:      Boolean,
   tabs:            NonEmptyList[Either[CalibrationQueueTabActive, AvailableTab]],
-  defaultObserver: Observer)
+  defaultObserver: Observer
+)
 
 object TabFocus {
   implicit val eq: Eq[TabFocus] =

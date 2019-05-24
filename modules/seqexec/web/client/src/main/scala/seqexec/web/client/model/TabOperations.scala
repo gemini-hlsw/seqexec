@@ -163,6 +163,13 @@ object TabOperations {
       case r                  => r
     })
 
+  // Set the resource operations in the map to idle.
+  def clearCommonResourceCompleted(re: Resource): TabOperations => TabOperations =
+    TabOperations.resourceRunRequested.modify(_.map {
+      case (r, s) if re === r && s === ResourceRunOperation.ResourceRunCompleted => r -> ResourceRunOperation.ResourceRunIdle
+      case r                                                                     => r
+    })
+
   val Default: TabOperations =
     TabOperations(
       RunOperation.RunIdle,

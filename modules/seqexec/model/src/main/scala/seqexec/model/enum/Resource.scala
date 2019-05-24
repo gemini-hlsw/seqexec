@@ -9,7 +9,9 @@ import cats.implicits._
 
 /** A Seqexec resource represents any system that can be only used by one single agent. */
 sealed abstract class Resource(val ordinal: Int, val label: String)
-  extends Product with Serializable
+  extends Product with Serializable {
+  def isInstrument: Boolean = false
+}
 
 object Resource {
 
@@ -34,10 +36,13 @@ object Resource {
   implicit val ordering: Ordering[Resource] =
     order.toOrdering
 
+  val common: List[Resource] = List(TCS, Gcal)
 }
 
 sealed abstract class Instrument(ordinal: Int, label: String)
-  extends Resource(ordinal, label)
+  extends Resource(ordinal, label) {
+  override def isInstrument: Boolean = true
+}
 
 object Instrument {
 
