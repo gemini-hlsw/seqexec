@@ -15,6 +15,7 @@ import edu.gemini.spModel.seqcomp.SeqConfigNames.{INSTRUMENT_KEY, OBSERVE_KEY}
 import java.lang.{Double => JDouble, Integer => JInt}
 
 import gem.enum.LightSinkName
+import gem.syntax.string._
 import seqexec.model.enum.Instrument
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.ConfigUtilOps._
@@ -108,11 +109,12 @@ object Gnirs {
     camera  <- config.extractAs[Camera](INSTRUMENT_KEY / CAMERA_PROP)
     decker  <- getDecker(config, slit, woll, xdisp)
     wavel   <- config.extractAs[Wavelength](INSTRUMENT_KEY / CENTRAL_WAVELENGTH_PROP).map(_.doubleValue().nanometers)
+    focus   <- getFocus(config)
     filter  <- config.extractAs[Filter](INSTRUMENT_KEY / FILTER_PROP).optionalKey
     hartm   <- config.extractAs[HartmannMask](INSTRUMENT_KEY / HARTMANN_MASK_PROP).optionalKey
     filter1 <- getFilter1(filter, hartm, slit, decker)
     filter2 = getFilter2(filter, xdisp)
-  } yield Other(mode, camera, decker, filter1, filter2, wavel, slitOp) )
+  } yield Other(mode, camera, decker, filter1, filter2, focus, wavel, slitOp) )
     .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
 
   private def getCCMode(config: Config, xdispersed: CrossDispersed, woll: WollastonPrism)
@@ -168,7 +170,8 @@ object Gnirs {
       (h, f) match {
         case (None, _)               => f.asRight
         case (Some(x), Filter1.Open) => x.asRight
-        case (Some(x), _)            => ConfigUtilOps.ContentError(s"Cannot use filter $f and Hartmann mask $x at the same time").asLeft
+        case (Some(x), _)            => ContentError(s"Cannot use filter $f and Hartmann mask $x at the same time")
+          .asLeft
       }
     }
 
@@ -206,5 +209,12 @@ object Gnirs {
     case SlitWidth.PUPIL_VIEWER => GnirsController.SlitWidth.PupilViewer.some
     case _                      => None
   }
+
+  private def getFocus(config: Config): Either[ExtractFailure, GnirsController.Focus] =
+    config.extractInstAs[Focus](FOCUS_PROP).flatMap{ v =>
+      if (v.toString === FocusSuggestion.BEST_FOCUS.displayValue) GnirsController.Focus.Best.asRight
+      else v.toString.parseIntOption.map(GnirsController.Focus.Manual(_).asRight)
+        .getOrElse(ContentError(s"Invalid value for focus ($v)").asLeft)
+    }
 
 }

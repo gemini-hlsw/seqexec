@@ -196,19 +196,22 @@ object GnirsControllerEpics {
 
   private def setOtherCCParams(config: Other): List[SeqAction[Unit]] = {
     val open = "Open"
-    val focus = "best focus"
+    val bestFocus = "best focus"
     val wavelengthTolerance = 0.0001
-    val refocusParams = setAcquisitionMirror(config.mode) ++
+    val params = setAcquisitionMirror(config.mode) ++
       smartSetParam(encode(config.filter1), epicsSys.filter1.map(removePartName), ccCmd.setFilter1(encode(config.filter1))) ++
       setFilter2(config.filter2, config.wavel) ++
       setSpectrographyComponents(config.mode, config.camera) ++
       smartSetParam(encode(config.camera), epicsSys.camera.map(removePartName), ccCmd.setCamera(encode(config.camera)))
-    // Force focus configuration if any of the above is set
-    val focusSet = if (refocusParams.nonEmpty) List(ccCmd.setFocusBest(focus)) else Nil
+
+    val focusParam = config.focus match {
+      case Focus.Best => List(ccCmd.setFocusBest(bestFocus))
+      case Focus.Manual(v) => smartSetParam(v, epicsSys.focusEng, ccCmd.setFocus(v))
+    }
 
     smartSetParam(open, epicsSys.cover.map(removePartName), ccCmd.setCover(open)) ++
-      refocusParams ++
-      focusSet ++
+      params ++
+      focusParam ++
       config.slitWidth.map(sl => smartSetParam(encode(sl), epicsSys.slitWidth.map(removePartName), ccCmd.setSlitWidth(encode(sl)))).getOrElse(Nil) ++
       smartSetParam(encode(config.decker), epicsSys.decker.map(removePartName), ccCmd.setDecker(encode(config.decker))) ++
       smartSetDoubleParam(wavelengthTolerance)(encode(config.wavel), epicsSys.centralWavelength, ccCmd.setCentralWavelength(encode(config.wavel)))
