@@ -52,6 +52,16 @@ object PauseOperation {
 
 }
 
+sealed trait CancelPauseOperation extends Product with Serializable
+object CancelPauseOperation {
+  case object CancelPauseInFlight extends CancelPauseOperation
+  case object CancelPauseIdle extends CancelPauseOperation
+
+  implicit val eq: Eq[CancelPauseOperation] =
+    Eq.fromUniversalEquals
+
+}
+
 sealed trait ResumeOperation extends Product with Serializable
 object ResumeOperation {
   case object ResumeInFlight extends ResumeOperation
@@ -101,6 +111,7 @@ final case class TabOperations(
   runRequested:         RunOperation,
   syncRequested:        SyncOperation,
   pauseRequested:       PauseOperation,
+  cancelPauseRequested: CancelPauseOperation,
   resumeRequested:      ResumeOperation,
   stopRequested:        StopOperation,
   abortRequested:       AbortOperation,
@@ -113,6 +124,7 @@ final case class TabOperations(
 
   val stepRequestInFlight: Boolean =
     pauseRequested === PauseOperation.PauseInFlight ||
+      cancelPauseRequested === CancelPauseOperation.CancelPauseInFlight ||
       resumeRequested === ResumeOperation.ResumeInFlight ||
       stopRequested === StopOperation.StopInFlight ||
       abortRequested === AbortOperation.AbortInFlight ||
@@ -127,6 +139,7 @@ object TabOperations {
         (x.runRequested,
          x.syncRequested,
          x.pauseRequested,
+         x.cancelPauseRequested,
          x.resumeRequested,
          x.stopRequested,
          x.abortRequested,
@@ -155,6 +168,7 @@ object TabOperations {
       RunOperation.RunIdle,
       SyncOperation.SyncIdle,
       PauseOperation.PauseIdle,
+      CancelPauseOperation.CancelPauseIdle,
       ResumeOperation.ResumeIdle,
       StopOperation.StopIdle,
       AbortOperation.AbortIdle,

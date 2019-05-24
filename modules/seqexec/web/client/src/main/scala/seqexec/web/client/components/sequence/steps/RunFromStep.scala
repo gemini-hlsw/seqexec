@@ -24,9 +24,10 @@ import web.client.style._
   * Contains the control to start a step from an arbitrary point
   */
 object RunFromStep {
-  final case class Props(id:      Observation.Id,
-                         stepId:  Int,
-                         runFrom: StartFromOperation)
+  final case class Props(id:               Observation.Id,
+                         stepId:           Int,
+                         resourceInFlight: Boolean,
+                         runFrom:          StartFromOperation)
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
@@ -46,7 +47,8 @@ object RunFromStep {
               icon     = Some(IconPlay),
               color    = Some("blue"),
               onClick  = requestRunFrom(p.id, p.stepId),
-              disabled = p.runFrom === StartFromOperation.StartFromInFlight)
+              disabled = p.resourceInFlight || p.runFrom === StartFromOperation.StartFromInFlight
+            )
           )
         )
       )

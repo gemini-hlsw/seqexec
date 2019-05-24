@@ -161,6 +161,7 @@ object StepProgressCell {
       RunFromStep(
         RunFromStep.Props(props.obsId,
                           props.step.id,
+                          props.tabOperations.resourceInFlight,
                           props.tabOperations.startFromRequested))
         .when(props.step.canRunFrom),
       <.div(
