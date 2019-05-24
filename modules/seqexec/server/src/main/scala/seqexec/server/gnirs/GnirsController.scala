@@ -68,6 +68,8 @@ object GnirsController {
     case object J_MK extends Filter1
     case object K_MK extends Filter1
     case object PupilViewer extends Filter1
+    case object RightMask extends Filter1
+    case object LeftMask extends Filter1
   }
 
   sealed trait Filter2Pos
@@ -87,6 +89,12 @@ object GnirsController {
   sealed trait Filter2
   case object Auto extends Filter2
   final case class Manual(f: Filter2Pos) extends Filter2
+
+  sealed trait Focus
+  object Focus {
+    case object Best extends Focus
+    final case class Manual(v: Int) extends Focus
+  }
 
   type ReadMode = edu.gemini.spModel.gemini.gnirs.GNIRSParams.ReadMode
 
@@ -126,6 +134,7 @@ object GnirsController {
                          decker: Decker,
                          filter1: Filter1,
                          filter2: Filter2,
+                         focus: Focus,
                          wavel: Wavelength,
                          slitWidth: Option[SlitWidth]
                         ) extends CCConfig
