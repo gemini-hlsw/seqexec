@@ -59,7 +59,7 @@ object SequenceControl {
       cancelPauseRequested === CancelPauseOperation.CancelPauseIdle
 
     val canSync: Boolean =
-      p.canOperate && syncIdle && runIdle && !resourceInFlight
+      p.canOperate && syncIdle && runIdle
     val canRun: Boolean =
       p.canOperate && runIdle && syncIdle && !resourceInFlight
     val canPause: Boolean = p.canOperate && pauseIdle
