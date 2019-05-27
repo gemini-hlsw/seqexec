@@ -207,6 +207,16 @@ package keywords {
         val default: String = StrDefault
       }
 
+    val TrueDefaultValue: DefaultHeaderValue[Boolean] =
+      new DefaultHeaderValue[Boolean] {
+        val default: Boolean = true
+      }
+
+    val FalseDefaultValue: DefaultHeaderValue[Boolean] =
+      new DefaultHeaderValue[Boolean] {
+        val default: Boolean = false
+      }
+
     /**
      * @typeclass Functor
      */
@@ -235,6 +245,7 @@ package object keywords {
   def doubleDefault[F[_]: Applicative]: F[Double] = DoubleDefault.pure[F]
   def strDefault[F[_]: Applicative]: F[String]    = StrDefault.pure[F]
   def boolDefault[F[_]: Applicative]: F[Boolean]  = BooleanDefault.pure[F]
+  def listDefault[F[_]: Applicative, A]: F[List[A]]  = List.empty[A].pure[F]
 
   def internalKeywordConvert[_](k: Keyword[_]): InternalKeyword =
     InternalKeyword(k.n, k.t, s"${k.v}")
