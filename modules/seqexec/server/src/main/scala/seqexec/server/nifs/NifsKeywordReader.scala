@@ -3,7 +3,9 @@
 
 package seqexec.server.nifs
 
-import cats.effect.IO
+import cats.Applicative
+import cats.effect.Sync
+import cats.effect.LiftIO
 import cats.implicits._
 import seqexec.server.keywords._
 
@@ -26,23 +28,25 @@ trait NifsKeywordReader[F[_]] {
   def windowCover       : F[String]
 }
 
-object NifsKeywordReaderDummy extends NifsKeywordReader[IO] {
-  override def aperture: IO[String]          = IO.pure(StrDefault)
-  override def biasPwr: IO[Double]           = IO.pure(DoubleDefault)
-  override def centralWavelength: IO[Double] = IO.pure(DoubleDefault)
-  override def coadds: IO[Int]               = IO.pure(IntDefault)
-  override def dcName: IO[String]            = IO.pure(StrDefault)
-  override def exposureTime: IO[Double]      = IO.pure(DoubleDefault)
-  override def exposureMode: IO[String]      = IO.pure(StrDefault)
-  override def filter: IO[String]            = IO.pure(StrDefault)
-  override def grating: IO[String]           = IO.pure(StrDefault)
-  override def imagingMirror: IO[String]     = IO.pure(StrDefault)
-  override def maskOffset: IO[Double]        = IO.pure(DoubleDefault)
-  override def numberOfFowSamples: IO[Int]   = IO.pure(IntDefault)
-  override def numberOfPeriods: IO[Int]      = IO.pure(IntDefault)
-  override def period: IO[Double]            = IO.pure(DoubleDefault)
-  override def readTime: IO[Double]          = IO.pure(DoubleDefault)
-  override def windowCover: IO[String]       = IO.pure(StrDefault)
+object NifsKeywordReaderDummy {
+  def apply[F[_]: Applicative]: NifsKeywordReader[F] = new NifsKeywordReader[F] {
+    override def aperture: F[String]          = strDefault[F]
+    override def biasPwr: F[Double]           = doubleDefault[F]
+    override def centralWavelength: F[Double] = doubleDefault[F]
+    override def coadds: F[Int]               = intDefault[F]
+    override def dcName: F[String]            = strDefault[F]
+    override def exposureTime: F[Double]      = doubleDefault[F]
+    override def exposureMode: F[String]      = strDefault[F]
+    override def filter: F[String]            = strDefault[F]
+    override def grating: F[String]           = strDefault[F]
+    override def imagingMirror: F[String]     = strDefault[F]
+    override def maskOffset: F[Double]        = doubleDefault[F]
+    override def numberOfFowSamples: F[Int]   = intDefault[F]
+    override def numberOfPeriods: F[Int]      = intDefault[F]
+    override def period: F[Double]            = doubleDefault[F]
+    override def readTime: F[Double]          = doubleDefault[F]
+    override def windowCover: F[String]       = strDefault[F]
+  }
 }
 
 trait NifsKeywordReaderLUT {
@@ -85,52 +89,52 @@ trait NifsKeywordReaderLUT {
     )
 }
 
-object NifsKeywordReaderImpl
-    extends NifsKeywordReader[IO]
-    with NifsKeywordReaderLUT {
-  val sys = NifsEpics.instance
-  override def aperture: IO[String] =
-    sys.mask
-      .map(_ === Invalid)
-      .ifM(sys.lastSelectedMask, sys.mask)
-      .map(_.flatMap(MaskKeywordLUT.get))
-      .safeValOrDefault
+object NifsKeywordReaderEpics extends NifsKeywordReaderLUT {
+  def apply[F[_]: Sync: LiftIO]: NifsKeywordReader[F] = new NifsKeywordReader[F] {
+    val sys = NifsEpics.instance
+    override def aperture: F[String] =
+      sys.mask
+        .map(_ === Invalid)
+        .ifM(sys.lastSelectedMask, sys.mask)
+        .map(_.flatMap(MaskKeywordLUT.get))
+        .safeValOrDefault.to[F]
 
-  override def biasPwr: IO[Double] = sys.biasPwr.safeValOrDefault
+    override def biasPwr: F[Double] = sys.biasPwr.safeValOrDefault.to[F]
 
-  override def centralWavelength: IO[Double] =
-    sys.centralWavelength.safeValOrDefault
+    override def centralWavelength: F[Double] =
+      sys.centralWavelength.safeValOrDefault.to[F]
 
-  override def coadds: IO[Int]          = sys.coadds.safeValOrDefault
+    override def coadds: F[Int]          = sys.coadds.safeValOrDefault.to[F]
 
-  override def dcName: IO[String]       = sys.dcName.safeValOrDefault
+    override def dcName: F[String]       = sys.dcName.safeValOrDefault.to[F]
 
-  override def exposureTime: IO[Double] = sys.exposureTime.safeValOrDefault
+    override def exposureTime: F[Double] = sys.exposureTime.safeValOrDefault.to[F]
 
-  override def exposureMode: IO[String] = sys.exposureMode.safeValOrDefault
+    override def exposureMode: F[String] = sys.exposureMode.safeValOrDefault.to[F]
 
-  override def filter: IO[String] =
-    sys.filter.map(_.flatMap(FilterKeywordLUT.get)).safeValOrDefault
+    override def filter: F[String] =
+      sys.filter.map(_.flatMap(FilterKeywordLUT.get)).safeValOrDefault.to[F]
 
-  override def grating: IO[String] =
-    sys.disperser
-      .map(_ === Invalid)
-      .ifM(sys.lastSelectedDisperser, sys.disperser)
-      .map(_.flatMap(DisperserKeywordLUT.get))
-      .safeValOrDefault
+    override def grating: F[String] =
+      sys.disperser
+        .map(_ === Invalid)
+        .ifM(sys.lastSelectedDisperser, sys.disperser)
+        .map(_.flatMap(DisperserKeywordLUT.get))
+        .safeValOrDefault.to[F]
 
-  override def imagingMirror: IO[String] = sys.imagingMirror.safeValOrDefault
+    override def imagingMirror: F[String] = sys.imagingMirror.safeValOrDefault.to[F]
 
-  override def maskOffset: IO[Double]    = sys.maskOffset.safeValOrDefault
+    override def maskOffset: F[Double]    = sys.maskOffset.safeValOrDefault.to[F]
 
-  override def numberOfFowSamples: IO[Int] =
-    sys.numberOfFowSamples.safeValOrDefault
+    override def numberOfFowSamples: F[Int] =
+      sys.numberOfFowSamples.safeValOrDefault.to[F]
 
-  override def numberOfPeriods: IO[Int] = sys.numberOfPeriods.safeValOrDefault
+    override def numberOfPeriods: F[Int] = sys.numberOfPeriods.safeValOrDefault.to[F]
 
-  override def period: IO[Double]       = sys.period.safeValOrDefault
+    override def period: F[Double]       = sys.period.safeValOrDefault.to[F]
 
-  override def readTime: IO[Double]     = sys.readTime.safeValOrDefault
+    override def readTime: F[Double]     = sys.readTime.safeValOrDefault.to[F]
 
-  override def windowCover: IO[String]  = sys.windowCover.safeValOrDefault
+    override def windowCover: F[String]  = sys.windowCover.safeValOrDefault.to[F]
+  }
 }
