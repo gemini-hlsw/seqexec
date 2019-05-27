@@ -23,7 +23,7 @@ object GsaoiHeader extends GsaoiLUT {
         id,
         inst,
         List(
-          buildInt32S(tcsKeywordsReader.getGsaoiInstPort, KeywordName.INPORT),
+          buildInt32S(tcsKeywordsReader.gsaoiInstPort, KeywordName.INPORT),
           buildStringS(instReader.upperFilter, KeywordName.FILTER1),
           buildInt32S(instReader.upperFilterEngPos, KeywordName.FILT1POS),
           buildStringS(instReader.upperFilterHealth, KeywordName.FILT1CAR),
@@ -41,7 +41,7 @@ object GsaoiHeader extends GsaoiLUT {
           buildDoubleS(instReader.detectorHousingTemperature, KeywordName.DETHTEMP),
           buildDoubleS(instReader.dewarPressure, KeywordName.DEWPRES),
           buildStringS(instReader.dateObs, KeywordName.DATE_OBS),
-          buildStringS(tcsKeywordsReader.getUT, KeywordName.TIME_OBS),
+          buildStringS(tcsKeywordsReader.ut, KeywordName.TIME_OBS),
           buildDoubleS(instReader.mjdobs, KeywordName.GSAOI_MJD_OBS),
           buildStringS(instReader.readMode, KeywordName.SAMPMODE),
           buildStringS(instReader.expositionMode, KeywordName.EXPMODE),

@@ -24,14 +24,14 @@ object NifsHeader {
   ): Header[F] = new Header[F] {
     override def sendBefore(obsId: Observation.Id, id: ImageFileId): F[Unit] = {
       // position angle in radians
-      val φ = tcsKeywordsReader.getInstrumentPA.map(toRadians)
+      val φ = tcsKeywordsReader.instrumentPA.map(toRadians)
       sendKeywords(
         id,
         inst,
         List(
           buildStringS(instReader.grating, KeywordName.GRATING),
           buildStringS(instReader.aperture, KeywordName.APERTURE),
-          buildInt32S(tcsKeywordsReader.getNifsInstPort, KeywordName.INPORT),
+          buildInt32S(tcsKeywordsReader.nifsInstPort, KeywordName.INPORT),
           buildStringS(instReader.filter, KeywordName.FILTER),
           buildStringS(instReader.windowCover, KeywordName.WINDCOVR),
           buildDoubleS(instReader.maskOffset, KeywordName.APOFFSET),
@@ -47,14 +47,14 @@ object NifsHeader {
           buildDoubleS(instReader.biasPwr, KeywordName.BIASPWR),
           buildInt32S(instReader.numberOfFowSamples, KeywordName.LNRS),
           buildStringS("IFU".pure[F], KeywordName.OBSMODE),
-          buildStringS(tcsKeywordsReader.getDate, KeywordName.DATE_OBS),
+          buildStringS(tcsKeywordsReader.date, KeywordName.DATE_OBS),
           // Approximate WCS
           buildStringS("RA---TAN".pure[F], KeywordName.CTYPE1),
           buildDoubleS(15.0.pure[F], KeywordName.CRPIX1),
-          buildDoubleS(tcsKeywordsReader.getSourceATarget.getRA, KeywordName.CRVAL1),
+          buildDoubleS(tcsKeywordsReader.sourceATarget.ra, KeywordName.CRVAL1),
           buildStringS("DEC--TAN".pure[F], KeywordName.CTYPE2),
           buildDoubleS(34.0.pure[F], KeywordName.CRPIX2),
-          buildDoubleS(tcsKeywordsReader.getSourceATarget.getDec, KeywordName.CRVAL2),
+          buildDoubleS(tcsKeywordsReader.sourceATarget.dec, KeywordName.CRVAL2),
           buildDoubleS(φ.map(φ => -4.7e-5 * sin(φ)), KeywordName.CD1_1),
           buildDoubleS(φ.map(φ =>  1.9e-5 * cos(φ)), KeywordName.CD1_2),
           buildDoubleS(φ.map(φ => -4.7e-5 * cos(φ)), KeywordName.CD2_1),

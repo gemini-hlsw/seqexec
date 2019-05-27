@@ -4,6 +4,7 @@
 package seqexec.server.tcs
 
 import cats.effect.{IO, Sync}
+import cats.effect.LiftIO
 import cats.implicits._
 import squants.Angle
 import edu.gemini.epics.acm._
@@ -488,7 +489,7 @@ final class TcsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, Stri
 
     override def equinox: F[Option[String]] = safeAttribute(tcsState.getStringAttribute("sourceAEquinox"))
 
-    override def radialVelocity:F[Option[Double]] = safeAttributeSDouble(tcsState.getDoubleAttribute("radvel"))
+    override def radialVelocity: F[Option[Double]] = safeAttributeSDouble(tcsState.getDoubleAttribute("radvel"))
 
     override def frame: F[Option[String]] = safeAttribute(tcsState.getStringAttribute("frame"))
 
@@ -651,15 +652,15 @@ object TcsEpics extends EpicsSystem[TcsEpics[IO]] {
   }
 
   class ProbeGuideConfig[F[_]: Sync](protected val prefix: String, protected val tcsState: CaStatusAcceptor) {
-    def nodachopa: F[Option[String]] = safeAttribute(tcsState.getStringAttribute(prefix+"nodachopa"))
-    def nodachopb: F[Option[String]] = safeAttribute(tcsState.getStringAttribute(prefix+"nodachopb"))
-    def nodachopc: F[Option[String]] = safeAttribute(tcsState.getStringAttribute(prefix+"nodachopc"))
-    def nodbchopa: F[Option[String]] = safeAttribute(tcsState.getStringAttribute(prefix+"nodbchopa"))
-    def nodbchopb: F[Option[String]] = safeAttribute(tcsState.getStringAttribute(prefix+"nodbchopb"))
-    def nodbchopc: F[Option[String]] = safeAttribute(tcsState.getStringAttribute(prefix+"nodbchopc"))
-    def nodcchopa: F[Option[String]] = safeAttribute(tcsState.getStringAttribute(prefix+"nodcchopa"))
-    def nodcchopb: F[Option[String]] = safeAttribute(tcsState.getStringAttribute(prefix+"nodcchopb"))
-    def nodcchopc: F[Option[String]] = safeAttribute(tcsState.getStringAttribute(prefix+"nodcchopc"))
+    def nodachopa: F[Option[String]] = safeAttribute(tcsState.getStringAttribute(prefix + "nodachopa"))
+    def nodachopb: F[Option[String]] = safeAttribute(tcsState.getStringAttribute(prefix + "nodachopb"))
+    def nodachopc: F[Option[String]] = safeAttribute(tcsState.getStringAttribute(prefix + "nodachopc"))
+    def nodbchopa: F[Option[String]] = safeAttribute(tcsState.getStringAttribute(prefix + "nodbchopa"))
+    def nodbchopb: F[Option[String]] = safeAttribute(tcsState.getStringAttribute(prefix + "nodbchopb"))
+    def nodbchopc: F[Option[String]] = safeAttribute(tcsState.getStringAttribute(prefix + "nodbchopc"))
+    def nodcchopa: F[Option[String]] = safeAttribute(tcsState.getStringAttribute(prefix + "nodcchopa"))
+    def nodcchopb: F[Option[String]] = safeAttribute(tcsState.getStringAttribute(prefix + "nodcchopb"))
+    def nodcchopc: F[Option[String]] = safeAttribute(tcsState.getStringAttribute(prefix + "nodcchopc"))
   }
 
   sealed trait Target[F[_]] {
@@ -674,6 +675,23 @@ object TcsEpics extends EpicsSystem[TcsEpics[IO]] {
     def centralWavelenght: F[Option[Double]]
     def parallax: F[Option[Double]]
     def radialVelocity: F[Option[Double]]
+  }
+
+  // TODO: Delete me after fully moved to tagless
+  implicit class TargetIOOps(val tio: Target[IO]) extends AnyVal{
+    def to[F[_]: LiftIO]: Target[F] = new Target[F] {
+      def objectName: F[Option[String]] = tio.objectName.to[F]
+      def ra: F[Option[Double]] = tio.ra.to[F]
+      def dec: F[Option[Double]] = tio.dec.to[F]
+      def frame: F[Option[String]] = tio.frame.to[F]
+      def equinox: F[Option[String]] = tio.equinox.to[F]
+      def epoch: F[Option[String]] = tio.epoch.to[F]
+      def properMotionRA: F[Option[Double]] = tio.properMotionRA.to[F]
+      def properMotionDec: F[Option[Double]] = tio.properMotionDec.to[F]
+      def centralWavelenght: F[Option[Double]] = tio.centralWavelenght.to[F]
+      def parallax: F[Option[Double]] = tio.parallax.to[F]
+      def radialVelocity: F[Option[Double]] = tio.radialVelocity.to[F]
+    }
   }
 
 }

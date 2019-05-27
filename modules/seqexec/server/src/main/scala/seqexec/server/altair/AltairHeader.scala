@@ -32,7 +32,7 @@ object AltairHeader {
             buildDoubleS(altairReader.aowfsz, KeywordName.AOWFSZ),
             buildDoubleS(altairReader.aogain, KeywordName.AOGAIN),
             buildStringS(altairReader.aoncpa, KeywordName.AONCPAF),
-            buildStringS(tcsKeywordsReader.getCRFollow.map(
+            buildStringS(tcsKeywordsReader.crFollow.map(
                            _.map(CRFollow.keywordValue).getOrElse("INDEF")),
                          KeywordName.CRFOLLOW),
             buildStringS(altairReader.ngndfilt, KeywordName.AONDFILT),

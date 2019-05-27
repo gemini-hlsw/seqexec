@@ -501,7 +501,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
   private def calcInstHeader(config: Config, inst: Instrument)(
     implicit tio: Timer[IO]
   ): TrySeq[Header[IO]] = {
-    val tcsKReader = if (settings.tcsKeywords) TcsKeywordsReaderImpl else DummyTcsKeywordsReader
+    val tcsKReader = if (settings.tcsKeywords) TcsKeywordsReaderEpics[IO] else DummyTcsKeywordsReader[IO]
     inst match {
       case Instrument.F2     =>
         toInstrumentSys(inst).map(Flamingos2Header.header(_, Flamingos2Header.ObsKeywordsReaderODB(config), tcsKReader))
@@ -531,13 +531,13 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
     }
   }
 
-  private def commonHeaders(config: Config, tcsSubsystems: List[TcsController.Subsystem],
-                            inst: InstrumentSystem[IO])(ctx: HeaderExtraData): Header[IO] =
+  private def commonHeaders[F[_]: Sync: LiftIO](config: Config, tcsSubsystems: List[TcsController.Subsystem],
+                            inst: InstrumentSystem[F])(ctx: HeaderExtraData): Header[F] =
     new StandardHeader(
       inst,
       ObsKeywordReaderImpl(config, site),
-      if (settings.tcsKeywords) TcsKeywordsReaderImpl else DummyTcsKeywordsReader,
-      StateKeywordsReader[IO](ctx.conditions, ctx.operator, ctx.observer),
+      if (settings.tcsKeywords) TcsKeywordsReaderEpics[F] else DummyTcsKeywordsReader[F],
+      StateKeywordsReader[F](ctx.conditions, ctx.operator, ctx.observer),
       tcsSubsystems
     )
 
@@ -569,7 +569,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
           List(commonHeaders(config, allButGaos.toList, i)(ctx), gwsHeaders(i), h)))
       }
     case AltairObs(inst) =>
-      val tcsKReader = if (settings.tcsKeywords) TcsKeywordsReaderImpl else DummyTcsKeywordsReader
+      val tcsKReader = if (settings.tcsKeywords) TcsKeywordsReaderEpics[IO] else DummyTcsKeywordsReader[IO]
       for {
         gst  <- Altair.guideStarType(config)
         is   <- toInstrumentSys(inst)
@@ -656,17 +656,17 @@ object SeqTranslate {
     def toResult: Result = r.fold(e => Result.Error(SeqexecFailure.explain(e)), identity)
   }
 
-  implicit class ConfigResultToResult[A <: Result.PartialVal](val r: Either[SeqexecFailure, ConfigResult[IO]]) extends AnyVal {
+  implicit class ConfigResultToResult[F[_], A <: Result.PartialVal](val r: Either[SeqexecFailure, ConfigResult[F]]) extends AnyVal {
     def toResult: Result = r.fold(e => Result.Error(SeqexecFailure.explain(e)), r => Result.OK(
       Response.Configured(r.sys.resource)))
   }
 
-  implicit class ActionResponseToAction[A <: Response](val x: SeqAction[A]) extends AnyVal {
-    def toAction(kind: ActionType): Action[IO] = fromF[IO](kind, x.value.map(_.toResult))
+  implicit class ActionResponseToAction[F[_]: Functor, A <: Response](val x: SeqActionF[F, A]) {
+    def toAction(kind: ActionType): Action[F] = fromF[F](kind, x.value.map(_.toResult))
   }
 
-  implicit class ConfigResultToAction(val x: SeqAction[ConfigResult[IO]]) extends AnyVal {
-    def toAction(kind: ActionType): Action[IO] = fromF[IO](kind, x.value.map(_.toResult))
+  implicit class ConfigResultToAction[F[_]: Functor](val x: SeqActionF[F, ConfigResult[F]]) {
+    def toAction(kind: ActionType): Action[F] = fromF[F](kind, x.value.map(_.toResult))
   }
 
   final case class ObserveContext(t: ObserveCommand.Result => SeqAction[Result], expTime: Time) extends Result.PauseContext
