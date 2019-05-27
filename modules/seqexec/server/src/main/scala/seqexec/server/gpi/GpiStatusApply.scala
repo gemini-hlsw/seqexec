@@ -40,7 +40,7 @@ object GpiStatusApply extends GpiLookupTables {
     * falsely not set the obs mode
     */
   def overrideObsMode[F[_]: Sync](db:        GiapiStatusDb[F],
-                                  gpiConfig: GpiConfig,
+                                  gpiConfig: RegularGpiConfig,
                                   config:    Configuration): F[Configuration] =
     gpiConfig.mode match {
       case Right(_) => config.pure[F]

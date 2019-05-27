@@ -44,6 +44,8 @@ sealed trait GpiClient[F[_]] extends GiapiClient[F] {
 
 
 object GpiClient {
+  val ALIGN_AND_CALIB_DEFAULT_MODE: Int = 4
+
   /**
     * Client for GPI
     */
@@ -51,8 +53,6 @@ object GpiClient {
                                           val statusDb:       GiapiStatusDb[F])
       extends GpiClient[F] {
     import GiapiClient.DefaultCommandTimeout
-
-    private val ALIGN_AND_CALIB_DEFAULT_MODE: Int = 4
 
     ///////////////
     // Status items

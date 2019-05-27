@@ -155,7 +155,6 @@ package object server {
     Eq[Int].contramap(_.ordinal())
 
   type TrySeq[A]                 = Either[SeqexecFailure, A]
-  type ApplicativeErrorSeq[F[_]] = ApplicativeError[F, SeqexecFailure]
 
   object TrySeq {
     def apply[A](a: A): TrySeq[A]              = Either.right(a)
@@ -225,11 +224,6 @@ package object server {
   implicit class StreamIOOps[A](s: Stream[IO, A]) {
     def streamLiftIO[F[_]: LiftIO]: fs2.Stream[F, A] =
       s.translate(λ[IO ~> F](_.to))
-  }
-
-  implicit class MoreDisjunctionOps[A, B](ab: Either[A, B]) {
-    def validationNel: ValidatedNel[A, B] =
-      ab.fold(a => Validated.Invalid(NonEmptyList.of(a)), b => Validated.Valid(b))
   }
 
   implicit class EitherTFailureOps[F[_]: MonadError[?[_], Throwable], A](s: EitherT[F, SeqexecFailure, A]) {

@@ -76,7 +76,9 @@ object NonStandardModeParams extends GpiConfigEq {
   implicit val show: Show[NonStandardModeParams] = Show.fromToString
 }
 
-final case class GpiConfig(
+sealed trait GpiConfig extends Product with Serializable
+
+final case class RegularGpiConfig(
   adc:            LegacyAdc,
   expTime:        Duration,
   coAdds:         Int,
@@ -86,10 +88,10 @@ final case class GpiConfig(
   shutters:       Shutters,
   asu:            ArtificialSources,
   pc:             LegacyPupilCamera,
-  aoFlags:        AOFlags)
+  aoFlags:        AOFlags) extends GpiConfig
 
-object GpiConfig extends GpiConfigEq {
-  implicit val eq: Eq[GpiConfig] = Eq.by(
+object RegularGpiConfig extends GpiConfigEq {
+  implicit val eq: Eq[RegularGpiConfig] = Eq.by(
     x =>
       (x.adc,
        x.expTime,
@@ -101,6 +103,14 @@ object GpiConfig extends GpiConfigEq {
        x.asu,
        x.pc,
        x.aoFlags))
+}
+
+case object AlignAndCalibConfig extends GpiConfig {
+  val config: Configuration =
+    Configuration.single("gpi:alignAndCalib.part1", GpiClient.ALIGN_AND_CALIB_DEFAULT_MODE)
+
+  override def toString: String = s"$config"
+
 }
 
 trait GpiController[F[_]] extends GiapiInstrumentController[F, GpiConfig] {
@@ -132,7 +142,7 @@ trait GpiConfigEq {
 object GpiController extends GpiLookupTables with GpiConfigEq {
   val logger: Logger = getLogger
 
-  private def obsModeConfiguration(config: GpiConfig): Configuration =
+  private def obsModeConfiguration(config: RegularGpiConfig): Configuration =
     config.mode.fold(
       m =>
         Configuration.single(GpiObservationMode.applyItem,
@@ -153,6 +163,12 @@ object GpiController extends GpiLookupTables with GpiConfigEq {
     )
 
   private def gpiConfiguration(config: GpiConfig): Configuration =
+    config match {
+      case r: RegularGpiConfig => regularGpiConfiguration(r)
+      case AlignAndCalibConfig => AlignAndCalibConfig.config
+    }
+
+  private def regularGpiConfiguration(config: RegularGpiConfig): Configuration =
     Configuration.single(GpiAdc.applyItem,
       (config.adc === LegacyAdc.IN)
         .fold(1, 0)) |+|
@@ -211,9 +227,9 @@ object GpiController extends GpiLookupTables with GpiConfigEq {
        else Configuration.Zero) |+|
       obsModeConfiguration(config)
 
-  private def computeConfig[F[_]: Sync](
+  private def computeRegularConfig[F[_]: Sync](
     client: GpiClient[F],
-    config: GpiConfig
+    config: RegularGpiConfig
   ): F[Configuration] =
     for {
       b <- Sync[F].delay(gpiConfiguration(config))
@@ -236,7 +252,10 @@ object GpiController extends GpiLookupTables with GpiConfigEq {
 
       // scalastyle:off
       override def configuration(config: GpiConfig): F[Configuration] =
-        computeConfig(client, config)
+        config match {
+          case c: RegularGpiConfig => computeRegularConfig(client, c)
+          case AlignAndCalibConfig => AlignAndCalibConfig.config.pure[F]
+        }
     }
 
 }
