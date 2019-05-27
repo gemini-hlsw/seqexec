@@ -30,7 +30,7 @@ final case class Tcs private (tcsController: TcsController,
                               subsystems: NonEmptySet[Subsystem],
                               gaos: Option[Either[Altair[IO], Gems[IO]]],
                               guideDb: GuideConfigDb[IO]
-                             )(config: Tcs.TcsSeqConfig) extends System[IO] {
+                            )(config: Tcs.TcsSeqConfig[IO]) extends System[IO] {
   import Tcs._
 
   override val resource: Resource = Resource.TCS
@@ -143,7 +143,7 @@ object Tcs {
   }
 
   @Lenses
-  final case class TcsSeqConfig(
+  final case class TcsSeqConfig[F[_]](
     guideWithP1: Option[StandardGuideOptions.Value],
     guideWithP2: Option[StandardGuideOptions.Value],
     guideWithOI: Option[StandardGuideOptions.Value],
@@ -151,7 +151,7 @@ object Tcs {
     offsetA: Option[InstrumentOffset],
     wavelA: Option[Wavelength],
     lightPath: LightPath,
-    instrument: InstrumentSystem[IO]
+    instrument: InstrumentSystem[F]
   )
 
   @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))

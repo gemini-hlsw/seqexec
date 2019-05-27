@@ -3,91 +3,99 @@
 
 package seqexec.server.gnirs
 
-import cats.effect.IO
-import seqexec.server.SeqAction
-import seqexec.server.SeqActionF
+import cats.Applicative
+import cats.effect.Sync
+import cats.effect.LiftIO
 import seqexec.server.keywords._
 
 trait GnirsKeywordReader[F[_]] {
-  def getArrayId: SeqActionF[F, String]
-  def getArrayType: SeqActionF[F, String]
-  def getDetectorBias: SeqActionF[F, Double]
-  def getFilter1: SeqActionF[F, String]
-  def getFilterWheel1Pos: SeqActionF[F, Int]
-  def getFilter2: SeqActionF[F, String]
-  def getFilterWheel2Pos: SeqActionF[F, Int]
-  def getCamera: SeqActionF[F, String]
-  def getCameraPos: SeqActionF[F, Int]
-  def getDecker: SeqActionF[F, String]
-  def getDeckerPos: SeqActionF[F, Int]
-  def getSlit: SeqActionF[F, String]
-  def getSlitPos: SeqActionF[F, Int]
-  def getPrism: SeqActionF[F, String]
-  def getPrismPos: SeqActionF[F, Int]
-  def getGrating: SeqActionF[F, String]
-  def getGratingPos: SeqActionF[F, Int]
-  def getGratingWavelength: SeqActionF[F, Double]
-  def getGratingOrder: SeqActionF[F, Int]
-  def getGratingTilt: SeqActionF[F, Double]
-  def getFocus: SeqActionF[F, String]
-  def getFocusPos: SeqActionF[F, Int]
-  def getAcquisitionMirror: SeqActionF[F, String]
-  def getWindowCover: SeqActionF[F, String]
-  def getObsEpoch: SeqActionF[F, Double]
+  def arrayId: F[String]
+  def arrayType: F[String]
+  def detectorBias: F[Double]
+  def filter1: F[String]
+  def filterWheel1Pos: F[Int]
+  def filter2: F[String]
+  def filterWheel2Pos: F[Int]
+  def camera: F[String]
+  def cameraPos: F[Int]
+  def decker: F[String]
+  def deckerPos: F[Int]
+  def slit: F[String]
+  def slitPos: F[Int]
+  def prism: F[String]
+  def prismPos: F[Int]
+  def grating: F[String]
+  def gratingPos: F[Int]
+  def gratingWavelength: F[Double]
+  def gratingOrder: F[Int]
+  def gratingTilt: F[Double]
+  def focus: F[String]
+  def focusPos: F[Int]
+  def acquisitionMirror: F[String]
+  def windowCover: F[String]
+  def obsEpoch: F[Double]
 }
 
-object GnirsKeywordReaderDummy extends GnirsKeywordReader[IO] {
-  override def getArrayId: SeqActionF[IO, String] = SeqAction(StrDefault)
-  override def getArrayType: SeqActionF[IO, String] = SeqAction(StrDefault)
-  override def getDetectorBias: SeqActionF[IO, Double] = SeqAction(DoubleDefault)
-  override def getFilter1: SeqActionF[IO, String] = SeqAction(StrDefault)
-  override def getFilterWheel1Pos: SeqActionF[IO, Int] = SeqAction(IntDefault)
-  override def getFilter2: SeqActionF[IO, String] = SeqAction(StrDefault)
-  override def getFilterWheel2Pos: SeqActionF[IO, Int] = SeqAction(IntDefault)
-  override def getCamera: SeqActionF[IO, String] = SeqAction(StrDefault)
-  override def getCameraPos: SeqActionF[IO, Int] = SeqAction(IntDefault)
-  override def getDecker: SeqActionF[IO, String] = SeqAction(StrDefault)
-  override def getDeckerPos: SeqActionF[IO, Int] = SeqAction(IntDefault)
-  override def getSlit: SeqActionF[IO, String] = SeqAction(StrDefault)
-  override def getSlitPos: SeqActionF[IO, Int] = SeqAction(IntDefault)
-  override def getPrism: SeqActionF[IO, String] = SeqAction(StrDefault)
-  override def getPrismPos: SeqActionF[IO, Int] = SeqAction(IntDefault)
-  override def getGrating: SeqActionF[IO, String] = SeqAction(StrDefault)
-  override def getGratingPos: SeqActionF[IO, Int] = SeqAction(IntDefault)
-  override def getGratingWavelength: SeqActionF[IO, Double] = SeqAction(DoubleDefault)
-  override def getGratingOrder: SeqActionF[IO, Int] = SeqAction(IntDefault)
-  override def getGratingTilt: SeqActionF[IO, Double] = SeqAction(DoubleDefault)
-  override def getFocus: SeqActionF[IO, String] = SeqAction(StrDefault)
-  override def getFocusPos: SeqActionF[IO, Int] = SeqAction(IntDefault)
-  override def getAcquisitionMirror: SeqActionF[IO, String] = SeqAction(StrDefault)
-  override def getWindowCover: SeqActionF[IO, String] = SeqAction(StrDefault)
-  override def getObsEpoch: SeqActionF[IO, Double] = SeqAction(DoubleDefault)
+object GnirsKeywordReaderDummy {
+  def apply[F[_]: Applicative]: GnirsKeywordReader[F] = new GnirsKeywordReader[F] {
+    override def arrayId: F[String] = strDefault[F]
+    override def arrayType: F[String] = strDefault[F]
+    override def detectorBias: F[Double] = doubleDefault[F]
+    override def filter1: F[String] = strDefault[F]
+    override def filterWheel1Pos: F[Int] = intDefault[F]
+    override def filter2: F[String] = strDefault[F]
+    override def filterWheel2Pos: F[Int] = intDefault[F]
+    override def camera: F[String] = strDefault[F]
+    override def cameraPos: F[Int] = intDefault[F]
+    override def decker: F[String] = strDefault[F]
+    override def deckerPos: F[Int] = intDefault[F]
+    override def slit: F[String] = strDefault[F]
+    override def slitPos: F[Int] = intDefault[F]
+    override def prism: F[String] = strDefault[F]
+    override def prismPos: F[Int] = intDefault[F]
+    override def grating: F[String] = strDefault[F]
+    override def gratingPos: F[Int] = intDefault[F]
+    override def gratingWavelength: F[Double] = doubleDefault[F]
+    override def gratingOrder: F[Int] = intDefault[F]
+    override def gratingTilt: F[Double] = doubleDefault[F]
+    override def focus: F[String] = strDefault[F]
+    override def focusPos: F[Int] = intDefault[F]
+    override def acquisitionMirror: F[String] = strDefault[F]
+    override def windowCover: F[String] = strDefault[F]
+    override def obsEpoch: F[Double] = doubleDefault[F]
+  }
 }
 
-object GnirsKeywordReaderImpl extends GnirsKeywordReader[IO] {
-  override def getArrayId: SeqActionF[IO, String] = GnirsEpics.instance.arrayId.toSeqActionDefault
-  override def getArrayType: SeqActionF[IO, String] = GnirsEpics.instance.arrayType.toSeqActionDefault
-  override def getDetectorBias: SeqActionF[IO, Double] = GnirsEpics.instance.detBias.toSeqActionDefault
-  override def getFilter1: SeqActionF[IO, String] = GnirsEpics.instance.filter1.toSeqActionDefault
-  override def getFilterWheel1Pos: SeqActionF[IO, Int] = GnirsEpics.instance.filter1Eng.toSeqActionDefault
-  override def getFilter2: SeqActionF[IO, String] = GnirsEpics.instance.filter2.toSeqActionDefault
-  override def getFilterWheel2Pos: SeqActionF[IO, Int] = GnirsEpics.instance.filter2Eng.toSeqActionDefault
-  override def getCamera: SeqActionF[IO, String] = GnirsEpics.instance.camera.toSeqActionDefault
-  override def getCameraPos: SeqActionF[IO, Int] = GnirsEpics.instance.cameraEng.toSeqActionDefault
-  override def getDecker: SeqActionF[IO, String] = GnirsEpics.instance.decker.toSeqActionDefault
-  override def getDeckerPos: SeqActionF[IO, Int] = GnirsEpics.instance.deckerEng.toSeqActionDefault
-  override def getSlit: SeqActionF[IO, String] = GnirsEpics.instance.slitWidth.toSeqActionDefault
-  override def getSlitPos: SeqActionF[IO, Int] = GnirsEpics.instance.slitEng.toSeqActionDefault
-  override def getPrism: SeqActionF[IO, String] = GnirsEpics.instance.prism.toSeqActionDefault
-  override def getPrismPos: SeqActionF[IO, Int] = GnirsEpics.instance.prismEng.toSeqActionDefault
-  override def getGrating: SeqActionF[IO, String] = GnirsEpics.instance.grating.toSeqActionDefault
-  override def getGratingPos: SeqActionF[IO, Int] = GnirsEpics.instance.gratingEng.toSeqActionDefault
-  override def getGratingWavelength: SeqActionF[IO, Double] = GnirsEpics.instance.centralWavelength.toSeqActionDefault
-  override def getGratingOrder: SeqActionF[IO, Int] = GnirsEpics.instance.gratingOrder.toSeqActionDefault
-  override def getGratingTilt: SeqActionF[IO, Double] = GnirsEpics.instance.gratingTilt.toSeqActionDefault
-  override def getFocus: SeqActionF[IO, String] = GnirsEpics.instance.focus.toSeqActionDefault
-  override def getFocusPos: SeqActionF[IO, Int] = GnirsEpics.instance.focusEng.toSeqActionDefault
-  override def getAcquisitionMirror: SeqActionF[IO, String] = GnirsEpics.instance.acqMirror.toSeqActionDefault
-  override def getWindowCover: SeqActionF[IO, String] = GnirsEpics.instance.cover.toSeqActionDefault
-  override def getObsEpoch: SeqActionF[IO, Double] = GnirsEpics.instance.obsEpoch.toSeqActionDefault
+object GnirsKeywordReaderEpics {
+  def apply[F[_]: Sync: LiftIO]: GnirsKeywordReader[F] = new GnirsKeywordReader[F] {
+    private val F = implicitly[Sync[F]]
+    private val sys = GnirsEpics.instance
+
+    // TODO make GnirsEpics referentially transparent
+    override def arrayId: F[String] = F.delay(sys.arrayId).safeValOrDefault
+    override def arrayType: F[String] = F.delay(sys.arrayType).safeValOrDefault
+    override def detectorBias: F[Double] = F.delay(sys.detBias).safeValOrDefault
+    override def filter1: F[String] = F.delay(sys.filter1).safeValOrDefault
+    override def filterWheel1Pos: F[Int] = F.delay(sys.filter1Eng).safeValOrDefault
+    override def filter2: F[String] = F.delay(sys.filter2).safeValOrDefault
+    override def filterWheel2Pos: F[Int] = F.delay(sys.filter2Eng).safeValOrDefault
+    override def camera: F[String] = F.delay(sys.camera).safeValOrDefault
+    override def cameraPos: F[Int] = F.delay(sys.cameraEng).safeValOrDefault
+    override def decker: F[String] = F.delay(sys.decker).safeValOrDefault
+    override def deckerPos: F[Int] = F.delay(sys.deckerEng).safeValOrDefault
+    override def slit: F[String] = F.delay(sys.slitWidth).safeValOrDefault
+    override def slitPos: F[Int] = F.delay(sys.slitEng).safeValOrDefault
+    override def prism: F[String] = F.delay(sys.prism).safeValOrDefault
+    override def prismPos: F[Int] = F.delay(sys.prismEng).safeValOrDefault
+    override def grating: F[String] = F.delay(sys.grating).safeValOrDefault
+    override def gratingPos: F[Int] = F.delay(sys.gratingEng).safeValOrDefault
+    override def gratingWavelength: F[Double] = F.delay(sys.centralWavelength).safeValOrDefault
+    override def gratingOrder: F[Int] = F.delay(sys.gratingOrder).safeValOrDefault
+    override def gratingTilt: F[Double] = F.delay(sys.gratingTilt).safeValOrDefault
+    override def focus: F[String] = F.delay(sys.focus).safeValOrDefault
+    override def focusPos: F[Int] = F.delay(sys.focusEng).safeValOrDefault
+    override def acquisitionMirror: F[String] = F.delay(sys.acqMirror).safeValOrDefault
+    override def windowCover: F[String] = F.delay(sys.cover).safeValOrDefault
+    override def obsEpoch: F[Double] = F.delay(sys.obsEpoch).safeValOrDefault
+  }
 }

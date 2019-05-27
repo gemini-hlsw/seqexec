@@ -16,39 +16,39 @@ object GnirsHeader {
     override def sendBefore(obsId: Observation.Id, id: ImageFileId): F[Unit] =
       sendKeywords(id, inst, List(
         buildInt32S(tcsReader.gnirsInstPort, KeywordName.INPORT),
-        buildString(gnirsReader.getArrayId, KeywordName.ARRAYID),
-        buildString(gnirsReader.getArrayType, KeywordName.ARRAYTYP),
+        buildStringS(gnirsReader.arrayId, KeywordName.ARRAYID),
+        buildStringS(gnirsReader.arrayType, KeywordName.ARRAYTYP),
         buildStringS(tcsReader.date, KeywordName.DATE_OBS),
         buildStringS(tcsReader.ut, KeywordName.TIME_OBS),
         buildStringS(tcsReader.ut, KeywordName.UTSTART),
-        buildString(gnirsReader.getFilter1, KeywordName.FILTER1),
-        buildInt32(gnirsReader.getFilterWheel1Pos, KeywordName.FW1_ENG),
-        buildString(gnirsReader.getFilter2, KeywordName.FILTER2),
-        buildInt32(gnirsReader.getFilterWheel2Pos, KeywordName.FW2_ENG),
-        buildString(gnirsReader.getCamera, KeywordName.CAMERA),
-        buildInt32(gnirsReader.getCameraPos, KeywordName.CAM_ENG),
-        buildString(gnirsReader.getSlit, KeywordName.SLIT),
-        buildInt32(gnirsReader.getSlitPos, KeywordName.SLIT_ENG),
-        buildString(gnirsReader.getDecker, KeywordName.DECKER),
-        buildInt32(gnirsReader.getDeckerPos, KeywordName.DKR_ENG),
-        buildString(gnirsReader.getGrating, KeywordName.GRATING),
-        buildInt32(gnirsReader.getGratingPos, KeywordName.GR_ENG),
-        buildDouble(gnirsReader.getGratingWavelength, KeywordName.GRATWAVE),
-        buildInt32(gnirsReader.getGratingOrder, KeywordName.GRATORD),
-        buildDouble(gnirsReader.getGratingTilt, KeywordName.GRATTILT),
-        buildString(gnirsReader.getPrism, KeywordName.PRISM),
-        buildInt32(gnirsReader.getPrismPos, KeywordName.PRSM_ENG),
-        buildString(gnirsReader.getAcquisitionMirror, KeywordName.ACQMIR),
-        buildString(gnirsReader.getWindowCover, KeywordName.COVER),
-        buildString(gnirsReader.getFocus, KeywordName.FOCUS),
-        buildInt32(gnirsReader.getFocusPos, KeywordName.FCS_ENG),
-        buildDouble(gnirsReader.getDetectorBias, KeywordName.DETBIAS)
+        buildStringS(gnirsReader.filter1, KeywordName.FILTER1),
+        buildInt32S(gnirsReader.filterWheel1Pos, KeywordName.FW1_ENG),
+        buildStringS(gnirsReader.filter2, KeywordName.FILTER2),
+        buildInt32S(gnirsReader.filterWheel2Pos, KeywordName.FW2_ENG),
+        buildStringS(gnirsReader.camera, KeywordName.CAMERA),
+        buildInt32S(gnirsReader.cameraPos, KeywordName.CAM_ENG),
+        buildStringS(gnirsReader.slit, KeywordName.SLIT),
+        buildInt32S(gnirsReader.slitPos, KeywordName.SLIT_ENG),
+        buildStringS(gnirsReader.decker, KeywordName.DECKER),
+        buildInt32S(gnirsReader.deckerPos, KeywordName.DKR_ENG),
+        buildStringS(gnirsReader.grating, KeywordName.GRATING),
+        buildInt32S(gnirsReader.gratingPos, KeywordName.GR_ENG),
+        buildDoubleS(gnirsReader.gratingWavelength, KeywordName.GRATWAVE),
+        buildInt32S(gnirsReader.gratingOrder, KeywordName.GRATORD),
+        buildDoubleS(gnirsReader.gratingTilt, KeywordName.GRATTILT),
+        buildStringS(gnirsReader.prism, KeywordName.PRISM),
+        buildInt32S(gnirsReader.prismPos, KeywordName.PRSM_ENG),
+        buildStringS(gnirsReader.acquisitionMirror, KeywordName.ACQMIR),
+        buildStringS(gnirsReader.windowCover, KeywordName.COVER),
+        buildStringS(gnirsReader.focus, KeywordName.FOCUS),
+        buildInt32S(gnirsReader.focusPos, KeywordName.FCS_ENG),
+        buildDoubleS(gnirsReader.detectorBias, KeywordName.DETBIAS)
       ) )
 
     override def sendAfter(id: ImageFileId): F[Unit] =
       sendKeywords(id, inst, List(
         buildStringS(tcsReader.ut, KeywordName.UTEND),
-        buildDouble(gnirsReader.getObsEpoch, KeywordName.OBSEPOCH)
+        buildDoubleS(gnirsReader.obsEpoch, KeywordName.OBSEPOCH)
       ) )
   }
 }

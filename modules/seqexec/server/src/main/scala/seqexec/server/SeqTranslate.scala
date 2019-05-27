@@ -46,7 +46,7 @@ import seqexec.server.nifs._
 import seqexec.server.altair.Altair
 import seqexec.server.altair.AltairHeader
 import seqexec.server.altair.AltairLgsHeader
-import seqexec.server.altair.AltairKeywordReaderImpl
+import seqexec.server.altair.AltairKeywordReaderEpics
 import seqexec.server.altair.AltairKeywordReaderDummy
 import seqexec.server.SeqexecFailure._
 import seqexec.server._
@@ -203,8 +203,8 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
     for {
       stepType  <- calcStepType(config)
       inst      <- toInstrumentSys(stepType.instrument)
-      systems   <- calcSystems(config, stepType)
-      headers   <- calcHeaders(config, stepType)
+      systems   <- calcSystems(config, stepType, inst)
+      headers   <- calcHeaders(config, stepType, inst)
     } yield buildStep(inst, systems, headers)
   }
   //scalastyle:on
@@ -447,37 +447,40 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
   private def extractWavelength(config: Config): Option[Wavelength] =
     config.extractAs[Wavelength](OBSERVING_WAVELENGTH_KEY).toOption
 
-  private def calcSystems(config: Config, stepType: StepType)(
-    implicit tio: Timer[IO]
+  private def calcSystems(
+    config: Config,
+    stepType: StepType,
+    sys: InstrumentSystem[IO]
   ): TrySeq[List[System[IO]]] = {
     stepType match {
-      case CelestialObject(inst) => toInstrumentSys(inst).map{sys => sys :: List(
+      case CelestialObject(inst) =>  (sys :: List(
           Tcs.fromConfig(systems.tcs, hasOI(inst).fold(allButGaos, allButGaosNorOi), None, sys, systems.guideDb)(
             config,
             LightPath(TcsController.LightSource.Sky, sys.sfName(config)),
             extractWavelength(config)),
           Gcal(systems.gcal, site == Site.GS)
-      ) }
-      case FlatOrArc(inst)       => toInstrumentSys(inst).map{sys => sys :: List(
+      )).asRight
+
+      case FlatOrArc(inst)       =>  (sys :: List(
           Tcs.fromConfig(systems.tcs, flatOrArcTcsSubsystems(inst), None, sys, systems.guideDb)(
             config,
             LightPath(TcsController.LightSource.GCAL, sys.sfName(config)),
             extractWavelength(config)),
           Gcal(systems.gcal, site == Site.GS)
-      ) }
-      case DarkOrBias(inst)      => toInstrumentSys(inst).map(List(_))
-      case AltairObs(inst)          => for{
-        sys    <- toInstrumentSys(inst)
-        altair <- Altair.fromConfig(config, systems.altair)
-      } yield sys :: List(
-          Tcs.fromConfig(systems.tcs, hasOI(inst).fold(allButGaos, allButGaosNorOi).add(Gaos),
-            altair.asLeft.some, sys, systems.guideDb)(config,
-            LightPath(TcsController.LightSource.AO, sys.sfName(config)),
-            extractWavelength(config)),
-          Gcal(systems.gcal, site == Site.GS)
+      )).asRight
 
+      case DarkOrBias(_)      =>  List(sys).asRight
 
-      )
+      case AltairObs(inst)          =>
+        Altair.fromConfig(config, systems.altair).map {altair =>
+          sys :: List(
+            Tcs.fromConfig(systems.tcs, hasOI(inst).fold(allButGaos, allButGaosNorOi).add(Gaos),
+              altair.asLeft.some, sys, systems.guideDb)(config,
+              LightPath(TcsController.LightSource.AO, sys.sfName(config)),
+              extractWavelength(config)),
+            Gcal(systems.gcal, site == Site.GS)
+        )}
+
       case _                     => TrySeq.fail(Unexpected(s"Unsupported step type $stepType"))
     }
   }
@@ -498,36 +501,37 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
     case Nifs(_, _)       => Instrument.Nifs
   }
 
-  private def calcInstHeader(config: Config, inst: Instrument)(
-    implicit tio: Timer[IO]
+  private def calcInstHeader(
+    config: Config,
+    sys: InstrumentSystem[IO]
   ): TrySeq[Header[IO]] = {
     val tcsKReader = if (settings.tcsKeywords) TcsKeywordsReaderEpics[IO] else DummyTcsKeywordsReader[IO]
-    inst match {
+    sys.resource match {
       case Instrument.F2     =>
-        toInstrumentSys(inst).map(Flamingos2Header.header(_, Flamingos2Header.ObsKeywordsReaderODB(config), tcsKReader))
+        Flamingos2Header.header[IO](sys, Flamingos2Header.ObsKeywordsReaderODB(config), tcsKReader).asRight
       case Instrument.GmosS |
            Instrument.GmosN  =>
         val gmosInstReader = if (settings.gmosKeywords) GmosHeader.InstKeywordReaderImpl else GmosHeader.DummyInstKeywordReader
-        toInstrumentSys(inst).map(GmosHeader.header(_, GmosHeader.ObsKeywordsReaderImpl(config), gmosInstReader, tcsKReader))
+        GmosHeader.header[IO](sys, GmosHeader.ObsKeywordsReaderImpl(config), gmosInstReader, tcsKReader).asRight
       case Instrument.Gnirs  =>
-        val gnirsReader = if(settings.gnirsKeywords) GnirsKeywordReaderImpl else GnirsKeywordReaderDummy
-        toInstrumentSys(inst).map(GnirsHeader.header(_, gnirsReader, tcsKReader))
+        val gnirsReader = if(settings.gnirsKeywords) GnirsKeywordReaderEpics[IO] else GnirsKeywordReaderDummy[IO]
+        GnirsHeader.header[IO](sys, gnirsReader, tcsKReader).asRight
       case Instrument.Gpi    =>
-        TrySeq(GpiHeader.header(systems.gpi.gdsClient, tcsKReader, ObsKeywordReaderImpl[IO](config, site)))
+        GpiHeader.header[IO](systems.gpi.gdsClient, tcsKReader, ObsKeywordReaderImpl[IO](config, site)).asRight
       case Instrument.Ghost  =>
         GhostHeader.header[IO].asRight
       case Instrument.Niri   =>
         val niriReader = if(settings.niriKeywords) NiriKeywordReaderEpics[IO]
                           else NiriKeywordReaderDummy[IO]
-        toInstrumentSys(inst).map(NiriHeader.header(_, niriReader, tcsKReader))
+        NiriHeader.header[IO](sys, niriReader, tcsKReader).asRight
       case Instrument.Nifs   =>
-        val nifsReader = if(settings.nifsKeywords) NifsKeywordReaderImpl else NifsKeywordReaderDummy
-        toInstrumentSys(inst).map(NifsHeader.header(_, nifsReader, tcsKReader))
+        val nifsReader = if(settings.nifsKeywords) NifsKeywordReaderEpics[IO] else NifsKeywordReaderDummy[IO]
+        NifsHeader.header[IO](sys, nifsReader, tcsKReader).asRight
       case Instrument.Gsaoi   =>
         val gsaoiReader = if (settings.gsaoiKeywords) GsaoiKeywordReaderEpics[IO](GsaoiEpics.instance) else GsaoiKeywordReaderDummy[IO]
-        toInstrumentSys(inst).map(GsaoiHeader.header[IO](_, tcsKReader, gsaoiReader))
+        GsaoiHeader.header[IO](sys, tcsKReader, gsaoiReader).asRight
       case _                 =>
-        TrySeq.fail(Unexpected(s"Instrument $inst not supported."))
+        TrySeq.fail(Unexpected(s"Instrument ${sys.resource} not supported."))
     }
   }
 
@@ -550,44 +554,46 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
   private def altairHeader[F[_]: Sync: LiftIO](instrument: InstrumentSystem[F], tcsKReader: TcsKeywordsReader[F]): Header[F] =
     AltairHeader.header[F](
       instrument,
-      if (settings.altairKeywords) new AltairKeywordReaderImpl[F]() else new AltairKeywordReaderDummy[F](),
+      if (settings.altairKeywords) AltairKeywordReaderEpics[F] else AltairKeywordReaderDummy[F],
       tcsKReader)
 
   private def altairLgsHeader[F[_]: Sync: LiftIO](guideStar: GuideStarType, instrument: InstrumentSystem[F]): Header[F] =
     if (guideStar === GuideStarType.LGS) {
       AltairLgsHeader.header(instrument,
-        if (settings.altairKeywords) new AltairKeywordReaderImpl[F]() else new AltairKeywordReaderDummy[F]())
+        if (settings.altairKeywords) AltairKeywordReaderEpics[F] else AltairKeywordReaderDummy[F])
     } else {
       dummyHeader[F]
     }
 
-  private def calcHeaders(config: Config, stepType: StepType)(
-    implicit tio: Timer[IO]
+  private def calcHeaders(
+    config: Config,
+    stepType: StepType,
+    sys: InstrumentSystem[IO]
   ): TrySeq[Reader[HeaderExtraData, List[Header[IO]]]] = stepType match {
-    case CelestialObject(inst) => toInstrumentSys(inst) >>= { i =>
-        calcInstHeader(config, inst).map(h => Reader(ctx =>
-          List(commonHeaders(config, allButGaos.toList, i)(ctx), gwsHeaders(i), h)))
-      }
-    case AltairObs(inst) =>
+    case CelestialObject(_) =>
+        calcInstHeader(config, sys).map(h => Reader(ctx =>
+          List(commonHeaders(config, allButGaos.toList, sys)(ctx), gwsHeaders(sys), h)))
+
+    case AltairObs(_) =>
       val tcsKReader = if (settings.tcsKeywords) TcsKeywordsReaderEpics[IO] else DummyTcsKeywordsReader[IO]
       for {
         gst  <- Altair.guideStarType(config)
-        is   <- toInstrumentSys(inst)
-        read <- calcInstHeader(config, inst).map(h => Reader((ctx: HeaderExtraData) =>
+        read <- calcInstHeader(config, sys).map(h => Reader((ctx: HeaderExtraData) =>
                   // Order is important
                   List(
-                    commonHeaders(config, allButGaos.toList, is)(ctx),
-                    altairHeader(is, tcsKReader),
-                    altairLgsHeader(gst, is),
-                    gwsHeaders(is), h)))
+                    commonHeaders(config, allButGaos.toList, sys)(ctx),
+                    altairHeader(sys, tcsKReader),
+                    altairLgsHeader(gst, sys),
+                    gwsHeaders(sys), h)))
       } yield read
-    case FlatOrArc(inst)       => toInstrumentSys(inst) >>= { i =>
-        calcInstHeader(config, inst).map(h => Reader(ctx =>
-          List(commonHeaders(config, flatOrArcTcsSubsystems(inst).toList, i)(ctx), gcalHeader(i), gwsHeaders(i), h)))
-      }
-    case DarkOrBias(inst)      => toInstrumentSys(inst) >>= { i =>
-        calcInstHeader(config, inst).map(h => Reader(ctx => List(commonHeaders(config, Nil, i)(ctx), gwsHeaders(i), h)))
-      }
+
+    case FlatOrArc(inst)       =>
+        calcInstHeader(config, sys).map(h => Reader(ctx =>
+          List(commonHeaders(config, flatOrArcTcsSubsystems(inst).toList, sys)(ctx), gcalHeader(sys), gwsHeaders(sys), h)))
+
+    case DarkOrBias(_)      =>
+        calcInstHeader(config, sys).map(h => Reader(ctx => List(commonHeaders(config, Nil, sys)(ctx), gwsHeaders(sys), h)))
+    case AlignAndCalib         => TrySeq(Reader(_ => Nil))
     case st                    => TrySeq.fail(Unexpected(s"Unsupported step type $st"))
   }
 
