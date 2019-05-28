@@ -95,7 +95,7 @@ trait GpiArbitraries extends ArbTime {
     Cogen[(LegacyApodizer, LegacyFPM, LegacyLyot, LegacyFilter)]
       .contramap(x => (x.apodizer, x.fpm, x.lyot, x.filter))
 
-  implicit val gpiConfigArb: Arbitrary[GpiConfig] = Arbitrary {
+  implicit val gpiConfigArb: Arbitrary[RegularGpiConfig] = Arbitrary {
     for {
       adc   <- arbitrary[LegacyAdc]
       exp   <- arbitrary[Duration]
@@ -107,7 +107,7 @@ trait GpiArbitraries extends ArbTime {
       asu   <- arbitrary[ArtificialSources]
       pc    <- arbitrary[LegacyPupilCamera]
       ao    <- arbitrary[AOFlags]
-    } yield GpiConfig(adc, exp, coa, mode, disp, dispA, shut, asu, pc, ao)
+    } yield RegularGpiConfig(adc, exp, coa, mode, disp, dispA, shut, asu, pc, ao)
   }
 
   implicit val adcCogen: Cogen[LegacyAdc] =
@@ -116,7 +116,7 @@ trait GpiArbitraries extends ArbTime {
     Cogen[String].contramap(_.displayValue)
   implicit val ppCogen: Cogen[LegacyPupilCamera] =
     Cogen[String].contramap(_.displayValue)
-  implicit val gpiConfigCogen: Cogen[GpiConfig] =
+  implicit val gpiConfigCogen: Cogen[RegularGpiConfig] =
     Cogen[(LegacyAdc,
        Duration,
        Int,

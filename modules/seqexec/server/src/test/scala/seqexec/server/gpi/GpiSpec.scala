@@ -14,5 +14,5 @@ final class GpiSpec extends CatsSuite with GpiArbitraries {
   checkAll("Eq[ArtificialSources]", EqTests[ArtificialSources].eqv)
   checkAll("Eq[Shutters]", EqTests[Shutters].eqv)
   checkAll("Eq[NonStandardModeParams]", EqTests[NonStandardModeParams].eqv)
-  checkAll("Eq[GPIConfig]", EqTests[GpiConfig].eqv)
+  checkAll("Eq[GPIConfig]", EqTests[RegularGpiConfig].eqv)
 }

@@ -48,10 +48,11 @@ object GiapiStatusApply {
   /** @group Constructors */ case object GpiPPM extends GiapiStatusApply("GpiPPM", Instrument.Gpi, GiapiType.String, "gpi:ppmMask", "gpi:selectPupilPlaneMask.maskStr")
   /** @group Constructors */ case object GpiFPM extends GiapiStatusApply("GpiFPM", Instrument.Gpi, GiapiType.String, "gpi:fpmMask", "gpi:selectFocalPlaneMask.maskStr")
   /** @group Constructors */ case object GpiLyot extends GiapiStatusApply("GpiLyot", Instrument.Gpi, GiapiType.String, "gpi:lyotMask", "gpi:selectLyotMask.maskStr")
+  /** @group Constructors */ case object GpiAlignAndCalib extends GiapiStatusApply("GpiAlignAndCalib", Instrument.Gpi, GiapiType.Int, "gpi:alignAndCalib.part1", "gpi:alignAndCalib.part1")
 
   /** All members of GiapiStatusApply, in canonical order. */
   val all: List[GiapiStatusApply] =
-    List(GpiAdc, GpiUseAo, GpiAoOptimize, GpiUseCal, GpiFpmPinholeBias, GpiIntegrationTime, GpiNumCoadds, GpiMagI, GpiMagH, GpiCalEntranceShutter, GpiCalReferenceShutter, GpiCalScienceShutter, GpiEntranceShutter, GpiCalExitShutter, GpiPupilCamera, GpiSCPower, GpiSCAttenuation, GpiSrcVis, GpiSrcIR, GpiPolarizerDeplay, GpiPolarizerAngle, GpiObservationMode, GpiIFSFilter, GpiPPM, GpiFPM, GpiLyot)
+    List(GpiAdc, GpiUseAo, GpiAoOptimize, GpiUseCal, GpiFpmPinholeBias, GpiIntegrationTime, GpiNumCoadds, GpiMagI, GpiMagH, GpiCalEntranceShutter, GpiCalReferenceShutter, GpiCalScienceShutter, GpiEntranceShutter, GpiCalExitShutter, GpiPupilCamera, GpiSCPower, GpiSCAttenuation, GpiSrcVis, GpiSrcIR, GpiPolarizerDeplay, GpiPolarizerAngle, GpiObservationMode, GpiIFSFilter, GpiPPM, GpiFPM, GpiLyot, GpiAlignAndCalib)
 
   /** Select the member of GiapiStatusApply with the given tag, if any. */
   def fromTag(s: String): Option[GiapiStatusApply] =

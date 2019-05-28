@@ -107,7 +107,7 @@ object RegularGpiConfig extends GpiConfigEq {
 
 case object AlignAndCalibConfig extends GpiConfig {
   val config: Configuration =
-    Configuration.single("gpi:alignAndCalib.part1", GpiClient.ALIGN_AND_CALIB_DEFAULT_MODE)
+    Configuration.single(GpiAlignAndCalib.applyItem, GpiClient.ALIGN_AND_CALIB_DEFAULT_MODE)
 
   override def toString: String = s"$config"
 
