@@ -8,7 +8,7 @@ import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.extra.router._
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.component.Scala.Unmounted
-import japgolly.scalajs.react.extra.Reusability
+import japgolly.scalajs.react.Reusability
 import gem.enum.Site
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.model.Pages._

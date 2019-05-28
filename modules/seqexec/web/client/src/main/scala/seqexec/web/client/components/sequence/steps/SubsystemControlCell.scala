@@ -9,8 +9,8 @@ import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.Callback
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.ReactEvent
-import japgolly.scalajs.react.extra.Reusability
-import japgolly.scalajs.react.extra.Reusability._
+import japgolly.scalajs.react.Reusability
+import japgolly.scalajs.react.Reusability._
 import gem.Observation
 
 import scala.collection.immutable.SortedMap

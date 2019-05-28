@@ -4,7 +4,7 @@
 package seqexec.web.client.components.sequence.steps
 
 import japgolly.scalajs.react.component.Scala.Unmounted
-import japgolly.scalajs.react.extra.Reusability
+import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.Callback
 import japgolly.scalajs.react.ScalaComponent

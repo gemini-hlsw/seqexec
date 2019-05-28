@@ -4,7 +4,7 @@
 package seqexec.web.client.semanticui
 
 import cats.Eq
-import japgolly.scalajs.react.extra.Reusability
+import japgolly.scalajs.react.Reusability
 
 sealed trait Size
 

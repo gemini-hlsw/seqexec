@@ -4,7 +4,7 @@
 package web.client.table
 
 import cats.Eq
-import japgolly.scalajs.react.extra.Reusability
+import japgolly.scalajs.react.Reusability
 
 sealed trait UserModified extends Product with Serializable
 case object IsModified    extends UserModified

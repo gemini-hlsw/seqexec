@@ -6,7 +6,7 @@ package seqexec.web.client.semanticui.elements.label
 import seqexec.web.client.semanticui.Size
 import seqexec.web.client.semanticui.elements.icon.Icon
 import japgolly.scalajs.react.ScalaComponent
-import japgolly.scalajs.react.extra.Reusability
+import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 import cats.implicits._

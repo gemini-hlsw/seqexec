@@ -4,7 +4,7 @@
 package web.client
 
 import japgolly.scalajs.react.raw.JsNumber
-import japgolly.scalajs.react.extra.Reusability
+import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.CatsReact._
 import org.scalajs.dom
 import org.scalajs.dom.html

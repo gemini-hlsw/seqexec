@@ -87,7 +87,7 @@ object SeqexecUI {
         .onPostRender((_, next) =>
           Callback.when(next === SoundTest)(SeqexecCircuit.dispatchCB(RequestSoundEcho)) *>
           Callback.when(next =!= SeqexecCircuit.zoom(_.uiModel.navLocation).value)(SeqexecCircuit.dispatchCB(NavigateSilentTo(next))))
-        .renderWith { case (_, r) => <.div(r.render()).render}
+        .renderWith { case (_, r) => <.div(r.render()) }
         .setTitle(pageTitle(site))
         .logToConsole
     }
