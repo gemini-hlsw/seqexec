@@ -68,34 +68,33 @@ object GnirsKeywordReaderDummy {
 
 object GnirsKeywordReaderEpics {
   def apply[F[_]: Sync: LiftIO]: GnirsKeywordReader[F] = new GnirsKeywordReader[F] {
-    private val F = implicitly[Sync[F]]
     private val sys = GnirsEpics.instance
 
     // TODO make GnirsEpics referentially transparent
-    override def arrayId: F[String] = F.delay(sys.arrayId).safeValOrDefault
-    override def arrayType: F[String] = F.delay(sys.arrayType).safeValOrDefault
-    override def detectorBias: F[Double] = F.delay(sys.detBias).safeValOrDefault
-    override def filter1: F[String] = F.delay(sys.filter1).safeValOrDefault
-    override def filterWheel1Pos: F[Int] = F.delay(sys.filter1Eng).safeValOrDefault
-    override def filter2: F[String] = F.delay(sys.filter2).safeValOrDefault
-    override def filterWheel2Pos: F[Int] = F.delay(sys.filter2Eng).safeValOrDefault
-    override def camera: F[String] = F.delay(sys.camera).safeValOrDefault
-    override def cameraPos: F[Int] = F.delay(sys.cameraEng).safeValOrDefault
-    override def decker: F[String] = F.delay(sys.decker).safeValOrDefault
-    override def deckerPos: F[Int] = F.delay(sys.deckerEng).safeValOrDefault
-    override def slit: F[String] = F.delay(sys.slitWidth).safeValOrDefault
-    override def slitPos: F[Int] = F.delay(sys.slitEng).safeValOrDefault
-    override def prism: F[String] = F.delay(sys.prism).safeValOrDefault
-    override def prismPos: F[Int] = F.delay(sys.prismEng).safeValOrDefault
-    override def grating: F[String] = F.delay(sys.grating).safeValOrDefault
-    override def gratingPos: F[Int] = F.delay(sys.gratingEng).safeValOrDefault
-    override def gratingWavelength: F[Double] = F.delay(sys.centralWavelength).safeValOrDefault
-    override def gratingOrder: F[Int] = F.delay(sys.gratingOrder).safeValOrDefault
-    override def gratingTilt: F[Double] = F.delay(sys.gratingTilt).safeValOrDefault
-    override def focus: F[String] = F.delay(sys.focus).safeValOrDefault
-    override def focusPos: F[Int] = F.delay(sys.focusEng).safeValOrDefault
-    override def acquisitionMirror: F[String] = F.delay(sys.acqMirror).safeValOrDefault
-    override def windowCover: F[String] = F.delay(sys.cover).safeValOrDefault
-    override def obsEpoch: F[Double] = F.delay(sys.obsEpoch).safeValOrDefault
+    override def arrayId: F[String] = sys.arrayId.safeValOrDefault.to[F]
+    override def arrayType: F[String] = sys.arrayType.safeValOrDefault.to[F]
+    override def detectorBias: F[Double] = sys.detBias.safeValOrDefault.to[F]
+    override def filter1: F[String] = sys.filter1.safeValOrDefault.to[F]
+    override def filterWheel1Pos: F[Int] = sys.filter1Eng.safeValOrDefault.to[F]
+    override def filter2: F[String] = sys.filter2.safeValOrDefault.to[F]
+    override def filterWheel2Pos: F[Int] = sys.filter2Eng.safeValOrDefault.to[F]
+    override def camera: F[String] = sys.camera.safeValOrDefault.to[F]
+    override def cameraPos: F[Int] = sys.cameraEng.safeValOrDefault.to[F]
+    override def decker: F[String] = sys.decker.safeValOrDefault.to[F]
+    override def deckerPos: F[Int] = sys.deckerEng.safeValOrDefault.to[F]
+    override def slit: F[String] = sys.slitWidth.safeValOrDefault.to[F]
+    override def slitPos: F[Int] = sys.slitEng.safeValOrDefault.to[F]
+    override def prism: F[String] = sys.prism.safeValOrDefault.to[F]
+    override def prismPos: F[Int] = sys.prismEng.safeValOrDefault.to[F]
+    override def grating: F[String] = sys.grating.safeValOrDefault.to[F]
+    override def gratingPos: F[Int] = sys.gratingEng.safeValOrDefault.to[F]
+    override def gratingWavelength: F[Double] = sys.centralWavelength.safeValOrDefault.to[F]
+    override def gratingOrder: F[Int] = sys.gratingOrder.safeValOrDefault.to[F]
+    override def gratingTilt: F[Double] = sys.gratingTilt.safeValOrDefault.to[F]
+    override def focus: F[String] = sys.focus.safeValOrDefault.to[F]
+    override def focusPos: F[Int] = sys.focusEng.safeValOrDefault.to[F]
+    override def acquisitionMirror: F[String] = sys.acqMirror.safeValOrDefault.to[F]
+    override def windowCover: F[String] = sys.cover.safeValOrDefault.to[F]
+    override def obsEpoch: F[Double] = sys.obsEpoch.safeValOrDefault.to[F]
   }
 }

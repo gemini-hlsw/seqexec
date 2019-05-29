@@ -342,9 +342,7 @@ object NifsControllerEpics extends NifsEncoders {
                     postCcConfig)
 
   private def configCC(cfg: CCConfig): IO[Unit] =
-    //IO.sleep(1500.millisecond) *> // the TCL seqexec does this but we'll skip for now
     firstCCPass(cfg) *>
-      //IO.sleep(1500.millisecond) *> // the TCL seqexec does this but we'll skip for now
       secondCCPass(cfg)
 
   def apply()(implicit ioTimer: Timer[IO]): NifsController[IO] = new NifsController[IO] {
@@ -352,13 +350,13 @@ object NifsControllerEpics extends NifsEncoders {
     override def applyConfig(config: NifsController.NifsConfig): IO[Unit] =
       configCC(config.cc) *> configDC(config.dc)
 
+    val checkDhs =
+      failUnlessM(
+        epicsSys.dhsConnected.map(_.exists(_ === DhsConnected.Yes)),
+                  SeqexecFailure.Execution("NIFS is not connected to DHS"))
+
     override def observe(fileId: ImageFileId,
                          cfg:    DCConfig): IO[ObserveCommand.Result] = {
-      val checkDhs =
-        failUnlessM(
-          epicsSys.dhsConnected.map(_.exists(_ === DhsConnected.Yes)),
-                    SeqexecFailure.Execution("NIFS is not connected to DHS"))
-
       IO(Log.info("Start NIFS observe")) *>
         checkDhs *>
         epicsSys.observeCmd.setLabel(fileId) *>
