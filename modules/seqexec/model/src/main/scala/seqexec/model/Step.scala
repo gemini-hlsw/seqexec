@@ -15,6 +15,7 @@ sealed trait Step {
   def skip: Boolean
   def fileId: Option[dhs.ImageFileId]
 }
+
 object Step {
   val Zero: Step = StandardStep(id = -1, config = Map.empty, status = StepState.Pending, breakpoint = false, skip = false, fileId = None, configStatus = Nil, observeStatus = ActionStatus.Pending)
 
