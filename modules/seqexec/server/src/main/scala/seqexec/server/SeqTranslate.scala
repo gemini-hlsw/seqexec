@@ -161,13 +161,17 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
                      implicit cio: Concurrent[IO],
                               tio: Timer[IO]
                    ): TrySeq[SequenceGen.StepGen[IO]] = {
-    def buildStep(inst: InstrumentSystem[IO], sys: List[System[IO]],
-                  headers: Reader[HeaderExtraData, List[Header[IO]]]): SequenceGen.StepGen[IO] = {
+    def buildStep(
+      inst: InstrumentSystem[IO],
+      sys: List[System[IO]],
+      headers: Reader[HeaderExtraData, List[Header[IO]]],
+      stepType: StepType
+    ): SequenceGen.StepGen[IO] = {
       val initialStepExecutions: List[List[Action[IO]]] =
-        if (i === 0)
+        (i === 0 && stepType.includesObserve).option {
           List(List(systems.odb.sequenceStart(obsId, "")
             .as(Response.Ignored).toAction(ActionType.Undefined)))
-        else Nil
+        }.orEmpty
 
       val configs: Map[Resource, Action[IO]] = sys.map { x =>
         val res = resourceFromSystem(x)
@@ -175,10 +179,14 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
 
         res -> x.configure(config).as(Response.Configured(x.resource)).toAction(kind)
       }.toMap
-      def rest(ctx:HeaderExtraData): List[List[Action[IO]]] = List(
-        List(Action(ActionType.Observe, observe(config, obsId, inst, sys.filterNot(inst.equals),
-          headers)(ctx), Action.State(Action.Idle, Nil)))
-      )
+
+      def rest(ctx: HeaderExtraData): List[List[Action[IO]]] =
+        (stepType.includesObserve).option {
+          List(
+            List(Action(ActionType.Observe, observe(config, obsId, inst, sys.filterNot(inst.equals),
+              headers)(ctx), Action.State(Action.Idle, Nil)))
+          )
+        }.orEmpty
 
       extractStatus(config) match {
         case StepState.Pending if i >= nextToRun => SequenceGen.PendingStepGen(
@@ -205,9 +213,8 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
       inst      <- toInstrumentSys(stepType.instrument)
       systems   <- calcSystems(config, stepType, inst)
       headers   <- calcHeaders(config, stepType, inst)
-    } yield buildStep(inst, systems, headers)
+    } yield buildStep(inst, systems, headers, stepType)
   }
-  //scalastyle:on
 
   // Required for untyped objects from java
   implicit val objectShow: Show[AnyRef] = Show.fromToString
@@ -223,8 +230,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
   def sequence(obsId: Observation.Id, sequence: SeqexecSequence)(
     implicit cio: Concurrent[IO],
              tio: Timer[IO]
-  ):
-      (List[SeqexecFailure], Option[SequenceGen[IO]]) = {
+  ): (List[SeqexecFailure], Option[SequenceGen[IO]]) = {
 
     val configs = sequence.config.getAllSteps.toList
 
@@ -481,6 +487,8 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
             Gcal(systems.gcal, site == Site.GS)
         )}
 
+      case AlignAndCalib         => List(sys).asRight
+
       case _                     => TrySeq.fail(Unexpected(s"Unsupported step type $stepType"))
     }
   }
@@ -593,7 +601,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
 
     case DarkOrBias(_)      =>
         calcInstHeader(config, sys).map(h => Reader(ctx => List(commonHeaders(config, Nil, sys)(ctx), gwsHeaders(sys), h)))
-    case AlignAndCalib         => TrySeq(Reader(_ => Nil))
+    case AlignAndCalib         => TrySeq(Reader(_ => Nil)) // No headers for A&C
     case st                    => TrySeq.fail(Unexpected(s"Unsupported step type $st"))
   }
 
@@ -602,10 +610,6 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
 object SeqTranslate {
   def apply(site: Site, systems: Systems[IO], settings: TranslateSettings): SeqTranslate =
     new SeqTranslate(site, systems, settings)
-
-  private sealed trait StepType {
-    val instrument: Instrument
-  }
 
   private def extractInstrument(config: Config): TrySeq[Instrument] = {
     config.extractAs[String](INSTRUMENT_KEY / INSTRUMENT_NAME_PROP).asTrySeq.flatMap {
@@ -622,16 +626,8 @@ object SeqTranslate {
     }
   }
 
-  private final case class CelestialObject(override val instrument: Instrument) extends StepType
-  private final case class Dark(override val instrument: Instrument) extends StepType
-  private final case class NodAndShuffle(override val instrument: Instrument) extends StepType
-  private final case class Gems(override val instrument: Instrument) extends StepType
-  private final case class AltairObs(override val instrument: Instrument) extends StepType
-  private final case class FlatOrArc(override val instrument: Instrument) extends StepType
-  private final case class DarkOrBias(override val instrument: Instrument) extends StepType
-  private case object AlignAndCalib extends StepType {
-    override val instrument: Instrument = Instrument.Gpi
-  }
+  def isAlignAndCalib(config: Config): Option[StepType] =
+    Gpi.isAlignAndCalib(config).option(AlignAndCalib)
 
   private def calcStepType(config: Config): TrySeq[StepType] = {
     def extractGaos(inst: Instrument): TrySeq[StepType] = config.extractAs[String](AO_SYSTEM_KEY) match {
@@ -643,15 +639,17 @@ object SeqTranslate {
       case _                                                      => TrySeq.fail(Unexpected("Logical error reading AO system name"))
     }
 
-    (config.extractAs[String](OBSERVE_KEY / OBSERVE_TYPE_PROP).leftMap(explainExtractError), extractInstrument(config)).mapN { (obsType, inst) =>
-      obsType match {
-        case SCIENCE_OBSERVE_TYPE                     => extractGaos(inst)
-        case BIAS_OBSERVE_TYPE | DARK_OBSERVE_TYPE    => TrySeq(DarkOrBias(inst))
-        case FLAT_OBSERVE_TYPE | ARC_OBSERVE_TYPE | CAL_OBSERVE_TYPE
-                                                      => TrySeq(FlatOrArc(inst))
-        case _                                        => TrySeq.fail(Unexpected("Unknown step type " + obsType))
-      }
-    }.flatten
+    isAlignAndCalib(config).map(_.asRight).getOrElse {
+      (config.extractAs[String](OBSERVE_KEY / OBSERVE_TYPE_PROP).leftMap(explainExtractError), extractInstrument(config)).mapN { (obsType, inst) =>
+        obsType match {
+          case SCIENCE_OBSERVE_TYPE                     => extractGaos(inst)
+          case BIAS_OBSERVE_TYPE | DARK_OBSERVE_TYPE    => TrySeq(DarkOrBias(inst))
+          case FLAT_OBSERVE_TYPE | ARC_OBSERVE_TYPE | CAL_OBSERVE_TYPE
+                                                        => TrySeq(FlatOrArc(inst))
+          case _                                        => TrySeq.fail(Unexpected("Unknown step type " + obsType))
+        }
+      }.flatten
+    }
   }
 
   implicit class ResponseToResult(val r: Either[SeqexecFailure, Response]) extends AnyVal {

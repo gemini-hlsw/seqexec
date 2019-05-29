@@ -11,6 +11,8 @@ import cats.data.Reader
 import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.gemini.gpi.Gpi._
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
+import edu.gemini.spModel.obscomp.InstConstants
+import edu.gemini.spModel.obsclass.ObsClass
 import fs2.Stream
 import java.lang.{ Boolean => JBoolean }
 import java.lang.{ Double => JDouble }
@@ -140,7 +142,16 @@ object Gpi {
         } else mode.asLeft.asRight
       }
 
-  def fromSequenceConfig[F[_]: Sync](config: Config): SeqActionF[F, GpiConfig] =
+  val AcquisitionKey = ObsClass.ACQ.headerValue()
+  // TODO wrap this on F to keep RT, It involves a large change upstream
+  def isAlignAndCalib(config: Config): Boolean = {
+    (config.extractAs[String](INSTRUMENT_KEY / InstConstants.INSTRUMENT_NAME_PROP), config.extractAs[String](OBSERVE_KEY / InstConstants.OBS_CLASS_PROP)).mapN {
+      case (Gpi.name, "acq") => true
+      case _                 => false
+    }.getOrElse(false)
+  }
+
+  private def regularSequenceConfig[F[_]: Sync](config: Config): SeqActionF[F, GpiConfig] =
     EitherT(Sync[F].delay(
       (for {
         adc      <- config.extractAs[Adc](INSTRUMENT_KEY / ADC_PROP)
@@ -156,8 +167,14 @@ object Gpi {
         asu      <- gpiASU(config)
         pc       <- config.extractAs[PupilCamera](INSTRUMENT_KEY / PUPUL_CAMERA_PROP)
         ao       <- gpiAoFlags(config)
-      } yield GpiConfig(adc, exp, coa, mode, pol, polA, shutters, asu, pc, ao))
+      } yield RegularGpiConfig(adc, exp, coa, mode, pol, polA, shutters, asu, pc, ao))
         .leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
     ))
+
+  private def alignAndCalibConfig[F[_]: Sync]: SeqActionF[F, GpiConfig] =
+    SeqActionF(AlignAndCalibConfig)
+
+  def fromSequenceConfig[F[_]: Sync](config: Config): SeqActionF[F, GpiConfig] =
+    SeqActionF.embedF(Sync[F].delay(isAlignAndCalib(config))).ifM(alignAndCalibConfig, regularSequenceConfig(config))
 
 }
