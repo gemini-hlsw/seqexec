@@ -461,8 +461,8 @@ object StepsTable extends Columns {
     Reusability.caseClassExcept('config)
   implicit val stepReuse: Reusability[Step] =
     Reusability {
-      case (a: StandardStep, b: StandardStep) => stdStepReuse.testNot(a, b)
-      case _ => false
+      case (a: StandardStep, b: StandardStep) => stdStepReuse.test(a, b)
+      case _                                  => false
     }
   implicit val propsReuse: Reusability[Props] =
     Reusability.by(x => (x.canOperate, x.selectedStep, x.stepsList))

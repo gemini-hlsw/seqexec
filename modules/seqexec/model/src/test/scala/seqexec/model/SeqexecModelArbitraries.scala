@@ -17,8 +17,9 @@ import scala.concurrent.duration.Duration
 import squants.time._
 import seqexec.model.enum._
 import seqexec.model.events.SingleActionEvent
+import seqexec.model.arb.ArbStepState
 
-trait SeqexecModelArbitraries extends ArbObservation {
+trait SeqexecModelArbitraries extends ArbObservation with ArbStepState {
 
   private val maxListSize = 2
 
@@ -118,18 +119,6 @@ trait SeqexecModelArbitraries extends ArbObservation {
       o <- arbitrary[Option[Observer]]
       n <- Gen.alphaStr
     } yield SequenceMetadata(i, o, n)
-  }
-
-  implicit val spsArb = Arbitrary[StepState] {
-    for {
-      v1 <- Gen.oneOf(StepState.Pending,
-                      StepState.Completed,
-                      StepState.Skipped,
-                      StepState.Running,
-                      StepState.Paused)
-      v2 <- Gen.alphaStr.map(StepState.Failed.apply)
-      r  <- Gen.oneOf(v1, v2)
-    } yield r
   }
 
   implicit val acsArb = Arbitrary[ActionStatus](
@@ -267,9 +256,6 @@ trait SeqexecModelArbitraries extends ArbObservation {
 
   implicit val obCogen: Cogen[Observer] =
     Cogen[String].contramap(_.value)
-
-  implicit val stsCogen: Cogen[StepState] =
-    Cogen[String].contramap(_.productPrefix)
 
   implicit val stParams: Cogen[StepConfig] =
     Cogen[String].contramap(_.mkString(","))

@@ -4,6 +4,7 @@
 package seqexec.model
 
 import cats.Eq
+import cats.implicits._
 
 sealed abstract class StepState(val canRunFrom: Boolean)
   extends Product with Serializable
@@ -18,6 +19,14 @@ object StepState {
         case object Paused              extends StepState(true)
 
   implicit val equal: Eq[StepState] =
-    Eq.fromUniversalEquals
+    Eq.instance {
+      case (Pending, Pending)     => true
+      case (Completed, Completed) => true
+      case (Skipped, Skipped)     => true
+      case (Failed(a), Failed(b)) => a === b
+      case (Running, Running)     => true
+      case (Paused, Paused)       => true
+      case _                      => false
+    }
 
 }
