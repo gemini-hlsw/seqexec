@@ -11,12 +11,13 @@ sealed abstract class StepType(val label: String)
 
 object StepType {
 
-  case object Object      extends StepType("OBJECT")
-  case object Arc         extends StepType("ARC")
-  case object Flat        extends StepType("FLAT")
-  case object Bias        extends StepType("BIAS")
-  case object Dark        extends StepType("DARK")
-  case object Calibration extends StepType("CAL")
+  case object Object        extends StepType("OBJECT")
+  case object Arc           extends StepType("ARC")
+  case object Flat          extends StepType("FLAT")
+  case object Bias          extends StepType("BIAS")
+  case object Dark          extends StepType("DARK")
+  case object Calibration   extends StepType("CAL")
+  case object AlignAndCalib extends StepType("A & C")
 
   implicit val eq: Eq[StepType] =
     Eq.fromUniversalEquals
@@ -25,7 +26,7 @@ object StepType {
     Show.show(_.label)
 
   val all: List[StepType] =
-    List(Object, Arc, Flat, Bias, Dark, Calibration)
+    List(Object, Arc, Flat, Bias, Dark, Calibration, AlignAndCalib)
 
   def fromString(s: String): Option[StepType] =
     all.find(_.label === s)

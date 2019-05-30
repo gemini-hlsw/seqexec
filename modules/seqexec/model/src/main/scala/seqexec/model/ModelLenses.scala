@@ -155,8 +155,6 @@ trait ModelLenses {
     paramValueL(SystemName.Observe.withParam("object")) ^<-? // find the target name
     some                                                     // focus on the option
 
-  val stringToStepTypeP: Prism[String, StepType] =
-    Prism(StepType.fromString)(_.show)
   private[model] def telescopeOffsetPI: Iso[Double, TelescopeOffset.P] =
     Iso(TelescopeOffset.P.apply)(_.value)
   private[model] def telescopeOffsetQI: Iso[Double, TelescopeOffset.Q] =
@@ -168,12 +166,12 @@ trait ModelLenses {
 
   def stepObserveOptional[A](systemName: SystemName, param: String, prism: Prism[String, A]): Optional[Step, A] =
     standardStepP                            ^|-> // which is a standard step
-    stepConfigL                              ^|-> // configuration of the step
-    systemConfigL(systemName)                ^<-? // Observe config
-    some                                     ^|-> // some
-    paramValueL(systemName.withParam(param)) ^<-? // find the target name
-    some                                     ^<-? // focus on the option
+    stepConfigL                              ^|-? // configuration of the step
+    configParamValueO(systemName, param)     ^<-?
     prism                                         // step type
+
+  val stringToStepTypeP: Prism[String, StepType] =
+    Prism(StepType.fromString)(_.show)
 
   val stepTypeO: Optional[Step, StepType] =
     stepObserveOptional(SystemName.Observe, "observeType", stringToStepTypeP)
@@ -290,6 +288,10 @@ trait ModelLenses {
       standardStepP ^|->  // only standard steps
       stepConfigL   ^|-?  // get step config
       configParamValueO(SystemName.Observe, "class")
+
+  // Composite lens to find the sequence obs class
+  val stepClassO: Optional[Step, String] =
+    stepObserveOptional(SystemName.Observe, "class", Prism.id)
 
   // Composite lens to find the target name on observation
   val observeTargetNameT: Traversal[SeqexecEvent, TargetName] =

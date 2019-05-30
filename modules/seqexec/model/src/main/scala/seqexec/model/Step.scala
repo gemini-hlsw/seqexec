@@ -96,6 +96,7 @@ final case class StandardStep(
   configStatus: List[(Resource, ActionStatus)],
   observeStatus: ActionStatus
 ) extends Step
+
 object StandardStep {
   implicit val equal: Eq[StandardStep] = Eq.by(x => x: Step)
 }
