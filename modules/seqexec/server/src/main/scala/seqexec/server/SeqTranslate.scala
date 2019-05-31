@@ -36,7 +36,7 @@ import seqexec.server.gpi.{Gpi, GpiHeader}
 import seqexec.server.ghost.{Ghost, GhostHeader}
 import seqexec.server.gsaoi._
 import seqexec.server.gcal._
-import seqexec.server.gmos.{GmosHeader, GmosNorth, GmosSouth}
+import seqexec.server.gmos.{GmosHeader, GmosObsKeywordsReader, GmosKeywordReaderDummy, GmosKeywordReaderEpics, GmosNorth, GmosSouth}
 import seqexec.server.gws.{DummyGwsKeywordsReader, GwsHeader, GwsKeywordsReaderEpics}
 import seqexec.server.tcs._
 import seqexec.server.tcs.TcsController.LightPath
@@ -519,8 +519,8 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
         Flamingos2Header.header[IO](sys, Flamingos2Header.ObsKeywordsReaderODB(config), tcsKReader).asRight
       case Instrument.GmosS |
            Instrument.GmosN  =>
-        val gmosInstReader = if (settings.gmosKeywords) GmosHeader.InstKeywordReaderImpl else GmosHeader.DummyInstKeywordReader
-        GmosHeader.header[IO](sys, GmosHeader.ObsKeywordsReaderImpl(config), gmosInstReader, tcsKReader).asRight
+        val gmosInstReader = if (settings.gmosKeywords) GmosKeywordReaderEpics[IO] else GmosKeywordReaderDummy[IO]
+        GmosHeader.header[IO](sys, GmosObsKeywordsReader(config), gmosInstReader, tcsKReader).asRight
       case Instrument.Gnirs  =>
         val gnirsReader = if(settings.gnirsKeywords) GnirsKeywordReaderEpics[IO] else GnirsKeywordReaderDummy[IO]
         GnirsHeader.header[IO](sys, gnirsReader, tcsKReader).asRight
