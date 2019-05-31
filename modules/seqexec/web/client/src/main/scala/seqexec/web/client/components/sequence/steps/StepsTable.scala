@@ -56,8 +56,8 @@ import web.client.table._
 trait Columns {
   val ControlWidth: Double          = 40
   val StepWidth: Double             = 60
-  val ExecutionWidth: Double        = 260
-  val ExecutionMinWidth: Double     = 200
+  val ExecutionWidth: Double        = 350
+  val ExecutionMinWidth: Double     = 350
   val OffsetWidthBase: Double       = 75
   val OffsetIconWidth: Double       = 23.02
   val OffsetPadding: Double         = 12
@@ -553,10 +553,11 @@ object StepsTable extends Columns {
     }
 
   def stepObjectTypeRenderer(
+    i:    Instrument,
     size: SSize
   ): CellRenderer[js.Object, js.Object, StepRow] =
     (_, _, _, row: StepRow, _) =>
-      ObjectTypeCell(ObjectTypeCell.Props(row.step, size))
+      ObjectTypeCell(ObjectTypeCell.Props(i, row.step, size))
 
   private val stepRowStyle: Step => GStyle = {
     case s if s.hasError                       => SeqexecStyles.rowError
@@ -684,7 +685,7 @@ object StepsTable extends Columns {
       case FilterColumn        => b.props.instrument.map(i => stepItemRenderer(_.filter(i)))
       case FPUColumn           => b.props.instrument.map(i => stepFPURenderer(i))
       case CameraColumn        => b.props.instrument.map(i => stepItemRenderer(_.cameraName(i)))
-      case ObjectTypeColumn    => stepObjectTypeRenderer(SSize.Small).some
+      case ObjectTypeColumn    => b.props.instrument.map(stepObjectTypeRenderer(_, SSize.Small))
       case SettingsColumn      => b.props.steps.map(p => settingsControlRenderer(b.props, p))
       case ReadModeColumn      => stepItemRendererS(_.readMode).some
       case DeckerColumn        => stepItemRendererS(_.deckerName).some
@@ -824,10 +825,13 @@ object StepsTable extends Columns {
     if (e.altKey || e.button === MIDDLE_BUTTON) {
       Callback.when(p.canSetBreakpoint)(
         (p.obsId, p.stepsList.find(_.id === index + 1))
-          .mapN((oid, step) =>
-            SeqexecCircuit.dispatchCB(FlipBreakpointStep(oid, step))
-              .when(step.canSetBreakpoint(index + 1, p.nextStepToRun)).void)
-        .getOrEmpty
+          .mapN(
+            (oid, step) =>
+              SeqexecCircuit
+                .dispatchCB(FlipBreakpointStep(oid, step))
+                .when(step.canSetBreakpoint(index + 1, p.nextStepToRun))
+                .void)
+          .getOrEmpty
       )
     } else {
       onRowClick

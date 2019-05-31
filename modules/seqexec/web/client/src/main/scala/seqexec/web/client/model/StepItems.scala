@@ -10,6 +10,7 @@ import gem.enum.GpiFilter
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.FPUMode
 import seqexec.model.enum.Guiding
+import seqexec.model.enum.StepType
 import seqexec.model.Step
 import seqexec.model.StepState
 import seqexec.model.enumerations
@@ -75,6 +76,16 @@ object StepItems {
       fpu(i)
         .orElse(instrumentSlitWidthO.getOption(s))
         .orElse(instrumentMaskO.getOption(s))
+
+    def alignAndCalib(i: Instrument): Option[StepType.AlignAndCalib.type] =
+      i match {
+        case Instrument.Gpi if stepClassO.getOption(s).forall(_ === "acq") =>
+          StepType.AlignAndCalib.some
+        case _ => none
+      }
+
+    def stepType: Option[StepType] =
+      stepTypeO.getOption(s)
 
     private def gpiFilter: Step => Option[String] = s => {
       // Read the filter, if not found deduce it from the obs mode

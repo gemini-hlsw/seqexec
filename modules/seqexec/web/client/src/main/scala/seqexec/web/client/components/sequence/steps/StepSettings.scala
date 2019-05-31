@@ -16,7 +16,6 @@ import seqexec.model.Step
 import seqexec.model.StepState
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.model.Pages
-import seqexec.web.client.model.lenses._
 import seqexec.web.client.model.StepItems._
 import seqexec.web.client.semanticui.elements.label.Label
 import seqexec.web.client.semanticui.elements.icon.Icon._
@@ -149,7 +148,7 @@ object SettingsCell {
   * Component to display the object type
   */
 object ObjectTypeCell {
-  final case class Props(step: Step, size: Size)
+  final case class Props(instrument: Instrument, step: Step, size: Size)
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
@@ -158,8 +157,9 @@ object ObjectTypeCell {
     .stateless
     .render_P { p =>
       <.div( // Column object type
-        stepTypeO
-          .getOption(p.step)
+        p.step
+          .alignAndCalib(p.instrument)
+          .orElse(p.step.stepType)
           .map { st =>
             val stepTypeColor = st match {
               case _ if p.step.status === StepState.Completed => "light gray"
@@ -169,6 +169,7 @@ object ObjectTypeCell {
               case StepType.Bias                              => "teal"
               case StepType.Dark                              => "black"
               case StepType.Calibration                       => "blue"
+              case StepType.AlignAndCalib                     => "brown"
             }
             Label(
               Label.Props(st.show, color = stepTypeColor.some, size = p.size))
