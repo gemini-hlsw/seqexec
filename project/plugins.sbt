@@ -4,7 +4,7 @@ resolvers  ++= Seq(
 )
 // Gives support for Scala.js compilation
 val scalaJSVersion =
-  Option(System.getenv("SCALAJS_VERSION")).getOrElse("0.6.27")
+  Option(System.getenv("SCALAJS_VERSION")).getOrElse("0.6.28")
 
 libraryDependencies ++= Seq(
   "org.postgresql" % "postgresql"  % "42.2.1", // needed by flyway
@@ -39,7 +39,7 @@ addSbtPlugin("com.dwijnand"       % "sbt-dynver"               % "3.0.0")
 addSbtPlugin("org.wartremover"    % "sbt-wartremover"          % "2.4.2")
 
 // Use NPM modules rather than webjars
-addSbtPlugin("ch.epfl.scala"      % "sbt-scalajs-bundler"      % "0.14.0")
+addSbtPlugin("ch.epfl.scala"      % "sbt-scalajs-bundler"      % "0.15.0-0.6")
 
 // Used to find dependencies
 addSbtPlugin("net.virtual-void"   % "sbt-dependency-graph"     % "0.9.0")
