@@ -10,6 +10,7 @@ import diode.Effect
 import diode.ModelRW
 import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
+import seqexec.model.enum.Resource
 import seqexec.model.RequestFailed
 import seqexec.web.client.model.PauseOperation
 import seqexec.web.client.model.CancelPauseOperation
@@ -66,14 +67,6 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
           id,
           TabOperations.cancelPauseRequested.set(CancelPauseOperation.CancelPauseInFlight)))
 
-    case RequestResourceRun(id, _, r) =>
-      updatedL(
-        SequencesOnDisplay.markOperations(
-          id,
-          TabOperations
-            .resourceRun(r)
-            .set(ResourceRunOperation.ResourceRunInFlight.some)))
-
     case RunFromComplete(id, _) =>
       updatedL(
         SequencesOnDisplay.markOperations(
@@ -88,6 +81,24 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
           TabOperations
             .resourceRun(r)
             .set(ResourceRunOperation.ResourceRunCompleted.some)))
+  }
+
+  def handleRequestResourceRun: PartialFunction[Any, ActionResult[M]] = {
+    case RequestResourceRun(id, _, r) =>
+      // reset others instrument that may have run common resources
+      val resetOthers: SequencesOnDisplay => SequencesOnDisplay =
+        if (Resource.common.contains(r)) {
+          SequencesOnDisplay.resetCommonResourceOperations(id, r)
+        } else {
+          identity
+        }
+      updatedL(
+        resetOthers >>>
+        SequencesOnDisplay.markOperations(
+          id,
+          TabOperations
+            .resourceRun(r)
+            .set(ResourceRunOperation.ResourceRunInFlight.some)))
   }
 
   def handleOperationResult: PartialFunction[Any, ActionResult[M]] = {
@@ -205,5 +216,6 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
          handleOperationResult,
          handleOperationFailed,
          handleSelectedStep,
-         handleOperationComplete).combineAll
+         handleOperationComplete,
+         handleRequestResourceRun).combineAll
 }

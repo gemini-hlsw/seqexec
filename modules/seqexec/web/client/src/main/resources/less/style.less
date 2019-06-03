@@ -46,9 +46,41 @@ body {
   }
 }
 
+.ui.yellow.label.SeqexecStyles-activeResourceLabel {
+  background-image: linear-gradient(90deg, @borderColor 50%, transparent 50%),
+    linear-gradient(90deg, @borderColor 50%, transparent 50%),
+    linear-gradient(0deg, @borderColor 50%, transparent 50%),
+    linear-gradient(0deg, @borderColor 50%, transparent 50%);
+  background-repeat: repeat-x, repeat-x, repeat-y, repeat-y;
+  background-size: 5px 3px, 5px 3px, 3px 5px, 3px 5px;
+  background-position: left top, right bottom, left bottom, right top;
+  animation: border-dance 4s infinite linear;
+}
+
+@keyframes border-dance {
+  0% {
+    background-position: left top, right bottom, left bottom, right top;
+  }
+  100% {
+    background-position: left 20px top, right 20px bottom, left bottom 20px,
+      right top 20px;
+  }
+}
+
 .SeqexecStyles-activeInstrumentLabel {
   padding-bottom: 0.2em;
   text-align: center;
+}
+
+.SeqexecStyles-instrumentAndResourcesLabel {
+  display: flex;
+  margin-bottom: -6px;
+}
+
+.SeqexecStyles-resourceLabels {
+  display: flex;
+  position: relative;
+  bottom: 8px;
 }
 
 .SeqexecStyles-filterActiveButton {
@@ -83,6 +115,11 @@ body {
 }
 
 .SeqexecStyles-previewTabLoadButton {
+  align-self: flex-end;
+  margin-left: auto;
+}
+
+.SeqexecStyles-resourcesTabLabels {
   align-self: flex-end;
   margin-left: auto;
 }

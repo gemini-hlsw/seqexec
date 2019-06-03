@@ -20,6 +20,15 @@ object SeqexecStyles {
   val activeInstrumentLabel: GStyle =
     GStyle.fromString("SeqexecStyles-activeInstrumentLabel")
 
+  val activeResourceLabel: GStyle =
+    GStyle.fromString("SeqexecStyles-activeResourceLabel")
+
+  val resourceLabels: GStyle =
+    GStyle.fromString("SeqexecStyles-resourceLabels")
+
+  val instrumentAndResourcesLabel: GStyle =
+    GStyle.fromString("SeqexecStyles-instrumentAndResourcesLabel")
+
   val tab: GStyle = GStyle.fromString("SeqexecStyles-tab")
 
   val tabLabel: GStyle = GStyle.fromString("SeqexecStyles-tabLabel")
@@ -31,6 +40,9 @@ object SeqexecStyles {
 
   val previewTabLoadButton: GStyle =
     GStyle.fromString("SeqexecStyles-previewTabLoadButton")
+
+  val resourcesTabLabels: GStyle =
+    GStyle.fromString("SeqexecStyles-resourcesTabLabels")
 
   val activeTabContent: GStyle =
     GStyle.fromString("SeqexecStyles-activeTabContent")

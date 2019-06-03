@@ -929,7 +929,7 @@ object StepsTable extends Columns {
     // The selected step may have changed externally
     val selectedStepChange: Callback =
       (cur.selectedStep, next.selectedStep).mapN { (c, n) =>
-        b.modState(State.selected.set(n.some)).when(c =!= n).void
+        b.setStateL(State.selected)(n.some).when(c =!= n).void
       }.getOrEmpty
 
     // If the step is running recalculate height
@@ -940,9 +940,15 @@ object StepsTable extends Columns {
         none
       }
 
-    selectStep *> selectedStepChange *> (running.toList ::: selected.toList ::: differentStepsStates).minimumOption.map {
-      recomputeRowHeightsCB
-    }.getOrEmpty
+    // Decide from what row to recalculate
+    val recalculateHeight: Callback =
+      (running.toList ::: selected.toList ::: differentStepsStates).minimumOption.map {
+        recomputeRowHeightsCB
+      }.getOrEmpty
+
+    selectStep *>
+      selectedStepChange *>
+      recalculateHeight
   }
 
   // Wire it up from VDOM

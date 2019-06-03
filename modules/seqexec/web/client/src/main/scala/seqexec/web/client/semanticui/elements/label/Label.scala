@@ -34,6 +34,7 @@ object Label {
     tag                      : Boolean = false,
     basic                    : Boolean = false,
     link                     : Boolean = false,
+    circular                 : Boolean = false,
     size                     : Size = Size.NotSized,
     pointing                 : Pointing = Pointing.None,
     icon                     : Option[Icon] = None,
@@ -47,6 +48,7 @@ object Label {
     ^.classSet(
       "basic"          -> p.basic,
       "tag"            -> p.tag,
+      "circular"       -> p.circular,
       "tiny"           -> (p.size === Size.Tiny),
       "mini"           -> (p.size === Size.Mini),
       "small"          -> (p.size === Size.Small),

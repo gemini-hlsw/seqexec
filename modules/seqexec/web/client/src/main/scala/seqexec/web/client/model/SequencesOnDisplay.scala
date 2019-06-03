@@ -13,6 +13,7 @@ import monocle.Traversal
 import monocle.macros.Lenses
 import monocle.std
 import shapeless.tag
+import scala.collection.immutable.SortedMap
 import seqexec.model.Observer
 import seqexec.model.SequenceView
 import seqexec.model.SequencesQueue
@@ -305,7 +306,8 @@ final case class SequencesOnDisplay(tabs: Zipper[SeqexecTab]) {
                      i.nextStepToRun,
                      i.isPreview,
                      TabSelected.fromBoolean(a),
-                     i.loading).asRight
+                     i.loading,
+                     i.tabOperations.resourceRunRequested).asRight
       case (i: PreviewSequenceTab, a) =>
         AvailableTab(i.obsId,
                      i.sequence.status,
@@ -314,7 +316,8 @@ final case class SequencesOnDisplay(tabs: Zipper[SeqexecTab]) {
                      i.nextStepToRun,
                      i.isPreview,
                      TabSelected.fromBoolean(a),
-                     i.loading).asRight
+                     i.loading,
+                     SortedMap.empty).asRight
       case (i: CalibrationQueueTab, a) =>
         CalibrationQueueTabActive(i, TabSelected.fromBoolean(a)).asLeft
     })
@@ -428,6 +431,11 @@ object SequencesOnDisplay {
   ): Traversal[SequencesOnDisplay, InstrumentSequenceTab] =
     SequencesOnDisplay.tabs ^|->> Zipper.unsafeFilterZ(instrumentSequenceMatch(id)) ^<-? SeqexecTab.instrumentTab
 
+  def instrumentTabExceptId(
+    id: Observation.Id
+  ): Traversal[SequencesOnDisplay, InstrumentSequenceTab] =
+    SequencesOnDisplay.tabs ^|->> Zipper.unsafeFilterZ(!instrumentSequenceMatch(id)(_)) ^<-? SeqexecTab.instrumentTab
+
   def sequenceTabById(
     id: Observation.Id
   ): Traversal[SequencesOnDisplay, SequenceTab] =
@@ -535,5 +543,9 @@ object SequencesOnDisplay {
 
   def resetResourceOperations(id: Observation.Id, r: Resource): SequencesOnDisplay => SequencesOnDisplay =
     markOperations(id, TabOperations.clearResourceOperations(r))
+
+  def resetCommonResourceOperations(id: Observation.Id, r: Resource): SequencesOnDisplay => SequencesOnDisplay =
+    (SequencesOnDisplay.instrumentTabExceptId(id) ^|-> InstrumentSequenceTab.tabOperations)
+      .modify(TabOperations.clearCommonResourceCompleted(r))
 
 }

@@ -19,6 +19,7 @@ import seqexec.web.client.actions.LoadSequence
 import seqexec.web.client.model.Pages._
 import seqexec.web.client.model.AvailableTab
 import seqexec.web.client.model.TabSelected
+import seqexec.web.client.model.ResourceRunOperation
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.semanticui._
 import seqexec.web.client.semanticui.elements.icon.Icon._
@@ -38,19 +39,20 @@ object SequenceTab {
   final case class State(loading:            Boolean)
 
   implicit val propsReuse: Reusability[Props] =
-    Reusability.by(x =>
-      (x.tab, x.loggedIn, x.defaultObserver, x.runningInstruments))
+    Reusability.caseClassExcept[Props]('router)
   implicit val stateReuse: Reusability[State] = Reusability.by(_.loading)
 
   type Backend = RenderScope[Props, State, Unit]
 
-  def load(b: Backend, inst: Instrument, id: Observation.Id)(e: ReactEvent): Callback =
+  def load(b: Backend, inst: Instrument, id: Observation.Id)(
+    e:        ReactEvent): Callback =
     e.preventDefaultCB *>
       e.stopPropagationCB *>
       b.setState(State(loading = true)) *>
       SeqexecCircuit.dispatchCB(LoadSequence(b.props.defaultObserver, inst, id))
 
-  private def showSequence(p: Props, page: SeqexecPages)(e: ReactEvent): Callback =
+  private def showSequence(p: Props, page: SeqexecPages)(
+    e:                        ReactEvent): Callback =
     // prevent default to avoid the link jumping
     e.preventDefaultCB *>
       // Request to display the selected sequence
@@ -92,9 +94,13 @@ object SequenceTab {
       val instrument = b.props.tab.instrument
       val running    = b.props.runningInstruments.contains(instrument)
       val isPreview  = b.props.tab.isPreview
-      val instName   = instrument.show
-      val dispName   = if (isPreview) s"Preview: $instName" else instName
-      val isLogged   = b.props.loggedIn
+      val resources = b.props.tab.resourceOperations.filterNot {
+        case (r, s) =>
+          r.isInstrument || s === ResourceRunOperation.ResourceRunIdle
+      }
+      val instName = instrument.show
+      val dispName = if (isPreview) s"Preview: $instName" else instName
+      val isLogged = b.props.loggedIn
       val nextStepToRun =
         StepIdDisplayed(b.props.tab.nextStepToRun.getOrElse(-1))
 
@@ -151,11 +157,57 @@ object SequenceTab {
                         extraStyles = List(SeqexecStyles.labelPointer)))
         )
 
-      val tabContent: VdomNode =
+      val resourceLabels =
         <.div(
-          SeqexecStyles.tabLabel,
-          instrumentWithId
+          SeqexecStyles.resourceLabels,
+          resources.map {
+            case (r, s) =>
+              val color = s match {
+                case ResourceRunOperation.ResourceRunIdle      => "white"
+                case ResourceRunOperation.ResourceRunCompleted => "green"
+                case ResourceRunOperation.ResourceRunInFlight  => "yellow"
+              }
+              s match {
+                case ResourceRunOperation.ResourceRunInFlight =>
+                  Label(
+                    Label.Props(r.show,
+                                color = color.some,
+                                size  = Size.Small,
+                                extraStyles = List(
+                                  SeqexecStyles.activeResourceLabel))): VdomNode
+                case ResourceRunOperation.ResourceRunCompleted =>
+                  Label(Label.Props(r.show,
+                                    color = color.some,
+                                    size  = Size.Small)): VdomNode
+                case _ => EmptyVdom
+              }
+          }.toTagMod
         )
+
+      val instrumentAndResources =
+        React.Fragment(
+          <.div(SeqexecStyles.instrumentAndResourcesLabel,
+                <.div(SeqexecStyles.tabLabel, dispName),
+                resourceLabels),
+          Label(
+            Label.Props(tabTitle,
+                        color       = color.some,
+                        icon        = icon.some,
+                        extraStyles = List(SeqexecStyles.labelPointer)))
+        )
+
+      val tabContent: VdomNode =
+        if (resources.isEmpty) {
+          <.div(
+            SeqexecStyles.tabLabel,
+            instrumentWithId
+          )
+        } else {
+          <.div(
+            SeqexecStyles.tabLabel,
+            instrumentAndResources
+          )
+        }
 
       val previewTabContent: VdomNode =
         <.div(
