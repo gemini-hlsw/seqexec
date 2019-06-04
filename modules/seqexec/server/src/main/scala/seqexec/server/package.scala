@@ -45,6 +45,7 @@ import seqexec.model.StepId
 import seqexec.engine.Event
 import seqexec.engine.Handle
 import seqexec.engine.Sequence
+import seqexec.server.SequenceGen.StepGen
 import squants.Time
 
 package server {
@@ -304,7 +305,7 @@ package object server {
   }
 
   def toStepList[F[_]](seq: SequenceGen[F], d: HeaderExtraData): List[engine.Step[F]] =
-    seq.steps.map(_.generate(d))
+    seq.steps.map(StepGen.generate(_, d))
 
   // If f is true continue, otherwise fail
   def failUnlessM[F[_]: MonadError[?[_], Throwable]](f: F[Boolean], err: Exception): F[Unit] =

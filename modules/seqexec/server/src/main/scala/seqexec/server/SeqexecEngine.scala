@@ -905,8 +905,8 @@ object SeqexecEngine extends SeqexecConfiguration {
     val seq = st.toSequence
 
     def resources(s: SequenceGen.StepGen[F]): List[Resource] = s match {
-      case SequenceGen.PendingStepGen(_, _, resources, _) => resources.toList
-      case _                                              => List.empty
+      case s: SequenceGen.PendingStepGen[F] => s.resources.toList
+      case _                                => List.empty
     }
     def engineSteps(seq: Sequence[F]): List[Step] = {
 

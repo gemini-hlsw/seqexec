@@ -25,13 +25,13 @@ final class SeqexecServerLensesSpec extends CatsSuite with SeqexecServerArbitrar
   implicit def stepActionsGenEq[F[_]]: Eq[StepActionsGen[F]] = Eq.by(x => (x.pre, x.configs, x.post))
   implicit def pndstepgEq[F[_]]: Eq[PendingStepGen[F]] = Eq.by(x => (x.id, x.config, x.resources, x
     .generator))
-  implicit def skipstepgEq[F[_]]: Eq[SkippedStepGen[F]] = Eq.by(x => (x.id, x.config))
-  implicit def cmpstepgEq[F[_]]: Eq[CompletedStepGen[F]] = Eq.by(x => (x.id, x.config, x.fileId))
+  implicit val skipstepgEq: Eq[SkippedStepGen] = Eq.by(x => (x.id, x.config))
+  implicit val cmpstepgEq: Eq[CompletedStepGen] = Eq.by(x => (x.id, x.config, x.fileId))
   implicit def stepqEq[F[_]]: Eq[StepGen[F]] = Eq.instance {
-    case (a: PendingStepGen[F],   b: PendingStepGen[F])     => a === b
-    case (a: SkippedStepGen[F],   b: SkippedStepGen[F])     => a === b
-    case (a: CompletedStepGen[F], b: CompletedStepGen[F])   => a === b
-    case _                                                  => false
+    case (a: PendingStepGen[F],   b: PendingStepGen[F]) => a === b
+    case (a: SkippedStepGen,   b: SkippedStepGen)       => a === b
+    case (a: CompletedStepGen, b: CompletedStepGen)     => a === b
+    case _                                              => false
   }
   implicit def seqgEq[F[_]]: Eq[SequenceGen[F]] = Eq.by(x => (x.id, x.title, x.instrument, x.steps))
   implicit def obsseqEq[F[_]]: Eq[SequenceData[F]] = Eq.by(x => (x.observer, x.seqGen))
