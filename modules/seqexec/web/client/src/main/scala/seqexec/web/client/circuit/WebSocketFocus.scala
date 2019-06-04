@@ -20,13 +20,21 @@ final case class WebSocketsFocus(location:        Pages.SeqexecPages,
                                  defaultObserver: Observer,
                                  clientId:        Option[ClientId],
                                  site:            Option[Site],
-                                 sound:           SoundSelection)
+                                 sound:           SoundSelection,
+                                 serverVersion:   Option[String])
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object WebSocketsFocus {
   implicit val eq: Eq[WebSocketsFocus] =
-    Eq.by(x =>
-      (x.location, x.sequences, x.user, x.defaultObserver, x.clientId, x.site))
+    Eq.by(
+      x =>
+        (x.location,
+         x.sequences,
+         x.user,
+         x.defaultObserver,
+         x.clientId,
+         x.site,
+         x.serverVersion))
 
   val webSocketFocusL: Lens[SeqexecAppRootModel, WebSocketsFocus] =
     Lens[SeqexecAppRootModel, WebSocketsFocus](
@@ -37,13 +45,17 @@ object WebSocketsFocus {
                         m.uiModel.defaultObserver,
                         m.clientId,
                         m.site,
-                        m.uiModel.sound))(
+                        m.uiModel.sound,
+                        m.serverVersion))(
       v =>
         m =>
-          m.copy(sequences = v.sequences,
-                 uiModel = m.uiModel.copy(user = v.user,
-                                          defaultObserver = v.defaultObserver,
-                                          sound           = v.sound),
-                 clientId = v.clientId,
-                 site     = v.site))
+          m.copy(
+            sequences = v.sequences,
+            uiModel = m.uiModel.copy(user = v.user,
+                                     defaultObserver = v.defaultObserver,
+                                     sound           = v.sound),
+            clientId      = v.clientId,
+            site          = v.site,
+            serverVersion = v.serverVersion
+      ))
 }

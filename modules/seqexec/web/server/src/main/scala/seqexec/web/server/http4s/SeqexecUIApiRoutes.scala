@@ -17,6 +17,7 @@ import seqexec.web.server.security.AuthenticationService.AuthResult
 import seqexec.web.server.security.AuthenticationService
 import seqexec.web.server.security.Http4sAuthentication
 import seqexec.web.server.security.TokenRefresher
+import seqexec.web.server.OcsBuildInfo
 import seqexec.web.common.LogMessage
 import fs2.concurrent.Topic
 import fs2.Pipe
@@ -134,7 +135,7 @@ class SeqexecUIApiRoutes(site: String,
         // Create a client specific process
 
         def initialEvent(clientId: ClientId): Stream[IO, WebSocketFrame] =
-          Stream.emit(Binary(ByteVector(trimmedArray(ConnectionOpenEvent(user.toOption, clientId): SeqexecEvent))))
+          Stream.emit(Binary(ByteVector(trimmedArray(ConnectionOpenEvent(user.toOption, clientId, OcsBuildInfo.version): SeqexecEvent))))
 
         def engineEvents(clientId: ClientId): Stream[IO, WebSocketFrame]  =
           engineOutput.subscribe(1).map(anonymizeF).filter(filterOutNull).filter(filterOutOnClientId(clientId)).map(v => Binary(ByteVector(trimmedArray(v))))

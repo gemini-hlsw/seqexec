@@ -793,6 +793,7 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries with Arb
         clientId    <- arbitrary[Option[ClientId]]
         site        <- arbitrary[Option[Site]]
         sound       <- arbitrary[SoundSelection]
+        serverVer   <- arbitrary[Option[String]]
       } yield
         WebSocketsFocus(navLocation,
                         sequences,
@@ -800,7 +801,8 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries with Arb
                         observer,
                         clientId,
                         site,
-                        sound)
+                        sound,
+                        serverVer)
     }
 
   implicit val wsfCogen: Cogen[WebSocketsFocus] =
@@ -810,7 +812,8 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries with Arb
            Observer,
            Option[ClientId],
            Option[Site],
-           SoundSelection)]
+           SoundSelection,
+           Option[String])]
       .contramap(
         x =>
           (x.location,
@@ -819,7 +822,8 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries with Arb
            x.defaultObserver,
            x.clientId,
            x.site,
-           x.sound))
+           x.sound,
+           x.serverVersion))
 
   implicit val arbInitialSyncFocus: Arbitrary[InitialSyncFocus] =
     Arbitrary {
@@ -842,7 +846,8 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries with Arb
         site      <- arbitrary[Option[Site]]
         clientId  <- arbitrary[Option[ClientId]]
         uiModel   <- arbitrary[SeqexecUIModel]
-      } yield SeqexecAppRootModel(sequences, ws, site, clientId, uiModel)
+        version   <- arbitrary[Option[String]]
+      } yield SeqexecAppRootModel(sequences, ws, site, clientId, uiModel, version)
     }
 
   implicit val arbAppTableStates: Arbitrary[AppTableStates] =

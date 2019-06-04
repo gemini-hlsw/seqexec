@@ -22,7 +22,8 @@ trait SequenceEventsArbitraries extends ArbTime with ArbNotification {
     for {
       u  <- arbitrary[Option[UserDetails]]
       id <- arbitrary[ClientId]
-    } yield ConnectionOpenEvent(u, id)
+      v  <- arbitrary[String]
+    } yield ConnectionOpenEvent(u, id, v)
   }
 
   implicit val sseArb = Arbitrary[SequenceStart] {
@@ -217,7 +218,8 @@ trait SequenceEventsArbitraries extends ArbTime with ArbNotification {
   }
 
   implicit val coeCogen: Cogen[ConnectionOpenEvent] =
-    Cogen[Option[UserDetails]].contramap(_.u)
+    Cogen[(Option[UserDetails], ClientId, String)]
+      .contramap(x => (x.userDetails, x.clientId, x.serverVersion))
 
   implicit val smuCogen: Cogen[SeqexecModelUpdate] =
     Cogen[SequencesQueue[SequenceView]].contramap(_.view)
