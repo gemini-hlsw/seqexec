@@ -265,21 +265,21 @@ object GnirsControllerEpics extends GnirsEncoders {
 
   val checkDhs =
     failUnlessM(
-      epicsSys.dhsConnected.map(_.forall(identity)),
+      epicsSys.dhsConnected.map(_.contains(true)),
                 SeqexecFailure.Execution("GNIRS is not connected to DHS"))
 
   val checkArray =
     failUnlessM(
-      epicsSys.arrayActive.map(_.forall(identity)),
+      epicsSys.arrayActive.map(_.contains(true)),
                 SeqexecFailure.Execution("GNIRS detector array is not active"))
 
   val warnOnDhs =
-    epicsSys.dhsConnected.map(_.forall(identity)).flatMap(
+    epicsSys.dhsConnected.map(_.contains(true)).flatMap(
        IO(Log.warn("GNIRS is not connected to DHS")).whenA
     )
 
   val warnOnArray =
-    epicsSys.arrayActive.map(_.forall(identity)).flatMap(
+    epicsSys.arrayActive.map(_.contains(true)).flatMap(
        IO(Log.warn("GNIRS detector array is not active")).whenA
     )
 

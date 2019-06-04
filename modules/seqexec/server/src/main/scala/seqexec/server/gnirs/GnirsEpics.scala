@@ -166,7 +166,8 @@ class GnirsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, String])
   def arrayActive: F[Option[Boolean]] =
     arrayActiveAttr
       .map(safeAttribute(_))
-      .traverse(r => Nested(r).map(_.getActive).value.map(_.getOrElse(false)))
+      .traverse(r => Nested(r).map(_.getActive).value)
+      .map(_.flatten)
 
   def minInt: F[Option[Double]] = Nested(safeAttributeSDouble(dcState.getDoubleAttribute("minInt"))).map(_.toDouble).value
 
