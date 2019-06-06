@@ -520,7 +520,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
         val gnirsReader = if(settings.gnirsKeywords) GnirsKeywordReaderEpics[IO] else GnirsKeywordReaderDummy[IO]
         GnirsHeader.header[IO](sys, gnirsReader, tcsKReader).asRight
       case Instrument.Gpi    =>
-        GpiHeader.header[IO](systems.gpi.gdsClient, tcsKReader, ObsKeywordReaderImpl[IO](config, site)).asRight
+        GpiHeader.header[IO](systems.gpi.gdsClient, tcsKReader, ObsKeywordReader[IO](config, site)).asRight
       case Instrument.Ghost  =>
         GhostHeader.header[IO].asRight
       case Instrument.Niri   =>
@@ -542,7 +542,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
                             inst: InstrumentSystem[F])(ctx: HeaderExtraData): Header[F] =
     new StandardHeader(
       inst,
-      ObsKeywordReaderImpl(config, site),
+      ObsKeywordReader[F](config, site),
       if (settings.tcsKeywords) TcsKeywordsReaderEpics[F] else DummyTcsKeywordsReader[F],
       StateKeywordsReader[F](ctx.conditions, ctx.operator, ctx.observer),
       tcsSubsystems

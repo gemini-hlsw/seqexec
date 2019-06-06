@@ -255,9 +255,11 @@ package object keywords {
     def orDefault: A = a.getOrElse(d.default)
   }
 
-  implicit class A2SeqAction[A: DefaultHeaderValue](val v: Option[A]) {
-    // Convert to a SeqAction or use the default
-    def toSeqActionDefault: SeqAction[A] = SeqAction(v.orDefault)
+  implicit class DefaultValueFOps[F[_]: Functor, A: DefaultHeaderValue](
+      val v: F[Option[A]]) {
+    private val D: DefaultHeaderValue[A] = DefaultHeaderValue[A]
+
+    def orDefault: F[A] = v.map(_.getOrElse(D.default))
   }
 
   // Keywords are read and they can fail or be missing
@@ -277,11 +279,6 @@ package object keywords {
     // use the default
     def safeValOrDefault: F[A] =
       v.handleError(_ => DefaultHeaderValue[A].default)
-  }
-
-  implicit class SeqActionOption2SeqActionF[F[_]: Functor, A: DefaultHeaderValue](
-      val v: F[Option[A]]) {
-    def orDefault: F[A] = v.map(_.orDefault)
   }
 
   def buildKeywordF[F[_]: Functor, A](get: F[A], name: KeywordName, f: (KeywordName, A) => Keyword[A]): KeywordBag => F[KeywordBag] =
