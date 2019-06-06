@@ -309,8 +309,7 @@ package object server {
   // If f is true continue, otherwise fail
   def failUnlessM[F[_]: MonadError[?[_], Throwable]](f: F[Boolean], err: Exception): F[Unit] =
     f.flatMap {
-      case true => Applicative[F].unit
-      case false => MonadError[F, Throwable].raiseError(err)
+      MonadError[F, Throwable].raiseError(err).unlessA
     }
 
 }

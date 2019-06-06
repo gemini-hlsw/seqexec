@@ -3,93 +3,100 @@
 
 package seqexec.server.gnirs
 
-import java.lang.{Double => JDouble}
-
+import cats.implicits._
+import cats.effect.IO
+import cats.effect.Sync
+import cats.data.Nested
 import edu.gemini.epics.acm._
 import edu.gemini.seqexec.server.gnirs.{DetectorState => JDetectorState}
-import seqexec.server.EpicsCommand.setParameter
-import seqexec.server.{EpicsCommand, EpicsSystem, ObserveCommand, SeqAction}
+import java.lang.{Double => JDouble}
 import org.log4s.{Logger, getLogger}
-import cats.implicits._
+import seqexec.server.EpicsCommand.setParameter
+import seqexec.server.EpicsCommand.setParameterF
+import seqexec.server.EpicsUtil.safeAttribute
+import seqexec.server.EpicsUtil.safeAttributeSDouble
+import seqexec.server.EpicsUtil.safeAttributeSInt
+import seqexec.server.{EpicsSystem, ObserveCommand, SeqAction}
+import seqexec.server.EpicsCommandF
 
-class GnirsEpics(epicsService: CaService, tops: Map[String, String]) {
+class GnirsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, String]) {
 
   val GnirsTop: String = tops.getOrElse("nirs", "nirs:")
 
-  object configCCCmd extends EpicsCommand {
+  object configCCCmd extends EpicsCommandF {
     override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("nirs::config"))
 
-    val cover: Option[CaParameter[String]] = cs.map(_.getString("cover"))
-    def setCover(v: String): SeqAction[Unit] = setParameter(cover, v)
+    private val cover: Option[CaParameter[String]] = cs.map(_.getString("cover"))
+    def setCover(v: String): F[Unit] = setParameterF(cover, v)
 
-    val filter1: Option[CaParameter[String]] = cs.map(_.getString("filter1"))
-    def setFilter1(v: String): SeqAction[Unit] = setParameter(filter1, v)
+    private val filter1: Option[CaParameter[String]] = cs.map(_.getString("filter1"))
+    def setFilter1(v: String): F[Unit] = setParameterF(filter1, v)
 
-    val filter2: Option[CaParameter[String]] = cs.map(_.getString("filter2"))
-    def setFilter2(v: String): SeqAction[Unit] = setParameter(filter2, v)
+    private val filter2: Option[CaParameter[String]] = cs.map(_.getString("filter2"))
+    def setFilter2(v: String): F[Unit] = setParameterF(filter2, v)
 
-    val focus: Option[CaParameter[Integer]] = cs.map(_.getInteger("focus"))
-    def setFocus(v: Int): SeqAction[Unit] = setParameter(focus, Integer.valueOf(v))
+    private val focus: Option[CaParameter[Integer]] = cs.map(_.getInteger("focus"))
+    def setFocus(v: Int): F[Unit] = setParameterF(focus, Integer.valueOf(v))
 
-    val tilt: Option[CaParameter[String]] = cs.map(_.getString("tilt"))
-    def setTilt(v: String): SeqAction[Unit] = setParameter(tilt, v)
+    private val tilt: Option[CaParameter[String]] = cs.map(_.getString("tilt"))
+    def setTilt(v: String): F[Unit] = setParameterF(tilt, v)
 
-    val prism: Option[CaParameter[String]] = cs.map(_.getString("prism"))
-    def setPrism(v: String): SeqAction[Unit] = setParameter(prism, v)
+    private val prism: Option[CaParameter[String]] = cs.map(_.getString("prism"))
+    def setPrism(v: String): F[Unit] = setParameterF(prism, v)
 
-    val acqMirror: Option[CaParameter[String]] = cs.map(_.getString("acqMirror"))
-    def setAcqMirror(v: String): SeqAction[Unit] = setParameter(acqMirror, v)
+    private val acqMirror: Option[CaParameter[String]] = cs.map(_.getString("acqMirror"))
+    def setAcqMirror(v: String): F[Unit] = setParameterF(acqMirror, v)
 
-    val focusbest: Option[CaParameter[String]] = cs.map(_.getString("focusbest"))
-    def setFocusBest(v: String): SeqAction[Unit] = setParameter(focusbest, v)
+    private val focusbest: Option[CaParameter[String]] = cs.map(_.getString("focusbest"))
+    def setFocusBest(v: String): F[Unit] = setParameterF(focusbest, v)
 
-    val centralWavelength: Option[CaParameter[JDouble]] = cs.map(_.getDouble("centralWavelength"))
-    def setCentralWavelength(v: Double): SeqAction[Unit] = setParameter(centralWavelength, JDouble.valueOf(v))
+    private val centralWavelength: Option[CaParameter[JDouble]] = cs.map(_.getDouble("centralWavelength"))
+    def setCentralWavelength(v: Double): F[Unit] = setParameterF(centralWavelength, JDouble.valueOf(v))
 
-    val camera: Option[CaParameter[String]] = cs.map(_.getString("camera"))
-    def setCamera(v: String): SeqAction[Unit] = setParameter(camera, v)
+    private val camera: Option[CaParameter[String]] = cs.map(_.getString("camera"))
+    def setCamera(v: String): F[Unit] = setParameterF(camera, v)
 
-    val gratingMode: Option[CaParameter[String]] = cs.map(_.getString("gratingMode"))
-    def setGratingMode(v: String): SeqAction[Unit] = setParameter(gratingMode, v)
+    private val gratingMode: Option[CaParameter[String]] = cs.map(_.getString("gratingMode"))
+    def setGratingMode(v: String): F[Unit] = setParameterF(gratingMode, v)
 
-    val gratingOrder: Option[CaParameter[Integer]] = cs.map(_.getInteger("order"))
-    def setOrder(v: Int): SeqAction[Unit] = setParameter(gratingOrder, Integer.valueOf(v))
+    private val gratingOrder: Option[CaParameter[Integer]] = cs.map(_.getInteger("order"))
+    def setOrder(v: Int): F[Unit] = setParameterF(gratingOrder, Integer.valueOf(v))
 
-    val grating: Option[CaParameter[String]] = cs.map(_.getString("grating"))
-    def setGrating(v: String): SeqAction[Unit] = setParameter(grating, v)
+    private val grating: Option[CaParameter[String]] = cs.map(_.getString("grating"))
+    def setGrating(v: String): F[Unit] = setParameterF(grating, v)
 
-    val slitWidth: Option[CaParameter[String]] = cs.map(_.getString("slitWidth"))
-    def setSlitWidth(v: String): SeqAction[Unit] = setParameter(slitWidth, v)
+    private val slitWidth: Option[CaParameter[String]] = cs.map(_.getString("slitWidth"))
+    def setSlitWidth(v: String): F[Unit] = setParameterF(slitWidth, v)
 
-    val decker: Option[CaParameter[String]] = cs.map(_.getString("decker"))
-    def setDecker(v: String): SeqAction[Unit] = setParameter(decker, v)
+    private val decker: Option[CaParameter[String]] = cs.map(_.getString("decker"))
+    def setDecker(v: String): F[Unit] = setParameterF(decker, v)
 
   }
 
-  object configDCCmd extends EpicsCommand {
+  object configDCCmd extends EpicsCommandF {
     override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("nirs::dcconfig"))
 
-    val lowNoise: Option[CaParameter[Integer]] = cs.map(_.getInteger("lowNoise"))
-    def setLowNoise(v: Int): SeqAction[Unit] = setParameter(lowNoise, Integer.valueOf(v))
+    private val lowNoise: Option[CaParameter[Integer]] = cs.map(_.getInteger("lowNoise"))
+    def setLowNoise(v: Int): F[Unit] = setParameterF(lowNoise, Integer.valueOf(v))
 
-    val exposureTime: Option[CaParameter[JDouble]] = cs.map(_.getDouble("exposureTime"))
-    def setExposureTime(v: Double): SeqAction[Unit] = setParameter(exposureTime, JDouble.valueOf(v))
+    private val exposureTime: Option[CaParameter[JDouble]] = cs.map(_.getDouble("exposureTime"))
+    def setExposureTime(v: Double): F[Unit] = setParameterF(exposureTime, JDouble.valueOf(v))
 
-    val wcs: Option[CaParameter[String]] = cs.map(_.getString("wcs"))
-    def setWcs(v: String): SeqAction[Unit] = setParameter(wcs, v)
+    private val wcs: Option[CaParameter[String]] = cs.map(_.getString("wcs"))
+    def setWcs(v: String): F[Unit] = setParameterF(wcs, v)
 
-    val digitalAvgs: Option[CaParameter[Integer]] = cs.map(_.getInteger("digitalAvgs"))
-    def setDigitalAvgs(v: Int): SeqAction[Unit] = setParameter(digitalAvgs, Integer.valueOf(v))
+    private val digitalAvgs: Option[CaParameter[Integer]] = cs.map(_.getInteger("digitalAvgs"))
+    def setDigitalAvgs(v: Int): F[Unit] = setParameterF(digitalAvgs, Integer.valueOf(v))
 
-    val detBias: Option[CaParameter[JDouble]] = cs.map(_.getDouble("detBias"))
-    def setDetBias(v: Double): SeqAction[Unit] = setParameter(detBias, JDouble.valueOf(v))
+    private val detBias: Option[CaParameter[JDouble]] = cs.map(_.getDouble("detBias"))
+    def setDetBias(v: Double): F[Unit] = setParameterF(detBias, JDouble.valueOf(v))
 
-    val coadds: Option[CaParameter[JDouble]] = cs.map(_.getDouble("coadds"))
-    def setCoadds(v: Int): SeqAction[Unit] = setParameter(coadds, JDouble.valueOf(v.toDouble))
+    private val coadds: Option[CaParameter[JDouble]] = cs.map(_.getDouble("coadds"))
+    def setCoadds(v: Int): F[Unit] = setParameterF(coadds, JDouble.valueOf(v.toDouble))
 
   }
 
-  object endObserveCmd extends EpicsCommand {
+  object endObserveCmd extends EpicsCommandF {
     override protected val cs:Option[CaCommandSender] = Option(epicsService.getCommandSender("nirs::endObserve"))
   }
 
@@ -98,7 +105,7 @@ class GnirsEpics(epicsService: CaService, tops: Map[String, String]) {
     "nirs::observeCmd", s"${GnirsTop}dc:apply", s"${GnirsTop}dc:applyC", s"${GnirsTop}dc:observeC",
     true, s"${GnirsTop}dc:stop", s"${GnirsTop}dc:abort", ""))
 
-  object stopCmd extends EpicsCommand {
+  object stopCmd extends EpicsCommandF {
     override protected val cs: Option[CaCommandSender] = stopCS
   }
 
@@ -109,7 +116,7 @@ class GnirsEpics(epicsService: CaService, tops: Map[String, String]) {
 
   private val abortCS: Option[CaCommandSender] = Option(epicsService.getCommandSender("nirs::abort"))
 
-  object abortCmd extends EpicsCommand {
+  object abortCmd extends EpicsCommandF {
     override protected val cs: Option[CaCommandSender] = abortCS
   }
 
@@ -126,95 +133,95 @@ class GnirsEpics(epicsService: CaService, tops: Map[String, String]) {
     def setLabel(v: String): SeqAction[Unit] = setParameter(label, v)
   }
 
-  val state: CaStatusAcceptor = epicsService.getStatusAcceptor("nirs::status")
-  val dcState: CaStatusAcceptor = epicsService.getStatusAcceptor("nirs::dcstatus")
+  private val state: CaStatusAcceptor = epicsService.getStatusAcceptor("nirs::status")
+  private val dcState: CaStatusAcceptor = epicsService.getStatusAcceptor("nirs::dcstatus")
 
-  def arrayId: Option[String] = Option(dcState.getStringAttribute("arrayid").value)
+  def arrayId: F[Option[String]] = safeAttribute(dcState.getStringAttribute("arrayid"))
 
-  def arrayType: Option[String] = Option(dcState.getStringAttribute("arraytyp").value)
+  def arrayType: F[Option[String]] = safeAttribute(dcState.getStringAttribute("arraytyp"))
 
-  def obsEpoch: Option[Double] = Option(dcState.getDoubleAttribute("OBSEPOCH").value).map(_.toDouble)
+  def obsEpoch: F[Option[Double]] = Nested(safeAttributeSDouble(dcState.getDoubleAttribute("OBSEPOCH"))).map(_.toDouble).value
 
-  def detBias: Option[Double] = Option(dcState.getDoubleAttribute("detBias").value).map(_.toDouble)
+  def detBias: F[Option[Double]] = Nested(safeAttributeSDouble(dcState.getDoubleAttribute("detBias"))).map(_.toDouble).value
 
-  def countDown: Option[String] = Option(dcState.getStringAttribute("countdown").value)
+  def countDown: F[Option[String]] = safeAttribute(dcState.getStringAttribute("countdown"))
 
-  def numCoadds: Option[Int] = Option(dcState.getIntegerAttribute("numCoAdds").value).map(_.toInt)
+  def numCoadds: F[Option[Int]] = Nested(safeAttributeSInt(dcState.getIntegerAttribute("numCoAdds"))).map(_.toInt).value
 
-  def wcs: Option[String] = Option(dcState.getStringAttribute("wcs").value)
+  def wcs: F[Option[String]] = safeAttribute(dcState.getStringAttribute("wcs"))
 
-  def exposureTime: Option[Double] = Option(dcState.getDoubleAttribute("exposureTime").value).map(_.toDouble)
+  def exposureTime: F[Option[Double]] = Nested(safeAttributeSDouble(dcState.getDoubleAttribute("exposureTime"))).map(_.toDouble).value
 
-  def digitalAvgs: Option[Int] = Option(dcState.getIntegerAttribute("digitalAvgs").value).map(_.toInt)
+  def digitalAvgs: F[Option[Int]] = Nested(safeAttributeSInt(dcState.getIntegerAttribute("digitalAvgs"))).map(_.toInt).value
 
-  def lowNoise: Option[Int] = Option(dcState.getIntegerAttribute("lowNoise").value).map(_.toInt)
+  def lowNoise: F[Option[Int]] = Nested(safeAttributeSInt(dcState.getIntegerAttribute("lowNoise"))).map(_.toInt).value
 
-  private val observeCAttr: CaAttribute[CarStateGEM5] = dcState.addEnum("observeState",
-    s"${GnirsTop}dc:observeC.VAL", classOf[CarStateGEM5])
-  def observeState: Option[CarStateGEM5] = Option(observeCAttr.value)
-
-  def dhsConnected: Option[Boolean] = Option(dcState.getIntegerAttribute("dhsConnected").value)
-    .map(_.toInt =!= 0)
+  def dhsConnected: F[Option[Boolean]] = Nested(safeAttributeSInt(dcState.getIntegerAttribute("dhsConnected")))
+    .map(_.toInt =!= 0).value
 
   val arrayActiveAttr: Option[CaAttribute[JDetectorState]] = Option(dcState.addEnum(
     "arrayState", s"${GnirsTop}dc:activate", classOf[JDetectorState]
   ))
-  def arrayActive: Option[Boolean] = arrayActiveAttr.flatMap(at => Option(at.value))
-    .map(_.getActive)
 
-  def minInt: Option[Double] = Option(dcState.getDoubleAttribute("minInt").value).map(_.toDouble)
+  def arrayActive: F[Option[Boolean]] =
+    arrayActiveAttr
+      .map(safeAttribute(_))
+      .traverse(r => Nested(r).map(_.getActive).value)
+      .map(_.flatten)
 
-  def dettemp: Option[Double] = Option(dcState.getDoubleAttribute("dettemp").value).map(_.toDouble)
+  def minInt: F[Option[Double]] = Nested(safeAttributeSDouble(dcState.getDoubleAttribute("minInt"))).map(_.toDouble).value
 
-  def prism: Option[String] = Option(state.getStringAttribute("prism").value)
+  def dettemp: F[Option[Double]] = Nested(safeAttributeSDouble(dcState.getDoubleAttribute("dettemp"))).map(_.toDouble).value
 
-  def focus: Option[String] = Option(state.getStringAttribute("focus").value)
+  def prism: F[Option[String]] = safeAttribute(state.getStringAttribute("prism"))
 
-  def slitWidth: Option[String] = Option(state.getStringAttribute("slitWidth").value)
+  def focus: F[Option[String]] = safeAttribute(state.getStringAttribute("focus"))
 
-  def acqMirror: Option[String] = Option(state.getStringAttribute("acqMirror").value)
+  def slitWidth: F[Option[String]] = safeAttribute(state.getStringAttribute("slitWidth"))
 
-  def cover: Option[String] = Option(state.getStringAttribute("cover").value)
+  def acqMirror: F[Option[String]] = safeAttribute(state.getStringAttribute("acqMirror"))
 
-  def grating: Option[String] = Option(state.getStringAttribute("grating").value)
+  def cover: F[Option[String]] = safeAttribute(state.getStringAttribute("cover"))
 
-  def gratingMode: Option[String] = Option(state.getStringAttribute("gratingMode").value)
+  def grating: F[Option[String]] = safeAttribute(state.getStringAttribute("grating"))
 
-  def filter1: Option[String] = Option(state.getStringAttribute("filter1").value)
+  def gratingMode: F[Option[String]] = safeAttribute(state.getStringAttribute("gratingMode"))
 
-  def filter2: Option[String] = Option(state.getStringAttribute("filter2").value)
+  def filter1: F[Option[String]] = safeAttribute(state.getStringAttribute("filter1"))
 
-  def camera: Option[String] = Option(state.getStringAttribute("camera").value)
+  def filter2: F[Option[String]] = safeAttribute(state.getStringAttribute("filter2"))
 
-  def decker: Option[String] = Option(state.getStringAttribute("decker").value)
+  def camera: F[Option[String]] = safeAttribute(state.getStringAttribute("camera"))
 
-  def centralWavelength: Option[Double] = Option(state.getDoubleAttribute("centralWavelength").value).map(_.toDouble)
+  def decker: F[Option[String]] = safeAttribute(state.getStringAttribute("decker"))
 
-  def gratingTilt: Option[Double] = Option(state.getDoubleAttribute("grattilt").value).map(_.toDouble)
+  def centralWavelength: F[Option[Double]] = Nested(safeAttributeSDouble(state.getDoubleAttribute("centralWavelength"))).map(_.toDouble).value
 
-  def nirscc: Option[String] = Option(state.getStringAttribute("nirscc").value)
+  def gratingTilt: F[Option[Double]] = Nested(safeAttributeSDouble(state.getDoubleAttribute("grattilt"))).map(_.toDouble).value
 
-  def gratingOrder: Option[Int] = Option(state.getIntegerAttribute("gratord").value).map(_.toInt)
+  def nirscc: F[Option[String]] = safeAttribute(state.getStringAttribute("nirscc"))
 
-  def filter1Eng: Option[Int] = Option(state.getIntegerAttribute("fw1_eng").value).map(_.toInt)
+  def gratingOrder: F[Option[Int]] = Nested(safeAttributeSInt(state.getIntegerAttribute("gratord"))).map(_.toInt).value
 
-  def filter2Eng: Option[Int] = Option(state.getIntegerAttribute("fw2_eng").value).map(_.toInt)
+  def filter1Eng: F[Option[Int]] = Nested(safeAttributeSInt(state.getIntegerAttribute("fw1_eng"))).map(_.toInt).value
 
-  def deckerEng: Option[Int] = Option(state.getIntegerAttribute("dkr_eng").value).map(_.toInt)
+  def filter2Eng: F[Option[Int]] = Nested(safeAttributeSInt(state.getIntegerAttribute("fw2_eng"))).map(_.toInt).value
 
-  def gratingEng: Option[Int] = Option(state.getIntegerAttribute("gr_eng").value).map(_.toInt)
+  def deckerEng: F[Option[Int]] = Nested(safeAttributeSInt(state.getIntegerAttribute("dkr_eng"))).map(_.toInt).value
 
-  def prismEng: Option[Int] = Option(state.getIntegerAttribute("prsm_eng").value).map(_.toInt)
+  def gratingEng: F[Option[Int]] = Nested(safeAttributeSInt(state.getIntegerAttribute("gr_eng"))).map(_.toInt).value
 
-  def cameraEng: Option[Int] = Option(state.getIntegerAttribute("cam_eng").value).map(_.toInt)
+  def prismEng: F[Option[Int]] = Nested(safeAttributeSInt(state.getIntegerAttribute("prsm_eng"))).map(_.toInt).value
 
-  def slitEng: Option[Int] = Option(state.getIntegerAttribute("slit_eng").value).map(_.toInt)
+  def cameraEng: F[Option[Int]] = Nested(safeAttributeSInt(state.getIntegerAttribute("cam_eng"))).map(_.toInt).value
 
-  def focusEng: Option[Int] = Option(state.getIntegerAttribute("fcs_eng").value).map(_.toInt)
+  def slitEng: F[Option[Int]] = Nested(safeAttributeSInt(state.getIntegerAttribute("slit_eng"))).map(_.toInt).value
+
+  def focusEng: F[Option[Int]] = Nested(safeAttributeSInt(state.getIntegerAttribute("fcs_eng"))).map(_.toInt).value
 
 }
 
-object GnirsEpics extends EpicsSystem[GnirsEpics] {
+object GnirsEpics extends EpicsSystem[GnirsEpics[IO]] {
 
   override val className: String = getClass.getName
   override val Log: Logger = getLogger
