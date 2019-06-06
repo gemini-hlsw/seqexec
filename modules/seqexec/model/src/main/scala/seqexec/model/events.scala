@@ -56,13 +56,14 @@ object events {
     case _                      => false
   }
 
-  final case class ConnectionOpenEvent(u:        Option[UserDetails],
-                                       clientId: ClientId)
+  final case class ConnectionOpenEvent(userDetails:   Option[UserDetails],
+                                       clientId:      ClientId,
+                                       serverVersion: String)
       extends SeqexecEvent
 
   object ConnectionOpenEvent {
     implicit lazy val equal: Eq[ConnectionOpenEvent] =
-      Eq.by(x => (x.u, x.clientId))
+      Eq.by(x => (x.userDetails, x.clientId, x.serverVersion))
   }
 
   object SeqexecModelUpdate {

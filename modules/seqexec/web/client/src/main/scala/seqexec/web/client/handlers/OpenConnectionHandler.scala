@@ -20,7 +20,7 @@ class OpenConnectionHandler[M](modelRW: ModelRW[M, CalibrationQueues])
     with Handlers[M, CalibrationQueues] {
 
   override def handle: PartialFunction[Any, ActionResult[M]] = {
-    case ServerMessage(ConnectionOpenEvent(u, _)) =>
+    case ServerMessage(ConnectionOpenEvent(u, _, _)) =>
       val ts = u
         .as(CalQueueTable.State.EditableTableState)
         .getOrElse(CalQueueTable.State.ROTableState)

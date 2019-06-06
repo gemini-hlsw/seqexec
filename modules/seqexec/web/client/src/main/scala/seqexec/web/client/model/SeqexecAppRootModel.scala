@@ -32,11 +32,12 @@ import web.client.table._
   * Root of the UI Model of the application
   */
 @Lenses
-final case class SeqexecAppRootModel(sequences: SequencesQueue[SequenceView],
-                                     ws:        WebSocketConnection,
-                                     site:      Option[Site],
-                                     clientId:  Option[ClientId],
-                                     uiModel:   SeqexecUIModel)
+final case class SeqexecAppRootModel(sequences:     SequencesQueue[SequenceView],
+                                     ws:            WebSocketConnection,
+                                     site:          Option[Site],
+                                     clientId:      Option[ClientId],
+                                     uiModel:       SeqexecUIModel,
+                                     serverVersion: Option[String])
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object SeqexecAppRootModel {
@@ -52,7 +53,8 @@ object SeqexecAppRootModel {
     WebSocketConnection.Empty,
     None,
     None,
-    SeqexecUIModel.Initial)
+    SeqexecUIModel.Initial,
+    None)
 
   val logDisplayL: Lens[SeqexecAppRootModel, SectionVisibilityState] =
     SeqexecAppRootModel.uiModel ^|->
@@ -102,5 +104,5 @@ object SeqexecAppRootModel {
       at(CalibrationQueueId)).asGetter
 
   implicit val eq: Eq[SeqexecAppRootModel] =
-    Eq.by(x => (x.sequences, x.ws, x.site, x.clientId, x.uiModel))
+    Eq.by(x => (x.sequences, x.ws, x.site, x.clientId, x.uiModel, x.serverVersion))
 }
