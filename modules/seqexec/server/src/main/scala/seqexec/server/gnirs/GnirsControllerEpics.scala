@@ -275,12 +275,12 @@ object GnirsControllerEpics extends GnirsEncoders {
 
   val warnOnDhs =
     epicsSys.dhsConnected.map(_.contains(true)).flatMap(
-       IO(Log.warn("GNIRS is not connected to DHS")).whenA
+       IO(Log.warn("GNIRS is not connected to DHS")).unlessA
     )
 
   val warnOnArray =
     epicsSys.arrayActive.map(_.contains(true)).flatMap(
-       IO(Log.warn("GNIRS detector array is not active")).whenA
+       IO(Log.warn("GNIRS detector array is not active")).unlessA
     )
 
   def apply()(implicit ioTimer: Timer[IO]): GnirsController[IO] =
