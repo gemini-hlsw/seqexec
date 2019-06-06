@@ -7,10 +7,12 @@ import seqexec.model.{StepId, StepState}
 import cats.implicits._
 import monocle.Lens
 import monocle.macros.GenLens
+import monocle.macros.Lenses
 
 /**
   * A list of `Executions` grouped by observation.
   */
+@Lenses
 final case class Step[F[_]](
                              id: StepId,
                              breakpoint: Step.BreakpointMark,
@@ -19,11 +21,26 @@ final case class Step[F[_]](
                              executions: List[List[Action[F]]]
 )
 
+@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object Step {
 
+  @Lenses
   final case class BreakpointMark(self: Boolean) extends AnyVal
+  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
+  object BreakpointMark
+
+  @Lenses
   final case class SkipMark(self: Boolean) extends AnyVal
+  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
+  object SkipMark
+
+  @Lenses
   final case class Skipped(self: Boolean) extends AnyVal
+  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
+  object Skipped
+
+  def breakpointL[F[_]]: Lens[Step[F], Boolean] = Step.breakpoint ^|-> BreakpointMark.self
+  def skippedL[F[_]]: Lens[Step[F], Boolean] = Step.skipped ^|-> Skipped.self
 
   def init[F[_]](id: StepId,
                  executions: List[List[Action[F]]]): Step[F] = Step(id, BreakpointMark(false),

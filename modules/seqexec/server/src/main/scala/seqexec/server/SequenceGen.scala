@@ -22,31 +22,32 @@ final case class SequenceGen[F[_]](id: Observation.Id, title: String,
                              instrument: Instrument,
                              steps: List[SequenceGen.StepGen[F]]) {
   val resources: Set[Resource] = steps.collect{
-    case SequenceGen.PendingStepGen(_, _, resources, _) => resources
+    case p: SequenceGen.PendingStepGen[F] => p.resources
   }.foldMap(identity(_))
 
   def configActionCoord(stepId: StepId, r: Resource): Option[ActionCoordsInSeq] =
     steps.find(_.id === stepId)
-      .collect{ case p @ SequenceGen.PendingStepGen(_, _, _, _) => p}
+      .collect{ case p: SequenceGen.PendingStepGen[F] => p}
       .flatMap{ _.generator.configActionCoord(r) }
       .map{case (ex, ac) => ActionCoordsInSeq(stepId, ex, ac)}
 
   def resourceAtCoords(c: ActionCoordsInSeq): Option[Resource] =
     steps.find(_.id === c.stepId)
-      .collect{ case p @ SequenceGen.PendingStepGen(_, _, _, _) => p}
+      .collect{ case p: SequenceGen.PendingStepGen[F] => p}
       .flatMap(_.generator.resourceAtCoords(c.execIdx, c.actIdx))
 }
 
 object SequenceGen {
 
-  sealed trait StepGen[F[_]] {
+  sealed trait StepGen[+F[_]] {
     val id: StepId
     val config: StepConfig
+  }
 
-    def generate(ctx: HeaderExtraData): EngineStep[F] = this match {
-      case PendingStepGen(_, _, _, g) => EngineStep.init[F](id, g.generate(ctx))
-      case SkippedStepGen(id, _)      => EngineStep.init[F](id, Nil)
-        .copy(skipped = EngineStep.Skipped(true))
+  object StepGen {
+    def generate[F[_]](stepGen: StepGen[F], ctx: HeaderExtraData): EngineStep[F] = stepGen match {
+      case p: PendingStepGen[F]       => EngineStep.init[F](stepGen.id, p.generator.generate(ctx))
+      case SkippedStepGen(id, _)      => EngineStep.skippedL.set(true)(EngineStep.init[F](id, Nil))
       case CompletedStepGen(id, _, _) => EngineStep.init[F](id, Nil)
     }
   }
@@ -77,15 +78,15 @@ object SequenceGen {
                              ) extends StepGen[F]
 
 
-  final case class SkippedStepGen[F[_]](override val id: StepId,
+  final case class SkippedStepGen(override val id: StepId,
                                   override val config: StepConfig
-                              ) extends StepGen[F]
+                              ) extends StepGen[Nothing]
 
   // Receiving a sequence from the ODB with a completed step without an image file id would be
   // weird, but I still use an Option just in case
-  final case class CompletedStepGen[F[_]](override val id: StepId,
+  final case class CompletedStepGen(override val id: StepId,
                                     override val config: StepConfig,
                                     fileId: Option[ImageFileId]
-                                ) extends StepGen[F]
+                                ) extends StepGen[Nothing]
 
 }
