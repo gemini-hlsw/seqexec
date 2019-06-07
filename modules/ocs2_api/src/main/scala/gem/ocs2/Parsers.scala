@@ -10,7 +10,7 @@ import gem.Observation
 import gem.Program
 import gem.enum._
 import gem.config.GcalConfig.GcalLamp
-import gem.math._
+import gsp.math._
 
 /** String parsers for our model types.
   */

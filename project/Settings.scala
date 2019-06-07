@@ -142,6 +142,9 @@ object Settings {
     val guava                   = "25.0-jre"
     val prometheusClient        = "0.6.0"
     val geminiLocales           = "0.1.0-2019a"
+
+    // Gemini Libraries
+    val gspMath                 = "0.1.0+5-7322fff9-SNAPSHOT"
   }
 
   /**
@@ -270,6 +273,10 @@ object Settings {
     val GmpStatusDatabase   = "edu.gemini.aspen.gmp" % "gmp-statusdb"            % LibraryVersions.gmpStatusDatabase
     val GmpCmdJmsBridge     = "edu.gemini.aspen.gmp" % "gmp-commands-jms-bridge" % LibraryVersions.gmpCmdClientBridge
     val Guava               = "com.google.guava"     % "guava"                   % LibraryVersions.guava
+
+    // Gemini Libraries
+    val GspMath             = Def.setting("edu.gemini" %%% "gsp-math"         % LibraryVersions.gspMath         )
+    val GspMathTestkit      = Def.setting("edu.gemini" %%% "gsp-math-testkit" % LibraryVersions.gspMath % "test")
   }
 
   object PluginVersions {

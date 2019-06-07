@@ -7,6 +7,7 @@ package arb
 import gem.config.GcalConfig
 import gem.config.GcalConfig.{GcalArcs, GcalLamp}
 import gem.enum._
+import gsp.math.arb.ArbTime
 
 import cats.data.NonEmptySet
 import cats.laws.discipline.arbitrary._

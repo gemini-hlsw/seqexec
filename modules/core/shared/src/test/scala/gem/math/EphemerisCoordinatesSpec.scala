@@ -3,7 +3,9 @@
 
 package gem.math
 
-import gem.arb._
+import gem.arb.ArbEphemeris
+import gsp.math.{ Angle, Offset }
+import gsp.math.arb.{ ArbCoordinates, ArbDeclination, ArbOffset, ArbRightAscension }
 
 import cats.{ Eq, Show }
 import cats.kernel.laws.discipline._

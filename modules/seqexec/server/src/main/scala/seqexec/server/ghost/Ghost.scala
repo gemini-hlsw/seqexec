@@ -12,10 +12,8 @@ import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import edu.gemini.spModel.gemini.ghost.{ Ghost => SPGhost }
 import gem.enum.LightSinkName
-import gem.math.Coordinates
-import gem.math.Declination
-import gem.math.RightAscension
-import gem.optics.Format
+import gsp.math.{ Coordinates, Declination, RightAscension }
+import gsp.math.optics.Format
 import scala.concurrent.duration._
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Instrument

@@ -6,7 +6,8 @@ package gem.arb
 import gem.CoAdds
 import gem.config.{DynamicConfig, StaticConfig}
 import gem.enum._
-import gem.math.Wavelength
+import gsp.math.Wavelength
+import gsp.math.arb.{ ArbTime, ArbWavelength }
 
 import java.time.Duration
 

@@ -4,8 +4,9 @@
 package gem
 package horizons
 
-import gem.math.{ Angle, Ephemeris, EphemerisCoordinates, Offset }
+import gem.math.{ Ephemeris, EphemerisCoordinates }
 import gem.util.Timestamp
+import gsp.math.{ Angle, Offset }
 
 import atto.ParseResult
 import atto.ParseResult.Done
@@ -32,9 +33,9 @@ object EphemerisParser {
     import atto._
     import Atto._
     import cats.implicits._
-    import gem.parser.CoordinateParsers._
-    import gem.parser.MiscParsers._
-    import gem.parser.TimeParsers._
+    import gsp.math.parser.CoordinateParsers._
+    import gsp.math.parser.MiscParsers._
+    import gsp.math.parser.TimeParsers._
 
     val SOE           = "$$SOE"
     val EOE           = "$$EOE"

@@ -6,7 +6,7 @@ package gem.dao
 import cats.effect.{ IO, ContextShift }
 import doobie._, doobie.implicits._
 import gem.Program
-import gem.syntax.prism._
+import gsp.math.syntax.prism._
 
 import scala.collection.immutable.TreeMap
 

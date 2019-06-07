@@ -6,8 +6,8 @@ package enum
 
 import cats.instances.string._
 import cats.syntax.eq._
-import gem.math.Angle
 import gem.util.Enumerated
+import gsp.math.Angle
 
 /**
  * Enumerated type for GMOS detector.

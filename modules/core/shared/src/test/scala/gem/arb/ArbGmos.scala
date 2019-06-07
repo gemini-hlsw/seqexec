@@ -7,7 +7,8 @@ package arb
 import gem.config.{DynamicConfig, StaticConfig}
 import gem.config.GmosConfig._
 import gem.enum._
-import gem.math.{Offset, Wavelength}
+import gsp.math.{Offset, Wavelength}
+import gsp.math.arb.{ ArbOffset, ArbTime, ArbWavelength }
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.{Arbitrary, Cogen, Gen}
 

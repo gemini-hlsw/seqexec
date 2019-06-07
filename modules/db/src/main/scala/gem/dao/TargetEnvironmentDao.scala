@@ -9,7 +9,7 @@ import cats.implicits._
 import doobie._
 import doobie.implicits._
 import gem.instances.treeset._
-import gem.math.Index
+import gsp.math.Index
 
 object TargetEnvironmentDao {
 

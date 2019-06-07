@@ -8,12 +8,12 @@ import cats.implicits._
 import gem.{ Dataset, EphemerisKey, Observation, Program, Step, Target }
 import gem.config._
 import gem.enum._
-import gem.math._
 import gem.ocs2.pio.PioPath._
 import gem.ocs2.pio.{ PioDecoder, PioError, PioPath }
 import gem.ocs2.pio.PioError.ParseError
 import gem.ocs2.pio.PioDecoder.fromParse
-import gem.syntax.all._
+import gsp.math._
+import gsp.math.syntax.all._
 
 import java.time.Instant
 

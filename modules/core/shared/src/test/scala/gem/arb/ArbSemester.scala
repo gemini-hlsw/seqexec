@@ -5,6 +5,7 @@ package gem
 package arb
 
 import gem.enum.Half
+import gsp.math.arb.ArbTime
 import java.time.Year
 import org.scalacheck._
 import org.scalacheck.Arbitrary._

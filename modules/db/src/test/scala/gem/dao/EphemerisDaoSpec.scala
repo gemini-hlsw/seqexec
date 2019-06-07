@@ -8,10 +8,10 @@ import gem.arb.ArbEnumerated._
 import gem.arb.ArbEphemeris._
 import gem.arb.ArbEphemerisKey._
 import gem.arb.ArbEphemerisMeta._
-import gem.arb.ArbTime._
 import gem.enum.Site
 import gem.math.Ephemeris
 import gem.util.Timestamp
+import gem.arb.ArbTimestamp._
 
 import cats.implicits._
 

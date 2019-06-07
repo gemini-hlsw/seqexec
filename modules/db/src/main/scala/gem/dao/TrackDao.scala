@@ -8,8 +8,8 @@ import cats.implicits._
 import doobie._, doobie.implicits._
 
 import gem.enum.Site
-import gem.math.ProperMotion
 import gem.util.Timestamp
+import gsp.math.ProperMotion
 
 
 object TrackDao {

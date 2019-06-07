@@ -8,8 +8,8 @@ import gem.config.StaticConfig
 import gem.dao.{ DatabaseConfiguration, ObservationDao, ProgramDao, UserDao }
 import gem.enum.ProgramRole
 import gem.json.instances.all._
-import gem.math.Index
-import gem.syntax.prism._
+import gsp.math.Index
+import gsp.math.syntax.prism._
 
 import cats.effect.{ ContextShift, IO }
 import cats.implicits._

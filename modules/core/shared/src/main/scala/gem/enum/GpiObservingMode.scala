@@ -7,8 +7,8 @@ package enum
 import cats.Eval
 import cats.instances.string._
 import cats.syntax.eq._
-import gem.math.MagnitudeValue
 import gem.util.Enumerated
+import gsp.math.MagnitudeValue
 
 /**
  * Enumerated type for GPI ObservingMode.

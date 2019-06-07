@@ -4,8 +4,8 @@
 package gem.dao.meta
 
 import doobie._
-import gem.math._
-import gem.syntax.prism._
+import gsp.math.Declination
+import gsp.math.syntax.prism._
 
 trait DeclinationMeta {
   import AngleMeta._

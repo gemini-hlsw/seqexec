@@ -4,7 +4,9 @@
 package gem
 package arb
 
-import gem.math.{ Coordinates, Ephemeris, EphemerisCoordinates, Offset }
+import gem.math.{ Ephemeris, EphemerisCoordinates }
+import gsp.math.{ Coordinates, Offset }
+import gsp.math.arb.{ ArbCoordinates, ArbOffset }
 import gem.util.Timestamp
 
 import org.scalacheck._
@@ -14,7 +16,7 @@ import org.scalacheck.Arbitrary._
 trait ArbEphemeris {
   import ArbCoordinates._
   import ArbOffset._
-  import ArbTime._
+  import ArbTimestamp._
   import Ephemeris.Element
 
   implicit val arbEphemerisCoordinates: Arbitrary[EphemerisCoordinates] =

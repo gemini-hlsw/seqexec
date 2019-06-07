@@ -8,7 +8,7 @@ import gem.arb._
 import cats.{ Eq, Show }
 import cats.kernel.laws.discipline._
 import cats.tests.CatsSuite
-import gem.laws.discipline._
+import gsp.math.laws.discipline._
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals"))
 final class EphemerisKeySpec extends CatsSuite {

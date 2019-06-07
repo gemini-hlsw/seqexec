@@ -4,8 +4,8 @@
 package gem.dao.meta
 
 import doobie._
-import gem.math.Wavelength
-import gem.syntax.prism._
+import gsp.math.Wavelength
+import gsp.math.syntax.prism._
 
 /**
  * Meta definitions for various wavelength units.  These are *not* implicit

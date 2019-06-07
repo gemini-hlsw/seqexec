@@ -5,7 +5,7 @@ package gem
 package arb
 
 import gem.enum.Instrument
-import gem.syntax.treesetcompanion._
+import gsp.math.syntax.treesetcompanion._
 
 import org.scalacheck._
 import org.scalacheck.Gen._

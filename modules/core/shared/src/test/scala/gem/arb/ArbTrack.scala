@@ -5,7 +5,9 @@ package gem
 package arb
 
 import gem.enum.Site
-import gem.math._
+import gem.math.Ephemeris
+import gsp.math._
+import gsp.math.arb.ArbProperMotion
 
 import gem.Track.{ Nonsidereal, Sidereal }
 import org.scalacheck._

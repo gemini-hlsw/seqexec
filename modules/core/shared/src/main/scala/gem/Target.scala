@@ -6,7 +6,7 @@ package gem
 import cats._
 import cats.implicits._
 
-import gem.math.ProperMotion
+import gsp.math.ProperMotion
 
 import monocle.macros.Lenses
 

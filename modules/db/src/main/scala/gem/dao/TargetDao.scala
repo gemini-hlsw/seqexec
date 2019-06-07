@@ -9,7 +9,7 @@ import doobie.implicits._
 import gem.dao.meta._
 import gem.dao.composite._
 import gem.enum.TrackType
-import gem.math.{ Declination, ProperMotion, RightAscension }
+import gsp.math.{ Declination, ProperMotion, RightAscension }
 
 object TargetDao extends EnumeratedMeta /* extend EnumeratedMeta to lower the priority - see MetaTrackType below and issue #170 */ {
 

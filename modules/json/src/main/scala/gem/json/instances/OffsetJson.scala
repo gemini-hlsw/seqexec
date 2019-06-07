@@ -3,8 +3,8 @@
 
 package gem.json.instances
 
-import gem.math.Offset
 import gem.json.syntax.splitepi._
+import gsp.math.Offset
 import io.circe.{ Decoder, Encoder }
 import io.circe.generic.semiauto._
 

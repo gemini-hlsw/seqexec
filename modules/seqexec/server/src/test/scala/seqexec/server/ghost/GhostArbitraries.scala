@@ -3,9 +3,8 @@
 
 package seqexec.server.ghost
 
-import gem.math.Coordinates
-import gem.arb.ArbTime
-import gem.arb.ArbCoordinates._
+import gsp.math.Coordinates
+import gsp.math.arb.{ ArbCoordinates, ArbTime }
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Arbitrary
 import org.scalacheck.Cogen
@@ -14,6 +13,9 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.duration._
 
 trait GhostArbitraries extends ArbTime {
+
+  import ArbCoordinates._
+
   val ghostSRSingleTargetConfigGen: Gen[StandardResolutionMode.SingleTarget] =
     for {
       basePos    <- arbitrary[Option[Coordinates]]

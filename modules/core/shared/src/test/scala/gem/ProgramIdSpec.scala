@@ -8,6 +8,7 @@ import cats.kernel.laws.discipline._
 import cats.tests.CatsSuite
 import gem.arb._
 import gem.enum.{ Site, DailyProgramType }
+import gsp.math.arb.ArbTime
 import java.time._
 import monocle.law.discipline._
 

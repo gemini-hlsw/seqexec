@@ -11,8 +11,8 @@ import gem.config._
 import gem.dao.composite._
 import gem.dao.meta._
 import gem.enum._
-import gem.math.Wavelength
 import gem.util.Location
+import gsp.math.Wavelength
 import fs2.Stream
 import scala.collection.immutable.TreeMap
 

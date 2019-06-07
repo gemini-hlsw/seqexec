@@ -5,7 +5,7 @@ package gem
 
 import cats.{ Order, Show }
 import cats.instances.short._
-import gem.syntax.prism._
+import gsp.math.syntax.prism._
 import monocle.Prism
 
 sealed abstract case class CoAdds private (toShort: Short) {

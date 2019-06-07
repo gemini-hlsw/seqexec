@@ -7,7 +7,7 @@ import cats.implicits._
 import java.util.UUID
 import gem.Observation
 import gem.arb.ArbObservation
-import gem.arb.ArbTime.arbSDuration
+import gsp.math.arb.ArbTime.arbSDuration
 import org.scalacheck.Arbitrary
 import org.scalacheck.Cogen
 import org.scalacheck.Gen

@@ -4,7 +4,7 @@
 package gem.dao.meta
 
 import doobie._
-import gem.math.Offset
+import gsp.math.Offset
 
 trait OffsetMeta {
   import AngleMeta._

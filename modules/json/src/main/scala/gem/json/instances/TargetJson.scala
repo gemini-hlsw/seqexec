@@ -5,7 +5,8 @@ package gem.json.instances
 
 import gem.{ EphemerisKey, Target, UserTarget }
 import gem.enum.Site
-import gem.math.{ Ephemeris, ProperMotion }
+import gem.math.Ephemeris
+import gsp.math.ProperMotion
 import io.circe._
 import io.circe.{ Decoder, Encoder }
 import io.circe.generic.semiauto._
