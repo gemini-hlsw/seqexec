@@ -9,9 +9,9 @@ import doobie._, doobie.implicits._
 import gem.config.{ StaticConfig }
 import gem.dao.meta._
 import gem.enum._
-import gem.math.Index
-import gem.syntax.treemap._
 import gem.util.Location
+import gsp.math.Index
+import gsp.math.syntax.treemap._
 
 import scala.collection.immutable.TreeMap
 

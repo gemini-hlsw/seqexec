@@ -5,7 +5,7 @@ package seqexec.web.model.boopickle
 
 import boopickle.DefaultBasic._
 import gem.{ProgramId, Observation}
-import gem.math.Index
+import gsp.math.Index
 import java.time.{LocalDate, Year}
 
 /**

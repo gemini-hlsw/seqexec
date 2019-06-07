@@ -5,7 +5,8 @@ package gem
 package arb
 
 import gem.config.TelescopeConfig
-import gem.math.Offset
+import gsp.math.Offset
+import gsp.math.arb.ArbOffset
 
 import org.scalacheck.{ Arbitrary, Cogen }
 import org.scalacheck.Arbitrary.arbitrary

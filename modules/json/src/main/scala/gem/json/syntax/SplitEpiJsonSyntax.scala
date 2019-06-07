@@ -3,7 +3,7 @@
 
 package gem.json.syntax
 
-import gem.optics._
+import gsp.math.optics._
 import io.circe._
 
 trait SplitEpiJsonSyntax {

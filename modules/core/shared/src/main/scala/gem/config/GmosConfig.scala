@@ -5,7 +5,7 @@ package gem.config
 
 import gem.enum._
 import gem.instances.time._
-import gem.math.{ Offset, Wavelength }
+import gsp.math.{ Offset, Wavelength }
 
 import cats.{ Eq, Order }
 import cats.implicits._

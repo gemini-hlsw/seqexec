@@ -4,7 +4,7 @@
 package gem.ocs2
 
 import gem.{ EphemerisKey, Target }
-import gem.math._
+import gsp.math._
 import gem.ocs2.Decoders._
 import gem.ocs2.pio._
 import gem.ocs2.pio.PioError.{ MissingKey, ParseError }

@@ -4,7 +4,7 @@
 package gem.horizons
 
 import gem.math.{ Ephemeris, EphemerisCoordinates }
-import gem.syntax.treemap._
+import gsp.math.syntax.treemap._
 import gem.util.Timestamp
 
 import cats.effect.IO

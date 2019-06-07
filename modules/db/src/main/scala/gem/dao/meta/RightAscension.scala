@@ -4,7 +4,7 @@
 package gem.dao.meta
 
 import doobie._
-import gem.math._
+import gsp.math.RightAscension
 
 trait RightAscensionMeta {
   import AngleMeta._

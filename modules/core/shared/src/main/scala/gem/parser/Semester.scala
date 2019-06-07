@@ -6,11 +6,12 @@ package parser
 
 import cats.implicits._
 import atto._, Atto._
+import gsp.math.parser.TimeParsers
 
 /** Parser for [[gem.Semester]]. */
 trait SemesterParsers {
-  import TimeParsers._
   import EnumParsers._
+  import TimeParsers._
 
   /** Parser for a full-year `Semester` like `2015A`. */
   val semester: Parser[Semester] =

@@ -6,7 +6,7 @@ package gem.util
 import cats._
 import cats.implicits._
 import cats.effect.IO
-import gem.optics.Format
+import gsp.math.optics.Format
 import java.time.{ Instant, ZonedDateTime }
 import java.time.ZoneOffset.UTC
 import java.time.temporal.ChronoUnit.MICROS

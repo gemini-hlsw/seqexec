@@ -7,8 +7,9 @@ package dao
 import gem.dao.composite._
 import gem.dao.meta._
 import gem.enum.Site
-import gem.math._
+import gem.math.{ EphemerisCoordinates, Ephemeris }
 import gem.util.Timestamp
+import gsp.math.{ Coordinates, Declination, Offset, RightAscension }
 
 import cats.implicits._
 import doobie._, doobie.implicits._

@@ -4,9 +4,9 @@
 package gem.horizons
 
 import gem.EphemerisKey
-import gem.arb.ArbTime._
 import gem.enum.Site.GS
-import gem.syntax.time._
+import gsp.math.arb.ArbTime._
+import gsp.math.syntax.time._
 
 import org.scalacheck.{ Arbitrary, Gen }
 import org.scalacheck.Arbitrary.arbitrary

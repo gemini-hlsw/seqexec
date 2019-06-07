@@ -9,6 +9,7 @@ import cats.tests.CatsSuite
 import gem.arb._
 import gem.enum.{ Half, Site }
 import gem.instances.time._
+import gsp.math.arb.ArbTime
 import java.time.{ Year, ZoneId }
 import java.time.format.DateTimeFormatter
 

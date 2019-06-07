@@ -3,7 +3,8 @@
 
 package gem.horizons
 
-import gem.math.{ Angle, Ephemeris, Offset }
+import gem.math.Ephemeris
+import gsp.math.{ Angle, Offset }
 import gem.syntax.stream._
 
 import cats.implicits._

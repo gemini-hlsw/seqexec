@@ -7,14 +7,15 @@ package parser
 import atto._, Atto._
 import cats.implicits._
 import gem.enum.{ Site, ProgramType }
+import gsp.math.parser.{ MiscParsers, TimeParsers }
 
 /** Parsers for [[gem.ProgramId]]. */
 trait ProgramIdParsers {
-  import MiscParsers._
   import EnumParsers._
   import SemesterParsers._
-  import TimeParsers._
   import ProgramId._
+  import MiscParsers._
+  import TimeParsers._
 
   /** Parser for a standard science program id like `GS-2008A-SV-33`. */
   val science: Parser[Science] =

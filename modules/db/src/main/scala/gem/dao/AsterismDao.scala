@@ -11,9 +11,9 @@ import doobie.implicits._
 
 import gem.dao.meta._
 import gem.enum.{ AsterismType, Instrument }
-import gem.math.Index
 import gem.instances.treemap._
-import gem.syntax.treemap._
+import gsp.math.Index
+import gsp.math.syntax.treemap._
 import scala.collection.immutable.{ TreeMap }
 
 object AsterismDao {

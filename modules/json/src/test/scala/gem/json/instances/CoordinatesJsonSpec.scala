@@ -4,8 +4,8 @@
 package gem.json.instances
 
 import cats.tests.CatsSuite
-import gem.math._
-import gem.arb._
+import gsp.math._
+import gsp.math.arb._
 import io.circe.testing.CodecTests
 import io.circe.testing.instances._
 

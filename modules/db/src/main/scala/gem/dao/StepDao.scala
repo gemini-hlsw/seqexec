@@ -13,8 +13,8 @@ import gem.config.GcalConfig.GcalLamp
 import gem.dao.composite._
 import gem.dao.meta._
 import gem.enum._
-import gem.math.Offset
-import gem.syntax.treemap._
+import gsp.math.Offset
+import gsp.math.syntax.treemap._
 import java.time.Duration
 import scala.collection.immutable.TreeMap
 

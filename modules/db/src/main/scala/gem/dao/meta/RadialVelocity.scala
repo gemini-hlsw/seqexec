@@ -4,7 +4,7 @@
 package gem.dao.meta
 
 import doobie._
-import gem.math._
+import gsp.math.RadialVelocity
 
 trait RadialVelocityMeta {
   import PrismMeta._

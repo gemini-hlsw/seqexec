@@ -10,7 +10,7 @@ import gem.enum.{ Half, Site }
 import gem.instances.time._
 import gem.math.LocalObservingNight
 import gem.parser.SemesterParsers
-import gem.syntax.parser._
+import gsp.math.syntax.parser._
 import java.time._
 import java.time.Month._
 

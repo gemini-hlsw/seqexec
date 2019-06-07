@@ -3,9 +3,9 @@
 
 package gem.math
 
-import gem.optics.SplitMono
-import gem.syntax.treemap._
 import gem.util.Timestamp
+import gsp.math.optics.SplitMono
+import gsp.math.syntax.treemap._
 
 import cats.{ Eq, Foldable, Monoid }
 import cats.implicits._

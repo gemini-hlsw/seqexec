@@ -9,7 +9,7 @@ import cats.effect.Sync
 import cats.data.OptionT
 import cats.data.Nested
 import cats.implicits._
-import gem.syntax.string._
+import gsp.math.syntax.string._
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import monocle.Prism

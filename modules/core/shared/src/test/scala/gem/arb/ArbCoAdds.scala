@@ -4,7 +4,7 @@
 package gem
 package arb
 
-import gem.syntax.prism._
+import gsp.math.syntax.prism._
 
 import org.scalacheck.{ Arbitrary, Cogen, Gen }
 

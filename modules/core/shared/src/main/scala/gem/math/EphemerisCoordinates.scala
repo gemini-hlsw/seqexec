@@ -3,6 +3,8 @@
 
 package gem.math
 
+import gsp.math._
+
 import cats._
 import monocle.Lens
 import monocle.macros.GenLens

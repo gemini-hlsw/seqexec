@@ -4,7 +4,7 @@
 package gem.dao.meta
 
 import doobie._
-import gem.syntax.prism._
+import gsp.math.syntax.prism._
 import monocle.Prism
 import scala.reflect.runtime.universe.TypeTag
 

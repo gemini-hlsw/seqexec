@@ -15,7 +15,7 @@ import edu.gemini.spModel.seqcomp.SeqConfigNames.{INSTRUMENT_KEY, OBSERVE_KEY}
 import java.lang.{Double => JDouble, Integer => JInt}
 
 import gem.enum.LightSinkName
-import gem.syntax.string._
+import gsp.math.syntax.string._
 import seqexec.model.enum.Instrument
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.ConfigUtilOps._

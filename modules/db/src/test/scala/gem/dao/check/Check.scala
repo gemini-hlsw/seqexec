@@ -11,7 +11,7 @@ import gem._
 import gem.enum._
 import gem.config._
 import gem.util.{ Timestamp, Location }
-import gem.math._
+import gsp.math._
 import java.time.LocalDate
 import org.scalatest._
 import scala.collection.immutable.{ TreeMap, TreeSet }

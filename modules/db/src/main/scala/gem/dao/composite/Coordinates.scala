@@ -6,7 +6,7 @@ package gem.dao.composite
 import doobie._
 import gem.dao.meta._
 
-import gem.math._
+import gsp.math.Coordinates
 
 trait CoordinatesComposite {
 

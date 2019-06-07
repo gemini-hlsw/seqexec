@@ -6,7 +6,7 @@ package dao
 
 import cats.implicits._
 import doobie.implicits._
-import gem.math.Index
+import gsp.math.Index
 import org.scalatest._
 import org.scalatest.prop._
 import org.scalatest.Matchers._

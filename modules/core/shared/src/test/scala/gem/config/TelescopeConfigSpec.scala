@@ -3,7 +3,8 @@
 
 package gem.config
 
-import gem.arb._
+import gem.arb.ArbTelescopeConfig
+import gsp.math.arb.ArbOffset
 
 import cats.tests.CatsSuite
 import cats.kernel.laws.discipline._

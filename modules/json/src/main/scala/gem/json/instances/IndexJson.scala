@@ -3,8 +3,8 @@
 
 package gem.json.instances
 
-import gem.math.Index
 import gem.json.syntax.prism._
+import gsp.math.Index
 import io.circe.{ Decoder, Encoder, KeyDecoder, KeyEncoder }
 
 trait IndexJson {

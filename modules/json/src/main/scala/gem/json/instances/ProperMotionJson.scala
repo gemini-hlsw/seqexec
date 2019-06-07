@@ -4,7 +4,7 @@
 package gem.json.instances
 
 import gem.json.syntax.all._
-import gem.math.{ Angle, Epoch, ProperMotion, RadialVelocity }
+import gsp.math.{ Angle, Epoch, ProperMotion, RadialVelocity }
 import io.circe._
 import io.circe.generic.semiauto._
 

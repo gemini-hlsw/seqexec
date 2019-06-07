@@ -7,7 +7,7 @@ import cats.{ Eq, Show }
 import cats.kernel.laws.discipline._
 import cats.tests.CatsSuite
 import gem.arb._
-import gem.math.Index
+import gsp.math.Index
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals"))
 final class ObservationIdSpec extends CatsSuite {

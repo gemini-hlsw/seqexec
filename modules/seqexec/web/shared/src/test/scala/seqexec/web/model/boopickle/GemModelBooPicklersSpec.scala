@@ -6,8 +6,9 @@ package seqexec.web.model.boopickle
 import cats.Eq
 import cats.tests.CatsSuite
 import gem.{ProgramId, Observation}
-import gem.arb.{ArbIndex, ArbTime, ArbProgramId, ArbObservation}
-import gem.math.Index
+import gem.arb.{ ArbProgramId, ArbObservation }
+import gsp.math.Index
+import gsp.math.arb.{ ArbIndex, ArbTime }
 import java.time.{LocalDate, Year}
 import org.scalacheck.Arbitrary._
 

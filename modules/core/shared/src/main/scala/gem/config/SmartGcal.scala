@@ -5,7 +5,7 @@ package gem
 package config
 
 import gem.enum._
-import gem.math.Wavelength
+import gsp.math.Wavelength
 
 /** Marker trait for smart gcal search keys used to lookup corresponding gcal
   * configurations.

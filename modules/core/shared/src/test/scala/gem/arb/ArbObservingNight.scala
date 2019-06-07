@@ -6,6 +6,7 @@ package arb
 
 import gem.enum.Site
 import gem.math.{ LocalObservingNight, ObservingNight }
+import gsp.math.arb.ArbTime
 
 import org.scalacheck._
 import org.scalacheck.Arbitrary._

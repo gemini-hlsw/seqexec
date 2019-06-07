@@ -4,8 +4,8 @@
 package gem.dao.meta
 
 import doobie._
-import gem.math.Index
-import gem.syntax.prism._
+import gsp.math.Index
+import gsp.math.syntax.prism._
 
 trait IndexMeta {
 

@@ -3,8 +3,8 @@
 
 package gem.ocs2.pio
 
-import gem.syntax.string._
 import gem.util.Enumerated
+import gsp.math.syntax.string._
 
 import cats.Functor
 import cats.implicits._

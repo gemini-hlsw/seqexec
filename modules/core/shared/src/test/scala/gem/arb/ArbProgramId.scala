@@ -5,8 +5,9 @@ package gem
 package arb
 
 import gem.enum. { Site, ProgramType, DailyProgramType }
-import gem.math.Index
-import gem.syntax.prism._
+import gsp.math.Index
+import gsp.math.arb.ArbTime
+import gsp.math.syntax.prism._
 import java.time.LocalDate
 import org.scalacheck._
 import org.scalacheck.Gen._

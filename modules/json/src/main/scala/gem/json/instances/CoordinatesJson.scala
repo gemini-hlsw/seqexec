@@ -4,7 +4,7 @@
 package gem.json.instances
 
 import gem.json.syntax.all._
-import gem.math.{ Coordinates, Declination, RightAscension }
+import gsp.math.{ Coordinates, Declination, RightAscension }
 import io.circe._
 import io.circe.generic.semiauto._
 

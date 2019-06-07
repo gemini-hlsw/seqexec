@@ -4,7 +4,7 @@
 package gem
 package config
 
-import gem.math.Offset
+import gsp.math.Offset
 
 import cats.Order
 import cats.implicits._

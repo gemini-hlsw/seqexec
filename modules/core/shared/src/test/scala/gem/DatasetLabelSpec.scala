@@ -7,7 +7,7 @@ import cats.tests.CatsSuite
 import cats.{ Eq, Show }
 import cats.kernel.laws.discipline._
 import gem.arb._
-import gem.laws.discipline._
+import gsp.math.laws.discipline._
 
 @SuppressWarnings(Array("org.wartremover.warts.ToString"))
 final class DatasetLabelSpec extends CatsSuite {

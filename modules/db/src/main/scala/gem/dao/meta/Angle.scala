@@ -4,7 +4,7 @@
 package gem.dao.meta
 
 import doobie._
-import gem.math.{ Angle, HourAngle }
+import gsp.math.{ Angle, HourAngle }
 
 trait AngleMeta {
 
