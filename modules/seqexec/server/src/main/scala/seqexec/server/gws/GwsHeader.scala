@@ -17,16 +17,16 @@ object GwsHeader {
       gwsReader.health.map(_ === EpicsHealth.Good)
         .handleError(_ => false) // error check the health read
         .ifM(sendKeywords[F](id, inst, List(
-          buildDoubleS(gwsReader.humidity, KeywordName.HUMIDITY),
-          buildDoubleS(gwsReader.temperature.map(_.toCelsiusScale), KeywordName.TAMBIENT),
-          buildDoubleS(gwsReader.temperature.map(_.toFahrenheitScale), KeywordName.TAMBIEN2),
-          buildDoubleS(gwsReader.airPressure.map(_.toMillimetersOfMercury), KeywordName.PRESSURE),
-          buildDoubleS(gwsReader.airPressure.map(_.toPascals), KeywordName.PRESSUR2),
-          buildDoubleS(gwsReader.dewPoint.map(_.toCelsiusScale), KeywordName.DEWPOINT),
-          buildDoubleS(gwsReader.dewPoint.map(_.toFahrenheitScale), KeywordName.DEWPOIN2),
-          buildDoubleS(gwsReader.windVelocity.map(_.toMetersPerSecond), KeywordName.WINDSPEE),
-          buildDoubleS(gwsReader.windVelocity.map(_.toInternationalMilesPerHour), KeywordName.WINDSPE2),
-          buildDoubleS(gwsReader.windDirection.map(_.toDegrees), KeywordName.WINDDIRE)
+          buildDouble(gwsReader.humidity, KeywordName.HUMIDITY),
+          buildDouble(gwsReader.temperature.map(_.toCelsiusScale), KeywordName.TAMBIENT),
+          buildDouble(gwsReader.temperature.map(_.toFahrenheitScale), KeywordName.TAMBIEN2),
+          buildDouble(gwsReader.airPressure.map(_.toMillimetersOfMercury), KeywordName.PRESSURE),
+          buildDouble(gwsReader.airPressure.map(_.toPascals), KeywordName.PRESSUR2),
+          buildDouble(gwsReader.dewPoint.map(_.toCelsiusScale), KeywordName.DEWPOINT),
+          buildDouble(gwsReader.dewPoint.map(_.toFahrenheitScale), KeywordName.DEWPOIN2),
+          buildDouble(gwsReader.windVelocity.map(_.toMetersPerSecond), KeywordName.WINDSPEE),
+          buildDouble(gwsReader.windVelocity.map(_.toInternationalMilesPerHour), KeywordName.WINDSPE2),
+          buildDouble(gwsReader.windDirection.map(_.toDegrees), KeywordName.WINDDIRE)
         )), Applicative[F].unit)
 
     override def sendAfter(id: ImageFileId): F[Unit] = Applicative[F].unit

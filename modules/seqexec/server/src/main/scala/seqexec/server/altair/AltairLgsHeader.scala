@@ -21,22 +21,23 @@ object AltairLgsHeader {
           id,
           inst,
           List(
-            buildDoubleS(altairReader.lgdfocus, KeywordName.LGDFOCUS),
-            buildDoubleS(altairReader.lgttcnts, KeywordName.LGTTCNTS),
-            buildInt32S(altairReader.lgttexp, KeywordName.LGTTEXP),
-            buildDoubleS(altairReader.lgsfcnts, KeywordName.LGSFCNTS),
-            buildDoubleS(altairReader.lgsfexp, KeywordName.LGSFEXP),
-            buildDoubleS(altairReader.fsmtip, KeywordName.FSMTIP),
-            buildDoubleS(altairReader.fsmtilt, KeywordName.FSMTILT),
-            buildDoubleS(altairReader.lgzmpos, KeywordName.LGZMPOS),
-            buildDoubleS(altairReader.naalt, KeywordName.NAALT),
-            buildDoubleS(altairReader.nathick, KeywordName.NATHICK),
-            buildStringS(altairReader.lgndfilt, KeywordName.LGNDFILT),
-            buildStringS(altairReader.lgttiris, KeywordName.LGTTIRIS)
+            buildDouble(altairReader.lgdfocus, KeywordName.LGDFOCUS),
+            buildDouble(altairReader.lgttcnts, KeywordName.LGTTCNTS),
+            buildInt32(altairReader.lgttexp, KeywordName.LGTTEXP),
+            buildDouble(altairReader.lgsfcnts, KeywordName.LGSFCNTS),
+            buildDouble(altairReader.lgsfexp, KeywordName.LGSFEXP),
+            buildDouble(altairReader.fsmtip, KeywordName.FSMTIP),
+            buildDouble(altairReader.fsmtilt, KeywordName.FSMTILT),
+            buildDouble(altairReader.lgzmpos, KeywordName.LGZMPOS),
+            buildDouble(altairReader.naalt, KeywordName.NAALT),
+            buildDouble(altairReader.nathick, KeywordName.NATHICK),
+            buildString(altairReader.lgndfilt, KeywordName.LGNDFILT),
+            buildString(altairReader.lgttiris, KeywordName.LGTTIRIS)
           )
         )
 
-      override def sendBefore(obsId: Observation.Id, id: ImageFileId): F[Unit] = Applicative[F].unit
+      override def sendBefore(obsId: Observation.Id, id: ImageFileId): F[Unit] =
+        Applicative[F].unit
     }
 
 }

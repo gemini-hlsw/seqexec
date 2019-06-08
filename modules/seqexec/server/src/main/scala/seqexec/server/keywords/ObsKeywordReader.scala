@@ -93,16 +93,16 @@ object ObsKeywordReader extends ObsKeywordsReaderConstants {
     }
 
     override def obsType: F[String] = F.delay(
-      s"${config.getItemValue(new ItemKey(OBSERVE_KEY, OBSERVE_TYPE_PROP))}").safeValOrDefault
+      s"${config.getItemValue(new ItemKey(OBSERVE_KEY, OBSERVE_TYPE_PROP))}")
 
     override def obsClass: F[String] = F.delay(
-      s"${config.getItemValue(new ItemKey(OBSERVE_KEY, OBS_CLASS_PROP))}").safeValOrDefault
+      s"${config.getItemValue(new ItemKey(OBSERVE_KEY, OBS_CLASS_PROP))}")
 
     override def gemPrgId: F[String] = F.delay(
-      s"${config.getItemValue(new ItemKey(OCS_KEY, PROGRAMID_PROP))}").safeValOrDefault
+      s"${config.getItemValue(new ItemKey(OCS_KEY, PROGRAMID_PROP))}")
 
     override def obsId: F[String] = F.delay(
-      s"${config.getItemValue(new ItemKey(OCS_KEY, OBSERVATIONID_PROP))}").safeValOrDefault
+      s"${config.getItemValue(new ItemKey(OCS_KEY, OBSERVATIONID_PROP))}")
 
     private def explainExtractError(e: ExtractFailure): SeqexecFailure =
       SeqexecFailure.Unexpected(ConfigUtilOps.explain(e))
@@ -124,13 +124,13 @@ object ObsKeywordReader extends ObsKeywordsReaderConstants {
     override def requestedConditions: F[Map[String, String]] = {
       val keys: F[List[(String, String)]] =
         List(SB, CC, IQ, WV).map { key =>
-        val value: F[String] = F.delay {
-          config.extractAs[String](new ItemKey(OCS_KEY, "obsConditions:" + key))
-            .map { d => (d === "100").fold("Any", s"$d-percentile") }
-            .toOption
-          }.safeValOrDefault
-        value.map(key -> _)
-      }.sequence
+          val value: F[String] = F.delay {
+            config.extractAs[String](new ItemKey(OCS_KEY, "obsConditions:" + key))
+              .map { d => (d === "100").fold("Any", s"$d-percentile") }
+              .toOption
+            }.safeValOrDefault
+          value.map(key -> _)
+        }.sequence
       keys.map(_.toMap)
     }
 
@@ -196,7 +196,6 @@ object ObsKeywordReader extends ObsKeywordsReaderConstants {
     override def pwfs1GuideS: F[String] =
       pwfs1Guide
         .map(decodeGuide)
-        .safeValOrDefault
 
     override def pwfs2Guide: F[StandardGuideOptions.Value] =
       EitherT(F.delay(
@@ -207,7 +206,6 @@ object ObsKeywordReader extends ObsKeywordsReaderConstants {
     override def pwfs2GuideS: F[String] =
       pwfs2Guide
         .map(decodeGuide)
-        .safeValOrDefault
 
     override def oiwfsGuide: F[StandardGuideOptions.Value] =
       EitherT(F.delay(
@@ -221,7 +219,6 @@ object ObsKeywordReader extends ObsKeywordsReaderConstants {
     override def oiwfsGuideS: F[String] =
       oiwfsGuide
         .map(decodeGuide)
-        .safeValOrDefault
 
     override def aowfsGuide: F[StandardGuideOptions.Value] =
       EitherT(F.delay(
@@ -235,7 +232,6 @@ object ObsKeywordReader extends ObsKeywordsReaderConstants {
     override def aowfsGuideS: F[String] =
       aowfsGuide
         .map(decodeGuide)
-        .safeValOrDefault
 
     private implicit val eqVisibility: Eq[Visibility] = Eq.by(_.ordinal())
 
@@ -245,7 +241,6 @@ object ObsKeywordReader extends ObsKeywordsReaderConstants {
       }
 
     override def headerPrivacy: F[Boolean] = headerPrivacyF
-      .handleError(_ => false) // Matches the default on `headerPrivacy` where we make it PUBLIC
 
     private val noProprietaryMonths: F[String] =
       F.delay(LocalDate.now(ZoneId.of("GMT")).format(DateTimeFormatter.ISO_LOCAL_DATE))
@@ -267,7 +262,6 @@ object ObsKeywordReader extends ObsKeywordsReaderConstants {
     override def proprietaryMonths: F[String] =
       headerPrivacyF
         .ifM(calcProprietaryMonths, noProprietaryMonths)
-        .safeValOrDefault
 
     private val manualDarkValue = "Manual Dark"
     private val manualDarkOverride = "Dark"
@@ -297,7 +291,6 @@ object ObsKeywordReader extends ObsKeywordsReaderConstants {
         .map(Boolean.unbox)
         .getOrElse(false)
       )
-      .handleError(_ => false)
   }
   // scalastyle:on
 }

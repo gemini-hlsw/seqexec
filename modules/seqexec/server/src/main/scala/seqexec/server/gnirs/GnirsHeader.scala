@@ -15,40 +15,40 @@ object GnirsHeader {
   def header[F[_]: Sync](inst: InstrumentSystem[F], gnirsReader: GnirsKeywordReader[F], tcsReader: TcsKeywordsReader[F]): Header[F] = new Header[F] {
     override def sendBefore(obsId: Observation.Id, id: ImageFileId): F[Unit] =
       sendKeywords(id, inst, List(
-        buildInt32S(tcsReader.gnirsInstPort, KeywordName.INPORT),
-        buildStringS(gnirsReader.arrayId, KeywordName.ARRAYID),
-        buildStringS(gnirsReader.arrayType, KeywordName.ARRAYTYP),
-        buildStringS(tcsReader.date, KeywordName.DATE_OBS),
-        buildStringS(tcsReader.ut, KeywordName.TIME_OBS),
-        buildStringS(tcsReader.ut, KeywordName.UTSTART),
-        buildStringS(gnirsReader.filter1, KeywordName.FILTER1),
-        buildInt32S(gnirsReader.filterWheel1Pos, KeywordName.FW1_ENG),
-        buildStringS(gnirsReader.filter2, KeywordName.FILTER2),
-        buildInt32S(gnirsReader.filterWheel2Pos, KeywordName.FW2_ENG),
-        buildStringS(gnirsReader.camera, KeywordName.CAMERA),
-        buildInt32S(gnirsReader.cameraPos, KeywordName.CAM_ENG),
-        buildStringS(gnirsReader.slit, KeywordName.SLIT),
-        buildInt32S(gnirsReader.slitPos, KeywordName.SLIT_ENG),
-        buildStringS(gnirsReader.decker, KeywordName.DECKER),
-        buildInt32S(gnirsReader.deckerPos, KeywordName.DKR_ENG),
-        buildStringS(gnirsReader.grating, KeywordName.GRATING),
-        buildInt32S(gnirsReader.gratingPos, KeywordName.GR_ENG),
-        buildDoubleS(gnirsReader.gratingWavelength, KeywordName.GRATWAVE),
-        buildInt32S(gnirsReader.gratingOrder, KeywordName.GRATORD),
-        buildDoubleS(gnirsReader.gratingTilt, KeywordName.GRATTILT),
-        buildStringS(gnirsReader.prism, KeywordName.PRISM),
-        buildInt32S(gnirsReader.prismPos, KeywordName.PRSM_ENG),
-        buildStringS(gnirsReader.acquisitionMirror, KeywordName.ACQMIR),
-        buildStringS(gnirsReader.windowCover, KeywordName.COVER),
-        buildStringS(gnirsReader.focus, KeywordName.FOCUS),
-        buildInt32S(gnirsReader.focusPos, KeywordName.FCS_ENG),
-        buildDoubleS(gnirsReader.detectorBias, KeywordName.DETBIAS)
+        buildInt32(tcsReader.gnirsInstPort, KeywordName.INPORT),
+        buildString(gnirsReader.arrayId, KeywordName.ARRAYID),
+        buildString(gnirsReader.arrayType, KeywordName.ARRAYTYP),
+        buildString(tcsReader.date, KeywordName.DATE_OBS),
+        buildString(tcsReader.ut, KeywordName.TIME_OBS),
+        buildString(tcsReader.ut, KeywordName.UTSTART),
+        buildString(gnirsReader.filter1, KeywordName.FILTER1),
+        buildInt32(gnirsReader.filterWheel1Pos, KeywordName.FW1_ENG),
+        buildString(gnirsReader.filter2, KeywordName.FILTER2),
+        buildInt32(gnirsReader.filterWheel2Pos, KeywordName.FW2_ENG),
+        buildString(gnirsReader.camera, KeywordName.CAMERA),
+        buildInt32(gnirsReader.cameraPos, KeywordName.CAM_ENG),
+        buildString(gnirsReader.slit, KeywordName.SLIT),
+        buildInt32(gnirsReader.slitPos, KeywordName.SLIT_ENG),
+        buildString(gnirsReader.decker, KeywordName.DECKER),
+        buildInt32(gnirsReader.deckerPos, KeywordName.DKR_ENG),
+        buildString(gnirsReader.grating, KeywordName.GRATING),
+        buildInt32(gnirsReader.gratingPos, KeywordName.GR_ENG),
+        buildDouble(gnirsReader.gratingWavelength, KeywordName.GRATWAVE),
+        buildInt32(gnirsReader.gratingOrder, KeywordName.GRATORD),
+        buildDouble(gnirsReader.gratingTilt, KeywordName.GRATTILT),
+        buildString(gnirsReader.prism, KeywordName.PRISM),
+        buildInt32(gnirsReader.prismPos, KeywordName.PRSM_ENG),
+        buildString(gnirsReader.acquisitionMirror, KeywordName.ACQMIR),
+        buildString(gnirsReader.windowCover, KeywordName.COVER),
+        buildString(gnirsReader.focus, KeywordName.FOCUS),
+        buildInt32(gnirsReader.focusPos, KeywordName.FCS_ENG),
+        buildDouble(gnirsReader.detectorBias, KeywordName.DETBIAS)
       ) )
 
     override def sendAfter(id: ImageFileId): F[Unit] =
       sendKeywords(id, inst, List(
-        buildStringS(tcsReader.ut, KeywordName.UTEND),
-        buildDoubleS(gnirsReader.obsEpoch, KeywordName.OBSEPOCH)
+        buildString(tcsReader.ut, KeywordName.UTEND),
+        buildDouble(gnirsReader.obsEpoch, KeywordName.OBSEPOCH)
       ) )
   }
 }

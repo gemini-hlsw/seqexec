@@ -241,11 +241,11 @@ package object keywords {
   val Indef: String           = "INDEF"
   val BooleanDefault: Boolean = false
 
-  def intDefault[F[_]: Applicative]: F[Int]       = IntDefault.pure[F]
-  def doubleDefault[F[_]: Applicative]: F[Double] = DoubleDefault.pure[F]
-  def strDefault[F[_]: Applicative]: F[String]    = StrDefault.pure[F]
-  def boolDefault[F[_]: Applicative]: F[Boolean]  = BooleanDefault.pure[F]
-  def listDefault[F[_]: Applicative, A]: F[List[A]]  = List.empty[A].pure[F]
+  def intDefault[F[_]: Applicative]: F[Int]         = IntDefault.pure[F]
+  def doubleDefault[F[_]: Applicative]: F[Double]   = DoubleDefault.pure[F]
+  def strDefault[F[_]: Applicative]: F[String]      = StrDefault.pure[F]
+  def boolDefault[F[_]: Applicative]: F[Boolean]    = BooleanDefault.pure[F]
+  def listDefault[F[_]: Applicative, A]: F[List[A]] = List.empty[A].pure[F]
 
   def internalKeywordConvert[_](k: Keyword[_]): InternalKeyword =
     InternalKeyword(k.n, k.t, s"${k.v}")
@@ -281,36 +281,30 @@ package object keywords {
       v.handleError(_ => DefaultHeaderValue[A].default)
   }
 
-  def buildKeywordF[F[_]: Functor, A](get: F[A], name: KeywordName, f: (KeywordName, A) => Keyword[A]): KeywordBag => F[KeywordBag] =
-    k => get.map(x => k.add(f(name, x)))
-  def buildKeyword[F[_]: MonadError[?[_], Throwable], A](get: SeqActionF[F, A], name: KeywordName, f: (KeywordName, A) => Keyword[A]): KeywordBag => F[KeywordBag] =
-    k => get.map(x => k.add(f(name, x))).liftF
-  def buildInt8S[F[_]: Functor](get: F[Byte], name: KeywordName): KeywordBag => F[KeywordBag]       = buildKeywordF(get, name, Int8Keyword)
-  def buildInt8[F[_]: MonadError[?[_], Throwable]](get: SeqActionF[F, Byte], name: KeywordName): KeywordBag => F[KeywordBag]       = buildKeyword(get, name, Int8Keyword)
-  def buildInt16S[F[_]: Functor](get: F[Short], name: KeywordName): KeywordBag => F[KeywordBag]     = buildKeywordF(get, name, Int16Keyword)
-  def buildInt16[F[_]: MonadError[?[_], Throwable]](get: SeqActionF[F, Short], name: KeywordName): KeywordBag => F[KeywordBag]     = buildKeyword(get, name, Int16Keyword)
-  def buildInt32S[F[_]: Functor](get: F[Int], name: KeywordName): KeywordBag => F[KeywordBag]       = buildKeywordF(get, name, Int32Keyword)
-  def buildInt32[F[_]: MonadError[?[_], Throwable]](get: SeqActionF[F, Int], name: KeywordName): KeywordBag => F[KeywordBag]       = buildKeyword(get, name, Int32Keyword)
-  def buildFloatS[F[_]: Functor](get: F[Float], name: KeywordName): KeywordBag => F[KeywordBag]     = buildKeywordF(get, name, FloatKeyword)
-  def buildFloat[F[_]: MonadError[?[_], Throwable]](get: SeqActionF[F, Float], name: KeywordName): KeywordBag => F[KeywordBag]     = buildKeyword(get, name, FloatKeyword)
-  def buildDoubleS[F[_]: Functor](get: F[Double], name: KeywordName): KeywordBag => F[KeywordBag]   = buildKeywordF(get, name, DoubleKeyword)
-  def buildDouble[F[_]: MonadError[?[_], Throwable]](get: SeqActionF[F, Double], name: KeywordName): KeywordBag => F[KeywordBag]   = buildKeyword(get, name, DoubleKeyword)
-  def buildBooleanS[F[_]: Functor](get: F[Boolean], name: KeywordName): KeywordBag => F[KeywordBag] = buildKeywordF(get, name, BooleanKeyword)
-  def buildBoolean[F[_]: MonadError[?[_], Throwable]](get: SeqActionF[F, Boolean], name: KeywordName): KeywordBag => F[KeywordBag] = buildKeyword(get, name, BooleanKeyword)
-  def buildStringS[F[_]: Functor](get: F[String], name: KeywordName): KeywordBag => F[KeywordBag]   = buildKeywordF(get, name, StringKeyword)
-  def buildString[F[_]: MonadError[?[_], Throwable]](get: SeqActionF[F, String], name: KeywordName): KeywordBag => F[KeywordBag]   = buildKeyword(get, name, StringKeyword)
+  def buildKeyword[F[_]: MonadError[?[_], Throwable], A: DefaultHeaderValue](get: F[A], name: KeywordName, f: (KeywordName, A) => Keyword[A]): KeywordBag => F[KeywordBag] =
+    k => get.safeValOrDefault.map(x => k.add(f(name, x)))
+  def buildInt32[F[_]: MonadError[?[_], Throwable]](get: F[Int], name: KeywordName): KeywordBag => F[KeywordBag]       = buildKeyword(get, name, Int32Keyword)
+  def buildDouble[F[_]: MonadError[?[_], Throwable]](get: F[Double], name: KeywordName): KeywordBag => F[KeywordBag]   = buildKeyword(get, name, DoubleKeyword)
+  def buildBoolean[F[_]: MonadError[?[_], Throwable]](get: F[Boolean], name: KeywordName, ev: DefaultHeaderValue[Boolean]): KeywordBag => F[KeywordBag] = {
+    implicit val defaultV = ev
+    buildKeyword(get, name, BooleanKeyword)
+  }
+  def buildString[F[_]: MonadError[?[_], Throwable]](get: F[String], name: KeywordName): KeywordBag => F[KeywordBag]   = buildKeyword(get, name, StringKeyword)
 
   def sendKeywords[F[_]: MonadError[?[_], Throwable]](
       id: ImageFileId,
       inst: InstrumentSystem[F],
       b: List[KeywordBag => F[KeywordBag]]): F[Unit] =
-    for {
+    (for {
       bag <- inst.keywordsClient.keywordsBundler.bundleKeywords(b)
       _   <- inst.keywordsClient.setKeywords(id, bag, finalFlag = false)
-    } yield ()
+    } yield ())
+    .handleError(_ => ()) // In case there is an error ignore them to let other keywords be added
 
   def dummyHeader[F[_]: Applicative]: Header[F] = new Header[F] {
-    override def sendBefore(obsId: Observation.Id, id: ImageFileId): F[Unit] = Applicative[F].unit
-    override def sendAfter(id: ImageFileId): F[Unit] = Applicative[F].unit
+    override def sendBefore(obsId: Observation.Id, id: ImageFileId): F[Unit] =
+      Applicative[F].unit
+    override def sendAfter(id: ImageFileId): F[Unit] =
+      Applicative[F].unit
   }
 }

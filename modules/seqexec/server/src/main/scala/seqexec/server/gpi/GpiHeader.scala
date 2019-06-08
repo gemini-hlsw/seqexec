@@ -24,15 +24,15 @@ object GpiHeader {
                               id: ImageFileId): F[Unit] = {
         val ks = GdsInstrument.bundleKeywords(
           List(
-            buildDoubleS(tcsKeywordsReader.parallacticAngle
+            buildDouble(tcsKeywordsReader.parallacticAngle
                           .map(_.map(_.toDegrees))
                           .orDefault,
                         KeywordName.PAR_ANG),
-            buildInt32S(tcsKeywordsReader.gpiInstPort,
+            buildInt32(tcsKeywordsReader.gpiInstPort,
                        KeywordName.INPORT),
-            buildBooleanS(obsKeywordsReader.astrometicField,
-                         KeywordName.ASTROMTC),
-            buildStringS(tcsKeywordsReader.crFollow.map(
+            buildBoolean(obsKeywordsReader.astrometicField,
+                         KeywordName.ASTROMTC, DefaultHeaderValue.FalseDefaultValue),
+            buildString(tcsKeywordsReader.crFollow.map(
                           _.map(CRFollow.keywordValue).getOrElse("INDEF")),
                         KeywordName.CRFOLLOW)
           )

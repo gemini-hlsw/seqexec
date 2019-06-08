@@ -29,37 +29,37 @@ object NifsHeader {
         id,
         inst,
         List(
-          buildStringS(instReader.grating, KeywordName.GRATING),
-          buildStringS(instReader.aperture, KeywordName.APERTURE),
-          buildInt32S(tcsKeywordsReader.nifsInstPort, KeywordName.INPORT),
-          buildStringS(instReader.filter, KeywordName.FILTER),
-          buildStringS(instReader.windowCover, KeywordName.WINDCOVR),
-          buildDoubleS(instReader.maskOffset, KeywordName.APOFFSET),
-          buildDoubleS(instReader.centralWavelength, KeywordName.GRATWAVE),
-          buildStringS(instReader.imagingMirror, KeywordName.FLIP),
-          buildDoubleS(instReader.exposureTime, KeywordName.EXPRQ),
-          buildStringS(instReader.dcName, KeywordName.DCNAME),
-          buildDoubleS(instReader.period, KeywordName.PERIOD),
-          buildInt32S(instReader.numberOfPeriods, KeywordName.NPERIODS),
-          buildStringS(instReader.exposureMode, KeywordName.EXPMODE),
-          buildDoubleS(instReader.readTime, KeywordName.RDTIME),
-          buildInt32S(instReader.coadds, KeywordName.COADDS),
-          buildDoubleS(instReader.biasPwr, KeywordName.BIASPWR),
-          buildInt32S(instReader.numberOfFowSamples, KeywordName.LNRS),
-          buildStringS("IFU".pure[F], KeywordName.OBSMODE),
-          buildStringS(tcsKeywordsReader.date, KeywordName.DATE_OBS),
+          buildString(instReader.grating, KeywordName.GRATING),
+          buildString(instReader.aperture, KeywordName.APERTURE),
+          buildInt32(tcsKeywordsReader.nifsInstPort, KeywordName.INPORT),
+          buildString(instReader.filter, KeywordName.FILTER),
+          buildString(instReader.windowCover, KeywordName.WINDCOVR),
+          buildDouble(instReader.maskOffset, KeywordName.APOFFSET),
+          buildDouble(instReader.centralWavelength, KeywordName.GRATWAVE),
+          buildString(instReader.imagingMirror, KeywordName.FLIP),
+          buildDouble(instReader.exposureTime, KeywordName.EXPRQ),
+          buildString(instReader.dcName, KeywordName.DCNAME),
+          buildDouble(instReader.period, KeywordName.PERIOD),
+          buildInt32(instReader.numberOfPeriods, KeywordName.NPERIODS),
+          buildString(instReader.exposureMode, KeywordName.EXPMODE),
+          buildDouble(instReader.readTime, KeywordName.RDTIME),
+          buildInt32(instReader.coadds, KeywordName.COADDS),
+          buildDouble(instReader.biasPwr, KeywordName.BIASPWR),
+          buildInt32(instReader.numberOfFowSamples, KeywordName.LNRS),
+          buildString("IFU".pure[F], KeywordName.OBSMODE),
+          buildString(tcsKeywordsReader.date, KeywordName.DATE_OBS),
           // Approximate WCS
-          buildStringS("RA---TAN".pure[F], KeywordName.CTYPE1),
-          buildDoubleS(15.0.pure[F], KeywordName.CRPIX1),
-          buildDoubleS(tcsKeywordsReader.sourceATarget.ra, KeywordName.CRVAL1),
-          buildStringS("DEC--TAN".pure[F], KeywordName.CTYPE2),
-          buildDoubleS(34.0.pure[F], KeywordName.CRPIX2),
-          buildDoubleS(tcsKeywordsReader.sourceATarget.dec, KeywordName.CRVAL2),
-          buildDoubleS(φ.map(φ => -4.7e-5 * sin(φ)), KeywordName.CD1_1),
-          buildDoubleS(φ.map(φ =>  1.9e-5 * cos(φ)), KeywordName.CD1_2),
-          buildDoubleS(φ.map(φ => -4.7e-5 * cos(φ)), KeywordName.CD2_1),
-          buildDoubleS(φ.map(φ => -1.9e-5 * sin(φ)), KeywordName.CD2_2),
-          buildStringS("FK5".pure[F], KeywordName.RADECSYS)
+          buildString("RA---TAN".pure[F], KeywordName.CTYPE1),
+          buildDouble(15.0.pure[F], KeywordName.CRPIX1),
+          buildDouble(tcsKeywordsReader.sourceATarget.ra, KeywordName.CRVAL1),
+          buildString("DEC--TAN".pure[F], KeywordName.CTYPE2),
+          buildDouble(34.0.pure[F], KeywordName.CRPIX2),
+          buildDouble(tcsKeywordsReader.sourceATarget.dec, KeywordName.CRVAL2),
+          buildDouble(φ.map(φ => -4.7e-5 * sin(φ)), KeywordName.CD1_1),
+          buildDouble(φ.map(φ =>  1.9e-5 * cos(φ)), KeywordName.CD1_2),
+          buildDouble(φ.map(φ => -4.7e-5 * cos(φ)), KeywordName.CD2_1),
+          buildDouble(φ.map(φ => -1.9e-5 * sin(φ)), KeywordName.CD2_2),
+          buildString("FK5".pure[F], KeywordName.RADECSYS)
         )
       )
     }
@@ -68,7 +68,7 @@ object NifsHeader {
       sendKeywords(id,
                    inst,
                    List(
-                     buildDoubleS(instReader.exposureTime, KeywordName.EXPTIME)
+                     buildDouble(instReader.exposureTime, KeywordName.EXPTIME)
                    ))
   }
 }
