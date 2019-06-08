@@ -10,7 +10,7 @@ import japgolly.scalajs.react.component.builder.Lifecycle.RenderScope
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.Reusability
-import japgolly.scalajs.react.CatsReact._
+import japgolly.scalajs.react.MonocleReact._
 import japgolly.scalajs.react._
 import monocle.macros.Lenses
 import seqexec.model.enum.BatchExecState
@@ -45,8 +45,6 @@ object CalibrationQueueTab {
     Reusability.by(x => (x.tab.active, x.tab.calibrationTab.state))
   implicit val stateReuse: Reusability[State] = Reusability.derive[State]
 
-  private val ST = ReactS.Fix[State]
-
   def showCalibrationQueue(p: Props, page: SeqexecPages)(
     e:                        ReactEvent): Callback =
     // prevent default to avoid the link jumping
@@ -66,16 +64,15 @@ object CalibrationQueueTab {
         }
         .getOrEmpty
 
-  private def onDragEnter(e: ReactDragEvent) =
-    ST.mod(State.draggingOver.set(Option(e.dataTransfer.getData("text/plain"))))
-      .liftCB
+  private def onDragEnter(b: Backend)(e: ReactDragEvent) =
+    b.setStateL(State.draggingOver)(Option(e.dataTransfer.getData("text/plain")))
 
-  private def onDrop(e: ReactDragEvent) =
-    ST.retM(addToQueueE(e)) *>
-      onDragEnd
+  private def onDrop(b: Backend)(e: ReactDragEvent) =
+    addToQueueE(e) *>
+      onDragEnd(b)
 
-  private def onDragEnd =
-    ST.mod(State.draggingOver.set(none)).liftCB
+  private def onDragEnd(b: Backend) =
+    b.setStateL(State.draggingOver)(none)
 
   private def linkTo(b: Backend, page: SeqexecPages)(mod: TagMod*) = {
     val p      = b.props
@@ -98,10 +95,10 @@ object CalibrationQueueTab {
       ^.onDragOver ==> { (e: ReactDragEvent) =>
         e.preventDefaultCB *> Callback { e.dataTransfer.dropEffect = "copy" }
       },
-      ^.onDragEnter ==> b.runStateFn(onDragEnter),
-      ^.onDrop ==> b.runStateFn(onDrop),
-      ^.onDragEnd --> b.runState(onDragEnd),
-      ^.onDragLeave --> b.runState(onDragEnd),
+      ^.onDragEnter ==> onDragEnter(b) _,
+      ^.onDrop ==> onDrop(b) _,
+      ^.onDragEnd --> onDragEnd(b),
+      ^.onDragLeave --> onDragEnd(b),
       mod.toTagMod
     )
   }

@@ -3,18 +3,19 @@
 
 package seqexec.web.client.semanticui.elements.input
 
-import japgolly.scalajs.react.{Callback, CallbackTo, ReactEventFromInput, ScalaComponent}
-import japgolly.scalajs.react.CatsReact._
+import cats.implicits._
+import japgolly.scalajs.react.{Callback, ReactEventFromInput, ScalaComponent}
+import japgolly.scalajs.react.component.builder.Lifecycle.RenderScope
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.extra.StateSnapshot
-import cats.implicits._
 
 /**
  * Input component that uses a EVar to share the content of the field
  */
 object InputEV {
   type ChangeCallback = String => Callback
+  type Backend      = RenderScope[Props, State, Unit]
 
   @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
   final case class Props(name: String,
@@ -33,22 +34,23 @@ object InputEV {
   case object TextInput extends InputType
   case object PasswordInput extends InputType
 
-  // Use state monad to hold the state of the system
-  private val ST = ReactS.Fix[State]
-
-  def onTextChange(p: Props)(e: ReactEventFromInput): ReactST[CallbackTo, State, Unit] = {
+  def onTextChange(b: Backend)(e: ReactEventFromInput): Callback = {
     // Capture the value outside setState, react reuses the events
     val v = e.target.value
     // First update the internal state, then call the outside listener
-    ST.set(State(v, changed = true)).liftCB >> ST.retM(p.value.setState(v)) >> ST.retM(p.onChange(v))
+    b.setState(State(v, changed = true)) *>
+    b.props.value.setState(v) *>
+    b.props.onChange(v)
   }
 
-  def onBlur(c: ChangeCallback): ReactST[CallbackTo, State, Unit] =
-    ST.get.liftCB.flatMap(v => ST.retM(c(v.value)))
+  def onBlur(b: Backend, c: ChangeCallback): Callback =
+    c(b.state.value)
 
   private val component = ScalaComponent.builder[Props]("InputEV")
     .initialState(State(""))
-    .renderPS { ($, p, s) =>
+    .render { b =>
+      val p = b.props
+      val s = b.state
       <.input(
         ^.`type` := (p.inputType match {
           case TextInput     => "text"
@@ -59,8 +61,8 @@ object InputEV {
         ^.id := p.id,
         ^.value := s.value,
         ^.disabled := p.disabled,
-        ^.onChange ==> $.runStateFn(onTextChange(p)),
-        ^.onBlur   --> $.runState(onBlur(p.onBlur))
+        ^.onChange ==> onTextChange(b),
+        ^.onBlur   --> onBlur(b, p.onBlur)
       )
     }.componentWillMount { ctx =>
       // Update state of the input if the property has changed
