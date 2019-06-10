@@ -81,6 +81,43 @@ public final class CaCommandMonitorImpl implements CaCommandMonitor {
         }
     }
 
+    private boolean isActive() {
+        return currentState == State.BUSY;
+    }
+
+    @Override
+    public State waitInactive(long timeout, TimeUnit unit)
+            throws TimeoutException, InterruptedException {
+        lock.lock();
+        State state = currentState;
+        try {
+            while (isActive()) {
+                if (!condition.await(timeout, unit)) {
+                    throw new TimeoutException();
+                }
+            }
+            state = currentState;
+        } finally {
+            lock.unlock();
+        }
+        return state;
+    }
+
+    @Override
+    public State waitInactive() throws InterruptedException {
+        lock.lock();
+        State state = currentState;
+        try {
+            while (!isActive()) {
+                condition.await();
+            }
+            state = currentState;
+        } finally {
+            lock.unlock();
+        }
+        return state;
+    }
+
     @Override
     public State state() {
         return currentState;
@@ -106,9 +143,12 @@ public final class CaCommandMonitorImpl implements CaCommandMonitor {
         if (currentState == State.BUSY) {
             currentState = State.IDLE;
             condition.signalAll();
-            lock.unlock();
-            if (callback != null) {
-                callback.onSuccess();
+            try {
+                if (callback != null) {
+                    callback.onSuccess();
+                }
+            } finally {
+                lock.unlock();
             }
         } else {
             lock.unlock();
@@ -121,9 +161,12 @@ public final class CaCommandMonitorImpl implements CaCommandMonitor {
             this.cause = cause;
             currentState = State.ERROR;
             condition.signalAll();
-            lock.unlock();
-            if (callback != null) {
-                callback.onFailure(cause);
+            try {
+                if (callback != null) {
+                    callback.onFailure(cause);
+                }
+            } finally {
+                lock.unlock();
             }
         } else {
             lock.unlock();
@@ -135,9 +178,12 @@ public final class CaCommandMonitorImpl implements CaCommandMonitor {
         if (currentState == State.BUSY) {
             currentState = State.PAUSE;
             condition.signalAll();
-            lock.unlock();
-            if (callback != null) {
-                callback.onPause();
+            try {
+                if (callback != null) {
+                    callback.onPause();
+                }
+            } finally {
+                lock.unlock();
             }
         } else {
             lock.unlock();
