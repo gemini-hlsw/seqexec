@@ -144,7 +144,7 @@ object Settings {
     val geminiLocales           = "0.1.0-2019a"
 
     // Gemini Libraries
-    val gspMath                 = "0.1.0+5-7322fff9-SNAPSHOT"
+    val gspMath                 = "0.1.1"
   }
 
   /**
