@@ -20,6 +20,7 @@ import monocle.Lens
 import monocle.macros.Lenses
 import react.virtualized._
 import scala.scalajs.js
+import scala.math.max
 import react.common._
 import react.common.implicits._
 import seqexec.model.enum.Instrument
@@ -648,35 +649,39 @@ object SessionQueueTable extends Columns {
   }
 
   def table(b: Backend)(size: Size): VdomNode =
-    Table(
-      Table.props(
-        disableHeader = false,
-        noRowsRenderer = () =>
-          <.div(
-            ^.cls := "ui center aligned segment noRows",
-            SeqexecStyles.noRowsSegment,
-            ^.height := 180.px,
-            "Session queue empty"
+    if (size.width > 0) {
+      Table(
+        Table.props(
+          disableHeader = false,
+          noRowsRenderer = () =>
+            <.div(
+              ^.cls := "ui center aligned segment noRows",
+              SeqexecStyles.noRowsSegment,
+              ^.height := 180.px,
+              "Session queue empty"
+          ),
+          overscanRowCount = SeqexecStyles.overscanRowCount,
+          height           = 180,
+          rowCount         = b.props.rowCount,
+          rowHeight        = SeqexecStyles.rowHeight,
+          rowClassName     = rowClassName(b.props) _,
+          width            = max(1, size.width.toInt),
+          rowGetter        = b.props.rowGetter _,
+          headerClassName  = SeqexecStyles.tableHeader.htmlClass,
+          scrollTop        = b.state.tableState.scrollPosition,
+          onScroll         = (_, _, pos) => updateScrollPosition(b, pos),
+          onRowDoubleClick = doubleClick(b),
+          onRowClick       = singleClick(b),
+          headerHeight     = SeqexecStyles.headerHeight,
+          rowRenderer      = draggableRowRenderer(b)
         ),
-        overscanRowCount = SeqexecStyles.overscanRowCount,
-        height           = 180,
-        rowCount         = b.props.rowCount,
-        rowHeight        = SeqexecStyles.rowHeight,
-        rowClassName     = rowClassName(b.props) _,
-        width            = size.width.toInt,
-        rowGetter        = b.props.rowGetter _,
-        headerClassName  = SeqexecStyles.tableHeader.htmlClass,
-        scrollTop        = b.state.tableState.scrollPosition,
-        onScroll         = (_, _, pos) => updateScrollPosition(b, pos),
-        onRowDoubleClick = doubleClick(b),
-        onRowClick       = singleClick(b),
-        headerHeight     = SeqexecStyles.headerHeight,
-        rowRenderer      = draggableRowRenderer(b)
-      ),
-      b.state.tableState.columnBuilder(size,
-                                       colBuilder(b, size),
-                                       b.props.columnWidths): _*
-    ).vdomElement
+        b.state.tableState.columnBuilder(size,
+                                         colBuilder(b, size),
+                                         b.props.columnWidths): _*
+      ).vdomElement
+    } else {
+      <.div()
+    }
 
   def dragStart(b: Backend, obsId: Observation.Id)(
     e:             ReactDragEvent): Callback =

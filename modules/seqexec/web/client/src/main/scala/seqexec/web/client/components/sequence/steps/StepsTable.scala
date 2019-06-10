@@ -799,11 +799,11 @@ object StepsTable extends Columns {
           "No Steps"
       ),
       overscanRowCount = SeqexecStyles.overscanRowCount,
-      height           = size.height.toInt,
+      height           = max(1, size.height.toInt),
       rowCount         = b.props.rowCount,
       rowHeight        = rowHeight(b) _,
       rowClassName     = rowClassName(b) _,
-      width            = size.width.toInt,
+      width            = max(1, size.width.toInt),
       rowGetter        = b.props.rowGetter _,
       scrollToIndex    = startScrollToIndex(b),
       scrollTop        = startScrollTop(b.state),
@@ -962,9 +962,13 @@ object StepsTable extends Columns {
               .columnBuilder(size, colBuilder(b, size), b.props.columnWidths)
               .map(_.vdomElement)
 
-          ref
-            .component(stepsTableProps(b)(size))(ts: _*)
-            .vdomElement
+          if (size.width > 0) {
+            ref
+              .component(stepsTableProps(b)(size))(ts: _*)
+              .vdomElement
+          } else {
+            <.div()
+          }
         },
         onResize = s =>
           b.modStateL(State.tableState)(

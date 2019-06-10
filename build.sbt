@@ -465,10 +465,6 @@ lazy val seqexec_web_client = project.in(file("modules/seqexec/web/client"))
     useYarn                                  := true,
     // JS dependencies via npm
     npmDependencies in Compile ++= Seq(
-      "react"                   -> LibraryVersions.reactJS,
-      "react-dom"               -> LibraryVersions.reactJS,
-      "react-virtualized"       -> LibraryVersions.reactVirtualized,
-      "react-draggable"         -> LibraryVersions.reactDraggable,
       "jquery"                  -> LibraryVersions.jQuery,
       "semantic-ui-dropdown"    -> LibraryVersions.semanticUI,
       "semantic-ui-modal"       -> LibraryVersions.semanticUI,

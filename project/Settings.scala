@@ -75,10 +75,10 @@ object Settings {
     val diodeReact              = "1.1.5.142"
     val javaTimeJS              = "2.0.0-RC2"
     val scalaJQuery             = "1.2"
-    val scalaJSReactCommon      = "0.2.0"
-    val scalaJSReactVirtualized = "0.6.0b"
-    val scalaJSReactClipboard   = "0.7.0"
-    val scalaJSReactDraggable   = "0.4.0"
+    val scalaJSReactCommon      = "0.2.1"
+    val scalaJSReactVirtualized = "0.6.2"
+    val scalaJSReactClipboard   = "0.8.0"
+    val scalaJSReactDraggable   = "0.4.1"
     val scalaJSReactSortable    = "0.2.0"
 
     // Scala libraries
@@ -98,7 +98,7 @@ object Settings {
     val unboundId               = "3.2.1"
     val jwt                     = "2.1.0"
     val slf4j                   = "1.7.26"
-    val log4s                   = "1.8.0"
+    val log4s                   = "1.8.1"
     val logback                 = "1.2.3"
     val janino                  = "3.0.12"
     val logstash                = "6.0"
@@ -119,13 +119,10 @@ object Settings {
     val scalaMock               = "4.1.0"
 
     // Pure JS libraries
-    val reactJS                 = "16.7.0"
     val jQuery                  = "3.2.1"
     val semanticUI              = "2.3.1"
     val ocsVersion              = "2019101.1.3"
     val uglifyJs                = "1.2.4"
-    val reactVirtualized        = "9.21.0"
-    val reactDraggable          = "3.3.0"
 
     val apacheXMLRPC            = "3.1.3"
     val opencsv                 = "2.1"
