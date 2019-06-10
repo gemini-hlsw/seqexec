@@ -79,7 +79,7 @@ object Settings {
     val scalaJSReactVirtualized = "0.6.2"
     val scalaJSReactClipboard   = "0.8.0"
     val scalaJSReactDraggable   = "0.4.1"
-    val scalaJSReactSortable    = "0.2.0"
+    val scalaJSReactSortable    = "0.2.1"
 
     // Scala libraries
     val catsEffectVersion       = "1.3.1"

@@ -33,6 +33,7 @@ import seqexec.model.RunningStep
 import seqexec.web.client.model.lenses._
 import seqexec.web.client.model.ClientStatus
 import seqexec.web.client.model.TabOperations
+import seqexec.web.client.model.RunOperation
 import seqexec.web.client.model.Pages.SeqexecPages
 import seqexec.web.client.model.ModelOps._
 import seqexec.web.client.model.StepItems._
@@ -413,6 +414,7 @@ object StepsTable extends Columns {
       case OffsetColumn    => offsetWidth
       case _               => none
     }
+
     private val measuredColumnWidths: TableColumn => Option[Double] =
       colWidthsO(stepsList,
                  allTC,
@@ -429,7 +431,8 @@ object StepsTable extends Columns {
   final case class State(tableState:      TableState[TableColumn],
                          breakpointHover: Option[Int],
                          selected:        Option[StepId],
-                         scrollCount:     Int) {
+                         scrollCount:     Int,
+                         scrollWhileRun:  Boolean) {
 
     def visibleCols(p: Props): State =
       State.columns.set(NonEmptyList.fromListUnsafe(p.shownForInstrument))(this)
@@ -454,7 +457,7 @@ object StepsTable extends Columns {
     val InitialTableState: TableState[TableColumn] =
       TableState(NotModified, 0, all)
 
-    val InitialState: State = State(InitialTableState, None, None, 0)
+    val InitialState: State = State(InitialTableState, None, None, 0, false)
   }
 
   val stdStepReuse: Reusability[StandardStep] =
@@ -702,7 +705,7 @@ object StepsTable extends Columns {
     def updateState(s: TableState[TableColumn]): Callback =
       (b.modState(State.tableState.set(s)) *> b.props.obsId
         .map(i => SeqexecCircuit.dispatchCB(UpdateStepTableState(i, s)))
-        .getOrEmpty).when(size.width > 0).void
+        .getOrEmpty).when_(size.width > 0)
 
     tb match {
       case ColumnRenderArgs(meta, _, width, true) =>
@@ -742,9 +745,10 @@ object StepsTable extends Columns {
   // Aditionally if we programatically scroll to a position we get another call
   // Only after that we assume scroll is user initatied
   def updateScrollPosition(b: Backend, pos: JsNumber): Callback = {
-    val modMod            = b.setStateL(State.userModified)(IsModified)
     val posMod            = b.setStateL(State.scrollPosition)(pos)
-    val hasScrolledBefore = b.state.scrollCount > 1
+    // This is done to ignore the scrolls made automatically upon startup
+    val hasScrolledBefore = b.state.scrollCount > 2
+    val modMod            = b.setStateL(State.userModified)(IsModified).when_(hasScrolledBefore)
     val scrollCountMods   = b.modStateL(State.scrollCount)(_ + 1)
     // Separately calculate the state to send upstream
     val newTs = if (hasScrolledBefore) {
@@ -752,14 +756,22 @@ object StepsTable extends Columns {
     } else {
       State.scrollPosition.set(pos)(b.state)
     }
+    val posDiff = abs(pos.toDouble - b.state.tableState.scrollPosition.toDouble)
+    // If running store it on the state
+    // We'll consider that the user has moved intentionally if the scroll is more than 2 rows
+    val scrolledWhileRunningMod = b.setStateL(State.scrollWhileRun)(true)
+      .when_(b.props.sequenceState.exists(_.isRunning) && posDiff > 2*(HeightWithOffsets + BreakpointLineHeight))
     // Always update the position and counts, but the modification flag only if
     // we are sure the user did scroll manually
-    posMod *> scrollCountMods *> modMod.when(hasScrolledBefore) *>
+    (posMod *>
+      scrollCountMods *>
+      modMod *>
+      scrolledWhileRunningMod *>
       // And silently update the model
       b.props.obsId
         .map(id =>
-          SeqexecCircuit.dispatchCB(UpdateStepTableState(id, newTs.tableState)))
-        .getOrEmpty
+          SeqexecCircuit.dispatchCB(UpdateStepTableState(id, newTs.tableState))).getOrEmpty)
+      .when_(posDiff > 1) // Only update the state if the change is significant
   }
 
   def startScrollTop(state: State): js.UndefOr[JsNumber] =
@@ -773,7 +785,7 @@ object StepsTable extends Columns {
     if (b.state.tableState.isModified) {
       -1
     } else {
-      b.props.nextStepToRun
+      max(0, b.props.nextStepToRun - 1)
     }
 
   // Single click puts the row as selected
@@ -785,8 +797,7 @@ object StepsTable extends Columns {
           .dispatchCB(ClearAllResourceOperations(id)) *>
         b.modState(State.selected.set(Some(i))) *>
         recomputeRowHeightsCB(min(b.state.selected.getOrElse(i), i)))
-        .when(b.props.stepSelectionAllowed(i))
-        .void
+        .when_(b.props.stepSelectionAllowed(i))
     }.getOrEmpty
 
   def stepsTableProps(b: Backend)(size: Size): Table.Props =
@@ -809,8 +820,8 @@ object StepsTable extends Columns {
       scrollTop        = startScrollTop(b.state),
       onRowClick       = singleClick(b),
       onScroll = (a, _, pos) =>
-        updateScrollPosition(b, pos).when(a.toDouble > 0) *> Callback.empty,
-      scrollToAlignment = ScrollToAlignment.Center,
+        updateScrollPosition(b, pos).when_(a.toDouble > 0),
+      scrollToAlignment = ScrollToAlignment.Start,
       headerClassName   = SeqexecStyles.tableHeader.htmlClass,
       headerHeight      = SeqexecStyles.headerHeight,
       rowRenderer       = stopsRowRenderer(b.props)
@@ -823,16 +834,13 @@ object StepsTable extends Columns {
     onRowClick: Option[OnRowClick])(e: ReactMouseEvent): Callback =
     // If alt is pressed or middle button flip the breakpoint
     if (e.altKey || e.button === MIDDLE_BUTTON) {
-      Callback.when(p.canSetBreakpoint)(
-        (p.obsId, p.stepsList.find(_.id === index + 1))
-          .mapN(
-            (oid, step) =>
-              SeqexecCircuit
-                .dispatchCB(FlipBreakpointStep(oid, step))
-                .when(step.canSetBreakpoint(index + 1, p.nextStepToRun))
-                .void)
-          .getOrEmpty
-      )
+      (p.obsId, p.stepsList.find(_.id === index + 1))
+        .mapN(
+          (oid, step) =>
+            SeqexecCircuit
+              .dispatchCB(FlipBreakpointStep(oid, step))
+              .when_(step.canSetBreakpoint(index + 1, p.nextStepToRun)))
+        .getOrEmpty.when_(p.canSetBreakpoint)
     } else {
       onRowClick
         .filter(_ => e.clientX > ControlWidth)
@@ -883,10 +891,50 @@ object StepsTable extends Columns {
                          p:     Props,
                          obsId: Observation.Id,
                          i:     StepId): Callback =
-    (SeqexecCircuit.dispatchCB(UpdateSelectedStep(obsId, i)) *>
-      b.modState(State.selected.set(i.some)))
-      .when(p.canControlSubsystems(i))
-      .void
+    SeqexecCircuit.dispatchCB(UpdateSelectedStep(obsId, i)) *>
+      b.setStateL(State.selected)(i.some)
+        .when_(p.canControlSubsystems(i))
+
+  private def scrollTo(i: StepId): Callback =
+    ref.get.flatMapCB(_.raw.scrollToRowCB(i))
+
+  // Scroll to pos on run requested
+  private def scrollToCB(cur: Props, next: Props): Callback =
+    scrollTo(next.nextStepToRun - 1)
+      .when_(cur.tabOperations.runRequested =!= next.tabOperations.runRequested
+        && next.tabOperations.runRequested === RunOperation.RunInFlight)
+
+  private def selectStepCB(b: ReceiveProps): Callback = {
+    val (cur: Props, next: Props) = (b.currentProps, b.nextProps)
+    // Update the selected step as the run proceeds
+    (next.obsId, cur.runningStep, next.runningStep) match {
+      case (Some(obsId), Some(RunningStep(i, _)), None) =>
+        // This happens when a sequence stops, e.g. with a pasue
+        updateStep(b, next, obsId, i) *>
+          // And reset scrolling state
+          b.setStateL(State.scrollWhileRun)(false)
+      case (Some(obsId), Some(RunningStep(i, _)), Some(RunningStep(j, _)))
+          if i =!= j =>
+        // This happens when we keep running and move to the next step
+        // If the user hasn't scrolled we'll focus on the next step
+        updateStep(b, next, obsId, j) *>
+          scrollTo(j - 1).unless_(b.state.scrollWhileRun)
+      case (Some(obsId), _, Some(RunningStep(j, _)))
+          if cur.sequenceState =!= next.sequenceState && next.sequenceState.exists(_.isRunning) =>
+        // When we start running
+        updateStep(b, next, obsId, j)
+      case _ =>
+        Callback.empty
+    }
+  }
+
+  private def selectedStepChangeCB(b: ReceiveProps): Callback = {
+    val (cur: Props, next: Props) = (b.currentProps, b.nextProps)
+    // The selected step may have changed externally
+    (cur.selectedStep, next.selectedStep).mapN { (c, n) =>
+      b.setStateL(State.selected)(n.some).when(c =!= n).void
+    }.getOrEmpty
+  }
 
   // We need to update the state if the props change
   def receiveNewProps(b: ReceiveProps): Callback = {
@@ -902,22 +950,6 @@ object StepsTable extends Columns {
         cur.id
     }
 
-    // Update the selected step as the run proceeds
-    val selectStep = (next.obsId, cur.runningStep, next.runningStep) match {
-      case (Some(obsId), Some(RunningStep(i, _)), None) =>
-        updateStep(b, next, obsId, i)
-      case (Some(obsId), Some(RunningStep(i, _)), Some(RunningStep(j, _)))
-          if i =!= j =>
-        updateStep(b, next, obsId, j)
-      case (Some(obsId), _, Some(RunningStep(j, _)))
-          if cur.sequenceState =!= next.sequenceState && next.sequenceState
-            .exists(_.isRunning) =>
-        // When we start running select the running step
-        updateStep(b, next, obsId, j)
-      case _ =>
-        Callback.empty
-    }
-
     // If the selected step changes recompute height
     val selected: Option[StepId] =
       (cur.selectedStep, next.selectedStep)
@@ -925,12 +957,6 @@ object StepsTable extends Columns {
           min(c, n)
         }
         .filter(_ => b.state.selected =!= next.selectedStep)
-
-    // The selected step may have changed externally
-    val selectedStepChange: Callback =
-      (cur.selectedStep, next.selectedStep).mapN { (c, n) =>
-        b.setStateL(State.selected)(n.some).when(c =!= n).void
-      }.getOrEmpty
 
     // If the step is running recalculate height
     val running: Option[StepId] =
@@ -946,8 +972,9 @@ object StepsTable extends Columns {
         recomputeRowHeightsCB
       }.getOrEmpty
 
-    selectStep *>
-      selectedStepChange *>
+    scrollToCB(cur, next) *>
+    selectStepCB(b) *>
+      selectedStepChangeCB(b) *>
       recalculateHeight
   }
 
