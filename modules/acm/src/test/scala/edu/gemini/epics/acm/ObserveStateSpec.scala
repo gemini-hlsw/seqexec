@@ -27,7 +27,7 @@ import org.scalatest._
   Array("org.wartremover.warts.NonUnitStatements",
         "org.wartremover.warts.PublicInference",
         "org.wartremover.warts.IsInstanceOf"))
-final class ObserveStateSpec extends FunSuite with GsaoiMocks with NifsMocks with GmosMocks with NiriMocks {
+final class ObserveStateSpec extends FunSuite with GsaoiMocks with NifsMocks with GmosMocks with NiriMocks with GnirsMocks {
 
   test("NIFS normal observation") {
     val (epicsReader, epicsWriter) = nifsMocks
@@ -280,6 +280,10 @@ final class ObserveStateSpec extends FunSuite with GsaoiMocks with NifsMocks wit
     observe.onCarValChange(CarState.IDLE)
     assert(observe.applyState().isIdle)
     assert(!l.isDone)
+
+    val state: CaCommandMonitor.State = l.waitInactive(2, TimeUnit.SECONDS)
+    assert(state === CaCommandMonitor.State.PAUSE)
+
     // Check that listener was called
     assert(observeErrorCount.get() === 0)
     assert(observePauseCount.get() === 1)
@@ -774,6 +778,145 @@ final class ObserveStateSpec extends FunSuite with GsaoiMocks with NifsMocks wit
     assert(observeSuccessCount.get() === 0)
   }
 
+  test("GNIRS normal observation") {
+    val (epicsReader, epicsWriter) = gnirsMocks
+
+    val observe = new CaObserveSenderImpl(
+      "nirs::observeCmd",
+      "nirs:dc:apply",
+      "nirs:dc:applyC",
+      "nirs:dc:observeC",
+      "nirs:dc:stop",
+      "nirs:dc:abort",
+      "GNIRS Observe",
+      classOf[CarState],
+      epicsReader,
+      epicsWriter)
+    // Start idle
+    assert(observe.applyState().isIdle)
+
+    val observeErrorCount = new AtomicInteger()
+    val observePauseCount = new AtomicInteger()
+    val observeSuccessCount = new AtomicInteger()
+    // Post an observe
+    val l = observe.post()
+    l.setCallback(new CaCommandListener() {
+      def onFailure(ex: Exception): Unit = {
+        observeErrorCount.incrementAndGet()
+        ()
+      }
+      def onPause(): Unit = {
+        observePauseCount.incrementAndGet()
+        ()
+      }
+      def onSuccess(): Unit = {
+        observeSuccessCount.incrementAndGet()
+        ()
+      }
+    })
+
+    // OBSERVE
+    // OBSERVE goes BUSY
+    // Observe CAR VAL change
+    observe.onObserveCarValChange(CarState.BUSY)
+    assert(!observe.applyState().isIdle)
+    // VAL change
+    observe.onApplyValChange(208)
+    assert(!observe.applyState().isIdle)
+    // CAR CLID change
+    observe.onCarClidChange(208)
+    assert(!observe.applyState().isIdle)
+    // CAR VAL change
+    observe.onCarValChange(CarState.BUSY)
+    assert(!observe.applyState().isIdle)
+
+    // OBSERVE goes IDLE
+    // Observe CAR VAL change
+    // CAR CLID change
+    observe.onCarClidChange(208)
+    assert(!observe.applyState().isIdle)
+    // CAR VAL change
+    observe.onCarValChange(CarState.IDLE)
+    assert(!observe.applyState().isIdle)
+    observe.onObserveCarValChange(CarState.IDLE)
+    // And we are done and IDLE
+    assert(observe.applyState().isIdle)
+    l.waitDone(2, TimeUnit.SECONDS)
+    assert(l.isDone)
+
+    // Check that listener was called
+    assert(observeErrorCount.get() === 0)
+    assert(observePauseCount.get() === 0)
+    assert(observeSuccessCount.get() === 1)
+  }
+
+  test("GNIRS weird observation") {
+    val (epicsReader, epicsWriter) = gnirsMocks
+
+    val observe = new CaObserveSenderImpl(
+      "nirs::observeCmd",
+      "nirs:dc:apply",
+      "nirs:dc:applyC",
+      "nirs:dc:observeC",
+      "nirs:dc:stop",
+      "nirs:dc:abort",
+      "GNIRS Observe",
+      classOf[CarState],
+      epicsReader,
+      epicsWriter)
+    // Start idle
+    assert(observe.applyState().isIdle)
+
+    val observeErrorCount = new AtomicInteger()
+    val observePauseCount = new AtomicInteger()
+    val observeSuccessCount = new AtomicInteger()
+    // Post an observe
+    val l = observe.post()
+    l.setCallback(new CaCommandListener() {
+      def onFailure(ex: Exception): Unit = {
+        observeErrorCount.incrementAndGet()
+        ()
+      }
+      def onPause(): Unit = {
+        observePauseCount.incrementAndGet()
+        ()
+      }
+      def onSuccess(): Unit = {
+        observeSuccessCount.incrementAndGet()
+        ()
+      }
+    })
+
+    // OBSERVE
+    // OBSERVE goes BUSY
+    // Observe CAR VAL change
+    observe.onObserveCarValChange(CarState.BUSY)
+    assert(!observe.applyState().isIdle)
+    // VAL change
+    observe.onApplyValChange(3)
+    assert(!observe.applyState().isIdle)
+    // CAR CLID change
+    observe.onCarClidChange(3)
+    assert(!observe.applyState().isIdle)
+
+    // OBSERVE goes IDLE
+    // Observe CAR VAL change
+    observe.onCarValChange(CarState.IDLE)
+    assert(!observe.applyState().isIdle)
+    // CAR CLID change
+    observe.onCarClidChange(3)
+    assert(!observe.applyState().isIdle)
+    // CAR VAL change
+    observe.onObserveCarValChange(CarState.IDLE)
+    l.waitDone(2, TimeUnit.SECONDS)
+    assert(l.isDone)
+
+    // Check that listener was called
+    assert(observeErrorCount.get() === 0)
+    assert(observePauseCount.get() === 0)
+    assert(observeSuccessCount.get() === 1)
+  }
+
 }
 
 // ScalaMock has a restriction that doesn't allow it to mock overloaded methods
@@ -785,12 +928,12 @@ final class ObserveStateSpec extends FunSuite with GsaoiMocks with NifsMocks wit
 class CadDirectiveChannelMock extends ReadWriteClientEpicsChannel[CadDirective] {
   override def setValue(a: java.util.List[CadDirective]): Unit = {}
   override def setValue(a : CadDirective): Unit = {}
-  override def getAll(): java.util.List[CadDirective] = null
-  override def getDBR(): gov.aps.jca.dbr.DBR = null
-  override def getFirst(): CadDirective = null.asInstanceOf[CadDirective]
-  override def getName(): String = null
-  override def getType(): gov.aps.jca.dbr.DBRType = null
-  override def isValid(): Boolean = true
+  override def getAll: java.util.List[CadDirective] = null
+  override def getDBR: gov.aps.jca.dbr.DBR = null
+  override def getFirst: CadDirective = null.asInstanceOf[CadDirective]
+  override def getName: String = null
+  override def getType: gov.aps.jca.dbr.DBRType = null
+  override def isValid: Boolean = true
   override def registerListener(x: edu.gemini.epics.api.ChannelAlarmListener[CadDirective]): Unit = {}
   override def registerListener(x: edu.gemini.epics.api.ChannelListener[CadDirective]): Unit = {}
   override def unRegisterListener(x: edu.gemini.epics.api.ChannelAlarmListener[CadDirective]): Unit = {}
@@ -802,12 +945,12 @@ class CadDirectiveChannelMock extends ReadWriteClientEpicsChannel[CadDirective] 
 class CarStateChannelMock extends ReadWriteClientEpicsChannel[CarState] {
   override def setValue(a: java.util.List[CarState]): Unit = {}
   override def setValue(a : CarState): Unit = {}
-  override def getAll(): java.util.List[CarState] = null
-  override def getDBR(): gov.aps.jca.dbr.DBR = null
-  override def getFirst(): CarState = null.asInstanceOf[CarState]
-  override def getName(): String = null
-  override def getType(): gov.aps.jca.dbr.DBRType = null
-  override def isValid(): Boolean = true
+  override def getAll: java.util.List[CarState] = null
+  override def getDBR: gov.aps.jca.dbr.DBR = null
+  override def getFirst: CarState = null.asInstanceOf[CarState]
+  override def getName: String = null
+  override def getType: gov.aps.jca.dbr.DBRType = null
+  override def isValid: Boolean = true
   override def registerListener(x: edu.gemini.epics.api.ChannelAlarmListener[CarState]): Unit = {}
   override def registerListener(x: edu.gemini.epics.api.ChannelListener[CarState]): Unit = {}
   override def unRegisterListener(x: edu.gemini.epics.api.ChannelAlarmListener[CarState]): Unit = {}
@@ -819,12 +962,12 @@ class CarStateChannelMock extends ReadWriteClientEpicsChannel[CarState] {
 class IntChannelMock extends ReadWriteClientEpicsChannel[JInteger] {
   override def setValue(a: java.util.List[JInteger]): Unit = {}
   override def setValue(a : JInteger): Unit = {}
-  override def getAll(): java.util.List[JInteger] = null
-  override def getDBR(): gov.aps.jca.dbr.DBR = null
-  override def getFirst(): JInteger= null.asInstanceOf[JInteger]
-  override def getName(): String = null
-  override def getType(): gov.aps.jca.dbr.DBRType = null
-  override def isValid(): Boolean = true
+  override def getAll: java.util.List[JInteger] = null
+  override def getDBR: gov.aps.jca.dbr.DBR = null
+  override def getFirst: JInteger= null.asInstanceOf[JInteger]
+  override def getName: String = null
+  override def getType: gov.aps.jca.dbr.DBRType = null
+  override def isValid: Boolean = true
   override def registerListener(x: edu.gemini.epics.api.ChannelAlarmListener[JInteger]): Unit = {}
   override def registerListener(x: edu.gemini.epics.api.ChannelListener[JInteger]): Unit = {}
   override def unRegisterListener(x: edu.gemini.epics.api.ChannelAlarmListener[JInteger]): Unit = {}
@@ -836,12 +979,12 @@ class IntChannelMock extends ReadWriteClientEpicsChannel[JInteger] {
 class ShortChannelMock extends ReadWriteClientEpicsChannel[JShort] {
   override def setValue(a: java.util.List[JShort]): Unit = {}
   override def setValue(a : JShort): Unit = {}
-  override def getAll(): java.util.List[JShort] = null
-  override def getDBR(): gov.aps.jca.dbr.DBR = null
-  override def getFirst(): JShort= null.asInstanceOf[JShort]
-  override def getName(): String = null
-  override def getType(): gov.aps.jca.dbr.DBRType = null
-  override def isValid(): Boolean = true
+  override def getAll: java.util.List[JShort] = null
+  override def getDBR: gov.aps.jca.dbr.DBR = null
+  override def getFirst: JShort= null.asInstanceOf[JShort]
+  override def getName: String = null
+  override def getType: gov.aps.jca.dbr.DBRType = null
+  override def isValid: Boolean = true
   override def registerListener(x: edu.gemini.epics.api.ChannelAlarmListener[JShort]): Unit = {}
   override def registerListener(x: edu.gemini.epics.api.ChannelListener[JShort]): Unit = {}
   override def unRegisterListener(x: edu.gemini.epics.api.ChannelAlarmListener[JShort]): Unit = {}
@@ -853,12 +996,12 @@ class ShortChannelMock extends ReadWriteClientEpicsChannel[JShort] {
 class StringChannelMock extends ReadWriteClientEpicsChannel[String] {
   override def setValue(a: java.util.List[String]): Unit = {}
   override def setValue(a : String): Unit = {}
-  override def getAll(): java.util.List[String] = null
-  override def getDBR(): gov.aps.jca.dbr.DBR = null
-  override def getFirst(): String = null.asInstanceOf[String]
-  override def getName(): String = null
-  override def getType(): gov.aps.jca.dbr.DBRType = null
-  override def isValid(): Boolean = true
+  override def getAll: java.util.List[String] = null
+  override def getDBR: gov.aps.jca.dbr.DBR = null
+  override def getFirst: String = null.asInstanceOf[String]
+  override def getName: String = null
+  override def getType: gov.aps.jca.dbr.DBRType = null
+  override def isValid: Boolean = true
   override def registerListener(x: edu.gemini.epics.api.ChannelAlarmListener[String]): Unit = {}
   override def registerListener(x: edu.gemini.epics.api.ChannelListener[String]): Unit = {}
   override def unRegisterListener(x: edu.gemini.epics.api.ChannelAlarmListener[String]): Unit = {}
@@ -871,45 +1014,66 @@ class StringChannelMock extends ReadWriteClientEpicsChannel[String] {
         "org.wartremover.warts.PublicInference"))
 trait ChannelsFactory extends MockFactory {
   // Functions to setup mocks with different expectations
-  def dirChannel = {
+  def dirChannel: CadDirectiveChannelMock = {
     val m  = mock[CadDirectiveChannelMock]
     (m.setValue(_: CadDirective)).expects(*)
     m
   }
 
-  def dirChannelPause = {
+  def dirChannelPause: CadDirectiveChannelMock = {
     val m  = mock[CadDirectiveChannelMock]//(dirCAJChannel, null, 0.1)
     (m.setValue(_: CadDirective)).expects(*).twice()
     m
   }
 
-  def dirChannelNoSet = mock[CadDirectiveChannelMock]
+  def dirChannelNoSet: CadDirectiveChannelMock = mock[CadDirectiveChannelMock]
 
-  def carChannel = {
+  def carChannel:CarStateChannelMock = {
     val m  = mock[CarStateChannelMock]
     (m.registerListener(_: edu.gemini.epics.api.ChannelListener[CarState])).expects(*)
     m
   }
 
-  def intChannelS = {
+  def intChannelS: IntChannelMock = {
     val m  = mock[IntChannelMock]
     (m.registerListener(_: ChannelListener[JInteger])).expects(*)
     m
   }
-  def intChannel =  mock[IntChannelMock]
+  def intChannel: IntChannelMock =  mock[IntChannelMock]
 
-  def strChannel = mock[StringChannelMock]
+  def strChannel: StringChannelMock = mock[StringChannelMock]
 
-  def strChannelErr = {
+  def strChannelErr: StringChannelMock = {
     val m  = mock[StringChannelMock]
     (m.getFirst _).expects().once().returns("Error msg")
     m
   }
 
-  def shortChannel = {
+  def shortChannel: ShortChannelMock = {
     val m  = mock[ShortChannelMock]
     (m.registerListener(_: ChannelListener[JShort])).expects(*)
     m
+  }
+}
+
+@SuppressWarnings(
+  Array("org.wartremover.warts.NonUnitStatements",
+        "org.wartremover.warts.PublicInference"))
+trait GenericInstMocks extends ChannelsFactory {
+  def genericInstMocks(apply: String, applyCar: String, observeCar: String): (EpicsReader, EpicsWriter) = {
+    val epicsReader = mock[EpicsReader]
+    val epicsWriter = mock[EpicsWriter]
+
+    (epicsWriter.getEnumChannel[CadDirective] _).expects(s"${apply}.DIR", *).returns(dirChannel)
+    (epicsReader.getIntegerChannel _).expects(s"${apply}.VAL").returns(intChannelS)
+    (epicsReader.getStringChannel _).expects(s"${apply}.MESS").returns(strChannel)
+    (epicsReader.getIntegerChannel _).expects(s"${applyCar}.CLID").returns(intChannelS)
+    (epicsReader.getEnumChannel[CarState] _).expects(s"${applyCar}.VAL", *).returns(carChannel)
+    (epicsReader.getStringChannel _).expects(s"${applyCar}.OMSS").returns(strChannel)
+    (epicsReader.getIntegerChannel _).expects(s"${observeCar}.CLID").returns(intChannel)
+    (epicsReader.getEnumChannel[CarState] _).expects(s"${observeCar}.VAL", *).returns(carChannel)
+    (epicsReader.getStringChannel _).expects(s"${observeCar}.OMSS").returns(strChannel)
+    (epicsReader, epicsWriter)
   }
 }
 
@@ -921,11 +1085,11 @@ trait GsaoiMocks extends ChannelsFactory {
     val epicsReader = mock[EpicsReader]
     val epicsWriter = mock[EpicsWriter]
 
-    (epicsWriter.getEnumChannel _).expects("gsaoi:dc:obsapply.DIR", *).returns(dirChannel)
+    (epicsWriter.getEnumChannel[CadDirective] _).expects("gsaoi:dc:obsapply.DIR", *).returns(dirChannel)
     (epicsReader.getIntegerChannel _).expects("gsaoi:dc:obsapply.VAL").returns(intChannelS)
     (epicsReader.getStringChannel _).expects("gsaoi:dc:obsapply.MESS").returns(strChannel)
     (epicsReader.getIntegerChannel _).expects("gsaoi:dc:observeC.CLID").returns(intChannelS)
-    (epicsReader.getEnumChannel _).expects("gsaoi:dc:observeC.VAL", *).returns(carChannel)
+    (epicsReader.getEnumChannel[CarState] _).expects("gsaoi:dc:observeC.VAL", *).returns(carChannel)
     (epicsReader.getStringChannel _).expects("gsaoi:dc:observeC.OMSS").returns(strChannel)
     (epicsReader.getShortChannel _).expects("gsaoi:dc:stop.MARK").returns(shortChannel)
     (epicsReader.getShortChannel _).expects("gsaoi:dc:abort.MARK").returns(shortChannel)
@@ -937,20 +1101,10 @@ trait GsaoiMocks extends ChannelsFactory {
 @SuppressWarnings(
   Array("org.wartremover.warts.NonUnitStatements",
         "org.wartremover.warts.PublicInference"))
-trait NifsMocks extends ChannelsFactory {
+trait NifsMocks extends GenericInstMocks {
   def nifsMocks: (EpicsReader, EpicsWriter) = {
-    val epicsReader = mock[EpicsReader]
-    val epicsWriter = mock[EpicsWriter]
+    val (epicsReader, epicsWriter) = genericInstMocks("nifs:dc:nifsApply", "nifs:dc:applyC", "nifs:dc:observeC")
 
-    (epicsWriter.getEnumChannel _).expects("nifs:dc:nifsApply.DIR", *).returns(dirChannel)
-    (epicsReader.getIntegerChannel _).expects("nifs:dc:nifsApply.VAL").returns(intChannelS)
-    (epicsReader.getStringChannel _).expects("nifs:dc:nifsApply.MESS").returns(strChannel)
-    (epicsReader.getIntegerChannel _).expects("nifs:dc:applyC.CLID").returns(intChannelS)
-    (epicsReader.getEnumChannel _).expects("nifs:dc:applyC.VAL", *).returns(carChannel)
-    (epicsReader.getStringChannel _).expects("nifs:dc:applyC.OMSS").returns(strChannel)
-    (epicsReader.getIntegerChannel _).expects("nifs:dc:observeC.CLID").returns(intChannel)
-    (epicsReader.getEnumChannel _).expects("nifs:dc:observeC.VAL", *).returns(carChannel)
-    (epicsReader.getStringChannel _).expects("nifs:dc:observeC.OMSS").returns(strChannel)
     (epicsReader.getShortChannel _).expects("nifs:dc:stop.MARK").returns(shortChannel)
     (epicsReader.getShortChannel _).expects("nifs:dc:abort.MARK").returns(shortChannel)
     (epicsReader, epicsWriter)
@@ -961,20 +1115,10 @@ trait NifsMocks extends ChannelsFactory {
 @SuppressWarnings(
   Array("org.wartremover.warts.NonUnitStatements",
         "org.wartremover.warts.PublicInference"))
-trait GmosMocks extends ChannelsFactory {
+trait GmosMocks extends GenericInstMocks {
   def gmosMocks: (EpicsReader, EpicsWriter) = {
-    val epicsReader = mock[EpicsReader]
-    val epicsWriter = mock[EpicsWriter]
+    val (epicsReader, epicsWriter) = genericInstMocks("gm:apply", "gm:applyC", "gm:dc:observeC")
 
-    (epicsWriter.getEnumChannel _).expects("gm:apply.DIR", *).returns(dirChannel)
-    (epicsReader.getIntegerChannel _).expects("gm:apply.VAL").returns(intChannelS)
-    (epicsReader.getStringChannel _).expects("gm:apply.MESS").returns(strChannel)
-    (epicsReader.getIntegerChannel _).expects("gm:applyC.CLID").returns(intChannelS)
-    (epicsReader.getEnumChannel _).expects("gm:applyC.VAL", *).returns(carChannel)
-    (epicsReader.getStringChannel _).expects("gm:applyC.OMSS").returns(strChannel)
-    (epicsReader.getIntegerChannel _).expects("gm:dc:observeC.CLID").returns(intChannel)
-    (epicsReader.getEnumChannel _).expects("gm:dc:observeC.VAL", *).returns(carChannel)
-    (epicsReader.getStringChannel _).expects("gm:dc:observeC.OMSS").returns(strChannel)
     (epicsReader.getShortChannel _).expects("gm:stop.MARK").returns(shortChannel)
     (epicsReader.getShortChannel _).expects("gm:abort.MARK").returns(shortChannel)
     (epicsReader, epicsWriter)
@@ -984,14 +1128,14 @@ trait GmosMocks extends ChannelsFactory {
     val epicsReader = mock[EpicsReader]
     val epicsWriter = mock[EpicsWriter]
 
-    (epicsWriter.getEnumChannel _).expects("gm:apply.DIR", *).returns(dirChannelPause)
+    (epicsWriter.getEnumChannel[CadDirective] _).expects("gm:apply.DIR", *).returns(dirChannelPause)
     (epicsReader.getIntegerChannel _).expects("gm:apply.VAL").returns(intChannelS)
     (epicsReader.getStringChannel _).expects("gm:apply.MESS").returns(strChannel)
     (epicsReader.getIntegerChannel _).expects("gm:applyC.CLID").returns(intChannelS)
-    (epicsReader.getEnumChannel _).expects("gm:applyC.VAL", *).returns(carChannel)
+    (epicsReader.getEnumChannel[CarState] _).expects("gm:applyC.VAL", *).returns(carChannel)
     (epicsReader.getStringChannel _).expects("gm:applyC.OMSS").returns(strChannel)
     (epicsReader.getIntegerChannel _).expects("gm:dc:observeC.CLID").returns(intChannel)
-    (epicsReader.getEnumChannel _).expects("gm:dc:observeC.VAL", *).returns(carChannel)
+    (epicsReader.getEnumChannel[CarState] _).expects("gm:dc:observeC.VAL", *).returns(carChannel)
     (epicsReader.getStringChannel _).expects("gm:dc:observeC.OMSS").returns(strChannel)
     (epicsReader.getShortChannel _).expects("gm:stop.MARK").returns(shortChannel)
     (epicsReader.getShortChannel _).expects("gm:abort.MARK").returns(shortChannel)
@@ -1002,14 +1146,14 @@ trait GmosMocks extends ChannelsFactory {
     val epicsReader = mock[EpicsReader]
     val epicsWriter = mock[EpicsWriter]
 
-    (epicsWriter.getEnumChannel _).expects("gm:apply.DIR", *).returns(dirChannel)
+    (epicsWriter.getEnumChannel[CadDirective] _).expects("gm:apply.DIR", *).returns(dirChannel)
     (epicsReader.getIntegerChannel _).expects("gm:apply.VAL").returns(intChannelS)
     (epicsReader.getStringChannel _).expects("gm:apply.MESS").returns(strChannel)
     (epicsReader.getIntegerChannel _).expects("gm:applyC.CLID").returns(intChannelS)
-    (epicsReader.getEnumChannel _).expects("gm:applyC.VAL", *).returns(carChannel)
+    (epicsReader.getEnumChannel[CarState] _).expects("gm:applyC.VAL", *).returns(carChannel)
     (epicsReader.getStringChannel _).expects("gm:applyC.OMSS").returns(strChannel)
     (epicsReader.getIntegerChannel _).expects("gm:dc:observeC.CLID").returns(intChannel)
-    (epicsReader.getEnumChannel _).expects("gm:dc:observeC.VAL", *).returns(carChannel)
+    (epicsReader.getEnumChannel[CarState] _).expects("gm:dc:observeC.VAL", *).returns(carChannel)
     (epicsReader.getStringChannel _).expects("gm:dc:observeC.OMSS").returns(strChannelErr)
     (epicsReader.getShortChannel _).expects("gm:stop.MARK").returns(shortChannel)
     (epicsReader.getShortChannel _).expects("gm:abort.MARK").returns(shortChannel)
@@ -1021,23 +1165,26 @@ trait GmosMocks extends ChannelsFactory {
 @SuppressWarnings(
   Array("org.wartremover.warts.NonUnitStatements",
         "org.wartremover.warts.PublicInference"))
-trait NiriMocks extends ChannelsFactory {
+trait NiriMocks extends GenericInstMocks {
   def niriMocks: (EpicsReader, EpicsWriter) = {
-    val epicsReader = mock[EpicsReader]
-    val epicsWriter = mock[EpicsWriter]
+    val (epicsReader, epicsWriter) = genericInstMocks("niri:dc:apply", "niri:dc:applyC", "niri:dc:observeC")
 
-    (epicsWriter.getEnumChannel _).expects("niri:dc:apply.DIR", *).returns(dirChannel)
-    (epicsReader.getIntegerChannel _).expects("niri:dc:apply.VAL").returns(intChannelS)
-    (epicsReader.getStringChannel _).expects("niri:dc:apply.MESS").returns(strChannel)
-    (epicsReader.getIntegerChannel _).expects("niri:dc:applyC.CLID").returns(intChannelS)
-    (epicsReader.getEnumChannel _).expects("niri:dc:applyC.VAL", *).returns(carChannel)
-    (epicsReader.getStringChannel _).expects("niri:dc:applyC.OMSS").returns(strChannel)
-    (epicsReader.getIntegerChannel _).expects("niri:dc:observeC.CLID").returns(intChannel)
-    (epicsReader.getEnumChannel _).expects("niri:dc:observeC.VAL", *).returns(carChannel)
-    (epicsReader.getStringChannel _).expects("niri:dc:observeC.OMSS").returns(strChannel)
     (epicsReader.getShortChannel _).expects("niri:dc:stop.MARK").returns(shortChannel)
     (epicsReader.getShortChannel _).expects("niri:dc:abort.MARK").returns(shortChannel)
     (epicsReader, epicsWriter)
   }
 
+}
+
+@SuppressWarnings(
+  Array("org.wartremover.warts.NonUnitStatements",
+    "org.wartremover.warts.PublicInference"))
+trait GnirsMocks extends GenericInstMocks {
+  def gnirsMocks: (EpicsReader, EpicsWriter) = {
+    val (epicsReader, epicsWriter) = genericInstMocks("nirs:dc:apply", "nirs:dc:applyC", "nirs:dc:observeC")
+
+    (epicsReader.getShortChannel _).expects("nirs:dc:stop.MARK").returns(shortChannel)
+    (epicsReader.getShortChannel _).expects("nirs:dc:abort.MARK").returns(shortChannel)
+    (epicsReader, epicsWriter)
+  }
 }

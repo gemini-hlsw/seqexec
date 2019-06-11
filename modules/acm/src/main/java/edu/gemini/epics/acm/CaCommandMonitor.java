@@ -50,6 +50,19 @@ public interface CaCommandMonitor {
     void waitDone() throws InterruptedException;
 
     /**
+     * Blocks the current thread while the command is active.
+     *
+     * @param timeout
+     *            time to wait for the command inactivity, in seconds.
+     * @throws TimeoutException
+     * @return the end state of the command
+     */
+    State waitInactive(long timeout, TimeUnit unit) throws TimeoutException,
+            InterruptedException;
+
+    State waitInactive() throws InterruptedException;
+
+    /**
      * Retrieves the current execution state of the command.
      * 
      * @return the execution state of the command.

@@ -716,7 +716,7 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
                         failCommandWithCarError(cm);
                         return idleState;
                     } else if (carState.isBusy()) {
-                        return new CaObserveSenderImpl.WaitApplyBusy(cm, val, carState, observeState);
+                        return new CaObserveSenderImpl.WaitApplyIdle(cm, val, carState, observeState);
                     }
                 }
                 return new CaObserveSenderImpl.WaitApplyBusy(cm, val, carState, observeState);
@@ -803,7 +803,12 @@ public class CaObserveSenderImpl<C extends Enum<C> & CarStateGeneric> implements
                 return idleState;
             }
             else {
-                return this;
+                if(val.isIdle() && observeState != idleObserveState) {
+                    return (new CaObserveSenderImpl.WaitApplyIdle(cm, clid, val, observeState)).onCarValChange(val);
+                }
+                else {
+                    return this;
+                }
             }
         }
 
