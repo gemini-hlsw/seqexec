@@ -30,7 +30,7 @@ object GpiHeader {
                         KeywordName.PAR_ANG),
             buildInt32S(tcsKeywordsReader.gpiInstPort,
                        KeywordName.INPORT),
-            buildBoolean(obsKeywordsReader.getAstrometicField,
+            buildBooleanS(obsKeywordsReader.astrometicField,
                          KeywordName.ASTROMTC),
             buildStringS(tcsKeywordsReader.crFollow.map(
                           _.map(CRFollow.keywordValue).getOrElse("INDEF")),
