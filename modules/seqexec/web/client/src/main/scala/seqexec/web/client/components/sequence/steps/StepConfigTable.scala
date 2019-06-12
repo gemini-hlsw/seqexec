@@ -15,6 +15,7 @@ import japgolly.scalajs.react.Reusability
 import cats.implicits._
 import react.virtualized._
 import scala.scalajs.js
+import scala.math.max
 import seqexec.model.Step
 import seqexec.model.enum.SystemName
 import seqexec.web.client.components.SeqexecStyles
@@ -165,11 +166,11 @@ object StepConfigTable {
           "No configuration for step"
       ),
       overscanRowCount = SeqexecStyles.overscanRowCount,
-      height           = size.height.toInt,
+      height           = max(1, size.height.toInt),
       rowCount         = b.props.rowCount,
       rowHeight        = SeqexecStyles.rowHeight,
       rowClassName     = rowClassName(b.props) _,
-      width            = size.width.toInt,
+      width            = max(1, size.width.toInt),
       rowGetter        = b.props.rowGetter _,
       scrollTop        = b.state.scrollPosition,
       headerClassName  = SeqexecStyles.tableHeader.htmlClass,
@@ -182,9 +183,13 @@ object StepConfigTable {
     .initialStateFromProps(_.startState)
     .render ( b =>
       TableContainer(TableContainer.Props(true, size =>
-        Table(settingsTableProps(b, size),
-              b.state.columnBuilder(size, colBuilder(b, size)): _*),
-              onResize = _ => Callback.empty))
+        if (size.width > 0) {
+          Table(settingsTableProps(b, size),
+                b.state.columnBuilder(size, colBuilder(b, size)): _*)
+        } else {
+          <.div()
+        },
+      onResize = _ => Callback.empty))
     )
     .configure(Reusability.shouldComponentUpdate)
     .build

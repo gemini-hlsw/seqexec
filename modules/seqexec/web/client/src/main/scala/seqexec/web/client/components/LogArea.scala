@@ -24,6 +24,7 @@ import monocle.function.At.atSortedMap
 import react.virtualized._
 import react.clipboard._
 import scala.scalajs.js
+import scala.math.max
 import scala.collection.immutable.SortedMap
 import seqexec.model.enum.ServerLogLevel
 import seqexec.model.events._
@@ -289,28 +290,32 @@ object LogArea {
     * Build the table log
     */
   private def table(b: Backend)(size: Size): VdomNode =
-    Table(
-      Table.props(
-        disableHeader = false,
-        noRowsRenderer = () =>
-          <.div(
-            ^.cls := "ui center aligned segment noRows",
-            SeqexecStyles.noRowsSegment,
-            ^.height := 270.px,
-            "No log entries"
+    if (size.width > 0) {
+      Table(
+        Table.props(
+          disableHeader = false,
+          noRowsRenderer = () =>
+            <.div(
+              ^.cls := "ui center aligned segment noRows",
+              SeqexecStyles.noRowsSegment,
+              ^.height := 270.px,
+              "No log entries"
+          ),
+          overscanRowCount = SeqexecStyles.overscanRowCount,
+          height           = 200,
+          rowCount         = b.props.rowCount(b.state),
+          rowHeight        = SeqexecStyles.rowHeight,
+          rowClassName     = rowClassName(b) _,
+          width            = max(1, size.width),
+          rowGetter        = b.props.rowGetter(b.state) _,
+          headerClassName  = SeqexecStyles.tableHeader.htmlClass,
+          headerHeight     = SeqexecStyles.headerHeight
         ),
-        overscanRowCount = SeqexecStyles.overscanRowCount,
-        height           = 200,
-        rowCount         = b.props.rowCount(b.state),
-        rowHeight        = SeqexecStyles.rowHeight,
-        rowClassName     = rowClassName(b) _,
-        width            = size.width,
-        rowGetter        = b.props.rowGetter(b.state) _,
-        headerClassName  = SeqexecStyles.tableHeader.htmlClass,
-        headerHeight     = SeqexecStyles.headerHeight
-      ),
-      b.state.tableState.columnBuilder(size, colBuilder(b, size)): _*
-    ).vdomElement
+        b.state.tableState.columnBuilder(size, colBuilder(b, size)): _*
+      ).vdomElement
+    } else {
+      <.div()
+    }
 
   private def onResize(b: Backend): Size => Callback = s =>
     b.modStateL(State.tableState)(_.recalculateWidths(s, _ => true, columnWidths))

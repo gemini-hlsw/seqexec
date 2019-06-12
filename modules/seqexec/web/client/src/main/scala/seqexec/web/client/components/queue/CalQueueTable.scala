@@ -20,6 +20,7 @@ import monocle.macros.Lenses
 import react.virtualized._
 import react.sortable._
 import scala.scalajs.js
+import scala.math.max
 import scala.concurrent.duration._
 import react.common._
 import seqexec.model.QueueId
@@ -347,11 +348,11 @@ object CalQueueTable {
             "Cal queue empty"
         ),
         overscanRowCount = SeqexecStyles.overscanRowCount,
-        height           = size.height.toInt,
+        height           = max(1, size.height.toInt),
         rowCount         = p.rowCount,
         rowHeight        = SeqexecStyles.rowHeight,
         rowClassName     = rowClassName(p, s) _,
-        width            = size.width.toInt,
+        width            = max(1, size.width.toInt),
         rowGetter        = p.rowGetter(s) _,
         headerClassName  = SeqexecStyles.tableHeader.htmlClass,
         scrollTop        = s.tableState.scrollPosition,
@@ -402,21 +403,25 @@ object CalQueueTable {
         TableContainer.Props(
           p.canOperate,
           size => {
-            val sortableList = SortableContainer.wrapC(
-              Table.component,
-              s.tableState
-                .columnBuilder(size, colBuilder(p, s, size))
-                .map(_.vdomElement))
+            if (size.width > 0) {
+              val sortableList = SortableContainer.wrapC(
+                Table.component,
+                s.tableState
+                  .columnBuilder(size, colBuilder(p, s, size))
+                  .map(_.vdomElement))
 
-            // If distance is 0 we can miss some events
-            val cp = SortableContainer.Props(
-              onSortEnd         = requestMove,
-              shouldCancelStart = _ => CallbackTo(!p.data.canOperate),
-              helperClass =
-                (SeqexecStyles.noselect |+| SeqexecStyles.draggedRowHelper).htmlClass,
-              distance = 3
-            )
-            sortableList(cp)(table(p, s)(size))
+              // If distance is 0 we can miss some events
+              val cp = SortableContainer.Props(
+                onSortEnd         = requestMove,
+                shouldCancelStart = _ => CallbackTo(!p.data.canOperate),
+                helperClass =
+                  (SeqexecStyles.noselect |+| SeqexecStyles.draggedRowHelper).htmlClass,
+                distance = 3
+              )
+              sortableList(cp)(table(p, s)(size))
+            } else {
+              <.div()
+            }
           },
           onResize = _ => Callback.empty
         ))
