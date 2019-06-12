@@ -16,6 +16,8 @@ import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.raw.JsNumber
 import japgolly.scalajs.react.extra.TimerSupport
+import japgolly.scalajs.react.MonocleReact._
+import monocle.Lens
 import monocle.macros.Lenses
 import react.virtualized._
 import react.sortable._
@@ -24,6 +26,7 @@ import scala.math.max
 import scala.concurrent.duration._
 import react.common._
 import seqexec.model.QueueId
+import seqexec.model.SequenceState
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.QueueManipulationOp
 import seqexec.web.client.model.QueueSeqOperations
@@ -39,8 +42,13 @@ import seqexec.web.client.actions.UpdateCalTableState
 import seqexec.web.client.semanticui.elements.button.Button
 import seqexec.web.client.semanticui.elements.icon.Icon.IconTimes
 import seqexec.web.client.semanticui.elements.icon.Icon.IconRefresh
+import seqexec.web.client.semanticui.elements.icon.Icon.IconAttention
+import seqexec.web.client.semanticui.elements.icon.Icon.IconCheckmark
+import seqexec.web.client.semanticui.elements.icon.Icon.IconCircleNotched
+import seqexec.web.client.semanticui.elements.icon.Icon.IconRefresh
 import seqexec.web.client.semanticui.{ Size => SSize }
 import web.client.table._
+import web.client.style._
 
 /**
   * Calibration queue table
@@ -48,10 +56,12 @@ import web.client.table._
 object CalQueueTable {
   sealed trait TableColumn extends Product with Serializable
   case object RemoveSeqColumn extends TableColumn
+  case object StateSeqColumn extends TableColumn
   case object ObsIdColumn extends TableColumn
   case object InstrumentColumn extends TableColumn
 
   private val RemoveColumnWidth  = 30.0
+  private val StateColumnWidth   = 25.0
   private val ObsIdMinWidth      = 66.2167 + SeqexecStyles.TableBorderWidth
   private val InstrumentMinWidth = 90.4333 + SeqexecStyles.TableBorderWidth
 
@@ -68,6 +78,13 @@ object CalQueueTable {
     visible = true,
     FixedColumnWidth.unsafeFromDouble(RemoveColumnWidth))
 
+  val StateSeqMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
+    StateSeqColumn,
+    name    = "state",
+    label   = "",
+    visible = true,
+    FixedColumnWidth.unsafeFromDouble(StateColumnWidth))
+
   val ObsIdColumnMeta: ColumnMeta[TableColumn] = ColumnMeta[TableColumn](
     ObsIdColumn,
     name    = "obsid",
@@ -83,15 +100,18 @@ object CalQueueTable {
     VariableColumnWidth.unsafeFromDouble(0.5, InstrumentMinWidth))
 
   val all: NonEmptyList[ColumnMeta[TableColumn]] =
-    NonEmptyList.of(RemoveSeqMeta, ObsIdColumnMeta, InstrumentColumnMeta)
+    NonEmptyList.of(RemoveSeqMeta,
+                    StateSeqMeta,
+                    ObsIdColumnMeta,
+                    InstrumentColumnMeta)
 
   val ro: NonEmptyList[ColumnMeta[TableColumn]] =
-    NonEmptyList.of(ObsIdColumnMeta, InstrumentColumnMeta)
+    NonEmptyList.of(StateSeqMeta, ObsIdColumnMeta, InstrumentColumnMeta)
 
   final case class Props(queueId: QueueId, data: CalQueueFocus) {
     val rowCount: Int = data.seqs.size
 
-    val canOperate: Boolean = data.canOperate
+    val canOperate: Boolean = data.status.canOperate
 
     def moveSeq[T: Eq](list: List[T], i: Int, value: T): List[T] = {
       val (front, back) = list.splitAt(i)
@@ -109,7 +129,7 @@ object CalQueueTable {
       moved
         .lift(i)
         .map { s =>
-          CalQueueRow(s.id, s.i)
+          CalQueueRow(s.id, s.i, s.status)
         }
         .getOrElse(CalQueueRow.Empty)
     }
@@ -151,11 +171,10 @@ object CalQueueTable {
         .find {
           case (_, i) => removedRows.contains(i)
         }
-        .map(_._2)
         .map { i =>
-          (i to rowCount).toList
+          (i._2 to rowCount).toList
         }
-        .getOrElse(Nil)
+        .orEmpty
 
     val upLifted: List[Int] =
       data.seqs.zipWithIndex
@@ -164,11 +183,10 @@ object CalQueueTable {
             seqState(s.id).exists(
               _.removeSeqQueue === RemoveSeqQueue.RemoveSeqQueueInFlight)
         }
-        .map(_._2)
         .map { i =>
-          ((i + 1) to rowCount).toList
+          ((i._2 + 1) to rowCount).toList
         }
-        .getOrElse(Nil)
+        .orEmpty
 
   }
 
@@ -187,6 +205,12 @@ object CalQueueTable {
       State(ROTableState, animationRendered = false, moved = None)
     val DefaultEditable: State =
       State(EditableTableState, animationRendered = false, moved = None)
+
+    val scrollPosition: Lens[State, JsNumber] =
+      State.tableState ^|-> TableState.scrollPosition
+
+    val columns: Lens[State, NonEmptyList[ColumnMeta[TableColumn]]] =
+      State.tableState ^|-> TableState.columns
   }
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
@@ -200,24 +224,31 @@ object CalQueueTable {
   trait CalQueueRow extends js.Object {
     var obsId: Observation.Id
     var instrument: Instrument
+    var status: SequenceState
   }
   // scalastyle:on
 
   object CalQueueRow {
 
     @SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf"))
-    def apply(obsId: Observation.Id, instrument: Instrument): CalQueueRow = {
+    def apply(obsId:      Observation.Id,
+              instrument: Instrument,
+              status:     SequenceState): CalQueueRow = {
       val p = (new js.Object).asInstanceOf[CalQueueRow]
       p.obsId      = obsId
       p.instrument = instrument
+      p.status     = status
       p
     }
 
-    def unapply(l: CalQueueRow): Option[(Observation.Id, Instrument)] =
-      Some((l.obsId, l.instrument))
+    def unapply(
+      l: CalQueueRow): Option[(Observation.Id, Instrument, SequenceState)] =
+      Some((l.obsId, l.instrument, l.status))
 
     def Empty: CalQueueRow =
-      apply(Observation.Id.unsafeFromString("Default-1"), Instrument.F2)
+      apply(Observation.Id.unsafeFromString("Default-1"),
+            Instrument.F2,
+            SequenceState.Idle)
   }
 
   val obsIdRenderer: CellRenderer[js.Object, js.Object, CalQueueRow] =
@@ -238,8 +269,7 @@ object CalQueueTable {
     (_, _, _, r: CalQueueRow, _) =>
       <.div(
         SeqexecStyles.centeredCell,
-        ^.width := 100.pct,
-        ^.height := 100.pct,
+        SeqexecStyles.fullCell,
         Button(
           Button.Props(
             size        = SSize.Mini,
@@ -260,6 +290,33 @@ object CalQueueTable {
           ))
     )
 
+  private def statusIconRenderer
+    : CellRenderer[js.Object, js.Object, CalQueueRow] =
+    (_, _, _, row: CalQueueRow, _) => {
+      val selectedIconStyle = SeqexecStyles.selectedIcon
+      val icon: TagMod =
+        row.status match {
+          case SequenceState.Completed =>
+            IconCheckmark.copyIcon(extraStyles = List(selectedIconStyle))
+          case SequenceState.Running(_, _) =>
+            IconCircleNotched.copyIcon(fitted  = true,
+                                       loading = true,
+                                       extraStyles =
+                                         List(SeqexecStyles.runningIcon))
+          case SequenceState.Failed(_) =>
+            IconAttention.copyIcon(color       = "red".some,
+                                   extraStyles = List(selectedIconStyle))
+          case _ =>
+            EmptyVdom
+        }
+
+      <.div(
+        SeqexecStyles.centeredCell,
+        SeqexecStyles.fullCell,
+        icon
+      )
+    }
+
   class CalQueueTableBackend(b: BackendScope[Props, State])
       extends TimerSupport {
 
@@ -269,11 +326,12 @@ object CalQueueTable {
       size:  Size
     ): ColumnRenderArgs[TableColumn] => Table.ColumnArg = tb => {
       def updateState(s: TableState[TableColumn]): Callback =
-        b.modState(State.tableState.set(s)) *>
+        b.setStateL(State.tableState)(s) *>
           SeqexecCircuit.dispatchCB(UpdateCalTableState(props.queueId, s))
 
       def renderer(c: TableColumn) = c match {
         case RemoveSeqColumn  => removeSeqRenderer(props)
+        case StateSeqColumn   => statusIconRenderer
         case ObsIdColumn      => obsIdRenderer
         case InstrumentColumn => instrumentRenderer
       }
@@ -306,30 +364,44 @@ object CalQueueTable {
       }
     }
 
-    def rowClassName(p: Props, s: State)(i: Int): String =
+    private def rowStatusStyle(p: Props, s: State)(i: Int): GStyle =
       ((i, p.rowGetter(s)(i)) match {
         case (-1, _) =>
+          GStyle.Zero
+        case (_, r: CalQueueRow) if r.status === SequenceState.Completed =>
+          SeqexecStyles.rowPositive
+        case (_, r: CalQueueRow) if r.status.isRunning =>
+          SeqexecStyles.rowWarning
+        case (_, r: CalQueueRow) if r.status.isError =>
+          SeqexecStyles.rowNegative
+        case _ =>
+          GStyle.Zero
+      })
+
+    def rowClassName(p: Props, s: State)(i: Int): String =
+      (((i, p.rowGetter(s)(i)) match {
+        case (-1, _) =>
           SeqexecStyles.headerRowStyle
-        case (_, CalQueueRow(i, _))
+        case (_, CalQueueRow(i, _, _))
             if p.addedRows.contains(i) && !s.animationRendered =>
           SeqexecStyles.stepRow |+| SeqexecStyles.draggableRow |+| SeqexecStyles.calRowBackground
-        case (_, CalQueueRow(i, _))
+        case (_, CalQueueRow(i, _, _))
             if p.movedRows.contains(i) && !s.animationRendered =>
           SeqexecStyles.stepRow |+| SeqexecStyles.draggableRow |+| SeqexecStyles.calRowBackground
-        case (i, CalQueueRow(_, _))
+        case (i, CalQueueRow(_, _, _))
             if p.afterDeletedRows.contains(i) && !s.animationRendered =>
           SeqexecStyles.stepRow |+| SeqexecStyles.draggableRow |+| SeqexecStyles.calRowBackground
         case (i, _) if p.upLifted.contains(i) && !s.animationRendered =>
           SeqexecStyles.stepRow |+| SeqexecStyles.draggableRow |+| SeqexecStyles.deletedRow
         case _ =>
           SeqexecStyles.stepRow |+| SeqexecStyles.draggableRow
-      }).htmlClass
+      }) |+| rowStatusStyle(p, s)(i)).htmlClass
 
     def updateScrollPosition(pos: JsNumber): Callback =
       b.props.zip(b.state) >>= {
         case (p, state) =>
           val s =
-            (State.tableState ^|-> TableState.scrollPosition).set(pos)(state)
+            State.scrollPosition.set(pos)(state)
           b.setState(s) *>
             SeqexecCircuit.dispatchCB(
               UpdateCalTableState(p.queueId, s.tableState))
@@ -377,16 +449,16 @@ object CalQueueTable {
       }) *> b.modState(_.copy(moved = c.some))
 
     def resetAnim: Callback =
-      b.modState(_.copy(animationRendered = true)) *>
+      b.setStateL(State.animationRendered)(true) *>
         b.props >>= { p =>
         SeqexecCircuit.dispatchCB(ClearLastQueueOp(p.queueId))
       }
 
     def allowAnim: Callback =
-      b.modState(_.copy(animationRendered = false))
+      b.setStateL(State.animationRendered)(false)
 
     def resetMoved: Callback =
-      b.modState(_.copy(moved = none))
+      b.setStateL(State.moved)(none)
 
     def updateVisibleCols: Callback =
       b.props >>= { p =>
@@ -395,7 +467,7 @@ object CalQueueTable {
         } else {
           State.DefaultRO.tableState.columns
         }
-        b.modState(s => s.copy(tableState = s.tableState.copy(columns = cols)))
+        b.setStateL(State.columns)(cols)
       }
 
     def render(p: Props, s: State): VdomElement =
@@ -443,8 +515,7 @@ object CalQueueTable {
     .renderBackend[CalQueueTableBackend]
     .componentWillMount { c =>
       // If on load we have an op don't animate
-      c.backend.resetAnim.when(c.props.data.lastOp.isDefined) *>
-        Callback.empty
+      c.backend.resetAnim.when_(c.props.data.lastOp.isDefined)
     }
     .componentWillReceiveProps { c =>
       // This is a bit tricky. if the last op has changed we allow animation
