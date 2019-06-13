@@ -85,15 +85,7 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
 
   def handleRequestResourceRun: PartialFunction[Any, ActionResult[M]] = {
     case RequestResourceRun(id, _, r) =>
-      // reset others instrument that may have run common resources
-      val resetOthers: SequencesOnDisplay => SequencesOnDisplay =
-        if (Resource.common.contains(r)) {
-          SequencesOnDisplay.resetCommonResourceOperations(id, r)
-        } else {
-          identity
-        }
       updatedL(
-        resetOthers >>>
         SequencesOnDisplay.markOperations(
           id,
           TabOperations
@@ -114,7 +106,15 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
           TabOperations.syncRequested.set(SyncOperation.SyncIdle)))
 
     case RunResourceRemote(id, s, r) =>
+      // reset others instrument that may have run common resources
+      val resetOthers: SequencesOnDisplay => SequencesOnDisplay =
+        if (Resource.common.contains(r)) {
+          SequencesOnDisplay.resetCommonResourceOperations(id, r)
+        } else {
+          identity
+        }
       updatedLE(
+        resetOthers >>>
         SequencesOnDisplay.markOperations(
           id,
           TabOperations
