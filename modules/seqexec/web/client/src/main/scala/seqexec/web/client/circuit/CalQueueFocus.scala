@@ -23,17 +23,19 @@ import scala.collection.immutable.SortedMap
 
 @Lenses
 final case class CalQueueFocus(
-  canOperate: Boolean,
-  loggedIn:   Boolean,
+  status:     ClientStatus,
   seqs:       List[CalQueueSeq],
   tableState: TableState[CalQueueTable.TableColumn],
   seqOps:     SortedMap[Observation.Id, QueueSeqOperations],
-  lastOp:     Option[QueueManipulationOp])
+  lastOp:     Option[QueueManipulationOp]) {
+  val canOperate: Boolean = status.canOperate
+  val loggedIn: Boolean   = status.isLogged
+}
 
 @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object CalQueueFocus {
   implicit val eq: Eq[CalQueueFocus] =
-    Eq.by(x => (x.canOperate, x.seqs, x.seqOps, x.tableState, x.lastOp))
+    Eq.by(x => (x.status, x.seqs, x.tableState, x.seqOps, x.lastOp))
 
   def seqQueueOpsT(
     id: Observation.Id
@@ -84,8 +86,7 @@ object CalQueueFocus {
           seqOpsL(id).getOption).zip(Getter(qLastOpL(id).getOption))))) >>> {
       case (status, (ids, (ts, (seqOps, lastOp)))) =>
         val obsIds = ids.collect { case Some(x) => x }
-        CalQueueFocus(status.canOperate,
-                      status.isLogged,
+        CalQueueFocus(status,
                       obsIds,
                       ts.getOrElse(CalQueueTable.State.ROTableState),
                       seqOps.getOrElse(SortedMap.empty),

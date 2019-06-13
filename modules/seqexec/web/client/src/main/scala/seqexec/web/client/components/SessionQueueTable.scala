@@ -534,7 +534,7 @@ object SessionQueueTable extends Columns {
     ((i, p.rowGetter(i)) match {
       case (-1, _) =>
         SeqexecStyles.headerRowStyle
-      case (_, r: SessionQueueRow) if r.status == SequenceState.Completed =>
+      case (_, r: SessionQueueRow) if r.status === SequenceState.Completed =>
         draggableRow |+| SeqexecStyles.rowPositive
       case (_, r: SessionQueueRow) if r.status.isRunning =>
         draggableRow |+| SeqexecStyles.rowWarning
@@ -718,9 +718,11 @@ object SessionQueueTable extends Columns {
   private def initialState(p: Props): State =
     State.tableState.set(p.sequences.tableState)(State.InitialState)
 
-  private def onResize(b: Backend): Size => Callback = s =>
-    b.setStateL(State.lastSize)(s.some) *>
-      b.modStateL(State.tableState)(_.recalculateWidths(s, b.props.visibleColumns, b.props.columnWidths))
+  private def onResize(b: Backend): Size => Callback =
+    s =>
+      b.setStateL(State.lastSize)(s.some) *>
+        b.modStateL(State.tableState)(
+          _.recalculateWidths(s, b.props.visibleColumns, b.props.columnWidths))
 
   private val component = ScalaComponent
     .builder[Props]("SessionQueueTable")
