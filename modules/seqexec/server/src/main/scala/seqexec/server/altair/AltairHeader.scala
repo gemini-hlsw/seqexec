@@ -24,22 +24,22 @@ object AltairHeader {
           id,
           inst,
           List(
-            buildDoubleS(altairReader.aofreq, KeywordName.AOFREQ),
-            buildDoubleS(altairReader.aocounts, KeywordName.AOCOUNTS),
-            buildDoubleS(altairReader.aoseeing, KeywordName.AOSEEING),
-            buildDoubleS(altairReader.aowfsx, KeywordName.AOWFSX),
-            buildDoubleS(altairReader.aowfsy, KeywordName.AOWFSY),
-            buildDoubleS(altairReader.aowfsz, KeywordName.AOWFSZ),
-            buildDoubleS(altairReader.aogain, KeywordName.AOGAIN),
-            buildStringS(altairReader.aoncpa, KeywordName.AONCPAF),
-            buildStringS(tcsKeywordsReader.crFollow.map(
+            buildDouble(altairReader.aofreq, KeywordName.AOFREQ),
+            buildDouble(altairReader.aocounts, KeywordName.AOCOUNTS),
+            buildDouble(altairReader.aoseeing, KeywordName.AOSEEING),
+            buildDouble(altairReader.aowfsx, KeywordName.AOWFSX),
+            buildDouble(altairReader.aowfsy, KeywordName.AOWFSY),
+            buildDouble(altairReader.aowfsz, KeywordName.AOWFSZ),
+            buildDouble(altairReader.aogain, KeywordName.AOGAIN),
+            buildString(altairReader.aoncpa, KeywordName.AONCPAF),
+            buildString(tcsKeywordsReader.crFollow.map(
                            _.map(CRFollow.keywordValue).getOrElse("INDEF")),
                          KeywordName.CRFOLLOW),
-            buildStringS(altairReader.ngndfilt, KeywordName.AONDFILT),
-            buildStringS(altairReader.astar, KeywordName.AOFLENS),
-            buildStringS(altairReader.aoflex, KeywordName.AOFLEXF),
-            buildStringS(altairReader.lgustage, KeywordName.LGUSTAGE),
-            buildStringS(altairReader.aobs, KeywordName.AOBS)
+            buildString(altairReader.ngndfilt, KeywordName.AONDFILT),
+            buildString(altairReader.astar, KeywordName.AOFLENS),
+            buildString(altairReader.aoflex, KeywordName.AOFLEXF),
+            buildString(altairReader.lgustage, KeywordName.LGUSTAGE),
+            buildString(altairReader.aobs, KeywordName.AOBS)
           )
         )
 

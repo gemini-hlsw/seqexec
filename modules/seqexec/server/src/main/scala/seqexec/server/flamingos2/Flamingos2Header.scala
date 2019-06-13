@@ -43,14 +43,14 @@ object Flamingos2Header {
           id,
           inst,
           List(
-            buildBooleanS(f2ObsReader.preimage, KeywordName.PREIMAGE),
-            buildStringS(
+            buildBoolean(f2ObsReader.preimage, KeywordName.PREIMAGE, DefaultHeaderValue.FalseDefaultValue),
+            buildString(
               Sync[F].delay(
                 LocalDate.now.format(DateTimeFormatter.ISO_LOCAL_DATE)),
               KeywordName.DATE_OBS),
-            buildStringS(tcsKeywordsReader.ut, KeywordName.TIME_OBS),
-            buildStringS(f2ObsReader.readMode, KeywordName.READMODE),
-            buildInt32S(f2ObsReader.nReads, KeywordName.NREADS)
+            buildString(tcsKeywordsReader.ut, KeywordName.TIME_OBS),
+            buildString(f2ObsReader.readMode, KeywordName.READMODE),
+            buildInt32(f2ObsReader.nReads, KeywordName.NREADS)
           )
         )
 

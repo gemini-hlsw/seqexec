@@ -15,7 +15,6 @@ import cats.implicits._
 import gem.enum.DhsKeywordName
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.{SeqexecFailure, TrySeq}
-import seqexec.server.SeqActionF
 import seqexec.server.keywords.DhsClient.ImageParameters
 import seqexec.server.SeqexecFailure.SeqexecExceptionWhile
 import io.circe.syntax._
@@ -58,17 +57,6 @@ class DhsClientHttp[F[_]: Effect](base: Client[F], baseURI: Uri)(implicit timer:
       .attemptT
       .leftMap(SeqexecExceptionWhile("creating image in DHS", _): SeqexecFailure)
       .flatMap(EitherT.fromEither(_)).liftF
-  }
-
-  def setParameters(id: ImageFileId, p: ImageParameters): SeqActionF[F, Unit] = {
-    val req = PUT(
-      Json.obj("setParameters" := p.asJson),
-      baseURI / id
-    )
-    client.expect[TrySeq[Unit]](req)(jsonOf[F, TrySeq[Unit]])
-      .attemptT
-      .leftMap(SeqexecExceptionWhile("setting image parameters in DHS", _))
-      .flatMap(EitherT.fromEither(_))
   }
 
   override def setKeywords(
@@ -153,13 +141,14 @@ object DhsClientHttp {
       "contributors" := p.contributors
     ))
 
-  implicit def keywordEncode: Encoder[InternalKeyword] = Encoder.instance[InternalKeyword]( k =>
-    Json.obj(
-      "name" := DhsKeywordName.all.find(_.keyword === k.name).map(_.name).getOrElse(k.name.name),
-      "type" := KeywordType.dhsKeywordType(k.keywordType),
-      "value" := k.value
+  implicit def keywordEncode: Encoder[InternalKeyword] =
+    Encoder.instance[InternalKeyword]( k =>
+      Json.obj(
+        "name" := DhsKeywordName.all.find(_.keyword === k.name).map(_.name).getOrElse(k.name.name),
+        "type" := KeywordType.dhsKeywordType(k.keywordType),
+        "value" := k.value
+      )
     )
-  )
 
   final case class Error(t: ErrorType, msg: String) {
     override def toString = s"(${t.str}) $msg"

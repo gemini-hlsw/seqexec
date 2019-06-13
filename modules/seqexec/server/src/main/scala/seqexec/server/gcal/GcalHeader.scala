@@ -15,10 +15,10 @@ object GcalHeader {
   implicit def header[F[_]: Sync](inst: InstrumentSystem[F], gcalReader: GcalKeywordReader[F]): Header[F] =
     new Header[F] {
       private val gcalKeywords = List(
-        buildStringS(gcalReader.lamp, KeywordName.GCALLAMP),
-        buildStringS(gcalReader.filter, KeywordName.GCALFILT),
-        buildStringS(gcalReader.diffuser, KeywordName.GCALDIFF),
-        buildStringS(gcalReader.shutter, KeywordName.GCALSHUT)
+        buildString(gcalReader.lamp, KeywordName.GCALLAMP),
+        buildString(gcalReader.filter, KeywordName.GCALFILT),
+        buildString(gcalReader.diffuser, KeywordName.GCALDIFF),
+        buildString(gcalReader.shutter, KeywordName.GCALSHUT)
       )
 
       override def sendBefore(obsId: Observation.Id,

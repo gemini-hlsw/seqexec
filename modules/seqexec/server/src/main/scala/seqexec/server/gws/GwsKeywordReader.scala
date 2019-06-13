@@ -84,22 +84,22 @@ object GwsKeywordsReaderEpics extends GwsDefaults {
     private val sys = GwsEpics.instance
 
     override def temperature: F[Temperature] =
-      sys.ambientT.safeValOrDefault.to[F]
+      sys.ambientT.to[F]
 
     override def dewPoint: F[Temperature @@ DewPoint] =
-      sys.dewPoint.map(tag[DewPoint][Temperature](_)).safeValOrDefault.to[F]
+      sys.dewPoint.map(tag[DewPoint][Temperature](_)).to[F]
 
     override def airPressure: F[Pressure] =
-      sys.airPressure.safeValOrDefault.to[F]
+      sys.airPressure.to[F]
 
     override def windVelocity: F[Velocity] =
-      sys.windVelocity.safeValOrDefault.to[F]
+      sys.windVelocity.to[F]
 
     override def windDirection: F[Angle] =
-      sys.windDirection.safeValOrDefault.to[F]
+      sys.windDirection.to[F]
 
     override def humidity: F[Double] =
-      sys.humidity.safeValOrDefault.to[F]
+      sys.humidity.to[F]
 
     override def health: F[EpicsHealth] =
       sys.health.to[F]
