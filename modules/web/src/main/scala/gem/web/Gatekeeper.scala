@@ -103,7 +103,7 @@ object Gatekeeper {
    * is a bit more complex than normal services because we must work in OptionT to handle the case
    * where `delegate` doesn't respond.
    */
-  def authenticate[F[_]: Sync](env: Environment[F], delegate: AuthedService[GemService[F], F]): HttpRoutes[F] =
+  def authenticate[F[_]: Sync](env: Environment[F], delegate: AuthedRoutes[GemService[F], F]): HttpRoutes[F] =
     Kleisli[OptionT[F, ?], Request[F], Response[F]] {
       // curl -i -b gem.jwt=... localhost:8080/something/else
       case req =>

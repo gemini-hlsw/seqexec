@@ -6,6 +6,7 @@ package web
 
 import cats._
 import cats.implicits._
+import cats.effect.Sync
 import gem.{ Service => GemService }
 import gem.json.instances.all._
 import io.circe.syntax._
@@ -36,9 +37,10 @@ object Application {
   }
 
   /** Gem application endpoints. */
-  def service[F[_]: Monad]: AuthedService[GemService[F], F] = {
-    val dsl = new Http4sDsl[F] {}; import dsl._
-    AuthedService {
+  def service[F[_]: Sync]: AuthedRoutes[GemService[F], F] = {
+    val dsl = new Http4sDsl[F] {}
+    import dsl._
+    AuthedRoutes.of {
 
       // Select matching program ids and titles.
       case GET -> Root / "api" / "query" / "program" :? Query(q) +& Limit(n) as gs =>

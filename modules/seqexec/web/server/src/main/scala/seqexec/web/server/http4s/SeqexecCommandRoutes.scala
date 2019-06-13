@@ -32,7 +32,7 @@ class SeqexecCommandRoutes(auth:       AuthenticationService,
   // Handles authentication
   private val httpAuthentication = new Http4sAuthentication(auth)
 
-  private val commandServices: AuthedService[UserDetails, IO] = AuthedService {
+  private val commandServices: AuthedRoutes[UserDetails, IO] = AuthedRoutes.of {
     case POST -> Root / ObsIdVar(obsId) / "start" / ClientIDVar(clientId) as user =>
       for {
         _    <- se.start(inputQueue, obsId, user, clientId)
