@@ -86,8 +86,8 @@ class SeqexecUIApiRoutes(site: String,
 
     }}
 
-  val protectedServices: AuthedService[AuthResult, IO] =
-    AuthedService {
+  val protectedServices: AuthedRoutes[AuthResult, IO] =
+    AuthedRoutes.of {
       // Route used for testing only
       case GET  -> Root  / "log" / count as _ if devMode =>
         for {_ <- 0 until min(1000, max(0, count.toInt))} {
