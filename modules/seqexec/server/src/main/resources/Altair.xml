@@ -2,6 +2,7 @@
 <Records xmlns="http://www.gemini.edu/CaSchema">
     <Top name="ao">ao</Top>
     <Top name="bto">bto</Top>
+    <Top name="sfo">sfo</Top>
     <Apply name="btoFsaApply">
         <top>bto</top>
         <apply>apply</apply>
