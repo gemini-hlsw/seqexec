@@ -175,7 +175,9 @@ object ObsKeywordReader extends ObsKeywordsReaderConstants {
     }
 
     override def dataLabel: F[String] =
-      (OBSERVE_KEY / DATA_LABEL_PROP).toString.pure[F]
+      F.delay(
+        s"${config.getItemValue(OBSERVE_KEY / DATA_LABEL_PROP)}"
+      )
 
     override def observatory: F[String] = telescopeName.pure[F]
 
