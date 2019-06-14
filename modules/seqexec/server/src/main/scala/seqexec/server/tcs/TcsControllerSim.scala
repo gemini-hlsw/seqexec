@@ -3,28 +3,34 @@
 
 package seqexec.server.tcs
 
-import cats.data.{EitherT, NonEmptySet}
-import cats.effect.IO
+import cats.Applicative
+import cats.data.NonEmptySet
 import org.log4s.getLogger
 import seqexec.server.tcs.TcsController._
-import seqexec.server.SeqAction
 import cats.implicits._
 import seqexec.server.altair.Altair
 import seqexec.server.gems.Gems
 
-object TcsControllerSim extends TcsController {
+
+class TcsControllerSim[F[_]: Applicative] private extends TcsController[F] {
 
   private val Log = getLogger
 
   override def applyConfig(subsystems: NonEmptySet[Subsystem],
-                           gaos: Option[Either[Altair[IO], Gems[IO]]],
-                           tc: TcsConfig): SeqAction[Unit] = {
-    def configSubsystem(subsystem: Subsystem): IO[Unit] = IO.apply(Log.info(s"Applying ${subsystem.show} configuration."))
+                           gaos: Option[Either[Altair[F], Gems[F]]],
+                           tc: TcsConfig): F[Unit] = {
+    def configSubsystem(subsystem: Subsystem): F[Unit] = Log.info(s"Applying ${subsystem.show} configuration.").pure[F]
 
-    SeqAction.lift(subsystems.toList.map(configSubsystem).sequence.as(()))
+    subsystems.toList.map(configSubsystem).sequence.void
   }
 
-  override def notifyObserveStart: SeqAction[Unit] = EitherT.right(IO(Log.info("Simulate TCS observe")))
+  override def notifyObserveStart: F[Unit] = Log.info("Simulate TCS observe").pure[F]
 
-  override def notifyObserveEnd: SeqAction[Unit] = EitherT.right(IO(Log.info("Simulate TCS endObserve")))
+  override def notifyObserveEnd: F[Unit] = Log.info("Simulate TCS endObserve").pure[F]
+}
+
+object TcsControllerSim {
+
+  def apply[F[_]: Applicative]: TcsController[F] = new TcsControllerSim[F]
+
 }

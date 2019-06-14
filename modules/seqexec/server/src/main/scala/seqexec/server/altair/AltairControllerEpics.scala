@@ -15,7 +15,7 @@ import mouse.boolean._
 import edu.gemini.seqexec.server.altair.LgsSfoControl
 import edu.gemini.spModel.gemini.altair.AltairParams.FieldLens
 import monocle.macros.Lenses
-import seqexec.server.{SeqAction, SeqexecFailure, TrySeq}
+import seqexec.server.{SeqexecFailure, TrySeq}
 import seqexec.server.altair.AltairController._
 import seqexec.server.tcs.{FOCAL_PLANE_SCALE, Gaos, TcsEpics}
 import seqexec.server.tcs.Gaos._
@@ -66,10 +66,9 @@ object AltairControllerEpics extends AltairController[IO] {
   private def validatePreparedControlMatrix(currCfg: EpicsAltairConfig, newPos: (Length, Length))
   : Boolean = validControlMatrix(currCfg.preparedMatrixCoords)(newPos)
 
-  private def prepareMatrix(newPos: (Length, Length)): IO[Unit] = convertTcsAction(
+  private def prepareMatrix(newPos: (Length, Length)): IO[Unit] =
     epicsTcs.aoPrepareControlMatrix.setX(newPos._1.toMillimeters) *>
       epicsTcs.aoPrepareControlMatrix.setY(newPos._2.toMillimeters)
-  )
 
   implicit val fieldLensEq: Eq[FieldLens] = Eq.by(_.ordinal)
 
@@ -93,12 +92,12 @@ object AltairControllerEpics extends AltairController[IO] {
 
     // Actions to stop loops
     val actions = List(
-      currCfg.aoLoop.option(convertTcsAction(epicsTcs.aoCorrect.setCorrections(CorrectionsOff) *>
-        epicsTcs.targetFilter.setShortCircuit(TargetFilterClosed))),
+      currCfg.aoLoop.option(epicsTcs.aoCorrect.setCorrections(CorrectionsOff) *>
+        epicsTcs.targetFilter.setShortCircuit(TargetFilterClosed)),
       newPos.filter(_ => newPosOk && !matrixOk && !prepMatrixOk).map(prepareMatrix)
     ).collect { case Some(x) => x }
 
-    val pause = (actions.sequence *> convertTcsAction(epicsTcs.targetFilter.post).void).whenA(actions.nonEmpty)
+    val pause = (actions.sequence *> epicsTcs.targetFilter.post[IO].void).whenA(actions.nonEmpty)
 
     needsToStop.option((newCfg, pause))
   }
@@ -123,12 +122,10 @@ object AltairControllerEpics extends AltairController[IO] {
 
     (newPosOk && guideOk).option(
       (epicsAltair.waitMatrixCalc(CarStateGEM5.IDLE, matrixPrepTimeout) *>
-        convertTcsAction(
-          epicsTcs.aoCorrect.setCorrections(CorrectionsOn) *>
-          epicsTcs.aoFlatten.mark *>
-          epicsTcs.targetFilter.setShortCircuit(TargetFilterOpen) *>
-          epicsTcs.targetFilter.post
-        ) *>
+        epicsTcs.aoCorrect.setCorrections(CorrectionsOn) *>
+        epicsTcs.aoFlatten.mark[IO] *>
+        epicsTcs.targetFilter.setShortCircuit(TargetFilterOpen) *>
+        epicsTcs.targetFilter.post[IO] *>
         epicsAltair.waitAoSettled(aoSettledTimeout)
       ).whenA(!currCfg.aoLoop)
     )
@@ -222,22 +219,19 @@ object AltairControllerEpics extends AltairController[IO] {
   private def pauseResumeLgsWithXX(currCfg: EpicsAltairConfig)(
       pauseReasons: Set[Gaos.PauseCondition], resumeReasons: Set[Gaos.ResumeCondition])
   : PauseResume[IO] = {
-    val pause = (pauseReasons.contains(Gaos.GaosGuideOff) && currCfg.aoLoop).option{
-      convertTcsAction(epicsTcs.aoCorrect.setCorrections(CorrectionsOff) *>
+    val pause: Option[IO[Unit]] = (pauseReasons.contains(Gaos.GaosGuideOff) && currCfg.aoLoop).option{
+      epicsTcs.aoCorrect.setCorrections(CorrectionsOff) *>
         epicsTcs.targetFilter.setShortCircuit(TargetFilterClosed) *>
-        epicsTcs.targetFilter.post.void
-      )
+        epicsTcs.targetFilter.post[IO].void
     }
-    val resume = (resumeReasons.contains(Gaos.GaosGuideOn) &&
+    val resume: Option[IO[Unit]] = (resumeReasons.contains(Gaos.GaosGuideOn) &&
       (pauseReasons.contains(Gaos.GaosGuideOff) || !currCfg.aoLoop)
     ).option{
-      convertTcsAction(
-        epicsTcs.aoCorrect.setCorrections(CorrectionsOn) *>
-          epicsTcs.aoFlatten.mark *>
-          epicsTcs.targetFilter.setShortCircuit(TargetFilterOpen) *>
-          epicsTcs.targetFilter.post
-      ) *>
-      epicsAltair.waitAoSettled(aoSettledTimeout)
+      epicsTcs.aoCorrect.setCorrections(CorrectionsOn) *>
+        epicsTcs.aoFlatten.mark[IO] *>
+        epicsTcs.targetFilter.setShortCircuit(TargetFilterOpen) *>
+        epicsTcs.targetFilter.post[IO] *>
+        epicsAltair.waitAoSettled(aoSettledTimeout)
     }
 
     PauseResume(
@@ -247,8 +241,8 @@ object AltairControllerEpics extends AltairController[IO] {
   }
 
   private def turnOff(c: EpicsAltairConfig): PauseResume[IO] = PauseResume(
-    convertTcsAction(epicsTcs.aoCorrect.setCorrections(CorrectionsOff) *>
-      epicsTcs.targetFilter.post
+    (epicsTcs.aoCorrect.setCorrections(CorrectionsOff) *>
+      epicsTcs.targetFilter.post[IO]
     ).whenA(c.aoLoop).some,
     None
   )
@@ -268,8 +262,7 @@ object AltairControllerEpics extends AltairController[IO] {
     }
 
   override def observe(expTime: Time)(cfg: AltairConfig): IO[Unit] = IO(LocalDate.now).flatMap( date =>
-    convertTcsAction(
-      epicsTcs.aoStatistics.setTriggerTimeInterval(0.0) *>
+    ( epicsTcs.aoStatistics.setTriggerTimeInterval(0.0) *>
         epicsTcs.aoStatistics.setInterval(expTime.toSeconds) *>
         epicsTcs.aoStatistics.setSamples(1) *>
         epicsTcs.aoStatistics.setFileName("aostats" + date.format(DateTimeFormatter.ofPattern("yyyyMMdd")))
@@ -325,7 +318,7 @@ object AltairControllerEpics extends AltairController[IO] {
   /*
    * Helper function to be used until TcsEpics is converted to use F[_]
    */
-  def convertTcsAction[T](a: SeqAction[T]): IO[T] = a.value.flatMap(_.fold(IO.raiseError(_), IO(_)))
+  //def convertTcsAction[T](a: SeqAction[T]): IO[T] = a.value.flatMap(_.fold(IO.raiseError(_), IO(_)))
 
   // This is a bit convoluted. AO follow state is read from Altair, but set as part of TCS configuration
   override def isFollowing: IO[Option[Boolean]] = AltairEpics.instance.aoFollow

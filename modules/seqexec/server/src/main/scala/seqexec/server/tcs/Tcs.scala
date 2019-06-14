@@ -3,8 +3,8 @@
 
 package seqexec.server.tcs
 
-import cats.data.{EitherT, NonEmptySet}
-import cats.effect.IO
+import cats.data.NonEmptySet
+import cats.effect.Sync
 import cats.implicits._
 import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.core.Wavelength
@@ -20,17 +20,17 @@ import seqexec.server.altair.Altair
 import seqexec.server.altair.AltairController._
 import seqexec.server.gems.Gems
 import seqexec.server.tcs.TcsController._
-import seqexec.server.{ConfigResult, InstrumentSystem, SeqAction, SeqexecFailure, System}
+import seqexec.server.{ConfigResult, InstrumentSystem, SeqActionF, System}
 import shapeless.tag
 import squants.Angle
 import squants.space.Arcseconds
 
 
-final case class Tcs private (tcsController: TcsController,
+final case class Tcs[F[_]: Sync] private (tcsController: TcsController[F],
                               subsystems: NonEmptySet[Subsystem],
-                              gaos: Option[Either[Altair[IO], Gems[IO]]],
-                              guideDb: GuideConfigDb[IO]
-                            )(config: Tcs.TcsSeqConfig[IO]) extends System[IO] {
+                              gaos: Option[Either[Altair[F], Gems[F]]],
+                              guideDb: GuideConfigDb[F]
+                            )(config: Tcs.TcsSeqConfig[F]) extends System[F] {
   import Tcs._
 
   override val resource: Resource = Resource.TCS
@@ -50,17 +50,16 @@ final case class Tcs private (tcsController: TcsController,
     case Subsystem.Gaos   => List(tcs.gds.pwfs2OrAowfs.toOption).collect{ case Some(x) => (x:GuiderConfig).show }
   }
 
-  override def configure(config: Config): SeqAction[ConfigResult[IO]] =
-    EitherT.liftF[IO, SeqexecFailure, TcsConfig](buildTcsConfig)
-      .flatMap{ cfg =>
-        SeqAction(Log.debug(s"Applying TCS configuration: ${subsystems.toList.flatMap(subsystemConfig(cfg, _))}")) *>
-        tcsController.applyConfig(subsystems, gaos, cfg).as(ConfigResult(this))
-      }
+  override def configure(config: Config): SeqActionF[F, ConfigResult[F]] = SeqActionF.embedF(
+    buildTcsConfig.flatMap{ cfg =>
+      Log.debug(s"Applying TCS configuration: ${subsystems.toList.flatMap(subsystemConfig(cfg, _))}").pure[F] *>
+      tcsController.applyConfig(subsystems, gaos, cfg).as(ConfigResult(this))
+    }
+  )
 
-  override def notifyObserveStart: SeqAction[Unit] =
-    tcsController.notifyObserveStart
+  override def notifyObserveStart: SeqActionF[F, Unit] = SeqActionF.embedF(tcsController.notifyObserveStart)
 
-  override def notifyObserveEnd: SeqAction[Unit] = tcsController.notifyObserveEnd
+  override def notifyObserveEnd: SeqActionF[F, Unit] = SeqActionF.embedF(tcsController.notifyObserveEnd)
 
   val defaultGuiderConf = GuiderConfig(ProbeTrackingConfig.Parked, GuiderSensorOff)
   def calcGuiderConfig(inUse: Boolean, guideWith: Option[StandardGuideOptions.Value]): GuiderConfig =
@@ -72,7 +71,7 @@ final case class Tcs private (tcsController: TcsController,
    * configuration set from TCC. The TCC configuration has precedence: if a guider is not used in the TCC configuration,
    * it will not be used for the step, regardless of the sequence values.
    */
-  def buildTcsConfig: IO[TcsConfig] =
+  def buildTcsConfig: F[TcsConfig] =
     guideDb.value.map{ c => {
       val useAo: Boolean = c.gaosGuide match {
         case Some(Left(AltairOff)) => false
@@ -157,10 +156,10 @@ object Tcs {
   @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object TcsSeqConfig
 
-  def fromConfig(controller: TcsController, subsystems: NonEmptySet[Subsystem], gaos: Option[Either[Altair[IO],
-    Gems[IO]]], instrument: InstrumentSystem[IO], guideConfigDb: GuideConfigDb[IO])(
+  def fromConfig[F[_]: Sync](controller: TcsController[F], subsystems: NonEmptySet[Subsystem], gaos: Option[Either[Altair[F],
+    Gems[F]]], instrument: InstrumentSystem[F], guideConfigDb: GuideConfigDb[F])(
                   config: Config, lightPath: LightPath, observingWavelength: Option[Wavelength]
-  ): Tcs = {
+  ): Tcs[F] = {
 
     val gwp1 = config.extractAs[StandardGuideOptions.Value](TELESCOPE_KEY / GUIDE_WITH_PWFS1_PROP).toOption
     val gwp2 = config.extractAs[StandardGuideOptions.Value](TELESCOPE_KEY / GUIDE_WITH_PWFS2_PROP).toOption

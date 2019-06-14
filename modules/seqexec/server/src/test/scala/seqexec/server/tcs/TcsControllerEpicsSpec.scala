@@ -61,13 +61,13 @@ class TcsControllerEpicsSpec extends FlatSpec with PrivateMethodTester {
 
   "TcsControllerEpics" should "not pause guiding if it is not necessary" in {
     //No offset
-    TcsControllerEpics invokePrivate mustPauseWhileOffsetting(
+    TcsControllerEpics() invokePrivate mustPauseWhileOffsetting(
       baseCurrentStatus,
       baseConfig
     ) shouldBe false
 
     //Offset, but no guider in use
-    TcsControllerEpics invokePrivate mustPauseWhileOffsetting(
+    TcsControllerEpics() invokePrivate mustPauseWhileOffsetting(
       baseCurrentStatus,
       (TcsConfig.tc ^|-> TelescopeConfig.offsetA).set(
         InstrumentOffset(
@@ -80,7 +80,7 @@ class TcsControllerEpicsSpec extends FlatSpec with PrivateMethodTester {
 
   it should "decide if it can keep PWFS1 guiding active when applying an offset" in {
     //Big offset with PWFS1 in use
-    TcsControllerEpics invokePrivate mustPauseWhileOffsetting(
+    TcsControllerEpics() invokePrivate mustPauseWhileOffsetting(
       baseCurrentStatus,
       (
         (TcsConfig.tc ^|-> TelescopeConfig.offsetA).set(
@@ -100,7 +100,7 @@ class TcsControllerEpicsSpec extends FlatSpec with PrivateMethodTester {
         ) (baseConfig)
     ) shouldBe true
 
-    TcsControllerEpics invokePrivate mustPauseWhileOffsetting(
+    TcsControllerEpics() invokePrivate mustPauseWhileOffsetting(
       baseCurrentStatus,
       (
         (TcsConfig.tc ^|-> TelescopeConfig.offsetA).set(
@@ -121,7 +121,7 @@ class TcsControllerEpicsSpec extends FlatSpec with PrivateMethodTester {
     ) shouldBe true
 
     //Small offset with PWFS1 in use
-    TcsControllerEpics invokePrivate mustPauseWhileOffsetting(
+    TcsControllerEpics() invokePrivate mustPauseWhileOffsetting(
       baseCurrentStatus,
       (
         (TcsConfig.tc ^|-> TelescopeConfig.offsetA).set(
@@ -144,7 +144,7 @@ class TcsControllerEpicsSpec extends FlatSpec with PrivateMethodTester {
 
   it should "decide if it can keep PWFS2 guiding active when applying an offset" in {
     //Big offset with PWFS2 in use
-    TcsControllerEpics invokePrivate mustPauseWhileOffsetting(
+    TcsControllerEpics() invokePrivate mustPauseWhileOffsetting(
       baseCurrentStatus,
       (
         (TcsConfig.tc ^|-> TelescopeConfig.offsetA).set(
@@ -164,7 +164,7 @@ class TcsControllerEpicsSpec extends FlatSpec with PrivateMethodTester {
       )(baseConfig)
     ) shouldBe true
 
-    TcsControllerEpics invokePrivate mustPauseWhileOffsetting(
+    TcsControllerEpics() invokePrivate mustPauseWhileOffsetting(
       baseCurrentStatus,
       (
         (TcsConfig.tc ^|-> TelescopeConfig.offsetA).set(
@@ -185,7 +185,7 @@ class TcsControllerEpicsSpec extends FlatSpec with PrivateMethodTester {
     ) shouldBe true
 
     //Small offset with PWFS2 in use
-    TcsControllerEpics invokePrivate mustPauseWhileOffsetting(
+    TcsControllerEpics() invokePrivate mustPauseWhileOffsetting(
       baseCurrentStatus,
       (
         (TcsConfig.tc ^|-> TelescopeConfig.offsetA).set(
@@ -211,7 +211,7 @@ class TcsControllerEpicsSpec extends FlatSpec with PrivateMethodTester {
     val threshold = Millimeters(1.0)
 
     //Big offset with OIWFS in use
-    TcsControllerEpics invokePrivate mustPauseWhileOffsetting(
+    TcsControllerEpics() invokePrivate mustPauseWhileOffsetting(
       baseCurrentStatus,
       (
         (TcsConfig.tc ^|-> TelescopeConfig.offsetA).set(
@@ -232,7 +232,7 @@ class TcsControllerEpicsSpec extends FlatSpec with PrivateMethodTester {
       )(baseConfig)
     ) shouldBe true
 
-    TcsControllerEpics invokePrivate mustPauseWhileOffsetting(
+    TcsControllerEpics() invokePrivate mustPauseWhileOffsetting(
       baseCurrentStatus,
       (
         (TcsConfig.tc ^|-> TelescopeConfig.offsetA).set(
@@ -254,7 +254,7 @@ class TcsControllerEpicsSpec extends FlatSpec with PrivateMethodTester {
     ) shouldBe true
 
     //Small offset with OIWFS in use
-    TcsControllerEpics invokePrivate mustPauseWhileOffsetting(
+    TcsControllerEpics() invokePrivate mustPauseWhileOffsetting(
       baseCurrentStatus,
       (
         (TcsConfig.tc ^|-> TelescopeConfig.offsetA).set(
@@ -282,7 +282,7 @@ class TcsControllerEpicsSpec extends FlatSpec with PrivateMethodTester {
   it should "decide if it can keep Altair guiding active when applying an offset" in {
     val niriAoThreshold = Arcseconds(3.0)
     //Big offset with Altair in use
-    TcsControllerEpics invokePrivate mustPauseWhileOffsetting(
+    TcsControllerEpics() invokePrivate mustPauseWhileOffsetting(
       baseCurrentStatus,
       (
         (TcsConfig.tc ^|-> TelescopeConfig.offsetA).set(
@@ -303,7 +303,7 @@ class TcsControllerEpicsSpec extends FlatSpec with PrivateMethodTester {
       )(baseConfig)
     ) shouldBe true
 
-    TcsControllerEpics invokePrivate mustPauseWhileOffsetting(
+    TcsControllerEpics() invokePrivate mustPauseWhileOffsetting(
       baseCurrentStatus,
       (
         (TcsConfig.tc ^|-> TelescopeConfig.offsetA).set(
@@ -325,7 +325,7 @@ class TcsControllerEpicsSpec extends FlatSpec with PrivateMethodTester {
     ) shouldBe true
 
     //Small offset with Altair in use
-    TcsControllerEpics invokePrivate mustPauseWhileOffsetting(
+    TcsControllerEpics() invokePrivate mustPauseWhileOffsetting(
       baseCurrentStatus,
       (
         (TcsConfig.tc ^|-> TelescopeConfig.offsetA).set(

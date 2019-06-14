@@ -3,7 +3,8 @@
 
 package seqexec.server.tcs
 
-import cats.data.{EitherT, Nested, OneAnd, OptionT}
+import cats.MonadError
+import cats.data.{Nested, OneAnd, OptionT}
 import cats.effect.IO
 import cats.implicits._
 import mouse.boolean._
@@ -12,9 +13,9 @@ import edu.gemini.spModel.core.Wavelength
 import seqexec.server.EpicsCodex.{DecodeEpicsValue, decode}
 import seqexec.server.tcs.TcsController.FollowOption.{FollowOff, FollowOn}
 import seqexec.server.tcs.TcsController.MountGuideOption.{MountGuideOff, MountGuideOn}
-import seqexec.server.{SeqAction, SeqexecFailure, TrySeq}
+import seqexec.server.SeqexecFailure
 import seqexec.server.tcs.TcsController._
-import seqexec.server.tcs.TcsControllerEpics.{AoFold, EpicsTcsConfig, InstrumentPorts, ScienceFold, InvalidPort}
+import seqexec.server.tcs.TcsControllerEpics.{AoFold, EpicsTcsConfig, InstrumentPorts, InvalidPort, ScienceFold}
 import shapeless.tag
 import squants.{Angle, Length}
 import squants.space.{Angstroms, Degrees, Millimeters}
@@ -52,7 +53,7 @@ object TcsConfigRetriever {
     else AoFold.Out
   )
 
-  private def getGuideConfig: SeqAction[TelescopeGuideConfig] = EitherT ( {
+  private def getGuideConfig: IO[TelescopeGuideConfig] = {
     for {
       mountGuide <-  OptionT(TcsEpics.instance.absorbTipTilt).map(decode[Int, MountGuideOption])
       m1Source   <-  OptionT(TcsEpics.instance.m1GuideSource).map(decode[String, M1Source])
@@ -65,10 +66,10 @@ object TcsConfigRetriever {
       m2Guide    <- OptionT(Nested(TcsEpics.instance.m2GuideState).map(decodeM2Guide(_, m2Coma, List((m2p1Guide, TipTiltSource.PWFS1),
         (m2p2Guide, TipTiltSource.PWFS2), (m2oiGuide, TipTiltSource.OIWFS),
         (m2aoGuide, TipTiltSource.GAOS)).foldLeft(Set.empty[TipTiltSource])((s: Set[TipTiltSource], v: (Boolean, TipTiltSource)) => if (v._1) s + v._2 else s))).value)
-    } yield TrySeq(TelescopeGuideConfig(mountGuide, m1Guide, m2Guide))
-  }.value.map(_.getOrElse(TrySeq.fail(SeqexecFailure.Unexpected("Unable to read guide configuration from TCS.")))))
+    } yield TelescopeGuideConfig(mountGuide, m1Guide, m2Guide)
+  }.getOrElseF(IO.raiseError(SeqexecFailure.Unexpected("Unable to read guide configuration from TCS.")))
 
-  private def getAoFold: SeqAction[AoFold] =
+  private def getAoFold: IO[AoFold] =
     getStatusVal(TcsEpics.instance.aoFoldPosition.map(_.map(decode[String, AoFold])), "AO Fold")
 
   private def decodeNodChopOption(s: String): Boolean = s.trim === "On"
@@ -119,7 +120,7 @@ object TcsConfigRetriever {
   implicit private val decodeGuideSensorOption: DecodeEpicsValue[BinaryYesNo, GuiderSensorOption] =
     DecodeEpicsValue((s: BinaryYesNo) => if (s === BinaryYesNo.No) GuiderSensorOff else GuiderSensorOn)
 
-  private def getPwfs1: SeqAction[GuiderConfig] = for {
+  private def getPwfs1: IO[GuiderConfig] = for {
     prk <- getStatusVal(TcsEpics.instance.p1Parked, "PWFS1 parked state")
     trk <- getStatusVal(getNodChopTrackingConfig(TcsEpics.instance.pwfs1ProbeGuideConfig), "PWFS1 tracking configuration")
     fol <- getStatusVal(TcsEpics.instance.p1FollowS.map(_.map(decode[String, FollowOption])), "PWFS1 follow state")
@@ -128,18 +129,17 @@ object TcsConfigRetriever {
 
   // P2 probe guide configuration is partially shared with Altair guide configuration. useAo tells which one is.
   // TODO: Make sure it works for GS.
-  private def getPwfs2OrAowfs(getAoFollow: IO[Option[Boolean]]): SeqAction[Either[GuiderConfig, ProbeTrackingConfig]] =
-    for {
-      useAo <- getStatusVal(TcsEpics.instance.useAo, "use AO flag")
-      aoFol <- getStatusVal(getAoFollow, "AO follow state").map(_.fold(FollowOn, FollowOff))
-      prk   <- getStatusVal(TcsEpics.instance.p2Parked, "PWFS2 parked state")
-      trk   <- getStatusVal(getNodChopTrackingConfig(TcsEpics.instance.pwfs2ProbeGuideConfig), "PWFS2 tracking configuration")
-      fol   <- getStatusVal(TcsEpics.instance.p2FollowS.map(_.map(decode[String, FollowOption])), "PWFS2 follow state")
-      wfs   <- getStatusVal(TcsEpics.instance.pwfs2On.map(_.map(decode[BinaryYesNo, GuiderSensorOption])), "PWFS2 detector")
-    } yield if(useAo === BinaryYesNo.Yes) Right(calcProbeTrackingConfig(aoFol, trk))
-            else Left(GuiderConfig(prk.fold(ProbeTrackingConfig.Parked, calcProbeTrackingConfig(fol, trk)), wfs))
+  private def getPwfs2OrAowfs(getAoFollow: IO[Option[Boolean]]): IO[Either[GuiderConfig, ProbeTrackingConfig]] = for {
+    useAo <- getStatusVal(TcsEpics.instance.useAo, "use AO flag")
+    aoFol <- getStatusVal(getAoFollow, "AO follow state").map(_.fold(FollowOn, FollowOff))
+    prk   <- getStatusVal(TcsEpics.instance.p2Parked, "PWFS2 parked state")
+    trk   <- getStatusVal(getNodChopTrackingConfig(TcsEpics.instance.pwfs2ProbeGuideConfig), "PWFS2 tracking configuration")
+    fol   <- getStatusVal(TcsEpics.instance.p2FollowS.map(_.map(decode[String, FollowOption])), "PWFS2 follow state")
+    wfs   <- getStatusVal(TcsEpics.instance.pwfs2On.map(_.map(decode[BinaryYesNo, GuiderSensorOption])), "PWFS2 detector")
+  } yield if(useAo === BinaryYesNo.Yes) Right(calcProbeTrackingConfig(aoFol, trk))
+          else Left(GuiderConfig(prk.fold(ProbeTrackingConfig.Parked, calcProbeTrackingConfig(fol, trk)), wfs))
 
-  private def getOiwfs: SeqAction[GuiderConfig] = for {
+  private def getOiwfs: IO[GuiderConfig] = for {
     prk <- getStatusVal(TcsEpics.instance.oiParked, "OIWFS parked state")
     trk <- getStatusVal(getNodChopTrackingConfig(TcsEpics.instance.oiwfsProbeGuideConfig), "OIWFS tracking configuration")
     fol <- getStatusVal(TcsEpics.instance.oiFollowS.map(_.map(decode[String, FollowOption])), "OIWFS follow state")
@@ -148,40 +148,40 @@ object TcsConfigRetriever {
 
   import ScienceFoldPositionCodex._
 
-  private def getScienceFoldPosition: SeqAction[Option[ScienceFold]] =
-    for {
-      sfPos <- getStatusVal(TcsEpics.instance.sfName,"SF position")
-      sfParked <- getStatusVal(TcsEpics.instance.sfParked.map(_.map(_ =!= 0)), "SF park")
-    } yield if (sfParked) ScienceFold.Parked.some
-            else decode[String, Option[ScienceFold]](sfPos)
+  private def getScienceFoldPosition: IO[Option[ScienceFold]] = for {
+    sfPos <- getStatusVal(TcsEpics.instance.sfName,"SF position")
+    sfParked <- getStatusVal(TcsEpics.instance.sfParked.map(_.map(_ =!= 0)), "SF park")
+  } yield if (sfParked) ScienceFold.Parked.some
+          else decode[String, Option[ScienceFold]](sfPos)
 
   implicit val decodeHwrsPickupPosition: DecodeEpicsValue[String, HrwfsPickupPosition] = DecodeEpicsValue((t: String)
   => if (t.trim === "IN") HrwfsPickupPosition.IN
     else HrwfsPickupPosition.OUT)
 
-  private def getHrwfsPickupPosition: SeqAction[HrwfsPickupPosition] =
-    for {
-      hwPos <- getStatusVal(TcsEpics.instance.agHwName.map(_.map(decode[String, HrwfsPickupPosition])), "Pickup position")
-      hwParked <- getStatusVal(TcsEpics.instance.agHwParked.map(_.map(_ =!= 0)), "Pickup park")
-    } yield if (hwParked) HrwfsPickupPosition.Parked
-      else hwPos
+  private def getHrwfsPickupPosition: IO[HrwfsPickupPosition] = for {
+    hwPos <- getStatusVal(TcsEpics.instance.agHwName.map(_.map(decode[String, HrwfsPickupPosition])), "Pickup position")
+    hwParked <- getStatusVal(TcsEpics.instance.agHwParked.map(_.map(_ =!= 0)), "Pickup park")
+  } yield if (hwParked) HrwfsPickupPosition.Parked
+          else hwPos
 
-  private def getStatusVal[A](get: IO[Option[A]], name: String): SeqAction[A] = EitherT(get.map(
-    _.fold(TrySeq.fail[A](SeqexecFailure.Unexpected(s"Unable to read $name from TCS.")))(TrySeq(_))
-  ))
+  private def getStatusVal[F[_]: MonadError[?[_], Throwable], A](get: F[Option[A]], name: String): F[A] =
+    OptionT(get).getOrElseF(SeqexecFailure.Unexpected(s"Unable to read $name from TCS.").raiseError[F, A])
+    //get.ensure(SeqexecFailure.Unexpected(s"Unable to read $name from TCS."))(_.isDefined)
+//  private def getStatusVal[A](get: IO[Option[A]], name: String): IO[A] =
+//    OptionT(get).getOrElseF(IO.raiseError(SeqexecFailure.Unexpected(s"Unable to read $name from TCS.")))
 
-  private def getIAA: SeqAction[Angle] = getStatusVal(TcsEpics.instance.instrAA.map(_.map(Degrees(_))), "IAA")
+  private def getIAA: IO[Angle] = getStatusVal(TcsEpics.instance.instrAA.map(_.map(Degrees(_))), "IAA")
 
-  private def getOffsetX: SeqAction[Length] = getStatusVal(TcsEpics.instance.xoffsetPoA1.map(_.map(Millimeters(_))),
+  private def getOffsetX: IO[Length] = getStatusVal(TcsEpics.instance.xoffsetPoA1.map(_.map(Millimeters(_))),
     "X offset")
 
-  private def getOffsetY: SeqAction[Length] = getStatusVal(TcsEpics.instance.yoffsetPoA1.map(_.map(Millimeters(_))),
+  private def getOffsetY: IO[Length] = getStatusVal(TcsEpics.instance.yoffsetPoA1.map(_.map(Millimeters(_))),
     "Y offset")
 
-  private def getWavelength: SeqAction[Wavelength] =
+  private def getWavelength: IO[Wavelength] =
     getStatusVal(TcsEpics.instance.sourceAWavelength.map(_.map(v => Wavelength(Angstroms(v)))), "central wavelength")
 
-  private def getInstrumentPorts: SeqAction[InstrumentPorts] = SeqAction.lift( for {
+  private def getInstrumentPorts: IO[InstrumentPorts] = for {
     f2    <- TcsEpics.instance.f2Port.map(_.getOrElse(InvalidPort))
     ghost <- TcsEpics.instance.ghostPort.map(_.getOrElse(InvalidPort))
     gmos  <- TcsEpics.instance.gmosPort.map(_.getOrElse(InvalidPort))
@@ -191,18 +191,17 @@ object TcsConfigRetriever {
     nifs  <- TcsEpics.instance.nifsPort.map(_.getOrElse(InvalidPort))
     niri  <- TcsEpics.instance.niriPort.map(_.getOrElse(InvalidPort))
   } yield InstrumentPorts(
-      f2,
-      ghost,
-      gmos,
-      gnirs,
-      gpi,
-      gsaoi,
-      nifs,
-      niri
-    )
+    f2,
+    ghost,
+    gmos,
+    gnirs,
+    gpi,
+    gsaoi,
+    nifs,
+    niri
   )
 
-  def retrieveConfiguration(getAoFollow: IO[Option[Boolean]]): SeqAction[EpicsTcsConfig] =
+  def retrieveConfiguration(getAoFollow: IO[Option[Boolean]]): IO[EpicsTcsConfig] =
     for {
       iaa    <- getIAA
       offX   <- getOffsetX

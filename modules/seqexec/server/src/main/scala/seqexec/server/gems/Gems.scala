@@ -9,19 +9,25 @@ import seqexec.server.gems.GemsController.{GemsConfig, GemsOff}
 import seqexec.server.tcs.Gaos
 import squants.Time
 
-class Gems[F[_]: Applicative] private (controller: GemsController[F], config: GemsConfig) extends Gaos[F] {
-
-  val cfg = config
-
-  override def observe(config: Either[AltairConfig, GemsConfig], expTime: Time): F[Unit] = controller.observe(expTime)
-
-  override def endObserve(config: Either[AltairConfig, GemsConfig]): F[Unit] = controller.endObserve
-
+trait Gems[F[_]] extends Gaos[F] {
+  val cfg: GemsConfig
 }
 
+
 object Gems {
+
+  private class GemsImpl[F[_]: Applicative] (controller: GemsController[F], config: GemsConfig) extends Gems[F] {
+
+    override val cfg: GemsConfig = config
+
+    override def observe(config: Either[AltairConfig, GemsConfig], expTime: Time): F[Unit] = controller.observe(expTime)
+
+    override def endObserve(config: Either[AltairConfig, GemsConfig]): F[Unit] = controller.endObserve
+
+  }
+
   def fromConfig[F[_]: Applicative](controller: GemsController[F])/*(config: Config)*/: F[Gems[F]] =
-    Applicative[F].pure(new Gems[F](controller, GemsOff))
+    Applicative[F].pure(new GemsImpl[F](controller, GemsOff))
 }
 
 
