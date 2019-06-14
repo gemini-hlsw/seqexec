@@ -5,21 +5,18 @@ package seqexec.server.flamingos2
 
 import cats.data.StateT
 import cats.data.OptionT
-import cats.effect.{ IO, Timer }
+import cats.effect.{ Async, Timer }
 import cats.implicits._
-import seqexec.model.dhs.ImageFileId
-import seqexec.server.{EpicsCodex, ObserveCommand, Progress, ProgressUtil, RemainingTime, SeqAction}
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.{Decker, Filter, ReadoutMode, WindowCover, _}
 import org.log4s.getLogger
+import seqexec.model.dhs.ImageFileId
+import seqexec.server.{ObserveCommand, Progress, ProgressUtil, RemainingTime}
+import seqexec.server.flamingos2.Flamingos2Controller._
+import seqexec.server.EpicsCodex._
 import squants.{Seconds, Time}
 import squants.time.TimeConversions._
 
-final case class Flamingos2ControllerEpics()(implicit val tio: Timer[IO]) extends Flamingos2Controller[IO] {
-  private val Log = getLogger
-
-  import EpicsCodex._
-  import Flamingos2Controller._
-
+trait Flamisgos2Encoders {
   implicit val encodeReadoutMode: EncodeEpicsValue[ReadoutMode, String] = EncodeEpicsValue {
     case ReadoutMode.SCIENCE     => "SCI"
     case ReadoutMode.ENGINEERING => "ENG"
@@ -30,13 +27,6 @@ final case class Flamingos2ControllerEpics()(implicit val tio: Timer[IO]) extend
     case BiasMode.LongSlit => "Long_Slit"
     case BiasMode.MOS      => "Mos"
   }
-
-  def setDCConfig(dc: DCConfig): SeqAction[Unit] = for {
-    _ <- Flamingos2Epics.instance.dcConfigCmd.setExposureTime(dc.t.toSeconds.toDouble)
-    _ <- Flamingos2Epics.instance.dcConfigCmd.setNumReads(dc.n.getCount)
-    _ <- Flamingos2Epics.instance.dcConfigCmd.setReadoutMode(encode(dc.r))
-    _ <- Flamingos2Epics.instance.dcConfigCmd.setBiasMode(encode(dc.b))
-  } yield ()
 
   implicit val encodeWindowCoverPosition: EncodeEpicsValue[WindowCover, String] = EncodeEpicsValue {
     case WindowCover.OPEN  => "Open"
@@ -98,59 +88,73 @@ final case class Flamingos2ControllerEpics()(implicit val tio: Timer[IO]) extend
     case Grism.Dark    => "DK_G5804"
   }
 
-  def setCCConfig(cc: CCConfig): SeqAction[Unit] = {
-    val fpu = encode(cc.fpu)
-    val filter = encode(cc.f)
-    for {
-      _ <- Flamingos2Epics.instance.configCmd.setWindowCover(encode(cc.w))
-      _ <- Flamingos2Epics.instance.configCmd.setDecker(encode(cc.d))
-      _ <- Flamingos2Epics.instance.configCmd.setMOS(fpu._1)
-      _ <- Flamingos2Epics.instance.configCmd.setMask(fpu._2)
-      _ <- filter.map(Flamingos2Epics.instance.configCmd.setFilter).getOrElse(SeqAction.void)
-      _ <- Flamingos2Epics.instance.configCmd.setLyot(encode(cc.l))
-      _ <- Flamingos2Epics.instance.configCmd.setGrism(encode(cc.g))
-    } yield ()
-  }
+}
 
-  override def applyConfig(config: Flamingos2Config): IO[Unit] = for {
-    _ <- IO.apply(Log.debug("Start Flamingos2 configuration"))
-    _ <- setDCConfig(config.dc).widenRethrowT
-    _ <- setCCConfig(config.cc).widenRethrowT
-    _ <- Flamingos2Epics.instance.configCmd.setTimeout(ConfigTimeout).widenRethrowT
-    _ <- Flamingos2Epics.instance.post.widenRethrowT
-    _ <- IO(Log.debug("Completed Flamingos2 configuration"))
-  } yield ()
-
-  override def observe(fileId: ImageFileId, expTime: Time): IO[ObserveCommand.Result] = for {
-    _ <- Flamingos2Epics.instance.observeCmd.setLabel(fileId).widenRethrowT
-    _ <- Flamingos2Epics.instance.observeCmd.setTimeout(expTime + ReadoutTimeout).widenRethrowT
-    _ <- Flamingos2Epics.instance.observeCmd.post.widenRethrowT
-  } yield ObserveCommand.Success
-
-  override def endObserve: IO[Unit] = for {
-    _ <- IO(Log.debug("Send endObserve to Flamingos2"))
-    _ <- Flamingos2Epics.instance.endObserveCmd.setTimeout(DefaultTimeout).widenRethrowT
-    _ <- Flamingos2Epics.instance.endObserveCmd.mark.widenRethrowT
-    _ <- Flamingos2Epics.instance.endObserveCmd.post.widenRethrowT
-  } yield ()
-
-  override def observeProgress(total: Time): fs2.Stream[IO, Progress] = {
-    val s = ProgressUtil.fromStateTOption[IO, Time](_ => StateT[IO, Time, Option[Progress]] { st =>
-      val m = if (total >= st) total else st
-      val p = for {
-        obst <- OptionT(Flamingos2Epics.instance.observeState)
-        dummy = obst // Hack to avoid scala/bug#11175
-        if obst.isBusy
-        rem <- OptionT(Flamingos2Epics.instance.countdown)
-      } yield Progress(m, RemainingTime(rem.seconds))
-      p.value.map(p => (m, p))
-    })
-    s(total).dropWhile(_.remaining.self.value === 0.0) // drop leading zeros
-      .takeThrough(_.remaining.self.value > 0.0) // drop all tailing zeros but the first one
-  }
+object Flamingos2ControllerEpics extends Flamisgos2Encoders {
 
   val ReadoutTimeout: Time = Seconds(300)
   val DefaultTimeout: Time = Seconds(60)
   val ConfigTimeout: Time = Seconds(400)
 
+  def apply[F[_]: Async](sys: Flamingos2Epics[F])(implicit tio: Timer[F]): Flamingos2Controller[F] = new Flamingos2Controller[F] {
+    private val Log = getLogger
+
+    private def setDCConfig(dc: DCConfig): F[Unit] = for {
+      _ <- sys.dcConfigCmd.setExposureTime(dc.t.toSeconds.toDouble)
+      _ <- sys.dcConfigCmd.setNumReads(dc.n.getCount)
+      _ <- sys.dcConfigCmd.setReadoutMode(encode(dc.r))
+      _ <- sys.dcConfigCmd.setBiasMode(encode(dc.b))
+    } yield ()
+
+    private def setCCConfig(cc: CCConfig): F[Unit] = {
+      val fpu = encode(cc.fpu)
+      val filter = encode(cc.f)
+      for {
+        _ <- sys.configCmd.setWindowCover(encode(cc.w))
+        _ <- sys.configCmd.setDecker(encode(cc.d))
+        _ <- sys.configCmd.setMOS(fpu._1)
+        _ <- sys.configCmd.setMask(fpu._2)
+        _ <- filter.map(sys.configCmd.setFilter).getOrElse(Async[F].unit)
+        _ <- sys.configCmd.setLyot(encode(cc.l))
+        _ <- sys.configCmd.setGrism(encode(cc.g))
+      } yield ()
+    }
+
+    override def applyConfig(config: Flamingos2Config): F[Unit] = for {
+      _ <- Async[F].delay(Log.debug("Start Flamingos2 configuration"))
+      _ <- setDCConfig(config.dc)
+      _ <- setCCConfig(config.cc)
+      _ <- sys.configCmd.setTimeout[F](ConfigTimeout)
+      _ <- sys.post
+      _ <- Async[F].delay(Log.debug("Completed Flamingos2 configuration"))
+    } yield ()
+
+    override def observe(fileId: ImageFileId, expTime: Time): F[ObserveCommand.Result] = for {
+      _ <- sys.observeCmd.setLabel(fileId)
+      _ <- sys.observeCmd.setTimeout[F](expTime + ReadoutTimeout)
+      _ <- sys.observeCmd.post[F]
+    } yield ObserveCommand.Success
+
+    override def endObserve: F[Unit] = for {
+      _ <- Async[F].delay(Log.debug("Send endObserve to Flamingos2"))
+      _ <- sys.endObserveCmd.setTimeout[F](DefaultTimeout)
+      _ <- sys.endObserveCmd.mark[F]
+      _ <- sys.endObserveCmd.post[F]
+    } yield ()
+
+    override def observeProgress(total: Time): fs2.Stream[F, Progress] = {
+      val s = ProgressUtil.fromStateTOption[F, Time](_ => StateT[F, Time, Option[Progress]] { st =>
+        val m = if (total >= st) total else st
+        val p = for {
+          obst <- OptionT.liftF(sys.observeState)
+          dummy = obst // Hack to avoid scala/bug#11175
+          if obst.isBusy
+          rem <- OptionT.liftF(sys.countdown)
+        } yield Progress(m, RemainingTime(rem.seconds))
+        p.value.map(p => (m, p))
+      })
+      s(total).dropWhile(_.remaining.self.value === 0.0) // drop leading zeros
+        .takeThrough(_.remaining.self.value > 0.0) // drop all tailing zeros but the first one
+    }
+  }
 }
