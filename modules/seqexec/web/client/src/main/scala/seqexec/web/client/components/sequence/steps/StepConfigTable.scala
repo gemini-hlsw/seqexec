@@ -12,8 +12,8 @@ import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.raw.JsNumber
 import japgolly.scalajs.react.component.builder.Lifecycle.RenderScope
 import japgolly.scalajs.react.Reusability
-import cats.implicits._
 import react.virtualized._
+import react.common.implicits._
 import scala.scalajs.js
 import scala.math.max
 import seqexec.model.Step
@@ -24,7 +24,6 @@ import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.actions.UpdateStepsConfigTableState
 import seqexec.web.client.reusability._
 import web.client.table._
-import seqexec.web.client.reusability._
 
 object StepConfigTable {
   sealed trait TableColumn extends Product with Serializable

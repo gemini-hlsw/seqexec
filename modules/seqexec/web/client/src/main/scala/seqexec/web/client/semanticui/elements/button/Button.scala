@@ -8,11 +8,12 @@ import cats.implicits._
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
+import react.common.style._
+import react.common.implicits._
 import seqexec.web.client.semanticui.Size
 import seqexec.web.client.semanticui._
 import seqexec.web.client.semanticui.elements.icon.Icon
 import scala.scalajs.js
-import web.client.style._
 
 object Button {
   sealed trait ButtonState
@@ -80,7 +81,7 @@ object Button {
                          onClickE: js.UndefOr[ReactEvent => Callback] = js.undefined,
                          onClick: Callback = Callback.empty,
                          dataTooltip: Option[String] = None,
-                         extraStyles: List[GStyle] = Nil)
+                         extraStyles: List[Css] = Nil)
 
   private def classSet(p: Props): TagMod =
     ^.classSet(
@@ -116,7 +117,7 @@ object Button {
           if (p.animated === NotAnimated)
             <.button(
               ^.cls := "ui button",
-              p.extraStyles.map(geminiStyleToTagMod).toTagMod,
+              p.extraStyles,
               ^.`type` := (p.buttonType match {
                 case ButtonType => "button"
                 case SubmitType => "submit"

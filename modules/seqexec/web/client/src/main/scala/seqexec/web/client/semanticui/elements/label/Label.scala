@@ -3,14 +3,15 @@
 
 package seqexec.web.client.semanticui.elements.label
 
-import seqexec.web.client.semanticui.Size
+import seqexec.web.client.semanticui._
 import seqexec.web.client.semanticui.elements.icon.Icon
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 import cats.implicits._
-import web.client.style._
+import react.common._
+import react.common.syntax._
 import cats.kernel.Eq
 
 sealed trait Pointing
@@ -38,13 +39,13 @@ object Label {
     size                     : Size = Size.NotSized,
     pointing                 : Pointing = Pointing.None,
     icon                     : Option[Icon] = None,
-    extraStyles              : List[GStyle] = Nil)
+    extraStyles              : List[Css] = Nil)
 
   implicit val propsReuse: Reusability[Props] = Reusability.derive[Props]
 
   def content(p: Props): List[TagMod] = List(
     ^.cls := p.color.fold("ui label")(u => s"ui $u label"),
-    p.extraStyles.map(geminiStyleToTagMod).toTagMod,
+    p.extraStyles,
     ^.classSet(
       "basic"          -> p.basic,
       "tag"            -> p.tag,

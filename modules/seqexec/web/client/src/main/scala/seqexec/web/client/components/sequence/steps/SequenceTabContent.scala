@@ -10,6 +10,7 @@ import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.extra.router.RouterCtl
+import react.common.implicits._
 import seqexec.model.Step
 import seqexec.web.client.circuit._
 import seqexec.web.client.model.Pages.SeqexecPages
@@ -20,7 +21,6 @@ import seqexec.web.client.components.sequence.toolbars.SequenceDefaultToolbar
 import seqexec.web.client.components.sequence.toolbars.StepConfigToolbar
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.reusability._
-import web.client.style._
 
 /**
   * Content of a single tab with a sequence

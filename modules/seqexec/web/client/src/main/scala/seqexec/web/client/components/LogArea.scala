@@ -23,6 +23,7 @@ import monocle.function.At.at
 import monocle.function.At.atSortedMap
 import react.virtualized._
 import react.clipboard._
+import react.common.implicits._
 import scala.scalajs.js
 import scala.math.max
 import scala.collection.immutable.SortedMap
@@ -41,7 +42,6 @@ import seqexec.web.client.actions.ToggleLogArea
 import seqexec.web.common.FixedLengthBuffer
 import seqexec.web.client.reusability._
 import seqexec.web.client.circuit.SeqexecCircuit
-import web.client.style._
 import web.client.table._
 
 /**

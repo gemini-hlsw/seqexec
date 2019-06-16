@@ -3,7 +3,6 @@
 
 package web.client
 
-import cats.Monoid
 import cats.Foldable
 import cats.data.NonEmptyList
 import cats.implicits._
@@ -19,7 +18,7 @@ import js.JSConverters._
 import react.virtualized._
 import react.virtualized.raw
 import react.common._
-import react.common.syntax._
+import react.common.implicits._
 import react.sortable._
 import react.draggable._
 import web.client.utils._
@@ -59,12 +58,6 @@ package object table {
           <.span(^.cls := "DragHandleIcon", "⋮")
         )
     )
-
-  implicit val styleMonoid: Monoid[Style] = new Monoid[Style] {
-    override val empty: Style = Style(Map.empty)
-    override def combine(a: Style, b: Style): Style =
-      Style(a.styles ++ b.styles)
-  }
 
   private implicit class ClickCallbackOps(val cb: OnRowClick) extends AnyVal {
     def toJsCallback: raw.RawOnRowEvent =

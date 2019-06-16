@@ -4,15 +4,14 @@
 package seqexec.web.client.components
 
 import seqexec.web.client.circuit._
-// import cats.implicits._
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.Reusability
+import react.common.implicits._
 import seqexec.web.client.model.SessionQueueFilter
 import seqexec.web.client.model.ObsClass
 import seqexec.web.client.actions.UpdateSessionFilter
-import web.client.style._
 
 /**
   * Container for the queue table

@@ -9,7 +9,7 @@ import japgolly.scalajs.react.Callback
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.Reusability
 import react.virtualized._
-import web.client.style._
+import react.common.implicits._
 
 /**
   * Container for several types of tables

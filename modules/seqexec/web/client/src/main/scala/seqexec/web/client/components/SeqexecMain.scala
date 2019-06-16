@@ -10,12 +10,12 @@ import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.Reusability
 import gem.enum.Site
+import react.common.implicits._
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.model.Pages._
 import seqexec.web.client.components.tabs.TabsArea
 import seqexec.web.client.model.WebSocketConnection
 import seqexec.web.client.reusability._
-import web.client.style._
 
 object AppTitle {
   final case class Props(site: Site, ws: WebSocketConnection)

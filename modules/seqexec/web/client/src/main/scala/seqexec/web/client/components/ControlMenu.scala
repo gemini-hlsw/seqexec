@@ -11,11 +11,11 @@ import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.semanticui.Size
 import seqexec.web.client.semanticui.elements.button.Button
 import seqexec.web.client.semanticui.elements.icon.Icon.IconSignOut
+import react.common.implicits._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.Callback
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.vdom.html_<^._
-import web.client.style._
 
 /**
   * Menu with options

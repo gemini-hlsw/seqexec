@@ -8,6 +8,7 @@ import japgolly.scalajs.react._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.Reusability
+import react.common.implicits._
 import seqexec.model.Step
 import seqexec.model.OffsetAxis
 import seqexec.web.client.model.StepItems._
@@ -16,7 +17,6 @@ import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.semanticui.elements.icon.Icon.{IconBan, IconCrosshairs}
 import seqexec.web.client.semanticui.Size
 import seqexec.web.client.reusability._
-import web.client.style._
 
 /**
   * Component to display the offsets

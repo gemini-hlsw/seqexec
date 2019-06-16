@@ -5,14 +5,15 @@ package seqexec.web.client.semanticui.elements.icon
 
 import cats.Eq
 import cats.implicits._
-import seqexec.web.client.semanticui.Size
+import seqexec.web.client.semanticui._
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.Callback
 import japgolly.scalajs.react.ReactEvent
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.Reusability
+import react.common.style._
+import react.common.implicits._
 import scala.scalajs.js
-import web.client.style._
 
 /**
   * Semantic UI Icon component
@@ -33,7 +34,7 @@ final case class Icon(p: Icon.Props, children: Seq[VdomNode]) {
                bordered:     Boolean                            = false,
                inverted:     Boolean                            = false,
                color:        Option[String]                     = None,
-               extraStyles:  List[GStyle]                       = Nil,
+               extraStyles:  List[Css]                       = Nil,
                key:          String                             = "",
                onClickE:     js.UndefOr[ReactEvent => Callback] = js.undefined,
                onClick:      Callback                           = Callback.empty,
@@ -70,7 +71,7 @@ final case class Icon(p: Icon.Props, children: Seq[VdomNode]) {
       .renderPC((_, p, c) =>
         <.i(
           ^.cls := s"${p.id} icon",
-          p.extraStyles.map(geminiStyleToTagMod).toTagMod,
+          p.extraStyles,
           ^.cls :=? p.color,
           ^.classSet(
             "disabled" -> p.disabled,
@@ -196,7 +197,7 @@ object Icon {
                          bordered:     Boolean = false,
                          inverted:     Boolean = false,
                          color:        Option[String] = None,
-                         extraStyles:  List[GStyle] = Nil,
+                         extraStyles:  List[Css] = Nil,
                          key:          String = "",
                          onMouseEnter: Callback = Callback.empty,
                          onMouseLeave: Callback = Callback.empty,

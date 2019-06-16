@@ -12,7 +12,7 @@ import japgolly.scalajs.react.ReactEvent
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.Reusability._
 import gem.Observation
-
+import react.common.implicits._
 import scala.collection.immutable.SortedMap
 import seqexec.model.enum._
 import seqexec.model.StepId
@@ -27,7 +27,6 @@ import seqexec.web.client.semanticui.elements.icon.Icon.IconCheckmark
 import seqexec.web.client.semanticui.Size
 import seqexec.web.client.reusability._
 import seqexec.web.client.semanticui.elements.icon.Icon
-import web.client.style._
 
 /**
   * Contains the control buttons for each subsystem

@@ -13,6 +13,7 @@ import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.MonocleReact._
 import japgolly.scalajs.react._
 import monocle.macros.Lenses
+import react.common.implicits._
 import seqexec.model.enum.BatchExecState
 import seqexec.model.CalibrationQueueId
 import seqexec.web.client.circuit.SeqexecCircuit
@@ -25,7 +26,6 @@ import seqexec.web.client.semanticui.elements.label.Label
 import seqexec.web.client.semanticui.elements.icon.Icon._
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.reusability._
-import web.client.style._
 
 object CalibrationQueueTab {
   type Backend = RenderScope[Props, State, Unit]

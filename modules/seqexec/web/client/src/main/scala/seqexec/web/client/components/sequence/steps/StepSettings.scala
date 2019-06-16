@@ -10,6 +10,7 @@ import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.extra.router.RouterCtl
 import gem.Observation
+import react.common.implicits._
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.StepType
 import seqexec.model.Step
@@ -21,7 +22,6 @@ import seqexec.web.client.semanticui.elements.label.Label
 import seqexec.web.client.semanticui.elements.icon.Icon._
 import seqexec.web.client.semanticui.Size
 import seqexec.web.client.reusability._
-import web.client.style._
 
 /**
   * Component to display an item of a sequence

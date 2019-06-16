@@ -6,7 +6,11 @@ package seqexec.web.client.components
 import cats.implicits._
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
+import japgolly.scalajs.react.component.Scala.Unmounted
+import japgolly.scalajs.react.vdom.TagOf
 import monocle.macros.Lenses
+import org.scalajs.dom.html.Div
+import scala.concurrent.ExecutionContext.Implicits.global
 import seqexec.model.UserDetails
 import seqexec.web.client.semanticui.elements.icon.Icon._
 import seqexec.web.client.model._
@@ -18,10 +22,6 @@ import seqexec.web.client.semanticui.elements.modal.Content
 import seqexec.web.client.semanticui.elements.modal.Header
 import seqexec.web.client.semanticui.elements.label.FormLabel
 import seqexec.web.client.services.SeqexecWebClient
-import japgolly.scalajs.react.component.Scala.Unmounted
-import japgolly.scalajs.react.vdom.TagOf
-import org.scalajs.dom.html.Div
-import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
   * UI for the login box

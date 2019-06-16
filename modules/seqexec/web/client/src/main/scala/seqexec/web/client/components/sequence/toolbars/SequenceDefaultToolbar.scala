@@ -8,9 +8,9 @@ import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.component.Scala.Unmounted
 import gem.Observation
+import react.common.implicits._
 import seqexec.web.client.circuit._
 import seqexec.web.client.components.SeqexecStyles
-import web.client.style._
 
 /**
   * Toolbar for logged in users

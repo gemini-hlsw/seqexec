@@ -11,6 +11,7 @@ import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.extra.TimerSupport
 import monocle.macros.Lenses
+import react.common.implicits._
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.ObservationProgress
 import seqexec.model.StepId
@@ -21,7 +22,6 @@ import seqexec.web.client.semanticui.elements.progress.Progress
 import scala.concurrent.duration._
 import scala.math.max
 import scala.math.min
-import web.client.style._
 
 object SmoothProgressBar {
   val periodUpdate: Int = 50

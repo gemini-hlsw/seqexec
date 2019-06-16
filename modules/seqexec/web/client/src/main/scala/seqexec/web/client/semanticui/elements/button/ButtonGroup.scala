@@ -6,12 +6,13 @@ package seqexec.web.client.semanticui.elements.button
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
-import web.client.style._
+import react.common.style._
+import react.common.implicits._
 
 object ButtonGroup {
 
   @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
-  final case class Props(extraStyles: List[GStyle] = Nil)
+  final case class Props(extraStyles: List[Css] = Nil)
 
   private def component =
     ScalaComponent
@@ -19,7 +20,7 @@ object ButtonGroup {
       .renderPC(
         (_, p, c) =>
           <.div(
-            p.extraStyles.map(geminiStyleToTagMod).toTagMod,
+            p.extraStyles,
             ^.cls := "ui buttons",
             c
         ))
