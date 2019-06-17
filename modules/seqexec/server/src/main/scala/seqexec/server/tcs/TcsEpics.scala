@@ -584,7 +584,7 @@ object TcsEpics extends EpicsSystem[TcsEpics[IO]] {
   override val Log: Logger = getLogger
   override val CA_CONFIG_FILE: String = "/Tcs.xml"
 
-  override def build(service: CaService, tops: Map[String, String]) = new TcsEpics(service, tops)
+  override def build(service: CaService, tops: Map[String, String]) = new TcsEpics[IO](service, tops)
 
   sealed class ProbeGuideCmd[F[_]: Async](csName: String, epicsService: CaService) extends EpicsCommandF {
     override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender(csName))

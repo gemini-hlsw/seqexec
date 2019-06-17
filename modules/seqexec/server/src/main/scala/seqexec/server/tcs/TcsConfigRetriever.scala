@@ -70,7 +70,7 @@ object TcsConfigRetriever {
   }.getOrElseF(IO.raiseError(SeqexecFailure.Unexpected("Unable to read guide configuration from TCS.")))
 
   private def getAoFold: IO[AoFold] =
-    getStatusVal(TcsEpics.instance.aoFoldPosition.map(_.map(decode[String, AoFold])), "AO Fold")
+    getStatusVal(Nested(TcsEpics.instance.aoFoldPosition).map(decode[String, AoFold]).value, "AO Fold")
 
   private def decodeNodChopOption(s: String): Boolean = s.trim === "On"
 
@@ -123,8 +123,8 @@ object TcsConfigRetriever {
   private def getPwfs1: IO[GuiderConfig] = for {
     prk <- getStatusVal(TcsEpics.instance.p1Parked, "PWFS1 parked state")
     trk <- getStatusVal(getNodChopTrackingConfig(TcsEpics.instance.pwfs1ProbeGuideConfig), "PWFS1 tracking configuration")
-    fol <- getStatusVal(TcsEpics.instance.p1FollowS.map(_.map(decode[String, FollowOption])), "PWFS1 follow state")
-    wfs <- getStatusVal(TcsEpics.instance.pwfs1On.map(_.map(decode[BinaryYesNo, GuiderSensorOption])), "PWFS1 detector")
+    fol <- getStatusVal(Nested(TcsEpics.instance.p1FollowS).map(decode[String, FollowOption]).value, "PWFS1 follow state")
+    wfs <- getStatusVal(Nested(TcsEpics.instance.pwfs1On).map(decode[BinaryYesNo, GuiderSensorOption]).value, "PWFS1 detector")
   } yield GuiderConfig(prk.fold(ProbeTrackingConfig.Parked, calcProbeTrackingConfig(fol, trk)), wfs)
 
   // P2 probe guide configuration is partially shared with Altair guide configuration. useAo tells which one is.
@@ -134,23 +134,25 @@ object TcsConfigRetriever {
     aoFol <- getStatusVal(getAoFollow, "AO follow state").map(_.fold(FollowOn, FollowOff))
     prk   <- getStatusVal(TcsEpics.instance.p2Parked, "PWFS2 parked state")
     trk   <- getStatusVal(getNodChopTrackingConfig(TcsEpics.instance.pwfs2ProbeGuideConfig), "PWFS2 tracking configuration")
-    fol   <- getStatusVal(TcsEpics.instance.p2FollowS.map(_.map(decode[String, FollowOption])), "PWFS2 follow state")
-    wfs   <- getStatusVal(TcsEpics.instance.pwfs2On.map(_.map(decode[BinaryYesNo, GuiderSensorOption])), "PWFS2 detector")
-  } yield if(useAo === BinaryYesNo.Yes) Right(calcProbeTrackingConfig(aoFol, trk))
-          else Left(GuiderConfig(prk.fold(ProbeTrackingConfig.Parked, calcProbeTrackingConfig(fol, trk)), wfs))
+    fol   <- getStatusVal(Nested(TcsEpics.instance.p2FollowS).map(decode[String, FollowOption]).value, "PWFS2 follow state")
+    wfs   <- getStatusVal(Nested(TcsEpics.instance.pwfs2On).map(decode[BinaryYesNo, GuiderSensorOption]).value, "PWFS2 detector")
+  } yield (useAo === BinaryYesNo.Yes).either(
+    GuiderConfig(prk.fold(ProbeTrackingConfig.Parked, calcProbeTrackingConfig(fol, trk)), wfs),
+    calcProbeTrackingConfig(aoFol, trk)
+  )
 
   private def getOiwfs: IO[GuiderConfig] = for {
     prk <- getStatusVal(TcsEpics.instance.oiParked, "OIWFS parked state")
     trk <- getStatusVal(getNodChopTrackingConfig(TcsEpics.instance.oiwfsProbeGuideConfig), "OIWFS tracking configuration")
-    fol <- getStatusVal(TcsEpics.instance.oiFollowS.map(_.map(decode[String, FollowOption])), "OIWFS follow state")
-    wfs <- getStatusVal(TcsEpics.instance.oiwfsOn.map(_.map(decode[BinaryYesNo, GuiderSensorOption])), "OIWFS detector")
+    fol <- getStatusVal(Nested(TcsEpics.instance.oiFollowS).map(decode[String, FollowOption]).value, "OIWFS follow state")
+    wfs <- getStatusVal(Nested(TcsEpics.instance.oiwfsOn).map(decode[BinaryYesNo, GuiderSensorOption]).value, "OIWFS detector")
   } yield GuiderConfig(prk.fold(ProbeTrackingConfig.Parked, calcProbeTrackingConfig(fol, trk)), wfs)
 
   import ScienceFoldPositionCodex._
 
   private def getScienceFoldPosition: IO[Option[ScienceFold]] = for {
-    sfPos <- getStatusVal(TcsEpics.instance.sfName,"SF position")
-    sfParked <- getStatusVal(TcsEpics.instance.sfParked.map(_.map(_ =!= 0)), "SF park")
+    sfPos    <- getStatusVal(TcsEpics.instance.sfName,"SF position")
+    sfParked <- getStatusVal(Nested(TcsEpics.instance.sfParked).map(_ =!= 0).value, "SF park")
   } yield if (sfParked) ScienceFold.Parked.some
           else decode[String, Option[ScienceFold]](sfPos)
 
@@ -159,27 +161,26 @@ object TcsConfigRetriever {
     else HrwfsPickupPosition.OUT)
 
   private def getHrwfsPickupPosition: IO[HrwfsPickupPosition] = for {
-    hwPos <- getStatusVal(TcsEpics.instance.agHwName.map(_.map(decode[String, HrwfsPickupPosition])), "Pickup position")
-    hwParked <- getStatusVal(TcsEpics.instance.agHwParked.map(_.map(_ =!= 0)), "Pickup park")
+    hwPos    <- getStatusVal(Nested(TcsEpics.instance.agHwName).map(decode[String, HrwfsPickupPosition]).value,
+      "Pickup position")
+    hwParked <- getStatusVal(Nested(TcsEpics.instance.agHwParked).map(_ =!= 0).value, "Pickup park")
   } yield if (hwParked) HrwfsPickupPosition.Parked
           else hwPos
 
   private def getStatusVal[F[_]: MonadError[?[_], Throwable], A](get: F[Option[A]], name: String): F[A] =
     OptionT(get).getOrElseF(SeqexecFailure.Unexpected(s"Unable to read $name from TCS.").raiseError[F, A])
-    //get.ensure(SeqexecFailure.Unexpected(s"Unable to read $name from TCS."))(_.isDefined)
-//  private def getStatusVal[A](get: IO[Option[A]], name: String): IO[A] =
-//    OptionT(get).getOrElseF(IO.raiseError(SeqexecFailure.Unexpected(s"Unable to read $name from TCS.")))
 
-  private def getIAA: IO[Angle] = getStatusVal(TcsEpics.instance.instrAA.map(_.map(Degrees(_))), "IAA")
+  private def getIAA: IO[Angle] = getStatusVal(Nested(TcsEpics.instance.instrAA).map(Degrees(_)).value, "IAA")
 
-  private def getOffsetX: IO[Length] = getStatusVal(TcsEpics.instance.xoffsetPoA1.map(_.map(Millimeters(_))),
+  private def getOffsetX: IO[Length] = getStatusVal(Nested(TcsEpics.instance.xoffsetPoA1).map(Millimeters(_)).value,
     "X offset")
 
-  private def getOffsetY: IO[Length] = getStatusVal(TcsEpics.instance.yoffsetPoA1.map(_.map(Millimeters(_))),
+  private def getOffsetY: IO[Length] = getStatusVal(Nested(TcsEpics.instance.yoffsetPoA1).map(Millimeters(_)).value,
     "Y offset")
 
   private def getWavelength: IO[Wavelength] =
-    getStatusVal(TcsEpics.instance.sourceAWavelength.map(_.map(v => Wavelength(Angstroms(v)))), "central wavelength")
+    getStatusVal(Nested(TcsEpics.instance.sourceAWavelength).map(v => Wavelength(Angstroms(v))).value,
+      "central wavelength")
 
   private def getInstrumentPorts: IO[InstrumentPorts] = for {
     f2    <- TcsEpics.instance.f2Port.map(_.getOrElse(InvalidPort))

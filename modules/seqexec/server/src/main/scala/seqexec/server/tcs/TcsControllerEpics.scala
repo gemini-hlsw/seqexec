@@ -91,7 +91,7 @@ class TcsControllerEpics private extends TcsController[IO] {
       ).collect{ case Some(x) => x }
 
       actions.nonEmpty.option{ x => actions.sequence *>
-        Async[F].pure(trkSet(d)(x))
+        trkSet(d)(x).pure[F]
       }
     }
     else none
@@ -321,7 +321,7 @@ class TcsControllerEpics private extends TcsController[IO] {
                                 act: T => F[Unit],
                                 lens: Lens[EpicsTcsConfig, T])
   : Option[EpicsTcsConfig => F[EpicsTcsConfig]] =
-    (used && current =!= demand).option(c => act(demand) *> Applicative[F].pure(lens.set(demand)(c)))
+    (used && current =!= demand).option(c => act(demand) *> lens.set(demand)(c).pure[F])
 
   override def applyConfig(subsystems: NonEmptySet[Subsystem],
                            gaos: Option[Either[Altair[IO], Gems[IO]]],
@@ -447,8 +447,8 @@ class TcsControllerEpics private extends TcsController[IO] {
   : F[PauseResume[F]] = (gaos, demand.gaos).mapN {
     case (Left(g), c)  => g.pauseResume(c, calcAoPauseConditions(current, demand), calcAoResumeConditions(current, demand))
     case (Right(_), _) => Sync[F].raiseError[PauseResume[F]](SeqexecFailure.Unexpected("GeMS not supported"))
-    case _             => Sync[F].pure((PauseResume[F](None, None)))
-  }.getOrElse(Sync[F].pure(PauseResume[F](None, None)))
+    case _             => PauseResume[F](None, None).pure[F]
+  }.getOrElse(PauseResume[F](None, None).pure[F])
 
   def updateEpicsGuideConfig(epicsCfg: EpicsTcsConfig, demand: TcsConfig): EpicsTcsConfig = (
     EpicsTcsConfig.telescopeGuideConfig.set(demand.gc) >>>
