@@ -19,51 +19,67 @@ import seqexec.server.tcs.Gaos.{PauseResume, ResumeCondition}
 import seqexec.server.tcs.Gaos
 import squants.Time
 
-class Altair[F[_]: Sync] private (controller: AltairController[F],
-                          fieldLens: FieldLens
-                         ) extends Gaos[F] {
-
+trait Altair[F[_]] extends Gaos[F] {
   def pauseResume(config: Either[AltairConfig, GemsConfig], pauseReasons: Set[Gaos.PauseCondition],
-                           resumeReasons: Set[ResumeCondition]): F[PauseResume[F]] =
-    config.swap.map(controller.pauseResume(pauseReasons, resumeReasons, fieldLens)(_))
-      .getOrElse(PauseResume[F](None, None).pure[F])
+                  resumeReasons: Set[ResumeCondition]): F[PauseResume[F]]
 
-  override def observe(config: Either[AltairConfig, GemsConfig], expTime: Time): F[Unit] =
-    config.swap.map(controller.observe(expTime)(_)).getOrElse(Sync[F].unit)
+  val resource: Resource
 
-  override def endObserve(config: Either[AltairConfig, GemsConfig]): F[Unit] =
-    config.swap.map(controller.endObserve).getOrElse(Sync[F].unit)
+  def usesP1(guide: AltairConfig): Boolean
 
-  val resource: Resource = Resource.Altair
+  def usesOI(guide: AltairConfig): Boolean
 
-  def usesP1(guide: AltairConfig): Boolean = guide match {
-    case LgsWithP1 => true
-    case _         => false
-  }
+  def isFollowing: F[Option[Boolean]]
 
-  def usesOI(guide: AltairConfig): Boolean = guide match {
-    case LgsWithOi |
-         Ngs(true, _) => true
-    case _            => false
-  }
-
-  def isFollowing: F[Option[Boolean]] = controller.isFollowing
-
-  def hasTarget(guide: AltairConfig): Boolean = guide match {
-    case Lgs(st, sf, _) => st || sf
-    case LgsWithOi      => false
-    case LgsWithP1      => false
-    case Ngs(_, _)      => true
-    case AltairOff      => false
-  }
+  def hasTarget(guide: AltairConfig): Boolean
 
 }
 
 object Altair {
 
+  private class AltairImpl[F[_]: Sync] (controller: AltairController[F],
+                                        fieldLens: FieldLens
+                                       ) extends Altair[F] {
+    override def pauseResume(config: Either[AltairConfig, GemsConfig], pauseReasons: Set[Gaos.PauseCondition],
+                             resumeReasons: Set[ResumeCondition]): F[PauseResume[F]] =
+      config.swap.map(controller.pauseResume(pauseReasons, resumeReasons, fieldLens)(_))
+        .getOrElse(PauseResume[F](None, None).pure[F])
+
+    override def observe(config: Either[AltairConfig, GemsConfig], expTime: Time): F[Unit] =
+      config.swap.map(controller.observe(expTime)(_)).getOrElse(Sync[F].unit)
+
+    override def endObserve(config: Either[AltairConfig, GemsConfig]): F[Unit] =
+      config.swap.map(controller.endObserve).getOrElse(Sync[F].unit)
+
+    override val resource: Resource = Resource.Altair
+
+    override def usesP1(guide: AltairConfig): Boolean = guide match {
+      case LgsWithP1 => true
+      case _         => false
+    }
+
+    override def usesOI(guide: AltairConfig): Boolean = guide match {
+      case LgsWithOi |
+           Ngs(true, _) => true
+      case _            => false
+    }
+
+    override def isFollowing: F[Option[Boolean]] = controller.isFollowing
+
+    override def hasTarget(guide: AltairConfig): Boolean = guide match {
+      case Lgs(st, sf, _) => st || sf
+      case LgsWithOi      => false
+      case LgsWithP1      => false
+      case Ngs(_, _)      => true
+      case AltairOff      => false
+    }
+
+  }
+
+
   def fromConfig[F[_]: Sync](config: Config, controller: AltairController[F]): TrySeq[Altair[F]] =
     config.extractAs[FieldLens](new ItemKey(AO_CONFIG_NAME) / FIELD_LENSE_PROP).map { fieldLens =>
-      new Altair(controller, fieldLens)
+      new AltairImpl[F](controller, fieldLens)
     }.asTrySeq
 
   def guideStarType(config: Config): TrySeq[GuideStarType] =

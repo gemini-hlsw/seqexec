@@ -101,7 +101,7 @@ class SeqTranslateSpec extends FlatSpec {
   private val systems = Systems[IO](
     new OdbProxy(new Peer("localhost", 8443, null), new OdbProxy.DummyOdbCommands),
     DhsClientSim(LocalDate.of(2016, 4, 15)),
-    TcsControllerSim,
+    TcsControllerSim[IO],
     GcalControllerSim[IO],
     Flamingos2ControllerSim[IO],
     GmosControllerSim.south[IO],

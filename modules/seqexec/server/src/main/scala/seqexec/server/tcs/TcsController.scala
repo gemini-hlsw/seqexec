@@ -5,9 +5,8 @@ package seqexec.server.tcs
 
 import cats._
 import cats.data.{NonEmptySet, OneAnd}
-import cats.effect.IO
 import cats.implicits._
-import seqexec.server.{InstrumentGuide, SeqAction}
+import seqexec.server.InstrumentGuide
 import edu.gemini.spModel.core.Wavelength
 import gem.enum.LightSinkName
 import squants.{Angle, Length}
@@ -26,16 +25,16 @@ import shapeless.tag.@@
  * Most of the code deals with representing the state of the TCS subsystems.
  */
 
-trait TcsController {
+trait TcsController[F[_]] {
   import TcsController._
 
   def applyConfig(subsystems: NonEmptySet[Subsystem],
-                  gaos: Option[Either[Altair[IO], Gems[IO]]],
-                  tc: TcsConfig): SeqAction[Unit]
+                  gaos: Option[Either[Altair[F], Gems[F]]],
+                  tc: TcsConfig): F[Unit]
 
-  def notifyObserveStart: SeqAction[Unit]
+  def notifyObserveStart: F[Unit]
 
-  def notifyObserveEnd: SeqAction[Unit]
+  def notifyObserveEnd: F[Unit]
 }
 
 // scalastyle:off
