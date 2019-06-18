@@ -7,7 +7,8 @@ import japgolly.scalajs.react._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.component.builder.Lifecycle.RenderScope
 import japgolly.scalajs.react.vdom.html_<^._
-import web.client.style._
+import react.common.style._
+import react.common.implicits._
 
 /**
   * Semantic UI checkbox componnet
@@ -20,7 +21,7 @@ object Checkbox {
   final case class Props(label:       String,
                          checked:     Boolean,
                          onChange:    ChangeCallback = _ => Callback.empty,
-                         extraStyles: List[GStyle] = Nil)
+                         extraStyles: List[Css] = Nil)
 
   final case class State(checked: Boolean) {
     def flip: State = copy(checked = !checked)
@@ -38,7 +39,7 @@ object Checkbox {
         <.div(
           ^.cls := "ui checkbox",
           (^.cls := "checked").when(b.state.checked),
-          b.props.extraStyles.map(geminiStyleToTagMod).toTagMod,
+          b.props.extraStyles,
           <.input.checkbox(
             ^.onChange --> onChange(b, b.props.onChange),
             ^.checked := b.state.checked

@@ -11,6 +11,7 @@ import japgolly.scalajs.react.extra.router.RouterCtl
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.Reusability
+import react.common.implicits._
 import seqexec.web.client.actions.SelectCalibrationQueue
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.model.WebSocketConnection
@@ -19,7 +20,6 @@ import seqexec.web.client.OcsBuildInfo
 import seqexec.web.client.semanticui.elements.icon.Icon._
 import seqexec.web.client.semanticui.elements.menu.HeaderItem
 import seqexec.web.client.reusability._
-import web.client.style._
 
 /**
   * Component for the bar at the top of the page

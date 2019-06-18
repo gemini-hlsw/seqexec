@@ -9,6 +9,8 @@ import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.vdom.html_<^._
 import gem.Observation
+import react.common._
+import react.common.implicits._
 import seqexec.model.Step
 import seqexec.model.StepState
 import seqexec.web.client.components.SeqexecStyles
@@ -17,7 +19,6 @@ import seqexec.web.client.semanticui.elements.icon.Icon
 import seqexec.web.client.semanticui.elements.icon.Icon._
 import seqexec.web.client.services.HtmlConstants.iconEmpty
 import seqexec.web.client.reusability._
-import web.client.style._
 
 /**
   * Component to display an icon for the state
@@ -91,7 +92,7 @@ object StepIconCell {
       case _                => iconEmpty
     }
 
-  private def stepStyle(p: Props): GStyle =
+  private def stepStyle(p: Props): Css =
     p.status match {
       case StepState.Running   => SeqexecStyles.runningIconCell
       case StepState.Skipped   => SeqexecStyles.skippedIconCell

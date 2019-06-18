@@ -11,6 +11,7 @@ import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.Reusability
 import gem.Observation
 import mouse.all._
+import react.common.implicits._
 import seqexec.web.client.circuit._
 import seqexec.web.client.actions.RequestCancelPause
 import seqexec.web.client.actions.RequestPause
@@ -27,7 +28,6 @@ import seqexec.web.client.semanticui.elements.icon.Icon.IconPlay
 import seqexec.web.client.semanticui.elements.icon.Icon.IconPause
 import seqexec.web.client.semanticui.elements.icon.Icon.IconBan
 import seqexec.web.client.reusability._
-import web.client.style._
 
 /**
   * Control buttons for the sequence

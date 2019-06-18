@@ -21,7 +21,7 @@ import monocle.macros.Lenses
 import scala.scalajs.js
 import scala.math._
 import react.common._
-import react.common.syntax._
+import react.common.implicits._
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.StepType
 import seqexec.model.StepState
@@ -51,7 +51,6 @@ import seqexec.web.client.semanticui.elements.icon.Icon._
 import seqexec.web.client.semanticui.{ Size => SSize }
 import seqexec.web.client.reusability._
 import react.virtualized._
-import web.client.style._
 import web.client.table._
 
 trait Columns {
@@ -562,7 +561,7 @@ object StepsTable extends Columns {
     (_, _, _, row: StepRow, _) =>
       ObjectTypeCell(ObjectTypeCell.Props(i, row.step, size))
 
-  private val stepRowStyle: Step => GStyle = {
+  private val stepRowStyle: Step => Css = {
     case s if s.hasError                       => SeqexecStyles.rowError
     case s if s.status === StepState.Running   => SeqexecStyles.rowWarning
     case s if s.status === StepState.Paused    => SeqexecStyles.rowWarning
@@ -631,7 +630,7 @@ object StepsTable extends Columns {
         baseHeight(b.props)
     }
 
-  val columnClassName: TableColumn => Option[GStyle] = {
+  val columnClassName: TableColumn => Option[Css] = {
     case ControlColumn                => SeqexecStyles.controlCellRow.some
     case StepColumn | ExecutionColumn => SeqexecStyles.paddedStepRow.some
     case ObservingModeColumn | ExposureColumn | DisperserColumn | FilterColumn |
@@ -642,7 +641,7 @@ object StepsTable extends Columns {
     case _              => none
   }
 
-  val headerClassName: TableColumn => Option[GStyle] = {
+  val headerClassName: TableColumn => Option[Css] = {
     case ControlColumn =>
       (SeqexecStyles.centeredCell |+| SeqexecStyles.tableHeaderIcons).some
     case SettingsColumn =>

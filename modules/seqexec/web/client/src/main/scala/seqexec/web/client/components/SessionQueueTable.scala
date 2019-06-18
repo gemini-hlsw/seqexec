@@ -49,7 +49,6 @@ import seqexec.web.client.semanticui.elements.icon.Icon.IconCalendarOutline
 import seqexec.web.client.semanticui.elements.icon.Icon.IconClockOutline
 import seqexec.web.client.semanticui.{ Size => SSize }
 import seqexec.web.client.reusability._
-import web.client.style._
 import web.client.table._
 
 trait Columns {
@@ -564,7 +563,7 @@ object SessionQueueTable extends Columns {
     case _              => defaultHeaderRendererS
   }
 
-  private val columnStyle: TableColumn => Option[GStyle] = {
+  private val columnStyle: TableColumn => Option[Css] = {
     case ObsIdColumn | StateColumn | InstrumentColumn | ObsNameColumn |
         TargetNameColumn =>
       SeqexecStyles.queueTextColumn.some
@@ -708,7 +707,7 @@ object SessionQueueTable extends Columns {
         ^.key := key,
         ^.role := "row",
         ^.onDragStart ==> dragStart(b, rowData.obsId),
-        ^.style := Style.toJsObject(style),
+        ^.style := style.toJsObject,
         ^.onClick -->? onRowClick.map(h => h(index)),
         ^.onDoubleClick -->? onRowDoubleClick.map(h => h(index)),
         columns.toTagMod

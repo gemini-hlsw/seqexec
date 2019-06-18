@@ -6,7 +6,8 @@ package seqexec.web.client.semanticui.elements.menu
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.vdom.html_<^._
-import web.client.style._
+import react.common.implicits._
+import react.common._
 
 /**
   * Semantic UI Header Item component
@@ -14,14 +15,14 @@ import web.client.style._
 object HeaderItem {
 
   @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
-  final case class Props(name: String, sub: Boolean = false, extraStyles: List[GStyle] = Nil)
+  final case class Props(name: String, sub: Boolean = false, extraStyles: List[Css] = Nil)
 
   private val component = ScalaComponent.builder[Props]("Header-Item")
     .stateless
     .renderPC( (_, p, c) =>
       <.div(
         ^.cls := "ui header item",
-        p.extraStyles.map(geminiStyleToTagMod).toTagMod,
+        p.extraStyles,
         ^.classSet(
           "sub" -> p.sub
         ),

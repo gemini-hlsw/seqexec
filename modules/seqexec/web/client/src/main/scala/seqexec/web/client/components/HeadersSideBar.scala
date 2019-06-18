@@ -4,6 +4,18 @@
 package seqexec.web.client.components
 
 import diode.react.ModelProxy
+import cats.implicits._
+import cats.Eq
+import japgolly.scalajs.react.component.Scala.Unmounted
+import japgolly.scalajs.react.BackendScope
+import japgolly.scalajs.react.Callback
+import japgolly.scalajs.react.ScalaComponent
+import japgolly.scalajs.react.extra.StateSnapshot
+import japgolly.scalajs.react.extra.TimerSupport
+import japgolly.scalajs.react.vdom.html_<^._
+import org.scalajs.dom.html.Div
+import scala.concurrent.duration._
+import react.common.implicits._
 import seqexec.model.enum.CloudCover
 import seqexec.model.enum.ImageQuality
 import seqexec.model.enum.SkyBackground
@@ -25,18 +37,6 @@ import seqexec.web.client.actions.UpdateDefaultObserver
 import seqexec.web.client.actions.UpdateObserver
 import seqexec.web.client.actions.UpdateSkyBackground
 import seqexec.web.client.actions.UpdateWaterVapor
-import web.client.style._
-import japgolly.scalajs.react.component.Scala.Unmounted
-import japgolly.scalajs.react.BackendScope
-import japgolly.scalajs.react.Callback
-import japgolly.scalajs.react.ScalaComponent
-import japgolly.scalajs.react.extra.StateSnapshot
-import japgolly.scalajs.react.extra.TimerSupport
-import japgolly.scalajs.react.vdom.html_<^._
-import org.scalajs.dom.html.Div
-import cats.implicits._
-import cats.Eq
-import scala.concurrent.duration._
 
 /**
   * Display to show headers per sequence

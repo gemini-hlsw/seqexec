@@ -21,10 +21,11 @@ import monocle.Lens
 import monocle.macros.Lenses
 import react.virtualized._
 import react.sortable._
+import react.common._
+import react.common.implicits._
 import scala.scalajs.js
 import scala.math.max
 import scala.concurrent.duration._
-import react.common._
 import seqexec.model.QueueId
 import seqexec.model.SequenceState
 import seqexec.model.enum.Instrument
@@ -48,7 +49,6 @@ import seqexec.web.client.semanticui.elements.icon.Icon.IconCircleNotched
 import seqexec.web.client.semanticui.elements.icon.Icon.IconRefresh
 import seqexec.web.client.semanticui.{ Size => SSize }
 import web.client.table._
-import web.client.style._
 
 /**
   * Calibration queue table
@@ -364,10 +364,10 @@ object CalQueueTable {
       }
     }
 
-    private def rowStatusStyle(p: Props, s: State)(i: Int): GStyle =
+    private def rowStatusStyle(p: Props, s: State)(i: Int): Css =
       ((i, p.rowGetter(s)(i)) match {
         case (-1, _) =>
-          GStyle.Zero
+          Css.Zero
         case (_, r: CalQueueRow) if r.status === SequenceState.Completed =>
           SeqexecStyles.rowPositive
         case (_, r: CalQueueRow) if r.status.isRunning =>
@@ -375,7 +375,7 @@ object CalQueueTable {
         case (_, r: CalQueueRow) if r.status.isError =>
           SeqexecStyles.rowNegative
         case _ =>
-          GStyle.Zero
+          Css.Zero
       })
 
     def rowClassName(p: Props, s: State)(i: Int): String =

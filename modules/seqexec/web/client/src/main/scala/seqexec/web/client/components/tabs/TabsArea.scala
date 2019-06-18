@@ -10,13 +10,13 @@ import japgolly.scalajs.react.React
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react.extra.router.RouterCtl
+import react.common.implicits._
 import seqexec.web.client.circuit._
 import seqexec.web.client.model.Pages.SeqexecPages
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.components.sequence.steps.SequenceTabContent
 import seqexec.web.client.components.queue.CalQueueTabContent
 import seqexec.web.client.reusability._
-import web.client.style._
 
 /**
   * Top level container of the tabs area

@@ -75,11 +75,12 @@ object Settings {
     val diodeReact              = "1.1.5.142"
     val javaTimeJS              = "2.0.0-RC3"
     val scalaJQuery             = "1.2"
-    val scalaJSReactCommon      = "0.2.1"
-    val scalaJSReactVirtualized = "0.6.2"
+    val scalaJSReactCommon      = "0.2.4"
+    val scalaJSReactVirtualized = "0.6.3"
     val scalaJSReactClipboard   = "0.8.0"
     val scalaJSReactDraggable   = "0.4.1"
     val scalaJSReactSortable    = "0.2.1"
+    val reactSemanticUI         = "0.1.4"
 
     // Scala libraries
     val catsEffectVersion       = "1.3.1"

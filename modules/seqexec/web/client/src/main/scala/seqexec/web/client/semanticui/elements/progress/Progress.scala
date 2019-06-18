@@ -7,8 +7,10 @@ import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
 import org.querki.jquery.$
+import react.common._
+import react.common.implicits._
 import web.client.facades.semanticui.SemanticUIProgress._
-import web.client.style._
+
 
 /**
   * Produces a progress element using javascript
@@ -21,9 +23,9 @@ object Progress {
                          indicating:  Boolean = false,
                          progress:    Boolean = false,
                          color:       Option[String] = None,
-                         progressCls: List[GStyle] = Nil,
-                         barCls:      List[GStyle],
-                         labelCls:    List[GStyle] = Nil)
+                         progressCls: List[Css] = Nil,
+                         barCls:      List[Css],
+                         labelCls:    List[Css] = Nil)
 
   private val component = ScalaComponent
     .builder[Props]("Progress")
@@ -35,12 +37,12 @@ object Progress {
         ^.classSet(
           "indicating" -> p.indicating
         ),
-        p.progressCls.map(geminiStyleToTagMod).toTagMod,
+        p.progressCls,
         <.div(^.cls := "bar",
-              p.barCls.map(geminiStyleToTagMod).toTagMod,
+              p.barCls,
               <.div(^.cls := "progress").when(p.progress)),
         <.div(^.cls := "label",
-              p.labelCls.map(geminiStyleToTagMod).toTagMod,
+              p.labelCls,
               p.label),
         c
       )

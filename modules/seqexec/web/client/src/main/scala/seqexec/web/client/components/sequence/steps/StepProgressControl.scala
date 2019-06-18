@@ -9,6 +9,7 @@ import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.Reusability
+import react.common.implicits._
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.ActionStatus
 import seqexec.model.enum.Resource
@@ -28,7 +29,6 @@ import seqexec.web.client.semanticui.elements.icon.Icon
 import seqexec.web.client.semanticui.elements.icon.Icon._
 import seqexec.web.client.semanticui.elements.label.Label
 import seqexec.web.client.reusability._
-import web.client.style._
 
 /**
   * Component to display the step state and control

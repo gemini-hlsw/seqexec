@@ -11,6 +11,8 @@ import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.React
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.component.Scala.Unmounted
+import react.common.style._
+import react.common.implicits._
 import seqexec.model.enum.Instrument
 import seqexec.model.RunningStep
 import seqexec.web.client.model.Pages._
@@ -24,7 +26,6 @@ import seqexec.web.client.semanticui.elements.icon.Icon.IconChevronLeft
 import seqexec.web.client.semanticui.elements.icon.Icon.IconChevronRight
 import seqexec.web.client.semanticui.elements.label.Label
 import seqexec.web.client.semanticui.Size
-import web.client.style._
 import mouse.boolean._
 
 /**
@@ -88,7 +89,7 @@ object StepConfigToolbar {
             ^.cls := "ui right floated eight wide column",
             SeqexecStyles.shorterFields,
             ButtonGroup(
-              ButtonGroup.Props(List(GStyle.fromString("right floated"))),
+              ButtonGroup.Props(List(Css("right floated"))),
               // Previous step button
               (p.step > 0).option(
                 p.router.link(prevStepPage)(

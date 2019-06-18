@@ -9,6 +9,7 @@ import japgolly.scalajs.react.Callback
 import japgolly.scalajs.react.ScalaComponent
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.Reusability
+import react.common.implicits._
 import seqexec.model.QueueId
 import seqexec.web.client.circuit._
 import seqexec.web.client.actions.RequestAllSelectedSequences
@@ -27,7 +28,6 @@ import seqexec.web.client.semanticui.elements.icon.Icon.IconPlay
 import seqexec.web.client.semanticui.elements.icon.Icon.IconStop
 import seqexec.web.client.semanticui.controlButton
 import seqexec.web.client.reusability._
-import web.client.style._
 
 /**
   * Toolbar for logged in users

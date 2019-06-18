@@ -11,6 +11,7 @@ import japgolly.scalajs.react.component.builder.Lifecycle.RenderScope
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.Reusability
 import japgolly.scalajs.react._
+import react.common.implicits._
 import seqexec.model.Observer
 import seqexec.model.SequenceState
 import seqexec.model.enum.Instrument
@@ -28,7 +29,6 @@ import seqexec.web.client.semanticui.elements.button.Button
 import seqexec.web.client.semanticui.elements.popup.Popup
 import seqexec.web.client.components.SeqexecStyles
 import seqexec.web.client.reusability._
-import web.client.style._
 
 object SequenceTab {
   final case class Props(router:             RouterCtl[SeqexecPages],
