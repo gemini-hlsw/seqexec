@@ -18,7 +18,7 @@ import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import edu.gemini.spModel.target.obsComp.TargetObsCompConstants._
 import edu.gemini.spModel.gemini.gpi.Gpi.ASTROMETRIC_FIELD_PROP
 import gem.enum.Site
-import gem.syntax.string._
+import gsp.math.syntax.string._
 import java.time.format.DateTimeFormatter
 import java.time.{Instant, LocalDate, LocalDateTime, ZoneId}
 import mouse.boolean._

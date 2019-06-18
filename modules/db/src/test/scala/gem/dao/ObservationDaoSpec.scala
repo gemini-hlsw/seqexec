@@ -8,7 +8,7 @@ import doobie.util.invariant.UnexpectedEnd
 import doobie.implicits._
 import gem.Observation
 import gem.enum._
-import gem.math.Index
+import gsp.math.Index
 import org.scalatest._
 import org.scalatest.prop._
 import org.scalatest.Matchers._

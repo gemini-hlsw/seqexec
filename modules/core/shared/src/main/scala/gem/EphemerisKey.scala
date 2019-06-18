@@ -5,9 +5,9 @@ package gem
 
 import gem.enum.EphemerisKeyType
 import gem.parser.EphemerisKeyParsers
-import gem.syntax.parser._
-import gem.syntax.string._
-import gem.optics.Format
+import gsp.math.syntax.parser._
+import gsp.math.syntax.string._
+import gsp.math.optics.Format
 
 import cats.{ Order, Show }
 import cats.implicits._

@@ -6,7 +6,7 @@ package gem
 import cats.{ Eq, Order, Show }
 import cats.implicits._
 import gem.config.StaticConfig
-import gem.math.Index
+import gsp.math.Index
 
 /** ADT for an observation, with constructors for each instrument. */
 sealed trait Observation {

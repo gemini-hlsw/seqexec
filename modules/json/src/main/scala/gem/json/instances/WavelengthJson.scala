@@ -4,7 +4,7 @@
 package gem.json.instances
 
 import gem.json.syntax.prism._
-import gem.math.Wavelength
+import gsp.math.Wavelength
 import io.circe.{ Decoder, Encoder }
 
 trait WavelengthJson {

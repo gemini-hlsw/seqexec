@@ -7,7 +7,7 @@ package config
 import gem.CoAdds
 import gem.enum._
 import gem.instances.time._
-import gem.math.Wavelength
+import gsp.math.Wavelength
 
 import cats.Eq
 import cats.implicits._

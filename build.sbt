@@ -86,7 +86,12 @@ addCommandAlias("schemaSpy", "sql/runMain org.schemaspy.Main -t pgsql -port 5432
 addCommandAlias("gemctl", "ctl/runMain gem.ctl.main")//
 
 resolvers in ThisBuild +=
+  Resolver.sonatypeRepo("public")
+
+resolvers in ThisBuild +=
   Resolver.sonatypeRepo("snapshots")
+
+updateOptions in ThisBuild := updateOptions.value.withLatestSnapshots(false)
 
 // // Before printing the prompt check git to make sure all is well.
 // shellPrompt in ThisBuild := { state =>
@@ -149,7 +154,9 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
       CatsEffect.value,
       Mouse.value,
       Shapeless.value,
-      Atto.value
+      Atto.value,
+      GspMath.value,
+      GspMathTestkit.value
     ) ++ Monocle.value
   ).jvmConfigure(
     _.enablePlugins(AutomateHeaderPlugin)
@@ -228,7 +235,7 @@ lazy val ocs2 = project
       Fs2,
       ScalaXml.value,
       ScalaParserCombinators.value,
-      Http4sXml,
+      Http4sXml
     ) ++ Http4sClient ++ Http4s
   )
 

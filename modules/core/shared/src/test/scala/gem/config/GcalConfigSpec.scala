@@ -7,6 +7,7 @@ package config
 import gem.arb._
 import gem.config.GcalConfig.GcalArcs
 import gem.instances.time._
+import gsp.math.arb.ArbTime
 
 import cats.tests.CatsSuite
 import cats.kernel.laws.discipline._

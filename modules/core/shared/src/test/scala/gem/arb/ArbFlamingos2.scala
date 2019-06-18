@@ -6,6 +6,7 @@ package gem.arb
 import gem.config.F2Config.F2FpuChoice
 import gem.config.{DynamicConfig, StaticConfig}
 import gem.enum._
+import gsp.math.arb.ArbTime
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.{Arbitrary, Cogen, Gen}
 

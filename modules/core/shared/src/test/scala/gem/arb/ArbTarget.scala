@@ -4,7 +4,8 @@
 package gem
 package arb
 
-import gem.math.ProperMotion
+import gsp.math.ProperMotion
+import gsp.math.arb.ArbProperMotion
 
 import org.scalacheck._
 import org.scalacheck.Arbitrary._

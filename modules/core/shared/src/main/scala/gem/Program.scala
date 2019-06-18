@@ -5,7 +5,7 @@ package gem
 
 import cats.Eq
 import cats.implicits._
-import gem.math.Index
+import gsp.math.Index
 import scala.collection.immutable.SortedMap
 
 /**

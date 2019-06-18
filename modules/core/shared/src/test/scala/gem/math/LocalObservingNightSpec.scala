@@ -3,8 +3,9 @@
 
 package gem.math
 
-import gem.arb._
+import gem.arb.{ ArbEnumerated, ArbObservingNight }
 import gem.instances.time._
+import gsp.math.arb.ArbTime
 import cats.{ Eq, Show }
 import cats.kernel.laws.discipline._
 import cats.tests.CatsSuite

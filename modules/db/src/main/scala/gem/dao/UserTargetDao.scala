@@ -6,8 +6,8 @@ package dao
 
 import gem.dao.meta._
 import gem.enum.UserTargetType
-import gem.math.Index
-import gem.syntax.treesetcompanion._
+import gsp.math.Index
+import gsp.math.syntax.treesetcompanion._
 
 import cats.implicits._
 import doobie._, doobie.implicits._

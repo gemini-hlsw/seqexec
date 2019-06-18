@@ -7,9 +7,9 @@ import cats.implicits._
 
 import gem.config._
 import gem.enum._
-import gem.math.Offset
 import gem.ocs2.pio._
 import gem.ocs2.pio.PioError.missingKey
+import gsp.math.Offset
 
 import scala.xml.Node
 

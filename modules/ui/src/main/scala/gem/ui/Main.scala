@@ -7,7 +7,7 @@ package ui
 import gem.CoAdds
 import gem.config._
 import gem.enum._
-import gem.math._
+import gsp.math._
 import gem.json.instances.program._
 import io.circe.syntax._
 import java.time.{ Duration, Year }

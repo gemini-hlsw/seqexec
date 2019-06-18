@@ -11,7 +11,7 @@ import org.scalacheck.Arbitrary._
 
 trait ArbEphemerisMeta {
 
-  import ArbTime._
+  import ArbTimestamp._
 
   implicit val arbHorizonsSolnRef: Arbitrary[HorizonsSolutionRef] =
     Arbitrary {

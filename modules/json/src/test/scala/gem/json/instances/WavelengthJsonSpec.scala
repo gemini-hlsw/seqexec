@@ -4,8 +4,8 @@
 package gem.json.instances
 
 import cats.tests.CatsSuite
-import gem.math.Wavelength
-import gem.arb._
+import gsp.math.Wavelength
+import gsp.math.arb.ArbWavelength
 import io.circe.testing.CodecTests
 import io.circe.testing.instances._
 

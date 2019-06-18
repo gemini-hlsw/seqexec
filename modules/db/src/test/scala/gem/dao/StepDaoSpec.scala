@@ -8,7 +8,7 @@ import gem._
 import gem.config._
 import gem.config.F2Config.F2FpuChoice.Builtin
 import gem.enum._
-import gem.math._
+import gsp.math.{ Angle, Index, Offset }
 import java.time.Duration
 import org.scalatest._
 import scala.collection.immutable.{ TreeMap, TreeSet }

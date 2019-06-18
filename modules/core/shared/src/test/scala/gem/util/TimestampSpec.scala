@@ -4,9 +4,10 @@
 package gem
 package util
 
-import gem.arb.ArbTime._
-import gem.laws.discipline._
+import gem.arb.ArbTimestamp._
 import gem.instances.time._
+import gsp.math.arb.ArbTime._
+import gsp.math.laws.discipline._
 
 import cats.kernel.laws.discipline._
 import cats.tests.CatsSuite

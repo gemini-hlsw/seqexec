@@ -4,7 +4,7 @@
 package gem.json.instances
 
 import cats.tests.CatsSuite
-import gem.arb._
+import gsp.math.arb.ArbTime
 import gem.instances.time._
 import io.circe.testing.CodecTests
 import io.circe.testing.instances._

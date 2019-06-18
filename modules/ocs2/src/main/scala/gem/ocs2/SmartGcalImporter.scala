@@ -13,7 +13,7 @@ import gem.config.SmartGcalKey
 import gem.dao.{DatabaseConfiguration, SmartGcalDao, UserDao}
 import gem.enum.{GcalBaselineType, GcalLampType}
 import gem.ocs2.pio.PioParse
-import gem.math.Wavelength
+import gsp.math.Wavelength
 
 import java.io.File
 import java.time.Duration

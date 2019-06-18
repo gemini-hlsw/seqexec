@@ -6,10 +6,10 @@ package gem.horizons
 import gem.EphemerisKey
 import gem.enum.Site.GS
 import gem.math.Ephemeris
-import gem.syntax.time._
 import gem.test.RespectIncludeTags
 import gem.test.Tags._
 import gem.util.Timestamp
+import gsp.math.syntax.time._
 
 import cats.implicits._
 import cats.tests.CatsSuite

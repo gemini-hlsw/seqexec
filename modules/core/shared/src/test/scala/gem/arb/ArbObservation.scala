@@ -5,9 +5,10 @@ package gem
 package arb
 
 import gem.enum.Instrument
-import gem.math.Index
-import gem.syntax.prism._
-import gem.syntax.treemap._
+import gsp.math.Index
+import gsp.math.arb.ArbIndex
+import gsp.math.syntax.prism._
+import gsp.math.syntax.treemap._
 
 import cats.implicits._
 import org.scalacheck._

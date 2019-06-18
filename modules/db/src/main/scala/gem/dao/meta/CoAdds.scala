@@ -5,7 +5,7 @@ package gem.dao.meta
 
 import doobie._
 import gem.CoAdds
-import gem.syntax.prism._
+import gsp.math.syntax.prism._
 
 trait CoAddsMeta {
 

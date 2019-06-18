@@ -3,7 +3,8 @@
 
 package gem.horizons.tcs
 
-import gem.math.{ Angle, Declination, Ephemeris, HourAngle, JulianDate, RightAscension }
+import gem.math.Ephemeris
+import gsp.math.{ Angle, Declination, HourAngle, JulianDate, RightAscension }
 
 import cats._
 

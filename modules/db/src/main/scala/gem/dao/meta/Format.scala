@@ -4,7 +4,7 @@
 package gem.dao.meta
 
 import doobie._
-import gem.optics.Format
+import gsp.math.optics.Format
 import scala.reflect.runtime.universe.TypeTag
 
 /**

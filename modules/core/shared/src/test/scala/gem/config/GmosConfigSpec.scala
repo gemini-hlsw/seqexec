@@ -3,10 +3,11 @@
 
 package gem.config
 
-import gem.arb._
+import gem.arb.{ ArbEnumerated, ArbGmos }
 import gem.enum.GmosNorthDisperser
 import gem.instances.time._
 import gem.config.GmosConfig._
+import gsp.math.arb.{ ArbOffset, ArbTime, ArbWavelength }
 import cats.kernel.laws.discipline._
 import cats.tests.CatsSuite
 import monocle.law.discipline._

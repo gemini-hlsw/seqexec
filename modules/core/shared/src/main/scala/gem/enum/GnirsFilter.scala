@@ -6,8 +6,8 @@ package enum
 
 import cats.instances.string._
 import cats.syntax.eq._
-import gem.math.Wavelength
 import gem.util.Enumerated
+import gsp.math.Wavelength
 
 /**
  * Enumerated type for GNIRS Filter.

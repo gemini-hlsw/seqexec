@@ -6,7 +6,7 @@ package gem.horizons
 import gem.{EphemerisKey, Semester}
 import gem.enum.Site
 import gem.math.Ephemeris
-import gem.syntax.time._
+import gsp.math.syntax.time._
 
 import cats._
 import cats.effect.IO

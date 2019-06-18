@@ -6,7 +6,7 @@ package seqexec.server.ghost
 import cats.implicits._
 import cats.Eq
 import cats.effect.Sync
-import gem.math.Coordinates
+import gsp.math.Coordinates
 import giapi.client.commands.Configuration
 import giapi.client.ghost.GhostClient
 import giapi.client.GiapiConfig

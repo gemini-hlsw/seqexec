@@ -9,9 +9,9 @@ import java.time._
 import java.time.format.DateTimeFormatter
 import gem.enum.{ Site, ProgramType, DailyProgramType }
 import gem.instances.time._
-import gem.math.Index
 import gem.parser.ProgramIdParsers
-import gem.syntax.parser._
+import gsp.math.Index
+import gsp.math.syntax.parser._
 import monocle.Prism
 
 /**

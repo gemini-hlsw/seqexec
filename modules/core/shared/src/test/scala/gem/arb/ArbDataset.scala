@@ -9,6 +9,8 @@ import org.scalacheck._
 import org.scalacheck.Gen._
 import org.scalacheck.Arbitrary._
 
+import gsp.math.arb.ArbTime
+
 trait ArbDataset {
   import ArbObservation._
   import ArbTime._

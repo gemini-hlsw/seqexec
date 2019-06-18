@@ -6,8 +6,9 @@ package gem
 import cats.Eq
 
 import gem.enum.Site
-import gem.math._
+import gem.math.Ephemeris
 import gem.util.Timestamp
+import gsp.math._
 
 import java.time.Instant
 

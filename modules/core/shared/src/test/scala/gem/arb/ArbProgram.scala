@@ -5,7 +5,8 @@ package gem
 package arb
 
 import gem.{ Observation, Program }
-import gem.math.Index
+import gsp.math.Index
+import gsp.math.arb.ArbIndex
 import org.scalacheck.Arbitrary
 import org.scalacheck.Arbitrary._
 import scala.collection.immutable.SortedMap
