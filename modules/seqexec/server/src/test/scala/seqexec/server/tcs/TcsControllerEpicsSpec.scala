@@ -8,10 +8,10 @@ import edu.gemini.spModel.core.Wavelength
 import gem.enum.LightSinkName.Gmos
 import org.scalatest.{FlatSpec, PrivateMethodTester}
 import org.scalatest.Matchers._
-import seqexec.model.enum.Instrument
+import seqexec.model.enum._
+import seqexec.model.TelescopeGuideConfig
 import seqexec.server.InstrumentGuide
 import seqexec.server.tcs.TcsController.LightSource.Sky
-import seqexec.server.tcs.TcsController.MountGuideOption.MountGuideOff
 import seqexec.server.tcs.TcsController._
 import seqexec.server.tcs.TcsControllerEpics.{AoFold, EpicsTcsConfig, InstrumentPorts}
 import shapeless.tag
@@ -27,7 +27,7 @@ class TcsControllerEpicsSpec extends FlatSpec with PrivateMethodTester {
     GuiderConfig(ProbeTrackingConfig.Off, GuiderSensorOff),
     Left(GuiderConfig(ProbeTrackingConfig.Off, GuiderSensorOff)),
     GuiderConfig(ProbeTrackingConfig.Off, GuiderSensorOff),
-    TelescopeGuideConfig(MountGuideOff, M1GuideOff, M2GuideOff),
+    TelescopeGuideConfig(MountGuideOption.MountGuideOff, M1GuideConfig.M1GuideOff, M2GuideConfig.M2GuideOff),
     AoFold.Out,
     None,
     HrwfsPickupPosition.OUT,
@@ -44,7 +44,7 @@ class TcsControllerEpicsSpec extends FlatSpec with PrivateMethodTester {
   )
 
   private val baseConfig = TcsConfig(
-    TelescopeGuideConfig(MountGuideOff, M1GuideOff, M2GuideOff),
+    TelescopeGuideConfig(MountGuideOption.MountGuideOff, M1GuideConfig.M1GuideOff, M2GuideConfig.M2GuideOff),
     TelescopeConfig(None, None),
     GuidersConfig(
       tag[P1Config](GuiderConfig(ProbeTrackingConfig.Off, GuiderSensorOff)),
@@ -89,7 +89,7 @@ class TcsControllerEpicsSpec extends FlatSpec with PrivateMethodTester {
           ).some
         ) >>>
           (TcsConfig.gc ^|-> TelescopeGuideConfig.m2Guide).set(
-            M2GuideOn(ComaOption.ComaOff, Set(TipTiltSource.PWFS1))
+            M2GuideConfig.M2GuideOn(ComaOption.ComaOff, Set(TipTiltSource.PWFS1))
           ) >>>
           (TcsConfig.gds ^|-> GuidersConfig.pwfs1).set(
             tag[P1Config](GuiderConfig(
@@ -109,7 +109,7 @@ class TcsControllerEpicsSpec extends FlatSpec with PrivateMethodTester {
           ).some
         ) >>>
           (TcsConfig.gc ^|-> TelescopeGuideConfig.m1Guide).set(
-            M1GuideOn(M1Source.PWFS1)
+            M1GuideConfig.M1GuideOn(M1Source.PWFS1)
           ) >>>
           (TcsConfig.gds ^|-> GuidersConfig.pwfs1).set(
             tag[P1Config](GuiderConfig(
@@ -130,7 +130,7 @@ class TcsControllerEpicsSpec extends FlatSpec with PrivateMethodTester {
           ).some
         ) >>>
           (TcsConfig.gc ^|-> TelescopeGuideConfig.m2Guide).set(
-            M2GuideOn(ComaOption.ComaOff, Set(TipTiltSource.PWFS1))
+            M2GuideConfig.M2GuideOn(ComaOption.ComaOff, Set(TipTiltSource.PWFS1))
           ) >>>
           (TcsConfig.gds ^|-> GuidersConfig.pwfs1).set(
             tag[P1Config](GuiderConfig(
@@ -153,7 +153,7 @@ class TcsControllerEpicsSpec extends FlatSpec with PrivateMethodTester {
           ).some
         ) >>>
           (TcsConfig.gc ^|-> TelescopeGuideConfig.m2Guide).set(
-            M2GuideOn(ComaOption.ComaOff, Set(TipTiltSource.PWFS2))
+            M2GuideConfig.M2GuideOn(ComaOption.ComaOff, Set(TipTiltSource.PWFS2))
           ) >>>
           (TcsConfig.gds ^|-> GuidersConfig.pwfs2OrAowfs).set(Left(
             tag[P2Config](GuiderConfig(
@@ -173,7 +173,7 @@ class TcsControllerEpicsSpec extends FlatSpec with PrivateMethodTester {
           ).some
         ) >>>
           (TcsConfig.gc ^|-> TelescopeGuideConfig.m1Guide).set(
-            M1GuideOn(M1Source.PWFS2)
+            M1GuideConfig.M1GuideOn(M1Source.PWFS2)
           ) >>>
           (TcsConfig.gds ^|-> GuidersConfig.pwfs2OrAowfs).set(Left(
             tag[P2Config](GuiderConfig(
@@ -194,7 +194,7 @@ class TcsControllerEpicsSpec extends FlatSpec with PrivateMethodTester {
           ).some
         ) >>>
           (TcsConfig.gc ^|-> TelescopeGuideConfig.m2Guide).set(
-            M2GuideOn(ComaOption.ComaOff, Set(TipTiltSource.PWFS2))
+            M2GuideConfig.M2GuideOn(ComaOption.ComaOff, Set(TipTiltSource.PWFS2))
           ) >>>
           (TcsConfig.gds ^|-> GuidersConfig.pwfs2OrAowfs).set(Left(
             tag[P2Config](GuiderConfig(
@@ -220,7 +220,7 @@ class TcsControllerEpicsSpec extends FlatSpec with PrivateMethodTester {
           ).some
         ) >>>
           (TcsConfig.gc ^|-> TelescopeGuideConfig.m2Guide).set(
-            M2GuideOn(ComaOption.ComaOff, Set(TipTiltSource.OIWFS))
+            M2GuideConfig.M2GuideOn(ComaOption.ComaOff, Set(TipTiltSource.OIWFS))
           ) >>>
           (TcsConfig.gds ^|-> GuidersConfig.oiwfs).set(
             tag[OIConfig](GuiderConfig(
@@ -241,7 +241,7 @@ class TcsControllerEpicsSpec extends FlatSpec with PrivateMethodTester {
           ).some
         ) >>>
           (TcsConfig.gc ^|-> TelescopeGuideConfig.m1Guide).set(
-            M1GuideOn(M1Source.OIWFS)
+            M1GuideConfig.M1GuideOn(M1Source.OIWFS)
           ) >>>
           (TcsConfig.gds ^|-> GuidersConfig.oiwfs).set(
             tag[OIConfig](GuiderConfig(
@@ -263,7 +263,7 @@ class TcsControllerEpicsSpec extends FlatSpec with PrivateMethodTester {
           ).some
         ) >>>
           (TcsConfig.gc ^|-> TelescopeGuideConfig.m2Guide).set(
-            M2GuideOn(ComaOption.ComaOff, Set(TipTiltSource.OIWFS))
+            M2GuideConfig.M2GuideOn(ComaOption.ComaOff, Set(TipTiltSource.OIWFS))
           ) >>>
           (TcsConfig.gds ^|-> GuidersConfig.oiwfs).set(
             tag[OIConfig](GuiderConfig(
@@ -291,7 +291,7 @@ class TcsControllerEpicsSpec extends FlatSpec with PrivateMethodTester {
           ).some
         ) >>>
           (TcsConfig.gc ^|-> TelescopeGuideConfig.m2Guide).set(
-            M2GuideOn(ComaOption.ComaOff, Set(TipTiltSource.GAOS))
+            M2GuideConfig.M2GuideOn(ComaOption.ComaOff, Set(TipTiltSource.GAOS))
           ) >>>
           (TcsConfig.gds ^|-> GuidersConfig.pwfs2OrAowfs).set(Right(
             tag[AoGuide](
@@ -312,7 +312,7 @@ class TcsControllerEpicsSpec extends FlatSpec with PrivateMethodTester {
           ).some
         ) >>>
           (TcsConfig.gc ^|-> TelescopeGuideConfig.m1Guide).set(
-            M1GuideOn(M1Source.GAOS)
+            M1GuideConfig.M1GuideOn(M1Source.GAOS)
           ) >>>
           (TcsConfig.gds ^|-> GuidersConfig.pwfs2OrAowfs).set(Right(
             tag[AoGuide](
@@ -334,7 +334,7 @@ class TcsControllerEpicsSpec extends FlatSpec with PrivateMethodTester {
           ).some
         ) >>>
           (TcsConfig.gc ^|-> TelescopeGuideConfig.m2Guide).set(
-            M2GuideOn(ComaOption.ComaOff, Set(TipTiltSource.GAOS))
+            M2GuideConfig.M2GuideOn(ComaOption.ComaOff, Set(TipTiltSource.GAOS))
           ) >>>
           (TcsConfig.gds ^|-> GuidersConfig.pwfs2OrAowfs).set(Right(
             tag[AoGuide](

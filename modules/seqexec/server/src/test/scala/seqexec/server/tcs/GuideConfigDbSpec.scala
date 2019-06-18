@@ -9,10 +9,9 @@ import io.circe.parser._
 import GuideConfigDb._
 import cats.effect.IO
 import cats.implicits._
+import seqexec.model.enum._
+import seqexec.model.TelescopeGuideConfig
 import seqexec.server.altair.AltairController.Lgs
-import seqexec.server.tcs.TcsController.ComaOption.{ComaOff, ComaOn}
-import seqexec.server.tcs.TcsController.MountGuideOption.{MountGuideOff, MountGuideOn}
-import seqexec.server.tcs.TcsController.{M1GuideOn, M1Source, M2GuideOn, TelescopeGuideConfig, TipTiltSource}
 import squants.space.Millimeters
 
 final class GuideConfigDbSpec extends FlatSpec {
@@ -36,9 +35,9 @@ final class GuideConfigDbSpec extends FlatSpec {
   """
   val guideConfig1: GuideConfig = GuideConfig(
     TelescopeGuideConfig(
-      MountGuideOn,
-      M1GuideOn(M1Source.PWFS1),
-      M2GuideOn(ComaOff, Set(TipTiltSource.PWFS1))
+      MountGuideOption.MountGuideOn,
+      M1GuideConfig.M1GuideOn(M1Source.PWFS1),
+      M2GuideConfig.M2GuideOn(ComaOption.ComaOff, Set(TipTiltSource.PWFS1))
     ),
     None
   )
@@ -74,9 +73,9 @@ final class GuideConfigDbSpec extends FlatSpec {
   """
   val guideConfig2: GuideConfig = GuideConfig(
     TelescopeGuideConfig(
-      MountGuideOff,
-      M1GuideOn(M1Source.PWFS1),
-      M2GuideOn(ComaOn, Set(TipTiltSource.PWFS1))
+      MountGuideOption.MountGuideOff,
+      M1GuideConfig.M1GuideOn(M1Source.PWFS1),
+      M2GuideConfig.M2GuideOn(ComaOption.ComaOn, Set(TipTiltSource.PWFS1))
     ),
     Some(Left(Lgs(strap = true, sfo = true, starPos = (Millimeters(-5.0), Millimeters(3.0)))))
   )

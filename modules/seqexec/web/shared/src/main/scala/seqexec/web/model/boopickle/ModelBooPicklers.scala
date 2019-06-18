@@ -4,7 +4,9 @@
 package seqexec.web.model.boopickle
 
 import boopickle.DefaultBasic._
+import cats.Eq
 import cats.Traverse
+import cats.Monoid
 import cats.implicits._
 import gem.Observation
 import java.time.Instant
@@ -22,35 +24,30 @@ trait ModelBooPicklers extends GemModelBooPicklers {
   def valuesMap[F[_]: Traverse, A, B](c: F[A], f: A => B): Map[B, A] =
     c.fproduct(f).map(_.swap).toList.toMap
 
+  // scalastyle:off
+  def valuesMapPickler[A: Eq, B: Monoid: Pickler](valuesMap: Map[B, A]) =
+    transformPickler(
+      (t: B) =>
+        valuesMap
+          .get(t)
+          .getOrElse(throw new RuntimeException(s"Failed to decode value")))(
+      t => valuesMap.find { case (_, v) => v === t }.map(_._1).orEmpty)
+  // scalastyle:on
+
   val instrumentIdx = valuesMap(Instrument.all, (x: Instrument) => x.ordinal)
 
-  implicit val instrumentPickler = transformPickler(
-    (t: Int) =>
-      instrumentIdx
-        .get(t)
-        .getOrElse(throw new RuntimeException("Failed to decode instrument")))(
-    _.ordinal)
+  implicit val instrumentPickler = valuesMapPickler(instrumentIdx)
 
   val resourceIdx =
     valuesMap(Instrument.allResources, (x: Resource) => x.ordinal)
 
-  implicit val resourcePickler = transformPickler(
-    (t: Int) =>
-      resourceIdx
-        .get(t)
-        .getOrElse(throw new RuntimeException("Failed to decode resource")))(
-    _.ordinal)
+  implicit val resourcePickler = valuesMapPickler(resourceIdx)
 
   implicit val operatorPickler = generatePickler[Operator]
 
   val sysNameIdx = valuesMap(SystemName.all, (x: SystemName) => x.system)
 
-  implicit val systemNamePickler = transformPickler(
-    (t: String) =>
-      sysNameIdx
-        .get(t)
-        .getOrElse(throw new RuntimeException("Failed to decode system name")))(
-    _.system)
+  implicit val systemNamePickler = valuesMapPickler(sysNameIdx)
 
   implicit val observerPickler = generatePickler[Observer]
 
@@ -61,41 +58,21 @@ trait ModelBooPicklers extends GemModelBooPicklers {
 
   val cloudCoverIdx = valuesMap(CloudCover.all, (x: CloudCover) => x.toInt)
 
-  implicit val cloudCoverPickler = transformPickler(
-    (t: Int) =>
-      cloudCoverIdx
-        .get(t)
-        .getOrElse(throw new RuntimeException("Failed to decode cloud cover")))(
-    _.toInt)
+  implicit val cloudCoverPickler = valuesMapPickler(cloudCoverIdx)
 
   val imageQualityIdx =
     valuesMap(ImageQuality.all, (x: ImageQuality) => x.toInt)
 
-  implicit val imageQualityPickler = transformPickler((t: Int) =>
-    imageQualityIdx
-      .get(t)
-      .getOrElse(throw new RuntimeException("Failed to decode image quality")))(
-    _.toInt)
+  implicit val imageQualityPickler = valuesMapPickler(imageQualityIdx)
 
   val skyBackgroundIdx =
     valuesMap(SkyBackground.all, (x: SkyBackground) => x.toInt)
 
-  implicit val skyBackgroundPickler = transformPickler(
-    (t: Int) =>
-      skyBackgroundIdx
-        .get(t)
-        .getOrElse(
-          throw new RuntimeException("Failed to decode sky background")))(
-    _.toInt)
+  implicit val skyBackgroundPickler = valuesMapPickler(skyBackgroundIdx)
 
   val waterVaporIdx = valuesMap(WaterVapor.all, (x: WaterVapor) => x.toInt)
 
-  implicit val waterVaporPickler = transformPickler(
-    (t: Int) =>
-      waterVaporIdx
-        .get(t)
-        .getOrElse(throw new RuntimeException("Failed to decode water vapor")))(
-    _.toInt)
+  implicit val waterVaporPickler = valuesMapPickler(waterVaporIdx)
 
   implicit val sequenceStateCompletedPickler =
     generatePickler[SequenceState.Completed.type]
@@ -118,13 +95,7 @@ trait ModelBooPicklers extends GemModelBooPicklers {
                                     (3 -> ActionStatus.Paused),
                                     (4 -> ActionStatus.Failed))
 
-  implicit val actionStatusPickler = transformPickler(
-    (t: Int) =>
-      actionStatusIdx
-        .get(t)
-        .getOrElse(
-          throw new RuntimeException("Falied to decode action status")))(t =>
-    actionStatusIdx.find { case (_, v) => v === t }.map(_._1).getOrElse(-1))
+  implicit val actionStatusPickler = valuesMapPickler(actionStatusIdx)
 
   implicit val stepStatePendingPickler = generatePickler[StepState.Pending.type]
   implicit val stepStateCompletedPickler =
@@ -172,10 +143,6 @@ trait ModelBooPicklers extends GemModelBooPicklers {
     .addConcreteType[QueueManipulationOp.AddedSeqs]
     .addConcreteType[QueueManipulationOp.RemovedSeqs]
 
-  private val serverLogIdx = Map((0 -> ServerLogLevel.INFO),
-                                 (1 -> ServerLogLevel.WARN),
-                                 (2 -> ServerLogLevel.ERROR))
-
   implicit val singleActionOpStartedPickler   = generatePickler[SingleActionOp.Started]
   implicit val singleActionOpCompletedPickler = generatePickler[SingleActionOp.Completed]
   implicit val singleActionOpErrorPickler     = generatePickler[SingleActionOp.Error]
@@ -184,13 +151,11 @@ trait ModelBooPicklers extends GemModelBooPicklers {
     .addConcreteType[SingleActionOp.Completed]
     .addConcreteType[SingleActionOp.Error]
 
-  implicit val serverLogLevelPickler = transformPickler(
-    (t: Int) =>
-      serverLogIdx
-        .get(t)
-        .getOrElse(
-          throw new RuntimeException("Falied to decode server log level")))(t =>
-    serverLogIdx.find { case (_, v) => v === t }.map(_._1).getOrElse(-1))
+  private val serverLogIdx = Map((0 -> ServerLogLevel.INFO),
+                                 (1 -> ServerLogLevel.WARN),
+                                 (2 -> ServerLogLevel.ERROR))
+
+  implicit val serverLogLevelPickler = valuesMapPickler(serverLogIdx)
 
   implicit val batchCommandStateIdlePickler =
     generatePickler[BatchCommandState.Idle.type]
@@ -209,13 +174,7 @@ trait ModelBooPicklers extends GemModelBooPicklers {
                                       (3 -> BatchExecState.Stopping),
                                       (4 -> BatchExecState.Completed))
 
-  implicit val batchExecStatePickler = transformPickler(
-    (t: Int) =>
-      batchExecStateIdx
-        .get(t)
-        .getOrElse(
-          throw new RuntimeException("Falied to decode batch exec state")))(t =>
-    batchExecStateIdx.find { case (_, v) => v === t }.map(_._1).getOrElse(-1))
+  implicit val batchExecStatePickler = valuesMapPickler(batchExecStateIdx)
 
   implicit val executionQueuePickler = generatePickler[ExecutionQueueView]
 
@@ -226,6 +185,47 @@ trait ModelBooPicklers extends GemModelBooPicklers {
 
   implicit val sequenceQueueViewPickler =
     generatePickler[SequencesQueue[SequenceView]]
+
+  private val comaOptionIdx = Map((0 -> ComaOption.ComaOn),
+                                  (1 -> ComaOption.ComaOff))
+
+  implicit val comaPickler = valuesMapPickler(comaOptionIdx)
+
+  private val tipTiltSourceIdx = Map((0 -> TipTiltSource.PWFS1),
+                                     (1 -> TipTiltSource.PWFS2),
+                                     (2 -> TipTiltSource.OIWFS),
+                                     (3 -> TipTiltSource.GAOS))
+
+  implicit val tipTiltSourcePickler = valuesMapPickler(tipTiltSourceIdx)
+
+  private val m1SourceIdx = Map((0 -> M1Source.PWFS1),
+                                (1 -> M1Source.PWFS2),
+                                (2 -> M1Source.OIWFS),
+                                (3 -> M1Source.GAOS),
+                                (4 -> M1Source.HRWFS))
+
+  implicit val m1SourcePickler = valuesMapPickler(m1SourceIdx)
+
+  private val mountGuideIdx = Map((0 -> MountGuideOption.MountGuideOff),
+                                  (1 -> MountGuideOption.MountGuideOn))
+
+  implicit val mountGuidePickler = valuesMapPickler(mountGuideIdx)
+  implicit val m1GuideOnPickler  = generatePickler[M1GuideConfig.M1GuideOn]
+  implicit val m1GuideOffPickler =
+    generatePickler[M1GuideConfig.M1GuideOff.type]
+  implicit val m1GuideConfigPickler = compositePickler[M1GuideConfig]
+    .addConcreteType[M1GuideConfig.M1GuideOn]
+    .addConcreteType[M1GuideConfig.M1GuideOff.type]
+
+  implicit val m2GuideOnPickler = generatePickler[M2GuideConfig.M2GuideOn]
+  implicit val m2GuideOffPickler =
+    generatePickler[M2GuideConfig.M2GuideOff.type]
+  implicit val m2GuideConfigPickler = compositePickler[M2GuideConfig]
+    .addConcreteType[M2GuideConfig.M2GuideOn]
+    .addConcreteType[M2GuideConfig.M2GuideOff.type]
+
+  implicit val telescopeGuideconfigPickler =
+    generatePickler[TelescopeGuideConfig]
 
   implicit val resourceConflictPickler = generatePickler[ResourceConflict]
   implicit val instrumentInUsePickler  = generatePickler[InstrumentInUse]

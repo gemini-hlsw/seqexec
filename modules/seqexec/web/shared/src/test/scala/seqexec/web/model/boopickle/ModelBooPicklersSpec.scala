@@ -13,6 +13,13 @@ import seqexec.model._
 import seqexec.model.events._
 import seqexec.model.SeqexecModelArbitraries._
 import seqexec.model.SequenceEventsArbitraries._
+import seqexec.model.arb.ArbComaOption._
+import seqexec.model.arb.ArbTipTiltSource._
+import seqexec.model.arb.ArbM1Source._
+import seqexec.model.arb.ArbMountGuideOption._
+import seqexec.model.arb.ArbM1GuideConfig._
+import seqexec.model.arb.ArbM2GuideConfig._
+import seqexec.model.arb.ArbTelescopeGuideConfig._
 import squants.time.Time
 
 /**
@@ -82,4 +89,11 @@ final class BoopicklingSpec extends CatsSuite with ModelBooPicklers with ArbObse
   checkAll("Pickler[ObservationProgress]",
            PicklerTests[ObservationProgress].pickler)
   checkAll("Pickler[SingleActionEvent]", PicklerTests[SingleActionEvent].pickler)
+  checkAll("Pickler[ComaOption]", PicklerTests[ComaOption].pickler)
+  checkAll("Pickler[TipTiltSource]", PicklerTests[TipTiltSource].pickler)
+  checkAll("Pickler[M1Source]", PicklerTests[M1Source].pickler)
+  checkAll("Pickler[MountGuideOption]", PicklerTests[MountGuideOption].pickler)
+  checkAll("Pickler[M1GuideConfig]", PicklerTests[M1GuideConfig].pickler)
+  checkAll("Pickler[M2GuideConfig]", PicklerTests[M2GuideConfig].pickler)
+  checkAll("Pickler[TelescopeGuideConfig]", PicklerTests[TelescopeGuideConfig].pickler)
 }
