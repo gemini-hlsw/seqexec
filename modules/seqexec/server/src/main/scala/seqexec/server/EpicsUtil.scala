@@ -399,9 +399,6 @@ object EpicsUtil {
   def safeAttributeSDoubleF[F[_]: Sync](name: String, get: => CaAttribute[JDouble]): F[Double] =
     safeAttributeF(name, get).map(_.toDouble)
 
-  def safeAttributeStringF[F[_]: Sync](name: String, get: => CaAttribute[String]): F[String] =
-    safeAttributeF(name, get)
-
   def safeAttributeSFloat[F[_]: Sync, A](get: => CaAttribute[JFloat]): F[Option[Float]] =
     Nested(safeAttribute(get)).map(_.toFloat).value
 

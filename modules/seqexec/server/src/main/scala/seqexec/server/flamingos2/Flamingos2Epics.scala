@@ -86,7 +86,7 @@ final class Flamingos2Epics[F[_]: Async](epicsService: CaService, tops: Map[Stri
   private val f2State = epicsService.getStatusAcceptor("flamingos2::status")
 
   private def read(name: String): F[String] =
-    safeAttributeStringF[F](name, f2State.getStringAttribute(name))
+    safeAttributeF(name, f2State.getStringAttribute(name))
 
   private def readI(name: String): F[Int] =
     safeAttributeSIntF[F](name, f2State.getIntegerAttribute(name))

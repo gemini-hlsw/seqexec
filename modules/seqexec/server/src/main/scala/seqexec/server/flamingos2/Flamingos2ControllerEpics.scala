@@ -16,7 +16,7 @@ import seqexec.server.EpicsCodex._
 import squants.{Seconds, Time}
 import squants.time.TimeConversions._
 
-trait Flamisgos2Encoders {
+trait Flamingos2Encoders {
   implicit val encodeReadoutMode: EncodeEpicsValue[ReadoutMode, String] = EncodeEpicsValue {
     case ReadoutMode.SCIENCE     => "SCI"
     case ReadoutMode.ENGINEERING => "ENG"
@@ -90,7 +90,7 @@ trait Flamisgos2Encoders {
 
 }
 
-object Flamingos2ControllerEpics extends Flamisgos2Encoders {
+object Flamingos2ControllerEpics extends Flamingos2Encoders {
 
   val ReadoutTimeout: Time = Seconds(300)
   val DefaultTimeout: Time = Seconds(60)
