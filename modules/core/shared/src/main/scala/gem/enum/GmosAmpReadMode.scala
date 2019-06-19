@@ -32,7 +32,6 @@ object GmosAmpReadMode {
     all.find(_.tag === s)
 
   /** Select the member of GmosAmpReadMode with the given tag, throwing if absent. */
-  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GmosAmpReadMode =
     fromTag(s).getOrElse(throw new NoSuchElementException(s"GmosAmpReadMode: Invalid tag: '$s'"))
 

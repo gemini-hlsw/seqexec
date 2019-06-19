@@ -28,7 +28,6 @@ final case class StepsTableFocus(id:                  Observation.Id,
                                  tableState:          TableState[StepsTable.TableColumn],
                                  tabOperations:       TabOperations)
 
-@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object StepsTableFocus {
   implicit val eq: Eq[StepsTableFocus] =
     Eq.by(

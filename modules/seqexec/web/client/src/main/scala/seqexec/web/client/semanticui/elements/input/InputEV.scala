@@ -17,7 +17,6 @@ object InputEV {
   type ChangeCallback = String => Callback
   type Backend      = RenderScope[Props, State, Unit]
 
-  @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
   final case class Props(name: String,
                    id: String,
                    value: StateSnapshot[String],
@@ -27,7 +26,6 @@ object InputEV {
                    onChange: ChangeCallback = _ => Callback.empty, // callback for parents of this component
                    onBlur: ChangeCallback = _ => Callback.empty)
 
-  @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
   final case class State(value: String, changed: Boolean = false)
 
   sealed trait InputType

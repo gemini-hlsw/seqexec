@@ -42,7 +42,6 @@ object GpiApodizer {
     all.find(_.tag === s)
 
   /** Select the member of GpiApodizer with the given tag, throwing if absent. */
-  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GpiApodizer =
     fromTag(s).getOrElse(throw new NoSuchElementException(s"GpiApodizer: Invalid tag: '$s'"))
 

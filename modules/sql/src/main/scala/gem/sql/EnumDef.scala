@@ -18,7 +18,6 @@ object EnumDef {
   import Angle._
   import EnumRefs._
 
-  @SuppressWarnings(Array("org.wartremover.warts.PublicInference", "org.wartremover.warts.ExplicitImplicitTypes"))
   protected[sql] object ToImport extends Poly1 {
     // scalastyle:off method.type
     implicit def caseString[S] = at[(S, String)] { _ => Option.empty[String] }
@@ -51,7 +50,6 @@ object EnumDef {
     // scalastyle:on method.type
   }
 
-  @SuppressWarnings(Array("org.wartremover.warts.PublicInference", "org.wartremover.warts.ExplicitImplicitTypes"))
   protected[sql] object ToDeclaration extends Poly1 {
     // scalastyle:off method.type
     implicit def caseString  [S <: Symbol] = at[(S, String)  ] { case (s, _) => "  val " + s.name + ": String" }
@@ -91,7 +89,6 @@ object EnumDef {
     // scalastyle:on method.type
   }
 
-  @SuppressWarnings(Array("org.wartremover.warts.PublicInference", "org.wartremover.warts.ExplicitImplicitTypes"))
   protected[sql] object ToLiteral extends Poly1 {
     implicit val caseString       = at[String     ](a => "\"" + a + "\"")
     implicit val caseInt          = at[Int        ](a => a.toString)
@@ -191,7 +188,6 @@ object EnumDef {
       |    all.find(_.tag === s)
       |
       |  /** Select the member of $name with the given tag, throwing if absent. */
-      |  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
       |  def unsafeFromTag(s: String): $name =
       |    fromTag(s).getOrElse(throw new NoSuchElementException(s"$name: Invalid tag: '$$s'"))
       |

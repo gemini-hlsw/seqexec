@@ -17,7 +17,6 @@ object Checkbox {
   type Backend        = RenderScope[Props, State, Unit]
   type ChangeCallback = Boolean => Callback
 
-  @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
   final case class Props(label:       String,
                          checked:     Boolean,
                          onChange:    ChangeCallback = _ => Callback.empty,

@@ -23,7 +23,6 @@ final case class WebSocketsFocus(location:        Pages.SeqexecPages,
                                  sound:           SoundSelection,
                                  serverVersion:   Option[String])
 
-@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object WebSocketsFocus {
   implicit val eq: Eq[WebSocketsFocus] =
     Eq.by(

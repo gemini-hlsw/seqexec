@@ -13,7 +13,6 @@ import scala.reflect.runtime.universe.TypeTag
 /** Legacy system (telescope, instrument, observe, calibration) key and parser
   * definitions.
   */
-@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object Legacy {
   sealed abstract class System(val system: String) {
 
@@ -21,7 +20,6 @@ object Legacy {
 
       val path: String = s"$system:$name"
 
-      @SuppressWarnings(Array("org.wartremover.warts.ToString"))
       val tpe:  String = Key.clean(ev.tpe.toString)
 
       def rawValue(cm: ConfigMap): Either[PioError, String] =

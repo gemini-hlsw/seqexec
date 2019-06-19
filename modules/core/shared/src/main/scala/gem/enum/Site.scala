@@ -39,7 +39,6 @@ object Site {
     all.find(_.tag === s)
 
   /** Select the member of Site with the given tag, throwing if absent. */
-  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): Site =
     fromTag(s).getOrElse(throw new NoSuchElementException(s"Site: Invalid tag: '$s'"))
 

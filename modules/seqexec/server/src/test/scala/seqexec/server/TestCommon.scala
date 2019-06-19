@@ -27,7 +27,6 @@ import shapeless.tag
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 
-@SuppressWarnings(Array("org.wartremover.warts.Throw"))
 object TestCommon {
   implicit val ioContextShift: ContextShift[IO] =
     IO.contextShift(ExecutionContext.global)

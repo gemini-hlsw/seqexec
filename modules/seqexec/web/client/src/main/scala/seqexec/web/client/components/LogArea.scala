@@ -96,7 +96,6 @@ object LogArea {
   // scalastyle:on
   object LogRow {
 
-    @SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf"))
     def apply(local:     String,
               timestamp: Instant,
               level:     ServerLogLevel,
@@ -151,7 +150,6 @@ object LogArea {
   implicit val stateReuse: Reusability[State] =
     Reusability.by(x => (x.selectedLevels.toList, x.tableState))
 
-  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object State {
 
     def levelLens(l: ServerLogLevel): Lens[State, Option[Boolean]] =

@@ -14,7 +14,6 @@ import react.common._
   */
 object HeaderItem {
 
-  @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
   final case class Props(name: String, sub: Boolean = false, extraStyles: List[Css] = Nil)
 
   private val component = ScalaComponent.builder[Props]("Header-Item")
@@ -31,9 +30,7 @@ object HeaderItem {
       )
     ).build
 
-  @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
   def apply(name: String, children: VdomNode*): Unmounted[Props, Unit, Unit] = component(Props(name))(children: _*)
 
-  @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
   def apply(p: Props, children: VdomNode*): Unmounted[Props, Unit, Unit] = component(p)(children: _*)
 }

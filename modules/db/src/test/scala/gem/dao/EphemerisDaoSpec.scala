@@ -27,7 +27,6 @@ import org.scalatest.prop._
 import org.scalatest.Matchers._
 
 
-@SuppressWarnings(Array("org.wartremover.warts.Equals", "org.wartremover.warts.NonUnitStatements"))
 class EphemerisDaoSpec extends PropSpec with PropertyChecks with DaoTest {
 
   import EphemerisDaoSpec._
@@ -298,7 +297,6 @@ class EphemerisDaoSpec extends PropSpec with PropertyChecks with DaoTest {
   }
 }
 
-@SuppressWarnings(Array("org.wartremover.warts.Equals"))
 object EphemerisDaoSpec {
   final case class KS(key: EphemerisKey, site: Site)
 

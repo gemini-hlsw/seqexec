@@ -93,7 +93,6 @@ final case class Zipper[A](lefts: List[A], focus: A, rights: List[A]) {
   def toNel: NonEmptyList[A] = NonEmptyList.fromListUnsafe(toList)
 }
 
-@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object Zipper {
   def fromNel[A](ne: NonEmptyList[A]): Zipper[A] =
     Zipper(Nil, ne.head, ne.tail)

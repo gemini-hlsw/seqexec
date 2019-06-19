@@ -44,7 +44,6 @@ object GmosDtax {
     all.find(_.tag === s)
 
   /** Select the member of GmosDtax with the given tag, throwing if absent. */
-  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GmosDtax =
     fromTag(s).getOrElse(throw new NoSuchElementException(s"GmosDtax: Invalid tag: '$s'"))
 

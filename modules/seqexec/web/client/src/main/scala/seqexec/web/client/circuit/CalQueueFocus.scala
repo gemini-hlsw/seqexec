@@ -32,7 +32,6 @@ final case class CalQueueFocus(
   val loggedIn: Boolean   = status.isLogged
 }
 
-@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object CalQueueFocus {
   implicit val eq: Eq[CalQueueFocus] =
     Eq.by(x => (x.status, x.seqs, x.tableState, x.seqOps, x.lastOp))

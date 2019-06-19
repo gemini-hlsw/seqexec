@@ -35,7 +35,6 @@ object GmosSouthStageMode {
     all.find(_.tag === s)
 
   /** Select the member of GmosSouthStageMode with the given tag, throwing if absent. */
-  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GmosSouthStageMode =
     fromTag(s).getOrElse(throw new NoSuchElementException(s"GmosSouthStageMode: Invalid tag: '$s'"))
 

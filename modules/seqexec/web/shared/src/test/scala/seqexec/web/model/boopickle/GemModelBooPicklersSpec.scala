@@ -15,14 +15,6 @@ import org.scalacheck.Arbitrary._
 /**
   * Tests Serialization/Deserialization using BooPickle
   */
-@SuppressWarnings(
-  Array(
-    "org.wartremover.warts.ImplicitParameter",
-    "org.wartremover.warts.Throw",
-    "org.wartremover.warts.OptionPartial",
-    "org.wartremover.warts.NonUnitStatements",
-    "org.wartremover.warts.Equals"
-  ))
 final class GemModelBooPicklersSpec extends CatsSuite with GemModelBooPicklers with ArbTime with ArbIndex with ArbProgramId {
   import ArbObservation.arbObservationId
 

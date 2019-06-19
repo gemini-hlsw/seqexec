@@ -25,7 +25,6 @@ import java.time.temporal.ChronoUnit.DAYS
   *     testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-l", "gem.test.Tags.RequiresNetwork")
   *
   */
-@SuppressWarnings(Array("org.wartremover.warts.Equals"))
 final class HorizonsEphemerisQuerySpec extends CatsSuite with EphemerisTestSupport with RespectIncludeTags {
 
   import HorizonsEphemerisQuerySpec._

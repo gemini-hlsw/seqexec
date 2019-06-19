@@ -15,7 +15,6 @@ import seqexec.server.tcs.TcsController.MountGuideOption.{MountGuideOff, MountGu
 import seqexec.server.tcs.TcsController.{M1GuideOn, M1Source, M2GuideOn, TelescopeGuideConfig, TipTiltSource}
 import squants.space.Millimeters
 
-@SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 final class GuideConfigDbSpec extends FlatSpec {
 
   val rawJson1: String = """

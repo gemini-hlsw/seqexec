@@ -41,7 +41,6 @@ object F2Fpu {
     all.find(_.tag === s)
 
   /** Select the member of F2Fpu with the given tag, throwing if absent. */
-  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): F2Fpu =
     fromTag(s).getOrElse(throw new NoSuchElementException(s"F2Fpu: Invalid tag: '$s'"))
 

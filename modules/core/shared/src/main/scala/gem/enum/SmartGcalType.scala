@@ -32,7 +32,6 @@ object SmartGcalType {
     all.find(_.tag === s)
 
   /** Select the member of SmartGcalType with the given tag, throwing if absent. */
-  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): SmartGcalType =
     fromTag(s).getOrElse(throw new NoSuchElementException(s"SmartGcalType: Invalid tag: '$s'"))
 

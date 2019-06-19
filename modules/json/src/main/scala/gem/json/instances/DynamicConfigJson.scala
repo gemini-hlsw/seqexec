@@ -8,7 +8,6 @@ import gem.enum._
 import io.circe._
 import io.circe.generic.semiauto._
 
-@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 trait DynamicConfigJson {
   import coadds._
   import enumerated._

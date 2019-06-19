@@ -7,7 +7,6 @@ package tcs
 import cats.tests.CatsSuite
 
 
-@SuppressWarnings(Array("org.wartremover.warts.Equals", "org.wartremover.warts.TraversableOps"))
 final class TcsFormatSpec extends CatsSuite with EphemerisTestSupport {
 
   private val Eph = eph(

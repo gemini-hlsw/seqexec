@@ -8,7 +8,6 @@ import gsp.math.Offset
 import io.circe.{ Decoder, Encoder }
 import io.circe.generic.semiauto._
 
-@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 trait OffsetJson {
 
   implicit val OffsetPEncoder: Encoder[Offset.P] = Offset.P.signedArcseconds.reverse.toEncoder

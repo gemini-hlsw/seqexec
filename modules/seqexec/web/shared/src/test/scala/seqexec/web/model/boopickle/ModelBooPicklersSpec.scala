@@ -18,14 +18,6 @@ import squants.time.Time
 /**
   * Tests Serialization/Deserialization using BooPickle
   */
-@SuppressWarnings(
-  Array(
-    "org.wartremover.warts.ImplicitParameter",
-    "org.wartremover.warts.Throw",
-    "org.wartremover.warts.OptionPartial",
-    "org.wartremover.warts.NonUnitStatements",
-    "org.wartremover.warts.Equals"
-  ))
 final class BoopicklingSpec extends CatsSuite with ModelBooPicklers with ArbObservation {
 
   checkAll("Pickler[UserDetails]", PicklerTests[UserDetails].pickler)

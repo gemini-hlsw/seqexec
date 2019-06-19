@@ -40,7 +40,6 @@ object F2ReadMode {
     all.find(_.tag === s)
 
   /** Select the member of F2ReadMode with the given tag, throwing if absent. */
-  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): F2ReadMode =
     fromTag(s).getOrElse(throw new NoSuchElementException(s"F2ReadMode: Invalid tag: '$s'"))
 

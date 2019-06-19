@@ -50,7 +50,6 @@ object Gatekeeper {
      * Construct a token using the TTL defined in the envronment, and encode/sign it using the
      * algorithm and secret key also defined in the environment.
      */
-    @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
     def encode[F[_]: Sync](env: Environment[F], user: User[_]): F[String] =
       create(user, env.config.jwt.ttlSeconds).map(env.encodeJwt(_))
 
@@ -65,7 +64,6 @@ object Gatekeeper {
      * Decode an encoded GemToken if possible, otherwise return an error string to be included
      * in the Forbidden() body.
      */
-    @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
     def decode[F[_]](env: Environment[F], encoded: String): F[Either[String, GemToken]] =
       env.decodeJwt[GemToken](encoded)
 
@@ -82,7 +80,6 @@ object Gatekeeper {
   final case class LoginRequest(uid: String, pass: String)
 
   /** A service that listens to /login and issues new cookies. */
-  @SuppressWarnings(Array("org.wartremover.warts.PublicInference")) // false positive on decodeJson
   def login[F[_]: Sync](env: Environment[F]): HttpRoutes[F] = {
     val dsl = new Http4sDsl[F] {}; import dsl._
     HttpRoutes.of[F] {
@@ -126,7 +123,6 @@ object Gatekeeper {
    * Construct the gatekeeper middleware. We need a server environment to figure out how to do
    * do this because we need a way to encode/decode tokens, as well as way to log users in.
    */
-  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   def apply[F[_]: Sync](env: Environment[F]): AuthMiddleware[F, GemService[F]] = delegate =>
     login(env) <+> authenticate(env, delegate)
 

@@ -34,7 +34,6 @@ object MoveSeqQueue {
 final case class QueueSeqOperations(removeSeqQueue: RemoveSeqQueue,
                                     moveSeqQueue:   MoveSeqQueue)
 
-@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object QueueSeqOperations {
   implicit val eq: Eq[QueueSeqOperations] =
     Eq.by(x => (x.removeSeqQueue, x.moveSeqQueue))

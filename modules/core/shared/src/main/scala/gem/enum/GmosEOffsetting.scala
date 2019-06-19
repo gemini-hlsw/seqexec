@@ -32,7 +32,6 @@ object GmosEOffsetting {
     all.find(_.tag === s)
 
   /** Select the member of GmosEOffsetting with the given tag, throwing if absent. */
-  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GmosEOffsetting =
     fromTag(s).getOrElse(throw new NoSuchElementException(s"GmosEOffsetting: Invalid tag: '$s'"))
 

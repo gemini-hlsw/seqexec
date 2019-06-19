@@ -61,7 +61,6 @@ object interpreter {
    * Construct a program to log a message to the console at the given log level and indentation.
    * This is where all the colorizing happens.
    */
-  @SuppressWarnings(Array("org.wartremover.warts.ToString"))
   private def doLogʹ(ansi: Boolean, level: Level, msg: String, state: IORef[InterpreterState]): IO[Unit] = {
     lazy val color =
       if (ansi) {

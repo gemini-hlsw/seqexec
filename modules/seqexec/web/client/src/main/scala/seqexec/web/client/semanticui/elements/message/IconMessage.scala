@@ -50,7 +50,6 @@ object IconMessage extends Message {
     )
     .build
 
-  @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
   final case class Props(icon: Icon, header: Option[String] = None, style: Style = Style.NotDefined, size: Size = Size.NotSized)
 
   def apply(p: Props, children: VdomNode*): Unmounted[Props, Unit, Unit] = component(p)(children: _*)

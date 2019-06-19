@@ -179,7 +179,6 @@ class Engine[D, U](stateL: Engine.State[D]) {
       }
   }
 
-  @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
   private def execute(id: Observation.Id)(implicit ev: Concurrent[IO]): HandleType[Unit] = {
     get.flatMap(st => stateL.sequenceStateIndex(id).getOption(st).map {
       case seq@Sequence.State.Final(_, _)  =>
@@ -329,7 +328,6 @@ class Engine[D, U](stateL: Engine.State[D]) {
   /**
     * Main logical thread to handle events and produce output.
     */
-  @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
   private def run(userReact: PartialFunction[SystemEvent, HandleType[Unit]])(ev: EventType)(implicit ci: Concurrent[IO]): HandleType[ResultType] = {
     ev match {
       case EventUser(ue)   => handleUserEvent(ue)
@@ -342,7 +340,6 @@ class Engine[D, U](stateL: Engine.State[D]) {
   // input, stream of events
   // initalState: state
   // f takes an event and the current state, it produces a new state, a new value B and more actions
-  @SuppressWarnings(Array("org.wartremover.warts.ImplicitParameter"))
   def mapEvalState[F[_]: Applicative, A, S, B](input: Stream[F, A],
                             initialState: S, f: (A, S) => F[(S, B, Option[Stream[F, A]])])
                            (implicit ev: Concurrent[F]): Stream[F, B] = {
@@ -357,7 +354,6 @@ class Engine[D, U](stateL: Engine.State[D]) {
     }
   }
 
-  @SuppressWarnings(Array("org.wartremover.warts.AnyVal", "org.wartremover.warts.ImplicitParameter"))
   private def runE(userReact: PartialFunction[SystemEvent, HandleType[Unit]])
                   (ev: EventType,s: D)
                   (implicit ci: Concurrent[IO])
@@ -366,7 +362,6 @@ class Engine[D, U](stateL: Engine.State[D]) {
       case (si, (r, p)) => (si, (r, si), p)
     }
 
-  @SuppressWarnings(Array("org.wartremover.warts.AnyVal", "org.wartremover.warts.ImplicitParameter"))
   def process(userReact: PartialFunction[SystemEvent, HandleType[Unit]])
              (input: Stream[IO, EventType])(qs: D)(implicit ev: Concurrent[IO])
   : Stream[IO, (ResultType, D)] =

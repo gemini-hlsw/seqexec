@@ -32,7 +32,6 @@ object GnirsAcquisitionMirror {
     all.find(_.tag === s)
 
   /** Select the member of GnirsAcquisitionMirror with the given tag, throwing if absent. */
-  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GnirsAcquisitionMirror =
     fromTag(s).getOrElse(throw new NoSuchElementException(s"GnirsAcquisitionMirror: Invalid tag: '$s'"))
 

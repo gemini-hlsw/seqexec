@@ -9,7 +9,6 @@ import gem.math.{ Ephemeris, EphemerisCoordinates }
 import io.circe.{ Decoder, Encoder }
 import io.circe.generic.semiauto._
 
-@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 trait EphemerisJson {
   import coordinates._
   import offset._

@@ -131,7 +131,6 @@ final case class TabOperations(
       startFromRequested === StartFromOperation.StartFromInFlight
 }
 
-@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object TabOperations {
   implicit val eq: Eq[TabOperations] =
     Eq.by(

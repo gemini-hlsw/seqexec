@@ -18,7 +18,6 @@ object ItemEntryUtil {
       case _ => ks.maxBy(_.getKey.toString.length).toString.length
     }
 
-    @SuppressWarnings(Array("org.wartremover.warts.ToString"))
     def seqValue(o: Object): String = o match {
       case s: SequenceableSpType => s.sequenceValue()
       case d: DisplayableSpType  => d.displayValue()

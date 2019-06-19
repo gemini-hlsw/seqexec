@@ -14,7 +14,6 @@ final case class ExecutionQueue(name:      String,
                                 cmdState:  BatchCommandState,
                                 queue:     List[Observation.Id])
 
-@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object ExecutionQueue {
   def init(name: String): ExecutionQueue =
     ExecutionQueue(name, BatchCommandState.Idle, List.empty)

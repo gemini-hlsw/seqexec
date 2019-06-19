@@ -39,7 +39,6 @@ final case class SeqexecAppRootModel(sequences:     SequencesQueue[SequenceView]
                                      uiModel:       SeqexecUIModel,
                                      serverVersion: Option[String])
 
-@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object SeqexecAppRootModel {
   val NoSequencesLoaded: SequencesQueue[SequenceView] =
     SequencesQueue[SequenceView](Map.empty,

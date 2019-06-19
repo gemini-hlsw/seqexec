@@ -34,7 +34,6 @@ object GsaoiUtilityWheel {
     all.find(_.tag === s)
 
   /** Select the member of GsaoiUtilityWheel with the given tag, throwing if absent. */
-  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GsaoiUtilityWheel =
     fromTag(s).getOrElse(throw new NoSuchElementException(s"GsaoiUtilityWheel: Invalid tag: '$s'"))
 

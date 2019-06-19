@@ -606,7 +606,6 @@ object TcsControllerEpics {
     val instrumentOffset: InstrumentOffset = offset.toInstrumentOffset(iaa)
   }
 
-  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object EpicsTcsConfig
 
   final case class GuideControl[F[_]: Async](subs: Subsystem,

@@ -8,7 +8,6 @@ import gsp.math.{ Angle, Epoch, ProperMotion, RadialVelocity }
 import io.circe._
 import io.circe.generic.semiauto._
 
-@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 trait ProperMotionJson {
   import coordinates._
   import offset._

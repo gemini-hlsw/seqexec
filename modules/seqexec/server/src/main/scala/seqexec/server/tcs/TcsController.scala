@@ -286,7 +286,6 @@ object TcsController {
   @Lenses
   final case class TelescopeGuideConfig(mountGuide: MountGuideOption, m1Guide: M1GuideConfig, m2Guide: M2GuideConfig)
 
-  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object TelescopeGuideConfig {
     implicit val eq: Eq[TelescopeGuideConfig] = Eq.by(x => (x.mountGuide, x.m1Guide, x.m2Guide))
   }
@@ -331,7 +330,6 @@ object TcsController {
 
   implicit val wavelengthEq: Eq[Wavelength] = Eq.by(_.length.value)
 
-  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object TelescopeConfig {
     implicit val show: Show[TelescopeConfig] = Show.fromToString
   }
@@ -353,7 +351,6 @@ object TcsController {
     val isActive: Boolean = tracking.isActive && detector === GuiderSensorOn
   }
 
-  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object GuiderConfig {
     implicit val show: Show[GuiderConfig] = Show.fromToString[GuiderConfig]
 
@@ -367,7 +364,6 @@ object TcsController {
     oiwfs: GuiderConfig@@OIConfig
   )
 
-  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object GuidersConfig {
     implicit val pwfs1Eq: Eq[GuiderConfig@@P1Config] = Eq[GuiderConfig].contramap(identity)
   }
@@ -384,7 +380,6 @@ object TcsController {
     inst: InstrumentGuide
   )
 
-  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object TcsConfig
 
   sealed trait Subsystem extends Product with Serializable

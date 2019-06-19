@@ -24,7 +24,6 @@ object UserNotificationBox {
 
   implicit val propsReuse: Reusability[Props] = Reusability.by(_.notification)
 
-  @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
   private val component = ScalaComponent.builder[Props]("UserNotificationBox")
     .stateless
     .render_P { p =>

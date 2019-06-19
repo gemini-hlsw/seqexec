@@ -20,7 +20,6 @@ import seqexec.web.client.model.InstrumentSequenceTab
 /**
   * Tests Sequences on display class
   */
-@SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 final class SequencesOnDisplaySpec extends CatsSuite with ArbitrariesWebClient {
   test("Starts with just the calibration tab") {
     SequencesOnDisplay.Empty.tabs.length should be(1)

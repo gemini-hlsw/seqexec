@@ -7,7 +7,6 @@ import gem.config._
 import io.circe.{ Decoder, Encoder }
 import io.circe.generic.semiauto._
 
-@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 trait StaticConfigJson {
   import enumerated._
   import offset._

@@ -69,7 +69,6 @@ object StepConfigTable {
   // scalastyle:on
   object SettingsRow {
 
-    @SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf"))
     def apply(sub: SystemName, name: String, value: String): SettingsRow = {
       val p = (new js.Object).asInstanceOf[SettingsRow]
       p.sub   = sub

@@ -791,7 +791,6 @@ object KeywordName {
     all.find(_.tag === s)
 
   /** Select the member of KeywordName with the given tag, throwing if absent. */
-  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): KeywordName =
     fromTag(s).getOrElse(throw new NoSuchElementException(s"KeywordName: Invalid tag: '$s'"))
 

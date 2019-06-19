@@ -22,7 +22,6 @@ final case class Icon(p: Icon.Props, children: Seq[VdomNode]) {
   import Icon._
 
   // Custom copy constructor to avoid passing the id again
-  @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
   def copyIcon(disabled:     Boolean                            = false,
                loading:      Boolean                            = false,
                fitted:       Boolean                            = false,
@@ -184,7 +183,6 @@ object Icon {
     implicit val reuse: Reusability[Rotated] = Reusability.byRef[Rotated]
   }
 
-  @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
   final case class Props(id:           String,
                          disabled:     Boolean = false,
                          loading:      Boolean = false,
@@ -208,7 +206,6 @@ object Icon {
   // Used to call Icon directly on a jsx component declaration
   implicit def icon2TagMod(i: Icon): VdomElement = i.component
 
-  @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
   def apply(s: String, children: VdomNode*): Icon = Icon(Props(s), children)
 
 }

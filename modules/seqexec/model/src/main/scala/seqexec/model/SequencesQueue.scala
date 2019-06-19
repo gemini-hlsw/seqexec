@@ -24,7 +24,6 @@ final case class SequencesQueue[T](
   sessionQueue: List[T]
 )
 
-@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object SequencesQueue {
 
   implicit def equal[T: Eq]: Eq[SequencesQueue[T]] =

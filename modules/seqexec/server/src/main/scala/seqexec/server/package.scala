@@ -53,7 +53,6 @@ package server {
   final case class EngineState(queues: ExecutionQueues, selected: Map[Instrument, Observation.Id], conditions: Conditions, operator: Option[Operator], sequences: Map[Observation.Id, SequenceData[IO]])
 
   // TODO EngineState extending Engine.State is problematic when trying to remove the strong IO dependency
-  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object EngineState extends Engine.State[EngineState]{
     val default: EngineState =
       EngineState(

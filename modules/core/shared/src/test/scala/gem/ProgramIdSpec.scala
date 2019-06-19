@@ -12,7 +12,6 @@ import gsp.math.arb.ArbTime
 import java.time._
 import monocle.law.discipline._
 
-@SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals"))
 final class ProgramIdSpec extends CatsSuite {
   import ProgramId._
   import ArbEnumerated._

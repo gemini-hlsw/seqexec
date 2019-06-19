@@ -39,7 +39,6 @@ object GnirsDecker {
     all.find(_.tag === s)
 
   /** Select the member of GnirsDecker with the given tag, throwing if absent. */
-  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GnirsDecker =
     fromTag(s).getOrElse(throw new NoSuchElementException(s"GnirsDecker: Invalid tag: '$s'"))
 

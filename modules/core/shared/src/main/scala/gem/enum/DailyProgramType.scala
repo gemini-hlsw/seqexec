@@ -32,7 +32,6 @@ object DailyProgramType {
   def fromTag(s: String): Option[DailyProgramType] =
     all.find(_.tag === s)
 
-  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): DailyProgramType =
     fromTag(s).getOrElse(throw new NoSuchElementException(s))
 

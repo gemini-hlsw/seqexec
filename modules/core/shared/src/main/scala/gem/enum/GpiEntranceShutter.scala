@@ -33,7 +33,6 @@ object GpiEntranceShutter {
     all.find(_.tag === s)
 
   /** Select the member of GpiEntranceShutter with the given tag, throwing if absent. */
-  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GpiEntranceShutter =
     fromTag(s).getOrElse(throw new NoSuchElementException(s"GpiEntranceShutter: Invalid tag: '$s'"))
 

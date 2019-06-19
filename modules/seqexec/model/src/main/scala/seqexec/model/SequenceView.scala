@@ -29,7 +29,6 @@ final case class SequenceView (
   }
 }
 
-@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object SequenceView {
   implicit val eq: Eq[SequenceView] =
     Eq.by(x => (x.id, x.metadata, x.status, x.steps, x.willStopIn))

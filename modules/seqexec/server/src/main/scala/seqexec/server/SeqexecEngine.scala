@@ -779,7 +779,6 @@ object SeqexecEngine extends SeqexecConfiguration {
     val ioTimeout               = cfg.require[Duration]("seqexec-engine.ioTimeout")
 
     // TODO: Review initialization of EPICS systems
-    @SuppressWarnings(Array("org.wartremover.warts.Throw"))
     def initEpicsSystem(sys: EpicsSystem[_], tops: Map[String, String]): IO[Unit] =
       IO.apply(
         Option(CaService.getInstance()) match {

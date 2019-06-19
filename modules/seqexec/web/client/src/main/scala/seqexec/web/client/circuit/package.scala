@@ -54,7 +54,6 @@ package circuit {
   final case class SequencesFocus(sequences: SequencesQueue[SequenceView],
                                   sod:       SequencesOnDisplay)
 
-  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object SequencesFocus {
     implicit val eq: Eq[SequencesFocus] =
       Eq.by(x => (x.sequences, x.sod))
@@ -74,7 +73,6 @@ package circuit {
                                     sod:      SequencesOnDisplay,
                                     clientId: Option[ClientId])
 
-  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object SODLocationFocus {
     implicit val eq: Eq[SODLocationFocus] =
       Eq.by(x => (x.location, x.sod, x.clientId))
@@ -97,7 +95,6 @@ package circuit {
                                     sod:       SequencesOnDisplay,
                                     firstLoad: Boolean)
 
-  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object InitialSyncFocus {
     implicit val eq: Eq[InitialSyncFocus] =
       Eq.by(x => (x.location, x.sod, x.firstLoad))
@@ -186,7 +183,6 @@ package circuit {
                                 status:              SequenceState,
                                 tabOperations:       TabOperations)
 
-  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object ControlModel {
     implicit val eq: Eq[ControlModel] =
       Eq.by(
@@ -211,7 +207,6 @@ package circuit {
   final case class SequenceControlFocus(canOperate: Boolean,
                                         control:    ControlModel)
 
-  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object SequenceControlFocus {
     implicit val eq: Eq[SequenceControlFocus] =
       Eq.by(x => (x.canOperate, x.control))

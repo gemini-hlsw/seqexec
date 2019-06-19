@@ -37,7 +37,6 @@ import org.http4s.Uri._
 import seqexec.server.altair.AltairControllerSim
 import squants.time.Seconds
 
-@SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements", "org.wartremover.warts.Throw"))
 class SeqTranslateSpec extends FlatSpec {
 
   implicit val ioTimer: Timer[IO] = IO.timer(ExecutionContext.global)

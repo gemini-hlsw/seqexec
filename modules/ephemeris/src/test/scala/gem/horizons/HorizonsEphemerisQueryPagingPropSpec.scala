@@ -20,7 +20,6 @@ import java.time.{ Duration, Instant }
 import scala.math.Ordering.Implicits._
 
 
-@SuppressWarnings(Array("org.wartremover.warts.Equals"))
 class HorizonsEphemerisQueryPagingPropSpec extends PropSpec with PropertyChecks {
 
   import HorizonsEphemerisQueryPagingPropSpec._

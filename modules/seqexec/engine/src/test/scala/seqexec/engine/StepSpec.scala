@@ -21,7 +21,6 @@ import seqexec.engine.TestUtil.TestState
 import scala.Function.const
 import scala.concurrent.ExecutionContext
 
-@SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 class StepSpec extends FlatSpec {
 
   implicit val ioContextShift: ContextShift[IO] =

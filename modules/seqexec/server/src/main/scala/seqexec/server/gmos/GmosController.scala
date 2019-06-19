@@ -48,15 +48,12 @@ object GmosController {
   sealed abstract class Config[T<:SiteDependentTypes] {
     import Config._
 
-    @SuppressWarnings(Array("org.wartremover.warts.LeakingSealed"))
     case class BuiltInFPU(fpu: T#FPU) extends GmosFPU
 
     sealed trait GmosDisperser
     object GmosDisperser {
       case object Mirror extends GmosDisperser
-      @SuppressWarnings(Array("org.wartremover.warts.LeakingSealed"))
       case class Order0(disperser: T#Disperser) extends GmosDisperser
-      @SuppressWarnings(Array("org.wartremover.warts.LeakingSealed"))
       case class OrderN(disperser: T#Disperser, order: DisperserOrder, lambda: Length)
         extends GmosDisperser
     }
@@ -191,7 +188,6 @@ object GmosController {
 
   // This is a trick to allow using a type from a class parameter to define the type of another class parameter
   class GmosConfig[T<:SiteDependentTypes] private (val cc: Config[T]#CCConfig, val dc: DCConfig, val c: Config[T]) {
-    @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
     def this(c: Config[T])(cc: c.CCConfig, dc: DCConfig) = this(cc, dc, c)
   }
 

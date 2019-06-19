@@ -22,7 +22,6 @@ final case class ExecutionQueueView(id:        QueueId,
   }
 }
 
-@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object ExecutionQueueView {
   implicit val eq: Eq[ExecutionQueueView] =
     Eq.by(x => (x.id, x.name, x.cmdState, x.execState, x.queue))

@@ -14,9 +14,7 @@ import cats.implicits._
 /**
   * Produces a dropdown menu, similar to a combobox
   */
-@SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 object DropdownMenu {
-  @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
   final case class Props[A](label: String,
                    defaultSelect: Option[A],
                    defaultSelectText: String,

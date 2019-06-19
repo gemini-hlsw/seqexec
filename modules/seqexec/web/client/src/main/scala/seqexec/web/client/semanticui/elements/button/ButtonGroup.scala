@@ -11,7 +11,6 @@ import react.common.implicits._
 
 object ButtonGroup {
 
-  @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
   final case class Props(extraStyles: List[Css] = Nil)
 
   private def component =
@@ -26,11 +25,9 @@ object ButtonGroup {
         ))
       .build
 
-  @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
   def apply(p: Props, children: VdomNode*): Unmounted[Props, Unit, Unit] =
     component(p)(children: _*)
 
-  @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
   def apply(children: VdomNode*): Unmounted[Props, Unit, Unit] =
     component(Props())(children: _*)
 }

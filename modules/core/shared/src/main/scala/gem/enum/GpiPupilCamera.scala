@@ -33,7 +33,6 @@ object GpiPupilCamera {
     all.find(_.tag === s)
 
   /** Select the member of GpiPupilCamera with the given tag, throwing if absent. */
-  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GpiPupilCamera =
     fromTag(s).getOrElse(throw new NoSuchElementException(s"GpiPupilCamera: Invalid tag: '$s'"))
 

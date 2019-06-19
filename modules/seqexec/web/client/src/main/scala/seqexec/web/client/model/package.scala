@@ -14,7 +14,6 @@ package object model {
       (x.url, x.protocol, x.readyState)
     }
 
-  @SuppressWarnings(Array("org.wartremover.warts.Equals"))
   implicit def eqPot[A: Eq]: Eq[Pot[A]] = Eq.instance {
     case (Empty, Empty)                           => true
     case (Unavailable, Unavailable)               => true

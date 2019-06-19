@@ -21,22 +21,18 @@ final case class Step[F[_]](
                              executions: List[List[Action[F]]]
 )
 
-@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object Step {
 
   @Lenses
   final case class BreakpointMark(self: Boolean) extends AnyVal
-  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object BreakpointMark
 
   @Lenses
   final case class SkipMark(self: Boolean) extends AnyVal
-  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object SkipMark
 
   @Lenses
   final case class Skipped(self: Boolean) extends AnyVal
-  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object Skipped
 
   def breakpointL[F[_]]: Lens[Step[F], Boolean] = Step.breakpoint ^|-> BreakpointMark.self

@@ -39,7 +39,6 @@ object GpiFPM {
     all.find(_.tag === s)
 
   /** Select the member of GpiFPM with the given tag, throwing if absent. */
-  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GpiFPM =
     fromTag(s).getOrElse(throw new NoSuchElementException(s"GpiFPM: Invalid tag: '$s'"))
 

@@ -16,7 +16,6 @@ final case class SequenceMetadata(
   name:       String
 )
 
-@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object SequenceMetadata {
   implicit val eq: Eq[SequenceMetadata] =
     Eq.by(x => (x.instrument, x.observer, x.name))

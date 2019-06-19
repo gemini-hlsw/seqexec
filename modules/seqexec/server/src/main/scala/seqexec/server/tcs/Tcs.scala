@@ -153,7 +153,6 @@ object Tcs {
     instrument: InstrumentSystem[F]
   )
 
-  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object TcsSeqConfig
 
   def fromConfig[F[_]: Sync](controller: TcsController[F], subsystems: NonEmptySet[Subsystem], gaos: Option[Either[Altair[F],

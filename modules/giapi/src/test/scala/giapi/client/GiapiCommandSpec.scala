@@ -39,7 +39,6 @@ object GmpCommands {
       override def sendCommand(command: JCommand, listener: CompletionListener): HandlerResponse =
         sendCommand(command, listener, 0)
 
-      @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
       override def sendCommand(command: JCommand, listener: CompletionListener, timeout: Long): HandlerResponse =
         command.getSequenceCommand match {
           case SequenceCommand.INIT => HandlerResponse.COMPLETED

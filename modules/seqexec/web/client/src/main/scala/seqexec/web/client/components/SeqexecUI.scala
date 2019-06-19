@@ -77,7 +77,6 @@ object SeqexecUI {
       p => (p.instrument.show, p.obsId.format, p.step)
     }
 
-  @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
   def router(site: Site): IO[Router[SeqexecPages]] = {
     val instrumentNames = site.instruments.map(i => (i.show, i)).toList.toMap
 

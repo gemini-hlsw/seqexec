@@ -12,7 +12,6 @@ import cats.tests.CatsSuite
 
 import scala.util.Either
 
-@SuppressWarnings(Array("org.wartremover.warts.Equals"))
 final class HorizonsNameQuerySpec extends CatsSuite with RespectIncludeTags {
   import HorizonsNameQuery._
 

@@ -26,7 +26,6 @@ final case class AppTableStates(
   stepsTables:       Map[Observation.Id, TableState[StepsTable.TableColumn]],
   queueTables:       Map[QueueId, TableState[CalQueueTable.TableColumn]])
 
-@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object AppTableStates {
 
   val Initial: AppTableStates = AppTableStates(

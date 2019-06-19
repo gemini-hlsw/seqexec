@@ -31,7 +31,6 @@ object MagnitudeSystem {
     all.find(_.tag === s)
 
   /** Select the member of MagnitudeSystem with the given tag, throwing if absent. */
-  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): MagnitudeSystem =
     fromTag(s).getOrElse(throw new NoSuchElementException(s"MagnitudeSystem: Invalid tag: '$s'"))
 

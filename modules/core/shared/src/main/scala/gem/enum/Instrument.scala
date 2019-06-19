@@ -47,7 +47,6 @@ object Instrument {
     all.find(_.tag === s)
 
   /** Select the member of Instrument with the given tag, throwing if absent. */
-  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): Instrument =
     fromTag(s).getOrElse(throw new NoSuchElementException(s"Instrument: Invalid tag: '$s'"))
 

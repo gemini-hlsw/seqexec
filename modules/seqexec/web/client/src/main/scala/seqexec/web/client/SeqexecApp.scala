@@ -42,7 +42,6 @@ object SeqexecApp {
     SeqexecCircuit.dispatch(Initialize(seqexecSite))
   }
 
-  @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
   def renderingNode: IO[Element] = IO {
     // Find or create the node where we render
     Option(document.getElementById("root")).getOrElse {

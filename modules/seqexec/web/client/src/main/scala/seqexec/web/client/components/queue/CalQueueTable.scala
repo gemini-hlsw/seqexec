@@ -195,7 +195,6 @@ object CalQueueTable {
                          animationRendered: Boolean,
                          moved:             Option[IndexChange])
 
-  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object State {
     val EditableTableState: TableState[TableColumn] =
       TableState(NotModified, 0, all)
@@ -230,7 +229,6 @@ object CalQueueTable {
 
   object CalQueueRow {
 
-    @SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf"))
     def apply(obsId:      Observation.Id,
               instrument: Instrument,
               status:     SequenceState): CalQueueRow = {

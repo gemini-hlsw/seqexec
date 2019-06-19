@@ -10,7 +10,6 @@ import japgolly.scalajs.react.component.Scala.Unmounted
 import cats.implicits._
 
 object TableHeader {
-  @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
   final case class Props(collapsing: Boolean = false,
     colSpan: Option[Int] = None,
     aligned: Aligned = Aligned.None,
@@ -53,9 +52,7 @@ object TableHeader {
       )
     ).build
 
-  @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
   def apply(p: Props, children: VdomNode*): Unmounted[Props, Unit, Unit] = component(p)(children: _*)
 
-  @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
   def apply(children: VdomNode*): Unmounted[Props, Unit, Unit] = component(Props.zero)(children: _*)
 }

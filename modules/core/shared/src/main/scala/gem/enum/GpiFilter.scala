@@ -37,7 +37,6 @@ object GpiFilter {
     all.find(_.tag === s)
 
   /** Select the member of GpiFilter with the given tag, throwing if absent. */
-  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GpiFilter =
     fromTag(s).getOrElse(throw new NoSuchElementException(s"GpiFilter: Invalid tag: '$s'"))
 

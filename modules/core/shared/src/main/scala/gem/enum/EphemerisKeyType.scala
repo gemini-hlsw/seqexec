@@ -35,7 +35,6 @@ object EphemerisKeyType {
     all.find(_.tag === s)
 
   /** Select the member of EphemerisKeyType with the given tag, throwing if absent. */
-  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): EphemerisKeyType =
     fromTag(s).getOrElse(throw new NoSuchElementException(s"EphemerisKeyType: Invalid tag: '$s'"))
 

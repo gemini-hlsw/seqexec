@@ -11,7 +11,6 @@ import cats.implicits._
 trait TimeInstances {
 
   // The java.time types all follow this pattern.
-  @SuppressWarnings(Array("org.wartremover.warts.Equals"))
   private def naturalOrder[A](before: (A, A) => Boolean): Order[A] =
     Order.from { (a, b) =>
              if (a == b)        0

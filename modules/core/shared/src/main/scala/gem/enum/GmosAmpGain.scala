@@ -32,7 +32,6 @@ object GmosAmpGain {
     all.find(_.tag === s)
 
   /** Select the member of GmosAmpGain with the given tag, throwing if absent. */
-  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GmosAmpGain =
     fromTag(s).getOrElse(throw new NoSuchElementException(s"GmosAmpGain: Invalid tag: '$s'"))
 

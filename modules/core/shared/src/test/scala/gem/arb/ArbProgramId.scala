@@ -39,7 +39,6 @@ trait ArbProgramId {
     }
 
   // This one is a little awkward because the only way we can get a Nonstandard is via parsing.
-  @SuppressWarnings(Array("org.wartremover.warts.OptionPartial"))
   implicit val arbNonstandard: Arbitrary[Nonstandard] =
     Arbitrary {
 

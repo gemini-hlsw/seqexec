@@ -21,7 +21,6 @@ import scala.collection.immutable.SortedMap
 final case class AllObservationsProgressState(
   obsProgress: SortedMap[(Observation.Id, StepId), ObservationProgress])
 
-@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object AllObservationsProgressState {
   val Empty: AllObservationsProgressState =
     AllObservationsProgressState(SortedMap.empty)

@@ -13,7 +13,6 @@ import scala.scalajs.js.annotation.JSImport
 /**
   * Facades for the SemanticUI javascript. Note that there are extensions to JQuery
   */
-@SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 object SemanticUIDropDown {
 
   @js.native
@@ -35,20 +34,17 @@ object SemanticUIDropDown {
   }
 
   @js.native
-  @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
   trait SemanticDropDown extends JQuery {
     def dropdown(): this.type = js.native
     def dropdown(cmd: String): this.type            = js.native
     def dropdown(o:   JsDropdownOptions): this.type = js.native
   }
 
-  @SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf"))
   implicit def jq2Semantic($ : JQuery): SemanticDropDown =
     $.asInstanceOf[SemanticDropDown]
 
 }
 
-@SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 object SemanticUITab {
 
   @js.native
@@ -70,18 +66,15 @@ object SemanticUITab {
   }
 
   @js.native
-  @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
   trait SemanticTab extends JQuery {
     def tab(o: JsTabOptions): this.type
   }
 
-  @SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf"))
   implicit def jq2Semantic($ : JQuery): SemanticTab =
     $.asInstanceOf[SemanticTab]
 
 }
 
-@SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 object SemanticUIVisibility {
 
   @js.native
@@ -103,18 +96,15 @@ object SemanticUIVisibility {
   }
 
   @js.native
-  @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
   trait SemanticVisibility extends JQuery {
     def visibility(o: JsVisiblityOptions): this.type
   }
 
-  @SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf"))
   implicit def jq2Semantic($ : JQuery): SemanticVisibility =
     $.asInstanceOf[SemanticVisibility]
 
 }
 
-@SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 object SemanticUIProgress {
 
   @js.native
@@ -142,18 +132,15 @@ object SemanticUIProgress {
   }
 
   @js.native
-  @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
   trait SemanticProgress extends JQuery {
     def progress(o: JsProgressOptions): this.type
   }
 
-  @SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf"))
   implicit def jq2Semantic($ : JQuery): SemanticProgress =
     $.asInstanceOf[SemanticProgress]
 
 }
 
-@SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 object SemanticUIPopup {
 
   @js.native
@@ -176,12 +163,10 @@ object SemanticUIPopup {
   }
 
   @js.native
-  @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
   trait SemanticPopup extends JQuery {
     def popup(o: JsPopupOptions): this.type
   }
 
-  @SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf"))
   implicit def jq2Semantic($ : JQuery): SemanticPopup =
     $.asInstanceOf[SemanticPopup]
 

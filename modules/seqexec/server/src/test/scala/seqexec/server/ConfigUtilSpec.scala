@@ -39,7 +39,6 @@ trait ConfigArbitraries {
     }
 }
 
-@SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 class ConfigUtilSpec extends FlatSpec with Matchers with EitherValues with PropertyChecks with ConfigArbitraries {
   import ConfigUtilOps._
 

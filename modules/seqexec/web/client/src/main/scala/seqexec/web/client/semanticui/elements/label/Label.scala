@@ -28,7 +28,6 @@ object Pointing {
 }
 
 object Label {
-  @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
   final case class Props(text: String,
     htmlFor                  : Option[String] = None,
     color                    : Option[String] = None,

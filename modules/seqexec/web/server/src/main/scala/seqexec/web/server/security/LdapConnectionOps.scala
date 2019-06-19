@@ -11,7 +11,6 @@ import scala.collection.JavaConverters._
 object LdapConnectionOps {
   // Extension methods for ldap connection
   implicit class LdapConnectionOps(val c: LDAPConnection) extends AnyVal {
-    @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
     def authenticate(u: String, p: String): UID = {
       val UidExtractor = s"(\\w*)@(.*)?".r
 

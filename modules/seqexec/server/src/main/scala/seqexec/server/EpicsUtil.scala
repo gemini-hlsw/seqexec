@@ -122,7 +122,6 @@ trait EpicsSystem[T] {
   }
 }
 
-@SuppressWarnings(Array("org.wartremover.warts.Overloading"))
 object EpicsCommand {
 
   sealed trait Result

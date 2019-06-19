@@ -312,7 +312,6 @@ object AltairControllerEpics extends AltairController[IO] {
     aoLoop: Boolean
   )
 
-  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object EpicsAltairConfig
 
   /*

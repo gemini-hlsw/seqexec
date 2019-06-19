@@ -15,7 +15,6 @@ import java.time._
 import monocle.law.discipline._
 
 
-@SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals"))
 final class ObservingNightSpec extends CatsSuite {
   import ArbEnumerated._
   import ArbObservingNight._

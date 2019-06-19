@@ -14,7 +14,6 @@ import cats.implicits._
   */
 object CloseableMessage extends Message {
 
-  @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
   final case class Props(header: Option[String] = None, style: Style = Style.NotDefined)
 
   private def component = ScalaComponent.builder[Props]("Message")

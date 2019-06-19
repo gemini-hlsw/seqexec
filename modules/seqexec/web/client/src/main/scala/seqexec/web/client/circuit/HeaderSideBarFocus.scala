@@ -39,7 +39,6 @@ final case class HeaderSideBarFocus(
   observer: Either[Observer,
                    Either[DayCalObserverFocus, SequenceObserverFocus]])
 
-@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object HeaderSideBarFocus {
   implicit val eq: Eq[HeaderSideBarFocus] =
     Eq.by(x => (x.status, x.conditions, x.operator, x.observer))

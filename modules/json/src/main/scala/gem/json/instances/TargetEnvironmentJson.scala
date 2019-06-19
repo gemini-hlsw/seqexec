@@ -8,7 +8,6 @@ import io.circe._
 import io.circe.{ Decoder, Encoder }
 import io.circe.generic.semiauto._
 
-@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 trait TargetEnvironmentJson {
   import asterism._
   import sortedset._

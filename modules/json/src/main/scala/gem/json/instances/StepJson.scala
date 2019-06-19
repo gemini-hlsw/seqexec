@@ -8,7 +8,6 @@ import gem.config.TelescopeConfig
 import io.circe.{ Decoder, Encoder }
 import io.circe.generic.semiauto._
 
-@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 trait StepJson {
   import dynamicconfig._
   import enumerated._

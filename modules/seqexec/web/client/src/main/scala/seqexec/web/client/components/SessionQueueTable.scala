@@ -255,7 +255,6 @@ object SessionQueueTable extends Columns {
 
   }
 
-  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object State {
     // Lenses
     val columns: Lens[State, NonEmptyList[ColumnMeta[TableColumn]]] =
@@ -304,7 +303,6 @@ object SessionQueueTable extends Columns {
   // scalastyle:on
   object SessionQueueRow {
 
-    @SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf"))
     def apply(obsId:         Observation.Id,
               status:        SequenceState,
               instrument:    Instrument,

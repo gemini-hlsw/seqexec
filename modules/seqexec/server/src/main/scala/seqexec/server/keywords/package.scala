@@ -167,7 +167,6 @@ package keywords {
       KeywordBag(keywords ::: other.keywords)
   }
 
-  @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
   object KeywordBag {
     def empty: KeywordBag = KeywordBag(List())
 

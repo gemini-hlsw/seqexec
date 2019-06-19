@@ -12,7 +12,6 @@ import monocle.macros.Lenses
   * Metadata for a column
   */
 @Lenses
-@SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
 final case class ColumnMeta[A](column:     A,
                                name:       String,
                                label:      String,
@@ -26,7 +25,6 @@ final case class ColumnMeta[A](column:     A,
   }
 }
 
-@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object ColumnMeta {
   implicit def eqCm[A: Eq]: Eq[ColumnMeta[A]] =
     Eq.by(x =>

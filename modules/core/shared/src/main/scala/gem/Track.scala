@@ -45,7 +45,6 @@ object Track {
       Some(properMotion.at(time).baseCoordinates)
   }
 
-  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object Sidereal {
 
     implicit val EqSidereal: Eq[Sidereal] =
@@ -67,7 +66,6 @@ object Track {
 
   }
 
-  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object Nonsidereal {
 
     val empty: Nonsidereal =

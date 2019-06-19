@@ -27,7 +27,6 @@ final case class CalQueueState(
   seqOps:     SortedMap[Observation.Id, QueueSeqOperations],
   lastOp:     Option[QueueManipulationOp])
 
-@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object CalQueueState {
   implicit val eq: Eq[CalQueueState] =
     Eq.by(x => (x.ops, x.seqOps, x.tableState, x.lastOp))
@@ -59,7 +58,6 @@ final case class CalibrationQueues(queues: SortedMap[QueueId, CalQueueState]) {
     })
 }
 
-@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object CalibrationQueues {
   implicit val eq: Eq[CalibrationQueues] =
     Eq.by(_.queues)

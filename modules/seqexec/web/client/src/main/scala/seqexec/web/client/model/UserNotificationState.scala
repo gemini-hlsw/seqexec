@@ -14,7 +14,6 @@ import seqexec.model.Notification
 @Lenses
 final case class UserNotificationState(visibility: SectionVisibilityState, notification: Option[Notification])
 
-@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object UserNotificationState {
   val Empty: UserNotificationState = UserNotificationState(SectionClosed, None)
 

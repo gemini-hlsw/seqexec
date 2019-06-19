@@ -47,7 +47,6 @@ object StaticConfig {
     stageMode: GmosNorthStageMode
   ) extends StaticConfig
 
-  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object GmosN extends GmosNorthLenses {
 
     val Default: GmosN =
@@ -86,7 +85,6 @@ object StaticConfig {
     stageMode: GmosSouthStageMode
   ) extends StaticConfig
 
-  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object GmosS extends GmosSouthLenses {
 
     val Default: GmosS =
@@ -120,7 +118,6 @@ object StaticConfig {
     wellDepth: GnirsWellDepth
   ) extends StaticConfig
 
-  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object Gnirs {
     val Default: Gnirs =
       Gnirs(GnirsWellDepth.Shallow)

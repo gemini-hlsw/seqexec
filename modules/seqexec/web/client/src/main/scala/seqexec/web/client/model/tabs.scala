@@ -109,7 +109,6 @@ final case class CalibrationQueueTab(
   val isPreview: Boolean = false
 }
 
-@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object CalibrationQueueTab {
   val Empty: CalibrationQueueTab =
     CalibrationQueueTab(BatchExecState.Idle,
@@ -203,7 +202,6 @@ final case class InstrumentSequenceTab(
   }
 }
 
-@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object InstrumentSequenceTab {
   // Marker traits
   trait LoadedSV
@@ -241,7 +239,6 @@ final case class PreviewSequenceTab(
   tabOperations:   TabOperations)
     extends SequenceTab
 
-@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object PreviewSequenceTab {
   implicit val eq: Eq[PreviewSequenceTab] =
     Eq.by(

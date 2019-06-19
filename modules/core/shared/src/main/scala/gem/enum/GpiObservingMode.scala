@@ -65,7 +65,6 @@ object GpiObservingMode {
     all.find(_.tag === s)
 
   /** Select the member of GpiObservingMode with the given tag, throwing if absent. */
-  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GpiObservingMode =
     fromTag(s).getOrElse(throw new NoSuchElementException(s"GpiObservingMode: Invalid tag: '$s'"))
 

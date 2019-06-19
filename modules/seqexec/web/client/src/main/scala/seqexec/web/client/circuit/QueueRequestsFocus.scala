@@ -29,7 +29,6 @@ final case class QueueRequestsFocus(
   queuesObserver: SortedMap[QueueId, Observer],
   seqFilter:      SessionQueueFilter)
 
-@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object QueueRequestsFocus {
   implicit val eq: Eq[QueueRequestsFocus] =
     Eq.by(x => (x.clientId, x.sequences, x.calTabObserver, x.queuesObserver))

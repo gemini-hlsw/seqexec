@@ -42,7 +42,6 @@ object GsaoiRoi {
     all.find(_.tag === s)
 
   /** Select the member of GsaoiRoi with the given tag, throwing if absent. */
-  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GsaoiRoi =
     fromTag(s).getOrElse(throw new NoSuchElementException(s"GsaoiRoi: Invalid tag: '$s'"))
 

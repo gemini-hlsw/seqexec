@@ -37,7 +37,6 @@ object GnirsPrism {
     all.find(_.tag === s)
 
   /** Select the member of GnirsPrism with the given tag, throwing if absent. */
-  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GnirsPrism =
     fromTag(s).getOrElse(throw new NoSuchElementException(s))
 

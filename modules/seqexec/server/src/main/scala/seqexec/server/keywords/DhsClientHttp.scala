@@ -34,7 +34,6 @@ import scala.concurrent.duration._
 class DhsClientHttp[F[_]: Effect](base: Client[F], baseURI: Uri)(implicit timer: Timer[F]) extends DhsClient[F] with Http4sClientDsl[F] {
   import DhsClientHttp._
 
-  @SuppressWarnings(Array("org.wartremover.warts.Var"))
   private val client = {
     val max = 2
     var attemptsCounter = 1 // scalastyle:ignore

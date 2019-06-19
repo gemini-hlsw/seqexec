@@ -15,7 +15,6 @@ import monocle.macros.Lenses
   */
 @Lenses final case class UserTarget(target: Target, targetType: UserTargetType)
 
-@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object UserTarget {
 
   /** UserTarget identifier. */

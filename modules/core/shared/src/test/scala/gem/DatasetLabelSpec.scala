@@ -9,7 +9,6 @@ import cats.kernel.laws.discipline._
 import gem.arb._
 import gsp.math.laws.discipline._
 
-@SuppressWarnings(Array("org.wartremover.warts.ToString"))
 final class DatasetLabelSpec extends CatsSuite {
   import ArbDataset._
 

@@ -18,15 +18,6 @@ import squants.time.TimeConversions._
   * Boopickle can auto derived encoders but it is preferred to make
   * them explicitly
   */
-@SuppressWarnings(
-  Array(
-    "org.wartremover.warts.Equals",
-    "org.wartremover.warts.PublicInference",
-    "org.wartremover.warts.ImplicitParameter",
-    "org.wartremover.warts.NonUnitStatements",
-    "org.wartremover.warts.Throw",
-    "org.wartremover.warts.OptionPartial"
-  ))
 trait ModelBooPicklers extends GemModelBooPicklers {
   def valuesMap[F[_]: Traverse, A, B](c: F[A], f: A => B): Map[B, A] =
     c.fproduct(f).map(_.swap).toList.toMap

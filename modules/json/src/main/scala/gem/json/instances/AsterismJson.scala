@@ -7,7 +7,6 @@ import gem.Asterism
 import io.circe.{ Decoder, Encoder }
 import io.circe.generic.semiauto._
 
-@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 trait AsterismJson {
   import target._
 

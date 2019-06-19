@@ -66,7 +66,6 @@ final case class SessionQueueFilter(obsClass: ObsClass) {
   def isFilterApplied: Boolean = obsClass =!= ObsClass.All
 }
 
-@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object SessionQueueFilter {
   implicit val eq: Eq[SessionQueueFilter] =
     Eq.by(_.obsClass)

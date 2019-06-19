@@ -29,7 +29,6 @@ trait TreeMapInstances extends TreeMapInstances2 {
     }
 
   // scalastyle:off method.length
-  @SuppressWarnings(Array("org.wartremover.warts.Option2Iterable"))
   implicit def catsStdInstancesForTreeMap[K: Order]: Traverse[TreeMap[K, ?]] with FlatMap[TreeMap[K, ?]] =
     new Traverse[TreeMap[K, ?]] with FlatMap[TreeMap[K, ?]] {
 
@@ -67,7 +66,6 @@ trait TreeMapInstances extends TreeMapInstances2 {
       def tailRecM[A, B](a: A)(f: A => TreeMap[K, Either[A, B]]): TreeMap[K, B] = {
         val bldr = TreeMap.newBuilder[K, B](Order[K].toOrdering)
 
-        @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
         @tailrec def descend(k: K, either: Either[A, B]): Unit =
           either match {
             case Left(a) =>
@@ -121,7 +119,6 @@ trait TreeMapInstances2 extends TreeMapInstances1 {
     new TreeMapMonoid[K, V]
 }
 
-@SuppressWarnings(Array("org.wartremover.warts.Var", "org.wartremover.warts.Equals"))
 class TreeMapHash[K, V](implicit V: Hash[V], O: Order[K], K: Hash[K]) extends TreeMapEq[K, V]()(V, O) with Hash[TreeMap[K, V]] {
   // adapted from [[scala.util.hashing.MurmurHash3]],
   // but modified standard `Any#hashCode` to `ev.hash`.
@@ -144,7 +141,6 @@ class TreeMapHash[K, V](implicit V: Hash[V], O: Order[K], K: Hash[K]) extends Tr
   }
 }
 
-@SuppressWarnings(Array("org.wartremover.warts.Equals"))
 class TreeMapEq[K, V](implicit V: Eq[V], O: Order[K]) extends Eq[TreeMap[K, V]] {
   def eqv(x: TreeMap[K, V], y: TreeMap[K, V]): Boolean =
     if (x eq y) (O, true)._2
