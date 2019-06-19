@@ -163,7 +163,7 @@ object StepProgressCell {
                           props.step.id,
                           props.tabOperations.resourceInFlight,
                           props.tabOperations.startFromRequested))
-        .when(props.step.canRunFrom),
+        .when(props.step.canRunFrom && props.clientStatus.canOperate),
       <.div(
         SeqexecStyles.specialStateLabel,
         props.step.show
