@@ -13,7 +13,6 @@ object TestUtil {
   @Lenses
   final case class TestState(sequences: Map[Observation.Id, Sequence.State[IO]])
 
-  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object TestState extends Engine.State[TestState] {
     override def sequenceStateIndex(sid: Observation.Id): Optional[TestState, Sequence
     .State[IO]] =

@@ -23,7 +23,6 @@ import monocle.macros.Lenses
   solnRef: Option[HorizonsSolutionRef]
 )
 
-@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object EphemerisMeta {
 
   implicit val eqEphemerisMeta: Eq[EphemerisMeta] =

@@ -36,7 +36,6 @@ object DhsKeywordName {
     all.find(_.tag === s)
 
   /** Select the member of DhsKeywordName with the given tag, throwing if absent. */
-  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): DhsKeywordName =
     fromTag(s).getOrElse(throw new NoSuchElementException(s"DhsKeywordName: Invalid tag: '$s'"))
 

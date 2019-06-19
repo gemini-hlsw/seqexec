@@ -28,7 +28,6 @@ import seqexec.server.SeqexecFailure
 final case class GdsClient[F[_]: Effect: Functor](base: Client[F], gdsUri: Uri)(implicit timer: Timer[F])
     extends Http4sClientDsl[F] {
 
-  @SuppressWarnings(Array("org.wartremover.warts.Var"))
   private val client = {
     val max = 2
     var attemptsCounter = 1 // scalastyle:ignore

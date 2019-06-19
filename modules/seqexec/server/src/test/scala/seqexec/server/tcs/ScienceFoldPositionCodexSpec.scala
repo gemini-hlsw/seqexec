@@ -11,7 +11,6 @@ import gem.enum.LightSinkName.{Gmos, Gsaoi, Nifs, Niri_f32, F2}
 import seqexec.server.tcs.TcsController.LightSource.{AO, GCAL, Sky}
 import seqexec.server.tcs.TcsControllerEpics.ScienceFold
 
-@SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 class ScienceFoldPositionCodexSpec extends FlatSpec {
 
   private val invalid = "Invalid"

@@ -20,7 +20,6 @@ import fs2.Pipe
 import java.time.{ LocalDate, Month }
 import java.time.temporal.ChronoUnit.MINUTES
 
-@SuppressWarnings(Array("org.wartremover.warts.Equals"))
 final class EphemerisCompressionSpec extends CatsSuite with EphemerisTestSupport with RespectIncludeTags {
   import EphemerisCompressionSpec._
 

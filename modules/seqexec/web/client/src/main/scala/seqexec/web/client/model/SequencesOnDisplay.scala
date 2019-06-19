@@ -392,7 +392,6 @@ final case class SequencesOnDisplay(tabs: Zipper[SeqexecTab]) {
 /**
   * Contains the sequences displayed on the instrument tabs. Note that they are references to sequences on the Queue
   */
-@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object SequencesOnDisplay {
   // We need to initialize the model with something so we use preview
   val Empty: SequencesOnDisplay =

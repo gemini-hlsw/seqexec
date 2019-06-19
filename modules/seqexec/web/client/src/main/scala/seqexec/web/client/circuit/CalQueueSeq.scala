@@ -20,7 +20,6 @@ final case class CalQueueSeq(id:     Observation.Id,
                              i:      Instrument,
                              status: SequenceState)
 
-@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object CalQueueSeq {
   implicit val eq: Eq[CalQueueSeq] =
     Eq.by(x => (x.id, x.id, x.status))

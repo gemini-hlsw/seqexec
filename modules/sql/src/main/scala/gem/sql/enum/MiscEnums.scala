@@ -12,7 +12,6 @@ import gem.sql.EnumDef
 import shapeless.record._
 import shapeless.Witness
 
-@SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 object MiscEnums {
   import Angle._
   import EnumRefs._

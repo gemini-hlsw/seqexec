@@ -12,5 +12,4 @@ final case class SequenceData[F[_]](observer: Option[Observer],
                               seqGen: SequenceGen[F],
                               seq: Sequence.State[F])
 
-@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object SequenceData

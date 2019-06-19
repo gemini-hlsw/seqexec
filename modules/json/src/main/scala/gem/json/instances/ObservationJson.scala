@@ -7,7 +7,6 @@ import gem.Observation
 import io.circe.{ Decoder, Encoder }
 import io.circe.generic.semiauto._
 
-@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 trait ObservationJson {
   import targetenvironment._
   import staticconfig._

@@ -29,7 +29,6 @@ trait Check extends FlatSpec with Matchers with IOChecker {
    * Some dummy values to pass to statement constructors. The actual values don't matter because
    * the statements are never executed, but they are dereferenced and cannot be null.
    */
-  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object Dummy {
     val instant          = java.time.Instant.EPOCH
     val duration         = java.time.Duration.ZERO

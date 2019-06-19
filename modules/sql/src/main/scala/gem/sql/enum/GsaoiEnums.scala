@@ -9,7 +9,6 @@ import shapeless.record._
 import shapeless.Witness
 import gem.sql.FiniteDuration
 
-@SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 object GsaoiEnums {
   import EnumRefs._
 

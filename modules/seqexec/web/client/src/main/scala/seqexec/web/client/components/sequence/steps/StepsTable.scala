@@ -292,7 +292,6 @@ object StepsTable extends Columns {
   // scalastyle:on
   object StepRow {
 
-    @SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf"))
     def apply(step: Step): StepRow = {
       val p = (new js.Object).asInstanceOf[StepRow]
       p.step = step
@@ -441,7 +440,6 @@ object StepsTable extends Columns {
 
   }
 
-  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object State {
     // Lenses
     val columns: Lens[State, NonEmptyList[ColumnMeta[TableColumn]]] =

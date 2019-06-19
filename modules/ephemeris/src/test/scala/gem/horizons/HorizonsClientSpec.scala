@@ -7,7 +7,6 @@ import cats.effect.{ IO, ContextShift }
 import cats.tests.CatsSuite
 import fs2.Stream
 
-@SuppressWarnings(Array("org.wartremover.warts.Var", "org.wartremover.warts.Equals"))
 final class HorizonsClientSpec extends CatsSuite {
 
   private implicit val contextShift: ContextShift[IO] =

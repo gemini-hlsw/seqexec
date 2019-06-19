@@ -37,7 +37,6 @@ object SmoothProgressBar {
   @Lenses
   final case class State(total: Long, value: Long, skipStep: Boolean)
 
-  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object State {
     def fromProps(p: Props): State = State(p.total, p.value, false)
   }

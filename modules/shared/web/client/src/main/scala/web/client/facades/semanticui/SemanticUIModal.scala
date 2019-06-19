@@ -12,7 +12,6 @@ import scala.scalajs.js.annotation.JSImport
 /**
   * Facades for the SemanticUI javascript modal
   */
-@SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 object SemanticUITransition {
 
   @js.native
@@ -22,19 +21,16 @@ object SemanticUITransition {
   SemanticTransitionModule
 
   @js.native
-  @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
   trait SemanticTransition extends JQuery {
     def transition(s: String): this.type
   }
 
-  @SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf"))
   implicit def jq2Semantic($: JQuery): SemanticTransition = {
     $.asInstanceOf[SemanticTransition]
   }
 
 }
 
-@SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 object SemanticUIModal {
   @js.native
   @JSImport("semantic-ui-transition", JSImport.Default)
@@ -68,12 +64,10 @@ object SemanticUIModal {
   }
 
   @js.native
-  @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
   trait SemanticModal extends js.Object {
     def modal(s: String): this.type
     def modal(o: JsModalOptions): this.type
   }
 
-  @SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf"))
   implicit def jq2Semantic(jQuery: JQuery): SemanticModal = jQuery.asInstanceOf[SemanticModal]
 }

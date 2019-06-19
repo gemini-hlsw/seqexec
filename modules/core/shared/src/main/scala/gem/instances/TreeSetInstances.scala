@@ -25,7 +25,6 @@ trait TreeSetInstances extends TreeSetInstances1 {
       override def foldMap[A, B](fa: TreeSet[A])(f: A => B)(implicit B: Monoid[B]): B =
         B.combineAll(fa.iterator.map(f))
 
-      @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
       override def get[A](fa: TreeSet[A])(idx: Long): Option[A] = {
         @tailrec
         def go(idx: Int, it: Iterator[A]): Option[A] = {
@@ -97,7 +96,6 @@ class TreeSetOrder[A: Order] extends Order[TreeSet[A]] {
   }
 }
 
-@SuppressWarnings(Array("org.wartremover.warts.Var", "org.wartremover.warts.Equals"))
 class TreeSetHash[A: Order: Hash] extends Hash[TreeSet[A]] {
   import scala.util.hashing.MurmurHash3._
 

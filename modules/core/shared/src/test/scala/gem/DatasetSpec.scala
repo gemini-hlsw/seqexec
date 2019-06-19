@@ -10,7 +10,6 @@ import gem.arb._
 import gem.instances.time._
 import java.time.Instant
 
-@SuppressWarnings(Array("org.wartremover.warts.ToString"))
 final class DatasetSpec extends CatsSuite {
   import ArbDataset._
 

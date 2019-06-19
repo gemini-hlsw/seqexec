@@ -11,7 +11,6 @@ import cats.kernel.laws.discipline._
 import cats.tests.CatsSuite
 import monocle.law.discipline._
 
-@SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals"))
 final class LocalObservingNightSpec extends CatsSuite {
   import ArbTime._
   import ArbEnumerated._

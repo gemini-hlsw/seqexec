@@ -18,7 +18,6 @@ import java.time.ZoneOffset.UTC
 import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
 
-@SuppressWarnings(Array("org.wartremover.warts.Equals", "org.wartremover.warts.NonUnitStatements"))
 final class TimestampSpec extends CatsSuite {
 
   // Laws

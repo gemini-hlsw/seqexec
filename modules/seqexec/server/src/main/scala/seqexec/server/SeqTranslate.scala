@@ -49,7 +49,6 @@ import seqexec.server.altair.AltairLgsHeader
 import seqexec.server.altair.AltairKeywordReaderEpics
 import seqexec.server.altair.AltairKeywordReaderDummy
 import seqexec.server.SeqexecFailure._
-import seqexec.server._
 import squants.Time
 import squants.time.TimeConversions._
 
@@ -409,7 +408,6 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
     pausedCommand(seqId, f, useCountdown = false)
   }
 
-  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   private def toInstrumentSys(inst: Instrument)(
     implicit ev: Timer[IO]
   ): TrySeq[InstrumentSystem[IO]] = inst match {

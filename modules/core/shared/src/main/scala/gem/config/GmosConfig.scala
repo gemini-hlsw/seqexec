@@ -252,7 +252,6 @@ object GmosConfig {
     customRois:    Set[GmosCustomRoiEntry]
   )
 
-  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object GmosCommonStaticConfig extends GmosCommonStaticConfigOptics {
 
     val Default: GmosCommonStaticConfig =

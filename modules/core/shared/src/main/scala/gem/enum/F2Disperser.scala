@@ -35,7 +35,6 @@ object F2Disperser {
     all.find(_.tag === s)
 
   /** Select the member of F2Disperser with the given tag, throwing if absent. */
-  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): F2Disperser =
     fromTag(s).getOrElse(throw new NoSuchElementException(s"F2Disperser: Invalid tag: '$s'"))
 

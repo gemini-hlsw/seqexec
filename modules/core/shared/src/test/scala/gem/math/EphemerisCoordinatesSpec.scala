@@ -14,7 +14,6 @@ import monocle.law.discipline._
 import org.scalacheck.{ Arbitrary, Gen }
 import org.scalatest.Assertion
 
-@SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals"))
 final class EphemerisCoordinatesSpec extends CatsSuite {
   import ArbCoordinates._
   import ArbEphemeris._

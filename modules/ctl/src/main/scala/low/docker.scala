@@ -47,7 +47,6 @@ object docker {
       case Output(0, List(h)) => Network(h, name)
     }
 
-  @SuppressWarnings(Array("org.wartremover.warts.TraversableOps")) // .last below
   def pullImage(nameAndVersion: String): CtlIO[Option[Image]] =
     docker("pull", nameAndVersion).require {
       case Output(0, s :: ss) if (s :: ss).last.contains("not found") => None

@@ -15,7 +15,6 @@ import scala.xml._
 
 // Basic sanity checks for target decoding
 
-@SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals", "org.wartremover.warts.OptionPartial"))
 final class TargetDecodersTest extends CatsSuite {
   import TargetDecodersTest._
 
@@ -77,7 +76,6 @@ final class TargetDecodersTest extends CatsSuite {
   }
 }
 
-@SuppressWarnings(Array("org.wartremover.warts.Equals", "org.wartremover.warts.OptionPartial"))
 object TargetDecodersTest {
   val SiderealNode: Elem =
     <paramset name="target">

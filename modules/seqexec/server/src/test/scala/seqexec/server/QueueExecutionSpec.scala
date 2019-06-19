@@ -16,7 +16,6 @@ import seqexec.model.enum.{BatchCommandState, Instrument}
 import seqexec.model.enum.Resource.TCS
 import seqexec.server.TestCommon._
 
-@SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 class QueueExecutionSpec extends FlatSpec with Matchers with NonImplicitAssertions {
   "SeqexecEngine addSequenceToQueue" should
     "add sequence id to queue" in {

@@ -17,7 +17,6 @@ import org.scalatest.{Assertion, FlatSpec, Matchers}
 import java.time.Duration
 import scala.collection.immutable.{ TreeMap, TreeSet }
 
-@SuppressWarnings(Array("org.wartremover.warts.Equals", "org.wartremover.warts.NonUnitStatements"))
 class SmartGcalSpec extends FlatSpec with Matchers with DaoTest {
   import GcalLampType.{ Arc, Flat }
   import GcalBaselineType.Night

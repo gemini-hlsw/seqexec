@@ -8,7 +8,6 @@ import cats.kernel.laws.discipline._
 
 import gem.arb._
 
-@SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals"))
 final class TargetSpec extends CatsSuite {
   import ArbTarget._
 

@@ -33,7 +33,6 @@ object GcalDiffuser {
     all.find(_.tag === s)
 
   /** Select the member of GcalDiffuser with the given tag, throwing if absent. */
-  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GcalDiffuser =
     fromTag(s).getOrElse(throw new NoSuchElementException(s"GcalDiffuser: Invalid tag: '$s'"))
 

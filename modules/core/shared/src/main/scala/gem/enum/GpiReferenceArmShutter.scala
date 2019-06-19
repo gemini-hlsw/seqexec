@@ -33,7 +33,6 @@ object GpiReferenceArmShutter {
     all.find(_.tag === s)
 
   /** Select the member of GpiReferenceArmShutter with the given tag, throwing if absent. */
-  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GpiReferenceArmShutter =
     fromTag(s).getOrElse(throw new NoSuchElementException(s"GpiReferenceArmShutter: Invalid tag: '$s'"))
 

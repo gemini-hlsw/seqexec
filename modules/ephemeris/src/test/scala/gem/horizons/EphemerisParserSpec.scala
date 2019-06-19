@@ -18,7 +18,6 @@ import scala.collection.immutable.TreeMap
 /** Not really a spec per se, but rather a way to exercise the ephemeris parser
   * with a few fixed examples and get a sense of whether it works.
   */
-@SuppressWarnings(Array("org.wartremover.warts.Equals"))
 final class EphemerisParserSpec extends CatsSuite with EphemerisTestSupport {
 
   test("Must parse") {

@@ -10,7 +10,6 @@ import cats.kernel.laws.discipline._
 import cats.tests.CatsSuite
 import gsp.math.laws.discipline._
 
-@SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals"))
 final class EphemerisKeySpec extends CatsSuite {
   import ArbEphemerisKey._
   import ArbEnumerated._

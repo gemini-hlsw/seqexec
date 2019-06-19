@@ -14,7 +14,6 @@ import org.scalatest.{EitherValues, FlatSpec, Matchers}
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext // N.B. using global for our blocking context here
 
-@SuppressWarnings(Array("org.wartremover.warts.Throw", "org.wartremover.warts.NonUnitStatements", "org.wartremover.warts.Throw"))
 class StaticRoutesSpec extends FlatSpec with Matchers with EitherValues {
   private val builtAtMillis = 1000L
 

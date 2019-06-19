@@ -23,7 +23,6 @@ import seqexec.engine.TestUtil.TestState
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 
-@SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 class packageSpec extends FlatSpec with NonImplicitAssertions {
 
   implicit val ioContextShift: ContextShift[IO] =
@@ -105,7 +104,6 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
     case _                       => false
   }
 
-  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def runToCompletion(s0: TestState): Option[TestState] = {
     executionEngine.process(PartialFunction.empty)(Stream.eval(IO.pure(Event.start[executionEngine.ConcreteTypes](seqId, user, clientId, always))))(s0).drop(1).takeThrough(
       a => !isFinished(a._2.sequences(seqId).status)
@@ -207,7 +205,6 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
   }
 
   "engine" should "not capture runtime exceptions." in {
-    @SuppressWarnings(Array("org.wartremover.warts.Throw"))
     def s0(e: Throwable): TestState = TestState(
       Map((seqId, Sequence.State.init(Sequence(
         id = Observation.Id.unsafeFromString("GS-2018B-Q-0-4"),

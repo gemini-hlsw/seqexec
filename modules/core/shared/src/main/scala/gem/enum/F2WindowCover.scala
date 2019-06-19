@@ -32,7 +32,6 @@ object F2WindowCover {
     all.find(_.tag === s)
 
   /** Select the member of F2WindowCover with the given tag, throwing if absent. */
-  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): F2WindowCover =
     fromTag(s).getOrElse(throw new NoSuchElementException(s"F2WindowCover: Invalid tag: '$s'"))
 

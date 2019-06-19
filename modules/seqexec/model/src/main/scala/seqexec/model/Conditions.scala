@@ -16,7 +16,6 @@ final case class Conditions(
   wv: WaterVapor
 )
 
-@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object Conditions {
 
   val Worst: Conditions =

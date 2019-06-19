@@ -11,7 +11,6 @@ package object arb {
   implicit class MoreGenOps[A](g: Gen[A]) {
 
     /** Like `retryUntil` but retries until the specified PartialFunction is defined. */
-    @SuppressWarnings(Array("org.wartremover.warts.OptionPartial"))
     def collectUntil[B](f: PartialFunction[A, B]): Gen[B] =
       g.map(a => f.lift(a)).retryUntil(_.isDefined).map(_.get)
 

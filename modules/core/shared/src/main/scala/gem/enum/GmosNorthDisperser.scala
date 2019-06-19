@@ -40,7 +40,6 @@ object GmosNorthDisperser {
     all.find(_.tag === s)
 
   /** Select the member of GmosNorthDisperser with the given tag, throwing if absent. */
-  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GmosNorthDisperser =
     fromTag(s).getOrElse(throw new NoSuchElementException(s"GmosNorthDisperser: Invalid tag: '$s'"))
 

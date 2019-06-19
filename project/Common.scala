@@ -2,7 +2,6 @@ import Settings.Libraries._
 import sbt.Keys._
 import sbt._
 import de.heikoseeberger.sbtheader.HeaderPlugin.autoImport._
-import wartremover.WartRemover.autoImport._
 import com.timushev.sbt.updates.UpdatesPlugin.autoImport._
 import org.flywaydb.sbt.FlywayPlugin.autoImport._
 
@@ -10,18 +9,6 @@ import org.flywaydb.sbt.FlywayPlugin.autoImport._
   * Define tasks and settings used by module definitions
   */
 object Common {
-  lazy val gemWarts =
-    Warts.allBut(
-      Wart.Any,                // false positives
-      Wart.Nothing,            // false positives
-      Wart.Null,               // false positives
-      Wart.Product,            // false positives
-      Wart.Serializable,       // false positives
-      Wart.Recursion,          // false positives
-      Wart.ImplicitConversion, // we know what we're doing
-      Wart.ImplicitParameter   // we do finally tagless
-    )
-
   lazy val commonSettings = Seq(
     // Workaround for https://github.com/sbt/sbt/issues/4109
     initialCommands += "jline.TerminalFactory.get.init\n",
@@ -48,9 +35,6 @@ object Common {
     )),
     // Common libraries
     libraryDependencies                    ++= TestLibs.value,
-    // Wartremover in compile and test (not in Console)
-    wartremoverErrors in (Compile, compile) := gemWarts,
-    wartremoverErrors in (Test,    compile) := gemWarts,
     // Don't build javadoc when we're packaging the docker image.
     mappings in (Compile, packageDoc)       := Seq(),
     sources in (Compile,doc)                := Seq.empty,

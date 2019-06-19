@@ -51,7 +51,6 @@ package object enum extends ToPrismOps {
    * Enrichment methods for the [[Half]] companion object.
    * @group Enrichments
    */
-  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   implicit class HalfCompanionOps(val value: Half.type) extends AnyVal {
 
     def unsafeFromInt(n: Int): Half =

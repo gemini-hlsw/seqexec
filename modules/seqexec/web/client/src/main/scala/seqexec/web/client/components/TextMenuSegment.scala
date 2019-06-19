@@ -34,6 +34,5 @@ object TextMenuSegment {
   // Used to call TextMenuSegment directly on a jsx component declaration
   implicit def textMenu2TagMod(i: TextMenuSegment):VdomElement = i.component
 
-  @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
   def apply(header: String, key: String, children: VdomNode*): TextMenuSegment = TextMenuSegment(Props(header), children, key)
 }

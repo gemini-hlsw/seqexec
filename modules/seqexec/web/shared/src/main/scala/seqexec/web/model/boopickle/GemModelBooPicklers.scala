@@ -12,7 +12,6 @@ import java.time.{LocalDate, Year}
   * Contains boopickle implicit picklers of gem model objects
   * Eventually these will be shared across gem clients
   */
-@SuppressWarnings(Array("org.wartremover.warts.Equals", "org.wartremover.warts.PublicInference", "org.wartremover.warts.ImplicitParameter", "org.wartremover.warts.NonUnitStatements", "org.wartremover.warts.Throw", "org.wartremover.warts.OptionPartial"))
 trait GemModelBooPicklers extends BooPicklerSyntax {
   implicit val yearPickler:          Pickler[Year]           = transformPickler(Year.of)(_.getValue)
   implicit val localDatePickler:     Pickler[LocalDate]      = transformPickler(LocalDate.ofEpochDay)(_.toEpochDay)

@@ -6,7 +6,6 @@ package seqexec.server.keywords
 import cats.tests.CatsSuite
 import scala.xml.XML
 
-@SuppressWarnings(Array("org.wartremover.warts.Throw"))
 final class GdsClientSpec extends CatsSuite {
   test("GDSClient should reject bad responses") {
     val xml = XML.load(getClass.getResource("/gds-bad-resp.xml"))

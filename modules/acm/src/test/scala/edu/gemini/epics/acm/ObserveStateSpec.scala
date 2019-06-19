@@ -23,10 +23,6 @@ import org.scalatest._
   * care about the state of the channels. Instead we want to only observe
   * the state transitions
   */
-@SuppressWarnings(
-  Array("org.wartremover.warts.NonUnitStatements",
-        "org.wartremover.warts.PublicInference",
-        "org.wartremover.warts.IsInstanceOf"))
 final class ObserveStateSpec extends FunSuite with GsaoiMocks with NifsMocks with GmosMocks with NiriMocks with GnirsMocks {
 
   test("NIFS normal observation") {
@@ -924,7 +920,6 @@ final class ObserveStateSpec extends FunSuite with GsaoiMocks with NifsMocks wit
 // This is exactly the case for `ReadWriteClientEpicsChannel[T]` and the [register|unRegister]Listener methods
 // The workaround is to create classes such as below with concrete type and mock those
 // https://github.com/paulbutcher/ScalaMock/issues/193
-@SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf"))
 class CadDirectiveChannelMock extends ReadWriteClientEpicsChannel[CadDirective] {
   override def setValue(a: java.util.List[CadDirective]): Unit = {}
   override def setValue(a : CadDirective): Unit = {}
@@ -941,7 +936,6 @@ class CadDirectiveChannelMock extends ReadWriteClientEpicsChannel[CadDirective] 
   override def destroy(): Unit = {}
 }
 
-@SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf"))
 class CarStateChannelMock extends ReadWriteClientEpicsChannel[CarState] {
   override def setValue(a: java.util.List[CarState]): Unit = {}
   override def setValue(a : CarState): Unit = {}
@@ -958,7 +952,6 @@ class CarStateChannelMock extends ReadWriteClientEpicsChannel[CarState] {
   override def destroy(): Unit = {}
 }
 
-@SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf"))
 class IntChannelMock extends ReadWriteClientEpicsChannel[JInteger] {
   override def setValue(a: java.util.List[JInteger]): Unit = {}
   override def setValue(a : JInteger): Unit = {}
@@ -975,7 +968,6 @@ class IntChannelMock extends ReadWriteClientEpicsChannel[JInteger] {
   override def destroy(): Unit = {}
 }
 
-@SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf"))
 class ShortChannelMock extends ReadWriteClientEpicsChannel[JShort] {
   override def setValue(a: java.util.List[JShort]): Unit = {}
   override def setValue(a : JShort): Unit = {}
@@ -992,7 +984,6 @@ class ShortChannelMock extends ReadWriteClientEpicsChannel[JShort] {
   override def destroy(): Unit = {}
 }
 
-@SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf"))
 class StringChannelMock extends ReadWriteClientEpicsChannel[String] {
   override def setValue(a: java.util.List[String]): Unit = {}
   override def setValue(a : String): Unit = {}
@@ -1009,9 +1000,6 @@ class StringChannelMock extends ReadWriteClientEpicsChannel[String] {
   override def destroy(): Unit = {}
 }
 
-@SuppressWarnings(
-  Array("org.wartremover.warts.NonUnitStatements",
-        "org.wartremover.warts.PublicInference"))
 trait ChannelsFactory extends MockFactory {
   // Functions to setup mocks with different expectations
   def dirChannel: CadDirectiveChannelMock = {
@@ -1056,9 +1044,6 @@ trait ChannelsFactory extends MockFactory {
   }
 }
 
-@SuppressWarnings(
-  Array("org.wartremover.warts.NonUnitStatements",
-        "org.wartremover.warts.PublicInference"))
 trait GenericInstMocks extends ChannelsFactory {
   def genericInstMocks(apply: String, applyCar: String, observeCar: String): (EpicsReader, EpicsWriter) = {
     val epicsReader = mock[EpicsReader]
@@ -1077,9 +1062,6 @@ trait GenericInstMocks extends ChannelsFactory {
   }
 }
 
-@SuppressWarnings(
-  Array("org.wartremover.warts.NonUnitStatements",
-        "org.wartremover.warts.PublicInference"))
 trait GsaoiMocks extends ChannelsFactory {
   def gsaoiMocks: (EpicsReader, EpicsWriter) = {
     val epicsReader = mock[EpicsReader]
@@ -1098,9 +1080,6 @@ trait GsaoiMocks extends ChannelsFactory {
 
 }
 
-@SuppressWarnings(
-  Array("org.wartremover.warts.NonUnitStatements",
-        "org.wartremover.warts.PublicInference"))
 trait NifsMocks extends GenericInstMocks {
   def nifsMocks: (EpicsReader, EpicsWriter) = {
     val (epicsReader, epicsWriter) = genericInstMocks("nifs:dc:nifsApply", "nifs:dc:applyC", "nifs:dc:observeC")
@@ -1112,9 +1091,6 @@ trait NifsMocks extends GenericInstMocks {
 
 }
 
-@SuppressWarnings(
-  Array("org.wartremover.warts.NonUnitStatements",
-        "org.wartremover.warts.PublicInference"))
 trait GmosMocks extends GenericInstMocks {
   def gmosMocks: (EpicsReader, EpicsWriter) = {
     val (epicsReader, epicsWriter) = genericInstMocks("gm:apply", "gm:applyC", "gm:dc:observeC")
@@ -1162,9 +1138,6 @@ trait GmosMocks extends GenericInstMocks {
 
 }
 
-@SuppressWarnings(
-  Array("org.wartremover.warts.NonUnitStatements",
-        "org.wartremover.warts.PublicInference"))
 trait NiriMocks extends GenericInstMocks {
   def niriMocks: (EpicsReader, EpicsWriter) = {
     val (epicsReader, epicsWriter) = genericInstMocks("niri:dc:apply", "niri:dc:applyC", "niri:dc:observeC")
@@ -1176,9 +1149,6 @@ trait NiriMocks extends GenericInstMocks {
 
 }
 
-@SuppressWarnings(
-  Array("org.wartremover.warts.NonUnitStatements",
-    "org.wartremover.warts.PublicInference"))
 trait GnirsMocks extends GenericInstMocks {
   def gnirsMocks: (EpicsReader, EpicsWriter) = {
     val (epicsReader, epicsWriter) = genericInstMocks("nirs:dc:apply", "nirs:dc:applyC", "nirs:dc:observeC")

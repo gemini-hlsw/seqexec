@@ -48,7 +48,6 @@ object GmosNorthFpu {
     all.find(_.tag === s)
 
   /** Select the member of GmosNorthFpu with the given tag, throwing if absent. */
-  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GmosNorthFpu =
     fromTag(s).getOrElse(throw new NoSuchElementException(s"GmosNorthFpu: Invalid tag: '$s'"))
 

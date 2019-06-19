@@ -33,7 +33,6 @@ object ProgramRole {
     all.find(_.tag === s)
 
   /** Select the member of ProgramRole with the given tag, throwing if absent. */
-  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): ProgramRole =
     fromTag(s).getOrElse(throw new NoSuchElementException(s"ProgramRole: Invalid tag: '$s'"))
 

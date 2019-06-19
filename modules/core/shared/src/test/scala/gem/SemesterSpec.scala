@@ -13,7 +13,6 @@ import gsp.math.arb.ArbTime
 import java.time.{ Year, ZoneId }
 import java.time.format.DateTimeFormatter
 
-@SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals"))
 final class SemesterSpec extends CatsSuite {
   import ArbEnumerated._
   import ArbSemester._

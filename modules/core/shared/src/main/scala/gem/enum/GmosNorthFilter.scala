@@ -59,7 +59,6 @@ object GmosNorthFilter {
     all.find(_.tag === s)
 
   /** Select the member of GmosNorthFilter with the given tag, throwing if absent. */
-  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GmosNorthFilter =
     fromTag(s).getOrElse(throw new NoSuchElementException(s"GmosNorthFilter: Invalid tag: '$s'"))
 

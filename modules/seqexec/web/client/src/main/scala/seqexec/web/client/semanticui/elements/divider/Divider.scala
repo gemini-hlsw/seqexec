@@ -11,7 +11,6 @@ import japgolly.scalajs.react.component.Scala.Unmounted
   * Semantic UI Divider component
   */
 object Divider {
-  @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
   final case class Props(vertical: Boolean = false,
                    horizontal: Boolean = false,
                    inverted: Boolean = false,
@@ -37,9 +36,7 @@ object Divider {
       )
     ).build
 
-  @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
   def apply(children: VdomNode*): Unmounted[Props, Unit, Unit] = component(Props())(children: _*)
 
-  @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
   def apply(p: Props, children: VdomNode*): Unmounted[Props, Unit, Unit] = component(p)(children: _*)
 }

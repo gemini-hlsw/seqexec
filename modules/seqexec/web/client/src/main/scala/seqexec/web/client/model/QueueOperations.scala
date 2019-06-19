@@ -56,7 +56,6 @@ final case class QueueOperations(addDayCalRequested:   AddDayCalOperation,
                                  runCalRequested:      RunCalOperation,
                                  stopCalRequested:     StopCalOperation)
 
-@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object QueueOperations {
   implicit val eq: Eq[QueueOperations] =
     Eq.by(

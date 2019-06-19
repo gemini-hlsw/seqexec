@@ -26,7 +26,6 @@ final case class CalQueueControlFocus(canOperate:  Boolean,
                                       queueSize:   Int,
                                       selectedSeq: Int)
 
-@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object CalQueueControlFocus {
   implicit val eq: Eq[CalQueueControlFocus] =
     Eq.by(x =>

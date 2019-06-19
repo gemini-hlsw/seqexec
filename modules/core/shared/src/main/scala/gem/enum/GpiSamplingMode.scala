@@ -35,7 +35,6 @@ object GpiSamplingMode {
     all.find(_.tag === s)
 
   /** Select the member of GpiSamplingMode with the given tag, throwing if absent. */
-  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GpiSamplingMode =
     fromTag(s).getOrElse(throw new NoSuchElementException(s"GpiSamplingMode: Invalid tag: '$s'"))
 

@@ -7,7 +7,6 @@ import gem.Program
 import io.circe.{ Decoder, Encoder }
 import io.circe.generic.semiauto._
 
-@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 trait ProgramJson {
   import index._
   import observation._

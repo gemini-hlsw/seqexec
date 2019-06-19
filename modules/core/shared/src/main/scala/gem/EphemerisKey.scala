@@ -55,14 +55,12 @@ object EphemerisKey extends EphemerisOptics {
     * for Kohoutek, yielding the query string `NAME=C/1973 E1;CAP`.
     */
   @Lenses final case class Comet(des: String) extends Horizons(s"NAME=$des;CAP")
-  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object Comet
 
   /** Designation for an asteroid under modern naming conventions. Example:
     * `1971 UC1` for 1896 Beer, yielding a query string `ASTNAM=1971 UC1`.
     */
   @Lenses final case class AsteroidNew(des: String) extends Asteroid(s"ASTNAM=$des")
-  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object AsteroidNew
 
   /** Designation for an asteroid under "old" naming conventions. These are
@@ -72,7 +70,6 @@ object EphemerisKey extends EphemerisOptics {
     override def des: String =
       num.toString
   }
-  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object AsteroidOld
 
   /** Designation for a major body (planet or satellite thereof). These have
@@ -82,7 +79,6 @@ object EphemerisKey extends EphemerisOptics {
     override def des: String =
       num.toString
   }
-  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object MajorBody
 
   /** Identifies a user-supplied collection of ephemeris data, where the number
@@ -92,7 +88,6 @@ object EphemerisKey extends EphemerisOptics {
     override def des: String =
       id.toString
   }
-  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object UserSupplied
 
   implicit val ShowEphemerisKey: Show[EphemerisKey] =

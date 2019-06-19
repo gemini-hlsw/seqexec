@@ -61,7 +61,6 @@ object Button {
     implicit val equal: Eq[Type] = Eq.fromUniversalEquals
   }
 
-  @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
   final case class Props(state: ButtonState = Inactive,
                          emphasis: Emphasis = NoEmphasis,
                          animated: Animated = NotAnimated,
@@ -151,11 +150,9 @@ object Button {
         })
       .build
 
-  @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
   def apply(p: Props, children: VdomNode*): Unmounted[Props, Unit, Unit] =
     component(p)(children: _*)
 
-  @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
   def apply(text: String): Unmounted[Props, Unit, Unit] =
     component(Props())(text)
 }

@@ -35,7 +35,6 @@ object GsaoiOdgwSize {
     all.find(_.tag === s)
 
   /** Select the member of GsaoiOdgwSize with the given tag, throwing if absent. */
-  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GsaoiOdgwSize =
     fromTag(s).getOrElse(throw new NoSuchElementException(s"GsaoiOdgwSize: Invalid tag: '$s'"))
 

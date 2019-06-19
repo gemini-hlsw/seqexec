@@ -16,7 +16,6 @@ import web.client.facades.semanticui.SemanticUIProgress._
   * Produces a progress element using javascript
   */
 object Progress {
-  @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
   final case class Props(label:       String,
                          total:       Long,
                          value:       Long,

@@ -7,7 +7,6 @@ import gem.config.GcalConfig
 import io.circe.{ Decoder, Encoder }
 import io.circe.generic.semiauto._
 
-@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 trait GcalConfigJson {
   import coadds._
   import enumerated._

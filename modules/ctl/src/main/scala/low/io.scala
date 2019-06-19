@@ -11,7 +11,6 @@ object io {
 
   final case class Output(exitCode: Int, lines: List[String])
 
-  @SuppressWarnings(Array("org.wartremover.warts.MutableDataStructures"))
   def exec(cmd: Either[String, List[String]], f: String => IO[Unit]): IO[Output] =
     IO {
       import scala.sys.process._

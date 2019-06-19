@@ -14,7 +14,6 @@ trait utils {
   type Canvas = html.Canvas
   type Ctx2D  = dom.CanvasRenderingContext2D
 
-  @SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf"))
   def textWidth(text: String, font: String): Double = {
     val canvas = dom.document.createElement("canvas").asInstanceOf[Canvas]
     val ctx    = canvas.getContext("2d").asInstanceOf[Ctx2D]

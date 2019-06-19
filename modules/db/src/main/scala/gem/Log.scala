@@ -64,7 +64,6 @@ abstract class Log[M[_]] private (name: String, xa: Transactor[IO]) {
   def logMessage(user: User[_], msg: => String): M[Unit] =
     success(user, msg, 0, ())
 
-  @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
   def shutdown(ms: Long): M[Unit] =
     M.delay {
       jdkLogger.info("Log shutdown requested.")

@@ -46,7 +46,6 @@ object GnirsFilter {
     all.find(_.tag === s)
 
   /** Select the member of GnirsFilter with the given tag, throwing if absent. */
-  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GnirsFilter =
     fromTag(s).getOrElse(throw new NoSuchElementException(s"GnirsFilter: Invalid tag: '$s'"))
 

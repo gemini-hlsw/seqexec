@@ -14,7 +14,6 @@ import seqexec.web.client.circuit._
 // import seqexec.web.client.circuit.SeqexecCircuit._
 import org.scalatest.prop.PropertyChecks
 
-@SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 final class CircuitReaderSpec
     extends CatsSuite
     with PropertyChecks

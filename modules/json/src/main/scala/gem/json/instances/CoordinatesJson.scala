@@ -8,7 +8,6 @@ import gsp.math.{ Coordinates, Declination, RightAscension }
 import io.circe._
 import io.circe.generic.semiauto._
 
-@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 trait CoordinatesJson {
 
   implicit val RightAscensionEncoder: Encoder[RightAscension] = RightAscension.fromStringHMS.toEncoder

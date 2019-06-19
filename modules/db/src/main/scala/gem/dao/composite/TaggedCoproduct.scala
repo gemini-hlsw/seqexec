@@ -90,7 +90,6 @@ object TaggedCoproduct {
      * arguments, which means the runtime representations must be identical, which means we can just
      * do it as a cast and avoid allocating anything at all.
      */
-    @SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf"))
     def widen[TT >: T]: TaggedCoproductEncoder.Aux[TT, C, Out] =
       this.asInstanceOf[TaggedCoproductEncoder.Aux[TT, C, Out]]
 

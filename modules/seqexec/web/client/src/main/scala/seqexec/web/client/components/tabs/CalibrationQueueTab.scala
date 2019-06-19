@@ -38,7 +38,6 @@ object CalibrationQueueTab {
     val onDrag: Boolean = draggingOver.isDefined
   }
 
-  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object State
 
   implicit val propsReuse: Reusability[Props] =

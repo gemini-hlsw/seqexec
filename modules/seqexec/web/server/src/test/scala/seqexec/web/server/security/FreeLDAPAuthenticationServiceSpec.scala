@@ -15,7 +15,6 @@ class FreeLDAPAuthenticationServiceSpec extends FlatSpec with Matchers with Prop
 
   // Silly mock of a user database
   case class MockAuthDB(users: Map[UID, (String, DisplayName)], acceptEmptyPwd: Boolean) {
-    @SuppressWarnings(Array("org.wartremover.warts.Throw"))
     def authenticate(u: String, p: String): UID =
       // This checks if the username and password but lets it bypass it
       if (users.contains(u) && ((u === p && p.nonEmpty) || acceptEmptyPwd)) u else throw new RuntimeException()

@@ -62,7 +62,6 @@ object GsaoiFilter {
     all.find(_.tag === s)
 
   /** Select the member of GsaoiFilter with the given tag, throwing if absent. */
-  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GsaoiFilter =
     fromTag(s).getOrElse(throw new NoSuchElementException(s"GsaoiFilter: Invalid tag: '$s'"))
 

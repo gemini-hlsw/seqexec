@@ -8,7 +8,6 @@ import doobie._, doobie.implicits._
 import shapeless.record._
 import shapeless.Witness
 
-@SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 object GpiEnums {
   import EnumRefs._
 

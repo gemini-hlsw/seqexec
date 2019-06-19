@@ -39,7 +39,6 @@ object GmosCustomSlitWidth {
     all.find(_.tag === s)
 
   /** Select the member of GmosCustomSlitWidth with the given tag, throwing if absent. */
-  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GmosCustomSlitWidth =
     fromTag(s).getOrElse(throw new NoSuchElementException(s"GmosCustomSlitWidth: Invalid tag: '$s'"))
 

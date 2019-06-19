@@ -23,13 +23,6 @@ import seqexec.web.model.boopickle.GemModelBooPicklers
 /**
   * Contains http4s implicit encoders of model objects
   */
-@SuppressWarnings(
-  Array(
-    "org.wartremover.warts.Equals",
-    "org.wartremover.warts.ImplicitParameter",
-    "org.wartremover.warts.NonUnitStatements",
-    "org.wartremover.warts.OptionPartial"
-  ))
 trait BooEncoders extends GemModelBooPicklers {
   // Decoders, Included here instead of the on the object definitions to avoid
   // a circular dependency on http4s

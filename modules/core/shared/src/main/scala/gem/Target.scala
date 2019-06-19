@@ -13,7 +13,6 @@ import monocle.macros.Lenses
 /** A target of observation. */
 @Lenses final case class Target(name: String, track: Either[EphemerisKey, ProperMotion])
 
-@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object Target {
 
   /** Target identifier. */

@@ -58,7 +58,6 @@ object ConfigUtilOps {
   }
 
   // key syntax: parent / child
-  @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
   implicit class ItemKeyOps(val k: ItemKey) extends AnyVal {
     def /(s: String): ItemKey             = new ItemKey(k, s)
     def /(p: PropertyDescriptor): ItemKey = /(p.getName)
@@ -74,7 +73,6 @@ object ConfigUtilOps {
   implicit val ConfigSequenceExtractItem: ExtractItem[ConfigSequence] =
     (c: ConfigSequence, key: ItemKey) => Option(c.getItemValue(0, key))
 
-  @SuppressWarnings(Array("org.wartremover.warts.AsInstanceOf"))
   final class Extracted[C] private [server] (c: C, key: ItemKey)(implicit ei: ExtractItem[C]) {
     def as[A](implicit clazz: ClassTag[A]): Either[ExtractFailure, A] =
       for {

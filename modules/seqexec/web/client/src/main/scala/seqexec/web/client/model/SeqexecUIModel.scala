@@ -43,7 +43,6 @@ final case class SeqexecUIModel(
   sound:              SoundSelection,
   firstLoad:          Boolean)
 
-@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object SeqexecUIModel {
   val Initial: SeqexecUIModel = SeqexecUIModel(
     Pages.Root,

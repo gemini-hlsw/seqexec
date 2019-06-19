@@ -16,7 +16,6 @@ import seqexec.web.common.FixedLengthBuffer
 final case class GlobalLog(log:     FixedLengthBuffer[ServerLogMessage],
                            display: SectionVisibilityState)
 
-@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object GlobalLog {
   implicit val eq: Eq[GlobalLog] = Eq.by(x => (x.log, x.display))
 }

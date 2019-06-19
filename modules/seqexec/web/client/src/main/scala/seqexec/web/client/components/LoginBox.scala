@@ -36,7 +36,6 @@ object LoginBox {
                          progressMsg: Option[String],
                          errorMsg:    Option[String])
 
-  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   object State {
     val Empty: State = State("", "", None, None)
   }
@@ -163,7 +162,6 @@ object LoginBox {
       )
   }
 
-  @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
   private val component = ScalaComponent
     .builder[Props]("Login")
     .initialState(State.Empty)

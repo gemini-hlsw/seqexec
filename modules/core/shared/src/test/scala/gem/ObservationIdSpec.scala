@@ -9,7 +9,6 @@ import cats.tests.CatsSuite
 import gem.arb._
 import gsp.math.Index
 
-@SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals"))
 final class ObservationIdSpec extends CatsSuite {
   import ArbObservation._
 

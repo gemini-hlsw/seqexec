@@ -34,7 +34,6 @@ import seqexec.web.model.boopickle.ModelBooPicklers
 /**
   * Handles the WebSocket connection and performs reconnection if needed
   */
-@SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 class WebSocketHandler[M](modelRW: ModelRW[M, WebSocketConnection])
     extends ActionHandler(modelRW)
     with Handlers[M, WebSocketConnection]

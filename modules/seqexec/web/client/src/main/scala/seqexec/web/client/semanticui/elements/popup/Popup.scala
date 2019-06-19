@@ -12,9 +12,7 @@ import japgolly.scalajs.react.raw.React
   * Produces a popup using javascript
   * This is a barebones component waiting for the proper react component to be made available
   */
-@SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements", "org.wartremover.warts.AsInstanceOf"))
 object Popup {
-  @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
   final case class Props(selector: String, content: String)
 
   private val component = ScalaComponent.builder[Props]("Popup")

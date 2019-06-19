@@ -9,7 +9,6 @@ import seqexec.model.events.SeqexecEvent
 
 package boopickle {
 
-  @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
   trait BooPicklerSyntax {
     implicit class PicklerPrismOps[A, B <: AnyRef](p: Prism[A, B])(implicit PA: Pickler[A]) {
       def toPickler: Pickler[B] =
@@ -28,7 +27,6 @@ package boopickle {
             }
           }
 
-          @SuppressWarnings(Array("org.wartremover.warts.Throw"))
           override def unpickle(implicit state: UnpickleState): B = {
             state.dec.readInt match {
               case idx if idx < 0 =>
@@ -52,7 +50,6 @@ package object boopickle extends ModelBooPicklers {
     * In most cases http4s will use the limit of a byte buffer but not for websockets
     * This method trims the binary array to be sent on the WS channel
     */
-  @SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
   def trimmedArray(e: SeqexecEvent): Array[Byte] = {
     val byteBuffer = Pickle.intoBytes(e)
     val bytes      = new Array[Byte](byteBuffer.limit())

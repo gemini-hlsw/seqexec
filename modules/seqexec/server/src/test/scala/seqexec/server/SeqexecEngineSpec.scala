@@ -15,7 +15,6 @@ import seqexec.model.enum._
 import seqexec.model.enum.Resource.TCS
 import monocle.Monocle._
 
-@SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertions {
 
   "SeqexecEngine configStatus" should

@@ -135,9 +135,6 @@ final case class TableState[A: Eq](userModified:   UserModified,
   }
 
   // scalastyle:off
-  @SuppressWarnings(
-    Array("org.wartremover.warts.NonUnitStatements",
-          "org.wartremover.warts.Throw"))
   private def distributePercentages(
     s:               Size,
     calculatedWidth: A => Option[Double]
@@ -216,7 +213,6 @@ final case class TableState[A: Eq](userModified:   UserModified,
   // scalastyle:on
 
   // Table can call this to build the columns
-  @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
   def columnBuilder(
     s:               Size,
     cb:              ColumnRenderArgs[A] => Table.ColumnArg,
@@ -280,7 +276,6 @@ final case class TableState[A: Eq](userModified:   UserModified,
       this
     }
 
-  @SuppressWarnings(Array("org.wartremover.warts.DefaultArguments"))
   def resizeColumn(
     column:          A,
     s:               Size,

@@ -35,7 +35,6 @@ object GnirsCamera {
     all.find(_.tag === s)
 
   /** Select the member of GnirsCamera with the given tag, throwing if absent. */
-  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GnirsCamera =
     fromTag(s).getOrElse(throw new NoSuchElementException(s"GnirsCamera: Invalid tag: '$s'"))
 

@@ -11,7 +11,6 @@ import cats.kernel.laws.discipline._
 import gsp.math.laws.discipline._
 import cats.tests.CatsSuite
 
-@SuppressWarnings(Array("org.wartremover.warts.ToString", "org.wartremover.warts.Equals", "org.wartremover.warts.OptionPartial"))
 final class EphemerisSpec extends CatsSuite {
   import ArbEphemeris._
   import ArbTimestamp._

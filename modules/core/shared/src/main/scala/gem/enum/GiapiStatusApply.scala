@@ -59,7 +59,6 @@ object GiapiStatusApply {
     all.find(_.tag === s)
 
   /** Select the member of GiapiStatusApply with the given tag, throwing if absent. */
-  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GiapiStatusApply =
     fromTag(s).getOrElse(throw new NoSuchElementException(s"GiapiStatusApply: Invalid tag: '$s'"))
 

@@ -11,7 +11,6 @@ import io.circe._
 import io.circe.{ Decoder, Encoder }
 import io.circe.generic.semiauto._
 
-@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 trait TargetJson {
   import ephemeris._
   import propermotion._

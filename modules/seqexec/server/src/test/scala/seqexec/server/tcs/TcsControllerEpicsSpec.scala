@@ -17,7 +17,6 @@ import seqexec.server.tcs.TcsControllerEpics.{AoFold, EpicsTcsConfig, Instrument
 import shapeless.tag
 import squants.space._
 
-@SuppressWarnings(Array("org.wartremover.warts.NonUnitStatements"))
 class TcsControllerEpicsSpec extends FlatSpec with PrivateMethodTester {
   import TcsControllerEpicsSpec._
 

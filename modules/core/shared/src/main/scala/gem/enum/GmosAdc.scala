@@ -32,7 +32,6 @@ object GmosAdc {
     all.find(_.tag === s)
 
   /** Select the member of GmosAdc with the given tag, throwing if absent. */
-  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
   def unsafeFromTag(s: String): GmosAdc =
     fromTag(s).getOrElse(throw new NoSuchElementException(s"GmosAdc: Invalid tag: '$s'"))
 
