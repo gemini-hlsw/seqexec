@@ -6,9 +6,11 @@ package seqexec.model.arb
 import org.scalacheck.Arbitrary
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Cogen
+import gem.arb.ArbEnumerated._
 import seqexec.model.TelescopeGuideConfig
 import seqexec.model.enum._
-import seqexec.model.arb.ArbMountGuideOption._
+import seqexec.model.M1GuideConfig
+import seqexec.model.M2GuideConfig
 import seqexec.model.arb.ArbM1GuideConfig._
 import seqexec.model.arb.ArbM2GuideConfig._
 

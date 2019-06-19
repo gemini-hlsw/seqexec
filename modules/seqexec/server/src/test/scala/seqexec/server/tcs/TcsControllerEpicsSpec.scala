@@ -10,6 +10,8 @@ import org.scalatest.{FlatSpec, PrivateMethodTester}
 import org.scalatest.Matchers._
 import seqexec.model.enum._
 import seqexec.model.TelescopeGuideConfig
+import seqexec.model.M1GuideConfig
+import seqexec.model.M2GuideConfig
 import seqexec.server.InstrumentGuide
 import seqexec.server.tcs.TcsController.LightSource.Sky
 import seqexec.server.tcs.TcsController._

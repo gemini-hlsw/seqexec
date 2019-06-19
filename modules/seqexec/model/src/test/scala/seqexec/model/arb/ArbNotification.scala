@@ -4,6 +4,7 @@
 package seqexec.model.arb
 
 import gem.Observation
+import gem.arb.ArbEnumerated._
 import gem.arb.ArbObservation
 import org.scalacheck.Arbitrary
 import org.scalacheck.Arbitrary._
@@ -17,10 +18,6 @@ import seqexec.model.InstrumentInUse
 import seqexec.model.SubsystemBusy
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.Resource
-import seqexec.model.SeqexecModelArbitraries.resArb
-import seqexec.model.SeqexecModelArbitraries.resCogen
-import seqexec.model.SeqexecModelArbitraries.insArb
-import seqexec.model.SeqexecModelArbitraries.instCogen
 
 trait ArbNotification extends ArbObservation {
   implicit val rcArb = Arbitrary[ResourceConflict] {

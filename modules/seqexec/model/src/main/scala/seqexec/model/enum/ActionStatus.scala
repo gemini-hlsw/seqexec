@@ -3,7 +3,7 @@
 
 package seqexec.model.enum
 
-import cats.Eq
+import gem.util.Enumerated
 
 sealed trait ActionStatus extends Product with Serializable
 
@@ -11,20 +11,25 @@ object ActionStatus {
 
   /** Action is not yet run. */
   case object Pending extends ActionStatus
-
   /** Action run and completed. */
   case object Completed extends ActionStatus
-
   /** Action currently running. */
   case object Running extends ActionStatus
-
   /** Action run but paused. */
   case object Paused extends ActionStatus
-
   /** Action run but failed to complete. */
   case object Failed extends ActionStatus
 
-  implicit val equal: Eq[ActionStatus] =
-    Eq.fromUniversalEquals
-
+  /** @group Typeclass Instances */
+  implicit val ActionStatusEnumerated: Enumerated[ActionStatus] =
+    new Enumerated[ActionStatus] {
+      def all = List(Pending, Completed, Running, Paused, Failed)
+      def tag(a: ActionStatus): String = a match {
+        case Pending => "Pending"
+        case Completed => "Completed"
+        case Running => "Running"
+        case Paused => "Paused"
+        case Failed => "Failed"
+      }
+    }
 }

@@ -11,7 +11,7 @@ import diode.ModelRW
 import diode.NoAction
 import org.scalajs.dom.window
 import seqexec.model.enum.ActionStatus
-import seqexec.model.enum.SingleActionOp
+import seqexec.model.SingleActionOp
 import seqexec.model.Observer
 import seqexec.model.SequencesQueue
 import seqexec.model.SequenceView

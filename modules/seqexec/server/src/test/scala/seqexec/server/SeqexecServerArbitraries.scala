@@ -3,10 +3,12 @@
 
 package seqexec.server
 
+import gem.arb.ArbEnumerated._
 import gem.Observation
 import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, Cogen, Gen}
-import seqexec.model.enum.{BatchCommandState, Instrument}
+import seqexec.model.BatchCommandState
+import seqexec.model.enum.Instrument
 import seqexec.model.{Conditions, Operator}
 import seqexec.model.SeqexecModelArbitraries._
 

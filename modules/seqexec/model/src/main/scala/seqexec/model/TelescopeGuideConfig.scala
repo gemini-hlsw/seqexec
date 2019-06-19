@@ -7,8 +7,6 @@ import cats.Eq
 import cats.implicits._
 import monocle.macros.Lenses
 import seqexec.model.enum.MountGuideOption
-import seqexec.model.enum.M1GuideConfig
-import seqexec.model.enum.M2GuideConfig
 
 /** Data type for guide config. */
 @Lenses

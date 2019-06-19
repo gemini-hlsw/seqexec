@@ -5,16 +5,13 @@ package seqexec.model
 
 import cats.tests.CatsSuite
 import cats.kernel.laws.discipline._
+import gem.arb.ArbEnumerated._
 import seqexec.model.enum._
 import seqexec.model.SeqexecModelArbitraries._
 import seqexec.model.events.SingleActionEvent
 import seqexec.model.arb.ArbRunningStep._
 import seqexec.model.arb.ArbNotification._
-import seqexec.model.arb.ArbMountGuideOption._
-import seqexec.model.arb.ArbComaOption._
-import seqexec.model.arb.ArbTipTiltSource._
 import seqexec.model.arb.ArbM2GuideConfig._
-import seqexec.model.arb.ArbM1Source._
 import seqexec.model.arb.ArbM1GuideConfig._
 import seqexec.model.arb.ArbTelescopeGuideConfig._
 import squants.time.Time
@@ -78,4 +75,5 @@ final class ModelSpec extends CatsSuite {
   checkAll("Eq[M1Source]", EqTests[M1Source].eqv)
   checkAll("Eq[M1GuideConfig]", EqTests[M1GuideConfig].eqv)
   checkAll("Eq[TelescopeGuideConfig]", EqTests[TelescopeGuideConfig].eqv)
+  checkAll("Eq[BatchCommandState]", EqTests[BatchCommandState].eqv)
 }

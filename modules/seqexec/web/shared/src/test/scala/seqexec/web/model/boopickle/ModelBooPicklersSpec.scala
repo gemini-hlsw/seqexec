@@ -6,6 +6,7 @@ package seqexec.web.model.boopickle
 import _root_.boopickle.DefaultBasic._
 import cats.tests.CatsSuite
 import gem.Observation
+import gem.arb.ArbEnumerated._
 import gem.arb.ArbObservation
 import org.scalacheck.Arbitrary._
 import seqexec.model.enum._
@@ -13,10 +14,6 @@ import seqexec.model._
 import seqexec.model.events._
 import seqexec.model.SeqexecModelArbitraries._
 import seqexec.model.SequenceEventsArbitraries._
-import seqexec.model.arb.ArbComaOption._
-import seqexec.model.arb.ArbTipTiltSource._
-import seqexec.model.arb.ArbM1Source._
-import seqexec.model.arb.ArbMountGuideOption._
 import seqexec.model.arb.ArbM1GuideConfig._
 import seqexec.model.arb.ArbM2GuideConfig._
 import seqexec.model.arb.ArbTelescopeGuideConfig._

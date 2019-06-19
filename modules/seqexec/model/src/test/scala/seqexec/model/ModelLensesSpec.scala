@@ -10,6 +10,7 @@ import monocle.law.discipline.OptionalTests
 import monocle.law.discipline.PrismTests
 import monocle.law.discipline.TraversalTests
 import org.scalacheck.Arbitrary._
+import gem.arb.ArbEnumerated._
 import seqexec.model.enum._
 import seqexec.model.SeqexecModelArbitraries._
 import seqexec.model.SequenceEventsArbitraries._

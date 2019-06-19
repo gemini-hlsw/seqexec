@@ -8,7 +8,7 @@ import diode.ActionHandler
 import diode.ActionResult
 import diode.ModelRW
 import seqexec.model.events._
-import seqexec.model.enum.QueueManipulationOp
+import seqexec.model.QueueManipulationOp
 import seqexec.web.client.model.CalibrationQueues
 import seqexec.web.client.model.RunCalOperation
 import seqexec.web.client.model.StopCalOperation

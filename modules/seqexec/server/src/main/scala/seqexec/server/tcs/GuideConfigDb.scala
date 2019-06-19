@@ -11,12 +11,12 @@ import seqexec.model.enum.MountGuideOption._
 import seqexec.model.enum.ComaOption
 import seqexec.model.enum.ComaOption._
 import seqexec.model.enum.M1Source
-import seqexec.model.enum.M1GuideConfig
-import seqexec.model.enum.M1GuideConfig._
-import seqexec.model.enum.M2GuideConfig
-import seqexec.model.enum.M2GuideConfig._
 import seqexec.model.enum.MountGuideOption
 import seqexec.model.enum.TipTiltSource
+import seqexec.model.M1GuideConfig
+import seqexec.model.M1GuideConfig._
+import seqexec.model.M2GuideConfig
+import seqexec.model.M2GuideConfig._
 import seqexec.model.TelescopeGuideConfig
 import seqexec.server.altair.AltairController._
 import seqexec.server.gems.GemsController.{GemsConfig, GemsOff}

@@ -3,7 +3,8 @@
 
 package seqexec.model.enum
 
-import cats.{ Eq, Show }
+import cats.Show
+import gem.util.Enumerated
 
 sealed abstract class WaterVapor(val toInt: Int, val label: String)
   extends Product with Serializable
@@ -18,10 +19,14 @@ object WaterVapor {
   val all: List[WaterVapor] =
     List(Percent20, Percent50, Percent80, Any)
 
-  implicit val equal: Eq[WaterVapor] =
-    Eq.fromUniversalEquals
-
   implicit val showWaterVapor: Show[WaterVapor] =
     Show.show(_.label)
+
+  /** @group Typeclass Instances */
+  implicit val WaterVaporEnumerated: Enumerated[WaterVapor] =
+    new Enumerated[WaterVapor] {
+      def all = WaterVapor.all
+      def tag(a: WaterVapor): String = a.label
+    }
 
 }

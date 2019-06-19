@@ -3,7 +3,8 @@
 
 package seqexec.model.enum
 
-import cats.{ Eq, Show }
+import cats.Show
+import gem.util.Enumerated
 
 sealed abstract class CloudCover(val toInt: Int, val label: String)
   extends Product with Serializable
@@ -18,10 +19,13 @@ object CloudCover {
   val all: List[CloudCover] =
     List(Percent50, Percent70, Percent80, Any)
 
-  implicit val equalCloudCover: Eq[CloudCover] =
-    Eq.fromUniversalEquals
-
   implicit val showCloudCover: Show[CloudCover] =
     Show.show(_.label)
 
+  /** @group Typeclass Instances */
+  implicit val CloudCoverEnumerated: Enumerated[CloudCover] =
+    new Enumerated[CloudCover] {
+      def all = CloudCover.all
+      def tag(a: CloudCover): String = a.label
+    }
 }

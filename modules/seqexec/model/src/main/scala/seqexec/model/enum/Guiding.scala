@@ -3,8 +3,8 @@
 
 package seqexec.model.enum
 
-import cats.Eq
 import cats.implicits._
+import gem.util.Enumerated
 
 sealed abstract class Guiding(val configValue: String)
   extends Product with Serializable
@@ -18,10 +18,14 @@ object Guiding {
   val all: List[Guiding] =
     List(Guide, Park, Freeze)
 
-  implicit val equal: Eq[Guiding] =
-    Eq.fromUniversalEquals
-
   def fromString(s: String): Option[Guiding] =
     all.find(_.configValue === s)
+
+  /** @group Typeclass Instances */
+  implicit val GuidingEnumerated: Enumerated[Guiding] =
+    new Enumerated[Guiding] {
+      def all = Guiding.all
+      def tag(a: Guiding): String = a.configValue
+    }
 
 }

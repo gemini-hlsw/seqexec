@@ -3,8 +3,9 @@
 
 package seqexec.model.enum
 
-import cats.{ Eq, Show }
+import cats.Show
 import cats.implicits._
+import gem.util.Enumerated
 
 sealed abstract class SystemName(val system: String) {
 
@@ -36,7 +37,10 @@ object SystemName {
   implicit val show: Show[SystemName] =
     Show.show(_.system)
 
-  implicit val equal: Eq[SystemName] =
-    Eq.fromUniversalEquals
-
+  /** @group Typeclass Instances */
+  implicit val SystemNameEnumerated: Enumerated[SystemName] =
+    new Enumerated[SystemName] {
+      def all = SystemName.all
+      def tag(a: SystemName): String = a.system
+    }
 }

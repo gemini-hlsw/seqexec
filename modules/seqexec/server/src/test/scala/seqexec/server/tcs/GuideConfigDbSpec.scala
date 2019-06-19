@@ -10,6 +10,8 @@ import GuideConfigDb._
 import cats.effect.IO
 import cats.implicits._
 import seqexec.model.enum._
+import seqexec.model.M1GuideConfig
+import seqexec.model.M2GuideConfig
 import seqexec.model.TelescopeGuideConfig
 import seqexec.server.altair.AltairController.Lgs
 import squants.space.Millimeters

@@ -17,9 +17,9 @@ import mouse.all._
 import seqexec.model.enum.Resource
 import seqexec.model.TelescopeGuideConfig
 import seqexec.model.enum.TipTiltSource
-import seqexec.model.enum.M1GuideConfig
 import seqexec.model.enum.M1Source
-import seqexec.model.enum.M2GuideConfig
+import seqexec.model.M1GuideConfig
+import seqexec.model.M2GuideConfig
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.altair.Altair
 import seqexec.server.altair.AltairController._

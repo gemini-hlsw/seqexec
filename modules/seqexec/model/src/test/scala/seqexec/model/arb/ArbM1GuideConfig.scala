@@ -7,9 +7,9 @@ import org.scalacheck.Arbitrary
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Cogen
 import org.scalacheck.Gen
-import seqexec.model.enum.M1GuideConfig
 import seqexec.model.enum.M1Source
-import seqexec.model.arb.ArbM1Source._
+import seqexec.model.M1GuideConfig
+import gem.arb.ArbEnumerated._
 
 trait ArbM1GuideConfig {
 

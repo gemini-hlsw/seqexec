@@ -3,8 +3,9 @@
 
 package seqexec.model.enum
 
-import cats.Eq
 import cats.Show
+import cats.implicits._
+import gem.util.Enumerated
 
 sealed trait BatchExecState extends Product with Serializable {
   val running: Boolean = this match {
@@ -21,14 +22,18 @@ object BatchExecState {
   case object Stopping extends BatchExecState // Queue was commanded to stop, but at least one sequence is still running.
   case object Completed extends BatchExecState // All sequences in the queue were run to completion.
 
-  implicit val equal: Eq[BatchExecState] = Eq.fromUniversalEquals
-
   implicit val show: Show[BatchExecState] = Show.show {
     case Idle      => "Idle"
     case Running   => "Running"
     case Waiting   => "Waiting"
     case Stopping  => "Stopping"
     case Completed => "Completed"
-
   }
+
+  /** @group Typeclass Instances */
+  implicit val BatchExecStateEnumerated: Enumerated[BatchExecState] =
+    new Enumerated[BatchExecState] {
+      def all = List(Idle, Running, Waiting, Stopping, Completed)
+      def tag(a: BatchExecState): String = a.show
+    }
 }

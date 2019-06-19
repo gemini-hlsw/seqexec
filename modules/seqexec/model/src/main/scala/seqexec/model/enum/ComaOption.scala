@@ -3,7 +3,7 @@
 
 package seqexec.model.enum
 
-import cats.Eq
+import gem.util.Enumerated
 
 /** Enumerated type for Coma option. */
 sealed trait ComaOption extends Product with Serializable
@@ -12,5 +12,13 @@ object ComaOption {
   case object ComaOn  extends ComaOption
   case object ComaOff extends ComaOption
 
-  implicit val eq: Eq[ComaOption] = Eq.fromUniversalEquals
+  /** @group Typeclass Instances */
+  implicit val CommaOptionEnumerated: Enumerated[ComaOption] =
+    new Enumerated[ComaOption] {
+      def all = List(ComaOn, ComaOff)
+      def tag(a: ComaOption): String = a match {
+        case ComaOn => "ComaOn"
+        case ComaOff => "ComaOff"
+      }
+    }
 }

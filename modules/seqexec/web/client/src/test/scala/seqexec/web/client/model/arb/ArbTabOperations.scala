@@ -6,8 +6,8 @@ package seqexec.web.client.arb
 import org.scalacheck.Arbitrary._
 import org.scalacheck._
 import scala.collection.immutable.SortedMap
+import gem.arb.ArbEnumerated._
 import seqexec.model.enum.Resource
-import seqexec.model.SeqexecModelArbitraries._
 import seqexec.web.client.model._
 import seqexec.web.client.model.RunOperation
 
@@ -73,7 +73,10 @@ trait ArbTabOperations {
   implicit val cpuCogen: Cogen[CancelPauseOperation] =
     Cogen[String].contramap(_.productPrefix)
 
-  implicit val arbTabOperations: Arbitrary[TabOperations] =
+  implicit val arbTabOperations: Arbitrary[TabOperations] = {
+    implicit val ordering: Ordering[Resource] =
+      cats.Order[Resource].toOrdering
+
     Arbitrary {
       for {
         r <- arbitrary[RunOperation]
@@ -87,9 +90,9 @@ trait ArbTabOperations {
         u <- arbitrary[SortedMap[Resource, ResourceRunOperation]]
       } yield TabOperations(r, s, p, c, m, t, a, f, u)
     }
+  }
 
   implicit val toCogen: Cogen[TabOperations] = {
-    implicit val rrc = seqexec.model.SeqexecModelArbitraries.resCogen
     Cogen[(RunOperation,
            SyncOperation,
            PauseOperation,

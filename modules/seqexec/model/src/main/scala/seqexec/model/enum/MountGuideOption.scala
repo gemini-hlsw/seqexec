@@ -3,7 +3,7 @@
 
 package seqexec.model.enum
 
-import cats.Eq
+import gem.util.Enumerated
 
 /** Enumerated type for offloading of tip/tilt corrections from M2 to mount. */
 sealed trait MountGuideOption extends Product with Serializable
@@ -12,5 +12,13 @@ object MountGuideOption {
   case object MountGuideOff extends MountGuideOption
   case object MountGuideOn  extends MountGuideOption
 
-  implicit val eq: Eq[MountGuideOption] = Eq.fromUniversalEquals
+  /** @group Typeclass Instances */
+  implicit val MountGuideOptionEnumerated: Enumerated[MountGuideOption] =
+    new Enumerated[MountGuideOption] {
+      def all = List(MountGuideOff, MountGuideOn)
+      def tag(a: MountGuideOption): String = a match {
+        case MountGuideOff => "MountGuideOff"
+        case MountGuideOn  => "MountGuideOn"
+      }
+    }
 }

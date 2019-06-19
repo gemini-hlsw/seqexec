@@ -1,14 +1,15 @@
 // Copyright (c) 2016-2019 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
-package seqexec.model.enum
+package seqexec.model
 
 import cats.Eq
 import cats.Show
 import cats.implicits._
+import seqexec.model.enum.M1Source
 
 /** Data type for M1 guide config. */
-sealed trait M1GuideConfig
+sealed trait M1GuideConfig extends Product with Serializable
 
 object M1GuideConfig {
   case object M1GuideOff extends M1GuideConfig

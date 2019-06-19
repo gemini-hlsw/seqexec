@@ -14,7 +14,7 @@ import scala.collection.immutable.SortedMap
 import seqexec.model.enum.Instrument
 import seqexec.model.enum.Resource
 import seqexec.model.enum.BatchExecState
-import seqexec.model.enum.QueueManipulationOp
+import seqexec.model.QueueManipulationOp
 import seqexec.model.ClientId
 import seqexec.model.QueueId
 import seqexec.model.Observer

@@ -3,8 +3,9 @@
 
 package seqexec.model.enum
 
-import cats.{ Eq, Show }
+import cats.Show
 import cats.implicits._
+import gem.util.Enumerated
 
 sealed abstract class FPUMode(val label: String)
   extends Product with Serializable
@@ -17,13 +18,16 @@ object FPUMode {
   val all: List[FPUMode] =
     List(BuiltIn, Custom)
 
-  implicit val equal: Eq[FPUMode] =
-    Eq.fromUniversalEquals
-
   implicit val show: Show[FPUMode] =
     Show.fromToString
 
   def fromString(s: String): Option[FPUMode] =
     all.find(_.label === s)
 
+  /** @group Typeclass Instances */
+  implicit val FPUModeEnumerated: Enumerated[FPUMode] =
+    new Enumerated[FPUMode] {
+      def all = FPUMode.all
+      def tag(a: FPUMode): String = a.label
+    }
 }

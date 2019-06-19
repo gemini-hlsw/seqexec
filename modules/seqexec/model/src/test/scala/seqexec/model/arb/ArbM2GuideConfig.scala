@@ -7,11 +7,10 @@ import org.scalacheck.Arbitrary
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Cogen
 import org.scalacheck.Gen
-import seqexec.model.enum.M2GuideConfig
+import gem.arb.ArbEnumerated._
 import seqexec.model.enum.ComaOption
 import seqexec.model.enum.TipTiltSource
-import seqexec.model.arb.ArbComaOption._
-import seqexec.model.arb.ArbTipTiltSource._
+import seqexec.model.M2GuideConfig
 
 trait ArbM2GuideConfig {
 
