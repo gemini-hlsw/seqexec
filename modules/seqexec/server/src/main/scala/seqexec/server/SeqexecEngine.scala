@@ -75,7 +75,7 @@ class SeqexecEngine(httpClient: Client[IO], gpi: GpiClient[IO], ghost: GhostClie
       DhsClientSim(settings.date)),
     settings.tcsControl.command.fold(TcsControllerEpics(), TcsControllerSim[IO]),
     settings.gcalControl.command.fold(GcalControllerEpics(), GcalControllerSim[IO]),
-    settings.f2Control.command.fold(Flamingos2ControllerEpics(),
+    settings.f2Control.command.fold(Flamingos2ControllerEpics[IO](Flamingos2Epics.instance),
       settings.instForceError.fold(Flamingos2ControllerSimBad[IO](settings.failAt),
         Flamingos2ControllerSim[IO])),
     settings.gmosControl.command.fold(GmosSouthControllerEpics(), GmosControllerSim.south),
