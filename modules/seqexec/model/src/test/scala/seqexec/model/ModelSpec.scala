@@ -5,21 +5,22 @@ package seqexec.model
 
 import cats.tests.CatsSuite
 import cats.kernel.laws.discipline._
+import gem.arb.ArbEnumerated._
 import seqexec.model.enum._
 import seqexec.model.SeqexecModelArbitraries._
 import seqexec.model.events.SingleActionEvent
-import seqexec.model.arb.ArbRunningStep
-import seqexec.model.arb.ArbNotification
+import seqexec.model.arb.ArbRunningStep._
+import seqexec.model.arb.ArbNotification._
+import seqexec.model.arb.ArbM2GuideConfig._
+import seqexec.model.arb.ArbM1GuideConfig._
+import seqexec.model.arb.ArbTelescopeGuideConfig._
 import squants.time.Time
 import squants.time.TimeUnit
 
 /**
   * Tests Model typeclasses
   */
-final class ModelSpec
-    extends CatsSuite
-    with ArbRunningStep
-    with ArbNotification {
+final class ModelSpec extends CatsSuite {
 
   checkAll("Eq[UserDetails]", EqTests[UserDetails].eqv)
   checkAll("Eq[SystemName]", EqTests[SystemName].eqv)
@@ -67,4 +68,12 @@ final class ModelSpec
   checkAll("Eq[SingleActionOp]", EqTests[SingleActionOp].eqv)
   checkAll("Eq[SingleActionEvent]", EqTests[SingleActionEvent].eqv)
   checkAll("Eq[RunningStep]", EqTests[RunningStep].eqv)
+  checkAll("Eq[MountGuideOption]", EqTests[MountGuideOption].eqv)
+  checkAll("Eq[ComaOption]", EqTests[ComaOption].eqv)
+  checkAll("Eq[TipTiltSource]", EqTests[TipTiltSource].eqv)
+  checkAll("Eq[M2GuideConfig]", EqTests[M2GuideConfig].eqv)
+  checkAll("Eq[M1Source]", EqTests[M1Source].eqv)
+  checkAll("Eq[M1GuideConfig]", EqTests[M1GuideConfig].eqv)
+  checkAll("Eq[TelescopeGuideConfig]", EqTests[TelescopeGuideConfig].eqv)
+  checkAll("Eq[BatchCommandState]", EqTests[BatchCommandState].eqv)
 }

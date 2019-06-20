@@ -1,13 +1,11 @@
 // Copyright (c) 2016-2019 Association of Universities for Research in Astronomy, Inc. (AURA)
 // For license information see LICENSE or https://opensource.org/licenses/BSD-3-Clause
 
-package seqexec.model.enum
+package seqexec.model
 
 import cats.Eq
 import cats.implicits._
 import gem.Observation
-import seqexec.model.ClientId
-import seqexec.model.QueueId
 
 sealed trait QueueManipulationOp extends Product with Serializable {
   val qid: QueueId

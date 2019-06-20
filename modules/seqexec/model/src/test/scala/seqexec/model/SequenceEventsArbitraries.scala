@@ -9,10 +9,11 @@ import org.scalacheck.Cogen
 import org.scalacheck.Gen
 import org.scalacheck.Arbitrary._
 import gem.Observation
+import gem.arb.ArbEnumerated._
 import gsp.math.arb.ArbTime
 import java.time.Instant
 import seqexec.model.enum._
-import seqexec.model.enum.QueueManipulationOp._
+import seqexec.model.QueueManipulationOp._
 import seqexec.model.SeqexecModelArbitraries._
 import seqexec.model.arb.ArbNotification
 

@@ -15,6 +15,11 @@ import monocle.macros.Lenses
 import org.log4s.getLogger
 import mouse.all._
 import seqexec.model.enum.Resource
+import seqexec.model.TelescopeGuideConfig
+import seqexec.model.enum.TipTiltSource
+import seqexec.model.enum.M1Source
+import seqexec.model.M1GuideConfig
+import seqexec.model.M2GuideConfig
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.altair.Altair
 import seqexec.server.altair.AltairController._
@@ -24,7 +29,6 @@ import seqexec.server.{ConfigResult, InstrumentSystem, SeqActionF, System}
 import shapeless.tag
 import squants.Angle
 import squants.space.Arcseconds
-
 
 final case class Tcs[F[_]: Sync] private (tcsController: TcsController[F],
                               subsystems: NonEmptySet[Subsystem],
@@ -186,12 +190,12 @@ object Tcs {
 
   def calcGuiderInUse(telGuide: TelescopeGuideConfig, tipTiltSource: TipTiltSource, m1Source: M1Source): Boolean = {
     val usedByM1: Boolean = telGuide.m1Guide match {
-      case M1GuideOn(src) => src === m1Source
-      case _              => false
+      case M1GuideConfig.M1GuideOn(src) => src === m1Source
+      case _                            => false
     }
     val usedByM2 = telGuide.m2Guide match {
-      case M2GuideOn(_, srcs) => srcs.contains(tipTiltSource)
-      case _                  => false
+      case M2GuideConfig.M2GuideOn(_, srcs) => srcs.contains(tipTiltSource)
+      case _                                => false
     }
 
     usedByM1 | usedByM2

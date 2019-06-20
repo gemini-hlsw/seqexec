@@ -10,9 +10,15 @@ import cats.implicits._
 import mouse.boolean._
 import edu.gemini.seqexec.server.tcs.{BinaryOnOff, BinaryYesNo}
 import edu.gemini.spModel.core.Wavelength
+import seqexec.model.enum.MountGuideOption
+import seqexec.model.enum.ComaOption
+import seqexec.model.enum.M1Source
+import seqexec.model.enum.TipTiltSource
+import seqexec.model.M1GuideConfig
+import seqexec.model.M2GuideConfig
+import seqexec.model.TelescopeGuideConfig
 import seqexec.server.EpicsCodex.{DecodeEpicsValue, decode}
 import seqexec.server.tcs.TcsController.FollowOption.{FollowOff, FollowOn}
-import seqexec.server.tcs.TcsController.MountGuideOption.{MountGuideOff, MountGuideOn}
 import seqexec.server.SeqexecFailure
 import seqexec.server.tcs.TcsController._
 import seqexec.server.tcs.TcsControllerEpics.{AoFold, EpicsTcsConfig, InstrumentPorts, InvalidPort, ScienceFold}
@@ -24,7 +30,7 @@ object TcsConfigRetriever {
 
   // Code to retrieve the current configuration from TCS. Include a lot of decoders
   implicit private val decodeMountGuideOption: DecodeEpicsValue[Int, MountGuideOption] = DecodeEpicsValue((d: Int)
-  => if (d === 0) MountGuideOff else MountGuideOn)
+  => if (d === 0) MountGuideOption.MountGuideOff else MountGuideOption.MountGuideOn)
 
   implicit private val decodeM1GuideSource: DecodeEpicsValue[String, M1Source] = DecodeEpicsValue((s: String)
   => s.trim match {
@@ -36,8 +42,8 @@ object TcsConfigRetriever {
     })
 
   private def decodeM1Guide(r: BinaryOnOff, s: M1Source): M1GuideConfig =
-    if (r === BinaryOnOff.Off) M1GuideOff
-    else M1GuideOn(s)
+    if (r === BinaryOnOff.Off) M1GuideConfig.M1GuideOff
+    else M1GuideConfig.M1GuideOn(s)
 
   private def decodeGuideSourceOption(s: String): Boolean = s.trim =!= "OFF"
 
@@ -45,8 +51,8 @@ object TcsConfigRetriever {
   => if (s.trim === "Off") ComaOption.ComaOff else ComaOption.ComaOn)
 
   private def decodeM2Guide(s: BinaryOnOff, u: ComaOption, v: Set[TipTiltSource]): M2GuideConfig =
-    if (s === BinaryOnOff.Off) M2GuideOff
-    else M2GuideOn(u, v)
+    if (s === BinaryOnOff.Off) M2GuideConfig.M2GuideOff
+    else M2GuideConfig.M2GuideOn(u, v)
 
   implicit private val decodeAoFold: DecodeEpicsValue[String, AoFold] = DecodeEpicsValue((s: String) =>
     if(s.trim === "IN") AoFold.In

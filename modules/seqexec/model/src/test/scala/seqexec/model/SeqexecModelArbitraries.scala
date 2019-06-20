@@ -6,6 +6,7 @@ package seqexec.model
 import cats.implicits._
 import java.util.UUID
 import gem.Observation
+import gem.arb.ArbEnumerated._
 import gem.arb.ArbObservation
 import gsp.math.arb.ArbTime.arbSDuration
 import org.scalacheck.Arbitrary
@@ -24,11 +25,6 @@ trait SeqexecModelArbitraries extends ArbObservation with ArbStepState {
   private val maxListSize = 2
 
   implicit val opArb = Arbitrary[Operator] { Gen.alphaStr.map(Operator.apply) }
-
-  implicit val ccArb = Arbitrary[CloudCover](Gen.oneOf(CloudCover.all))
-  implicit val wvArb = Arbitrary[WaterVapor](Gen.oneOf(WaterVapor.all))
-  implicit val sbArb = Arbitrary[SkyBackground](Gen.oneOf(SkyBackground.all))
-  implicit val iqArb = Arbitrary[ImageQuality](Gen.oneOf(ImageQuality.all))
 
   implicit val conArb = Arbitrary[Conditions] {
     for {
@@ -61,35 +57,6 @@ trait SeqexecModelArbitraries extends ArbObservation with ArbStepState {
     arbitrary[UUID].map(ClientId)
   }
 
-  implicit val levArb = Arbitrary[ServerLogLevel](
-    Gen.oneOf(ServerLogLevel.INFO, ServerLogLevel.WARN, ServerLogLevel.ERROR))
-  implicit val resArb = Arbitrary[Resource](
-    Gen.oneOf(
-      Resource.P1,
-      Resource.OI,
-      Resource.TCS,
-      Resource.Gcal,
-      Resource.Gems,
-      Resource.Altair,
-      Instrument.F2,
-      Instrument.GmosS,
-      Instrument.GmosN,
-      Instrument.Gpi,
-      Instrument.Gsaoi,
-      Instrument.Gnirs,
-      Instrument.Niri,
-      Instrument.Nifs
-    ))
-  implicit val insArb = Arbitrary[Instrument](
-    Gen.oneOf(Instrument.F2,
-              Instrument.GmosS,
-              Instrument.GmosN,
-              Instrument.Gpi,
-              Instrument.Gsaoi,
-              Instrument.Gnirs,
-              Instrument.Niri,
-              Instrument.Nifs))
-
   implicit val queueIdArb: Arbitrary[QueueId] = Arbitrary {
     arbitrary[UUID].map(QueueId)
   }
@@ -121,13 +88,6 @@ trait SeqexecModelArbitraries extends ArbObservation with ArbStepState {
     } yield SequenceMetadata(i, o, n)
   }
 
-  implicit val acsArb = Arbitrary[ActionStatus](
-    Gen.oneOf(ActionStatus.Pending,
-              ActionStatus.Completed,
-              ActionStatus.Running,
-              ActionStatus.Paused,
-              ActionStatus.Failed))
-
   implicit val sqrArb = Arbitrary[SequenceState.Running] {
     for {
       u <- arbitrary[Boolean]
@@ -144,7 +104,6 @@ trait SeqexecModelArbitraries extends ArbObservation with ArbStepState {
       s <- Gen.oneOf(f, r, a)
     } yield s
   }
-  implicit val snArb = Arbitrary(Gen.oneOf(SystemName.all))
 
   def asciiStr: Gen[String] =
     Gen.listOf(Gen.alphaChar).map(_.mkString)
@@ -207,11 +166,6 @@ trait SeqexecModelArbitraries extends ArbObservation with ArbStepState {
                        observeStatus = os)
   }
 
-  implicit val styArb = Arbitrary(Gen.oneOf(StepType.all))
-  implicit val guiArb =
-    Arbitrary[Guiding](Gen.oneOf(Guiding.Park, Guiding.Guide, Guiding.Freeze))
-  implicit val fpmArb =
-    Arbitrary[FPUMode](Gen.oneOf(FPUMode.BuiltIn, FPUMode.Custom))
   implicit val telOffPArb = Arbitrary[TelescopeOffset.P] {
     for {
       d <- Gen.choose(-999.0, 999.0)
@@ -242,15 +196,6 @@ trait SeqexecModelArbitraries extends ArbObservation with ArbStepState {
   implicit val actCogen: Cogen[ActionType] =
     Cogen[String].contramap(_.productPrefix)
 
-  implicit val snCogen: Cogen[SystemName] =
-    Cogen[String].contramap(_.show)
-
-  implicit val resCogen: Cogen[Resource] =
-    Cogen[String].contramap(_.show)
-
-  implicit val instCogen: Cogen[Instrument] =
-    Cogen[String].contramap(_.show)
-
   implicit val opCogen: Cogen[Operator] =
     Cogen[String].contramap(_.value)
 
@@ -259,9 +204,6 @@ trait SeqexecModelArbitraries extends ArbObservation with ArbStepState {
 
   implicit val stParams: Cogen[StepConfig] =
     Cogen[String].contramap(_.mkString(","))
-
-  implicit val acsCogen: Cogen[ActionStatus] =
-    Cogen[String].contramap(_.productPrefix)
 
   implicit val stepCogen: Cogen[Step] =
     Cogen[(StepId,
@@ -297,9 +239,6 @@ trait SeqexecModelArbitraries extends ArbObservation with ArbStepState {
   implicit val sqsCogen: Cogen[SequenceState] =
     Cogen[String].contramap(_.productPrefix)
 
-  implicit val styCogen: Cogen[StepType] =
-    Cogen[String].contramap(_.productPrefix)
-
   implicit val udCogen: Cogen[UserDetails] =
     Cogen[(String, String)].contramap(u => (u.username, u.displayName))
 
@@ -328,33 +267,12 @@ trait SeqexecModelArbitraries extends ArbObservation with ArbStepState {
   implicit val offCogen: Cogen[TelescopeOffset] =
     Cogen[(TelescopeOffset.P, TelescopeOffset.Q)].contramap(o => (o.p, o.q))
 
-  implicit val guiCogen: Cogen[Guiding] =
-    Cogen[String].contramap(_.productPrefix)
-
-  implicit val fpuCogen: Cogen[FPUMode] =
-    Cogen[String].contramap(_.productPrefix)
-
-  implicit val ccCogen: Cogen[CloudCover] =
-    Cogen[String].contramap(_.productPrefix)
-
-  implicit val wvCogen: Cogen[WaterVapor] =
-    Cogen[String].contramap(_.productPrefix)
-
-  implicit val sbCogen: Cogen[SkyBackground] =
-    Cogen[String].contramap(_.productPrefix)
-
-  implicit val iqCogen: Cogen[ImageQuality] =
-    Cogen[String].contramap(_.productPrefix)
-
   implicit val conCogen: Cogen[Conditions] =
     Cogen[(CloudCover, ImageQuality, SkyBackground, WaterVapor)].contramap(c =>
       (c.cc, c.iq, c.sb, c.wv))
 
   implicit val cidCogen: Cogen[ClientId] =
     Cogen[UUID].contramap(_.self)
-
-  implicit val levCogen: Cogen[ServerLogLevel] =
-    Cogen[String].contramap(_.productPrefix)
 
   implicit val seqBatchCmdRunArb: Arbitrary[BatchCommandState.Run] = Arbitrary {
     for {
@@ -377,17 +295,6 @@ trait SeqexecModelArbitraries extends ArbObservation with ArbStepState {
           (r.productPrefix, obs.some, usd.some, cid.some)
         case o => (o.productPrefix, None, None, None)
       }
-
-  implicit val seqBatchXStateArb: Arbitrary[BatchExecState] = Arbitrary(
-    Gen.oneOf(BatchExecState.Idle,
-              BatchExecState.Waiting,
-              BatchExecState.Running,
-              BatchExecState.Stopping,
-              BatchExecState.Completed)
-  )
-
-  implicit val seqBatchXStateCogen: Cogen[BatchExecState] =
-    Cogen[String].contramap(_.productPrefix)
 
   implicit val executionQueueViewArb: Arbitrary[ExecutionQueueView] =
     Arbitrary {

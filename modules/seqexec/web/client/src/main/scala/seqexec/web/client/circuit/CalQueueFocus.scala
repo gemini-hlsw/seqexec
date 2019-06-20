@@ -17,7 +17,7 @@ import seqexec.model.ExecutionQueueView
 import seqexec.model.QueueId
 import seqexec.web.client.model._
 import seqexec.web.client.components.queue.CalQueueTable
-import seqexec.model.enum.QueueManipulationOp
+import seqexec.model.QueueManipulationOp
 import web.client.table.TableState
 import scala.collection.immutable.SortedMap
 

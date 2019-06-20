@@ -3,8 +3,9 @@
 
 package seqexec.model.enum
 
-import cats.{ Eq, Show }
+import cats.Show
 import cats.implicits._
+import gem.util.Enumerated
 
 sealed abstract class StepType(val label: String)
   extends Product with Serializable
@@ -19,9 +20,6 @@ object StepType {
   case object Calibration   extends StepType("CAL")
   case object AlignAndCalib extends StepType("A & C")
 
-  implicit val eq: Eq[StepType] =
-    Eq.fromUniversalEquals
-
   implicit val show: Show[StepType] =
     Show.show(_.label)
 
@@ -30,5 +28,12 @@ object StepType {
 
   def fromString(s: String): Option[StepType] =
     all.find(_.label === s)
+
+  /** @group Typeclass Instances */
+  implicit val StepTypeEnumerated: Enumerated[StepType] =
+    new Enumerated[StepType] {
+      def all = StepType.all
+      def tag(a: StepType): String = a.label
+    }
 
 }

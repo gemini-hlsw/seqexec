@@ -13,7 +13,7 @@ import seqexec.model.ClientId
 import seqexec.model.QueueId
 import seqexec.model.Observer
 import seqexec.model.ExecutionQueueView
-import seqexec.model.enum.BatchCommandState
+import seqexec.model.BatchCommandState
 import seqexec.model.SequencesQueue
 import seqexec.model.SequenceView
 import seqexec.web.client.model.SeqexecAppRootModel

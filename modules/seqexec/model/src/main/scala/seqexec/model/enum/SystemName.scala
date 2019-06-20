@@ -3,8 +3,8 @@
 
 package seqexec.model.enum
 
-import cats.{ Eq, Show }
 import cats.implicits._
+import gem.util.Enumerated
 
 sealed abstract class SystemName(val system: String) {
 
@@ -33,10 +33,10 @@ object SystemName {
   def unsafeFromString(system: String): SystemName =
     fromString(system).getOrElse(sys.error(s"Unknown system name $system"))
 
-  implicit val show: Show[SystemName] =
-    Show.show(_.system)
-
-  implicit val equal: Eq[SystemName] =
-    Eq.fromUniversalEquals
-
+  /** @group Typeclass Instances */
+  implicit val SystemNameEnumerated: Enumerated[SystemName] =
+    new Enumerated[SystemName] {
+      def all = SystemName.all
+      def tag(a: SystemName): String = a.system
+    }
 }

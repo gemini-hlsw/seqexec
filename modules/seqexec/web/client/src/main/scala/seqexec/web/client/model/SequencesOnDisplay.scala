@@ -19,6 +19,7 @@ import seqexec.model.SequenceView
 import seqexec.model.SequencesQueue
 import seqexec.model.StepId
 import seqexec.model.CalibrationQueueId
+import seqexec.model.BatchCommandState
 import seqexec.model.enum._
 import seqexec.web.common.Zipper
 import seqexec.web.client.circuit.SequenceObserverFocus
