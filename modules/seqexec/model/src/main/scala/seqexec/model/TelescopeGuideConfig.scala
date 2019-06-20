@@ -14,7 +14,6 @@ final case class TelescopeGuideConfig(mountGuide: MountGuideOption,
                                       m1Guide:    M1GuideConfig,
                                       m2Guide:    M2GuideConfig)
 
-@SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
 object TelescopeGuideConfig {
   implicit val eq: Eq[TelescopeGuideConfig] =
     Eq.by(x => (x.mountGuide, x.m1Guide, x.m2Guide))
