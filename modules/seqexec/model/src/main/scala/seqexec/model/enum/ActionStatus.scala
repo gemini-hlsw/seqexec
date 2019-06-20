@@ -20,10 +20,13 @@ object ActionStatus {
   /** Action run but failed to complete. */
   case object Failed extends ActionStatus
 
+  val all: List[ActionStatus] =
+    List(Pending, Completed, Running, Paused, Failed)
+
   /** @group Typeclass Instances */
   implicit val ActionStatusEnumerated: Enumerated[ActionStatus] =
     new Enumerated[ActionStatus] {
-      def all = List(Pending, Completed, Running, Paused, Failed)
+      def all = ActionStatus.all
       def tag(a: ActionStatus): String = a match {
         case Pending => "Pending"
         case Completed => "Completed"

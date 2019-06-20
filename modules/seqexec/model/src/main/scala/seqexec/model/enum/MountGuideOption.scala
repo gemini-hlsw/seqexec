@@ -12,10 +12,13 @@ object MountGuideOption {
   case object MountGuideOff extends MountGuideOption
   case object MountGuideOn  extends MountGuideOption
 
+  val all: List[MountGuideOption] =
+    List(MountGuideOff, MountGuideOn)
+
   /** @group Typeclass Instances */
   implicit val MountGuideOptionEnumerated: Enumerated[MountGuideOption] =
     new Enumerated[MountGuideOption] {
-      def all = List(MountGuideOff, MountGuideOn)
+      def all = MountGuideOption.all
       def tag(a: MountGuideOption): String = a match {
         case MountGuideOff => "MountGuideOff"
         case MountGuideOn  => "MountGuideOn"
