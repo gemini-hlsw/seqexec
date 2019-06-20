@@ -12,7 +12,8 @@ import org.scalatest.{FlatSpec, Matchers, NonImplicitAssertions}
 import org.scalatest.Inside.inside
 import seqexec.engine.Sequence
 import seqexec.model.{CalibrationQueueId, Observer, SequenceState, UserDetails}
-import seqexec.model.enum.{BatchCommandState, Instrument}
+import seqexec.model.BatchCommandState
+import seqexec.model.enum.Instrument
 import seqexec.model.enum.Resource.TCS
 import seqexec.server.TestCommon._
 

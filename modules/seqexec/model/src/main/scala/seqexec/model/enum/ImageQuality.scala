@@ -3,7 +3,8 @@
 
 package seqexec.model.enum
 
-import cats.{ Eq, Show }
+import cats.Show
+import gem.util.Enumerated
 
 sealed abstract class ImageQuality(val toInt: Int, val label: String)
   extends Product with Serializable
@@ -18,11 +19,13 @@ object ImageQuality {
   val all: List[ImageQuality] =
     List(Percent20, Percent70, Percent85, Any)
 
-  implicit val equalImageQuality: Eq[ImageQuality] =
-    Eq.fromUniversalEquals
-
   implicit val showImageQuality: Show[ImageQuality] =
     Show.show(_.label)
 
+  /** @group Typeclass Instances */
+  implicit val ImageQualityEnumerated: Enumerated[ImageQuality] =
+    new Enumerated[ImageQuality] {
+      def all = ImageQuality.all
+      def tag(a: ImageQuality): String = a.label
+    }
 }
-

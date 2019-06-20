@@ -14,7 +14,7 @@ import monocle.function.At.at
 import seqexec.model.ExecutionQueueView
 import seqexec.model.QueueId
 import seqexec.model.SequencesQueue
-import seqexec.model.enum.BatchCommandState
+import seqexec.model.BatchCommandState
 import seqexec.model.enum.BatchExecState
 import seqexec.web.client.model._
 

@@ -7,12 +7,20 @@ import cats.effect.Sync
 import cats.effect.concurrent.Ref
 import cats.implicits._
 import mouse.boolean._
+import seqexec.model.enum.MountGuideOption._
+import seqexec.model.enum.ComaOption
+import seqexec.model.enum.ComaOption._
+import seqexec.model.enum.M1Source
+import seqexec.model.enum.MountGuideOption
+import seqexec.model.enum.TipTiltSource
+import seqexec.model.M1GuideConfig
+import seqexec.model.M1GuideConfig._
+import seqexec.model.M2GuideConfig
+import seqexec.model.M2GuideConfig._
+import seqexec.model.TelescopeGuideConfig
 import seqexec.server.altair.AltairController._
 import seqexec.server.gems.GemsController.{GemsConfig, GemsOff}
-import TcsController.{ComaOption, M1GuideConfig, M1GuideOff, M1GuideOn, M1Source, M2GuideConfig, M2GuideOff, M2GuideOn, MountGuideOption, TelescopeGuideConfig, TipTiltSource}
 import io.circe.{Decoder, DecodingFailure}
-import seqexec.server.tcs.TcsController.ComaOption._
-import seqexec.server.tcs.TcsController.MountGuideOption.{MountGuideOff, MountGuideOn}
 import squants.space.Millimeters
 
 trait GuideConfigDb[F[_]] {

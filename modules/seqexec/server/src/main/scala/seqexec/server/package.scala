@@ -37,6 +37,7 @@ import seqexec.model.Conditions
 import seqexec.model.Observer
 import seqexec.model.Operator
 import seqexec.model.SequenceState
+import seqexec.model.BatchCommandState
 import seqexec.model.enum._
 import seqexec.model.Notification
 import seqexec.model.UserDetails

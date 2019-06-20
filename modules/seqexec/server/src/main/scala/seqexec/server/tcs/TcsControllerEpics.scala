@@ -4,22 +4,29 @@
 package seqexec.server.tcs
 
 import cats.{Applicative, Endo, Eq}
-import seqexec.server.tcs.TcsController.{HrwfsConfig, TelescopeGuideConfig, _}
-import seqexec.server.{EpicsCodex, EpicsCommandF, SeqexecFailure}
-import edu.gemini.spModel.core.Wavelength
-import org.log4s.{Logger, getLogger}
-import squants.time.Seconds
 import cats.data._
 import cats.effect.{Async, IO, Sync}
 import cats.implicits._
+import edu.gemini.spModel.core.Wavelength
 import gem.enum.LightSinkName
+import org.log4s.{Logger, getLogger}
+import squants.time.Seconds
 import mouse.boolean._
-import seqexec.server.altair.Altair
-import seqexec.server.gems.Gems
-import squants.{Angle, Length}
 import monocle.{Iso, Lens}
 import monocle.macros.Lenses
+import squants.{Angle, Length}
 import seqexec.model.enum.Instrument
+import seqexec.model.enum.ComaOption
+import seqexec.model.enum.MountGuideOption
+import seqexec.model.enum.M1Source
+import seqexec.model.enum.TipTiltSource
+import seqexec.model.M2GuideConfig
+import seqexec.model.M1GuideConfig
+import seqexec.model.TelescopeGuideConfig
+import seqexec.server.altair.Altair
+import seqexec.server.gems.Gems
+import seqexec.server.tcs.TcsController._
+import seqexec.server.{EpicsCodex, EpicsCommandF, SeqexecFailure}
 import seqexec.server.tcs.Gaos.{GaosGuideOff, GaosGuideOn, OffsetMove, OffsetReached, OiOff, OiOn, P1Off, P1On, PauseCondition, PauseResume, ResumeCondition}
 import seqexec.server.tcs.TcsEpics.{ProbeFollowCmd, ProbeGuideCmd}
 import shapeless.tag
@@ -30,7 +37,6 @@ class TcsControllerEpics private extends TcsController[IO] {
 
   import TcsControllerEpics._
   import EpicsCodex._
-  import MountGuideOption._
   import ScienceFoldPositionCodex._
 
   // Same offset is applied to all the beams
@@ -212,8 +218,8 @@ class TcsControllerEpics private extends TcsController[IO] {
 
   implicit private val encodeMountGuideConfig: EncodeEpicsValue[MountGuideOption, String] =
     EncodeEpicsValue{
-      case MountGuideOn  => "on"
-      case MountGuideOff => "off"
+      case MountGuideOption.MountGuideOn  => "on"
+      case MountGuideOption.MountGuideOff => "off"
     }
 
   private def setMountGuide(c: MountGuideOption): IO[Unit] =
@@ -221,28 +227,28 @@ class TcsControllerEpics private extends TcsController[IO] {
 
   implicit private val encodeM1GuideConfig: EncodeEpicsValue[M1GuideConfig, String] =
     EncodeEpicsValue{
-      case M1GuideOn(_) => "on"
-      case M1GuideOff   => "off"
+      case M1GuideConfig.M1GuideOn(_) => "on"
+      case M1GuideConfig.M1GuideOff   => "off"
     }
 
   private def setM1Guide(c: M1GuideConfig): IO[Unit] = TcsEpics.instance.m1GuideCmd.setState(encode(c))
 
   private val encodeM2Guide: EncodeEpicsValue[M2GuideConfig, String] =
     EncodeEpicsValue{
-      case M2GuideOn(_, _) => "on"
-      case M2GuideOff      => "off"
+      case M2GuideConfig.M2GuideOn(_, _) => "on"
+      case M2GuideConfig.M2GuideOff      => "off"
     }
 
   private val encodeM2Coma: EncodeEpicsValue[M2GuideConfig, String] =
     EncodeEpicsValue{
-      case M2GuideOn(ComaOption.ComaOn, _) => "on"
+      case M2GuideConfig.M2GuideOn(ComaOption.ComaOn, _) => "on"
       case _                               => "off"
     }
 
   private val encodeM2GuideReset: EncodeEpicsValue[M2GuideConfig, String] =
     EncodeEpicsValue{
-      case M2GuideOn(_, _) => "off"
-      case M2GuideOff      => "on"
+      case M2GuideConfig.M2GuideOn(_, _) => "off"
+      case M2GuideConfig.M2GuideOff      => "on"
     }
 
   private def setM2Guide(c: M2GuideConfig, d: M2GuideConfig)(tcsCfg: EpicsTcsConfig): IO[EpicsTcsConfig] = {
@@ -417,13 +423,13 @@ class TcsControllerEpics private extends TcsController[IO] {
           .set(calc(current.oiwfs.detector, demand.gds.oiwfs.detector))
     ) >>> TcsConfig.gc.modify(
       TelescopeGuideConfig.mountGuide.set(
-        (mustOff || demand.gc.mountGuide === MountGuideOff).fold(MountGuideOff, current.telescopeGuideConfig.mountGuide)
+        (mustOff || demand.gc.mountGuide === MountGuideOption.MountGuideOff).fold(MountGuideOption.MountGuideOff, current.telescopeGuideConfig.mountGuide)
       ) >>>
         TelescopeGuideConfig.m1Guide.set(
-          (mustOff || demand.gc.m1Guide === M1GuideOff).fold(M1GuideOff, current.telescopeGuideConfig.m1Guide)
+          (mustOff || demand.gc.m1Guide === M1GuideConfig.M1GuideOff).fold(M1GuideConfig.M1GuideOff, current.telescopeGuideConfig.m1Guide)
         ) >>>
         TelescopeGuideConfig.m2Guide.set(
-          (mustOff || demand.gc.m2Guide === M2GuideOff).fold(M2GuideOff, current.telescopeGuideConfig.m2Guide)
+          (mustOff || demand.gc.m2Guide === M2GuideConfig.M2GuideOff).fold(M2GuideConfig.M2GuideOff, current.telescopeGuideConfig.m2Guide)
         )
     ) >>> normalizeM1Guiding(gaosEnabled) >>> normalizeM2Guiding(gaosEnabled) >>> normalizeMountGuiding)(demand)
   }
@@ -506,12 +512,12 @@ class TcsControllerEpics private extends TcsController[IO] {
   // Disable M1 guiding if source is off
   def normalizeM1Guiding(gaosEnabled: Boolean): Endo[TcsConfig] = cfg =>
     (TcsConfig.gc ^|-> TelescopeGuideConfig.m1Guide).modify{
-      case g@M1GuideOn(src) => src match {
-        case M1Source.PWFS1 => if(guiderActive(cfg.gds.pwfs1)) g else M1GuideOff
-        case M1Source.PWFS2 => if(cfg.gds.pwfs2OrAowfs.swap.exists(guiderActive)) g else M1GuideOff
-        case M1Source.OIWFS => if(guiderActive(cfg.gds.oiwfs)) g else M1GuideOff
+      case g @ M1GuideConfig.M1GuideOn(src) => src match {
+        case M1Source.PWFS1 => if(guiderActive(cfg.gds.pwfs1)) g else M1GuideConfig.M1GuideOff
+        case M1Source.PWFS2 => if(cfg.gds.pwfs2OrAowfs.swap.exists(guiderActive)) g else M1GuideConfig.M1GuideOff
+        case M1Source.OIWFS => if(guiderActive(cfg.gds.oiwfs)) g else M1GuideConfig.M1GuideOff
         case M1Source.GAOS  => if(cfg.gds.pwfs2OrAowfs.exists(_.detector === GuiderSensorOn) && gaosEnabled) g
-                               else M1GuideOff
+        else M1GuideConfig.M1GuideOff
         case _              => g
       }
       case x                => x
@@ -520,7 +526,7 @@ class TcsControllerEpics private extends TcsController[IO] {
   // Disable M2 sources if they are off, disable M2 guiding if all are off
   def normalizeM2Guiding(gaosEnabled: Boolean): Endo[TcsConfig] = cfg =>
     (TcsConfig.gc ^|-> TelescopeGuideConfig.m2Guide).modify{
-      case M2GuideOn(coma, srcs) =>
+      case M2GuideConfig.M2GuideOn(coma, srcs) =>
         val ss = srcs.filter{
           case TipTiltSource.PWFS1 => guiderActive(cfg.gds.pwfs1)
           case TipTiltSource.PWFS2 => cfg.gds.pwfs2OrAowfs.swap.map(guiderActive).getOrElse(false)
@@ -528,16 +534,16 @@ class TcsControllerEpics private extends TcsController[IO] {
           case TipTiltSource.GAOS  => cfg.gds.pwfs2OrAowfs.exists(_.detector === GuiderSensorOn) && gaosEnabled
           case _                   => true
         }
-        if(ss.isEmpty) M2GuideOff
-        else M2GuideOn((cfg.gc.m1Guide =!= M1GuideOff).fold(coma, ComaOption.ComaOff), ss)
+        if(ss.isEmpty) M2GuideConfig.M2GuideOff
+        else M2GuideConfig.M2GuideOn((cfg.gc.m1Guide =!= M1GuideConfig.M1GuideOff).fold(coma, ComaOption.ComaOff), ss)
       case x                     => x
     }(cfg)
 
   // Disable Mount guiding if M2 guiding is disabled
   val normalizeMountGuiding: Endo[TcsConfig] = cfg =>
     (TcsConfig.gc ^|-> TelescopeGuideConfig.mountGuide).modify{ m => (m, cfg.gc.m2Guide) match {
-      case (MountGuideOn, M2GuideOn(_, _)) => MountGuideOn
-      case _                               => MountGuideOff
+      case (MountGuideOption.MountGuideOn, M2GuideConfig.M2GuideOn(_, _)) => MountGuideOption.MountGuideOn
+      case _                                                              => MountGuideOption.MountGuideOff
     } }(cfg)
 
 }

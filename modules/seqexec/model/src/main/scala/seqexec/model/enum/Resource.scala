@@ -3,9 +3,9 @@
 
 package seqexec.model.enum
 
-import cats.{ Eq, Order, Show }
+import cats.Show
 import cats.data.NonEmptyList
-import cats.implicits._
+import gem.util.Enumerated
 
 /** A Seqexec resource represents any system that can be only used by one single agent. */
 sealed abstract class Resource(val ordinal: Int, val label: String)
@@ -26,17 +26,17 @@ object Resource {
   // For now, I replaced them with TCS
   //  case object Mount extends Resource
   //  case object ScienceFold extends Resource
-
-  implicit val order: Order[Resource] =
-    Order.by(_.ordinal)
-
   implicit val show: Show[Resource] =
     Show.show(_.label)
 
-  implicit val ordering: Ordering[Resource] =
-    order.toOrdering
-
   val common: List[Resource] = List(TCS, Gcal)
+
+  /** @group Typeclass Instances */
+  implicit val ResourceEnumerated: Enumerated[Resource] =
+    new Enumerated[Resource] {
+      def all = Instrument.allResources.toList
+      def tag(a: Resource): String = a.label
+    }
 }
 
 sealed abstract class Instrument(ordinal: Int, label: String)
@@ -56,9 +56,6 @@ object Instrument {
   case object Niri  extends Instrument(18, "NIRI")
   case object Nifs  extends Instrument(19, "NIFS")
 
-  implicit val equal: Eq[Instrument] =
-    Eq.by(x => x: Resource)
-
   implicit val show: Show[Instrument] =
     Show.show(_.label)
 
@@ -74,4 +71,10 @@ object Instrument {
   val allResources: NonEmptyList[Resource] =
     NonEmptyList.of(Resource.P1, Resource.OI, Resource.TCS, Resource.Gcal, Resource.Gems, Resource.Altair) ::: Instrument.all
 
+  /** @group Typeclass Instances */
+  implicit val InstrumentEnumerated: Enumerated[Instrument] =
+    new Enumerated[Instrument] {
+      def all = Instrument.all.toList
+      def tag(a: Instrument): String = a.label
+    }
 }

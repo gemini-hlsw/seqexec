@@ -7,7 +7,7 @@ import cats.Eq
 import cats.implicits._
 import gem.Observation
 import monocle.macros.Lenses
-import seqexec.model.enum.BatchCommandState
+import seqexec.model.BatchCommandState
 
 @Lenses
 final case class ExecutionQueue(name:      String,

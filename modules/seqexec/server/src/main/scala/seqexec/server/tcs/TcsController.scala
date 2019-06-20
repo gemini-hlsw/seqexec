@@ -6,11 +6,12 @@ package seqexec.server.tcs
 import cats._
 import cats.data.{NonEmptySet, OneAnd}
 import cats.implicits._
-import seqexec.server.InstrumentGuide
 import edu.gemini.spModel.core.Wavelength
-import gem.enum.LightSinkName
-import squants.{Angle, Length}
+import gem.enum._
 import monocle.macros.Lenses
+import squants.{Angle, Length}
+import seqexec.model.TelescopeGuideConfig
+import seqexec.server.InstrumentGuide
 import seqexec.server.altair.Altair
 import seqexec.server.altair.AltairController.AltairConfig
 import seqexec.server.gems.Gems
@@ -39,68 +40,6 @@ trait TcsController[F[_]] {
 
 // scalastyle:off
 object TcsController {
-
-  /** Enumerated type for Tip/Tilt Source. */
-  sealed trait TipTiltSource
-  object TipTiltSource {
-    case object PWFS1 extends TipTiltSource
-    case object PWFS2 extends TipTiltSource
-    case object OIWFS extends TipTiltSource
-    case object GAOS  extends TipTiltSource
-  }
-
-  /** Enumerated type for M1 Source. */
-  sealed trait M1Source
-  object M1Source {
-    case object PWFS1 extends M1Source
-    case object PWFS2 extends M1Source
-    case object OIWFS extends M1Source
-    case object GAOS  extends M1Source
-    case object HRWFS extends M1Source
-
-    implicit val m1SourceEq: Eq[M1Source] = Eq.fromUniversalEquals
-  }
-
-  /** Enumerated type for Coma option. */
-  sealed trait ComaOption
-  object ComaOption {
-    case object ComaOn  extends ComaOption
-    case object ComaOff extends ComaOption
-
-    implicit val eq: Eq[ComaOption] = Eq.fromUniversalEquals
-  }
-
-  /** Data type for M2 guide config. */
-  sealed trait M2GuideConfig
-  case object M2GuideOff extends M2GuideConfig
-  final case class M2GuideOn(coma: ComaOption, source: Set[TipTiltSource]) extends M2GuideConfig
-  object M2GuideOn {
-    implicit val eq: Eq[M2GuideOn] = Eq.by(x => (x.coma, x.source))
-  }
-  object M2GuideConfig {
-    implicit val show: Show[M2GuideConfig] = Show.fromToString
-    implicit val eq: Eq[M2GuideConfig] = Eq.instance{
-      case (M2GuideOff, M2GuideOff)               => true
-      case (a@M2GuideOn(_, _), b@M2GuideOn(_, _)) => a === b
-      case _                                      => false
-    }
-  }
-
-  /** Data type for M2 guide config. */
-  sealed trait M1GuideConfig
-  case object M1GuideOff extends M1GuideConfig
-  final case class M1GuideOn(source: M1Source) extends M1GuideConfig
-  object M1GuideOn {
-    implicit val eq: Eq[M1GuideOn] = Eq.by(_.source)
-  }
-  object M1GuideConfig {
-    implicit val show: Show[M1GuideConfig] = Show.fromToString
-    implicit val eq: Eq[M1GuideConfig] = Eq.instance{
-      case (M1GuideOff, M1GuideOff)         => true
-      case (a@M1GuideOn(_), b@M1GuideOn(_)) => a === b
-      case _                                => false
-    }
-  }
 
   /** Enumerated type for beams A, B, and C. */
   sealed trait Beam extends Product with Serializable
@@ -271,23 +210,6 @@ object TcsController {
     implicit val show: Show[LightPath] = Show.fromToString
 
     implicit val positionEq: Eq[LightPath] = Eq.by(x => (x.source, x.sink))
-  }
-
-  /** Enumerated type for offloading of tip/tilt corrections from M2 to mount. */
-  sealed trait MountGuideOption
-  object MountGuideOption {
-    case object MountGuideOff extends MountGuideOption
-    case object MountGuideOn  extends MountGuideOption
-
-    implicit val eq: Eq[MountGuideOption] = Eq.fromUniversalEquals
-  }
-
-  /** Data type for guide config. */
-  @Lenses
-  final case class TelescopeGuideConfig(mountGuide: MountGuideOption, m1Guide: M1GuideConfig, m2Guide: M2GuideConfig)
-
-  object TelescopeGuideConfig {
-    implicit val eq: Eq[TelescopeGuideConfig] = Eq.by(x => (x.mountGuide, x.m1Guide, x.m2Guide))
   }
 
   // TCS expects offsets as two length quantities (in millimeters) in the focal plane
