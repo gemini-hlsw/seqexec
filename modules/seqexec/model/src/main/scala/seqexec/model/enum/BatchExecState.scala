@@ -4,7 +4,6 @@
 package seqexec.model.enum
 
 import cats.Show
-import cats.implicits._
 import gem.util.Enumerated
 
 sealed trait BatchExecState extends Product with Serializable {
@@ -30,6 +29,14 @@ object BatchExecState {
     case Completed => "Completed"
   }
 
+  def tag(s: BatchExecState): String = s match {
+    case Idle      => "Idle"
+    case Running   => "Running"
+    case Waiting   => "Waiting"
+    case Stopping  => "Stopping"
+    case Completed => "Completed"
+  }
+
   val all: List[BatchExecState] =
     List(Idle, Running, Waiting, Stopping, Completed)
 
@@ -37,6 +44,6 @@ object BatchExecState {
   implicit val BatchExecStateEnumerated: Enumerated[BatchExecState] =
     new Enumerated[BatchExecState] {
       def all = BatchExecState.all
-      def tag(a: BatchExecState): String = a.show
+      def tag(a: BatchExecState): String = BatchExecState.tag(a)
     }
 }

@@ -3,7 +3,6 @@
 
 package seqexec.model.enum
 
-import cats.Show
 import cats.implicits._
 import gem.util.Enumerated
 
@@ -17,9 +16,6 @@ object FPUMode {
 
   val all: List[FPUMode] =
     List(BuiltIn, Custom)
-
-  implicit val show: Show[FPUMode] =
-    Show.fromToString
 
   def fromString(s: String): Option[FPUMode] =
     all.find(_.label === s)

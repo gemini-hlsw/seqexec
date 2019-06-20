@@ -9,6 +9,7 @@ import cats.Traverse
 import cats.Monoid
 import cats.implicits._
 import gem.Observation
+import gem.util.Enumerated
 import java.time.Instant
 import seqexec.model._
 import seqexec.model.enum._
@@ -24,14 +25,21 @@ trait ModelBooPicklers extends GemModelBooPicklers {
   def valuesMap[F[_]: Traverse, A, B](c: F[A], f: A => B): Map[B, A] =
     c.fproduct(f).map(_.swap).toList.toMap
 
+  def sourceIndex[A : Enumerated]: Map[Int, A] =
+    Enumerated[A].all.zipWithIndex.map(_.swap).toMap
+
   // scalastyle:off
-  def valuesMapPickler[A: Eq, B: Monoid: Pickler](valuesMap: Map[B, A]) =
+  def valuesMapPickler[A: Eq: Enumerated, B: Monoid: Pickler](valuesMap: Map[B, A]) =
     transformPickler(
       (t: B) =>
         valuesMap
           .get(t)
           .getOrElse(throw new RuntimeException(s"Failed to decode value")))(
-      t => valuesMap.find { case (_, v) => v === t }.map(_._1).orEmpty)
+      t => valuesMap.find { case (_, v) => v === t }.foldMap(_._1))
+
+  def enumeratedPickler[A: Eq: Enumerated] = {
+    valuesMapPickler[A, Int](sourceIndex[A])
+  }
   // scalastyle:on
 
   val instrumentIdx = valuesMap(Instrument.all, (x: Instrument) => x.ordinal)
@@ -89,13 +97,7 @@ trait ModelBooPicklers extends GemModelBooPicklers {
     .addConcreteType[SequenceState.Failed]
     .addConcreteType[SequenceState.Idle.type]
 
-  private val actionStatusIdx = Map((0 -> ActionStatus.Pending),
-                                    (1 -> ActionStatus.Completed),
-                                    (2 -> ActionStatus.Running),
-                                    (3 -> ActionStatus.Paused),
-                                    (4 -> ActionStatus.Failed))
-
-  implicit val actionStatusPickler = valuesMapPickler(actionStatusIdx)
+  implicit val actionStatusPickler = enumeratedPickler[ActionStatus]
 
   implicit val stepStatePendingPickler = generatePickler[StepState.Pending.type]
   implicit val stepStateCompletedPickler =
@@ -151,12 +153,6 @@ trait ModelBooPicklers extends GemModelBooPicklers {
     .addConcreteType[SingleActionOp.Completed]
     .addConcreteType[SingleActionOp.Error]
 
-  private val serverLogIdx = Map((0 -> ServerLogLevel.INFO),
-                                 (1 -> ServerLogLevel.WARN),
-                                 (2 -> ServerLogLevel.ERROR))
-
-  implicit val serverLogLevelPickler = valuesMapPickler(serverLogIdx)
-
   implicit val batchCommandStateIdlePickler =
     generatePickler[BatchCommandState.Idle.type]
   implicit val batchCommandStateRun = generatePickler[BatchCommandState.Run]
@@ -168,13 +164,7 @@ trait ModelBooPicklers extends GemModelBooPicklers {
     .addConcreteType[BatchCommandState.Run]
     .addConcreteType[BatchCommandState.Stop.type]
 
-  private val batchExecStateIdx = Map((0 -> BatchExecState.Idle),
-                                      (1 -> BatchExecState.Running),
-                                      (2 -> BatchExecState.Waiting),
-                                      (3 -> BatchExecState.Stopping),
-                                      (4 -> BatchExecState.Completed))
-
-  implicit val batchExecStatePickler = valuesMapPickler(batchExecStateIdx)
+  implicit val batchExecStatePickler = enumeratedPickler[BatchExecState]
 
   implicit val executionQueuePickler = generatePickler[ExecutionQueueView]
 
@@ -186,30 +176,13 @@ trait ModelBooPicklers extends GemModelBooPicklers {
   implicit val sequenceQueueViewPickler =
     generatePickler[SequencesQueue[SequenceView]]
 
-  private val comaOptionIdx = Map((0 -> ComaOption.ComaOn),
-                                  (1 -> ComaOption.ComaOff))
+  implicit val comaPickler = enumeratedPickler[ComaOption]
 
-  implicit val comaPickler = valuesMapPickler(comaOptionIdx)
+  implicit val tipTiltSourcePickler = enumeratedPickler[TipTiltSource]
+  implicit val serverLogLevelPickler = enumeratedPickler[ServerLogLevel]
+  implicit val m1SourcePickler = enumeratedPickler[M1Source]
 
-  private val tipTiltSourceIdx = Map((0 -> TipTiltSource.PWFS1),
-                                     (1 -> TipTiltSource.PWFS2),
-                                     (2 -> TipTiltSource.OIWFS),
-                                     (3 -> TipTiltSource.GAOS))
-
-  implicit val tipTiltSourcePickler = valuesMapPickler(tipTiltSourceIdx)
-
-  private val m1SourceIdx = Map((0 -> M1Source.PWFS1),
-                                (1 -> M1Source.PWFS2),
-                                (2 -> M1Source.OIWFS),
-                                (3 -> M1Source.GAOS),
-                                (4 -> M1Source.HRWFS))
-
-  implicit val m1SourcePickler = valuesMapPickler(m1SourceIdx)
-
-  private val mountGuideIdx = Map((0 -> MountGuideOption.MountGuideOff),
-                                  (1 -> MountGuideOption.MountGuideOn))
-
-  implicit val mountGuidePickler = valuesMapPickler(mountGuideIdx)
+  implicit val mountGuidePickler = enumeratedPickler[MountGuideOption]
   implicit val m1GuideOnPickler  = generatePickler[M1GuideConfig.M1GuideOn]
   implicit val m1GuideOffPickler =
     generatePickler[M1GuideConfig.M1GuideOff.type]

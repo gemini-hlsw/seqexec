@@ -171,7 +171,7 @@ trait ModelLenses {
     prism                                         // step type
 
   val stringToStepTypeP: Prism[String, StepType] =
-    Prism(StepType.fromString)(_.show)
+    Prism(StepType.fromString)(_.label)
 
   val stepTypeO: Optional[Step, StepType] =
     stepObserveOptional(SystemName.Observe, "observeType", stringToStepTypeP)
@@ -185,7 +185,7 @@ trait ModelLenses {
     stepObserveOptional(SystemName.Observe, "coadds", stringToIntP)
 
   val stringToFPUModeP: Prism[String, FPUMode] =
-    Prism(FPUMode.fromString)(_.show)
+    Prism(FPUMode.fromString)(_.label)
   // Composite lens to find the instrument fpu model
   val instrumentFPUModeO: Optional[Step, FPUMode] =
     stepObserveOptional(SystemName.Instrument, "fpuMode", stringToFPUModeP)

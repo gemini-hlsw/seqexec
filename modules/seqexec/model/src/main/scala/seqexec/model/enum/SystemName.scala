@@ -3,7 +3,6 @@
 
 package seqexec.model.enum
 
-import cats.Show
 import cats.implicits._
 import gem.util.Enumerated
 
@@ -33,9 +32,6 @@ object SystemName {
 
   def unsafeFromString(system: String): SystemName =
     fromString(system).getOrElse(sys.error(s"Unknown system name $system"))
-
-  implicit val show: Show[SystemName] =
-    Show.show(_.system)
 
   /** @group Typeclass Instances */
   implicit val SystemNameEnumerated: Enumerated[SystemName] =

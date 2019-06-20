@@ -21,9 +21,9 @@ object M1GuideConfig {
 
   implicit val show: Show[M1GuideConfig] = Show.fromToString
   implicit val eq: Eq[M1GuideConfig] = Eq.instance {
-    case (M1GuideOff, M1GuideOff)             => true
-    case (a @ M1GuideOn(_), b @ M1GuideOn(_)) => a === b
-    case _                                    => false
+    case (M1GuideOff, M1GuideOff)     => true
+    case (M1GuideOn(a), M1GuideOn(b)) => a === b
+    case _                            => false
   }
 
 }
