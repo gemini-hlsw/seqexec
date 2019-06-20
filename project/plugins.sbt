@@ -30,7 +30,7 @@ addSbtPlugin("com.typesafe.sbt"   % "sbt-native-packager"      % "1.3.5")
 addSbtPlugin("org.scalastyle"    %% "scalastyle-sbt-plugin"    % "1.0.0")
 
 // add and check headers
-addSbtPlugin("de.heikoseeberger"  % "sbt-header"               % "4.1.0")
+addSbtPlugin("de.heikoseeberger"  % "sbt-header"               % "5.2.0")
 
 // Built the version out of git
 addSbtPlugin("com.typesafe.sbt"   % "sbt-git"                  % "0.9.3")
