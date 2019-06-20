@@ -78,14 +78,14 @@ object Settings {
     val scalaJSReactCommon      = "0.2.4"
     val scalaJSReactVirtualized = "0.6.3"
     val scalaJSReactClipboard   = "0.8.0"
-    val scalaJSReactDraggable   = "0.4.1"
+    val scalaJSReactDraggable   = "0.4.2"
     val scalaJSReactSortable    = "0.2.1"
     val reactSemanticUI         = "0.1.4"
 
     // Scala libraries
     val catsEffectVersion       = "1.3.1"
     val catsVersion             = "1.6.1"
-    val mouseVersion            = "0.21"
+    val mouseVersion            = "0.22"
     val fs2Version              = "1.0.5"
     val shapelessVersion        = "2.3.3"
     val attoVersion             = "0.6.5"
