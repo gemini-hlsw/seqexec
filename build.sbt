@@ -126,7 +126,6 @@ lazy val ocs3 = preventPublication(project.in(file(".")))
     web,
     sql,
     main,
-    ui,
     giapi,
     web_server_common,
     web_client_common,
@@ -277,17 +276,6 @@ lazy val web = project
       Http4sCirce,
       JwtCore
     ) ++ Http4s ++ Logging.value
-  )
-
-lazy val ui = project
-  .in(file("modules/ui"))
-  .enablePlugins(AutomateHeaderPlugin)
-  .enablePlugins(ScalaJSPlugin)
-  .dependsOn(core.js, json.js)
-  .settings(commonSettings)
-  .settings(commonJSSettings)
-  .settings(
-    scalaJSUseMainModuleInitializer := true
   )
 
 lazy val ctl = project

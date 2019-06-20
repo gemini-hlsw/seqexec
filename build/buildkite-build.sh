@@ -87,14 +87,6 @@ echo "--- :javascript: Linking Javascript"
 /usr/local/bin/sbt                      \
   -jvm-opts build/buildkite-jvmopts     \
   -Docs3.skipDependencyUpdates          \
-  seqexec_web_client/fastOptJS          \
-  ui/fastOptJS
-
-echo "--- :webpack: Webpack"
-/usr/local/bin/sbt                      \
-  -jvm-opts build/buildkite-jvmopts     \
-  -Docs3.skipDependencyUpdates          \
-  seqexec_web_client/fastOptJS::webpack \
   seqexec_web_client/fullOptJS::webpack
 
 ###
