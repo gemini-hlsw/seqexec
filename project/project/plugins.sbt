@@ -1,2 +1,2 @@
 // So the build build will use it
-addSbtPlugin("com.timushev.sbt"  % "sbt-updates" % "0.3.4")
+addSbtPlugin("com.timushev.sbt"  % "sbt-updates" % "0.4.1")
