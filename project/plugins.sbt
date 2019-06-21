@@ -34,7 +34,7 @@ addSbtPlugin("de.heikoseeberger"  % "sbt-header"               % "4.1.0")
 
 // Built the version out of git
 addSbtPlugin("com.typesafe.sbt"   % "sbt-git"                  % "0.9.3")
-addSbtPlugin("com.dwijnand"       % "sbt-dynver"               % "3.0.0")
+addSbtPlugin("com.dwijnand"       % "sbt-dynver"               % "3.3.0")
 
 // Use NPM modules rather than webjars
 addSbtPlugin("ch.epfl.scala"      % "sbt-scalajs-bundler"      % "0.15.0-0.6")
