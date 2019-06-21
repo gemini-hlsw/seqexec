@@ -40,7 +40,7 @@ addSbtPlugin("com.dwijnand"       % "sbt-dynver"               % "4.0.0")
 addSbtPlugin("ch.epfl.scala"      % "sbt-scalajs-bundler"      % "0.15.0-0.6")
 
 // Used to find dependencies
-addSbtPlugin("net.virtual-void"   % "sbt-dependency-graph"     % "0.9.0")
+addSbtPlugin("net.virtual-void"   % "sbt-dependency-graph"     % "0.9.2")
 addSbtPlugin("com.timushev.sbt"   % "sbt-updates"              % "0.3.4")
 
 onLoad in Global := { s => "dependencyUpdates" :: s }
