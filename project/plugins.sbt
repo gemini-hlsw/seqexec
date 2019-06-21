@@ -21,7 +21,7 @@ addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "0.6.0")
 addSbtPlugin("io.spray"           % "sbt-revolver"             % "0.9.1")
 
 // Extract metadata from sbt and make it available to the code
-addSbtPlugin("com.eed3si9n"       % "sbt-buildinfo"            % "0.7.0")
+addSbtPlugin("com.eed3si9n"       % "sbt-buildinfo"            % "0.9.0")
 
 // Support making distributions
 addSbtPlugin("com.typesafe.sbt"   % "sbt-native-packager"      % "1.3.5")
