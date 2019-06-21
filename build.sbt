@@ -32,12 +32,6 @@ cancelable in Global := true
 // Should make CI builds more robust
 concurrentRestrictions in Global += Tags.limit(ScalaJSTags.Link, 2)
 
-// // check for library updates whenever the project is [re]load
-// onLoad in Global := { s =>
-//   if (sys.props.contains("ocs3.skipDependencyUpdates")) s
-//   else "dependencyUpdates" :: s
-// }
-
 // Uncomment for local gmp testing
 // resolvers in ThisBuild += "Local Maven Repository" at "file://"+Path.userHome.absolutePath+"/.m2/repository"
 
@@ -420,8 +414,7 @@ lazy val seqexec_web_server = project.in(file("modules/seqexec/web/server"))
   )
   .settings(
     buildInfoUsePackageAsPath := true,
-    buildInfoKeys := Seq(name, version),
-    buildInfoKeys += buildInfoBuildNumber,
+    buildInfoKeys := BuildInfoKey.ofN(name, version, buildInfoBuildNumber),
     buildInfoOptions += BuildInfoOption.BuildTime,
     buildInfoObject := "OcsBuildInfo",
     buildInfoPackage := "seqexec.web.server"
@@ -506,7 +499,7 @@ lazy val seqexec_web_client = project.in(file("modules/seqexec/web/client"))
   )
   .settings(
     buildInfoUsePackageAsPath := true,
-    buildInfoKeys := Seq(name, version),
+    buildInfoKeys := BuildInfoKey.ofN(name, version),
     buildInfoObject := "OcsBuildInfo",
     buildInfoPackage := "seqexec.web.client"
   )
@@ -539,7 +532,7 @@ lazy val seqexec_server = project
   )
   .settings(
     buildInfoUsePackageAsPath := true,
-    buildInfoKeys := Seq(name, version),
+    buildInfoKeys := BuildInfoKey.ofN(name, version),
     buildInfoObject := "OcsBuildInfo",
     buildInfoPackage := "seqexec.server"
   )
