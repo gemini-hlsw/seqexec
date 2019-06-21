@@ -3,9 +3,10 @@
 
 package seqexec.server.tcs
 
-import cats.effect.Sync
-import cats.effect.concurrent.Ref
+import cats.effect.Concurrent
 import cats.implicits._
+import fs2.Stream
+import fs2.concurrent.SignallingRef
 import mouse.boolean._
 import seqexec.model.enum.MountGuideOption._
 import seqexec.model.enum.ComaOption
@@ -23,29 +24,31 @@ import seqexec.server.gems.GemsController.{GemsConfig, GemsOff}
 import io.circe.{Decoder, DecodingFailure}
 import squants.space.Millimeters
 
-trait GuideConfigDb[F[_]] {
-  import GuideConfigDb._
+final case class GuideConfig(tcsGuide: TelescopeGuideConfig,
+                             gaosGuide: Option[Either[AltairConfig, GemsConfig]])
 
+trait GuideConfigDb[F[_]] {
   def value: F[GuideConfig]
 
   def set(v: GuideConfig): F[Unit]
 
+  def discrete: Stream[F, GuideConfig]
 }
 
 object GuideConfigDb {
 
-  final case class GuideConfig(tcsGuide: TelescopeGuideConfig,
-                              gaosGuide: Option[Either[AltairConfig, GemsConfig]])
-
   val defaultGuideConfig = GuideConfig(TelescopeGuideConfig(MountGuideOff, M1GuideOff, M2GuideOff), None)
 
-  def newDb[F[_]: Sync]: F[GuideConfigDb[F]] = Ref.of[F, GuideConfig](defaultGuideConfig).map{ref =>
-    new GuideConfigDb[F] {
-      override def value: F[GuideConfig] = ref.get
+  def newDb[F[_]: Concurrent]: F[GuideConfigDb[F]] =
+    SignallingRef[F, GuideConfig](defaultGuideConfig).map { ref =>
+      new GuideConfigDb[F] {
+        override def value: F[GuideConfig] = ref.get
 
-      override def set(v: GuideConfig): F[Unit] = ref.set(v)
+        override def set(v: GuideConfig): F[Unit] = ref.set(v)
+
+        override def discrete: Stream[F, GuideConfig] = ref.discrete
+      }
     }
-  }
 
   implicit val altairDecoder: Decoder[AltairConfig] = Decoder.instance[AltairConfig]{
     c =>

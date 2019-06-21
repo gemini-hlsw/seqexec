@@ -4,7 +4,10 @@
 package seqexec.web.server.http4s
 
 import cats.effect.{ ContextShift, IO, Timer }
+import cats.implicits._
 import seqexec.model.events._
+import seqexec.server.tcs.GuideConfig
+import seqexec.server.tcs.GuideConfigDb
 import seqexec.web.server.security.{AuthenticationConfig, AuthenticationService, LDAPConfig}
 import fs2.concurrent.Topic
 import fs2.Stream
@@ -23,6 +26,14 @@ class SeqexecUIApiRoutesSpec extends FlatSpec with Matchers with StringSyntax wi
   implicit val ioTimer: Timer[IO] =
     IO.timer(ExecutionContext.global)
 
+  val guideDb = new GuideConfigDb[IO] {
+    override def value: IO[GuideConfig] = GuideConfigDb.defaultGuideConfig.pure[IO]
+
+    override def set(v: GuideConfig): IO[Unit] = IO.unit
+
+    override def discrete: Stream[IO, GuideConfig] = Stream.emit(GuideConfigDb.defaultGuideConfig)
+  }
+
   private val config = AuthenticationConfig(devMode = true, Hours(8), "token", "abc", useSSL = false, LDAPConfig(Nil))
   private val authService = AuthenticationService(config)
   val out: Stream[IO, Topic[IO, SeqexecEvent]] = Stream.eval(Topic[IO, SeqexecEvent](NullEvent))
@@ -30,7 +41,7 @@ class SeqexecUIApiRoutesSpec extends FlatSpec with Matchers with StringSyntax wi
   private val service =
     for {
       o <- out
-    } yield new SeqexecUIApiRoutes("GS", true, authService, o).service
+    } yield new SeqexecUIApiRoutes("GS", true, authService, guideDb, o).service
 
   "SeqexecUIApiRoutes login" should
     "reject requests without body" in {

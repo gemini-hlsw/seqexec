@@ -3,16 +3,16 @@
 
 package seqexec.server
 
-import java.time.LocalDate
-import java.util.UUID
-
 import cats.effect.{ContextShift, IO, Timer}
 import cats.implicits._
+import fs2.Stream
+import io.prometheus.client.CollectorRegistry
+import java.time.LocalDate
+import java.util.UUID
 import gem.Observation
 import gem.enum.Site
 import giapi.client.ghost.GhostClient
 import giapi.client.gpi.GpiClient
-import io.prometheus.client.CollectorRegistry
 import org.http4s.Uri
 import org.http4s.Uri.uri
 import seqexec.engine
@@ -21,9 +21,9 @@ import seqexec.engine.Result.PauseContext
 import seqexec.model.{ActionType, ClientId}
 import seqexec.model.enum.{Instrument, Resource}
 import seqexec.server.keywords.GdsClient
+import seqexec.server.tcs.GuideConfig
 import seqexec.server.tcs.GuideConfigDb
 import shapeless.tag
-
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 
@@ -82,9 +82,11 @@ object TestCommon {
     .exists(_.seq.status.isCompleted)
   private val sm = SeqexecMetrics.build[IO](Site.GS, new CollectorRegistry()).unsafeRunSync
   private val guideDb = new GuideConfigDb[IO] {
-    override def value: IO[GuideConfigDb.GuideConfig] = GuideConfigDb.defaultGuideConfig.pure[IO]
+    override def value: IO[GuideConfig] = GuideConfigDb.defaultGuideConfig.pure[IO]
 
-    override def set(v: GuideConfigDb.GuideConfig): IO[Unit] = IO.unit
+    override def set(v: GuideConfig): IO[Unit] = IO.unit
+
+    override def discrete: Stream[IO, GuideConfig] = Stream.emit(GuideConfigDb.defaultGuideConfig)
   }
 
   val gpiSim: GpiClient[IO] = GpiClient.simulatedGpiClient[IO].use(IO(_)).unsafeRunSync

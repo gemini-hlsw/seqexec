@@ -25,7 +25,7 @@ import seqexec.server.gcal.GcalControllerSim
 import seqexec.server.gmos.GmosControllerSim
 import seqexec.server.gnirs.GnirsControllerSim
 import seqexec.server.gsaoi.GsaoiControllerSim
-import seqexec.server.tcs.{GuideConfigDb, TcsControllerSim}
+import seqexec.server.tcs.{GuideConfigDb, GuideConfig, TcsControllerSim}
 import seqexec.server.gpi.GpiController
 import seqexec.server.Response.Observed
 import seqexec.server.ghost.GhostController
@@ -92,9 +92,11 @@ class SeqTranslateSpec extends FlatSpec {
   ).unsafeRunSync
 
   val guideDb = new GuideConfigDb[IO] {
-    override def value: IO[GuideConfigDb.GuideConfig] = GuideConfigDb.defaultGuideConfig.pure[IO]
+    override def value: IO[GuideConfig] = GuideConfigDb.defaultGuideConfig.pure[IO]
 
-    override def set(v: GuideConfigDb.GuideConfig): IO[Unit] = IO.unit
+    override def set(v: GuideConfig): IO[Unit] = IO.unit
+
+    override def discrete: Stream[IO, GuideConfig] = Stream.emit(GuideConfigDb.defaultGuideConfig)
   }
 
   private val systems = Systems[IO](

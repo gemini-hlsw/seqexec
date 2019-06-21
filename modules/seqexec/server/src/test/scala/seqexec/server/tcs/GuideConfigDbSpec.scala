@@ -88,6 +88,7 @@ final class GuideConfigDbSpec extends FlatSpec {
   }
 
   it should "retrieve the same configuration that was set" in {
+    implicit val ctx = IO.contextShift(scala.concurrent.ExecutionContext.global)
     val db = GuideConfigDb.newDb[IO]
 
     val ret = db.flatMap(x => x.set(guideConfig1) *> x.value).unsafeRunSync

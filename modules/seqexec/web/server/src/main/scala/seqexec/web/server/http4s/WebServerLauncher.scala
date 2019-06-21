@@ -173,7 +173,7 @@ object WebServerLauncher extends IOApp with LogInitialization with SeqexecConfig
     val router = Router[IO](
       "/"                     -> new StaticRoutes(conf.devMode, OcsBuildInfo.builtAtMillis, bec).service,
       "/api/seqexec/commands" -> new SeqexecCommandRoutes(as, inputs, se).service,
-      "/api"                  -> new SeqexecUIApiRoutes(conf.site, conf.devMode, as, outputs).service,
+      "/api"                  -> new SeqexecUIApiRoutes(conf.site, conf.devMode, as, gcdb, outputs).service,
       "/api/seqexec/guide"    -> new GuideConfigDbRoutes(gcdb).service,
       "/smartgcal"            -> new SmartGcalRoutes(conf.smartGCalHost, conf.smartGCalLocation).service
     )
