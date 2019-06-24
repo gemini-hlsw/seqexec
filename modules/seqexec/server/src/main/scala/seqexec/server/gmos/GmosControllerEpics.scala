@@ -261,7 +261,6 @@ object GmosControllerEpics {
 
   val dhsConnected: String = "CONNECTED"
 
-  // scalastyle:off
   def apply[T <: GmosController.SiteDependentTypes](cfg: GmosController.Config[T])(implicit e: Encoders[T]): GmosController[IO, T] =
     new GmosController[IO, T] {
       override def applyConfig(config: GmosController.GmosConfig[T]): IO[Unit] = {
@@ -338,19 +337,12 @@ object GmosControllerEpics {
         _   <- IO(Log.info("Completed aborting Gmos observation"))
       } yield if(ret === ObserveCommand.Success) ObserveCommand.Aborted else ret
 
-      // override def observeProgress(total: Time, elapsed: ElapsedTime): Stream[IO, Progress] = {
-      //   implicit val ioTimer: Timer[IO] = IO.timer(ExecutionContext.global)
-      //   ProgressUtil.fromFOption(_ => IO(
-      //     GmosEpics.instance.countdown.map(c => Progress(total, RemainingTime(c.seconds)))
-      //   ))
-      // }
       override def observeProgress(total: Time, elapsed: ElapsedTime): Stream[IO, Progress] = {
         implicit val ioTimer: Timer[IO] = IO.timer(ExecutionContext.global)
         EpicsUtil.countdown[IO](total, IO(GmosEpics.instance.countdown.map(_.seconds)),
           IO(GmosEpics.instance.observeState))
       }
   }
-  // scalastyle:on
 
   // Parameters to define a ROI
   sealed abstract case class XStart(value: Int)

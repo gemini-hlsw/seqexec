@@ -203,7 +203,6 @@ object EnumDef {
       |}
       |""".stripMargin.trim
     )
-  // scalastyle:on method.length
 
   def fromQuery[R <: HList, F <: HList, D <: HList, I <: HList, V <: HList, Lub1, Lub2, L <: HList](name: String, desc: String)(records: Query0[(String, R)])(
     implicit  f: Fields.Aux[R, F],

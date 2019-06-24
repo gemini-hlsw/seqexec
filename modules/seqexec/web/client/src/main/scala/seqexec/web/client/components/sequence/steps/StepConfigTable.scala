@@ -59,14 +59,12 @@ object StepConfigTable {
     Reusability.by(p => (p.settingsList, p.startState))
 
   // ScalaJS defined trait
-  // scalastyle:off
   trait SettingsRow extends js.Object {
     var sub  : SystemName
     var name : String
     var value: String
   }
 
-  // scalastyle:on
   object SettingsRow {
 
     def apply(sub: SystemName, name: String, value: String): SettingsRow = {

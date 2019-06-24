@@ -80,7 +80,6 @@ trait AltairKeywordReaderLUT {
 }
 
 object AltairKeywordReaderEpics extends AltairKeywordReaderLUT {
-  // scalastyle:off
   def apply[F[_]: Sync: LiftIO]: AltairKeywordReader[F] = new AltairKeywordReader[F] {
     val sys = AltairEpics.instance
 
@@ -145,5 +144,4 @@ object AltairKeywordReaderEpics extends AltairKeywordReaderLUT {
     override def lgndfilt: F[String] = sys.lgndfilt.safeValOrDefault.to[F]
     override def lgttiris: F[String] = sys.lgttiris.safeValOrDefault.to[F]
   }
-  // scalastyle:on
 }

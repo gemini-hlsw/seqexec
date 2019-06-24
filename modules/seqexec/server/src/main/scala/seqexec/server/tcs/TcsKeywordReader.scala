@@ -213,7 +213,6 @@ object DummyTargetKeywordsReader {
 }
 
 object DummyTcsKeywordsReader {
-  // scalastyle:off
   def apply[F[_]: Applicative]: TcsKeywordsReader[F] = new TcsKeywordsReader[F] {
 
     override def hourAngle: F[String] = "00:00:00".pure[F]
@@ -326,11 +325,9 @@ object DummyTcsKeywordsReader {
 
     override def decOffset: F[Double] = 0.0.pure[F]
   }
-  // scalastyle:on
 }
 
 object TcsKeywordsReaderEpics extends TcsKeywordDefaults {
-  // scalastyle:off
   def apply[F[_]: Sync: LiftIO]: TcsKeywordsReader[F] = new TcsKeywordsReader[F] {
     override def hourAngle: F[String] = TcsEpics.instance.hourAngle.safeValOrDefault.to[F]
 
@@ -551,5 +548,4 @@ object TcsKeywordsReaderEpics extends TcsKeywordDefaults {
       } yield -p * ipa.sin + q * ipa.cos
     ).map(_.toArcseconds).value.safeValOrDefault
   }
-  // scalastyle:on
 }

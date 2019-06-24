@@ -38,7 +38,6 @@ trait TcsController[F[_]] {
   def notifyObserveEnd: F[Unit]
 }
 
-// scalastyle:off
 object TcsController {
 
   /** Enumerated type for beams A, B, and C. */
@@ -333,4 +332,3 @@ object TcsController {
   }
 
 }
-// scalastyle:on

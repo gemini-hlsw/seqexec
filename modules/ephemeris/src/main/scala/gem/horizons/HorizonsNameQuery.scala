@@ -154,7 +154,6 @@ object HorizonsNameQuery {
       case2 orElse "Could not parse the header line as a comet".asLeft
     }
 
-    // scalastyle:off method.length
     def parseAsteroids(header: String, tail: List[String]): ParsedAsteroids = {
 
       // Common case is that we have many results, or none.
@@ -218,7 +217,6 @@ object HorizonsNameQuery {
       case5 orElse
       case6 orElse "Could not parse the header line as an asteroid".asLeft
     }
-    // scalastyle:on method.length
 
     def parseMajorBodies(header: String, tail: List[String]): ParsedMajorBodies = {
 

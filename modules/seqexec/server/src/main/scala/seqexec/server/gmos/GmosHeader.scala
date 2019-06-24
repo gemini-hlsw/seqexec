@@ -13,7 +13,6 @@ import seqexec.server.InstrumentSystem
 import seqexec.server.tcs.TcsKeywordsReader
 
 object GmosHeader {
-  // scalastyle:off
   def header[F[_]: Sync](
     inst:              InstrumentSystem[F],
     gmosObsReader:     GmosObsKeywordsReader[F],
@@ -115,5 +114,4 @@ object GmosHeader {
         } yield ()
 
     }
-  // scalastyle:on
 }

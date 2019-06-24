@@ -134,7 +134,6 @@ final case class TableState[A: Eq](userModified:   UserModified,
     }
   }
 
-  // scalastyle:off
   private def distributePercentages(
     s:               Size,
     calculatedWidth: A => Option[Double]
@@ -210,7 +209,6 @@ final case class TableState[A: Eq](userModified:   UserModified,
         }
       copy(columns = NonEmptyList.fromListUnsafe(cols))
     }
-  // scalastyle:on
 
   // Table can call this to build the columns
   def columnBuilder(
