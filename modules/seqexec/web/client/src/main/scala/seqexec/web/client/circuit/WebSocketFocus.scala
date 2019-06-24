@@ -21,7 +21,8 @@ final case class WebSocketsFocus(location:        Pages.SeqexecPages,
                                  clientId:        Option[ClientId],
                                  site:            Option[Site],
                                  sound:           SoundSelection,
-                                 serverVersion:   Option[String])
+                                 serverVersion:   Option[String],
+                                 guideConfig:     TelescopeGuideConfig)
 
 object WebSocketsFocus {
   implicit val eq: Eq[WebSocketsFocus] =
@@ -33,7 +34,8 @@ object WebSocketsFocus {
          x.defaultObserver,
          x.clientId,
          x.site,
-         x.serverVersion))
+         x.serverVersion,
+         x.guideConfig))
 
   val webSocketFocusL: Lens[SeqexecAppRootModel, WebSocketsFocus] =
     Lens[SeqexecAppRootModel, WebSocketsFocus](
@@ -45,7 +47,8 @@ object WebSocketsFocus {
                         m.clientId,
                         m.site,
                         m.uiModel.sound,
-                        m.serverVersion))(
+                        m.serverVersion,
+                        m.guideConfig))(
       v =>
         m =>
           m.copy(
@@ -55,6 +58,7 @@ object WebSocketsFocus {
                                      sound           = v.sound),
             clientId      = v.clientId,
             site          = v.site,
-            serverVersion = v.serverVersion
+            serverVersion = v.serverVersion,
+            guideConfig   = v.guideConfig
       ))
 }

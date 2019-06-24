@@ -29,9 +29,11 @@ import seqexec.model.UserDetails
 import seqexec.model.ObservationProgress
 import seqexec.model.RunningStep
 import seqexec.model.ObservationProgress
+import seqexec.model.TelescopeGuideConfig
 import seqexec.model.events.ServerLogMessage
 import seqexec.model.arb.ArbRunningStep._
 import seqexec.model.arb.ArbNotification._
+import seqexec.model.arb.ArbTelescopeGuideConfig._
 import seqexec.model.SeqexecModelArbitraries._
 import seqexec.model.SequenceEventsArbitraries.slmArb
 import seqexec.model.SequenceEventsArbitraries.slmCogen
@@ -794,6 +796,7 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries with Arb
         site        <- arbitrary[Option[Site]]
         sound       <- arbitrary[SoundSelection]
         serverVer   <- arbitrary[Option[String]]
+        guideConf   <- arbitrary[TelescopeGuideConfig]
       } yield
         WebSocketsFocus(navLocation,
                         sequences,
@@ -802,7 +805,8 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries with Arb
                         clientId,
                         site,
                         sound,
-                        serverVer)
+                        serverVer,
+                        guideConf)
     }
 
   implicit val wsfCogen: Cogen[WebSocketsFocus] =
@@ -813,7 +817,8 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries with Arb
            Option[ClientId],
            Option[Site],
            SoundSelection,
-           Option[String])]
+           Option[String],
+           TelescopeGuideConfig)]
       .contramap(
         x =>
           (x.location,
@@ -823,7 +828,8 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries with Arb
            x.clientId,
            x.site,
            x.sound,
-           x.serverVersion))
+           x.serverVersion,
+           x.guideConfig))
 
   implicit val arbInitialSyncFocus: Arbitrary[InitialSyncFocus] =
     Arbitrary {
@@ -847,7 +853,8 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries with Arb
         clientId  <- arbitrary[Option[ClientId]]
         uiModel   <- arbitrary[SeqexecUIModel]
         version   <- arbitrary[Option[String]]
-      } yield SeqexecAppRootModel(sequences, ws, site, clientId, uiModel, version)
+        guideConf <- arbitrary[TelescopeGuideConfig]
+      } yield SeqexecAppRootModel(sequences, ws, site, clientId, uiModel, version, guideConf)
     }
 
   implicit val arbAppTableStates: Arbitrary[AppTableStates] =

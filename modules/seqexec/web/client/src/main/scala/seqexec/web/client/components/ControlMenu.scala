@@ -3,7 +3,6 @@
 
 package seqexec.web.client.components
 
-import diode.react.ModelProxy
 import seqexec.web.client.actions.Logout
 import seqexec.web.client.actions.OpenLoginBox
 import seqexec.web.client.model.ClientStatus
@@ -22,27 +21,26 @@ import japgolly.scalajs.react.vdom.html_<^._
   */
 object ControlMenu {
 
-  final case class Props(status: ModelProxy[ClientStatus])
+  final case class Props(status: ClientStatus)
 
   private val soundConnect =
     SeqexecCircuit.connect(SeqexecCircuit.soundSettingReader)
 
-  def openLogin[A](proxy: ModelProxy[A]): Callback =
-    proxy.dispatchCB(OpenLoginBox)
-  def logout[A](proxy: ModelProxy[A]): Callback = proxy.dispatchCB(Logout)
+  private val openLogin: Callback =
+    SeqexecCircuit.dispatchCB(OpenLoginBox)
+  private val logout: Callback =
+    SeqexecCircuit.dispatchCB(Logout)
 
-  private def loginButton[A](proxy: ModelProxy[A], enabled: Boolean) =
+  private def loginButton(enabled: Boolean) =
     Button(Button.Props(size     = Size.Medium,
-                        onClick  = openLogin(proxy),
+                        onClick  = openLogin,
                         disabled = !enabled,
                         inverted = true),
            "Login")
 
-  private def logoutButton[A](proxy:   ModelProxy[A],
-                              text:    String,
-                              enabled: Boolean) =
+  private def logoutButton(text: String, enabled: Boolean) =
     Button(Button.Props(size     = Size.Medium,
-                        onClick  = logout(proxy),
+                        onClick  = logout,
                         icon     = Some(IconSignOut),
                         disabled = !enabled,
                         inverted = true),
@@ -52,7 +50,7 @@ object ControlMenu {
     .builder[Props]("SeqexecTopMenu")
     .stateless
     .render_P { p =>
-      val status = p.status()
+      val status = p.status
       <.div(
         ^.cls := "ui secondary right menu",
         SeqexecStyles.notInMobile,
@@ -60,43 +58,45 @@ object ControlMenu {
           <.div(
             ^.cls := "ui item",
             soundConnect(x => SoundControl(SoundControl.Props(x()))),
-            loginButton(p.status, status.isConnected)
+            loginButton(status.isConnected)
           )
-        )(u =>
-          <.div(
-            ^.cls := "ui secondary right menu",
+        )(
+          u =>
             <.div(
-              ^.cls := "ui header item",
-              SeqexecStyles.notInMobile,
-              u.displayName
-            ),
-            <.div(
-              ^.cls := "ui header item",
-              SeqexecStyles.onlyMobile,
-              // Ideally we'd do this with css text-overflow but it is not
-              // working properly inside a header item, let's abbreviate in code
-              u.displayName
-                .split("\\s")
-                .headOption
-                .map(_.substring(0, 10) + "...")
-                .getOrElse[String]("")
-            ),
-            <.div(
-              ^.cls := "ui item",
-              SeqexecStyles.notInMobile,
-              soundConnect(x => SoundControl(SoundControl.Props(x()))),
-              logoutButton(p.status, "Logout", status.isConnected)
-            ),
-            <.div(
-              ^.cls := "ui item",
-              SeqexecStyles.onlyMobile,
-              logoutButton(p.status, "", status.isConnected)
+              ^.cls := "ui secondary right menu",
+              <.div(
+                ^.cls := "ui header item",
+                SeqexecStyles.notInMobile,
+                u.displayName
+              ),
+              <.div(
+                ^.cls := "ui header item",
+                SeqexecStyles.onlyMobile,
+                // Ideally we'd do this with css text-overflow but it is not
+                // working properly inside a header item, let's abbreviate in code
+                u.displayName
+                  .split("\\s")
+                  .headOption
+                  .map(_.substring(0, 10) + "...")
+                  .getOrElse[String]("")
+              ),
+              <.div(
+                ^.cls := "ui item",
+                SeqexecStyles.notInMobile,
+                soundConnect(x => SoundControl(SoundControl.Props(x()))),
+                logoutButton("Logout", status.isConnected)
+              ),
+              <.div(
+                ^.cls := "ui item",
+                SeqexecStyles.onlyMobile,
+                logoutButton("", status.isConnected)
+              )
             )
-        ))
+        )
       )
     }
     .build
 
-  def apply(u: ModelProxy[ClientStatus]): Unmounted[Props, Unit, Unit] =
+  def apply(u: ClientStatus): Unmounted[Props, Unit, Unit] =
     component(Props(u))
 }
