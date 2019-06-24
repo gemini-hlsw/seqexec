@@ -11,6 +11,7 @@ import cats.implicits._
 import seqexec.model.ClientId
 import seqexec.model._
 import seqexec.model.events._
+import seqexec.server.tcs.GuideConfigDb
 import seqexec.web.model.boopickle._
 import seqexec.web.server.http4s.encoder._
 import seqexec.web.server.security.AuthenticationService.AuthResult
@@ -40,6 +41,7 @@ import scodec.bits.ByteVector
 class SeqexecUIApiRoutes(site: String,
                          devMode: Boolean,
                          auth: AuthenticationService,
+                         guideConfigS: GuideConfigDb[IO],
                          engineOutput: Topic[IO, SeqexecEvent])(
   implicit cio: Concurrent[IO],
            tio: Timer[IO]
@@ -54,6 +56,12 @@ class SeqexecUIApiRoutes(site: String,
 
   // Handles authentication
   private val httpAuthentication = new Http4sAuthentication(auth)
+
+  // Stream of updates to the guide config db
+  val guideConfigEvents =
+    guideConfigS.discrete
+      .map(g => GuideConfigUpdate(g.tcsGuide))
+      .map(toFrame)
 
   /**
     * Creates a process that sends a ping every second to keep the connection alive
@@ -113,32 +121,19 @@ class SeqexecUIApiRoutes(site: String,
           Ok(site)
 
       case GET -> Root / "seqexec" / "events" as user        =>
-        // Stream seqexec events to clients and a ping
-        def anonymize(e: SeqexecEvent) =
-          // Hide the name and target name for anonymous users
-          (telescopeTargetNameT.set("*****") andThen observeTargetNameT.set("*****") andThen sequenceNameT.set(""))(e)
-
-        // Filter out NullEvents from the engine
-        def filterOutNull = (e: SeqexecEvent) => e match {
-          case NullEvent => false
-          case _         => true
-        }
-
-        // Messages with a clientId are only sent to the matching cliend
-        def filterOutOnClientId(clientId: ClientId) = (e: SeqexecEvent) => e match {
-          case e: ForClient if e.clientId =!= clientId => false
-          case _                                       => true
-        }
-
         // If the user didn't login, anonymize
         val anonymizeF: SeqexecEvent => SeqexecEvent = user.fold(_ => anonymize _, _ => identity _)
-        // Create a client specific process
 
         def initialEvent(clientId: ClientId): Stream[IO, WebSocketFrame] =
-          Stream.emit(Binary(ByteVector(trimmedArray(ConnectionOpenEvent(user.toOption, clientId, OcsBuildInfo.version): SeqexecEvent))))
+          Stream.emit(toFrame(ConnectionOpenEvent(user.toOption, clientId, OcsBuildInfo.version)))
 
         def engineEvents(clientId: ClientId): Stream[IO, WebSocketFrame]  =
-          engineOutput.subscribe(1).map(anonymizeF).filter(filterOutNull).filter(filterOutOnClientId(clientId)).map(v => Binary(ByteVector(trimmedArray(v))))
+          engineOutput
+            .subscribe(1)
+            .map(anonymizeF)
+            .filter(filterOutNull)
+            .filter(filterOutOnClientId(clientId))
+            .map(toFrame)
 
         // We don't care about messages sent over ws by clients
         val clientEventsSink: Pipe[IO, WebSocketFrame, Unit] = _.evalMap(_ => IO.unit)
@@ -147,11 +142,33 @@ class SeqexecUIApiRoutes(site: String,
         for {
           clientId <- IO.apply(ClientId(UUID.randomUUID()))
           initial  = initialEvent(clientId)
-          streams  = pingStream.mergeHaltBoth(engineEvents(clientId))
+          streams  = Stream(pingStream, guideConfigEvents, engineEvents(clientId)).parJoinUnbounded
           ws       <- WebSocketBuilder[IO].build(initial ++ streams, clientEventsSink)
         } yield ws
 
     }
 
   def service: HttpRoutes[IO] = publicService <+> TokenRefresher(GZip(httpAuthentication.optAuth(protectedServices)), httpAuthentication)
+
+  // Event to WebSocket frame
+  private def toFrame(e: SeqexecEvent) =
+    Binary(ByteVector(trimmedArray(e)))
+
+  // Stream seqexec events to clients and a ping
+  private def anonymize(e: SeqexecEvent) =
+    // Hide the name and target name for anonymous users
+    (telescopeTargetNameT.set("*****") andThen observeTargetNameT.set("*****") andThen sequenceNameT.set(""))(e)
+
+  // Filter out NullEvents from the engine
+  private def filterOutNull = (e: SeqexecEvent) => e match {
+    case NullEvent => false
+    case _         => true
+  }
+
+  // Messages with a clientId are only sent to the matching cliend
+  private def filterOutOnClientId(clientId: ClientId) = (e: SeqexecEvent) => e match {
+    case e: ForClient if e.clientId =!= clientId => false
+    case _                                       => true
+  }
+
 }

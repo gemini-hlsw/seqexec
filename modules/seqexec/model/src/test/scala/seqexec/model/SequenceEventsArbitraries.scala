@@ -16,8 +16,13 @@ import seqexec.model.enum._
 import seqexec.model.QueueManipulationOp._
 import seqexec.model.SeqexecModelArbitraries._
 import seqexec.model.arb.ArbNotification
+import seqexec.model.arb.ArbTelescopeGuideConfig._
 
 trait SequenceEventsArbitraries extends ArbTime with ArbNotification {
+
+  implicit val gcuArb = Arbitrary[GuideConfigUpdate] {
+    arbitrary[TelescopeGuideConfig].map(GuideConfigUpdate.apply)
+  }
 
   implicit val coeArb = Arbitrary[ConnectionOpenEvent] {
     for {
@@ -224,6 +229,9 @@ trait SequenceEventsArbitraries extends ArbTime with ArbNotification {
 
   implicit val smuCogen: Cogen[SeqexecModelUpdate] =
     Cogen[SequencesQueue[SequenceView]].contramap(_.view)
+
+  implicit val gcuCogen: Cogen[GuideConfigUpdate] =
+    Cogen[TelescopeGuideConfig].contramap(_.telescope)
 
   implicit val sseCogen: Cogen[SequenceStart] =
     Cogen[SequencesQueue[SequenceView]].contramap(_.view)

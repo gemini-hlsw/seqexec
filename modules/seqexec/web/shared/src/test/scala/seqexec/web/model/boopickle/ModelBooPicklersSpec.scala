@@ -73,6 +73,7 @@ final class BoopicklingSpec extends CatsSuite with ModelBooPicklers with ArbObse
   checkAll("Pickler[RequestFailed]", PicklerTests[RequestFailed].pickler)
   checkAll("Pickler[SubsystemBusy]", PicklerTests[SubsystemBusy].pickler)
   checkAll("Pickler[UserNotification]", PicklerTests[UserNotification].pickler)
+  checkAll("Pickler[GuideConfigUpdate]", PicklerTests[GuideConfigUpdate].pickler)
   checkAll("Pickler[UserLoginRequest]", PicklerTests[UserLoginRequest].pickler)
   checkAll("Pickler[Instrument]", PicklerTests[Instrument].pickler)
   checkAll("Pickler[Resource]", PicklerTests[Resource].pickler)

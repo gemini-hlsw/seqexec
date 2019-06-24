@@ -240,6 +240,7 @@ trait ModelBooPicklers extends GemModelBooPicklers {
   implicit val exposurePausedPickler      = generatePickler[ExposurePaused]
   implicit val serverLogMessagePickler    = generatePickler[ServerLogMessage]
   implicit val userNotificationPickler    = generatePickler[UserNotification]
+  implicit val guideConfigPickler         = generatePickler[GuideConfigUpdate]
   implicit val queueUpdatedPickler        = generatePickler[QueueUpdated]
   implicit val timeProgressPickler =
     transformPickler((t: Double) => t.milliseconds)(_.toMilliseconds)
@@ -275,6 +276,7 @@ trait ModelBooPicklers extends GemModelBooPicklers {
     .addConcreteType[ExposurePaused]
     .addConcreteType[ServerLogMessage]
     .addConcreteType[UserNotification]
+    .addConcreteType[GuideConfigUpdate]
     .addConcreteType[QueueUpdated]
     .addConcreteType[ObservationProgressEvent]
     .addConcreteType[SingleActionEvent]

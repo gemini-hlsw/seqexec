@@ -314,6 +314,14 @@ object events {
       Eq.by(x => (x.memo, x.clientId))
   }
 
+  final case class GuideConfigUpdate(telescope: TelescopeGuideConfig)
+      extends SeqexecEvent
+
+  object GuideConfigUpdate {
+    implicit lazy val equal: Eq[GuideConfigUpdate] =
+      Eq.by(_.telescope)
+  }
+
   implicit val equal: Eq[SeqexecEvent] =
     Eq.instance {
       case (a: ConnectionOpenEvent,      b: ConnectionOpenEvent)      => a === b
@@ -321,6 +329,7 @@ object events {
       case (a: NewLogMessage,            b: NewLogMessage)            => a === b
       case (a: ServerLogMessage,         b: ServerLogMessage)         => a === b
       case (a: UserNotification,         b: UserNotification)         => a === b
+      case (a: GuideConfigUpdate,        b: GuideConfigUpdate)        => a === b
       case (a: ObservationProgressEvent, b: ObservationProgressEvent) => a === b
       case (a: SingleActionEvent,        b: SingleActionEvent)        => a === b
       case (_: NullEvent.type,           _: NullEvent.type)           => true

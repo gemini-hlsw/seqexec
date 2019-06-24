@@ -12,8 +12,7 @@ import org.http4s.circe.jsonOf
 import org.log4s.getLogger
 import seqexec.server.tcs.GuideConfigDb
 import seqexec.server.tcs.GuideConfigDb._
-
-
+import seqexec.server.tcs.GuideConfig
 
 class GuideConfigDbRoutes(db: GuideConfigDb[IO]) {
   // Logger for guide configuration updates
