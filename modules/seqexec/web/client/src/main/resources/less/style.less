@@ -6,6 +6,7 @@
 @background_color_6: #f9fafb;
 @table_row_left_padding: 1em;
 @breakpoint_line_color: #a5673f;
+@breakpoint_done_line_color: darkgray;
 @gutter_end_color: rgba(
   34,
   36,
@@ -613,17 +614,23 @@ body {
   color: @disabledTextColor;
 }
 
-.SeqexecStyles-rowDone {
+.rowDone(@background_color) {
   pointer-events: none;
   color: fadein(@disabledTextColor, 30%);
-  background: @gutter_end_color;
+  background: @background_color;
+}
+
+.SeqexecStyles-rowDone {
+  .rowDone(@gutter_end_color);
 }
 
 .SeqexecStyles-rowNone {
   background: @background;
 }
 
-.stepRowWithBreakpoint() {
+.stepWithBreakpoint(@line_color) {
+  // background-color: @background;
+  background-image: linear-gradient(to right, @line_color 0px, @line_color);
   font-size: smaller !important;
   text-overflow: ellipsis;
   word-wrap: break-word;
@@ -638,18 +645,15 @@ body {
 }
 
 .SeqexecStyles-stepRowWithBreakpoint {
-  .stepRowWithBreakpoint();
-  background-color: @background;
-  background-image: linear-gradient(
-    to right,
-    @breakpoint_line_color 0px,
-    @breakpoint_line_color
-  );
-  padding-top: 4px;
+  .stepWithBreakpoint(@breakpoint_line_color);
+}
+
+.SeqexecStyles-stepDoneWithBreakpoint {
+  .stepWithBreakpoint(@breakpoint_done_line_color);
 }
 
 .SeqexecStyles-stepRowWithBreakpointHover {
-  .stepRowWithBreakpoint();
+  .stepWithBreakpoint(@breakpoint_line_color);
   background-color: @background;
   background-image: linear-gradient(
     to right,
@@ -661,16 +665,24 @@ body {
   padding-top: 0px;
 }
 
-.SeqexecStyles-stepRowWithBreakpointAndControl {
-  .stepRowWithBreakpoint();
+.stepWithBreakpointAndControl(@line_color) {
+  .stepWithBreakpoint(@line_color);
   background-image: linear-gradient(
     to right,
     @borderColor 0px,
     @gutter_end_color 19px,
-    @breakpoint_line_color 19px,
-    @breakpoint_line_color
+    @line_color 19px,
+    @line_color
   );
   padding-top: 4px;
+}
+
+.SeqexecStyles-stepRowWithBreakpointAndControl {
+  .stepWithBreakpointAndControl(@breakpoint_line_color);
+}
+
+.SeqexecStyles-stepDoneWithBreakpointAndControl {
+  .stepWithBreakpointAndControl(@breakpoint_done_line_color);
 }
 
 .SeqexecStyles-centeredCell {

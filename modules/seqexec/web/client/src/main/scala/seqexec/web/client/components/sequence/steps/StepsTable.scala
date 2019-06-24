@@ -569,6 +569,16 @@ object StepsTable extends Columns {
     case _                                     => SeqexecStyles.stepRow
   }
 
+  private val breakpointRowStyle: Step => Css = {
+    case s if s.isFinished => SeqexecStyles.stepDoneWithBreakpoint
+    case _                 => SeqexecStyles.stepRowWithBreakpoint
+  }
+
+  private val breakpointAndControlRowStyle: Step => Css = {
+    case s if s.isFinished => SeqexecStyles.stepDoneWithBreakpointAndControl
+    case _                 => SeqexecStyles.stepRowWithBreakpointAndControl
+  }
+
   /**
     * Class for the row depends on properties
     */
@@ -582,10 +592,10 @@ object StepsTable extends Columns {
         SeqexecStyles.headerRowStyle
       case (_, StepRow(s @ StandardStep(_, _, _, true, _, _, _, _)), true, _) =>
         // row with control elements and breakpoint
-        SeqexecStyles.stepRowWithBreakpointAndControl |+| stepRowStyle(s)
+        breakpointAndControlRowStyle(b.props.rowGetter(i - 1).step) |+| stepRowStyle(s)
       case (_, StepRow(s @ StandardStep(_, _, _, true, _, _, _, _)), false, _) =>
         // row with breakpoint
-        SeqexecStyles.stepRowWithBreakpoint |+| stepRowStyle(s)
+        breakpointRowStyle(b.props.rowGetter(i - 1).step) |+| stepRowStyle(s)
       case (j, StepRow(s @ StandardStep(_, _, _, false, _, _, _, _)), _, Some(k)) if j === k =>
         // row with breakpoint and hover
         SeqexecStyles.stepRowWithBreakpointHover |+| stepRowStyle(s)
@@ -818,7 +828,7 @@ object StepsTable extends Columns {
       onRowClick       = singleClick(b),
       onScroll = (a, _, pos) =>
         updateScrollPosition(b, pos).when_(a.toDouble > 0),
-      scrollToAlignment = ScrollToAlignment.Start,
+      scrollToAlignment = ScrollToAlignment.Center,
       headerClassName   = SeqexecStyles.tableHeader.htmlClass,
       headerHeight      = SeqexecStyles.headerHeight,
       rowRenderer       = stopsRowRenderer(b.props)
@@ -897,7 +907,7 @@ object StepsTable extends Columns {
 
   // Scroll to pos on run requested
   private def scrollToCB(cur: Props, next: Props): Callback =
-    scrollTo(next.nextStepToRun - 1)
+    scrollTo(next.nextStepToRun)
       .when_(cur.tabOperations.runRequested =!= next.tabOperations.runRequested
         && next.tabOperations.runRequested === RunOperation.RunInFlight)
 
@@ -915,7 +925,7 @@ object StepsTable extends Columns {
         // This happens when we keep running and move to the next step
         // If the user hasn't scrolled we'll focus on the next step
         updateStep(b, next, obsId, j) *>
-          scrollTo(j - 1).unless_(b.state.scrollWhileRun)
+          scrollTo(j).unless_(b.state.scrollWhileRun)
       case (Some(obsId), _, Some(RunningStep(j, _)))
           if cur.sequenceState =!= next.sequenceState && next.sequenceState.exists(_.isRunning) =>
         // When we start running

@@ -210,11 +210,17 @@ object SeqexecStyles {
   val stepRowWithBreakpoint: Css =
     Css("SeqexecStyles-stepRowWithBreakpoint")
 
+  val stepDoneWithBreakpoint: Css =
+    Css("SeqexecStyles-stepDoneWithBreakpoint")
+
   val stepRowWithBreakpointHover: Css =
     Css("SeqexecStyles-stepRowWithBreakpointHover")
 
   val stepRowWithBreakpointAndControl: Css =
     Css("SeqexecStyles-stepRowWithBreakpointAndControl")
+
+  val stepDoneWithBreakpointAndControl: Css =
+    Css("SeqexecStyles-stepDoneWithBreakpointAndControl")
 
   val centeredCell: Css = Css("SeqexecStyles-centeredCell")
 
