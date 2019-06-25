@@ -17,6 +17,9 @@ object SeqexecStyles {
   val TableBorderWidth: Double = 1.0
   val TableRightPadding: Int   = 13
 
+  val activeGuide: Css =
+    Css("SeqexecStyles-activeGuide")
+
   val activeInstrumentLabel: Css =
     Css("SeqexecStyles-activeInstrumentLabel")
 

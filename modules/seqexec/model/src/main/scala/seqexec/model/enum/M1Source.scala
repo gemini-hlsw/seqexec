@@ -19,17 +19,19 @@ object M1Source {
   val all: List[M1Source] =
     List(PWFS1, PWFS2, OIWFS, GAOS, HRWFS)
 
+  def tag(s: M1Source): String = s match {
+    case PWFS1 => "PWFS1"
+    case PWFS2 => "PWFS2"
+    case OIWFS => "OIWFS"
+    case GAOS  => "GAOS"
+    case HRWFS => "HRWFS"
+  }
+
   /** @group Typeclass Instances */
   implicit val M1SourceEnumerated: Enumerated[M1Source] =
     new Enumerated[M1Source] {
       def all = M1Source.all
-      def tag(a: M1Source): String = a match {
-        case PWFS1 => "PWFS1"
-        case PWFS2 => "PWFS2"
-        case OIWFS => "OIWFS"
-        case GAOS  => "GAOS"
-        case HRWFS => "HRWFS"
-      }
+      def tag(a: M1Source): String = M1Source.tag(a)
     }
 
 }

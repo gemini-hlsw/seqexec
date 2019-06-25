@@ -16,6 +16,9 @@ import monocle.function.At.atSortedMap
 import monocle.function.Each.each
 import monocle.function.FilterIndex.filterIndex
 import scala.collection.immutable.SortedMap
+import seqexec.model.enum.MountGuideOption._
+import seqexec.model.M1GuideConfig._
+import seqexec.model.M2GuideConfig._
 import seqexec.model.ClientId
 import seqexec.model.Conditions
 import seqexec.model.ExecutionQueueView
@@ -23,6 +26,7 @@ import seqexec.model.QueueId
 import seqexec.model.SequenceView
 import seqexec.model.SequencesQueue
 import seqexec.model.CalibrationQueueId
+import seqexec.model.TelescopeGuideConfig
 import seqexec.web.client.components.sequence.steps.StepConfigTable
 import seqexec.web.client.components.sequence.steps.StepsTable
 import seqexec.web.client.components.SessionQueueTable
@@ -32,28 +36,33 @@ import web.client.table._
   * Root of the UI Model of the application
   */
 @Lenses
-final case class SeqexecAppRootModel(sequences:     SequencesQueue[SequenceView],
-                                     ws:            WebSocketConnection,
-                                     site:          Option[Site],
-                                     clientId:      Option[ClientId],
-                                     uiModel:       SeqexecUIModel,
-                                     serverVersion: Option[String])
+final case class SeqexecAppRootModel(
+  sequences:     SequencesQueue[SequenceView],
+  ws:            WebSocketConnection,
+  site:          Option[Site],
+  clientId:      Option[ClientId],
+  uiModel:       SeqexecUIModel,
+  serverVersion: Option[String],
+  guideConfig:   TelescopeGuideConfig
+)
 
 object SeqexecAppRootModel {
   val NoSequencesLoaded: SequencesQueue[SequenceView] =
     SequencesQueue[SequenceView](Map.empty,
                                  Conditions.Default,
-                                 None,
+                                 none,
                                  SortedMap.empty,
                                  Nil)
 
   val Initial: SeqexecAppRootModel = SeqexecAppRootModel(
     NoSequencesLoaded,
     WebSocketConnection.Empty,
-    None,
-    None,
+    none,
+    none,
     SeqexecUIModel.Initial,
-    None)
+    none,
+    TelescopeGuideConfig(MountGuideOff, M1GuideOff, M2GuideOff)
+  )
 
   val logDisplayL: Lens[SeqexecAppRootModel, SectionVisibilityState] =
     SeqexecAppRootModel.uiModel ^|->
@@ -74,9 +83,11 @@ object SeqexecAppRootModel {
     : Lens[SeqexecAppRootModel, TableState[SessionQueueTable.TableColumn]] =
     SeqexecAppRootModel.uiModel ^|-> SeqexecUIModel.appTableStates ^|-> AppTableStates.sessionQueueTable
 
-  def stepsTableStateL(id: Observation.Id)
-    : Lens[SeqexecAppRootModel, Option[TableState[StepsTable.TableColumn]]] =
-    SeqexecAppRootModel.uiModel ^|-> SeqexecUIModel.appTableStates ^|-> AppTableStates.stepsTableAtL(id)
+  def stepsTableStateL(
+    id: Observation.Id
+  ): Lens[SeqexecAppRootModel, Option[TableState[StepsTable.TableColumn]]] =
+    SeqexecAppRootModel.uiModel ^|-> SeqexecUIModel.appTableStates ^|-> AppTableStates
+      .stepsTableAtL(id)
 
   val soundSettingL: Lens[SeqexecAppRootModel, SoundSelection] =
     SeqexecAppRootModel.uiModel ^|-> SeqexecUIModel.sound
@@ -103,5 +114,7 @@ object SeqexecAppRootModel {
       at(CalibrationQueueId)).asGetter
 
   implicit val eq: Eq[SeqexecAppRootModel] =
-    Eq.by(x => (x.sequences, x.ws, x.site, x.clientId, x.uiModel, x.serverVersion))
+    Eq.by(
+      x => (x.sequences, x.ws, x.site, x.clientId, x.uiModel, x.serverVersion)
+    )
 }

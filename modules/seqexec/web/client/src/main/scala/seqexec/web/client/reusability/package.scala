@@ -6,15 +6,11 @@ package seqexec.web.client
 import diode.data.PotState
 import cats.implicits._
 import gem.Observation
-import gem.enum.Site
+import gem.util.Enumerated
 import japgolly.scalajs.react.CatsReact._
 import japgolly.scalajs.react.Reusability
 import scala.collection.immutable.SortedMap
-import seqexec.model.enum.ActionStatus
-import seqexec.model.enum.Instrument
-import seqexec.model.enum.BatchExecState
 import seqexec.model.enum.Resource
-import seqexec.model.enum.SystemName
 import seqexec.model.enum.ServerLogLevel
 import seqexec.model.Observer
 import seqexec.model.QueueId
@@ -23,6 +19,9 @@ import seqexec.model.StepConfig
 import seqexec.model.StepState
 import seqexec.model.UserDetails
 import seqexec.model.SequenceState
+import seqexec.model.M1GuideConfig
+import seqexec.model.M2GuideConfig
+import seqexec.model.TelescopeGuideConfig
 import seqexec.web.client.model.AvailableTab
 import seqexec.web.client.model.ClientStatus
 import seqexec.web.client.model.SectionVisibilityState
@@ -42,12 +41,10 @@ import seqexec.web.client.model.GlobalLog
 import seqexec.web.client.circuit._
 
 package object reusability {
-  implicit val actionStatuReuse: Reusability[ActionStatus]  = Reusability.byEq
+  implicit def enumeratedReuse[A <: AnyRef: Enumerated]: Reusability[A] =
+    Reusability.byRef
   implicit val stepStateReuse: Reusability[StepState]       = Reusability.byEq
-  implicit val instrumentReuse: Reusability[Instrument]     = Reusability.byEq
-  implicit val resourceReuse: Reusability[Resource]         = Reusability.byEq
   implicit val obsIdReuse: Reusability[Observation.Id]      = Reusability.byEq
-  implicit val siteReuse: Reusability[Site]                 = Reusability.byEq
   implicit val observerReuse: Reusability[Observer]         = Reusability.byEq
   implicit val stepConfigReuse: Reusability[StepConfig]     = Reusability.byEq
   implicit val stepReuse: Reusability[Step]                 = Reusability.byEq
@@ -61,7 +58,6 @@ package object reusability {
   implicit val sCFocusReuse: Reusability[SequenceControlFocus] =
     Reusability.byEq
   implicit val tabSelReuse: Reusability[TabSelected] = Reusability.byRef
-  implicit val sysnReuse: Reusability[SystemName]    = Reusability.byRef
   implicit val sectReuse: Reusability[SectionVisibilityState] =
     Reusability.byRef
   implicit val potStateReuse: Reusability[PotState] = Reusability.byRef
@@ -84,10 +80,8 @@ package object reusability {
   implicit val qfReuse: Reusability[CalQueueControlFocus]  = Reusability.byEq
   implicit val cqfReuse: Reusability[CalQueueFocus]        = Reusability.byEq
   implicit val qidReuse: Reusability[QueueId]              = Reusability.byEq
-  implicit val bexReuse: Reusability[BatchExecState]       = Reusability.byRef
   implicit val soundReuse: Reusability[SoundSelection]     = Reusability.byRef
   implicit val globalLogReuse: Reusability[GlobalLog]      = Reusability.byEq
-  implicit val sllReuse: Reusability[ServerLogLevel]       = Reusability.byEq
   implicit val resMap: Reusability[Map[Resource, ResourceRunOperation]] =
     Reusability.map
   implicit val sllbMap: Reusability[Map[ServerLogLevel, Boolean]] =
@@ -96,4 +90,10 @@ package object reusability {
     Reusability.by(_.toMap)
   implicit val tabOpsMap: Reusability[TabOperations] =
     Reusability.byEq
+  implicit val m1gReuse: Reusability[M1GuideConfig] =
+    Reusability.derive[M1GuideConfig]
+  implicit val m2gReuse: Reusability[M2GuideConfig] =
+    Reusability.derive[M2GuideConfig]
+  implicit val configReuse: Reusability[TelescopeGuideConfig] =
+    Reusability.derive[TelescopeGuideConfig]
 }

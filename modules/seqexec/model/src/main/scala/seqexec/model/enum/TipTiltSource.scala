@@ -18,15 +18,17 @@ object TipTiltSource {
   val all: List[TipTiltSource] =
     List(PWFS1, PWFS2, OIWFS, GAOS)
 
+  def tag(s: TipTiltSource): String = s match {
+    case PWFS1 => "PWFS1"
+    case PWFS2 => "PWFS2"
+    case OIWFS => "OIWFS"
+    case GAOS  => "GAOS"
+  }
+
   /** @group Typeclass Instances */
   implicit val TipTiltSourceEnumerated: Enumerated[TipTiltSource] =
     new Enumerated[TipTiltSource] {
       def all = TipTiltSource.all
-      def tag(a: TipTiltSource): String = a match {
-        case PWFS1 => "PWFS1"
-        case PWFS2 => "PWFS2"
-        case OIWFS => "OIWFS"
-        case GAOS  => "GAOS"
-      }
+      def tag(a: TipTiltSource): String = TipTiltSource.tag(a)
     }
 }

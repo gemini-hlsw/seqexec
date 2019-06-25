@@ -52,18 +52,18 @@ object GuideConfigDb {
 
   implicit val altairDecoder: Decoder[AltairConfig] = Decoder.instance[AltairConfig]{
     c =>
-      c.downField("aoOn").as[Boolean].flatMap{
+      c.downField("aoOn").as[Boolean].flatMap {
         if(_) {
-          c.downField("mode").as[String].flatMap{
+          c.downField("mode").as[String].flatMap {
             case "NGS" => for{
               blnd <- c.downField("oiBlend").as[Boolean]
               gsx  <- c.downField("aogsx").as[Double]
               gsy  <- c.downField("aogsy").as[Double]
             } yield Ngs(blnd, (Millimeters(gsx), Millimeters(gsy)))
-            case "LGS" => c.downField("useP1").as[Boolean].flatMap{
+            case "LGS" => c.downField("useP1").as[Boolean].flatMap {
               if(_) Right(LgsWithP1)
               else {
-                c.downField("useOI").as[Boolean].flatMap{
+                c.downField("useOI").as[Boolean].flatMap {
                   if(_) Right(LgsWithOi)
                   else for {
                     strapLoop <- c.downField("strapOn").as[Boolean]
@@ -90,7 +90,7 @@ object GuideConfigDb {
   implicit val mountGuideDecoder: Decoder[MountGuideOption] =
     Decoder.decodeBoolean.map(_.fold(MountGuideOn, MountGuideOff))
 
-  implicit val m1GuideSourceDecoder: Decoder[M1Source] = Decoder.decodeString.flatMap{
+  implicit val m1GuideSourceDecoder: Decoder[M1Source] = Decoder.decodeString.flatMap {
     case "PWFS1" => Decoder.const(M1Source.PWFS1)
     case "PWFS2" => Decoder.const(M1Source.PWFS2)
     case "OIWFS" => Decoder.const(M1Source.OIWFS)
@@ -108,7 +108,7 @@ object GuideConfigDb {
     }
   }
 
-  implicit val m2GuideSourceDecoder: Decoder[TipTiltSource] = Decoder.decodeString.flatMap{
+  implicit val m2GuideSourceDecoder: Decoder[TipTiltSource] = Decoder.decodeString.flatMap {
     case "PWFS1" => Decoder.const(TipTiltSource.PWFS1)
     case "PWFS2" => Decoder.const(TipTiltSource.PWFS2)
     case "OIWFS" => Decoder.const(TipTiltSource.OIWFS)
@@ -119,7 +119,7 @@ object GuideConfigDb {
   implicit val comaDecoder: Decoder[ComaOption] = Decoder.decodeBoolean.map(_.fold(ComaOn, ComaOff))
 
   implicit val m2GuideDecoder: Decoder[M2GuideConfig] = Decoder.instance[M2GuideConfig]{ c =>
-    c.downField("on").as[Boolean].flatMap{
+    c.downField("on").as[Boolean].flatMap {
       if(_) for {
         srcs <- c.downField("sources").as[Set[TipTiltSource]]
         coma <- c.downField("comaOn").as[ComaOption]

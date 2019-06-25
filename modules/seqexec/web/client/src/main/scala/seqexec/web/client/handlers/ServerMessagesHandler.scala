@@ -258,6 +258,11 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
       effectOnly(Effect(Future(RunResourceFailed(sid, stepId, r, actualMsg))))
   }
 
+  val guideConfigMessage: PartialFunction[Any, ActionResult[M]] = {
+    case ServerMessage(r: GuideConfigUpdate) =>
+      updatedL(WebSocketsFocus.guideConfig.set(r.telescope))
+  }
+
   val defaultMessage: PartialFunction[Any, ActionResult[M]] = {
     case ServerMessage(_) =>
       // Ignore unknown events
@@ -284,6 +289,7 @@ class ServerMessagesHandler[M](modelRW: ModelRW[M, WebSocketsFocus])
       sequencePauseCancelMessage,
       modelUpdateMessage,
       singleRunCompleteMessage,
+      guideConfigMessage,
       defaultMessage
     ).combineAll
 }
