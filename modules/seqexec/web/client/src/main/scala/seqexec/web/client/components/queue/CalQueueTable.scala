@@ -219,13 +219,11 @@ object CalQueueTable {
     Reusability.by(x => (x.tableState, x.moved))
 
   // ScalaJS defined trait
-  // scalastyle:off
   trait CalQueueRow extends js.Object {
     var obsId: Observation.Id
     var instrument: Instrument
     var status: SequenceState
   }
-  // scalastyle:on
 
   object CalQueueRow {
 

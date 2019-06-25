@@ -284,12 +284,10 @@ object StepsTable extends Columns {
   val BreakpointLineHeight: Int = 5
 
   // ScalaJS defined trait
-  // scalastyle:off
   trait StepRow extends js.Object {
     var step: Step
   }
 
-  // scalastyle:on
   object StepRow {
 
     def apply(step: Step): StepRow = {

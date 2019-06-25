@@ -199,7 +199,6 @@ package client {
       * @param url Url to connect to
       * @tparam F Effect type
       */
-    // scalastyle:off
     def giapiConnection[F[_]: Timer: ConcurrentEffect](
       url: String
     ): GiapiConnection[F] =
@@ -256,7 +255,6 @@ package client {
             c <- build(c) // Build the interpreter
           } yield c
       }
-    // scalastyle:on
 
     /**
       * Interpreter on Id

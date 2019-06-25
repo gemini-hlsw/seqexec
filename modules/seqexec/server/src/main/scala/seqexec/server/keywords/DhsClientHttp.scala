@@ -36,7 +36,7 @@ class DhsClientHttp[F[_]: Effect](base: Client[F], baseURI: Uri)(implicit timer:
 
   private val client = {
     val max = 2
-    var attemptsCounter = 1 // scalastyle:ignore
+    var attemptsCounter = 1
     val policy = RetryPolicy[F] { attempts: Int =>
       if (attempts >= max) None
       else {

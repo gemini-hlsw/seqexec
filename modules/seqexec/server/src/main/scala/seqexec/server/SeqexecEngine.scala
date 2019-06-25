@@ -745,7 +745,6 @@ object SeqexecEngine extends SeqexecConfiguration {
       case Array(k, v) => k.trim -> v.trim
     }.toMap
 
-  // scalastyle:off
   def seqexecConfiguration(
     implicit cs: ContextShift[IO]
   ): Kleisli[IO, Config, Settings] = Kleisli { cfg: Config =>
@@ -996,7 +995,5 @@ object SeqexecEngine extends SeqexecConfiguration {
     qState.sequences.get(c.sid).flatMap(_.seqGen.resourceAtCoords(c.actCoords))
       .map(res => SingleActionEvent(f(c.sid, c.actCoords.stepId, res)))
       .getOrElse(NullEvent)
-
-  // scalastyle:on
 
 }

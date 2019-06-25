@@ -28,7 +28,6 @@ trait TreeMapInstances extends TreeMapInstances2 {
           .mkString("TreeMap(", ", ", ")")
     }
 
-  // scalastyle:off method.length
   implicit def catsStdInstancesForTreeMap[K: Order]: Traverse[TreeMap[K, ?]] with FlatMap[TreeMap[K, ?]] =
     new Traverse[TreeMap[K, ?]] with FlatMap[TreeMap[K, ?]] {
 

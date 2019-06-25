@@ -81,7 +81,6 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
 
   private def info[F[_]: Sync](msg: => String): SeqActionF[F, Unit] = SeqActionF.liftF(Sync[F].delay(Log.info(msg)))
 
-  //scalastyle:off
   private def observe(config: Config, obsId: Observation.Id, inst: InstrumentSystem[IO],
                       otherSys: List[System[IO]], headers: Reader[HeaderExtraData, List[Header[IO]]])
                      (ctx: HeaderExtraData)

@@ -73,7 +73,6 @@ object GmosController {
 
   }
 
-  // scalastyle:off
   object Config {
     type DTAX                = edu.gemini.spModel.gemini.gmos.GmosCommonType.DTAX
     type ADC                 = edu.gemini.spModel.gemini.gmos.GmosCommonType.ADC
@@ -145,7 +144,6 @@ object GmosController {
     )
 
   }
-  // scalastyle:on
 
   sealed trait SiteDependentTypes {
     type Filter

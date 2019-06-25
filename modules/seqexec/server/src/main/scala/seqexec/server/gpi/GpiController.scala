@@ -250,7 +250,6 @@ object GpiController extends GpiLookupTables with GpiConfigEq {
 
       override val name = "GPI"
 
-      // scalastyle:off
       override def configuration(config: GpiConfig): F[Configuration] =
         config match {
           case c: RegularGpiConfig => computeRegularConfig(client, c)

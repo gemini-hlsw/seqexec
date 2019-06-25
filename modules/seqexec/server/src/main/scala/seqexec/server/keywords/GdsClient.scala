@@ -30,7 +30,7 @@ final case class GdsClient[F[_]: Effect: Functor](base: Client[F], gdsUri: Uri)(
 
   private val client = {
     val max = 2
-    var attemptsCounter = 1 // scalastyle:ignore
+    var attemptsCounter = 1
     val policy = RetryPolicy[F] { attempts: Int =>
       if (attempts >= max) None
       else {

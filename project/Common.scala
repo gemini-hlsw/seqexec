@@ -38,8 +38,6 @@ object Common {
     // Don't build javadoc when we're packaging the docker image.
     mappings in (Compile, packageDoc)       := Seq(),
     sources in (Compile,doc)                := Seq.empty,
-    // Temporary, needed for decline 0.4.0-M1
-    resolvers += Resolver.jcenterRepo,
 
     // We don't care to see updates about the scala language itself
     dependencyUpdatesFilter -= moduleFilter(name = "scala-library"),

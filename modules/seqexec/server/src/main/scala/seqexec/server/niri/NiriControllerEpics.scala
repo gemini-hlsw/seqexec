@@ -271,7 +271,6 @@ object NiriControllerEpics extends NiriEncoders {
   private val ConfigTimeout: Time = Seconds(180)
   private val DefaultTimeout: Time = Seconds(60)
 
-  // scalastyle:off
   def apply(): NiriController[IO] = new NiriController[IO] {
     private def actOnDHSNotConected(act: IO[Unit]): IO[Unit] =
       epicsSys.dhsConnected.map(_.exists(identity)).ifM(IO.unit, act)
@@ -351,5 +350,4 @@ object NiriControllerEpics extends NiriEncoders {
       }
 
   }
-  // scalastyle:on
 }

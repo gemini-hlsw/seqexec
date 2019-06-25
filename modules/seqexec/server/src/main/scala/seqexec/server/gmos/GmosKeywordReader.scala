@@ -131,7 +131,6 @@ object GmosKeywordReaderDummy {
 }
 
 object GmosKeywordReaderEpics {
-  // scalastyle:off
   def apply[F[_]: Sync: LiftIO]: GmosKeywordReader[F] = new GmosKeywordReader[F] {
     private val F = implicitly[Sync[F]]
     private val sys = GmosEpics.instance
@@ -207,5 +206,4 @@ object GmosKeywordReaderEpics {
       F.delay(sys.adcUsed.forall(_ === 1))
         .handleError(_ => false)
   }
-  // scalastyle:on
 }

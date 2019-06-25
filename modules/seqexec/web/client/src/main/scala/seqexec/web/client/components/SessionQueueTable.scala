@@ -285,7 +285,6 @@ object SessionQueueTable extends Columns {
   implicit val stateReuse: Reusability[State] = Reusability.derive[State]
 
   // ScalaJS defined trait
-  // scalastyle:off
   trait SessionQueueRow extends js.Object {
     var obsId: Observation.Id
     var status: SequenceState
@@ -300,7 +299,6 @@ object SessionQueueTable extends Columns {
     var inDayCalQueue: Boolean
   }
 
-  // scalastyle:on
   object SessionQueueRow {
 
     def apply(obsId:         Observation.Id,
@@ -577,7 +575,6 @@ object SessionQueueTable extends Columns {
       .void
   }
 
-  // scalastyle:off
   private def colBuilder(
     b:    Backend,
     size: Size): ColumnRenderArgs[TableColumn] => Table.ColumnArg = {

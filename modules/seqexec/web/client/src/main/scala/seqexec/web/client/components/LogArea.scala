@@ -84,7 +84,6 @@ object LogArea {
   private val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SS")
 
   // ScalaJS defined trait
-  // scalastyle:off
   trait LogRow extends js.Object {
     var local: String // Formatted string
     var timestamp: Instant
@@ -93,7 +92,6 @@ object LogArea {
     var clip: String
   }
 
-  // scalastyle:on
   object LogRow {
 
     def apply(local:     String,

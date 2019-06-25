@@ -83,7 +83,6 @@ final case class TimingWindowKeywords(
 )
 
 object ObsKeywordReader extends ObsKeywordsReaderConstants {
-  // scalastyle:off
   def apply[F[_]: Sync](config: Config, site: Site): ObsKeywordsReader[F] = new ObsKeywordsReader[F] {
     private val F = implicitly[Sync[F]]
     // Format used on FITS keywords
@@ -294,5 +293,4 @@ object ObsKeywordReader extends ObsKeywordsReaderConstants {
         .getOrElse(false)
       )
   }
-  // scalastyle:on
 }

@@ -22,7 +22,6 @@ import web.client.table._
 
 object actions {
 
-  // scalastyle:off
   // Actions
   final case class NavigateTo(page:       SeqexecPages) extends Action
   final case class NavigateSilentTo(page: SeqexecPages) extends Action
@@ -195,7 +194,6 @@ object actions {
   // Used for UI debugging
   final case class MarkStepAsRunning(s: Observation.Id, step: Int) extends Action
 
-  // scalastyle:on
   private val standardStep: PartialFunction[Step, (StepId, StepState, List[(Resource, ActionStatus)])] = {
     case i: StandardStep => (i.id, i.status, i.configStatus)
   }

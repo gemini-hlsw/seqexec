@@ -12,7 +12,6 @@ import seqexec.server.InstrumentSystem
 import seqexec.server.tcs.TcsKeywordsReader
 
 object NiriHeader {
-  // scalastyle:off
   def header[F[_]: Sync](inst: InstrumentSystem[F], instReader: NiriKeywordReader[F],
              tcsKeywordsReader: TcsKeywordsReader[F]): Header[F] = new Header[F] {
     override def sendBefore(obsId: Observation.Id, id: ImageFileId): F[Unit] =
@@ -68,6 +67,5 @@ object NiriHeader {
         buildDouble(instReader.observationEpoch, KeywordName.OBSEPOCH)
       ))
   }
-  // scalastyle:on
 
 }

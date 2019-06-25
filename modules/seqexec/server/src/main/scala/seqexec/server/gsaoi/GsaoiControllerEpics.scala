@@ -99,7 +99,6 @@ object GsaoiControllerEpics {
   private def applyParam[A: Eq](c: A, d: A, f: A => IO[Unit]): Option[IO[Unit]] =
     (c =!= d).option(f(d))
 
-  //scalastyle:off
   def apply(): GsaoiController[IO] = new GsaoiController[IO] {
 
     private val epicsSys = GsaoiEpics.instance
@@ -215,5 +214,4 @@ object GsaoiControllerEpics {
     } yield EpicsGsaoiConfig(fl, uw, wc, rm, ro, co, et, fo, gd)
 
   }
-  //scalastyle:on
 }

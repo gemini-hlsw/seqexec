@@ -25,7 +25,6 @@ import scala.util.Try
  * Created by jluhrs on 10/1/15.
  */
 
-// scalastyle:off
 final class TcsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]) {
 
   import TcsEpics._
@@ -693,4 +692,3 @@ object TcsEpics extends EpicsSystem[TcsEpics[IO]] {
   }
 
 }
-// scalastyle:on
