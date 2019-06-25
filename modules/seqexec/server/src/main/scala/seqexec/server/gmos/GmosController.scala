@@ -90,28 +90,29 @@ object GmosController {
     type PosAngle            = edu.gemini.spModel.core.Angle
 
     // I'm not totally sure this is being used
-    sealed trait BiasTime
+    sealed trait BiasTime extends Product with Serializable
 
-    case object BiasTimeSet extends BiasTime
-
-    case object BiasTimeEmpty extends BiasTime
-
-    case object BiasTimeUnset extends BiasTime
+    object BiasTime {
+      case object BiasTimeSet extends BiasTime
+      case object BiasTimeEmpty extends BiasTime
+      case object BiasTimeUnset extends BiasTime
+    }
 
     // Used for the shutterState
-    sealed trait ShutterState
+    sealed trait ShutterState extends Product with Serializable
 
-    case object UnsetShutter extends ShutterState
+    object ShutterState {
+      case object UnsetShutter extends ShutterState
+      case object OpenShutter extends ShutterState
+      case object CloseShutter extends ShutterState
+    }
 
-    case object OpenShutter extends ShutterState
+    sealed trait Beam extends Product with Serializable
 
-    case object CloseShutter extends ShutterState
-
-    sealed trait Beam
-
-    case object InBeam extends Beam
-
-    case object OutOfBeam extends Beam
+    object Beam {
+      case object InBeam extends Beam
+      case object OutOfBeam extends Beam
+    }
 
     sealed trait GmosFPU
 

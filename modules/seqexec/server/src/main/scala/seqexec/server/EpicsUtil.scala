@@ -420,6 +420,18 @@ object EpicsUtil {
   def smartSetParam[A: Eq](v: A, get: => Option[A], set: SeqAction[Unit]): List[SeqAction[Unit]] =
     if(get =!= v.some) List(set) else Nil
 
+  def applyParam[F[_]: Applicative, A: Eq](c: A, d: A, f: A => F[Unit]): Option[F[Unit]] =
+    if (c =!= d) f(d).some else none
+
+  def applyParamT[F[_]: Functor](
+    relTolerance: Double
+  )(c: Double, d: Double, set: Double => F[Unit]): Option[F[Unit]] =
+    if (!(d === 0.0 && c === 0.0) || (d === 0.0 || abs((c - d)/d) > relTolerance)) {
+      set(d).some
+    } else {
+      none
+    }
+
   // This method takes a list of actions returning possible actions
   // If at least one is defined it will execute them and then executes `after`
   def executeIfNeeded[F[_]: Monad, A](i:     List[F[Option[F[Unit]]]],
@@ -444,8 +456,11 @@ object EpicsUtil {
     get.map(_ =!= v.some).map(_.option(set))
 
   def smartSetDoubleParam(relTolerance: Double)(v: Double, get: => Option[Double], set: SeqAction[Unit]): List[SeqAction[Unit]] =
-    if(get.forall(x => (v === 0.0 && x =!= 0.0) || abs((x - v)/v) > relTolerance))
-  List(set) else Nil
+    if (get.forall(x => !(v === 0.0 && x === 0.0) || (v === 0.0 || abs((x - v)/v) > relTolerance))) {
+      List(set)
+    } else {
+      Nil
+    }
 
   def smartSetDoubleParamF[F[_]: Functor](relTolerance: Double)(v: Double, get: F[Option[Double]], set: F[Unit]): F[Option[F[Unit]]] =
     get.map(g => (g.forall(x => (v === 0.0 && x =!= 0.0) || abs((x - v)/v) > relTolerance)).option(set))

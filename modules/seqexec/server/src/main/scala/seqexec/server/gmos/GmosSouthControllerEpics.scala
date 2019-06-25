@@ -6,7 +6,7 @@ package seqexec.server.gmos
 import cats.effect.IO
 import cats.implicits._
 import seqexec.server.EpicsCodex.EncodeEpicsValue
-import seqexec.server.gmos.GmosController.Config.{InBeam, OutOfBeam}
+import seqexec.server.gmos.GmosController.Config.Beam
 import seqexec.server.gmos.GmosController.{SouthTypes, southConfigTypes}
 import seqexec.server.gmos.GmosControllerEpics.ROIValues
 import edu.gemini.spModel.gemini.gmos.GmosCommonType
@@ -26,26 +26,26 @@ object GmosSouthEncoders extends GmosControllerEpics.Encoders[SouthTypes] {
 
   override val fpu: EncodeEpicsValue[SouthTypes#FPU, (Option[String], Option[String])] = EncodeEpicsValue{ a => {
     val r = a match {
-      case FPU.FPU_NONE    => (none, OutOfBeam.some)
-      case FPU.LONGSLIT_1  => ("0.25arcsec".some, InBeam.some)
-      case FPU.LONGSLIT_2  => ("0.5arcsec".some, InBeam.some)
-      case FPU.LONGSLIT_3  => ("0.75arcsec".some, InBeam.some)
-      case FPU.LONGSLIT_4  => ("1.0arcsec".some, InBeam.some)
-      case FPU.LONGSLIT_5  => ("1.5arcsec".some, InBeam.some)
-      case FPU.LONGSLIT_6  => ("2.0arcsec".some, InBeam.some)
-      case FPU.LONGSLIT_7  => ("5.0arcsec".some, InBeam.some)
-      case FPU.IFU_1       => ("IFU-2".some, InBeam.some)
-      case FPU.IFU_2       => ("IFU-B".some, InBeam.some)
-      case FPU.IFU_3       => ("IFU-R".some, InBeam.some)
+      case FPU.FPU_NONE    => (none, Beam.OutOfBeam.some)
+      case FPU.LONGSLIT_1  => ("0.25arcsec".some, Beam.InBeam.some)
+      case FPU.LONGSLIT_2  => ("0.5arcsec".some, Beam.InBeam.some)
+      case FPU.LONGSLIT_3  => ("0.75arcsec".some, Beam.InBeam.some)
+      case FPU.LONGSLIT_4  => ("1.0arcsec".some, Beam.InBeam.some)
+      case FPU.LONGSLIT_5  => ("1.5arcsec".some, Beam.InBeam.some)
+      case FPU.LONGSLIT_6  => ("2.0arcsec".some, Beam.InBeam.some)
+      case FPU.LONGSLIT_7  => ("5.0arcsec".some, Beam.InBeam.some)
+      case FPU.IFU_1       => ("IFU-2".some, Beam.InBeam.some)
+      case FPU.IFU_2       => ("IFU-B".some, Beam.InBeam.some)
+      case FPU.IFU_3       => ("IFU-R".some, Beam.InBeam.some)
       case FPU.BHROS       => (none, none)
-      case FPU.IFU_N       => ("IFU-NS-2".some, InBeam.some)
-      case FPU.IFU_N_B     => ("IFU-NS-B".some, InBeam.some)
-      case FPU.IFU_N_R     => ("IFU-NS-R".some, InBeam.some)
-      case FPU.NS_1        => ("NS0.5arcsec".some, InBeam.some)
-      case FPU.NS_2        => ("NS0.75arcsec".some, InBeam.some)
-      case FPU.NS_3        => ("NS1.0arcsec".some, InBeam.some)
-      case FPU.NS_4        => ("NS1.5arcsec".some, InBeam.some)
-      case FPU.NS_5        => ("NS2.0arcsec".some, InBeam.some)
+      case FPU.IFU_N       => ("IFU-NS-2".some, Beam.InBeam.some)
+      case FPU.IFU_N_B     => ("IFU-NS-B".some, Beam.InBeam.some)
+      case FPU.IFU_N_R     => ("IFU-NS-R".some, Beam.InBeam.some)
+      case FPU.NS_1        => ("NS0.5arcsec".some, Beam.InBeam.some)
+      case FPU.NS_2        => ("NS0.75arcsec".some, Beam.InBeam.some)
+      case FPU.NS_3        => ("NS1.0arcsec".some, Beam.InBeam.some)
+      case FPU.NS_4        => ("NS1.5arcsec".some, Beam.InBeam.some)
+      case FPU.NS_5        => ("NS2.0arcsec".some, Beam.InBeam.some)
       case FPU.CUSTOM_MASK => (none, none)
     }
     (r._1, r._2.map(GmosControllerEpics.beamEncoder.encode))

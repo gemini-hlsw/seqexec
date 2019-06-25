@@ -213,7 +213,7 @@ object AltairControllerEpics extends AltairController[IO] {
     reasons: Set[Gaos.ResumeCondition]): Option[IO[Unit]] =
     resumeNgsOrLgsMode(starPos, currCfg)(reasons).filter(_ => strap || sfo).map(_ *> ttgsOn(strap, sfo, currCfg))
 
-  /*
+  /**
    * Modes LgsWithP1 and LgsWithOi don't use an Altair target. The only action required is to start or stop corrections
    */
   private def pauseResumeLgsWithXX(currCfg: EpicsAltairConfig)(
@@ -311,13 +311,6 @@ object AltairControllerEpics extends AltairController[IO] {
     strapGate: Int,
     aoLoop: Boolean
   )
-
-  object EpicsAltairConfig
-
-  /*
-   * Helper function to be used until TcsEpics is converted to use F[_]
-   */
-  //def convertTcsAction[T](a: SeqAction[T]): IO[T] = a.value.flatMap(_.fold(IO.raiseError(_), IO(_)))
 
   // This is a bit convoluted. AO follow state is read from Altair, but set as part of TCS configuration
   override def isFollowing: IO[Option[Boolean]] = AltairEpics.instance.aoFollow

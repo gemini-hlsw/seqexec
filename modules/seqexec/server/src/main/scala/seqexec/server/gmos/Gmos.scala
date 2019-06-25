@@ -178,21 +178,21 @@ object Gmos {
 
   // It seems this is unused but it shows up on the DC apply config
   private def biasTimeObserveType(observeType: String): BiasTime = observeType match {
-    case SCIENCE_OBSERVE_TYPE => BiasTimeUnset
-    case FLAT_OBSERVE_TYPE    => BiasTimeUnset
-    case ARC_OBSERVE_TYPE     => BiasTimeEmpty
-    case DARK_OBSERVE_TYPE    => BiasTimeEmpty
-    case BIAS_OBSERVE_TYPE    => BiasTimeUnset
-    case _                    => BiasTimeUnset
+    case SCIENCE_OBSERVE_TYPE => BiasTime.BiasTimeUnset
+    case FLAT_OBSERVE_TYPE    => BiasTime.BiasTimeUnset
+    case ARC_OBSERVE_TYPE     => BiasTime.BiasTimeEmpty
+    case DARK_OBSERVE_TYPE    => BiasTime.BiasTimeEmpty
+    case BIAS_OBSERVE_TYPE    => BiasTime.BiasTimeUnset
+    case _                    => BiasTime.BiasTimeUnset
   }
 
   private def shutterStateObserveType(observeType: String): ShutterState = observeType match {
-    case SCIENCE_OBSERVE_TYPE => OpenShutter
-    case FLAT_OBSERVE_TYPE    => OpenShutter
-    case ARC_OBSERVE_TYPE     => OpenShutter
-    case DARK_OBSERVE_TYPE    => CloseShutter
-    case BIAS_OBSERVE_TYPE    => CloseShutter
-    case _                    => UnsetShutter
+    case SCIENCE_OBSERVE_TYPE => ShutterState.OpenShutter
+    case FLAT_OBSERVE_TYPE    => ShutterState.OpenShutter
+    case ARC_OBSERVE_TYPE     => ShutterState.OpenShutter
+    case DARK_OBSERVE_TYPE    => ShutterState.CloseShutter
+    case BIAS_OBSERVE_TYPE    => ShutterState.CloseShutter
+    case _                    => ShutterState.UnsetShutter
   }
 
   private def customROIs(config: Config): List[ROI] = {
