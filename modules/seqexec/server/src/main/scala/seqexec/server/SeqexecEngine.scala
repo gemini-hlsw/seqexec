@@ -48,7 +48,7 @@ import seqexec.server.niri.{NiriControllerEpics, NiriControllerSim, NiriEpics}
 import seqexec.server.nifs.{NifsControllerEpics, NifsControllerSim, NifsEpics}
 import seqexec.server.gws.GwsEpics
 import seqexec.server.gems.GemsEpics
-import seqexec.server.tcs.{GuideConfigDb, TcsControllerEpics, TcsControllerSim, TcsEpics}
+import seqexec.server.tcs.{GuideConfigDb, TcsEpics, TcsNorthControllerEpics, TcsNorthControllerSim, TcsSouthControllerEpics, TcsSouthControllerSim}
 import seqexec.server.SeqEvent._
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.altair.{AltairControllerEpics, AltairControllerSim, AltairEpics}
@@ -76,7 +76,8 @@ class SeqexecEngine(httpClient: Client[IO], gpi: GpiClient[IO], ghost: GhostClie
     odbProxy,
     settings.dhsControl.command.fold(DhsClientHttp(httpClient, settings.dhsURI),
       DhsClientSim(settings.date)),
-    settings.tcsControl.command.fold(TcsControllerEpics(), TcsControllerSim[IO]),
+    (settings.tcsControl.command && settings.site === Site.GS).fold(TcsSouthControllerEpics(), TcsSouthControllerSim[IO]),
+    (settings.tcsControl.command && settings.site === Site.GN).fold(TcsNorthControllerEpics(), TcsNorthControllerSim[IO]),
     settings.gcalControl.command.fold(GcalControllerEpics(), GcalControllerSim[IO]),
     settings.f2Control.command.fold(Flamingos2ControllerEpics[IO](Flamingos2Epics.instance),
       settings.instForceError.fold(Flamingos2ControllerSimBad[IO](settings.failAt),

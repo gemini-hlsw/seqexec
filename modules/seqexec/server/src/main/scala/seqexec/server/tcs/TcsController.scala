@@ -10,12 +10,6 @@ import edu.gemini.spModel.core.Wavelength
 import gem.enum._
 import monocle.macros.Lenses
 import squants.{Angle, Length}
-import seqexec.model.TelescopeGuideConfig
-import seqexec.server.InstrumentGuide
-import seqexec.server.altair.Altair
-import seqexec.server.altair.AltairController.AltairConfig
-import seqexec.server.gems.Gems
-import seqexec.server.gems.GemsController.GemsConfig
 import shapeless.tag
 import shapeless.tag.@@
 
@@ -25,18 +19,6 @@ import shapeless.tag.@@
  * Interface to change the TCS state.
  * Most of the code deals with representing the state of the TCS subsystems.
  */
-
-trait TcsController[F[_]] {
-  import TcsController._
-
-  def applyConfig(subsystems: NonEmptySet[Subsystem],
-                  gaos: Option[Either[Altair[F], Gems[F]]],
-                  tc: TcsConfig): F[Unit]
-
-  def notifyObserveStart: F[Unit]
-
-  def notifyObserveEnd: F[Unit]
-}
 
 object TcsController {
 
@@ -278,30 +260,7 @@ object TcsController {
     implicit val eq: Eq[GuiderConfig] = Eq.by(x => (x.tracking, x.detector))
   }
 
-  @Lenses
-  final case class GuidersConfig(
-    pwfs1: GuiderConfig@@P1Config,
-    pwfs2OrAowfs: Either[GuiderConfig@@P2Config, GuiderConfig@@AoGuide],
-    oiwfs: GuiderConfig@@OIConfig
-  )
-
-  object GuidersConfig {
-    implicit val pwfs1Eq: Eq[GuiderConfig@@P1Config] = Eq[GuiderConfig].contramap(identity)
-  }
-
   final case class AGConfig(sfPos: LightPath, hrwfs: Option[HrwfsConfig])
-
-  @Lenses
-  final case class TcsConfig(
-    gc:  TelescopeGuideConfig,
-    tc:  TelescopeConfig,
-    gds: GuidersConfig,
-    agc: AGConfig,
-    gaos: Option[Either[AltairConfig, GemsConfig]],
-    inst: InstrumentGuide
-  )
-
-  object TcsConfig
 
   sealed trait Subsystem extends Product with Serializable
   object Subsystem {

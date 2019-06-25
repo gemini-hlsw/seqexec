@@ -11,7 +11,7 @@ import seqexec.server.gmos.GmosController._
 import seqexec.server.gsaoi.GsaoiController
 import seqexec.server.ghost.GhostController
 import seqexec.server.gcal.GcalController
-import seqexec.server.tcs.{GuideConfigDb, TcsController}
+import seqexec.server.tcs.{GuideConfigDb, TcsSouthController, TcsNorthController}
 import seqexec.server.gnirs.GnirsController
 import seqexec.server.niri.NiriController
 import seqexec.server.nifs.NifsController
@@ -19,7 +19,8 @@ import seqexec.server.nifs.NifsController
 final case class Systems[F[_]](
   odb:        OdbProxy[F],
   dhs:        DhsClient[F],
-  tcs:        TcsController[F],
+  tcsSouth:   TcsSouthController[F],
+  tcsNorth:   TcsNorthController[F],
   gcal:       GcalController[F],
   flamingos2: Flamingos2Controller[F],
   gmosSouth:  GmosSouthController[F],

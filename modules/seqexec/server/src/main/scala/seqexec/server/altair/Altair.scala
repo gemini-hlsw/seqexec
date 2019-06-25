@@ -4,7 +4,6 @@
 package seqexec.server.altair
 
 import cats.effect.Sync
-import cats.implicits._
 import edu.gemini.spModel.ao.AOConstants.AO_CONFIG_NAME
 import edu.gemini.spModel.config2.{Config, ItemKey}
 import edu.gemini.spModel.gemini.altair.AltairConstants.FIELD_LENSE_PROP
@@ -20,7 +19,7 @@ import seqexec.server.tcs.Gaos
 import squants.Time
 
 trait Altair[F[_]] extends Gaos[F] {
-  def pauseResume(config: Either[AltairConfig, GemsConfig], pauseReasons: Set[Gaos.PauseCondition],
+  def pauseResume(config: AltairConfig, pauseReasons: Set[Gaos.PauseCondition],
                   resumeReasons: Set[ResumeCondition]): F[PauseResume[F]]
 
   val resource: Resource
@@ -40,10 +39,9 @@ object Altair {
   private class AltairImpl[F[_]: Sync] (controller: AltairController[F],
                                         fieldLens: FieldLens
                                        ) extends Altair[F] {
-    override def pauseResume(config: Either[AltairConfig, GemsConfig], pauseReasons: Set[Gaos.PauseCondition],
+    override def pauseResume(config: AltairConfig, pauseReasons: Set[Gaos.PauseCondition],
                              resumeReasons: Set[ResumeCondition]): F[PauseResume[F]] =
-      config.swap.map(controller.pauseResume(pauseReasons, resumeReasons, fieldLens)(_))
-        .getOrElse(PauseResume[F](None, None).pure[F])
+      controller.pauseResume(pauseReasons, resumeReasons, fieldLens)(config)
 
     override def observe(config: Either[AltairConfig, GemsConfig], expTime: Time): F[Unit] =
       config.swap.map(controller.observe(expTime)(_)).getOrElse(Sync[F].unit)
