@@ -173,6 +173,9 @@ trait ModelLenses {
   val stringToStepTypeP: Prism[String, StepType] =
     Prism(StepType.fromString)(_.label)
 
+  val stringToBooleanP: Prism[String, Boolean] =
+    Prism[String, Boolean](_.equalsIgnoreCase("true").some)(_.toString)
+
   val stepTypeO: Optional[Step, StepType] =
     stepObserveOptional(SystemName.Observe, "observeType", stringToStepTypeP)
 
@@ -189,6 +192,10 @@ trait ModelLenses {
   // Composite lens to find the instrument fpu model
   val instrumentFPUModeO: Optional[Step, FPUMode] =
     stepObserveOptional(SystemName.Instrument, "fpuMode", stringToFPUModeP)
+
+  // Composite lens to find if the step is N&S
+  val isNodAndShuffleO: Optional[Step, Boolean] =
+    stepObserveOptional(SystemName.Instrument, "useNS", stringToBooleanP)
 
   // Composite lens to find the instrument fpu
   val instrumentFPUO: Optional[Step, String] =

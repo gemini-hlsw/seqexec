@@ -84,8 +84,17 @@ object StepItems {
         case _ => none
       }
 
-    def stepType: Option[StepType] =
-      stepTypeO.getOption(s)
+    def nodAndShuffle(i: Instrument): Option[StepType.NodAndShuffle.type] =
+      i match {
+        case Instrument.GmosS | Instrument.GmosN if isNodAndShuffleO.getOption(s).forall(identity) =>
+          StepType.NodAndShuffle.some
+        case _ => none
+      }
+
+    def stepType(instrument: Instrument): Option[StepType] =
+      alignAndCalib(instrument)
+      .orElse(nodAndShuffle(instrument))
+      .orElse(stepTypeO.getOption(s))
 
     private def gpiFilter: Step => Option[String] = s => {
       // Read the filter, if not found deduce it from the obs mode

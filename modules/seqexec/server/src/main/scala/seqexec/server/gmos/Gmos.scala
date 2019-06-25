@@ -18,6 +18,7 @@ import edu.gemini.spModel.obscomp.InstConstants.{EXPOSURE_TIME_PROP, _}
 import edu.gemini.spModel.seqcomp.SeqConfigNames.{INSTRUMENT_KEY, OBSERVE_KEY}
 import edu.gemini.spModel.gemini.gmos.GmosCommonType
 import java.lang.{Double => JDouble, Integer => JInt}
+import mouse.boolean._
 import org.log4s.{Logger, getLogger}
 import scala.concurrent.duration._
 import seqexec.model.dhs.ImageFileId
@@ -127,6 +128,11 @@ abstract class Gmos[F[_]: Sync, T<:GmosController.SiteDependentTypes](controller
     } yield new GmosController.GmosConfig[T](configTypes)(cc, dc)
   )
 
+  override def calcStepType(config: Config): Either[SeqexecFailure, StepType] =
+    Gmos.isNodAndShuffle(config).option(NodAndShuffle(instrument).asRight).getOrElse{
+      SequenceConfiguration.calcStepType(config)
+    }
+
   override def observe(config: Config): SeqObserveF[F, ImageFileId, ObserveCommand.Result] =
     Reader { fileId =>
       SeqActionF.liftF(calcObserveTime(config)).flatMap { x =>
@@ -163,6 +169,11 @@ object Gmos {
 
     val fpuDefault: T#FPU
   }
+
+  def isNodAndShuffle(config: Config): Boolean =
+    config.extractAs[java.lang.Boolean](INSTRUMENT_KEY / USE_NS_PROP)
+      .map(_.booleanValue())
+      .getOrElse(false)
 
   // It seems this is unused but it shows up on the DC apply config
   private def biasTimeObserveType(observeType: String): BiasTime = observeType match {

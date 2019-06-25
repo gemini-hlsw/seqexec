@@ -19,6 +19,7 @@ object StepType {
   case object Dark          extends StepType("DARK")
   case object Calibration   extends StepType("CAL")
   case object AlignAndCalib extends StepType("A & C")
+  case object NodAndShuffle extends StepType("N & S")
 
   implicit val show: Show[StepType] =
     Show.show(_.label)
@@ -28,6 +29,6 @@ object StepType {
 
   /** @group Typeclass Instances */
   implicit val StepTypeEnumerated: Enumerated[StepType] =
-    Enumerated.of(Object, Arc, Flat, Bias, Dark, Calibration, AlignAndCalib)
+    Enumerated.of(Object, Arc, Flat, Bias, Dark, Calibration, AlignAndCalib, NodAndShuffle)
 
 }

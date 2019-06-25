@@ -18,6 +18,7 @@ import java.lang.{ Boolean => JBoolean }
 import java.lang.{ Double => JDouble }
 import java.lang.{ Integer => JInt }
 import gem.enum.LightSinkName
+import mouse.boolean._
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Instrument
 import seqexec.server.ConfigUtilOps._
@@ -25,9 +26,8 @@ import seqexec.server._
 import seqexec.server.keywords.GdsClient
 import seqexec.server.keywords.GdsInstrument
 import seqexec.server.keywords.KeywordsClient
-import squants.Time
-
 import scala.concurrent.duration._
+import squants.Time
 import squants.time.Milliseconds
 import squants.time.Seconds
 import squants.time.Time
@@ -51,6 +51,11 @@ final case class Gpi[F[_]: Sync: Timer](controller: GpiController[F])
   override def sfName(config: Config): LightSinkName = LightSinkName.Gpi
 
   override val contributorName: String = "gpi"
+
+  override def calcStepType(config: Config): Either[SeqexecFailure, StepType] =
+    Gpi.isAlignAndCalib(config).option(AlignAndCalib.asRight).getOrElse{
+      SequenceConfiguration.calcStepType(config)
+    }
 
   override val observeControl: InstrumentSystem.ObserveControl[F] =
     InstrumentSystem.Uncontrollable()
@@ -143,6 +148,7 @@ object Gpi {
       }
 
   val AcquisitionKey = ObsClass.ACQ.headerValue()
+
   // TODO wrap this on F to keep RT, It involves a large change upstream
   def isAlignAndCalib(config: Config): Boolean = {
     (config.extractAs[String](INSTRUMENT_KEY / InstConstants.INSTRUMENT_NAME_PROP), config.extractAs[String](OBSERVE_KEY / InstConstants.OBS_CLASS_PROP)).mapN {
