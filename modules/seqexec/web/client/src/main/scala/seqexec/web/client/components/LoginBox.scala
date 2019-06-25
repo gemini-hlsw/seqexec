@@ -14,6 +14,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import seqexec.model.UserDetails
 import seqexec.web.client.semanticui.elements.icon.Icon._
 import seqexec.web.client.model._
+import seqexec.web.client.model.SectionVisibilityState._
 import seqexec.web.client.actions.CloseLoginBox
 import seqexec.web.client.actions.LoggedIn
 import seqexec.web.client.circuit.SeqexecCircuit

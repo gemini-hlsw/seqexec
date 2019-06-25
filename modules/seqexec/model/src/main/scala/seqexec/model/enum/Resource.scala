@@ -33,10 +33,7 @@ object Resource {
 
   /** @group Typeclass Instances */
   implicit val ResourceEnumerated: Enumerated[Resource] =
-    new Enumerated[Resource] {
-      def all = Instrument.allResources.toList
-      def tag(a: Resource): String = a.label
-    }
+    Enumerated.of(Instrument.allResources.head, Instrument.allResources.tail: _*)
 }
 
 sealed abstract class Instrument(ordinal: Int, label: String)
@@ -73,8 +70,5 @@ object Instrument {
 
   /** @group Typeclass Instances */
   implicit val InstrumentEnumerated: Enumerated[Instrument] =
-    new Enumerated[Instrument] {
-      def all = Instrument.all.toList
-      def tag(a: Instrument): String = a.label
-    }
+    Enumerated.of(all.head, all.tail: _*)
 }

@@ -3,7 +3,6 @@
 
 package seqexec.model.enum
 
-import cats._
 import gem.util.Enumerated
 
 sealed abstract class ServerLogLevel(val label: String)
@@ -15,16 +14,7 @@ object ServerLogLevel {
   case object WARN  extends ServerLogLevel("WARNING")
   case object ERROR extends ServerLogLevel("ERROR")
 
-  implicit val show: Show[ServerLogLevel] =
-    Show.show(_.label)
-
-  val all: List[ServerLogLevel] =
-    List(INFO, WARN, ERROR)
-
   /** @group Typeclass Instances */
   implicit val ServerLogLevelEnumerated: Enumerated[ServerLogLevel] =
-    new Enumerated[ServerLogLevel] {
-      def all = ServerLogLevel.all
-      def tag(a: ServerLogLevel): String = a.label
-    }
+    Enumerated.of(INFO, WARN, ERROR)
 }

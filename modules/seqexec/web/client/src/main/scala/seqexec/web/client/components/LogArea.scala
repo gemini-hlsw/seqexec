@@ -4,6 +4,7 @@
 package seqexec.web.client.components
 
 import cats.Eq
+import cats.Show
 import cats.data.NonEmptyList
 import cats.implicits._
 import mouse.all._
@@ -37,7 +38,7 @@ import seqexec.web.client.semanticui.elements.button.Button
 import seqexec.web.client.semanticui.elements.button.Button.LeftLabeled
 import seqexec.web.client.semanticui.{ Size => SSize }
 import seqexec.web.client.model.GlobalLog
-import seqexec.web.client.model.SectionOpen
+import seqexec.web.client.model.SectionVisibilityState.SectionOpen
 import seqexec.web.client.actions.ToggleLogArea
 import seqexec.web.common.FixedLengthBuffer
 import seqexec.web.client.reusability._
@@ -68,6 +69,9 @@ object CopyLogToClipboard {
   */
 object LogArea {
   type Backend = RenderScope[Props, State, Unit]
+
+  implicit val show: Show[ServerLogLevel] =
+    Show.show(_.label)
 
   sealed trait TableColumn
   case object TimestampColumn extends TableColumn
@@ -162,7 +166,7 @@ object LogArea {
                                                         ClipboardColumnMeta))
 
     val Default: State =
-      State(SortedMap(ServerLogLevel.all.map(_ -> true): _*), DefaultTableState)
+      State(SortedMap(ServerLogLevel.ServerLogLevelEnumerated.all.map(_ -> true): _*), DefaultTableState)
   }
 
   private val ClipboardWidth    = 37.0

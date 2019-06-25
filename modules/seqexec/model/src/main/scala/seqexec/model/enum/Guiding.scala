@@ -15,17 +15,11 @@ object Guiding {
   case object Park   extends Guiding("park")
   case object Freeze extends Guiding("freeze")
 
-  val all: List[Guiding] =
-    List(Guide, Park, Freeze)
-
   def fromString(s: String): Option[Guiding] =
-    all.find(_.configValue === s)
+    GuidingEnumerated.all.find(_.configValue === s)
 
   /** @group Typeclass Instances */
   implicit val GuidingEnumerated: Enumerated[Guiding] =
-    new Enumerated[Guiding] {
-      def all = Guiding.all
-      def tag(a: Guiding): String = a.configValue
-    }
+    Enumerated.of(Guide, Park, Freeze)
 
 }

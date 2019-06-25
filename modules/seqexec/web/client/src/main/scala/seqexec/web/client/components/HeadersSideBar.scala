@@ -6,6 +6,7 @@ package seqexec.web.client.components
 import diode.react.ModelProxy
 import cats.implicits._
 import cats.Eq
+import cats.Show
 import japgolly.scalajs.react.component.Scala.Unmounted
 import japgolly.scalajs.react.BackendScope
 import japgolly.scalajs.react.Callback
@@ -42,6 +43,19 @@ import seqexec.web.client.actions.UpdateWaterVapor
   * Display to show headers per sequence
   */
 object HeadersSideBar {
+
+  implicit val showSkyBackground: Show[SkyBackground] =
+    Show.show(_.label)
+
+  implicit val showWaterVapor: Show[WaterVapor] =
+    Show.show(_.label)
+
+  implicit val showCloudCover: Show[CloudCover] =
+    Show.show(_.label)
+
+  implicit val showImageQuality: Show[ImageQuality] =
+    Show.show(_.label)
+
   final case class Props(model: ModelProxy[HeaderSideBarFocus]) {
     def canOperate: Boolean = model().status.canOperate
     def selectedObserver
@@ -179,14 +193,14 @@ object HeadersSideBar {
               DropdownMenu.Props("Image Quality",
                                  p.model().conditions.iq.some,
                                  "Select",
-                                 ImageQuality.all,
+                                 ImageQuality.ImageQualityEnumerated.all,
                                  disabled = !enabled,
                                  iqChanged)),
             DropdownMenu(
               DropdownMenu.Props("Cloud Cover",
                                  p.model().conditions.cc.some,
                                  "Select",
-                                 CloudCover.all,
+                                 CloudCover.CloudCoverEnumerated.all,
                                  disabled = !enabled,
                                  ccChanged))
           ),
@@ -197,14 +211,14 @@ object HeadersSideBar {
               DropdownMenu.Props("Water Vapor",
                                  p.model().conditions.wv.some,
                                  "Select",
-                                 WaterVapor.all,
+                                 WaterVapor.WaterVaporEnumerated.all,
                                  disabled = !enabled,
                                  wvChanged)),
             DropdownMenu(
               DropdownMenu.Props("Sky Background",
                                  p.model().conditions.sb.some,
                                  "Select",
-                                 SkyBackground.all,
+                                 SkyBackground.SkyBackgroundEnumerated.all,
                                  disabled = !enabled,
                                  sbChanged))
           )

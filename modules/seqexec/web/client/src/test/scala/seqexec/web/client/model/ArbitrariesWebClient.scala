@@ -42,6 +42,7 @@ import seqexec.web.common.FixedLengthBuffer
 import seqexec.web.common.Zipper
 import seqexec.web.common.ArbitrariesWebCommon._
 import seqexec.web.client.model._
+import seqexec.web.client.model.SectionVisibilityState._
 import seqexec.web.client.circuit._
 import seqexec.web.client.model.Pages._
 import seqexec.web.client.model.Formatting.OffsetsDisplay
@@ -60,42 +61,6 @@ import web.client.table.TableState
 
 trait ArbitrariesWebClient extends ArbObservation with TableArbitraries with ArbTabOperations {
 
-  implicit val arbTabSelected: Arbitrary[TabSelected] =
-    Arbitrary(Gen.oneOf(TabSelected.Selected, TabSelected.Background))
-
-  implicit val tsCogen: Cogen[TabSelected] =
-    Cogen[String].contramap(_.productPrefix)
-
-  implicit val arbAddDayCalOperation: Arbitrary[AddDayCalOperation] =
-    Arbitrary(
-      Gen.oneOf(AddDayCalOperation.AddDayCalIdle,
-                AddDayCalOperation.AddDayCalInFlight))
-
-  implicit val adCogen: Cogen[AddDayCalOperation] =
-    Cogen[String].contramap(_.productPrefix)
-
-  implicit val arbClearAllCalOperation: Arbitrary[ClearAllCalOperation] =
-    Arbitrary(
-      Gen.oneOf(ClearAllCalOperation.ClearAllCalIdle,
-                ClearAllCalOperation.ClearAllCalInFlight))
-
-  implicit val caqCogen: Cogen[ClearAllCalOperation] =
-    Cogen[String].contramap(_.productPrefix)
-
-  implicit val arbRunCalOperation: Arbitrary[RunCalOperation] =
-    Arbitrary(
-      Gen.oneOf(RunCalOperation.RunCalIdle, RunCalOperation.RunCalInFlight))
-
-  implicit val rcCogen: Cogen[RunCalOperation] =
-    Cogen[String].contramap(_.productPrefix)
-
-  implicit val arbStopCalOperation: Arbitrary[StopCalOperation] =
-    Arbitrary(
-      Gen.oneOf(StopCalOperation.StopCalIdle, StopCalOperation.StopCalInFlight))
-
-  implicit val scCogen: Cogen[StopCalOperation] =
-    Cogen[String].contramap(_.productPrefix)
-
   implicit val arbQueueOperations: Arbitrary[QueueOperations] =
     Arbitrary {
       for {
@@ -108,24 +73,6 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries with Arb
 
   implicit val qoCogen: Cogen[QueueOperations] =
     Cogen[AddDayCalOperation].contramap(x => x.addDayCalRequested)
-
-  implicit val arbRemoveSeqQueue: Arbitrary[RemoveSeqQueue] =
-    Arbitrary {
-      Gen.oneOf(RemoveSeqQueue.RemoveSeqQueueIdle,
-                RemoveSeqQueue.RemoveSeqQueueInFlight)
-    }
-
-  implicit val rsqCogen: Cogen[RemoveSeqQueue] =
-    Cogen[String].contramap(_.productPrefix)
-
-  implicit val arbMoveSeqQueue: Arbitrary[MoveSeqQueue] =
-    Arbitrary {
-      Gen.oneOf(MoveSeqQueue.MoveSeqQueueIdle,
-                MoveSeqQueue.MoveSeqQueueInFlight)
-    }
-
-  implicit val msqCogen: Cogen[MoveSeqQueue] =
-    Cogen[String].contramap(_.productPrefix)
 
   implicit val arbCalibrationQueueTab: Arbitrary[CalibrationQueueTab] =
     Arbitrary {
@@ -322,12 +269,6 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries with Arb
 
   implicit val cssCogen: Cogen[ClientStatus] =
     Cogen[(Option[UserDetails], WebSocketConnection)].contramap(x => (x.u, x.w))
-
-  implicit val arbSection: Arbitrary[SectionVisibilityState] =
-    Arbitrary(Gen.oneOf(SectionOpen, SectionClosed))
-
-  implicit val sectionCogen: Cogen[SectionVisibilityState] =
-    Cogen[String].contramap(_.productPrefix)
 
   implicit val arbTableType: Arbitrary[StepsTableTypeSelection] =
     Arbitrary(
@@ -701,12 +642,6 @@ trait ArbitrariesWebClient extends ArbObservation with TableArbitraries with Arb
   implicit val obsQueueFilter: Cogen[SessionQueueFilter] =
     Cogen[ObsClass]
       .contramap(_.obsClass)
-
-  implicit val arbSoundSelection: Arbitrary[SoundSelection] =
-    Arbitrary(Gen.oneOf(SoundSelection.SoundOn, SoundSelection.SoundOff))
-
-  implicit val soundSelClassCogen: Cogen[SoundSelection] =
-    Cogen[String].contramap(_.productPrefix)
 
   implicit val arbSeqexecUIModel: Arbitrary[SeqexecUIModel] =
     Arbitrary {

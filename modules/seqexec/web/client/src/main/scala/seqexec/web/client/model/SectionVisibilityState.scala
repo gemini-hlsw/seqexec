@@ -3,13 +3,17 @@
 
 package seqexec.web.client.model
 
-import cats._
+import gem.util.Enumerated
 
 // UI model
 sealed trait SectionVisibilityState extends Product with Serializable
-case object SectionOpen extends SectionVisibilityState
-case object SectionClosed extends SectionVisibilityState
 
 object SectionVisibilityState {
-  implicit val eq: Eq[SectionVisibilityState] = Eq.fromUniversalEquals
+  case object SectionOpen extends SectionVisibilityState
+  case object SectionClosed extends SectionVisibilityState
+
+  /** @group Typeclass Instances */
+  implicit val SectionVisibilityStateEnumerated: Enumerated[SectionVisibilityState] =
+    Enumerated.of(SectionOpen, SectionClosed)
+
 }

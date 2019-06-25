@@ -12,16 +12,7 @@ object ComaOption {
   case object ComaOn  extends ComaOption
   case object ComaOff extends ComaOption
 
-  val all: List[ComaOption] =
-    List(ComaOn, ComaOff)
-
   /** @group Typeclass Instances */
   implicit val CommaOptionEnumerated: Enumerated[ComaOption] =
-    new Enumerated[ComaOption] {
-      def all = ComaOption.all
-      def tag(a: ComaOption): String = a match {
-        case ComaOn => "ComaOn"
-        case ComaOff => "ComaOff"
-      }
-    }
+    Enumerated.of(ComaOn, ComaOff)
 }

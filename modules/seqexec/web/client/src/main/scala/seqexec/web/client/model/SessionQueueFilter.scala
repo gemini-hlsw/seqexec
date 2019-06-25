@@ -5,6 +5,7 @@ package seqexec.web.client.model
 
 import cats.Eq
 import cats.implicits._
+import gem.util.Enumerated
 import monocle.macros.Lenses
 import seqexec.model.SequenceView
 import seqexec.web.client.circuit.SequenceInSessionQueue
@@ -17,8 +18,9 @@ object ObsClass {
   case object Daytime extends ObsClass
   case object Nighttime extends ObsClass
 
-  implicit val eq: Eq[ObsClass] =
-    Eq.fromUniversalEquals
+  /** @group Typeclass Instances */
+  implicit val ObsClassEnumerated: Enumerated[ObsClass] =
+    Enumerated.of(All, Daytime, Nighttime)
 
   def fromString(s: String): ObsClass = s match {
     case "dayCal" => Daytime

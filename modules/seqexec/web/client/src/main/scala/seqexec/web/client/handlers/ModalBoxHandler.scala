@@ -6,6 +6,7 @@ package seqexec.web.client.handlers
 import cats.implicits._
 import diode.{ Action, ActionHandler, ActionResult, ModelRW }
 import seqexec.web.client.model._
+import seqexec.web.client.model.SectionVisibilityState._
 
 /**
   * Handles actions related to opening/closing a modal

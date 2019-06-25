@@ -35,6 +35,13 @@ trait Enumerated[A] extends Order[A] {
 
 object Enumerated {
   def apply[A](implicit ev: Enumerated[A]): ev.type = ev
+
+  def of[A <: Product](a: A, as: A*): Enumerated[A] =
+    new Enumerated[A] {
+      def all: List[A] = a :: as.toList
+      def tag(a: A): String = a.productPrefix
+    }
+
 }
 
 /** @group Typeclasses */

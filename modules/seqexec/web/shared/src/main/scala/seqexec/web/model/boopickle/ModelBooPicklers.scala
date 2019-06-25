@@ -53,7 +53,7 @@ trait ModelBooPicklers extends GemModelBooPicklers {
 
   implicit val operatorPickler = generatePickler[Operator]
 
-  val sysNameIdx = valuesMap(SystemName.all, (x: SystemName) => x.system)
+  val sysNameIdx = valuesMap(SystemName.SystemNameEnumerated.all, (x: SystemName) => x.system)
 
   implicit val systemNamePickler = valuesMapPickler(sysNameIdx)
 
@@ -64,21 +64,21 @@ trait ModelBooPicklers extends GemModelBooPicklers {
   implicit val instantPickler =
     transformPickler((t: Long) => Instant.ofEpochMilli(t))(_.toEpochMilli)
 
-  val cloudCoverIdx = valuesMap(CloudCover.all, (x: CloudCover) => x.toInt)
+  val cloudCoverIdx = valuesMap(CloudCover.CloudCoverEnumerated.all, (x: CloudCover) => x.toInt)
 
   implicit val cloudCoverPickler = valuesMapPickler(cloudCoverIdx)
 
   val imageQualityIdx =
-    valuesMap(ImageQuality.all, (x: ImageQuality) => x.toInt)
+    valuesMap(ImageQuality.ImageQualityEnumerated.all, (x: ImageQuality) => x.toInt)
 
   implicit val imageQualityPickler = valuesMapPickler(imageQualityIdx)
 
   val skyBackgroundIdx =
-    valuesMap(SkyBackground.all, (x: SkyBackground) => x.toInt)
+    valuesMap(SkyBackground.SkyBackgroundEnumerated.all, (x: SkyBackground) => x.toInt)
 
   implicit val skyBackgroundPickler = valuesMapPickler(skyBackgroundIdx)
 
-  val waterVaporIdx = valuesMap(WaterVapor.all, (x: WaterVapor) => x.toInt)
+  val waterVaporIdx = valuesMap(WaterVapor.WaterVaporEnumerated.all, (x: WaterVapor) => x.toInt)
 
   implicit val waterVaporPickler = valuesMapPickler(waterVaporIdx)
 

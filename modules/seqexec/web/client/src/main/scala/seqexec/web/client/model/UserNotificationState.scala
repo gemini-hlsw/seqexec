@@ -7,6 +7,7 @@ import cats.Eq
 import cats.implicits._
 import monocle.macros.Lenses
 import seqexec.model.Notification
+import seqexec.web.client.model.SectionVisibilityState.SectionClosed
 
 /**
   * Utility class to display a generic notification sent by the server

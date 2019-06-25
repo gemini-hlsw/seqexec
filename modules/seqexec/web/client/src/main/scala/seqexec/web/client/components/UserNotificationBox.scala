@@ -11,6 +11,7 @@ import seqexec.model.Notification
 import seqexec.web.client.semanticui.elements.icon.Icon.IconCheckmark
 import seqexec.web.client.semanticui.elements.modal.{Content, Header}
 import seqexec.web.client.model._
+import seqexec.web.client.model.SectionVisibilityState._
 import seqexec.web.client.circuit.SeqexecCircuit
 import seqexec.web.client.actions.CloseUserNotificationBox
 import seqexec.web.client.reusability._

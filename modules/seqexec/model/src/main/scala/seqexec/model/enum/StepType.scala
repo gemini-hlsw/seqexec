@@ -23,17 +23,11 @@ object StepType {
   implicit val show: Show[StepType] =
     Show.show(_.label)
 
-  val all: List[StepType] =
-    List(Object, Arc, Flat, Bias, Dark, Calibration, AlignAndCalib)
-
   def fromString(s: String): Option[StepType] =
-    all.find(_.label === s)
+    StepTypeEnumerated.all.find(_.label === s)
 
   /** @group Typeclass Instances */
   implicit val StepTypeEnumerated: Enumerated[StepType] =
-    new Enumerated[StepType] {
-      def all = StepType.all
-      def tag(a: StepType): String = a.label
-    }
+    Enumerated.of(Object, Arc, Flat, Bias, Dark, Calibration, AlignAndCalib)
 
 }
