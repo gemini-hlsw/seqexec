@@ -3,7 +3,6 @@
 
 package seqexec.model.enum
 
-import cats.Show
 import gem.util.Enumerated
 
 sealed abstract class CloudCover(val toInt: Int, val label: String)
@@ -16,16 +15,7 @@ object CloudCover {
   case object Percent80 extends CloudCover(80,  "80%/Cloudy")
   case object Any       extends CloudCover(100, "Any")
 
-  val all: List[CloudCover] =
-    List(Percent50, Percent70, Percent80, Any)
-
-  implicit val showCloudCover: Show[CloudCover] =
-    Show.show(_.label)
-
   /** @group Typeclass Instances */
   implicit val CloudCoverEnumerated: Enumerated[CloudCover] =
-    new Enumerated[CloudCover] {
-      def all = CloudCover.all
-      def tag(a: CloudCover): String = a.label
-    }
+    Enumerated.of(Percent50, Percent70, Percent80, Any)
 }

@@ -5,45 +5,46 @@ package seqexec.web.client.model
 
 import cats.Eq
 import cats.implicits._
+import gem.util.Enumerated
 import monocle.macros.Lenses
 
 sealed trait AddDayCalOperation extends Product with Serializable
 object AddDayCalOperation {
-  case object AddDayCalInFlight extends AddDayCalOperation
   case object AddDayCalIdle extends AddDayCalOperation
+  case object AddDayCalInFlight extends AddDayCalOperation
 
-  implicit val eq: Eq[AddDayCalOperation] =
-    Eq.fromUniversalEquals
+  implicit val AddDayCalOperationEnumerated: Enumerated[AddDayCalOperation] =
+    Enumerated.of(AddDayCalIdle, AddDayCalInFlight)
 
 }
 
 sealed trait ClearAllCalOperation extends Product with Serializable
 object ClearAllCalOperation {
-  case object ClearAllCalInFlight extends ClearAllCalOperation
   case object ClearAllCalIdle extends ClearAllCalOperation
+  case object ClearAllCalInFlight extends ClearAllCalOperation
 
-  implicit val eq: Eq[ClearAllCalOperation] =
-    Eq.fromUniversalEquals
+  implicit val ClearAllCalOperationEnumerated: Enumerated[ClearAllCalOperation] =
+    Enumerated.of(ClearAllCalIdle, ClearAllCalInFlight)
 
 }
 
 sealed trait RunCalOperation extends Product with Serializable
 object RunCalOperation {
-  case object RunCalInFlight extends RunCalOperation
   case object RunCalIdle extends RunCalOperation
+  case object RunCalInFlight extends RunCalOperation
 
-  implicit val eq: Eq[RunCalOperation] =
-    Eq.fromUniversalEquals
+  implicit val RunCalOperationEnumerated: Enumerated[RunCalOperation] =
+    Enumerated.of(RunCalIdle, RunCalInFlight)
 
 }
 
 sealed trait StopCalOperation extends Product with Serializable
 object StopCalOperation {
-  case object StopCalInFlight extends StopCalOperation
   case object StopCalIdle extends StopCalOperation
+  case object StopCalInFlight extends StopCalOperation
 
-  implicit val eq: Eq[StopCalOperation] =
-    Eq.fromUniversalEquals
+  implicit val StopCalOperationEnumerated: Enumerated[StopCalOperation] =
+    Enumerated.of(StopCalIdle, StopCalInFlight)
 
 }
 

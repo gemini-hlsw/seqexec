@@ -14,8 +14,8 @@ import seqexec.web.client.semanticui._
 import seqexec.web.client.semanticui.elements.message.IconMessage
 import seqexec.web.client.semanticui.elements.icon.Icon.IconInbox
 import seqexec.web.client.circuit.SeqexecCircuit
-import seqexec.web.client.model.SectionClosed
-import seqexec.web.client.model.SectionOpen
+import seqexec.web.client.model.SectionVisibilityState.SectionClosed
+import seqexec.web.client.model.SectionVisibilityState.SectionOpen
 import seqexec.web.client.model.SectionVisibilityState
 import seqexec.web.client.model.TabSelected
 import seqexec.web.client.components.SeqexecStyles

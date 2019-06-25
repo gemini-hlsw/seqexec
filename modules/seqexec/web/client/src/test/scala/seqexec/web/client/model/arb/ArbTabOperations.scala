@@ -12,67 +12,6 @@ import seqexec.web.client.model._
 import seqexec.web.client.model.RunOperation
 
 trait ArbTabOperations {
-  implicit val arbRunOperation: Arbitrary[RunOperation] =
-    Arbitrary(Gen.oneOf(RunOperation.RunIdle, RunOperation.RunInFlight))
-
-  implicit val roCogen: Cogen[RunOperation] =
-    Cogen[String].contramap(_.productPrefix)
-
-  implicit val arbSyncOperation: Arbitrary[SyncOperation] =
-    Arbitrary(Gen.oneOf(SyncOperation.SyncIdle, SyncOperation.SyncInFlight))
-
-  implicit val soCogen: Cogen[SyncOperation] =
-    Cogen[String].contramap(_.productPrefix)
-
-  implicit val arbPauseOperation: Arbitrary[PauseOperation] =
-    Arbitrary(Gen.oneOf(PauseOperation.PauseIdle, PauseOperation.PauseInFlight))
-
-  implicit val poCogen: Cogen[PauseOperation] =
-    Cogen[String].contramap(_.productPrefix)
-
-  implicit val arbStopOperation: Arbitrary[StopOperation] =
-    Arbitrary(Gen.oneOf(StopOperation.StopIdle, StopOperation.StopInFlight))
-
-  implicit val stoCogen: Cogen[StopOperation] =
-    Cogen[String].contramap(_.productPrefix)
-
-  implicit val arbAbortOperation: Arbitrary[AbortOperation] =
-    Arbitrary(Gen.oneOf(AbortOperation.AbortIdle, AbortOperation.AbortInFlight))
-
-  implicit val abtCogen: Cogen[AbortOperation] =
-    Cogen[String].contramap(_.productPrefix)
-
-  implicit val arbResumeOperation: Arbitrary[ResumeOperation] =
-    Arbitrary(Gen.oneOf(ResumeOperation.ResumeIdle, ResumeOperation.ResumeInFlight))
-
-  implicit val resCogen: Cogen[ResumeOperation] =
-    Cogen[String].contramap(_.productPrefix)
-
-  implicit val arbResourceRunOperation: Arbitrary[ResourceRunOperation] =
-    Arbitrary(
-      Gen.oneOf(ResourceRunOperation.ResourceRunIdle,
-                ResourceRunOperation.ResourceRunInFlight,
-                ResourceRunOperation.ResourceRunCompleted))
-
-  implicit val rruCogen: Cogen[ResourceRunOperation] =
-    Cogen[String].contramap(_.productPrefix)
-
-  implicit val arbStartFromOperation: Arbitrary[StartFromOperation] =
-    Arbitrary(
-      Gen.oneOf(StartFromOperation.StartFromIdle,
-                StartFromOperation.StartFromInFlight))
-
-  implicit val sfoCogen: Cogen[StartFromOperation] =
-    Cogen[String].contramap(_.productPrefix)
-
-  implicit val arbCancelPauseOperation: Arbitrary[CancelPauseOperation] =
-    Arbitrary(
-      Gen.oneOf(CancelPauseOperation.CancelPauseIdle,
-                CancelPauseOperation.CancelPauseInFlight))
-
-  implicit val cpuCogen: Cogen[CancelPauseOperation] =
-    Cogen[String].contramap(_.productPrefix)
-
   implicit val arbTabOperations: Arbitrary[TabOperations] = {
     implicit val ordering: Ordering[Resource] =
       cats.Order[Resource].toOrdering

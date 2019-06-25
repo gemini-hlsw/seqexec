@@ -6,6 +6,7 @@ package seqexec.web.client.model
 import cats._
 import cats.implicits._
 import gem.Observation
+import gem.util.Enumerated
 import monocle.Lens
 import monocle.Optional
 import monocle.Prism
@@ -60,10 +61,11 @@ object TabSelected {
   case object Selected extends TabSelected
   case object Background extends TabSelected
 
-  implicit val eq: Eq[TabSelected] =
-    Eq.fromUniversalEquals
-
   def fromBoolean(b: Boolean): TabSelected = if (b) Selected else Background
+
+  /** @group Typeclass Instances */
+  implicit val TabSelectedEnumerated: Enumerated[TabSelected] =
+    Enumerated.of(Selected, Background)
 
 }
 

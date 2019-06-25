@@ -14,21 +14,7 @@ object TipTiltSource {
   case object OIWFS extends TipTiltSource
   case object GAOS  extends TipTiltSource
 
-  /** All members of TipTiltSource, in canonical order. */
-  val all: List[TipTiltSource] =
-    List(PWFS1, PWFS2, OIWFS, GAOS)
-
-  def tag(s: TipTiltSource): String = s match {
-    case PWFS1 => "PWFS1"
-    case PWFS2 => "PWFS2"
-    case OIWFS => "OIWFS"
-    case GAOS  => "GAOS"
-  }
-
   /** @group Typeclass Instances */
   implicit val TipTiltSourceEnumerated: Enumerated[TipTiltSource] =
-    new Enumerated[TipTiltSource] {
-      def all = TipTiltSource.all
-      def tag(a: TipTiltSource): String = TipTiltSource.tag(a)
-    }
+    Enumerated.of(PWFS1, PWFS2, OIWFS, GAOS)
 }

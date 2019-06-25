@@ -6,7 +6,7 @@ package seqexec.model.enum
 import cats.implicits._
 import gem.util.Enumerated
 
-sealed abstract class SystemName(val system: String) {
+sealed abstract class SystemName(val system: String) extends Product with Serializable {
 
   def withParam(p: String): String =
     s"$system:$p"
@@ -24,19 +24,13 @@ object SystemName {
   case object Meta           extends SystemName("meta")
   case object AdaptiveOptics extends SystemName("adaptive optics")
 
-  val all: List[SystemName] =
-    List(Ocs, Observe, Instrument, Telescope, Gcal, Calibration, Meta, AdaptiveOptics)
-
   def fromString(system: String): Option[SystemName] =
-    all.find(_.system === system)
+    SystemNameEnumerated.all.find(_.system === system)
 
   def unsafeFromString(system: String): SystemName =
     fromString(system).getOrElse(sys.error(s"Unknown system name $system"))
 
   /** @group Typeclass Instances */
   implicit val SystemNameEnumerated: Enumerated[SystemName] =
-    new Enumerated[SystemName] {
-      def all = SystemName.all
-      def tag(a: SystemName): String = a.system
-    }
+    Enumerated.of(Ocs, Observe, Instrument, Telescope, Gcal, Calibration, Meta, AdaptiveOptics)
 }

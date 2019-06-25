@@ -6,6 +6,7 @@ package seqexec.web.client
 import cats.kernel.laws.discipline._
 import cats.tests.CatsSuite
 import diode.data._
+import gem.arb.ArbEnumerated._
 import monocle.law.discipline.LensTests
 import org.scalajs.dom.WebSocket
 import seqexec.web.client.components.sequence.steps.StepConfigTable

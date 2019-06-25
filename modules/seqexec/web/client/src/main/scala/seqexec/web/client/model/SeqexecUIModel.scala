@@ -5,10 +5,12 @@ package seqexec.web.client.model
 
 import cats.Eq
 import cats.implicits._
+import gem.util.Enumerated
 import monocle.macros.Lenses
 import seqexec.model.Observer
 import seqexec.model.UserDetails
 import seqexec.web.common.FixedLengthBuffer
+import seqexec.web.client.model.SectionVisibilityState.SectionClosed
 
 sealed trait SoundSelection extends Product with Serializable
 
@@ -16,7 +18,9 @@ object SoundSelection {
   case object SoundOn extends SoundSelection
   case object SoundOff extends SoundSelection
 
-  implicit val eq: Eq[SoundSelection] = Eq.fromUniversalEquals
+  /** @group Typeclass Instances */
+  implicit val SoundSelectionEnumerated: Enumerated[SoundSelection] =
+    Enumerated.of(SoundOn, SoundOff)
 
   def flip: SoundSelection => SoundSelection = _ match {
     case SoundSelection.SoundOn  => SoundSelection.SoundOff

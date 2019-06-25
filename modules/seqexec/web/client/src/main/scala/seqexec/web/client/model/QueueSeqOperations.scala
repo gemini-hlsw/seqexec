@@ -5,16 +5,16 @@ package seqexec.web.client.model
 
 import cats.Eq
 import cats.implicits._
+import gem.util.Enumerated
 import monocle.macros.Lenses
 
 sealed trait RemoveSeqQueue extends Product with Serializable
 object RemoveSeqQueue {
-  case object RemoveSeqQueueInFlight extends RemoveSeqQueue
   case object RemoveSeqQueueIdle extends RemoveSeqQueue
+  case object RemoveSeqQueueInFlight extends RemoveSeqQueue
 
-  implicit val eq: Eq[RemoveSeqQueue] =
-    Eq.fromUniversalEquals
-
+  implicit val RemoveSeqQueueEnumerated: Enumerated[RemoveSeqQueue] =
+    Enumerated.of(RemoveSeqQueueIdle, RemoveSeqQueueInFlight)
 }
 
 sealed trait MoveSeqQueue extends Product with Serializable
@@ -22,9 +22,8 @@ object MoveSeqQueue {
   case object MoveSeqQueueInFlight extends MoveSeqQueue
   case object MoveSeqQueueIdle extends MoveSeqQueue
 
-  implicit val eq: Eq[MoveSeqQueue] =
-    Eq.fromUniversalEquals
-
+  implicit val MoveSeqQueueEnumerated: Enumerated[MoveSeqQueue] =
+    Enumerated.of(MoveSeqQueueIdle, MoveSeqQueueInFlight)
 }
 
 /**

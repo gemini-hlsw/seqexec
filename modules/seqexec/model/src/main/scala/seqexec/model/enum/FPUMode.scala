@@ -14,16 +14,10 @@ object FPUMode {
   case object BuiltIn extends FPUMode("BUILTIN")
   case object Custom  extends FPUMode("CUSTOM_MASK")
 
-  val all: List[FPUMode] =
-    List(BuiltIn, Custom)
-
   def fromString(s: String): Option[FPUMode] =
-    all.find(_.label === s)
+    FPUModeEnumerated.all.find(_.label === s)
 
   /** @group Typeclass Instances */
   implicit val FPUModeEnumerated: Enumerated[FPUMode] =
-    new Enumerated[FPUMode] {
-      def all = FPUMode.all
-      def tag(a: FPUMode): String = a.label
-    }
+    Enumerated.of(BuiltIn, Custom)
 }

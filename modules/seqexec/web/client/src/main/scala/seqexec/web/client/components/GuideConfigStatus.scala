@@ -5,6 +5,7 @@ package seqexec.web.client.components
 
 import cats.Show
 import cats.implicits._
+import gem.syntax.all._
 import diode.react.ModelProxy
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.vdom.html_<^._
@@ -13,9 +14,7 @@ import japgolly.scalajs.react.Reusability
 import react.common.implicits._
 import seqexec.model.TelescopeGuideConfig
 import seqexec.model.enum.ComaOption
-import seqexec.model.enum.M1Source
 import seqexec.model.enum.MountGuideOption
-import seqexec.model.enum.TipTiltSource
 import seqexec.model.M1GuideConfig
 import seqexec.model.M2GuideConfig
 import seqexec.web.client.reusability._
@@ -37,7 +36,7 @@ object GuideConfigStatus {
   }
 
   implicit val m1GuideShow = Show.show[M1GuideConfig] {
-    case M1GuideConfig.M1GuideOn(s) => M1Source.tag(s)
+    case M1GuideConfig.M1GuideOn(s) => s.tag
     case M1GuideConfig.M1GuideOff   => "Off"
   }
 
@@ -66,7 +65,7 @@ object GuideConfigStatus {
               <.span(
                 ^.cls := "header item",
                 SeqexecStyles.activeGuide.when(s.nonEmpty),
-                s"Tip/Tilt: ${s.map(TipTiltSource.tag).mkString("+")}".when(s.nonEmpty),
+                s"Tip/Tilt: ${s.map(_.tag).mkString("+")}".when(s.nonEmpty),
                 s"Tip/Tilt: Off".when(s.isEmpty)
               ),
               <.span(

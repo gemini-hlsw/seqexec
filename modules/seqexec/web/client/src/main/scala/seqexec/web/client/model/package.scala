@@ -7,6 +7,7 @@ import cats.Eq
 import cats.implicits._
 import diode.data._
 import org.scalajs.dom.WebSocket
+import seqexec.web.client.model.SectionVisibilityState._
 
 package object model {
   implicit val eqWebSocket: Eq[WebSocket] =

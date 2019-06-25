@@ -27,7 +27,6 @@ import seqexec.web.client.model.ClientStatus
 import seqexec.web.client.model.SectionVisibilityState
 import seqexec.web.client.model.UserNotificationState
 import seqexec.web.client.model.WebSocketConnection
-import seqexec.web.client.model.AddDayCalOperation
 import seqexec.web.client.model.PauseOperation
 import seqexec.web.client.model.QueueOperations
 import seqexec.web.client.model.RunOperation
@@ -75,7 +74,6 @@ package object reusability {
   implicit val userDetailsReuse: Reusability[UserDetails]    = Reusability.byEq
   implicit val usrNotReuse: Reusability[UserNotificationState] =
     Reusability.byEq
-  implicit val dcAddReuse: Reusability[AddDayCalOperation] = Reusability.byRef
   implicit val qoReuse: Reusability[QueueOperations]       = Reusability.byEq
   implicit val qfReuse: Reusability[CalQueueControlFocus]  = Reusability.byEq
   implicit val cqfReuse: Reusability[CalQueueFocus]        = Reusability.byEq

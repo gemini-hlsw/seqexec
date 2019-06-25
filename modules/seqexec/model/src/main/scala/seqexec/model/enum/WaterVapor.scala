@@ -3,7 +3,6 @@
 
 package seqexec.model.enum
 
-import cats.Show
 import gem.util.Enumerated
 
 sealed abstract class WaterVapor(val toInt: Int, val label: String)
@@ -16,17 +15,8 @@ object WaterVapor {
   case object Percent80 extends WaterVapor(80,  "85%/High")
   case object Any       extends WaterVapor(100, "Any")
 
-  val all: List[WaterVapor] =
-    List(Percent20, Percent50, Percent80, Any)
-
-  implicit val showWaterVapor: Show[WaterVapor] =
-    Show.show(_.label)
-
   /** @group Typeclass Instances */
   implicit val WaterVaporEnumerated: Enumerated[WaterVapor] =
-    new Enumerated[WaterVapor] {
-      def all = WaterVapor.all
-      def tag(a: WaterVapor): String = a.label
-    }
+    Enumerated.of(Percent20, Percent50, Percent80, Any)
 
 }

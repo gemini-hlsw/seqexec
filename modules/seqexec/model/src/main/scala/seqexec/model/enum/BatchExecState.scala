@@ -31,13 +31,7 @@ object BatchExecState {
     case Completed => "Completed"
   }
 
-  val all: List[BatchExecState] =
-    List(Idle, Running, Waiting, Stopping, Completed)
-
   /** @group Typeclass Instances */
   implicit val BatchExecStateEnumerated: Enumerated[BatchExecState] =
-    new Enumerated[BatchExecState] {
-      def all = BatchExecState.all
-      def tag(a: BatchExecState): String = BatchExecState.tag(a)
-    }
+    Enumerated.of(Idle, Running, Waiting, Stopping, Completed)
 }

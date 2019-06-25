@@ -5,6 +5,7 @@ package seqexec.web.client.model
 
 import cats.Eq
 import cats.implicits._
+import gem.util.Enumerated
 import monocle.Lens
 import monocle.macros.Lenses
 import monocle.function.At.at
@@ -14,82 +15,90 @@ import scala.collection.immutable.SortedMap
 
 sealed trait RunOperation extends Product with Serializable
 object RunOperation {
-  case object RunInFlight extends RunOperation
   case object RunIdle extends RunOperation
+  case object RunInFlight extends RunOperation
 
-  implicit val eq: Eq[RunOperation] =
-    Eq.fromUniversalEquals
+  /** @group Typeclass Instances */
+  implicit val RunOperationEnumerated: Enumerated[RunOperation] =
+    Enumerated.of(RunIdle, RunInFlight)
 
 }
 
 sealed trait StopOperation extends Product with Serializable
 object StopOperation {
-  case object StopInFlight extends StopOperation
   case object StopIdle extends StopOperation
+  case object StopInFlight extends StopOperation
 
-  implicit val eq: Eq[StopOperation] =
-    Eq.fromUniversalEquals
+  /** @group Typeclass Instances */
+  implicit val StopOperationEnumerated: Enumerated[StopOperation] =
+    Enumerated.of(StopIdle, StopInFlight)
 
 }
 
 sealed trait AbortOperation extends Product with Serializable
 object AbortOperation {
-  case object AbortInFlight extends AbortOperation
   case object AbortIdle extends AbortOperation
+  case object AbortInFlight extends AbortOperation
 
-  implicit val eq: Eq[AbortOperation] =
-    Eq.fromUniversalEquals
+  /** @group Typeclass Instances */
+  implicit val AbortOperationEnumerated: Enumerated[AbortOperation] =
+    Enumerated.of(AbortIdle, AbortInFlight)
 
 }
 
 sealed trait PauseOperation extends Product with Serializable
 object PauseOperation {
-  case object PauseInFlight extends PauseOperation
   case object PauseIdle extends PauseOperation
+  case object PauseInFlight extends PauseOperation
 
-  implicit val eq: Eq[PauseOperation] =
-    Eq.fromUniversalEquals
+  /** @group Typeclass Instances */
+  implicit val PauseOperationEnumerated: Enumerated[PauseOperation] =
+    Enumerated.of(PauseIdle, PauseInFlight)
 
 }
 
 sealed trait CancelPauseOperation extends Product with Serializable
 object CancelPauseOperation {
-  case object CancelPauseInFlight extends CancelPauseOperation
   case object CancelPauseIdle extends CancelPauseOperation
+  case object CancelPauseInFlight extends CancelPauseOperation
 
-  implicit val eq: Eq[CancelPauseOperation] =
-    Eq.fromUniversalEquals
+  /** @group Typeclass Instances */
+  implicit val CancelPauseOperationEnumerated: Enumerated[CancelPauseOperation] =
+    Enumerated.of(CancelPauseIdle, CancelPauseInFlight)
 
 }
 
 sealed trait ResumeOperation extends Product with Serializable
 object ResumeOperation {
-  case object ResumeInFlight extends ResumeOperation
   case object ResumeIdle extends ResumeOperation
+  case object ResumeInFlight extends ResumeOperation
 
-  implicit val eq: Eq[ResumeOperation] =
-    Eq.fromUniversalEquals
+  /** @group Typeclass Instances */
+  implicit val ResumeOperationEnumerated: Enumerated[ResumeOperation] =
+    Enumerated.of(ResumeIdle, ResumeInFlight)
 
 }
 
 sealed trait SyncOperation extends Product with Serializable
 object SyncOperation {
-  case object SyncInFlight extends SyncOperation
   case object SyncIdle extends SyncOperation
+  case object SyncInFlight extends SyncOperation
 
-  implicit val eq: Eq[SyncOperation] =
-    Eq.fromUniversalEquals
+  /** @group Typeclass Instances */
+  implicit val SyncOperationEnumerated: Enumerated[SyncOperation] =
+    Enumerated.of(SyncIdle, SyncInFlight)
 
 }
 
 sealed trait ResourceRunOperation extends Product with Serializable
 object ResourceRunOperation {
+  case object ResourceRunIdle extends ResourceRunOperation
   case object ResourceRunInFlight extends ResourceRunOperation
   case object ResourceRunCompleted extends ResourceRunOperation
-  case object ResourceRunIdle extends ResourceRunOperation
 
-  implicit val eq: Eq[ResourceRunOperation] =
-    Eq.fromUniversalEquals
+  /** @group Typeclass Instances */
+  implicit val ResourceRunOperationEnumerated: Enumerated[ResourceRunOperation] =
+    Enumerated.of(ResourceRunIdle, ResourceRunInFlight, ResourceRunCompleted)
 
 }
 
@@ -98,8 +107,9 @@ object StartFromOperation {
   case object StartFromInFlight extends StartFromOperation
   case object StartFromIdle extends StartFromOperation
 
-  implicit val eq: Eq[StartFromOperation] =
-    Eq.fromUniversalEquals
+  /** @group Typeclass Instances */
+  implicit val StartFromOperationEnumerated: Enumerated[StartFromOperation] =
+    Enumerated.of(StartFromIdle, StartFromInFlight)
 
 }
 

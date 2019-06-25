@@ -3,7 +3,6 @@
 
 package seqexec.model.enum
 
-import cats.Show
 import gem.util.Enumerated
 
 sealed abstract class ImageQuality(val toInt: Int, val label: String)
@@ -16,16 +15,7 @@ object ImageQuality {
   case object Percent85 extends ImageQuality(85,  "85%/Poor")
   case object Any       extends ImageQuality(100, "Any")
 
-  val all: List[ImageQuality] =
-    List(Percent20, Percent70, Percent85, Any)
-
-  implicit val showImageQuality: Show[ImageQuality] =
-    Show.show(_.label)
-
   /** @group Typeclass Instances */
   implicit val ImageQualityEnumerated: Enumerated[ImageQuality] =
-    new Enumerated[ImageQuality] {
-      def all = ImageQuality.all
-      def tag(a: ImageQuality): String = a.label
-    }
+    Enumerated.of(Percent20, Percent70, Percent85, Any)
 }
