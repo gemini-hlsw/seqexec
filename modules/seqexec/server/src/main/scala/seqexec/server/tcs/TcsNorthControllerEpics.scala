@@ -41,7 +41,7 @@ class TcsNorthControllerEpics private extends TcsControllerEpics[TcsNorthControl
         (c.getNodChop =!= d.getNodChop)
           .option(setNodChopProbeTrackingConfig(TcsEpics.instance.pwfs2ProbeGuideCmd)(d.getNodChop)),
         (c.follow =!= d.follow).option(TcsEpics.instance.aoProbeFollowCmd.setFollowState(encode(d.follow)))
-      ).collect{ case Some(x) => x }
+      ).mapFilter(identity)
 
       actions.nonEmpty.option{ x => actions.sequence *>
         IO(EpicsTcsConfig.pwfs2OrAowfs.set(Right(d))(x))
@@ -107,7 +107,7 @@ class TcsNorthControllerEpics private extends TcsControllerEpics[TcsNorthControl
       )),
       setScienceFold(subsystems, current, tcs.agc.sfPos, EpicsTcsConfig.scienceFoldPosition, current.instPorts),
       setHrPickup(subsystems, tcs.agc, current, EpicsTcsConfig.hrwfsPickupPosition, current.instPorts)
-    ).collect{ case Some(x) => x }
+    ).mapFilter(identity)
 
     def sysConfig(current: EpicsTcsConfig): IO[EpicsTcsConfig] = {
       val params = configParams(current)
@@ -162,7 +162,7 @@ class TcsNorthControllerEpics private extends TcsControllerEpics[TcsNorthControl
     configurePwfs2Detector(subsystems, current.pwfs2OrAowfs, demand.gds.pwfs2OrAowfs),
     applyParam(subsystems.contains(Subsystem.OIWFS), current.oiwfs.detector, demand.gds.oiwfs.detector,
       setOiwfs, EpicsTcsConfig.oiwfs ^|-> GuiderConfig.detector)
-  ).collect{ case Some(x) => x }
+  ).mapFilter(identity)
 
   def calcGuideOff(current: EpicsTcsConfig, demand: TcsNorthConfig, gaosEnabled: Boolean): TcsNorthConfig = {
     val mustOff = mustPauseWhileOffsetting(current, demand)
@@ -201,14 +201,14 @@ class TcsNorthControllerEpics private extends TcsControllerEpics[TcsNorthControl
     (current.oiwfs.detector === GuiderSensorOn && demand.gds.oiwfs.detector === GuiderSensorOff).option(OiOff),
     (current.pwfs1.detector === GuiderSensorOn && demand.gds.pwfs1.detector === GuiderSensorOff).option(P1Off),
     demand.gds.pwfs2OrAowfs.toOption.filter(_.detector === GuiderSensorOff).as(GaosGuideOff)
-  ).collect{ case Some(x) => x }
+  ).collect{case Some(x) => x}
 
   def calcAoResumeConditions(current: EpicsTcsConfig, demand: TcsNorthConfig): Set[ResumeCondition] = Set(
     demand.tc.offsetA.map(v => OffsetReached(v.toFocalPlaneOffset(current.iaa))),
     (demand.gds.oiwfs.detector === GuiderSensorOn).option(OiOn),
     (demand.gds.pwfs1.detector === GuiderSensorOn).option(P1On),
     demand.gds.pwfs2OrAowfs.toOption.filter(_.detector === GuiderSensorOn).as(GaosGuideOn)
-  ).collect{ case Some(x) => x }
+  ).collect{case Some(x) => x}
 
   def pauseResumeGaos[F[_]: Sync ](gaos: Option[Altair[F]], current: EpicsTcsConfig, demand: TcsNorthConfig)
   : F[PauseResume[F]] = (gaos, demand.gaos).mapN {
@@ -312,33 +312,6 @@ object TcsNorthControllerEpics {
 
   def apply(): TcsNorthController[IO] = new TcsNorthControllerEpics
 
-//  /* AO fold position */
-//  sealed trait AoFold {
-//    val active: Boolean
-//  }
-//  object AoFold {
-//    object In extends AoFold {
-//      override val active: Boolean = true
-//    }
-//    object Out extends AoFold {
-//      override val active: Boolean = false
-//    }
-//  }
-//
-//  final case class InstrumentPorts(
-//                                    flamingos2Port: Int,
-//                                    ghostPort: Int,
-//                                    gmosPort: Int,
-//                                    gnirsPort: Int,
-//                                    gpiPort: Int,
-//                                    gsaoiPort: Int,
-//                                    nifsPort: Int,
-//                                    niriPort: Int
-//                                  )
-//
-//  val BottomPort: Int = 1
-//  val InvalidPort: Int = 0
-
   @Lenses
   final case class EpicsTcsConfig(
                                    iaa: Angle,
@@ -355,16 +328,5 @@ object TcsNorthControllerEpics {
                                  ) {
     val instrumentOffset: InstrumentOffset = offset.toInstrumentOffset(iaa)
   }
-
-  object EpicsTcsConfig
-
-//  final case class GuideControl[F[_]: Async](subs: Subsystem,
-//                                             parkCmd: EpicsCommandF,
-//                                             nodChopGuideCmd: ProbeGuideCmd[F],
-//                                             followCmd: ProbeFollowCmd[F]
-//                                            )
-//
-//  val pwfs1OffsetThreshold: Length = Arcseconds(0.01)/FOCAL_PLANE_SCALE
-//  val pwfs2OffsetThreshold: Length = Arcseconds(0.01)/FOCAL_PLANE_SCALE
 
 }

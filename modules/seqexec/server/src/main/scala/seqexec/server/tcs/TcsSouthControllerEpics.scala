@@ -267,6 +267,4 @@ object TcsSouthControllerEpics {
     val instrumentOffset: InstrumentOffset = offset.toInstrumentOffset(iaa)
   }
 
-  object EpicsTcsConfig
-
 }

@@ -6,10 +6,9 @@ package seqexec.server.tcs
 import cats.data.NonEmptySet
 import cats.effect.Sync
 import seqexec.server.altair.Altair
-import org.log4s.getLogger
 
 class TcsNorthControllerSim[F[_]: Sync] private extends TcsNorthController[F] {
- val sim = new TcsControllerSim[F](TcsNorthControllerSim.Log)
+ val sim = new TcsControllerSim[F]
 
   override def applyConfig(subsystems: NonEmptySet[TcsController.Subsystem],
                            gaos: Option[Altair[F]],
@@ -22,7 +21,7 @@ class TcsNorthControllerSim[F[_]: Sync] private extends TcsNorthController[F] {
 }
 
 object TcsNorthControllerSim {
-  val Log = getLogger
 
   def apply[F[_]: Sync]: TcsNorthController[F] = new TcsNorthControllerSim[F]
+
 }

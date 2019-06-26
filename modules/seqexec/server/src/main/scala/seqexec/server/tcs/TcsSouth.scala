@@ -114,9 +114,6 @@ object TcsSouth {
                                        instrument: InstrumentSystem[F]
                                      )
 
-  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
-  object TcsSeqConfig
-
   def fromConfig[F[_]: Sync](controller: TcsSouthController[F], subsystems: NonEmptySet[Subsystem],
                              gaos: Option[Gems[F]], instrument: InstrumentSystem[F], guideConfigDb: GuideConfigDb[F])(
     config: Config, lightPath: LightPath, observingWavelength: Option[Wavelength]

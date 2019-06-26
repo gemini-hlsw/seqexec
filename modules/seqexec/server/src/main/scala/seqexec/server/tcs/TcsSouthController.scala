@@ -26,7 +26,6 @@ trait TcsSouthController[F[_]] {
   def notifyObserveEnd: F[Unit]
 }
 
-// scalastyle:off
 object TcsSouthController {
 
   @Lenses
@@ -50,7 +49,4 @@ object TcsSouthController {
                               inst: InstrumentGuide
                             )
 
-  object TcsSouthConfig
-
 }
-// scalastyle:on

@@ -47,7 +47,7 @@ class TcsNorth[F[_]: Sync] private (tcsController: TcsNorthController[F],
       GuiderConfig(ProbeTrackingConfig.Parked, GuiderSensorOff)).show)
     case Subsystem.Mount  => List(tcs.tc.show)
     case Subsystem.AGUnit => List(tcs.agc.sfPos.show, tcs.agc.hrwfs.show)
-    case Subsystem.Gaos   => List(tcs.gds.pwfs2OrAowfs.toOption).collect{ case Some(x) => (x:GuiderConfig).show }
+    case Subsystem.Gaos   => tcs.gds.pwfs2OrAowfs.map((_:GuiderConfig).show).toList
   }
 
   override def configure(config: Config): SeqActionF[F, ConfigResult[F]] = SeqActionF.embedF(
@@ -136,9 +136,6 @@ object TcsNorth {
                                        lightPath: LightPath,
                                        instrument: InstrumentSystem[F]
                                      )
-
-  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
-  object TcsSeqConfig
 
   def fromConfig[F[_]: Sync](controller: TcsNorthController[F], subsystems: NonEmptySet[Subsystem],
                              gaos: Option[Altair[F]], instrument: InstrumentSystem[F], guideConfigDb: GuideConfigDb[F])(

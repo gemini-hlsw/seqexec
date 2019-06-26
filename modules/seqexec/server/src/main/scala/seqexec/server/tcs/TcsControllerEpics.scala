@@ -25,6 +25,10 @@ import shapeless.tag
 import shapeless.tag.@@
 import squants.space.Arcseconds
 
+/*
+ * Base implementation of an Epics TcsController
+ * Type parameter C is the class used to hold the current configuration
+ */
 trait TcsControllerEpics[C] {
 
   import TcsControllerEpics._
@@ -86,7 +90,7 @@ trait TcsControllerEpics[C] {
                ProbeTrackingConfig.Frozen => (c.follow =!= d.follow)
             .option(guideControl.followCmd.setFollowState(encode(d.follow)))
         }
-      ).collect { case Some(x) => x }
+      ).mapFilter(identity)
 
       actions.nonEmpty.option { x =>
         actions.sequence *>

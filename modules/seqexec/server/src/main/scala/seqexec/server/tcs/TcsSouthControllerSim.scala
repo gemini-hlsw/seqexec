@@ -5,11 +5,10 @@ package seqexec.server.tcs
 
 import cats.data.NonEmptySet
 import cats.effect.Sync
-import org.log4s.getLogger
 import seqexec.server.gems.Gems
 
 class TcsSouthControllerSim[F[_]: Sync] private extends TcsSouthController[F] {
-  val sim = new TcsControllerSim[F](TcsSouthControllerSim.Log)
+  val sim = new TcsControllerSim[F]
 
   override def applyConfig(subsystems: NonEmptySet[TcsController.Subsystem],
                            gaos: Option[Gems[F]],
@@ -22,7 +21,7 @@ class TcsSouthControllerSim[F[_]: Sync] private extends TcsSouthController[F] {
 }
 
 object TcsSouthControllerSim {
-  val Log = getLogger
 
   def apply[F[_]: Sync]: TcsSouthController[F] = new TcsSouthControllerSim[F]
+
 }
