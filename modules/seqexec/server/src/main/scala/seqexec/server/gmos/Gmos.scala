@@ -6,20 +6,21 @@ package seqexec.server.gmos
 import cats.data.Reader
 import cats.implicits._
 import cats.effect.Sync
+import gem.enum.LightSinkName
 import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.gemini.gmos.GmosCommonType._
 import edu.gemini.spModel.gemini.gmos.InstGmosCommon._
+import edu.gemini.spModel.guide.StandardGuideOptions
 import edu.gemini.spModel.obscomp.InstConstants.{EXPOSURE_TIME_PROP, _}
 import edu.gemini.spModel.seqcomp.SeqConfigNames.{INSTRUMENT_KEY, OBSERVE_KEY}
-import java.lang.{Double => JDouble, Integer => JInt}
-
 import edu.gemini.spModel.gemini.gmos.GmosCommonType
-import gem.enum.LightSinkName
+import java.lang.{Double => JDouble, Integer => JInt}
 import mouse.all._
 import org.log4s.{Logger, getLogger}
-
 import scala.concurrent.duration._
 import seqexec.model.dhs.ImageFileId
+import seqexec.model.TelescopeOffset
+import seqexec.model.enum.Guiding
 import seqexec.server.ConfigUtilOps.{ContentError, ConversionError, _}
 import seqexec.server.gmos.Gmos.SiteSpecifics
 import seqexec.server.gmos.GmosController.Config._
@@ -59,6 +60,31 @@ abstract class Gmos[F[_]: Sync, T<:GmosController.SiteDependentTypes](controller
     }
   }
 
+  // The OT lets beams up to G but in practice it is always A/B
+  private val BeamLabels = List('A, 'B, 'C, 'D, 'E, 'F, 'G)
+
+  private def nsPosition(config: Config, sc: Int): Either[ExtractFailure, Vector[NSPosition]] = {
+    (for {
+      i <- 0 to scala.math.min(BeamLabels.length, sc) - 1
+    } yield {
+      for {
+        s <- BeamLabels.lift(i).toRight(ContentError(s"Unknwon label at position $i"))
+        p <- config.extractAs[String](INSTRUMENT_KEY / s"nsBeam${s.name}-p").map(_.toDouble)
+        q <- config.extractAs[String](INSTRUMENT_KEY / s"nsBeam${s.name}-q").map(_.toDouble)
+        k = INSTRUMENT_KEY / s"nsBeam${s.name}-guideWithOIWFS"
+        g <- config.extractAs[StandardGuideOptions.Value](k).flatMap(r => Guiding.fromString(r.toString).toRight(KeyNotFound(k)))
+      } yield NSPosition(s, TelescopeOffset.P(p), TelescopeOffset.Q(q), g)
+    }).toVector.sequence
+  }
+
+  private def nodAndShuffle(config: Config): Either[ExtractFailure, NS] =
+    for {
+      cycles <- config.extractAs[JInt](INSTRUMENT_KEY / NUM_NS_CYCLES_PROP).map(_.toInt)
+      rows   <- config.extractAs[JInt](INSTRUMENT_KEY / DETECTOR_ROWS_PROP).map(_.toInt)
+      sc     <- config.extractAs[JInt](INSTRUMENT_KEY / NS_STEP_COUNT_PROP_NAME)
+      pos    <- nsPosition(config, sc)
+    } yield NS.NodAndShuffle(cycles, rows, pos)
+
   private def calcDisperser(disp: T#Disperser, order: Option[DisperserOrder], wl: Option[Length])
   : Either[ConfigUtilOps.ExtractFailure, configTypes.GmosDisperser] =
     if(configTypes.isMirror(disp))
@@ -87,7 +113,9 @@ abstract class Gmos[F[_]: Sync, T<:GmosController.SiteDependentTypes](controller
       adc              <- config.extractAs[ADC](INSTRUMENT_KEY / ADC_PROP)
       electronicOffset =  config.extractAs[UseElectronicOffset](INSTRUMENT_KEY / USE_ELECTRONIC_OFFSETTING_PROP)
       disperser        <- calcDisperser(disp, disperserOrder.toOption, disperserLambda.toOption)
-    } yield configTypes.CCConfig(filter, disperser, fpu, stageMode, dtax, adc, electronicOffset.toOption)).leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
+      useNS            <- config.extractAs[java.lang.Boolean](INSTRUMENT_KEY / USE_NS_PROP)
+      ns               <- (if (useNS) nodAndShuffle(config) else NS.NoNodAndShuffle.asRight)
+    } yield configTypes.CCConfig(filter, disperser, fpu, stageMode, dtax, adc, electronicOffset.toOption, ns)).leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
 
   private def fromSequenceConfig(config: Config): SeqActionF[F, GmosController.GmosConfig[T]] = SeqActionF.either( for {
       cc <- ccConfigFromSequenceConfig(config)
@@ -163,7 +191,7 @@ object Gmos {
     val rois = for {
       i <- 1 to 5
     } yield attemptROI(i)
-    rois.toList.collect { case Some(x) => x }
+    rois.toList.mapFilter(identity)
   }
 
   def dcConfigFromSequenceConfig(config: Config): TrySeq[DCConfig] =
