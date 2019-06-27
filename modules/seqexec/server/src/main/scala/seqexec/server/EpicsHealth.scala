@@ -3,8 +3,8 @@
 
 package seqexec.server
 
-import cats.Eq
 import cats.implicits._
+import gem.util.Enumerated
 
 sealed trait EpicsHealth extends Product with Serializable
 
@@ -13,5 +13,6 @@ object EpicsHealth {
   case object Bad extends EpicsHealth
   implicit def fromInt(v: Int): EpicsHealth = if (v === 0) Good else Bad
 
-  implicit val healthEq: Eq[EpicsHealth] = Eq.fromUniversalEquals
+  implicit val EpicsHealthEnumerated: Enumerated[EpicsHealth] =
+    Enumerated.of(Good, Bad)
 }

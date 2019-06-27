@@ -3,19 +3,20 @@
 
 package seqexec.server.gmos
 
+import cats.Eq
 import cats.Show
+import cats.implicits._
+import edu.gemini.spModel.gemini.gmos.GmosCommonType.BuiltinROI
+import edu.gemini.spModel.gemini.gmos.{GmosNorthType, GmosSouthType}
+import gsp.math.Offset
+import scala.concurrent.duration.Duration
 import seqexec.model.dhs.ImageFileId
+import seqexec.model.enum.Guiding
 import seqexec.server.gmos.GmosController.Config.DCConfig
 import seqexec.server.SeqexecFailure.Unexpected
-import seqexec.server._
-import edu.gemini.spModel.gemini.gmos.GmosCommonType.BuiltinROI
-import squants.{Length, Time}
-
-import scala.concurrent.duration.Duration
-import cats.implicits._
-import cats.kernel.Eq
-import edu.gemini.spModel.gemini.gmos.{GmosNorthType, GmosSouthType}
 import seqexec.server.InstrumentSystem.ElapsedTime
+import seqexec.server._
+import squants.{Length, Time}
 
 trait GmosController[F[_], T <: GmosController.SiteDependentTypes] {
   import GmosController._
@@ -68,7 +69,8 @@ object GmosController {
       stage: T#GmosStageMode,
       dtaX: DTAX,
       adc: ADC,
-      useElectronicOffset: Option[UseElectronicOffset]
+      useElectronicOffset: Option[UseElectronicOffset],
+      nodAndShuffle: NS
     )
 
   }
@@ -123,6 +125,17 @@ object GmosController {
 
     sealed abstract class RegionsOfInterest(val rois: Either[BuiltinROI, List[ROI]])
 
+    // Node and shuffle positions
+    final case class NSPosition(id: Symbol, offset: Offset, guide: Guiding)
+
+    // Node and shuffle options
+    sealed trait NS extends Product with Serializable
+
+    object NS {
+      case object NoNodAndShuffle extends NS
+      final case class NodAndShuffle(cycles: Int, rows: Int, positions: Vector[NSPosition]) extends NS
+    }
+
     object RegionsOfInterest {
       def fromOCS(builtIn: BuiltinROI, custom: List[ROI]): Either[SeqexecFailure, RegionsOfInterest] =
         (builtIn, custom) match {
@@ -131,7 +144,7 @@ object GmosController {
           case _                                              => Unexpected("Inconsistent values for GMOS regions of interest").asLeft
         }
 
-      def unapply(r: RegionsOfInterest): Some[Either[BuiltinROI, List[ROI]]] = Some(r.rois)
+      def unapply(r: RegionsOfInterest): Option[Either[BuiltinROI, List[ROI]]] = r.rois.some
     }
 
     final case class DCConfig(
