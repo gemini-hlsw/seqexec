@@ -7,6 +7,9 @@ import cats.data.Reader
 import cats.implicits._
 import cats.effect.Sync
 import gem.enum.LightSinkName
+import gsp.math.Angle
+import gsp.math.Offset
+import gsp.math.syntax.string._
 import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.gemini.gmos.GmosCommonType._
 import edu.gemini.spModel.gemini.gmos.InstGmosCommon._
@@ -15,11 +18,9 @@ import edu.gemini.spModel.obscomp.InstConstants.{EXPOSURE_TIME_PROP, _}
 import edu.gemini.spModel.seqcomp.SeqConfigNames.{INSTRUMENT_KEY, OBSERVE_KEY}
 import edu.gemini.spModel.gemini.gmos.GmosCommonType
 import java.lang.{Double => JDouble, Integer => JInt}
-import mouse.all._
 import org.log4s.{Logger, getLogger}
 import scala.concurrent.duration._
 import seqexec.model.dhs.ImageFileId
-import seqexec.model.TelescopeOffset
 import seqexec.model.enum.Guiding
 import seqexec.server.ConfigUtilOps.{ContentError, ConversionError, _}
 import seqexec.server.gmos.Gmos.SiteSpecifics
@@ -63,17 +64,20 @@ abstract class Gmos[F[_]: Sync, T<:GmosController.SiteDependentTypes](controller
   // The OT lets beams up to G but in practice it is always A/B
   private val BeamLabels = List('A, 'B, 'C, 'D, 'E, 'F, 'G)
 
+  def configToAngle(s: String): Either[ExtractFailure, Angle] =
+    s.parseDoubleOption.toRight(ContentError("Invalid offset value")).map(Angle.fromDoubleArcseconds(_))
+
   private def nsPosition(config: Config, sc: Int): Either[ExtractFailure, Vector[NSPosition]] = {
     (for {
       i <- 0 to scala.math.min(BeamLabels.length, sc) - 1
     } yield {
       for {
-        s <- BeamLabels.lift(i).toRight(ContentError(s"Unknwon label at position $i"))
-        p <- config.extractAs[String](INSTRUMENT_KEY / s"nsBeam${s.name}-p").map(_.toDouble)
-        q <- config.extractAs[String](INSTRUMENT_KEY / s"nsBeam${s.name}-q").map(_.toDouble)
+        s <- BeamLabels.lift(i).toRight(ContentError(s"Unknown label at position $i"))
+        p <- config.extractAs[String](INSTRUMENT_KEY / s"nsBeam${s.name}-p").flatMap(configToAngle).flatMap(Offset.P(_).asRight)
+        q <- config.extractAs[String](INSTRUMENT_KEY / s"nsBeam${s.name}-q").flatMap(configToAngle).flatMap(Offset.Q(_).asRight)
         k = INSTRUMENT_KEY / s"nsBeam${s.name}-guideWithOIWFS"
         g <- config.extractAs[StandardGuideOptions.Value](k).flatMap(r => Guiding.fromString(r.toString).toRight(KeyNotFound(k)))
-      } yield NSPosition(s, TelescopeOffset.P(p), TelescopeOffset.Q(q), g)
+      } yield NSPosition(s, Offset(p, q), g)
     }).toVector.sequence
   }
 
@@ -191,8 +195,14 @@ object Gmos {
     val rois = for {
       i <- 1 to 5
     } yield attemptROI(i)
-    rois.toList.mapFilter(identity)
+    rois.toList.flattenOption
   }
+
+  private def toGain(s: String): Either[ExtractFailure, Double] =
+    s.parseDoubleOption match {
+      case Some(x) => x.asRight
+      case None    => ConversionError(INSTRUMENT_KEY / AMP_GAIN_SETTING_PROP, "Bad Amp gain setting").asLeft
+    }
 
   def dcConfigFromSequenceConfig(config: Config): TrySeq[DCConfig] =
     (for {
@@ -203,7 +213,7 @@ object Gmos {
       ampReadMode  <- config.extractAs[AmpReadMode](AmpReadMode.KEY)
       gainChoice   <- config.extractAs[AmpGain](INSTRUMENT_KEY / AMP_GAIN_CHOICE_PROP)
       ampCount     <- config.extractAs[AmpCount](INSTRUMENT_KEY / AMP_COUNT_PROP)
-      gainSetting  <- config.extractAs[String](INSTRUMENT_KEY / AMP_GAIN_SETTING_PROP).flatMap(s => s.parseDouble.leftMap(_ => ConversionError(INSTRUMENT_KEY / AMP_GAIN_SETTING_PROP, "Bad Amp gain setting")))
+      gainSetting  <- config.extractAs[String](INSTRUMENT_KEY / AMP_GAIN_SETTING_PROP).flatMap(toGain)
       xBinning     <- config.extractAs[Binning](INSTRUMENT_KEY / CCD_X_BIN_PROP)
       yBinning     <- config.extractAs[Binning](INSTRUMENT_KEY / CCD_Y_BIN_PROP)
       builtInROI   <- config.extractAs[BuiltinROI](INSTRUMENT_KEY / BUILTIN_ROI_PROP)

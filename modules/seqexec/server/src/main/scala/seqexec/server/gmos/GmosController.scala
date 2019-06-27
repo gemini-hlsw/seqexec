@@ -8,6 +8,7 @@ import cats.Show
 import cats.implicits._
 import edu.gemini.spModel.gemini.gmos.GmosCommonType.BuiltinROI
 import edu.gemini.spModel.gemini.gmos.{GmosNorthType, GmosSouthType}
+import gsp.math.Offset
 import scala.concurrent.duration.Duration
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Guiding
@@ -15,7 +16,6 @@ import seqexec.server.gmos.GmosController.Config.DCConfig
 import seqexec.server.SeqexecFailure.Unexpected
 import seqexec.server.InstrumentSystem.ElapsedTime
 import seqexec.server._
-import seqexec.model.TelescopeOffset
 import squants.{Length, Time}
 
 trait GmosController[F[_], T <: GmosController.SiteDependentTypes] {
@@ -126,7 +126,7 @@ object GmosController {
     sealed abstract class RegionsOfInterest(val rois: Either[BuiltinROI, List[ROI]])
 
     // Node and shuffle positions
-    final case class NSPosition(id: Symbol, p: TelescopeOffset.P, q: TelescopeOffset.Q, guide: Guiding)
+    final case class NSPosition(id: Symbol, offset: Offset, guide: Guiding)
 
     // Node and shuffle options
     sealed trait NS extends Product with Serializable
