@@ -73,8 +73,8 @@ abstract class Gmos[F[_]: Sync, T<:GmosController.SiteDependentTypes](controller
     } yield {
       for {
         s <- BeamLabels.lift(i).toRight(ContentError(s"Unknown label at position $i"))
-        p <- config.extractAs[String](INSTRUMENT_KEY / s"nsBeam${s.name}-p").flatMap(configToAngle).flatMap(Offset.P(_).asRight)
-        q <- config.extractAs[String](INSTRUMENT_KEY / s"nsBeam${s.name}-q").flatMap(configToAngle).flatMap(Offset.Q(_).asRight)
+        p <- config.extractAs[String](INSTRUMENT_KEY / s"nsBeam${s.name}-p").flatMap(configToAngle).map(Offset.P.apply)
+        q <- config.extractAs[String](INSTRUMENT_KEY / s"nsBeam${s.name}-q").flatMap(configToAngle).map(Offset.Q.apply)
         k = INSTRUMENT_KEY / s"nsBeam${s.name}-guideWithOIWFS"
         g <- config.extractAs[StandardGuideOptions.Value](k).flatMap(r => Guiding.fromString(r.toString).toRight(KeyNotFound(k)))
       } yield NSPosition(s, Offset(p, q), g)
@@ -199,10 +199,8 @@ object Gmos {
   }
 
   private def toGain(s: String): Either[ExtractFailure, Double] =
-    s.parseDoubleOption match {
-      case Some(x) => x.asRight
-      case None    => ConversionError(INSTRUMENT_KEY / AMP_GAIN_SETTING_PROP, "Bad Amp gain setting").asLeft
-    }
+    s.parseDoubleOption
+      .toRight(ConversionError(INSTRUMENT_KEY / AMP_GAIN_SETTING_PROP, "Bad Amp gain setting"))
 
   def dcConfigFromSequenceConfig(config: Config): TrySeq[DCConfig] =
     (for {
