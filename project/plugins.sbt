@@ -12,6 +12,9 @@ libraryDependencies ++= Seq(
   "org.typelevel" %% "cats-core"   % "1.6.1",
   "org.typelevel" %% "cats-effect" % "0.8"
 )
+
+addSbtPlugin("edu.gemini"         % "sbt-gsp"                  % "0.1.6")
+
 addSbtPlugin("org.scala-js"       % "sbt-scalajs"              % scalaJSVersion)
 
 addSbtPlugin("org.flywaydb"       % "flyway-sbt"               % "4.2.0")
@@ -28,9 +31,6 @@ addSbtPlugin("com.typesafe.sbt"   % "sbt-native-packager"      % "1.3.24")
 
 // Check the style with scalastyle
 addSbtPlugin("org.scalastyle"    %% "scalastyle-sbt-plugin"    % "1.0.0")
-
-// add and check headers
-addSbtPlugin("de.heikoseeberger"  % "sbt-header"               % "4.1.0")
 
 // Built the version out of git
 addSbtPlugin("com.typesafe.sbt"   % "sbt-git"                  % "1.0.0")
