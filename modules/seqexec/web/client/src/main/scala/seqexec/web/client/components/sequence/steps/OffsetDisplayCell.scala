@@ -64,7 +64,7 @@ object OffsetsDisplayCell {
                 <.div(
                   ^.width := offsetWidth.px,
                   SeqexecStyles.inlineBlock,
-                  offsetValueFormat(offsetP)
+                  offsetAngle(offsetP.toAngle)
                 )
               ),
               <.div(
@@ -77,7 +77,7 @@ object OffsetsDisplayCell {
                 <.div(
                   ^.width := offsetWidth.px,
                   SeqexecStyles.inlineBlock,
-                  offsetValueFormat(offsetQ)
+                  offsetAngle(offsetQ.toAngle)
                 )
               )
             )

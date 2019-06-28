@@ -4,7 +4,6 @@
 package seqexec.model
 
 import cats.tests.CatsSuite
-import monocle.law.discipline.IsoTests
 import monocle.law.discipline.LensTests
 import monocle.law.discipline.OptionalTests
 import monocle.law.discipline.PrismTests
@@ -47,10 +46,10 @@ final class ModelLensesSpec extends CatsSuite with ModelLenses {
            TraversalTests(firstScienceTargetNameT))
   checkAll("step type prism", PrismTests(stringToStepTypeP))
   checkAll("step step type optional", OptionalTests(stepTypeO))
-  checkAll("telescope p offset iso", IsoTests(telescopeOffsetPI))
-  checkAll("telescope q offset iso", IsoTests(telescopeOffsetQI))
-  checkAll("telescope offset optional",
+  checkAll("telescope offset p optional",
            OptionalTests(telescopeOffsetO(OffsetAxis.AxisP)))
+  checkAll("telescope offset q optional",
+           OptionalTests(telescopeOffsetO(OffsetAxis.AxisQ)))
   checkAll("step double prism", PrismTests(stringToDoubleP))
   checkAll("param guiding prism", PrismTests(stringToGuidingP))
   checkAll("telescope guiding traversal", TraversalTests(telescopeGuidingWithT))
