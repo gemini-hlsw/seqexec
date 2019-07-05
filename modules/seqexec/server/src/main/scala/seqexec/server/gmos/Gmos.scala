@@ -18,7 +18,6 @@ import edu.gemini.spModel.obscomp.InstConstants.{EXPOSURE_TIME_PROP, _}
 import edu.gemini.spModel.seqcomp.SeqConfigNames.{INSTRUMENT_KEY, OBSERVE_KEY}
 import edu.gemini.spModel.gemini.gmos.GmosCommonType
 import java.lang.{Double => JDouble, Integer => JInt}
-import mouse.boolean._
 import org.log4s.{Logger, getLogger}
 import scala.concurrent.duration._
 import seqexec.model.dhs.ImageFileId
@@ -129,7 +128,9 @@ abstract class Gmos[F[_]: Sync, T<:GmosController.SiteDependentTypes](controller
   )
 
   override def calcStepType(config: Config): Either[SeqexecFailure, StepType] =
-    Gmos.isNodAndShuffle(config).option(NodAndShuffle(instrument).asRight).getOrElse{
+    if (Gmos.isNodAndShuffle(config)) {
+      NodAndShuffle(instrument).asRight
+    } else {
       SequenceConfiguration.calcStepType(config)
     }
 

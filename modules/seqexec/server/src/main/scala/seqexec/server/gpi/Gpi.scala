@@ -18,7 +18,6 @@ import java.lang.{ Boolean => JBoolean }
 import java.lang.{ Double => JDouble }
 import java.lang.{ Integer => JInt }
 import gem.enum.LightSinkName
-import mouse.boolean._
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Instrument
 import seqexec.server.ConfigUtilOps._
@@ -53,7 +52,9 @@ final case class Gpi[F[_]: Sync: Timer](controller: GpiController[F])
   override val contributorName: String = "gpi"
 
   override def calcStepType(config: Config): Either[SeqexecFailure, StepType] =
-    Gpi.isAlignAndCalib(config).option(AlignAndCalib.asRight).getOrElse{
+    if (Gpi.isAlignAndCalib(config)) {
+      AlignAndCalib.asRight
+    } else {
       SequenceConfiguration.calcStepType(config)
     }
 
