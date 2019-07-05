@@ -50,4 +50,17 @@ package object model {
   implicit val timeEq: Eq[Time] =
     Eq.by(_.toMilliseconds)
 
+  implicit class InstrumentOps(val i: Instrument) extends AnyVal {
+    def hasOI: Boolean = i match {
+      case Instrument.F2    => true
+      case Instrument.GmosS => true
+      case Instrument.GmosN => true
+      case Instrument.Nifs  => true
+      case Instrument.Niri  => true
+      case Instrument.Gsaoi => false
+      case Instrument.Gpi   => true
+      case Instrument.Ghost => false
+      case _                => false
+    }
+  }
 }

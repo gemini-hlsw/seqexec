@@ -25,9 +25,8 @@ import seqexec.server._
 import seqexec.server.keywords.GdsClient
 import seqexec.server.keywords.GdsInstrument
 import seqexec.server.keywords.KeywordsClient
-import squants.Time
-
 import scala.concurrent.duration._
+import squants.Time
 import squants.time.Milliseconds
 import squants.time.Seconds
 import squants.time.Time
@@ -51,6 +50,13 @@ final case class Gpi[F[_]: Sync: Timer](controller: GpiController[F])
   override def sfName(config: Config): LightSinkName = LightSinkName.Gpi
 
   override val contributorName: String = "gpi"
+
+  override def calcStepType(config: Config): Either[SeqexecFailure, StepType] =
+    if (Gpi.isAlignAndCalib(config)) {
+      AlignAndCalib.asRight
+    } else {
+      SequenceConfiguration.calcStepType(config)
+    }
 
   override val observeControl: InstrumentSystem.ObserveControl[F] =
     InstrumentSystem.Uncontrollable()
@@ -143,6 +149,7 @@ object Gpi {
       }
 
   val AcquisitionKey = ObsClass.ACQ.headerValue()
+
   // TODO wrap this on F to keep RT, It involves a large change upstream
   def isAlignAndCalib(config: Config): Boolean = {
     (config.extractAs[String](INSTRUMENT_KEY / InstConstants.INSTRUMENT_NAME_PROP), config.extractAs[String](OBSERVE_KEY / InstConstants.OBS_CLASS_PROP)).mapN {

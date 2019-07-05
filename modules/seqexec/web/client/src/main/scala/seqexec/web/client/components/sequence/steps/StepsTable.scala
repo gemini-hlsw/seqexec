@@ -70,7 +70,7 @@ trait Columns {
   val FilterWidth: Double           = 180
   val FilterMinWidth: Double        = 100
   val FPUWidth: Double              = 100
-  val FPUMinWidth: Double           = 10
+  val FPUMinWidth: Double           = 46.667 + SeqexecStyles.TableBorderWidth
   val CameraWidth: Double           = 180
   val CameraMinWidth: Double        = 10
   val DeckerWidth: Double           = 110

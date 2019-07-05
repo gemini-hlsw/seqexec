@@ -3,9 +3,9 @@
 
 package seqexec.model
 
-import seqexec.model.enum._
-import seqexec.model.events._
-
+import cats._
+import cats.implicits._
+import gsp.math.syntax.all._
 import monocle.Lens
 import monocle.Optional
 import monocle.Prism
@@ -17,11 +17,10 @@ import monocle.function.At.atMap
 import monocle.function.FilterIndex.filterIndex
 import monocle.unsafe.MapTraversal._
 import monocle.std.option.some
+import monocle.std.string._
 import monocle.Iso
-
-import cats._
-import cats.implicits._
-import mouse.all._
+import seqexec.model.enum._
+import seqexec.model.events._
 
 trait ModelLenses {
   // Some useful Monocle lenses
@@ -160,9 +159,7 @@ trait ModelLenses {
   private[model] def telescopeOffsetQI: Iso[Double, TelescopeOffset.Q] =
     Iso(TelescopeOffset.Q.apply)(_.value)
   val stringToDoubleP: Prism[String, Double] =
-    Prism((x: String) => x.parseDouble.toOption)(_.show)
-  val stringToIntP: Prism[String, Int] =
-    Prism((x: String) => x.parseInt.toOption)(_.show)
+    Prism((x: String) => x.parseDoubleOption)(_.show)
 
   def stepObserveOptional[A](systemName: SystemName, param: String, prism: Prism[String, A]): Optional[Step, A] =
     standardStepP                            ^|-> // which is a standard step
@@ -182,13 +179,17 @@ trait ModelLenses {
 
   // Composite lens to find the observe coadds
   val observeCoaddsO: Optional[Step, Int] =
-    stepObserveOptional(SystemName.Observe, "coadds", stringToIntP)
+    stepObserveOptional(SystemName.Observe, "coadds", stringToInt)
 
   val stringToFPUModeP: Prism[String, FPUMode] =
     Prism(FPUMode.fromString)(_.label)
   // Composite lens to find the instrument fpu model
   val instrumentFPUModeO: Optional[Step, FPUMode] =
     stepObserveOptional(SystemName.Instrument, "fpuMode", stringToFPUModeP)
+
+  // Composite lens to find if the step is N&S
+  val isNodAndShuffleO: Optional[Step, Boolean] =
+    stepObserveOptional(SystemName.Instrument, "useNS", stringToBoolean)
 
   // Composite lens to find the instrument fpu
   val instrumentFPUO: Optional[Step, String] =

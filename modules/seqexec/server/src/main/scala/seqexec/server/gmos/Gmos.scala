@@ -127,6 +127,13 @@ abstract class Gmos[F[_]: Sync, T<:GmosController.SiteDependentTypes](controller
     } yield new GmosController.GmosConfig[T](configTypes)(cc, dc)
   )
 
+  override def calcStepType(config: Config): Either[SeqexecFailure, StepType] =
+    if (Gmos.isNodAndShuffle(config)) {
+      NodAndShuffle(instrument).asRight
+    } else {
+      SequenceConfiguration.calcStepType(config)
+    }
+
   override def observe(config: Config): SeqObserveF[F, ImageFileId, ObserveCommand.Result] =
     Reader { fileId =>
       SeqActionF.liftF(calcObserveTime(config)).flatMap { x =>
@@ -163,6 +170,11 @@ object Gmos {
 
     val fpuDefault: T#FPU
   }
+
+  def isNodAndShuffle(config: Config): Boolean =
+    config.extractAs[java.lang.Boolean](INSTRUMENT_KEY / USE_NS_PROP)
+      .map(_.booleanValue())
+      .getOrElse(false)
 
   // It seems this is unused but it shows up on the DC apply config
   private def biasTimeObserveType(observeType: String): BiasTime = observeType match {

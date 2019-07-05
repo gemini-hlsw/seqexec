@@ -10,10 +10,7 @@ import cats.effect.Sync
 import cats.effect.LiftIO
 import cats.implicits._
 import edu.gemini.seqexec.odb.{ExecutedDataset, SeqexecSequence}
-import edu.gemini.spModel.ao.AOConstants._
-import edu.gemini.spModel.config2.{Config, ItemKey}
-import edu.gemini.spModel.core.Wavelength
-import edu.gemini.spModel.gemini.altair.AltairConstants
+import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.gemini.altair.AltairParams.GuideStarType
 import edu.gemini.spModel.obscomp.InstConstants._
 import edu.gemini.spModel.seqcomp.SeqConfigNames._
@@ -24,14 +21,15 @@ import mouse.all._
 import org.log4s._
 import seqexec.engine._
 import seqexec.model.enum.{Instrument, Resource}
-import seqexec.model.{ActionType, StepState}
+import seqexec.model._
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.ConfigUtilOps._
-import seqexec.server.SeqexecFailure.{Unexpected, UnrecognizedInstrument}
+import seqexec.server.SeqexecFailure.Unexpected
 import seqexec.server.InstrumentSystem._
 import seqexec.server.SequenceGen.StepActionsGen
 import seqexec.server.flamingos2.{Flamingos2, Flamingos2Header}
 import seqexec.server.keywords._
+import seqexec.server.SequenceConfiguration._
 import seqexec.server.gpi.{Gpi, GpiHeader}
 import seqexec.server.ghost.{Ghost, GhostHeader}
 import seqexec.server.gsaoi._
@@ -54,8 +52,6 @@ import squants.time.TimeConversions._
 
 class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings) {
   private val Log = getLogger
-
-  implicit val show: Show[InstrumentSystem[IO]] = Show.show(_.resource.show)
 
   import SeqTranslate._
 
@@ -90,10 +86,12 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
       config.extractAs[String](OBSERVE_KEY / DATA_LABEL_PROP).leftMap(e =>
       SeqexecFailure.Unexpected(ConfigUtilOps.explain(e))))
 
-    def notifyObserveStart[F[_]: Sync: LiftIO]: SeqActionF[F, Unit] = otherSys.map(_.notifyObserveStart).sequence.void.toF[F]
+    def notifyObserveStart[F[_]: Sync: LiftIO]: SeqActionF[F, Unit] =
+      otherSys.map(_.notifyObserveStart).sequence.void.toF[F]
 
     // endObserve must be sent to the instrument too.
-    def notifyObserveEnd[F[_]: Sync: LiftIO]: SeqActionF[F, Unit] = (inst +: otherSys).map(_.notifyObserveEnd).sequence.void.toF[F]
+    def notifyObserveEnd[F[_]: Sync: LiftIO]: SeqActionF[F, Unit] =
+      (inst +: otherSys).map(_.notifyObserveEnd).sequence.void.toF[F]
 
     def closeImage[F[_]: LiftIO](id: ImageFileId): SeqActionF[F, Unit] =
       SeqActionF.embed(inst.keywordsClient.closeImage(id))
@@ -152,7 +150,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
     }
   }
 
-  private def step(obsId: Observation.Id, i: Int, config: Config, nextToRun: Int,
+  private def step(obsId: Observation.Id, i: StepId, config: Config, nextToRun: StepId,
                    datasets: Map[Int, ExecutedDataset])(
                      implicit cio: Concurrent[IO],
                               tio: Timer[IO]
@@ -211,17 +209,6 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
       headers   <- calcHeaders(config, stepType, inst)
     } yield buildStep(inst, systems, headers, stepType)
   }
-
-  // Required for untyped objects from java
-  implicit val objectShow: Show[AnyRef] = Show.fromToString
-
-  private def extractStatus(config: Config): StepState =
-    config.getItemValue(new ItemKey("observe:status")).show match {
-      case "ready"    => StepState.Pending
-      case "complete" => StepState.Completed
-      case "skipped"  => StepState.Skipped
-      case kw         => StepState.Failed("Unexpected status keyword: " ++ kw)
-    }
 
   def sequence(obsId: Observation.Id, sequence: SeqexecSequence)(
     implicit cio: Concurrent[IO],
@@ -427,23 +414,8 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
 
   import TcsController.Subsystem._
 
-  private def hasOI(inst: Instrument): Boolean = inst match {
-    case Instrument.F2    => true
-    case Instrument.GmosS => true
-    case Instrument.GmosN => true
-    case Instrument.Nifs  => true
-    case Instrument.Niri  => true
-    case Instrument.Gsaoi => false
-    case Instrument.Gpi   => true
-    case Instrument.Ghost => false
-    case _                => false
-  }
-
   private def flatOrArcTcsSubsystems(inst: Instrument): NonEmptySet[TcsController.Subsystem] =
-    NonEmptySet.of(AGUnit, (if (hasOI(inst)) List(OIWFS) else List.empty): _*)
-
-  private def extractWavelength(config: Config): Option[Wavelength] =
-    config.extractAs[Wavelength](OBSERVING_WAVELENGTH_KEY).toOption
+    NonEmptySet.of(AGUnit, (if (inst.hasOI) List(OIWFS) else List.empty): _*)
 
   private def calcSystems(
     config: Config,
@@ -452,7 +424,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
   ): TrySeq[List[System[IO]]] = {
     stepType match {
       case CelestialObject(inst) =>  (sys :: List(
-          Tcs.fromConfig(systems.tcs, hasOI(inst).fold(allButGaos, allButGaosNorOi), None, sys, systems.guideDb)(
+          Tcs.fromConfig(systems.tcs, inst.hasOI.fold(allButGaos, allButGaosNorOi), None, sys, systems.guideDb)(
             config,
             LightPath(TcsController.LightSource.Sky, sys.sfName(config)),
             extractWavelength(config)),
@@ -472,7 +444,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
       case AltairObs(inst)          =>
         Altair.fromConfig(config, systems.altair).map {altair =>
           sys :: List(
-            Tcs.fromConfig(systems.tcs, hasOI(inst).fold(allButGaos, allButGaosNorOi).add(Gaos),
+            Tcs.fromConfig(systems.tcs, inst.hasOI.fold(allButGaos, allButGaosNorOi).add(Gaos),
               altair.asLeft.some, sys, systems.guideDb)(config,
               LightPath(TcsController.LightSource.AO, sys.sfName(config)),
               extractWavelength(config)),
@@ -602,47 +574,6 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
 object SeqTranslate {
   def apply(site: Site, systems: Systems[IO], settings: TranslateSettings): SeqTranslate =
     new SeqTranslate(site, systems, settings)
-
-  private def extractInstrument(config: Config): TrySeq[Instrument] = {
-    config.extractAs[String](INSTRUMENT_KEY / INSTRUMENT_NAME_PROP).asTrySeq.flatMap {
-      case Flamingos2.name => TrySeq(Instrument.F2)
-      case GmosSouth.name  => TrySeq(Instrument.GmosS)
-      case GmosNorth.name  => TrySeq(Instrument.GmosN)
-      case Gnirs.name      => TrySeq(Instrument.Gnirs)
-      case Gpi.name        => TrySeq(Instrument.Gpi)
-      case Ghost.name      => TrySeq(Instrument.Ghost)
-      case Niri.name       => TrySeq(Instrument.Niri)
-      case Nifs.name       => TrySeq(Instrument.Nifs)
-      case Gsaoi.name      => TrySeq(Instrument.Gsaoi)
-      case ins             => TrySeq.fail(UnrecognizedInstrument(s"inst $ins"))
-    }
-  }
-
-  def isAlignAndCalib(config: Config): Option[StepType] =
-    Gpi.isAlignAndCalib(config).option(AlignAndCalib)
-
-  private def calcStepType(config: Config): TrySeq[StepType] = {
-    def extractGaos(inst: Instrument): TrySeq[StepType] = config.extractAs[String](AO_SYSTEM_KEY) match {
-      case Left(ConfigUtilOps.ConversionError(_, _))              => TrySeq.fail(Unexpected("Unable to get AO system from sequence"))
-      case Left(ConfigUtilOps.ContentError(_))                    => TrySeq.fail(Unexpected("Logical error"))
-      case Left(ConfigUtilOps.KeyNotFound(_))                     => TrySeq(CelestialObject(inst))
-      case Right(AltairConstants.SYSTEM_NAME_PROP)                => TrySeq(AltairObs(inst))
-      case Right(edu.gemini.spModel.gemini.gems.Gems.SYSTEM_NAME) => TrySeq(Gems(inst))
-      case _                                                      => TrySeq.fail(Unexpected("Logical error reading AO system name"))
-    }
-
-    isAlignAndCalib(config).map(_.asRight).getOrElse {
-      (config.extractAs[String](OBSERVE_KEY / OBSERVE_TYPE_PROP).leftMap(explainExtractError), extractInstrument(config)).mapN { (obsType, inst) =>
-        obsType match {
-          case SCIENCE_OBSERVE_TYPE                     => extractGaos(inst)
-          case BIAS_OBSERVE_TYPE | DARK_OBSERVE_TYPE    => TrySeq(DarkOrBias(inst))
-          case FLAT_OBSERVE_TYPE | ARC_OBSERVE_TYPE | CAL_OBSERVE_TYPE
-                                                        => TrySeq(FlatOrArc(inst))
-          case _                                        => TrySeq.fail(Unexpected("Unknown step type " + obsType))
-        }
-      }.flatten
-    }
-  }
 
   implicit class ResponseToResult(val r: Either[SeqexecFailure, Response]) extends AnyVal {
     def toResult: Result = r.fold(e => Result.Error(SeqexecFailure.explain(e)), r => Result.OK(r))

@@ -157,9 +157,7 @@ object ObjectTypeCell {
     .stateless
     .render_P { p =>
       <.div( // Column object type
-        p.step
-          .alignAndCalib(p.instrument)
-          .orElse(p.step.stepType)
+        p.step.stepType(p.instrument)
           .map { st =>
             val stepTypeColor = st match {
               case _ if p.step.status === StepState.Completed => "light gray"
@@ -170,6 +168,7 @@ object ObjectTypeCell {
               case StepType.Dark                              => "black"
               case StepType.Calibration                       => "blue"
               case StepType.AlignAndCalib                     => "brown"
+              case StepType.NodAndShuffle                     => "olive"
             }
             Label(
               Label.Props(st.show, color = stepTypeColor.some, size = p.size))

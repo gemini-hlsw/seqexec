@@ -3,12 +3,12 @@
 
 package seqexec.server
 
-import fs2.Stream
-import seqexec.model.dhs.ImageFileId
-import seqexec.server.keywords.KeywordsClient
 import edu.gemini.spModel.config2.Config
+import fs2.Stream
 import gem.enum.LightSinkName
+import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Instrument
+import seqexec.server.keywords.KeywordsClient
 import squants.{Length, Time}
 
 trait InstrumentSystem[F[_]] extends System[F] with InstrumentGuide {
@@ -24,6 +24,8 @@ trait InstrumentSystem[F[_]] extends System[F] with InstrumentGuide {
   def calcObserveTime(config: Config): F[Time]
   def keywordsClient: KeywordsClient[F]
   def observeProgress(total: Time, elapsed: InstrumentSystem.ElapsedTime): Stream[F, Progress]
+  def calcStepType(config: Config): Either[SeqexecFailure, StepType] =
+    SequenceConfiguration.calcStepType(config)
   override val oiOffsetGuideThreshold: Option[Length] = None
   override def instrument: Instrument = resource
 }
