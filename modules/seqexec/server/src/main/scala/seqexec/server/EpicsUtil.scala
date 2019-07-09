@@ -436,7 +436,7 @@ object EpicsUtil {
    * @param c Current value on the system
    * @param d Value to be set
    */
-  private def toleranceTest(t: Double, c: Double, d: Double): Boolean =
+  private def areValuesDifferentEnough(t: Double, c: Double, d: Double): Boolean =
     (!(d === 0.0 && c === 0.0) && (d === 0.0 || abs((c - d)/d) > t))
 
   /**
@@ -450,7 +450,7 @@ object EpicsUtil {
   def applyParamT[F[_]: Functor](
     relTolerance: Double
   )(c: Double, d: Double, set: Double => F[Unit]): Option[F[Unit]] =
-    if (toleranceTest(relTolerance, c, d)) {
+    if (areValuesDifferentEnough(relTolerance, c, d)) {
       set(d).some
     } else {
       none
@@ -480,14 +480,14 @@ object EpicsUtil {
     get.map(_ =!= v.some).map(_.option(set))
 
   def smartSetDoubleParam(relTolerance: Double)(v: Double, get: => Option[Double], set: SeqAction[Unit]): List[SeqAction[Unit]] =
-    if (get.forall(x => !(v === 0.0 && x === 0.0) || (v === 0.0 || abs((x - v)/v) > relTolerance))) {
+    if (get.forall(areValuesDifferentEnough(relTolerance, _, v))) {
       List(set)
     } else {
       Nil
     }
 
   def smartSetDoubleParamF[F[_]: Functor](relTolerance: Double)(v: Double, get: F[Option[Double]], set: F[Unit]): F[Option[F[Unit]]] =
-    get.map(g => (g.forall(toleranceTest(relTolerance, _, v))).option(set))
+    get.map(g => (g.forall(areValuesDifferentEnough(relTolerance, _, v))).option(set))
 
   def countdown[F[_]: Apply: cats.effect.Timer](total: Time, remT: F[Option[Time]],
                               obsState: F[Option[CarStateGeneric]]): Stream[F, Progress] =
