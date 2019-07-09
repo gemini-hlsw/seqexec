@@ -76,7 +76,6 @@ object Altair {
 
   }
 
-
   def fromConfig[F[_]: Sync](config: Config, controller: AltairController[F]): TrySeq[Altair[F]] =
     config.extractAs[FieldLens](new ItemKey(AO_CONFIG_NAME) / FIELD_LENSE_PROP).map { fieldLens =>
       new AltairImpl[F](controller, fieldLens)

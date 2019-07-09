@@ -3,7 +3,6 @@
 
 package seqexec.server.gsaoi
 
-import cats.Eq
 import cats.data.OptionT
 import cats.effect.{IO, Timer}
 import cats.implicits._
@@ -15,6 +14,7 @@ import seqexec.model.dhs.ImageFileId
 import seqexec.server.EpicsCodex._
 import seqexec.server.gsaoi.GsaoiController.{DCConfig, GsaoiConfig}
 import seqexec.server.{EpicsUtil, ObserveCommand, Progress, SeqexecFailure, failUnlessM}
+import seqexec.server.EpicsUtil.applyParam
 import squants.{Seconds, Time}
 import squants.time.TimeConversions._
 
@@ -96,9 +96,6 @@ object GsaoiControllerEpics {
     guiding: Boolean
   )
 
-  private def applyParam[A: Eq](c: A, d: A, f: A => IO[Unit]): Option[IO[Unit]] =
-    (c =!= d).option(f(d))
-
   def apply(): GsaoiController[IO] = new GsaoiController[IO] {
 
     private val epicsSys = GsaoiEpics.instance
@@ -108,7 +105,7 @@ object GsaoiControllerEpics {
         applyParam(current.filter, encode(config.cc.filter), epicsSys.ccConfigCmd.setFilter),
         applyParam(current.utilityWheel, encode(config.cc.utilityWheel), epicsSys.ccConfigCmd.setUtilWheel),
         applyParam(current.windowCover, encode(config.cc.windowCover), epicsSys.ccConfigCmd.setWindowCover)
-      ).mapFilter(identity)
+      ).flattenOption
 
       val dcParams = List(
         applyParam(current.coadds, config.dc.coadds, epicsSys.dcConfigCmd.setNumberOfCoadds),
@@ -117,7 +114,7 @@ object GsaoiControllerEpics {
           epicsSys.dcConfigCmd.setFowlerSamples),
         applyParam(current.readMode, readModeFromMode(config.dc.readMode), epicsSys.dcConfigCmd.setReadMode),
         applyParam(current.roi, encode(config.dc.roi), epicsSys.dcConfigCmd.setRoi)
-      ).mapFilter(identity)
+      ).flattenOption
 
       val guideOff: IO[Unit] = (
         epicsSys.endGuideCmd.mark[IO] *>

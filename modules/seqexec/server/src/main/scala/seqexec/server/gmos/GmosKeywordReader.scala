@@ -4,7 +4,6 @@
 package seqexec.server.gmos
 
 import cats.Applicative
-import cats.effect.LiftIO
 import cats.effect.Sync
 import cats.implicits._
 import seqexec.server.ConfigUtilOps._
@@ -131,60 +130,56 @@ object GmosKeywordReaderDummy {
 }
 
 object GmosKeywordReaderEpics {
-  def apply[F[_]: Sync: LiftIO]: GmosKeywordReader[F] = new GmosKeywordReader[F] {
-    private val F = implicitly[Sync[F]]
-    private val sys = GmosEpics.instance
+  def apply[F[_]: Sync](sys: GmosEpics[F]): GmosKeywordReader[F] = new GmosKeywordReader[F] {
 
-    override def ccName: F[String] = F.delay(sys.ccName).safeValOrDefault
-    override def maskId: F[Int] = F.delay(sys.maskId).safeValOrDefault
-    override def maskName: F[String] = F.delay(sys.fpu).safeValOrDefault
-    override def maskType: F[Int] = F.delay(sys.maskType).safeValOrDefault
-    override def maskLoc: F[Int] = F.delay(sys.inBeam).safeValOrDefault
-    override def filter1: F[String] = F.delay(sys.filter1).safeValOrDefault
-    override def filter2: F[String] = F.delay(sys.filter2).safeValOrDefault
-    override def filter1Id: F[Int] = F.delay(sys.filter1Id).safeValOrDefault
-    override def filter2Id: F[Int] = F.delay(sys.filter2Id).safeValOrDefault
-    override def grating: F[String] = F.delay(sys.disperser).safeValOrDefault
-    override def gratingId: F[Int] = F.delay(sys.disperserId).safeValOrDefault
-    override def gratingWavelength: F[Double] = F.delay(sys.gratingWavel).safeValOrDefault
-    override def gratingAdjustedWavelength: F[Double] =F.delay(sys.disperserWavel).safeValOrDefault
-    override def gratingOrder: F[Int] = F.delay(sys.disperserOrder).safeValOrDefault
-    override def gratingTilt: F[Double] = F.delay(sys.gratingTilt).safeValOrDefault
+    override def ccName: F[String] = sys.ccName
+    override def maskId: F[Int] = sys.maskId
+    override def maskName: F[String] = sys.fpu
+    override def maskType: F[Int] = sys.maskType
+    override def maskLoc: F[Int] = sys.inBeam
+    override def filter1: F[String] = sys.filter1
+    override def filter2: F[String] = sys.filter2
+    override def filter1Id: F[Int] = sys.filter1Id
+    override def filter2Id: F[Int] = sys.filter2Id
+    override def grating: F[String] = sys.disperser
+    override def gratingId: F[Int] = sys.disperserId
+    override def gratingWavelength: F[Double] = sys.gratingWavel
+    override def gratingAdjustedWavelength: F[Double] = sys.disperserWavel
+    override def gratingOrder: F[Int] = sys.disperserOrder
+    override def gratingTilt: F[Double] = sys.gratingTilt
     override def gratingStep: F[Double] =
       // Set the value to the epics channel if inBeam is    1
-      F.delay(sys.reqGratingMotorSteps.filter(_ => sys.disperserInBeam === Some(1))).safeValOrDefault
-    override def dtaX: F[Double] = F.delay(sys.dtaX).safeValOrDefault
-    override def dtaY: F[Double] = F.delay(sys.dtaY).safeValOrDefault
-    override def dtaZ: F[Double] = F.delay(sys.dtaZ).safeValOrDefault
-    override def dtaZst: F[Double] = F.delay(sys.dtaZStart).safeValOrDefault
-    override def dtaZen: F[Double] = F.delay(sys.dtaZEnd).safeValOrDefault
-    override def dtaZme: F[Double] = F.delay(sys.dtaZMean).safeValOrDefault
-    override def stageMode: F[String] = F.delay(sys.stageMode).safeValOrDefault
-    override def adcMode: F[String] = F.delay(sys.adcMode).safeValOrDefault
-    override def dcName: F[String] = F.delay(sys.dcName).safeValOrDefault
-    override def detectorType: F[String] = F.delay(sys.detectorType).safeValOrDefault
-    override def detectorId: F[String] = F.delay(sys.detectorId).safeValOrDefault
+      sys.disperserInBeam.map(_ === 1).ifM(sys.reqGratingMotorSteps, doubleDefault[F])
+    override def dtaX: F[Double] = sys.dtaX
+    override def dtaY: F[Double] = sys.dtaY
+    override def dtaZ: F[Double] = sys.dtaZ
+    override def dtaZst: F[Double] = sys.dtaZStart
+    override def dtaZen: F[Double] = sys.dtaZEnd
+    override def dtaZme: F[Double] = sys.dtaZMean
+    override def stageMode: F[String] = sys.stageMode
+    override def adcMode: F[String] = sys.adcMode
+    override def dcName: F[String] = sys.dcName
+    override def detectorType: F[String] = sys.detectorType
+    override def detectorId: F[String] = sys.detectorId
     // TODO Exposure changes with N&S
-    override def exposureTime: F[Double]   = F.delay(sys.reqExposureTime.map(_.toDouble)).safeValOrDefault
-    override def adcUsed: F[Int]           = F.delay(sys.adcUsed).safeValOrDefault
-    override def adcPrismEntSt: F[Double]  = F.delay(sys.adcPrismEntryAngleStart).safeValOrDefault
-    override def adcPrismEntEnd: F[Double] = F.delay(sys.adcPrismEntryAngleEnd).safeValOrDefault
-    override def adcPrismEntMe: F[Double]  = F.delay(sys.adcPrismEntryAngleMean).safeValOrDefault
-    override def adcPrismExtSt: F[Double]  = F.delay(sys.adcPrismExitAngleStart).safeValOrDefault
-    override def adcPrismExtEnd: F[Double] = F.delay(sys.adcPrismEntryAngleEnd).safeValOrDefault
-    override def adcPrismExtMe: F[Double]  = F.delay(sys.adcPrismExitAngleEnd).safeValOrDefault
-    override def adcWavelength1: F[Double] = F.delay(sys.adcExitLowerWavel).safeValOrDefault
-    override def adcWavelength2: F[Double] = F.delay(sys.adcExitUpperWavel).safeValOrDefault
+    override def exposureTime: F[Double]   = sys.reqExposureTime.map(_.toDouble)
+    override def adcUsed: F[Int]           = sys.adcUsed
+    override def adcPrismEntSt: F[Double]  = sys.adcPrismEntryAngleStart
+    override def adcPrismEntEnd: F[Double] = sys.adcPrismEntryAngleEnd
+    override def adcPrismEntMe: F[Double]  = sys.adcPrismEntryAngleMean
+    override def adcPrismExtSt: F[Double]  = sys.adcPrismExitAngleStart
+    override def adcPrismExtEnd: F[Double] = sys.adcPrismEntryAngleEnd
+    override def adcPrismExtMe: F[Double]  = sys.adcPrismExitAngleEnd
+    override def adcWavelength1: F[Double] = sys.adcExitLowerWavel
+    override def adcWavelength2: F[Double] = sys.adcExitUpperWavel
     // The TCL code does some verifications to ensure the value is not negative
-    override def detNRoi: F[Int] = F.delay(sys.roiNumUsed.filter(_ > 0).orEmpty).safeValOrDefault
+    override def detNRoi: F[Int] =
+      sys.roiNumUsed.map(_ > 0).ifM(sys.roiNumUsed, intDefault[F])
 
-    private def roi(r: RoiStatus): F[RoiValues] =
-      (F.delay(r.ccdXstart).safeValOrDefault,
-        F.delay(r.ccdXsize).safeValOrDefault,
-        F.delay(r.ccdYstart).safeValOrDefault,
-        F.delay(r.ccdYsize).safeValOrDefault).mapN(RoiValues.apply)
+    private def roi(r: RoiStatus[F]): F[RoiValues] =
+      (r.ccdXstart, r.ccdXsize, r.ccdYstart, r.ccdYsize).mapN(RoiValues.apply)
 
-    private def readRois(count: Int, rois: Map[Int, RoiStatus]): F[List[(Int, RoiValues)]] =
+    private def readRois(count: Int, rois: Map[Int, RoiStatus[F]]): F[List[(Int, RoiValues)]] =
       (for {
         i <- (1 to count).toList
       } yield rois.get(i).traverse(roi).map(i -> _))
@@ -195,15 +190,15 @@ object GmosKeywordReaderEpics {
         }
 
     override def roiValues: F[List[(Int, RoiValues)]] =
-      (F.delay(sys.roiNumUsed.orEmpty), F.delay(sys.rois))
+      (sys.roiNumUsed, sys.rois)
         .mapN(readRois(_, _))
         .flatten
-        .handleError(_ => Nil)
+        .handleError(_ => List.empty[(Int, RoiValues)])
 
-    override def aExpCount: F[Int] = F.delay(sys.aExpCount).safeValOrDefault
-    override def bExpCount: F[Int] = F.delay(sys.aExpCount).safeValOrDefault
+    override def aExpCount: F[Int] = sys.aExpCount
+    override def bExpCount: F[Int] = sys.aExpCount
     override def isADCInUse: F[Boolean] =
-      F.delay(sys.adcUsed.forall(_ === 1))
+      sys.adcUsed.map(_ === 1)
         .handleError(_ => false)
   }
 }
