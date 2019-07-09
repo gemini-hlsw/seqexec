@@ -420,13 +420,37 @@ object EpicsUtil {
   def smartSetParam[A: Eq](v: A, get: => Option[A], set: SeqAction[Unit]): List[SeqAction[Unit]] =
     if(get =!= v.some) List(set) else Nil
 
+  /**
+   * Decides to set a param comparing the current value and the value to be set
+   * @param c Current value on the system
+   * @param d Value to be set
+   * @param f Action to set the parameter
+   */
   def applyParam[F[_]: Applicative, A: Eq](c: A, d: A, f: A => F[Unit]): Option[F[Unit]] =
     if (c =!= d) f(d).some else none
 
+  /**
+   * Test if we should set a value d given that the current value c and
+   * a given tolerance
+   * @param t Max relative tolerance allowed between the current and destination value
+   * @param c Current value on the system
+   * @param d Value to be set
+   */
+  private def toleranceTest(t: Double, c: Double, d: Double): Boolean =
+    (!(d === 0.0 && c === 0.0) && (d === 0.0 || abs((c - d)/d) > t))
+
+  /**
+   * Decides to set a param comparing the current value and the value to be set with
+   * a given tolerance
+   * @param relTolerance Max relative tolerance allowed between the current and destination value
+   * @param c Current value on the system
+   * @param d Value to be set
+   * @param f Action to set the parameter
+   */
   def applyParamT[F[_]: Functor](
     relTolerance: Double
   )(c: Double, d: Double, set: Double => F[Unit]): Option[F[Unit]] =
-    if (!(d === 0.0 && c === 0.0) || (d === 0.0 || abs((c - d)/d) > relTolerance)) {
+    if (toleranceTest(relTolerance, c, d)) {
       set(d).some
     } else {
       none
@@ -463,7 +487,7 @@ object EpicsUtil {
     }
 
   def smartSetDoubleParamF[F[_]: Functor](relTolerance: Double)(v: Double, get: F[Option[Double]], set: F[Unit]): F[Option[F[Unit]]] =
-    get.map(g => (g.forall(x => (v === 0.0 && x =!= 0.0) || abs((x - v)/v) > relTolerance)).option(set))
+    get.map(g => (g.forall(toleranceTest(relTolerance, _, v))).option(set))
 
   def countdown[F[_]: Apply: cats.effect.Timer](total: Time, remT: F[Option[Time]],
                               obsState: F[Option[CarStateGeneric]]): Stream[F, Progress] =
