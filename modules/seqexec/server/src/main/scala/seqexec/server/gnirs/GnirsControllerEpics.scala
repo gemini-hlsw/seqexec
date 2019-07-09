@@ -298,9 +298,9 @@ object GnirsControllerEpics extends GnirsEncoders {
         IO(Log.info("Start GNIRS observe")) *>
           checkDhs *>
           checkArray *>
-          epicsSys.observeCmd.setLabel(fileId).widenRethrowT *>
-          epicsSys.observeCmd.setTimeout(expTime + ReadoutTimeout).widenRethrowT *>
-          epicsSys.observeCmd.post.widenRethrowT
+          epicsSys.observeCmd.setLabel(fileId) *>
+          epicsSys.observeCmd.setTimeout[IO](expTime + ReadoutTimeout) *>
+          epicsSys.observeCmd.post[IO]
 
       override def endObserve: IO[Unit] =
         IO(Log.debug("Send endObserve to GNIRS")) *>

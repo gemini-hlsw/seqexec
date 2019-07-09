@@ -35,7 +35,7 @@ import seqexec.server.ghost.{Ghost, GhostHeader}
 import seqexec.server.gsaoi._
 import seqexec.server.gcal._
 import seqexec.server.gmos.{GmosHeader, GmosEpics, GmosObsKeywordsReader, GmosKeywordReaderDummy, GmosKeywordReaderEpics, GmosNorth, GmosSouth}
-import seqexec.server.gws.{DummyGwsKeywordsReader, GwsHeader, GwsKeywordsReaderEpics}
+import seqexec.server.gws.{DummyGwsKeywordsReader, GwsEpics, GwsHeader, GwsKeywordsReaderEpics}
 import seqexec.server.tcs._
 import seqexec.server.tcs.TcsController.LightPath
 import seqexec.server.gnirs._
@@ -43,6 +43,7 @@ import seqexec.server.niri._
 import seqexec.server.nifs._
 import seqexec.server.altair.Altair
 import seqexec.server.altair.AltairHeader
+import seqexec.server.altair.AltairEpics
 import seqexec.server.altair.AltairLgsHeader
 import seqexec.server.altair.AltairKeywordReaderEpics
 import seqexec.server.altair.AltairKeywordReaderDummy
@@ -477,7 +478,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
     config: Config,
     sys: InstrumentSystem[IO]
   ): TrySeq[Header[IO]] = {
-    val tcsKReader = if (settings.tcsKeywords) TcsKeywordsReaderEpics[IO] else DummyTcsKeywordsReader[IO]
+    val tcsKReader = if (settings.tcsKeywords) TcsKeywordsReaderEpics[IO](TcsEpics.instance) else DummyTcsKeywordsReader[IO]
     sys.resource match {
       case Instrument.F2     =>
         Flamingos2Header.header[IO](sys, Flamingos2Header.ObsKeywordsReaderODB(config), tcsKReader).asRight
@@ -486,18 +487,18 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
         val gmosInstReader = if (settings.gmosKeywords) GmosKeywordReaderEpics[IO](GmosEpics.instance) else GmosKeywordReaderDummy[IO]
         GmosHeader.header[IO](sys, GmosObsKeywordsReader(config), gmosInstReader, tcsKReader).asRight
       case Instrument.Gnirs  =>
-        val gnirsReader = if(settings.gnirsKeywords) GnirsKeywordReaderEpics[IO] else GnirsKeywordReaderDummy[IO]
+        val gnirsReader = if(settings.gnirsKeywords) GnirsKeywordReaderEpics[IO](GnirsEpics.instance) else GnirsKeywordReaderDummy[IO]
         GnirsHeader.header[IO](sys, gnirsReader, tcsKReader).asRight
       case Instrument.Gpi    =>
         GpiHeader.header[IO](systems.gpi.gdsClient, tcsKReader, ObsKeywordReader[IO](config, site)).asRight
       case Instrument.Ghost  =>
         GhostHeader.header[IO].asRight
       case Instrument.Niri   =>
-        val niriReader = if(settings.niriKeywords) NiriKeywordReaderEpics[IO]
+        val niriReader = if(settings.niriKeywords) NiriKeywordReaderEpics[IO](NiriEpics.instance)
                           else NiriKeywordReaderDummy[IO]
         NiriHeader.header[IO](sys, niriReader, tcsKReader).asRight
       case Instrument.Nifs   =>
-        val nifsReader = if(settings.nifsKeywords) NifsKeywordReaderEpics[IO] else NifsKeywordReaderDummy[IO]
+        val nifsReader = if(settings.nifsKeywords) NifsKeywordReaderEpics[IO](NifsEpics.instance) else NifsKeywordReaderDummy[IO]
         NifsHeader.header[IO](sys, nifsReader, tcsKReader).asRight
       case Instrument.Gsaoi   =>
         val gsaoiReader = if (settings.gsaoiKeywords) GsaoiKeywordReaderEpics[IO](GsaoiEpics.instance) else GsaoiKeywordReaderDummy[IO]
@@ -507,32 +508,32 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
     }
   }
 
-  private def commonHeaders[F[_]: Sync: LiftIO](config: Config, tcsSubsystems: List[TcsController.Subsystem],
+  private def commonHeaders[F[_]: Sync](epics: TcsEpics[F], config: Config, tcsSubsystems: List[TcsController.Subsystem],
                             inst: InstrumentSystem[F])(ctx: HeaderExtraData): Header[F] =
     new StandardHeader(
       inst,
       ObsKeywordReader[F](config, site),
-      if (settings.tcsKeywords) TcsKeywordsReaderEpics[F] else DummyTcsKeywordsReader[F],
+      if (settings.tcsKeywords) TcsKeywordsReaderEpics[F](epics) else DummyTcsKeywordsReader[F],
       StateKeywordsReader[F](ctx.conditions, ctx.operator, ctx.observer),
       tcsSubsystems
     )
 
-  private def gwsHeaders[F[_]: Sync: LiftIO](i: InstrumentSystem[F]): Header[F] = GwsHeader.header(i,
-    if (settings.gwsKeywords) GwsKeywordsReaderEpics[F] else DummyGwsKeywordsReader[F])
+  private def gwsHeaders[F[_]: Sync](epics: GwsEpics[F], i: InstrumentSystem[F]): Header[F] = GwsHeader.header(i,
+    if (settings.gwsKeywords) GwsKeywordsReaderEpics[F](epics) else DummyGwsKeywordsReader[F])
 
-  private def gcalHeader[F[_]: Sync: LiftIO](i: InstrumentSystem[F]): Header[F] = GcalHeader.header(i,
-    if (settings.gcalKeywords) GcalKeywordsReaderEpics[F] else DummyGcalKeywordsReader[F] )
+  private def gcalHeader[F[_]: Sync](epics: GcalEpics[F], i: InstrumentSystem[F]): Header[F] = GcalHeader.header(i,
+    if (settings.gcalKeywords) GcalKeywordsReaderEpics[F](epics) else DummyGcalKeywordsReader[F] )
 
-  private def altairHeader[F[_]: Sync: LiftIO](instrument: InstrumentSystem[F], tcsKReader: TcsKeywordsReader[F]): Header[F] =
+  private def altairHeader[F[_]: Sync: LiftIO](epics: AltairEpics[F], instrument: InstrumentSystem[F], tcsKReader: TcsKeywordsReader[F]): Header[F] =
     AltairHeader.header[F](
       instrument,
-      if (settings.altairKeywords) AltairKeywordReaderEpics[F] else AltairKeywordReaderDummy[F],
+      if (settings.altairKeywords) AltairKeywordReaderEpics[F](epics) else AltairKeywordReaderDummy[F],
       tcsKReader)
 
-  private def altairLgsHeader[F[_]: Sync: LiftIO](guideStar: GuideStarType, instrument: InstrumentSystem[F]): Header[F] =
+  private def altairLgsHeader[F[_]: Sync](epics: AltairEpics[F], guideStar: GuideStarType, instrument: InstrumentSystem[F]): Header[F] =
     if (guideStar === GuideStarType.LGS) {
       AltairLgsHeader.header(instrument,
-        if (settings.altairKeywords) AltairKeywordReaderEpics[F] else AltairKeywordReaderDummy[F])
+        if (settings.altairKeywords) AltairKeywordReaderEpics[F](epics) else AltairKeywordReaderDummy[F])
     } else {
       dummyHeader[F]
     }
@@ -544,27 +545,27 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
   ): TrySeq[Reader[HeaderExtraData, List[Header[IO]]]] = stepType match {
     case CelestialObject(_) =>
         calcInstHeader(config, sys).map(h => Reader(ctx =>
-          List(commonHeaders(config, allButGaos.toList, sys)(ctx), gwsHeaders(sys), h)))
+          List(commonHeaders(TcsEpics.instance, config, allButGaos.toList, sys)(ctx), gwsHeaders(GwsEpics.instance, sys), h)))
 
     case AltairObs(_) =>
-      val tcsKReader = if (settings.tcsKeywords) TcsKeywordsReaderEpics[IO] else DummyTcsKeywordsReader[IO]
+      val tcsKReader = if (settings.tcsKeywords) TcsKeywordsReaderEpics[IO](TcsEpics.instance) else DummyTcsKeywordsReader[IO]
       for {
         gst  <- Altair.guideStarType(config)
         read <- calcInstHeader(config, sys).map(h => Reader((ctx: HeaderExtraData) =>
                   // Order is important
                   List(
-                    commonHeaders(config, allButGaos.toList, sys)(ctx),
-                    altairHeader(sys, tcsKReader),
-                    altairLgsHeader(gst, sys),
-                    gwsHeaders(sys), h)))
+                    commonHeaders(TcsEpics.instance, config, allButGaos.toList, sys)(ctx),
+                    altairHeader(AltairEpics.instance, sys, tcsKReader),
+                    altairLgsHeader(AltairEpics.instance, gst, sys),
+                    gwsHeaders(GwsEpics.instance, sys), h)))
       } yield read
 
     case FlatOrArc(inst)       =>
         calcInstHeader(config, sys).map(h => Reader(ctx =>
-          List(commonHeaders(config, flatOrArcTcsSubsystems(inst).toList, sys)(ctx), gcalHeader(sys), gwsHeaders(sys), h)))
+          List(commonHeaders(TcsEpics.instance, config, flatOrArcTcsSubsystems(inst).toList, sys)(ctx), gcalHeader(GcalEpics.instance, sys), gwsHeaders(GwsEpics.instance, sys), h)))
 
     case DarkOrBias(_)      =>
-        calcInstHeader(config, sys).map(h => Reader(ctx => List(commonHeaders(config, Nil, sys)(ctx), gwsHeaders(sys), h)))
+        calcInstHeader(config, sys).map(h => Reader(ctx => List(commonHeaders(TcsEpics.instance, config, Nil, sys)(ctx), gwsHeaders(GwsEpics.instance, sys), h)))
     case AlignAndCalib         => TrySeq(Reader(_ => Nil)) // No headers for A&C
     case st                    => TrySeq.fail(Unexpected(s"Unsupported step type $st"))
   }

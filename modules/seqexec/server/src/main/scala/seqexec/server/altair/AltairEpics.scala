@@ -9,8 +9,8 @@ import mouse.boolean._
 import edu.gemini.epics.acm._
 import edu.gemini.seqexec.server.altair.LgsSfoControl
 import org.log4s.{Logger, getLogger}
-import seqexec.server.{EpicsCommandF, EpicsSystem, EpicsUtil}
-import seqexec.server.EpicsCommand.setParameterF
+import seqexec.server.{EpicsCommand, EpicsSystem, EpicsUtil}
+import seqexec.server.EpicsCommand.setParameter
 import cats.implicits._
 import seqexec.server.EpicsUtil._
 import squants.Time
@@ -18,40 +18,40 @@ import squants.Time
 class AltairEpics[F[_]: Async](service: CaService, tops: Map[String, String]) {
   val AltairTop: String = tops.getOrElse("ao", "ao:")
 
-  object strapGateControl extends EpicsCommandF {
+  object strapGateControl extends EpicsCommand {
     override protected val cs: Option[CaCommandSender] = Option(service.createTaskControlSender("aoStrap",
       s"${AltairTop}wfcs:strapGtCtl", "ALTAIR STRAP"))
 
     val gate: Option[CaParameter[Integer]] = cs.map(_.addInteger("gate", s"${AltairTop}wfcs:strapGtCtl.A",
       "Gate control", false))
-    def setGate(v: Int): F[Unit] = setParameterF(gate, Integer.valueOf(v))
+    def setGate(v: Int): F[Unit] = setParameter(gate, Integer.valueOf(v))
   }
 
-  object strapControl extends EpicsCommandF {
+  object strapControl extends EpicsCommand {
     override protected val cs: Option[CaCommandSender] = Option(service.createTaskControlSender("strapCorrCtl",
       s"${AltairTop}wfcs:strapCorrCtl", "ALTAIR SFO"))
 
     val active: Option[CaParameter[Integer]] = cs.map(_.addInteger("onoff", s"${AltairTop}wfcs:strapCorrCtl.A",
       "Strap onoff loop control", false))
-    def setActive(v: Int): F[Unit] = setParameterF(active, Integer.valueOf(v))
+    def setActive(v: Int): F[Unit] = setParameter(active, Integer.valueOf(v))
   }
 
   // sfoControl is a bit weird, in that changing the 'active' parameter takes effect immediately.
-  object sfoControl extends EpicsCommandF {
+  object sfoControl extends EpicsCommand {
     override protected val cs: Option[CaCommandSender] =
       Option(service.getCommandSender("aoSfoLoop"))
 
     val active: Option[CaParameter[LgsSfoControl]] = cs.map(_.addEnum[LgsSfoControl]("active",
       s"${AltairTop}cc:lgszoomSfoLoop.VAL", classOf[LgsSfoControl], false))
-    def setActive(v: LgsSfoControl): F[Unit] = setParameterF(active, v)
+    def setActive(v: LgsSfoControl): F[Unit] = setParameter(active, v)
   }
 
-  object btoLoopControl extends EpicsCommandF {
+  object btoLoopControl extends EpicsCommand {
     override protected val cs: Option[CaCommandSender] =
       Option(service.getCommandSender("btoFsaLoopCtrl"))
 
     val active: Option[CaParameter[String]] = cs.map(_.getString("loop"))
-    def setActive(v: String): F[Unit] = setParameterF(active, v)
+    def setActive(v: String): F[Unit] = setParameter(active, v)
   }
 
   val status: CaStatusAcceptor = service.getStatusAcceptor("aostate")

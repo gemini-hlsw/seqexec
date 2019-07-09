@@ -5,7 +5,6 @@ package seqexec.server.flamingos2
 
 import cats.Applicative
 import cats.data.EitherT
-import cats.effect.LiftIO
 import cats.effect.Sync
 import cats.implicits._
 import gem.Observation
@@ -111,12 +110,11 @@ object Flamingos2Header {
   }
 
   object InstKeywordReaderEpics {
-    def apply[F[_]: Sync: LiftIO]: InstKeywordsReader[F] =
+    def apply[F[_]: Sync](sys: Flamingos2Epics[F]): InstKeywordsReader[F] =
       new InstKeywordsReader[F] {
-        private val sys                   = Flamingos2Epics.instance
-        override def getHealth: F[String] = sys.health.safeValOrDefault.to[F]
+        override def getHealth: F[String] = sys.health
 
-        override def getState: F[String] = sys.state.safeValOrDefault.to[F]
+        override def getState: F[String] = sys.state
       }
   }
 

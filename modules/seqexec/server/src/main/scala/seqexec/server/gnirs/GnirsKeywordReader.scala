@@ -5,7 +5,6 @@ package seqexec.server.gnirs
 
 import cats.Applicative
 import cats.effect.Sync
-import cats.effect.LiftIO
 import seqexec.server.keywords._
 
 trait GnirsKeywordReader[F[_]] {
@@ -67,34 +66,31 @@ object GnirsKeywordReaderDummy {
 }
 
 object GnirsKeywordReaderEpics {
-  def apply[F[_]: Sync: LiftIO]: GnirsKeywordReader[F] = new GnirsKeywordReader[F] {
-    private val sys = GnirsEpics.instance
-
-    // TODO make GnirsEpics referentially transparent
-    override def arrayId: F[String] = sys.arrayId.safeValOrDefault.to[F]
-    override def arrayType: F[String] = sys.arrayType.safeValOrDefault.to[F]
-    override def detectorBias: F[Double] = sys.detBias.safeValOrDefault.to[F]
-    override def filter1: F[String] = sys.filter1.safeValOrDefault.to[F]
-    override def filterWheel1Pos: F[Int] = sys.filter1Eng.safeValOrDefault.to[F]
-    override def filter2: F[String] = sys.filter2.safeValOrDefault.to[F]
-    override def filterWheel2Pos: F[Int] = sys.filter2Eng.safeValOrDefault.to[F]
-    override def camera: F[String] = sys.camera.safeValOrDefault.to[F]
-    override def cameraPos: F[Int] = sys.cameraEng.safeValOrDefault.to[F]
-    override def decker: F[String] = sys.decker.safeValOrDefault.to[F]
-    override def deckerPos: F[Int] = sys.deckerEng.safeValOrDefault.to[F]
-    override def slit: F[String] = sys.slitWidth.safeValOrDefault.to[F]
-    override def slitPos: F[Int] = sys.slitEng.safeValOrDefault.to[F]
-    override def prism: F[String] = sys.prism.safeValOrDefault.to[F]
-    override def prismPos: F[Int] = sys.prismEng.safeValOrDefault.to[F]
-    override def grating: F[String] = sys.grating.safeValOrDefault.to[F]
-    override def gratingPos: F[Int] = sys.gratingEng.safeValOrDefault.to[F]
-    override def gratingWavelength: F[Double] = sys.centralWavelength.safeValOrDefault.to[F]
-    override def gratingOrder: F[Int] = sys.gratingOrder.safeValOrDefault.to[F]
-    override def gratingTilt: F[Double] = sys.gratingTilt.safeValOrDefault.to[F]
-    override def focus: F[String] = sys.focus.safeValOrDefault.to[F]
-    override def focusPos: F[Int] = sys.focusEng.safeValOrDefault.to[F]
-    override def acquisitionMirror: F[String] = sys.acqMirror.safeValOrDefault.to[F]
-    override def windowCover: F[String] = sys.cover.safeValOrDefault.to[F]
-    override def obsEpoch: F[Double] = sys.obsEpoch.safeValOrDefault.to[F]
+  def apply[F[_]: Sync](sys: GnirsEpics[F]): GnirsKeywordReader[F] = new GnirsKeywordReader[F] {
+    override def arrayId: F[String] = sys.arrayId.safeValOrDefault
+    override def arrayType: F[String] = sys.arrayType.safeValOrDefault
+    override def detectorBias: F[Double] = sys.detBias.safeValOrDefault
+    override def filter1: F[String] = sys.filter1.safeValOrDefault
+    override def filterWheel1Pos: F[Int] = sys.filter1Eng.safeValOrDefault
+    override def filter2: F[String] = sys.filter2.safeValOrDefault
+    override def filterWheel2Pos: F[Int] = sys.filter2Eng.safeValOrDefault
+    override def camera: F[String] = sys.camera.safeValOrDefault
+    override def cameraPos: F[Int] = sys.cameraEng.safeValOrDefault
+    override def decker: F[String] = sys.decker.safeValOrDefault
+    override def deckerPos: F[Int] = sys.deckerEng.safeValOrDefault
+    override def slit: F[String] = sys.slitWidth.safeValOrDefault
+    override def slitPos: F[Int] = sys.slitEng.safeValOrDefault
+    override def prism: F[String] = sys.prism.safeValOrDefault
+    override def prismPos: F[Int] = sys.prismEng.safeValOrDefault
+    override def grating: F[String] = sys.grating.safeValOrDefault
+    override def gratingPos: F[Int] = sys.gratingEng.safeValOrDefault
+    override def gratingWavelength: F[Double] = sys.centralWavelength.safeValOrDefault
+    override def gratingOrder: F[Int] = sys.gratingOrder.safeValOrDefault
+    override def gratingTilt: F[Double] = sys.gratingTilt.safeValOrDefault
+    override def focus: F[String] = sys.focus.safeValOrDefault
+    override def focusPos: F[Int] = sys.focusEng.safeValOrDefault
+    override def acquisitionMirror: F[String] = sys.acqMirror.safeValOrDefault
+    override def windowCover: F[String] = sys.cover.safeValOrDefault
+    override def obsEpoch: F[Double] = sys.obsEpoch.safeValOrDefault
   }
 }

@@ -7,7 +7,6 @@ import cats.Applicative
 import cats.Eq
 import cats.data.Nested
 import cats.effect.Sync
-import cats.effect.LiftIO
 import cats.implicits._
 import edu.gemini.seqexec.server.gcal.BinaryOnOff
 import seqexec.server.keywords._
@@ -34,13 +33,12 @@ object DummyGcalKeywordsReader {
 
 object GcalKeywordsReaderEpics {
 
-  def apply[F[_]: Sync: LiftIO]: GcalKeywordReader[F] = new GcalKeywordReader[F] {
-    val sys = GcalEpics.instance
+  def apply[F[_]: Sync](sys: GcalEpics[F]): GcalKeywordReader[F] = new GcalKeywordReader[F] {
     implicit val eq: Eq[BinaryOnOff] = Eq.by(_.ordinal())
 
-    def diffuser: F[String] = sys.diffuser.safeValOrDefault.to[F]
+    def diffuser: F[String] = sys.diffuser.safeValOrDefault
 
-    def filter: F[String] = sys.filter.safeValOrDefault.to[F]
+    def filter: F[String] = sys.filter.safeValOrDefault
 
     def lamp: F[String] = {
       val noValue = none[String].pure[F]
@@ -62,6 +60,6 @@ object GcalKeywordsReaderEpics {
       case "OPEN"  => "OPEN"
       case "CLOSE" => "CLOSED"
       case _       => "INDEF"
-    }.value.safeValOrDefault.to[F]
+    }.value.safeValOrDefault
   }
 }

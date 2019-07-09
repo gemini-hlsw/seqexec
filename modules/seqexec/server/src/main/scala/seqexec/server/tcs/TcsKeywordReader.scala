@@ -4,7 +4,6 @@
 package seqexec.server.tcs
 
 import cats._
-import cats.effect.LiftIO
 import cats.effect.Sync
 import cats.data.OptionT
 import cats.data.Nested
@@ -328,67 +327,65 @@ object DummyTcsKeywordsReader {
 }
 
 object TcsKeywordsReaderEpics extends TcsKeywordDefaults {
-  def apply[F[_]: Sync: LiftIO]: TcsKeywordsReader[F] = new TcsKeywordsReader[F] {
-    override def hourAngle: F[String] = TcsEpics.instance.hourAngle.safeValOrDefault.to[F]
+  def apply[F[_]: Sync](sys: TcsEpics[F]): TcsKeywordsReader[F] = new TcsKeywordsReader[F] {
+    override def hourAngle: F[String] = sys.hourAngle.safeValOrDefault
 
-    override def localTime: F[String] = TcsEpics.instance.localTime.safeValOrDefault.to[F]
+    override def localTime: F[String] = sys.localTime.safeValOrDefault
 
-    override def trackingFrame: F[String] = TcsEpics.instance.trackingFrame.safeValOrDefault.to[F]
+    override def trackingFrame: F[String] = sys.trackingFrame.safeValOrDefault
 
-    override def trackingEpoch: F[Double] = TcsEpics.instance.trackingEpoch.safeValOrDefault.to[F]
+    override def trackingEpoch: F[Double] = sys.trackingEpoch.safeValOrDefault
 
     private def translateEpoch(v: Option[String]): Option[Double] =
       v.filter(_.nonEmpty).flatMap(_.drop(1).parseDoubleOption)
 
-    override def trackingEquinox: F[Double] = TcsEpics.instance.trackingEquinox.map(translateEpoch).safeValOrDefault.to[F]
+    override def trackingEquinox: F[Double] = sys.trackingEquinox.map(translateEpoch).safeValOrDefault
 
-    override def trackingDec: F[Double] = TcsEpics.instance.trackingDec.safeValOrDefault.to[F]
+    override def trackingDec: F[Double] = sys.trackingDec.safeValOrDefault
 
-    override def trackingRA: F[Double] = TcsEpics.instance.trackingRA.safeValOrDefault.to[F]
+    override def trackingRA: F[Double] = sys.trackingRA.safeValOrDefault
 
-    override def elevation: F[Double] = TcsEpics.instance.elevation.safeValOrDefault.to[F]
+    override def elevation: F[Double] = sys.elevation.safeValOrDefault
 
-    override def azimuth: F[Double] = TcsEpics.instance.azimuth.safeValOrDefault.to[F]
+    override def azimuth: F[Double] = sys.azimuth.safeValOrDefault
 
-    override def crPositionAngle: F[Double] = TcsEpics.instance.crPositionAngle.safeValOrDefault.to[F]
+    override def crPositionAngle: F[Double] = sys.crPositionAngle.safeValOrDefault
 
-    override def ut: F[String] = TcsEpics.instance.ut.safeValOrDefault.to[F]
+    override def ut: F[String] = sys.ut.safeValOrDefault
 
-    override def date: F[String] = TcsEpics.instance.date.safeValOrDefault.to[F]
+    override def date: F[String] = sys.date.safeValOrDefault
 
-    override def m2Baffle: F[String] = TcsEpics.instance.m2Baffle.safeValOrDefault.to[F]
+    override def m2Baffle: F[String] = sys.m2Baffle.safeValOrDefault
 
-    override def m2CentralBaffle: F[String] = TcsEpics.instance.m2CentralBaffle.safeValOrDefault.to[F]
+    override def m2CentralBaffle: F[String] = sys.m2CentralBaffle.safeValOrDefault
 
-    override def st: F[String] = TcsEpics.instance.st.safeValOrDefault.to[F]
+    override def st: F[String] = sys.st.safeValOrDefault
 
-    override def sfRotation: F[Double] = TcsEpics.instance.sfRotation.safeValOrDefault.to[F]
+    override def sfRotation: F[Double] = sys.sfRotation.safeValOrDefault
 
-    override def sfTilt: F[Double] = TcsEpics.instance.sfTilt.safeValOrDefault.to[F]
+    override def sfTilt: F[Double] = sys.sfTilt.safeValOrDefault
 
-    override def sfLinear: F[Double] = TcsEpics.instance.sfLinear.safeValOrDefault.to[F]
+    override def sfLinear: F[Double] = sys.sfLinear.safeValOrDefault
 
-    override def instrumentPA: F[Double] = TcsEpics.instance.instrPA.safeValOrDefault.to[F]
+    override def instrumentPA: F[Double] = sys.instrPA.safeValOrDefault
 
-    override def gmosInstPort: F[Int] = TcsEpics.instance.gmosPort.safeValOrDefault.to[F]
+    override def gmosInstPort: F[Int] = sys.gmosPort.safeValOrDefault
 
     private val xoffIndex = 6
     private val yoffIndex = 7
 
     private def xOffsetOption: F[Option[Angle]] =
-      TcsEpics.instance.targetA
+      sys.targetA
         .map(_.flatMap(v => v.lift(xoffIndex).map(x => Millimeters(x) * FOCAL_PLANE_SCALE)))
         .handleError(_ => none)
-        .to[F]
 
     override def xOffset: F[Double] =
       Nested(xOffsetOption).map(_.toArcseconds).value.safeValOrDefault
 
     private def yOffsetOption: F[Option[Angle]] =
-      TcsEpics.instance.targetA
+      sys.targetA
         .map(_.flatMap(v => v.lift(yoffIndex).map(x => Millimeters(x) * FOCAL_PLANE_SCALE)))
         .handleError(_ => none)
-        .to[F]
 
     override def yOffset: F[Double] =
       Nested(yOffsetOption).map(_.toArcseconds).value.safeValOrDefault
@@ -408,20 +405,20 @@ object TcsKeywordsReaderEpics extends TcsKeywordDefaults {
     override def trackingRAOffset: F[Double] = {
       def raOffset(off: Angle, dec: Angle): Angle = normalizeSignedAngle(off) * dec.cos
 
-      TcsEpics.instance.targetA.map(_.flatMap(v =>
+      sys.targetA.map(_.flatMap(v =>
         Apply[Option].ap2(Option(raOffset _))(v.lift(raoffIndex).map(Radians(_)),v.lift(decoffIndex).map(Radians(_)))))
         .map(_.map(_.toArcseconds))
-        .safeValOrDefault.to[F]
+        .safeValOrDefault
     }
 
     override def trackingDecOffset: F[Double] =
-      TcsEpics.instance.targetA
+      sys.targetA
         .map(_.flatMap(v => v.lift(decoffIndex).map(Radians(_).toArcseconds)))
-        .safeValOrDefault.to[F]
+        .safeValOrDefault
 
-    override def instrumentAA: F[Double] = TcsEpics.instance.instrAA.safeValOrDefault.to[F]
+    override def instrumentAA: F[Double] = sys.instrAA.safeValOrDefault
 
-    override def aoFoldName: F[String] = TcsEpics.instance.aoFoldPosition.safeValOrDefault.to[F]
+    override def aoFoldName: F[String] = sys.aoFoldPosition.safeValOrDefault
 
     private def target(t: TcsEpics.Target[F]) = new TargetKeywordsReader[F] {
 
@@ -448,73 +445,72 @@ object TcsKeywordsReaderEpics extends TcsKeywordDefaults {
       override def properMotionRA: F[Double] = t.properMotionRA.safeValOrDefault
     }
 
-    override def sourceATarget: TargetKeywordsReader[F] = target(TcsEpics.instance.sourceATarget.to[F])
+    override def sourceATarget: TargetKeywordsReader[F] = target(sys.sourceATarget)
 
-    override def airMass: F[Double] =  TcsEpics.instance.airmass.safeValOrDefault.to[F]
+    override def airMass: F[Double] =  sys.airmass.safeValOrDefault
 
-    override def startAirMass: F[Double] = TcsEpics.instance.airmassStart.safeValOrDefault.to[F]
+    override def startAirMass: F[Double] = sys.airmassStart.safeValOrDefault
 
-    override def endAirMass: F[Double] = TcsEpics.instance.airmassEnd.safeValOrDefault.to[F]
+    override def endAirMass: F[Double] = sys.airmassEnd.safeValOrDefault
 
     override def parallacticAngle: F[Option[Angle]] =
-      Nested(TcsEpics.instance.parallacticAngle)
+      Nested(sys.parallacticAngle)
         .map(normalizeSignedAngle).value
         .handleError(_ => none)
-        .to[F]
 
-    override def pwfs1Target: TargetKeywordsReader[F] = target(TcsEpics.instance.pwfs1Target.to[F])
 
-    override def pwfs2Target: TargetKeywordsReader[F] = target(TcsEpics.instance.pwfs2Target.to[F])
+    override def pwfs1Target: TargetKeywordsReader[F] = target(sys.pwfs1Target)
 
-    override def oiwfsTarget: TargetKeywordsReader[F] = target(TcsEpics.instance.oiwfsTarget.to[F])
+    override def pwfs2Target: TargetKeywordsReader[F] = target(sys.pwfs2Target)
 
-    override def aowfsTarget: TargetKeywordsReader[F] = target(TcsEpics.instance.pwfs2Target.to[F])
+    override def oiwfsTarget: TargetKeywordsReader[F] = target(sys.oiwfsTarget)
 
-    override def gwfs1Target: TargetKeywordsReader[F] = target(TcsEpics.instance.gwfs1Target.to[F])
+    override def aowfsTarget: TargetKeywordsReader[F] = target(sys.pwfs2Target)
 
-    override def gwfs2Target: TargetKeywordsReader[F] = target(TcsEpics.instance.gwfs2Target.to[F])
+    override def gwfs1Target: TargetKeywordsReader[F] = target(sys.gwfs1Target)
 
-    override def gwfs3Target: TargetKeywordsReader[F] = target(TcsEpics.instance.gwfs3Target.to[F])
+    override def gwfs2Target: TargetKeywordsReader[F] = target(sys.gwfs2Target)
 
-    override def gwfs4Target: TargetKeywordsReader[F] = target(TcsEpics.instance.gwfs4Target.to[F])
+    override def gwfs3Target: TargetKeywordsReader[F] = target(sys.gwfs3Target)
 
-    override def m2UserFocusOffset: F[Double] = TcsEpics.instance.m2UserFocusOffset.safeValOrDefault.to[F]
+    override def gwfs4Target: TargetKeywordsReader[F] = target(sys.gwfs4Target)
+
+    override def m2UserFocusOffset: F[Double] = sys.m2UserFocusOffset.safeValOrDefault
 
     private def calcFrequency(t: Double): Double = if (t > 0.0) 1.0 / t else DefaultHeaderValue[Double].default
 
     override def pwfs1Freq: F[Double] =
-      Nested(TcsEpics.instance.pwfs1IntegrationTime).map(calcFrequency).value.safeValOrDefault.to[F]
+      Nested(sys.pwfs1IntegrationTime).map(calcFrequency).value.safeValOrDefault
 
     override def pwfs2Freq: F[Double] =
-      Nested(TcsEpics.instance.pwfs2IntegrationTime).map(calcFrequency).value.safeValOrDefault.to[F]
+      Nested(sys.pwfs2IntegrationTime).map(calcFrequency).value.safeValOrDefault
 
     override def oiwfsFreq: F[Double] =
-      Nested(TcsEpics.instance.oiwfsIntegrationTime).map(calcFrequency).value.safeValOrDefault.to[F]
+      Nested(sys.oiwfsIntegrationTime).map(calcFrequency).value.safeValOrDefault
 
-    override def carouselMode: F[String] = TcsEpics.instance.carouselMode.safeValOrDefault.to[F]
+    override def carouselMode: F[String] = sys.carouselMode.safeValOrDefault
 
-    override def gnirsInstPort: F[Int] = TcsEpics.instance.gnirsPort.safeValOrDefault.to[F]
+    override def gnirsInstPort: F[Int] = sys.gnirsPort.safeValOrDefault
 
-    override def gpiInstPort: F[Int] = TcsEpics.instance.gpiPort.safeValOrDefault.to[F]
+    override def gpiInstPort: F[Int] = sys.gpiPort.safeValOrDefault
 
-    override def niriInstPort: F[Int] = TcsEpics.instance.niriPort.safeValOrDefault.to[F]
+    override def niriInstPort: F[Int] = sys.niriPort.safeValOrDefault
 
-    override def nifsInstPort: F[Int] = TcsEpics.instance.nifsPort.safeValOrDefault.to[F]
+    override def nifsInstPort: F[Int] = sys.nifsPort.safeValOrDefault
 
-    override def gsaoiInstPort: F[Int] = TcsEpics.instance.gsaoiPort.safeValOrDefault.to[F]
+    override def gsaoiInstPort: F[Int] = sys.gsaoiPort.safeValOrDefault
 
-    override def f2InstPort: F[Int] = TcsEpics.instance.f2Port.safeValOrDefault.to[F]
+    override def f2InstPort: F[Int] = sys.f2Port.safeValOrDefault
 
     override def crFollow: F[Option[CRFollow]] =
-      TcsEpics.instance.crFollow.map(_.flatMap(CRFollow.fromInt.getOption))
+      sys.crFollow.map(_.flatMap(CRFollow.fromInt.getOption))
       .handleError(_ => none)
-      .to[F]
 
     private def pOffsetOption: F[Option[Angle]] = (
       for {
         xoff <- OptionT(xOffsetOption)
         yoff <- OptionT(yOffsetOption)
-        iaa  <- OptionT(TcsEpics.instance.instrAA.to[F]).map(Degrees(_))
+        iaa  <- OptionT(sys.instrAA).map(Degrees(_))
       } yield  -xoff * iaa.cos + yoff * iaa.sin
     ).value
      .handleError(_ => none)
@@ -525,7 +521,7 @@ object TcsKeywordsReaderEpics extends TcsKeywordDefaults {
       for {
         xoff <- OptionT(xOffsetOption)
         yoff <- OptionT(yOffsetOption)
-        iaa  <- OptionT(TcsEpics.instance.instrAA.to[F]).map(Degrees(_))
+        iaa  <- OptionT(sys.instrAA).map(Degrees(_))
       } yield  -xoff * iaa.sin - yoff * iaa.cos
     ).value
      .handleError(_ => none)
@@ -536,7 +532,7 @@ object TcsKeywordsReaderEpics extends TcsKeywordDefaults {
       for {
         p <- OptionT(pOffsetOption)
         q <- OptionT(qOffsetOption)
-        ipa <- OptionT(TcsEpics.instance.instrPA.to[F]).map(Degrees(_))
+        ipa <- OptionT(sys.instrPA).map(Degrees(_))
       } yield p * ipa.cos + q * ipa.sin
     ).map(_.toArcseconds).value.safeValOrDefault
 
@@ -544,7 +540,7 @@ object TcsKeywordsReaderEpics extends TcsKeywordDefaults {
       for {
         p <- OptionT(pOffsetOption)
         q <- OptionT(qOffsetOption)
-        ipa <- OptionT(TcsEpics.instance.instrPA.to[F]).map(Degrees(_))
+        ipa <- OptionT(sys.instrPA).map(Degrees(_))
       } yield -p * ipa.sin + q * ipa.cos
     ).map(_.toArcseconds).value.safeValOrDefault
   }
