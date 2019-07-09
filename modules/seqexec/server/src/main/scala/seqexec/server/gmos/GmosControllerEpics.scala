@@ -88,6 +88,10 @@ private[gmos] final case class GmosDCEpicsState(
   ccdYBinning: Int
 )
 
+private[gmos] final case class GmosNSEpicsState(
+  nsPairs: Int
+)
+
 private[gmos] final case class GmosCCEpicsState(
   filter1: String,
   filter2: String,
@@ -109,7 +113,8 @@ private[gmos] final case class GmosCCEpicsState(
  */
 private[gmos] final case class GmosEpicsState(
   dc: GmosDCEpicsState,
-  cc: GmosCCEpicsState
+  cc: GmosCCEpicsState,
+  ns: GmosNSEpicsState
 )
 
 object GmosControllerEpics extends GmosEncoders {
@@ -126,7 +131,13 @@ object GmosControllerEpics extends GmosEncoders {
     for {
       dc <- retrieveDCState
       cc <- retrieveCCState
-    } yield GmosEpicsState(dc, cc)
+      ns <- retrieveNSState
+    } yield GmosEpicsState(dc, cc, ns)
+
+  private def retrieveNSState: IO[GmosNSEpicsState] =
+    for {
+      nsPairs <- sys.nsPairs
+    } yield GmosNSEpicsState(nsPairs)
 
   private def retrieveDCState: IO[GmosDCEpicsState] =
     for {
@@ -316,6 +327,11 @@ object GmosControllerEpics extends GmosEncoders {
           // TODO these are not smart about setting them only if needed
           setROI(config.bi, config.roi)
 
+      private def nsParams(state: GmosNSEpicsState, config: NSConfig): List[IO[Unit]] =
+        List(
+          applyParam(state.nsPairs, config.nsPairs, (x: Int) => DC.setNsPairs(x))
+        ).flattenOption
+
       private def ccParams(state: GmosCCEpicsState, config: Config[T]#CCConfig): List[IO[Unit]] =
         (setFilters(state, config.filter) ++
           setDisperserParams(state, cfg, config.disperser) ++
@@ -325,7 +341,9 @@ object GmosControllerEpics extends GmosEncoders {
             setElectronicOffset(state, config.useElectronicOffset))).flattenOption
 
       override def applyConfig(config: GmosController.GmosConfig[T]): IO[Unit] = retrieveState.flatMap { state =>
-        val params = dcParams(state.dc, config.dc) ++ ccParams(state.cc, config.cc)
+        val params = dcParams(state.dc, config.dc) ++
+                     ccParams(state.cc, config.cc) ++
+                     nsParams(state.ns, config.ns)
 
         IO(Log.info("Start Gmos configuration")) *>
           IO(Log.debug(s"Gmos configuration: ${config.show}")) *>

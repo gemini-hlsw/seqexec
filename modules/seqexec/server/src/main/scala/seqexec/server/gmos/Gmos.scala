@@ -25,6 +25,7 @@ import seqexec.model.enum.Guiding
 import seqexec.server.ConfigUtilOps.{ContentError, ConversionError, _}
 import seqexec.server.gmos.Gmos.SiteSpecifics
 import seqexec.server.gmos.GmosController.Config._
+import seqexec.server.gmos.GmosController.Config.NSConfig
 import seqexec.server.gmos.GmosController.SiteDependentTypes
 import seqexec.server.keywords.{DhsInstrument, KeywordsClient}
 import seqexec.server._
@@ -81,13 +82,13 @@ abstract class Gmos[F[_]: Sync, T<:GmosController.SiteDependentTypes](controller
     }).toVector.sequence
   }
 
-  private def nodAndShuffle(config: Config): Either[ExtractFailure, NS] =
+  private def nodAndShuffle(config: Config): Either[ExtractFailure, NSConfig] =
     for {
       cycles <- config.extractAs[JInt](INSTRUMENT_KEY / NUM_NS_CYCLES_PROP).map(_.toInt)
       rows   <- config.extractAs[JInt](INSTRUMENT_KEY / DETECTOR_ROWS_PROP).map(_.toInt)
       sc     <- config.extractAs[JInt](INSTRUMENT_KEY / NS_STEP_COUNT_PROP_NAME)
       pos    <- nsPosition(config, sc)
-    } yield NS.NodAndShuffle(cycles, rows, pos)
+    } yield NSConfig.NodAndShuffle(cycles, rows, pos)
 
   private def calcDisperser(disp: T#Disperser, order: Option[DisperserOrder], wl: Option[Length])
   : Either[ConfigUtilOps.ExtractFailure, configTypes.GmosDisperser] =
@@ -117,14 +118,19 @@ abstract class Gmos[F[_]: Sync, T<:GmosController.SiteDependentTypes](controller
       adc              <- config.extractAs[ADC](INSTRUMENT_KEY / ADC_PROP)
       electronicOffset =  config.extractAs[UseElectronicOffset](INSTRUMENT_KEY / USE_ELECTRONIC_OFFSETTING_PROP)
       disperser        <- calcDisperser(disp, disperserOrder.toOption, disperserLambda.toOption)
+    } yield configTypes.CCConfig(filter, disperser, fpu, stageMode, dtax, adc, electronicOffset.toOption)).leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
+
+  private def nsConfigFromSequenceConfig(config: Config): TrySeq[NSConfig] =
+    (for {
       useNS            <- config.extractAs[java.lang.Boolean](INSTRUMENT_KEY / USE_NS_PROP)
-      ns               <- (if (useNS) nodAndShuffle(config) else NS.NoNodAndShuffle.asRight)
-    } yield configTypes.CCConfig(filter, disperser, fpu, stageMode, dtax, adc, electronicOffset.toOption, ns)).leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
+      ns               <- (if (useNS) nodAndShuffle(config) else NSConfig.NoNodAndShuffle.asRight)
+    } yield ns).leftMap(e => SeqexecFailure.Unexpected(ConfigUtilOps.explain(e)))
 
   private def fromSequenceConfig(config: Config): SeqActionF[F, GmosController.GmosConfig[T]] = SeqActionF.either( for {
       cc <- ccConfigFromSequenceConfig(config)
       dc <- dcConfigFromSequenceConfig(config)
-    } yield new GmosController.GmosConfig[T](configTypes)(cc, dc)
+      ns <- nsConfigFromSequenceConfig(config)
+    } yield new GmosController.GmosConfig[T](configTypes)(cc, dc, ns)
   )
 
   override def calcStepType(config: Config): Either[SeqexecFailure, StepType] =
