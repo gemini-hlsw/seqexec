@@ -24,7 +24,7 @@ addSbtPlugin("io.spray"           % "sbt-revolver"             % "0.9.1")
 addSbtPlugin("com.eed3si9n"       % "sbt-buildinfo"            % "0.9.0")
 
 // Support making distributions
-addSbtPlugin("com.typesafe.sbt"   % "sbt-native-packager"      % "1.3.24")
+addSbtPlugin("com.typesafe.sbt"   % "sbt-native-packager"      % "1.3.25")
 
 // Check the style with scalastyle
 addSbtPlugin("org.scalastyle"    %% "scalastyle-sbt-plugin"    % "1.0.0")
