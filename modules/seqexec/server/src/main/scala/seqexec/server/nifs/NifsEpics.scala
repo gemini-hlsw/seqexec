@@ -13,77 +13,77 @@ import java.lang.{Double => JDouble}
 import org.log4s.{Logger, getLogger}
 import seqexec.server.ObserveCommand
 import seqexec.server.EpicsSystem
-import seqexec.server.EpicsCommandF
-import seqexec.server.ObserveCommandF
+import seqexec.server.EpicsCommand
+import seqexec.server.ObserveCommand
 import seqexec.server.EpicsUtil.safeAttribute
 import seqexec.server.EpicsUtil.safeAttributeSDouble
 import seqexec.server.EpicsUtil.safeAttributeSInt
-import seqexec.server.EpicsCommand.setParameterF
+import seqexec.server.EpicsCommand.setParameter
 
 class NifsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, String]) {
   val NifsTop = tops.getOrElse("nifs", "nifs:")
 
-  object ccConfigCmd extends EpicsCommandF {
+  object ccConfigCmd extends EpicsCommand {
     override protected val cs: Option[CaCommandSender] =
       Option(epicsService.getCommandSender("nifs::config"))
 
     val disperser: Option[CaParameter[String]] = cs.map(_.getString("disperser"))
-    def setDisperser(v: String): F[Unit] = setParameterF(disperser, v)
+    def setDisperser(v: String): F[Unit] = setParameter(disperser, v)
 
     val filter: Option[CaParameter[String]] = cs.map(_.getString("filter"))
-    def setFilter(v: String): F[Unit] = setParameterF(filter, v)
+    def setFilter(v: String): F[Unit] = setParameter(filter, v)
 
     val windowCover: Option[CaParameter[String]] = cs.map(_.getString("windowCover"))
-    def setWindowCover(v: String): F[Unit] = setParameterF(windowCover, v)
+    def setWindowCover(v: String): F[Unit] = setParameter(windowCover, v)
 
     val maskOffset: Option[CaParameter[JDouble]] = cs.map(_.getDouble("maskOffset"))
-    def setMaskOffset(v: Double): F[Unit] = setParameterF(maskOffset, JDouble.valueOf(v))
+    def setMaskOffset(v: Double): F[Unit] = setParameter(maskOffset, JDouble.valueOf(v))
 
     val imagingMirror: Option[CaParameter[String]] = cs.map(_.getString("imagingMirror"))
-    def setImagingMirror(v: String): F[Unit] = setParameterF(imagingMirror, v)
+    def setImagingMirror(v: String): F[Unit] = setParameter(imagingMirror, v)
 
     val mask: Option[CaParameter[String]] = cs.map(_.getString("mask"))
-    def setMask(v: String): F[Unit] = setParameterF(mask, v)
+    def setMask(v: String): F[Unit] = setParameter(mask, v)
 
     val centralWavelength: Option[CaParameter[JDouble]] = cs.map(_.getDouble("centralWavelength"))
-    def setCentralWavelength(v: Double): F[Unit] = setParameterF(centralWavelength, JDouble.valueOf(v))
+    def setCentralWavelength(v: Double): F[Unit] = setParameter(centralWavelength, JDouble.valueOf(v))
 
   }
 
-  object dcConfigCmd extends EpicsCommandF {
+  object dcConfigCmd extends EpicsCommand {
     override protected val cs: Option[CaCommandSender] =
       Option(epicsService.getCommandSender("nifs::dcconfig"))
 
     private val coadds: Option[CaParameter[Integer]] = cs.map(_.getInteger("coadds"))
-    def setCoadds(v: Int): F[Unit] = setParameterF(coadds, Integer.valueOf(v))
+    def setCoadds(v: Int): F[Unit] = setParameter(coadds, Integer.valueOf(v))
 
     private val exposureTime: Option[CaParameter[JDouble]] = cs.map(_.getDouble("exposureTime"))
-    def setExposureTime(v: Double): F[Unit] = setParameterF(exposureTime, JDouble.valueOf(v))
+    def setExposureTime(v: Double): F[Unit] = setParameter(exposureTime, JDouble.valueOf(v))
 
     private val fowlerSamples: Option[CaParameter[Integer]] = cs.map(_.getInteger("numberOfFowSamples"))
-    def setFowlerSamples(v: Int): F[Unit] = setParameterF(fowlerSamples, Integer.valueOf(v))
+    def setFowlerSamples(v: Int): F[Unit] = setParameter(fowlerSamples, Integer.valueOf(v))
 
     private val period: Option[CaParameter[JDouble]] = cs.map(_.getDouble("period"))
-    def setPeriod(v: Double): F[Unit] = setParameterF(period, JDouble.valueOf(v))
+    def setPeriod(v: Double): F[Unit] = setParameter(period, JDouble.valueOf(v))
 
     private val readMode: Option[CaParameter[ReadMode]] = cs.map(c =>
       c.addEnum[ReadMode]("readMode", s"${NifsTop}dc:obs_readMode", classOf[ReadMode], false)
     )
-    def setReadMode(v: ReadMode): F[Unit] = setParameterF(readMode, v)
+    def setReadMode(v: ReadMode): F[Unit] = setParameter(readMode, v)
 
     private val numberOfResets: Option[CaParameter[Integer]] = cs.map(_.getInteger("numberOfResets"))
     def setnumberOfResets(v: Int): F[Unit] =
-      setParameterF(numberOfResets, Integer.valueOf(v))
+      setParameter(numberOfResets, Integer.valueOf(v))
 
     private val numberOfPeriods: Option[CaParameter[Integer]] = cs.map(_.getInteger("numberOfPeriods"))
     def setnumberOfPeriods(v: Int): F[Unit] =
-      setParameterF(numberOfPeriods, Integer.valueOf(v))
+      setParameter(numberOfPeriods, Integer.valueOf(v))
 
     private val timeMode: Option[CaParameter[TimeMode]] = cs.map(c =>
       c.addEnum[TimeMode]("timeMode", s"${NifsTop}dc:obs_timeMode", classOf[TimeMode], false)
     )
     def setTimeMode(v: TimeMode): F[Unit] =
-      setParameterF(timeMode, v)
+      setParameter(timeMode, v)
   }
 
   private val stopCS: Option[CaCommandSender] = Option(epicsService.getCommandSender("nifs::stop"))
@@ -92,7 +92,7 @@ class NifsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, String]) 
     "nifs::observeCmd", s"${NifsTop}dc:nifsApply", s"${NifsTop}dc:applyC", s"${NifsTop}dc:observeC",
     false, s"${NifsTop}dc:stop", s"${NifsTop}dc:abort", ""))
 
-  object stopCmd extends EpicsCommandF {
+  object stopCmd extends EpicsCommand {
     override protected val cs: Option[CaCommandSender] = stopCS
   }
 
@@ -103,7 +103,7 @@ class NifsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, String]) 
 
   private val abortCS: Option[CaCommandSender] = Option(epicsService.getCommandSender("nifs::abort"))
 
-  object abortCmd extends EpicsCommandF {
+  object abortCmd extends EpicsCommand {
     override protected val cs: Option[CaCommandSender] = abortCS
   }
 
@@ -112,16 +112,16 @@ class NifsEpics[F[_]: Sync](epicsService: CaService, tops: Map[String, String]) 
     override protected val os: Option[CaApplySender] = observeAS
   }
 
-  object observeCmd extends ObserveCommandF {
+  object observeCmd extends ObserveCommand {
     override protected val cs: Option[CaCommandSender] = Option(
       epicsService.getCommandSender("nifs::observe"))
     override protected val os: Option[CaApplySender] = observeAS
 
     private val label: Option[CaParameter[String]] = cs.map(_.getString("label"))
-    def setLabel(v: String): F[Unit] = setParameterF(label, v)
+    def setLabel(v: String): F[Unit] = setParameter(label, v)
   }
 
-  object endObserveCmd extends EpicsCommandF {
+  object endObserveCmd extends EpicsCommand {
     override val cs: Option[CaCommandSender] = Option(
       epicsService.getCommandSender("nifs::endObserve"))
   }

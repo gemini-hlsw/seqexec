@@ -26,7 +26,7 @@ import seqexec.model.TelescopeGuideConfig
 import seqexec.server.altair.Altair
 import seqexec.server.gems.Gems
 import seqexec.server.tcs.TcsController._
-import seqexec.server.{EpicsCodex, EpicsCommandF, SeqexecFailure}
+import seqexec.server.{EpicsCodex, EpicsCommand, SeqexecFailure}
 import seqexec.server.tcs.Gaos.{GaosGuideOff, GaosGuideOn, OffsetMove, OffsetReached, OiOff, OiOn, P1Off, P1On, PauseCondition, PauseResume, ResumeCondition}
 import seqexec.server.tcs.TcsEpics.{ProbeFollowCmd, ProbeGuideCmd}
 import shapeless.tag
@@ -147,7 +147,7 @@ class TcsControllerEpics private extends TcsController[IO] {
       "Incompatible configuration: useAO is false but sequence uses Altair")) }.some
   }
 
-  private def setGuiderWfs[F[_]: Sync](on: TcsEpics.WfsObserveCmd[F], off: EpicsCommandF)(c: GuiderSensorOption)
+  private def setGuiderWfs[F[_]: Sync](on: TcsEpics.WfsObserveCmd[F], off: EpicsCommand)(c: GuiderSensorOption)
   : F[Unit] = {
     val NonStopExposures = -1
     c match {
@@ -615,7 +615,7 @@ object TcsControllerEpics {
   object EpicsTcsConfig
 
   final case class GuideControl[F[_]: Async](subs: Subsystem,
-                                             parkCmd: EpicsCommandF,
+                                             parkCmd: EpicsCommand,
                                              nodChopGuideCmd: ProbeGuideCmd[F],
                                              followCmd: ProbeFollowCmd[F]
                                             )

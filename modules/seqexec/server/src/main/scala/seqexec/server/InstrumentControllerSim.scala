@@ -61,12 +61,12 @@ object InstrumentControllerSim {
     private def observeTic(stop: Boolean, abort: Boolean, pause: Boolean, remain: Int, timeout: Option[Int]): F[ObserveCommand.Result] =
       if(remain < tic) {
         Log.info(s"Simulate $name observation completed")
-        ObserveCommand.Success.pure[F].widen
-      } else if(stop) ObserveCommand.Stopped.pure[F].widen
-        else if(abort) ObserveCommand.Aborted.pure[F].widen
+        ObserveCommand.Result.Success.pure[F].widen
+      } else if(stop) ObserveCommand.Result.Stopped.pure[F].widen
+        else if(abort) ObserveCommand.Result.Aborted.pure[F].widen
         else if(pause) {
           remainingTime.set(remain)
-          ObserveCommand.Paused.pure[F].widen
+          ObserveCommand.Result.Paused.pure[F].widen
         }
         else if(timeout.exists(_<= 0)) Sync[F].raiseError(SeqexecException(new TimeoutException()))
         else {

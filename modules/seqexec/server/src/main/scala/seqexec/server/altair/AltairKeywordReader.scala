@@ -3,7 +3,6 @@
 
 package seqexec.server.altair
 
-import cats.effect.LiftIO
 import cats.effect.Sync
 import cats.Applicative
 import cats.data.Nested
@@ -80,8 +79,7 @@ trait AltairKeywordReaderLUT {
 }
 
 object AltairKeywordReaderEpics extends AltairKeywordReaderLUT {
-  def apply[F[_]: Sync: LiftIO]: AltairKeywordReader[F] = new AltairKeywordReader[F] {
-    val sys = AltairEpics.instance
+  def apply[F[_]: Sync](sys: AltairEpics[F]): AltairKeywordReader[F] = new AltairKeywordReader[F] {
 
     override def aofreq: F[Double] =
       Nested(sys.aoexpt)
@@ -89,24 +87,23 @@ object AltairKeywordReaderEpics extends AltairKeywordReaderLUT {
         .map(1 / _.toDouble)
         .value
         .safeValOrDefault
-        .to[F]
-    override def aocounts: F[Double] = sys.aocounts.safeValOrDefault.to[F]
+    override def aocounts: F[Double] = sys.aocounts.safeValOrDefault
     override def aoseeing: F[Double] =
-      Nested(sys.aoseeing).map(_.toDouble).value.safeValOrDefault.to[F]
-    override def aowfsx: F[Double]   = sys.aowfsx.safeValOrDefault.to[F]
-    override def aowfsy: F[Double]   = sys.aowfsy.safeValOrDefault.to[F]
-    override def aowfsz: F[Double]   = sys.aowfsz.safeValOrDefault.to[F]
-    override def aogain: F[Double]   = sys.aogain.safeValOrDefault.to[F]
-    override def aoncpa: F[String]   = sys.aoncpa.safeValOrDefault.to[F]
-    override def ngndfilt: F[String] = sys.ngndfilt.safeValOrDefault.to[F]
+      Nested(sys.aoseeing).map(_.toDouble).value.safeValOrDefault
+    override def aowfsx: F[Double]   = sys.aowfsx.safeValOrDefault
+    override def aowfsy: F[Double]   = sys.aowfsy.safeValOrDefault
+    override def aowfsz: F[Double]   = sys.aowfsz.safeValOrDefault
+    override def aogain: F[Double]   = sys.aogain.safeValOrDefault
+    override def aoncpa: F[String]   = sys.aoncpa.safeValOrDefault
+    override def ngndfilt: F[String] = sys.ngndfilt.safeValOrDefault
     override def astar: F[String] =
-      sys.astar.safeValOrDefault.map(AOFlensKeywordLUT.getOrElse(_, "OUT")).to[F]
-    override def aoflex: F[String]   = sys.aoflex.safeValOrDefault.to[F]
-    override def lgustage: F[String] = sys.lgustage.safeValOrDefault.to[F]
-    override def aobs: F[String]     = sys.aobs.safeValOrDefault.to[F]
+      sys.astar.safeValOrDefault.map(AOFlensKeywordLUT.getOrElse(_, "OUT"))
+    override def aoflex: F[String]   = sys.aoflex.safeValOrDefault
+    override def lgustage: F[String] = sys.lgustage.safeValOrDefault
+    override def aobs: F[String]     = sys.aobs.safeValOrDefault
 
     // LGS
-    override def lgdfocus: F[Double] = sys.lgdfocus.safeValOrDefault.to[F]
+    override def lgdfocus: F[Double] = sys.lgdfocus.safeValOrDefault
     override def lgttcnts: F[Double] =
       (for {
         apd1 <- sys.apd1
@@ -116,13 +113,13 @@ object AltairKeywordReaderEpics extends AltairKeywordReaderLUT {
       } yield
         (apd1, apd2, apd3, apd4)
           .mapN(_ + _ + _ + _)
-          .map(_.toDouble)).safeValOrDefault.to[F]
-    override def lgttexp: F[Int]     = sys.lgttexp.safeValOrDefault.to[F]
-    override def lgsfcnts: F[Double] = sys.lgsfcnts.safeValOrDefault.to[F]
-    override def lgsfexp: F[Double]  = sys.lgsfexp.safeValOrDefault.to[F]
-    override def fsmtip: F[Double]   = sys.fsmtip.safeValOrDefault.to[F]
-    override def fsmtilt: F[Double]  = sys.fsmtilt.safeValOrDefault.to[F]
-    override def lgzmpos: F[Double]  = sys.lgzmpos.safeValOrDefault.to[F]
+          .map(_.toDouble)).safeValOrDefault
+    override def lgttexp: F[Int]     = sys.lgttexp.safeValOrDefault
+    override def lgsfcnts: F[Double] = sys.lgsfcnts.safeValOrDefault
+    override def lgsfexp: F[Double]  = sys.lgsfexp.safeValOrDefault
+    override def fsmtip: F[Double]   = sys.fsmtip.safeValOrDefault
+    override def fsmtilt: F[Double]  = sys.fsmtilt.safeValOrDefault
+    override def lgzmpos: F[Double]  = sys.lgzmpos.safeValOrDefault
     override def naalt: F[Double] = {
       val modela: Double = 210.0
       val modelb: Double = 1.01
@@ -138,10 +135,10 @@ object AltairKeywordReaderEpics extends AltairKeywordReaderLUT {
           r * math.cos(za.toRadians) / 1000.0
         }
       }
-      r.safeValOrDefault.to[F]
+      r.safeValOrDefault
     }
-    override def nathick: F[Double]  = sys.nathick.safeValOrDefault.to[F]
-    override def lgndfilt: F[String] = sys.lgndfilt.safeValOrDefault.to[F]
-    override def lgttiris: F[String] = sys.lgttiris.safeValOrDefault.to[F]
+    override def nathick: F[Double]  = sys.nathick.safeValOrDefault
+    override def lgndfilt: F[String] = sys.lgndfilt.safeValOrDefault
+    override def lgttiris: F[String] = sys.lgttiris.safeValOrDefault
   }
 }

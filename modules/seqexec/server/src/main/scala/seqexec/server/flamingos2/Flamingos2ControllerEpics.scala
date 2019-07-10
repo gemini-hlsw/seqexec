@@ -133,7 +133,7 @@ object Flamingos2ControllerEpics extends Flamingos2Encoders {
       _ <- sys.observeCmd.setLabel(fileId)
       _ <- sys.observeCmd.setTimeout[F](expTime + ReadoutTimeout)
       _ <- sys.observeCmd.post[F]
-    } yield ObserveCommand.Success
+    } yield ObserveCommand.Result.Success
 
     override def endObserve: F[Unit] = for {
       _ <- Async[F].delay(Log.debug("Send endObserve to Flamingos2"))

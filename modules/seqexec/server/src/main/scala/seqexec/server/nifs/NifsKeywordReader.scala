@@ -5,7 +5,6 @@ package seqexec.server.nifs
 
 import cats.Applicative
 import cats.effect.Sync
-import cats.effect.LiftIO
 import cats.implicits._
 import seqexec.server.keywords._
 
@@ -90,51 +89,50 @@ trait NifsKeywordReaderLUT {
 }
 
 object NifsKeywordReaderEpics extends NifsKeywordReaderLUT {
-  def apply[F[_]: Sync: LiftIO]: NifsKeywordReader[F] = new NifsKeywordReader[F] {
-    val sys = NifsEpics.instance
+  def apply[F[_]: Sync](sys: NifsEpics[F]): NifsKeywordReader[F] = new NifsKeywordReader[F] {
     override def aperture: F[String] =
       sys.mask
         .map(_ === Invalid)
         .ifM(sys.lastSelectedMask, sys.mask)
         .map(_.flatMap(MaskKeywordLUT.get))
-        .safeValOrDefault.to[F]
+        .safeValOrDefault
 
-    override def biasPwr: F[Double] = sys.biasPwr.safeValOrDefault.to[F]
+    override def biasPwr: F[Double] = sys.biasPwr.safeValOrDefault
 
     override def centralWavelength: F[Double] =
-      sys.centralWavelength.safeValOrDefault.to[F]
+      sys.centralWavelength.safeValOrDefault
 
-    override def coadds: F[Int]          = sys.coadds.safeValOrDefault.to[F]
+    override def coadds: F[Int]          = sys.coadds.safeValOrDefault
 
-    override def dcName: F[String]       = sys.dcName.safeValOrDefault.to[F]
+    override def dcName: F[String]       = sys.dcName.safeValOrDefault
 
-    override def exposureTime: F[Double] = sys.exposureTime.safeValOrDefault.to[F]
+    override def exposureTime: F[Double] = sys.exposureTime.safeValOrDefault
 
-    override def exposureMode: F[String] = sys.exposureMode.safeValOrDefault.to[F]
+    override def exposureMode: F[String] = sys.exposureMode.safeValOrDefault
 
     override def filter: F[String] =
-      sys.filter.map(_.flatMap(FilterKeywordLUT.get)).safeValOrDefault.to[F]
+      sys.filter.map(_.flatMap(FilterKeywordLUT.get)).safeValOrDefault
 
     override def grating: F[String] =
       sys.disperser
         .map(_ === Invalid)
         .ifM(sys.lastSelectedDisperser, sys.disperser)
         .map(_.flatMap(DisperserKeywordLUT.get))
-        .safeValOrDefault.to[F]
+        .safeValOrDefault
 
-    override def imagingMirror: F[String] = sys.imagingMirror.safeValOrDefault.to[F]
+    override def imagingMirror: F[String] = sys.imagingMirror.safeValOrDefault
 
-    override def maskOffset: F[Double]    = sys.maskOffset.safeValOrDefault.to[F]
+    override def maskOffset: F[Double]    = sys.maskOffset.safeValOrDefault
 
     override def numberOfFowSamples: F[Int] =
-      sys.numberOfFowSamples.safeValOrDefault.to[F]
+      sys.numberOfFowSamples.safeValOrDefault
 
-    override def numberOfPeriods: F[Int] = sys.numberOfPeriods.safeValOrDefault.to[F]
+    override def numberOfPeriods: F[Int] = sys.numberOfPeriods.safeValOrDefault
 
-    override def period: F[Double]       = sys.period.safeValOrDefault.to[F]
+    override def period: F[Double]       = sys.period.safeValOrDefault
 
-    override def readTime: F[Double]     = sys.readTime.safeValOrDefault.to[F]
+    override def readTime: F[Double]     = sys.readTime.safeValOrDefault
 
-    override def windowCover: F[String]  = sys.windowCover.safeValOrDefault.to[F]
+    override def windowCover: F[String]  = sys.windowCover.safeValOrDefault
   }
 }

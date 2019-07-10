@@ -5,7 +5,6 @@ package seqexec.server.gws
 
 import cats.Applicative
 import cats.implicits._
-import cats.effect.LiftIO
 import cats.effect.Sync
 import seqexec.server.EpicsHealth
 import seqexec.server.keywords._
@@ -80,28 +79,27 @@ object DummyGwsKeywordsReader extends GwsDefaults {
 }
 
 object GwsKeywordsReaderEpics extends GwsDefaults {
-  def apply[F[_]: Sync: LiftIO]: GwsKeywordReader[F] = new GwsKeywordReader[F] {
-    private val sys = GwsEpics.instance
+  def apply[F[_]: Sync](sys: GwsEpics[F]): GwsKeywordReader[F] = new GwsKeywordReader[F] {
 
     override def temperature: F[Temperature] =
-      sys.ambientT.to[F]
+      sys.ambientT
 
     override def dewPoint: F[Temperature @@ DewPoint] =
-      sys.dewPoint.map(tag[DewPoint][Temperature](_)).to[F]
+      sys.dewPoint.map(tag[DewPoint][Temperature](_))
 
     override def airPressure: F[Pressure] =
-      sys.airPressure.to[F]
+      sys.airPressure
 
     override def windVelocity: F[Velocity] =
-      sys.windVelocity.to[F]
+      sys.windVelocity
 
     override def windDirection: F[Angle] =
-      sys.windDirection.to[F]
+      sys.windDirection
 
     override def humidity: F[Double] =
-      sys.humidity.to[F]
+      sys.humidity
 
     override def health: F[EpicsHealth] =
-      sys.health.to[F]
+      sys.health
   }
 }

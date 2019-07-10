@@ -6,7 +6,6 @@ package seqexec.server.niri
 import cats.Applicative
 import cats.data.Nested
 import cats.effect.Sync
-import cats.effect.LiftIO
 import cats.implicits._
 import seqexec.server.keywords._
 
@@ -82,33 +81,32 @@ object NiriKeywordReaderDummy {
 }
 
 object NiriKeywordReaderEpics {
-  def apply[F[_]: Sync: LiftIO]: NiriKeywordReader[F] = new NiriKeywordReader[F] {
-    val sys = NiriEpics.instance
-    override def arrayId: F[String] = sys.arrayId.safeValOrDefault.to[F]
-    override def arrayType: F[String] = sys.arrayType.safeValOrDefault.to[F]
-    override def camera: F[String] = sys.camera.safeValOrDefault.to[F]
-    override def coadds: F[Int] = sys.coadds.safeValOrDefault.to[F]
+  def apply[F[_]: Sync](sys: NiriEpics[F]): NiriKeywordReader[F] = new NiriKeywordReader[F] {
+    override def arrayId: F[String] = sys.arrayId.safeValOrDefault
+    override def arrayType: F[String] = sys.arrayType.safeValOrDefault
+    override def camera: F[String] = sys.camera.safeValOrDefault
+    override def coadds: F[Int] = sys.coadds.safeValOrDefault
     override def exposureTime: F[Double] =
       (for {
         it <- sys.integrationTime
         mi <- sys.minIntegration
-      } yield (it, mi).mapN(_ + _)).safeValOrDefault.to[F]
-    override def filter1: F[String] = sys.filter1.safeValOrDefault.to[F]
-    override def filter2: F[String] = sys.filter2.safeValOrDefault.to[F]
-    override def filter3: F[String] = sys.filter3.safeValOrDefault.to[F]
-    override def focusName: F[String] = sys.focus.safeValOrDefault.to[F]
-    override def focusPosition: F[Double] = sys.focusPosition.safeValOrDefault.to[F]
-    override def focalPlaneMask: F[String] = sys.mask.safeValOrDefault.to[F]
-    override def beamSplitter: F[String] = sys.beamSplitter.safeValOrDefault.to[F]
-    override def windowCover: F[String] = sys.windowCover.safeValOrDefault.to[F]
-    override def framesPerCycle: F[Int] = sys.framesPerCycle.safeValOrDefault.to[F]
+      } yield (it, mi).mapN(_ + _)).safeValOrDefault
+    override def filter1: F[String] = sys.filter1.safeValOrDefault
+    override def filter2: F[String] = sys.filter2.safeValOrDefault
+    override def filter3: F[String] = sys.filter3.safeValOrDefault
+    override def focusName: F[String] = sys.focus.safeValOrDefault
+    override def focusPosition: F[Double] = sys.focusPosition.safeValOrDefault
+    override def focalPlaneMask: F[String] = sys.mask.safeValOrDefault
+    override def beamSplitter: F[String] = sys.beamSplitter.safeValOrDefault
+    override def windowCover: F[String] = sys.windowCover.safeValOrDefault
+    override def framesPerCycle: F[Int] = sys.framesPerCycle.safeValOrDefault
     override def headerTiming: F[String] = Nested(sys.hdrTiming).map {
       case 1 => "BEFORE"
       case 2 => "AFTER"
       case 3 => "BOTH"
       case _ => "INDEF"
-    }.value.safeValOrDefault.to[F]
-    override def lnrs: F[Int] = sys.lnrs.safeValOrDefault.to[F]
+    }.value.safeValOrDefault
+    override def lnrs: F[Int] = sys.lnrs.safeValOrDefault
     override def mode: F[String] = Nested(sys.mode).map {
       case 0 => "STARE"
       case 1 => "SEP"
@@ -116,26 +114,26 @@ object NiriKeywordReaderEpics {
       case 3 => "CHOP2"
       case 4 => "TEST"
       case _ => "INDEF"
-    }.value.safeValOrDefault.to[F]
-    override def numberDigitalAverage: F[Int] = sys.digitalAverageCount.safeValOrDefault.to[F]
-    override def pupilViewer: F[String] = sys.pupilViewer.safeValOrDefault.to[F]
-    override def detectorTemperature: F[Double] = sys.detectorTemp.safeValOrDefault.to[F]
-    override def mountTemperature: F[Double] = sys.mountTemp.safeValOrDefault.to[F]
-    override def µcodeName: F[String] = sys.µcodeName.safeValOrDefault.to[F]
+    }.value.safeValOrDefault
+    override def numberDigitalAverage: F[Int] = sys.digitalAverageCount.safeValOrDefault
+    override def pupilViewer: F[String] = sys.pupilViewer.safeValOrDefault
+    override def detectorTemperature: F[Double] = sys.detectorTemp.safeValOrDefault
+    override def mountTemperature: F[Double] = sys.mountTemp.safeValOrDefault
+    override def µcodeName: F[String] = sys.µcodeName.safeValOrDefault
     override def µcodeType: F[String] = Nested(sys.µcodeType).map {
       case 1 => "RRD"
       case 2 => "RDD"
       case 3 => "RD"
       case 4 => "SRB"
       case _ => "INDEF"
-    }.value.safeValOrDefault.to[F]
-    override def cl1VoltageDD: F[Double] = sys.vddCl1.safeValOrDefault.to[F]
-    override def cl2VoltageDD: F[Double] = sys.vddCl2.safeValOrDefault.to[F]
-    override def ucVoltage: F[Double] = sys.vddUc.safeValOrDefault.to[F]
-    override def detectorVoltage: F[Double] = sys.detectorVDetBias.safeValOrDefault.to[F]
-    override def cl1VoltageGG: F[Double] = sys.vggCl1.safeValOrDefault.to[F]
-    override def cl2VoltageGG: F[Double] = sys.vggCl2.safeValOrDefault.to[F]
-    override def setVoltage: F[Double] = sys.detectorVSetBias.safeValOrDefault.to[F]
-    override def observationEpoch: F[Double] = sys.obsEpoch.safeValOrDefault.to[F]
+    }.value.safeValOrDefault
+    override def cl1VoltageDD: F[Double] = sys.vddCl1.safeValOrDefault
+    override def cl2VoltageDD: F[Double] = sys.vddCl2.safeValOrDefault
+    override def ucVoltage: F[Double] = sys.vddUc.safeValOrDefault
+    override def detectorVoltage: F[Double] = sys.detectorVDetBias.safeValOrDefault
+    override def cl1VoltageGG: F[Double] = sys.vggCl1.safeValOrDefault
+    override def cl2VoltageGG: F[Double] = sys.vggCl2.safeValOrDefault
+    override def setVoltage: F[Double] = sys.detectorVSetBias.safeValOrDefault
+    override def observationEpoch: F[Double] = sys.obsEpoch.safeValOrDefault
   }
 }

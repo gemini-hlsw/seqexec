@@ -68,7 +68,7 @@ final case class Gpi[F[_]: Sync: Timer](controller: GpiController[F])
       SeqActionF.embedF(calcObserveTime(config).flatMap { ot =>
         controller
           .observe(fileId, timeoutTolerance + ot)
-          .as(ObserveCommand.Success: ObserveCommand.Result)
+          .as(ObserveCommand.Result.Success: ObserveCommand.Result)
       })
     }
 

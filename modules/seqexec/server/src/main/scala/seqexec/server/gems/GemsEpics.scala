@@ -9,8 +9,8 @@ import cats.implicits._
 import edu.gemini.epics.acm.{CaCommandSender, CaService, CaStatusAcceptor}
 import edu.gemini.seqexec.server.gems.{ApdState, BinaryOnOff, LoopState, ReadyState}
 import org.log4s.{Logger, getLogger}
-import seqexec.server.{EpicsCommandF, EpicsSystem}
-import seqexec.server.EpicsCommand.setParameterF
+import seqexec.server.{EpicsCommand, EpicsSystem}
+import seqexec.server.EpicsCommand.setParameter
 import seqexec.server.EpicsUtil.{safeAttribute, safeAttributeSDouble, safeAttributeSFloat, safeAttributeSInt}
 
 class GemsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String]) {
@@ -19,22 +19,22 @@ class GemsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
   private val RtcTop = tops.getOrElse("rtc", "rtc:")
   private val AomTop = tops.getOrElse("aom", "aom:")
 
-  object LoopControl extends EpicsCommandF {
+  object LoopControl extends EpicsCommand {
     override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gems::seqLoopCtrl"))
 
-    def setCommand(v: String): F[Unit] = setParameterF(cs.map(_.getString("cmd")), v)
+    def setCommand(v: String): F[Unit] = setParameter(cs.map(_.getString("cmd")), v)
 
-    def setReasons(v: String): F[Unit] = setParameterF(cs.map(_.getString("reasons")), v)
+    def setReasons(v: String): F[Unit] = setParameter(cs.map(_.getString("reasons")), v)
   }
 
-  object ApdControl extends EpicsCommandF {
+  object ApdControl extends EpicsCommand {
     override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gems::ttApdCtrl"))
 
-    def setApd1Cmd(v: String): F[Unit] = setParameterF(cs.map(_.getString("apd1Cmd")), v)
+    def setApd1Cmd(v: String): F[Unit] = setParameter(cs.map(_.getString("apd1Cmd")), v)
 
-    def setApd2Cmd(v: String): F[Unit] = setParameterF(cs.map(_.getString("apd2Cmd")), v)
+    def setApd2Cmd(v: String): F[Unit] = setParameter(cs.map(_.getString("apd2Cmd")), v)
 
-    def setApd3Cmd(v: String): F[Unit] = setParameterF(cs.map(_.getString("apd3Cmd")), v)
+    def setApd3Cmd(v: String): F[Unit] = setParameter(cs.map(_.getString("apd3Cmd")), v)
   }
 
   val mystStatus: CaStatusAcceptor = epicsService.getStatusAcceptor("gems::status")
