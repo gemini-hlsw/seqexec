@@ -13,6 +13,7 @@ import scala.concurrent.duration.Duration
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Guiding
 import seqexec.server.gmos.GmosController.Config.DCConfig
+import seqexec.server.gmos.GmosController.Config.NSConfig
 import seqexec.server.SeqexecFailure.Unexpected
 import seqexec.server.InstrumentSystem.ElapsedTime
 import seqexec.server._
@@ -69,8 +70,7 @@ object GmosController {
       stage: T#GmosStageMode,
       dtaX: DTAX,
       adc: ADC,
-      useElectronicOffset: Option[UseElectronicOffset],
-      nodAndShuffle: NS
+      useElectronicOffset: Option[UseElectronicOffset]
     )
 
   }
@@ -130,11 +130,17 @@ object GmosController {
     final case class NSPosition(id: Symbol, offset: Offset, guide: Guiding)
 
     // Node and shuffle options
-    sealed trait NS extends Product with Serializable
+    sealed trait NSConfig extends Product with Serializable {
+      def nsPairs: Int
+    }
 
-    object NS {
-      case object NoNodAndShuffle extends NS
-      final case class NodAndShuffle(cycles: Int, rows: Int, positions: Vector[NSPosition]) extends NS
+    object NSConfig {
+      case object NoNodAndShuffle extends NSConfig {
+        val nsPairs = 0
+      }
+      final case class NodAndShuffle(cycles: Int, rows: Int, positions: Vector[NSPosition]) extends NSConfig {
+        val nsPairs = cycles
+      }
     }
 
     object RegionsOfInterest {
@@ -199,8 +205,8 @@ object GmosController {
   val northConfigTypes: NorthConfigTypes = new NorthConfigTypes
 
   // This is a trick to allow using a type from a class parameter to define the type of another class parameter
-  class GmosConfig[T<:SiteDependentTypes] private (val cc: Config[T]#CCConfig, val dc: DCConfig, val c: Config[T]) {
-    def this(c: Config[T])(cc: c.CCConfig, dc: DCConfig) = this(cc, dc, c)
+  class GmosConfig[T<:SiteDependentTypes] private (val cc: Config[T]#CCConfig, val dc: DCConfig, val c: Config[T], val ns: NSConfig) {
+    def this(c: Config[T])(cc: c.CCConfig, dc: DCConfig, ns: NSConfig) = this(cc, dc, c, ns)
   }
 
   type GmosSouthController[F[_]] = GmosController[F, SouthTypes]
