@@ -10,6 +10,7 @@ import cats.effect.Sync
 import cats.effect.Async
 import cats.implicits._
 import fs2.Stream
+import gem.util.Enumerated
 import java.lang.{ Double => JDouble }
 import java.lang.{ Integer => JInt }
 import java.lang.{ Float => JFloat }
@@ -37,8 +38,8 @@ trait EpicsCommand {
       cs.map { ccs =>
         ccs.postCallback {
           new CaCommandListener {
-            override def onSuccess(): Unit = f(Completed.asRight)
-            override def onPause(): Unit = f(Paused.asRight)
+            override def onSuccess(): Unit = f(Result.Completed.asRight)
+            override def onPause(): Unit = f(Result.Paused.asRight)
             override def onFailure(cause: Exception): Unit = f(cause.asLeft)
           }
         }
@@ -91,8 +92,14 @@ trait EpicsSystem[T] {
 object EpicsCommand {
 
   sealed trait Result extends Product with Serializable
-  case object Paused extends Result
-  case object Completed extends Result
+  object Result {
+    case object Paused extends Result
+    case object Completed extends Result
+
+    /** @group Typeclass Instances */
+    implicit val EpicsCommandEnumerated: Enumerated[Result] =
+      Enumerated.of(Paused, Completed)
+  }
 
   def setParameter[F[_]: Sync, T](p: Option[CaParameter[T]], v: T): F[Unit] =
     Sync[F].delay {
@@ -110,7 +117,7 @@ object EpicsCommand {
 
 }
 
-trait ObserveCommand     {
+trait ObserveCommand {
   import ObserveCommand._
 
   protected val cs: Option[CaCommandSender]
@@ -121,11 +128,11 @@ trait ObserveCommand     {
       os.map { oos =>
         oos.postCallback {
           new CaCommandListener {
-            override def onSuccess(): Unit = f(Success.asRight)
-            override def onPause(): Unit = f(Paused.asRight)
+            override def onSuccess(): Unit = f(Result.Success.asRight)
+            override def onPause(): Unit = f(Result.Paused.asRight)
             override def onFailure(cause: Exception): Unit = cause match {
-              case _: CaObserveStopped => f(Stopped.asRight)
-              case _: CaObserveAborted => f(Aborted.asRight)
+              case _: CaObserveStopped => f(Result.Stopped.asRight)
+              case _: CaObserveAborted => f(Result.Aborted.asRight)
               case _                   => f(cause.asLeft)
             }
           }
@@ -145,10 +152,18 @@ trait ObserveCommand     {
 
 object ObserveCommand {
   sealed trait Result extends Product with Serializable
-  case object Success extends Result
-  case object Paused extends Result
-  case object Stopped extends Result
-  case object Aborted extends Result
+
+  object Result {
+    case object Success extends Result
+    case object Paused extends Result
+    case object Stopped extends Result
+    case object Aborted extends Result
+
+
+    /** @group Typeclass Instances */
+    implicit val ObserveResultEnumerated: Enumerated[Result] =
+      Enumerated.of(Success, Paused, Stopped, Aborted)
+  }
 
   implicit val equal: Eq[Result] = Eq.fromUniversalEquals
 }
@@ -288,7 +303,7 @@ object EpicsUtil {
    * @param d Value to be set
    * @param f Action to set the parameter
    */
-  def applyParam[F[_]: Applicative, A: Eq](c: A, d: A, f: A => F[Unit]): Option[F[Unit]] =
+  def applyParam[F[_], A: Eq](c: A, d: A, f: A => F[Unit]): Option[F[Unit]] =
     if (c =!= d) f(d).some else none
 
   /**

@@ -125,10 +125,10 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
         SeqAction.fail(SeqexecFailure.Execution(s"Observation ${obsId.format} aborted by user."))
 
       r match {
-        case ObserveCommand.Success => successTail
-        case ObserveCommand.Stopped => stopTail
-        case ObserveCommand.Aborted => abortTail
-        case ObserveCommand.Paused  =>
+        case ObserveCommand.Result.Success => successTail
+        case ObserveCommand.Result.Stopped => stopTail
+        case ObserveCommand.Result.Aborted => abortTail
+        case ObserveCommand.Result.Paused  =>
           SeqActionF.liftF(inst.calcObserveTime(config))
             .map(e => Result.Paused(ObserveContext(observeTail(id, dataId), e)))
       }

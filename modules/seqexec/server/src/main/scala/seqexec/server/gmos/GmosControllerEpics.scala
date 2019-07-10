@@ -330,9 +330,9 @@ object GmosControllerEpics extends GmosEncoders {
         IO(Log.info("Start Gmos configuration")) *>
           IO(Log.debug(s"Gmos configuration: ${config.show}")) *>
           warnOnDHSNotConected *>
-          ((params.sequence *>
+          (params.sequence *>
             sys.configCmd.setTimeout[IO](ConfigTimeout) *>
-            sys.post)
+            sys.post
           ).unlessA(params.isEmpty) *>
           IO(Log.info("Completed Gmos configuration"))
       }
@@ -385,7 +385,7 @@ object GmosControllerEpics extends GmosEncoders {
         _   <- sys.stopAndWaitCmd.mark[IO]
         ret <- sys.stopAndWaitCmd.post[IO]
         _   <- IO(Log.info("Completed stopping Gmos observation"))
-      } yield if(ret === ObserveCommand.Success) ObserveCommand.Stopped else ret
+      } yield if(ret === ObserveCommand.Result.Success) ObserveCommand.Result.Stopped else ret
 
       override def abortPaused: IO[ObserveCommand.Result] = for {
         _   <- IO(Log.info("Abort Gmos paused observation"))
@@ -393,7 +393,7 @@ object GmosControllerEpics extends GmosEncoders {
         _   <- sys.abortAndWait.mark[IO]
         ret <- sys.abortAndWait.post[IO]
         _   <- IO(Log.info("Completed aborting Gmos observation"))
-      } yield if(ret === ObserveCommand.Success) ObserveCommand.Aborted else ret
+      } yield if(ret === ObserveCommand.Result.Success) ObserveCommand.Result.Aborted else ret
 
       override def observeProgress(total: Time, elapsed: ElapsedTime): Stream[IO, Progress] = {
         implicit val ioTimer: Timer[IO] = IO.timer(ExecutionContext.global)

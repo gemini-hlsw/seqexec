@@ -6,17 +6,13 @@ package seqexec.server
 import gem.arb.ArbEnumerated._
 import gem.Observation
 import org.scalacheck.Arbitrary._
-import org.scalacheck.{Arbitrary, Cogen, Gen}
+import org.scalacheck.{Arbitrary, Cogen}
 import seqexec.model.BatchCommandState
 import seqexec.model.enum.Instrument
 import seqexec.model.{Conditions, Operator}
 import seqexec.model.SeqexecModelArbitraries._
 
 trait SeqexecServerArbitraries {
-
-  implicit val observeCommandArb: Arbitrary[ObserveCommand.Result] = Arbitrary(Gen.oneOf(ObserveCommand.Success, ObserveCommand.Paused, ObserveCommand.Aborted, ObserveCommand.Stopped))
-  implicit val observeCommandCogen: Cogen[ObserveCommand.Result] =
-    Cogen[String].contramap(_.productPrefix)
 
   implicit val selectedCoGen: Cogen[Map[Instrument, Observation.Id]] =
     Cogen[List[(Instrument, Observation.Id)]].contramap(_.toList)
@@ -41,9 +37,4 @@ trait SeqexecServerArbitraries {
     Cogen[(String, BatchCommandState, List[Observation.Id])]
       .contramap(x => (x.name, x.cmdState, x.queue))
 
-  implicit val epicsHealthArb: Arbitrary[EpicsHealth] =
-    Arbitrary(Gen.oneOf(EpicsHealth.Good, EpicsHealth.Bad))
-
-  implicit val epicsHealthCogen: Cogen[EpicsHealth] =
-    Cogen[String].contramap(_.productPrefix)
 }

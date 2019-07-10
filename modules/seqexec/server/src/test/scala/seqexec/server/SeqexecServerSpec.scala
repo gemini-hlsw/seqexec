@@ -5,6 +5,7 @@ package seqexec.server
 
 import cats.kernel.laws.discipline._
 import cats.tests.CatsSuite
+import gem.arb.ArbEnumerated._
 
 /**
   * Tests SeqexecServer typeclasses

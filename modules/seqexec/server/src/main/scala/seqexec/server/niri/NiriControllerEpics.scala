@@ -294,7 +294,7 @@ object NiriControllerEpics extends NiriEncoders {
       val paramsDC = configDC(config.dc)
       val params =  paramsDC ++ configCC(config.cc)
 
-      val cfgActions1 = if(params.isEmpty) IO.pure(EpicsCommand.Completed)
+      val cfgActions1 = if(params.isEmpty) IO.pure(EpicsCommand.Result.Completed)
                         else executeIfNeeded(params,
                           epicsSys.configCmd.setTimeout[IO](ConfigTimeout) *>
                           epicsSys.configCmd.post[IO])

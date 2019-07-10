@@ -50,7 +50,7 @@ final case class Ghost[F[_]: Sync](controller: GhostController[F])
       SeqActionF.embedF(calcObserveTime(config).flatMap { x =>
         controller
           .observe(fileId, x)
-          .as(ObserveCommand.Success: ObserveCommand.Result)
+          .as(ObserveCommand.Result.Success: ObserveCommand.Result)
       })
     }
 
