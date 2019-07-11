@@ -179,9 +179,9 @@ class GmosEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
   def rois: F[Map[Int, RoiStatus[F]]] =
     Sync[F].delay((1 to 5).map(i => i -> RoiStatus[F](dcState, i)).toMap)
 
-  def ccdXBinning: F[Int] = dcReadI("ccdXBinning")
+  def ccdXBinning: F[Int] = dcReadD("ccdXBinning").map(_.toInt)
 
-  def ccdYBinning: F[Int] = dcReadI("ccdYBinning")
+  def ccdYBinning: F[Int] = dcReadD("ccdYBinning").map(_.toInt)
 
   def currentCycle: F[Int] = dcReadI("currentCycle")
 

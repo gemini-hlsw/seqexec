@@ -11,6 +11,7 @@ import gsp.math.Angle
 import gsp.math.Offset
 import gsp.math.syntax.string._
 import edu.gemini.spModel.config2.Config
+import edu.gemini.spModel.config2.ItemKey
 import edu.gemini.spModel.gemini.gmos.GmosCommonType._
 import edu.gemini.spModel.gemini.gmos.InstGmosCommon._
 import edu.gemini.spModel.guide.StandardGuideOptions
@@ -68,6 +69,14 @@ abstract class Gmos[F[_]: Sync, T<:GmosController.SiteDependentTypes](controller
   def configToAngle(s: String): Either[ExtractFailure, Angle] =
     s.parseDoubleOption.toRight(ContentError("Invalid offset value")).map(Angle.fromDoubleArcseconds(_))
 
+  def extractGuiding(config: Config, k: ItemKey): Either[ExtractFailure, Guiding] =
+    config
+      .extractAs[StandardGuideOptions.Value](k)
+      .flatMap(r => Guiding.fromString(r.toString).toRight(KeyNotFound(k)))
+      .orElse {
+        config.extractAs[String](k).flatMap(Guiding.fromString(_).toRight(KeyNotFound(k)))
+      }
+
   private def nsPosition(config: Config, sc: Int): Either[ExtractFailure, Vector[NSPosition]] = {
     (for {
       i <- 0 to scala.math.min(BeamLabels.length, sc) - 1
@@ -77,7 +86,7 @@ abstract class Gmos[F[_]: Sync, T<:GmosController.SiteDependentTypes](controller
         p <- config.extractAs[String](INSTRUMENT_KEY / s"nsBeam${s.name}-p").flatMap(configToAngle).map(Offset.P.apply)
         q <- config.extractAs[String](INSTRUMENT_KEY / s"nsBeam${s.name}-q").flatMap(configToAngle).map(Offset.Q.apply)
         k = INSTRUMENT_KEY / s"nsBeam${s.name}-guideWithOIWFS"
-        g <- config.extractAs[StandardGuideOptions.Value](k).flatMap(r => Guiding.fromString(r.toString).toRight(KeyNotFound(k)))
+        g <- extractGuiding(config, k)
       } yield NSPosition(s, Offset(p, q), g)
     }).toVector.sequence
   }

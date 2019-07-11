@@ -508,7 +508,7 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
     }
   }
 
-  private def commonHeaders[F[_]: Sync](epics: TcsEpics[F], config: Config, tcsSubsystems: List[TcsController.Subsystem],
+  private def commonHeaders[F[_]: Sync](epics: => TcsEpics[F], config: Config, tcsSubsystems: List[TcsController.Subsystem],
                             inst: InstrumentSystem[F])(ctx: HeaderExtraData): Header[F] =
     new StandardHeader(
       inst,
@@ -518,19 +518,19 @@ class SeqTranslate(site: Site, systems: Systems[IO], settings: TranslateSettings
       tcsSubsystems
     )
 
-  private def gwsHeaders[F[_]: Sync](epics: GwsEpics[F], i: InstrumentSystem[F]): Header[F] = GwsHeader.header(i,
+  private def gwsHeaders[F[_]: Sync](epics: => GwsEpics[F], i: InstrumentSystem[F]): Header[F] = GwsHeader.header(i,
     if (settings.gwsKeywords) GwsKeywordsReaderEpics[F](epics) else DummyGwsKeywordsReader[F])
 
-  private def gcalHeader[F[_]: Sync](epics: GcalEpics[F], i: InstrumentSystem[F]): Header[F] = GcalHeader.header(i,
+  private def gcalHeader[F[_]: Sync](epics: => GcalEpics[F], i: InstrumentSystem[F]): Header[F] = GcalHeader.header(i,
     if (settings.gcalKeywords) GcalKeywordsReaderEpics[F](epics) else DummyGcalKeywordsReader[F] )
 
-  private def altairHeader[F[_]: Sync: LiftIO](epics: AltairEpics[F], instrument: InstrumentSystem[F], tcsKReader: TcsKeywordsReader[F]): Header[F] =
+  private def altairHeader[F[_]: Sync: LiftIO](epics: => AltairEpics[F], instrument: InstrumentSystem[F], tcsKReader: TcsKeywordsReader[F]): Header[F] =
     AltairHeader.header[F](
       instrument,
       if (settings.altairKeywords) AltairKeywordReaderEpics[F](epics) else AltairKeywordReaderDummy[F],
       tcsKReader)
 
-  private def altairLgsHeader[F[_]: Sync](epics: AltairEpics[F], guideStar: GuideStarType, instrument: InstrumentSystem[F]): Header[F] =
+  private def altairLgsHeader[F[_]: Sync](epics: => AltairEpics[F], guideStar: GuideStarType, instrument: InstrumentSystem[F]): Header[F] =
     if (guideStar === GuideStarType.LGS) {
       AltairLgsHeader.header(instrument,
         if (settings.altairKeywords) AltairKeywordReaderEpics[F](epics) else AltairKeywordReaderDummy[F])
