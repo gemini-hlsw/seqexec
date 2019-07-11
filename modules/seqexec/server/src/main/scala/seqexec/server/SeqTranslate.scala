@@ -45,7 +45,6 @@ import seqexec.server.altair.AltairEpics
 import seqexec.server.altair.AltairLgsHeader
 import seqexec.server.altair.AltairKeywordReaderEpics
 import seqexec.server.altair.AltairKeywordReaderDummy
-import seqexec.server.SeqexecFailure._
 import squants.Time
 import squants.time.TimeConversions._
 

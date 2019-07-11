@@ -63,7 +63,7 @@ object TcsNorthControllerEpicsAo {
       .map { o => (o.x - current.base.offset.x, o.y - current.base.offset.y) }
       .map(d => d._1 * d._1 + d._2 * d._2)
 
-    val aoThreshold =  aoOffsetThreshold(demand.inst.instrument)
+    val aoThreshold = aoOffsetThreshold(demand.inst.instrument)
         .filter(_ => Tcs.calcGuiderInUse(demand.gc, TipTiltSource.GAOS, M1Source.GAOS) && demand.gds.aoguide.isActive)
 
     val thresholds = List(
@@ -71,7 +71,7 @@ object TcsNorthControllerEpicsAo {
         .option(pwfs1OffsetThreshold),
       aoThreshold,
       demand.inst.oiOffsetGuideThreshold
-        .filter(_ => Tcs.calcGuiderInUse(demand.gc, TipTiltSource.OIWFS, M1Source.OIWFS) && demand.gds.oiwfs.isActive),
+        .filter(_ => Tcs.calcGuiderInUse(demand.gc, TipTiltSource.OIWFS, M1Source.OIWFS) && demand.gds.oiwfs.isActive)
     )
     // Does the offset movement surpass any of the existing thresholds ?
     distanceSquared.exists(dd => thresholds.exists(_.exists(t => t*t < dd)))
@@ -133,7 +133,6 @@ object TcsNorthControllerEpicsAo {
     setPwfs1(EpicsTcsAoConfig.base)(subsystems, current.base.pwfs1.detector, demand.gds.pwfs1.detector),
     setOiwfs(EpicsTcsAoConfig.base)(subsystems, current.base.oiwfs.detector, demand.gds.oiwfs.detector)
   ).collect{ case Some(x) => x }
-
 
   def tagIso[B, T]: Iso[B@@T, B] = Iso.apply[B@@T, B](x => x)(tag[T](_))
 

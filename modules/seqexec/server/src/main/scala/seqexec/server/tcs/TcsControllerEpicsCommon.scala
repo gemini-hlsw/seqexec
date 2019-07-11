@@ -21,7 +21,7 @@ import seqexec.model.M1GuideConfig
 import seqexec.model.TelescopeGuideConfig
 import seqexec.server.EpicsCodex.{EncodeEpicsValue, encode}
 import seqexec.server.tcs.TcsController._
-import seqexec.server.{EpicsCommandF, SeqexecFailure}
+import seqexec.server.{EpicsCommand, SeqexecFailure}
 import seqexec.server.tcs.TcsEpics.{ProbeFollowCmd, ProbeGuideCmd}
 import seqexec.server.tcs.ScienceFoldPositionCodex._
 import shapeless.tag
@@ -154,7 +154,7 @@ object TcsControllerEpicsCommon {
   }
 
   final case class GuideControl[F[_]: Async](subs: Subsystem,
-                                             parkCmd: EpicsCommandF,
+                                             parkCmd: EpicsCommand,
                                              nodChopGuideCmd: ProbeGuideCmd[F],
                                              followCmd: ProbeFollowCmd[F]
                                             )
@@ -197,13 +197,13 @@ object TcsControllerEpicsCommon {
 
   implicit val encodeNodChopOption: EncodeEpicsValue[NodChopTrackingOption, String] =
     EncodeEpicsValue {
-      case NodChopTrackingOption.NodChopTrackingOn => "On"
+      case NodChopTrackingOption.NodChopTrackingOn  => "On"
       case NodChopTrackingOption.NodChopTrackingOff => "Off"
     }
 
   implicit val encodeFollowOption: EncodeEpicsValue[FollowOption, String] =
     EncodeEpicsValue {
-      case FollowOption.FollowOn => "On"
+      case FollowOption.FollowOn  => "On"
       case FollowOption.FollowOff => "Off"
     }
 
@@ -266,7 +266,7 @@ object TcsControllerEpicsCommon {
   ): Option[C => IO[C]] =
     setGuideProbe(oiwfsGuiderControl, (l ^|-> BaseEpicsTcsConfig.oiwfs ^|-> GuiderConfig.tracking).set)(a, b, c)
 
-  private def setGuiderWfs[F[_] : Sync](on: TcsEpics.WfsObserveCmd[F], off: EpicsCommandF)(c: GuiderSensorOption)
+  private def setGuiderWfs[F[_] : Sync](on: TcsEpics.WfsObserveCmd[F], off: EpicsCommand)(c: GuiderSensorOption)
   : F[Unit] = {
     val NonStopExposures = -1
     c match {
@@ -304,16 +304,16 @@ object TcsControllerEpicsCommon {
       case Niri_f6 |
            Niri_f14 |
            Niri_f32 => ports.niriPort
-      case Nifs => ports.nifsPort
-      case Gnirs => ports.gnirsPort
-      case F2 => ports.flamingos2Port
-      case Gpi => ports.gpiPort
-      case Ghost => ports.ghostPort
-      case Gsaoi => ports.gsaoiPort
+      case Nifs     => ports.nifsPort
+      case Gnirs    => ports.gnirsPort
+      case F2       => ports.flamingos2Port
+      case Gpi      => ports.gpiPort
+      case Ghost    => ports.ghostPort
+      case Gsaoi    => ports.gsaoiPort
       case Ac |
-           Hr => BottomPort
+           Hr       => BottomPort
       case Phoenix |
-           Visitor => InvalidPort
+           Visitor  => InvalidPort
     }
     (port =!= InvalidPort).option(port)
   }
@@ -330,9 +330,9 @@ object TcsControllerEpicsCommon {
   }
 
   implicit private val encodeHrwfsPickupPosition: EncodeEpicsValue[HrwfsPickupPosition, String] =
-    EncodeEpicsValue {
-      case HrwfsPickupPosition.IN => "IN"
-      case HrwfsPickupPosition.OUT => "OUT"
+    EncodeEpicsValue{
+      case HrwfsPickupPosition.IN     => "IN"
+      case HrwfsPickupPosition.OUT    => "OUT"
       case HrwfsPickupPosition.Parked => "park-pos."
     }
 
@@ -343,16 +343,16 @@ object TcsControllerEpicsCommon {
 
   private def calcHrPickupPosition(c: AGConfig, ports: InstrumentPorts): Option[HrwfsPickupPosition] = c.hrwfs.flatMap {
     case HrwfsConfig.Manual(h) => h.some
-    case HrwfsConfig.Auto => scienceFoldFromRequested(ports)(c.sfPos).flatMap {
+    case HrwfsConfig.Auto      => scienceFoldFromRequested(ports)(c.sfPos).flatMap {
       case ScienceFold.Parked |
            ScienceFold.Position(_, _, BottomPort) => HrwfsPickupPosition.Parked.some
-      case ScienceFold.Position(_, _, _) => none
+      case ScienceFold.Position(_, _, _)          => none
     }
   }
 
   implicit private val encodeMountGuideConfig: EncodeEpicsValue[MountGuideOption, String] =
-    EncodeEpicsValue {
-      case MountGuideOption.MountGuideOn => "on"
+    EncodeEpicsValue{
+      case MountGuideOption.MountGuideOn  => "on"
       case MountGuideOption.MountGuideOff => "off"
     }
 
@@ -366,7 +366,7 @@ object TcsControllerEpicsCommon {
   implicit private val encodeM1GuideConfig: EncodeEpicsValue[M1GuideConfig, String] =
     EncodeEpicsValue {
       case M1GuideConfig.M1GuideOn(_) => "on"
-      case M1GuideConfig.M1GuideOff => "off"
+      case M1GuideConfig.M1GuideOff   => "off"
     }
 
   def setM1Guide[C](l: Lens[C, BaseEpicsTcsConfig])(
@@ -379,19 +379,19 @@ object TcsControllerEpicsCommon {
   private val encodeM2Guide: EncodeEpicsValue[M2GuideConfig, String] =
     EncodeEpicsValue {
       case M2GuideConfig.M2GuideOn(_, _) => "on"
-      case M2GuideConfig.M2GuideOff => "off"
+      case M2GuideConfig.M2GuideOff      => "off"
     }
 
   private val encodeM2Coma: EncodeEpicsValue[M2GuideConfig, String] =
     EncodeEpicsValue {
       case M2GuideConfig.M2GuideOn(ComaOption.ComaOn, _) => "on"
-      case _ => "off"
+      case _                                             => "off"
     }
 
   private val encodeM2GuideReset: EncodeEpicsValue[M2GuideConfig, String] =
     EncodeEpicsValue {
       case M2GuideConfig.M2GuideOn(_, _) => "off"
-      case M2GuideConfig.M2GuideOff => "on"
+      case M2GuideConfig.M2GuideOff      => "on"
     }
 
   def setM2Guide[C](l: Lens[C, BaseEpicsTcsConfig])(
@@ -405,7 +405,7 @@ object TcsControllerEpicsCommon {
       TcsEpics.instance.m2GuideConfigCmd.setReset(encodeM2GuideReset.encode(d))
         .whenA(encodeM2GuideReset.encode(d) =!= encodeM2GuideReset.encode(c))
     )
-    
+
     (subsystems.contains(Subsystem.M2) && actions.nonEmpty).option( x =>
       actions.sequence *> IO(
         (l ^|-> BaseEpicsTcsConfig.telescopeGuideConfig ^|-> TelescopeGuideConfig.m2Guide).set(d)(x)
