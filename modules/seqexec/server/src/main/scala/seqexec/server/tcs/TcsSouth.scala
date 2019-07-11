@@ -17,9 +17,9 @@ import org.log4s.getLogger
 import seqexec.model.enum.{M1Source, Resource, TipTiltSource}
 import seqexec.server.{ConfigResult, InstrumentSystem, SeqActionF, System}
 import seqexec.server.gems.Gems
-import seqexec.server.tcs.TcsController.{AGConfig, GuiderConfig, GuiderSensorOff, HrwfsConfig, InstrumentOffset, LightPath, OIConfig, OffsetP, OffsetQ, P1Config, P2Config, ProbeTrackingConfig, Subsystem, TelescopeConfig}
+import seqexec.server.tcs.TcsController.{AGConfig, BasicGuidersConfig, BasicTcsConfig, GuiderConfig, GuiderSensorOff, HrwfsConfig, InstrumentOffset, LightPath, OIConfig, OffsetP, OffsetQ, P1Config, P2Config, ProbeTrackingConfig, Subsystem, TelescopeConfig}
 import seqexec.server.ConfigUtilOps._
-import seqexec.server.tcs.TcsSouthController.{GuidersConfig, TcsSouthConfig}
+import seqexec.server.tcs.TcsSouthController.TcsSouthConfig
 import shapeless.tag
 import squants.Angle
 import squants.space.Arcseconds
@@ -68,31 +68,29 @@ case class TcsSouth [F[_]: Sync] private (tcsController: TcsSouthController[F],
    * configuration set from TCC. The TCC configuration has precedence: if a guider is not used in the TCC configuration,
    * it will not be used for the step, regardless of the sequence values.
    */
-  def buildTcsConfig: F[TcsSouthConfig] =
-    guideDb.value.map{ c => {
-      TcsSouthConfig(
-        c.tcsGuide,
-        TelescopeConfig(config.offsetA, config.wavelA),
-        GuidersConfig(
-          tag[P1Config](calcGuiderConfig(
-            calcGuiderInUse(c.tcsGuide, TipTiltSource.PWFS1, M1Source.PWFS1),
-            config.guideWithP1
-          ) ),
-          tag[P2Config](calcGuiderConfig(
-            calcGuiderInUse(c.tcsGuide, TipTiltSource.PWFS2, M1Source.PWFS2),
-            config.guideWithP2
-          ) ),
-          tag[OIConfig](calcGuiderConfig(
-            calcGuiderInUse(c.tcsGuide, TipTiltSource.OIWFS, M1Source.OIWFS),
-            config.guideWithOI
-          ) )
+  def buildBasicTcsConfig(gc: GuideConfig): F[TcsSouthConfig] =
+    (BasicTcsConfig(
+      gc.tcsGuide,
+      TelescopeConfig(config.offsetA, config.wavelA),
+      BasicGuidersConfig(
+        tag[P1Config](calcGuiderConfig(
+          calcGuiderInUse(gc.tcsGuide, TipTiltSource.PWFS1, M1Source.PWFS1),
+          config.guideWithP1)
         ),
-        AGConfig(config.lightPath, HrwfsConfig.Auto.some),
-        c.gaosGuide.flatMap(_.toOption),
-        config.instrument
-      )
-    } }
+        tag[P2Config](calcGuiderConfig(
+          calcGuiderInUse(gc.tcsGuide, TipTiltSource.PWFS2, M1Source.PWFS2),
+          config.guideWithP2)
+        ),
+        tag[OIConfig](calcGuiderConfig(
+          calcGuiderInUse(gc.tcsGuide, TipTiltSource.OIWFS, M1Source.OIWFS),
+          config.guideWithOI)
+        )
+      ),
+      AGConfig(config.lightPath, HrwfsConfig.Auto.some),
+      config.instrument
+    ):TcsSouthConfig).pure[F]
 
+  def buildTcsConfig: F[TcsSouthConfig] = guideDb.value.flatMap(buildBasicTcsConfig)
 
 }
 
@@ -107,7 +105,6 @@ object TcsSouth {
                                        guideWithP1: Option[StandardGuideOptions.Value],
                                        guideWithP2: Option[StandardGuideOptions.Value],
                                        guideWithOI: Option[StandardGuideOptions.Value],
-                                       guideWithAO: Option[StandardGuideOptions.Value],
                                        offsetA: Option[InstrumentOffset],
                                        wavelA: Option[Wavelength],
                                        lightPath: LightPath,
@@ -122,7 +119,6 @@ object TcsSouth {
     val gwp1 = config.extractAs[StandardGuideOptions.Value](TELESCOPE_KEY / GUIDE_WITH_PWFS1_PROP).toOption
     val gwp2 = config.extractAs[StandardGuideOptions.Value](TELESCOPE_KEY / GUIDE_WITH_PWFS2_PROP).toOption
     val gwoi = config.extractAs[StandardGuideOptions.Value](TELESCOPE_KEY / GUIDE_WITH_OIWFS_PROP).toOption
-    val gwao = config.extractAs[StandardGuideOptions.Value](TELESCOPE_KEY / GUIDE_WITH_AOWFS_PROP).toOption
     val offsetp = config.extractAs[String](TELESCOPE_KEY / P_OFFSET_PROP).toOption.flatMap(_.parseDoubleOption)
       .map(Arcseconds(_):Angle).map(tag[OffsetP](_))
     val offsetq = config.extractAs[String](TELESCOPE_KEY / Q_OFFSET_PROP).toOption.flatMap(_.parseDoubleOption)
@@ -132,7 +128,6 @@ object TcsSouth {
       gwp1,
       gwp2,
       gwoi,
-      gwao,
       (offsetp, offsetq).mapN(InstrumentOffset(_, _)),
       observingWavelength,
       lightPath,

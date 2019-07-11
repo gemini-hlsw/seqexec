@@ -3,15 +3,9 @@
 
 package seqexec.server.tcs
 
-import cats.Eq
 import cats.data.NonEmptySet
-import cats.implicits._
-import monocle.macros.Lenses
-import seqexec.model.TelescopeGuideConfig
-import seqexec.server.InstrumentGuide
-import seqexec.server.altair.Altair
-import seqexec.server.altair.AltairController.AltairConfig
-import seqexec.server.tcs.TcsController.{AoGuide, GuiderConfig, OIConfig, P1Config, P2Config}
+import seqexec.server.altair.{Altair, AltairController}
+import seqexec.server.tcs.TcsController.{AoGuide, AoTcsConfig, GuiderConfig, TcsConfig}
 import shapeless.tag.@@
 
 trait TcsNorthController[F[_]] {
@@ -27,28 +21,8 @@ trait TcsNorthController[F[_]] {
 }
 
 object TcsNorthController {
-  @Lenses
-  final case class GuidersConfig(
-                                  pwfs1: GuiderConfig@@P1Config,
-                                  pwfs2OrAowfs: Either[GuiderConfig@@P2Config, GuiderConfig@@AoGuide],
-                                  oiwfs: GuiderConfig@@OIConfig
-                                )
 
-  object GuidersConfig
-  {
-    implicit val pwfs1Eq: Eq[GuiderConfig@@P1Config] = Eq[GuiderConfig].contramap(identity)
-  }
-
-  @Lenses
-  final case class TcsNorthConfig(
-    gc:  TelescopeGuideConfig,
-    tc:  TcsController.TelescopeConfig,
-    gds: GuidersConfig,
-    agc: TcsController.AGConfig,
-    gaos: Option[AltairConfig],
-    inst: InstrumentGuide
-  )
-
-  object TcsConfig
+  type TcsNorthConfig = TcsConfig[GuiderConfig@@AoGuide, AltairController.AltairConfig]
+  type TcsNorthAoConfig = AoTcsConfig[GuiderConfig@@AoGuide, AltairController.AltairConfig]
 
 }
