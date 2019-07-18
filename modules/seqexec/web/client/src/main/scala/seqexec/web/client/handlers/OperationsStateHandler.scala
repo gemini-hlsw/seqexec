@@ -72,7 +72,7 @@ class OperationsStateHandler[M](modelRW: ModelRW[M, SequencesOnDisplay])
         SequencesOnDisplay.markOperations(
           id,
           TabOperations.startFromRequested
-            .set(StartFromOperation.StartFromInFlight)))
+            .set(StartFromOperation.StartFromIdle)))
 
     case RunResourceComplete(id, _, r) =>
       updatedL(
