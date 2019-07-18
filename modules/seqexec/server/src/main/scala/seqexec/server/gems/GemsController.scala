@@ -21,7 +21,16 @@ object GemsController {
   sealed trait GemsConfig
 
   case object GemsOff extends GemsConfig
-  // TODO Complete ADT for GeMS configurations
+
+  final case class GemsOn(
+    ttgs1: Boolean,
+    ttgs2: Boolean,
+    ttgs3: Boolean,
+    odgw1: Boolean,
+    odgw2: Boolean,
+    odgw3: Boolean,
+    odgw4: Boolean
+  ) extends GemsConfig
 
 }
 
