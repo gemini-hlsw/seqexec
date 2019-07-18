@@ -8,7 +8,6 @@ import cats.kernel.laws.discipline._
 import cats.tests.CatsSuite
 import monocle.law.discipline._
 
-
 final class StepSpec extends CatsSuite {
 
   import ArbEnumerated._

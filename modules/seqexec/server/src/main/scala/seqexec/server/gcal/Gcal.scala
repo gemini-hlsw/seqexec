@@ -7,14 +7,12 @@ import cats._
 import cats.implicits._
 import cats.effect.Sync
 import cats.data.EitherT
-import java.util.{Set => JSet}
-
 import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.gemini.calunit.CalUnitConstants._
 import edu.gemini.spModel.gemini.calunit.CalUnitParams.Lamp
 import edu.gemini.spModel.seqcomp.SeqConfigNames.CALIBRATION_KEY
+import java.util.{Set => JSet}
 import org.log4s.{Logger, getLogger}
-
 import scala.Function.const
 import scala.collection.JavaConverters._
 import seqexec.model.enum.Resource

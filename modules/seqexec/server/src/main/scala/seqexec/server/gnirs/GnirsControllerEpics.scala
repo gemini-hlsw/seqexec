@@ -7,7 +7,7 @@ import cats.implicits._
 import cats.effect.{ IO, Timer }
 import cats.data.Nested
 import seqexec.model.dhs.ImageFileId
-import seqexec.server.{Dark => _, _}
+import seqexec.server._
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams.{Camera, Decker, Disperser, ReadMode}
 import fs2.Stream
@@ -15,6 +15,7 @@ import org.log4s.getLogger
 import squants.{Length, Seconds, Time}
 import squants.space.LengthConversions._
 import seqexec.model.dhs.ImageFileId
+import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.EpicsUtil._
 import seqexec.server.EpicsCodex._
 import seqexec.server.gnirs.GnirsController._
@@ -294,7 +295,7 @@ object GnirsControllerEpics extends GnirsEncoders {
           setCCParams(config.cc) *>
           IO(Log.debug("Completed GNIRS configuration"))
 
-      override def observe(fileId: ImageFileId, expTime: Time): IO[ObserveCommand.Result] =
+      override def observe(fileId: ImageFileId, expTime: Time): IO[ObserveCommandResult] =
         IO(Log.info("Start GNIRS observe")) *>
           checkDhs *>
           checkArray *>

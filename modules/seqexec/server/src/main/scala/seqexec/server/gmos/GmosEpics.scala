@@ -11,6 +11,7 @@ import edu.gemini.epics.acm._
 import java.lang.{Double => JDouble}
 import mouse.all._
 import org.log4s.{Logger, getLogger}
+import seqexec.model.enum.ApplyCommandResult
 import seqexec.server.EpicsCommand.setParameter
 import seqexec.server.gmos.GmosEpics.{RoiParameters, RoiStatus}
 import seqexec.server.{EpicsCommand, EpicsSystem}
@@ -25,7 +26,7 @@ class GmosEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
 
   val GmosTop: String = tops.getOrElse("gm", "gm:")
 
-  def post: F[EpicsCommand.Result] = configCmd.post[F]
+  def post: F[ApplyCommandResult] = configCmd.post[F]
 
   object configCmd extends EpicsCommand {
     override protected val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gmos::config"))

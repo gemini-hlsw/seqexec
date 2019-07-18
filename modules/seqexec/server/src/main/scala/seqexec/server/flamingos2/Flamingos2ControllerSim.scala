@@ -8,10 +8,10 @@ import java.util.concurrent.atomic.AtomicInteger
 import cats.effect.Sync
 import cats.effect.Timer
 import seqexec.model.dhs.ImageFileId
+import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.SeqexecFailure.Execution
 import seqexec.server.flamingos2.Flamingos2Controller.Flamingos2Config
 import seqexec.server.InstrumentControllerSim
-import seqexec.server.ObserveCommand
 import seqexec.server.Progress
 import org.log4s.getLogger
 import squants.Time
@@ -25,7 +25,7 @@ final case class Flamingos2ControllerSim[F[_]: Sync: Timer]()
   private val sim = InstrumentControllerSim[F]("FLAMINGOS-2")
 
   override def observe(fileId:  ImageFileId,
-                       expTime: Time): F[ObserveCommand.Result] =
+                       expTime: Time): F[ObserveCommandResult] =
     sim.observe(fileId, expTime)
 
   override def applyConfig(config: Flamingos2Config): F[Unit] =
@@ -49,7 +49,7 @@ final case class Flamingos2ControllerSimBad[F[_]: Sync: Timer](failAt: Int)
   private val counter: AtomicInteger = new AtomicInteger(0)
 
   override def observe(fileId:  ImageFileId,
-                       expTime: Time): F[ObserveCommand.Result] =
+                       expTime: Time): F[ObserveCommandResult] =
     sim.observe(fileId, expTime)
 
   override def applyConfig(config: Flamingos2Config): F[Unit] =

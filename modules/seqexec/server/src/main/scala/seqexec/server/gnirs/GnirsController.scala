@@ -9,8 +9,9 @@ import cats.Show
 import cats.implicits._
 import edu.gemini.spModel.gemini.gnirs.GNIRSParams.{ ReadMode => LegacyReadMode }
 import seqexec.model.dhs.ImageFileId
+import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.gnirs.GnirsController.GnirsConfig
-import seqexec.server.{ObserveCommand, Progress}
+import seqexec.server.Progress
 import squants.{Length, Time}
 import squants.time.TimeConversions._
 
@@ -18,7 +19,7 @@ trait GnirsController[F[_]] {
 
   def applyConfig(config: GnirsConfig): F[Unit]
 
-  def observe(fileId: ImageFileId, expTime: Time): F[ObserveCommand.Result]
+  def observe(fileId: ImageFileId, expTime: Time): F[ObserveCommandResult]
 
   // endObserve is to notify the completion of the observation, not to cause its end.
   def endObserve: F[Unit]

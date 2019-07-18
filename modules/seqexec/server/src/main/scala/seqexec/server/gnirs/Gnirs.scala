@@ -13,9 +13,9 @@ import edu.gemini.spModel.gemini.gnirs.InstGNIRS._
 import edu.gemini.spModel.obscomp.InstConstants.{BIAS_OBSERVE_TYPE, DARK_OBSERVE_TYPE, OBSERVE_TYPE_PROP}
 import edu.gemini.spModel.seqcomp.SeqConfigNames.{INSTRUMENT_KEY, OBSERVE_KEY}
 import java.lang.{Double => JDouble, Integer => JInt}
-
 import gem.enum.LightSinkName
 import gsp.math.syntax.string._
+import seqexec.model.enum.ObserveCommandResult
 import seqexec.model.enum.Instrument
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.ConfigUtilOps._
@@ -38,7 +38,7 @@ final case class Gnirs[F[_]: Sync](controller: GnirsController[F], dhsClient: Dh
   override val observeControl: ObserveControl[F] = UnpausableControl(StopObserveCmd(SeqActionF.embedF(controller.stopObserve)),
                                                                 AbortObserveCmd(SeqActionF.embedF(controller.abortObserve)))
 
-  override def observe(config: Config): SeqObserveF[F, ImageFileId, ObserveCommand.Result] =
+  override def observe(config: Config): SeqObserveF[F, ImageFileId, ObserveCommandResult] =
     Reader { fileId =>
       SeqActionF.liftF(calcObserveTime(config)).flatMap { x =>
         SeqActionF.embedF(controller.observe(fileId, x))

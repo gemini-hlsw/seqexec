@@ -19,7 +19,9 @@ import edu.gemini.spModel.gemini.niri.Niri.BuiltinROI
 import org.log4s.getLogger
 import scala.concurrent.ExecutionContext
 import seqexec.model.dhs.ImageFileId
-import seqexec.server.{EpicsCodex, EpicsCommand, ObserveCommand, Progress, ProgressUtil, SeqexecFailure}
+import seqexec.model.enum.ObserveCommandResult
+import seqexec.model.enum.ApplyCommandResult
+import seqexec.server.{EpicsCodex, Progress, ProgressUtil, SeqexecFailure}
 import seqexec.server.EpicsUtil._
 import seqexec.server.EpicsCodex._
 import seqexec.server.niri.NiriController._
@@ -294,7 +296,7 @@ object NiriControllerEpics extends NiriEncoders {
       val paramsDC = configDC(config.dc)
       val params =  paramsDC ++ configCC(config.cc)
 
-      val cfgActions1 = if(params.isEmpty) IO.pure(EpicsCommand.Result.Completed)
+      val cfgActions1 = if(params.isEmpty) IO.pure(ApplyCommandResult.Completed)
                         else executeIfNeeded(params,
                           epicsSys.configCmd.setTimeout[IO](ConfigTimeout) *>
                           epicsSys.configCmd.post[IO])
@@ -313,7 +315,7 @@ object NiriControllerEpics extends NiriEncoders {
         IO(Log.debug("Completed NIRI configuration"))
     }
 
-    override def observe(fileId: ImageFileId, cfg: DCConfig): IO[ObserveCommand.Result] =
+    override def observe(fileId: ImageFileId, cfg: DCConfig): IO[ObserveCommandResult] =
       IO(Log.info("Start NIRI observe")) *>
         failOnDHSNotConected *>
         failOnArrayNotActive *>

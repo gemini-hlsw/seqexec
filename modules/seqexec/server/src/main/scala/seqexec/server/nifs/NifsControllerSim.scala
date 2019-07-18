@@ -7,11 +7,11 @@ import cats.effect.Sync
 import cats.effect.Timer
 import cats.implicits._
 import seqexec.model.dhs.ImageFileId
+import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.InstrumentSystem.ElapsedTime
 import seqexec.server.nifs.NifsController.DCConfig
 import seqexec.server.nifs.NifsController.NifsConfig
 import seqexec.server.InstrumentControllerSim
-import seqexec.server.ObserveCommand
 import seqexec.server.Progress
 import squants.Time
 import squants.time.TimeConversions._
@@ -23,7 +23,7 @@ object NifsControllerSim {
       private val sim: InstrumentControllerSim[F] = InstrumentControllerSim[F](s"NIRI")
 
       override def observe(fileId: ImageFileId,
-                           cfg:    DCConfig): F[ObserveCommand.Result] =
+                           cfg:    DCConfig): F[ObserveCommandResult] =
         calcTotalExposureTime(cfg).flatMap {ot =>
           sim
             .observe(fileId, ot)

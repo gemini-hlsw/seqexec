@@ -135,7 +135,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
             id = 1,
             executions = List(
               List(fromF[IO](ActionType.Undefined,
-                IO(Result.Paused(new Result.PauseContext {}))))
+                IO(Result.Paused(new Result.PauseContext[IO] {}))))
             )
           )
         )
@@ -440,7 +440,7 @@ class packageSpec extends FlatSpec with NonImplicitAssertions {
                   executions = List(
                     List(
                       Action[IO](ActionType.Undefined, Stream(Result.OK(DummyResult)).covary[IO],
-                        Action.State(Action.Completed(DummyResult), List.empty)
+                        Action.State(Action.ActionState.Completed(DummyResult), List.empty)
                       )
                     )
                   )

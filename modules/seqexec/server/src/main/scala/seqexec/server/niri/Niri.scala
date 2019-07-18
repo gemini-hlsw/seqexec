@@ -16,9 +16,10 @@ import edu.gemini.seqexec.server.niri.ReadMode
 import gem.enum.LightSinkName
 import seqexec.server.ConfigUtilOps._
 import seqexec.model.dhs.ImageFileId
+import seqexec.model.enum.ObserveCommandResult
 import seqexec.model.enum.Instrument
 import seqexec.server.ConfigUtilOps.ExtractFailure
-import seqexec.server.{ConfigResult, ConfigUtilOps, InstrumentSystem, ObserveCommand, Progress, SeqActionF, SeqObserveF, SeqexecFailure, TrySeq}
+import seqexec.server.{ConfigResult, ConfigUtilOps, InstrumentSystem, Progress, SeqActionF, SeqObserveF, SeqexecFailure, TrySeq}
 import seqexec.server.keywords.{DhsClient, DhsInstrument, KeywordsClient}
 import seqexec.server.tcs.FOCAL_PLANE_SCALE
 import java.lang.{Double => JDouble, Integer => JInt}
@@ -47,7 +48,7 @@ final case class Niri[F[_]: Sync: Timer](controller: NiriController[F], dhsClien
     UnpausableControl(StopObserveCmd(SeqActionF.embedF(controller.stopObserve)),
                     AbortObserveCmd(SeqActionF.embedF(controller.abortObserve)))
 
-  override def observe(config: Config): SeqObserveF[F, ImageFileId, ObserveCommand.Result] =
+  override def observe(config: Config): SeqObserveF[F, ImageFileId, ObserveCommandResult] =
     Reader { fileId => SeqActionF.either(getDCConfig(config))
       .flatMap(x => SeqActionF.embedF(controller.observe(fileId, x)))
     }

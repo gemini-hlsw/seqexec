@@ -23,6 +23,7 @@ import org.log4s.{Logger, getLogger}
 import scala.concurrent.duration._
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Guiding
+import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.ConfigUtilOps.{ContentError, ConversionError, _}
 import seqexec.server.gmos.Gmos.SiteSpecifics
 import seqexec.server.gmos.GmosController.Config._
@@ -144,12 +145,12 @@ abstract class Gmos[F[_]: Sync, T<:GmosController.SiteDependentTypes](controller
 
   override def calcStepType(config: Config): Either[SeqexecFailure, StepType] =
     if (Gmos.isNodAndShuffle(config)) {
-      NodAndShuffle(instrument).asRight
+      StepType.NodAndShuffle(instrument).asRight
     } else {
       SequenceConfiguration.calcStepType(config)
     }
 
-  override def observe(config: Config): SeqObserveF[F, ImageFileId, ObserveCommand.Result] =
+  override def observe(config: Config): SeqObserveF[F, ImageFileId, ObserveCommandResult] =
     Reader { fileId =>
       SeqActionF.liftF(calcObserveTime(config)).flatMap { x =>
         SeqActionF.embedF(controller.observe(fileId, x))
@@ -167,8 +168,9 @@ abstract class Gmos[F[_]: Sync, T<:GmosController.SiteDependentTypes](controller
     Sync[F].delay(config.extractAs[JDouble](OBSERVE_KEY / EXPOSURE_TIME_PROP)
       .map(v => Seconds(v.toDouble)).getOrElse(Seconds(10000)))
 
-  override def observeProgress(total: Time, elapsed: ElapsedTime): fs2.Stream[F, Progress] = controller
-    .observeProgress(total, elapsed)
+  override def observeProgress(total: Time, elapsed: ElapsedTime): fs2.Stream[F, Progress] =
+    controller
+      .observeProgress(total, elapsed)
 }
 
 object Gmos {

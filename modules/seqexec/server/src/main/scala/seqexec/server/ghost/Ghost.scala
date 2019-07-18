@@ -17,6 +17,7 @@ import gsp.math.optics.Format
 import scala.concurrent.duration._
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Instrument
+import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.ConfigUtilOps._
 import seqexec.server._
 import seqexec.server.keywords.GdsInstrument
@@ -41,16 +42,16 @@ final case class Ghost[F[_]: Sync](controller: GhostController[F])
   override val contributorName: String = "ghost"
 
   override val observeControl: InstrumentSystem.ObserveControl[F] =
-    InstrumentSystem.Uncontrollable()
+    InstrumentSystem.Uncontrollable
 
   override def observe(
     config: Config
-  ): SeqObserveF[F, ImageFileId, ObserveCommand.Result] =
+  ): SeqObserveF[F, ImageFileId, ObserveCommandResult] =
     Reader { fileId =>
       SeqActionF.embedF(calcObserveTime(config).flatMap { x =>
         controller
           .observe(fileId, x)
-          .as(ObserveCommand.Result.Success: ObserveCommand.Result)
+          .as(ObserveCommandResult.Success: ObserveCommandResult)
       })
     }
 

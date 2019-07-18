@@ -3,17 +3,15 @@
 
 package seqexec.engine
 
-import java.util.UUID
-
-import seqexec.model.{ActionType, ClientId, SequenceState, UserDetails}
-
-import scala.Function.const
-import org.scalatest.FlatSpec
-import org.scalatest.Inside.inside
-import org.scalatest.Matchers._
 import cats.effect.{ContextShift, IO}
 import fs2.Stream
 import gem.Observation
+import java.util.UUID
+import org.scalatest.FlatSpec
+import org.scalatest.Inside.inside
+import org.scalatest.Matchers._
+import seqexec.model.{ActionType, ClientId, SequenceState, UserDetails}
+import scala.Function.const
 import seqexec.engine.TestUtil.TestState
 
 import scala.concurrent.ExecutionContext
@@ -145,10 +143,10 @@ class SequenceSpec extends FlatSpec {
 
   // TODO: Share these fixtures with StepSpec
   private object DummyResult extends Result.RetVal
-  private val result: Result = Result.OK(DummyResult)
+  private val result: Result[Nothing] = Result.OK(DummyResult)
   private val action: Action[IO] = fromF[IO](ActionType.Undefined, IO(result))
-  private val completedAction: Action[IO] = action.copy(state = Action.State(Action.Completed(DummyResult), Nil))
-  def simpleStep2(pending: List[Actions[IO]], focus: Execution[IO], done: List[Results]): Step.Zipper[IO] = {
+  private val completedAction: Action[IO] = action.copy(state = Action.State(Action.ActionState.Completed(DummyResult), Nil))
+  def simpleStep2(pending: List[Actions[IO]], focus: Execution[IO], done: List[Results[IO]]): Step.Zipper[IO] = {
     val rollback: (Execution[IO], List[Actions[IO]]) =  done.map(_.map(const(action))) ++ List(focus.execution.map(const(action))) ++ pending match {
       case Nil => (Execution.empty, Nil)
       case x::xs => (Execution(x), xs)
@@ -199,7 +197,7 @@ class SequenceSpec extends FlatSpec {
 
     val c = ActionCoordsInSeq(1, ExecutionIndex(0), ActionIndex(1))
 
-    assert(seq.startSingle(c).getSingleState(c) === Action.Started)
+    assert(seq.startSingle(c).getSingleState(c) === Action.ActionState.Started)
 
   }
 

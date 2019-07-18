@@ -38,22 +38,22 @@ object TestCommon {
     odbHost = "localhost",
     date = LocalDate.of(2017, 1, 1),
     dhsURI = uri("http://localhost/"),
-    altairControl = Simulated,
-    gemsControl = Simulated,
-    dhsControl = Simulated,
-    f2Control = Simulated,
-    gcalControl = Simulated,
-    ghostControl = Simulated,
-    gmosControl = Simulated,
-    gnirsControl = Simulated,
-    gpiControl = Simulated,
-    gpiGdsControl = Simulated,
-    ghostGdsControl = Simulated,
-    gsaoiControl = Simulated,
-    gwsControl = Simulated,
-    nifsControl = Simulated,
-    niriControl = Simulated,
-    tcsControl = Simulated,
+    altairControl = ControlStrategy.Simulated,
+    gemsControl = ControlStrategy.Simulated,
+    dhsControl = ControlStrategy.Simulated,
+    f2Control = ControlStrategy.Simulated,
+    gcalControl = ControlStrategy.Simulated,
+    ghostControl = ControlStrategy.Simulated,
+    gmosControl = ControlStrategy.Simulated,
+    gnirsControl = ControlStrategy.Simulated,
+    gpiControl = ControlStrategy.Simulated,
+    gpiGdsControl = ControlStrategy.Simulated,
+    ghostGdsControl = ControlStrategy.Simulated,
+    gsaoiControl = ControlStrategy.Simulated,
+    gwsControl = ControlStrategy.Simulated,
+    nifsControl = ControlStrategy.Simulated,
+    niriControl = ControlStrategy.Simulated,
+    tcsControl = ControlStrategy.Simulated,
     odbNotifications = false,
     instForceError = false,
     failAt = 0,
@@ -62,21 +62,21 @@ object TestCommon {
     tag[GhostSettings][Uri](uri("http://localhost:8888/xmlrpc"))
   )
 
-  def configureIO(resource: Resource): IO[Result] = IO.apply(Result.OK(Response.Configured(resource)))
+  def configureIO(resource: Resource): IO[Result[IO]] = IO.apply(Result.OK(Response.Configured(resource)))
   def pendingAction(resource: Resource): Action[IO] =
     engine.fromF[IO](ActionType.Configure(resource), configureIO(resource))
   def running(resource: Resource): Action[IO] = pendingAction(resource).copy(state = Action.State(
-    Action.Started, Nil))
+    Action.ActionState.Started, Nil))
   def done(resource: Resource): Action[IO] = pendingAction(resource).copy(state = Action.State(
-    Action.Completed(Response.Configured(resource)), Nil))
+    Action.ActionState.Completed(Response.Configured(resource)), Nil))
   val fileId = "fileId"
   def observing: Action[IO] = engine.fromF[IO](ActionType.Observe,
-    IO.apply(Result.OK(Response.Observed(fileId)))).copy(state = Action.State(Action.Started, Nil))
-  def fileIdReady: Action[IO] = observing.copy(state = Action.State(Action.Started,
+    IO.apply(Result.OK(Response.Observed(fileId)))).copy(state = Action.State(Action.ActionState.Started, Nil))
+  def fileIdReady: Action[IO] = observing.copy(state = Action.State(Action.ActionState.Started,
     List(FileIdAllocated(fileId))))
-  def observed: Action[IO] = observing.copy(state = Action.State(Action.Completed(Response.Observed(fileId)),
+  def observed: Action[IO] = observing.copy(state = Action.State(Action.ActionState.Completed(Response.Observed(fileId)),
     List(FileIdAllocated(fileId))))
-  def paused: Action[IO] = observing.copy(state = Action.State(Action.Paused(new PauseContext{}),
+  def paused: Action[IO] = observing.copy(state = Action.State(Action.ActionState.Paused(new PauseContext[IO]{}),
     List(FileIdAllocated(fileId))))
   def testCompleted(oid: Observation.Id)(st: EngineState): Boolean = st.sequences.get(oid)
     .exists(_.seq.status.isCompleted)

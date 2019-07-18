@@ -20,7 +20,7 @@ import mouse.boolean._
 import org.log4s.getLogger
 import scala.math.abs
 import seqexec.model.dhs.ImageFileId
-import seqexec.server.ObserveCommand
+import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.Progress
 import seqexec.server.ProgressUtil
 import seqexec.server.SeqexecFailure
@@ -356,7 +356,7 @@ object NifsControllerEpics extends NifsEncoders {
                   SeqexecFailure.Execution("NIFS is not connected to DHS"))
 
     override def observe(fileId: ImageFileId,
-                         cfg:    DCConfig): IO[ObserveCommand.Result] = {
+                         cfg:    DCConfig): IO[ObserveCommandResult] = {
       IO(Log.info("Start NIFS observe")) *>
         checkDhs *>
         epicsSys.observeCmd.setLabel(fileId) *>

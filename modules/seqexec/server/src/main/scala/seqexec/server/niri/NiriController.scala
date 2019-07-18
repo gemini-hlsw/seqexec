@@ -5,15 +5,16 @@ package seqexec.server.niri
 
 import cats.Show
 import seqexec.model.dhs.ImageFileId
+import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.niri.NiriController.{DCConfig, NiriConfig}
-import seqexec.server.{ObserveCommand, Progress}
+import seqexec.server.Progress
 import squants.Time
 
 trait NiriController[F[_]] {
 
   def applyConfig(config: NiriConfig): F[Unit]
 
-  def observe(fileId: ImageFileId, cfg: DCConfig): F[ObserveCommand.Result]
+  def observe(fileId: ImageFileId, cfg: DCConfig): F[ObserveCommandResult]
 
   def endObserve: F[Unit]
 

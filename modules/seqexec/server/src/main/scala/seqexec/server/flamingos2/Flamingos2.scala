@@ -8,7 +8,6 @@ import cats.effect.Sync
 import cats.effect.Timer
 import cats.implicits._
 import fs2.Stream
-import seqexec.server.tcs.FOCAL_PLANE_SCALE
 import edu.gemini.spModel.config2.Config
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.{Reads, _}
 import edu.gemini.spModel.obscomp.InstConstants.{DARK_OBSERVE_TYPE, OBSERVE_TYPE_PROP}
@@ -16,7 +15,9 @@ import edu.gemini.spModel.seqcomp.SeqConfigNames._
 import java.lang.{Double => JDouble}
 import gem.enum.LightSinkName
 import scala.concurrent.duration.{Duration, SECONDS}
+import seqexec.server.tcs.FOCAL_PLANE_SCALE
 import seqexec.model.enum.Instrument
+import seqexec.model.enum.ObserveCommandResult
 import seqexec.model.dhs.ImageFileId
 import seqexec.server.ConfigUtilOps._
 import seqexec.server.flamingos2.Flamingos2Controller._
@@ -42,10 +43,10 @@ final case class Flamingos2[F[_]: Sync: Timer](f2Controller: Flamingos2Controlle
 
   override val keywordsClient: KeywordsClient[F] = this
 
-  override val observeControl: InstrumentSystem.ObserveControl[F] = InstrumentSystem.Uncontrollable()
+  override val observeControl: InstrumentSystem.ObserveControl[F] = InstrumentSystem.Uncontrollable
 
   // FLAMINGOS-2 does not support abort or stop.
-  override def observe(config: Config): SeqObserveF[F, ImageFileId, ObserveCommand.Result] =
+  override def observe(config: Config): SeqObserveF[F, ImageFileId, ObserveCommandResult] =
     Reader { fileId =>
       SeqActionF.liftF(calcObserveTime(config)).flatMap { x =>
         SeqActionF.embedF(f2Controller.observe(fileId, x))
@@ -64,11 +65,12 @@ final case class Flamingos2[F[_]: Sync: Timer](f2Controller: Flamingos2Controlle
       config.extractAs[JDouble](OBSERVE_KEY / EXPOSURE_TIME_PROP)
         .map(x => Seconds(x.toDouble)).getOrElse(Seconds(360)))
 
-  override def observeProgress(total: Time, elapsed: InstrumentSystem.ElapsedTime): Stream[F, Progress] = f2Controller
-    .observeProgress(total)
+  override def observeProgress(total: Time, elapsed: InstrumentSystem.ElapsedTime): Stream[F, Progress] =
+    f2Controller.observeProgress(total)
 
   // TODO Use different value if using electronic offsets
-  override val oiOffsetGuideThreshold: Option[Length] = (Arcseconds(0.01)/FOCAL_PLANE_SCALE).some
+  override val oiOffsetGuideThreshold: Option[Length] =
+    (Arcseconds(0.01)/FOCAL_PLANE_SCALE).some
 }
 
 object Flamingos2 {

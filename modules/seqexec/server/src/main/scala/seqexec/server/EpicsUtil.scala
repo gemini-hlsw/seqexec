@@ -10,7 +10,6 @@ import cats.effect.Sync
 import cats.effect.Async
 import cats.implicits._
 import fs2.Stream
-import gem.util.Enumerated
 import java.lang.{ Double => JDouble }
 import java.lang.{ Integer => JInt }
 import java.lang.{ Float => JFloat }
@@ -23,6 +22,8 @@ import java.util.concurrent.TimeUnit.MILLISECONDS
 import edu.gemini.epics.acm._
 import mouse.boolean._
 import org.log4s._
+import seqexec.model.enum.ApplyCommandResult
+import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.SeqexecFailure.SeqexecException
 import seqexec.server.SeqexecFailure.NullEpicsError
 import squants.Time
@@ -30,16 +31,15 @@ import scala.math.abs
 import scala.collection.JavaConverters._
 
 trait EpicsCommand {
-  import EpicsCommand._
   protected val cs: Option[CaCommandSender]
 
-  def post[F[_]: Async]: F[Result] =
-    Async[F].async[Result] { (f: Either[Throwable, Result] => Unit) =>
+  def post[F[_]: Async]: F[ApplyCommandResult] =
+    Async[F].async[ApplyCommandResult] { (f: Either[Throwable, ApplyCommandResult] => Unit) =>
       cs.map { ccs =>
         ccs.postCallback {
           new CaCommandListener {
-            override def onSuccess(): Unit = f(Result.Completed.asRight)
-            override def onPause(): Unit = f(Result.Paused.asRight)
+            override def onSuccess(): Unit = f(ApplyCommandResult.Completed.asRight)
+            override def onPause(): Unit = f(ApplyCommandResult.Paused.asRight)
             override def onFailure(cause: Exception): Unit = f(cause.asLeft)
           }
         }
@@ -91,16 +91,6 @@ trait EpicsSystem[T] {
 
 object EpicsCommand {
 
-  sealed trait Result extends Product with Serializable
-  object Result {
-    case object Paused extends Result
-    case object Completed extends Result
-
-    /** @group Typeclass Instances */
-    implicit val EpicsCommandEnumerated: Enumerated[Result] =
-      Enumerated.of(Paused, Completed)
-  }
-
   def setParameter[F[_]: Sync, T](p: Option[CaParameter[T]], v: T): F[Unit] =
     Sync[F].delay {
       p.map(_.set(v))
@@ -118,21 +108,19 @@ object EpicsCommand {
 }
 
 trait ObserveCommand {
-  import ObserveCommand._
-
   protected val cs: Option[CaCommandSender]
   protected val os: Option[CaApplySender]
 
-  def post[F[_]: Async]: F[Result] =
-    Async[F].async[Result] { (f: Either[Throwable, Result] => Unit) =>
+  def post[F[_]: Async]: F[ObserveCommandResult] =
+    Async[F].async[ObserveCommandResult] { (f: Either[Throwable, ObserveCommandResult] => Unit) =>
       os.map { oos =>
         oos.postCallback {
           new CaCommandListener {
-            override def onSuccess(): Unit = f(Result.Success.asRight)
-            override def onPause(): Unit = f(Result.Paused.asRight)
+            override def onSuccess(): Unit = f(ObserveCommandResult.Success.asRight)
+            override def onPause(): Unit = f(ObserveCommandResult.Paused.asRight)
             override def onFailure(cause: Exception): Unit = cause match {
-              case _: CaObserveStopped => f(Result.Stopped.asRight)
-              case _: CaObserveAborted => f(Result.Aborted.asRight)
+              case _: CaObserveStopped => f(ObserveCommandResult.Stopped.asRight)
+              case _: CaObserveAborted => f(ObserveCommandResult.Aborted.asRight)
               case _                   => f(cause.asLeft)
             }
           }
@@ -148,24 +136,6 @@ trait ObserveCommand {
     Sync[F].delay {
       cs.map(_.getApplySender).map(_.setTimeout(t.toMilliseconds.toLong, MILLISECONDS))
     }.void
-}
-
-object ObserveCommand {
-  sealed trait Result extends Product with Serializable
-
-  object Result {
-    case object Success extends Result
-    case object Paused extends Result
-    case object Stopped extends Result
-    case object Aborted extends Result
-
-
-    /** @group Typeclass Instances */
-    implicit val ObserveResultEnumerated: Enumerated[Result] =
-      Enumerated.of(Success, Paused, Stopped, Aborted)
-  }
-
-  implicit val equal: Eq[Result] = Eq.fromUniversalEquals
 }
 
 object EpicsCodex {
