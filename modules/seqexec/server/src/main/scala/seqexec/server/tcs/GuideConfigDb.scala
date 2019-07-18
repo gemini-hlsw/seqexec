@@ -20,7 +20,7 @@ import seqexec.model.M2GuideConfig
 import seqexec.model.M2GuideConfig._
 import seqexec.model.TelescopeGuideConfig
 import seqexec.server.altair.AltairController._
-import seqexec.server.gems.GemsController.{GemsConfig, GemsOff}
+import seqexec.server.gems.GemsController.{GemsConfig, GemsOff, GemsOn}
 import io.circe.{Decoder, DecodingFailure}
 import squants.space.Millimeters
 
@@ -82,7 +82,23 @@ object GuideConfigDb {
   }
 
   // TODO Implement GeMS decoder
-  implicit val gemsDecoder: Decoder[GemsConfig] = Decoder.const(GemsOff)
+  implicit val gemsDecoder: Decoder[GemsConfig] = Decoder.instance[GemsConfig]{
+    c =>
+      c.downField("aoOn").as[Boolean].flatMap { x =>
+        if(x) {
+          for {
+            ttgs1 <- c.downField("ttgs1On").as[Boolean]
+            ttgs2 <- c.downField("ttgs2On").as[Boolean]
+            ttgs3 <- c.downField("ttgs3On").as[Boolean]
+            odgw1 <- c.downField("odgw1On").as[Boolean]
+            odgw2 <- c.downField("odgw2On").as[Boolean]
+            odgw3 <- c.downField("odgw3On").as[Boolean]
+            odgw4 <- c.downField("odgw4On").as[Boolean]
+          } yield GemsOn(ttgs1, ttgs2, ttgs3, odgw1, odgw2, odgw3, odgw4)
+        }
+        else Right(GemsOff)
+      }
+  }
 
   implicit val gaosEitherDecoder: Decoder[Either[AltairConfig, GemsConfig]] =
     Decoder.decodeEither("altair", "gems")

@@ -14,6 +14,7 @@ import seqexec.model.M1GuideConfig
 import seqexec.model.M2GuideConfig
 import seqexec.model.TelescopeGuideConfig
 import seqexec.server.altair.AltairController.Lgs
+import seqexec.server.gems.GemsController.GemsOn
 import squants.space.Millimeters
 
 final class GuideConfigDbSpec extends FlatSpec {
@@ -82,9 +83,47 @@ final class GuideConfigDbSpec extends FlatSpec {
     Some(Left(Lgs(strap = true, sfo = true, starPos = (Millimeters(-5.0), Millimeters(3.0)))))
   )
 
+  val rawJson3: String = """
+  {
+    "tcsGuide": {
+      "m1Guide": {
+        "on": true,
+        "source": "GAOS"
+      },
+      "m2Guide": {
+        "on": true,
+        "sources": ["GAOS"],
+        "comaOn": true
+      },
+      "mountGuideOn": true
+    },
+    "gaosGuide": {
+      "gems": {
+        "aoOn": true,
+        "ttgs1On": true,
+        "ttgs2On": false,
+        "ttgs3On": false,
+        "odgw1On": true,
+        "odgw2On": false,
+        "odgw3On": true,
+        "odgw4On": true
+      }
+    }
+ }
+  """
+  val guideConfig3: GuideConfig = GuideConfig(
+    TelescopeGuideConfig(
+      MountGuideOption.MountGuideOn,
+      M1GuideConfig.M1GuideOn(M1Source.GAOS),
+      M2GuideConfig.M2GuideOn(ComaOption.ComaOn, Set(TipTiltSource.GAOS))
+    ),
+    Some(Right(GemsOn(true, false, false, true, false, true, true)))
+  )
+
   "GuideConfigDb" should "provide decoders" in {
     decode[GuideConfig](rawJson1) shouldBe Right(guideConfig1)
     decode[GuideConfig](rawJson2) shouldBe Right(guideConfig2)
+    decode[GuideConfig](rawJson3) shouldBe Right(guideConfig3)
   }
 
   it should "retrieve the same configuration that was set" in {
