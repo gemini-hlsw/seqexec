@@ -4,9 +4,11 @@
 package seqexec.engine
 
 import cats.Eq
+import cats.implicits._
 import monocle.function.Index.{index, listIndex}
 import monocle.syntax.apply._
 import mouse.boolean._
+import seqexec.engine.Action.ActionState
 
 /**
   * This structure holds the current `Execution` under execution. It carries
@@ -46,11 +48,11 @@ final case class Execution[F[_]](execution: List[Action[F]]) {
     *
     * If the index doesn't exist, `Current` is returned unmodified.
     */
-  def mark(i: Int)(r: Result): Execution[F] =
+  def mark(i: Int)(r: Result[F]): Execution[F] =
     Execution((execution &|-? index(i)).modify(a => a.copy(state = actionStateFromResult(r)(a.state))))
 
   def start(i: Int): Execution[F] =
-    Execution((execution &|-? index(i)).modify(a => a.copy(state = a.state.copy(runState = Action.Started))))
+    Execution((execution &|-? index(i)).modify(a => a.copy(state = a.state.copy(runState = ActionState.Started))))
 }
 
 object Execution {
@@ -65,31 +67,32 @@ object Execution {
     (as.nonEmpty && as.forall(_.state.runState.isIdle)).option(Execution(as))
 
   def errored[F[_]](ex: Execution[F]): Boolean = ex.execution.exists(_.state.runState match {
-    case Action.Failed(_) => true
+    case ActionState.Failed(_) => true
     case _                => false
   })
 
   def finished[F[_]](ex: Execution[F]): Boolean = ex.execution.forall(_.state.runState match {
-    case Action.Completed(_) => true
-    case Action.Failed(_)    => true
+    case ActionState.Completed(_) => true
+    case ActionState.Failed(_)    => true
     case _                   => false
   })
 
   def progressRatio[F[_]](ex: Execution[F]): (Int, Int) = (ex.results.length, ex.execution.length)
 
-  def actionStateFromResult(r: Result): (Action.State => Action.State) = s => r match {
-    case Result.OK(x)         => s.copy(runState = Action.Completed(x))
-    case Result.OKStopped(x)  => s.copy(runState = Action.Completed(x))
-    case Result.Partial(x)    => s.copy(partials = x :: s.partials)
-    case Result.Paused(c)     => s.copy(runState = Action.Paused(c))
-    case e@Result.Error(_)    => s.copy(runState = Action.Failed(e))
-  }
+  def actionStateFromResult[F[_]](r: Result[F]): (Action.State[F] => Action.State[F]) =
+    s => r match {
+      case Result.OK(x)         => s.copy(runState = ActionState.Completed(x))
+      case Result.OKStopped(x)  => s.copy(runState = ActionState.Completed(x))
+      case Result.Partial(x)    => s.copy(partials = x :: s.partials)
+      case e@Result.Error(_)    => s.copy(runState = ActionState.Failed(e))
+      case c: Result.Paused[F]  => s.copy(runState = ActionState.Paused(c.ctx))
+    }
 }
 
 /**
   * The result of an `Action`.
   */
-sealed trait Result {
+sealed trait Result[+F[_]] extends Product with Serializable {
   val errMsg: Option[String] = None
 }
 
@@ -98,15 +101,15 @@ object Result {
   // Base traits for results. They make harder to pass the wrong value.
   trait RetVal
   trait PartialVal
-  trait PauseContext
+  trait PauseContext[F[_]]
 
-  final case class OK[R <: RetVal](response: R) extends Result
-  final case class OKStopped[R <: RetVal](response: R) extends Result
-  final case class Partial[R <: PartialVal](response: R) extends Result
-  final case class Paused[C <: PauseContext](ctx: PauseContext) extends Result
+  final case class OK[R <: RetVal](response: R) extends Result[Nothing]
+  final case class OKStopped[R <: RetVal](response: R) extends Result[Nothing]
+  final case class Partial[R <: PartialVal](response: R) extends Result[Nothing]
+  final case class Paused[F[_]](ctx: PauseContext[F]) extends Result[F]
   // TODO: Replace the message by a richer Error type like `SeqexecFailure`
-  final case class Error(msg: String) extends Result {
-    override val errMsg: Option[String] = Some(msg)
+  final case class Error(msg: String) extends Result[Nothing] {
+    override val errMsg: Option[String] = msg.some
   }
   object Error {
     implicit val eq: Eq[Error] = Eq.fromUniversalEquals

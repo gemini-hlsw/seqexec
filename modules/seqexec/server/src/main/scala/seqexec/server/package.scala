@@ -29,6 +29,8 @@ import monocle.function.At._
 import seqexec.engine.Engine
 import seqexec.engine.Result.PartialVal
 import seqexec.engine.Result.RetVal
+import seqexec.engine.Result.PauseContext
+import seqexec.engine.Result
 import seqexec.model.ClientId
 import seqexec.model.CalibrationQueueId
 import seqexec.model.CalibrationQueueName
@@ -80,40 +82,43 @@ package server {
     }
   }
 
-  sealed trait SeqEvent
-  final case class SetOperator(name: Operator, user: Option[UserDetails]) extends SeqEvent
-  final case class SetObserver(id: Observation.Id, user: Option[UserDetails], name: Observer) extends SeqEvent
-  final case class SetConditions(conditions: Conditions, user: Option[UserDetails]) extends SeqEvent
-  final case class LoadSequence(sid: Observation.Id) extends SeqEvent
-  final case class UnloadSequence(id: Observation.Id) extends SeqEvent
-  final case class AddLoadedSequence(instrument: Instrument, sid: Observation.Id, user: UserDetails, clientId: ClientId) extends SeqEvent
-  final case class ClearLoadedSequences(user: Option[UserDetails]) extends SeqEvent
-  final case class SetImageQuality(iq: ImageQuality, user: Option[UserDetails]) extends SeqEvent
-  final case class SetWaterVapor(wv: WaterVapor, user: Option[UserDetails]) extends SeqEvent
-  final case class SetSkyBackground(wv: SkyBackground, user: Option[UserDetails]) extends SeqEvent
-  final case class SetCloudCover(cc: CloudCover, user: Option[UserDetails]) extends SeqEvent
-  final case class NotifyUser(memo: Notification, clientID: ClientId) extends SeqEvent
-  final case class StartQueue(qid: QueueId, clientID: ClientId) extends SeqEvent
-  final case class StopQueue(qid: QueueId, clientID: ClientId) extends SeqEvent
-  final case class UpdateQueueAdd(qid: QueueId, seqs: List[Observation.Id]) extends SeqEvent
-  final case class UpdateQueueRemove(qid: QueueId, seqs: List[Observation.Id], pos: List[Int]) extends SeqEvent
-  final case class UpdateQueueMoved(qid: QueueId, cid: ClientId, oid: Observation.Id, pos: Int) extends SeqEvent
-  final case class UpdateQueueClear(qid: QueueId) extends SeqEvent
-  final case class StartSysConfig(sid: Observation.Id, stepId: StepId, res: Resource) extends SeqEvent
-  final case class Busy(sid: Observation.Id, cid: ClientId) extends SeqEvent
-  final case class SequenceStart(sid: Observation.Id, stepId: StepId) extends SeqEvent
-  final case class ResourceBusy(sid: Observation.Id, stepId: StepId, res: Resource, clientID: ClientId) extends SeqEvent
-  case object NullSeqEvent extends SeqEvent
+  sealed trait SeqEvent extends Product with Serializable
 
-  sealed trait ControlStrategy
-  // System will be fully controlled by Seqexec
-  case object FullControl extends ControlStrategy
-  // Seqexec connects to system, but only to read values
-  case object ReadOnly extends ControlStrategy
-  // All system interactions are internally simulated
-  case object Simulated extends ControlStrategy
+  object SeqEvent {
+    final case class SetOperator(name: Operator, user: Option[UserDetails]) extends SeqEvent
+    final case class SetObserver(id: Observation.Id, user: Option[UserDetails], name: Observer) extends SeqEvent
+    final case class SetConditions(conditions: Conditions, user: Option[UserDetails]) extends SeqEvent
+    final case class LoadSequence(sid: Observation.Id) extends SeqEvent
+    final case class UnloadSequence(id: Observation.Id) extends SeqEvent
+    final case class AddLoadedSequence(instrument: Instrument, sid: Observation.Id, user: UserDetails, clientId: ClientId) extends SeqEvent
+    final case class ClearLoadedSequences(user: Option[UserDetails]) extends SeqEvent
+    final case class SetImageQuality(iq: ImageQuality, user: Option[UserDetails]) extends SeqEvent
+    final case class SetWaterVapor(wv: WaterVapor, user: Option[UserDetails]) extends SeqEvent
+    final case class SetSkyBackground(wv: SkyBackground, user: Option[UserDetails]) extends SeqEvent
+    final case class SetCloudCover(cc: CloudCover, user: Option[UserDetails]) extends SeqEvent
+    final case class NotifyUser(memo: Notification, clientID: ClientId) extends SeqEvent
+    final case class StartQueue(qid: QueueId, clientID: ClientId) extends SeqEvent
+    final case class StopQueue(qid: QueueId, clientID: ClientId) extends SeqEvent
+    final case class UpdateQueueAdd(qid: QueueId, seqs: List[Observation.Id]) extends SeqEvent
+    final case class UpdateQueueRemove(qid: QueueId, seqs: List[Observation.Id], pos: List[Int]) extends SeqEvent
+    final case class UpdateQueueMoved(qid: QueueId, cid: ClientId, oid: Observation.Id, pos: Int) extends SeqEvent
+    final case class UpdateQueueClear(qid: QueueId) extends SeqEvent
+    final case class StartSysConfig(sid: Observation.Id, stepId: StepId, res: Resource) extends SeqEvent
+    final case class Busy(sid: Observation.Id, cid: ClientId) extends SeqEvent
+    final case class SequenceStart(sid: Observation.Id, stepId: StepId) extends SeqEvent
+    final case class ResourceBusy(sid: Observation.Id, stepId: StepId, res: Resource, clientID: ClientId) extends SeqEvent
+    case object NullSeqEvent extends SeqEvent
+  }
 
+  sealed trait ControlStrategy extends Product with Serializable
   object ControlStrategy {
+    // System will be fully controlled by Seqexec
+    case object FullControl extends ControlStrategy
+    // Seqexec connects to system, but only to read values
+    case object ReadOnly extends ControlStrategy
+    // All system interactions are internally simulated
+    case object Simulated extends ControlStrategy
+
     def fromString(v: String): Option[ControlStrategy] = v match {
       case "full"      => Some(FullControl)
       case "readOnly"  => Some(ReadOnly)
@@ -145,6 +150,8 @@ package server {
   final case class Progress(total: Time, remaining: RemainingTime) extends PartialVal {
     val progress: Time = total - remaining.self
   }
+
+  final case class ObserveContext[F[_]](t: ObserveCommandResult => EitherT[F, SeqexecFailure, Result[F]], expTime: Time) extends PauseContext[F]
 
 }
 
@@ -287,20 +294,20 @@ package object server {
 
   implicit class ControlStrategyOps(v: ControlStrategy) {
     val connect: Boolean = v match {
-      case Simulated => false
+      case ControlStrategy.Simulated => false
       case _         => true
     }
     // If connected, then use real values for keywords
     val realKeywords: Boolean = connect
     val command: Boolean = v match {
-      case FullControl => true
+      case ControlStrategy.FullControl => true
       case _           => false
     }
   }
 
   implicit final class ToHandle[A](f: EngineState => (EngineState, A)) {
     import Handle.StateToHandle
-    def toHandle: Handle[EngineState, Event[executeEngine.ConcreteTypes], A] =
+    def toHandle: Handle[EngineState, Event[IO, executeEngine.ConcreteTypes], A] =
       StateT[IO, EngineState, A]{ st => IO(f(st)) }.toHandle
   }
 

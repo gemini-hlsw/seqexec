@@ -63,11 +63,11 @@ trait SequenceConfiguration {
         case Left(ConfigUtilOps.ContentError(_)) =>
           Unexpected("Logical error").asLeft
         case Left(ConfigUtilOps.KeyNotFound(_)) =>
-          CelestialObject(inst).asRight
+          StepType.CelestialObject(inst).asRight
         case Right(AltairConstants.SYSTEM_NAME_PROP) =>
-          AltairObs(inst).asRight
+          StepType.AltairObs(inst).asRight
         case Right(edu.gemini.spModel.gemini.gems.Gems.SYSTEM_NAME) =>
-          Gems(inst).asRight
+          StepType.Gems(inst).asRight
         case _ =>
           Unexpected("Logical error reading AO system name").asLeft
       }
@@ -79,9 +79,9 @@ trait SequenceConfiguration {
       obsType match {
         case SCIENCE_OBSERVE_TYPE => extractGaos(inst)
         case BIAS_OBSERVE_TYPE | DARK_OBSERVE_TYPE =>
-          DarkOrBias(inst).asRight
+          StepType.DarkOrBias(inst).asRight
         case FLAT_OBSERVE_TYPE | ARC_OBSERVE_TYPE | CAL_OBSERVE_TYPE =>
-          FlatOrArc(inst).asRight
+          StepType.FlatOrArc(inst).asRight
         case _ => Unexpected("Unknown step type " + obsType).asLeft
       }
     }.flatten

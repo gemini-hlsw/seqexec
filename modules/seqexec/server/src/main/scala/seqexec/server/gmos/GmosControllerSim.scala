@@ -6,9 +6,10 @@ package seqexec.server.gmos
 import cats.effect.Sync
 import cats.effect.Timer
 import seqexec.model.dhs.ImageFileId
+import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.InstrumentSystem.ElapsedTime
 import seqexec.server.gmos.GmosController.{GmosConfig, NorthTypes, SiteDependentTypes, SouthTypes}
-import seqexec.server.{InstrumentControllerSim, ObserveCommand, Progress}
+import seqexec.server.{InstrumentControllerSim, Progress}
 import squants.Time
 
 object GmosControllerSim {
@@ -16,7 +17,7 @@ object GmosControllerSim {
     new GmosController[F, T] {
       private val sim: InstrumentControllerSim[F] = InstrumentControllerSim[F](s"GMOS $name")
 
-      override def observe(fileId: ImageFileId, expTime: Time): F[ObserveCommand.Result] =
+      override def observe(fileId: ImageFileId, expTime: Time): F[ObserveCommandResult] =
         sim.observe(fileId, expTime)
 
       override def applyConfig(config: GmosConfig[T]): F[Unit] = sim.applyConfig(config)
@@ -29,11 +30,11 @@ object GmosControllerSim {
 
       override def pauseObserve: F[Unit] = sim.pauseObserve
 
-      override def resumePaused(expTime: Time): F[ObserveCommand.Result] = sim.resumePaused
+      override def resumePaused(expTime: Time): F[ObserveCommandResult] = sim.resumePaused
 
-      override def stopPaused: F[ObserveCommand.Result] = sim.stopPaused
+      override def stopPaused: F[ObserveCommandResult] = sim.stopPaused
 
-      override def abortPaused: F[ObserveCommand.Result] = sim.abortPaused
+      override def abortPaused: F[ObserveCommandResult] = sim.abortPaused
 
       override def observeProgress(total: Time, elapsed: ElapsedTime): fs2.Stream[F, Progress] =
         sim.observeCountdown(total, elapsed)

@@ -6,6 +6,7 @@ package seqexec.server.flamingos2
 import cats.effect.IO
 import cats.effect.Async
 import edu.gemini.epics.acm._
+import seqexec.model.enum.ApplyCommandResult
 import seqexec.server.{EpicsCommand, EpicsSystem}
 import seqexec.server.EpicsCommand.setParameter
 import seqexec.server.EpicsUtil._
@@ -15,7 +16,7 @@ final class Flamingos2Epics[F[_]: Async](epicsService: CaService, tops: Map[Stri
 
   val F2Top: String = tops.getOrElse("f2", "f2:")
 
-  def post: F[EpicsCommand.Result] = configCmd.post[F]
+  def post: F[ApplyCommandResult] = configCmd.post[F]
 
   object dcConfigCmd extends EpicsCommand {
     override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("flamingos2::dcconfig"))

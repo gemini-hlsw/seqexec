@@ -6,8 +6,9 @@ package seqexec.server.flamingos2
 import cats.Show
 import cats.kernel.Eq
 import fs2.Stream
+import seqexec.model.enum.ObserveCommandResult
 import seqexec.model.dhs.ImageFileId
-import seqexec.server.{ObserveCommand, Progress}
+import seqexec.server.Progress
 import scala.concurrent.duration.Duration
 import squants.Time
 
@@ -16,7 +17,7 @@ trait Flamingos2Controller[F[_]] {
 
   def applyConfig(config: Flamingos2Config): F[Unit]
 
-  def observe(fileId: ImageFileId, expTime: Time): F[ObserveCommand.Result]
+  def observe(fileId: ImageFileId, expTime: Time): F[ObserveCommandResult]
 
   def endObserve: F[Unit]
 

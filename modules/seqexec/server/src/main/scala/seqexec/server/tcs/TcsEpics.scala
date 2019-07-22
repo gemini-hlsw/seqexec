@@ -9,6 +9,7 @@ import squants.Angle
 import edu.gemini.epics.acm._
 import edu.gemini.seqexec.server.tcs.{BinaryOnOff, BinaryYesNo}
 import org.log4s.{Logger, getLogger}
+import seqexec.model.enum.ApplyCommandResult
 import seqexec.server.EpicsCommand._
 import seqexec.server.EpicsUtil._
 import seqexec.server.{EpicsCommand, EpicsSystem}
@@ -33,7 +34,7 @@ final class TcsEpics[F[_]: Async](epicsService: CaService, tops: Map[String, Str
 
   // This is a bit ugly. Commands are triggered from the main apply record, so I just choose an arbitrary command here.
   // Triggering that command will trigger all the marked commands.
-  def post: F[Result] = m1GuideCmd.post
+  def post: F[ApplyCommandResult] = m1GuideCmd.post
 
   object m1GuideCmd extends EpicsCommand {
     override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("m1Guide"))

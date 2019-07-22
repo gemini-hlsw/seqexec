@@ -248,7 +248,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
       sf <- advanceOne(q, s0, seqexecEngine.configSystem(q, seqObsId1, 1, TCS, clientId))
     } yield {
       inside(sf.flatMap((EngineState.sequences ^|-? index(seqObsId1)).getOption)) {
-        case Some(s) => assertResult(Some(Action.Started))(
+        case Some(s) => assertResult(Some(Action.ActionState.Started))(
           s.seqGen.configActionCoord(1, TCS).map(s.seq.getSingleState)
         )
       }
@@ -266,7 +266,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
       sf <- advanceOne(q, s0, seqexecEngine.configSystem(q, seqObsId1, 1, TCS, clientId))
     } yield {
       inside(sf.flatMap((EngineState.sequences ^|-? index(seqObsId1)).getOption)) {
-        case Some(s) => assertResult(Some(Action.Idle))(
+        case Some(s) => assertResult(Some(Action.ActionState.Idle))(
           s.seqGen.configActionCoord(1, TCS).map(s.seq.getSingleState)
         )
       }
@@ -286,7 +286,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
       sf <- advanceOne(q, s0, seqexecEngine.configSystem(q, seqObsId2, 1, Instrument.F2, clientId))
     } yield {
       inside(sf.flatMap((EngineState.sequences ^|-? index(seqObsId2)).getOption)) {
-        case Some(s) => assertResult(Some(Action.Idle))(
+        case Some(s) => assertResult(Some(Action.ActionState.Idle))(
           s.seqGen.configActionCoord(1, Instrument.F2).map(s.seq.getSingleState)
         )
       }
@@ -306,7 +306,7 @@ class SeqexecEngineSpec extends FlatSpec with Matchers with NonImplicitAssertion
       sf <- advanceOne(q, s0, seqexecEngine.configSystem(q, seqObsId2, 1, Instrument.F2, clientId))
     } yield {
       inside(sf.flatMap((EngineState.sequences ^|-? index(seqObsId2)).getOption)) {
-        case Some(s) => assertResult(Some(Action.Started))(
+        case Some(s) => assertResult(Some(Action.ActionState.Started))(
           s.seqGen.configActionCoord(1, Instrument.F2).map(s.seq.getSingleState)
         )
       }

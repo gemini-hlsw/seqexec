@@ -21,10 +21,10 @@ import shapeless.tag
 import seqexec.server.ConfigUtilOps._
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Instrument
+import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.ConfigUtilOps.ExtractFailure
 import seqexec.server.ConfigResult
 import seqexec.server.InstrumentSystem
-import seqexec.server.ObserveCommand
 import seqexec.server.Progress
 import seqexec.server.SeqActionF
 import seqexec.server.SeqObserveF
@@ -59,7 +59,7 @@ final case class Nifs[F[_]: Sync](
 
   override def observe(
     config: Config
-  ): SeqObserveF[F, ImageFileId, ObserveCommand.Result] =
+  ): SeqObserveF[F, ImageFileId, ObserveCommandResult] =
     Reader { fileId =>
       SeqActionF
         .either(getDCConfig(config).asTrySeq)

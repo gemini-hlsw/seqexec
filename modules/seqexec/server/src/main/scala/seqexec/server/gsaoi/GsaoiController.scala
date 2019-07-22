@@ -8,9 +8,9 @@ import cats.Eq
 import cats.Show
 import cats.implicits._
 import seqexec.model.dhs.ImageFileId
+import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.gsaoi.GsaoiController.DCConfig
 import seqexec.server.gsaoi.GsaoiController.GsaoiConfig
-import seqexec.server.ObserveCommand
 import seqexec.server.Progress
 import squants.Time
 import squants.time.TimeConversions._
@@ -20,7 +20,7 @@ trait GsaoiController[F[_]] {
 
   def applyConfig(config: GsaoiConfig): F[Unit]
 
-  def observe(fileId: ImageFileId, cfg: DCConfig): F[ObserveCommand.Result]
+  def observe(fileId: ImageFileId, cfg: DCConfig): F[ObserveCommandResult]
 
   def endObserve: F[Unit]
 

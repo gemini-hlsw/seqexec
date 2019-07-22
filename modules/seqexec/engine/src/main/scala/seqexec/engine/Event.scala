@@ -10,51 +10,53 @@ import gem.Observation
 import seqexec.model.ClientId
 import seqexec.model.UserDetails
 import seqexec.model.StepId
+import seqexec.engine.SystemEvent._
+import seqexec.engine.UserEvent._
 
 /**
   * Anything that can go through the Event Queue.
   */
-sealed abstract class Event[+D<:Engine.Types]
-final case class EventUser[D<:Engine.Types](ue: UserEvent[D]) extends Event[D]
-final case class EventSystem(se: SystemEvent) extends Event[Nothing]
+sealed trait Event[+F[_], +D <: Engine.Types] extends Product with Serializable
 
 object Event {
+  final case class EventUser[D <: Engine.Types](ue: UserEvent[D]) extends Event[Nothing, D]
+  final case class EventSystem[F[_]](se: SystemEvent[F]) extends Event[F, Nothing]
 
-  def start[D<:Engine.Types](id: Observation.Id, user: UserDetails, clientId: ClientId, userCheck: D#StateType => Boolean): Event[D] =
+  def start[D <: Engine.Types](id: Observation.Id, user: UserDetails, clientId: ClientId, userCheck: D#StateType => Boolean): Event[IO, D] =
     EventUser[D](Start[D](id, user.some, clientId, userCheck))
-  def pause[D<:Engine.Types](id: Observation.Id, user: UserDetails): Event[D] = EventUser[D](Pause(id, user.some))
-  def cancelPause[D<:Engine.Types](id: Observation.Id, user: UserDetails): Event[D] = EventUser[D](CancelPause(id, user.some))
-  def breakpoint[D<:Engine.Types](id: Observation.Id, user: UserDetails, step: StepId, v: Boolean): Event[D] = EventUser[D](Breakpoint(id, user.some, step, v))
-  def skip[D<:Engine.Types](id: Observation.Id, user: UserDetails, step: StepId, v: Boolean): Event[D] = EventUser[D](SkipMark(id, user.some, step, v))
-  def poll(clientId: ClientId): Event[Nothing] = EventUser(Poll(clientId))
-  def getState[D<:Engine.Types](f: D#StateType => Option[Stream[IO, Event[D]]]): Event[D] = EventUser[D](GetState[D](f))
-  def modifyState[D<:Engine.Types](f: Handle[D#StateType, Event[D], D#EventData]): Event[D] = EventUser[D](ModifyState[D](f))
-  def actionStop[D<:Engine.Types](id: Observation.Id, f: D#StateType => Option[Stream[IO, Event[D]]]): Event[D] = EventUser[D](ActionStop(id, f))
-  def actionResume[D<:Engine.Types](id: Observation.Id, i: Int, c: Stream[IO, Result]): Event[D] =
+  def pause[D <: Engine.Types](id: Observation.Id, user: UserDetails): Event[IO, D] = EventUser[D](Pause(id, user.some))
+  def cancelPause[D <: Engine.Types](id: Observation.Id, user: UserDetails): Event[IO, D] = EventUser[D](CancelPause(id, user.some))
+  def breakpoint[D <: Engine.Types](id: Observation.Id, user: UserDetails, step: StepId, v: Boolean): Event[IO, D] = EventUser[D](Breakpoint(id, user.some, step, v))
+  def skip[D <: Engine.Types](id: Observation.Id, user: UserDetails, step: StepId, v: Boolean): Event[IO, D] = EventUser[D](SkipMark(id, user.some, step, v))
+  def poll(clientId: ClientId): Event[Nothing, Nothing] = EventUser(Poll(clientId))
+  def getState[D <: Engine.Types](f: D#StateType => Option[Stream[IO, Event[IO, D]]]): Event[IO, D] = EventUser[D](GetState[D](f))
+  def modifyState[D <: Engine.Types](f: Handle[D#StateType, Event[IO, D], D#EventData]): Event[IO, D] = EventUser[D](ModifyState[D](f))
+  def actionStop[D <: Engine.Types](id: Observation.Id, f: D#StateType => Option[Stream[IO, Event[IO, D]]]): Event[IO, D] = EventUser[D](ActionStop(id, f))
+  def actionResume[D <: Engine.Types](id: Observation.Id, i: Int, c: Stream[IO, Result[IO]]): Event[IO, D] =
     EventUser[D](ActionResume(id, i, c))
-  def logDebugMsg[D<:Engine.Types](msg: String): Event[D] = EventUser[D](LogDebug(msg))
-  def logInfoMsg[D<:Engine.Types](msg: String): Event[D] = EventUser[D](LogInfo(msg))
-  def logWarningMsg[D<:Engine.Types](msg: String): Event[D] = EventUser[D](LogWarning(msg))
-  def logErrorMsg[D<:Engine.Types](msg: String): Event[D] = EventUser[D](LogError(msg))
+  def logDebugMsg[D <: Engine.Types](msg: String): Event[IO, D] = EventUser[D](LogDebug(msg))
+  def logInfoMsg[D <: Engine.Types](msg: String): Event[IO, D] = EventUser[D](LogInfo(msg))
+  def logWarningMsg[D <: Engine.Types](msg: String): Event[IO, D] = EventUser[D](LogWarning(msg))
+  def logErrorMsg[D <: Engine.Types](msg: String): Event[IO, D] = EventUser[D](LogError(msg))
 
-  def failed(id: Observation.Id, i: Int, e: Result.Error): Event[Nothing] = EventSystem(Failed(id, i, e))
+  def failed(id: Observation.Id, i: Int, e: Result.Error): Event[IO, Nothing] = EventSystem[IO](Failed(id, i, e))
   def completed[R<:Result.RetVal](id: Observation.Id, stepId: StepId, i: Int, r: Result.OK[R])
-  : Event[Nothing] = EventSystem(Completed(id, stepId, i, r))
+  : Event[IO, Nothing] = EventSystem[IO](Completed(id, stepId, i, r))
   def stopCompleted[R<:Result.RetVal](id: Observation.Id, stepId: StepId, i: Int, r: Result.OKStopped[R])
-  : Event[Nothing] = EventSystem(StopCompleted(id, stepId, i, r))
+  : Event[IO, Nothing] = EventSystem[IO](StopCompleted(id, stepId, i, r))
   def partial[R<:Result.PartialVal](id: Observation.Id, stepId: StepId, i: Int,
-                                    r: Result.Partial[R]): Event[Nothing] =
-    EventSystem(PartialResult(id, stepId, i, r))
-  def paused[C <: Result.PauseContext](id: Observation.Id, i: Int, c: Result.Paused[C]): Event[Nothing] = EventSystem(Paused(id, i, c))
-  def breakpointReached(id: Observation.Id): Event[Nothing] = EventSystem(BreakpointReached(id))
-  def busy(id: Observation.Id, clientId: ClientId): Event[Nothing] = EventSystem(Busy(id, clientId))
-  def executed(id: Observation.Id): Event[Nothing] = EventSystem(Executed(id))
-  def executing(id: Observation.Id): Event[Nothing] = EventSystem(Executing(id))
-  def finished(id: Observation.Id): Event[Nothing] = EventSystem(Finished(id))
-  def nullEvent: Event[Nothing] = EventSystem(Null)
-  def singleRunCompleted[R<:Result.RetVal](c: ActionCoords, r: Result.OK[R]): Event[Nothing] =
-    EventSystem(SingleRunCompleted(c, r))
-  def singleRunFailed(c:ActionCoords, e: Result.Error): Event[Nothing] =
-    EventSystem(SingleRunFailed(c, e))
+                                    r: Result.Partial[R]): Event[IO, Nothing] =
+    EventSystem[IO](PartialResult(id, stepId, i, r))
+  def paused[F[_]](id: Observation.Id, i: Int, c: Result.Paused[F]): Event[F, Nothing] = EventSystem[F](Paused[F](id, i, c))
+  def breakpointReached(id: Observation.Id): Event[IO, Nothing] = EventSystem[IO](BreakpointReached(id))
+  def busy(id: Observation.Id, clientId: ClientId): Event[IO, Nothing] = EventSystem[IO](Busy(id, clientId))
+  def executed(id: Observation.Id): Event[IO, Nothing] = EventSystem[IO](Executed(id))
+  def executing(id: Observation.Id): Event[IO, Nothing] = EventSystem[IO](Executing(id))
+  def finished(id: Observation.Id): Event[IO, Nothing] = EventSystem[IO](Finished(id))
+  def nullEvent: Event[IO, Nothing] = EventSystem[IO](Null)
+  def singleRunCompleted[R<:Result.RetVal](c: ActionCoords, r: Result.OK[R]): Event[IO, Nothing] =
+    EventSystem[IO](SingleRunCompleted(c, r))
+  def singleRunFailed(c:ActionCoords, e: Result.Error): Event[IO, Nothing] =
+    EventSystem[IO](SingleRunFailed(c, e))
 
 }

@@ -15,6 +15,7 @@ import edu.gemini.spModel.core.SPProgramID
 import gem.Observation
 import seqexec.engine.Event
 import seqexec.engine.Sequence
+import seqexec.server.SeqEvent._
 import seqexec.server.ConfigUtilOps._
 
 final class ODBSequencesLoader[F[_]: Monad](odbProxy: OdbProxy[F], translator: SeqTranslate) {

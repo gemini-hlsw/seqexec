@@ -11,9 +11,10 @@ import edu.gemini.seqexec.server.gsaoi.DhsConnected
 import edu.gemini.spModel.gemini.gsaoi.Gsaoi.{Filter, ReadMode, Roi, UtilityWheel}
 import org.log4s.getLogger
 import seqexec.model.dhs.ImageFileId
+import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.EpicsCodex._
 import seqexec.server.gsaoi.GsaoiController.{DCConfig, GsaoiConfig}
-import seqexec.server.{EpicsUtil, ObserveCommand, Progress, SeqexecFailure, failUnlessM}
+import seqexec.server.{EpicsUtil, Progress, SeqexecFailure, failUnlessM}
 import seqexec.server.EpicsUtil.applyParam
 import squants.{Seconds, Time}
 import squants.time.TimeConversions._
@@ -145,7 +146,7 @@ object GsaoiControllerEpics {
         IO(Log.info("Completed Gsaoi configuration"))
     }
 
-    override def observe(fileId: ImageFileId, cfg: GsaoiController.DCConfig): IO[ObserveCommand.Result] = {
+    override def observe(fileId: ImageFileId, cfg: GsaoiController.DCConfig): IO[ObserveCommandResult] = {
       val checkDhs: IO[Unit] = failUnlessM[IO](
         epicsSys.dhsConnected.map(_.exists(_ === DhsConnected.Yes)),
         SeqexecFailure.Execution("GSAOI is not connected to DHS")

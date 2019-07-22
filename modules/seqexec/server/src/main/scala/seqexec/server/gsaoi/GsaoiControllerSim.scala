@@ -7,11 +7,11 @@ import cats.effect.Sync
 import cats.effect.Timer
 import cats.implicits._
 import seqexec.model.dhs.ImageFileId
+import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.InstrumentSystem.ElapsedTime
 import seqexec.server.gsaoi.GsaoiController.DCConfig
 import seqexec.server.gsaoi.GsaoiController.GsaoiConfig
 import seqexec.server.InstrumentControllerSim
-import seqexec.server.ObserveCommand
 import seqexec.server.Progress
 import squants.Time
 import squants.time.TimeConversions._
@@ -23,7 +23,7 @@ object GsaoiControllerSim {
       private val sim: InstrumentControllerSim[F] = InstrumentControllerSim[F](s"GSAOI")
 
       override def observe(fileId: ImageFileId,
-                           cfg:    DCConfig): F[ObserveCommand.Result] =
+                           cfg:    DCConfig): F[ObserveCommandResult] =
         calcTotalExposureTime(cfg).flatMap {
           sim.observe(fileId, _)
         }

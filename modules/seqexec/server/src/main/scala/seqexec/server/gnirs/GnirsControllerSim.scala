@@ -6,10 +6,11 @@ package seqexec.server.gnirs
 import cats.effect.Sync
 import cats.effect.Timer
 import seqexec.model.dhs.ImageFileId
+import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.InstrumentSystem.ElapsedTime
 import seqexec.server.gnirs.GnirsController.DCConfig
 import seqexec.server.gnirs.GnirsController.GnirsConfig
-import seqexec.server.{InstrumentControllerSim, ObserveCommand, Progress}
+import seqexec.server.{InstrumentControllerSim, Progress}
 import squants.Time
 import squants.time.TimeConversions._
 
@@ -19,7 +20,7 @@ object GnirsControllerSim {
 
       private val sim: InstrumentControllerSim[F] = InstrumentControllerSim[F](s"GNIRS")
 
-      override def observe(fileId: ImageFileId, expTime: Time): F[ObserveCommand.Result] =
+      override def observe(fileId: ImageFileId, expTime: Time): F[ObserveCommandResult] =
         sim.observe(fileId, expTime)
 
       override def applyConfig(config: GnirsConfig): F[Unit] = sim.applyConfig(config)

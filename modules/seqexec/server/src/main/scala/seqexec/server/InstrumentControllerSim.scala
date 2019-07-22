@@ -14,6 +14,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import mouse.all._
 import org.log4s.getLogger
 import seqexec.model.dhs.ImageFileId
+import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.SeqexecFailure.SeqexecException
 import seqexec.server.InstrumentSystem.ElapsedTime
 import squants.time.{Seconds, Time}
@@ -21,7 +22,7 @@ import squants.time.{Seconds, Time}
 import scala.annotation.tailrec
 
 sealed trait InstrumentControllerSim[F[_]] {
-  def observe(fileId: ImageFileId, expTime: Time): F[ObserveCommand.Result]
+  def observe(fileId: ImageFileId, expTime: Time): F[ObserveCommandResult]
 
   def applyConfig[C: Show](config: C): F[Unit]
 
@@ -33,11 +34,11 @@ sealed trait InstrumentControllerSim[F[_]] {
 
   def pauseObserve: F[Unit]
 
-  def resumePaused: F[ObserveCommand.Result]
+  def resumePaused: F[ObserveCommandResult]
 
-  def stopPaused: F[ObserveCommand.Result]
+  def stopPaused: F[ObserveCommandResult]
 
-  def abortPaused: F[ObserveCommand.Result]
+  def abortPaused: F[ObserveCommandResult]
 
   def observeCountdown(total: Time, elapsed: ElapsedTime): Stream[F, Progress]
 
@@ -58,15 +59,15 @@ object InstrumentControllerSim {
     private val ConfigurationDelay = Seconds(5)
 
     @tailrec
-    private def observeTic(stop: Boolean, abort: Boolean, pause: Boolean, remain: Int, timeout: Option[Int]): F[ObserveCommand.Result] =
+    private def observeTic(stop: Boolean, abort: Boolean, pause: Boolean, remain: Int, timeout: Option[Int]): F[ObserveCommandResult] =
       if(remain < tic) {
         Log.info(s"Simulate $name observation completed")
-        ObserveCommand.Result.Success.pure[F].widen
-      } else if(stop) ObserveCommand.Result.Stopped.pure[F].widen
-        else if(abort) ObserveCommand.Result.Aborted.pure[F].widen
+        ObserveCommandResult.Success.pure[F].widen
+      } else if(stop) ObserveCommandResult.Stopped.pure[F].widen
+        else if(abort) ObserveCommandResult.Aborted.pure[F].widen
         else if(pause) {
           remainingTime.set(remain)
-          ObserveCommand.Result.Paused.pure[F].widen
+          ObserveCommandResult.Paused.pure[F].widen
         }
         else if(timeout.exists(_<= 0)) Sync[F].raiseError(SeqexecException(new TimeoutException()))
         else {
@@ -74,7 +75,7 @@ object InstrumentControllerSim {
           observeTic(stopFlag.get, abortFlag.get, pauseFlag.get, remain - tic, timeout.map(_ - tic))
         }
 
-    def observe(fileId: ImageFileId, expTime: Time): F[ObserveCommand.Result] = Sync[F].delay {
+    def observe(fileId: ImageFileId, expTime: Time): F[ObserveCommandResult] = Sync[F].delay {
       Log.info(s"Simulate taking $name observation with label $fileId")
       pauseFlag.set(false)
       stopFlag.set(false)
@@ -111,18 +112,18 @@ object InstrumentControllerSim {
       pauseFlag.set(true)
     }
 
-    def resumePaused: F[ObserveCommand.Result] = Sync[F].delay {
+    def resumePaused: F[ObserveCommandResult] = Sync[F].delay {
       Log.info(s"Simulate resuming $name observation")
       pauseFlag.set(false) } *>
       observeTic(stop = false, abort = false, pause = false, remainingTime.get,
         useTimeout.option(remainingTime.get + 2 * tic))
 
-    def stopPaused: F[ObserveCommand.Result] = Sync[F].delay {
+    def stopPaused: F[ObserveCommandResult] = Sync[F].delay {
       Log.info(s"Simulate stopping $name paused observation")
       pauseFlag.set(false) } *>
       observeTic(stop = true, abort = false, pause = false, 1000, None)
 
-    def abortPaused: F[ObserveCommand.Result] = Sync[F].delay {
+    def abortPaused: F[ObserveCommandResult] = Sync[F].delay {
       Log.info(s"Simulate aborting $name paused observation")
       pauseFlag.set(false) } *>
       observeTic(stop = false, abort = true, pause = false, 1000, None)

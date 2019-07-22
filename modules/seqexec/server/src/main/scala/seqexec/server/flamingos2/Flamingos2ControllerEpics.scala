@@ -10,7 +10,8 @@ import cats.implicits._
 import edu.gemini.spModel.gemini.flamingos2.Flamingos2.{Decker, Filter, ReadoutMode, WindowCover, _}
 import org.log4s.getLogger
 import seqexec.model.dhs.ImageFileId
-import seqexec.server.{ObserveCommand, Progress, ProgressUtil, RemainingTime}
+import seqexec.model.enum.ObserveCommandResult
+import seqexec.server.{Progress, ProgressUtil, RemainingTime}
 import seqexec.server.flamingos2.Flamingos2Controller._
 import seqexec.server.EpicsCodex._
 import squants.{Seconds, Time}
@@ -129,11 +130,11 @@ object Flamingos2ControllerEpics extends Flamingos2Encoders {
       _ <- Async[F].delay(Log.debug("Completed Flamingos2 configuration"))
     } yield ()
 
-    override def observe(fileId: ImageFileId, expTime: Time): F[ObserveCommand.Result] = for {
+    override def observe(fileId: ImageFileId, expTime: Time): F[ObserveCommandResult] = for {
       _ <- sys.observeCmd.setLabel(fileId)
       _ <- sys.observeCmd.setTimeout[F](expTime + ReadoutTimeout)
       _ <- sys.observeCmd.post[F]
-    } yield ObserveCommand.Result.Success
+    } yield ObserveCommandResult.Success
 
     override def endObserve: F[Unit] = for {
       _ <- Async[F].delay(Log.debug("Send endObserve to Flamingos2"))

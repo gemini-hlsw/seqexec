@@ -19,7 +19,7 @@ import seqexec.engine.{Action, Actions}
 final class SeqexecServerLensesSpec extends CatsSuite with SeqexecServerArbitraries with ArbObservation {
 
   // I tried to go down the rabbit hole with the Eqs, but it is not worth it for what they are used.
-  implicit val actStateEq: Eq[Action.State] = Eq.fromUniversalEquals
+  implicit def actStateEq[F[_]]: Eq[Action.State[F]] = Eq.fromUniversalEquals
   implicit def actionEq[F[_]]: Eq[Action[F]] = Eq.by(x => (x.kind, x.state))
   implicit def steppEq[F[_]]: Eq[HeaderExtraData => List[Actions[F]]] = Eq.fromUniversalEquals
   implicit def stepActionsGenEq[F[_]]: Eq[StepActionsGen[F]] = Eq.by(x => (x.pre, x.configs, x.post))

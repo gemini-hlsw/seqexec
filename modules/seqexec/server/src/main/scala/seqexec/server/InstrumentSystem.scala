@@ -8,6 +8,7 @@ import fs2.Stream
 import gem.enum.LightSinkName
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Instrument
+import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.keywords.KeywordsClient
 import squants.{Length, Time}
 
@@ -19,7 +20,7 @@ trait InstrumentSystem[F[_]] extends System[F] with InstrumentGuide {
   val observeControl: InstrumentSystem.ObserveControl[F]
 
   def observe(
-      config: Config): SeqObserveF[F, ImageFileId, ObserveCommand.Result]
+      config: Config): SeqObserveF[F, ImageFileId, ObserveCommandResult]
   //Expected total observe lapse, used to calculate timeout
   def calcObserveTime(config: Config): F[Time]
   def keywordsClient: KeywordsClient[F]
@@ -36,12 +37,12 @@ object InstrumentSystem {
   final case class AbortObserveCmd[F[_]](self: SeqActionF[F, Unit])
   final case class PauseObserveCmd[F[_]](self: SeqActionF[F, Unit])
   final case class ContinuePausedCmd[F[_]](
-      self: Time => SeqActionF[F, ObserveCommand.Result])
-  final case class StopPausedCmd[F[_]](self: SeqActionF[F, ObserveCommand.Result])
-  final case class AbortPausedCmd[F[_]](self: SeqActionF[F, ObserveCommand.Result])
+      self: Time => SeqActionF[F, ObserveCommandResult])
+  final case class StopPausedCmd[F[_]](self: SeqActionF[F, ObserveCommandResult])
+  final case class AbortPausedCmd[F[_]](self: SeqActionF[F, ObserveCommandResult])
 
-  sealed trait ObserveControl[F[_]] extends Product with Serializable
-  final case class Uncontrollable[F[_]]() extends ObserveControl[F]
+  sealed trait ObserveControl[+F[_]] extends Product with Serializable
+  case object Uncontrollable extends ObserveControl[Nothing]
   final case class CompleteControl[F[_]](stop: StopObserveCmd[F],
                                 abort: AbortObserveCmd[F],
                                 pause: PauseObserveCmd[F],

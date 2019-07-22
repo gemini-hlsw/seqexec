@@ -3,21 +3,21 @@
 
 package seqexec.server
 
-import java.time.LocalDate
-
 import cats.implicits._
 import cats.effect._
+import edu.gemini.spModel.core.Peer
 import fs2.Stream
 import giapi.client.gpi.GpiClient
 import giapi.client.ghost.GhostClient
 import gem.Observation
 import gem.enum.Site
-
+import java.time.LocalDate
+import org.scalatest.FlatSpec
+import org.http4s.Uri._
 import scala.concurrent.ExecutionContext
 import seqexec.engine.{Action, Result, Sequence}
 import seqexec.model.enum.Instrument.GmosS
 import seqexec.model.{ActionType, SequenceState, StepConfig}
-import seqexec.server.SeqTranslate.ObserveContext
 import seqexec.server.keywords.DhsClientSim
 import seqexec.server.keywords.GdsClient
 import seqexec.server.flamingos2.Flamingos2ControllerSim
@@ -31,9 +31,6 @@ import seqexec.server.Response.Observed
 import seqexec.server.ghost.GhostController
 import seqexec.server.niri.NiriControllerSim
 import seqexec.server.nifs.NifsControllerSim
-import edu.gemini.spModel.core.Peer
-import org.scalatest.FlatSpec
-import org.http4s.Uri._
 import seqexec.server.altair.AltairControllerSim
 import squants.time.Seconds
 
@@ -45,7 +42,7 @@ class SeqTranslateSpec extends FlatSpec {
   private val config: StepConfig = Map()
   private val fileId = "DummyFileId"
   private val seqId = Observation.Id.unsafeFromString("GS-2018A-Q-1-1")
-  private def observeActions(state: Action.ActionState): List[Action[IO]] = List(
+  private def observeActions(state: Action.ActionState[IO]): List[Action[IO]] = List(
     Action(ActionType.Observe, Stream.emit(Result.OK(Observed(fileId))).covary[IO],
       Action.State(state, Nil))
   )
@@ -57,7 +54,7 @@ class SeqTranslateSpec extends FlatSpec {
       1,
       config,
       Set(GmosS),
-      SequenceGen.StepActionsGen(List(), Map(), _ => List(observeActions(Action.Idle)))
+      SequenceGen.StepActionsGen(List(), Map(), _ => List(observeActions(Action.ActionState.Idle)))
     ))
   )
 
@@ -78,7 +75,7 @@ class SeqTranslateSpec extends FlatSpec {
     .modify(_.start(0).mark(0)(Result.Partial(FileIdAllocated(fileId))))(baseState)
   // Observe paused
   private val s4: EngineState = EngineState.sequenceStateIndex(seqId)
-    .modify(_.mark(0)(Result.Paused(ObserveContext(_ => SeqAction(Result.OK(Observed
+    .modify(_.mark(0)(Result.Paused(ObserveContext[IO](_ => SeqActionF(Result.OK(Observed
     (fileId))), Seconds(1)))))(baseState)
   // Observe failed
   private val s5: EngineState = EngineState.sequenceStateIndex(seqId)

@@ -8,8 +8,8 @@ import cats.effect.Sync
 import cats.effect.Async
 import edu.gemini.epics.acm.{CaAttribute, CaCommandSender, CaService, CaStatusAcceptor}
 import edu.gemini.seqexec.server.gcal.BinaryOnOff
+import seqexec.model.enum.ApplyCommandResult
 import seqexec.server.EpicsSystem
-import seqexec.server.EpicsCommand
 import seqexec.server.EpicsCommand
 import seqexec.server.EpicsCommand.setParameter
 import seqexec.server.EpicsUtil.safeAttribute
@@ -24,7 +24,7 @@ class GcalEpics[F[_]: Async](epicsService: CaService, tops: Map[String, String])
 
   val GcalTop: String = tops.get("gc").getOrElse("")
 
-  def post: F[EpicsCommand.Result] = lampsCmd.post
+  def post: F[ApplyCommandResult] = lampsCmd.post
 
   object shutterCmd extends EpicsCommand {
     override val cs: Option[CaCommandSender] = Option(epicsService.getCommandSender("gcal::shutter"))

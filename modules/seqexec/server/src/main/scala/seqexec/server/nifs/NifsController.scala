@@ -10,7 +10,7 @@ import seqexec.model.dhs.ImageFileId
 import seqexec.server.nifs.NifsController.DCConfig
 import seqexec.server.nifs.NifsController.NifsConfig
 import edu.gemini.spModel.gemini.nifs.NIFSParams.{ ReadMode => LegacyReadMode }
-import seqexec.server.ObserveCommand
+import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.Progress
 import squants.Time
 import squants.time.TimeConversions._
@@ -20,7 +20,7 @@ trait NifsController[F[_]] {
 
   def applyConfig(config: NifsConfig): F[Unit]
 
-  def observe(fileId: ImageFileId, cfg: DCConfig): F[ObserveCommand.Result]
+  def observe(fileId: ImageFileId, cfg: DCConfig): F[ObserveCommandResult]
 
   def endObserve: F[Unit]
 

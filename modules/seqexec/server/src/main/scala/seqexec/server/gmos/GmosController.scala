@@ -12,6 +12,7 @@ import gsp.math.Offset
 import scala.concurrent.duration.Duration
 import seqexec.model.dhs.ImageFileId
 import seqexec.model.enum.Guiding
+import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.gmos.GmosController.Config.DCConfig
 import seqexec.server.gmos.GmosController.Config.NSConfig
 import seqexec.server.SeqexecFailure.Unexpected
@@ -24,7 +25,7 @@ trait GmosController[F[_], T <: GmosController.SiteDependentTypes] {
 
   def applyConfig(config: GmosConfig[T]): F[Unit]
 
-  def observe(fileId: ImageFileId, expTime: Time): F[ObserveCommand.Result]
+  def observe(fileId: ImageFileId, expTime: Time): F[ObserveCommandResult]
 
   // endObserve is to notify the completion of the observation, not to cause its end.
   def endObserve: F[Unit]
@@ -35,11 +36,11 @@ trait GmosController[F[_], T <: GmosController.SiteDependentTypes] {
 
   def pauseObserve: F[Unit]
 
-  def resumePaused(expTime: Time): F[ObserveCommand.Result]
+  def resumePaused(expTime: Time): F[ObserveCommandResult]
 
-  def stopPaused: F[ObserveCommand.Result]
+  def stopPaused: F[ObserveCommandResult]
 
-  def abortPaused: F[ObserveCommand.Result]
+  def abortPaused: F[ObserveCommandResult]
 
   def observeProgress(total: Time, elapsed: ElapsedTime): fs2.Stream[F, Progress]
 

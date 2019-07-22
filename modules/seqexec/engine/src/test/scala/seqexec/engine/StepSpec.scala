@@ -3,21 +3,21 @@
 
 package seqexec.engine
 
-import java.util.UUID
-
 import cats.effect.{ ContextShift, IO }
-import seqexec.model.enum.Instrument.GmosS
-import seqexec.model.{ActionType, ClientId, SequenceState, StepState, UserDetails}
-import seqexec.model.enum.Resource
-import seqexec.model.{ActionType, UserDetails}
 import fs2.concurrent.Queue
 import fs2.Stream
+import java.util.UUID
 import gem.Observation
 import org.scalatest.Inside._
 import org.scalatest.Matchers._
 import org.scalatest._
 import seqexec.engine.TestUtil.TestState
-
+import seqexec.engine.EventResult._
+import seqexec.engine.SystemEvent._
+import seqexec.model.enum.Instrument.GmosS
+import seqexec.model.{ActionType, ClientId, SequenceState, StepState, UserDetails}
+import seqexec.model.enum.Resource
+import seqexec.model.{ActionType, UserDetails}
 import scala.Function.const
 import scala.concurrent.ExecutionContext
 
@@ -35,13 +35,13 @@ class StepSpec extends FlatSpec {
   private val result = Result.OK(DummyResult)
   private val failure = Result.Error("Dummy error")
   private val actionFailed =  fromF[IO](ActionType.Undefined, IO(failure)).copy(state = Action.State
-  (Action.Failed(failure), Nil))
+  (Action.ActionState.Failed(failure), Nil))
   private val action: Action[IO] = fromF[IO](ActionType.Undefined, IO(result))
-  private val actionCompleted: Action[IO] = action.copy(state = Action.State(Action.Completed(DummyResult), Nil))
+  private val actionCompleted: Action[IO] = action.copy(state = Action.State(Action.ActionState.Completed(DummyResult), Nil))
   private def always[D]: D => Boolean = _ => true
   private val clientId: ClientId = ClientId(UUID.randomUUID)
 
-  def simpleStep(pending: List[Actions[IO]], focus: Execution[IO], done: List[Results]): Step.Zipper[IO] = {
+  def simpleStep(pending: List[Actions[IO]], focus: Execution[IO], done: List[Results[IO]]): Step.Zipper[IO] = {
     val rollback: (Execution[IO], List[Actions[IO]]) = done.map(_.map(const(action))) ++ List(focus.execution.map(const(action))) ++ pending match {
       case Nil => (Execution.empty, Nil)
       case x::xs => (Execution(x), xs)
@@ -414,7 +414,7 @@ class StepSpec extends FlatSpec {
                             Result.Partial(PartialValDouble(0.5)),
                             Result.OK(RetValDouble(1.0))
                           )).covary[IO],
-                          Action.State(Action.Idle, Nil)
+                          Action.State(Action.ActionState.Idle, Nil)
                         )
                       )
                     )
@@ -431,13 +431,13 @@ class StepSpec extends FlatSpec {
     inside (qss.drop(1).headOption.flatMap(_.sequences.get(seqId))) {
       case Some(Sequence.State.Zipper(zipper, status, _)) =>
         inside (zipper.focus.focus.execution.headOption) {
-          case Some(Action(_, _, Action.State(Action.Started, v::_))) => v shouldEqual PartialValDouble(0.5)
+          case Some(Action(_, _, Action.State(Action.ActionState.Started, v::_))) => v shouldEqual PartialValDouble(0.5)
         }
         assert(status.isRunning)
     }
     inside (qss.lastOption.flatMap(_.sequences.get(seqId))) {
       case Some(Sequence.State.Final(seq, status)) =>
-        seq.steps.headOption.flatMap(_.executions.headOption.flatMap(_.headOption)).map(_.state.runState) shouldEqual Some(Action.Completed(RetValDouble(1.0)))
+        seq.steps.headOption.flatMap(_.executions.headOption.flatMap(_.headOption)).map(_.state.runState) shouldEqual Some(Action.ActionState.Completed(RetValDouble(1.0)))
         status shouldBe SequenceState.Completed
     }
 

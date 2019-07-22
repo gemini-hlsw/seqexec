@@ -12,10 +12,11 @@ import mouse.all._
 import scala.concurrent.ExecutionContext
 import org.log4s.getLogger
 import seqexec.model.dhs.ImageFileId
+import seqexec.model.enum.ObserveCommandResult
 import seqexec.server.EpicsCodex.EncodeEpicsValue
 import seqexec.server.EpicsUtil._
 import seqexec.server.InstrumentSystem.ElapsedTime
-import seqexec.server.{EpicsUtil, ObserveCommand, Progress, SeqexecFailure}
+import seqexec.server.{EpicsUtil, Progress, SeqexecFailure}
 import seqexec.server.EpicsCodex._
 import seqexec.server.gmos.GmosController.Config._
 import seqexec.server.gmos.GmosController._
@@ -355,7 +356,7 @@ object GmosControllerEpics extends GmosEncoders {
           IO(Log.info("Completed Gmos configuration"))
       }
 
-      override def observe(fileId: ImageFileId, expTime: Time): IO[ObserveCommand.Result] =
+      override def observe(fileId: ImageFileId, expTime: Time): IO[ObserveCommandResult] =
         failOnDHSNotConected *>
           sys.observeCmd.setLabel(fileId) *>
           sys.observeCmd.setTimeout[IO](expTime + ReadoutTimeout) *>
@@ -389,7 +390,7 @@ object GmosControllerEpics extends GmosEncoders {
           sys.pauseCmd.mark[IO] *>
           sys.pauseCmd.post[IO].void
 
-      override def resumePaused(expTime: Time): IO[ObserveCommand.Result] = for {
+      override def resumePaused(expTime: Time): IO[ObserveCommandResult] = for {
         _   <- IO(Log.debug("Resume Gmos observation"))
         _   <- sys.continueCmd.setTimeout[IO](expTime + ReadoutTimeout)
         _   <- sys.continueCmd.mark[IO]
@@ -397,21 +398,21 @@ object GmosControllerEpics extends GmosEncoders {
         _   <- IO(Log.debug("Completed Gmos observation"))
       } yield ret
 
-      override def stopPaused: IO[ObserveCommand.Result] = for {
+      override def stopPaused: IO[ObserveCommandResult] = for {
         _   <- IO(Log.info("Stop Gmos paused observation"))
         _   <- sys.pauseCmd.setTimeout[IO](DefaultTimeout)
         _   <- sys.stopAndWaitCmd.mark[IO]
         ret <- sys.stopAndWaitCmd.post[IO]
         _   <- IO(Log.info("Completed stopping Gmos observation"))
-      } yield if(ret === ObserveCommand.Result.Success) ObserveCommand.Result.Stopped else ret
+      } yield if(ret === ObserveCommandResult.Success) ObserveCommandResult.Stopped else ret
 
-      override def abortPaused: IO[ObserveCommand.Result] = for {
+      override def abortPaused: IO[ObserveCommandResult] = for {
         _   <- IO(Log.info("Abort Gmos paused observation"))
         _   <- sys.abortAndWait.setTimeout[IO](DefaultTimeout)
         _   <- sys.abortAndWait.mark[IO]
         ret <- sys.abortAndWait.post[IO]
         _   <- IO(Log.info("Completed aborting Gmos observation"))
-      } yield if(ret === ObserveCommand.Result.Success) ObserveCommand.Result.Aborted else ret
+      } yield if(ret === ObserveCommandResult.Success) ObserveCommandResult.Aborted else ret
 
       override def observeProgress(total: Time, elapsed: ElapsedTime): Stream[IO, Progress] = {
         implicit val ioTimer: Timer[IO] = IO.timer(ExecutionContext.global)
